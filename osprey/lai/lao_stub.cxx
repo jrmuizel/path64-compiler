@@ -696,20 +696,15 @@ LAO_optimize(BB_List &entryBBs, BB_List &innerBBs, BB_List &exitBBs, unsigned la
 
 // Optimize a LOOP_DESCR inner loop through the LAO.
 bool
-LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
+LAO_optimize(CG_LOOP *cg_loop, unsigned lao_actions) {
   BB_List entryBBs, innerBBs, exitBBs;
   bool result = false;
   //
-  //bool has_trip_count = CG_LOOP_Trip_Count(loop) != NULL;
-  //fprintf(stderr, "LAO_optimize: has_trip_count=%d\n", has_trip_count);
-  //
+  LOOP_DESCR *loop = cg_loop->Loop();
   if (BB_innermost(LOOP_DESCR_loophead(loop))) {
-    // Create a prolog and epilog for the region when possible.
-    CG_LOOP cg_loop(loop);
-    // We need to call cg_loop.Build_CG_LOOP_Info() to perform
-    // initialization of operations in the loop. This is required before calling
-    // CG_DEP_Compute_Graph with cyclic = true.
-    if (cg_loop.Single_BB()) cg_loop.Build_CG_LOOP_Info();
+    // We need to call cg_loop->Build_CG_LOOP_Info() to initialize the loop
+    // operations. This is required by CG_DEP_Compute_Graph with cyclic = true.
+    if (cg_loop->Single_BB()) cg_loop->Build_CG_LOOP_Info();
     //
     entryBBs.push_back(CG_LOOP_prolog);
     //
@@ -1163,6 +1158,16 @@ LAO_printCGIR()
 }
 
 /*-------------------------- Old LAO Entry Points ----------------------------*/
+
+// Must be IDENTICAL to enum LOOP_OPT_ACTION in lai/cg_loop.cxx
+enum LAO_SWP_ACTION {
+  NO_LOOP_OPT,
+  SINGLE_BB_DOLOOP_SWP,
+  SINGLE_BB_DOLOOP_UNROLL,
+  SINGLE_BB_WHILELOOP_SWP,
+  SINGLE_BB_WHILELOOP_UNROLL,
+  MULTI_BB_DOLOOP
+};
 
 bool
 LAO_scheduleRegion ( BB_List& entryBBs, BB_List& innerBBs, BB_List& exitBBs, LAO_SWP_ACTION action ) {
