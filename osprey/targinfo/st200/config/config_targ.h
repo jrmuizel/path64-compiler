@@ -198,6 +198,20 @@ extern char *Isa_Name (TARGET_ISA target_isa);
 
 #define MAX_LARGE_FRAME_OFFSET	0x7FFFFFFFL	// 32 bits
 
+/* 
+ * Alignment is target dependent and should be specified as such on
+ * each target for each MTYPE. This would require changes to the
+ * compiler including FE changes. For now, I'll just use the
+ * strongest alignment.
+ */
+#define TARG_NONE_ALIGN  0
+#define TARG_BYTE_ALIGN  1
+#define TARG_CARD_ALIGN  2
+#define TARG_WORD_ALIGN  4
+#define TARG_DWORD_ALIGN  8
+#define TARG_QUAD_ALIGN  16
+
+#if 0
 typedef enum _align {
   _NONE_ALIGN = 0,
   _BYTE_ALIGN = 1,
@@ -213,6 +227,7 @@ typedef enum _align {
  * compiler including FE changes. For now, I'll just use the
  * strongest alignment.
  */
+#endif
 
 /*
  * This alignment is used for aligning the stack segments
