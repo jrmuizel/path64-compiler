@@ -118,25 +118,20 @@ CGIR_CRP_to_Register(CLASS_REG_PAIR crp) {
 // Convert CGIR_LAB to LIR Label.
 static inline Label
 CGIR_LAB_to_Label(CGIR_LAB cgir_lab) {
-  Label label = Interface_searchLabel(interface, cgir_lab);
-  if (label == NULL) {
-    label = Interface_createLabel(interface, cgir_lab, LABEL_name(cgir_lab));
-  }
+  Label label = Interface_makeLabel(interface, cgir_lab, LABEL_name(cgir_lab));
   return label;
 }
 
 // Convert CGIR_SYM to LIR Symbol.
 static inline Symbol
 CGIR_SYM_to_Symbol(CGIR_SYM cgir_sym) {
-  Symbol symbol = Interface_searchSymbol(interface, cgir_sym);
-  if (symbol == NULL) {
-    if (ST_class(cgir_sym) == CLASS_CONST) {
-      char buffer[64];
-      sprintf(buffer, "CONST#%llu", (uint64_t)cgir_sym);
-      symbol = Interface_createSymbol(interface, cgir_sym, String_S(buffer));
-    } else {
-      symbol = Interface_createSymbol(interface, cgir_sym, ST_name(cgir_sym));
-    }
+  Symbol symbol = NULL;
+  if (ST_class(cgir_sym) == CLASS_CONST) {
+    char buffer[64];
+    sprintf(buffer, "CONST#%llu", (uint64_t)cgir_sym);
+    symbol = Interface_makeSymbol(interface, cgir_sym, String_S(buffer));
+  } else {
+    symbol = Interface_makeSymbol(interface, cgir_sym, ST_name(cgir_sym));
   }
   return symbol;
 }
@@ -144,100 +139,97 @@ CGIR_SYM_to_Symbol(CGIR_SYM cgir_sym) {
 // Convert CGIR_TN to LIR TempName.
 static inline TempName
 CGIR_TN_to_TempName(CGIR_TN cgir_tn) {
-  TempName tempname = Interface_searchTempName(interface, cgir_tn);
-  if (tempname == NULL) {
-    if (TN_is_register(cgir_tn)) {
-      if (TN_is_dedicated(cgir_tn)) {
-	CLASS_REG_PAIR tn_crp = TN_class_reg(cgir_tn);
-	tempname = Interface_createDedicatedTempName(interface, cgir_tn, CGIR_CRP_to_Register(tn_crp));
-      } else {
-	ISA_REGISTER_CLASS tn_irc = TN_register_class(cgir_tn);
-	tempname = Interface_createPseudoRegTempName(interface, cgir_tn, CGIR_IRC_to_RegClass(tn_irc));
-      }
-    } else if (TN_is_constant(cgir_tn)) {
-      if (TN_has_value(cgir_tn)) {
-	int64_t value = TN_value(cgir_tn);
-	Immediate immediate = CGIR_LC_to_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
-	tempname = Interface_createAbsoluteTempName(interface, cgir_tn, immediate, value);
-      } else if (TN_is_symbol(cgir_tn)) {
-	Symbol symbol = NULL;
-	ST *var = TN_var(cgir_tn);
-	ST_IDX st_idx = ST_st_idx(*var);
-	int64_t offset = TN_offset(cgir_tn);
-	Immediate immediate = CGIR_LC_to_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
-	symbol = CGIR_SYM_to_Symbol(st_idx);
-	tempname = Interface_createSymbolTempName(interface, cgir_tn, immediate, symbol, offset);
-      } else if (TN_is_label(cgir_tn)) {
-	CGIR_LAB cgir_lab = TN_label(cgir_tn);
-	Immediate immediate = CGIR_LC_to_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
-	Label label = CGIR_LAB_to_Label(cgir_lab);
-	tempname = Interface_createLabelTempName(interface, cgir_tn, immediate, label);
-	Is_True(TN_offset(cgir_tn) == 0, ("LAO requires zero offset from label."));
-      } else if (TN_is_enum(cgir_tn)) {
-	ISA_ENUM_CLASS_VALUE value = TN_enum(cgir_tn);
-	Modifier modifier = CGIR_IEC_to_Modifier((ISA_ENUM_CLASS)0);	// HACK ALERT
-	tempname = Interface_createModifierTempName(interface, cgir_tn, modifier, value);
-      } else {
-	Is_True(FALSE, ("Unknown constant TN type."));
-      }
+  TempName tempname = NULL;
+  if (TN_is_register(cgir_tn)) {
+    if (TN_is_dedicated(cgir_tn)) {
+      CLASS_REG_PAIR tn_crp = TN_class_reg(cgir_tn);
+      tempname = Interface_makeDedicatedTempName(interface, cgir_tn, CGIR_CRP_to_Register(tn_crp));
     } else {
-      Is_True(FALSE, ("Unknown TN type."));
+      ISA_REGISTER_CLASS tn_irc = TN_register_class(cgir_tn);
+      tempname = Interface_makePseudoRegTempName(interface, cgir_tn, CGIR_IRC_to_RegClass(tn_irc));
     }
-    Is_True(tempname != NULL, ("tempname should not be NULL."));
+  } else if (TN_is_constant(cgir_tn)) {
+    if (TN_has_value(cgir_tn)) {
+      int64_t value = TN_value(cgir_tn);
+      Immediate immediate = CGIR_LC_to_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
+      tempname = Interface_makeAbsoluteTempName(interface, cgir_tn, immediate, value);
+    } else if (TN_is_symbol(cgir_tn)) {
+      Symbol symbol = NULL;
+      ST *var = TN_var(cgir_tn);
+      ST_IDX st_idx = ST_st_idx(*var);
+      int64_t offset = TN_offset(cgir_tn);
+      Immediate immediate = CGIR_LC_to_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
+      symbol = CGIR_SYM_to_Symbol(st_idx);
+      tempname = Interface_makeSymbolTempName(interface, cgir_tn, immediate, symbol, offset);
+    } else if (TN_is_label(cgir_tn)) {
+      CGIR_LAB cgir_lab = TN_label(cgir_tn);
+      Immediate immediate = CGIR_LC_to_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
+      Label label = CGIR_LAB_to_Label(cgir_lab);
+      tempname = Interface_makeLabelTempName(interface, cgir_tn, immediate, label);
+      Is_True(TN_offset(cgir_tn) == 0, ("LAO requires zero offset from label."));
+    } else if (TN_is_enum(cgir_tn)) {
+      ISA_ENUM_CLASS_VALUE value = TN_enum(cgir_tn);
+      Modifier modifier = CGIR_IEC_to_Modifier((ISA_ENUM_CLASS)0);	// HACK ALERT
+      tempname = Interface_makeModifierTempName(interface, cgir_tn, modifier, value);
+    } else {
+      Is_True(FALSE, ("Unknown constant TN type."));
+    }
+  } else {
+    Is_True(FALSE, ("Unknown TN type."));
   }
+  Is_True(tempname != NULL, ("tempname should not be NULL."));
   return tempname;
 }
 
 // Convert CGIR_OP to LIR Operation.
 static Operation
 CGIR_OP_to_Operation(CGIR_OP cgir_op) {
-  Operation operation = Interface_searchOperation(interface, cgir_op);
-  if (operation == NULL) {
-    int argCount = OP_opnds(cgir_op);
-    int resCount = OP_results(cgir_op);
-    Operator OPERATOR = CGIR_TOP_to_Operator(OP_code(cgir_op));
-    operation = Interface_createOperation(interface, cgir_op, OPERATOR, argCount, resCount);
-    for (int i = 0; i < argCount; i++) {
-      TempName tempname = CGIR_TN_to_TempName(OP_opnd(cgir_op, i));
-      Interface_Operation_appendArgument(interface, operation, tempname);
-    }
-    for (int i = 0; i < resCount; i++) {
-      TempName tempname = CGIR_TN_to_TempName(OP_result(cgir_op, i));
-      Interface_Operation_appendResult(interface, operation, tempname);
-    }
-    if (OP_volatile(cgir_op)) {
-      // FIXME Interface_Operation_setVolatile(interface, operation);
-    }
+  int argCount = OP_opnds(cgir_op);
+  int resCount = OP_results(cgir_op);
+  Operator OPERATOR = CGIR_TOP_to_Operator(OP_code(cgir_op));
+  Operation operation = Interface_makeOperation(interface, cgir_op, OPERATOR, argCount, resCount);
+  if (Interface_Operation_isComplete(interface, operation)) return operation;
+  for (int i = 0; i < argCount; i++) {
+    TempName tempname = CGIR_TN_to_TempName(OP_opnd(cgir_op, i));
+    Interface_Operation_appendArgument(interface, operation, tempname);
+  }
+  for (int i = 0; i < resCount; i++) {
+    TempName tempname = CGIR_TN_to_TempName(OP_result(cgir_op, i));
+    Interface_Operation_appendResult(interface, operation, tempname);
+  }
+  if (OP_volatile(cgir_op)) {
+    // FIXME Interface_Operation_setVolatile(interface, operation);
   }
   // TODO: MemInfo
+  Interface_Operation_complete(interface, operation);
   return operation;
 }
 
 // Convert CGIR_BB to LIR BasicBlock.
 static BasicBlock
 CGIR_BB_to_BasicBlock(CGIR_BB cgir_bb) {
-  BasicBlock basicblock = Interface_searchBasicBlock(interface, cgir_bb);
-  if (basicblock == NULL) {
-    basicblock = Interface_createBasicBlock(interface, cgir_bb, BB_freq(cgir_bb));
-    // the BasicBlock label(s)
-    if (BB_has_label(cgir_bb)) {
-      ANNOTATION *annot;
-      for (annot = ANNOT_First(BB_annotations(cgir_bb), ANNOT_LABEL);
-	   annot != NULL;
-	   annot = ANNOT_Next(annot, ANNOT_LABEL)) {
-	CGIR_LAB cgir_lab = ANNOT_label(annot);
-	Label label = CGIR_LAB_to_Label(cgir_lab);
-	Interface_BasicBlock_appendLabel(interface, basicblock, label);
-      }
-    }
-    // the BasicBlock operations
-    CGIR_OP cgir_op = NULL;
-    FOR_ALL_BB_OPs(cgir_bb, cgir_op) {
-      Operation operation = CGIR_OP_to_Operation(cgir_op);
-      Interface_BasicBlock_appendOperation(interface, basicblock, operation);
+  float frequency = BB_freq(cgir_bb);
+  BasicBlock basicblock = Interface_makeBasicBlock(interface, cgir_bb, frequency);
+  if (Interface_BasicBlock_isComplete(interface, basicblock)) return basicblock;
+  // the BasicBlock label(s)
+  if (BB_has_label(cgir_bb)) {
+    ANNOTATION *annot;
+    for (annot = ANNOT_First(BB_annotations(cgir_bb), ANNOT_LABEL);
+	 annot != NULL;
+	 annot = ANNOT_Next(annot, ANNOT_LABEL)) {
+      CGIR_LAB cgir_lab = ANNOT_label(annot);
+      Label label = CGIR_LAB_to_Label(cgir_lab);
+      Interface_BasicBlock_appendLabel(interface, basicblock, label);
     }
   }
+  // the BasicBlock operations
+  CGIR_OP cgir_op = NULL;
+  FOR_ALL_BB_OPs(cgir_bb, cgir_op) {
+    Operation operation = CGIR_OP_to_Operation(cgir_op);
+    Interface_BasicBlock_appendOperation(interface, basicblock, operation);
+  }
   // TODO: LoopInfo
+  Interface_BasicBlock_complete(interface, basicblock);
   return basicblock;
 }
 
@@ -795,11 +787,11 @@ lao_setLeaveArcs(BB *bb, BasicBlock basicblock) {
   BBLIST *bblist = NULL;
   FOR_ALL_BB_SUCCS(bb, bblist) {
     BB *succ_bb = BBLIST_item(bblist);
-    BasicBlock succ_basicblock = Interface_searchBasicBlock(interface, succ_bb);
+    BasicBlock succ_basicblock = CGIR_BB_to_BasicBlock(succ_bb);
     if (succ_basicblock != NULL) {
       float probability = BBLIST_prob(bblist);
       unsigned flags = BBLIST_flags(bblist);
-      Interface_createControlArc(interface, basicblock, succ_basicblock, probability, flags);
+      Interface_makeControlArc(interface, basicblock, succ_basicblock, probability, flags);
     }
   }
 }
@@ -833,7 +825,7 @@ lao_setMemoryDependences(BB* bb, LoopInfo loopinfo) {
   FOR_ALL_BB_OPs(bb, op) {
     ARC_LIST *arcs = NULL;
     if (_CG_DEP_op_info(op)) {
-      Operation orig_operation = Interface_searchOperation(interface, op);
+      Operation orig_operation = CGIR_OP_to_Operation(op);
       for (arcs = OP_succs(op); arcs; arcs = ARC_LIST_rest(arcs)) {
 	ARC *arc = ARC_LIST_first(arcs);
 	CG_DEP_KIND kind = ARC_kind(arc);
@@ -842,7 +834,7 @@ lao_setMemoryDependences(BB* bb, LoopInfo loopinfo) {
 	  int latency = ARC_latency(arc), omega = ARC_omega(arc);
 	  OP *pred_op = ARC_pred(arc), *succ_op = ARC_succ(arc);
 	  Is_True(pred_op == op, ("Error in lao_setMemoryDependences"));
-	  Operation dest_operation = Interface_searchOperation(interface, succ_op);
+	  Operation dest_operation = CGIR_OP_to_Operation(succ_op);
 	  Interface_LoopInfo_setMemoryDependence(interface, loopinfo,
 	      orig_operation, dest_operation, latency, omega, definite);
 	  //CG_DEP_Trace_Arc(arc, TRUE, FALSE);
@@ -863,8 +855,8 @@ static LoopInfo
 lao_makeLoopInfo(BB_List& bb_list, bool cyclic) {
   BB *bb = bb_list.front();
   CGIR_LAB cgir_lab = Gen_Label_For_BB(bb);
-  Label label = Interface_searchLabel(interface, cgir_lab);
-  LoopInfo loopinfo = Interface_createLoopInfo(interface, label);
+  Label label = CGIR_LAB_to_Label(cgir_lab);
+  LoopInfo loopinfo = Interface_makeLoopInfo(interface, label);
   CG_DEP_Compute_Region_MEM_Arcs(bb_list,
       cyclic,	// compute_cyclic
       false);	// memread_arcs
