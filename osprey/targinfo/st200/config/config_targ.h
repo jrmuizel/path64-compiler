@@ -181,7 +181,7 @@ extern char *Isa_Name (TARGET_ISA target_isa);
 /* 
  * largest signed offset possible in small-frame stack model:
  */
-#define MAX_SMALL_FRAME_OFFSET  0x3ff    // try 9 bits
+#define MAX_SMALL_FRAME_OFFSET  0x7fffffff    // entire 32 bits addressing
 
 /*
  * Since the largest offset allowed is 9 bits
@@ -213,7 +213,11 @@ typedef enum _align {
  * compiler including FE changes. For now, I'll just use the
  * strongest alignment.
  */
-#define DEFAULT_STACK_ALIGNMENT _WORD_ALIGN
+
+/*
+ * This alignment is used for aligning the stack segments
+ */
+#define DEFAULT_STACK_ALIGNMENT 32
 
 /* ====================================================================
  *
