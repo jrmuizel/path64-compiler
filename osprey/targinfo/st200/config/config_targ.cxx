@@ -459,6 +459,12 @@ Preconfigure_Target ( void )
   //       canonicalization up to U8 is performed.
   WOPT_Enable_Min_Type = FALSE;
 
+  //
+  // Enable_CVT_Folding will try to remove the CVTs, specifically
+  // from LDID/ILOAD/STID/ISTORE, which we can not tolerate.
+  //
+  //WOPT_Enable_Cvt_Folding = FALSE;
+
   // Overwrite some CG defaults: 
 
   // Generate floating point constants directly in the code
@@ -500,7 +506,6 @@ Configure_Target ()
   Spill_Float_Mtype = MTYPE_UNKNOWN;
   // Maximal MTYPE that directly corresponds to machine registers.
   // Perhaps there must be one for each type ...
-  // This also seems to define the border between using CVT or CVTL ?
   Max_Int_Mtype = Def_Int_Mtype = MTYPE_I4;
   Max_Uint_Mtype = Def_Uint_Mtype = MTYPE_U4;
   // That's too difficult now ...
