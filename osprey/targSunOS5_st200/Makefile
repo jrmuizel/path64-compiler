@@ -153,4 +153,3 @@ INSTALL_DEP := $(foreach targ,$(SUBDIRS),$(subst_install))
 deps.mk: Makefile
 	@echo $(LOCAL_DEP) | sed -e 's/-sep- */\n/g' > $@
 	@echo $(INSTALL_DEP) | sed -e 's/-sep- */\n/g' >> $@
-
