@@ -22,20 +22,9 @@
 #include "cg_loop.h"
 #include "hb.h"
 
-// Replicates enum CodeRegion_Action in LIR_CodeRegion.h
-enum LAO_Action {
-  LAO_NoAction = 0,
-  LAO_BlockSchedule = 1,	// super block scheduling
-  LAO_TraceSchedule = 2,	// trace block scheduling
-  LAO_LoopSchedule = 4,		// scheduling with loop-carried dependences
-  LAO_LoopPipeline = 8,		// loop pipelining with modulo scheduling
-  LAO_LoopUnwind = 16,		// modulo expansion if LoopPipeline
-  LAO_LoopUnroll = 32,		// counted loop unrolling
-  LAO_Recurrences = 64,		// recurrence rewriting
-  LAO_Reductions = 128,		// reduction splitting
-  LAO_PostPass = 256,		// postpass scheduling
-  LAO_RegAlloc = 512,		// register allocate
-};
+extern "C" {
+#include "LAO_Driver.h"
+}
 
 // Optimize a LOOP_DESCR through the LAO.
 bool
