@@ -65,12 +65,12 @@ LIBRARY_SUBDIRS =  \
 #  being built first.
 #
 TOOL_SUBDIRS = 		\
-	driver 		\
-	gccfe 		\
-	be 		\
-	lw_inline 	\
-	lai		\
-	wopt
+	gccfe \
+	be \
+	lai \
+	wopt \
+	driver \
+	lw_inline
 
 #	ipl	\
 #        whirl2c \
