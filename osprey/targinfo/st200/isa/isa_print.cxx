@@ -320,7 +320,7 @@ main()
 
   /* ================================= */ 
   ISA_PRINT_TYPE print_0; 
-  print_0 = ISA_Print_Type_Create("print_0", "c0	%s %s [ %s ]  = %s"); 
+  print_0 = ISA_Print_Type_Create("print_0", "%s %s [ %s ]  = %s"); 
   Name(); 
   Operand(0); 
   Operand(1); 
@@ -337,7 +337,7 @@ main()
 
   /* ================================= */ 
   ISA_PRINT_TYPE print_1; 
-  print_1 = ISA_Print_Type_Create("print_1", "c0	%s %s"); 
+  print_1 = ISA_Print_Type_Create("print_1", "%s %s"); 
   Name(); 
   Operand(0); 
 
@@ -349,7 +349,7 @@ main()
 
   /* ================================= */ 
   ISA_PRINT_TYPE print_2; 
-  print_2 = ISA_Print_Type_Create("print_2", "c0	%s"); 
+  print_2 = ISA_Print_Type_Create("print_2", "%s"); 
   Name(); 
 
   Instruction_Print_Group(print_2, 
@@ -396,7 +396,7 @@ main()
 
   /* ================================= */ 
   ISA_PRINT_TYPE print_3; 
-  print_3 = ISA_Print_Type_Create("print_3", "c0	%s %s"); 
+  print_3 = ISA_Print_Type_Create("print_3", "%s %s"); 
   Name(); 
   Operand(0); 
 
@@ -407,7 +407,7 @@ main()
 
   /* ================================= */ 
   ISA_PRINT_TYPE print_4; 
-  print_4 = ISA_Print_Type_Create("print_4", "c0	%s %s [ %s ]"); 
+  print_4 = ISA_Print_Type_Create("print_4", "%s %s [ %s ]"); 
   Name(); 
   Operand(0); 
   Operand(1); 
@@ -423,7 +423,7 @@ main()
 
   /* ================================= */ 
   ISA_PRINT_TYPE print_5; 
-  print_5 = ISA_Print_Type_Create("print_5", "c0	%s %s = %s"); 
+  print_5 = ISA_Print_Type_Create("print_5", "%s %s = %s"); 
   Name(); 
   Result(0); 
   Operand(0); 
@@ -445,7 +445,7 @@ main()
 
   /* ================================= */ 
   ISA_PRINT_TYPE print_6; 
-  print_6 = ISA_Print_Type_Create("print_6", "c0	%s %s , %s = %s , %s , %s"); 
+  print_6 = ISA_Print_Type_Create("print_6", "%s %s , %s = %s , %s , %s"); 
   Name(); 
   Result(0); 
   Result(1); 
@@ -460,7 +460,7 @@ main()
 
   /* ================================= */ 
   ISA_PRINT_TYPE print_7; 
-  print_7 = ISA_Print_Type_Create("print_7", "c0	%s %s = %s , %s"); 
+  print_7 = ISA_Print_Type_Create("print_7", "%s %s = %s , %s"); 
   Name(); 
   Result(0); 
   Operand(0); 
@@ -592,7 +592,7 @@ main()
 
   /* ================================= */ 
   ISA_PRINT_TYPE print_8; 
-  print_8 = ISA_Print_Type_Create("print_8", "c0	%s %s = %s , %s"); 
+  print_8 = ISA_Print_Type_Create("print_8", "%s %s = %s , %s"); 
   Name(); 
   Result(0); 
   Operand(0); 
@@ -659,7 +659,7 @@ main()
 
   /* ================================= */ 
   ISA_PRINT_TYPE print_9; 
-  print_9 = ISA_Print_Type_Create("print_9", "c0	%s %s , %s"); 
+  print_9 = ISA_Print_Type_Create("print_9", "%s %s , %s"); 
   Name(); 
   Operand(0); 
   Operand(1); 
@@ -671,7 +671,7 @@ main()
 
   /* ================================= */ 
   ISA_PRINT_TYPE print_10; 
-  print_10 = ISA_Print_Type_Create("print_10", "c0	%s %s = %s , %s , %s"); 
+  print_10 = ISA_Print_Type_Create("print_10", "%s %s = %s , %s , %s"); 
   Name(); 
   Result(0); 
   Operand(0); 
@@ -685,7 +685,7 @@ main()
 
   /* ================================= */ 
   ISA_PRINT_TYPE print_11; 
-  print_11 = ISA_Print_Type_Create("print_11", "c0	%s %s = %s [ %s ]"); 
+  print_11 = ISA_Print_Type_Create("print_11", "%s %s = %s [ %s ]"); 
   Name(); 
   Result(0); 
   Operand(0); 
@@ -716,7 +716,7 @@ main()
 
   /* ================================= */ 
   ISA_PRINT_TYPE print_12; 
-  print_12 = ISA_Print_Type_Create("print_12", "c0	%s %s = %s , %s , %s"); 
+  print_12 = ISA_Print_Type_Create("print_12", "%s %s = %s , %s , %s"); 
   Name(); 
   Result(0); 
   Operand(0); 
