@@ -155,13 +155,6 @@ BOOL No_Quad_Aligned_Branch = FALSE;
 /* Does target provides only unsigned 64-bit instructions? */
 BOOL Only_Unsigned_64_Bit_Ops = FALSE;
 
-/* Does target provide only 32-bit instructions? */
-BOOL Only_32_Bit_Ops = TRUE;
-
-/* Does target support floating point and long long arithmetic? */
-BOOL Emulate_FloatingPoint_Ops = TRUE;
-BOOL Emulate_LongLong_Ops = TRUE;
-
 BOOL Has_GP_Groups = FALSE;
 
 /* Does target have offsets in load and store instructions?
@@ -388,6 +381,24 @@ Prepare_Target ( void )
 void
 Preconfigure_Target ( void )
 {
+  Gen_PIC_Calls = FALSE;	// ld handle's pic calls for IA-64
+  GP_Is_Preserved = FALSE;
+
+  Split_Quad_Ops = TRUE;
+
+  // This flag seems to really only affect CVT/CVTL processing.
+  // When it's on, the I8I4CVT is not simplified, for example.
+  Split_64_Bit_Int_Ops = TRUE;
+
+  // Target provides only 32-bit instructions
+  Only_32_Bit_Ops = TRUE;
+
+  // Target does not support floating point arithmetic
+  Emulate_FloatingPoint_Ops = TRUE;
+
+  // Do not use the extract/compose whirl ops
+  Enable_extract_compose = FALSE;
+
   // overwrite some OPT defaults
   // Normally, do not inline divide sequences on this target
   // This is handled by ...
@@ -415,17 +426,6 @@ Preconfigure_Target ( void )
 void
 Configure_Target ()
 {
-
-#if defined(linux)
-  Target_Byte_Sex = LITTLE_ENDIAN;
-#else  
-  Target_Byte_Sex = BIG_ENDIAN;
-#endif
-  Same_Byte_Sex = ( Target_Byte_Sex == Host_Byte_Sex );
-
-  Gen_PIC_Calls = FALSE;	// ld handle's pic calls for IA-64
-  GP_Is_Preserved = FALSE;
-
   /* Set up the target processor and ISA: */
   Prepare_Target ();
 
@@ -461,9 +461,6 @@ Configure_Target ()
   // Ugly hack !!!
   // Same hack as above ...
   Integer_type = MTYPE_I4;
-
-  Split_Quad_Ops = TRUE;
-  Split_64_Bit_Int_Ops = TRUE;
 
 #if defined(FRONT_END_C) || defined(FRONT_END_CPLUSPLUS)
 #ifndef EDG_FORTRAN
@@ -511,11 +508,6 @@ Configure_Target ()
       Align_Object = FALSE;
     }
   }
-
-  /*
-   * Do not use the extract/compose whirl ops
-   */
-  Enable_extract_compose=FALSE;
 
 #if defined(BACK_END)
   Init_Targ_Sim();	/* must be done before initialize_stack_frame */
