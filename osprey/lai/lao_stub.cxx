@@ -730,26 +730,32 @@ LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
 // Optimize a HB through the LAO.
 bool
 LAO_optimize(HB *hb, unsigned lao_actions) {
+fprintf(TFile, "HB_optimize\n");
   BB_List entryBBs, innerBBs, exitBBs;
   bool result = false;
   //
   entryBBs.push_back(HB_Entry(hb));
+fprintf(TFile, "HB_entry(%d)\n", BB_id(HB_Entry(hb)));
   //
   BB *bb = NULL;
   FOR_ALL_BB_SET_members(HB_Blocks(hb), bb) {
-    innerBBs.push_back(bb);
+    if (!LAO_inBB_List(entryBBs, bb)) {
+fprintf(TFile, "HB_body(%d)\n", BB_id(bb));
+      innerBBs.push_back(bb);
+    }
     //
     BBLIST *succs = NULL;
     FOR_ALL_BB_SUCCS(bb, succs) {
       BB *succ = BBLIST_item(succs);
       if (!HB_Contains_Block(hb, succ)) {
 	if (!LAO_inBB_List(exitBBs, succ))
+fprintf(TFile, "HB_exit(%d)\n", BB_id(bb));
 	  exitBBs.push_back(succ);
       }
     }
   }
   //
-  result = LAO_optimize(entryBBs, innerBBs, exitBBs, lao_actions);
+  //BUG! result = LAO_optimize(entryBBs, innerBBs, exitBBs, lao_actions);
   //
   return result;
 }
