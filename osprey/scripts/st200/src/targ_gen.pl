@@ -169,7 +169,6 @@ my $OP_JUMP        = 0x00000080;
 my $OP_IJUMP       = 0x00000100;
 my $OP_CALL        = 0x00000200;
 my $OP_DISMISSIBLE = 0x00000800;
-my $OP_NOOP        = 0x00001000;
 my $OP_IMMEDIATE   = 0x00002000;
 my $OP_XFER        = 0x00004000;
 my $OP_MOVE        = 0x00008000;
