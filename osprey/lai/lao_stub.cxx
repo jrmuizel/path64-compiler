@@ -661,7 +661,19 @@ static void LAOS_printBB (BB *bp);
 static bool
 LAO_optimize(BB_List &entryBBs, BB_List &innerBBs, BB_List &exitBBs, unsigned lao_actions) {
   bool result = false;
+  // Trace the interface BBs
+  BB_List::iterator bb_iter;
+  for (bb_iter = entryBBs.begin(); bb_iter != entryBBs.end(); bb_iter++) {
+    fprintf(TFile, "BB_entry(%d)\n", BB_id(*bb_iter));
+  }
+  for (bb_iter = innerBBs.begin(); bb_iter != innerBBs.end(); bb_iter++) {
+    fprintf(TFile, "BB_body(%d)\n", BB_id(*bb_iter));
+  }
+  for (bb_iter = exitBBs.begin(); bb_iter != exitBBs.end(); bb_iter++) {
+    fprintf(TFile, "BB_exit(%d)\n", BB_id(*bb_iter));
+  }
   //
+  LAOS_printCGIR();
   Interface_open(interface);
   //
   CodeRegion coderegion = LAO_makeCodeRegion(entryBBs, innerBBs, exitBBs);
@@ -676,17 +688,14 @@ LAO_optimize(BB_List &entryBBs, BB_List &innerBBs, BB_List &exitBBs, unsigned la
   return result;
 }
 
-// Optimize a LOOP_DESCR through the LAO.
+// Optimize a LOOP_DESCR inner loop through the LAO.
 bool
 LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
   BB_List entryBBs, innerBBs, exitBBs;
   bool result = false;
   //
-#ifndef LAO_EXPERIMENT
-  LAOS_printCGIR();
-#endif //LAO_EXPERIMENT
-  //
   if (BB_innermost(LOOP_DESCR_loophead(loop))) {
+fprintf(TFile, "LOOP_optimize\n");
     // Create a prolog and epilog for the region when possible.
     CG_LOOP cg_loop(loop);
     // We need to call cg_loop.Build_CG_LOOP_Info() to perform
@@ -735,12 +744,10 @@ fprintf(TFile, "HB_optimize\n");
   bool result = false;
   //
   entryBBs.push_back(HB_Entry(hb));
-fprintf(TFile, "HB_entry(%d)\n", BB_id(HB_Entry(hb)));
   //
   BB *bb = NULL;
   FOR_ALL_BB_SET_members(HB_Blocks(hb), bb) {
     if (!LAO_inBB_List(entryBBs, bb)) {
-fprintf(TFile, "HB_body(%d)\n", BB_id(bb));
       innerBBs.push_back(bb);
     }
     //
@@ -749,13 +756,12 @@ fprintf(TFile, "HB_body(%d)\n", BB_id(bb));
       BB *succ = BBLIST_item(succs);
       if (!HB_Contains_Block(hb, succ)) {
 	if (!LAO_inBB_List(exitBBs, succ))
-fprintf(TFile, "HB_exit(%d)\n", BB_id(bb));
 	  exitBBs.push_back(succ);
       }
     }
   }
   //
-  //BUG! result = LAO_optimize(entryBBs, innerBBs, exitBBs, lao_actions);
+  result = LAO_optimize(entryBBs, innerBBs, exitBBs, lao_actions);
   //
   return result;
 }
