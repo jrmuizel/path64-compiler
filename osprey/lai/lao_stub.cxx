@@ -81,6 +81,10 @@ static void LAO_updateResult(OP *operation, int index, TN *tn);
 static TN * LAO_makeDedicatedTN(Register reg);
 static TN * LAO_makePseudoRegTN(RegClass regclass);
 static TN * LAO_makeAbsoluteTN(int64_t value);
+static TN * LAO_makeLabelTN(LABEL_IDX lab);
+static void LAO_unlinkBB(BB *bb);
+static void LAO_linkPredSucc(BB *bb, BB *dest, float prob, unsigned flags);
+static LABEL_IDX LAO_makeLabelForBB(BB *bb);
 
 /*--------------------------- LAO_INIT / LAO_FINI ----------------------------*/
 
@@ -370,6 +374,10 @@ LAO_INIT() {
     Interface_LAO_makeDedicatedTN = LAO_makeDedicatedTN;
     Interface_LAO_makePseudoRegTN = LAO_makePseudoRegTN;
     Interface_LAO_makeAbsoluteTN = LAO_makeAbsoluteTN;
+    Interface_LAO_makeLabelTN = LAO_makeLabelTN;
+    Interface_LAO_unlinkBB = LAO_unlinkBB;
+    Interface_LAO_linkPredSucc = LAO_linkPredSucc;
+    Interface_LAO_makeLabelForBB = LAO_makeLabelForBB;
   }
 }
 
@@ -788,6 +796,27 @@ LAO_makeAbsoluteTN(int64_t value) {
   int size;
   size = (value >= (int64_t)0x80000000 && value <= (int64_t)0x7FFFFFFF) ? 4 : 8;
   return Gen_Literal_TN(value, size);
+}
+
+static TN *
+LAO_makeLabelTN(LABEL_IDX lab) {
+  return Gen_Label_TN(lab, 0);
+}
+
+static void
+LAO_unlinkBB(BB *bb) {
+  BB_Delete_Predecessors(bb);
+  BB_Delete_Successors(bb);
+}
+
+static void
+LAO_linkPredSucc(BB *bb, BB *dest, float prob, unsigned flags) {
+  Link_Pred_Succ_with_Prob(bb, dest, prob, (flags & BLM_PROB_FB), !(flags & BLM_PROB_FB));
+}
+
+static LABEL_IDX
+LAO_makeLabelForBB(BB *bb) {
+  return Gen_Label_For_BB(bb);
 }
 
 /*----------------------- LAO Optimization Functions -------------------------*/
