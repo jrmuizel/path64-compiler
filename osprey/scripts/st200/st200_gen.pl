@@ -275,58 +275,122 @@ sub op_signature {
 #
 #    make a printing signature similar to:
 #
-#          %R?_NAME_%R_,_%R_,_%R(O_R_O_O) for each TOP
+#          %R?_NAME_%R_,_%R_,_%R(O_NAME_R_O_O) for each TOP
 # ==================================================================
 
 sub op_print {
     my $opcode = $_[0];
     my $format = $OP_format[$opcode];
+    my $syntax = $OP_syntax[$opcode];
     my $signature;
+
+    # First get formats of all operands:
 
     if ($format eq 'Int3R' ||
 	$format eq 'Cmp3R_Reg' ||
 	$format eq 'Cmp3R_Br') {
-	$signature = 'NAME_%R_=_%R,_%R(NAME_R_O_O)';
+	$OP_results[$opcode] = 1;
+	$OP_opnds[$opcode] = 2;
+
+	$OP_res[$opcode][0]{'fmt'} = '%s';
+	$OP_opnd[$opcode][0]{'fmt'} = '%s';
+	$OP_opnd[$opcode][1]{'fmt'} = '%s';
+
+#	$signature = 'NAME_%R_=_%R,_%R(NAME_R_O_O)';
     }
     elsif ($format eq 'Int3I' ||
 	   $format eq 'Cmp3I_Reg' ||
 	   $format eq 'Cmp3I_Br') {
-	$signature = 'NAME_%R_=_%R,_%I(NAME_R_O_O)';
+	$OP_results[$opcode] = 1;
+	$OP_opnds[$opcode] = 2;
+	$OP_res[$opcode][0]{'fmt'} = '%s';
+	$OP_opnd[$opcode][0]{'fmt'} = '%s';
+	$OP_opnd[$opcode][1]{'fmt'} = '%d';
+#	$signature = 'NAME_%R_=_%R,_%I(NAME_R_O_O)';
     }
     elsif ($format eq 'SelectR') {
-	$signature = 'NAME_%R_=_%R,_%R,_%R(NAME_R_O_O_O)';
+	$OP_results[$opcode] = 1;
+	$OP_opnds[$opcode] = 3;
+	$OP_res[$opcode][0]{'fmt'} = '%s';
+	$OP_opnd[$opcode][0]{'fmt'} = '%s';
+	$OP_opnd[$opcode][1]{'fmt'} = '%s';
+	$OP_opnd[$opcode][2]{'fmt'} = '%s';
+#	$signature = 'NAME_%R_=_%R,_%R,_%R(NAME_R_O_O_O)';
     }
     elsif ($format eq 'SelectI') {
-	$signature = 'NAME_%R_=_%R,_%R,_%I(NAME_R_O_O_O)';
+	$OP_results[$opcode] = 1;
+	$OP_opnds[$opcode] = 3;
+	$OP_res[$opcode][0]{'fmt'} = '%s';
+	$OP_opnd[$opcode][0]{'fmt'} = '%s';
+	$OP_opnd[$opcode][1]{'fmt'} = '%s';
+	$OP_opnd[$opcode][2]{'fmt'} = '%d';
+#	$signature = 'NAME_%R_=_%R,_%R,_%I(NAME_R_O_O_O)';
     }
     elsif ($format eq 'cgen') {
-	$signature = 'NAME_%R,_%R_=_%R,_%R,_%R(NAME_R_R_O_O_O)';
+	$OP_results[$opcode] = 2;
+	$OP_opnds[$opcode] = 3;
+	$OP_res[$opcode][0]{'fmt'} = '%s';
+	$OP_res[$opcode][1]{'fmt'} = '%s';
+	$OP_opnd[$opcode][0]{'fmt'} = '%s';
+	$OP_opnd[$opcode][1]{'fmt'} = '%s';
+	$OP_opnd[$opcode][2]{'fmt'} = '%s';
+#	$signature = 'NAME_%R,_%R_=_%R,_%R,_%R(NAME_R_R_O_O_O)';
     }
     elsif ($format eq 'Imm') {
-	$signature = 'NAME_%I(NAME_O)';
+	$OP_results[$opcode] = 0;
+	$OP_opnds[$opcode] = 1;
+	$OP_opnd[$opcode][0]{'fmt'} = '%d';
+#	$signature = 'NAME_%I(NAME_O)';
     }
     elsif ($format eq 'Load') {
-	$signature = 'NAME_%R_=_%I_[_%R_](NAME_R_O_O)';
+	$OP_results[$opcode] = 1;
+	$OP_opnds[$opcode] = 2;
+	$OP_res[$opcode][0]{'fmt'} = '%s';
+	$OP_opnd[$opcode][0]{'fmt'} = '%d';
+	$OP_opnd[$opcode][1]{'fmt'} = '%s';
+#	$signature = 'NAME_%R_=_%I_[_%R_](NAME_R_O_O)';
     }
     elsif ($format eq 'Store') {
-	$signature = 'NAME_%I_[_%R_]_=_%R(NAME_O_O_O)';
+	$OP_results[$opcode] = 0;
+	$OP_opnds[$opcode] = 3;
+	$OP_opnd[$opcode][0]{'fmt'} = '%d';
+	$OP_opnd[$opcode][1]{'fmt'} = '%s';
+	$OP_opnd[$opcode][2]{'fmt'} = '%s';
+#	$signature = 'NAME_%I_[_%R_]_=_%R(NAME_O_O_O)';
     }
     elsif ($format eq 'Branch') {
-	$signature = 'NAME_%R,_%R(NAME_O_O)';
+	$OP_results[$opcode] = 0;
+	$OP_opnds[$opcode] = 2;
+	$OP_opnd[$opcode][0]{'fmt'} = '%s';
+	$OP_opnd[$opcode][1]{'fmt'} = '%s';
+#	$signature = 'NAME_%R,_%R(NAME_O_O)';
     }
     elsif ($format eq 'Call') {
 	if ($OP_mnemonic[$opcode] eq 'call' ||
 	    $OP_mnemonic[$opcode] eq 'goto') {
-	    $signature = 'NAME_LR_=_%R(NAME_O)';
+	    $OP_results[$opcode] = 1;
+	    $OP_opnds[$opcode] = 1;
+	    $OP_res[$opcode][0]{'fmt'} = '%s';
+	    $OP_opnd[$opcode][0]{'fmt'} = '%s';
+#	    $signature = 'NAME_LR_=_%R(NAME_O)';
 	}
 	elsif ($OP_mnemonic[$opcode] eq 'icall') {
-	    $signature = 'NAME_LR_=_LR(NAME)';
+	    $OP_results[$opcode] = 1;
+	    $OP_opnds[$opcode] = 1;
+	    $OP_res[$opcode][0]{'fmt'} = '%s';
+	    $OP_opnd[$opcode][0]{'fmt'} = '%s';
+#	    $signature = 'NAME_LR_=_LR(NAME)';
 	}
 	elsif ($OP_mnemonic[$opcode] eq 'igoto') {
-	    $signature = 'NAME_LR(NAME)';
+	    $OP_results[$opcode] = 1;
+	    $OP_opnds[$opcode] = 0;
+	    $OP_res[$opcode][0]{'fmt'} = '%s';
+#	    $signature = 'NAME_LR(NAME)';
 	}
 	elsif ($OP_mnemonic[$opcode] eq 'rfi') {
-	    $signature = 'NAME(NAME)';
+	    $OP_results[$opcode] = 0;
+	    $OP_opnds[$opcode] = 0;
+#	    $signature = 'NAME(NAME)';
 	}
 	else {
 	    printf(STDOUT "ERROR: unknown call format %s in op_signature\n", 
@@ -335,13 +399,84 @@ sub op_print {
 	}
     }
     elsif ($format eq 'SysOp') {
-	$signature = 'NAME_%I(NAME_O)';
+	$OP_results[$opcode] = 0;
+	$OP_opnds[$opcode] = 1;
+	$OP_opnd[$opcode][0]{'fmt'} = '%d';
+#	$signature = 'NAME_%I(NAME_O)';
     }
     else {
 	printf(STDOUT "ERROR: unknown format %s in op_signature\n", 
 	       $format);
 	exit(1);
     }
+
+    # process syntax:
+    print STDOUT " syntax: $syntax \n";
+    my @st = split(' ',$syntax);
+    print STDOUT " list: @st \n";
+
+    my $count = 0;
+    foreach my $elt (@st) {
+	my $idx;
+	my $fmt;
+
+	print STDOUT "   elt: $elt \n";
+
+        if ($elt =~ /%(\d),/) {
+	    if ($count < $OP_results[$opcode]) {
+		$idx = $1 - 1;
+		$fmt = $OP_res[$opcode][$idx]{'fmt'};
+		$signature = $signature."R".$idx.":".$fmt
+	    }
+	    else {
+		$idx = $1 - $OP_results[$opcode] - 1;
+		$fmt = $OP_opnd[$opcode][$idx]{'fmt'};
+		$signature = $signature."O".$idx.":".$fmt
+	    }
+	    $signature = $signature."_,_";
+	    $count++;
+	}
+	elsif ($elt =~ /%(\d)\[%(\d)]/) {
+	    # these must be operands
+	    my $idx1 = $1 - $OP_results[$opcode] - 1;
+	    my $idx2 = $2 - $OP_results[$opcode] - 1;
+	    my $fmt1 = $OP_opnd[$opcode][$idx1]{'fmt'};
+	    my $fmt2 = $OP_opnd[$opcode][$idx2]{'fmt'};
+	    $signature = $signature."O".$idx1.":".$fmt1."_[_"."O".$idx2.":".$fmt2."_]_";
+	    $count = $count + 2;
+	}
+        elsif ($elt =~ /%(\d)/) {
+	    if ($count < $OP_results[$opcode]) {
+		$idx = $1 - 1;
+		$fmt = $OP_res[$opcode][$idx]{'fmt'};
+		$signature = $signature."R".$idx.":".$fmt
+	    }
+	    else {
+		$idx = $1 - $OP_results[$opcode] - 1;
+		$fmt = $OP_opnd[$opcode][$idx]{'fmt'};
+		$signature = $signature."O".$idx.":".$fmt
+	    }
+	    $count++;
+	}
+	elsif ($elt eq '[') {
+	    $signature = $signature.'_[_';
+	}
+	elsif ($elt eq ']') {
+	    $signature = $signature.'_]';
+	}
+	elsif ($elt eq 'LR') {
+	    $signature = $signature.'LR';
+	}
+	elsif ($elt eq '=') {
+	    $signature = $signature.'_=_';
+	}
+	else {
+	    # must be the opcode
+
+	}
+    }
+
+    print STDOUT " signature: $signature  \n";
 
     return $signature;
 }
@@ -1365,108 +1500,72 @@ sub emit_printing_formats {
 
     # First specify bundle/grouping stuff
     printf(PRNT_F "  Define_Macro(\"END_GROUP\", \";;\");\t// end-of-group marker \n");
-    printf(PRNT_F "  Define_Macro(\"BEGIN_BUNDLE\", \"## bundle %s:\");\t// bundle introducer \n", "%s");
-    printf(PRNT_F "  Define_Macro(\"END_BUNDLE\", \";;\");\t// bundle terminator \n");
+    printf(PRNT_F "  Define_Macro(\"BEGIN_BUNDLE\", \"## {\t %s:\");\t// bundle introducer \n", "%s");
+    printf(PRNT_F "  Define_Macro(\"END_BUNDLE\", \"## };\");\t// bundle terminator \n");
     printf(PRNT_F "\n");
 
     my $count = 0;
-    foreach my $group (keys(%PrintGroup)) {
-	$group =~ /(.*)\((\w*)\)/;
-	my $ft = $1;
-	my $pt = $2;
-	my @format = split ('_',$ft);
-	my @pattern = split ('_',$pt);
-	my @new_format;
-	my @new_pattern;
-	my @args;
-	my $opcode;
+    foreach my $signature (keys(%PrintGroup)) {
+	my @pattern = split ('_',$signature);
+	my @fmt;
+	my @instr;
+	my $args;
 
-	foreach my $elt (@format) {
+	# push %s for name in the format
+	push (@instr, "\t%s");
 
-	    if ($elt eq "%R?") {
-		push (@new_format, "%s");
-		push (@args, "%s");
-		push (@new_pattern, shift (@pattern));
-	    }
-	    elsif ($elt eq "%R!") {
-		push (@new_format, "%s");
-		push (@args, "%s");
-		push (@new_pattern, shift (@pattern));
-	    }
-	    elsif (($elt eq "%R") ||
-		   ($elt eq "%S") ||
-		   ($elt eq "%M") ) {
-		push (@new_format, "%s");
-		push (@args, "%s");
-		push (@new_pattern, shift (@pattern));
-	    }
-	    elsif ($elt eq "%I") {
-		push (@new_format, "%s");
-		push (@args, "%d");
-		push (@new_pattern, shift (@pattern));
-	    }
-	    elsif ($elt eq "%R,") {
-		push (@new_format, "%s,");
-		push (@args, "%s");
-		push (@new_pattern, shift (@pattern));
-	    }
-	    elsif ($elt eq ",%I") {
-		push (@new_format, ", %s");
-		push (@args, "%d");
-		push (@new_pattern, shift (@pattern));
-	    }
-	    elsif ($elt eq "\\\\%pr5") {
-		push (@new_format, "%s");
-		push (@args, "%s");
-		push (@new_pattern, shift (@pattern));
-	    }
-	    elsif ($elt eq "0x%05x") {
-		push (@new_format, "%s");
-		push (@args, "0x%05x");
-		push (@new_pattern, shift (@pattern));
-	    }
-	    elsif ($elt =~ /\%/) {
-		print "ERROR: unknown print format $elt !!!\n";
-		exit (1);
-	    }
-	    elsif ($elt eq "NAME") {
-		push (@new_format, "\t%s");
-		push (@args, "%s");
-		push (@new_pattern, "NAME");
-		shift (@pattern);
+	my $i = 0;
+	foreach my $elt (@pattern) {
+	    if ($elt =~ /(.*):(\S*)/) {
+		# for now always %s in the instrn format
+		push (@instr, "%s");
+		$args[$i++] = $1;
+		push (@fmt, $2);
 	    }
 	    else {
-		# it should be OK ??
-		push (@new_format, $elt);
+		# just push
+		push (@instr, $elt);
 	    }
 	}
 
-	my $new_ft = join (' ', @new_format);
+	my $new_ft = join(' ',@instr);
 
 	# print print group header
 	print PRNT_F "  /* ================================= */ \n";
 	print PRNT_F "  ISA_PRINT_TYPE print_$count; \n";
 	print PRNT_F "  print_$count = ISA_Print_Type_Create(\"print_$count\", \"c0$new_ft\"); \n";
 
-	my $opnd = 0;
-	my $res = 0;
-	foreach my $sym (@new_pattern) {
-	    if ($sym eq "O") {
-		printf (PRNT_F "  Operand(%d, \"%s\"); \n", $opnd, shift (@args));
-		$opnd++;
+	printf (PRNT_F "  Name(\"%s\"); \n", "%s");
+	my $j;
+	for ($j = 0; $j < $i; $j++) {
+	    if ($args[$j] eq 'R0') { 
+		printf (PRNT_F "  Result(0, \"%s\"); \n", shift (@fmt));
 	    }
-	    elsif ($sym eq "R") {
-		printf (PRNT_F "  Result(%d, \"%s\"); \n", $res, shift (@args));
-		$res++;
+	    elsif ($args[$j] eq 'R1') { 
+		printf (PRNT_F "  Result(1, \"%s\"); \n", shift (@fmt));
+	    }
+	    elsif ($args[$j] eq 'O0') { 
+		printf (PRNT_F "  Operand(0, \"%s\"); \n", shift (@fmt));
+	    }
+	    elsif ($args[$j] eq 'O1') { 
+		printf (PRNT_F "  Operand(1, \"%s\"); \n", shift (@fmt));
+	    }
+	    elsif ($args[$j] eq 'O2') { 
+		printf (PRNT_F "  Operand(2, \"%s\"); \n", shift (@fmt));
+	    }
+	    elsif ($args[$j] eq 'O3') { 
+		printf (PRNT_F "  Operand(3, \"%s\"); \n", shift (@fmt));
 	    }
 	    else {
-		printf (PRNT_F "  Name(\"%s\"); \n", shift (@args));
+		printf(STDOUT "ERROR: unknown element %s in op_signature\n", $elt);
+		exit(1);
 	    }
 	}
 
+	# print instructions:
 	print PRNT_F "\n";
 	print PRNT_F "  Instruction_Print_Group(print_$count, \n";
-	foreach $opcode (@{$PrintGroup{$group}}) {
+	foreach $opcode (@{$PrintGroup{$signature}}) {
 	    print PRNT_F "\t\t TOP_$opcode, \n";
 	}
 	print PRNT_F "\t\t TOP_UNDEFINED); \n";
@@ -2715,6 +2814,7 @@ sub finish_opcode_processing {
     # operand groups:
     push(@{$SignatureGroup{$OP_signature[$opcode]}}, $OP_opcode[$opcode]);
 
+    $OP_print[$opcode] = &op_print($opcode);
     # print groups:
     push(@{$PrintGroup{$OP_print[$opcode]}}, $OP_opcode[$opcode]);
 
@@ -3126,8 +3226,8 @@ sub finish_opcode_processing {
           $OP_signature[$OP_count] = &op_signature($OP_count);
 
           # print groups:
-          $OP_print[$OP_count] = &op_print($OP_count);
-          print STDOUT "  $OP_print[$OP_count] \n";
+#          $OP_print[$OP_count] = &op_print($OP_count);
+#          print STDOUT "  $OP_print[$OP_count] \n";
 
           # special cases:
           if ($OP_mnemonic[$OP_count] eq 'pft') {
@@ -3144,6 +3244,11 @@ sub finish_opcode_processing {
 	      # set up properties:
 	      &sort_by_properties($OP_count);
 	  }
+      }
+
+      # Figure out opcode's assembly printing format
+      if ($line =~ /^\+syntax\s(.*)/) {
+          $OP_syntax[$OP_count] = $1;
       }
   }
 
@@ -3183,7 +3288,7 @@ sub finish_opcode_processing {
   $OP_signature[$OP_count] = ':nop:';
   push(@{$SignatureGroup{$OP_signature[$OP_count]}}, $OP_opcode[$OP_count]);
   # print groups:
-  $OP_print[$OP_count] = 'NAME(NAME)';
+  $OP_print[$OP_count] = '';
   push(@{$PrintGroup{$OP_print[$OP_count]}}, $OP_opcode[$OP_count]);
   print STDOUT "  $OP_print[$OP_count] \n";
 
@@ -3219,7 +3324,7 @@ sub finish_opcode_processing {
   $OP_signature[$OP_count] = 'dest:mov:src2';
   push(@{$SignatureGroup{$OP_signature[$OP_count]}}, $OP_opcode[$OP_count]);
   # print groups:
-  $OP_print[$OP_count] = 'NAME_%R_=_%R(NAME_R_O)';
+  $OP_print[$OP_count] = 'R0:%s_=_O0:%s';
   push(@{$PrintGroup{$OP_print[$OP_count]}}, $OP_opcode[$OP_count]);
   print STDOUT "  $OP_print[$OP_count] \n";
 
@@ -3255,7 +3360,7 @@ sub finish_opcode_processing {
   $OP_signature[$OP_count] = 'idest:mov:isrc2';
   push(@{$SignatureGroup{$OP_signature[$OP_count]}}, $OP_opcode[$OP_count]);
   # print groups:
-  $OP_print[$OP_count] = 'NAME_%R_=_%I(NAME_R_O)';
+  $OP_print[$OP_count] = 'R0:%s_=_O0:%d';
   push(@{$PrintGroup{$OP_print[$OP_count]}}, $OP_opcode[$OP_count]);
   print STDOUT "  $OP_print[$OP_count] \n";
 
@@ -3291,7 +3396,7 @@ sub finish_opcode_processing {
   $OP_signature[$OP_count] = 'bdest:mov:src1';
   push(@{$SignatureGroup{$OP_signature[$OP_count]}}, $OP_opcode[$OP_count]);
   # print groups:
-  $OP_print[$OP_count] = 'NAME_%R_=_%R(NAME_R_O)';
+  $OP_print[$OP_count] = 'R0:%s_=_O0:%s';
   push(@{$PrintGroup{$OP_print[$OP_count]}}, $OP_opcode[$OP_count]);
   print STDOUT "  $OP_print[$OP_count] \n";
 
@@ -3327,7 +3432,7 @@ sub finish_opcode_processing {
   $OP_signature[$OP_count] = 'dest:mov:scond';
   push(@{$SignatureGroup{$OP_signature[$OP_count]}}, $OP_opcode[$OP_count]);
   # print groups:
-  $OP_print[$OP_count] = 'NAME_%R_=_%R(NAME_R_O)';
+  $OP_print[$OP_count] = 'R0:%s_=_O0:%s';
   push(@{$PrintGroup{$OP_print[$OP_count]}}, $OP_opcode[$OP_count]);
   print STDOUT "  $OP_print[$OP_count] \n";
 
@@ -3366,7 +3471,7 @@ sub finish_opcode_processing {
   $OP_signature[$OP_count] = ':return:lr';
   push(@{$SignatureGroup{$OP_signature[$OP_count]}}, $OP_opcode[$OP_count]);
   # print groups:
-  $OP_print[$OP_count] = 'NAME_%R(NAME_O)';
+  $OP_print[$OP_count] = 'O0:%s';
   push(@{$PrintGroup{$OP_print[$OP_count]}}, $OP_opcode[$OP_count]);
   print STDOUT "  $OP_print[$OP_count] \n";
 
