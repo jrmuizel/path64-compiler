@@ -45,9 +45,6 @@ LAO_inBB_List(BB_List& bb_list, BB *bb) {
   return false;
 }
 
-static void
-LAOS_printCGIR();
-
 // Map CGIR TOP to LIR Operator.
 static Operator TOP__Operator[TOP_UNDEFINED];
 
@@ -78,9 +75,9 @@ typedef vector<BB*> BB_VECTOR;
 // Initialization of the LAO, needs to be called once.
 void
 LAO_INIT() {
-#ifndef LAO_EXPERIMENT
-#endif //LAO_EXPERIMENT
-  int dummy; fprintf(stderr, "LAO PID=%lld\n", (int64_t)getpid()); scanf("%d", &dummy);
+  if (getenv("PID")) {
+    int dummy; fprintf(stderr, "PID=%lld\n", (int64_t)getpid()); scanf("%d", &dummy);
+  }
   if (LAO_initialized++ == 0) {
     // initialize LIR
     LIR_INIT();
@@ -655,7 +652,7 @@ LAO_makeLoopInfo(BB_List& bb_list, bool cyclic) {
 
 /*----------------------- LAO Optimization Functions -------------------------*/
 
-static void LAOS_printBB (BB *bp);
+static void LAO_printCGIR();
 
 // Low-level LAO_optimize entry point.
 static bool
@@ -673,7 +670,7 @@ LAO_optimize(BB_List &entryBBs, BB_List &innerBBs, BB_List &exitBBs, unsigned la
     fprintf(TFile, "BB_exit(%d)\n", BB_id(*bb_iter));
   }
   //
-  LAOS_printCGIR();
+  if (getenv("PRINT")) LAO_printCGIR();
   Interface_open(interface);
   //
   CodeRegion coderegion = LAO_makeCodeRegion(entryBBs, innerBBs, exitBBs);
@@ -695,7 +692,6 @@ LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
   bool result = false;
   //
   if (BB_innermost(LOOP_DESCR_loophead(loop))) {
-fprintf(TFile, "LOOP_optimize\n");
     // Create a prolog and epilog for the region when possible.
     CG_LOOP cg_loop(loop);
     // We need to call cg_loop.Build_CG_LOOP_Info() to perform
@@ -729,7 +725,10 @@ fprintf(TFile, "LOOP_optimize\n");
       }
       //
       // Call the main LAO_optimize entry point.
-      result = LAO_optimize(entryBBs, innerBBs, exitBBs, lao_actions);
+      if (getenv("LOOP")) {
+	fprintf(TFile, "LOOP_optimize\n");
+	result = LAO_optimize(entryBBs, innerBBs, exitBBs, lao_actions);
+      }
     }
   }
   //
@@ -739,7 +738,6 @@ fprintf(TFile, "LOOP_optimize\n");
 // Optimize a HB through the LAO.
 bool
 LAO_optimize(HB *hb, unsigned lao_actions) {
-fprintf(TFile, "HB_optimize\n");
   BB_List entryBBs, innerBBs, exitBBs;
   bool result = false;
   //
@@ -761,7 +759,10 @@ fprintf(TFile, "HB_optimize\n");
     }
   }
   //
-  result = LAO_optimize(entryBBs, innerBBs, exitBBs, lao_actions);
+  if (getenv("HB")) {
+    fprintf(TFile, "HB_optimize\n");
+    result = LAO_optimize(entryBBs, innerBBs, exitBBs, lao_actions);
+  }
   //
   return result;
 }
@@ -817,7 +818,7 @@ static OP_list * OP_list_new(OP_list *head)
 }
 
 static void
-LAOS_printTN ( const TN *tn )
+LAO_printTN ( const TN *tn )
 {
   //
   if (TN_is_constant(tn)) {
@@ -890,7 +891,7 @@ LAOS_printTN ( const TN *tn )
 }
 
 static void
-LAOS_printOP ( const OP *op )
+LAO_printOP ( const OP *op )
 {
   int i;
   //
@@ -910,7 +911,7 @@ LAOS_printOP ( const OP *op )
   //
   else for (i = 0; i < OP_results(op); i++) {
     fprintf(TFile, "%s", (i == 0 ? " " : ", "));
-    LAOS_printTN(OP_result(op,i));
+    LAO_printTN(OP_result(op,i));
   }
   //
   fprintf(TFile, " =");
@@ -918,24 +919,24 @@ LAOS_printOP ( const OP *op )
   for (i=0; i<OP_opnds(op); i++) {
     fprintf(TFile, "%s", (i == 0 ? " " : ", "));
     TN *tn = OP_opnd(op,i);
-    LAOS_printTN(tn);
+    LAO_printTN(tn);
     if (OP_Defs_TN(op, tn)) fprintf(TFile, "<def>");
   }
 }
 
 static void
-LAOS_printOPs ( const OP *op )
+LAO_printOPs ( const OP *op )
 {
   for ( ; op; op = OP_next(op)) {
     fprintf(TFile, "\t");
-    LAOS_printOP(op);
+    LAO_printOP(op);
     fprintf(TFile, "       \t#line[%4d]", Srcpos_To_Line(OP_srcpos(op)));
     fprintf(TFile, "\n");
   }
 }
 
 static void
-LAOS_printBB_Header (BB *bp)
+LAO_printBB_Header (BB *bp)
 {
   BBLIST *bl;
   INT16 i;
@@ -1091,14 +1092,14 @@ LAOS_printBB_Header (BB *bp)
 }
 
 static void
-LAOS_printBB (BB *bp)
+LAO_printBB (BB *bp)
 {
-  LAOS_printBB_Header (bp );
-  if (BB_first_op(bp))	LAOS_printOPs (BB_first_op(bp));
+  LAO_printBB_Header (bp );
+  if (BB_first_op(bp))	LAO_printOPs (BB_first_op(bp));
 }
 
 static void
-LAOS_printAlias()
+LAO_printAlias()
 {
   OP_list *memops = NULL, *elt1, *elt2;
   BB *bp;
@@ -1117,9 +1118,9 @@ LAOS_printAlias()
   fprintf(TFile, "--------------- Begin Print Alias ---------------\n");
   //
   for (elt1 = memops; elt1; elt1 = elt1->next) {
-    fprintf(TFile, "<Alias>"); LAOS_printOP(elt1->op); fprintf(TFile, "\n");
+    fprintf(TFile, "<Alias>"); LAO_printOP(elt1->op); fprintf(TFile, "\n");
     for (elt2 = memops; elt2 != elt1; elt2 = elt2->next) {
-      fprintf(TFile, "\t<with>"); LAOS_printOP(elt2->op); fprintf(TFile, "\t");
+      fprintf(TFile, "\t<with>"); LAO_printOP(elt2->op); fprintf(TFile, "\t");
       alias = CG_DEP_Mem_Ops_Alias(elt1->op, elt2->op, &identical);
       if (!alias)          fprintf(TFile, "NO-ALIAS");
       else if (!identical) fprintf(TFile, "   ALIAS");
@@ -1133,17 +1134,17 @@ LAOS_printAlias()
 }
 
 static void
-LAOS_printCGIR()
+LAO_printCGIR()
 {
   BB *bp;
   //
   fprintf(TFile, "--------CFG Begin--------\n");
   for (bp = REGION_First_BB; bp; bp = BB_next(bp)) {
-    LAOS_printBB ( bp );
+    LAO_printBB ( bp );
     fprintf ( TFile,"\n" );
   }
   //
-  LAOS_printAlias();
+  LAO_printAlias();
   //
   // Print live-analysis information
   fprintf(TFile, "-------- CFG End --------\n");
@@ -1161,7 +1162,7 @@ LAO_scheduleRegion ( BB_List& entryBBs, BB_List& innerBBs, BB_List& exitBBs, LAO
   fprintf(TFile, "---- Before LAO schedule region ----\n");
   fprintf(TFile, "---- Begin trace regionBBs ----\n");
   for (bb_iter = innerBBs.begin(); bb_iter != innerBBs.end(); bb_iter++) {
-    LAOS_printBB(*bb_iter);
+    LAO_printBB(*bb_iter);
   }    
   fprintf(TFile, "---- End trace regionBBs ----\n");
   //
@@ -1180,7 +1181,7 @@ LAO_scheduleRegion ( BB_List& entryBBs, BB_List& innerBBs, BB_List& exitBBs, LAO
 }
 
 static void
-LAOS_printCGIR(void);
+LAO_printCGIR(void);
 
 bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
   LOOP_DESCR *loop = cl.Loop();
@@ -1188,7 +1189,7 @@ bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
   BB_List entryBBs, innerBBs, exitBBs;
   bool res;
   //
-  LAOS_printCGIR();
+  LAO_printCGIR();
   //
   fprintf(TFile, "---- Before LAO schedule loop ----\n");
   fprintf(TFile, "     ------ LOOP id %2d ------\n", BB_id(LOOP_DESCR_loophead(loop)));
@@ -1197,7 +1198,7 @@ bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
   int scan;
   scanf("%d", &scan);
   //
-  FOR_ALL_BB_SET_members(LOOP_DESCR_bbset(loop), bb) LAOS_printBB(bb);
+  FOR_ALL_BB_SET_members(LOOP_DESCR_bbset(loop), bb) LAO_printBB(bb);
   //
   entryBBs.push_back (CG_LOOP_prolog);
   innerBBs.push_back (CG_LOOP_prolog);
