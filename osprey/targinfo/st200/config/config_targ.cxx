@@ -409,24 +409,35 @@ Preconfigure_Target ( void )
   // Do not use the extract/compose whirl ops
   Enable_extract_compose = FALSE;
 
+  // These are only necessary in the BACK_END
+  // Can they be used elsewhere, eg. IPA ??
+  //
+#if defined(BACK_END)
+
   // overwrite some OPT defaults
   // Normally, do not inline divide sequences on this target
   // This is handled by ...
   OPT_Inline_Divide = FALSE;
 
   // Overwrite some WOPT defaults:
-  // do not allow minmax opcode
+
+  // do not allow minmax opcode: this is usefull when we're able to
+  // set two conditions in one instruction
   WOPT_Enable_MINMAX = FALSE;
-  // do not allow the test expression optimization, st100 has
-  // hardware loop counters
+
+  // do not allow the test expression optimization
+  //
+  // TODO: should be anabled since it is usefull in the absence of
+  //       hardware loop counters
+  //
   WOPT_Enable_LFTR2 = FALSE;
 
   // simple if-conversion at CFG build time 
   //  WOPT_Enable_Simple_If_Conv = TRUE;
 
-
-  // Overwrite some CG defaults:
+  // Overwrite some CG defaults: temporarily until I can enable it
   Enable_CG_Peephole = FALSE;
+#endif
 
   return;
 }
