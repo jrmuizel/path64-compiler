@@ -1,5 +1,11 @@
 #include <string.h>
+#if defined(__CYGWIN__)
+#if __GNUC__ >= 3
+#include <stdarg.h>
+#else
 #include <varargs.h>
+#endif // __CYGWIN__
+#endif // __GNUC__ >= 3
 #include <stdio.h>
 
 #define PTR void *
