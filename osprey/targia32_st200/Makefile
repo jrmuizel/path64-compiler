@@ -84,10 +84,78 @@ TOOL_SUBDIRS = \
 
 SUBDIRS=$(INCLUDE_SUBDIRS) $(LIBRARY_SUBDIRS) $(TOOL_SUBDIRS)
 
-default local install clean clobber:
-	@for d in $(SUBDIRS); do \
-	    if [ -d $$d ] ; then \
-	    	echo "===> cd $$d; $(MAKE) $@"; \
-	    	(cd $$d; $(MAKE) $@) || exit 1; \
-	    fi; \
-	done
+default: $(addprefix default_,$(SUBDIRS))
+local: $(addprefix local_,$(SUBDIRS))
+install: $(addprefix install_,$(SUBDIRS))
+clean: $(addprefix clean_,$(SUBDIRS))
+clobber: $(addprefix clobber_,$(SUBDIRS))
+
+clean_%:
+	$(MAKE) -C $* clean
+clobber_%:
+	$(MAKE) -C $* clobber
+default_%:
+	$(MAKE) -C $* default
+local_%:
+	$(MAKE) -C $* local
+install_%:
+	$(MAKE) -C $* install
+
+
+# Dependencies
+targ_info=include
+libiberty=include
+libelf=include
+libcmplrs=include
+libcomutil=include
+libdwarf=include
+libelfutil=include
+libSYS=include
+be=include
+driver=include
+gccfe=libcmplrs libcomutil
+g++fe=libcmplrs libcomutil
+be=targ_info
+lai=libelf libelfutil libdwarf be targ_info
+ipl=be wopt
+ipa=be ipl
+wopt=be
+lno=be wopt ipl
+lw_inline=be
+whirl2c=be
+
+
+# Now transform dependencies written above into Make dependencies
+
+# Utility "functions"
+subst_local=$(strip local_$(targ)): $(addprefix local_,$($(targ)))-sep-
+subst_install=$(strip install_$(targ)): $(addprefix install_,$($(targ)))-sep-
+
+# Generate "local" rules
+# Transform each dependencies of the form
+# "targ1=dep1 dep2"
+# "targ2=dep3 dep4"
+# into local_targ1: local_dep1 local_dep2-sep-local_targ2: local_dep3 local_dep4-sep-
+# Then into: (replace '-sep-' by newlines)
+# local_targ1: local_dep1 local_dep2
+# local_targ2: local_dep3 local_dep4
+
+LOCALS_DEP1 := $(foreach targ,$(SUBDIRS),$(subst_local))
+LOCALS_DEP2 := $(subst -sep- ,"\n",$(LOCALS_DEP1))	# Be careful of space after '-sep-'
+LOCALS_DEP := $(subst -sep-,"\n",$(LOCALS_DEP2))	# To remove the last '-sep-' at EOL
+
+
+# Same thing for "install" rules.
+INSTALL_DEP1 := $(foreach targ,$(SUBDIRS),$(subst_install))
+INSTALL_DEP2 := $(subst -sep- ,"\n",$(INSTALL_DEP1))
+INSTALL_DEP := $(subst -sep-,"\n",$(INSTALL_DEP2))
+
+# No need for dependencies for "clean" and "clobber" rules
+
+# Generate the newly generated dependencies into an auxiliary Makefile fragment
+
+-include deps.mk
+
+deps.mk: Makefile
+	@echo $(LOCALS_DEP) > $@
+	@echo $(INSTALL_DEP) >> $@
