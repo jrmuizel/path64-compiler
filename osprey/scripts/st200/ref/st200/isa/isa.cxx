@@ -295,6 +295,7 @@ main ()
 		 "intrncall",	 // simulated
 		 "spadjust",	 // simulated
 		 "noop",	 // simulated
+		 "getpc",	 // simulated
 		 "phi",	 // ssa
 		 "psi",	 // ssa
 		 "begin_pregtn",	 // dummy

@@ -444,6 +444,7 @@ main()
 		 TOP_intrncall, 
 		 TOP_spadjust, 
 		 TOP_noop, 
+		 TOP_getpc, 
 		 TOP_phi, 
 		 TOP_psi, 
 		 TOP_UNDEFINED); 

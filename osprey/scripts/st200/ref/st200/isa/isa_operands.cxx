@@ -344,6 +344,14 @@ main()
   Operand (1, isrc2, opnd2); 
 
   /* ====================================== */ 
+  Instruction_Group("O_getpc", 
+		 TOP_getpc, 
+		 TOP_UNDEFINED); 
+
+  Result (0, idest); 
+  Operand (0, btarg); 
+
+  /* ====================================== */ 
   Instruction_Group("O_call", 
 		 TOP_call, 
 		 TOP_UNDEFINED); 
@@ -430,6 +438,12 @@ main()
   Operand (1, src1, base); 
 
   /* ====================================== */ 
+  Instruction_Group("O_asm", 
+		 TOP_asm, 
+		 TOP_UNDEFINED); 
+
+
+  /* ====================================== */ 
   Instruction_Group("O_cgen", 
 		 TOP_addcg, 
 		 TOP_divs, 
@@ -440,12 +454,6 @@ main()
   Operand (0, src1); 
   Operand (1, src2); 
   Operand (2, bcond); 
-
-  /* ====================================== */ 
-  Instruction_Group("O_asm", 
-		 TOP_asm, 
-		 TOP_UNDEFINED); 
-
 
   /* ====================================== */ 
   Instruction_Group("O_spadjust", 

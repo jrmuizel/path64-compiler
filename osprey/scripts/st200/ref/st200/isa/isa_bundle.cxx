@@ -230,6 +230,7 @@ main()
 		 TOP_rfi, 
 		 TOP_prgins, 
 		 TOP_sync, 
+		 TOP_getpc, 
 		 TOP_UNDEFINED); 
 
   /* ===== Specification for S1_Unit Type ===== */ 
@@ -400,6 +401,7 @@ main()
 		 TOP_rfi, 
 		 TOP_prgins, 
 		 TOP_sync, 
+		 TOP_getpc, 
 		 TOP_UNDEFINED); 
 
   /* ===== Specification for S2_Unit Type ===== */ 
@@ -570,6 +572,7 @@ main()
 		 TOP_rfi, 
 		 TOP_prgins, 
 		 TOP_sync, 
+		 TOP_getpc, 
 		 TOP_UNDEFINED); 
 
   /* ===== Specification for S3_Unit Type ===== */ 
@@ -740,6 +743,7 @@ main()
 		 TOP_rfi, 
 		 TOP_prgins, 
 		 TOP_sync, 
+		 TOP_getpc, 
 		 TOP_UNDEFINED); 
 
   /* ===== Specification for EXT0_Unit Type ===== */ 

@@ -1,7 +1,231 @@
 #!/usr/bin/perl -w
 
-# Generate target description files for the ST200 processor
 
+####################################################################
+#
+#  Generate target description files for the ST200 processor
+#
+#  Following CHESS files are required:
+#
+#    st220_opc.db - describes TOPs, operands, printing format
+#    st220_fmt.db - describes groups of TOPs by properties and 
+#                   printing format
+#    st220_arc.db - describes scheduling latencies, resources
+#
+####################################################################
+
+
+#use strict;
+
+####################################################################
+#                         GLOBAL VARIABLES
+####################################################################
+
+my $TRUE = 1;
+my $FALSE = 0;
+my $UNDEF = -1;
+
+my $SIGNED = "SIGNED";
+my $UNSIGNED = "UNSIGNED";
+my $PCREL = "PCREL";
+
+# global ISA subset count
+my $SUBSET_count = 0;
+my @SUBSET_opcodes;
+my @SUBSET_parent;
+my @SUBSET_name;
+my %SUBSET_scd;
+
+# global ISA properties count
+my $ISA_PROPERTY_count = 0;
+my @ISA_PROPERTY_name;
+
+# RCLASS properties
+my $RCLASS_count = 0;
+my @RCLASS_name;
+my @RCLASS_can_be_stored;
+my @RCLASS_mult_store;
+my @RCLASS_is_ptr;
+my @RCLASS_bits;
+my $PTR_TYPE;
+
+
+# REGSET properties
+my $REGSET_count = 0;
+my @REGSET_rclass;
+my @REGSET_minreg;
+my @REGSET_maxreg;
+my @REGSET_format;
+my @REGSET_names;
+my @REGSET_subset;
+my @REGSET_subset_count;
+
+# LCLASS properties
+my $LCLASS_count = 0;
+my @LCLASS_rtype;
+my @LCLASS_name;
+my @LCLASS_bits;
+
+# ECLASS properties
+my $ECLASS_count = 0;
+my @ECLASS_name;
+my @ECLASS_elt_count;
+my @ECLASS_elt;
+my @ECLASS_bits;
+
+# REG_OPND properties
+my $REG_OPND_count = 0;
+my @REG_OPND_name;
+my @REG_OPND_rclass;
+my @REG_OPND_size;
+my @REG_OPND_subclass;
+my @REG_OPND_rtype;
+my @REG_OPND_fp_type;
+
+# LIR_OPND properties
+my $LIT_OPND_count = 0;
+my @LIT_OPND_name;
+my @LIT_OPND_size;
+my @LIT_OPND_rtype;
+my @LIT_OPND_lclass;
+
+# ENUM_OPND properties
+my $ENUM_OPND_count = 0;
+my @ENUM_OPND_name;
+my @ENUM_OPND_size;
+my @ENUM_OPND_rtype;
+my @ENUM_OPND_eclass;
+
+# OPND_USE properties
+my $OPND_USE_count = 0;
+my @OPND_USE_name;
+
+
+# global scheduling resource count
+my $RES_count = 0;
+my @RES_name;
+my @RES_avail;
+
+# global SCD_CLASS count
+my $SCD_CLASS_count = 0;
+my @SCD_CLASS_name;
+my @SCD_CLASS_results;
+my @SCD_CLASS_opnds;
+my @SCD_CLASS_result;
+my @SCD_CLASS_opnd;
+
+# global EXEC_SLOT count
+my $EXEC_SLOT_count = 0;
+my @EXEC_SLOT_name;
+my @EXEC_SLOT_scds;
+
+# global BUNDLE count -- can only be 1 for now
+my $BUNDLE_count = 0;
+my @BUNDLE_name;
+my @BUNDLE_field;
+my @BUNDLE_slots;
+my @BUNDLE_slot;
+my @BUNDLE_bits;
+my @BUNDLE_temps;
+my @BUNDLE_temp;
+
+# global packing groups count (instruction binary compression)
+my $PACK_count = 0;
+my @PACK_comment;
+my @PACK_type;
+my @PACK_words;
+my @PACK_result;
+my @PACK_word_results;
+my @PACK_word_opnds;
+my @PACK_result_ipos;
+my @PACK_result_bits;
+my @PACK_results;
+my @PACK_opnds;
+my @PACK_opnd_start;
+my @PACK_opnd_ipos;
+my @PACK_opnd_bits;
+my @PACK_result_start;
+
+my $ARCH_name;
+
+# Temporary global variables
+my $cur_regset;
+my $cur_eclass;
+my $current_pack;
+my $cur_bundle;
+my $cur_temp;
+
+####################################################################
+#  Operation properties -- 32 bits can map 32 properties:
+####################################################################
+
+my $OP_NONE        = 0x00000000;
+my $OP_SEXT        = 0x00000001;
+my $OP_SIMULATED   = 0x00000002;  # simulated TOP - expends into a seq.
+my $OP_DUMMY       = 0x00000004;  # dummy TOP - do not get emitted
+my $OP_ZEXT        = 0x00000008;
+my $OP_LOAD        = 0x00000010;  
+my $OP_STORE       = 0x00000020;
+my $OP_BRANCH      = 0x00000040;
+my $OP_JUMP        = 0x00000080;
+my $OP_IJUMP       = 0x00000100;
+my $OP_CALL        = 0x00000200;
+my $OP_DISMISSIBLE = 0x00000800;
+my $OP_NOOP        = 0x00001000;
+my $OP_IMMEDIATE   = 0x00002000;
+my $OP_XFER        = 0x00004000;
+my $OP_MOVE        = 0x00008000;
+my $OP_NOP         = 0x00010000;
+my $OP_PREFETCH    = 0x00020000;
+my $OP_MUL         = 0x00040000;
+my $OP_ADD         = 0x00080000;
+my $OP_SUB         = 0x00100000;
+my $OP_OR          = 0x00200000;
+my $OP_SELECT      = 0x00400000;
+my $OP_UNSIGNED    = 0x00800000;
+my $OP_INTOP       = 0x01000000;
+my $OP_CMP         = 0x02000000;
+my $OP_AND         = 0x04000000;
+my $OP_XOR         = 0x08000000;
+my $OP_SHL         = 0x10000000;
+my $OP_SHR         = 0x20000000;
+my $OP_SHRU        = 0x40000000;
+
+
+my @SimulatedOpcodes;
+my @DummyOpcodes;
+my @SSAOpcodes;
+
+# global TOPs count
+my $OP_count = 0;
+my @OP_opcode;
+my @OP_mnemonic;
+my @OP_format;
+my @OP_opnds;
+my @OP_results;
+my @OP_variant;
+my @OP_signature;
+my @OP_pack;
+my @OP_syntax;
+my @OP_print;
+my @OP_res;
+my @OP_opnd;
+my @OP_properties;
+my @OP_scdclass;
+my @OP_opnd_access_time;
+my @OP_result_avail_time;
+my @OP_subset;
+my @OP_bytes;
+my @OP_align;
+
+my %SignatureGroup;
+my %PackGroup;
+my %AttrGroup;
+my %PrintGroup;
+my %MemBytes;
+my %MemAlign;
+
+# Files
 
 # ==================================================================
 #    opcode_is_
@@ -51,7 +275,7 @@ sub opcode_is_subset {
     my $opcode = $_[0];
     my $subset = subset_id($_[1]);
 
-    foreach $op (@{$SUBSET_opcodes[$subset]}) {
+    foreach my $op (@{$SUBSET_opcodes[$subset]}) {
 	if ($OP_opcode[$op] eq $OP_opcode[$opcode]) {
 	    return 1;
 	}
@@ -884,14 +1108,14 @@ sub set_print {
 # if opcode exists in parent, same properties, same sched infos. Remove it.
 sub update_subsets {
 
-    for ($i = $SUBSET_count-1; $i>0; $i--) {
+    for (my $i = $SUBSET_count-1; $i>0; $i--) {
 	my $parent = $SUBSET_parent[$i];
-	foreach $opcode (@{$SUBSET_opcodes[$i]}) {
-	    foreach $opcode2 (@{$SUBSET_opcodes[subset_id($parent)]}) {
+	foreach my $opcode (@{$SUBSET_opcodes[$i]}) {
+	    foreach my $opcode2 (@{$SUBSET_opcodes[subset_id($parent)]}) {
 		if ($OP_opcode[$opcode] eq $OP_opcode[$opcode2]) {
 		    foreach my $signature (keys(%SignatureGroup)) {
 			my $found=$FALSE;
-			foreach $op (@{$SignatureGroup{$signature}}) {
+			foreach my $op (@{$SignatureGroup{$signature}}) {
 			    if ($op eq $OP_opcode[$opcode2]) {
 				if ($found eq $TRUE) {
 				    $op = $UNDEF;
@@ -903,7 +1127,7 @@ sub update_subsets {
 
 		    foreach my $pack (keys(%PackGroup)) {
 			my $found=$FALSE;
-			foreach $op (@{$PackGroup{$pack}}) {
+			foreach my $op (@{$PackGroup{$pack}}) {
 			    if ($op eq $OP_opcode[$opcode2]) {
 				if ($found eq $TRUE) {
 				    $op = $UNDEF;
@@ -915,7 +1139,7 @@ sub update_subsets {
 
 		    foreach my $attr (keys(%AttrGroup)) {
 			my $found=$FALSE;
-			foreach $op (@{$AttrGroup{$attr}}) {
+			foreach my $op (@{$AttrGroup{$attr}}) {
 			    if ($op eq $OP_opcode[$opcode2]) {
 				if ($found eq $TRUE) {
 				    $op = $UNDEF;
@@ -927,7 +1151,7 @@ sub update_subsets {
 
 		    foreach my $print (keys(%PrintGroup)) {
 			my $found=$FALSE;
-			foreach $op (@{$PrintGroup{$print}}) {
+			foreach my $op (@{$PrintGroup{$print}}) {
 			    if ($op eq $OP_opcode[$opcode2]) {
 				if ($found eq $TRUE) {
 				    $op = $UNDEF;
@@ -939,7 +1163,7 @@ sub update_subsets {
 
 		    foreach my $mem (keys(%MemBytes)) {
 			my $found=$FALSE;
-			foreach $op (@{$MemBytes{$mem}}) {
+			foreach my $op (@{$MemBytes{$mem}}) {
 			    if ($op eq $OP_opcode[$opcode2]) {
 				if ($found eq $TRUE) {
 				    $op = $UNDEF;
@@ -951,7 +1175,7 @@ sub update_subsets {
 
 		    foreach my $mem (keys(%MemAlign)) {
 			my $found=$FALSE;
-			foreach $op (@{$MemAlign{$mem}}) {
+			foreach my $op (@{$MemAlign{$mem}}) {
 			    if ($op eq $OP_opcode[$opcode2]) {
 				if ($found eq $TRUE) {
 				    $op = $UNDEF;
@@ -996,10 +1220,6 @@ sub update_subsets {
 # ==================================================================
 
 sub initialize_required_opcodes {
-
-    @SimulatedOpcodes;
-    @DummyOpcodes;
-    @SSAOpcodes;
 
     my $opcode;
 
@@ -2028,6 +2248,7 @@ sub emit_operands {
 
     my $rests;
     my $opnds;
+    my $gname;
     my @results;
     my @operands;
 
@@ -2042,8 +2263,8 @@ sub emit_operands {
 	    print OPND_F "  Instruction_Group(\"O_$gname\", \n";
 	}
 
-	my $PushOpcode;
-	for ($i = 0; $i < $OP_count; $i++) {
+	my @PushOpcode;
+	for (my $i = 0; $i < $OP_count; $i++) {
 	    $PushOpcode[$i] = 0;
 	}
 	foreach $opcode (@{$SignatureGroup{$signature}}) {
@@ -2170,7 +2391,7 @@ CONTINUE:
 	    printf PRNT_F "  \"goto\",\t /* TOP_%s */ \n", $OP_opcode[$i];
 	}
 	elsif ($OP_properties[$i] & $OP_DISMISSIBLE) {
-	    $mnemonic = $OP_mnemonic[$i];
+	    my $mnemonic = $OP_mnemonic[$i];
 	    $mnemonic =~ tr/_/./;
 	    printf PRNT_F "  \"%s\",\t /* TOP_%s */ \n", $mnemonic, , $OP_opcode[$i];
 	}
@@ -2271,7 +2492,7 @@ CONTINUE:
 	my @pattern = split ('_',$signature);
 	my @fmt;
 	my @instr;
-	my $args;
+	my @args;
 
 #	printf STDOUT "trying signature %s\n", $signature;
 
@@ -2322,7 +2543,7 @@ CONTINUE:
 		printf PRNT_F "  Operand(3); \n", shift (@fmt);
 	    }
 	    else {
-		printf STDOUT "ERROR: unknown element %s in emit_printing_formats\n", $elt;
+		printf STDOUT "ERROR: unknown element %s in emit_printing_formats\n", $args[$j];
 		exit(1);
 	    }
 	}
@@ -2330,7 +2551,7 @@ CONTINUE:
 	# print instructions:
 	print PRNT_F "\n";
 	print PRNT_F "  Instruction_Print_Group(print_$count, \n";
-	foreach $opcode (@{$PrintGroup{$signature}}) {
+	foreach my $opcode (@{$PrintGroup{$signature}}) {
 	    unless ($opcode eq $UNDEF) {
 		print PRNT_F "\t\t TOP_$opcode, \n";
 	    }
@@ -2873,7 +3094,7 @@ sub process_scdinfo {
     # Sanity check: make sure that all operands/results have same
     # access/available time
     my $res = -1;
-    for ($i = 0; $i < $OP_results[$opcode]; $i++) {
+    for (my $i = 0; $i < $OP_results[$opcode]; $i++) {
 	if ($res != -1 && $res != $OP_result_avail_time[$opcode][$i]) {
 	    printf STDOUT "ERROR: results of opcode %s have different available time\n", $OP_opcode[$opcode];
 	exit(1);
@@ -2884,12 +3105,14 @@ sub process_scdinfo {
 #    printf STDOUT "  > any result avail time %d\n", $res;
 
     my $opnd = -1;
-    for ($i = 0; $i < $OP_opnds[$opcode]; $i++) {
-	if ($opnd != -1 && $opnd != $OP_opnd_access_time[$opcode][$i]) {
-	    printf STDOUT "ERROR: operands of opcode %s have different access time\n", $OP_opcode[$opcode];
-	exit(1);
-	}
+    for (my $i = 0; $i < $OP_opnds[$opcode]; $i++) {
+      if ($opnd == -1) {
 	$opnd = $OP_opnd_access_time[$opcode][$i];
+      }
+      if ($opnd != $OP_opnd_access_time[$opcode][$i]) {
+	printf STDOUT "WARNING: opcode %s: operand %d have different access time %d than first operand (access time %d). Taking first operand access time %d\n", $OP_opcode[$opcode], $i, $OP_opnd_access_time[$opcode][$i], $opnd;
+	$OP_opnd_access_time[$opcode][$i] = $opnd;
+      }
     }
 
     my $scdclass = $OP_scdclass[$opcode];
@@ -2916,18 +3139,18 @@ OK:
 	exit(1);
     }
 
-    for ($i = 0; $i < $OP_results[$opcode]; $i++) {
+    for (my $i = 0; $i < $OP_results[$opcode]; $i++) {
 	if ($SCD_CLASS_result[$sc][$subset][$i] != -1 &&
 	    $SCD_CLASS_result[$sc][$subset][$i] != $OP_result_avail_time[$opcode][$i]) {
 	    printf STDOUT "ERROR: result %d for scdclass %s is being reset\n", $i, $scdclass;
-	    printf STDOUT "scdclass %d, results %d\n", $SCD_CLASS_result[$sc][$subset][$i], $results[$i];
+	    printf STDOUT "scdclass %d, results %d\n", $SCD_CLASS_result[$sc][$subset][$i], $OP_result_avail_time[$opcode][$i];
 
 	    exit(1);
 	}
 	$SCD_CLASS_result[$sc][$subset][$i] = $OP_result_avail_time[$opcode][$i];
     }
 
-    for ($i = 0; $i < $OP_opnds[$opcode]; $i++) {
+    for (my $i = 0; $i < $OP_opnds[$opcode]; $i++) {
 	if ($SCD_CLASS_opnd[$sc][$subset][$i] != -1 &&
 	    $SCD_CLASS_opnd[$sc][$subset][$i] != $OP_opnd_access_time[$opcode][$i]) {
 	    printf STDOUT "ERROR: operand %d for opcode %s is being reset in subset %s\n",
@@ -3062,6 +3285,8 @@ sub read_scdinfo {
 
     my $MAX_RESULTS = 2;
     my $MAX_OPNDS = 3;
+    my @results;
+    my @opnds;
 
     while ($line = <ARCH_F>) {
 
@@ -3142,14 +3367,14 @@ FOUND_OPCODE:
 	    printf STDOUT "ERROR: result %d for opcode %s not defined\n", $i, $OP_opcode[$opcode];
 	    exit(1);
 	}
-	$OP_result_avail_time[$opcode][$i] = $results[i];
+	$OP_result_avail_time[$opcode][$i] = $results[$i];
     }
     for (my $i = 0; $i < $OP_opnds[$opcode]; $i++) {
 	if ($opnds[$i] == -1) {
 	    printf STDOUT "ERROR: operand %d for opcode %s not defined\n", $i, $OP_opcode[$opcode];
 	    exit(1);
 	}
-	$OP_opnd_access_time[$opcode][$i] = $opnds[i];
+	$OP_opnd_access_time[$opcode][$i] = $opnds[$i];
     }
 
     # determine this opcode's scdclass:
@@ -3438,7 +3663,7 @@ sub DECL_REG_SUBSET {
 	$REGSET_subset[$cur_regset][$idx]{'regs'}[$reg] = 0;
     }
 
-    while (($elt = shift(@regs)) != -1) {
+    while ((my $elt = shift(@regs)) != -1) {
 	for ($reg = $REGSET_minreg[$cur_regset];
 	     $reg <= $REGSET_maxreg[$cur_regset];
 	     $reg++) {
@@ -3621,7 +3846,7 @@ sub DECL_SCD_CLASS {
 
     $SCD_CLASS_name[$SCD_CLASS_count] = $name;
     $SCD_CLASS_results[$SCD_CLASS_count] = $results;
-    for ($sub = 0; $sub < $SUBSET_count; $sub++) {
+    for (my $sub = 0; $sub < $SUBSET_count; $sub++) {
 	for ($i = 0; $i < $results; $i++) {
 	    $SCD_CLASS_result[$SCD_CLASS_count][$sub][$i] = -1;
 	}
@@ -4021,6 +4246,7 @@ sub read_opcodes {
     my $format;
     my $mnemonic;
     my $syntax;
+    my $scdclass;
 
   CONTINUE:
     while ($line = <OPCODE_F>) {
@@ -4164,8 +4390,6 @@ sub read_opcodes {
     close(OPCODE_F);
 
     # There is a number of opcodes that I need to specify manually:
-
-    my $scdclass;
 
     # ----------------- nop ------------------
 
@@ -4318,98 +4542,6 @@ sub read_opcodes {
 #    main
 # ==================================================================
 
-####################################################################
-#
-#  Following CHESS files are required:
-#
-#    st220_opc.db - describes TOPs, operands, printing format
-#    st220_fmt.db - describes groups of TOPs by properties and 
-#                   printing format
-#    st220_arc.db - describes scheduling latencies, resources
-#
-####################################################################
-
-#  if (!open (FORMAT_F, "< ../src/st220_fmt.db")) {
-#      printf STDOUT "ERROR: can't open file \"../src/st220_fmt.db\" \n";
-#      exit(1);
-#  }
-
-  ####################################################################
-  #                         GLOBAL VARIABLES
-  ####################################################################
-
-  $TRUE = 1;
-  $FALSE = 0;
-  $UNDEF = -1;
-
-  $SIGNED = "SIGNED";
-  $UNSIGNED = "UNSIGNED";
-  $PCREL = "PCREL";
-
-  # global ISA subset count
-  $SUBSET_count = 0;
-  # global ISA properties count
-  $ISA_PROPERTY_count = 0;
-
-  $RCLASS_count = 0;
-  $REGSET_count = 0;
-  $LCLASS_count = 0;
-  $ECLASS_count = 0;
-
-  $REG_OPND_count = 0;
-  $LIT_OPND_count = 0;
-  $ENUM_OPND_count = 0;
-  $OPND_USE_count = 0;
-
-  # global TOPs count
-  $OP_count = 0;
-  # global scheduling resource count
-  $RES_count = 0;
-  # global SCD_CLASS count
-  $SCD_CLASS_count = 0;
-  # global EXEC_SLOT count
-  $EXEC_SLOT_count = 0;
-  # global BUNDLE count -- can only be 1 for now
-  $BUNDLE_count = 0;
-  # global packing groups count (instruction binary compression)
-  $PACK_count = 0;
-
-  ####################################################################
-  #  Operation properties -- 32 bits can map 32 properties:
-  ####################################################################
-
-  $OP_NONE        = 0x00000000;
-  $OP_SEXT        = 0x00000001;
-  $OP_SIMULATED   = 0x00000002;  # simulated TOP - expends into a seq.
-  $OP_DUMMY       = 0x00000004;  # dummy TOP - do not get emitted
-  $OP_ZEXT        = 0x00000008;
-  $OP_LOAD        = 0x00000010;  
-  $OP_STORE       = 0x00000020;
-  $OP_BRANCH      = 0x00000040;
-  $OP_JUMP        = 0x00000080;
-  $OP_IJUMP       = 0x00000100;
-  $OP_CALL        = 0x00000200;
-  $OP_DISMISSIBLE = 0x00000800;
-  $OP_NOOP        = 0x00001000;
-  $OP_IMMEDIATE   = 0x00002000;
-  $OP_XFER        = 0x00004000;
-  $OP_MOVE        = 0x00008000;
-  $OP_NOP         = 0x00010000;
-  $OP_PREFETCH    = 0x00020000;
-  $OP_MUL         = 0x00040000;
-  $OP_ADD         = 0x00080000;
-  $OP_SUB         = 0x00100000;
-  $OP_OR          = 0x00200000;
-  $OP_SELECT      = 0x00400000;
-  $OP_UNSIGNED    = 0x00800000;
-  $OP_INTOP       = 0x01000000;
-  $OP_CMP         = 0x02000000;
-  $OP_AND         = 0x04000000;
-  $OP_XOR         = 0x08000000;
-  $OP_SHL         = 0x10000000;
-  $OP_SHR         = 0x20000000;
-  $OP_SHRU        = 0x40000000;
-
   ####################################################################
   #                        ISA DESCRIPTION
   #
@@ -4429,8 +4561,8 @@ sub read_opcodes {
 
   &DECL_ARCHITECTURE("st200");
 
-  &DECL_ISA_SUBSET (NULL, "st220");
-  &DECL_ISA_SUBSET (st220, "st200");
+  &DECL_ISA_SUBSET ("NULL", "st220");
+  &DECL_ISA_SUBSET ("st220", "st200");
 
 #  &DECL_ISA_SUBSET (st220, "st210");
 #  &DECL_ISA_SUBSET (st210, "st200");
@@ -4496,7 +4628,7 @@ sub read_opcodes {
 
   # Register Set (rclass, minreg, maxreg, format, reg_names):
   # For each set define also Reg subset (name, list_of_members):
-  @int_regs = ('$r0.0', '$r0.1', '$r0.2');
+  my @int_regs = ('$r0.0', '$r0.1', '$r0.2');
   &DECL_REG_SET("integer", 0, 63, "\$r0.%d", @int_regs);
     &DECL_REG_SUBSET("r0", (0));
     &DECL_REG_SUBSET("lr", (63));
@@ -4505,7 +4637,7 @@ sub read_opcodes {
 			       33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48,
 			       49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62));
 
-  @br_regs = ('$b0.0');
+  my @br_regs = ('$b0.0');
   &DECL_REG_SET("branch", 0, 7, "\$b0.%d", @br_regs);
 
   # lclass (name, bit_size, signed?):
@@ -4869,8 +5001,8 @@ sub read_opcodes {
   &initialize_bundle_file ($archdir);
   &initialize_decode_file ($archdir);
 
-  #BD3 &initialize_op_file($archdir);
-  #BD3 TODO: eliminate all functions that write to OP_F.
+  #BD3 TODO: Is it necessary?
+  &initialize_op_file($archdir);
 
   my $sub;
   for ($sub = 0; $sub < $SUBSET_count-1; $sub++) {
@@ -4887,7 +5019,7 @@ sub read_opcodes {
   &update_subsets ();
 
   # Emit ISA information
-  for ($opcode = 0; $opcode < $OP_count; $opcode++) {
+  for (my $opcode = 0; $opcode < $OP_count; $opcode++) {
       if ($OP_opcode[$opcode]) {
 	  &emit_opcode ($opcode);
       }
@@ -4911,7 +5043,7 @@ sub read_opcodes {
   &emit_decode_info ();
 
   # target info:
-  #BD3 &emit_op_info();
+  &emit_op_info();
 
   # end of generation:
   &finalize_isa_file ();
@@ -4927,7 +5059,6 @@ sub read_opcodes {
   &finalize_bundle_file ();
   &finalize_decode_file ();
 
-  #BD3 &finalize_op_file();
+  &finalize_op_file();
 
-  close(FORMAT_F);
 
