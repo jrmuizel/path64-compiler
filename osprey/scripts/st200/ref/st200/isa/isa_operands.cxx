@@ -150,8 +150,6 @@ main()
 		 TOP_sth_ii, 
 		 TOP_stw_i, 
 		 TOP_stw_ii, 
-		 TOP_prginspg_i, 
-		 TOP_prginspg_ii, 
 		 TOP_UNDEFINED); 
 
   Operand (0, isrc2, offset); 
@@ -222,6 +220,8 @@ main()
 		 TOP_pft_ii, 
 		 TOP_prgadd_i, 
 		 TOP_prgadd_ii, 
+		 TOP_prginspg_i, 
+		 TOP_prginspg_ii, 
 		 TOP_prgset_i, 
 		 TOP_prgset_ii, 
 		 TOP_UNDEFINED); 

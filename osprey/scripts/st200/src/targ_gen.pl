@@ -310,9 +310,6 @@ sub op_bytes {
 	   $mnemonic eq 'stb') {
 	$bytes = 1;
     }
-    elsif ($mnemonic eq 'prginspg') {
-	$bytes = 0;
-    }
     else {
 	printf STDOUT "ERROR: unknown mnemonic %s in op_bytes\n", $mnemonic;
 	exit(1);
@@ -351,9 +348,6 @@ sub op_align {
 	   $mnemonic eq 'ldbu_d' ||
 	   $mnemonic eq 'stb') {
 	$align = 1;
-    }
-    elsif ($mnemonic eq 'prginspg') {
-	$align = 0;
     }
     else {
 	printf STDOUT "ERROR: unknown mnemonic %s in op_align\n", $mnemonic;
@@ -710,6 +704,7 @@ sub set_signature {
 	   $format eq 'StoreE') {
 	if ($OP_mnemonic[$opcode] eq 'pft' ||
 	    $OP_mnemonic[$opcode] eq 'prgset' ||
+	    $OP_mnemonic[$opcode] eq 'prginspg' ||
 	    $OP_mnemonic[$opcode] eq 'prgadd') {
 	    $signature = ':cache:isrc2_offset,src1_base';
 	}
@@ -865,6 +860,7 @@ sub set_pack {
     elsif ($format eq 'Store') {
 	if ($OP_mnemonic[$opcode] eq 'pft' ||
 	    $OP_mnemonic[$opcode] eq 'prgset' ||
+	    $OP_mnemonic[$opcode] eq 'prginspg' ||
 	    $OP_mnemonic[$opcode] eq 'prgadd') {
 	    $pack = 'Cache';
 	}
@@ -875,6 +871,7 @@ sub set_pack {
     elsif ($format eq 'StoreE') {
 	if ($OP_mnemonic[$opcode] eq 'pft' ||
 	    $OP_mnemonic[$opcode] eq 'prgset' ||
+	    $OP_mnemonic[$opcode] eq 'prginspg' ||
 	    $OP_mnemonic[$opcode] eq 'prgadd') {
 	    $pack = 'CacheE';
 	}
@@ -1037,6 +1034,7 @@ sub set_print {
 	$OP_opnd[$opcode][1]{'fmt'} = '%s';
 	unless ($OP_mnemonic[$opcode] eq 'pft' ||
 		$OP_mnemonic[$opcode] eq 'prgset' ||
+		$OP_mnemonic[$opcode] eq 'prginspg' ||
 		$OP_mnemonic[$opcode] eq 'prgadd') {
 	    $OP_opnd[$opcode][2]{'fmt'} = '%s';
 	}

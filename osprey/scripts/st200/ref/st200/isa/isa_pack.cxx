@@ -114,6 +114,7 @@ main()
   Instruction_Pack_Group(p37, 
 	TOP_pft_i, 	 0x10000000UL,
 	TOP_prgadd_i, 	 0x10000000UL,
+	TOP_prginspg_i, 	 0x10000000UL,
 	TOP_prgset_i, 	 0x10000000UL,
 	TOP_UNDEFINED); 
 
@@ -125,6 +126,7 @@ main()
   Instruction_Pack_Group(p38, 
 	TOP_pft_ii, 	 0x10000000UL, 0x10000000UL,
 	TOP_prgadd_ii, 	 0x10000000UL, 0x10000000UL,
+	TOP_prginspg_ii, 	 0x10000000UL, 0x10000000UL,
 	TOP_prgset_ii, 	 0x10000000UL, 0x10000000UL,
 	TOP_UNDEFINED); 
 
@@ -577,7 +579,6 @@ main()
   Operand(1, 0, 0, 6); 
   Operand(2, 0, 6, 6); 
   Instruction_Pack_Group(p20, 
-	TOP_prginspg_i, 	 0x10000000UL,
 	TOP_stb_i, 	 0x10000000UL,
 	TOP_sth_i, 	 0x10000000UL,
 	TOP_stw_i, 	 0x10000000UL,
@@ -591,7 +592,6 @@ main()
   Next_Word(); 
   Operand(0, 9, 0, 23); 
   Instruction_Pack_Group(p21, 
-	TOP_prginspg_ii, 	 0x10000000UL, 0x10000000UL,
 	TOP_stb_ii, 	 0x10000000UL, 0x10000000UL,
 	TOP_sth_ii, 	 0x10000000UL, 0x10000000UL,
 	TOP_stw_ii, 	 0x10000000UL, 0x10000000UL,
