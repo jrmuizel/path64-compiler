@@ -2610,6 +2610,7 @@ sub initialize_pack_file {
 # ==================================================================
 
 sub emit_pack_info {
+    my $subset = shift;
     my $group;
     my $count;
 
@@ -2750,6 +2751,7 @@ sub initialize_decode_file {
 # ==================================================================
 
 sub emit_decode_info {
+    my $subset = shift;
     my $i;
     printf DECODE_F "  ISA_Decode_Begin(\"%s\"); \n\n", $ARCH_name;
 
@@ -2825,6 +2827,7 @@ sub initialize_bundle_file {
 # ==================================================================
 
 sub emit_bundle_info {
+    my $subset = shift;
     my $unit;
     my $slot;
     my $bundle;
@@ -2870,7 +2873,7 @@ sub emit_bundle_info {
 	my $scdclass;
 	foreach $scdclass (@scdclasses) {
 	    my $opcode;
-	    foreach $opcode (@{$SUBSET_scd{'st220'}{$scdclass}{'ops'}}) {
+	    foreach $opcode (@{$SUBSET_scd{$subset}{$scdclass}{'ops'}}) {
 		printf BUNDLE_F "\t\t TOP_%s, \n", $opcode;
 	    }
 	}
@@ -3247,7 +3250,7 @@ OK:
 # ==================================================================
 #    read_scdinfo
 #
-#    Information is in st220_arc.db file
+#    Information is in st220/arc.db file
 # ==================================================================
 
 sub read_scdinfo {
@@ -4557,6 +4560,17 @@ sub read_opcodes {
   #
   ####################################################################
 
+  my %options;
+  use Getopt::Std;
+  getopts('o:s:', \%options);
+  my $subset = $options{s} || '';
+  my $archdir = $options{o} || "st200";
+  
+  unless ($subset =~ /^st2/) {
+    print STDERR "usage: $0 -s subsetdir [-o outputdir]\n";
+    exit 1;
+  }
+
   &DECL_ARCHITECTURE("st200");
 
   &DECL_ISA_SUBSET ("NULL", "st220");
@@ -4984,17 +4998,6 @@ sub read_opcodes {
   #                       PROCESSING
   ###############################################################
 
-  my %options;
-  use Getopt::Std;
-  getopts('o:s:', \%options);
-  my $subset = $options{s} || '';
-  my $archdir = $options{o} || "st200";
-  
-  unless ($subset =~ /^st2/) {
-    print STDERR "usage: $0 -s subsetdir [-o outputdir]\n";
-    exit 1;
-  }
-
   # open and emit head info into all concerned files:
   &initialize_isa_file ($archdir);
   &initialize_reg_file ($archdir);
@@ -5043,12 +5046,12 @@ sub read_opcodes {
   &emit_printing_formats ();
 
   # scheduling info:
-  &emit_scdinfo ();
-  &emit_bundle_info ();
+  &emit_scdinfo ($subset);
+  &emit_bundle_info ($subset);
 
   # these are completely dummy, not used for now in the compiler:
-  &emit_pack_info ();
-  &emit_decode_info ();
+  &emit_pack_info ($subset);
+  &emit_decode_info ($subset);
 
   # target info:
   &emit_op_info();
