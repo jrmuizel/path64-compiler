@@ -155,6 +155,13 @@ BOOL No_Quad_Aligned_Branch = FALSE;
 /* Does target provides only unsigned 64-bit instructions? */
 BOOL Only_Unsigned_64_Bit_Ops = FALSE;
 
+/* Does target provide only 32-bit instructions? */
+BOOL Only_32_Bit_Ops = TRUE;
+
+/* Does target support floating point and long long arithmetic? */
+BOOL Emulate_FloatingPoint_Ops = TRUE;
+BOOL Emulate_LongLong_Ops = TRUE;
+
 BOOL Has_GP_Groups = FALSE;
 
 /* Does target have offsets in load and store instructions?

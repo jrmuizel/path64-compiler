@@ -78,7 +78,7 @@ extern "C" {
  * ====================================================================
  */
 
-#include "mtypes.h"
+  /* #include "mtypes.h" */
 
 /* ====================================================================
  *
@@ -199,6 +199,7 @@ extern char *Isa_Name (TARGET_ISA target_isa);
 #define MAX_LARGE_FRAME_OFFSET	0x7FFFFFFFL	// 32 bits
 
 typedef enum _align {
+  _NONE_ALIGN = 0,
   _BYTE_ALIGN = 1,
   _CARD_ALIGN = 2,
   _WORD_ALIGN = 4,
