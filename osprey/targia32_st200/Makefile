@@ -121,7 +121,7 @@ gccfe=libcmplrs libcomutil
 g++fe=libcmplrs libcomutil
 lai=libelf libelfutil libdwarf be targ_info
 ipl=be wopt
-ipa=be ipl
+ipa=be ipl wopt
 wopt=be
 lno=be wopt ipl
 lw_inline=be
@@ -154,6 +154,6 @@ INSTALL_DEP := $(foreach targ,$(SUBDIRS),$(subst_install))
 -include deps.mk
 
 deps.mk: Makefile
-	@echo $(LOCAL_DEP) | perl -p -e 's/-sep- */\n/g' > $@
-	@echo $(INSTALL_DEP) | perl -p -e 's/-sep- */\n/g' >> $@
+	@echo $(LOCAL_DEP) | /usr/bin/perl -p -e 's/-sep- */\n/g' > $@
+	@echo $(INSTALL_DEP) | /usr/bin/perl -p -e 's/-sep- */\n/g' >> $@
 
