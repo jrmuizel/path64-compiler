@@ -42,12 +42,14 @@ endif
 
 LDIRT += $(TARGETS) *.o
 
-default: first $(TARGETS)
+default: first local
 
 first:
 	cd $(BUILD_AREA)/include && $(MAKE)
 
-install: default
+local: $(TARGETS)
+
+install: local
 
 include $(COMMONRULES)
 

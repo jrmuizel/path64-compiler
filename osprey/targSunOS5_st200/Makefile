@@ -84,7 +84,7 @@ TOOL_SUBDIRS = \
 
 SUBDIRS=$(INCLUDE_SUBDIRS) $(LIBRARY_SUBDIRS) $(TOOL_SUBDIRS)
 
-default install clean clobber:
+default local install clean clobber:
 	@for d in $(SUBDIRS); do \
 	    if [ -d $$d ] ; then \
 	    	echo "===> cd $$d; $(MAKE) $@"; \
