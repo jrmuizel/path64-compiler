@@ -195,13 +195,11 @@ CGIR_OP_to_Operation(CGIR_OP cgir_op) {
   int resCount = OP_results(cgir_op);
   TempName *results = (TempName *)(resCount ? alloca(resCount*sizeof(TempName)) : NULL);
   for (int i = 0; i < resCount; i++) results[i] = CGIR_TN_to_TempName(OP_result(cgir_op, i));
-  // the Operation MemInfo
-  MemInfo meminfo = NULL;
   // make the Operation
   Operator OPERATOR = CGIR_TOP_to_Operator(OP_code(cgir_op));
   Operation operation = Interface_makeOperation(interface, cgir_op,
-      OPERATOR, argCount, arguments, resCount, results, meminfo);
-  // TODO: MemInfo, Volatile
+      OPERATOR, argCount, arguments, resCount, results);
+  if (OP_volatile(cgir_op)) Interface_Operation_setVolatile(interface, operation);
   return operation;
 }
 
@@ -229,12 +227,9 @@ CGIR_BB_to_BasicBlock(CGIR_BB cgir_bb) {
     Is_True(operationCount < MAX_OPERATION_COUNT, ("BB has more than MAX_OPERATION_COUNT operations"));
     operations[operationCount++] = CGIR_OP_to_Operation(cgir_op);
   }
-  // the BasicBlock LoopInfo
-  LoopInfo loopinfo = NULL;
   // make the BasicBlock
   BasicBlock basicblock = Interface_makeBasicBlock(interface, cgir_bb,
-      labelCount, labels, operationCount, operations, loopinfo);
-  // TODO: LoopInfo
+      labelCount, labels, operationCount, operations);
   return basicblock;
 }
 
@@ -242,7 +237,7 @@ CGIR_BB_to_BasicBlock(CGIR_BB cgir_bb) {
 static ControlNode
 CGIR_BB_to_ControlNode(CGIR_BB cgir_bb) {
   float frequency = BB_freq(cgir_bb);
-  BasicBlock basicblock = Interface_makeBasicBlock(interface, cgir_bb, 0, NULL, 0, NULL, NULL);
+  BasicBlock basicblock = Interface_makeBasicBlock(interface, cgir_bb, 0, NULL, 0, NULL);
   int liveinCount = 0, MAX_LIVEIN_COUNT = 16384;
   TempName *liveins = (TempName *)alloca(MAX_LIVEIN_COUNT*sizeof(TempName));
   for (TN *tn = GTN_SET_Choose(BB_live_in(cgir_bb));
@@ -472,32 +467,6 @@ CGIR_BB_update(CGIR_BB cgir_bb, BasicBlock basicblock, int labelCount, Label lab
   // TODO: loopinfo, flags, etc.
 }
 
-// Create a CGIR_LI from a LIR LoopInfo.
-static CGIR_LI
-CGIR_LI_create(LoopInfo loopinfo) {
-  // TODO
-  return NULL;
-}
-
-// Update a CGIR_LI from a LIR LoopInfo.
-void
-CGIR_LI_update(CGIR_LI cgir_li, LoopInfo loopinfo) {
-  // TODO
-}
-
-// Create a CGIR_MI from a LIR MemInfo
-CGIR_MI
-CGIR_MI_create(MemInfo meminfo) {
-  // TODO
-  return NULL;
-}
-
-// Update a CGIR_MI from a LIR MemInfo.
-void
-CGIR_MI_update(CGIR_MI cgir_mi, MemInfo meminfo) {
-  // TODO
-}
-
 // Chain two CGIR_BBs in the CGIR.
 void
 CGIR_BB_chain(CGIR_BB cgir_bb, CGIR_BB succ_cgir_bb) {
@@ -521,6 +490,19 @@ void
 CGIR_BB_unlink(CGIR_BB cgir_bb) {
   BB_Delete_Predecessors(cgir_bb);
   BB_Delete_Successors(cgir_bb);
+}
+
+// Create a CGIR_LI from a LIR LoopInfo.
+static CGIR_LI
+CGIR_LI_create(LoopInfo loopinfo) {
+  // TODO
+  return NULL;
+}
+
+// Update a CGIR_LI from a LIR LoopInfo.
+void
+CGIR_LI_update(CGIR_LI cgir_li, LoopInfo loopinfo) {
+  // TODO
 }
 
 /*--------------------------- lao_init / lao_fini ----------------------------*/
@@ -550,14 +532,12 @@ lao_init() {
     *Interface__CGIR_OP_update(interface) = CGIR_OP_update;
     *Interface__CGIR_BB_create(interface) = CGIR_BB_create;
     *Interface__CGIR_BB_update(interface) = CGIR_BB_update;
-    *Interface__CGIR_LI_create(interface) = CGIR_LI_create;
-    *Interface__CGIR_LI_update(interface) = CGIR_LI_update;
-    *Interface__CGIR_MI_create(interface) = CGIR_MI_create;
-    *Interface__CGIR_MI_update(interface) = CGIR_MI_update;
     *Interface__CGIR_BB_chain(interface) = CGIR_BB_chain;
     *Interface__CGIR_BB_unchain(interface) = CGIR_BB_unchain;
     *Interface__CGIR_BB_link(interface) = CGIR_BB_link;
     *Interface__CGIR_BB_unlink(interface) = CGIR_BB_unlink;
+    *Interface__CGIR_LI_create(interface) = CGIR_LI_create;
+    *Interface__CGIR_LI_update(interface) = CGIR_LI_update;
     // initialize TOP__Operator
     for (int i = 0; i < TOP_UNDEFINED; i++) TOP__Operator[i] = Operator_;
     TOP__Operator[TOP_add_i] = Operator_CODE_ADD_IDEST_SRC1_ISRC2;
@@ -870,10 +850,18 @@ CG_DEP_Compute_Region_MEM_Arcs(list<BB*>    bb_list,
 // Make a LAO LoopInfo from the BB_List supplied.
 static LoopInfo
 lao_makeLoopInfo(BB_List& bb_list, bool cyclic) {
+  LoopInfo loopinfo = NULL;
   BB *bb = bb_list.front();
   CGIR_LAB cgir_lab = Gen_Label_For_BB(bb);
   Label label = CGIR_LAB_to_Label(cgir_lab);
-  LoopInfo loopinfo = Interface_makeLoopInfo(interface, label);
+  // get the BB LoopInfo
+  ANNOTATION *annot = ANNOT_Get(BB_annotations(bb), ANNOT_LOOPINFO);
+  if (annot != NULL) {
+    CGIR_LI cgir_li = ANNOT_loopinfo(annot);
+    loopinfo = Interface_makeLoopInfo(interface, cgir_li, label);
+  } else {
+    loopinfo = Interface_makeLoopInfo(interface, NULL, label);
+  }
   CG_DEP_Compute_Region_MEM_Arcs(bb_list,
       cyclic,	// compute_cyclic
       false);	// memread_arcs
@@ -890,6 +878,7 @@ lao_makeLoopInfo(BB_List& bb_list, bool cyclic) {
 // Low-level LAO_optimize entry point.
 static bool
 lao_optimize(BB_List &entryBBs, BB_List &bodyBBs, BB_List &exitBBs, unsigned lao_actions) {
+  bool cyclic = lao_actions & LAO_LoopSchedule || lao_actions & LAO_LoopPipeline;
   bool result = false;
   BB_List nonexitBBs;
   BB_List::iterator bb_iter;
@@ -926,8 +915,7 @@ lao_optimize(BB_List &entryBBs, BB_List &bodyBBs, BB_List &exitBBs, unsigned lao
       }
     }
   }
-  //
-  bool cyclic = lao_actions & LAO_LoopSchedule || lao_actions & LAO_LoopPipeline;
+  // Make the LoopInfos for the bodyBBs.
   LoopInfo loopinfo = lao_makeLoopInfo(bodyBBs, cyclic);
   //
   result = LAO_Optimize(lao_actions);
