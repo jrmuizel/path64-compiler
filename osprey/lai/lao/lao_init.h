@@ -8,8 +8,8 @@
 ***
 **/
 
-#ifndef laoinit_INCLUDED
-#define laoinit_INCLUDED
+#ifndef lao_init_INCLUDED
+#define lao_init_INCLUDED
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,4 +31,4 @@ lao_fini(void);
 }
 #endif
 
-#endif /* laoinit_INCLUDED */
+#endif /* lao_init_INCLUDED */

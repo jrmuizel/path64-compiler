@@ -46,11 +46,11 @@
 #if defined __linux__ || defined(_NO_WEAK_SUPPORT_)
 
 #include "defs.h"
-#include "laoinit.h"
+#include "lao_init.h"
 
 // from lao/lao_stub.cxx
-CG_EXPORTED extern void (*lao_init_p) ();
-CG_EXPORTED extern void (*lao_init_p) ();
+CG_EXPORTED extern void (*lao_init_p)();
+CG_EXPORTED extern void (*lao_fini_p)();
 
 /*
  * This function is recognized by the Linux linker and placed in the
