@@ -4,8 +4,22 @@
 
 
 # ==================================================================
-#    opcode_is_simulated
+#    opcode_is_
+#
+#    check opcode belonging to some groups
 # ==================================================================
+sub opcode_is_ssa {
+    my $opcode;
+    my $gname = $_[0];
+
+    foreach $opcode (@SSAOpcodes) {
+	if ($gname eq $opcode) {
+	    return 1;
+	}
+    }
+
+    return 0;
+}
 
 sub opcode_is_simulated {
     my $opcode;
@@ -20,16 +34,27 @@ sub opcode_is_simulated {
     return 0;
 }
 
-# ==================================================================
-#    opcode_is_dummy
-# ==================================================================
-
 sub opcode_is_dummy {
     my $opcode;
     my $gname = $_[0];
 
     foreach $opcode (@DummyOpcodes) {
 	if ($gname eq $opcode) {
+	    return 1;
+	}
+    }
+
+    return 0;
+}
+
+sub opcode_is_subset {
+    my $opcode = $_[0];
+    my $subset = subset_id($_[1]);
+
+    my $opcode;
+
+    foreach $op (@{$SUBSET_opcodes[$subset]}) {
+	if ($OP_opcode[$op] eq $OP_opcode[$opcode]) {
 	    return 1;
 	}
     }
@@ -84,6 +109,8 @@ sub op_bytes {
 sub op_align {
     my $mnemonic = $OP_mnemonic[$_[0]];
     my $align;
+
+#    printf (STDOUT "  > align %s\n", $mnemonic);
 
     if ($mnemonic eq 'ldw' ||
 	$mnemonic eq 'ldw_d' ||
@@ -172,6 +199,7 @@ sub set_variant {
 	   $format eq 'Ijump' ||
 	   $format eq 'cgen' ||
 	   $format eq 'Imm' ||
+	   $format eq 'SBreak' ||
 	   $format eq 'SysOp') {
 	$variant = "";
     }
@@ -184,9 +212,6 @@ sub set_variant {
     elsif ($format eq 'MoveE') {
 	$variant = "_ii";
     }
-    elsif ($format eq 'Cache') {
-	$variant = "";
-    }
     elsif ($format eq 'Sync') {
 	$variant = "";
     }
@@ -198,6 +223,9 @@ sub set_variant {
     }
     elsif ($format eq 'Noop') {
 	$variant = "";
+    }
+    elsif ($format eq 'Monadic') {
+	$variant = "_r";
     }
     else {
 	printf(STDOUT "ERROR: unknown format %s in set_variant\n", 
@@ -225,9 +253,12 @@ sub set_operands {
 	$format eq 'Cmp3E_Reg' ||
 	$format eq 'Cmp3I_Br' ||
 	$format eq 'Cmp3E_Br') {
-
-	$OP_results[$opcode] = 1;
 	$OP_opnds[$opcode] = 2;
+	$OP_results[$opcode] = 1;
+    }
+    elsif ($format eq 'Monadic') {
+	$OP_opnds[$opcode] = 1;
+	$OP_results[$opcode] = 1;
     }
     elsif ($format eq 'SelectR' ||
 	   $format eq 'SelectI' ||
@@ -256,7 +287,14 @@ sub set_operands {
 	   $format eq 'StoreE') {
 
 	$OP_results[$opcode] = 0;
-	$OP_opnds[$opcode] = 3;
+	if ($OP_mnemonic[$opcode] eq 'pft' ||
+	    $OP_mnemonic[$opcode] eq 'prgset' ||
+	    $OP_mnemonic[$opcode] eq 'prgadd') {
+	    $OP_opnds[$opcode] = 2;
+	}
+	else {
+	    $OP_opnds[$opcode] = 3;
+	}
     }
     elsif ($format eq 'Branch') {
 
@@ -288,7 +326,8 @@ sub set_operands {
 	$OP_results[$opcode] = 0;
 	$OP_opnds[$opcode] = 1;
     }
-    elsif ($format eq 'SysOp') {
+    elsif ($format eq 'SysOp' ||
+	   $format eq 'SBreak') {
 	$OP_results[$opcode] = 0;
 	$OP_opnds[$opcode] = 0;
     }
@@ -297,10 +336,6 @@ sub set_operands {
 	   $format eq 'MoveE') {
 	$OP_results[$opcode] = 1;
 	$OP_opnds[$opcode] = 1;
-    }
-    elsif ($format eq 'Cache') {
-	$OP_results[$opcode] = 0;
-	$OP_opnds[$opcode] = 2;
     }
     elsif ($format eq 'Sync') {
 	$OP_results[$opcode] = 0;
@@ -335,64 +370,69 @@ sub set_signature {
     my $signature;
 
     if ($format eq 'Int3R') {
-	$signature = 'dest:Int3R:src1,src2';
+	if ($OP_mnemonic[$opcode] eq 'mull' ||
+	    $OP_mnemonic[$opcode] eq 'mullu' ||
+	    $OP_mnemonic[$opcode] eq 'mulh' ||
+	    $OP_mnemonic[$opcode] eq 'mulhu' ||
+	    $OP_mnemonic[$opcode] eq 'mulll' ||
+	    $OP_mnemonic[$opcode] eq 'mullu' ||
+	    $OP_mnemonic[$opcode] eq 'mullh' ||
+	    $OP_mnemonic[$opcode] eq 'mullhu' ||
+	    $OP_mnemonic[$opcode] eq 'mulhh' ||
+	    $OP_mnemonic[$opcode] eq 'mulhhu' ||
+	    $OP_mnemonic[$opcode] eq 'mulhs' ||
+	    $OP_mnemonic[$opcode] eq 'mulhhs' ||
+	    $OP_mnemonic[$opcode] eq 'mulllu' ||
+	    $OP_mnemonic[$opcode] eq 'mullhus') {
+	    $signature = 'dest2:Int3R:src1_opnd1,src2_opnd2';
+	} else {
+	    $signature = 'dest:Int3R:src1_opnd1,src2_opnd2';
+	}
     }
     elsif ($format eq 'Int3I' ||
 	   $format eq 'Int3E') {
 	# special case of sub_i:
 	if ($OP_mnemonic[$opcode] eq 'sub') {
-	    $signature = 'idest:Int3I:isrc2,src1';
-	}
-	# signed/unsigned matters for some opcodes
-	elsif ($OP_mnemonic[$opcode] eq 'maxu' ||
-	       $OP_mnemonic[$opcode] eq 'minu') {
-	    
-	    $signature = 'idest:Int3I:src1,usrc2';
-	}
-	else {
-	    $signature = 'idest:Int3I:src1,isrc2';
+	    $signature = 'idest:Int3I:isrc2_opnd1,src1_opnd2';
+	} elsif ($OP_mnemonic[$opcode] eq 'mull' ||
+		 $OP_mnemonic[$opcode] eq 'mullu' ||
+		 $OP_mnemonic[$opcode] eq 'mulh' ||
+		 $OP_mnemonic[$opcode] eq 'mulhu' ||
+		 $OP_mnemonic[$opcode] eq 'mulll' ||
+		 $OP_mnemonic[$opcode] eq 'mullu' ||
+		 $OP_mnemonic[$opcode] eq 'mullh' ||
+		 $OP_mnemonic[$opcode] eq 'mullhu' ||
+		 $OP_mnemonic[$opcode] eq 'mulhh' ||
+		 $OP_mnemonic[$opcode] eq 'mulhhu' ||
+		 $OP_mnemonic[$opcode] eq 'mulhs' ||
+		 $OP_mnemonic[$opcode] eq 'mulhhs' ||
+		 $OP_mnemonic[$opcode] eq 'mulllu' ||
+		 $OP_mnemonic[$opcode] eq 'mullhus') {
+	    $signature = 'idest2:Int3I:src1_opnd1,isrc2_opnd2';
+	} else {
+	    $signature = 'idest:Int3I:src1_opnd1,isrc2_opnd2';
 	}
     }
     elsif ($format eq 'Cmp3R_Reg') {
-	$signature = 'dest:Cmp3R_Reg:src1,src2';
+	$signature = 'dest:Cmp3R_Reg:src1_opnd1,src2_opnd2';
     }
     elsif ($format eq 'Cmp3I_Reg' ||
 	   $format eq 'Cmp3E_Reg') {
-	# signed/unsigned matters for certain opcodes
-	if ($OP_mnemonic[$opcode] eq 'cmpgeu' ||
-	    $OP_mnemonic[$opcode] eq 'cmpgtu' ||
-	    $OP_mnemonic[$opcode] eq 'cmpleu' ||
-	    $OP_mnemonic[$opcode] eq 'cmpltu') {
-
-	    $signature = 'idest:Cmp3I_Reg:src1,usrc2';
-	}
-	else {
-	    $signature = 'idest:Cmp3I_Reg:src1,isrc2';
-	}
+	$signature = 'idest:Cmp3I_Reg:src1_opnd1,isrc2_opnd2';
     }
     elsif ($format eq 'Cmp3R_Br') {
-	$signature = 'bdest:Cmp3R_Br:src1,src2';
+	$signature = 'bdest:Cmp3R_Br:src1_opnd1,src2_opnd2';
     }
     elsif ($format eq 'Cmp3I_Br' ||
 	   $format eq 'Cmp3E_Br') {
-	# signed/unsigned matters for certain opcodes
-	if ($OP_mnemonic[$opcode] eq 'cmpgeu' ||
-	    $OP_mnemonic[$opcode] eq 'cmpgtu' ||
-	    $OP_mnemonic[$opcode] eq 'cmpleu' ||
-	    $OP_mnemonic[$opcode] eq 'cmpltu') {
-
-	    $signature = 'ibdest:Cmp3I_Br:src1,usrc2';
-	}
-	else {
-	    $signature = 'ibdest:Cmp3I_Br:src1,isrc2';
-	}
+	$signature = 'ibdest:Cmp3I_Br:src1_opnd1,isrc2_opnd2';
     }
     elsif ($format eq 'SelectR') {
-	$signature = 'dest:SelectR:bcond,src1,src2';
+	$signature = 'dest:SelectR:bcond_condition,src1_opnd1,src2_opnd2';
     }
     elsif ($format eq 'SelectI' ||
 	   $format eq 'SelectE') {
-	$signature = 'idest:SelectI:bcond,src1,isrc2';
+	$signature = 'idest:SelectI:bcond_condition,src1_opnd1,isrc2_opnd2';
     }
     elsif ($format eq 'cgen') {
 	$signature = 'dest,bdest:cgen:src1,src2,bcond';
@@ -402,14 +442,26 @@ sub set_signature {
     }
     elsif ($format eq 'Load' ||
 	   $format eq 'LoadE') {
-	$signature = 'dest:Load:isrc2_offset,src1_base';
+	if ($OP_mnemonic[$opcode] eq 'ldw_d' ||
+	    $OP_mnemonic[$opcode] eq 'ldw') {
+	    $signature = 'dest:Load:isrc2_offset,src1_base';
+	} else {
+	    $signature = 'dest2:Load:isrc2_offset,src1_base';
+	}
     }
     elsif ($format eq 'Store' ||
 	   $format eq 'StoreE') {
-	$signature = ':Store:isrc2_offset,src1_base,src2_storeval';
+	if ($OP_mnemonic[$opcode] eq 'pft' ||
+	    $OP_mnemonic[$opcode] eq 'prgset' ||
+	    $OP_mnemonic[$opcode] eq 'prgadd') {
+	    $signature = ':cache:isrc2_offset,src1_base';
+	}
+	else {
+	    $signature = ':Store:isrc2_offset,src1_base,src2_storeval';
+	}
     }
     elsif ($format eq 'Branch') {
-	$signature = ':Branch:bcond,btarg_target';
+	$signature = ':Branch:bcond_condition,btarg_target';
     }
     elsif ($format eq 'Call') {
 	if ($OP_mnemonic[$opcode] eq 'call') {
@@ -433,18 +485,15 @@ sub set_signature {
     elsif ($format eq 'Ijump') {
 	$signature = ':ijump:lr';
     }
-    elsif ($format eq 'SysOp') {
+    elsif ($format eq 'SysOp' || $format eq 'SBreak') {
 	$signature = ':SysOp:';
     }
     elsif ($format eq 'MoveR') {
-	$signature = 'dest:move:src2';
+	$signature = 'dest:move:src2_opnd1';
     }
     elsif ($format eq 'MoveI' ||
 	   $format eq 'MoveE') {
-	$signature = 'idest:move:isrc2';
-    }
-    elsif ($format eq 'Cache') {
-	$signature = ':cache:isrc2,src1';
+	$signature = 'idest:move:isrc2_opnd1';
     }
     elsif ($format eq 'Sync') {
 	$signature = ':Sync:';
@@ -457,6 +506,9 @@ sub set_signature {
     }
     elsif ($format eq 'Noop') {
 	$signature = ':nop:';
+    }
+    elsif ($format eq 'Monadic') {
+	$signature = 'dest:Monadic:src2_opnd1';
     }
     else {
 	printf(STDOUT "ERROR: unknown format %s in op_signature\n", 
@@ -538,10 +590,24 @@ sub set_pack {
 	$pack = 'LoadE';
     }
     elsif ($format eq 'Store') {
-	$pack = 'Store';
+	if ($OP_mnemonic[$opcode] eq 'pft' ||
+	    $OP_mnemonic[$opcode] eq 'prgset' ||
+	    $OP_mnemonic[$opcode] eq 'prgadd') {
+	    $pack = 'Cache';
+	}
+	else {
+	    $pack = 'Store';
+	}
     }
     elsif ($format eq 'StoreE') {
-	$pack = 'StoreE';
+	if ($OP_mnemonic[$opcode] eq 'pft' ||
+	    $OP_mnemonic[$opcode] eq 'prgset' ||
+	    $OP_mnemonic[$opcode] eq 'prgadd') {
+	    $pack = 'CacheE';
+	}
+	else {
+	    $pack = 'StoreE';
+	}
     }
     elsif ($format eq 'Branch') {
 	$pack = 'Branch';
@@ -568,7 +634,7 @@ sub set_pack {
     elsif ($format eq 'Ijump') {
 	$pack = 'Ijump';
     }
-    elsif ($format eq 'SysOp') {
+    elsif ($format eq 'SysOp' || $format eq 'SBreak') {
 	$pack = 'SysOp';
     }
     elsif ($format eq 'MoveR') {
@@ -579,9 +645,6 @@ sub set_pack {
     }
     elsif ($format eq 'MoveE') {
 	$pack = 'MoveE';
-    }
-    elsif ($format eq 'Cache') {
-	$pack = 'Cache';
     }
     elsif ($format eq 'Sync') {
 	$pack = 'Sync';
@@ -594,6 +657,9 @@ sub set_pack {
     }
     elsif ($format eq 'Noop') {
 	$pack = 'nop';
+    }
+    elsif ($format eq 'Monadic') {
+	$pack = 'Monadic';
     }
     else {
 	printf(STDOUT "ERROR: unknown format %s in op_pack\n", 
@@ -618,37 +684,15 @@ sub set_print {
     my $syntax = $OP_syntax[$opcode];
     my $signature;
 
-    # special case of sub_i:
-    if ($format eq 'Int3I' ||
+    if ($format eq 'Int3R' || 
+	$format eq 'Int3I' ||
 	$format eq 'Int3E') {
+	# special case of sub_i:
 	if ($OP_mnemonic[$opcode] eq 'sub') {
-
-	    $OP_res[$opcode][0]{'fmt'} = '%s';
-	    $OP_opnd[$opcode][0]{'fmt'} = '%d';
-	    $OP_opnd[$opcode][1]{'fmt'} = '%s';
-	    $signature = "R0:%s_=_O0:%d_,_O1:%s";
-
-	    print STDOUT " syntax: $syntax \n";
-	    print STDOUT " signature: $signature \n";
-	    $OP_print[$opcode] = $signature;
-	    return;
-	}
-	else {
-	    $OP_res[$opcode][0]{'fmt'} = '%s';
-	    $OP_opnd[$opcode][0]{'fmt'} = '%s';
-	    $OP_opnd[$opcode][1]{'fmt'} = '%d';
-	}
-    }
-    elsif ($format eq 'Int3R') {
-	if ($OP_mnemonic[$opcode] eq 'sub') {
-
 	    $OP_res[$opcode][0]{'fmt'} = '%s';
 	    $OP_opnd[$opcode][0]{'fmt'} = '%s';
 	    $OP_opnd[$opcode][1]{'fmt'} = '%s';
 	    $signature = "R0:%s_=_O0:%s_,_O1:%s";
-
-	    print STDOUT " syntax: $syntax \n";
-	    print STDOUT " signature: $signature \n";
 	    $OP_print[$opcode] = $signature;
 	    return;
 	}
@@ -707,7 +751,11 @@ sub set_print {
 	   $format eq 'StoreE') {
 	$OP_opnd[$opcode][0]{'fmt'} = '%d';
 	$OP_opnd[$opcode][1]{'fmt'} = '%s';
-	$OP_opnd[$opcode][2]{'fmt'} = '%s';
+	unless ($OP_mnemonic[$opcode] eq 'pft' ||
+		$OP_mnemonic[$opcode] eq 'prgset' ||
+		$OP_mnemonic[$opcode] eq 'prgadd') {
+	    $OP_opnd[$opcode][2]{'fmt'} = '%s';
+	}
     }
     elsif ($format eq 'Branch') {
 	$OP_opnd[$opcode][0]{'fmt'} = '%s';
@@ -719,8 +767,8 @@ sub set_print {
 	    $OP_res[$opcode][0]{'fmt'} = '%s';
 	    $OP_opnd[$opcode][0]{'fmt'} = '%s';
 	    $signature = "R0:%s_=_O0:%s";
-	    print STDOUT " syntax: $syntax \n";
-	    print STDOUT " signature: $signature \n";
+#	    print STDOUT " syntax: $syntax \n";
+#	    print STDOUT " signature: $signature \n";
 	}
 	elsif ($OP_mnemonic[$opcode] eq 'rfi') {
 	    $signature = "";
@@ -738,25 +786,16 @@ sub set_print {
 	   $format eq 'Ijump') {
 	$OP_opnd[$opcode][0]{'fmt'} = '%s';
 	$signature = "O0:%s";
-	print STDOUT " syntax: $syntax \n";
-	print STDOUT " signature: $signature \n";
 	$OP_print[$opcode] = $signature;
 	return;
     }
-    elsif ($format eq 'SysOp') {
+    elsif ($format eq 'SysOp' || $format eq 'SBreak') {
     }
-    elsif ($format eq 'MoveR') {
-	$OP_res[$opcode][0]{'fmt'} = '%s';
-	$OP_opnd[$opcode][0]{'fmt'} = '%s';
-    }
-    elsif ($format eq 'MoveI' ||
+    elsif ($format eq 'MoveR' ||
+	   $format eq 'MoveI' ||
 	   $format eq 'MoveE') {
 	$OP_res[$opcode][0]{'fmt'} = '%s';
-	$OP_opnd[$opcode][0]{'fmt'} = '%d';
-    }
-    elsif ($format eq 'Cache') {
-	$OP_opnd[$opcode][0]{'fmt'} = '%d';
-	$OP_opnd[$opcode][1]{'fmt'} = '%s';
+	$OP_opnd[$opcode][0]{'fmt'} = '%s';
     }
     elsif ($format eq 'Sync') {
     }
@@ -770,13 +809,17 @@ sub set_print {
     }
     elsif ($format eq 'Noop') {
     }
+    elsif ($format eq 'Monadic') {
+	$OP_res[$opcode][0]{'fmt'} = '%s';
+	$OP_opnd[$opcode][0]{'fmt'} = '%s';
+    }
     else {
 	printf(STDOUT "ERROR: unknown format %s in set_print\n", $format);
 	exit(1);
     }
 
     # process syntax:
-    print STDOUT " syntax: $syntax \n";
+#    print STDOUT " syntax: $syntax \n";
     my @st = split(' ',$syntax);
 #    print STDOUT " list: @st \n";
 
@@ -796,7 +839,7 @@ sub set_print {
 	    else {
 		$idx = $1 - $OP_results[$opcode] - 1;
 		$fmt = $OP_opnd[$opcode][$idx]{'fmt'};
-		$signature = $signature."O".$idx.":".$fmt
+		$signature = $signature."O".$idx.":".$fmt;
 	    }
 	    $signature = $signature."_,_";
 	    $count++;
@@ -819,6 +862,7 @@ sub set_print {
 	    else {
 		$idx = $1 - $OP_results[$opcode] - 1;
 		$fmt = $OP_opnd[$opcode][$idx]{'fmt'};
+#		print STDOUT "   opformat: $fmt \n";
 		$signature = $signature."O".$idx.":".$fmt
 	    }
 	    $count++;
@@ -842,10 +886,99 @@ sub set_print {
 	}
     }
 
-    print STDOUT " signature: $signature  \n";
+#    print STDOUT " signature: $signature  \n";
 
     $OP_print[$opcode] = $signature;
     return;
+}
+
+# for each subset
+# if opcode exists in parent, same properties, same sched infos. Remove it.
+sub update_subsets {
+
+    for ($i = $SUBSET_count-1; $i>0; $i--) {
+	my $parent = $SUBSET_parent[$i];
+	foreach $opcode (@{$SUBSET_opcodes[$i]}) {
+	    foreach $opcode2 (@{$SUBSET_opcodes[subset_id($parent)]}) {
+		if ($OP_opcode[$opcode] eq $OP_opcode[$opcode2]) {
+		    foreach my $signature (keys(%SignatureGroup)) {
+			my $found=$FALSE;
+			foreach $op (@{$SignatureGroup{$signature}}) {
+			    if ($op eq $OP_opcode[$opcode2]) {
+				if ($found eq $TRUE) {
+				    $op = $UNDEF;
+				}
+				$found = $TRUE;
+			    }
+			}
+		    }
+
+		    foreach my $pack (keys(%PackGroup)) {
+			my $found=$FALSE;
+			foreach $op (@{$PackGroup{$pack}}) {
+			    if ($op eq $OP_opcode[$opcode2]) {
+				if ($found eq $TRUE) {
+				    $op = $UNDEF;
+				}
+				$found = $TRUE;
+			    }
+			}
+		    }
+
+		    foreach my $attr (keys(%AttrGroup)) {
+			my $found=$FALSE;
+			foreach $op (@{$AttrGroup{$attr}}) {
+			    if ($op eq $OP_opcode[$opcode2]) {
+				if ($found eq $TRUE) {
+				    $op = $UNDEF;
+				} 
+				$found = $TRUE;
+			    }
+			}
+		    }
+
+		    foreach my $print (keys(%PrintGroup)) {
+			my $found=$FALSE;
+			foreach $op (@{$PrintGroup{$print}}) {
+			    if ($op eq $OP_opcode[$opcode2]) {
+				if ($found eq $TRUE) {
+				    $op = $UNDEF;
+				} 
+				$found = $TRUE;
+			    }
+			}
+		    }
+
+		    foreach my $mem (keys(%MemBytes)) {
+			my $found=$FALSE;
+			foreach $op (@{$MemBytes{$mem}}) {
+			    if ($op eq $OP_opcode[$opcode2]) {
+				if ($found eq $TRUE) {
+				    $op = $UNDEF;
+				} 
+				$found = $TRUE;
+			    }
+			}
+		    }
+
+		    foreach my $mem (keys(%MemAlign)) {
+			my $found=$FALSE;
+			foreach $op (@{$MemAlign{$mem}}) {
+			    if ($op eq $OP_opcode[$opcode2]) {
+				if ($found eq $TRUE) {
+				    $op = $UNDEF;
+				} 
+				$found = $TRUE;
+			    }
+			}
+		    }
+
+		    $OP_opcode[$opcode2] = $UNDEF;
+		    $opcode2 = $UNDEF;
+		}
+	    }
+	}
+    }
 }
 
 # ==================================================================
@@ -878,17 +1011,18 @@ sub initialize_required_opcodes {
 
     @SimulatedOpcodes;
     @DummyOpcodes;
+    @SSAOpcodes;
 
-    my $subset;
     my $opcode;
 
     push (@SimulatedOpcodes, "asm");
     push (@SimulatedOpcodes, "intrncall");
     push (@SimulatedOpcodes, "spadjust");
-    push (@SimulatedOpcodes, "copy_br");
+#    push (@SimulatedOpcodes, "copy_br");
     push (@SimulatedOpcodes, "noop");
-    push (@SimulatedOpcodes, "phi");
-    push (@SimulatedOpcodes, "psi");
+
+    push (@SSAOpcodes, "phi");
+    push (@SSAOpcodes, "psi");
 
     push (@DummyOpcodes, "begin_pregtn");
     push (@DummyOpcodes, "end_pregtn");
@@ -903,62 +1037,61 @@ sub initialize_required_opcodes {
     foreach $opcode (@SimulatedOpcodes) {
 	$OP_opcode[$OP_count] = $opcode;
 	$OP_properties[$OP_count] = $OP_SIMULATED;
+	push(@{$AttrGroup{'simulated'}}, $opcode);
+	push (@{$SUBSET_opcodes[subset_id("st200")]}, $OP_count);
+
+	if ($opcode eq 'spadjust' || $opcode eq 'asm') {
+	    $OP_scdclass[$OP_count] = "simulated" if $opcode eq 'spadjust';
+	    $OP_scdclass[$OP_count] = "asm" if $opcode eq 'asm';
+	    $OP_results[$OP_count] = 1;
+	    $OP_opnds[$OP_count] = 1;
+	    $OP_result_avail_time[$OP_count][0] = 3;
+	    $OP_opnd_access_time[$OP_count][0] = 2;
+
+	    my $subset;
+	    for ($subset = 0; $subset < $SUBSET_count; $subset++) {
+		$OP_subset[$OP_count] = $SUBSET_name[$subset];   
+		&process_scdinfo($OP_count);
+	    }
+	}
+
+	$OP_count++;
+    }
+
+    foreach $opcode (@SSAOpcodes) {
+	$OP_opcode[$OP_count] = $opcode;
+	$OP_properties[$OP_count] = $OP_SIMULATED;
+	$OP_scdclass[$OP_count] = "ssa";
+	$OP_results[$OP_count] = 1;
+	$OP_opnds[$OP_count] = 1;
+	$OP_result_avail_time[$OP_count][0] = 0;
+	$OP_opnd_access_time[$OP_count][0] = 0;
+	push(@{$AttrGroup{'simulated'}}, $opcode);
+	push (@{$SUBSET_opcodes[subset_id("st200")]}, $OP_count);
+
+	my $subset;
+	for ($subset = 0; $subset < $SUBSET_count; $subset++) {
+	    $OP_subset[$OP_count] = $SUBSET_name[$subset];   
+	    &process_scdinfo($OP_count);
+	}
 	$OP_count++;
     }
 
     foreach $opcode (@DummyOpcodes) {
 	$OP_opcode[$OP_count] = $opcode;
 	$OP_properties[$OP_count] = $OP_DUMMY;
+	push(@{$AttrGroup{'dummy'}}, $opcode);
+	push (@{$SUBSET_opcodes[subset_id("st200")]}, $OP_count);
+
 	$OP_count++;
     }
 
     #    add required opcodes to all isa subsets, so they are 
     #    also emitted by the emit_subsets.
     #
-    #    TODO: now subset generating skripts do not allow one instruction
-    #    to be part of more than 1 ISA subset. I need to allow this for 
-    #    the simulated and dummy instructions.
-
-    for ($subset = 0; $subset < $SUBSET_count; $subset++) {
-	push (@{$SUBSET_opcodes[$subset]}, 'asm');
-	push (@{$SUBSET_opcodes[$subset]}, 'intrncall');
-	push (@{$SUBSET_opcodes[$subset]}, 'spadjust');
-	push (@{$SUBSET_opcodes[$subset]}, 'copy_br');
-	push (@{$SUBSET_opcodes[$subset]}, 'noop');
-	push (@{$SUBSET_opcodes[$subset]}, 'phi');
-	push (@{$SUBSET_opcodes[$subset]}, 'psi');
-
-	push (@{$SUBSET_opcodes[$subset]}, 'begin_pregtn');
-	push (@{$SUBSET_opcodes[$subset]}, 'end_pregtn');
-	push (@{$SUBSET_opcodes[$subset]}, 'bwd_bar');
-	push (@{$SUBSET_opcodes[$subset]}, 'fwd_bar');
-	push (@{$SUBSET_opcodes[$subset]}, 'dfixup');
-	push (@{$SUBSET_opcodes[$subset]}, 'ffixup');
-	push (@{$SUBSET_opcodes[$subset]}, 'ifixup');
-	push (@{$SUBSET_opcodes[$subset]}, 'label');
-    }
 
     # isa_properties: add required opcodes to AttrGroup, so they are 
     # also emitted by the emit_properties.
-
-    # simulated:
-    push(@{$AttrGroup{'simulated'}}, 'asm');
-    push(@{$AttrGroup{'simulated'}}, 'intrncall');
-    push(@{$AttrGroup{'simulated'}}, 'spadjust');
-    push(@{$AttrGroup{'simulated'}}, 'copy_br');
-    push(@{$AttrGroup{'simulated'}}, 'noop');
-    push(@{$AttrGroup{'simulated'}}, 'phi');
-    push(@{$AttrGroup{'simulated'}}, 'psi');
-
-    # dummy:
-    push(@{$AttrGroup{'dummy'}}, 'begin_pregtn');
-    push(@{$AttrGroup{'dummy'}}, 'end_pregtn');
-    push(@{$AttrGroup{'dummy'}}, 'bwd_bar');
-    push(@{$AttrGroup{'dummy'}}, 'fwd_bar');
-    push(@{$AttrGroup{'dummy'}}, 'dfixup');
-    push(@{$AttrGroup{'dummy'}}, 'ffixup');
-    push(@{$AttrGroup{'dummy'}}, 'ifixup');
-    push(@{$AttrGroup{'dummy'}}, 'label');
 
     # var_operands:
     push(@{$AttrGroup{'var_opnds'}}, 'asm');
@@ -973,12 +1106,12 @@ sub initialize_required_opcodes {
     #       hardwired here !
 
     push(@{$SignatureGroup{':asm:'}}, 'asm');
-    push(@{$SignatureGroup{':asm:'}}, 'phi');
-    push(@{$SignatureGroup{':asm:'}}, 'psi');
+    push(@{$SignatureGroup{':ssa:'}}, 'phi');
+    push(@{$SignatureGroup{':ssa:'}}, 'psi');
     push(@{$SignatureGroup{':intrncall:'}}, 'intrncall');
 
     push(@{$SignatureGroup{'idest:spadjust:src1,isrc2'}}, 'spadjust');
-    push(@{$SignatureGroup{'bdest:copy_br:scond'}}, 'copy_br');
+#    push(@{$SignatureGroup{'bdest:copy_br:scond'}}, 'copy_br');
     push(@{$SignatureGroup{':noop:'}}, 'noop');
 
     push(@{$SignatureGroup{':pregtn:src1,isrc2'}}, 'begin_pregtn');
@@ -1030,6 +1163,9 @@ sub emit_opcode {
     my $opcode = $_[0];
 
     printf (ISA_F "\t\t \"%s\",", $OP_opcode[$opcode]);
+    if (opcode_is_ssa($OP_opcode[$opcode]) == 1) {
+	printf(ISA_F "\t // ssa");
+    }
     if (opcode_is_simulated($OP_opcode[$opcode]) == 1) {
 	printf(ISA_F "\t // simulated");
     }
@@ -1149,7 +1285,7 @@ sub emit_registers {
 	    for ($reg = $REGSET_minreg[$i];
 		 $reg <= $REGSET_maxreg[$i];
 		 $reg++) {
-
+#		printf (STDOUT "%d: %d\n", $reg, $REGSET_subset[$i][$subset]{'regs'}[$reg]);
 		if ($REGSET_subset[$i][$subset]{'regs'}[$reg] == 1) {
 		    if ($found) {
 			printf(REG_F ",%d", $reg);
@@ -1266,9 +1402,9 @@ sub emit_literals {
 	if ($LCLASS_rtype[$lclass] eq 'SIGNED') {
 	    printf(LIT_F "  ISA_Create_Lit_Class(\"%s\", %s, SignedBitRange(%d), LIT_RANGE_END); \n", $LCLASS_name[$lclass], "SIGNED", $LCLASS_bits[$lclass]);
 	}
-	else {
-	    printf(LIT_F "  ISA_Create_Lit_Class(\"%s\", %s, UnsignedBitRange(%d), LIT_RANGE_END); \n", $LCLASS_name[$lclass], "UNSIGNED", $LCLASS_bits[$lclass]);
-	}
+#	else {
+#	    printf(LIT_F "  ISA_Create_Lit_Class(\"%s\", %s, UnsignedBitRange(%d), LIT_RANGE_END); \n", $LCLASS_name[$lclass], "UNSIGNED", $LCLASS_bits[$lclass]);
+#	}
     }
     printf (LIT_F "\n");
 
@@ -1401,8 +1537,8 @@ sub emit_subsets {
 
     for ($i = 0; $i < $SUBSET_count; $i++) {
 	my $subset = $SUBSET_name[$i];
-	printf (SUBS_F "  %s = ISA_Subset_Create(NULL,\"%s\"); \n\n", 
-		$subset, $subset);
+	printf (SUBS_F "  %s = ISA_Subset_Create(%s,\"%s\"); \n\n", 
+		$subset, $SUBSET_parent[$i], $subset);
 	printf (SUBS_F "  /* ==================================================================== \n");
 	printf (SUBS_F "   *             %s_%s Instructions \n", 
 		$ARCH_name, $subset);
@@ -1411,7 +1547,9 @@ sub emit_subsets {
 
         printf (SUBS_F "  Instruction_Group(%s, \n", $subset);
 	foreach $opcode (@{$SUBSET_opcodes[$i]}) {
-	    printf (SUBS_F "\t\t TOP_%s, \n", $opcode);
+	    if($opcode != $UNDEF) {
+		printf (SUBS_F "\t\t TOP_%s, \n", $OP_opcode[$opcode]);
+	    }
 	}
 	printf (SUBS_F "\t\t TOP_UNDEFINED); \n\n");
     }
@@ -1479,7 +1617,8 @@ sub initialize_properties_file {
 sub sort_by_properties {
     my $opcode = $_[0];
 
-    if ($OP_format[$opcode] eq 'Load') {
+
+    if ($OP_format[$opcode] eq 'Load' || $OP_format[$opcode] eq 'LoadE') {
 	$OP_properties[$opcode] ^= $OP_LOAD;
 	$OP_bytes[$opcode] = &op_bytes($opcode);
 	$OP_align[$opcode] = &op_align($opcode);
@@ -1492,7 +1631,7 @@ sub sort_by_properties {
 	}
     }
 
-    if ($OP_format[$opcode] eq 'Store') {
+    if ($OP_format[$opcode] eq 'Store' || $OP_format[$opcode] eq 'StoreE') {
 	$OP_properties[$opcode] ^= $OP_STORE;
 	$OP_bytes[$opcode] = &op_bytes($opcode);
 	$OP_align[$opcode] = &op_align($opcode);
@@ -1502,30 +1641,32 @@ sub sort_by_properties {
 	if ($OP_mnemonic[$opcode] eq 'br' ||
 	    $OP_mnemonic[$opcode] eq 'brf') {
 	    $OP_properties[$opcode] ^= $OP_BRANCH;
-	    $OP_properties[$opcode] ^= $OP_F_GROUP;
+	    $OP_properties[$opcode] ^= $OP_XFER;
 	}
     }
 
     if ($OP_format[$opcode] eq 'Call') {
 	$OP_properties[$opcode] ^= $OP_CALL;
-	$OP_properties[$opcode] ^= $OP_F_GROUP;
+	$OP_properties[$opcode] ^= $OP_XFER;
     }
 
     if ($OP_format[$opcode] eq 'Jump') {
 	$OP_properties[$opcode] ^= $OP_JUMP;
-	$OP_properties[$opcode] ^= $OP_F_GROUP;
+	$OP_properties[$opcode] ^= $OP_XFER;
     }
 
     if ($OP_format[$opcode] eq 'Ijump') {
 	$OP_properties[$opcode] ^= $OP_IJUMP;
-	$OP_properties[$opcode] ^= $OP_F_GROUP;
+	$OP_properties[$opcode] ^= $OP_XFER;
     }
 
     # has immediate operand ??
     if ($OP_format[$opcode] eq 'Int3I' ||
+	$OP_format[$opcode] eq 'Int3E' ||
 	$OP_format[$opcode] eq 'Cmp3I_Reg' ||
 	$OP_format[$opcode] eq 'Cmp3I_Br' ||
 	$OP_format[$opcode] eq 'SelectI' ||
+	$OP_format[$opcode] eq 'SelectE' ||
 	$OP_format[$opcode] eq 'Store' ||
 	$OP_format[$opcode] eq 'Load' ||
 	$OP_format[$opcode] eq 'Branch') {
@@ -1533,8 +1674,111 @@ sub sort_by_properties {
     }
 
     if ($OP_format[$opcode] eq 'MoveR' ||
-	$OP_format[$opcode] eq 'MoveI') {
+	$OP_format[$opcode] eq 'MoveI' ||
+	$OP_format[$opcode] eq 'MoveE') {
 	$OP_properties[$opcode] ^= $OP_MOVE;
+	$OP_properties[$opcode] ^= $OP_INTOP;
+    }
+
+    if ($OP_format[$opcode] eq 'SelectI' ||
+	$OP_format[$opcode] eq 'SelectE' || 
+	$OP_format[$opcode] eq 'SelectR') {
+	$OP_properties[$opcode] ^= $OP_SELECT;
+	$OP_properties[$opcode] ^= $OP_INTOP;
+    }
+
+    if ($OP_format[$opcode] eq 'Int3I' ||
+	$OP_format[$opcode] eq 'Int3R' ||
+	$OP_format[$opcode] eq 'Int3E') {
+        if ($OP_mnemonic[$opcode] eq 'mull' ||
+	    $OP_mnemonic[$opcode] eq 'mulll' ||
+	    $OP_mnemonic[$opcode] eq 'mulllu' ||
+	    $OP_mnemonic[$opcode] eq 'mullu') {
+	    $OP_properties[$opcode] ^= $OP_MUL;
+	}
+
+	if ($OP_mnemonic[$opcode] eq 'sub') {
+	    $OP_properties[$opcode] ^= $OP_SUB;
+	}
+
+	if ($OP_mnemonic[$opcode] eq 'add' ||
+	    $OP_mnemonic[$opcode] eq 'addcg') {
+	    $OP_properties[$opcode] ^= $OP_ADD;
+	}
+
+	if ($OP_mnemonic[$opcode] eq 'or') {
+	    $OP_properties[$opcode] ^= $OP_OR;
+	}
+
+	if ($OP_mnemonic[$opcode] eq 'and') {
+	    $OP_properties[$opcode] ^= $OP_AND;
+	}
+
+	if ($OP_mnemonic[$opcode] eq 'xor') {
+	    $OP_properties[$opcode] ^= $OP_XOR;
+	}
+
+	if ($OP_mnemonic[$opcode] eq 'shl') {
+	    $OP_properties[$opcode] ^= $OP_SHL;
+	}
+
+	if ($OP_mnemonic[$opcode] eq 'shr') {
+	    $OP_properties[$opcode] ^= $OP_SHR;
+	}
+
+	if ($OP_mnemonic[$opcode] eq 'shru') {
+	    $OP_properties[$opcode] ^= $OP_SHRU;
+	}
+
+	if ($OP_mnemonic[$opcode] eq 'ldbu' ||
+	    $OP_mnemonic[$opcode] eq 'ldbu_d' ||
+	    $OP_mnemonic[$opcode] eq 'ldhu' ||
+	    $OP_mnemonic[$opcode] eq 'ldhu_d' ||
+	    $OP_mnemonic[$opcode] eq 'maxu' ||
+	    $OP_mnemonic[$opcode] eq 'minu' ||
+	    $OP_mnemonic[$opcode] eq 'shru' ||
+	    $OP_mnemonic[$opcode] eq 'mulhhu' ||
+	    $OP_mnemonic[$opcode] eq 'mulhu' ||
+	    $OP_mnemonic[$opcode] eq 'mulllu' ||
+	    $OP_mnemonic[$opcode] eq 'mullhu' ||
+	    $OP_mnemonic[$opcode] eq 'mulllu' ||
+	    $OP_mnemonic[$opcode] eq 'mullu') {
+	    $OP_properties[$opcode] ^= $OP_UNSIGNED;
+	}
+
+	$OP_properties[$opcode] ^= $OP_INTOP;
+    }
+
+    if ($OP_format[$opcode] eq 'Monadic') {
+	if ($OP_mnemonic[$opcode] eq 'sxth') {
+	    $OP_properties[$opcode] ^= $OP_SEXT;
+	}
+	if ($OP_mnemonic[$opcode] eq 'sxtb') {
+	    $OP_properties[$opcode] ^= $OP_SEXT;
+	}
+	elsif ($OP_mnemonic[$opcode] eq 'zxth') {
+	    $OP_properties[$opcode] ^= $OP_ZEXT;
+	}
+
+	$OP_properties[$opcode] ^= $OP_INTOP;
+    }
+
+    if ($OP_format[$opcode] eq 'Cmp3I_Reg' ||
+	$OP_format[$opcode] eq 'Cmp3E_Reg' ||
+	$OP_format[$opcode] eq 'Cmp3R_Reg' ||
+	$OP_format[$opcode] eq 'Cmp3I_Br'  ||
+	$OP_format[$opcode] eq 'Cmp3E_Br'  ||
+	$OP_format[$opcode] eq 'Cmp3R_Br') {
+
+	if ($OP_mnemonic[$opcode] eq 'cmpgeu' ||
+	    $OP_mnemonic[$opcode] eq 'cmpgtu' ||
+	    $OP_mnemonic[$opcode] eq 'cmpleu' ||
+	    $OP_mnemonic[$opcode] eq 'cmpltu') {
+	    $OP_properties[$opcode] ^= $OP_UNSIGNED;
+	}
+
+	$OP_properties[$opcode] ^= $OP_CMP;
+	$OP_properties[$opcode] ^= $OP_INTOP;
     }
 
     return;
@@ -1549,13 +1793,37 @@ sub emit_properties {
     my $opcode;
 
     foreach $group (keys(%AttrGroup)) {
+	my $group_str = $group;
+
+	if ($group eq 'xor') {
+	    $group_str = 'Xor';
+	}
+	elsif ($group eq 'and') {
+    	    $group_str = 'And';
+	}
+	elsif ($group eq 'or') {
+    	    $group_str = 'Or';
+	}
+
+	printf (PROP_F "  /* ====================================== */ \n");
+        printf (PROP_F "  %s = ISA_Property_Create (\"%s\"); \n",
+		$group_str, $group);
+
+	printf (PROP_F "  Instruction_Group (%s, \n", $group_str);
+	foreach $opcode (@{$AttrGroup{$group}}) {
+	    unless ($opcode eq $UNDEF) {
+		printf (PROP_F "\t\t TOP_%s, \n", $opcode);
+	    }
+	}
+	printf (PROP_F "\t\t TOP_UNDEFINED); \n\n");
+    }
+
+  # Needed to compile. no op associated. should be removed
+    foreach $group (defs_fcc, defs_fcr, refs_fcr, branch_predict, access_reg_bank, side_effects, unalign, mem_fill_type, likely, l_group, f_group, flop, madd, guard_t, guard_f, div, unsafe) {
 	printf (PROP_F "  /* ====================================== */ \n");
         printf (PROP_F "  %s = ISA_Property_Create (\"%s\"); \n",
 		$group, $group);
 	printf (PROP_F "  Instruction_Group (%s, \n", $group);
-	foreach $opcode (@{$AttrGroup{$group}}) {
-	    printf (PROP_F "\t\t TOP_%s, \n", $opcode);
-	}
 	printf (PROP_F "\t\t TOP_UNDEFINED); \n\n");
     }
 
@@ -1566,7 +1834,9 @@ sub emit_properties {
 	printf (PROP_F "  /* ====================================== */ \n");
 	printf (PROP_F "  ISA_Memory_Access (%s, \n", $group);
 	foreach $opcode (@{$MemBytes{$group}}) {
-	    printf (PROP_F "\t\t TOP_%s, \n", $opcode);
+	    unless ($opcode eq $UNDEF) {
+		printf (PROP_F "\t\t TOP_%s, \n", $opcode);
+	    }
 	}
 	printf (PROP_F "\t\t TOP_UNDEFINED); \n\n");
     }
@@ -1578,7 +1848,9 @@ sub emit_properties {
 	printf (PROP_F "  /* ====================================== */ \n");
 	printf (PROP_F "  ISA_Memory_Alignment (%s, \n", $group);
 	foreach $opcode (@{$MemAlign{$group}}) {
-	    printf (PROP_F "\t\t TOP_%s, \n", $opcode);
+	    unless ($opcode eq $UNDEF) {
+		printf (PROP_F "\t\t TOP_%s, \n", $opcode);
+	    }
 	}
 	printf (PROP_F "\t\t TOP_UNDEFINED); \n\n");
     }
@@ -1653,9 +1925,10 @@ sub initialize_operands_file {
     printf (OPND_F "   *     1. base operand use for TOP_load, TOP_store; \n");
     printf (OPND_F "   *     2. offset operand use for TOP_load, TOP_store; \n");
     printf (OPND_F "   *     3. storeval operand use for TOP_store; \n");
+    printf (OPND_F "   *     4. condition operand use for TOP_select; \n");
     printf (OPND_F "   * \n");
     printf (OPND_F "   *   Following built-in use types may be specified: \n");
-    printf (OPND_F "   *     4. implicit operand use for TOPs when the operand is implicitely used; \n");
+    printf (OPND_F "   *     5. implicit operand use for TOPs when the operand is implicitely used; \n");
     printf (OPND_F "   * \n");
     printf (OPND_F "   *   Here you can specify any additional operand uses. \n");
     printf (OPND_F "   * ------------------------------------------------------\n");
@@ -1725,8 +1998,6 @@ sub initialize_operands_file {
 # ==================================================================
 
 sub emit_operands {
-
-    
     my $signature;
     my $opcode;
     my $group = 0;
@@ -1746,8 +2017,15 @@ sub emit_operands {
 	else {
 	    print OPND_F "  Instruction_Group(\"O_$gname\", \n";
 	}
+
+	my $PushOpcode;
+	for ($i = 0; $i < $OP_count; $i++) {
+	    $PushOpcode[$i] = 0;
+	}
 	foreach $opcode (@{$SignatureGroup{$signature}}) {
-	    print OPND_F "\t\t TOP_$opcode, \n";
+	    if ($opcode != $UNDEF) {
+		print OPND_F "\t\t TOP_$opcode, \n";
+	    }
 	}
 	print OPND_F "\t\t TOP_UNDEFINED); \n\n";
 	@results = split(",", $rests);
@@ -1847,8 +2125,13 @@ sub emit_printing_formats {
 
     # printout a table with mnemonic names:
     printf(PRNT_F "static const char *mnemonic_names[%d] = {\n", $OP_count);
+CONTINUE:
     for ($i = 0; $i < $OP_count-1; $i++) {
+	if ($OP_opcode[$i] eq $UNDEF) {
+	    next CONTINUE;
+	}
 	if (opcode_is_dummy($OP_opcode[$i]) || 
+	    opcode_is_ssa($OP_opcode[$i]) || 
 	    opcode_is_simulated($OP_opcode[$i])) {
 	    printf (PRNT_F "  \"%s\",\t /* TOP_%s */\n", 
 		                            $OP_opcode[$i], $OP_opcode[$i]);
@@ -1860,6 +2143,12 @@ sub emit_printing_formats {
 	elsif ($OP_mnemonic[$i] eq 'igoto') {
 	    printf(PRNT_F "  \"goto\",\t /* TOP_%s */ \n", $OP_opcode[$i]);
 	}
+	elsif ($OP_properties[$i] & $OP_DISMISSIBLE) {
+	    $mnemonic = $OP_mnemonic[$i];
+	    $mnemonic =~ tr/_/./;
+	    printf(PRNT_F "  \"%s\",\t /* TOP_%s */ \n", 
+		                         $mnemonic, , $OP_opcode[$i]);
+	}
 	else {
 	    printf(PRNT_F "  \"%s\",\t /* TOP_%s */ \n", 
 		                          $OP_mnemonic[$i], $OP_opcode[$i]);
@@ -1867,6 +2156,7 @@ sub emit_printing_formats {
     }
 
     if (opcode_is_dummy($OP_opcode[$OP_count-1]) || 
+	opcode_is_ssa($OP_opcode[$OP_count-1]) || 
 	opcode_is_simulated($OP_opcode[$OP_count-1])) {
 
 	printf (PRNT_F "  \"%s\" \t /* TOP_%s */\n", 
@@ -1963,6 +2253,8 @@ sub emit_printing_formats {
 	my @instr;
 	my $args;
 
+#	printf (STDOUT "trying signature %s\n", $signature);
+
 	# push %s for name in the format
 	push (@instr, "\t%s");
 
@@ -1987,26 +2279,27 @@ sub emit_printing_formats {
 	print PRNT_F "  ISA_PRINT_TYPE print_$count; \n";
 	print PRNT_F "  print_$count = ISA_Print_Type_Create(\"print_$count\", \"c0$new_ft\"); \n";
 
-	printf (PRNT_F "  Name(\"%s\"); \n", "%s");
+	printf (PRNT_F "  Name(); \n", "%s");
+
 	my $j;
 	for ($j = 0; $j < $i; $j++) {
 	    if ($args[$j] eq 'R0') { 
-		printf (PRNT_F "  Result(0, \"%s\"); \n", shift (@fmt));
+		printf (PRNT_F "  Result(0); \n", shift (@fmt));
 	    }
 	    elsif ($args[$j] eq 'R1') { 
-		printf (PRNT_F "  Result(1, \"%s\"); \n", shift (@fmt));
+		printf (PRNT_F "  Result(1); \n", shift (@fmt));
 	    }
 	    elsif ($args[$j] eq 'O0') { 
-		printf (PRNT_F "  Operand(0, \"%s\"); \n", shift (@fmt));
+		printf (PRNT_F "  Operand(0); \n", shift (@fmt));
 	    }
 	    elsif ($args[$j] eq 'O1') { 
-		printf (PRNT_F "  Operand(1, \"%s\"); \n", shift (@fmt));
+		printf (PRNT_F "  Operand(1); \n", shift (@fmt));
 	    }
 	    elsif ($args[$j] eq 'O2') { 
-		printf (PRNT_F "  Operand(2, \"%s\"); \n", shift (@fmt));
+		printf (PRNT_F "  Operand(2); \n", shift (@fmt));
 	    }
 	    elsif ($args[$j] eq 'O3') { 
-		printf (PRNT_F "  Operand(3, \"%s\"); \n", shift (@fmt));
+		printf (PRNT_F "  Operand(3); \n", shift (@fmt));
 	    }
 	    else {
 		printf(STDOUT "ERROR: unknown element %s in emit_printing_formats\n", $elt);
@@ -2018,7 +2311,9 @@ sub emit_printing_formats {
 	print PRNT_F "\n";
 	print PRNT_F "  Instruction_Print_Group(print_$count, \n";
 	foreach $opcode (@{$PrintGroup{$signature}}) {
-	    print PRNT_F "\t\t TOP_$opcode, \n";
+	    unless ($opcode eq $UNDEF) {
+		print PRNT_F "\t\t TOP_$opcode, \n";
+	    }
 	}
 	print PRNT_F "\t\t TOP_UNDEFINED); \n";
 	print PRNT_F "\n";
@@ -2156,13 +2451,15 @@ BREAK:
 	printf (PACK_F "  Instruction_Pack_Group(p%d, \n", $i);
 	my $opcode;
 	foreach $opcode (@{$PackGroup{$group}}) {
-	    printf (PACK_F "\tTOP_%s, \t", $opcode);
+	    unless ($opcode eq $UNDEF) {
+		printf (PACK_F "\tTOP_%s, \t", $opcode);
 
-	    for ($word = 0; $word < $PACK_words[$i]; $word++) {
-		# coding is dummy for now
-		printf (PACK_F " 0x10000000UL,");
+		for ($word = 0; $word < $PACK_words[$i]; $word++) {
+		    # coding is dummy for now
+		    printf (PACK_F " 0x10000000UL,");
+		}
+		printf (PACK_F "\n");
 	    }
-	    printf (PACK_F "\n");
 	}
 	printf (PACK_F "\tTOP_UNDEFINED); \n\n");
     }
@@ -2228,7 +2525,8 @@ CONTINUE:
     for ($i = 0; $i < $OP_count; $i++) {
 	my $opcode = $OP_opcode[$i];
         # skip if it's an simulated/dummy:
-	if (($OP_properties[$i] & $OP_DUMMY) ||
+	if (!$opcode ||
+	    ($OP_properties[$i] & $OP_DUMMY) ||
 	    ($OP_properties[$i] & $OP_SIMULATED)) {
 	    next CONTINUE;
 	}
@@ -2440,7 +2738,7 @@ sub emit_op_info {
     printf (OP_F "\n");
 
     printf (OP_F "inline TOP CGTARG_Noop_Top (ISA_EXEC_UNIT_PROPERTY unit) { \n");
-    printf (OP_F "  return TOP_nop; \n");
+    printf (OP_F "  return TOP_noop; \n");
     printf (OP_F "} \n");
     printf (OP_F "\n");
 
@@ -2490,7 +2788,7 @@ sub finalize_op_file {
 
 sub initialize_si_file {
 
-    open (SI_F, "> st220_si.cxx");
+    open (SI_F, "> st200_si.cxx");
 
     &copyright_notice (SI_F);
 
@@ -2534,6 +2832,8 @@ sub initialize_si_file {
 sub process_scdinfo {
     my $opcode = $_[0];
 
+    my $subset = subset_id ($OP_subset[$opcode]);
+
     # Assumptions:
     # I am only using the Any_Operand_Access_Time() and
     # Any_Result_Available_Time(). So, just check that all opcodes
@@ -2550,7 +2850,7 @@ sub process_scdinfo {
 	$res = $OP_result_avail_time[$opcode][$i];
     }
 
-    printf (STDOUT "  > any result avail time %d\n", $res);
+#    printf (STDOUT "  > any result avail time %d\n", $res);
 
     my $opnd = -1;
     for ($i = 0; $i < $OP_opnds[$opcode]; $i++) {
@@ -2560,8 +2860,6 @@ sub process_scdinfo {
 	}
 	$opnd = $OP_opnd_access_time[$opcode][$i];
     }
-
-    printf (STDOUT "  > any operand access time %d\n", $opnd);
 
     my $scdclass = $OP_scdclass[$opcode];
 
@@ -2577,8 +2875,6 @@ sub process_scdinfo {
 
 OK:
 
-    printf (STDOUT "  > scdclass %s\n", $scdclass);
-
     # Sanity checks !
     if ($SCD_CLASS_results[$sc] < $OP_results[$opcode]) {
 	printf (STDOUT "ERROR: opcode %s has more results than scd class %s\n", $OP_opcode[$opcode], $scdclass);
@@ -2590,39 +2886,97 @@ OK:
     }
 
     for ($i = 0; $i < $OP_results[$opcode]; $i++) {
-	if ($SCD_CLASS_result[$sc][$i] != -1 &&
-	    $SCD_CLASS_result[$sc][$i] != $OP_result_avail_time[$opcode][$i]) {
+	if ($SCD_CLASS_result[$sc][$subset][$i] != -1 &&
+	    $SCD_CLASS_result[$sc][$subset][$i] != $OP_result_avail_time[$opcode][$i]) {
 	    printf (STDOUT "ERROR: result %d for scdclass %s is being reset\n", $i, $scdclass);
-
-#	    printf (STDOUT "scdclass %d, results %d\n", $SCD_CLASS_result[$sc][$i], $results[$i]);
+	    printf (STDOUT "scdclass %d, results %d\n", $SCD_CLASS_result[$sc][$subset][$i], $results[$i]);
 
 	    exit(1);
 	}
-	$SCD_CLASS_result[$sc][$i] = $OP_result_avail_time[$opcode][$i];
+	$SCD_CLASS_result[$sc][$subset][$i] = $OP_result_avail_time[$opcode][$i];
     }
 
     for ($i = 0; $i < $OP_opnds[$opcode]; $i++) {
-	if ($SCD_CLASS_opnd[$sc][$i] != -1 &&
-	    $SCD_CLASS_opnd[$sc][$i] != $OP_opnd_access_time[$opcode][$i]) {
-	    printf (STDOUT "ERROR: operand %d for opcode %s is being reset\n", $i, $OP_opcode[$opcode]);
+	if ($SCD_CLASS_opnd[$sc][$subset][$i] != -1 &&
+	    $SCD_CLASS_opnd[$sc][$subset][$i] != $OP_opnd_access_time[$opcode][$i]) {
+	    printf (STDOUT "ERROR: operand %d for opcode %s is being reset in subset %s\n", $i, $OP_opcode[$opcode], $SUBSET_name[$subset]);
+	    printf (STDOUT "%d scdclass %d, opns %d\n", $opcode, $SCD_CLASS_opnd[$sc][$subset][$i], $OP_opnd_access_time[$opcode][$i]);
 	    exit(1);
 	}
-	$SCD_CLASS_opnd[$sc][$i] = $OP_opnd_access_time[$opcode][$i];
+	$SCD_CLASS_opnd[$sc][$subset][$i] = $OP_opnd_access_time[$opcode][$i];
     }
 
     $subset = $OP_subset[$opcode];
 
     # ISSUE: TOPs are issued at cycle 0
-    # MEM: used at cycle 0.
-    $SUBSET_scd{$subset}{$scdclass}{'res'}{'ISSUE'} = 0;
-    if ($scdclass eq 'LOAD' ||
-	$scdclass eq 'STORE') {
-	$SUBSET_scd{$subset}{$scdclass}{'res'}{'MEM'} = 0;
+    $SUBSET_scd{$subset}{$scdclass}{'res'} = [];
+
+    if ($scdclass eq 'ALU') {
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['INT', 0 ]);
+    } elsif ($scdclass eq 'ALU_IMM') {
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['INT', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ODD', 0 ]);
+    } elsif ($scdclass eq 'MUL') {
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['MUL', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ODD', 0 ]);
+    } elsif ($scdclass eq 'MUL_IMM') {
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['MUL', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ODD', 0 ]);
+    } elsif ($scdclass eq 'LOAD' ||
+	     $scdclass eq 'LOAD2' ||
+	     $scdclass eq 'STORE') {
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['MEM', 0 ]);
+    } elsif ($scdclass eq 'LOAD_IMM' ||
+	     $scdclass eq 'LOAD2_IMM' ||
+	     $scdclass eq 'STORE_IMM') {
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['MEM', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ODD', 0 ]);
+    }
+    elsif ($scdclass eq 'EXT') {
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ODD', 0 ]);
+    }
+    elsif ($scdclass eq 'BRANCH') {
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['XFER', 0 ]);
+    }
+    elsif ($scdclass eq 'CALL') {
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+    }
+    elsif ($scdclass eq 'JUMP') {
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+    }
+    elsif ($scdclass eq 'SYNC') {
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+    }
+    elsif ($scdclass eq 'asm') {
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+    }
+    else {
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['INT', 0 ]);
     }
 
+    # MEM: used at cycle 0.
+ 
     # Insert this TOP into the list:
     push (@{$SUBSET_scd{$subset}{$scdclass}{'ops'}}, $OP_opcode[$opcode]);
-    printf (STDOUT "  > pushing %s (%s,%s)\n", $OP_opcode[$opcode], $subset, $scdclass);
+#    printf (STDOUT "  > pushing %s (%s,%s)\n", $OP_opcode[$opcode], $subset, $scdclass);
 
     return;
 }
@@ -2635,17 +2989,18 @@ OK:
 
 sub read_scdinfo {
     my $opcode = $_[0];
-    my $sset;
     my $subset = $OP_subset[$opcode];
     my $line;
 
-    if (!open (ARCH_F, "< ../src/st220_arc.db")) {
-	printf (STDOUT "ERROR: can't open file \"../src/st220_arc.db\" \n");
+    my $opc_file_name = "../src/arc_$subset.db";
+
+#    printf (STDOUT "  *** reading schedinfo ***\n");
+#    printf (STDOUT "  > read_scdinfo: for op %s subset %s\n", $OP_opcode[$opcode], $subset);
+
+    if (!open (ARCH_F, "$opc_file_name")) {
+	printf (STDOUT "error: can't open file \"$opc_file_name\" \n");
 	exit(1);
     }
-
-    printf (STDOUT "  *** reading schedinfo ***\n");
-    printf (STDOUT "  > read_scdinfo: subset %s\n", $subset);
 
     #------------------------------------------------------
     # + =======...======= + starts a new record
@@ -2707,6 +3062,7 @@ sub read_scdinfo {
 	    my $cycle = $3;
 	    $opnds[$oidx] = $cycle;
 
+#	    printf (STDOUT " line = %s\n", $line);
 #	    printf (STDOUT "  operand[%d] = %d\n", $oidx, $opnds[$oidx]);
 
 	}
@@ -2718,30 +3074,26 @@ sub read_scdinfo {
 		goto FOUND_OPCODE;
 	    }
 	}
-
     }
 
     printf (STDOUT "ERROR: read_scdinfo -- couldn't find record for opcode %s \n", $opcode);
     exit(1);
 
 FOUND_OPCODE:
-
     # some additional latency information that's not in 
     # the arc file
     if ($OP_opcode[$opcode] eq 'call' ||
 	$OP_opcode[$opcode] eq 'icall') {
-	$results[0] = 1;
-#	printf (STDOUT "  result[0] = 1\n");
+	$results[0] = 5;
     }
-    if ($OP_opcode[$opcode] eq 'icall' ||
+    if ($OP_opcode[$opcode] eq 'call' ||
+	$OP_opcode[$opcode] eq 'icall' ||
 	$OP_opcode[$opcode] eq 'imml' ||
 	$OP_opcode[$opcode] eq 'immr') {
-	$opnds[0] = 0;
-#	printf (STDOUT "  operand[0] = 0\n");
+	$opnds[0] = 1;
     }
     if ($OP_opcode[$opcode] eq 'igoto') {
 	$opnds[0] = 1;
-#	printf (STDOUT "  operand[0] = 1\n");
     }
 
     # Sanity check:
@@ -2762,7 +3114,7 @@ FOUND_OPCODE:
     }
 
     # determine this opcode's scdclass:
-    printf (STDOUT "  > resources %s\n", $resources);
+#    printf (STDOUT " %s > %s\n", $resources, $OP_format[$opcode]);
 
     # resources corresponds to a scheduling class:
     if ($resources eq 'ALU') {
@@ -2772,7 +3124,12 @@ FOUND_OPCODE:
 	$scdclass = 'MUL';
     }
     elsif ($resources eq 'LOAD') {
-	$scdclass = 'LOAD';
+	if ($subset eq "st210" && ($mnemonic eq 'ldw' || $mnemonic eq 'ldw_d')) {
+	    $scdclass = 'LOAD2';	    
+	}
+	else {
+	    $scdclass = 'LOAD';
+	}
     }
     elsif ($resources eq 'STORE') {
 	$scdclass = 'STORE';
@@ -2783,11 +3140,7 @@ FOUND_OPCODE:
     elsif ($resources eq 'CALL') {
 	if ($mnemonic eq 'goto' || $mnemonic eq 'igoto') {
 	    $scdclass = 'JUMP';
-	}
-	elsif ($mnemonic eq 'rfi') {
-	    $scdclass = 'RFI';
-	}
-	else {
+	} else {
 	    $scdclass = 'CALL';
 	}
     }
@@ -2798,6 +3151,14 @@ FOUND_OPCODE:
 	printf(STDOUT "ERROR: unknown resource %s in read_scdinfo\n", 
 	       $resources);
 	exit(1);
+    }
+
+    # Special scdclass cases
+    # treat special instructions such as sync, prgins
+    if ($mnemonic eq 'sync' ||
+	$mnemonic eq 'syncins' ||
+	$mnemonic eq 'prgins') {
+      $scdclass = 'SYNC';
     }
 
     $OP_scdclass[$opcode] = $scdclass;
@@ -2820,14 +3181,13 @@ sub emit_scdinfo {
 #    &read_scdinfo();
 
     # For each ISA subset:
-    my $i;
+    my $sub;
 CONTINUE:
-    for ($i = 0; $i < $SUBSET_count; $i++) {
-	my $subset = $SUBSET_name[$i];
+    for ($sub = $0; $sub < $SUBSET_count; $sub++) {
+	my $subset = $SUBSET_name[$sub];
 
 	printf (SI_F "  /* ======================================================\n");
-	printf (SI_F "   * Resource description for the ISA_SUBSET_%s \n",
-		$subset);
+	printf (SI_F "   * Resource description for the ISA_SUBSET_%s \n", $subset);
 	printf (SI_F "   * ======================================================\n");
 	printf (SI_F "   */ \n\n");
 
@@ -2853,12 +3213,12 @@ CONTINUE:
 	    # since I suppose they're all same:
 	    if ($SCD_CLASS_results[$i] > 0) {
 		printf (SI_F "  Any_Result_Available_Time(%d); \n",
-			$SCD_CLASS_result[$i][0]);
+			$SCD_CLASS_result[$i][$sub][0]);
 	    }
 
 	    if ($SCD_CLASS_opnds[$i] > 0) {
 		printf (SI_F "  Any_Operand_Access_Time(%d); \n",
-			$SCD_CLASS_opnd[$i][0]);
+			$SCD_CLASS_opnd[$i][$sub][0]);
 	    }
 
 #	    printf (SI_F "  Any_Operand_Access_Time(0); \n");
@@ -2866,18 +3226,16 @@ CONTINUE:
 
             # define resource requirements:
 	    my $rid;
-	    for ($rid = 0; $rid < $RES_count; $rid++) {
-		my $rname = $RES_name[$rid];
-                if (defined($SUBSET_scd{$subset}{$scdclass}{'res'}{$rname})) {
-                    printf (SI_F "  Resource_Requirement(res_%s, %d); \n",
-		            $rname, 
-                            $SUBSET_scd{$subset}{$scdclass}{'res'}{$rname});
-                }
+	    foreach my $pair (@{$SUBSET_scd{$subset}{$scdclass}{'res'}}) {
+		my $rname = $pair->[0];
+		my $cycle = $pair->[1];
+		printf (SI_F "  Resource_Requirement(res_%s, %d); \n",
+			$rname, 
+			$cycle);
             }
 	    printf (SI_F "\n");
 	}
-
-	printf (SI_F "  Machine_Done(\"st220.c\"); \n\n");
+	printf (SI_F "  Machine_Done(\"%s.c\"); \n\n", $subset);
     }
 
     return;
@@ -2960,7 +3318,8 @@ sub DECL_ARCHITECTURE {
 # ==================================================================
 
 sub DECL_ISA_SUBSET {
-    $SUBSET_name[$SUBSET_count] = $_[0];
+    $SUBSET_parent[$SUBSET_count] = $_[0];
+    $SUBSET_name[$SUBSET_count] = $_[1];
     $SUBSET_count++;
 }
 
@@ -3035,8 +3394,16 @@ sub DECL_REG_SUBSET {
 
     my $idx = $REGSET_subset_count[$cur_regset];
 
+#    printf (STDOUT "reg_subset %s %d idx %d\n", $name, $cur_regset, $idx);
+
     $REGSET_subset[$cur_regset][$idx]{'name'} = $name;
     $REGSET_subset[$cur_regset][$idx]{'rclass'} = $REGSET_rclass[$cur_regset];
+
+    for ($reg = $REGSET_minreg[$cur_regset];
+	 $reg <= $REGSET_maxreg[$cur_regset];
+	 $reg++) {
+	$REGSET_subset[$cur_regset][$idx]{'regs'}[$reg] = 0;
+    }
 
     while (($elt = shift(@regs)) != -1) {
 	for ($reg = $REGSET_minreg[$cur_regset];
@@ -3045,13 +3412,11 @@ sub DECL_REG_SUBSET {
 	    if ($reg == $elt) {
 		$REGSET_subset[$cur_regset][$idx]{'regs'}[$reg] = 1;
 	    }
-	    else {
-		$REGSET_subset[$cur_regset][$idx]{'regs'}[$reg] = 0;
-	    }
 	}
     }
 
     $REGSET_subset_count[$cur_regset]++;
+
     return;
 }
 
@@ -3078,9 +3443,9 @@ sub DECL_REG_SET {
     $cur_regset = $REGSET_count;
     $REGSET_count++;
 
-    for ($i = 0; $i < scalar(@names); $i++) {
-	print STDOUT "$REGSET_names[$REGSET_count-1][$i] \n";
-    }
+#    for ($i = 0; $i < scalar(@names); $i++) {
+#	print STDOUT "$REGSET_names[$REGSET_count-1][$i] \n";
+#    }
 
     return;
 }
@@ -3223,12 +3588,14 @@ sub DECL_SCD_CLASS {
 
     $SCD_CLASS_name[$SCD_CLASS_count] = $name;
     $SCD_CLASS_results[$SCD_CLASS_count] = $results;
-    for ($i = 0; $i < $results; $i++) {
-	$SCD_CLASS_result[$SCD_CLASS_count][$i] = -1;
-    }
-    $SCD_CLASS_opnds[$SCD_CLASS_count] = $opnds;
-    for ($i = 0; $i < $opnds; $i++) {
-	$SCD_CLASS_opnd[$SCD_CLASS_count][$i] = -1;
+    for ($sub = $0; $sub < $SUBSET_count; $sub++) {
+	for ($i = 0; $i < $results; $i++) {
+	    $SCD_CLASS_result[$SCD_CLASS_count][$sub][$i] = -1;
+	}
+	$SCD_CLASS_opnds[$SCD_CLASS_count] = $opnds;
+	for ($i = 0; $i < $opnds; $i++) {
+	    $SCD_CLASS_opnd[$SCD_CLASS_count][$sub][$i] = -1;
+	}
     }
     $SCD_CLASS_count++;
 }
@@ -3350,9 +3717,9 @@ sub DECL_BUNDLE {
     $BUNDLE_field[$BUNDLE_count] = $_[2];
     $BUNDLE_slots[$BUNDLE_count] = $_[3];
 
-    printf(STDOUT "BUNDLE %s %d slots: \n",
-	   $BUNDLE_name[$BUNDLE_count],
-	   $BUNDLE_slots[$BUNDLE_count]);
+#    printf(STDOUT "BUNDLE %s %d slots: \n",
+#	   $BUNDLE_name[$BUNDLE_count],
+#	   $BUNDLE_slots[$BUNDLE_count]);
 
     for ($i = 0; $i < $_[3]; $i++) {
 	my ($id, $start, $bits) = split(",", $_[$i+4]);
@@ -3360,10 +3727,10 @@ sub DECL_BUNDLE {
 	$BUNDLE_slot[$BUNDLE_count][$i]{'start'} = $start;
 	$BUNDLE_slot[$BUNDLE_count][$i]{'bits'} = $bits;
 
-	printf(STDOUT "  DECL_SLOT %s -- (%d, 0, %d, %d)\n", $_[$i+4],
-	       $BUNDLE_slot[$BUNDLE_count][$i]{'id'},
-	       $BUNDLE_slot[$BUNDLE_count][$i]{'start'},
-	       $BUNDLE_slot[$BUNDLE_count][$i]{'bits'});
+#	printf(STDOUT "  DECL_SLOT %s -- (%d, 0, %d, %d)\n", $_[$i+4],
+#	       $BUNDLE_slot[$BUNDLE_count][$i]{'id'},
+#	       $BUNDLE_slot[$BUNDLE_count][$i]{'start'},
+#	       $BUNDLE_slot[$BUNDLE_count][$i]{'bits'});
 
     }
     $BUNDLE_temps[$BUNDLE_count] = 0;
@@ -3435,12 +3802,12 @@ sub STOP {
 # ==================================================================
 sub process_opcode {
     my $opcode = $_[0];
+    my $subset = $_[1];
 
     # variant:
     &set_variant($opcode);
 
     $OP_opcode[$opcode] = $OP_mnemonic[$opcode].$OP_variant[$opcode];
-    printf (STDOUT " TOP = %s\n", $OP_opcode[$opcode]);
 
     # depending on OP format, set number of opnds/results
     &set_operands($opcode);
@@ -3453,7 +3820,7 @@ sub process_opcode {
 
     # Figure out OPcode properties:
     if ($OP_mnemonic[$opcode] eq 'pft') {
-	# prefetch is marked as Store but is not
+	$OP_properties[$opcode] ^= $OP_PREFETCH;
     }
     elsif ($OP_mnemonic[$opcode] eq 'prgadd' ||
 	   $OP_mnemonic[$opcode] eq 'prgset') {
@@ -3468,8 +3835,8 @@ sub process_opcode {
     }
 
     # only one subset for now:
-    $OP_subset[$opcode] = "st220";
-    push(@{$SUBSET_opcodes[&subset_id("st220")]}, $OP_opcode[$opcode]);
+    $OP_subset[$opcode] = $SUBSET_name[$subset];
+    push(@{$SUBSET_opcodes[$subset]}, $opcode);
 
     # operand groups:
     push(@{$SignatureGroup{$OP_signature[$opcode]}}, $OP_opcode[$opcode]);
@@ -3502,7 +3869,7 @@ sub process_opcode {
     }
 
     if ($OP_properties[$opcode] & $OP_BRANCH) {
-	push(@{$AttrGroup{'branch'}}, $OP_opcode[$opcode]);
+	push(@{$AttrGroup{'cond'}}, $OP_opcode[$opcode]);
     }
 
     if ($OP_properties[$opcode] & $OP_JUMP) {
@@ -3513,15 +3880,80 @@ sub process_opcode {
 	push(@{$AttrGroup{'ijump'}}, $OP_opcode[$opcode]);
     }
 
-    if ($OP_properties[$opcode] & $OP_F_GROUP) {
-	push(@{$AttrGroup{'f_group'}}, $OP_opcode[$opcode]);
+    if ($OP_properties[$opcode] & $OP_XFER) {
+	push(@{$AttrGroup{'xfer'}}, $OP_opcode[$opcode]);
     }
 
     if ($OP_properties[$opcode] & $OP_MOVE) {
 	push(@{$AttrGroup{'move'}}, $OP_opcode[$opcode]);
     }
+
     if ($OP_properties[$opcode] & $OP_NOP) {
 	push(@{$AttrGroup{'noop'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_PREFETCH) {
+	push(@{$AttrGroup{'prefetch'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_MUL) {
+	push(@{$AttrGroup{'mul'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_ADD) {
+	push(@{$AttrGroup{'add'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_SUB) {
+	push(@{$AttrGroup{'sub'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_OR) {
+	push(@{$AttrGroup{'or'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_AND) {
+	push(@{$AttrGroup{'and'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_XOR) {
+	push(@{$AttrGroup{'xor'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_SHL) {
+	push(@{$AttrGroup{'shl'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_SHR) {
+	push(@{$AttrGroup{'shr'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_SHRU) {
+	push(@{$AttrGroup{'shru'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_SEXT) {
+	push(@{$AttrGroup{'sext'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_ZEXT) {
+	push(@{$AttrGroup{'zext'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_SELECT) {
+	push(@{$AttrGroup{'select'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_UNSIGNED) {
+	push(@{$AttrGroup{'unsign'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_INTOP) {
+	push(@{$AttrGroup{'intop'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_CMP) {
+	push(@{$AttrGroup{'cmp'}}, $OP_opcode[$opcode]);
     }
 
 #    if ($OP_properties[$opcode] & $OP_IMMEDIATE) {
@@ -3529,6 +3961,324 @@ sub process_opcode {
 #    }
 
     return;
+}
+
+
+# ==================================================================
+#    read_opcodes
+# ==================================================================
+
+sub read_opcodes {
+    my $subset = $_[0];
+    my $subset_name = $SUBSET_name[$subset];
+    my $opc_file_name = "../src/opc_$subset_name.db";
+
+    printf (STDOUT " reading subset %s from %s\n", $subset_name, $opc_file_name);
+      
+    if (!open (OPCODE_F, "$opc_file_name")) {
+	printf (STDOUT "error: can't open file \"$opc_file_name\" \n");
+	exit(1);
+    }
+
+    # read OPCODE_F file:
+    my $line;
+    my $i;
+
+    my $property;
+    my $format;
+    my $mnemonic;
+    my $syntax;
+
+  CONTINUE:
+    while ($line = <OPCODE_F>) {
+	# Read one OPeration record:
+
+	# Records start with 
+	#      +=s. ... 
+	# and end with
+	#      +format
+	#
+	if ($line =~ /^\+=s./) {
+	    # beginning of new record:
+	    # reset OP_properties:
+	    $property = $OP_NONE;
+	}
+
+#	printf (STDOUT "line = %s\n", $line);
+
+	# opcode's mnemonic:
+	if ($line =~ /^\+mnemonic\s(\S*)\n/) {
+	    $mnemonic = $1;
+	    $mnemonic =~ tr/./_/;
+	}
+      
+	# opcode's assembly printing format
+	if ($line =~ /^\+syntax\s(.*)/) {
+	    $syntax = $1;
+	}
+
+	# opcode's format is the last record, process opcode
+	if ($line =~ /^\+format\s(\w*)/) {
+	    # skip processing of some opcodes:
+	    if ($mnemonic eq 'asm' ||
+		$mnemonic eq 'recv' ||
+		$mnemonic eq 'send') {
+		goto CONTINUE;
+	    }
+	    elsif ($mnemonic eq 'sync') {
+		$format = 'Sync';
+	    }
+	    elsif ($mnemonic eq 'goto') {
+		$format = 'Jump';
+	    }
+	    elsif ($mnemonic eq 'igoto') {
+		$format = 'Ijump';
+	    }
+	    elsif ($mnemonic eq 'bswap' ||
+		   $mnemonic eq 'sxth' ||
+		   $mnemonic eq 'sxtb' ||
+		   $mnemonic eq 'zxth') {
+		$format = 'Monadic';
+	    }
+	    else {
+		$format = $1;
+	    }
+
+
+	    $OP_properties[$OP_count] = $property;
+	    $OP_mnemonic[$OP_count] = $mnemonic;
+	    $OP_syntax[$OP_count] = $syntax;
+	    $OP_format[$OP_count] = $format;
+
+	    # process the opcode:
+	    &process_opcode($OP_count, $subset);
+	    &read_scdinfo($OP_count);
+	    $OP_count++;
+
+	    # if it is one of opcodes that accepts an immediate
+	    # as operand, create a "twin" opcode of extended format
+
+	    my $format;
+	    if ($OP_format[$OP_count-1] eq 'Int3I') {
+		$format = 'Int3E';
+	    }
+	    elsif ($OP_format[$OP_count-1] eq 'MoveI') {
+		$format = 'MoveE';
+	    }
+	    elsif ($OP_format[$OP_count-1] eq 'Cmp3I_Reg') {
+		$format = 'Cmp3E_Reg';
+	    }
+	    elsif ($OP_format[$OP_count-1] eq 'Cmp3I_Br') {
+		$format = 'Cmp3E_Br';
+	    }
+	    elsif ($OP_format[$OP_count-1] eq 'SelectI') {
+		$format = 'SelectE';
+	    }
+	    elsif ($OP_format[$OP_count-1] eq 'Store') {
+		$format = 'StoreE';
+	    }
+	    elsif ($OP_format[$OP_count-1] eq 'Load') {
+		$format = 'LoadE';
+	    }
+	    else {
+		goto CONTINUE;
+	    }
+
+	    # make a "twin" opcode:
+
+	    $OP_mnemonic[$OP_count] = $OP_mnemonic[$OP_count-1];
+	    $OP_properties[$OP_count] = $OP_NONE;
+	    $OP_format[$OP_count] = $format;
+	    $OP_syntax[$OP_count] = $OP_syntax[$OP_count-1];
+
+	    &process_opcode($OP_count, $subset);
+
+	    # initialize the scheduling info:
+
+	    for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
+		$OP_result_avail_time[$OP_count][$i] = 
+		    $OP_result_avail_time[$OP_count-1][$i];
+	    }
+
+	    for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
+		$OP_opnd_access_time[$OP_count][$i] = 
+		    $OP_opnd_access_time[$OP_count-1][$i];
+	    }
+
+	    $scdclass = $OP_scdclass[$OP_count-1];
+	    if ($scdclass eq 'ALU') {
+		$scdclass = 'ALU_IMM';
+	    } elsif ($scdclass eq 'STORE') {
+		$scdclass = 'STORE_IMM';
+	    } elsif ($scdclass eq 'STORE') {
+		$scdclass = 'STORE_IMM';
+	    } elsif ($scdclass eq 'LOAD') {
+		$scdclass = 'LOAD_IMM';
+	    } elsif ($scdclass eq 'LOAD2') {
+		$scdclass = 'LOAD2_IMM';
+	    } elsif ($scdclass eq 'MUL') {
+		$scdclass = 'MUL_IMM';
+	    }
+	    $OP_scdclass[$OP_count] = $scdclass;
+	    
+	    &process_scdinfo($OP_count);
+
+	    $OP_count++;
+
+	} # finish current record
+    } # while there are records
+
+    close(OPCODE_F);
+
+    # There is a number of opcodes that I need to specify manually:
+
+    my $scdclass;
+
+    # ----------------- nop ------------------
+
+    # beginning of a new record
+
+    $OP_mnemonic[$OP_count] = 'nop';
+    $OP_format[$OP_count] = 'Noop';
+    $OP_properties[$OP_count] = $OP_NONE;
+    $OP_properties[$OP_count] ^= $OP_NOP;
+    $OP_syntax[$OP_count] = 'nop';
+    &process_opcode($OP_count, $subset);
+
+    $OP_scdclass[$OP_count] = "ALU";
+    &process_scdinfo($OP_count);
+
+    $OP_count++;
+
+    # ----------------- mov ------------------
+
+    # beginning of a new recore
+
+    $OP_mnemonic[$OP_count] = 'mov';
+    $OP_format[$OP_count] = 'MoveR';
+    $OP_properties[$OP_count] = $OP_NONE;
+    $OP_syntax[$OP_count] = 'mov %1 = %2';
+    &process_opcode($OP_count, $subset);
+
+    for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
+	$OP_result_avail_time[$OP_count][$i] = 3;
+    }
+
+    for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
+	$OP_opnd_access_time[$OP_count][$i] = 2;
+    }
+
+    $OP_scdclass[$OP_count] = "ALU";
+    &process_scdinfo($OP_count);
+
+    $OP_count++;
+
+    # ----------------- mov ------------------
+
+    # beginning of a new recore
+    $OP_mnemonic[$OP_count] = 'mov';
+    $OP_format[$OP_count] = 'MoveI';
+    $OP_properties[$OP_count] = $OP_NONE;
+    $OP_syntax[$OP_count] = 'mov %1 = %2';
+    &process_opcode($OP_count, $subset);
+
+    for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
+	$OP_result_avail_time[$OP_count][$i] = 3;
+    }
+
+    for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
+	$OP_opnd_access_time[$OP_count][$i] = 2;
+    }
+
+    $OP_scdclass[$OP_count] = "ALU";
+    &process_scdinfo($OP_count);
+
+    $OP_count++;
+
+    # ----------------- mov (extended) ------------------
+
+    # beginning of a new recore
+    $OP_mnemonic[$OP_count] = 'mov';
+    $OP_format[$OP_count] = 'MoveE';
+    $OP_properties[$OP_count] = $OP_NONE;
+    $OP_syntax[$OP_count] = 'mov %1 = %2';
+    &process_opcode($OP_count, $subset);
+
+    for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
+	$OP_result_avail_time[$OP_count][$i] = 3;
+    }
+
+    for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
+	$OP_opnd_access_time[$OP_count][$i] = 2;
+    }
+
+    $OP_scdclass[$OP_count] = "ALU_IMM";
+    &process_scdinfo($OP_count);
+    
+    $OP_count++;
+
+    # ----------------- mtb ------------------
+
+    # beginning of a new recore
+    $OP_mnemonic[$OP_count] = 'mtb';
+    $OP_format[$OP_count] = 'mtb';
+    $OP_properties[$OP_count] = $OP_NONE;
+    $OP_syntax[$OP_count] = 'mtb %1 = %2';
+    &process_opcode($OP_count, $subset);
+
+    for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
+	$OP_result_avail_time[$OP_count][$i] = 3;
+    }
+
+    for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
+	$OP_opnd_access_time[$OP_count][$i] = 2;
+    }
+
+    $OP_scdclass[$OP_count] = "ALU";
+    &process_scdinfo($OP_count);
+
+    $OP_count++;
+
+    # ----------------- mfb ------------------
+
+    # beginning of a new recore
+    $OP_mnemonic[$OP_count] = 'mfb';
+    $OP_format[$OP_count] = 'mfb';
+    $OP_properties[$OP_count] = $OP_NONE;
+    $OP_syntax[$OP_count] = 'mfb %1 = %2';
+    &process_opcode($OP_count, $subset);
+
+    for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
+	$OP_result_avail_time[$OP_count][$i] = 3;
+    }
+
+    for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
+	$OP_opnd_access_time[$OP_count][$i] = 2;
+    }
+
+    $OP_scdclass[$OP_count] = "ALU";
+    &process_scdinfo($OP_count);
+
+    $OP_count++;
+
+    # ----------------- return ------------------
+
+    # beginning of a new recore
+    $OP_mnemonic[$OP_count] = 'return';
+    $OP_format[$OP_count] = 'Ijump';
+    $OP_properties[$OP_count] = $OP_NONE;
+    $OP_syntax[$OP_count] = 'return LR';
+
+    &process_opcode($OP_count, $subset);
+
+    for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
+	$OP_opnd_access_time[$OP_count][$i] = 1;
+    }
+
+    $OP_scdclass[$OP_count] = "JUMP";
+    &process_scdinfo($OP_count);
+    
+    $OP_count++;
 }
 
 # ==================================================================
@@ -3546,15 +4296,10 @@ sub process_opcode {
 #
 ####################################################################
 
-  if (!open (OPCODE_F, "< ../src/st220_opc.db")) {
-      printf (STDOUT "ERROR: can't open file \"../src/st220_opc.db\" \n");
-      exit(1);
-  }
-
-  if (!open (FORMAT_F, "< ../src/st220_fmt.db")) {
-      printf (STDOUT "ERROR: can't open file \"../src/st220_fmt.db\" \n");
-      exit(1);
-  }
+#  if (!open (FORMAT_F, "< ../src/st220_fmt.db")) {
+#      printf (STDOUT "ERROR: can't open file \"../src/st220_fmt.db\" \n");
+#      exit(1);
+#  }
 
   ####################################################################
   #                         GLOBAL VARIABLES
@@ -3562,6 +4307,7 @@ sub process_opcode {
 
   $TRUE = 1;
   $FALSE = 0;
+  $UNDEF = -1;
 
   $SIGNED = "SIGNED";
   $UNSIGNED = "UNSIGNED";
@@ -3600,8 +4346,10 @@ sub process_opcode {
   ####################################################################
 
   $OP_NONE        = 0x00000000;
+  $OP_SEXT        = 0x00000001;
   $OP_SIMULATED   = 0x00000002;  # simulated TOP - expends into a seq.
   $OP_DUMMY       = 0x00000004;  # dummy TOP - do not get emitted
+  $OP_ZEXT        = 0x00000008;
   $OP_LOAD        = 0x00000010;  
   $OP_STORE       = 0x00000020;
   $OP_BRANCH      = 0x00000040;
@@ -3611,9 +4359,23 @@ sub process_opcode {
   $OP_DISMISSIBLE = 0x00000800;
   $OP_NOOP        = 0x00001000;
   $OP_IMMEDIATE   = 0x00002000;
-  $OP_F_GROUP     = 0x00004000;
+  $OP_XFER        = 0x00004000;
   $OP_MOVE        = 0x00008000;
   $OP_NOP         = 0x00010000;
+  $OP_PREFETCH    = 0x00020000;
+  $OP_MUL         = 0x00040000;
+  $OP_ADD         = 0x00080000;
+  $OP_SUB         = 0x00100000;
+  $OP_OR          = 0x00200000;
+  $OP_SELECT      = 0x00400000;
+  $OP_UNSIGNED    = 0x00800000;
+  $OP_INTOP       = 0x01000000;
+  $OP_CMP         = 0x02000000;
+  $OP_AND         = 0x04000000;
+  $OP_XOR         = 0x08000000;
+  $OP_SHL         = 0x10000000;
+  $OP_SHR         = 0x20000000;
+  $OP_SHRU        = 0x40000000;
 
   ####################################################################
   #                        ISA DESCRIPTION
@@ -3634,7 +4396,11 @@ sub process_opcode {
 
   &DECL_ARCHITECTURE("st200");
 
-  &DECL_ISA_SUBSET ("st220");
+  &DECL_ISA_SUBSET (NULL, "st220");
+  &DECL_ISA_SUBSET (st220, "st200");
+
+#  &DECL_ISA_SUBSET (st220, "st210");
+#  &DECL_ISA_SUBSET (st210, "st200");
 
   # Following properties are required by the Pro64:
   &DECL_ISA_PROPERTY("noop");
@@ -3642,7 +4408,7 @@ sub process_opcode {
   &DECL_ISA_PROPERTY("store");
   &DECL_ISA_PROPERTY("jump");
   &DECL_ISA_PROPERTY("ijump");
-  &DECL_ISA_PROPERTY("branch");
+  &DECL_ISA_PROPERTY("cond");
   &DECL_ISA_PROPERTY("call");
   &DECL_ISA_PROPERTY("simulated");
   &DECL_ISA_PROPERTY("dummy");
@@ -3650,8 +4416,45 @@ sub process_opcode {
 
   # Some additional properties:
   &DECL_ISA_PROPERTY("dismissible");
-  &DECL_ISA_PROPERTY("f_group");
+  &DECL_ISA_PROPERTY("xfer");
   &DECL_ISA_PROPERTY("move");
+  &DECL_ISA_PROPERTY("prefetch");
+  &DECL_ISA_PROPERTY("mul");
+  &DECL_ISA_PROPERTY("sub");
+  &DECL_ISA_PROPERTY("add");
+
+  &DECL_ISA_PROPERTY("Xor");
+  &DECL_ISA_PROPERTY("And");
+  &DECL_ISA_PROPERTY("Or");
+  &DECL_ISA_PROPERTY("shl");
+  &DECL_ISA_PROPERTY("shr");
+  &DECL_ISA_PROPERTY("shru");
+  &DECL_ISA_PROPERTY("zext");
+  &DECL_ISA_PROPERTY("sext");
+
+  &DECL_ISA_PROPERTY("intop");
+  &DECL_ISA_PROPERTY("select");
+  &DECL_ISA_PROPERTY("unsign");
+  &DECL_ISA_PROPERTY("cmp");
+
+  # Needed to compile. no op associated.
+  &DECL_ISA_PROPERTY("l_group");
+  &DECL_ISA_PROPERTY("f_group");
+  &DECL_ISA_PROPERTY("flop");
+  &DECL_ISA_PROPERTY("madd");
+  &DECL_ISA_PROPERTY("mem_fill_type");
+  &DECL_ISA_PROPERTY("guard_t");
+  &DECL_ISA_PROPERTY("guard_f");
+  &DECL_ISA_PROPERTY("div");
+  &DECL_ISA_PROPERTY("unsafe");
+  &DECL_ISA_PROPERTY("likely");
+  &DECL_ISA_PROPERTY("unalign");
+  &DECL_ISA_PROPERTY("access_reg_bank");
+  &DECL_ISA_PROPERTY("side_effects");
+  &DECL_ISA_PROPERTY("branch_predict");
+  &DECL_ISA_PROPERTY("refs_fcr");
+  &DECL_ISA_PROPERTY("defs_fcc");
+  &DECL_ISA_PROPERTY("defs_fcr");
 
   # rclass (name, bit_size, is_ptr, can_be_stored, mult_store):
 
@@ -3664,6 +4467,10 @@ sub process_opcode {
   &DECL_REG_SET("integer", 0, 63, "\$r0.%d", @int_regs);
     &DECL_REG_SUBSET("r0", (0));
     &DECL_REG_SUBSET("lr", (63));
+    &DECL_REG_SUBSET("no_lr", (0, 1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16,
+			       17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+			       33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48,
+			       49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62));
 
   @br_regs = ('$b0.0');
   &DECL_REG_SET("branch", 0, 7, "\$b0.%d", @br_regs);
@@ -3676,16 +4483,16 @@ sub process_opcode {
   &DECL_LCLASS("u23", 23, $UNSIGNED);
   &DECL_LCLASS("s9", 9, $SIGNED);
 
-  &DECL_ECLASS("ibus", 9);
-    &ENUM("c0", 0);
-    &ENUM("c1", 1);
-    &ENUM("c2", 2);
-    &ENUM("c3", 3);
-    &ENUM("c4", 4);
-    &ENUM("c5", 5);
-    &ENUM("c6", 6);
-    &ENUM("c7", 7);
-    &ENUM("c8", 8);
+#  &DECL_ECLASS("ibus", 9);
+#    &ENUM("c0", 0);
+#    &ENUM("c1", 1);
+#    &ENUM("c2", 2);
+#    &ENUM("c3", 3);
+#    &ENUM("c4", 4);
+#    &ENUM("c5", 5);
+#    &ENUM("c6", 6);
+#    &ENUM("c7", 7);
+#    &ENUM("c8", 8);
 
   # register operand (name, rclass, reg_subclass, rtype):
 
@@ -3694,7 +4501,9 @@ sub process_opcode {
   &DECL_REG_OPND("bdest", "branch", "UNDEFINED", $UNSIGNED);
   &DECL_REG_OPND("ibdest", "branch", "UNDEFINED", $UNSIGNED);
   &DECL_REG_OPND("dest", "integer", "UNDEFINED", $SIGNED);
+  &DECL_REG_OPND("dest2", "integer", "no_lr", $SIGNED);
   &DECL_REG_OPND("idest", "integer", "UNDEFINED", $SIGNED);
+  &DECL_REG_OPND("idest2", "integer", "no_lr", $SIGNED);
   &DECL_REG_OPND("src1", "integer", "UNDEFINED", $SIGNED);
   &DECL_REG_OPND("src2", "integer", "UNDEFINED", $SIGNED);
   &DECL_REG_OPND("lr", "integer", "lr", $UNSIGNED);
@@ -3703,22 +4512,26 @@ sub process_opcode {
 
   &DECL_LIT_OPND("btarg","s23", $SIGNED);
   &DECL_LIT_OPND("isrc2","s32", $SIGNED);  
-  &DECL_LIT_OPND("usrc2","u32", $UNSIGNED);
+#  &DECL_LIT_OPND("usrc2","u32", $UNSIGNED);
   &DECL_LIT_OPND("s9","s9", $SIGNED);
-  &DECL_LIT_OPND("imm","u23", $UNSIGNED);
+  &DECL_LIT_OPND("imm","s23", $SIGNED);
   &DECL_LIT_OPND("pcrel","s32", $PCREL);
 
   # enumeration operand (name, eclass, rtype):
 
-  &DECL_ENUM_OPND("icbus","ibus", $UNSIGNED);
+#  &DECL_ENUM_OPND("icbus","ibus", $UNSIGNED);
 
   # operand use types:
-#  &DECL_OPND_USE("base");
-#  &DECL_OPND_USE("offset");
-#  &DECL_OPND_USE("storeval");
+  &DECL_OPND_USE("base");
+  &DECL_OPND_USE("offset");
+  &DECL_OPND_USE("storeval");
+  &DECL_OPND_USE("condition");
+  &DECL_OPND_USE("predicate");
   &DECL_OPND_USE("target");
   &DECL_OPND_USE("postincr");
-#  &DECL_OPND_USE("uniq_res");
+  &DECL_OPND_USE("uniq_res");
+  &DECL_OPND_USE("opnd1");
+  &DECL_OPND_USE("opnd2");
 
   ####################################################################
   #                       SCHEDULING MODEL
@@ -3743,26 +4556,38 @@ sub process_opcode {
   &DECL_SCD_RESOURCE ("INT", 4);       # 4 integer units
   &DECL_SCD_RESOURCE ("MUL", 2);       # 2 multipliers
   &DECL_SCD_RESOURCE ("MEM", 1);       # 1 load/store unit
+  &DECL_SCD_RESOURCE ("ODD", 2);       # 2 odd slots
   &DECL_SCD_RESOURCE ("XFER", 1);      # 1 branch unit
 
   &DECL_SCD_CLASS ("ALU", 2, 3);             # ALU TOPs
+  &DECL_SCD_CLASS ("ALU_IMM", 2, 3);         # ALU TOPs
   &DECL_SCD_CLASS ("MUL", 1, 2);             # 3 cycle MUL TOPs
+  &DECL_SCD_CLASS ("MUL_IMM", 1, 2);         # 3 cycle MUL TOPs
   &DECL_SCD_CLASS ("LOAD", 1, 2);            # 3 cycle LOAD TOPs
+  &DECL_SCD_CLASS ("LOAD_IMM", 1, 2);        # 3 cycle LOAD TOPs
+  &DECL_SCD_CLASS ("LOAD2", 1, 2);           # 2 cycle LOAD TOPs
+  &DECL_SCD_CLASS ("LOAD2_IMM", 1, 2);       # 2 cycle LOAD TOPs
   &DECL_SCD_CLASS ("STORE", 0, 3);           # STORE TOPs
+  &DECL_SCD_CLASS ("STORE_IMM", 0, 3);       # STORE TOPs
   &DECL_SCD_CLASS ("EXT", 0, 1);             # Immediate extentions
-#  &DECL_SCD_CLASS ("IMM", 1, 1);             # Long Immediate operand move
   &DECL_SCD_CLASS ("BRANCH", 0, 2);          # conditional branch
   &DECL_SCD_CLASS ("CALL", 1, 1);            # function call
   &DECL_SCD_CLASS ("JUMP", 0, 1);            # direct, indirect jump
-  &DECL_SCD_CLASS ("RFI", 0, 0);             # rfi ?
+  &DECL_SCD_CLASS ("SYNC", 0, 0);            # sync instructions
+  &DECL_SCD_CLASS ("simulated", 1, 1);       # simulated
+  &DECL_SCD_CLASS ("asm", 1, 1);       	     # asm
+  &DECL_SCD_CLASS ("ssa", 1, 1);             # ssa
 
-  &DECL_EXEC_SLOT ("S0", "ALU,LOAD,STORE,EXT,BRANCH,JUMP,CALL"); # Slot 0
-  &DECL_EXEC_SLOT ("S1", "ALU,MUL,LOAD,STORE,BRANCH,JUMP,CALL"); # Slot 1
-  &DECL_EXEC_SLOT ("S2", "ALU,LOAD,STORE,EXT,BRANCH,JUMP,CALL"); # Slot 2
-  &DECL_EXEC_SLOT ("S3", "ALU,MUL,LOAD,STORE,BRANCH,JUMP,CALL"); # Slot 3
-  &DECL_EXEC_SLOT ("EXT0", "ALU,MUL,LOAD,STORE"); # Long immediate in slot 0-1
-  &DECL_EXEC_SLOT ("EXT1", "ALU,MUL,LOAD,STORE"); # Long immediate in slot 1-2
-  &DECL_EXEC_SLOT ("EXT2", "ALU,MUL,LOAD,STORE"); # Long immediate in slot 2-3
+  &DECL_EXEC_SLOT ("S0", "ALU,MUL,LOAD,LOAD_2,STORE,EXT,BRANCH,JUMP,CALL,SYNC"); # Slot 0
+  &DECL_EXEC_SLOT ("S1", "ALU,MUL,LOAD,LOAD_2,STORE,EXT,BRANCH,JUMP,CALL,SYNC"); # Slot 1
+  &DECL_EXEC_SLOT ("S2", "ALU,MUL,LOAD,LOAD2_IMM,STORE,EXT,BRANCH,JUMP,CALL,SYNC"); # Slot 2
+  &DECL_EXEC_SLOT ("S3", "ALU,MUL,LOAD,LOAD2_IMM,STORE,EXT,BRANCH,JUMP,CALL,SYNC"); # Slot 3
+  &DECL_EXEC_SLOT ("EXT0", "ALU_IMM,MUL_IMM,LOAD_IMM,LOAD2_IMM,STORE_IMM"); # Long immediate in slot 0-1
+  &DECL_EXEC_SLOT ("EXT1", "ALU_IMM,MUL_IMM,LOAD_IMM,LOAD2_IMM,STORE_IMM"); # Long immediate in slot 1-2
+  &DECL_EXEC_SLOT ("EXT2", "ALU_IMM,MUL_IMM,LOAD_IMM,LOAD2_IMM,STORE_IMM"); # Long immediate in slot 2-3
+  &DECL_EXEC_SLOT ("Odd",  "MUL");                # Multiplies in slot 1 or 3
+  &DECL_EXEC_SLOT ("Even", "EXT");               # Multiplies in slot 1 or 3
+  &DECL_EXEC_SLOT ("ReqS0", "BRANCH,JUMP,CALL"); 
 
   # Declare bundle (name, size_in_bits, temp_bits, num_slots, [slots 0..N]).
   &DECL_BUNDLE("st200", 128, "0,0,0", 4, "0,0,32", "1,32,32", "2,64,32", "3,96,32");
@@ -3777,174 +4602,62 @@ sub process_opcode {
     &SLOT(3, "S3");
     &STOP(3);
 
-  &DECL_TEMPLATE("temp1",4);
+  &DECL_TEMPLATE("temp1",1);
     &SLOT(0, "S0");
     &STOP(0);
-    &SLOT(1, "S1");
-    &SLOT(2, "S2");
-    &SLOT(3, "S3");
-    &STOP(3);
 
-  &DECL_TEMPLATE("temp2",4);
+  &DECL_TEMPLATE("temp2",2);
     &SLOT(0, "S0");
     &SLOT(1, "S1");
     &STOP(1);
-    &SLOT(2, "S2");
-    &SLOT(3, "S3");
-    &STOP(3);
 
-  &DECL_TEMPLATE("temp3",4);
+  &DECL_TEMPLATE("temp3",3);
     &SLOT(0, "S0");
     &SLOT(1, "S1");
     &SLOT(2, "S2");
     &STOP(2);
-    &SLOT(3, "S3");
-    &STOP(3);
 
   &DECL_TEMPLATE("temp4",4);
-    &SLOT(0, "S0");
-    &STOP(0);
-    &SLOT(1, "S1");
-    &STOP(1);
+    &SLOT(0, "EXT0");
+    &SLOT(1, "EXT0");
     &SLOT(2, "S2");
     &SLOT(3, "S3");
     &STOP(3);
 
-  &DECL_TEMPLATE("temp5",4);
-    &SLOT(0, "S0");
-    &STOP(0);
-    &SLOT(1, "S1");
-    &SLOT(2, "S2");
-    &STOP(2);
-    &SLOT(3, "S3");
-    &STOP(3);
-
-  &DECL_TEMPLATE("temp6",4);
-    &SLOT(0, "S0");
-    &STOP(0);
-    &SLOT(1, "S1");
+  &DECL_TEMPLATE("temp5",2);
+    &SLOT(0, "EXT0");
+    &SLOT(1, "EXT0");
     &STOP(1);
+
+  &DECL_TEMPLATE("temp6",3);
+    &SLOT(0, "EXT0");
+    &SLOT(1, "EXT0");
     &SLOT(2, "S2");
     &STOP(2);
-    &SLOT(3, "S3");
-    &STOP(3);
 
   &DECL_TEMPLATE("temp7",4);
-    &SLOT(0, "S0");
-    &SLOT(1, "S1");
-    &STOP(1);
-    &SLOT(2, "S2");
-    &STOP(2);
-    &SLOT(3, "S3");
+    &SLOT(0, "EXT0");
+    &SLOT(1, "EXT0");
+    &SLOT(2, "EXT2");
+    &SLOT(3, "EXT2");
     &STOP(3);
 
   &DECL_TEMPLATE("temp8",4);
-    &SLOT(0, "EXT0");
-    &SLOT(1, "EXT0");
-    &SLOT(2, "S2");
+    &SLOT(0, "S0");
+    &SLOT(1, "EXT1");
+    &SLOT(2, "EXT1");
     &SLOT(3, "S3");
     &STOP(3);
 
-  &DECL_TEMPLATE("temp9",4);
-    &SLOT(0, "EXT0");
-    &SLOT(1, "EXT0");
-    &STOP(1);
-    &SLOT(2, "S2");
-    &SLOT(3, "S3");
-    &STOP(3);
+  &DECL_TEMPLATE("temp9",3);
+    &SLOT(0, "S0");
+    &SLOT(1, "EXT1");
+    &SLOT(2, "EXT1");
+    &STOP(2);
 
   &DECL_TEMPLATE("temp10",4);
-    &SLOT(0, "EXT0");
-    &SLOT(1, "EXT0");
-    &SLOT(2, "S2");
-    &STOP(2);
-    &SLOT(3, "S3");
-    &STOP(3);
-
-  &DECL_TEMPLATE("temp11",4);
-    &SLOT(0, "EXT0");
-    &SLOT(1, "EXT0");
-    &STOP(1);
-    &SLOT(2, "S2");
-    &STOP(2);
-    &SLOT(3, "S3");
-    &STOP(3);
-
-  &DECL_TEMPLATE("temp12",4);
-    &SLOT(0, "EXT0");
-    &SLOT(1, "EXT0");
-    &SLOT(2, "EXT2");
-    &SLOT(3, "EXT2");
-    &STOP(3);
-
-  &DECL_TEMPLATE("temp13",4);
-    &SLOT(0, "EXT0");
-    &SLOT(1, "EXT0");
-    &STOP(1);
-    &SLOT(2, "EXT2");
-    &SLOT(3, "EXT2");
-    &STOP(3);
-
-  &DECL_TEMPLATE("temp14",4);
-    &SLOT(0, "S0");
-    &SLOT(1, "EXT1");
-    &SLOT(2, "EXT1");
-    &SLOT(3, "S3");
-    &STOP(3);
-
-  &DECL_TEMPLATE("temp15",4);
-    &SLOT(0, "S0");
-    &STOP(1);
-    &SLOT(1, "EXT1");
-    &SLOT(2, "EXT1");
-    &SLOT(3, "S3");
-    &STOP(3);
-
-  &DECL_TEMPLATE("temp16",4);
-    &SLOT(0, "S0");
-    &SLOT(1, "EXT1");
-    &SLOT(2, "EXT1");
-    &STOP(2);
-    &SLOT(3, "S3");
-    &STOP(3);
-
-  &DECL_TEMPLATE("temp17",4);
-    &SLOT(0, "S0");
-    &STOP(1);
-    &SLOT(1, "EXT1");
-    &SLOT(2, "EXT1");
-    &STOP(2);
-    &SLOT(3, "S3");
-    &STOP(3);
-
-  &DECL_TEMPLATE("temp18",4);
     &SLOT(0, "S0");
     &SLOT(1, "S1");
-    &SLOT(2, "EXT2");
-    &SLOT(3, "EXT2");
-    &STOP(3);
-
-  &DECL_TEMPLATE("temp19",4);
-    &SLOT(0, "S0");
-    &STOP(0);
-    &SLOT(1, "S1");
-    &SLOT(2, "EXT2");
-    &SLOT(3, "EXT2");
-    &STOP(3);
-
-  &DECL_TEMPLATE("temp20",4);
-    &SLOT(0, "S0");
-    &SLOT(1, "S1");
-    &STOP(1);
-    &SLOT(2, "EXT2");
-    &SLOT(3, "EXT2");
-    &STOP(3);
-
-  &DECL_TEMPLATE("temp21",4);
-    &SLOT(0, "S0");
-    &STOP(0);
-    &SLOT(1, "S1");
-    &STOP(1);
     &SLOT(2, "EXT2");
     &SLOT(3, "EXT2");
     &STOP(3);
@@ -4093,7 +4806,15 @@ sub process_opcode {
   &DECL_PACK_TYPE ("Cache", 0, 2, "cache opcodes ");
     &PACK_OPERAND (0, 0, 12, 9);
     &PACK_OPERAND (0, 0, 0, 6);
+  &DECL_PACK_TYPE ("CacheE", 0, 2, "xcache opcodes ");
+    &PACK_OPERAND (0, 0, 12, 9);
+    &PACK_OPERAND (0, 0, 0, 6);
+    &NEXT_WORD();
+    &PACK_OPERAND (0, 9, 0, 23);
   &DECL_PACK_TYPE ("Sync", 0, 0, "sync");
+  &DECL_PACK_TYPE ("Monadic", 1, 1, "Monadic: dest = src1");
+    &PACK_RESULT (0, 0, 12, 6);
+    &PACK_OPERAND (0, 0, 0, 6);
 
   ###############################################################
   #                       PROCESSING
@@ -4115,381 +4836,25 @@ sub process_opcode {
 
   &initialize_op_file();
 
-  # read OPCODE_F file:
-  my $line;
-  my $i;
-
-CONTINUE:
-  while ($line = <OPCODE_F>) {
-      # Read one OPeration record:
-
-      # Records start with 
-      #      +=s. ... 
-      # and end with
-      #      +format
-      #
-      if ($line =~ /^\+=s./) {
-	  # beginning of new record:
-          printf (STDOUT " ----- new record %d ----\n", $OP_count);
-
-          # reset OP_properties:
-          $OP_properties[$OP_count] = $OP_NONE;
-      }
-
-      # opcode's mnemonic:
-      if ($line =~ /^\+mnemonic\s(\S*)\n/) {
-          my $mnemonic = $1;
-          $mnemonic =~ tr/./_/;
-          $OP_mnemonic[$OP_count] = $mnemonic;
-          printf (STDOUT " mnemonic %s\n", $1);
-      }
-      
-      # opcode's assembly printing format
-      if ($line =~ /^\+syntax\s(.*)/) {
-          $OP_syntax[$OP_count] = $1;
-	  printf (STDOUT " syntax %s\n", $1);
-      }
-
-      # opcode's format is the last record, process opcode
-      if ($line =~ /^\+format\s(\w*)/) {
-          $OP_format[$OP_count] = $1;
-
-	  # skip processing of some opcodes:
-	  if ($OP_mnemonic[$OP_count] eq 'asm' ||
-	      $OP_mnemonic[$OP_count] eq 'recv' ||
-	      $OP_mnemonic[$OP_count] eq 'send' ||
-	      $OP_mnemonic[$OP_count] eq 'sxtb' ||
-	      $OP_mnemonic[$OP_count] eq 'sxth') {
-	      
-	      goto CONTINUE;
-	  }
-	  elsif ($OP_mnemonic[$OP_count] eq 'bswap') {
-	      $OP_format[$OP_count] = 'MoveR';
-	  }
-	  elsif ($OP_mnemonic[$OP_count] eq 'pft' ||
-		 $OP_mnemonic[$OP_count] eq 'prgadd' ||
-		 $OP_mnemonic[$OP_count] eq 'prgset') {
-	      $OP_format[$OP_count] = 'Cache';
-	  }
-	  elsif ($OP_mnemonic[$OP_count] eq 'sync') {
-	      $OP_format[$OP_count] = 'Sync';
-	  }
-	  elsif ($OP_mnemonic[$OP_count] eq 'goto') {
-	      $OP_format[$OP_count] = 'Jump';
-	  }
-	  elsif ($OP_mnemonic[$OP_count] eq 'igoto') {
-	      $OP_format[$OP_count] = 'Ijump';
-	  }
-	  else {
-	      $OP_format[$OP_count] = $1;
-	  }
-          printf (STDOUT " format %s\n", $1);
-
-	  # process the opcode:
-	  &process_opcode($OP_count);
-	  &read_scdinfo($OP_count);
-	  $OP_count++;
-
-	  # if it is one of opcodes that accepts an immediate
-	  # as operand, create a "twin" opcode of extended format
-
-	  my $format;
-	  if ($OP_format[$OP_count-1] eq 'Int3I') {
-	      $format = 'Int3E';
-	  }
-	  elsif ($OP_format[$OP_count-1] eq 'MoveI') {
-	      $format = 'MoveE';
-	  }
-	  elsif ($OP_format[$OP_count-1] eq 'Cmp3I_Reg') {
-	      $format = 'Cmp3E_Reg';
-	  }
-	  elsif ($OP_format[$OP_count-1] eq 'Cmp3I_Br') {
-	      $format = 'Cmp3E_Br';
-	  }
-	  elsif ($OP_format[$OP_count-1] eq 'SelectI') {
-	      $format = 'SelectE';
-	  }
-	  elsif ($OP_format[$OP_count-1] eq 'Store') {
-	      $format = 'StoreE';
-	  }
-	  elsif ($OP_format[$OP_count-1] eq 'Load') {
-	      $format = 'LoadE';
-	  }
-	  else {
-	      goto CONTINUE;
-	  }
-
-	  # make a "twin" opcode:
-
-	  $OP_mnemonic[$OP_count] = $OP_mnemonic[$OP_count-1];
-	  $OP_properties[$OP_count] = $OP_NONE;
-	  $OP_format[$OP_count] = $format;
-	  $OP_syntax[$OP_count] = $OP_syntax[$OP_count-1];
-	  printf (STDOUT " mnemonic %s\n", $OP_mnemonic[$OP_count]);
-	  printf (STDOUT " syntax %s\n", $OP_syntax[$OP_count]);
-	  printf (STDOUT " format %s\n", $OP_format[$OP_count]);
-	  &process_opcode($OP_count);
-
-	  # initialize the scheduling info:
-
-	  for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
-	      $OP_result_avail_time[$OP_count][$i] = 
-		  $OP_result_avail_time[$OP_count-1][$i];
-	  }
-
-	  for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-	      $OP_opnd_access_time[$OP_count][$i] = 
-		  $OP_opnd_access_time[$OP_count-1][$i];
-	  }
-
-	  $OP_scdclass[$OP_count] = $OP_scdclass[$OP_count-1];
-	  &process_scdinfo($OP_count);
-
-	  $OP_count++;
-
-      } # finish current record
-
-  } # while there are records
-
-  # There is a number of opcodes that I need to specify manually:
-
-  my $scdclass;
-  my $subset;
-
-  # ----------------- sxtb ------------------
-
-  # beginning of a new recore
-  printf (STDOUT " ----- new record %d ----\n", $OP_count);
-
-  $OP_mnemonic[$OP_count] = 'sxtb';
-  printf (STDOUT " mnemonic %s\n", $OP_mnemonic[$OP_count]);
-  $OP_format[$OP_count] = 'MoveR';
-  printf (STDOUT " format %s\n", $OP_format[$OP_count]);
-  $OP_properties[$OP_count] = $OP_NONE;
-  $OP_syntax[$OP_count] = 'sxtb %1 = %2';
-  &process_opcode($OP_count);
-
-  for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
-      $OP_result_avail_time[$OP_count][$i] = 3;
-  }
-
-  for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-      $OP_opnd_access_time[$OP_count][$i] = 2;
-  }
-
-  $OP_scdclass[$OP_count] = 'ALU';
-  &process_scdinfo($OP_count);
-
-  $OP_count++;
-
-  # ----------------- sxth ------------------
-
-  # beginning of a new recore
-  printf (STDOUT " ----- new record %d ----\n", $OP_count);
-
-  $OP_mnemonic[$OP_count] = 'sxth';
-  printf (STDOUT " mnemonic %s\n", $OP_mnemonic[$OP_count]);
-  $OP_format[$OP_count] = 'MoveR';
-  printf (STDOUT " format %s\n", $OP_format[$OP_count]);
-  $OP_properties[$OP_count] = $OP_NONE;
-  $OP_syntax[$OP_count] = 'sxth %1 = %2';
-  &process_opcode($OP_count);
-
-  for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
-      $OP_result_avail_time[$OP_count][$i] = 3;
-  }
-
-  for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-      $OP_opnd_access_time[$OP_count][$i] = 2;
-  }
-
-  $OP_scdclass[$OP_count] = "ALU";
-  &process_scdinfo($OP_count);
-
-  $OP_count++;
-
-  # ----------------- nop ------------------
-
-  # beginning of a new recore
-  printf (STDOUT " ----- new record %d ----\n", $OP_count);
-
-  $OP_mnemonic[$OP_count] = 'nop';
-  printf (STDOUT " mnemonic %s\n", $OP_mnemonic[$OP_count]);
-  $OP_format[$OP_count] = 'Noop';
-  printf (STDOUT " format %s\n", $OP_format[$OP_count]);
-  $OP_properties[$OP_count] = $OP_NONE;
-  $OP_properties[$OP_count] ^= $OP_NOP;
-  $OP_syntax[$OP_count] = 'nop';
-  &process_opcode($OP_count);
-
-  $OP_scdclass[$OP_count] = "ALU";
-  &process_scdinfo($OP_count);
-
-  $OP_count++;
-
-  # ----------------- mov ------------------
-
-  # beginning of a new recore
-  printf (STDOUT " ----- new record %d ----\n", $OP_count);
-
-  $OP_mnemonic[$OP_count] = 'mov';
-  printf (STDOUT " mnemonic %s\n", $OP_mnemonic[$OP_count]);
-  $OP_format[$OP_count] = 'MoveR';
-  printf (STDOUT " format %s\n", $OP_format[$OP_count]);
-  $OP_properties[$OP_count] = $OP_NONE;
-  $OP_syntax[$OP_count] = 'mov %1 = %2';
-  &process_opcode($OP_count);
-
-  for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
-      $OP_result_avail_time[$OP_count][$i] = 3;
-  }
-
-  for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-      $OP_opnd_access_time[$OP_count][$i] = 2;
-  }
-
-  $OP_scdclass[$OP_count] = "ALU";
-  &process_scdinfo($OP_count);
-
-  $OP_count++;
-
-  # ----------------- mov ------------------
-
-  # beginning of a new recore
-  printf (STDOUT " ----- new record %d ----\n", $OP_count);
-
-  $OP_mnemonic[$OP_count] = 'mov';
-  printf (STDOUT " mnemonic %s\n", $OP_mnemonic[$OP_count]);
-  $OP_format[$OP_count] = 'MoveI';
-  printf (STDOUT " format %s\n", $OP_format[$OP_count]);
-  $OP_properties[$OP_count] = $OP_NONE;
-  $OP_syntax[$OP_count] = 'mov %1 = %2';
-  &process_opcode($OP_count);
-
-  for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
-      $OP_result_avail_time[$OP_count][$i] = 3;
-  }
-
-  for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-      $OP_opnd_access_time[$OP_count][$i] = 2;
-  }
-
-  $OP_scdclass[$OP_count] = "ALU";
-  &process_scdinfo($OP_count);
-
-  $OP_count++;
-
-  # ----------------- mov (extended) ------------------
-
-  # beginning of a new recore
-  printf (STDOUT " ----- new record %d ----\n", $OP_count);
-
-  $OP_mnemonic[$OP_count] = 'mov';
-  printf (STDOUT " mnemonic %s\n", $OP_mnemonic[$OP_count]);
-  $OP_format[$OP_count] = 'MoveE';
-  printf (STDOUT " format %s\n", $OP_format[$OP_count]);
-  $OP_properties[$OP_count] = $OP_NONE;
-  $OP_syntax[$OP_count] = 'mov %1 = %2';
-  &process_opcode($OP_count);
-
-  for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
-      $OP_result_avail_time[$OP_count][$i] = 3;
-  }
-
-  for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-      $OP_opnd_access_time[$OP_count][$i] = 2;
-  }
-
-  $OP_scdclass[$OP_count] = "ALU";
-  &process_scdinfo($OP_count);
-
-  $OP_count++;
-
-  # ----------------- mtb ------------------
-
-  # beginning of a new recore
-  printf (STDOUT " ----- new record %d ----\n", $OP_count);
-
-  $OP_mnemonic[$OP_count] = 'mtb';
-  printf (STDOUT " mnemonic %s\n", $OP_mnemonic[$OP_count]);
-  $OP_format[$OP_count] = 'mtb';
-  printf (STDOUT " format %s\n", $OP_format[$OP_count]);
-  $OP_properties[$OP_count] = $OP_NONE;
-  $OP_syntax[$OP_count] = 'mtb %1 = %2';
-  &process_opcode($OP_count);
-
-  for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
-      $OP_result_avail_time[$OP_count][$i] = 3;
-  }
-
-  for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-      $OP_opnd_access_time[$OP_count][$i] = 2;
-  }
-
-  $OP_scdclass[$OP_count] = "ALU";
-  &process_scdinfo($OP_count);
-
-  $OP_count++;
-
-  # ----------------- mfb ------------------
-
-  # beginning of a new recore
-  printf (STDOUT " ----- new record %d ----\n", $OP_count);
-
-  $OP_mnemonic[$OP_count] = 'mfb';
-  printf (STDOUT " mnemonic %s\n", $OP_mnemonic[$OP_count]);
-  $OP_format[$OP_count] = 'mfb';
-  printf (STDOUT " format %s\n", $OP_format[$OP_count]);
-  $OP_properties[$OP_count] = $OP_NONE;
-  $OP_syntax[$OP_count] = 'mfb %1 = %2';
-  &process_opcode($OP_count);
-
-  for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
-      $OP_result_avail_time[$OP_count][$i] = 3;
-  }
-
-  for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-      $OP_opnd_access_time[$OP_count][$i] = 2;
-  }
-
-  $OP_scdclass[$OP_count] = "ALU";
-  &process_scdinfo($OP_count);
-
-  $OP_count++;
-
-
-  # ----------------- return ------------------
-
-  # beginning of a new recore
-  printf (STDOUT " ----- new record %d ----\n", $OP_count);
-
-  $OP_mnemonic[$OP_count] = 'return';
-  printf (STDOUT " mnemonic %s\n", $OP_mnemonic[$OP_count]);
-  $OP_format[$OP_count] = 'Ijump';
-  printf (STDOUT " format %s\n", $OP_format[$OP_count]);
-  $OP_properties[$OP_count] = $OP_NONE;
-  $OP_syntax[$OP_count] = 'return LR';
-
-  &process_opcode($OP_count);
-
-  for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-      $OP_opnd_access_time[$OP_count][$i] = 1;
-  }
-
-  $OP_scdclass[$OP_count] = "JUMP";
-  &process_scdinfo($OP_count);
-
-  $OP_count++;
-
+  my $sub;
+  for ($sub = 0; $sub < $SUBSET_count-1; $sub++) {
+      printf(STDOUT "Generating targinfos for subset %s\n", $SUBSET_name[$sub]);
+      &read_opcodes ($sub);
+  } # for each subset
 
   # The Pro64 compiler needs a number of simulated and dummy 
   # opcodes. They get added after all the real ISA opcodes have
   # been sorted because simulated/dummy do not need to be.
   &initialize_required_opcodes ();
 
+  # Each opcode common to all subset can be moved to the parent subset.
+  &update_subsets ();
+
   # Emit ISA information
   for ($opcode = 0; $opcode < $OP_count; $opcode++) {
-      &emit_opcode ($opcode);
+      if ($OP_opcode[$opcode]) {
+	  &emit_opcode ($opcode);
+      }
   }
 
   # Emit the information for all opcodes including simulated/dummy:
@@ -4528,6 +4893,5 @@ CONTINUE:
 
   &finalize_op_file();
 
-  close(OPCODE_F);
   close(FORMAT_F);
 

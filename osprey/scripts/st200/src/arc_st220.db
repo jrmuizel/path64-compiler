@@ -4,7 +4,7 @@
 
 + ======================================================= +
 +=add
-+opcode 00000
++field0 INT3_OPCODE=00000
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
@@ -16,13 +16,13 @@ result1 = operand1 + operand2;
 
 + ======================================================= +
 +=addcg
-+opcode 0010
++field0 CGEN_OPCODE=0010
 +formats cgen
 +resources ALU
 +op1 name=result1, stage=3
 +op2 name=result2, stage=3
-+op3 name=operand1, stage=2, type=signed
-+op4 name=operand2, stage=2, type=signed
++op3 name=operand1, stage=2, type=unsigned
++op4 name=operand2, stage=2, type=unsigned
 +op5 name=operand3, stage=2, type=unsigned
 +summary Add with carry and generate carry
 +stage_3_0
@@ -31,7 +31,7 @@ result2 = Bit(result1, 32);
 
 + ======================================================= +
 +=and
-+opcode 01001
++field0 INT3_OPCODE=01001
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
@@ -43,7 +43,7 @@ result1 = operand1 & operand2;
 
 + ======================================================= +
 +=andc
-+opcode 01010
++field0 INT3_OPCODE=01010
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
@@ -55,7 +55,7 @@ result1 = (~operand1) & operand2;
 
 + ======================================================= +
 +=andl
-+opcode 1010
++field0 CMP3_OPCODE=1010
 +formats Cmp3R_Reg Cmp3R_Br Cmp3I_Reg Cmp3I_Br
 +resources ALU
 +op1 name=result1, stage=3
@@ -67,54 +67,54 @@ result1 = (operand1 != 0) AND (operand2 != 0);
 
 + ======================================================= +
 +=br
-+opcode 0
++field0 BRANCH_OPCODE=0
 +formats Branch
 +resources BRANCH
-+op1 name=operand1, stage=1, type=unsigned
++op1 name=operand1, stage=0, type=unsigned
 +op2 name=operand2, stage=1, type=signed
 +summary Branch
-+state1 name=PC, kind=src, stage=1
++state1 name=BUNDLE_PC, kind=src, stage=1
 +state2 name=PC, kind=dst, stage=1
 +stage_1_0
 IF (operand1 != 0) 
-	PC = Register(ZeroExtend_32_(PC) + (operand2 << 2));
+	PC = Register(ZeroExtend_32_(BUNDLE_PC) + (operand2 << 2));
 
 + ======================================================= +
 +=break
-+opcode 1111111
++field0 SYSOP_OPCODE=1111111
 +formats SysOp
 +resources ALU
 +summary Break
 +stage_3_0
-THROW ILL_INST;
+THROW(ILL_INST);
 
 + ======================================================= +
 +=brf
-+opcode 1
++field0 BRANCH_OPCODE=1
 +formats Branch
 +resources BRANCH
-+op1 name=operand1, stage=1, type=unsigned
++op1 name=operand1, stage=0, type=unsigned
 +op2 name=operand2, stage=1, type=signed
 +summary Branch false
-+state1 name=PC, kind=src, stage=1
++state1 name=BUNDLE_PC, kind=src, stage=1
 +state2 name=PC, kind=dst, stage=1
 +stage_1_0
 IF (operand1 == 0) 
-	PC = Register(ZeroExtend_32_(PC) + (operand2 << 2));
+	PC = Register(ZeroExtend_32_(BUNDLE_PC) + (operand2 << 2));
+
 
 + ======================================================= +
 +=bswap
-+opcode 10100
-+formats Int3R
++field0 MONADIC_OPCODE=000000010
++formats Monadic
 +resources ALU
 +op1 name=result1, stage=3
-+op3 name=operand1, stage=2, type=unsigned
++op2 name=operand1, stage=2, type=unsigned
 +temp1 name=byte0
 +temp2 name=byte1
 +temp3 name=byte2
 +temp4 name=byte3
-+summary Byte swap
-+syntax bswap %1 = %3
++summary Byte Swap
 +stage_3_0
 byte0 = BitsOf(operand1,0,8);
 byte1 = BitsOf(operand1,8,8);
@@ -124,22 +124,57 @@ result1 = ((byte0 << 24) | (byte1 << 16)) | ((byte2 << 8) | byte3);
 
 + ======================================================= +
 +=call
-+opcode 000
++field0 CALL_OPCODE=000
++field1 LNK=0
 +formats Call
-+field0 LNK=0
 +resources CALL
-+op1 name=operand1, stage=0, type=signed
-+state1 name=LR, kind=dst, stage=1
-+state2 name=PC, kind=dst, stage=1
++op1 name=operand1, stage=1, type=signed
++state1 name=LR, kind=dst, stage=3
++state2 name=BUNDLE_PC, kind=src, stage=1
++state3 name=PC, kind=src, stage=1
++state4 name=PC, kind=dst, stage=1
++temp1 name=NEXT_PC
 +summary Jump and link
 +stage_1_0
-PC = Register(ZeroExtend_32_(PC) + (operand2 << 2));
-+stage_5_0
-LR = PC;
+NEXT_PC = PC;
+PC = Register(ZeroExtend_32_(BUNDLE_PC) + (operand1 << 2));
++stage_3_0
+LR = NEXT_PC;
+
++ ======================================================= +
++=icall
++field0 CALL_OPCODE=000
++field1 LNK=1
++formats Call
++resources CALL
++op1 fixed=00000000000000000000000
++state1 name=LR, kind=dst, stage=3
++state2 name=LR, kind=src, stage=1
++state3 name=PC, kind=dst, stage=1
++state4 name=PC, kind=src, stage=1
++temp1 name=NEXT_PC
++summary Jump (using Link Register) and link
++syntax call LR = LR
++stage_1_0
+NEXT_PC = PC;
+PC = Register(ZeroExtend_32_(LR));
++stage_3_0
+LR = NEXT_PC;
+
++ ======================================================= +
++=clz
++field0 MONADIC_OPCODE=000000100
++formats Monadic
++resources ALU
++op1 name=result1, stage=3
++op2 name=operand1, stage=2, type=unsigned
++summary Count leading zeros
++stage_3_0
+result1 = CountLeadingZeros(operand1);
 
 + ======================================================= +
 +=cmpeq
-+opcode 0000
++field0 CMP3_OPCODE=0000
 +formats Cmp3R_Reg Cmp3R_Br Cmp3I_Reg Cmp3I_Br
 +resources ALU
 +op1 name=result1, stage=3
@@ -151,7 +186,7 @@ result1 = operand1 == operand2;
 
 + ======================================================= +
 +=cmpge
-+opcode 0010
++field0 CMP3_OPCODE=0010
 +formats Cmp3R_Reg Cmp3R_Br Cmp3I_Reg Cmp3I_Br
 +resources ALU
 +op1 name=result1, stage=3
@@ -163,7 +198,7 @@ result1 = operand1 >= operand2;
 
 + ======================================================= +
 +=cmpgeu
-+opcode 0011
++field0 CMP3_OPCODE=0011
 +formats Cmp3R_Reg Cmp3R_Br Cmp3I_Reg Cmp3I_Br
 +resources ALU
 +op1 name=result1, stage=3
@@ -175,7 +210,7 @@ result1 = operand1 >= operand2;
 
 + ======================================================= +
 +=cmpgt
-+opcode 0100
++field0 CMP3_OPCODE=0100
 +formats Cmp3R_Reg Cmp3R_Br Cmp3I_Reg Cmp3I_Br
 +resources ALU
 +op1 name=result1, stage=3
@@ -187,7 +222,7 @@ result1 = operand1 > operand2;
 
 + ======================================================= +
 +=cmpgtu
-+opcode 0101
++field0 CMP3_OPCODE=0101
 +formats Cmp3R_Reg Cmp3R_Br Cmp3I_Reg Cmp3I_Br
 +resources ALU
 +op1 name=result1, stage=3
@@ -199,7 +234,7 @@ result1 = operand1 > operand2;
 
 + ======================================================= +
 +=cmple
-+opcode 0110
++field0 CMP3_OPCODE=0110
 +formats Cmp3R_Reg Cmp3R_Br Cmp3I_Reg Cmp3I_Br
 +resources ALU
 +op1 name=result1, stage=3
@@ -211,7 +246,7 @@ result1 = operand1 <= operand2;
 
 + ======================================================= +
 +=cmpleu
-+opcode 0111
++field0 CMP3_OPCODE=0111
 +formats Cmp3R_Reg Cmp3R_Br Cmp3I_Reg Cmp3I_Br
 +resources ALU
 +op1 name=result1, stage=3
@@ -223,7 +258,7 @@ result1 = operand1 <= operand2;
 
 + ======================================================= +
 +=cmplt
-+opcode 1000
++field0 CMP3_OPCODE=1000
 +formats Cmp3R_Reg Cmp3R_Br Cmp3I_Reg Cmp3I_Br
 +resources ALU
 +op1 name=result1, stage=3
@@ -235,7 +270,7 @@ result1 = operand1 < operand2;
 
 + ======================================================= +
 +=cmpltu
-+opcode 1001
++field0 CMP3_OPCODE=1001
 +formats Cmp3R_Reg Cmp3R_Br Cmp3I_Reg Cmp3I_Br
 +resources ALU
 +op1 name=result1, stage=3
@@ -247,7 +282,7 @@ result1 = operand1 < operand2;
 
 + ======================================================= +
 +=cmpne
-+opcode 0001
++field0 CMP3_OPCODE=0001
 +formats Cmp3R_Reg Cmp3R_Br Cmp3I_Reg Cmp3I_Br
 +resources ALU
 +op1 name=result1, stage=3
@@ -259,7 +294,7 @@ result1 = operand1 != operand2;
 
 + ======================================================= +
 +=divs
-+opcode 0100
++field0 CGEN_OPCODE=0100
 +formats cgen
 +resources ALU
 +op1 name=result1, stage=3
@@ -270,7 +305,7 @@ result1 = operand1 != operand2;
 +summary Non-restoring divide stage
 +temp1 name=temp
 +stage_3_0
-temp = ZeroExtend_32_(operand1 * 2) + operand3; 
+temp = ZeroExtend_32_(operand1 * 2) | (operand3 & 1); 
 IF (operand1 < 0) 
 { 
     result1 = temp + operand2; 
@@ -284,48 +319,35 @@ ELSE
 
 + ======================================================= +
 +=goto
-+opcode 001
++field0 CALL_OPCODE=001
++field1 LNK=0
 +formats Call
-+field0 LNK=0
 +resources CALL
 +op1 name=operand1, stage=1, type=signed
-+state1 name=PC, kind=dst, stage=1
++state1 name=BUNDLE_PC, kind=src, stage=1
++state2 name=PC, kind=dst, stage=1
++syntax goto %1
 +summary Jump
 +stage_1_0
-PC = Register(ZeroExtend_32_(PC) + (operand1 << 2));
-
-+ ======================================================= +
-+=icall
-+opcode 000
-+formats Call
-+field0 LNK=1
-+resources CALL
-+state1 name=LR, kind=dst, stage=3
-+state2 name=LR, kind=src, stage=-1
-+state3 name=PC, kind=dst, stage=1
-+summary Jump (using Link Register) and link
-+syntax call LR = LR
-+stage_1_0
-PC = LR;
-+stage_5_0
-LR = PC;
+PC = Register(ZeroExtend_32_(BUNDLE_PC) + (operand1 << 2));
 
 + ======================================================= +
 +=igoto
-+opcode 001
++field0 CALL_OPCODE=001
++field1 LNK=1
 +formats Call
-+field0 LNK=1
 +resources CALL
-+state1 name=LR, kind=src, stage=-1
++op1 fixed=00000000000000000000000
++state1 name=LR, kind=src, stage=1
 +state2 name=PC, kind=dst, stage=1
 +summary Jump (using Link Register)
 +syntax goto LR
 +stage_1_0
-PC = LR;
+PC = Register(ZeroExtend_32_(LR));
 
 + ======================================================= +
 +=imml
-+opcode 01010
++field0 IMMX_OPCODE=01010
 +formats Imm
 +resources IMM
 +op1 name=extension, stage=2, type=unsigned
@@ -333,7 +355,7 @@ PC = LR;
 
 + ======================================================= +
 +=immr
-+opcode 01011
++field0 IMMX_OPCODE=01011
 +formats Imm
 +resources IMM
 +op1 name=extension, stage=2, type=unsigned
@@ -341,21 +363,23 @@ PC = LR;
 
 + ======================================================= +
 +=ldb
-+opcode 0011
++field0 LOAD_OPCODE=0011
++field1 D=0
 +formats Load
-+field0 D=0
 +resources LOAD
-+op1 name=result1, stage=5
++lr readonly
++op1 name=result1, stage=5_1
 +op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed
 +summary Signed load byte
 +temp1 name=ea
 +stage_3_0
 ea = ZeroExtend_32_(operand1 + operand2);
+IF (IsDBreakHit(ea))
+  THROW(DBREAK);
 IF (IsCRegSpace(ea))
-  THROW CREG_ACCESS_VIOALTION;
-ELSE
-  ReadCheckMemory_8_(ea);
+  THROW(CREG_ACCESS_VIOLATION);
+ReadCheckMemory_8_(ea);
 +stage_5_0
 ReadMemory_8_(ea);
 +stage_5_1
@@ -363,20 +387,21 @@ result1 = SignExtend_8_(ReadMemResponse());
 
 + ======================================================= +
 +=ldb.d
-+opcode 0011
++field0 LOAD_OPCODE=0011
++field1 D=1
 +formats Load
-+field0 D=1
 +resources LOAD
-+op1 name=result1, stage=5
++lr readonly
++op1 name=result1, stage=5_1
 +op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed
 +summary Signed load byte dismissable
 +temp1 name=ea
 +stage_3_0
-ea = ZeroExtend_32_(operand1 + operand2); 
-IF (IsCRegSpace(ea))
-  DisReadCheckCReg(ea);
-ELSE
+ea = ZeroExtend_32_(operand1 + operand2);
+IF (IsDBreakHit(ea))
+  THROW(DBREAK);
+IF (NOT (IsCRegSpace(ea)))
   DisReadCheckMemory_8_(ea);
 +stage_5_0
 IF (NOT (IsCRegSpace(ea)))
@@ -389,21 +414,23 @@ ELSE
 
 + ======================================================= +
 +=ldbu
-+opcode 0100
++field0 LOAD_OPCODE=0100
++field1 D=0
 +formats Load
-+field0 D=0
 +resources LOAD
-+op1 name=result1, stage=5
++lr readonly
++op1 name=result1, stage=5_1
 +op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed
 +summary Unsigned load byte
 +temp1 name=ea
 +stage_3_0
 ea = ZeroExtend_32_(operand1 + operand2); 
+IF (IsDBreakHit(ea))
+  THROW(DBREAK);
 IF (IsCRegSpace(ea))
-  THROW CREG_ACCESS_VIOALTION;
-ELSE
-  ReadCheckMemory_8_(ea);
+  THROW(CREG_ACCESS_VIOLATION);
+ReadCheckMemory_8_(ea);
 +stage_5_0
 ReadMemory_8_(ea);
 +stage_5_1
@@ -411,20 +438,21 @@ result1 = ZeroExtend_8_(ReadMemResponse());
 
 + ======================================================= +
 +=ldbu.d
-+opcode 0100
++field0 LOAD_OPCODE=0100
++field1 D=1
 +formats Load
-+field0 D=1
 +resources LOAD
-+op1 name=result1, stage=5
++lr readonly
++op1 name=result1, stage=5_1
 +op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed
 +summary Unsigned load byte dismissable
 +temp1 name=ea
 +stage_3_0
 ea = ZeroExtend_32_(operand1 + operand2); 
-IF (IsCRegSpace(ea))
-  DisReadCheckCReg(ea);
-ELSE
+IF (IsDBreakHit(ea))
+  THROW(DBREAK);
+IF (NOT (IsCRegSpace(ea)))
   DisReadCheckMemory_8_(ea);
 +stage_5_0
 IF (NOT (IsCRegSpace(ea)))
@@ -437,21 +465,23 @@ ELSE
 
 + ======================================================= +
 +=ldh
-+opcode 0001
++field0 LOAD_OPCODE=0001
++field1 D=0
 +formats Load
-+field0 D=0
 +resources LOAD
-+op1 name=result1, stage=5
++lr readonly
++op1 name=result1, stage=5_1
 +op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed
 +summary Signed load half-word
 +temp1 name=ea
 +stage_3_0
 ea = ZeroExtend_32_(operand1 + operand2); 
+IF (IsDBreakHit(ea))
+  THROW(DBREAK);
 IF (IsCRegSpace(ea))
-  THROW CREG_ACCESS_VIOALTION;
-ELSE
-  ReadCheckMemory_16_(ea);
+  THROW(CREG_ACCESS_VIOLATION);
+ReadCheckMemory_16_(ea);
 +stage_5_0
 ReadMemory_16_(ea);
 +stage_5_1
@@ -459,20 +489,21 @@ result1 = SignExtend_16_(ReadMemResponse());
 
 + ======================================================= +
 +=ldh.d
-+opcode 0001
++field0 LOAD_OPCODE=0001
++field1 D=1
 +formats Load
-+field0 D=1
 +resources LOAD
-+op1 name=result1, stage=5
++lr readonly
++op1 name=result1, stage=5_1
 +op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed
 +summary Signed load half-word dismissable
 +temp1 name=ea
 +stage_3_0
 ea = ZeroExtend_32_(operand1 + operand2); 
-IF (IsCRegSpace(ea))
-  DisReadCheckCReg(ea);
-ELSE
+IF (IsDBreakHit(ea))
+  THROW(DBREAK);
+IF (NOT (IsCRegSpace(ea)))
   DisReadCheckMemory_16_(ea);
 +stage_5_0
 IF (NOT (IsCRegSpace(ea)))
@@ -485,21 +516,23 @@ ELSE
 
 + ======================================================= +
 +=ldhu
-+opcode 0010
++field0 LOAD_OPCODE=0010
++field1 D=0
 +formats Load
-+field0 D=0
 +resources LOAD
-+op1 name=result1, stage=5
++lr readonly
++op1 name=result1, stage=5_1
 +op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed
 +summary Unsigned load half-word
 +temp1 name=ea
 +stage_3_0
-ea = ZeroExtend_32_(operand1 + operand2); 
+ea = ZeroExtend_32_(operand1 + operand2);
+IF (IsDBreakHit(ea))
+  THROW(DBREAK);
 IF (IsCRegSpace(ea))
-  THROW CREG_ACCESS_VIOALTION;
-ELSE
-  ReadCheckMemory_16_(ea);
+  THROW(CREG_ACCESS_VIOLATION);
+ReadCheckMemory_16_(ea);
 +stage_5_0
 ReadMemory_16_(ea);
 +stage_5_1
@@ -507,20 +540,21 @@ result1 = ZeroExtend_16_(ReadMemResponse());
 
 + ======================================================= +
 +=ldhu.d
-+opcode 0010
++field0 LOAD_OPCODE=0010
++field1 D=1
 +formats Load
-+field0 D=1
 +resources LOAD
-+op1 name=result1, stage=5
++lr readonly
++op1 name=result1, stage=5_1
 +op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed
 +summary Unsigned load half-word dismissable
 +temp1 name=ea
 +stage_3_0
 ea = ZeroExtend_32_(operand1 + operand2); 
-IF (IsCRegSpace(ea))
-  DisReadCheckCReg(ea);
-ELSE
+IF (IsDBreakHit(ea))
+  THROW(DBREAK);
+IF (NOT (IsCRegSpace(ea)))
   DisReadCheckMemory_16_(ea);
 +stage_5_0
 IF (NOT (IsCRegSpace(ea)))
@@ -533,21 +567,22 @@ ELSE
 
 + ======================================================= +
 +=ldw
-+opcode 0000
++field0 LOAD_OPCODE=0000
++field1 D=0
 +formats Load
-+field0 D=0
 +resources LOAD
-+op1 name=result1, stage=5
++op1 name=result1, stage=5_1
 +op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed
 +summary Load word
 +temp1 name=ea
 +stage_3_0
-ea = ZeroExtend_32_(operand1 + operand2); 
+ea = ZeroExtend_32_(operand1 + operand2);
+IF (IsDBreakHit(ea))
+  THROW(DBREAK);
 IF (IsCRegSpace(ea))
   ReadCheckCReg(ea);
-ELSE
-  ReadCheckMemory_32_(ea);
+ReadCheckMemory_32_(ea);
 +stage_5_0
 IF (IsCRegSpace(ea))
   ReadCReg(ea);
@@ -558,20 +593,20 @@ ELSE
 
 + ======================================================= +
 +=ldw.d
-+opcode 0000
++field0 LOAD_OPCODE=0000
++field1 D=1
 +formats Load
-+field0 D=1
 +resources LOAD
-+op1 name=result1, stage=5
++op1 name=result1, stage=5_1
 +op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed
 +summary Load word dismissable
 +temp1 name=ea
 +stage_3_0
 ea = ZeroExtend_32_(operand1 + operand2); 
-IF (IsCRegSpace(ea))
-  DisReadCheckCReg(ea);
-ELSE
+IF (IsDBreakHit(ea))
+  THROW(DBREAK);
+IF (NOT (IsCRegSpace(ea)))
   DisReadCheckMemory_32_(ea);
 +stage_5_0
 IF (NOT (IsCRegSpace(ea)))
@@ -584,7 +619,7 @@ ELSE
 
 + ======================================================= +
 +=max
-+opcode 10000
++field0 INT3_OPCODE=10000
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
@@ -599,7 +634,7 @@ ELSE
 
 + ======================================================= +
 +=maxu
-+opcode 10001
++field0 INT3_OPCODE=10001
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
@@ -614,7 +649,7 @@ ELSE
 
 + ======================================================= +
 +=min
-+opcode 10010
++field0 INT3_OPCODE=10010
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
@@ -629,7 +664,7 @@ ELSE
 
 + ======================================================= +
 +=minu
-+opcode 10011
++field0 INT3_OPCODE=10011
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
@@ -644,9 +679,10 @@ ELSE
 
 + ======================================================= +
 +=mulh
-+opcode 10111
++field0 INT3_OPCODE=10111
 +formats Int3R Int3I
 +resources MUL
++lr readonly
 +op1 name=result1, stage=5
 +op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed
@@ -656,9 +692,10 @@ result1 = operand1 * (operand2 >> 16);
 
 + ======================================================= +
 +=mulhh
-+opcode 11101
++field0 INT3_OPCODE=11101
 +formats Int3R Int3I
 +resources MUL
++lr readonly
 +op1 name=result1, stage=5
 +op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed
@@ -667,10 +704,24 @@ result1 = operand1 * (operand2 >> 16);
 result1 = (operand1 >> 16) * (operand2 >> 16);
 
 + ======================================================= +
-+=mulhhu
-+opcode 11110
++=mulhhs
++field0 INT3_OPCODE=10100
 +formats Int3R Int3I
 +resources MUL
++lr readonly
++op1 name=result1, stage=5
++op2 name=operand1, stage=2, type=signed
++op3 name=operand2, stage=2, type=signed
++summary Word by upper-half-word signed multiply, returns top 32 bits of 48 bit result
++stage_5_0
+result1 = (operand1 * (operand2 >> 16)) >> 16;
+
++ ======================================================= +
++=mulhhu
++field0 INT3_OPCODE=11110
++formats Int3R Int3I
++resources MUL
++lr readonly
 +op1 name=result1, stage=5
 +op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed
@@ -680,9 +731,10 @@ result1 = ZeroExtend_16_(operand1 >> 16) * ZeroExtend_16_(operand2 >> 16);
 
 + ======================================================= +
 +=mulhs
-+opcode 11111
++field0 INT3_OPCODE=11111
 +formats Int3R Int3I
 +resources MUL
++lr readonly
 +op1 name=result1, stage=5
 +op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed
@@ -692,9 +744,10 @@ result1 = (operand1 * ZeroExtend_16_(operand2 >> 16)) << 16;
 
 + ======================================================= +
 +=mulhu
-+opcode 11000
++field0 INT3_OPCODE=11000
 +formats Int3R Int3I
 +resources MUL
++lr readonly
 +op1 name=result1, stage=5
 +op2 name=operand1, stage=2, type=unsigned
 +op3 name=operand2, stage=2, type=signed
@@ -704,9 +757,10 @@ result1 = operand1 * ZeroExtend_16_(operand2 >> 16);
 
 + ======================================================= +
 +=mull
-+opcode 10101
++field0 INT3_OPCODE=10101
 +formats Int3R Int3I
 +resources MUL
++lr readonly
 +op1 name=result1, stage=5
 +op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed, size=16
@@ -716,9 +770,10 @@ result1 = operand1 * operand2;
 
 + ======================================================= +
 +=mullh
-+opcode 11011
++field0 INT3_OPCODE=11011
 +formats Int3R Int3I
 +resources MUL
++lr readonly
 +op1 name=result1, stage=5
 +op2 name=operand1, stage=2, type=signed, size=16
 +op3 name=operand2, stage=2, type=signed
@@ -728,9 +783,10 @@ result1 = operand1 * (operand2 >> 16);
 
 + ======================================================= +
 +=mullhu
-+opcode 11100
++field0 INT3_OPCODE=11100
 +formats Int3R Int3I
 +resources MUL
++lr readonly
 +op1 name=result1, stage=5
 +op2 name=operand1, stage=2, type=unsigned, size=16
 +op3 name=operand2, stage=2, type=signed
@@ -739,10 +795,24 @@ result1 = operand1 * (operand2 >> 16);
 result1 = operand1 * ZeroExtend_16_(operand2 >> 16);
 
 + ======================================================= +
-+=mulll
-+opcode 11001
++=mullhus
++field0 INT3_OPCODE=01111
 +formats Int3R Int3I
 +resources MUL
++lr readonly
++op1 name=result1, stage=5
++op2 name=operand1, stage=2, type=signed
++op3 name=operand2, stage=2, type=unsigned, size=16
++summary Word by lower-half-word signed multiply, returns top 16 bits of 48 bit result, sign extended
++stage_5_0
+result1 = (operand1 * operand2) >> 32;
+
++ ======================================================= +
++=mulll
++field0 INT3_OPCODE=11001
++formats Int3R Int3I
++resources MUL
++lr readonly
 +op1 name=result1, stage=5
 +op2 name=operand1, stage=2, type=signed, size=16
 +op3 name=operand2, stage=2, type=signed, size=16
@@ -752,9 +822,10 @@ result1 = operand1 * operand2;
 
 + ======================================================= +
 +=mulllu
-+opcode 11010
++field0 INT3_OPCODE=11010
 +formats Int3R Int3I
 +resources MUL
++lr readonly
 +op1 name=result1, stage=5
 +op2 name=operand1, stage=2, type=unsigned, size=16
 +op3 name=operand2, stage=2, type=unsigned, size=16
@@ -764,9 +835,10 @@ result1 = operand1 * operand2;
 
 + ======================================================= +
 +=mullu
-+opcode 10110
++field0 INT3_OPCODE=10110
 +formats Int3R Int3I
 +resources MUL
++lr readonly
 +op1 name=result1, stage=5
 +op2 name=operand1, stage=2, type=unsigned
 +op3 name=operand2, stage=2, type=unsigned, size=16
@@ -776,7 +848,7 @@ result1 = operand1 * operand2;
 
 + ======================================================= +
 +=nandl
-+opcode 1011
++field0 CMP3_OPCODE=1011
 +formats Cmp3R_Reg Cmp3R_Br Cmp3I_Reg Cmp3I_Br
 +resources ALU
 +op1 name=result1, stage=3
@@ -788,7 +860,7 @@ result1 = NOT ((operand1 != 0) AND (operand2 != 0));
 
 + ======================================================= +
 +=norl
-+opcode 1101
++field0 CMP3_OPCODE=1101
 +formats Cmp3R_Reg Cmp3R_Br Cmp3I_Reg Cmp3I_Br
 +resources ALU
 +op1 name=result1, stage=3
@@ -800,7 +872,7 @@ result1 = NOT ((operand1 != 0) OR (operand2 != 0));
 
 + ======================================================= +
 +=or
-+opcode 01011
++field0 INT3_OPCODE=01011
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
@@ -812,7 +884,7 @@ result1 = operand1 | operand2;
 
 + ======================================================= +
 +=orc
-+opcode 01100
++field0 INT3_OPCODE=01100
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
@@ -824,7 +896,7 @@ result1 = (~operand1) | operand2;
 
 + ======================================================= +
 +=orl
-+opcode 1100
++field0 CMP3_OPCODE=1100
 +formats Cmp3R_Reg Cmp3R_Br Cmp3I_Reg Cmp3I_Br
 +resources ALU
 +op1 name=result1, stage=3
@@ -836,14 +908,15 @@ result1 = (operand1 != 0) OR (operand2 != 0);
 
 + ======================================================= +
 +=pft
-+opcode 01101
++field0 STORE_OPCODE=01101
 +formats Store
 +resources STORE
 +op1 name=operand1, stage=2, type=signed
 +op2 name=operand2, stage=2, type=signed
++op3 fixed=000000
 +summary Prefetch
 +syntax pft %1[%2]
-+temp1 name=dummy
++temp1 name=ea
 +stage_3_0
 ea = ZeroExtend_32_(operand1 + operand2); 
 +stage_5_0
@@ -851,11 +924,12 @@ PrefetchMemory(ea);
 
 + ======================================================= +
 +=prgadd
-+opcode 01110
++field0 STORE_OPCODE=01110
 +formats Store
 +resources STORE
 +op1 name=operand1, stage=2, type=signed
 +op2 name=operand2, stage=2, type=signed
++op3 fixed=000000
 +summary Purge the address given from the data cache
 +syntax prgadd %1[%2]
 +temp1 name=ea
@@ -866,11 +940,12 @@ PurgeAddress(ea);
 
 + ======================================================= +
 +=prgset
-+opcode 01111
++field0 STORE_OPCODE=01111
 +formats Store
 +resources STORE
 +op1 name=operand1, stage=2, type=signed
 +op2 name=operand2, stage=2, type=signed
++op3 fixed=000000
 +summary Purge a set of four cache lines from the data cache
 +syntax prgset %1[%2]
 +temp1 name=ea
@@ -881,7 +956,8 @@ PurgeSet(ea);
 
 + ======================================================= +
 +=prgins
-+opcode 1111100
++field0 SYSOP_OPCODE=1111100
++field1 STOPBIT=1
 +formats SysOp
 +resources CALL
 +summary Purge the instruction cache
@@ -890,24 +966,25 @@ PurgeIns();
 
 + ======================================================= +
 +=rfi
-+opcode 010
++field0 CALL_OPCODE=010
++field1 LNK=0
 +formats Call
-+field0 LNK=0
 +resources CALL
-+state1 name=SAVED_PC, kind=src, stage=-2
++op1 fixed=00000000000000000000000
++state1 name=SAVED_PC, kind=src, stage=1
 +state2 name=SAVED_PC, kind=dst, stage=5
-+state3 name=SAVED_PSW, kind=src, stage=-2
++state3 name=SAVED_PSW, kind=src, stage=1
 +state4 name=SAVED_PSW, kind=dst, stage=5
-+state5 name=SAVED_SAVED_PC, kind=src, stage=2
-+state6 name=SAVED_SAVED_PSW, kind=src, stage=2
++state5 name=SAVED_SAVED_PC, kind=src, stage=1
++state6 name=SAVED_SAVED_PSW, kind=src, stage=1
 +state7 name=PSW, kind=src, stage=1
 +state8 name=PSW, kind=dst, stage=5
 +state9 name=PC, kind=dst, stage=1
 +summary Return from interrupt
 +syntax rfi
 +stage_1_0
-IF (PSW[USER_MODE]) 
-	THROW ILL_INST;
+IF (PSW[USER_MODE])
+	THROW(ILL_INST);
 PC = Register(ZeroExtend_32_(SAVED_PC));
 +stage_5_0
 PSW = SAVED_PSW;
@@ -916,16 +993,17 @@ SAVED_PSW = SAVED_SAVED_PSW;
 
 + ======================================================= +
 +=sbrk
-+opcode 1111101
++field0 SYSOP_OPCODE=1111101
++field1 STOPBIT=1
 +formats SysOp
 +resources ALU
 +summary Software breakpoint
 +stage_3_0
-THROW SBREAK;
+THROW(SBREAK);
 
 + ======================================================= +
 +=sh1add
-+opcode 00101
++field0 INT3_OPCODE=00101
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
@@ -937,7 +1015,7 @@ result1 = (operand1 << 1) + operand2;
 
 + ======================================================= +
 +=sh2add
-+opcode 00110
++field0 INT3_OPCODE=00110
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
@@ -949,7 +1027,7 @@ result1 = (operand1 << 2) + operand2;
 
 + ======================================================= +
 +=sh3add
-+opcode 00111
++field0 INT3_OPCODE=00111
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
@@ -961,7 +1039,7 @@ result1 = (operand1 << 3) + operand2;
 
 + ======================================================= +
 +=sh4add
-+opcode 01000
++field0 INT3_OPCODE=01000
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
@@ -973,49 +1051,46 @@ result1 = (operand1 << 4) + operand2;
 
 + ======================================================= +
 +=shl
-+opcode 00010
++field0 INT3_OPCODE=00010
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
 +op2 name=operand1, stage=2, type=signed
-+op3 name=operand2, stage=2, type=signed
++op3 name=operand2, stage=2, type=unsigned, size=8
 +summary Shift left
-+temp1 name=distance, type=unsigned
 +stage_3_0
-distance = ZeroExtend_8_(operand2); 
-result1 = operand1 << distance;
+IF (operand2 > 31)
+result1 = 0;
+ELSE
+result1 = operand1 << operand2;
 
 + ======================================================= +
 +=shr
-+opcode 00011
++field0 INT3_OPCODE=00011
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
 +op2 name=operand1, stage=2, type=signed
-+op3 name=operand2, stage=2, type=signed
++op3 name=operand2, stage=2, type=unsigned, size=8
 +summary Arithmetic shift right
-+temp1 name=distance, type=unsigned
 +stage_3_0
-distance = ZeroExtend_8_(operand2); 
-result1 = operand1 >> distance;
+result1 = operand1 >> operand2;
 
 + ======================================================= +
 +=shru
-+opcode 00100
++field0 INT3_OPCODE=00100
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
 +op2 name=operand1, stage=2, type=unsigned
-+op3 name=operand2, stage=2, type=signed
++op3 name=operand2, stage=2, type=unsigned, size=8
 +summary Logical shift right
-+temp1 name=distance, type=unsigned
 +stage_3_0
-distance = ZeroExtend_8_(operand2); 
-result1 = operand1 >> distance;
+result1 = operand1 >> operand2;
 
 + ======================================================= +
 +=slct
-+opcode 000
++field0 SLCT_OPCODE=000
 +formats SelectR SelectI
 +resources ALU
 +op1 name=result1, stage=3
@@ -1031,7 +1106,7 @@ ELSE
 
 + ======================================================= +
 +=slctf
-+opcode 001
++field0 SLCT_OPCODE=001
 +formats SelectR SelectI
 +resources ALU
 +op1 name=result1, stage=3
@@ -1047,7 +1122,7 @@ ELSE
 
 + ======================================================= +
 +=stb
-+opcode 01100
++field0 STORE_OPCODE=01100
 +formats Store
 +resources STORE
 +op1 name=operand1, stage=2, type=signed
@@ -1057,16 +1132,17 @@ ELSE
 +temp1 name=ea
 +stage_3_0
 ea = ZeroExtend_32_(operand1 + operand2);
+IF (IsDBreakHit(ea))
+  THROW(DBREAK);
 IF (IsCRegSpace(ea))
-  THROW CREG_ACCESS_VIOALTION;
-ELSE
-  WriteCheckMemory_8_(ea);
+  THROW(CREG_ACCESS_VIOLATION);
+WriteCheckMemory_8_(ea);
 +stage_5_0
 WriteMemory_8_(ea, operand3);
 
 + ======================================================= +
 +=sth
-+opcode 01011
++field0 STORE_OPCODE=01011
 +formats Store
 +resources STORE
 +op1 name=operand1, stage=2, type=signed
@@ -1076,16 +1152,17 @@ WriteMemory_8_(ea, operand3);
 +temp1 name=ea
 +stage_3_0
 ea = ZeroExtend_32_(operand1 + operand2); 
+IF (IsDBreakHit(ea))
+  THROW(DBREAK);
 IF (IsCRegSpace(ea))
-  THROW CREG_ACCESS_VIOALTION;
-ELSE
-  WriteCheckMemory_16_(ea);
+  THROW(CREG_ACCESS_VIOLATION);
+WriteCheckMemory_16_(ea);
 +stage_5_0
 WriteMemory_16_(ea, operand3);
 
 + ======================================================= +
 +=stw
-+opcode 01010
++field0 STORE_OPCODE=01010
 +formats Store
 +resources STORE
 +op1 name=operand1, stage=2, type=signed
@@ -1095,10 +1172,11 @@ WriteMemory_16_(ea, operand3);
 +temp1 name=ea
 +stage_3_0
 ea = ZeroExtend_32_(operand1 + operand2); 
+IF (IsDBreakHit(ea))
+  THROW(DBREAK);
 IF (IsCRegSpace(ea))
   WriteCheckCReg(ea);
-ELSE
-  WriteCheckMemory_32_(ea);
+WriteCheckMemory_32_(ea);
 +stage_5_0
 IF (IsCRegSpace(ea))
   WriteCReg(ea, operand3);
@@ -1107,22 +1185,47 @@ ELSE
 
 + ======================================================= +
 +=sub
-+opcode 00001
++field0 INT3_OPCODE=00001
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
-+op2 name=operand1, stage=2, type=signed
 +op3 name=operand2, stage=2, type=signed
++op2 name=operand1, stage=2, type=signed
 +summary Subtract
 +syntax sub %1 = %3, %2
 +stage_3_0
 result1 = operand2 - operand1;
 
 + ======================================================= +
++=sxtb
++field0 MONADIC_OPCODE=000000000
++formats Monadic
++resources ALU
++op1 name=result1, stage=3
++op2 name=operand1, stage=2, type=signed, size=8
++summary Sign extend byte
++stage_3_0
+result1 = operand1;
+
++ ======================================================= +
++=sxth
++field0 MONADIC_OPCODE=000000001
++formats Monadic
++resources ALU
++op1 name=result1, stage=3
++op2 name=operand1, stage=2, type=signed, size=16
++summary Sign extend half
++stage_3_0
+result1 = operand1;
+
++ ======================================================= +
 +=sync
-+opcode 10000
++field0 STORE_OPCODE=10000
 +formats Store
 +resources LOAD
++op1 fixed=000000000
++op2 fixed=000000
++op3 fixed=000000
 +summary Ensure synchronisation
 +syntax sync
 +stage_5_0
@@ -1130,40 +1233,18 @@ Sync();
 
 + ======================================================= +
 +=syscall
-+opcode 1111110
++field0 SYSOP_OPCODE=1111110
++field1 STOPBIT=1
 +formats SysOp
 +resources ALU
 +summary System call
++syntax syscall
 +stage_3_0
-THROW ILL_INST;
-
-+ ======================================================= +
-+=sxtb
-+opcode 01110
-+formats Int3R
-+resources ALU
-+op1 name=result1, stage=3
-+op3 name=operand1, stage=2, type=signed, size=8
-+summary Sign-extend byte
-+syntax sxtb %1 = %3
-+stage_3_0
-result1 = operand1;
-
-+ ======================================================= +
-+=sxth
-+opcode 01111
-+formats Int3R
-+resources ALU
-+op1 name=result1, stage=3
-+op3 name=operand1, stage=2, type=signed, size=16
-+summary Sign-extend half-word
-+syntax sxth %1 = %3
-+stage_3_0
-result1 = operand1;
+THROW(ILL_INST);
 
 + ======================================================= +
 +=xor
-+opcode 01101
++field0 INT3_OPCODE=01101
 +formats Int3R Int3I
 +resources ALU
 +op1 name=result1, stage=3
@@ -1172,4 +1253,18 @@ result1 = operand1;
 +summary Bitwise exclusive-or
 +stage_3_0
 result1 = operand1 ^ operand2;
+
++ ======================================================= +
++=zxth
++field0 MONADIC_OPCODE=000000011
++formats Monadic
++resources ALU
++op1 name=result1, stage=3
++op2 name=operand1, stage=2, type=unsigned, size=16
++summary Zero extend half
++stage_3_0
+result1 = operand1;
+
++ ======================================================= +
+
 
