@@ -67,7 +67,9 @@ typedef vector<BB*> BB_VECTOR;
 
 static void CGIR_print();
 
+
 /*-------------------- CGIR -> LIR Conversion Fonctions ----------------------*/
+// These functions are the only ones to call the Interface_make functions.
 
 // Convert CGIR TOP to LIR Operator.
 static inline Operator
@@ -118,7 +120,8 @@ CGIR_CRP_to_Register(CLASS_REG_PAIR crp) {
 // Convert CGIR_LAB to LIR Label.
 static inline Label
 CGIR_LAB_to_Label(CGIR_LAB cgir_lab) {
-  Label label = Interface_makeLabel(interface, cgir_lab, LABEL_name(cgir_lab));
+  Label label = NULL;
+  label = Interface_makeLabel(interface, cgir_lab, LABEL_name(cgir_lab));
   return label;
 }
 
@@ -233,6 +236,10 @@ CGIR_BB_to_BasicBlock(CGIR_BB cgir_bb) {
   return basicblock;
 }
 
+
+/*-------------------- LIR -> CGIR Conversion Fonctions ----------------------*/
+// These functions are the only ones to call the Interface_update functions.
+
 // Convert LIR RegClass to CGIR ISA_REGISTER_CLASS.
 static inline ISA_REGISTER_CLASS
 RegClass_to_CGIR_IRC(RegClass regclass) {
@@ -254,7 +261,7 @@ Register_to_CGIR_CRP(Register registre) {
 }
 
 // Convert LIR Operator to TOP.
-static TOP
+static inline TOP
 Operator_to_CGIR_TOP(Operator lir_operator) {
   TOP top = TOP_UNDEFINED;
   for (int i = 0; i < TOP_UNDEFINED; i++) {
@@ -265,6 +272,35 @@ Operator_to_CGIR_TOP(Operator lir_operator) {
   }
   return top;
 }
+
+// Convert LIR Label to CGIR_LAB
+static inline CGIR_LAB
+Label_to_CGIR_LAB(Label label) {
+  CGIR_LAB cgir_lab = Interface_updateLAB(interface, label);
+  return cgir_lab;
+}
+
+// Convert LIR Symbol to CGIR_SYM
+static inline CGIR_SYM
+Symbol_to_CGIR_SYM(Symbol symbol) {
+  CGIR_SYM cgir_sym = Interface_updateSYM(interface, symbol);
+  return cgir_sym;
+}
+
+// Convert LIR TempName to CGIR_TN
+static inline CGIR_TN
+TempName_to_CGIR_TN(TempName tempname) {
+  CGIR_TN cgir_tn = Interface_updateTN(interface, tempname);
+  return cgir_tn;
+}
+
+// Convert LIR Operation to CGIR_OP
+static inline CGIR_OP
+Operation_to_CGIR_OP(Operation operation) {
+  CGIR_OP cgir_op = Interface_updateOP(interface, operation);
+  return cgir_op;
+}
+
 
 /*-------------------- LIR Interface Call-Back Functions ---------------------*/
 
@@ -295,7 +331,7 @@ CGIR_SYM_update(CGIR_SYM cgir_sym, Symbol symbol) {
 
 // Create a CGIR_TN from a LIR Dedicated TempName.
 static CGIR_TN
-CGIR_TN_Dedicated_create(Register registre) {
+CGIR_Dedicated_TN_create(Register registre) {
   int size = 0;		// not used in Build_Dedicated_TN
   CLASS_REG_PAIR crp = Register_to_CGIR_CRP(registre);
   return Build_Dedicated_TN(CLASS_REG_PAIR_rclass(crp), CLASS_REG_PAIR_reg(crp), size);
@@ -303,43 +339,43 @@ CGIR_TN_Dedicated_create(Register registre) {
 
 // Create a CGIR_TN from a LIR PseudoReg TempName.
 static CGIR_TN
-CGIR_TN_PseudoReg_create(RegClass regclass) {
+CGIR_Pseudo_TNReg_create(RegClass regclass) {
   int size = 0;		// FIXME
   return Gen_Register_TN(RegClass_to_CGIR_IRC(regclass), size);
 }
 
 // Create a CGIR_TN from a LIR Modifier TempName.
 static CGIR_TN
-CGIR_TN_Modifier_create(Modifier modifier) {
+CGIR_Modifier_TN_create(Modifier modifier) {
   Is_True(0, ("CGIR_createModifier_TN not implemented"));
   return NULL;
 }
 
 // Create a CGIR_TN from a LIR Absolute TempName.
 static CGIR_TN
-CGIR_TN_Absolute_create(Immediate immediate, int64_t value) {
+CGIR_Absolute_TN_create(Immediate immediate, int64_t value) {
   int size = (value >= (int64_t)0x80000000 && value <= (int64_t)0x7FFFFFFF) ? 4 : 8;
   return Gen_Literal_TN(value, size);
 }
 
 // Create a CGIR_TN from a LIR Symbol TempName.
 static CGIR_TN
-CGIR_TN_Symbol_create(Immediate immediate, Symbol symbol, int64_t offset) {
+CGIR_Symbol_TN_create(Immediate immediate, Symbol symbol, int64_t offset) {
   Is_True(0, ("CGIR_createSymbol_TN not implemented"));
   return NULL;
 }
 
 // Create a CGIR_TN from a LIR Label TempName.
 static CGIR_TN
-CGIR_TN_Label_create(Immediate immediate, Label label) {
-  CGIR_LAB cgir_lab = Interface_lookupLAB(interface, label);
-  Is_True(cgir_lab != 0, ("Interface_lookupLAB returned zero LABEL_IDX"));
+CGIR_Label_TN_create(Immediate immediate, Label label) {
+  CGIR_LAB cgir_lab = Label_to_CGIR_LAB(label);
   return Gen_Label_TN(cgir_lab, 0);
 }
 
 // Update a CGIR_TN from a LIR TempName.
 static void
 CGIR_TN_update(CGIR_TN cgir_tn, TempName tempname) {
+  // TODO: commit register allocation.
 }
 
 // Create a CGIR_OP from a LIR Operation.
@@ -348,11 +384,11 @@ CGIR_OP_create(Operation operation, int argCount, TempName arguments[], int resC
   TOP top = Operator_to_CGIR_TOP(Interface_Operation_getOperator(interface, operation));
   CGIR_TN *argTNs = (CGIR_TN *)alloca(sizeof(CGIR_TN)*argCount);
   for (int i = 0; i < argCount; i++) {
-    argTNs[i] = Interface_lookupTN(interface, arguments[i]);
+    argTNs[i] = TempName_to_CGIR_TN(arguments[i]);
   }
   CGIR_TN *resTNs = (CGIR_TN *)alloca(sizeof(CGIR_TN)*resCount);
   for (int i = 0; i < resCount; i++) {
-    resTNs[i] = Interface_lookupTN(interface, results[i]);
+    resTNs[i] = TempName_to_CGIR_TN(results[i]);
   }
   CGIR_OP cgir_op = Mk_VarOP(top, resCount, argCount, resTNs, argTNs);
   // TODO: issue dates, flags, etc.
@@ -368,12 +404,12 @@ CGIR_OP_update(CGIR_OP cgir_op, Operation operation, int argCount, TempName argu
   }
   Is_True(argCount == OP_opnds(cgir_op), ("OP_opnds mismatch in CGIR_update_OP"));
   for (int i = 0; i < argCount; i++) {
-    CGIR_TN cgir_tn = Interface_lookupTN(interface, arguments[i]);
+    CGIR_TN cgir_tn = TempName_to_CGIR_TN(arguments[i]);
     if (OP_opnd(cgir_op, i) != cgir_tn) Set_OP_opnd(cgir_op, i, cgir_tn);
   }
   Is_True(resCount == OP_results(cgir_op), ("OP_results mismatch in CGIR_update_OP"));
   for (int i = 0; i < resCount; i++) {
-    CGIR_TN cgir_tn = Interface_lookupTN(interface, results[i]);
+    CGIR_TN cgir_tn = TempName_to_CGIR_TN(results[i]);
     if (OP_result(cgir_op, i) != cgir_tn) Set_OP_result(cgir_op, i, cgir_tn);
   }
   // TODO: issue dates, flags, etc.
@@ -384,14 +420,14 @@ static CGIR_BB
 CGIR_BB_create(BasicBlock basicblock, int labelCount, Label labels[], int opCount, Operation operations[]) {
   CGIR_BB cgir_bb = Gen_BB();
   for (int i = 0; i < labelCount; i++) {
-    CGIR_LAB cgir_lab = Interface_lookupLAB(interface, labels[i]);
+    CGIR_LAB cgir_lab = Label_to_CGIR_LAB(labels[i]);
     // code borrowed from Gen_Label_For_BB
     Set_Label_BB(cgir_lab, cgir_bb);
     BB_Add_Annotation(cgir_bb, ANNOT_LABEL, (void *)cgir_lab);
   }
   OPS ops = OPS_EMPTY;
   for (int i = 0; i < opCount; i++) {
-    OPS_Append_Op(&ops, Interface_lookupOP(interface, operations[i]));
+    OPS_Append_Op(&ops, Operation_to_CGIR_OP(operations[i]));
   }
   BB_Append_Ops(cgir_bb, &ops);
   // TODO: loopinfo, flags, etc.
@@ -402,7 +438,7 @@ CGIR_BB_create(BasicBlock basicblock, int labelCount, Label labels[], int opCoun
 static void
 CGIR_BB_update(CGIR_BB cgir_bb, BasicBlock basicblock, int labelCount, Label labels[], int opCount, Operation operations[]) {
   for (int i = 0; i < labelCount; i++) {
-    CGIR_LAB label = Interface_lookupLAB(interface, labels[i]);
+    CGIR_LAB label = Label_to_CGIR_LAB(labels[i]);
     if (!Is_Label_For_BB(label, cgir_bb)) {
       // code borrowed from Gen_Label_For_BB
       Set_Label_BB(label, cgir_bb);
@@ -412,7 +448,7 @@ CGIR_BB_update(CGIR_BB cgir_bb, BasicBlock basicblock, int labelCount, Label lab
   BB_Remove_All(cgir_bb);
   OPS ops = OPS_EMPTY;
   for (int i = 0; i < opCount; i++) {
-    OPS_Append_Op(&ops, Interface_lookupOP(interface, operations[i]));
+    OPS_Append_Op(&ops, Operation_to_CGIR_OP(operations[i]));
   }
   BB_Append_Ops(cgir_bb, &ops);
   // TODO: loopinfo, flags, etc.
@@ -485,12 +521,12 @@ lao_init() {
     *Interface__CGIR_LAB_update(interface) = CGIR_LAB_update;
     *Interface__CGIR_SYM_create(interface) = CGIR_SYM_create;
     *Interface__CGIR_SYM_update(interface) = CGIR_SYM_update;
-    *Interface__CGIR_TN_Dedicated_create(interface) = CGIR_TN_Dedicated_create;
-    *Interface__CGIR_TN_PseudoReg_create(interface) = CGIR_TN_PseudoReg_create;
-    *Interface__CGIR_TN_Modifier_create(interface) = CGIR_TN_Modifier_create;
-    *Interface__CGIR_TN_Absolute_create(interface) = CGIR_TN_Absolute_create;
-    *Interface__CGIR_TN_Symbol_create(interface) = CGIR_TN_Symbol_create;
-    *Interface__CGIR_TN_Label_create(interface) = CGIR_TN_Label_create;
+    *Interface__CGIR_Dedicated_TN_create(interface) = CGIR_Dedicated_TN_create;
+    *Interface__CGIR_Pseudo_TNReg_create(interface) = CGIR_Pseudo_TNReg_create;
+    *Interface__CGIR_Modifier_TN_create(interface) = CGIR_Modifier_TN_create;
+    *Interface__CGIR_Absolute_TN_create(interface) = CGIR_Absolute_TN_create;
+    *Interface__CGIR_Symbol_TN_create(interface) = CGIR_Symbol_TN_create;
+    *Interface__CGIR_Label_TN_create(interface) = CGIR_Label_TN_create;
     *Interface__CGIR_TN_update(interface) = CGIR_TN_update;
     *Interface__CGIR_OP_create(interface) = CGIR_OP_create;
     *Interface__CGIR_OP_update(interface) = CGIR_OP_update;
@@ -1090,7 +1126,7 @@ CGIR_TN_print ( const TN *tn )
       	fprintf ( TFile, ":%s%+lld)", ST_name(var), TN_offset(tn) );
     } 
     else {
-      ErrMsg (EC_Unimplemented, "sPrint_TN: illegal constant TN");
+      ErrMsg (EC_Unimplemented, "CGIR_TN_print: illegal constant TN");
     }
   }
   else {  /* register TN */
