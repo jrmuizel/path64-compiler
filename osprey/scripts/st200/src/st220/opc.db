@@ -88,6 +88,166 @@
 +syntax andl %1 = %2, %3
 +format Cmp3I_Br
 
++=s.101100000RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_0
++syntax asm_0 
++format Asm
+
++=s.101100001RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_1
++syntax asm_1 
++format Asm
+
++=s.101100010RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_2
++syntax asm_2 
++format Asm
+
++=s.101100011RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_3
++syntax asm_3 
++format Asm
+
++=s.101100100RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_4
++syntax asm_4 
++format Asm
+
++=s.101100101RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_5
++syntax asm_5 
++format Asm
+
++=s.101100110RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_6
++syntax asm_6 
++format Asm
+
++=s.101100111RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_7
++syntax asm_7 
++format Asm
+
++=s.101101000RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_8
++syntax asm_8 
++format Asm
+
++=s.101101001RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_9
++syntax asm_9 
++format Asm
+
++=s.101101010RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_10
++syntax asm_10 
++format Asm
+
++=s.101101011RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_11
++syntax asm_11 
++format Asm
+
++=s.101101100RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_12
++syntax asm_12 
++format Asm
+
++=s.101101101RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_13
++syntax asm_13 
++format Asm
+
++=s.101101110RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_14
++syntax asm_14 
++format Asm
+
++=s.101101111RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_15
++syntax asm_15 
++format Asm
+
++=s.101110000RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_16
++syntax asm_16 
++format Asm
+
++=s.101110001RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_17
++syntax asm_17 
++format Asm
+
++=s.101110010RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_18
++syntax asm_18 
++format Asm
+
++=s.101110011RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_19
++syntax asm_19 
++format Asm
+
++=s.101110100RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_20
++syntax asm_20 
++format Asm
+
++=s.101110101RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_21
++syntax asm_21 
++format Asm
+
++=s.101110110RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_22
++syntax asm_22 
++format Asm
+
++=s.101110111RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_23
++syntax asm_23 
++format Asm
+
++=s.101111000RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_24
++syntax asm_24 
++format Asm
+
++=s.101111001RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_25
++syntax asm_25 
++format Asm
+
++=s.101111010RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_26
++syntax asm_26 
++format Asm
+
++=s.101111011RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_27
++syntax asm_27 
++format Asm
+
++=s.101111100RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_28
++syntax asm_28 
++format Asm
+
++=s.101111101RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_29
++syntax asm_29 
++format Asm
+
++=s.101111110RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_30
++syntax asm_30 
++format Asm
+
++=s.101111111RRRRRRRRRRRRRRRRRRRRR
++mnemonic asm_31
++syntax asm_31 
++format Asm
+
 +=s.1110aaabbbbbbbbbbbbbbbbbbbbbbb
 +mnemonic br
 +op1 {bcond a}
@@ -986,7 +1146,7 @@
 +syntax prgset %1[%2]
 +format Store
 
-+=1.011111100.....................
++=s.011111100.....................
 +mnemonic prgins
 +syntax prgins 
 +format SysOp
@@ -996,7 +1156,7 @@
 +syntax rfi
 +format Call
 
-+=1.011111101.....................
++=s.011111101.....................
 +mnemonic sbrk
 +syntax sbrk 
 +format SysOp
@@ -1208,7 +1368,7 @@
 +syntax sync
 +format Store
 
-+=1.011111110.....................
++=s.011111110.....................
 +mnemonic syscall
 +syntax syscall
 +format SysOp

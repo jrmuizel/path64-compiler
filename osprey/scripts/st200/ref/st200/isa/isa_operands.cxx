@@ -438,12 +438,6 @@ main()
   Operand (1, src1, base); 
 
   /* ====================================== */ 
-  Instruction_Group("O_asm", 
-		 TOP_asm, 
-		 TOP_UNDEFINED); 
-
-
-  /* ====================================== */ 
   Instruction_Group("O_cgen", 
 		 TOP_addcg, 
 		 TOP_divs, 
@@ -454,6 +448,44 @@ main()
   Operand (0, src1); 
   Operand (1, src2); 
   Operand (2, bcond); 
+
+  /* ====================================== */ 
+  Instruction_Group("O_asm", 
+		 TOP_asm_0, 
+		 TOP_asm_1, 
+		 TOP_asm_2, 
+		 TOP_asm_3, 
+		 TOP_asm_4, 
+		 TOP_asm_5, 
+		 TOP_asm_6, 
+		 TOP_asm_7, 
+		 TOP_asm_8, 
+		 TOP_asm_9, 
+		 TOP_asm_10, 
+		 TOP_asm_11, 
+		 TOP_asm_12, 
+		 TOP_asm_13, 
+		 TOP_asm_14, 
+		 TOP_asm_15, 
+		 TOP_asm_16, 
+		 TOP_asm_17, 
+		 TOP_asm_18, 
+		 TOP_asm_19, 
+		 TOP_asm_20, 
+		 TOP_asm_21, 
+		 TOP_asm_22, 
+		 TOP_asm_23, 
+		 TOP_asm_24, 
+		 TOP_asm_25, 
+		 TOP_asm_26, 
+		 TOP_asm_27, 
+		 TOP_asm_28, 
+		 TOP_asm_29, 
+		 TOP_asm_30, 
+		 TOP_asm_31, 
+		 TOP_asm, 
+		 TOP_UNDEFINED); 
+
 
   /* ====================================== */ 
   Instruction_Group("O_spadjust", 

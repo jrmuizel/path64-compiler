@@ -66,6 +66,326 @@ result1 = (~operand1) & operand2;
 result1 = (operand1 != 0) AND (operand2 != 0);
 
 + ======================================================= +
+
++=asm_0
++field0 INT3_OPCODE=00000
++formats Asm
++resources ASM
++summary Asm0
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_1
++field0 INT3_OPCODE=00001
++formats Asm
++resources ASM
++summary Asm1
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_2
++field0 INT3_OPCODE=00010
++formats Asm
++resources ASM
++summary Asm2
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_3
++field0 INT3_OPCODE=00011
++formats Asm
++resources ASM
++summary Asm3
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_4
++field0 INT3_OPCODE=00100
++formats Asm
++resources ASM
++summary Asm4
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_5
++field0 INT3_OPCODE=00101
++formats Asm
++resources ASM
++summary Asm5
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_6
++field0 INT3_OPCODE=00110
++formats Asm
++resources ASM
++summary Asm6
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_7
++field0 INT3_OPCODE=00111
++formats Asm
++resources ASM
++summary Asm7
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_8
++field0 INT3_OPCODE=01000
++formats Asm
++resources ASM
++summary Asm8
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_9
++field0 INT3_OPCODE=01001
++formats Asm
++resources ASM
++summary Asm9
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_10
++field0 INT3_OPCODE=01010
++formats Asm
++resources ASM
++summary Asm10
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_11
++field0 INT3_OPCODE=01011
++formats Asm
++resources ASM
++summary Asm11
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_12
++field0 INT3_OPCODE=01100
++formats Asm
++resources ASM
++summary Asm12
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_13
++field0 INT3_OPCODE=01101
++formats Asm
++resources ASM
++summary Asm13
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_14
++field0 INT3_OPCODE=01110
++formats Asm
++resources ASM
++summary Asm14
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_15
++field0 INT3_OPCODE=01111
++formats Asm
++resources ASM
++summary Asm15
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_16
++field0 INT3_OPCODE=10000
++formats Asm
++resources ASM
++summary Asm16
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_17
++field0 INT3_OPCODE=10001
++formats Asm
++resources ASM
++summary Asm17
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_18
++field0 INT3_OPCODE=10010
++formats Asm
++resources ASM
++summary Asm18
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_19
++field0 INT3_OPCODE=10011
++formats Asm
++resources ASM
++summary Asm19
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_20
++field0 INT3_OPCODE=10100
++formats Asm
++resources ASM
++summary Asm20
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_21
++field0 INT3_OPCODE=10101
++formats Asm
++resources ASM
++summary Asm21
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_22
++field0 INT3_OPCODE=10110
++formats Asm
++resources ASM
++summary Asm22
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_23
++field0 INT3_OPCODE=10111
++formats Asm
++resources ASM
++summary Asm23
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_24
++field0 INT3_OPCODE=11000
++formats Asm
++resources ASM
++summary Asm24
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_25
++field0 INT3_OPCODE=11001
++formats Asm
++resources ASM
++summary Asm25
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_26
++field0 INT3_OPCODE=11010
++formats Asm
++resources ASM
++summary Asm26
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_27
++field0 INT3_OPCODE=11011
++formats Asm
++resources ASM
++summary Asm27
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_28
++field0 INT3_OPCODE=11100
++formats Asm
++resources ASM
++summary Asm28
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_29
++field0 INT3_OPCODE=11101
++formats Asm
++resources ASM
++summary Asm29
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_30
++field0 INT3_OPCODE=11110
++formats Asm
++resources ASM
++summary Asm30
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
+
++=asm_31
++field0 INT3_OPCODE=11111
++formats Asm
++resources ASM
++summary Asm31
++stage_3_0
+THROW(ILL_INST);
+
++ ======================================================= +
 +=br
 +field0 BRANCH_OPCODE=0
 +formats Branch
@@ -379,7 +699,8 @@ IF (IsDBreakHit(ea))
   THROW(DBREAK);
 IF (IsCRegSpace(ea))
   THROW(CREG_ACCESS_VIOLATION);
-ReadCheckMemory_8_(ea);
+ELSE
+  ReadCheckMemory_8_(ea);
 +stage_5_0
 ReadMemory_8_(ea);
 +stage_5_1
@@ -430,7 +751,8 @@ IF (IsDBreakHit(ea))
   THROW(DBREAK);
 IF (IsCRegSpace(ea))
   THROW(CREG_ACCESS_VIOLATION);
-ReadCheckMemory_8_(ea);
+ELSE
+  ReadCheckMemory_8_(ea);
 +stage_5_0
 ReadMemory_8_(ea);
 +stage_5_1
@@ -481,7 +803,8 @@ IF (IsDBreakHit(ea))
   THROW(DBREAK);
 IF (IsCRegSpace(ea))
   THROW(CREG_ACCESS_VIOLATION);
-ReadCheckMemory_16_(ea);
+ELSE
+  ReadCheckMemory_16_(ea);
 +stage_5_0
 ReadMemory_16_(ea);
 +stage_5_1
@@ -532,7 +855,8 @@ IF (IsDBreakHit(ea))
   THROW(DBREAK);
 IF (IsCRegSpace(ea))
   THROW(CREG_ACCESS_VIOLATION);
-ReadCheckMemory_16_(ea);
+ELSE
+  ReadCheckMemory_16_(ea);
 +stage_5_0
 ReadMemory_16_(ea);
 +stage_5_1
@@ -582,6 +906,7 @@ IF (IsDBreakHit(ea))
   THROW(DBREAK);
 IF (IsCRegSpace(ea))
   ReadCheckCReg(ea);
+ELSE
 ReadCheckMemory_32_(ea);
 +stage_5_0
 IF (IsCRegSpace(ea))
@@ -957,7 +1282,6 @@ PurgeSet(ea);
 + ======================================================= +
 +=prgins
 +field0 SYSOP_OPCODE=1111100
-+field1 STOPBIT=1
 +formats SysOp
 +resources CALL
 +summary Purge the instruction cache
@@ -1234,7 +1558,6 @@ Sync();
 + ======================================================= +
 +=syscall
 +field0 SYSOP_OPCODE=1111110
-+field1 STOPBIT=1
 +formats SysOp
 +resources ALU
 +summary System call
@@ -1266,5 +1589,3 @@ result1 = operand1 ^ operand2;
 result1 = operand1;
 
 + ======================================================= +
-
-

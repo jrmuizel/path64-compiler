@@ -95,6 +95,44 @@ main()
 
   no_adj = Create_Operand_Adjustment("no adjustment", "O_VAL"); 
 
+  /* =====  p38: ===== */ 
+  p38 = ISA_Pack_Type_Create("p38"); 
+  Operand(0, 0, 0, 23); 
+  Instruction_Pack_Group(p38, 
+	TOP_asm_0, 	 0x10000000UL,
+	TOP_asm_1, 	 0x10000000UL,
+	TOP_asm_2, 	 0x10000000UL,
+	TOP_asm_3, 	 0x10000000UL,
+	TOP_asm_4, 	 0x10000000UL,
+	TOP_asm_5, 	 0x10000000UL,
+	TOP_asm_6, 	 0x10000000UL,
+	TOP_asm_7, 	 0x10000000UL,
+	TOP_asm_8, 	 0x10000000UL,
+	TOP_asm_9, 	 0x10000000UL,
+	TOP_asm_10, 	 0x10000000UL,
+	TOP_asm_11, 	 0x10000000UL,
+	TOP_asm_12, 	 0x10000000UL,
+	TOP_asm_13, 	 0x10000000UL,
+	TOP_asm_14, 	 0x10000000UL,
+	TOP_asm_15, 	 0x10000000UL,
+	TOP_asm_16, 	 0x10000000UL,
+	TOP_asm_17, 	 0x10000000UL,
+	TOP_asm_18, 	 0x10000000UL,
+	TOP_asm_19, 	 0x10000000UL,
+	TOP_asm_20, 	 0x10000000UL,
+	TOP_asm_21, 	 0x10000000UL,
+	TOP_asm_22, 	 0x10000000UL,
+	TOP_asm_23, 	 0x10000000UL,
+	TOP_asm_24, 	 0x10000000UL,
+	TOP_asm_25, 	 0x10000000UL,
+	TOP_asm_26, 	 0x10000000UL,
+	TOP_asm_27, 	 0x10000000UL,
+	TOP_asm_28, 	 0x10000000UL,
+	TOP_asm_29, 	 0x10000000UL,
+	TOP_asm_30, 	 0x10000000UL,
+	TOP_asm_31, 	 0x10000000UL,
+	TOP_UNDEFINED); 
+
   /* =====  p28: ===== */ 
   p28 = ISA_Pack_Type_Create("p28"); 
   Instruction_Pack_Group(p28, 
@@ -278,6 +316,13 @@ main()
 	TOP_mov_ii, 	 0x10000000UL, 0x10000000UL,
 	TOP_UNDEFINED); 
 
+  /* =====  p21: ===== */ 
+  p21 = ISA_Pack_Type_Create("p21"); 
+  Operand(0, 0, 0, 23); 
+  Instruction_Pack_Group(p21, 
+	TOP_goto, 	 0x10000000UL,
+	TOP_UNDEFINED); 
+
   /* =====  p1: ===== */ 
   p1 = ISA_Pack_Type_Create("p1"); 
   Result(0, 6, 6); 
@@ -314,13 +359,6 @@ main()
 	TOP_shr_i, 	 0x10000000UL,
 	TOP_shru_i, 	 0x10000000UL,
 	TOP_xor_i, 	 0x10000000UL,
-	TOP_UNDEFINED); 
-
-  /* =====  p21: ===== */ 
-  p21 = ISA_Pack_Type_Create("p21"); 
-  Operand(0, 0, 0, 23); 
-  Instruction_Pack_Group(p21, 
-	TOP_goto, 	 0x10000000UL,
 	TOP_UNDEFINED); 
 
   /* =====  p33: ===== */ 

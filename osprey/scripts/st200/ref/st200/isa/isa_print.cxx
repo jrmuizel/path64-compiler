@@ -10,7 +10,7 @@
 #include "topcode.h" 
 #include "isa_print_gen.h" 
 
-static const char *mnemonic_names[258] = {
+static const char *mnemonic_names[290] = {
   "add",	 /* TOP_add_r */ 
   "add",	 /* TOP_add_i */ 
   "add",	 /* TOP_add_ii */ 
@@ -27,6 +27,38 @@ static const char *mnemonic_names[258] = {
   "andl",	 /* TOP_andl_ii_r */ 
   "andl",	 /* TOP_andl_i_b */ 
   "andl",	 /* TOP_andl_ii_b */ 
+  "asm_0",	 /* TOP_asm_0 */ 
+  "asm_1",	 /* TOP_asm_1 */ 
+  "asm_2",	 /* TOP_asm_2 */ 
+  "asm_3",	 /* TOP_asm_3 */ 
+  "asm_4",	 /* TOP_asm_4 */ 
+  "asm_5",	 /* TOP_asm_5 */ 
+  "asm_6",	 /* TOP_asm_6 */ 
+  "asm_7",	 /* TOP_asm_7 */ 
+  "asm_8",	 /* TOP_asm_8 */ 
+  "asm_9",	 /* TOP_asm_9 */ 
+  "asm_10",	 /* TOP_asm_10 */ 
+  "asm_11",	 /* TOP_asm_11 */ 
+  "asm_12",	 /* TOP_asm_12 */ 
+  "asm_13",	 /* TOP_asm_13 */ 
+  "asm_14",	 /* TOP_asm_14 */ 
+  "asm_15",	 /* TOP_asm_15 */ 
+  "asm_16",	 /* TOP_asm_16 */ 
+  "asm_17",	 /* TOP_asm_17 */ 
+  "asm_18",	 /* TOP_asm_18 */ 
+  "asm_19",	 /* TOP_asm_19 */ 
+  "asm_20",	 /* TOP_asm_20 */ 
+  "asm_21",	 /* TOP_asm_21 */ 
+  "asm_22",	 /* TOP_asm_22 */ 
+  "asm_23",	 /* TOP_asm_23 */ 
+  "asm_24",	 /* TOP_asm_24 */ 
+  "asm_25",	 /* TOP_asm_25 */ 
+  "asm_26",	 /* TOP_asm_26 */ 
+  "asm_27",	 /* TOP_asm_27 */ 
+  "asm_28",	 /* TOP_asm_28 */ 
+  "asm_29",	 /* TOP_asm_29 */ 
+  "asm_30",	 /* TOP_asm_30 */ 
+  "asm_31",	 /* TOP_asm_31 */ 
   "br",	 /* TOP_br */ 
   "break",	 /* TOP_break */ 
   "brf",	 /* TOP_brf */ 
@@ -321,6 +353,38 @@ main()
   Name(); 
 
   Instruction_Print_Group(print_2, 
+		 TOP_asm_0, 
+		 TOP_asm_1, 
+		 TOP_asm_2, 
+		 TOP_asm_3, 
+		 TOP_asm_4, 
+		 TOP_asm_5, 
+		 TOP_asm_6, 
+		 TOP_asm_7, 
+		 TOP_asm_8, 
+		 TOP_asm_9, 
+		 TOP_asm_10, 
+		 TOP_asm_11, 
+		 TOP_asm_12, 
+		 TOP_asm_13, 
+		 TOP_asm_14, 
+		 TOP_asm_15, 
+		 TOP_asm_16, 
+		 TOP_asm_17, 
+		 TOP_asm_18, 
+		 TOP_asm_19, 
+		 TOP_asm_20, 
+		 TOP_asm_21, 
+		 TOP_asm_22, 
+		 TOP_asm_23, 
+		 TOP_asm_24, 
+		 TOP_asm_25, 
+		 TOP_asm_26, 
+		 TOP_asm_27, 
+		 TOP_asm_28, 
+		 TOP_asm_29, 
+		 TOP_asm_30, 
+		 TOP_asm_31, 
 		 TOP_break, 
 		 TOP_prgins, 
 		 TOP_rfi, 
