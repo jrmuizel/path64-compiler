@@ -444,6 +444,16 @@ Preconfigure_Target ( void )
   //
   WOPT_Enable_LFTR2 = FALSE;
 
+  // This will cause WOPT to attempt to find out the real size of
+  // objects (eg. ASHR >> 32 of an I8 will give I4), and use this
+  // rather than the original type in creating STID/LDIDs of temps,
+  // etc. We need to preserve the real types, otherwise we end up
+  // with rotten WHIRL. 
+  // NOTE: it is not clear to me why the IA64 version works when
+  //       this is on. I suspect that everything's repeared when
+  //       canonicalization up to U8 is performed.
+  WOPT_Enable_Min_Type = FALSE;
+
   // Overwrite some CG defaults: 
 
   // Generate floating point constants directly in the code

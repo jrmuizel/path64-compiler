@@ -232,7 +232,7 @@ typedef enum _align {
  */
 #endif
 
-#define DEFAULT_STACK_ALIGNMENT _WORD_ALIGN
+#define DEFAULT_STACK_ALIGNMENT TARG_WORD_ALIGN
 
 /* ====================================================================
  *

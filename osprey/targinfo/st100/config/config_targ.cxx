@@ -155,13 +155,6 @@ BOOL No_Quad_Aligned_Branch = FALSE;
 /* Does target provides only unsigned 64-bit instructions? */
 BOOL Only_Unsigned_64_Bit_Ops = FALSE;
 
-/* Does target provide only 32-bit instructions? */
-BOOL Only_32_Bit_Ops = TRUE;
-
-/* Does target support floating point and long long arithmetic? */
-BOOL Emulate_FloatingPoint_Ops = TRUE;
-BOOL Emulate_LongLong_Ops = TRUE;
-
 BOOL Has_GP_Groups = FALSE;
 
 /* Does target have offsets in load and store instructions?
@@ -388,21 +381,84 @@ Prepare_Target ( void )
 void
 Preconfigure_Target ( void )
 {
+  /*
+   * FE will remove CVTs of types > I4/U4 kids of STID/ISTOR unless 
+   * this is undefined
+   */
+  FE_Cvtl_Opt = FALSE;
+
+  /* pv #297274 describes why we cannot put initialized data in .bss */
+  /* (cbr) don't change a tentative definition for a definition.
+   * ref iso/iec 9899 ansi C chap 6.7.2).
+   * For st2x0 we only consider ourselves in "kernel" mode so that not all
+   * registers are available for the appication in order to reduce context
+   * switches (see st200 runtime manual).
+   */
+  // if ( Kernel_Code ) 
+  Zeroinit_in_bss = FALSE;
+
+  Gen_PIC_Calls = FALSE;	// ld handle's pic calls for IA-64
+  GP_Is_Preserved = FALSE;
+
+  Split_Quad_Ops = TRUE;
+
+  // This flag seems to really only affect CVT/CVTL processing.
+  // When it's on, the I8I4CVT is not simplified, for example.
+  Split_64_Bit_Int_Ops = TRUE;
+
+  // Target provides only 32-bit instructions
+  Only_32_Bit_Ops = TRUE;
+
+  // Target does not support floating point arithmetic
+  Emulate_FloatingPoint_Ops = TRUE;
+
+  // Do not use the extract/compose whirl ops
+  Enable_extract_compose = FALSE;
+
+  // These are only necessary in the BACK_END
+  // Can they be used elsewhere, eg. IPA ??
+  //
+#if defined(BACK_END)
+
   // overwrite some OPT defaults
   // Normally, do not inline divide sequences on this target
-  // However, if the Lai_Code is generated, always inline them.
   // This is handled by ...
   OPT_Inline_Divide = FALSE;
 
   // Overwrite some WOPT defaults:
-  // do not allow minmax opcode
+
+  // Do not use the extract/compose whirl ops. See Enable_extract_compose
+  WOPT_Enable_Bits_Load_Store = FALSE;
+
+  // do don't have a divrem instruction or runtime call.
+  WOPT_Enable_DIVREM = FALSE;
+
+  // do not allow minmax opcode: this is usefull when we're able to
+  // set two conditions in one instruction
   WOPT_Enable_MINMAX = FALSE;
-  // do not allow the test expression optimization, st100 has
-  // hardware loop counters
+
+  // do not allow the test expression optimization
+  //
+  // TODO: should be anabled since it is usefull in the absence of
+  //       hardware loop counters
+  //
   WOPT_Enable_LFTR2 = FALSE;
 
-  // Overwrite some CG defaults:
-  Enable_CG_Peephole = FALSE;
+  // This will cause WOPT to attempt to find out the real size of
+  // objects (eg. ASHR >> 32 of an I8 will give I4), and use this
+  // rather than the original type in creating STID/LDIDs of temps,
+  // etc. We need to preserve the real types, otherwise we end up
+  // with rotten WHIRL. 
+  // NOTE: it is not clear to me why the IA64 version works when
+  //       this is on. I suspect that everything's repeared when
+  //       canonicalization up to U8 is performed.
+  WOPT_Enable_Min_Type = FALSE;
+
+  // Overwrite some CG defaults: 
+
+  // Generate floating point constants directly in the code
+  CG_floating_const_in_memory = FALSE;
+#endif
 
   return;
 }
@@ -416,17 +472,6 @@ Preconfigure_Target ( void )
 void
 Configure_Target ()
 {
-
-#if defined(linux)
-  Target_Byte_Sex = LITTLE_ENDIAN;
-#else  
-  Target_Byte_Sex = BIG_ENDIAN;
-#endif
-  Same_Byte_Sex = ( Target_Byte_Sex == Host_Byte_Sex );
-
-  Gen_PIC_Calls = FALSE;	// ld handle's pic calls for IA-64
-  GP_Is_Preserved = FALSE;
-
   /* Set up the target processor and ISA: */
   Prepare_Target ();
 
