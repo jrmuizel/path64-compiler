@@ -381,6 +381,12 @@ Prepare_Target ( void )
 void
 Preconfigure_Target ( void )
 {
+  /*
+   * FE will remove CVTs of types > I4/U4 kids of STID/ISTOR unless 
+   * this is undefined
+   */
+  FE_Cvtl_Opt = FALSE;
+
   /* pv #297274 describes why we cannot put initialized data in .bss */
   /* (cbr) don't change a tentative definition for a definition.
    * ref iso/iec 9899 ansi C chap 6.7.2).
