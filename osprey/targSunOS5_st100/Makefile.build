@@ -1,0 +1,33 @@
+
+# By default the build system relies on relative paths to access the
+# source directories. However, it is also possible to build the
+# compiler with absolute paths (for instance to build it in an other
+# directory or when using symbolic links that would prevent the use of
+# relative path access) ; just set one or all of the following
+# variables accordingly.
+
+# where to find the sources
+# SRC_DIR        = $(HOME)/Work/PRO64/osprey1.0
+# where to build
+# BUILD_DIR      = /tmp/targSunOS5_st200
+
+ifdef SRC_DIR
+BUILD_TOT      = $(SRC_DIR)
+else 
+BUILD_TOT      = ../..
+endif
+
+ifdef BUILD_DIR
+BUILD_AREA     = $(BUILD_DIR)
+else
+BUILD_AREA     = ..
+endif
+
+
+BUILD_ROOTS    = TARGET
+BUILD_TYPE     = SHARED
+BUILD_OPTIMIZE = DEBUG
+#BUILD_VARIANT  = DEBUG
+BUILD_VARIANT  = RELEASE
+BUILD_INSTALL  = DEFAULT
+BUILD_COMPILER = GNU
