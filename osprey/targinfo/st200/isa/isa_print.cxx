@@ -375,9 +375,7 @@ main()
 		 TOP_break, 
 		 TOP_prgins, 
 		 TOP_rfi, 
-		 TOP_sbrk, 
 		 TOP_sync, 
-		 TOP_syscall, 
 		 TOP_nop, 
 		 TOP_UNDEFINED); 
 
@@ -436,6 +434,8 @@ main()
   Instruction_Print_Group(print_4, 
 		 TOP_goto, 
 		 TOP_igoto, 
+		 TOP_sbrk, 
+		 TOP_syscall, 
 		 TOP_return, 
 		 TOP_UNDEFINED); 
 
