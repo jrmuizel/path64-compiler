@@ -357,7 +357,7 @@ void
 LAO_FINI() {
   if (--LAO_initialized == 0) {
     // finalize MEM_lao_pool
-    MEM_POOL_Delete  ( &MEM_lao_pool );
+    MEM_POOL_Delete ( &MEM_lao_pool );
     // finalize LIR
     LIR_FINI();
   }
@@ -668,8 +668,6 @@ LAO_optimize(BB_List &entryBBs, BB_List &innerBBs, BB_List &exitBBs, unsigned la
   //
   bool cyclic = lao_actions & LAO_LoopSchedule || lao_actions & LAO_LoopPipeline;
   LoopInfo loopinfo = LAO_makeLoopInfo(innerBBs, cyclic);
-  //
-  CodeRegion_pretty(coderegion, TFile);
   //
   result = CodeRegion_optimize(coderegion, lao_actions);
   //
