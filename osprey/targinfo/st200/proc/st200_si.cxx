@@ -458,6 +458,7 @@ main (int argc, char *argv[])
   Any_Operand_Access_Time(0); 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_XFER, 0); 
+  Resource_Requirement(res_ODD, 0); 
 
 
   ///////////////////////////////////////// 
@@ -473,6 +474,7 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(5); 
   Any_Operand_Access_Time(1); 
   Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ODD, 0); 
 
 
   ///////////////////////////////////////// 
@@ -487,6 +489,7 @@ main (int argc, char *argv[])
 
   Any_Operand_Access_Time(1); 
   Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ODD, 0); 
 
 
   ///////////////////////////////////////// 
