@@ -21,15 +21,14 @@
 
 extern "C" {
 
-#define bool int
 #define this THIS
 #define operator OPERATOR
+#define __STDBOOL_H__
 
 #include "LIR.h"
 
 #undef operator
 #undef this
-#undef bool
 
 }
 
@@ -59,11 +58,10 @@ static int LAO_initialized = 0;
 static void
 LAO_INIT() {
   if (LAO_initialized++ == 0) {
-    int i;
     // initialize LIR
     LIR_INIT();
     // initialize TOP__Operator
-    for (i = 0; i < TOP_UNDEFINED; i++) TOP__Operator[i] = Operator_;
+    for (int i = 0; i < TOP_UNDEFINED; i++) TOP__Operator[i] = Operator_;
     TOP__Operator[TOP_add_i] = Operator_CODE_ADD_IDEST_SRC1_ISRC2;
     TOP__Operator[TOP_add_ii] = Operator_CODE_ADD_IDEST_SRC1_ISRCX;
     TOP__Operator[TOP_add_r] = Operator_CODE_ADD_DEST_SRC1_SRC2;
@@ -312,16 +310,16 @@ LAO_INIT() {
     TOP__Operator[TOP_xor_ii] = Operator_CODE_XOR_IDEST_SRC1_ISRCX;
     TOP__Operator[TOP_xor_r] = Operator_CODE_XOR_DEST_SRC1_SRC2;
     // initialize IEC__Modifier
-    for (i = 0; i < EC_MAX; i++) IEC__Modifier[i] = Modifier_;
+    for (int i = 0; i < EC_MAX; i++) IEC__Modifier[i] = Modifier_;
     // initialize LC__Immediate
-    for (i = 0; i < LC_MAX; i++) LC__Immediate[i] = Immediate_;
+    for (int i = 0; i < LC_MAX; i++) LC__Immediate[i] = Immediate_;
     LC__Immediate[LC_s32] = Immediate_I_signed_32_overflow_dont;
     LC__Immediate[LC_u32] = Immediate_I_signed_32_overflow_dont;
     LC__Immediate[LC_s23] = Immediate_I_signed_23_overflow_signed;
     LC__Immediate[LC_u23] = Immediate_I_unsigned_23_overflow_unsigned;
     LC__Immediate[LC_s9] = Immediate_I_signed_9_overflow_signed;
     // initialize IRC__RegClass
-    for (i = 0; i < ISA_REGISTER_CLASS_MAX; i++) IRC__RegClass[i] = RegClass_;
+    for (int i = 0; i < ISA_REGISTER_CLASS_MAX; i++) IRC__RegClass[i] = RegClass_;
     IRC__RegClass[ISA_REGISTER_CLASS_integer] = RegClass_GRC;
     IRC__RegClass[ISA_REGISTER_CLASS_branch] = RegClass_BRC;
     // initialize MEM_lao_pool
@@ -435,6 +433,65 @@ TN_TempName (TN *tn) {
   return lirTN;
 }
 
+static Operation
+OP_Operation(OP *op) {
+  int argCount = OP_opnds(op);
+  int resCount = OP_results(op);
+  Operator OPERATOR = TOP_Operator(OP_code(op));
+  Operation operation = Interface_makeOperation(interface, (void *)op, OPERATOR, argCount, resCount);
+  for (int i = 0; i < argCount; i++) {
+    TempName tempname = TN_TempName(OP_opnd(op, i));
+    Interface_appendOperationArgument(interface, operation, tempname);
+  }
+  for (int i = 0; i < resCount; i++) {
+    TempName tempname = TN_TempName(OP_result(op, i));
+    Interface_appendOperationResult(interface, operation, tempname);
+  }
+  return operation;
+}
+
+static BasicBlock
+BB_BasicBlock(BB *bb) {
+  BasicBlock basicblock = Interface_makeBasicBlock(interface, bb);
+  // the BasicBlock label(s)
+  if (BB_has_label(bb)) {
+    ANNOTATION *annot;
+    for (annot = ANNOT_First(BB_annotations(bb), ANNOT_LABEL);
+	 annot != NULL;
+	 annot = ANNOT_Next(annot, ANNOT_LABEL)) {
+      LABEL_IDX label_idx = ANNOT_label(annot);
+      Label label = Interface_makeLabel(interface, label_idx, LABEL_name(label_idx));
+      Interface_appendBasicBlockLabel(interface, basicblock, label);
+    }
+  }
+  // the BasicBlock operations
+  OP *op = NULL;
+  FOR_ALL_BB_OPs(bb, op) {
+    Operation operation = OP_Operation(op);
+    Interface_appendBasicBlockOperation(interface, basicblock, operation);
+  }
+  // the BasicBlock livein
+  for (TN *tn = GTN_SET_Choose(BB_live_in(bb));
+       tn != GTN_SET_CHOOSE_FAILURE;
+       tn = GTN_SET_Choose_Next(BB_live_in(bb), tn)) {
+    TempName tempname = TN_TempName(tn);
+    Interface_setLiveIn(interface, basicblock, tempname);
+  }
+  // the BasicBlock liveout
+  for (TN *tn = GTN_SET_Choose(BB_live_out(bb));
+       tn != GTN_SET_CHOOSE_FAILURE;
+       tn = GTN_SET_Choose_Next(BB_live_out(bb), tn)) {
+    TempName tempname = TN_TempName(tn);
+    Interface_setLiveOut(interface, basicblock, tempname);
+  }
+  return basicblock;
+}
+
+static CodeRegion
+CG_LOOP_CodeRegion(CG_LOOP *cg_loop) {
+  CodeRegion coderegion = NULL;
+  return coderegion;
+}
 
 /* -----------------------------------------------------------------------
  * Functions to convert CGIR/BB to/from LIR/BasicBlock
