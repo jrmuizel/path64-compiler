@@ -76,9 +76,9 @@ TOOL_SUBDIRS = \
 	lno \
 	lw_inline \
         whirl2c \
-	driver 
+	driver \
+        ir_tools 
 
-#        ir_tools 
 #	dwarfdump \
 #	elfdump \
 #	whirl2f \
