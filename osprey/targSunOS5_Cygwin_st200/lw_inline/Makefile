@@ -33,60 +33,25 @@
 #
 
 #
-#  Makefile for targia32_st100
+#  Makefile for inline 
 #
 
 #
-#  These directories must be "built" first because they generate header files
-#  which other directories depend on.
+# Define the BUILD HOST and TARGET platforms
 #
-INCLUDE_SUBDIRS = \
-	include \
-	targ_info
+include ../Makefile.platforms
 
 #
-#  Next, all of the libraries are built because the tools depend on them.
+# Define the build parameters that are common to most of the modules
+# (can be overwritten below
 #
-#### Only these for now #####
-LIBRARY_SUBDIRS =  \
-        libiberty  \
-	libelf     \
-	libcmplrs  \
-	libcomutil \
-	libdwarf   \
-	libelfutil \
-	libSYS
+include ../Makefile.build
 
+BUILD_BASE     = ../../ipa/lw_inline
 
 #
-#  Finally, the compiler tools (components) are built.
+# Include a top-level makefile which will then include the module
+# specific Makefile.gsetup
 #
-#  Note that be_driver must come last since it depends on other components
-#  being built first.
-#
-TOOL_SUBDIRS = \
-	gccfe \
-	be \
-	lai \
-	wopt \
-	driver \
-        ipl    \
-        whirl2c \
-        ir_tools \
-	lno \
-	lw_inline
+include $(BUILD_TOT)/Makefile.gsetup
 
-#	dwarfdump \
-#	elfdump \
-#	whirl2f \
-#	be_driver
-
-SUBDIRS=$(INCLUDE_SUBDIRS) $(LIBRARY_SUBDIRS) $(TOOL_SUBDIRS)
-
-default install clean clobber:
-	@for d in $(SUBDIRS); do \
-	    if [ -d $$d ] ; then \
-	    	echo "===> cd $$d; $(MAKE) $@"; \
-	    	(cd $$d; $(MAKE) $@) || exit 1; \
-	    fi; \
-	done

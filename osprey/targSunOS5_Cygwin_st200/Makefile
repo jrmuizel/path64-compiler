@@ -72,18 +72,13 @@ TOOL_SUBDIRS = \
 	driver \
         ipl    \
         whirl2c \
-        ir_tools
+        ir_tools \
+	lw_inline
 
-
-
-#	lw_inline \
 #       lno
-
 
 #	dwarfdump \
 #	elfdump \
-#	ir_tools \
-#	whirl2c \
 #	whirl2f \
 #	be_driver
 
