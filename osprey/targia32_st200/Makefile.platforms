@@ -3,6 +3,7 @@
 # Define the BUILD platform
 #
 BUILD_OS    = LINUX
+#BUILD_OS    = LINUX-RH-WS-3
 BUILD_ARCH  = IA32
 BUILD_ABI   = I32BIT
 
