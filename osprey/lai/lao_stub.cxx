@@ -1,11 +1,5 @@
 #include <stdio.h>
 
-// Do not redefine these types
-
-#define _INT8_T
-#define _INTPTR_T
-#define _UINTPTR_T
-
 #include "bb.h"
 #include "cg_region.h"
 #include "freq.h"
@@ -21,348 +15,385 @@
 #include "erglob.h"
 #include "tracing.h"
 
-#include "stdint.h"
 #include "stdbool.h"
-
 #include "lao_stub.h"
 
 extern "C" {
 
-  // Because this and operator are C++ keywords
-
 #define this     THIS
 #define operator OPERATOR
 
-  // To prevent name space conflict
-
-#define BasicBlock LIR_NODE
-#define TempName   LIR_OPERAND
-#define Operation  LIR_OPERATION
-
 #include "LIR2.h"
-
-  // Missing definition in LAO
-typedef void * LIR_REGION;
-
-#undef Operation
-#undef TempName
-#undef BasicBlock
 
 #undef operator
 #undef this
 
 }
 
-// Array to map TOP operators to LIR operators
-static Operator TOP2LAO[TOP_UNDEFINED];
+typedef BasicBlock LIR_BB;
+typedef TempName LIR_TN;
+typedef Operation LIR_OP;
+typedef CodeRegion LIR_REGION;
+
+// Map CGIR TOP to LIR Operator.
+static Operator TOP__Operator[TOP_UNDEFINED];
+
+// Map CGIR Enum to LIR Modifier.
+static Modifier ECV__Modifier[ECV_MAX];
+
+// Map CGIR Literal to LIR Immediate.
+static Immediate LC__Immediate[LC_MAX];
+
+// Map CGIR ISA_REGISTER_CLASS to LIR RegClass.
+static RegClass IRC__RegClass[ISA_REGISTER_CLASS_MAX];
 
 // Memory pool local to the stub
-static MEM_POOL MEM_lao_stub_pool;
+static MEM_POOL MEM_lao_pool;
 
 // Hash table to map CGIR TNs to LAO TempNames.
 static hTN_MAP TN2LIR_map;
 
 static void
-TOP2LAO_INIT() {
-
-  TOP2LAO[TOP_add_i] = Operator_CODE_ADD_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_add_ii] = Operator_;
-  TOP2LAO[TOP_add_r] = Operator_CODE_ADD_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_addcg] = Operator_CODE_ADDCG_DEST_BDEST_SRC1_SRC2_SCOND;
-  TOP2LAO[TOP_and_i] = Operator_CODE_AND_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_and_ii] = Operator_;
-  TOP2LAO[TOP_and_r] = Operator_CODE_AND_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_andc_i] = Operator_CODE_ANDC_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_andc_ii] = Operator_;
-  TOP2LAO[TOP_andc_r] = Operator_CODE_ANDC_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_andl_i_b] = Operator_CODE_ANDL_IBDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_andl_i_r] = Operator_CODE_ANDL_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_andl_ii_b] = Operator_;
-  TOP2LAO[TOP_andl_ii_r] = Operator_;
-  TOP2LAO[TOP_andl_r_b] = Operator_CODE_ANDL_BDEST_SRC1_SRC2;
-  TOP2LAO[TOP_andl_r_r] = Operator_CODE_ANDL_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_asm] = Operator_CODE_ASM15_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_begin_pregtn] = Operator_;
-  TOP2LAO[TOP_br] = Operator_CODE_BR_BCOND_BTARG;
-  TOP2LAO[TOP_break] = Operator_CODE_BREAK;
-  TOP2LAO[TOP_brf] = Operator_CODE_BRF_BCOND_BTARG;
-  TOP2LAO[TOP_bswap_r] = Operator_CODE_BSWAP_IDEST_SRC1;
-  TOP2LAO[TOP_bwd_bar] = Operator_;
-  TOP2LAO[TOP_call] = Operator_CODE_CALL_BTARG;
-  TOP2LAO[TOP_cmpeq_i_b] = Operator_CODE_CMPEQ_IBDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpeq_i_r] = Operator_CODE_CMPEQ_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpeq_ii_b] = Operator_;
-  TOP2LAO[TOP_cmpeq_ii_r] = Operator_;
-  TOP2LAO[TOP_cmpeq_r_b] = Operator_CODE_CMPEQ_BDEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmpeq_r_r] = Operator_CODE_CMPEQ_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmpge_i_b] = Operator_CODE_CMPGE_IBDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpge_i_r] = Operator_CODE_CMPGE_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpge_ii_b] = Operator_;
-  TOP2LAO[TOP_cmpge_ii_r] = Operator_;
-  TOP2LAO[TOP_cmpge_r_b] = Operator_CODE_CMPGE_BDEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmpge_r_r] = Operator_CODE_CMPGE_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmpgeu_i_b] = Operator_CODE_CMPGEU_IBDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpgeu_i_r] = Operator_CODE_CMPGEU_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpgeu_ii_b] = Operator_;
-  TOP2LAO[TOP_cmpgeu_ii_r] = Operator_;
-  TOP2LAO[TOP_cmpgeu_r_b] = Operator_CODE_CMPGEU_BDEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmpgeu_r_r] = Operator_CODE_CMPGEU_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmpgt_i_b] = Operator_CODE_CMPGT_IBDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpgt_i_r] = Operator_CODE_CMPGT_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpgt_ii_b] = Operator_;
-  TOP2LAO[TOP_cmpgt_ii_r] = Operator_;
-  TOP2LAO[TOP_cmpgt_r_b] = Operator_CODE_CMPGT_BDEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmpgt_r_r] = Operator_CODE_CMPGT_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmpgtu_i_b] = Operator_CODE_CMPGTU_IBDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpgtu_i_r] = Operator_CODE_CMPGTU_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpgtu_ii_b] = Operator_;
-  TOP2LAO[TOP_cmpgtu_ii_r] = Operator_;
-  TOP2LAO[TOP_cmpgtu_r_b] = Operator_CODE_CMPGTU_BDEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmpgtu_r_r] = Operator_CODE_CMPGTU_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmple_i_b] = Operator_CODE_CMPLE_IBDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmple_i_r] = Operator_CODE_CMPLE_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmple_ii_b] = Operator_;
-  TOP2LAO[TOP_cmple_ii_r] = Operator_;
-  TOP2LAO[TOP_cmple_r_b] = Operator_CODE_CMPLE_BDEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmple_r_r] = Operator_CODE_CMPLE_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmpleu_i_b] = Operator_CODE_CMPLEU_IBDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpleu_i_r] = Operator_CODE_CMPLEU_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpleu_ii_b] = Operator_;
-  TOP2LAO[TOP_cmpleu_ii_r] = Operator_;
-  TOP2LAO[TOP_cmpleu_r_b] = Operator_CODE_CMPLEU_BDEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmpleu_r_r] = Operator_CODE_CMPLEU_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmplt_i_b] = Operator_CODE_CMPLT_IBDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmplt_i_r] = Operator_CODE_CMPLT_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmplt_ii_b] = Operator_;
-  TOP2LAO[TOP_cmplt_ii_r] = Operator_;
-  TOP2LAO[TOP_cmplt_r_b] = Operator_CODE_CMPLT_BDEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmplt_r_r] = Operator_CODE_CMPLT_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmpltu_i_b] = Operator_CODE_CMPLTU_IBDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpltu_i_r] = Operator_CODE_CMPLTU_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpltu_ii_b] = Operator_;
-  TOP2LAO[TOP_cmpltu_ii_r] = Operator_;
-  TOP2LAO[TOP_cmpltu_r_b] = Operator_CODE_CMPLTU_BDEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmpltu_r_r] = Operator_CODE_CMPLTU_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmpne_i_b] = Operator_CODE_CMPNE_IBDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpne_i_r] = Operator_CODE_CMPNE_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_cmpne_ii_b] = Operator_;
-  TOP2LAO[TOP_cmpne_ii_r] = Operator_;
-  TOP2LAO[TOP_cmpne_r_b] = Operator_CODE_CMPNE_BDEST_SRC1_SRC2;
-  TOP2LAO[TOP_cmpne_r_r] = Operator_CODE_CMPNE_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_copy_br] = Operator_;
-  TOP2LAO[TOP_dfixup] = Operator_;
-  TOP2LAO[TOP_divs] = Operator_CODE_DIVS_DEST_BDEST_SRC1_SRC2_SCOND;
-  TOP2LAO[TOP_end_pregtn] = Operator_;
-  TOP2LAO[TOP_ffixup] = Operator_;
-  TOP2LAO[TOP_fwd_bar] = Operator_;
-  TOP2LAO[TOP_goto] = Operator_CODE_GOTO_BTARG;
-  TOP2LAO[TOP_icall] = Operator_CODE_ICALL;
-  TOP2LAO[TOP_ifixup] = Operator_;
-  TOP2LAO[TOP_igoto] = Operator_CODE_IGOTO;
-  TOP2LAO[TOP_imml] = Operator_CODE_IMML_IMM;
-  TOP2LAO[TOP_immr] = Operator_CODE_IMMR_IMM;
-  TOP2LAO[TOP_intrncall] = Operator_;
-  TOP2LAO[TOP_label] = Operator_;
-  TOP2LAO[TOP_ldb_d_i] = Operator_CODE_LDBD_IDESTL_ISRC2_SRC1;
-  TOP2LAO[TOP_ldb_d_ii] = Operator_;
-  TOP2LAO[TOP_ldb_i] = Operator_CODE_LDB_IDESTL_ISRC2_SRC1;
-  TOP2LAO[TOP_ldb_ii] = Operator_;
-  TOP2LAO[TOP_ldbu_d_i] = Operator_CODE_LDBUD_IDESTL_ISRC2_SRC1;
-  TOP2LAO[TOP_ldbu_d_ii] = Operator_;
-  TOP2LAO[TOP_ldbu_i] = Operator_CODE_LDBU_IDESTL_ISRC2_SRC1;
-  TOP2LAO[TOP_ldbu_ii] = Operator_;
-  TOP2LAO[TOP_ldh_d_i] = Operator_CODE_LDHD_IDESTL_ISRC2_SRC1;
-  TOP2LAO[TOP_ldh_d_ii] = Operator_;
-  TOP2LAO[TOP_ldh_i] = Operator_CODE_LDH_IDESTL_ISRC2_SRC1;
-  TOP2LAO[TOP_ldh_ii] = Operator_;
-  TOP2LAO[TOP_ldhu_d_i] = Operator_CODE_LDHUD_IDESTL_ISRC2_SRC1;
-  TOP2LAO[TOP_ldhu_d_ii] = Operator_;
-  TOP2LAO[TOP_ldhu_i] = Operator_CODE_LDHU_IDESTL_ISRC2_SRC1;
-  TOP2LAO[TOP_ldhu_ii] = Operator_;
-  TOP2LAO[TOP_ldw_d_i] = Operator_CODE_LDWD_IDESTL_ISRC2_SRC1;
-  TOP2LAO[TOP_ldw_d_ii] = Operator_;
-  TOP2LAO[TOP_ldw_i] = Operator_CODE_LDW_IDESTL_ISRC2_SRC1;
-  TOP2LAO[TOP_ldw_ii] = Operator_;
-  TOP2LAO[TOP_max_i] = Operator_CODE_MAX_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_max_ii] = Operator_;
-  TOP2LAO[TOP_max_r] = Operator_CODE_MAX_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_maxu_i] = Operator_CODE_MAXU_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_maxu_ii] = Operator_;
-  TOP2LAO[TOP_maxu_r] = Operator_CODE_MAXU_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_mfb] = Operator_CODE_MFB_IDEST_SCOND;
-  TOP2LAO[TOP_min_i] = Operator_CODE_MIN_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_min_ii] = Operator_;
-  TOP2LAO[TOP_min_r] = Operator_CODE_MIN_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_minu_i] = Operator_CODE_MINU_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_minu_ii] = Operator_;
-  TOP2LAO[TOP_minu_r] = Operator_CODE_MINU_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_mov_i] = Operator_CODE_MOV_IDEST_ISRC2;
-  TOP2LAO[TOP_mov_ii] = Operator_;
-  TOP2LAO[TOP_mov_r] = Operator_CODE_MOV_DEST_SRC2;
-  TOP2LAO[TOP_mtb] = Operator_CODE_MTB_BDEST_SRC1;
-  TOP2LAO[TOP_mulh_i] = Operator_CODE_MULH_IDESTL_SRC1_ISRC2;
-  TOP2LAO[TOP_mulh_ii] = Operator_;
-  TOP2LAO[TOP_mulh_r] = Operator_CODE_MULH_DESTL_SRC1_SRC2;
-  TOP2LAO[TOP_mulhh_i] = Operator_CODE_MULHH_IDESTL_SRC1_ISRC2;
-  TOP2LAO[TOP_mulhh_ii] = Operator_;
-  TOP2LAO[TOP_mulhh_r] = Operator_CODE_MULHH_DESTL_SRC1_SRC2;
-  TOP2LAO[TOP_mulhhu_i] = Operator_CODE_MULHHU_IDESTL_SRC1_ISRC2;
-  TOP2LAO[TOP_mulhhu_ii] = Operator_;
-  TOP2LAO[TOP_mulhhu_r] = Operator_CODE_MULHHU_DESTL_SRC1_SRC2;
-  TOP2LAO[TOP_mulhs_i] = Operator_CODE_MULHS_IDESTL_SRC1_ISRC2;
-  TOP2LAO[TOP_mulhs_ii] = Operator_;
-  TOP2LAO[TOP_mulhs_r] = Operator_CODE_MULHS_DESTL_SRC1_SRC2;
-  TOP2LAO[TOP_mulhu_i] = Operator_CODE_MULHU_IDESTL_SRC1_ISRC2;
-  TOP2LAO[TOP_mulhu_ii] = Operator_;
-  TOP2LAO[TOP_mulhu_r] = Operator_CODE_MULHU_DESTL_SRC1_SRC2;
-  TOP2LAO[TOP_mull_i] = Operator_CODE_MULL_IDESTL_SRC1_ISRC2;
-  TOP2LAO[TOP_mull_ii] = Operator_;
-  TOP2LAO[TOP_mull_r] = Operator_CODE_MULL_DESTL_SRC1_SRC2;
-  TOP2LAO[TOP_mullh_i] = Operator_CODE_MULLH_IDESTL_SRC1_ISRC2;
-  TOP2LAO[TOP_mullh_ii] = Operator_;
-  TOP2LAO[TOP_mullh_r] = Operator_CODE_MULLH_DESTL_SRC1_SRC2;
-  TOP2LAO[TOP_mullhu_i] = Operator_CODE_MULLHU_IDESTL_SRC1_ISRC2;
-  TOP2LAO[TOP_mullhu_ii] = Operator_;
-  TOP2LAO[TOP_mullhu_r] = Operator_CODE_MULLHU_DESTL_SRC1_SRC2;
-  TOP2LAO[TOP_mulll_i] = Operator_CODE_MULLL_IDESTL_SRC1_ISRC2;
-  TOP2LAO[TOP_mulll_ii] = Operator_;
-  TOP2LAO[TOP_mulll_r] = Operator_CODE_MULLL_DESTL_SRC1_SRC2;
-  TOP2LAO[TOP_mulllu_i] = Operator_CODE_MULLLU_IDESTL_SRC1_ISRC2;
-  TOP2LAO[TOP_mulllu_ii] = Operator_;
-  TOP2LAO[TOP_mulllu_r] = Operator_CODE_MULLLU_DESTL_SRC1_SRC2;
-  TOP2LAO[TOP_mullu_i] = Operator_CODE_MULLU_IDESTL_SRC1_ISRC2;
-  TOP2LAO[TOP_mullu_ii] = Operator_;
-  TOP2LAO[TOP_mullu_r] = Operator_CODE_MULLU_DESTL_SRC1_SRC2;
-  TOP2LAO[TOP_nandl_i_b] = Operator_CODE_NANDL_IBDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_nandl_i_r] = Operator_CODE_NANDL_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_nandl_ii_b] = Operator_;
-  TOP2LAO[TOP_nandl_ii_r] = Operator_;
-  TOP2LAO[TOP_nandl_r_b] = Operator_CODE_NANDL_BDEST_SRC1_SRC2;
-  TOP2LAO[TOP_nandl_r_r] = Operator_CODE_NANDL_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_noop] = Operator_;
-  TOP2LAO[TOP_nop] = Operator_CODE_NOP;
-  TOP2LAO[TOP_norl_i_b] = Operator_CODE_NORL_IBDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_norl_i_r] = Operator_CODE_NORL_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_norl_ii_b] = Operator_;
-  TOP2LAO[TOP_norl_ii_r] = Operator_;
-  TOP2LAO[TOP_norl_r_b] = Operator_CODE_NORL_BDEST_SRC1_SRC2;
-  TOP2LAO[TOP_norl_r_r] = Operator_CODE_NORL_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_or_i] = Operator_CODE_OR_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_or_ii] = Operator_;
-  TOP2LAO[TOP_or_r] = Operator_CODE_OR_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_orc_i] = Operator_CODE_ORC_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_orc_ii] = Operator_;
-  TOP2LAO[TOP_orc_r] = Operator_CODE_ORC_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_orl_i_b] = Operator_CODE_ORL_IBDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_orl_i_r] = Operator_CODE_ORL_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_orl_ii_b] = Operator_;
-  TOP2LAO[TOP_orl_ii_r] = Operator_;
-  TOP2LAO[TOP_orl_r_b] = Operator_CODE_ORL_BDEST_SRC1_SRC2;
-  TOP2LAO[TOP_orl_r_r] = Operator_CODE_ORL_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_pft] = Operator_CODE_PFT_ISRC2_SRC1;
-  TOP2LAO[TOP_phi] = Operator_;
-  TOP2LAO[TOP_prgadd] = Operator_CODE_PRGADD_ISRC2_SRC1;
-  TOP2LAO[TOP_prgins] = Operator_CODE_PRGINS;
-  TOP2LAO[TOP_prgset] = Operator_CODE_PRGSET_ISRC2_SRC1;
-  TOP2LAO[TOP_psi] = Operator_;
-  TOP2LAO[TOP_return] = Operator_;
-  TOP2LAO[TOP_rfi] = Operator_CODE_RFI;
-  TOP2LAO[TOP_sbrk] = Operator_CODE_SBRK;
-  TOP2LAO[TOP_sh1add_i] = Operator_CODE_SH1ADD_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_sh1add_ii] = Operator_;
-  TOP2LAO[TOP_sh1add_r] = Operator_CODE_SH1ADD_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_sh2add_i] = Operator_CODE_SH2ADD_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_sh2add_ii] = Operator_;
-  TOP2LAO[TOP_sh2add_r] = Operator_CODE_SH2ADD_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_sh3add_i] = Operator_CODE_SH3ADD_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_sh3add_ii] = Operator_;
-  TOP2LAO[TOP_sh3add_r] = Operator_CODE_SH3ADD_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_sh4add_i] = Operator_CODE_SH4ADD_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_sh4add_ii] = Operator_;
-  TOP2LAO[TOP_sh4add_r] = Operator_CODE_SH4ADD_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_shl_i] = Operator_CODE_SHL_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_shl_ii] = Operator_;
-  TOP2LAO[TOP_shl_r] = Operator_CODE_SHL_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_shr_i] = Operator_CODE_SHR_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_shr_ii] = Operator_;
-  TOP2LAO[TOP_shr_r] = Operator_CODE_SHR_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_shru_i] = Operator_CODE_SHRU_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_shru_ii] = Operator_;
-  TOP2LAO[TOP_shru_r] = Operator_CODE_SHRU_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_slct_i] = Operator_CODE_SLCT_IDEST_SCOND_SRC1_ISRC2;
-  TOP2LAO[TOP_slct_ii] = Operator_;
-  TOP2LAO[TOP_slct_r] = Operator_CODE_SLCT_DEST_SCOND_SRC1_SRC2;
-  TOP2LAO[TOP_slctf_i] = Operator_CODE_SLCTF_IDEST_SCOND_SRC1_ISRC2;
-  TOP2LAO[TOP_slctf_ii] = Operator_;
-  TOP2LAO[TOP_slctf_r] = Operator_CODE_SLCTF_DEST_SCOND_SRC1_SRC2;
-  TOP2LAO[TOP_spadjust] = Operator_;
-  TOP2LAO[TOP_stb_i] = Operator_CODE_STB_ISRC2_SRC1_SRC2;
-  TOP2LAO[TOP_stb_ii] = Operator_;
-  TOP2LAO[TOP_sth_i] = Operator_CODE_STH_ISRC2_SRC1_SRC2;
-  TOP2LAO[TOP_sth_ii] = Operator_;
-  TOP2LAO[TOP_stw_i] = Operator_CODE_STW_ISRC2_SRC1_SRC2;
-  TOP2LAO[TOP_stw_ii] = Operator_;
-  TOP2LAO[TOP_sub_i] = Operator_CODE_SUB_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_sub_ii] = Operator_;
-  TOP2LAO[TOP_sub_r] = Operator_CODE_SUB_DEST_SRC1_SRC2;
-  TOP2LAO[TOP_sxtb_r] = Operator_CODE_SXTB_IDEST_SRC1;
-  TOP2LAO[TOP_sxth_r] = Operator_CODE_SXTH_IDEST_SRC1;
-  TOP2LAO[TOP_sync] = Operator_CODE_SYNC;
-  TOP2LAO[TOP_syscall] = Operator_CODE_SYSCALL;
-  TOP2LAO[TOP_xor_i] = Operator_CODE_XOR_IDEST_SRC1_ISRC2;
-  TOP2LAO[TOP_xor_ii] = Operator_;
-  TOP2LAO[TOP_xor_r] = Operator_CODE_XOR_DEST_SRC1_SRC2;
+LAO_INIT() {
+  int i;
+  // initialize LIR2
+  LIR2_INIT();
+  // initialize TOP__Operator
+  for (i = 0; i < TOP_UNDEFINED; i++) TOP__Operator[i] = Operator_;
+  TOP__Operator[TOP_add_i] = Operator_CODE_ADD_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_add_ii] = Operator_CODE_ADD_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_add_r] = Operator_CODE_ADD_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_addcg] = Operator_CODE_ADDCG_DEST_BDEST_SRC1_SRC2_SCOND;
+  TOP__Operator[TOP_and_i] = Operator_CODE_AND_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_and_ii] = Operator_CODE_AND_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_and_r] = Operator_CODE_AND_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_andc_i] = Operator_CODE_ANDC_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_andc_ii] = Operator_CODE_ANDC_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_andc_r] = Operator_CODE_ANDC_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_andl_i_b] = Operator_CODE_ANDL_IBDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_andl_ii_b] = Operator_CODE_ANDL_IBDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_andl_i_r] = Operator_CODE_ANDL_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_andl_ii_r] = Operator_CODE_ANDL_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_andl_r_b] = Operator_CODE_ANDL_BDEST_SRC1_SRC2;
+  TOP__Operator[TOP_andl_r_r] = Operator_CODE_ANDL_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_asm] = Operator_CODE_ASM15_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_begin_pregtn] = Operator_PSEUDO_PRO64;
+  TOP__Operator[TOP_br] = Operator_CODE_BR_BCOND_BTARG;
+  TOP__Operator[TOP_break] = Operator_CODE_BREAK;
+  TOP__Operator[TOP_brf] = Operator_CODE_BRF_BCOND_BTARG;
+  TOP__Operator[TOP_bswap_r] = Operator_CODE_BSWAP_IDEST_SRC1;
+  TOP__Operator[TOP_bwd_bar] = Operator_PSEUDO_PRO64;
+  TOP__Operator[TOP_call] = Operator_CODE_CALL_BTARG;
+  TOP__Operator[TOP_cmpeq_i_b] = Operator_CODE_CMPEQ_IBDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpeq_ii_b] = Operator_CODE_CMPEQ_IBDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpeq_i_r] = Operator_CODE_CMPEQ_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpeq_ii_r] = Operator_CODE_CMPEQ_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpeq_r_b] = Operator_CODE_CMPEQ_BDEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmpeq_r_r] = Operator_CODE_CMPEQ_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmpge_i_b] = Operator_CODE_CMPGE_IBDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpge_ii_b] = Operator_CODE_CMPGE_IBDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpge_i_r] = Operator_CODE_CMPGE_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpge_ii_r] = Operator_CODE_CMPGE_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpge_r_b] = Operator_CODE_CMPGE_BDEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmpge_r_r] = Operator_CODE_CMPGE_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmpgeu_i_b] = Operator_CODE_CMPGEU_IBDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpgeu_ii_b] = Operator_CODE_CMPGEU_IBDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpgeu_i_r] = Operator_CODE_CMPGEU_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpgeu_ii_r] = Operator_CODE_CMPGEU_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpgeu_r_b] = Operator_CODE_CMPGEU_BDEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmpgeu_r_r] = Operator_CODE_CMPGEU_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmpgt_i_b] = Operator_CODE_CMPGT_IBDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpgt_ii_b] = Operator_CODE_CMPGT_IBDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpgt_i_r] = Operator_CODE_CMPGT_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpgt_ii_r] = Operator_CODE_CMPGT_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpgt_r_b] = Operator_CODE_CMPGT_BDEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmpgt_r_r] = Operator_CODE_CMPGT_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmpgtu_i_b] = Operator_CODE_CMPGTU_IBDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpgtu_ii_b] = Operator_CODE_CMPGTU_IBDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpgtu_i_r] = Operator_CODE_CMPGTU_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpgtu_ii_r] = Operator_CODE_CMPGTU_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpgtu_r_b] = Operator_CODE_CMPGTU_BDEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmpgtu_r_r] = Operator_CODE_CMPGTU_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmple_i_b] = Operator_CODE_CMPLE_IBDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmple_ii_b] = Operator_CODE_CMPLE_IBDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmple_i_r] = Operator_CODE_CMPLE_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmple_ii_r] = Operator_CODE_CMPLE_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmple_r_b] = Operator_CODE_CMPLE_BDEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmple_r_r] = Operator_CODE_CMPLE_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmpleu_i_b] = Operator_CODE_CMPLEU_IBDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpleu_ii_b] = Operator_CODE_CMPLEU_IBDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpleu_i_r] = Operator_CODE_CMPLEU_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpleu_ii_r] = Operator_CODE_CMPLEU_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpleu_r_b] = Operator_CODE_CMPLEU_BDEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmpleu_r_r] = Operator_CODE_CMPLEU_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmplt_i_b] = Operator_CODE_CMPLT_IBDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmplt_ii_b] = Operator_CODE_CMPLT_IBDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmplt_i_r] = Operator_CODE_CMPLT_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmplt_ii_r] = Operator_CODE_CMPLT_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmplt_r_b] = Operator_CODE_CMPLT_BDEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmplt_r_r] = Operator_CODE_CMPLT_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmpltu_i_b] = Operator_CODE_CMPLTU_IBDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpltu_ii_b] = Operator_CODE_CMPLTU_IBDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpltu_i_r] = Operator_CODE_CMPLTU_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpltu_ii_r] = Operator_CODE_CMPLTU_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpltu_r_b] = Operator_CODE_CMPLTU_BDEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmpltu_r_r] = Operator_CODE_CMPLTU_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmpne_i_b] = Operator_CODE_CMPNE_IBDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpne_ii_b] = Operator_CODE_CMPNE_IBDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpne_i_r] = Operator_CODE_CMPNE_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_cmpne_ii_r] = Operator_CODE_CMPNE_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_cmpne_r_b] = Operator_CODE_CMPNE_BDEST_SRC1_SRC2;
+  TOP__Operator[TOP_cmpne_r_r] = Operator_CODE_CMPNE_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_copy_br] = Operator_PSEUDO_PRO64;
+  TOP__Operator[TOP_dfixup] = Operator_PSEUDO_PRO64;
+  TOP__Operator[TOP_divs] = Operator_CODE_DIVS_DEST_BDEST_SRC1_SRC2_SCOND;
+  TOP__Operator[TOP_end_pregtn] = Operator_PSEUDO_PRO64;
+  TOP__Operator[TOP_ffixup] = Operator_PSEUDO_PRO64;
+  TOP__Operator[TOP_fwd_bar] = Operator_PSEUDO_PRO64;
+  TOP__Operator[TOP_goto] = Operator_CODE_GOTO_BTARG;
+  TOP__Operator[TOP_icall] = Operator_CODE_ICALL;
+  TOP__Operator[TOP_ifixup] = Operator_PSEUDO_PRO64;
+  TOP__Operator[TOP_igoto] = Operator_CODE_IGOTO;
+  TOP__Operator[TOP_imml] = Operator_CODE_IMML_IMM;
+  TOP__Operator[TOP_immr] = Operator_CODE_IMMR_IMM;
+  TOP__Operator[TOP_intrncall] = Operator_PSEUDO_PRO64;
+  TOP__Operator[TOP_label] = Operator_PSEUDO_LABEL;
+  TOP__Operator[TOP_ldb_d_i] = Operator_CODE_LDBD_IDESTL_ISRC2_SRC1;
+  TOP__Operator[TOP_ldb_d_ii] = Operator_CODE_LDBD_IDESTL_ISRCX_SRC1;
+  TOP__Operator[TOP_ldb_i] = Operator_CODE_LDB_IDESTL_ISRC2_SRC1;
+  TOP__Operator[TOP_ldb_ii] = Operator_CODE_LDB_IDESTL_ISRCX_SRC1;
+  TOP__Operator[TOP_ldbu_d_i] = Operator_CODE_LDBUD_IDESTL_ISRC2_SRC1;
+  TOP__Operator[TOP_ldbu_d_ii] = Operator_CODE_LDBUD_IDESTL_ISRCX_SRC1;
+  TOP__Operator[TOP_ldbu_i] = Operator_CODE_LDBU_IDESTL_ISRC2_SRC1;
+  TOP__Operator[TOP_ldbu_ii] = Operator_CODE_LDBU_IDESTL_ISRCX_SRC1;
+  TOP__Operator[TOP_ldh_d_i] = Operator_CODE_LDHD_IDESTL_ISRC2_SRC1;
+  TOP__Operator[TOP_ldh_d_ii] = Operator_CODE_LDHD_IDESTL_ISRCX_SRC1;
+  TOP__Operator[TOP_ldh_i] = Operator_CODE_LDH_IDESTL_ISRC2_SRC1;
+  TOP__Operator[TOP_ldh_ii] = Operator_CODE_LDH_IDESTL_ISRCX_SRC1;
+  TOP__Operator[TOP_ldhu_d_i] = Operator_CODE_LDHUD_IDESTL_ISRC2_SRC1;
+  TOP__Operator[TOP_ldhu_d_ii] = Operator_CODE_LDHUD_IDESTL_ISRCX_SRC1;
+  TOP__Operator[TOP_ldhu_i] = Operator_CODE_LDHU_IDESTL_ISRC2_SRC1;
+  TOP__Operator[TOP_ldhu_ii] = Operator_CODE_LDHU_IDESTL_ISRCX_SRC1;
+  TOP__Operator[TOP_ldw_d_i] = Operator_CODE_LDWD_IDESTL_ISRC2_SRC1;
+  TOP__Operator[TOP_ldw_d_ii] = Operator_CODE_LDWD_IDESTL_ISRCX_SRC1;
+  TOP__Operator[TOP_ldw_i] = Operator_CODE_LDW_IDESTL_ISRC2_SRC1;
+  TOP__Operator[TOP_ldw_ii] = Operator_CODE_LDW_IDESTL_ISRCX_SRC1;
+  TOP__Operator[TOP_max_i] = Operator_CODE_MAX_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_max_ii] = Operator_CODE_MAX_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_max_r] = Operator_CODE_MAX_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_maxu_i] = Operator_CODE_MAXU_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_maxu_ii] = Operator_CODE_MAXU_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_maxu_r] = Operator_CODE_MAXU_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_mfb] = Operator_CODE_MFB_IDEST_SCOND;
+  TOP__Operator[TOP_min_i] = Operator_CODE_MIN_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_min_ii] = Operator_CODE_MIN_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_min_r] = Operator_CODE_MIN_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_minu_i] = Operator_CODE_MINU_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_minu_ii] = Operator_CODE_MINU_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_minu_r] = Operator_CODE_MINU_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_mov_i] = Operator_CODE_MOV_IDEST_ISRC2;
+  TOP__Operator[TOP_mov_ii] = Operator_CODE_MOV_IDEST_ISRCX;
+  TOP__Operator[TOP_mov_r] = Operator_CODE_MOV_DEST_SRC2;
+  TOP__Operator[TOP_mtb] = Operator_CODE_MTB_BDEST_SRC1;
+  TOP__Operator[TOP_mulh_i] = Operator_CODE_MULH_IDESTL_SRC1_ISRC2;
+  TOP__Operator[TOP_mulh_ii] = Operator_CODE_MULH_IDESTL_SRC1_ISRCX;
+  TOP__Operator[TOP_mulh_r] = Operator_CODE_MULH_DESTL_SRC1_SRC2;
+  TOP__Operator[TOP_mulhh_i] = Operator_CODE_MULHH_IDESTL_SRC1_ISRC2;
+  TOP__Operator[TOP_mulhh_ii] = Operator_CODE_MULHH_IDESTL_SRC1_ISRCX;
+  TOP__Operator[TOP_mulhh_r] = Operator_CODE_MULHH_DESTL_SRC1_SRC2;
+  TOP__Operator[TOP_mulhhu_i] = Operator_CODE_MULHHU_IDESTL_SRC1_ISRC2;
+  TOP__Operator[TOP_mulhhu_ii] = Operator_CODE_MULHHU_IDESTL_SRC1_ISRCX;
+  TOP__Operator[TOP_mulhhu_r] = Operator_CODE_MULHHU_DESTL_SRC1_SRC2;
+  TOP__Operator[TOP_mulhs_i] = Operator_CODE_MULHS_IDESTL_SRC1_ISRC2;
+  TOP__Operator[TOP_mulhs_ii] = Operator_CODE_MULHS_IDESTL_SRC1_ISRCX;
+  TOP__Operator[TOP_mulhs_r] = Operator_CODE_MULHS_DESTL_SRC1_SRC2;
+  TOP__Operator[TOP_mulhu_i] = Operator_CODE_MULHU_IDESTL_SRC1_ISRC2;
+  TOP__Operator[TOP_mulhu_ii] = Operator_CODE_MULHU_IDESTL_SRC1_ISRCX;
+  TOP__Operator[TOP_mulhu_r] = Operator_CODE_MULHU_DESTL_SRC1_SRC2;
+  TOP__Operator[TOP_mull_i] = Operator_CODE_MULL_IDESTL_SRC1_ISRC2;
+  TOP__Operator[TOP_mull_ii] = Operator_CODE_MULL_IDESTL_SRC1_ISRCX;
+  TOP__Operator[TOP_mull_r] = Operator_CODE_MULL_DESTL_SRC1_SRC2;
+  TOP__Operator[TOP_mullh_i] = Operator_CODE_MULLH_IDESTL_SRC1_ISRC2;
+  TOP__Operator[TOP_mullh_ii] = Operator_CODE_MULLH_IDESTL_SRC1_ISRCX;
+  TOP__Operator[TOP_mullh_r] = Operator_CODE_MULLH_DESTL_SRC1_SRC2;
+  TOP__Operator[TOP_mullhu_i] = Operator_CODE_MULLHU_IDESTL_SRC1_ISRC2;
+  TOP__Operator[TOP_mullhu_ii] = Operator_CODE_MULLHU_IDESTL_SRC1_ISRCX;
+  TOP__Operator[TOP_mullhu_r] = Operator_CODE_MULLHU_DESTL_SRC1_SRC2;
+  TOP__Operator[TOP_mulll_i] = Operator_CODE_MULLL_IDESTL_SRC1_ISRC2;
+  TOP__Operator[TOP_mulll_ii] = Operator_CODE_MULLL_IDESTL_SRC1_ISRCX;
+  TOP__Operator[TOP_mulll_r] = Operator_CODE_MULLL_DESTL_SRC1_SRC2;
+  TOP__Operator[TOP_mulllu_i] = Operator_CODE_MULLLU_IDESTL_SRC1_ISRC2;
+  TOP__Operator[TOP_mulllu_ii] = Operator_CODE_MULLLU_IDESTL_SRC1_ISRCX;
+  TOP__Operator[TOP_mulllu_r] = Operator_CODE_MULLLU_DESTL_SRC1_SRC2;
+  TOP__Operator[TOP_mullu_i] = Operator_CODE_MULLU_IDESTL_SRC1_ISRC2;
+  TOP__Operator[TOP_mullu_ii] = Operator_CODE_MULLU_IDESTL_SRC1_ISRCX;
+  TOP__Operator[TOP_mullu_r] = Operator_CODE_MULLU_DESTL_SRC1_SRC2;
+  TOP__Operator[TOP_nandl_i_b] = Operator_CODE_NANDL_IBDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_nandl_ii_b] = Operator_CODE_NANDL_IBDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_nandl_i_r] = Operator_CODE_NANDL_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_nandl_ii_r] = Operator_CODE_NANDL_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_nandl_r_b] = Operator_CODE_NANDL_BDEST_SRC1_SRC2;
+  TOP__Operator[TOP_nandl_r_r] = Operator_CODE_NANDL_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_noop] = Operator_PSEUDO_NOP;
+  TOP__Operator[TOP_nop] = Operator_CODE_NOP;
+  TOP__Operator[TOP_norl_i_b] = Operator_CODE_NORL_IBDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_norl_ii_b] = Operator_CODE_NORL_IBDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_norl_i_r] = Operator_CODE_NORL_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_norl_ii_r] = Operator_CODE_NORL_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_norl_r_b] = Operator_CODE_NORL_BDEST_SRC1_SRC2;
+  TOP__Operator[TOP_norl_r_r] = Operator_CODE_NORL_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_or_i] = Operator_CODE_OR_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_or_ii] = Operator_CODE_OR_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_or_r] = Operator_CODE_OR_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_orc_i] = Operator_CODE_ORC_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_orc_ii] = Operator_CODE_ORC_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_orc_r] = Operator_CODE_ORC_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_orl_i_b] = Operator_CODE_ORL_IBDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_orl_ii_b] = Operator_CODE_ORL_IBDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_orl_i_r] = Operator_CODE_ORL_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_orl_ii_r] = Operator_CODE_ORL_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_orl_r_b] = Operator_CODE_ORL_BDEST_SRC1_SRC2;
+  TOP__Operator[TOP_orl_r_r] = Operator_CODE_ORL_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_pft] = Operator_CODE_PFT_ISRC2_SRC1;
+  TOP__Operator[TOP_phi] = Operator_PSEUDO_PHI;
+  TOP__Operator[TOP_prgadd] = Operator_CODE_PRGADD_ISRC2_SRC1;
+  TOP__Operator[TOP_prgins] = Operator_CODE_PRGINS;
+  TOP__Operator[TOP_prgset] = Operator_CODE_PRGSET_ISRC2_SRC1;
+  TOP__Operator[TOP_psi] = Operator_PSEUDO_PSI;
+  TOP__Operator[TOP_return] = Operator_MACRO_RETURN;
+  TOP__Operator[TOP_rfi] = Operator_CODE_RFI;
+  TOP__Operator[TOP_sbrk] = Operator_CODE_SBRK;
+  TOP__Operator[TOP_sh1add_i] = Operator_CODE_SH1ADD_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_sh1add_ii] = Operator_CODE_SH1ADD_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_sh1add_r] = Operator_CODE_SH1ADD_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_sh2add_i] = Operator_CODE_SH2ADD_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_sh2add_ii] = Operator_CODE_SH2ADD_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_sh2add_r] = Operator_CODE_SH2ADD_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_sh3add_i] = Operator_CODE_SH3ADD_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_sh3add_ii] = Operator_CODE_SH3ADD_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_sh3add_r] = Operator_CODE_SH3ADD_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_sh4add_i] = Operator_CODE_SH4ADD_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_sh4add_ii] = Operator_CODE_SH4ADD_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_sh4add_r] = Operator_CODE_SH4ADD_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_shl_i] = Operator_CODE_SHL_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_shl_ii] = Operator_CODE_SHL_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_shl_r] = Operator_CODE_SHL_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_shr_i] = Operator_CODE_SHR_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_shr_ii] = Operator_CODE_SHR_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_shr_r] = Operator_CODE_SHR_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_shru_i] = Operator_CODE_SHRU_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_shru_ii] = Operator_CODE_SHRU_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_shru_r] = Operator_CODE_SHRU_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_slct_i] = Operator_CODE_SLCT_IDEST_SCOND_SRC1_ISRC2;
+  TOP__Operator[TOP_slct_ii] = Operator_CODE_SLCT_IDEST_SCOND_SRC1_ISRCX;
+  TOP__Operator[TOP_slct_r] = Operator_CODE_SLCT_DEST_SCOND_SRC1_SRC2;
+  TOP__Operator[TOP_slctf_i] = Operator_CODE_SLCTF_IDEST_SCOND_SRC1_ISRC2;
+  TOP__Operator[TOP_slctf_ii] = Operator_CODE_SLCTF_IDEST_SCOND_SRC1_ISRCX;
+  TOP__Operator[TOP_slctf_r] = Operator_CODE_SLCTF_DEST_SCOND_SRC1_SRC2;
+  TOP__Operator[TOP_spadjust] = Operator_PSEUDO_PRO64;
+  TOP__Operator[TOP_stb_i] = Operator_CODE_STB_ISRC2_SRC1_SRC2;
+  TOP__Operator[TOP_stb_ii] = Operator_CODE_STB_ISRCX_SRC1_SRC2;
+  TOP__Operator[TOP_sth_i] = Operator_CODE_STH_ISRC2_SRC1_SRC2;
+  TOP__Operator[TOP_sth_ii] = Operator_CODE_STH_ISRCX_SRC1_SRC2;
+  TOP__Operator[TOP_stw_i] = Operator_CODE_STW_ISRC2_SRC1_SRC2;
+  TOP__Operator[TOP_stw_ii] = Operator_CODE_STW_ISRCX_SRC1_SRC2;
+  TOP__Operator[TOP_sub_i] = Operator_CODE_SUB_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_sub_ii] = Operator_CODE_SUB_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_sub_r] = Operator_CODE_SUB_DEST_SRC1_SRC2;
+  TOP__Operator[TOP_sxtb_r] = Operator_CODE_SXTB_IDEST_SRC1;
+  TOP__Operator[TOP_sxth_r] = Operator_CODE_SXTH_IDEST_SRC1;
+  TOP__Operator[TOP_sync] = Operator_CODE_SYNC;
+  TOP__Operator[TOP_syscall] = Operator_CODE_SYSCALL;
+  TOP__Operator[TOP_xor_i] = Operator_CODE_XOR_IDEST_SRC1_ISRC2;
+  TOP__Operator[TOP_xor_ii] = Operator_CODE_XOR_IDEST_SRC1_ISRCX;
+  TOP__Operator[TOP_xor_r] = Operator_CODE_XOR_DEST_SRC1_SRC2;
+  // initialize ECV__Modifier
+  for (i = 0; i < ECV_MAX; i++) ECV__Modifier[i] = Modifier_;
+  // initialize LC__Immediate
+  for (i = 0; i < LC_MAX; i++) LC__Immediate[i] = Immediate_;
+  // initialize IRC__RegClass
+  for (i = 0; i < ISA_REGISTER_CLASS_MAX; i++) IRC__RegClass[i] = RegClass_;
+  // initialize MEM_lao_pool
+  MEM_POOL_Initialize ( &MEM_lao_pool , "lao_stub_pool", false );
+  // initialize TN2LIR_map
+  hTN_MAP_Create(&MEM_lao_pool);
 }
 
-static void
-TOP2LAO_FINI() {
-}
-
-static Operator
-TOP_CGIR2LAO (TOP topcode) {
-  return TOP2LAO[topcode];
-}
-
-static void
-LAOstub_INIT() {
-
-  MEM_POOL_Initialize ( &MEM_lao_stub_pool , "lao_stub_pool", false );
-  TN2LIR_map = hTN_MAP_Create(&MEM_lao_stub_pool);
-
-  TOP2LAO_INIT();
-}
-
-static void
-LAOstub_FINI() {
-
-  TOP2LAO_FINI();
-
+static inline void
+LAO_FINI() {
+  // finalize TN2LIR_map
   TN2LIR_map = NULL;
-  MEM_POOL_Delete  ( &MEM_lao_stub_pool );
+  // finalize MEM_lao_pool
+  MEM_POOL_Delete  ( &MEM_lao_pool );
+  // finalize LIR2
+  LIR2_FINI();
+}
+
+static inline Operator
+TOP_Operator (TOP top) {
+  Operator lao_operator = TOP__Operator[top];
+  Is_True(top >= 0 && top < TOP_UNDEFINED, ("TOPcode out of range"));
+  Is_True(lao_operator != Operator_, ("Cannot map TOPcode to Operator"));
+  return lao_operator;
+}
+
+static inline Modifier
+ECV_Modifier (ISA_ENUM_CLASS_VALUE ecv) {
+  Modifier lao_modifier = ECV__Modifier[ecv];
+  Is_True(ecv >= 0 && ecv < ECV_MAX, ("ISA_ENUM_CLASS_VALUE out of range"));
+  Is_True(lao_modifier != Modifier_, ("Cannot map ISA_ENUM_CLASS_VALUE to Modifier"));
+  return lao_modifier;
+}
+
+static inline Immediate
+LC_Immediate (ISA_LIT_CLASS ilc) {
+  Immediate lao_immediate = LC__Immediate[ilc];
+  Is_True(ilc >= 0 && ilc < LC_MAX, ("ISA_LIT_CLASS out of range"));
+  Is_True(lao_immediate != Immediate_, ("Cannot map ISA_LIT_CLASS to Immediate"));
+  return lao_immediate;
+}
+
+static inline RegClass
+IRC_RegClass (ISA_REGISTER_CLASS irc) {
+  RegClass lao_regclass = IRC__RegClass[irc];
+  Is_True(irc >= 0 && irc < ISA_REGISTER_CLASS_MAX, ("ISA_REGISTER_CLASS out of range"));
+  Is_True(lao_regclass != RegClass_, ("Cannot map ISA_REGISTER_CLASS to RegClass"));
+  return lao_regclass;
+}
+
+extern Register RegClass_lowreg[];
+
+static inline Register
+CRP_Register (CLASS_REG_PAIR crp) {
+  mREGISTER reg = CLASS_REG_PAIR_reg(crp);
+  ISA_REGISTER_CLASS irc = CLASS_REG_PAIR_rclass(crp);
+  RegClass regclass = IRC_RegClass(irc);
+  Register lowreg = RegClass_lowreg[regclass];
+  return (Register)(lowreg + (reg - 1));
 }
 
 /* -----------------------------------------------------------------------
- * Functions to convert CGIR/TN to LIR2/LIR_OPERAND
+ * Functions to convert CGIR/TN to LIR2/LIR_TN
  * -----------------------------------------------------------------------
  */
 
-static LIR_OPERAND
+static LIR_TN
 TN_convert2LIR_reg ( TN *tn, int regindex, int regclass ) {
-  LIR_OPERAND lirTN;
+  LIR_TN lirTN;
 
-  Is_True(hTN_MAP_Get(TN2LIR_map, tn) == NULL, ("LAO TempName creation interface cannot be called twize with same TN."));
+  Is_True(hTN_MAP_Get(TN2LIR_map, tn) == NULL, ("LAO TempName creation interface cannot be called twice with same TN."));
 
   if (TN_is_dedicated(tn))
     lirTN = Interface_makeDedicatedTempName(interface, tn, (Register)TN_register(tn));
   else
-    lirTN = Interface_makePseudoRegTempName(interface, tn, (RegGroup)regclass);
+    lirTN = Interface_makePseudoRegTempName(interface, tn, (RegClass)regclass);
 
   return lirTN;
 }
 
-static LIR_OPERAND
+static LIR_TN
 TN_convert2LIR_imm ( TN *tn, int immediate, int64_t value ) {
-  LIR_OPERAND lirTN;
+  LIR_TN lirTN;
 
   Is_True(hTN_MAP_Get(TN2LIR_map, tn) == NULL, ("LAO TempName creation interface cannot be called twize with same TN."));
 
@@ -371,9 +402,9 @@ TN_convert2LIR_imm ( TN *tn, int immediate, int64_t value ) {
   return lirTN;
 }
 
-static LIR_OPERAND
+static LIR_TN
 TN_convert2LIR_sym ( TN *tn, ST *var, int64_t offset ) {
-  LIR_OPERAND lirTN;
+  LIR_TN lirTN;
 
   Is_True(hTN_MAP_Get(TN2LIR_map, tn) == NULL, ("LAO TempName creation interface cannot be called twize with same TN."));
 
@@ -384,9 +415,9 @@ TN_convert2LIR_sym ( TN *tn, ST *var, int64_t offset ) {
   return lirTN;
 }
 
-static LIR_OPERAND
+static LIR_TN
 TN_convert2LIR_lab ( TN *tn, LABEL_IDX label, int64_t offset ) {
-  LIR_OPERAND lirTN;
+  LIR_TN lirTN;
 
   Is_True(hTN_MAP_Get(TN2LIR_map, tn) == NULL, ("LAO TempName creation interface cannot be called twize with same TN."));
 
@@ -397,14 +428,14 @@ TN_convert2LIR_lab ( TN *tn, LABEL_IDX label, int64_t offset ) {
   return lirTN;
 }
 
-static LIR_OPERAND
+static LIR_TN
 TN_convert2TempName ( TN *tn ) {
 
-  LIR_OPERAND lirTN;
+  LIR_TN lirTN;
 
   // First, check if a lirTN already exits for this TN.
 
-  if ((lirTN = (LIR_OPERAND)hTN_MAP_Get(TN2LIR_map, tn)) != NULL)
+  if ((lirTN = (LIR_TN)hTN_MAP_Get(TN2LIR_map, tn)) != NULL)
     return lirTN;
 
   if (TN_is_constant(tn)) {
@@ -439,16 +470,16 @@ TN_convert2TempName ( TN *tn ) {
   return lirTN;
 }
 static void
-LIROP_addArgument ( LIR_OPERATION lirOP, TN *tn ) {
-  LIR_OPERAND lirTN;
+LIROP_addArgument ( LIR_OP lirOP, TN *tn ) {
+  LIR_TN lirTN;
 
   lirTN = TN_convert2TempName(tn);
   Interface_appendOperationArgument(interface, lirOP, lirTN);
 }
 
 static void
-LIROP_addResult ( LIR_OPERATION lirOP, TN *tn ) {
-  LIR_OPERAND lirTN;
+LIROP_addResult ( LIR_OP lirOP, TN *tn ) {
+  LIR_TN lirTN;
 
   lirTN = TN_convert2TempName(tn);
   Interface_appendOperationResult(interface, lirOP, lirTN);
@@ -456,13 +487,13 @@ LIROP_addResult ( LIR_OPERATION lirOP, TN *tn ) {
 
 
 /* -----------------------------------------------------------------------
- * Functions to convert CGIR/BB to/from LIR2/LIR_NODE
+ * Functions to convert CGIR/BB to/from LIR2/LIR_BB
  * -----------------------------------------------------------------------
  */
 
 typedef struct bbmap_ {
   BB *cgir;
-  LIR_NODE lir2;
+  LIR_BB lir2;
 } BBmap_, *BBmap;
 
 
@@ -476,7 +507,7 @@ static int BB_map_SIZE = 0;
  * -----------------------------------------------------------------------
  */
 static void
-BBmap_add ( BB * cgirBB, LIR_NODE lirBB ) {
+BBmap_add ( BB * cgirBB, LIR_BB lirBB ) {
   BBmap bbmap;
   int count = 1;
 
@@ -489,10 +520,10 @@ BBmap_add ( BB * cgirBB, LIR_NODE lirBB ) {
   if (count >= BB_map_SIZE) {
     int newSIZE = BB_map_SIZE + 10;
     BBmap newMap;
-    newMap = TYPE_MEM_POOL_ALLOC_N(BBmap_, &MEM_lao_stub_pool, newSIZE);
+    newMap = TYPE_MEM_POOL_ALLOC_N(BBmap_, &MEM_lao_pool, newSIZE);
     if (BB_map != NULL) {
       memcpy(newMap, BB_map, sizeof(BBmap_)*count);
-      MEM_POOL_FREE(&MEM_lao_stub_pool, BB_map);
+      MEM_POOL_FREE(&MEM_lao_pool, BB_map);
     }
     BB_map = newMap;
   }
@@ -507,7 +538,7 @@ BBmap_add ( BB * cgirBB, LIR_NODE lirBB ) {
  * Return the CGIR/LAO node associated with the given LAO/CGIR node
  * -----------------------------------------------------------------------
  */
-static LIR_NODE
+static LIR_BB
 BB_CGIR2LAO ( BB * node ) {
   BBmap bbmap;
 
@@ -520,7 +551,7 @@ BB_CGIR2LAO ( BB * node ) {
 }
 
 static BB *
-BB_LAO2CGIR ( LIR_NODE node ) {
+BB_LAO2CGIR ( LIR_BB node ) {
   BBmap bbmap;
 
   for (bbmap = BB_map; bbmap->cgir; bbmap++) {
@@ -531,9 +562,9 @@ BB_LAO2CGIR ( LIR_NODE node ) {
   Is_True(FALSE, ("Could not find CGIR BB for BasicBlock:%p", node));
 }
 
-static LIR_NODE
+static LIR_BB
 BB_convert2LIR ( BB *bb ) {
-  LIR_NODE lirBB;
+  LIR_BB lirBB;
   int i;
 
   fprintf(TFile, "Starting BB_convert2LIR for %d\n", BB_id(bb));
@@ -556,9 +587,9 @@ BB_convert2LIR ( BB *bb ) {
 
   const OP *op;
   FOR_ALL_BB_OPs (bb, op) {
-    LIR_OPERATION lirOP;
+    LIR_OP lirOP;
 
-    lirOP = Interface_makeOperation(interface, (void *)op, TOP_CGIR2LAO(OP_code(op)),
+    lirOP = Interface_makeOperation(interface, (void *)op, TOP_Operator(OP_code(op)),
 				    OP_opnds(op), OP_results(op));
 
     Interface_appendBasicBlockOperation(interface, lirBB, lirOP);
@@ -604,7 +635,7 @@ BB_inRegion ( BB *regionBBs[], BB *bb ) {
 
 static void
 BB_LIRcreateEdges ( BB *src, BB *dst ) {
-  LIR_NODE srcLIR, dstLIR;
+  LIR_BB srcLIR, dstLIR;
 
   srcLIR = BB_CGIR2LAO(src);
   dstLIR = BB_CGIR2LAO(dst);
@@ -664,8 +695,7 @@ bool LAO_scheduleRegion ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs , LAO_S
   }    
   fprintf(TFile, "---- End trace regionBBs ----\n");
 
-  LIR2_INIT();
-  LAOstub_INIT();
+  LAO_INIT();
 
   lir_region = REGION_convert2LIR(entryBBs, exitBBs, regionBBs);
 
@@ -675,8 +705,7 @@ bool LAO_scheduleRegion ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs , LAO_S
     //    REGION_convert2CGIR(lir_region);
   }
 
-  LAOstub_FINI();
-  LIR2_FINI();
+  LAO_FINI();
   
   fprintf(TFile, "---- After LAO schedule region ----\n");
   return (status == 0);
