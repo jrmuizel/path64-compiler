@@ -402,6 +402,26 @@ char *SYS_getpdir_w32(const char *program)
   return pdir;
 }
 
+char *SYS_absolute_path_w32(const char *program);
+char *SYS_absolute_path_w32(const char *program)
+{
+  char *pdir = NULL;
+#ifdef _WIN32
+  HMODULE mod;
+  char *ignored ;  
+  if((mod = GetModuleHandle (NULL)) != NULL) {
+    if ((GetModuleFileName (mod, win32_path, MAX_PATH_LENGTH)) != 0) {
+      pdir = win32_path;
+    } else if (GetFullPathName(program, MAX_PATH_LENGTH, win32_path, &ignored)) {
+	pdir = win32_path;
+    } else { 
+	fprintf (stderr, "%s: cannot find installation directory (GetLastError: %lu)\n", SYS_programname, GetLastError()) ;
+    }
+  }
+#endif
+  return pdir;
+}
+
 static  char *SYS_getpdir_unix(const char *pname);
 static char *SYS_getpdir_unix(const char *pname)
 {
