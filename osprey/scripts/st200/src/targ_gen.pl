@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 
 # Generate target description files for the ST200 processor
 
@@ -51,8 +51,6 @@ sub opcode_is_subset {
     my $opcode = $_[0];
     my $subset = subset_id($_[1]);
 
-    my $opcode;
-
     foreach $op (@{$SUBSET_opcodes[$subset]}) {
 	if ($OP_opcode[$op] eq $OP_opcode[$opcode]) {
 	    return 1;
@@ -92,8 +90,7 @@ sub op_bytes {
 	$bytes = 1;
     }
     else {
-	printf(STDOUT "ERROR: unknown mnemonic %s in op_bytes\n", 
-	       $mnemonic);
+	printf STDOUT "ERROR: unknown mnemonic %s in op_bytes\n", $mnemonic;
 	exit(1);
     }
 
@@ -110,7 +107,7 @@ sub op_align {
     my $mnemonic = $OP_mnemonic[$_[0]];
     my $align;
 
-#    printf (STDOUT "  > align %s\n", $mnemonic);
+#    printf STDOUT "  > align %s\n", $mnemonic;
 
     if ($mnemonic eq 'ldw' ||
 	$mnemonic eq 'ldw_d' ||
@@ -132,8 +129,7 @@ sub op_align {
 	$align = 1;
     }
     else {
-	printf(STDOUT "ERROR: unknown mnemonic %s in op_align\n", 
-	       $mnemonic);
+	printf STDOUT "ERROR: unknown mnemonic %s in op_align\n", $mnemonic;
 	exit(1);
     }
 
@@ -228,8 +224,7 @@ sub set_variant {
 	$variant = "_r";
     }
     else {
-	printf(STDOUT "ERROR: unknown format %s in set_variant\n", 
-	       $format);
+	printf STDOUT "ERROR: unknown format %s in set_variant\n", $format;
 	exit(1);
     }
 
@@ -313,8 +308,7 @@ sub set_operands {
 	    $OP_opnds[$opcode] = 0;
 	}
 	else {
-	    printf(STDOUT "ERROR: unknown call format %s in set_operands\n", 
-	       $OP_mnemonic[$opcode]);
+	    printf STDOUT "ERROR: unknown call format %s in set_operands\n", $OP_mnemonic[$opcode];
 	    exit(1);
 	}
     }
@@ -354,8 +348,7 @@ sub set_operands {
 	$OP_opnds[$opcode] = 0;
     }
     else {
-	printf(STDOUT "ERROR: unknown format %s in set_operands\n", 
-	       $format);
+	printf STDOUT "ERROR: unknown format %s in set_operands\n", $format;
 	exit(1);
     }
 }
@@ -474,8 +467,7 @@ sub set_signature {
 	    $signature = ':rfi:';
 	}
 	else {
-	    printf(STDOUT "ERROR: unknown call format %s in op_signature\n", 
-	       $OP_mnemonic[$opcode]);
+	    printf STDOUT "ERROR: unknown call format %s in op_signature\n", $OP_mnemonic[$opcode];
 	    exit(1);
 	}
     }
@@ -511,8 +503,7 @@ sub set_signature {
 	$signature = 'dest:Monadic:src2_opnd1';
     }
     else {
-	printf(STDOUT "ERROR: unknown format %s in op_signature\n", 
-	       $format);
+	printf STDOUT "ERROR: unknown format %s in op_signature\n", $format;
 	exit(1);
     }
 
@@ -623,8 +614,7 @@ sub set_pack {
 	    $pack = 'rfi';
 	}
 	else {
-	    printf(STDOUT "ERROR: unknown call opcode %s in op_pack\n", 
-	       $OP_mnemonic[$opcode]);
+	    printf STDOUT "ERROR: unknown call opcode %s in op_pack\n", $OP_mnemonic[$opcode];
 	    exit(1);
 	}
     }
@@ -662,8 +652,7 @@ sub set_pack {
 	$pack = 'Monadic';
     }
     else {
-	printf(STDOUT "ERROR: unknown format %s in op_pack\n", 
-	       $format);
+	printf STDOUT "ERROR: unknown format %s in op_pack\n", $format;
 	exit(1);
     }
 
@@ -682,7 +671,7 @@ sub set_print {
     my $opcode = $_[0];
     my $format = $OP_format[$opcode];
     my $syntax = $OP_syntax[$opcode];
-    my $signature;
+    my $signature = "";
 
     if ($format eq 'Int3R' || 
 	$format eq 'Int3I' ||
@@ -774,8 +763,7 @@ sub set_print {
 	    $signature = "";
 	}
 	else {
-	    printf(STDOUT "ERROR: unknown call opcode %s in set_print\n", 
-	       $OP_mnemonic[$opcode]);
+	    printf STDOUT "ERROR: unknown call opcode %s in set_print\n", $OP_mnemonic[$opcode];
 	    exit(1);
 	}
 
@@ -814,7 +802,7 @@ sub set_print {
 	$OP_opnd[$opcode][0]{'fmt'} = '%s';
     }
     else {
-	printf(STDOUT "ERROR: unknown format %s in set_print\n", $format);
+	printf STDOUT "ERROR: unknown format %s in set_print\n", $format;
 	exit(1);
     }
 
@@ -874,7 +862,7 @@ sub set_print {
 	    $signature = $signature.'_]';
 	}
 	elsif ($elt eq 'LR') {
-	    printf(STDOUT "ERROR: LR in set_print\n", $format);
+	    printf STDOUT "ERROR: LR in set_print\n", $format;
 	    exit(1);
 	}
 	elsif ($elt eq '=') {
@@ -1169,7 +1157,7 @@ sub initialize_isa_file {
 
     print ISA_F "main ()\n";
     print ISA_F "{\n";
-    printf (ISA_F "  ISA_Create (\"%s\", \n", $ARCH_name);
+    printf ISA_F "  ISA_Create (\"%s\", \n", $ARCH_name;
 
     return;
 }
@@ -1183,17 +1171,17 @@ sub initialize_isa_file {
 sub emit_opcode {
     my $opcode = $_[0];
 
-    printf (ISA_F "\t\t \"%s\",", $OP_opcode[$opcode]);
+    printf ISA_F "\t\t \"%s\",", $OP_opcode[$opcode];
     if (opcode_is_ssa($OP_opcode[$opcode]) == 1) {
-	printf(ISA_F "\t // ssa");
+	printf ISA_F "\t // ssa";
     }
     if (opcode_is_simulated($OP_opcode[$opcode]) == 1) {
-	printf(ISA_F "\t // simulated");
+	printf ISA_F "\t // simulated";
     }
     if (opcode_is_dummy($OP_opcode[$opcode]) == 1) {
-	printf(ISA_F "\t // dummy");
+	printf ISA_F "\t // dummy";
     }
-    printf(ISA_F "\n");
+    printf ISA_F "\n";
 }
 
 # ==================================================================
@@ -1222,43 +1210,43 @@ sub initialize_reg_file {
 
     &copyright_notice(REG_F);
 
-    printf (REG_F "// AUTOMATICALLY GENERATED FROM CHESS DATA BASE !!! \n\n");
-    printf (REG_F "//  \n");
-    printf (REG_F "//  Generate ISA registers information \n");
-    printf (REG_F "/////////////////////////////////////// \n");
-    printf (REG_F "\n");
+    printf REG_F "// AUTOMATICALLY GENERATED FROM CHESS DATA BASE !!! \n\n";
+    printf REG_F "//  \n";
+    printf REG_F "//  Generate ISA registers information \n";
+    printf REG_F "/////////////////////////////////////// \n";
+    printf REG_F "\n";
 
-    printf (REG_F "#include <stddef.h>\n");
-    printf (REG_F "#include \"isa_registers_gen.h\" \n");
-    printf (REG_F "#include \"targ_isa_subset.h\"\n\n\n");
+    printf REG_F "#include <stddef.h>\n";
+    printf REG_F "#include \"isa_registers_gen.h\" \n";
+    printf REG_F "#include \"targ_isa_subset.h\"\n\n\n";
 
-    printf (REG_F "static int ISA_Mask(ISA_SUBSET isa) \n");
-    printf (REG_F "{ \n");
-    printf (REG_F "  return 1 << (int)isa; \n");
-    printf (REG_F "} \n");
-    printf (REG_F "\n");
+    printf REG_F "static int ISA_Mask(ISA_SUBSET isa) \n";
+    printf REG_F "{ \n";
+    printf REG_F "  return 1 << (int)isa; \n";
+    printf REG_F "} \n";
+    printf REG_F "\n";
 
-    printf (REG_F "static int All_ISA_Mask(void) \n");
-    printf (REG_F "{ \n");
-    printf (REG_F "  int i; \n");
-    printf (REG_F "  int mask = 0; \n");
-    printf (REG_F "  for (i = ISA_SUBSET_MIN; i <= ISA_SUBSET_MAX; ++i) { \n");
-    printf (REG_F "    mask |= 1 << i; \n");
-    printf (REG_F "  } \n");
-    printf (REG_F "  return mask; \n");
-    printf (REG_F "} \n");
-    printf (REG_F "\n");
+    printf REG_F "static int All_ISA_Mask(void) \n";
+    printf REG_F "{ \n";
+    printf REG_F "  int i; \n";
+    printf REG_F "  int mask = 0; \n";
+    printf REG_F "  for (i = ISA_SUBSET_MIN; i <= ISA_SUBSET_MAX; ++i) { \n";
+    printf REG_F "    mask |= 1 << i; \n";
+    printf REG_F "  } \n";
+    printf REG_F "  return mask; \n";
+    printf REG_F "} \n";
+    printf REG_F "\n";
 
-    printf (REG_F "static int Range_ISA_Mask(ISA_SUBSET min_isa, ISA_SUBSET max_isa) \n");
-    printf (REG_F "{ \n");
-    printf (REG_F "  int i; \n");
-    printf (REG_F "  int mask = 0; \n");
-    printf (REG_F "  for (i = (int)min_isa; i <= (int)max_isa; ++i) { \n");
-    printf (REG_F "    mask |= 1 << i; \n");
-    printf (REG_F "  } \n");
-    printf (REG_F "  return mask; \n");
-    printf (REG_F "} \n");
-    printf (REG_F "\n");
+    printf REG_F "static int Range_ISA_Mask(ISA_SUBSET min_isa, ISA_SUBSET max_isa) \n";
+    printf REG_F "{ \n";
+    printf REG_F "  int i; \n";
+    printf REG_F "  int mask = 0; \n";
+    printf REG_F "  for (i = (int)min_isa; i <= (int)max_isa; ++i) { \n";
+    printf REG_F "    mask |= 1 << i; \n";
+    printf REG_F "  } \n";
+    printf REG_F "  return mask; \n";
+    printf REG_F "} \n";
+    printf REG_F "\n";
 
     return;
 }
@@ -1272,29 +1260,28 @@ sub emit_registers {
 
     for ($i = 0; $i < $REGSET_count; $i++) {
 	my $reg;
-	printf(REG_F "static const char *%s_reg_names[] = {\n", 
-	       $REGSET_rclass[$i]);
+	printf REG_F "static const char *%s_reg_names[] = {\n", $REGSET_rclass[$i];
 	for ($reg = $REGSET_minreg[$i]; 
 	     $reg < $REGSET_maxreg[$i];
 	     $reg++) {
 	    if (defined($REGSET_names[$i][$reg])) {
-		printf(REG_F "\t\"%s\",", $REGSET_names[$i][$reg]);
+		printf REG_F "\t\"%s\",", $REGSET_names[$i][$reg];
 	    }
 	    else {
-		printf(REG_F "\tNULL,");
+		printf REG_F "\tNULL,";
 	    }
 	    if ($reg != 0 && $reg % 4 == 0) {
-		printf(REG_F "\n");
+		printf REG_F "\n";
 	    }
 	}
 	if (defined($REGSET_names[$i][$REGSET_maxreg[$i]])) {
-	    printf(REG_F "\t\"%s\"\n", $REGSET_names[$i][$REGSET_maxreg[$i]]);
+	    printf REG_F "\t\"%s\"\n", $REGSET_names[$i][$REGSET_maxreg[$i]];
 	}
 	else {
-	    printf(REG_F "\tNULL\n");
+	    printf REG_F "\tNULL\n";
 	}
-	printf(REG_F "};\n");
-	printf(REG_F "\n");
+	printf REG_F "};\n";
+	printf REG_F "\n";
 
 	# subsets of this set:
 	my $subset;
@@ -1303,67 +1290,69 @@ sub emit_registers {
 	    my $found;
 
 	    # Emit members table:
-	    printf(REG_F "static const int %s_%s[] = {", 
-		   $REGSET_rclass[$i], $REGSET_subset[$i][$subset]{'name'});
+	    printf REG_F "static const int %s_%s[] = {", 
+		   $REGSET_rclass[$i], $REGSET_subset[$i][$subset]{'name'};
 	    $found = 0;
 	    for ($reg = $REGSET_minreg[$i];
 		 $reg <= $REGSET_maxreg[$i];
 		 $reg++) {
-#		printf (STDOUT "%d: %d\n", $reg, $REGSET_subset[$i][$subset]{'regs'}[$reg]);
+#		printf STDOUT "%d: %d\n", $reg, $REGSET_subset[$i][$subset]{'regs'}[$reg];
 		if ($REGSET_subset[$i][$subset]{'regs'}[$reg] == 1) {
 		    if ($found) {
-			printf(REG_F ",%d", $reg);
+			printf REG_F ",%d", $reg;
 		    }
 		    else {
-			printf(REG_F "%d", $reg);
+			printf REG_F "%d", $reg;
 		    }
 		    $found = 1;
 		}
 	    }
-	    printf(REG_F "}; \n");
+	    printf REG_F "}; \n";
 	}
-	printf(REG_F "\n");
+	printf REG_F "\n";
 
     }
 
     # Emit a usefull macro:
-    printf(REG_F "#define NELEMS(a) (sizeof(a) / sizeof(*(a))) \n");
-    printf(REG_F "\n");
+    printf REG_F "#define NELEMS(a) (sizeof(a) / sizeof(*(a))) \n";
+    printf REG_F "\n";
 
-    printf(REG_F "main() \n");
-    printf(REG_F "{ \n");
-    printf(REG_F "  ISA_REGISTER_CLASS \n");
+    printf REG_F "main() \n";
+    printf REG_F "{ \n";
+    printf REG_F "  ISA_REGISTER_CLASS \n";
     for ($i = 0; $i < $RCLASS_count-1; $i++) {
-	printf(REG_F "\t rc_%s,\n", $RCLASS_name[$i]);
+	printf REG_F "\t rc_%s,\n", $RCLASS_name[$i];
     }
-    printf(REG_F "\t rc_%s;\n", $RCLASS_name[$i]);
-    printf(REG_F "\n");
+    printf REG_F "\t rc_%s;\n", $RCLASS_name[$i];
+    printf REG_F "\n";
 
-    printf(REG_F "  ISA_Registers_Begin(\"%s\"); \n", $ARCH_name);
-    printf(REG_F "\n");
+    printf REG_F "  ISA_Registers_Begin(\"%s\"); \n", $ARCH_name;
+    printf REG_F "\n";
 
     for ($i = 0; $i < $RCLASS_count; $i++) {
 	my $can_be_stored = ($RCLASS_can_be_stored[$i]) ? "true" : "false";
 	my $mult_store = ($RCLASS_mult_store[$i]) ? "true" : "false";
 	my $is_ptr = ($RCLASS_is_ptr[$i]) ? "true" : "false";
-	printf(REG_F "  rc_%s = ISA_Register_Class_Create(\"%s\", %d, %s, %s, %s); \n", $RCLASS_name[$i], $RCLASS_name[$i], $RCLASS_bits[$i], $is_ptr, $can_be_stored, $mult_store);
+	printf REG_F "  rc_%s = ISA_Register_Class_Create(\"%s\", %d, %s, %s, %s); \n",
+	    $RCLASS_name[$i], $RCLASS_name[$i], $RCLASS_bits[$i], $is_ptr, $can_be_stored, $mult_store;
     }
-    printf(REG_F "\n");
+    printf REG_F "\n";
 
     # Emit register sets:
     for ($i = 0; $i < $REGSET_count; $i++) {
 	my $reg;
-	printf(REG_F "  ISA_Register_Set(rc_%s, %d, %d, \"%s\", NULL, All_ISA_Mask()); \n", $REGSET_rclass[$i], $REGSET_minreg[$i], $REGSET_maxreg[$i], $REGSET_format[$i]);
+	printf REG_F "  ISA_Register_Set(rc_%s, %d, %d, \"%s\", NULL, All_ISA_Mask()); \n",
+	    $REGSET_rclass[$i], $REGSET_minreg[$i], $REGSET_maxreg[$i], $REGSET_format[$i];
 	# subsets of this set:
 	my $subset;
 	for ($subset = 0; $subset < $REGSET_subset_count[$i]; $subset++) {
-	    printf(REG_F "  ISA_Register_Subclass_Create(\"%s\", rc_%s,
+	    printf REG_F "  ISA_Register_Subclass_Create(\"%s\", rc_%s,
 			        NELEMS(%s_%s), %s_%s, NULL); \n", 
 		   $REGSET_subset[$i][$subset]{'name'}, $REGSET_rclass[$i],
 		   $REGSET_rclass[$i], $REGSET_subset[$i][$subset]{'name'},
-		   $REGSET_rclass[$i], $REGSET_subset[$i][$subset]{'name'});
+		   $REGSET_rclass[$i], $REGSET_subset[$i][$subset]{'name'};
 	}
-	printf(REG_F "\n");
+	printf REG_F "\n";
     }
 
     return;
@@ -1375,9 +1364,9 @@ sub emit_registers {
 
 sub finalize_reg_file {
 
-    printf (REG_F "  ISA_Registers_End(); \n");
-    printf (REG_F "  return 0; \n");
-    printf (REG_F "} \n");
+    printf REG_F "  ISA_Registers_End(); \n";
+    printf REG_F "  return 0; \n";
+    printf REG_F "} \n";
 
     close (REG_F);
     return;
@@ -1570,21 +1559,19 @@ sub emit_subsets {
 
     for ($i = 0; $i < $SUBSET_count; $i++) {
 	my $subset = $SUBSET_name[$i];
-	printf (SUBS_F "  %s = ISA_Subset_Create(%s,\"%s\"); \n\n", 
-		$subset, $SUBSET_parent[$i], $subset);
-	printf (SUBS_F "  /* ==================================================================== \n");
-	printf (SUBS_F "   *             %s_%s Instructions \n", 
-		$ARCH_name, $subset);
-	printf (SUBS_F "   * ==================================================================== \n");
-	printf (SUBS_F "   */ \n");
+	printf SUBS_F "  %s = ISA_Subset_Create(%s,\"%s\"); \n\n", $subset, $SUBSET_parent[$i], $subset;
+	printf SUBS_F "  /* ==================================================================== \n";
+	printf SUBS_F "   *             %s_%s Instructions \n", $ARCH_name, $subset;
+	printf SUBS_F "   * ==================================================================== \n";
+	printf SUBS_F "   */ \n";
 
-        printf (SUBS_F "  Instruction_Group(%s, \n", $subset);
+        printf SUBS_F "  Instruction_Group(%s, \n", $subset;
 	foreach $opcode (@{$SUBSET_opcodes[$i]}) {
 	    if($opcode != $UNDEF) {
-		printf (SUBS_F "\t\t TOP_%s, \n", $OP_opcode[$opcode]);
+		printf SUBS_F "\t\t TOP_%s, \n", $OP_opcode[$opcode];
 	    }
 	}
-	printf (SUBS_F "\t\t TOP_UNDEFINED); \n\n");
+	printf SUBS_F "\t\t TOP_UNDEFINED); \n\n";
     }
 
     return;
@@ -1631,12 +1618,12 @@ sub initialize_properties_file {
     print PROP_F "{ \n";
     print PROP_F "  ISA_PROPERTY \n";
     for ($prop = 0; $prop < $ISA_PROPERTY_count-1; $prop++) {
-	printf (PROP_F "    %s,\n", $ISA_PROPERTY_name[$prop]);
+	printf PROP_F "    %s,\n", $ISA_PROPERTY_name[$prop];
     }
-    printf (PROP_F "    %s;\n", $ISA_PROPERTY_name[$ISA_PROPERTY_count-1]);
-    printf (PROP_F "\n");
+    printf PROP_F "    %s;\n", $ISA_PROPERTY_name[$ISA_PROPERTY_count-1];
+    printf PROP_F "\n";
 
-    printf (PROP_F "  ISA_Properties_Begin (\"%s\"); \n\n\n",$ARCH_name);
+    printf PROP_F "  ISA_Properties_Begin (\"%s\"); \n\n\n",$ARCH_name;
 
     print PROP_F "  /* ==================================================================== \n";
     print PROP_F "   *              Operator attributes descriptors \n";
@@ -1843,54 +1830,50 @@ sub emit_properties {
     	    $group_str = 'Or';
 	}
 
-	printf (PROP_F "  /* ====================================== */ \n");
-        printf (PROP_F "  %s = ISA_Property_Create (\"%s\"); \n",
-		$group_str, $group);
+	printf PROP_F "  /* ====================================== */ \n";
+        printf PROP_F "  %s = ISA_Property_Create (\"%s\"); \n", $group_str, $group;
 
-	printf (PROP_F "  Instruction_Group (%s, \n", $group_str);
+	printf PROP_F "  Instruction_Group (%s, \n", $group_str;
 	foreach $opcode (@{$AttrGroup{$group}}) {
 	    unless ($opcode eq $UNDEF) {
-		printf (PROP_F "\t\t TOP_%s, \n", $opcode);
+		printf PROP_F "\t\t TOP_%s, \n", $opcode;
 	    }
 	}
-	printf (PROP_F "\t\t TOP_UNDEFINED); \n\n");
+	printf PROP_F "\t\t TOP_UNDEFINED); \n\n";
     }
 
   # Needed to compile. no op associated. should be removed
-    foreach $group (defs_fcc, defs_fcr, refs_fcr, branch_predict, access_reg_bank, side_effects, unalign, mem_fill_type, likely, l_group, f_group, flop, madd, guard_t, guard_f, div, unsafe) {
-	printf (PROP_F "  /* ====================================== */ \n");
-        printf (PROP_F "  %s = ISA_Property_Create (\"%s\"); \n",
-		$group, $group);
-	printf (PROP_F "  Instruction_Group (%s, \n", $group);
-	printf (PROP_F "\t\t TOP_UNDEFINED); \n\n");
+    foreach $group qw(defs_fcc defs_fcr refs_fcr branch_predict access_reg_bank side_effects unalign mem_fill_type likely l_group f_group flop madd guard_t guard_f div unsafe) {
+	printf PROP_F "  /* ====================================== */ \n";
+        printf PROP_F "  %s = ISA_Property_Create (\"%s\"); \n", $group, $group;
+	printf PROP_F "  Instruction_Group (%s, \n", $group;
+	printf PROP_F "\t\t TOP_UNDEFINED); \n\n";
     }
 
     foreach $group (keys(%MemBytes)) {
-	printf (PROP_F "  /* ====================================== */ \n");
-	printf (PROP_F "  /*         Memory Access Size %s          */ \n",
-                                                                    $group);
-	printf (PROP_F "  /* ====================================== */ \n");
-	printf (PROP_F "  ISA_Memory_Access (%s, \n", $group);
+	printf PROP_F "  /* ====================================== */ \n";
+	printf PROP_F "  /*         Memory Access Size %s          */ \n", $group;
+	printf PROP_F "  /* ====================================== */ \n";
+	printf PROP_F "  ISA_Memory_Access (%s, \n", $group;
 	foreach $opcode (@{$MemBytes{$group}}) {
 	    unless ($opcode eq $UNDEF) {
-		printf (PROP_F "\t\t TOP_%s, \n", $opcode);
+		printf PROP_F "\t\t TOP_%s, \n", $opcode;
 	    }
 	}
-	printf (PROP_F "\t\t TOP_UNDEFINED); \n\n");
+	printf PROP_F "\t\t TOP_UNDEFINED); \n\n";
     }
 
     foreach $group (keys(%MemAlign)) {
-	printf (PROP_F "  /* ====================================== */ \n");
-	printf (PROP_F "  /*          Memory Alignment %s           */ \n",
-                                                                    $group);
-	printf (PROP_F "  /* ====================================== */ \n");
-	printf (PROP_F "  ISA_Memory_Alignment (%s, \n", $group);
+	printf PROP_F "  /* ====================================== */ \n";
+	printf PROP_F "  /*          Memory Alignment %s           */ \n", $group;
+	printf PROP_F "  /* ====================================== */ \n";
+	printf PROP_F "  ISA_Memory_Alignment (%s, \n", $group;
 	foreach $opcode (@{$MemAlign{$group}}) {
 	    unless ($opcode eq $UNDEF) {
-		printf (PROP_F "\t\t TOP_%s, \n", $opcode);
+		printf PROP_F "\t\t TOP_%s, \n", $opcode;
 	    }
 	}
-	printf (PROP_F "\t\t TOP_UNDEFINED); \n\n");
+	printf PROP_F "\t\t TOP_UNDEFINED); \n\n";
     }
 
     return;
@@ -1938,95 +1921,95 @@ sub initialize_operands_file {
 
     # Specify operand value types:
     if ($REG_OPND_count > 0) {
-	printf (OPND_F "  OPERAND_VALUE_TYPE ");
+	printf OPND_F "  OPERAND_VALUE_TYPE ";
 	for ($i = 0; $i < $REG_OPND_count-1; $i++) {
-	    printf (OPND_F "%s, ", $REG_OPND_name[$i]);
+	    printf OPND_F "%s, ", $REG_OPND_name[$i];
 	}
-	printf (OPND_F "%s; \n", $REG_OPND_name[$REG_OPND_count-1]);
+	printf OPND_F "%s; \n", $REG_OPND_name[$REG_OPND_count-1];
     }
     if ($LIT_OPND_count > 0) {
-	printf (OPND_F "  OPERAND_VALUE_TYPE ");
+	printf OPND_F "  OPERAND_VALUE_TYPE ";
 	for ($i = 0; $i < $LIT_OPND_count-1; $i++) {
-	    printf (OPND_F "%s, ", $LIT_OPND_name[$i]);
+	    printf OPND_F "%s, ", $LIT_OPND_name[$i];
 	}
-	printf (OPND_F "%s; \n", $LIT_OPND_name[$LIT_OPND_count-1]);
+	printf OPND_F "%s; \n", $LIT_OPND_name[$LIT_OPND_count-1];
     }
     if ($ENUM_OPND_count > 0) {
-	printf (OPND_F "  OPERAND_VALUE_TYPE ");
+	printf OPND_F "  OPERAND_VALUE_TYPE ";
 	for ($i = 0; $i < $ENUM_OPND_count-1; $i++) {
-	    printf (OPND_F "%s, ", $ENUM_OPND_name[$i]);
+	    printf OPND_F "%s, ", $ENUM_OPND_name[$i];
 	}
-	printf (OPND_F "%s; \n", $ENUM_OPND_name[$ENUM_OPND_count-1]);
+	printf OPND_F "%s; \n", $ENUM_OPND_name[$ENUM_OPND_count-1];
     }
     print OPND_F "\n";
 
     # Specify operand use type:
-    printf (OPND_F "  /* ------------------------------------------------------\n");
-    printf (OPND_F "   *   Following built-in use types must be specified: \n");
-    printf (OPND_F "   *     1. base operand use for TOP_load, TOP_store; \n");
-    printf (OPND_F "   *     2. offset operand use for TOP_load, TOP_store; \n");
-    printf (OPND_F "   *     3. storeval operand use for TOP_store; \n");
-    printf (OPND_F "   *     4. condition operand use for TOP_select; \n");
-    printf (OPND_F "   * \n");
-    printf (OPND_F "   *   Following built-in use types may be specified: \n");
-    printf (OPND_F "   *     5. implicit operand use for TOPs when the operand is implicitely used; \n");
-    printf (OPND_F "   * \n");
-    printf (OPND_F "   *   Here you can specify any additional operand uses. \n");
-    printf (OPND_F "   * ------------------------------------------------------\n");
-    printf (OPND_F "   */\n");
+    printf OPND_F "  /* ------------------------------------------------------\n";
+    printf OPND_F "   *   Following built-in use types must be specified: \n";
+    printf OPND_F "   *     1. base operand use for TOP_load, TOP_store; \n";
+    printf OPND_F "   *     2. offset operand use for TOP_load, TOP_store; \n";
+    printf OPND_F "   *     3. storeval operand use for TOP_store; \n";
+    printf OPND_F "   *     4. condition operand use for TOP_select; \n";
+    printf OPND_F "   * \n";
+    printf OPND_F "   *   Following built-in use types may be specified: \n";
+    printf OPND_F "   *     5. implicit operand use for TOPs when the operand is implicitely used; \n";
+    printf OPND_F "   * \n";
+    printf OPND_F "   *   Here you can specify any additional operand uses. \n";
+    printf OPND_F "   * ------------------------------------------------------\n";
+    printf OPND_F "   */\n";
 
     if ($OPND_USE_count > 0) {
-	printf (OPND_F "  OPERAND_USE_TYPE \n");
+	printf OPND_F "  OPERAND_USE_TYPE \n";
 	for ($i = 0; $i < $OPND_USE_count-1; $i++) {
-	    printf (OPND_F "        %s, \n", $OPND_USE_name[$i]);
+	    printf OPND_F "        %s, \n", $OPND_USE_name[$i];
 	}
-	printf (OPND_F "        %s; \n", $OPND_USE_name[$OPND_USE_count-1]);
+	printf OPND_F "        %s; \n", $OPND_USE_name[$OPND_USE_count-1];
     }
-    printf (OPND_F "\n");
+    printf OPND_F "\n";
 
-    printf (OPND_F "  ISA_Operands_Begin(\"%s\"); \n",$ARCH_name);
+    printf OPND_F "  ISA_Operands_Begin(\"%s\"); \n",$ARCH_name;
 
     if ($REG_OPND_count > 0) {
-	printf (OPND_F "  /* Create the register operand types: */ \n");
+	printf OPND_F "  /* Create the register operand types: */ \n";
 	for ($i = 0; $i < $REG_OPND_count; $i++) {
-	    printf (OPND_F "  %s = ISA_Reg_Opnd_Type_Create(\"%s\", \n",
-		    $REG_OPND_name[$i], $REG_OPND_name[$i]);
-            printf (OPND_F "                ISA_REGISTER_CLASS_%s, \n",
-		    $REG_OPND_rclass[$i]);
-	    printf (OPND_F "                ISA_REGISTER_SUBCLASS_%s, \n",
-		    $REG_OPND_subclass[$i]);
-	    printf (OPND_F "                %d, %s, %s); \n",
-		    $REG_OPND_size[$i], $REG_OPND_rtype[$i], $REG_OPND_fp_type[$i]);
+	    printf OPND_F "  %s = ISA_Reg_Opnd_Type_Create(\"%s\", \n",
+		    $REG_OPND_name[$i], $REG_OPND_name[$i];
+            printf OPND_F "                ISA_REGISTER_CLASS_%s, \n",
+		    $REG_OPND_rclass[$i];
+	    printf OPND_F "                ISA_REGISTER_SUBCLASS_%s, \n",
+		    $REG_OPND_subclass[$i];
+	    printf OPND_F "                %d, %s, %s); \n",
+		    $REG_OPND_size[$i], $REG_OPND_rtype[$i], $REG_OPND_fp_type[$i];
 	}
-	printf (OPND_F "\n");
+	printf OPND_F "\n";
     }
     if ($LIT_OPND_count > 0) {
-	printf (OPND_F "  /* Create the literal operand types: */ \n");
+	printf OPND_F "  /* Create the literal operand types: */ \n";
 	for ($i = 0; $i < $LIT_OPND_count; $i++) {
-	    printf (OPND_F "  %s = ISA_Lit_Opnd_Type_Create(\"%s\", %d, %s, LC_%s); \n",
+	    printf OPND_F "  %s = ISA_Lit_Opnd_Type_Create(\"%s\", %d, %s, LC_%s); \n",
 		    $LIT_OPND_name[$i], $LIT_OPND_name[$i], 
 		    $LIT_OPND_size[$i],$LIT_OPND_rtype[$i], 
-		    $LIT_OPND_lclass[$i]);
+		    $LIT_OPND_lclass[$i];
 	}
-	printf (OPND_F "\n");
+	printf OPND_F "\n";
     }
 
     if ($ENUM_OPND_count > 0) {
-	printf (OPND_F "  /* Create the enum operand types: */ \n");
+	printf OPND_F "  /* Create the enum operand types: */ \n";
 	for ($i = 0; $i < $ENUM_OPND_count; $i++) {
-	    printf (OPND_F "  %s = ISA_Enum_Opnd_Type_Create(\"%s\", %d, %s, EC_%s); \n",
-		    $ENUM_OPND_name[$i], $ENUM_OPND_name[$i], $ENUM_OPND_size[$i],$ENUM_OPND_rtype[$i], $ENUM_OPND_eclass[$i]);
+	    printf OPND_F "  %s = ISA_Enum_Opnd_Type_Create(\"%s\", %d, %s, EC_%s); \n",
+		    $ENUM_OPND_name[$i], $ENUM_OPND_name[$i], $ENUM_OPND_size[$i],$ENUM_OPND_rtype[$i], $ENUM_OPND_eclass[$i];
 	}
-	printf (OPND_F "\n");
+	printf OPND_F "\n";
     }
-    printf (OPND_F "\n");
+    printf OPND_F "\n";
 
     if ($OPND_USE_count > 0) {
-	printf (OPND_F "  /* Create the operand uses: */ \n");
-	printf (OPND_F "\n");
+	printf OPND_F "  /* Create the operand uses: */ \n";
+	printf OPND_F "\n";
 	for ($i = 0; $i < $OPND_USE_count; $i++) {
-	    printf (OPND_F "  %s = Create_Operand_Use(\"%s\"); \n",
-		    $OPND_USE_name[$i], $OPND_USE_name[$i]);
+	    printf OPND_F "  %s = Create_Operand_Use(\"%s\"); \n",
+		    $OPND_USE_name[$i], $OPND_USE_name[$i];
 	}
 	printf (OPND_F "\n");
     }
@@ -2064,7 +2047,7 @@ sub emit_operands {
 	    $PushOpcode[$i] = 0;
 	}
 	foreach $opcode (@{$SignatureGroup{$signature}}) {
-	    if ($opcode != $UNDEF) {
+	    if ($opcode ne $UNDEF) {
 		print OPND_F "\t\t TOP_$opcode, \n";
 	    }
 	}
@@ -2177,25 +2160,22 @@ CONTINUE:
 	if (opcode_is_dummy($OP_opcode[$i]) || 
 	    opcode_is_ssa($OP_opcode[$i]) || 
 	    opcode_is_simulated($OP_opcode[$i])) {
-	    printf (PRNT_F "  \"%s\",\t /* TOP_%s */\n", 
-		                            $OP_opcode[$i], $OP_opcode[$i]);
+	    printf PRNT_F "  \"%s\",\t /* TOP_%s */\n", $OP_opcode[$i], $OP_opcode[$i];
 	}
 	# mnemonics is corrupted for icall,igoto
 	elsif ($OP_mnemonic[$i] eq 'icall') {
-	    printf(PRNT_F "  \"call\",\t /* TOP_%s */ \n", $OP_opcode[$i]);
+	    printf PRNT_F "  \"call\",\t /* TOP_%s */ \n", $OP_opcode[$i];
 	}
 	elsif ($OP_mnemonic[$i] eq 'igoto') {
-	    printf(PRNT_F "  \"goto\",\t /* TOP_%s */ \n", $OP_opcode[$i]);
+	    printf PRNT_F "  \"goto\",\t /* TOP_%s */ \n", $OP_opcode[$i];
 	}
 	elsif ($OP_properties[$i] & $OP_DISMISSIBLE) {
 	    $mnemonic = $OP_mnemonic[$i];
 	    $mnemonic =~ tr/_/./;
-	    printf(PRNT_F "  \"%s\",\t /* TOP_%s */ \n", 
-		                         $mnemonic, , $OP_opcode[$i]);
+	    printf PRNT_F "  \"%s\",\t /* TOP_%s */ \n", $mnemonic, , $OP_opcode[$i];
 	}
 	else {
-	    printf(PRNT_F "  \"%s\",\t /* TOP_%s */ \n", 
-		                          $OP_mnemonic[$i], $OP_opcode[$i]);
+	    printf PRNT_F "  \"%s\",\t /* TOP_%s */ \n", $OP_mnemonic[$i], $OP_opcode[$i];
 	}
     }
 
@@ -2203,25 +2183,21 @@ CONTINUE:
 	opcode_is_ssa($OP_opcode[$OP_count-1]) || 
 	opcode_is_simulated($OP_opcode[$OP_count-1])) {
 
-	printf (PRNT_F "  \"%s\" \t /* TOP_%s */\n", 
-		          $OP_opcode[$OP_count-1], $OP_opcode[$OP_count-1]);
+	printf PRNT_F "  \"%s\" \t /* TOP_%s */\n", $OP_opcode[$OP_count-1], $OP_opcode[$OP_count-1];
     }
     # mnemonics is corrupted for icall,igoto
     elsif ($OP_mnemonic[$i] eq 'icall') {
-	printf(PRNT_F "  \"call\",\t /* TOP_%s */ \n", 
-	                                           $OP_opcode[$OP_count-1]);
+	printf PRNT_F "  \"call\",\t /* TOP_%s */ \n", $OP_opcode[$OP_count-1];
     }
     elsif ($OP_mnemonic[$i] eq 'igoto') {
-	printf(PRNT_F "  \"goto\",\t /* TOP_%s */ \n", 
-	                                           $OP_opcode[$OP_count-1]);
+	printf PRNT_F "  \"goto\",\t /* TOP_%s */ \n", $OP_opcode[$OP_count-1];
     }
     else {
-	printf(PRNT_F "  \"%s\" \t /* TOP_%s */ \n",
-	                $OP_mnemonic[$OP_count-1], $OP_opcode[$OP_count-1]);
+	printf PRNT_F "  \"%s\" \t /* TOP_%s */ \n", $OP_mnemonic[$OP_count-1], $OP_opcode[$OP_count-1];
     }
-    printf(PRNT_F "};\n");
+    printf PRNT_F "};\n";
 
-    printf(PRNT_F "\n");
+    printf PRNT_F "\n";
 
 #    print PRNT_F "// Multiple topcodes map to the same assembly name. To disambiguate the \n";
 #    print PRNT_F "// topcodes, we append a signature to the basename. To get the assembly \n";
@@ -2243,11 +2219,11 @@ CONTINUE:
 
 #    my $opcode;
 #    foreach $opcode (@SimulatedOpcodes) {
-#	printf (PRNT_F "  case TOP_%s: return \"%s\"; \n", $opcode, $opcode);
+#	printf PRNT_F "  case TOP_%s: return \"%s\"; \n", $opcode, $opcode;
 #    }
 
 #    foreach $opcode (@DummyOpcodes) {
-#	printf (PRNT_F "  case TOP_%s: return \"%s\"; \n", $opcode, $opcode);
+#	printf PRNT_F "  case TOP_%s: return \"%s\"; \n", $opcode, $opcode;
 #    }
     # special cases (I really should generate a table):
 #    print PRNT_F "  case TOP_icall: return \"call\"; \n";
@@ -2275,20 +2251,20 @@ CONTINUE:
 
 #    print PRNT_F "  return strdup(buf); \n";
 
-    printf (PRNT_F "  return mnemonic_names[topcode]; \n");
-    printf (PRNT_F "} \n\n");
+    printf PRNT_F "  return mnemonic_names[topcode]; \n";
+    printf PRNT_F "} \n\n";
 
     print PRNT_F "main() \n";
     print PRNT_F "{ \n";
 
-    printf (PRNT_F "  ISA_Print_Begin(\"%s\"); \n\n",$ARCH_name);
-    printf (PRNT_F "  Set_AsmName_Func(asmname); \n\n");
+    printf PRNT_F "  ISA_Print_Begin(\"%s\"); \n\n",$ARCH_name;
+    printf PRNT_F "  Set_AsmName_Func(asmname); \n\n";
 
     # First specify bundle/grouping stuff
-    printf(PRNT_F "  Define_Macro(\"END_GROUP\", \";;\");\t// end-of-group marker \n");
-    printf(PRNT_F "  Define_Macro(\"BEGIN_BUNDLE\", \"## {\t %s:\");\t// bundle introducer \n", "%s");
-    printf(PRNT_F "  Define_Macro(\"END_BUNDLE\", \"## };\");\t// bundle terminator \n");
-    printf(PRNT_F "\n");
+    printf PRNT_F "  Define_Macro(\"END_GROUP\", \";;\");\t// end-of-group marker \n";
+    printf PRNT_F "  Define_Macro(\"BEGIN_BUNDLE\", \"## {\t %s:\");\t// bundle introducer \n", "%s";
+    printf PRNT_F "  Define_Macro(\"END_BUNDLE\", \"## };\");\t// bundle terminator \n";
+    printf PRNT_F "\n";
 
     my $count = 0;
     foreach my $signature (keys(%PrintGroup)) {
@@ -2297,7 +2273,7 @@ CONTINUE:
 	my @instr;
 	my $args;
 
-#	printf (STDOUT "trying signature %s\n", $signature);
+#	printf STDOUT "trying signature %s\n", $signature;
 
 	# push %s for name in the format
 	push (@instr, "\t%s");
@@ -2323,30 +2299,30 @@ CONTINUE:
 	print PRNT_F "  ISA_PRINT_TYPE print_$count; \n";
 	print PRNT_F "  print_$count = ISA_Print_Type_Create(\"print_$count\", \"c0$new_ft\"); \n";
 
-	printf (PRNT_F "  Name(); \n", "%s");
+	printf PRNT_F "  Name(); \n", "%s";
 
 	my $j;
 	for ($j = 0; $j < $i; $j++) {
 	    if ($args[$j] eq 'R0') { 
-		printf (PRNT_F "  Result(0); \n", shift (@fmt));
+		printf PRNT_F "  Result(0); \n", shift (@fmt);
 	    }
 	    elsif ($args[$j] eq 'R1') { 
-		printf (PRNT_F "  Result(1); \n", shift (@fmt));
+		printf PRNT_F "  Result(1); \n", shift (@fmt);
 	    }
 	    elsif ($args[$j] eq 'O0') { 
-		printf (PRNT_F "  Operand(0); \n", shift (@fmt));
+		printf PRNT_F "  Operand(0); \n", shift (@fmt);
 	    }
 	    elsif ($args[$j] eq 'O1') { 
-		printf (PRNT_F "  Operand(1); \n", shift (@fmt));
+		printf PRNT_F "  Operand(1); \n", shift (@fmt);
 	    }
 	    elsif ($args[$j] eq 'O2') { 
-		printf (PRNT_F "  Operand(2); \n", shift (@fmt));
+		printf PRNT_F "  Operand(2); \n", shift (@fmt);
 	    }
 	    elsif ($args[$j] eq 'O3') { 
-		printf (PRNT_F "  Operand(3); \n", shift (@fmt));
+		printf PRNT_F "  Operand(3); \n", shift (@fmt);
 	    }
 	    else {
-		printf(STDOUT "ERROR: unknown element %s in emit_printing_formats\n", $elt);
+		printf STDOUT "ERROR: unknown element %s in emit_printing_formats\n", $elt;
 		exit(1);
 	    }
 	}
@@ -2395,19 +2371,19 @@ sub initialize_pack_file {
     open (PACK_F, "> $dir/isa_pack.cxx");
     &copyright_notice (PACK_F);
 
-    printf (PACK_F "// \n");
-    printf (PACK_F "// Group TOPs with similar packing format together.  \n");
-    printf (PACK_F "///////////////////////////////////////////////////////// \n");
+    printf PACK_F "// \n";
+    printf PACK_F "// Group TOPs with similar packing format together.  \n";
+    printf PACK_F "///////////////////////////////////////////////////////// \n";
 
-    printf (PACK_F "// Instructions may be packed (compressed) in binary files. The packing rules \n");
-    printf (PACK_F "// are specified in this file. \n\n");
+    printf PACK_F "// Instructions may be packed (compressed) in binary files. The packing rules \n";
+    printf PACK_F "// are specified in this file. \n\n";
 
-    printf (PACK_F "#include <stddef.h> \n");
-    printf (PACK_F "#include \"topcode.h\" \n");
-    printf (PACK_F "#include \"isa_pack_gen.h\" \n\n");
+    printf PACK_F "#include <stddef.h> \n";
+    printf PACK_F "#include \"topcode.h\" \n";
+    printf PACK_F "#include \"isa_pack_gen.h\" \n\n";
  
-    printf (PACK_F "main() \n");
-    printf (PACK_F "{ \n");
+    printf PACK_F "main() \n";
+    printf PACK_F "{ \n";
 }
 
 # ==================================================================
@@ -2421,32 +2397,31 @@ sub emit_pack_info {
     # Use the same groups as operand/result description.
     # TODO: should reflect things like operand scaling, etc.
 
-    printf (PACK_F "  ISA_PACK_TYPE \n\t\t");
+    printf PACK_F "  ISA_PACK_TYPE \n\t\t";
     my $i;
     for ($i = 0; $i < $PACK_count-1; $i++) {
-	printf (PACK_F "p%d, \t// %s\n\t\t", $i, $PACK_comment[$i]);
+	printf PACK_F "p%d, \t// %s\n\t\t", $i, $PACK_comment[$i];
     }
-    printf (PACK_F "p%d; \t// %s\n\n", $i, $PACK_comment[$i]);
+    printf PACK_F "p%d; \t// %s\n\n", $i, $PACK_comment[$i];
 
     # This is just a copy of what I found in the ia64/isa_pack.cxx
-    printf (PACK_F "  OPND_ADJ_TYPE	no_adj; \n\n");
+    printf PACK_F "  OPND_ADJ_TYPE	no_adj; \n\n";
 
     # An instruction is 32-bit wide on the ST200
-    printf (PACK_F "  ISA_Pack_Begin(\"%s\", 32); \n\n", $ARCH_name);
+    printf PACK_F "  ISA_Pack_Begin(\"%s\", 32); \n\n", $ARCH_name;
 
-    printf (PACK_F "  /* Create the various adjustments that need to be performed between \n");
-    printf (PACK_F "   * assembly language form and packed form. Note that simple shift  \n");
-    printf (PACK_F "   * adjustments have been accomplished directly in the operand packing \n");
-    printf (PACK_F "   * specification. \n");
-    printf (PACK_F "   */ \n\n");
-    printf (PACK_F "  no_adj = Create_Operand_Adjustment(\"no adjustment\", \"O_VAL\"); \n\n");
+    printf PACK_F "  /* Create the various adjustments that need to be performed between \n";
+    printf PACK_F "   * assembly language form and packed form. Note that simple shift  \n";
+    printf PACK_F "   * adjustments have been accomplished directly in the operand packing \n";
+    printf PACK_F "   * specification. \n";
+    printf PACK_F "   */ \n\n";
+    printf PACK_F "  no_adj = Create_Operand_Adjustment(\"no adjustment\", \"O_VAL\"); \n\n";
 
     $count = 0;
     foreach $group (keys(%PackGroup)) {
 	my $rests;
 	my $gname;
 	my $opnds;
-	my $opcode;
 
 	# find corresponding PACK
 	my $i;
@@ -2456,13 +2431,13 @@ sub emit_pack_info {
 	    }
 	}
 
-	printf(STDOUT "ERROR: couldn't find PACK info for %s\n", $group);
+	printf STDOUT "ERROR: couldn't find PACK info for %s\n", $group;
 	exit(1);
 
 BREAK:
 	# $i -- index of corresponding PACK info
-	printf (PACK_F "  /* =====  p%d: ===== */ \n", $i);
-	printf (PACK_F "  p%d = ISA_Pack_Type_Create(\"p%d\"); \n", $i, $i);
+	printf PACK_F "  /* =====  p%d: ===== */ \n", $i;
+	printf PACK_F "  p%d = ISA_Pack_Type_Create(\"p%d\"); \n", $i, $i;
 	my $word;
 	for ($word = 0; $word < $PACK_words[$i]; $word++) {
 	    my $res;
@@ -2470,46 +2445,45 @@ BREAK:
 
 	    # issue Next_Word()
 	    if ($word > 0) {
-		printf (PACK_F "  Next_Word(); \n");
+		printf PACK_F "  Next_Word(); \n";
 	    }
 
 	    # results
 	    for ($res = 0; $res < $PACK_results[$i]; $res++) {
 		if ($PACK_word_results[$i][$res][$word] == 1) {
-		    printf (PACK_F "  Result(%s, %d, %d); \n", 
+		    printf PACK_F "  Result(%s, %d, %d); \n", 
 			    $res, 
 			    $PACK_result_ipos[$i][$res][$word],
-			    $PACK_result_bits[$i][$res][$word]);
+			    $PACK_result_bits[$i][$res][$word];
 		}
 	    }
 
 	    # operands now
 	    for ($opnd = 0; $opnd < $PACK_opnds[$i]; $opnd++) {
 		if ($PACK_word_opnds[$i][$opnd][$word] == 1) {
-		    printf (PACK_F "  Operand(%s, %d, %d, %d); \n", 
+		    printf PACK_F "  Operand(%s, %d, %d, %d); \n", 
 			    $opnd, 
 			    $PACK_opnd_start[$i][$opnd][$word],
 			    $PACK_opnd_ipos[$i][$opnd][$word],
-			    $PACK_opnd_bits[$i][$opnd][$word]);
+			    $PACK_opnd_bits[$i][$opnd][$word];
 		}
 	    }
 	}
 
 	# instruction group:
-	printf (PACK_F "  Instruction_Pack_Group(p%d, \n", $i);
-	my $opcode;
-	foreach $opcode (@{$PackGroup{$group}}) {
+	printf PACK_F "  Instruction_Pack_Group(p%d, \n", $i;
+	foreach my $opcode (@{$PackGroup{$group}}) {
 	    unless ($opcode eq $UNDEF) {
-		printf (PACK_F "\tTOP_%s, \t", $opcode);
+		printf PACK_F "\tTOP_%s, \t", $opcode;
 
 		for ($word = 0; $word < $PACK_words[$i]; $word++) {
 		    # coding is dummy for now
-		    printf (PACK_F " 0x10000000UL,");
+		    printf PACK_F " 0x10000000UL,";
 		}
-		printf (PACK_F "\n");
+		printf PACK_F "\n";
 	    }
 	}
-	printf (PACK_F "\tTOP_UNDEFINED); \n\n");
+	printf PACK_F "\tTOP_UNDEFINED); \n\n";
     }
 }
 
@@ -2519,9 +2493,9 @@ BREAK:
 
 sub finalize_pack_file {
 
-    printf (PACK_F "  ISA_Pack_End(); \n");
-    printf (PACK_F "  return 0; \n");
-    printf (PACK_F "} \n");
+    printf PACK_F "  ISA_Pack_End(); \n";
+    printf PACK_F "  return 0; \n";
+    printf PACK_F "} \n";
 
     close (PACK_F);
     return;
@@ -2539,17 +2513,17 @@ sub initialize_decode_file {
     open (DECODE_F, "> $dir/isa_decode.cxx");
     &copyright_notice (DECODE_F);
 
-    printf (DECODE_F "// \n");
-    printf (DECODE_F "// Generate instruction decoding information. \n");
-    printf (DECODE_F "///////////////////////////////////// \n");
-    printf (DECODE_F "///////////////////////////////////// \n\n");
+    printf DECODE_F "// \n";
+    printf DECODE_F "// Generate instruction decoding information. \n";
+    printf DECODE_F "///////////////////////////////////// \n";
+    printf DECODE_F "///////////////////////////////////// \n\n";
 
-    printf (DECODE_F "#include \"topcode.h\" \n");
-    printf (DECODE_F "#include \"isa_decode_gen.h\" \n");
-    printf (DECODE_F "#include \"targ_isa_bundle.h\" \n\n");
+    printf DECODE_F "#include \"topcode.h\" \n";
+    printf DECODE_F "#include \"isa_decode_gen.h\" \n";
+    printf DECODE_F "#include \"targ_isa_bundle.h\" \n\n";
  
-    printf (DECODE_F "main() \n");
-    printf (DECODE_F "{ \n\n");
+    printf DECODE_F "main() \n";
+    printf DECODE_F "{ \n\n";
 }
 
 # ==================================================================
@@ -2558,20 +2532,19 @@ sub initialize_decode_file {
 
 sub emit_decode_info {
     my $i;
-    printf (DECODE_F "  ISA_Decode_Begin(\"%s\"); \n\n", $ARCH_name);
+    printf DECODE_F "  ISA_Decode_Begin(\"%s\"); \n\n", $ARCH_name;
 
     # a completely dummy decoding description: all units go to alu
-    printf (DECODE_F "  STATE ex_unit = Create_Unit_State(\"ex_unit\", 0, 4); \n\n");
-    printf (DECODE_F "  STATE alu = Create_Inst_State(\"alu\", 0, 0, 15); \n\n");
+    printf DECODE_F "  STATE ex_unit = Create_Unit_State(\"ex_unit\", 0, 4); \n\n";
+    printf DECODE_F "  STATE alu = Create_Inst_State(\"alu\", 0, 0, 15); \n\n";
 
-    printf (DECODE_F "  Transitions(ex_unit, \n");
+    printf DECODE_F "  Transitions(ex_unit, \n";
     for ($i = 0; $i < $EXEC_SLOT_count; $i++) {
-	printf (DECODE_F "        ISA_EXEC_%s_Unit, alu, \n", 
-                                              $EXEC_SLOT_name[$i]);
+	printf DECODE_F "        ISA_EXEC_%s_Unit, alu, \n", $EXEC_SLOT_name[$i];
     }
-    printf (DECODE_F "	      END_TRANSITIONS); \n\n");
+    printf DECODE_F "	      END_TRANSITIONS); \n\n";
 
-    printf (DECODE_F "  Transitions(alu, \n");
+    printf DECODE_F "  Transitions(alu, \n";
     # all instructions:
 CONTINUE:
     for ($i = 0; $i < $OP_count; $i++) {
@@ -2582,13 +2555,13 @@ CONTINUE:
 	    ($OP_properties[$i] & $OP_SIMULATED)) {
 	    next CONTINUE;
 	}
-	printf (DECODE_F "	   %d,\t Final(TOP_%s),\n", $i, $opcode);
+	printf DECODE_F "	   %d,\t Final(TOP_%s),\n", $i, $opcode;
     }
-    printf (DECODE_F "	      END_TRANSITIONS); \n\n");
+    printf DECODE_F "	      END_TRANSITIONS); \n\n";
 
-    printf (DECODE_F "  Initial_State(ex_unit); \n\n");
+    printf DECODE_F "  Initial_State(ex_unit); \n\n";
 
-    printf (DECODE_F "  ISA_Decode_End(); \n");
+    printf DECODE_F "  ISA_Decode_End(); \n";
 }
 
 # ==================================================================
@@ -2597,8 +2570,8 @@ CONTINUE:
 
 sub finalize_decode_file {
 
-    printf (DECODE_F "  return 0; \n");
-    printf (DECODE_F "} \n");
+    printf DECODE_F "  return 0; \n";
+    printf DECODE_F "} \n";
 
     close (DECODE_F);
     return;
@@ -2616,16 +2589,16 @@ sub initialize_bundle_file {
     open (BUNDLE_F, "> $dir/isa_bundle.cxx");
     &copyright_notice (BUNDLE_F);
 
-    printf (BUNDLE_F "//  \n");
-    printf (BUNDLE_F "//  Generate ISA bundle information \n");
-    printf (BUNDLE_F "/////////////////////////////////////// \n\n");
+    printf BUNDLE_F "//  \n";
+    printf BUNDLE_F "//  Generate ISA bundle information \n";
+    printf BUNDLE_F "/////////////////////////////////////// \n\n";
 
-    printf (BUNDLE_F "#include <stddef.h> \n");
-    printf (BUNDLE_F "#include \"topcode.h\" \n");
-    printf (BUNDLE_F "#include \"isa_bundle_gen.h\" \n\n");
+    printf BUNDLE_F "#include <stddef.h> \n";
+    printf BUNDLE_F "#include \"topcode.h\" \n";
+    printf BUNDLE_F "#include \"isa_bundle_gen.h\" \n\n";
 
-    printf (BUNDLE_F "main() \n");
-    printf (BUNDLE_F "{ \n");
+    printf BUNDLE_F "main() \n";
+    printf BUNDLE_F "{ \n";
 }
 
 # ==================================================================
@@ -2638,84 +2611,81 @@ sub emit_bundle_info {
     my $bundle;
 
     # Emit the Exec_Unit types - these are EXEC_SLOTs:
-    printf (BUNDLE_F "  ISA_EXEC_UNIT_TYPE \n");
+    printf BUNDLE_F "  ISA_EXEC_UNIT_TYPE \n";
 
     for ($unit = 0; $unit < $EXEC_SLOT_count-1; $unit++) {
-	printf (BUNDLE_F "\t\t    %s_Unit, \n", $EXEC_SLOT_name[$unit]);
+	printf BUNDLE_F "\t\t    %s_Unit, \n", $EXEC_SLOT_name[$unit];
     }
-    printf (BUNDLE_F "\t\t    %s_Unit; \n", 
-	                        $EXEC_SLOT_name[$EXEC_SLOT_count-1]);
-    printf (BUNDLE_F "\n");
+    printf BUNDLE_F "\t\t    %s_Unit; \n" , $EXEC_SLOT_name[$EXEC_SLOT_count-1];
+    printf BUNDLE_F "\n";
 
     for ($bundle = 0; $bundle < $BUNDLE_count; $bundle++) {
 	my $f_id;
 	my $f_begins;
 	my $f_bits;
 
-	printf (BUNDLE_F "  ISA_Bundle_Begin(\"%s\", %d); \n",
-                           $BUNDLE_name[$bundle], $BUNDLE_bits[$bundle]);
-	printf (BUNDLE_F "\n");
+	printf BUNDLE_F "  ISA_Bundle_Begin(\"%s\", %d); \n",
+                           $BUNDLE_name[$bundle], $BUNDLE_bits[$bundle];
+	printf BUNDLE_F "\n";
 
-	printf (BUNDLE_F "  /* ===== Specification for bundle packing  ===== */ \n");
-	printf (BUNDLE_F "  ISA_Bundle_Pack_Create(ISA_Bundle_Pack_Little_Endian); \n");
+	printf BUNDLE_F "  /* ===== Specification for bundle packing  ===== */ \n";
+	printf BUNDLE_F "  ISA_Bundle_Pack_Create(ISA_Bundle_Pack_Little_Endian); \n";
 	($f_id, $f_begins, $f_bits) = split(",", $BUNDLE_field[$bundle]);
-	printf (BUNDLE_F "  Pack_Template(%d, %d, %d); \n",
-                                              $f_id, $f_begins, $f_bits);
+	printf BUNDLE_F "  Pack_Template(%d, %d, %d); \n", $f_id, $f_begins, $f_bits;
         for ($slot = 0; $slot < $BUNDLE_slots[$bundle]; $slot++) {
-	    printf (BUNDLE_F "  Pack_Slot(%d, 0, %d, %d); \n",
+	    printf BUNDLE_F "  Pack_Slot(%d, 0, %d, %d); \n",
 		    $BUNDLE_slot[$bundle][$slot]{'id'},
 		    $BUNDLE_slot[$bundle][$slot]{'start'},
-		    $BUNDLE_slot[$bundle][$slot]{'bits'});
+		    $BUNDLE_slot[$bundle][$slot]{'bits'};
 	}
-	printf (BUNDLE_F "\n");
+	printf BUNDLE_F "\n";
     }
 
     # Emit instructions to Exec_Unit mapping information.
     for ($unit = 0; $unit < $EXEC_SLOT_count; $unit++) {
-	printf (BUNDLE_F "  /* ===== Specification for %s_Unit Type ===== */ \n", $EXEC_SLOT_name[$unit]);
-	printf (BUNDLE_F "  %s_Unit = ISA_Exec_Unit_Type_Create(\"%s_Unit\", NULL); \n", $EXEC_SLOT_name[$unit], $EXEC_SLOT_name[$unit]);
-	printf (BUNDLE_F "  Instruction_Exec_Unit_Group(%s_Unit, \n", 
-	                                        $EXEC_SLOT_name[$unit]);
+	printf BUNDLE_F "  /* ===== Specification for %s_Unit Type ===== */ \n", $EXEC_SLOT_name[$unit];
+	printf BUNDLE_F "  %s_Unit = ISA_Exec_Unit_Type_Create(\"%s_Unit\", NULL); \n",
+	    $EXEC_SLOT_name[$unit], $EXEC_SLOT_name[$unit];
+	printf BUNDLE_F "  Instruction_Exec_Unit_Group(%s_Unit, \n", $EXEC_SLOT_name[$unit];
 	my @scdclasses = split(",",$EXEC_SLOT_scds[$unit]);
 	my $scdclass;
 	foreach $scdclass (@scdclasses) {
 	    my $opcode;
 	    foreach $opcode (@{$SUBSET_scd{'st220'}{$scdclass}{'ops'}}) {
-		printf (BUNDLE_F "\t\t TOP_%s, \n", $opcode);
+		printf BUNDLE_F "\t\t TOP_%s, \n", $opcode;
 	    }
 	}
-	printf (BUNDLE_F "\t\t TOP_UNDEFINED); \n\n");
+	printf BUNDLE_F "\t\t TOP_UNDEFINED); \n\n";
     }
 
     # Emit allowed bundle combinations:
     for ($bundle = 0; $bundle < $BUNDLE_count; $bundle++) {
 	my $temp;
-	printf (BUNDLE_F "  /* === All legal bundle orderings (%s of them) are specified below. */ \n\n", $BUNDLE_temps[$bundle]);
+	printf BUNDLE_F "  /* === All legal bundle orderings (%s of them) are specified below. */ \n\n", $BUNDLE_temps[$bundle];
 	for ($temp = 0; $temp < $BUNDLE_temps[$bundle]; $temp++) {
 	    my $i;
 	    my $name = ${BUNDLE_temp[$bundle][$temp]}{'name'};
 	    my $slots = ${BUNDLE_temp[$bundle][$temp]}{'slots'};
 	    my $stops = ${BUNDLE_temp[$bundle][$temp]}{'stops'};
 
-	    printf (BUNDLE_F "  /* ===== Template 0x00 (%d) ===== */ \n",
-		                                                     $temp);
-	    printf (BUNDLE_F "  ISA_Bundle_Type_Create(\"%s\", \".%s\", %d); \n", $name, $name, $slots);
+	    printf BUNDLE_F "  /* ===== Template 0x00 (%d) ===== */ \n", $temp;
+	    printf BUNDLE_F "  ISA_Bundle_Type_Create(\"%s\", \".%s\", %d); \n", $name, $name, $slots;
 	    for ($i = 0; $i < $slots; $i++) {
 		my $unt = ${BUNDLE_temp[$bundle][$temp]}{'slot'}[$i]{'unit'};
 		my $stp = ${BUNDLE_temp[$bundle][$temp]}{'slot'}[$i]{'stop'};
-		printf (BUNDLE_F "  Slot(%d, %s_Unit); \n", $i, $unt);
+		printf BUNDLE_F "  Slot(%d, %s_Unit); \n", $i, $unt;
 		if ($stp == 1) {
-		    printf (BUNDLE_F "  Stop(%d); \n", $i);
+		    printf BUNDLE_F "  Stop(%d); \n", $i;
 		}
 	    }
-            printf (BUNDLE_F "\n");
+            printf BUNDLE_F "\n";
 	}
 
         # Arthur: eventually the instr->exec_unit mapping is a
         #         part of a current bundle that start with
         #         Bundle_Begin() and ends with Bundle_End().
-	printf (BUNDLE_F "\n");
-	printf (BUNDLE_F "  ISA_Bundle_End(); \n");
+	printf BUNDLE_F "\n";
+	printf BUNDLE_F "  ISA_Bundle_End(); \n";
     }
 
 }
@@ -2726,8 +2696,8 @@ sub emit_bundle_info {
 
 sub finalize_bundle_file {
 
-    printf (BUNDLE_F "  return 0; \n");
-    printf (BUNDLE_F "} \n");
+    printf BUNDLE_F "  return 0; \n";
+    printf BUNDLE_F "} \n";
 
     close (BUNDLE_F);
     return;
@@ -2743,23 +2713,23 @@ sub initialize_op_file {
     open (OP_F, "> $dir/targ_op.h");
     &copyright_notice (OP_F);
 
-    printf (OP_F "//  \n");
-    printf (OP_F "//  Generate TOP information \n");
-    printf (OP_F "/////////////////////////////////////// \n\n");
+    printf OP_F "//  \n";
+    printf OP_F "//  Generate TOP information \n";
+    printf OP_F "/////////////////////////////////////// \n\n";
 
-    printf (OP_F "#ifndef targ_op_INCLUDED \n");
-    printf (OP_F "#define targ_op_INCLUDED \n");
-    printf (OP_F "\n");
+    printf OP_F "#ifndef targ_op_INCLUDED \n";
+    printf OP_F "#define targ_op_INCLUDED \n";
+    printf OP_F "\n";
 
-    printf (OP_F "// Some of the defines are already defined here \n");
-    printf (OP_F "// Set the rest to FALSE \n");
-    printf (OP_F "#include \"targ_isa_properties.h\" \n");
-    printf (OP_F "\n");
+    printf OP_F "// Some of the defines are already defined here \n";
+    printf OP_F "// Set the rest to FALSE \n";
+    printf OP_F "#include \"targ_isa_properties.h\" \n";
+    printf OP_F "\n";
 
-    printf (OP_F "// This should be on a per OP basis ?  \n");
-    printf (OP_F "#define OP_COPY_OPND 1 \n");
-    printf (OP_F "#define OP_PREDICATE_OPND -1     // not supported on this target \n");
-    printf (OP_F "\n");
+    printf OP_F "// This should be on a per OP basis ?  \n";
+    printf OP_F "#define OP_COPY_OPND 1 \n";
+    printf OP_F "#define OP_PREDICATE_OPND -1     // not supported on this target \n";
+    printf OP_F "\n";
 }
 
 # ==================================================================
@@ -2768,10 +2738,10 @@ sub initialize_op_file {
 sub emit_top_define {
     my $def = $_[0];
     my $val = $_[1];
-    printf (OP_F "#ifndef %s \n", $def);
-    printf (OP_F "#define %s(t) \t (FALSE) \n", $def);
-    printf (OP_F "#endif \n");
-    printf (OP_F "\n");
+    printf OP_F "#ifndef %s \n", $def;
+    printf OP_F "#define %s(t) \t (FALSE) \n", $def;
+    printf OP_F "#endif \n";
+    printf OP_F "\n";
 }
 
 # ==================================================================
@@ -2782,47 +2752,47 @@ sub emit_top_define {
 # ==================================================================
 sub emit_op_info {
 
-    printf (OP_F "/* _fixed_results and _fixed_opnds return how many fixed \n");
-    printf (OP_F " * results/operands an instruction has (OP_result/OP_opnds includes \n");
-    printf (OP_F " * any variable operands in the count). \n");
-    printf (OP_F " */ \n");
-    printf (OP_F "#define TOP_fixed_results(t)	(ISA_OPERAND_INFO_Results(ISA_OPERAND_Info(t))) \n");
-    printf (OP_F "#define TOP_fixed_opnds(t)	(ISA_OPERAND_INFO_Operands(ISA_OPERAND_Info(t))) \n");
-    printf (OP_F "\n");
+    printf OP_F "/* _fixed_results and _fixed_opnds return how many fixed \n";
+    printf OP_F " * results/operands an instruction has (OP_result/OP_opnds includes \n";
+    printf OP_F " * any variable operands in the count). \n";
+    printf OP_F " */ \n";
+    printf OP_F "#define TOP_fixed_results(t)	(ISA_OPERAND_INFO_Results(ISA_OPERAND_Info(t))) \n";
+    printf OP_F "#define TOP_fixed_opnds(t)	(ISA_OPERAND_INFO_Operands(ISA_OPERAND_Info(t))) \n";
+    printf OP_F "\n";
 
     # the following is not clear for now:
-    printf (OP_F "/* ??? */ \n");
-    printf (OP_F "#define OP_inst_words(o)        (1) \n");
-    printf (OP_F "\n");
+    printf OP_F "/* ??? */ \n";
+    printf OP_F "#define OP_inst_words(o)        (1) \n";
+    printf OP_F "\n";
 
-    printf (OP_F "inline TOP CGTARG_Noop_Top (ISA_EXEC_UNIT_PROPERTY unit) { \n");
-    printf (OP_F "  return TOP_noop; \n");
-    printf (OP_F "} \n");
-    printf (OP_F "\n");
-
-    #---------------------------------------------------------------------
-    # TOP_is_same_res
-    #---------------------------------------------------------------------
-    printf (OP_F "/* Result must not be same as operand */ \n");
-    printf (OP_F "inline BOOL TOP_is_uniq_res(TOP topcode, INT i) { \n");
-    printf (OP_F "  const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info(topcode); \n");
-    printf (OP_F "  ISA_OPERAND_USE this_def = ISA_OPERAND_INFO_Def(oinfo, i); \n");
-    printf (OP_F "  if (this_def & OU_uniq_res)  \n");
-    printf (OP_F "    return TRUE; \n");
-    printf (OP_F " \n");
-    printf (OP_F "  return FALSE; \n");
-    printf (OP_F "} \n");
-    printf (OP_F "\n");
+    printf OP_F "inline TOP CGTARG_Noop_Top (ISA_EXEC_UNIT_PROPERTY unit) { \n";
+    printf OP_F "  return TOP_noop; \n";
+    printf OP_F "} \n";
+    printf OP_F "\n";
 
     #---------------------------------------------------------------------
     # TOP_is_same_res
     #---------------------------------------------------------------------
-    printf (OP_F "/* Returns index of operand that must be same register as result i */ \n");
-    printf (OP_F "inline INT TOP_is_same_res(TOP topcode, INT i) { \n");
-    printf (OP_F "  const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info(topcode); \n");
-    printf (OP_F "  return ISA_OPERAND_INFO_Same_Res(oinfo, i); \n");
-    printf (OP_F "} \n");
-    printf (OP_F "\n");
+    printf OP_F "/* Result must not be same as operand */ \n";
+    printf OP_F "inline BOOL TOP_is_uniq_res(TOP topcode, INT i) { \n";
+    printf OP_F "  const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info(topcode); \n";
+    printf OP_F "  ISA_OPERAND_USE this_def = ISA_OPERAND_INFO_Def(oinfo, i); \n";
+    printf OP_F "  if (this_def & OU_uniq_res)  \n";
+    printf OP_F "    return TRUE; \n";
+    printf OP_F " \n";
+    printf OP_F "  return FALSE; \n";
+    printf OP_F "} \n";
+    printf OP_F "\n";
+
+    #---------------------------------------------------------------------
+    # TOP_is_same_res
+    #---------------------------------------------------------------------
+    printf OP_F "/* Returns index of operand that must be same register as result i */ \n";
+    printf OP_F "inline INT TOP_is_same_res(TOP topcode, INT i) { \n";
+    printf OP_F "  const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info(topcode); \n";
+    printf OP_F "  return ISA_OPERAND_INFO_Same_Res(oinfo, i); \n";
+    printf OP_F "} \n";
+    printf OP_F "\n";
 
     return;
 }
@@ -2833,7 +2803,7 @@ sub emit_op_info {
 
 sub finalize_op_file {
 
-    printf (OP_F "#endif /* targ_op_INCLUDED */ \n");
+    printf OP_F "#endif /* targ_op_INCLUDED */ \n";
 
     close (OP_F);
     return;
@@ -2853,38 +2823,38 @@ sub initialize_si_file {
 
     &copyright_notice (SI_F);
 
-    printf (SI_F "//  %s processor scheduling information \n", $ARCH_name);
-    printf (SI_F "///////////////////////////////////// \n");
-    printf (SI_F "//   \n");
-    printf (SI_F "//  Description:  \n");
-    printf (SI_F "//  \n");
-    printf (SI_F "//  Generate a scheduling description of a %s processor  \n", $ARCH_name);
-    printf (SI_F "//  via the si_gen interface.  \n");
-    printf (SI_F "//  \n");
-    printf (SI_F "/////////////////////////////////////  \n\n");
+    printf SI_F "//  %s processor scheduling information \n", $ARCH_name;
+    printf SI_F "///////////////////////////////////// \n";
+    printf SI_F "//   \n";
+    printf SI_F "//  Description:  \n";
+    printf SI_F "//  \n";
+    printf SI_F "//  Generate a scheduling description of a %s processor  \n", $ARCH_name;
+    printf SI_F "//  via the si_gen interface.  \n";
+    printf SI_F "//  \n";
+    printf SI_F "/////////////////////////////////////  \n\n";
 
-    printf (SI_F "#include \"si_gen.h\" \n");
-    printf (SI_F "#include \"targ_isa_subset.h\" \n");
-    printf (SI_F "#include \"topcode.h\" \n\n");
+    printf SI_F "#include \"si_gen.h\" \n";
+    printf SI_F "#include \"targ_isa_subset.h\" \n";
+    printf SI_F "#include \"topcode.h\" \n\n";
 
     my $format = "";
-    printf (SI_F "static RESOURCE ");
+    printf SI_F "static RESOURCE ";
     my $rid;
     for ($rid = 0; $rid < $RES_count; $rid++) {
-	printf (SI_F "%s res_%s", $format, $RES_name[$rid]);
+	printf SI_F "%s res_%s", $format, $RES_name[$rid];
 	$format = ",\n	       ";
     }
-    printf (SI_F "; \n\n");
-    printf (SI_F "int \n");
-    printf (SI_F "main (int argc, char *argv[]) \n");
-    printf (SI_F "{ \n");
+    printf SI_F "; \n\n";
+    printf SI_F "int \n";
+    printf SI_F "main (int argc, char *argv[]) \n";
+    printf SI_F "{ \n";
 
     for ($rid = 0; $rid < $RES_count; $rid++) {
-	printf (SI_F "  res_%s = RESOURCE_Create(\"%s\", %d); \n",
-		$RES_name[$rid], $RES_name[$rid], $RES_avail[$rid]);
+	printf SI_F "  res_%s = RESOURCE_Create(\"%s\", %d); \n",
+		$RES_name[$rid], $RES_name[$rid], $RES_avail[$rid];
     }
 
-    printf (SI_F "\n");
+    printf SI_F "\n";
 }
 
 # ==================================================================
@@ -2905,18 +2875,18 @@ sub process_scdinfo {
     my $res = -1;
     for ($i = 0; $i < $OP_results[$opcode]; $i++) {
 	if ($res != -1 && $res != $OP_result_avail_time[$opcode][$i]) {
-	    printf (STDOUT "ERROR: results of opcode %s have different available time\n", $OP_opcode[$opcode]);
+	    printf STDOUT "ERROR: results of opcode %s have different available time\n", $OP_opcode[$opcode];
 	exit(1);
 	}
 	$res = $OP_result_avail_time[$opcode][$i];
     }
 
-#    printf (STDOUT "  > any result avail time %d\n", $res);
+#    printf STDOUT "  > any result avail time %d\n", $res;
 
     my $opnd = -1;
     for ($i = 0; $i < $OP_opnds[$opcode]; $i++) {
 	if ($opnd != -1 && $opnd != $OP_opnd_access_time[$opcode][$i]) {
-	    printf (STDOUT "ERROR: operands of opcode %s have different access time\n", $OP_opcode[$opcode]);
+	    printf STDOUT "ERROR: operands of opcode %s have different access time\n", $OP_opcode[$opcode];
 	exit(1);
 	}
 	$opnd = $OP_opnd_access_time[$opcode][$i];
@@ -2931,26 +2901,26 @@ sub process_scdinfo {
 	    goto OK;
 	}
     }
-    printf (STDOUT "ERROR: scd class %s in process_scdinfo has not been declared\n", $scdclass);
+    printf STDOUT "ERROR: scd class %s in process_scdinfo has not been declared\n", $scdclass;
     exit(1);
 
 OK:
 
     # Sanity checks !
     if ($SCD_CLASS_results[$sc] < $OP_results[$opcode]) {
-	printf (STDOUT "ERROR: opcode %s has more results than scd class %s\n", $OP_opcode[$opcode], $scdclass);
+	printf STDOUT "ERROR: opcode %s has more results than scd class %s\n", $OP_opcode[$opcode], $scdclass;
 	exit(1);
     }
     if ($SCD_CLASS_opnds[$sc] < $OP_opnds[$opcode]) {
-	printf (STDOUT "ERROR: opcode %s has more operands than scd class %s\n", $OP_opcode[$opcode], $scdclass);
+	printf STDOUT "ERROR: opcode %s has more operands than scd class %s\n", $OP_opcode[$opcode], $scdclass;
 	exit(1);
     }
 
     for ($i = 0; $i < $OP_results[$opcode]; $i++) {
 	if ($SCD_CLASS_result[$sc][$subset][$i] != -1 &&
 	    $SCD_CLASS_result[$sc][$subset][$i] != $OP_result_avail_time[$opcode][$i]) {
-	    printf (STDOUT "ERROR: result %d for scdclass %s is being reset\n", $i, $scdclass);
-	    printf (STDOUT "scdclass %d, results %d\n", $SCD_CLASS_result[$sc][$subset][$i], $results[$i]);
+	    printf STDOUT "ERROR: result %d for scdclass %s is being reset\n", $i, $scdclass;
+	    printf STDOUT "scdclass %d, results %d\n", $SCD_CLASS_result[$sc][$subset][$i], $results[$i];
 
 	    exit(1);
 	}
@@ -2960,8 +2930,10 @@ OK:
     for ($i = 0; $i < $OP_opnds[$opcode]; $i++) {
 	if ($SCD_CLASS_opnd[$sc][$subset][$i] != -1 &&
 	    $SCD_CLASS_opnd[$sc][$subset][$i] != $OP_opnd_access_time[$opcode][$i]) {
-	    printf (STDOUT "ERROR: operand %d for opcode %s is being reset in subset %s\n", $i, $OP_opcode[$opcode], $SUBSET_name[$subset]);
-	    printf (STDOUT "%d scdclass %d, opns %d\n", $opcode, $SCD_CLASS_opnd[$sc][$subset][$i], $OP_opnd_access_time[$opcode][$i]);
+	    printf STDOUT "ERROR: operand %d for opcode %s is being reset in subset %s\n",
+		$i, $OP_opcode[$opcode], $SUBSET_name[$subset];
+	    printf STDOUT "%d scdclass %d, opns %d\n",
+		$opcode, $SCD_CLASS_opnd[$sc][$subset][$i], $OP_opnd_access_time[$opcode][$i];
 	    exit(1);
 	}
 	$SCD_CLASS_opnd[$sc][$subset][$i] = $OP_opnd_access_time[$opcode][$i];
@@ -3046,7 +3018,7 @@ OK:
  
     # Insert this TOP into the list:
     push (@{$SUBSET_scd{$subset}{$scdclass}{'ops'}}, $OP_opcode[$opcode]);
-#    printf (STDOUT "  > pushing %s (%s,%s)\n", $OP_opcode[$opcode], $subset, $scdclass);
+#    printf STDOUT "  > pushing %s (%s,%s)\n", $OP_opcode[$opcode], $subset, $scdclass;
 
     return;
 }
@@ -3064,11 +3036,11 @@ sub read_scdinfo {
 
     my $opc_file_name = "../src/arc_$subset.db";
 
-#    printf (STDOUT "  *** reading schedinfo ***\n");
-#    printf (STDOUT "  > read_scdinfo: for op %s subset %s\n", $OP_opcode[$opcode], $subset);
+#    printf STDOUT "  *** reading schedinfo ***\n";
+#    printf STDOUT "  > read_scdinfo: for op %s subset %s\n", $OP_opcode[$opcode], $subset;
 
     if (!open (ARCH_F, "$opc_file_name")) {
-	printf (STDOUT "error: can't open file \"$opc_file_name\" \n");
+	printf STDOUT "error: can't open file \"$opc_file_name\" \n";
 	exit(1);
     }
 
@@ -3082,13 +3054,11 @@ sub read_scdinfo {
 
     # look for line +=<opcode>
 
-    my $mnemonic;
+    my $mnemonic = "";
     my $resources;
     my $scdclass;
     my $results;
     my $opnds;
-
-    my $i;
 
     my $MAX_RESULTS = 2;
     my $MAX_OPNDS = 3;
@@ -3102,10 +3072,10 @@ sub read_scdinfo {
 
 	    # initialize results/opnds for this opcode.
 	    # we will be able to check whether all have been specified.
-	    for ($i = 0; $i < $MAX_RESULTS; $i++) {
+	    for (my $i = 0; $i < $MAX_RESULTS; $i++) {
 		$results[$i] = -1;
 	    }
-	    for ($i = 0; $i < $MAX_OPNDS; $i++) {
+	    for (my $i = 0; $i < $MAX_OPNDS; $i++) {
 		$opnds[$i] = -1;
 	    }
 
@@ -3123,7 +3093,7 @@ sub read_scdinfo {
 
 	    $results[$ridx] = $cycle;
 
-#	    printf (STDOUT "  result[%d] = %d\n", $ridx, $results[$ridx]);
+#	    printf STDOUT "  result[%d] = %d\n", $ridx, $results[$ridx];
 
 	}
 
@@ -3132,8 +3102,8 @@ sub read_scdinfo {
 	    my $cycle = $3;
 	    $opnds[$oidx] = $cycle;
 
-#	    printf (STDOUT " line = %s\n", $line);
-#	    printf (STDOUT "  operand[%d] = %d\n", $oidx, $opnds[$oidx]);
+#	    printf STDOUT " line = %s\n", $line;
+#	    printf STDOUT "  operand[%d] = %d\n", $oidx, $opnds[$oidx];
 
 	}
 
@@ -3146,7 +3116,7 @@ sub read_scdinfo {
 	}
     }
 
-    printf (STDOUT "ERROR: read_scdinfo -- couldn't find record for opcode %s \n", $opcode);
+    printf STDOUT "ERROR: read_scdinfo -- couldn't find record for opcode %s \n", $opcode;
     exit(1);
 
 FOUND_OPCODE:
@@ -3167,24 +3137,23 @@ FOUND_OPCODE:
     }
 
     # Sanity check:
-    my $i;
-    for ($i = 0; $i < $OP_results[$opcode]; $i++) {
+    for (my $i = 0; $i < $OP_results[$opcode]; $i++) {
 	if ($results[$i] == -1) {
-	    printf (STDOUT "ERROR: result %d for opcode %s not defined\n", $i, $OP_opcode[$opcode]);
+	    printf STDOUT "ERROR: result %d for opcode %s not defined\n", $i, $OP_opcode[$opcode];
 	    exit(1);
 	}
 	$OP_result_avail_time[$opcode][$i] = $results[i];
     }
-    for ($i = 0; $i < $OP_opnds[$opcode]; $i++) {
+    for (my $i = 0; $i < $OP_opnds[$opcode]; $i++) {
 	if ($opnds[$i] == -1) {
-	    printf (STDOUT "ERROR: operand %d for opcode %s not defined\n", $i, $OP_opcode[$opcode]);
+	    printf STDOUT "ERROR: operand %d for opcode %s not defined\n", $i, $OP_opcode[$opcode];
 	    exit(1);
 	}
 	$OP_opnd_access_time[$opcode][$i] = $opnds[i];
     }
 
     # determine this opcode's scdclass:
-#    printf (STDOUT " %s > %s\n", $resources, $OP_format[$opcode]);
+#    printf STDOUT " %s > %s\n", $resources, $OP_format[$opcode];
 
     # resources corresponds to a scheduling class:
     if ($resources eq 'ALU') {
@@ -3218,8 +3187,7 @@ FOUND_OPCODE:
 	$scdclass = 'EXT';
     }
     else {
-	printf(STDOUT "ERROR: unknown resource %s in read_scdinfo\n", 
-	       $resources);
+	printf STDOUT "ERROR: unknown resource %s in read_scdinfo\n", $resources;
 	exit(1);
     }
 
@@ -3253,59 +3221,54 @@ sub emit_scdinfo {
     # For each ISA subset:
     my $sub;
 CONTINUE:
-    for ($sub = $0; $sub < $SUBSET_count; $sub++) {
+    for ($sub = 0; $sub < $SUBSET_count; $sub++) {
 	my $subset = $SUBSET_name[$sub];
 
-	printf (SI_F "  /* ======================================================\n");
-	printf (SI_F "   * Resource description for the ISA_SUBSET_%s \n", $subset);
-	printf (SI_F "   * ======================================================\n");
-	printf (SI_F "   */ \n\n");
+	printf SI_F "  /* ======================================================\n";
+	printf SI_F "   * Resource description for the ISA_SUBSET_%s \n", $subset;
+	printf SI_F "   * ======================================================\n";
+	printf SI_F "   */ \n\n";
 
-	printf (SI_F "  Machine(\"%s\", ISA_SUBSET_%s, argc, argv); \n",
-		$ARCH_name, $subset);
+	printf SI_F "  Machine(\"%s\", ISA_SUBSET_%s, argc, argv); \n", $ARCH_name, $subset;
 
 	# emit groups of instructions with similar resource constraints:
 	my $i;
 	for ($i = 0; $i < $SCD_CLASS_count; $i++) {
 	    $scdclass = $SCD_CLASS_name[$i];
-            printf (SI_F "\n  ///////////////////////////////////////// \n");
-            printf (SI_F "  //   Instructions for Scd Class %s \n", $scdclass);
-            printf (SI_F "  ///////////////////////////////////////// \n\n");
+            printf SI_F "\n  ///////////////////////////////////////// \n";
+            printf SI_F "  //   Instructions for Scd Class %s \n", $scdclass;
+            printf SI_F "  ///////////////////////////////////////// \n\n";
 
-	    printf (SI_F "  Instruction_Group(\"%s\", \n", $scdclass);
+	    printf SI_F "  Instruction_Group(\"%s\", \n", $scdclass;
             foreach $opcode (@{$SUBSET_scd{$subset}{$scdclass}{'ops'}}) {
-		printf (SI_F "\t\t TOP_%s, \n", $opcode);
+		printf SI_F "\t\t TOP_%s, \n", $opcode;
 	    }
-	    printf (SI_F "\t\t TOP_UNDEFINED); \n\n");
+	    printf SI_F "\t\t TOP_UNDEFINED); \n\n";
 
             # define latencies:
 
 	    # since I suppose they're all same:
 	    if ($SCD_CLASS_results[$i] > 0) {
-		printf (SI_F "  Any_Result_Available_Time(%d); \n",
-			$SCD_CLASS_result[$i][$sub][0]);
+		printf SI_F "  Any_Result_Available_Time(%d); \n", $SCD_CLASS_result[$i][$sub][0];
 	    }
 
 	    if ($SCD_CLASS_opnds[$i] > 0) {
-		printf (SI_F "  Any_Operand_Access_Time(%d); \n",
-			$SCD_CLASS_opnd[$i][$sub][0]);
+		printf SI_F "  Any_Operand_Access_Time(%d); \n", $SCD_CLASS_opnd[$i][$sub][0];
 	    }
 
-#	    printf (SI_F "  Any_Operand_Access_Time(0); \n");
-#	    printf (SI_F "  Any_Result_Available_Time(1);		// ??? not sure \n");
+#	    printf SI_F "  Any_Operand_Access_Time(0); \n";
+#	    printf SI_F "  Any_Result_Available_Time(1);		// ??? not sure \n";
 
             # define resource requirements:
 	    my $rid;
 	    foreach my $pair (@{$SUBSET_scd{$subset}{$scdclass}{'res'}}) {
 		my $rname = $pair->[0];
 		my $cycle = $pair->[1];
-		printf (SI_F "  Resource_Requirement(res_%s, %d); \n",
-			$rname, 
-			$cycle);
+		printf SI_F "  Resource_Requirement(res_%s, %d); \n", $rname, $cycle;
             }
-	    printf (SI_F "\n");
+	    printf SI_F "\n";
 	}
-	printf (SI_F "  Machine_Done(\"%s.c\"); \n\n", $subset);
+	printf SI_F "  Machine_Done(\"%s.c\"); \n\n", $subset;
     }
 
     return;
@@ -3334,40 +3297,40 @@ sub copyright_notice {
 
     my $FILE = $_[0];
 
-    printf($FILE "/* -- This file is automatically generated -- */ \n");
-    printf($FILE "/* \n\n");
+    printf $FILE "/* -- This file is automatically generated -- */ \n";
+    printf $FILE "/* \n\n";
 
-    printf($FILE "  Copyright (C) 2002 ST Microelectronics, Inc.  All Rights Reserved. \n\n");
+    printf $FILE "  Copyright (C) 2002 ST Microelectronics, Inc.  All Rights Reserved. \n\n";
 
-    printf($FILE "  This program is free software; you can redistribute it and/or modify it \n");
-    printf($FILE "  under the terms of version 2 of the GNU General Public License as \n");
-    printf($FILE "  published by the Free Software Foundation. \n");
+    printf $FILE "  This program is free software; you can redistribute it and/or modify it \n";
+    printf $FILE "  under the terms of version 2 of the GNU General Public License as \n";
+    printf $FILE "  published by the Free Software Foundation. \n";
 
-    printf($FILE "  This program is distributed in the hope that it would be useful, but \n");
-    printf($FILE "  WITHOUT ANY WARRANTY; without even the implied warranty of \n");
-    printf($FILE "  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. \n\n");
+    printf $FILE "  This program is distributed in the hope that it would be useful, but \n";
+    printf $FILE "  WITHOUT ANY WARRANTY; without even the implied warranty of \n";
+    printf $FILE "  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. \n\n";
 
-    printf($FILE "  Further, this software is distributed without any warranty that it is \n");
-    printf($FILE "  free of the rightful claim of any third person regarding infringement \n");
-    printf($FILE "  or the like.  Any license provided herein, whether implied or \n");
-    printf($FILE "  otherwise, applies only to this software file.  Patent licenses, if \n");
-    printf($FILE "  any, provided herein do not apply to combinations of this program with \n");
-    printf($FILE "  other software, or any other product whatsoever. \n");
+    printf $FILE "  Further, this software is distributed without any warranty that it is \n";
+    printf $FILE "  free of the rightful claim of any third person regarding infringement \n";
+    printf $FILE "  or the like.  Any license provided herein, whether implied or \n";
+    printf $FILE "  otherwise, applies only to this software file.  Patent licenses, if \n";
+    printf $FILE "  any, provided herein do not apply to combinations of this program with \n";
+    printf $FILE "  other software, or any other product whatsoever. \n";
 
-    printf($FILE "  You should have received a copy of the GNU General Public License along \n");
-    printf($FILE "  with this program; if not, write the Free Software Foundation, Inc., 59 \n");
-    printf($FILE "  Temple Place - Suite 330, Boston MA 02111-1307, USA. \n\n");
+    printf $FILE "  You should have received a copy of the GNU General Public License along \n";
+    printf $FILE "  with this program; if not, write the Free Software Foundation, Inc., 59 \n";
+    printf $FILE "  Temple Place - Suite 330, Boston MA 02111-1307, USA. \n\n";
 
-    printf($FILE "  Contact information:  ST Microelectronics, Inc., \n");
-    printf($FILE "  , or: \n\n");
+    printf $FILE "  Contact information:  ST Microelectronics, Inc., \n";
+    printf $FILE "  , or: \n\n";
 
-    printf($FILE "  http://www.st.com \n\n");
+    printf $FILE "  http://www.st.com \n\n";
 
-    printf($FILE "  For further information regarding this notice, see: \n\n");
+    printf $FILE "  For further information regarding this notice, see: \n\n";
 
-    printf($FILE "  http: \n");
+    printf $FILE "  http: \n";
 
-    printf($FILE "*/ \n\n");
+    printf $FILE "*/ \n\n";
 }
 
 # ==================================================================
@@ -3407,7 +3370,7 @@ sub subset_id {
     }
 
     # couldn't find this subset:
-    printf(STDOUT "ERROR: subset %s undeclared\n", $name);
+    printf STDOUT "ERROR: subset %s undeclared\n", $name;
     exit(1);
 }
 
@@ -3445,7 +3408,7 @@ sub rclass_id {
 	    goto BREAK;
 	}
     }
-    printf(STDOUT "ERROR: invalid rclass name %s\n", $rclass_name);
+    printf STDOUT "ERROR: invalid rclass name %s\n", $rclass_name;
     exit(1);
 
 BREAK:
@@ -3464,7 +3427,7 @@ sub DECL_REG_SUBSET {
 
     my $idx = $REGSET_subset_count[$cur_regset];
 
-#    printf (STDOUT "reg_subset %s %d idx %d\n", $name, $cur_regset, $idx);
+#    printf STDOUT "reg_subset %s %d idx %d\n", $name, $cur_regset, $idx;
 
     $REGSET_subset[$cur_regset][$idx]{'name'} = $name;
     $REGSET_subset[$cur_regset][$idx]{'rclass'} = $REGSET_rclass[$cur_regset];
@@ -3540,7 +3503,7 @@ sub lclass_id {
 	    goto BREAK;
 	}
     }
-    printf(STDOUT "ERROR: invalid lclass name %s\n", $lclass_name);
+    printf STDOUT "ERROR: invalid lclass name %s\n", $lclass_name;
     exit(1);
 
 BREAK:
@@ -3575,7 +3538,7 @@ sub eclass_id {
 	    goto BREAK;
 	}
     }
-    printf(STDOUT "ERROR: invalid eclass name %s\n", $eclass_name);
+    printf STDOUT "ERROR: invalid eclass name %s\n", $eclass_name;
     exit(1);
 
 BREAK:
@@ -3658,7 +3621,7 @@ sub DECL_SCD_CLASS {
 
     $SCD_CLASS_name[$SCD_CLASS_count] = $name;
     $SCD_CLASS_results[$SCD_CLASS_count] = $results;
-    for ($sub = $0; $sub < $SUBSET_count; $sub++) {
+    for ($sub = 0; $sub < $SUBSET_count; $sub++) {
 	for ($i = 0; $i < $results; $i++) {
 	    $SCD_CLASS_result[$SCD_CLASS_count][$sub][$i] = -1;
 	}
@@ -3680,7 +3643,7 @@ sub scdclass_id {
 	}
     }
 
-    printf(STDOUT "ERROR: invalid scdclass name %s\n", $name);
+    printf STDOUT "ERROR: invalid scdclass name %s\n", $name;
     exit(1);
 }
 
@@ -3787,9 +3750,9 @@ sub DECL_BUNDLE {
     $BUNDLE_field[$BUNDLE_count] = $_[2];
     $BUNDLE_slots[$BUNDLE_count] = $_[3];
 
-#    printf(STDOUT "BUNDLE %s %d slots: \n",
+#    printf STDOUT "BUNDLE %s %d slots: \n",
 #	   $BUNDLE_name[$BUNDLE_count],
-#	   $BUNDLE_slots[$BUNDLE_count]);
+#	   $BUNDLE_slots[$BUNDLE_count];
 
     for ($i = 0; $i < $_[3]; $i++) {
 	my ($id, $start, $bits) = split(",", $_[$i+4]);
@@ -3797,10 +3760,10 @@ sub DECL_BUNDLE {
 	$BUNDLE_slot[$BUNDLE_count][$i]{'start'} = $start;
 	$BUNDLE_slot[$BUNDLE_count][$i]{'bits'} = $bits;
 
-#	printf(STDOUT "  DECL_SLOT %s -- (%d, 0, %d, %d)\n", $_[$i+4],
+#	printf STDOUT "  DECL_SLOT %s -- (%d, 0, %d, %d)\n", $_[$i+4],
 #	       $BUNDLE_slot[$BUNDLE_count][$i]{'id'},
 #	       $BUNDLE_slot[$BUNDLE_count][$i]{'start'},
-#	       $BUNDLE_slot[$BUNDLE_count][$i]{'bits'});
+#	       $BUNDLE_slot[$BUNDLE_count][$i]{'bits'};
 
     }
     $BUNDLE_temps[$BUNDLE_count] = 0;
@@ -3837,7 +3800,7 @@ sub SLOT {
 
     # slot exceeds the number of allowed slots:
     if (${BUNDLE_temp[$cur_bundle][$cur_temp]}{'slots'} <= $_[0]) {
-	printf(STDOUT "ERROR: invalid slot number %d\n", $_[0]);
+	printf STDOUT "ERROR: invalid slot number %d\n", $_[0];
 	exit(1);
     }
     # slot refers to non-existing FU
@@ -3846,7 +3809,7 @@ sub SLOT {
 	    goto BREAK;
 	}
     }
-    printf(STDOUT "ERROR: invalid slot kind %d\n", $_[1]);
+    printf STDOUT "ERROR: invalid slot kind %d\n", $_[1];
     exit(1);
 
 BREAK:
@@ -3860,7 +3823,7 @@ BREAK:
 sub STOP {
     # stop exceeds the number of allowed slots:
     if (${BUNDLE_temp[$cur_bundle][$cur_temp]}{'slots'} <= $_[0]) {
-	printf(STDOUT "ERROR: invalid stop number %d\n", $_[0]);
+	printf STDOUT "ERROR: invalid stop number %d\n", $_[0];
 	exit(1);
     }
 
@@ -4043,10 +4006,10 @@ sub read_opcodes {
     my $subset_name = $SUBSET_name[$subset];
     my $opc_file_name = "../src/opc_$subset_name.db";
 
-    printf (STDOUT " reading subset %s from %s\n", $subset_name, $opc_file_name);
+    printf STDOUT " reading subset %s from %s\n", $subset_name, $opc_file_name;
       
     if (!open (OPCODE_F, "$opc_file_name")) {
-	printf (STDOUT "error: can't open file \"$opc_file_name\" \n");
+	printf STDOUT "error: can't open file \"$opc_file_name\" \n";
 	exit(1);
     }
 
@@ -4074,7 +4037,7 @@ sub read_opcodes {
 	    $property = $OP_NONE;
 	}
 
-#	printf (STDOUT "line = %s\n", $line);
+#	printf STDOUT "line = %s\n", $line;
 
 	# opcode's mnemonic:
 	if ($line =~ /^\+mnemonic\s(\S*)\n/) {
@@ -4367,7 +4330,7 @@ sub read_opcodes {
 ####################################################################
 
 #  if (!open (FORMAT_F, "< ../src/st220_fmt.db")) {
-#      printf (STDOUT "ERROR: can't open file \"../src/st220_fmt.db\" \n");
+#      printf STDOUT "ERROR: can't open file \"../src/st220_fmt.db\" \n";
 #      exit(1);
 #  }
 
@@ -4911,7 +4874,7 @@ sub read_opcodes {
 
   my $sub;
   for ($sub = 0; $sub < $SUBSET_count-1; $sub++) {
-      printf(STDOUT "Generating targinfos for subset %s\n", $SUBSET_name[$sub]);
+      printf STDOUT "Generating targinfos for subset %s\n", $SUBSET_name[$sub];
       &read_opcodes ($sub);
   } # for each subset
 
