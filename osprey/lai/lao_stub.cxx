@@ -491,6 +491,33 @@ LAO_BB_BasicBlock(BB *bb) {
   return basicblock;
 }
 
+// Enter the Memory dependences into the LAO.
+void
+LAO_setMemoryDependences(list<BB*>& bb_list, bool cyclic) {
+  if (bb_list.size() == 1) {
+    BB *bb = bb_list.front();
+    CG_DEP_Compute_Graph(bb,
+	false,	// assigned_regs
+	cyclic,	// compute_cyclic
+	false,	// memread_arcs
+	false,	// memin_arcs
+	false,	// control_arcs
+	NULL);	// need_anti_out_dep
+    CG_DEP_Trace_Graph(bb);
+    CG_DEP_Delete_Graph(bb);
+  } else {
+    CG_DEP_Compute_Region_Graph(bb_list,
+	false,	// assigned_regs
+	false,	// memread_arcs
+	false);	// control_arcs
+    list<BB*>::iterator bbi;
+    FOR_ALL_BB_STLLIST_ITEMS_FWD(bb_list, bbi) {
+      CG_DEP_Trace_Graph(*bbi);
+    }
+    CG_DEP_Delete_Graph(&bb_list);
+  }
+}
+
 /*-------------------------- LAO Utility Functions----------------------------*/
 
 // Enter the control-flow arcs in the LAO.
@@ -504,7 +531,8 @@ LAO_setControlArc(BasicBlockHandle handle, CodeRegion coderegion) {
     BasicBlock succ_basicblock = Interface_getBasicBlock(interface, succ_bb);
     if (succ_basicblock != NULL) {
       float probability = BBLIST_prob(bblist);
-      CodeRegion_makeControlArc(coderegion, basicblock, succ_basicblock, probability);
+      unsigned flags = BBLIST_flags(bblist);
+      CodeRegion_makeControlArc(coderegion, basicblock, succ_basicblock, probability, flags);
     }
   }
 }
@@ -596,6 +624,17 @@ LAO_optimize(BB_VECTOR &entryBBs, BB_VECTOR &innerBBs, BB_VECTOR &exitBBs, CodeR
   Interface_open(interface);
   //
   CodeRegion coderegion = LAO_makeCodeRegion(entryBBs, innerBBs, exitBBs, region_kind);
+  //
+  // Add the memory dependences
+  list<BB*> bb_list;
+  for (int i = 0; i < innerBBs.size(); i++) {
+    bb_list.push_back( innerBBs[i] );
+  }
+  bool cyclic =
+      lao_actions & LAO_LoopSchedule ||
+      lao_actions & LAO_LoopPipeline;
+  //LAO_setMemoryDependences(bb_list, cyclic);
+  LAO_setMemoryDependences(bb_list, false);
   //
   CodeRegion_pretty(coderegion, TFile);
   //
