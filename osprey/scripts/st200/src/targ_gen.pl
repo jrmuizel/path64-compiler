@@ -211,7 +211,6 @@ my @OP_properties;
 my @OP_scdclass;
 my @OP_opnd_access_time;
 my @OP_result_avail_time;
-my @OP_subset;
 my @OP_bytes;
 my @OP_align;
 
@@ -235,7 +234,7 @@ my $PACK_F;
 my $DECODE_F;
 my $BUNDLE_F;
 my $OP_F;
-my $SI_F;
+my @SI_F;
 
 # ==================================================================
 #    opcode_is_
@@ -425,8 +424,10 @@ sub set_variant {
 	   $format eq 'Ijump' ||
 	   $format eq 'cgen' ||
 	   $format eq 'Imm' ||
+	   $format eq 'SysOp' ||
 	   $format eq 'SBreak' ||
-	   $format eq 'SysOp') {
+	   $format eq 'Sim' ||
+	   $format eq 'Dummy') {
 	$variant = "";
     }
     elsif ($format eq 'MoveR') {
@@ -597,6 +598,10 @@ sub set_operands {
     elsif ($format eq 'PswOp') {
 	$OP_results[$opcode] = 0;
 	$OP_opnds[$opcode] = 1;
+    }
+    elsif ($format eq 'Sim' || $format eq 'Dummy') {
+	$OP_results[$opcode] = 0;
+	$OP_opnds[$opcode] = 0;
     }
     else {
 	printf STDOUT "ERROR: unknown format %s in set_operands\n", $format;
@@ -770,8 +775,14 @@ sub set_signature {
     elsif ($format eq 'PswOp') {
 	$signature = ':PswOp:src2_storeval';
     }
+    elsif ($format eq 'Sim') {
+	$signature = ':sim:';
+    }
+    elsif ($format eq 'Dummy') {
+	$signature = ':dummy:';
+    }
     else {
-	printf STDOUT "ERROR: unknown format %s in op_signature\n", $format;
+	printf STDOUT "ERROR: unknown format %s in set_signature\n", $format;
 	exit(1);
     }
 
@@ -936,8 +947,14 @@ sub set_pack {
     elsif ($format eq 'PswOp') {
 	$pack = 'PswOp';
     }
+    elsif ($format eq 'Sim') {
+	$pack = 'sim';
+    }
+    elsif ($format eq 'Dummy') {
+	$pack = 'dummy';
+    }
     else {
-	printf STDOUT "ERROR: unknown format %s in op_pack\n", $format;
+	printf STDOUT "ERROR: unknown format %s in set_pack\n", $format;
 	exit(1);
     }
 
@@ -1094,7 +1111,9 @@ sub set_print {
 	$OP_res[$opcode][0]{'fmt'} = '%s';
 	$OP_opnd[$opcode][0]{'fmt'} = '%s';
     }
-    elsif ($format eq 'Asm') {
+    elsif ($format eq 'Asm'
+	   || $format eq 'Sim'
+	   || $format eq 'Dummy') {
     }
     elsif ($format eq 'Noop') {
     }
@@ -1303,7 +1322,6 @@ sub update_subsets {
 # ==================================================================
 
 sub initialize_required_opcodes {
-
     my $opcode;
 
     push (@SimulatedOpcodes, "asm");
@@ -1327,70 +1345,55 @@ sub initialize_required_opcodes {
     push (@DummyOpcodes, "label");
 
     # Add to the OP_xxx[] tables:
-    foreach $opcode (@SimulatedOpcodes) {
-	$OP_opcode[$OP_count] = $opcode;
-	$OP_properties[$OP_count] = $OP_SIMULATED;
-	push(@{$AttrGroup{'simulated'}}, $opcode);
-	push (@{$SUBSET_opcodes[subset_id("st200")]}, $OP_count);
+    for (my $subset = 0; $subset < $SUBSET_count; $subset++) {
+	my $opnum;
+	foreach $opcode (@SimulatedOpcodes) {
 
-	if ($opcode eq 'getpc') {
-	    $OP_scdclass[$OP_count] = "getpc";
-	    $OP_results[$OP_count] = 1;
-	    $OP_opnds[$OP_count] = 1;
-	    $OP_result_avail_time[$OP_count][0] = 3;
-	    $OP_opnd_access_time[$OP_count][0] = 2;
+	    $opnum = DECL_OPCODE ( $opcode, $OP_SIMULATED, $opcode, 'Sim',
+				   $subset );
 
-	    my $subset;
-	    for ($subset = 0; $subset < $SUBSET_count; $subset++) {
-		$OP_subset[$OP_count] = $SUBSET_name[$subset];   
-		&process_scdinfo($OP_count);
+	    if ($opcode eq 'getpc') {
+		$OP_scdclass[$opnum] = "getpc";
+		$OP_results[$opnum] = 1;
+		$OP_opnds[$opnum] = 1;
+
+		$OP_result_avail_time[$subset][$opnum][0] = 3;
+		$OP_opnd_access_time[$subset][$opnum][0] = 2;
+		&process_scdinfo($opnum, $subset);
+	    }
+
+	    if ($opcode eq 'spadjust' || $opcode eq 'asm') {
+		$OP_scdclass[$opnum] = "simulated" if $opcode eq 'spadjust';
+		$OP_scdclass[$opnum] = "asm" if $opcode eq 'asm';
+		$OP_results[$opnum] = 1;
+		$OP_opnds[$opnum] = 1;
+
+		$OP_result_avail_time[$subset][$opnum][0] = 3;
+		$OP_opnd_access_time[$subset][$opnum][0] = 2;
+		&process_scdinfo($opnum, $subset);
 	    }
 	}
 
-	if ($opcode eq 'spadjust' || $opcode eq 'asm') {
-	    $OP_scdclass[$OP_count] = "simulated" if $opcode eq 'spadjust';
-	    $OP_scdclass[$OP_count] = "asm" if $opcode eq 'asm';
-	    $OP_results[$OP_count] = 1;
-	    $OP_opnds[$OP_count] = 1;
-	    $OP_result_avail_time[$OP_count][0] = 3;
-	    $OP_opnd_access_time[$OP_count][0] = 2;
+	foreach $opcode (@SSAOpcodes) {
 
-	    my $subset;
-	    for ($subset = 0; $subset < $SUBSET_count; $subset++) {
-		$OP_subset[$OP_count] = $SUBSET_name[$subset];   
-		&process_scdinfo($OP_count);
-	    }
+	    $opnum = DECL_OPCODE ( $opcode, $OP_SIMULATED, $opcode, 'Sim',
+				   $subset );
+
+	    $OP_scdclass[$opnum] = "ssa";
+	    $OP_results[$opnum] = 1;
+	    $OP_opnds[$opnum] = 1;
+
+	    $OP_result_avail_time[$subset][$opnum][0] = 0;
+	    $OP_opnd_access_time[$subset][$opnum][0] = 0;
+	    &process_scdinfo($opnum, $subset);
 	}
 
-	$OP_count++;
-    }
+	foreach $opcode (@DummyOpcodes) {
 
-    foreach $opcode (@SSAOpcodes) {
-	$OP_opcode[$OP_count] = $opcode;
-	$OP_properties[$OP_count] = $OP_SIMULATED;
-	$OP_scdclass[$OP_count] = "ssa";
-	$OP_results[$OP_count] = 1;
-	$OP_opnds[$OP_count] = 1;
-	$OP_result_avail_time[$OP_count][0] = 0;
-	$OP_opnd_access_time[$OP_count][0] = 0;
-	push(@{$AttrGroup{'simulated'}}, $opcode);
-	push (@{$SUBSET_opcodes[subset_id("st200")]}, $OP_count);
-
-	my $subset;
-	for ($subset = 0; $subset < $SUBSET_count; $subset++) {
-	    $OP_subset[$OP_count] = $SUBSET_name[$subset];   
-	    &process_scdinfo($OP_count);
+	    $opnum = DECL_OPCODE ( $opcode, $OP_DUMMY, $opcode, 'Dummy',
+				   $subset );
 	}
-	$OP_count++;
-    }
 
-    foreach $opcode (@DummyOpcodes) {
-	$OP_opcode[$OP_count] = $opcode;
-	$OP_properties[$OP_count] = $OP_DUMMY;
-	push(@{$AttrGroup{'dummy'}}, $opcode);
-	push (@{$SUBSET_opcodes[subset_id("st200")]}, $OP_count);
-
-	$OP_count++;
     }
 
     #    add required opcodes to all isa subsets, so they are 
@@ -2468,48 +2471,45 @@ sub emit_printing_formats {
     # printout a table with mnemonic names:
     printf($PRNT_F "static const char *mnemonic_names[%d] = {\n", $OP_count);
 CONTINUE:
-    for ($i = 0; $i < $OP_count-1; $i++) {
+    for ($i = 0; $i < $OP_count; $i++) {
+	my $separator;
+
 	if ($OP_opcode[$i] eq $UNDEF) {
 	    next CONTINUE;
 	}
+	if ($i != $OP_count - 1) {
+	    $separator = ",";
+	} else {
+	    $separator = " ";
+	}
+
 	if (opcode_is_dummy($OP_opcode[$i]) || 
 	    opcode_is_ssa($OP_opcode[$i]) || 
 	    opcode_is_simulated($OP_opcode[$i])) {
-	    printf $PRNT_F "  \"%s\",\t /* TOP_%s */\n", $OP_opcode[$i], $OP_opcode[$i];
+	    printf $PRNT_F "  \"%s\"%s\t /* TOP_%s */\n", $OP_opcode[$i],
+	           $separator, $OP_opcode[$i];
 	}
 	# mnemonics is corrupted for icall,igoto
 	elsif ($OP_mnemonic[$i] eq 'icall') {
-	    printf $PRNT_F "  \"call\",\t /* TOP_%s */ \n", $OP_opcode[$i];
+	    printf $PRNT_F "  \"call\"%s\t /* TOP_%s */ \n", $separator,
+	           $OP_opcode[$i];
 	}
 	elsif ($OP_mnemonic[$i] eq 'igoto') {
-	    printf $PRNT_F "  \"goto\",\t /* TOP_%s */ \n", $OP_opcode[$i];
+	    printf $PRNT_F "  \"goto\"%s\t /* TOP_%s */ \n", $separator,
+                   $OP_opcode[$i];
 	}
 	elsif ($OP_properties[$i] & $OP_DISMISSIBLE) {
 	    my $mnemonic = $OP_mnemonic[$i];
 	    $mnemonic =~ tr/_/./;
-	    printf $PRNT_F "  \"%s\",\t /* TOP_%s */ \n", $mnemonic, , $OP_opcode[$i];
+	    printf $PRNT_F "  \"%s\"%s\t /* TOP_%s */ \n", $mnemonic,
+	           $separator, $OP_opcode[$i];
 	}
 	else {
-	    printf $PRNT_F "  \"%s\",\t /* TOP_%s */ \n", $OP_mnemonic[$i], $OP_opcode[$i];
+	    printf $PRNT_F "  \"%s\"%s\t /* TOP_%s */ \n", $OP_mnemonic[$i],
+                   $separator, $OP_opcode[$i];
 	}
     }
 
-    if (opcode_is_dummy($OP_opcode[$OP_count-1]) || 
-	opcode_is_ssa($OP_opcode[$OP_count-1]) || 
-	opcode_is_simulated($OP_opcode[$OP_count-1])) {
-
-	printf $PRNT_F "  \"%s\" \t /* TOP_%s */\n", $OP_opcode[$OP_count-1], $OP_opcode[$OP_count-1];
-    }
-    # mnemonics is corrupted for icall,igoto
-    elsif ($OP_mnemonic[$i] eq 'icall') {
-	printf $PRNT_F "  \"call\",\t /* TOP_%s */ \n", $OP_opcode[$OP_count-1];
-    }
-    elsif ($OP_mnemonic[$i] eq 'igoto') {
-	printf $PRNT_F "  \"goto\",\t /* TOP_%s */ \n", $OP_opcode[$OP_count-1];
-    }
-    else {
-	printf $PRNT_F "  \"%s\" \t /* TOP_%s */ \n", $OP_mnemonic[$OP_count-1], $OP_opcode[$OP_count-1];
-    }
     printf $PRNT_F "};\n";
 
     printf $PRNT_F "\n";
@@ -2583,6 +2583,7 @@ CONTINUE:
 
     my $count = 0;
     foreach my $signature (sort(keys(%PrintGroup))) {
+
 	my @pattern = split ('_',$signature);
 	my @fmt;
 	my @instr;
@@ -2706,7 +2707,6 @@ sub initialize_pack_file {
 # ==================================================================
 
 sub emit_pack_info {
-    my $subset = shift;
     my $group;
     my $count;
 
@@ -2847,7 +2847,6 @@ sub initialize_decode_file {
 # ==================================================================
 
 sub emit_decode_info {
-    my $subset = shift;
     my $i;
     printf $DECODE_F "  ISA_Decode_Begin(\"%s\"); \n\n", $ARCH_name;
 
@@ -2923,7 +2922,6 @@ sub initialize_bundle_file {
 # ==================================================================
 
 sub emit_bundle_info {
-    my $subset = shift;
     my $unit;
     my $slot;
     my $bundle;
@@ -2967,11 +2965,24 @@ sub emit_bundle_info {
 	printf $BUNDLE_F "  Instruction_Exec_Unit_Group(%s_Unit, \n", $EXEC_SLOT_name[$unit];
 	my @scdclasses = split(",",$EXEC_SLOT_scds[$unit]);
 	my $scdclass;
+	my @ops = ();
 	foreach $scdclass (@scdclasses) {
-	    my $opcode;
-	    foreach $opcode (@{$SUBSET_scd{$subset}{$scdclass}{'ops'}}) {
-		printf $BUNDLE_F "\t\t TOP_%s, \n", $opcode;
+	    for (my $i = 0; $i < $SUBSET_count; $i++) {
+		foreach my $opcode (@{$SUBSET_scd{$i}{$scdclass}{'ops'}}) {
+		    my $found = $FALSE;
+		    foreach my $opcode2 (@ops) {
+			if ($opcode eq $opcode2) {
+			    $found = $TRUE;
+			}
+		    }
+		    if (! $found) {
+			push (@ops, $opcode);
+		    }
+		}
 	    }
+	}
+	foreach my $opcode (@ops) {
+	    printf $BUNDLE_F "\t\t TOP_%s, \n", $opcode;
 	}
 	printf $BUNDLE_F "\t\t TOP_UNDEFINED); \n\n";
     }
@@ -3129,50 +3140,56 @@ sub finalize_op_file {
 
 
 # ==================================================================
-#    initialize_si_file
+#    initialize_si_files
 # ==================================================================
 
-sub initialize_si_file {
+sub initialize_si_files {
 
     my $dir = shift || '.';
     $dir .= "/proc";
     system "mkdir -p $dir";
-    open ($SI_F, "> $dir/st200_si.cxx");
 
-    &copyright_notice ($SI_F);
+    for (my $i = 0; $i < $SUBSET_count; $i++) {
+	my $si_file;
 
-    printf $SI_F "//  %s processor scheduling information \n", $ARCH_name;
-    printf $SI_F "///////////////////////////////////// \n";
-    printf $SI_F "//   \n";
-    printf $SI_F "//  Description:  \n";
-    printf $SI_F "//  \n";
-    printf $SI_F "//  Generate a scheduling description of a %s processor  \n", $ARCH_name;
-    printf $SI_F "//  via the si_gen interface.  \n";
-    printf $SI_F "//  \n";
-    printf $SI_F "/////////////////////////////////////  \n\n";
+	open ($SI_F[$i], "> $dir/$SUBSET_name[$i]_si.cxx");
+	printf STDOUT "Creating %s\n", "$dir/$SUBSET_name[$i]_si.cxx";
+	$si_file = $SI_F[$i];
+	&copyright_notice ($si_file);
 
-    printf $SI_F "#include \"si_gen.h\" \n";
-    printf $SI_F "#include \"targ_isa_subset.h\" \n";
-    printf $SI_F "#include \"topcode.h\" \n\n";
+	printf $si_file "//  %s processor scheduling information \n", $ARCH_name;
+	printf $si_file "///////////////////////////////////// \n";
+	printf $si_file "//   \n";
+	printf $si_file "//  Description:  \n";
+	printf $si_file "//  \n";
+	printf $si_file "//  Generate a scheduling description of a %s processor  \n", $ARCH_name;
+	printf $si_file "//  via the si_gen interface.  \n";
+	printf $si_file "//  \n";
+	printf $si_file "/////////////////////////////////////  \n\n";
+	
+	printf $si_file "#include \"si_gen.h\" \n";
+	printf $si_file "#include \"targ_isa_subset.h\" \n";
+	printf $si_file "#include \"topcode.h\" \n\n";
 
-    my $format = "";
-    printf $SI_F "static RESOURCE ";
-    my $rid;
-    for ($rid = 0; $rid < $RES_count; $rid++) {
-	printf $SI_F "%s res_%s", $format, $RES_name[$rid];
-	$format = ",\n	       ";
+	my $format = "";
+	printf $si_file "static RESOURCE ";
+	my $rid;
+	for ($rid = 0; $rid < $RES_count; $rid++) {
+	    printf $si_file "%s res_%s", $format, $RES_name[$rid];
+	    $format = ",\n	       ";
+	}
+	printf $si_file "; \n\n";
+	printf $si_file "int \n";
+	printf $si_file "main (int argc, char *argv[]) \n";
+	printf $si_file "{ \n";
+	
+	for ($rid = 0; $rid < $RES_count; $rid++) {
+	    printf $si_file "  res_%s = RESOURCE_Create(\"%s\", %d); \n",
+	    $RES_name[$rid], $RES_name[$rid], $RES_avail[$rid];
+	}
+
+	printf $si_file "\n";
     }
-    printf $SI_F "; \n\n";
-    printf $SI_F "int \n";
-    printf $SI_F "main (int argc, char *argv[]) \n";
-    printf $SI_F "{ \n";
-
-    for ($rid = 0; $rid < $RES_count; $rid++) {
-	printf $SI_F "  res_%s = RESOURCE_Create(\"%s\", %d); \n",
-		$RES_name[$rid], $RES_name[$rid], $RES_avail[$rid];
-    }
-
-    printf $SI_F "\n";
 }
 
 # ==================================================================
@@ -3180,8 +3197,7 @@ sub initialize_si_file {
 # ==================================================================
 sub process_scdinfo {
     my $opcode = $_[0];
-
-    my $subset = subset_id ($OP_subset[$opcode]);
+    my $subset = $_[1];
 
     # Assumptions:
     # I am only using the Any_Operand_Access_Time() and
@@ -3192,11 +3208,11 @@ sub process_scdinfo {
     # access/available time
     my $res = -1;
     for (my $i = 0; $i < $OP_results[$opcode]; $i++) {
-	if ($res != -1 && $res != $OP_result_avail_time[$opcode][$i]) {
+	if ($res != -1 && $res != $OP_result_avail_time[$subset][$opcode][$i]) {
 	    printf STDOUT "ERROR: results of opcode %s have different available time\n", $OP_opcode[$opcode];
 	exit(1);
 	}
-	$res = $OP_result_avail_time[$opcode][$i];
+	$res = $OP_result_avail_time[$subset][$opcode][$i];
     }
 
 #    printf STDOUT "  > any result avail time %d\n", $res;
@@ -3204,11 +3220,11 @@ sub process_scdinfo {
     my $opnd = -1;
     for (my $i = 0; $i < $OP_opnds[$opcode]; $i++) {
       if ($opnd == -1) {
-	$opnd = $OP_opnd_access_time[$opcode][$i];
+	$opnd = $OP_opnd_access_time[$subset][$opcode][$i];
       }
-      if ($opnd != $OP_opnd_access_time[$opcode][$i]) {
-	printf STDOUT "WARNING: opcode %s: operand %d have different access time %d than first operand (access time %d). Taking first operand access time %d\n", $OP_opcode[$opcode], $i, $OP_opnd_access_time[$opcode][$i], $opnd, $opnd;
-	$OP_opnd_access_time[$opcode][$i] = $opnd;
+      if ($opnd != $OP_opnd_access_time[$subset][$opcode][$i]) {
+	printf STDOUT "WARNING: opcode %s: operand %d have different access time %d than first operand (access time %d). Taking first operand access time %d\n", $OP_opcode[$opcode], $i, $OP_opnd_access_time[$subset][$opcode][$i], $opnd, $opnd;
+	$OP_opnd_access_time[$subset][$opcode][$i] = $opnd;
       }
     }
 
@@ -3238,28 +3254,26 @@ OK:
 
     for (my $i = 0; $i < $OP_results[$opcode]; $i++) {
 	if ($SCD_CLASS_result[$sc][$subset][$i] != -1 &&
-	    $SCD_CLASS_result[$sc][$subset][$i] != $OP_result_avail_time[$opcode][$i]) {
+	    $SCD_CLASS_result[$sc][$subset][$i] != $OP_result_avail_time[$subset][$opcode][$i]) {
 	    printf STDOUT "ERROR: result %d for scdclass %s is being reset\n", $i, $scdclass;
-	    printf STDOUT "scdclass %d, results %d\n", $SCD_CLASS_result[$sc][$subset][$i], $OP_result_avail_time[$opcode][$i];
+	    printf STDOUT "scdclass %d, results %d\n", $SCD_CLASS_result[$sc][$subset][$i], $OP_result_avail_time[$subset][$opcode][$i];
 
 	    exit(1);
 	}
-	$SCD_CLASS_result[$sc][$subset][$i] = $OP_result_avail_time[$opcode][$i];
+	$SCD_CLASS_result[$sc][$subset][$i] = $OP_result_avail_time[$subset][$opcode][$i];
     }
 
     for (my $i = 0; $i < $OP_opnds[$opcode]; $i++) {
 	if ($SCD_CLASS_opnd[$sc][$subset][$i] != -1 &&
-	    $SCD_CLASS_opnd[$sc][$subset][$i] != $OP_opnd_access_time[$opcode][$i]) {
+	    $SCD_CLASS_opnd[$sc][$subset][$i] != $OP_opnd_access_time[$subset][$opcode][$i]) {
 	    printf STDOUT "ERROR: operand %d for opcode %s is being reset in subset %s\n",
 		$i, $OP_opcode[$opcode], $SUBSET_name[$subset];
 	    printf STDOUT "%d scdclass %d, opns %d\n",
-		$opcode, $SCD_CLASS_opnd[$sc][$subset][$i], $OP_opnd_access_time[$opcode][$i];
+		$opcode, $SCD_CLASS_opnd[$sc][$subset][$i], $OP_opnd_access_time[$subset][$opcode][$i];
 	    exit(1);
 	}
-	$SCD_CLASS_opnd[$sc][$subset][$i] = $OP_opnd_access_time[$opcode][$i];
+	$SCD_CLASS_opnd[$sc][$subset][$i] = $OP_opnd_access_time[$subset][$opcode][$i];
     }
-
-    $subset = $OP_subset[$opcode];
 
     # ISSUE: TOPs are issued at cycle 0
     $SUBSET_scd{$subset}{$scdclass}{'res'} = [];
@@ -3359,10 +3373,10 @@ OK:
 
 sub read_scdinfo {
     my $opcode = $_[0];
-    my $subset = $OP_subset[$opcode];
+    my $subset = $_[1];
     my $line;
 
-    my $opc_file_name = "../src/$subset/arc.db";
+    my $opc_file_name = "../src/$SUBSET_name[$subset]/arc.db";
 
 #    printf STDOUT "  *** reading schedinfo ***\n";
 #    printf STDOUT "  > read_scdinfo: for op %s subset %s\n", $OP_opcode[$opcode], $subset;
@@ -3385,8 +3399,6 @@ sub read_scdinfo {
     my $mnemonic = "";
     my $resources;
     my $scdclass;
-    my $results;
-    my $opnds;
 
     my $MAX_RESULTS = 2;
     my $MAX_OPNDS = 3;
@@ -3472,8 +3484,8 @@ FOUND_OPCODE:
 	# but compiler calls it the first operand.
 	$opnds[0] = $opnds[2];
     }
-    if ($OP_opcode[$opcode] eq 'syscall' ||
-	$OP_opcode[$opcode] eq 'sbrk') {
+    if ($OP_mnemonic[$opcode] eq 'syscall' ||
+	$OP_mnemonic[$opcode] eq 'sbrk') {
 	$opnds[0] = 2;
     }
 
@@ -3483,14 +3495,14 @@ FOUND_OPCODE:
 	    printf STDOUT "ERROR: result %d for opcode %s not defined\n", $i, $OP_opcode[$opcode];
 	    exit(1);
 	}
-	$OP_result_avail_time[$opcode][$i] = $results[$i];
+	$OP_result_avail_time[$subset][$opcode][$i] = $results[$i];
     }
     for (my $i = 0; $i < $OP_opnds[$opcode]; $i++) {
 	if ($opnds[$i] == -1) {
 	    printf STDOUT "ERROR: operand %d for opcode %s not defined\n", $i, $OP_opcode[$opcode];
 	    exit(1);
 	}
-	$OP_opnd_access_time[$opcode][$i] = $opnds[$i];
+	$OP_opnd_access_time[$subset][$opcode][$i] = $opnds[$i];
     }
 
     # determine this opcode's scdclass:
@@ -3548,7 +3560,7 @@ FOUND_OPCODE:
     }
 
     $OP_scdclass[$opcode] = $scdclass;
-    &process_scdinfo($opcode);
+    &process_scdinfo($opcode, $subset);
 
     close(ARCH_F);
 }
@@ -3556,68 +3568,67 @@ FOUND_OPCODE:
 # ==================================================================
 #    emit_scdinfo
 #
-#    Write scheduling info into file st200_si.cxx
+#    Write scheduling info into file {$subset}_si.cxx
 # ==================================================================
 
 sub emit_scdinfo {
     my $scdclass;
     my $opcode;
+    my $sub = shift;
 
     # Read scheduling info for each TOP:
 #    &read_scdinfo();
 
-    # For each ISA subset:
-    my $sub;
+#    printf STDOUT "emit_scdinfo, sub = %d\n", $sub;
+
 CONTINUE:
-    for ($sub = 0; $sub < $SUBSET_count; $sub++) {
-	my $subset = $SUBSET_name[$sub];
+    my $subset = $SUBSET_name[$sub];
+    my $si_file = $SI_F[$sub];
 
-	printf $SI_F "  /* ======================================================\n";
-	printf $SI_F "   * Resource description for the ISA_SUBSET_%s \n", $subset;
-	printf $SI_F "   * ======================================================\n";
-	printf $SI_F "   */ \n\n";
+    printf $si_file "  /* ======================================================\n";
+    printf $si_file "   * Resource description for the ISA_SUBSET_%s \n", $subset;
+    printf $si_file "   * ======================================================\n";
+    printf $si_file "   */ \n\n";
 
-	printf $SI_F "  Machine(\"%s\", ISA_SUBSET_%s, argc, argv); \n", $ARCH_name, $subset;
+    printf $si_file "  Machine(\"%s\", ISA_SUBSET_%s, argc, argv); \n", $ARCH_name, $subset;
 
-	# emit groups of instructions with similar resource constraints:
-	my $i;
-	for ($i = 0; $i < $SCD_CLASS_count; $i++) {
-	    $scdclass = $SCD_CLASS_name[$i];
-            printf $SI_F "\n  ///////////////////////////////////////// \n";
-            printf $SI_F "  //   Instructions for Scd Class %s \n", $scdclass;
-            printf $SI_F "  ///////////////////////////////////////// \n\n";
+    # emit groups of instructions with similar resource constraints:
+    for (my $i = 0; $i < $SCD_CLASS_count; $i++) {
+	$scdclass = $SCD_CLASS_name[$i];
+	printf $si_file "\n  ///////////////////////////////////////// \n";
+	printf $si_file "  //   Instructions for Scd Class %s \n", $scdclass;
+	printf $si_file "  ///////////////////////////////////////// \n\n";
 
-	    printf $SI_F "  Instruction_Group(\"%s\", \n", $scdclass;
-            foreach $opcode (@{$SUBSET_scd{$subset}{$scdclass}{'ops'}}) {
-		printf $SI_F "\t\t TOP_%s, \n", $opcode;
-	    }
-	    printf $SI_F "\t\t TOP_UNDEFINED); \n\n";
-
-            # define latencies:
-
-	    # since I suppose they're all same:
-	    if ($SCD_CLASS_results[$i] > 0) {
-		printf $SI_F "  Any_Result_Available_Time(%d); \n", $SCD_CLASS_result[$i][$sub][0];
-	    }
-
-	    if ($SCD_CLASS_opnds[$i] > 0) {
-		printf $SI_F "  Any_Operand_Access_Time(%d); \n", $SCD_CLASS_opnd[$i][$sub][0];
-	    }
-
-#	    printf $SI_F "  Any_Operand_Access_Time(0); \n";
-#	    printf $SI_F "  Any_Result_Available_Time(1);		// ??? not sure \n";
-
-            # define resource requirements:
-	    my $rid;
-	    foreach my $pair (@{$SUBSET_scd{$subset}{$scdclass}{'res'}}) {
-		my $rname = $pair->[0];
-		my $cycle = $pair->[1];
-		printf $SI_F "  Resource_Requirement(res_%s, %d); \n", $rname, $cycle;
-            }
-	    printf $SI_F "\n";
+	printf $si_file "  Instruction_Group(\"%s\", \n", $scdclass;
+	foreach $opcode (@{$SUBSET_scd{$sub}{$scdclass}{'ops'}}) {
+	    printf $si_file "\t\t TOP_%s, \n", $opcode;
 	}
-	printf $SI_F "  Machine_Done(\"%s.c\"); \n\n", $subset;
+	printf $si_file "\t\t TOP_UNDEFINED); \n\n";
+
+	# define latencies:
+
+	# since I suppose they're all same:
+	if ($SCD_CLASS_results[$i] > 0) {
+	    printf $si_file "  Any_Result_Available_Time(%d); \n", $SCD_CLASS_result[$i][$sub][0];
+	}
+
+	if ($SCD_CLASS_opnds[$i] > 0) {
+	    printf $si_file "  Any_Operand_Access_Time(%d); \n", $SCD_CLASS_opnd[$i][$sub][0];
+	}
+
+#	    printf $si_file "  Any_Operand_Access_Time(0); \n";
+#	    printf $si_file "  Any_Result_Available_Time(1);		// ??? not sure \n";
+
+	# define resource requirements:
+	my $rid;
+	foreach my $pair (@{$SUBSET_scd{$sub}{$scdclass}{'res'}}) {
+	    my $rname = $pair->[0];
+	    my $cycle = $pair->[1];
+	    printf $si_file "  Resource_Requirement(res_%s, %d); \n", $rname, $cycle;
+	}
+	printf $si_file "\n";
     }
+    printf $si_file "  Machine_Done(\"%s.c\"); \n\n", $subset;
 
     return;
 }
@@ -3626,16 +3637,15 @@ CONTINUE:
 #    finalize_si_file
 # ==================================================================
 
-sub finalize_si_file {
+sub finalize_si_files {
 
-    printf ($SI_F "}\n");
-
-    close ($SI_F);
+    for (my $i = 0; $i < $SUBSET_count; $i++) {
+	my $si_file = $SI_F[$i];
+	printf ($si_file "}\n");
+	close ($SI_F[$i]);
+    }
     return;
 }
-
-
-
 
 # ==================================================================
 #    copyright_notice
@@ -4179,16 +4189,54 @@ sub STOP {
 }
 
 # ==================================================================
+#    DECL_OPCODE
+# ==================================================================
+sub DECL_OPCODE {
+    my $mnemonic = $_[0];
+    my $property = $_[1];
+    my $syntax = $_[2];
+    my $format = $_[3];
+    my $subset = $_[4];
+
+    my $opnum;
+
+    for ($opnum = 0; $opnum < $OP_count; $opnum++) {
+	if ($OP_mnemonic[$opnum] eq $mnemonic
+	    && $OP_format[$opnum] eq $format) {
+	    goto BREAK;
+	}
+    }
+
+    $OP_properties[$opnum] = $property;
+    $OP_mnemonic[$opnum] = $mnemonic;
+    $OP_syntax[$opnum] = $syntax;
+    $OP_format[$opnum] = $format;
+
+    &process_opcode($opnum);
+    $OP_count++;
+
+BREAK:
+#    printf STDOUT "pushing opcode %d into subset %d\n", $opcode, $subset;
+    push(@{$SUBSET_opcodes[$subset]}, $opnum);
+
+    return $opnum;
+}
+
+# ==================================================================
 #    process_opcode
 # ==================================================================
 sub process_opcode {
     my $opcode = $_[0];
     my $subset = $_[1];
 
+#    printf STDOUT " process_opcode %d\n", $opcode;
+
     # variant:
     &set_variant($opcode);
 
     $OP_opcode[$opcode] = $OP_mnemonic[$opcode].$OP_variant[$opcode];
+
+ #   printf STDOUT "OP_opcode[%d] = %s, properties = %d\n", $opcode, $OP_opcode[$opcode],$OP_properties[$opcode];
 
     # depending on OP format, set number of opnds/results
     &set_operands($opcode);
@@ -4216,18 +4264,19 @@ sub process_opcode {
 	&sort_by_properties($opcode);
     }
 
-    # only one subset for now:
-    $OP_subset[$opcode] = $SUBSET_name[$subset];
-    push(@{$SUBSET_opcodes[$subset]}, $opcode);
+#    printf STDOUT "pushing opcode %d into subset %d\n", $opcode, $subset;
+#    push(@{$SUBSET_opcodes[$subset]}, $opcode);
 
-    # operand groups:
-    push(@{$SignatureGroup{$OP_signature[$opcode]}}, $OP_opcode[$opcode]);
+    if (! ($OP_properties[$opcode] & ($OP_DUMMY | $OP_SIMULATED))) {
+	# operand groups:
+	push(@{$SignatureGroup{$OP_signature[$opcode]}}, $OP_opcode[$opcode]);
 
-    # pack groups:
-    push(@{$PackGroup{$OP_pack[$opcode]}}, $OP_opcode[$opcode]);
+	# pack groups:
+	push(@{$PackGroup{$OP_pack[$opcode]}}, $OP_opcode[$opcode]);
 
-    # print groups:
-    push(@{$PrintGroup{$OP_print[$opcode]}}, $OP_opcode[$opcode]);
+	# print groups:
+	push(@{$PrintGroup{$OP_print[$opcode]}}, $OP_opcode[$opcode]);
+    }
 
     # properties:
     if ($OP_properties[$opcode] & $OP_LOAD) {
@@ -4338,6 +4387,14 @@ sub process_opcode {
 	push(@{$AttrGroup{'cmp'}}, $OP_opcode[$opcode]);
     }
 
+    if ($OP_properties[$opcode] & $OP_SIMULATED) {
+	push(@{$AttrGroup{'simulated'}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_DUMMY) {
+	push(@{$AttrGroup{'dummy'}}, $OP_opcode[$opcode]);
+    }
+
 #    if ($OP_properties[$opcode] & $OP_IMMEDIATE) {
 #	push(@{$AttrGroup{'immediate'}}, $OP_opcode[$opcode]);
 #    }
@@ -4427,47 +4484,44 @@ sub read_opcodes {
 		   $mnemonic eq 'pswclr') {
 		$format = 'PswOp';
 	    }
+	    elsif ($mnemonic eq 'sbrk' ||
+		   $mnemonic eq 'syscall') {
+		$format = 'SBreak';
+	    }
 	    else {
 		$format = $1;
 	    }
 
-
-	    $OP_properties[$OP_count] = $property;
-	    $OP_mnemonic[$OP_count] = $mnemonic;
-	    $OP_syntax[$OP_count] = $syntax;
-	    $OP_format[$OP_count] = $format;
-
-	    # process the opcode:
-	    &process_opcode($OP_count, $subset);
-	    &read_scdinfo($OP_count);
-	    $OP_count++;
+	    my $opnum = DECL_OPCODE ( $mnemonic, $property, $syntax, $format,
+				   $subset );
+	    &read_scdinfo($opnum, $subset);
 
 	    # if it is one of opcodes that accepts an immediate
 	    # as operand, create a "twin" opcode of extended format
 
 	    my $format;
-	    if ($OP_format[$OP_count-1] eq 'Int3I') {
+	    if ($OP_format[$opnum] eq 'Int3I') {
 		$format = 'Int3E';
 	    }
-	    elsif ($OP_format[$OP_count-1] eq 'Mul64I') {
+	    elsif ($OP_format[$opnum] eq 'Mul64I') {
 		$format = 'Mul64E';
 	    }
-	    elsif ($OP_format[$OP_count-1] eq 'MoveI') {
+	    elsif ($OP_format[$opnum] eq 'MoveI') {
 		$format = 'MoveE';
 	    }
-	    elsif ($OP_format[$OP_count-1] eq 'Cmp3I_Reg') {
+	    elsif ($OP_format[$opnum] eq 'Cmp3I_Reg') {
 		$format = 'Cmp3E_Reg';
 	    }
-	    elsif ($OP_format[$OP_count-1] eq 'Cmp3I_Br') {
+	    elsif ($OP_format[$opnum] eq 'Cmp3I_Br') {
 		$format = 'Cmp3E_Br';
 	    }
-	    elsif ($OP_format[$OP_count-1] eq 'SelectI') {
+	    elsif ($OP_format[$opnum] eq 'SelectI') {
 		$format = 'SelectE';
 	    }
-	    elsif ($OP_format[$OP_count-1] eq 'Store') {
+	    elsif ($OP_format[$opnum] eq 'Store') {
 		$format = 'StoreE';
 	    }
-	    elsif ($OP_format[$OP_count-1] eq 'Load') {
+	    elsif ($OP_format[$opnum] eq 'Load') {
 		$format = 'LoadE';
 	    }
 	    else {
@@ -4476,26 +4530,22 @@ sub read_opcodes {
 
 	    # make a "twin" opcode:
 
-	    $OP_mnemonic[$OP_count] = $OP_mnemonic[$OP_count-1];
-	    $OP_properties[$OP_count] = $OP_NONE;
-	    $OP_format[$OP_count] = $format;
-	    $OP_syntax[$OP_count] = $OP_syntax[$OP_count-1];
-
-	    &process_opcode($OP_count, $subset);
+	    my $twin_opnum = DECL_OPCODE ( $mnemonic, $OP_NONE, $syntax,
+					$format, $subset );
 
 	    # initialize the scheduling info:
 
-	    for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
-		$OP_result_avail_time[$OP_count][$i] = 
-		    $OP_result_avail_time[$OP_count-1][$i];
+	    for ($i = 0; $i < $OP_results[$twin_opnum]; $i++) {
+		$OP_result_avail_time[$subset][$twin_opnum][$i] = 
+		    $OP_result_avail_time[$subset][$opnum][$i];
 	    }
 
-	    for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-		$OP_opnd_access_time[$OP_count][$i] = 
-		    $OP_opnd_access_time[$OP_count-1][$i];
+	    for ($i = 0; $i < $OP_opnds[$twin_opnum]; $i++) {
+		$OP_opnd_access_time[$subset][$twin_opnum][$i] = 
+		    $OP_opnd_access_time[$subset][$opnum][$i];
 	    }
 
-	    $scdclass = $OP_scdclass[$OP_count-1];
+	    $scdclass = $OP_scdclass[$opnum];
 	    if ($scdclass eq 'ALU') {
 		$scdclass = 'ALU_IMM';
 	    } elsif ($scdclass eq 'STORE') {
@@ -4509,164 +4559,127 @@ sub read_opcodes {
 	    } elsif ($scdclass eq 'MUL') {
 		$scdclass = 'MUL_IMM';
 	    }
-	    $OP_scdclass[$OP_count] = $scdclass;
+	    $OP_scdclass[$twin_opnum] = $scdclass;
 	    
-	    &process_scdinfo($OP_count);
+	    &process_scdinfo($twin_opnum, $subset);
 
-	    $OP_count++;
 
 	} # finish current record
     } # while there are records
 
     close(OPCODE_F);
 
-    # There is a number of opcodes that I need to specify manually:
+    # There are a number of opcodes that I need to specify manually:
+
+    my $opnum;
 
     # ----------------- nop ------------------
 
     # beginning of a new record
 
-    $OP_mnemonic[$OP_count] = 'nop';
-    $OP_format[$OP_count] = 'Noop';
-    $OP_properties[$OP_count] = $OP_NONE;
-    $OP_properties[$OP_count] ^= $OP_NOP;
-    $OP_syntax[$OP_count] = 'nop';
-    &process_opcode($OP_count, $subset);
+    $opnum = DECL_OPCODE ( 'nop', $OP_NONE ^ $OP_NOP, 'nop', 'Noop', $subset );
 
-    $OP_scdclass[$OP_count] = "ALU";
-    &process_scdinfo($OP_count);
-
-    $OP_count++;
+    $OP_scdclass[$opnum] = "ALU";
+    &process_scdinfo($opnum, $subset);
 
     # ----------------- mov ------------------
 
-    # beginning of a new recore
+    # beginning of a new record
 
-    $OP_mnemonic[$OP_count] = 'mov';
-    $OP_format[$OP_count] = 'MoveR';
-    $OP_properties[$OP_count] = $OP_NONE;
-    $OP_syntax[$OP_count] = 'mov %1 = %2';
-    &process_opcode($OP_count, $subset);
+    $opnum = DECL_OPCODE ( 'mov', $OP_NONE, 'mov %1 = %2', 'MoveR', $subset );
 
-    for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
-	$OP_result_avail_time[$OP_count][$i] = 3;
+    for ($i = 0; $i < $OP_results[$opnum]; $i++) {
+	$OP_result_avail_time[$subset][$opnum][$i] = 3;
     }
 
-    for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-	$OP_opnd_access_time[$OP_count][$i] = 2;
+    for ($i = 0; $i < $OP_opnds[$opnum]; $i++) {
+	$OP_opnd_access_time[$subset][$opnum][$i] = 2;
     }
 
-    $OP_scdclass[$OP_count] = "ALU";
-    &process_scdinfo($OP_count);
-
-    $OP_count++;
+    $OP_scdclass[$opnum] = "ALU";
+    &process_scdinfo($opnum, $subset);
 
     # ----------------- mov ------------------
 
-    # beginning of a new recore
-    $OP_mnemonic[$OP_count] = 'mov';
-    $OP_format[$OP_count] = 'MoveI';
-    $OP_properties[$OP_count] = $OP_NONE;
-    $OP_syntax[$OP_count] = 'mov %1 = %2';
-    &process_opcode($OP_count, $subset);
+    # beginning of a new record
 
-    for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
-	$OP_result_avail_time[$OP_count][$i] = 3;
+    $opnum = DECL_OPCODE ( 'mov', $OP_NONE, 'mov %1 = %2', 'MoveI', $subset );
+
+    for ($i = 0; $i < $OP_results[$opnum]; $i++) {
+	$OP_result_avail_time[$subset][$opnum][$i] = 3;
     }
 
-    for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-	$OP_opnd_access_time[$OP_count][$i] = 2;
+    for ($i = 0; $i < $OP_opnds[$opnum]; $i++) {
+	$OP_opnd_access_time[$subset][$opnum][$i] = 2;
     }
 
-    $OP_scdclass[$OP_count] = "ALU";
-    &process_scdinfo($OP_count);
-
-    $OP_count++;
+    $OP_scdclass[$opnum] = "ALU";
+    &process_scdinfo($opnum, $subset);
 
     # ----------------- mov (extended) ------------------
 
-    # beginning of a new recore
-    $OP_mnemonic[$OP_count] = 'mov';
-    $OP_format[$OP_count] = 'MoveE';
-    $OP_properties[$OP_count] = $OP_NONE;
-    $OP_syntax[$OP_count] = 'mov %1 = %2';
-    &process_opcode($OP_count, $subset);
+    # beginning of a new record
 
-    for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
-	$OP_result_avail_time[$OP_count][$i] = 3;
+    $opnum = DECL_OPCODE ( 'mov', $OP_NONE, 'mov %1 = %2', 'MoveE', $subset );
+
+    for ($i = 0; $i < $OP_results[$opnum]; $i++) {
+	$OP_result_avail_time[$subset][$opnum][$i] = 3;
     }
 
-    for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-	$OP_opnd_access_time[$OP_count][$i] = 2;
+    for ($i = 0; $i < $OP_opnds[$opnum]; $i++) {
+	$OP_opnd_access_time[$subset][$opnum][$i] = 2;
     }
 
-    $OP_scdclass[$OP_count] = "ALU_IMM";
-    &process_scdinfo($OP_count);
+    $OP_scdclass[$opnum] = "ALU_IMM";
+    &process_scdinfo($opnum, $subset);
     
-    $OP_count++;
-
     # ----------------- mtb ------------------
 
-    # beginning of a new recore
-    $OP_mnemonic[$OP_count] = 'mtb';
-    $OP_format[$OP_count] = 'mtb';
-    $OP_properties[$OP_count] = $OP_NONE;
-    $OP_syntax[$OP_count] = 'mtb %1 = %2';
-    &process_opcode($OP_count, $subset);
+    # beginning of a new record
 
-    for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
-	$OP_result_avail_time[$OP_count][$i] = 3;
+    $opnum = DECL_OPCODE ( 'mtb', $OP_NONE, 'mtb %1 = %2', 'mtb', $subset );
+
+    for ($i = 0; $i < $OP_results[$opnum]; $i++) {
+	$OP_result_avail_time[$subset][$opnum][$i] = 3;
     }
 
-    for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-	$OP_opnd_access_time[$OP_count][$i] = 2;
+    for ($i = 0; $i < $OP_opnds[$opnum]; $i++) {
+	$OP_opnd_access_time[$subset][$opnum][$i] = 2;
     }
 
-    $OP_scdclass[$OP_count] = "ALU";
-    &process_scdinfo($OP_count);
-
-    $OP_count++;
+    $OP_scdclass[$opnum] = "ALU";
+    &process_scdinfo($opnum, $subset);
 
     # ----------------- mfb ------------------
 
-    # beginning of a new recore
-    $OP_mnemonic[$OP_count] = 'mfb';
-    $OP_format[$OP_count] = 'mfb';
-    $OP_properties[$OP_count] = $OP_NONE;
-    $OP_syntax[$OP_count] = 'mfb %1 = %2';
-    &process_opcode($OP_count, $subset);
+    # beginning of a new record
 
-    for ($i = 0; $i < $OP_results[$OP_count]; $i++) {
-	$OP_result_avail_time[$OP_count][$i] = 3;
+    $opnum = DECL_OPCODE ( 'mfb', $OP_NONE, 'mfb %1 = %2', 'mfb', $subset );
+
+    for ($i = 0; $i < $OP_results[$opnum]; $i++) {
+	$OP_result_avail_time[$subset][$opnum][$i] = 3;
     }
 
-    for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-	$OP_opnd_access_time[$OP_count][$i] = 2;
+    for ($i = 0; $i < $OP_opnds[$opnum]; $i++) {
+	$OP_opnd_access_time[$subset][$opnum][$i] = 2;
     }
 
-    $OP_scdclass[$OP_count] = "ALU";
-    &process_scdinfo($OP_count);
-
-    $OP_count++;
+    $OP_scdclass[$opnum] = "ALU";
+    &process_scdinfo($opnum, $subset);
 
     # ----------------- return ------------------
 
-    # beginning of a new recore
-    $OP_mnemonic[$OP_count] = 'return';
-    $OP_format[$OP_count] = 'Ijump';
-    $OP_properties[$OP_count] = $OP_NONE;
-    $OP_syntax[$OP_count] = 'return LR';
+    # beginning of a new record
 
-    &process_opcode($OP_count, $subset);
+    $opnum = DECL_OPCODE ( 'return', $OP_NONE, 'return LR', 'Ijump', $subset );
 
-    for ($i = 0; $i < $OP_opnds[$OP_count]; $i++) {
-	$OP_opnd_access_time[$OP_count][$i] = 1;
+    for ($i = 0; $i < $OP_opnds[$opnum]; $i++) {
+	$OP_opnd_access_time[$subset][$opnum][$i] = 1;
     }
 
-    $OP_scdclass[$OP_count] = "JUMP";
-    &process_scdinfo($OP_count);
+    $OP_scdclass[$opnum] = "JUMP";
+    &process_scdinfo($opnum, $subset);
     
-    $OP_count++;
 }
 
 # ==================================================================
@@ -4690,21 +4703,22 @@ sub read_opcodes {
   #
   ####################################################################
 
-  my %options;
-  use Getopt::Std;
-  getopts('o:s:', \%options);
-  my $subset = $options{s} || '';
-  my $archdir = $options{o} || "st200";
-  
-  unless ($subset =~ /^st2/) {
-    print STDERR "usage: $0 -s subsetdir [-o outputdir]\n";
-    exit 1;
-  }
+my $archdir;
+my @targets;
+use Getopt::Long;
+GetOptions ( "s=s" => \@targets, "o=s" => \$archdir);
+
 
   &DECL_ARCHITECTURE("st200");
 
-  &DECL_ISA_SUBSET ("NULL", $subset);
-  &DECL_ISA_SUBSET ($subset, "st200");
+
+  foreach my $subset (@targets) {
+      unless ($subset =~ /^st2/) {
+	  print STDERR "usage: $0 {-s subsetdir} [-o outputdir]\n";
+	  exit 1;
+      }
+      &DECL_ISA_SUBSET ("NULL", $subset);
+  }
 
 #  &DECL_ISA_SUBSET (st220, "st210");
 #  &DECL_ISA_SUBSET (st210, "st200");
@@ -4859,12 +4873,21 @@ sub read_opcodes {
   #
   ####################################################################
 
+  # [SC] Scheduling resources are hard-coded here for every processor.
+  # TODO: This needs to become processor-specific, and derived from
+  # chess information.
+
   &DECL_SCD_RESOURCE ("ISSUE", 4);     # 4 issue slots
   &DECL_SCD_RESOURCE ("INT", 4);       # 4 integer units
   &DECL_SCD_RESOURCE ("MUL", 2);       # 2 multipliers
   &DECL_SCD_RESOURCE ("MEM", 1);       # 1 load/store unit
   &DECL_SCD_RESOURCE ("ODD", 2);       # 2 odd slots
   &DECL_SCD_RESOURCE ("XFER", 1);      # 1 branch unit
+
+  # [SC] Scheduling classes are hard-coded here for every processor.
+  # TODO: This needs to become processor-specific.  It would be better
+  # to derive scheduling classes from instruction properties in the
+  # chess database.
 
   &DECL_SCD_CLASS ("ALU", 2, 3);             # ALU TOPs
   &DECL_SCD_CLASS ("ALU_IMM", 2, 3);         # ALU TOPs
@@ -4887,6 +4910,9 @@ sub read_opcodes {
   &DECL_SCD_CLASS ("asm", 1, 1);          # asm
   &DECL_SCD_CLASS ("ssa", 1, 1);             # ssa
   &DECL_SCD_CLASS ("getpc", 2, 1);             # getpc
+
+  # [SC] Bundling constraints are considered part of the architecture, not the
+  # implementation, so do not need to be processor-specific.
 
   &DECL_EXEC_SLOT ("S0", "ALU,MUL,LOAD,LOAD_2,PSWOP,STORE,EXT,BRANCH,JUMP,CALL,SYNC,PRGINS,getpc"); # Slot 0
   &DECL_EXEC_SLOT ("S1", "ALU,MUL,LOAD,LOAD_2,PSWOP,STORE,EXT,BRANCH,JUMP,CALL,SYNC,PRGINS,getpc"); # Slot 1
@@ -5153,7 +5179,7 @@ sub read_opcodes {
   &initialize_reg_file ($archdir);
   &initialize_lit_file ($archdir);
   &initialize_enum_file ($archdir);
-  &initialize_si_file ($archdir);
+  &initialize_si_files ($archdir);
   &initialize_operands_file ($archdir);
   &initialize_subset_file ($archdir);
   &initialize_properties_file ($archdir);
@@ -5166,7 +5192,7 @@ sub read_opcodes {
   &initialize_op_file($archdir);
 
   my $sub;
-  for ($sub = 0; $sub < $SUBSET_count-1; $sub++) {
+  for ($sub = 0; $sub < $SUBSET_count; $sub++) {
       printf STDOUT "Generating targinfos for subset %s\n", $SUBSET_name[$sub];
       &read_opcodes ($sub);
   } # for each subset
@@ -5174,10 +5200,10 @@ sub read_opcodes {
   # The Pro64 compiler needs a number of simulated and dummy 
   # opcodes. They get added after all the real ISA opcodes have
   # been sorted because simulated/dummy do not need to be.
-  &initialize_required_opcodes ();
+  &initialize_required_opcodes ($sub);
 
   # Each opcode common to all subset can be moved to the parent subset.
-  &update_subsets ();
+  # &update_subsets ();
 
   # Emit ISA information
   for (my $opcode = 0; $opcode < $OP_count; $opcode++) {
@@ -5195,13 +5221,16 @@ sub read_opcodes {
   &emit_operands ();
   &emit_printing_formats ();
 
-  # scheduling info:
-  &emit_scdinfo ($subset);
-  &emit_bundle_info ($subset);
+  for ($sub = 0; $sub < $SUBSET_count; $sub++) { 
+      # scheduling info:
+      &emit_scdinfo ($sub);
+  } # for each subset
+
+  &emit_bundle_info ();
 
   # these are completely dummy, not used for now in the compiler:
-  &emit_pack_info ($subset);
-  &emit_decode_info ($subset);
+  &emit_decode_info ();
+  &emit_pack_info ();
 
   # target info:
   &emit_op_info();
@@ -5211,7 +5240,7 @@ sub read_opcodes {
   &finalize_reg_file ();
   &finalize_lit_file ();
   &finalize_enum_file ();
-  &finalize_si_file ();
+  &finalize_si_files ();
   &finalize_operands_file ();
   &finalize_subset_file ();
   &finalize_properties_file ();
