@@ -2088,6 +2088,9 @@ sub sort_by_properties {
       if ($OP_mnemonic[$opcode] eq 'mul32') {
 	  $OP_properties[$opcode] ^= $OP_MUL;
       }
+      if ($OP_mnemonic[$opcode] eq 'mul64hu') {
+	  $OP_properties[$opcode] ^= $OP_UNSIGNED;
+      }
       $OP_properties[$opcode] ^= $OP_INTOP;
     }
 
