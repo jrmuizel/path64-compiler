@@ -281,19 +281,6 @@ sub opcode_is_dummy {
     return 0;
 }
 
-sub opcode_is_subset {
-    my $opcode = $_[0];
-    my $subset = subset_id($_[1]);
-
-    foreach my $op (@{$SUBSET_opcodes[$subset]}) {
-	if ($OP_opcode[$op] eq $OP_opcode[$opcode]) {
-	    return 1;
-	}
-    }
-
-    return 0;
-}
-
 # ==================================================================
 #    op_bytes
 #
