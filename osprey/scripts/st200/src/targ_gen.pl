@@ -1988,6 +1988,8 @@ sub sort_by_properties {
     # has immediate operand ??
     if ($OP_format[$opcode] eq 'Int3I' ||
 	$OP_format[$opcode] eq 'Int3E' ||
+	$OP_format[$opcode] eq 'Mul64I' ||
+	$OP_format[$opcode] eq 'Mul64E' ||
 	$OP_format[$opcode] eq 'Cmp3I_Reg' ||
 	$OP_format[$opcode] eq 'Cmp3I_Br' ||
 	$OP_format[$opcode] eq 'SelectI' ||
@@ -2068,6 +2070,14 @@ sub sort_by_properties {
 	}
 
 	$OP_properties[$opcode] ^= $OP_INTOP;
+    }
+
+    if ($OP_format[$opcode] eq 'Mul64I' ||
+	$OP_format[$opcode] eq 'Mul64R' ||
+	$OP_format[$opcode] eq 'Mul64E') {
+      if ($OP_mnemonic[$opcode] eq 'mul32') {
+	  $OP_properties[$opcode] ^= $OP_MUL;
+      }
     }
 
     if ($OP_format[$opcode] eq 'Monadic') {
@@ -4403,6 +4413,9 @@ sub read_opcodes {
 	    my $format;
 	    if ($OP_format[$OP_count-1] eq 'Int3I') {
 		$format = 'Int3E';
+	    }
+	    elsif ($OP_format[$OP_count-1] eq 'Mul64I') {
+		$format = 'Mul64E';
 	    }
 	    elsif ($OP_format[$OP_count-1] eq 'MoveI') {
 		$format = 'MoveE';
