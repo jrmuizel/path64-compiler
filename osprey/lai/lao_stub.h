@@ -28,14 +28,14 @@ extern "C" {
 
 // Optimize a LOOP_DESCR through the LAO.
 bool
-LAO_optimize(CG_LOOP *cg_loop, unsigned lao_actions);
+lao_optimize(CG_LOOP *cg_loop, unsigned lao_actions);
 
 // Optimize a HB through the LAO.
 bool
-LAO_optimize(HB *hb, unsigned lao_actions);
+lao_optimize(HB *hb, unsigned lao_actions);
 
 // Optimize a Function through the LAO.
 bool
-LAO_optimize(unsigned lao_actions);
+lao_optimize(unsigned lao_actions);
 
 #endif /* laostub_INCLUDED */
