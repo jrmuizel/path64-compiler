@@ -66,11 +66,11 @@ LIBRARY_SUBDIRS =  \
 #
 TOOL_SUBDIRS = \
 	gccfe \
+	be \
 	lai \
+        ipl \
 	wopt \
 	lno \
-        ipl \
-	be \
 	lw_inline \
         whirl2c \
 	driver 
