@@ -530,27 +530,27 @@ LAO_setControlArc(BasicBlockHandle handle, CodeRegion coderegion) {
 
 // Enter the live-in information in the LAO.
 static void
-LAO_setLiveIn(BasicBlockHandle handle, CodeRegion coderegion) {
+LAO_setLiveIn(BasicBlockHandle handle) {
   BB *bb = (BB *)BasicBlockHandle_pointer(handle);
   BasicBlock basicblock = BasicBlockHandle_basicblock(handle);
   for (TN *tn = GTN_SET_Choose(BB_live_in(bb));
        tn != GTN_SET_CHOOSE_FAILURE;
        tn = GTN_SET_Choose_Next(BB_live_in(bb), tn)) {
     TempName tempname = LAO_TN_TempName(tn);
-    CodeRegion_setLiveIn(coderegion, basicblock, tempname);
+    BasicBlock_setLiveIn(basicblock, tempname);
   }
 }
 
 // Enter the live-out information in the LAO.
 static void
-LAO_setLiveOut(BasicBlockHandle handle, CodeRegion coderegion) {
+LAO_setLiveOut(BasicBlockHandle handle) {
   BB *bb = (BB *)BasicBlockHandle_pointer(handle);
   BasicBlock basicblock = BasicBlockHandle_basicblock(handle);
   for (TN *tn = GTN_SET_Choose(BB_live_out(bb));
        tn != GTN_SET_CHOOSE_FAILURE;
        tn = GTN_SET_Choose_Next(BB_live_out(bb), tn)) {
     TempName tempname = LAO_TN_TempName(tn);
-    CodeRegion_setLiveOut(coderegion, basicblock, tempname);
+    BasicBlock_setLiveOut(basicblock, tempname);
   }
 }
 
@@ -589,8 +589,8 @@ LAO_makeCodeRegion(BB_List& entryBBs, BB_List& innerBBs, BB_List& exitBBs) {
   Interface_fillBasicBlockHandles(interface, handles);
   for (int i = 0; i < bb_count; i++) {
     LAO_setControlArc(handles + i, coderegion);
-    LAO_setLiveIn(handles + i, coderegion);
-    LAO_setLiveOut(handles + i, coderegion);
+    LAO_setLiveIn(handles + i);
+    LAO_setLiveOut(handles + i);
   }
   //
   return coderegion;
