@@ -623,11 +623,8 @@ main (int argc, char *argv[])
 		 TOP_getpc, 
 		 TOP_UNDEFINED); 
 
-  Any_Result_Available_Time(2); 
-  Any_Operand_Access_Time(1); 
-  Resource_Requirement(res_ISSUE, 0); 
-  Resource_Requirement(res_ISSUE, 0); 
-  Resource_Requirement(res_ISSUE, 0); 
+  Any_Result_Available_Time(3); 
+  Any_Operand_Access_Time(2); 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_ODD, 0); 
   Resource_Requirement(res_XFER, 0); 
@@ -861,11 +858,8 @@ main (int argc, char *argv[])
 		 TOP_getpc, 
 		 TOP_UNDEFINED); 
 
-  Any_Result_Available_Time(2); 
-  Any_Operand_Access_Time(1); 
-  Resource_Requirement(res_ISSUE, 0); 
-  Resource_Requirement(res_ISSUE, 0); 
-  Resource_Requirement(res_ISSUE, 0); 
+  Any_Result_Available_Time(3); 
+  Any_Operand_Access_Time(2); 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_ODD, 0); 
   Resource_Requirement(res_XFER, 0); 
