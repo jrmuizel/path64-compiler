@@ -543,19 +543,23 @@ Gen_SWP_Branch (
   bool is_doloop
 )
 {
-  BB *body = cl.Loop_header();
-  OP *br_op = BB_branch_op(body);
-  TN *label_tn = OP_opnd(br_op, Branch_Target_Operand(br_op));
-  OPS ops = OPS_EMPTY;
-  OP *op;
+  if (PROC_has_swp_branches()) {
+    BB *body = cl.Loop_header();
+    OP *br_op = BB_branch_op(body);
+    TN *label_tn = OP_opnd(br_op, Branch_Target_Operand(br_op));
+    OPS ops = OPS_EMPTY;
+    OP *op;
 
-  FmtAssert(FALSE,("not implemented"));
+    FmtAssert(FALSE,("not implemented"));
   
-  op = OPS_last(&ops);
-  Set_OP_Tag (op, Gen_Tag());
+    op = OPS_last(&ops);
+    Set_OP_Tag (op, Gen_Tag());
 
-  BB_Remove_Op(body, br_op);
-  BB_Append_Ops(body, &ops);
+    BB_Remove_Op(body, br_op);
+    BB_Append_Ops(body, &ops);
+  }
+
+  return;
 }
 
 /* ====================================================================
