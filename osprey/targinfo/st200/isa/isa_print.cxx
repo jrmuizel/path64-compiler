@@ -434,6 +434,8 @@ main()
   Instruction_Print_Group(print_4, 
 		 TOP_goto, 
 		 TOP_igoto, 
+		 TOP_pswset_r, 
+		 TOP_pswclr_r, 
 		 TOP_sbrk, 
 		 TOP_syscall, 
 		 TOP_return, 
@@ -453,18 +455,7 @@ main()
 
   /* ================================= */ 
   ISA_PRINT_TYPE print_6; 
-  print_6 = ISA_Print_Type_Create("print_6", "%s %s"); 
-  Name(); 
-  Operand(2); 
-
-  Instruction_Print_Group(print_6, 
-		 TOP_pswset_r, 
-		 TOP_pswclr_r, 
-		 TOP_UNDEFINED); 
-
-  /* ================================= */ 
-  ISA_PRINT_TYPE print_7; 
-  print_7 = ISA_Print_Type_Create("print_7", "%s %s , %s = %s , %s , %s"); 
+  print_6 = ISA_Print_Type_Create("print_6", "%s %s , %s = %s , %s , %s"); 
   Name(); 
   Result(0); 
   Result(1); 
@@ -472,20 +463,20 @@ main()
   Operand(1); 
   Operand(2); 
 
-  Instruction_Print_Group(print_7, 
+  Instruction_Print_Group(print_6, 
 		 TOP_addcg, 
 		 TOP_divs, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
-  ISA_PRINT_TYPE print_8; 
-  print_8 = ISA_Print_Type_Create("print_8", "%s %s = %s [ %s ]"); 
+  ISA_PRINT_TYPE print_7; 
+  print_7 = ISA_Print_Type_Create("print_7", "%s %s = %s [ %s ]"); 
   Name(); 
   Result(0); 
   Operand(0); 
   Operand(1); 
 
-  Instruction_Print_Group(print_8, 
+  Instruction_Print_Group(print_7, 
 		 TOP_ldb_i, 
 		 TOP_ldb_ii, 
 		 TOP_ldb_d_i, 
@@ -509,13 +500,13 @@ main()
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
-  ISA_PRINT_TYPE print_9; 
-  print_9 = ISA_Print_Type_Create("print_9", "%s %s = %s"); 
+  ISA_PRINT_TYPE print_8; 
+  print_8 = ISA_Print_Type_Create("print_8", "%s %s = %s"); 
   Name(); 
   Result(0); 
   Operand(0); 
 
-  Instruction_Print_Group(print_9, 
+  Instruction_Print_Group(print_8, 
 		 TOP_bswap_r, 
 		 TOP_call, 
 		 TOP_icall, 
@@ -531,14 +522,14 @@ main()
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
-  ISA_PRINT_TYPE print_10; 
-  print_10 = ISA_Print_Type_Create("print_10", "%s %s = %s , %s"); 
+  ISA_PRINT_TYPE print_9; 
+  print_9 = ISA_Print_Type_Create("print_9", "%s %s = %s , %s"); 
   Name(); 
   Result(0); 
   Operand(0); 
   Operand(1); 
 
-  Instruction_Print_Group(print_10, 
+  Instruction_Print_Group(print_9, 
 		 TOP_andl_i_r, 
 		 TOP_andl_ii_r, 
 		 TOP_andl_i_b, 
@@ -598,14 +589,14 @@ main()
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
-  ISA_PRINT_TYPE print_11; 
-  print_11 = ISA_Print_Type_Create("print_11", "%s %s = %s , %s"); 
+  ISA_PRINT_TYPE print_10; 
+  print_10 = ISA_Print_Type_Create("print_10", "%s %s = %s , %s"); 
   Name(); 
   Result(0); 
   Operand(0); 
   Operand(1); 
 
-  Instruction_Print_Group(print_11, 
+  Instruction_Print_Group(print_10, 
 		 TOP_add_r, 
 		 TOP_add_i, 
 		 TOP_add_ii, 
@@ -742,6 +733,22 @@ main()
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
+  ISA_PRINT_TYPE print_11; 
+  print_11 = ISA_Print_Type_Create("print_11", "%s %s = %s , %s , %s"); 
+  Name(); 
+  Result(0); 
+  Operand(0); 
+  Operand(1); 
+  Operand(2); 
+
+  Instruction_Print_Group(print_11, 
+		 TOP_slct_i, 
+		 TOP_slct_ii, 
+		 TOP_slctf_i, 
+		 TOP_slctf_ii, 
+		 TOP_UNDEFINED); 
+
+  /* ================================= */ 
   ISA_PRINT_TYPE print_12; 
   print_12 = ISA_Print_Type_Create("print_12", "%s %s = %s , %s , %s"); 
   Name(); 
@@ -751,22 +758,6 @@ main()
   Operand(2); 
 
   Instruction_Print_Group(print_12, 
-		 TOP_slct_i, 
-		 TOP_slct_ii, 
-		 TOP_slctf_i, 
-		 TOP_slctf_ii, 
-		 TOP_UNDEFINED); 
-
-  /* ================================= */ 
-  ISA_PRINT_TYPE print_13; 
-  print_13 = ISA_Print_Type_Create("print_13", "%s %s = %s , %s , %s"); 
-  Name(); 
-  Result(0); 
-  Operand(0); 
-  Operand(1); 
-  Operand(2); 
-
-  Instruction_Print_Group(print_13, 
 		 TOP_slct_r, 
 		 TOP_slctf_r, 
 		 TOP_UNDEFINED); 
