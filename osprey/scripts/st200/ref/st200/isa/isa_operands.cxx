@@ -135,6 +135,14 @@ main()
   Operand (0, src2, storeval); 
 
   /* ====================================== */ 
+  Instruction_Group("O_SBreak", 
+		 TOP_sbrk, 
+		 TOP_syscall, 
+		 TOP_UNDEFINED); 
+
+  Operand (0, isrc2, opnd1); 
+
+  /* ====================================== */ 
   Instruction_Group("O_Store", 
 		 TOP_stb_i, 
 		 TOP_stb_ii, 
@@ -160,8 +168,6 @@ main()
   Instruction_Group("O_SysOp", 
 		 TOP_break, 
 		 TOP_prgins, 
-		 TOP_sbrk, 
-		 TOP_syscall, 
 		 TOP_UNDEFINED); 
 
 

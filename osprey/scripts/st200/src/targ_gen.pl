@@ -566,10 +566,13 @@ sub set_operands {
 	$OP_results[$opcode] = 0;
 	$OP_opnds[$opcode] = 1;
     }
-    elsif ($format eq 'SysOp' ||
-	   $format eq 'SBreak') {
+    elsif ($format eq 'SysOp') {
 	$OP_results[$opcode] = 0;
 	$OP_opnds[$opcode] = 0;
+    }
+    elsif ($format eq 'SBreak') {
+	$OP_results[$opcode] = 0;
+	$OP_opnds[$opcode] = 1;
     }
     elsif ($format eq 'MoveR' ||
 	   $format eq 'MoveI' ||
@@ -738,8 +741,11 @@ sub set_signature {
     elsif ($format eq 'Ijump') {
 	$signature = ':ijump:lr';
     }
-    elsif ($format eq 'SysOp' || $format eq 'SBreak') {
+    elsif ($format eq 'SysOp') {
 	$signature = ':SysOp:';
+    }
+    elsif ($format eq 'SBreak') {
+	$signature = ':SBreak:isrc2_opnd1';
     }
     elsif ($format eq 'MoveR') {
 	$signature = 'dest:move:src2_opnd1';
@@ -1066,7 +1072,13 @@ sub set_print {
 	$OP_print[$opcode] = $signature;
 	return;
     }
-    elsif ($format eq 'SysOp' || $format eq 'SBreak') {
+    elsif ($format eq 'SysOp') {
+    }
+    elsif ($format eq 'SBreak') {
+	$OP_opnd[$opcode][0]{'fmt'} = '%s';
+	$signature = "O0:%s";
+	$OP_print[$opcode] = $signature;
+	return;
     }
     elsif ($format eq 'MoveR' ||
 	   $format eq 'MoveI' ||
@@ -3450,6 +3462,10 @@ FOUND_OPCODE:
 	# (and has two fixed operands preceding it).
 	# but compiler calls it the first operand.
 	$opnds[0] = $opnds[2];
+    }
+    if ($OP_opcode[$opcode] eq 'syscall' ||
+	$OP_opcode[$opcode] eq 'sbrk') {
+	$opnds[0] = 2;
     }
 
     # Sanity check:
