@@ -58,17 +58,20 @@ LIBRARY_SUBDIRS = \
 #  Note that be_driver must come last since it depends on other components
 #  being built first.
 #
-TOOL_SUBDIRS = \
-	gccfe \
-	be \
-	lai \
-	lw_inline \
-	wopt \
-	driver 
+TOOL_SUBDIRS = 		\
+	gccfe 		\
+	be 		\
+	lw_inline 	\
+	wopt 		\
+	ipl 		\
+	lno 		\
+	driver 		\
+	lai		\
+	whirl2c 
+
 #	dwarfdump \
 #	elfdump \
 #	ir_tools \
-#	whirl2c \
 #	whirl2f \
 #	be_driver
 
