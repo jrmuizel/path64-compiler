@@ -1,4 +1,3 @@
-#ifdef __LAO_STUB
 #include <stdio.h>
 
 // Do not redefine these types
@@ -1068,5 +1067,3 @@ void LAOS_printCGIR()
 
   fprintf(TFile, "-------- CFG End --------\n");
 }
-
-#endif

@@ -1,4 +1,3 @@
-#ifdef LAO_STUB
 /**
 ***			Interface to/from the LAO
 ***			-------------------------
@@ -39,4 +38,3 @@ bool LAO_scheduleRegion ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs, LAO_SW
 bool Perform_SWP ( LOOP_DESCR *loop , LAO_SWP_ACTION action );
 
 #endif /* laostub_INCLUDED */
-#endif
