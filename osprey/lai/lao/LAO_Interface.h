@@ -1,34 +1,5 @@
-#define __VERSION__ "3.2"
-#define __USER_LABEL_PREFIX__ 
-#define __REGISTER_PREFIX__ 
-#define __HAVE_BUILTIN_SETJMP__ 1
-#define __GNUC__ 3
-#define __GNUC_MINOR__ 2
-#define __GNUC_PATCHLEVEL__ 0
-#define __GXX_ABI_VERSION 102
-#define sparc 1
-#define sun 1
-#define unix 1
-#define __svr4__ 1
-#define __SVR4 1
-#define __PRAGMA_REDEFINE_EXTNAME 1
-#define __sparc__ 1
-#define __sun__ 1
-#define __unix__ 1
-#define __svr4__ 1
-#define __SVR4 1
-#define __PRAGMA_REDEFINE_EXTNAME 1
-#define __sparc 1
-#define __sun 1
-#define __unix 1
-#define __NO_INLINE__ 1
-#define __STDC_HOSTED__ 1
-#define __SIZE_TYPE__ unsigned int
-#define __PTRDIFF_TYPE__ int
-#define __WCHAR_TYPE__ long int
-#define __WINT_TYPE__ long int
-#define __GCC_NEW_VARARGS__ 1
-#define __LAI_H__ 
+
+#define __LAI_H__
 
 /*!
   @file LAI.h
@@ -61,8 +32,7 @@ typedef struct BasicBlock_ *BasicBlock;
 typedef struct LoopInfo_ *LoopInfo;
 typedef struct CodeRegion_ *CodeRegion;
 
-
-#define __INTERFACE_E__ 
+#define __INTERFACE_E__
 
 /*!
   @file Interface.e
@@ -108,8 +78,7 @@ typedef int LAI_Register;
   Import LAO enumerations definitions.
 */
 
-
-#define __LAO_E__ 
+#define __LAO_E__
 
 /*!
   @file LAO.e
@@ -125,8 +94,7 @@ typedef int LAI_Register;
 
 // Exported enumerations
 
-
-#define __REGIONTYPE_E__ 
+#define __REGIONTYPE_E__
 
 /*!
   @file RegionType.e
@@ -159,10 +127,10 @@ RegionTypeNAME[];
 #define RegionTypeNAME(type) RegionTypeNAME[type]
 
 
+//__REGIONTYPE_E__
 
 
-
-#define __OPTIMIZATION_E__ 
+#define __OPTIMIZATION_E__
 
 /*!
   @file Optimization.e
@@ -201,21 +169,39 @@ OptimizationPassNAMES(unsigned phases);
 /*!
   OptimizationPrePass_Mask -- Mask of optimizations allowed in prepass.
 */
-#define Optimization_PrePass_Mask ( Optimization_PreSched | Optimization_LoopUnwind | Optimization_LoopUnroll | Optimization_EnableSSA | Optimization_StartBlock | Optimization_StopBlock | Optimization_Force_PrePass | 0)
+#define Optimization_PrePass_Mask (\
+  Optimization_PreSched |\
+  Optimization_LoopUnwind |\
+  Optimization_LoopUnroll |\
+  Optimization_EnableSSA |\
+  Optimization_StartBlock |\
+  Optimization_StopBlock |\
+  Optimization_Force_PrePass | \
+  0)
+
 /*!
   OptimizationRegAlloc_Mask -- Mask of optimization allowed in regalloc pass.
 */
-#define Optimization_RegAlloc_Mask ( Optimization_RegAlloc | Optimization_Localize | Optimization_Force_RegAlloc | 0)
-
-
-
-
+#define Optimization_RegAlloc_Mask (\
+  Optimization_RegAlloc |\
+  Optimization_Localize |\
+  Optimization_Force_RegAlloc | \
+  0)
 
 /*!
   OptimizationPostPass_Mask -- Mask of optimization allowed in postpass.
 */
-#define Optimization_PostPass_Mask ( Optimization_PostSched | Optimization_Force_PostPass | 0)
-#define __CONFIGURATION_E__ 
+#define Optimization_PostPass_Mask (\
+  Optimization_PostSched |\
+  Optimization_Force_PostPass | \
+  0)
+  
+
+
+//__OPTIMIZATION_E__
+
+
+#define __CONFIGURATION_E__
 
 /*!
   @file Configuration.e
@@ -237,56 +223,56 @@ OptimizationPassNAMES(unsigned phases);
   corresponding assertion is at the safest level.
 */
 typedef enum {
-  Configuration_LogMaxBBOC, //!< Log2 of maximum operation count in a BasicBlock.
-  Configuration_RegionType, //!< RegionType for instruction scheduling.
+  Configuration_LogMaxBBOC,	//!< Log2 of maximum operation count in a BasicBlock.
+  Configuration_RegionType,	//!< RegionType for instruction scheduling.
     // 0 => basic block region,
     // 1 => super block region,
     // 2 => trace block region.
-  Configuration_InstrMode, //!< Instruction Mode (ISA Subset).
-  Configuration_SchedKind, //!< Instruction scheduling kind.
+  Configuration_InstrMode,	//!< Instruction Mode (ISA Subset).
+  Configuration_SchedKind,	//!< Instruction scheduling kind.
     // 0 => sequential scheduling,
     // 1 => dependence scheduling,
     // 2 => insertion scheduling,
     // 3 => convergent scheduling.
-  Configuration_AllocKind, //!< Register allocation kind.
+  Configuration_AllocKind,	//!< Register allocation kind.
     // 0 => local register allocation,
     // 1 => global register allocation,
     // 2 => integrated register allocation.
-  Configuration_Pipelining, //!< Software pipelining level.
+  Configuration_Pipelining,	//!< Software pipelining level.
     // 0 => cyclic instruction schedule,
     // 1 => software pipelining with overlap 1,
     // n => software pipelining with overlap (1<<n)-1.
-  Configuration_LogUnwind, //!< Log2 of default unwind factor.
+  Configuration_LogUnwind,	//!< Log2 of default unwind factor.
     // 0 => no unwind,
     // 1 => unwind 2,
     // n => unwind 1<<n.
-  Configuration_LogUnroll, //!< Log2 of default unroll factor.
+  Configuration_LogUnroll,	//!< Log2 of default unroll factor.
     // 0 => no unroll,
     // 1 => unroll 2,
     // n => unroll 1<<n.
-  Configuration_Speculation, //!< Software speculation level.
+  Configuration_Speculation,	//!< Software speculation level.
     // 0 => no software speculation,
     // 1 => software speculation of non-excepting instructions.
     // 2 => software speculation of dismissable instructions (advanced LOADs).
     // 3 => software speculation of non-dismissable instructions (regular LOADs).
-  Configuration_Renaming, //!< Register renaming level.
+  Configuration_Renaming,	//!< Register renaming level.
     // 0 => no register renaming,
     // 1 => register renaming,
     // n => modulo renaming over n iterations.
-  Configuration_LoopOpt, //!< Targets of loop optimizations.
+  Configuration_LoopOpt,	//!< Targets of loop optimizations.
     // 0 => no loop optimizations,
     // 1 => innermost loops only,
     // n => n innermost loops.
-  Configuration_LoopDep, //!< Loop memory dependences assumed.
+  Configuration_LoopDep,	//!< Loop memory dependences assumed.
     // 0 => serial loop dependences,
     // 1 => scalar loop dependences,
     // 2 => vector loop dependences,
     // 3 => parallel loop dependences,
     // 4 => liberal loop dependences.
-  Configuration_MinTrip, //!< Minimum value of loop trip count.
-  Configuration_Modulus, //!< Modulus of loop trip count.
-  Configuration_Residue, //!< Residue of loop trip count.
-  Configuration_StackModel, //!< Stack model for symbol allocation.
+  Configuration_MinTrip,	//!< Minimum value of loop trip count.
+  Configuration_Modulus,	//!< Modulus of loop trip count.
+  Configuration_Residue,	//!< Residue of loop trip count.
+  Configuration_StackModel,	//!< Stack model for symbol allocation.
     // 0 => stack model small,
     // 1 => stack model large,
     // 2 => stack model dynamic.
@@ -297,10 +283,10 @@ ConfigurationItemNAME[];
 #define ConfigurationItemNAME(type) ConfigurationItemNAME[type]
 
 
+//__CONFIGURATION_E__
 
 
-
-#define __DEPENDENCE_E__ 
+#define __DEPENDENCE_E__
 
 /*!
   @file Dependence.e
@@ -318,38 +304,40 @@ ConfigurationItemNAME[];
   DependenceType -- Enumerates the Dependence types.
 */
 typedef enum {
-  Dependence_Flow, // Flow memory dependence arc.
-  Dependence_Anti, // Anti memory dependence arc.
-  Dependence_Input, // Input memory dependence arc.
-  Dependence_Output, // Output memory dependence arc.
-  Dependence_Spill, // Spill (flow) memory dependence arc.
-  Dependence_Other, // Other memory dependence arc.
-  Dependence_RAW, // Register Read After Write dependence arc.
-  Dependence_WAR, // Register Write After Read dependence arc.
-  Dependence_WAW, // Register Write After Write dependence arc.
-  Dependence_Volatile, // Sequentialize the volatile operations.
-  Dependence_Life, // Register consumer node to its lifetime node.
-  Dependence_Link, // Register producer node to its lifetime node.
-  Dependence_Span, // Limits the span of the modulo temporaries.
-  Dependence_Post, // Inserted by SchedGraph_postArc.
-  Dependence_None, // Inserted by SchedGraph_complete.
-  Dependence_Sched, // Inserted by SchedGraph_complete.
+  Dependence_Flow,	// Flow memory dependence arc.
+  Dependence_Anti,	// Anti memory dependence arc.
+  Dependence_Input,	// Input memory dependence arc.
+  Dependence_Output,	// Output memory dependence arc.
+  Dependence_Spill,	// Spill (flow) memory dependence arc.
+  Dependence_Other,	// Other memory dependence arc.
+  Dependence_RAW,	// Register Read After Write dependence arc.
+  Dependence_WAR,	// Register Write After Read dependence arc.
+  Dependence_WAW,	// Register Write After Write dependence arc.
+  Dependence_Volatile,	// Sequentialize the volatile operations.
+  Dependence_Life,	// Register consumer node to its lifetime node.
+  Dependence_Link,	// Register producer node to its lifetime node.
+  Dependence_Span,	// Limits the span of the modulo temporaries.
+  Dependence_Post,	// Inserted by SchedGraph_postArc.
+  Dependence_None,	// Inserted by SchedGraph_complete.
+  Dependence_Sched,	// Inserted by SchedGraph_complete.
   DependenceType__,
 } DependenceType;
 extern const char *
 DependenceTypeNAME[];
 #define DependenceType(type) ((type) & (16 - 1))
 #define DependenceTypeNAME(type) DependenceTypeNAME[DependenceType(type)]
-#define DependenceType_Definite 16
+#define	DependenceType_Definite 16
 #define DependenceType_Lifetime 32
 #define DependenceType_isDefinite(type) (((type) & DependenceType_Definite) != 0)
 #define DependenceType_isLifetime(type) (((type) & DependenceType_Lifetime) != 0)
 #define DependenceType_mayAdjust(type) (DependenceType(type) <= Dependence_Volatile)
 
 
+//__DEPENDENCE_E__
 
 
 
+//__LAO_E__
 
 
 /*!
@@ -402,8 +390,7 @@ typedef enum {
 } LAI_SExport;
 
 
-
-
+//__INTERFACE_E__
 
 
 
@@ -411,8 +398,7 @@ typedef enum {
   CGIR callbacks.
 */
 
-
-#define __CGIR_H__ 
+#define __CGIR_H__
 
 /*!
   @file CGIR.h
@@ -506,6 +492,7 @@ typedef struct CGIR_CallBack_ CGIR_CallBack_, *CGIR_CallBack;
 #define CGIR_CallBack_LD_update(this) (0, (this)->LD_update)
 #define CGIR_CallBack__LD_update(this) (&(this)->LD_update)
 
+//__CGIR_H__
 
 
 /*!
@@ -568,26 +555,26 @@ struct LAI_Interface_ {
   uint32_t (*Interface_LoopInfo_identity)(LoopInfo loopInfo);
   int (*Interface_LoopInfo_unrolled)(LoopInfo loopInfo);
   Operation (*Interface_makeOperation)(Interface this, CGIR_OP cgir_op,
-                                       LAI_Operator operator, int argCount, Temporary arguments[], int resCount, Temporary results[],
-                                       int regCount, int registers[]);
+				       LAI_Operator operator, int argCount, Temporary arguments[], int resCount, Temporary results[],
+				       int regCount, int registers[]);
   Operation (*Interface_findOperation)(Interface this, CGIR_OP cgir_op);
   void (*Interface_Operation_setVolatile)(Interface this, Operation operation);
   void (*Interface_Operation_setPrefetch)(Interface this, Operation operation);
   void (*Interface_Operation_setBarrier)(Interface this, Operation operation);
   void (*Interface_Operation_setSpillCode)(Interface this, Operation operation, Symbol symbol);
   BasicBlock (*Interface_makeBasicBlock)(Interface this, CGIR_BB cgir_bb, LAI_InstrMode instrMode,
-                                         int labelCount, Label labels[], int operationCount, Operation operations[]);
+					 int labelCount, Label labels[], int operationCount, Operation operations[]);
   BasicBlock (*Interface_findBasicBlock)(Interface this, CGIR_BB cgir_bb);
   void (*Interface_moreBasicBlock)(Interface this,
-                                   BasicBlock basicBlock, intptr_t regionId, float frequency,
-                                   int liveInCount, Temporary liveIns[], int liveOutCount, Temporary liveOuts[]);
+				   BasicBlock basicBlock, intptr_t regionId, float frequency,
+				   int liveInCount, Temporary liveIns[], int liveOutCount, Temporary liveOuts[]);
   void (*Interface_linkBasicBlocks)(Interface this, BasicBlock tail_block, BasicBlock head_block, float probability);
   LoopInfo (*Interface_makeLoopInfo)(Interface this, CGIR_LD cgir_ld, BasicBlock basicBlock, LAI_ConfigurationItem item, ...);
   LoopInfo (*Interface_findLoopInfo)(Interface this, CGIR_LD cgir_ld);
   void (*Interface_LoopInfo_setDependenceNode)(Interface this, LoopInfo loopInfo, Operation operation);
   void (*Interface_LoopInfo_setDependenceArc)(Interface this, LoopInfo loopInfo,
-                                              Operation tail_operation, Operation head_operation, int latency, int omega,
-                                              LAI_DependenceType type);
+					      Operation tail_operation, Operation head_operation, int latency, int omega, 
+					      LAI_DependenceType type);
   void (*Interface_setBody)(Interface this, BasicBlock basicBlock);
   void (*Interface_setEntry)(Interface this, BasicBlock basicBlock);
   void (*Interface_setExit)(Interface this, BasicBlock basicBlock);
@@ -829,3 +816,6 @@ LAI_getInstance(void);
 #define LAI_Interface_open (*LAI_instance->Interface_open)
 #define LAI_Interface_optimize (*LAI_instance->Interface_optimize)
 #define LAI_Interface_close (*LAI_instance->Interface_close)
+
+
+//__LAI_H__
