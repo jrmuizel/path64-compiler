@@ -38,41 +38,23 @@
 #
 
 #
+# Define the BUILD HOST and TARGET platforms
+#
+include ../Makefile.platforms
+
+#
+# Define the build parameters that are common to most of the modules
+# (can be overwritten below
+#
+include ../Makefile.build
+
+#
 #  Define build parameters
 #
-BUILD_AREA     = ..
-BUILD_TOT      = ../..
 BUILD_BASE     = ../../common/util
-BUILD_ROOTS    = TARGET
-BUILD_ABI      = I32BIT
-BUILD_ARCH     = SPARC
-BUILD_TYPE     = SHARED
-BUILD_OPTIMIZE = DEBUG
-BUILD_VARIANT  = DEFAULT
-BUILD_INSTALL  = DEFAULT
-BUILD_TARGET   = ST200
-BUILD_COMPILER = GNU
-BUILD_OS       = SUNOS5
 
-
-#ifdef IRIX
-# smake
-
-#  Include (optional) parameter override file
-#if exists(../Makefile.override)
-#include "../Makefile.override"
-#endif
-#  Include setup file which will then include Makefile.base
-#include "$(BUILD_TOT)/Makefile.setup"
-
-#else
-# gmake
-
-#  Include (optional) parameter override file
--include ../Makefile.override
-
-#  Include setup file which will then include Makefile.base
+#
+# Include a top-level makefile which will then include the module
+# specific Makefile.gsetup
+#
 include $(BUILD_TOT)/Makefile.gsetup
-
-#endif
-
