@@ -344,14 +344,6 @@ main()
   Operand (1, isrc2, opnd2); 
 
   /* ====================================== */ 
-  Instruction_Group("O_getpc", 
-		 TOP_getpc, 
-		 TOP_UNDEFINED); 
-
-  Result (0, idest); 
-  Operand (0, btarg); 
-
-  /* ====================================== */ 
   Instruction_Group("O_call", 
 		 TOP_call, 
 		 TOP_UNDEFINED); 
@@ -615,6 +607,14 @@ main()
 		 TOP_fwd_bar, 
 		 TOP_UNDEFINED); 
 
+
+  /* ====================================== */ 
+  Instruction_Group("O_getpc", 
+		 TOP_getpc, 
+		 TOP_UNDEFINED); 
+
+  Result (0, lr); 
+  Operand (0, btarg); 
 
   /* ====================================== */ 
   Instruction_Group("O_mtb", 
