@@ -630,7 +630,7 @@ BOOL SWP_Failure(BB *body, SWP_RETURN_CODE code)
 {
   // Generate SWP ROTATING KERNEL Annotation
   ROTATING_KERNEL_INFO *info = TYPE_PU_ALLOC(ROTATING_KERNEL_INFO);
-  bzero(info, sizeof(ROTATING_KERNEL_INFO));
+  BZERO(info, sizeof(ROTATING_KERNEL_INFO));
   ROTATING_KERNEL_INFO_succeeded(info) = FALSE;
   ROTATING_KERNEL_INFO_failure_code(info) = code;
   BB_Add_Annotation(body, ANNOT_ROTATING_KERNEL, (void *)info);

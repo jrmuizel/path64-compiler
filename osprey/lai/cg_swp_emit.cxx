@@ -726,7 +726,7 @@ SWP_Emit(SWP_OP_vector& op_state,
   {
     // Generate SWP ROTATING KERNEL Annotation
     ROTATING_KERNEL_INFO *info = TYPE_PU_ALLOC(ROTATING_KERNEL_INFO);
-    bzero(info, sizeof(ROTATING_KERNEL_INFO));
+    BZERO(info, sizeof(ROTATING_KERNEL_INFO));
     reg_assign.Update_Annotation(info);
     
 	// Regenerate SWP resource statistics
