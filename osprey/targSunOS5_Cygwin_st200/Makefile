@@ -71,6 +71,7 @@ TOOL_SUBDIRS = \
 	wopt \
 	driver \
         ipl    \
+	ipa	\
         whirl2c \
 	lw_inline \
 	lno

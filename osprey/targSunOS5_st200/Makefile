@@ -70,6 +70,7 @@ TOOL_SUBDIRS = \
 	be \
 	lai \
         ipl \
+	ipa \
 	wopt \
 	lno \
 	lw_inline \
