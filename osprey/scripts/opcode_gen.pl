@@ -1487,7 +1487,7 @@ sub END_WHIRLFUNC {
     printf(CFILE_MTYPES "  if ( b > 0 && b <= %sLAST ) { \n", $MTYPE_PREFIX);
     printf(CFILE_MTYPES "    return %sname(b); \n", $MTYPE_PREFIX);
     printf(CFILE_MTYPES "  } else { \n");
-    printf(CFILE_MTYPES "    sprintf (buf, \"BETYPE_\%1d\", b); \n");
+    printf(CFILE_MTYPES "    sprintf (buf, \"BETYPE_%s\", b); \n", "%1d");
     printf(CFILE_MTYPES "    return buf; \n");
     printf(CFILE_MTYPES "  } \n");
     printf(CFILE_MTYPES "} \n\n");
