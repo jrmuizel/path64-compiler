@@ -45,18 +45,21 @@ extern void EETARG_Save_Extra_Callee_Tns (OPS *ops);
 extern void EETARG_Restore_Extra_Callee_Tns (OPS *ops);
 
 // target-specific adjustments to entry ops
-extern void CGTARG_Fixup_Entry_Code (BB *bb);
-
-//  Replace the call OP with a jump.
-extern OP *CGTARG_Build_Jump_Instead_Of_Call(OP *call_op);
-
-#ifdef USE_HIGH_LEVEL_PROCEDURE_EXIT
-extern OP* CGTARG_High_Level_Procedure_Exit();
-#else
-inline OP* CGTARG_High_Level_Procedure_Exit() { return NULL; }
+extern void EETARG_Fixup_Entry_Code (BB *bb);
+#ifdef TARG_ST100
+extern void EETARG_Fixup_Exit_Code (BB *bb);
 #endif
 
-extern void CGTARG_Init_Entry_Exit_Code (WN *, BOOL);
+//  Replace the call OP with a jump.
+extern OP *EETARG_Build_Jump_Instead_Of_Call(OP *call_op);
+
+#ifdef USE_HIGH_LEVEL_PROCEDURE_EXIT
+extern OP* EETARG_High_Level_Procedure_Exit();
+#else
+inline OP* EETARG_High_Level_Procedure_Exit() { return NULL; }
+#endif
+
+extern void EETARG_Init_Entry_Exit_Code (WN *, BOOL);
 
 
 
