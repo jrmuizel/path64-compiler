@@ -211,26 +211,8 @@ extern char *Isa_Name (TARGET_ISA target_isa);
 #define TARG_DWORD_ALIGN  8
 #define TARG_QUAD_ALIGN  16
 
-#if 0
-typedef enum _align {
-  _NONE_ALIGN = 0,
-  _BYTE_ALIGN = 1,
-  _CARD_ALIGN = 2,
-  _WORD_ALIGN = 4,
-  _DWORD_ALIGN = 8,
-  _QUAD_ALIGN = 16
-} ALIGN;  
-
-/* 
- * Alignment is target dependent and should be specified as such on
- * each target for each MTYPE. This would require changes to the
- * compiler including FE changes. For now, I'll just use the
- * strongest alignment.
- */
-#endif
-
 /*
- * This alignment is used for aligning the stack segments
+ * Alignment used for aligning the stack segments
  */
 #define DEFAULT_STACK_ALIGNMENT 32
 
