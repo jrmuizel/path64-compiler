@@ -1,0 +1,18 @@
+BUILD_NEW=yes
+
+# to be able to build on the local file system in natively built cygwin open64
+# eg . SRC = /home/zoryj/Work/MdtComp/PRO64/osprey1.0/
+ifdef LOCAL_BUILD
+SRC            = please_set_src_location
+else
+SRC            = ../..
+endif
+
+BUILD_AREA     = ..
+BUILD_TOT      = $(SRC)
+BUILD_ROOTS    = TARGET
+BUILD_TYPE     = SHARED
+BUILD_OPTIMIZE = DEBUG
+BUILD_VARIANT  = DEFAULT
+BUILD_INSTALL  = DEFAULT
+BUILD_COMPILER = GNU
