@@ -51,7 +51,7 @@ include ../Makefile.build
 #
 #  Define build parameters
 #
-BUILD_BASE     = ../../libdwarf
+BUILD_BASE     = $(BUILD_TOT)/libdwarf
 
 #
 # Include a top-level makefile which will then include the module

@@ -50,7 +50,7 @@ include ../Makefile.build
 #
 #  Define build parameters
 #
-BUILD_BASE     = ../../targinfo
+BUILD_BASE     = $(BUILD_TOT)/targinfo
 
 #
 # Include a top-level makefile which will then include the module

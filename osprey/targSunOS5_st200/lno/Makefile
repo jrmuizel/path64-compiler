@@ -50,7 +50,7 @@ include ../Makefile.build
 #
 #  Define build parameters
 #
-BUILD_BASE     = ../../be/lno
+BUILD_BASE     = $(BUILD_TOT)/be/lno
 
 #
 # Include a top-level makefile which will then include the module

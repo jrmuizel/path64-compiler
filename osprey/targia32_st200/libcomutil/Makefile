@@ -51,7 +51,7 @@ include ../Makefile.build
 #
 #  Define build parameters
 #
-BUILD_BASE     = ../../common/util
+BUILD_BASE     = $(BUILD_TOT)/common/util
 
 #
 # Include a top-level makefile which will then include the module

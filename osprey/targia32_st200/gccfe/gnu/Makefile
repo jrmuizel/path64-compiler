@@ -51,9 +51,15 @@ include ../../Makefile.build
 #
 #  Define build parameters
 #
-BUILD_AREA     = ../..
+ifndef SRC_DIR
 BUILD_TOT      = ../../..
-BUILD_BASE     = ../../../gccfe/gnu
+endif
+
+ifndef BUILD_DIR
+BUILD_AREA     = ../..
+endif
+
+BUILD_BASE     = $(BUILD_TOT)/gccfe/gnu
 
 #
 # Include a top-level makefile which will then include the module

@@ -50,7 +50,7 @@ include ../Makefile.build
 #
 #  Define build parameters
 #
-BUILD_BASE     = ../../ipa/local
+BUILD_BASE     = $(BUILD_TOT)/ipa/local
 
 #
 # Include a top-level makefile which will then include the module

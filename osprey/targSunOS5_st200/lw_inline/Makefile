@@ -47,7 +47,7 @@ include ../Makefile.platforms
 #
 include ../Makefile.build
 
-BUILD_BASE     = ../../ipa/lw_inline
+BUILD_BASE     = $(BUILD_TOT)/ipa/lw_inline
 
 #
 # Include a top-level makefile which will then include the module

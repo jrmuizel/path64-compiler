@@ -50,7 +50,7 @@ include ../Makefile.build
 #
 #  Define build parameters
 #
-BUILD_BASE     = ../../ir_tools
+BUILD_BASE     = $(BUILD_TOT)/ir_tools
 
 #
 # Include a top-level makefile which will then include the module
