@@ -510,4 +510,183 @@ main (int argc, char *argv[])
 
   Machine_Done("st220.c"); 
 
+  /* ======================================================
+   * Resource description for the ISA_SUBSET_st200 
+   * ======================================================
+   */ 
+
+  Machine("st200", ISA_SUBSET_st200, argc, argv); 
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class ALU 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("ALU", 
+		 TOP_UNDEFINED); 
+
+  Any_Result_Available_Time(-1); 
+  Any_Operand_Access_Time(-1); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class ALU_IMM 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("ALU_IMM", 
+		 TOP_UNDEFINED); 
+
+  Any_Result_Available_Time(-1); 
+  Any_Operand_Access_Time(-1); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class MUL 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("MUL", 
+		 TOP_UNDEFINED); 
+
+  Any_Result_Available_Time(-1); 
+  Any_Operand_Access_Time(-1); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class MUL_IMM 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("MUL_IMM", 
+		 TOP_UNDEFINED); 
+
+  Any_Result_Available_Time(-1); 
+  Any_Operand_Access_Time(-1); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class LOAD 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("LOAD", 
+		 TOP_UNDEFINED); 
+
+  Any_Result_Available_Time(-1); 
+  Any_Operand_Access_Time(-1); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class LOAD_IMM 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("LOAD_IMM", 
+		 TOP_UNDEFINED); 
+
+  Any_Result_Available_Time(-1); 
+  Any_Operand_Access_Time(-1); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class LOAD2 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("LOAD2", 
+		 TOP_UNDEFINED); 
+
+  Any_Result_Available_Time(-1); 
+  Any_Operand_Access_Time(-1); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class LOAD2_IMM 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("LOAD2_IMM", 
+		 TOP_UNDEFINED); 
+
+  Any_Result_Available_Time(-1); 
+  Any_Operand_Access_Time(-1); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class STORE 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("STORE", 
+		 TOP_UNDEFINED); 
+
+  Any_Operand_Access_Time(-1); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class STORE_IMM 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("STORE_IMM", 
+		 TOP_UNDEFINED); 
+
+  Any_Operand_Access_Time(-1); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class EXT 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("EXT", 
+		 TOP_UNDEFINED); 
+
+  Any_Operand_Access_Time(-1); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class BRANCH 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("BRANCH", 
+		 TOP_UNDEFINED); 
+
+  Any_Operand_Access_Time(-1); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class CALL 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("CALL", 
+		 TOP_UNDEFINED); 
+
+  Any_Result_Available_Time(-1); 
+  Any_Operand_Access_Time(-1); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class JUMP 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("JUMP", 
+		 TOP_UNDEFINED); 
+
+  Any_Operand_Access_Time(-1); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class simulated 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("simulated", 
+		 TOP_asm, 
+		 TOP_spadjust, 
+		 TOP_UNDEFINED); 
+
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class ssa 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("ssa", 
+		 TOP_phi, 
+		 TOP_psi, 
+		 TOP_UNDEFINED); 
+
+
+  Machine_Done("st200.c"); 
+
 }
