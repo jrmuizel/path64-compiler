@@ -201,7 +201,13 @@ sub op_signature {
 	$signature = 'dest:Int3R:src1,src2';
     }
     elsif ($format eq 'Int3I') {
-	$signature = 'idest:Int3I:src1,isrc2';
+	# special case of sub_i:
+	if ($OP_mnemonic[$opcode] eq 'sub') {
+	    $signature = 'idest:Int3I:isrc2,src1';
+	}
+	else {
+	    $signature = 'idest:Int3I:src1,isrc2';
+	}
     }
     elsif ($format eq 'Cmp3R_Reg') {
 	$signature = 'dest:Cmp3R_Reg:src1,src2';
@@ -283,6 +289,21 @@ sub op_print {
     my $format = $OP_format[$opcode];
     my $syntax = $OP_syntax[$opcode];
     my $signature;
+
+    # special case of sub_i:
+    if (($format eq 'Int3I') && 
+	($OP_mnemonic[$opcode] eq 'sub')) {
+	$OP_results[$opcode] = 1;
+	$OP_opnds[$opcode] = 2;
+	$OP_res[$opcode][0]{'fmt'} = '%s';
+	$OP_opnd[$opcode][0]{'fmt'} = '%d';
+	$OP_opnd[$opcode][1]{'fmt'} = '%s';
+	$signature = "R0:%s_=_O0:%d_,_O1:%s";
+
+	print STDOUT " syntax: $syntax \n";
+	print STDOUT " signature: $signature \n";
+	return $signature;
+    }
 
     # First get formats of all operands:
 
