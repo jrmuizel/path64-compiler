@@ -3245,9 +3245,7 @@ OK:
     }
     elsif ($scdclass eq 'SYNC') {
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
-      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
-      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
-      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['MEM', 0 ]);
     }
     elsif ($scdclass eq 'asm') {
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
@@ -3260,6 +3258,8 @@ OK:
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ODD', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['XFER', 0 ]);
     }
     else {
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
@@ -4796,7 +4796,7 @@ sub read_opcodes {
   &DECL_EXEC_SLOT ("EXT2", "ALU_IMM,MUL_IMM,LOAD_IMM,LOAD2_IMM,STORE_IMM"); # Long immediate in slot 2-3
   &DECL_EXEC_SLOT ("Odd",  "MUL");                # Multiplies in slot 1 or 3
   &DECL_EXEC_SLOT ("Even", "EXT");               # Multiplies in slot 1 or 3
-  &DECL_EXEC_SLOT ("ReqS0", "BRANCH,JUMP,CALL"); 
+  &DECL_EXEC_SLOT ("ReqS0", "BRANCH,JUMP,CALL,getpc"); 
 
   # Declare bundle (name, size_in_bits, temp_bits, num_slots, [slots 0..N]).
   &DECL_BUNDLE("st200", 128, "0,0,0", 4, "0,0,32", "1,32,32", "2,64,32", "3,96,32");

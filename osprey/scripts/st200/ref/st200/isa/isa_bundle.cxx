@@ -1172,6 +1172,7 @@ main()
 		 TOP_call, 
 		 TOP_icall, 
 		 TOP_rfi, 
+		 TOP_getpc, 
 		 TOP_UNDEFINED); 
 
   /* === All legal bundle orderings (11 of them) are specified below. */ 
