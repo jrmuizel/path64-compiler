@@ -435,7 +435,12 @@ Preconfigure_Target ( void )
   // simple if-conversion at CFG build time 
   //  WOPT_Enable_Simple_If_Conv = TRUE;
 
-  // Overwrite some CG defaults: temporarily until I can enable it
+  // Overwrite some CG defaults: 
+
+  // Generate floating point constants directly in the code
+  CG_floating_const_in_memory = FALSE;
+
+  // temporarily until I can enable it
   Enable_CG_Peephole = FALSE;
 #endif
 

@@ -38,6 +38,7 @@ static const char *asmname(TOP topcode)
   case TOP_ffixup: return "ffixup"; 
   case TOP_ifixup: return "ifixup"; 
   case TOP_label: return "label"; 
+  case TOP_icall: return "call"; 
   default: break; 
   } 
 
