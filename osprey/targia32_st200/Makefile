@@ -64,18 +64,18 @@ LIBRARY_SUBDIRS =  \
 #  Note that be_driver must come last since it depends on other components
 #  being built first.
 #
-TOOL_SUBDIRS = \
-	gccfe \
-	be \
-	lai \
-	wopt \
-	driver \
-        ipl    \
-        whirl2c \
-        ir_tools \
-	lno \
-        lw_inline
+TOOL_SUBDIRS = 		\
+	driver 		\
+	gccfe 		\
+	be 		\
+	lw_inline 	\
+	lai		\
+	wopt
 
+#	ipl	\
+#        whirl2c \
+#        ir_tools \
+#	lno \
 #	dwarfdump \
 #	elfdump \
 #	whirl2f \
@@ -87,6 +87,6 @@ default install clean clobber:
 	@for d in $(SUBDIRS); do \
 	    if [ -d $$d ] ; then \
 	    	echo "===> cd $$d; $(MAKE) $@"; \
-	    	(cd $$d; $(MAKE) $@) || exit 1; \
+	    	cd $$d; $(MAKE) $@; \
 	    fi; \
 	done
