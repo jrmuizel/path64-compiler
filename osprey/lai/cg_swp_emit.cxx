@@ -359,6 +359,7 @@ void SWP_REG_ASSIGNMENT::Update_Annotation(ROTATING_KERNEL_INFO *info)
     REGISTER_SET tmp = REGISTER_CLASS_allocatable(i);
     tmp = REGISTER_SET_Difference(tmp, non_rotating_reg[i]);
 
+#ifdef TARG_IA64
     if (i != ISA_REGISTER_CLASS_integer) {
       // assume all rotating registers are killed 
       // for some reason, rotating reg are not in REGISTER_CLASS_allocatable()?
@@ -366,6 +367,7 @@ void SWP_REG_ASSIGNMENT::Update_Annotation(ROTATING_KERNEL_INFO *info)
 			       REGISTER_SET_Range(rotating_reg_base[i],
 						  rotating_reg_base[i] + rotating_reg_avail[i] - 1));
     }
+#endif
 
     ROTATING_KERNEL_INFO_live_in(info)[i] = tmp;
     ROTATING_KERNEL_INFO_kill(info)[i] = tmp;
