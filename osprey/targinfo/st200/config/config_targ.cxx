@@ -427,6 +427,9 @@ Preconfigure_Target ( void )
 
   // Overwrite some WOPT defaults:
 
+  // Do not use the extract/compose whirl ops. See Enable_extract_compose
+  WOPT_Enable_Bits_Load_Store = FALSE;
+
   // do don't have a divrem instruction or runtime call.
   WOPT_Enable_DIVREM = FALSE;
 
@@ -440,9 +443,6 @@ Preconfigure_Target ( void )
   //       hardware loop counters
   //
   WOPT_Enable_LFTR2 = FALSE;
-
-  // simple if-conversion at CFG build time 
-  //  WOPT_Enable_Simple_If_Conv = TRUE;
 
   // Overwrite some CG defaults: 
 
