@@ -43,10 +43,6 @@ LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions);
 bool
 LAO_optimize(HB *hb, unsigned lao_actions);
 
-void
-LAO_INIT();
-void
-LAO_FINI();
 
 // Must be IDENTICAL to enum LOOP_OPT_ACTION in lai/cg_loop.cxx
 enum LAO_SWP_ACTION {
@@ -58,10 +54,10 @@ enum LAO_SWP_ACTION {
   MULTI_BB_DOLOOP
 };
 
-void LAOS_printCGIR();
+bool
+LAO_scheduleRegion ( vector<BB>& entryBBs, vector<BB>& regionBBs, vector<BB>& exitBBs, LAO_SWP_ACTION action );
 
-bool LAO_scheduleRegion ( vector<BB>& entryBBs, vector<BB>& regionBBs, vector<BB>& exitBBs, LAO_SWP_ACTION action );
-
-bool Perform_SWP ( CG_LOOP& cl, LAO_SWP_ACTION action );
+bool
+Perform_SWP ( CG_LOOP& cl, LAO_SWP_ACTION action );
 
 #endif /* laostub_INCLUDED */
