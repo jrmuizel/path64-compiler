@@ -240,7 +240,8 @@ extern BOOL PTR_packed_arithmetic;
 extern BOOL BOOL_packed_arithmetic;
 extern BOOL FP_packed_arithmetic;
 
-#define ARCH_recip_is_exact TRUE
+// don't try to canonalize 1/a. On st200 recip is implemented with a divide.
+#define ARCH_recip_is_exact FALSE
 #define ARCH_has_bit_tests TRUE
 
 /* default value for WHIRL_Keep_Cvt */
