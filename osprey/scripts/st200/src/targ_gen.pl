@@ -439,6 +439,9 @@ sub set_variant {
     elsif ($format eq 'mfb') {
 	$variant = "";
     }
+    elsif ($format eq 'Asm') {
+	$variant = "";
+    }
     elsif ($format eq 'Noop') {
 	$variant = "";
     }
@@ -564,6 +567,10 @@ sub set_operands {
     elsif ($format eq 'mfb') {
 	$OP_results[$opcode] = 1;
 	$OP_opnds[$opcode] = 1;
+    }
+    elsif ($format eq 'Asm') {
+	$OP_results[$opcode] = 0;
+	$OP_opnds[$opcode] = 0;
     }
     elsif ($format eq 'Noop') {
 	$OP_results[$opcode] = 0;
@@ -718,6 +725,9 @@ sub set_signature {
     elsif ($format eq 'mfb') {
 	$signature = 'idest:mfb:scond';
     }
+    elsif ($format eq 'Asm') {
+	$signature = ':asm:';
+    }
     elsif ($format eq 'Noop') {
 	$signature = ':nop:';
     }
@@ -866,6 +876,9 @@ sub set_pack {
     }
     elsif ($format eq 'mfb') {
 	$pack = 'mfb';
+    }
+    elsif ($format eq 'Asm') {
+	$pack = 'asm';
     }
     elsif ($format eq 'Noop') {
 	$pack = 'nop';
@@ -1016,6 +1029,8 @@ sub set_print {
     elsif ($format eq 'mfb') {
 	$OP_res[$opcode][0]{'fmt'} = '%s';
 	$OP_opnd[$opcode][0]{'fmt'} = '%s';
+    }
+    elsif ($format eq 'Asm') {
     }
     elsif ($format eq 'Noop') {
     }
@@ -2644,8 +2659,7 @@ sub emit_pack_info {
 	my $opnds;
 
 	# find corresponding PACK
-	my $i;
-	for ($i = 0; $i < $PACK_count; $i++) {
+	for (my $i = 0; $i < $PACK_count; $i++) {
 	    if ($PACK_type[$i] eq $group) {
 		goto BREAK;
 	    }
@@ -3383,6 +3397,9 @@ FOUND_OPCODE:
 
     # resources corresponds to a scheduling class:
     if ($resources eq 'ALU') {
+	$scdclass = 'ALU';
+    }
+    elsif ($resources eq 'ASM') {
 	$scdclass = 'ALU';
     }
     elsif ($resources eq 'MUL') {
@@ -4573,8 +4590,8 @@ sub read_opcodes {
 
   &DECL_ARCHITECTURE("st200");
 
-  &DECL_ISA_SUBSET ("NULL", "st220");
-  &DECL_ISA_SUBSET ("st220", "st200");
+  &DECL_ISA_SUBSET ("NULL", $subset);
+  &DECL_ISA_SUBSET ($subset, "st200");
 
 #  &DECL_ISA_SUBSET (st220, "st210");
 #  &DECL_ISA_SUBSET (st210, "st200");
@@ -4993,6 +5010,8 @@ sub read_opcodes {
   &DECL_PACK_TYPE ("Monadic", 1, 1, "Monadic: dest = src1");
     &PACK_RESULT (0, 0, 12, 6);
     &PACK_OPERAND (0, 0, 0, 6);
+  &DECL_PACK_TYPE ("asm", 0, 1, "asm: imm");
+    &PACK_OPERAND (0, 0, 0, 23);
 
   ###############################################################
   #                       PROCESSING
