@@ -52,7 +52,7 @@ include ../Makefile.build
 #
 #  Define build parameters
 #
-BUILD_BASE     = ../../libcmplrs
+BUILD_BASE     = $(BUILD_TOT)/libcmplrs
 
 #
 # Include a top-level makefile which will then include the module

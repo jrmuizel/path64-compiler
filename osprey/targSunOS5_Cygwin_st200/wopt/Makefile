@@ -50,7 +50,7 @@ include ../Makefile.build
 #
 #  Define build parameters
 #
-BUILD_BASE     = ../../be/opt
+BUILD_BASE     = $(BUILD_TOT)/be/opt
 
 
 #

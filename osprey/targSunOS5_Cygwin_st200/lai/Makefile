@@ -50,7 +50,7 @@ include ../Makefile.build
 #
 #  Define build parameters
 #
-BUILD_BASE     = ../../lai
+BUILD_BASE     = $(BUILD_TOT)/lai
 
 
 #

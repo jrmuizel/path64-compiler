@@ -47,7 +47,7 @@ include ../Makefile.platforms
 #
 include ../Makefile.build
 
-BUILD_BASE     = ../../driver
+BUILD_BASE     = $(BUILD_TOT)/driver
 
 #
 # Include a top-level makefile which will then include the module

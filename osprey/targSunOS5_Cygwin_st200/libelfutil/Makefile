@@ -51,7 +51,7 @@ include ../Makefile.build
 #
 #  Define build parameters
 #
-BUILD_BASE     = ../../libelfutil
+BUILD_BASE     = $(BUILD_TOT)/libelfutil
 
 #
 # Include a top-level makefile which will then include the module
