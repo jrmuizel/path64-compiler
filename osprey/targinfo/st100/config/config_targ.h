@@ -170,6 +170,51 @@ extern char *Isa_Name (TARGET_ISA target_isa);
 /* maximum gspace (gp-relative) size */
 #define DEFAULT_GSPACE		0x3fffff
 
+/* How big is a large object? */
+#define DEFAULT_LARGE_OBJECT_BYTES	64
+
+/*
+ * fixed part of the stack offset adjustment
+ */
+#define STACK_OFFSET_ADJUSTMENT         0
+
+/* 
+ * largest signed offset possible in small-frame stack model:
+ * 2^9 words = 11 bits
+ */
+#define MAX_SMALL_FRAME_OFFSET  0x7ff    // 11 bits
+
+/*
+ * Since the largest offset allowed is 11 bits
+ */
+#define DEFAULT_TEMP_SPACE_BYTES        1024
+
+/*
+ * Default, maximal area that may be needed to home formal arguments
+ * passed in registers (4 longs + 3 ptrs)
+ */
+#define DEFAULT_FORMAL_SAVE_AREA_SIZE   44
+
+#define MAX_SFSEG_BYTES		0x7FFFFFFFFFFFFFFFLL
+
+#define MAX_LARGE_FRAME_OFFSET	0x7FFFFFFFFFFFFFFFLL	// 64bits on all targs
+
+typedef enum _align {
+  _BYTE_ALIGN = 1,
+  _CARD_ALIGN = 2,
+  _WORD_ALIGN = 4,
+  _DWORD_ALIGN = 8,
+  _QUAD_ALIGN = 16
+} ALIGN;  
+
+/* 
+ * Alignment is target dependent and should be specified as such on
+ * each target for each MTYPE. This would require changes to the
+ * compiler including FE changes. For now, I'll just use the
+ * strongest alignment.
+ */
+#define DEFAULT_STACK_ALIGNMENT _WORD_ALIGN
+
 /* ====================================================================
  *
  * Miscellaneous options
