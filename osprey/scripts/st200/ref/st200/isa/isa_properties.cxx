@@ -51,6 +51,7 @@ main()
     simulated,
     dummy,
     var_opnds,
+    barrier,
     dismissible,
     xfer,
     move,
@@ -110,6 +111,27 @@ main()
 		 TOP_and_r, 
 		 TOP_and_i, 
 		 TOP_and_ii, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
+  barrier = ISA_Property_Create ("barrier"); 
+  Instruction_Group (barrier, 
+		 TOP_break, 
+		 TOP_prgadd_i, 
+		 TOP_prgadd_ii, 
+		 TOP_prgins, 
+		 TOP_prginspg_i, 
+		 TOP_prginspg_ii, 
+		 TOP_prgset_i, 
+		 TOP_prgset_ii, 
+		 TOP_pswset_r, 
+		 TOP_pswclr_r, 
+		 TOP_sbrk, 
+		 TOP_sync, 
+		 TOP_syscall, 
+		 TOP_syncins, 
+		 TOP_bwd_bar, 
+		 TOP_fwd_bar, 
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 

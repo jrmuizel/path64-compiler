@@ -168,6 +168,7 @@ my $OP_BRANCH      = 0x00000040;
 my $OP_JUMP        = 0x00000080;
 my $OP_IJUMP       = 0x00000100;
 my $OP_CALL        = 0x00000200;
+my $OP_BARRIER     = 0x00000400;
 my $OP_DISMISSIBLE = 0x00000800;
 my $OP_IMMEDIATE   = 0x00002000;
 my $OP_XFER        = 0x00004000;
@@ -2124,6 +2125,18 @@ sub sort_by_properties {
 
 	$OP_properties[$opcode] ^= $OP_CMP;
 	$OP_properties[$opcode] ^= $OP_INTOP;
+    }
+
+    if ($OP_mnemonic[$opcode] eq 'prgins'  ||
+	$OP_mnemonic[$opcode] eq 'syncins' ||
+	$OP_mnemonic[$opcode] eq 'break'   ||
+	$OP_mnemonic[$opcode] eq 'sbrk'    ||
+	$OP_mnemonic[$opcode] eq 'syscall' ||
+	$OP_mnemonic[$opcode] eq 'pswset'  ||
+	$OP_mnemonic[$opcode] eq 'pswclr'  ||
+	$OP_mnemonic[$opcode] eq 'fwd_bar' ||
+	$OP_mnemonic[$opcode] eq 'bwd_bar') {
+	$OP_properties[$opcode] ^= $OP_BARRIER;
     }
 
     return;
@@ -4257,9 +4270,11 @@ sub process_opcode {
 	   $OP_mnemonic[$opcode] eq 'prginspg' ||
 	   $OP_mnemonic[$opcode] eq 'prgset') {
 	# purge cache is marked as Store but is not
+	$OP_properties[$opcode] ^= $OP_BARRIER;
     }
     elsif ($OP_mnemonic[$opcode] eq 'sync') {
 	# sync is marked as Store but is not
+	$OP_properties[$opcode] ^= $OP_BARRIER;
     }
     else {
 	# set up properties:
@@ -4291,6 +4306,10 @@ sub process_opcode {
 	push(@{$AttrGroup{'store'}}, $OP_opcode[$opcode]);
 	push(@{$MemBytes{$OP_bytes[$opcode]}}, $OP_opcode[$opcode]);
 	push(@{$MemAlign{$OP_align[$opcode]}}, $OP_opcode[$opcode]);
+    }
+
+    if ($OP_properties[$opcode] & $OP_BARRIER) {
+	push(@{$AttrGroup{'barrier'}}, $OP_opcode[$opcode]);
     }
 
     if ($OP_properties[$opcode] & $OP_DISMISSIBLE) {
@@ -4746,6 +4765,7 @@ GetOptions ( "s=s" => \@targets, "o=s" => \$archdir);
   &DECL_ISA_PROPERTY("var_opnds");
 
   # Some additional properties:
+  &DECL_ISA_PROPERTY("barrier");
   &DECL_ISA_PROPERTY("dismissible");
   &DECL_ISA_PROPERTY("xfer");
   &DECL_ISA_PROPERTY("move");
@@ -5195,7 +5215,7 @@ GetOptions ( "s=s" => \@targets, "o=s" => \$archdir);
   &initialize_properties_file ($archdir);
   &initialize_print_file ($archdir);
   &initialize_pack_file ($archdir);
-  &initialize_bundle_file ($archdir);
+#  &initialize_bundle_file ($archdir);
   &initialize_decode_file ($archdir);
 
   #BD3 TODO: Is it necessary?
@@ -5236,7 +5256,7 @@ GetOptions ( "s=s" => \@targets, "o=s" => \$archdir);
       &emit_scdinfo ($sub);
   } # for each subset
 
-  &emit_bundle_info ();
+#  &emit_bundle_info ();
 
   # these are completely dummy, not used for now in the compiler:
   &emit_decode_info ();
@@ -5256,7 +5276,7 @@ GetOptions ( "s=s" => \@targets, "o=s" => \$archdir);
   &finalize_properties_file ();
   &finalize_print_file ();
   &finalize_pack_file ();
-  &finalize_bundle_file ();
+#  &finalize_bundle_file ();
   &finalize_decode_file ();
 
   &finalize_op_file();
