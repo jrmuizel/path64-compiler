@@ -3220,7 +3220,12 @@ LAI_Emit_PU (
 
   cur_section = NULL;
 
+  // I cannot do this while it is constantly changing !
+  // When they learn to work out the specs and abide by them,
+  // and communicate, I might enable this again, Arthur.
+  /*
   emit_function_prototypes ();
+  */
 
   // initialize any new global sections:
   // We don't do this in LAI_Begin_File because may not have done
