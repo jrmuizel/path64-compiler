@@ -20,6 +20,7 @@
 #include "config.h"
 #include "errors.h"
 #include "cg_loop.h"
+#include "hb.h"
 
 // LAO_EXPERIMENT
 // Replicates enum CodeRegion_Action in LIR_CodeRegion.h
@@ -36,8 +37,12 @@ enum LAO_Action {
 };
 
 // LAO_EXPERIMENT
+// Optimize a LOOP_DESCR through the LAO.
 bool
 LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions);
+
+bool
+LAO_optimize(HB *hb, unsigned lao_actions);
 
 void
 LAO_INIT();

@@ -475,43 +475,57 @@ LAO_BB_BasicBlock(BB *bb) {
       Operation operation = LAO_OP_Operation(op);
       Interface_appendBasicBlockOperation(interface, basicblock, operation);
     }
-    // the BasicBlock livein
-    for (TN *tn = GTN_SET_Choose(BB_live_in(bb));
-	 tn != GTN_SET_CHOOSE_FAILURE;
-	 tn = GTN_SET_Choose_Next(BB_live_in(bb), tn)) {
-      TempName tempname = LAO_TN_TempName(tn);
-      Interface_setLiveIn(interface, basicblock, tempname);
-    }
-    // the BasicBlock liveout
-    for (TN *tn = GTN_SET_Choose(BB_live_out(bb));
-	 tn != GTN_SET_CHOOSE_FAILURE;
-	 tn = GTN_SET_Choose_Next(BB_live_out(bb), tn)) {
-      TempName tempname = LAO_TN_TempName(tn);
-      Interface_setLiveOut(interface, basicblock, tempname);
-    }
   }
   return basicblock;
 }
 
 // Enter the control-flow arcs in the LAO.
 void
-LAO_setControlArc(BasicBlockHandle handle, va_list va) {
-  BBLIST *succs = NULL;
+LAO_mapControlArc(BasicBlockHandle handle, va_list va) {
+  BBLIST *bblist = NULL;
   BB *bb = (BB *)BasicBlockHandle_pointer(handle);
   BasicBlock basicblock = BasicBlockHandle_basicblock(handle);
-  FOR_ALL_BB_SUCCS(bb, succs) {
-    BB *succ_bb = BBLIST_item(succs);
+  FOR_ALL_BB_SUCCS(bb, bblist) {
+    BB *succ_bb = BBLIST_item(bblist);
     BasicBlock succ_basicblock = Interface_getBasicBlock(interface, succ_bb);
     if (succ_basicblock != NULL) {
-      Interface_makeControlArc(interface, basicblock, succ_basicblock);
+      float probability = BBLIST_prob(bblist);
+      Interface_makeControlArc(interface, basicblock, succ_basicblock, probability);
     }
   }
 }
 
-// Enter the control-flow arcs in the LAO.
+// Enter the live-in information in the LAO.
+void
+LAO_mapLiveIn(BasicBlockHandle handle, va_list va) {
+  BB *bb = (BB *)BasicBlockHandle_pointer(handle);
+  BasicBlock basicblock = BasicBlockHandle_basicblock(handle);
+  for (TN *tn = GTN_SET_Choose(BB_live_in(bb));
+       tn != GTN_SET_CHOOSE_FAILURE;
+       tn = GTN_SET_Choose_Next(BB_live_in(bb), tn)) {
+    TempName tempname = LAO_TN_TempName(tn);
+    Interface_setLiveIn(interface, basicblock, tempname);
+  }
+}
+
+// Enter the live-out information in the LAO.
+void
+LAO_mapLiveOut(BasicBlockHandle handle, va_list va) {
+  BB *bb = (BB *)BasicBlockHandle_pointer(handle);
+  BasicBlock basicblock = BasicBlockHandle_basicblock(handle);
+  for (TN *tn = GTN_SET_Choose(BB_live_out(bb));
+       tn != GTN_SET_CHOOSE_FAILURE;
+       tn = GTN_SET_Choose_Next(BB_live_out(bb), tn)) {
+    TempName tempname = LAO_TN_TempName(tn);
+    Interface_setLiveOut(interface, basicblock, tempname);
+  }
+}
+
+// Optimize through the LAO.
 bool
 LAO_optimize(unsigned lao_actions) {
-  return Interface_optimize(interface, lao_actions);;
+  Interface_mapBasicBlockHandles(interface, LAO_mapControlArc);
+  return Interface_optimize(interface, lao_actions);
 }
 
 // Optimize a LOOP_DESCR through the LAO.
@@ -552,9 +566,15 @@ LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
     Interface_makeCodeRegion(interface, CodeRegion_InnerLoop);
     Interface_setEntry(interface, Interface_getBasicBlock(interface, CG_LOOP_prolog_start));
     Interface_setExit(interface, Interface_getBasicBlock(interface, CG_LOOP_epilog_end));
-    Interface_mapBasicBlockHandles(interface, LAO_setControlArc);
     result = LAO_optimize(lao_actions);
   }
+  return result;
+}
+
+// Optimize a HB through the LAO.
+bool
+LAO_optimize(HB *hb, unsigned lao_actions) {
+  bool result = false;
   return result;
 }
 
@@ -636,7 +656,7 @@ BB_LIRcreateEdges ( BB *src, BB *dst ) {
 
   Is_True((src != NULL) && (dst != NULL), ("BB_map internal ERROR."));
 
-  Interface_makeControlArc(interface, srcLIR, dstLIR);
+  Interface_makeControlArc(interface, srcLIR, dstLIR, (float)0.0);
 }
 
 static CodeRegion
