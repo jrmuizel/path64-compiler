@@ -87,6 +87,6 @@ default install clean clobber:
 	@for d in $(SUBDIRS); do \
 	    if [ -d $$d ] ; then \
 	    	echo "===> cd $$d; $(MAKE) $@"; \
-	    	cd $$d; $(MAKE) $@; cd ..; \
+	    	(cd $$d; $(MAKE) $@) || exit 1; \
 	    fi; \
 	done
