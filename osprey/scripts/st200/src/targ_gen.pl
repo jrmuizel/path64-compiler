@@ -2086,6 +2086,7 @@ sub sort_by_properties {
       if ($OP_mnemonic[$opcode] eq 'mul32') {
 	  $OP_properties[$opcode] ^= $OP_MUL;
       }
+      $OP_properties[$opcode] ^= $OP_INTOP;
     }
 
     if ($OP_format[$opcode] eq 'Monadic') {
