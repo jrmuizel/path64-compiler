@@ -101,7 +101,7 @@ typedef enum {
   ABI_ST200	/* 32-bit */
 } TARGET_ABI;
 
-extern TARGET_ABI Target_ABI;
+BE_EXPORTED extern TARGET_ABI Target_ABI;
 
 /* ================ */
 /* Target processor */
@@ -115,10 +115,10 @@ typedef enum {
   TARGET_st220	        /* st220 */
 } TARGET_PROCESSOR;
 
-extern TARGET_PROCESSOR Target;		/* -Tc */
+BE_EXPORTED extern TARGET_PROCESSOR Target;		/* -Tc */
 
 /* return the target name for <target> */
-extern char *Targ_Name (TARGET_PROCESSOR target);
+BE_EXPORTED extern char *Targ_Name (TARGET_PROCESSOR target);
 
 #define Is_Target_st220()	(Target==TARGET_st220)
 
@@ -132,10 +132,10 @@ typedef enum {
   TARGET_ISA_ST200
 } TARGET_ISA;
 
-extern TARGET_ISA Target_ISA;	/* -Tc.Rc */
+BE_EXPORTED extern TARGET_ISA Target_ISA;	/* -Tc.Rc */
 
 /* return the ISA name corresponding to <target_isa> */
-extern char *Isa_Name (TARGET_ISA target_isa);
+BE_EXPORTED extern char *Isa_Name (TARGET_ISA target_isa);
 
 #define Is_Target_ISA_ST200()	(Target_ISA==TARGET_ISA_ST200)
 
@@ -232,14 +232,14 @@ extern char *Isa_Name (TARGET_ISA target_isa);
    #defines are set in config_targ.h
 */
 
-extern BOOL ARCH_mask_shift_counts;
-extern BOOL ARCH_generate_nor;
+BE_EXPORTED extern BOOL ARCH_mask_shift_counts;
+BE_EXPORTED extern BOOL ARCH_generate_nor;
 
 
-extern BOOL INT_packed_arithmetic;
-extern BOOL PTR_packed_arithmetic;
-extern BOOL BOOL_packed_arithmetic;
-extern BOOL FP_packed_arithmetic;
+BE_EXPORTED extern BOOL INT_packed_arithmetic;
+BE_EXPORTED extern BOOL PTR_packed_arithmetic;
+BE_EXPORTED extern BOOL BOOL_packed_arithmetic;
+BE_EXPORTED extern BOOL FP_packed_arithmetic;
 
 // don't try to canonalize 1/a. On st200 recip is implemented with a divide.
 #define ARCH_recip_is_exact FALSE
