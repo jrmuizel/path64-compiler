@@ -56,7 +56,7 @@ CG_EXPORTED extern void (*lao_fini_p)();
  * This function is recognized by the Linux linker and placed in the
  * .init section of the .so. Thus, executed upon mapping the .so
  */
-struct LAO_INITIALIZE {
+struct LAO_INIT {
   LAO_INIT () {
     lao_init_p = lao_init;
     lao_fini_p = lao_fini;
