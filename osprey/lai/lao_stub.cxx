@@ -633,7 +633,7 @@ bool LAO_scheduleRegion ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs , LAO_S
 
   lir_region = REGION_convert2LIR(entryBBs, exitBBs, regionBBs);
 
-  CodeRegion_pretty(lir_region, stderr);
+  CodeRegion_pretty(lir_region, TFile);
 
   //  status = REGION_schedule(lir_region);
 
@@ -647,6 +647,8 @@ bool LAO_scheduleRegion ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs , LAO_S
   return (status == 0);
 }
 
+void LAOS_printCGIR(void);
+
 bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
   LOOP_DESCR *loop = cl.Loop();
   BB *bb;
@@ -654,9 +656,11 @@ bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
   int entryIdx, regionIdx, exitIdx;
   bool res;
 
+  LAOS_printCGIR();
+
   fprintf(TFile, "---- Before LAO schedule loop ----\n");
-  fprintf(TFile, "     ----- LOOP id %2d -----\n", BB_id(LOOP_DESCR_loophead(loop)));
-  fprintf(TFile, "           ----------\n");
+  fprintf(TFile, "     ------ LOOP id %2d ------\n", BB_id(LOOP_DESCR_loophead(loop)));
+  fprintf(TFile, "            -----------\n");
 
   int scan;
   scanf("%d", &scan);
@@ -675,6 +679,11 @@ bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
     
   entryBBs[entryIdx] = exitBBs[exitIdx] = regionBBs[regionIdx] = NULL;
       
+  fprintf(TFile, "--------------- dpendence graph for %d ---------------\n", BB_id(regionBBs[1]));
+  // CG_DEP_Compute_Region_Graph
+  CYCLIC_DEP_GRAPH cyclic_graph( regionBBs[1], &MEM_lao_pool); 
+  CG_DEP_Trace_Graph(regionBBs[1]);
+
   res = LAO_scheduleRegion ( entryBBs, exitBBs, regionBBs, action );
 
   return res;
@@ -992,6 +1001,8 @@ void LAOS_printAlias()
     }
   }
 
+  fprintf(TFile, "--------------- Begin Print Alias ---------------\n");
+
   for (elt1 = memops; elt1; elt1 = elt1->next) {
     fprintf(TFile, "<Alias>"); LAOS_printOP(elt1->op); fprintf(TFile, "\n");
     for (elt2 = memops; elt2 != elt1; elt2 = elt2->next) {
@@ -1004,6 +1015,8 @@ void LAOS_printAlias()
     }
     fprintf(TFile, "</Alias>\n");
   }
+
+  fprintf(TFile, "---------------- End Print Alias ----------------\n");
 }
 
 void LAOS_printCGIR()
@@ -1016,7 +1029,7 @@ void LAOS_printCGIR()
     fprintf ( TFile,"\n" );
   }
 
-  //  LAOS_printAlias();
+  LAOS_printAlias();
 
   // Print live-analysis information
 
