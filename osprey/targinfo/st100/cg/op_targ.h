@@ -59,6 +59,25 @@
 #define TOP_is_likely(t)	 (FALSE)
 #define TOP_is_side_effects(t)   (FALSE)
 #define TOP_is_noop(t)           (t == TOP_noop)
+#define TOP_is_unalign_ld(t)     (FALSE)
+#define TOP_is_unalign_store(t)  (FALSE)
+#define TOP_is_defs_fcr(t)       (FALSE)
+#define TOP_is_defs_fcc(t)       (FALSE)
+#define TOP_is_refs_fcr(t)       (FALSE)
+#define TOP_is_select(t)         (FALSE)
+#define TOP_is_isub(t)           (FALSE)
+#define TOP_is_ior(t)            (FALSE)
+#define TOP_is_flop(t)           (FALSE)
+#define TOP_is_fadd(t)           (FALSE)
+#define TOP_is_fsub(t)           (FALSE)
+#define TOP_is_fmul(t)           (FALSE)
+#define TOP_is_fdiv(t)           (FALSE)
+#define TOP_is_imul(t)           (FALSE)
+#define TOP_is_idiv(t)           (FALSE)
+/* Instruction accesses rotating register bank */
+#define TOP_is_access_reg_bank(t) (FALSE)
+/* Result must not be same as operand */
+#define TOP_is_uniq_res(t)       (TRUE)
 
 /* Convenience access macros for properties of the OP */
 /* TODO: define all the macros for OP properties. */
@@ -97,12 +116,38 @@
 
 #define OP_has_predicate(o)     (TOP_is_predicated(OP_code(o)))
 
+#define OP_uncond(o)            (OP_xfer(o) && !OP_cond(o))
+
+#define OP_defs_fcr(o)		(TOP_is_defs_fcr(OP_code(o)))
+#define OP_defs_fcc(o)		(TOP_is_defs_fcc(OP_code(o)))
+#define OP_refs_fcr(o)		(TOP_is_refs_fcr(OP_code(o)))
+#define OP_select(o)		(TOP_is_select(OP_code(o)))
+#define OP_isub(o)		(TOP_is_isub(OP_code(o)))
+#define OP_ior(o)               (TOP_is_ior(OP_code(o)))
+#define OP_flop(o)		(TOP_is_flop(OP_code(o)))
+#define OP_fadd(o)		(TOP_is_fadd(OP_code(o)))
+#define OP_fsub(o)		(TOP_is_fsub(OP_code(o)))
+#define OP_fmul(o)		(TOP_is_fmul(OP_code(o)))
+#define OP_fdiv(o)		(TOP_is_fdiv(OP_code(o)))
+#define OP_imul(o)		(TOP_is_fmul(OP_code(o)))
+#define OP_idiv(o)		(TOP_is_fdiv(OP_code(o)))
+#define OP_access_reg_bank(o)	(TOP_is_access_reg_bank(OP_code(o)))
+#define OP_uniq_res(o)		(TOP_is_uniq_res(OP_code(o)))
+
+/* Hazard related stuff ?? where should this go ?? */
+#define OP_has_hazard(o)	(ISA_HAZARD_TOP_Has_Hazard(OP_code(o)))
+
 /* Is it an iadd OP ?:
  *  -- in oputil.cxx to determine if OP sets offset;
- *  -- in tnutil.cxx to 
+ *  -- in tnutil.cxx to ...
+ *
+ * OP_iadd(o) -- iadd is a isa_property that means integer add 
+ *               operator (see common/targ_info/ia64/isa_properties.cxx)
+ *               used in cg/cg_dep_graph.cxx (perhaps other places ??)
  */
 #define OP_is_iadd(o)           (FALSE)
 #define OP_is_ior(o)            (FALSE)
+#define OP_iadd(o)              (FALSE)
 
 #define OP_operand_info(o)	(ISA_OPERAND_Info(OP_code(o)))
 #define OP_immediate_opnd(o)	(TOP_Immediate_Operand(OP_code(o),NULL))

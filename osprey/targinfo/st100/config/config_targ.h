@@ -188,6 +188,13 @@ extern char *Isa_Name (TARGET_ISA target_isa);
 
 extern BOOL ARCH_mask_shift_counts;
 extern BOOL ARCH_generate_nor;
+
+
+extern BOOL INT_packed_arithmetic;
+extern BOOL PTR_packed_arithmetic;
+extern BOOL BOOL_packed_arithmetic;
+extern BOOL FP_packed_arithmetic;
+
 #define ARCH_recip_is_exact TRUE
 #define ARCH_has_bit_tests TRUE
 
@@ -200,6 +207,7 @@ extern BOOL ARCH_generate_nor;
  * ====================================================================
  */
 
+#define ACCESS_BYTES 4
 #define INST_BYTES 16
 
 inline INT

@@ -48,7 +48,7 @@
 #include "targ_sim.h"
 #include "register.h"
 #include "op.h"
-#include "lai_flags.h"
+#include "cg_flags.h"
 #include "calls.h"
 #include "cgtarget.h"
 #include "reg_live.h"

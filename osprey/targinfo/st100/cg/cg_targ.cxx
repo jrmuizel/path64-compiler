@@ -74,9 +74,12 @@
 #include "targ_proc_properties.h"
 #include "targ_isa_enums.h"
 #include "cgtarget.h"
-#include "expand.h"
+#include "calls.h"
+#include "cgexp.h"
 
 
+UINT32 CGTARG_branch_taken_penalty;
+BOOL CGTARG_branch_taken_penalty_overridden = FALSE;
 
 mTOP CGTARG_Inter_RegClass_Copy_Table[ISA_REGISTER_CLASS_MAX+1][ISA_REGISTER_CLASS_MAX+1][2];
 
@@ -135,6 +138,44 @@ CGTARG_Preg_Register_And_Class (
 
   FmtAssert(FALSE, ("failed to map preg %d", preg));
   /*NOTREACHED*/
+}
+
+/* ====================================================================
+ *   CGTARG_Compute_Branch_Parameters
+ * ====================================================================
+ */
+void 
+CGTARG_Compute_Branch_Parameters (
+  INT32 *mispredict, 
+  INT32 *fixed, 
+  INT32 *brtaken, 
+  double *factor
+)
+{
+  *mispredict = 0;
+  *fixed = 0;
+  *brtaken = 0;
+  *factor = 0.0;
+
+  if (Is_Target_ST120_v101())
+  {
+    *mispredict= 8; *fixed= 1; *brtaken= 1; *factor = 1.0;
+  }
+  else
+  {
+    FmtAssert(FALSE, ("CGTARG_Compute_Branch_Parameters: invalid target"));
+  }
+
+ /*
+  * override for command line options
+  *	-CG:mispredicted_branch=N
+  *	-CG:mispredicted_factor=N
+  */
+  if (CG_branch_mispredict_penalty >= 0)
+    *mispredict= CG_branch_mispredict_penalty ;
+
+  if (CG_branch_mispredict_factor >= 0)
+    *factor= CG_branch_mispredict_factor * (.01);
 }
 
 /* ====================================================================
@@ -381,6 +422,133 @@ CGTARG_Get_unc_Variant (
 }
 
 /* ====================================================================
+ *   CGTARG_Dependence_Required
+ * ====================================================================
+ */
+BOOL
+CGTARG_Dependence_Required (
+  OP *pred_op, 
+  OP *succ_op
+)
+{
+
+  BOOL read_write_predicate,	   // all TOPs which read/write predicate regs
+       write_predicate,		   // all TOPs which write predicate regs
+       read_write_status_field;    // all TOPs which read/write a specific
+                                   // status field regs
+
+  read_write_predicate = FALSE;
+  write_predicate = FALSE;
+  read_write_status_field = FALSE;
+
+  OP *hazard_op = NULL;
+
+  // The dependences that need to be preserved are:
+
+  // (1) fsetc.xx
+  // reads/writes to status field register 'xx' cannot move above/below
+  // this instruction.
+
+  /*
+  switch (OP_code(pred_op)) {
+    case TOP_fsetc:
+      read_write_status_field = TRUE;
+      hazard_op = succ_op;
+      break;
+    }
+    break;
+  }
+  */
+
+  if (hazard_op) {
+    OP *other_op = (hazard_op == pred_op) ? succ_op : pred_op;
+
+    // Special case other instruction being an fsetc instruction as 
+    // it has an implicit read of .s0 
+
+    TN *status_field; // the status field reg written by hazard_op
+    if (read_write_status_field) {
+      status_field = OP_opnd(hazard_op, 1);
+      //      if (OP_code(other_op) == TOP_fsetc &&
+      //	  TN_enum(status_field) == ECV_sf_s0) return TRUE;
+    }
+
+    INT k;
+    for (k = 0; k < OP_opnds(other_op); k++) {
+      TN *opnd_tn = OP_opnd(other_op, k);
+
+      if (TN_is_constant(opnd_tn)) {
+	if (read_write_status_field &&
+	    TN_is_enum(opnd_tn) &&
+	    TN_enum(opnd_tn) == TN_enum(status_field)) return TRUE;
+	continue;
+      }
+
+      if (TN_is_const_reg(opnd_tn)) continue;
+
+      REGISTER reg = TN_register(opnd_tn);
+      ISA_REGISTER_CLASS reg_class = TN_register_class(opnd_tn);
+
+      if (read_write_predicate &&
+	  reg_class == ISA_REGISTER_CLASS_guard) return TRUE;
+
+      if (reg == REGISTER_UNDEFINED) continue;
+    }
+
+    for (k = 0; k < OP_results(other_op); k++) {
+      TN *result_tn = OP_result(other_op, k);
+
+      if (TN_is_const_reg(result_tn)) continue;
+
+      REGISTER reg = TN_register(result_tn);
+      ISA_REGISTER_CLASS reg_class = TN_register_class(result_tn);
+
+      // can have conflict with op that writes to predicate,
+      // even though haven't assigned registers yet.
+      if (write_predicate &&
+	   reg_class == ISA_REGISTER_CLASS_guard) return TRUE;
+
+      if (reg == REGISTER_UNDEFINED) continue;
+    }
+  }
+
+  // The following descriptions below present target-specific ordering
+  // constraints that must be respected. They can't fit in the same
+  // instruction group.
+  //
+  // alloc
+  //
+  // WITH ANY OF THE BELOW
+  //
+  // flushrs, 
+  // move from ar.bpstore, 
+  // move from ar.rnat, 
+  // br.cexit, 
+  // br.ctop,
+  // br.wexit, 
+  // br.wtop, 
+  // br.call, 
+  // br.ia, 
+  // br.ret,
+  // clrrrb.
+
+  /*
+  if (OP_code(pred_op)  == TOP_alloc &&
+      (OP_code(succ_op) == TOP_flushrs ||
+       OP_code(succ_op) == TOP_br_cexit,
+       OP_code(succ_op) == TOP_br_ctop ||
+       OP_code(succ_op) == TOP_br_wexit ||
+       OP_code(succ_op) == TOP_br_wtop ||
+       OP_code(succ_op) == TOP_br_call ||
+       OP_code(succ_op) == TOP_br_ia ||
+       OP_code(succ_op) == TOP_br_ret ||
+       OP_code(succ_op) == TOP_clrrrb ||
+       OP_code(succ_op) == TOP_clrrrb_pr)) return TRUE;
+  */
+  return FALSE;
+}
+
+/* ====================================================================
  *   CGTARG_Init_OP_cond_def_kind
  * ====================================================================
  */
@@ -412,6 +580,27 @@ CGTARG_Init_OP_cond_def_kind (
       Set_OP_cond_def_kind(op, OP_ALWAYS_UNC_DEF);
     break;
   }
+}
+
+/* ====================================================================
+ *   CGTARG_Mem_Ref_Bytes
+ *
+ *   Requires: OP_load(memop) || OP_store(memop)
+ * ====================================================================
+ */
+UINT32 
+CGTARG_Mem_Ref_Bytes (
+  const OP *memop
+)
+{
+  FmtAssert(OP_load(memop) || OP_store(memop), ("not a load or store"));
+
+  switch (OP_code(memop)) {
+  default:
+    FmtAssert(FALSE, ("unrecognized op (%s) in CGTARG_Mem_Ref_Bytes",
+		      TOP_Name(OP_code(memop))));
+  }
+  /*NOTREACHED*/
 }
 
 /* ====================================================================
@@ -664,6 +853,78 @@ CGTARG_Postprocess_Asm_String (
  */
 
 /* ====================================================================
+ *   CGTARG_Load_From_Memory
+ * ====================================================================
+ */
+void CGTARG_Load_From_Memory (
+  TN *tn, 
+  ST *mem_loc, 
+  OPS *ops
+)
+{
+  TYPE_ID mtype = TY_mtype(ST_type(mem_loc));
+
+  FmtAssert(FALSE, ("CGTARG_Load_From_Memory: not implemented"));
+
+  if (TN_register_class(tn) == ISA_REGISTER_CLASS_guard) {
+    /* Since we can't directly load a predicate TN, first load into
+     * an integer register and then set the predicate by checking for
+     * a non-zero value.
+     */
+    TN *temp_tn = Build_TN_Of_Mtype (MTYPE_I8);
+    //    Exp_Load (mtype, mtype, temp_tn, mem_loc, 0, ops, V_NONE);
+    //    Build_OP (TOP_cmp_i_ne, tn, True_TN, 
+    //	      True_TN, Gen_Literal_TN(0, 4), temp_tn, ops);
+  }
+  //  else if (TN_register_class(tn) == ISA_REGISTER_CLASS_branch) {
+	// first load into an integer register and then copy.
+  //    	TN *temp_tn = Build_TN_Of_Mtype (MTYPE_I8);
+  //    	Exp_Load (mtype, mtype, temp_tn, mem_loc, 0, ops, V_NONE);
+  //    	Build_OP (TOP_mov_t_br, tn, True_TN, temp_tn, ops);
+  //  } 
+  else {
+
+    /* Non-predicate TNs are just a simple load.
+     */
+    Exp_Load (mtype, mtype, tn, mem_loc, 0, ops, V_NONE);
+  }
+}
+
+
+/* ====================================================================
+ *   CGTARG_Store_To_Memory
+ * ====================================================================
+ */
+void CGTARG_Store_To_Memory(TN *tn, ST *mem_loc, OPS *ops)
+{
+  TYPE_ID mtype = TY_mtype(ST_type(mem_loc));
+
+  FmtAssert(FALSE, ("CGTARG_Store_To_Memory: not implemented"));
+
+  if (TN_register_class(tn) == ISA_REGISTER_CLASS_guard) {
+    /* Since we can't directly store a predicate TN, first copy to
+     * an integer register and then store.
+     */
+    TN *temp_tn = Build_TN_Of_Mtype (MTYPE_I8);
+    //    Build_OP (TOP_mov, temp_tn, True_TN, Zero_TN, ops);
+    //    Build_OP (TOP_mov_i, temp_tn, tn, Gen_Literal_TN(1, 4), ops);
+    //    Exp_Store (mtype, temp_tn, mem_loc, 0, ops, V_NONE);
+  }
+  //  else if (TN_register_class(tn) == ISA_REGISTER_CLASS_branch) {
+	// first copy to an integer register and then store.
+  //    	TN *temp_tn = Build_TN_Of_Mtype (MTYPE_I8);
+  //    	Build_OP (TOP_mov_f_br, temp_tn, True_TN, tn, ops);
+  //    	Exp_Store (mtype, temp_tn, mem_loc, 0, ops, V_NONE);
+  //  } 
+  else {
+
+    /* Non-predicate TNs are just a simple store.
+     */
+    Exp_Store (mtype, tn, mem_loc, 0, ops, V_NONE);
+  }
+}
+
+/* ====================================================================
  *   CGTARG_Can_Fit_Immediate_In_Add_Instruction
  * ====================================================================
  */
@@ -675,7 +936,402 @@ CGTARG_Can_Fit_Immediate_In_Add_Instruction (
   return ISA_LC_Value_In_Class (immed, LC_u8);
 }
 
+/* ====================================================================
+ *   CGTARG_Can_Load_Immediate_In_Single_Instruction
+ * ====================================================================
+ */
+BOOL
+CGTARG_Can_Load_Immediate_In_Single_Instruction (
+  INT64 immed
+)
+{
+	return ISA_LC_Value_In_Class (immed, LC_s16);
+}
 
+/* ====================================================================
+ *   CGTARG_Is_OP_Advanced_Load
+ * ====================================================================
+ */
+BOOL
+CGTARG_Is_OP_Advanced_Load( OP *memop )
+{
+  if (!OP_load(memop)) return FALSE;
+
+  INT i;
+  for (i = 0; i < OP_opnds(memop); ++i) {
+    TN *opnd_tn = OP_opnd(memop, i);
+    //    if (TN_is_enum(opnd_tn)) {
+    //      if (TN_enum(opnd_tn) == ECV_ldtype_a ||
+    //	  TN_enum(opnd_tn) == ECV_ldtype_sa) return TRUE;
+    //    }
+  }
+
+  return FALSE;
+}
+
+/* ====================================================================
+ *
+ * CGTARG_Is_OP_Speculative_Load
+ *
+ * See interface description
+ *
+ * ====================================================================
+ */
+BOOL
+CGTARG_Is_OP_Speculative_Load ( 
+  OP *memop 
+)
+{
+  if (!OP_load(memop)) return FALSE;
+
+  INT i;
+  for (i = 0; i < OP_opnds(memop); ++i) {
+    TN *opnd_tn = OP_opnd(memop, i);
+    //    if (TN_is_enum(opnd_tn)) {
+    //      if (TN_enum(opnd_tn) == ECV_ldtype_s ||
+    //	  TN_enum(opnd_tn) == ECV_ldtype_sa) return TRUE;
+    //    }
+  }
+
+  return FALSE;
+}
+
+/* ====================================================================
+ *   CGTARG_Is_OP_Check_Load
+ *
+ *   no check loads on ST100.
+ * ====================================================================
+ */
+BOOL
+CGTARG_Is_OP_Check_Load ( 
+  OP *memop 
+)
+{
+  if (!OP_load(memop)) return FALSE;
+
+  return FALSE;
+}
+
+/* ====================================================================
+ *   CGTARG_Is_OP_Speculative
+ * ====================================================================
+ */
+BOOL
+CGTARG_Is_OP_Speculative (
+  OP *op
+)
+{
+  if (!OP_load(op)) return FALSE;
+
+  // speculative and advanced loads are safe to speculate.
+  if (CGTARG_Is_OP_Advanced_Load(op) || CGTARG_Is_OP_Speculative_Load(op))
+    return TRUE;
+
+  return FALSE;
+}
+
+/* ====================================================================
+ *   CGTARG_Can_Be_Speculative
+ * ====================================================================
+ */
+BOOL
+CGTARG_Can_Be_Speculative ( 
+  OP *op 
+)
+{
+  WN *wn;
+
+  /* not allowed to speculate anything. */
+  if (Eager_Level == EAGER_NONE) return FALSE;
+
+  /* don't speculate volatile memory references. */
+  if (OP_volatile(op)) return FALSE;
+
+  if (TOP_Can_Be_Speculative(OP_code(op))) return TRUE;
+
+  if (!OP_load(op)) return FALSE;
+
+  /* Try to identify simple scalar loads than can be safely speculated:
+   *  a) read only loads (literals, GOT-loads, etc.)
+   *  b) load of a fixed variable (directly referenced)
+   *  c) load of a fixed variable (base address is constant or
+   *     known to be in bounds)
+   *  d) speculative, advanced and advanced-speculative loads are safe.
+   */
+
+  /*  a) read only loads (literals, GOT-loads, etc.)
+   */
+  if (OP_no_alias(op)) goto scalar_load;
+
+  /*  b) load of a fixed variable (directly referenced); this
+   *     includes spill-restores.
+   *  b') exclude cases of direct loads of weak symbols (#622949).
+   */
+  if (TN_is_symbol(OP_opnd(op, 1)) &&
+      !ST_is_weak_symbol(TN_var(OP_opnd(op, 1)))) goto scalar_load;
+
+  /*  c) load of a fixed variable (base address is constant or
+   *     known to be in bounds), comment out the rematerizable bit check 
+   *     since it doesn;t guarantee safeness all the time.
+   */
+  if (/*   TN_is_rematerializable(OP_opnd(op, 0)) || */
+      (   (wn = Get_WN_From_Memory_OP(op))
+	  && Alias_Manager->Safe_to_speculate(wn))) goto scalar_load;
+
+  /* d) speculative, advanced, speculative-advanced loads are safe to 
+   *    speculate. 
+   */
+  if (CGTARG_Is_OP_Speculative(op)) goto scalar_load;
+
+  /* If we got to here, we couldn't convince ourself that we have
+   * a scalar load -- no speculation this time...
+   */
+  return FALSE;
+
+  /* We now know we have a scalar load of some form. Determine if they
+   * are allowed to be speculated.
+   */
+scalar_load:
+  return TRUE; 
+}
+
+/* ====================================================================
+ *   CGTARG_OP_is_counted_loop
+ * ====================================================================
+ */
+BOOL 
+CGTARG_OP_is_counted_loop (
+  OP *op
+) 
+{
+  return FALSE;
+}
+
+/* ====================================================================
+ *   CGTARG_Copy_Operand
+ * ====================================================================
+ */
+INT 
+CGTARG_Copy_Operand (
+  OP *op
+)
+{
+  TOP opr = OP_code(op);
+  switch (opr) {
+
+  // NOTE: TOP_fandcm, TOP_for, and TOP_fxor could be handled like
+  // their integer counterparts should that ever become useful.
+
+  case TOP_GP32_ADD_GT_DR_DR_U8:
+    if (TN_has_value(OP_opnd(op,2)) && TN_value(OP_opnd(op,2)) == 0) {
+      return 1;
+    }
+    break;
+
+    /*
+  case TOP_add:
+  case TOP_or:
+  case TOP_xor:
+    if (TN_register_and_class(OP_opnd(op,2)) == CLASS_AND_REG_zero) {
+      return 1;
+    }
+    if (TN_register_and_class(OP_opnd(op,1)) == CLASS_AND_REG_zero) {
+      return 2;
+    }
+    break;
+
+  case TOP_andcm:
+  case TOP_sub:
+    if (TN_register_and_class(OP_opnd(op,2)) == CLASS_AND_REG_zero) {
+      return 1;
+    }
+    break;
+
+  case TOP_and_i:
+    if (TN_has_value(OP_opnd(op,1)) && TN_value(OP_opnd(op,1)) == -1) {
+      return 2;
+    }
+    break;
+
+  case TOP_extr:
+  case TOP_extr_u:
+    if (   TN_has_value(OP_opnd(op,2)) && TN_value(OP_opnd(op,2)) == 0
+	&& TN_has_value(OP_opnd(op,3)) && TN_value(OP_opnd(op,3)) == 64)
+    {
+      return 1;
+    }
+    break;
+
+  case TOP_shl_i:
+  case TOP_shr_i:
+  case TOP_shr_i_u: 
+    if (   (TN_register_and_class(OP_opnd(op,1)) == CLASS_AND_REG_zero)
+	|| (TN_has_value(OP_opnd(op,2)) && TN_value(OP_opnd(op,2)) == 0))
+    {
+      return 1;
+    }
+    break;
+
+  case TOP_shl:
+  case TOP_shr: 
+  case TOP_shr_u: 
+    if (   (TN_register_and_class(OP_opnd(op,1)) == CLASS_AND_REG_zero)
+	|| (TN_register_and_class(OP_opnd(op,2)) == CLASS_AND_REG_zero))
+    {
+      return 1;
+    }
+    break;
+
+  case TOP_mov:
+  case TOP_mov_f:
+  case TOP_copy_br:
+	return 1;
+    */
+
+  }
+  return -1;
+}
+
+/* ====================================================================
+ *   CGTARG_Generate_Remainder_Branch
+ * ====================================================================
+ */
+void
+CGTARG_Generate_Remainder_Branch (
+  TN *trip_count, 
+  TN *label_tn,
+  OPS *prolog_ops, 
+  OPS *body_ops
+)
+{
+  INT32 trip_size = TN_size(trip_count);
+
+  FmtAssert(FALSE,("CGTARG_Generate_Remainder_Branch: not implemented"));
+
+  LC_Used_In_PU = TRUE;
+  if (TN_is_constant(trip_count)) {
+    TN *tmp_tn = Gen_Register_TN (ISA_REGISTER_CLASS_du,
+				  trip_size);
+    Exp_COPY(tmp_tn, 
+        Gen_Literal_TN(TN_value(trip_count)-1, trip_size), prolog_ops);
+    Exp_COPY(LC_TN, tmp_tn, prolog_ops);
+  } else {
+    TN *trip_counter_minus_1 = 
+                    Gen_Register_TN (ISA_REGISTER_CLASS_du, trip_size);
+    Exp_OP2(OPC_I5SUB,
+	    trip_counter_minus_1,
+	    trip_count,
+	    Gen_Literal_TN(1, trip_size),
+	    prolog_ops);
+    Exp_COPY(LC_TN, trip_counter_minus_1, prolog_ops);
+  }
+
+  /*
+  Build_OP (TOP_br_cloop, 
+  	    LC_TN,
+  	    Gen_Enum_TN(ECV_bwh_dptk),
+  	    Gen_Enum_TN(ECV_ph_few),
+  	    Gen_Enum_TN(ECV_dh),
+	    label_tn, 
+	    LC_TN,
+	    body_ops);
+  */
+}
+
+/* ====================================================================
+ *
+ * CGTARG_Generate_Branch_Cloop
+ *
+ * See interface description
+ *
+ * ====================================================================
+ */
+void
+CGTARG_Generate_Branch_Cloop(OP *br_op,
+			     TN *unrolled_trip_count,
+			     TN *trip_count_tn,
+			     INT32 ntimes,
+			     TN *label_tn,
+			     OPS *prolog_ops,
+			     OPS *body_ops)
+{ 
+
+  FmtAssert(FALSE,("CGTARG_Generate_Branch_Cloop: not implemented"));
+
+  LC_Used_In_PU = TRUE;
+
+  if (!CGTARG_OP_is_counted_loop(br_op)) {
+    /*
+    Build_OP (TOP_br_cloop, 
+	      LC_TN,
+	      Gen_Enum_TN(ECV_bwh_dptk),
+	      Gen_Enum_TN(ECV_ph_few),
+	      Gen_Enum_TN(ECV_dh),
+	      label_tn, 
+	      LC_TN,
+	      body_ops);
+    */
+  }
+
+  INT32 trip_size = TN_size(trip_count_tn);
+  TN *unrolled_trip_count_minus_1;
+
+  if (TN_is_constant(trip_count_tn)) {
+    unrolled_trip_count_minus_1 = 
+         Gen_Literal_TN(TN_value(trip_count_tn) / ntimes - 1, trip_size);
+  } else {
+    if (unrolled_trip_count == NULL) {
+      unrolled_trip_count = Build_TN_Like(trip_count_tn);
+      Exp_OP2(trip_size == 4 ? OPC_U4DIV : OPC_U8DIV,
+	      unrolled_trip_count,
+	      trip_count_tn,
+	      Gen_Literal_TN(ntimes, trip_size),
+	      prolog_ops);
+    }
+    unrolled_trip_count_minus_1 = 
+                      Gen_Register_TN (ISA_REGISTER_CLASS_du, trip_size);
+    Exp_OP2(OPC_I8SUB,
+	    unrolled_trip_count_minus_1,
+	    unrolled_trip_count,
+	    Gen_Literal_TN(1, trip_size),
+	    prolog_ops);
+  } 
+
+  // workaround a Exp_COPY bug?
+  if (TN_is_constant(unrolled_trip_count_minus_1)) {
+    TN *tmp_tn = Gen_Register_TN (ISA_REGISTER_CLASS_du, trip_size);
+    Exp_COPY(tmp_tn, unrolled_trip_count_minus_1, prolog_ops);
+    unrolled_trip_count_minus_1 = tmp_tn;
+  }
+
+  Exp_COPY(LC_TN, unrolled_trip_count_minus_1, prolog_ops);
+}
+
+/* ====================================================================
+ * ====================================================================
+ *                 Scheduling related stuff:
+ * ====================================================================
+ * ====================================================================
+ */
+
+/* ====================================================================
+ *   CGTARG_Adjust_Latency
+ * ====================================================================
+ */
+void
+CGTARG_Adjust_Latency (
+  OP *pred_op, 
+  OP *succ_op, 
+  CG_DEP_KIND kind, 
+  UINT8 opnd, 
+  INT *latency
+)
+{
+  const TOP pred_code = OP_code(pred_op);
+  const TOP succ_code = OP_code(succ_op);
+
+  FmtAssert(FALSE,("CGTARG_Adjust_Latency: not implemented"));
+}
 
 /* ====================================================================
  * ====================================================================

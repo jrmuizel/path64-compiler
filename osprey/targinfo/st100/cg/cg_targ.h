@@ -535,10 +535,6 @@ typedef enum {
 } COMPARE_TYPE;
 
 
-
-extern BOOL CGTARG_Can_Fit_Immediate_In_Add_Instruction (INT64 immed);
-
-
 extern BOOL CGTARG_Preg_Register_And_Class(WN_OFFSET preg,
 					   ISA_REGISTER_CLASS *rclass,
 					   REGISTER *reg);
@@ -559,6 +555,21 @@ extern void CGTARG_Compute_Branch_Parameters(INT32 *mispredict,
 						    INT32 *fixed,
 						    INT32 *brtaken,
 						    double *factor);
+
+/* Target predication: */
+inline BOOL CGTARG_Can_Predicate_Calls() { return TRUE; }
+inline BOOL CGTARG_Can_Predicate_Returns() { return TRUE; }
+inline BOOL CGTARG_Can_Predicate_Branches() { return TRUE; }
+inline BOOL CGTARG_Can_Predicate() { return TRUE; }
+
+/* Target ISA: */
+inline BOOL CGTARG_Is_OP_Barrier(OP *op) { return FALSE; }
+inline BOOL CGTARG_Is_OP_Intrinsic(OP *op) 
+{ 
+  return OP_code(op) == TOP_intrncall;
+}
+
+
 
 /* ====================================================================
  *                REGISTER stuff
@@ -671,8 +682,19 @@ inline TOP CGTARG_Inter_RegClass_Copy(ISA_REGISTER_CLASS dst,
   return (TOP)CGTARG_Inter_RegClass_Copy_Table[src][dst][is_double];
 }
 
+inline TN *CGTARG_gen_trip_count_TN (INT32 trip_size) 
+{ 
+  return Gen_Register_TN(ISA_REGISTER_CLASS_du, trip_size);
+}
+
 inline BOOL
 CGTARG_Has_Branch_Predict(void)
+{
+  return FALSE;
+}
+
+inline BOOL
+CGTARG_Have_Indexed_Mem_Insts(void)
 {
   return FALSE;
 }

@@ -58,7 +58,6 @@
 #include "targ_abi_properties.h"
 
 #include "lai.h"
-#include "lai_flags.h"
 #include "calls.h"
 #include "register.h"
 

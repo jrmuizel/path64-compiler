@@ -84,6 +84,12 @@ typedef unsigned char an_integer_kind;
 BOOL ARCH_generate_nor = FALSE;       // Generate the NOR opcode
 BOOL ARCH_mask_shift_counts = FALSE;  // shift counts are masked by the hardware (vs. truncated)
 
+/* Needed todefine whether the packed arithmetic is allowed: */
+BOOL INT_packed_arithmetic = TRUE;
+BOOL FP_packed_arithmetic = FALSE;
+BOOL PTR_packed_arithmetic = FALSE;
+BOOL BOOL_packed_arithmetic = FALSE;
+
 /* =====================================================================
  *    Target selection 
  * =====================================================================
