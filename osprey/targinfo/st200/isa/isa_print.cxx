@@ -22,6 +22,7 @@ static const char *asmname(TOP topcode)
   char buf[100]; 
   /* 
    * First handle simulated and dummy instructions: 
+   * Handle movl and movr instructions: 
    */ 
   switch (topcode) { 
   case TOP_asm: return "asm"; 
@@ -37,6 +38,7 @@ static const char *asmname(TOP topcode)
   case TOP_ffixup: return "ffixup"; 
   case TOP_ifixup: return "ifixup"; 
   case TOP_label: return "label"; 
+  case TOP_movl: return "mov"; 
   default: break; 
   } 
 
@@ -78,11 +80,10 @@ main()
   Operand(0, "%s"); 
 
   Instruction_Print_Group(print_0, 
-		 TOP_send_i, 
-		 TOP_recv_i, 
 		 TOP_call, 
 		 TOP_icall, 
-		 TOP_goto, 
+		 TOP_sxtb_r, 
+		 TOP_sxth_r, 
 		 TOP_mov_r, 
 		 TOP_mtb, 
 		 TOP_mfb, 
@@ -112,6 +113,7 @@ main()
 
   Instruction_Print_Group(print_2, 
 		 TOP_mov_i, 
+		 TOP_movl, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
@@ -121,57 +123,45 @@ main()
   Operand(0, "%s"); 
 
   Instruction_Print_Group(print_3, 
+		 TOP_goto, 
 		 TOP_igoto, 
 		 TOP_return, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
   ISA_PRINT_TYPE print_4; 
-  print_4 = ISA_Print_Type_Create("print_4", "c0	%s %s = %s"); 
-  Name("%s"); 
-  Result(0, "%s"); 
-  Operand(1, "%s"); 
-
-  Instruction_Print_Group(print_4, 
-		 TOP_sxtb_r, 
-		 TOP_sxth_r, 
-		 TOP_bswap_r, 
-		 TOP_UNDEFINED); 
-
-  /* ================================= */ 
-  ISA_PRINT_TYPE print_5; 
-  print_5 = ISA_Print_Type_Create("print_5", "c0	%s %s"); 
+  print_4 = ISA_Print_Type_Create("print_4", "c0	%s %s"); 
   Name("%s"); 
   Operand(0, "%d"); 
 
-  Instruction_Print_Group(print_5, 
+  Instruction_Print_Group(print_4, 
 		 TOP_imml, 
 		 TOP_immr, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
-  ISA_PRINT_TYPE print_6; 
-  print_6 = ISA_Print_Type_Create("print_6", "c0	%s %s [ %s ]  = %s"); 
+  ISA_PRINT_TYPE print_5; 
+  print_5 = ISA_Print_Type_Create("print_5", "c0	%s %s [ %s ]  = %s"); 
   Name("%s"); 
   Operand(0, "%d"); 
   Operand(1, "%s"); 
   Operand(2, "%s"); 
 
-  Instruction_Print_Group(print_6, 
+  Instruction_Print_Group(print_5, 
 		 TOP_stw, 
 		 TOP_sth, 
 		 TOP_stb, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
-  ISA_PRINT_TYPE print_7; 
-  print_7 = ISA_Print_Type_Create("print_7", "c0	%s %s = %s [ %s ]"); 
+  ISA_PRINT_TYPE print_6; 
+  print_6 = ISA_Print_Type_Create("print_6", "c0	%s %s = %s [ %s ]"); 
   Name("%s"); 
   Result(0, "%s"); 
   Operand(0, "%d"); 
   Operand(1, "%s"); 
 
-  Instruction_Print_Group(print_7, 
+  Instruction_Print_Group(print_6, 
 		 TOP_ldw, 
 		 TOP_ldw_d, 
 		 TOP_ldh, 
@@ -185,21 +175,21 @@ main()
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
-  ISA_PRINT_TYPE print_8; 
-  print_8 = ISA_Print_Type_Create("print_8", "c0	%s %s [ %s ]"); 
+  ISA_PRINT_TYPE print_7; 
+  print_7 = ISA_Print_Type_Create("print_7", "c0	%s %s [ %s ]"); 
   Name("%s"); 
   Operand(0, "%d"); 
   Operand(1, "%s"); 
 
-  Instruction_Print_Group(print_8, 
+  Instruction_Print_Group(print_7, 
 		 TOP_pft, 
 		 TOP_prgadd, 
 		 TOP_prgset, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
-  ISA_PRINT_TYPE print_9; 
-  print_9 = ISA_Print_Type_Create("print_9", "c0	%s %s , %s = %s , %s , %s"); 
+  ISA_PRINT_TYPE print_8; 
+  print_8 = ISA_Print_Type_Create("print_8", "c0	%s %s , %s = %s , %s , %s"); 
   Name("%s"); 
   Result(0, "%s"); 
   Result(1, "%s"); 
@@ -207,9 +197,20 @@ main()
   Operand(1, "%s"); 
   Operand(2, "%s"); 
 
-  Instruction_Print_Group(print_9, 
+  Instruction_Print_Group(print_8, 
 		 TOP_addcg, 
 		 TOP_divs, 
+		 TOP_UNDEFINED); 
+
+  /* ================================= */ 
+  ISA_PRINT_TYPE print_9; 
+  print_9 = ISA_Print_Type_Create("print_9", "c0	%s %s = %s"); 
+  Name("%s"); 
+  Result(0, "%s"); 
+  Operand(1, ""); 
+
+  Instruction_Print_Group(print_9, 
+		 TOP_bswap_r, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
