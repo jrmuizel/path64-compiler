@@ -447,8 +447,6 @@ main (int argc, char *argv[])
 		 TOP_prgadd_i, 
 		 TOP_prginspg_i, 
 		 TOP_prgset_i, 
-		 TOP_pswset_r, 
-		 TOP_pswclr_r, 
 		 TOP_stb_i, 
 		 TOP_sth_i, 
 		 TOP_stw_i, 
@@ -522,6 +520,7 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(5); 
   Any_Operand_Access_Time(1); 
   Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_XFER, 0); 
   Resource_Requirement(res_ODD, 0); 
 
 
@@ -537,6 +536,7 @@ main (int argc, char *argv[])
 
   Any_Operand_Access_Time(1); 
   Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_XFER, 0); 
   Resource_Requirement(res_ODD, 0); 
 
 
@@ -566,6 +566,22 @@ main (int argc, char *argv[])
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_ISSUE, 0); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class PSWOP 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("PSWOP", 
+		 TOP_pswset_r, 
+		 TOP_pswclr_r, 
+		 TOP_UNDEFINED); 
+
+  Any_Operand_Access_Time(2); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_XFER, 0); 
+  Resource_Requirement(res_ODD, 0); 
+  Resource_Requirement(res_MEM, 0); 
 
 
   ///////////////////////////////////////// 
@@ -801,6 +817,16 @@ main (int argc, char *argv[])
   Instruction_Group("PRGINS", 
 		 TOP_UNDEFINED); 
 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class PSWOP 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("PSWOP", 
+		 TOP_UNDEFINED); 
+
+  Any_Operand_Access_Time(-1); 
 
 
   ///////////////////////////////////////// 
