@@ -633,6 +633,8 @@ bool LAO_scheduleRegion ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs , LAO_S
 
   lir_region = REGION_convert2LIR(entryBBs, exitBBs, regionBBs);
 
+  CodeRegion_pretty(lir_region, stderr);
+
   //  status = REGION_schedule(lir_region);
 
   if (status == 0) {
