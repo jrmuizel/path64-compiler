@@ -1106,6 +1106,9 @@ sub set_print {
     }
     elsif ($format eq 'PswOp') {
 	$OP_opnd[$opcode][2]{'fmt'} = '%s';
+	$signature = "O0:%s";
+	$OP_print[$opcode] = $signature;
+	return;
     }
     else {
 	printf STDOUT "ERROR: unknown format %s in set_print\n", $format;
