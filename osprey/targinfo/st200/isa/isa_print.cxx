@@ -10,7 +10,7 @@
 #include "topcode.h" 
 #include "isa_print_gen.h" 
 
-static const char *mnemonic_names[245] = {
+static const char *mnemonic_names[247] = {
   "add",	 /* TOP_add_r */ 
   "sub",	 /* TOP_sub_r */ 
   "shl",	 /* TOP_shl_r */ 
@@ -248,6 +248,8 @@ static const char *mnemonic_names[245] = {
   "spadjust",	 /* TOP_spadjust */
   "copy_br",	 /* TOP_copy_br */
   "noop",	 /* TOP_noop */
+  "phi",	 /* TOP_phi */
+  "psi",	 /* TOP_psi */
   "begin_pregtn",	 /* TOP_begin_pregtn */
   "end_pregtn",	 /* TOP_end_pregtn */
   "bwd_bar",	 /* TOP_bwd_bar */
