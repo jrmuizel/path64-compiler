@@ -1020,6 +1020,8 @@ sub initialize_required_opcodes {
     push (@SimulatedOpcodes, "spadjust");
 #    push (@SimulatedOpcodes, "copy_br");
     push (@SimulatedOpcodes, "noop");
+# (sc) 
+    push (@SimulatedOpcodes, "getpc");
 
     push (@SSAOpcodes, "phi");
     push (@SSAOpcodes, "psi");
@@ -1039,6 +1041,20 @@ sub initialize_required_opcodes {
 	$OP_properties[$OP_count] = $OP_SIMULATED;
 	push(@{$AttrGroup{'simulated'}}, $opcode);
 	push (@{$SUBSET_opcodes[subset_id("st200")]}, $OP_count);
+
+	if ($opcode eq 'getpc') {
+	    $OP_scdclass[$OP_count] = "getpc";
+	    $OP_results[$OP_count] = 1;
+	    $OP_opnds[$OP_count] = 1;
+	    $OP_result_avail_time[$OP_count][0] = 2;
+	    $OP_opnd_access_time[$OP_count][0] = 1;
+
+	    my $subset;
+	    for ($subset = 0; $subset < $SUBSET_count; $subset++) {
+		$OP_subset[$OP_count] = $SUBSET_name[$subset];   
+		&process_scdinfo($OP_count);
+	    }
+	}
 
 	if ($opcode eq 'spadjust' || $opcode eq 'asm') {
 	    $OP_scdclass[$OP_count] = "simulated" if $opcode eq 'spadjust';
@@ -1104,6 +1120,8 @@ sub initialize_required_opcodes {
     # isa_operands: Create SignatureGroup entry for required opcodes.
     # TODO: generalize so that target-dependent types are not
     #       hardwired here !
+
+    push(@{$SignatureGroup{'idest:getpc:btarg:'}}, 'getpc');
 
     push(@{$SignatureGroup{':asm:'}}, 'asm');
     push(@{$SignatureGroup{':ssa:'}}, 'phi');
@@ -2972,6 +2990,12 @@ OK:
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
     }
+    elsif ($scdclass eq 'getpc') {
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+    }
     else {
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['INT', 0 ]);
@@ -4582,11 +4606,12 @@ sub read_opcodes {
   &DECL_SCD_CLASS ("simulated", 1, 1);       # simulated
   &DECL_SCD_CLASS ("asm", 1, 1);       	     # asm
   &DECL_SCD_CLASS ("ssa", 1, 1);             # ssa
+  &DECL_SCD_CLASS ("getpc", 2, 1);             # getpc
 
-  &DECL_EXEC_SLOT ("S0", "ALU,MUL,LOAD,LOAD_2,STORE,EXT,BRANCH,JUMP,CALL,SYNC"); # Slot 0
-  &DECL_EXEC_SLOT ("S1", "ALU,MUL,LOAD,LOAD_2,STORE,EXT,BRANCH,JUMP,CALL,SYNC"); # Slot 1
-  &DECL_EXEC_SLOT ("S2", "ALU,MUL,LOAD,LOAD2_IMM,STORE,EXT,BRANCH,JUMP,CALL,SYNC"); # Slot 2
-  &DECL_EXEC_SLOT ("S3", "ALU,MUL,LOAD,LOAD2_IMM,STORE,EXT,BRANCH,JUMP,CALL,SYNC"); # Slot 3
+  &DECL_EXEC_SLOT ("S0", "ALU,MUL,LOAD,LOAD_2,STORE,EXT,BRANCH,JUMP,CALL,SYNC,getpc"); # Slot 0
+  &DECL_EXEC_SLOT ("S1", "ALU,MUL,LOAD,LOAD_2,STORE,EXT,BRANCH,JUMP,CALL,SYNC,getpc"); # Slot 1
+  &DECL_EXEC_SLOT ("S2", "ALU,MUL,LOAD,LOAD2_IMM,STORE,EXT,BRANCH,JUMP,CALL,SYNC,getpc"); # Slot 2
+  &DECL_EXEC_SLOT ("S3", "ALU,MUL,LOAD,LOAD2_IMM,STORE,EXT,BRANCH,JUMP,CALL,SYNC,getpc"); # Slot 3
   &DECL_EXEC_SLOT ("EXT0", "ALU_IMM,MUL_IMM,LOAD_IMM,LOAD2_IMM,STORE_IMM"); # Long immediate in slot 0-1
   &DECL_EXEC_SLOT ("EXT1", "ALU_IMM,MUL_IMM,LOAD_IMM,LOAD2_IMM,STORE_IMM"); # Long immediate in slot 1-2
   &DECL_EXEC_SLOT ("EXT2", "ALU_IMM,MUL_IMM,LOAD_IMM,LOAD2_IMM,STORE_IMM"); # Long immediate in slot 2-3
