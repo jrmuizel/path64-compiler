@@ -42,8 +42,11 @@
 #include "topcode.h" 
 #include "isa_print_gen.h" 
 
-static const char *mnemonic_names[401] = { 
+static const char *mnemonic_names[407] = { 
   "addcg", 	 /* TOP_addcg */  
+  "addd", 	 /* TOP_addd */  
+  "adds", 	 /* TOP_adds */  
+  "adds.n", 	 /* TOP_adds_n */  
   "add", 	 /* TOP_add_r */  
   "add", 	 /* TOP_add_i */  
   "add", 	 /* TOP_add_ii */  
@@ -116,12 +119,16 @@ static const char *mnemonic_names[401] = {
   "bwd.bar", 	 /* TOP_bwd_bar */  
   "call", 	 /* TOP_call */  
   "clz", 	 /* TOP_clz */  
+  "cmpeqd", 	 /* TOP_cmpeqd */  
+  "cmpeqs", 	 /* TOP_cmpeqs */  
   "cmpeq", 	 /* TOP_cmpeq_r_b */  
   "cmpeq", 	 /* TOP_cmpeq_r_r */  
   "cmpeq", 	 /* TOP_cmpeq_i_b */  
   "cmpeq", 	 /* TOP_cmpeq_ii_b */  
   "cmpeq", 	 /* TOP_cmpeq_i_r */  
   "cmpeq", 	 /* TOP_cmpeq_ii_r */  
+  "cmpged", 	 /* TOP_cmpged */  
+  "cmpges", 	 /* TOP_cmpges */  
   "cmpgeu", 	 /* TOP_cmpgeu_r_b */  
   "cmpgeu", 	 /* TOP_cmpgeu_r_r */  
   "cmpgeu", 	 /* TOP_cmpgeu_i_b */  
@@ -134,6 +141,8 @@ static const char *mnemonic_names[401] = {
   "cmpge", 	 /* TOP_cmpge_ii_b */  
   "cmpge", 	 /* TOP_cmpge_i_r */  
   "cmpge", 	 /* TOP_cmpge_ii_r */  
+  "cmpgtd", 	 /* TOP_cmpgtd */  
+  "cmpgts", 	 /* TOP_cmpgts */  
   "cmpgtu", 	 /* TOP_cmpgtu_r_b */  
   "cmpgtu", 	 /* TOP_cmpgtu_r_r */  
   "cmpgtu", 	 /* TOP_cmpgtu_i_b */  
@@ -146,6 +155,8 @@ static const char *mnemonic_names[401] = {
   "cmpgt", 	 /* TOP_cmpgt_ii_b */  
   "cmpgt", 	 /* TOP_cmpgt_i_r */  
   "cmpgt", 	 /* TOP_cmpgt_ii_r */  
+  "cmpled", 	 /* TOP_cmpled */  
+  "cmples", 	 /* TOP_cmples */  
   "cmpleu", 	 /* TOP_cmpleu_r_b */  
   "cmpleu", 	 /* TOP_cmpleu_r_r */  
   "cmpleu", 	 /* TOP_cmpleu_i_b */  
@@ -158,6 +169,8 @@ static const char *mnemonic_names[401] = {
   "cmple", 	 /* TOP_cmple_ii_b */  
   "cmple", 	 /* TOP_cmple_i_r */  
   "cmple", 	 /* TOP_cmple_ii_r */  
+  "cmpltd", 	 /* TOP_cmpltd */  
+  "cmplts", 	 /* TOP_cmplts */  
   "cmpltu", 	 /* TOP_cmpltu_r_b */  
   "cmpltu", 	 /* TOP_cmpltu_r_r */  
   "cmpltu", 	 /* TOP_cmpltu_i_b */  
@@ -176,47 +189,26 @@ static const char *mnemonic_names[401] = {
   "cmpne", 	 /* TOP_cmpne_ii_b */  
   "cmpne", 	 /* TOP_cmpne_i_r */  
   "cmpne", 	 /* TOP_cmpne_ii_r */  
+  "cvtdi", 	 /* TOP_cvtdi */  
+  "cvtds", 	 /* TOP_cvtds */  
+  "cvtdu", 	 /* TOP_cvtdu */  
+  "cvtid", 	 /* TOP_cvtid */  
+  "cvtis", 	 /* TOP_cvtis */  
+  "cvtis.n", 	 /* TOP_cvtis_n */  
+  "cvtsd", 	 /* TOP_cvtsd */  
+  "cvtsi", 	 /* TOP_cvtsi */  
+  "cvtsi.n", 	 /* TOP_cvtsi_n */  
+  "cvtsu", 	 /* TOP_cvtsu */  
+  "cvtud", 	 /* TOP_cvtud */  
+  "cvtus", 	 /* TOP_cvtus */  
   "dfixup", 	 /* TOP_dfixup */  
-  "divs", 	 /* TOP_divs */  
+  "divd", 	 /* TOP_divd */  
+  "divs", 	 /* TOP_divs_b_b_r */  
+  "divs", 	 /* TOP_divs_r */  
   "divu", 	 /* TOP_divu */  
   "div", 	 /* TOP_div */  
   "end.pregtn", 	 /* TOP_end_pregtn */  
-  "faddd", 	 /* TOP_faddd */  
-  "fadds", 	 /* TOP_fadds */  
-  "fadds.n", 	 /* TOP_fadds_n */  
-  "fcmpeqd", 	 /* TOP_fcmpeqd */  
-  "fcmpeqs", 	 /* TOP_fcmpeqs */  
-  "fcmpged", 	 /* TOP_fcmpged */  
-  "fcmpges", 	 /* TOP_fcmpges */  
-  "fcmpgtd", 	 /* TOP_fcmpgtd */  
-  "fcmpgts", 	 /* TOP_fcmpgts */  
-  "fcmpled", 	 /* TOP_fcmpled */  
-  "fcmples", 	 /* TOP_fcmples */  
-  "fcmpltd", 	 /* TOP_fcmpltd */  
-  "fcmplts", 	 /* TOP_fcmplts */  
-  "fconvdi", 	 /* TOP_fconvdi */  
-  "fconvds", 	 /* TOP_fconvds */  
-  "fconvdu", 	 /* TOP_fconvdu */  
-  "fconvid", 	 /* TOP_fconvid */  
-  "fconvis", 	 /* TOP_fconvis */  
-  "fconvis.n", 	 /* TOP_fconvis_n */  
-  "fconvsd", 	 /* TOP_fconvsd */  
-  "fconvsi", 	 /* TOP_fconvsi */  
-  "fconvsi.n", 	 /* TOP_fconvsi_n */  
-  "fconvsu", 	 /* TOP_fconvsu */  
-  "fconvud", 	 /* TOP_fconvud */  
-  "fconvus", 	 /* TOP_fconvus */  
-  "fdivd", 	 /* TOP_fdivd */  
-  "fdivs", 	 /* TOP_fdivs */  
   "ffixup", 	 /* TOP_ffixup */  
-  "fmuld", 	 /* TOP_fmuld */  
-  "fmuls", 	 /* TOP_fmuls */  
-  "fmuls.n", 	 /* TOP_fmuls_n */  
-  "fsqrtd", 	 /* TOP_fsqrtd */  
-  "fsqrts", 	 /* TOP_fsqrts */  
-  "fsubd", 	 /* TOP_fsubd */  
-  "fsubs", 	 /* TOP_fsubs */  
-  "fsubs.n", 	 /* TOP_fsubs_n */  
   "fwd.bar", 	 /* TOP_fwd_bar */  
   "getpc", 	 /* TOP_getpc */  
   "goto", 	 /* TOP_goto */  
@@ -238,10 +230,6 @@ static const char *mnemonic_names[401] = {
   "ldb.d", 	 /* TOP_ldb_d_ii */  
   "ldb", 	 /* TOP_ldb_i */  
   "ldb", 	 /* TOP_ldb_ii */  
-  "lddc", 	 /* TOP_lddc_i */  
-  "lddc", 	 /* TOP_lddc_ii */  
-  "ldd", 	 /* TOP_ldd_i */  
-  "ldd", 	 /* TOP_ldd_ii */  
   "ldhc", 	 /* TOP_ldhc_i */  
   "ldhc", 	 /* TOP_ldhc_ii */  
   "ldhuc", 	 /* TOP_ldhuc_i */  
@@ -254,6 +242,10 @@ static const char *mnemonic_names[401] = {
   "ldh.d", 	 /* TOP_ldh_d_ii */  
   "ldh", 	 /* TOP_ldh_i */  
   "ldh", 	 /* TOP_ldh_ii */  
+  "ldpc", 	 /* TOP_ldpc_i */  
+  "ldpc", 	 /* TOP_ldpc_ii */  
+  "ldp", 	 /* TOP_ldp_i */  
+  "ldp", 	 /* TOP_ldp_ii */  
   "ldwc", 	 /* TOP_ldwc_i */  
   "ldwc", 	 /* TOP_ldwc_ii */  
   "ldwl", 	 /* TOP_ldwl */  
@@ -287,6 +279,7 @@ static const char *mnemonic_names[401] = {
   "mul64h", 	 /* TOP_mul64h_r */  
   "mul64h", 	 /* TOP_mul64h_i */  
   "mul64h", 	 /* TOP_mul64h_ii */  
+  "muld", 	 /* TOP_muld */  
   "mulfrac", 	 /* TOP_mulfrac_r */  
   "mulfrac", 	 /* TOP_mulfrac_i */  
   "mulfrac", 	 /* TOP_mulfrac_ii */  
@@ -329,6 +322,8 @@ static const char *mnemonic_names[401] = {
   "mull", 	 /* TOP_mull_r */  
   "mull", 	 /* TOP_mull_i */  
   "mull", 	 /* TOP_mull_ii */  
+  "muls", 	 /* TOP_muls */  
+  "muls.n", 	 /* TOP_muls_n */  
   "nandl", 	 /* TOP_nandl_r_b */  
   "nandl", 	 /* TOP_nandl_r_r */  
   "nandl", 	 /* TOP_nandl_i_b */  
@@ -413,30 +408,41 @@ static const char *mnemonic_names[401] = {
   "slct", 	 /* TOP_slct_i */  
   "slct", 	 /* TOP_slct_ii */  
   "spadjust", 	 /* TOP_spadjust */  
+  "sqrtd", 	 /* TOP_sqrtd */  
+  "sqrts", 	 /* TOP_sqrts */  
   "stbc", 	 /* TOP_stbc_i */  
   "stbc", 	 /* TOP_stbc_ii */  
   "stb", 	 /* TOP_stb_i */  
   "stb", 	 /* TOP_stb_ii */  
-  "stdc", 	 /* TOP_stdc_i */  
-  "stdc", 	 /* TOP_stdc_ii */  
-  "std", 	 /* TOP_std_i */  
-  "std", 	 /* TOP_std_ii */  
   "sthc", 	 /* TOP_sthc_i */  
   "sthc", 	 /* TOP_sthc_ii */  
   "sth", 	 /* TOP_sth_i */  
   "sth", 	 /* TOP_sth_ii */  
+  "stpc", 	 /* TOP_stpc_i */  
+  "stpc", 	 /* TOP_stpc_ii */  
+  "stp", 	 /* TOP_stp_i */  
+  "stp", 	 /* TOP_stp_ii */  
   "stwc", 	 /* TOP_stwc_i */  
   "stwc", 	 /* TOP_stwc_ii */  
   "stwl", 	 /* TOP_stwl */  
   "stw", 	 /* TOP_stw_i */  
   "stw", 	 /* TOP_stw_ii */  
+  "subd", 	 /* TOP_subd */  
+  "subs", 	 /* TOP_subs */  
+  "subs.n", 	 /* TOP_subs_n */  
   "sub", 	 /* TOP_sub_r */  
   "sub", 	 /* TOP_sub_i */  
   "sub", 	 /* TOP_sub_ii */  
   "sxtb", 	 /* TOP_sxtb */  
   "sxth", 	 /* TOP_sxth */  
-  "sync", 	 /* TOP_sync */  
-  "syncins", 	 /* TOP_syncins */  
+  "sync", 	 /* TOP_ST220_sync */  
+  "sync", 	 /* TOP_ST230_sync */  
+  "sync", 	 /* TOP_ST231_sync */  
+  "sync", 	 /* TOP_ST235_sync */  
+  "syncins", 	 /* TOP_ST220_syncins */  
+  "syncins", 	 /* TOP_ST230_syncins */  
+  "syncins", 	 /* TOP_ST231_syncins */  
+  "syncins", 	 /* TOP_ST235_syncins */  
   "syscall", 	 /* TOP_syscall */  
   "wmb", 	 /* TOP_wmb */  
   "xor", 	 /* TOP_xor_r */  
@@ -472,8 +478,14 @@ main()
 		 TOP_nop, 
 		 TOP_prgins, 
 		 TOP_rfi, 
-		 TOP_sync, 
-		 TOP_syncins, 
+		 TOP_ST220_sync, 
+		 TOP_ST230_sync, 
+		 TOP_ST231_sync, 
+		 TOP_ST235_sync, 
+		 TOP_ST220_syncins, 
+		 TOP_ST230_syncins, 
+		 TOP_ST231_syncins, 
+		 TOP_ST235_syncins, 
 		 TOP_wmb, 
 		 TOP_UNDEFINED); 
 
@@ -515,25 +527,25 @@ main()
 		 TOP_bswap, 
 		 TOP_call, 
 		 TOP_clz, 
-		 TOP_fconvdi, 
-		 TOP_fconvds, 
-		 TOP_fconvdu, 
-		 TOP_fconvid, 
-		 TOP_fconvis, 
-		 TOP_fconvis_n, 
-		 TOP_fconvsd, 
-		 TOP_fconvsi, 
-		 TOP_fconvsi_n, 
-		 TOP_fconvsu, 
-		 TOP_fconvud, 
-		 TOP_fconvus, 
-		 TOP_fsqrtd, 
-		 TOP_fsqrts, 
+		 TOP_cvtdi, 
+		 TOP_cvtds, 
+		 TOP_cvtdu, 
+		 TOP_cvtid, 
+		 TOP_cvtis, 
+		 TOP_cvtis_n, 
+		 TOP_cvtsd, 
+		 TOP_cvtsi, 
+		 TOP_cvtsi_n, 
+		 TOP_cvtsu, 
+		 TOP_cvtud, 
+		 TOP_cvtus, 
 		 TOP_mfb, 
 		 TOP_mov_r, 
 		 TOP_mov_i, 
 		 TOP_mov_ii, 
 		 TOP_mtb, 
+		 TOP_sqrtd, 
+		 TOP_sqrts, 
 		 TOP_sxtb, 
 		 TOP_sxth, 
 		 TOP_zxtb, 
@@ -605,6 +617,9 @@ main()
   Operand(1); 
 
   Instruction_Print_Group(print_5, 
+		 TOP_addd, 
+		 TOP_adds, 
+		 TOP_adds_n, 
 		 TOP_add_r, 
 		 TOP_add_i, 
 		 TOP_add_ii, 
@@ -620,12 +635,16 @@ main()
 		 TOP_and_r, 
 		 TOP_and_i, 
 		 TOP_and_ii, 
+		 TOP_cmpeqd, 
+		 TOP_cmpeqs, 
 		 TOP_cmpeq_r_b, 
 		 TOP_cmpeq_r_r, 
 		 TOP_cmpeq_i_b, 
 		 TOP_cmpeq_ii_b, 
 		 TOP_cmpeq_i_r, 
 		 TOP_cmpeq_ii_r, 
+		 TOP_cmpged, 
+		 TOP_cmpges, 
 		 TOP_cmpgeu_r_b, 
 		 TOP_cmpgeu_r_r, 
 		 TOP_cmpgeu_i_b, 
@@ -638,6 +657,8 @@ main()
 		 TOP_cmpge_ii_b, 
 		 TOP_cmpge_i_r, 
 		 TOP_cmpge_ii_r, 
+		 TOP_cmpgtd, 
+		 TOP_cmpgts, 
 		 TOP_cmpgtu_r_b, 
 		 TOP_cmpgtu_r_r, 
 		 TOP_cmpgtu_i_b, 
@@ -650,6 +671,8 @@ main()
 		 TOP_cmpgt_ii_b, 
 		 TOP_cmpgt_i_r, 
 		 TOP_cmpgt_ii_r, 
+		 TOP_cmpled, 
+		 TOP_cmples, 
 		 TOP_cmpleu_r_b, 
 		 TOP_cmpleu_r_r, 
 		 TOP_cmpleu_i_b, 
@@ -662,6 +685,8 @@ main()
 		 TOP_cmple_ii_b, 
 		 TOP_cmple_i_r, 
 		 TOP_cmple_ii_r, 
+		 TOP_cmpltd, 
+		 TOP_cmplts, 
 		 TOP_cmpltu_r_b, 
 		 TOP_cmpltu_r_r, 
 		 TOP_cmpltu_i_b, 
@@ -680,29 +705,10 @@ main()
 		 TOP_cmpne_ii_b, 
 		 TOP_cmpne_i_r, 
 		 TOP_cmpne_ii_r, 
+		 TOP_divd, 
+		 TOP_divs_r, 
 		 TOP_divu, 
 		 TOP_div, 
-		 TOP_faddd, 
-		 TOP_fadds, 
-		 TOP_fadds_n, 
-		 TOP_fcmpeqd, 
-		 TOP_fcmpeqs, 
-		 TOP_fcmpged, 
-		 TOP_fcmpges, 
-		 TOP_fcmpgtd, 
-		 TOP_fcmpgts, 
-		 TOP_fcmpled, 
-		 TOP_fcmples, 
-		 TOP_fcmpltd, 
-		 TOP_fcmplts, 
-		 TOP_fdivd, 
-		 TOP_fdivs, 
-		 TOP_fmuld, 
-		 TOP_fmuls, 
-		 TOP_fmuls_n, 
-		 TOP_fsubd, 
-		 TOP_fsubs, 
-		 TOP_fsubs_n, 
 		 TOP_maxu_r, 
 		 TOP_maxu_i, 
 		 TOP_maxu_ii, 
@@ -724,6 +730,7 @@ main()
 		 TOP_mul64h_r, 
 		 TOP_mul64h_i, 
 		 TOP_mul64h_ii, 
+		 TOP_muld, 
 		 TOP_mulfrac_r, 
 		 TOP_mulfrac_i, 
 		 TOP_mulfrac_ii, 
@@ -766,6 +773,8 @@ main()
 		 TOP_mull_r, 
 		 TOP_mull_i, 
 		 TOP_mull_ii, 
+		 TOP_muls, 
+		 TOP_muls_n, 
 		 TOP_nandl_r_b, 
 		 TOP_nandl_r_r, 
 		 TOP_nandl_i_b, 
@@ -813,6 +822,9 @@ main()
 		 TOP_shr_r, 
 		 TOP_shr_i, 
 		 TOP_shr_ii, 
+		 TOP_subd, 
+		 TOP_subs, 
+		 TOP_subs_n, 
 		 TOP_sub_r, 
 		 TOP_sub_i, 
 		 TOP_sub_ii, 
@@ -853,12 +865,12 @@ main()
 		 TOP_ldbc_ii, 
 		 TOP_ldbuc_i, 
 		 TOP_ldbuc_ii, 
-		 TOP_lddc_i, 
-		 TOP_lddc_ii, 
 		 TOP_ldhc_i, 
 		 TOP_ldhc_ii, 
 		 TOP_ldhuc_i, 
 		 TOP_ldhuc_ii, 
+		 TOP_ldpc_i, 
+		 TOP_ldpc_ii, 
 		 TOP_ldwc_i, 
 		 TOP_ldwc_ii, 
 		 TOP_UNDEFINED); 
@@ -880,8 +892,6 @@ main()
 		 TOP_ldb_d_ii, 
 		 TOP_ldb_i, 
 		 TOP_ldb_ii, 
-		 TOP_ldd_i, 
-		 TOP_ldd_ii, 
 		 TOP_ldhu_d_i, 
 		 TOP_ldhu_d_ii, 
 		 TOP_ldhu_i, 
@@ -890,6 +900,8 @@ main()
 		 TOP_ldh_d_ii, 
 		 TOP_ldh_i, 
 		 TOP_ldh_ii, 
+		 TOP_ldp_i, 
+		 TOP_ldp_ii, 
 		 TOP_ldw_d_i, 
 		 TOP_ldw_d_ii, 
 		 TOP_ldw_i, 
@@ -931,7 +943,7 @@ main()
 
   Instruction_Print_Group(print_11, 
 		 TOP_addcg, 
-		 TOP_divs, 
+		 TOP_divs_b_b_r, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
@@ -994,10 +1006,10 @@ main()
   Instruction_Print_Group(print_15, 
 		 TOP_stb_i, 
 		 TOP_stb_ii, 
-		 TOP_std_i, 
-		 TOP_std_ii, 
 		 TOP_sth_i, 
 		 TOP_sth_ii, 
+		 TOP_stp_i, 
+		 TOP_stp_ii, 
 		 TOP_stw_i, 
 		 TOP_stw_ii, 
 		 TOP_UNDEFINED); 
@@ -1014,10 +1026,10 @@ main()
   Instruction_Print_Group(print_16, 
 		 TOP_stbc_i, 
 		 TOP_stbc_ii, 
-		 TOP_stdc_i, 
-		 TOP_stdc_ii, 
 		 TOP_sthc_i, 
 		 TOP_sthc_ii, 
+		 TOP_stpc_i, 
+		 TOP_stpc_ii, 
 		 TOP_stwc_i, 
 		 TOP_stwc_ii, 
 		 TOP_UNDEFINED); 
