@@ -33,7 +33,7 @@
 #
 
 #
-#  Makefile for targia32_st200
+#  Makefile for targia32_st100
 #
 
 #
@@ -48,13 +48,15 @@ INCLUDE_SUBDIRS = \
 #  Next, all of the libraries are built because the tools depend on them.
 #
 #### Only these for now #####
-LIBRARY_SUBDIRS = \
-        libelf \
-        libiberty \
-        libelfutil \
-        libdwarf  \
-	libcmplrs \
+LIBRARY_SUBDIRS =  \
+        libiberty  \
+	libelf     \
+	libcmplrs  \
 	libcomutil \
+	libdwarf   \
+	libelfutil \
+	libSYS
+
 
 #
 #  Finally, the compiler tools (components) are built.
@@ -62,22 +64,27 @@ LIBRARY_SUBDIRS = \
 #  Note that be_driver must come last since it depends on other components
 #  being built first.
 #
-TOOL_SUBDIRS = 		\
-	gccfe 		\
-	be 		\
-	wopt 		\
-	driver 		\
-	lai		\
-	ipl             \
-        ir_tools        \
-	whirl2c 	
+TOOL_SUBDIRS = \
+	gccfe \
+	be \
+	lai \
+	wopt \
+	driver \
+        ipl    \
+        whirl2c \
+        ir_tools \
+	lno
 
-#	lw_inline 	\
-#	lno 		\
+
+
+#	lw_inline \
+#       lno
 
 
 #	dwarfdump \
 #	elfdump \
+#	ir_tools \
+#	whirl2c \
 #	whirl2f \
 #	be_driver
 

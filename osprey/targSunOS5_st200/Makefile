@@ -54,7 +54,8 @@ LIBRARY_SUBDIRS =  \
 	libcmplrs  \
 	libcomutil \
 	libdwarf   \
-	libelfutil
+	libelfutil \
+	libSYS
 
 
 #
@@ -71,8 +72,8 @@ TOOL_SUBDIRS = \
 	driver \
         ipl    \
         whirl2c \
-        ir_tools \
-	lno
+        ir_tools 
+#	lno
 
 
 
