@@ -49,8 +49,8 @@
 #include "laoinit.h"
 
 // from lao/lao_stub.cxx
-BE_EXPORTED extern void (*lao_init_p) ();
-BE_EXPORTED extern void (*lao_init_p) ();
+CG_EXPORTED extern void (*lao_init_p) ();
+CG_EXPORTED extern void (*lao_init_p) ();
 
 /*
  * This function is recognized by the Linux linker and placed in the
