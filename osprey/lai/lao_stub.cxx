@@ -620,13 +620,9 @@ LAO_setMemoryDependences(BB* bb, LoopInfo loopinfo) {
 
 // Make a LAO LoopInfo from the BB_List supplied.
 static LoopInfo
-LAO_makeLoopInfo(BB_List& bb_list, unsigned lao_actions) {
+LAO_makeLoopInfo(BB_List& bb_list, bool cyclic) {
   void *pointer = NULL;		// Parameter for CG_DEP_Delete_Graph.
   LoopInfo loopinfo = NULL;	// FIXME
-  bool cyclic =
-      lao_actions & LAO_LoopSchedule ||
-      lao_actions & LAO_LoopPipeline;
-  //  cyclic = false;	// HACK ALERT
   if (bb_list.size() == 1) {
     BB *bb = bb_list.front();
     CG_DEP_Compute_Graph(bb,
@@ -641,8 +637,6 @@ LAO_makeLoopInfo(BB_List& bb_list, unsigned lao_actions) {
   } else {
     if (cyclic) {
       cyclic = false;
-      lao_actions &= ~LAO_LoopSchedule;
-      lao_actions &= ~LAO_LoopPipeline;
       fprintf(TFile, "Cannot compute cyclic dependences on multi-BB loops\n");
     }
     CG_DEP_Compute_Region_Graph(bb_list,
@@ -672,7 +666,8 @@ LAO_optimize(BB_List &entryBBs, BB_List &innerBBs, BB_List &exitBBs, CodeRegion_
   //
   CodeRegion coderegion = LAO_makeCodeRegion(entryBBs, innerBBs, exitBBs, region_kind);
   //
-  LoopInfo loopinfo = LAO_makeLoopInfo(innerBBs, lao_actions);
+  bool cyclic = lao_actions & LAO_LoopSchedule || lao_actions & LAO_LoopPipeline;
+  LoopInfo loopinfo = LAO_makeLoopInfo(innerBBs, cyclic);
   //
   CodeRegion_pretty(coderegion, TFile);
   //
