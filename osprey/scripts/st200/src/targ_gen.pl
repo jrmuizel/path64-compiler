@@ -3305,10 +3305,12 @@ OK:
     }
     elsif ($scdclass eq 'CALL') {
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['XFER', 0 ]);
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ODD', 0 ]);
     }
     elsif ($scdclass eq 'JUMP') {
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['XFER', 0 ]);
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ODD', 0 ]);
     }
     elsif ($scdclass eq 'SYNC') {
@@ -3323,6 +3325,12 @@ OK:
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+    }
+    elsif ($scdclass eq 'PSWOP') {
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['XFER', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ODD', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['MEM', 0 ]);
     }
     elsif ($scdclass eq 'getpc') {
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
@@ -3534,6 +3542,9 @@ FOUND_OPCODE:
       $scdclass = 'SYNC';
     } elsif ($mnemonic eq 'prgins') {
       $scdclass = 'PRGINS';
+    } elsif ($mnemonic eq 'pswset' ||
+	     $mnemonic eq 'pswclr') {
+      $scdclass = 'PSWOP';
     }
 
     $OP_scdclass[$opcode] = $scdclass;
@@ -4871,21 +4882,22 @@ sub read_opcodes {
   &DECL_SCD_CLASS ("JUMP", 0, 1);            # direct, indirect jump
   &DECL_SCD_CLASS ("SYNC", 0, 0);            # sync instructions
   &DECL_SCD_CLASS ("PRGINS", 0, 0);          # prgins instruction
+  &DECL_SCD_CLASS ("PSWOP", 0, 1);           # pswset/pswclr
   &DECL_SCD_CLASS ("simulated", 1, 1);       # simulated
   &DECL_SCD_CLASS ("asm", 1, 1);          # asm
   &DECL_SCD_CLASS ("ssa", 1, 1);             # ssa
   &DECL_SCD_CLASS ("getpc", 2, 1);             # getpc
 
-  &DECL_EXEC_SLOT ("S0", "ALU,MUL,LOAD,LOAD_2,STORE,EXT,BRANCH,JUMP,CALL,SYNC,PRGINS,getpc"); # Slot 0
-  &DECL_EXEC_SLOT ("S1", "ALU,MUL,LOAD,LOAD_2,STORE,EXT,BRANCH,JUMP,CALL,SYNC,PRGINS,getpc"); # Slot 1
-  &DECL_EXEC_SLOT ("S2", "ALU,MUL,LOAD,LOAD2_IMM,STORE,EXT,BRANCH,JUMP,CALL,PRGINS,SYNC,getpc"); # Slot 2
-  &DECL_EXEC_SLOT ("S3", "ALU,MUL,LOAD,LOAD2_IMM,STORE,EXT,BRANCH,JUMP,CALL,SYNC,PRGINS,getpc"); # Slot 3
+  &DECL_EXEC_SLOT ("S0", "ALU,MUL,LOAD,LOAD_2,PSWOP,STORE,EXT,BRANCH,JUMP,CALL,SYNC,PRGINS,getpc"); # Slot 0
+  &DECL_EXEC_SLOT ("S1", "ALU,MUL,LOAD,LOAD_2,PSWOP,STORE,EXT,BRANCH,JUMP,CALL,SYNC,PRGINS,getpc"); # Slot 1
+  &DECL_EXEC_SLOT ("S2", "ALU,MUL,LOAD,LOAD2_IMM,PSWOP,STORE,EXT,BRANCH,JUMP,CALL,PRGINS,SYNC,getpc"); # Slot 2
+  &DECL_EXEC_SLOT ("S3", "ALU,MUL,LOAD,LOAD2_IMM,PSWOP,STORE,EXT,BRANCH,JUMP,CALL,SYNC,PRGINS,getpc"); # Slot 3
   &DECL_EXEC_SLOT ("EXT0", "ALU_IMM,MUL_IMM,LOAD_IMM,LOAD2_IMM,STORE_IMM"); # Long immediate in slot 0-1
   &DECL_EXEC_SLOT ("EXT1", "ALU_IMM,MUL_IMM,LOAD_IMM,LOAD2_IMM,STORE_IMM"); # Long immediate in slot 1-2
   &DECL_EXEC_SLOT ("EXT2", "ALU_IMM,MUL_IMM,LOAD_IMM,LOAD2_IMM,STORE_IMM"); # Long immediate in slot 2-3
   &DECL_EXEC_SLOT ("Odd",  "MUL");                # Multiplies in slot 1 or 3
   &DECL_EXEC_SLOT ("Even", "EXT");               # Multiplies in slot 1 or 3
-  &DECL_EXEC_SLOT ("ReqS0", "BRANCH,JUMP,CALL,getpc"); 
+  &DECL_EXEC_SLOT ("ReqS0", "BRANCH,JUMP,CALL,getpc,PSWOP"); 
 
   # Declare bundle (name, size_in_bits, temp_bits, num_slots, [slots 0..N]).
   &DECL_BUNDLE("st200", 128, "0,0,0", 4, "0,0,32", "1,32,32", "2,64,32", "3,96,32");
