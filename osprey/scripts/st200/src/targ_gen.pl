@@ -2672,7 +2672,8 @@ sub emit_pack_info {
 	my $opnds;
 
 	# find corresponding PACK
-	for (my $i = 0; $i < $PACK_count; $i++) {
+	my $i;
+	for ($i = 0; $i < $PACK_count; $i++) {
 	    if ($PACK_type[$i] eq $group) {
 		goto BREAK;
 	    }
