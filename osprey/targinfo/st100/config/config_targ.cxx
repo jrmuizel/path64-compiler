@@ -65,6 +65,7 @@
 #include "config_debug.h"
 #include "config_TARG.h"
 #include "config_opt.h"
+#include "config_wopt.h"   /* what WOPT does can be target dependent */
 #include "erglob.h"
 #include "tracing.h"
 #include "mtypes.h"
@@ -380,6 +381,13 @@ Prepare_Target ( void )
 void
 Preconfigure_Target ( void )
 {
+  // Overwrite some WOPT defaults:
+  // do not allow minmax opcode
+  WOPT_Enable_MINMAX = FALSE;
+  // do not allow the test expression optimization, st100 has
+  // hardware loop counters
+  WOPT_Enable_LFTR2 = FALSE;
+
   return;
 }
 
@@ -423,10 +431,11 @@ Configure_Target ()
   Spill_Int_Mtype = MTYPE_I4;
   Spill_Ptr_Mtype = MTYPE_A4;
   Spill_Float_Mtype = MTYPE_UNKNOWN;
-  // I do not know what this is. I use MTYPE_I8 because long long
-  // is 64-bit on the ST100.
-  Max_Int_Mtype = Def_Int_Mtype = MTYPE_I8;
-  Max_Uint_Mtype = Def_Uint_Mtype = MTYPE_U8;
+  // Maximal MTYPE that directly corresponds to machine registers.
+  // Perhaps there must be one for each type ...
+  // This also seems to define the border between using CVT or CVTL ?
+  Max_Int_Mtype = Def_Int_Mtype = MTYPE_I5;
+  Max_Uint_Mtype = Def_Uint_Mtype = MTYPE_U5;
   // That's too difficult now ...
   // Front-end does not know how to properly generate the MTYPE_B.
   // In WOPT there is a phase that introduces the MTYPE_B into the

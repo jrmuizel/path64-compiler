@@ -57,7 +57,7 @@
 #include "entry_exit_targ.h"
 #include "targ_abi_properties.h"
 
-#include "lai.h"
+#include "cg.h"
 #include "calls.h"
 #include "register.h"
 

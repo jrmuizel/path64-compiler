@@ -50,364 +50,44 @@ BOOL PQS_Tracing;
 TN_MAP PQS_tn_map;
 OP_MAP PQS_op_map;
 
+/* ====================================================================
+ *   get_top_info
+ *
+ *   TODO: perhaps it can be marked with the Operator data base.
+ * ====================================================================
+ */
 static void
 get_top_info(TOP x, PQS_ITYPE &itype, PQS_RELOPTYPE &relop)
 {
    relop = PQS_RELOPTYPE_OTHER;
    itype = PQS_ITYPE_INVALID;
 
-   FmtAssert(FALSE,("pqs:get_top_info -- not implemented"));
-
-   /*
    switch (x) {
-    case TOP_cmp4_eq_or_andcm: 
-    case TOP_cmp4_ge_or_andcm: 
-    case TOP_cmp4_gt_or_andcm: 
-    case TOP_cmp4_i_eq_or_andcm: 
-    case TOP_cmp4_i_ne_or_andcm: 
-    case TOP_cmp4_le_or_andcm: 
-    case TOP_cmp4_lt_or_andcm: 
-    case TOP_cmp4_ne_or_andcm: 
-    case TOP_cmp4_z1_ge_or_andcm: 
-    case TOP_cmp4_z1_gt_or_andcm: 
-    case TOP_cmp4_z1_le_or_andcm: 
-    case TOP_cmp4_z1_lt_or_andcm: 
-    case TOP_cmp4_z2_ge_or_andcm: 
-    case TOP_cmp4_z2_gt_or_andcm: 
-    case TOP_cmp4_z2_le_or_andcm: 
-    case TOP_cmp4_z2_lt_or_andcm: 
-    case TOP_cmp_eq_or_andcm: 
-    case TOP_cmp_ge_or_andcm: 
-    case TOP_cmp_gt_or_andcm: 
-    case TOP_cmp_i_eq_or_andcm: 
-    case TOP_cmp_i_ne_or_andcm: 
-    case TOP_cmp_le_or_andcm: 
-    case TOP_cmp_lt_or_andcm: 
-    case TOP_cmp_ne_or_andcm: 
-    case TOP_cmp_z1_ge_or_andcm: 
-    case TOP_cmp_z1_gt_or_andcm: 
-    case TOP_cmp_z1_le_or_andcm: 
-    case TOP_cmp_z1_lt_or_andcm: 
-    case TOP_cmp_z2_ge_or_andcm: 
-    case TOP_cmp_z2_gt_or_andcm: 
-    case TOP_cmp_z2_le_or_andcm: 
-    case TOP_cmp_z2_lt_or_andcm: 
-    case TOP_tbit_nz_or_andcm: 
-    case TOP_tbit_z_or_andcm: 
-    case TOP_tnat_nz_or_andcm: 
-    case TOP_tnat_z_or_andcm: 
-       itype = PQS_ITYPE_ORANDCM;
-       break;
-
-    case TOP_cmp4_eq_and_orcm: 
-    case TOP_cmp4_ge_and_orcm: 
-    case TOP_cmp4_gt_and_orcm: 
-    case TOP_cmp4_i_eq_and_orcm: 
-    case TOP_cmp4_i_ne_and_orcm: 
-    case TOP_cmp4_le_and_orcm: 
-    case TOP_cmp4_lt_and_orcm: 
-    case TOP_cmp4_ne_and_orcm: 
-    case TOP_cmp4_z1_ge_and_orcm: 
-    case TOP_cmp4_z1_gt_and_orcm: 
-    case TOP_cmp4_z1_le_and_orcm: 
-    case TOP_cmp4_z1_lt_and_orcm: 
-    case TOP_cmp4_z2_ge_and_orcm: 
-    case TOP_cmp4_z2_gt_and_orcm: 
-    case TOP_cmp4_z2_le_and_orcm: 
-    case TOP_cmp4_z2_lt_and_orcm: 
-    case TOP_cmp_eq_and_orcm: 
-    case TOP_cmp_ge_and_orcm: 
-    case TOP_cmp_gt_and_orcm: 
-    case TOP_cmp_i_eq_and_orcm: 
-    case TOP_cmp_i_ne_and_orcm: 
-    case TOP_cmp_le_and_orcm: 
-    case TOP_cmp_lt_and_orcm: 
-    case TOP_cmp_ne_and_orcm: 
-    case TOP_cmp_z1_ge_and_orcm: 
-    case TOP_cmp_z1_gt_and_orcm: 
-    case TOP_cmp_z1_le_and_orcm: 
-    case TOP_cmp_z1_lt_and_orcm: 
-    case TOP_cmp_z2_ge_and_orcm: 
-    case TOP_cmp_z2_gt_and_orcm: 
-    case TOP_cmp_z2_le_and_orcm: 
-    case TOP_cmp_z2_lt_and_orcm: 
-       itype = PQS_ITYPE_ORANDCM;
-       break;
-
-    case TOP_cmp4_eq_andcm: 
-    case TOP_cmp4_ge_andcm: 
-    case TOP_cmp4_gt_andcm: 
-    case TOP_cmp4_i_eq_andcm: 
-    case TOP_cmp4_i_ne_andcm: 
-    case TOP_cmp4_le_andcm: 
-    case TOP_cmp4_lt_andcm: 
-    case TOP_cmp4_ne_andcm: 
-    case TOP_cmp4_z1_ge_andcm: 
-    case TOP_cmp4_z1_gt_andcm: 
-    case TOP_cmp4_z1_le_andcm: 
-    case TOP_cmp4_z1_lt_andcm: 
-    case TOP_cmp4_z2_ge_andcm: 
-    case TOP_cmp4_z2_gt_andcm: 
-    case TOP_cmp4_z2_le_andcm: 
-    case TOP_cmp4_z2_lt_andcm: 
-    case TOP_cmp_eq_andcm: 
-    case TOP_cmp_ge_andcm: 
-    case TOP_cmp_gt_andcm: 
-    case TOP_cmp_i_eq_andcm: 
-    case TOP_cmp_i_ne_andcm: 
-    case TOP_cmp_le_andcm: 
-    case TOP_cmp_lt_andcm: 
-    case TOP_cmp_ne_andcm: 
-    case TOP_cmp_z1_ge_andcm: 
-    case TOP_cmp_z1_gt_andcm: 
-    case TOP_cmp_z1_le_andcm: 
-    case TOP_cmp_z1_lt_andcm: 
-    case TOP_cmp_z2_ge_andcm: 
-    case TOP_cmp_z2_gt_andcm: 
-    case TOP_cmp_z2_le_andcm: 
-    case TOP_cmp_z2_lt_andcm: 
-       itype = PQS_ITYPE_ANDCM;
-       break;
-
-    case TOP_cmp4_eq_and: 
-    case TOP_cmp4_ge_and: 
-    case TOP_cmp4_gt_and: 
-    case TOP_cmp4_i_eq_and: 
-    case TOP_cmp4_i_ne_and: 
-    case TOP_cmp4_le_and: 
-    case TOP_cmp4_lt_and: 
-    case TOP_cmp4_ne_and: 
-    case TOP_cmp4_z1_ge_and: 
-    case TOP_cmp4_z1_gt_and: 
-    case TOP_cmp4_z1_le_and: 
-    case TOP_cmp4_z1_lt_and: 
-    case TOP_cmp4_z2_ge_and: 
-    case TOP_cmp4_z2_gt_and: 
-    case TOP_cmp4_z2_le_and: 
-    case TOP_cmp4_z2_lt_and: 
-    case TOP_cmp_eq_and: 
-    case TOP_cmp_ge_and: 
-    case TOP_cmp_gt_and: 
-    case TOP_cmp_i_eq_and: 
-    case TOP_cmp_i_ne_and: 
-    case TOP_cmp_le_and: 
-    case TOP_cmp_lt_and: 
-    case TOP_cmp_ne_and: 
-    case TOP_cmp_z1_ge_and: 
-    case TOP_cmp_z1_gt_and: 
-    case TOP_cmp_z1_le_and: 
-    case TOP_cmp_z1_lt_and: 
-    case TOP_cmp_z2_ge_and: 
-    case TOP_cmp_z2_gt_and: 
-    case TOP_cmp_z2_le_and: 
-    case TOP_cmp_z2_lt_and: 
-    case TOP_tbit_nz_and: 
-    case TOP_tbit_z_and: 
-    case TOP_tnat_nz_and: 
-    case TOP_tnat_z_and: 
-       itype = PQS_ITYPE_AND;
-       break;
-
-    case TOP_cmp4_eq_orcm: 
-    case TOP_cmp4_ge_orcm: 
-    case TOP_cmp4_gt_orcm: 
-    case TOP_cmp4_i_eq_orcm: 
-    case TOP_cmp4_i_ne_orcm: 
-    case TOP_cmp4_le_orcm: 
-    case TOP_cmp4_lt_orcm: 
-    case TOP_cmp4_ne_orcm: 
-    case TOP_cmp4_z1_ge_orcm: 
-    case TOP_cmp4_z1_gt_orcm: 
-    case TOP_cmp4_z1_le_orcm: 
-    case TOP_cmp4_z1_lt_orcm: 
-    case TOP_cmp4_z2_ge_orcm: 
-    case TOP_cmp4_z2_gt_orcm: 
-    case TOP_cmp4_z2_le_orcm: 
-    case TOP_cmp4_z2_lt_orcm: 
-    case TOP_cmp_eq_orcm: 
-    case TOP_cmp_ge_orcm: 
-    case TOP_cmp_gt_orcm: 
-    case TOP_cmp_i_eq_orcm: 
-    case TOP_cmp_i_ne_orcm: 
-    case TOP_cmp_le_orcm: 
-    case TOP_cmp_lt_orcm: 
-    case TOP_cmp_ne_orcm: 
-    case TOP_cmp_z1_ge_orcm: 
-    case TOP_cmp_z1_gt_orcm: 
-    case TOP_cmp_z1_le_orcm: 
-    case TOP_cmp_z1_lt_orcm: 
-    case TOP_cmp_z2_ge_orcm: 
-    case TOP_cmp_z2_gt_orcm: 
-    case TOP_cmp_z2_le_orcm: 
-    case TOP_cmp_z2_lt_orcm: 
-       itype = PQS_ITYPE_ORCM;
-       break;
-
-
-    case TOP_cmp4_eq_or: 
-    case TOP_cmp4_ge_or: 
-    case TOP_cmp4_gt_or: 
-    case TOP_cmp4_i_eq_or: 
-    case TOP_cmp4_i_ne_or: 
-    case TOP_cmp4_le_or: 
-    case TOP_cmp4_lt_or: 
-    case TOP_cmp4_ne_or: 
-    case TOP_cmp4_z1_ge_or: 
-    case TOP_cmp4_z1_gt_or: 
-    case TOP_cmp4_z1_le_or: 
-    case TOP_cmp4_z1_lt_or: 
-    case TOP_cmp4_z2_ge_or: 
-    case TOP_cmp4_z2_gt_or: 
-    case TOP_cmp4_z2_le_or: 
-    case TOP_cmp4_z2_lt_or: 
-    case TOP_cmp_eq_or: 
-    case TOP_cmp_ge_or: 
-    case TOP_cmp_gt_or: 
-    case TOP_cmp_i_eq_or: 
-    case TOP_cmp_i_ne_or: 
-    case TOP_cmp_le_or: 
-    case TOP_cmp_lt_or: 
-    case TOP_cmp_ne_or: 
-    case TOP_cmp_z1_ge_or: 
-    case TOP_cmp_z1_gt_or: 
-    case TOP_cmp_z1_le_or: 
-    case TOP_cmp_z1_lt_or: 
-    case TOP_cmp_z2_ge_or: 
-    case TOP_cmp_z2_gt_or: 
-    case TOP_cmp_z2_le_or: 
-    case TOP_cmp_z2_lt_or: 
-    case TOP_tbit_nz_or: 
-    case TOP_tbit_z_or: 
-    case TOP_tnat_nz_or: 
-    case TOP_tnat_z_or: 
-       itype = PQS_ITYPE_OR;
-       break;
-
-    case TOP_fcmp_ord_unc: 
-    case TOP_fcmp_unord_unc: 
-    case TOP_cmp4_eq_unc: 
-    case TOP_cmp4_ge_unc: 
-    case TOP_cmp4_geu_unc: 
-    case TOP_cmp4_gt_unc: 
-    case TOP_cmp4_gtu_unc: 
-    case TOP_cmp4_i_eq_unc: 
-    case TOP_cmp4_i_ge_unc: 
-    case TOP_cmp4_i_geu_unc: 
-    case TOP_cmp4_i_gt_unc: 
-    case TOP_cmp4_i_gtu_unc: 
-    case TOP_cmp4_i_le_unc: 
-    case TOP_cmp4_i_leu_unc: 
-    case TOP_cmp4_i_lt_unc: 
-    case TOP_cmp4_i_ltu_unc: 
-    case TOP_cmp4_i_ne_unc: 
-    case TOP_cmp4_le_unc: 
-    case TOP_cmp4_leu_unc: 
-    case TOP_cmp4_lt_unc: 
-    case TOP_cmp4_ltu_unc: 
-    case TOP_cmp4_ne_unc: 
-    case TOP_cmp_eq_unc: 
-    case TOP_cmp_ge_unc: 
-    case TOP_cmp_geu_unc: 
-    case TOP_cmp_gt_unc: 
-    case TOP_cmp_gtu_unc: 
-    case TOP_cmp_i_eq_unc: 
-    case TOP_cmp_i_ge_unc: 
-    case TOP_cmp_i_geu_unc: 
-    case TOP_cmp_i_gt_unc: 
-    case TOP_cmp_i_gtu_unc: 
-    case TOP_cmp_i_le_unc: 
-    case TOP_cmp_i_leu_unc: 
-    case TOP_cmp_i_lt_unc: 
-    case TOP_cmp_i_ltu_unc: 
-    case TOP_cmp_i_ne_unc: 
-    case TOP_cmp_le_unc: 
-    case TOP_cmp_leu_unc: 
-    case TOP_cmp_lt_unc: 
-    case TOP_cmp_ltu_unc: 
-    case TOP_cmp_ne_unc: 
-    case TOP_fclass_m_unc: 
-    case TOP_fclass_nm_unc: 
-    case TOP_fcmp_eq_unc: 
-    case TOP_fcmp_ge_unc: 
-    case TOP_fcmp_gt_unc: 
-    case TOP_fcmp_le_unc: 
-    case TOP_fcmp_lt_unc: 
-    case TOP_fcmp_neq_unc: 
-    case TOP_fcmp_nge_unc: 
-    case TOP_fcmp_ngt_unc: 
-    case TOP_fcmp_nle_unc: 
-    case TOP_fcmp_nlt_unc: 
-    case TOP_tbit_nz_unc: 
-    case TOP_tbit_z_unc: 
-    case TOP_tnat_nz_unc: 
-    case TOP_tnat_z_unc: 
-       itype = PQS_ITYPE_UNC;
-       break;
-
-    case TOP_fcmp_ord: 
-    case TOP_fcmp_unord: 
-    case TOP_cmp4_eq: 
-    case TOP_cmp4_ge: 
-    case TOP_cmp4_geu: 
-    case TOP_cmp4_gt: 
-    case TOP_cmp4_gtu: 
-    case TOP_cmp4_i_eq: 
-    case TOP_cmp4_i_ge: 
-    case TOP_cmp4_i_geu: 
-    case TOP_cmp4_i_gt: 
-    case TOP_cmp4_i_gtu: 
-    case TOP_cmp4_i_le: 
-    case TOP_cmp4_i_leu: 
-    case TOP_cmp4_i_lt: 
-    case TOP_cmp4_i_ltu: 
-    case TOP_cmp4_i_ne: 
-    case TOP_cmp4_le: 
-    case TOP_cmp4_leu: 
-    case TOP_cmp4_lt: 
-    case TOP_cmp4_ltu: 
-    case TOP_cmp4_ne: 
-    case TOP_cmp_eq: 
-    case TOP_cmp_ge: 
-    case TOP_cmp_geu: 
-    case TOP_cmp_gt: 
-    case TOP_cmp_gtu: 
-    case TOP_cmp_i_eq: 
-    case TOP_cmp_i_ge: 
-    case TOP_cmp_i_geu: 
-    case TOP_cmp_i_gt: 
-    case TOP_cmp_i_gtu: 
-    case TOP_cmp_i_le: 
-    case TOP_cmp_i_leu: 
-    case TOP_cmp_i_lt: 
-    case TOP_cmp_i_ltu: 
-    case TOP_cmp_i_ne: 
-    case TOP_cmp_le: 
-    case TOP_cmp_leu: 
-    case TOP_cmp_lt: 
-    case TOP_cmp_ltu: 
-    case TOP_cmp_ne: 
-    case TOP_fclass_m: 
-    case TOP_fclass_nm: 
-    case TOP_fcmp_eq: 
-    case TOP_fcmp_ge: 
-    case TOP_fcmp_gt: 
-    case TOP_fcmp_le: 
-    case TOP_fcmp_lt: 
-    case TOP_fcmp_neq: 
-    case TOP_fcmp_nge: 
-    case TOP_fcmp_ngt: 
-    case TOP_fcmp_nle: 
-    case TOP_fcmp_nlt: 
-    case TOP_tbit_nz: 
-    case TOP_tbit_z: 
-    case TOP_tnat_nz: 
-    case TOP_tnat_z: 
+     case TOP_GP32_EQE_GT_BR_DR_DR:
+     case TOP_GP32_EQE_GT_BR_DR_U8:
+     case TOP_GP32_EQW_GT_BR_DR_DR:
+     case TOP_GP32_EQW_GT_BR_DR_U8:
+     case TOP_GP32_GEE_GT_BR_DR_DR:
+     case TOP_GP32_GEE_GT_BR_DR_U8:
+     case TOP_GP32_GEW_GT_BR_DR_DR:
+     case TOP_GP32_GEW_GT_BR_DR_U8:
+     case TOP_GP32_GTE_GT_BR_DR_DR:
+     case TOP_GP32_GTE_GT_BR_DR_U8:
+     case TOP_GP32_GTW_GT_BR_DR_DR:
+     case TOP_GP32_GTW_GT_BR_DR_U8:
+     case TOP_GP32_LEE_GT_BR_DR_DR:
+     case TOP_GP32_LEE_GT_BR_DR_U8:
+     case TOP_GP32_LEW_GT_BR_DR_DR:
+     case TOP_GP32_LEW_GT_BR_DR_U8:
+     case TOP_GP32_LTE_GT_BR_DR_DR:
+     case TOP_GP32_LTE_GT_BR_DR_U8:
+     case TOP_GP32_LTW_GT_BR_DR_DR:
+     case TOP_GP32_LTW_GT_BR_DR_U8:
+     case TOP_GP32_NEE_GT_BR_DR_DR:
+     case TOP_GP32_NEE_GT_BR_DR_U8:
+     case TOP_GP32_NEW_GT_BR_DR_DR:
+     case TOP_GP32_NEW_GT_BR_DR_U8:
        itype = PQS_ITYPE_NORM;
-       break;
-
-    case TOP_frcpa: 
-    case TOP_frsqrta: 
-       itype = PQS_ITYPE_DIVSQRT;
        break;
 
     default: 
@@ -417,82 +97,21 @@ get_top_info(TOP x, PQS_ITYPE &itype, PQS_RELOPTYPE &relop)
 
    
    switch (x) {
-    case TOP_fcmp_neq: 
-    case TOP_fcmp_neq_unc: 
-    case TOP_cmp4_i_ne: 
-    case TOP_cmp4_i_ne_and: 
-    case TOP_cmp4_i_ne_and_orcm: 
-    case TOP_cmp4_i_ne_andcm: 
-    case TOP_cmp4_i_ne_or: 
-    case TOP_cmp4_i_ne_or_andcm: 
-    case TOP_cmp4_i_ne_orcm: 
-    case TOP_cmp4_i_ne_unc: 
-    case TOP_cmp4_ne: 
-    case TOP_cmp4_ne_and: 
-    case TOP_cmp4_ne_and_orcm: 
-    case TOP_cmp4_ne_andcm: 
-    case TOP_cmp4_ne_or: 
-    case TOP_cmp4_ne_or_andcm: 
-    case TOP_cmp4_ne_orcm: 
-    case TOP_cmp4_ne_unc: 
-    case TOP_cmp_i_ne: 
-    case TOP_cmp_i_ne_and: 
-    case TOP_cmp_i_ne_and_orcm: 
-    case TOP_cmp_i_ne_andcm: 
-    case TOP_cmp_i_ne_or: 
-    case TOP_cmp_i_ne_or_andcm: 
-    case TOP_cmp_i_ne_orcm: 
-    case TOP_cmp_i_ne_unc: 
-    case TOP_cmp_ne: 
-    case TOP_cmp_ne_and: 
-    case TOP_cmp_ne_and_orcm: 
-    case TOP_cmp_ne_andcm: 
-    case TOP_cmp_ne_or: 
-    case TOP_cmp_ne_or_andcm: 
-    case TOP_cmp_ne_orcm: 
-    case TOP_cmp_ne_unc: 
+     case TOP_GP32_NEE_GT_BR_DR_DR:
+     case TOP_GP32_NEE_GT_BR_DR_U8:
+     case TOP_GP32_NEW_GT_BR_DR_DR:
+     case TOP_GP32_NEW_GT_BR_DR_U8:
        relop = PQS_RELOPTYPE_NE;
        break;
 
-    case TOP_cmp4_eq: 
-    case TOP_cmp4_eq_and: 
-    case TOP_cmp4_eq_and_orcm: 
-    case TOP_cmp4_eq_andcm: 
-    case TOP_cmp4_eq_or: 
-    case TOP_cmp4_eq_or_andcm: 
-    case TOP_cmp4_eq_orcm: 
-    case TOP_cmp4_eq_unc: 
-    case TOP_cmp4_i_eq: 
-    case TOP_cmp4_i_eq_and: 
-    case TOP_cmp4_i_eq_and_orcm: 
-    case TOP_cmp4_i_eq_andcm: 
-    case TOP_cmp4_i_eq_or: 
-    case TOP_cmp4_i_eq_or_andcm: 
-    case TOP_cmp4_i_eq_orcm: 
-    case TOP_cmp4_i_eq_unc: 
-    case TOP_cmp_eq: 
-    case TOP_cmp_eq_and: 
-    case TOP_cmp_eq_and_orcm: 
-    case TOP_cmp_eq_andcm: 
-    case TOP_cmp_eq_or: 
-    case TOP_cmp_eq_or_andcm: 
-    case TOP_cmp_eq_orcm: 
-    case TOP_cmp_eq_unc: 
-    case TOP_cmp_i_eq: 
-    case TOP_cmp_i_eq_and: 
-    case TOP_cmp_i_eq_and_orcm: 
-    case TOP_cmp_i_eq_andcm: 
-    case TOP_cmp_i_eq_or: 
-    case TOP_cmp_i_eq_or_andcm: 
-    case TOP_cmp_i_eq_orcm: 
-    case TOP_cmp_i_eq_unc: 
-    case TOP_fcmp_eq: 
-    case TOP_fcmp_eq_unc: 
+     case TOP_GP32_EQE_GT_BR_DR_DR:
+     case TOP_GP32_EQE_GT_BR_DR_U8:
+     case TOP_GP32_EQW_GT_BR_DR_DR:
+     case TOP_GP32_EQW_GT_BR_DR_U8:
        relop = PQS_RELOPTYPE_EQ;
        break;
-
    }
-   */
+
    return;
 }
 

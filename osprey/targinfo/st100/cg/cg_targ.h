@@ -523,18 +523,6 @@
 
 #define MIN_BRANCH_DISP (2097151 * INST_BYTES)
 
-typedef enum {
-  COMPARE_TYPE_unc,
-  COMPARE_TYPE_or,
-  COMPARE_TYPE_orcm,
-  COMPARE_TYPE_and,
-  COMPARE_TYPE_andcm,
-  COMPARE_TYPE_or_andcm,
-  COMPARE_TYPE_and_orcm,
-  COMPARE_TYPE_normal
-} COMPARE_TYPE;
-
-
 extern BOOL CGTARG_Preg_Register_And_Class(WN_OFFSET preg,
 					   ISA_REGISTER_CLASS *rclass,
 					   REGISTER *reg);
@@ -555,6 +543,8 @@ extern void CGTARG_Compute_Branch_Parameters(INT32 *mispredict,
 						    INT32 *fixed,
 						    INT32 *brtaken,
 						    double *factor);
+
+extern void Make_Branch_Conditional(BB *bb);
 
 /* Target predication: */
 inline BOOL CGTARG_Can_Predicate_Calls() { return TRUE; }
@@ -698,12 +688,6 @@ CGTARG_Have_Indexed_Mem_Insts(void)
 {
   return FALSE;
 }
-
-/* ---------------------------------------------------------------------
- *    Return a parallel version of cmp_top if any such exists.
- * ---------------------------------------------------------------------
- */
-extern TOP CGTARG_Parallel_Compare(OP* cmp_op, COMPARE_TYPE ctype);
 
 /* ---------------------------------------------------------------------
  *    Given a compare opcode, return the unconditional variant form. 

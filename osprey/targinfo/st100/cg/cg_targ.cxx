@@ -65,7 +65,7 @@
 #include "opt_alias_interface.h"
 #include "opt_alias_mgr.h"
 #include "cgir.h"
-#include "lai.h"
+#include "cg.h"
 #include "void_list.h"
 #include "whirl2ops.h"
 #include "targ_isa_lits.h"
@@ -138,6 +138,79 @@ CGTARG_Preg_Register_And_Class (
 
   FmtAssert(FALSE, ("failed to map preg %d", preg));
   /*NOTREACHED*/
+}
+
+/* ====================================================================
+ *   CGTARG_Parallel_Compare
+ * ====================================================================
+ */
+TOP
+CGTARG_Parallel_Compare (
+  OP* cmp_op, 
+  COMPARE_TYPE ctype
+)
+{
+  //
+  // None for floats.  For gp registers, only support "eq" and "ne"
+  // for arbitrary register compares.  Others must have one operand
+  // be the zero register.
+  //
+  if (OP_flop(cmp_op)) {
+    return TOP_UNDEFINED;
+  }
+
+  FmtAssert(FALSE,("CGTARG_Parallel_Compare: not implemented"));
+
+  TOP cmp_top = OP_code(cmp_op);
+  if (OP_opnd(cmp_op, 1) != Zero_TN && OP_opnd(cmp_op, 2) != Zero_TN) {
+    switch (cmp_top) {
+      /*
+    case TOP_cmp_ne:
+    case TOP_cmp4_ne:
+    case TOP_cmp_i_ne:
+    case TOP_cmp4_i_eq:
+    case TOP_cmp4_eq:
+    case TOP_cmp_i_eq:
+    case TOP_cmp_eq:
+      break;
+      */
+    default:
+      return TOP_UNDEFINED;
+    }
+  }
+
+  /*
+  switch (cmp_top) {
+
+  }
+  */
+
+  return TOP_UNDEFINED;
+}
+
+/* ====================================================================
+ *   CGTARG_Unconditional_Compare
+ * ====================================================================
+ */
+static BOOL 
+CGTARG_Unconditional_Compare_Helper (
+  TOP top, 
+  TOP* uncond_ver
+)
+{
+  // There is no unconditional compares on the ST100 for the
+  // moment:
+  switch (top) {
+
+  default:
+    *uncond_ver = TOP_UNDEFINED;
+  }
+  return FALSE;
+}
+
+BOOL CGTARG_Unconditional_Compare(OP *op, TOP* uncond_ver)
+{
+  return (CGTARG_Unconditional_Compare_Helper(OP_code(op),uncond_ver));
 }
 
 /* ====================================================================
@@ -347,58 +420,6 @@ CGTARG_Analyze_Compare (
   *tn1 = cond_tn1;
   *tn2 = cond_tn2;
   return variant;
-}
-
-/* ====================================================================
- *   CGTARG_Unconditional_Compare
- *
- *   See interface description
- * ====================================================================
- */
-static BOOL 
-CGTARG_Unconditional_Compare_Helper (
-  TOP top, 
-  TOP* uncond_ver
-)
-{
-  *uncond_ver = TOP_UNDEFINED;
-
-  return FALSE;
-}
-
-/* ====================================================================
- *    CGTARG_Parallel_Compare
- *
- *    See interface description
- *
- *    None for floats. For gp registers, only support "eq" and "ne"
- *    for arbitrary register compares.  Others must have one operand
- *    be the zero register.
- * ====================================================================
- */
-TOP
-CGTARG_Parallel_Compare (
-  OP* cmp_op, 
-  COMPARE_TYPE ctype
-)
-{
-  TOP cmp_top = OP_code(cmp_op);
-
-  if (OP_opnd(cmp_op, 1) != Zero_TN && OP_opnd(cmp_op, 2) != Zero_TN) {
-    switch (cmp_top) {
-
-      default:
-	return TOP_UNDEFINED;
-    }
-  }
-
-  switch (cmp_top) {
-
-    default:
-      return TOP_UNDEFINED;
-  }
-
-  return TOP_UNDEFINED;
 }
 
 /* ====================================================================
@@ -853,6 +874,26 @@ CGTARG_Postprocess_Asm_String (
  */
 
 /* ====================================================================
+ *   CGTARG_Spill_Type
+ * ====================================================================
+ */
+TY_IDX 
+CGTARG_Spill_Type (TN *tn) 
+{
+  switch (TN_register_class(tn)) {
+    case ISA_REGISTER_CLASS_guard:
+    case ISA_REGISTER_CLASS_du:
+      return Spill_Int_Type;
+
+    case ISA_REGISTER_CLASS_au:
+      return Spill_Ptr_Type;
+
+    default:
+      FmtAssert(FALSE,("CGTARG_Spill_Type: wrong TN register class"));
+  }
+}
+
+/* ====================================================================
  *   CGTARG_Load_From_Memory
  * ====================================================================
  */
@@ -864,32 +905,26 @@ void CGTARG_Load_From_Memory (
 {
   TYPE_ID mtype = TY_mtype(ST_type(mem_loc));
 
-  FmtAssert(FALSE, ("CGTARG_Load_From_Memory: not implemented"));
-
   if (TN_register_class(tn) == ISA_REGISTER_CLASS_guard) {
-    /* Since we can't directly load a predicate TN, first load into
+    /* 
+     * Since we can't directly load a predicate TN, first load into
      * an integer register and then set the predicate by checking for
      * a non-zero value.
      */
-    TN *temp_tn = Build_TN_Of_Mtype (MTYPE_I8);
-    //    Exp_Load (mtype, mtype, temp_tn, mem_loc, 0, ops, V_NONE);
-    //    Build_OP (TOP_cmp_i_ne, tn, True_TN, 
-    //	      True_TN, Gen_Literal_TN(0, 4), temp_tn, ops);
+    TN *temp_tn = Build_TN_Of_Mtype (MTYPE_I4);
+    Exp_Load (mtype, mtype, temp_tn, mem_loc, 0, ops, V_NONE);
+    Build_OP (TOP_GP32_NEW_GT_BR_DR_U8, tn, True_TN, 
+                          temp_tn, Gen_Literal_TN(0, 4), ops);
   }
-  //  else if (TN_register_class(tn) == ISA_REGISTER_CLASS_branch) {
-	// first load into an integer register and then copy.
-  //    	TN *temp_tn = Build_TN_Of_Mtype (MTYPE_I8);
-  //    	Exp_Load (mtype, mtype, temp_tn, mem_loc, 0, ops, V_NONE);
-  //    	Build_OP (TOP_mov_t_br, tn, True_TN, temp_tn, ops);
-  //  } 
   else {
-
-    /* Non-predicate TNs are just a simple load.
+    /* 
+     * Non-predicate TNs are just a simple load.
      */
     Exp_Load (mtype, mtype, tn, mem_loc, 0, ops, V_NONE);
   }
-}
 
+  return;
+}
 
 /* ====================================================================
  *   CGTARG_Store_To_Memory
@@ -899,29 +934,23 @@ void CGTARG_Store_To_Memory(TN *tn, ST *mem_loc, OPS *ops)
 {
   TYPE_ID mtype = TY_mtype(ST_type(mem_loc));
 
-  FmtAssert(FALSE, ("CGTARG_Store_To_Memory: not implemented"));
-
   if (TN_register_class(tn) == ISA_REGISTER_CLASS_guard) {
-    /* Since we can't directly store a predicate TN, first copy to
+    /* 
+     * Since we can't directly store a predicate TN, first copy to
      * an integer register and then store.
      */
-    TN *temp_tn = Build_TN_Of_Mtype (MTYPE_I8);
-    //    Build_OP (TOP_mov, temp_tn, True_TN, Zero_TN, ops);
-    //    Build_OP (TOP_mov_i, temp_tn, tn, Gen_Literal_TN(1, 4), ops);
-    //    Exp_Store (mtype, temp_tn, mem_loc, 0, ops, V_NONE);
+    TN *temp_tn = Build_TN_Of_Mtype (MTYPE_I4);
+    Build_OP (TOP_GP32_BOOL_GT_DR_BR, temp_tn, True_TN, tn, ops);
+    Exp_Store (mtype, temp_tn, mem_loc, 0, ops, V_NONE);
   }
-  //  else if (TN_register_class(tn) == ISA_REGISTER_CLASS_branch) {
-	// first copy to an integer register and then store.
-  //    	TN *temp_tn = Build_TN_Of_Mtype (MTYPE_I8);
-  //    	Build_OP (TOP_mov_f_br, temp_tn, True_TN, tn, ops);
-  //    	Exp_Store (mtype, temp_tn, mem_loc, 0, ops, V_NONE);
-  //  } 
   else {
-
-    /* Non-predicate TNs are just a simple store.
+    /* 
+     * Non-predicate TNs are just a simple store.
      */
     Exp_Store (mtype, tn, mem_loc, 0, ops, V_NONE);
   }
+
+  return;
 }
 
 /* ====================================================================

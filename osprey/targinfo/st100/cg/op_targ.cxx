@@ -53,3 +53,67 @@
 #include "targ_isa_operands.h"
 #include "targ_isa_properties.h"
 
+/* ====================================================================
+ *   CGTARG_Predicate_OP
+ *
+ *   If a BB ends in an unconditional branch, turn it into a 
+ *   conditional branch with TRUE predicate, so we can predicate with 
+ *   something else later.
+ *   If we can't find an unconditional branch, just give up and do 
+ *   nothing
+ * ====================================================================
+ */
+void
+Make_Branch_Conditional (
+  BB *bb
+)
+{
+  OP *new_br;
+  TOP new_top;
+  OP* br_op = BB_branch_op(bb);
+
+  if (!br_op) return;
+
+  FmtAssert(FALSE,("Make_Branch_Conditional: not implemented"));
+
+  /*
+  switch (OP_code(br_op)) {
+  case TOP_br:
+    new_top = TOP_br_cond;
+    break;
+  case TOP_br_r:
+    new_top = TOP_br_r_cond;
+    break;
+  default:
+    return;
+  }
+
+  new_br = Mk_OP(new_top,
+		 True_TN,
+		 Gen_Enum_TN(ECV_bwh_dptk),
+		 Gen_Enum_TN(ECV_ph_few),
+		 Gen_Enum_TN(ECV_dh),
+		 OP_opnd(br_op,2));
+  */
+
+  OP_srcpos(new_br) = OP_srcpos(br_op);
+  BB_Insert_Op_After(bb, br_op, new_br);
+  BB_Remove_Op(bb, br_op);
+}
+
+/* ====================================================================
+ *   CGTARG_Predicate_OP
+ * ====================================================================
+ */
+void
+CGTARG_Predicate_OP (
+  BB* bb, 
+  OP* op, 
+  TN* pred_tn
+)
+{
+  if (OP_has_predicate(op)) {
+    Set_OP_opnd(op, OP_PREDICATE_OPND, pred_tn);
+  }
+}
+
