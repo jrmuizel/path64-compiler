@@ -37,7 +37,7 @@ enum LAO_Action {
 
 // LAO_EXPERIMENT
 bool
-LAO_optimize(CG_LOOP *cgloop, unsigned lao_actions);
+LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions);
 
 void
 LAO_INIT();

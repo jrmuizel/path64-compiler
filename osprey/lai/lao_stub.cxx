@@ -48,6 +48,7 @@ static MEM_POOL MEM_lao_pool;
 // Variable used to skip multiple LAO_INIT / LAO_FINI calls
 static int LAO_initialized = 0;
 
+// Initialization of the LAO, needs to be called once.
 void
 LAO_INIT() {
   if (LAO_initialized++ == 0) {
@@ -321,6 +322,7 @@ LAO_INIT() {
   }
 }
 
+// Finalization of the LAO, needs to be called once.
 void
 LAO_FINI() {
   if (--LAO_initialized == 0) {
@@ -331,6 +333,7 @@ LAO_FINI() {
   }
 }
 
+// Convert CGIR TOP to LAO Operator.
 static inline Operator
 TOP_Operator (TOP top) {
   Operator lao_operator = TOP__Operator[top];
@@ -339,6 +342,7 @@ TOP_Operator (TOP top) {
   return lao_operator;
 }
 
+// Convert CGIR ISA_ENUM_CLASS to LAO Modifier.
 static inline Modifier
 IEC_Modifier (ISA_ENUM_CLASS iec) {
   Modifier lao_modifier = IEC__Modifier[iec];
@@ -347,6 +351,7 @@ IEC_Modifier (ISA_ENUM_CLASS iec) {
   return lao_modifier;
 }
 
+// Convert CGIR ISA_LIT_CLASS to LAO Immediate.
 static inline Immediate
 LC_Immediate (ISA_LIT_CLASS ilc) {
   Immediate lao_immediate = LC__Immediate[ilc];
@@ -355,6 +360,7 @@ LC_Immediate (ISA_LIT_CLASS ilc) {
   return lao_immediate;
 }
 
+// Convert CGIR ISA_REGISTER_CLASS to LAO RegClass.
 static inline RegClass
 IRC_RegClass (ISA_REGISTER_CLASS irc) {
   RegClass lao_regclass = IRC__RegClass[irc];
@@ -363,74 +369,72 @@ IRC_RegClass (ISA_REGISTER_CLASS irc) {
   return lao_regclass;
 }
 
-static Register RegClass_LowReg[] = {
-#define RegClass(RegClass, BitWidth, LowReg, HighReg, Registers, Comment) Register__##LowReg
-#include "CSD_Register.enum"
-};
-
+// Convert CGIR CLASS_REG_PAIR to LAO Register.
 static inline Register
 CRP_Register (CLASS_REG_PAIR crp) {
   mREGISTER reg = CLASS_REG_PAIR_reg(crp);
   ISA_REGISTER_CLASS irc = CLASS_REG_PAIR_rclass(crp);
   RegClass regclass = IRC_RegClass(irc);
-  Register lowreg = RegClass_LowReg[regclass];
+  Register lowreg = RegClass_getLowReg(regclass);
   return (Register)(lowreg + (reg - 1));
 }
 
+// Convert CGIR TN to LAO TempName.
 static inline TempName
 TN_TempName (TN *tn) {
-  TempName lirTN = NULL;
-
+  TempName tempname = NULL;
+  
   if (TN_is_register(tn)) {
-
+    
     if (TN_is_dedicated(tn)) {
       CLASS_REG_PAIR tn_crp = TN_class_reg(tn);
-      lirTN = Interface_makeDedicatedTempName(interface, tn, CRP_Register(tn_crp));
+      tempname = Interface_makeDedicatedTempName(interface, tn, CRP_Register(tn_crp));
     } else {
       ISA_REGISTER_CLASS tn_irc = TN_register_class(tn);
-      lirTN = Interface_makePseudoRegTempName(interface, tn, IRC_RegClass(tn_irc));
+      tempname = Interface_makePseudoRegTempName(interface, tn, IRC_RegClass(tn_irc));
     }
-
+  
   } else if (TN_is_constant(tn)) {
-
+    
     if (TN_has_value(tn)) {
       int64_t value = TN_value(tn);
       Immediate immediate = LC_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
-      lirTN = Interface_makeAbsoluteTempName(interface, tn, immediate, value);
-
+      tempname = Interface_makeAbsoluteTempName(interface, tn, immediate, value);
+    
     } else if (TN_is_symbol(tn)) {
       ST *var = TN_var(tn);
       ST_IDX st_idx = ST_st_idx(*var);
       int64_t offset = TN_offset(tn);
       Immediate immediate = LC_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
       Symbol symbol = Interface_makeSymbol(interface, st_idx, ST_name(st_idx));
-      lirTN = Interface_makeSymbolTempName(interface, tn, immediate, symbol, offset);
-
+      tempname = Interface_makeSymbolTempName(interface, tn, immediate, symbol, offset);
+    
     } else if (TN_is_label(tn)) {
       LABEL_IDX label_idx = TN_label(tn);
       Immediate immediate = LC_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
       Label label = Interface_makeLabel(interface, label_idx, LABEL_name(label_idx));
-      lirTN = Interface_makeLabelTempName(interface, tn, immediate, label);
+      tempname = Interface_makeLabelTempName(interface, tn, immediate, label);
       Is_True(TN_offset(tn) == 0, ("LAO requires zero offset from label."));
-
+    
     } else if (TN_is_enum(tn)) {
       ISA_ENUM_CLASS_VALUE value = TN_enum(tn);
       Modifier modifier = IEC_Modifier((ISA_ENUM_CLASS)0);	// HACK ALERT
-      lirTN = Interface_makeModifierTempName(interface, tn, modifier, value);
-
+      tempname = Interface_makeModifierTempName(interface, tn, modifier, value);
+    
     } else {
       Is_True(FALSE, ("Unknown constant TN type."));
     }
-
+  
   } else {
     Is_True(FALSE, ("Unknown TN type."));
   }
-
-  Is_True(lirTN != NULL, ("TN should not be NULL."));
-
-  return lirTN;
+  
+  Is_True(tempname != NULL, ("tempname should not be NULL."));
+  
+  return tempname;
 }
 
+// Convert CGIR OP to LAO Operation.
 static Operation
 OP_Operation(OP *op) {
   int argCount = OP_opnds(op);
@@ -448,6 +452,7 @@ OP_Operation(OP *op) {
   return operation;
 }
 
+// Convert CGIR BB to LAO BasicBlock.
 static BasicBlock
 BB_BasicBlock(BB *bb) {
   BasicBlock basicblock = Interface_makeBasicBlock(interface, bb);
@@ -486,14 +491,28 @@ BB_BasicBlock(BB *bb) {
 }
 
 bool
-LAO_optimize(CG_LOOP *cgloop, unsigned lao_actions) {
-  return false;
-}
-
-static CodeRegion
-CG_LOOP_CodeRegion(CG_LOOP *cg_loop) {
-  CodeRegion coderegion = Interface_makeCodeRegion(interface, CodeRegion_InnerLoop);
-  return coderegion;
+LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
+  bool result = false;
+  if (BB_innermost(LOOP_DESCR_loophead(loop))) {
+    CodeRegion coderegion = Interface_makeCodeRegion(interface, CodeRegion_InnerLoop);
+    CG_LOOP cg_loop(loop);
+    if (cg_loop.Has_prolog()) {
+      BasicBlock prolog = BB_BasicBlock(CG_LOOP_prolog);
+      CodeRegion_setEntry(coderegion, prolog);
+    }
+    FOR_ALL_BB_SET_members(LOOP_DESCR_bbset(loop), bb) {
+      BasicBlock basicblock = BB_BasicBlock(bb);
+    }
+    if (cg_loop.Has_epilog()) {
+      BasicBlock epilog = BB_BasicBlock(CG_LOOP_epilog);
+      CodeRegion_setExit(coderegion, epilog);
+    }
+    if (!cg_loop.Has_prolog_epilog()) {
+      lao_actions &= ~LAO_LoopPipeline;
+    }
+    result = CodeRegion_optimize(coderegion, lao_actions);
+  }
+  return result;
 }
 
 static BasicBlock
