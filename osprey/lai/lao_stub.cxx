@@ -45,9 +45,6 @@ static RegClass IRC__RegClass[ISA_REGISTER_CLASS_MAX];
 // Memory pool local to the stub
 static MEM_POOL MEM_lao_pool;
 
-// Hash table to map CGIR TNs to LAO TempNames.
-static hTN_MAP TN2LIR_map;
-
 // Variable used to skip multiple LAO_INIT / LAO_FINI calls
 static int LAO_initialized = 0;
 
@@ -309,6 +306,7 @@ LAO_INIT() {
     for (int i = 0; i < EC_MAX; i++) IEC__Modifier[i] = Modifier_;
     // initialize LC__Immediate
     for (int i = 0; i < LC_MAX; i++) LC__Immediate[i] = Immediate_;
+    LC__Immediate[0] = Immediate_I_signed_32_overflow_dont; // HACK ALERT
     LC__Immediate[LC_s32] = Immediate_I_signed_32_overflow_dont;
     LC__Immediate[LC_u32] = Immediate_I_signed_32_overflow_dont;
     LC__Immediate[LC_s23] = Immediate_I_signed_23_overflow_signed;
@@ -320,16 +318,12 @@ LAO_INIT() {
     IRC__RegClass[ISA_REGISTER_CLASS_branch] = RegClass_BRC;
     // initialize MEM_lao_pool
     MEM_POOL_Initialize ( &MEM_lao_pool , "lao_stub_pool", false );
-    // initialize TN2LIR_map
-    TN2LIR_map = hTN_MAP_Create(&MEM_lao_pool);
   }
 }
 
 static inline void
 LAO_FINI() {
   if (--LAO_initialized == 0) {
-    // finalize TN2LIR_map
-    TN2LIR_map = NULL;
     // finalize MEM_lao_pool
     MEM_POOL_Delete  ( &MEM_lao_pool );
     // finalize LIR
@@ -385,47 +379,55 @@ CRP_Register (CLASS_REG_PAIR crp) {
 
 static inline TempName
 TN_TempName (TN *tn) {
-  TempName lirTN = (TempName)hTN_MAP_Get(TN2LIR_map, tn);
-  if (lirTN == NULL) {
-    if (TN_is_register(tn)) {
-      if (TN_is_dedicated(tn)) {
-	CLASS_REG_PAIR tn_crp = TN_class_reg(tn);
-	lirTN = Interface_makeDedicatedTempName(interface, tn, CRP_Register(tn_crp));
-      } else {
-	ISA_REGISTER_CLASS tn_irc = TN_register_class(tn);
-	lirTN = Interface_makePseudoRegTempName(interface, tn, IRC_RegClass(tn_irc));
-      }
-    } else if (TN_is_constant(tn)) {
-      if (TN_has_value(tn)) {
-	int64_t value = TN_value(tn);
-	Immediate immediate = LC_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
-	lirTN = Interface_makeAbsoluteTempName(interface, tn, immediate, value);
-      } else if (TN_is_symbol(tn)) {
-	ST *var = TN_var(tn);
-	ST_IDX st_idx = ST_st_idx(*var);
-	int64_t offset = TN_offset(tn);
-	Immediate immediate = LC_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
-	Symbol symbol = Interface_makeSymbol(interface, st_idx, ST_name(st_idx));
-	lirTN = Interface_makeSymbolTempName(interface, tn, immediate, symbol, offset);
-      } else if (TN_is_label(tn)) {
-	LABEL_IDX label_idx = TN_label(tn);
-	Immediate immediate = LC_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
-	Label label = Interface_makeLabel(interface, label_idx, LABEL_name(label_idx));
-	lirTN = Interface_makeLabelTempName(interface, tn, immediate, label);
-	Is_True(TN_offset(tn) == 0, ("LAO requires zero offset from label."));
-      } else if (TN_is_enum(tn)) {
-	ISA_ENUM_CLASS_VALUE value = TN_enum(tn);
-	Modifier modifier = IEC_Modifier((ISA_ENUM_CLASS)0);	// HACK ALERT
-	lirTN = Interface_makeModifierTempName(interface, tn, modifier, value);
-      } else {
-	Is_True(FALSE, ("Unknown constant TN type."));
-      }
+  TempName lirTN = NULL;
+
+  if (TN_is_register(tn)) {
+
+    if (TN_is_dedicated(tn)) {
+      CLASS_REG_PAIR tn_crp = TN_class_reg(tn);
+      lirTN = Interface_makeDedicatedTempName(interface, tn, CRP_Register(tn_crp));
     } else {
-      Is_True(FALSE, ("Unknown TN type."));
+      ISA_REGISTER_CLASS tn_irc = TN_register_class(tn);
+      lirTN = Interface_makePseudoRegTempName(interface, tn, IRC_RegClass(tn_irc));
     }
-    Is_True(lirTN != NULL, ("TN should not be NULL."));
-    hTN_MAP_Set(TN2LIR_map, tn, (void *)lirTN);
+
+  } else if (TN_is_constant(tn)) {
+
+    if (TN_has_value(tn)) {
+      int64_t value = TN_value(tn);
+      Immediate immediate = LC_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
+      lirTN = Interface_makeAbsoluteTempName(interface, tn, immediate, value);
+
+    } else if (TN_is_symbol(tn)) {
+      ST *var = TN_var(tn);
+      ST_IDX st_idx = ST_st_idx(*var);
+      int64_t offset = TN_offset(tn);
+      Immediate immediate = LC_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
+      Symbol symbol = Interface_makeSymbol(interface, st_idx, ST_name(st_idx));
+      lirTN = Interface_makeSymbolTempName(interface, tn, immediate, symbol, offset);
+
+    } else if (TN_is_label(tn)) {
+      LABEL_IDX label_idx = TN_label(tn);
+      Immediate immediate = LC_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
+      Label label = Interface_makeLabel(interface, label_idx, LABEL_name(label_idx));
+      lirTN = Interface_makeLabelTempName(interface, tn, immediate, label);
+      Is_True(TN_offset(tn) == 0, ("LAO requires zero offset from label."));
+
+    } else if (TN_is_enum(tn)) {
+      ISA_ENUM_CLASS_VALUE value = TN_enum(tn);
+      Modifier modifier = IEC_Modifier((ISA_ENUM_CLASS)0);	// HACK ALERT
+      lirTN = Interface_makeModifierTempName(interface, tn, modifier, value);
+
+    } else {
+      Is_True(FALSE, ("Unknown constant TN type."));
+    }
+
+  } else {
+    Is_True(FALSE, ("Unknown TN type."));
   }
+
+  Is_True(lirTN != NULL, ("TN should not be NULL."));
+
   return lirTN;
 }
 
@@ -489,80 +491,6 @@ CG_LOOP_CodeRegion(CG_LOOP *cg_loop) {
   return coderegion;
 }
 
-/* -----------------------------------------------------------------------
- * Functions to convert CGIR/BB to/from LIR/BasicBlock
- * -----------------------------------------------------------------------
- */
-
-typedef struct bbmap_ {
-  BB *cgir;
-  BasicBlock lir;
-} BBmap_, *BBmap;
-
-static BBmap_ *BB_map = NULL;
-static int BB_map_SIZE = 0;
-
-/* -----------------------------------------------------------------------
- * Associates a cgirBB to a lirBB through the BB_map array. BB_map is
- * an array of BB_map_, terminated by an element with NULL values.
- * -----------------------------------------------------------------------
- */
-static void
-BBmap_add ( BB * cgirBB, BasicBlock lirBB ) {
-  BBmap bbmap;
-  int count = 1;
-
-  if (BB_map_SIZE != 0) {
-    for (bbmap = BB_map; bbmap->cgir; bbmap++, count ++);
-  }
-
-  Is_True((count <= BB_map_SIZE) || (BB_map_SIZE == 0), ("Inconsistent BB_map count"));
-
-  if (count >= BB_map_SIZE) {
-    int newSIZE = BB_map_SIZE + 10;
-    BBmap newMap;
-    newMap = TYPE_MEM_POOL_ALLOC_N(BBmap_, &MEM_lao_pool, newSIZE);
-    if (BB_map != NULL) {
-      memcpy(newMap, BB_map, sizeof(BBmap_)*count);
-      MEM_POOL_FREE(&MEM_lao_pool, BB_map);
-    }
-    BB_map = newMap;
-  }
-
-  BB_map[count-1].cgir = cgirBB;
-  BB_map[count-1].lir = lirBB;
-  BB_map[count].cgir = NULL;
-  BB_map[count].lir = NULL;
-}
-
-/* -----------------------------------------------------------------------
- * Return the CGIR/LAO node associated with the given LAO/CGIR node
- * -----------------------------------------------------------------------
- */
-static BasicBlock
-BB_CGIR2LAO ( BB * node ) {
-  BBmap bbmap;
-
-  for (bbmap = BB_map; bbmap->cgir; bbmap++) {
-    if (bbmap->cgir == node)
-      return bbmap->lir;
-  }
-
-  return NULL;
-}
-
-static BB *
-BB_LAO2CGIR ( BasicBlock node ) {
-  BBmap bbmap;
-
-  for (bbmap = BB_map; bbmap->cgir; bbmap++) {
-    if (bbmap->lir == node)
-      return bbmap->cgir;
-  }
-
-  Is_True(FALSE, ("Could not find CGIR BB for BasicBlock:%p", node));
-}
-
 static BasicBlock
 BB_convert2LIR ( BB *bb ) {
   BasicBlock lirBB;
@@ -571,8 +499,6 @@ BB_convert2LIR ( BB *bb ) {
   fprintf(TFile, "Starting BB_convert2LIR for %d\n", BB_id(bb));
 
   lirBB = Interface_makeBasicBlock ( interface, bb );
-
-  BBmap_add(bb, lirBB);
 
   // Now, fill the basic blocks with labels, operations and branches
 
@@ -638,8 +564,8 @@ static void
 BB_LIRcreateEdges ( BB *src, BB *dst ) {
   BasicBlock srcLIR, dstLIR;
 
-  srcLIR = BB_CGIR2LAO(src);
-  dstLIR = BB_CGIR2LAO(dst);
+  srcLIR = Interface_getBasicBlock(interface, src);
+  dstLIR = Interface_getBasicBlock(interface, dst);
 
   Is_True((src != NULL) && (dst != NULL), ("BB_map internal ERROR."));
 
@@ -659,11 +585,11 @@ REGION_convert2LIR ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs ) {
   }
 
   for (i = 0; entryBBs[i]; i++) {
-    CodeRegion_setEntry(coderegion, BB_CGIR2LAO(entryBBs[i]));
+    CodeRegion_setEntry(coderegion, Interface_getBasicBlock(interface, entryBBs[i]));
   }
 
   for (i = 0; exitBBs[i]; i++) {
-    CodeRegion_setExit(coderegion, BB_CGIR2LAO(exitBBs[i]));
+    CodeRegion_setExit(coderegion, Interface_getBasicBlock(interface, exitBBs[i]));
   }
 
   // Then, create the control-flow edges between them.
@@ -724,6 +650,9 @@ bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
   fprintf(TFile, "---- Before LAO schedule loop ----\n");
   fprintf(TFile, "     ----- LOOP id %2d -----\n", BB_id(LOOP_DESCR_loophead(loop)));
   fprintf(TFile, "           ----------\n");
+
+  int scan;
+  scanf("%d", &scan);
 
   FOR_ALL_BB_SET_members(LOOP_DESCR_bbset(loop), bb) LAOS_printBB(bb);
 
