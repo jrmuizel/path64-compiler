@@ -53,6 +53,9 @@ BUILD_TARGET   = ST100
 BUILD_COMPILER = GNU
 BUILD_OS       = LINUX
 
+# because we build cg.so in lai directory (temporary until we rename
+# it to cg):
+LOCAL_CG_DIR    = lai
 
 #ifdef IRIX
 # smake

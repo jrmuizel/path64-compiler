@@ -202,6 +202,20 @@ extern char *Isa_Name (TARGET_ISA target_isa);
 
 #define MAX_LARGE_FRAME_OFFSET	0x7FFFFFFFFFFFFFFFLL	// 64bits on all targs
 
+/* 
+ * Alignment is target dependent and should be specified as such on
+ * each target for each MTYPE. This would require changes to the
+ * compiler including FE changes. For now, I'll just use the
+ * strongest alignment.
+ */
+#define TARG_NONE_ALIGN  0
+#define TARG_BYTE_ALIGN  1
+#define TARG_CARD_ALIGN  2
+#define TARG_WORD_ALIGN  4
+#define TARG_DWORD_ALIGN  8
+#define TARG_QUAD_ALIGN  16
+
+#if 0
 typedef enum _align {
   _BYTE_ALIGN = 1,
   _CARD_ALIGN = 2,
@@ -216,6 +230,8 @@ typedef enum _align {
  * compiler including FE changes. For now, I'll just use the
  * strongest alignment.
  */
+#endif
+
 #define DEFAULT_STACK_ALIGNMENT _WORD_ALIGN
 
 /* ====================================================================
@@ -254,23 +270,6 @@ extern BOOL FP_packed_arithmetic;
  * dependencies.
  * ====================================================================
  */
-
-/* How many bytes are brought in by a load/store.
- * TODO: should depend on circumstances ?
- */
-//inline INT TARG_Access_Bytes (void) { return 4; }
-// #define ACCESS_BYTES 4
-
-// This is defined in the targ_isa_bundle.h now
-//#define INST_BYTES 8
-
-/* For now only the GP32 code generation is supported.
- * 2 GP32 instructions are considered to form a bundle of 2
- * and the size is 8.
- * TODO: in general this depends on the ISA mode used.
- */
-//inline INT TARG_Inst_Bytes (void) { return 8; }
-//inline INT TARG_Text_Alignment (void) { return 8; }
 
 #ifdef __cplusplus
 }
