@@ -1355,7 +1355,7 @@ sub initialize_required_opcodes {
     # TODO: generalize so that target-dependent types are not
     #       hardwired here !
 
-    push(@{$SignatureGroup{'idest:getpc:btarg:'}}, 'getpc');
+    push(@{$SignatureGroup{'lr:getpc:btarg:'}}, 'getpc');
 
     push(@{$SignatureGroup{':asm:'}}, 'asm');
     push(@{$SignatureGroup{':ssa:'}}, 'phi');
