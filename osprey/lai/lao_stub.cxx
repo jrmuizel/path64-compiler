@@ -187,52 +187,55 @@ CGIR_TN_to_TempName(CGIR_TN cgir_tn) {
 // Convert CGIR_OP to LIR Operation.
 static Operation
 CGIR_OP_to_Operation(CGIR_OP cgir_op) {
+  // the Operation arguments
   int argCount = OP_opnds(cgir_op);
+  TempName *arguments = (TempName *)(argCount ? alloca(argCount*sizeof(TempName)) : NULL);
+  for (int i = 0; i < argCount; i++) arguments[i] = CGIR_TN_to_TempName(OP_opnd(cgir_op, i));
+  // the Operation results
   int resCount = OP_results(cgir_op);
+  TempName *results = (TempName *)(resCount ? alloca(resCount*sizeof(TempName)) : NULL);
+  for (int i = 0; i < resCount; i++) results[i] = CGIR_TN_to_TempName(OP_result(cgir_op, i));
+  // the Operation MemInfo
+  MemInfo meminfo = NULL;
+  // make the Operation
   Operator OPERATOR = CGIR_TOP_to_Operator(OP_code(cgir_op));
-  Operation operation = Interface_makeOperation(interface, cgir_op, OPERATOR, argCount, resCount);
-  if (Interface_Operation_isComplete(interface, operation)) return operation;
-  for (int i = 0; i < argCount; i++) {
-    TempName tempname = CGIR_TN_to_TempName(OP_opnd(cgir_op, i));
-    Interface_Operation_appendArgument(interface, operation, tempname);
-  }
-  for (int i = 0; i < resCount; i++) {
-    TempName tempname = CGIR_TN_to_TempName(OP_result(cgir_op, i));
-    Interface_Operation_appendResult(interface, operation, tempname);
-  }
-  if (OP_volatile(cgir_op)) {
-    // FIXME Interface_Operation_setVolatile(interface, operation);
-  }
-  // TODO: MemInfo
-  Interface_Operation_complete(interface, operation);
+  Operation operation = Interface_makeOperation(interface, cgir_op,
+      OPERATOR, argCount, arguments, resCount, results, meminfo);
+  // TODO: MemInfo, Volatile
   return operation;
 }
 
 // Convert CGIR_BB to LIR BasicBlock.
 static BasicBlock
 CGIR_BB_to_BasicBlock(CGIR_BB cgir_bb) {
-  float frequency = BB_freq(cgir_bb);
-  BasicBlock basicblock = Interface_makeBasicBlock(interface, cgir_bb, frequency);
-  if (Interface_BasicBlock_isComplete(interface, basicblock)) return basicblock;
   // the BasicBlock label(s)
+  int labelCount = 0, MAX_LABEL_COUNT = 256;
+  Label *labels = (Label *)alloca(MAX_LABEL_COUNT*sizeof(Label));
   if (BB_has_label(cgir_bb)) {
     ANNOTATION *annot;
     for (annot = ANNOT_First(BB_annotations(cgir_bb), ANNOT_LABEL);
 	 annot != NULL;
 	 annot = ANNOT_Next(annot, ANNOT_LABEL)) {
+      Is_True(labelCount < MAX_LABEL_COUNT, ("BB has more than MAX_LABEL_COUNT labels"));
       CGIR_LAB cgir_lab = ANNOT_label(annot);
-      Label label = CGIR_LAB_to_Label(cgir_lab);
-      Interface_BasicBlock_appendLabel(interface, basicblock, label);
+      labels[labelCount++] = CGIR_LAB_to_Label(cgir_lab);
     }
   }
   // the BasicBlock operations
+  int operationCount = 0, MAX_OPERATION_COUNT = 16384;
+  Operation *operations = (Operation *)alloca(MAX_OPERATION_COUNT*sizeof(Operation));
   CGIR_OP cgir_op = NULL;
   FOR_ALL_BB_OPs(cgir_bb, cgir_op) {
-    Operation operation = CGIR_OP_to_Operation(cgir_op);
-    Interface_BasicBlock_appendOperation(interface, basicblock, operation);
+    Is_True(operationCount < MAX_OPERATION_COUNT, ("BB has more than MAX_OPERATION_COUNT operations"));
+    operations[operationCount++] = CGIR_OP_to_Operation(cgir_op);
   }
+  // the BasicBlock LoopInfo
+  LoopInfo loopinfo = NULL;
+  // make the BasicBlock
+  float frequency = BB_freq(cgir_bb);
+  BasicBlock basicblock = Interface_makeBasicBlock(interface, cgir_bb,
+      labelCount, labels, operationCount, operations, loopinfo, frequency);
   // TODO: LoopInfo
-  Interface_BasicBlock_complete(interface, basicblock);
   return basicblock;
 }
 
