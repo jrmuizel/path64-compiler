@@ -67,7 +67,7 @@ static int Range_ISA_Mask(ISA_SUBSET min_isa, ISA_SUBSET max_isa)
 } 
 
 static const char *integer_reg_names[] = {
-	"$r0.0",	"$r0.1",	"$r0.2",	NULL,	NULL,
+	"$r0",	"$r1",	"$r2",	NULL,	NULL,
 	NULL,	NULL,	NULL,	NULL,
 	NULL,	NULL,	NULL,	NULL,
 	NULL,	NULL,	NULL,	NULL,
@@ -90,7 +90,7 @@ static const int integer_lr[] = {63};
 static const int integer_no_lr[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62}; 
 
 static const char *branch_reg_names[] = {
-	"$b0.0",	NULL,	NULL,	NULL,	NULL,
+	"$b0",	NULL,	NULL,	NULL,	NULL,
 	NULL,	NULL,	NULL
 };
 
@@ -108,7 +108,7 @@ main()
   rc_integer = ISA_Register_Class_Create("integer", 32, true, true, false); 
   rc_branch = ISA_Register_Class_Create("branch", 1, false, true, false); 
 
-  ISA_Register_Set(rc_integer, 0, 63, "$r0.%d", NULL, All_ISA_Mask()); 
+  ISA_Register_Set(rc_integer, 0, 63, "$r%d", NULL, All_ISA_Mask()); 
   ISA_Register_Subclass_Create("r0", rc_integer,
 			        NELEMS(integer_r0), integer_r0, NULL); 
   ISA_Register_Subclass_Create("lr", rc_integer,
@@ -116,7 +116,7 @@ main()
   ISA_Register_Subclass_Create("no_lr", rc_integer,
 			        NELEMS(integer_no_lr), integer_no_lr, NULL); 
 
-  ISA_Register_Set(rc_branch, 0, 7, "$b0.%d", NULL, All_ISA_Mask()); 
+  ISA_Register_Set(rc_branch, 0, 7, "$b%d", NULL, All_ISA_Mask()); 
 
   ISA_Registers_End(); 
   return 0; 
