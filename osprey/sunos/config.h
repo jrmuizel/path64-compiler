@@ -41,7 +41,7 @@
 
 /* Define if your processor stores words with the most significant
    byte first (like Motorola and SPARC, unlike Intel and VAX).  */
-/* #define WORDS_BIGENDIAN  1 */
+#define WORDS_BIGENDIAN  1
 
 /* Define to 1 if the elf64_getshdr function is in libelf.a */
 #define HAVE_ELF64_GETSHDR 1
