@@ -10,7 +10,7 @@
 #include "topcode.h" 
 #include "isa_print_gen.h" 
 
-static const char *mnemonic_names[247] = {
+static const char *mnemonic_names[255] = {
   "add",	 /* TOP_add_r */ 
   "sub",	 /* TOP_sub_r */ 
   "shl",	 /* TOP_shl_r */ 
@@ -199,24 +199,24 @@ static const char *mnemonic_names[247] = {
   "break",	 /* TOP_break */ 
   "ldw",	 /* TOP_ldw_i */ 
   "ldw",	 /* TOP_ldw_ii */ 
-  "ldw_d",	 /* TOP_ldw_d_i */ 
-  "ldw_d",	 /* TOP_ldw_d_ii */ 
+  "ldw.d",	 /* TOP_ldw_d_i */ 
+  "ldw.d",	 /* TOP_ldw_d_ii */ 
   "ldh",	 /* TOP_ldh_i */ 
   "ldh",	 /* TOP_ldh_ii */ 
-  "ldh_d",	 /* TOP_ldh_d_i */ 
-  "ldh_d",	 /* TOP_ldh_d_ii */ 
+  "ldh.d",	 /* TOP_ldh_d_i */ 
+  "ldh.d",	 /* TOP_ldh_d_ii */ 
   "ldhu",	 /* TOP_ldhu_i */ 
   "ldhu",	 /* TOP_ldhu_ii */ 
-  "ldhu_d",	 /* TOP_ldhu_d_i */ 
-  "ldhu_d",	 /* TOP_ldhu_d_ii */ 
+  "ldhu.d",	 /* TOP_ldhu_d_i */ 
+  "ldhu.d",	 /* TOP_ldhu_d_ii */ 
   "ldb",	 /* TOP_ldb_i */ 
   "ldb",	 /* TOP_ldb_ii */ 
-  "ldb_d",	 /* TOP_ldb_d_i */ 
-  "ldb_d",	 /* TOP_ldb_d_ii */ 
+  "ldb.d",	 /* TOP_ldb_d_i */ 
+  "ldb.d",	 /* TOP_ldb_d_ii */ 
   "ldbu",	 /* TOP_ldbu_i */ 
   "ldbu",	 /* TOP_ldbu_ii */ 
-  "ldbu_d",	 /* TOP_ldbu_d_i */ 
-  "ldbu_d",	 /* TOP_ldbu_d_ii */ 
+  "ldbu.d",	 /* TOP_ldbu_d_i */ 
+  "ldbu.d",	 /* TOP_ldbu_d_ii */ 
   "stw",	 /* TOP_stw_i */ 
   "stw",	 /* TOP_stw_ii */ 
   "sth",	 /* TOP_sth_i */ 
@@ -236,6 +236,7 @@ static const char *mnemonic_names[247] = {
   "brf",	 /* TOP_brf */ 
   "sxtb",	 /* TOP_sxtb_r */ 
   "sxth",	 /* TOP_sxth_r */ 
+  "zxth",	 /* TOP_zxth_r */ 
   "nop",	 /* TOP_nop */ 
   "mov",	 /* TOP_mov_r */ 
   "mov",	 /* TOP_mov_i */ 
@@ -243,6 +244,13 @@ static const char *mnemonic_names[247] = {
   "mtb",	 /* TOP_mtb */ 
   "mfb",	 /* TOP_mfb */ 
   "return",	 /* TOP_return */ 
+  "clz",	 /* TOP_clz */ 
+  "mulhhs",	 /* TOP_mulhhs_r */ 
+  "mulhhs",	 /* TOP_mulhhs_i */ 
+  "mulhhs",	 /* TOP_mulhhs_ii */ 
+  "mullhus",	 /* TOP_mullhus_r */ 
+  "mullhus",	 /* TOP_mullhus_i */ 
+  "mullhus",	 /* TOP_mullhus_ii */ 
   "asm",	 /* TOP_asm */
   "intrncall",	 /* TOP_intrncall */
   "spadjust",	 /* TOP_spadjust */
@@ -528,6 +536,12 @@ main()
 		 TOP_orl_ii_b, 
 		 TOP_norl_i_b, 
 		 TOP_norl_ii_b, 
+		 TOP_mulhhs_r, 
+		 TOP_mulhhs_i, 
+		 TOP_mulhhs_ii, 
+		 TOP_mullhus_r, 
+		 TOP_mullhus_i, 
+		 TOP_mullhus_ii, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
@@ -542,11 +556,13 @@ main()
 		 TOP_icall, 
 		 TOP_sxtb_r, 
 		 TOP_sxth_r, 
+		 TOP_zxth_r, 
 		 TOP_mov_r, 
 		 TOP_mov_i, 
 		 TOP_mov_ii, 
 		 TOP_mtb, 
 		 TOP_mfb, 
+		 TOP_clz, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
