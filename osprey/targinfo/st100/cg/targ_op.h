@@ -83,8 +83,30 @@
 #define TOP_is_l_group(t)        (FALSE)
 /* Instruction accesses rotating register bank */
 #define TOP_is_access_reg_bank(t) (FALSE)
+
+/* These two will be ventually replaced by accesses to OPND_INFO */
 /* Result must not be same as operand */
-#define TOP_is_uniq_res(t)       (TRUE)
+inline BOOL TOP_is_uniq_res(TOP topcode) {
+  INT i;
+  const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info(topcode);
+  for (i = 0; i < ISA_OPERAND_INFO_Results(oinfo); i++) {
+    ISA_OPERAND_USE this_def = ISA_OPERAND_INFO_Def(oinfo, i);
+    if (this_def & OU_uniq_res) 
+      return TRUE;
+  }
+  return FALSE;
+}
+
+/* Result must be same as one of the operands */
+inline BOOL TOP_is_same_res(TOP topcode) {
+  INT i;
+  const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info(topcode);
+  for (i = 0; i < ISA_OPERAND_INFO_Results(oinfo); i++) {
+    if (ISA_OPERAND_INFO_Same_Res(oinfo, i) >= 0)
+      return TRUE;
+  }
+  return FALSE;
+}
 
 /* _fixed_results and _fixed_opnds return how many fixed
  * results/operands an instruction has (OP_result/OP_opnds includes
@@ -101,7 +123,6 @@
 /* ??? */
 #define OP_inst_words(o)        (1)
 
-#define TOP_same_res(t)             (FALSE)
 #define TOP_save_predicates(t)      (FALSE)
 #define TOP_restore_predicates(t)   (FALSE)
 
