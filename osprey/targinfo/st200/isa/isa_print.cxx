@@ -10,59 +10,257 @@
 #include "topcode.h" 
 #include "isa_print_gen.h" 
 
-// Multiple topcodes map to the same assembly name. To disambiguate the 
-// topcodes, we append a signature to the basename. To get the assembly 
-// name we must strip off the suffix. 
+static const char *mnemonic_names[245] = {
+  "add",	 /* TOP_add_r */ 
+  "sub",	 /* TOP_sub_r */ 
+  "shl",	 /* TOP_shl_r */ 
+  "shr",	 /* TOP_shr_r */ 
+  "shru",	 /* TOP_shru_r */ 
+  "sh1add",	 /* TOP_sh1add_r */ 
+  "sh2add",	 /* TOP_sh2add_r */ 
+  "sh3add",	 /* TOP_sh3add_r */ 
+  "sh4add",	 /* TOP_sh4add_r */ 
+  "and",	 /* TOP_and_r */ 
+  "andc",	 /* TOP_andc_r */ 
+  "or",	 /* TOP_or_r */ 
+  "orc",	 /* TOP_orc_r */ 
+  "xor",	 /* TOP_xor_r */ 
+  "max",	 /* TOP_max_r */ 
+  "maxu",	 /* TOP_maxu_r */ 
+  "min",	 /* TOP_min_r */ 
+  "minu",	 /* TOP_minu_r */ 
+  "bswap",	 /* TOP_bswap_r */ 
+  "mull",	 /* TOP_mull_r */ 
+  "mullu",	 /* TOP_mullu_r */ 
+  "mulh",	 /* TOP_mulh_r */ 
+  "mulhu",	 /* TOP_mulhu_r */ 
+  "mulll",	 /* TOP_mulll_r */ 
+  "mulllu",	 /* TOP_mulllu_r */ 
+  "mullh",	 /* TOP_mullh_r */ 
+  "mullhu",	 /* TOP_mullhu_r */ 
+  "mulhh",	 /* TOP_mulhh_r */ 
+  "mulhhu",	 /* TOP_mulhhu_r */ 
+  "mulhs",	 /* TOP_mulhs_r */ 
+  "cmpeq",	 /* TOP_cmpeq_r_r */ 
+  "cmpne",	 /* TOP_cmpne_r_r */ 
+  "cmpge",	 /* TOP_cmpge_r_r */ 
+  "cmpgeu",	 /* TOP_cmpgeu_r_r */ 
+  "cmpgt",	 /* TOP_cmpgt_r_r */ 
+  "cmpgtu",	 /* TOP_cmpgtu_r_r */ 
+  "cmple",	 /* TOP_cmple_r_r */ 
+  "cmpleu",	 /* TOP_cmpleu_r_r */ 
+  "cmplt",	 /* TOP_cmplt_r_r */ 
+  "cmpltu",	 /* TOP_cmpltu_r_r */ 
+  "andl",	 /* TOP_andl_r_r */ 
+  "nandl",	 /* TOP_nandl_r_r */ 
+  "orl",	 /* TOP_orl_r_r */ 
+  "norl",	 /* TOP_norl_r_r */ 
+  "cmpeq",	 /* TOP_cmpeq_r_b */ 
+  "cmpne",	 /* TOP_cmpne_r_b */ 
+  "cmpge",	 /* TOP_cmpge_r_b */ 
+  "cmpgeu",	 /* TOP_cmpgeu_r_b */ 
+  "cmpgt",	 /* TOP_cmpgt_r_b */ 
+  "cmpgtu",	 /* TOP_cmpgtu_r_b */ 
+  "cmple",	 /* TOP_cmple_r_b */ 
+  "cmpleu",	 /* TOP_cmpleu_r_b */ 
+  "cmplt",	 /* TOP_cmplt_r_b */ 
+  "cmpltu",	 /* TOP_cmpltu_r_b */ 
+  "andl",	 /* TOP_andl_r_b */ 
+  "nandl",	 /* TOP_nandl_r_b */ 
+  "orl",	 /* TOP_orl_r_b */ 
+  "norl",	 /* TOP_norl_r_b */ 
+  "add",	 /* TOP_add_i */ 
+  "add",	 /* TOP_add_ii */ 
+  "sub",	 /* TOP_sub_i */ 
+  "sub",	 /* TOP_sub_ii */ 
+  "shl",	 /* TOP_shl_i */ 
+  "shl",	 /* TOP_shl_ii */ 
+  "shr",	 /* TOP_shr_i */ 
+  "shr",	 /* TOP_shr_ii */ 
+  "shru",	 /* TOP_shru_i */ 
+  "shru",	 /* TOP_shru_ii */ 
+  "sh1add",	 /* TOP_sh1add_i */ 
+  "sh1add",	 /* TOP_sh1add_ii */ 
+  "sh2add",	 /* TOP_sh2add_i */ 
+  "sh2add",	 /* TOP_sh2add_ii */ 
+  "sh3add",	 /* TOP_sh3add_i */ 
+  "sh3add",	 /* TOP_sh3add_ii */ 
+  "sh4add",	 /* TOP_sh4add_i */ 
+  "sh4add",	 /* TOP_sh4add_ii */ 
+  "and",	 /* TOP_and_i */ 
+  "and",	 /* TOP_and_ii */ 
+  "andc",	 /* TOP_andc_i */ 
+  "andc",	 /* TOP_andc_ii */ 
+  "or",	 /* TOP_or_i */ 
+  "or",	 /* TOP_or_ii */ 
+  "orc",	 /* TOP_orc_i */ 
+  "orc",	 /* TOP_orc_ii */ 
+  "xor",	 /* TOP_xor_i */ 
+  "xor",	 /* TOP_xor_ii */ 
+  "max",	 /* TOP_max_i */ 
+  "max",	 /* TOP_max_ii */ 
+  "maxu",	 /* TOP_maxu_i */ 
+  "maxu",	 /* TOP_maxu_ii */ 
+  "min",	 /* TOP_min_i */ 
+  "min",	 /* TOP_min_ii */ 
+  "minu",	 /* TOP_minu_i */ 
+  "minu",	 /* TOP_minu_ii */ 
+  "mull",	 /* TOP_mull_i */ 
+  "mull",	 /* TOP_mull_ii */ 
+  "mullu",	 /* TOP_mullu_i */ 
+  "mullu",	 /* TOP_mullu_ii */ 
+  "mulh",	 /* TOP_mulh_i */ 
+  "mulh",	 /* TOP_mulh_ii */ 
+  "mulhu",	 /* TOP_mulhu_i */ 
+  "mulhu",	 /* TOP_mulhu_ii */ 
+  "mulll",	 /* TOP_mulll_i */ 
+  "mulll",	 /* TOP_mulll_ii */ 
+  "mulllu",	 /* TOP_mulllu_i */ 
+  "mulllu",	 /* TOP_mulllu_ii */ 
+  "mullh",	 /* TOP_mullh_i */ 
+  "mullh",	 /* TOP_mullh_ii */ 
+  "mullhu",	 /* TOP_mullhu_i */ 
+  "mullhu",	 /* TOP_mullhu_ii */ 
+  "mulhh",	 /* TOP_mulhh_i */ 
+  "mulhh",	 /* TOP_mulhh_ii */ 
+  "mulhhu",	 /* TOP_mulhhu_i */ 
+  "mulhhu",	 /* TOP_mulhhu_ii */ 
+  "mulhs",	 /* TOP_mulhs_i */ 
+  "mulhs",	 /* TOP_mulhs_ii */ 
+  "cmpeq",	 /* TOP_cmpeq_i_r */ 
+  "cmpeq",	 /* TOP_cmpeq_ii_r */ 
+  "cmpne",	 /* TOP_cmpne_i_r */ 
+  "cmpne",	 /* TOP_cmpne_ii_r */ 
+  "cmpge",	 /* TOP_cmpge_i_r */ 
+  "cmpge",	 /* TOP_cmpge_ii_r */ 
+  "cmpgeu",	 /* TOP_cmpgeu_i_r */ 
+  "cmpgeu",	 /* TOP_cmpgeu_ii_r */ 
+  "cmpgt",	 /* TOP_cmpgt_i_r */ 
+  "cmpgt",	 /* TOP_cmpgt_ii_r */ 
+  "cmpgtu",	 /* TOP_cmpgtu_i_r */ 
+  "cmpgtu",	 /* TOP_cmpgtu_ii_r */ 
+  "cmple",	 /* TOP_cmple_i_r */ 
+  "cmple",	 /* TOP_cmple_ii_r */ 
+  "cmpleu",	 /* TOP_cmpleu_i_r */ 
+  "cmpleu",	 /* TOP_cmpleu_ii_r */ 
+  "cmplt",	 /* TOP_cmplt_i_r */ 
+  "cmplt",	 /* TOP_cmplt_ii_r */ 
+  "cmpltu",	 /* TOP_cmpltu_i_r */ 
+  "cmpltu",	 /* TOP_cmpltu_ii_r */ 
+  "andl",	 /* TOP_andl_i_r */ 
+  "andl",	 /* TOP_andl_ii_r */ 
+  "nandl",	 /* TOP_nandl_i_r */ 
+  "nandl",	 /* TOP_nandl_ii_r */ 
+  "orl",	 /* TOP_orl_i_r */ 
+  "orl",	 /* TOP_orl_ii_r */ 
+  "norl",	 /* TOP_norl_i_r */ 
+  "norl",	 /* TOP_norl_ii_r */ 
+  "cmpeq",	 /* TOP_cmpeq_i_b */ 
+  "cmpeq",	 /* TOP_cmpeq_ii_b */ 
+  "cmpne",	 /* TOP_cmpne_i_b */ 
+  "cmpne",	 /* TOP_cmpne_ii_b */ 
+  "cmpge",	 /* TOP_cmpge_i_b */ 
+  "cmpge",	 /* TOP_cmpge_ii_b */ 
+  "cmpgeu",	 /* TOP_cmpgeu_i_b */ 
+  "cmpgeu",	 /* TOP_cmpgeu_ii_b */ 
+  "cmpgt",	 /* TOP_cmpgt_i_b */ 
+  "cmpgt",	 /* TOP_cmpgt_ii_b */ 
+  "cmpgtu",	 /* TOP_cmpgtu_i_b */ 
+  "cmpgtu",	 /* TOP_cmpgtu_ii_b */ 
+  "cmple",	 /* TOP_cmple_i_b */ 
+  "cmple",	 /* TOP_cmple_ii_b */ 
+  "cmpleu",	 /* TOP_cmpleu_i_b */ 
+  "cmpleu",	 /* TOP_cmpleu_ii_b */ 
+  "cmplt",	 /* TOP_cmplt_i_b */ 
+  "cmplt",	 /* TOP_cmplt_ii_b */ 
+  "cmpltu",	 /* TOP_cmpltu_i_b */ 
+  "cmpltu",	 /* TOP_cmpltu_ii_b */ 
+  "andl",	 /* TOP_andl_i_b */ 
+  "andl",	 /* TOP_andl_ii_b */ 
+  "nandl",	 /* TOP_nandl_i_b */ 
+  "nandl",	 /* TOP_nandl_ii_b */ 
+  "orl",	 /* TOP_orl_i_b */ 
+  "orl",	 /* TOP_orl_ii_b */ 
+  "norl",	 /* TOP_norl_i_b */ 
+  "norl",	 /* TOP_norl_ii_b */ 
+  "slct",	 /* TOP_slct_r */ 
+  "slctf",	 /* TOP_slctf_r */ 
+  "addcg",	 /* TOP_addcg */ 
+  "divs",	 /* TOP_divs */ 
+  "imml",	 /* TOP_imml */ 
+  "immr",	 /* TOP_immr */ 
+  "slct",	 /* TOP_slct_i */ 
+  "slct",	 /* TOP_slct_ii */ 
+  "slctf",	 /* TOP_slctf_i */ 
+  "slctf",	 /* TOP_slctf_ii */ 
+  "prgins",	 /* TOP_prgins */ 
+  "sbrk",	 /* TOP_sbrk */ 
+  "syscall",	 /* TOP_syscall */ 
+  "break",	 /* TOP_break */ 
+  "ldw",	 /* TOP_ldw_i */ 
+  "ldw",	 /* TOP_ldw_ii */ 
+  "ldw_d",	 /* TOP_ldw_d_i */ 
+  "ldw_d",	 /* TOP_ldw_d_ii */ 
+  "ldh",	 /* TOP_ldh_i */ 
+  "ldh",	 /* TOP_ldh_ii */ 
+  "ldh_d",	 /* TOP_ldh_d_i */ 
+  "ldh_d",	 /* TOP_ldh_d_ii */ 
+  "ldhu",	 /* TOP_ldhu_i */ 
+  "ldhu",	 /* TOP_ldhu_ii */ 
+  "ldhu_d",	 /* TOP_ldhu_d_i */ 
+  "ldhu_d",	 /* TOP_ldhu_d_ii */ 
+  "ldb",	 /* TOP_ldb_i */ 
+  "ldb",	 /* TOP_ldb_ii */ 
+  "ldb_d",	 /* TOP_ldb_d_i */ 
+  "ldb_d",	 /* TOP_ldb_d_ii */ 
+  "ldbu",	 /* TOP_ldbu_i */ 
+  "ldbu",	 /* TOP_ldbu_ii */ 
+  "ldbu_d",	 /* TOP_ldbu_d_i */ 
+  "ldbu_d",	 /* TOP_ldbu_d_ii */ 
+  "stw",	 /* TOP_stw_i */ 
+  "stw",	 /* TOP_stw_ii */ 
+  "sth",	 /* TOP_sth_i */ 
+  "sth",	 /* TOP_sth_ii */ 
+  "stb",	 /* TOP_stb_i */ 
+  "stb",	 /* TOP_stb_ii */ 
+  "pft",	 /* TOP_pft */ 
+  "prgadd",	 /* TOP_prgadd */ 
+  "prgset",	 /* TOP_prgset */ 
+  "sync",	 /* TOP_sync */ 
+  "call",	 /* TOP_call */ 
+  "call",	 /* TOP_icall */ 
+  "goto",	 /* TOP_goto */ 
+  "goto",	 /* TOP_igoto */ 
+  "rfi",	 /* TOP_rfi */ 
+  "br",	 /* TOP_br */ 
+  "brf",	 /* TOP_brf */ 
+  "sxtb",	 /* TOP_sxtb_r */ 
+  "sxth",	 /* TOP_sxth_r */ 
+  "nop",	 /* TOP_nop */ 
+  "mov",	 /* TOP_mov_r */ 
+  "mov",	 /* TOP_mov_i */ 
+  "mov",	 /* TOP_mov_ii */ 
+  "mtb",	 /* TOP_mtb */ 
+  "mfb",	 /* TOP_mfb */ 
+  "return",	 /* TOP_return */ 
+  "asm",	 /* TOP_asm */
+  "intrncall",	 /* TOP_intrncall */
+  "spadjust",	 /* TOP_spadjust */
+  "copy_br",	 /* TOP_copy_br */
+  "noop",	 /* TOP_noop */
+  "begin_pregtn",	 /* TOP_begin_pregtn */
+  "end_pregtn",	 /* TOP_end_pregtn */
+  "bwd_bar",	 /* TOP_bwd_bar */
+  "fwd_bar",	 /* TOP_fwd_bar */
+  "dfixup",	 /* TOP_dfixup */
+  "ffixup",	 /* TOP_ffixup */
+  "ifixup",	 /* TOP_ifixup */
+  "label" 	 /* TOP_label */
+};
 
 static const char *asmname(TOP topcode) 
 { 
-  int c; 
-  int i; 
-  const char *name = TOP_Name(topcode); 
-  char buf[100]; 
-  /* 
-   * First handle simulated and dummy instructions: 
-   * Handle movl and movr instructions: 
-   */ 
-  switch (topcode) { 
-  case TOP_asm: return "asm"; 
-  case TOP_intrncall: return "intrncall"; 
-  case TOP_spadjust: return "spadjust"; 
-  case TOP_copy_br: return "copy_br"; 
-  case TOP_noop: return "noop"; 
-  case TOP_begin_pregtn: return "begin_pregtn"; 
-  case TOP_end_pregtn: return "end_pregtn"; 
-  case TOP_bwd_bar: return "bwd_bar"; 
-  case TOP_fwd_bar: return "fwd_bar"; 
-  case TOP_dfixup: return "dfixup"; 
-  case TOP_ffixup: return "ffixup"; 
-  case TOP_ifixup: return "ifixup"; 
-  case TOP_label: return "label"; 
-  case TOP_icall: return "call"; 
-  case TOP_igoto: return "goto"; 
-  default: break; 
-  } 
-
-  c = name[0];
-
-  for (i = 0; c != '\0'; ++i) { 
-    c = name[i]; 
-    if (c == '_') { 
-      // if next is _i or _r, get out, else it's a _d 
-      if (name[i+1] == 'd') { 
-	buf[i] = '.'; 
-	buf[i+1] = 'd'; 
-        buf[i+3] = '\0'; 
-      } 
-      else { 
-	buf[i] = '\0'; 
-      } 
-      break; 
-    } 
-    buf[i] = c; 
-  } 
-
-  return strdup(buf); 
+  return mnemonic_names[topcode]; 
 } 
 
 main() 
