@@ -54,8 +54,8 @@
 #include "const.h"
 #include "ti_res_count.h"
 
-typedef pair<TN*, OP*> tn_def_op;
-typedef vector<tn_def_op> op_vec_type;
+typedef std::pair<TN*, OP*> tn_def_op;
+typedef std::vector<tn_def_op> op_vec_type;
 
 // For use with stable_sort later
 bool operator<(tn_def_op& t1, tn_def_op& t2)

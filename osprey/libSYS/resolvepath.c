@@ -1,4 +1,6 @@
 
+// [HK] added <stdlib.h> to have prototype of exit function
+#include <stdlib.h>
 #include <malloc.h>
 #include <stdio.h>
 #include <unistd.h>

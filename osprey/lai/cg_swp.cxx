@@ -35,7 +35,13 @@
 
 
 #define USE_STANDARD_TYPES
+// [HK]
+#if __GNUC__ >= 3
+#include <vector>
+// using std::vector;
+#else
 #include <vector.h>
+#endif // __GNUC__ >= 3
 #include "defs.h"
 #include "errors.h"
 #include "tracing.h"
@@ -78,8 +84,8 @@ void SWP_OPTIONS::PU_Configure()
   if (!Max_Unroll_Times_Set)
     Max_Unroll_Times = (CG_opt_level > 2) ? 8 : 4;  
 
-  Min_Unroll_Times = max(1, Min_Unroll_Times);
-  Max_Unroll_Times = max(1, Max_Unroll_Times);
+    Min_Unroll_Times = max(1, Min_Unroll_Times);
+    Max_Unroll_Times = max(1, Max_Unroll_Times);
 
   if (Min_Unroll_Times_Set)
     Max_Unroll_Times = Max(Max_Unroll_Times, Min_Unroll_Times);
@@ -266,8 +272,8 @@ void SWP_Show_Statistics(const SWP_OP_vector& swp_op_vector, BB *body)
 // 
 struct TN_DU {
   typedef OP_VECTOR::index_type index_type;
-  vector<index_type> defs;
-  vector<index_type> uses;
+  std::vector<index_type> defs;
+  std::vector<index_type> uses;
 
   bool TN_is_invariant() const {
     return defs.size() == 0;
@@ -318,8 +324,8 @@ struct TN_DU {
 //
 struct TN_DU_MAP {
 
-  typedef map<TN *, TN_DU>::iterator iterator;
-  map<TN *, TN_DU> TN_DU_map;
+  typedef std::map<TN *, TN_DU>::iterator iterator;
+  std::map<TN *, TN_DU> TN_DU_map;
 
   iterator begin() {
     return TN_DU_map.begin();
@@ -714,7 +720,7 @@ SWP_RETURN_CODE Detect_SWP_Constraints(CG_LOOP &cl, bool trace)
 static void
 Prune_Regout_Deps(BB *body, TN_SET *non_rotating)
 {
-  vector<ARC*> arcs_to_delete;
+  std::vector<ARC*> arcs_to_delete;
   OP *op;
   FOR_ALL_BB_OPs(body, op) {
     if (_CG_DEP_op_info(op)) {

@@ -31,7 +31,12 @@
 */
 
 #define USE_STANDARD_TYPES
+// [HK]
+#if __GNUC__ >= 3
+#include <vector>
+#else
 #include <vector.h>
+#endif // __GNUC__ >= 3
 #include <list>
 #include "defs.h"
 #include "errors.h"
