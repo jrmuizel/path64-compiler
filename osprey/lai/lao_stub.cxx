@@ -31,6 +31,9 @@ extern "C" {
 
 }
 
+static void
+LAOS_printCGIR();
+
 // Map CGIR TOP to LIR Operator.
 static Operator TOP__Operator[TOP_UNDEFINED];
 
@@ -56,12 +59,14 @@ extern "C" {
 
 typedef vector<BB*> BB_VECTOR;
 
+/*--------------------------- LAO_INIT / LAO_FINI ----------------------------*/
+
 // Initialization of the LAO, needs to be called once.
 void
 LAO_INIT() {
 #ifndef LAO_EXPERIMENT
-  int dummy; fprintf(stderr, "LAO PID=%lld\n", (int64_t)getpid()); scanf("%d", &dummy);
 #endif //LAO_EXPERIMENT
+  int dummy; fprintf(stderr, "LAO PID=%lld\n", (int64_t)getpid()); scanf("%d", &dummy);
   if (LAO_initialized++ == 0) {
     // initialize LIR
     LIR_INIT();
@@ -329,7 +334,7 @@ LAO_INIT() {
     IRC__RegClass[ISA_REGISTER_CLASS_integer] = RegClass_GRC;
     IRC__RegClass[ISA_REGISTER_CLASS_branch] = RegClass_BRC;
     // initialize MEM_lao_pool
-    MEM_POOL_Initialize ( &MEM_lao_pool , "lao_stub_pool", false );
+    MEM_POOL_Initialize ( &MEM_lao_pool, "lao_stub_pool", false );
   }
 }
 
@@ -344,15 +349,7 @@ LAO_FINI() {
   }
 }
 
-// Utility routine on vectors.
-static bool
-BB_inRegion ( BB_VECTOR& regionBBs, BB *bb ) {
-//
-  for (int i = 0; i < regionBBs.size(); i++)
-    if (regionBBs[i] == bb) return true;
-//
-  return false;
-}
+/*------------------------ LAO Conversion Fonctions --------------------------*/
 
 // Convert CGIR TOP to LAO Operator.
 static inline Operator
@@ -494,6 +491,8 @@ LAO_BB_BasicBlock(BB *bb) {
   return basicblock;
 }
 
+/*-------------------------- LAO Utility Functions----------------------------*/
+
 // Enter the control-flow arcs in the LAO.
 static void
 LAO_setControlArc(BasicBlockHandle handle, CodeRegion coderegion) {
@@ -536,26 +535,14 @@ LAO_setLiveOut(BasicBlockHandle handle, CodeRegion coderegion) {
   }
 }
 
-static void
-BB_LIRcreateEdges ( BB *src, BB *dst ) {
-  BasicBlock srcLIR, dstLIR;
-//
-  srcLIR = Interface_getBasicBlock(interface, src);
-  dstLIR = Interface_getBasicBlock(interface, dst);
-//
-  Is_True((src != NULL) && (dst != NULL), ("BB_map internal ERROR."));
-//
-  CodeRegion coderegion = Interface_getCodeRegion(interface);
-  CodeRegion_makeControlArc(coderegion, srcLIR, dstLIR, (float)0.0);
-}
-
+// Make a LAO CodeRegion form the BB_VECTORs supplied.
 static CodeRegion
-REGION_convert2LIR ( BB_VECTOR& entryBBs, BB_VECTOR& innerBBs, BB_VECTOR& exitBBs , CodeRegion_Type region_kind) {
+LAO_makeCodeRegion(BB_VECTOR& entryBBs, BB_VECTOR& innerBBs, BB_VECTOR& exitBBs, CodeRegion_Type region_kind) {
   int bb_count = entryBBs.size() + innerBBs.size() + exitBBs.size();
-//
+  //
   CodeRegion coderegion = Interface_makeCodeRegion(interface, region_kind, bb_count);
-//
-  // Create the LAO BasicBlocks
+  //
+  // Create the LAO BasicBlocks.
   for (int i = 0; i < entryBBs.size(); i++) {
     LAO_BB_BasicBlock ( entryBBs[i] );
   }
@@ -565,7 +552,7 @@ REGION_convert2LIR ( BB_VECTOR& entryBBs, BB_VECTOR& innerBBs, BB_VECTOR& exitBB
   for (int i = 0; i < exitBBs.size(); i++) {
     LAO_BB_BasicBlock ( exitBBs[i] );
   }
-//
+  //
   // Set the CodeRegion entry and exit BasicBlocks.
   for (int i = 0; i < entryBBs.size(); i++) {
     BasicBlock basicblock = Interface_getBasicBlock(interface, entryBBs[i]);
@@ -575,22 +562,7 @@ REGION_convert2LIR ( BB_VECTOR& entryBBs, BB_VECTOR& innerBBs, BB_VECTOR& exitBB
     BasicBlock basicblock = Interface_getBasicBlock(interface, exitBBs[i]);
     CodeRegion_setExit(coderegion, basicblock);
   }
-//
-#if 0
-  // Then, create the control-flow edges between them.
-  BBLIST *bl;
-  for (i = 0; i < innerBBs.size(); i++) {
-    BB *src, *dst;
-    src = innerBBs[i];
-    FOR_ALL_BB_SUCCS (src, bl) {
-      dst = BBLIST_item(bl);
-//
-      if (BB_inRegion(innerBBs, dst))
-	BB_LIRcreateEdges ( src, dst );
-    }
-  }
-#endif
-//
+  //
   // Add the control-flow arcs, the live-in, and the live-out.
   size_t size = bb_count * sizeof(BasicBlockHandle_);
   BasicBlockHandle_ *handles = (BasicBlockHandle_ *)alloca(size);
@@ -600,242 +572,137 @@ REGION_convert2LIR ( BB_VECTOR& entryBBs, BB_VECTOR& innerBBs, BB_VECTOR& exitBB
     LAO_setLiveIn(handles + i, coderegion);
     LAO_setLiveOut(handles + i, coderegion);
   }
-//
+  //
   return coderegion;
 }
 
-static void LAOS_printBB (BB *bp);
+// Test if a BB belongs to a BB_VECTOR.
+static bool
+LAO_inBB_VECTOR ( BB_VECTOR& regionBBs, BB *bb ) {
+  //
+  for (int i = 0; i < regionBBs.size(); i++)
+    if (regionBBs[i] == bb) return true;
+  //
+  return false;
+}
 
+/*----------------------- LAO Optimization Functions -------------------------*/
+
+// Low-level LAO_optimize entry point.
+static bool
+LAO_optimize(BB_VECTOR &entryBBs, BB_VECTOR &innerBBs, BB_VECTOR &exitBBs, CodeRegion_Type region_kind, unsigned lao_actions) {
+  bool result = false;
+  //
+  Interface_open(interface);
+  //
+  CodeRegion coderegion = LAO_makeCodeRegion(entryBBs, innerBBs, exitBBs, region_kind);
+  //
+  CodeRegion_pretty(coderegion, TFile);
+  //
+  // Optimize through the LAO.
+  result = CodeRegion_optimize(coderegion, lao_actions);
+  //
+  Interface_close(interface);
+  //
+  return result;
+}
+
+// Optimize a LOOP_DESCR through the LAO.
 bool
-LAO_scheduleRegion ( BB_VECTOR& entryBBs, BB_VECTOR& innerBBs, BB_VECTOR& exitBBs , CodeRegion_Type region_kind, LAO_SWP_ACTION action ) {
-  int i;
-  BB *bb;
-  CodeRegion lir_region;
-  int status;
-  
-  fprintf(TFile, "---- Before LAO schedule region ----\n");
-  fprintf(TFile, "---- Begin trace regionBBs ----\n");
-  for (i = 0; i < innerBBs.size(); i ++) {
-    bb = innerBBs[i];
-    LAOS_printBB(bb);
-  }    
-  fprintf(TFile, "---- End trace regionBBs ----\n");
-//
-  lir_region = REGION_convert2LIR(entryBBs, innerBBs, exitBBs, region_kind);
-//
-  CodeRegion_pretty(lir_region, TFile);
-//
-  //  status = REGION_schedule(lir_region);
-//
-  if (status == 0) {
-    //    REGION_convert2CGIR(lir_region);
-  }
-  //  
-  fprintf(TFile, "---- After LAO schedule region ----\n");
-  return (status == 0);
-}
-
-static void
-LAOS_printCGIR(void);
-
-bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
-  LOOP_DESCR *loop = cl.Loop();
-  BB *bb;
+LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
   BB_VECTOR entryBBs, innerBBs, exitBBs;
-  bool res;
-//
+  bool result = false;
+  //
+#ifndef LAO_EXPERIMENT
   LAOS_printCGIR();
-//
-  fprintf(TFile, "---- Before LAO schedule loop ----\n");
-  fprintf(TFile, "     ------ LOOP id %2d ------\n", BB_id(LOOP_DESCR_loophead(loop)));
-  fprintf(TFile, "            -----------\n");
-//
-  int scan;
-  scanf("%d", &scan);
-//
-  FOR_ALL_BB_SET_members(LOOP_DESCR_bbset(loop), bb) LAOS_printBB(bb);
-//
-  entryBBs.push_back (CG_LOOP_prolog);
-  innerBBs.push_back (CG_LOOP_prolog);
-  innerBBs.push_back (LOOP_DESCR_loophead(loop));
-  innerBBs.push_back (CG_LOOP_epilog);
-  exitBBs.push_back  (CG_LOOP_epilog);
-//
-  fprintf(TFile, "--------------- dpendence graph for %d ---------------\n", BB_id(innerBBs[1]));
-  // CG_DEP_Compute_Region_Graph
-  CYCLIC_DEP_GRAPH cyclic_graph( innerBBs[1], &MEM_lao_pool); 
-  CG_DEP_Trace_Graph(innerBBs[1]);
-//
-  res = LAO_scheduleRegion ( entryBBs, innerBBs, exitBBs, CodeRegion_InnerLoop, action );
-//
-  return res;
+#endif //LAO_EXPERIMENT
+  //
+  if (BB_innermost(LOOP_DESCR_loophead(loop))) {
+    // Create a prolog and epilog for the region when possible.
+    CG_LOOP cg_loop(loop);
+    //
+    entryBBs.push_back(CG_LOOP_prolog);
+    //
+    // Enter the body blocks in linear order.
+    BB *loop_head = LOOP_DESCR_loophead(loop);
+    BB *loop_tail = LOOP_DESCR_Find_Unique_Tail(loop);
+    //
+    if (loop_tail != NULL) {
+      //
+      for (BB *bb = loop_head;
+	   bb && BB_prev(bb) != loop_tail;
+	   bb = BB_next(bb)) {
+	if (BB_SET_MemberP(LOOP_DESCR_bbset(loop), bb)) {
+	  innerBBs.push_back(bb);
+	  //
+	  BBLIST *succs = NULL;
+	  FOR_ALL_BB_SUCCS(bb, succs) {
+	    BB *succ = BBLIST_item(succs);
+	    if (!BB_SET_MemberP(LOOP_DESCR_bbset(loop), succ)) {
+	      // Ensure that a bb is not put twice in the vector
+	      if (!LAO_inBB_VECTOR(exitBBs, succ))
+		exitBBs.push_back(succ);
+	    }
+	  }
+	}
+      }
+      //
+      // Call the main LAO_optimize entry point.
+      result = LAO_optimize(entryBBs, innerBBs, exitBBs, CodeRegion_InnerLoop, lao_actions);
+    }
+  }
+  //
+  return result;
 }
 
+// Optimize a HB through the LAO.
+bool
+LAO_optimize(HB *hb, unsigned lao_actions) {
+  BB_VECTOR entryBBs, innerBBs, exitBBs;
+  BB *bb;
+  bool result = false;
+  //
+  entryBBs.push_back(HB_Entry(hb));
+  //
+  FOR_ALL_BB_SET_members(HB_Blocks(hb), bb) {
+    innerBBs.push_back(bb);
+    //
+    BBLIST *succs = NULL;
+    FOR_ALL_BB_SUCCS(bb, succs) {
+      BB *succ = BBLIST_item(succs);
+      if (!HB_Contains_Block(hb, succ)) {
+	if (!LAO_inBB_VECTOR(exitBBs, succ))
+	  exitBBs.push_back(succ);
+      }
+    }
+  }
+  //
+  result = LAO_optimize(entryBBs, innerBBs, exitBBs, CodeRegion_TraceBlocks, lao_actions);
+  //
+  return result;
+}
 
-/* -----------------------------------------------------------------------
- * Utility routines to print CGIR structures
- * -----------------------------------------------------------------------
- */
-static void
-LAOS_printBB_Header (BB *bp)
+/*-------------------------- CGIR Print Functions ----------------------------*/
+
+typedef struct OP_list {
+  OP *op;
+  struct OP_list *next;
+} OP_list;
+
+static OP_list * OP_list_new(OP_list *head)
 {
-  BBLIST *bl;
-  INT16 i;
-  ANNOTATION *annot = ANNOT_Get(BB_annotations(bp), ANNOT_LOOPINFO);
-  BOOL freqs = FREQ_Frequencies_Computed();
-//
-  if ( BB_entry(bp) ) {
-    ANNOTATION *ant = ANNOT_Get (BB_annotations(bp), ANNOT_ENTRYINFO);
-    ENTRYINFO *ent = ANNOT_entryinfo (ant);
-    OP *sp_adj = BB_entry_sp_adj_op(bp);
-    Is_True ((sp_adj == ENTRYINFO_sp_adj(ent)),("bad sp_adj"));
-//
-    fprintf ( TFile, "Entrypoint: %s\t Starting Line %d\n",
-	      ST_name(ENTRYINFO_name(ent)),
-	      Srcpos_To_Line(ENTRYINFO_srcpos(ent)));
-//
-    if (sp_adj) {
-      OP *op;
-      BOOL found_sp_adj = FALSE;
-      fprintf ( TFile, "SP entry adj: " );
-      Print_OP_No_SrcLine (sp_adj);
-      FOR_ALL_BB_OPs_FWD(bp,op)
-	if (op == sp_adj) {
-	  found_sp_adj = TRUE;
-	  break;
-	}
-      if (found_sp_adj == FALSE)
-	fprintf ( TFile, "******** ERROR ******** sp adjust not found in entry block\n");
-    }
-  }
-//
-  if ( BB_exit(bp) ) {
-    ANNOTATION *ant = ANNOT_Get (BB_annotations(bp), ANNOT_EXITINFO);
-    EXITINFO *exit = ANNOT_exitinfo (ant);
-    OP *sp_adj = BB_exit_sp_adj_op(bp);
-    Is_True ((sp_adj == EXITINFO_sp_adj(exit)),("bad sp_adj"));
-//
-    if (sp_adj) {
-      OP *op;
-      BOOL found_sp_adj = FALSE;
-      fprintf ( TFile, "SP exit adj: " );
-      Print_OP_No_SrcLine (sp_adj);
-//
-      FOR_ALL_BB_OPs_FWD(bp,op)
-	if (op == sp_adj) {
-	  found_sp_adj = TRUE;
-	  break;
-	}
-      if (found_sp_adj == FALSE)
-	fprintf ( TFile, "******** ERROR ******** sp adjust not found in exit block\n");
-    }
-  }
-//
-  fprintf ( TFile, "    BB %d, flags 0x%04x",
-	    BB_id(bp), BB_flag(bp) );
-//
-  if (freqs || BB_freq_fb_based(bp))
-    fprintf(TFile, ", freq %g (%s)", BB_freq(bp),
-	    BB_freq_fb_based(bp) ? "feedback" : "heuristic");
-  
-  if (BB_unreachable(bp)) fprintf ( TFile, ", Unreachable");
-  if (BB_entry(bp))	fprintf ( TFile, ", Entry" );
-  if (BB_handler(bp))	fprintf ( TFile, ", Handler" );
-  if (BB_asm(bp)) 	fprintf ( TFile, ", Asm" );
-//
-  if (BB_exit(bp)) {
-    if (BB_call(bp))	fprintf ( TFile, ", Tail-call" );
-    else		fprintf ( TFile, ", Exit" );
-  } else if (BB_call(bp)) fprintf ( TFile, ", Call" );
-//
-  if (BB_rid(bp)) {
-    INT exits;
-    RID *rid = BB_rid(bp);
-    CGRIN *cgrin = RID_cginfo(rid);
-    if (cgrin) {
-      if (bp == CGRIN_entry(cgrin)) {
-	fprintf ( TFile, ", Region-entry " );
-      }
-      exits = RID_num_exits(rid);
-      for (i = 0; i < exits; ++i) {
-	if (bp == CGRIN_exit_i(cgrin, i)) {
-	  fprintf ( TFile, ", Region-exit[%d]", i );
-	}
-      }
-    }
-  }
-//
-  fprintf ( TFile, "\n");
-//
-  if (annot)
-    Print_LOOPINFO(ANNOT_loopinfo(annot));
-//
-  if (BB_loop_head_bb(bp)) {
-    if (BB_loophead(bp)) {
-      if (!annot) {
-	fprintf(TFile, "\tHead of loop body line %d\n", BB_Loop_Lineno(bp));
-      }
-    } else {
-      BB *head = BB_loop_head_bb(bp);
-      fprintf(TFile,
-	      "\tPart of loop body starting at line %d with head BB:%d\n",
-	      BB_Loop_Lineno(head), BB_id(head));
-    }
-  }
-//
-  if (BB_unrollings(bp) > 1)
-    fprintf(TFile, "\tUnrolled %d times%s\n", BB_unrollings(bp),
-	    BB_unrolled_fully(bp) ? " (fully)" : "");
-//
-  if ( BB_rid(bp) )
-    RID_Fprint( TFile, BB_rid(bp) );
-//
-  fprintf ( TFile, "\tpred" );
-  FOR_ALL_BB_PREDS (bp, bl) {
-    fprintf ( TFile, " %d", BB_id(BBLIST_item(bl)));
-  }
-//
-  fprintf ( TFile, "\n\tsucc%s", freqs ? " (w/probs)" : "" );
-  FOR_ALL_BB_SUCCS (bp, bl) {
-    fprintf ( TFile, " %d",
-	      BB_id(BBLIST_item(bl)));
-    if (freqs) fprintf(TFile, "(%g)", BBLIST_prob(bl));
-  }
-  fprintf ( TFile, "\n" );
-//
-  if (BB_has_label(bp)) {
-    ANNOTATION *ant;
-    fprintf(TFile, "\tLabel");
-    for (ant = ANNOT_First(BB_annotations(bp), ANNOT_LABEL);
-	 ant != NULL;
-	 ant = ANNOT_Next(ant, ANNOT_LABEL))
-      {
-	INT eh_labs = 0;
-	LABEL_IDX label = ANNOT_label(ant);
-	fprintf (TFile," %s", LABEL_name(label));
-	FmtAssert((Get_Label_BB(label) == bp),
-		  (" Inconsistent ST for BB:%2d label", BB_id(bp)));
-	switch (LABEL_kind(Label_Table[label])) {
-	case LKIND_BEGIN_EH_RANGE:
-	  fprintf (TFile,"%cbegin_eh_range", eh_labs++ ? ' ' : '(');
-	  break;
-	case LKIND_END_EH_RANGE:
-	  fprintf (TFile,"%cend_eh_range", eh_labs++ ? ' ' : '(');
-	  break;
-	}
-	if (eh_labs)
-	  fprintf (TFile,")");
-      }
-    fprintf(TFile, "\n");
-  }
-//
-  return;
+  OP_list * elem;
+  //
+  elem = (OP_list *)malloc(sizeof(OP_list));
+  elem->next = head;
+  head = elem;
+  return head;
 }
 
 static void
 LAOS_printTN ( const TN *tn )
 {
-//
+  //
   if (TN_is_constant(tn)) {
     if ( TN_has_value(tn)) {
       fprintf ( TFile, "(0x%llx)", TN_value(tn) );
@@ -870,7 +737,7 @@ LAOS_printTN ( const TN *tn )
     }
     else if ( TN_is_symbol(tn) ) {
       ST *var = TN_var(tn);
-//
+      //
       fprintf ( TFile, "(sym" );
       fprintf ( TFile, TN_RELOCS_Name(TN_relocs(tn)) );
       //
@@ -951,25 +818,166 @@ LAOS_printOPs ( const OP *op )
 }
 
 static void
+LAOS_printBB_Header (BB *bp)
+{
+  BBLIST *bl;
+  INT16 i;
+  ANNOTATION *annot = ANNOT_Get(BB_annotations(bp), ANNOT_LOOPINFO);
+  BOOL freqs = FREQ_Frequencies_Computed();
+  //
+  if ( BB_entry(bp) ) {
+    ANNOTATION *ant = ANNOT_Get (BB_annotations(bp), ANNOT_ENTRYINFO);
+    ENTRYINFO *ent = ANNOT_entryinfo (ant);
+    OP *sp_adj = BB_entry_sp_adj_op(bp);
+    Is_True ((sp_adj == ENTRYINFO_sp_adj(ent)),("bad sp_adj"));
+    //
+    fprintf ( TFile, "Entrypoint: %s\t Starting Line %d\n",
+	      ST_name(ENTRYINFO_name(ent)),
+	      Srcpos_To_Line(ENTRYINFO_srcpos(ent)));
+    //
+    if (sp_adj) {
+      OP *op;
+      BOOL found_sp_adj = FALSE;
+      fprintf ( TFile, "SP entry adj: " );
+      Print_OP_No_SrcLine (sp_adj);
+      FOR_ALL_BB_OPs_FWD(bp,op)
+	if (op == sp_adj) {
+	  found_sp_adj = TRUE;
+	  break;
+	}
+      if (found_sp_adj == FALSE)
+	fprintf ( TFile, "******** ERROR ******** sp adjust not found in entry block\n");
+    }
+  }
+  //
+  if ( BB_exit(bp) ) {
+    ANNOTATION *ant = ANNOT_Get (BB_annotations(bp), ANNOT_EXITINFO);
+    EXITINFO *exit = ANNOT_exitinfo (ant);
+    OP *sp_adj = BB_exit_sp_adj_op(bp);
+    Is_True ((sp_adj == EXITINFO_sp_adj(exit)),("bad sp_adj"));
+    //
+    if (sp_adj) {
+      OP *op;
+      BOOL found_sp_adj = FALSE;
+      fprintf ( TFile, "SP exit adj: " );
+      Print_OP_No_SrcLine (sp_adj);
+      //
+      FOR_ALL_BB_OPs_FWD(bp,op)
+	if (op == sp_adj) {
+	  found_sp_adj = TRUE;
+	  break;
+	}
+      if (found_sp_adj == FALSE)
+	fprintf ( TFile, "******** ERROR ******** sp adjust not found in exit block\n");
+    }
+  }
+  //
+  fprintf ( TFile, "    BB %d, flags 0x%04x",
+	    BB_id(bp), BB_flag(bp) );
+  //
+  if (freqs || BB_freq_fb_based(bp))
+    fprintf(TFile, ", freq %g (%s)", BB_freq(bp),
+	    BB_freq_fb_based(bp) ? "feedback" : "heuristic");
+  
+  if (BB_unreachable(bp)) fprintf ( TFile, ", Unreachable");
+  if (BB_entry(bp))	fprintf ( TFile, ", Entry" );
+  if (BB_handler(bp))	fprintf ( TFile, ", Handler" );
+  if (BB_asm(bp)) 	fprintf ( TFile, ", Asm" );
+  //
+  if (BB_exit(bp)) {
+    if (BB_call(bp))	fprintf ( TFile, ", Tail-call" );
+    else		fprintf ( TFile, ", Exit" );
+  } else if (BB_call(bp)) fprintf ( TFile, ", Call" );
+  //
+  if (BB_rid(bp)) {
+    INT exits;
+    RID *rid = BB_rid(bp);
+    CGRIN *cgrin = RID_cginfo(rid);
+    if (cgrin) {
+      if (bp == CGRIN_entry(cgrin)) {
+	fprintf ( TFile, ", Region-entry " );
+      }
+      exits = RID_num_exits(rid);
+      for (i = 0; i < exits; ++i) {
+	if (bp == CGRIN_exit_i(cgrin, i)) {
+	  fprintf ( TFile, ", Region-exit[%d]", i );
+	}
+      }
+    }
+  }
+  //
+  fprintf ( TFile, "\n");
+  //
+  if (annot)
+    Print_LOOPINFO(ANNOT_loopinfo(annot));
+  //
+  if (BB_loop_head_bb(bp)) {
+    if (BB_loophead(bp)) {
+      if (!annot) {
+	fprintf(TFile, "\tHead of loop body line %d\n", BB_Loop_Lineno(bp));
+      }
+    } else {
+      BB *head = BB_loop_head_bb(bp);
+      fprintf(TFile,
+	      "\tPart of loop body starting at line %d with head BB:%d\n",
+	      BB_Loop_Lineno(head), BB_id(head));
+    }
+  }
+  //
+  if (BB_unrollings(bp) > 1)
+    fprintf(TFile, "\tUnrolled %d times%s\n", BB_unrollings(bp),
+	    BB_unrolled_fully(bp) ? " (fully)" : "");
+  //
+  if ( BB_rid(bp) )
+    RID_Fprint( TFile, BB_rid(bp) );
+  //
+  fprintf ( TFile, "\tpred" );
+  FOR_ALL_BB_PREDS (bp, bl) {
+    fprintf ( TFile, " %d", BB_id(BBLIST_item(bl)));
+  }
+  //
+  fprintf ( TFile, "\n\tsucc%s", freqs ? " (w/probs)" : "" );
+  FOR_ALL_BB_SUCCS (bp, bl) {
+    fprintf ( TFile, " %d",
+	      BB_id(BBLIST_item(bl)));
+    if (freqs) fprintf(TFile, "(%g)", BBLIST_prob(bl));
+  }
+  fprintf ( TFile, "\n" );
+  //
+  if (BB_has_label(bp)) {
+    ANNOTATION *ant;
+    fprintf(TFile, "\tLabel");
+    for (ant = ANNOT_First(BB_annotations(bp), ANNOT_LABEL);
+	 ant != NULL;
+	 ant = ANNOT_Next(ant, ANNOT_LABEL))
+      {
+	INT eh_labs = 0;
+	LABEL_IDX label = ANNOT_label(ant);
+	fprintf (TFile," %s", LABEL_name(label));
+	FmtAssert((Get_Label_BB(label) == bp),
+		  (" Inconsistent ST for BB:%2d label", BB_id(bp)));
+	switch (LABEL_kind(Label_Table[label])) {
+	case LKIND_BEGIN_EH_RANGE:
+	  fprintf (TFile,"%cbegin_eh_range", eh_labs++ ? ' ' : '(');
+	  break;
+	case LKIND_END_EH_RANGE:
+	  fprintf (TFile,"%cend_eh_range", eh_labs++ ? ' ' : '(');
+	  break;
+	}
+	if (eh_labs)
+	  fprintf (TFile,")");
+      }
+    fprintf(TFile, "\n");
+  }
+  //
+  return;
+}
+
+static void
 LAOS_printBB (BB *bp)
 {
   LAOS_printBB_Header (bp );
   if (BB_first_op(bp))	LAOS_printOPs (BB_first_op(bp));
-}
-
-typedef struct OP_list {
-  OP *op;
-  struct OP_list *next;
-} OP_list;
-
-static OP_list * OP_list_new(OP_list *head)
-{
-  OP_list * elem;
-  //
-  elem = (OP_list *)malloc(sizeof(OP_list));
-  elem->next = head;
-  head = elem;
-  return head;
 }
 
 static void
@@ -1024,95 +1032,70 @@ LAOS_printCGIR()
   fprintf(TFile, "-------- CFG End --------\n");
 }
 
+/*-------------------------- Old LAO Entry Points ----------------------------*/
 
-// Low-level LAO_optimize entry point.
-static bool
-LAO_optimize(BB_VECTOR &entryBBs, BB_VECTOR &innerBBs, BB_VECTOR &exitBBs, CodeRegion_Type region_kind, unsigned lao_actions) {
-  CodeRegion coderegion;
-  bool result = false;
-  //
-  coderegion = REGION_convert2LIR(entryBBs, innerBBs, exitBBs, region_kind);
-  //
-  CodeRegion_pretty(coderegion, TFile);
-  //
-  // Optimize through the LAO.
-  result = CodeRegion_optimize(coderegion, lao_actions);
-  //
-  return result;
-}
-
-// Optimize a LOOP_DESCR through the LAO.
 bool
-LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
-  BB_VECTOR entryBBs, innerBBs, exitBBs;
-  bool result = false;
-  //
-#ifndef LAO_EXPERIMENT
-  LAOS_printCGIR();
-#endif //LAO_EXPERIMENT
-  //
-  if (BB_innermost(LOOP_DESCR_loophead(loop))) {
-    // Create a prolog and epilog for the region when possible.
-    CG_LOOP cg_loop(loop);
-    //
-    entryBBs.push_back(CG_LOOP_prolog);
-    //
-    // Enter the body blocks in linear order.
-    BB *loop_head = LOOP_DESCR_loophead(loop);
-    BB *loop_tail = LOOP_DESCR_Find_Unique_Tail(loop);
-    //
-    if (loop_tail != NULL) {
-      //
-      for (BB *bb = loop_head;
-	   bb && BB_prev(bb) != loop_tail;
-	   bb = BB_next(bb)) {
-	if (BB_SET_MemberP(LOOP_DESCR_bbset(loop), bb)) {
-	  innerBBs.push_back(bb);
-	  //
-	  BBLIST *succs = NULL;
-	  FOR_ALL_BB_SUCCS(bb, succs) {
-	    BB *succ = BBLIST_item(succs);
-	    if (!BB_SET_MemberP(LOOP_DESCR_bbset(loop), succ)) {
-	      // Ensure that a bb is not put twize in the vector
-	      if (!BB_inRegion(exitBBs, succ))
-		exitBBs.push_back(succ);
-	    }
-	  }
-	}
-      }
-      //
-      // Call the main LAO_optimize entry point.
-      result = LAO_optimize(entryBBs, innerBBs, exitBBs, CodeRegion_InnerLoop, lao_actions);
-    }
-  }
-  //
-  return result;
-}
-
-
-// Optimize a HB through the LAO.
-bool
-LAO_optimize(HB *hb, unsigned lao_actions) {
-  BB_VECTOR entryBBs, innerBBs, exitBBs;
+LAO_scheduleRegion ( BB_VECTOR& entryBBs, BB_VECTOR& innerBBs, BB_VECTOR& exitBBs, CodeRegion_Type region_kind, LAO_SWP_ACTION action ) {
+  int i;
   BB *bb;
-  bool result = false;
+  CodeRegion lir_region;
+  int status;
+  
+  fprintf(TFile, "---- Before LAO schedule region ----\n");
+  fprintf(TFile, "---- Begin trace regionBBs ----\n");
+  for (i = 0; i < innerBBs.size(); i ++) {
+    bb = innerBBs[i];
+    LAOS_printBB(bb);
+  }    
+  fprintf(TFile, "---- End trace regionBBs ----\n");
   //
-  entryBBs.push_back(HB_Entry(hb));
+  lir_region = LAO_makeCodeRegion(entryBBs, innerBBs, exitBBs, region_kind);
   //
-  FOR_ALL_BB_SET_members(HB_Blocks(hb), bb) {
-    innerBBs.push_back(bb);
-    //
-    BBLIST *succs = NULL;
-    FOR_ALL_BB_SUCCS(bb, succs) {
-      BB *succ = BBLIST_item(succs);
-      if (!HB_Contains_Block(hb, succ)) {
-	if (!BB_inRegion(exitBBs, succ))
-	  exitBBs.push_back(succ);
-      }
-    }
+  CodeRegion_pretty(lir_region, TFile);
+  //
+  //  status = REGION_schedule(lir_region);
+  //
+  if (status == 0) {
+    //    REGION_convert2CGIR(lir_region);
   }
-  //
-  result = LAO_optimize(entryBBs, innerBBs, exitBBs, CodeRegion_TraceBlocks, lao_actions);
-  //
-  return result;
+  //  
+  fprintf(TFile, "---- After LAO schedule region ----\n");
+  return (status == 0);
 }
+
+static void
+LAOS_printCGIR(void);
+
+bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
+  LOOP_DESCR *loop = cl.Loop();
+  BB *bb;
+  BB_VECTOR entryBBs, innerBBs, exitBBs;
+  bool res;
+  //
+  LAOS_printCGIR();
+  //
+  fprintf(TFile, "---- Before LAO schedule loop ----\n");
+  fprintf(TFile, "     ------ LOOP id %2d ------\n", BB_id(LOOP_DESCR_loophead(loop)));
+  fprintf(TFile, "            -----------\n");
+  //
+  int scan;
+  scanf("%d", &scan);
+  //
+  FOR_ALL_BB_SET_members(LOOP_DESCR_bbset(loop), bb) LAOS_printBB(bb);
+  //
+  entryBBs.push_back (CG_LOOP_prolog);
+  innerBBs.push_back (CG_LOOP_prolog);
+  innerBBs.push_back (LOOP_DESCR_loophead(loop));
+  innerBBs.push_back (CG_LOOP_epilog);
+  exitBBs.push_back  (CG_LOOP_epilog);
+  //
+  fprintf(TFile, "--------------- dpendence graph for %d ---------------\n", BB_id(innerBBs[1]));
+  // CG_DEP_Compute_Region_Graph
+  CYCLIC_DEP_GRAPH cyclic_graph( innerBBs[1], &MEM_lao_pool); 
+  CG_DEP_Trace_Graph(innerBBs[1]);
+  //
+  res = LAO_scheduleRegion ( entryBBs, innerBBs, exitBBs, CodeRegion_InnerLoop, action );
+  //
+  return res;
+}
+
