@@ -629,16 +629,6 @@ LAO_makeLoopInfo(BB_List& bb_list, unsigned lao_actions) {
   //  cyclic = false;	// HACK ALERT
   if (bb_list.size() == 1) {
     BB *bb = bb_list.front();
-
-    if (cyclic) {
-      extern CG_LOOP *Current_CG_LOOP;
-      //
-      // We need to call cg_loop.Build_CG_LOOP_Info() to perform
-      // initialization of operations in the loop. Current_CG_LOOP is a
-      // global variable initialized by the CG_LOOP constructor.
-      Is_True(Current_CG_LOOP, ("No current CG_LOOP"));
-      Current_CG_LOOP->Build_CG_LOOP_Info();
-    }
     CG_DEP_Compute_Graph(bb,
 	false,	// assigned_regs
 	cyclic,	// compute_cyclic
@@ -646,10 +636,15 @@ LAO_makeLoopInfo(BB_List& bb_list, unsigned lao_actions) {
 	true,	// memin_arcs
 	false,	// control_arcs
 	NULL);	// need_anti_out_dep
-    //CG_DEP_Trace_Graph(bb);
     LAO_setMemoryDependences(bb, loopinfo);
     pointer = bb;
   } else {
+    if (cyclic) {
+      cyclic = false;
+      lao_actions &= ~LAO_LoopSchedule;
+      lao_actions &= ~LAO_LoopPipeline;
+      fprintf(TFile, "Cannot compute cyclic dependences on multi-BB loops\n");
+    }
     CG_DEP_Compute_Region_Graph(bb_list,
 	false,	// assigned_regs
 	false,	// memread_arcs
@@ -657,7 +652,6 @@ LAO_makeLoopInfo(BB_List& bb_list, unsigned lao_actions) {
     BB_List::iterator bb_iter;
     for (bb_iter = bb_list.begin(); bb_iter != bb_list.end(); bb_iter++) {
       LAO_setMemoryDependences(*bb_iter, loopinfo);
-      //CG_DEP_Trace_Graph(*bb_iter);
     }
     pointer = &bb_list;
   }
@@ -682,7 +676,6 @@ LAO_optimize(BB_List &entryBBs, BB_List &innerBBs, BB_List &exitBBs, CodeRegion_
   //
   CodeRegion_pretty(coderegion, TFile);
   //
-  // Optimize through the LAO.
   result = CodeRegion_optimize(coderegion, lao_actions);
   //
   Interface_close(interface);
@@ -703,6 +696,10 @@ LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
   if (BB_innermost(LOOP_DESCR_loophead(loop))) {
     // Create a prolog and epilog for the region when possible.
     CG_LOOP cg_loop(loop);
+    // We need to call cg_loop.Build_CG_LOOP_Info() to perform
+    // initialization of operations in the loop. This is required before calling
+    // CG_DEP_Compute_Graph with cyclic = true.
+    if (cg_loop.Single_BB()) cg_loop.Build_CG_LOOP_Info();
     //
     entryBBs.push_back(CG_LOOP_prolog);
     //
@@ -722,9 +719,8 @@ LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
 	  FOR_ALL_BB_SUCCS(bb, succs) {
 	    BB *succ = BBLIST_item(succs);
 	    if (!BB_SET_MemberP(LOOP_DESCR_bbset(loop), succ)) {
-	      // Ensure that a bb is not put twice in the vector
-	      if (!LAO_inBB_List(exitBBs, succ))
-		exitBBs.push_back(succ);
+	      // Ensure that a bb is not put twice in the exitBBs.
+	      if (!LAO_inBB_List(exitBBs, succ)) exitBBs.push_back(succ);
 	    }
 	  }
 	}
