@@ -97,10 +97,158 @@ main()
    */ 
 
   /* ====================================== */ 
-  noop = ISA_Property_Create ("noop"); 
-  Instruction_Group (noop, 
-		 TOP_nop, 
-		 TOP_noop, 
+  add = ISA_Property_Create ("add"); 
+  Instruction_Group (add, 
+		 TOP_add_r, 
+		 TOP_add_i, 
+		 TOP_add_ii, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
+  And = ISA_Property_Create ("and"); 
+  Instruction_Group (And, 
+		 TOP_and_r, 
+		 TOP_and_i, 
+		 TOP_and_ii, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
+  call = ISA_Property_Create ("call"); 
+  Instruction_Group (call, 
+		 TOP_call, 
+		 TOP_icall, 
+		 TOP_rfi, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
+  cmp = ISA_Property_Create ("cmp"); 
+  Instruction_Group (cmp, 
+		 TOP_andl_r_r, 
+		 TOP_andl_r_b, 
+		 TOP_andl_i_r, 
+		 TOP_andl_ii_r, 
+		 TOP_andl_i_b, 
+		 TOP_andl_ii_b, 
+		 TOP_cmpeq_r_r, 
+		 TOP_cmpeq_r_b, 
+		 TOP_cmpeq_i_r, 
+		 TOP_cmpeq_ii_r, 
+		 TOP_cmpeq_i_b, 
+		 TOP_cmpeq_ii_b, 
+		 TOP_cmpge_r_r, 
+		 TOP_cmpge_r_b, 
+		 TOP_cmpge_i_r, 
+		 TOP_cmpge_ii_r, 
+		 TOP_cmpge_i_b, 
+		 TOP_cmpge_ii_b, 
+		 TOP_cmpgeu_r_r, 
+		 TOP_cmpgeu_r_b, 
+		 TOP_cmpgeu_i_r, 
+		 TOP_cmpgeu_ii_r, 
+		 TOP_cmpgeu_i_b, 
+		 TOP_cmpgeu_ii_b, 
+		 TOP_cmpgt_r_r, 
+		 TOP_cmpgt_r_b, 
+		 TOP_cmpgt_i_r, 
+		 TOP_cmpgt_ii_r, 
+		 TOP_cmpgt_i_b, 
+		 TOP_cmpgt_ii_b, 
+		 TOP_cmpgtu_r_r, 
+		 TOP_cmpgtu_r_b, 
+		 TOP_cmpgtu_i_r, 
+		 TOP_cmpgtu_ii_r, 
+		 TOP_cmpgtu_i_b, 
+		 TOP_cmpgtu_ii_b, 
+		 TOP_cmple_r_r, 
+		 TOP_cmple_r_b, 
+		 TOP_cmple_i_r, 
+		 TOP_cmple_ii_r, 
+		 TOP_cmple_i_b, 
+		 TOP_cmple_ii_b, 
+		 TOP_cmpleu_r_r, 
+		 TOP_cmpleu_r_b, 
+		 TOP_cmpleu_i_r, 
+		 TOP_cmpleu_ii_r, 
+		 TOP_cmpleu_i_b, 
+		 TOP_cmpleu_ii_b, 
+		 TOP_cmplt_r_r, 
+		 TOP_cmplt_r_b, 
+		 TOP_cmplt_i_r, 
+		 TOP_cmplt_ii_r, 
+		 TOP_cmplt_i_b, 
+		 TOP_cmplt_ii_b, 
+		 TOP_cmpltu_r_r, 
+		 TOP_cmpltu_r_b, 
+		 TOP_cmpltu_i_r, 
+		 TOP_cmpltu_ii_r, 
+		 TOP_cmpltu_i_b, 
+		 TOP_cmpltu_ii_b, 
+		 TOP_cmpne_r_r, 
+		 TOP_cmpne_r_b, 
+		 TOP_cmpne_i_r, 
+		 TOP_cmpne_ii_r, 
+		 TOP_cmpne_i_b, 
+		 TOP_cmpne_ii_b, 
+		 TOP_nandl_r_r, 
+		 TOP_nandl_r_b, 
+		 TOP_nandl_i_r, 
+		 TOP_nandl_ii_r, 
+		 TOP_nandl_i_b, 
+		 TOP_nandl_ii_b, 
+		 TOP_norl_r_r, 
+		 TOP_norl_r_b, 
+		 TOP_norl_i_r, 
+		 TOP_norl_ii_r, 
+		 TOP_norl_i_b, 
+		 TOP_norl_ii_b, 
+		 TOP_orl_r_r, 
+		 TOP_orl_r_b, 
+		 TOP_orl_i_r, 
+		 TOP_orl_ii_r, 
+		 TOP_orl_i_b, 
+		 TOP_orl_ii_b, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
+  cond = ISA_Property_Create ("cond"); 
+  Instruction_Group (cond, 
+		 TOP_br, 
+		 TOP_brf, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
+  dismissible = ISA_Property_Create ("dismissible"); 
+  Instruction_Group (dismissible, 
+		 TOP_ldb_d_i, 
+		 TOP_ldb_d_ii, 
+		 TOP_ldbu_d_i, 
+		 TOP_ldbu_d_ii, 
+		 TOP_ldh_d_i, 
+		 TOP_ldh_d_ii, 
+		 TOP_ldhu_d_i, 
+		 TOP_ldhu_d_ii, 
+		 TOP_ldw_d_i, 
+		 TOP_ldw_d_ii, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
+  dummy = ISA_Property_Create ("dummy"); 
+  Instruction_Group (dummy, 
+		 TOP_begin_pregtn, 
+		 TOP_end_pregtn, 
+		 TOP_bwd_bar, 
+		 TOP_fwd_bar, 
+		 TOP_dfixup, 
+		 TOP_ffixup, 
+		 TOP_ifixup, 
+		 TOP_label, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
+  ijump = ISA_Property_Create ("ijump"); 
+  Instruction_Group (ijump, 
+		 TOP_igoto, 
+		 TOP_return, 
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 
@@ -300,87 +448,9 @@ main()
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 
-  Xor = ISA_Property_Create ("xor"); 
-  Instruction_Group (Xor, 
-		 TOP_xor_r, 
-		 TOP_xor_i, 
-		 TOP_xor_ii, 
-		 TOP_UNDEFINED); 
-
-  /* ====================================== */ 
-  shr = ISA_Property_Create ("shr"); 
-  Instruction_Group (shr, 
-		 TOP_shr_r, 
-		 TOP_shr_i, 
-		 TOP_shr_ii, 
-		 TOP_UNDEFINED); 
-
-  /* ====================================== */ 
-  cond = ISA_Property_Create ("cond"); 
-  Instruction_Group (cond, 
-		 TOP_br, 
-		 TOP_brf, 
-		 TOP_UNDEFINED); 
-
-  /* ====================================== */ 
-  mul = ISA_Property_Create ("mul"); 
-  Instruction_Group (mul, 
-		 TOP_mull_r, 
-		 TOP_mull_i, 
-		 TOP_mull_ii, 
-		 TOP_mulll_r, 
-		 TOP_mulll_i, 
-		 TOP_mulll_ii, 
-		 TOP_mulllu_r, 
-		 TOP_mulllu_i, 
-		 TOP_mulllu_ii, 
-		 TOP_mullu_r, 
-		 TOP_mullu_i, 
-		 TOP_mullu_ii, 
-		 TOP_UNDEFINED); 
-
-  /* ====================================== */ 
-  zext = ISA_Property_Create ("zext"); 
-  Instruction_Group (zext, 
-		 TOP_zxth_r, 
-		 TOP_UNDEFINED); 
-
-  /* ====================================== */ 
-  shru = ISA_Property_Create ("shru"); 
-  Instruction_Group (shru, 
-		 TOP_shru_r, 
-		 TOP_shru_i, 
-		 TOP_shru_ii, 
-		 TOP_UNDEFINED); 
-
-  /* ====================================== */ 
-  And = ISA_Property_Create ("and"); 
-  Instruction_Group (And, 
-		 TOP_and_r, 
-		 TOP_and_i, 
-		 TOP_and_ii, 
-		 TOP_UNDEFINED); 
-
-  /* ====================================== */ 
-  sext = ISA_Property_Create ("sext"); 
-  Instruction_Group (sext, 
-		 TOP_sxtb_r, 
-		 TOP_sxth_r, 
-		 TOP_UNDEFINED); 
-
-  /* ====================================== */ 
-  sub = ISA_Property_Create ("sub"); 
-  Instruction_Group (sub, 
-		 TOP_sub_r, 
-		 TOP_sub_i, 
-		 TOP_sub_ii, 
-		 TOP_UNDEFINED); 
-
-  /* ====================================== */ 
-  ijump = ISA_Property_Create ("ijump"); 
-  Instruction_Group (ijump, 
-		 TOP_igoto, 
-		 TOP_return, 
+  jump = ISA_Property_Create ("jump"); 
+  Instruction_Group (jump, 
+		 TOP_goto, 
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 
@@ -409,6 +479,46 @@ main()
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 
+  move = ISA_Property_Create ("move"); 
+  Instruction_Group (move, 
+		 TOP_mov_r, 
+		 TOP_mov_i, 
+		 TOP_mov_ii, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
+  mul = ISA_Property_Create ("mul"); 
+  Instruction_Group (mul, 
+		 TOP_mull_r, 
+		 TOP_mull_i, 
+		 TOP_mull_ii, 
+		 TOP_mulll_r, 
+		 TOP_mulll_i, 
+		 TOP_mulll_ii, 
+		 TOP_mulllu_r, 
+		 TOP_mulllu_i, 
+		 TOP_mulllu_ii, 
+		 TOP_mullu_r, 
+		 TOP_mullu_i, 
+		 TOP_mullu_ii, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
+  noop = ISA_Property_Create ("noop"); 
+  Instruction_Group (noop, 
+		 TOP_nop, 
+		 TOP_noop, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
+  Or = ISA_Property_Create ("or"); 
+  Instruction_Group (Or, 
+		 TOP_or_r, 
+		 TOP_or_i, 
+		 TOP_or_ii, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
   prefetch = ISA_Property_Create ("prefetch"); 
   Instruction_Group (prefetch, 
 		 TOP_pft_i, 
@@ -416,25 +526,45 @@ main()
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 
-  dummy = ISA_Property_Create ("dummy"); 
-  Instruction_Group (dummy, 
-		 TOP_begin_pregtn, 
-		 TOP_end_pregtn, 
-		 TOP_bwd_bar, 
-		 TOP_fwd_bar, 
-		 TOP_dfixup, 
-		 TOP_ffixup, 
-		 TOP_ifixup, 
-		 TOP_label, 
+  select = ISA_Property_Create ("select"); 
+  Instruction_Group (select, 
+		 TOP_slct_r, 
+		 TOP_slct_i, 
+		 TOP_slct_ii, 
+		 TOP_slctf_r, 
+		 TOP_slctf_i, 
+		 TOP_slctf_ii, 
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 
-  var_opnds = ISA_Property_Create ("var_opnds"); 
-  Instruction_Group (var_opnds, 
-		 TOP_asm, 
-		 TOP_intrncall, 
-		 TOP_phi, 
-		 TOP_psi, 
+  sext = ISA_Property_Create ("sext"); 
+  Instruction_Group (sext, 
+		 TOP_sxtb_r, 
+		 TOP_sxth_r, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
+  shl = ISA_Property_Create ("shl"); 
+  Instruction_Group (shl, 
+		 TOP_shl_r, 
+		 TOP_shl_i, 
+		 TOP_shl_ii, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
+  shr = ISA_Property_Create ("shr"); 
+  Instruction_Group (shr, 
+		 TOP_shr_r, 
+		 TOP_shr_i, 
+		 TOP_shr_ii, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
+  shru = ISA_Property_Create ("shru"); 
+  Instruction_Group (shru, 
+		 TOP_shru_r, 
+		 TOP_shru_i, 
+		 TOP_shru_ii, 
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 
@@ -450,21 +580,6 @@ main()
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 
-  dismissible = ISA_Property_Create ("dismissible"); 
-  Instruction_Group (dismissible, 
-		 TOP_ldb_d_i, 
-		 TOP_ldb_d_ii, 
-		 TOP_ldbu_d_i, 
-		 TOP_ldbu_d_ii, 
-		 TOP_ldh_d_i, 
-		 TOP_ldh_d_ii, 
-		 TOP_ldhu_d_i, 
-		 TOP_ldhu_d_ii, 
-		 TOP_ldw_d_i, 
-		 TOP_ldw_d_ii, 
-		 TOP_UNDEFINED); 
-
-  /* ====================================== */ 
   store = ISA_Property_Create ("store"); 
   Instruction_Group (store, 
 		 TOP_stb_i, 
@@ -476,30 +591,11 @@ main()
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 
-  Or = ISA_Property_Create ("or"); 
-  Instruction_Group (Or, 
-		 TOP_or_r, 
-		 TOP_or_i, 
-		 TOP_or_ii, 
-		 TOP_UNDEFINED); 
-
-  /* ====================================== */ 
-  select = ISA_Property_Create ("select"); 
-  Instruction_Group (select, 
-		 TOP_slct_r, 
-		 TOP_slct_i, 
-		 TOP_slct_ii, 
-		 TOP_slctf_r, 
-		 TOP_slctf_i, 
-		 TOP_slctf_ii, 
-		 TOP_UNDEFINED); 
-
-  /* ====================================== */ 
-  add = ISA_Property_Create ("add"); 
-  Instruction_Group (add, 
-		 TOP_add_r, 
-		 TOP_add_i, 
-		 TOP_add_ii, 
+  sub = ISA_Property_Create ("sub"); 
+  Instruction_Group (sub, 
+		 TOP_sub_r, 
+		 TOP_sub_i, 
+		 TOP_sub_ii, 
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 
@@ -564,6 +660,15 @@ main()
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 
+  var_opnds = ISA_Property_Create ("var_opnds"); 
+  Instruction_Group (var_opnds, 
+		 TOP_asm, 
+		 TOP_intrncall, 
+		 TOP_phi, 
+		 TOP_psi, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
   xfer = ISA_Property_Create ("xfer"); 
   Instruction_Group (xfer, 
 		 TOP_br, 
@@ -577,122 +682,17 @@ main()
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 
-  cmp = ISA_Property_Create ("cmp"); 
-  Instruction_Group (cmp, 
-		 TOP_andl_r_r, 
-		 TOP_andl_r_b, 
-		 TOP_andl_i_r, 
-		 TOP_andl_ii_r, 
-		 TOP_andl_i_b, 
-		 TOP_andl_ii_b, 
-		 TOP_cmpeq_r_r, 
-		 TOP_cmpeq_r_b, 
-		 TOP_cmpeq_i_r, 
-		 TOP_cmpeq_ii_r, 
-		 TOP_cmpeq_i_b, 
-		 TOP_cmpeq_ii_b, 
-		 TOP_cmpge_r_r, 
-		 TOP_cmpge_r_b, 
-		 TOP_cmpge_i_r, 
-		 TOP_cmpge_ii_r, 
-		 TOP_cmpge_i_b, 
-		 TOP_cmpge_ii_b, 
-		 TOP_cmpgeu_r_r, 
-		 TOP_cmpgeu_r_b, 
-		 TOP_cmpgeu_i_r, 
-		 TOP_cmpgeu_ii_r, 
-		 TOP_cmpgeu_i_b, 
-		 TOP_cmpgeu_ii_b, 
-		 TOP_cmpgt_r_r, 
-		 TOP_cmpgt_r_b, 
-		 TOP_cmpgt_i_r, 
-		 TOP_cmpgt_ii_r, 
-		 TOP_cmpgt_i_b, 
-		 TOP_cmpgt_ii_b, 
-		 TOP_cmpgtu_r_r, 
-		 TOP_cmpgtu_r_b, 
-		 TOP_cmpgtu_i_r, 
-		 TOP_cmpgtu_ii_r, 
-		 TOP_cmpgtu_i_b, 
-		 TOP_cmpgtu_ii_b, 
-		 TOP_cmple_r_r, 
-		 TOP_cmple_r_b, 
-		 TOP_cmple_i_r, 
-		 TOP_cmple_ii_r, 
-		 TOP_cmple_i_b, 
-		 TOP_cmple_ii_b, 
-		 TOP_cmpleu_r_r, 
-		 TOP_cmpleu_r_b, 
-		 TOP_cmpleu_i_r, 
-		 TOP_cmpleu_ii_r, 
-		 TOP_cmpleu_i_b, 
-		 TOP_cmpleu_ii_b, 
-		 TOP_cmplt_r_r, 
-		 TOP_cmplt_r_b, 
-		 TOP_cmplt_i_r, 
-		 TOP_cmplt_ii_r, 
-		 TOP_cmplt_i_b, 
-		 TOP_cmplt_ii_b, 
-		 TOP_cmpltu_r_r, 
-		 TOP_cmpltu_r_b, 
-		 TOP_cmpltu_i_r, 
-		 TOP_cmpltu_ii_r, 
-		 TOP_cmpltu_i_b, 
-		 TOP_cmpltu_ii_b, 
-		 TOP_cmpne_r_r, 
-		 TOP_cmpne_r_b, 
-		 TOP_cmpne_i_r, 
-		 TOP_cmpne_ii_r, 
-		 TOP_cmpne_i_b, 
-		 TOP_cmpne_ii_b, 
-		 TOP_nandl_r_r, 
-		 TOP_nandl_r_b, 
-		 TOP_nandl_i_r, 
-		 TOP_nandl_ii_r, 
-		 TOP_nandl_i_b, 
-		 TOP_nandl_ii_b, 
-		 TOP_norl_r_r, 
-		 TOP_norl_r_b, 
-		 TOP_norl_i_r, 
-		 TOP_norl_ii_r, 
-		 TOP_norl_i_b, 
-		 TOP_norl_ii_b, 
-		 TOP_orl_r_r, 
-		 TOP_orl_r_b, 
-		 TOP_orl_i_r, 
-		 TOP_orl_ii_r, 
-		 TOP_orl_i_b, 
-		 TOP_orl_ii_b, 
+  Xor = ISA_Property_Create ("xor"); 
+  Instruction_Group (Xor, 
+		 TOP_xor_r, 
+		 TOP_xor_i, 
+		 TOP_xor_ii, 
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 
-  jump = ISA_Property_Create ("jump"); 
-  Instruction_Group (jump, 
-		 TOP_goto, 
-		 TOP_UNDEFINED); 
-
-  /* ====================================== */ 
-  move = ISA_Property_Create ("move"); 
-  Instruction_Group (move, 
-		 TOP_mov_r, 
-		 TOP_mov_i, 
-		 TOP_mov_ii, 
-		 TOP_UNDEFINED); 
-
-  /* ====================================== */ 
-  call = ISA_Property_Create ("call"); 
-  Instruction_Group (call, 
-		 TOP_call, 
-		 TOP_icall, 
-		 TOP_rfi, 
-		 TOP_UNDEFINED); 
-
-  /* ====================================== */ 
-  shl = ISA_Property_Create ("shl"); 
-  Instruction_Group (shl, 
-		 TOP_shl_r, 
-		 TOP_shl_i, 
-		 TOP_shl_ii, 
+  zext = ISA_Property_Create ("zext"); 
+  Instruction_Group (zext, 
+		 TOP_zxth_r, 
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 

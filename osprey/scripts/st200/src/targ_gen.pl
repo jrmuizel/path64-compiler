@@ -2063,7 +2063,7 @@ sub emit_properties {
     my $group;
     my $opcode;
 
-    foreach $group (keys(%AttrGroup)) {
+    foreach $group (sort(keys(%AttrGroup))) {
 	my $group_str = $group;
 
 	if ($group eq 'xor') {
@@ -2096,7 +2096,7 @@ sub emit_properties {
 	printf $PR_F "\t\t TOP_UNDEFINED); \n\n";
     }
 
-    foreach $group (keys(%MemBytes)) {
+    foreach $group (sort(keys(%MemBytes))) {
 	printf $PR_F "  /* ====================================== */ \n";
 	printf $PR_F "  /*         Memory Access Size %s          */ \n", $group;
 	printf $PR_F "  /* ====================================== */ \n";
@@ -2109,7 +2109,7 @@ sub emit_properties {
 	printf $PR_F "\t\t TOP_UNDEFINED); \n\n";
     }
 
-    foreach $group (keys(%MemAlign)) {
+    foreach $group (sort(keys(%MemAlign))) {
 	printf $PR_F "  /* ====================================== */ \n";
 	printf $PR_F "  /*          Memory Alignment %s           */ \n", $group;
 	printf $PR_F "  /* ====================================== */ \n";
@@ -2278,7 +2278,7 @@ sub emit_operands {
     my @results;
     my @operands;
 
-    foreach $signature (keys(%SignatureGroup)) {
+    foreach $signature (sort(keys(%SignatureGroup))) {
 	($rests, $gname, $opnds) = split(":", $signature);
 	print $OPND_F "  /* ====================================== */ \n";
 	if ($gname eq '*') {
@@ -2514,7 +2514,7 @@ CONTINUE:
     printf $PRNT_F "\n";
 
     my $count = 0;
-    foreach my $signature (keys(%PrintGroup)) {
+    foreach my $signature (sort(keys(%PrintGroup))) {
 	my @pattern = split ('_',$signature);
 	my @fmt;
 	my @instr;
@@ -2666,7 +2666,7 @@ sub emit_pack_info {
     printf $PACK_F "  no_adj = Create_Operand_Adjustment(\"no adjustment\", \"O_VAL\"); \n\n";
 
     $count = 0;
-    foreach $group (keys(%PackGroup)) {
+    foreach $group (sort(keys(%PackGroup))) {
 	my $rests;
 	my $gname;
 	my $opnds;
