@@ -678,7 +678,7 @@ LAO_setMemoryDependences(BB* bb, LoopInfo loopinfo) {
 	  Operation dest_operation = Interface_getOperation(interface, succ_op);
 	  LoopInfo_setMemoryDependence(loopinfo,
 	      orig_operation, dest_operation, latency, omega, definite);
-	  CG_DEP_Trace_Arc(arc, TRUE, FALSE);
+	  //CG_DEP_Trace_Arc(arc, TRUE, FALSE);
 	}
       }
     } else fprintf(TFile, "<arc>   CG_DEP INFO is NULL\n");
@@ -698,37 +698,14 @@ LAO_makeLoopInfo(BB_List& bb_list, bool cyclic, CodeRegion coderegion) {
   LABEL_IDX label_idx = Gen_Label_For_BB(bb);
   Label label = Interface_makeLabel(interface, label_idx, LABEL_name(label_idx));
   LoopInfo loopinfo = CodeRegion_makeLoopInfo(coderegion, label);
-  if (1) {
-    CG_DEP_Compute_Region_MEM_Arcs(bb_list,
-	cyclic,	// compute_cyclic
-	false);	// memread_arcs
-    BB_List::iterator bb_iter;
-    for (bb_iter = bb_list.begin(); bb_iter != bb_list.end(); bb_iter++) {
-      LAO_setMemoryDependences(*bb_iter, loopinfo);
-    }
-    CG_DEP_Delete_Graph(&bb_list);
-  } else
-  if (bb_list.size() == 1) {
-    CG_DEP_Compute_Graph(bb,
-	false,	// assigned_regs
-	cyclic,	// compute_cyclic
-	false,	// memread_arcs
-	true,	// memin_arcs
-	false,	// control_arcs
-	NULL);	// need_anti_out_dep
-    LAO_setMemoryDependences(bb, loopinfo);
-    CG_DEP_Delete_Graph(bb);
-  } else {
-    CG_DEP_Compute_Region_Graph(bb_list,
-	false,	// assigned_regs
-	false,	// memread_arcs
-	false);	// control_arcs
-    BB_List::iterator bb_iter;
-    for (bb_iter = bb_list.begin(); bb_iter != bb_list.end(); bb_iter++) {
-      LAO_setMemoryDependences(*bb_iter, loopinfo);
-    }
-    CG_DEP_Delete_Graph(&bb_list);
+  CG_DEP_Compute_Region_MEM_Arcs(bb_list,
+      cyclic,	// compute_cyclic
+      false);	// memread_arcs
+  BB_List::iterator bb_iter;
+  for (bb_iter = bb_list.begin(); bb_iter != bb_list.end(); bb_iter++) {
+    LAO_setMemoryDependences(*bb_iter, loopinfo);
   }
+  CG_DEP_Delete_Graph(&bb_list);
   return loopinfo;
 }
 
@@ -865,9 +842,6 @@ LAO_optimize(CG_LOOP *cg_loop, unsigned lao_actions) {
   //
   LOOP_DESCR *loop = cg_loop->Loop();
   if (BB_innermost(LOOP_DESCR_loophead(loop))) {
-    // We need to call cg_loop->Build_CG_LOOP_Info() to initialize the loop
-    // operations. This is required by CG_DEP_Compute_Graph with cyclic = true.
-    if (cg_loop->Single_BB()) cg_loop->Build_CG_LOOP_Info();
     //
     entryBBs.push_back(CG_LOOP_prolog);
     //
@@ -1397,4 +1371,4 @@ bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
   return res;
 }
 
-/*-------------------------- Replicated Fuctions _----------------------------*/
+/*-------------------------- Replicated Fuctions -----------------------------*/
