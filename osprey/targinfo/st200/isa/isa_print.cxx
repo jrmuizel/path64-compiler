@@ -10,7 +10,7 @@
 #include "topcode.h" 
 #include "isa_print_gen.h" 
 
-static const char *mnemonic_names[255] = {
+static const char *mnemonic_names[256] = {
   "add",	 /* TOP_add_r */ 
   "sub",	 /* TOP_sub_r */ 
   "shl",	 /* TOP_shl_r */ 
@@ -223,7 +223,8 @@ static const char *mnemonic_names[255] = {
   "sth",	 /* TOP_sth_ii */ 
   "stb",	 /* TOP_stb_i */ 
   "stb",	 /* TOP_stb_ii */ 
-  "pft",	 /* TOP_pft */ 
+  "pft",	 /* TOP_pft_i */ 
+  "pft",	 /* TOP_pft_ii */ 
   "prgadd",	 /* TOP_prgadd */ 
   "prgset",	 /* TOP_prgset */ 
   "sync",	 /* TOP_sync */ 
@@ -351,7 +352,8 @@ main()
   Operand(1); 
 
   Instruction_Print_Group(print_3, 
-		 TOP_pft, 
+		 TOP_pft_i, 
+		 TOP_pft_ii, 
 		 TOP_prgadd, 
 		 TOP_prgset, 
 		 TOP_UNDEFINED); 
