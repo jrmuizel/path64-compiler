@@ -66,11 +66,11 @@ LIBRARY_SUBDIRS =  \
 #
 TOOL_SUBDIRS = \
 	gccfe \
-	be \
 	lai \
 	wopt \
 	lno \
-        ipl    \
+        ipl \
+	be \
 	lw_inline \
         whirl2c \
 	driver 
@@ -79,7 +79,6 @@ TOOL_SUBDIRS = \
 #	dwarfdump \
 #	elfdump \
 #	whirl2f \
-#	be_driver
 
 SUBDIRS=$(INCLUDE_SUBDIRS) $(LIBRARY_SUBDIRS) $(TOOL_SUBDIRS)
 
