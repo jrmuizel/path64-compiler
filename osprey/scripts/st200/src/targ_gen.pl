@@ -4671,8 +4671,8 @@ sub read_opcodes {
 
   # Register Set (rclass, minreg, maxreg, format, reg_names):
   # For each set define also Reg subset (name, list_of_members):
-  my @int_regs = ('$r0.0', '$r0.1', '$r0.2');
-  &DECL_REG_SET("integer", 0, 63, "\$r0.%d", @int_regs);
+  my @int_regs = ('$r0', '$r1', '$r2');
+  &DECL_REG_SET("integer", 0, 63, "\$r%d", @int_regs);
     &DECL_REG_SUBSET("r0", (0));
     &DECL_REG_SUBSET("lr", (63));
     &DECL_REG_SUBSET("no_lr", (0, 1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16,
@@ -4680,8 +4680,8 @@ sub read_opcodes {
 			       33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48,
 			       49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62));
 
-  my @br_regs = ('$b0.0');
-  &DECL_REG_SET("branch", 0, 7, "\$b0.%d", @br_regs);
+  my @br_regs = ('$b0');
+  &DECL_REG_SET("branch", 0, 7, "\$b%d", @br_regs);
 
   # lclass (name, bit_size, signed?):
 
