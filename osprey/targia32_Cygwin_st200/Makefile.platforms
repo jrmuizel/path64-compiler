@@ -1,0 +1,26 @@
+BUILD_NEW=yes
+
+#
+# Define the BUILD platform
+#
+BUILD_OS    = LINUX
+BUILD_ARCH  = IA32
+BUILD_ABI   = I32BIT
+
+#
+# Define the HOST platform
+#
+HOST_OS     = CYGWIN_NT
+HOST_ARCH   = IA32
+HOST_ABI    = I32BIT
+
+#
+# Define the TARGET
+#
+BUILD_TARGET = ST200
+
+ifeq (,$(findstring Cygwin,$(ROOT)))
+Abort .DEFAULT:
+	@echo Error: "must set ROOT to the cygwin install dir !"
+	@exit 1
+endif
