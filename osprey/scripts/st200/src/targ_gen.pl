@@ -989,7 +989,7 @@ sub update_subsets {
 #    // Simulated instructions: these may be translated into
 #    // a number of target instructions, and also may depend
 #    // on an execution unit, eg. noop on IA64.
-#      "asm",                    /* a ASM statement */
+#      "asm",                 /* a GNU ASM statement */
 #      "intrncall",
 #      "spadjust",               /* SP adjustment OP */
 #      "copy.br",
@@ -1149,7 +1149,10 @@ sub initialize_required_opcodes {
 
 sub initialize_isa_file {
 
-    open (ISA_F, "> isa.cxx");
+    my $dir = shift || '.';
+    $dir .= "/isa";
+    system "mkdir -p $dir";
+    open (ISA_F, "> $dir/isa.cxx");
 
     &copyright_notice(ISA_F);
 
@@ -1212,7 +1215,10 @@ sub finalize_isa_file {
 
 sub initialize_reg_file {
 
-    open (REG_F, "> isa_registers.cxx");
+    my $dir = shift || '.';
+    $dir .= "/isa";
+    system "mkdir -p $dir";
+    open (REG_F, "> $dir/isa_registers.cxx");
 
     &copyright_notice(REG_F);
 
@@ -1383,7 +1389,10 @@ sub finalize_reg_file {
 
 sub initialize_lit_file {
 
-    open (LIT_F, "> isa_lits.cxx");
+    my $dir = shift || '.';
+    $dir .= "/isa";
+    system "mkdir -p $dir";
+    open (LIT_F, "> $dir/isa_lits.cxx");
 
     &copyright_notice(LIT_F);
 
@@ -1449,7 +1458,10 @@ sub finalize_lit_file {
 
 sub initialize_enum_file {
 
-    open (ENUM_F, "> isa_enums.cxx");
+    my $dir = shift || '.';
+    $dir .= "/isa";
+    system "mkdir -p $dir";
+    open (ENUM_F, "> $dir/isa_enums.cxx");
 
     &copyright_notice(ENUM_F);
 
@@ -1519,7 +1531,10 @@ sub finalize_enum_file {
 sub initialize_subset_file {
     my $i;
 
-    open (SUBS_F, "> isa_subset.cxx");
+    my $dir = shift || '.';
+    $dir .= "/isa";
+    system "mkdir -p $dir";
+    open (SUBS_F, "> $dir/isa_subset.cxx");
 
     &copyright_notice(SUBS_F);
 
@@ -1597,7 +1612,10 @@ sub finalize_subset_file {
 sub initialize_properties_file {
     my $prop;
 
-    open (PROP_F, "> isa_properties.cxx");
+    my $dir = shift || '.';
+    $dir .= "/isa";
+    system "mkdir -p $dir";
+    open (PROP_F, "> $dir/isa_properties.cxx");
 
     &copyright_notice(PROP_F);
 
@@ -1899,7 +1917,10 @@ sub finalize_properties_file {
 sub initialize_operands_file {
     my $i;
 
-    open (OPND_F, "> isa_operands.cxx");
+    my $dir = shift || '.';
+    $dir .= "/isa";
+    system "mkdir -p $dir";
+    open (OPND_F, "> $dir/isa_operands.cxx");
 
     print OPND_F "//  AUTOMATICALLY GENERATED FROM CHESS DATABASE !!! \n";
     print OPND_F "// Group TOPS with similar operands/results format. \n";
@@ -2120,7 +2141,10 @@ sub finalize_operands_file {
 
 sub initialize_print_file {
 
-    open (PRNT_F, "> isa_print.cxx");
+    my $dir = shift || '.';
+    $dir .= "/isa";
+    system "mkdir -p $dir";
+    open (PRNT_F, "> $dir/isa_print.cxx");
 
     print PRNT_F "//  AUTOMATICALLY GENERATED FROM CHESS DATABASE !!! \n";
     print PRNT_F "// Group TOPS with similar printing format. \n";
@@ -2364,7 +2388,11 @@ sub finalize_print_file {
 # ==================================================================
 
 sub initialize_pack_file {
-    open (PACK_F, "> isa_pack.cxx");
+
+    my $dir = shift || '.';
+    $dir .= "/isa";
+    system "mkdir -p $dir";
+    open (PACK_F, "> $dir/isa_pack.cxx");
     &copyright_notice (PACK_F);
 
     printf (PACK_F "// \n");
@@ -2504,7 +2532,11 @@ sub finalize_pack_file {
 # ==================================================================
 
 sub initialize_decode_file {
-    open (DECODE_F, "> isa_decode.cxx");
+
+    my $dir = shift || '.';
+    $dir .= "/isa";
+    system "mkdir -p $dir";
+    open (DECODE_F, "> $dir/isa_decode.cxx");
     &copyright_notice (DECODE_F);
 
     printf (DECODE_F "// \n");
@@ -2577,7 +2609,11 @@ sub finalize_decode_file {
 # ==================================================================
 
 sub initialize_bundle_file {
-    open (BUNDLE_F, "> isa_bundle.cxx");
+
+    my $dir = shift || '.';
+    $dir .= "/isa";
+    system "mkdir -p $dir";
+    open (BUNDLE_F, "> $dir/isa_bundle.cxx");
     &copyright_notice (BUNDLE_F);
 
     printf (BUNDLE_F "//  \n");
@@ -2702,7 +2738,9 @@ sub finalize_bundle_file {
 # ==================================================================
 
 sub initialize_op_file {
-    open (OP_F, "> targ_op.h");
+
+    my $dir = shift || '.';
+    open (OP_F, "> $dir/targ_op.h");
     &copyright_notice (OP_F);
 
     printf (OP_F "//  \n");
@@ -2808,7 +2846,10 @@ sub finalize_op_file {
 
 sub initialize_si_file {
 
-    open (SI_F, "> st200_si.cxx");
+    my $dir = shift || '.';
+    $dir .= "/proc";
+    system "mkdir -p $dir";
+    open (SI_F, "> $dir/st200_si.cxx");
 
     &copyright_notice (SI_F);
 
@@ -4604,7 +4645,7 @@ sub read_opcodes {
   &DECL_SCD_CLASS ("JUMP", 0, 1);            # direct, indirect jump
   &DECL_SCD_CLASS ("SYNC", 0, 0);            # sync instructions
   &DECL_SCD_CLASS ("simulated", 1, 1);       # simulated
-  &DECL_SCD_CLASS ("asm", 1, 1);       	     # asm
+  &DECL_SCD_CLASS ("asm", 1, 1);          # asm
   &DECL_SCD_CLASS ("ssa", 1, 1);             # ssa
   &DECL_SCD_CLASS ("getpc", 2, 1);             # getpc
 
@@ -4851,20 +4892,22 @@ sub read_opcodes {
   ###############################################################
 
   # open and emit head info into all concerned files:
-  &initialize_isa_file ();
-  &initialize_reg_file ();
-  &initialize_lit_file ();
-  &initialize_enum_file ();
-  &initialize_si_file ();
-  &initialize_operands_file ();
-  &initialize_subset_file ();
-  &initialize_properties_file ();
-  &initialize_print_file ();
-  &initialize_pack_file ();
-  &initialize_bundle_file ();
-  &initialize_decode_file ();
+  my $archdir = "st200";
+  &initialize_isa_file ($archdir);
+  &initialize_reg_file ($archdir);
+  &initialize_lit_file ($archdir);
+  &initialize_enum_file ($archdir);
+  &initialize_si_file ($archdir);
+  &initialize_operands_file ($archdir);
+  &initialize_subset_file ($archdir);
+  &initialize_properties_file ($archdir);
+  &initialize_print_file ($archdir);
+  &initialize_pack_file ($archdir);
+  &initialize_bundle_file ($archdir);
+  &initialize_decode_file ($archdir);
 
-  &initialize_op_file();
+  #BD3 &initialize_op_file($archdir);
+  #BD3 TODO: eliminate all functions that write to OP_F.
 
   my $sub;
   for ($sub = 0; $sub < $SUBSET_count-1; $sub++) {
@@ -4905,7 +4948,7 @@ sub read_opcodes {
   &emit_decode_info ();
 
   # target info:
-  &emit_op_info();
+  #BD3 &emit_op_info();
 
   # end of generation:
   &finalize_isa_file ();
@@ -4921,7 +4964,7 @@ sub read_opcodes {
   &finalize_bundle_file ();
   &finalize_decode_file ();
 
-  &finalize_op_file();
+  #BD3 &finalize_op_file();
 
   close(FORMAT_F);
 
