@@ -324,6 +324,11 @@ sub op_bytes {
 	   $mnemonic eq 'stb') {
 	$bytes = 1;
     }
+    elsif ($mnemonic eq 'prginspg' ||
+	   $mnemonic eq 'pswclr' ||
+	   $mnemonic eq 'pswset') {
+	$bytes = 0;
+    }
     else {
 	printf STDOUT "ERROR: unknown mnemonic %s in op_bytes\n", $mnemonic;
 	exit(1);
@@ -363,6 +368,11 @@ sub op_align {
 	   $mnemonic eq 'stb') {
 	$align = 1;
     }
+    elsif ($mnemonic eq 'prginspg' ||
+	   $mnemonic eq 'pswclr' ||
+	   $mnemonic eq 'pswset') {
+	$align = 0;
+    }
     else {
 	printf STDOUT "ERROR: unknown mnemonic %s in op_align\n", $mnemonic;
 	exit(1);
@@ -387,6 +397,15 @@ sub set_variant {
 	$variant = '_i';
     }
     elsif ($format eq 'Int3E') {
+	$variant = '_ii';
+    }
+    elsif ($format eq 'Mul64R') {
+	$variant = '_r';
+    }
+    elsif ($format eq 'Mul64I') {
+	$variant = '_i';
+    }
+    elsif ($format eq 'Mul64E') {
 	$variant = '_ii';
     }
     elsif ($format eq 'Cmp3R_Reg') {
@@ -480,6 +499,9 @@ sub set_operands {
     if ($format eq 'Int3R' ||
 	$format eq 'Int3I' ||
 	$format eq 'Int3E' ||
+	$format eq 'Mul64R' ||
+	$format eq 'Mul64I' ||
+	$format eq 'Mul64E' ||
 	$format eq 'Cmp3R_Reg' ||
 	$format eq 'Cmp3R_Br' ||
 	$format eq 'Cmp3I_Reg' ||
@@ -522,8 +544,13 @@ sub set_operands {
 	$OP_results[$opcode] = 0;
 	if ($OP_mnemonic[$opcode] eq 'pft' ||
 	    $OP_mnemonic[$opcode] eq 'prgset' ||
+	    $OP_mnemonic[$opcode] eq 'prginspg' ||
 	    $OP_mnemonic[$opcode] eq 'prgadd') {
 	    $OP_opnds[$opcode] = 2;
+	}
+	elsif ($OP_mnemonic[$opcode] eq 'pswclr' ||
+	       $OP_mnemonic[$opcode] eq 'pswset') {
+	    $OP_opnds[$opcode] = 0;
 	}
 	else {
 	    $OP_opnds[$opcode] = 3;
@@ -647,6 +674,13 @@ sub set_signature {
 	} else {
 	    $signature = 'idest:Int3I:src1_opnd1,isrc2_opnd2';
 	}
+    }
+    elsif ($format eq 'Mul64R') {
+      $signature = 'dest2:Mul64R:src1_opnd1,src2_opnd2';
+    }
+    elsif ($format eq 'Mul64I' ||
+	   $format eq 'Mul64E') {
+      $signature = 'idest2:Mul64I:src1_opnd1,isrc2_opnd2';
     }
     elsif ($format eq 'Cmp3R_Reg') {
 	$signature = 'dest:Cmp3R_Reg:src1_opnd1,src2_opnd2';
@@ -785,6 +819,15 @@ sub set_pack {
 	else {
 	    $pack = 'Int3E';
 	}
+    }
+    elsif ($format eq 'Mul64R') {
+	$pack = 'Mul64R';
+    }
+    elsif ($format eq 'Mul64I') {
+	$pack = 'Mul64I';
+    }
+    elsif ($format eq 'Mul64E') {
+	$pack = 'Mul64E';
     }
     elsif ($format eq 'Cmp3R_Reg') {
 	$pack = 'Cmp3R_Reg';
@@ -938,6 +981,13 @@ sub set_print {
 	    $OP_opnd[$opcode][0]{'fmt'} = '%s';
 	    $OP_opnd[$opcode][1]{'fmt'} = '%s';
 	}
+    }
+    elsif ($format eq 'Mul64R' || 
+	$format eq 'Mul64I' ||
+	$format eq 'Mul64E') {
+	$OP_res[$opcode][0]{'fmt'} = '%s';
+	$OP_opnd[$opcode][0]{'fmt'} = '%s';
+	$OP_opnd[$opcode][1]{'fmt'} = '%s';
     }
     elsif ($format eq 'Cmp3R_Reg' ||
 	   $format eq 'Cmp3R_Br') {
@@ -4113,6 +4163,7 @@ sub process_opcode {
 	$OP_properties[$opcode] ^= $OP_PREFETCH;
     }
     elsif ($OP_mnemonic[$opcode] eq 'prgadd' ||
+	   $OP_mnemonic[$opcode] eq 'prginspg' ||
 	   $OP_mnemonic[$opcode] eq 'prgset') {
 	# purge cache is marked as Store but is not
     }
@@ -4890,6 +4941,20 @@ sub read_opcodes {
     &PACK_OPERAND (0, 0, 0, 6);
     &PACK_OPERAND (1, 0, 12, 9);
   &DECL_PACK_TYPE ("Int3E", 1, 1, "Int3E: idest = src1, isrc2 / imml");
+    &PACK_RESULT (0, 0, 6, 6);
+    &PACK_OPERAND (0, 0, 0, 6);
+    &PACK_OPERAND (1, 0, 12, 9);
+    &NEXT_WORD();
+    &PACK_OPERAND (0, 9, 0, 23);
+  &DECL_PACK_TYPE ("Mul64R", 1, 2, "Mul64R: dest = src1, src2");
+    &PACK_RESULT (0, 0, 12, 6);
+    &PACK_OPERAND (0, 0, 0, 6);
+    &PACK_OPERAND (1, 0, 6, 6);
+  &DECL_PACK_TYPE ("Mul64I", 1, 2, "Mul64I: idest = src1, isrc2");
+    &PACK_RESULT (0, 0, 6, 6);
+    &PACK_OPERAND (0, 0, 0, 6);
+    &PACK_OPERAND (1, 0, 12, 9);
+  &DECL_PACK_TYPE ("Mul64E", 1, 1, "Mul64E: idest = src1, isrc2 / imml");
     &PACK_RESULT (0, 0, 6, 6);
     &PACK_OPERAND (0, 0, 0, 6);
     &PACK_OPERAND (1, 0, 12, 9);

@@ -582,6 +582,10 @@ main()
   /* ====================================== */ 
   store = ISA_Property_Create ("store"); 
   Instruction_Group (store, 
+		 TOP_pswset_i, 
+		 TOP_pswset_ii, 
+		 TOP_pswclr_i, 
+		 TOP_pswclr_ii, 
 		 TOP_stb_i, 
 		 TOP_stb_ii, 
 		 TOP_sth_i, 
@@ -781,6 +785,16 @@ main()
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 
+  /*         Memory Access Size 0          */ 
+  /* ====================================== */ 
+  ISA_Memory_Access (0, 
+		 TOP_pswset_i, 
+		 TOP_pswset_ii, 
+		 TOP_pswclr_i, 
+		 TOP_pswclr_ii, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
   /*         Memory Access Size 1          */ 
   /* ====================================== */ 
   ISA_Memory_Access (1, 
@@ -822,6 +836,16 @@ main()
 		 TOP_ldw_d_ii, 
 		 TOP_stw_i, 
 		 TOP_stw_ii, 
+		 TOP_UNDEFINED); 
+
+  /* ====================================== */ 
+  /*          Memory Alignment 0           */ 
+  /* ====================================== */ 
+  ISA_Memory_Alignment (0, 
+		 TOP_pswset_i, 
+		 TOP_pswset_ii, 
+		 TOP_pswclr_i, 
+		 TOP_pswclr_ii, 
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 

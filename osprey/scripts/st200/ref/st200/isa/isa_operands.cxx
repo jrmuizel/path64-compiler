@@ -134,6 +134,12 @@ main()
 		 TOP_sth_ii, 
 		 TOP_stw_i, 
 		 TOP_stw_ii, 
+		 TOP_prginspg_i, 
+		 TOP_prginspg_ii, 
+		 TOP_pswset_i, 
+		 TOP_pswset_ii, 
+		 TOP_pswclr_i, 
+		 TOP_pswclr_ii, 
 		 TOP_UNDEFINED); 
 
   Operand (0, isrc2, offset); 
