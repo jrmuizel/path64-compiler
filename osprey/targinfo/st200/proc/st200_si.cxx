@@ -251,6 +251,7 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(3); 
   Any_Operand_Access_Time(2); 
   Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_INT, 0); 
   Resource_Requirement(res_ODD, 0); 
 
@@ -318,6 +319,7 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(5); 
   Any_Operand_Access_Time(2); 
   Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_MUL, 0); 
   Resource_Requirement(res_ODD, 0); 
 
@@ -365,6 +367,7 @@ main (int argc, char *argv[])
 
   Any_Result_Available_Time(5); 
   Any_Operand_Access_Time(2); 
+  Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_MEM, 0); 
   Resource_Requirement(res_ODD, 0); 
@@ -424,6 +427,7 @@ main (int argc, char *argv[])
 		 TOP_UNDEFINED); 
 
   Any_Operand_Access_Time(2); 
+  Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_MEM, 0); 
   Resource_Requirement(res_ODD, 0); 
@@ -496,6 +500,10 @@ main (int argc, char *argv[])
 		 TOP_spadjust, 
 		 TOP_UNDEFINED); 
 
+  Any_Result_Available_Time(1); 
+  Any_Operand_Access_Time(0); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_INT, 0); 
 
 
   ///////////////////////////////////////// 
@@ -507,6 +515,10 @@ main (int argc, char *argv[])
 		 TOP_psi, 
 		 TOP_UNDEFINED); 
 
+  Any_Result_Available_Time(0); 
+  Any_Operand_Access_Time(0); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_INT, 0); 
 
   Machine_Done("st220.c"); 
 
@@ -675,6 +687,10 @@ main (int argc, char *argv[])
 		 TOP_spadjust, 
 		 TOP_UNDEFINED); 
 
+  Any_Result_Available_Time(1); 
+  Any_Operand_Access_Time(0); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_INT, 0); 
 
 
   ///////////////////////////////////////// 
@@ -686,6 +702,10 @@ main (int argc, char *argv[])
 		 TOP_psi, 
 		 TOP_UNDEFINED); 
 
+  Any_Result_Available_Time(0); 
+  Any_Operand_Access_Time(0); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_INT, 0); 
 
   Machine_Done("st200.c"); 
 
