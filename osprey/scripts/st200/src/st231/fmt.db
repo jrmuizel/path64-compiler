@@ -1,0 +1,272 @@
++ **************************************************
++ ST230 Format Database
++ **************************************************
+
++ ********************* Int3R **********************
++=Int3R
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=0
++field4 CMP=0
++field5 INT3_OPCODE
++field6 RESERVED_18_3
++op1 dest
++op2 src1
++op3 src2
++syntax %1 = %2, %3
++type INT3
+
++ ********************* Int3I **********************
++=Int3I
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=1
++field4 CMP=0
++field5 INT3_OPCODE
++op1 idest
++op2 src1
++op3 isrc2
++syntax %1 = %2, %3
++type INT3
+
++ ********************* Monadic ********************
++=Monadic
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=1
++field4 CMP=0
++field5 INT3_OPCODE=01110
++field6 MONADIC_OPCODE
++op1 idest
++op2 src1
++syntax %1 = %2
++type INT3
+
++ ********************* Cmp3R_Reg ******************
++=Cmp3R_Reg
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=0
++field4 CMP=1
++field5 B=0
++field6 CMP3_OPCODE
++field7 RESERVED_18_3
++op1 dest
++op2 src1
++op3 src2
++syntax %1 = %2, %3
++type CMP3
+
++ ********************* Cmp3R_Br *******************
++=Cmp3R_Br
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=0
++field4 CMP=1
++field5 B=1
++field6 CMP3_OPCODE
++field7 RESERVED_12_6
++op1 bdest
++op2 src1
++op3 src2
++syntax %1 = %2, %3
++type CMP3
+
++ ********************* Cmp3I_Reg ******************
++=Cmp3I_Reg
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=1
++field4 CMP=1
++field5 B=0
++field6 CMP3_OPCODE
++op1 idest
++op2 src1
++op3 isrc2
++syntax %1 = %2, %3
++type CMP3
+
++ ********************* Cmp3I_Br *******************
++=Cmp3I_Br
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=1
++field4 CMP=1
++field5 B=1
++field6 CMP3_OPCODE
++field7 RESERVED_9_3
++op1 ibdest
++op2 src1
++op3 isrc2
++syntax %1 = %2, %3
++type CMP3
+
++ ********************* Imm ************************
++=Imm
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=01
++field3 IMMX_OPCODE
++op1 imm
++syntax %1
++type IMMX
+
++ ********************* SelectR ********************
++=SelectR
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=01
++field3 I=0
++field4 SLCT_OPCODE
++field5 RESERVED_18_3
++op1 dest
++op2 scond
++op3 src1
++op4 src2
++syntax %1 = %2, %3, %4
++type SLCT
+
++ ********************* SelectI ********************
++=SelectI
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=01
++field3 I=1
++field4 SLCT_OPCODE
++op1 idest
++op2 scond
++op3 src1
++op4 isrc2
++syntax %1 = %2, %3, %4
++type SLCT
+
++ ********************* cgen ***********************
++=cgen
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=01
++field3 CGEN_OPCODE
++op1 dest
++op2 bdest
++op3 src1
++op4 src2
++op5 scond
++syntax %1, %2 = %3, %4, %5
++type CGEN
+
++ ********************* SysOp ***********************
++=SysOp
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=01
++field3 SYSOP_OPCODE
++field4 RESERVED_0_21
++type SYSOP
+
++ ********************* SBreak ***********************
++=SBreak
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=01
++field3 SBREAK_OPCODE
++field4 SBREAK_VAR
++type SYSOP
+
++ ********************* Load ***********************
++=Load
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=10
++field3 LOAD_OPCODE
++field4 D
++field5 RESERVED_21_2
++op1 idest
++op2 isrc2
++op3 src1
++syntax %1 = %2[%3]
++type LOAD
+
++ ********************* Store **********************
++=Store
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=10
++field3 STORE_OPCODE
++field4 RESERVED_21_2
++op1 isrc2
++op2 src1
++op3 src2
++syntax %1[%2] = %3
++type STORE
+
++ ********************* Call ***********************
++=Call
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=11
++field3 I=0
++field4 CALL_OPCODE
++field5 LNK
++op1 btarg
++syntax LR = %1
++type CALL
+
++ ********************* Branch *********************
++=Branch
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=11
++field3 I=1
++field4 BRANCH_OPCODE
++op1 bcond
++op2 btarg
++syntax %1, %2
++type BRANCH
+
++ ********************* Mul64R **********************
++=Mul64R
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=0
++field4 CMP=1
++field5 MUL64_OPCODE
++field6 RESERVED_18_3
++op1 dest
++op2 src1
++op3 src2
++syntax %1 = %2, %3
++type INT3
+
++ ********************* Mul64I *******************
++=Mul64I
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=1
++field4 CMP=1
++field5 MUL64_OPCODE
++op1 idest
++op2 src1
++op3 isrc2
++syntax %1 = %2, %3
++type INT3
+
++ ********************* Asm ************************
++=Asm
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=10
++field3 I=1
++field4 CMP=1
++field5 INT3_OPCODE
++field6 ASM_VAR
++syntax
++type INT3

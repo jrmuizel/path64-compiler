@@ -1,0 +1,235 @@
++ **************************************************
++ ST230 Fields Database
++ **************************************************
+
++ ****************** RESERVED FIELDS ***************
+
++=RESERVED_30_1
++desc Reserved
++size 1
++offset 30
++reserved
+
++=RESERVED_21_2
++desc Reserved
++size 2
++offset 21
++reserved
+
++=RESERVED_18_3
++desc Reserved
++size 3
++offset 18
++reserved
+
++=RESERVED_12_6
++desc Reserved
++size 6
++offset 12
++reserved
+
++=RESERVED_9_3
++desc Reserved
++size 3
++offset 9
++reserved
+
++=RESERVED_0_21
++desc Reserved
++size 21
++offset 0
++reserved
+
++ ****************** GENERAL FIELDS ****************
+
++=SBREAK_VAR
++size 21
++offset 0
++desc Software breakpoint argument.
++variable Reserved for software use
+
++=ASM_VAR
++size 21
++offset 0
++desc Asm argument.
++variable Reserved for software use
+
++=STOPBIT
++desc S
++size 1
++offset 31
++variable s
+
++=CMP
++desc C
++size 1
++offset 26
+
++=I
++desc I
++size 1
++offset 27
+
++=B
++desc B
++size 1
++offset 25
+
++=D
++desc D
++size 1
++offset 23
+
++=LNK
++desc LNK
++size 1
++offset 23
+
++=FMT
++desc FMT
++size 2
++offset 28
+
++ ****************** OPCODE FIELDS *****************
++=INT3_OPCODE
++desc OPC
++size 5
++offset 21
+
++=MONADIC_OPCODE
++desc OPC
++size 9
++offset 12
+
++=CMP3_OPCODE
++desc OPC
++size 4
++offset 21
+
++=IMMX_OPCODE
++desc OPC
++size 5
++offset 23
+
++=SLCT_OPCODE
++desc OPC
++size 3
++offset 24
+
++=CGEN_OPCODE
++desc OPC
++size 4
++offset 24
+
++=SYSOP_OPCODE
++desc OPC
++size 7
++offset 21
+
++=SBREAK_OPCODE
++desc OPC
++size 7
++offset 21
+
++=LOAD_OPCODE
++desc OPC
++size 4
++offset 24
+
++=STORE_OPCODE
++desc OPC
++size 5
++offset 23
+
++=CALL_OPCODE
++desc OPC
++size 3
++offset 24
+
++=BRANCH_OPCODE
++desc OPC
++size 1
++offset 26
+
++=MUL64_OPCODE
++desc OPC
++size 5
++offset 21
+
++ ****************** OPERAND FIELDS ****************
++=bcond
++size 3
++offset 23
++kind src
++desc Branch register containing the branch condition.
++operand size=1
+
++=bdest
++size 3
++offset 18
++kind dst
++desc Destination branch register for register format operations.
++operand size=1
+
++=btarg
++size 23
++offset 0
++kind src
++desc Branch offset value from PC.
++operand size=23 immediate
+
++=dest
++size 6
++offset 12
++kind dst
++desc Destination general purpose register for register format operations.
++operand size=32
+
++=ibdest
++size 3
++offset 6
++kind dst
++desc Destination branch register for immediate format operations.
++operand size=1
+
++=idest
++size 6
++offset 6
++kind dst
++desc Destination general purpose register for immediate format operations.
++operand size=32
+
++=isrc2
++size 9
++offset 12
++kind src
++desc 9-bit short immediate value.
++operand size=32 immediate
+
++=imm
++size 23
++offset 0
++kind src
++desc 23-bit value used to extend a short immediate.
++operand size=23 immediate
+
++=scond
++size 3
++offset 21
++kind src
++desc Source branch register used for select condition or carry.
++operand size=1
+
++=src1
++size 6
++offset 0
++kind src
++desc General purpose source register.
++operand size=32
+
++=src2
++size 6
++offset 6
++kind src
++desc General purpose source register.
++operand size=32
