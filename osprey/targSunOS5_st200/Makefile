@@ -33,7 +33,7 @@
 #
 
 #
-#  Makefile for targia32_st100
+#  Makefile for targSunOS5_st200
 #
 
 #
@@ -55,7 +55,8 @@ LIBRARY_SUBDIRS =  \
 	libcomutil \
 	libdwarf   \
 	libelfutil \
-	libSYS
+	libSYS     \
+	instrumentationC
 
 
 #
@@ -114,11 +115,10 @@ libcomutil=include
 libdwarf=include
 libelfutil=include
 libSYS=include
-be=include
+be=include targ_info instrumentationC
 driver=include
 gccfe=libcmplrs libcomutil
 g++fe=libcmplrs libcomutil
-be=targ_info
 lai=libelf libelfutil libdwarf be targ_info
 ipl=be wopt
 ipa=be ipl

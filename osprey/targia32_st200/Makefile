@@ -33,7 +33,7 @@
 #
 
 #
-#  Makefile for targia32_st100
+#  Makefile for targia32_st200
 #
 
 #
@@ -55,7 +55,8 @@ LIBRARY_SUBDIRS =  \
 	libcomutil \
 	libdwarf   \
 	libelfutil \
-	libSYS
+	libSYS     \
+	instrumentationC
 
 
 #
@@ -89,6 +90,7 @@ local: $(addprefix local_,$(SUBDIRS))
 install: $(addprefix install_,$(SUBDIRS))
 clean: $(addprefix clean_,$(SUBDIRS))
 clobber: $(addprefix clobber_,$(SUBDIRS))
+last: $(addprefix last_,$(SUBDIRS))
 
 clean_%:
 	$(MAKE) -C $* clean
@@ -100,6 +102,8 @@ local_%:
 	$(MAKE) -C $* local
 install_%:
 	$(MAKE) -C $* install
+last_%:
+	$(MAKE) -C $* last
 
 
 # Dependencies
@@ -111,11 +115,10 @@ libcomutil=include
 libdwarf=include
 libelfutil=include
 libSYS=include
-be=include
+be=include targ_info instrumentationC
 driver=include
 gccfe=libcmplrs libcomutil
 g++fe=libcmplrs libcomutil
-be=targ_info
 lai=libelf libelfutil libdwarf be targ_info
 ipl=be wopt
 ipa=be ipl

@@ -33,7 +33,7 @@
 #
 
 #
-#  Makefile for targSunOS5_MingW_st200
+#  Makefile for targSunOS5_Cygwin_st200
 #
 
 #
@@ -55,7 +55,8 @@ LIBRARY_SUBDIRS =  \
 	libcomutil \
 	libdwarf   \
 	libelfutil \
-        libSYS 
+	libSYS     \
+	instrumentationC
 
 
 #
@@ -114,11 +115,10 @@ libcomutil=include
 libdwarf=include
 libelfutil=include
 libSYS=include
-be=include
+be=include targ_info instrumentationC
 driver=include libSYS
 gccfe=libcmplrs libcomutil
 g++fe=libcmplrs libcomutil
-be=targ_info
 lai=libelf libelfutil libdwarf be targ_info
 ipl=be wopt
 ipa=be ipl
@@ -156,5 +156,4 @@ INSTALL_DEP := $(foreach targ,$(SUBDIRS),$(subst_install))
 deps.mk: Makefile
 	@echo $(LOCAL_DEP) | perl -p -e 's/-sep- */\n/g' > $@
 	@echo $(INSTALL_DEP) | perl -p -e 's/-sep- */\n/g' >> $@
-
 
