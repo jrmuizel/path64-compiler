@@ -489,7 +489,7 @@ BB_BasicBlock(BB *bb) {
 
 static CodeRegion
 CG_LOOP_CodeRegion(CG_LOOP *cg_loop) {
-  CodeRegion coderegion = NULL;
+  CodeRegion coderegion = Interface_makeCodeRegion(interface, CodeRegion_InnerLoop);
   return coderegion;
 }
 
@@ -654,6 +654,8 @@ static CodeRegion
 REGION_convert2LIR ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs ) {
   int i;
 
+  CodeRegion coderegion = Interface_makeCodeRegion(interface, CodeRegion_InnerLoop);
+
   // First, create LIR basic blocks, and mark entry and exit nodes.
 
   for (i = 0; regionBBs[i]; i++) {
@@ -661,11 +663,11 @@ REGION_convert2LIR ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs ) {
   }
 
   for (i = 0; entryBBs[i]; i++) {
-    Interface_setEntry(interface, BB_CGIR2LAO(entryBBs[i]));
+    CodeRegion_setEntry(coderegion, BB_CGIR2LAO(entryBBs[i]));
   }
 
   for (i = 0; exitBBs[i]; i++) {
-    Interface_setExit(interface, BB_CGIR2LAO(exitBBs[i]));
+    CodeRegion_setExit(coderegion, BB_CGIR2LAO(exitBBs[i]));
   }
 
   // Then, create the control-flow edges between them.
