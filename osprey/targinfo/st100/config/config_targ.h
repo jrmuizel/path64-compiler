@@ -255,7 +255,7 @@ extern BOOL FP_packed_arithmetic;
 /* How many bytes are brought in by a load/store.
  * TODO: should depend on circumstances ?
  */
-inline INT TARG_Access_Bytes (void) { return 4; }
+//inline INT TARG_Access_Bytes (void) { return 4; }
 // #define ACCESS_BYTES 4
 
 // This is defined in the targ_isa_bundle.h now
@@ -267,7 +267,7 @@ inline INT TARG_Access_Bytes (void) { return 4; }
  * TODO: in general this depends on the ISA mode used.
  */
 //inline INT TARG_Inst_Bytes (void) { return 8; }
-inline INT TARG_Text_Alignment (void) { return 8; }
+//inline INT TARG_Text_Alignment (void) { return 8; }
 
 #ifdef __cplusplus
 }

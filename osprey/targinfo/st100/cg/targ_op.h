@@ -45,8 +45,8 @@
  * ====================================================================
  */
 
-#ifndef op_targ_INCLUDED
-#define op_targ_INCLUDED
+#ifndef targ_op_INCLUDED
+#define targ_op_INCLUDED
 
 #define OP_COPY_OPND 1
 #define OP_PREDICATE_OPND 0
@@ -97,6 +97,16 @@ inline BOOL TOP_is_uniq_res(TOP topcode) {
   return FALSE;
 }
 
+/* Result must not be same as operand */
+inline BOOL TOP_is_uniq_res(TOP topcode, INT i) {
+  const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info(topcode);
+  ISA_OPERAND_USE this_def = ISA_OPERAND_INFO_Def(oinfo, i);
+  if (this_def & OU_uniq_res) 
+    return TRUE;
+
+  return FALSE;
+}
+
 /* Result must be same as one of the operands */
 inline BOOL TOP_is_same_res(TOP topcode) {
   INT i;
@@ -107,6 +117,12 @@ inline BOOL TOP_is_same_res(TOP topcode) {
   }
   return FALSE;
 }
+
+/* Returns index of operand that must be same register as result i */ 
+inline INT TOP_is_same_res(TOP topcode, INT i) { 
+  const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info(topcode); 
+  return ISA_OPERAND_INFO_Same_Res(oinfo, i); 
+} 
 
 /* _fixed_results and _fixed_opnds return how many fixed
  * results/operands an instruction has (OP_result/OP_opnds includes
