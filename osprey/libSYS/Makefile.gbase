@@ -1,0 +1,58 @@
+#
+#  Makefile.base for libSYS
+#
+
+include	$(COMMONDEFS)
+
+LCOPTS   = $(STD_COMPILE_OPTS)
+LCINCS  += 
+
+LIBRARY = libSYS.a
+
+TARGETS = $(LIBRARY)
+
+ifeq ($(HOST_OS),SUNOS5)
+CFILES = vasprintf.c
+endif
+
+ifeq ($(HOST_OS),MINGW)
+LCDEFS+= -D_WIN32
+CFILES = \
+	missing.c \
+	SYS.c \
+	pexecute.c \
+	hostsys.c \
+	getsubopt.c \
+	vasprintf.c
+endif
+
+ifeq ($(HOST_OS), CYGWIN_NT)
+LCDEFS+= -D_WIN32
+CFILES = \
+	getsubopt.c \
+	SYS.c	    \
+	pexecute.c  \
+	vasprintf.c
+endif
+
+ifeq ($(HOST_OS), LINUX)
+CFILES = \
+	resolvepath.c
+endif
+
+LDIRT += $(TARGETS) *.o
+
+default: first $(TARGETS)
+
+first:
+	cd $(BUILD_AREA)/include && $(MAKE)
+
+install: default
+
+include $(COMMONRULES)
+
+VPATH =  $(BUILD_BASE)
+
+.PRECIOUS: $(LIBRARY)
+$(LIBRARY): $(LIBRARY)($(OBJECTS))
+
