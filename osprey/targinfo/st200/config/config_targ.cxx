@@ -448,9 +448,6 @@ Preconfigure_Target ( void )
 
   // Generate floating point constants directly in the code
   CG_floating_const_in_memory = FALSE;
-
-  // temporarily until I can enable it
-  Enable_CG_Peephole = FALSE;
 #endif
 
   return;
