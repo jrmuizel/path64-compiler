@@ -1,6 +1,5 @@
 /*
  * strtoll.h.
- * $Id$
  *
  * Note on the implementation :
  * - support determination of base as follow :
