@@ -1629,6 +1629,12 @@ sub sort_by_properties {
 	    $OP_mnemonic[$opcode] eq 'ldbu_d') {
 	    $OP_properties[$opcode] ^= $OP_DISMISSIBLE;
 	}
+	if ($OP_mnemonic[$opcode] eq 'ldbu' ||
+	    $OP_mnemonic[$opcode] eq 'ldbu_d' ||
+	    $OP_mnemonic[$opcode] eq 'ldhu' ||
+	    $OP_mnemonic[$opcode] eq 'ldhu_d') {
+	  $OP_properties[$opcode] ^= $OP_UNSIGNED;
+	}
     }
 
     if ($OP_format[$opcode] eq 'Store' || $OP_format[$opcode] eq 'StoreE') {
@@ -1730,11 +1736,7 @@ sub sort_by_properties {
 	    $OP_properties[$opcode] ^= $OP_SHRU;
 	}
 
-	if ($OP_mnemonic[$opcode] eq 'ldbu' ||
-	    $OP_mnemonic[$opcode] eq 'ldbu_d' ||
-	    $OP_mnemonic[$opcode] eq 'ldhu' ||
-	    $OP_mnemonic[$opcode] eq 'ldhu_d' ||
-	    $OP_mnemonic[$opcode] eq 'maxu' ||
+	if ($OP_mnemonic[$opcode] eq 'maxu' ||
 	    $OP_mnemonic[$opcode] eq 'minu' ||
 	    $OP_mnemonic[$opcode] eq 'shru' ||
 	    $OP_mnemonic[$opcode] eq 'mulhhu' ||
