@@ -1,0 +1,1497 @@
+
+
++=s.000000000...ddddddxxxxxxwwwwww
++mnemonic add
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax add %1 = %2, %3
++format Int3R
+
++=s.000000001...ddddddxxxxxxwwwwww
++mnemonic sub
++op1 {dest d}
++op3 {src2 x}
++op2 {src1 w}
++syntax sub %1 = %3, %2
++format Int3R
+
++=s.000000010...ddddddxxxxxxwwwwww
++mnemonic shl
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax shl %1 = %2, %3
++format Int3R
+
++=s.000000011...ddddddxxxxxxwwwwww
++mnemonic shr
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax shr %1 = %2, %3
++format Int3R
+
++=s.000000100...ddddddxxxxxxwwwwww
++mnemonic shru
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax shru %1 = %2, %3
++format Int3R
+
++=s.000000101...ddddddxxxxxxwwwwww
++mnemonic sh1add
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax sh1add %1 = %2, %3
++format Int3R
+
++=s.000000110...ddddddxxxxxxwwwwww
++mnemonic sh2add
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax sh2add %1 = %2, %3
++format Int3R
+
++=s.000000111...ddddddxxxxxxwwwwww
++mnemonic sh3add
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax sh3add %1 = %2, %3
++format Int3R
+
++=s.000001000...ddddddxxxxxxwwwwww
++mnemonic sh4add
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax sh4add %1 = %2, %3
++format Int3R
+
++=s.000001001...ddddddxxxxxxwwwwww
++mnemonic and
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax and %1 = %2, %3
++format Int3R
+
++=s.000001010...ddddddxxxxxxwwwwww
++mnemonic andc
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax andc %1 = %2, %3
++format Int3R
+
++=s.000001011...ddddddxxxxxxwwwwww
++mnemonic or
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax or %1 = %2, %3
++format Int3R
+
++=s.000001100...ddddddxxxxxxwwwwww
++mnemonic orc
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax orc %1 = %2, %3
++format Int3R
+
++=s.000001101...ddddddxxxxxxwwwwww
++mnemonic xor
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax xor %1 = %2, %3
++format Int3R
+
++=s.000001110...ddddddxxxxxx......
++mnemonic sxtb
++op1 {dest d}
++op3 {src2 x}
++syntax sxtb %1 = %3
++format Int3R
+
++=s.000001111...ddddddxxxxxx......
++mnemonic sxth
++op1 {dest d}
++op3 {src2 x}
++syntax sxth %1 = %3
++format Int3R
+
++=s.000010000...ddddddxxxxxxwwwwww
++mnemonic max
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax max %1 = %2, %3
++format Int3R
+
++=s.000010001...ddddddxxxxxxwwwwww
++mnemonic maxu
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax maxu %1 = %2, %3
++format Int3R
+
++=s.000010010...ddddddxxxxxxwwwwww
++mnemonic min
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax min %1 = %2, %3
++format Int3R
+
++=s.000010011...ddddddxxxxxxwwwwww
++mnemonic minu
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax minu %1 = %2, %3
++format Int3R
+
++=s.000010100...ddddddxxxxxx......
++mnemonic bswap
++op1 {dest d}
++op3 {src2 x}
++syntax bswap %1 = %3
++format Int3R
+
++=s.000010101...ddddddxxxxxxwwwwww
++mnemonic mull
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax mull %1 = %2, %3
++format Int3R
+
++=s.000010110...ddddddxxxxxxwwwwww
++mnemonic mullu
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax mullu %1 = %2, %3
++format Int3R
+
++=s.000010111...ddddddxxxxxxwwwwww
++mnemonic mulh
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax mulh %1 = %2, %3
++format Int3R
+
++=s.000011000...ddddddxxxxxxwwwwww
++mnemonic mulhu
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax mulhu %1 = %2, %3
++format Int3R
+
++=s.000011001...ddddddxxxxxxwwwwww
++mnemonic mulll
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax mulll %1 = %2, %3
++format Int3R
+
++=s.000011010...ddddddxxxxxxwwwwww
++mnemonic mulllu
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax mulllu %1 = %2, %3
++format Int3R
+
++=s.000011011...ddddddxxxxxxwwwwww
++mnemonic mullh
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax mullh %1 = %2, %3
++format Int3R
+
++=s.000011100...ddddddxxxxxxwwwwww
++mnemonic mullhu
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax mullhu %1 = %2, %3
++format Int3R
+
++=s.000011101...ddddddxxxxxxwwwwww
++mnemonic mulhh
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax mulhh %1 = %2, %3
++format Int3R
+
++=s.000011110...ddddddxxxxxxwwwwww
++mnemonic mulhhu
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax mulhhu %1 = %2, %3
++format Int3R
+
++=s.000011111...ddddddxxxxxxwwwwww
++mnemonic mulhs
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax mulhs %1 = %2, %3
++format Int3R
+
++=s.000100000...ddddddxxxxxxwwwwww
++mnemonic cmpeq
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpeq %1 = %2, %3
++format Cmp3R_Reg
+
++=s.000100001...ddddddxxxxxxwwwwww
++mnemonic cmpne
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpne %1 = %2, %3
++format Cmp3R_Reg
+
++=s.000100010...ddddddxxxxxxwwwwww
++mnemonic cmpge
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpge %1 = %2, %3
++format Cmp3R_Reg
+
++=s.000100011...ddddddxxxxxxwwwwww
++mnemonic cmpgeu
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpgeu %1 = %2, %3
++format Cmp3R_Reg
+
++=s.000100100...ddddddxxxxxxwwwwww
++mnemonic cmpgt
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpgt %1 = %2, %3
++format Cmp3R_Reg
+
++=s.000100101...ddddddxxxxxxwwwwww
++mnemonic cmpgtu
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpgtu %1 = %2, %3
++format Cmp3R_Reg
+
++=s.000100110...ddddddxxxxxxwwwwww
++mnemonic cmple
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmple %1 = %2, %3
++format Cmp3R_Reg
+
++=s.000100111...ddddddxxxxxxwwwwww
++mnemonic cmpleu
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpleu %1 = %2, %3
++format Cmp3R_Reg
+
++=s.000101000...ddddddxxxxxxwwwwww
++mnemonic cmplt
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmplt %1 = %2, %3
++format Cmp3R_Reg
+
++=s.000101001...ddddddxxxxxxwwwwww
++mnemonic cmpltu
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpltu %1 = %2, %3
++format Cmp3R_Reg
+
++=s.000101010...ddddddxxxxxxwwwwww
++mnemonic andl
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax andl %1 = %2, %3
++format Cmp3R_Reg
+
++=s.000101011...ddddddxxxxxxwwwwww
++mnemonic nandl
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax nandl %1 = %2, %3
++format Cmp3R_Reg
+
++=s.000101100...ddddddxxxxxxwwwwww
++mnemonic orl
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax orl %1 = %2, %3
++format Cmp3R_Reg
+
++=s.000101101...ddddddxxxxxxwwwwww
++mnemonic norl
++op1 {dest d}
++op2 {src1 w}
++op3 {src2 x}
++syntax norl %1 = %2, %3
++format Cmp3R_Reg
+
++=s.000110000bbb......xxxxxxwwwwww
++mnemonic cmpeq
++op1 {bdest b}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpeq %1 = %2, %3
++format Cmp3R_Br
+
++=s.000110001bbb......xxxxxxwwwwww
++mnemonic cmpne
++op1 {bdest b}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpne %1 = %2, %3
++format Cmp3R_Br
+
++=s.000110010bbb......xxxxxxwwwwww
++mnemonic cmpge
++op1 {bdest b}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpge %1 = %2, %3
++format Cmp3R_Br
+
++=s.000110011bbb......xxxxxxwwwwww
++mnemonic cmpgeu
++op1 {bdest b}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpgeu %1 = %2, %3
++format Cmp3R_Br
+
++=s.000110100bbb......xxxxxxwwwwww
++mnemonic cmpgt
++op1 {bdest b}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpgt %1 = %2, %3
++format Cmp3R_Br
+
++=s.000110101bbb......xxxxxxwwwwww
++mnemonic cmpgtu
++op1 {bdest b}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpgtu %1 = %2, %3
++format Cmp3R_Br
+
++=s.000110110bbb......xxxxxxwwwwww
++mnemonic cmple
++op1 {bdest b}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmple %1 = %2, %3
++format Cmp3R_Br
+
++=s.000110111bbb......xxxxxxwwwwww
++mnemonic cmpleu
++op1 {bdest b}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpleu %1 = %2, %3
++format Cmp3R_Br
+
++=s.000111000bbb......xxxxxxwwwwww
++mnemonic cmplt
++op1 {bdest b}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmplt %1 = %2, %3
++format Cmp3R_Br
+
++=s.000111001bbb......xxxxxxwwwwww
++mnemonic cmpltu
++op1 {bdest b}
++op2 {src1 w}
++op3 {src2 x}
++syntax cmpltu %1 = %2, %3
++format Cmp3R_Br
+
++=s.000111010bbb......xxxxxxwwwwww
++mnemonic andl
++op1 {bdest b}
++op2 {src1 w}
++op3 {src2 x}
++syntax andl %1 = %2, %3
++format Cmp3R_Br
+
++=s.000111011bbb......xxxxxxwwwwww
++mnemonic nandl
++op1 {bdest b}
++op2 {src1 w}
++op3 {src2 x}
++syntax nandl %1 = %2, %3
++format Cmp3R_Br
+
++=s.000111100bbb......xxxxxxwwwwww
++mnemonic orl
++op1 {bdest b}
++op2 {src1 w}
++op3 {src2 x}
++syntax orl %1 = %2, %3
++format Cmp3R_Br
+
++=s.000111101bbb......xxxxxxwwwwww
++mnemonic norl
++op1 {bdest b}
++op2 {src1 w}
++op3 {src2 x}
++syntax norl %1 = %2, %3
++format Cmp3R_Br
+
++=s.001000000iiiiiiiiiddddddwwwwww
++mnemonic add
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax add %1 = %2, %3
++format Int3I
+
++=s.001000001iiiiiiiiiddddddwwwwww
++mnemonic sub
++op1 {idest d}
++op3 {isrc2 i}
++op2 {src1 w}
++syntax sub %1 = %3, %2
++format Int3I
+
++=s.001000010iiiiiiiiiddddddwwwwww
++mnemonic shl
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax shl %1 = %2, %3
++format Int3I
+
++=s.001000011iiiiiiiiiddddddwwwwww
++mnemonic shr
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax shr %1 = %2, %3
++format Int3I
+
++=s.001000100iiiiiiiiiddddddwwwwww
++mnemonic shru
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax shru %1 = %2, %3
++format Int3I
+
++=s.001000101iiiiiiiiiddddddwwwwww
++mnemonic sh1add
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax sh1add %1 = %2, %3
++format Int3I
+
++=s.001000110iiiiiiiiiddddddwwwwww
++mnemonic sh2add
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax sh2add %1 = %2, %3
++format Int3I
+
++=s.001000111iiiiiiiiiddddddwwwwww
++mnemonic sh3add
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax sh3add %1 = %2, %3
++format Int3I
+
++=s.001001000iiiiiiiiiddddddwwwwww
++mnemonic sh4add
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax sh4add %1 = %2, %3
++format Int3I
+
++=s.001001001iiiiiiiiiddddddwwwwww
++mnemonic and
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax and %1 = %2, %3
++format Int3I
+
++=s.001001010iiiiiiiiiddddddwwwwww
++mnemonic andc
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax andc %1 = %2, %3
++format Int3I
+
++=s.001001011iiiiiiiiiddddddwwwwww
++mnemonic or
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax or %1 = %2, %3
++format Int3I
+
++=s.001001100iiiiiiiiiddddddwwwwww
++mnemonic orc
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax orc %1 = %2, %3
++format Int3I
+
++=s.001001101iiiiiiiiiddddddwwwwww
++mnemonic xor
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax xor %1 = %2, %3
++format Int3I
+
++=s.001010000iiiiiiiiiddddddwwwwww
++mnemonic max
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax max %1 = %2, %3
++format Int3I
+
++=s.001010001iiiiiiiiiddddddwwwwww
++mnemonic maxu
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax maxu %1 = %2, %3
++format Int3I
+
++=s.001010010iiiiiiiiiddddddwwwwww
++mnemonic min
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax min %1 = %2, %3
++format Int3I
+
++=s.001010011iiiiiiiiiddddddwwwwww
++mnemonic minu
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax minu %1 = %2, %3
++format Int3I
+
++=s.001010101iiiiiiiiiddddddwwwwww
++mnemonic mull
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax mull %1 = %2, %3
++format Int3I
+
++=s.001010110iiiiiiiiiddddddwwwwww
++mnemonic mullu
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax mullu %1 = %2, %3
++format Int3I
+
++=s.001010111iiiiiiiiiddddddwwwwww
++mnemonic mulh
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax mulh %1 = %2, %3
++format Int3I
+
++=s.001011000iiiiiiiiiddddddwwwwww
++mnemonic mulhu
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax mulhu %1 = %2, %3
++format Int3I
+
++=s.001011001iiiiiiiiiddddddwwwwww
++mnemonic mulll
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax mulll %1 = %2, %3
++format Int3I
+
++=s.001011010iiiiiiiiiddddddwwwwww
++mnemonic mulllu
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax mulllu %1 = %2, %3
++format Int3I
+
++=s.001011011iiiiiiiiiddddddwwwwww
++mnemonic mullh
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax mullh %1 = %2, %3
++format Int3I
+
++=s.001011100iiiiiiiiiddddddwwwwww
++mnemonic mullhu
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax mullhu %1 = %2, %3
++format Int3I
+
++=s.001011101iiiiiiiiiddddddwwwwww
++mnemonic mulhh
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax mulhh %1 = %2, %3
++format Int3I
+
++=s.001011110iiiiiiiiiddddddwwwwww
++mnemonic mulhhu
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax mulhhu %1 = %2, %3
++format Int3I
+
++=s.001011111iiiiiiiiiddddddwwwwww
++mnemonic mulhs
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax mulhs %1 = %2, %3
++format Int3I
+
++=s.001100000iiiiiiiiiddddddwwwwww
++mnemonic cmpeq
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpeq %1 = %2, %3
++format Cmp3I_Reg
+
++=s.001100001iiiiiiiiiddddddwwwwww
++mnemonic cmpne
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpne %1 = %2, %3
++format Cmp3I_Reg
+
++=s.001100010iiiiiiiiiddddddwwwwww
++mnemonic cmpge
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpge %1 = %2, %3
++format Cmp3I_Reg
+
++=s.001100011iiiiiiiiiddddddwwwwww
++mnemonic cmpgeu
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpgeu %1 = %2, %3
++format Cmp3I_Reg
+
++=s.001100100iiiiiiiiiddddddwwwwww
++mnemonic cmpgt
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpgt %1 = %2, %3
++format Cmp3I_Reg
+
++=s.001100101iiiiiiiiiddddddwwwwww
++mnemonic cmpgtu
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpgtu %1 = %2, %3
++format Cmp3I_Reg
+
++=s.001100110iiiiiiiiiddddddwwwwww
++mnemonic cmple
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmple %1 = %2, %3
++format Cmp3I_Reg
+
++=s.001100111iiiiiiiiiddddddwwwwww
++mnemonic cmpleu
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpleu %1 = %2, %3
++format Cmp3I_Reg
+
++=s.001101000iiiiiiiiiddddddwwwwww
++mnemonic cmplt
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmplt %1 = %2, %3
++format Cmp3I_Reg
+
++=s.001101001iiiiiiiiiddddddwwwwww
++mnemonic cmpltu
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpltu %1 = %2, %3
++format Cmp3I_Reg
+
++=s.001101010iiiiiiiiiddddddwwwwww
++mnemonic andl
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax andl %1 = %2, %3
++format Cmp3I_Reg
+
++=s.001101011iiiiiiiiiddddddwwwwww
++mnemonic nandl
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax nandl %1 = %2, %3
++format Cmp3I_Reg
+
++=s.001101100iiiiiiiiiddddddwwwwww
++mnemonic orl
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax orl %1 = %2, %3
++format Cmp3I_Reg
+
++=s.001101101iiiiiiiiiddddddwwwwww
++mnemonic norl
++op1 {idest d}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax norl %1 = %2, %3
++format Cmp3I_Reg
+
++=s.001110000iiiiiiiii...bbbwwwwww
++mnemonic cmpeq
++op1 {ibdest b}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpeq %1 = %2, %3
++format Cmp3I_Br
+
++=s.001110001iiiiiiiii...bbbwwwwww
++mnemonic cmpne
++op1 {ibdest b}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpne %1 = %2, %3
++format Cmp3I_Br
+
++=s.001110010iiiiiiiii...bbbwwwwww
++mnemonic cmpge
++op1 {ibdest b}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpge %1 = %2, %3
++format Cmp3I_Br
+
++=s.001110011iiiiiiiii...bbbwwwwww
++mnemonic cmpgeu
++op1 {ibdest b}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpgeu %1 = %2, %3
++format Cmp3I_Br
+
++=s.001110100iiiiiiiii...bbbwwwwww
++mnemonic cmpgt
++op1 {ibdest b}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpgt %1 = %2, %3
++format Cmp3I_Br
+
++=s.001110101iiiiiiiii...bbbwwwwww
++mnemonic cmpgtu
++op1 {ibdest b}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpgtu %1 = %2, %3
++format Cmp3I_Br
+
++=s.001110110iiiiiiiii...bbbwwwwww
++mnemonic cmple
++op1 {ibdest b}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmple %1 = %2, %3
++format Cmp3I_Br
+
++=s.001110111iiiiiiiii...bbbwwwwww
++mnemonic cmpleu
++op1 {ibdest b}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpleu %1 = %2, %3
++format Cmp3I_Br
+
++=s.001111000iiiiiiiii...bbbwwwwww
++mnemonic cmplt
++op1 {ibdest b}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmplt %1 = %2, %3
++format Cmp3I_Br
+
++=s.001111001iiiiiiiii...bbbwwwwww
++mnemonic cmpltu
++op1 {ibdest b}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax cmpltu %1 = %2, %3
++format Cmp3I_Br
+
++=s.001111010iiiiiiiii...bbbwwwwww
++mnemonic andl
++op1 {ibdest b}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax andl %1 = %2, %3
++format Cmp3I_Br
+
++=s.001111011iiiiiiiii...bbbwwwwww
++mnemonic nandl
++op1 {ibdest b}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax nandl %1 = %2, %3
++format Cmp3I_Br
+
++=s.001111100iiiiiiiii...bbbwwwwww
++mnemonic orl
++op1 {ibdest b}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax orl %1 = %2, %3
++format Cmp3I_Br
+
++=s.001111101iiiiiiiii...bbbwwwwww
++mnemonic norl
++op1 {ibdest b}
++op2 {src1 w}
++op3 {isrc2 i}
++syntax norl %1 = %2, %3
++format Cmp3I_Br
+
++=s.010000ccc...ddddddxxxxxxwwwwww
++mnemonic slct
++op1 {dest d}
++op2 {scond c}
++op3 {src1 w}
++op4 {src2 x}
++syntax slct %1 = %2, %3, %4
++format SelectR
+
++=s.010001ccc...ddddddxxxxxxwwwwww
++mnemonic slctf
++op1 {dest d}
++op2 {scond c}
++op3 {src1 w}
++op4 {src2 x}
++syntax slctf %1 = %2, %3, %4
++format SelectR
+
++=s.010010cccbbbddddddxxxxxxwwwwww
++mnemonic addcg
++op1 {dest d}
++op2 {bdest b}
++op3 {src1 w}
++op4 {src2 x}
++op5 {scond c}
++syntax addcg %1, %2 = %3, %4, %5
++format cgen
+
++=s.010100cccbbbddddddxxxxxxwwwwww
++mnemonic divs
++op1 {dest d}
++op2 {bdest b}
++op3 {src1 w}
++op4 {src2 x}
++op5 {scond c}
++syntax divs %1, %2 = %3, %4, %5
++format cgen
+
++=s.0101010iiiiiiiiiiiiiiiiiiiiiii
++mnemonic imml
++op1 {imm i}
++syntax imml %1
++format Imm
+
++=s.0101011iiiiiiiiiiiiiiiiiiiiiii
++mnemonic immr
++op1 {imm i}
++syntax immr %1
++format Imm
+
++=s.011000ccciiiiiiiiiddddddwwwwww
++mnemonic slct
++op1 {idest d}
++op2 {scond c}
++op3 {src1 w}
++op4 {isrc2 i}
++syntax slct %1 = %2, %3, %4
++format SelectI
+
++=s.011001ccciiiiiiiiiddddddwwwwww
++mnemonic slctf
++op1 {idest d}
++op2 {scond c}
++op3 {src1 w}
++op4 {isrc2 i}
++syntax slctf %1 = %2, %3, %4
++format SelectI
+
++=s.011111100.....................
++mnemonic prgins
++syntax prgins
++format SysOp
+
++=s.011111101.....................
++mnemonic sbrk
++syntax sbrk
++format SysOp
+
++=s.011111110.....................
++mnemonic syscall
++syntax syscall
++format SysOp
+
++=s.011111111.....................
++mnemonic break
++syntax break
++format SysOp
+
++=s.1000000..iiiiiiiiiddddddwwwwww
++mnemonic ldw
++op1 {idest d}
++op2 {isrc2 i}
++op3 {src1 w}
++syntax ldw %1 = %2[%3]
++format Load
+
++=s.1000001..iiiiiiiiiddddddwwwwww
++mnemonic ldw.d
++op1 {idest d}
++op2 {isrc2 i}
++op3 {src1 w}
++syntax ldw.d %1 = %2[%3]
++format Load
+
++=s.1000010..iiiiiiiiiddddddwwwwww
++mnemonic ldh
++op1 {idest d}
++op2 {isrc2 i}
++op3 {src1 w}
++syntax ldh %1 = %2[%3]
++format Load
+
++=s.1000011..iiiiiiiiiddddddwwwwww
++mnemonic ldh.d
++op1 {idest d}
++op2 {isrc2 i}
++op3 {src1 w}
++syntax ldh.d %1 = %2[%3]
++format Load
+
++=s.1000100..iiiiiiiiiddddddwwwwww
++mnemonic ldhu
++op1 {idest d}
++op2 {isrc2 i}
++op3 {src1 w}
++syntax ldhu %1 = %2[%3]
++format Load
+
++=s.1000101..iiiiiiiiiddddddwwwwww
++mnemonic ldhu.d
++op1 {idest d}
++op2 {isrc2 i}
++op3 {src1 w}
++syntax ldhu.d %1 = %2[%3]
++format Load
+
++=s.1000110..iiiiiiiiiddddddwwwwww
++mnemonic ldb
++op1 {idest d}
++op2 {isrc2 i}
++op3 {src1 w}
++syntax ldb %1 = %2[%3]
++format Load
+
++=s.1000111..iiiiiiiiiddddddwwwwww
++mnemonic ldb.d
++op1 {idest d}
++op2 {isrc2 i}
++op3 {src1 w}
++syntax ldb.d %1 = %2[%3]
++format Load
+
++=s.1001000..iiiiiiiiiddddddwwwwww
++mnemonic ldbu
++op1 {idest d}
++op2 {isrc2 i}
++op3 {src1 w}
++syntax ldbu %1 = %2[%3]
++format Load
+
++=s.1001001..iiiiiiiiiddddddwwwwww
++mnemonic ldbu.d
++op1 {idest d}
++op2 {isrc2 i}
++op3 {src1 w}
++syntax ldbu.d %1 = %2[%3]
++format Load
+
++=s.1001010..iiiiiiiiixxxxxxwwwwww
++mnemonic stw
++op1 {isrc2 i}
++op2 {src1 w}
++op3 {src2 x}
++syntax stw %1[%2] = %3
++format Store
+
++=s.1001011..iiiiiiiiixxxxxxwwwwww
++mnemonic sth
++op1 {isrc2 i}
++op2 {src1 w}
++op3 {src2 x}
++syntax sth %1[%2] = %3
++format Store
+
++=s.1001100..iiiiiiiiixxxxxxwwwwww
++mnemonic stb
++op1 {isrc2 i}
++op2 {src1 w}
++op3 {src2 x}
++syntax stb %1[%2] = %3
++format Store
+
++=s.1001101..iiiiiiiii......wwwwww
++mnemonic pft
++op1 {isrc2 i}
++op2 {src1 w}
++syntax pft %1[%2]
++format Store
+
++=s.1001110..iiiiiiiii......wwwwww
++mnemonic prgadd
++op1 {isrc2 i}
++op2 {src1 w}
++syntax prgadd %1[%2]
++format Store
+
++=s.1001111..iiiiiiiii......wwwwww
++mnemonic prgset
++op1 {isrc2 i}
++op2 {src1 w}
++syntax prgset %1[%2]
++format Store
+
++=s.1010000.......................
++mnemonic sync
++syntax sync
++format Store
+
++=s.101000100vvvvvvvvvwwwwww......
++reserved 
++mnemonic send
++op1 {icbus v}
++op2 {src2 w}
++syntax send %1 = %2
++format Int3I
+
++=s.101001000wwwwwwwwwvvvvvv......
++reserved 
++mnemonic recv
++op1 {idest v}
++op2 {icbus w}
++syntax recv %1 = %2
++format Int3I
+
++=s.101100000...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,0 %1 = %2, %3
++format Int3R
+
++=s.101100001...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,1 %1 = %2, %3
++format Int3R
+
++=s.101100010...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,2 %1 = %2, %3
++format Int3R
+
++=s.101100011...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,3 %1 = %2, %3
++format Int3R
+
++=s.101100100...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,4 %1 = %2, %3
++format Int3R
+
++=s.101100101...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,5 %1 = %2, %3
++format Int3R
+
++=s.101100110...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,6 %1 = %2, %3
++format Int3R
+
++=s.101100111...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,7 %1 = %2, %3
++format Int3R
+
++=s.101101000...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,8 %1 = %2, %3
++format Int3R
+
++=s.101101001...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,9 %1 = %2, %3
++format Int3R
+
++=s.101101010...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,10 %1 = %2, %3
++format Int3R
+
++=s.101101011...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,11 %1 = %2, %3
++format Int3R
+
++=s.101101100...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,12 %1 = %2, %3
++format Int3R
+
++=s.101101101...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,13 %1 = %2, %3
++format Int3R
+
++=s.101101110...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,14 %1 = %2, %3
++format Int3R
+
++=s.101101111...vvvvvvxxxxxxwwwwww
++reserved 
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,15 %1 = %2, %3
++format Int3R
+
++=s.101110000xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,0 %1 = %2, %3
++format Int3I
+
++=s.101110001xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,1 %1 = %2, %3
++format Int3I
+
++=s.101110010xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,2 %1 = %2, %3
++format Int3I
+
++=s.101110011xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,3 %1 = %2, %3
++format Int3I
+
++=s.101110100xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,4 %1 = %2, %3
++format Int3I
+
++=s.101110101xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,5 %1 = %2, %3
++format Int3I
+
++=s.101110110xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,6 %1 = %2, %3
++format Int3I
+
++=s.101110111xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,7 %1 = %2, %3
++format Int3I
+
++=s.101111000xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,8 %1 = %2, %3
++format Int3I
+
++=s.101111001xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,9 %1 = %2, %3
++format Int3I
+
++=s.101111010xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,10 %1 = %2, %3
++format Int3I
+
++=s.101111011xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,11 %1 = %2, %3
++format Int3I
+
++=s.101111100xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,12 %1 = %2, %3
++format Int3I
+
++=s.101111101xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,13 %1 = %2, %3
++format Int3I
+
++=s.101111110xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,14 %1 = %2, %3
++format Int3I
+
++=s.101111111xxxxxxxxxvvvvvvwwwwww
++reserved 
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,15 %1 = %2, %3
++format Int3I
+
++=s.1100000iiiiiiiiiiiiiiiiiiiiiii
++mnemonic call
++op1 {btarg i}
++syntax call LR = %1
++format Call
+
++=s.1100001.......................
++mnemonic icall
++syntax call LR = LR
++format Call
+
++=s.1100010iiiiiiiiiiiiiiiiiiiiiii
++mnemonic goto
++op1 {btarg i}
++syntax goto LR = %1
++format Call
+
++=s.1100011.......................
++mnemonic igoto
++syntax goto LR
++format Call
+
++=s.1100100.......................
++mnemonic rfi
++syntax rfi
++format Call
+
++=s.1110ccciiiiiiiiiiiiiiiiiiiiiii
++mnemonic br
++op1 {bcond c}
++op2 {btarg i}
++syntax br %1, %2
++format Branch
+
++=s.1111ccciiiiiiiiiiiiiiiiiiiiiii
++mnemonic brf
++op1 {bcond c}
++op2 {btarg i}
++syntax brf %1, %2
++format Branch

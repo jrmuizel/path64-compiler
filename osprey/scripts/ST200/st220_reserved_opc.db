@@ -1,0 +1,307 @@
++ **************************************************
++ ST220 Opcodes Database
++ **************************************************
+
++=s.101000100vvvvvvvvvwwwwww......
++reserved
++mnemonic send
++op1 {icbus v}
++op2 {src2 w}
++syntax send %1 = %2
++format Int3I
+
++=s.101001000wwwwwwwwwvvvvvv......
++reserved
++mnemonic recv
++op1 {idest v}
++op2 {icbus w}
++syntax recv %1 = %2
++format Int3I
+
++=s.101100000...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,0 %1 = %2, %3
++format Int3R
+
++=s.101100001...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,1 %1 = %2, %3
++format Int3R
+
++=s.101100010...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,2 %1 = %2, %3
++format Int3R
+
++=s.101100011...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,3 %1 = %2, %3
++format Int3R
+
++=s.101100100...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,4 %1 = %2, %3
++format Int3R
+
++=s.101100101...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,5 %1 = %2, %3
++format Int3R
+
++=s.101100110...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,6 %1 = %2, %3
++format Int3R
+
++=s.101100111...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,7 %1 = %2, %3
++format Int3R
+
++=s.101101000...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,8 %1 = %2, %3
++format Int3R
+
++=s.101101001...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,9 %1 = %2, %3
++format Int3R
+
++=s.101101010...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,10 %1 = %2, %3
++format Int3R
+
++=s.101101011...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,11 %1 = %2, %3
++format Int3R
+
++=s.101101100...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,12 %1 = %2, %3
++format Int3R
+
++=s.101101101...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,13 %1 = %2, %3
++format Int3R
+
++=s.101101110...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,14 %1 = %2, %3
++format Int3R
+
++=s.101101111...vvvvvvxxxxxxwwwwww
++reserved
++mnemonic asm
++op1 {dest v}
++op2 {src1 w}
++op3 {src2 x}
++syntax asm,15 %1 = %2, %3
++format Int3R
+
++=s.101110000xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,0 %1 = %2, %3
++format Int3I
+
++=s.101110001xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,1 %1 = %2, %3
++format Int3I
+
++=s.101110010xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,2 %1 = %2, %3
++format Int3I
+
++=s.101110011xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,3 %1 = %2, %3
++format Int3I
+
++=s.101110100xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,4 %1 = %2, %3
++format Int3I
+
++=s.101110101xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,5 %1 = %2, %3
++format Int3I
+
++=s.101110110xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,6 %1 = %2, %3
++format Int3I
+
++=s.101110111xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,7 %1 = %2, %3
++format Int3I
+
++=s.101111000xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,8 %1 = %2, %3
++format Int3I
+
++=s.101111001xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,9 %1 = %2, %3
++format Int3I
+
++=s.101111010xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,10 %1 = %2, %3
++format Int3I
+
++=s.101111011xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,11 %1 = %2, %3
++format Int3I
+
++=s.101111100xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,12 %1 = %2, %3
++format Int3I
+
++=s.101111101xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,13 %1 = %2, %3
++format Int3I
+
++=s.101111110xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,14 %1 = %2, %3
++format Int3I
+
++=s.101111111xxxxxxxxxvvvvvvwwwwww
++reserved
++mnemonic asm
++op1 {idest v}
++op2 {src1 w}
++op3 {isrc2 x}
++syntax asm,15 %1 = %2, %3
++format Int3I
