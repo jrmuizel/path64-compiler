@@ -24,14 +24,6 @@ extern "C" {
 #define __STDBOOL_H__
 #include "CCL.h"
 #include "CSD.h"
-#include "LIR_CSD.h"
-typedef struct Label_ *Label;
-typedef struct Symbol_ *Symbol;
-typedef struct TempName_ *TempName;
-typedef struct Operation_ *Operation;
-typedef struct BasicBlock_ *BasicBlock;
-typedef struct CodeRegion_ *CodeRegion;
-typedef struct LoopInfo_ *LoopInfo;
 #include "LAO_Interface.h"
 #undef operator
 #undef this
@@ -146,7 +138,7 @@ CRP_LAO_Register(Register registre) {
 // Convert CGIR_LAB to LIR Label.
 static inline Label
 LAO_LAB_Label(CGIR_LAB cgir_lab) {
-  Label label = Interface_getLabel(interface, cgir_lab);
+  Label label = Interface_searchLabel(interface, cgir_lab);
   if (label == NULL) {
     label = Interface_createLabel(interface, cgir_lab, LABEL_name(cgir_lab));
   }
@@ -156,7 +148,7 @@ LAO_LAB_Label(CGIR_LAB cgir_lab) {
 // Convert CGIR_SYM to LIR Symbol.
 static inline Symbol
 LAO_SYM_Symbol(CGIR_SYM cgir_sym) {
-  Symbol symbol = Interface_getSymbol(interface, cgir_sym);
+  Symbol symbol = Interface_searchSymbol(interface, cgir_sym);
   if (symbol == NULL) {
     if (ST_class(cgir_sym) == CLASS_CONST) {
       char buffer[64];
@@ -172,7 +164,7 @@ LAO_SYM_Symbol(CGIR_SYM cgir_sym) {
 // Convert CGIR_TN to LIR TempName.
 static inline TempName
 LAO_TN_TempName(CGIR_TN cgir_tn) {
-  TempName tempname = Interface_getTempName(interface, cgir_tn);
+  TempName tempname = Interface_searchTempName(interface, cgir_tn);
   if (tempname == NULL) {
     if (TN_is_register(cgir_tn)) {
       if (TN_is_dedicated(cgir_tn)) {
@@ -219,7 +211,7 @@ LAO_TN_TempName(CGIR_TN cgir_tn) {
 // Convert CGIR_OP to LIR Operation.
 static Operation
 LAO_OP_Operation(CGIR_OP cgir_op) {
-  Operation operation = Interface_getOperation(interface, cgir_op);
+  Operation operation = Interface_searchOperation(interface, cgir_op);
   if (operation == NULL) {
     int argCount = OP_opnds(cgir_op);
     int resCount = OP_results(cgir_op);
@@ -243,7 +235,7 @@ LAO_OP_Operation(CGIR_OP cgir_op) {
 // Convert CGIR_BB to LIR BasicBlock.
 static BasicBlock
 LAO_BB_BasicBlock(CGIR_BB cgir_bb) {
-  BasicBlock basicblock = Interface_getBasicBlock(interface, cgir_bb);
+  BasicBlock basicblock = Interface_searchBasicBlock(interface, cgir_bb);
   if (basicblock == NULL) {
     basicblock = Interface_createBasicBlock(interface, cgir_bb, BB_freq(cgir_bb));
     // the BasicBlock label(s)
@@ -284,12 +276,12 @@ LAO_Operator_TOP(Operator lir_operator) {
 
 // Update CGIR_LAB from LIR Label.
 static void
-LAO_update_LAB(Label label, CGIR_LAB cgir_lab) {
+LAO_updateLAB(Label label, CGIR_LAB cgir_lab) {
 }
 
 // Create CGIR_LAB from LIR Label.
 static CGIR_LAB
-LAO_create_LAB(Label label) {
+LAO_createLAB(Label label) {
   CGIR_LAB cgir_lab = 0;
   String name = Interface_Label_getName(interface, label);
   // code borrowed from Gen_Label_For_BB
@@ -299,22 +291,22 @@ LAO_create_LAB(Label label) {
 
 // Update CGIR_SYM from LIR Symbol.
 static void
-LAO_update_SYM(Symbol symbol, CGIR_SYM cgir_sym) {
+LAO_updateSYM(Symbol symbol, CGIR_SYM cgir_sym) {
 }
 
 // Create CGIR_SYM from LIR Symbol.
 static CGIR_SYM
-LAO_create_SYM(Symbol symbol) {
+LAO_createSYM(Symbol symbol) {
 }
 
 // Update CGIR_TN from LIR TempName.
 static void
-LAO_update_TN(TempName tempname, CGIR_TN cgir_tn) {
+LAO_updateTN(TempName tempname, CGIR_TN cgir_tn) {
 }
 
 // Create CGIR_TN from LIR Dedicated TempName.
 static CGIR_TN
-LAO_createDedicated_TN(Register registre) {
+LAO_createDedicatedTN(Register registre) {
   int size = 0;		// not used in Build_Dedicated_TN
   CLASS_REG_PAIR crp = CRP_LAO_Register(registre);
   return Build_Dedicated_TN(CLASS_REG_PAIR_rclass(crp), CLASS_REG_PAIR_reg(crp), size);
@@ -322,55 +314,55 @@ LAO_createDedicated_TN(Register registre) {
 
 // Create CGIR_TN from LIR PseudoReg TempName.
 static CGIR_TN
-LAO_createPseudoReg_TN(RegClass regclass) {
+LAO_createPseudoRegTN(RegClass regclass) {
   int size = 0;		// FIXME
   return Gen_Register_TN(IRC_LAO_RegClass(regclass), size);
 }
 
 // Create CGIR_TN from LIR Modifier TempName.
 static CGIR_TN
-LAO_createModifier_TN(Modifier modifier) {
+LAO_createModifierTN(Modifier modifier) {
   Is_True(0, ("LAO_createModifier_TN not implemented"));
   return NULL;
 }
 
 // Create CGIR_TN from LIR Absolute TempName.
 static CGIR_TN
-LAO_createAbsolute_TN(Immediate immediate, int64_t value) {
+LAO_createAbsoluteTN(Immediate immediate, int64_t value) {
   int size = (value >= (int64_t)0x80000000 && value <= (int64_t)0x7FFFFFFF) ? 4 : 8;
   return Gen_Literal_TN(value, size);
 }
 
 // Create CGIR_TN from LIR Symbol TempName.
 static CGIR_TN
-LAO_createSymbol_TN(Immediate immediate, Symbol symbol, int64_t offset) {
+LAO_createSymbolTN(Immediate immediate, Symbol symbol, int64_t offset) {
   Is_True(0, ("LAO_createSymbol_TN not implemented"));
   return NULL;
 }
 
 // Create CGIR_TN from LIR Label TempName.
 static CGIR_TN
-LAO_createLabel_TN(Immediate immediate, Label label) {
-  LABEL_IDX label_idx = Interface_getLAB(interface, label);
-  Is_True(label_idx != 0, ("Interface_getLAB returned zero LABEL_IDX"));
+LAO_createLabelTN(Immediate immediate, Label label) {
+  LABEL_IDX label_idx = Interface_lookupLAB(interface, label);
+  Is_True(label_idx != 0, ("Interface_lookupLAB returned zero LABEL_IDX"));
   return Gen_Label_TN(label_idx, 0);
 }
 
 // Update CGIR_OP from LIR Operation.
 static void
-LAO_update_OP(Operation operation, int argCount, TempName arguments[], int resCount, TempName results[], CGIR_OP cgir_op) {
+LAO_updateOP(Operation operation, int argCount, TempName arguments[], int resCount, TempName results[], CGIR_OP cgir_op) {
   TOP top = LAO_Operator_TOP(Interface_Operation_getOperator(interface, operation));
   if (OP_code(cgir_op) != top) {
     OP_Change_Opcode(cgir_op, top);
   }
   Is_True(argCount == OP_opnds(cgir_op), ("OP_opnds mismatch in LAO_update_OP"));
   for (int i = 0; i < argCount; i++) {
-    CGIR_TN cgir_tn = Interface_getTN(interface, arguments[i]);
+    CGIR_TN cgir_tn = Interface_lookupTN(interface, arguments[i]);
     if (OP_opnd(cgir_op, i) != cgir_tn) Set_OP_opnd(cgir_op, i, cgir_tn);
   }
   Is_True(resCount == OP_results(cgir_op), ("OP_results mismatch in LAO_update_OP"));
   for (int i = 0; i < resCount; i++) {
-    CGIR_TN cgir_tn = Interface_getTN(interface, results[i]);
+    CGIR_TN cgir_tn = Interface_lookupTN(interface, results[i]);
     if (OP_result(cgir_op, i) != cgir_tn) Set_OP_result(cgir_op, i, cgir_tn);
   }
   // TBD: issue dates, flags, etc.
@@ -378,15 +370,15 @@ LAO_update_OP(Operation operation, int argCount, TempName arguments[], int resCo
 
 // Create CGIR_OP from LIR Operation.
 static CGIR_OP
-LAO_create_OP(Operation operation, int argCount, TempName arguments[], int resCount, TempName results[]) {
+LAO_createOP(Operation operation, int argCount, TempName arguments[], int resCount, TempName results[]) {
   TOP top = LAO_Operator_TOP(Interface_Operation_getOperator(interface, operation));
   CGIR_TN *argTNs = (CGIR_TN *)alloca(sizeof(CGIR_TN)*argCount);
   for (int i = 0; i < argCount; i++) {
-    argTNs[i] = Interface_getTN(interface, arguments[i]);
+    argTNs[i] = Interface_lookupTN(interface, arguments[i]);
   }
   CGIR_TN *resTNs = (CGIR_TN *)alloca(sizeof(CGIR_TN)*resCount);
   for (int i = 0; i < resCount; i++) {
-    resTNs[i] = Interface_getTN(interface, results[i]);
+    resTNs[i] = Interface_lookupTN(interface, results[i]);
   }
   CGIR_OP cgir_op = Mk_VarOP(top, resCount, argCount, resTNs, argTNs);
   // TBD: issue dates, flags, etc.
@@ -395,9 +387,9 @@ LAO_create_OP(Operation operation, int argCount, TempName arguments[], int resCo
 
 // Update CGIR_BB from LIR BasicBlock.
 static void
-LAO_update_BB(BasicBlock basicblock, int labelCount, Label labels[], int opCount, Operation operations[], CGIR_BB cgir_bb) {
+LAO_updateBB(BasicBlock basicblock, int labelCount, Label labels[], int opCount, Operation operations[], CGIR_BB cgir_bb) {
   for (int i = 0; i < labelCount; i++) {
-    LABEL_IDX label = Interface_getLAB(interface, labels[i]);
+    LABEL_IDX label = Interface_lookupLAB(interface, labels[i]);
     if (!Is_Label_For_BB(label, cgir_bb)) {
       // code borrowed from Gen_Label_For_BB
       Set_Label_BB(label, cgir_bb);
@@ -407,7 +399,7 @@ LAO_update_BB(BasicBlock basicblock, int labelCount, Label labels[], int opCount
   BB_Remove_All(cgir_bb);
   OPS ops = OPS_EMPTY;
   for (int i = 0; i < opCount; i++) {
-    OPS_Append_Op(&ops, Interface_getOP(interface, operations[i]));
+    OPS_Append_Op(&ops, Interface_lookupOP(interface, operations[i]));
   }
   BB_Append_Ops(cgir_bb, &ops);
   // TBD: loopinfo, flags, etc.
@@ -415,17 +407,17 @@ LAO_update_BB(BasicBlock basicblock, int labelCount, Label labels[], int opCount
 
 // Create CGIR_BB from LIR BasicBlock.
 static CGIR_BB
-LAO_create_BB(BasicBlock basicblock, int labelCount, Label labels[], int opCount, Operation operations[]) {
+LAO_createBB(BasicBlock basicblock, int labelCount, Label labels[], int opCount, Operation operations[]) {
   CGIR_BB cgir_bb = Gen_BB();
   for (int i = 0; i < labelCount; i++) {
-    LABEL_IDX label = Interface_getLAB(interface, labels[i]);
+    LABEL_IDX label = Interface_lookupLAB(interface, labels[i]);
     // code borrowed from Gen_Label_For_BB
     Set_Label_BB(label, cgir_bb);
     BB_Add_Annotation(cgir_bb, ANNOT_LABEL, (void *)label);
   }
   OPS ops = OPS_EMPTY;
   for (int i = 0; i < opCount; i++) {
-    OPS_Append_Op(&ops, Interface_getOP(interface, operations[i]));
+    OPS_Append_Op(&ops, Interface_lookupOP(interface, operations[i]));
   }
   BB_Append_Ops(cgir_bb, &ops);
   // TBD: loopinfo, flags, etc.
@@ -486,21 +478,21 @@ LAO_init() {
     // initialize LIR; this constructs the interface variable
     LAO_INIT();
     // initialize the interface call-back pointers
-    *Interface__create_LAB(interface) = LAO_create_LAB;
-    *Interface__update_LAB(interface) = LAO_update_LAB;
-    *Interface__create_SYM(interface) = LAO_create_SYM;
-    *Interface__update_SYM(interface) = LAO_update_SYM;
-    *Interface__createDedicated_TN(interface) = LAO_createDedicated_TN;
-    *Interface__createPseudoReg_TN(interface) = LAO_createPseudoReg_TN;
-    *Interface__createModifier_TN(interface) = LAO_createModifier_TN;
-    *Interface__createAbsolute_TN(interface) = LAO_createAbsolute_TN;
-    *Interface__createSymbol_TN(interface) = LAO_createSymbol_TN;
-    *Interface__createLabel_TN(interface) = LAO_createLabel_TN;
-    *Interface__update_TN(interface) = LAO_update_TN;
-    *Interface__create_OP(interface) = LAO_create_OP;
-    *Interface__update_OP(interface) = LAO_update_OP;
-    *Interface__create_BB(interface) = LAO_create_BB;
-    *Interface__update_BB(interface) = LAO_update_BB;
+    *Interface__createLAB(interface) = LAO_createLAB;
+    *Interface__updateLAB(interface) = LAO_updateLAB;
+    *Interface__createSYM(interface) = LAO_createSYM;
+    *Interface__updateSYM(interface) = LAO_updateSYM;
+    *Interface__createDedicatedTN(interface) = LAO_createDedicatedTN;
+    *Interface__createPseudoRegTN(interface) = LAO_createPseudoRegTN;
+    *Interface__createModifierTN(interface) = LAO_createModifierTN;
+    *Interface__createAbsoluteTN(interface) = LAO_createAbsoluteTN;
+    *Interface__createSymbolTN(interface) = LAO_createSymbolTN;
+    *Interface__createLabelTN(interface) = LAO_createLabelTN;
+    *Interface__updateTN(interface) = LAO_updateTN;
+    *Interface__createOP(interface) = LAO_createOP;
+    *Interface__updateOP(interface) = LAO_updateOP;
+    *Interface__createBB(interface) = LAO_createBB;
+    *Interface__updateBB(interface) = LAO_updateBB;
     // initialize TOP__Operator
     for (int i = 0; i < TOP_UNDEFINED; i++) TOP__Operator[i] = Operator_;
     TOP__Operator[TOP_add_i] = Operator_CODE_ADD_IDEST_SRC1_ISRC2;
@@ -784,7 +776,7 @@ LAO_setControlArc(BB *bb, BasicBlock basicblock) {
   BBLIST *bblist = NULL;
   FOR_ALL_BB_SUCCS(bb, bblist) {
     BB *succ_bb = BBLIST_item(bblist);
-    BasicBlock succ_basicblock = Interface_getBasicBlock(interface, succ_bb);
+    BasicBlock succ_basicblock = Interface_searchBasicBlock(interface, succ_bb);
     if (succ_basicblock != NULL) {
       float probability = BBLIST_prob(bblist);
       unsigned flags = BBLIST_flags(bblist);
@@ -822,7 +814,7 @@ LAO_setMemoryDependences(BB* bb, LoopInfo loopinfo) {
   FOR_ALL_BB_OPs(bb, op) {
     ARC_LIST *arcs = NULL;
     if (_CG_DEP_op_info(op)) {
-      Operation orig_operation = Interface_getOperation(interface, op);
+      Operation orig_operation = Interface_searchOperation(interface, op);
       for (arcs = OP_succs(op); arcs; arcs = ARC_LIST_rest(arcs)) {
 	ARC *arc = ARC_LIST_first(arcs);
 	CG_DEP_KIND kind = ARC_kind(arc);
@@ -831,7 +823,7 @@ LAO_setMemoryDependences(BB* bb, LoopInfo loopinfo) {
 	  int latency = ARC_latency(arc), omega = ARC_omega(arc);
 	  OP *pred_op = ARC_pred(arc), *succ_op = ARC_succ(arc);
 	  Is_True(pred_op == op, ("Error in LAO_setMemoryDependences"));
-	  Operation dest_operation = Interface_getOperation(interface, succ_op);
+	  Operation dest_operation = Interface_searchOperation(interface, succ_op);
 	  Interface_LoopInfo_setMemoryDependence(interface, loopinfo,
 	      orig_operation, dest_operation, latency, omega, definite);
 	  //CG_DEP_Trace_Arc(arc, TRUE, FALSE);
@@ -852,7 +844,7 @@ static LoopInfo
 LAO_makeLoopInfo(BB_List& bb_list, bool cyclic) {
   BB *bb = bb_list.front();
   LABEL_IDX label_idx = Gen_Label_For_BB(bb);
-  Label label = Interface_getLabel(interface, label_idx);
+  Label label = Interface_searchLabel(interface, label_idx);
   LoopInfo loopinfo = Interface_createLoopInfo(interface, label);
   CG_DEP_Compute_Region_MEM_Arcs(bb_list,
       cyclic,	// compute_cyclic
@@ -900,7 +892,7 @@ LAO_optimize(BB_List &entryBBs, BB_List &innerBBs, BB_List &exitBBs, unsigned la
   bool cyclic = lao_actions & LAO_LoopSchedule || lao_actions & LAO_LoopPipeline;
   LoopInfo loopinfo = LAO_makeLoopInfo(innerBBs, cyclic);
   //
-  result = Interface_optimize(interface, lao_actions);
+  result = LAO_Optimize(lao_actions);
   //
   //WORK CodeRegion_updateCGIR(coderegion);
   //
