@@ -31,6 +31,8 @@ extern "C" {
 
 }
 
+typedef list<BB*> BB_List;
+
 static void
 LAOS_printCGIR();
 
@@ -491,33 +493,6 @@ LAO_BB_BasicBlock(BB *bb) {
   return basicblock;
 }
 
-// Enter the Memory dependences into the LAO.
-void
-LAO_setMemoryDependences(list<BB*>& bb_list, bool cyclic) {
-  if (bb_list.size() == 1) {
-    BB *bb = bb_list.front();
-    CG_DEP_Compute_Graph(bb,
-	false,	// assigned_regs
-	cyclic,	// compute_cyclic
-	false,	// memread_arcs
-	false,	// memin_arcs
-	false,	// control_arcs
-	NULL);	// need_anti_out_dep
-    CG_DEP_Trace_Graph(bb);
-    CG_DEP_Delete_Graph(bb);
-  } else {
-    CG_DEP_Compute_Region_Graph(bb_list,
-	false,	// assigned_regs
-	false,	// memread_arcs
-	false);	// control_arcs
-    list<BB*>::iterator bbi;
-    FOR_ALL_BB_STLLIST_ITEMS_FWD(bb_list, bbi) {
-      CG_DEP_Trace_Graph(*bbi);
-    }
-    CG_DEP_Delete_Graph(&bb_list);
-  }
-}
-
 /*-------------------------- LAO Utility Functions----------------------------*/
 
 // Enter the control-flow arcs in the LAO.
@@ -563,7 +538,7 @@ LAO_setLiveOut(BasicBlockHandle handle, CodeRegion coderegion) {
   }
 }
 
-// Make a LAO CodeRegion form the BB_VECTORs supplied.
+// Make a LAO CodeRegion from the BB_VECTORs supplied.
 static CodeRegion
 LAO_makeCodeRegion(BB_VECTOR& entryBBs, BB_VECTOR& innerBBs, BB_VECTOR& exitBBs, CodeRegion_Type region_kind) {
   int bb_count = entryBBs.size() + innerBBs.size() + exitBBs.size();
@@ -604,6 +579,69 @@ LAO_makeCodeRegion(BB_VECTOR& entryBBs, BB_VECTOR& innerBBs, BB_VECTOR& exitBBs,
   return coderegion;
 }
 
+// Enter the BB Memory dependences into the LAO.
+static void
+LAO_setMemoryDependences(BB* bb, LoopInfo loopinfo) {
+  OP *op = NULL;
+  FOR_ALL_BB_OPs(bb, op) {
+    ARC_LIST *arcs = NULL;
+    if (_CG_DEP_op_info(op)) {
+      Operation orig_operation = Interface_getOperation(interface, op);
+      for (arcs = OP_succs(op); arcs; arcs = ARC_LIST_rest(arcs)) {
+	ARC *arc = ARC_LIST_first(arcs);
+	CG_DEP_KIND kind = ARC_kind(arc);
+	if (ARC_is_mem(arc)) {
+	  bool definite = ARC_is_definite(arc);
+	  int latency = ARC_latency(arc), omega = ARC_omega(arc);
+	  OP *pred_op = ARC_pred(arc), *succ_op = ARC_succ(arc);
+	  Is_True(pred_op == op, ("Error in LAO_setMemoryDependences"));
+	  Operation dest_operation = Interface_getOperation(interface, succ_op);
+	  LoopInfo_setMemoryDependence(loopinfo,
+	      orig_operation, dest_operation, latency, omega, definite);
+	  //CG_DEP_Trace_Arc(arc, TRUE, FALSE);
+	}
+      }
+    } else fprintf(TFile, "<arc>   CG_DEP INFO is NULL\n");
+  }
+}
+
+// Make a LAO LoopInfo from the BB_List supplied.
+static LoopInfo
+LAO_makeLoopInfo(BB_List& bb_list, unsigned lao_actions) {
+  void *pointer = NULL;		// Parameter for CG_DEP_Delete_Graph.
+  LoopInfo loopinfo = NULL;	// FIXME
+  bool cyclic =
+      lao_actions & LAO_LoopSchedule ||
+      lao_actions & LAO_LoopPipeline;
+  cyclic = false;	// HACK ALERT
+  if (bb_list.size() == 1) {
+    BB *bb = bb_list.front();
+    CG_DEP_Compute_Graph(bb,
+	false,	// assigned_regs
+	cyclic,	// compute_cyclic
+	false,	// memread_arcs
+	false,	// memin_arcs
+	false,	// control_arcs
+	NULL);	// need_anti_out_dep
+    //CG_DEP_Trace_Graph(bb);
+    LAO_setMemoryDependences(bb, loopinfo);
+    pointer = bb;
+  } else {
+    CG_DEP_Compute_Region_Graph(bb_list,
+	false,	// assigned_regs
+	false,	// memread_arcs
+	false);	// control_arcs
+    BB_List::iterator bbi;
+    FOR_ALL_BB_STLLIST_ITEMS_FWD(bb_list, bbi) {
+      //CG_DEP_Trace_Graph(*bbi);
+      LAO_setMemoryDependences(*bbi, loopinfo);
+    }
+    pointer = &bb_list;
+  }
+  CG_DEP_Delete_Graph(pointer);
+  return loopinfo;
+}
+
 // Test if a BB belongs to a BB_VECTOR.
 static bool
 LAO_inBB_VECTOR ( BB_VECTOR& regionBBs, BB *bb ) {
@@ -625,16 +663,11 @@ LAO_optimize(BB_VECTOR &entryBBs, BB_VECTOR &innerBBs, BB_VECTOR &exitBBs, CodeR
   //
   CodeRegion coderegion = LAO_makeCodeRegion(entryBBs, innerBBs, exitBBs, region_kind);
   //
-  // Add the memory dependences
-  list<BB*> bb_list;
+  BB_List bb_list;
   for (int i = 0; i < innerBBs.size(); i++) {
     bb_list.push_back( innerBBs[i] );
   }
-  bool cyclic =
-      lao_actions & LAO_LoopSchedule ||
-      lao_actions & LAO_LoopPipeline;
-  //LAO_setMemoryDependences(bb_list, cyclic);
-  LAO_setMemoryDependences(bb_list, false);
+  LoopInfo loopinfo = LAO_makeLoopInfo(bb_list, lao_actions);
   //
   CodeRegion_pretty(coderegion, TFile);
   //
