@@ -71,7 +71,8 @@ TOOL_SUBDIRS = \
 	driver \
         ipl    \
         whirl2c \
-        ir_tools
+        ir_tools \
+	lno
 
 
 
