@@ -31,11 +31,6 @@ extern "C" {
 
 }
 
-typedef BasicBlock LIR_BB;
-typedef TempName LIR_TN;
-typedef Operation LIR_OP;
-typedef CodeRegion LIR_REGION;
-
 // Map CGIR TOP to LIR Operator.
 static Operator TOP__Operator[TOP_UNDEFINED];
 
@@ -376,20 +371,23 @@ IRC_RegClass (ISA_REGISTER_CLASS irc) {
   return lao_regclass;
 }
 
-extern Register RegClass_lowreg[]; // HACK ALERT
+static Register RegClass_LowReg[] = {
+#define RegClass(RegClass, BitWidth, LowReg, HighReg, Registers, Comment) Register__##LowReg
+#include "CSD_Register.enum"
+};
 
 static inline Register
 CRP_Register (CLASS_REG_PAIR crp) {
   mREGISTER reg = CLASS_REG_PAIR_reg(crp);
   ISA_REGISTER_CLASS irc = CLASS_REG_PAIR_rclass(crp);
   RegClass regclass = IRC_RegClass(irc);
-  Register lowreg = RegClass_lowreg[regclass];
+  Register lowreg = RegClass_LowReg[regclass];
   return (Register)(lowreg + (reg - 1));
 }
 
 static inline TempName
 TN_TempName (TN *tn) {
-  LIR_TN lirTN = (LIR_TN)hTN_MAP_Get(TN2LIR_map, tn);
+  TempName lirTN = (TempName)hTN_MAP_Get(TN2LIR_map, tn);
   if (lirTN == NULL) {
     if (TN_is_register(tn)) {
       if (TN_is_dedicated(tn)) {
@@ -433,128 +431,15 @@ TN_TempName (TN *tn) {
   return lirTN;
 }
 
-/* -----------------------------------------------------------------------
- * Functions to convert CGIR/TN to LIR/LIR_TN
- * -----------------------------------------------------------------------
- */
-
-static LIR_TN
-TN_convert2LIR_reg ( TN *tn, int regindex, int regclass ) {
-  LIR_TN lirTN;
-
-  Is_True(hTN_MAP_Get(TN2LIR_map, tn) == NULL, ("LAO TempName creation interface cannot be called twice with same TN."));
-
-  if (TN_is_dedicated(tn)) {
-    CLASS_REG_PAIR tn_crp = TN_class_reg(tn);
-    lirTN = Interface_makeDedicatedTempName(interface, tn, CRP_Register(tn_crp));
-  } else {
-    ISA_REGISTER_CLASS tn_irc = TN_register_class(tn);
-    lirTN = Interface_makePseudoRegTempName(interface, tn, IRC_RegClass(tn_irc));
-  }
-
-  return lirTN;
-}
-
-static LIR_TN
-TN_convert2LIR_imm ( TN *tn, int immediate, int64_t value ) {
-  LIR_TN lirTN;
-
-  Is_True(hTN_MAP_Get(TN2LIR_map, tn) == NULL, ("LAO TempName creation interface cannot be called twice with same TN."));
-
-  lirTN = Interface_makeAbsoluteTempName(interface, tn, (Immediate)immediate, value);
-
-  return lirTN;
-}
-
-static LIR_TN
-TN_convert2LIR_sym ( TN *tn, ST *var, int64_t offset ) {
-  LIR_TN lirTN;
-
-  Is_True(hTN_MAP_Get(TN2LIR_map, tn) == NULL, ("LAO TempName creation interface cannot be called twice with same TN."));
-
-  lirTN = Interface_makeSymbolTempName(interface, tn, (Immediate)0,
-				       Interface_makeSymbol(interface, ST_name_idx(var), ST_name(var)),
-				       offset);
-
-  return lirTN;
-}
-
-static LIR_TN
-TN_convert2LIR_lab ( TN *tn, LABEL_IDX label, int64_t offset ) {
-  LIR_TN lirTN;
-
-  Is_True(hTN_MAP_Get(TN2LIR_map, tn) == NULL, ("LAO TempName creation interface cannot be called twice with same TN."));
-  Is_True(offset == 0, ("LAO requires zero offset from label."));
-
-  lirTN = Interface_makeLabelTempName(interface, tn, (Immediate)0,
-				      Interface_makeLabel(interface, label, LABEL_name(label)));
-
-  return lirTN;
-}
-
-static LIR_TN
-TN_convert2TempName ( TN *tn ) {
-
-  LIR_TN lirTN;
-
-  // First, check if a lirTN already exits for this TN.
-
-  if ((lirTN = (LIR_TN)hTN_MAP_Get(TN2LIR_map, tn)) != NULL)
-    return lirTN;
-
-  if (TN_is_constant(tn)) {
-
-    if ( TN_has_value(tn))
-      lirTN = TN_convert2LIR_imm (tn, 0/* immediate */, TN_value(tn));
-
-    else if (TN_is_enum(tn)) {
-      Is_True(FALSE, ("TN_is_enum not implemented."));
-      //	  Interface_makeAbsoluteTempName(interface, tn, NULL, TN_enum(tn));
-    }
-
-    else if (TN_is_label(tn))
-      lirTN = TN_convert2LIR_lab (tn, TN_label(tn), TN_offset(tn));
-
-    else if (TN_is_tag(tn))
-      lirTN = TN_convert2LIR_lab (tn, TN_label(tn), 0);
-
-    else if (TN_is_symbol(tn))
-      lirTN = TN_convert2LIR_sym (tn, TN_var(tn), TN_offset(tn));
-
-    else {
-      ErrMsg (EC_Unimplemented, "sPrint_TN: illegal constant TN");
-    }
-  }
-  else {  /* register TN */
-    lirTN = TN_convert2LIR_reg ( tn, TN_number(tn), TN_register_class(tn));
-  }
-
-  hTN_MAP_Set(TN2LIR_map, tn, (void *)lirTN);
-
-  return lirTN;
-}
-
-static void
-LIROP_addArgument ( LIR_OP lirOP, TN *tn ) {
-  LIR_TN lirTN = TN_convert2TempName(tn);
-  Interface_appendOperationArgument(interface, lirOP, lirTN);
-}
-
-static void
-LIROP_addResult ( LIR_OP lirOP, TN *tn ) {
-  LIR_TN lirTN = TN_convert2TempName(tn);
-  Interface_appendOperationResult(interface, lirOP, lirTN);
-}
-
 
 /* -----------------------------------------------------------------------
- * Functions to convert CGIR/BB to/from LIR/LIR_BB
+ * Functions to convert CGIR/BB to/from LIR/BasicBlock
  * -----------------------------------------------------------------------
  */
 
 typedef struct bbmap_ {
   BB *cgir;
-  LIR_BB lir2;
+  BasicBlock lir;
 } BBmap_, *BBmap;
 
 static BBmap_ *BB_map = NULL;
@@ -566,7 +451,7 @@ static int BB_map_SIZE = 0;
  * -----------------------------------------------------------------------
  */
 static void
-BBmap_add ( BB * cgirBB, LIR_BB lirBB ) {
+BBmap_add ( BB * cgirBB, BasicBlock lirBB ) {
   BBmap bbmap;
   int count = 1;
 
@@ -588,42 +473,42 @@ BBmap_add ( BB * cgirBB, LIR_BB lirBB ) {
   }
 
   BB_map[count-1].cgir = cgirBB;
-  BB_map[count-1].lir2 = lirBB;
+  BB_map[count-1].lir = lirBB;
   BB_map[count].cgir = NULL;
-  BB_map[count].lir2 = NULL;
+  BB_map[count].lir = NULL;
 }
 
 /* -----------------------------------------------------------------------
  * Return the CGIR/LAO node associated with the given LAO/CGIR node
  * -----------------------------------------------------------------------
  */
-static LIR_BB
+static BasicBlock
 BB_CGIR2LAO ( BB * node ) {
   BBmap bbmap;
 
   for (bbmap = BB_map; bbmap->cgir; bbmap++) {
     if (bbmap->cgir == node)
-      return bbmap->lir2;
+      return bbmap->lir;
   }
 
   return NULL;
 }
 
 static BB *
-BB_LAO2CGIR ( LIR_BB node ) {
+BB_LAO2CGIR ( BasicBlock node ) {
   BBmap bbmap;
 
   for (bbmap = BB_map; bbmap->cgir; bbmap++) {
-    if (bbmap->lir2 == node)
+    if (bbmap->lir == node)
       return bbmap->cgir;
   }
 
   Is_True(FALSE, ("Could not find CGIR BB for BasicBlock:%p", node));
 }
 
-static LIR_BB
+static BasicBlock
 BB_convert2LIR ( BB *bb ) {
-  LIR_BB lirBB;
+  BasicBlock lirBB;
   int i;
 
   fprintf(TFile, "Starting BB_convert2LIR for %d\n", BB_id(bb));
@@ -646,7 +531,7 @@ BB_convert2LIR ( BB *bb ) {
 
   const OP *op;
   FOR_ALL_BB_OPs (bb, op) {
-    LIR_OP lirOP;
+    Operation lirOP;
 
     lirOP = Interface_makeOperation(interface, (void *)op, TOP_Operator(OP_code(op)),
 				    OP_opnds(op), OP_results(op));
@@ -655,25 +540,27 @@ BB_convert2LIR ( BB *bb ) {
 
     for (i = 0; i < OP_opnds(op); i++) {
       TN *tn = OP_opnd(op, i);
-      LIROP_addArgument(lirOP, tn);
+      TempName lirTN = TN_TempName(tn);
+      Interface_appendOperationArgument(interface, lirOP, lirTN);
     }
 
     for (i = 0; i < OP_results(op); i++) {
       TN *tn = OP_result(op, i);
-      LIROP_addResult(lirOP, tn);
+      TempName lirTN = TN_TempName(tn);
+      Interface_appendOperationResult(interface, lirOP, lirTN);
     }
   }
   // Set live-in and live-out information on basic blocks.
   for (TN *tn = GTN_SET_Choose(BB_live_in(bb));
        tn != GTN_SET_CHOOSE_FAILURE;
        tn = GTN_SET_Choose_Next(BB_live_in(bb), tn)) {
-    Interface_setLiveIn(interface, lirBB, TN_convert2TempName(tn));
+    Interface_setLiveIn(interface, lirBB, TN_TempName(tn));
   }
 
   for (TN *tn = GTN_SET_Choose(BB_live_out(bb));
        tn != GTN_SET_CHOOSE_FAILURE;
        tn = GTN_SET_Choose_Next(BB_live_out(bb), tn)) {
-    Interface_setLiveOut(interface, lirBB, TN_convert2TempName(tn));
+    Interface_setLiveOut(interface, lirBB, TN_TempName(tn));
   }
   fprintf(TFile, "Completed BB_convert2LIR for %d\n", BB_id(bb));
 }
@@ -692,7 +579,7 @@ BB_inRegion ( BB *regionBBs[], BB *bb ) {
 
 static void
 BB_LIRcreateEdges ( BB *src, BB *dst ) {
-  LIR_BB srcLIR, dstLIR;
+  BasicBlock srcLIR, dstLIR;
 
   srcLIR = BB_CGIR2LAO(src);
   dstLIR = BB_CGIR2LAO(dst);
@@ -702,7 +589,7 @@ BB_LIRcreateEdges ( BB *src, BB *dst ) {
   Interface_makeControlArc(interface, srcLIR, dstLIR);
 }
 
-static LIR_REGION
+static CodeRegion
 REGION_convert2LIR ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs ) {
   int i;
 
@@ -741,7 +628,7 @@ static void LAOS_printBB (BB *bp);
 bool LAO_scheduleRegion ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs , LAO_SWP_ACTION action ) {
   int i;
   BB *bb;
-  LIR_REGION lir_region;
+  CodeRegion lir_region;
   int status;
   
   fprintf(TFile, "---- Before LAO schedule region ----\n");
