@@ -35,6 +35,6 @@ void LAOS_printCGIR();
 
 bool LAO_scheduleRegion ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs, LAO_SWP_ACTION action );
 
-bool Perform_SWP ( LOOP_DESCR *loop , LAO_SWP_ACTION action );
+bool Perform_SWP ( CG_LOOP& cl, LAO_SWP_ACTION action );
 
 #endif /* laostub_INCLUDED */

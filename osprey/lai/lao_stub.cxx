@@ -15,6 +15,8 @@
 #include "erglob.h"
 #include "tracing.h"
 
+#include "dso.h"
+
 #include "lao_stub.h"
 
 extern "C" {
@@ -48,6 +50,8 @@ static MEM_POOL MEM_lao_pool;
 
 // Hash table to map CGIR TNs to LAO TempNames.
 static hTN_MAP TN2LIR_map;
+
+static bool loaded_LAO_so = FALSE;
 
 // Variable used to skip multiple LAO_INIT / LAO_FINI calls
 static int LAO_initialized = 0;
@@ -655,12 +659,19 @@ bool LAO_scheduleRegion ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs , LAO_S
   return (status == 0);
 }
 
-bool Perform_SWP ( LOOP_DESCR * loop , LAO_SWP_ACTION action )
-{
-
+bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
+  LOOP_DESCR *loop; // = cl.loop();
   BB *bb;
   BB **entryBBs, **exitBBs, **regionBBs;
+  int entryIdx, regionIdx, exitIdx;
   bool res;
+
+  if (loaded_LAO_so == FALSE) {
+    load_so("libLIR2.so", CG_Path, FALSE); // Show_Progress);
+    load_so("libCSD.so", CG_Path, FALSE); // Show_Progress);
+    load_so("libCCL.so", CG_Path, FALSE); // Show_Progress);
+    loaded_LAO_so = TRUE;
+  }
 
   fprintf(TFile, "---- Before LAO schedule loop ----\n");
   fprintf(TFile, "     ----- LOOP id %2d -----\n", BB_id(LOOP_DESCR_loophead(loop)));
@@ -668,34 +679,21 @@ bool Perform_SWP ( LOOP_DESCR * loop , LAO_SWP_ACTION action )
 
   FOR_ALL_BB_SET_members(LOOP_DESCR_bbset(loop), bb) LAOS_printBB(bb);
 
-  switch (action) {
-  case SINGLE_BB_DOLOOP_SWP:
-  case SINGLE_BB_DOLOOP_UNROLL:
+  entryIdx = regionIdx = exitIdx = 0;
 
-    entryBBs  = (BB **)alloca(sizeof(BB *)*2);
-    exitBBs   = (BB **)alloca(sizeof(BB *)*2);
-    regionBBs = (BB **)alloca(sizeof(BB *)*2);
+  entryBBs  = (BB **)alloca(sizeof(BB *)*2);
+  exitBBs   = (BB **)alloca(sizeof(BB *)*3);
+  regionBBs = (BB **)alloca(sizeof(BB *)*2);
 
-    entryBBs[0] = exitBBs[0] = regionBBs[0] = LOOP_DESCR_loophead(loop);
-    entryBBs[1] = exitBBs[1] = regionBBs[1] = NULL;
+  entryBBs[entryIdx++] = regionBBs[regionIdx++] = CG_LOOP_prolog;
+  regionBBs[regionIdx++] = LOOP_DESCR_loophead(loop);
+  exitBBs[exitIdx++] = regionBBs[regionIdx++] = CG_LOOP_epilog;
+    
+  entryBBs[entryIdx] = exitBBs[exitIdx] = regionBBs[regionIdx] = NULL;
       
-    res = LAO_scheduleRegion ( entryBBs, exitBBs, regionBBs, action );
+  res = LAO_scheduleRegion ( entryBBs, exitBBs, regionBBs, action );
 
-    return res;
-
-  case SINGLE_BB_WHILELOOP_SWP:
-    return false;
-  case SINGLE_BB_WHILELOOP_UNROLL:
-    return false;
-  case MULTI_BB_DOLOOP:
-    return false;
-  case NO_LOOP_OPT:
-    return false;
-  default:
-    Is_True(FALSE, ("unknown loop opt action."));
-  }
-
-  return TRUE;
+  return res;
 }
 
 
