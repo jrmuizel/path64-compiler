@@ -166,6 +166,7 @@ main()
   Instruction_Group("O_SysOp", 
 		 TOP_break, 
 		 TOP_prgins, 
+		 TOP_syncins, 
 		 TOP_UNDEFINED); 
 
 

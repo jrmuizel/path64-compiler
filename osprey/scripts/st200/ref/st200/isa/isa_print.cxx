@@ -10,7 +10,7 @@
 #include "topcode.h" 
 #include "isa_print_gen.h" 
 
-static const char *mnemonic_names[306] = {
+static const char *mnemonic_names[307] = {
   "add",	 /* TOP_add_r */ 
   "add",	 /* TOP_add_i */ 
   "add",	 /* TOP_add_ii */ 
@@ -302,6 +302,7 @@ static const char *mnemonic_names[306] = {
   "mtb",	 /* TOP_mtb */ 
   "mfb",	 /* TOP_mfb */ 
   "return",	 /* TOP_return */ 
+  "syncins",	 /* TOP_syncins */ 
   "asm",	 /* TOP_asm */
   "intrncall",	 /* TOP_intrncall */
   "spadjust",	 /* TOP_spadjust */
@@ -377,6 +378,7 @@ main()
 		 TOP_rfi, 
 		 TOP_sync, 
 		 TOP_nop, 
+		 TOP_syncins, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 

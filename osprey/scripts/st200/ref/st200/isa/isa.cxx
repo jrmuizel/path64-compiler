@@ -339,6 +339,7 @@ main ()
 		 "mtb",
 		 "mfb",
 		 "return",
+		 "syncins",
 		 "asm",	 // simulated
 		 "intrncall",	 // simulated
 		 "spadjust",	 // simulated

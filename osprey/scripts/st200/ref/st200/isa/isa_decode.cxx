@@ -353,6 +353,7 @@ main()
 	   288,	 Final(TOP_mtb),
 	   289,	 Final(TOP_mfb),
 	   290,	 Final(TOP_return),
+	   291,	 Final(TOP_syncins),
 	      END_TRANSITIONS); 
 
   Initial_State(ex_unit); 

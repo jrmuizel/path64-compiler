@@ -3549,8 +3549,7 @@ FOUND_OPCODE:
 
     # Special scdclass cases
     # treat special instructions such as sync, prgins
-    if ($mnemonic eq 'sync' ||
-	$mnemonic eq 'syncins') {
+    if ($mnemonic eq 'sync') {
       $scdclass = 'SYNC';
     } elsif ($mnemonic eq 'prgins') {
       $scdclass = 'PRGINS';
@@ -4680,6 +4679,14 @@ sub read_opcodes {
     $OP_scdclass[$opnum] = "JUMP";
     &process_scdinfo($opnum, $subset);
     
+    # ----------------- syncins -----------------
+
+    # beginning of a new record
+
+    $opnum = DECL_OPCODE ( 'syncins', $OP_NONE, 'syncins', 'SysOp', $subset );
+
+    $OP_scdclass[$opnum] = ($subset_name eq "st220") ? "JUMP" :  "PSWOP";
+    &process_scdinfo($opnum, $subset);
 }
 
 # ==================================================================

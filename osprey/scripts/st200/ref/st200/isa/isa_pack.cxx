@@ -610,6 +610,7 @@ main()
 	TOP_prgins, 	 0x10000000UL,
 	TOP_sbrk, 	 0x10000000UL,
 	TOP_syscall, 	 0x10000000UL,
+	TOP_syncins, 	 0x10000000UL,
 	TOP_UNDEFINED); 
 
   /* =====  p41: ===== */ 
