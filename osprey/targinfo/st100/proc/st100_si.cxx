@@ -47,13 +47,9 @@
 static RESOURCE  res_ISSUE,
 	        res_AU,
 	        res_DU,
-	        res_GMI,
-	        res_TI,
-	        res_BRANCH,
-	        res_SR,
-	        res_SL,
-	        res_EX,
-	        res_MEMORY; 
+	        res_GU,
+	        res_G,
+	        res_B; 
 
 int 
 main (int argc, char *argv[]) 
@@ -61,13 +57,9 @@ main (int argc, char *argv[])
   res_ISSUE = RESOURCE_Create("ISSUE", 2); 
   res_AU = RESOURCE_Create("AU", 2); 
   res_DU = RESOURCE_Create("DU", 2); 
-  res_GMI = RESOURCE_Create("GMI", 2); 
-  res_TI = RESOURCE_Create("TI", 2); 
-  res_BRANCH = RESOURCE_Create("BRANCH", 1); 
-  res_SR = RESOURCE_Create("SR", 1); 
-  res_SL = RESOURCE_Create("SL", 1); 
-  res_EX = RESOURCE_Create("EX", 1); 
-  res_MEMORY = RESOURCE_Create("MEMORY", 1); 
+  res_GU = RESOURCE_Create("GU", 1); 
+  res_G = RESOURCE_Create("G", 2); 
+  res_B = RESOURCE_Create("B", 1); 
 
   /* ======================================================
    * Resource description for the ISA_SUBSET_gp32 
@@ -99,7 +91,9 @@ main (int argc, char *argv[])
 		 TOP_GP32_BITRA_GT_AR_AR, 
 		 TOP_GP32_GETP15U_GT_AR, 
 		 TOP_GP32_MAKEA_GT_AR_S16, 
-		 TOP_GP32_MAKEBA_GT_AR_U32, 
+		 TOP_GP32_MAKEBA_GT_AR_S16, 
+		 TOP_GP32_MAKEHA_GT_AR_S16, 
+		 TOP_GP32_MAKEWA_GT_AR_S16, 
 		 TOP_GP32_MAKEPR_GT_S21, 
 		 TOP_GP32_MOREA_GT_AR_U16, 
 		 TOP_GP32_MOVEA_GT_AR_AR, 
@@ -124,7 +118,7 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_SL, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class LBR 
@@ -189,8 +183,9 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_GMI, 0); 
-  Resource_Requirement(res_SL, 0); 
+  Resource_Requirement(res_G, 0); 
+  Resource_Requirement(res_B, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class LCR 
@@ -255,7 +250,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_BRANCH, 0); 
+  Resource_Requirement(res_GU, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class LDR 
@@ -684,7 +680,7 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_SL, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class SMD 
@@ -698,7 +694,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_BRANCH, 0); 
+  Resource_Requirement(res_GU, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class LSE 
@@ -723,7 +720,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_BRANCH, 0); 
+  Resource_Requirement(res_GU, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class FOP 
@@ -744,6 +742,7 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_DU, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class SAR 
@@ -808,7 +807,7 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_SL, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class SGM 
@@ -1142,7 +1141,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_DU, 0); 
-  Resource_Requirement(res_GMI, 0); 
+  Resource_Requirement(res_G, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class SBR 
@@ -1181,7 +1181,7 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_SL, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class SCR 
@@ -1246,7 +1246,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_BRANCH, 0); 
+  Resource_Requirement(res_GU, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class SDR 
@@ -1493,7 +1494,7 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_SL, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class SUB 
@@ -1511,7 +1512,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_BRANCH, 0); 
+  Resource_Requirement(res_GU, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class DCE 
@@ -1557,6 +1559,7 @@ main (int argc, char *argv[])
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_DU, 0); 
 
+
   ///////////////////////////////////////// 
   //   Instructions for Scd Class NOP 
   ///////////////////////////////////////// 
@@ -1568,8 +1571,7 @@ main (int argc, char *argv[])
   Any_Operand_Access_Time(0); 
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
-  Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_DU, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class EXP 
@@ -1590,7 +1592,7 @@ main (int argc, char *argv[])
   Any_Operand_Access_Time(0); 
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
-  Resource_Requirement(res_EX, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class SWE 
@@ -1608,8 +1610,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_DU, 0); 
-  Resource_Requirement(res_BRANCH, 0); 
+  Resource_Requirement(res_GU, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class MAC 
@@ -1688,6 +1690,7 @@ main (int argc, char *argv[])
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_DU, 0); 
 
+
   ///////////////////////////////////////// 
   //   Instructions for Scd Class LSR 
   ///////////////////////////////////////// 
@@ -1725,8 +1728,7 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_SR, 0); 
-  Resource_Requirement(res_SL, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class PSR 
@@ -1744,7 +1746,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_BRANCH, 0); 
+  Resource_Requirement(res_GU, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class BRA 
@@ -1765,7 +1768,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_BRANCH, 0); 
+  Resource_Requirement(res_GU, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class AGM 
@@ -1788,9 +1792,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_GMI, 0); 
-  Resource_Requirement(res_TI, 0); 
-  Resource_Requirement(res_SL, 0); 
+  Resource_Requirement(res_G, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class A2C 
@@ -1806,7 +1809,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_BRANCH, 0); 
+  Resource_Requirement(res_GU, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class D2A 
@@ -1821,8 +1825,7 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_TI, 0); 
-  Resource_Requirement(res_SL, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class A2D 
@@ -1836,8 +1839,7 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_TI, 0); 
-  Resource_Requirement(res_SL, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class DGM 
@@ -1886,7 +1888,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_DU, 0); 
-  Resource_Requirement(res_GMI, 0); 
+  Resource_Requirement(res_G, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class SSR 
@@ -1925,7 +1928,7 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_SL, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class B2D 
@@ -1940,14 +1943,14 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_DU, 0); 
-  Resource_Requirement(res_GMI, 0); 
+  Resource_Requirement(res_G, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class CIM 
   ///////////////////////////////////////// 
 
   Instruction_Group("CIM", 
-		 TOP_GP32_GP16MD, 
 		 TOP_GP32_GP32MD, 
 		 TOP_UNDEFINED); 
 
@@ -1955,7 +1958,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_BRANCH, 0); 
+  Resource_Requirement(res_GU, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class D2C 
@@ -1969,9 +1973,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_TI, 0); 
-  Resource_Requirement(res_BRANCH, 0); 
-  Resource_Requirement(res_SL, 0); 
+  Resource_Requirement(res_GU, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class SYN 
@@ -1985,7 +1988,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_BRANCH, 0); 
+  Resource_Requirement(res_GU, 0); 
+
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class FGM 
@@ -2040,55 +2044,8 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_DU, 0); 
-  Resource_Requirement(res_GMI, 0); 
+  Resource_Requirement(res_G, 0); 
 
-  ///////////////////////////////////////// 
-  //   Instructions for Scd Class NULL 
-  ///////////////////////////////////////// 
-
-  Instruction_Group("NULL", 
-		 TOP_IFR_DIVE_GT_DR_DR_DR, 
-		 TOP_IFR_DIVUE_GT_DR_DR_DR, 
-		 TOP_IFR_DIVUW_GT_DR_DR_DR, 
-		 TOP_IFR_DIVW_GT_DR_DR_DR, 
-		 TOP_IFR_MAXE_GT_DR_DR_DR, 
-		 TOP_IFR_MAXH_GT_DR_DR_DR, 
-		 TOP_IFR_MAXUE_GT_DR_DR_DR, 
-		 TOP_IFR_MAXUH_GT_DR_DR_DR, 
-		 TOP_IFR_MAXUW_GT_DR_DR_DR, 
-		 TOP_IFR_MAXW_GT_DR_DR_DR, 
-		 TOP_IFR_MINE_GT_DR_DR_DR, 
-		 TOP_IFR_MINH_GT_DR_DR_DR, 
-		 TOP_IFR_MINUE_GT_DR_DR_DR, 
-		 TOP_IFR_MINUH_GT_DR_DR_DR, 
-		 TOP_IFR_MINUW_GT_DR_DR_DR, 
-		 TOP_IFR_MINW_GT_DR_DR_DR, 
-		 TOP_IFR_MULE_GT_DR_DR_DR, 
-		 TOP_IFR_MULH_GT_DR_DR_DR, 
-		 TOP_IFR_MULUE_GT_DR_DR_DR, 
-		 TOP_IFR_MULUH_GT_DR_DR_DR, 
-		 TOP_IFR_MULUW_GT_DR_DR_DR, 
-		 TOP_IFR_MULW_GT_DR_DR_DR, 
-		 TOP_IFR_MPSSE_GT_DR_DR_DR, 
-		 TOP_IFR_MPSUE_GT_DR_DR_DR, 
-		 TOP_IFR_MPUSE_GT_DR_DR_DR, 
-		 TOP_IFR_MPUUE_GT_DR_DR_DR, 
-		 TOP_IFR_MASSHW_GT_DR_DR_DR_DR, 
-		 TOP_IFR_MASUHW_GT_DR_DR_DR_DR, 
-		 TOP_IFR_MAUSHW_GT_DR_DR_DR_DR, 
-		 TOP_IFR_MAUUHW_GT_DR_DR_DR_DR, 
-		 TOP_IFR_MAUHW_GT_DR_DR_DR_DR, 
-		 TOP_IFR_MASSE_GT_DR_DR_DR_DR, 
-		 TOP_IFR_MASUE_GT_DR_DR_DR_DR, 
-		 TOP_IFR_MAUSE_GT_DR_DR_DR_DR, 
-		 TOP_IFR_MAUUE_GT_DR_DR_DR_DR, 
-		 TOP_IFR_MAWE_GT_DR_DR_DR_DR, 
-		 TOP_IFR_MAWUE_GT_DR_DR_DR_DR, 
-		 TOP_UNDEFINED); 
-
-  Any_Operand_Access_Time(0); 
-  Any_Result_Available_Time(1);		// ??? not sure 
-  Resource_Requirement(res_ISSUE, 0); 
 
   ///////////////////////////////////////// 
   //   Instructions for Scd Class SCE 
@@ -2233,6 +2190,7 @@ main (int argc, char *argv[])
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_DU, 0); 
 
+
   ///////////////////////////////////////// 
   //   Instructions for Scd Class LAR 
   ///////////////////////////////////////// 
@@ -2296,225 +2254,7 @@ main (int argc, char *argv[])
   Any_Result_Available_Time(1);		// ??? not sure 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_AU, 0); 
-  Resource_Requirement(res_SL, 0); 
-  Machine_Done("st100.c"); 
 
-  /* ======================================================
-   * Resource description for the ISA_SUBSET_gp16 
-   * ======================================================
-   */ 
-
-  Machine("st100", ISA_SUBSET_gp16, argc, argv); 
-
-  ///////////////////////////////////////// 
-  //   Instructions for Scd Class SCD_GP16 
-  ///////////////////////////////////////// 
-
-  Instruction_Group("SCD_GP16", 
-		 TOP_GP16_ADDBA_G0T_ARL_ARH_P3, 
-		 TOP_GP16_ADDBA_G0T_ARL_ARL_P3, 
-		 TOP_GP16_ADDBA_G0T_ARL_ARL_U4, 
-		 TOP_GP16_ADDBA_G0T_ARL_P15_U7, 
-		 TOP_GP16_ADDHA_G0T_ARL_ARH_P3, 
-		 TOP_GP16_ADDHA_G0T_ARL_ARL_P3, 
-		 TOP_GP16_ADDU_G0T_DRL_DRL_DRL, 
-		 TOP_GP16_ADDWA_G0T_ARL_ARH_P3, 
-		 TOP_GP16_ADDWA_G0T_ARL_ARL_P3, 
-		 TOP_GP16_AND_G0T_DRL_DRL, 
-		 TOP_GP16_AND_G0T_DRL_U5, 
-		 TOP_GP16_BARRIER, 
-		 TOP_GP16_BCLR_G0T_DRL_DRL, 
-		 TOP_GP16_BKP, 
-		 TOP_GP16_BKPNXT_G0T, 
-		 TOP_GP16_BKP_G0F, 
-		 TOP_GP16_BKP_G0T, 
-		 TOP_GP16_BNOT_G0T_DRL_DRL, 
-		 TOP_GP16_BRANCH, 
-		 TOP_GP16_BRANCH_G0F, 
-		 TOP_GP16_BSET_G0T_DRL_DRL, 
-		 TOP_GP16_CALLPR_G0T_U9, 
-		 TOP_GP16_CALL_G0T_S9, 
-		 TOP_GP16_COPYA_G0T_ARL_DRL, 
-		 TOP_GP16_COPYD_G0T_DRL_ARL, 
-		 TOP_GP16_DECBA_G0T_ARL_ARL, 
-		 TOP_GP16_DECU_G0T_DRL_U5, 
-		 TOP_GP16_DECWA_G0T_P15_ARL, 
-		 TOP_GP16_DECWA_G0T_P15_U8, 
-		 TOP_GP16_EQA_G0_ARL_ARL, 
-		 TOP_GP16_EQW_G0_DRL_DRL, 
-		 TOP_GP16_EQW_G0_DRL_U5, 
-		 TOP_GP16_EXTB_G0T_DRL_DRL, 
-		 TOP_GP16_EXTH_G0T_DRL_DRL, 
-		 TOP_GP16_EXTUB_G0T_DRL_DRL, 
-		 TOP_GP16_EXTUH_G0T_DRL_DRL, 
-		 TOP_GP16_EXTUW_G0T_DRL_DRL, 
-		 TOP_GP16_EXTW_G0T_DRL_DRL, 
-		 TOP_GP16_FA_G0_ARL, 
-		 TOP_GP16_FBPOS_G0_DRL_DRL, 
-		 TOP_GP16_FWAND_G0_DRL_DRL, 
-		 TOP_GP16_FWOR_G0_DRL_DRL, 
-		 TOP_GP16_GEA_G0_ARL_ARL, 
-		 TOP_GP16_GEUW_G0_DRL_DRL, 
-		 TOP_GP16_GEUW_G0_DRL_U5, 
-		 TOP_GP16_GEW_G0_DRL_DRL, 
-		 TOP_GP16_GEW_G0_DRL_U5, 
-		 TOP_GP16_GOTO_G0F_S9, 
-		 TOP_GP16_GOTO_S11, 
-		 TOP_GP16_GP32MD, 
-		 TOP_GP16_GP32NXT, 
-		 TOP_GP16_GTA_G0_ARL_ARL, 
-		 TOP_GP16_GTUW_G0_DRL_DRL, 
-		 TOP_GP16_GTUW_G0_DRL_U5, 
-		 TOP_GP16_GTW_G0_DRL_DRL, 
-		 TOP_GP16_GTW_G0_DRL_U5, 
-		 TOP_GP16_INCBA_G0T_ARL_ARL, 
-		 TOP_GP16_INCU_G0T_DRL_U5, 
-		 TOP_GP16_INCWA_G0T_P15_ARL, 
-		 TOP_GP16_INCWA_G0T_P15_U8, 
-		 TOP_GP16_JUMP, 
-		 TOP_GP16_LAW_G0T_ARL_ARH_P_P3, 
-		 TOP_GP16_LAW_G0T_ARL_ARL_P_P3, 
-		 TOP_GP16_LAW_G0T_ARL_ARL_P_U4, 
-		 TOP_GP16_LAW_G0T_ARL_MQ_P15, 
-		 TOP_GP16_LAW_G0T_ARL_P13_PR_U5, 
-		 TOP_GP16_LAW_G0T_ARL_P13_P_U8, 
-		 TOP_GP16_LAW_G0T_ARL_P15_P_U6, 
-		 TOP_GP16_LAW_G0T_ARL_P15_QP, 
-		 TOP_GP16_LDB_G0T_DRL_ARH_P_P3, 
-		 TOP_GP16_LDB_G0T_DRL_ARL_P_P3, 
-		 TOP_GP16_LDB_G0T_DRL_ARL_P_U4, 
-		 TOP_GP16_LDB_G0T_DRL_MQ_P15, 
-		 TOP_GP16_LDB_G0T_DRL_P13_PR_U5, 
-		 TOP_GP16_LDB_G0T_DRL_P13_P_U8, 
-		 TOP_GP16_LDB_G0T_DRL_P15_P_U6, 
-		 TOP_GP16_LDB_G0T_DRL_P15_QP, 
-		 TOP_GP16_LDH_G0T_DRL_ARH_P_P3, 
-		 TOP_GP16_LDH_G0T_DRL_ARL_P_P3, 
-		 TOP_GP16_LDH_G0T_DRL_ARL_P_U4, 
-		 TOP_GP16_LDH_G0T_DRL_MQ_P15, 
-		 TOP_GP16_LDH_G0T_DRL_P13_PR_U5, 
-		 TOP_GP16_LDH_G0T_DRL_P13_P_U8, 
-		 TOP_GP16_LDH_G0T_DRL_P15_P_U6, 
-		 TOP_GP16_LDH_G0T_DRL_P15_QP, 
-		 TOP_GP16_LDUB_G0T_DRL_ARH_P_P3, 
-		 TOP_GP16_LDUB_G0T_DRL_ARL_P_P3, 
-		 TOP_GP16_LDUB_G0T_DRL_ARL_P_U4, 
-		 TOP_GP16_LDUB_G0T_DRL_MQ_P15, 
-		 TOP_GP16_LDUB_G0T_DRL_P13_PR_U5, 
-		 TOP_GP16_LDUB_G0T_DRL_P13_P_U8, 
-		 TOP_GP16_LDUB_G0T_DRL_P15_P_U6, 
-		 TOP_GP16_LDUB_G0T_DRL_P15_QP, 
-		 TOP_GP16_LDUH_G0T_DRL_ARH_P_P3, 
-		 TOP_GP16_LDUH_G0T_DRL_ARL_P_P3, 
-		 TOP_GP16_LDUH_G0T_DRL_ARL_P_U4, 
-		 TOP_GP16_LDUH_G0T_DRL_MQ_P15, 
-		 TOP_GP16_LDUH_G0T_DRL_P13_PR_U5, 
-		 TOP_GP16_LDUH_G0T_DRL_P13_P_U8, 
-		 TOP_GP16_LDUH_G0T_DRL_P15_P_U6, 
-		 TOP_GP16_LDUH_G0T_DRL_P15_QP, 
-		 TOP_GP16_LDUW_G0T_DRL_ARH_P_P3, 
-		 TOP_GP16_LDUW_G0T_DRL_ARL_P_P3, 
-		 TOP_GP16_LDUW_G0T_DRL_ARL_P_U4, 
-		 TOP_GP16_LDUW_G0T_DRL_MQ_P15, 
-		 TOP_GP16_LDUW_G0T_DRL_P13_PR_U5, 
-		 TOP_GP16_LDUW_G0T_DRL_P13_P_U8, 
-		 TOP_GP16_LDUW_G0T_DRL_P15_P_U6, 
-		 TOP_GP16_LDUW_G0T_DRL_P15_QP, 
-		 TOP_GP16_LEUW_G0_DRL_U5, 
-		 TOP_GP16_LEW_G0_DRL_U5, 
-		 TOP_GP16_LINK_G0T, 
-		 TOP_GP16_LTUW_G0_DRL_U5, 
-		 TOP_GP16_LTW_G0_DRL_U5, 
-		 TOP_GP16_MAKEBA_G0T_AR_U32, 
-		 TOP_GP16_MAKEB_G0T_DR_S32, 
-		 TOP_GP16_MAKEK_G0T_DR_S40, 
-		 TOP_GP16_MAKEPR_S11, 
-		 TOP_GP16_MAKESR_G0T_S11, 
-		 TOP_GP16_MAKE_G0T_DRL_S7, 
-		 TOP_GP16_MOREPR_U10, 
-		 TOP_GP16_MORESR_G0T_U10, 
-		 TOP_GP16_MOVEA_G0T_ARH_ARL, 
-		 TOP_GP16_MOVEA_G0T_ARL_ARH, 
-		 TOP_GP16_MOVEA_G0T_ARL_ARL, 
-		 TOP_GP16_MOVE_G0T_DRH_DRL, 
-		 TOP_GP16_MOVE_G0T_DRL_DRH, 
-		 TOP_GP16_MOVE_G0T_DRL_DRL, 
-		 TOP_GP16_MPSSLL_G0T_DRL_DRL, 
-		 TOP_GP16_MPSUHL_G0T_DRL_DRL, 
-		 TOP_GP16_MPUUHL_G0T_DRL_DRL, 
-		 TOP_GP16_MPUULL_G0T_DRL_DRL, 
-		 TOP_GP16_NEA_G0_ARL_ARL, 
-		 TOP_GP16_NEGU_G0T_DRL_DRL, 
-		 TOP_GP16_NEW_G0_DRL_DRL, 
-		 TOP_GP16_NEW_G0_DRL_U5, 
-		 TOP_GP16_NOP, 
-		 TOP_GP16_NOTG_G0, 
-		 TOP_GP16_NOT_G0T_DRL_DRL, 
-		 TOP_GP16_OR_G0T_DRL_DRL, 
-		 TOP_GP16_POPRTS_RSET, 
-		 TOP_GP16_POPRTS_U5, 
-		 TOP_GP16_POP_RSET, 
-		 TOP_GP16_POP_U5, 
-		 TOP_GP16_PUSH_RSET, 
-		 TOP_GP16_PUSH_U5, 
-		 TOP_GP16_ROTLW_G0T_DRL_DRL, 
-		 TOP_GP16_ROTRW_G0T_DRL_DRL, 
-		 TOP_GP16_RTS, 
-		 TOP_GP16_SAW_G0T_ARH_P_P3_ARL, 
-		 TOP_GP16_SAW_G0T_ARL_P_P3_ARL, 
-		 TOP_GP16_SAW_G0T_ARL_P_U4_ARL, 
-		 TOP_GP16_SAW_G0T_MQ_P15_ARL, 
-		 TOP_GP16_SAW_G0T_P13_PR_U5_ARL, 
-		 TOP_GP16_SAW_G0T_P13_P_U8_ARL, 
-		 TOP_GP16_SAW_G0T_P15_P_U6_ARL, 
-		 TOP_GP16_SAW_G0T_P15_QP_ARL, 
-		 TOP_GP16_SDB_G0T_ARH_P_P3_DRL, 
-		 TOP_GP16_SDB_G0T_ARL_P_P3_DRL, 
-		 TOP_GP16_SDB_G0T_ARL_P_U4_DRL, 
-		 TOP_GP16_SDB_G0T_MQ_P15_DRL, 
-		 TOP_GP16_SDB_G0T_P13_PR_U5_DRL, 
-		 TOP_GP16_SDB_G0T_P13_P_U8_DRL, 
-		 TOP_GP16_SDB_G0T_P15_P_U6_DRL, 
-		 TOP_GP16_SDB_G0T_P15_QP_DRL, 
-		 TOP_GP16_SDH_G0T_ARH_P_P3_DRL, 
-		 TOP_GP16_SDH_G0T_ARL_P_P3_DRL, 
-		 TOP_GP16_SDH_G0T_ARL_P_U4_DRL, 
-		 TOP_GP16_SDH_G0T_MQ_P15_DRL, 
-		 TOP_GP16_SDH_G0T_P13_PR_U5_DRL, 
-		 TOP_GP16_SDH_G0T_P13_P_U8_DRL, 
-		 TOP_GP16_SDH_G0T_P15_P_U6_DRL, 
-		 TOP_GP16_SDH_G0T_P15_QP_DRL, 
-		 TOP_GP16_SDW_G0T_ARH_P_P3_DRL, 
-		 TOP_GP16_SDW_G0T_ARL_P_P3_DRL, 
-		 TOP_GP16_SDW_G0T_ARL_P_U4_DRL, 
-		 TOP_GP16_SDW_G0T_MQ_P15_DRL, 
-		 TOP_GP16_SDW_G0T_P13_PR_U5_DRL, 
-		 TOP_GP16_SDW_G0T_P13_P_U8_DRL, 
-		 TOP_GP16_SDW_G0T_P15_P_U6_DRL, 
-		 TOP_GP16_SDW_G0T_P15_QP_DRL, 
-		 TOP_GP16_SETG_G0, 
-		 TOP_GP16_SHLU32_G0T_DRL, 
-		 TOP_GP16_SHLU_G0T_DRL_DRL, 
-		 TOP_GP16_SHLU_G0T_DRL_U5, 
-		 TOP_GP16_SHR16_G0T_DRL, 
-		 TOP_GP16_SHR32_G0T_DRL, 
-		 TOP_GP16_SHRUW_G0T_DRL_DRL, 
-		 TOP_GP16_SHRUW_G0T_DRL_U5, 
-		 TOP_GP16_SHRW_G0T_DRL_DRL, 
-		 TOP_GP16_SHRW_G0T_DRL_U5, 
-		 TOP_GP16_SUBBA_G0T_ARL_ARL_U4, 
-		 TOP_GP16_SUBU_G0T_DRL_DRL_DRL, 
-		 TOP_GP16_TA_G0_ARL, 
-		 TOP_GP16_TBPOS_G0_DRL_DRL, 
-		 TOP_GP16_TRAP_U4, 
-		 TOP_GP16_TWAND_G0_DRL_DRL, 
-		 TOP_GP16_TWOR_G0_DRL_DRL, 
-		 TOP_GP16_XOR_G0T_DRL_DRL, 
-		 TOP_UNDEFINED); 
-
-  Any_Operand_Access_Time(0); 
-  Any_Result_Available_Time(1);		// ??? not sure 
-  Resource_Requirement(res_ISSUE, 0); 
   Machine_Done("st100.c"); 
 
 }
