@@ -54,7 +54,8 @@ typedef struct {
   char sym[20];
 } tcon_info;
 
-static tcon_info *tcon_info_array;
+static tcon_info *tcon_info_array = NULL;
+static INT32 tcon_info_array_size;
 static INT32 current_idx;
 
 /* ====================================================================
@@ -64,13 +65,20 @@ static INT32 current_idx;
 void
 Init_Tcon_Info ()
 {
-  INT tcon_count = TCON_Table_Size();
+  INT tcon_count = TCON_Table_Size() + 1;
 
-  // is supposed to clear out the values ?
-  tcon_info_array = 
-       (tcon_info *) Src_Alloc (sizeof(tcon_info) * tcon_count);
-  bzero (tcon_info_array, sizeof(tcon_info) * tcon_count);
+  if (tcon_info_array == NULL) {
+    //    tcon_count = MAX(8, tcon_count);
+    // is supposed to clear out the values ?
+    tcon_info_array = 
+             (tcon_info*) Src_Alloc (sizeof(tcon_info) * tcon_count);
+    bzero (tcon_info_array, sizeof(tcon_info) * tcon_count);
+  }
+  else {
+    FmtAssert(FALSE,("tcon_info_array is not NULL ?"));
+  }
 
+  tcon_info_array_size = tcon_count;
   current_idx = 0;
 
   return;
@@ -84,6 +92,10 @@ void
 Fini_Tcon_Info ()
 {
   // should deallocate space ... ??
+
+  tcon_info_array = NULL;
+  tcon_info_array_size = 0;
+  current_idx = 0;
 
   return;
 }
@@ -107,6 +119,9 @@ make_name_for_tcon (
   TCON_IDX tcon
 )
 {
+  Is_True(tcon > 0 && tcon < tcon_info_array_size,
+	    ("TCON IDX %d out of range (%d)", tcon, tcon_info_array_size));
+
   char *buf = tcon_info_array[tcon].sym;
 
   sprintf(buf,"UNNAMED_CONST_%d", current_idx++);
@@ -122,6 +137,17 @@ Get_TCON_name (
   TCON_IDX tcon
 )
 {
+#if 0
+  // Are any TCONs created in cgemit ??
+  if (tcon >= current_idx) {
+    // overflowed
+    Realloc_Tcon_Info (i);
+  }
+#endif
+
+  Is_True(tcon > 0 && tcon < tcon_info_array_size,
+	    ("TCON IDX %d out of range (%d)", tcon, tcon_info_array_size));
+
   if (strncmp(tcon_info_array[tcon].sym, "UNNAMED_CONST", 13)) {
     make_name_for_tcon (tcon);
   }
