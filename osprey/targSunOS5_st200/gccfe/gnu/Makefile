@@ -52,7 +52,7 @@ include ../../Makefile.build
 #  Define build parameters
 #
 ifndef SRC_DIR
-BUILD_TOT      = ../$(BUILD_TOT)
+BUILD_TOT      := ../$(BUILD_TOT)
 endif
 
 ifndef BUILD_DIR
