@@ -69,20 +69,18 @@ TOOL_SUBDIRS = \
 	g++fe \
 	be \
 	lai \
-	wopt \
-	lno \
         ipl \
 	ipa \
+	wopt \
+	lno \
 	lw_inline \
         whirl2c \
-	driver \
+	driver 
 
-#        whirl2c \
 #        ir_tools 
 #	dwarfdump \
 #	elfdump \
 #	whirl2f \
-#	be_driver
 
 SUBDIRS=$(INCLUDE_SUBDIRS) $(LIBRARY_SUBDIRS) $(TOOL_SUBDIRS)
 
