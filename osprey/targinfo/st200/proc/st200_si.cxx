@@ -547,12 +547,25 @@ main (int argc, char *argv[])
   ///////////////////////////////////////// 
 
   Instruction_Group("SYNC", 
-		 TOP_prgins, 
 		 TOP_sync, 
 		 TOP_UNDEFINED); 
 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_MEM, 0); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class PRGINS 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("PRGINS", 
+		 TOP_prgins, 
+		 TOP_UNDEFINED); 
+
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
 
 
   ///////////////////////////////////////// 
@@ -780,6 +793,15 @@ main (int argc, char *argv[])
   ///////////////////////////////////////// 
 
   Instruction_Group("SYNC", 
+		 TOP_UNDEFINED); 
+
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class PRGINS 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("PRGINS", 
 		 TOP_UNDEFINED); 
 
 

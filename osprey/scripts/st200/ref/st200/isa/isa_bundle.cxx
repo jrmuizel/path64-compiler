@@ -271,8 +271,8 @@ main()
 		 TOP_call, 
 		 TOP_icall, 
 		 TOP_rfi, 
-		 TOP_prgins, 
 		 TOP_sync, 
+		 TOP_prgins, 
 		 TOP_getpc, 
 		 TOP_UNDEFINED); 
 
@@ -485,8 +485,8 @@ main()
 		 TOP_call, 
 		 TOP_icall, 
 		 TOP_rfi, 
-		 TOP_prgins, 
 		 TOP_sync, 
+		 TOP_prgins, 
 		 TOP_getpc, 
 		 TOP_UNDEFINED); 
 
@@ -913,8 +913,8 @@ main()
 		 TOP_call, 
 		 TOP_icall, 
 		 TOP_rfi, 
-		 TOP_prgins, 
 		 TOP_sync, 
+		 TOP_prgins, 
 		 TOP_getpc, 
 		 TOP_UNDEFINED); 
 
