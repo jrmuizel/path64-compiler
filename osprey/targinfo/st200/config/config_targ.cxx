@@ -427,6 +427,9 @@ Preconfigure_Target ( void )
 
   // Overwrite some WOPT defaults:
 
+  // do don't have a divrem instruction or runtime call.
+  WOPT_Enable_DIVREM = FALSE;
+
   // do not allow minmax opcode: this is usefull when we're able to
   // set two conditions in one instruction
   WOPT_Enable_MINMAX = FALSE;
