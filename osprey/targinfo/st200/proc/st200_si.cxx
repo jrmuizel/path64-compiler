@@ -339,7 +339,6 @@ main (int argc, char *argv[])
 		 TOP_ldhu_d_i, 
 		 TOP_ldw_i, 
 		 TOP_ldw_d_i, 
-		 TOP_sync, 
 		 TOP_UNDEFINED); 
 
   Any_Result_Available_Time(5); 
@@ -468,7 +467,6 @@ main (int argc, char *argv[])
   Instruction_Group("CALL", 
 		 TOP_call, 
 		 TOP_icall, 
-		 TOP_prgins, 
 		 TOP_rfi, 
 		 TOP_UNDEFINED); 
 
@@ -488,6 +486,21 @@ main (int argc, char *argv[])
 		 TOP_UNDEFINED); 
 
   Any_Operand_Access_Time(1); 
+  Resource_Requirement(res_ISSUE, 0); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class SYNC 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("SYNC", 
+		 TOP_prgins, 
+		 TOP_sync, 
+		 TOP_UNDEFINED); 
+
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_ISSUE, 0); 
 
 
@@ -691,6 +704,15 @@ main (int argc, char *argv[])
 		 TOP_UNDEFINED); 
 
   Any_Operand_Access_Time(-1); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class SYNC 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("SYNC", 
+		 TOP_UNDEFINED); 
+
 
 
   ///////////////////////////////////////// 
