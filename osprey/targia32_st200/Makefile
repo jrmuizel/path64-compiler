@@ -33,7 +33,7 @@
 #
 
 #
-#  Makefile for targia32_st100
+#  Makefile for targia32_st200
 #
 
 #
@@ -49,6 +49,10 @@ INCLUDE_SUBDIRS = \
 #
 #### Only these for now #####
 LIBRARY_SUBDIRS = \
+        libelf \
+        libiberty \
+        libelfutil \
+        libdwarf  \
 	libcmplrs \
 	libcomutil \
 
@@ -61,17 +65,19 @@ LIBRARY_SUBDIRS = \
 TOOL_SUBDIRS = 		\
 	gccfe 		\
 	be 		\
-	lw_inline 	\
 	wopt 		\
-	ipl 		\
-	lno 		\
 	driver 		\
 	lai		\
-	whirl2c 
+	ipl             \
+        ir_tools        \
+	whirl2c 	
+
+#	lw_inline 	\
+#	lno 		\
+
 
 #	dwarfdump \
 #	elfdump \
-#	ir_tools \
 #	whirl2f \
 #	be_driver
 
