@@ -174,9 +174,12 @@ extern char *Isa_Name (TARGET_ISA target_isa);
 #define DEFAULT_LARGE_OBJECT_BYTES	64
 
 /*
- * fixed part of the stack offset adjustment
+ * max size that may be needed for push/pop registers:
+ * a hack for now, what I really need is to minimize what is
+ * pushed/poped (eg. just the loop control registers) and have
+ * this as small as possible.
  */
-#define STACK_OFFSET_ADJUSTMENT         0
+#define STACK_OFFSET_ADJUSTMENT         128
 
 /* 
  * largest signed offset possible in small-frame stack model:
