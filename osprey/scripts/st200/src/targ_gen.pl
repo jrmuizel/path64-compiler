@@ -7,10 +7,8 @@
 #
 #  Following CHESS files are required:
 #
-#    st220_opc.db - describes TOPs, operands, printing format
-#    st220_fmt.db - describes groups of TOPs by properties and 
-#                   printing format
-#    st220_arc.db - describes scheduling latencies, resources
+#    st220/opc.db - describes TOPs, operands, printing format
+#    st220/arc.db - describes scheduling latencies, resources
 #
 ####################################################################
 
@@ -3257,7 +3255,7 @@ sub read_scdinfo {
     my $subset = $OP_subset[$opcode];
     my $line;
 
-    my $opc_file_name = "../src/arc_$subset.db";
+    my $opc_file_name = "../src/$subset/arc.db";
 
 #    printf STDOUT "  *** reading schedinfo ***\n";
 #    printf STDOUT "  > read_scdinfo: for op %s subset %s\n", $OP_opcode[$opcode], $subset;
@@ -4229,7 +4227,7 @@ sub process_opcode {
 sub read_opcodes {
     my $subset = $_[0];
     my $subset_name = $SUBSET_name[$subset];
-    my $opc_file_name = "../src/opc_$subset_name.db";
+    my $opc_file_name = "../src/$subset_name/opc.db";
 
     printf STDOUT " reading subset %s from %s\n", $subset_name, $opc_file_name;
       
