@@ -4984,8 +4984,18 @@ sub read_opcodes {
   #                       PROCESSING
   ###############################################################
 
+  my %options;
+  use Getopt::Std;
+  getopts('o:s:', \%options);
+  my $subset = $options{s} || '';
+  my $archdir = $options{o} || "st200";
+  
+  unless ($subset =~ /^st2/) {
+    print STDERR "usage: $0 -s subsetdir [-o outputdir]\n";
+    exit 1;
+  }
+
   # open and emit head info into all concerned files:
-  my $archdir = "st200";
   &initialize_isa_file ($archdir);
   &initialize_reg_file ($archdir);
   &initialize_lit_file ($archdir);
