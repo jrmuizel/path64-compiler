@@ -33,65 +33,32 @@
 #
 
 #
-#  Makefile for targia32_st100
+#  Makefile for g++fe
 #
-
-#
-#  These directories must be "built" first because they generate header files
-#  which other directories depend on.
-#
-INCLUDE_SUBDIRS = \
-	include \
-	targ_info
-
-#
-#  Next, all of the libraries are built because the tools depend on them.
-#
-#### Only these for now #####
-LIBRARY_SUBDIRS =  \
-        libiberty  \
-	libelf     \
-	libcmplrs  \
-	libcomutil \
-	libdwarf   \
-	libelfutil \
-	libSYS
 
 
 #
-#  Finally, the compiler tools (components) are built.
+# Define the BUILD HOST and TARGET platforms
 #
-#  Note that be_driver must come last since it depends on other components
-#  being built first.
+include ../../Makefile.platforms
+
 #
-TOOL_SUBDIRS = \
-	gccfe \
-	g++fe \
-	be \
-	lai \
-	wopt \
-	lno \
-        ipl \
-	lw_inline \
-        whirl2c \
-	driver \
+#  Define build parameters
+#
+include ../../Makefile.build
 
+ifndef SRC_DIR
+BUILD_TOT      := ../$(BUILD_TOT)
+endif
 
-#	ipl	\
-#        whirl2c \
-#        ir_tools \
-#	lno \
-#	dwarfdump \
-#	elfdump \
-#	whirl2f \
-#	be_driver
+ifndef BUILD_DIR
+BUILD_AREA     = ../..
+endif
 
-SUBDIRS=$(INCLUDE_SUBDIRS) $(LIBRARY_SUBDIRS) $(TOOL_SUBDIRS)
+BUILD_BASE     = $(BUILD_TOT)/g++fe/gnu
 
-default install clean clobber:
-	@for d in $(SUBDIRS); do \
-	    if [ -d $$d ] ; then \
-	    	echo "===> cd $$d; $(MAKE) $@"; \
-	    	(cd $$d; $(MAKE) $@) || exit 1; \
-	    fi; \
-	done
+#
+#  Include setup file which will then include Makefile.base
+#
+include $(BUILD_TOT)/Makefile.gsetup
+
