@@ -552,11 +552,11 @@ LAO_setLiveOut(BasicBlockHandle handle, CodeRegion coderegion) {
 
 // Make a LAO CodeRegion from the BB_VECTORs supplied.
 static CodeRegion
-LAO_makeCodeRegion(BB_List& entryBBs, BB_List& innerBBs, BB_List& exitBBs, CodeRegion_Type region_kind) {
+LAO_makeCodeRegion(BB_List& entryBBs, BB_List& innerBBs, BB_List& exitBBs) {
   BB_List::iterator bb_iter;
   int bb_count = entryBBs.size() + innerBBs.size() + exitBBs.size();
   //
-  CodeRegion coderegion = Interface_makeCodeRegion(interface, region_kind, bb_count);
+  CodeRegion coderegion = Interface_makeCodeRegion(interface, bb_count);
   //
   // Create the LAO BasicBlocks.
   for (bb_iter = entryBBs.begin(); bb_iter != entryBBs.end(); bb_iter++) {
@@ -659,12 +659,12 @@ static void LAOS_printBB (BB *bp);
 
 // Low-level LAO_optimize entry point.
 static bool
-LAO_optimize(BB_List &entryBBs, BB_List &innerBBs, BB_List &exitBBs, CodeRegion_Type region_kind, unsigned lao_actions) {
+LAO_optimize(BB_List &entryBBs, BB_List &innerBBs, BB_List &exitBBs, unsigned lao_actions) {
   bool result = false;
   //
   Interface_open(interface);
   //
-  CodeRegion coderegion = LAO_makeCodeRegion(entryBBs, innerBBs, exitBBs, region_kind);
+  CodeRegion coderegion = LAO_makeCodeRegion(entryBBs, innerBBs, exitBBs);
   //
   bool cyclic = lao_actions & LAO_LoopSchedule || lao_actions & LAO_LoopPipeline;
   LoopInfo loopinfo = LAO_makeLoopInfo(innerBBs, cyclic);
@@ -722,7 +722,7 @@ LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
       }
       //
       // Call the main LAO_optimize entry point.
-      result = LAO_optimize(entryBBs, innerBBs, exitBBs, CodeRegion_InnerLoop, lao_actions);
+      result = LAO_optimize(entryBBs, innerBBs, exitBBs, lao_actions);
     }
   }
   //
@@ -751,7 +751,7 @@ LAO_optimize(HB *hb, unsigned lao_actions) {
     }
   }
   //
-  result = LAO_optimize(entryBBs, innerBBs, exitBBs, CodeRegion_TraceBlocks, lao_actions);
+  result = LAO_optimize(entryBBs, innerBBs, exitBBs, lao_actions);
   //
   return result;
 }
@@ -1109,7 +1109,7 @@ LAOS_printCGIR()
 /*-------------------------- Old LAO Entry Points ----------------------------*/
 
 bool
-LAO_scheduleRegion ( BB_List& entryBBs, BB_List& innerBBs, BB_List& exitBBs, CodeRegion_Type region_kind, LAO_SWP_ACTION action ) {
+LAO_scheduleRegion ( BB_List& entryBBs, BB_List& innerBBs, BB_List& exitBBs, LAO_SWP_ACTION action ) {
   int i;
   BB_List::iterator bb_iter;
   CodeRegion lir_region;
@@ -1122,7 +1122,7 @@ LAO_scheduleRegion ( BB_List& entryBBs, BB_List& innerBBs, BB_List& exitBBs, Cod
   }    
   fprintf(TFile, "---- End trace regionBBs ----\n");
   //
-  lir_region = LAO_makeCodeRegion(entryBBs, innerBBs, exitBBs, region_kind);
+  lir_region = LAO_makeCodeRegion(entryBBs, innerBBs, exitBBs);
   //
   CodeRegion_pretty(lir_region, TFile);
   //
@@ -1167,7 +1167,7 @@ bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
   CYCLIC_DEP_GRAPH cyclic_graph( LOOP_DESCR_loophead(loop), &MEM_lao_pool); 
   CG_DEP_Trace_Graph(LOOP_DESCR_loophead(loop));
   //
-  res = LAO_scheduleRegion ( entryBBs, innerBBs, exitBBs, CodeRegion_InnerLoop, action );
+  res = LAO_scheduleRegion ( entryBBs, innerBBs, exitBBs, action );
   //
   return res;
 }
