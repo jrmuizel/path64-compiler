@@ -59,7 +59,9 @@ typedef vector<BB*> BB_VECTOR;
 // Initialization of the LAO, needs to be called once.
 void
 LAO_INIT() {
-  //int dummy; fprintf(stderr, "LAO PID=%lld\n", (int64_t)getpid()); scanf("%d", &dummy);
+#ifndef LAO_EXPERIMENT
+  int dummy; fprintf(stderr, "LAO PID=%lld\n", (int64_t)getpid()); scanf("%d", &dummy);
+#endif //LAO_EXPERIMENT
   if (LAO_initialized++ == 0) {
     // initialize LIR
     LIR_INIT();
@@ -445,11 +447,11 @@ LAO_OP_Operation(OP *op) {
     operation = Interface_makeOperation(interface, op, OPERATOR, argCount, resCount);
     for (int i = 0; i < argCount; i++) {
       TempName tempname = LAO_TN_TempName(OP_opnd(op, i));
-      Interface_appendOperationArgument(interface, operation, tempname);
+      Operation_appendArgument(operation, tempname);
     }
     for (int i = 0; i < resCount; i++) {
       TempName tempname = LAO_TN_TempName(OP_result(op, i));
-      Interface_appendOperationResult(interface, operation, tempname);
+      Operation_appendResult(operation, tempname);
     }
   }
   return operation;
@@ -469,14 +471,14 @@ LAO_BB_BasicBlock(BB *bb) {
 	   annot = ANNOT_Next(annot, ANNOT_LABEL)) {
 	LABEL_IDX label_idx = ANNOT_label(annot);
 	Label label = Interface_makeLabel(interface, label_idx, LABEL_name(label_idx));
-	Interface_appendBasicBlockLabel(interface, basicblock, label);
+	BasicBlock_appendLabel(basicblock, label);
       }
     }
     // the BasicBlock operations
     OP *op = NULL;
     FOR_ALL_BB_OPs(bb, op) {
       Operation operation = LAO_OP_Operation(op);
-      Interface_appendBasicBlockOperation(interface, basicblock, operation);
+      BasicBlock_appendOperation(basicblock, operation);
     }
   }
   return basicblock;
@@ -484,7 +486,7 @@ LAO_BB_BasicBlock(BB *bb) {
 
 // Enter the control-flow arcs in the LAO.
 void
-LAO_mapControlArc(BasicBlockHandle handle, va_list va) {
+LAO_setControlArc(BasicBlockHandle handle, CodeRegion coderegion) {
   BBLIST *bblist = NULL;
   BB *bb = (BB *)BasicBlockHandle_pointer(handle);
   BasicBlock basicblock = BasicBlockHandle_basicblock(handle);
@@ -493,130 +495,131 @@ LAO_mapControlArc(BasicBlockHandle handle, va_list va) {
     BasicBlock succ_basicblock = Interface_getBasicBlock(interface, succ_bb);
     if (succ_basicblock != NULL) {
       float probability = BBLIST_prob(bblist);
-      Interface_makeControlArc(interface, basicblock, succ_basicblock, probability);
+      CodeRegion_makeControlArc(coderegion, basicblock, succ_basicblock, probability);
     }
   }
 }
 
-// Enter the control-flow arcs in the LAO.
-bool
-LAO_optimize(unsigned lao_actions) {
-  Interface_mapBasicBlockHandles(interface, LAO_mapControlArc);
-  return Interface_optimize(interface, lao_actions);
-}
-
-extern "C" {
-#include "unistd.h"
-}
-
 // Enter the live-in information in the LAO.
 void
-LAO_mapLiveIn(BasicBlockHandle handle, va_list va) {
+LAO_setLiveIn(BasicBlockHandle handle, CodeRegion coderegion) {
   BB *bb = (BB *)BasicBlockHandle_pointer(handle);
   BasicBlock basicblock = BasicBlockHandle_basicblock(handle);
   for (TN *tn = GTN_SET_Choose(BB_live_in(bb));
        tn != GTN_SET_CHOOSE_FAILURE;
        tn = GTN_SET_Choose_Next(BB_live_in(bb), tn)) {
     TempName tempname = LAO_TN_TempName(tn);
-    Interface_setLiveIn(interface, basicblock, tempname);
+    CodeRegion_setLiveIn(coderegion, basicblock, tempname);
   }
 }
 
 // Enter the live-out information in the LAO.
 void
-LAO_mapLiveOut(BasicBlockHandle handle, va_list va) {
+LAO_setLiveOut(BasicBlockHandle handle, CodeRegion coderegion) {
   BB *bb = (BB *)BasicBlockHandle_pointer(handle);
   BasicBlock basicblock = BasicBlockHandle_basicblock(handle);
   for (TN *tn = GTN_SET_Choose(BB_live_out(bb));
        tn != GTN_SET_CHOOSE_FAILURE;
        tn = GTN_SET_Choose_Next(BB_live_out(bb), tn)) {
     TempName tempname = LAO_TN_TempName(tn);
-    Interface_setLiveOut(interface, basicblock, tempname);
+    CodeRegion_setLiveOut(coderegion, basicblock, tempname);
   }
 }
 
-// Optimize through the LAO.
-
+// Low-level LAO_optimize entry point.
 bool
-LAO_optimize(BB_VECTOR &entryBBs, BB_VECTOR &innerBBs, BB_VECTOR &exitBBs, unsigned lao_actions ) {
-  int i;
-  CodeRegion lir_region;
-  bool result;
+LAO_optimize(BB_VECTOR &entryBBs, BB_VECTOR &innerBBs, BB_VECTOR &exitBBs, CodeRegion coderegion, unsigned lao_actions) {
 
-  // First, create LIR basic blocks, and mark entry and exit nodes.
-
-  for (i = 0; i < entryBBs.size(); i++) {
+  // Create the LAO BasicBlocks, and mark entry and exit nodes.
+  for (int i = 0; i < entryBBs.size(); i++) {
     LAO_BB_BasicBlock ( entryBBs[i] );
   }
-
-  for (i = 0; i < innerBBs.size(); i++) {
+  for (int i = 0; i < innerBBs.size(); i++) {
     LAO_BB_BasicBlock ( innerBBs[i] );
   }
-
-  for (i = 0; i < exitBBs.size(); i++) {
+  for (int i = 0; i < exitBBs.size(); i++) {
     LAO_BB_BasicBlock ( exitBBs[i] );
   }
 
-  lir_region = Interface_makeCodeRegion(interface, CodeRegion_InnerLoop);
-    
-  for (i = 0; entryBBs[i]; i++) {
-    CodeRegion_setEntry(lir_region, Interface_getBasicBlock(interface, entryBBs[i]));
+  // Add the control-flow arcs, the live-in, and the live-out.
+  uint32_t basicblockCount = Interface_basicblockCount(interface);
+  size_t size = basicblockCount*sizeof(BasicBlockHandle_);
+  BasicBlockHandle_ *handles = (BasicBlockHandle_ *)alloca(size);
+  Interface_fillBasicBlockHandles(interface, handles);
+  for (int i = 0; i < basicblockCount; i++) {
+    LAO_setControlArc(handles + i, coderegion);
+    LAO_setLiveIn(handles + i, coderegion);
+    LAO_setLiveOut(handles + i, coderegion);
   }
 
-  for (i = 0; exitBBs[i]; i++) {
-    CodeRegion_setExit(lir_region, Interface_getBasicBlock(interface, exitBBs[i]));
+  // Set the CodeRegion entry and exit BasicBlocks.
+  for (int i = 0; entryBBs[i]; i++) {
+    BasicBlock basicblock = Interface_getBasicBlock(interface, entryBBs[i]);
+    CodeRegion_setEntry(coderegion, basicblock);
+  }
+  for (int i = 0; exitBBs[i]; i++) {
+    BasicBlock basicblock = Interface_getBasicBlock(interface, exitBBs[i]);
+    CodeRegion_setExit(coderegion, basicblock);
   }
 
-  CodeRegion_pretty(lir_region, TFile);
+  CodeRegion_pretty(coderegion, TFile);
     
-  result = LAO_optimize(lao_actions);
+  // Optimize through the LAO.
+  bool result = CodeRegion_optimize(coderegion, lao_actions);
+
+  return result;
 }
 
 // Optimize a LOOP_DESCR through the LAO.
 bool
 LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
-  bool result = false;
+  int basicblockCount = 0;
   BB_VECTOR entryBBs, innerBBs, exitBBs;
 
+#ifndef LAO_EXPERIMENT
   LAOS_printCGIR();
-
-  printf("PID = %lld\n", (int64_t)getpid());
-  int scan; scanf("%d", &scan);
+#endif //LAO_EXPERIMENT
 
   if (BB_innermost(LOOP_DESCR_loophead(loop))) {
     // Create a prolog and epilog for the region when possible.
     CG_LOOP cg_loop(loop);
 
     entryBBs.push_back(CG_LOOP_prolog);
+    ++basicblockCount;
 
     // Enter the body blocks in linear order.
     BB *loop_head = LOOP_DESCR_loophead(loop);
     BB *loop_tail = LOOP_DESCR_Find_Unique_Tail(loop);
 
-    if (loop_tail == NULL)
-      return false;
+    if (loop_tail == NULL) return false;
 
     for (BB *bb = loop_head;
 	 bb && BB_prev(bb) != loop_tail;
 	 bb = BB_next(bb)) {
       if (BB_SET_MemberP(LOOP_DESCR_bbset(loop), bb)) {
 	innerBBs.push_back(bb);
+	++basicblockCount;
 
-	BBLIST *succs;
+	BBLIST *succs = NULL;
 	FOR_ALL_BB_SUCCS(bb, succs) {
 	  BB *succ = BBLIST_item(succs);
 	  if (!BB_SET_MemberP(LOOP_DESCR_bbset(loop), succ)) {
 	    // A bb can be put more than once in this vector.
 	    exitBBs.push_back(succ);
+	    ++basicblockCount;
 	  }
 	}
       }
     }
 
-    result = LAO_optimize(entryBBs, innerBBs, exitBBs, lao_actions);
+    // Create the LAO CodeRegion.
+    CodeRegion coderegion = Interface_makeCodeRegion(interface, CodeRegion_InnerLoop, basicblockCount);
+
+    // Call the main LAO_optimize entry point.
+    return LAO_optimize(entryBBs, innerBBs, exitBBs, coderegion, lao_actions);
   }
 
-  return result;
+  return false;
 }
 
 
@@ -625,64 +628,6 @@ bool
 LAO_optimize(HB *hb, unsigned lao_actions) {
   bool result = false;
   return result;
-}
-
-
-static BasicBlock
-BB_convert2LIR ( BB *bb ) {
-  BasicBlock lirBB;
-  int i;
-
-  fprintf(TFile, "Starting BB_convert2LIR for %d\n", BB_id(bb));
-
-  lirBB = Interface_makeBasicBlock ( interface, bb );
-
-  // Now, fill the basic blocks with labels, operations and branches
-
-  if (BB_has_label(bb)) {
-    ANNOTATION *ant;
-    for (ant = ANNOT_First(BB_annotations(bb), ANNOT_LABEL);
-	 ant != NULL;
-	 ant = ANNOT_Next(ant, ANNOT_LABEL)) {
-      LABEL_IDX label = ANNOT_label(ant);
-      Interface_appendBasicBlockLabel(interface, lirBB, Interface_makeLabel(interface, label, LABEL_name(label)));
-    }
-  }
-
-  const OP *op;
-  FOR_ALL_BB_OPs (bb, op) {
-    Operation lirOP;
-
-    lirOP = Interface_makeOperation(interface, (void *)op, LAO_TOP_Operator(OP_code(op)),
-				    OP_opnds(op), OP_results(op));
-
-    Interface_appendBasicBlockOperation(interface, lirBB, lirOP);
-
-    for (i = 0; i < OP_opnds(op); i++) {
-      TN *tn = OP_opnd(op, i);
-      TempName lirTN = LAO_TN_TempName(tn);
-      Interface_appendOperationArgument(interface, lirOP, lirTN);
-    }
-
-    for (i = 0; i < OP_results(op); i++) {
-      TN *tn = OP_result(op, i);
-      TempName lirTN = LAO_TN_TempName(tn);
-      Interface_appendOperationResult(interface, lirOP, lirTN);
-    }
-  }
-  // Set live-in and live-out information on basic blocks.
-  for (TN *tn = GTN_SET_Choose(BB_live_in(bb));
-       tn != GTN_SET_CHOOSE_FAILURE;
-       tn = GTN_SET_Choose_Next(BB_live_in(bb), tn)) {
-    Interface_setLiveIn(interface, lirBB, LAO_TN_TempName(tn));
-  }
-
-  for (TN *tn = GTN_SET_Choose(BB_live_out(bb));
-       tn != GTN_SET_CHOOSE_FAILURE;
-       tn = GTN_SET_Choose_Next(BB_live_out(bb), tn)) {
-    Interface_setLiveOut(interface, lirBB, LAO_TN_TempName(tn));
-  }
-  fprintf(TFile, "Completed BB_convert2LIR for %d\n", BB_id(bb));
 }
 
 static bool
@@ -706,14 +651,15 @@ BB_LIRcreateEdges ( BB *src, BB *dst ) {
 
   Is_True((src != NULL) && (dst != NULL), ("BB_map internal ERROR."));
 
-  Interface_makeControlArc(interface, srcLIR, dstLIR, (float)0.0);
+  CodeRegion coderegion = Interface_getCodeRegion(interface);
+  CodeRegion_makeControlArc(coderegion, srcLIR, dstLIR, (float)0.0);
 }
 
 static CodeRegion
 REGION_convert2LIR ( BB_VECTOR& entryBBs, BB_VECTOR& regionBBs, BB_VECTOR& exitBBs ) {
-  int i;
+  int i, bb_count = regionBBs.size() + entryBBs.size() + exitBBs.size();
 
-  CodeRegion coderegion = Interface_makeCodeRegion(interface, CodeRegion_InnerLoop);
+  CodeRegion coderegion = Interface_makeCodeRegion(interface, CodeRegion_InnerLoop, bb_count);
 
   // First, create LIR basic blocks, and mark entry and exit nodes.
 

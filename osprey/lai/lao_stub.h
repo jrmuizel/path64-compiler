@@ -22,7 +22,6 @@
 #include "cg_loop.h"
 #include "hb.h"
 
-// LAO_EXPERIMENT
 // Replicates enum CodeRegion_Action in LIR_CodeRegion.h
 enum LAO_Action {
   LAO_NoAction = 0,
@@ -36,11 +35,11 @@ enum LAO_Action {
   LAO_Reductions = 128,		// reduction splitting
 };
 
-// LAO_EXPERIMENT
 // Optimize a LOOP_DESCR through the LAO.
 bool
 LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions);
 
+// Optimize a HB through the LAO.
 bool
 LAO_optimize(HB *hb, unsigned lao_actions);
 
