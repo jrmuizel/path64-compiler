@@ -3139,7 +3139,7 @@ sub process_scdinfo {
 	$opnd = $OP_opnd_access_time[$opcode][$i];
       }
       if ($opnd != $OP_opnd_access_time[$opcode][$i]) {
-	printf STDOUT "WARNING: opcode %s: operand %d have different access time %d than first operand (access time %d). Taking first operand access time %d\n", $OP_opcode[$opcode], $i, $OP_opnd_access_time[$opcode][$i], $opnd;
+	printf STDOUT "WARNING: opcode %s: operand %d have different access time %d than first operand (access time %d). Taking first operand access time %d\n", $OP_opcode[$opcode], $i, $OP_opnd_access_time[$opcode][$i], $opnd, $opnd;
 	$OP_opnd_access_time[$opcode][$i] = $opnd;
       }
     }
