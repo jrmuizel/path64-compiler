@@ -1330,8 +1330,8 @@ sub initialize_required_opcodes {
 	    $OP_scdclass[$OP_count] = "getpc";
 	    $OP_results[$OP_count] = 1;
 	    $OP_opnds[$OP_count] = 1;
-	    $OP_result_avail_time[$OP_count][0] = 2;
-	    $OP_opnd_access_time[$OP_count][0] = 1;
+	    $OP_result_avail_time[$OP_count][0] = 3;
+	    $OP_opnd_access_time[$OP_count][0] = 2;
 
 	    my $subset;
 	    for ($subset = 0; $subset < $SUBSET_count; $subset++) {
@@ -3317,9 +3317,6 @@ OK:
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
     }
     elsif ($scdclass eq 'getpc') {
-      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
-      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
-      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ODD', 0 ]);
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['XFER', 0 ]);
