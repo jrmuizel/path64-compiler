@@ -381,12 +381,21 @@ Prepare_Target ( void )
 void
 Preconfigure_Target ( void )
 {
+  // overwrite some OPT defaults
+  // Normally, do not inline divide sequences on this target
+  // However, if the Lai_Code is generated, always inline them.
+  // This is handled by ...
+  OPT_Inline_Divide = FALSE;
+
   // Overwrite some WOPT defaults:
   // do not allow minmax opcode
   WOPT_Enable_MINMAX = FALSE;
   // do not allow the test expression optimization, st100 has
   // hardware loop counters
   WOPT_Enable_LFTR2 = FALSE;
+
+  // Overwrite some CG defaults:
+  Enable_CG_Peephole = FALSE;
 
   return;
 }

@@ -211,17 +211,17 @@ extern BOOL FP_packed_arithmetic;
  * TODO: should depend on circumstances ?
  */
 inline INT TARG_Access_Bytes (void) { return 4; }
-/* #define ACCESS_BYTES 4 */
+// #define ACCESS_BYTES 4
 
-/* Perhaps this is obsolete ? */
-#define INST_BYTES 16
+// This is defined in the targ_isa_bundle.h now
+//#define INST_BYTES 8
 
 /* For now only the GP32 code generation is supported.
  * 2 GP32 instructions are considered to form a bundle of 2
  * and the size is 8.
  * TODO: in general this depends on the ISA mode used.
  */
-inline INT TARG_Inst_Bytes (void) { return 8; }
+//inline INT TARG_Inst_Bytes (void) { return 8; }
 inline INT TARG_Text_Alignment (void) { return 8; }
 
 #ifdef __cplusplus
