@@ -1,0 +1,2 @@
+ -> main loop with CVSROOT=:ext:gnx1380.gnb.st.com:/apa/comp/.cvsroot
+ -> Starting server: rsh gnx1380.gnb.st.com cvs server 
