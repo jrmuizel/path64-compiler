@@ -624,11 +624,13 @@ LAO_setMemoryDependences(BB* bb, LoopInfo loopinfo) {
 
 // Make a LAO LoopInfo from the BB_List supplied.
 static LoopInfo
-LAO_makeLoopInfo(BB_List& bb_list, bool cyclic) {
+LAO_makeLoopInfo(BB_List& bb_list, bool cyclic, CodeRegion coderegion) {
   void *pointer = NULL;		// Parameter for CG_DEP_Delete_Graph.
-  LoopInfo loopinfo = NULL;	// FIXME
+  BB *bb = bb_list.front();
+  LABEL_IDX label_idx = Gen_Label_For_BB(bb);
+  Label label = Interface_makeLabel(interface, label_idx, LABEL_name(label_idx));
+  LoopInfo loopinfo = CodeRegion_makeLoopInfo(coderegion, label);
   if (bb_list.size() == 1) {
-    BB *bb = bb_list.front();
     CG_DEP_Compute_Graph(bb,
 	false,	// assigned_regs
 	cyclic,	// compute_cyclic
@@ -683,7 +685,7 @@ LAO_optimize(BB_List &entryBBs, BB_List &innerBBs, BB_List &exitBBs, unsigned la
   CodeRegion coderegion = LAO_makeCodeRegion(entryBBs, innerBBs, exitBBs);
   //
   bool cyclic = lao_actions & LAO_LoopSchedule || lao_actions & LAO_LoopPipeline;
-  LoopInfo loopinfo = LAO_makeLoopInfo(innerBBs, cyclic);
+  LoopInfo loopinfo = LAO_makeLoopInfo(innerBBs, cyclic, coderegion);
   //
   result = CodeRegion_optimize(coderegion, lao_actions);
   //
@@ -697,6 +699,9 @@ bool
 LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
   BB_List entryBBs, innerBBs, exitBBs;
   bool result = false;
+  //
+  //bool has_trip_count = CG_LOOP_Trip_Count(loop) != NULL;
+  //fprintf(stderr, "LAO_optimize: has_trip_count=%d\n", has_trip_count);
   //
   if (BB_innermost(LOOP_DESCR_loophead(loop))) {
     // Create a prolog and epilog for the region when possible.
