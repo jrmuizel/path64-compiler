@@ -80,11 +80,13 @@
 #include "eh_region.h"
 #include "label_util.h"
 #include "tag.h"
+#include "localize.h"
+#include "gra_live.h"
 
 #include "lai.h"
 #include "calls.h"
 #include "cgtarget.h"
-#include "expand.h"
+#include "cgexp.h"
 #include "emit.h"
 
 MEM_POOL MEM_local_region_pool;	/* allocations local to processing a region */
@@ -95,7 +97,7 @@ BOOL Trace_REGION_Interface = FALSE;
 BOOL PU_Has_Calls;
 BOOL PU_References_GP;
 
-BOOL LAI_PU_Has_Feedback;
+BOOL CG_PU_Has_Feedback;
 
 RID *Current_Rid;
 
@@ -131,6 +133,9 @@ LAI_PU_Initialize (
 			   pu_num > CG_skip_after  ||
 			   pu_num == CG_skip_equal) ? 0 : Opt_Level);
   pu_num++;
+
+  Reuse_Temp_TNs = (CG_opt_level == 0);
+  if (Get_Trace (TP_CGEXP, 1024)) Reuse_Temp_TNs = FALSE;
 
   CGTARG_Initialize();
   BB_PU_Initialize ();
@@ -306,6 +311,7 @@ LAI_Emit_Code(
     BOOL region )
 {
 /*later:  BOOL region = DST_IS_NULL(pu_dst); */
+  BOOL orig_reuse_temp_tns = Reuse_Temp_TNs;
 
   Alias_Manager = alias_mgr;
 
@@ -313,9 +319,9 @@ LAI_Emit_Code(
   Start_Timer(T_CodeGen_CU);
 
   // Use of feedback information can be disabled in CG using the 
-  // -CG:enable_feedback=off flag. The flag LAI_PU_Has_Feedback is used
+  // -CG:enable_feedback=off flag. The flag CG_PU_Has_Feedback is used
   // all over CG instead of Cur_PU_Feedback for this reason.
-  LAI_PU_Has_Feedback = ((Cur_PU_Feedback != NULL) && LAI_enable_feedback);
+  CG_PU_Has_Feedback = ((Cur_PU_Feedback != NULL) && LAI_enable_feedback);
 
   LAI_Region_Initialize (rwn, alias_mgr);
 
@@ -334,7 +340,7 @@ LAI_Emit_Code(
 
   // If using feedback, incorporate into the CFG as early as possible.
   // This phase also fills in any missing feedback using heuristics.
-  if (LAI_PU_Has_Feedback) {
+  if (CG_PU_Has_Feedback) {
     Set_Error_Phase ("FREQ");
     Start_Timer (T_Freq_CU);
     FREQ_Incorporate_Feedback ( rwn );
@@ -346,12 +352,171 @@ LAI_Emit_Code(
   /* do it later ...
   Optimize_Tail_Calls( Get_Current_PU_ST() );
   */
+
   Init_Callee_Saved_Regs_for_REGION(Get_Current_PU_ST(), region);
   Generate_Entry_Exit_Code (Get_Current_PU_ST(), region);
-
   Stop_Timer (T_Expand_CU);
   Check_for_Dump (TP_CGEXP, NULL);
 
+  if (CG_localize_tns) {
+    /* turn all global TNs into local TNs */
+    Set_Error_Phase ( "Localize" );
+    Start_Timer ( T_Localize_CU );
+    Localize_Any_Global_TNs(region ? REGION_get_rid( rwn ) : NULL);
+    Stop_Timer ( T_Localize_CU );
+    Check_for_Dump ( TP_LOCALIZE, NULL );
+  } else {
+    /* Initialize liveness info for new parts of the REGION */
+    /* also compute global liveness for the REGION */
+    Set_Error_Phase( "Global Live Range Analysis");
+    Start_Timer( T_GLRA_CU );
+    GRA_LIVE_Init(region ? REGION_get_rid( rwn ) : NULL);
+    Stop_Timer ( T_GLRA_CU );
+    Check_for_Dump ( TP_FIND_GLOB, NULL );
+  }
+
+  if (Enable_CG_Peephole) {
+    Set_Error_Phase("Extended Block Optimizer");
+    Start_Timer(T_EBO_CU);
+    //    EBO_Pre_Process_Region (region ? REGION_get_rid(rwn) : NULL);
+    Stop_Timer ( T_EBO_CU );
+    Check_for_Dump ( TP_EBO, NULL );
+  }
+
+  // Optimize control flow (first pass)
+  if (CG_opt_level > 0 && CFLOW_opt_before_cgprep) {
+    // Perform all the optimizations that make things more simple.
+    // Reordering doesn't have that property.
+    //    CFLOW_Optimize(  (CFLOW_ALL_OPTS|CFLOW_IN_CGPREP)
+    //		   & ~(CFLOW_FREQ_ORDER | CFLOW_REORDER),
+    //		   "CFLOW (first pass)");
+  //    if (frequency_verify && CG_PU_Has_Feedback)
+  //      FREQ_Verify("CFLOW (first pass)");
+  }
+
+  // Invoke global optimizations before register allocation at -O2 and above.
+  if (CG_opt_level > 1) {
+
+    // Compute frequencies using heuristics when not using feedback.
+    // It is important to do this after the code has been given a
+    // cleanup by cflow so that it more closely resembles what it will
+    // to the later phases of cg.
+    if (!CG_PU_Has_Feedback) {
+      Set_Error_Phase("FREQ");
+      Start_Timer (T_Freq_CU);
+      //      FREQ_Compute_BB_Frequencies();
+      Stop_Timer (T_Freq_CU);
+      //      if (frequency_verify)
+      //	FREQ_Verify("Heuristic Frequency Computation");
+    }
+
+    // Perform hyperblock formation (if-conversion).  Only works for
+    // IA-64 at the moment. 
+    //
+    if (CGTARG_Can_Predicate()) {
+      // Initialize the predicate query system in the hyperblock 
+      // formation phase
+      //      HB_Form_Hyperblocks(region ? REGION_get_rid(rwn) : NULL, NULL);
+      //      if (!PQSCG_pqs_valid()) {
+      //	PQSCG_reinit(REGION_First_BB);
+      //      }
+      //      if (frequency_verify)
+      //	FREQ_Verify("Hyberblock Formation");
+    }
+    
+    if (CG_enable_loop_optimizations) {
+      Set_Error_Phase("CGLOOP");
+      Start_Timer(T_Loop_CU);
+      // Optimize loops (mostly innermost)
+      //      Perform_Loop_Optimizations();
+      // detect GTN
+      //      GRA_LIVE_Recalc_Liveness(region ? REGION_get_rid( rwn) : NULL);	
+      //      GRA_LIVE_Rename_TNs();  // rename TNs -- required by LRA
+      Stop_Timer(T_Loop_CU);
+      Check_for_Dump(TP_CGLOOP, NULL);
+      //      if (frequency_verify)
+      //	FREQ_Verify("CGLOOP");
+    }
+
+    /* Optimize control flow (second pass) */
+    if (CFLOW_opt_after_cgprep) {
+      //      CFLOW_Optimize(CFLOW_ALL_OPTS, "CFLOW (second pass)");
+      //      if (frequency_verify)
+      //	FREQ_Verify("CFLOW (second pass)");
+    }
+
+    if (Enable_CG_Peephole) {
+      Set_Error_Phase( "Extended Block Optimizer");
+      Start_Timer( T_EBO_CU );
+      //      EBO_Process_Region (region ? REGION_get_rid(rwn) : NULL);
+      //      PQSCG_reinit(REGION_First_BB);
+      Stop_Timer ( T_EBO_CU );
+      Check_for_Dump ( TP_EBO, NULL );
+    }
+  }
+
+  if (!Get_Trace (TP_CGEXP, 1024))
+	Reuse_Temp_TNs = TRUE;	/* for spills */
+
+  //  if (CGSPILL_Enable_Force_Rematerialization)
+    //    CGSPILL_Force_Rematerialization();
+
+  if (!region) {
+    /* in case cgprep introduced a gp reference */
+    Adjust_GP_Setup_Code( Get_Current_PU_ST(), FALSE /* allocate registers */ );
+    /* in case cgprep introduced a lc reference */
+    //    Adjust_LC_Setup_Code();
+
+    // TODO:  when generate control speculation (ld.s) and st8.spill
+    // of NaT bits, then need to save and restore ar.unat. 
+  }
+
+  /* Global register allocation, Scheduling:
+   *
+   * The overall algorithm is as follows:
+   *   - Global code motion before register allocation
+   *   - Local scheduling before register allocation
+   *   - Global register allocation
+   *   - Local register allocation
+   *   - Global code motion phase (GCM) 
+   *   - Local scheduling after register allocation
+   */
+
+  //  IGLS_Schedule_Region (TRUE /* before register allocation */);
+
+  if (!CG_localize_tns)
+  {
+    // Earlier phases (esp. GCM) might have introduced local definitions
+    // and uses for global TNs. Rename them to local TNs so that GRA 
+    // does not have to deal with them.
+
+    if (GRA_recalc_liveness) {
+      Start_Timer( T_GLRA_CU);
+      GRA_LIVE_Recalc_Liveness(region ? REGION_get_rid( rwn) : NULL);
+      Stop_Timer ( T_GLRA_CU );
+      Check_for_Dump (TP_FIND_GLOB, NULL);
+    } else {
+      GRA_LIVE_Rename_TNs ();
+    }
+
+    if (GRA_redo_liveness) {
+      Start_Timer( T_GLRA_CU );
+      GRA_LIVE_Init(region ? REGION_get_rid( rwn ) : NULL);
+      Stop_Timer ( T_GLRA_CU );
+      Check_for_Dump ( TP_FIND_GLOB, NULL );
+    }
+
+    //    GRA_Allocate_Global_Registers( region );
+  }
+
+  //  LRA_Allocate_Registers (!region);
+
+  if (!CG_localize_tns ) {
+    Set_Error_Phase ( "GRA_Finish" );
+    /* Done with all grant information */
+    //    GRA_Finalize_Grants();
+  }
+ 
   if (!region) {
     /* Check that we didn't introduce a new gp reference */
     Adjust_GP_Setup_Code( Get_Current_PU_ST(), FALSE);
@@ -365,6 +530,18 @@ LAI_Emit_Code(
     Set_Error_Phase ("Final SP adjustment");
     Adjust_Entry_Exit_Code (Get_Current_PU_ST());
   }
+
+  if (Enable_CG_Peephole) {
+    Set_Error_Phase("Extended Block Optimizer");
+    Start_Timer(T_EBO_CU);
+    //    EBO_Post_Process_Region (region ? REGION_get_rid(rwn) : NULL);
+    Stop_Timer ( T_EBO_CU );
+    Check_for_Dump ( TP_EBO, NULL );
+  }
+
+  //  IGLS_Schedule_Region (FALSE /* after register allocation */);
+
+  Reuse_Temp_TNs = orig_reuse_temp_tns;		/* restore */
 
   if (region) {
     /*--------------------------------------------------------------------*/

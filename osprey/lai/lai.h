@@ -59,7 +59,7 @@
 #include "symtab.h"
 #include "tn_map.h"
 
-#include "lai_flags.h"
+#include "cg_flags.h"
 
 extern TN_MAP TN_To_PREG_Map;
 
@@ -71,7 +71,7 @@ struct bb;
 extern BOOL PU_Has_Calls;
 extern BOOL PU_References_GP;
 
-extern BOOL LAI_PU_Has_Feedback;
+extern BOOL CG_PU_Has_Feedback;
 
 /* WOPT alias manager */
 extern struct ALIAS_MANAGER *Alias_Manager;

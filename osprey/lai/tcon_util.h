@@ -50,7 +50,7 @@
  *        section, each TCON has a label emitted with its
  *        symbolic name.
  *
- *   NOTE: This file should only be included by the lai/expand.h
+ *   NOTE: This file should only be included by the lai/cgexp.h
  * ====================================================================
  */
 

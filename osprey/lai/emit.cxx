@@ -79,7 +79,7 @@
 #include "whirl2ops.h"		   /* for Get_WN_From_Memory_OP */
 #include "lai.h"
 #include "calls.h"                 /* for Frame_Len */
-#include "expand.h"                /* for Exp_Simulated_OP */
+#include "cgexp.h"                /* for Exp_Simulated_OP */
 
 #include "cg_targ.h"
 
