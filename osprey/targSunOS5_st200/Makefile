@@ -69,13 +69,13 @@ TOOL_SUBDIRS = \
 	be \
 	lai \
 	wopt \
-	driver \
-	lw_inline
+	lno \
+        ipl    \
+	lw_inline \
+        whirl2c \
+	driver 
 
-#        ipl    \
-#        whirl2c \
 #        ir_tools 
-#	lno
 #	dwarfdump \
 #	elfdump \
 #	whirl2f \
@@ -87,6 +87,6 @@ default install clean clobber:
 	@for d in $(SUBDIRS); do \
 	    if [ -d $$d ] ; then \
 	    	echo "===> cd $$d; $(MAKE) $@"; \
-	    	cd $$d; $(MAKE) $@; cd ..; \
+	    	cd $$d; $(MAKE) $@; if [ $$? != 0 ] ; then exit 1; fi; cd ..; \
 	    fi; \
 	done
