@@ -512,6 +512,11 @@ Configure_Target ()
     }
   }
 
+  /*
+   * Do not use the extract/compose whirl ops
+   */
+  Enable_extract_compose=FALSE;
+
 #if defined(BACK_END)
   Init_Targ_Sim();	/* must be done before initialize_stack_frame */
 #endif
