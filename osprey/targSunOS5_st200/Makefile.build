@@ -33,9 +33,7 @@ BUILD_INSTALL  = DEFAULT
 BUILD_COMPILER = GNU
 
 # Use ccache to compile ?
-BUILD_CCACHE = CCACHE
-CCACHE_DIR = /work1/bd3/.ccache
-export CCACHE_DIR
+#BUILD_CCACHE = CCACHE
 
 # Build LAO support ?
 LAO_ENABLED=1
