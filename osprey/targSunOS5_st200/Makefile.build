@@ -34,3 +34,6 @@ BUILD_COMPILER = GNU
 
 # Use ccache to compile ?
 #BUILD_CCACHE = CCACHE
+
+# Build LAO support ?
+LAO_ENABLED=1

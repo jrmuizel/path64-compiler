@@ -2,14 +2,14 @@
 /*-------------------- CGIR Imports --------------------------------------*/
 #include "cgtarget.h"
 
-/*-------------------- LAO effective CSD enumerations --------------------*/
-#ifdef __cplusplus
+/*-------------------- LAO Target definitions --------------------*/
 extern "C" {
-#endif
-#include "CSD.e"
-#ifdef __cplusplus
+#define this THIS
+#define operator OPERATOR
+#include "LAO_Target.h"
+#undef operator
+#undef this
 }
-#endif
 
 #include "targ_cgir_lao.h"
 
