@@ -43,6 +43,8 @@ static const char *asmname(TOP topcode)
   default: break; 
   } 
 
+  c = name[0];
+
   for (i = 0; c != '\0'; ++i) { 
     c = name[i]; 
     if (c == '_') { 
