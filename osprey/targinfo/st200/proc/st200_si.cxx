@@ -496,14 +496,29 @@ main (int argc, char *argv[])
   ///////////////////////////////////////// 
 
   Instruction_Group("simulated", 
-		 TOP_asm, 
 		 TOP_spadjust, 
 		 TOP_UNDEFINED); 
 
-  Any_Result_Available_Time(1); 
-  Any_Operand_Access_Time(0); 
+  Any_Result_Available_Time(3); 
+  Any_Operand_Access_Time(2); 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_INT, 0); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class asm 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("asm", 
+		 TOP_asm, 
+		 TOP_UNDEFINED); 
+
+  Any_Result_Available_Time(3); 
+  Any_Operand_Access_Time(2); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
 
 
   ///////////////////////////////////////// 
@@ -683,14 +698,29 @@ main (int argc, char *argv[])
   ///////////////////////////////////////// 
 
   Instruction_Group("simulated", 
-		 TOP_asm, 
 		 TOP_spadjust, 
 		 TOP_UNDEFINED); 
 
-  Any_Result_Available_Time(1); 
-  Any_Operand_Access_Time(0); 
+  Any_Result_Available_Time(3); 
+  Any_Operand_Access_Time(2); 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_INT, 0); 
+
+
+  ///////////////////////////////////////// 
+  //   Instructions for Scd Class asm 
+  ///////////////////////////////////////// 
+
+  Instruction_Group("asm", 
+		 TOP_asm, 
+		 TOP_UNDEFINED); 
+
+  Any_Result_Available_Time(3); 
+  Any_Operand_Access_Time(2); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
 
 
   ///////////////////////////////////////// 
