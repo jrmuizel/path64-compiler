@@ -2523,7 +2523,7 @@ CONTINUE:
 #	printf STDOUT "trying signature %s\n", $signature;
 
 	# push %s for name in the format
-	push (@instr, "\t%s");
+	push (@instr, "%s");
 
 	my $i = 0;
 	foreach my $elt (@pattern) {
@@ -2544,7 +2544,7 @@ CONTINUE:
 	# print print group header
 	print $PRNT_F "  /* ================================= */ \n";
 	print $PRNT_F "  ISA_PRINT_TYPE print_$count; \n";
-	print $PRNT_F "  print_$count = ISA_Print_Type_Create(\"print_$count\", \"c0$new_ft\"); \n";
+	print $PRNT_F "  print_$count = ISA_Print_Type_Create(\"print_$count\", \"$new_ft\"); \n";
 
 	printf $PRNT_F "  Name(); \n", "%s";
 
