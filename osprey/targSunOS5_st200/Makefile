@@ -89,6 +89,7 @@ local: $(addprefix local_,$(SUBDIRS))
 install: $(addprefix install_,$(SUBDIRS))
 clean: $(addprefix clean_,$(SUBDIRS))
 clobber: $(addprefix clobber_,$(SUBDIRS))
+last: $(addprefix last_,$(SUBDIRS))
 
 clean_%:
 	$(MAKE) -C $* clean
@@ -100,6 +101,8 @@ local_%:
 	$(MAKE) -C $* local
 install_%:
 	$(MAKE) -C $* install
+last_%:
+	$(MAKE) -C $* last
 
 
 # Dependencies
