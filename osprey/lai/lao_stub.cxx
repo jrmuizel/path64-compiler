@@ -766,6 +766,39 @@ fprintf(TFile, "HB_optimize\n");
   return result;
 }
 
+// Optimize a function through the LAO.
+bool
+LAO_optimize(unsigned lao_actions) {
+  BB_List entryBBs, innerBBs, exitBBs;
+  BBLIST *bl;
+  BB *bp;
+  int predCount, succCount;
+  bool result = false;
+  //
+  for (bp = REGION_First_BB; bp; bp = BB_next(bp)) {
+    predCount = 0;
+    FOR_ALL_BB_PREDS (bp, bl) {
+      predCount ++;
+    }
+    succCount = 0;
+    FOR_ALL_BB_SUCCS (bp, bl) {
+      succCount ++;
+    }
+    if (predCount == 0) {
+      entryBBs.push_back(bp);
+    }
+    else if (succCount == 0) {
+      exitBBs.push_back(bp);
+    }
+    else
+      innerBBs.push_back(bp);
+  }
+  //
+  result = LAO_optimize(entryBBs, innerBBs, exitBBs, lao_actions);
+  //
+  return result;
+}
+
 /*-------------------------- CGIR Print Functions ----------------------------*/
 
 typedef struct OP_list {
