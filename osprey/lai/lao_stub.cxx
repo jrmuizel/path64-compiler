@@ -70,6 +70,18 @@ extern "C" {
 
 typedef vector<BB*> BB_VECTOR;
 
+static BB * LAO_createBB(BB *bbprev);
+static void LAO_clearOPs(BB *bb);
+static void LAO_appendOperation(BB *bb, OP *operation);
+static OP * LAO_makeOperation(Operator oper, int argCount, int resCount, TN *argTNs[], TN *resTNs[]);
+static OP * LAO_duplicateOP(OP *operation);
+static void LAO_updateOperator(OP *operation, Operator oper);
+static void LAO_updateArgument(OP *operation, int index, TN *tn);
+static void LAO_updateResult(OP *operation, int index, TN *tn);
+static TN * LAO_makeDedicatedTN(Register reg);
+static TN * LAO_makePseudoRegTN(RegClass regclass);
+static TN * LAO_makeAbsoluteTN(int64_t value);
+
 /*--------------------------- LAO_INIT / LAO_FINI ----------------------------*/
 
 // Initialization of the LAO, needs to be called once.
@@ -346,6 +358,18 @@ LAO_INIT() {
     IRC__RegClass[ISA_REGISTER_CLASS_branch] = RegClass_BRC;
     // initialize MEM_lao_pool
     MEM_POOL_Initialize ( &MEM_lao_pool, "lao_stub_pool", false );
+
+    Interface_LAO_createBB = LAO_createBB;
+    Interface_LAO_clearOPs = LAO_clearOPs;
+    Interface_LAO_appendOperation = LAO_appendOperation;
+    Interface_LAO_makeOperation = LAO_makeOperation;
+    Interface_LAO_duplicateOP = LAO_duplicateOP;
+    Interface_LAO_updateOperator = LAO_updateOperator;
+    Interface_LAO_updateArgument = LAO_updateArgument;
+    Interface_LAO_updateResult = LAO_updateResult;
+    Interface_LAO_makeDedicatedTN = LAO_makeDedicatedTN;
+    Interface_LAO_makePseudoRegTN = LAO_makePseudoRegTN;
+    Interface_LAO_makeAbsoluteTN = LAO_makeAbsoluteTN;
   }
 }
 
@@ -369,6 +393,14 @@ LAO_TOP_Operator(TOP top) {
   Is_True(top >= 0 && top < TOP_UNDEFINED, ("TOPcode out of range"));
   Is_True(lao_operator != Operator_, ("Cannot map TOPcode to Operator"));
   return lao_operator;
+}
+
+// Convert LAO Operator to CGIR TOP.
+static inline TOP
+TOP_LAO_Operator(Operator oper) {
+  for (int i = 0; i < TOP_UNDEFINED; i ++)
+    if (TOP__Operator[i] == oper) return (TOP)i;
+  return TOP_UNDEFINED;
 }
 
 // Convert CGIR ISA_ENUM_CLASS to LAO Modifier.
@@ -398,6 +430,14 @@ LAO_IRC_RegClass(ISA_REGISTER_CLASS irc) {
   return lao_regclass;
 }
 
+// Convert LAO RegClass to CGIR ISA_REGISTER_CLASS.
+static inline ISA_REGISTER_CLASS
+IRC_LAO_RegClass(RegClass lao_regclass) {
+  for (int i = ISA_REGISTER_CLASS_MIN; i <= ISA_REGISTER_CLASS_MAX; i++)
+    if (IRC__RegClass[i] == lao_regclass) return (ISA_REGISTER_CLASS)i;
+  return ISA_REGISTER_CLASS_UNDEFINED;
+}
+
 // Convert CGIR CLASS_REG_PAIR to LAO Register.
 static inline Register
 LAO_CRP_Register(CLASS_REG_PAIR crp) {
@@ -406,6 +446,18 @@ LAO_CRP_Register(CLASS_REG_PAIR crp) {
   RegClass regclass = LAO_IRC_RegClass(irc);
   Register lowreg = RegClass_getLowReg(regclass);
   return (Register)(lowreg + (reg - 1));
+}
+
+// Convert LAO Register to CGIR CLASS_REG_PAIR.
+static inline CLASS_REG_PAIR
+CRP_LAO_Register(Register registre) {
+  RegClass regclass = Register_getRegClass(registre);
+  Register lowreg = RegClass_getLowReg(regclass);
+  ISA_REGISTER_CLASS irc = IRC_LAO_RegClass(regclass);
+  REGISTER reg = (registre - lowreg) + 1;
+  CLASS_REG_PAIR crp;
+  Set_CLASS_REG_PAIR(crp, irc, reg);
+  return crp;
 }
 
 // Convert CGIR TN to LAO TempName.
@@ -461,9 +513,12 @@ LAO_TN_TempName(TN *tn) {
   return tempname;
 }
 
+static void LAO_printOP ( const OP *op );
+
 // Convert CGIR OP to LAO Operation.
 static Operation
 LAO_OP_Operation(OP *op) {
+  LAO_printOP(op); fprintf(TFile, "\n");
   Operation operation = Interface_getOperation(interface, op);
   if (operation == NULL) {
     int argCount = OP_opnds(op);
@@ -669,6 +724,72 @@ LAO_makeLoopInfo(BB_List& bb_list, bool cyclic, CodeRegion coderegion) {
   return loopinfo;
 }
 
+/*-------------------------- LAO-CGIR Interface Functions ----------------------------*/
+
+static BB *
+LAO_createBB(BB *bbprev) {
+  BB *bbnew;
+  Is_True(bbprev != NULL, ("No bb to insert after"));
+  bbnew = Gen_And_Insert_BB_After(bbprev);
+  return bbnew;
+}
+
+static void
+LAO_clearOPs(BB *bb) {
+  BB_Remove_All(bb);
+}
+
+static void
+LAO_appendOperation(BB *bb, OP *operation) {
+  BB_Append_Op(bb, operation);
+}
+
+static OP *
+LAO_makeOperation(Operator oper, int argCount, int resCount, TN *argTNs[], TN *resTNs[]) {
+  return Mk_VarOP(TOP_LAO_Operator(oper), resCount, argCount, resTNs, argTNs);
+}
+
+static OP *
+LAO_duplicateOP(OP *operation) {
+  return Dup_OP(operation);
+}
+
+static void
+LAO_updateOperator(OP *operation, Operator oper) {
+  if (LAO_TOP_Operator(OP_code(operation)) != oper)
+    OP_Change_Opcode(operation, TOP_LAO_Operator(oper));
+}
+
+static void
+LAO_updateArgument(OP *operation, int index, TN *tn) {
+  if (OP_opnd(operation, index) != tn)
+    Set_OP_opnd(operation, index, tn);
+}
+
+static void
+LAO_updateResult(OP *operation, int index, TN *tn) {
+  if (OP_result(operation, index) != tn)
+    Set_OP_result(operation, index, tn);
+}
+
+static TN *
+LAO_makeDedicatedTN(Register reg) {
+  return Build_Dedicated_TN(CLASS_REG_PAIR_rclass(CRP_LAO_Register(reg)), CLASS_REG_PAIR_reg(CRP_LAO_Register(reg)), 0);
+}
+
+static TN *
+LAO_makePseudoRegTN(RegClass regclass) {
+  // TBD: Give a correct size.
+  return Gen_Register_TN(IRC_LAO_RegClass(regclass), 0);
+}
+
+static TN *
+LAO_makeAbsoluteTN(int64_t value) {
+  int size;
+  size = (value >= (int64_t)0x80000000 && value <= (int64_t)0x7FFFFFFF) ? 4 : 8;
+  return Gen_Literal_TN(value, size);
+}
+
 /*----------------------- LAO Optimization Functions -------------------------*/
 
 static void LAO_printCGIR();
@@ -698,6 +819,9 @@ LAO_optimize(BB_List &entryBBs, BB_List &innerBBs, BB_List &exitBBs, unsigned la
   LoopInfo loopinfo = LAO_makeLoopInfo(innerBBs, cyclic, coderegion);
   //
   result = CodeRegion_optimize(coderegion, lao_actions);
+  //
+  CodeRegion_updateCGIR(coderegion);
+  if (getenv("PRINT")) LAO_printCGIR();
   //
   Interface_close(interface);
   //
@@ -787,6 +911,7 @@ LAO_optimize(HB *hb, unsigned lao_actions) {
 // Optimize a function through the LAO.
 bool
 LAO_optimize(unsigned lao_actions) {
+fprintf(TFile, "Function_optimize\n");
   BB_List entryBBs, innerBBs, exitBBs;
   BBLIST *bl;
   BB *bp;
