@@ -8,17 +8,17 @@ extern "C" {
 
 /*-------------------- Init/Fini --------------------------------*/
 /* Need to be called only once per process execution. */
-extern void TARG_CGIR_LAI_Init(void);
-extern void TARG_CGIR_LAI_Fini(void);
+extern void CGIR_LAI_Init(void);
+extern void CGIR_LAI_Fini(void);
 
 /*-------------------- CGIR -> LIR Conversions ------------------*/
-extern LAI_Operator TARG_CGIR_TOP_to_Operator(TOP top);
-extern LAI_Operator TARG_CGIR_TOP_to_Operator(TOP top);
-extern LAI_Register TARG_CGIR_CRP_to_Register(CLASS_REG_PAIR crp);
-extern LAI_RegClass TARG_CGIR_IRC_to_RegClass(ISA_REGISTER_CLASS irc);
-extern LAI_Immediate TARG_CGIR_LC_to_Immediate(ISA_LIT_CLASS ilc);
-extern LAI_Modifier TARG_CGIR_IEC_to_Modifier(ISA_ENUM_CLASS iec);
-extern LAI_InstrMode TARG_CGIR_IS_to_InstrMode(ISA_SUBSET is);
+extern LAI_Operator CGIR_TOP_to_Operator(TOP top);
+extern LAI_Operator CGIR_TOP_to_Operator(TOP top);
+extern LAI_Register CGIR_CRP_to_Register(CLASS_REG_PAIR crp);
+extern LAI_RegClass CGIR_IRC_to_RegClass(ISA_REGISTER_CLASS irc);
+extern LAI_Immediate CGIR_LC_to_Immediate(ISA_LIT_CLASS ilc);
+extern LAI_Modifier CGIR_IEC_to_Modifier(ISA_ENUM_CLASS iec);
+extern LAI_InstrMode CGIR_IS_to_InstrMode(ISA_SUBSET is);
 
 /*-------------------- LIR -> CGIR Conversions ------------------*/
 extern ISA_REGISTER_CLASS TARG_RegClass_to_CGIR_IRC(LAI_RegClass regClass);
