@@ -15,8 +15,6 @@
 #include "erglob.h"
 #include "tracing.h"
 
-#include "dso.h"
-
 #include "lao_stub.h"
 
 extern "C" {
@@ -49,8 +47,6 @@ static MEM_POOL MEM_lao_pool;
 
 // Hash table to map CGIR TNs to LAO TempNames.
 static hTN_MAP TN2LIR_map;
-
-static bool loaded_LAO_so = FALSE;
 
 // Variable used to skip multiple LAO_INIT / LAO_FINI calls
 static int LAO_initialized = 0;
@@ -683,7 +679,7 @@ REGION_convert2LIR ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs ) {
     }
   }
 
-  return NULL;
+  return coderegion;
 }
 
 static void LAOS_printBB (BB *bp);
@@ -719,18 +715,11 @@ bool LAO_scheduleRegion ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs , LAO_S
 }
 
 bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
-  LOOP_DESCR *loop; // = cl.loop();
+  LOOP_DESCR *loop = cl.Loop();
   BB *bb;
   BB **entryBBs, **exitBBs, **regionBBs;
   int entryIdx, regionIdx, exitIdx;
   bool res;
-
-  if (loaded_LAO_so == FALSE) {
-    load_so("libLIR2.so", CG_Path, FALSE); // Show_Progress);
-    load_so("libCSD.so", CG_Path, FALSE); // Show_Progress);
-    load_so("libCCL.so", CG_Path, FALSE); // Show_Progress);
-    loaded_LAO_so = TRUE;
-  }
 
   fprintf(TFile, "---- Before LAO schedule loop ----\n");
   fprintf(TFile, "     ----- LOOP id %2d -----\n", BB_id(LOOP_DESCR_loophead(loop)));
@@ -741,8 +730,8 @@ bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
   entryIdx = regionIdx = exitIdx = 0;
 
   entryBBs  = (BB **)alloca(sizeof(BB *)*2);
-  exitBBs   = (BB **)alloca(sizeof(BB *)*3);
-  regionBBs = (BB **)alloca(sizeof(BB *)*2);
+  exitBBs   = (BB **)alloca(sizeof(BB *)*2);
+  regionBBs = (BB **)alloca(sizeof(BB *)*4);
 
   entryBBs[entryIdx++] = regionBBs[regionIdx++] = CG_LOOP_prolog;
   regionBBs[regionIdx++] = LOOP_DESCR_loophead(loop);
