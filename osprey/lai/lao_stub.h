@@ -43,6 +43,10 @@ LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions);
 bool
 LAO_optimize(HB *hb, unsigned lao_actions);
 
+// Optimize a Function through the LAO.
+bool
+LAO_optimize(unsigned lao_actions);
+
 
 // Must be IDENTICAL to enum LOOP_OPT_ACTION in lai/cg_loop.cxx
 enum LAO_SWP_ACTION {
