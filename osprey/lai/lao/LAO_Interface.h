@@ -177,44 +177,47 @@ RegionTypeNAME[];
 */
 
 /*!
-  OptimizationPass -- Enumerate the LAO optimization phases.
+  Optimization -- Enumerate the LAO optimization phases.
 */
 typedef enum {
   Optimization_Linearize = 0x1,
-  Optimization_PostSched = 0x2,
+  Optimization_PostPass = 0x2,
   Optimization_RegAlloc = 0x4,
-  Optimization_PreSched = 0x8,
+  Optimization_PrePass = 0x8,
   Optimization_LoopUnwind = 0x10,
   Optimization_LoopUnroll = 0x20,
   Optimization_EnableSSA = 0x40,
+  Optimization_EnablePFA = 0x80,
   Optimization_StartBlock = 0x100,
   Optimization_StopBlock = 0x200,
   Optimization_Localize = 0x400,
-  // Used to force passing through interface
+  // Used to force activation of the LAO interface.
   Optimization_Force_PostPass = 0x1000,
   Optimization_Force_RegAlloc = 0x2000,
   Optimization_Force_PrePass = 0x4000
-} OptimizationPass;
+} Optimization;
 const char *
-OptimizationPassNAMES(unsigned phases);
+OptimizationNAMES(unsigned phases);
 
 /*!
-  OptimizationPrePass_Mask -- Mask of optimizations allowed in prepass.
+  Optimization_PrePass_Mask -- Mask of optimizations allowed in prepass.
 */
-#define Optimization_PrePass_Mask ( Optimization_PreSched | Optimization_LoopUnwind | Optimization_LoopUnroll | Optimization_EnableSSA | Optimization_StartBlock | Optimization_StopBlock | Optimization_Force_PrePass | 0)
+#define Optimization_PrePass_Mask ( Optimization_PrePass | Optimization_LoopUnwind | Optimization_LoopUnroll | Optimization_EnableSSA | Optimization_EnablePFA | Optimization_StartBlock | Optimization_StopBlock | Optimization_Force_PrePass | 0)
 /*!
-  OptimizationRegAlloc_Mask -- Mask of optimization allowed in regalloc pass.
+  Optimization_RegAlloc_Mask -- Mask of optimization allowed in regalloc pass.
 */
-#define Optimization_RegAlloc_Mask ( Optimization_RegAlloc | Optimization_Localize | Optimization_Force_RegAlloc | 0)
+#define Optimization_RegAlloc_Mask ( Optimization_RegAlloc | Optimization_Localize | Optimization_StartBlock | Optimization_StopBlock | Optimization_Force_RegAlloc | 0)
+
+
 
 
 
 
 
 /*!
-  OptimizationPostPass_Mask -- Mask of optimization allowed in postpass.
+  Optimization_PostPass_Mask -- Mask of optimization allowed in postpass.
 */
-#define Optimization_PostPass_Mask ( Optimization_PostSched | Optimization_Force_PostPass | 0)
+#define Optimization_PostPass_Mask ( Optimization_PostPass | Optimization_StartBlock | Optimization_StopBlock | Optimization_Force_PostPass | 0)
 #define __CONFIGURATION_E__ 
 
 /*!
@@ -233,60 +236,60 @@ OptimizationPassNAMES(unsigned phases);
   ConfigurationItem -- Enumerate the Configuration items.
   @par
   Each ConfigurationItem can have a negative value, meaning that the value should be
-  ignored. Each Configuration_Control can have a zero value, meaning that the
+  ignored. Each ConfigurationItem_Control can have a zero value, meaning that the
   corresponding assertion is at the safest level.
 */
 typedef enum {
-  Configuration_LogMaxBBOC, //!< Log2 of maximum operation count in a BasicBlock.
-  Configuration_RegionType, //!< RegionType for instruction scheduling.
+  ConfigurationItem_LogMaxBBOC, //!< Log2 of maximum operation count in a BasicBlock.
+  ConfigurationItem_RegionType, //!< RegionType for instruction scheduling.
     // 0 => basic block region,
     // 1 => super block region,
     // 2 => trace block region.
-  Configuration_InstrMode, //!< Instruction Mode (ISA Subset).
-  Configuration_SchedKind, //!< Instruction scheduling kind.
+  ConfigurationItem_InstrMode, //!< Instruction Mode (ISA Subset).
+  ConfigurationItem_SchedKind, //!< Instruction scheduling kind.
     // 0 => sequential scheduling,
     // 1 => dependence scheduling,
     // 2 => insertion scheduling,
     // 3 => convergent scheduling.
-  Configuration_AllocKind, //!< Register allocation kind.
+  ConfigurationItem_AllocKind, //!< Register allocation kind.
     // 0 => local register allocation,
     // 1 => global register allocation,
     // 2 => integrated register allocation.
-  Configuration_Pipelining, //!< Software pipelining level.
+  ConfigurationItem_Pipelining, //!< Software pipelining level.
     // 0 => cyclic instruction schedule,
     // 1 => software pipelining with overlap 1,
     // n => software pipelining with overlap (1<<n)-1.
-  Configuration_LogUnwind, //!< Log2 of default unwind factor.
+  ConfigurationItem_LogUnwind, //!< Log2 of default unwind factor.
     // 0 => no unwind,
     // 1 => unwind 2,
     // n => unwind 1<<n.
-  Configuration_LogUnroll, //!< Log2 of default unroll factor.
+  ConfigurationItem_LogUnroll, //!< Log2 of default unroll factor.
     // 0 => no unroll,
     // 1 => unroll 2,
     // n => unroll 1<<n.
-  Configuration_Speculation, //!< Software speculation level.
+  ConfigurationItem_Speculation, //!< Software speculation level.
     // 0 => no software speculation,
     // 1 => software speculation of non-excepting instructions.
     // 2 => software speculation of dismissable instructions (advanced LOADs).
     // 3 => software speculation of non-dismissable instructions (regular LOADs).
-  Configuration_Renaming, //!< Register renaming level.
+  ConfigurationItem_Renaming, //!< Register renaming level.
     // 0 => no register renaming,
     // 1 => register renaming,
     // n => modulo renaming over n iterations.
-  Configuration_LoopOpt, //!< Targets of loop optimizations.
+  ConfigurationItem_LoopOpt, //!< Targets of loop optimizations.
     // 0 => no loop optimizations,
     // 1 => innermost loops only,
     // n => n innermost loops.
-  Configuration_LoopDep, //!< Loop memory dependences assumed.
+  ConfigurationItem_LoopDep, //!< Loop memory dependences assumed.
     // 0 => serial loop dependences,
     // 1 => scalar loop dependences,
     // 2 => vector loop dependences,
     // 3 => parallel loop dependences,
     // 4 => liberal loop dependences.
-  Configuration_MinTrip, //!< Minimum value of loop trip count.
-  Configuration_Modulus, //!< Modulus of loop trip count.
-  Configuration_Residue, //!< Residue of loop trip count.
-  Configuration_StackModel, //!< Stack model for symbol allocation.
+  ConfigurationItem_MinTrip, //!< Minimum value of loop trip count.
+  ConfigurationItem_Modulus, //!< Modulus of loop trip count.
+  ConfigurationItem_Residue, //!< Residue of loop trip count.
+  ConfigurationItem_StackModel, //!< Stack model for symbol allocation.
     // 0 => stack model small,
     // 1 => stack model large,
     // 2 => stack model dynamic.
@@ -417,7 +420,7 @@ typedef enum {
 /*!
   @file CGIR.h
   
-  Revision: 1.13  $Date$
+  Revision: 1.14  $Date$
   
   @author Benoit Dupont de Dinechin (Benoit.Dupont-de-Dinechin@st.com).
   @author Christophe Guillon (Christophe.Guillon@st.com).
