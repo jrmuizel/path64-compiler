@@ -10,7 +10,7 @@
 #include "topcode.h" 
 #include "isa_print_gen.h" 
 
-static const char *mnemonic_names[296] = {
+static const char *mnemonic_names[308] = {
   "add",	 /* TOP_add_r */ 
   "add",	 /* TOP_add_i */ 
   "add",	 /* TOP_add_ii */ 
@@ -202,6 +202,18 @@ static const char *mnemonic_names[296] = {
   "mullu",	 /* TOP_mullu_r */ 
   "mullu",	 /* TOP_mullu_i */ 
   "mullu",	 /* TOP_mullu_ii */ 
+  "mul32",	 /* TOP_mul32_r */ 
+  "mul32",	 /* TOP_mul32_i */ 
+  "mul32",	 /* TOP_mul32_ii */ 
+  "mul64h",	 /* TOP_mul64h_r */ 
+  "mul64h",	 /* TOP_mul64h_i */ 
+  "mul64h",	 /* TOP_mul64h_ii */ 
+  "mul64hu",	 /* TOP_mul64hu_r */ 
+  "mul64hu",	 /* TOP_mul64hu_i */ 
+  "mul64hu",	 /* TOP_mul64hu_ii */ 
+  "mulfrac",	 /* TOP_mulfrac_r */ 
+  "mulfrac",	 /* TOP_mulfrac_i */ 
+  "mulfrac",	 /* TOP_mulfrac_ii */ 
   "nandl",	 /* TOP_nandl_r_r */ 
   "nandl",	 /* TOP_nandl_r_b */ 
   "nandl",	 /* TOP_nandl_i_r */ 
@@ -680,6 +692,18 @@ main()
 		 TOP_mullu_r, 
 		 TOP_mullu_i, 
 		 TOP_mullu_ii, 
+		 TOP_mul32_r, 
+		 TOP_mul32_i, 
+		 TOP_mul32_ii, 
+		 TOP_mul64h_r, 
+		 TOP_mul64h_i, 
+		 TOP_mul64h_ii, 
+		 TOP_mul64hu_r, 
+		 TOP_mul64hu_i, 
+		 TOP_mul64hu_ii, 
+		 TOP_mulfrac_r, 
+		 TOP_mulfrac_i, 
+		 TOP_mulfrac_ii, 
 		 TOP_nandl_r_r, 
 		 TOP_nandl_r_b, 
 		 TOP_norl_r_r, 

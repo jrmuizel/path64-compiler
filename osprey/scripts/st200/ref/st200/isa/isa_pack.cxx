@@ -490,6 +490,43 @@ main()
 	TOP_mov_r, 	 0x10000000UL,
 	TOP_UNDEFINED); 
 
+  /* =====  p5: ===== */ 
+  p5 = ISA_Pack_Type_Create("p5"); 
+  Result(0, 6, 6); 
+  Operand(0, 0, 0, 6); 
+  Next_Word(); 
+  Operand(0, 9, 0, 23); 
+  Instruction_Pack_Group(p5, 
+	TOP_mul32_ii, 	 0x10000000UL, 0x10000000UL,
+	TOP_mul64h_ii, 	 0x10000000UL, 0x10000000UL,
+	TOP_mul64hu_ii, 	 0x10000000UL, 0x10000000UL,
+	TOP_mulfrac_ii, 	 0x10000000UL, 0x10000000UL,
+	TOP_UNDEFINED); 
+
+  /* =====  p4: ===== */ 
+  p4 = ISA_Pack_Type_Create("p4"); 
+  Result(0, 6, 6); 
+  Operand(0, 0, 0, 6); 
+  Operand(1, 0, 12, 9); 
+  Instruction_Pack_Group(p4, 
+	TOP_mul32_i, 	 0x10000000UL,
+	TOP_mul64h_i, 	 0x10000000UL,
+	TOP_mul64hu_i, 	 0x10000000UL,
+	TOP_mulfrac_i, 	 0x10000000UL,
+	TOP_UNDEFINED); 
+
+  /* =====  p3: ===== */ 
+  p3 = ISA_Pack_Type_Create("p3"); 
+  Result(0, 12, 6); 
+  Operand(0, 0, 0, 6); 
+  Operand(1, 0, 6, 6); 
+  Instruction_Pack_Group(p3, 
+	TOP_mul32_r, 	 0x10000000UL,
+	TOP_mul64h_r, 	 0x10000000UL,
+	TOP_mul64hu_r, 	 0x10000000UL,
+	TOP_mulfrac_r, 	 0x10000000UL,
+	TOP_UNDEFINED); 
+
   /* =====  p15: ===== */ 
   p15 = ISA_Pack_Type_Create("p15"); 
   Result(0, 6, 6); 

@@ -501,6 +501,9 @@ main()
 		 TOP_mullu_r, 
 		 TOP_mullu_i, 
 		 TOP_mullu_ii, 
+		 TOP_mul32_r, 
+		 TOP_mul32_i, 
+		 TOP_mul32_ii, 
 		 TOP_UNDEFINED); 
 
   /* ====================================== */ 

@@ -369,6 +369,18 @@ main()
   Operand (1, src1, base); 
 
   /* ====================================== */ 
+  Instruction_Group("O_Mul64R", 
+		 TOP_mul32_r, 
+		 TOP_mul64h_r, 
+		 TOP_mul64hu_r, 
+		 TOP_mulfrac_r, 
+		 TOP_UNDEFINED); 
+
+  Result (0, dest2); 
+  Operand (0, src1, opnd1); 
+  Operand (1, src2, opnd2); 
+
+  /* ====================================== */ 
   Instruction_Group("O_Cmp3R_Reg", 
 		 TOP_andl_r_r, 
 		 TOP_cmpeq_r_r, 
@@ -532,6 +544,22 @@ main()
 		 TOP_mulllu_ii, 
 		 TOP_mullu_i, 
 		 TOP_mullu_ii, 
+		 TOP_UNDEFINED); 
+
+  Result (0, idest2); 
+  Operand (0, src1, opnd1); 
+  Operand (1, isrc2, opnd2); 
+
+  /* ====================================== */ 
+  Instruction_Group("O_Mul64I", 
+		 TOP_mul32_i, 
+		 TOP_mul32_ii, 
+		 TOP_mul64h_i, 
+		 TOP_mul64h_ii, 
+		 TOP_mul64hu_i, 
+		 TOP_mul64hu_ii, 
+		 TOP_mulfrac_i, 
+		 TOP_mulfrac_ii, 
 		 TOP_UNDEFINED); 
 
   Result (0, idest2); 

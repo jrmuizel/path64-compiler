@@ -319,6 +319,14 @@ main (int argc, char *argv[])
 		 TOP_mulllu_i, 
 		 TOP_mullu_r, 
 		 TOP_mullu_i, 
+		 TOP_mul32_r, 
+		 TOP_mul32_i, 
+		 TOP_mul64h_r, 
+		 TOP_mul64h_i, 
+		 TOP_mul64hu_r, 
+		 TOP_mul64hu_i, 
+		 TOP_mulfrac_r, 
+		 TOP_mulfrac_i, 
 		 TOP_UNDEFINED); 
 
   Any_Result_Available_Time(5); 
@@ -346,6 +354,10 @@ main (int argc, char *argv[])
 		 TOP_mulll_ii, 
 		 TOP_mulllu_ii, 
 		 TOP_mullu_ii, 
+		 TOP_mul32_ii, 
+		 TOP_mul64h_ii, 
+		 TOP_mul64hu_ii, 
+		 TOP_mulfrac_ii, 
 		 TOP_UNDEFINED); 
 
   Any_Result_Available_Time(5); 
