@@ -2854,14 +2854,14 @@ sub emit_decode_info {
     printf $DECODE_F "  ISA_Decode_Begin(\"%s\"); \n\n", $ARCH_name;
 
     # a completely dummy decoding description: all units go to alu
-    printf $DECODE_F "  STATE ex_unit = Create_Unit_State(\"ex_unit\", 0, 4); \n\n";
+#    printf $DECODE_F "  STATE ex_unit = Create_Unit_State(\"ex_unit\", 0, 4); \n\n";
     printf $DECODE_F "  STATE alu = Create_Inst_State(\"alu\", 0, 0, 15); \n\n";
 
-    printf $DECODE_F "  Transitions(ex_unit, \n";
-    for ($i = 0; $i < $EXEC_SLOT_count; $i++) {
-	printf $DECODE_F "        ISA_EXEC_%s_Unit, alu, \n", $EXEC_SLOT_name[$i];
-    }
-    printf $DECODE_F "	      END_TRANSITIONS); \n\n";
+#    printf $DECODE_F "  Transitions(ex_unit, \n";
+#    for ($i = 0; $i < $EXEC_SLOT_count; $i++) {
+#	printf $DECODE_F "        ISA_EXEC_%s_Unit, alu, \n", $EXEC_SLOT_name[$i];
+#    }
+#    printf $DECODE_F "	      END_TRANSITIONS); \n\n";
 
     printf $DECODE_F "  Transitions(alu, \n";
     # all instructions:
@@ -2878,7 +2878,7 @@ CONTINUE:
     }
     printf $DECODE_F "	      END_TRANSITIONS); \n\n";
 
-    printf $DECODE_F "  Initial_State(ex_unit); \n\n";
+    printf $DECODE_F "  Initial_State(alu); \n\n";
 
     printf $DECODE_F "  ISA_Decode_End(); \n";
 }

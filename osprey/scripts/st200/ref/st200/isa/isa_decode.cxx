@@ -44,22 +44,7 @@ main()
 
   ISA_Decode_Begin("st200"); 
 
-  STATE ex_unit = Create_Unit_State("ex_unit", 0, 4); 
-
   STATE alu = Create_Inst_State("alu", 0, 0, 15); 
-
-  Transitions(ex_unit, 
-        ISA_EXEC_S0_Unit, alu, 
-        ISA_EXEC_S1_Unit, alu, 
-        ISA_EXEC_S2_Unit, alu, 
-        ISA_EXEC_S3_Unit, alu, 
-        ISA_EXEC_EXT0_Unit, alu, 
-        ISA_EXEC_EXT1_Unit, alu, 
-        ISA_EXEC_EXT2_Unit, alu, 
-        ISA_EXEC_Odd_Unit, alu, 
-        ISA_EXEC_Even_Unit, alu, 
-        ISA_EXEC_ReqS0_Unit, alu, 
-	      END_TRANSITIONS); 
 
   Transitions(alu, 
 	   0,	 Final(TOP_add_r),
@@ -356,7 +341,7 @@ main()
 	   291,	 Final(TOP_syncins),
 	      END_TRANSITIONS); 
 
-  Initial_State(ex_unit); 
+  Initial_State(alu); 
 
   ISA_Decode_End(); 
   return 0; 
