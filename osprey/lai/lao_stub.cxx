@@ -427,11 +427,18 @@ LAO_TN_TempName(TN *tn) {
 	Immediate immediate = LAO_LC_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
 	tempname = Interface_makeAbsoluteTempName(interface, tn, immediate, value);
       } else if (TN_is_symbol(tn)) {
+	Symbol symbol = NULL;
 	ST *var = TN_var(tn);
 	ST_IDX st_idx = ST_st_idx(*var);
 	int64_t offset = TN_offset(tn);
 	Immediate immediate = LAO_LC_Immediate((ISA_LIT_CLASS)0); // HACK ALERT
-	Symbol symbol = Interface_makeSymbol(interface, st_idx, ST_name(st_idx));
+	if (ST_class(st_idx) == CLASS_CONST) {
+	  char buffer[64];
+	  sprintf(buffer, "CONST#%llu", (uint64_t)st_idx);
+	  symbol = Interface_makeSymbol(interface, st_idx, String_S(buffer));
+	} else {
+	  symbol = Interface_makeSymbol(interface, st_idx, ST_name(st_idx));
+	}
 	tempname = Interface_makeSymbolTempName(interface, tn, immediate, symbol, offset);
       } else if (TN_is_label(tn)) {
 	LABEL_IDX label_idx = TN_label(tn);
