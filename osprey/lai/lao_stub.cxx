@@ -483,7 +483,7 @@ static BasicBlock
 LAO_BB_BasicBlock(BB *bb) {
   BasicBlock basicblock = Interface_getBasicBlock(interface, bb);
   if (basicblock == NULL) {
-    basicblock = Interface_makeBasicBlock(interface, bb);
+    basicblock = Interface_makeBasicBlock(interface, bb, BB_freq(bb));
     // the BasicBlock label(s)
     if (BB_has_label(bb)) {
       ANNOTATION *annot;
