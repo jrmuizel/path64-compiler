@@ -33,6 +33,18 @@ extern "C" {
 
 typedef list<BB*> BB_List;
 
+// Test if a BB belongs to a BB_List.
+static bool
+LAO_inBB_List(BB_List& bb_list, BB *bb) {
+  //
+  BB_List::iterator bb_iter;
+  for (bb_iter = bb_list.begin(); bb_iter != bb_list.end(); bb_iter++) {
+    if (*bb_iter == bb) return true;
+  }
+  //
+  return false;
+}
+
 static void
 LAOS_printCGIR();
 
@@ -540,29 +552,30 @@ LAO_setLiveOut(BasicBlockHandle handle, CodeRegion coderegion) {
 
 // Make a LAO CodeRegion from the BB_VECTORs supplied.
 static CodeRegion
-LAO_makeCodeRegion(BB_VECTOR& entryBBs, BB_VECTOR& innerBBs, BB_VECTOR& exitBBs, CodeRegion_Type region_kind) {
+LAO_makeCodeRegion(BB_List& entryBBs, BB_List& innerBBs, BB_List& exitBBs, CodeRegion_Type region_kind) {
+  BB_List::iterator bb_iter;
   int bb_count = entryBBs.size() + innerBBs.size() + exitBBs.size();
   //
   CodeRegion coderegion = Interface_makeCodeRegion(interface, region_kind, bb_count);
   //
   // Create the LAO BasicBlocks.
-  for (int i = 0; i < entryBBs.size(); i++) {
-    LAO_BB_BasicBlock ( entryBBs[i] );
+  for (bb_iter = entryBBs.begin(); bb_iter != entryBBs.end(); bb_iter++) {
+    LAO_BB_BasicBlock(*bb_iter);
   }
-  for (int i = 0; i < innerBBs.size(); i++) {
-    LAO_BB_BasicBlock ( innerBBs[i] );
+  for (bb_iter = innerBBs.begin(); bb_iter != innerBBs.end(); bb_iter++) {
+    LAO_BB_BasicBlock(*bb_iter);
   }
-  for (int i = 0; i < exitBBs.size(); i++) {
-    LAO_BB_BasicBlock ( exitBBs[i] );
+  for (bb_iter = exitBBs.begin(); bb_iter != exitBBs.end(); bb_iter++) {
+    LAO_BB_BasicBlock(*bb_iter);
   }
   //
   // Set the CodeRegion entry and exit BasicBlocks.
-  for (int i = 0; i < entryBBs.size(); i++) {
-    BasicBlock basicblock = Interface_getBasicBlock(interface, entryBBs[i]);
+  for (bb_iter = entryBBs.begin(); bb_iter != entryBBs.end(); bb_iter++) {
+    BasicBlock basicblock = Interface_getBasicBlock(interface, *bb_iter);
     CodeRegion_setEntry(coderegion, basicblock);
   }
-  for (int i = 0; i < exitBBs.size(); i++) {
-    BasicBlock basicblock = Interface_getBasicBlock(interface, exitBBs[i]);
+  for (bb_iter = exitBBs.begin(); bb_iter != exitBBs.end(); bb_iter++) {
+    BasicBlock basicblock = Interface_getBasicBlock(interface, *bb_iter);
     CodeRegion_setExit(coderegion, basicblock);
   }
   //
@@ -620,7 +633,7 @@ LAO_makeLoopInfo(BB_List& bb_list, unsigned lao_actions) {
 	false,	// assigned_regs
 	cyclic,	// compute_cyclic
 	false,	// memread_arcs
-	false,	// memin_arcs
+	true,	// memin_arcs
 	false,	// control_arcs
 	NULL);	// need_anti_out_dep
     //CG_DEP_Trace_Graph(bb);
@@ -631,10 +644,10 @@ LAO_makeLoopInfo(BB_List& bb_list, unsigned lao_actions) {
 	false,	// assigned_regs
 	false,	// memread_arcs
 	false);	// control_arcs
-    BB_List::iterator bbi;
-    FOR_ALL_BB_STLLIST_ITEMS_FWD(bb_list, bbi) {
-      //CG_DEP_Trace_Graph(*bbi);
-      LAO_setMemoryDependences(*bbi, loopinfo);
+    BB_List::iterator bb_iter;
+    for (bb_iter = bb_list.begin(); bb_iter != bb_list.end(); bb_iter++) {
+      LAO_setMemoryDependences(*bb_iter, loopinfo);
+      //CG_DEP_Trace_Graph(*bb_iter);
     }
     pointer = &bb_list;
   }
@@ -642,32 +655,18 @@ LAO_makeLoopInfo(BB_List& bb_list, unsigned lao_actions) {
   return loopinfo;
 }
 
-// Test if a BB belongs to a BB_VECTOR.
-static bool
-LAO_inBB_VECTOR ( BB_VECTOR& regionBBs, BB *bb ) {
-  //
-  for (int i = 0; i < regionBBs.size(); i++)
-    if (regionBBs[i] == bb) return true;
-  //
-  return false;
-}
-
 /*----------------------- LAO Optimization Functions -------------------------*/
 
 // Low-level LAO_optimize entry point.
 static bool
-LAO_optimize(BB_VECTOR &entryBBs, BB_VECTOR &innerBBs, BB_VECTOR &exitBBs, CodeRegion_Type region_kind, unsigned lao_actions) {
+LAO_optimize(BB_List &entryBBs, BB_List &innerBBs, BB_List &exitBBs, CodeRegion_Type region_kind, unsigned lao_actions) {
   bool result = false;
   //
   Interface_open(interface);
   //
   CodeRegion coderegion = LAO_makeCodeRegion(entryBBs, innerBBs, exitBBs, region_kind);
   //
-  BB_List bb_list;
-  for (int i = 0; i < innerBBs.size(); i++) {
-    bb_list.push_back( innerBBs[i] );
-  }
-  LoopInfo loopinfo = LAO_makeLoopInfo(bb_list, lao_actions);
+  LoopInfo loopinfo = LAO_makeLoopInfo(innerBBs, lao_actions);
   //
   CodeRegion_pretty(coderegion, TFile);
   //
@@ -682,7 +681,7 @@ LAO_optimize(BB_VECTOR &entryBBs, BB_VECTOR &innerBBs, BB_VECTOR &exitBBs, CodeR
 // Optimize a LOOP_DESCR through the LAO.
 bool
 LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
-  BB_VECTOR entryBBs, innerBBs, exitBBs;
+  BB_List entryBBs, innerBBs, exitBBs;
   bool result = false;
   //
 #ifndef LAO_EXPERIMENT
@@ -712,7 +711,7 @@ LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
 	    BB *succ = BBLIST_item(succs);
 	    if (!BB_SET_MemberP(LOOP_DESCR_bbset(loop), succ)) {
 	      // Ensure that a bb is not put twice in the vector
-	      if (!LAO_inBB_VECTOR(exitBBs, succ))
+	      if (!LAO_inBB_List(exitBBs, succ))
 		exitBBs.push_back(succ);
 	    }
 	  }
@@ -730,12 +729,12 @@ LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
 // Optimize a HB through the LAO.
 bool
 LAO_optimize(HB *hb, unsigned lao_actions) {
-  BB_VECTOR entryBBs, innerBBs, exitBBs;
-  BB *bb;
+  BB_List entryBBs, innerBBs, exitBBs;
   bool result = false;
   //
   entryBBs.push_back(HB_Entry(hb));
   //
+  BB *bb = NULL;
   FOR_ALL_BB_SET_members(HB_Blocks(hb), bb) {
     innerBBs.push_back(bb);
     //
@@ -743,7 +742,7 @@ LAO_optimize(HB *hb, unsigned lao_actions) {
     FOR_ALL_BB_SUCCS(bb, succs) {
       BB *succ = BBLIST_item(succs);
       if (!HB_Contains_Block(hb, succ)) {
-	if (!LAO_inBB_VECTOR(exitBBs, succ))
+	if (!LAO_inBB_List(exitBBs, succ))
 	  exitBBs.push_back(succ);
       }
     }
@@ -1105,7 +1104,7 @@ LAOS_printCGIR()
 }
 
 /*-------------------------- Old LAO Entry Points ----------------------------*/
-
+#if 0
 bool
 LAO_scheduleRegion ( BB_VECTOR& entryBBs, BB_VECTOR& innerBBs, BB_VECTOR& exitBBs, CodeRegion_Type region_kind, LAO_SWP_ACTION action ) {
   int i;
@@ -1170,4 +1169,5 @@ bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
   //
   return res;
 }
+#endif
 
