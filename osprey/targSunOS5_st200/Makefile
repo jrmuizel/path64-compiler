@@ -136,19 +136,13 @@ subst_install=$(strip install_$(targ)): $(addprefix install_,$($(targ)))-sep-
 # "targ1=dep1 dep2"
 # "targ2=dep3 dep4"
 # into local_targ1: local_dep1 local_dep2-sep-local_targ2: local_dep3 local_dep4-sep-
-# Then into: (replace '-sep-' by newlines)
-# local_targ1: local_dep1 local_dep2
-# local_targ2: local_dep3 local_dep4
+# -sep- are transformed into newlines later
 
-LOCALS_DEP1 := $(foreach targ,$(SUBDIRS),$(subst_local))
-LOCALS_DEP2 := $(subst -sep- ,"\n",$(LOCALS_DEP1))	# Be careful of space after '-sep-'
-LOCALS_DEP := $(subst -sep-,"\n",$(LOCALS_DEP2))	# To remove the last '-sep-' at EOL
+LOCAL_DEP := $(foreach targ,$(SUBDIRS),$(subst_local))
 
 
 # Same thing for "install" rules.
-INSTALL_DEP1 := $(foreach targ,$(SUBDIRS),$(subst_install))
-INSTALL_DEP2 := $(subst -sep- ,"\n",$(INSTALL_DEP1))
-INSTALL_DEP := $(subst -sep-,"\n",$(INSTALL_DEP2))
+INSTALL_DEP := $(foreach targ,$(SUBDIRS),$(subst_install))
 
 # No need for dependencies for "clean" and "clobber" rules
 
@@ -157,5 +151,5 @@ INSTALL_DEP := $(subst -sep-,"\n",$(INSTALL_DEP2))
 -include deps.mk
 
 deps.mk: Makefile
-	@echo $(LOCALS_DEP) > $@
-	@echo $(INSTALL_DEP) >> $@
+	@echo $(LOCAL_DEP) | sed -e 's/-sep- */\n/g' > $@
+	@echo $(INSTALL_DEP) | sed -e 's/-sep- */\n/g' >> $@
