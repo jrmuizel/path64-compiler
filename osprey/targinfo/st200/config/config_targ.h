@@ -176,7 +176,7 @@ extern char *Isa_Name (TARGET_ISA target_isa);
 /*
  * fixed part of the stack offset adjustment
  */
-#define STACK_OFFSET_ADJUSTMENT         0
+#define STACK_OFFSET_ADJUSTMENT         16
 
 /* 
  * largest signed offset possible in small-frame stack model:
