@@ -551,7 +551,9 @@ main (int argc, char *argv[])
 		 TOP_UNDEFINED); 
 
   Resource_Requirement(res_ISSUE, 0); 
-  Resource_Requirement(res_MEM, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ISSUE, 0); 
 
 
   ///////////////////////////////////////// 
