@@ -189,18 +189,18 @@ static const char *mnemonic_names[415] = {
   "cmpne", 	 /* TOP_cmpne_ii_b */  
   "cmpne", 	 /* TOP_cmpne_i_r */  
   "cmpne", 	 /* TOP_cmpne_ii_r */  
-  "cvtdi", 	 /* TOP_cvtdi */  
-  "cvtds", 	 /* TOP_cvtds */  
-  "cvtdu", 	 /* TOP_cvtdu */  
-  "cvtid", 	 /* TOP_cvtid */  
-  "cvtis", 	 /* TOP_cvtis */  
-  "cvtis.n", 	 /* TOP_cvtis_n */  
-  "cvtsd", 	 /* TOP_cvtsd */  
-  "cvtsi", 	 /* TOP_cvtsi */  
-  "cvtsi.n", 	 /* TOP_cvtsi_n */  
-  "cvtsu", 	 /* TOP_cvtsu */  
-  "cvtud", 	 /* TOP_cvtud */  
-  "cvtus", 	 /* TOP_cvtus */  
+  "convdf", 	 /* TOP_convdf */  
+  "convdi", 	 /* TOP_convdi */  
+  "convdu", 	 /* TOP_convdu */  
+  "convfd", 	 /* TOP_convfd */  
+  "convfi", 	 /* TOP_convfi */  
+  "convfi.n", 	 /* TOP_convfi_n */  
+  "convfu", 	 /* TOP_convfu */  
+  "convid", 	 /* TOP_convid */  
+  "convif", 	 /* TOP_convif */  
+  "convif.n", 	 /* TOP_convif_n */  
+  "convud", 	 /* TOP_convud */  
+  "convuf", 	 /* TOP_convuf */  
   "dfixup", 	 /* TOP_dfixup */  
   "divd", 	 /* TOP_divd */  
   "divf", 	 /* TOP_divf */  
@@ -330,12 +330,12 @@ static const char *mnemonic_names[415] = {
   "cmpgtd", 	 /* TOP_multi_cmpgtd */  
   "cmpled", 	 /* TOP_multi_cmpled */  
   "cmpltd", 	 /* TOP_multi_cmpltd */  
-  "cvtdi", 	 /* TOP_multi_cvtdi */  
-  "cvtds", 	 /* TOP_multi_cvtds */  
-  "cvtdu", 	 /* TOP_multi_cvtdu */  
-  "cvtid", 	 /* TOP_multi_cvtid */  
-  "cvtsd", 	 /* TOP_multi_cvtsd */  
-  "cvtud", 	 /* TOP_multi_cvtud */  
+  "convdf", 	 /* TOP_multi_convdf */  
+  "convdi", 	 /* TOP_multi_convdi */  
+  "convdu", 	 /* TOP_multi_convdu */  
+  "convfd", 	 /* TOP_multi_convfd */  
+  "convid", 	 /* TOP_multi_convid */  
+  "convud", 	 /* TOP_multi_convud */  
   "divd", 	 /* TOP_multi_divd */  
   "ldpc", 	 /* TOP_multi_ldpc_i */  
   "ldpc", 	 /* TOP_multi_ldpc_ii */  
@@ -525,29 +525,29 @@ main()
 		 TOP_bswap, 
 		 TOP_call, 
 		 TOP_clz, 
-		 TOP_cvtdi, 
-		 TOP_cvtds, 
-		 TOP_cvtdu, 
-		 TOP_cvtid, 
-		 TOP_cvtis, 
-		 TOP_cvtis_n, 
-		 TOP_cvtsd, 
-		 TOP_cvtsi, 
-		 TOP_cvtsi_n, 
-		 TOP_cvtsu, 
-		 TOP_cvtud, 
-		 TOP_cvtus, 
+		 TOP_convdf, 
+		 TOP_convdi, 
+		 TOP_convdu, 
+		 TOP_convfd, 
+		 TOP_convfi, 
+		 TOP_convfi_n, 
+		 TOP_convfu, 
+		 TOP_convid, 
+		 TOP_convif, 
+		 TOP_convif_n, 
+		 TOP_convud, 
+		 TOP_convuf, 
 		 TOP_mfb, 
 		 TOP_mov_r, 
 		 TOP_mov_i, 
 		 TOP_mov_ii, 
 		 TOP_mtb, 
-		 TOP_multi_cvtdi, 
-		 TOP_multi_cvtds, 
-		 TOP_multi_cvtdu, 
-		 TOP_multi_cvtid, 
-		 TOP_multi_cvtsd, 
-		 TOP_multi_cvtud, 
+		 TOP_multi_convdf, 
+		 TOP_multi_convdi, 
+		 TOP_multi_convdu, 
+		 TOP_multi_convfd, 
+		 TOP_multi_convid, 
+		 TOP_multi_convud, 
 		 TOP_multi_sqrtd, 
 		 TOP_sqrtd, 
 		 TOP_sqrtf, 
