@@ -552,6 +552,7 @@ main()
   Operand(0); 
 
   Instruction_Print_Group(print_5, 
+		 TOP_bswap_r,
 		 TOP_call, 
 		 TOP_icall, 
 		 TOP_sxtb_r, 
@@ -591,7 +592,7 @@ main()
   Operand(1); 
 
   Instruction_Print_Group(print_7, 
-		 TOP_bswap_r, 
+		 TOP_UNDEFINED,
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
