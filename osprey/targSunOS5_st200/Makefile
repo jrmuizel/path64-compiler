@@ -66,6 +66,7 @@ LIBRARY_SUBDIRS =  \
 #
 TOOL_SUBDIRS = \
 	gccfe \
+	g++fe \
 	be \
 	lai \
         ipl \
