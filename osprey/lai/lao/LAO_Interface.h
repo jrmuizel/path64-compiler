@@ -31,14 +31,6 @@ typedef struct Operation_ *Operation;
 typedef struct BasicBlock_ *BasicBlock;
 typedef struct LoopInfo_ *LoopInfo;
 typedef struct CodeRegion_ *CodeRegion;
-typedef int Immediate;
-typedef int InstrMode;
-typedef int MType;
-typedef int Modifier;
-typedef int Operator;
-typedef int RegClass;
-typedef int RegKind;
-typedef int Register;
 
 #define __INTERFACE_E__
 
@@ -66,7 +58,24 @@ typedef struct LOOP_DESCR *CGIR_LD;
 typedef struct region_id *CGIR_RID;
 
 /*!
-  Import LAO enumarations.
+  Interface LAO enumarations.
+*/
+typedef int LAI_ConfigurationItem;
+typedef int LAI_DependenceType;
+
+/*!
+  Interface LAO target enumarations.
+*/
+typedef int LAI_Immediate;
+typedef int LAI_InstrMode;
+typedef int LAI_MType;
+typedef int LAI_Modifier;
+typedef int LAI_Operator;
+typedef int LAI_RegClass;
+typedef int LAI_Register;
+
+/*!
+  Import LAO enumerations definitions.
 */
 
 #define __LAO_E__
@@ -393,7 +402,7 @@ typedef enum {
 /*!
   @file CGIR.h
   
-  Revision: 1.10  $Date$
+  Revision: 1.11  $Date$
   
   @author Benoit Dupont de Dinechin (Benoit.Dupont-de-Dinechin@st.com).
   @author Christophe Guillon (Christophe.Guillon@st.com).
@@ -501,13 +510,13 @@ struct LAI_Interface_ {
   Symbol (*Interface_makeSymbol)(Interface this, CGIR_SYM cgir_sym, const char *name);
   void (*Interface_Symbol_setClasses)(Interface this, Symbol symbol, LAI_SClass sclass, LAI_SStorage sstorage, LAI_SExport sexport);
   Symbol (*Interface_findSymbol)(Interface this, CGIR_SYM cgir_sym);
-  Temporary (*Interface_makeDedicatedTemporary)(Interface this, CGIR_TN cgir_tn, Register registre);
-  Temporary (*Interface_makeAssignRegTemporary)(Interface this, CGIR_TN cgir_tn, Register registre);
-  Temporary (*Interface_makePseudoRegTemporary)(Interface this, CGIR_TN cgir_tn, RegClass regClass);
-  Temporary (*Interface_makeModifierTemporary)(Interface this, CGIR_TN cgir_tn, Modifier modifier, int64_t value);
-  Temporary (*Interface_makeAbsoluteTemporary)(Interface this, CGIR_TN cgir_tn, Immediate immediate, int64_t value);
-  Temporary (*Interface_makeSymbolTemporary)(Interface this, CGIR_TN cgir_tn, Immediate immediate, Symbol symbol, int64_t offset);
-  Temporary (*Interface_makeLabelTemporary)(Interface this, CGIR_TN cgir_tn, Immediate immediate, Label label);
+  Temporary (*Interface_makeDedicatedTemporary)(Interface this, CGIR_TN cgir_tn, LAI_Register registre);
+  Temporary (*Interface_makeAssignRegTemporary)(Interface this, CGIR_TN cgir_tn, LAI_Register registre);
+  Temporary (*Interface_makePseudoRegTemporary)(Interface this, CGIR_TN cgir_tn, LAI_RegClass regClass);
+  Temporary (*Interface_makeModifierTemporary)(Interface this, CGIR_TN cgir_tn, LAI_Modifier modifier, int64_t value);
+  Temporary (*Interface_makeAbsoluteTemporary)(Interface this, CGIR_TN cgir_tn, LAI_Immediate immediate, int64_t value);
+  Temporary (*Interface_makeSymbolTemporary)(Interface this, CGIR_TN cgir_tn, LAI_Immediate immediate, Symbol symbol, int64_t offset);
+  Temporary (*Interface_makeLabelTemporary)(Interface this, CGIR_TN cgir_tn, LAI_Immediate immediate, Label label);
   void (*Interface_Temporary_setRematerializable)(Interface this, Temporary temporary, Temporary rematerializableValue);
   void (*Interface_Temporary_setHomeable)(Interface this, Temporary temporary, Temporary homeLocation);
   void (*Interface_Temporary_setDedicated)(Interface this, Temporary temporary);
@@ -520,19 +529,19 @@ struct LAI_Interface_ {
   Symbol (*Interface_Temporary_symbol)(Temporary temporary);
   int64_t (*Interface_Temporary_offset)(Temporary temporary);
   int (*Interface_Temporary_isModifier)(Temporary temporary);
-  Modifier (*Interface_Temporary_modifier)(Temporary temporary);
-  Immediate (*Interface_Temporary_immediate)(Temporary temporary);
+  LAI_Modifier (*Interface_Temporary_modifier)(Temporary temporary);
+  LAI_Immediate (*Interface_Temporary_immediate)(Temporary temporary);
   int (*Interface_Temporary_isPseudoReg)(Temporary temporary);
   int (*Interface_Temporary_isDedicated)(Temporary temporary);
   int (*Interface_Temporary_isAssignReg)(Temporary temporary);
-  Register (*Interface_Temporary_assigned)(Temporary temporary);
-  RegClass (*Interface_Temporary_regClass)(Temporary temporary);
+  LAI_Register (*Interface_Temporary_assigned)(Temporary temporary);
+  LAI_RegClass (*Interface_Temporary_regClass)(Temporary temporary);
   uint32_t (*Interface_Symbol_identity)(Symbol symbol);
   const char * (*Interface_Symbol_name)(Symbol symbol);
   int (*Interface_Symbol_isSpill)(Symbol symbol);
-  MType (*Interface_Symbol_mtype)(Symbol symbol);
+  LAI_MType (*Interface_Symbol_mtype)(Symbol symbol);
   uint32_t (*Interface_Operation_identity)(Operation operation);
-  Operator (*Interface_Operation_operator)(Operation operation);
+  LAI_Operator (*Interface_Operation_operator)(Operation operation);
   int (*Interface_Operation_iteration)(Operation operation);
   int (*Interface_Operation_issueDate)(Operation operation);
   int (*Interface_Operation_isSpillCode)(Operation operation);
@@ -545,31 +554,31 @@ struct LAI_Interface_ {
   uint32_t (*Interface_LoopInfo_identity)(LoopInfo loopInfo);
   int (*Interface_LoopInfo_unrolled)(LoopInfo loopInfo);
   Operation (*Interface_makeOperation)(Interface this, CGIR_OP cgir_op,
-				       Operator operator, int argCount, Temporary arguments[], int resCount, Temporary results[],
+				       LAI_Operator operator, int argCount, Temporary arguments[], int resCount, Temporary results[],
 				       int regCount, int registers[]);
   Operation (*Interface_findOperation)(Interface this, CGIR_OP cgir_op);
   void (*Interface_Operation_setVolatile)(Interface this, Operation operation);
   void (*Interface_Operation_setPrefetch)(Interface this, Operation operation);
   void (*Interface_Operation_setBarrier)(Interface this, Operation operation);
   void (*Interface_Operation_setSpillCode)(Interface this, Operation operation, Symbol symbol);
-  BasicBlock (*Interface_makeBasicBlock)(Interface this, CGIR_BB cgir_bb, InstrMode instrMode,
+  BasicBlock (*Interface_makeBasicBlock)(Interface this, CGIR_BB cgir_bb, LAI_InstrMode instrMode,
 					 int labelCount, Label labels[], int operationCount, Operation operations[]);
   BasicBlock (*Interface_findBasicBlock)(Interface this, CGIR_BB cgir_bb);
   void (*Interface_moreBasicBlock)(Interface this,
 				   BasicBlock basicBlock, intptr_t regionId, float frequency,
 				   int liveInCount, Temporary liveIns[], int liveOutCount, Temporary liveOuts[]);
   void (*Interface_linkBasicBlocks)(Interface this, BasicBlock tail_block, BasicBlock head_block, float probability);
-  LoopInfo (*Interface_makeLoopInfo)(Interface this, CGIR_LD cgir_ld, BasicBlock basicBlock, ConfigurationItem item, ...);
+  LoopInfo (*Interface_makeLoopInfo)(Interface this, CGIR_LD cgir_ld, BasicBlock basicBlock, LAI_ConfigurationItem item, ...);
   LoopInfo (*Interface_findLoopInfo)(Interface this, CGIR_LD cgir_ld);
   void (*Interface_LoopInfo_setDependenceNode)(Interface this, LoopInfo loopInfo, Operation operation);
   void (*Interface_LoopInfo_setDependenceArc)(Interface this, LoopInfo loopInfo,
 					      Operation tail_operation, Operation head_operation, int latency, int omega, 
-					      DependenceType type);
+					      LAI_DependenceType type);
   void (*Interface_setBody)(Interface this, BasicBlock basicBlock);
   void (*Interface_setEntry)(Interface this, BasicBlock basicBlock);
   void (*Interface_setExit)(Interface this, BasicBlock basicBlock);
   void (*Interface_updateCGIR)(Interface this, CGIR_CallBack callback);
-  CodeRegion (*Interface_open)(Interface this, const char *name, ConfigurationItem item, ...);
+  CodeRegion (*Interface_open)(Interface this, const char *name, LAI_ConfigurationItem item, ...);
   unsigned (*Interface_optimize)(Interface this, unsigned optimizations);
   void (*Interface_close)(Interface this);
 };

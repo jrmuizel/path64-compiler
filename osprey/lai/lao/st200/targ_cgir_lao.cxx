@@ -6,6 +6,7 @@
 extern "C" {
 #define this THIS
 #define operator OPERATOR
+#include "LAO_Interface.h"
 #include "LAO_Target.h"
 #undef operator
 #undef this
@@ -16,26 +17,26 @@ extern "C" {
 /*-------------------- Maps for CGIR <-> LIR Conversions ------------------*/
 
 // Map CGIR ISA_SUBSET to LIR InstrMode.
-static InstrMode IS__InstrMode[ISA_SUBSET_MAX+1];
+static LAI_InstrMode IS__InstrMode[ISA_SUBSET_MAX+1];
 
 // Map LIR InstrMode to CGIR ISA_SUBSET.
 static ISA_SUBSET InstrMode__IS[InstrMode__];
 
 // Map CGIR TOP to LIR Operator.
-static Operator TOP__Operator[TOP_UNDEFINED];
+static LAI_Operator TOP__Operator[TOP_UNDEFINED];
 
 // Map LIR Operator to CGIR TOP.
 static TOP Operator__TOP[Operator__];
 
 // Map CGIR ISA_ENUM_CLASS to LIR Modifier.
-static Modifier IEC__Modifier[EC_MAX];
+static LAI_Modifier IEC__Modifier[EC_MAX];
 
 // Map CGIR Literal to LIR Immediate.
-static Immediate LC__Immediate[LC_MAX];
+static LAI_Immediate LC__Immediate[LC_MAX];
 
 // Map CGIR ISA_REGISTER_CLASS to LIR RegClass.
 // WARNING! ISA_REGISTER_CLASS reaches ISA_REGISTER_CLASS_MAX
-static RegClass IRC__RegClass[ISA_REGISTER_CLASS_MAX+1];
+static LAI_RegClass IRC__RegClass[ISA_REGISTER_CLASS_MAX+1];
 
 // Map LIR RegClass to CGIR ISA_REGISTER_CLASS.
 static ISA_REGISTER_CLASS RegClass__IRC[RegClass__];
@@ -47,9 +48,9 @@ static TYPE_ID MType__TYPE_ID[MType__];
 /*-------------------- CGIR -> LIR Conversion Fonctions ------------------*/
 
 // Convert ISA_SUBSET to LIR InstrMode.
-InstrMode
+LAI_InstrMode
 TARG_CGIR_IS_to_InstrMode(ISA_SUBSET is) {
-  InstrMode lao_instrmode;
+  LAI_InstrMode lao_instrmode;
 #if 0
   //  The mapping DOES NOT WORK YET!
   lao_instrmode = IS__InstrMode[is];
@@ -62,50 +63,50 @@ TARG_CGIR_IS_to_InstrMode(ISA_SUBSET is) {
 }
 
 // Convert CGIR ISA_ENUM_CLASS to LIR Modifier.
-Modifier
+LAI_Modifier
 TARG_CGIR_IEC_to_Modifier(ISA_ENUM_CLASS iec) {
-  Modifier lao_modifier = IEC__Modifier[iec];
+  LAI_Modifier lao_modifier = IEC__Modifier[iec];
   Is_True(iec >= 0 && iec < EC_MAX, ("ISA_ENUM_CLASS out of range"));
   Is_True(lao_modifier != Modifier__, ("Cannot map ISA_ENUM_CLASS to Modifier"));
   return lao_modifier;
 }
 
 // Convert CGIR ISA_LIT_CLASS to LIR Immediate.
-Immediate
+LAI_Immediate
 TARG_CGIR_LC_to_Immediate(ISA_LIT_CLASS ilc) {
-  Immediate lao_immediate = LC__Immediate[ilc];
+  LAI_Immediate lao_immediate = LC__Immediate[ilc];
   Is_True(ilc >= 0 && ilc < LC_MAX, ("ISA_LIT_CLASS out of range"));
   Is_True(lao_immediate != Immediate__, ("Cannot map ISA_LIT_CLASS to Immediate"));
   return lao_immediate;
 }
 
 // Convert CGIR ISA_REGISTER_CLASS to LIR RegClass.
-RegClass
+LAI_RegClass
 TARG_CGIR_IRC_to_RegClass(ISA_REGISTER_CLASS irc) {
-  RegClass lao_regClass = IRC__RegClass[irc];
+  LAI_RegClass lao_regClass = IRC__RegClass[irc];
   Is_True(irc >= 0 && irc <= ISA_REGISTER_CLASS_MAX, ("ISA_REGISTER_CLASS out of range"));
   Is_True(lao_regClass != RegClass__, ("Cannot map ISA_REGISTER_CLASS to RegClass"));
   return lao_regClass;
 }
 
 // Convert CGIR CLASS_REG_PAIR to LIR Register.
-Register
+LAI_Register
 TARG_CGIR_CRP_to_Register(CLASS_REG_PAIR crp) {
   mREGISTER reg = CLASS_REG_PAIR_reg(crp);
   ISA_REGISTER_CLASS irc = CLASS_REG_PAIR_rclass(crp);
-  RegClass regClass = TARG_CGIR_IRC_to_RegClass(irc);
-  Register lowReg;
+  LAI_RegClass regClass = TARG_CGIR_IRC_to_RegClass(irc);
+  LAI_Register lowReg;
   if (irc == ISA_REGISTER_CLASS_branch) 
     lowReg = Register_B0;
   else 
     lowReg = Register_R0;
-  return (Register)(lowReg + (reg - 1));
+  return (LAI_Register)(lowReg + (reg - 1));
 }
 
 // Convert CGIR TOP to LIR Operator.
-Operator
+LAI_Operator
 TARG_CGIR_TOP_to_Operator(TOP top) {
-  Operator lao_operator = TOP__Operator[top];
+  LAI_Operator lao_operator = TOP__Operator[top];
   Is_True(top >= 0 && top < TOP_UNDEFINED, ("TOPcode out of range"));
   Is_True(lao_operator != Operator__, ("Cannot map TOPcode to Operator"));
   return lao_operator;
@@ -115,7 +116,7 @@ TARG_CGIR_TOP_to_Operator(TOP top) {
 
 // Convert LIR RegClass to CGIR ISA_REGISTER_CLASS.
 ISA_REGISTER_CLASS
-TARG_RegClass_to_CGIR_IRC(RegClass regClass) {
+TARG_RegClass_to_CGIR_IRC(LAI_RegClass regClass) {
   Is_True(regClass < RegClass__, ("RegClass out of range"));
   ISA_REGISTER_CLASS irc = RegClass__IRC[regClass];
   Is_True(irc != ISA_REGISTER_CLASS_UNDEFINED, ("Cannot map RegClass to ISA_REGISTER_CLASS"));
@@ -124,9 +125,9 @@ TARG_RegClass_to_CGIR_IRC(RegClass regClass) {
 
 // Convert LIR Register to CGIR CLASS_REG_PAIR.
 CLASS_REG_PAIR
-TARG_Register_to_CGIR_CRP(Register registre) {
+TARG_Register_to_CGIR_CRP(LAI_Register registre) {
   CLASS_REG_PAIR crp;
-  Register lowReg;
+  LAI_Register lowReg;
   ISA_REGISTER_CLASS irc;
   if (registre >= Register_B0 && registre <= Register_B7) {
     irc = ISA_REGISTER_CLASS_branch;
@@ -141,7 +142,7 @@ TARG_Register_to_CGIR_CRP(Register registre) {
 
 // Convert LIR Operator to TOP.
 TOP
-TARG_Operator_to_CGIR_TOP(Operator lir_operator) {
+TARG_Operator_to_CGIR_TOP(LAI_Operator lir_operator) {
   Is_True(lir_operator < Operator__, ("Operator out of range"));
   TOP top = Operator__TOP[lir_operator];
   Is_True(top != TOP_UNDEFINED, ("Cannot map Operator to TOP"));
@@ -150,7 +151,7 @@ TARG_Operator_to_CGIR_TOP(Operator lir_operator) {
 
 // Convert LIR MType to CGIR TYPE_ID
 TYPE_ID
-TARG_MType_to_CGIR_TYPE_ID(MType lir_mtype) {
+TARG_MType_to_CGIR_TYPE_ID(LAI_MType lir_mtype) {
   Is_True(lir_mtype < MType__, ("MType out of range"));
   TYPE_ID type_id = MType__TYPE_ID[lir_mtype];
   Is_True(type_id != MTYPE_UNKNOWN, ("Cannot map mtype to TYPE_ID"));
