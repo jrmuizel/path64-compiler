@@ -69,8 +69,12 @@ TOOL_SUBDIRS = \
 	be \
 	lai \
 	wopt \
+	lno \
+        ipl \
+	lw_inline \
+        whirl2c \
 	driver \
-	lw_inline
+
 
 #	ipl	\
 #        whirl2c \
