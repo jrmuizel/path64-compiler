@@ -53,7 +53,7 @@
 #include "defs.h"
 #include <vector>
 #include <pair.h>
-#include <math.h>
+#include "W_math.h"
 /*
 #include "cg_swp.h"
 #include "cg_swp_options.h"

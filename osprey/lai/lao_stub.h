@@ -12,7 +12,7 @@
 #ifndef laostub_INCLUDED
 #define laostub_INCLUDED
 
-#include <math.h>
+#include "W_math.h"
 #include <stdarg.h>
 #include <set.h>
 
