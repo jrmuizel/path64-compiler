@@ -458,6 +458,7 @@ Preconfigure_Target ( void )
 
   // Generate floating point constants directly in the code
   CG_floating_const_in_memory = FALSE;
+
 #endif
 
   return;
