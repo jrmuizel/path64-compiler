@@ -43,7 +43,23 @@
 
 #define DEFAULT_LARGE_OBJECT_BYTES	64
 
-#define DEFAULT_TEMP_SPACE_BYTES 4096
+/* 
+ * largest signed offset possible in small-frame stack model:
+ * 2^9 words = 11 bits
+ */
+#define MAX_SMALL_FRAME_OFFSET  0x7ff    // 11 bits
+
+/*
+ * Since the largest offset allowed is 11 bits
+ */
+#define DEFAULT_TEMP_SPACE_BYTES        1024
+
+/*
+ * Default, maximal area that may be needed to home formal arguments
+ * passed in registers (4 longs + 3 ptrs)
+ */
+#define DEFAULT_FORMAL_SAVE_AREA_SIZE   44
+
 #define MAX_SFSEG_BYTES		0x7FFFFFFFFFFFFFFFLL
 
 #define MAX_LARGE_FRAME_OFFSET	0x7FFFFFFFFFFFFFFFLL	// 64bits on all targs
@@ -62,6 +78,6 @@ typedef enum _align {
  * compiler including FE changes. For now, I'll just use the
  * strongest alignment.
  */
-#define DEFAULT_STACK_ALIGNMENT _DWORD_ALIGN
+#define DEFAULT_STACK_ALIGNMENT _WORD_ALIGN
 
 #endif /* targ_data_layout_INCLUDED */

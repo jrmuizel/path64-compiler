@@ -514,69 +514,44 @@
 
 #include "defs.h"
 
-#include "targ_abi_properties.h"
-#include "targ_isa_print.h"
+/* ====================================================================
+ *   Branch handling:
+ * ====================================================================
+ */
+#define _MIN_BRANCH_DISP             (2097151 * ISA_INST_BYTES)
+#define _DEFAULT_BRP_BRANCH_LIMIT    (256 * ISA_INST_BYTES)
+#define _DEFAULT_LONG_BRANCH_LIMIT   (2000000 * ISA_INST_BYTES)
 
-#include "register_targ.h"
-#include "tn_targ.h"
-#include "op_targ.h"
-
-#define MIN_BRANCH_DISP (2097151 * INST_BYTES)
-
-extern BOOL CGTARG_Preg_Register_And_Class(WN_OFFSET preg,
-					   ISA_REGISTER_CLASS *rclass,
-					   REGISTER *reg);
-
-extern void CGTARG_Init_OP_cond_def_kind(OP *);
-
-extern void CGTARG_Branch_Info ( const OP* op, INT* tfirst, INT* tcount );
-
-extern INT CGTARG_Analyze_Branch(OP *br,
-				 TN **tn1, 
-				 TN **tn2);
-extern INT CGTARG_Analyze_Compare(OP *br,
-				  TN **tn1,
-				  TN **tn2,
-	 			  OP **compare_op);
-
-extern void CGTARG_Compute_Branch_Parameters(INT32 *mispredict,
-						    INT32 *fixed,
-						    INT32 *brtaken,
-						    double *factor);
-
-extern void Make_Branch_Conditional(BB *bb);
-
-/* Target predication: */
-inline BOOL CGTARG_Can_Predicate_Calls() { return TRUE; }
-inline BOOL CGTARG_Can_Predicate_Returns() { return TRUE; }
-inline BOOL CGTARG_Can_Predicate_Branches() { return TRUE; }
-inline BOOL CGTARG_Can_Predicate() { return TRUE; }
-
-/* Target ISA: */
-inline BOOL CGTARG_Is_OP_Barrier(OP *op) { return FALSE; }
-inline BOOL CGTARG_Is_OP_Intrinsic(OP *op) 
-{ 
-  return OP_code(op) == TOP_intrncall;
+// Return format string for operand i of op.
+inline char *_ISA_PRINT_PREDICATE (ISA_OPERAND_USE use) {
+  if (use & OU_reversed) return "%s!";
+  else return "%s?";
 }
 
 
+inline BOOL 
+_CGTARG_Use_Brlikely(float branch_taken_probability)
+{
+  return FALSE;
+}
 
 /* ====================================================================
- *                REGISTER stuff
+ *    Predication:
  * ====================================================================
  */
 
-/* --------------------------------------------------------------------
- *   Get the target register number and class associated with the
- *   preg, if there is one that is.
- * --------------------------------------------------------------------
- */
-extern BOOL CGTARG_Preg_Register_And_Class(WN_OFFSET preg,
-					   ISA_REGISTER_CLASS *rclass,
-					   REGISTER *reg);
+inline BOOL _CGTARG_Can_Predicate_Calls() { return TRUE; }
+inline BOOL _CGTARG_Can_Predicate_Returns() { return TRUE; }
+inline BOOL _CGTARG_Can_Predicate_Branches() { return TRUE; }
+inline BOOL _CGTARG_Can_Predicate() { return TRUE; }
 
 /* ====================================================================
- *                ASM statement processing
+ *    ISA properties:
+ * ====================================================================
+ */
+
+/* ====================================================================
+ *    ASM:
  * ====================================================================
  */
 
@@ -646,16 +621,10 @@ TOP CGTARG_Invert(TOP opr)
   return CGTARG_Invert_Table[(INT)opr];
 }
 
-inline TOP
-CGTARG_Noop_Top(void)
-{
-  return TOP_noop;	// return simulated nop
-}
-
 inline INT
 CGTARG_Text_Alignment (void)
 {
-  return INST_BYTES;
+  return ISA_INST_BYTES;
 }
 
 /* --------------------------------------------------------------------

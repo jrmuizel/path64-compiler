@@ -122,11 +122,6 @@ Init_Mtype_RegClass_Map ()
 }
 
 /* ====================================================================
- * Define a few things that differ among code generators
- * ====================================================================
- */
-
-/* ====================================================================
  *   Compute_Dedicated_PU_Livein
  * ====================================================================
  */
@@ -485,7 +480,12 @@ Set_Register_Never_Allocatable (PREG_NUM preg)
   dont_allocate_these_registers.push_back( make_pair( rclass, reg ));
 }
 
-  // now check for any registers that user doesn't want allocated
+/* ====================================================================
+ *   Set_Register_Not_Allocatable
+ *
+ *   check for any registers that user doesn't want allocated
+ * ====================================================================
+ */
 void
 Set_Register_Not_Allocatable ()
 {

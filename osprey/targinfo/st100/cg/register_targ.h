@@ -107,14 +107,10 @@
 #ifndef register_targ_INCLUDED
 #define register_targ_INCLUDED
 
-
-#include "targ_abi_properties.h"
-
 extern char *ISA_REGISTER_CLASS_symbol[];
 #define ISA_REGISTER_CLASS_Symbol(rc) (ISA_REGISTER_CLASS_symbol[rc])
 
-inline char*
-ISA_REGISTER_CLASS_ASM_Name (ISA_REGISTER_CLASS rc) {
+inline char* _ISA_REGISTER_CLASS_ASM_Name (ISA_REGISTER_CLASS rc) {
   switch (rc) {
   case ISA_REGISTER_CLASS_du: return "dreg";
   case ISA_REGISTER_CLASS_au: return "areg";
@@ -126,25 +122,29 @@ ISA_REGISTER_CLASS_ASM_Name (ISA_REGISTER_CLASS rc) {
   }
 }
 
-/* ====================================================================
- *                       Exported functions
- * ====================================================================
- */
-
-inline BOOL Is_Predicate_REGISTER_CLASS(ISA_REGISTER_CLASS rclass) {
+inline BOOL _Is_Predicate_REGISTER_CLASS(ISA_REGISTER_CLASS rclass) {
   return FALSE;
 }
 
-extern void Initialize_Register_Class(ISA_REGISTER_CLASS);
+inline BOOL _REGISTER_Has_Stacked_Registers(ISA_REGISTER_CLASS rclass) {
+  return FALSE;
+}
 
-/* whether REGISTER_CLASS re-initialization required */
-extern BOOL REGISTER_Check_Alloc_Status (ISA_REGISTER_CLASS);
+inline BOOL _REGISTER_Has_Rotating_Registers(ISA_REGISTER_CLASS rclass) {
+  return FALSE;
+}
 
-/* user wants this not to be allocatable */
-extern BOOL REGISTER_set_allocatable (ISA_REGISTER_CLASS, REGISTER);
-extern BOOL REGISTER_set_not_allocatable (ISA_REGISTER_CLASS, REGISTER);
-extern void Set_Register_Never_Allocatable (char *);
-extern void Set_Register_Never_Allocatable (PREG_NUM);
-extern void Set_Register_Not_Allocatable (void);
+inline BOOL _REGISTER_Is_Rotating(ISA_REGISTER_CLASS rclass, REGISTER reg)
+{
+  return FALSE;
+}
+
+inline REGISTER_SET _REGISTER_Get_Requested_Rotating_Registers (
+  ISA_REGISTER_CLASS rclass
+)
+{
+  return REGISTER_SET_EMPTY_SET;
+}
+
 
 #endif /* register_targ_INCLUDED */

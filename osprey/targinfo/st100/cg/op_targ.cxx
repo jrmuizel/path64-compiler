@@ -49,58 +49,6 @@
 
 #include "cgir.h"
 
-#include "targ_isa_subset.h"
-#include "targ_isa_operands.h"
-#include "targ_isa_properties.h"
-
-/* ====================================================================
- *   CGTARG_Predicate_OP
- *
- *   If a BB ends in an unconditional branch, turn it into a 
- *   conditional branch with TRUE predicate, so we can predicate with 
- *   something else later.
- *   If we can't find an unconditional branch, just give up and do 
- *   nothing
- * ====================================================================
- */
-void
-Make_Branch_Conditional (
-  BB *bb
-)
-{
-  OP *new_br;
-  TOP new_top;
-  OP* br_op = BB_branch_op(bb);
-
-  if (!br_op) return;
-
-  FmtAssert(FALSE,("Make_Branch_Conditional: not implemented"));
-
-  /*
-  switch (OP_code(br_op)) {
-  case TOP_br:
-    new_top = TOP_br_cond;
-    break;
-  case TOP_br_r:
-    new_top = TOP_br_r_cond;
-    break;
-  default:
-    return;
-  }
-
-  new_br = Mk_OP(new_top,
-		 True_TN,
-		 Gen_Enum_TN(ECV_bwh_dptk),
-		 Gen_Enum_TN(ECV_ph_few),
-		 Gen_Enum_TN(ECV_dh),
-		 OP_opnd(br_op,2));
-  */
-
-  OP_srcpos(new_br) = OP_srcpos(br_op);
-  BB_Insert_Op_After(bb, br_op, new_br);
-  BB_Remove_Op(bb, br_op);
-}
-
 /* ====================================================================
  *   CGTARG_Predicate_OP
  * ====================================================================
@@ -114,6 +62,87 @@ CGTARG_Predicate_OP (
 {
   if (OP_has_predicate(op)) {
     Set_OP_opnd(op, OP_PREDICATE_OPND, pred_tn);
+  }
+}
+
+/* ====================================================================
+ *   CGTARG_Copy_Operand
+ *
+ *   TODO: generate automatically ?? at leats some obvious ones
+ *         coherently with the isa property ?
+ * ====================================================================
+ */
+INT 
+CGTARG_Copy_Operand (
+  OP *op
+)
+{
+  TOP opr = OP_code(op);
+  switch (opr) {
+
+  // NOTE: TOP_fandcm, TOP_for, and TOP_fxor could be handled like
+  // their integer counterparts should that ever become useful.
+
+  case TOP_GP32_ADD_GT_DR_DR_U8:
+    //case TOP_or:
+    //case TOP_xor:
+    //case TOP_sub:
+    //case TOP_shl_i:
+    //case TOP_shr_i:
+    if (TN_has_value(OP_opnd(op,2)) && TN_value(OP_opnd(op,2)) == 0) {
+      return 1;
+    }
+    break;
+
+  case TOP_GP32_COPYA_GT_AR_DR:
+  case TOP_GP32_COPYC_GT_CRL_DR:
+  case TOP_GP32_COPYD_GT_DR_AR:
+
+  case TOP_GP32_MOVEA_GT_AR_AR:
+  case TOP_GP32_MOVEG_GT_BR_BR:
+  case TOP_GP32_MOVE_GT_DR_DR:
+    //TOP_GP32_MOVEHH_GT_DR_DR,
+    //TOP_GP32_MOVEHL_GT_DR_DR,
+    //TOP_GP32_MOVELH_GT_DR_DR,
+    //TOP_GP32_MOVELL_GT_DR_DR,
+    //TOP_GP32_MOVEP_GT_DR_DR,
+    return 1;
+
+  }
+  return -1;
+}
+
+/* ====================================================================
+ *   CGTARG_Init_OP_cond_def_kind
+ * ====================================================================
+ */
+void 
+CGTARG_Init_OP_cond_def_kind (
+  OP *op
+)
+{
+  TOP top = OP_code(op);
+  switch (top) {
+
+    // The following OPs unconditionally define the predicate results.
+    //
+  case TOP_noop:
+
+    Set_OP_cond_def_kind(op, OP_ALWAYS_UNC_DEF);
+    break;
+
+    // The following OPs do not always update the result predicates.
+  case TOP_label:
+
+    Set_OP_cond_def_kind(op, OP_ALWAYS_COND_DEF);
+    break;
+
+  default:
+    if (OP_has_predicate(op))
+      Set_OP_cond_def_kind(op, OP_PREDICATED_DEF);
+    else
+      Set_OP_cond_def_kind(op, OP_ALWAYS_UNC_DEF);
+    break;
   }
 }
 

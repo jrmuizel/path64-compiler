@@ -51,14 +51,12 @@
 #define OP_COPY_OPND 1
 #define OP_PREDICATE_OPND 0
 
-/*
- * These are only here because I need to make cg.so compile.
- * Later these will not be seen in the "target independent"
- * part of cg.
- */
 #define TOP_is_likely(t)	 (FALSE)
+#define TOP_is_branch_predict(t) (FALSE)
 #define TOP_is_side_effects(t)   (FALSE)
 #define TOP_is_noop(t)           (t == TOP_noop)
+/* Memory instructions which are fill/spill type */
+#define TOP_is_mem_fill_type(t)  (FALSE)
 #define TOP_is_unalign_ld(t)     (FALSE)
 #define TOP_is_unalign_store(t)  (FALSE)
 #define TOP_is_defs_fcr(t)       (FALSE)
@@ -74,150 +72,50 @@
 #define TOP_is_fdiv(t)           (FALSE)
 #define TOP_is_imul(t)           (FALSE)
 #define TOP_is_idiv(t)           (FALSE)
+#define TOP_is_icmp(t)           (FALSE)
+/* This is already defined in isa_properties.cxx
+#define TOP_is_madd(t)           (FALSE) 
+*/
+
+/* Instruction must be first in an instruction group */
+#define TOP_is_f_group(t)        (FALSE)
+/* Instruction must be last in an instruction group */
+#define TOP_is_l_group(t)        (FALSE)
 /* Instruction accesses rotating register bank */
 #define TOP_is_access_reg_bank(t) (FALSE)
 /* Result must not be same as operand */
 #define TOP_is_uniq_res(t)       (TRUE)
 
-/* Convenience access macros for properties of the OP */
-/* TODO: define all the macros for OP properties. */
-#define OP_noop(o)		(TOP_is_noop(OP_code(o)))
-#define OP_load(o)		(TOP_is_load(OP_code(o)))
-#define OP_store(o)		(TOP_is_store(OP_code(o)))
-#define OP_memory(o)		(OP_load(o) | OP_store(o))
-#define OP_call(o)		(TOP_is_call(OP_code(o)))
-//#define OP_branch(o)            (TOP_is_branch(OP_code(o)))
-#define OP_dummy(o)		(TOP_is_dummy(OP_code(o)))
-#define OP_unalign_ld(o)	(TOP_is_unalign_ld(OP_code(o)))
-#define OP_unalign_store(o)	(TOP_is_unalign_store(OP_code(o)))
-#define OP_unalign_mem(o)	(OP_unalign_ld(o) | OP_unalign_store(o))
-#define OP_jump(o)		(TOP_is_jump(OP_code(o)))
-#define OP_ijump(o)		(TOP_is_ijump(OP_code(o)))
-#define OP_side_effects(o)	(TOP_is_side_effects(OP_code(o)))
-#define OP_var_opnds(o)		(TOP_is_var_opnds(OP_code(o)))
-
-/* Is conditional branch OP ? */
-#define OP_cond(o)              (TOP_is_branch(OP_code(o)))
-
-/* Is OP a branch ? */
-#define  OP_br(o)               (TOP_is_jump(OP_code(o)) || TOP_is_ijump(OP_code(o)) || TOP_is_branch(OP_code(o)))
-
-/* Is control transfer OP ? */
-#define OP_xfer(o)              (OP_br(o) || TOP_is_call(OP_code(o)))
-
-/* Is OP a likely branch ? */
-#define OP_likely(o)            (TOP_is_likely(OP_code(o)))
-
-/* Is it a simulated OP ? */
-#define OP_simulated(o)         (TOP_is_simulated(OP_code(o)))
-
-/* Is it a prefetch OP ? */
-#define OP_prefetch(o)          (FALSE)
-
-#define OP_has_predicate(o)     (TOP_is_predicated(OP_code(o)))
-
-#define OP_uncond(o)            (OP_xfer(o) && !OP_cond(o))
-
-#define OP_defs_fcr(o)		(TOP_is_defs_fcr(OP_code(o)))
-#define OP_defs_fcc(o)		(TOP_is_defs_fcc(OP_code(o)))
-#define OP_refs_fcr(o)		(TOP_is_refs_fcr(OP_code(o)))
-#define OP_select(o)		(TOP_is_select(OP_code(o)))
-#define OP_isub(o)		(TOP_is_isub(OP_code(o)))
-#define OP_ior(o)               (TOP_is_ior(OP_code(o)))
-#define OP_flop(o)		(TOP_is_flop(OP_code(o)))
-#define OP_fadd(o)		(TOP_is_fadd(OP_code(o)))
-#define OP_fsub(o)		(TOP_is_fsub(OP_code(o)))
-#define OP_fmul(o)		(TOP_is_fmul(OP_code(o)))
-#define OP_fdiv(o)		(TOP_is_fdiv(OP_code(o)))
-#define OP_imul(o)		(TOP_is_fmul(OP_code(o)))
-#define OP_idiv(o)		(TOP_is_fdiv(OP_code(o)))
-#define OP_access_reg_bank(o)	(TOP_is_access_reg_bank(OP_code(o)))
-#define OP_uniq_res(o)		(TOP_is_uniq_res(OP_code(o)))
-
-/* Hazard related stuff ?? where should this go ?? */
-#define OP_has_hazard(o)	(ISA_HAZARD_TOP_Has_Hazard(OP_code(o)))
-
-/* Is it an iadd OP ?:
- *  -- in oputil.cxx to determine if OP sets offset;
- *  -- in tnutil.cxx to ...
- *
- * OP_iadd(o) -- iadd is a isa_property that means integer add 
- *               operator (see common/targ_info/ia64/isa_properties.cxx)
- *               used in cg/cg_dep_graph.cxx (perhaps other places ??)
+/* _fixed_results and _fixed_opnds return how many fixed
+ * results/operands an instruction has (OP_result/OP_opnds includes
+ * any variable operands in the count).
  */
-#define OP_is_iadd(o)           (FALSE)
-#define OP_is_ior(o)            (FALSE)
-#define OP_iadd(o)              (FALSE)
+#define TOP_fixed_results(t)	(ISA_OPERAND_INFO_Results(ISA_OPERAND_Info(t)))
+#define TOP_fixed_opnds(t)	(ISA_OPERAND_INFO_Operands(ISA_OPERAND_Info(t)))
 
-#define OP_operand_info(o)	(ISA_OPERAND_Info(OP_code(o)))
-#define OP_immediate_opnd(o)	(TOP_Immediate_Operand(OP_code(o),NULL))
-#define OP_has_immediate(o)	(OP_immediate_opnd(o) >= 0)
-#define OP_find_opnd_use(o,u)	(TOP_Find_Operand_Use(OP_code(o),(u)))
+/* This is defined as a isa_property
+#define TOP_is_unsafe(t)        (FALSE)
+*/
 
+
+/* ??? */
 #define OP_inst_words(o)        (1)
 
-inline char *ISA_PREDICATE_FORMAT (OP *op) {
-  if (OP_jump(op) || OP_ijump(op) || OP_cond(op)) 
-    return ("%s!");
-  return ("%s?");
+#define TOP_same_res(t)             (FALSE)
+#define TOP_save_predicates(t)      (FALSE)
+#define TOP_restore_predicates(t)   (FALSE)
+
+// return simulated nop
+//inline OP *_CGTARG_Noop (void) {
+//  return Mk_OP (TOP_noop, True_TN);	// return simulated nop
+//}
+
+inline TOP CGTARG_Noop_Top (ISA_EXEC_UNIT_PROPERTY unit) {
+  return TOP_GP32_NOP;
 }
 
-// ----------------------------------------
-// Copy ASM_OP_ANNOT when duplicating an OP
-// ----------------------------------------
-inline void
-Copy_Asm_OP_Annot(OP* new_op, OP* op) 
-{
-  /*
-  if (OP_code(op) == TOP_asm) {
-    OP_MAP_Set(OP_Asm_Map, new_op, OP_MAP_Get(OP_Asm_Map, op));
-  }
-  */
-  return;
-}
-
-/* -----------------------------------------------------------------------
- *   OP counts for memory analysis (see whirl2ops.cxx)
- * -----------------------------------------------------------------------
- */
-inline BOOL CGTARG_OP_is_barrier (OP *op) {
-  return ((!OP_memory(op) || OP_no_alias(op)) && !OP_call(op));
-}
-
-
-/* -----------------------------------------------------------------------
- * See be/cg/op.h for interface
- * -----------------------------------------------------------------------
- */
-inline BOOL 
-OP_same_res(OP *op)
-{
-  return FALSE;
-}
-
-/* -----------------------------------------------------------------------
- * check if an operation that saves all the predicate registers
- * -----------------------------------------------------------------------
- */
-inline BOOL
-OP_save_predicates(OP *op)
-{
-  return FALSE;
-}
-
-/* -----------------------------------------------------------------------
- * check if an operation that restores all the predicate registers
- * -----------------------------------------------------------------------
- */
-inline BOOL
-OP_restore_predicates(OP *op)
-{
-  return FALSE;
-}
-
-inline void OP_Change_To_Noop(OP *op)
-{
-  ;
-}
+//inline OP *_CGTARG_Noop (ISA_EXEC_UNIT_PROPERTY unit) {
+//  return Mk_OP (TOP_GP32_NOP); // not predicated on ST100
+//}
 
 #endif /* op_targ_INCLUDED */

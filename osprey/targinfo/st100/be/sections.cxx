@@ -32,6 +32,15 @@
 
 */
 
+/* ====================================================================
+ *
+ *  Description:
+ *
+ *    This should be moved to be/com/ directory and should contain only
+ *    target independent stuff. All target dependent things should go
+ *    to targ_sections[c,h].
+ * ====================================================================
+ */
 
 #include <elf.h>
 #include "defs.h"
@@ -40,16 +49,11 @@
 #include "config_targ.h"
 #include "data_layout.h"
 #include "sections.h"
+#include "targ_sections.h"
+#include "targ_isa_bundle.h" // for ISA_INST_BYTES
 
-#define SHF_ST100_SHORT	SHF_MIPS_GPREL
-/* #define INST_BYTES 16 */
-
-#define TDATA1_SIZE  256
-#define TDATA2_SIZE  512
-#define TDATA4_SIZE  1024
-#define SDATA1_SIZE  INT32_MAX
-#define SDATA2_SIZE  INT32_MAX
-#define SDATA4_SIZE  INT32_MAX
+// only called from Shorten_Section():
+extern SECTION_IDX Corresponding_Short_Section (ST *st, SECTION_IDX sec);
 
 SECTION Sections[_SEC_INDEX_MAX] = {
   {_SEC_UNKNOWN,NULL,
@@ -58,8 +62,104 @@ SECTION Sections[_SEC_INDEX_MAX] = {
      0, ".unknown", 0},
   {_SEC_TEXT,	NULL,
      0|SHF_EXECINSTR|SHF_ALLOC,
-	SHT_PROGBITS, INST_BYTES, 
-     INT32_MAX, ELF_TEXT, 0},
+	SHT_PROGBITS, ISA_INST_BYTES, 
+     TEXT_SIZE, ELF_TEXT, 0},
+  {_SEC_DATA,	NULL,
+     0|SHF_WRITE|SHF_ALLOC, 
+	SHT_PROGBITS, 0, 
+     DATA_SIZE, ELF_DATA, 0},
+  {_SEC_SDATA,	NULL,
+     0|SHF_WRITE|SHF_IA_64_SHORT|SHF_ALLOC,
+	SHT_PROGBITS, 0, 
+     SDATA_SIZE, SDATA_NAME, 0},
+  {_SEC_RDATA,	NULL,
+     0|SHF_ALLOC,
+	SHT_PROGBITS, 0, 
+     RDATA_SIZE, ELF_RODATA, 0},
+  {_SEC_SRDATA,	NULL,
+     0|SHF_IA_64_SHORT|SHF_ALLOC,
+	SHT_PROGBITS, 0, 
+     INT32_MAX, MIPS_SRDATA, 0},
+  {_SEC_LIT4,	NULL,
+     0|SHF_IA_64_SHORT|SHF_ALLOC|SHF_MIPS_MERGE,
+	SHT_PROGBITS, 4, 
+     LIT4_SIZE, LIT4_NAME, 0},
+  {_SEC_LIT8,	NULL,
+     0|SHF_IA_64_SHORT|SHF_ALLOC|SHF_MIPS_MERGE,
+	SHT_PROGBITS, 8, 
+     LIT8_SIZE, LIT8_NAME, 0},
+  {_SEC_LIT16,	NULL,
+     0|SHF_IA_64_SHORT|SHF_ALLOC|SHF_MIPS_MERGE,
+	SHT_PROGBITS, 16, 
+     LIT16_SIZE, LIT16_NAME, 0},
+  {_SEC_BSS,	NULL,
+     0|SHF_WRITE|SHF_ALLOC,
+	SHT_NOBITS, 0, 
+     BSS_SIZE, ELF_BSS, 0},
+  {_SEC_SBSS,	NULL,
+     0|SHF_WRITE|SHF_IA_64_SHORT|SHF_ALLOC,
+	SHT_NOBITS, 0, 
+     SBSS_SIZE, SBSS_NAME, 0},
+  {_SEC_GOT,	NULL,
+     0|SHF_IA_64_SHORT|SHF_ALLOC,
+	SHT_PROGBITS, 0, 
+     GOT_SIZE, ELF_GOT, 0},
+  {_SEC_CPLINIT,	NULL,
+     0|SHF_WRITE|SHF_ALLOC|SHF_MIPS_NAMES,
+	SHT_PROGBITS, 0, 
+     CPLINIT_SIZE, CPLINIT_NAME, 0},
+
+  // MIPS and IA64 specific sections
+#if defined(TARG_MIPS) || defined(TARG_IA64)
+  {_SEC_LDATA,	NULL,
+     0|SHF_WRITE|SHF_ALLOC|SHF_MIPS_LOCAL,
+	SHT_PROGBITS, 0, 
+     INT64_MAX, ".MIPS.ldata", 0},
+#ifndef linux
+  {_SEC_LBSS,	NULL,
+     0|SHF_WRITE|SHF_ALLOC|SHF_MIPS_LOCAL,
+	SHT_NOBITS, 0, 
+     INT64_MAX, MIPS_LBSS, 0},
+#else
+  // There is no MIPS_LBSS section on Linux, but we need a space holder
+  {_SEC_LBSS,   NULL,
+     0,
+        0, 0,
+     0, ".unknown", 0},
+#endif
+
+#ifndef linux
+  {_SEC_EH_REGION,	NULL,
+     0|SHF_WRITE|SHF_ALLOC|SHF_MIPS_NAMES,
+	SHT_PROGBITS, 0, 
+     INT64_MAX, MIPS_EH_REGION, 0},
+  {_SEC_EH_REGION_SUPP,	NULL,
+     0|SHF_WRITE|SHF_ALLOC|SHF_MIPS_NAMES,
+	SHT_PROGBITS, 0, 
+     INT64_MAX, MIPS_EH_REGION_SUPP, 0},
+#else
+  // It's not yet clear what to do about the EH_REGION sections on Linux
+  {_SEC_EH_REGION,      NULL,
+     0,
+        0, 0,
+     0, ".unknown", 0},
+  {_SEC_EH_REGION_SUPP, NULL,
+     0,
+        0, 0,
+     0, ".unknown", 0},
+#endif
+  {_SEC_DISTR_ARRAY,  NULL,
+     0|SHF_WRITE|SHF_ALLOC|SHF_MIPS_NAMES,
+	SHT_PROGBITS, 0,
+     INT64_MAX, "_MIPS_distr_array", 0},
+  // I don't know what it is
+  {_SEC_THREAD_PRIVATE_FUNCS,      NULL,
+     0,
+        0, 0,
+     0, ".unknown", 0},
+#endif /* TARG_MIPS || TARG_IA64 */
+
+#if defined(TARG_ST100)
   {_SEC_XSPACE,	NULL,
      0|SHF_WRITE|SHF_ALLOC, 
 	SHT_PROGBITS, 0, 
@@ -92,109 +192,8 @@ SECTION Sections[_SEC_INDEX_MAX] = {
      0|SHF_WRITE|SHF_ST100_SHORT|SHF_ALLOC,
 	SHT_PROGBITS, 0, 
      SDATA4_SIZE, ".sdata4", 0},
-  {_SEC_DATA,	NULL,
-     0|SHF_WRITE|SHF_ST100_SHORT|SHF_ALLOC,
-	SHT_PROGBITS, 0, 
-     INT32_MAX, ELF_DATA, 0},
-  {_SEC_RODATA,	NULL,
-     0|SHF_ALLOC,
-	SHT_PROGBITS, 0, 
-     INT32_MAX, ELF_RODATA, 0},
-  {_SEC_BSS,	NULL,
-     0|SHF_WRITE|SHF_ALLOC,
-	SHT_NOBITS, 0, 
-     INT32_MAX, ELF_BSS, 0},
-  {_SEC_GOT,	NULL,
-     0|SHF_ST100_SHORT|SHF_ALLOC,
-	SHT_PROGBITS, 0, 
-     INT32_MAX, ELF_GOT, 0},
-  {_SEC_CPLINIT,	NULL,
-     0|SHF_WRITE|SHF_ALLOC|SHF_MIPS_NAMES,
-	SHT_PROGBITS, 0, 
-     INT32_MAX, "__cplinit", 0},
-#ifndef linux
-  {_SEC_EH_REGION,	NULL,
-     0|SHF_WRITE|SHF_ALLOC|SHF_MIPS_NAMES,
-	SHT_PROGBITS, 0, 
-     INT32_MAX, MIPS_EH_REGION, 0},
-  {_SEC_EH_REGION_SUPP,	NULL,
-     0|SHF_WRITE|SHF_ALLOC|SHF_MIPS_NAMES,
-	SHT_PROGBITS, 0, 
-     INT32_MAX, MIPS_EH_REGION_SUPP, 0},
-#else
-  // It's not yet clear what to do about the EH_REGION sections on Linux
-  {_SEC_EH_REGION,      NULL,
-     0,
-        0, 0,
-     0, ".unknown", 0},
-  {_SEC_EH_REGION_SUPP, NULL,
-     0,
-        0, 0,
-     0, ".unknown", 0},
-#endif
-  {_SEC_DISTR_ARRAY,  NULL,
-     0|SHF_WRITE|SHF_ALLOC|SHF_MIPS_NAMES,
-	SHT_PROGBITS, 0,
-     INT64_MAX, "_MIPS_distr_array", 0},
-  {_SEC_THREAD_PRIVATE_FUNCS, NULL,
-     0,
-        0, 0,
-     0, ".unknown", 0}
+#endif /* TARG_ST100 */
 };
-
-/* ====================================================================
- *    Corresponding_Short_Section
- * ====================================================================
- */
-SECTION_IDX
-Corresponding_Short_Section (
-  SECTION_IDX sec
-)
-{
-  switch ( sec ) {
-    default:		return sec;
-  }
-}
-
-/* ====================================================================
- *    SEC_is_gprel
- * ====================================================================
- */
-BOOL
-SEC_is_gprel (SECTION_IDX sec)
-{
-  return (SEC_flags(sec) & SHF_ST100_SHORT);
-}
-
-/* ====================================================================
- *    SEC_is_merge
- * ====================================================================
- */
-BOOL
-SEC_is_merge (SECTION_IDX sec)
-{
-  return (SEC_flags(sec) & SHF_MIPS_MERGE);
-}
-
-/* ====================================================================
- *    SEC_is_exec
- * ====================================================================
- */
-extern BOOL
-SEC_is_exec (SECTION_IDX sec)
-{
-  return (SEC_flags(sec) & SHF_EXECINSTR);
-}
-
-/* ====================================================================
- *    SEC_is_nobits
- * ====================================================================
- */
-extern BOOL
-SEC_is_nobits (SECTION_IDX sec)
-{
-  return (SEC_type(sec) & SHT_NOBITS);
-}
 
 /* ====================================================================
  *   Shorten_Section
@@ -215,6 +214,9 @@ Shorten_Section (
    SECTION_IDX newsec;
    BOOL        is_root_block = Is_Allocatable_Root_Block(st);
 
+   // if we are not generating GP-relative addressing, return
+   if (Gen_GP_Relative == FALSE) return sec;
+
    if (!is_root_block && ST_class(st) == CLASS_BLOCK) return sec;
 
    /* For PIC code, we can only put local or hidden objects into GP
@@ -225,9 +227,10 @@ Shorten_Section (
    {
       return sec;
    }
-
-   newsec = Corresponding_Short_Section (sec);
+#if 0
+   newsec = Corresponding_Short_Section (st, sec);
    if (newsec == sec) return sec;	// won't be shortened
+#endif
 
    size = ST_size(st);
    /* size = 0 implies that we don't really know the size. e.g. int a[]; */
@@ -269,6 +272,9 @@ Shorten_Section (
 	}
    }
 
+   newsec = Corresponding_Short_Section (st, sec);
+
+#if 0
    if (sec == _SEC_SDATA1 && ST_class(st) == CLASS_CONST) {
      /* by default put all short .rodata items into .srdata, unless 
       * we can put it into an appropriate merge section.
@@ -290,115 +296,8 @@ Shorten_Section (
 	 break;
      }
    }
-   Set_ST_gprel(st);
+#endif
 
    return newsec;
-}
-
-/* ====================================================================
- *    SEC_static
- * ====================================================================
- */
-SECTION_IDX 
-SEC_static (
-  ST *st
-)
-{
-  SECTION_IDX sec;
-
-  if (ST_is_thread_private(st)) {
-    if (ST_is_initialized(st) && !ST_init_value_zero (st))
-      sec = _SEC_DATA;
-    else
-      sec = _SEC_BSS;
-  }
-  else if (ST_is_initialized(st) && !ST_init_value_zero (st)) {
-    sec = (ST_is_constant(st) ? _SEC_RODATA : _SEC_DATA);
-  }
-  else {
-    sec = _SEC_BSS;
-  }
-
-  return sec;
-}
-
-/* ====================================================================
- *    SEC_uninit_global
- * ====================================================================
- */
-SECTION_IDX 
-SEC_uninit_global (
-  ST *st
-)
-{
-  SECTION_IDX sec;
-
-  if (ST_is_thread_private(st)) {
-    sec = _SEC_BSS;
-  } 
-  else {
-    sec = _SEC_BSS;
-  }
-
-  return sec;
-}
-
-/* ====================================================================
- *    SEC_init_global
- * ====================================================================
- */
-SECTION_IDX 
-SEC_init_global (
-  ST *st
-)
-{
-  SECTION_IDX sec;
-
-  if (ST_is_thread_private(st)) 
-    sec = _SEC_DATA;
-  else if (ST_is_constant(st)) 
-    sec = _SEC_RODATA;
-  else 
-    sec = _SEC_DATA;
-
-  return sec;
-}
-
-/* ====================================================================
- *    SEC_text
- * ====================================================================
- */
-SECTION_IDX 
-SEC_text (
-  ST *st
-)
-{
-  SECTION_IDX sec = _SEC_TEXT;
-  return sec;
-}
-
-SECTION_IDX 
-SEC_text ()
-{
-  SECTION_IDX sec = _SEC_TEXT;
-  return sec;
-}
-
-/* ====================================================================
- *    SEC_extern
- * ====================================================================
- */
-SECTION_IDX 
-SEC_extern (
-  ST *st
-)
-{
-  SECTION_IDX sec;
-
-  sec = Shorten_Section (st, _SEC_DATA);
-  if (sec != _SEC_DATA) 
-    Set_ST_gprel (st);
-
-  return sec;
 }
 

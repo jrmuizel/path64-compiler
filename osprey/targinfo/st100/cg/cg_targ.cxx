@@ -68,11 +68,7 @@
 #include "cg.h"
 #include "void_list.h"
 #include "whirl2ops.h"
-#include "targ_isa_lits.h"
-#include "targ_isa_registers.h"
 #include "w2op.h"
-#include "targ_proc_properties.h"
-#include "targ_isa_enums.h"
 #include "cgtarget.h"
 #include "calls.h"
 #include "cgexp.h"
@@ -87,8 +83,6 @@ TOP CGTARG_Invert_Table[TOP_count+1];
 
 /* ====================================================================
  *   CGTARG_Preg_Register_And_Class
- *
- *   See interface description
  * ====================================================================
  */
 BOOL
@@ -138,6 +132,54 @@ CGTARG_Preg_Register_And_Class (
 
   FmtAssert(FALSE, ("failed to map preg %d", preg));
   /*NOTREACHED*/
+}
+
+/* ====================================================================
+ *   Make_Branch_Conditional
+ *
+ *   If a BB ends in an unconditional branch, turn it into a 
+ *   conditional branch with TRUE predicate, so we can predicate with 
+ *   something else later.
+ *   If we can't find an unconditional branch, just give up and do 
+ *   nothing
+ * ====================================================================
+ */
+void
+Make_Branch_Conditional (
+  BB *bb
+)
+{
+  OP *new_br;
+  TOP new_top;
+  OP* br_op = BB_branch_op(bb);
+
+  if (!br_op) return;
+
+  FmtAssert(FALSE,("Make_Branch_Conditional: not implemented"));
+
+#if 0
+  switch (OP_code(br_op)) {
+  case TOP_br:
+    new_top = TOP_br_cond;
+    break;
+  case TOP_br_r:
+    new_top = TOP_br_r_cond;
+    break;
+  default:
+    return;
+  }
+
+  new_br = Mk_OP(new_top,
+		 True_TN,
+		 Gen_Enum_TN(ECV_bwh_dptk),
+		 Gen_Enum_TN(ECV_ph_few),
+		 Gen_Enum_TN(ECV_dh),
+		 OP_opnd(br_op,2));
+#endif
+
+  OP_srcpos(new_br) = OP_srcpos(br_op);
+  BB_Insert_Op_After(bb, br_op, new_br);
+  BB_Remove_Op(bb, br_op);
 }
 
 /* ====================================================================
@@ -570,61 +612,6 @@ CGTARG_Dependence_Required (
 }
 
 /* ====================================================================
- *   CGTARG_Init_OP_cond_def_kind
- * ====================================================================
- */
-void 
-CGTARG_Init_OP_cond_def_kind (
-  OP *op
-)
-{
-  TOP top = OP_code(op);
-  switch (top) {
-
-    // The following OPs unconditionally define the predicate results.
-    //
-  case TOP_noop:
-
-    Set_OP_cond_def_kind(op, OP_ALWAYS_UNC_DEF);
-    break;
-
-    // The following OPs do not always update the result predicates.
-  case TOP_label:
-
-    Set_OP_cond_def_kind(op, OP_ALWAYS_COND_DEF);
-    break;
-
-  default:
-    if (OP_has_predicate(op))
-      Set_OP_cond_def_kind(op, OP_PREDICATED_DEF);
-    else
-      Set_OP_cond_def_kind(op, OP_ALWAYS_UNC_DEF);
-    break;
-  }
-}
-
-/* ====================================================================
- *   CGTARG_Mem_Ref_Bytes
- *
- *   Requires: OP_load(memop) || OP_store(memop)
- * ====================================================================
- */
-UINT32 
-CGTARG_Mem_Ref_Bytes (
-  const OP *memop
-)
-{
-  FmtAssert(OP_load(memop) || OP_store(memop), ("not a load or store"));
-
-  switch (OP_code(memop)) {
-  default:
-    FmtAssert(FALSE, ("unrecognized op (%s) in CGTARG_Mem_Ref_Bytes",
-		      TOP_Name(OP_code(memop))));
-  }
-  /*NOTREACHED*/
-}
-
-/* ====================================================================
  *                          Local ASMs stuff:
  * ====================================================================
  */
@@ -875,18 +862,31 @@ CGTARG_Postprocess_Asm_String (
 
 /* ====================================================================
  *   CGTARG_Spill_Type
+ *
+ *   Given a TN to spill and the precision range of its contents,
+ *   return the high-level type for the spill operation.
  * ====================================================================
  */
 TY_IDX 
-CGTARG_Spill_Type (TN *tn) 
+CGTARG_Spill_Type (
+  TN *tn,
+  INT range
+) 
 {
+  // For now range is always '0'; return I4 by default:
   switch (TN_register_class(tn)) {
     case ISA_REGISTER_CLASS_guard:
+      return MTYPE_To_TY(MTYPE_I1);
     case ISA_REGISTER_CLASS_du:
-      return Spill_Int_Type;
+      //      return Spill_Int_Type;
+      switch (range) {
+	//      case 0: return MTYPE_To_TY(MTYPE_I5);
+      default: return MTYPE_To_TY(MTYPE_I4);
+      }
 
     case ISA_REGISTER_CLASS_au:
-      return Spill_Ptr_Type;
+      //      return Spill_Ptr_Type;
+      return MTYPE_To_TY(MTYPE_A4);
 
     default:
       FmtAssert(FALSE,("CGTARG_Spill_Type: wrong TN register class"));
@@ -1137,88 +1137,28 @@ CGTARG_OP_is_counted_loop (
 }
 
 /* ====================================================================
- *   CGTARG_Copy_Operand
+ * CGTARG_Can_Change_To_Brlikely
  * ====================================================================
  */
-INT 
-CGTARG_Copy_Operand (
-  OP *op
+BOOL CGTARG_Can_Change_To_Brlikely(OP *xfer_op, TOP *new_opcode)
+{
+  return FALSE;
+}
+
+/* ====================================================================
+ *   CGTARG_Branches_On_True
+ * ====================================================================
+ */
+BOOL
+CGTARG_Branches_On_True (
+  OP* br_op, 
+  OP* cmp_op
 )
 {
-  TOP opr = OP_code(op);
-  switch (opr) {
-
-  // NOTE: TOP_fandcm, TOP_for, and TOP_fxor could be handled like
-  // their integer counterparts should that ever become useful.
-
-  case TOP_GP32_ADD_GT_DR_DR_U8:
-    if (TN_has_value(OP_opnd(op,2)) && TN_value(OP_opnd(op,2)) == 0) {
-      return 1;
-    }
-    break;
-
-    /*
-  case TOP_add:
-  case TOP_or:
-  case TOP_xor:
-    if (TN_register_and_class(OP_opnd(op,2)) == CLASS_AND_REG_zero) {
-      return 1;
-    }
-    if (TN_register_and_class(OP_opnd(op,1)) == CLASS_AND_REG_zero) {
-      return 2;
-    }
-    break;
-
-  case TOP_andcm:
-  case TOP_sub:
-    if (TN_register_and_class(OP_opnd(op,2)) == CLASS_AND_REG_zero) {
-      return 1;
-    }
-    break;
-
-  case TOP_and_i:
-    if (TN_has_value(OP_opnd(op,1)) && TN_value(OP_opnd(op,1)) == -1) {
-      return 2;
-    }
-    break;
-
-  case TOP_extr:
-  case TOP_extr_u:
-    if (   TN_has_value(OP_opnd(op,2)) && TN_value(OP_opnd(op,2)) == 0
-	&& TN_has_value(OP_opnd(op,3)) && TN_value(OP_opnd(op,3)) == 64)
-    {
-      return 1;
-    }
-    break;
-
-  case TOP_shl_i:
-  case TOP_shr_i:
-  case TOP_shr_i_u: 
-    if (   (TN_register_and_class(OP_opnd(op,1)) == CLASS_AND_REG_zero)
-	|| (TN_has_value(OP_opnd(op,2)) && TN_value(OP_opnd(op,2)) == 0))
-    {
-      return 1;
-    }
-    break;
-
-  case TOP_shl:
-  case TOP_shr: 
-  case TOP_shr_u: 
-    if (   (TN_register_and_class(OP_opnd(op,1)) == CLASS_AND_REG_zero)
-	|| (TN_register_and_class(OP_opnd(op,2)) == CLASS_AND_REG_zero))
-    {
-      return 1;
-    }
-    break;
-
-  case TOP_mov:
-  case TOP_mov_f:
-  case TOP_copy_br:
-	return 1;
-    */
-
+  if (OP_opnd(br_op, OP_PREDICATE_OPND) == OP_result(cmp_op, 0)) {
+    return TRUE;
   }
-  return -1;
+  return FALSE;
 }
 
 /* ====================================================================
@@ -1359,7 +1299,933 @@ CGTARG_Adjust_Latency (
   const TOP pred_code = OP_code(pred_op);
   const TOP succ_code = OP_code(succ_op);
 
-  FmtAssert(FALSE,("CGTARG_Adjust_Latency: not implemented"));
+  //  DevWarn("CGTARG_Adjust_Latency: not implemented");
+  return;
+}
+
+/* ====================================================================
+ *   CGTARG_Bundle_Stop_Bit_Available
+ * ====================================================================
+ */
+BOOL 
+CGTARG_Bundle_Stop_Bit_Available(TI_BUNDLE *bundle, INT slot)
+{
+  // Return TRUE the stop-bit is already set.
+  if (TI_BUNDLE_stop_bit(bundle, slot)) return TRUE;
+
+  return TI_BUNDLE_Stop_Bit_Available(bundle, slot);
+}
+
+/* ======================================================================
+ *   Delay_Scheduling_OP
+ *
+ *   Placeholder routine to check if placement of <op> at <slot_pos> in
+ *   a <bundle> can be delayed.
+ *
+ * Arthur: I moved it from hb_hazards.cxx for two reasons:
+ *         1. it is target dependent;
+ *         2. I want to change the functionality: once function
+ *            CGTARG_Bundle_Slot_Available() returns TRUE, I want
+ *            the op to be guaranteed to be bundled. In this case,
+ *            I can reserve stop bits (and eventually everything else
+ *            in CGTARG_Bundle_Slot_Available().
+ *
+ * ======================================================================
+ */
+static BOOL
+Delay_Scheduling_OP (
+  OP *op, 
+  INT slot_pos, 
+  TI_BUNDLE *bundle
+)
+{
+
+  // If <op> is a <xfer_op>, we would like to not greedily bundle it.
+  // Rather, delay the same, so that nops (if necessary) can be 
+  // inserted before (instead of after). As a result, any <xfer_op>
+  // will be the last_op in a legal bundle.
+
+#ifdef TARG_IA64
+  if (BB_last_op(OP_bb(op)) == op && OP_xfer(op) && 
+      (slot_pos != (ISA_MAX_SLOTS - 1))) 
+    return TRUE;
+#endif
+
+  // If <op> needs to be the last member of the group, check for slot
+  // positions and any prior stop bits present.
+  if (OP_l_group(op) && (slot_pos != (ISA_MAX_SLOTS - 1)) &&
+      !TI_BUNDLE_stop_bit(bundle, slot_pos))
+    return TRUE;
+
+  return FALSE;
+
+}
+
+/* ====================================================================
+ *   CGTARG_Bundle_Slot_Available
+ * ====================================================================
+ */
+BOOL 
+CGTARG_Bundle_Slot_Available(TI_BUNDLE              *bundle,
+			     OP                     *op,
+			     INT                     slot,
+			     ISA_EXEC_UNIT_PROPERTY *prop, 
+			     BOOL                    stop_bit_reqd,
+			     const CG_GROUPING      *grouping)
+{
+  // If slot already filled, return FALSE.
+  if (TI_BUNDLE_slot_filled(bundle, slot)) return FALSE;
+
+  INT  inst_words = ISA_PACK_Inst_Words(OP_code(op));
+
+  if (EXEC_PROPERTY_is_E0_Unit(OP_code(op)) &&
+      EXEC_PROPERTY_is_E1_Unit(OP_code(op))) {
+    if (slot == 0)
+      *prop = ISA_EXEC_PROPERTY_E0_Unit;
+    if (slot == 1)
+      *prop = ISA_EXEC_PROPERTY_E1_Unit;
+  }
+  else if (EXEC_PROPERTY_is_E1_Unit(OP_code(op))) {
+    // for example GOTO_GF_S21, etc.
+    *prop = ISA_EXEC_PROPERTY_E1_Unit;
+  }
+  else if (EXEC_PROPERTY_is_S0_Unit(OP_code(op)) &&
+	   EXEC_PROPERTY_is_S1_Unit(OP_code(op))) {
+    if (slot == 0)
+      *prop = ISA_EXEC_PROPERTY_S0_Unit;
+    if (slot == 1)
+      *prop = ISA_EXEC_PROPERTY_S1_Unit;
+  }
+  else if (EXEC_PROPERTY_is_S1_Unit(OP_code(op))) {
+    // LSR scheduling class:
+    *prop = ISA_EXEC_PROPERTY_S1_Unit;
+  }
+  else if (EXEC_PROPERTY_is_G_Unit(OP_code(op))) {
+    *prop = ISA_EXEC_PROPERTY_G_Unit;
+  }
+  else if (EXEC_PROPERTY_is_B_Unit(OP_code(op))) {
+    *prop = ISA_EXEC_PROPERTY_B_Unit;
+  }
+  else if (EXEC_PROPERTY_is_A0_Unit(OP_code(op)) &&
+	   EXEC_PROPERTY_is_E1_Unit(OP_code(op))) {
+    if (slot == 0)
+      *prop = ISA_EXEC_PROPERTY_A0_Unit;
+    if (slot == 1)
+      *prop = ISA_EXEC_PROPERTY_E1_Unit;
+  }
+  else if (EXEC_PROPERTY_is_E0ND_Unit(OP_code(op)) &&
+	   EXEC_PROPERTY_is_A1_Unit(OP_code(op))) {
+    if (slot == 0)
+      *prop = ISA_EXEC_PROPERTY_E0ND_Unit;
+    if (slot == 1)
+      *prop = ISA_EXEC_PROPERTY_A1_Unit;
+  }
+  else if (EXEC_PROPERTY_is_A2D_Unit(OP_code(op))) {
+    *prop = ISA_EXEC_PROPERTY_A2D_Unit;
+  }
+  else if (EXEC_PROPERTY_is_D2A_Unit(OP_code(op))) {
+    *prop = ISA_EXEC_PROPERTY_D2A_Unit;
+  }
+  else if (EXEC_PROPERTY_is_T_Unit(OP_code(op))) {
+    *prop = ISA_EXEC_PROPERTY_T_Unit;
+  }
+  else {
+    FmtAssert(FALSE, 
+      ("CGTARG_Bundle_Slot_Available: unknown OP_code property 0x%x",
+             ISA_EXEC_Unit_Prop(OP_code(op))));
+  }
+
+  // If there is a need to delay the scheduling of <op>...
+  // It is done after determination of prop because apparently
+  // prop is needed to be returned ?
+  if (Delay_Scheduling_OP(op, slot, bundle)) return FALSE;
+
+  // Need to check if extra slots are required and available within the
+  // bundle (eg. movl)
+  BOOL extra_slot_reqd = (inst_words == 2) ?
+    TI_BUNDLE_Slot_Available(bundle, *prop, slot + 1) : TRUE;
+
+  // if <stop_bit_reqd>, check for the availability of STOP bit being
+  // available at position <slot - 1>.
+  BOOL stop_bit_avail = (stop_bit_reqd) ? 
+    CGTARG_Bundle_Stop_Bit_Available(bundle, slot - 1) : TRUE;
+  
+  // If stop bit required, reserve it
+  if (slot > 0) {
+    if (stop_bit_reqd && stop_bit_avail) {
+      TI_BUNDLE_Reserve_Stop_Bit(bundle, slot - 1);
+    }
+  }
+   
+  // All bundles have a stop at the end, reserve it
+  TI_BUNDLE_Reserve_Stop_Bit(bundle, 1);
+
+  BOOL slot_avail = extra_slot_reqd && stop_bit_avail &&
+    TI_BUNDLE_Slot_Available (bundle, *prop, slot);
+
+  if (slot_avail) {
+    // Arthur: I prefer to reserve stuff here rather than in hb_hazards.cxx
+    TI_BUNDLE_Reserve_Slot (bundle, slot, *prop);
+  }
+  else {
+    // Need to unreserve the stop bits that I have reserved:
+    if (slot > 0) {
+      if (stop_bit_reqd && stop_bit_avail) {
+	TI_BUNDLE_Unreserve_Stop_Bit(bundle, slot - 1);
+      }
+    }
+
+    TI_BUNDLE_Unreserve_Stop_Bit(bundle, 1);
+  }
+
+  return slot_avail;
+}
+
+/* ====================================================================
+ *   CGTARG_Handle_Bundle_Hazard
+ *
+ *   Handle all bundle hazards in this routine.
+ *   Seemed pretty target independent to me, so moved its body to
+ *   hb_hazards.cxx. However, for all target-dependent stuff this
+ *   stub is left as a possibility.
+ * ====================================================================
+ */
+void
+CGTARG_Handle_Bundle_Hazard (OP                          *op, 
+			     TI_BUNDLE                   *bundle, 
+			     VECTOR                      *bundle_vector,
+			     BOOL                        can_fill, 
+			     INT                         slot_pos, 
+			     INT                         max_pos,
+			     BOOL                        stop_bit_reqd,
+			     ISA_EXEC_UNIT_PROPERTY      prop) 
+{
+  INT ti_err = TI_RC_OKAY;
+  INT template_bit = TI_BUNDLE_Return_Template(bundle);
+  FmtAssert (template_bit != -1, ("Illegal template encoding"));
+
+  // Adjust the slot_pos for TOPs which occupy more than 1 slot position,
+  // eg. ??
+  INT adjusted_slot_pos = (can_fill && ISA_PACK_Inst_Words(OP_code(op)) > 1) ? 
+    max_pos + ISA_PACK_Inst_Words(OP_code(op)) - 1 : max_pos;
+
+  INT i;
+  OP *prev_op = NULL;
+  FOR_ALL_SLOT_MEMBERS(bundle, i) {
+    if (i > adjusted_slot_pos) break;
+    if (!TI_BUNDLE_slot_filled(bundle, i)) {
+      if (i <= max_pos) {
+	OP *noop = Mk_OP(CGTARG_Noop_Top(ISA_EXEC_Slot_Prop(template_bit, i)));
+
+	// Check for conditions if noops need to be inserted before (or
+	// after) <op>.
+	if ((can_fill && !OP_xfer(op) && i >= slot_pos)) { 
+	  BB_Insert_Op_After(OP_bb(op), (prev_op) ? prev_op : op, noop);
+ 	  OP_scycle(noop) = -1;
+	  prev_op = noop;
+        }
+	else {
+	  BB_Insert_Op_Before(OP_bb(op), op, noop);
+ 	  OP_scycle(noop) = -1;
+	  prev_op = (can_fill) ? op : noop;
+	}
+	Set_OP_bundled (noop);
+	TI_BUNDLE_Reserve_Slot (bundle, i, ISA_EXEC_Slot_Prop(template_bit, i));
+      } else {
+	TI_BUNDLE_Reserve_Slot (bundle, i, prop);
+	prev_op = op;
+      }
+    }
+  }
+
+  // if the <bundle> is full, set the <end_group> marker appropriately.
+  if (TI_BUNDLE_Is_Full(bundle, &ti_err)) {
+    FmtAssert(ti_err != TI_RC_ERROR, ("%s", TI_errmsg));
+
+#if 0
+    if (OP_xfer(op)) {
+      if (BB_last_real_op(OP_bb(op)) == op)	Set_OP_end_group(op);
+      if (!can_fill && stop_bit_reqd) {
+	Set_OP_end_group(prev_op);
+	VECTOR_Reset (*bundle_vector);
+      }
+    }
+    else if (prev_op && 
+	     ((prev_op != op && stop_bit_reqd) || 
+	      (BB_last_op(OP_bb(prev_op)) == prev_op))) {
+      Set_OP_end_group(prev_op);
+      VECTOR_Reset (*bundle_vector);
+    }
+    else if (can_fill && BB_last_op(OP_bb(op)) == op) {
+      Set_OP_end_group(op);
+      VECTOR_Reset (*bundle_vector);
+    }
+#else
+    // On ST100 always set <end_group> marker when the bundle is full
+    if (prev_op && prev_op) {
+      // if we added a noop:
+      Set_OP_end_group(prev_op);
+      VECTOR_Reset (*bundle_vector);
+    }
+    else {
+      Set_OP_end_group(op);
+      VECTOR_Reset (*bundle_vector);
+    }
+#endif
+
+  }
+
+  return;
+}
+
+/* ====================================================================
+ *   CGTARG_Handle_Errata_Hazard
+ * ====================================================================
+ */
+void
+CGTARG_Handle_Errata_Hazard (OP *op, INT erratnum, INT ops_to_check)
+{
+}
+
+/* ====================================================================
+ *   CGTARG_Insert_Stop_Bits
+ * ====================================================================
+ */
+void
+CGTARG_Insert_Stop_Bits(BB *bb)
+{
+#if 0
+  // check if appropriate flag is enabled.
+  if (!Itanium_a0_step) return;
+
+  INT slot = 0;	// position in bundle, assumes bb starts new bundle
+  OP *op;
+  // Assumes that bundles have already been laid out.
+  FOR_ALL_BB_OPs_FWD (bb, op) {
+
+    if (Is_OP_fp_op1(op)) {
+      OP *noop1, *noop2, *noop3;
+
+      // Need to find last op in bundle;
+      // are 3 cases:  mmf, mfi, mfb.
+      // never have m in last slot, so previous mm means mmf bundle.
+      OP *last_op_in_bundle;
+      if (slot == 2) {
+	// mmf bundle, so in last slot of bundle
+	last_op_in_bundle = op;
+      }
+      else {
+	// mfi or mfb bundle, so in middle of bundle.
+      	// Advance to the next OP, set the end_of_group marker.
+      	last_op_in_bundle = OP_next(op);
+      	Set_OP_end_group(last_op_in_bundle);
+      }
+
+      // Add an empty bundle <nop.m, nop.i, nop.i>;; with the stop bit
+      // inserted.
+      noop1 = Mk_OP (TOP_nop_m, True_TN, Gen_Literal_TN(0, 4));
+      BB_Insert_Op_After(bb, last_op_in_bundle, noop1);
+      noop2 = Mk_OP (TOP_nop_i, True_TN, Gen_Literal_TN(0, 4));
+      BB_Insert_Op_After(bb, noop1, noop2);
+      noop3 = Mk_OP (TOP_nop_i, True_TN, Gen_Literal_TN(0, 4));
+      BB_Insert_Op_After(bb, noop2, noop3);
+
+      Set_OP_end_group(noop3);
+    }
+
+    if (OP_dummy(op)) continue;
+    if (OP_simulated(op)) continue;
+    slot += ISA_PACK_Inst_Words(OP_code(op));
+    if (slot >= ISA_MAX_SLOTS) slot = 0;
+  }
+#endif
+  return;
+}
+
+/* ====================================================================
+ *   CGTARG_Perform_THR_Code_Generation (OP load_op, THR_TYPE type)
+ *
+ *   Perform THR (and target-specific) code generation tasks per
+ *   THR_TYPE and OP. Depending on <type>, <op> can now be 
+ *   substituted (or replaced with) new ops.
+ * ====================================================================
+ */
+void 
+CGTARG_Perform_THR_Code_Generation (
+  OP *load_op, 
+  THR_TYPE type
+)
+{
+  if (type & THR_DATA_SPECULATION_NO_RB) {
+    FmtAssert(OP_load(load_op), ("CGTARG_Perform_THR_Code_Generation : not a load OP"));
+    INT enum_pos = -1;
+    /*
+    BOOL float_op = OP_Is_Float_Mem(load_op) ? TRUE : FALSE;
+    CGTARG_Return_Enum_TN(load_op, (float_op) ? ECV_fldtype : ECV_ldtype, &enum_pos);
+
+    FmtAssert(enum_pos != -1, ("OP doesn't have enum operand"));
+    
+    TN *enum1_tn = (float_op) ?  Gen_Enum_TN(ECV_fldtype_a) :
+                                 Gen_Enum_TN(ECV_ldtype_a);
+    Set_OP_opnd(load_op, enum_pos, enum1_tn);
+    Set_OP_speculative(load_op);               // set the OP_speculative flag.
+    
+    OP *check_load = Dup_OP(load_op);
+    TN *enum2_tn;
+    enum2_tn = (float_op) ? Gen_Enum_TN(ECV_fldtype_c_nc) : 
+                            Gen_Enum_TN(ECV_ldtype_c_nc);
+    Set_OP_opnd(check_load, enum_pos, enum2_tn); // set the enum TN, need to 
+                                                 // add generic enum accessor.
+    Set_OP_cond_def_kind(check_load, OP_ALWAYS_COND_DEF); 
+
+    BB_Insert_Op_After(OP_bb(load_op), load_op, check_load);
+    */
+
+  } else if (type & THR_DATA_SPECULATION_NO_RB_CLEANUP) {
+    /*
+    INT check_base_idx = TOP_Find_Operand_Use(OP_code(load_op), OU_base);
+    TN *check_base_tn = OP_opnd(load_op, check_base_idx);
+    TN *adv_load_base_tn = OP_opnd(chk_load, check_base_idx);
+    
+    TN *check_result_tn = OP_result(load_op, 0);
+    TN *adv_load_result_tn = OP_result(chk_load, 0);
+
+    if (TNs_Are_Equivalent(check_result_tn, adv_load_result_tn) &&
+	TNs_Are_Equivalent(check_base_tn, adv_load_base_tn)) {
+      BB_Remove_Op(OP_bb(load_op), load_op);
+      
+      INT enum_pos = -1;
+      BOOL float_op = OP_Is_Float_Mem(chk_load) ? TRUE : FALSE;
+      TN *enum_tn = 
+	CGTARG_Return_Enum_TN(chk_load,  
+			      (float_op) ? ECV_fldtype_c_nc : ECV_ldtype_c_nc, 
+			      &enum_pos); 
+
+      FmtAssert(enum_tn, ("OP doesn't have enum operand"));
+      Set_TN_enum(enum_tn, (float_op) ? ECV_fldtype : ECV_ldtype);   
+    }
+    */
+  }
+}
+
+
+
+/**********************************************************************
+ *
+ *             CGTARG_Interference implementation:
+ *
+ **********************************************************************
+ */
+
+static MEM_POOL interference_pool;
+static VOID_LIST** writing;     /* writing[i] is a list of live ranges being
+                                   written into registers in cycle i */
+static BOOL is_loop;            /* Are we working on a loop? */
+static INT32 assumed_longest_latency = 40;
+                                /* We need to allocate <writing> to be somewhat
+                                   longer than the number of cycles in the
+                                   schedule in order to accommodate writes
+                                   initiated near the end of the schedule.
+                                   We'll check and grow this number as
+                                   necessary. */
+static INT32 cycle_count;       /* Number of cycles in the schedule under
+                                   consideration. */
+static void (*make_interference)(void*,void*);
+                                /* Client's interference call back. */
+
+/* ====================================================================
+ *   Increase_Assumed_Longest_Latency
+ *
+ *   We need to increase our assumptions about the longest latency 
+ *   operation in our target.  Also reallocate <writing>.
+ *
+ * ====================================================================
+ */
+static void
+Increase_Assumed_Longest_Latency(INT32 new_longest_latency )
+{
+  DevWarn("Assumed longest latency should be at least %d",
+          new_longest_latency);
+  writing = TYPE_MEM_POOL_REALLOC_N(VOID_LIST*,&interference_pool,writing,
+                                    cycle_count + assumed_longest_latency,
+                                    cycle_count + new_longest_latency);
+  assumed_longest_latency = new_longest_latency;
+}
+
+/* ====================================================================
+ *   CGTARG_Interference_Required
+ * ====================================================================
+ */
+BOOL CGTARG_Interference_Required(void)
+{
+  return FALSE;
+}
+
+/* ====================================================================
+ *   CGTARG_Interference_Initialize
+ * ====================================================================
+ */
+void
+CGTARG_Interference_Initialize ( 
+  INT32 cycle_count_local, 
+  BOOL is_loop_local,
+  void (*make_interference_local)(void*,void*) 
+)
+{
+  static BOOL interference_pool_initialized = FALSE;
+
+  if ( ! interference_pool_initialized ) {
+    MEM_POOL_Initialize(&interference_pool,"Target_specific_interference",
+                        TRUE);
+    interference_pool_initialized = TRUE;
+  }
+
+  MEM_POOL_Push(&interference_pool);
+
+  is_loop = is_loop_local;
+  make_interference = make_interference_local;
+  cycle_count = cycle_count_local;
+
+  if ( is_loop )
+    writing = TYPE_MEM_POOL_ALLOC_N(VOID_LIST*,&interference_pool,cycle_count);
+  else
+    writing = TYPE_MEM_POOL_ALLOC_N(VOID_LIST*,&interference_pool,
+                                    cycle_count + assumed_longest_latency);
+}
+
+/* ====================================================================
+ *   CGTARG_Result_Live_Range
+ * ====================================================================
+ */
+void
+CGTARG_Result_Live_Range ( 
+  void* lrange, 
+  OP* op, 
+  INT32 offset 
+)
+{
+  VOID_LIST* l;
+  INT32 cycle = OP_scycle(op);
+
+  FmtAssert(FALSE, ("CGTARG_Result_Live_Range: not implemented"));
+
+#if 0
+  if ( OP_defs_fp(op) ) {
+    INT32 reg_write_cyc;
+    reg_write_cyc = TI_LATENCY_Result_Available_Cycle(OP_code(op), 0 /*???*/)
+		    + (OP_load(op) ? 0 : 1);
+
+    if ( is_loop )
+      reg_write_cyc = Mod(reg_write_cyc + cycle + offset,cycle_count);
+    else {
+      reg_write_cyc += cycle + offset;
+
+      if ( reg_write_cyc >= cycle_count + assumed_longest_latency ) {
+        /* Our assumed longest latency was too low, it seems */
+        Increase_Assumed_Longest_Latency(1 + reg_write_cyc - cycle_count);
+      }
+    }
+
+    for ( l = writing[reg_write_cyc]; l != NULL; l = VOID_LIST_rest(l) )
+      make_interference(lrange,VOID_LIST_first(l));
+
+    writing[reg_write_cyc] = VOID_LIST_Push(lrange,writing[reg_write_cyc],
+                                            &interference_pool);
+  }
+#endif
+  return;
+}
+
+/* ====================================================================
+ *   CGTARG_Operand_Live_Range
+ * ====================================================================
+ */
+void
+CGTARG_Operand_Live_Range ( 
+  void* lrange, 
+  INT   opnd, 
+  OP*   op, 
+  INT32 offset 
+)
+{
+  VOID_LIST* l;
+  INT32 cycle = OP_scycle(op);
+  INT32 reg_acc_cyc = TI_LATENCY_Operand_Access_Cycle(OP_code(op), opnd);
+
+  if ( is_loop )
+    reg_acc_cyc = Mod(reg_acc_cyc + cycle + offset,cycle_count);
+  else {
+    reg_acc_cyc += cycle + offset;
+
+    if ( reg_acc_cyc >= cycle_count + assumed_longest_latency )
+      return;   /* Nothing writing in this cycle anyway */
+  }
+
+  for ( l = writing[reg_acc_cyc]; l != NULL; l = VOID_LIST_rest(l) )
+    make_interference(lrange,VOID_LIST_first(l));
+}
+
+/* ====================================================================
+ *   CGTARG_Interference_Finalize
+ * ====================================================================
+ */
+void
+CGTARG_Interference_Finalize(void)
+{
+  MEM_POOL_Pop(&interference_pool);
+  writing = (VOID_LIST **) -1;
+}
+
+/**********************************************************************
+ *
+ *                 Peak Rate Class (PRC):
+ *
+ **********************************************************************
+ */
+
+/* ====================================================================
+ *
+ * Reduce_Fraction
+ *
+ * Half hearted attempt to reduce a fraction. If we don't succeed
+ * the only problem will be that we might round incorrectly on a
+ * instruction rate.
+ *
+ * The algorithm is to first try the denominator as a factor and
+ * then a few small primes.
+ *
+ * ====================================================================
+ */
+static void
+Reduce_Fraction(INT frac[2])
+{
+  INT i;
+  static const INT primes[] = {2, 3, 5, 7, 11, 13};
+  INT n = frac[0];
+  INT d = frac[1];
+  INT p = d;
+
+  if (d < -1 || d > 1) {
+    for (i = sizeof(primes) / sizeof(primes[0]); ; p = primes[--i]) {
+      while (n % p == 0 && d % p == 0) {
+	n = n / p;
+	d = d / p;
+      }
+      if (i == 0) break;
+    }
+  }
+
+  frac[0] = n;
+  frac[1] = d;
+}
+
+/* ====================================================================
+ *
+ * Harmonic_Mean
+ *
+ * Compute the harmonic weighted mean of two rates as follows:
+ *
+ *	  1        a                    b
+ *	---- = ( ----- * a_rate ) + ( ----- * b_rate )
+ *	mean     a + b                a + b
+ *
+ * Where:
+ *
+ *	"a" is the number of operations of class "a"
+ *	"b" is the number of operations of class "b"
+ *
+ * ====================================================================
+ */
+static void
+Harmonic_Mean(
+  INT mean[2],
+  INT a,
+  const INT a_rate[2],
+  INT b,
+  const INT b_rate[2]
+) {
+  if (a == 0) {
+    mean[0] = b_rate[0];
+    mean[1] = b_rate[1];
+  } else if (b == 0) {
+    mean[0] = a_rate[0];
+    mean[1] = a_rate[1];
+  } else {
+    mean[1] =   (a * a_rate[1] * b_rate[0]) 
+	      + (b * b_rate[1] * a_rate[0]);
+    mean[0] = (a + b) * a_rate[0] * b_rate[0];
+    Reduce_Fraction(mean);
+  }
+}
+
+/* ====================================================================
+ *   CGTARG_Peak_Rate
+ * ====================================================================
+ */
+void CGTARG_Peak_Rate ( 
+  PEAK_RATE_CLASS prc, 
+  PRC_INFO *info, 
+  INT ratio[2] 
+)
+{
+  ratio[0] = 1;
+  ratio[1] = 1;
+  
+  switch (prc) {
+  case PRC_INST:
+    ratio[0] = 6;
+    break;
+  case PRC_MADD:
+  case PRC_MEMREF:
+    ratio[0] = 2;
+    break;
+  case PRC_FLOP:
+  case PRC_FADD:
+  case PRC_FMUL:
+    ratio[0] = 2;
+    break;
+  case PRC_IOP:
+    ratio[0] = 4;
+    break;
+  default:
+    ratio[0] = 2;
+    break;
+  }
+}
+
+/* =======================================================================
+ *   Plural
+ *
+ *   Return "s" if i != 1, "" otherwise.  Used to get the number of nouns
+ *   right when printing.
+ * =======================================================================
+ */
+#define Plural(i) ((i) != 1 ? "s" : "")
+
+/* =======================================================================
+ *   Percent_Of_Peak
+ *
+ *   Compute the percentage of peak instructions executed. Both the
+ *   actual number of instructions executed and the peak attainable
+ *   are expressed as a fraction of insts/cycle.
+ * =======================================================================
+ */
+static INT
+Percent_Of_Peak(INT numer, INT denom, INT peak[2])
+{
+  if (numer == 0) return 0;
+  return (numer * peak[1] * 100) / ((denom * peak[0]) + peak[1] - 1);
+}
+
+/* =======================================================================
+ *   CGTARG_Print_PRC_INFO
+ *
+ *   Print statistics for the PRC_INFO to a 'file'.
+ * =======================================================================
+ */
+void
+CGTARG_Print_PRC_INFO(
+  FILE       *file,
+  PRC_INFO   *info,
+  INT32      ii,
+  const char *prefix,
+  const char *suffix
+)
+{
+  char *s;
+  INT madds_per_cycle[2];
+  INT memrefs_per_cycle[2];
+  INT flops_per_cycle[2];
+  INT fadds_per_cycle[2];
+  INT fmuls_per_cycle[2];
+  INT iops_per_cycle[2];
+  INT insts_per_cycle[2];
+  INT insts = info->refs[PRC_INST];
+  INT memrefs = info->refs[PRC_MEMREF];
+  INT flops = info->refs[PRC_FLOP];
+  INT madds = info->refs[PRC_MADD];
+  INT fadds = info->refs[PRC_FADD];
+  INT fmuls = info->refs[PRC_FMUL];
+  INT iops = info->refs[PRC_IOP];
+
+  CGTARG_Peak_Rate(PRC_INST, info, insts_per_cycle);
+  CGTARG_Peak_Rate(PRC_MEMREF, info, memrefs_per_cycle);
+  CGTARG_Peak_Rate(PRC_FLOP, info, flops_per_cycle);
+  CGTARG_Peak_Rate(PRC_MADD, info, madds_per_cycle);
+  CGTARG_Peak_Rate(PRC_FADD, info, fadds_per_cycle);
+  CGTARG_Peak_Rate(PRC_FMUL, info, fmuls_per_cycle);
+  CGTARG_Peak_Rate(PRC_IOP, info, iops_per_cycle);
+
+  if (flops != 0) {
+    BOOL unbalanced_fpu = FALSE;
+
+    if ( madds_per_cycle[0] != 0 ) {
+      fprintf(file,"%s%5d flop%1s        (%3d%% of peak) (madds count as 2)%s"
+                   "%s%5d flop%1s        (%3d%% of peak) (madds count as 1)%s"
+                   "%s%5d madd%1s        (%3d%% of peak)%s",
+		 prefix,
+		 flops + madds,
+		 Plural(flops + madds),
+		 Percent_Of_Peak(flops + madds, ii * 2, madds_per_cycle),
+		 suffix,
+		 prefix,
+		 flops,
+		 Plural(flops),
+		 Percent_Of_Peak(flops, ii, flops_per_cycle),
+		 suffix,
+		 prefix,
+		 madds,
+		 Plural(madds),
+		 Percent_Of_Peak(madds, ii, madds_per_cycle),
+		 suffix);
+    }
+    else {
+      fprintf(file,"%s%5d flop%1s        (%3d%% of peak)%s",
+		 prefix,
+		 flops,
+		 Plural(flops),
+		 Percent_Of_Peak(flops, ii, flops_per_cycle),
+		 suffix);
+    }
+
+    if ( unbalanced_fpu ) {
+      INT fmuls2_per_cycle[2]; /* combined fmul/madd peak rate */
+      INT fadds2_per_cycle[2]; /* combined fadd/madd peak rate */
+      INT fadds2 = fadds + madds;
+      INT fmuls2 = fmuls + madds;
+
+      Harmonic_Mean(fmuls2_per_cycle,
+		    fmuls, fmuls_per_cycle,
+		    madds, madds_per_cycle);
+      Harmonic_Mean(fadds2_per_cycle,
+		    fadds, fadds_per_cycle,
+		    madds, madds_per_cycle);
+
+      fprintf(file,"%s%5d fmul%1s        (%3d%% of peak)%s%s",
+		 prefix,
+		 fmuls2,
+		 Plural(fmuls2),
+		 Percent_Of_Peak(fmuls2, ii, fmuls2_per_cycle),
+		 madds_per_cycle[0] ? " (madds count as 1)" : "",
+		 suffix);
+      fprintf(file,"%s%5d fadd%1s        (%3d%% of peak)%s%s",
+		 prefix,
+		 fadds2,
+		 Plural(fadds2),
+		 Percent_Of_Peak(fadds2, ii, fadds2_per_cycle),
+		 madds_per_cycle[0] ? " (madds count as 1)" : "",
+		 suffix);
+    }
+  }
+
+  s = "";
+  if (FALSE) {
+    iops += memrefs;
+    s = " (mem refs included)";
+  }
+
+  fprintf(file,"%s%5d mem ref%1s     (%3d%% of peak)%s"
+               "%s%5d integer op%1s  (%3d%% of peak)%s%s"
+               "%s%5d instruction%1s (%3d%% of peak)%s",
+               prefix,
+               memrefs,
+               Plural(memrefs),
+               Percent_Of_Peak(memrefs, ii, memrefs_per_cycle),
+	       suffix,
+               prefix,
+               iops,
+               Plural(iops),
+               Percent_Of_Peak(iops, ii, iops_per_cycle),
+	       s,
+	       suffix,
+               prefix,
+               insts,
+               Plural(insts),
+               Percent_Of_Peak(insts, ii, insts_per_cycle),
+	       suffix);
+}
+
+
+
+/* =======================================================================
+ *   CGTARG_Compute_PRC_INFO
+ *
+ *   Compute some basic information about the given 'bb'. 
+ * =======================================================================
+ */
+void
+CGTARG_Compute_PRC_INFO(
+  BB *bb,
+  PRC_INFO *info
+)
+{
+  OP *op;
+
+  bzero (info, sizeof (PRC_INFO));
+
+  for ( op = BB_first_op(bb); op != NULL; op = OP_next(op) ) {
+    INT num_insts = OP_Real_Ops (op);
+
+    if (num_insts == 0) continue;
+
+    info->refs[PRC_INST] += num_insts;
+
+    if ( OP_flop(op) ) {
+      BOOL is_single = (OP_result_size(op,0) == 32);
+
+      ++info->refs[PRC_FLOP];
+      info->refs[PRC_FLOP_S] += is_single;
+      if (OP_madd(op)) {
+        ++info->refs[PRC_MADD];
+	info->refs[PRC_MADD_S] += is_single;
+      }
+      else if (OP_fadd(op) || OP_fsub(op)) {
+	++info->refs[PRC_FADD];
+	info->refs[PRC_FADD_S] += is_single;
+      }
+      else if (OP_fmul(op)) {
+	++info->refs[PRC_FMUL];
+	info->refs[PRC_FMUL_S] += is_single;
+      }
+    }
+    else if (OP_memory(op))
+      ++info->refs[PRC_MEMREF];
+    else {
+      INT k;
+
+      /* Conditional moves and m[tf]c1 are not tagged as flops.
+       * We certainly don't want to call them integer ops, so assume
+       * anything that uses FP regs isn't an integer instruction.
+       */
+      if (OP_has_result(op) && TN_is_float(OP_result(op,0))) goto not_iop;
+
+      for (k = 0; k < OP_opnds(op); k++) {
+	if (TN_is_float(OP_opnd(op,k))) goto not_iop;
+      }
+
+      info->refs[PRC_IOP] += num_insts;
+
+    not_iop:
+      ;
+    }
+  }
+}
+
+/**********************************************************************
+ *
+ *                  Hardware Workarounds ??
+ *
+ **********************************************************************
+ */
+/* ====================================================================
+ *   Hardware_Workarounds
+ *
+ *   Placeholder for all Hardware workarounds. 
+ * ====================================================================
+ */
+void
+Hardware_Workarounds(void)
+{
 }
 
 /* ====================================================================
@@ -1371,8 +2237,6 @@ CGTARG_Adjust_Latency (
 
 /* ====================================================================
  *   CGTARG_Initialize
- *
- *   See interface description
  * ====================================================================
  */
 void 
