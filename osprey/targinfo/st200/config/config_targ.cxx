@@ -415,6 +415,11 @@ Preconfigure_Target ( void )
   // Do not use the extract/compose whirl ops
   Enable_extract_compose = FALSE;
 
+  // Do not generate cis() INTRISIC_OPs
+  // Otherwise, WOPT converts calls to sin()/cos() into
+  // REAL/IMAG parts of a cis()
+  CIS_Allowed = FALSE;
+
   // These are only necessary in the BACK_END
   // Can they be used elsewhere, eg. IPA ??
   //
