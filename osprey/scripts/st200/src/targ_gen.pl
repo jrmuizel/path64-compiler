@@ -3305,7 +3305,9 @@ OK:
     }
     elsif ($scdclass eq 'SYNC') {
       push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
-      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['MEM', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
+      push(@{$SUBSET_scd{$subset}{$scdclass}{'res'}}, ['ISSUE', 0 ]);
     }
     elsif ($scdclass eq 'asm' ||
 	   $scdclass eq 'PRGINS') {
