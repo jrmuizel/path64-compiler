@@ -48,7 +48,7 @@ static MEM_POOL MEM_lao_pool;
 // Variable used to skip multiple LAO_INIT / LAO_FINI calls
 static int LAO_initialized = 0;
 
-static void
+void
 LAO_INIT() {
   if (LAO_initialized++ == 0) {
     // initialize LIR
@@ -321,7 +321,7 @@ LAO_INIT() {
   }
 }
 
-static inline void
+void
 LAO_FINI() {
   if (--LAO_initialized == 0) {
     // finalize MEM_lao_pool
@@ -483,6 +483,11 @@ BB_BasicBlock(BB *bb) {
     Interface_setLiveOut(interface, basicblock, tempname);
   }
   return basicblock;
+}
+
+bool
+LAO_optimize(CG_LOOP *cgloop, unsigned lao_actions) {
+  return false;
 }
 
 static CodeRegion

@@ -21,6 +21,29 @@
 #include "errors.h"
 #include "cg_loop.h"
 
+// LAO_EXPERIMENT
+// Replicates enum CodeRegion_Action in LIR_CodeRegion.h
+enum LAO_Action {
+  LAO_NoAction = 0,
+  LAO_BlockSchedule = 1,	// basic / super block scheduling
+  LAO_TraceSchedule = 2,	// scheduling of a block trace
+  LAO_LoopSchedule = 4,		// scheduling with loop-carried dependences
+  LAO_LoopPipeline = 8,		// loop pipelining with modulo scheduling
+  LAO_LoopUnwind = 16,		// modulo expansion if LoopPipeline
+  LAO_LoopUnroll = 32,		// counted loop unrolling
+  LAO_Recurrences = 64,		// recurrence rewriting
+  LAO_Reductions = 128,		// reduction splitting
+};
+
+// LAO_EXPERIMENT
+bool
+LAO_optimize(CG_LOOP *cgloop, unsigned lao_actions);
+
+void
+LAO_INIT();
+void
+LAO_FINI();
+
 // Must be IDENTICAL to enum LOOP_OPT_ACTION in lai/cg_loop.cxx
 enum LAO_SWP_ACTION {
   NO_LOOP_OPT,
