@@ -3,7 +3,8 @@
 # Define the BUILD platform
 #
 BUILD_OS    = LINUX
-#BUILD_OS    = LINUX-RH-WS-3
+#Define COMP_GNU_LOC for linux enterprise 3.0
+#COMP_GNU_LOC=/apa/gnu/Linux-RH-WS-3/bin/
 BUILD_ARCH  = IA32
 BUILD_ABI   = I32BIT
 
