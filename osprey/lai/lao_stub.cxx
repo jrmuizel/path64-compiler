@@ -626,9 +626,19 @@ LAO_makeLoopInfo(BB_List& bb_list, unsigned lao_actions) {
   bool cyclic =
       lao_actions & LAO_LoopSchedule ||
       lao_actions & LAO_LoopPipeline;
-  cyclic = false;	// HACK ALERT
+  //  cyclic = false;	// HACK ALERT
   if (bb_list.size() == 1) {
     BB *bb = bb_list.front();
+
+    if (cyclic) {
+      extern CG_LOOP *Current_CG_LOOP;
+      //
+      // We need to call cg_loop.Build_CG_LOOP_Info() to perform
+      // initialization of operations in the loop. Current_CG_LOOP is a
+      // global variable initialized by the CG_LOOP constructor.
+      Is_True(Current_CG_LOOP, ("No current CG_LOOP"));
+      Current_CG_LOOP->Build_CG_LOOP_Info();
+    }
     CG_DEP_Compute_Graph(bb,
 	false,	// assigned_regs
 	cyclic,	// compute_cyclic
@@ -656,6 +666,8 @@ LAO_makeLoopInfo(BB_List& bb_list, unsigned lao_actions) {
 }
 
 /*----------------------- LAO Optimization Functions -------------------------*/
+
+static void LAOS_printBB (BB *bp);
 
 // Low-level LAO_optimize entry point.
 static bool
@@ -1104,19 +1116,18 @@ LAOS_printCGIR()
 }
 
 /*-------------------------- Old LAO Entry Points ----------------------------*/
-#if 0
+
 bool
-LAO_scheduleRegion ( BB_VECTOR& entryBBs, BB_VECTOR& innerBBs, BB_VECTOR& exitBBs, CodeRegion_Type region_kind, LAO_SWP_ACTION action ) {
+LAO_scheduleRegion ( BB_List& entryBBs, BB_List& innerBBs, BB_List& exitBBs, CodeRegion_Type region_kind, LAO_SWP_ACTION action ) {
   int i;
-  BB *bb;
+  BB_List::iterator bb_iter;
   CodeRegion lir_region;
   int status;
   
   fprintf(TFile, "---- Before LAO schedule region ----\n");
   fprintf(TFile, "---- Begin trace regionBBs ----\n");
-  for (i = 0; i < innerBBs.size(); i ++) {
-    bb = innerBBs[i];
-    LAOS_printBB(bb);
+  for (bb_iter = innerBBs.begin(); bb_iter != innerBBs.end(); bb_iter++) {
+    LAOS_printBB(*bb_iter);
   }    
   fprintf(TFile, "---- End trace regionBBs ----\n");
   //
@@ -1140,7 +1151,7 @@ LAOS_printCGIR(void);
 bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
   LOOP_DESCR *loop = cl.Loop();
   BB *bb;
-  BB_VECTOR entryBBs, innerBBs, exitBBs;
+  BB_List entryBBs, innerBBs, exitBBs;
   bool res;
   //
   LAOS_printCGIR();
@@ -1160,14 +1171,12 @@ bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
   innerBBs.push_back (CG_LOOP_epilog);
   exitBBs.push_back  (CG_LOOP_epilog);
   //
-  fprintf(TFile, "--------------- dpendence graph for %d ---------------\n", BB_id(innerBBs[1]));
+  fprintf(TFile, "--------------- dpendence graph for %d ---------------\n", BB_id(LOOP_DESCR_loophead(loop)));
   // CG_DEP_Compute_Region_Graph
-  CYCLIC_DEP_GRAPH cyclic_graph( innerBBs[1], &MEM_lao_pool); 
-  CG_DEP_Trace_Graph(innerBBs[1]);
+  CYCLIC_DEP_GRAPH cyclic_graph( LOOP_DESCR_loophead(loop), &MEM_lao_pool); 
+  CG_DEP_Trace_Graph(LOOP_DESCR_loophead(loop));
   //
   res = LAO_scheduleRegion ( entryBBs, innerBBs, exitBBs, CodeRegion_InnerLoop, action );
   //
   return res;
 }
-#endif
-
