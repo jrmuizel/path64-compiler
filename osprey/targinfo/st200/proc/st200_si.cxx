@@ -534,9 +534,7 @@ main (int argc, char *argv[])
 		 TOP_UNDEFINED); 
 
   Resource_Requirement(res_ISSUE, 0); 
-  Resource_Requirement(res_ISSUE, 0); 
-  Resource_Requirement(res_ISSUE, 0); 
-  Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_MEM, 0); 
 
 
   ///////////////////////////////////////// 
@@ -598,6 +596,8 @@ main (int argc, char *argv[])
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ODD, 0); 
+  Resource_Requirement(res_XFER, 0); 
 
   Machine_Done("st220.c"); 
 
@@ -825,6 +825,8 @@ main (int argc, char *argv[])
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_ISSUE, 0); 
   Resource_Requirement(res_ISSUE, 0); 
+  Resource_Requirement(res_ODD, 0); 
+  Resource_Requirement(res_XFER, 0); 
 
   Machine_Done("st200.c"); 
 
