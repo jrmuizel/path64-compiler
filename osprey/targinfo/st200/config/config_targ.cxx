@@ -381,6 +381,16 @@ Prepare_Target ( void )
 void
 Preconfigure_Target ( void )
 {
+  /* pv #297274 describes why we cannot put initialized data in .bss */
+  /* (cbr) don't change a tentative definition for a definition.
+   * ref iso/iec 9899 ansi C chap 6.7.2).
+   * For st2x0 we only consider ourselves in "kernel" mode so that not all
+   * registers are available for the appication in order to reduce context
+   * switches (see st200 runtime manual).
+   */
+  // if ( Kernel_Code ) 
+  Zeroinit_in_bss = FALSE;
+
   Gen_PIC_Calls = FALSE;	// ld handle's pic calls for IA-64
   GP_Is_Preserved = FALSE;
 
@@ -410,6 +420,10 @@ Preconfigure_Target ( void )
   // do not allow the test expression optimization, st100 has
   // hardware loop counters
   WOPT_Enable_LFTR2 = FALSE;
+
+  // simple if-conversion at CFG build time 
+  //  WOPT_Enable_Simple_If_Conv = TRUE;
+
 
   // Overwrite some CG defaults:
   Enable_CG_Peephole = FALSE;
@@ -600,11 +614,6 @@ Configure_Source_Target ( char * /* filename */ )
   /* ST200 doesn't have index loads.
    */
   Indexed_Loads_Allowed = FALSE;
-
-  /* pv #297274 describes why we cannot put initialized data in .bss */
-  if ( Kernel_Code ) {
-    Zeroinit_in_bss = FALSE;
-  }
 
   /* Miscellaneous exception control */
   if ( FP_Excp_Max != NULL ) {
