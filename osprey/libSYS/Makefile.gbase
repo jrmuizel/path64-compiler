@@ -58,3 +58,4 @@ VPATH =  $(BUILD_BASE)
 .PRECIOUS: $(LIBRARY)
 $(LIBRARY): $(LIBRARY)($(OBJECTS))
 
+last: make_deps
