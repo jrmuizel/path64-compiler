@@ -64,7 +64,7 @@ LIBRARY_SUBDIRS =  \
 #  Note that be_driver must come last since it depends on other components
 #  being built first.
 #
-TOOL_SUBDIRS = 		\
+TOOL_SUBDIRS = \
 	gccfe \
 	be \
 	lai \
@@ -87,6 +87,6 @@ default install clean clobber:
 	@for d in $(SUBDIRS); do \
 	    if [ -d $$d ] ; then \
 	    	echo "===> cd $$d; $(MAKE) $@"; \
-	    	cd $$d; $(MAKE) $@; cd ..; \
+	    	(cd $$d; $(MAKE) $@) || exit 1; \
 	    fi; \
 	done
