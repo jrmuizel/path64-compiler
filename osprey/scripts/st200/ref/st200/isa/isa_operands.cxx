@@ -127,6 +127,14 @@ main()
   Operand (0, imm); 
 
   /* ====================================== */ 
+  Instruction_Group("O_PswOp", 
+		 TOP_pswset_r, 
+		 TOP_pswclr_r, 
+		 TOP_UNDEFINED); 
+
+  Operand (0, src2, storeval); 
+
+  /* ====================================== */ 
   Instruction_Group("O_Store", 
 		 TOP_stb_i, 
 		 TOP_stb_ii, 
@@ -136,10 +144,6 @@ main()
 		 TOP_stw_ii, 
 		 TOP_prginspg_i, 
 		 TOP_prginspg_ii, 
-		 TOP_pswset_i, 
-		 TOP_pswset_ii, 
-		 TOP_pswclr_i, 
-		 TOP_pswclr_ii, 
 		 TOP_UNDEFINED); 
 
   Operand (0, isrc2, offset); 

@@ -84,7 +84,8 @@ main()
 		p38, 	// xcache opcodes 
 		p39, 	// sync
 		p40, 	// Monadic: dest = src1
-		p41; 	// asm: imm
+		p41, 	// asm: imm
+		p42; 	// PswOp: src2
 
   OPND_ADJ_TYPE	no_adj; 
 
@@ -527,6 +528,14 @@ main()
 	TOP_mulfrac_r, 	 0x10000000UL,
 	TOP_UNDEFINED); 
 
+  /* =====  p42: ===== */ 
+  p42 = ISA_Pack_Type_Create("p42"); 
+  Operand(0, 0, 0, 6); 
+  Instruction_Pack_Group(p42, 
+	TOP_pswset_r, 	 0x10000000UL,
+	TOP_pswclr_r, 	 0x10000000UL,
+	TOP_UNDEFINED); 
+
   /* =====  p15: ===== */ 
   p15 = ISA_Pack_Type_Create("p15"); 
   Result(0, 6, 6); 
@@ -569,8 +578,6 @@ main()
   Operand(2, 0, 6, 6); 
   Instruction_Pack_Group(p20, 
 	TOP_prginspg_i, 	 0x10000000UL,
-	TOP_pswset_i, 	 0x10000000UL,
-	TOP_pswclr_i, 	 0x10000000UL,
 	TOP_stb_i, 	 0x10000000UL,
 	TOP_sth_i, 	 0x10000000UL,
 	TOP_stw_i, 	 0x10000000UL,
@@ -585,8 +592,6 @@ main()
   Operand(0, 9, 0, 23); 
   Instruction_Pack_Group(p21, 
 	TOP_prginspg_ii, 	 0x10000000UL, 0x10000000UL,
-	TOP_pswset_ii, 	 0x10000000UL, 0x10000000UL,
-	TOP_pswclr_ii, 	 0x10000000UL, 0x10000000UL,
 	TOP_stb_ii, 	 0x10000000UL, 0x10000000UL,
 	TOP_sth_ii, 	 0x10000000UL, 0x10000000UL,
 	TOP_stw_ii, 	 0x10000000UL, 0x10000000UL,

@@ -324,9 +324,7 @@ sub op_bytes {
 	   $mnemonic eq 'stb') {
 	$bytes = 1;
     }
-    elsif ($mnemonic eq 'prginspg' ||
-	   $mnemonic eq 'pswclr' ||
-	   $mnemonic eq 'pswset') {
+    elsif ($mnemonic eq 'prginspg') {
 	$bytes = 0;
     }
     else {
@@ -368,9 +366,7 @@ sub op_align {
 	   $mnemonic eq 'stb') {
 	$align = 1;
     }
-    elsif ($mnemonic eq 'prginspg' ||
-	   $mnemonic eq 'pswclr' ||
-	   $mnemonic eq 'pswset') {
+    elsif ($mnemonic eq 'prginspg') {
 	$align = 0;
     }
     else {
@@ -480,6 +476,9 @@ sub set_variant {
     elsif ($format eq 'Monadic') {
 	$variant = "_r";
     }
+    elsif ($format eq 'PswOp') {
+	$variant = "_r";
+    }
     else {
 	printf STDOUT "ERROR: unknown format %s in set_variant\n", $format;
 	exit(1);
@@ -548,10 +547,6 @@ sub set_operands {
 	    $OP_mnemonic[$opcode] eq 'prgadd') {
 	    $OP_opnds[$opcode] = 2;
 	}
-	elsif ($OP_mnemonic[$opcode] eq 'pswclr' ||
-	       $OP_mnemonic[$opcode] eq 'pswset') {
-	    $OP_opnds[$opcode] = 0;
-	}
 	else {
 	    $OP_opnds[$opcode] = 3;
 	}
@@ -615,6 +610,10 @@ sub set_operands {
     elsif ($format eq 'Noop') {
 	$OP_results[$opcode] = 0;
 	$OP_opnds[$opcode] = 0;
+    }
+    elsif ($format eq 'PswOp') {
+	$OP_results[$opcode] = 0;
+	$OP_opnds[$opcode] = 1;
     }
     else {
 	printf STDOUT "ERROR: unknown format %s in set_operands\n", $format;
@@ -781,6 +780,9 @@ sub set_signature {
     elsif ($format eq 'Monadic') {
 	$signature = 'dest:Monadic:src2_opnd1';
     }
+    elsif ($format eq 'PswOp') {
+	$signature = ':PswOp:src2_storeval';
+    }
     else {
 	printf STDOUT "ERROR: unknown format %s in op_signature\n", $format;
 	exit(1);
@@ -942,6 +944,9 @@ sub set_pack {
     elsif ($format eq 'Monadic') {
 	$pack = 'Monadic';
     }
+    elsif ($format eq 'PswOp') {
+	$pack = 'PswOp';
+    }
     else {
 	printf STDOUT "ERROR: unknown format %s in op_pack\n", $format;
 	exit(1);
@@ -1100,6 +1105,9 @@ sub set_print {
     elsif ($format eq 'Monadic') {
 	$OP_res[$opcode][0]{'fmt'} = '%s';
 	$OP_opnd[$opcode][0]{'fmt'} = '%s';
+    }
+    elsif ($format eq 'PswOp') {
+	$OP_opnd[$opcode][2]{'fmt'} = '%s';
     }
     else {
 	printf STDOUT "ERROR: unknown format %s in set_print\n", $format;
@@ -3449,6 +3457,13 @@ FOUND_OPCODE:
     if ($OP_opcode[$opcode] eq 'igoto') {
 	$opnds[0] = 1;
     }
+    if ($OP_opcode[$opcode] eq 'pswset_r' ||
+	$OP_opcode[$opcode] eq 'pswclr_r') {
+	# Chess calls first real operand the third operand,
+	# (and has two fixed operands preceding it).
+	# but compiler calls it the first operand.
+	$opnds[0] = $opnds[2];
+    }
 
     # Sanity check:
     for (my $i = 0; $i < $OP_results[$opcode]; $i++) {
@@ -4393,6 +4408,10 @@ sub read_opcodes {
 		   $mnemonic eq 'zxth') {
 		$format = 'Monadic';
 	    }
+	    elsif ($mnemonic eq 'pswset' ||
+		   $mnemonic eq 'pswclr') {
+		$format = 'PswOp';
+	    }
 	    else {
 		$format = $1;
 	    }
@@ -5106,6 +5125,8 @@ sub read_opcodes {
     &PACK_OPERAND (0, 0, 0, 6);
   &DECL_PACK_TYPE ("asm", 0, 1, "asm: imm");
     &PACK_OPERAND (0, 0, 0, 23);
+  &DECL_PACK_TYPE ("PswOp", 0, 1, "PswOp: src2");
+    &PACK_OPERAND (0, 0, 0, 6);
 
   ###############################################################
   #                       PROCESSING
