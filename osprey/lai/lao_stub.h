@@ -61,7 +61,7 @@ enum LAO_SWP_ACTION {
 
 void LAOS_printCGIR();
 
-bool LAO_scheduleRegion ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs, LAO_SWP_ACTION action );
+bool LAO_scheduleRegion ( vector<BB>& entryBBs, vector<BB>& regionBBs, vector<BB>& exitBBs, LAO_SWP_ACTION action );
 
 bool Perform_SWP ( CG_LOOP& cl, LAO_SWP_ACTION action );
 

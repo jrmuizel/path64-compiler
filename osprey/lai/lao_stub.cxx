@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <vector.h>
 
 #include "bb.h"
 #include "cg_region.h"
@@ -52,6 +53,8 @@ static int LAO_initialized = 0;
 extern "C" {
 #include <unistd.h>
 }
+
+typedef vector<BB*> BB_VECTOR;
 
 // Initialization of the LAO, needs to be called once.
 void
@@ -495,6 +498,17 @@ LAO_mapControlArc(BasicBlockHandle handle, va_list va) {
   }
 }
 
+// Enter the control-flow arcs in the LAO.
+bool
+LAO_optimize(unsigned lao_actions) {
+  Interface_mapBasicBlockHandles(interface, LAO_mapControlArc);
+  return Interface_optimize(interface, lao_actions);
+}
+
+extern "C" {
+#include "unistd.h"
+}
+
 // Enter the live-in information in the LAO.
 void
 LAO_mapLiveIn(BasicBlockHandle handle, va_list va) {
@@ -522,54 +536,89 @@ LAO_mapLiveOut(BasicBlockHandle handle, va_list va) {
 }
 
 // Optimize through the LAO.
+
 bool
-LAO_optimize(unsigned lao_actions) {
-  Interface_mapBasicBlockHandles(interface, LAO_mapControlArc);
-  return Interface_optimize(interface, lao_actions);
+LAO_optimize(BB_VECTOR &entryBBs, BB_VECTOR &innerBBs, BB_VECTOR &exitBBs, unsigned lao_actions ) {
+  int i;
+  CodeRegion lir_region;
+  bool result;
+
+  // First, create LIR basic blocks, and mark entry and exit nodes.
+
+  for (i = 0; i < entryBBs.size(); i++) {
+    LAO_BB_BasicBlock ( entryBBs[i] );
+  }
+
+  for (i = 0; i < innerBBs.size(); i++) {
+    LAO_BB_BasicBlock ( innerBBs[i] );
+  }
+
+  for (i = 0; i < exitBBs.size(); i++) {
+    LAO_BB_BasicBlock ( exitBBs[i] );
+  }
+
+  lir_region = Interface_makeCodeRegion(interface, CodeRegion_InnerLoop);
+    
+  for (i = 0; entryBBs[i]; i++) {
+    CodeRegion_setEntry(lir_region, Interface_getBasicBlock(interface, entryBBs[i]));
+  }
+
+  for (i = 0; exitBBs[i]; i++) {
+    CodeRegion_setExit(lir_region, Interface_getBasicBlock(interface, exitBBs[i]));
+  }
+
+  CodeRegion_pretty(lir_region, TFile);
+    
+  result = LAO_optimize(lao_actions);
 }
 
 // Optimize a LOOP_DESCR through the LAO.
 bool
 LAO_optimize(LOOP_DESCR *loop, unsigned lao_actions) {
   bool result = false;
+  BB_VECTOR entryBBs, innerBBs, exitBBs;
+
+  LAOS_printCGIR();
+
+  printf("PID = %lld\n", (int64_t)getpid());
+  int scan; scanf("%d", &scan);
+
   if (BB_innermost(LOOP_DESCR_loophead(loop))) {
+    // Create a prolog and epilog for the region when possible.
     CG_LOOP cg_loop(loop);
-    // Enter the prolog blocks in linear order.
-    if (cg_loop.Has_prolog()) {
-      for (BB *bb = CG_LOOP_prolog_start;
-	  bb && BB_prev(bb) != CG_LOOP_prolog;
-	  bb = BB_next(bb)) {
-	LAO_BB_BasicBlock(bb);
-      }
-    }
+
+    entryBBs.push_back(CG_LOOP_prolog);
+
     // Enter the body blocks in linear order.
     BB *loop_head = LOOP_DESCR_loophead(loop);
     BB *loop_tail = LOOP_DESCR_Find_Unique_Tail(loop);
-    if (loop_tail != NULL) {
-      for (BB *bb = loop_head;
-	  bb && BB_prev(bb) != loop_tail;
-	  bb = BB_next(bb)) {
-	if (BB_SET_MemberP(LOOP_DESCR_bbset(loop), bb)) {
-	  LAO_BB_BasicBlock(bb);
+
+    if (loop_tail == NULL)
+      return false;
+
+    for (BB *bb = loop_head;
+	 bb && BB_prev(bb) != loop_tail;
+	 bb = BB_next(bb)) {
+      if (BB_SET_MemberP(LOOP_DESCR_bbset(loop), bb)) {
+	innerBBs.push_back(bb);
+
+	BBLIST *succs;
+	FOR_ALL_BB_SUCCS(bb, succs) {
+	  BB *succ = BBLIST_item(succs);
+	  if (!BB_SET_MemberP(LOOP_DESCR_bbset(loop), succ)) {
+	    // A bb can be put more than once in this vector.
+	    exitBBs.push_back(succ);
+	  }
 	}
       }
-    } else return false;
-    // Enter the epilog blocks in linear order.
-    if (cg_loop.Has_epilog()) {
-      for (BB *bb = CG_LOOP_epilog;
-	  bb && BB_prev(bb) != CG_LOOP_epilog_end;
-	  bb = BB_next(bb)) {
-	LAO_BB_BasicBlock(bb);
-      }
     }
-    // Declare the CodeRegion type and set its entry / exit blocks.
-    Interface_makeCodeRegion(interface, CodeRegion_InnerLoop);
-    Interface_setEntry(interface, Interface_getBasicBlock(interface, CG_LOOP_prolog_start));
-    Interface_setExit(interface, Interface_getBasicBlock(interface, CG_LOOP_epilog_end));
-    result = LAO_optimize(lao_actions);
+
+    result = LAO_optimize(entryBBs, innerBBs, exitBBs, lao_actions);
   }
+
   return result;
 }
+
 
 // Optimize a HB through the LAO.
 bool
@@ -577,6 +626,7 @@ LAO_optimize(HB *hb, unsigned lao_actions) {
   bool result = false;
   return result;
 }
+
 
 static BasicBlock
 BB_convert2LIR ( BB *bb ) {
@@ -636,10 +686,10 @@ BB_convert2LIR ( BB *bb ) {
 }
 
 static bool
-BB_inRegion ( BB *regionBBs[], BB *bb ) {
+BB_inRegion ( BB_VECTOR& regionBBs, BB *bb ) {
   int i;
 
-  for (i = 0; regionBBs[i]; i++) {
+  for (i = 0; i < regionBBs.size(); i++) {
     if (regionBBs[i] == bb)
       return true;
   }
@@ -660,28 +710,28 @@ BB_LIRcreateEdges ( BB *src, BB *dst ) {
 }
 
 static CodeRegion
-REGION_convert2LIR ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs ) {
+REGION_convert2LIR ( BB_VECTOR& entryBBs, BB_VECTOR& regionBBs, BB_VECTOR& exitBBs ) {
   int i;
 
   CodeRegion coderegion = Interface_makeCodeRegion(interface, CodeRegion_InnerLoop);
 
   // First, create LIR basic blocks, and mark entry and exit nodes.
 
-  for (i = 0; regionBBs[i]; i++) {
-    BB_convert2LIR ( regionBBs[i] );
+  for (i = 0; i < regionBBs.size(); i++) {
+    LAO_BB_BasicBlock ( regionBBs[i] );
   }
 
-  for (i = 0; entryBBs[i]; i++) {
+  for (i = 0; i < entryBBs.size(); i++) {
     CodeRegion_setEntry(coderegion, Interface_getBasicBlock(interface, entryBBs[i]));
   }
 
-  for (i = 0; exitBBs[i]; i++) {
+  for (i = 0; i < exitBBs.size(); i++) {
     CodeRegion_setExit(coderegion, Interface_getBasicBlock(interface, exitBBs[i]));
   }
 
   // Then, create the control-flow edges between them.
   BBLIST *bl;
-  for (i = 0; regionBBs[i]; i++) {
+  for (i = 0; i < regionBBs.size(); i++) {
     BB *src, *dst;
     src = regionBBs[i];
     FOR_ALL_BB_SUCCS (src, bl) {
@@ -697,7 +747,7 @@ REGION_convert2LIR ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs ) {
 
 static void LAOS_printBB (BB *bp);
 
-bool LAO_scheduleRegion ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs , LAO_SWP_ACTION action ) {
+bool LAO_scheduleRegion ( BB_VECTOR& entryBBs, BB_VECTOR& innerBBs, BB_VECTOR& exitBBs , LAO_SWP_ACTION action ) {
   int i;
   BB *bb;
   CodeRegion lir_region;
@@ -705,15 +755,15 @@ bool LAO_scheduleRegion ( BB ** entryBBs, BB ** exitBBs, BB ** regionBBs , LAO_S
   
   fprintf(TFile, "---- Before LAO schedule region ----\n");
   fprintf(TFile, "---- Begin trace regionBBs ----\n");
-  for (i = 0; regionBBs[i]; i ++) {
-    bb = regionBBs[i];
+  for (i = 0; i < innerBBs.size(); i ++) {
+    bb = innerBBs[i];
     LAOS_printBB(bb);
   }    
   fprintf(TFile, "---- End trace regionBBs ----\n");
 
   LAO_INIT();
 
-  lir_region = REGION_convert2LIR(entryBBs, exitBBs, regionBBs);
+  lir_region = REGION_convert2LIR(entryBBs, innerBBs, exitBBs);
 
   CodeRegion_pretty(lir_region, TFile);
 
@@ -734,8 +784,7 @@ void LAOS_printCGIR(void);
 bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
   LOOP_DESCR *loop = cl.Loop();
   BB *bb;
-  BB **entryBBs, **exitBBs, **regionBBs;
-  int entryIdx, regionIdx, exitIdx;
+  BB_VECTOR entryBBs, innerBBs, exitBBs;
   bool res;
 
   LAOS_printCGIR();
@@ -749,24 +798,18 @@ bool Perform_SWP(CG_LOOP& cl, LAO_SWP_ACTION action) {
 
   FOR_ALL_BB_SET_members(LOOP_DESCR_bbset(loop), bb) LAOS_printBB(bb);
 
-  entryIdx = regionIdx = exitIdx = 0;
+  entryBBs.push_back (CG_LOOP_prolog);
+  innerBBs.push_back (CG_LOOP_prolog);
+  innerBBs.push_back (LOOP_DESCR_loophead(loop));
+  innerBBs.push_back (CG_LOOP_epilog);
+  exitBBs.push_back  (CG_LOOP_epilog);
 
-  entryBBs  = (BB **)alloca(sizeof(BB *)*2);
-  exitBBs   = (BB **)alloca(sizeof(BB *)*2);
-  regionBBs = (BB **)alloca(sizeof(BB *)*4);
-
-  entryBBs[entryIdx++] = regionBBs[regionIdx++] = CG_LOOP_prolog;
-  regionBBs[regionIdx++] = LOOP_DESCR_loophead(loop);
-  exitBBs[exitIdx++] = regionBBs[regionIdx++] = CG_LOOP_epilog;
-    
-  entryBBs[entryIdx] = exitBBs[exitIdx] = regionBBs[regionIdx] = NULL;
-      
-  fprintf(TFile, "--------------- dpendence graph for %d ---------------\n", BB_id(regionBBs[1]));
+  fprintf(TFile, "--------------- dpendence graph for %d ---------------\n", BB_id(innerBBs[1]));
   // CG_DEP_Compute_Region_Graph
-  CYCLIC_DEP_GRAPH cyclic_graph( regionBBs[1], &MEM_lao_pool); 
-  CG_DEP_Trace_Graph(regionBBs[1]);
+  CYCLIC_DEP_GRAPH cyclic_graph( innerBBs[1], &MEM_lao_pool); 
+  CG_DEP_Trace_Graph(innerBBs[1]);
 
-  res = LAO_scheduleRegion ( entryBBs, exitBBs, regionBBs, action );
+  res = LAO_scheduleRegion ( entryBBs, innerBBs, exitBBs, action );
 
   return res;
 }
