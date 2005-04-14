@@ -68,11 +68,11 @@ LIBRARY_SUBDIRS =  \
 TOOL_SUBDIRS = \
 	gccfe \
 	g++fe \
+	wopt \
 	be \
 	lai \
         ipl \
 	ipa \
-	wopt \
 	lno \
 	lw_inline \
         whirl2c \
