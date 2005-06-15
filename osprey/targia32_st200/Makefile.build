@@ -26,6 +26,8 @@ endif
 BUILD_ROOTS    = TARGET
 BUILD_TYPE     = SHARED
 BUILD_OPTIMIZE = DEBUG
+# For coverage use:
+# BUILD_OPTIMIZE = -O0 -fprofile-arcs -ftest-coverage -g
 #BUILD_VARIANT  = DEBUG
 BUILD_VARIANT  = RELEASE
 BUILD_INSTALL  = DEFAULT
