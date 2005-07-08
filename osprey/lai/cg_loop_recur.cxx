@@ -1158,7 +1158,12 @@ Fix_Recurrences_Before_Unrolling (
   FOR_ALL_BB_OPs(body, op) {
 
     if (! OP_has_predicate(op) || 
+      /* (cbr) predicate operand # is not necessary constant */
+#ifdef TARG_ST
+	! TN_is_true_pred(OP_opnd(op, OP_find_opnd_use(op, OU_predicate))))
+#else        
 	! TN_is_true_pred(OP_opnd(op, OP_PREDICATE_OPND))) 
+#endif
     {
 	continue;
     }
