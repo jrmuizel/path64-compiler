@@ -40,6 +40,11 @@
 #include "pqs.h"
 #include "tracing.h"
 
+#ifdef TARG_ST
+/* (cbr) use target interface */
+#include "targ_pqs.h"
+#endif
+
 // Disable the PQS (for debugging purposes)
 BOOL PQS_disabled=FALSE;
 
@@ -50,6 +55,8 @@ BOOL PQS_Tracing;
 TN_MAP PQS_tn_map;
 OP_MAP PQS_op_map;
 
+#ifndef TARG_ST
+/* (cbr) use target interface */
 /* ====================================================================
  *   get_top_info
  *
@@ -59,9 +66,6 @@ OP_MAP PQS_op_map;
 static void
 get_top_info(TOP x, PQS_ITYPE &itype, PQS_RELOPTYPE &relop)
 {
-   relop = PQS_RELOPTYPE_OTHER;
-   itype = PQS_ITYPE_INVALID;
-
    switch (x) {
      case TOP_GP32_EQE_GT_BR_DR_DR:
      case TOP_GP32_EQE_GT_BR_DR_U8:
@@ -114,6 +118,7 @@ get_top_info(TOP x, PQS_ITYPE &itype, PQS_RELOPTYPE &relop)
 
    return;
 }
+#endif
 
 /****************************************************************
 
@@ -143,10 +148,20 @@ PQS_classify_instruction (PQS_OP inst, PQS_TN &qual, PQS_TN &p1, PQS_TN &p2, PQS
    p2 = NULL;
    
    topcode = OP_code(inst);
+#ifdef TARG_ST
+   /* (cbr) use target interface */
+   PQSTARG_get_top_info(topcode, result, relop);
+#else
    get_top_info(topcode, result, relop);
-   
+#endif
+
    if (OP_has_predicate(inst)) {
-      qual = OP_opnd(inst,OP_PREDICATE_OPND);
+#ifdef TARG_ST
+     /* (cbr) predicate operand # is not necessary constant */
+     qual = OP_opnd(inst, OP_find_opnd_use(inst, OU_predicate));
+#else
+     qual = OP_opnd(inst,OP_PREDICATE_OPND);
+#endif
    }
    
    // Detect some very simple (but important) special cases
@@ -210,11 +225,15 @@ get_tn_map(const TN *t)
 // get_tn_map to set up the stuff for P0
 void PQS_MANAGER::Init_TN_OP_Info(void)
 {
+#ifdef TARG_ST200
+  True_TN = Gen_Register_TN (ISA_REGISTER_CLASS_branch, 4);
+#endif
    PQS_TN_MAP_TYPE *p0_map;
    PQS_TN_P0 = True_TN;
    PQS_tn_map = TN_MAP_Create();
    PQS_op_map = OP_MAP32_Create();
    p0_map = CXX_NEW(PQS_TN_MAP_TYPE,&PQS_mem_pool);
+   
    TN_MAP_Set(PQS_tn_map,PQS_TN_P0,p0_map);
    p0_map->last_def = PQS_IDX_TRUE;
 }
