@@ -212,7 +212,12 @@ SWP_OP_vector::SWP_OP_vector(BB *body, BOOL doloop, MEM_POOL *pool)
   tn_non_rotating = TN_SET_UnionD(tn_non_rotating, tn_invariants, pool);
   OP *br_op = BB_branch_op(body);
   branch = SWP_index(br_op);
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+  control_predicate_tn = OP_has_predicate(br_op) ? OP_opnd(br_op, OP_find_opnd_use(br_op, OU_predicate)) : NULL;
+#else
   control_predicate_tn = OP_has_predicate(br_op) ? OP_opnd(br_op, OP_PREDICATE_OPND) : NULL;
+#endif
   is_doloop = doloop;
   succeeded = false;
   loop_one_more_time = false;
@@ -450,8 +455,14 @@ Remove_Non_Definite_Dependence (
           OP *def1 = op_vec[lrs.defs[0]];
           OP *def2 = op_vec[lrs.defs[1]];
           if (OP_cond_def(def1) && OP_cond_def(def2)) {
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+            TN *pred1 = OP_opnd(def1, OP_find_opnd_use(def1, OU_predicate));
+            TN *pred2 = OP_opnd(def2, OP_find_opnd_use(def2, OU_predicate));
+#else
             TN *pred1 = OP_opnd(def1, OP_PREDICATE_OPND);
             TN *pred2 = OP_opnd(def2, OP_PREDICATE_OPND);
+#endif
             if (pred1 != pred2) {
               DEF_KIND kind;
               OP *pred1_def = TN_Reaching_Value_At_Op(pred1,def1,&kind,TRUE);
@@ -473,11 +484,21 @@ Remove_Non_Definite_Dependence (
 	bool found_covering_def = false;
 	OP *op = op_vec[lrs.uses[i]];
 	if (OP_cond_def(op)) {
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+	  TN *pred_tn = OP_opnd(op, OP_find_opnd_use(op, OU_predicate));
+#else
 	  TN *pred_tn = OP_opnd(op, OP_PREDICATE_OPND);
+#endif
 	  for (int j = lrs.defs.size() - 1; j >= 0; j--) {
 	    if (lrs.defs[j] < lrs.uses[i]) {
 	      OP *defop = op_vec[lrs.defs[j]];
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+	      TN *def_pred_tn = OP_opnd(defop, OP_find_opnd_use(defop, OU_predicate));
+#else
 	      TN *def_pred_tn = OP_opnd(defop, OP_PREDICATE_OPND);
+#endif
 	      if (def_pred_tn == pred_tn &&
 		  TN_DU_map[pred_tn].TN_unchanged(lrs.defs[j], lrs.defs[i])) {
 		found_covering_def = true;
@@ -522,7 +543,12 @@ Remove_Non_Definite_Dependence (
     for (OP *op = BB_first_op(body); op != old_first_op; op = OP_next(op)) {
       CG_LOOP_Init_Op(op);
       for (INT i = 0; i < OP_opnds(op); i++) {
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+	if (i != OP_find_opnd_use(op, OU_predicate) && TN_is_register(OP_opnd(op,i))
+#else
 	if (i != OP_PREDICATE_OPND && TN_is_register(OP_opnd(op,i))
+#endif
 	    && ! TN_is_dedicated(OP_opnd(op,i))) 
 	  Set_OP_omega(op, i, 1);
       }
@@ -601,7 +627,12 @@ void Undo_SWP_Branch(CG_LOOP &cl, bool is_doloop)
 #endif
   } else {
 
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+    TN *predicate = OP_opnd(br_op, OP_find_opnd_use(br_op, OU_predicate));
+#else
     TN *predicate = OP_opnd(br_op, OP_PREDICATE_OPND);
+#endif
 
     FmtAssert(FALSE,("not implemented"));
 #if 0
