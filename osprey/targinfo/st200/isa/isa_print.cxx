@@ -42,7 +42,7 @@
 #include "topcode.h" 
 #include "isa_print_gen.h" 
 
-static const char *mnemonic_names[386] = { 
+static const char *mnemonic_names[392] = { 
   "addcg", 	 /* TOP_addcg */  
   "addf.n", 	 /* TOP_addf_n */  
   "addpc", 	 /* TOP_addpc_r */  
@@ -51,6 +51,7 @@ static const char *mnemonic_names[386] = {
   "add", 	 /* TOP_add_r */  
   "add", 	 /* TOP_add_i */  
   "add", 	 /* TOP_add_ii */  
+  "ADJUST", 	 /* TOP_spadjust */  
   "andc", 	 /* TOP_andc_r */  
   "andc", 	 /* TOP_andc_i */  
   "andc", 	 /* TOP_andc_ii */  
@@ -63,7 +64,6 @@ static const char *mnemonic_names[386] = {
   "and", 	 /* TOP_and_r */  
   "and", 	 /* TOP_and_i */  
   "and", 	 /* TOP_and_ii */  
-  "asm", 	 /* TOP_asm */  
   "asm_0", 	 /* TOP_asm_0 */  
   "asm_10", 	 /* TOP_asm_10 */  
   "asm_11", 	 /* TOP_asm_11 */  
@@ -112,12 +112,13 @@ static const char *mnemonic_names[386] = {
   "asm_7", 	 /* TOP_asm_7 */  
   "asm_8", 	 /* TOP_asm_8 */  
   "asm_9", 	 /* TOP_asm_9 */  
-  "begin.pregtn", 	 /* TOP_begin_pregtn */  
+  "BEGIN_PREGTN", 	 /* TOP_begin_pregtn */  
   "break", 	 /* TOP_break */  
   "brf", 	 /* TOP_brf */  
   "br", 	 /* TOP_br */  
   "bswap", 	 /* TOP_bswap */  
-  "bwd.bar", 	 /* TOP_bwd_bar */  
+  "BWDBAR", 	 /* TOP_bwd_bar */  
+  "CALL", 	 /* TOP_CALL */  
   "call", 	 /* TOP_call */  
   "clz", 	 /* TOP_clz */  
   "cmpeq", 	 /* TOP_cmpeq_r_b */  
@@ -180,26 +181,30 @@ static const char *mnemonic_names[386] = {
   "cmpne", 	 /* TOP_cmpne_ii_b */  
   "cmpne", 	 /* TOP_cmpne_i_r */  
   "cmpne", 	 /* TOP_cmpne_ii_r */  
-  "composep", 	 /* TOP_composep */  
+  "COMPOSEP", 	 /* TOP_composep */  
   "convfi.n", 	 /* TOP_convfi_n */  
   "convif.n", 	 /* TOP_convif_n */  
+  "COPY", 	 /* TOP_COPY */  
   "dbgsbrk", 	 /* TOP_dbgsbrk */  
-  "dfixup", 	 /* TOP_dfixup */  
   "divs", 	 /* TOP_divs */  
   "divu", 	 /* TOP_divu */  
   "div", 	 /* TOP_div */  
-  "end.pregtn", 	 /* TOP_end_pregtn */  
-  "extractp", 	 /* TOP_extractp */  
-  "ffixup", 	 /* TOP_ffixup */  
-  "fwd.bar", 	 /* TOP_fwd_bar */  
-  "getpc", 	 /* TOP_getpc */  
+  "END_PREGTN", 	 /* TOP_end_pregtn */  
+  "EXTRACTP", 	 /* TOP_extractp */  
+  "FALL", 	 /* TOP_FALL */  
+  "FWDBAR", 	 /* TOP_fwd_bar */  
+  "GETPC", 	 /* TOP_getpc */  
+  "GNUASM", 	 /* TOP_asm */  
+  "GOTO", 	 /* TOP_GOTO */  
   "goto", 	 /* TOP_goto */  
   "icall", 	 /* TOP_icall */  
   "idle", 	 /* TOP_idle */  
-  "ifixup", 	 /* TOP_ifixup */  
+  "IFIXUP", 	 /* TOP_ifixup */  
   "igoto", 	 /* TOP_igoto */  
-  "intrncall", 	 /* TOP_intrncall */  
-  "label", 	 /* TOP_label */  
+  "INTRINSIC", 	 /* TOP_intrncall */  
+  "JUMP", 	 /* TOP_JUMP */  
+  "KILL", 	 /* TOP_KILL */  
+  "LABEL", 	 /* TOP_label */  
   "ldbc", 	 /* TOP_ldbc_i */  
   "ldbc", 	 /* TOP_ldbc_ii */  
   "ldbuc", 	 /* TOP_ldbuc_i */  
@@ -235,6 +240,8 @@ static const char *mnemonic_names[386] = {
   "ldw.d", 	 /* TOP_ldw_d_ii */  
   "ldw", 	 /* TOP_ldw_i */  
   "ldw", 	 /* TOP_ldw_ii */  
+  "LINK", 	 /* TOP_LINK */  
+  "LOOP", 	 /* TOP_LOOP */  
   "maxu", 	 /* TOP_maxu_r */  
   "maxu", 	 /* TOP_maxu_i */  
   "maxu", 	 /* TOP_maxu_ii */  
@@ -248,9 +255,9 @@ static const char *mnemonic_names[386] = {
   "min", 	 /* TOP_min_r */  
   "min", 	 /* TOP_min_i */  
   "min", 	 /* TOP_min_ii */  
-  "movc", 	 /* TOP_movc */  
-  "movcf", 	 /* TOP_movcf */  
-  "movp", 	 /* TOP_movp */  
+  "MOVC", 	 /* TOP_movc */  
+  "MOVCF", 	 /* TOP_movcf */  
+  "MOVP", 	 /* TOP_movp */  
   "mov", 	 /* TOP_mov_r */  
   "mov", 	 /* TOP_mov_i */  
   "mov", 	 /* TOP_mov_ii */  
@@ -307,13 +314,10 @@ static const char *mnemonic_names[386] = {
   "mull", 	 /* TOP_mull_r */  
   "mull", 	 /* TOP_mull_i */  
   "mull", 	 /* TOP_mull_ii */  
-  "composep", 	 /* TOP_multi_composep */  
-  "extractp", 	 /* TOP_multi_extractp */  
   "ldpc", 	 /* TOP_multi_ldpc_i */  
   "ldpc", 	 /* TOP_multi_ldpc_ii */  
   "ldp", 	 /* TOP_multi_ldp_i */  
   "ldp", 	 /* TOP_multi_ldp_ii */  
-  "movp", 	 /* TOP_multi_movp */  
   "stpc", 	 /* TOP_multi_stpc_i */  
   "stpc", 	 /* TOP_multi_stpc_ii */  
   "stp", 	 /* TOP_multi_stp_i */  
@@ -324,7 +328,7 @@ static const char *mnemonic_names[386] = {
   "nandl", 	 /* TOP_nandl_ii_b */  
   "nandl", 	 /* TOP_nandl_i_r */  
   "nandl", 	 /* TOP_nandl_ii_r */  
-  "noop", 	 /* TOP_noop */  
+  "NOOP", 	 /* TOP_noop */  
   "nop", 	 /* TOP_nop */  
   "norl", 	 /* TOP_norl_r_b */  
   "norl", 	 /* TOP_norl_r_r */  
@@ -348,7 +352,7 @@ static const char *mnemonic_names[386] = {
   "pftc", 	 /* TOP_pftc_ii */  
   "pft", 	 /* TOP_pft_i */  
   "pft", 	 /* TOP_pft_ii */  
-  "phi", 	 /* TOP_phi */  
+  "PHI", 	 /* TOP_phi */  
   "prgadd", 	 /* TOP_prgadd_i */  
   "prgadd", 	 /* TOP_prgadd_ii */  
   "prgins", 	 /* TOP_prgins */  
@@ -358,11 +362,13 @@ static const char *mnemonic_names[386] = {
   "prginspg", 	 /* TOP_prginspg_ii */  
   "prgset", 	 /* TOP_prgset_i */  
   "prgset", 	 /* TOP_prgset_ii */  
-  "psi", 	 /* TOP_psi */  
+  "PSI", 	 /* TOP_psi */  
   "pswclr", 	 /* TOP_pswclr */  
   "pswset", 	 /* TOP_pswset */  
+  "PUSHREGS", 	 /* TOP_pushregs */  
   "remu", 	 /* TOP_remu */  
   "rem", 	 /* TOP_rem */  
+  "RETURN", 	 /* TOP_RETURN */  
   "return", 	 /* TOP_return */  
   "returnadd", 	 /* TOP_returnadd */  
   "rfi", 	 /* TOP_rfi */  
@@ -389,13 +395,13 @@ static const char *mnemonic_names[386] = {
   "shr", 	 /* TOP_shr_r */  
   "shr", 	 /* TOP_shr_i */  
   "shr", 	 /* TOP_shr_ii */  
+  "SIGMA", 	 /* TOP_SIGMA */  
   "slctf", 	 /* TOP_slctf_r */  
   "slctf", 	 /* TOP_slctf_i */  
   "slctf", 	 /* TOP_slctf_ii */  
   "slct", 	 /* TOP_slct_r */  
   "slct", 	 /* TOP_slct_i */  
   "slct", 	 /* TOP_slct_ii */  
-  "spadjust", 	 /* TOP_spadjust */  
   "stbc", 	 /* TOP_stbc_i */  
   "stbc", 	 /* TOP_stbc_ii */  
   "stb", 	 /* TOP_stb_i */  
