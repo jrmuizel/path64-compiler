@@ -61,5 +61,8 @@ inline OP* EETARG_High_Level_Procedure_Exit() { return NULL; }
 
 extern void EETARG_Init_Entry_Exit_Code (WN *, BOOL);
 
-
-
+#ifdef TARG_ST
+// Target specific stack frame fixup before finalizing the stack frame
+// layout.
+extern void EETARG_Fixup_Stack_Frame (void);
+#endif
