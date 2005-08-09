@@ -40,6 +40,12 @@
 #define PQS_USE_MEMPOOLS
 #endif
 
+#if __GNUC__ >= 3
+#include <utility>
+#else
+#include <utility.h>
+#endif // __GNUC__ >= 3
+
 #include "tn.h"
 #include "op.h"
 #include "bb.h"
@@ -79,7 +85,7 @@ typedef vector<PQS_NODE_IDX,PQS_NODE_IDX_ALLOCATOR> PQS_NODE_IDX_VECTOR;
 */
 
 // Pairs of index and TN.
-typedef pair<PQS_NODE_IDX,PQS_TN> PQS_TNI;
+typedef std::pair<PQS_NODE_IDX,PQS_TN> PQS_TNI;
 #define PQS_TNI_TN(x) ((x).second)
 #define PQS_TNI_IDX(x) ((x).first)
 
