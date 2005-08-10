@@ -43,7 +43,7 @@
 #if __GNUC__ >= 3
 #include <utility>
 #else
-#include <utility.h>
+#include <pair.h>
 #endif // __GNUC__ >= 3
 
 #include "tn.h"
