@@ -126,6 +126,7 @@ wopt=be
 lno=be wopt ipl
 lw_inline=be
 whirl2c=be
+ir_tools=include libcomutil
 
 
 # Now transform dependencies written above into Make dependencies
