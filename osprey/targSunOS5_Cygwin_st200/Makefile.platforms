@@ -18,6 +18,7 @@ HOST_ABI    = I32BIT
 # Define the TARGET
 #
 BUILD_TARGET = ST200
+BUILD_TARGET_OS = BARE_OS21
 
 ifeq (,$(findstring Cygwin,$(ROOT)))
 Abort .DEFAULT:
