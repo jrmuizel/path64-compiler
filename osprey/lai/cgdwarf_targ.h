@@ -55,7 +55,8 @@ extern Dwarf_P_Fde Build_Fde_For_Proc (Dwarf_P_Debug  dw_dbg,
 				       // symbolic ranges.
 				       INT       low_pc,
 				       INT       high_pc,
-				       Elf64_Word	scn_index);
+				       Elf64_Word	scn_index,
+				       UINT64*   code_len);
 #else
 extern Dwarf_P_Fde Build_Fde_For_Proc (Dwarf_P_Debug  dw_dbg,
 				       BB            *firstbb,
