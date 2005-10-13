@@ -50,7 +50,7 @@ include ../Makefile.build
 #
 #  Define build parameters
 #
-BUILD_BASE     = $(BUILD_TOT)/gccfe
+BUILD_BASE     = $(BUILD_TOT)/g++fe
 
 #
 # Include a top-level makefile which will then include the module

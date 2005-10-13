@@ -59,7 +59,7 @@ ifndef BUILD_DIR
 BUILD_AREA     = ../..
 endif
 
-BUILD_BASE     = $(BUILD_TOT)/gccfe/gnu
+BUILD_BASE     = $(BUILD_TOT)/g++fe/gnu
 
 #
 # Include a top-level makefile which will then include the module

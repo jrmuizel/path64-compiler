@@ -1,4 +1,3 @@
-BUILD_NEW=yes
 
 #
 # Define the BUILD platform
@@ -19,8 +18,3 @@ HOST_ABI    = I32BIT
 #
 BUILD_TARGET = ST200
 
-ifeq (,$(findstring Cygwin,$(ROOT)))
-Abort .DEFAULT:
-	@echo Error: "must set ROOT to the cygwin install dir !"
-	@exit 1
-endif

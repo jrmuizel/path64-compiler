@@ -9,7 +9,7 @@
 # where to find the sources
 # SRC_DIR        = $(HOME)/Work/PRO64/osprey1.0
 # where to build
-# BUILD_DIR      = /tmp/targia32_Cygwin_st200
+# BUILD_DIR      = /tmp/targia32_st200
 
 ifdef SRC_DIR
 BUILD_TOT      = $(SRC_DIR)
@@ -26,9 +26,24 @@ endif
 BUILD_ROOTS    = TARGET
 BUILD_TYPE     = SHARED
 BUILD_OPTIMIZE = DEBUG
-BUILD_VARIANT  = DEFAULT
+# For coverage use:
+# BUILD_OPTIMIZE = -O0 -fprofile-arcs -ftest-coverage -g
+#BUILD_VARIANT  = DEBUG
+BUILD_VARIANT  = RELEASE
 BUILD_INSTALL  = DEFAULT
 BUILD_COMPILER = GNU
 
+# Use ccache to compile ?
+#BUILD_CCACHE = CCACHE
+#export CCACHE_DIR=/work1/$(USER)/.ccache
+
+# Use distcc in addition to ccache ?
+#export CCACHE_PREFIX=distcc
+#export DISTCC_HOSTS=localhost gnx287 gnx344 gnx366 gnx343
+
 # Build LAO support ?
 LAO_ENABLED=1
+
+
+# ROOT directory for installation
+ROOT:=$(shell pwd)/devimage
