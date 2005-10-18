@@ -3,6 +3,8 @@
 #define H_MATH_H
 
 #include <math.h>
+/* [HK] */
+#if __GNUC__ < 3
 
 #ifndef expf
 #define expf(x) ((float)(exp(x)))
@@ -80,4 +82,5 @@
 #define tanhf(x) ((float)(tanh(x)))
 #endif
 
+#endif /* __GNUC < 3 */
 #endif /* H_MATH_H */
