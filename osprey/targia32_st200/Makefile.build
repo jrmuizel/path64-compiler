@@ -25,7 +25,7 @@ endif
 
 BUILD_ROOTS    = TARGET
 BUILD_TYPE     = SHARED
-BUILD_OPTIMIZE = DEBUG
+BUILD_OPTIMIZE = -O2
 # For coverage use:
 # BUILD_OPTIMIZE = -O0 -fprofile-arcs -ftest-coverage -g
 #BUILD_VARIANT  = DEBUG
@@ -34,8 +34,11 @@ BUILD_INSTALL  = DEFAULT
 BUILD_COMPILER = GNU
 
 # Use ccache to compile ?
-#BUILD_CCACHE = CCACHE
-
-# Build LAO support ?
+BUILD_CCACHE = CCACHE
+CCACHE_DIR=/home/compwork/bidaultt/.ccache
+#CCACHE = distcc
+export CCACHE_PREFIX=distcc
+export DISTCC_HOSTS=gnx287 gnx2259 gnx2260 gnx2261 gnx2262 gnx2363 gnx2364 gnx2365 gnx2366 pcx0022
+# Build LAO support ? 
 LAO_ENABLED=1
 
