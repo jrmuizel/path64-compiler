@@ -1,65 +1,34 @@
 
-#ifndef sys_types_h
-#include "sys/types.h"
-#define sys_types_h
-#endif
-
-#ifndef stddef_h
-#include "stddef.h"
-#define stddef_h
-#endif
-
-#ifndef ctype_h
-#include "ctype.h"
-#define ctype_h
-#endif
-
-#ifndef stdlib_h
-#include "stdlib.h"
-#define stdlib_h
-#endif /* stdlib_h */
-
-#ifndef unistd_h
-#include "unistd.h"
-#define unistd_h
-#endif /* unistd_h */
-
-#ifndef stdio_h
-#include "stdio.h"
-#define stdio_h
-#endif /* stdio_h */
-
-#ifndef string_h
-#include "string.h"
-#define string_h
-#endif /* string_h */
-
-#ifndef errno_h
-#include "errno.h"
-#define errno_h
-#endif /* errno_h */
-
-#ifndef pexecute_h
-#include "pexecute.h"
-#define pexecute_h
-#endif /* pexecute_h */
-
-typedef int bool;
-#define true 1
-#define false 0
-
-#ifndef SYS_h
-#include "SYS.h"
-#define SYS_h
-#endif /* SYS_h */
-
+#include <sys/types.h>
+#include <stddef.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
 #include <sys/stat.h>
-
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#include <signal.h>
+
+#include "libiberty/libiberty.h"
+#include "SYS.h"
+
+/* signal functions .*/
+#ifndef WIFSIGNALED
+#define WIFSIGNALED(S) (((S) & 0xff) != 0 && ((S) & 0xff) != 0x7f)
+#endif
+#ifndef WTERMSIG
+#define WTERMSIG(S) ((S) & 0x7f)
+#endif
+#ifndef WIFEXITED
+#define WIFEXITED(S) (((S) & 0xff) == 0)
+#endif
+#ifndef WEXITSTATUS
+#define WEXITSTATUS(S) (((S) & 0xff00) >> 8)
 #endif
 
-#ifdef _WIN32
+
+#ifdef __MINGW32__
 #define DIR_SEPARATOR '\\'
 #define DIR_SEPARATOR2 '/'
 #define HAS_DRIVE_LETTER
@@ -68,7 +37,7 @@ typedef int bool;
 #define DIR_SEPARATOR '/'
 #endif
 
-#ifdef _WIN32
+#ifdef __MINGW32__
 #ifdef ERROR
 #undef ERROR
 #endif
@@ -77,7 +46,7 @@ typedef int bool;
 char win32_path[MAX_PATH_LENGTH];
 #endif
 
-const char *SYS_programname;
+const char *SYS_programname = "<undefined>";
 
 /* Import getenv. */
 #ifndef getenv
@@ -108,8 +77,8 @@ void *SYS_calloc(int n, int size)
 void *SYS_revert(void *ptr, int size)
 {
   int i;
-  uint8_t *p = (uint8_t *)ptr;
-  uint8_t swap;
+  char *p = (char *)ptr;
+  char swap;
 
   for (i = 0; i < size/2; i++)
     {
@@ -123,7 +92,7 @@ void *SYS_revert(void *ptr, int size)
 
 void *SYS_mempattern(void *dst, int dst_size, const void *pattern, int pattern_size)
 {
-  uint8_t *bptr = (uint8_t *)dst;
+  char *bptr = (char *)dst;
 
   if (pattern_size)
     {
@@ -165,7 +134,7 @@ char SYS_getDirSeparator(void)
   return DIR_SEPARATOR;
 }
 
-bool SYS_isDirSeparator(char c)
+int SYS_isDirSeparator(char c)
 {
   return c == DIR_SEPARATOR
 #ifdef DIR_SEPARATOR2
@@ -174,7 +143,7 @@ bool SYS_isDirSeparator(char c)
 	;
 }
 
-bool SYS_isAbsolute(const char *filename)
+int SYS_isAbsolute(const char *filename)
 {
 #ifdef HAS_DRIVE_LETTER
   return isalpha(filename[0]) && filename[1] == DRIVE_SEPARATOR &&
@@ -184,6 +153,25 @@ bool SYS_isAbsolute(const char *filename)
 #endif
 }
 
+char *SYS_inormalize(char *path)
+{
+  char *p = path;
+  char *ret = p;
+  /* Normalize all dir separators to the canonical one. */
+  while(*path != '\0') {
+    if (SYS_isDirSeparator(*path)) {
+      *p++ = SYS_getDirSeparator();
+      path++;
+      while(SYS_isDirSeparator(*path)) path++;
+    }
+    else {
+      *p++ = *path++;
+    }
+  }
+  if (p > ret && SYS_isDirSeparator(*(p-1))) p--;
+  *p = '\0';
+  return ret;
+}
 char *SYS_makePath(const char *dirname, const char *basename)
 {
     ASSERT(basename != NULL);
@@ -194,10 +182,11 @@ char *SYS_makePath(const char *dirname, const char *basename)
       int dirlen = strlen(dirname);
       char *path = SYS_malloc(sizeof(char)*(dirlen+baselen+2));
       ptr = SYS_strappend(path, dirname);
-      if (*dirname != '\0' && !SYS_isDirSeparator(dirname[dirlen-1])) {
+      if (dirlen > 0 && !SYS_isDirSeparator(dirname[dirlen-1])) {
 	*ptr++ = SYS_getDirSeparator();
       }
       SYS_strappend(ptr, basename);
+      path = SYS_inormalize(path);
       return path;
     }
 }
@@ -212,6 +201,7 @@ const char *SYS_makeFileName(const char *path, const char *suffix)
       char *p = SYS_malloc(sizeof(char)*(pathlen+suffixlen+1));
       strcpy(p, path); 
       strcpy(p+pathlen, suffix);
+      p = SYS_inormalize(p);
       return p;
     }
 }
@@ -221,25 +211,35 @@ const char *SYS_baseptr(const char *path)
     const char *p;
     p = strrchr(path, DIR_SEPARATOR);
 #ifdef DIR_SEPARATOR2
-    if (p == NULL) p = strrchr(path, DIR_SEPARATOR2);
+    {
+      const char *p2;
+      p2 = strrchr(path, DIR_SEPARATOR2);
+      if (p2 > p) p = p2;
+    }
 #endif
     return p == NULL ? path : p+1;
 }
 
-char *SYS_basename(const char *path)
+char *SYS_abasename(const char *path)
 {
     return SYS_strdup(SYS_baseptr(path));
 }
 
-bool SYS_matchsuffix(const char *path, const char *suffix)
+const char *SYS_ibasename(char *path)
 {
-  bool match = true;
+    return SYS_baseptr(path);
+}
+
+
+int SYS_matchsuffix(const char *path, const char *suffix)
+{
+  int match = 1;
   const char *p1 = suffix + strlen(suffix);
   const char *p2 = path + strlen(path);
   while(p1 > suffix) {
     p1--; p2--;
     if (p2 < path || (*p1 != *p2)) {
-      match = false;
+      match = 0;
       break;
     }
   }
@@ -248,14 +248,14 @@ bool SYS_matchsuffix(const char *path, const char *suffix)
 
 const char *SYS_baseprefix(const char *path, const char *suffix)
 {
-  bool match = true;
-  const char *p = SYS_basename(path);
+  int match = 1;
+  const char *p = SYS_baseptr(path);
   const char *p1 = suffix + strlen(suffix);
   char *p2 = (char *)p + strlen(p);
   while(p1 > suffix) {
     p1--; p2--;
     if (p2 < p || (*p1 != *p2)) {
-      match = false;
+      match = 0;
       break;
     }
   }
@@ -265,12 +265,16 @@ const char *SYS_baseprefix(const char *path, const char *suffix)
   return (const char *)p;
 }
 
-char *SYS_dirname(const char *path)
+char *SYS_adirname(const char *path)
 {
     const char *p;
     p = strrchr(path, DIR_SEPARATOR);
 #ifdef DIR_SEPARATOR2
-    if (p == NULL) p = strrchr(path, DIR_SEPARATOR2);
+    {
+      const char *p2;
+      p2 = strrchr(path, DIR_SEPARATOR2);
+      if (p2 > p) p = p2;
+    }
 #endif
     if (p == NULL) {
 	return SYS_strdup(".");
@@ -278,9 +282,35 @@ char *SYS_dirname(const char *path)
 	char *dirname = SYS_malloc(sizeof(char)*(p-path+1));
 	if (p-path > 0) {
 	  memcpy(dirname, path, p-path);
+	} else {
+	  dirname[0] = DIR_SEPARATOR;
+	  p++;
 	}
 	dirname[p-path] = '\0';
 	return dirname;
+    }
+}
+
+char *SYS_idirname(char *path)
+{
+    const char *p;
+    p = strrchr(path, DIR_SEPARATOR);
+#ifdef DIR_SEPARATOR2
+    {
+      const char *p2;
+      p2 = strrchr(path, DIR_SEPARATOR2);
+      if (p2 > p) p = p2;
+    }
+#endif
+    if (p == NULL) {
+      return strcpy(path, ".");
+    } else {
+      if (p-path == 0) {
+	path[0] = DIR_SEPARATOR;
+	p++;
+      }
+      path[p-path] = '\0';
+      return path;
     }
 }
 
@@ -304,7 +334,7 @@ int SYS_is_file(const char *path)
 char *SYS_tmpdir(void)
 {
   char *tmpdir;
-#ifdef _WIN32
+#ifdef __MINGW32__
   if ((tmpdir = getenv("TMPDIR")) != NULL && SYS_is_dir(tmpdir)) return SYS_strdup(tmpdir);
   if ((tmpdir = getenv("TMP")) != NULL && SYS_is_dir(tmpdir)) return SYS_strdup(tmpdir);
   if ((tmpdir = getenv("TEMP")) != NULL && SYS_is_dir(tmpdir)) return SYS_strdup(tmpdir);
@@ -319,14 +349,8 @@ char *SYS_tmpdir(void)
 
 char *SYS_tmpname(void)
 {
-
-  /* tmpnam() always returns T_tmpdir. The following allows
-a more flexible scheme. */
-  const char *tmpfile = tmpnam(NULL);
-  const char *filename = SYS_baseptr(tmpfile);
-  char *tmpdir = SYS_tmpdir();
-  char *path = SYS_makePath(tmpdir, filename);
-  return path;
+  
+  return make_temp_file("");
 }
 
 int SYS_unlink(const char *filename)
@@ -336,123 +360,45 @@ int SYS_unlink(const char *filename)
   return status;
 }
 
-int SYS_execute(const char *program, char * const *argv, int flags)
-{
-    char *errmsg_fmt, *errmsg_arg;
-    int ret = 0;
-    int status = 0;
-    int pid = 0;
-
-    if (flags & SYS_FLG_VERBOSE) {
-      int i;
-      for (i = 0; argv[i] != NULL; i++) {
-	fprintf(stderr, "%s ", argv[i]);
-      }
-      fprintf (stderr, "\n");
-    }
-
-    if (!(flags & SYS_FLG_DRYRUN)) {
-      pid = pexecute(program, argv,
-	SYS_programname, NULL, 
-	&errmsg_fmt, &errmsg_arg, flags & SYS_FLG_SEARCH ? PEXECUTE_SEARCH : 0);
-
-      if (pid == -1) {
-        fprintf (stderr, "%s: can't lauch %s: \n", SYS_programname, program);
-        fprintf (stderr, errmsg_fmt, errmsg_arg);
-        fprintf (stderr, "\n");
-      } else {
-        pid = pwait(pid, &status, 0);
-        if (pid < 0) {
-          ABORT();
-        }
-      }
-    }
-
-    if (pid == -1) {
-	ret = -1;
-    } else {
-      if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
-        fprintf (stderr, "%s: sub process %s returned status %d\n", SYS_programname, program, WEXITSTATUS(status));
-        ret = -1;
-      } else if (WIFSIGNALED(status)) {
-        fprintf (stderr, "%s: sub process %s received signal %d\n", SYS_programname, program, WTERMSIG(status));
-        ret = -1;
-      }
-    } 
-    return ret;
-}
-
-char *SYS_getpdir_w32(const char *program);
-char *SYS_getpdir_w32(const char *program)
+#ifdef __MINGW32__
+char *SYS_full_path_w32(const char *pname)
 {
   char *pdir = NULL;
-#ifdef _WIN32
-  HMODULE mod;
   char *ignored ;  
-  if((mod = GetModuleHandle (NULL)) != NULL) {
-    if ((GetModuleFileName (mod, win32_path, MAX_PATH_LENGTH)) != 0) {
-      pdir = SYS_dirname(win32_path);
-    } else if (GetFullPathName(program, MAX_PATH_LENGTH, win32_path, &ignored)) {
-	pdir = SYS_dirname(win32_path);
-    } else { 
-	fprintf (stderr, "%s: cannot find installation directory (GetLastError: %lu)\n", SYS_programname, GetLastError()) ;
-    }
+  if (GetFullPathName(pname, MAX_PATH_LENGTH, win32_path, &ignored)) {
+    pdir = SYS_strdup(win32_path);
   }
-#endif
   return pdir;
 }
-
-char *SYS_absolute_path_w32(const char *program);
-char *SYS_absolute_path_w32(const char *program)
-{
-  char *pdir = NULL;
-#ifdef _WIN32
-  HMODULE mod;
-  char *ignored ;  
-  if((mod = GetModuleHandle (NULL)) != NULL) {
-    if ((GetModuleFileName (mod, win32_path, MAX_PATH_LENGTH)) != 0) {
-      pdir = win32_path;
-    } else if (GetFullPathName(program, MAX_PATH_LENGTH, win32_path, &ignored)) {
-	pdir = win32_path;
-    } else { 
-	fprintf (stderr, "%s: cannot find installation directory (GetLastError: %lu)\n", SYS_programname, GetLastError()) ;
-    }
-  }
 #endif
-  return pdir;
-}
 
-static  char *SYS_getpdir_unix(const char *pname);
-static char *SYS_getpdir_unix(const char *pname)
+#ifndef __MINGW32__
+static char *
+SYS_full_path_unix(const char *pname)
 {
-  char *pdir = NULL;
-#ifndef _WIN32
-  const char *path;
-  const char *next;
-  char *path_ptr;
-  int dir_len;
   int pname_len = strlen(pname);
   char *file_buffer = SYS_malloc(1024+1);
+  
   if (SYS_isAbsolute(pname)) {
-    if (pname_len + 1 > 1024+1) {}
-    else { strcpy(file_buffer, pname); pdir = file_buffer; }
+    if (pname_len + 1 > 1024+1) goto failed;
+    strcpy(file_buffer, pname); 
+    if (access(file_buffer, F_OK) == -1) goto failed;
   } else if (strchr(pname, DIR_SEPARATOR) != NULL) {
     const char *pwd;
+    int dir_len;
     pwd = getcwd(file_buffer, 1024+1);
-    if (pwd != NULL) {
-      dir_len = strlen(pwd);
-      if (dir_len + pname_len + 1 + 1 > 1024+1) {}
-      else {
-        path_ptr = file_buffer + dir_len;
-        *path_ptr = DIR_SEPARATOR;
-        path_ptr += 1;
-        strncpy(path_ptr, pname, pname_len);
-        path_ptr += pname_len;
-        *path_ptr = '\0';
-        if (access(file_buffer, F_OK) == 0) pdir = file_buffer;
-      }
-    }
-   } else {
+    if (pwd == NULL) goto failed;
+    dir_len = strlen(pwd);
+    if (dir_len + 1 + pname_len + 1 > 1024+1) goto failed;
+    strcpy(file_buffer, pwd);
+    if (file_buffer[dir_len] != DIR_SEPARATOR)
+      file_buffer[dir_len] = DIR_SEPARATOR;
+    strcpy(&file_buffer[dir_len+1], pname);
+    if (access(file_buffer, F_OK) == -1) goto failed;
+  } else {
+    
+    const char *path, *next;
+    int dir_len, found = 0;
     path = getenv("PATH");
     while (path != NULL) {
       next = strchr(path, ':');
@@ -463,40 +409,45 @@ static char *SYS_getpdir_unix(const char *pname)
 	next++;
       }
       if (dir_len == 0) continue;
-      if (dir_len + pname_len + 1 + 1 > 1024+1) break;
-      path_ptr = file_buffer;
-      strncpy(path_ptr, path, dir_len);
-      path_ptr += dir_len;
-      if (*(path_ptr-1) != DIR_SEPARATOR) {
-	*path_ptr = DIR_SEPARATOR;
-	path_ptr += 1;
-      }
-      strncpy(path_ptr, pname, pname_len);
-      path_ptr += pname_len;
-      *path_ptr = '\0';
+      if (dir_len + 1 + pname_len + 1 > 1024+1) goto failed;
+      memcpy(file_buffer, path, dir_len);
+      if (file_buffer[dir_len] != DIR_SEPARATOR)
+	file_buffer[dir_len] = DIR_SEPARATOR;
+      strcpy(&file_buffer[dir_len+1], pname);
       if (access(file_buffer, F_OK) == 0) {
-	pdir = file_buffer;
+	found = 1;
 	break;
       }
       path = next;
     }
+    if (!found) goto failed;
   }
-  if (pdir == NULL) SYS_free(file_buffer);
-  else {
-    char *sep = strrchr(pdir, DIR_SEPARATOR);
-    if (sep != NULL) *sep = '\0';
-  }
-#endif
-  return pdir;
+  return file_buffer;
+ failed:
+  SYS_free(file_buffer);
+  return NULL;
 }
+#endif
 
-char *SYS_getpdir(const char *program)
+char *SYS_full_path(const char *pname)
 {
   char *path = NULL;
-#ifdef _WIN32
-  path = SYS_getpdir_w32(program);
+#ifdef __MINGW32__
+  path = SYS_full_path_w32(pname);
 #else
-  path = SYS_getpdir_unix(program);
+  path = SYS_full_path_unix(pname);
+#endif
+  return path;
+}
+
+char *SYS_real_path(const char *pname)
+{
+  char *path = NULL;
+#ifdef __MINGW32__
+  path = SYS_strdup(pname);
+#else
+    /* Get real path. */
+  path = lrealpath (pname);
 #endif
   return path;
 }
@@ -542,47 +493,6 @@ int SYS_copy(const char *filename_dst, const char *filename_src)
   return status;
 }
 
-/*  void SYS_indent(const char *first_prefix, const char *prefix, int indent_size, const char *string, FILE *file) */
-/*  { */
-/*    int len = strlen(string); */
-/*    char *buffer = SGC__ALLOCA(char, len+1); */
-/*    const char *base_ptr; */
-/*    char *ptr; */
-/*    int nline = 0; */
-/*    base_ptr = string; */
-/*    for(;;) { */
-/*      int count = 0, nword = 0; */
-/*      if (nline == 0) */
-/*        count += fprintf(file, first_prefix); */
-/*      else */
-/*        count += fprintf(file, prefix); */
-    
-/*      while ((ptr = strchr(base_ptr, ' ')) != NULL) { */
-/*        if (ptr > base_ptr) { */
-/*          int word_size = (ptr - base_ptr) + 1; */
-/*          strncpy(buffer, base_ptr, word_size); */
-/*          buffer[word_size] = '\0'; */
-/*          if ((word_size + count <= indent_size) || nword == 0) { */
-/*            count += fprintf(file, buffer); */
-/*          } else { */
-/*  	  break; */
-/*  	} */
-/*          nword++; */
-/*        } */
-/*        base_ptr = ptr + 1; */
-/*      } */
-/*      if (ptr == NULL) { */
-/*        int word_size = string + len - base_ptr; */
-/*        if ((word_size + count <= indent_size) || nword == 0) { */
-/*            fprintf(file, base_ptr); */
-/*            fprintf(file, "\n"); */
-/*            break; */
-/*        } */
-/*      } */
-/*      fprintf(file, "\n"); */
-/*      nline++; */
-/*    } */
-/*  } */
 
 int SYS_setenv(const char *var_name, const char *value)
 {

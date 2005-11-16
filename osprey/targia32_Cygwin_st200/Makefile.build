@@ -39,11 +39,11 @@ BUILD_COMPILER = GNU
 
 # Use distcc in addition to ccache ?
 #export CCACHE_PREFIX=distcc
-#export DISTCC_HOSTS=localhost gnx287 gnx344 gnx366 gnx343
+#export DISTCC_HOSTS=gnx287 gnx344 gnx366 gnx343
 
 # Build LAO support ?
 LAO_ENABLED=1
 
 
 # ROOT directory for installation
-ROOT:=$(shell pwd)/devimage
+ROOT?=$(BUILD_AREA)/devimage

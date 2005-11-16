@@ -33,7 +33,7 @@
 #
 
 #
-#  Makefile for gccfe/gnu
+#  Makefile for g++fe/gnu
 #
 
 #

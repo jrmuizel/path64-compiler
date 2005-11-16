@@ -39,13 +39,20 @@
 #
 #  These directories must be "built" first because they generate header files
 #  which other directories depend on.
+#  Please Specify dependencies for each new <directory> in the variable
+#  DEPS_FOR_<directory>.
 #
 INCLUDE_SUBDIRS = \
 	include \
 	targ_info
 
+DEPS_FOR_include	=
+DEPS_FOR_targ_info	= include
+
 #
 #  Next, all of the libraries are built because the tools depend on them.
+#  Please Specify dependencies for each new <directory> in the variable
+#  DEPS_FOR_<directory>.
 #
 #### Only these for now #####
 LIBRARY_SUBDIRS =  \
@@ -58,9 +65,20 @@ LIBRARY_SUBDIRS =  \
 	libSYS     \
 	instrumentationC
 
+DEPS_FOR_libiberty	= include
+DEPS_FOR_libelf		= include
+DEPS_FOR_libcmplrs	= include
+DEPS_FOR_libcomutil	= include
+DEPS_FOR_libdwarf	= include
+DEPS_FOR_libelfutil	= include
+DEPS_FOR_libSYS		= include
+DEPS_FOR_instrumentationC = include
 
 #
 #  Finally, the compiler tools (components) are built.
+#
+#  Please Specify dependencies for each new <directory> in the variable
+#  DEPS_FOR_<directory>.
 #
 #  Note that be_driver must come last since it depends on other components
 #  being built first.
@@ -68,22 +86,41 @@ LIBRARY_SUBDIRS =  \
 TOOL_SUBDIRS = \
 	gccfe \
 	g++fe \
+	wopt \
 	be \
 	lai \
         ipl \
 	ipa \
-	wopt \
 	lno \
 	lw_inline \
         whirl2c \
+        ir_tools \
 	driver 
 
-#        ir_tools 
 #	dwarfdump \
 #	elfdump \
 #	whirl2f \
 
-SUBDIRS=$(INCLUDE_SUBDIRS) $(LIBRARY_SUBDIRS) $(TOOL_SUBDIRS)
+DEPS_FOR_gccfe	:= $(INCLUDE_SUBDIRS)  $(LIBRARY_SUBDIRS)
+DEPS_FOR_g++fe	:= $(INCLUDE_SUBDIRS)  $(LIBRARY_SUBDIRS)
+DEPS_FOR_gccfe	:= $(INCLUDE_SUBDIRS)  $(LIBRARY_SUBDIRS)
+DEPS_FOR_be	:= $(INCLUDE_SUBDIRS)  $(LIBRARY_SUBDIRS)
+DEPS_FOR_lai	=  be
+DEPS_FOR_wopt	= be
+DEPS_FOR_ipl	= be
+DEPS_FOR_ipa	= be wopt ipl
+DEPS_FOR_lno	= be wopt ipl
+DEPS_FOR_lw_inline :=  $(INCLUDE_SUBDIRS)  $(LIBRARY_SUBDIRS) be
+DEPS_FOR_whirl2c :=  $(INCLUDE_SUBDIRS)  $(LIBRARY_SUBDIRS) be
+DEPS_FOR_whirl2f :=  $(INCLUDE_SUBDIRS)  $(LIBRARY_SUBDIRS) be
+DEPS_FOR_elfdump :=  $(INCLUDE_SUBDIRS)  $(LIBRARY_SUBDIRS)
+DEPS_FOR_dwarfdump :=  $(INCLUDE_SUBDIRS)  $(LIBRARY_SUBDIRS)
+DEPS_FOR_ir_tools :=  $(INCLUDE_SUBDIRS)  $(LIBRARY_SUBDIRS) be
+DEPS_FOR_driver :=  $(INCLUDE_SUBDIRS)  $(LIBRARY_SUBDIRS)
+
+SUBDIRS := $(INCLUDE_SUBDIRS)  $(LIBRARY_SUBDIRS) $(TOOL_SUBDIRS)
+
+.PHONY: default local install clean clobber last
 
 default: $(addprefix default_,$(SUBDIRS))
 local: $(addprefix local_,$(SUBDIRS))
@@ -106,47 +143,30 @@ last_%:
 	$(MAKE) -C $* last
 
 
-# Dependencies
-targ_info=include
-libiberty=include
-libelf=include
-libcmplrs=include
-libcomutil=include
-libdwarf=include
-libelfutil=include
-libSYS=include
-be=include targ_info instrumentationC
-driver=include libSYS
-gccfe=libcmplrs libcomutil
-g++fe=libcmplrs libcomutil
-lai=libelf libelfutil libdwarf be targ_info
-ipl=be wopt
-ipa=be ipl wopt
-wopt=be
-lno=be wopt ipl
-lw_inline=be
-whirl2c=be
-ir_tools=include libcomutil
-
-
+ifndef NO_DEPS
 # Now transform dependencies written above into Make dependencies
 
 # Utility "functions"
-subst_local=$(strip local_$(targ)): $(addprefix local_,$($(targ)))-sep-
-subst_install=$(strip install_$(targ)): $(addprefix install_,$($(targ)))-sep-
+subst_local=$(strip local_$(targ)): $(addprefix local_,$(DEPS_FOR_$(targ)))-sep-
+subst_last=$(strip last_$(targ)): $(addprefix last_,$(DEPS_FOR_$(targ)))-sep-
+subst_install=$(strip install_$(targ)): $(addprefix install_,$(DEPS_FOR_$(targ)))-sep-
 
 # Generate "local" rules
 # Transform each dependencies of the form
-# "targ1=dep1 dep2"
-# "targ2=dep3 dep4"
+# "DEPS_FOR_targ1=dep1 dep2"
+# "DEPS_FOR_targ2=dep3 dep4"
 # into local_targ1: local_dep1 local_dep2-sep-local_targ2: local_dep3 local_dep4-sep-
 # -sep- are transformed into newlines later
+# Don't use $(SUBDIRS) in the dependency rules as SUBDIRS may be redefined
+# on the make command line. For instance: make SUBDIRS=lai install.
+LOCAL_DEP := $(foreach targ,$(INCLUDE_SUBDIRS)  $(LIBRARY_SUBDIRS) $(TOOL_SUBDIRS),$(subst_local))
 
-LOCAL_DEP := $(foreach targ,$(SUBDIRS),$(subst_local))
 
+# Same thing for "last" rules.
+LAST_DEP := $(foreach targ,$(INCLUDE_SUBDIRS)  $(LIBRARY_SUBDIRS) $(TOOL_SUBDIRS),$(subst_last))
 
 # Same thing for "install" rules.
-INSTALL_DEP := $(foreach targ,$(SUBDIRS),$(subst_install))
+INSTALL_DEP := $(foreach targ,$(INCLUDE_SUBDIRS)  $(LIBRARY_SUBDIRS) $(TOOL_SUBDIRS),$(subst_install))
 
 # No need for dependencies for "clean" and "clobber" rules
 
@@ -156,5 +176,7 @@ INSTALL_DEP := $(foreach targ,$(SUBDIRS),$(subst_install))
 
 deps.mk: Makefile
 	@echo $(LOCAL_DEP) | perl -p -e 's/-sep- */\n/g' > $@
+	@echo $(LAST_DEP) | perl -p -e 's/-sep- */\n/g' >> $@
 	@echo $(INSTALL_DEP) | perl -p -e 's/-sep- */\n/g' >> $@
 
+endif

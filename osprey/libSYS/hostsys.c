@@ -98,7 +98,7 @@ int sys_set_alarm(int timeout, void *handler)
   return 0;
 }
 
-#elif defined(_WIN32)
+#elif defined(__MINGW32__)
 #include <windows.h>
 
 void *

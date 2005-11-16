@@ -14,7 +14,7 @@
 #ifndef __STRTOLL_H__
 #define __STRTOLL_H__
 
-#include <W_stdint.h>
+#include "W_stdint.h"
 
 int64_t SYS_strtoll (const char *nptr, const char **endptr, int base);
 uint64_t SYS_strtoull (const char *nptr, const char **endptr, int base);
