@@ -39,6 +39,7 @@
 extern BOOL Trace_Dwarf;
 
 /* construct the fde for the current procedure. */
+
 #ifdef TARG_ST
 // [CL] changed begin/end_label type and added
 // scn_index param to be used by the debug_frame
