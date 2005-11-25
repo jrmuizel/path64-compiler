@@ -43,7 +43,7 @@ BUILD_COMPILER = GNU
 
 
 # Build LAO support ?
-# LAO_ENABLED=1
+LAO_ENABLED=1
 
 
 # ROOT directory for installation.
