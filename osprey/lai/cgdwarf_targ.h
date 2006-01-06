@@ -83,7 +83,8 @@ extern void Init_Unwind_Info (BOOL trace);
 extern void Finalize_Unwind_Info(void);
 #ifdef TARG_ST
 // [CL] need to emit labels after bundles too
-extern void Emit_Unwind_Directives_For_OP(OP *op, FILE *f, BOOL after_op=FALSE);
+extern void Emit_Unwind_Directives_For_OP(OP *op, FILE *f, BOOL after_op,
+					  BOOL inserted_late);
 #else
 extern void Emit_Unwind_Directives_For_OP(OP *op, FILE *f);
 #endif
