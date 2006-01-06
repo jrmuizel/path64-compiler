@@ -115,12 +115,12 @@ char *SYS_strdup(const char *string)
   return strdup(string);
 }
 
-const char *SYS_strdupn(const char *string, int n)
+char *SYS_strdupn(const char *string, int n)
 {
   char *ptr = SYS_malloc(sizeof(char)*(n+1));
   strncpy(ptr, string, n);
   ptr[n] = '\0';
-  return (const char *)ptr;
+  return ptr;
 }
 
 char *SYS_strappend(char *dest, const char *src)
@@ -191,7 +191,7 @@ char *SYS_makePath(const char *dirname, const char *basename)
     }
 }
 
-const char *SYS_makeFileName(const char *path, const char *suffix)
+char *SYS_makeFileName(const char *path, const char *suffix)
 {
     ASSERT(path != NULL);
     ASSERT(suffix != NULL);
@@ -206,18 +206,18 @@ const char *SYS_makeFileName(const char *path, const char *suffix)
     }
 }
 
-const char *SYS_baseptr(const char *path)
+char *SYS_baseptr(const char *path)
 {
-    const char *p;
+    char *p;
     p = strrchr(path, DIR_SEPARATOR);
 #ifdef DIR_SEPARATOR2
     {
-      const char *p2;
+      char *p2;
       p2 = strrchr(path, DIR_SEPARATOR2);
       if (p2 > p) p = p2;
     }
 #endif
-    return p == NULL ? path : p+1;
+    return p == NULL ? (char *)path : p+1;
 }
 
 char *SYS_abasename(const char *path)
@@ -225,7 +225,7 @@ char *SYS_abasename(const char *path)
     return SYS_strdup(SYS_baseptr(path));
 }
 
-const char *SYS_ibasename(char *path)
+char *SYS_ibasename(char *path)
 {
     return SYS_baseptr(path);
 }
@@ -246,12 +246,12 @@ int SYS_matchsuffix(const char *path, const char *suffix)
   return match;
 }
 
-const char *SYS_baseprefix(const char *path, const char *suffix)
+char *SYS_baseprefix(char *path, const char *suffix)
 {
   int match = 1;
-  const char *p = SYS_baseptr(path);
+  char *p = SYS_baseptr(path);
   const char *p1 = suffix + strlen(suffix);
-  char *p2 = (char *)p + strlen(p);
+  char *p2 = p + strlen(p);
   while(p1 > suffix) {
     p1--; p2--;
     if (p2 < p || (*p1 != *p2)) {
@@ -262,7 +262,7 @@ const char *SYS_baseprefix(const char *path, const char *suffix)
   if (match) {
     *p2 = '\0';
   }
-  return (const char *)p;
+  return p;
 }
 
 char *SYS_adirname(const char *path)
@@ -323,6 +323,11 @@ int SYS_is_dir(const char *path)
   return ret;
 }
 
+int SYS_is_wdir(const char *path)
+{
+  return SYS_is_dir(path) && access(path, R_OK | W_OK | X_OK) == 0;
+}
+
 int SYS_is_file(const char *path)
 {
   struct stat buffer;
@@ -333,18 +338,30 @@ int SYS_is_file(const char *path)
 
 char *SYS_tmpdir(void)
 {
-  char *tmpdir;
-#ifdef __MINGW32__
-  if ((tmpdir = getenv("TMPDIR")) != NULL && SYS_is_dir(tmpdir)) return SYS_strdup(tmpdir);
-  if ((tmpdir = getenv("TMP")) != NULL && SYS_is_dir(tmpdir)) return SYS_strdup(tmpdir);
-  if ((tmpdir = getenv("TEMP")) != NULL && SYS_is_dir(tmpdir)) return SYS_strdup(tmpdir);
-  if (SYS_is_dir("\\tmp")) return SYS_strdup("\\tmp");
-  return SYS_strdup("\\");
-#else
-  if ((tmpdir = getenv("TMPDIR")) != NULL && SYS_is_dir(tmpdir)) return SYS_strdup(tmpdir);
-  if (SYS_is_dir(P_tmpdir)) return SYS_strdup(P_tmpdir);
-  return SYS_strdup("/tmp");
+  static const char d_tmp[] = 
+    { DIR_SEPARATOR, 't', 'm', 'p', '\0' };
+  static const char d_usrtmp[] =
+    { DIR_SEPARATOR, 'u', 's', 'r', DIR_SEPARATOR, 't', 'm', 'p', '\0' };
+  static const char d_vartmp[] =
+    { DIR_SEPARATOR, 'v', 'a', 'r', DIR_SEPARATOR, 't', 'm', 'p', '\0' };
+  static char *cached_tmpdir = NULL;
+  const char *tmpdir = NULL;
+  
+  if (cached_tmpdir != NULL) return SYS_strdup(cached_tmpdir);
+  
+  if ((tmpdir = getenv("TMPDIR")) != NULL && SYS_is_wdir(tmpdir)) goto found;
+  if ((tmpdir = getenv("TMP")) != NULL && SYS_is_wdir(tmpdir)) goto found;
+  if ((tmpdir = getenv("TEMP")) != NULL && SYS_is_wdir(tmpdir)) goto found;
+#ifdef P_tmpdir
+  if ((tmpdir = P_tmpdir) != NULL && SYS_is_wdir(tmpdir)) goto found;
 #endif
+  if ((tmpdir = d_vartmp) != NULL && SYS_is_wdir(tmpdir)) goto found;
+  if ((tmpdir = d_usrtmp) != NULL && SYS_is_wdir(tmpdir)) goto found;
+  if ((tmpdir = d_tmp) != NULL && SYS_is_wdir(tmpdir))  goto found;
+  tmpdir = ".";
+ found:
+  cached_tmpdir = SYS_strdup(tmpdir);
+  return SYS_strdup(cached_tmpdir);
 }
 
 char *SYS_tmpname(void)
@@ -452,9 +469,9 @@ char *SYS_real_path(const char *pname)
   return path;
 }
 
-const char *SYS_getcwd(void)
+char *SYS_getcwd(void)
 {
-  const char *path;
+  char *path;
   path = getcwd(NULL, 1024); 
   return path;
 }
@@ -502,5 +519,10 @@ int SYS_setenv(const char *var_name, const char *value)
   ptr = SYS_strappend(ptr, "=");
   ptr = SYS_strappend(ptr, value);
   return putenv(buffer);
+}
+
+char *SYS_getenv(const char *var_name)
+{
+  return getenv(var_name);
 }
 
