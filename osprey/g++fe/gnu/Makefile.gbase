@@ -1,0 +1,570 @@
+#
+#
+#  Copyright (C) 2000, 2001 Silicon Graphics, Inc.  All Rights Reserved.
+#
+#  This program is free software; you can redistribute it and/or modify it
+#  under the terms of version 2 of the GNU General Public License as
+#  published by the Free Software Foundation.
+#
+#  This program is distributed in the hope that it would be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+#
+#  Further, this software is distributed without any warranty that it is
+#  free of the rightful claim of any third person regarding infringement 
+#  or the like.  Any license provided herein, whether implied or 
+#  otherwise, applies only to this software file.  Patent licenses, if 
+#  any, provided herein do not apply to combinations of this program with 
+#  other software, or any other product whatsoever.  
+#
+#  You should have received a copy of the GNU General Public License along
+#  with this program; if not, write the Free Software Foundation, Inc., 59
+#  Temple Place - Suite 330, Boston MA 02111-1307, USA.
+#
+#  Contact information:  Silicon Graphics, Inc., 1600 Amphitheatre Pky,
+#  Mountain View, CA 94043, or:
+#
+#  http://www.sgi.com
+#
+#  For further information regarding this notice, see:
+#
+#  http://oss.sgi.com/projects/GenInfo/NoticeExplan
+#
+#
+
+#
+#  Makefile.base for gccfe
+#
+
+#----------------------------------------------------------------------
+#  Set environment variables
+#
+#  TARGDIR   :  is the targ specific directory in which we do build. 
+#               e.q.  /d1/cmplrs.src/v4.00/host32
+#
+#----------------------------------------------------------------------
+TARGDIR = $(BUILD_AREA)
+
+#----------------------------------------------------------------------
+#  Include the usual commondefs
+#----------------------------------------------------------------------
+include $(COMMONDEFS)
+
+#----------------------------------------------------------------------
+#  Set environment variables
+#----------------------------------------------------------------------
+ifeq ($(BUILD_COMPILER), EDG)
+CVERSION = -xansi
+else
+CVERSION =
+endif
+
+#----------------------------------------------------------------------
+#  Compiler Options
+#----------------------------------------------------------------------
+
+# These are here because they are needed both in fecc and in common so just
+# putting them in fecc/defines.h is not enough:
+
+HOSTDEFS += -DIN_GCC -DHAVE_CONFIG_H
+
+ifeq ($(BUILD_TARGET), IA64)
+HOSTDEFS += -DTARGET_NAME=\"ia64-linux\"
+HOSTDEFS += -DPREFIX=\"/usr/ia64-sgi-linux\"
+HOSTDEFS += -DGCC_INCLUDE_DIR=\"/usr/ia64-sgi-linux/lib/gcc-lib/ia64-sgi-linux/sgicc-1.0/include/\"
+HOSTDEFS += -DGPLUSPLUS_INCLUDE_DIR=\"/usr/ia64-sgi-linux/lib/gcc-lib/ia64-sgi-linux/sgicc-1.0/include/\"
+endif
+ifeq ($(BUILD_TARGET), IA32)
+HOSTDEFS += -DTARGET_NAME=\"i686-pc-linux-gnu\"
+HOSTDEFS += -DPREFIX=\"/usr/ia32-sgi-linux\"
+HOSTDEFS += -DGCC_INCLUDE_DIR=\"/usr/ia32-sgi-linux/lib/gcc-lib/ia32-sgi-linux/sgicc-1.0/include/\"
+HOSTDEFS += -DGPLUSPLUS_INCLUDE_DIR=\"/usr/ia32-sgi-linux/lib/gcc-lib/ia32-sgi-linux/sgicc-1.0/include/\"
+endif
+
+ifeq ($(BUILD_TARGET), ST200)
+ifeq ($(BUILD_OS),LINUX)
+HOSTDEFS += -DTARGET_NAME=\"st200-linux\"
+else
+HOSTDEFS += -DTARGET_NAME=\"st200\"
+endif
+endif
+
+ifeq ($(BUILD_TARGET), STxP70)
+ifeq ($(BUILD_OS),LINUX)
+HOSTDEFS += -DTARGET_NAME=\"stxp70-linux\"
+else
+HOSTDEFS += -DTARGET_NAME=\"stxp70\"
+endif
+endif
+
+# (cbr) define gnu version
+HOSTDEFS += -DGNU_FRONT_END=33
+HOSTDEFS += -DLONGLONG
+# (cbr) reserved from translator. not gnu
+# HOSTDEFS += -DFRONT_END
+# HOSTDEFS += -DUSE_DECL_SRCPOS
+# HOSTDEFS += -D_NEW_SYMTAB
+
+# (cbr) reserved from translator. not gnu
+#HOSTDEFS += -DFRONT_END_C
+# HOSTDEFS += -DCFE -DCIL
+#HOSTDEFS += -DDO_IL_LOWERING=0
+#HOSTDEFS += -DNO_USR_INCLUDE=TRUE
+#HOSTDEFS += -DAUTOMATIC_TEMPLATE_INSTANTIATION=0
+#HOSTDEFS += -DINSTANTIATION_BY_IMPLICIT_INCLUSION=0
+#HOSTDEFS += -DBACK_END_IS_C_GEN_BE=0
+
+ifneq  ($(BUILD_TARGET), ST200)
+ifneq  ($(BUILD_TARGET), STxP70)
+# (cbr) reserved from translator. not gnu
+HOSTDEFS += -DMONGOOSE_CIF
+HOSTDEFS += -DSGI_RAG_BACKEND
+ifeq ($(BUILD_COMPILER), GNU)
+HOSTDEFS += -DMIPSEL
+endif
+endif
+endif
+
+# just for st200 for now.
+ifeq  ($(BUILD_TARGET), ST200)
+HOSTDEFS += -DHANDLE_WFE_PRAGMAS
+endif
+
+ifeq  ($(BUILD_TARGET), STxP70)
+HOSTDEFS += -DHANDLE_WFE_PRAGMAS
+endif
+
+HOSTDEFS += -DSGI_MONGOOSE
+
+ifeq ($(BUILD_OPTIMIZE), DEBUG)
+HOSTDEFS += -DIs_True_On
+HOSTDEFS += -DInsist_On 
+HOSTDEFS += -DDEBUG=1
+HOSTDEFS += -DCHECKING=1
+else
+HOSTDEFS += -DDEBUG=0 
+HOSTDEFS += -DCHECKING=0 
+endif
+
+# (cbr) reserved from translator. not gnu
+# HOSTDEFS += -DGPLUSPLUS_FE
+
+ifeq ($(BUILD_TARGET), IA64)
+TARGDEFS = -D__MIPS_AND_IA64_ELF_H
+endif
+
+#----------------------------------------------------------------------
+#  List of directories, and source files of interest
+#----------------------------------------------------------------------
+
+FE_DIR 			= $(BUILD_TOT)/g++fe
+
+COMMON_COM_DIR 		= $(BUILD_TOT)/common/com
+COMMON_COM_TARG_DIR	= $(BUILD_TOT)/common/com/$(BUILD_TARGET_DIR)
+COMMON_TARG_INFO_ACCESS_DIR = $(BUILD_TOT)/common/targ_info/access
+COMMON_UTIL_DIR		= $(BUILD_TOT)/common/util
+COMMON_UTIL_TARG_DIR	= $(BUILD_TOT)/common/util/$(BUILD_TARGET_DIR)
+
+ifeq ($(BUILD_OS), IRIX)
+INCLUDE_DIR 		= $(BUILD_TOT)/include
+else
+INCLUDE_DIR 		= $(BUILD_AREA)/include
+endif
+
+GNU_DIR			= $(BUILD_BASE)
+GNU_CONFIG_DIR		= $(BUILD_BASE)/config
+GNU_COMMON_DIR		= $(BUILD_TOT)/gnu_common
+
+GNU_TARG_DIR = $(GNU_DIR)/$(BUILD_TARGET_DIR)
+GNU_CONFIG_TARG_DIR = $(GNU_CONFIG_DIR)/$(BUILD_TARGET_DIR)
+ifeq ($(BUILD_TARGET), IA32)
+GNU_CONFIG_TARG_DIR = $(GNU_CONFIG_DIR)/i386
+endif
+ifeq ($(BUILD_TARGET), MIPS)
+GNU_CONFIG_TARG_DIR = $(GNU_CONFIG_DIR)/mips
+endif
+
+GNU_CP_DIR		= $(BUILD_BASE)/cp
+
+TARG_COMUTIL_DIR	= $(TARGDIR)/libcomutil
+# TARG_LIBM_DIR		= $(TARGDIR)/libm
+TARG_CMPLRS_DIR		= $(TARGDIR)/libcmplrs
+TARG_CSUP_DIR		= $(TARGDIR)/libcsup
+TARG_LIBIBERTY_DIR      = $(TARGDIR)/libiberty
+# ST compilers have a different target info directory structure:
+ifeq ($(BUILD_TARGET), ST100)
+COMMON_TARGINFO_CONFIG_DIR  = $(BUILD_TOT)/targinfo/$(BUILD_TARGET_DIR)/config
+endif
+ifeq ($(BUILD_TARGET), ST200)
+COMMON_TARGINFO_CONFIG_DIR  = $(BUILD_TOT)/targinfo/$(BUILD_TARGET_DIR)/config
+endif
+ifeq ($(BUILD_TARGET), STxP70)
+COMMON_TARGINFO_CONFIG_DIR  = $(BUILD_TOT)/targinfo/$(BUILD_TARGET_DIR)/config
+endif
+ifeq ($(BUILD_TARGET), IA64)
+COMMON_TARGINFO_CONFIG_DIR  = 
+endif
+
+# These are the directories in which to look for source files.
+
+SRC_DIRS =		\
+  $(GNU_DIR)		\
+  $(GNU_TARG_DIR)	\
+  $(GNU_CONFIG_TARG_DIR)
+
+INC_DIRS =		\
+  $(COMMON_TARGINFO_CONFIG_DIR) \
+  $(FE_DIR)		\
+  $(GNU_DIR)		\
+  $(GNU_TARG_DIR)	\
+  $(GNU_CONFIG_DIR)	\
+  $(GNU_CONFIG_TARG_DIR)\
+  $(GNU_COMMON_DIR)/include
+
+SRC_DIRS +=		\
+  $(GNU_CP_DIR)
+INC_DIRS +=		\
+  $(GNU_CP_DIR)
+
+#----------------------------------------------------------------------
+#  List of source files.  Please keep them in alphabetical order.
+#----------------------------------------------------------------------
+GNU_SRCS =		\
+  alias.c		\
+  attribs.c   		\
+  bb-reorder.c		\
+  bitmap.c		\
+  builtins.c		\
+  caller-save.c		\
+  calls.c		\
+  c-common.c		\
+  c-dump.c		\
+  c-format.c		\
+  c-lex.c		\
+  c-opts.c		\
+  c-pragma.c		\
+  c-semantics.c		\
+  combine.c		\
+  conflict.c		\
+  convert.c		\
+  cse.c			\
+  cselib.c		\
+  dbxout.c		\
+  debug.c		\
+  df.c			\
+  diagnostic.c		\
+  dominance.c		\
+  dwarfout.c		\
+  dwarf2asm.c		\
+  dwarf2out.c		\
+  emit-rtl.c		\
+  except.c		\
+  explow.c		\
+  expmed.c		\
+  expr.c		\
+  et-forest.c           \
+  final.c		\
+  cfg.c		        \
+  cfganal.c	        \
+  cfgbuild.c	        \
+  cfgcleanup.c	        \
+  cfglayout.c  		\
+  cfgloop.c	        \
+  cfgrtl.c	        \
+  flow.c		\
+  fold-const.c		\
+  function.c		\
+  gcse.c		\
+  genrtl.c		\
+  ggc-common.c		\
+  ggc-page.c		\
+  gtype-desc.c		\
+  hashtable.c    	\
+  hooks.c		\
+  global.c		\
+  graph.c		\
+  haifa-sched.c		\
+  ifcvt.c		\
+  insn-attrtab.c	\
+  insn-extract.c	\
+  insn-emit.c		\
+  insn-opinit.c		\
+  insn-output.c		\
+  insn-recog.c		\
+  integrate.c		\
+  jump.c		\
+  lcm.c			\
+  lists.c		\
+  langhooks.c		\
+  line-map.c  		\
+  local-alloc.c		\
+  loop.c		\
+  mkdeps.c		\
+  optabs.c		\
+  params.c		\
+  predict.c		\
+  print-rtl.c		\
+  print-tree.c		\
+  profile.c		\
+  real.c		\
+  recog.c		\
+  regclass.c		\
+  regmove.c		\
+  regrename.c		\
+  reg-stack.c		\
+  reload.c		\
+  reload1.c		\
+  reorg.c		\
+  resource.c		\
+  ra.c			\
+  ra-build.c		\
+  ra-colorize.c		\
+  ra-debug.c		\
+  ra-rewrite.c		\
+  rtl.c			\
+  rtlanal.c		\
+  rtl-error.c		\
+  sbitmap.c		\
+  sched-deps.c		\
+  sched-rgn.c		\
+  sched-vis.c		\
+  sdbout.c		\
+  sibcall.c		\
+  simplify-rtx.c        \
+  stringpool.c  	\
+  ssa.c			\
+  ssa-ccp.c		\
+  ssa-dce.c		\
+  stmt.c		\
+  stor-layout.c		\
+  timevar.c		\
+  toplev.c		\
+  tracer.c		\
+  tree.c		\
+  tree-dump.c		\
+  tree-inline.c		\
+  unroll.c		\
+  varasm.c		\
+  varray.c		\
+  version.c		\
+  xcoffout.c
+
+ifeq ($(BUILD_TARGET), IA64)
+  GNU_SRCS += ia64.c
+endif
+ifeq ($(BUILD_TARGET), IA32)
+  GNU_SRCS += i386.c
+endif
+ifeq ($(BUILD_TARGET), MIPS)
+  GNU_SRCS += mips.c
+endif
+ifeq ($(BUILD_TARGET), ST200)
+  GNU_SRCS += lx.c
+endif
+
+ifeq ($(BUILD_TARGET), STxP70)
+  GNU_SRCS += lx.c
+endif
+
+GNU_CP_UNIQ_SRCS =	\
+  call.c		\
+  class.c		\
+  cvt.c			\
+  decl.c		\
+  decl2.c		\
+  dump.c		\
+  error.c		\
+  friend.c		\
+  init.c		\
+  lex.c			\
+  mangle.c		\
+  method.c		\
+  optimize.c		\
+  parse.c		\
+  pt.c			\
+  ptree.c		\
+  repo.c		\
+  rtti.c		\
+  search.c		\
+  semantics.c		\
+  spew.c		\
+  typeck.c		\
+  typeck2.c		
+
+GNU_CP_DUP_SRCS =	\
+  except.c		\
+  expr.c		\
+  tree.c
+
+
+#----------------------------------------------------------------------
+#  List of source files for cpp. 
+#----------------------------------------------------------------------
+GNU_CPP_SRCS = \
+  cpperror.c   \
+  cppdefault.c   \
+  cppfiles.c   \
+  cppinit.c    \
+  cpplib.c     \
+  cppspec.c    \
+  cppexp.c     \
+  cpphash.c    \
+  cpplex.c     \
+  cppmacro.c    \
+  cppmain.c    \
+  cpptrad.c    \
+  line-map.c	\
+  version.c    \
+  errors.c     \
+  prefix.c     \
+  mkdeps.c
+
+GNU_OBJS = $(GNU_SRCS:.c=.o)
+
+GNU_CPP_OBJS = $(GNU_CPP_SRCS:.c=.o)
+
+GNU_CP_UNIQ_OBJS = $(GNU_CP_UNIQ_SRCS:.c=.o)
+
+GNU_CP_DUP_OBJS  = cp-except.o cp-expr.o cp-tree.o cp-lang.o cp-dump.o
+
+GNU_CP_OBJS =  $(GNU_CP_DUP_OBJS) $(GNU_CP_UNIQ_OBJS)
+
+CFILES = $(GNU_SRCS) $(GNU_CP_UNIQ_SRCS) $(GNU_CPP_SRCS)
+
+VPATH    =  $(SRC_DIRS)
+
+LCOPTS = $(STD_COMPILE_OPTS)
+LCDEFS = $(HOSTDEFS) $(TARGDEFS)
+LCINCS = $(addprefix -I, $(INC_DIRS))
+
+LC++OPTS = $(STD_COMPILE_OPTS)
+LC++DEFS = $(HOSTDEFS) $(TARGDEFS)
+LC++INCS = $(LCINCS)
+
+ifneq ($(BUILD_COMPILER), EDG)
+# (cbr) LCOPTS += -fwritable-strings -w
+# (cbr) LC++OPTS += -fwritable-strings -w
+endif
+
+# setup stuff to build shared or non-shared
+GLDOPTS = $(STD_LOAD_OPTS)
+
+LDIRT =
+
+
+#------------------------------------------------------------
+#  Define target
+#------------------------------------------------------------
+LIBRARY = libgfecc.a
+ifeq ($(BUILD_COMPILER), OPEN64)
+# (cbr) libunwind support 
+TARGETS = $(LIBUNWIND)
+LIBUNWIND=libgcc_eh.a
+else
+TARGETS = $(LIBRARY)
+endif
+
+#----------------------------------------------------------------------
+#  Variables describing additional sources, objects, and libraries
+#----------------------------------------------------------------------
+COMUTIL_OBJS = $(TARG_COMUTIL_DIR)/libcomutil.a
+# LIBM_OBJS    = $(TARG_LIBM_DIR)/libm.a
+CMPLRS_OBJS  = $(TARG_CMPLRS_DIR)/libcmplrs.a
+CSUP_OBJS    = $(TARG_CSUP_DIR)/libcsup.a
+LIBIBERTY_OBJS = $(TARG_LIBIBERTY_DIR)/libiberty.a
+
+LLDLIBS = $(COMUTIL_OBJS) $(LIBIBERTY_OBJS)
+ifeq ($(BUILD_OS), IRIX)
+LLDLIBS += -lcmplrs -Bstatic -lffio -Bdynamic
+else
+LLDLIBS += $(CMPLRS_OBJS) $(CSUP_OBJS)
+endif
+
+ifneq ($(HOST_OS),CYGWIN_NT)
+# all we need is in libcygwin
+LLDLIBS +=  -lm
+endif
+
+default: first local last
+
+#----------------------------------------------------------------------
+#  The commands in this section are done BEFORE any other target is 
+#  built.
+#----------------------------------------------------------------------
+first:
+ifeq ($(BUILD_OS), LINUX)
+	cd $(BUILD_AREA)/include && $(MAKE)
+endif
+	cd $(TARG_LIBIBERTY_DIR) && $(MAKE)
+
+local: $(TARGETS)
+
+#----------------------------------------------------------------------
+#  The commands in this section are done AFTER every other target is 
+#  built.
+#----------------------------------------------------------------------
+last : local make_libdeps
+
+install: local
+
+cp-expr.o: $(GNU_CP_DIR)/expr.c
+	$(CCF) -c -o cp-expr.o $(GNU_CP_DIR)/expr.c
+
+cp-except.o: $(GNU_CP_DIR)/except.c
+	$(CCF) -c -o cp-except.o $(GNU_CP_DIR)/except.c
+
+cp-tree.o: $(GNU_CP_DIR)/tree.c
+	$(CCF) -c -o cp-tree.o $(GNU_CP_DIR)/tree.c
+
+tree.o: $(GNU_DIR)/tree.c
+	$(CCF) -c -o tree.o $(GNU_DIR)/tree.c
+
+cp-dump.o: $(GNU_CP_DIR)/dump.c
+	$(CCF) -c -o cp-dump.o $(GNU_CP_DIR)/dump.c
+
+prefix.o: prefix.c
+	$(CCF) -c $< -DPREFIX=\"\" $(GNU_DIR)/prefix.c
+
+#----------------------------------------------------------------------
+#  Include the usual commonrules
+#----------------------------------------------------------------------
+include $(COMMONRULES)
+
+.PRECIOUS : $(LIBRARY) 
+
+$(LIBRARY): $(OBJECTS) $(GNU_CP_DUP_OBJS)
+	$(AR) $(ARFLAGS) $@ $^
+
+#----------------------------------------------------------------------
+#  (cbr) special section for cross compiled library.
+#----------------------------------------------------------------------
+UNWIND_OBJS=unwind-dw2.o unwind-dw2-fde.o unwind-c.o 
+
+_install: $(LIBUNWIND)
+	if [ ! -d $(INSTALL_PREFIX)/$(INSTALL_DIR) ]; then $(STD_INSTALL) -d $(INSTALL_PREFIX)/$(INSTALL_DIR); fi
+	for h in $(TARGETS); do \
+	  $(STD_INSTALL) $(STD_INSTALL_EXEC_MASK) $$h $(INSTALL_PREFIX)/$(INSTALL_DIR); \
+	done
+
+ifeq ($(BUILD_COMPILER), OPEN64)
+# (cbr) libunwind support 
+CFLAGS+=-DIN_GCC -DIN_LIBGCC2 -D__GCC_FLOAT_NOT_NEEDED -DEH_RETURN_STACKADJ_RTX -funwind-tables
+
+$(LIBUNWIND): $(UNWIND_OBJS)
+	$(AR) rv $(LIBUNWIND) $(UNWIND_OBJS)
+
+INSTALL_DIR=cmplrs
+INSTALL_PREFIX:=$(ROOT)/lib
+
+libunwind: 
+	$(MAKE) HOSTDEFS+='-EL -mcore=st220' INSTALL_DIR=st220/le/bare clean _install
+	$(MAKE) HOSTDEFS+='-EB -mcore=st220' INSTALL_DIR=st220/be/bare clean _install
+	$(MAKE) HOSTDEFS+='-EL -mcore=st231' INSTALL_DIR=st231/le/bare clean _install
+	$(MAKE) HOSTDEFS+='-EB -mcore=st231' INSTALL_DIR=st231/be/bare clean _install
+	$(MAKE) HOSTDEFS+='-EL -mcore=st235' INSTALL_DIR=st235/le/bare clean _install
+	$(MAKE) HOSTDEFS+='-EB -mcore=st235' INSTALL_DIR=st235/be/bare clean _install
+
+endif
+
+
+
