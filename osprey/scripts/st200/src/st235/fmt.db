@@ -1,0 +1,461 @@
++ **************************************************
++ ST235 Format Database
++ **************************************************
+
++ ********************* Int3R **********************
++=Int3R
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=0
++field4 CMP=0
++field5 INT3_OPCODE
++field6 RESERVED_18_3
++op1 dest
++op2 src1
++op3 src2
++syntax %1 = %2, %3
++type INT3
+
++ ********************* Int3I **********************
++=Int3I
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=1
++field4 CMP=0
++field5 INT3_OPCODE
++op1 idest
++op2 src1
++op3 isrc2
++syntax %1 = %2, %3
++type INT3
+
++ ********************* Monadic ********************
++=Monadic
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=1
++field4 CMP=0
++field5 INT3_OPCODE=01110
++field6 MONADIC_OPCODE
++op1 idest
++op2 src1
++syntax %1 = %2
++type INT3
+
++ ********************* Cmp3R_Reg ******************
++=Cmp3R_Reg
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=0
++field4 CMP=1
++field5 B=0
++field6 CMP3_OPCODE
++field7 RESERVED_18_3
++op1 dest
++op2 src1
++op3 src2
++syntax %1 = %2, %3
++type CMP3
+
++ ********************* Cmp3R_Br *******************
++=Cmp3R_Br
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=0
++field4 CMP=1
++field5 B=1
++field6 CMP3_OPCODE
++field7 RESERVED_12_6
++op1 bdest
++op2 src1
++op3 src2
++syntax %1 = %2, %3
++type CMP3
+
++ ********************* Cmp3I_Reg ******************
++=Cmp3I_Reg
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=1
++field4 CMP=1
++field5 B=0
++field6 CMP3_OPCODE
++op1 idest
++op2 src1
++op3 isrc2
++syntax %1 = %2, %3
++type CMP3
+
++ ********************* Cmp3I_Br *******************
++=Cmp3I_Br
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=1
++field4 CMP=1
++field5 B=1
++field6 CMP3_OPCODE
++field7 RESERVED_9_3
++op1 ibdest
++op2 src1
++op3 isrc2
++syntax %1 = %2, %3
++type CMP3
+
++ ********************* Imm ************************
++=Imm
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=01
++field3 IMMX_OPCODE
++op1 imm
++syntax %1
++type IMMX
+
++ ********************* SelectR ********************
++=SelectR
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=01
++field3 I=0
++field4 SLCT_OPCODE
++field5 RESERVED_18_3
++op1 dest
++op2 scond
++op3 src1
++op4 src2
++syntax %1 = %2, %3, %4
++type SLCT
+
++ ********************* SelectI ********************
++=SelectI
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=01
++field3 I=1
++field4 SLCT_OPCODE
++op1 idest
++op2 scond
++op3 src1
++op4 isrc2
++syntax %1 = %2, %3, %4
++type SLCT
+
++ ********************* cgen ***********************
++=cgen
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=01
++field3 CGEN_OPCODE
++op1 dest
++op2 bdest
++op3 src1
++op4 src2
++op5 scond
++syntax %1, %2 = %3, %4, %5
++type CGEN
+
++ ********************* SysOp ***********************
++=SysOp
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=01
++field3 SYSOP_OPCODE
++field4 RESERVED_0_21
++type SYSOP
+
++ ********************* SBreak ***********************
++=SBreak
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=01
++field3 SBREAK_OPCODE
++field4 SBREAK_VAR
++type SYSOP
+
++ ********************* Load ***********************
++=Load
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=10
++field3 LOAD_OPCODE
++field4 LS_SUBOPCODE=000
++op1 idest
++op2 isrc2
++op3 src1
++syntax %1 = %2[%3]
++type LOAD
+
++ ********************* LoadC ***********************
++=LoadC
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=10
++field3 LOAD_OPCODE
++op1 idest
++op2 scond
++op3 isrc2
++op4 src1
++syntax %1 = %2, %3[%4]
++type LOAD
+
++ ********************* LoadL *********************
++=LoadL
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=10
++field3 LOAD_OPCODE=1111
++field4 LS_SUBOPCODE=111
++field5 LOADL_OPCODE
++op1 idest
++op2 src1
++syntax %1 = [%2]
++type LOAD
+
++ ********************* Store **********************
++=Store
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=10
++field3 STORE_OPCODE
++field4 LS_SUBOPCODE=000
++op1 isrc2
++op2 src1
++op3 src2
++syntax %1[%2] = %3
++type STORE
+
++ ********************* StoreC *********************
++=StoreC
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=10
++field3 STORE_OPCODE
++op1 isrc2
++op2 src1
++op3 scond
++op4 src2
++syntax %1[%2] = %3, %4
++type STORE
+
++ ********************* StoreL *********************
++=StoreL
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=10
++field3 STORE_OPCODE
++field4 LS_SUBOPCODE=111
++field5 STOREL_OPCODE
++op1 bdest2
++op2 src1
++op3 src2
++syntax %1, [%2] = %3
++type STORE
+
++ ********************* System *********************
++=System
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=10
++field3 STORE_OPCODE=1111
++field4 LS_SUBOPCODE=111
++field5 SYSTEM_OPCODE
++op1 src1
++op2 src2
++syntax %1, %2
++type STORE
+
++ ********************* Call ***********************
++=Call
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=11
++field3 I=0
++field4 CALL_OPCODE
++field5 LNK
++op1 btarg
++syntax LR = %1
++type CALL
+
++ ********************* Branch *********************
++=Branch
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=11
++field3 I=1
++field4 BRANCH_OPCODE
++op1 bcond
++op2 btarg
++syntax %1, %2
++type BRANCH
+
++ ********************* Mul64R **********************
++=Mul64R
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=0
++field4 CMP=1
++field5 MUL64_OPCODE
++field6 RESERVED_18_3
++op1 dest
++op2 src1
++op3 src2
++syntax %1 = %2, %3
++type INT3
+
++ ********************* Mul64I *******************
++=Mul64I
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 I=1
++field4 CMP=1
++field5 MUL64_OPCODE
++op1 idest
++op2 src1
++op3 isrc2
++syntax %1 = %2, %3
++type INT3
+
++ ********************* Maths3R_Dds **********************
++=Maths3R_Dds
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 FLOAT_FIXED0=00
++field4 FLOAT_OPCODE
++field5 FLOAT_FIXED1=010
++op1 dest
++op2 src1
++op3 src2
++syntax %1 = %2, %3
++type FLOAT
+
++ ********************* Maths3R_Dss **********************
++=Maths3R_Dss
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 FLOAT_FIXED0=00
++field4 FLOAT_OPCODE
++field5 FLOAT_FIXED1=010
++op1 dest
++op2 src1
++op3 src2
++syntax %1 = %2, %3
++type FLOAT
+
++ ********************* Maths3R_Mss **********************
++=Maths3R_Mss
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 FLOAT_FIXED0=00
++field4 FLOAT_OPCODE
++field5 FLOAT_FIXED1=010
++field6 RESERVED_6_6
++op1 dest
++op2 src1
++syntax %1 = %2
++type FLOAT
+
++ ********************* Float3R_Dss **********************
++=Float3R_Dss
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 FLOAT_FIXED0=00
++field4 FLOAT_OPCODE
++field5 FLOAT_FIXED1=001
++op1 dest
++op2 src1
++op3 src2
++syntax %1 = %2, %3
++type FLOAT
+
++ ********************* Float3R_Mss **********************
++=Float3R_Mss
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 FLOAT_FIXED0=00
++field4 FLOAT_OPCODE
++field5 FLOAT_FIXED1=001
++field6 RESERVED_6_6
++op1 dest
++op2 src1
++syntax %1 = %2
++type FLOAT
+
++ ********************* Float3R_Msd **********************
++=Float3R_Msd
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 FLOAT_FIXED0=00
++field4 FLOAT_OPCODE
++field5 FLOAT_FIXED1=001
++field7 RESERVED_6_6
++op1 dest
++op2 src1
++syntax %1 = %2
++type FLOAT
+
++ ********************* Float3R_Ddd **********************
++=Float3R_Ddd
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 FLOAT_FIXED0=00
++field4 FLOAT_OPCODE
++field5 FLOAT_FIXED1=001
++op1 dest
++op2 src1
++op3 src2
++syntax %1 = %2, %3
++type FLOAT
+
++ ********************* Float3R_Mdd **********************
++=Float3R_Mdd
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 FLOAT_FIXED0=00
++field4 FLOAT_OPCODE
++field5 FLOAT_FIXED1=001
++field7 RESERVED_6_6
++op1 dest
++op2 src1
++syntax %1 = %2
++type FLOAT
+
++ ********************* Float3R_Mds **********************
++=Float3R_Mds
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=00
++field3 FLOAT_FIXED0=00
++field4 FLOAT_OPCODE
++field5 FLOAT_FIXED1=001
++field7 RESERVED_6_6
++op1 dest
++op2 src1
++syntax %1 = %2
++type FLOAT
+
++ ********************* Asm ************************
++=Asm
++field0 STOPBIT
++field1 RESERVED_30_1
++field2 FMT=10
++field3 ASM_OPCODE
++field4 ASM_VAR
++syntax
++type INT3

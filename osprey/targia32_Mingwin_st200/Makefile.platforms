@@ -1,0 +1,20 @@
+
+#
+# Define the BUILD platform
+#
+BUILD_OS    = LINUX
+BUILD_ARCH  = IA32
+BUILD_ABI   = I32BIT
+
+#
+# Define the HOST platform
+#
+HOST_OS     = MINGW
+HOST_ARCH   = IA32
+HOST_ABI    = I32BIT
+
+#
+# Define the TARGET
+#
+BUILD_TARGET = ST200
+BUILD_TARGET_OS = BARE_OS21
