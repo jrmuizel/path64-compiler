@@ -70,6 +70,7 @@ main (int argc, char *argv[])
   Resource_Requirement(Resource_st235_ISSUE, 0);
   Resource_Requirement(Resource_st235_CTL, 0);
   Resource_Requirement(Resource_st235_ODD, 0);
+  Resource_Requirement(Resource_st235_EVEN, 0);
 
 
   Instruction_Group("group1",
@@ -81,6 +82,7 @@ main (int argc, char *argv[])
   Resource_Requirement(Resource_st235_ISSUE, 0);
   Resource_Requirement(Resource_st235_CTL, 0);
   Resource_Requirement(Resource_st235_ODD, 0);
+  Resource_Requirement(Resource_st235_EVEN, 0);
 
 
   Instruction_Group("group2",
@@ -91,13 +93,14 @@ main (int argc, char *argv[])
   Any_Operand_Access_Time(2);
   Resource_Requirement(Resource_st235_ISSUE, 0);
   Resource_Requirement(Resource_st235_CTL, 0);
-  Resource_Requirement(Resource_st235_MEM, 0);
   Resource_Requirement(Resource_st235_ODD, 0);
+  Resource_Requirement(Resource_st235_EVEN, 0);
+  Resource_Requirement(Resource_st235_MEM, 0);
 
 
   Instruction_Group("group3",
-		TOP_multi_stpc_ii,
-		TOP_multi_stp_ii,
+		TOP_multi_stlc_ii,
+		TOP_multi_stl_ii,
 		TOP_pftc_ii,
 		TOP_pft_ii,
 		TOP_prgadd_ii,
@@ -108,8 +111,8 @@ main (int argc, char *argv[])
 		TOP_stb_ii,
 		TOP_sthc_ii,
 		TOP_sth_ii,
-		TOP_stpc_ii,
-		TOP_stp_ii,
+		TOP_stlc_ii,
+		TOP_stl_ii,
 		TOP_stwc_ii,
 		TOP_stw_ii,
 		TOP_UNDEFINED);
@@ -119,11 +122,12 @@ main (int argc, char *argv[])
   Resource_Requirement(Resource_st235_ISSUE, 0);
   Resource_Requirement(Resource_st235_MEM, 0);
   Resource_Requirement(Resource_st235_ODD, 0);
+  Resource_Requirement(Resource_st235_EVEN, 0);
 
 
   Instruction_Group("group4",
-		TOP_multi_stpc_i,
-		TOP_multi_stp_i,
+		TOP_multi_stlc_i,
+		TOP_multi_stl_i,
 		TOP_pftc_i,
 		TOP_pft_i,
 		TOP_prgadd_i,
@@ -134,8 +138,8 @@ main (int argc, char *argv[])
 		TOP_stb_i,
 		TOP_sthc_i,
 		TOP_sth_i,
-		TOP_stpc_i,
-		TOP_stp_i,
+		TOP_stlc_i,
+		TOP_stl_i,
 		TOP_stwc_i,
 		TOP_stw_i,
 		TOP_UNDEFINED);
@@ -154,11 +158,11 @@ main (int argc, char *argv[])
   Resource_Requirement(Resource_st235_ISSUE, 0);
   Resource_Requirement(Resource_st235_CTL, 0);
   Resource_Requirement(Resource_st235_ODD, 0);
+  Resource_Requirement(Resource_st235_EVEN, 0);
 
 
   Instruction_Group("group6",
 		TOP_addcg,
-		TOP_addpc_r,
 		TOP_add_r,
 		TOP_add_i,
 		TOP_spadjust,
@@ -177,15 +181,9 @@ main (int argc, char *argv[])
 		TOP_asm_19_i,
 		TOP_asm_1,
 		TOP_asm_20_i,
-		TOP_asm_21_i,
-		TOP_asm_22_i,
-		TOP_asm_23_i,
 		TOP_asm_2,
 		TOP_asm_3,
 		TOP_asm_4,
-		TOP_asm_5,
-		TOP_asm_6,
-		TOP_asm_7,
 		TOP_bswap,
 		TOP_clz,
 		TOP_cmpeqf_n_b,
@@ -301,7 +299,6 @@ main (int argc, char *argv[])
 
   Instruction_Group("group7",
 		TOP_pushregs,
-		TOP_returnadd,
 		TOP_UNDEFINED);
 
   Any_Result_Available_Time(3);
@@ -309,6 +306,7 @@ main (int argc, char *argv[])
   Resource_Requirement(Resource_st235_ISSUE, 0);
   Resource_Requirement(Resource_st235_CTL, 0);
   Resource_Requirement(Resource_st235_ODD, 0);
+  Resource_Requirement(Resource_st235_EVEN, 0);
 
 
   Instruction_Group("group8",
@@ -322,9 +320,6 @@ main (int argc, char *argv[])
 		TOP_asm_18_ii,
 		TOP_asm_19_ii,
 		TOP_asm_20_ii,
-		TOP_asm_21_ii,
-		TOP_asm_22_ii,
-		TOP_asm_23_ii,
 		TOP_cmpeq_ii_b,
 		TOP_cmpeq_ii_r,
 		TOP_cmpgeu_ii_b,
@@ -374,6 +369,7 @@ main (int argc, char *argv[])
   Resource_Requirement(Resource_st235_ISSUE, 0);
   Resource_Requirement(Resource_st235_ISSUE, 0);
   Resource_Requirement(Resource_st235_ODD, 0);
+  Resource_Requirement(Resource_st235_EVEN, 0);
 
 
   Instruction_Group("group9",
@@ -394,6 +390,7 @@ main (int argc, char *argv[])
   Resource_Requirement(Resource_st235_ISSUE, 0);
   Resource_Requirement(Resource_st235_CTL, 0);
   Resource_Requirement(Resource_st235_ODD, 0);
+  Resource_Requirement(Resource_st235_EVEN, 0);
 
 
   Instruction_Group("group11",
@@ -405,33 +402,44 @@ main (int argc, char *argv[])
   Resource_Requirement(Resource_st235_ISSUE, 0);
   Resource_Requirement(Resource_st235_ISSUE, 0);
   Resource_Requirement(Resource_st235_ODD, 0);
+  Resource_Requirement(Resource_st235_EVEN, 0);
 
 
   Instruction_Group("group12",
-		TOP_asm_10,
-		TOP_asm_11,
-		TOP_asm_12,
-		TOP_asm_13,
-		TOP_asm_14,
-		TOP_asm_15,
+		TOP_asm_21_i,
+		TOP_asm_22_i,
+		TOP_asm_23_i,
 		TOP_asm_24_i,
 		TOP_asm_25_i,
-		TOP_asm_26_i,
-		TOP_asm_27_i,
-		TOP_asm_28_i,
-		TOP_asm_29_i,
-		TOP_asm_30_i,
-		TOP_asm_31_i,
+		TOP_asm_5,
+		TOP_asm_6,
+		TOP_asm_7,
 		TOP_asm_8,
 		TOP_asm_9,
 		TOP_UNDEFINED);
 
-  Any_Result_Available_Time(5);
+  Any_Result_Available_Time(4);
   Any_Operand_Access_Time(2);
   Resource_Requirement(Resource_st235_ISSUE, 0);
 
 
   Instruction_Group("group13",
+		TOP_asm_21_ii,
+		TOP_asm_22_ii,
+		TOP_asm_23_ii,
+		TOP_asm_24_ii,
+		TOP_asm_25_ii,
+		TOP_UNDEFINED);
+
+  Any_Result_Available_Time(4);
+  Any_Operand_Access_Time(2);
+  Resource_Requirement(Resource_st235_ISSUE, 0);
+  Resource_Requirement(Resource_st235_ISSUE, 0);
+  Resource_Requirement(Resource_st235_ODD, 0);
+  Resource_Requirement(Resource_st235_EVEN, 0);
+
+
+  Instruction_Group("group14",
 		TOP_addf_n,
 		TOP_convfi_n,
 		TOP_convif_n,
@@ -444,7 +452,7 @@ main (int argc, char *argv[])
   Resource_Requirement(Resource_st235_EVEN, 0);
 
 
-  Instruction_Group("group14",
+  Instruction_Group("group15",
 		TOP_ldbc_ii,
 		TOP_ldbuc_ii,
 		TOP_ldbu_ii,
@@ -453,12 +461,12 @@ main (int argc, char *argv[])
 		TOP_ldhuc_ii,
 		TOP_ldhu_ii,
 		TOP_ldh_ii,
-		TOP_ldpc_ii,
-		TOP_ldp_ii,
+		TOP_ldlc_ii,
+		TOP_ldl_ii,
 		TOP_ldwc_ii,
 		TOP_ldw_ii,
-		TOP_multi_ldpc_ii,
-		TOP_multi_ldp_ii,
+		TOP_multi_ldlc_ii,
+		TOP_multi_ldl_ii,
 		TOP_UNDEFINED);
 
   Any_Result_Available_Time(5);
@@ -467,11 +475,10 @@ main (int argc, char *argv[])
   Resource_Requirement(Resource_st235_ISSUE, 0);
   Resource_Requirement(Resource_st235_MEM, 0);
   Resource_Requirement(Resource_st235_ODD, 0);
+  Resource_Requirement(Resource_st235_EVEN, 0);
 
 
-  Instruction_Group("group15",
-		TOP_asm_24_ii,
-		TOP_asm_25_ii,
+  Instruction_Group("group16",
 		TOP_asm_26_ii,
 		TOP_asm_27_ii,
 		TOP_asm_28_ii,
@@ -502,9 +509,10 @@ main (int argc, char *argv[])
   Resource_Requirement(Resource_st235_ISSUE, 0);
   Resource_Requirement(Resource_st235_ISSUE, 0);
   Resource_Requirement(Resource_st235_ODD, 0);
+  Resource_Requirement(Resource_st235_EVEN, 0);
 
 
-  Instruction_Group("group16",
+  Instruction_Group("group17",
 		TOP_divu,
 		TOP_div,
 		TOP_ldbc_i,
@@ -515,13 +523,13 @@ main (int argc, char *argv[])
 		TOP_ldhuc_i,
 		TOP_ldhu_i,
 		TOP_ldh_i,
-		TOP_ldpc_i,
-		TOP_ldp_i,
+		TOP_ldlc_i,
+		TOP_ldl_i,
 		TOP_ldwc_i,
 		TOP_ldwl,
 		TOP_ldw_i,
-		TOP_multi_ldpc_i,
-		TOP_multi_ldp_i,
+		TOP_multi_ldlc_i,
+		TOP_multi_ldl_i,
 		TOP_remu,
 		TOP_rem,
 		TOP_stwl,
@@ -533,7 +541,19 @@ main (int argc, char *argv[])
   Resource_Requirement(Resource_st235_MEM, 0);
 
 
-  Instruction_Group("group17",
+  Instruction_Group("group18",
+		TOP_asm_10,
+		TOP_asm_11,
+		TOP_asm_12,
+		TOP_asm_13,
+		TOP_asm_14,
+		TOP_asm_15,
+		TOP_asm_26_i,
+		TOP_asm_27_i,
+		TOP_asm_28_i,
+		TOP_asm_29_i,
+		TOP_asm_30_i,
+		TOP_asm_31_i,
 		TOP_mul32_r,
 		TOP_mul32_i,
 		TOP_mul64hu_r,
@@ -577,24 +597,13 @@ main (int argc, char *argv[])
   Resource_Requirement(Resource_st235_ODD, 0);
 
 
-  Instruction_Group("group18",
+  Instruction_Group("group19",
 		TOP_break,
 		TOP_nop,
 		TOP_st235_sbrk,
 		TOP_UNDEFINED);
 
   Resource_Requirement(Resource_st235_ISSUE, 0);
-
-
-  Instruction_Group("group19",
-		TOP_rfi,
-		TOP_syncins,
-		TOP_UNDEFINED);
-
-  Resource_Requirement(Resource_st235_ISSUE, 0);
-  Resource_Requirement(Resource_st235_CTL, 0);
-  Resource_Requirement(Resource_st235_MEM, 0);
-  Resource_Requirement(Resource_st235_ODD, 0);
 
 
   Instruction_Group("group20",
@@ -605,9 +614,22 @@ main (int argc, char *argv[])
   Resource_Requirement(Resource_st235_ISSUE, 0);
   Resource_Requirement(Resource_st235_CTL, 0);
   Resource_Requirement(Resource_st235_ODD, 0);
+  Resource_Requirement(Resource_st235_EVEN, 0);
 
 
   Instruction_Group("group21",
+		TOP_rfi,
+		TOP_syncins,
+		TOP_UNDEFINED);
+
+  Resource_Requirement(Resource_st235_ISSUE, 0);
+  Resource_Requirement(Resource_st235_CTL, 0);
+  Resource_Requirement(Resource_st235_ODD, 0);
+  Resource_Requirement(Resource_st235_EVEN, 0);
+  Resource_Requirement(Resource_st235_MEM, 0);
+
+
+  Instruction_Group("group22",
 		TOP_asm,
 		TOP_prgins,
 		TOP_st235_syscall,
@@ -619,7 +641,7 @@ main (int argc, char *argv[])
   Resource_Requirement(Resource_st235_ISSUE, 0);
 
 
-  Instruction_Group("group22",
+  Instruction_Group("group23",
 		TOP_sync,
 		TOP_wmb,
 		TOP_UNDEFINED);
