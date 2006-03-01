@@ -29,6 +29,12 @@
   see ti_init.c. 
  */
 #include "ti_si.h"
+#ifdef TARG_ST
+#include <stdlib.h>
+#include "targ_isa_operands.h"
+
+static SI_RRW SI_RRW_initial_reservations;
+#endif
 
 /****************************************************************************
  ****************************************************************************/
@@ -37,7 +43,11 @@
 TARGINFO_EXPORTED
 SI_RRW SI_RRW_Initial(void)
 {
+#ifdef TARG_ST
+  return SI_RRW_initializer + SI_RRW_initial_reservations;
+#else
   return SI_RRW_initializer;
+#endif
 }
 
 TARGINFO_EXPORTED
@@ -152,12 +162,93 @@ TSI_Operand_Access_Time( TOP top, INT operand_index )
   return SI_top_si[(INT) top]->operand_access_times[operand_index];
 }
 
+#ifdef TARG_ST
+TARGINFO_EXPORTED
+BOOL
+TSI_Operand_Access_Times_Overridden ( TOP top )
+{
+  TI_SI_CONST SI *si = SI_top_si[(INT) top];
+  return si->operand_access_times_overridden;
+}
+
+TARGINFO_EXPORTED
+void
+TSI_Set_Operand_Access_Time ( TOP top, INT operand_index, INT tm )
+{
+  TI_SI_CONST SI *si = SI_top_si[(INT) top];
+  // Care: si can be null if the operation does not exist on this
+  // target.  We allow that case but silently ignore it, so that
+  // command-line options can be shared across targets.
+  if (si) {
+    if (! si->operand_access_times_overridden) {
+      // Cannot simply overwrite the current value, since it is
+      // shared with other instructions. First make a duplicate.
+      SI *new_si = (SI *)malloc (sizeof (SI));
+      if (!new_si) return;
+      memcpy (new_si, si, sizeof(SI));
+      SI_top_si[(INT) top] = new_si;
+      si = new_si;
+      const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info (top);
+      INT n_opds = ISA_OPERAND_INFO_Operands (oinfo);
+      mUINT8 *new_access_times = (mUINT8 *)malloc (sizeof(mUINT8) * n_opds);
+      if (!new_access_times) return;
+      memcpy (new_access_times, si->operand_access_times,
+	      n_opds * sizeof (mUINT8));
+      si->operand_access_times = new_access_times;
+      si->operand_access_times_overridden = TRUE;
+    }
+    si->operand_access_times[operand_index] = tm;
+  }
+}
+
+#endif
+
 TARGINFO_EXPORTED
 INT
 TSI_Result_Available_Time( TOP top, INT result_index )
 {
   return SI_top_si[(INT) top]->result_available_times[result_index];
 }
+
+#ifdef TARG_ST
+TARGINFO_EXPORTED
+BOOL TSI_Result_Available_Times_Overridden ( TOP top )
+{
+  TI_SI_CONST SI *si = SI_top_si[(INT) top];
+  return si->result_available_times_overridden;
+}
+
+TARGINFO_EXPORTED
+void
+TSI_Set_Result_Available_Time( TOP top, INT result_index, INT tm )
+{
+  TI_SI_CONST SI *si = SI_top_si[(INT) top];
+  // Care: si can be null if the operation does not exist on this
+  // target.  We allow that case but silently ignore it, so that
+  // command-line options can be shared across targets.
+  if (si) {
+    if (! si->result_available_times_overridden) {
+      // Cannot simply overwrite the current value, since it is
+      // shared with other instructions. First make a duplicate.
+      SI *new_si = (SI *)malloc (sizeof (SI));
+      if (!new_si) return;
+      memcpy (new_si, si, sizeof(SI));
+      SI_top_si[(INT) top] = new_si;
+      si = new_si;
+      const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info (top);
+      INT n_results = ISA_OPERAND_INFO_Results (oinfo);
+      mUINT8 *new_access_times = (mUINT8 *)malloc (sizeof(mUINT8) * n_results);
+      if (!new_access_times) return;
+      memcpy (new_access_times, si->result_available_times,
+	      n_results * sizeof (mUINT8));
+      new_access_times[result_index] = tm;
+      si->result_available_times_overridden = TRUE;
+    }
+    si->result_available_times[result_index] = tm;
+  }
+}
+
+#endif
 
 TARGINFO_EXPORTED
 INT
@@ -285,6 +376,70 @@ UINT SI_RESOURCE_ID_Avail_Per_Cycle( SI_RESOURCE_ID id )
 {
   return SI_RESOURCE_Avail_Per_Cycle(SI_resources[id]);
 }
+
+/****************************************************************************
+ ****************************************************************************/
+#ifdef TARG_ST
+static INT
+get_field_width(INT count) 
+{
+  INT i;
+  INT field_width;
+  for ( i = 31 ; i >= 0 ; --i ) {
+    if ((( (INT) 1) << i) & count) {
+      field_width = i + 2;
+      break;
+    }
+  }
+  return field_width;
+}
+
+void 
+SI_RESOURCE_ID_Set_Max_Avail(SI_RESOURCE_ID id, INT max)
+{
+  INT avail_per_cycle = SI_resources[id]->avail_per_cycle;
+  INT bit_index = SI_resources[id]->bit_index;
+  INT pre_reserve =  avail_per_cycle - max;
+  SI_RRW pre_requierement;
+  SI_RRW pre_requierement_mask;
+  INT r;
+  INT si_id;
+  if (pre_reserve <= 0) return;
+
+  pre_requierement = ((SI_RRW)pre_reserve << bit_index);
+  pre_requierement_mask = (((SI_RRW)-1) >> (sizeof(SI_RRW)*8 - get_field_width(avail_per_cycle)) << bit_index);
+  SI_RRW_initial_reservations = 
+    (SI_RRW_initial_reservations & ~pre_requierement_mask)
+    | pre_requierement;
+
+  /* Now fix SI informations that overflow the max resource. */
+  for (si_id = 0; si_id < SI_ID_count; si_id++) {
+    SI *si = SI_ID_si[si_id];
+    SI_RESOURCE_ID_SET *set;
+    if (si == (void *)0) continue;
+    set = si->resources_used;
+    if (set == (void *)0) continue;
+    if (*set & (1<<id)) {
+      for (r = 0; r < si->resource_total_vector_size; r++) {
+	if (si->resource_total_vector[r].resource->id == id) {
+         if (si->resource_total_vector[r].total_used > max) {
+	    si->resource_total_vector[r].total_used = max;
+	  }
+	}
+      }
+      for (r = 0; r < si->rr[0]; r++) {
+	SI_RRW reservation = si->rr[1+r];
+	INT num = (reservation & pre_requierement_mask) >> bit_index;
+	if (num > max) {
+	  reservation = (reservation & ~pre_requierement_mask)
+	    | (((SI_RRW)max << bit_index));
+	  si->rr[1+r] = reservation;
+	}
+      }
+    }
+  }
+}
+#endif
 
 /****************************************************************************
  ****************************************************************************/
