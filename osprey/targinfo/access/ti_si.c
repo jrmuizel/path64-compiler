@@ -31,7 +31,6 @@
 #include "ti_si.h"
 #ifdef TARG_ST
 #include <stdlib.h>
-#include "targ_isa_operands.h"
 
 static SI_RRW SI_RRW_initial_reservations;
 #endif
@@ -188,12 +187,11 @@ TSI_Set_Operand_Access_Time ( TOP top, INT operand_index, INT tm )
       memcpy (new_si, si, sizeof(SI));
       SI_top_si[(INT) top] = new_si;
       si = new_si;
-      const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info (top);
-      INT n_opds = ISA_OPERAND_INFO_Operands (oinfo);
-      mUINT8 *new_access_times = (mUINT8 *)malloc (sizeof(mUINT8) * n_opds);
+      mUINT8 *new_access_times = (mUINT8 *)malloc (sizeof(mUINT8)
+						   * si->n_opds);
       if (!new_access_times) return;
       memcpy (new_access_times, si->operand_access_times,
-	      n_opds * sizeof (mUINT8));
+	      si->n_opds * sizeof (mUINT8));
       si->operand_access_times = new_access_times;
       si->operand_access_times_overridden = TRUE;
     }
@@ -235,12 +233,11 @@ TSI_Set_Result_Available_Time( TOP top, INT result_index, INT tm )
       memcpy (new_si, si, sizeof(SI));
       SI_top_si[(INT) top] = new_si;
       si = new_si;
-      const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info (top);
-      INT n_results = ISA_OPERAND_INFO_Results (oinfo);
-      mUINT8 *new_access_times = (mUINT8 *)malloc (sizeof(mUINT8) * n_results);
+      mUINT8 *new_access_times = (mUINT8 *)malloc (sizeof(mUINT8)
+						   * si->n_results);
       if (!new_access_times) return;
       memcpy (new_access_times, si->result_available_times,
-	      n_results * sizeof (mUINT8));
+	      si->n_results * sizeof (mUINT8));
       new_access_times[result_index] = tm;
       si->result_available_times_overridden = TRUE;
     }
