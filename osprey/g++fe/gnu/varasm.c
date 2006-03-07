@@ -927,7 +927,12 @@ make_decl_rtl (decl, asmspec)
 
   if (name != new_name)
     {
+#ifdef TARG_ST
+      /* (cbr) don't output the * */
+      SET_DECL_ASSEMBLER_NAME (decl, get_identifier (new_name[0] == '*' ? new_name + 1 : new_name));
+#else
       SET_DECL_ASSEMBLER_NAME (decl, get_identifier (new_name));
+#endif
       name = IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (decl));
     }
 
