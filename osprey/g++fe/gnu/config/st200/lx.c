@@ -721,6 +721,16 @@ lx_va_start (valist, nextarg)
   expand_expr (t, const0_rtx, VOIDmode, EXPAND_NORMAL);
 }
 
+rtx lx_va_arg (valist, type)
+     tree valist ATTRIBUTE_UNUSED;
+     tree type ATTRIBUTE_UNUSED;
+{
+  /* [SC] A correct implementation of va_arg for st200 is a lot of work,
+     open64 does not need it, so left unimplemented until needed.
+  */
+  return gen_rtx (REG, SImode, RETURN_POINTER_REGNUM);
+}
+
 /* Emit RTL insns to initialize the variable parts of a trampoline.
    FNADDR is an RTX for the address of the function's pure code.
    CXT is an RTX for the static chain value for the function.  */

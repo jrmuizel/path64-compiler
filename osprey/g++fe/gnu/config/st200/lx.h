@@ -1001,6 +1001,9 @@ extern struct rtx_def *lx_builtin_saveregs ();
 #define EXPAND_BUILTIN_VA_START(valist, nextarg) \
   lx_va_start (valist, nextarg)
 
+#define EXPAND_BUILTIN_VA_ARG(valist, type) \
+  lx_va_arg (valist, type)
+
 /* Define this macro to store the anonymous register arguments into the stack
    so that all the arguments appear to have been passed consecutively on the
    stack.
