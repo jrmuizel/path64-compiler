@@ -562,13 +562,24 @@ INSTALL_PREFIX:=$(ROOT)/lib
 LDIRT += libunwind.a
 
 install-libunwind:
+	@for core in $(TARGET_LIBUNWIND_CORES); do \
+	  for endian in $(TARGET_LIBUNWIND_ENDIANESS); do \
+		$(MAKE) TARGET_CORE=$$core TARGET_ENDIANESS=$$endian target_install_st200_core_endian_libraries_; \
+	  done; \
+	done
+
+target_install_st200_core_endian_libraries_:
+	$(MAKE) \
+	HOSTDEFS+="-mcore=$(TARGET_CORE) $(addprefix -,$(subst be,EB,$(subst le,EL,$(TARGET_ENDIANESS))))" \
+	INSTALL_DIR=$(TARGET_CORE)/$(TARGET_ENDIANESS)/bare clean _install
+
 ifeq ($(HOST_ARCH), ST200)
-	$(MAKE) HOSTDEFS+='-EL -mcore=st220' INSTALL_DIR=st220/le/bare clean _install
-	$(MAKE) HOSTDEFS+='-EB -mcore=st220' INSTALL_DIR=st220/be/bare clean _install
-	$(MAKE) HOSTDEFS+='-EL -mcore=st231' INSTALL_DIR=st231/le/bare clean _install
-	$(MAKE) HOSTDEFS+='-EB -mcore=st231' INSTALL_DIR=st231/be/bare clean _install
-	$(MAKE) HOSTDEFS+='-EL -mcore=st235' INSTALL_DIR=st235/le/bare clean _install
-	$(MAKE) HOSTDEFS+='-EB -mcore=st235' INSTALL_DIR=st235/be/bare clean _install
+ifeq (x$(TARGET_LIBUNWIND_CORES)x,xx)
+$(error no target is defined. choose a subset of st220/st231/st235 for TARGET_LIBUNWIND_CORES)
+endif
+ifeq (x$(TARGET_LIBUNWIND_ENDIANESS)x,xx)
+$(error no endianess is defined. choose anong le/be for TARGET_LIBUNWIND_ENDIANESS)
+endif
 endif
 endif
 
