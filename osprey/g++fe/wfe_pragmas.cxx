@@ -516,6 +516,10 @@ void WFE_Expand_Pragma(tree stmt)
     }
     break;
   
+  case  WFE_PRAGMA_STREAM_ALIGNMENT:
+    args[0] = Get_Integer_Value(TREE_VALUE(pragma_args));
+    break;
+  
   default:
     DevWarn ("unsupported Pragma");
     return;

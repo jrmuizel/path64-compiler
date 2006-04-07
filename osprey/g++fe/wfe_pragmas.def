@@ -77,6 +77,8 @@ DECL_WFE_PRAGMA(WFE_PRAGMA_LOOPDEP, "loopdep", 1, WN_PRAGMA_LOOPDEP, 1, "A", "pr
 
 DECL_WFE_PRAGMA(WFE_PRAGMA_LOOPMOD, "loopmod", 1, WN_PRAGMA_LOOPMOD, 1, "(I+)", "pragma loopmod (n [,m]) - where n > 0 and n > m > 0 such that tripcount = k*n + m")
 
+DECL_WFE_PRAGMA(WFE_PRAGMA_STREAM_ALIGNMENT, "stream_alignment", 1, WN_PRAGMA_STREAM_ALIGNMENT, 1, "(I)", "pragma stream_alignment (n) - where n > 0")
+
 DECL_WFE_PRAGMA(WFE_PRAGMA_PIPELINE, "pipeline", 1, WN_PRAGMA_PIPELINE, 1, "(I+)", "pragma pipeline (n [,m]) - where n >= 0 and m >= 0") 
 
 DECL_WFE_PRAGMA(WFE_PRAGMA_FREQUENCY_HINT, "frequency_hint", 1, WN_PRAGMA_MIPS_FREQUENCY_HINT, 1, "A", "pragma frequency_hint NEVER|FREQUENT")
