@@ -59,13 +59,7 @@ TARGET_INT_MODEL Target_Int_Model = TARGET_INT_LP64;
 TARGET_INT_MODEL Target_Int_Model = TARGET_INT_ILP64;
 #endif
 
-/*
-#ifdef TARG_ST100
-TARGET_INT_MODEL Target_Int_Model = TARGET_INT_ILP32;
-#endif
-*/
-
-#if defined(TARG_ST200) || defined(TARG_ST100)
+#ifdef TARG_ST
 TARGET_INT_MODEL Target_Int_Model;
 #endif
 #ifdef TARG_IA32

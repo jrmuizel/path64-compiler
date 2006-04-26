@@ -762,8 +762,8 @@ DEF_BUILTIN (BUILT_IN__EXIT2,
 	     1, 0, !flag_isoc99,
 	     ATTR_NORETURN_NOTHROW_LIST)
 
-#if defined (TARG_ST200) && (GNU_FRONT_END==33)
-#include "gfecc_builtins.def"	/* Will come from targinfo/st200/...*/
-#elif defined (TARG_ST200)
-#include "gfec_builtins.def"	/* Will come from targinfo/st200/...*/
+#if defined (TARG_ST) && (GNU_FRONT_END==33)
+#include "gfecc_builtins.def"	/* Comes from targinfo/<arch>/config/...*/
+#elif defined (TARG_ST)
+#include "gfec_builtins.def"	/* Comes from targinfo/<arch>/config/...*/
 #endif /* defined(TARG_ST200) */

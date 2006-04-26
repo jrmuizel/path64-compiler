@@ -48,6 +48,7 @@ extern void EETARG_Restore_Extra_Callee_Tns (OPS *ops);
 extern void EETARG_Fixup_Entry_Code (BB *bb);
 #ifdef TARG_ST
 extern void EETARG_Fixup_Exit_Code (BB *bb);
+extern void EETARG_Set_Frame_Len (INT64 frame_len);
 #endif
 
 //  Replace the call OP with a jump.

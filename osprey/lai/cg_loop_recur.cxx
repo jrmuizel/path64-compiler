@@ -782,8 +782,13 @@ OPs_can_be_reassociated (
   if (top1 == top2 || top2 == Get_Opposite_TOP(top1)) {
 #endif
     if (OP_has_predicate(op1) && OP_has_predicate(op2)) {
+#ifdef TARG_ST
+      if (OP_opnd(op1, OP_find_opnd_use(op1,OU_predicate)) ==
+	  OP_opnd(op2, OP_find_opnd_use(op2,OU_predicate)))
+#else
       if (OP_opnd(op1, OP_PREDICATE_OPND) ==
 	  OP_opnd(op2, OP_PREDICATE_OPND))
+#endif
 	return true;
     }
   }

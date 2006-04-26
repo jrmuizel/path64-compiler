@@ -4138,9 +4138,8 @@ expand_builtin (exp, target, subtarget, mode, ignore)
     case BUILT_IN_UNWIND_INIT:
       expand_builtin_unwind_init ();
       return const0_rtx;
-    case BUILT_IN_DWARF_CFA: {
+    case BUILT_IN_DWARF_CFA:
       return virtual_cfa_rtx;
-    }
 #ifdef DWARF2_UNWIND_INFO
     case BUILT_IN_DWARF_SP_COLUMN:
       return expand_builtin_dwarf_sp_column ();
@@ -4150,8 +4149,9 @@ expand_builtin (exp, target, subtarget, mode, ignore)
 #endif
     case BUILT_IN_FROB_RETURN_ADDR:
       return expand_builtin_frob_return_addr (TREE_VALUE (arglist));
-    case BUILT_IN_EXTRACT_RETURN_ADDR:
+    case BUILT_IN_EXTRACT_RETURN_ADDR: {
       return expand_builtin_extract_return_addr (TREE_VALUE (arglist));
+    }
     case BUILT_IN_EH_RETURN:
       expand_builtin_eh_return (TREE_VALUE (arglist),
 				TREE_VALUE (TREE_CHAIN (arglist)));
@@ -4173,10 +4173,9 @@ expand_builtin (exp, target, subtarget, mode, ignore)
       expand_builtin_prefetch (arglist);
       return const0_rtx;
 
-#if defined(TARG_ST200)
-#include "gfec_builtins.h"		/* Will come from targinfo/st200/...*/	
+#ifdef TARG_ST
+#include "gfec_builtins.h"		/* Will come from targinfo/<arch>/...*/	
 #endif /* defined(TARG_ST200) */
-
 
     default:	/* just do library call, if unknown builtin */
       if (!DECL_ASSEMBLER_NAME_SET_P (fndecl))

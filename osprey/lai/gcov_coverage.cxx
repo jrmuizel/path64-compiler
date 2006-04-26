@@ -1139,7 +1139,7 @@ gen_edge_profiler (unsigned no, OPS *New_OPs )
 #if GCOV_COUNTER_SIZE_4
   /* Resulting register where is put the load */
   //    TN *tn = Gen_Register_TN (ISA_REGISTER_CLASS_integer, Pointer_Size);
-  TN *tn = Gen_Register_TN(ISA_REGISTER_CLASS_integer,/* size */4);
+  TN *tn = Build_TN_Of_Mtype(MTYPE_I4/* size */);
   Expand_Load (OPCODE_make_op(OPR_LDID, mode, mode), 
 	       tn, 
 	       Zero_TN,
@@ -1217,7 +1217,7 @@ gen_critical_edge_profiler (unsigned no, OPS *New_OPs, BB *src, BB *dst )
   /* Generate code to load memory location 'sym'+'ofst' into 'tgt_tn'. */
   /* Resulting register where is put the load */
   //    TN *tn = Gen_Register_TN (ISA_REGISTER_CLASS_integer, Pointer_Size);
-  TN *tn = Gen_Register_TN(ISA_REGISTER_CLASS_integer,/* size */4);
+  TN *tn = Build_TN_Of_Mtype(MTYPE_I4/* size */);
   Expand_Load (OPCODE_make_op(OPR_LDID, mode, mode), 
 	       tn, 
 	       Zero_TN,
@@ -1226,10 +1226,10 @@ gen_critical_edge_profiler (unsigned no, OPS *New_OPs, BB *src, BB *dst )
 	       New_OPs);
 
   /* increment +1 the counter */
-  TN *add_tn = Gen_Register_TN(ISA_REGISTER_CLASS_integer,/* size */4);
+  TN *add_tn = Build_TN_Of_Mtype(MTYPE_I4/* size */);
   Expand_Add(add_tn, tn, Gen_Literal_TN(1, 4), mode, New_OPs);
 
-  TN *select_tn = Gen_Register_TN(ISA_REGISTER_CLASS_integer,/* size */4);
+  TN *select_tn = Build_TN_Of_Mtype(MTYPE_I4/* size */);
   /* Detect FALL THRU edges */
   if (BB_next(src) == dst) {
     // Fall Thru

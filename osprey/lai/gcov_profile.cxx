@@ -214,7 +214,7 @@ insert_insn_on_edge (BB *src, BB *dst, unsigned num_edge)
   else
     {
       // Case of igoto with more than 2 successors 
-      if (OP_code(BB_branch_op(src)) == TOP_igoto) {
+      if (OP_ijump(BB_branch_op(src))) {
 	// Here we would need to split the edge to add the code for
 	// the counter. For the moment, this edge will not be instrumented.
 	// Gen_And_Insert_BB_After: update the jump table + add succesor

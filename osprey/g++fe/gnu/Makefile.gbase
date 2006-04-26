@@ -363,7 +363,7 @@ ifeq ($(BUILD_TARGET), ST200)
 endif
 
 ifeq ($(BUILD_TARGET), STxP70)
-  GNU_SRCS += lx.c
+  GNU_SRCS += stxp70.c
 endif
 
 GNU_CP_UNIQ_SRCS =	\
