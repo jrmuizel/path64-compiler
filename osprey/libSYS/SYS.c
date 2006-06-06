@@ -382,7 +382,7 @@ char *SYS_full_path_w32(const char *pname)
 {
   char *pdir = NULL;
   char *ignored ;  
-  if (GetFullPathName(pname, MAX_PATH_LENGTH, win32_path, &ignored)) {
+  if (SearchPath(NULL, pname, ".exe", MAX_PATH_LENGTH, win32_path, &ignored)) {
     pdir = SYS_strdup(win32_path);
   }
   return pdir;

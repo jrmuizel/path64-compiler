@@ -26,7 +26,8 @@ CFILES += \
 	dlfcn.c \
 	times.c \
 	sys_process_win32.c \
-	wrap_printf.c
+	wrap_printf.c \
+	wrap_file.c
 else
 # All non MINGW host have the following files
 CFILES += \
