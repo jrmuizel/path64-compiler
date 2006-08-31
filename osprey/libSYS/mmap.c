@@ -25,7 +25,7 @@ compilers or pure VC++ compilers */
 #include <unistd.h>
 
 
-char *last_error(void)
+static char *last_error(void)
 {
   static char error_message[1024];
   FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,NULL,GetLastError(),
@@ -40,12 +40,15 @@ typedef struct {
     void *lpBaseAddress ; 	/* The MapViewOfFile return value */
     size_t len ; 		/* The len that was requested by mmap */
     HANDLE hFileMappingObject ; /* The result of CreateFileMapping */
+    BOOL mmapisactive ;		/* When TRUE, region was mapped and not unmmaped, when FALSE, region already unmapped */
 } MMAPRECORD ;
 
-enum { MAX_MMAP_RECORD = 20 } ;
+/* This size is probably over conservative, however we do not recycle
+ entries, so we keep some margin */
+enum { MAX_MMAP_RECORD = 128 } ;
 static MMAPRECORD mmapRecord[MAX_MMAP_RECORD]  ;
 
-int setMmapRecord(void *addr, void *lpBaseAddress, int len, HANDLE hmap)
+static int setMmapRecord(void *addr, void *lpBaseAddress, int len, HANDLE hmap)
 {
     int mmaprecord_ = -1 ;
     int i ;
@@ -55,6 +58,7 @@ int setMmapRecord(void *addr, void *lpBaseAddress, int len, HANDLE hmap)
 	    mmapRecord[i].lpBaseAddress = lpBaseAddress ;
 	    mmapRecord[i].len = len ;
 	    mmapRecord[i].hFileMappingObject = hmap ;
+	    mmapRecord[i].mmapisactive = 1 ;
 	    mmaprecord_ = 0 ;
 	    break ;
 	}
@@ -62,19 +66,21 @@ int setMmapRecord(void *addr, void *lpBaseAddress, int len, HANDLE hmap)
     return mmaprecord_ ;
 }
 
-MMAPRECORD *getMmapRecord(void *addr, size_t len) 
+static MMAPRECORD *getMmapRecord(void *addr, size_t len, BOOL isactive) 
 {
     MMAPRECORD *mmaprecord_ = NULL ; 
     int i ;
     for( i=0; i<sizeof(mmapRecord)/sizeof(mmapRecord[0]); ++i) {
 	/* We insist on having same @ and size, but have no way to unmap less...*/
-	if (mmapRecord[i].mmapped==addr && mmapRecord[i].len==len) { 
+	/* We also filter out if the record is actrive or not*/
+	if (mmapRecord[i].mmapped==addr && mmapRecord[i].len==len && mmapRecord[i].mmapisactive==isactive) { 
 	    mmaprecord_ = &mmapRecord[i] ;
 	    break ;
 	}
     }
     return mmaprecord_ ;
 }
+
 
 /* local helper functions */
 static DWORD getAllocationGranularity () __attribute__((const)) ;
@@ -140,6 +146,7 @@ void *mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 		mmap_ = MapViewOfFile_ + offset ;
 		if (setMmapRecord(mmap_, MapViewOfFile_, len, hFileMappingObject)) {
 		    // Failure to record the mapping
+		    mmap_debug(("setMmapRecord failed: MAX_MMAP_RECORD is %d\n", MAX_MMAP_RECORD));
 		}
 	    } else {
 		// We mock the unix return value */
@@ -147,6 +154,7 @@ void *mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 		// We had acquired some ressources 
 		if (!CloseHandle(hFileMappingObject)) {
 		    // CloseHandle failure
+		    mmap_debug(("CloseHandle failed: %s\n", last_error()));
 		}
 		mmap_debug(("MapViewOfFile failed: %s\n", last_error()));
 	    }
@@ -155,7 +163,7 @@ void *mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 	  mmap_debug(("CreateFilemapping failed: %s\n", last_error()));
 	}
     }
-    mmap_debug(("mmap -> %p\n", mmap_));
+    mmap_debug(("mmap -> mmap_:%p, len:%u\n", mmap_, len));
 
     return mmap_ ;
 }
@@ -168,26 +176,33 @@ int munmap(void *addr, size_t len)
     MMAPRECORD *mmaprec;
     mmap_debug(("munmap: addr:%p, len:%u\n", addr, len));
 
-    mmaprec = getMmapRecord(addr, len) ;
-    if (mmaprec && mmaprec->lpBaseAddress) {
-	if (UnmapViewOfFile(mmaprec->lpBaseAddress)) {
-	    mmaprec->lpBaseAddress = NULL ;
-	    if (mmaprec && mmaprec->hFileMappingObject && (mmaprec->hFileMappingObject != INVALID_HANDLE_VALUE)) {
-		if (CloseHandle(mmaprec->hFileMappingObject)) {
-		    mmaprec->hFileMappingObject = INVALID_HANDLE_VALUE ;
-		    munmap_ = 0 ;
+    /* We search for active mappings : we could have recorded previous
+       but identical couples of @ and size, thus finding wrongly that they
+       are not active, wehereas an active record exist. In that case we would
+       not close properly the mapping, leading to issues when truncating the
+       file for instance */
+    if (mmaprec = getMmapRecord(addr, len, TRUE)) {
+	    mmaprec->mmapisactive = 0 ;
+	    if (mmaprec->lpBaseAddress && UnmapViewOfFile(mmaprec->lpBaseAddress)) {
+		if (mmaprec->hFileMappingObject && (mmaprec->hFileMappingObject != INVALID_HANDLE_VALUE)) {
+		    if (CloseHandle(mmaprec->hFileMappingObject)) {
+			munmap_ = 0 ;
+		    } else {
+			mmap_debug(("CloseHandle failed: %s\n", last_error()));
+		    }
 		} else {
-		    // CloseHandle failure
+		    mmap_debug(("Invalid record hFileMappingObject:%p\n", mmaprec->hFileMappingObject));
 		}
 	    } else {
-		// Invalid handle in record
+		mmap_debug(("UnmapViewOfFile failed: %s\n", last_error()));
 	    }
-	} else {
-	    // UnMapViewOfFile failure 
-	}
+    }  else if (mmaprec = getMmapRecord(addr, len, FALSE)) {
+	/* This is a special case to handle the multiple unmapping of files */
+	mmap_debug(("munmap: region addr:%p, len:%u has already been unmapped\n", addr, len));
+	munmap_ = 0 ;
     } else {
-	// The region does not seem to be mmaped
-    }   	   
+	mmap_debug(("munmap: region addr:%p, len:%u has never been mapped\n", addr, len));
+    } 	   
     mmap_debug(("munmap -> %d\n", munmap_));
     return munmap_ ;
 }
@@ -198,4 +213,5 @@ int munmap(void *addr, size_t len)
 #error "Unsupported platform"
 #endif
 #endif /* defined(NEED_MMAP) && defined(NEED_MUNMAP) */
+
 
