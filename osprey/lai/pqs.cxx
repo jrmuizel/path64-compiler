@@ -101,6 +101,8 @@ enum truth_val {
 //================================================================
 
 
+// [HK] template <> syntax is needed for specialization
+template <>
 void PQS_TN_SET::Print(FILE *f,BOOL newline)
 {
   PQS_TN_SET_TYPE::iterator p;
@@ -115,6 +117,8 @@ void PQS_TN_SET::Print(FILE *f,BOOL newline)
   if (newline) fprintf(f,"\n");
 }
 
+// [HK] template <> syntax is needed for specialization
+template <> 
 void PQS_TNI_SET::Print(FILE *f, BOOL newline)
 {
   PQS_TNI_SET::set_iterator_type p;

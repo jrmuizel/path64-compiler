@@ -743,7 +743,8 @@ WFE_Idents (void)
       int stlen = strlen(id->string);
       int stlen2;
       stlen2 = id->comment ? sizeof(AS_COMMENT) : sizeof(AS_IDENT);
-      char *new_str = (char*)malloc (stlen+stlen2+7);
+  // [HK] malloc is poisoned, use xmalloc instead
+      char *new_str = (char*)xmalloc (stlen+stlen2+7);
 
       sprintf (new_str, "\t%s %s%s%s",
                id->comment ? AS_COMMENT : AS_IDENT, 
