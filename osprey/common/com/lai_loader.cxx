@@ -57,7 +57,6 @@ extern "C" {
 };
 #include "register_preg.h"
 
-
 // ==========================================
 // MType <-> Register Class Conversion tables
 // ==========================================
@@ -282,9 +281,10 @@ int EXTENSION_PREG_to_REGISTER_NUM(PREG_NUM preg) {
 ISA_REGISTER_CLASS EXTENSION_MTYPE_to_REGISTER_CLASS(TYPE_ID mtype) {
   FmtAssert((extension_MTYPE_to_REGISTER_CLASS_table!=NULL),
 			("Unexpected NULL extension_MTYPE_to_REGISTER_CLASS_table"));
-  if (mtype > MTYPE_STATIC_COUNT && mtype <= MTYPE_COUNT) {
-    return (extension_MTYPE_to_REGISTER_CLASS_table[mtype - (MTYPE_STATIC_COUNT+1)]);
+  if (mtype > MTYPE_STATIC_LAST && mtype < FIRST_COMPOSED_MTYPE) {
+    return (extension_MTYPE_to_REGISTER_CLASS_table[mtype - (MTYPE_STATIC_LAST+1)]);
   }
+  FmtAssert((0),("Unexpexted MTYPE: %d", mtype));
   return (ISA_REGISTER_CLASS_UNDEFINED);
 }
 
@@ -295,9 +295,10 @@ ISA_REGISTER_CLASS EXTENSION_MTYPE_to_REGISTER_CLASS(TYPE_ID mtype) {
 ISA_REGISTER_SUBCLASS EXTENSION_MTYPE_to_REGISTER_SUBCLASS(TYPE_ID mtype) {
   FmtAssert((extension_MTYPE_to_REGISTER_SUBCLASS_table!=NULL),
 			("Unexpected NULL extension_MTYPE_to_REGISTER_SUBCLASS_table"));
-  if (mtype > MTYPE_STATIC_COUNT && mtype <= MTYPE_COUNT) {
-    return (extension_MTYPE_to_REGISTER_SUBCLASS_table[mtype - (MTYPE_STATIC_COUNT+1)]);
+  if (mtype > MTYPE_STATIC_LAST && mtype < FIRST_COMPOSED_MTYPE) {
+    return (extension_MTYPE_to_REGISTER_SUBCLASS_table[mtype - (MTYPE_STATIC_LAST+1)]);
   }
+  FmtAssert((0),("Unexpexted MTYPE: %d", mtype));
   return (ISA_REGISTER_SUBCLASS_UNDEFINED);
 }
 
@@ -335,7 +336,7 @@ TYPE_ID EXTENSION_REGISTER_CLASS_to_MTYPE(ISA_REGISTER_CLASS rc, INT size) {
  */
 static TYPE_ID Get_Extension_MTYPE_From_Name(const char *name) {
   mUINT32 i;
-  for (i=MTYPE_STATIC_COUNT+1; i<=MTYPE_COUNT; i++) {
+  for (i= MTYPE_STATIC_LAST + 1; i< FIRST_COMPOSED_MTYPE; i++) {
     if (!(strcmp(name, MTYPE_name(i)))) {
       return (i);
     }
@@ -979,6 +980,7 @@ static void Initialize_ISA_Operands(Lai_Loader_Info_t &ext_info,
     }
     
     // Update targinfo pointer
+    ISA_OPERAND_types_count   = nb_optypes;
     ISA_OPERAND_operand_types = optypes_tab;
     ISA_OPERAND_info          = opinfo_tab;
     ISA_OPERAND_info_index    = opinfo_idx_tab;
@@ -2048,10 +2050,10 @@ void Lai_Initialize_Extension_Loader (int nb_ext, const Extension_dll_t *ext_int
   if (ext_info->trace_on) {
 	fprintf(TFile, "...Initialize MTYPE from/to Register class table\n");
   }
-  if (MTYPE_COUNT > MTYPE_STATIC_COUNT) {
+  if (NB_PURE_DYNAMIC_MTYPES > 0) {
     extension_REGISTER_CLASS_to_MTYPE_table = TYPE_MEM_POOL_ALLOC_N(rc_to_mtype_info_t, Malloc_Mem_Pool, ((ISA_REGISTER_CLASS_MAX-ISA_REGISTER_CLASS_STATIC_MAX) + 1));
-    extension_MTYPE_to_REGISTER_CLASS_table = TYPE_MEM_POOL_ALLOC_N(ISA_REGISTER_CLASS, Malloc_Mem_Pool, ((MTYPE_COUNT-MTYPE_STATIC_COUNT) + 1));
-    extension_MTYPE_to_REGISTER_SUBCLASS_table = TYPE_MEM_POOL_ALLOC_N(ISA_REGISTER_SUBCLASS, Malloc_Mem_Pool, ((MTYPE_COUNT-MTYPE_STATIC_COUNT) + 1));
+    extension_MTYPE_to_REGISTER_CLASS_table = TYPE_MEM_POOL_ALLOC_N(ISA_REGISTER_CLASS, Malloc_Mem_Pool, NB_PURE_DYNAMIC_MTYPES);
+    extension_MTYPE_to_REGISTER_SUBCLASS_table = TYPE_MEM_POOL_ALLOC_N(ISA_REGISTER_SUBCLASS, Malloc_Mem_Pool, NB_PURE_DYNAMIC_MTYPES);
 
     for (j=0; j<(ISA_REGISTER_CLASS_MAX-ISA_REGISTER_CLASS_STATIC_MAX) + 1; j++) {
       extension_REGISTER_CLASS_to_MTYPE_table[j].typeCount = 0;
@@ -2065,8 +2067,8 @@ void Lai_Initialize_Extension_Loader (int nb_ext, const Extension_dll_t *ext_int
 	int     rsc_id = (modes[j].local_REGISTER_SUBCLASS_id != -1 ) ? ext_info->base_REGISTER_SUBCLASS[ext] + modes[j].local_REGISTER_SUBCLASS_id : ISA_REGISTER_SUBCLASS_UNDEFINED;
 	TYPE_ID mtype = Get_Extension_MTYPE_From_Name(modes[j].name);
 	// ...regclass from mtype
-	extension_MTYPE_to_REGISTER_CLASS_table[mtype - (MTYPE_STATIC_COUNT + 1)] = rc_id;
-	extension_MTYPE_to_REGISTER_SUBCLASS_table[mtype - (MTYPE_STATIC_COUNT + 1)] = rsc_id;
+	extension_MTYPE_to_REGISTER_CLASS_table[mtype - (MTYPE_STATIC_LAST + 1)] = rc_id;
+	extension_MTYPE_to_REGISTER_SUBCLASS_table[mtype - (MTYPE_STATIC_LAST + 1)] = rsc_id;
 	// ...mtype from regclass
 	rc_to_mtype_info_t *info;
 	info = &extension_REGISTER_CLASS_to_MTYPE_table[rc_id - (ISA_REGISTER_CLASS_STATIC_MAX+1)];
@@ -2097,6 +2099,55 @@ void Lai_Initialize_Extension_Loader (int nb_ext, const Extension_dll_t *ext_int
 void Lai_Cleanup_Extension_Loader() {
 }
 
+/**
+ * @see lai_loader_api.h
+ */
+INT EXTENSION_get_REGISTER_SUBCLASS_bit_size(ISA_REGISTER_SUBCLASS subclass)
+{
+    const ISA_REGISTER_SUBCLASS_INFO * subclassInfo =
+        ISA_REGISTER_SUBCLASS_Info(subclass);
+    ISA_REGISTER_CLASS rclass = ISA_REGISTER_SUBCLASS_INFO_Class(subclassInfo);
+    const ISA_REGISTER_CLASS_INFO* rcInfo = ISA_REGISTER_CLASS_Info(rclass);
+    INT size = ISA_REGISTER_CLASS_INFO_Bit_Size(rcInfo);
+
+    if(rclass > ISA_REGISTER_CLASS_STATIC_MAX)
+        {
+            INT globalSize = size * (ISA_REGISTER_CLASS_INFO_Last_Reg(rcInfo) -
+                                     ISA_REGISTER_CLASS_INFO_First_Reg(rcInfo)
+                                     + 1);
+            size = globalSize / ISA_REGISTER_SUBCLASS_INFO_Count(subclassInfo);
+        }
+    return size;
+}
+
+/**
+ * @see lai_loader_api.h
+ */
+INT EXTENSION_get_REGISTER_CLASS_max_bit_size(ISA_REGISTER_CLASS rc)
+{
+    const ISA_REGISTER_CLASS_INFO* rcInfo = ISA_REGISTER_CLASS_Info(rc);
+    INT size = ISA_REGISTER_CLASS_INFO_Bit_Size(rcInfo);
+
+    if(rc > ISA_REGISTER_CLASS_STATIC_MAX)
+        {
+            INT globalSize = size * (ISA_REGISTER_CLASS_INFO_Last_Reg(rcInfo) -
+                                     ISA_REGISTER_CLASS_INFO_First_Reg(rcInfo)
+                                     + 1);
+            ISA_REGISTER_SUBCLASS subclass;
+            FOR_ALL_ISA_REGISTER_SUBCLASS(subclass)
+            {
+                const ISA_REGISTER_SUBCLASS_INFO * subclassInfo =
+                    ISA_REGISTER_SUBCLASS_Info(subclass);
+                if(rc == ISA_REGISTER_SUBCLASS_INFO_Class(subclassInfo))
+                    {
+                        INT tmpSize = globalSize /
+                            ISA_REGISTER_SUBCLASS_INFO_Count(subclassInfo);
+                        size = tmpSize > size? tmpSize: size;
+                    }
+            }
+        }
+    return size;
+}
 
 #endif  /* defined (BACK_END) */
 

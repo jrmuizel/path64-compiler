@@ -68,6 +68,33 @@ BE_EXPORTED extern TOP EXTENSION_TOP_AM_automod_variant(TOP top,
 				     BOOL inc_mod,
 				     ISA_REGISTER_CLASS regclass);
 
+/**
+ * Get the bit size of a register of the given sub class.
+ *
+ * @param  subclass 
+ *
+ * @pre    subclass is a valid subclass index
+ * @post   true
+ *
+ * @return The number of bit of a register of given subclass
+ */
+BE_EXPORTED extern INT EXTENSION_get_REGISTER_SUBCLASS_bit_size(ISA_REGISTER_SUBCLASS subclass);
+
+/**
+ * Get the maximum bit size for given register class.
+ * The maximum bit size corresponds to maximum bit size of the register
+ * class and all its subclasses. For core registers, sub classes are not
+ * checked
+ *
+ * @param  rc A register class
+ *
+ * @pre    rc is a valid register class index
+ * @post   true
+ *
+ * @return The maximum bit size for given register class
+ */
+BE_EXPORTED extern INT EXTENSION_get_REGISTER_CLASS_max_bit_size(ISA_REGISTER_CLASS rc);
+
 #endif /* BACK_END */
 
 #endif /* TARG_ST */
