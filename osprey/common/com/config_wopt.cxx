@@ -263,6 +263,9 @@ BOOL  WOPT_Enable_FPFSA = TRUE; // Enables fix point flow sensitive analysis
 
 //TB
 BOOL WOPT_Enable_Warn_Uninit = FALSE;   // enable warning for detected uninitialized locals
+BOOL WOPT_Enable_Tailmerge = FALSE;     // enable tailmerge optimization
+BOOL WOPT_Enable_Compare_Hoisting=TRUE;  //enable hoisting of compare expression
+
 #endif
 
 
@@ -625,6 +628,10 @@ static OPTION_DESC Options_WOPT[] = {
   // TB: from PathScale 2.1: add -Wuninitialized support
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "warn_uninit",		"",
     0, 0, 0,	&WOPT_Enable_Warn_Uninit, NULL },
+  { OVK_BOOL,	OV_INTERNAL,	TRUE, "tailmerge_opt",		"",
+    0, 0, 0,	&WOPT_Enable_Tailmerge, NULL },
+ { OVK_BOOL,	OV_INTERNAL,	TRUE, "compare_hoisting", "",
+    0, 0, 0,	&WOPT_Enable_Compare_Hoisting, NULL },
 #endif
 
   { OVK_COUNT }		/* List terminator -- must be last */

@@ -61,7 +61,7 @@ TARGINFO_EXPORTED
 SI_RESOURCE_ID_SET SI_RESOURCE_ID_SET_Universe(void)
 {
   return    (SI_RESOURCE_ID_SET)-1
-	 >> (sizeof(SI_RESOURCE_ID_SET) * 8 - SI_resource_count);
+	 >> (sizeof(SI_RESOURCE_ID_SET) * 8 - TI_SI_resource_count);
 }
 
 /****************************************************************************
@@ -455,4 +455,94 @@ SI_ID_II_Cycle_Resource_Ids_Used( SI_ID id, INT ii )
 
   return info->ii_resources_used[ii - 1];
 }
+
+/****************************************************************************
+ Need read/write accesses to SI tables for Reconfigurability
+ ****************************************************************************/
+#ifdef TARG_ST
+TARGINFO_EXPORTED
+extern void Set_SI_resource_count(INT i) {
+  TI_SI_resource_count = i;
+}
+
+TARGINFO_EXPORTED
+extern void Set_SI_resources(SI_RESOURCE * TI_SI_CONST* t) {
+  SI_resources = t;
+}
+
+TARGINFO_EXPORTED
+extern void Set_SI_RRW_initializer (TI_SI_CONST SI_RRW i) {
+  SI_RRW_initializer = i;
+}
+
+TARGINFO_EXPORTED
+extern void Set_SI_RRW_overuse_mask(TI_SI_CONST SI_RRW i) {
+  SI_RRW_overuse_mask = i;
+}
+
+TARGINFO_EXPORTED
+extern void Set_SI_issue_slot_count(INT i) {
+  SI_issue_slot_count = i;
+}
+
+TARGINFO_EXPORTED
+extern void Set_SI_issue_slots(SI_ISSUE_SLOT * TI_SI_CONST* t) {
+  SI_issue_slots = t;
+}
+
+TARGINFO_EXPORTED
+void Set_SI_ID_count(int v) {
+  SI_ID_count = v;
+}
+
+TARGINFO_EXPORTED
+void Set_SI_ID_si(SI * TI_SI_CONST * tab) {
+  SI_ID_si = tab;
+}
+
+TARGINFO_EXPORTED
+void Set_SI_top_si(SI * TI_SI_CONST * tab) {
+  SI_top_si = tab;
+}
+
+TARGINFO_EXPORTED
+extern INT Get_SI_resource_count(void) {
+  return (TI_SI_resource_count);
+}
+
+TARGINFO_EXPORTED
+extern SI_RESOURCE * TI_SI_CONST* Get_SI_resources(void) {
+  return (SI_resources);
+}
+
+TARGINFO_EXPORTED
+extern TI_SI_CONST SI_RRW Get_SI_RRW_initializer (void) {
+  return (SI_RRW_initializer);
+}
+
+TARGINFO_EXPORTED
+extern TI_SI_CONST SI_RRW Get_SI_RRW_overuse_mask(void) {
+  return (SI_RRW_overuse_mask);
+}
+
+TARGINFO_EXPORTED
+extern INT Get_SI_issue_slot_count(void) {
+  return (SI_issue_slot_count);
+}
+
+TARGINFO_EXPORTED
+extern SI_ISSUE_SLOT * TI_SI_CONST* Get_SI_issue_slots(void) {
+  return (SI_issue_slots);
+}
+
+TARGINFO_EXPORTED
+SI * TI_SI_CONST * Get_SI_ID_si(void) {
+  return (SI_ID_si);
+}
+
+TARGINFO_EXPORTED
+SI * TI_SI_CONST * Get_SI_top_si(void) {
+  return (SI_top_si);
+}
+#endif
 

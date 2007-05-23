@@ -1,0 +1,18 @@
+#ifndef EXTENSION_INCLUDE_H
+#define EXTENSION_INCLUDE_H
+
+#define BITS_PER_UNIT 8
+#define HOST_WIDE_INT int
+#include "mtypes.h"
+#include "wintrinsic.h"
+#if defined (__STDC__) || defined (ALMOST_STDC) || defined (HAVE_STRINGIZE)
+#define CONCAT2(a,b)	 a##b
+#else
+#define CONCAT2(a,b)	 a/**/b
+#endif
+#include "auto-host.h"
+#include "machmode.h" // for enum machine_mode def
+#include "builtins.h"
+
+
+#endif /* EXTENSION_INCLUDE_H */
