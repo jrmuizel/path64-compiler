@@ -237,7 +237,7 @@ BOOL  WOPT_Enable_Extra_Rename_Pass_Set = FALSE;
 UINT32 WOPT_Enable_Extra_Preopt_Pass = 0;
 BOOL  WOPT_Enable_Bool_Simp = TRUE;
 BOOL  WOPT_Enable_Feedback_LPRE = FALSE;
-BOOL  WOPT_Enable_Feedback_EPRE = FALSE;
+//BOOL  WOPT_Enable_Feedback_EPRE = FALSE;
 BOOL  WOPT_Enable_CFG_Display = FALSE;     
 BOOL  WOPT_Enable_CFG_Merge_Multi_Zone = TRUE;
 BOOL  WOPT_Enable_CFG_Merge_Multi_Zone_Set = FALSE;
@@ -380,8 +380,8 @@ static OPTION_DESC Options_WOPT[] = {
     0, 0, 0,	&WOPT_Enable_Exp_PRE, NULL },
   { OVK_INT32,	OV_INTERNAL,	TRUE, "epre_limit",		"",
     INT32_MAX, 0, INT32_MAX,	&WOPT_Enable_Exp_PRE_Limit, NULL },
-  { OVK_BOOL,   OV_INTERNAL,    TRUE, "estr_fb_injury",       "",
-    0, 0, 0,    &WOPT_Enable_Estr_FB_Injury, &WOPT_Enable_Estr_FB_Injury_Set },
+//   { OVK_BOOL,   OV_INTERNAL,    TRUE, "estr_fb_injury",       "",
+//     0, 0, 0,    &WOPT_Enable_Estr_FB_Injury, &WOPT_Enable_Estr_FB_Injury_Set },
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "goto_conversion",	"goto",
     0, 0, 0,	&WOPT_Enable_Goto, NULL },
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "hoisting",		"hoist",
@@ -584,8 +584,8 @@ static OPTION_DESC Options_WOPT[] = {
     0, 0, 0,	&WOPT_Enable_Bool_Simp, NULL },
   { OVK_BOOL,   OV_INTERNAL,    FALSE, "fb_lpre",              "",
     0, 0, 0,    &WOPT_Enable_Feedback_LPRE, NULL },
-  { OVK_BOOL,   OV_INTERNAL,    FALSE, "fb_epre",              "",
-    0, 0, 0,    &WOPT_Enable_Feedback_EPRE, NULL },
+//   { OVK_BOOL,   OV_INTERNAL,    FALSE, "fb_epre",              "",
+//     0, 0, 0,    &WOPT_Enable_Feedback_EPRE, NULL },
   { OVK_BOOL,   OV_INTERNAL,    FALSE, "cfo_display",              "",
     0, 0, 0,    &WOPT_Enable_CFG_Display, NULL },
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "merge_multi_zone",		"",

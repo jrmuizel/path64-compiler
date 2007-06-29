@@ -938,7 +938,7 @@ BOOL Perform_SWP(CG_LOOP& cl, SWP_FIXUP_VECTOR& fixup, bool is_doloop)
 
     // Code Generation
     LOOPINFO *info = LOOP_DESCR_loopinfo(loop);
-    TN *trip_count_tn = info ? LOOPINFO_trip_count_tn(info) : NULL;
+    TN *trip_count_tn = info ? LOOPINFO_primary_trip_count_tn(info) : NULL;
     SWP_Emit(swp_op_vector, swp_assign, trip_count_tn, 
 	     head, body, tail,
 	     is_doloop, trace);

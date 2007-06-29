@@ -10,6 +10,9 @@
 #else
 #define CONCAT2(a,b)	 a/**/b
 #endif
+#ifndef PARAMS
+#define PARAMS(x) x
+#endif
 #include "auto-host.h"
 #include "machmode.h" // for enum machine_mode def
 #include "builtins.h"

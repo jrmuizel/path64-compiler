@@ -1,9 +1,0 @@
-The CHESS DB files are from the package ST200_CHESS_6.1.7.tar.gz.
-
-Files arc.db fld.db fmt.db mac.db res.db come from chess/235/sources/
-
-File opc.db is copied from chess/235/derived/GeneratedOpc.db
-
-AFAIK, only arc.db and opc.db are used by ../targ_gen.pl.
-
--- SC 7 Dec 2004

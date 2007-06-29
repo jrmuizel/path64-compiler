@@ -42,406 +42,535 @@
 #include "topcode.h" 
 #include "isa_print_gen.h" 
 
-static const char *mnemonic_names[399] = { 
-  "addcg", 	 /* TOP_addcg */  
-  "addf.n", 	 /* TOP_addf_n */  
-  "addpc", 	 /* TOP_addpc_i */  
-  "addpc", 	 /* TOP_addpc_ii */  
-  "add", 	 /* TOP_add_r */  
-  "add", 	 /* TOP_add_i */  
-  "add", 	 /* TOP_add_ii */  
+static const char *mnemonic_names[528] = { 
+  "abss.ph", 	 /* TOP_abss_ph_r_r */  
+  "absubu.pb", 	 /* TOP_absubu_pb_r_r_r */  
+  "addcg", 	 /* TOP_addcg_b_r_r_b_r */  
+  "addf.n", 	 /* TOP_addf_n_r_r_r */  
+  "addpc", 	 /* TOP_addpc_i_r */  
+  "addpc", 	 /* TOP_addpc_ii_r */  
+  "addso", 	 /* TOP_addso_r_r_r */  
+  "adds", 	 /* TOP_adds_r_r_r */  
+  "adds.ph", 	 /* TOP_adds_ph_r_r_r */  
+  "add", 	 /* TOP_add_r_r_r */  
+  "add", 	 /* TOP_add_i_r_r */  
+  "add", 	 /* TOP_add_ii_r_r */  
+  "add.ph", 	 /* TOP_add_ph_r_r_r */  
   "ADJUST", 	 /* TOP_spadjust */  
-  "andc", 	 /* TOP_andc_r */  
-  "andc", 	 /* TOP_andc_i */  
-  "andc", 	 /* TOP_andc_ii */  
-  "andl", 	 /* TOP_andl_r_b */  
-  "andl", 	 /* TOP_andl_i_b */  
-  "andl", 	 /* TOP_andl_ii_b */  
-  "andl", 	 /* TOP_andl_r_r */  
-  "andl", 	 /* TOP_andl_i_r */  
-  "andl", 	 /* TOP_andl_ii_r */  
-  "and", 	 /* TOP_and_r */  
-  "and", 	 /* TOP_and_i */  
-  "and", 	 /* TOP_and_ii */  
-  "asm_0", 	 /* TOP_asm_0 */  
-  "asm_10", 	 /* TOP_asm_10 */  
-  "asm_11", 	 /* TOP_asm_11 */  
-  "asm_12", 	 /* TOP_asm_12 */  
-  "asm_13", 	 /* TOP_asm_13 */  
-  "asm_14", 	 /* TOP_asm_14 */  
-  "asm_15", 	 /* TOP_asm_15 */  
-  "asm_16", 	 /* TOP_asm_16_i */  
-  "asm_16", 	 /* TOP_asm_16_ii */  
-  "asm_17", 	 /* TOP_asm_17_i */  
-  "asm_17", 	 /* TOP_asm_17_ii */  
-  "asm_18", 	 /* TOP_asm_18_i */  
-  "asm_18", 	 /* TOP_asm_18_ii */  
-  "asm_19", 	 /* TOP_asm_19_i */  
-  "asm_19", 	 /* TOP_asm_19_ii */  
-  "asm_1", 	 /* TOP_asm_1 */  
-  "asm_20", 	 /* TOP_asm_20_i */  
-  "asm_20", 	 /* TOP_asm_20_ii */  
-  "asm_21", 	 /* TOP_asm_21_i */  
-  "asm_21", 	 /* TOP_asm_21_ii */  
-  "asm_22", 	 /* TOP_asm_22_i */  
-  "asm_22", 	 /* TOP_asm_22_ii */  
-  "asm_23", 	 /* TOP_asm_23_i */  
-  "asm_23", 	 /* TOP_asm_23_ii */  
-  "asm_24", 	 /* TOP_asm_24_i */  
-  "asm_24", 	 /* TOP_asm_24_ii */  
-  "asm_25", 	 /* TOP_asm_25_i */  
-  "asm_25", 	 /* TOP_asm_25_ii */  
-  "asm_26", 	 /* TOP_asm_26_i */  
-  "asm_26", 	 /* TOP_asm_26_ii */  
-  "asm_27", 	 /* TOP_asm_27_i */  
-  "asm_27", 	 /* TOP_asm_27_ii */  
-  "asm_28", 	 /* TOP_asm_28_i */  
-  "asm_28", 	 /* TOP_asm_28_ii */  
-  "asm_29", 	 /* TOP_asm_29_i */  
-  "asm_29", 	 /* TOP_asm_29_ii */  
-  "asm_2", 	 /* TOP_asm_2 */  
-  "asm_30", 	 /* TOP_asm_30_i */  
-  "asm_30", 	 /* TOP_asm_30_ii */  
-  "asm_31", 	 /* TOP_asm_31_i */  
-  "asm_31", 	 /* TOP_asm_31_ii */  
-  "asm_3", 	 /* TOP_asm_3 */  
-  "asm_4", 	 /* TOP_asm_4 */  
-  "asm_5", 	 /* TOP_asm_5 */  
-  "asm_6", 	 /* TOP_asm_6 */  
-  "asm_7", 	 /* TOP_asm_7 */  
-  "asm_8", 	 /* TOP_asm_8 */  
-  "asm_9", 	 /* TOP_asm_9 */  
+  "andc", 	 /* TOP_andc_r_r_r */  
+  "andc", 	 /* TOP_andc_i_r_r */  
+  "andc", 	 /* TOP_andc_ii_r_r */  
+  "andl", 	 /* TOP_andl_r_r_b */  
+  "andl", 	 /* TOP_andl_i_r_b */  
+  "andl", 	 /* TOP_andl_ii_r_b */  
+  "andl", 	 /* TOP_andl_r_r_r */  
+  "andl", 	 /* TOP_andl_i_r_r */  
+  "andl", 	 /* TOP_andl_ii_r_r */  
+  "andl", 	 /* TOP_andl_b_b_b */  
+  "and", 	 /* TOP_and_r_r_r */  
+  "and", 	 /* TOP_and_i_r_r */  
+  "and", 	 /* TOP_and_ii_r_r */  
+  "APPLY", 	 /* TOP_intrncall */  
+  "asm_0", 	 /* TOP_asm_0_r_r_r */  
+  "asm_10", 	 /* TOP_asm_10_r_r_r */  
+  "asm_11", 	 /* TOP_asm_11_r_r_r */  
+  "asm_12", 	 /* TOP_asm_12_r_r_r */  
+  "asm_13", 	 /* TOP_asm_13_r_r_r */  
+  "asm_14", 	 /* TOP_asm_14_r_r_r */  
+  "asm_15", 	 /* TOP_asm_15_r_r_r */  
+  "asm_16", 	 /* TOP_asm_16_i_r_r */  
+  "asm_16", 	 /* TOP_asm_16_ii_r_r */  
+  "asm_17", 	 /* TOP_asm_17_i_r_r */  
+  "asm_17", 	 /* TOP_asm_17_ii_r_r */  
+  "asm_18", 	 /* TOP_asm_18_i_r_r */  
+  "asm_18", 	 /* TOP_asm_18_ii_r_r */  
+  "asm_19", 	 /* TOP_asm_19_i_r_r */  
+  "asm_19", 	 /* TOP_asm_19_ii_r_r */  
+  "asm_1", 	 /* TOP_asm_1_r_r_r */  
+  "asm_20", 	 /* TOP_asm_20_i_r_r */  
+  "asm_20", 	 /* TOP_asm_20_ii_r_r */  
+  "asm_21", 	 /* TOP_asm_21_i_r_r */  
+  "asm_21", 	 /* TOP_asm_21_ii_r_r */  
+  "asm_22", 	 /* TOP_asm_22_i_r_r */  
+  "asm_22", 	 /* TOP_asm_22_ii_r_r */  
+  "asm_23", 	 /* TOP_asm_23_i_r_r */  
+  "asm_23", 	 /* TOP_asm_23_ii_r_r */  
+  "asm_24", 	 /* TOP_asm_24_i_r_r */  
+  "asm_24", 	 /* TOP_asm_24_ii_r_r */  
+  "asm_25", 	 /* TOP_asm_25_i_r_r */  
+  "asm_25", 	 /* TOP_asm_25_ii_r_r */  
+  "asm_26", 	 /* TOP_asm_26_i_r_r */  
+  "asm_26", 	 /* TOP_asm_26_ii_r_r */  
+  "asm_27", 	 /* TOP_asm_27_i_r_r */  
+  "asm_27", 	 /* TOP_asm_27_ii_r_r */  
+  "asm_28", 	 /* TOP_asm_28_i_r_r */  
+  "asm_28", 	 /* TOP_asm_28_ii_r_r */  
+  "asm_29", 	 /* TOP_asm_29_i_r_r */  
+  "asm_29", 	 /* TOP_asm_29_ii_r_r */  
+  "asm_2", 	 /* TOP_asm_2_r_r_r */  
+  "asm_30", 	 /* TOP_asm_30_i_r_r */  
+  "asm_30", 	 /* TOP_asm_30_ii_r_r */  
+  "asm_31", 	 /* TOP_asm_31_i_r_r */  
+  "asm_31", 	 /* TOP_asm_31_ii_r_r */  
+  "asm_3", 	 /* TOP_asm_3_r_r_r */  
+  "asm_4", 	 /* TOP_asm_4_r_r_r */  
+  "asm_5", 	 /* TOP_asm_5_r_r_r */  
+  "asm_6", 	 /* TOP_asm_6_r_r_r */  
+  "asm_7", 	 /* TOP_asm_7_r_r_r */  
+  "asm_8", 	 /* TOP_asm_8_r_r_r */  
+  "asm_9", 	 /* TOP_asm_9_r_r_r */  
+  "avg4u.pb", 	 /* TOP_avg4u_pb_r_r_b_r */  
+  "avgu.pb", 	 /* TOP_avgu_pb_r_r_b_r */  
   "BEGIN_PREGTN", 	 /* TOP_begin_pregtn */  
   "break", 	 /* TOP_break */  
-  "brf", 	 /* TOP_brf */  
-  "br", 	 /* TOP_br */  
-  "bswap", 	 /* TOP_bswap */  
+  "brf", 	 /* TOP_brf_i_b */  
+  "br", 	 /* TOP_br_i_b */  
+  "bswap", 	 /* TOP_bswap_r_r */  
   "BWDBAR", 	 /* TOP_bwd_bar */  
-  "CALL", 	 /* TOP_CALL */  
-  "call", 	 /* TOP_call */  
-  "clz", 	 /* TOP_clz */  
-  "cmpeqf.n", 	 /* TOP_cmpeqf_n_b */  
-  "cmpeqf.n", 	 /* TOP_cmpeqf_n_r */  
-  "cmpeq", 	 /* TOP_cmpeq_r_b */  
-  "cmpeq", 	 /* TOP_cmpeq_i_b */  
-  "cmpeq", 	 /* TOP_cmpeq_ii_b */  
-  "cmpeq", 	 /* TOP_cmpeq_r_r */  
-  "cmpeq", 	 /* TOP_cmpeq_i_r */  
-  "cmpeq", 	 /* TOP_cmpeq_ii_r */  
-  "cmpgef.n", 	 /* TOP_cmpgef_n_b */  
-  "cmpgef.n", 	 /* TOP_cmpgef_n_r */  
-  "cmpgeu", 	 /* TOP_cmpgeu_r_b */  
-  "cmpgeu", 	 /* TOP_cmpgeu_i_b */  
-  "cmpgeu", 	 /* TOP_cmpgeu_ii_b */  
-  "cmpgeu", 	 /* TOP_cmpgeu_r_r */  
-  "cmpgeu", 	 /* TOP_cmpgeu_i_r */  
-  "cmpgeu", 	 /* TOP_cmpgeu_ii_r */  
-  "cmpge", 	 /* TOP_cmpge_r_b */  
-  "cmpge", 	 /* TOP_cmpge_i_b */  
-  "cmpge", 	 /* TOP_cmpge_ii_b */  
-  "cmpge", 	 /* TOP_cmpge_r_r */  
-  "cmpge", 	 /* TOP_cmpge_i_r */  
-  "cmpge", 	 /* TOP_cmpge_ii_r */  
-  "cmpgtf.n", 	 /* TOP_cmpgtf_n_b */  
-  "cmpgtf.n", 	 /* TOP_cmpgtf_n_r */  
-  "cmpgtu", 	 /* TOP_cmpgtu_r_b */  
-  "cmpgtu", 	 /* TOP_cmpgtu_i_b */  
-  "cmpgtu", 	 /* TOP_cmpgtu_ii_b */  
-  "cmpgtu", 	 /* TOP_cmpgtu_r_r */  
-  "cmpgtu", 	 /* TOP_cmpgtu_i_r */  
-  "cmpgtu", 	 /* TOP_cmpgtu_ii_r */  
-  "cmpgt", 	 /* TOP_cmpgt_r_b */  
-  "cmpgt", 	 /* TOP_cmpgt_i_b */  
-  "cmpgt", 	 /* TOP_cmpgt_ii_b */  
-  "cmpgt", 	 /* TOP_cmpgt_r_r */  
-  "cmpgt", 	 /* TOP_cmpgt_i_r */  
-  "cmpgt", 	 /* TOP_cmpgt_ii_r */  
-  "cmplef.n", 	 /* TOP_cmplef_n_b */  
-  "cmplef.n", 	 /* TOP_cmplef_n_r */  
-  "cmpleu", 	 /* TOP_cmpleu_r_b */  
-  "cmpleu", 	 /* TOP_cmpleu_i_b */  
-  "cmpleu", 	 /* TOP_cmpleu_ii_b */  
-  "cmpleu", 	 /* TOP_cmpleu_r_r */  
-  "cmpleu", 	 /* TOP_cmpleu_i_r */  
-  "cmpleu", 	 /* TOP_cmpleu_ii_r */  
-  "cmple", 	 /* TOP_cmple_r_b */  
-  "cmple", 	 /* TOP_cmple_i_b */  
-  "cmple", 	 /* TOP_cmple_ii_b */  
-  "cmple", 	 /* TOP_cmple_r_r */  
-  "cmple", 	 /* TOP_cmple_i_r */  
-  "cmple", 	 /* TOP_cmple_ii_r */  
-  "cmpltf.n", 	 /* TOP_cmpltf_n_b */  
-  "cmpltf.n", 	 /* TOP_cmpltf_n_r */  
-  "cmpltu", 	 /* TOP_cmpltu_r_b */  
-  "cmpltu", 	 /* TOP_cmpltu_i_b */  
-  "cmpltu", 	 /* TOP_cmpltu_ii_b */  
-  "cmpltu", 	 /* TOP_cmpltu_r_r */  
-  "cmpltu", 	 /* TOP_cmpltu_i_r */  
-  "cmpltu", 	 /* TOP_cmpltu_ii_r */  
-  "cmplt", 	 /* TOP_cmplt_r_b */  
-  "cmplt", 	 /* TOP_cmplt_i_b */  
-  "cmplt", 	 /* TOP_cmplt_ii_b */  
-  "cmplt", 	 /* TOP_cmplt_r_r */  
-  "cmplt", 	 /* TOP_cmplt_i_r */  
-  "cmplt", 	 /* TOP_cmplt_ii_r */  
-  "cmpne", 	 /* TOP_cmpne_r_b */  
-  "cmpne", 	 /* TOP_cmpne_i_b */  
-  "cmpne", 	 /* TOP_cmpne_ii_b */  
-  "cmpne", 	 /* TOP_cmpne_r_r */  
-  "cmpne", 	 /* TOP_cmpne_i_r */  
-  "cmpne", 	 /* TOP_cmpne_ii_r */  
+  "call", 	 /* TOP_call_i */  
+  "clz", 	 /* TOP_clz_r_r */  
+  "cmpeqf.n", 	 /* TOP_cmpeqf_n_r_r_b */  
+  "cmpeqf.n", 	 /* TOP_cmpeqf_n_r_r_r */  
+  "cmpeq", 	 /* TOP_cmpeq_r_r_b */  
+  "cmpeq", 	 /* TOP_cmpeq_i_r_b */  
+  "cmpeq", 	 /* TOP_cmpeq_ii_r_b */  
+  "cmpeq", 	 /* TOP_cmpeq_r_r_r */  
+  "cmpeq", 	 /* TOP_cmpeq_i_r_r */  
+  "cmpeq", 	 /* TOP_cmpeq_ii_r_r */  
+  "cmpeq.pb", 	 /* TOP_cmpeq_pb_r_r_r */  
+  "cmpeq.pb", 	 /* TOP_cmpeq_pb_r_r_b */  
+  "cmpeq.ph", 	 /* TOP_cmpeq_ph_r_r_r */  
+  "cmpeq.ph", 	 /* TOP_cmpeq_ph_r_r_b */  
+  "cmpgef.n", 	 /* TOP_cmpgef_n_r_r_b */  
+  "cmpgef.n", 	 /* TOP_cmpgef_n_r_r_r */  
+  "cmpgeu", 	 /* TOP_cmpgeu_r_r_b */  
+  "cmpgeu", 	 /* TOP_cmpgeu_i_r_b */  
+  "cmpgeu", 	 /* TOP_cmpgeu_ii_r_b */  
+  "cmpgeu", 	 /* TOP_cmpgeu_r_r_r */  
+  "cmpgeu", 	 /* TOP_cmpgeu_i_r_r */  
+  "cmpgeu", 	 /* TOP_cmpgeu_ii_r_r */  
+  "cmpge", 	 /* TOP_cmpge_r_r_b */  
+  "cmpge", 	 /* TOP_cmpge_i_r_b */  
+  "cmpge", 	 /* TOP_cmpge_ii_r_b */  
+  "cmpge", 	 /* TOP_cmpge_r_r_r */  
+  "cmpge", 	 /* TOP_cmpge_i_r_r */  
+  "cmpge", 	 /* TOP_cmpge_ii_r_r */  
+  "cmpgtf.n", 	 /* TOP_cmpgtf_n_r_r_b */  
+  "cmpgtf.n", 	 /* TOP_cmpgtf_n_r_r_r */  
+  "cmpgtu", 	 /* TOP_cmpgtu_r_r_b */  
+  "cmpgtu", 	 /* TOP_cmpgtu_i_r_b */  
+  "cmpgtu", 	 /* TOP_cmpgtu_ii_r_b */  
+  "cmpgtu", 	 /* TOP_cmpgtu_r_r_r */  
+  "cmpgtu", 	 /* TOP_cmpgtu_i_r_r */  
+  "cmpgtu", 	 /* TOP_cmpgtu_ii_r_r */  
+  "cmpgtu.pb", 	 /* TOP_cmpgtu_pb_r_r_r */  
+  "cmpgtu.pb", 	 /* TOP_cmpgtu_pb_r_r_b */  
+  "cmpgt", 	 /* TOP_cmpgt_r_r_b */  
+  "cmpgt", 	 /* TOP_cmpgt_i_r_b */  
+  "cmpgt", 	 /* TOP_cmpgt_ii_r_b */  
+  "cmpgt", 	 /* TOP_cmpgt_r_r_r */  
+  "cmpgt", 	 /* TOP_cmpgt_i_r_r */  
+  "cmpgt", 	 /* TOP_cmpgt_ii_r_r */  
+  "cmpgt.ph", 	 /* TOP_cmpgt_ph_r_r_r */  
+  "cmpgt.ph", 	 /* TOP_cmpgt_ph_r_r_b */  
+  "cmplef.n", 	 /* TOP_cmplef_n_r_r_b */  
+  "cmplef.n", 	 /* TOP_cmplef_n_r_r_r */  
+  "cmpleu", 	 /* TOP_cmpleu_r_r_b */  
+  "cmpleu", 	 /* TOP_cmpleu_i_r_b */  
+  "cmpleu", 	 /* TOP_cmpleu_ii_r_b */  
+  "cmpleu", 	 /* TOP_cmpleu_r_r_r */  
+  "cmpleu", 	 /* TOP_cmpleu_i_r_r */  
+  "cmpleu", 	 /* TOP_cmpleu_ii_r_r */  
+  "cmple", 	 /* TOP_cmple_r_r_b */  
+  "cmple", 	 /* TOP_cmple_i_r_b */  
+  "cmple", 	 /* TOP_cmple_ii_r_b */  
+  "cmple", 	 /* TOP_cmple_r_r_r */  
+  "cmple", 	 /* TOP_cmple_i_r_r */  
+  "cmple", 	 /* TOP_cmple_ii_r_r */  
+  "cmpltf.n", 	 /* TOP_cmpltf_n_r_r_b */  
+  "cmpltf.n", 	 /* TOP_cmpltf_n_r_r_r */  
+  "cmpltu", 	 /* TOP_cmpltu_r_r_b */  
+  "cmpltu", 	 /* TOP_cmpltu_i_r_b */  
+  "cmpltu", 	 /* TOP_cmpltu_ii_r_b */  
+  "cmpltu", 	 /* TOP_cmpltu_r_r_r */  
+  "cmpltu", 	 /* TOP_cmpltu_i_r_r */  
+  "cmpltu", 	 /* TOP_cmpltu_ii_r_r */  
+  "cmplt", 	 /* TOP_cmplt_r_r_b */  
+  "cmplt", 	 /* TOP_cmplt_i_r_b */  
+  "cmplt", 	 /* TOP_cmplt_ii_r_b */  
+  "cmplt", 	 /* TOP_cmplt_r_r_r */  
+  "cmplt", 	 /* TOP_cmplt_i_r_r */  
+  "cmplt", 	 /* TOP_cmplt_ii_r_r */  
+  "cmpne", 	 /* TOP_cmpne_r_r_b */  
+  "cmpne", 	 /* TOP_cmpne_i_r_b */  
+  "cmpne", 	 /* TOP_cmpne_ii_r_b */  
+  "cmpne", 	 /* TOP_cmpne_r_r_r */  
+  "cmpne", 	 /* TOP_cmpne_i_r_r */  
+  "cmpne", 	 /* TOP_cmpne_ii_r_r */  
   "COMPOSEP", 	 /* TOP_composep */  
-  "convfi.n", 	 /* TOP_convfi_n */  
-  "convif.n", 	 /* TOP_convif_n */  
+  "convbi", 	 /* TOP_convbi_b_r */  
+  "convfi.n", 	 /* TOP_convfi_n_r_r */  
+  "convib", 	 /* TOP_convib_r_b */  
+  "convif.n", 	 /* TOP_convif_n_r_r */  
   "COPY", 	 /* TOP_COPY */  
-  "divs", 	 /* TOP_divs */  
-  "divu", 	 /* TOP_divu */  
-  "div", 	 /* TOP_div */  
+  "dbgsbrk", 	 /* TOP_dbgsbrk */  
+  "divs", 	 /* TOP_divs_b_r_r_b_r */  
+  "divu", 	 /* TOP_divu_r_r_r */  
+  "div", 	 /* TOP_div_r_r_r */  
   "END_PREGTN", 	 /* TOP_end_pregtn */  
+  "ext1.pb", 	 /* TOP_ext1_pb_r_r_r */  
+  "ext2.pb", 	 /* TOP_ext2_pb_r_r_r */  
+  "ext3.pb", 	 /* TOP_ext3_pb_r_r_r */  
+  "extl.pb", 	 /* TOP_extl_pb_r_r_b_r */  
+  "extractlu", 	 /* TOP_extractlu_i_r_r */  
+  "extractlu", 	 /* TOP_extractlu_ii_r_r */  
+  "extractl", 	 /* TOP_extractl_i_r_r */  
+  "extractl", 	 /* TOP_extractl_ii_r_r */  
   "EXTRACTP", 	 /* TOP_extractp */  
-  "FALL", 	 /* TOP_FALL */  
+  "extractu", 	 /* TOP_extractu_i_r_r */  
+  "extractu", 	 /* TOP_extractu_ii_r_r */  
+  "extract", 	 /* TOP_extract_i_r_r */  
+  "extract", 	 /* TOP_extract_ii_r_r */  
+  "extr.pb", 	 /* TOP_extr_pb_r_r_b_r */  
+  "flushadd", 	 /* TOP_flushadd_r_i */  
+  "flushadd", 	 /* TOP_flushadd_r_ii */  
+  "flushadd.l1", 	 /* TOP_flushadd_l1_r_i */  
+  "flushadd.l1", 	 /* TOP_flushadd_l1_r_ii */  
   "FWDBAR", 	 /* TOP_fwd_bar */  
   "GETPC", 	 /* TOP_getpc */  
   "GNUASM", 	 /* TOP_asm */  
-  "GOTO", 	 /* TOP_GOTO */  
-  "goto", 	 /* TOP_goto */  
-  "icall", 	 /* TOP_icall */  
+  "goto", 	 /* TOP_goto_i */  
+  "call", 	 /* TOP_icall */  
   "idle", 	 /* TOP_idle */  
   "IFIXUP", 	 /* TOP_ifixup */  
-  "igoto", 	 /* TOP_igoto */  
-  "INTRINSIC", 	 /* TOP_intrncall */  
-  "JUMP", 	 /* TOP_JUMP */  
+  "goto", 	 /* TOP_igoto */  
+  "invadd", 	 /* TOP_invadd_r_i */  
+  "invadd", 	 /* TOP_invadd_r_ii */  
+  "invadd.l1", 	 /* TOP_invadd_l1_r_i */  
+  "invadd.l1", 	 /* TOP_invadd_l1_r_ii */  
   "KILL", 	 /* TOP_KILL */  
   "LABEL", 	 /* TOP_label */  
-  "ldbc", 	 /* TOP_ldbc_i */  
-  "ldbc", 	 /* TOP_ldbc_ii */  
-  "ldbuc", 	 /* TOP_ldbuc_i */  
-  "ldbuc", 	 /* TOP_ldbuc_ii */  
-  "ldbu.d", 	 /* TOP_ldbu_d_i */  
-  "ldbu.d", 	 /* TOP_ldbu_d_ii */  
-  "ldbu", 	 /* TOP_ldbu_i */  
-  "ldbu", 	 /* TOP_ldbu_ii */  
-  "ldb.d", 	 /* TOP_ldb_d_i */  
-  "ldb.d", 	 /* TOP_ldb_d_ii */  
-  "ldb", 	 /* TOP_ldb_i */  
-  "ldb", 	 /* TOP_ldb_ii */  
-  "ldhc", 	 /* TOP_ldhc_i */  
-  "ldhc", 	 /* TOP_ldhc_ii */  
-  "ldhuc", 	 /* TOP_ldhuc_i */  
-  "ldhuc", 	 /* TOP_ldhuc_ii */  
-  "ldhu.d", 	 /* TOP_ldhu_d_i */  
-  "ldhu.d", 	 /* TOP_ldhu_d_ii */  
-  "ldhu", 	 /* TOP_ldhu_i */  
-  "ldhu", 	 /* TOP_ldhu_ii */  
-  "ldh.d", 	 /* TOP_ldh_d_i */  
-  "ldh.d", 	 /* TOP_ldh_d_ii */  
-  "ldh", 	 /* TOP_ldh_i */  
-  "ldh", 	 /* TOP_ldh_ii */  
-  "ldlc", 	 /* TOP_ldlc_i */  
-  "ldlc", 	 /* TOP_ldlc_ii */  
-  "ldl", 	 /* TOP_ldl_i */  
-  "ldl", 	 /* TOP_ldl_ii */  
-  "ldwc", 	 /* TOP_ldwc_i */  
-  "ldwc", 	 /* TOP_ldwc_ii */  
-  "ldwl", 	 /* TOP_ldwl */  
-  "ldw.d", 	 /* TOP_ldw_d_i */  
-  "ldw.d", 	 /* TOP_ldw_d_ii */  
-  "ldw", 	 /* TOP_ldw_i */  
-  "ldw", 	 /* TOP_ldw_ii */  
-  "LINK", 	 /* TOP_LINK */  
-  "LOOP", 	 /* TOP_LOOP */  
-  "maxu", 	 /* TOP_maxu_r */  
-  "maxu", 	 /* TOP_maxu_i */  
-  "maxu", 	 /* TOP_maxu_ii */  
-  "max", 	 /* TOP_max_r */  
-  "max", 	 /* TOP_max_i */  
-  "max", 	 /* TOP_max_ii */  
-  "mfb", 	 /* TOP_mfb */  
-  "minu", 	 /* TOP_minu_r */  
-  "minu", 	 /* TOP_minu_i */  
-  "minu", 	 /* TOP_minu_ii */  
-  "min", 	 /* TOP_min_r */  
-  "min", 	 /* TOP_min_i */  
-  "min", 	 /* TOP_min_ii */  
+  "ldbc", 	 /* TOP_ldbc_r_i_b_r */  
+  "ldbc", 	 /* TOP_ldbc_r_ii_b_r */  
+  "ldbuc", 	 /* TOP_ldbuc_r_i_b_r */  
+  "ldbuc", 	 /* TOP_ldbuc_r_ii_b_r */  
+  "ldbu", 	 /* TOP_ldbu_r_i_r */  
+  "ldbu", 	 /* TOP_ldbu_r_ii_r */  
+  "ldbu.d", 	 /* TOP_ldbu_d_r_i_r */  
+  "ldbu.d", 	 /* TOP_ldbu_d_r_ii_r */  
+  "ldb", 	 /* TOP_ldb_r_i_r */  
+  "ldb", 	 /* TOP_ldb_r_ii_r */  
+  "ldb.d", 	 /* TOP_ldb_d_r_i_r */  
+  "ldb.d", 	 /* TOP_ldb_d_r_ii_r */  
+  "ldhc", 	 /* TOP_ldhc_r_i_b_r */  
+  "ldhc", 	 /* TOP_ldhc_r_ii_b_r */  
+  "ldhuc", 	 /* TOP_ldhuc_r_i_b_r */  
+  "ldhuc", 	 /* TOP_ldhuc_r_ii_b_r */  
+  "ldhu", 	 /* TOP_ldhu_r_i_r */  
+  "ldhu", 	 /* TOP_ldhu_r_ii_r */  
+  "ldhu.d", 	 /* TOP_ldhu_d_r_i_r */  
+  "ldhu.d", 	 /* TOP_ldhu_d_r_ii_r */  
+  "ldh", 	 /* TOP_ldh_r_i_r */  
+  "ldh", 	 /* TOP_ldh_r_ii_r */  
+  "ldh.d", 	 /* TOP_ldh_d_r_i_r */  
+  "ldh.d", 	 /* TOP_ldh_d_r_ii_r */  
+  "ldlc", 	 /* TOP_ldlc_r_i_b_p */  
+  "ldlc", 	 /* TOP_ldlc_r_ii_b_p */  
+  "ldl", 	 /* TOP_ldl_r_i_p */  
+  "ldl", 	 /* TOP_ldl_r_ii_p */  
+  "ldwc", 	 /* TOP_ldwc_r_i_b_r */  
+  "ldwc", 	 /* TOP_ldwc_r_ii_b_r */  
+  "ldwl", 	 /* TOP_ldwl_r_r */  
+  "ldw", 	 /* TOP_ldw_r_i_r */  
+  "ldw", 	 /* TOP_ldw_r_ii_r */  
+  "ldw.d", 	 /* TOP_ldw_d_r_i_r */  
+  "ldw.d", 	 /* TOP_ldw_d_r_ii_r */  
+  "maxu", 	 /* TOP_maxu_r_r_r */  
+  "maxu", 	 /* TOP_maxu_i_r_r */  
+  "maxu", 	 /* TOP_maxu_ii_r_r */  
+  "max", 	 /* TOP_max_r_r_r */  
+  "max", 	 /* TOP_max_i_r_r */  
+  "max", 	 /* TOP_max_ii_r_r */  
+  "max.ph", 	 /* TOP_max_ph_r_r_r */  
+  "mfb", 	 /* TOP_mfb_b_r */  
+  "minu", 	 /* TOP_minu_r_r_r */  
+  "minu", 	 /* TOP_minu_i_r_r */  
+  "minu", 	 /* TOP_minu_ii_r_r */  
+  "min", 	 /* TOP_min_r_r_r */  
+  "min", 	 /* TOP_min_i_r_r */  
+  "min", 	 /* TOP_min_ii_r_r */  
+  "min.ph", 	 /* TOP_min_ph_r_r_r */  
   "MOVC", 	 /* TOP_movc */  
   "MOVCF", 	 /* TOP_movcf */  
   "MOVP", 	 /* TOP_movp */  
-  "mov", 	 /* TOP_mov_r */  
-  "mov", 	 /* TOP_mov_i */  
-  "mov", 	 /* TOP_mov_ii */  
-  "mtb", 	 /* TOP_mtb */  
-  "mul32", 	 /* TOP_mul32_r */  
-  "mul32", 	 /* TOP_mul32_i */  
-  "mul32", 	 /* TOP_mul32_ii */  
-  "mul64hu", 	 /* TOP_mul64hu_r */  
-  "mul64hu", 	 /* TOP_mul64hu_i */  
-  "mul64hu", 	 /* TOP_mul64hu_ii */  
-  "mul64h", 	 /* TOP_mul64h_r */  
-  "mul64h", 	 /* TOP_mul64h_i */  
-  "mul64h", 	 /* TOP_mul64h_ii */  
-  "mulfrac", 	 /* TOP_mulfrac_r */  
-  "mulfrac", 	 /* TOP_mulfrac_i */  
-  "mulfrac", 	 /* TOP_mulfrac_ii */  
-  "mulf.n", 	 /* TOP_mulf_n */  
-  "mulhhs", 	 /* TOP_mulhhs_r */  
-  "mulhhs", 	 /* TOP_mulhhs_i */  
-  "mulhhs", 	 /* TOP_mulhhs_ii */  
-  "mulhhu", 	 /* TOP_mulhhu_r */  
-  "mulhhu", 	 /* TOP_mulhhu_i */  
-  "mulhhu", 	 /* TOP_mulhhu_ii */  
-  "mulhh", 	 /* TOP_mulhh_r */  
-  "mulhh", 	 /* TOP_mulhh_i */  
-  "mulhh", 	 /* TOP_mulhh_ii */  
-  "mulhs", 	 /* TOP_mulhs_r */  
-  "mulhs", 	 /* TOP_mulhs_i */  
-  "mulhs", 	 /* TOP_mulhs_ii */  
-  "mulhu", 	 /* TOP_mulhu_r */  
-  "mulhu", 	 /* TOP_mulhu_i */  
-  "mulhu", 	 /* TOP_mulhu_ii */  
-  "mulh", 	 /* TOP_mulh_r */  
-  "mulh", 	 /* TOP_mulh_i */  
-  "mulh", 	 /* TOP_mulh_ii */  
-  "mullhus", 	 /* TOP_mullhus_r */  
-  "mullhus", 	 /* TOP_mullhus_i */  
-  "mullhus", 	 /* TOP_mullhus_ii */  
-  "mullhu", 	 /* TOP_mullhu_r */  
-  "mullhu", 	 /* TOP_mullhu_i */  
-  "mullhu", 	 /* TOP_mullhu_ii */  
-  "mullh", 	 /* TOP_mullh_r */  
-  "mullh", 	 /* TOP_mullh_i */  
-  "mullh", 	 /* TOP_mullh_ii */  
-  "mulllu", 	 /* TOP_mulllu_r */  
-  "mulllu", 	 /* TOP_mulllu_i */  
-  "mulllu", 	 /* TOP_mulllu_ii */  
-  "mulll", 	 /* TOP_mulll_r */  
-  "mulll", 	 /* TOP_mulll_i */  
-  "mulll", 	 /* TOP_mulll_ii */  
-  "mullu", 	 /* TOP_mullu_r */  
-  "mullu", 	 /* TOP_mullu_i */  
-  "mullu", 	 /* TOP_mullu_ii */  
-  "mull", 	 /* TOP_mull_r */  
-  "mull", 	 /* TOP_mull_i */  
-  "mull", 	 /* TOP_mull_ii */  
-  "ldlc", 	 /* TOP_multi_ldlc_i */  
-  "ldlc", 	 /* TOP_multi_ldlc_ii */  
-  "ldl", 	 /* TOP_multi_ldl_i */  
-  "ldl", 	 /* TOP_multi_ldl_ii */  
-  "stlc", 	 /* TOP_multi_stlc_i */  
-  "stlc", 	 /* TOP_multi_stlc_ii */  
-  "stl", 	 /* TOP_multi_stl_i */  
-  "stl", 	 /* TOP_multi_stl_ii */  
-  "nandl", 	 /* TOP_nandl_r_b */  
-  "nandl", 	 /* TOP_nandl_i_b */  
-  "nandl", 	 /* TOP_nandl_ii_b */  
-  "nandl", 	 /* TOP_nandl_r_r */  
-  "nandl", 	 /* TOP_nandl_i_r */  
-  "nandl", 	 /* TOP_nandl_ii_r */  
-  "NOOP", 	 /* TOP_noop */  
+  "mov", 	 /* TOP_mov_r_r */  
+  "mov", 	 /* TOP_mov_i_r */  
+  "mov", 	 /* TOP_mov_ii_r */  
+  "mov", 	 /* TOP_mov_r_b */  
+  "mov", 	 /* TOP_st240_mov_r_b */  
+  "mov", 	 /* TOP_mov_b_r */  
+  "mov", 	 /* TOP_st240_mov_b_r */  
+  "mov", 	 /* TOP_mov_b_b */  
+  "mtb", 	 /* TOP_mtb_r_b */  
+  "mul32", 	 /* TOP_mul32_r_r_r */  
+  "mul32", 	 /* TOP_mul32_i_r_r */  
+  "mul32", 	 /* TOP_mul32_ii_r_r */  
+  "mul64hu", 	 /* TOP_mul64hu_r_r_r */  
+  "mul64hu", 	 /* TOP_mul64hu_i_r_r */  
+  "mul64hu", 	 /* TOP_mul64hu_ii_r_r */  
+  "mul64h", 	 /* TOP_mul64h_r_r_r */  
+  "mul64h", 	 /* TOP_mul64h_i_r_r */  
+  "mul64h", 	 /* TOP_mul64h_ii_r_r */  
+  "muladdus.pb", 	 /* TOP_muladdus_pb_r_r_r */  
+  "muladd.ph", 	 /* TOP_muladd_ph_r_r_r */  
+  "mulfracadds.ph", 	 /* TOP_mulfracadds_ph_r_r_r */  
+  "mulfracrm.ph", 	 /* TOP_mulfracrm_ph_r_r_r */  
+  "mulfracrne.ph", 	 /* TOP_mulfracrne_ph_r_r_r */  
+  "mulfrac", 	 /* TOP_mulfrac_r_r_r */  
+  "mulfrac", 	 /* TOP_mulfrac_i_r_r */  
+  "mulfrac", 	 /* TOP_mulfrac_ii_r_r */  
+  "mulf.n", 	 /* TOP_mulf_n_r_r_r */  
+  "mulhhs", 	 /* TOP_mulhhs_r_r_r */  
+  "mulhhs", 	 /* TOP_mulhhs_i_r_r */  
+  "mulhhs", 	 /* TOP_mulhhs_ii_r_r */  
+  "mulhhu", 	 /* TOP_mulhhu_r_r_r */  
+  "mulhhu", 	 /* TOP_mulhhu_i_r_r */  
+  "mulhhu", 	 /* TOP_mulhhu_ii_r_r */  
+  "mulhh", 	 /* TOP_mulhh_r_r_r */  
+  "mulhh", 	 /* TOP_mulhh_i_r_r */  
+  "mulhh", 	 /* TOP_mulhh_ii_r_r */  
+  "mulhs", 	 /* TOP_mulhs_r_r_r */  
+  "mulhs", 	 /* TOP_mulhs_i_r_r */  
+  "mulhs", 	 /* TOP_mulhs_ii_r_r */  
+  "mulhu", 	 /* TOP_mulhu_r_r_r */  
+  "mulhu", 	 /* TOP_mulhu_i_r_r */  
+  "mulhu", 	 /* TOP_mulhu_ii_r_r */  
+  "mulh", 	 /* TOP_mulh_r_r_r */  
+  "mulh", 	 /* TOP_mulh_i_r_r */  
+  "mulh", 	 /* TOP_mulh_ii_r_r */  
+  "mullhus", 	 /* TOP_mullhus_r_r_r */  
+  "mullhus", 	 /* TOP_mullhus_i_r_r */  
+  "mullhus", 	 /* TOP_mullhus_ii_r_r */  
+  "mullhu", 	 /* TOP_mullhu_r_r_r */  
+  "mullhu", 	 /* TOP_mullhu_i_r_r */  
+  "mullhu", 	 /* TOP_mullhu_ii_r_r */  
+  "mullh", 	 /* TOP_mullh_r_r_r */  
+  "mullh", 	 /* TOP_mullh_i_r_r */  
+  "mullh", 	 /* TOP_mullh_ii_r_r */  
+  "mulllu", 	 /* TOP_mulllu_r_r_r */  
+  "mulllu", 	 /* TOP_mulllu_i_r_r */  
+  "mulllu", 	 /* TOP_mulllu_ii_r_r */  
+  "mulll", 	 /* TOP_mulll_r_r_r */  
+  "mulll", 	 /* TOP_mulll_i_r_r */  
+  "mulll", 	 /* TOP_mulll_ii_r_r */  
+  "mullu", 	 /* TOP_mullu_r_r_r */  
+  "mullu", 	 /* TOP_mullu_i_r_r */  
+  "mullu", 	 /* TOP_mullu_ii_r_r */  
+  "mull", 	 /* TOP_mull_r_r_r */  
+  "mull", 	 /* TOP_mull_i_r_r */  
+  "mull", 	 /* TOP_mull_ii_r_r */  
+  "mull", 	 /* TOP_st240_mull_ii_r_r */  
+  "ldlc", 	 /* TOP_multi_ldlc_r_i_b_r */  
+  "ldlc", 	 /* TOP_multi_ldlc_r_ii_b_r */  
+  "ldl", 	 /* TOP_multi_ldl_r_i_r */  
+  "ldl", 	 /* TOP_multi_ldl_r_ii_r */  
+  "stlc", 	 /* TOP_multi_stlc_r_b_r_i */  
+  "stlc", 	 /* TOP_multi_stlc_r_b_r_ii */  
+  "stl", 	 /* TOP_multi_stl_r_r_i */  
+  "stl", 	 /* TOP_multi_stl_r_r_ii */  
+  "mul.ph", 	 /* TOP_mul_ph_r_r_r */  
+  "nandl", 	 /* TOP_nandl_r_r_b */  
+  "nandl", 	 /* TOP_nandl_i_r_b */  
+  "nandl", 	 /* TOP_nandl_ii_r_b */  
+  "nandl", 	 /* TOP_nandl_r_r_r */  
+  "nandl", 	 /* TOP_nandl_i_r_r */  
+  "nandl", 	 /* TOP_nandl_ii_r_r */  
+  "nandl", 	 /* TOP_nandl_b_b_b */  
   "nop", 	 /* TOP_nop */  
-  "norl", 	 /* TOP_norl_r_b */  
-  "norl", 	 /* TOP_norl_i_b */  
-  "norl", 	 /* TOP_norl_ii_b */  
-  "norl", 	 /* TOP_norl_r_r */  
-  "norl", 	 /* TOP_norl_i_r */  
-  "norl", 	 /* TOP_norl_ii_r */  
-  "orc", 	 /* TOP_orc_r */  
-  "orc", 	 /* TOP_orc_i */  
-  "orc", 	 /* TOP_orc_ii */  
-  "orl", 	 /* TOP_orl_r_b */  
-  "orl", 	 /* TOP_orl_i_b */  
-  "orl", 	 /* TOP_orl_ii_b */  
-  "orl", 	 /* TOP_orl_r_r */  
-  "orl", 	 /* TOP_orl_i_r */  
-  "orl", 	 /* TOP_orl_ii_r */  
-  "or", 	 /* TOP_or_r */  
-  "or", 	 /* TOP_or_i */  
-  "or", 	 /* TOP_or_ii */  
-  "pftc", 	 /* TOP_pftc_i */  
-  "pftc", 	 /* TOP_pftc_ii */  
-  "pft", 	 /* TOP_pft_i */  
-  "pft", 	 /* TOP_pft_ii */  
+  "norl", 	 /* TOP_norl_r_r_b */  
+  "norl", 	 /* TOP_norl_i_r_b */  
+  "norl", 	 /* TOP_norl_ii_r_b */  
+  "norl", 	 /* TOP_norl_r_r_r */  
+  "norl", 	 /* TOP_norl_i_r_r */  
+  "norl", 	 /* TOP_norl_ii_r_r */  
+  "norl", 	 /* TOP_norl_b_b_b */  
+  "orc", 	 /* TOP_orc_r_r_r */  
+  "orc", 	 /* TOP_orc_i_r_r */  
+  "orc", 	 /* TOP_orc_ii_r_r */  
+  "orl", 	 /* TOP_orl_r_r_b */  
+  "orl", 	 /* TOP_orl_i_r_b */  
+  "orl", 	 /* TOP_orl_ii_r_b */  
+  "orl", 	 /* TOP_orl_r_r_r */  
+  "orl", 	 /* TOP_orl_i_r_r */  
+  "orl", 	 /* TOP_orl_ii_r_r */  
+  "orl", 	 /* TOP_orl_b_b_b */  
+  "or", 	 /* TOP_or_r_r_r */  
+  "or", 	 /* TOP_or_i_r_r */  
+  "or", 	 /* TOP_or_ii_r_r */  
+  "packrnp.phh", 	 /* TOP_packrnp_phh_r_r_r */  
+  "packsu.pb", 	 /* TOP_packsu_pb_r_r_r */  
+  "packs.ph", 	 /* TOP_packs_ph_r_r_r */  
+  "pack.pb", 	 /* TOP_pack_pb_r_r_r */  
+  "pack.ph", 	 /* TOP_pack_ph_r_r_r */  
+  "perm.pb", 	 /* TOP_perm_pb_r_r_r */  
+  "perm.pb", 	 /* TOP_perm_pb_i_r_r */  
+  "perm.pb", 	 /* TOP_perm_pb_ii_r_r */  
+  "pftc", 	 /* TOP_pftc_r_i_b */  
+  "pftc", 	 /* TOP_pftc_r_ii_b */  
+  "pft", 	 /* TOP_pft_r_i */  
+  "pft", 	 /* TOP_pft_r_ii */  
   "PHI", 	 /* TOP_phi */  
-  "prgadd", 	 /* TOP_prgadd_i */  
-  "prgadd", 	 /* TOP_prgadd_ii */  
+  "prgadd", 	 /* TOP_prgadd_r_i */  
+  "prgadd", 	 /* TOP_prgadd_r_ii */  
+  "prgadd.l1", 	 /* TOP_prgadd_l1_r_i */  
+  "prgadd.l1", 	 /* TOP_prgadd_l1_r_ii */  
   "prgins", 	 /* TOP_prgins */  
-  "prginsadd", 	 /* TOP_prginsadd_i */  
-  "prginsadd", 	 /* TOP_prginsadd_ii */  
-  "prginspg", 	 /* TOP_prginspg_i */  
-  "prginspg", 	 /* TOP_prginspg_ii */  
-  "prgset", 	 /* TOP_prgset_i */  
-  "prgset", 	 /* TOP_prgset_ii */  
+  "prginsadd", 	 /* TOP_prginsadd_r_i */  
+  "prginsadd", 	 /* TOP_prginsadd_r_ii */  
+  "prginsadd.l1", 	 /* TOP_prginsadd_l1_r_i */  
+  "prginsadd.l1", 	 /* TOP_prginsadd_l1_r_ii */  
+  "prginspg", 	 /* TOP_prginspg_r_i */  
+  "prginspg", 	 /* TOP_prginspg_r_ii */  
+  "prginsset", 	 /* TOP_prginsset_r_i */  
+  "prginsset", 	 /* TOP_prginsset_r_ii */  
+  "prginsset.l1", 	 /* TOP_prginsset_l1_r_i */  
+  "prginsset.l1", 	 /* TOP_prginsset_l1_r_ii */  
+  "prgset", 	 /* TOP_prgset_r_i */  
+  "prgset", 	 /* TOP_prgset_r_ii */  
   "PSI", 	 /* TOP_psi */  
-  "pswclr", 	 /* TOP_pswclr */  
-  "pswset", 	 /* TOP_pswset */  
+  "pswclr", 	 /* TOP_pswclr_r */  
+  "pswmask", 	 /* TOP_pswmask_i_r_r */  
+  "pswmask", 	 /* TOP_pswmask_ii_r_r */  
+  "pswset", 	 /* TOP_pswset_r */  
   "PUSHREGS", 	 /* TOP_pushregs */  
-  "remu", 	 /* TOP_remu */  
-  "rem", 	 /* TOP_rem */  
-  "RETURN", 	 /* TOP_RETURN */  
+  "remu", 	 /* TOP_remu_r_r_r */  
+  "rem", 	 /* TOP_rem_r_r_r */  
+  "retention", 	 /* TOP_retention */  
   "return", 	 /* TOP_return */  
   "rfi", 	 /* TOP_rfi */  
-  "sbrk", 	 /* TOP_sbrk */  
-  "sbrk", 	 /* TOP_st235_sbrk */  
-  "sh1add", 	 /* TOP_sh1add_r */  
-  "sh1add", 	 /* TOP_sh1add_i */  
-  "sh1add", 	 /* TOP_sh1add_ii */  
-  "sh2add", 	 /* TOP_sh2add_r */  
-  "sh2add", 	 /* TOP_sh2add_i */  
-  "sh2add", 	 /* TOP_sh2add_ii */  
-  "sh3add", 	 /* TOP_sh3add_r */  
-  "sh3add", 	 /* TOP_sh3add_i */  
-  "sh3add", 	 /* TOP_sh3add_ii */  
-  "sh4add", 	 /* TOP_sh4add_r */  
-  "sh4add", 	 /* TOP_sh4add_i */  
-  "sh4add", 	 /* TOP_sh4add_ii */  
-  "shl", 	 /* TOP_shl_r */  
-  "shl", 	 /* TOP_shl_i */  
-  "shl", 	 /* TOP_shl_ii */  
-  "shru", 	 /* TOP_shru_r */  
-  "shru", 	 /* TOP_shru_i */  
-  "shru", 	 /* TOP_shru_ii */  
-  "shr", 	 /* TOP_shr_r */  
-  "shr", 	 /* TOP_shr_i */  
-  "shr", 	 /* TOP_shr_ii */  
+  "rotl", 	 /* TOP_rotl_r_r_r */  
+  "rotl", 	 /* TOP_rotl_i_r_r */  
+  "rotl", 	 /* TOP_rotl_ii_r_r */  
+  "sadu.pb", 	 /* TOP_sadu_pb_r_r_r */  
+  "satso", 	 /* TOP_satso_r_r */  
+  "sats", 	 /* TOP_sats_r_r */  
+  "sbrk", 	 /* TOP_sbrk_i */  
+  "sbrk", 	 /* TOP_st240_sbrk_i */  
+  "sh1addso", 	 /* TOP_sh1addso_r_r_r */  
+  "sh1adds", 	 /* TOP_sh1adds_r_r_r */  
+  "sh1add", 	 /* TOP_sh1add_r_r_r */  
+  "sh1add", 	 /* TOP_sh1add_i_r_r */  
+  "sh1add", 	 /* TOP_sh1add_ii_r_r */  
+  "sh1subso", 	 /* TOP_sh1subso_r_r_r */  
+  "sh1subs", 	 /* TOP_sh1subs_r_r_r */  
+  "sh2add", 	 /* TOP_sh2add_r_r_r */  
+  "sh2add", 	 /* TOP_sh2add_i_r_r */  
+  "sh2add", 	 /* TOP_sh2add_ii_r_r */  
+  "sh3add", 	 /* TOP_sh3add_r_r_r */  
+  "sh3add", 	 /* TOP_sh3add_i_r_r */  
+  "sh3add", 	 /* TOP_sh3add_ii_r_r */  
+  "sh4add", 	 /* TOP_sh4add_r_r_r */  
+  "sh4add", 	 /* TOP_sh4add_i_r_r */  
+  "sh4add", 	 /* TOP_sh4add_ii_r_r */  
+  "shlso", 	 /* TOP_shlso_r_r_r */  
+  "shlso", 	 /* TOP_shlso_i_r_r */  
+  "shlso", 	 /* TOP_shlso_ii_r_r */  
+  "shls", 	 /* TOP_shls_r_r_r */  
+  "shls", 	 /* TOP_shls_i_r_r */  
+  "shls", 	 /* TOP_shls_ii_r_r */  
+  "shls.ph", 	 /* TOP_shls_ph_r_r_r */  
+  "shls.ph", 	 /* TOP_shls_ph_i_r_r */  
+  "shls.ph", 	 /* TOP_shls_ph_ii_r_r */  
+  "shl", 	 /* TOP_shl_r_r_r */  
+  "shl", 	 /* TOP_shl_i_r_r */  
+  "shl", 	 /* TOP_shl_ii_r_r */  
+  "shl.ph", 	 /* TOP_shl_ph_r_r_r */  
+  "shl.ph", 	 /* TOP_shl_ph_i_r_r */  
+  "shl.ph", 	 /* TOP_shl_ph_ii_r_r */  
+  "shrrne.ph", 	 /* TOP_shrrne_ph_r_r_r */  
+  "shrrne.ph", 	 /* TOP_shrrne_ph_i_r_r */  
+  "shrrne.ph", 	 /* TOP_shrrne_ph_ii_r_r */  
+  "shrrnp", 	 /* TOP_shrrnp_i_r_r */  
+  "shrrnp", 	 /* TOP_shrrnp_ii_r_r */  
+  "shrrnp.ph", 	 /* TOP_shrrnp_ph_r_r_r */  
+  "shrrnp.ph", 	 /* TOP_shrrnp_ph_i_r_r */  
+  "shrrnp.ph", 	 /* TOP_shrrnp_ph_ii_r_r */  
+  "shru", 	 /* TOP_shru_r_r_r */  
+  "shru", 	 /* TOP_shru_i_r_r */  
+  "shru", 	 /* TOP_shru_ii_r_r */  
+  "shr", 	 /* TOP_shr_r_r_r */  
+  "shr", 	 /* TOP_shr_i_r_r */  
+  "shr", 	 /* TOP_shr_ii_r_r */  
+  "shr.ph", 	 /* TOP_shr_ph_r_r_r */  
+  "shr.ph", 	 /* TOP_shr_ph_i_r_r */  
+  "shr.ph", 	 /* TOP_shr_ph_ii_r_r */  
+  "shuffeve.pb", 	 /* TOP_shuffeve_pb_r_r_r */  
+  "shuffodd.pb", 	 /* TOP_shuffodd_pb_r_r_r */  
+  "shuff.pbh", 	 /* TOP_shuff_pbh_r_r_r */  
+  "shuff.pbl", 	 /* TOP_shuff_pbl_r_r_r */  
+  "shuff.phh", 	 /* TOP_shuff_phh_r_r_r */  
+  "shuff.phl", 	 /* TOP_shuff_phl_r_r_r */  
   "SIGMA", 	 /* TOP_SIGMA */  
-  "slctf", 	 /* TOP_slctf_r */  
-  "slctf", 	 /* TOP_slctf_i */  
-  "slctf", 	 /* TOP_slctf_ii */  
-  "slct", 	 /* TOP_slct_r */  
-  "slct", 	 /* TOP_slct_i */  
-  "slct", 	 /* TOP_slct_ii */  
-  "stbc", 	 /* TOP_stbc_i */  
-  "stbc", 	 /* TOP_stbc_ii */  
-  "stb", 	 /* TOP_stb_i */  
-  "stb", 	 /* TOP_stb_ii */  
-  "sthc", 	 /* TOP_sthc_i */  
-  "sthc", 	 /* TOP_sthc_ii */  
-  "sth", 	 /* TOP_sth_i */  
-  "sth", 	 /* TOP_sth_ii */  
-  "stlc", 	 /* TOP_stlc_i */  
-  "stlc", 	 /* TOP_stlc_ii */  
-  "stl", 	 /* TOP_stl_i */  
-  "stl", 	 /* TOP_stl_ii */  
-  "stwc", 	 /* TOP_stwc_i */  
-  "stwc", 	 /* TOP_stwc_ii */  
-  "stwl", 	 /* TOP_stwl */  
-  "stw", 	 /* TOP_stw_i */  
-  "stw", 	 /* TOP_stw_ii */  
-  "subf.n", 	 /* TOP_subf_n */  
-  "sub", 	 /* TOP_sub_r */  
-  "sub", 	 /* TOP_sub_i */  
-  "sub", 	 /* TOP_sub_ii */  
-  "sxtb", 	 /* TOP_sxtb */  
-  "sxth", 	 /* TOP_sxth */  
+  "SKIP", 	 /* TOP_noop */  
+  "slctf", 	 /* TOP_slctf_r_r_b_r */  
+  "slctf", 	 /* TOP_slctf_i_r_b_r */  
+  "slctf", 	 /* TOP_slctf_ii_r_b_r */  
+  "slctf.pb", 	 /* TOP_slctf_pb_r_r_b_r */  
+  "slctf.pb", 	 /* TOP_slctf_pb_i_r_b_r */  
+  "slctf.pb", 	 /* TOP_slctf_pb_ii_r_b_r */  
+  "slct", 	 /* TOP_slct_r_r_b_r */  
+  "slct", 	 /* TOP_slct_i_r_b_r */  
+  "slct", 	 /* TOP_slct_ii_r_b_r */  
+  "slct.pb", 	 /* TOP_slct_pb_r_r_b_r */  
+  "slct.pb", 	 /* TOP_slct_pb_i_r_b_r */  
+  "slct.pb", 	 /* TOP_slct_pb_ii_r_b_r */  
+  "slct", 	 /* TOP_st240_slct_r_r_b_r */  
+  "stbc", 	 /* TOP_stbc_r_b_r_i */  
+  "stbc", 	 /* TOP_stbc_r_b_r_ii */  
+  "stb", 	 /* TOP_stb_r_r_i */  
+  "stb", 	 /* TOP_stb_r_r_ii */  
+  "sthc", 	 /* TOP_sthc_r_b_r_i */  
+  "sthc", 	 /* TOP_sthc_r_b_r_ii */  
+  "sth", 	 /* TOP_sth_r_r_i */  
+  "sth", 	 /* TOP_sth_r_r_ii */  
+  "stlc", 	 /* TOP_stlc_p_b_r_i */  
+  "stlc", 	 /* TOP_stlc_p_b_r_ii */  
+  "stl", 	 /* TOP_stl_p_r_i */  
+  "stl", 	 /* TOP_stl_p_r_ii */  
+  "stwc", 	 /* TOP_stwc_r_b_r_i */  
+  "stwc", 	 /* TOP_stwc_r_b_r_ii */  
+  "stwl", 	 /* TOP_stwl_r_r_b */  
+  "stw", 	 /* TOP_stw_r_r_i */  
+  "stw", 	 /* TOP_stw_r_r_ii */  
+  "subf.n", 	 /* TOP_subf_n_r_r_r */  
+  "subso", 	 /* TOP_subso_r_r_r */  
+  "subs", 	 /* TOP_subs_r_r_r */  
+  "subs.ph", 	 /* TOP_subs_ph_r_r_r */  
+  "sub", 	 /* TOP_sub_r_r_r */  
+  "sub", 	 /* TOP_sub_r_i_r */  
+  "sub", 	 /* TOP_sub_r_ii_r */  
+  "sub.ph", 	 /* TOP_sub_ph_r_r_r */  
+  "sxtb", 	 /* TOP_sxtb_r_r */  
+  "sxth", 	 /* TOP_sxth_r_r */  
+  "sxt", 	 /* TOP_sxt_r_r_r */  
+  "sxt", 	 /* TOP_sxt_i_r_r */  
+  "sxt", 	 /* TOP_sxt_ii_r_r */  
   "sync", 	 /* TOP_sync */  
   "syncins", 	 /* TOP_syncins */  
-  "syscall", 	 /* TOP_syscall */  
-  "syscall", 	 /* TOP_st235_syscall */  
+  "syscall", 	 /* TOP_syscall_i */  
+  "syscall", 	 /* TOP_st240_syscall_i */  
+  "unpacku.pbh", 	 /* TOP_unpacku_pbh_r_r */  
+  "unpacku.pbl", 	 /* TOP_unpacku_pbl_r_r */  
+  "waitl", 	 /* TOP_waitl */  
   "wmb", 	 /* TOP_wmb */  
-  "xor", 	 /* TOP_xor_r */  
-  "xor", 	 /* TOP_xor_i */  
-  "xor", 	 /* TOP_xor_ii */  
-  "zxtb", 	 /* TOP_zxtb */  
-  "zxth", 	 /* TOP_zxth */  
+  "xor", 	 /* TOP_xor_r_r_r */  
+  "xor", 	 /* TOP_xor_i_r_r */  
+  "xor", 	 /* TOP_xor_ii_r_r */  
+  "zxtb", 	 /* TOP_zxtb_r_r */  
+  "zxth", 	 /* TOP_zxth_r_r */  
+  "zxt", 	 /* TOP_zxt_r_r_r */  
+  "zxt", 	 /* TOP_zxt_i_r_r */  
+  "zxt", 	 /* TOP_zxt_ii_r_r */  
 };
 
 static const char *asmname(TOP topcode) 
@@ -465,446 +594,584 @@ main()
   Name(); 
 
   Instruction_Print_Group(print_0, 
+		 TOP_igoto, 
 		 TOP_return, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
 
-  ISA_PRINT_TYPE print_1 = ISA_Print_Type_Create("print_1", "%s $r63 = %s"); 
+  ISA_PRINT_TYPE print_1 = ISA_Print_Type_Create("print_1", "%s $r63 = $r63"); 
   Name(); 
-  Operand(0); 
 
   Instruction_Print_Group(print_1, 
-		 TOP_call, 
+		 TOP_icall, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
 
-  ISA_PRINT_TYPE print_2 = ISA_Print_Type_Create("print_2", "%s"); 
+  ISA_PRINT_TYPE print_2 = ISA_Print_Type_Create("print_2", "%s $r63 = %s"); 
   Name(); 
+  Operand(0); 
 
   Instruction_Print_Group(print_2, 
+		 TOP_call_i, 
+		 TOP_UNDEFINED); 
+
+  /* ================================= */ 
+
+  ISA_PRINT_TYPE print_3 = ISA_Print_Type_Create("print_3", "%s"); 
+  Name(); 
+
+  Instruction_Print_Group(print_3, 
 		 TOP_break, 
 		 TOP_idle, 
 		 TOP_nop, 
 		 TOP_prgins, 
+		 TOP_retention, 
 		 TOP_rfi, 
 		 TOP_sync, 
 		 TOP_syncins, 
+		 TOP_waitl, 
 		 TOP_wmb, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
 
-  ISA_PRINT_TYPE print_3 = ISA_Print_Type_Create("print_3", "%s %s"); 
+  ISA_PRINT_TYPE print_4 = ISA_Print_Type_Create("print_4", "%s %s"); 
   Name(); 
-  Operand(0); 
-
-  Instruction_Print_Group(print_3, 
-		 TOP_goto, 
-		 TOP_pswclr, 
-		 TOP_pswset, 
-		 TOP_sbrk, 
-		 TOP_st235_sbrk, 
-		 TOP_syscall, 
-		 TOP_st235_syscall, 
-		 TOP_UNDEFINED); 
-
-  /* ================================= */ 
-
-  ISA_PRINT_TYPE print_4 = ISA_Print_Type_Create("print_4", "%s %s = %s"); 
-  Name(); 
-  Result(0); 
-  Operand(0); 
 
   Instruction_Print_Group(print_4, 
-		 TOP_addpc_i, 
-		 TOP_addpc_ii, 
-		 TOP_bswap, 
-		 TOP_clz, 
-		 TOP_convfi_n, 
-		 TOP_convif_n, 
-		 TOP_mfb, 
-		 TOP_mov_r, 
-		 TOP_mov_i, 
-		 TOP_mov_ii, 
-		 TOP_mtb, 
-		 TOP_sxtb, 
-		 TOP_sxth, 
-		 TOP_zxtb, 
-		 TOP_zxth, 
+		 TOP_dbgsbrk, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
 
-  ISA_PRINT_TYPE print_5 = ISA_Print_Type_Create("print_5", "%s %s = %s, %s"); 
+  ISA_PRINT_TYPE print_5 = ISA_Print_Type_Create("print_5", "%s %s"); 
   Name(); 
-  Result(0); 
   Operand(0); 
-  Operand(1); 
 
   Instruction_Print_Group(print_5, 
-		 TOP_addf_n, 
-		 TOP_add_r, 
-		 TOP_add_i, 
-		 TOP_add_ii, 
-		 TOP_andc_r, 
-		 TOP_andc_i, 
-		 TOP_andc_ii, 
-		 TOP_andl_r_b, 
-		 TOP_andl_i_b, 
-		 TOP_andl_ii_b, 
-		 TOP_andl_r_r, 
-		 TOP_andl_i_r, 
-		 TOP_andl_ii_r, 
-		 TOP_and_r, 
-		 TOP_and_i, 
-		 TOP_and_ii, 
-		 TOP_asm_0, 
-		 TOP_asm_10, 
-		 TOP_asm_11, 
-		 TOP_asm_12, 
-		 TOP_asm_13, 
-		 TOP_asm_14, 
-		 TOP_asm_15, 
-		 TOP_asm_16_i, 
-		 TOP_asm_16_ii, 
-		 TOP_asm_17_i, 
-		 TOP_asm_17_ii, 
-		 TOP_asm_18_i, 
-		 TOP_asm_18_ii, 
-		 TOP_asm_19_i, 
-		 TOP_asm_19_ii, 
-		 TOP_asm_1, 
-		 TOP_asm_20_i, 
-		 TOP_asm_20_ii, 
-		 TOP_asm_21_i, 
-		 TOP_asm_21_ii, 
-		 TOP_asm_22_i, 
-		 TOP_asm_22_ii, 
-		 TOP_asm_23_i, 
-		 TOP_asm_23_ii, 
-		 TOP_asm_24_i, 
-		 TOP_asm_24_ii, 
-		 TOP_asm_25_i, 
-		 TOP_asm_25_ii, 
-		 TOP_asm_26_i, 
-		 TOP_asm_26_ii, 
-		 TOP_asm_27_i, 
-		 TOP_asm_27_ii, 
-		 TOP_asm_28_i, 
-		 TOP_asm_28_ii, 
-		 TOP_asm_29_i, 
-		 TOP_asm_29_ii, 
-		 TOP_asm_2, 
-		 TOP_asm_30_i, 
-		 TOP_asm_30_ii, 
-		 TOP_asm_31_i, 
-		 TOP_asm_31_ii, 
-		 TOP_asm_3, 
-		 TOP_asm_4, 
-		 TOP_asm_5, 
-		 TOP_asm_6, 
-		 TOP_asm_7, 
-		 TOP_asm_8, 
-		 TOP_asm_9, 
-		 TOP_cmpeqf_n_b, 
-		 TOP_cmpeqf_n_r, 
-		 TOP_cmpeq_r_b, 
-		 TOP_cmpeq_i_b, 
-		 TOP_cmpeq_ii_b, 
-		 TOP_cmpeq_r_r, 
-		 TOP_cmpeq_i_r, 
-		 TOP_cmpeq_ii_r, 
-		 TOP_cmpgef_n_b, 
-		 TOP_cmpgef_n_r, 
-		 TOP_cmpgeu_r_b, 
-		 TOP_cmpgeu_i_b, 
-		 TOP_cmpgeu_ii_b, 
-		 TOP_cmpgeu_r_r, 
-		 TOP_cmpgeu_i_r, 
-		 TOP_cmpgeu_ii_r, 
-		 TOP_cmpge_r_b, 
-		 TOP_cmpge_i_b, 
-		 TOP_cmpge_ii_b, 
-		 TOP_cmpge_r_r, 
-		 TOP_cmpge_i_r, 
-		 TOP_cmpge_ii_r, 
-		 TOP_cmpgtf_n_b, 
-		 TOP_cmpgtf_n_r, 
-		 TOP_cmpgtu_r_b, 
-		 TOP_cmpgtu_i_b, 
-		 TOP_cmpgtu_ii_b, 
-		 TOP_cmpgtu_r_r, 
-		 TOP_cmpgtu_i_r, 
-		 TOP_cmpgtu_ii_r, 
-		 TOP_cmpgt_r_b, 
-		 TOP_cmpgt_i_b, 
-		 TOP_cmpgt_ii_b, 
-		 TOP_cmpgt_r_r, 
-		 TOP_cmpgt_i_r, 
-		 TOP_cmpgt_ii_r, 
-		 TOP_cmplef_n_b, 
-		 TOP_cmplef_n_r, 
-		 TOP_cmpleu_r_b, 
-		 TOP_cmpleu_i_b, 
-		 TOP_cmpleu_ii_b, 
-		 TOP_cmpleu_r_r, 
-		 TOP_cmpleu_i_r, 
-		 TOP_cmpleu_ii_r, 
-		 TOP_cmple_r_b, 
-		 TOP_cmple_i_b, 
-		 TOP_cmple_ii_b, 
-		 TOP_cmple_r_r, 
-		 TOP_cmple_i_r, 
-		 TOP_cmple_ii_r, 
-		 TOP_cmpltf_n_b, 
-		 TOP_cmpltf_n_r, 
-		 TOP_cmpltu_r_b, 
-		 TOP_cmpltu_i_b, 
-		 TOP_cmpltu_ii_b, 
-		 TOP_cmpltu_r_r, 
-		 TOP_cmpltu_i_r, 
-		 TOP_cmpltu_ii_r, 
-		 TOP_cmplt_r_b, 
-		 TOP_cmplt_i_b, 
-		 TOP_cmplt_ii_b, 
-		 TOP_cmplt_r_r, 
-		 TOP_cmplt_i_r, 
-		 TOP_cmplt_ii_r, 
-		 TOP_cmpne_r_b, 
-		 TOP_cmpne_i_b, 
-		 TOP_cmpne_ii_b, 
-		 TOP_cmpne_r_r, 
-		 TOP_cmpne_i_r, 
-		 TOP_cmpne_ii_r, 
-		 TOP_divu, 
-		 TOP_div, 
-		 TOP_maxu_r, 
-		 TOP_maxu_i, 
-		 TOP_maxu_ii, 
-		 TOP_max_r, 
-		 TOP_max_i, 
-		 TOP_max_ii, 
-		 TOP_minu_r, 
-		 TOP_minu_i, 
-		 TOP_minu_ii, 
-		 TOP_min_r, 
-		 TOP_min_i, 
-		 TOP_min_ii, 
-		 TOP_mul32_r, 
-		 TOP_mul32_i, 
-		 TOP_mul32_ii, 
-		 TOP_mul64hu_r, 
-		 TOP_mul64hu_i, 
-		 TOP_mul64hu_ii, 
-		 TOP_mul64h_r, 
-		 TOP_mul64h_i, 
-		 TOP_mul64h_ii, 
-		 TOP_mulfrac_r, 
-		 TOP_mulfrac_i, 
-		 TOP_mulfrac_ii, 
-		 TOP_mulf_n, 
-		 TOP_mulhhs_r, 
-		 TOP_mulhhs_i, 
-		 TOP_mulhhs_ii, 
-		 TOP_mulhhu_r, 
-		 TOP_mulhhu_i, 
-		 TOP_mulhhu_ii, 
-		 TOP_mulhh_r, 
-		 TOP_mulhh_i, 
-		 TOP_mulhh_ii, 
-		 TOP_mulhs_r, 
-		 TOP_mulhs_i, 
-		 TOP_mulhs_ii, 
-		 TOP_mulhu_r, 
-		 TOP_mulhu_i, 
-		 TOP_mulhu_ii, 
-		 TOP_mulh_r, 
-		 TOP_mulh_i, 
-		 TOP_mulh_ii, 
-		 TOP_mullhus_r, 
-		 TOP_mullhus_i, 
-		 TOP_mullhus_ii, 
-		 TOP_mullhu_r, 
-		 TOP_mullhu_i, 
-		 TOP_mullhu_ii, 
-		 TOP_mullh_r, 
-		 TOP_mullh_i, 
-		 TOP_mullh_ii, 
-		 TOP_mulllu_r, 
-		 TOP_mulllu_i, 
-		 TOP_mulllu_ii, 
-		 TOP_mulll_r, 
-		 TOP_mulll_i, 
-		 TOP_mulll_ii, 
-		 TOP_mullu_r, 
-		 TOP_mullu_i, 
-		 TOP_mullu_ii, 
-		 TOP_mull_r, 
-		 TOP_mull_i, 
-		 TOP_mull_ii, 
-		 TOP_nandl_r_b, 
-		 TOP_nandl_i_b, 
-		 TOP_nandl_ii_b, 
-		 TOP_nandl_r_r, 
-		 TOP_nandl_i_r, 
-		 TOP_nandl_ii_r, 
-		 TOP_norl_r_b, 
-		 TOP_norl_i_b, 
-		 TOP_norl_ii_b, 
-		 TOP_norl_r_r, 
-		 TOP_norl_i_r, 
-		 TOP_norl_ii_r, 
-		 TOP_orc_r, 
-		 TOP_orc_i, 
-		 TOP_orc_ii, 
-		 TOP_orl_r_b, 
-		 TOP_orl_i_b, 
-		 TOP_orl_ii_b, 
-		 TOP_orl_r_r, 
-		 TOP_orl_i_r, 
-		 TOP_orl_ii_r, 
-		 TOP_or_r, 
-		 TOP_or_i, 
-		 TOP_or_ii, 
-		 TOP_remu, 
-		 TOP_rem, 
-		 TOP_sh1add_r, 
-		 TOP_sh1add_i, 
-		 TOP_sh1add_ii, 
-		 TOP_sh2add_r, 
-		 TOP_sh2add_i, 
-		 TOP_sh2add_ii, 
-		 TOP_sh3add_r, 
-		 TOP_sh3add_i, 
-		 TOP_sh3add_ii, 
-		 TOP_sh4add_r, 
-		 TOP_sh4add_i, 
-		 TOP_sh4add_ii, 
-		 TOP_shl_r, 
-		 TOP_shl_i, 
-		 TOP_shl_ii, 
-		 TOP_shru_r, 
-		 TOP_shru_i, 
-		 TOP_shru_ii, 
-		 TOP_shr_r, 
-		 TOP_shr_i, 
-		 TOP_shr_ii, 
-		 TOP_subf_n, 
-		 TOP_sub_r, 
-		 TOP_sub_i, 
-		 TOP_sub_ii, 
-		 TOP_xor_r, 
-		 TOP_xor_i, 
-		 TOP_xor_ii, 
+		 TOP_goto_i, 
+		 TOP_pswclr_r, 
+		 TOP_pswset_r, 
+		 TOP_sbrk_i, 
+		 TOP_st240_sbrk_i, 
+		 TOP_syscall_i, 
+		 TOP_st240_syscall_i, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
 
-  ISA_PRINT_TYPE print_6 = ISA_Print_Type_Create("print_6", "%s %s = %s, %s, %s"); 
+  ISA_PRINT_TYPE print_6 = ISA_Print_Type_Create("print_6", "%s %s = %s"); 
   Name(); 
   Result(0); 
   Operand(0); 
-  Operand(1); 
-  Operand(2); 
 
   Instruction_Print_Group(print_6, 
-		 TOP_slctf_r, 
-		 TOP_slctf_i, 
-		 TOP_slctf_ii, 
-		 TOP_slct_r, 
-		 TOP_slct_i, 
-		 TOP_slct_ii, 
+		 TOP_abss_ph_r_r, 
+		 TOP_addpc_i_r, 
+		 TOP_addpc_ii_r, 
+		 TOP_bswap_r_r, 
+		 TOP_clz_r_r, 
+		 TOP_convbi_b_r, 
+		 TOP_convfi_n_r_r, 
+		 TOP_convib_r_b, 
+		 TOP_convif_n_r_r, 
+		 TOP_mfb_b_r, 
+		 TOP_mov_r_r, 
+		 TOP_mov_i_r, 
+		 TOP_mov_ii_r, 
+		 TOP_mov_r_b, 
+		 TOP_st240_mov_r_b, 
+		 TOP_mov_b_r, 
+		 TOP_st240_mov_b_r, 
+		 TOP_mov_b_b, 
+		 TOP_mtb_r_b, 
+		 TOP_satso_r_r, 
+		 TOP_sats_r_r, 
+		 TOP_sxtb_r_r, 
+		 TOP_sxth_r_r, 
+		 TOP_unpacku_pbh_r_r, 
+		 TOP_unpacku_pbl_r_r, 
+		 TOP_zxtb_r_r, 
+		 TOP_zxth_r_r, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
 
-  ISA_PRINT_TYPE print_7 = ISA_Print_Type_Create("print_7", "%s %s = %s, %s[%s]"); 
+  ISA_PRINT_TYPE print_7 = ISA_Print_Type_Create("print_7", "%s %s = %s, %s"); 
+  Name(); 
+  Result(0); 
+  Operand(0); 
+  Operand(1); 
+
+  Instruction_Print_Group(print_7, 
+		 TOP_absubu_pb_r_r_r, 
+		 TOP_addf_n_r_r_r, 
+		 TOP_addso_r_r_r, 
+		 TOP_adds_r_r_r, 
+		 TOP_adds_ph_r_r_r, 
+		 TOP_add_r_r_r, 
+		 TOP_add_i_r_r, 
+		 TOP_add_ii_r_r, 
+		 TOP_add_ph_r_r_r, 
+		 TOP_andc_r_r_r, 
+		 TOP_andc_i_r_r, 
+		 TOP_andc_ii_r_r, 
+		 TOP_andl_r_r_b, 
+		 TOP_andl_i_r_b, 
+		 TOP_andl_ii_r_b, 
+		 TOP_andl_r_r_r, 
+		 TOP_andl_i_r_r, 
+		 TOP_andl_ii_r_r, 
+		 TOP_andl_b_b_b, 
+		 TOP_and_r_r_r, 
+		 TOP_and_i_r_r, 
+		 TOP_and_ii_r_r, 
+		 TOP_asm_0_r_r_r, 
+		 TOP_asm_10_r_r_r, 
+		 TOP_asm_11_r_r_r, 
+		 TOP_asm_12_r_r_r, 
+		 TOP_asm_13_r_r_r, 
+		 TOP_asm_14_r_r_r, 
+		 TOP_asm_15_r_r_r, 
+		 TOP_asm_16_i_r_r, 
+		 TOP_asm_16_ii_r_r, 
+		 TOP_asm_17_i_r_r, 
+		 TOP_asm_17_ii_r_r, 
+		 TOP_asm_18_i_r_r, 
+		 TOP_asm_18_ii_r_r, 
+		 TOP_asm_19_i_r_r, 
+		 TOP_asm_19_ii_r_r, 
+		 TOP_asm_1_r_r_r, 
+		 TOP_asm_20_i_r_r, 
+		 TOP_asm_20_ii_r_r, 
+		 TOP_asm_21_i_r_r, 
+		 TOP_asm_21_ii_r_r, 
+		 TOP_asm_22_i_r_r, 
+		 TOP_asm_22_ii_r_r, 
+		 TOP_asm_23_i_r_r, 
+		 TOP_asm_23_ii_r_r, 
+		 TOP_asm_24_i_r_r, 
+		 TOP_asm_24_ii_r_r, 
+		 TOP_asm_25_i_r_r, 
+		 TOP_asm_25_ii_r_r, 
+		 TOP_asm_26_i_r_r, 
+		 TOP_asm_26_ii_r_r, 
+		 TOP_asm_27_i_r_r, 
+		 TOP_asm_27_ii_r_r, 
+		 TOP_asm_28_i_r_r, 
+		 TOP_asm_28_ii_r_r, 
+		 TOP_asm_29_i_r_r, 
+		 TOP_asm_29_ii_r_r, 
+		 TOP_asm_2_r_r_r, 
+		 TOP_asm_30_i_r_r, 
+		 TOP_asm_30_ii_r_r, 
+		 TOP_asm_31_i_r_r, 
+		 TOP_asm_31_ii_r_r, 
+		 TOP_asm_3_r_r_r, 
+		 TOP_asm_4_r_r_r, 
+		 TOP_asm_5_r_r_r, 
+		 TOP_asm_6_r_r_r, 
+		 TOP_asm_7_r_r_r, 
+		 TOP_asm_8_r_r_r, 
+		 TOP_asm_9_r_r_r, 
+		 TOP_cmpeqf_n_r_r_b, 
+		 TOP_cmpeqf_n_r_r_r, 
+		 TOP_cmpeq_r_r_b, 
+		 TOP_cmpeq_i_r_b, 
+		 TOP_cmpeq_ii_r_b, 
+		 TOP_cmpeq_r_r_r, 
+		 TOP_cmpeq_i_r_r, 
+		 TOP_cmpeq_ii_r_r, 
+		 TOP_cmpeq_pb_r_r_r, 
+		 TOP_cmpeq_pb_r_r_b, 
+		 TOP_cmpeq_ph_r_r_r, 
+		 TOP_cmpeq_ph_r_r_b, 
+		 TOP_cmpgef_n_r_r_b, 
+		 TOP_cmpgef_n_r_r_r, 
+		 TOP_cmpgeu_r_r_b, 
+		 TOP_cmpgeu_i_r_b, 
+		 TOP_cmpgeu_ii_r_b, 
+		 TOP_cmpgeu_r_r_r, 
+		 TOP_cmpgeu_i_r_r, 
+		 TOP_cmpgeu_ii_r_r, 
+		 TOP_cmpge_r_r_b, 
+		 TOP_cmpge_i_r_b, 
+		 TOP_cmpge_ii_r_b, 
+		 TOP_cmpge_r_r_r, 
+		 TOP_cmpge_i_r_r, 
+		 TOP_cmpge_ii_r_r, 
+		 TOP_cmpgtf_n_r_r_b, 
+		 TOP_cmpgtf_n_r_r_r, 
+		 TOP_cmpgtu_r_r_b, 
+		 TOP_cmpgtu_i_r_b, 
+		 TOP_cmpgtu_ii_r_b, 
+		 TOP_cmpgtu_r_r_r, 
+		 TOP_cmpgtu_i_r_r, 
+		 TOP_cmpgtu_ii_r_r, 
+		 TOP_cmpgtu_pb_r_r_r, 
+		 TOP_cmpgtu_pb_r_r_b, 
+		 TOP_cmpgt_r_r_b, 
+		 TOP_cmpgt_i_r_b, 
+		 TOP_cmpgt_ii_r_b, 
+		 TOP_cmpgt_r_r_r, 
+		 TOP_cmpgt_i_r_r, 
+		 TOP_cmpgt_ii_r_r, 
+		 TOP_cmpgt_ph_r_r_r, 
+		 TOP_cmpgt_ph_r_r_b, 
+		 TOP_cmplef_n_r_r_b, 
+		 TOP_cmplef_n_r_r_r, 
+		 TOP_cmpleu_r_r_b, 
+		 TOP_cmpleu_i_r_b, 
+		 TOP_cmpleu_ii_r_b, 
+		 TOP_cmpleu_r_r_r, 
+		 TOP_cmpleu_i_r_r, 
+		 TOP_cmpleu_ii_r_r, 
+		 TOP_cmple_r_r_b, 
+		 TOP_cmple_i_r_b, 
+		 TOP_cmple_ii_r_b, 
+		 TOP_cmple_r_r_r, 
+		 TOP_cmple_i_r_r, 
+		 TOP_cmple_ii_r_r, 
+		 TOP_cmpltf_n_r_r_b, 
+		 TOP_cmpltf_n_r_r_r, 
+		 TOP_cmpltu_r_r_b, 
+		 TOP_cmpltu_i_r_b, 
+		 TOP_cmpltu_ii_r_b, 
+		 TOP_cmpltu_r_r_r, 
+		 TOP_cmpltu_i_r_r, 
+		 TOP_cmpltu_ii_r_r, 
+		 TOP_cmplt_r_r_b, 
+		 TOP_cmplt_i_r_b, 
+		 TOP_cmplt_ii_r_b, 
+		 TOP_cmplt_r_r_r, 
+		 TOP_cmplt_i_r_r, 
+		 TOP_cmplt_ii_r_r, 
+		 TOP_cmpne_r_r_b, 
+		 TOP_cmpne_i_r_b, 
+		 TOP_cmpne_ii_r_b, 
+		 TOP_cmpne_r_r_r, 
+		 TOP_cmpne_i_r_r, 
+		 TOP_cmpne_ii_r_r, 
+		 TOP_divu_r_r_r, 
+		 TOP_div_r_r_r, 
+		 TOP_ext1_pb_r_r_r, 
+		 TOP_ext2_pb_r_r_r, 
+		 TOP_ext3_pb_r_r_r, 
+		 TOP_extractlu_i_r_r, 
+		 TOP_extractlu_ii_r_r, 
+		 TOP_extractl_i_r_r, 
+		 TOP_extractl_ii_r_r, 
+		 TOP_extractu_i_r_r, 
+		 TOP_extractu_ii_r_r, 
+		 TOP_extract_i_r_r, 
+		 TOP_extract_ii_r_r, 
+		 TOP_maxu_r_r_r, 
+		 TOP_maxu_i_r_r, 
+		 TOP_maxu_ii_r_r, 
+		 TOP_max_r_r_r, 
+		 TOP_max_i_r_r, 
+		 TOP_max_ii_r_r, 
+		 TOP_max_ph_r_r_r, 
+		 TOP_minu_r_r_r, 
+		 TOP_minu_i_r_r, 
+		 TOP_minu_ii_r_r, 
+		 TOP_min_r_r_r, 
+		 TOP_min_i_r_r, 
+		 TOP_min_ii_r_r, 
+		 TOP_min_ph_r_r_r, 
+		 TOP_mul32_r_r_r, 
+		 TOP_mul32_i_r_r, 
+		 TOP_mul32_ii_r_r, 
+		 TOP_mul64hu_r_r_r, 
+		 TOP_mul64hu_i_r_r, 
+		 TOP_mul64hu_ii_r_r, 
+		 TOP_mul64h_r_r_r, 
+		 TOP_mul64h_i_r_r, 
+		 TOP_mul64h_ii_r_r, 
+		 TOP_muladdus_pb_r_r_r, 
+		 TOP_muladd_ph_r_r_r, 
+		 TOP_mulfracadds_ph_r_r_r, 
+		 TOP_mulfracrm_ph_r_r_r, 
+		 TOP_mulfracrne_ph_r_r_r, 
+		 TOP_mulfrac_r_r_r, 
+		 TOP_mulfrac_i_r_r, 
+		 TOP_mulfrac_ii_r_r, 
+		 TOP_mulf_n_r_r_r, 
+		 TOP_mulhhs_r_r_r, 
+		 TOP_mulhhs_i_r_r, 
+		 TOP_mulhhs_ii_r_r, 
+		 TOP_mulhhu_r_r_r, 
+		 TOP_mulhhu_i_r_r, 
+		 TOP_mulhhu_ii_r_r, 
+		 TOP_mulhh_r_r_r, 
+		 TOP_mulhh_i_r_r, 
+		 TOP_mulhh_ii_r_r, 
+		 TOP_mulhs_r_r_r, 
+		 TOP_mulhs_i_r_r, 
+		 TOP_mulhs_ii_r_r, 
+		 TOP_mulhu_r_r_r, 
+		 TOP_mulhu_i_r_r, 
+		 TOP_mulhu_ii_r_r, 
+		 TOP_mulh_r_r_r, 
+		 TOP_mulh_i_r_r, 
+		 TOP_mulh_ii_r_r, 
+		 TOP_mullhus_r_r_r, 
+		 TOP_mullhus_i_r_r, 
+		 TOP_mullhus_ii_r_r, 
+		 TOP_mullhu_r_r_r, 
+		 TOP_mullhu_i_r_r, 
+		 TOP_mullhu_ii_r_r, 
+		 TOP_mullh_r_r_r, 
+		 TOP_mullh_i_r_r, 
+		 TOP_mullh_ii_r_r, 
+		 TOP_mulllu_r_r_r, 
+		 TOP_mulllu_i_r_r, 
+		 TOP_mulllu_ii_r_r, 
+		 TOP_mulll_r_r_r, 
+		 TOP_mulll_i_r_r, 
+		 TOP_mulll_ii_r_r, 
+		 TOP_mullu_r_r_r, 
+		 TOP_mullu_i_r_r, 
+		 TOP_mullu_ii_r_r, 
+		 TOP_mull_r_r_r, 
+		 TOP_mull_i_r_r, 
+		 TOP_mull_ii_r_r, 
+		 TOP_st240_mull_ii_r_r, 
+		 TOP_mul_ph_r_r_r, 
+		 TOP_nandl_r_r_b, 
+		 TOP_nandl_i_r_b, 
+		 TOP_nandl_ii_r_b, 
+		 TOP_nandl_r_r_r, 
+		 TOP_nandl_i_r_r, 
+		 TOP_nandl_ii_r_r, 
+		 TOP_nandl_b_b_b, 
+		 TOP_norl_r_r_b, 
+		 TOP_norl_i_r_b, 
+		 TOP_norl_ii_r_b, 
+		 TOP_norl_r_r_r, 
+		 TOP_norl_i_r_r, 
+		 TOP_norl_ii_r_r, 
+		 TOP_norl_b_b_b, 
+		 TOP_orc_r_r_r, 
+		 TOP_orc_i_r_r, 
+		 TOP_orc_ii_r_r, 
+		 TOP_orl_r_r_b, 
+		 TOP_orl_i_r_b, 
+		 TOP_orl_ii_r_b, 
+		 TOP_orl_r_r_r, 
+		 TOP_orl_i_r_r, 
+		 TOP_orl_ii_r_r, 
+		 TOP_orl_b_b_b, 
+		 TOP_or_r_r_r, 
+		 TOP_or_i_r_r, 
+		 TOP_or_ii_r_r, 
+		 TOP_packrnp_phh_r_r_r, 
+		 TOP_packsu_pb_r_r_r, 
+		 TOP_packs_ph_r_r_r, 
+		 TOP_pack_pb_r_r_r, 
+		 TOP_pack_ph_r_r_r, 
+		 TOP_perm_pb_r_r_r, 
+		 TOP_perm_pb_i_r_r, 
+		 TOP_perm_pb_ii_r_r, 
+		 TOP_pswmask_i_r_r, 
+		 TOP_pswmask_ii_r_r, 
+		 TOP_remu_r_r_r, 
+		 TOP_rem_r_r_r, 
+		 TOP_rotl_r_r_r, 
+		 TOP_rotl_i_r_r, 
+		 TOP_rotl_ii_r_r, 
+		 TOP_sadu_pb_r_r_r, 
+		 TOP_sh1addso_r_r_r, 
+		 TOP_sh1adds_r_r_r, 
+		 TOP_sh1add_r_r_r, 
+		 TOP_sh1add_i_r_r, 
+		 TOP_sh1add_ii_r_r, 
+		 TOP_sh1subso_r_r_r, 
+		 TOP_sh1subs_r_r_r, 
+		 TOP_sh2add_r_r_r, 
+		 TOP_sh2add_i_r_r, 
+		 TOP_sh2add_ii_r_r, 
+		 TOP_sh3add_r_r_r, 
+		 TOP_sh3add_i_r_r, 
+		 TOP_sh3add_ii_r_r, 
+		 TOP_sh4add_r_r_r, 
+		 TOP_sh4add_i_r_r, 
+		 TOP_sh4add_ii_r_r, 
+		 TOP_shlso_r_r_r, 
+		 TOP_shlso_i_r_r, 
+		 TOP_shlso_ii_r_r, 
+		 TOP_shls_r_r_r, 
+		 TOP_shls_i_r_r, 
+		 TOP_shls_ii_r_r, 
+		 TOP_shls_ph_r_r_r, 
+		 TOP_shls_ph_i_r_r, 
+		 TOP_shls_ph_ii_r_r, 
+		 TOP_shl_r_r_r, 
+		 TOP_shl_i_r_r, 
+		 TOP_shl_ii_r_r, 
+		 TOP_shl_ph_r_r_r, 
+		 TOP_shl_ph_i_r_r, 
+		 TOP_shl_ph_ii_r_r, 
+		 TOP_shrrne_ph_r_r_r, 
+		 TOP_shrrne_ph_i_r_r, 
+		 TOP_shrrne_ph_ii_r_r, 
+		 TOP_shrrnp_i_r_r, 
+		 TOP_shrrnp_ii_r_r, 
+		 TOP_shrrnp_ph_r_r_r, 
+		 TOP_shrrnp_ph_i_r_r, 
+		 TOP_shrrnp_ph_ii_r_r, 
+		 TOP_shru_r_r_r, 
+		 TOP_shru_i_r_r, 
+		 TOP_shru_ii_r_r, 
+		 TOP_shr_r_r_r, 
+		 TOP_shr_i_r_r, 
+		 TOP_shr_ii_r_r, 
+		 TOP_shr_ph_r_r_r, 
+		 TOP_shr_ph_i_r_r, 
+		 TOP_shr_ph_ii_r_r, 
+		 TOP_shuffeve_pb_r_r_r, 
+		 TOP_shuffodd_pb_r_r_r, 
+		 TOP_shuff_pbh_r_r_r, 
+		 TOP_shuff_pbl_r_r_r, 
+		 TOP_shuff_phh_r_r_r, 
+		 TOP_shuff_phl_r_r_r, 
+		 TOP_subf_n_r_r_r, 
+		 TOP_subso_r_r_r, 
+		 TOP_subs_r_r_r, 
+		 TOP_subs_ph_r_r_r, 
+		 TOP_sub_r_r_r, 
+		 TOP_sub_r_i_r, 
+		 TOP_sub_r_ii_r, 
+		 TOP_sub_ph_r_r_r, 
+		 TOP_sxt_r_r_r, 
+		 TOP_sxt_i_r_r, 
+		 TOP_sxt_ii_r_r, 
+		 TOP_xor_r_r_r, 
+		 TOP_xor_i_r_r, 
+		 TOP_xor_ii_r_r, 
+		 TOP_zxt_r_r_r, 
+		 TOP_zxt_i_r_r, 
+		 TOP_zxt_ii_r_r, 
+		 TOP_UNDEFINED); 
+
+  /* ================================= */ 
+
+  ISA_PRINT_TYPE print_8 = ISA_Print_Type_Create("print_8", "%s %s = %s, %s, %s"); 
   Name(); 
   Result(0); 
   Operand(0); 
   Operand(1); 
   Operand(2); 
 
-  Instruction_Print_Group(print_7, 
-		 TOP_ldbc_i, 
-		 TOP_ldbc_ii, 
-		 TOP_ldbuc_i, 
-		 TOP_ldbuc_ii, 
-		 TOP_ldhc_i, 
-		 TOP_ldhc_ii, 
-		 TOP_ldhuc_i, 
-		 TOP_ldhuc_ii, 
-		 TOP_ldlc_i, 
-		 TOP_ldlc_ii, 
-		 TOP_ldwc_i, 
-		 TOP_ldwc_ii, 
-		 TOP_multi_ldlc_i, 
-		 TOP_multi_ldlc_ii, 
+  Instruction_Print_Group(print_8, 
+		 TOP_avg4u_pb_r_r_b_r, 
+		 TOP_avgu_pb_r_r_b_r, 
+		 TOP_extl_pb_r_r_b_r, 
+		 TOP_extr_pb_r_r_b_r, 
+		 TOP_slctf_r_r_b_r, 
+		 TOP_slctf_i_r_b_r, 
+		 TOP_slctf_ii_r_b_r, 
+		 TOP_slctf_pb_r_r_b_r, 
+		 TOP_slctf_pb_i_r_b_r, 
+		 TOP_slctf_pb_ii_r_b_r, 
+		 TOP_slct_r_r_b_r, 
+		 TOP_slct_i_r_b_r, 
+		 TOP_slct_ii_r_b_r, 
+		 TOP_slct_pb_r_r_b_r, 
+		 TOP_slct_pb_i_r_b_r, 
+		 TOP_slct_pb_ii_r_b_r, 
+		 TOP_st240_slct_r_r_b_r, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
 
-  ISA_PRINT_TYPE print_8 = ISA_Print_Type_Create("print_8", "%s %s = %s[%s]"); 
+  ISA_PRINT_TYPE print_9 = ISA_Print_Type_Create("print_9", "%s %s = %s, %s[%s]"); 
   Name(); 
   Result(0); 
   Operand(0); 
   Operand(1); 
-
-  Instruction_Print_Group(print_8, 
-		 TOP_ldbu_d_i, 
-		 TOP_ldbu_d_ii, 
-		 TOP_ldbu_i, 
-		 TOP_ldbu_ii, 
-		 TOP_ldb_d_i, 
-		 TOP_ldb_d_ii, 
-		 TOP_ldb_i, 
-		 TOP_ldb_ii, 
-		 TOP_ldhu_d_i, 
-		 TOP_ldhu_d_ii, 
-		 TOP_ldhu_i, 
-		 TOP_ldhu_ii, 
-		 TOP_ldh_d_i, 
-		 TOP_ldh_d_ii, 
-		 TOP_ldh_i, 
-		 TOP_ldh_ii, 
-		 TOP_ldl_i, 
-		 TOP_ldl_ii, 
-		 TOP_ldw_d_i, 
-		 TOP_ldw_d_ii, 
-		 TOP_ldw_i, 
-		 TOP_ldw_ii, 
-		 TOP_multi_ldl_i, 
-		 TOP_multi_ldl_ii, 
-		 TOP_UNDEFINED); 
-
-  /* ================================= */ 
-
-  ISA_PRINT_TYPE print_9 = ISA_Print_Type_Create("print_9", "%s %s = [%s]"); 
-  Name(); 
-  Result(0); 
-  Operand(0); 
+  Operand(2); 
 
   Instruction_Print_Group(print_9, 
-		 TOP_ldwl, 
+		 TOP_ldbc_r_i_b_r, 
+		 TOP_ldbc_r_ii_b_r, 
+		 TOP_ldbuc_r_i_b_r, 
+		 TOP_ldbuc_r_ii_b_r, 
+		 TOP_ldhc_r_i_b_r, 
+		 TOP_ldhc_r_ii_b_r, 
+		 TOP_ldhuc_r_i_b_r, 
+		 TOP_ldhuc_r_ii_b_r, 
+		 TOP_ldlc_r_i_b_p, 
+		 TOP_ldlc_r_ii_b_p, 
+		 TOP_ldwc_r_i_b_r, 
+		 TOP_ldwc_r_ii_b_r, 
+		 TOP_multi_ldlc_r_i_b_r, 
+		 TOP_multi_ldlc_r_ii_b_r, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
 
-  ISA_PRINT_TYPE print_10 = ISA_Print_Type_Create("print_10", "%s %s, %s"); 
+  ISA_PRINT_TYPE print_10 = ISA_Print_Type_Create("print_10", "%s %s = %s[%s]"); 
   Name(); 
+  Result(0); 
   Operand(0); 
   Operand(1); 
 
   Instruction_Print_Group(print_10, 
-		 TOP_brf, 
-		 TOP_br, 
+		 TOP_ldbu_r_i_r, 
+		 TOP_ldbu_r_ii_r, 
+		 TOP_ldbu_d_r_i_r, 
+		 TOP_ldbu_d_r_ii_r, 
+		 TOP_ldb_r_i_r, 
+		 TOP_ldb_r_ii_r, 
+		 TOP_ldb_d_r_i_r, 
+		 TOP_ldb_d_r_ii_r, 
+		 TOP_ldhu_r_i_r, 
+		 TOP_ldhu_r_ii_r, 
+		 TOP_ldhu_d_r_i_r, 
+		 TOP_ldhu_d_r_ii_r, 
+		 TOP_ldh_r_i_r, 
+		 TOP_ldh_r_ii_r, 
+		 TOP_ldh_d_r_i_r, 
+		 TOP_ldh_d_r_ii_r, 
+		 TOP_ldl_r_i_p, 
+		 TOP_ldl_r_ii_p, 
+		 TOP_ldw_r_i_r, 
+		 TOP_ldw_r_ii_r, 
+		 TOP_ldw_d_r_i_r, 
+		 TOP_ldw_d_r_ii_r, 
+		 TOP_multi_ldl_r_i_r, 
+		 TOP_multi_ldl_r_ii_r, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
 
-  ISA_PRINT_TYPE print_11 = ISA_Print_Type_Create("print_11", "%s %s, %s = %s, %s, %s"); 
+  ISA_PRINT_TYPE print_11 = ISA_Print_Type_Create("print_11", "%s %s = [%s]"); 
+  Name(); 
+  Result(0); 
+  Operand(0); 
+
+  Instruction_Print_Group(print_11, 
+		 TOP_ldwl_r_r, 
+		 TOP_UNDEFINED); 
+
+  /* ================================= */ 
+
+  ISA_PRINT_TYPE print_12 = ISA_Print_Type_Create("print_12", "%s %s, %s"); 
+  Name(); 
+  Operand(0); 
+  Operand(1); 
+
+  Instruction_Print_Group(print_12, 
+		 TOP_brf_i_b, 
+		 TOP_br_i_b, 
+		 TOP_UNDEFINED); 
+
+  /* ================================= */ 
+
+  ISA_PRINT_TYPE print_13 = ISA_Print_Type_Create("print_13", "%s %s, %s = %s, %s, %s"); 
   Name(); 
   Result(0); 
   Result(1); 
@@ -912,113 +1179,113 @@ main()
   Operand(1); 
   Operand(2); 
 
-  Instruction_Print_Group(print_11, 
-		 TOP_addcg, 
-		 TOP_divs, 
+  Instruction_Print_Group(print_13, 
+		 TOP_addcg_b_r_r_b_r, 
+		 TOP_divs_b_r_r_b_r, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
 
-  ISA_PRINT_TYPE print_12 = ISA_Print_Type_Create("print_12", "%s %s, %s[%s]"); 
+  ISA_PRINT_TYPE print_14 = ISA_Print_Type_Create("print_14", "%s %s, %s[%s]"); 
   Name(); 
   Operand(0); 
   Operand(1); 
   Operand(2); 
 
-  Instruction_Print_Group(print_12, 
-		 TOP_pftc_i, 
-		 TOP_pftc_ii, 
+  Instruction_Print_Group(print_14, 
+		 TOP_pftc_r_i_b, 
+		 TOP_pftc_r_ii_b, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
 
-  ISA_PRINT_TYPE print_13 = ISA_Print_Type_Create("print_13", "%s %s, [%s] = %s"); 
+  ISA_PRINT_TYPE print_15 = ISA_Print_Type_Create("print_15", "%s %s, [%s] = %s"); 
   Name(); 
   Result(0); 
   Operand(0); 
   Operand(1); 
 
-  Instruction_Print_Group(print_13, 
-		 TOP_stwl, 
+  Instruction_Print_Group(print_15, 
+		 TOP_stwl_r_r_b, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
 
-  ISA_PRINT_TYPE print_14 = ISA_Print_Type_Create("print_14", "%s %s[%s]"); 
+  ISA_PRINT_TYPE print_16 = ISA_Print_Type_Create("print_16", "%s %s[%s]"); 
   Name(); 
   Operand(0); 
   Operand(1); 
 
-  Instruction_Print_Group(print_14, 
-		 TOP_pft_i, 
-		 TOP_pft_ii, 
-		 TOP_prgadd_i, 
-		 TOP_prgadd_ii, 
-		 TOP_prginsadd_i, 
-		 TOP_prginsadd_ii, 
-		 TOP_prginspg_i, 
-		 TOP_prginspg_ii, 
-		 TOP_prgset_i, 
-		 TOP_prgset_ii, 
+  Instruction_Print_Group(print_16, 
+		 TOP_flushadd_r_i, 
+		 TOP_flushadd_r_ii, 
+		 TOP_flushadd_l1_r_i, 
+		 TOP_flushadd_l1_r_ii, 
+		 TOP_invadd_r_i, 
+		 TOP_invadd_r_ii, 
+		 TOP_invadd_l1_r_i, 
+		 TOP_invadd_l1_r_ii, 
+		 TOP_pft_r_i, 
+		 TOP_pft_r_ii, 
+		 TOP_prgadd_r_i, 
+		 TOP_prgadd_r_ii, 
+		 TOP_prgadd_l1_r_i, 
+		 TOP_prgadd_l1_r_ii, 
+		 TOP_prginsadd_r_i, 
+		 TOP_prginsadd_r_ii, 
+		 TOP_prginsadd_l1_r_i, 
+		 TOP_prginsadd_l1_r_ii, 
+		 TOP_prginspg_r_i, 
+		 TOP_prginspg_r_ii, 
+		 TOP_prginsset_r_i, 
+		 TOP_prginsset_r_ii, 
+		 TOP_prginsset_l1_r_i, 
+		 TOP_prginsset_l1_r_ii, 
+		 TOP_prgset_r_i, 
+		 TOP_prgset_r_ii, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
 
-  ISA_PRINT_TYPE print_15 = ISA_Print_Type_Create("print_15", "%s %s[%s] = %s"); 
+  ISA_PRINT_TYPE print_17 = ISA_Print_Type_Create("print_17", "%s %s[%s] = %s"); 
   Name(); 
   Operand(0); 
   Operand(1); 
   Operand(2); 
 
-  Instruction_Print_Group(print_15, 
-		 TOP_multi_stl_i, 
-		 TOP_multi_stl_ii, 
-		 TOP_stb_i, 
-		 TOP_stb_ii, 
-		 TOP_sth_i, 
-		 TOP_sth_ii, 
-		 TOP_stl_i, 
-		 TOP_stl_ii, 
-		 TOP_stw_i, 
-		 TOP_stw_ii, 
+  Instruction_Print_Group(print_17, 
+		 TOP_multi_stl_r_r_i, 
+		 TOP_multi_stl_r_r_ii, 
+		 TOP_stb_r_r_i, 
+		 TOP_stb_r_r_ii, 
+		 TOP_sth_r_r_i, 
+		 TOP_sth_r_r_ii, 
+		 TOP_stl_p_r_i, 
+		 TOP_stl_p_r_ii, 
+		 TOP_stw_r_r_i, 
+		 TOP_stw_r_r_ii, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
 
-  ISA_PRINT_TYPE print_16 = ISA_Print_Type_Create("print_16", "%s %s[%s] = %s, %s"); 
+  ISA_PRINT_TYPE print_18 = ISA_Print_Type_Create("print_18", "%s %s[%s] = %s, %s"); 
   Name(); 
   Operand(0); 
   Operand(1); 
   Operand(2); 
   Operand(3); 
 
-  Instruction_Print_Group(print_16, 
-		 TOP_multi_stlc_i, 
-		 TOP_multi_stlc_ii, 
-		 TOP_stbc_i, 
-		 TOP_stbc_ii, 
-		 TOP_sthc_i, 
-		 TOP_sthc_ii, 
-		 TOP_stlc_i, 
-		 TOP_stlc_ii, 
-		 TOP_stwc_i, 
-		 TOP_stwc_ii, 
-		 TOP_UNDEFINED); 
-
-  /* ================================= */ 
-
-  ISA_PRINT_TYPE print_17 = ISA_Print_Type_Create("print_17", "call $r63 = $r63"); 
-
-  Instruction_Print_Group(print_17, 
-		 TOP_icall, 
-		 TOP_UNDEFINED); 
-
-  /* ================================= */ 
-
-  ISA_PRINT_TYPE print_18 = ISA_Print_Type_Create("print_18", "goto $r63"); 
-
   Instruction_Print_Group(print_18, 
-		 TOP_igoto, 
+		 TOP_multi_stlc_r_b_r_i, 
+		 TOP_multi_stlc_r_b_r_ii, 
+		 TOP_stbc_r_b_r_i, 
+		 TOP_stbc_r_b_r_ii, 
+		 TOP_sthc_r_b_r_i, 
+		 TOP_sthc_r_b_r_ii, 
+		 TOP_stlc_p_b_r_i, 
+		 TOP_stlc_p_b_r_ii, 
+		 TOP_stwc_r_b_r_i, 
+		 TOP_stwc_r_b_r_ii, 
 		 TOP_UNDEFINED); 
 
 
