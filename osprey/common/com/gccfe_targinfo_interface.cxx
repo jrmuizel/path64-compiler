@@ -37,12 +37,19 @@
 #include "targ_sim.h"
 #include "targ_isa_registers.h"
 #include "targ_abi_properties.h"
-#include "register_preg.h" // For CGTARG_Regclass_Preg_Min
-#include <ctype.h> //TB: for tower()
+#include "register_preg.h"        // For CGTARG_Regclass_Preg_Min
+#include "targ_register_common.h" // For CGTARG_Register_Class_Num_From_Name
+#include <ctype.h>                // For tower()
+extern "C" {
+extern void error (char*,...);    // From gnu
+}
+
 
 //TB: for extension, make ADDITIONAL_REGISTER_NAMES a real array
 static gcc_register_map_t *Additional_Register_Names_Var;
 static int Additional_Register_Names_Size_Var;
+
+static int Register_Class_To_gcc_Reg[ISA_REGISTER_CLASS_MAX_LIMIT+1];
 
 static char *Initial_Call_Used_Regs_Var;
 static char *Initial_Fixed_Regs_Var;
@@ -174,6 +181,7 @@ Initialize_Gcc_reg(void) {
     int preg_max = CGTARG_Regclass_Preg_Max(rclass);
     FmtAssert (((preg_max - preg_min) == register_count - 1),
       ("PREG range is not compatible with register class info for %d reg cladd", rclass));
+    Register_Class_To_gcc_Reg[rclass] = gcc_index;
     for (i = 0; i < register_count; ++i) {
       INT      isa_reg        = i + first_isa_reg;
       const char *reg_name = ISA_REGISTER_CLASS_INFO_Reg_Name(icinfo, isa_reg);
@@ -196,6 +204,7 @@ Initialize_Gcc_reg(void) {
 
       Additional_Register_Names_Var[gcc_index].name = temp;
       Additional_Register_Names_Var[gcc_index].number = gcc_index;
+      Additional_Register_Names_Var[gcc_index].disabled = 0;
       //For the moment all regs are not call used.
       Initial_Call_Used_Regs_Var[gcc_index] = gcc_is_fixed || is_caller;
       Initial_Fixed_Regs_Var[gcc_index] = gcc_is_fixed;
@@ -212,6 +221,98 @@ Initialize_Gcc_reg(void) {
   }
 }
 
+// From the register name passed on argument, retrieve the associated
+// Gcc register id and mark it with 'disabled' flag.
+static void Disable_Gcc_Reg(const char *regname) {
+  int regnum;
+  ISA_REGISTER_CLASS rclass = CGTARG_Register_Class_Num_From_Name(regname, &regnum);
+
+  if (rclass == ISA_REGISTER_CLASS_UNDEFINED) {
+    error("Invalid disabled register `%s'", regname);
+    return;
+  }
+
+  int gcc_index = Register_Class_To_gcc_Reg[rclass] + regnum;
+
+  Additional_Register_Names_Var[gcc_index].disabled = 1;
+}
+
+// From the 2 register names passed on argument, retrieve the associated
+// Gcc register ids and mark all register in range [reg1, reg2] with
+// 'disabled' flag.
+static void Disable_Gcc_Reg_Range(const char *regname1, const char *regname2) {
+  int i;
+  int regnum1, regnum2;
+  ISA_REGISTER_CLASS rclass1, rclass2;
+
+  rclass1 = CGTARG_Register_Class_Num_From_Name(regname1, &regnum1);
+  rclass2 = CGTARG_Register_Class_Num_From_Name(regname2, &regnum2);
+
+  if (rclass1 == ISA_REGISTER_CLASS_UNDEFINED || rclass1 != rclass2 || regnum1 > regnum2) {
+    error("Invalid disabled register range `%s-%s'", regname1, regname2);
+    return;
+  }
+
+  int gcc_index_min = Register_Class_To_gcc_Reg[rclass1] + regnum1;
+  int gcc_index_max = Register_Class_To_gcc_Reg[rclass1] + regnum2;
+
+  for (i = gcc_index_min; i <= gcc_index_max; i++) {
+    Additional_Register_Names_Var[i].disabled = 1;
+  }
+}
+
+// Mark disabled Gcc registers based on command line option -mdisabled-reg
+extern void GCCTARG_Mark_Disabled_Gcc_Reg() {
+  OPTION_LIST *ol = Disabled_Registers;
+  char *start;
+  char *p;
+  char regname[16];
+  char regname2[16];
+
+  // Go through command-line list
+  if (ol == NULL) return;
+  for ( ; ol != NULL; ol = OLIST_next(ol)) {
+
+    /* Check for commas and ranges: */
+    p = OLIST_val(ol);
+    start = p;
+    while ( *p != ':' && *p != 0 ) {
+      if ( *p == ',') {
+	strncpy (regname, start, p-start+1);
+	regname[p-start] = '\0';
+	Disable_Gcc_Reg(regname);
+	++p;
+	start = p;
+      }
+      else if (*p == '-' ) {
+	strncpy (regname, start, p-start+1);
+	regname[p-start] = '\0';
+	++p;
+	start = p;
+	while (*p != ',' && *p != '\0') {
+	  ++p;
+	}
+	strncpy (regname2, start, p-start+1);
+	regname2[p-start] = '\0';
+	Disable_Gcc_Reg_Range(regname, regname2);
+	if (*p == 0) {
+	  start = 0;
+	  break;
+	}
+	++p;
+	start = p;
+      }
+      else {
+	++p;
+      }
+    }
+    if (start != 0) {
+      strncpy (regname, start, p-start+1);
+      Disable_Gcc_Reg(regname);
+    }
+  }
+  return;
+}
 
 
 #endif //FRONT_END

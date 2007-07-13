@@ -63,6 +63,9 @@ extern int GCCTARG_Initial_Number_Of_Registers();
 // This function is called by GCCTARG_Configure_Gcc_From_Targinfo
 extern void TI_Initialize_Extension_Loader(void);
 
+// [TTh] Mark disabled Gcc registers based on command line option -mdisabled-reg
+extern void GCCTARG_Mark_Disabled_Gcc_Reg();
+
 #ifdef __cplusplus
 }
 #endif
