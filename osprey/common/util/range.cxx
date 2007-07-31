@@ -588,8 +588,7 @@ Range::isNonNegative () const
 BOOL
 Range::isLiteral () const
 {
-  // Recall: comparison returns false if either is non-finite.
-  return ! isEmpty () && min == max;
+  return ! isEmpty () && min.isFinite () && min == max;
 }
 
 INT64
