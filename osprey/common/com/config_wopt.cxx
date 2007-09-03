@@ -265,7 +265,7 @@ BOOL  WOPT_Enable_FPFSA = TRUE; // Enables fix point flow sensitive analysis
 BOOL WOPT_Enable_Warn_Uninit = FALSE;   // enable warning for detected uninitialized locals
 BOOL WOPT_Enable_Tailmerge = FALSE;     // enable tailmerge optimization
 BOOL WOPT_Enable_Compare_Hoisting=TRUE;  //enable hoisting of compare expression
-
+BOOL WOPT_Enable_Flow_Simplification_In_Tailmerge = FALSE;   // enable flow simplification in tailmerge optimization
 #endif
 
 
@@ -632,6 +632,8 @@ static OPTION_DESC Options_WOPT[] = {
     0, 0, 0,	&WOPT_Enable_Tailmerge, NULL },
  { OVK_BOOL,	OV_INTERNAL,	TRUE, "compare_hoisting", "",
     0, 0, 0,	&WOPT_Enable_Compare_Hoisting, NULL },
+  { OVK_BOOL,	OV_INTERNAL,	TRUE, "simp_flow_in_tailmerge_opt",		"",
+    0, 0, 0,	&WOPT_Enable_Flow_Simplification_In_Tailmerge, NULL },
 #endif
 
   { OVK_COUNT }		/* List terminator -- must be last */
