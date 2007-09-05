@@ -110,21 +110,6 @@ INT EXTENSION_get_Min_Offset(ISA_REGISTER_CLASS rc) {
 }
 
 /*
- * Return TRUE if the parameter intrinsic Id belongs to an extension
- */
-BOOL EXTENSION_Is_Extension_INTRINSIC(INTRINSIC id) {
-  return (id > INTRINSIC_STATIC_COUNT && id <= INTRINSIC_COUNT);
-}
-
-/*
- * Return TRUE if the parameter register class rc belongs to an extension
- */
-BOOL EXTENSION_Is_Extension_REGISTER_CLASS(ISA_REGISTER_CLASS rc) {
-  return (rc > ISA_REGISTER_CLASS_STATIC_MAX && rc <= ISA_REGISTER_CLASS_MAX);
-}
-
-
-/*
  * Return the name of the extension containing the specified INTRINSIC id,
  * or NULL if not found
  */
@@ -373,6 +358,39 @@ TOP EXTENSION_TOP_AM_automod_variant(TOP top,
   }
 
   return (TOP_UNDEFINED);
+}
+
+/**
+ * @see lai_loader_api.h
+ */
+INT EXTENSION_Get_REGISTER_CLASS_Optimal_Alignment(ISA_REGISTER_CLASS rc, INT size) {
+  INT min_size;
+  const extension_regclass_t *rc_info;
+  if (rc <= ISA_REGISTER_CLASS_STATIC_MAX || rc > ISA_REGISTER_CLASS_MAX) {
+    return size; // Non-extension register class
+  }
+
+  rc_info  = EXTENSION_get_REGISTER_CLASS_info(rc);
+  min_size = ISA_REGISTER_CLASS_INFO_Bit_Size(ISA_REGISTER_CLASS_Info(rc)) / 8;
+
+  while (size >= min_size &&
+	 (TOP_UNDEFINED == rc_info->get_load_TOP(/* reg size     */size,
+						 /* base_type    */AM_BASE_DEFAULT,
+						 /* offs_is_imm  */true,
+						 /* offs_is_incr */true)) &&
+	 (TOP_UNDEFINED == rc_info->get_store_TOP(/* reg size     */size,
+						  /* base_type    */AM_BASE_DEFAULT,
+						  /* offs_is_imm  */true,
+						  /* offs_is_incr */true))) {
+    size /= 2;
+  }
+
+  if (size >= min_size) {
+    return size;
+  } else {
+    // No load/store available for current register class, core load/store will be used.
+    return 4;
+  }
 }
 
 /* ===========================================================================

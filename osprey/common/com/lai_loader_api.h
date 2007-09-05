@@ -39,8 +39,19 @@ BE_EXPORTED extern int EXTENSION_PREG_to_REGISTER_NUM(PREG_NUM preg);
 BE_EXPORTED extern INT EXTENSION_get_Min_Offset(ISA_REGISTER_CLASS rc);
 
 /*
+ * Return TRUE if the parameter intrinsic Id belongs to an extension
+ */
+inline BOOL EXTENSION_Is_Extension_INTRINSIC(INTRINSIC id) {
+  return (id > INTRINSIC_STATIC_COUNT && id <= INTRINSIC_COUNT);
+}
+
+/*
  * Return TRUE if the parameter register class rc belongs to an extension
  */
+inline BOOL EXTENSION_Is_Extension_REGISTER_CLASS(ISA_REGISTER_CLASS rc) {
+  return (rc > ISA_REGISTER_CLASS_STATIC_MAX && rc <= ISA_REGISTER_CLASS_MAX);
+}
+
 BE_EXPORTED extern BOOL EXTENSION_Is_Extension_REGISTER_CLASS(ISA_REGISTER_CLASS rc);
 
 BE_EXPORTED extern BOOL EXTENSION_Is_Extension_INTRINSIC(INTRINSIC id);
@@ -94,6 +105,18 @@ BE_EXPORTED extern INT EXTENSION_get_REGISTER_SUBCLASS_bit_size(ISA_REGISTER_SUB
  * @return The maximum bit size for given register class
  */
 BE_EXPORTED extern INT EXTENSION_get_REGISTER_CLASS_max_bit_size(ISA_REGISTER_CLASS rc);
+
+/**
+ * Return the smallest alignment that will allow the generation of optimal
+ * load and store sequences (minimum number of instructions) for the
+ * specified register type (class + size).
+ *
+ * @param  rc is a register class
+ * @param  size is the width of the register type (in bytes)
+ *
+ * @return The optimal alignment (in bytes)
+ */
+BE_EXPORTED extern INT EXTENSION_Get_REGISTER_CLASS_Optimal_Alignment(ISA_REGISTER_CLASS rc, INT size);
 
 #endif /* BACK_END */
 
