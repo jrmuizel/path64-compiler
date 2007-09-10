@@ -42,7 +42,7 @@
 #include "topcode.h" 
 #include "isa_print_gen.h" 
 
-static const char *mnemonic_names[528] = { 
+static const char *mnemonic_names[531] = { 
   "abss.ph", 	 /* TOP_abss_ph_r_r */  
   "absubu.pb", 	 /* TOP_absubu_pb_r_r_r */  
   "addcg", 	 /* TOP_addcg_b_r_r_b_r */  
@@ -214,6 +214,7 @@ static const char *mnemonic_names[528] = {
   "convif.n", 	 /* TOP_convif_n_r_r */  
   "COPY", 	 /* TOP_COPY */  
   "dbgsbrk", 	 /* TOP_dbgsbrk */  
+  "dib", 	 /* TOP_dib */  
   "divs", 	 /* TOP_divs_b_r_r_b_r */  
   "divu", 	 /* TOP_divu_r_r_r */  
   "div", 	 /* TOP_div_r_r_r */  
@@ -437,6 +438,8 @@ static const char *mnemonic_names[528] = {
   "prginsset.l1", 	 /* TOP_prginsset_l1_r_ii */  
   "prgset", 	 /* TOP_prgset_r_i */  
   "prgset", 	 /* TOP_prgset_r_ii */  
+  "prgset.l1", 	 /* TOP_prgset_l1_r_i */  
+  "prgset.l1", 	 /* TOP_prgset_l1_r_ii */  
   "PSI", 	 /* TOP_psi */  
   "pswclr", 	 /* TOP_pswclr_r */  
   "pswmask", 	 /* TOP_pswmask_i_r_r */  
@@ -624,6 +627,7 @@ main()
 
   Instruction_Print_Group(print_3, 
 		 TOP_break, 
+		 TOP_dib, 
 		 TOP_idle, 
 		 TOP_nop, 
 		 TOP_prgins, 
@@ -1243,6 +1247,8 @@ main()
 		 TOP_prginsset_l1_r_ii, 
 		 TOP_prgset_r_i, 
 		 TOP_prgset_r_ii, 
+		 TOP_prgset_l1_r_i, 
+		 TOP_prgset_l1_r_ii, 
 		 TOP_UNDEFINED); 
 
   /* ================================= */ 
