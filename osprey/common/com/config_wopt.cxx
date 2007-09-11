@@ -266,6 +266,10 @@ BOOL WOPT_Enable_Warn_Uninit = FALSE;   // enable warning for detected uninitial
 BOOL WOPT_Enable_Tailmerge = FALSE;     // enable tailmerge optimization
 BOOL WOPT_Enable_Compare_Hoisting=TRUE;  //enable hoisting of compare expression
 BOOL WOPT_Enable_Flow_Simplification_In_Tailmerge = FALSE;   // enable flow simplification in tailmerge optimization
+// FdF 20070731: 0 means never, 1 means biased for code size, 2 means
+// biased for performance, 3 means always.
+INT32 WOPT_Enable_DoWhile_Conversion = 3;
+BOOL WOPT_Enable_DoWhile_Conversion_Set = FALSE;
 #endif
 
 
@@ -632,6 +636,8 @@ static OPTION_DESC Options_WOPT[] = {
     0, 0, 0,	&WOPT_Enable_Tailmerge, NULL },
  { OVK_BOOL,	OV_INTERNAL,	TRUE, "compare_hoisting", "",
     0, 0, 0,	&WOPT_Enable_Compare_Hoisting, NULL },
+  { OVK_INT32,	OV_INTERNAL,	TRUE, "dowhile_conversion",		"",
+    1, 0, 3,	&WOPT_Enable_DoWhile_Conversion, &WOPT_Enable_DoWhile_Conversion_Set },
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "simp_flow_in_tailmerge_opt",		"",
     0, 0, 0,	&WOPT_Enable_Flow_Simplification_In_Tailmerge, NULL },
 #endif
