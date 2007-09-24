@@ -35,18 +35,18 @@
 
 #ifndef LOADER_INTERNAL_H
 #define LOADER_INTERNAL_H
-#include "dyn_isa_api.h"
+#include "dyn_isa_api_access.h"
+#include "dyn_dll_api_access.h"
 
 // ==================================================================
 // This structure contains information shared by the various targinfo 
 // initializer functions
 // ==================================================================
 struct Lai_Loader_Info {
-  BOOL trace_on; // debug trace on?
-  int  nb_ext;
-  const extension_hooks_t   **hooks_tab;
-  const ISA_EXT_Interface_t **ISA_tab;
-  const Extension_dll_t      *dll_tab;
+  BOOL                     trace_on; // debug trace on?
+  int                      nb_ext;
+  EXTENSION_ISA_Info     **ISA_tab;
+  const Extension_dll_t   *dll_tab;
 
   // Base offsets for each element of each extension
   // (only those that need to be global are here)
@@ -57,7 +57,6 @@ struct Lai_Loader_Info {
   int  *base_ENUM_CLASS_VALUE;
   int  *base_REGISTER_CLASS;
   int  *base_REGISTER_SUBCLASS;
-  //TB: add support to extend PREG
   int  *base_PREG;
 };
 
@@ -66,7 +65,7 @@ typedef struct Lai_Loader_Info Lai_Loader_Info_t;
 // ===================
 // Register class data
 // ===================
-extern const extension_regclass_t **extension_regclass_table;
+extern const EXTENSION_Regclass_Info **extension_regclass_table;
 //TB: tables to save PREG-> reg class association
 //extern ISA_REGISTER_CLASS *extension_Preg_To_RegClass_table;
 //TB: tables to save PREG-> reg number association

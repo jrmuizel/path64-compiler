@@ -37,7 +37,7 @@
  *
  */
 #include "../gccfe/extension_include.h"
-#include "dyn_dll_api.h"
+#include "dyn_dll_api_access.h"
 #include "loader.h"
 #include "erglob.h"
 #include "errors.h"
@@ -47,7 +47,7 @@
 #include <stdlib.h>
 
 #ifdef BACK_END
-#include "dyn_isa_api.h"
+#include "dyn_isa_api_access.h"
 #undef inline
 #include "symtab_idx.h"
 #include "targ_sim.h"
@@ -89,12 +89,12 @@ static Lai_Loader_Info_t *global_ext_info_table;
 /*
  * Return a pointer to the description of extension register class
  */
-const extension_regclass_t *EXTENSION_get_REGISTER_CLASS_info(ISA_REGISTER_CLASS rc) {
+const EXTENSION_Regclass_Info *EXTENSION_get_REGISTER_CLASS_info(ISA_REGISTER_CLASS rc) {
   FmtAssert((extension_regclass_table!=NULL), ("Unexpected NULL extension_regclass_table"));
   if (rc > ISA_REGISTER_CLASS_STATIC_MAX && rc <= ISA_REGISTER_CLASS_MAX) {
     return (extension_regclass_table[rc - (ISA_REGISTER_CLASS_STATIC_MAX+1)]);
   }
-  return ((const extension_regclass_t*)NULL);
+  return ((EXTENSION_Regclass_Info*)NULL);
 }
 
 /*
@@ -365,7 +365,7 @@ TOP EXTENSION_TOP_AM_automod_variant(TOP top,
  */
 INT EXTENSION_Get_REGISTER_CLASS_Optimal_Alignment(ISA_REGISTER_CLASS rc, INT size) {
   INT min_size;
-  const extension_regclass_t *rc_info;
+  const EXTENSION_Regclass_Info *rc_info;
   if (rc <= ISA_REGISTER_CLASS_STATIC_MAX || rc > ISA_REGISTER_CLASS_MAX) {
     return size; // Non-extension register class
   }
@@ -1145,7 +1145,7 @@ static void Initialize_ISA_Hazards(Lai_Loader_Info_t &ext_info) {
  * ===========================================================================*/
 static void Initialize_SI(Lai_Loader_Info_t &ext_info,
 			  MEM_POOL        &tmp_mempool) {
-  const extension_si_t ** ext_proc_si_info;
+  const EXTENSION_SI_Info ** ext_proc_si_info;
   int  ext, j;
   // ...ptrs to newly allocated tables
   SI            **top_si_tab;
@@ -1190,7 +1190,7 @@ static void Initialize_SI(Lai_Loader_Info_t &ext_info,
   }
 
   // Allocate temporary memory for SI pointers
-  ext_proc_si_info          = TYPE_MEM_POOL_ALLOC_N(const extension_si_t*, &tmp_mempool, ext_info.nb_ext);
+  ext_proc_si_info          = TYPE_MEM_POOL_ALLOC_N(const EXTENSION_SI_Info*, &tmp_mempool, ext_info.nb_ext);
   static_res_count_in_ext   = TYPE_MEM_POOL_ALLOC_N(int, &tmp_mempool, ext_info.nb_ext);
   static_islot_count_in_ext = TYPE_MEM_POOL_ALLOC_N(int, &tmp_mempool, ext_info.nb_ext);
   nb_static_bits_in_ext     = TYPE_MEM_POOL_ALLOC_N(int, &tmp_mempool, ext_info.nb_ext);
@@ -1211,9 +1211,9 @@ static void Initialize_SI(Lai_Loader_Info_t &ext_info,
     //       single scheduling description will be available for an extension
     for (j=0; j < (int)ext_info.ISA_tab[ext]->get_scheduling_info_tab_sz(); j++) {
       if ((j==0) /*patch to take the first si, even if the processor name is not the same */ ||
-	  !strcmp(ext_info.ISA_tab[ext]->get_scheduling_info_tab()[j].get_processor_name(),
+	  !strcmp(ext_info.ISA_tab[ext]->get_Scheduling_Info_Access_tab()[j].get_processor_name(),
 		  proc_name)) {
-	ext_proc_si_info[ext] = &(ext_info.ISA_tab[ext]->get_scheduling_info_tab()[j]);
+	ext_proc_si_info[ext] = &(ext_info.ISA_tab[ext]->get_Scheduling_Info_Access_tab()[j]);
 	break;
       }
     }
@@ -1874,18 +1874,11 @@ void Lai_Initialize_Extension_Loader (int nb_ext, const Extension_dll_t *ext_int
   MEM_POOL_Initialize(&lai_loader_pool, "lai loader temporary memory", FALSE);
   MEM_POOL_Push(&lai_loader_pool);
 
-  const extension_hooks_t **ext_tab;
-  ext_tab = TYPE_MEM_POOL_ALLOC_N(const extension_hooks_t*, Malloc_Mem_Pool, nb_ext);
-  for (ext=0; ext<nb_ext; ext++) {
-    ext_tab[ext] = ext_inter_tab[ext].hooks;
-  }
-
   // Allocate and initialize Lai specific extension table
   ext_info = TYPE_MEM_POOL_ALLOC_N(Lai_Loader_Info_t, Malloc_Mem_Pool, 1);
   global_ext_info_table = ext_info;
 
   ext_info->nb_ext    = nb_ext;
-  ext_info->hooks_tab = ext_tab;
   ext_info->trace_on  = Get_Trace(TP_EXTLOAD, 0xffffffff);
   ext_info->dll_tab   = ext_inter_tab;
 
@@ -1894,7 +1887,7 @@ void Lai_Initialize_Extension_Loader (int nb_ext, const Extension_dll_t *ext_int
   }
 
   // Base offset for each element of each extension
-  ext_info->ISA_tab                = TYPE_MEM_POOL_ALLOC_N(const ISA_EXT_Interface_t*, Malloc_Mem_Pool, nb_ext);
+  ext_info->ISA_tab                = TYPE_MEM_POOL_ALLOC_N(EXTENSION_ISA_Info*, Malloc_Mem_Pool, nb_ext);
   ext_info->base_TOP               = TYPE_MEM_POOL_ALLOC_N(int, Malloc_Mem_Pool, nb_ext);
   ext_info->base_INTRINSIC         = TYPE_MEM_POOL_ALLOC_N(int, Malloc_Mem_Pool, nb_ext);
   ext_info->base_LIT_CLASS         = TYPE_MEM_POOL_ALLOC_N(int, Malloc_Mem_Pool, nb_ext);
@@ -1914,22 +1907,9 @@ void Lai_Initialize_Extension_Loader (int nb_ext, const Extension_dll_t *ext_int
   int subrc_max = ISA_REGISTER_SUBCLASS_STATIC_MAX;
   int preg_max = Get_Static_Last_Dedicated_Preg_Offset();
   for (ext=0; ext < nb_ext; ext++) {
-    get_isa_extension_instance_t get_instance;
-    get_instance = (get_isa_extension_instance_t)Get_dll_Symbol(&ext_inter_tab[ext], "get_isa_extension_instance");
-    if (get_instance == NULL) {
-      sprintf(err_msg, "Unable to find symbol get_isa_extension_instance (%s)", dlerror());
-      RaiseErrorIncompatibleLibrary(ext_inter_tab[ext].dllname, err_msg);
-    }
-    ext_info->ISA_tab[ext] = (*get_instance)();
-    
-    /* Coherency check - magic number */
-    if (MAGIC_NUMBER_EXT_ISA_API != ext_info->ISA_tab[ext]->magic) {
-      char err_msg[256];
-      sprintf(err_msg,
-	      "Incompatible magic number (lib:0x%08x, API:0x%08x).",
-	      ext_info->ISA_tab[ext]->magic, MAGIC_NUMBER_EXT_ISA_API);
-      RaiseErrorIncompatibleLibrary(ext_inter_tab[ext].dllname, err_msg);
-    }
+
+    // Get ISA Extension description accessor
+    ext_info->ISA_tab[ext] = Generate_EXTENSION_ISA_Info(&ext_inter_tab[ext], ext_info->trace_on);
 
     ext_info->base_TOP[ext] = nb_top;
     nb_top += ext_info->ISA_tab[ext]->get_TOP_count();
@@ -2041,13 +2021,13 @@ void Lai_Initialize_Extension_Loader (int nb_ext, const Extension_dll_t *ext_int
 						      ((INTRINSIC_COUNT-INTRINSIC_STATIC_COUNT) + 1));
 
     for (ext=0; ext<nb_ext; ext++) {
-      int intrn_in_ext = ext_tab[ext]->get_builtins_count();
+      int intrn_in_ext = ext_info->dll_tab[ext].hooks->get_builtins_count();
       if (intrn_in_ext > 0) {
 	if (ext_info->trace_on) {
 	  fprintf(TFile, "  Extension %d: First intrinsic %d\n", ext, ext_info->base_INTRINSIC[ext]);
 	}
 	intrn_isa_info = &extension_INTRINSIC_table[ext_info->base_INTRINSIC[ext]-(INTRINSIC_STATIC_COUNT+1)];
-	intrn_tab = ext_tab[ext]->get_builtins();
+	intrn_tab = ext_info->dll_tab[ext].hooks->get_builtins();
 	for (j=0; j<intrn_in_ext; j++) {
 	  intrn_isa_info->type = intrn_tab[j].type;
 	  if (intrn_isa_info->type == DYN_INTRN_TOP) {
@@ -2078,8 +2058,8 @@ void Lai_Initialize_Extension_Loader (int nb_ext, const Extension_dll_t *ext_int
     }
 
     for (ext=0; ext<nb_ext; ext++) {
-      int count = ext_tab[ext]->get_modes_count();
-      const extension_machine_types_t* modes = ext_tab[ext]->get_modes();
+      int count = ext_info->dll_tab[ext].hooks->get_modes_count();
+      const extension_machine_types_t* modes = ext_info->dll_tab[ext].hooks->get_modes();
       for (j=0; j<count; j++) {
 	int     rc_id = ext_info->base_REGISTER_CLASS[ext] + modes[j].local_REGISTER_CLASS_id;
 	int     rsc_id = (modes[j].local_REGISTER_SUBCLASS_id != -1 ) ? ext_info->base_REGISTER_SUBCLASS[ext] + modes[j].local_REGISTER_SUBCLASS_id : ISA_REGISTER_SUBCLASS_UNDEFINED;

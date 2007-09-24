@@ -41,10 +41,10 @@
  * Description of an extension dll
  * =============================== */
 struct Extension_dll {
-  char                    *extname;
-  char                    *dllname;
-  void                    *handler;
-  const extension_hooks_t *hooks;
+  char                     *extname;
+  char                     *dllname;
+  void                     *handler;
+  EXTENSION_HighLevel_Info *hooks;
 
   // Base indexes for dynamic components of current extension
   int  base_mtypes;
@@ -120,11 +120,6 @@ extern void Load_Extension_dlls(Extension_dll_t **ext_tab,
 				int *ext_count,
 				BOOL verbose);
 
-/* Retrieve a symbol from argument dll and return a pointer to it
-   (NULL if undefined) */
-extern void *Get_dll_Symbol(const Extension_dll_t *dll_instance,
-			    const char *symbol);
-
 /* Define the dynamic count: to be place in the loader section*/
 extern TYPE_ID Add_MTypes(const Extension_dll_t *dll_instance, int **local_mtype_to_rclass, int *mtype_count, BOOL verbose);
 
@@ -146,22 +141,25 @@ extern void Init_Mtypes(int nb_mtype_to_add);
 /* Cleanup code for the loader */
 extern void Cleanup_Extension_Loader(void);
 
-
-//TB: Common thinks: these functions are shared between wfe_loader and lai_loader
+/* Common things: these functions are shared between wfe_loader and lai_loader */
 #include "loader_internal.h"
-//Isa register init
+/* Return a pointer to the newly allocated API used to access to the 
+   ISA description of the specified extension. */
+extern EXTENSION_ISA_Info *Generate_EXTENSION_ISA_Info(const Extension_dll_t *dll_instance, BOOL verbose);
+
+/* Isa register init */
 extern void Initialize_ISA_RegisterClasses(Lai_Loader_Info_t &ext_info);
 
-//TB: ABI init
+/* ABI init */
 extern void Initialize_ABI_Properties(Lai_Loader_Info_t &ext_info);
 
-//TB map between preg and register in the extension
+/* Map between preg and register in the extension */
 BE_EXPORTED extern ISA_REGISTER_CLASS EXTENSION_PREG_to_REGISTER_CLASS(PREG_NUM preg);
 
-//TB map between gcc machine mode preg and open64 MTYPE
+/* Map between gcc machine mode preg and open64 MTYPE */
 BE_EXPORTED extern TYPE_ID MachineMode_To_Mtype(machine_mode_t mode);
 
-//TB: Run thru extension intrinsic to create composed mtype for multiple result support 
+/* Run thru extension intrinsic to create composed mtype for multiple result support */
 extern void Add_Composed_Mtype(void);
 
 #endif /* TARG_ST */

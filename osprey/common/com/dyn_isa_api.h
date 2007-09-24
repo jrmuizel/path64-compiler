@@ -260,7 +260,7 @@ struct ISA_EXT_Interface {
  const mUINT32                   (*get_ISA_VARIANT_attribute_tab_sz)    (void);
 
  /* Handling hazards -------------------------------------------------------- */
- const mUINT8*                    (*get_ISA_HAZARDS_index_tab)           (void);
+ const mUINT8*                   (*get_ISA_HAZARDS_index_tab)           (void);
 };
 
 typedef struct ISA_EXT_Interface ISA_EXT_Interface_t;

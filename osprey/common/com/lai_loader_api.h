@@ -11,14 +11,14 @@
 
 #ifdef BACK_END
 
-#include "dyn_isa_api.h"
+#include "dyn_isa_api_access.h"
 
 /* Initialization functions */
 void Lai_Initialize_Extension_Loader(int nb_ext, const struct Extension_dll *ext_tab);
 void Lai_Cleanup_Extension_Loader();
 
 /* Access functions to extension specific information */
-BE_EXPORTED extern const extension_regclass_t *EXTENSION_get_REGISTER_CLASS_info(ISA_REGISTER_CLASS rc);
+BE_EXPORTED extern const EXTENSION_Regclass_Info *EXTENSION_get_REGISTER_CLASS_info(ISA_REGISTER_CLASS rc);
 
 BE_EXPORTED extern ISA_REGISTER_CLASS EXTENSION_MTYPE_to_REGISTER_CLASS(TYPE_ID mtype);
 
