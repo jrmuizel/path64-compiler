@@ -82,6 +82,8 @@ typedef struct {
 
 static extension_intrinsic_info_t *extension_INTRINSIC_table = (extension_intrinsic_info_t*)NULL;
 
+// Associate regclass to regclass info
+static const EXTENSION_Regclass_Info **extension_regclass_table = (const EXTENSION_Regclass_Info**)NULL;
 
 // Keep access to extension info table
 static Lai_Loader_Info_t *global_ext_info_table;
@@ -91,7 +93,7 @@ static Lai_Loader_Info_t *global_ext_info_table;
  */
 const EXTENSION_Regclass_Info *EXTENSION_get_REGISTER_CLASS_info(ISA_REGISTER_CLASS rc) {
   FmtAssert((extension_regclass_table!=NULL), ("Unexpected NULL extension_regclass_table"));
-  if (rc > ISA_REGISTER_CLASS_STATIC_MAX && rc <= ISA_REGISTER_CLASS_MAX) {
+  if (EXTENSION_Is_Extension_REGISTER_CLASS(rc)) {
     return (extension_regclass_table[rc - (ISA_REGISTER_CLASS_STATIC_MAX+1)]);
   }
   return ((EXTENSION_Regclass_Info*)NULL);
@@ -102,7 +104,7 @@ const EXTENSION_Regclass_Info *EXTENSION_get_REGISTER_CLASS_info(ISA_REGISTER_CL
  */
 INT EXTENSION_get_Min_Offset(ISA_REGISTER_CLASS rc) {
   FmtAssert((extension_RegClass_To_Preg_Min_Offset_table!=NULL), ("Unexpected NULL extension_RegClass_To_Preg_Min_Offset_table"));
-  if (rc > ISA_REGISTER_CLASS_STATIC_MAX && rc <= ISA_REGISTER_CLASS_MAX) {
+  if (EXTENSION_Is_Extension_REGISTER_CLASS(rc)) {
     return (extension_RegClass_To_Preg_Min_Offset_table[rc - (ISA_REGISTER_CLASS_STATIC_MAX+1)]);
   }
   FmtAssert((0),("Unexpected Register Class, out of extension bounds: %d", rc));
@@ -115,7 +117,7 @@ INT EXTENSION_get_Min_Offset(ISA_REGISTER_CLASS rc) {
  */
 const char *EXTENSION_Get_Extension_Name_From_INTRINSIC(INTRINSIC id) {
   int ext=0;
-  if (id > INTRINSIC_STATIC_COUNT && id <= INTRINSIC_COUNT) {
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
     while (ext < (global_ext_info_table->nb_ext-1) && 
 	   id >= global_ext_info_table->base_INTRINSIC[ext+1]) {
       ext++;
@@ -149,7 +151,7 @@ const char *EXTENSION_Get_Extension_Name_From_TOP(TOP id) {
  */
 const char *EXTENSION_Get_Extension_Name_From_REGISTER_CLASS(ISA_REGISTER_CLASS rc) {
   int ext=0;
-  if (rc > ISA_REGISTER_CLASS_STATIC_MAX && rc <= ISA_REGISTER_CLASS_MAX) {
+  if (EXTENSION_Is_Extension_REGISTER_CLASS(rc)) {
     while (ext < (global_ext_info_table->nb_ext-1) && 
 	   rc >= global_ext_info_table->base_REGISTER_CLASS[ext+1]) {
       ext++;
@@ -166,7 +168,7 @@ const char *EXTENSION_Get_Extension_Name_From_REGISTER_CLASS(ISA_REGISTER_CLASS 
  */
 TOP EXTENSION_INTRINSIC_to_TOP(INTRINSIC id) {
   FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
-  if (id > INTRINSIC_STATIC_COUNT && id <= INTRINSIC_COUNT &&
+  if (EXTENSION_Is_Extension_INTRINSIC(id) &&
       (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].type == DYN_INTRN_TOP)) {
     return (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].u1.top);
   }
@@ -180,7 +182,7 @@ TOP EXTENSION_INTRINSIC_to_TOP(INTRINSIC id) {
  */
 bool EXTENSION_Is_TOP_INTRINSIC(INTRINSIC id) {
   FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
-  if (id > INTRINSIC_STATIC_COUNT && id <= INTRINSIC_COUNT) {
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
     return (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].type==DYN_INTRN_TOP);
   }
   return (false);
@@ -194,7 +196,7 @@ bool EXTENSION_Is_TOP_INTRINSIC(INTRINSIC id) {
  */
 bool EXTENSION_Is_Compose_INTRINSIC(INTRINSIC id) {
   FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
-  if (id > INTRINSIC_STATIC_COUNT && id <= INTRINSIC_COUNT) {
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
     return (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].type==DYN_INTRN_COMPOSE);
   }
   return (false);
@@ -208,7 +210,7 @@ bool EXTENSION_Is_Compose_INTRINSIC(INTRINSIC id) {
  */
 bool EXTENSION_Is_Partial_Compose_INTRINSIC(INTRINSIC id) {
   FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
-  if (id > INTRINSIC_STATIC_COUNT && id <= INTRINSIC_COUNT) {
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
     return (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].type==DYN_INTRN_PARTIAL_COMPOSE);
   }
   return (false);
@@ -222,7 +224,7 @@ bool EXTENSION_Is_Partial_Compose_INTRINSIC(INTRINSIC id) {
  */
 bool EXTENSION_Is_Partial_Extract_INTRINSIC(INTRINSIC id) {
   FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
-  if (id > INTRINSIC_STATIC_COUNT && id <= INTRINSIC_COUNT) {
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
     return (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].type==DYN_INTRN_PARTIAL_EXTRACT);
   }
   return (false);
@@ -236,7 +238,7 @@ bool EXTENSION_Is_Partial_Extract_INTRINSIC(INTRINSIC id) {
  */
 int EXTENSION_Get_ComposeExtract_Index(INTRINSIC id) {
   FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
-  if (id > INTRINSIC_STATIC_COUNT && id <= INTRINSIC_COUNT) {
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
     extension_intrinsic_info_t *info;
     info = &extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)];
     FmtAssert((info->type==DYN_INTRN_PARTIAL_EXTRACT ||
@@ -294,7 +296,7 @@ ISA_REGISTER_SUBCLASS EXTENSION_MTYPE_to_REGISTER_SUBCLASS(TYPE_ID mtype) {
  */
 TYPE_ID EXTENSION_REGISTER_CLASS_to_MTYPE(ISA_REGISTER_CLASS rc, INT size) {
   int i;
-  if (rc > ISA_REGISTER_CLASS_STATIC_MAX && rc <= ISA_REGISTER_CLASS_MAX) {
+  if (EXTENSION_Is_Extension_REGISTER_CLASS(rc)) {
     FmtAssert((extension_REGISTER_CLASS_to_MTYPE_table!=NULL),
 	      ("Unexpected NULL extension_REGISTER_CLASS_to_MTYPE_table"));
     rc_to_mtype_info_t *info;
@@ -366,11 +368,14 @@ TOP EXTENSION_TOP_AM_automod_variant(TOP top,
 INT EXTENSION_Get_REGISTER_CLASS_Optimal_Alignment(ISA_REGISTER_CLASS rc, INT size) {
   INT min_size;
   const EXTENSION_Regclass_Info *rc_info;
-  if (rc <= ISA_REGISTER_CLASS_STATIC_MAX || rc > ISA_REGISTER_CLASS_MAX) {
+  if (!EXTENSION_Is_Extension_REGISTER_CLASS(rc)) {
     return size; // Non-extension register class
   }
 
   rc_info  = EXTENSION_get_REGISTER_CLASS_info(rc);
+  if (rc_info == NULL) { // Register class info not defined for SFR classes
+    return size;
+  }
   min_size = ISA_REGISTER_CLASS_INFO_Bit_Size(ISA_REGISTER_CLASS_Info(rc)) / 8;
 
   while (size >= min_size &&
@@ -2008,10 +2013,45 @@ void Lai_Initialize_Extension_Loader (int nb_ext, const Extension_dll_t *ext_int
   // 
   // ==========================================================================
 
+  // Initialize RC to regclass info table
+  // ------------------------------------
+  if (ext_info->trace_on) {
+    fprintf(TFile, "...Initialize extension regclass info table\n");
+  }
+  if (ISA_REGISTER_CLASS_MAX > ISA_REGISTER_CLASS_STATIC_MAX) {
+    int nb_added_rclass = ISA_REGISTER_CLASS_MAX - ISA_REGISTER_CLASS_STATIC_MAX;
+    extension_regclass_table = TYPE_MEM_POOL_ALLOC_N(const EXTENSION_Regclass_Info*,
+						     Malloc_Mem_Pool,
+						     nb_added_rclass);
+  
+    for (ext=0; ext<nb_ext; ext++) {
+      int rc_in_ext = ext_info->ISA_tab[ext]->get_ISA_REGISTER_CLASS_tab_sz();
+      if (rc_in_ext > 0) {
+	
+	for (int local_rc=0; local_rc<rc_in_ext; local_rc++) {
+	  int reg;
+	  ISA_REGISTER_CLASS rc = local_rc + ext_info->base_REGISTER_CLASS[ext];
+	  // Only allocatable regclasses have an entry in get_REGISTER_CLASS_info_tab.
+	  // Non-allocatable one (typically SFR) are always the last one.
+	  for (reg=0; reg<ISA_REGISTER_MAX && !ABI_PROPERTY_Is_allocatable(rc, reg); reg++) { ; }
+	  if (reg < ISA_REGISTER_MAX) {
+	    extension_regclass_table[rc-(ISA_REGISTER_CLASS_STATIC_MAX+1)] =
+	      &(ext_info->ISA_tab[ext]->get_Regclass_Info_tab()[local_rc]);
+	  }
+	  else {
+	    // Regclass not allocatable (typically SFR)
+	    extension_regclass_table[rc-(ISA_REGISTER_CLASS_STATIC_MAX+1)] = NULL;
+	  }
+	}
+      }
+    }
+  }
+  
+
   // Initialize INTRINSIC to OP table
   // --------------------------------
   if (ext_info->trace_on) {
-	fprintf(TFile, "...Initialize INTRINSIC to OP table\n");
+    fprintf(TFile, "...Initialize INTRINSIC to OP table\n");
   }
   if (INTRINSIC_COUNT > INTRINSIC_STATIC_COUNT) {
     const extension_builtins_t* intrn_tab;
@@ -2046,7 +2086,7 @@ void Lai_Initialize_Extension_Loader (int nb_ext, const Extension_dll_t *ext_int
   // Initialize MTYPE from/to REGISTER CLASS table
   // ---------------------------------------------
   if (ext_info->trace_on) {
-	fprintf(TFile, "...Initialize MTYPE from/to Register class table\n");
+    fprintf(TFile, "...Initialize MTYPE from/to Register class table\n");
   }
   if (NB_PURE_DYNAMIC_MTYPES > 0) {
     extension_REGISTER_CLASS_to_MTYPE_table = TYPE_MEM_POOL_ALLOC_N(rc_to_mtype_info_t, Malloc_Mem_Pool, ((ISA_REGISTER_CLASS_MAX-ISA_REGISTER_CLASS_STATIC_MAX) + 1));

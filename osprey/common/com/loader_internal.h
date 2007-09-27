@@ -65,13 +65,11 @@ typedef struct Lai_Loader_Info Lai_Loader_Info_t;
 // ===================
 // Register class data
 // ===================
-extern const EXTENSION_Regclass_Info **extension_regclass_table;
-//TB: tables to save PREG-> reg class association
-//extern ISA_REGISTER_CLASS *extension_Preg_To_RegClass_table;
-//TB: tables to save PREG-> reg number association
+// Table to save PREG -> reg number association
 extern int *extension_Preg_To_RegNum_table;
-//TB: rclAss tO preg min offset
+// Table containing Rclass to preg min offset
 extern INT *extension_RegClass_To_Preg_Min_Offset_table;
+
 /*
  * Function called when an extension is incompatible with the core description
  */
