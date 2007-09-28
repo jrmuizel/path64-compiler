@@ -42,8 +42,11 @@
 #undef ERROR
 #endif
 #include <windows.h>
+#endif
+
+/* Set max path len to some common value. */
+#ifndef MAX_PATH_LENGTH
 #define MAX_PATH_LENGTH 1024
-char win32_path[MAX_PATH_LENGTH];
 #endif
 
 const char *SYS_programname = "<undefined>";
@@ -380,6 +383,7 @@ int SYS_unlink(const char *filename)
 #ifdef __MINGW32__
 char *SYS_full_path_w32(const char *pname)
 {
+  static char win32_path[MAX_PATH_LENGTH];
   char *pdir = NULL;
   char *ignored ;  
   if (SearchPath(NULL, pname, ".exe", MAX_PATH_LENGTH, win32_path, &ignored)) {
@@ -394,23 +398,25 @@ static char *
 SYS_full_path_unix(const char *pname)
 {
   int pname_len = strlen(pname);
-  char *file_buffer = SYS_malloc(1024+1);
+  char *file_buffer = SYS_malloc(MAX_PATH_LENGTH+1);
   
   if (SYS_isAbsolute(pname)) {
-    if (pname_len + 1 > 1024+1) goto failed;
+    if (pname_len + 1 > MAX_PATH_LENGTH+1) goto failed;
     strcpy(file_buffer, pname); 
     if (access(file_buffer, F_OK) == -1) goto failed;
   } else if (strchr(pname, DIR_SEPARATOR) != NULL) {
     const char *pwd;
     int dir_len;
-    pwd = getcwd(file_buffer, 1024+1);
-    if (pwd == NULL) goto failed;
-    dir_len = strlen(pwd);
-    if (dir_len + 1 + pname_len + 1 > 1024+1) goto failed;
-    strcpy(file_buffer, pwd);
-    if (file_buffer[dir_len] != DIR_SEPARATOR)
+    pwd = getcwd(file_buffer, MAX_PATH_LENGTH+1);
+    if (pwd == NULL || file_buffer[0] == '\0' ) goto failed;
+    dir_len = strlen(file_buffer);
+    if (dir_len + 1 + pname_len + 1 > MAX_PATH_LENGTH+1) goto failed;
+    if (file_buffer[dir_len-1] != DIR_SEPARATOR) {
       file_buffer[dir_len] = DIR_SEPARATOR;
-    strcpy(&file_buffer[dir_len+1], pname);
+      strcpy(&file_buffer[dir_len+1], pname);
+    } else {
+      strcpy(&file_buffer[dir_len], pname);
+    }
     if (access(file_buffer, F_OK) == -1) goto failed;
   } else {
     
@@ -425,12 +431,18 @@ SYS_full_path_unix(const char *pname)
 	dir_len = next - path;
 	next++;
       }
-      if (dir_len == 0) continue;
-      if (dir_len + 1 + pname_len + 1 > 1024+1) goto failed;
-      memcpy(file_buffer, path, dir_len);
-      if (file_buffer[dir_len] != DIR_SEPARATOR)
+      if (dir_len == 0) {
+	path = next;
+	continue;
+      }
+      if (dir_len + 1 + pname_len + 1 > MAX_PATH_LENGTH+1) goto failed;
+      memcpy(file_buffer, path, dir_len); /* Not yet '\0' terminated. */
+      if (file_buffer[dir_len-1] != DIR_SEPARATOR) {
 	file_buffer[dir_len] = DIR_SEPARATOR;
-      strcpy(&file_buffer[dir_len+1], pname);
+	strcpy(&file_buffer[dir_len+1], pname);
+      } else {
+	strcpy(&file_buffer[dir_len], pname);
+      }
       if (access(file_buffer, F_OK) == 0) {
 	found = 1;
 	break;
@@ -472,7 +484,7 @@ char *SYS_real_path(const char *pname)
 char *SYS_getcwd(void)
 {
   char *path;
-  path = getcwd(NULL, 1024); 
+  path = getcwd(NULL, MAX_PATH_LENGTH+1); 
   return path;
 }
 
