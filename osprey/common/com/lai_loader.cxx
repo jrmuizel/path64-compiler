@@ -1814,7 +1814,7 @@ static void Initialize_DW_DEBUG_info(Lai_Loader_Info_t &ext_info)
         new_tab_reg[rc2].ext_id     = EXTENSION_static_count+ext;
  
         // Set register class base dwarf id register.
-        new_tab_reg[rc2].dw_base_id = ext_tab->dw_base_id;
+        new_tab_reg[rc2].dw_base_id = ext_tab[rc2 - rc].dw_base_id;
       }
      rc+=nb_reg_class;
 
