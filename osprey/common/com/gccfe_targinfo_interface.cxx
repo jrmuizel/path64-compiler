@@ -221,6 +221,14 @@ Initialize_Gcc_reg(void) {
   }
 }
 
+
+//Return the open64 couple (rclass, reg number) associated to gcc
+//register index gcc_index
+void GCCTARG_Get_Rclass_From_Gcc_Reg(int gcc_index,ISA_REGISTER_CLASS *rclass, int *regnum) {
+  *rclass = CGTARG_Register_Class_Num_From_Name((const char*)Additional_Register_Names_Var[gcc_index].name, regnum);
+}
+
+
 // From the register name passed on argument, retrieve the associated
 // Gcc register id and mark it with 'disabled' flag.
 static void Disable_Gcc_Reg(const char *regname) {
@@ -312,6 +320,28 @@ extern void GCCTARG_Mark_Disabled_Gcc_Reg() {
     }
   }
   return;
+}
+
+
+//[TB] Return the dwarf id associated to gcc register gcc_reg
+int GCCTARG_Dwarf_Get_Reg_Id_From_Gcc_Reg(int gcc_reg) {
+  ISA_REGISTER_CLASS rclass;
+  int regnum;
+  //Mapping between gcc numbering and open64
+  //regclass,regnum
+  GCCTARG_Get_Rclass_From_Gcc_Reg(gcc_reg, &rclass, &regnum);
+  // [TB]Get bit size of this register class This size is used
+  // to get the dwarf ID. Indeed paired registers do not
+  // have the same id than classical registers. bit size is
+  // used to differenciate them.
+  const ISA_REGISTER_CLASS_INFO *cinfo;
+  cinfo = ISA_REGISTER_CLASS_Info(rclass);
+  INT32 regclass_bit_size = ISA_REGISTER_CLASS_INFO_Bit_Size(cinfo);
+  //Now get the dward id 
+  int v = CGTARG_DW_DEBUG_Get_Reg_Id(rclass,
+				     regnum,
+				     regclass_bit_size);
+  return v;
 }
 
 

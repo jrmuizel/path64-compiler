@@ -43,3 +43,12 @@
  */
 ISA_REGISTER_CLASS 
 CGTARG_Register_Class_Num_From_Name (const char *regname, int *regnum);
+
+/* ====================================================================
+ *   CGTARG_DW_DEBUG_Get_Reg_Id 
+ *   Returns the name of the dwarf debug identifier of a register.
+ * ====================================================================
+ */
+extern INT32 CGTARG_DW_DEBUG_Get_Reg_Id  (ISA_REGISTER_CLASS rclass,
+					  INT32  index,
+					  UINT32 bit_size);

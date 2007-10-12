@@ -56,6 +56,10 @@ extern int *GCCTARG_Map_Reg_To_Preg();
 extern int GCCTARG_Map_Reg_To_Preg_Size();
 extern int GCCTARG_Initial_Number_Of_Registers();
 
+//Funcs that returns the open64 register class and the register number
+//associated to the gcc register index gcc_index
+//extern void GCCTARG_Get_Rclass_From_Gcc_Reg(int gcc_index, ISA_REGISTER_CLASS *rclass, int *regnum);
+
 //Configure the bridge between gcc and targinfo
  extern void GCCTARG_Configure_Gcc_From_Targinfo(void);
 
@@ -65,6 +69,9 @@ extern void TI_Initialize_Extension_Loader(void);
 
 // [TTh] Mark disabled Gcc registers based on command line option -mdisabled-reg
 extern void GCCTARG_Mark_Disabled_Gcc_Reg();
+
+//[TB] Return the dwarf id associated to gcc register gcc_reg
+extern int GCCTARG_Dwarf_Get_Reg_Id_From_Gcc_Reg(int gcc_reg);
 
 #ifdef __cplusplus
 }
