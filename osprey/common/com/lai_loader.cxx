@@ -57,6 +57,9 @@ extern "C" {
 };
 #include "register_preg.h"
 
+/* Include local helpers. */
+#include "attribute_map_template.cxx"
+
 // ==========================================
 // MType <-> Register Class Conversion tables
 // ==========================================
@@ -411,7 +414,7 @@ INT EXTENSION_Get_REGISTER_CLASS_Optimal_Alignment(ISA_REGISTER_CLASS rc, INT si
 static void Initialize_ISA_Top(Lai_Loader_Info_t &ext_info) {
   int ext;
   const char **TOP_names_tab;
-  mUINT64     *TOP_prop_tab;
+  ISA_PROPERTY_FLAGS     *TOP_prop_tab;
   mUINT16     *TOP_mem_bytes_tab;
   mUINT16     *TOP_mem_align_tab;
 
@@ -422,7 +425,7 @@ static void Initialize_ISA_Top(Lai_Loader_Info_t &ext_info) {
   if (TOP_count == TOP_static_count) {
     return;
   }
-  
+
   // Allocate new tables for TOP related information and initialize with
   // the content of the initial static tables
   // Note: For all these tables, TOP_UNDEFINED value is kept at the end.
@@ -430,8 +433,8 @@ static void Initialize_ISA_Top(Lai_Loader_Info_t &ext_info) {
   memcpy(TOP_names_tab, ISA_generic_top_names, (TOP_static_count) * sizeof(const char *));
   TOP_names_tab[TOP_count] = ISA_generic_top_names[TOP_static_count]; // TOP_UNDEFINED
   
-  TOP_prop_tab = TYPE_MEM_POOL_ALLOC_N(mUINT64, Malloc_Mem_Pool, (TOP_count+1));
-  memcpy(TOP_prop_tab, ISA_PROPERTIES_flags, (TOP_static_count) * sizeof(mUINT64));
+  TOP_prop_tab = TYPE_MEM_POOL_ALLOC_N(ISA_PROPERTY_FLAGS, Malloc_Mem_Pool, (TOP_count+1));
+  memcpy(TOP_prop_tab, ISA_PROPERTIES_flags, (TOP_static_count) * sizeof(ISA_PROPERTY_FLAGS));
   TOP_prop_tab[TOP_count] = ISA_PROPERTIES_flags[TOP_static_count]; // TOP_UNDEFINED
 
   TOP_mem_bytes_tab = TYPE_MEM_POOL_ALLOC_N(mUINT16, Malloc_Mem_Pool, (TOP_count+1));
@@ -450,10 +453,6 @@ static void Initialize_ISA_Top(Lai_Loader_Info_t &ext_info) {
 	     ext_info.ISA_tab[ext]->get_TOP_name_tab(),
 	     top_in_ext * sizeof(const char *));
       
-      memcpy(&TOP_prop_tab[ext_info.base_TOP[ext]],
-	     ext_info.ISA_tab[ext]->get_TOP_prop_tab(),
-	     top_in_ext * sizeof(mUINT64));
-      
       memcpy(&TOP_mem_bytes_tab[ext_info.base_TOP[ext]],
 	     ext_info.ISA_tab[ext]->get_TOP_mem_bytes_tab(),
 	     top_in_ext * sizeof(mUINT16));
@@ -462,34 +461,40 @@ static void Initialize_ISA_Top(Lai_Loader_Info_t &ext_info) {
 	     ext_info.ISA_tab[ext]->get_TOP_mem_align_tab(),
 	     top_in_ext * sizeof(mUINT16));
 
-      { // Remap ISA properties attributes if necessary
-	INT    nb_remap;
-	INT    ext_attr_count = ext_info.ISA_tab[ext]->get_ISA_PROPERTIES_attribute_tab_sz();
-	const ISA_PROPERTIES_ATTRIBUTE *core_attr_tab = ISA_PROPERTIES_get_attribute_table();
-	const ISA_PROPERTIES_ATTRIBUTE *ext_attr_tab  = ext_info.ISA_tab[ext]->get_ISA_PROPERTIES_attribute_tab();
-	COMPUTE_ATTR_REMAP_TABLE ( /* in_EXT_NAME        */ ext_info.dll_tab[ext].dllname,
-				   /* in_COMPONENT_NAME  */ "TOP properties",
-				   /* in_ATTR_TYPE       */ UINT64,
-				   /* in_ATTR_SUFFIX     */ ULL,
-				   /* in_ATTR_FORMAT     */ "%llx",
-				   /* in_CORE_ATTR_COUNT */ ISA_PROPERTIES_ATTRIBUTE_COUNT,
-				   /* in_CORE_ATTR_TAB   */ core_attr_tab,
-				   /* in_EXT_ATTR_COUNT  */ ext_attr_count,
-				   /* in_EXT_ATTR_TAB    */ ext_attr_tab,
-				   /* out_NB_REMAP       */ nb_remap
-				   );
-	if (nb_remap>0) {
-	  mUINT64 *attr_walker = &TOP_prop_tab[ext_info.base_TOP[ext]];
-	  for (int top=0; top<top_in_ext; top++) {
-	    REMAP_ATTR ( /* in_ATTR_TYPE   */ UINT64,
-			 /* in_ATTR_SUFFIX */ ULL,
-			 /* in_ATTR        */ *attr_walker,
-			 /* out_ATTR       */ *attr_walker
-			 );
-	    attr_walker++;
-	  }
+      { 
+	// Remap ISA properties attributes. 
+	// Core ISA properties identifiers are stored on UINT64.
+	// Extension ISA properties identifiers are stored on UINT64, the identifier 
+	// is stored as a mask (1<<id) when the number of properties is <= 64,
+	// or as the identifier value if count > 64.
+	typedef ATTRIBUTE_MAP<mUINT64> CORE_ATTR_MAP;
+	typedef ATTRIBUTE_MAP<mUINT64> EXT_ATTR_MAP;
+	// The properties mask are stored both on UINT64 in extension and core.
+	typedef ATTRIBUTE_REMAPPER<EXT_ATTR_MAP, CORE_ATTR_MAP, mUINT64, mUINT64 > EXT_ATTR_REMAPPER;
+	const NAME_VALUE<mUINT64> *core_attr_tab = (const NAME_VALUE<mUINT64> *)ISA_PROPERTIES_get_attribute_table();
+	const NAME_VALUE<mUINT64> *ext_attr_tab  = (const NAME_VALUE<mUINT64> *)ext_info.ISA_tab[ext]->get_ISA_PROPERTIES_attribute_tab();
+	INT ext_attr_count = ext_info.ISA_tab[ext]->get_ISA_PROPERTIES_attribute_tab_sz();
+	EXT_ATTR_MAP::map_kind ext_map_kind = ext_attr_count > 64 ? EXT_ATTR_MAP::KIND_VALUE: EXT_ATTR_MAP::KIND_MASK;
+	/* Map of properties names to static ISA properties identifiers. */
+	CORE_ATTR_MAP core_attr_map(core_attr_tab, ISA_PROPERTIES_ATTRIBUTE_COUNT);
+	/* Map of extension properties to extension properties identifiers. */
+	EXT_ATTR_MAP ext_attr_map(ext_attr_tab, ext_attr_count, ext_map_kind);
+	/* Will remap from the EXTENSION_ISA_PROPERTY_FLAGS,  variable size mask of UINT64[ext_word_count], to
+	 * ISA_PROPERTY_FLAGS, also a variable mask of UINT64[core_word_count]. */
+	EXT_ATTR_REMAPPER remapper(ext_attr_map, core_attr_map);
+	INT ext_word_count = (ext_attr_count + 63) / 64;
+	INT core_word_count = (ISA_PROPERTIES_ATTRIBUTE_COUNT + 63) / 64;
+
+	const mUINT64 *ext_mask_walker = (const mUINT64 *)ext_info.ISA_tab[ext]->get_TOP_prop_tab();
+	mUINT64 *core_mask_walker = (mUINT64 *)&TOP_prop_tab[ext_info.base_TOP[ext]];
+	for (int top = 0; top < top_in_ext; top++) {
+	  if (!remapper.remapMaskPtr(ext_mask_walker, core_mask_walker, ext_word_count, core_word_count))
+	    RaiseErrorIncompatibleLibrary(ext_info.dll_tab[ext].dllname, 
+					  "Incompatible target description,"
+					  "ISA_PROPERTY attribute name in Extension not found in Core.");
+	  ext_mask_walker += ext_word_count;
+	  core_mask_walker += core_word_count;
 	}
-	CLEANUP_ATTR_REMAP_TABLE();
       }
 
       // ...Update base index in dll
@@ -941,47 +946,40 @@ static void Initialize_ISA_Operands(Lai_Loader_Info_t &ext_info,
 	}
       }
 
-      { // Remap ISA OPERAND USE attributes if necessary
-	INT    nb_remap;
-	INT    ext_attr_count = ext_info.ISA_tab[ext]->get_ISA_OPERAND_USE_attribute_tab_sz();
-	const ISA_OPERAND_USE_ATTRIBUTE *core_attr_tab = ISA_OPERAND_USE_get_attribute_table();
-	const ISA_OPERAND_USE_ATTRIBUTE *ext_attr_tab  = ext_info.ISA_tab[ext]->get_ISA_OPERAND_USE_attribute_tab();
-	COMPUTE_ATTR_REMAP_TABLE ( /* in_EXT_NAME        */ ext_info.dll_tab[ext].dllname,
-				   /* in_COMPONENT_NAME  */ "ISA OPERAND USE",
-				   /* in_ATTR_TYPE       */ mUINT32,
-				   /* in_ATTR_SUFFIX     */ UL,
-				   /* in_ATTR_FORMAT     */ "%x",
-				   /* in_CORE_ATTR_COUNT */ ISA_OPERAND_USE_ATTRIBUTE_COUNT,
-				   /* in_CORE_ATTR_TAB   */ core_attr_tab,
-				   /* in_EXT_ATTR_COUNT  */ ext_attr_count,
-				   /* in_EXT_ATTR_TAB    */ ext_attr_tab,
-				   /* out_NB_REMAP       */ nb_remap
-				   );
-	if (nb_remap>0) {
-	  tgt_info = &opinfo_tab[ext_base_OPERAND_info[ext]];
-	  for (j=0; j<sz; j++, tgt_info++) {
-	    // Update references to operand uses
-	    for (k=0; k<tgt_info->opnds; k++) {
-	      mUINT32 val = tgt_info->ouse[k]; // tempo used because ouse tab is UINT16
-	      REMAP_ATTR ( /* in_ATTR_TYPE   */ mUINT32,
-			   /* in_ATTR_SUFFIX */ UL,
-			   /* in_ATTR        */ val,
-			   /* out_ATTR       */ val
-			   );
-	      tgt_info->ouse[k] = val;
-	    }
-	    for (k=0; k<tgt_info->results; k++) {
-	      mUINT32 val = tgt_info->ruse[k]; // tempo used because ruse tab is UINT16
-	      REMAP_ATTR ( /* in_ATTR_TYPE   */ mUINT32,
-			   /* in_ATTR_SUFFIX */ UL,
-			   /* in_ATTR        */ val,
-			   /* out_ATTR       */ val
-			   );
-	      tgt_info->ruse[k] = val;
-	    }
+      { 
+	// Remap ISA OPERAND USE attributes into operand_info->ouse[k] operand info.
+	// ISA_OPERAND_USE identifiers are stored as UINT32 mask (1<<id) in the
+	// static ISA and in the extension ISA tables.
+	// Final values in ouse[] and ruse[] arrays info are stored as mask of mUINT16.
+	typedef ATTRIBUTE_MAP<UINT32> CORE_ATTR_MAP;
+	typedef ATTRIBUTE_MAP<UINT32> EXT_ATTR_MAP;
+	typedef ATTRIBUTE_REMAPPER<EXT_ATTR_MAP, CORE_ATTR_MAP, mUINT16, mUINT16 > EXT_ATTR_REMAPPER;
+	const NAME_VALUE<UINT32> *core_attr_tab = (const NAME_VALUE<UINT32> *)ISA_OPERAND_USE_get_attribute_table();
+	const NAME_VALUE<UINT32> *ext_attr_tab  = (const NAME_VALUE<UINT32> *)ext_info.ISA_tab[ext]->get_ISA_OPERAND_USE_attribute_tab();
+	INT ext_attr_count = ext_info.ISA_tab[ext]->get_ISA_OPERAND_USE_attribute_tab_sz();
+ 	CORE_ATTR_MAP core_attr_map(core_attr_tab, ISA_OPERAND_USE_ATTRIBUTE_COUNT, CORE_ATTR_MAP::KIND_MASK);
+	EXT_ATTR_MAP ext_attr_map(ext_attr_tab, ext_attr_count, EXT_ATTR_MAP::KIND_MASK);
+	EXT_ATTR_REMAPPER remapper(ext_attr_map, core_attr_map);
+
+	tgt_info = &opinfo_tab[ext_base_OPERAND_info[ext]];
+	for (j=0; j<sz; j++, tgt_info++) {
+	  // Update references to operand uses
+	  for (k=0; k<tgt_info->opnds; k++) {
+	    // Remap mUINT16 ouse info for each operand.
+	    if (!remapper.remapMask(tgt_info->ouse[k], tgt_info->ouse[k])) 
+	      RaiseErrorIncompatibleLibrary(ext_info.dll_tab[ext].dllname, 
+					    "Incompatible target description,"
+					    "OPERAND_USE attribute name in Extension not found in Core.");
+
+	  }
+	  for (k=0; k<tgt_info->results; k++) {
+	    // Remap mUINT16 ruse info for each result.
+	    if (!remapper.remapMask(tgt_info->ruse[k], tgt_info->ruse[k]))
+	      RaiseErrorIncompatibleLibrary(ext_info.dll_tab[ext].dllname, 
+					    "Incompatible target description,"
+					    "OPERAND_USE attribute name in Extension not found in Core.");
 	  }
 	}
-	CLEANUP_ATTR_REMAP_TABLE();
       }
 
       // Update operand index info
@@ -1674,23 +1672,19 @@ static void Initialize_ISA_VARIANTS(Lai_Loader_Info_t &ext_info) {
     if (top_in_ext) {
       INT ext_base_TOP = ext_info.base_TOP[ext];
       const ISA_VARIANT_INFO *ext_variant_tab = ext_info.ISA_tab[ext]->get_ISA_VARIANT_INFO_tab();
-      // Compute remap table if extension variants and core variants
-      //                     use different numbering
-      INT    nb_remap;
+      // Remap ISA VARIANT attributes.
+      // Core and Extension variant identifiers are stored as mask (1<<id) on UINT64.
+      // Variant mask on a top variant are stored as UINT64.
+      typedef ATTRIBUTE_MAP<UINT64> CORE_ATTR_MAP;
+      typedef ATTRIBUTE_MAP<UINT64> EXT_ATTR_MAP;
+      typedef ATTRIBUTE_REMAPPER<EXT_ATTR_MAP, CORE_ATTR_MAP, UINT64, UINT64 > EXT_ATTR_REMAPPER;
+      const NAME_VALUE<UINT64> *core_attr_tab = (const NAME_VALUE<UINT64> *)ISA_VARIANT_get_attribute_table();
+      const NAME_VALUE<UINT64> *ext_attr_tab = (const NAME_VALUE<UINT64> *)ext_info.ISA_tab[ext]->get_ISA_VARIANT_attribute_tab();
       INT    ext_attr_count = ext_info.ISA_tab[ext]->get_ISA_VARIANT_attribute_tab_sz();
-      const ISA_VARIANT_ATTRIBUTE *core_attr_tab = ISA_VARIANT_get_attribute_table();
-      const ISA_VARIANT_ATTRIBUTE *ext_attr_tab  = ext_info.ISA_tab[ext]->get_ISA_VARIANT_attribute_tab();
-      COMPUTE_ATTR_REMAP_TABLE ( /* in_EXT_NAME        */ ext_info.dll_tab[ext].dllname,
-				 /* in_COMPONENT_NAME  */ "variant",
-				 /* in_ATTR_TYPE       */ UINT64,
-				 /* in_ATTR_SUFFIX     */ ULL,
-				 /* in_ATTR_FORMAT     */ "%llx",
-				 /* in_CORE_ATTR_COUNT */ ISA_VARIANT_ATTRIBUTE_COUNT,
-				 /* in_CORE_ATTR_TAB   */ core_attr_tab,
-				 /* in_EXT_ATTR_COUNT  */ ext_attr_count,
-				 /* in_EXT_ATTR_TAB    */ ext_attr_tab,
-				 /* out_NB_REMAP       */ nb_remap
-				 );
+      CORE_ATTR_MAP core_attr_map(core_attr_tab, ISA_VARIANT_ATTRIBUTE_COUNT, CORE_ATTR_MAP::KIND_MASK);
+      EXT_ATTR_MAP ext_attr_map(ext_attr_tab, ext_attr_count, EXT_ATTR_MAP::KIND_MASK);
+      EXT_ATTR_REMAPPER remapper(ext_attr_map, core_attr_map);
+
       // Build extension variants entries
       for (top = 0; top < top_in_ext; top++) {
 	int n_variants = ext_variant_tab[top].n_variants;
@@ -1698,15 +1692,13 @@ static void Initialize_ISA_VARIANTS(Lai_Loader_Info_t &ext_info) {
 	variants_table[ext_base_TOP+top].variants = variant_ptr;
 	for (var = 0; var < n_variants; var++) {
 	  variant_ptr->top = ext_variant_tab[top].variants[var].top + ext_base_TOP; // convert to TOP global numbering
-	  REMAP_ATTR ( /* in_ATTR_TYPE   */ UINT64,
-		       /* in_ATTR_SUFFIX */ ULL,
-		       /* in_ATTR        */ ext_variant_tab[top].variants[var].attributes,
-		       /* out_ATTR       */ variant_ptr->attributes
-		     );
+	  if (!remapper.remapMask(ext_variant_tab[top].variants[var].attributes, variant_ptr->attributes))
+	    RaiseErrorIncompatibleLibrary(ext_info.dll_tab[ext].dllname, 
+					  "Incompatible target description,"
+					  "ISA_VARIANT attribute name in Extension not found in Core.");
 	  variant_ptr++;
 	}
       }
-      CLEANUP_ATTR_REMAP_TABLE();
     }
   }
 

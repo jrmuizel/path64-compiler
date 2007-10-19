@@ -30,6 +30,15 @@
   http: 
 */ 
 
+#if 0
+/*
+ * This stub is not needed anymore as the extension build will directly use
+ * dyn_get_TOP_prop_tab( ). Thus this file is obsolete.
+ * Thoug, we keep this file anyway in order to keep bacward compatibility
+ * with the reconfigurable toolkit installation that expects this file to
+ * be present in the open64 sources.
+*/
+
 /**
  *
  * This file is only useful for dynamic code extension.
@@ -50,3 +59,4 @@
 
 const mUINT64* ISA_PROPERTIES_flags = dyn_get_TOP_prop_tab( );
 
+#endif /* 0 */
