@@ -169,8 +169,9 @@ const Range Modulo (const Range &a, INT width)
   else {
     ZInt low_limit = (ZInt)-1 << width;
     ZInt high_limit = ((ZInt)1 << width) - 1;
-    ZInt max = (a.min < low_limit) ? high_limit : a.max;
-    ZInt min = (a.max > high_limit) ? low_limit : a.min;
+    BOOL out_of_range = (a.min < low_limit || a.max > high_limit);
+    ZInt max = out_of_range ? high_limit : a.max;
+    ZInt min = out_of_range ? low_limit : a.min;
     return Range (min, max);
   }
 }
