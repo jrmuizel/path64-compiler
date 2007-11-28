@@ -33,12 +33,18 @@
  * The implemented grammar (which is LL(2)) for parsing the visibility
  * specification file is:
  *
+ * top : version_decls | file_decls 
+ * 						[TERM: TOK_EOF ]
+ * version_decls : 'VERSION' '{' file_decls '}' ;
+ * 						[FIRST: 'VERSION'  TERM: TOK_EOF ]
  * file_decls : file_decl* ; 
- *						[TERM: TOK_EOF ]
- * file_decl : '{' visibility_decls '}' ;
- * 						[TERM: TOK_EOF, '{' ]
- * visibility_decls : visibility_decl* ;
+ *						[FIRST: 'ANY', '{' TERM: TOK_EOF, '}'  ]
+ * file_decl : ANY? '{' visibility_decls '}' ANY? ';'* ;
+ * 						[TERM: TOK_EOF, '{', '}', ANY ]
+ * visibility_decls : default_visibility_decl visibility_decl* ;
  *						[TERM: '}']
+ * default_visibility_decl : ( IDENT ':' )? pattern_decls ; 
+ *						[TERM: '}', IDENT ':' ]
  * visibility_decl : IDENT ':' pattern_decls ; 
  *						[TERM: '}', IDENT ':' ]
  * pattern_decls : pattern_decl* ; 
@@ -75,6 +81,7 @@
 #define TOK_ANY 257
 #define TOK_STRING 258
 #define TOK_ERROR 259
+#define TOK_EOF_STR "end of file"
 
 /*
  * type for the tokenizer state.
@@ -99,8 +106,13 @@ struct ll_state_t_ {
 };
 typedef struct ll_state_t_ ll_state_t;
 
+/* States can be or'ed together, with the following rules:
+   - DEFAULT/EXTERN are exclusive
+   - COMMENT can be or'ed with any other.
+*/
 #define STATE_DEFAULT 0
 #define STATE_IN_EXTERN 1
+#define STATE_IN_COMMENT 2 
 
 /*
  * Constructor for a tokenizer state.
@@ -176,7 +188,7 @@ ll_state_refill(ll_state_t *state)
 			0)
 
 #define PP_is_any(state,c) (isalnum(c) || c == '_' || c == '*' || \
-		      c == '[' || c == ']' || c == '?' || \
+		      c == '[' || c == ']' || c == '?' || c == '.' || \
 		      ((state)->s_state == STATE_IN_EXTERN && c == ':') || \
 		      0)
 
@@ -184,22 +196,35 @@ static ll_token_t
 ll_state_tokenize(ll_state_t *state)
 {
   ll_token_t tok;
-  int c;
+  int c, c2;
 
   while (1) {
     ll_state_refill(state);
     if (state->s_eof) {
-      ll_token_ctor(&tok, TOK_EOF, NULL, 0);
+      ll_token_ctor(&tok, TOK_EOF, TOK_EOF_STR, strlen(TOK_EOF_STR));
       goto found;
     }
 
     c = state->s_buffer[state->s_bpos];
+    c2 = state->s_buffer[state->s_bpos+1];
     if (isspace(c)) goto next;	/* skip spaces and return. */
-    else if (c == '#') {
-      /* Skip to end of line. */
+    else if ((state->s_state & STATE_IN_COMMENT)) {
+      if (c == '*' && c2 == '/') {
+	state->s_bpos+=2;
+	state->s_state &= ~STATE_IN_COMMENT;
+	continue;
+      } else goto next;
+    } else if (c == '/' && c2 == '*') {
+      /* Start comment. */
+      state->s_bpos+=2;
+      state->s_state |= STATE_IN_COMMENT;
+      continue;
+    } else if (c == '#' ||
+	       (c == '/' && c2 == '/')) {
+      /* One line comment, skip to end of line. */
       state->s_buffer[state->s_bpos] = '\0';
       continue;
-    }
+    } 
     else if (PP_is_punct(state, c)) {
       ll_token_ctor(&tok, c, &state->s_buffer[state->s_bpos], 1);
       state->s_bpos++;
@@ -381,7 +406,7 @@ static int
 PP_parse_token(PP_state_t *state, int id)
 {
   if (!PP_MATCH(state, id)) {
-    PP_set_strerr(state, "unexpected character: %s", PP_TOK_STR(state));
+    PP_set_strerr(state, "unexpected character or string: %s", PP_TOK_STR(state));
     return -1;
   }
   PP_SHIFT(state);
@@ -494,6 +519,27 @@ PP_parse_visibility_decl(PP_state_t *state)
 }
 
 static int
+PP_parse_default_visibility_decl(PP_state_t *state)
+{
+  int status = 0;
+  
+  if (PP_MATCH(state, TOK_ANY) &&
+      PP_MATCH_LA(state, 1, ':')) {
+    state->x.visi = vspec_get_visi(PP_TOK_STR(state));
+    if (state->x.visi == VSPEC_VISI_UNDEF) {
+      PP_set_strerr(state, "unexpected visibility: %s", PP_TOK_STR(state));
+      status = -1;
+    }
+    PP_SHIFT(state);
+    PP_SHIFT(state);
+  } else {
+    state->x.visi = VSPEC_VISI_DEFAULT;
+  }
+  if (status == 0) status = PP_parse_pattern_decls(state);
+  return status; 
+}
+
+static int
 PP_parse_visibility_decls(PP_state_t *state)
 {
   int status = 0;
@@ -501,6 +547,9 @@ PP_parse_visibility_decls(PP_state_t *state)
   state->x.lang = VSPEC_LANG_ASSEMBLER;
   state->x.visi = VSPEC_VISI_UNDEF;
 
+  if (!PP_MATCH(state, '}')) {
+    status = PP_parse_default_visibility_decl(state);
+  }
   while(status == 0 && !PP_MATCH(state, '}')) {
     status = PP_parse_visibility_decl(state);
   }
@@ -511,9 +560,14 @@ static int
 PP_parse_file_decl(PP_state_t *state)
 {
   int status = 0;
+  if (PP_MATCH(state, TOK_ANY)) PP_SHIFT(state);
   status = PP_parse_token(state, '{');
   if (status == 0) status = PP_parse_visibility_decls(state);
   if (status == 0) status = PP_parse_token(state, '}');
+  if (status == 0 && PP_MATCH(state, TOK_ANY)) PP_SHIFT(state);
+  while (status == 0 && PP_MATCH(state, ';')) {
+    status = PP_parse_token(state, ';');
+  }
   return status;
 }
 
@@ -521,16 +575,42 @@ static int
 PP_parse_file_decls(PP_state_t *state)
 {
   int status = 0;
-  while(status == 0 && !PP_MATCH(state, TOK_EOF)) {
+  while(status == 0 && !(PP_MATCH(state, TOK_EOF) || PP_MATCH(state, '}'))) {
     status = PP_parse_file_decl(state);
   }
+  return status;
+}
+
+
+static int
+PP_parse_version_decls(PP_state_t *state)
+{
+  int status = 0;
+  if (PP_MATCH2(state, TOK_ANY, "VERSION")) PP_SHIFT(state);
+  else {
+    PP_set_strerr(state, "missing VERSION declaration");
+    status = -1;
+  }
+  if (status == 0) status = PP_parse_token(state, '{');
+  if (status == 0) status = PP_parse_file_decls(state);
+  if (status == 0) status = PP_parse_token(state, '}');
   return status;
 }
 
 static int
 PP_parse_file(PP_state_t *state)
 {
-  return PP_parse_file_decls(state);
+  int status = 0;
+  if (PP_MATCH2(state, TOK_ANY, "VERSION")) {
+    status = PP_parse_version_decls(state);
+  } else {
+    status = PP_parse_file_decls(state);
+  }
+  if (status == 0 && !PP_MATCH(state, TOK_EOF)) {
+    PP_set_strerr(state, "trailing character found, expected end of specification");
+    status = -1;
+  }
+  return status;
 }
 
 
@@ -609,10 +689,10 @@ vspec_parse(const char *fname)
 
 #ifdef TEST
 /*
- * Compile with cc -DTEST -o test vspec_token.c vspec_parse.c vspec.c
+ * Compile with cc -DTEST -o t.out vspec_token.c vspec_parse.c vspec.c -liberty
  * The executable is a simple test for the parsing of visibility
  * specification files.
- * usage: ./test <visibility_spec> [symbols...]
+ * usage: ./t.out <visibility_spec> [symbols...]
  * Reads the specification file and dump it.
  * Output for each given symbol its visibility.
  */

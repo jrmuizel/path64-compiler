@@ -225,11 +225,13 @@ vspec_visi_t
 vspec_get_visi(const char *str_visi)
 {
   if (str_visi == NULL || 
-      strcmp(str_visi, "default") == 0)
+      strcmp(str_visi, "default") == 0 ||
+      strcmp(str_visi, "global") == 0)
     return VSPEC_VISI_DEFAULT;
   else if (strcmp(str_visi, "protected") == 0)
     return VSPEC_VISI_PROTECTED;
-  else if (strcmp(str_visi, "hidden") == 0)
+  else if (strcmp(str_visi, "hidden") == 0 ||
+	   strcmp(str_visi, "local") == 0)
     return VSPEC_VISI_HIDDEN;
   else if (strcmp(str_visi, "internal") == 0)
     return VSPEC_VISI_INTERNAL;
