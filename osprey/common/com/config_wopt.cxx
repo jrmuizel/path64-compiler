@@ -214,6 +214,10 @@ BOOL  WOPT_Enable_Verbose = FALSE;
 INT32 WOPT_Enable_Verify = 1;
 BOOL  WOPT_Enable_Vsym_Unique = FALSE;
 BOOL  WOPT_Enable_While_Loop = TRUE;
+#ifdef TARG_ST
+//TB
+BOOL  WOPT_Enable_While_Loop_Set = FALSE;
+#endif
 BOOL  WOPT_Enable_Worklist_Pruning = TRUE;
 BOOL  WOPT_Enable_Zero_Version = TRUE;
 BOOL  WOPT_Enable_Call_Zero_Version = TRUE;
@@ -268,7 +272,7 @@ BOOL WOPT_Enable_Compare_Hoisting=TRUE;  //enable hoisting of compare expression
 BOOL WOPT_Enable_Flow_Simplification_In_Tailmerge = FALSE;   // enable flow simplification in tailmerge optimization
 // FdF 20070731: 0 means never, 1 means biased for code size, 2 means
 // biased for performance, 3 means always.
-INT32 WOPT_Enable_DoWhile_Conversion = 3;
+INT32 WOPT_Enable_DoWhile_Conversion = DOWHILE_CONV_FOR_PERF;
 BOOL WOPT_Enable_DoWhile_Conversion_Set = FALSE;
 #endif
 
@@ -537,7 +541,7 @@ static OPTION_DESC Options_WOPT[] = {
   { OVK_INT32,	OV_INTERNAL,	TRUE, "verify",		"verify",
     1, 0, 4,	&WOPT_Enable_Verify, NULL },
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "while_loop",		"while",
-    0, 0, 0,	&WOPT_Enable_While_Loop, NULL },
+    0, 0, 0,	&WOPT_Enable_While_Loop, &WOPT_Enable_While_Loop_Set },
   { OVK_BOOL,   OV_INTERNAL,	TRUE, "worklist_prune",	"worklist_prune",
     0, 0, 0,    &WOPT_Enable_Worklist_Pruning, NULL },
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "zero_version",		"zero",
