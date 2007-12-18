@@ -91,8 +91,6 @@ static Concat rclassindex =      /* Register class index table       */
     (mUINT32)            ISA_REGISTER_CLASS_STATIC_COUNT+1U,
 };
 
-ISA_SUBSET ISA_SUBSET_Value = ISA_SUBSET_UNDEFINED;
-
 /* Beginning of code ================================================ */
 
 /*
@@ -152,4 +150,20 @@ Initialize_Register_Class_Stub( void )
 
   return;
 }
+
+
+/* Beginning of referenced but not called objects ===================================== */
+
+/*
+ * Avoids some link problems due to reference in targ_isa_registers.cxx. 
+ * these variables functions are not actually used by the extension generator.
+ */
+ISA_SUBSET_LIST *ISA_SUBSET_List = (ISA_SUBSET_LIST *)0;
+UINT32 ISA_SUBSET_LIST_Mask(struct ISA_SUBSET_LIST *)
+{
+  return 0;
+}
+
+/* End of referenced but not called objects ===================================== */
+
 
