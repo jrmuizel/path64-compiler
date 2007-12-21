@@ -274,6 +274,8 @@ BOOL WOPT_Enable_Flow_Simplification_In_Tailmerge = FALSE;   // enable flow simp
 // biased for performance, 3 means always.
 INT32 WOPT_Enable_DoWhile_Conversion = DOWHILE_CONV_FOR_PERF;
 BOOL WOPT_Enable_DoWhile_Conversion_Set = FALSE;
+INT32 WOPT_Pre_Small_Immediate = 16; // Simple expressions derived from an IV with a
+                                     // small immediate offset are not subject to PRE
 #endif
 
 
@@ -644,6 +646,8 @@ static OPTION_DESC Options_WOPT[] = {
     1, 0, 3,	&WOPT_Enable_DoWhile_Conversion, &WOPT_Enable_DoWhile_Conversion_Set },
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "simp_flow_in_tailmerge_opt",		"",
     0, 0, 0,	&WOPT_Enable_Flow_Simplification_In_Tailmerge, NULL },
+  { OVK_UINT32,	OV_INTERNAL,	TRUE, "Pre_Small_Immediate",		"",
+    16, 0, UINT32_MAX, &WOPT_Pre_Small_Immediate, NULL },
 #endif
 
   { OVK_COUNT }		/* List terminator -- must be last */
