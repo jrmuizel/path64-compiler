@@ -198,7 +198,8 @@ LBitMask::bits () const
 UINT64
 LBitMask::getbitmask () const
 {
-    return bmask_;
+  FmtAssert (!isTop (), ("Unexpected <top> range value"));
+  return bmask_;
 }
 
 
