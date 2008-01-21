@@ -57,21 +57,18 @@ class EXTENSION_Regclass_Info {
  public:
   // Constructor/destructor
   EXTENSION_Regclass_Info();
-  EXTENSION_Regclass_Info(const extension_regclass_t* input_rc_info);
+  EXTENSION_Regclass_Info(const extension_regclass_t* input_rc_info, INT rev_number);
   ~EXTENSION_Regclass_Info();
 
   // Copy constructor
   EXTENSION_Regclass_Info(const EXTENSION_Regclass_Info &);
 
   // Copy operator
-  EXTENSION_Regclass_Info&  operator= (const EXTENSION_Regclass_Info &rc_access) {
-    rc_info = rc_access.rc_info;
-    return (*this);
-  }
+  EXTENSION_Regclass_Info&  operator=(const EXTENSION_Regclass_Info &rc_access);
 
   // Memory accesses
-  inline TOP get_load_TOP (INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr) const;
-  inline TOP get_store_TOP(INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr) const;
+  TOP get_load_TOP (INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr, INT mpixel_size) const;
+  TOP get_store_TOP(INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr, INT mpixel_size) const;
  
   // Move within same extension
   inline TOP get_move_X2X_TOP               (INT size) const;
@@ -113,6 +110,7 @@ class EXTENSION_Regclass_Info {
  private:
   extension_regclass_t       *own_rc_info;
   const extension_regclass_t *rc_info;
+  int revision_number;
 };
 
 
@@ -293,16 +291,6 @@ class EXTENSION_ISA_Info {
 // ## Inlined functions for "EXTENSION_Regclass_Info"
 // ##
 // #############################################################################
-// Memory accesses
-inline TOP
-EXTENSION_Regclass_Info::get_load_TOP (INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr) const {
-  return       (rc_info->get_load_TOP(size, base_reg, offs_is_imm, offs_is_incr));
-}
-inline TOP
-EXTENSION_Regclass_Info::get_store_TOP(INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr) const {
-  return       (rc_info->get_store_TOP(size, base_reg, offs_is_imm, offs_is_incr));
-}
-
 // Move within same extension
 inline TOP
 EXTENSION_Regclass_Info::get_move_X2X_TOP               (INT size) const {

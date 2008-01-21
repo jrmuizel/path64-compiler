@@ -233,6 +233,37 @@ bool EXTENSION_Is_Partial_Extract_INTRINSIC(INTRINSIC id) {
   return (false);
 }
 
+/*
+ * Return true if the INTRINSIC identified by 'id' is a
+ * convert_to_pixel INTRINSIC, 
+ * meaning that it is a dummy intrinsic for the compiler that should
+ * be replaced by a simple copy.
+ * false otherwise.
+ */
+bool
+EXTENSION_Is_Convert_To_Pixel_INTRINSIC(INTRINSIC id) {
+  FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
+    return (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].type==DYN_INTRN_CONVERT_TO_PIXEL);
+  }
+  return false;
+}
+
+/*
+ * Return true if the INTRINSIC identified by 'id' is a
+ * convert_from_pixel INTRINSIC, 
+ * meaning that it is a dummy intrinsic for the compiler that should
+ * be replaced by a simple copy.
+ * false otherwise.
+ */
+bool
+EXTENSION_Is_Convert_From_Pixel_INTRINSIC(INTRINSIC id) {
+  FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
+    return (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].type==DYN_INTRN_CONVERT_FROM_PIXEL);
+  }
+  return false;
+}
 
 /*
  * Return the index associated with current INTRINSIC, which must be either a 
@@ -382,14 +413,14 @@ INT EXTENSION_Get_REGISTER_CLASS_Optimal_Alignment(ISA_REGISTER_CLASS rc, INT si
   min_size = ISA_REGISTER_CLASS_INFO_Bit_Size(ISA_REGISTER_CLASS_Info(rc)) / 8;
 
   while (size >= min_size &&
-	 (TOP_UNDEFINED == rc_info->get_load_TOP(/* reg size     */size,
-						 /* base_type    */AM_BASE_DEFAULT,
-						 /* offs_is_imm  */true,
-						 /* offs_is_incr */true)) &&
-	 (TOP_UNDEFINED == rc_info->get_store_TOP(/* reg size     */size,
-						  /* base_type    */AM_BASE_DEFAULT,
+	 (TOP_UNDEFINED == rc_info->get_load_TOP(/* reg size  */size,
+						 /* base_type*/AM_BASE_DEFAULT,
+						 /* offs_is_imm */true,
+						 /* offs_is_incr*/true, 0)) &&
+	 (TOP_UNDEFINED == rc_info->get_store_TOP(/* reg size  */size,
+						  /* base_type*/AM_BASE_DEFAULT,
 						  /* offs_is_imm  */true,
-						  /* offs_is_incr */true))) {
+						  /* offs_is_incr */true, 0))) {
     size /= 2;
   }
 

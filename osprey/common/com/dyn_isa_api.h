@@ -69,7 +69,7 @@ extern "C" {
 #endif
 
 
-#define MAGIC_NUMBER_EXT_ISA_API   20070615  /* Magic number. Interface checking */
+#define MAGIC_NUMBER_EXT_ISA_API   20070924  /* Magic number. Interface checking */
 
 /* ===========================================
  * Base register available for addressing mode
@@ -87,8 +87,8 @@ typedef enum {
 struct extension_regclass
 {
   // Memory accesses
-  TOP (*get_load_TOP) (INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr);
-  TOP (*get_store_TOP)(INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr);
+  TOP (*get_load_TOP) (INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr, INT mpixel_size);
+  TOP (*get_store_TOP)(INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr, INT mpixel_size);
  
   // Move within same extension
   TOP (*get_move_X2X_TOP)               (INT size);
@@ -125,7 +125,8 @@ struct extension_regclass
   // Virtual Compose/Extract/Widemove
   TOP (*get_simulated_compose_TOP) (INT from_size, INT to_size);
   TOP (*get_simulated_extract_TOP) (INT from_size, INT to_size);
-  TOP (*get_simulated_widemove_TOP)(INT size);
+  TOP (*get_simulated_widemove_TOP)(INT size); 
+
 };
 
 typedef struct extension_regclass extension_regclass_t;

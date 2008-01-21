@@ -42,19 +42,24 @@
  * | 20070615 | - No change                                                    |
  * |          |   (The id should not have been updated!!)                      |
  * +----------+----------------------------------------------------------------+
+ * | 20070924 | - pixel support                                                |
+ * +----------+----------------------------------------------------------------+
  *
  */
 #include "../gccfe/extension_include.h"
 #include "dyn_dll_api_access.h"
 
 // ========================================================================
-// List of compatible API revisions for ISA part of the library description
+// List of compatible API revisions for high level part of the library
+// description
 // ========================================================================
-#define    NB_SUPPORTED_HL_REV  2
+#define    NB_SUPPORTED_HL_REV  3
 #define    REV_20070131        (20070131)
 #define    REV_20070615        (20070615)
+#define    REV_20070924        (20070924)
 static INT supported_HL_rev_tab[NB_SUPPORTED_HL_REV] = {
   REV_20070131,
+  REV_20070615,
   MAGIC_NUMBER_EXT_API   /* current one */
 };
 
@@ -77,7 +82,21 @@ BOOL EXTENSION_Is_Supported_HighLevel_Revision(INT hooks_rev) {
 // ##
 // #############################################################################
 
-// --- Currently empty ---
+typedef struct
+{
+  machine_mode_t mmode; 
+  const char *name; 
+  enum mode_class mclass;
+  unsigned short mbitsize; 
+  unsigned char msize;
+  unsigned char munitsize;
+  unsigned char mwidermode; 
+  machine_mode_t innermode;
+  TYPE_ID mtype;
+  unsigned short alignment;
+  int local_REGISTER_CLASS_id;
+  int local_REGISTER_SUBCLASS_id;
+} extension_machine_types_t_pre_20070615;
 
 
 // #############################################################################
@@ -94,12 +113,37 @@ EXTENSION_HighLevel_Info::EXTENSION_HighLevel_Info(const extension_hooks *input_
   // =====================================================
   // Perform revision migration here
   // =====================================================
+  if  ( hooks->magic == MAGIC_NUMBER_EXT_API) {
+    overriden_machine_types = hooks->get_modes();
+  }
+  else {
+    if ( hooks->magic < REV_20070924 ) { /* any version older than
+                                            REV_20070924 */
+      int i;
+      int nb_entry = hooks->get_modes_count();
+      extension_machine_types_t_pre_20070615 *old_tab;
+      extension_machine_types_t              *new_tab;
+      old_tab = (extension_machine_types_t_pre_20070615*)hooks->get_modes();
+      new_tab = new extension_machine_types_t[nb_entry];
+
+      for (i=0; i<nb_entry; i++)  {
+        /* new extension_machine_types_t has an extra field
+           'mpixelsize' at the end */
+        memcpy(&(new_tab[i]), &(old_tab[i]), sizeof(extension_machine_types_t_pre_20070615));
+        new_tab[i].mpixelsize = 0;
+      }
+      overriden_machine_types = new_tab;
+    }
+  }
 }
 
 // Destructor
 EXTENSION_HighLevel_Info::~EXTENSION_HighLevel_Info() {
   if (own_hooks) {
     delete hooks;
+  }
+  if ( hooks->magic < REV_20070924 ) {
+    delete [] (extension_machine_types_t*) overriden_machine_types;
   }
 }
 

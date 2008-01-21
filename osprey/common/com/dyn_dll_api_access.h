@@ -95,6 +95,7 @@ class EXTENSION_HighLevel_Info {
  private:
   BOOL                   own_hooks;
   const extension_hooks *hooks;
+  const extension_machine_types_t * overriden_machine_types;
 };
 
 
@@ -112,7 +113,7 @@ EXTENSION_HighLevel_Info::get_initial_revision(void) const {
 /* Return a pointer on the modes array.  */
 inline const extension_machine_types_t * 
 EXTENSION_HighLevel_Info::get_modes (void) const {
-  return          (hooks->get_modes());
+  return          (overriden_machine_types);
 }
 
 /* Return the number of modes.  */

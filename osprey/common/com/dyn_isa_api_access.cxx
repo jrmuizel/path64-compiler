@@ -43,21 +43,24 @@
  * |          |   mUINT8 to mUINT16                                            |
  * |          |   [commit #12476]                                              |
  * +----------+----------------------------------------------------------------+
+ * | 20070924 | - pixel support                                                |
+ * +----------+----------------------------------------------------------------+
  *
  */
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h> // TODO: debug
 #include "dyn_isa_api_access.h"
 
 // ========================================================================
 // List of compatible API revisions for ISA part of the library description
 // ========================================================================
-#define    NB_SUPPORTED_ISA_REV 2
+#define    NB_SUPPORTED_ISA_REV 3
 #define    REV_20070126        (20070126)
 #define    REV_20070615        (20070615)
+#define    REV_20070924        (20070924)
 static INT supported_ISA_rev_tab[NB_SUPPORTED_ISA_REV] = {
   REV_20070126,
+  REV_20070615,
   MAGIC_NUMBER_EXT_ISA_API   /* current one */
 };
 
@@ -92,6 +95,31 @@ typedef struct {
 } ISA_REGISTER_CLASS_INFO_pre_20070126;
 
 
+typedef struct
+{
+  TOP (*get_load_TOP) (INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr);
+  TOP (*get_store_TOP)(INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr);
+  TOP (*get_move_X2X_TOP)               (INT size);
+  TOP (*get_move_R2X_TOP)               (INT size);
+  TOP (*get_move_X2R_TOP)               (INT size);
+  TOP (*get_insert_and_zeroext_R2X_TOP) (INT size);
+  TOP (*get_rotate_and_insert_R2X_TOP)  (INT size);
+  TOP (*get_insert_and_zeroext_RR2X_TOP)(INT size);
+  TOP (*get_rotate_and_insert_RR2X_TOP) (INT size);
+  TOP (*get_extract_X2R_TOP)            (INT size);
+  TOP (*get_extract_and_rotate_X2R_TOP) (INT size);
+  TOP (*get_clear_TOP)                  (INT size);
+  TOP (*get_zeroext_P2X_TOP)            (INT xsize);
+  TOP (*get_signext_P2X_TOP)            (INT xsize);
+  TOP (*get_zeroext_X_TOP)              (INT size);
+  TOP (*get_signext_X_TOP)              (INT size);
+  TOP (*get_simulated_compose_TOP) (INT from_size, INT to_size);
+  TOP (*get_simulated_extract_TOP) (INT from_size, INT to_size);
+  TOP (*get_simulated_widemove_TOP)(INT size); 
+} extension_regclass_t_pre_20070615;
+
+
+
 // #############################################################################
 // ##
 // ## Class: EXTENSION_Regclass_Info
@@ -102,16 +130,20 @@ typedef struct {
 EXTENSION_Regclass_Info::EXTENSION_Regclass_Info() {
   own_rc_info = NULL;
   rc_info     = NULL;
+  revision_number = -1;
 }
 
-EXTENSION_Regclass_Info::EXTENSION_Regclass_Info(const extension_regclass_t* input_rc_info) {
+EXTENSION_Regclass_Info::EXTENSION_Regclass_Info(const extension_regclass_t* input_rc_info, INT rev_number) {
+  revision_number = rev_number;
   own_rc_info = NULL;
   rc_info     = input_rc_info;
 }
 
+
 EXTENSION_Regclass_Info::EXTENSION_Regclass_Info(const EXTENSION_Regclass_Info &info) {
   own_rc_info = NULL;
   rc_info     = info.rc_info;
+  revision_number = info.revision_number;
 }
 
 // Destructor
@@ -121,6 +153,44 @@ EXTENSION_Regclass_Info::~EXTENSION_Regclass_Info() {
   }
 }
 
+  // Copy operator
+EXTENSION_Regclass_Info&
+EXTENSION_Regclass_Info::operator= (const EXTENSION_Regclass_Info &rc_access) {
+    rc_info = rc_access.rc_info;
+    own_rc_info = NULL;
+    revision_number = rc_access.revision_number;
+    return (*this);
+}
+
+
+// Memory accesses
+TOP
+EXTENSION_Regclass_Info::get_load_TOP (INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr, INT mpixel_size) const {
+  /* revision number before REV_20070924 do support pixel, using the
+     older api */
+  if (revision_number < REV_20070924) {
+    const extension_regclass_t_pre_20070615* rc = 
+      (extension_regclass_t_pre_20070615*) rc_info;
+    return       (rc->get_load_TOP(size, base_reg, offs_is_imm, offs_is_incr));
+  }
+  else {
+    return       (rc_info->get_load_TOP(size, base_reg, offs_is_imm, offs_is_incr, mpixel_size));
+  }
+}
+
+TOP
+EXTENSION_Regclass_Info::get_store_TOP(INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr, INT mpixel_size) const {
+  /* revision number before REV_20070924 do support pixel, using the
+     older api */
+  if (revision_number < REV_20070924) {
+    const extension_regclass_t_pre_20070615* rc = 
+      (extension_regclass_t_pre_20070615*) rc_info;
+    return       (rc->get_store_TOP(size, base_reg, offs_is_imm, offs_is_incr));
+  }
+  else {
+    return       (rc_info->get_store_TOP(size, base_reg, offs_is_imm, offs_is_incr, mpixel_size));
+  }
+}
 
 
 // #############################################################################
@@ -211,7 +281,8 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
   const extension_regclass_t *rc_tab = get_REGISTER_CLASS_info_tab();
   regclass_access_tab = new EXTENSION_Regclass_Info[nb_rc];
   for (i=0; i<nb_rc; i++) {
-    regclass_access_tab[i] = EXTENSION_Regclass_Info(&rc_tab[i]);
+    regclass_access_tab[i] = EXTENSION_Regclass_Info(&rc_tab[i],
+                                                     input_isa_ext->magic);
   }
 
   // Create Scheduling Info wrappers

@@ -39,7 +39,7 @@
 extern "C" {
 #endif
 
-#define MAGIC_NUMBER_EXT_API   20070615  /* Magic number. Interface checking */
+#define MAGIC_NUMBER_EXT_API   20070924  /* Magic number. Interface checking */
 
 struct extension_machine_types
 {
@@ -81,6 +81,8 @@ struct extension_machine_types
   int local_REGISTER_CLASS_id;
   /* mtype to reg sub class association */
   int local_REGISTER_SUBCLASS_id;
+  unsigned char mpixelsize;
+  /* size in bits of pixel type. zero for non-pixel types */
 };
 
 typedef struct extension_machine_types extension_machine_types_t;
@@ -90,7 +92,11 @@ typedef enum {
   DYN_INTRN_TOP = 0,         // 1 to 1 relation between current intrinsic and a TOP
   DYN_INTRN_PARTIAL_COMPOSE, // Compiler known intrinsic used to partially compose a SIMD data
   DYN_INTRN_PARTIAL_EXTRACT, // Compiler known intrinsic used to partially extract a SIMD data
-  DYN_INTRN_COMPOSE          // Compiler known intrinsic used to fully compose a SIMD data
+  DYN_INTRN_COMPOSE,          // Compiler known intrinsic used to fully compose a SIMD data
+  DYN_INTRN_CONVERT_TO_PIXEL,   // Compiler known intrinsic used to
+  DYN_INTRN_CONVERT_FROM_PIXEL, // convert between pixel type
+                                // (nx10/12/14bits) and corresponding
+                                // native data type (nx16bits)
  } DYN_INTRN_TYPE;
 
 /*

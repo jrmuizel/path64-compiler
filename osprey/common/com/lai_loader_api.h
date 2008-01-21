@@ -72,6 +72,10 @@ BE_EXPORTED extern bool EXTENSION_Is_Partial_Compose_INTRINSIC(INTRINSIC id);
 
 BE_EXPORTED extern bool EXTENSION_Is_Partial_Extract_INTRINSIC(INTRINSIC id);
 
+BE_EXPORTED extern bool EXTENSION_Is_Convert_To_Pixel_INTRINSIC(INTRINSIC id);
+
+BE_EXPORTED extern bool EXTENSION_Is_Convert_From_Pixel_INTRINSIC(INTRINSIC id);
+
 BE_EXPORTED extern int  EXTENSION_Get_ComposeExtract_Index(INTRINSIC id);
 
 BE_EXPORTED extern TOP EXTENSION_TOP_AM_automod_variant(TOP top,
