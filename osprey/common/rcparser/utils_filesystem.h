@@ -29,6 +29,13 @@
 
 		typedef struct stat utilsFileStatus;
 
+	#elif defined __CYGWIN32__
+
+		#include <sys/types.h>
+		#include <sys/stat.h>
+
+		typedef struct stat utilsFileStatus;
+
 	#else
 
 		#error Cannot guess OS...

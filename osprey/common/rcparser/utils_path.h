@@ -31,6 +31,13 @@ typedef struct stat utilsPathStat;
 
 typedef struct _stat utilsPathStat;
 
+#elif defined( __CYGWIN32__ )
+
+#include <sys/types.h>
+#include <sys/stat.h>
+
+typedef struct _stat utilsPathStat;
+
 #else
 
 #error "Cannot guess OS..."
