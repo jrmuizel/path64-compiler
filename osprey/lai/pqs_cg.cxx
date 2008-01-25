@@ -1,6 +1,6 @@
 /*
 
-  Copyright (C) 2000, 2001 Silicon Graphics, Inc.  All Rights Reserved.
+  Copyright (C) 2007, STMicroelectronics Inc.  All Rights Reserved.
 
   This program is free software; you can redistribute it and/or modify it
   under the terms of version 2 of the GNU General Public License as
@@ -21,179 +21,8 @@
   with this program; if not, write the Free Software Foundation, Inc., 59
   Temple Place - Suite 330, Boston MA 02111-1307, USA.
 
-  Contact information:  Silicon Graphics, Inc., 1600 Amphitheatre Pky,
-  Mountain View, CA 94043, or:
-
-  http://www.sgi.com
-
-  For further information regarding this notice, see:
-
-  http://oss.sgi.com/projects/GenInfo/NoticeExplan
-
 */
 
-
-#include "defs.h"
-
-#include "pqs_cg.h"
-/* #include "pqs_cg_st100.h" */
-#include "pqs.h"
-#include "tracing.h"
-
-#ifdef TARG_ST
-/* (cbr) use target interface */
-#include "targ_pqs.h"
-#endif
-
-// Disable the PQS (for debugging purposes)
-BOOL PQS_disabled=FALSE;
-
-// Tracing variable
-BOOL PQS_Tracing;
-
-// Give the maps a place to live
-TN_MAP PQS_tn_map;
-OP_MAP PQS_op_map;
-
-#ifndef TARG_ST
-/* (cbr) use target interface */
-/* ====================================================================
- *   get_top_info
- *
- *   TODO: perhaps it can be marked with the Operator data base.
- * ====================================================================
- */
-static void
-get_top_info(TOP x, PQS_ITYPE &itype, PQS_RELOPTYPE &relop)
-{
-   switch (x) {
-     case TOP_GP32_EQE_GT_BR_DR_DR:
-     case TOP_GP32_EQE_GT_BR_DR_U8:
-     case TOP_GP32_EQW_GT_BR_DR_DR:
-     case TOP_GP32_EQW_GT_BR_DR_U8:
-     case TOP_GP32_GEE_GT_BR_DR_DR:
-     case TOP_GP32_GEE_GT_BR_DR_U8:
-     case TOP_GP32_GEW_GT_BR_DR_DR:
-     case TOP_GP32_GEW_GT_BR_DR_U8:
-     case TOP_GP32_GTE_GT_BR_DR_DR:
-     case TOP_GP32_GTE_GT_BR_DR_U8:
-     case TOP_GP32_GTW_GT_BR_DR_DR:
-     case TOP_GP32_GTW_GT_BR_DR_U8:
-     case TOP_GP32_LEE_GT_BR_DR_DR:
-     case TOP_GP32_LEE_GT_BR_DR_U8:
-     case TOP_GP32_LEW_GT_BR_DR_DR:
-     case TOP_GP32_LEW_GT_BR_DR_U8:
-     case TOP_GP32_LTE_GT_BR_DR_DR:
-     case TOP_GP32_LTE_GT_BR_DR_U8:
-     case TOP_GP32_LTW_GT_BR_DR_DR:
-     case TOP_GP32_LTW_GT_BR_DR_U8:
-     case TOP_GP32_NEE_GT_BR_DR_DR:
-     case TOP_GP32_NEE_GT_BR_DR_U8:
-     case TOP_GP32_NEW_GT_BR_DR_DR:
-     case TOP_GP32_NEW_GT_BR_DR_U8:
-       itype = PQS_ITYPE_NORM;
-       break;
-
-    default: 
-       itype = PQS_ITYPE_NOPREDICATES;
-       break;
-   }
-
-   
-   switch (x) {
-     case TOP_GP32_NEE_GT_BR_DR_DR:
-     case TOP_GP32_NEE_GT_BR_DR_U8:
-     case TOP_GP32_NEW_GT_BR_DR_DR:
-     case TOP_GP32_NEW_GT_BR_DR_U8:
-       relop = PQS_RELOPTYPE_NE;
-       break;
-
-     case TOP_GP32_EQE_GT_BR_DR_DR:
-     case TOP_GP32_EQE_GT_BR_DR_U8:
-     case TOP_GP32_EQW_GT_BR_DR_DR:
-     case TOP_GP32_EQW_GT_BR_DR_U8:
-       relop = PQS_RELOPTYPE_EQ;
-       break;
-   }
-
-   return;
-}
-#endif
-
-/****************************************************************
-
-
-  PQS_ITYPE 
-  PQS_classify_instruction (PQS_OP inst, PQS_TN &qual, PQS_TN &p1, PQS_TN &p2, PQS_NODE_FLAGS &flags)
-  
-  Classify an instruction, returning (if present) the type of the instruction
-  and setting qual, p1 and p2 to the qualifying predicate, the first predicate output
-  and the second predicate output.
-
-  flags is set if it is easily determined that a condition is always true or always false.
-
-  WARNING: the result index numbers are hard-wired
-
-****************************************************************/
-PQS_ITYPE 
-PQS_classify_instruction (PQS_OP inst, PQS_TN &qual, PQS_TN &p1, PQS_TN &p2, PQS_NODE_FLAGS &flags)
-{
-   PQS_ITYPE result;
-   PQS_RELOPTYPE relop;
-   TN *op1,*op2;
-   TOP topcode;
-   flags = 0;
-   qual = NULL;
-   p1 = NULL;
-   p2 = NULL;
-   
-   topcode = OP_code(inst);
-#ifdef TARG_ST
-   /* (cbr) use target interface */
-   PQSTARG_get_top_info(topcode, result, relop);
-#else
-   get_top_info(topcode, result, relop);
-#endif
-
-   if (OP_has_predicate(inst)) {
-#ifdef TARG_ST
-     /* (cbr) predicate operand # is not necessary constant */
-     qual = OP_opnd(inst, OP_find_opnd_use(inst, OU_predicate));
-#else
-     qual = OP_opnd(inst,OP_PREDICATE_OPND);
-#endif
-   }
-   
-   // Detect some very simple (but important) special cases
-   if (relop == PQS_RELOPTYPE_EQ) {
-      op1 = OP_opnd(inst,1);
-      op2 = OP_opnd(inst,2);
-      if (op1 == op2) {
-	 flags = PQS_FLAG_CONDITION_TRUE;
-      }
-   }
-
-   if (relop == PQS_RELOPTYPE_NE) {
-      op1 = OP_opnd(inst,1);
-      op2 = OP_opnd(inst,2);
-      if (op1 == op2) {
-	 flags = PQS_FLAG_CONDITION_FALSE;
-      }
-   }
-
-   // Get the predicate results for the producer
-   if (result != PQS_ITYPE_NOPREDICATES) {
-      // Warning: this is hardwired 
-      if (result == PQS_ITYPE_DIVSQRT) {
-	 p1 = OP_result(inst,1);
-      } else {
-	 p1 = OP_result(inst,0);
-	 p2 = OP_result(inst,1);
-      }
-   }
-
-   return (result);
-}
 
 /*================================================================
 
@@ -203,93 +32,136 @@ See pqs_cg.h for descriptions.
 
 */
 
+#include "defs.h"
+#include "cg.h"
+#include "pqs_cg.h"
+#include "pqs.h"
+#include "pqs_target.h"
+#include "mempool.h"
+#include "cxx_memory.h"
+#include "tracing.h"
+
+// Disable the PQS (for debugging purposes)
+BOOL PQS_disabled=FALSE;
+
+// Tracing variable
+BOOL PQS_Tracing;
 
 // This is the primary instance of the PQS used by the CG "global" interface
 static PQS_MANAGER *pqsm=NULL;
 
-// Allocate the map for a TN if it hasn't already been allocated
-static PQS_TN_MAP_TYPE *
-get_tn_map(const TN *t)
-{
-   PQS_TN_MAP_TYPE *m = (PQS_TN_MAP_TYPE *) TN_MAP_Get(pqsm->PQS_tn_map,t);
-   if (m == NULL) {
-      m = CXX_NEW(PQS_TN_MAP_TYPE,&PQS_mem_pool);
-      TN_MAP_Set(pqsm->PQS_tn_map,(TN *) t,m);
-   }
-   return (m);
+bool lt_tn::operator()(TN *t1, const TN *t2) const {
+  // This code seems unnecessarily complicated for what we need here:
+  // we just need a canonical ordering of TNs that could be constants
+  // or registers, but comparing constant TNs of various types is
+  // complicated.
+  if (TN_is_register (t1) && TN_is_register (t2)) {
+    return TN_number(t1) < TN_number(t2);
+  } else if (TN_is_register (t1)) {
+    return t1;
+  } else if (TN_is_register (t2)) {
+    return t2;
+  }
+  // Neither are registers.
+  if (TN_has_value (t1) && TN_has_value (t2)) {
+    return TN_value (t1) < TN_value (t2);
+  } else if (TN_has_value (t1)) {
+    return t1;
+  } else if (TN_has_value (t2)) {
+    return t2;
+  }
+  // Neither have integer value.
+  if (TN_is_symbol (t1) && TN_is_symbol (t2)) {
+    if (ST_st_idx (TN_var (t1)) != ST_st_idx (TN_var (t2))) {
+      return ST_st_idx (TN_var (t1)) < ST_st_idx (TN_var (t2));
+    } else {
+      return TN_offset (t1) < TN_offset (t2);
+    }
+  } else if (TN_is_symbol (t1)) {
+    return t1;
+  } else if (TN_is_symbol (t2)) {
+    return t2;
+  }
+  // Neither is a symbol.
+  if (TN_is_label (t1) && TN_is_label (t2)) {
+    if (TN_label (t1) != TN_label (t2)) {
+      return TN_label (t1) < TN_label (t2);
+    } else {
+      return TN_offset (t1) < TN_offset (t2);
+    }
+  } else if (TN_is_label (t1)) {
+    return t1;
+  } else if (TN_is_label (t2)) {
+    return t2;
+  }
+  // Neither is a label.
+  FmtAssert (TN_is_enum (t1) && TN_is_enum (t2),
+	     ("Unexpected TN in lt_tn"));
+  return TN_enum (t1) < TN_enum (t2);
 }
 
-
-/* Part of the constructor to initialize TN0 and maps */
-// Needs to be set up this way becuase we need valid PQS_MANAGER before we can use
-// get_tn_map to set up the stuff for P0
-void PQS_MANAGER::Init_TN_OP_Info(void)
-{
-#ifdef TARG_ST200
-  True_TN = Gen_Register_TN (ISA_REGISTER_CLASS_branch, 4);
-#endif
-   PQS_TN_MAP_TYPE *p0_map;
-   PQS_TN_P0 = True_TN;
-   PQS_tn_map = TN_MAP_Create();
-   PQS_op_map = OP_MAP32_Create();
-   p0_map = CXX_NEW(PQS_TN_MAP_TYPE,&PQS_mem_pool);
-   
-   TN_MAP_Set(PQS_tn_map,PQS_TN_P0,p0_map);
-   p0_map->last_def = PQS_IDX_TRUE;
-}
-
-
-//
-// Destructor, 
-// Just delete the maps; the advantage of MEMPOOLS is that we don't need to worry 
-// about freeing up the space.
-// The default destructors for all the STL members take care of cleaning up the 
-// memory (which is probably also in a mempool) for the various lists and vectors
-// used in the PQS
-//
-PQS_MANAGER::~PQS_MANAGER()
-{
-  TN_MAP_Delete(PQS_tn_map);
-  OP_MAP_Delete(PQS_op_map);
-}
-
-
-// Initialize the PQS for a set of BB's 
-// 
 void
-PQSCG_init(BB * first_bb)
+PQSCG_init (BB *first_bb)
 {
    BB *bb;
    OP *op;
 
    if (pqsm || PQS_disabled) return;
+
+   PQS_Tracing = Get_Trace(TP_PQS, PQS_ENTRY);
+
    // Initialize the pqs manager
    PQS_Init_Memory();
    MEM_POOL_Push(&PQS_mem_pool);
-   pqsm = CXX_NEW(PQS_MANAGER,&MEM_phase_pool);
-   PQS_tn_map = pqsm->PQS_tn_map;
-   PQS_op_map = pqsm->PQS_op_map;
+   hTN_MAP tn_map = hTN_MAP_Create (&PQS_mem_pool);
+   pqsm = CXX_NEW(PQS_MANAGER (),&MEM_phase_pool);
+   
+   PQSTARG_target_synthesized_info (pqsm);
 
-   // Add all the instructions
-   FOR_ALL_BBLIST_ITEMS(first_bb,bb) {
-      FOR_ALL_BB_OPs_FWD(bb,op) {
-	 pqsm->PQS_Add_Instruction(op);
-      }
+   // We need to inform pqsm of the order of uses and defs of
+   // each TN, so that it can decide which are valid for its analysis.
+   FOR_ALL_BBLIST_ITEMS(first_bb, bb) {
+     FOR_ALL_BB_OPs_FWD(bb, op) {
+       for (int opndno = 0; opndno < OP_opnds(op); opndno++) {
+	 TN *tn = OP_opnd (op, opndno);
+	 pqsm->Note_Use (bb, tn);
+       }
+       for (int resno = 0; resno < OP_results(op); resno++) {
+	 TN *tn = OP_result (op, resno);
+	 pqsm->Note_Def (bb, tn);
+       }
+     }
    }
-
-   // Trace
-   if (Get_Trace(TP_PQS, 1)) {
-     PQS_Tracing = TRUE;
-   } else {
-     PQS_Tracing = FALSE;
+   // Also compute all modified registers in the code.
+   // We will allow unmodified dedicated registers to be valid for the
+   // analysis.
+   REGISTER_SET modified_registers[ISA_REGISTER_CLASS_MAX_LIMIT+1];
+   ISA_REGISTER_CLASS rc;
+   FOR_ALL_ISA_REGISTER_CLASS(rc) {
+     modified_registers[rc] = REGISTER_SET_EMPTY_SET;
    }
-
-   if (Get_Trace (TKIND_IR,TP_PQS)) {
-     pqsm->Print_all(TFile);
+   FOR_ALL_BBLIST_ITEMS(first_bb, bb) {
+     BB_Modified_Registers (bb, modified_registers, FALSE);
    }
+   pqsm->Note_Modified_Registers (modified_registers);
+   // Now we have passed all the required information, calculate
+   // the valid TNs.
+   pqsm->Calculate_Valid_TNs ();
+       
+   // Now scan the instructions to determine their predicate
+   // behaviour.
+   // Create a mapping from TN to PQS_NODE on the fly.
+   FOR_ALL_BBLIST_ITEMS(first_bb, bb) {
+     FOR_ALL_BB_OPs_FWD(bb, op) {
+       PQSTARG_classify_instruction (pqsm, op);
+     }
+   }
+   pqsm->Complete_Graph ();
 
+   if (PQS_Tracing) {
+     Trace_IR (TP_PQS, "PQS analysis", NULL);
+   }
 }
-
 
 void
 PQSCG_term(void)
@@ -302,7 +174,7 @@ PQSCG_term(void)
 }
 
 void
-PQSCG_reinit(BB * first_bb)
+PQSCG_reinit (BB *first_bb)
 {
   PQSCG_term();
   PQSCG_init(first_bb);
@@ -314,73 +186,11 @@ PQSCG_pqs_valid(void)
   return pqsm != NULL;
 }
 
-
-void
-PQSCG_add_instruction(PQS_OP op)
-{
-  pqsm->PQS_Add_Instruction(op);
-}
-
-//
-// In practice, I don't think we ever generate a case for which this is 
-// not going to return TRUE. If we eventually get clever with the OR and AND forms
-// of the predicate generators, this will change.
-//
-
-BOOL 
-PQSCG_sets_results_if_qual_true(PQS_OP op)
-{
-  PQS_ITYPE itype;
-  PQS_TN qual, p1, p2;
-  PQS_NODE_FLAGS flags;
-  BOOL result=FALSE;
-  
-  itype = PQS_classify_instruction (op, qual, p1, p2, flags);
-  switch (itype) {
-   case PQS_ITYPE_NOPREDICATES:
-   case PQS_ITYPE_NORM:
-   case PQS_ITYPE_UNC:
-   case PQS_ITYPE_DIVSQRT:
-     result = TRUE;
-     break;
-
-   case PQS_ITYPE_OR:
-   case PQS_ITYPE_ORANDCM:
-   case PQS_ITYPE_ANDCM:
-     result = (flags & PQS_FLAG_CONDITION_TRUE) != 0;
-     break;
-
-   case PQS_ITYPE_ORCM:
-   case PQS_ITYPE_AND:
-   case PQS_ITYPE_ANDORCM:
-     result = (flags & PQS_FLAG_CONDITION_FALSE) != 0;
-     break;
-  }
-
-  return (result);
-}
-
-void
-PQSCG_copy_tn_map(PQS_TN tn_out, PQS_TN tn_in)
-{
-  PQS_TN_MAP_TYPE *m_in=get_tn_map(tn_in);
-  PQS_TN_MAP_TYPE *m_out=get_tn_map(tn_out);
-  
-  // Copy the data
-  *m_out = *m_in;
-  // Set the tn_to_use field
-  if (m_out->tn_to_use == NULL) {
-    m_out->tn_to_use = tn_in;
-  }
-}
-
-
 // Get the mempool used by PQS
 MEM_POOL * PQSCG_get_mempool(void)
 {
   return &PQS_mem_pool;
 }
-
 
 /*================================================================
   The interface routines which use the "current" PQS_MANAGER set up by PQS_Init()
@@ -389,122 +199,45 @@ MEM_POOL * PQSCG_get_mempool(void)
 
 #define MAKE_SURE_PQSM_INTIALIZED Is_True(pqsm,("Predicate query system not yet intialized"))
 
-BOOL PQSCG_is_disjoint(PQS_TN tn1, PQS_TN tn2){
-   if (!pqsm) return (FALSE);
-   return pqsm->PQS_is_disjoint(tn1,tn2);
+BOOL PQSCG_is_disjoint(TN * tn1, TN * tn2)
+{
+  return pqsm && pqsm->PQS_is_disjoint (tn1, tn2);
 }
 
 BOOL PQSCG_is_disjoint(PQS_TN_SET &tns1, PQS_TN_SET &tns2)
 {
-   if (!pqsm) return (FALSE);
-   return pqsm->PQS_is_disjoint(tns1,tns2);
+  return pqsm && pqsm->PQS_is_disjoint (tns1, tns2);
 }
 
-BOOL PQSCG_is_subset_of (PQS_TN tn1, PQS_TN tn2)
+BOOL PQSCG_is_subset_of (TN *tn1, TN *tn2)
 {
-   if ((tn1 == tn2) || tn2 == True_TN) return (TRUE);
-   if (!pqsm) return (FALSE);
-   return pqsm->PQS_is_subset_of (tn1, tn2);
+  if (pqsm) {
+    return pqsm->PQS_is_subset_of (tn1, tn2);
+  } else {
+    return tn1 == tn2 || tn2 == True_TN;
+  }
 }
 
-BOOL PQSCG_is_subset_of (PQS_TN tn1, PQS_TN_SET &tns2)
+BOOL PQSCG_is_subset_of (TN * tn1, PQS_TN_SET &tns2)
 {
-   if (tns2.Is_Subset(True_TN) || tns2.Is_Subset(tn1)) return (TRUE);
-   if (!pqsm) return (FALSE);
-   return pqsm->PQS_is_subset_of (tn1, tns2);
+  if (pqsm) {
+    return pqsm->PQS_is_subset_of (tn1, tns2);
+  } else {
+    return tns2.Is_Subset (True_TN) || tns2.Is_Subset(tn1);
+  }
 }
 
 BOOL PQSCG_is_subset_of (PQS_TN_SET &tns1, PQS_TN_SET &tns2)
 {
-   if (tns2.Is_Subset(True_TN) || tns2.Is_Subset(tns1)) return (TRUE);
-   if (!pqsm) return (FALSE);
-   return pqsm->PQS_is_subset_of (tns1, tns2);
-}
-
-
-/*================================================================================
-  ================================================================================
-*/
-
-// Routines to deal with the maps
-PQS_NODE_IDX PQS_TN_get_last_definition(const TN *t)
-{
-   PQS_TN_MAP_TYPE *m = (PQS_TN_MAP_TYPE *) TN_MAP_Get(pqsm->PQS_tn_map,t);
-   if (m) return m->last_def;
-   return (PQS_IDX_NONE);
-}
-   
-PQS_NODE_IDX PQS_TN_used_as_qual_pred(const TN *t)
-{
-   PQS_TN_MAP_TYPE *m =  (PQS_TN_MAP_TYPE *) TN_MAP_Get(pqsm->PQS_tn_map,t);
-   if (m) return m->used_as_qual_pred;
-   return (FALSE);
-}
-
-PQS_NODE_IDX PQS_TN_no_query(const TN *t)
-{
-   PQS_TN_MAP_TYPE *m =  (PQS_TN_MAP_TYPE *) TN_MAP_Get(pqsm->PQS_tn_map,t);
-   if (m) return m->no_query;
-   return (TRUE);
-}
-
-
-
-void PQS_TN_set_last_definition(const TN *t, PQS_NODE_IDX p)
-{
-   PQS_TN_MAP_TYPE *m=get_tn_map(t);
-   m->last_def = p;
-}
-
-void PQS_TN_set_used_as_qual_pred(const TN *t)
-{
-   PQS_TN_MAP_TYPE *m=get_tn_map(t);
-   m->used_as_qual_pred = TRUE;
-}
-
-void PQS_TN_set_no_query(const TN *t)
-{
-   PQS_TN_MAP_TYPE *m=get_tn_map(t);
-   m->no_query = TRUE;
-}
-
-
-PQS_TN
-PQS_TN_get_tn_to_use(const TN *t)
-{
-  PQS_TN_MAP_TYPE *m=get_tn_map(t);
-  if (m->tn_to_use != NULL) {
-    return m->tn_to_use;
+  if (pqsm) {
+    return pqsm->PQS_is_subset_of (tns1, tns2);
   } else {
-    return (PQS_TN) t;
+    return tns2.Is_Subset (True_TN) || tns2.Is_Subset (tns1);
   }
 }
 
-void
-PQS_TN_set_tn_to_use(const TN *t, const TN *to_use)
+BOOL PQSCG_sets_results_if_qual_true(OP *op)
 {
-  PQS_TN_MAP_TYPE *m=get_tn_map(t);
-  m->tn_to_use = (PQS_TN) to_use;
+  return PQSTARG_sets_results_if_qual_true (op);
 }
 
-void
-PQS_OP_set_pqs_idx(OP *op, PQS_NODE_IDX p)
-{
-   OP_MAP32_Set(pqsm->PQS_op_map,op,p);
-}
-
-
-PQS_NODE_IDX
-PQS_OP_get_pqs_idx(OP *op)
-{
-   return OP_MAP32_Get(PQS_op_map,op);
-}
-
-
-
-// Debugging routines
-
-void dump_idx(PQS_NODE_IDX idx)
-{
-   pqsm->Print_idx(idx);
-}

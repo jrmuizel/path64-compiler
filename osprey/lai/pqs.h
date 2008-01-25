@@ -40,18 +40,9 @@
 #define PQS_USE_MEMPOOLS
 #endif
 
-#if __GNUC__ >= 3
-#include <utility>
-#else
-#include <pair.h>
-#endif // __GNUC__ >= 3
-
-#include "tn.h"
-#include "op.h"
-#include "bb.h"
-#include "tn_map.h"
-#include "op_map.h"
-#include "cxx_memory.h"
+#include <list>
+#include <vector>
+#include <map>
 
 // Tracing variable
 extern BOOL PQS_Tracing;
@@ -62,307 +53,123 @@ extern MEM_POOL PQS_mem_pool;
 extern void PQS_Init_Memory(void);
 #endif
  
-/*================================================================
-//================================================================
+typedef UINT32 PQS_SYMBOL;
+  
+#define PQS_HASH_SIZE 16
 
-Vectors of PQS_NODEs
+class PQS_NODE;
+class PQS_RELATION;
+class PQS_SYMBOL_SET;
+class PQS_TN_INFO;
 
-//================================================================
-*/
-
-#ifdef PQS_USE_MEMPOOLS
-typedef mempool_allocator<PQS_NODE_IDX> PQS_NODE_IDX_ALLOCATOR;
-#else
-typedef alloc PQS_NODE_IDX_ALLOCATOR;
-#endif
-
-typedef vector<PQS_NODE_IDX,PQS_NODE_IDX_ALLOCATOR> PQS_NODE_IDX_VECTOR;
-
-
-/*================================================================
-//================================================================
-//================================================================
-*/
-
-// Pairs of index and TN.
-typedef std::pair<PQS_NODE_IDX,PQS_TN> PQS_TNI;
-#define PQS_TNI_TN(x) ((x).second)
-#define PQS_TNI_IDX(x) ((x).first)
-
-struct lt_tni {
-   inline bool operator()(const PQS_TNI &t1, const PQS_TNI &t2) const {
-      if (PQS_TNI_TN(t1) == PQS_TNI_TN(t2)) {
-	 return PQS_TNI_IDX(t1) < PQS_TNI_IDX(t2);
-      } else {
-	 return TN_number(PQS_TNI_TN(t1)) < TN_number(PQS_TNI_TN(t2));
-      }
-   }
-};
-
-typedef PQS_SET<PQS_TNI,lt_tni> PQS_TNI_SET;
-typedef PQS_SET<PQS_TNI,lt_tni>::set_type PQS_TNI_SET_TYPE;
-
-//================================================================
-//================================================================
-//================================================================
-/* This is the definition of the NODE class 
- */
-
-class PQS_NODE {
-friend class PQS_MANAGER;
-private:
-// Data members
-   PQS_OP    _inst;                    // pointer to actual instruction setting things
-   PQS_ITYPE _itype;                   // Style of the instruction (i.e. UNC, OR,  AND, etc.)
-   PQS_TN       out_pred1,out_pred2;   // Points to the TN's for the predicates set by the instruction
-   PQS_NODE_IDX in_pred1,in_pred2;     // Nodes for the instructions setting previous instances
-   PQS_NODE_IDX qual_pred;             // Node for the qualifying predicate
-   PQS_TN       qual_tn;               // TN of the qualifying predicate
-   PQS_NODE_IDX other_instruction;     // Pointer to another instruction having the same condition
-   PQS_NODE_IDX_VECTOR use1,use2;
-   PQS_NODE_FLAGS flags;               // Miscellaneous flags
-
-   PQS_MARKER_TYPE _marker1,_marker2;        // For tree walks
-   void Init(void);
-
-public:
-   PQS_NODE()
-#ifdef PQS_USE_MEMPOOLS
-      : use1(PQS_NODE_IDX_VECTOR::allocator_type(&PQS_mem_pool)),
-	use2(PQS_NODE_IDX_VECTOR::allocator_type(&PQS_mem_pool)) 
-#endif
-   {
-      Init();
-   }
-   PQS_NODE(PQS_ITYPE itype, PQS_OP inst)
-#ifdef PQS_USE_MEMPOOLS
-      : use1(PQS_NODE_IDX_VECTOR::allocator_type(&PQS_mem_pool)),
-	use2(PQS_NODE_IDX_VECTOR::allocator_type(&PQS_mem_pool)) 
-#endif
-   {
-      Init();
-      _inst = inst;
-      _itype = itype;
-   }
-
-   ~PQS_NODE(){};
-
-   void add_use(PQS_TN tn, PQS_NODE_IDX idx);
-   inline INT32 num_use1() { return use1.size(); }
-   inline INT32 num_use2() { return use2.size(); }
-   inline PQS_NODE_IDX get_use1(INT32 i) { Is_True((i>=0 && i<num_use1()),("Bad i")); return use1[i]; }
-   inline PQS_NODE_IDX get_use2(INT32 i) { Is_True((i>=0 && i<num_use2()),("Bad i")); return use2[i]; }
-   
-   inline PQS_MARKER_TYPE Get_Marker1(void) {return _marker1;}
-   inline PQS_MARKER_TYPE Get_Marker2(void) {return _marker2;}
-   inline void Set_Marker1(PQS_MARKER_TYPE m) {_marker1 = m;}
-   inline void Set_Marker2(PQS_MARKER_TYPE m) {_marker2 = m;}
-   inline void Set_Flags(PQS_NODE_FLAGS f) {flags = f;}
-   inline PQS_NODE_FLAGS Get_Flags(void) {return flags;}
-
-   void Print(FILE *f=stdout);
-};
-
-#ifdef PQS_USE_MEMPOOLS
-typedef mempool_allocator<PQS_NODE> PQS_NODE_ALLOCATOR;
-#else
-typedef alloc PQS_NODE_ALLOCATOR;
-#endif
-typedef vector <PQS_NODE,PQS_NODE_ALLOCATOR> PQS_NODE_VECTOR;
+typedef std::list<PQS_NODE *, mempool_allocator<PQS_NODE *> > PQS_NODE_LIST;
+typedef PQS_NODE_LIST::iterator PQS_NODE_LIST_ITER;
+typedef std::list<PQS_RELATION *,mempool_allocator<PQS_RELATION *> > PQS_RELATION_LIST;
+typedef std::list<const PQS_RELATION *,mempool_allocator<const PQS_RELATION *> > CONST_PQS_RELATION_LIST;
+typedef PQS_RELATION_LIST::iterator PQS_RELATION_LIST_ITER;
+typedef PQS_RELATION_LIST::const_iterator PQS_RELATION_LIST_CONST_ITER;
+typedef std::vector<PQS_NODE *,mempool_allocator<PQS_NODE *> > PQS_NODE_MAP;
+typedef PQS_NODE_MAP::iterator PQS_NODE_MAP_ITER;
+typedef std::pair<const TN *,PQS_TN_INFO *> tn_map_pair;
+typedef std::map<TN *,PQS_TN_INFO *,std::less<TN *>,mempool_allocator<tn_map_pair> > PQS_TN_MAP;
+typedef PQS_TN_MAP::iterator PQS_TN_MAP_ITER;
 
 class PQS_MANAGER {
-private:
-   PQS_NODE_VECTOR _data;
-   PQS_MARKER_TYPE _mark_number;
+ private:
+  PQS_SYMBOL next_pqs_symbol;
+  UINT32 next_pqs_relation;
+  UINT32 current_marker; // Used for graph walks.
+  PQS_NODE *pqs_unknown_node;
+  PQS_NODE *pqs_true_node;
+  PQS_NODE *pqs_false_node;
+  TN *zero_tn;
+  PQS_NODE_LIST Hash_Table [PQS_HASH_SIZE];
+  PQS_RELATION_LIST all_relations;
+  PQS_TN_MAP tn_map;         // map from TN to PQS_NODE.
+  PQS_NODE_MAP node_map;  // map from PQS_SYMBOL to PQS_NODE.
+  REGISTER_SET modified_registers [ISA_REGISTER_CLASS_MAX_LIMIT+1];
+  BOOL trace_entry, trace_hash;
 
-   BOOL PQS_is_disjoint_helper(PQS_NODE_IDX tni2, PQS_TN tn2);
-   PQS_TRUTH never_true_together(PQS_TN t1, PQS_TN t2, PQS_NODE_IDX tni);
-   BOOL may_set_TRUE(PQS_NODE_IDX tni, PQS_TN tn);
-   BOOL may_set_FALSE(PQS_NODE_IDX tni, PQS_TN tn);
-   BOOL always_set_TRUE(PQS_NODE_IDX tni, PQS_TN tn);
-   BOOL always_set_FALSE(PQS_NODE_IDX tni, PQS_TN tn);
-   BOOL never_set_TRUE(PQS_NODE_IDX tni, PQS_TN tn);
-   BOOL never_set_FALSE(PQS_NODE_IDX tni, PQS_TN tn);
-   BOOL may_set_TRUE(INT32 truth);
-   BOOL may_set_FALSE(INT32 truth);
-   BOOL never_set_TRUE(INT32 truth);
-   BOOL never_set_FALSE(INT32 truth);
-   BOOL always_set_TRUE(INT32 truth);
-   BOOL always_set_FALSE(INT32 truth);
-   BOOL qual_always_true(INT32 truth);
-   INT32  get_truth_info(PQS_NODE_IDX tni, PQS_TN tn);
-   BOOL PQS_is_subset_of(PQS_NODE_IDX tni1, PQS_TN tn1, PQS_NODE_IDX tni2, PQS_TN tn2);
-   BOOL PQS_is_subset_of(PQS_NODE_IDX tni1, PQS_TN tn1, PQS_TN_SET &tns2);
-   BOOL PQS_is_disjoint (PQS_NODE_IDX tni1, PQS_NODE_IDX tni2, PQS_TN tn1, PQS_TN tn2);
-   BOOL PQS_is_disjoint_h (PQS_NODE_IDX tni1, PQS_NODE_IDX tni2, PQS_TN tn1, PQS_TN tn2);
-   void PQS_Mark_TN_Parents_TRUE(PQS_NODE_IDX tni, PQS_TN tn);
-   void PQS_Mark_TN_Parents_TRUE(PQS_TN tn);
-   PQS_TN_SET Simplify_TN_Set (const PQS_TN_SET &tn_in);
-   void Simplify_TNI_Set (PQS_TNI_SET &tni_in);
-   BOOL Simplify_In_Set(PQS_NODE_IDX tni, PQS_TN tn, PQS_TNI_SET &tnis);
-   void Init_TN_OP_Info(void);
-
-public:
-
-   PQS_MANAGER()
-#ifdef PQS_USE_MEMPOOLS
-      : _data(&PQS_mem_pool)
-#endif
-   {
-      PQS_NODE dummy;
-      _mark_number=0;
-      _data.push_back(dummy);
-      Init_TN_OP_Info();
-   }
-
-   ~PQS_MANAGER();
-
-#ifndef PQSTEST
-   TN_MAP PQS_tn_map;
-   OP_MAP PQS_op_map;
-#endif   
-   
-   inline PQS_MARKER_TYPE Current_Marker() {return _mark_number;}
-   inline void Update_Marker(void) {++_mark_number;}
-   inline void Set_Manager_Marker(PQS_MARKER_TYPE mark) {_mark_number = mark;}
-
-   inline PQS_NODE_IDX New_pqs_idx(PQS_ITYPE itype, PQS_OP inst); 
-
-   // Accessors
-   inline void PQS_NODE_set_out_pred1(PQS_NODE_IDX i, PQS_TN p1) {_data[i].out_pred1 = p1;}
-   inline void PQS_NODE_set_itype(PQS_NODE_IDX i, PQS_ITYPE itype) {_data[i]._itype = itype;}
-   inline void PQS_NODE_set_out_pred2(PQS_NODE_IDX i, PQS_TN p2) {_data[i].out_pred2 = p2;}
-   inline void PQS_NODE_set_in_pred1(PQS_NODE_IDX i, PQS_NODE_IDX p1) {_data[i].in_pred1 = p1;}
-   inline void PQS_NODE_set_in_pred2(PQS_NODE_IDX i, PQS_NODE_IDX p2) {_data[i].in_pred2 = p2;}
-   inline void PQS_NODE_set_qual_pred(PQS_NODE_IDX i, PQS_NODE_IDX p1) {_data[i].qual_pred = p1;}
-   inline void PQS_NODE_set_qual_tn(PQS_NODE_IDX i, PQS_TN t) {_data[i].qual_tn = t;}
-   inline void PQS_NODE_add_use(PQS_NODE_IDX i, PQS_TN p, PQS_NODE_IDX use) {
-      if (PQS_Is_Real_Idx(i)) _data[i].add_use(p,use);
-   }
-   inline void PQS_NODE_Mark(PQS_NODE_IDX i) {
-      _data[i].Set_Marker1(_mark_number);
-      _data[i].Set_Marker2(_mark_number);
-   }
-   inline void PQS_NODE_Mark(PQS_NODE_IDX i,PQS_TN t) {
-      // set the marker for the specific TN t
-      if (_data[i].out_pred1 == t) _data[i].Set_Marker1(_mark_number);
-      if (_data[i].out_pred2 == t) _data[i].Set_Marker2(_mark_number);
-   }
-   inline void PQS_NODE_set_flags(PQS_NODE_IDX i,PQS_NODE_FLAGS f) {_data[i].flags=f;}
-   inline void PQS_NODE_set_condition_true(PQS_NODE_IDX i) {_data[i].flags |= PQS_FLAG_CONDITION_TRUE;}
-   inline void PQS_NODE_set_condition_false(PQS_NODE_IDX i) {_data[i].flags |= PQS_FLAG_CONDITION_FALSE;}
-   
-   // getters
-
-   inline PQS_OP PQS_NODE_get_op(PQS_NODE_IDX i) {      return _data[i]._inst;   }
-   inline PQS_ITYPE PQS_NODE_get_itype(PQS_NODE_IDX i) {      return _data[i]._itype;   }
-   inline PQS_TN PQS_NODE_get_out_pred1(PQS_NODE_IDX i) {      return _data[i].out_pred1;   }
-   inline PQS_TN PQS_NODE_get_out_pred2(PQS_NODE_IDX i) {      return _data[i].out_pred2;   }
-   inline PQS_NODE_IDX PQS_NODE_get_in_pred1(PQS_NODE_IDX i) {      return _data[i].in_pred1;   }
-   inline PQS_NODE_IDX PQS_NODE_get_in_pred2(PQS_NODE_IDX i) {      return _data[i].in_pred2;   }
-   inline PQS_TN PQS_NODE_get_qual_tn(PQS_NODE_IDX i) {      return _data[i].qual_tn;   }
-   inline PQS_NODE_IDX PQS_NODE_get_qual_pred(PQS_NODE_IDX i) {      return _data[i].qual_pred;   }
-   inline INT32 PQS_NODE_num_use1(PQS_NODE_IDX i) {      return _data[i].num_use1();   }
-   inline INT32 PQS_NODE_num_use2(PQS_NODE_IDX i) {     return _data[i].num_use2();   }
-   inline PQS_NODE_IDX PQS_NODE_get_use1(PQS_NODE_IDX i,INT32 num) {      return _data[i].get_use1(num);   }
-   inline PQS_NODE_IDX PQS_NODE_get_use2(PQS_NODE_IDX i,INT32 num) {      return _data[i].get_use2(num);   }
-   inline BOOL Is_Marked(PQS_NODE_IDX i) {return (_mark_number == _data[i]._marker1 || _mark_number == _data[i]._marker2);
-   }
-
-   inline BOOL Is_Marked1(PQS_NODE_IDX i) {return (_mark_number == _data[i]._marker1);}
-   inline BOOL Is_Marked2(PQS_NODE_IDX i) {return (_mark_number == _data[i]._marker2);}
-
-   inline PQS_MARKER_TYPE PQS_NODE_get_marker(PQS_NODE_IDX i, INT32 num) { 
-      if (num==1) return _data[i].Get_Marker1();
-      else return _data[i].Get_Marker2();
-   }
-   inline PQS_NODE_FLAGS PQS_NODE_get_flags(PQS_NODE_IDX i) {return _data[i].flags;}
-   inline BOOL PQS_NODE_condition_true(PQS_NODE_IDX i) {return (_data[i].flags & PQS_FLAG_CONDITION_TRUE) != 0;}
-   inline BOOL PQS_NODE_condition_false(PQS_NODE_IDX i) {return (_data[i].flags & PQS_FLAG_CONDITION_FALSE) != 0;}
-
-
-   // Utility
-   
-   // given an index and a TN, return the index of the previous instance
-   inline PQS_NODE_IDX PQS_NODE_get_up_idx(PQS_NODE_IDX i, PQS_TN t)
-   {
-      if (PQS_NODE_get_out_pred1(i) == t) {
-	 return PQS_NODE_get_in_pred1(i);
-      } else if (PQS_NODE_get_out_pred2(i) == t) {
-	 return PQS_NODE_get_in_pred2(i);
-      } else {
-	 FmtAssert(0,("get_up_idx: malformed idx %d\n",i));
-	 return PQS_IDX_INVALID;
-      }
-   }
-   
-  
-   // given an index and a TN, return whether this is the TN in the 1 slot or the TN in the 2 slot
-   inline INT32 PQS_NODE_get_1_2(PQS_NODE_IDX i, PQS_TN t) {
-      if (PQS_NODE_get_out_pred1(i) == t) {
-	 return 1;
-      } else if (PQS_NODE_get_out_pred2(i) == t) {
-	 return 2;
-      } 
-      FmtAssert(0,("get_1_2: malformed idx %d\n",i));
-      return 0;
-   }
-
-   // Get the other TN in an index
-   inline PQS_TN PQS_NODE_get_other_tn(PQS_NODE_IDX i, PQS_TN t) {
-      if (PQS_NODE_get_out_pred1(i) == t) {
-	 return PQS_NODE_get_out_pred2(i);
-      } else if (PQS_NODE_get_out_pred2(i) == t) {
-	 return PQS_NODE_get_out_pred1(i);
-      }
-      FmtAssert(0,("get_other: malformed idx %d\n",i));
-      return 0;
-   }
-
-
-   // Global functions
-  
-   void Print_all(FILE *f=stdout);
-   void Print_idx(PQS_NODE_IDX idx, FILE *f=stdout);
-
-   BOOL PQS_is_disjoint(PQS_TN tn1, PQS_TN tn2);
-   BOOL PQS_is_disjoint(PQS_TN_SET &tns1, PQS_TN_SET &tns2);
-   
-   BOOL PQS_is_subset_of (PQS_TN tn1, PQS_TN tn2);
-   BOOL PQS_is_subset_of (PQS_TN tn1, PQS_TN_SET &tns2);
-   BOOL PQS_is_subset_of (PQS_TN_SET &tns1, PQS_TN_SET &tns2);
-
-   PQS_NODE_IDX PQS_Add_Instruction (PQS_OP inst);
-
-   // The dedicated P0 TN
-   PQS_TN PQS_TN_P0;
-
+  void Add_Node (PQS_NODE *p);
+  PQS_TN_INFO *tn_map_get (TN *tn);
+  PQS_RELATION *Emit_Partition_Relation (PQS_NODE *parent,
+					 const PQS_SYMBOL_SET & children,
+					 BOOL synthetic = FALSE);
+  PQS_RELATION *Emit_Partition_Relation (PQS_NODE *parent,
+					 PQS_NODE *s1, PQS_NODE *s2,
+					 BOOL synthetic = FALSE);
+  PQS_SYMBOL_SET Expr_Universe ();
+  void Mark_Reachable (PQS_NODE *p);
+  void Complete_Partition_Graph_For_Node (PQS_NODE *p);
+  void Complete_Partition_Graph ();
+  void Build_Levels (PQS_NODE *p, INT level);
+  void Build_Disjoint ();
+  BOOL Is_Disjoint (PQS_NODE *node1, PQS_NODE *node2);
+  BOOL Is_Disjoint (PQS_NODE *node1, const PQS_SYMBOL_SET& expr);
+  BOOL Is_Disjoint (const PQS_SYMBOL_SET& expr1, const PQS_SYMBOL_SET& expr2);
+  void Sum_Reduce (PQS_NODE *p, PQS_SYMBOL_SET& e);
+  BOOL Is_Subset (PQS_NODE *p, PQS_NODE *q);
+  BOOL Is_Subset (PQS_NODE *p, const PQS_SYMBOL_SET& expr);
+  BOOL Is_Subset (const PQS_SYMBOL_SET& expr1, const PQS_SYMBOL_SET& expr2);
+  PQS_NODE *Find_Lca (const PQS_SYMBOL_SET& expr);
+  PQS_SYMBOL_SET Rel_Cmpl (PQS_NODE *node1, PQS_NODE *node2);
+  PQS_NODE *PQS_hash_lookup (PQS_NODE *qual_sym,
+			     BOOL negate_result,
+			     VARIANT v,
+			     PQS_NODE *sym1, PQS_NODE *sym2);
+  PQS_TN_INFO *PQS_TN_Map_To_Node (TN *, PQS_NODE *);
+  PQS_NODE *PQS_Node (PQS_SYMBOL sym) { return node_map[sym]; }
+  PQS_NODE *PQS_Node (TN *tn);
+  PQS_NODE *PQS_Create_Symbol (PQS_NODE *qual_sym, VARIANT v,
+			       BOOL negate_result, PQS_NODE *sym1,
+			       PQS_NODE *sym2);
+  PQS_NODE *PQS_Create_Symbol ();
+  PQS_NODE *Symbol_Difference (const PQS_NODE *p1, const PQS_NODE *p2);
+  PQS_SYMBOL PQS_Symbol (TN *tn);
+  PQS_SYMBOL_SET PQS_Symbol_Set (PQS_TN_SET &tns);
+  BOOL Is_Valid (PQS_TN_SET &tns);
+  PQS_NODE *Add_Predicate_Cmp_Def (TN *pred_tn, PQS_NODE *qual_sym, 
+						VARIANT v, PQS_NODE *sym1,
+						PQS_NODE *sym2);
+  const UINT32 Current_Marker () { return current_marker; }
+  void Update_Marker () { current_marker++; }
+ public:
+  void Note_Use (BB *bb, TN *tn);
+  void Note_Def (BB *bb, TN *tn);
+  void Note_Modified_Registers (const REGISTER_SET *modified_registers);
+  void Note_Synthesized_TN (TN *tn);
+  PQS_NODE *Add_Predicate_Cmp_Def (TN *pred_tn, TN *qual_tn,
+						VARIANT v, TN *opd1, TN *opd2);
+  void Add_Copy (TN *result_tn, TN *qual_tn, TN *source_tn);
+  void Set_True (TN *result_tn, TN *qual_tn);
+  void Set_False (TN *result_tn, TN *qual_tn);
+  BOOL PQS_is_disjoint(TN * tn1, TN * tn2);
+  BOOL PQS_is_disjoint(PQS_TN_SET &tns1, PQS_TN_SET &tns2);
+  BOOL PQS_is_subset_of (TN * tn1, TN * tn2);
+  BOOL PQS_is_subset_of(TN * tn1, PQS_TN_SET &tns2);
+  BOOL PQS_is_subset_of (PQS_TN_SET &tns1, PQS_TN_SET &tns2);
+  UINT32 PQS_Rank (PQS_NODE *p);
+  void Calculate_Valid_TNs ();
+  void Complete_Graph ();
+  PQS_MANAGER ();  
 };
 
-//
-// Arthur: moved these here from target-specific part
-//
+#define FOR_ALL_PQS_NODES(IT,P) \
+  for ((IT) = node_map.begin (); \
+       (IT) != node_map.end (); \
+       ++(IT)) { \
+    (P) = *(IT);
 
-extern TN_MAP PQS_tn_map;
+#define END_FOR_ALL_PQS_NODES \
+  }
 
-extern PQS_NODE_IDX PQS_TN_get_last_definition(const TN *t);
-extern void         PQS_TN_set_last_definition(const TN *t, PQS_NODE_IDX p);
-extern BOOL         PQS_TN_used_as_qual_pred(const TN *t);
-extern void         PQS_TN_set_used_as_qual_pred(const TN *t);
-extern void         PQS_TN_set_no_query(const TN *t);
-extern BOOL         PQS_TN_no_query(const TN *t);
-extern TN *         PQS_TN_get_tn_to_use(const TN *t);
-extern void         PQS_TN_set_tn_to_use(const TN *t, const TN *to_use);
+#define FOR_ALL_RELATIONS(IT,R) \
+  for ((IT) = all_relations.begin (); \
+       (IT) != all_relations.end (); \
+       ++(IT)) { \
+    (R) = *(IT); 
 
-extern OP_MAP PQS_op_map;
-extern void PQS_OP_set_pqs_idx(OP *op, PQS_NODE_IDX p);
-extern PQS_NODE_IDX PQS_OP_get_pqs_idx(OP *op);
+#define END_FOR_ALL_RELATIONS \
+  }
 
-extern PQS_ITYPE 
-PQS_classify_instruction (OP *inst, TN * &qual, TN * &p1, TN * &p2, PQS_NODE_FLAGS &flags);
-
-#endif
-
-// Local Variables:
-// mode:C++
-// End:
+#endif /* PQS_H_INCLUDED */
