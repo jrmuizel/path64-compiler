@@ -113,11 +113,7 @@ EXTENSION_HighLevel_Info::EXTENSION_HighLevel_Info(const extension_hooks *input_
   // =====================================================
   // Perform revision migration here
   // =====================================================
-  if  ( hooks->magic == MAGIC_NUMBER_EXT_API) {
-    overriden_machine_types = hooks->get_modes();
-  }
-  else {
-    if ( hooks->magic < REV_20070924 ) { /* any version older than
+  if ( hooks->magic < REV_20070924 ) { /* any version older than
                                             REV_20070924 */
       int i;
       int nb_entry = hooks->get_modes_count();
@@ -133,7 +129,11 @@ EXTENSION_HighLevel_Info::EXTENSION_HighLevel_Info(const extension_hooks *input_
         new_tab[i].mpixelsize = 0;
       }
       overriden_machine_types = new_tab;
-    }
+  }
+  else {
+    // Extension library uses latest API.
+    // No migration required.
+    overriden_machine_types = hooks->get_modes();
   }
 }
 

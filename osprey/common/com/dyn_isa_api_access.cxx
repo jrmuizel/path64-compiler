@@ -234,22 +234,14 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
 
   INT i;
 
+  // =====================================================
+  // Perform revision migration here
+  // =====================================================
   // The input interface might be an older revision of ISA_EXT_Interface_t
   // that must be migrated. However, the magic number will still be accessible
   // at the same location first field of the structure), so it is safe to 
   // to first check the magic number then cast the structure to its old type.
-  if (input_isa_ext->magic == MAGIC_NUMBER_EXT_ISA_API) {
-    // Extension library uses latest API version
-    own_isa_ext = NULL;
-    isa_ext     = input_isa_ext;
-
-    overridden_ISA_REGISTER_CLASS_tab = input_isa_ext->get_ISA_REGISTER_CLASS_tab();
-  }
-  else {
-    // =====================================================
-    // Perform revision migration here
-    // =====================================================
-    if (input_isa_ext->magic == REV_20070126) {
+  if (input_isa_ext->magic == REV_20070126) {
       // ISA_EXT_Interface_t has not changed since its revision
       own_isa_ext = NULL;
       isa_ext     = input_isa_ext;
@@ -272,7 +264,14 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
 	memcpy(new_tab[i].reg_name, old_tab[i].reg_name, sizeof(const char *)*(ISA_REGISTER_MAX+1));
       }
       overridden_ISA_REGISTER_CLASS_tab = new_tab;
-    }
+  }
+  else {
+    // Extension library uses latest API.
+    // No migration required.
+    own_isa_ext = NULL;
+    isa_ext     = input_isa_ext;
+    
+    overridden_ISA_REGISTER_CLASS_tab = input_isa_ext->get_ISA_REGISTER_CLASS_tab();
   }
 
   // Create REGISTER CLASS Info wrappers (register class to TOP)
