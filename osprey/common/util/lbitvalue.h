@@ -44,6 +44,7 @@ class LBitValue {
   UINT64 zeromask_;
   UINT64 onemask_;
  public:
+  enum RangeSign { Signed, Unsigned};
   // lattice properties
   static const LBitValue Top ();
   static const LBitValue Bottom ();
@@ -68,6 +69,8 @@ class LBitValue {
   UINT64 getvalmask () const;
   friend const LBitValue MakeSigned (const LBitValue &a, INT width);
   friend const LBitValue MakeUnsigned (const LBitValue &a, INT width);
+  friend const LBitValue SignExtend (const LBitValue &a, INT width);
+  friend const LBitValue ZeroExtend (const LBitValue &a, INT width);
   friend const LBitValue LeftShift (const LBitValue &a, INT width);
   friend const LBitValue LeftShiftRange (const LBitValue &a, const LBitValue &b);
   friend const LBitValue RightShift (const LBitValue &a, INT width);
@@ -76,6 +79,7 @@ class LBitValue {
   friend const LBitValue BitXor (const LBitValue &a, const LBitValue &b);
   friend const LBitValue BitAnd (const LBitValue &a, const LBitValue &b);
   friend const LBitValue BitNot (const LBitValue &a);
+  friend const LBitValue BytePermute (const LBitValue &a, INT mask);
   friend const LBitValue Extract (const LBitValue &a, INT start, INT width);
   friend const LBitValue Insert (const LBitValue &a, INT start, INT width,
 					 const LBitValue &b);
@@ -84,6 +88,7 @@ class LBitValue {
   LBitValue (const LBitValue &a);
   LBitValue (INT64 a);
   LBitValue (const UINT64 bmask, const UINT64 valmask);
+  LBitValue (RangeSign sign, int bitwidth);
   LBitValue ();
 };
 

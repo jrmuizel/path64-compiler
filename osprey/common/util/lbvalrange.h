@@ -56,6 +56,7 @@ public:
 
   virtual LRange *makeRangeValue (INT64 value) const;
   virtual LRange *makeBitValue (UINT64 zeromask, UINT64 onemask) const;
+  virtual LRange *makeRangeWidth (INT Sign, INT bitwidth) const;
   virtual LRange *makeUniverse () const;
   virtual LRange *makeTop () const;
   virtual LRange *makeBottom () const;
@@ -76,6 +77,8 @@ public:
   virtual INT getTzcnt() const;
   virtual LRange *makeMakeSigned (INT width) const;
   virtual LRange *makeMakeUnsigned (INT width) const;
+  virtual LRange *makeSignExtend (INT width) const;
+  virtual LRange *makeZeroExtend (INT width) const;
   virtual LRange *makeLeftShift (INT width) const;
   virtual LRange *makeLeftShiftRange (const LRange *count) const;
   virtual LRange *makeSignedRightShift (INT width) const;
@@ -84,6 +87,7 @@ public:
   virtual LRange *makeBitOr (const LRange *b) const;
   virtual LRange *makeBitXor (const LRange *b) const;
   virtual LRange *makeBitNot () const;
+  virtual LRange *makeBytePermute (INT mask) const;
   virtual LRange *makeExtract (INT start, INT width) const;
   virtual LRange *makeInsert (INT start, INT width,
 			      const LRange *b) const;

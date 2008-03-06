@@ -192,6 +192,15 @@ static int countTrailingZeros64( UINT64 a )
   return 64 - countLeadingZeros64(~a & (a - 1));
 }
 
+static int byteperm(int mask, int val){
+  // perform a 32-bit byte permutation, 
+  // defined by the 8-bit value val
+  int resmask = 0;
+  for (int i = 0; i < 4; i++)
+    resmask |= ((mask >> (8*(val >> (2*i) & 0x3))) & 0xff) << (8*i);
+  return resmask;
+}
+
 // Queries
 
 INT 
@@ -305,6 +314,16 @@ const LBitValue MakeSigned (const LBitValue &a, INT width)
     UINT64 onemask = (INT64)((a.onemask_ & bmask_width) << rwidth) >> rwidth;
     return LBitValue (zeromask, onemask);
   }
+}
+
+const LBitValue SignExtend (const LBitValue &a, INT width)
+{
+  return MakeSigned (a, width);
+}
+
+const LBitValue ZeroExtend (const LBitValue &a, INT width)
+{
+  return MakeUnsigned (a, width);
 }
 
 const LBitValue LeftShift (const LBitValue &a, INT width)
@@ -426,6 +445,19 @@ const LBitValue Insert (const LBitValue &a, INT start, INT width,
 }
 
 
+const LBitValue BytePermute(const LBitValue &a, INT mask)
+{
+  FmtAssert ((mask & 0xff) == mask, ("Attempt to use a non-valid byte permutation mask value"));  
+  if (a.isTop ())
+    return a;
+  else {
+    UINT64 zeromask = byteperm(a.zeromask_, mask);
+    UINT64 onemask = byteperm(a.onemask_, mask) ;
+    return LBitValue (zeromask, onemask);
+  }
+}
+
+
 // Tracing helper
 
 void
@@ -461,6 +493,29 @@ LBitValue::LBitValue (UINT64 zeromask, UINT64 onemask)
   rtype = normal;
   zeromask_= zeromask;
   onemask_= onemask;
+}
+
+LBitValue::LBitValue (RangeSign sign, INT bitwidth)
+{
+  FmtAssert (bitwidth >= 0, ("Attempt to construct a range with negative bitwidth"));
+  rtype = normal;
+  if (bitwidth >= 64) {
+    zeromask_= (UINT64)0;
+    onemask_= (UINT64)0;
+  }
+  else {
+    if (sign == Unsigned){
+      zeromask_ = UINT64_MAX << bitwidth;
+      onemask_= (UINT64)0;
+    }
+    else if (sign == Signed) {
+      zeromask_ = (UINT64)0;
+      onemask_= (UINT64)0;      
+    }
+    else {
+      FmtAssert (FALSE, ("Unknown sign value"));
+    }
+  }
 }
 
 LBitValue::LBitValue ()

@@ -92,6 +92,8 @@ public:
     return makeBottom ();}
   virtual LRange *makeBitNot () const {
     return makeBottom ();}
+  virtual LRange *makeBytePermute (INT mask) const {
+    return makeBottom ();}
   virtual LRange *makeEq (const LRange *b) const {
     return makeBottom ();}
   virtual LRange *makeNe (const LRange *b) const {
@@ -166,6 +168,8 @@ public:
     return a->makeBitXor(b);}
   friend LRange *BitNot (const LRange *a){
     return a->makeBitNot();}
+  friend LRange *BytePermute (const LRange *a, INT mask){
+    return a->makeBytePermute(mask);}
   friend LRange *Eq (const LRange *a, const LRange *b){
     return a->makeEq(b);}
   friend LRange *Ne (const LRange *a, const LRange *b){

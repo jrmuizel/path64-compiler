@@ -62,6 +62,11 @@ LRange *LBValRange::makeBitValue (UINT64 zeromask, UINT64 onemask) const {
   return r;
 }
 
+LRange *LBValRange::makeRangeWidth (INT sign, INT bitwidth) const {
+  LRange *r = new LBValRange(LBitValue((LBitValue::RangeSign)sign, bitwidth));
+  return r;
+}
+
 LRange *LBValRange::makeUniverse () const { 
   LRange *r = new LBValRange(bvalrange_.Bottom ());
   return r;
@@ -173,6 +178,16 @@ LRange *LBValRange::makeMakeUnsigned (INT width) const {
   return r;
 }
 
+LRange *LBValRange::makeSignExtend (INT width) const {
+  LRange *r = new LBValRange(SignExtend (this->bvalrange_, width));
+  return r;
+}
+
+LRange *LBValRange::makeZeroExtend (INT width) const {
+  LRange *r = new LBValRange(ZeroExtend (this->bvalrange_, width));
+  return r;
+}
+
 LRange *LBValRange::makeBitAnd (const LRange *b) const {
   const LBValRange *vrange = LRANGE_CAST(const LBValRange *, b);
   LRange *r = new LBValRange(BitAnd (this->bvalrange_, vrange->bvalrange_));
@@ -193,6 +208,11 @@ LRange *LBValRange::makeBitXor (const LRange *b) const {
 
 LRange *LBValRange::makeBitNot () const {
   LRange *r = new LBValRange(BitNot (this->bvalrange_));
+  return r;
+}
+
+LRange *LBValRange::makeBytePermute (INT mask) const {
+  LRange *r = new LBValRange(BytePermute (this->bvalrange_, mask));
   return r;
 }
 

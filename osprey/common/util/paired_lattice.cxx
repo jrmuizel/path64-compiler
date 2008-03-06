@@ -192,6 +192,10 @@ template<class T1, class T2> LRange *PairedLattice<T1,T2>::makeBitNot () const {
   LRange *r = new PairedLattice<T1,T2>(*LRANGE_CAST(T1 *, first_.makeBitNot()),*LRANGE_CAST(T2 *, second_.makeBitNot()));
   return r;
 }
+template<class T1, class T2> LRange *PairedLattice<T1,T2>::makeBytePermute (INT mask) const {
+  LRange *r = new PairedLattice<T1,T2>(*LRANGE_CAST(T1 *, first_.makeBytePermute(mask)),*LRANGE_CAST(T2 *, second_.makeBytePermute(mask)));
+  return r;
+}
 template<class T1, class T2> LRange *PairedLattice<T1,T2>::makeEq (const LRange *b) const {
   const PairedLattice *plb = LRANGE_CAST(const PairedLattice *, b);
   LRange *r = new PairedLattice<T1,T2>(*LRANGE_CAST(T1 *, first_.makeEq(&plb->first_)),*LRANGE_CAST(T2 *, second_.makeEq(&plb->second_)));

@@ -92,6 +92,7 @@ public:
   virtual LRange *makeBitOr (const LRange *b) const;
   virtual LRange *makeBitXor (const LRange *b) const;
   virtual LRange *makeBitNot () const;
+  virtual LRange *makeBytePermute (INT mask) const;
   virtual LRange *makeEq (const LRange *b) const;
   virtual LRange *makeNe (const LRange *b) const;
   virtual LRange *makeGe (const LRange *b) const;
