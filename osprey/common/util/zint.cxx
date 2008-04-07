@@ -169,6 +169,10 @@ shr_zint(INT64 a, INT64 n)
   // Infinities are unchanged.
   if (a == ZINT_MIN || a == ZINT_MAX)
     return a;
+  else  if (n >= (8 * sizeof(a))) {
+    // Either 0 or -1;
+    return (a >= 0) ? 0 : -1;
+  }
   else
     return a >> n;
 }
