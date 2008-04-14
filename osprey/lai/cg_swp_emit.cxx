@@ -197,7 +197,7 @@ SWP_Reorder_OPs(const SWP_OP_vector& op_state,
 	!is_noop) {
       INT stage = op_state[sorted_op[i]].cycle / ii;
 #ifdef TARG_ST
-      Set_OP_opnd(op, OP_find_opnd_use(op,OU_predicate), reg_assign.Get_Control_Predicate(stage));
+      CGTARG_Predicate_OP(body, op, reg_assign.Get_Control_Predicate(stage), false);
 #else
       Set_OP_opnd(op, OP_PREDICATE_OPND, reg_assign.Get_Control_Predicate(stage));
 #endif
