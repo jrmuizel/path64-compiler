@@ -344,5 +344,15 @@ int GCCTARG_Dwarf_Get_Reg_Id_From_Gcc_Reg(int gcc_reg) {
   return v;
 }
 
-
+int GCCTARG_Gcc_Reg_Bit_Size (int gcc_reg) {
+  ISA_REGISTER_CLASS rclass;
+  int regnum;
+  //Mapping between gcc numbering and open64
+  //regclass,regnum
+  GCCTARG_Get_Rclass_From_Gcc_Reg(gcc_reg, &rclass, &regnum);
+  const ISA_REGISTER_CLASS_INFO *cinfo;
+  cinfo = ISA_REGISTER_CLASS_Info(rclass);
+  INT32 regclass_bit_size = ISA_REGISTER_CLASS_INFO_Bit_Size(cinfo);
+  return regclass_bit_size;
+}
 #endif //FRONT_END

@@ -73,6 +73,9 @@ extern void GCCTARG_Mark_Disabled_Gcc_Reg();
 //[TB] Return the dwarf id associated to gcc register gcc_reg
 extern int GCCTARG_Dwarf_Get_Reg_Id_From_Gcc_Reg(int gcc_reg);
 
+//[SC] Return the size in bits of gcc register gcc_reg
+extern int GCCTARG_Gcc_Reg_Bit_Size (int gcc_reg);
+
 #ifdef __cplusplus
 }
 #endif
