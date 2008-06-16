@@ -237,7 +237,7 @@ void ISA_Variants_End(void)
     for ( att_it = attributes.begin(); att_it != attributes.end(); ++att_it ) {
       ISA_VARIANT_ATT attribute = *att_it;
       int bit_position = attribute->bit_position;
-      fprintf (hfile, "#define VARATT_%-16s " PRINTF_LONGLONG_HEXA "%s\n", 
+      fprintf (hfile, "#define VARATT_%-16s " PRINTF_LONGLONG_FORMAT( "0x", "", "x" ) "%s\n", 
 	       attribute->name, 
 	       (1ULL << bit_position),
 	       int_suffix);
