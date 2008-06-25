@@ -38,6 +38,7 @@
 #ifndef LRANGE_H_INCLUDED
 #define LRANGE_H_INCLUDED
 
+#include "W_limits.h"
 #include "zint.h"
 
 class LRange {
@@ -79,6 +80,10 @@ public:
   virtual LRange *makeMul (const LRange *b) const {
     return makeBottom ();}
   virtual LRange *makeMulModulo (const LRange *b, INT width) const {
+    return makeBottom ();}
+  virtual LRange *makeDiv (const LRange *b) const {
+    return makeBottom ();}
+  virtual LRange *makeMod (const LRange *b) const {
     return makeBottom ();}
   virtual LRange *makeMin (const LRange *b) const {
     return makeBottom ();}
@@ -156,6 +161,10 @@ public:
     return a->makeMul(b);}
   friend LRange *MulModulo (const LRange *a, const LRange *b, INT width){
     return a->makeMulModulo(b, width);}
+  friend LRange *Div (const LRange *a, const LRange *b){
+    return a->makeDiv(b);}
+  friend LRange *Mod (const LRange *a, const LRange *b){
+    return a->makeMod(b);}
   friend LRange *Min (const LRange *a, const LRange *b){
     return a->makeMin(b);}
   friend LRange *Max (const LRange *a, const LRange *b){
@@ -218,12 +227,14 @@ public:
   virtual BOOL isNonNegative () const{return 0;}
   virtual BOOL isZero () const{return 0;}
   virtual BOOL isTop () const{return 0;}
-  virtual INT bits() const{return 0;}
+  virtual INT bits() const{return INT_MAX;}
   virtual INT getTzcnt() const{return 0;}
   virtual UINT64 getBitMask() const{return 0;}
   virtual UINT64 getValMask() const{return 0;}
   virtual UINT64 getZeroMask() const{return 0;}
   virtual UINT64 getOneMask() const{return 0;}
+  virtual UINT64 getBase() const{return 0;}
+  virtual UINT64 getBias() const{return 0;}
   virtual void Print (FILE *f) const{}
 
   // range constructors
@@ -240,6 +251,9 @@ public:
     return makeBottom ();}
   // Bit-value mask
   virtual LRange *makeBitValue (UINT64 zeromask, UINT64 onemask) const {
+    return makeBottom ();}
+  // alignment range
+  virtual LRange *makeAlign (ZInt base, ZInt bias) const {
     return makeBottom ();}
 
   // specific Backward

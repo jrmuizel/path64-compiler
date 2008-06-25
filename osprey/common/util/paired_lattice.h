@@ -41,6 +41,7 @@
 #include "lrange.h"
 #include "lvrange.h"
 #include "lbvalrange.h"
+#include "larange.h"
 #include "zint.h"
 #include <assert.h>
 
@@ -49,11 +50,15 @@ private:
   T1 first_;
   T2 second_;
   static MEM_POOL mempool_;
+
+public:
   // constructors
   PairedLattice(const PairedLattice<T1,T2> &that) {*this = that;}
   PairedLattice(const T1 &f, const T2 &s): first_(f), second_(s) { }
   PairedLattice(): first_(T1::Bottom ()), second_(T2::Bottom ()) { }
-public:
+
+  static PairedLattice<T1,T2> Bottom(){ return PairedLattice<T1,T2>();}
+
   virtual LRange *makeRangeValue(INT64 i) const;
 
   virtual LRange *makeRangeMinMax(ZInt min, ZInt max) const;
@@ -61,6 +66,8 @@ public:
   virtual LRange *makeRangeWidth (INT Sign, INT bitwidth) const;
 
   virtual LRange *makeRangeLowbit (INT Sign, INT lowbit, INT bitwidth) const;
+
+  virtual LRange *makeAlign(ZInt base, ZInt bias) const;
 
   virtual LRange *makeUniverse () const;
 
@@ -118,6 +125,8 @@ public:
   virtual INT64 getValue(void) const;
   virtual UINT64 getZeroMask(void) const;
   virtual UINT64 getOneMask(void) const;
+  virtual UINT64 getBase(void) const;
+  virtual UINT64 getBias(void) const;
 
 
   virtual BOOL isTop () const;
@@ -144,7 +153,5 @@ public:
   BE_EXPORTED static void MEMPOOL_Initialize(MEM_POOL mempool);
 };
 
-// typedef PairedLattice <LVRange, LBValue> VBLattice; 
-typedef PairedLattice <LVRange, LBValRange> VBLattice; 
 
 #endif // PAIRED_LATTICE_H_INCLUDED

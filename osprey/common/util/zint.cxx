@@ -56,10 +56,10 @@ add_zint (INT64 a, INT64 b)
       && a != ZINT_MIN)
     { INT64 temp = a; a = b; b = temp; }
 
-  if (a == ZINT_MIN)
-    return (b == ZINT_MAX) ? 0 : ZINT_MIN;
-  else if (a == ZINT_MAX)
-    return (b == ZINT_MIN) ? 0 : ZINT_MAX;
+  if (a == ZINT_MIN || a == ZINT_MAX)
+    return a;
+  else if (b == ZINT_MIN || b == ZINT_MAX)
+    return b;
   else {
     INT64 res = a + b;
     if (((a ^ b) & CARRY) == 0) {
@@ -74,10 +74,8 @@ add_zint (INT64 a, INT64 b)
 static INT64
 sub_zint (INT64 a, INT64 b)
 {
-  if (a == ZINT_MIN)
-    return (b == ZINT_MIN) ? 0 : ZINT_MIN;
-  else if (a == ZINT_MAX)
-    return (b == ZINT_MAX) ? 0 : ZINT_MAX;
+  if (a == ZINT_MIN || a == ZINT_MAX)
+    return a;
   else if (b == ZINT_MIN)
     return ZINT_MAX;
   else if (b == ZINT_MAX)
@@ -94,15 +92,101 @@ sub_zint (INT64 a, INT64 b)
 }
 
 static INT64
+div_zint (INT64 a, INT64 b)
+{
+  if (a == ZINT_MIN)
+    return (b < 0) ? ZINT_MAX : ZINT_MIN;
+  else if (a == ZINT_MAX)
+    return (b < 0) ? ZINT_MIN : ZINT_MAX;
+  else if (b == ZINT_MIN)
+    return 0;
+  else if (b == ZINT_MAX)
+    return 0;
+  else {
+    INT64 res = a / b;
+    return res;
+  }
+}
+
+static INT64
+mod_zint (INT64 a, INT64 b)
+{
+  if (a == ZINT_MIN || a == ZINT_MAX)
+    return a;
+  else if (b == ZINT_MIN)
+    return -a;
+  else if (b == ZINT_MAX)
+    return a;
+  else {
+    INT64 res = a % b;
+    return res;
+  }
+}
+
+static INT64
+bitand_zint (INT64 a, INT64 b)
+{
+  if ((a == ZINT_MIN || a == ZINT_MAX) && b)
+    return a;
+  else if ((b == ZINT_MIN || b == ZINT_MAX) && a)
+    return b;
+  else {
+    INT64 res = a & b;
+    return res;
+  }
+}
+
+static INT64
+bitor_zint (INT64 a, INT64 b)
+{
+  if ((a == ZINT_MIN || a == ZINT_MAX) && b != (INT64)-1)
+    return a;
+  else if ((b == ZINT_MIN || b == ZINT_MAX) && a != (INT64)-1)
+    return b;
+  else {
+    INT64 res = a | b;
+    return res;
+  }
+}
+
+static INT64
 neg_zint (INT64 a)
 {
   return a == ZINT_MIN ? ZINT_MAX : -a;
 }
 
 static INT64
+bitnot_zint (INT64 a)
+{
+  return (a == ZINT_MIN || a == ZINT_MAX) ? a : ~a;
+}
+
+static INT64
 abs_zint (INT64 a)
 {
   return a == ZINT_MIN ? ZINT_MAX : (a < 0 ? -a : a);
+}
+
+static INT64
+max_zint (INT64 a, INT64 b)
+{
+  if (a == ZINT_MAX || b == ZINT_MIN)
+    return a;
+  else if (a == ZINT_MIN || b == ZINT_MAX)
+    return b;
+  else 
+    return (a < b ? b : a);
+}
+
+static INT64
+min_zint (INT64 a, INT64 b)
+{
+  if (a == ZINT_MAX || b == ZINT_MIN)
+    return b;
+  else if (a == ZINT_MIN || b == ZINT_MAX)
+    return a;
+  else 
+    return (a < b ? a : b);
 }
 
 static INT64
@@ -241,6 +325,31 @@ const ZInt operator*(const ZInt& a, const ZInt& b)
   return ZInt (mul_zint (a.value, b.value));
 }
 
+const ZInt operator/(const ZInt& a, const ZInt& b)
+{
+  return ZInt (div_zint (a.value, b.value));
+}
+
+const ZInt operator%(const ZInt& a, const ZInt& b)
+{
+  return ZInt (mod_zint (a.value, b.value));
+}
+
+const ZInt operator|(const ZInt& a, const ZInt& b)
+{
+  return ZInt (bitor_zint (a.value, b.value));
+}
+
+const ZInt operator&(const ZInt& a, const ZInt& b)
+{
+  return ZInt (bitand_zint (a.value, b.value));
+}
+
+const ZInt operator~(const ZInt& a)
+{
+  return ZInt (bitnot_zint (a.value));
+}
+
 const ZInt operator<<(const ZInt &a, const ZInt &b)
 {
   return ZInt (shl_zint (a.value, b.value));
@@ -286,11 +395,29 @@ const ZInt abs(const ZInt& a)
   return ZInt (abs_zint (a.value));
 }
 
+const ZInt Min(const ZInt& a, const ZInt& b)
+{
+  return ZInt (min_zint (a.value, b.value));
+}
+
+const ZInt Max(const ZInt& a, const ZInt& b)
+{
+  return ZInt (max_zint (a.value, b.value));
+}
+
+
 INT64  const
 ZInt::to_INT64 () const
 {
   FmtAssert (isFinite(), ("Attempt to convert non-finite ZInt to INT64"));
   return value;
+}
+
+INT  const
+ZInt::to_INT () const
+{
+  FmtAssert (isFinite(), ("Attempt to convert non-finite ZInt to INT64"));
+  return (INT)value;
 }
 
 const ZInt

@@ -72,6 +72,11 @@ template<class T1, class T2> LRange *PairedLattice<T1,T2>::makeRangeLowbit (INT 
   return r;
 }
 
+template<class T1, class T2> LRange *PairedLattice<T1,T2>::makeAlign(ZInt base, ZInt bias) const { 
+  LRange *r = new PairedLattice<T1,T2>(*LRANGE_CAST(T1 *, first_.makeAlign(base, bias)),*LRANGE_CAST(T2 *, second_.makeAlign(base, bias)));
+  return r;
+}
+
 template<class T1, class T2> LRange *PairedLattice<T1,T2>::makeUniverse () const { 
   LRange *r = new PairedLattice<T1,T2>(*LRANGE_CAST(T1 *, first_.makeUniverse()),*LRANGE_CAST(T2 *, second_.makeUniverse()));
   return r;
@@ -296,6 +301,14 @@ template<class T1, class T2> UINT64 PairedLattice<T1,T2>::getOneMask(void) const
   return first_.getOneMask () | second_.getOneMask (); 
 }
 
+template<class T1, class T2> UINT64 PairedLattice<T1,T2>::getBase(void) const { 
+  return first_.getBase () | second_.getBase (); 
+}
+
+template<class T1, class T2> UINT64 PairedLattice<T1,T2>::getBias(void) const { 
+  return first_.getBias () | second_.getBias (); 
+}
+
 template<class T1, class T2> BOOL PairedLattice<T1,T2>::isTop () const {
   return first_.isTop () || second_.isTop ();
 }
@@ -353,5 +366,6 @@ template<class T1, class T2> void PairedLattice<T1,T2>::MEMPOOL_Initialize(MEM_P
   T2::MEMPOOL_Initialize(mempool);
 }
 
-// explicit instanciation of template specialization
+// explicit instanciation of template specializations
 template class PairedLattice <LVRange, LBValRange>;
+template class PairedLattice <PairedLattice <LVRange, LBValRange>, LARange>;

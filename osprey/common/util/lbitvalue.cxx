@@ -468,7 +468,7 @@ LBitValue::Print (FILE *f) const
   else if (isBottom ())
     fputs ("<bottom>", f);
   else {
-    fprintf (f, "zeromask: %#llx \t onemask: %#llx", zeromask_, onemask_);
+    fprintf (f, "\t zeromask: %#llx \t onemask: %#llx", zeromask_, onemask_);
   }
 }
 

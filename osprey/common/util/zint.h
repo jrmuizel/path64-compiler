@@ -82,6 +82,11 @@ class ZInt {
   BE_EXPORTED friend ZInt& operator-=(ZInt& a, const ZInt& b);
   BE_EXPORTED friend const ZInt operator-(const ZInt& a);
   BE_EXPORTED friend const ZInt operator*(const ZInt& a, const ZInt& b);
+  BE_EXPORTED friend const ZInt operator/(const ZInt& a, const ZInt& b);
+  BE_EXPORTED friend const ZInt operator%(const ZInt& a, const ZInt& b);
+  BE_EXPORTED friend const ZInt operator|(const ZInt& a, const ZInt& b);
+  BE_EXPORTED friend const ZInt operator&(const ZInt& a, const ZInt& b);
+  BE_EXPORTED friend const ZInt operator~(const ZInt& a);
   BE_EXPORTED friend const ZInt operator<<(const ZInt& a, const ZInt& b);
   BE_EXPORTED friend const ZInt operator>>(const ZInt& a, const ZInt& b);
   BE_EXPORTED friend const BOOL operator>(const ZInt &a, const ZInt &b);
@@ -90,8 +95,11 @@ class ZInt {
   BE_EXPORTED friend const BOOL operator<=(const ZInt &a, const ZInt &b);
   BE_EXPORTED friend const BOOL operator==(const ZInt &a, const ZInt &b);
   BE_EXPORTED friend const BOOL operator!=(const ZInt &a, const ZInt &b);
+  BE_EXPORTED friend const ZInt Max(const ZInt &a, const ZInt &b);
+  BE_EXPORTED friend const ZInt Min(const ZInt &a, const ZInt &b);
   BE_EXPORTED friend const ZInt abs(const ZInt& a);
   BE_EXPORTED INT64  const to_INT64 () const;
+  BE_EXPORTED INT  const to_INT () const;
   BE_EXPORTED static const ZInt MinusInf ();
   BE_EXPORTED static const ZInt PlusInf ();
   const BOOL isPlusInf () const { return value == ZINT_MAX; }
