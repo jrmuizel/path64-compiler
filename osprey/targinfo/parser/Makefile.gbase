@@ -1,0 +1,219 @@
+#
+#
+#  Copyright (C) 2000, 2001 Silicon Graphics, Inc.  All Rights Reserved.
+#
+#  This program is free software; you can redistribute it and/or modify it
+#  under the terms of version 2 of the GNU General Public License as
+#  published by the Free Software Foundation.
+#
+#  This program is distributed in the hope that it would be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+#
+#  Further, this software is distributed without any warranty that it is
+#  free of the rightful claim of any third person regarding infringement 
+#  or the like.  Any license provided herein, whether implied or 
+#  otherwise, applies only to this software file.  Patent licenses, if 
+#  any, provided herein do not apply to combinations of this program with 
+#  other software, or any other product whatsoever.  
+#
+#  You should have received a copy of the GNU General Public License along
+#  with this program; if not, write the Free Software Foundation, Inc., 59
+#  Temple Place - Suite 330, Boston MA 02111-1307, USA.
+#
+#  Contact information:  Silicon Graphics, Inc., 1600 Amphitheatre Pky,
+#  Mountain View, CA 94043, or:
+#
+#  http://www.sgi.com
+#
+#  For further information regarding this notice, see:
+#
+#  http://oss.sgi.com/projects/GenInfo/NoticeExplan
+#
+#
+
+#
+# TARG_ST
+# 
+# [CG]:
+# Added support for visibility specification files
+# files: vspec_*.[ch]
+#
+
+#
+#  Makefile.base for libcomutil
+#
+
+include	$(COMMONDEFS)
+
+ifeq ($(DSO_MODE),DLL)
+HOSTDEFS += -DTARGINFO_EXPORTED=$(DLLEXPORT)
+HOSTDEFS += -DBE_EXPORTED=$(DLLEXPORT)
+HOSTDEFS += -DIPL_EXPORTED=
+HOSTDEFS += -DLNO_EXPORTED=
+endif
+
+#----------------------------------------------------------------------
+#  List of directories, and source files of interest
+#----------------------------------------------------------------------
+
+CURRENT_DIR		= .
+COMMON_DIR		= $(BUILD_TOT)/common
+COMMON_COM_DIR		= $(COMMON_DIR)/com
+
+ifeq ($(BUILD_TARGET), MIPS)
+BUILD_TARGET_DIR = mips
+endif
+
+ifeq ($(BUILD_TARGET), IA64)
+TARGINFO_DIR          = $(BUILD_BASE)
+else
+TARGINFO_DIR          = $(BUILD_TOT)/targinfo
+endif
+TARGINFO_ACCESS_DIR	 = $(TARGINFO_DIR)/access
+TARGINFO_GENERATE_DIR = $(TARGINFO_DIR)/generate
+ifeq ($(BUILD_TARGET), IA64)
+TARGINFO_ISA_DIR      = $(TARGINFO_DIR)/isa/$(BUILD_TARGET_DIR)
+TARGINFO_ABI_DIR      = $(TARGINFO_DIR)/abi/$(BUILD_TARGET_DIR)
+TARGINFO_PROC_DIR     = $(TARGINFO_DIR)/proc/$(BUILD_TARGET_DIR)
+TARGINFO_CG_DIR       = 
+else
+TARGINFO_ISA_DIR      = $(TARGINFO_DIR)/$(BUILD_TARGET_DIR)/isa
+TARGINFO_ABI_DIR      = $(TARGINFO_DIR)/$(BUILD_TARGET_DIR)/abi
+TARGINFO_PROC_DIR 	 = $(TARGINFO_DIR)/$(BUILD_TARGET_DIR)/proc
+TARGINFO_CG_DIR       = $(TARGINFO_DIR)/$(BUILD_TARGET_DIR)/cg
+endif
+TARGINFO_PARSER_INC   = $(TARGINFO_DIR)/parser/inc
+TARGINFO_PARSER_DIR   = $(TARGINFO_DIR)/parser/src
+TARGINFO_PARSER_DIR  += $(TARGINFO_PARSER_INC)
+COMMON_RTKUTILS_DIR   = $(COMMON_DIR)/rtkutils
+
+TARG_INCLUDE_DIR      = $(BUILD_AREA)/include
+
+TARG_TARGINFO_DIR     = $(BUILD_AREA)/targ_info
+
+LIBAIR_DIR            = $(BUILD_TOT)/libair/air
+
+RTKUTILS_DIR          = $(COMMON_DIR)/rtkutils
+
+# These are the directories in which to look for source files.
+
+SRC_DIRS =                 \
+  $(CURRENT_DIR)           \
+  $(TARGINFO_ACCESS_DIR)   \
+  $(TARGINFO_GENERATE_DIR) \
+  $(TARGINFO_ISA_DIR)      \
+  $(TARGINFO_PROC_DIR)     \
+  $(TARGINFO_ABI_DIR)      \
+  $(TARGINFO_CG_DIR)       \
+  $(TARG_INCLUDE_DIR)      \
+  $(TARG_TARGINFO_DIR)     \
+  $(COMMON_COM_DIR)        \
+  $(TARGINFO_PARSER_DIR)   \
+  $(LIBAIR_DIR)            \
+  $(RTKUTILS_DIR)
+
+ifeq ($(BUILD_OPTIMIZE), DEBUG)
+HOSTDEFS += -DIs_True_On
+HOSTDEFS += -DInsist_On 
+endif
+
+ifeq ($(BUILD_COMPILER), EDG)
+CVERSION = -xansi
+WOFF = -fullwarn
+else
+CVERSION =
+WOFF =
+endif
+
+LASOPTS = $(STD_COMPILE_OPTS)
+
+LCOPTS = $(STD_COMPILE_OPTS)
+LCDEFS += $(HOSTDEFS) $(TARGDEFS)
+LCXXOPTS = $(STD_COMPILE_OPTS)
+LCXXDEFS += $(HOSTDEFS) $(TARGDEFS)
+
+LCINCS = $(addprefix -I, $(SRC_DIRS))
+LCXXINCS = $(addprefix -I, $(SRC_DIRS))
+
+LIBRARY = libparse.a
+
+TARGETS = $(LIBRARY)
+
+# only build mips3 version and install in default place
+ifeq ($(BUILD_TARGET), MIPS)
+STD_LIBRARY_LOC=$(DEF_LIBRARY_LOC)
+endif
+
+CFILES	=      \
+   alloc.c      \
+   analyzer.c   \
+   astype.c     \
+   ctxstck.c    \
+   ext_dll.c    \
+   ext_engine.c \
+   globals.c    \
+   opndstck.c   \
+   parser.c
+
+HFILES	= \
+   $(TARGINFO_PARSER_INC)/Dll.h        \
+   $(TARGINFO_PARSER_INC)/alloc.h      \
+   $(TARGINFO_PARSER_INC)/analyzer.h   \
+   $(TARGINFO_PARSER_INC)/astype.h     \
+   $(TARGINFO_PARSER_INC)/ctxstck.h    \
+   $(TARGINFO_PARSER_INC)/ext_engine.h \
+   $(TARGINFO_PARSER_INC)/globals.h    \
+   $(TARGINFO_PARSER_INC)/opndstck.h   \
+   $(TARGINFO_PARSER_INC)/parser.h     \
+   $(TARGINFO_PARSER_INC)/type_defs.h  \
+   $(LIBAIR_DIR)/air.h
+
+CXXFILES = 
+
+ifeq ($(RELEASE_MAJOR),)
+RELEASE_MAJOR=0
+endif
+ifeq ($(RELEASE_MINOR),)
+RELEASE_MINOR=0
+endif
+ifeq ($(RELEASE_PATCHLEVEL),)
+RELEASE_PATCHLEVEL=0
+endif
+
+ifeq ($(BUILD_VARIANT),RELEASE)
+CFLAGS += -D__RELEASE__ -DNDEBUG -DV_MAJ=$(RELEASE_MAJOR) -DV_MIN=$(RELEASE_MINOR) -DV_B=$(RELEASE_PATCHLEVEL)
+else
+CFLAGS += -DV_MAJ=$(RELEASE_MAJOR) -DV_MIN=$(RELEASE_MINOR) -DV_B=$(RELEASE_PATCHLEVEL)
+endif
+
+default: first
+	$(MAKE) local last
+
+include $(COMMONRULES)
+
+VPATH =  $(SRC_DIRS)
+
+first:
+
+first_local:
+ifndef PARALLEL
+	cd $(BUILD_AREA)/targ_info && $(MAKE)
+endif
+
+local: first_local
+	$(MAKE) $(TARGETS)
+
+last: local 
+	$(MAKE) make_libdeps
+
+exports: default
+#	$(INSTALL) -m 444 -F $(STD_LIBRARY_LOC) $(TARGETS)
+
+install: last
+#	$(STD_INSTALL) -m 444 -F $(STD_LIBRARY_LOC) $(TARGETS)
+
+.PRECIOUS : $(LIBRARY)
+
+$(LIBRARY): $(OBJECTS)
+	$(AR) $(ARFLAGS) $@ $^

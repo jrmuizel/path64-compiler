@@ -46,6 +46,13 @@ inline BOOL EXTENSION_Is_Extension_INTRINSIC(INTRINSIC id) {
 }
 
 /*
+ * Return TRUE if the parameter TOP Id belongs to an extension
+ */
+inline BOOL EXTENSION_Is_Extension_TOP(TOP id) {
+  return (id >= TOP_static_count && id < TOP_count);
+}
+
+/*
  * Return TRUE if the parameter register class rc belongs to an extension
  */
 inline BOOL EXTENSION_Is_Extension_REGISTER_CLASS(ISA_REGISTER_CLASS rc) {
@@ -61,6 +68,8 @@ BE_EXPORTED extern const char *EXTENSION_Get_Extension_Name_From_INTRINSIC(INTRI
 BE_EXPORTED extern const char *EXTENSION_Get_Extension_Name_From_TOP(TOP id);
 
 BE_EXPORTED extern const char *EXTENSION_Get_Extension_Name_From_REGISTER_CLASS(ISA_REGISTER_CLASS rc);
+
+BE_EXPORTED extern EXTENSION_ISA_Info *EXTENSION_Get_ISA_Info_From_TOP(TOP id);
 
 BE_EXPORTED extern TOP  EXTENSION_INTRINSIC_to_TOP(INTRINSIC id);
 

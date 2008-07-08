@@ -189,11 +189,12 @@ class EXTENSION_ISA_Info {
   inline void          set_TOP_UNDEFINED (TOP);
   
   /* Handling TOP properties ------------------------------------------------ */
-  inline const mUINT64*                  get_TOP_prop_tab                    (void) const;
+  inline const EXTENSION_ISA_PROPERTY_FLAGS* get_TOP_prop_tab                (void) const;
   inline const mUINT16*                  get_TOP_mem_bytes_tab               (void) const;
   inline const mUINT16*                  get_TOP_mem_align_tab               (void) const;
   /* ...attribute table used for compatibility check/remapping                */
-  inline const ISA_PROPERTIES_ATTRIBUTE* get_ISA_PROPERTIES_attribute_tab    (void) const;
+  inline const EXTENSION_ISA_PROPERTIES_ATTRIBUTE*
+                                         get_ISA_PROPERTIES_attribute_tab    (void) const;
   inline const mUINT32                   get_ISA_PROPERTIES_attribute_tab_sz (void) const;
 
   /* Handling assembly printing --------------------------------------------- */
@@ -201,6 +202,8 @@ class EXTENSION_ISA_Info {
   inline const mUINT32                   get_ISA_PRINT_info_tab_sz           (void) const;
   inline const mUINT16*                  get_ISA_PRINT_info_index_tab        (void) const;
   inline const char**                    get_ISA_PRINT_name_tab              (void) const;
+
+  inline const void*                     get_ISA_PRINT_info_20070924_tab     (void) const;
   
   /* Handling literal classes ----------------------------------------------- */
   inline const ISA_LIT_CLASS_INFO*       get_ISA_LIT_CLASS_info_tab          (void) const;
@@ -213,7 +216,6 @@ class EXTENSION_ISA_Info {
   inline const ISA_OPERAND_INFO*         get_ISA_OPERAND_info_tab            (void) const;
   inline const mUINT32                   get_ISA_OPERAND_info_tab_sz         (void) const;
   inline const mUINT16*                  get_ISA_OPERAND_info_index_tab      (void) const;
-  inline const mINT8*                    get_ISA_OPERAND_relocatable_opnd_tab(void) const;
   /* ...tables used for compatibility check/remapping                         */
   inline const ISA_OPERAND_USE_ATTRIBUTE*get_ISA_OPERAND_USE_attribute_tab   (void) const;
   inline const mUINT32                   get_ISA_OPERAND_USE_attribute_tab_sz(void) const;
@@ -267,6 +269,8 @@ class EXTENSION_ISA_Info {
   
   /* Handling bundling information ------------------------------------------ */
   inline const ISA_EXEC_UNIT_PROPERTY*   get_ISA_EXEC_unit_prop_tab          (void) const;
+  inline const ISA_EXEC_UNIT_SLOTS*      get_ISA_EXEC_unit_slots_tab         (void) const;
+  inline const mUINT8*                   get_ISA_BUNDLE_slot_count_tab       (void) const;
   
   /* Handling TOP variants -------------------------------------------------- */
   inline const ISA_VARIANT_INFO*         get_ISA_VARIANT_INFO_tab            (void) const;
@@ -281,6 +285,12 @@ class EXTENSION_ISA_Info {
   ISA_EXT_Interface_t           * own_isa_ext;
   const ISA_EXT_Interface_t     * isa_ext;
   const ISA_REGISTER_CLASS_INFO * overridden_ISA_REGISTER_CLASS_tab;
+  const ISA_OPERAND_VALTYP      * overridden_ISA_OPERAND_operand_types_tab;
+  const ISA_EXEC_UNIT_PROPERTY  * overridden_ISA_EXEC_unit_prop_tab;
+  const ISA_EXEC_UNIT_SLOTS     * overridden_ISA_EXEC_unit_slots_tab;
+  const mUINT8                  * overridden_ISA_BUNDLE_slot_count_tab;
+  const ISA_PRINT_INFO          * overridden_ISA_PRINT_info_tab;
+  const ISA_LIT_CLASS_INFO      * overridden_ISA_LIT_CLASS_info_tab;
   EXTENSION_Regclass_Info       * regclass_access_tab;
   EXTENSION_SI_Info             * si_access_tab;
 };
@@ -484,7 +494,7 @@ EXTENSION_ISA_Info::set_TOP_UNDEFINED(TOP top) {/* Set TOP_UNDEFINED value.     
 }
 
 /* Handling TOP properties ------------------------------------------------ */
-const mUINT64*
+const EXTENSION_ISA_PROPERTY_FLAGS*
 EXTENSION_ISA_Info::get_TOP_prop_tab() const {
   return  (isa_ext->get_TOP_prop_tab());
 }
@@ -500,7 +510,7 @@ EXTENSION_ISA_Info::get_TOP_mem_align_tab() const {
 }
 
 /* ...attribute table used for compatibility check/remapping                */
-const ISA_PROPERTIES_ATTRIBUTE*
+const EXTENSION_ISA_PROPERTIES_ATTRIBUTE*
 EXTENSION_ISA_Info::get_ISA_PROPERTIES_attribute_tab() const {
   return  (isa_ext->get_ISA_PROPERTIES_attribute_tab());
 }
@@ -513,7 +523,7 @@ EXTENSION_ISA_Info::get_ISA_PROPERTIES_attribute_tab_sz() const {
 /* Handling assembly printing --------------------------------------------- */
 const ISA_PRINT_INFO*
 EXTENSION_ISA_Info::get_ISA_PRINT_info_tab              (void) const {
-  return  (isa_ext->get_ISA_PRINT_info_tab());
+  return  (overridden_ISA_PRINT_info_tab);
 }
 const mUINT32
 EXTENSION_ISA_Info::get_ISA_PRINT_info_tab_sz           (void) const {
@@ -531,7 +541,7 @@ EXTENSION_ISA_Info::get_ISA_PRINT_name_tab              (void) const {
 /* Handling literal classes ----------------------------------------------- */
 const ISA_LIT_CLASS_INFO*
 EXTENSION_ISA_Info::get_ISA_LIT_CLASS_info_tab          (void) const {
-  return  (isa_ext->get_ISA_LIT_CLASS_info_tab());
+  return  (overridden_ISA_LIT_CLASS_info_tab);
 }
 const mUINT32
 EXTENSION_ISA_Info::get_ISA_LIT_CLASS_info_tab_sz       (void) const {
@@ -545,7 +555,7 @@ EXTENSION_ISA_Info::get_ISA_LIT_CLASS_static_max        (void) const {
 /* Handling operands ------------------------------------------------------ */
 const ISA_OPERAND_VALTYP*
 EXTENSION_ISA_Info::get_ISA_OPERAND_operand_types_tab   (void) const {
-  return  (isa_ext->get_ISA_OPERAND_operand_types_tab());
+  return  (overridden_ISA_OPERAND_operand_types_tab);
 }
 const mUINT32
 EXTENSION_ISA_Info::get_ISA_OPERAND_operand_types_tab_sz(void) const {
@@ -562,10 +572,6 @@ EXTENSION_ISA_Info::get_ISA_OPERAND_info_tab_sz         (void) const {
 const mUINT16*
 EXTENSION_ISA_Info::get_ISA_OPERAND_info_index_tab      (void) const {
   return  (isa_ext->get_ISA_OPERAND_info_index_tab());
-}
-const mINT8*
-EXTENSION_ISA_Info::get_ISA_OPERAND_relocatable_opnd_tab(void) const {
-  return  (isa_ext->get_ISA_OPERAND_relocatable_opnd_tab());
 }
 /* ...tables used for compatibility check/remapping                         */
 const ISA_OPERAND_USE_ATTRIBUTE*
@@ -703,7 +709,17 @@ EXTENSION_ISA_Info::get_ISA_ENUM_CLASS_INFO_VALUE_tab_sz(void) const {
 /* Handling bundling information ------------------------------------------ */
 const ISA_EXEC_UNIT_PROPERTY*
 EXTENSION_ISA_Info::get_ISA_EXEC_unit_prop_tab          (void) const {
-  return  (isa_ext->get_ISA_EXEC_unit_prop_tab());
+  return  (overridden_ISA_EXEC_unit_prop_tab);
+}
+
+const ISA_EXEC_UNIT_SLOTS*
+EXTENSION_ISA_Info::get_ISA_EXEC_unit_slots_tab         (void) const {
+  return (overridden_ISA_EXEC_unit_slots_tab);
+}
+
+const mUINT8*
+EXTENSION_ISA_Info::get_ISA_BUNDLE_slot_count_tab         (void) const {
+  return (overridden_ISA_BUNDLE_slot_count_tab);
 }
 
 /* Handling TOP variants -------------------------------------------------- */

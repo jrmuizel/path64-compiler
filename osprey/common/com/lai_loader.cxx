@@ -137,7 +137,7 @@ const char *EXTENSION_Get_Extension_Name_From_INTRINSIC(INTRINSIC id) {
  */
 const char *EXTENSION_Get_Extension_Name_From_TOP(TOP id) {
   int ext=0;
-  if (id > TOP_static_count && id < TOP_count) {
+  if (EXTENSION_Is_Extension_TOP(id)) {
     while (ext < (global_ext_info_table->nb_ext-1) && 
 	   id >= global_ext_info_table->base_TOP[ext+1]) {
       ext++;
@@ -162,6 +162,23 @@ const char *EXTENSION_Get_Extension_Name_From_REGISTER_CLASS(ISA_REGISTER_CLASS 
     return (global_ext_info_table->dll_tab[ext].extname);
   }
 
+  return (NULL);
+}
+
+/*
+ * Return the EXTENSION_ISA_Info associated to the parameter TOP,
+ * or NULL if the TOP does not belong to an extension
+ */
+EXTENSION_ISA_Info *EXTENSION_Get_ISA_Info_From_TOP(TOP id) {
+  int ext=0;
+  if (EXTENSION_Is_Extension_TOP(id)) {
+    while (ext < (global_ext_info_table->nb_ext-1) && 
+	   id >= global_ext_info_table->base_TOP[ext+1]) {
+      ext++;
+    }
+    return (global_ext_info_table->ISA_tab[ext]);
+  }
+  
   return (NULL);
 }
 
@@ -643,6 +660,8 @@ static void Initialize_ISA_Print(Lai_Loader_Info_t &ext_info) {
 static void Initialize_ISA_Bundle(Lai_Loader_Info_t &ext_info) {
   int ext;
   ISA_EXEC_UNIT_PROPERTY *unit_prop_tab;
+  ISA_EXEC_UNIT_SLOTS    *unit_slots_tab;
+  mUINT8                 *bundle_slot_count_tab;
 
   if (ext_info.trace_on) {
     fprintf(TFile, "...Initialize extension ISA bundles\n");
@@ -652,10 +671,24 @@ static void Initialize_ISA_Bundle(Lai_Loader_Info_t &ext_info) {
     return; // No top in extension
   }
 
-  // Allocate new table and fill it with the content
+
+  int i;
+  int subset_count = ISA_SUBSET_static_count;
+  for (ext=0; ext<ext_info.nb_ext; ext++) {      // Iterate on all extensions.
+    subset_count += ext_info.ISA_tab[ext]->get_ISA_SUBSET_tab_sz();
+  }
+
+
+  // Allocate new tables and fill it with the content
   // of the initial static table
   unit_prop_tab = TYPE_MEM_POOL_ALLOC_N(ISA_EXEC_UNIT_PROPERTY, Malloc_Mem_Pool, TOP_count);
   memcpy(unit_prop_tab, ISA_EXEC_unit_prop, TOP_static_count * sizeof(ISA_EXEC_UNIT_PROPERTY));
+  unit_slots_tab = TYPE_MEM_POOL_ALLOC_N(ISA_EXEC_UNIT_SLOTS, Malloc_Mem_Pool, TOP_count);
+  memcpy(unit_slots_tab, ISA_EXEC_unit_slots, TOP_static_count * sizeof(ISA_EXEC_UNIT_SLOTS));
+
+  /* ISA_SUBSET_List initialized by Initialize_ISA_Subsets */
+  bundle_slot_count_tab = TYPE_MEM_POOL_ALLOC_N(mUINT8, Malloc_Mem_Pool, subset_count);
+  memcpy(bundle_slot_count_tab, ISA_BUNDLE_slot_count, ISA_SUBSET_static_count * sizeof(mUINT8));
 
   for (ext=0; ext<ext_info.nb_ext; ext++) {
     int top_in_ext = ext_info.ISA_tab[ext]->get_TOP_count();
@@ -664,11 +697,28 @@ static void Initialize_ISA_Bundle(Lai_Loader_Info_t &ext_info) {
       memcpy(&unit_prop_tab[ext_info.base_TOP[ext]],
 	     ext_info.ISA_tab[ext]->get_ISA_EXEC_unit_prop_tab(),
 	     top_in_ext * sizeof(ISA_EXEC_UNIT_PROPERTY));
+
+      // Concatenate extension defined unit slots
+      memcpy(&unit_slots_tab[ext_info.base_TOP[ext]],
+	     ext_info.ISA_tab[ext]->get_ISA_EXEC_unit_slots_tab(),
+	     top_in_ext * sizeof(ISA_EXEC_UNIT_SLOTS));
+    }
+
+    int ext_num_subsets = ext_info.ISA_tab[ext]->get_ISA_SUBSET_tab_sz();
+    subset_count = ISA_SUBSET_static_count;
+    if(ext_num_subsets) {
+      // Concatenate extension defined bundle slot count
+      memcpy(&bundle_slot_count_tab[subset_count],
+	     ext_info.ISA_tab[ext]->get_ISA_BUNDLE_slot_count_tab(),
+	     ext_num_subsets * sizeof(mUINT8));
+      subset_count += ext_num_subsets;
     }
   }
   
-  // Update targinfo pointer
+  // Update targinfo pointers
   ISA_EXEC_unit_prop = unit_prop_tab;
+  ISA_EXEC_unit_slots = unit_slots_tab;
+  ISA_BUNDLE_slot_count = bundle_slot_count_tab;
 }
 
 
@@ -683,7 +733,7 @@ static void Initialize_ISA_Bundle(Lai_Loader_Info_t &ext_info) {
  * 
  * TODO: Currently, extension specific LCs that are defined within
  *       several extensions are not merged in the final table.
- *       (Doing so will need update of the Operand intialization)
+ *       (Doing so will need update of the Operand initialization)
  *
  * NOTE: Currently, Core literal classes are not used by extension
  *       operands, there is then no remapping/coherency check done
@@ -804,7 +854,6 @@ static void Initialize_ISA_Enum(Lai_Loader_Info_t &ext_info) {
  * - ISA_OPERAND_operand_types   (array [ISA_OPERAND_TYPES_COUNT])
  * - ISA_OPERAND_info            (array [ISA_OPERAND_INFO_COUNT])
  * - ISA_OPERAND_info_index      (array [TOP_count])
- * - ISA_OPERAND_relocatable_opnd(array [TOP_count])
  *
  * Assumptions:
  * - Extension TOPs use only extension defined OPERAND_info, not core ones
@@ -840,7 +889,6 @@ static void Initialize_ISA_Operands(Lai_Loader_Info_t &ext_info,
     ISA_OPERAND_VALTYP *optypes_tab;
     ISA_OPERAND_INFO   *opinfo_tab;
     mUINT16            *opinfo_idx_tab;
-    mINT8              *relocatable_opnd_tab;
 
     optypes_tab = TYPE_MEM_POOL_ALLOC_N(ISA_OPERAND_VALTYP, Malloc_Mem_Pool, nb_optypes);
     memcpy(optypes_tab, ISA_OPERAND_operand_types,
@@ -852,10 +900,6 @@ static void Initialize_ISA_Operands(Lai_Loader_Info_t &ext_info,
 
     opinfo_idx_tab = TYPE_MEM_POOL_ALLOC_N(mUINT16, Malloc_Mem_Pool, TOP_count);
     memcpy(opinfo_idx_tab, ISA_OPERAND_info_index, (TOP_static_count) * sizeof(mUINT16));
-
-    relocatable_opnd_tab = TYPE_MEM_POOL_ALLOC_N(mINT8, Malloc_Mem_Pool, TOP_count);
-    memcpy(relocatable_opnd_tab, ISA_OPERAND_relocatable_opnd, (TOP_static_count) * sizeof(mINT8));
-
 
     for (ext=0; ext<ext_info.nb_ext; ext++) {
       // Update operands types
@@ -1023,12 +1067,6 @@ static void Initialize_ISA_Operands(Lai_Loader_Info_t &ext_info,
       for (j=0; j<top_in_ext; j++) {
 	opinfo_idx_tab[ext_info.base_TOP[ext]+j] = base + ext_ii_tab[j];
       }
-
-      // Update relocatable operand info
-      // ...............................
-      memcpy(&relocatable_opnd_tab[ext_info.base_TOP[ext]],
-	     ext_info.ISA_tab[ext]->get_ISA_OPERAND_relocatable_opnd_tab(),
-	     top_in_ext * sizeof(mINT8));
     }
     
     // Update targinfo pointer
@@ -1036,7 +1074,6 @@ static void Initialize_ISA_Operands(Lai_Loader_Info_t &ext_info,
     ISA_OPERAND_operand_types = optypes_tab;
     ISA_OPERAND_info          = opinfo_tab;
     ISA_OPERAND_info_index    = opinfo_idx_tab;
-    ISA_OPERAND_relocatable_opnd = relocatable_opnd_tab;
   }
 }
 
@@ -1194,19 +1231,8 @@ static void Initialize_SI(Lai_Loader_Info_t &ext_info,
   new_res_count      = static_res_count;
   new_islot_count    = static_islot_count;
   for (ext=0; ext<ext_info.nb_ext; ext++) {
-    // Find SI description for current processor
-    ext_proc_si_info[ext] = 0;
-    // NOTE: The following code will probably be updated. We will consider that only a
-    //       single scheduling description will be available for an extension
-    for (j=0; j < (int)ext_info.ISA_tab[ext]->get_scheduling_info_tab_sz(); j++) {
-      if ((j==0) /* patch to take the first si, even if the processor name is not the same */
-	         /* Backward compatibility. Name "stxp70_ext" and "stxp70" can be both generated by stxp70 RTK. */ ||
-	  !strcmp(ext_info.ISA_tab[ext]->get_Scheduling_Info_Access_tab()[j].get_processor_name(),
-		  proc_name)) {
-	ext_proc_si_info[ext] = &(ext_info.ISA_tab[ext]->get_Scheduling_Info_Access_tab()[j]);
-	break;
-      }
-    }
+    // Find SI description for current processor (Always take the first one)
+    ext_proc_si_info[ext] = &(ext_info.ISA_tab[ext]->get_Scheduling_Info_Access_tab()[0]);
     FmtAssert((ext_proc_si_info[ext]!=NULL),
 	      ("ERROR: Targinfo dynamic loading failed: Cannot locate scheduling"
 	       " information for processor '%s' in current extension\n",
@@ -1229,15 +1255,15 @@ static void Initialize_SI(Lai_Loader_Info_t &ext_info,
 
       // ...Check Resources
       int ext_res_count = ext_proc_si_info[ext]->get_SI_resource_count();
-      const char *ext_proc_name = ext_proc_si_info[ext]->get_processor_name();
       SI_RESOURCE * const *ext_res_tab = ext_proc_si_info[ext]->get_SI_resources_tab();
       SI_RESOURCE * TI_SI_CONST* static_res_tab = Get_SI_resources();
       for (u = 0; (u<static_res_count) && (u<ext_res_count); u++) {
 	if (strcmp(SI_RESOURCE_Name(ext_res_tab[u]), SI_RESOURCE_ID_Name(u))==0 ||
 	    /* Backward compatibility. Allow First resource to be named Resource_stxp70_ext_ALL for STxP70 target. */
-	    (u == 0 && strcmp(proc_name, "stxp70") == 0 && 
-	     strcmp(ext_proc_name, "stxp70_ext") == 0 && 
-	     strcmp(SI_RESOURCE_Name(ext_res_tab[u]), "Resource_stxp70_ext_ALL") == 0)) {
+	    (u == 0 && (strcmp(proc_name, "stxp70_v3_ext")==0 &&
+			(strcmp(SI_RESOURCE_Name(ext_res_tab[u]), "Resource_stxp70_v3_ext_ALL")==0 ||
+			 strcmp(SI_RESOURCE_Name(ext_res_tab[u]), "Resource_stxp70_ALL")==0 ||
+			 strcmp(SI_RESOURCE_Name(ext_res_tab[u]), "Resource_stxp70_ext_ALL")==0)))) {
 	  if ((SI_RESOURCE_Avail_Per_Cycle(ext_res_tab[u]) != SI_RESOURCE_Avail_Per_Cycle(static_res_tab[u])) ||
 	      (SI_RESOURCE_Word_Index     (ext_res_tab[u]) != SI_RESOURCE_Word_Index     (static_res_tab[u])) ||
 	      (SI_RESOURCE_Bit_Index      (ext_res_tab[u]) != SI_RESOURCE_Bit_Index      (static_res_tab[u]))
@@ -1933,6 +1959,16 @@ void Lai_Initialize_Extension_Loader (int nb_ext, const Extension_dll_t *ext_int
 
     ext_info->base_REGISTER_SUBCLASS[ext] = subrc_max+1;
     subrc_max += ext_info->ISA_tab[ext]->get_ISA_REGISTER_SUBCLASS_tab_sz();
+
+    if (ext_info->trace_on) {
+      fprintf(TFile, "   -> First TOP id               (if any) : %d\n", ext_info->base_TOP[ext]);
+      fprintf(TFile, "   -> First INTRINSIC id         (if any) : %d\n", ext_info->base_INTRINSIC[ext]);
+      fprintf(TFile, "   -> First Literal class id     (if any) : %d\n", ext_info->base_LIT_CLASS[ext]);
+      fprintf(TFile, "   -> First ENUM class id        (if any) : %d\n", ext_info->base_ENUM_CLASS[ext]);
+      fprintf(TFile, "   -> First Register class id    (if any) : %d\n", ext_info->base_REGISTER_CLASS[ext]);
+      fprintf(TFile, "   -> First Register subclass id (if any) : %d\n", ext_info->base_REGISTER_SUBCLASS[ext]);
+      fprintf(TFile, "   -> First PREG id              (if any) : %d\n", ext_info->base_PREG[ext]);
+    }
   }
 
   // Sanity checks

@@ -110,16 +110,14 @@ Imm_Value_In_Range (
   INT64 imm
 )
 {
-  TOP new_opc = TOP_immediate(OP_code(op));
+  INT opnd = TOP_Find_Operand_Use(OP_code(op), OU_opnd2);
+  if (opnd == -1)
+    opnd = TOP_Find_Operand_Use(OP_code(op), OU_offset);
+  if (opnd == -1)
+    return FALSE;
 
-  if (new_opc == TOP_UNDEFINED) return FALSE;
-
-  INT opnd = TOP_Find_Operand_Use(new_opc, OU_offset);
-  const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info(new_opc);
-  const ISA_OPERAND_VALTYP *vtype = ISA_OPERAND_INFO_Operand(oinfo, opnd);
-  ISA_LIT_CLASS lc = ISA_OPERAND_VALTYP_Literal_Class(vtype);
-  BOOL retv = ISA_LC_Value_In_Class(imm, lc);
-  return retv;
+  TOP new_opc = TOP_opnd_immediate_variant(OP_code(op), opnd, imm);
+  return (new_opc != TOP_UNDEFINED);
 }
 
 /* =======================================================================

@@ -69,7 +69,7 @@ extern "C" {
 #endif
 
 
-#define MAGIC_NUMBER_EXT_ISA_API   20070924  /* Magic number. Interface checking */
+#define MAGIC_NUMBER_EXT_ISA_API   20080307  /* Magic number. Interface checking */
 
 /* ===========================================
  * Base register available for addressing mode
@@ -182,11 +182,11 @@ struct ISA_EXT_Interface {
  void         (*set_TOP_UNDEFINED) (TOP);/* Set TOP_UNDEFINED value.         */
 
  /* Handling TOP properties ------------------------------------------------ */
- const mUINT64*                  (*get_TOP_prop_tab)                    (void);
+ const EXTENSION_ISA_PROPERTY_FLAGS* (*get_TOP_prop_tab)                (void);
  const mUINT16*                  (*get_TOP_mem_bytes_tab)               (void);
  const mUINT16*                  (*get_TOP_mem_align_tab)               (void);
  /* ...attribute table used for compatibility check/remapping                */
- const ISA_PROPERTIES_ATTRIBUTE* (*get_ISA_PROPERTIES_attribute_tab)    (void);
+ const EXTENSION_ISA_PROPERTIES_ATTRIBUTE* (*get_ISA_PROPERTIES_attribute_tab)(void);
  const mUINT32                   (*get_ISA_PROPERTIES_attribute_tab_sz) (void);
 
  /* Handling assembly printing --------------------------------------------- */
@@ -206,8 +206,8 @@ struct ISA_EXT_Interface {
  const ISA_OPERAND_INFO*         (*get_ISA_OPERAND_info_tab)            (void);
  const mUINT32                   (*get_ISA_OPERAND_info_tab_sz)         (void);
  const mUINT16*                  (*get_ISA_OPERAND_info_index_tab)      (void);
- const mINT8*                    (*get_ISA_OPERAND_relocatable_opnd_tab)(void);
- /* ...tables used for compatibility check/remapping                         */
+ const mINT8*                    (*DEPRECATED_FUNC1)(void); /*NOTE: no more used, but kept to simplify backward compatibility*/
+  /* ...tables used for compatibility check/remapping                         */
  const ISA_OPERAND_USE_ATTRIBUTE*(*get_ISA_OPERAND_USE_attribute_tab)   (void);
  const mUINT32                   (*get_ISA_OPERAND_USE_attribute_tab_sz)(void);
  /* ...access to core reg class & subclass names used in ext                 */
@@ -262,6 +262,10 @@ struct ISA_EXT_Interface {
 
  /* Handling hazards -------------------------------------------------------- */
  const mUINT8*                   (*get_ISA_HAZARDS_index_tab)           (void);
+
+ /* Handling bundling information: Added here for backward compatibility issue*/
+ const ISA_EXEC_UNIT_SLOTS*      (*get_ISA_EXEC_unit_slots_tab)         (void);
+ const mUINT8*                   (*get_ISA_BUNDLE_slot_count_tab)       (void);
 };
 
 typedef struct ISA_EXT_Interface ISA_EXT_Interface_t;
