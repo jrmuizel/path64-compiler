@@ -420,10 +420,18 @@ void GenCode (FILE *cfd, char *cname) {
      fprintf (cfd, "}\n");
 #ifndef __TOOLKIT__
       fprintf (cfd, "#ifndef DEF_EXT_LONG_NAME\n");
-      fprintf (cfd, "#define DEF_EXT_LONG_NAME \"%s\"\n", utilsOptionGetScalar( & gensyn_option.long_name ) );
+      if (NULL==utilsOptionGetScalar( & gensyn_option.long_name )) {
+         fprintf (cfd, "#define DEF_EXT_LONG_NAME \"(null)\"\n");
+      } else {
+         fprintf (cfd, "#define DEF_EXT_LONG_NAME \"%s\"\n", utilsOptionGetScalar( & gensyn_option.long_name ) );
+      }
       fprintf (cfd, "#endif\n");
       fprintf (cfd, "#ifndef DEF_EXT_SHORT_NAME\n");
-      fprintf (cfd, "#define DEF_EXT_SHORT_NAME \"%s\"\n", utilsOptionGetScalar( & gensyn_option.short_name ) );
+      if (NULL==utilsOptionGetScalar( & gensyn_option.short_name )) {
+         fprintf (cfd, "#define DEF_EXT_SHORT_NAME \"(null)\"\n");
+      } else {
+         fprintf (cfd, "#define DEF_EXT_SHORT_NAME \"%s\"\n", utilsOptionGetScalar( & gensyn_option.short_name ) );
+      }
       fprintf (cfd, "#endif\n");
 #endif
       emitExtInterface(cfd);

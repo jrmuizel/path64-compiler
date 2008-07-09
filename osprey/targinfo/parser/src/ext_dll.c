@@ -26,7 +26,7 @@
 #include "utils_version.h"
 #endif
 
-#ifdef __linux
+#if defined(__linux) || defined(__sun)
 #include <sys/param.h>
 #include <unistd.h>
 #define GUESSPATHLEN MAXPATHLEN
