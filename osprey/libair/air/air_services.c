@@ -392,23 +392,23 @@ r_value( AIR_TN *tn )
 
     top = Get_AIR_OP_TOP(op); 
 
-    if(TOP_UNDEFINED==top)
-      { switch(sizeof(ISA_PACK_INST))
-	  { case 2: inst->fprintf(inst->stream,".half 0x%04x",
-				  (mUINT32)(mUINT16)inst->inst);
-	      break;
-
-	  case 4: inst->fprintf(inst->stream,".word 0x%08x",inst->inst);
-	    break;
-            
-	  case 8:       /* Fall through */
-	  default:
-	    inst->fprintf(inst->stream,"0x%016llx",
-			  (UINT64)(inst->inst));
-	    break;
+    if (TOP_UNDEFINED==top) {
+       if (inst->print_unknown) {
+          switch(sizeof(ISA_PACK_INST)) { 
+            case 2: inst->fprintf(inst->stream,".half 0x%04x",
+		  	          (mUINT32)(mUINT16)inst->inst);
+	            break;
+	    case 4: inst->fprintf(inst->stream,".word 0x%08x",inst->inst);
+	            break;
+            case 8:       /* Fall through */
+	    default:inst->fprintf(inst->stream,"0x%016llx",
+			          (UINT64)(inst->inst));
+	            break;
 	  }
-        return AIR_EVENT_NEXT;
-      }
+          return AIR_EVENT_NEXT;
+       }
+       return AIR_EVENT_END_ERROR;
+    }
 
     for (i = 0; i < Get_AIR_OP_nb_operands(op); i++) {
       tn = Get_AIR_OP_operandn(op,i);

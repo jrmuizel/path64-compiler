@@ -57,6 +57,7 @@ typedef struct{
    unsigned long long   PC;
    const char *       (*get_symbol_at_address)(unsigned long long addr, void * info);
    void                *disasm_info;
+   unsigned int         print_unknown;
 }AIR_Disasm;
 
 /* Functions prototypes ......................................*/

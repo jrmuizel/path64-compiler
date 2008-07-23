@@ -103,7 +103,8 @@ AIR_disasm_run( AIR_Disasm *inst )
 {
    AIR_Decode decode;
    AIR_Print  print;
-
+   int        print_return;
+   
    /* TODO: manage error cases */
 
    /* initialization of structure decode */
@@ -128,18 +129,19 @@ AIR_disasm_run( AIR_Disasm *inst )
    print.PC                    = inst->PC;
    print.get_symbol_at_address = inst->get_symbol_at_address;
    print.disasm_info           = inst->disasm_info;
+   print.print_unknown         = inst->print_unknown;
    
    AIR_reset_tns_flags(print.air_inst);
 
    if(disasm_run.print_preprocess)
      disasm_run.print_preprocess(&print);
 
-   disasm_run.print_process(&print);
+   print_return = disasm_run.print_process(&print);
 
    if(disasm_run.print_postprocess)
      disasm_run.print_postprocess(&print);
    
-   return 0;
+   return print_return;
 }
 
 int

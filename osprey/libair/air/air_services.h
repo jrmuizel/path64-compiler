@@ -66,7 +66,8 @@ typedef struct{
     unsigned long long   PC;
     const char *       (*get_symbol_at_address)(unsigned long long addr, void * info);
     void                *disasm_info;
-    BOOL             hexaconstant;  /* Whether constants are in hexadecimal.*/
+    BOOL                 hexaconstant;  /* Whether constants are in hexadecimal.*/
+    unsigned int         print_unknown; /* print unknown instructions as hexa constant */
 }AIR_Print;
 
 /* Flags on operands */
