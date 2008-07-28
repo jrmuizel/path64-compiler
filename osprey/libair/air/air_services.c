@@ -280,8 +280,6 @@ r_value( AIR_TN *tn )
       { vtype = is_opnd ? ISA_OPERAND_INFO_Operand(oinfo, index): 
 	  ISA_OPERAND_INFO_Result(oinfo,index);
 
-	a = AIR_new_string(50);
- 
 	switch(Get_AIR_TN_exp_kind(tn))
 	  { case AIR_Expression_immediate:
 	      val = Get_AIR_TN_exp_imm_val(tn);
@@ -321,7 +319,7 @@ r_value( AIR_TN *tn )
 		    }
 		  }
 		  if (NULL!=name) {
-		    strcat(symbname,name);
+		    strncat(symbname,name,50);
 		  }
 	        }
 	      }
@@ -333,6 +331,7 @@ r_value( AIR_TN *tn )
               /* Operand is displayed in nr of bytes 
                * even for scaled values (mask result with ~(-1LL<<size))
                */
+              a = AIR_new_string((symbname[0]!=0)?strlen(symbname)+1:50);
 	      if (symbname[0]) {
                 sprintf(a,"%s",symbname);
 	      } else if (hexaformat) { 
@@ -353,17 +352,22 @@ r_value( AIR_TN *tn )
 	      break;
 
 	  case AIR_Expression_regmask:
-	    sprintf(a,"0x%x",(UINT32)Get_AIR_TN_exp_regmask_mask(tn));
+	    a = AIR_new_string(50);
+	    snprintf(a,50,"0x%x",(UINT32)Get_AIR_TN_exp_regmask_mask(tn));
 	    break;
 
 	  case AIR_Expression_reloc:
-	    sprintf(a,"%lld",(UINT64)Get_AIR_TN_exp_reloc_val(tn));
+	    a = AIR_new_string(50);
+	    snprintf(a,50,"%lld",(UINT64)Get_AIR_TN_exp_reloc_val(tn));
 	    break;
 
 	  case AIR_Expression_enum:
-            if (ISA_EC_Emit_Name(Get_AIR_TN_exp_enum_ec(tn)))
-              sprintf(a,"%s",ISA_ECV_Name(Get_AIR_TN_exp_enum_ecv(tn)));
-            else sprintf(a,"%lld",(UINT64)ISA_ECV_Intval(Get_AIR_TN_exp_enum_ecv(tn)));
+ 	    a = AIR_new_string(50);
+            if (ISA_EC_Emit_Name(Get_AIR_TN_exp_enum_ec(tn))) {
+              snprintf(a,50,"%s",ISA_ECV_Name(Get_AIR_TN_exp_enum_ecv(tn)));
+            } else {
+	      snprintf(a,50,"%lld",(UINT64)ISA_ECV_Intval(Get_AIR_TN_exp_enum_ecv(tn)));
+	    }
 	    break;
           
 	  default:
