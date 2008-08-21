@@ -276,6 +276,8 @@ INT32 WOPT_Enable_DoWhile_Conversion = DOWHILE_CONV_FOR_PERF;
 BOOL WOPT_Enable_DoWhile_Conversion_Set = FALSE;
 INT32 WOPT_Pre_Small_Immediate = 16; // Simple expressions derived from an IV with a
                                      // small immediate offset are not subject to PRE
+UINT32 WOPT_Pre_LoadStore_offset = 0; // Create ILoad/Istore with 0 offset,
+                                 // if the nearest zero offset is lower than this value
 #endif
 
 
@@ -648,6 +650,10 @@ static OPTION_DESC Options_WOPT[] = {
     0, 0, 0,	&WOPT_Enable_Flow_Simplification_In_Tailmerge, NULL },
   { OVK_UINT32,	OV_INTERNAL,	TRUE, "Pre_Small_Immediate",		"",
     16, 0, UINT32_MAX, &WOPT_Pre_Small_Immediate, NULL },
+  // FdF 20080528: PRE on Iload/Istore for zero offset. Max value must
+  // be in sync with size of offset in opt_etable.h:EXP_OCCURS
+  { OVK_UINT32,	OV_INTERNAL,	TRUE, "Pre_LoadStore_offset",		"",
+    512, 0, 65535, &WOPT_Pre_LoadStore_offset, NULL },
 #endif
 
   { OVK_COUNT }		/* List terminator -- must be last */
