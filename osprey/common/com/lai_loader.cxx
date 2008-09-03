@@ -36,8 +36,7 @@
  * It supports extending the targinfo model, not shrinking it.
  *
  */
-#include "../gccfe/extension_include.h"
-#include "dyn_dll_api_access.h"
+#include "extension_include.h"
 #include "loader.h"
 #include "erglob.h"
 #include "errors.h"
@@ -81,6 +80,11 @@ typedef struct {
     TOP top;
     int compose_extract_idx;
   } u1;
+  char* asm_stmt_behavior;
+  char** asm_stmt_results;
+  char** asm_stmt_operands;
+  int    asm_stmt_cycles;
+  int    asm_stmt_size;
 } extension_intrinsic_info_t;
 
 static extension_intrinsic_info_t *extension_INTRINSIC_table = (extension_intrinsic_info_t*)NULL;
@@ -189,7 +193,8 @@ EXTENSION_ISA_Info *EXTENSION_Get_ISA_Info_From_TOP(TOP id) {
 TOP EXTENSION_INTRINSIC_to_TOP(INTRINSIC id) {
   FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
   if (EXTENSION_Is_Extension_INTRINSIC(id) &&
-      (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].type == DYN_INTRN_TOP)) {
+      (is_DYN_INTRN_TOP(extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)]))
+      ) {
     return (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].u1.top);
   }
   return (TOP_UNDEFINED);
@@ -203,7 +208,7 @@ TOP EXTENSION_INTRINSIC_to_TOP(INTRINSIC id) {
 bool EXTENSION_Is_TOP_INTRINSIC(INTRINSIC id) {
   FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
   if (EXTENSION_Is_Extension_INTRINSIC(id)) {
-    return (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].type==DYN_INTRN_TOP);
+    return (is_DYN_INTRN_TOP(extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)]));
   }
   return (false);
 }
@@ -217,7 +222,7 @@ bool EXTENSION_Is_TOP_INTRINSIC(INTRINSIC id) {
 bool EXTENSION_Is_Compose_INTRINSIC(INTRINSIC id) {
   FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
   if (EXTENSION_Is_Extension_INTRINSIC(id)) {
-    return (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].type==DYN_INTRN_COMPOSE);
+    return (is_DYN_INTRN_COMPOSE(extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)]));
   }
   return (false);
 }
@@ -231,7 +236,7 @@ bool EXTENSION_Is_Compose_INTRINSIC(INTRINSIC id) {
 bool EXTENSION_Is_Partial_Compose_INTRINSIC(INTRINSIC id) {
   FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
   if (EXTENSION_Is_Extension_INTRINSIC(id)) {
-    return (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].type==DYN_INTRN_PARTIAL_COMPOSE);
+    return (is_DYN_INTRN_PARTIAL_COMPOSE(extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)]));
   }
   return (false);
 }
@@ -245,7 +250,7 @@ bool EXTENSION_Is_Partial_Compose_INTRINSIC(INTRINSIC id) {
 bool EXTENSION_Is_Partial_Extract_INTRINSIC(INTRINSIC id) {
   FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
   if (EXTENSION_Is_Extension_INTRINSIC(id)) {
-    return (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].type==DYN_INTRN_PARTIAL_EXTRACT);
+    return (is_DYN_INTRN_PARTIAL_EXTRACT(extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)]));
   }
   return (false);
 }
@@ -261,7 +266,7 @@ bool
 EXTENSION_Is_Convert_To_Pixel_INTRINSIC(INTRINSIC id) {
   FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
   if (EXTENSION_Is_Extension_INTRINSIC(id)) {
-    return (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].type==DYN_INTRN_CONVERT_TO_PIXEL);
+    return (is_DYN_INTRN_CONVERT_TO_PIXEL(extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)]));
   }
   return false;
 }
@@ -277,10 +282,158 @@ bool
 EXTENSION_Is_Convert_From_Pixel_INTRINSIC(INTRINSIC id) {
   FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
   if (EXTENSION_Is_Extension_INTRINSIC(id)) {
-    return (extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)].type==DYN_INTRN_CONVERT_FROM_PIXEL);
+    return (is_DYN_INTRN_CONVERT_FROM_PIXEL(extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)]));
   }
   return false;
 }
+
+/*
+ * Return true if the INTRINSIC identified by 'id' is a
+ * convert_to_ctype INTRINSIC, 
+ * meaning that it is a dummy intrinsic for the compiler that should
+ * be replaced by moves to core register.
+ * false otherwise.
+ */
+bool
+EXTENSION_Is_Convert_To_CType_INTRINSIC(INTRINSIC id) {
+  FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
+    return (is_DYN_INTRN_CONVERT_TO_CTYPE(extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)]));
+  }
+  return false;
+}
+
+/*
+ * Return true if the INTRINSIC identified by 'id' is a
+ * convert_from_ctype INTRINSIC, 
+ * meaning that it is a dummy intrinsic for the compiler that should
+ * be replaced by moves from core registers to extension regisers.
+ * false otherwise.
+ */
+bool
+EXTENSION_Is_Convert_From_CType_INTRINSIC(INTRINSIC id) {
+  FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
+    return (is_DYN_INTRN_CONVERT_FROM_CTYPE(extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)]));
+  }
+  return false;
+}
+
+/** 
+ * Return true if the INTRINSIC identified by 'id' is a meta  INTRINSIC,
+ * meaning that it is defined as an asm-stmt.
+ * false otherwise.
+ * 
+ * @param id : intrinsic id.  
+ * 
+ * @return 
+ */
+bool EXTENSION_Is_Meta_INTRINSIC(INTRINSIC id) {
+  FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
+    return (is_DYN_INTRN_WHIRLNODE_META(extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)]));
+  }
+  return (false);
+}
+
+/** 
+ * return the asm cost (in cycles) corresponding to the meta intrinsic.
+ * 
+ * @param id : meta intrinsic id.  
+ * 
+ * @return 
+ */
+int EXTENSION_Get_Meta_INTRINSIC_Asm_Cycles(INTRINSIC id) {
+  FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
+    int itrnidx = id - (INTRINSIC_STATIC_COUNT+1);
+    if (is_DYN_INTRN_WHIRLNODE_META(extension_INTRINSIC_table[itrnidx])) {
+      return extension_INTRINSIC_table[itrnidx].asm_stmt_cycles;
+    }
+  }
+  return -1;
+}
+
+/** 
+ * return the asm cost (in size) corresponding to the meta intrinsic.
+ * 
+ * @param id : meta intrinsic id.  
+ * 
+ * @return 
+ */
+int EXTENSION_Get_Meta_INTRINSIC_Asm_Size(INTRINSIC id) {
+  FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
+    int itrnidx = id - (INTRINSIC_STATIC_COUNT+1);
+    if (is_DYN_INTRN_WHIRLNODE_META(extension_INTRINSIC_table[itrnidx])) {
+      return extension_INTRINSIC_table[itrnidx].asm_stmt_size;
+    }
+  }
+  return -1;
+}
+
+/** 
+ * return the asm behavior corresponding to the meta intrinsic.
+ * 
+ * @param id : meta intrinsic id.  
+ * 
+ * @return 
+ */
+char* EXTENSION_Get_Meta_INTRINSIC_Asm_Behavior(INTRINSIC id) {
+  FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
+    int itrnidx = id - (INTRINSIC_STATIC_COUNT+1);
+    if (is_DYN_INTRN_WHIRLNODE_META(extension_INTRINSIC_table[itrnidx])) {
+      return extension_INTRINSIC_table[itrnidx].asm_stmt_behavior;
+    }
+  }
+  return NULL;
+}
+
+/** 
+ * return an array of results (+temporaries) used in the asm_behavior
+ * for meta intrinsic.
+ *
+ * elements are described using the asm-stmt syntax. 
+ * array is finished by a NULL element.
+ *
+ * @param id : meta intrinsic id.  
+ * 
+ * @return 
+ */
+char** EXTENSION_Get_Meta_INTRINSIC_Asm_Results(INTRINSIC id) {
+  FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
+    int itrnidx = id - (INTRINSIC_STATIC_COUNT+1);
+    if (is_DYN_INTRN_WHIRLNODE_META(extension_INTRINSIC_table[itrnidx])) {
+      return extension_INTRINSIC_table[itrnidx].asm_stmt_results;
+    }
+  }
+  return NULL;
+}
+
+/** 
+ * return an array of operands used in the asm_behavior
+ * for meta intrinsic.
+ *
+ * elements are described using the asm-stmt syntax. 
+ * array is finished by a NULL element.
+ * 
+ * @param id : meta intrinsic id.  
+ * 
+ * @return 
+ */
+char** EXTENSION_Get_Meta_INTRINSIC_Asm_Operands(INTRINSIC id) {
+  FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
+    int itrnidx = id - (INTRINSIC_STATIC_COUNT+1);
+    if (is_DYN_INTRN_WHIRLNODE_META(extension_INTRINSIC_table[itrnidx])) {
+    return extension_INTRINSIC_table[itrnidx].asm_stmt_operands;  
+    }
+  }
+  return NULL;
+}
+
 
 /*
  * Return the index associated with current INTRINSIC, which must be either a 
@@ -292,13 +445,15 @@ int EXTENSION_Get_ComposeExtract_Index(INTRINSIC id) {
   if (EXTENSION_Is_Extension_INTRINSIC(id)) {
     extension_intrinsic_info_t *info;
     info = &extension_INTRINSIC_table[id - (INTRINSIC_STATIC_COUNT+1)];
-    FmtAssert((info->type==DYN_INTRN_PARTIAL_EXTRACT ||
-	       info->type==DYN_INTRN_PARTIAL_COMPOSE),
+    
+    FmtAssert((is_DYN_INTRN_PARTIAL_EXTRACT(*info) ||
+               is_DYN_INTRN_PARTIAL_COMPOSE(*info)),
 	      ("Not a compose or extract intrinsic"));
     return (info->u1.compose_extract_idx);
   }
   return (0);
 }
+
 
 /*
  * Return the register number associated to the specified PREG number .
@@ -372,7 +527,7 @@ TYPE_ID EXTENSION_REGISTER_CLASS_to_MTYPE(ISA_REGISTER_CLASS rc, INT size) {
  * Return the TYPE_ID corresponding to the extension machine type
  * identified by 'name' (MTYPE_UNKNOWN if undefined).
  */
-static TYPE_ID Get_Extension_MTYPE_From_Name(const char *name) {
+TYPE_ID Get_Extension_MTYPE_From_Name(const char *name) {
   mUINT32 i;
   for (i= MTYPE_STATIC_LAST + 1; i< FIRST_COMPOSED_MTYPE; i++) {
     if (!(strcmp(name, MTYPE_name(i)))) {
@@ -708,7 +863,7 @@ static void Initialize_ISA_Bundle(Lai_Loader_Info_t &ext_info) {
     subset_count = ISA_SUBSET_static_count;
     if(ext_num_subsets) {
       // Concatenate extension defined bundle slot count
-      memcpy(&bundle_slot_count_tab[subset_count],
+      memcpy(&bundle_slot_count_tab[subset_count+ext],
 	     ext_info.ISA_tab[ext]->get_ISA_BUNDLE_slot_count_tab(),
 	     ext_num_subsets * sizeof(mUINT8));
       subset_count += ext_num_subsets;
@@ -1894,7 +2049,7 @@ void Lai_Initialize_Extension_Loader (int nb_ext, const Extension_dll_t *ext_int
   global_ext_info_table = ext_info;
 
   ext_info->nb_ext    = nb_ext;
-  ext_info->trace_on  = Get_Trace(TP_EXTLOAD, 0xffffffff);
+  ext_info->trace_on  = Get_Trace(TP_EXTENSION, TRACE_EXTENSION_LOADER_MASK);
   ext_info->dll_tab   = ext_inter_tab;
 
   if (ext_info->trace_on) {
@@ -2090,10 +2245,29 @@ void Lai_Initialize_Extension_Loader (int nb_ext, const Extension_dll_t *ext_int
 	intrn_tab = ext_info->dll_tab[ext].hooks->get_builtins();
 	for (j=0; j<intrn_in_ext; j++) {
 	  intrn_isa_info->type = intrn_tab[j].type;
-	  if (intrn_isa_info->type == DYN_INTRN_TOP) {
+
+          intrn_isa_info->asm_stmt_behavior = NULL;
+          intrn_isa_info->asm_stmt_results = NULL;
+          intrn_isa_info->asm_stmt_operands = NULL;
+          intrn_isa_info->asm_stmt_cycles = -1;
+          intrn_isa_info->asm_stmt_size = -1;
+
+          if (is_DYN_INTRN_TOP(*intrn_isa_info)) {
 	    intrn_isa_info->u1.top = (TOP)(ext_info->base_TOP[ext] + intrn_tab[j].u1.local_TOP_id);
-	  }
-	  else {
+	  } else if (is_DYN_INTRN_WHIRLNODE_META(*intrn_isa_info)) {
+            FmtAssert((intrn_tab[j].wn_table!=NULL),
+                      ("intrn_tab[j].wn_table must not be NULL for DYN_INTRN_WHIRLNODE_META"));
+            intrn_isa_info->asm_stmt_behavior =
+              intrn_tab[j].wn_table->asm_stmt_behavior;
+            intrn_isa_info->asm_stmt_results =
+              intrn_tab[j].wn_table->asm_stmt_results;
+            intrn_isa_info->asm_stmt_operands =
+              intrn_tab[j].wn_table->asm_stmt_operands;
+            intrn_isa_info->asm_stmt_cycles = 
+              intrn_tab[j].wn_table->cycles;
+            intrn_isa_info->asm_stmt_size = 
+              intrn_tab[j].wn_table->size;
+          } else {
 	    intrn_isa_info->u1.compose_extract_idx = intrn_tab[j].u1.compose_extract_idx;
 	  }
 	  intrn_isa_info++;

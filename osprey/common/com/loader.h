@@ -35,6 +35,8 @@
 #ifndef LOADER_H
 #define LOADER_H
 
+#include "extension_include.h"
+#include "dyn_dll_api_access.h"
 
 #ifdef TARG_ST
 /* ===============================
@@ -158,6 +160,9 @@ BE_EXPORTED extern ISA_REGISTER_CLASS EXTENSION_PREG_to_REGISTER_CLASS(PREG_NUM 
 
 /* Map between gcc machine mode preg and open64 MTYPE */
 BE_EXPORTED extern TYPE_ID MachineMode_To_Mtype(machine_mode_t mode);
+
+/* Map between gcc machine mode preg and open64 MTYPE */
+BE_EXPORTED extern machine_mode_t Mtype_To_MachineMode(TYPE_ID mode);
 
 /* Run thru extension intrinsic to create composed mtype for multiple result support */
 extern void Add_Composed_Mtype(void);

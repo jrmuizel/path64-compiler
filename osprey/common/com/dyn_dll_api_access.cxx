@@ -44,6 +44,8 @@
  * +----------+----------------------------------------------------------------+
  * | 20070924 | - pixel support                                                |
  * +----------+----------------------------------------------------------------+
+ * | 20080715 | - extension codegen support                                    |
+ * +----------+----------------------------------------------------------------+
  *
  */
 #include "../gccfe/extension_include.h"
@@ -53,13 +55,15 @@
 // List of compatible API revisions for high level part of the library
 // description
 // ========================================================================
-#define    NB_SUPPORTED_HL_REV  3
+#define    NB_SUPPORTED_HL_REV  4
 #define    REV_20070131        (20070131)
 #define    REV_20070615        (20070615)
 #define    REV_20070924        (20070924)
+#define    REV_20080715        (20080715)
 static INT supported_HL_rev_tab[NB_SUPPORTED_HL_REV] = {
   REV_20070131,
   REV_20070615,
+  REV_20070924,
   MAGIC_NUMBER_EXT_API   /* current one */
 };
 
@@ -98,6 +102,38 @@ typedef struct
   int local_REGISTER_SUBCLASS_id;
 } extension_machine_types_t_pre_20070615;
 
+struct extension_builtins_pre_20080715
+{
+  enum built_in_function 		gcc_builtin_def;
+  INTRINSIC	open64_intrincic;
+
+  // Builtins flags follow the WHIRL semantic (opposed to the gcc one
+  // for has_no_side_effects and is_pure)
+  // has_no_side_effects means is_pure + no access to memory
+  char		is_by_val;
+  char		is_pure;
+  char		has_no_side_effects;
+  char		never_returns;
+  char		is_actual;
+  char		is_cg_intrinsic;
+  const char   *c_name;
+  const char   *runtime_name;
+
+  /* Prototype information   */
+  machine_mode_t             return_type;
+  unsigned char	             arg_count;
+  const machine_mode_t 	    *arg_type;     /* Number of items in table: arg_count */
+  const BUILTARG_INOUT_TYPE *arg_inout;    /* Number of items in table: arg_count */
+
+  // targ_info information
+  int type; // standard TOP intrinsic or compose/extract
+  union {
+    int		 local_TOP_id;        // TOP id if TOP intrinsic
+    int		 compose_extract_idx; // subpart access index if compose/extract
+  } u1;
+};
+  
+typedef struct extension_builtins_pre_20080715 extension_builtins_t_pre_20080715;
 
 // #############################################################################
 // ##
@@ -113,6 +149,40 @@ EXTENSION_HighLevel_Info::EXTENSION_HighLevel_Info(const extension_hooks *input_
   // =====================================================
   // Perform revision migration here
   // =====================================================
+  if ( hooks->magic < REV_20080715 ) {  /* any version older than
+                                           REV_20080715 */
+    int i;
+    int nb_entry = hooks->get_builtins_count();
+    extension_builtins_t_pre_20080715* old_builtins;
+    extension_builtins_t* new_builtins;
+    
+    old_builtins = (extension_builtins_t_pre_20080715*)hooks->get_builtins();
+    new_builtins = new extension_builtins_t[nb_entry];
+    
+    for (i=0; i<nb_entry; i++) {
+      /* new extension_builtins_t has an extra field wn_table at the end */
+      memcpy(&(new_builtins[i]), &(old_builtins[i]),
+             sizeof(extension_builtins_t_pre_20080715));
+
+      switch(old_builtins[i].type) {
+      case 0: 
+        new_builtins[i].type = DYN_INTRN_TOP; break;
+      case 1: new_builtins[i].type = DYN_INTRN_PARTIAL_COMPOSE; break;
+      case 2: new_builtins[i].type = DYN_INTRN_PARTIAL_EXTRACT; break;
+      case 3: new_builtins[i].type = DYN_INTRN_COMPOSE; break;
+      case 4: new_builtins[i].type = DYN_INTRN_CONVERT_TO_PIXEL; break;
+      case 5: new_builtins[i].type = DYN_INTRN_CONVERT_FROM_PIXEL; break;
+      default:
+        FmtAssert((false),
+                  ("unrecognized builtin type %d", old_builtins[i].type));
+      }
+      new_builtins[i].wn_table = NULL;
+    } 
+    overriden_builtins = new_builtins;
+  } else { // no migration needed for newer extensions.
+    overriden_builtins = hooks->get_builtins();
+  }
+
   if ( hooks->magic < REV_20070924 ) { /* any version older than
                                             REV_20070924 */
       int i;
@@ -144,6 +214,9 @@ EXTENSION_HighLevel_Info::~EXTENSION_HighLevel_Info() {
   }
   if ( hooks->magic < REV_20070924 ) {
     delete [] (extension_machine_types_t*) overriden_machine_types;
+  }
+  if ( hooks->magic < REV_20080715 ) {
+    delete [] (extension_builtins_t*) overriden_builtins;
   }
 }
 

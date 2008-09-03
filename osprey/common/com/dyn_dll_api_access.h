@@ -40,6 +40,7 @@
 #define DLL_EXPORTED 
 #endif
 
+#include "opcode.h"
 #include "dyn_dll_api.h"
 
 // Return TRUE if the specified revision is compatible with current compiler,
@@ -96,6 +97,7 @@ class EXTENSION_HighLevel_Info {
   BOOL                   own_hooks;
   const extension_hooks *hooks;
   const extension_machine_types_t * overriden_machine_types;
+  const  extension_builtins_t * overriden_builtins;
 };
 
 
@@ -137,7 +139,7 @@ EXTENSION_HighLevel_Info::get_mtypes_base_count (void) const {
 /* Return a pointer on the builtins array.  */
 inline const extension_builtins_t* 
 EXTENSION_HighLevel_Info::get_builtins (void) const {
-  return          (hooks->get_builtins());
+  return          (overriden_builtins);
 }
 
 /* Return the number of builtins.  */

@@ -39,7 +39,7 @@
 extern "C" {
 #endif
 
-#define MAGIC_NUMBER_EXT_API   20070924  /* Magic number. Interface checking */
+#define MAGIC_NUMBER_EXT_API   20080715  /* Magic number. Interface checking */
 
 struct extension_machine_types
 {
@@ -87,17 +87,43 @@ struct extension_machine_types
 
 typedef struct extension_machine_types extension_machine_types_t;
 
-/* Available types of dynamic builtins */
-typedef enum {
-  DYN_INTRN_TOP = 0,         // 1 to 1 relation between current intrinsic and a TOP
-  DYN_INTRN_PARTIAL_COMPOSE, // Compiler known intrinsic used to partially compose a SIMD data
-  DYN_INTRN_PARTIAL_EXTRACT, // Compiler known intrinsic used to partially extract a SIMD data
-  DYN_INTRN_COMPOSE,          // Compiler known intrinsic used to fully compose a SIMD data
-  DYN_INTRN_CONVERT_TO_PIXEL,   // Compiler known intrinsic used to
-  DYN_INTRN_CONVERT_FROM_PIXEL, // convert between pixel type
-                                // (nx10/12/14bits) and corresponding
-                                // native data type (nx16bits)
- } DYN_INTRN_TYPE;
+  /* Available types of dynamic builtins */
+  // 1 to 1 relation between current intrinsic and a TOP
+#define DYN_INTRN_TOP 0x1
+#define is_DYN_INTRN_TOP(b) (((b).type & DYN_INTRN_TOP) != 0)
+
+  // Compiler known intrinsic used to partially compose a SIMD data
+#define DYN_INTRN_PARTIAL_COMPOSE 0x2
+#define is_DYN_INTRN_PARTIAL_COMPOSE(b) (((b).type & DYN_INTRN_PARTIAL_COMPOSE) != 0)
+  // Compiler known intrinsic used to partially extract a SIMD data
+#define DYN_INTRN_PARTIAL_EXTRACT 0x4
+#define is_DYN_INTRN_PARTIAL_EXTRACT(b) (((b).type & DYN_INTRN_PARTIAL_EXTRACT) != 0)
+  // Compiler known intrinsic used to fully compose a SIMD data
+#define DYN_INTRN_COMPOSE 0x8
+#define is_DYN_INTRN_COMPOSE(b) (((b).type & DYN_INTRN_COMPOSE) != 0)
+  // Compiler known intrinsics used to convert between pixel
+  // type (nx10/12/14bits) and corresponding native data type (nx16bits)
+#define DYN_INTRN_CONVERT_TO_PIXEL 0x10
+#define is_DYN_INTRN_CONVERT_TO_PIXEL(b) (((b).type & DYN_INTRN_CONVERT_TO_PIXEL ) != 0)
+#define DYN_INTRN_CONVERT_FROM_PIXEL 0x20
+#define is_DYN_INTRN_CONVERT_FROM_PIXEL(b) (((b).type & DYN_INTRN_CONVERT_FROM_PIXEL ) != 0)
+  // Compiler known instrinsics used to convert between ctype (32bits 64bits)
+  //  and extension types.
+#define DYN_INTRN_CONVERT_TO_CTYPE 0x40
+#define is_DYN_INTRN_CONVERT_TO_CTYPE(b) (((b).type & DYN_INTRN_CONVERT_TO_CTYPE ) != 0)
+#define DYN_INTRN_CONVERT_FROM_CTYPE 0x80
+#define is_DYN_INTRN_CONVERT_FROM_CTYPE(b) (((b).type & DYN_INTRN_CONVERT_FROM_CTYPE ) != 0)
+  // type used for automatic code
+  // generation when intrinsic match a
+  // wn and intrinsic is meta (with
+  // an asm-stmt behavior associated.
+#define DYN_INTRN_WHIRLNODE_META 0x100
+#define is_DYN_INTRN_WHIRLNODE_META(b) (((b).type & DYN_INTRN_WHIRLNODE_META) != 0)
+  // marker specifying that intrinsic is a CLR.
+#define DYN_INTRN_CLR 0x200
+#define is_DYN_INTRN_CLR(b) (((b).type & DYN_INTRN_CLR) != 0)
+typedef int DYN_INTRN_TYPE;
+
 
 /*
  * Management of multi-results builtins. 
@@ -125,6 +151,17 @@ typedef enum {
    BUILTARG_IN       ,      /* In argument     -- par. passed by value               */
    BUILTARG_INOUT    ,      /* In/out argument -- C++ style (reference) par. passing */
 } BUILTARG_INOUT_TYPE;
+
+  
+struct wn_record {
+  int wn_opc;               // whirl-node opcode
+  int cycles;               // cost in cycles
+  int size;                 // cost in size
+  char*  asm_stmt_behavior; // asm statement code
+  char** asm_stmt_results;  // asm statement "results": out, in/out and tmp
+  char** asm_stmt_operands; // asm statement "operands": in
+};
+typedef struct wn_record wn_record_t;
 
 
 struct extension_builtins
@@ -156,10 +193,12 @@ struct extension_builtins
     int		 local_TOP_id;        // TOP id if TOP intrinsic
     int		 compose_extract_idx; // subpart access index if compose/extract
   } u1;
+
+  const wn_record_t *wn_table;
 };
-
+  
 typedef struct extension_builtins extension_builtins_t;
-
+  
 
 struct extension_hooks
 {
