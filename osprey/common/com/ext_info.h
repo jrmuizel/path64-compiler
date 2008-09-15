@@ -46,13 +46,15 @@
  * At least one of the type is expected to be an extension one. */
 BE_EXPORTED extern BOOL EXTENSION_Are_Equivalent_Mtype(TYPE_ID src_ty, TYPE_ID tgt_ty);
 
-BE_EXPORTED extern INTRINSIC EXTENSION_Get_Convert_Intrinsic(TYPE_ID src_ty, TYPE_ID tgt_ty);
+BE_EXPORTED extern INTRINSIC EXTENSION_Get_Convert_Intrinsic(TYPE_ID src_ty, TYPE_ID tgt_ty, BOOL ignore_sign=TRUE);
 
 BE_EXPORTED extern TYPE_ID EXTENSION_Get_Equivalent_Mtype(TYPE_ID ext_ty);
 
 BE_EXPORTED extern INTRINSIC EXTENSION_Get_CLR_Intrinsic(TYPE_ID ty);
 
-BE_EXPORTED extern void EXTENSION_Disable_Equivalent_Mtype();
+BE_EXPORTED extern INT EXTENSION_Get_Equivalent_Mtype_Status();
+
+BE_EXPORTED extern void EXTENSION_Set_Equivalent_Mtype_Status(INT val);
 
 
 #include <vector>

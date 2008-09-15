@@ -37,6 +37,7 @@
 
 #include "extension_include.h"
 #include "dyn_dll_api_access.h"
+#include "wn.h"
 
 #ifdef TARG_ST
 /* ===============================
@@ -130,6 +131,9 @@ BE_EXPORTED extern void Initialize_Extension_Loader(void);
 
 /* Initialize Register */
 BE_EXPORTED extern void Initialize_Extension_Loader_Register(void);
+
+/* Initialize PU specific options */
+BE_EXPORTED extern void Initialize_Extension_Loader_PU(WN *pu);
 
 /* OPEN64 Intrinsics init */
 extern void Init_Intrinsics(int nb_builtins_to_add);
