@@ -58,9 +58,9 @@ BE_EXPORTED extern void EXTENSION_Set_Equivalent_Mtype_Status(INT val);
 
 
 #include <vector>
-typedef std::vector<INT> INTRINSIC_Vector_t;
-#define OPCODE_MAPPED_ON_CORE -1
+typedef std::vector<INTRINSIC> INTRINSIC_Vector_t;
+#define OPCODE_MAPPED_ON_CORE INTRINSIC_INVALID
 BE_EXPORTED extern INTRINSIC_Vector_t* Get_Intrinsic_from_OPCODE(OPCODE opc);
-BE_EXPORTED extern void Add_Intrinsic_for_OPCODE(OPCODE opc, INT intrn);
+BE_EXPORTED extern void Add_Intrinsic_for_OPCODE(OPCODE opc, INTRINSIC intrn);
 
 #endif /* EXT_INFO_H */
