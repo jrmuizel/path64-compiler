@@ -41,6 +41,8 @@ http:
 #include "topcode.h"
 #include "targ_isa_print.h"
 #include "targ_abi_properties.h"
+#include "targ_isa_pack.h"
+#include "targ_isa_bundle.h"
 #include "ti_asm.h"
 
 /* Libair header files */
@@ -180,9 +182,15 @@ extern "C" {
     }
 
     for (index=0;index<Get_AIR_OP_nb_results(inst->air_inst);index++) {
+       mINT8 same_res;
+       
        if (NULL == Get_AIR_OP_resultn(inst->air_inst,index)) {
          a = AIR_build_implicit_TN(ISA_OPERAND_INFO_Result(ISA_OPERAND_Info(top),index));
          Set_AIR_OP_resultn(inst->air_inst,index,a);
+       }
+       /* If this result is a "SameRes" then duplicate the link */
+       if ((same_res = TOP_Same_Res_Operand(top,index)) != -1) {
+         Set_AIR_OP_operandn(inst->air_inst,same_res,Get_AIR_OP_resultn(inst->air_inst,index));
        }
     }
     
@@ -215,7 +223,7 @@ r_value( AIR_TN *tn )
       return Get_AIR_TN_exp_enum_ecv(tn);
       break;
     default:
-      AIR_error("Internal","IE_004","Expression not yet printable\n"); exit(-1);
+      AIR_fatal_error("Internal","IE_004","Expression not yet printable\n");
     }
   }
   else if(Is_AIR_TN_register(tn)) {
@@ -309,6 +317,7 @@ r_value( AIR_TN *tn )
 	        if (reloc != ISA_RELOC_UNDEFINED) {
 		  const char * name = NULL;
 		  
+                 if (NULL!=inst->get_symbol_at_address) {
 	          if (ISA_RELOC_Is_PC_Rel(reloc)) {
 	            if (inst->PC+val) {
 		       name = inst->get_symbol_at_address(inst->PC+val,inst->disasm_info);
@@ -318,6 +327,7 @@ r_value( AIR_TN *tn )
     		       name = inst->get_symbol_at_address(val,inst->disasm_info);
 		    }
 		  }
+	         }
 		  if (NULL!=name) {
 		    strncat(symbname,name,50);
 		  }
@@ -430,6 +440,103 @@ r_value( AIR_TN *tn )
     ISA_PRINT_Inst(inst->fprintf,inst->stream,top,ISA_PRINT_AsmName(top),result,opnd);
 
     return AIR_EVENT_NEXT;
+  }
+
+  int 
+  AIR_find_matching_template (ISA_EXEC_UNIT_PROPERTY bundle_props[ISA_MAX_SLOTS],
+	  		      int n_bundle_props)
+  {
+    int t;
+    static int template_initialized = 0;
+    static ISA_EXEC_UNIT_PROPERTY template_props[ISA_MAX_BUNDLES][ISA_BUNDLE_MAX_SLOTS];
+  
+    if(!template_initialized) {
+      template_initialized=1;
+      for(t = 0; t < ISA_MAX_BUNDLES; ++t) {
+        int n_props = ISA_EXEC_Slot_Count(t);
+        int i;
+
+        for(i = 0; i < n_props; ++i) {
+          template_props[t][i] = ISA_EXEC_Slot_Prop(t, i);
+        }
+      }
+    }
+    for(t = 0; t < ISA_MAX_BUNDLES; ++t) {
+      const ISA_EXEC_UNIT_PROPERTY *t_props = template_props[t];
+      int n_t_props = ISA_EXEC_Slot_Count(t);
+      if(n_t_props > ISA_MAX_SLOTS) {
+        continue;
+      }
+      if(n_bundle_props == n_t_props
+	 && memcmp(bundle_props, t_props,
+		   sizeof(ISA_EXEC_UNIT_PROPERTY) * n_bundle_props) == 0) {
+        // Perfect match.
+        return t;
+      }
+    }
+    return -1;
+  }
+
+  unsigned int
+  AIR_assemble_binary ( AIR_OP *op, ISA_PACK_INST *pinst )
+  {
+    unsigned int i;
+    unsigned int words;
+    long long    result[ISA_OPERAND_max_results];
+    long long    opnd[ISA_OPERAND_max_operands];
+
+    for (i = 0; i < Get_AIR_OP_nb_operands(op); i++) {
+      long long val = 0;
+      AIR_TN *t = Get_AIR_OP_operandn(op, i);
+
+      if (Is_AIR_TN_expression(t)) {
+        if (Get_AIR_TN_exp_kind(t) == AIR_Expression_immediate) {
+	  ISA_LIT_CLASS lc = ISA_OPERAND_VALTYP_Literal_Class(ISA_OPERAND_INFO_Operand(ISA_OPERAND_Info(Get_AIR_OP_TOP(op)),i));
+	  val = Get_AIR_TN_exp_imm_val(t);
+	  if (ISA_LC_Is_Negative(lc)) {
+	    val = -1 * val;
+	  }
+	  if (ISA_LC_Ranges(lc) != 1) {
+            AIR_fatal_error("Internal","IE_011","Literal class has a number of ranges different than 1\n");
+  	  }
+	  if(ISA_LC_Scaling_Mask(lc,1) & val) {
+            AIR_fatal_error("Internal","IE_011","Underflow on literal. Last bits must be cleared (scaling factor)\n");
+ 	  }
+	  val >>= ISA_LC_Scaling_Value(lc,1);
+        } else if (Get_AIR_TN_exp_kind(t) == AIR_Expression_regmask) {
+	  val = Get_AIR_TN_exp_regmask_mask(t);
+        } else if (Get_AIR_TN_exp_kind(t) == AIR_Expression_reloc) {
+	  val = Get_AIR_TN_exp_reloc_val(t);
+        } else if (Get_AIR_TN_exp_kind(t) == AIR_Expression_enum) {
+	  val = ISA_ECV_Intval(Get_AIR_TN_exp_enum_ecv(t));
+        } else {
+          AIR_fatal_error("Internal","IE_012","Unknown expression kind\n");
+        }
+      } else if(Is_AIR_TN_register(t)) {
+        val = Get_AIR_TN_reg_regnum(t);
+      } else {
+          AIR_fatal_error("Internal","IE_013","Unknown operand kind\n");
+      }
+      opnd[i] = val;
+    }
+
+    for (i = 0; i < Get_AIR_OP_nb_results(op); ++i) {
+      int val;
+      AIR_TN *t = Get_AIR_OP_resultn(op,i);
+
+      if(!Is_AIR_TN_register(t)) {
+        AIR_fatal_error("Internal","IE_014","Result is not of register type\n");
+      }
+      val = Get_AIR_TN_reg_regnum(t);
+      result[i] = val;
+    }
+
+    words = TI_ASM_Pack_Inst(Get_AIR_OP_TOP(op), result, opnd, pinst);
+    if(! (words > 0)) {
+      AIR_fatal_error("Internal","IE_015","Instruction encoding failed\n");
+    }    
+
+    return words;
   }
 
 #ifdef __cplusplus
