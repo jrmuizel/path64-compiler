@@ -171,6 +171,11 @@ BE_EXPORTED extern machine_mode_t Mtype_To_MachineMode(TYPE_ID mode);
 /* Run thru extension intrinsic to create composed mtype for multiple result support */
 extern void Add_Composed_Mtype(void);
 
+/* Get dll extension table. */
+BE_EXPORTED extern void Get_Loader_Extension_Table( Extension_dll_t **ext_tab, 
+                                                    mUINT32 *ext_count);
+
+
 #endif /* TARG_ST */
 
 #endif /* LOADER_H */
