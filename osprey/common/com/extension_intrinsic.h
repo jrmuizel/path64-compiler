@@ -45,3 +45,20 @@ void init_pattern_rec(void);
  * patterns in the WN tree. 
  */
 INTRINSIC targ_pattern_rec(WN *tree, INT *nboperands,  WN *kids[]);
+
+/**
+ * Function that generates an intrinsic OP from extension code generation.
+ * Note: This function should only be called from BETARG_Create_Intrinsic_from_OP()
+ * Return the corresponding whirl node in case of success, return NULL otherwise.
+ */
+WN *Create_Intrinsic_from_OP(INTRINSIC intrnidx, int nbkids, WN *kids[],
+			     TYPE_ID dsttype, WN** new_stmts,
+			     BOOL* modified);
+
+/**
+ * Function that generates an intrinsic OP from extension code generation.
+ * Return the corresponding whirl node in case of success, return NULL otherwise.
+ */
+WN *BETARG_Create_Intrinsic_from_OP(INTRINSIC intrnidx, int nbkids, WN *kids[],
+				    TYPE_ID dsttype, WN** new_stmts,
+				    BOOL* modified);

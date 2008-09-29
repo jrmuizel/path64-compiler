@@ -87,41 +87,56 @@ struct extension_machine_types
 
 typedef struct extension_machine_types extension_machine_types_t;
 
-  /* Available types of dynamic builtins */
-  // 1 to 1 relation between current intrinsic and a TOP
-#define DYN_INTRN_TOP 0x1
-#define is_DYN_INTRN_TOP(b) (((b).type & DYN_INTRN_TOP) != 0)
+/* Flags used to specify dynamic builtins types */
 
-  // Compiler known intrinsic used to partially compose a SIMD data
-#define DYN_INTRN_PARTIAL_COMPOSE 0x2
-#define is_DYN_INTRN_PARTIAL_COMPOSE(b) (((b).type & DYN_INTRN_PARTIAL_COMPOSE) != 0)
-  // Compiler known intrinsic used to partially extract a SIMD data
-#define DYN_INTRN_PARTIAL_EXTRACT 0x4
-#define is_DYN_INTRN_PARTIAL_EXTRACT(b) (((b).type & DYN_INTRN_PARTIAL_EXTRACT) != 0)
-  // Compiler known intrinsic used to fully compose a SIMD data
-#define DYN_INTRN_COMPOSE 0x8
-#define is_DYN_INTRN_COMPOSE(b) (((b).type & DYN_INTRN_COMPOSE) != 0)
-  // Compiler known intrinsics used to convert between pixel
-  // type (nx10/12/14bits) and corresponding native data type (nx16bits)
-#define DYN_INTRN_CONVERT_TO_PIXEL 0x10
-#define is_DYN_INTRN_CONVERT_TO_PIXEL(b) (((b).type & DYN_INTRN_CONVERT_TO_PIXEL ) != 0)
+/*    1 to 1 relation between current intrinsic and a TOP */
+#define DYN_INTRN_TOP                0x1
+
+/*    Intrinsic used to partially compose a SIMD data */
+#define DYN_INTRN_PARTIAL_COMPOSE    0x2
+
+/*    Intrinsic used to partially extract a SIMD data */
+#define DYN_INTRN_PARTIAL_EXTRACT    0x4
+
+/*    Intrinsic used to fully compose a SIMD data */
+#define DYN_INTRN_COMPOSE            0x8
+
+/*    Intrinsic  used to convert between pixel  type
+ *    (nx10/12/14bits) and corresponding native type
+ *    (nx16bits) */
+#define DYN_INTRN_CONVERT_TO_PIXEL   0x10
 #define DYN_INTRN_CONVERT_FROM_PIXEL 0x20
-#define is_DYN_INTRN_CONVERT_FROM_PIXEL(b) (((b).type & DYN_INTRN_CONVERT_FROM_PIXEL ) != 0)
-  // Compiler known instrinsics used to convert between ctype (32bits 64bits)
-  //  and extension types.
-#define DYN_INTRN_CONVERT_TO_CTYPE 0x40
-#define is_DYN_INTRN_CONVERT_TO_CTYPE(b) (((b).type & DYN_INTRN_CONVERT_TO_CTYPE ) != 0)
+
+/*    Instrinsic used to convert between ctype
+ *    (32bits 64bits) and extension types */
+#define DYN_INTRN_CONVERT_TO_CTYPE   0x40
 #define DYN_INTRN_CONVERT_FROM_CTYPE 0x80
+
+/*    Automatic code generation:
+ *    Intrinsic matchs a wn and intrinsic is
+ *    meta with an asm-stmt behavior associated */
+#define DYN_INTRN_WHIRLNODE_META     0x100
+
+/*    Intrinsic used to clear an extension type */
+#define DYN_INTRN_CLR                0x200
+
+/*    Intrinsic used to convert a 32 bits variable
+ *    to an extension type variable */
+#define DYN_INTRN_CONVERT_FROM_U32   0x400
+
+
+#define is_DYN_INTRN_TOP(b)                (((b).type & DYN_INTRN_TOP) != 0)
+#define is_DYN_INTRN_PARTIAL_COMPOSE(b)    (((b).type & DYN_INTRN_PARTIAL_COMPOSE) != 0)
+#define is_DYN_INTRN_PARTIAL_EXTRACT(b)    (((b).type & DYN_INTRN_PARTIAL_EXTRACT) != 0)
+#define is_DYN_INTRN_COMPOSE(b)            (((b).type & DYN_INTRN_COMPOSE) != 0)
+#define is_DYN_INTRN_CONVERT_TO_PIXEL(b)   (((b).type & DYN_INTRN_CONVERT_TO_PIXEL ) != 0)
+#define is_DYN_INTRN_CONVERT_FROM_PIXEL(b) (((b).type & DYN_INTRN_CONVERT_FROM_PIXEL ) != 0)
+#define is_DYN_INTRN_CONVERT_TO_CTYPE(b)   (((b).type & DYN_INTRN_CONVERT_TO_CTYPE ) != 0)
 #define is_DYN_INTRN_CONVERT_FROM_CTYPE(b) (((b).type & DYN_INTRN_CONVERT_FROM_CTYPE ) != 0)
-  // type used for automatic code
-  // generation when intrinsic match a
-  // wn and intrinsic is meta (with
-  // an asm-stmt behavior associated.
-#define DYN_INTRN_WHIRLNODE_META 0x100
-#define is_DYN_INTRN_WHIRLNODE_META(b) (((b).type & DYN_INTRN_WHIRLNODE_META) != 0)
-  // marker specifying that intrinsic is a CLR.
-#define DYN_INTRN_CLR 0x200
-#define is_DYN_INTRN_CLR(b) (((b).type & DYN_INTRN_CLR) != 0)
+#define is_DYN_INTRN_WHIRLNODE_META(b)     (((b).type & DYN_INTRN_WHIRLNODE_META) != 0)
+#define is_DYN_INTRN_CLR(b)                (((b).type & DYN_INTRN_CLR) != 0)
+#define is_DYN_INTRN_CONVERT_FROM_U32(b)   (((b).type & DYN_INTRN_CONVERT_FROM_U32) != 0)
+
 typedef int DYN_INTRN_TYPE;
 
 

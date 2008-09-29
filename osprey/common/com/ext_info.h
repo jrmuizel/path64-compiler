@@ -52,6 +52,8 @@ BE_EXPORTED extern TYPE_ID EXTENSION_Get_Equivalent_Mtype(TYPE_ID ext_ty);
 
 BE_EXPORTED extern INTRINSIC EXTENSION_Get_CLR_Intrinsic(TYPE_ID ty);
 
+BE_EXPORTED extern INTRINSIC EXTENSION_Get_Convert_From_U32_Intrinsic(TYPE_ID ty);
+
 BE_EXPORTED extern INT EXTENSION_Get_Equivalent_Mtype_Status();
 
 BE_EXPORTED extern void EXTENSION_Set_Equivalent_Mtype_Status(INT val);
