@@ -90,12 +90,18 @@ const Range Intersect (const Range &a, const Range &b)
 
 const Range SignExtend (const Range &a, INT width)
 {
-  return MakeSigned (a, width);
+  if (width == 0)
+    return Range (0);
+  else
+    return MakeSigned (a, width);
 }
 
 const Range ZeroExtend (const Range &a, INT width)
 {
-  return MakeUnsigned (a, width);
+  if (width == 0)
+    return Range (0);
+  else
+    return MakeUnsigned (a, width);
 }
 
 const Range LeftShift (const Range &a, INT count)
@@ -635,9 +641,13 @@ Range::Print (FILE *f) const
 
 Range::Range (RangeSign Sign, INT lowbit, INT width)
 {
+  FmtAssert (width >= 0, ("Attempt to create an invalid range"));
   if (Sign == NoSign) Sign = Unsigned;
-  if (width == 0)
-    rtype = empty;
+  if (width == 0){
+    rtype = normal;
+    min = 0;
+    max = 0;
+  }    
   else if ((width + lowbit) >= 64) {
     rtype = normal;
     min = ZInt::MinusInf ();

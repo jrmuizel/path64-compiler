@@ -242,9 +242,11 @@ public:
   virtual LRange *makeRangeValue (INT64 value) const {
     return makeBottom ();}
   // specific Forward
-  // Value Range
+  // both Value and Bit-value Range
+  // Handles bitwidth >= 0
   virtual LRange *makeRangeWidth (INT Sign, INT bitwidth) const {
     return makeBottom ();}
+  // Specific Value Range
   virtual LRange *makeRangeLowbit (INT Sign, INT lowbit, INT bitwidth) const {
     return makeBottom ();}
   virtual LRange *makeRangeMinMax (ZInt min, ZInt max) const {
