@@ -44,7 +44,8 @@ void init_pattern_rec(void);
  * main function of pattern_rec. Check the set of target specific
  * patterns in the WN tree. 
  */
-INTRINSIC targ_pattern_rec(WN *tree, INT *nboperands,  WN *kids[]);
+INTRINSIC targ_pattern_rec(WN *tree, INT *nbkids,  WN *kids[],
+                           INT *nboutputs,  ST* outputs[]);
 
 /**
  * Function that generates an intrinsic OP from extension code generation.
@@ -52,8 +53,9 @@ INTRINSIC targ_pattern_rec(WN *tree, INT *nboperands,  WN *kids[]);
  * Return the corresponding whirl node in case of success, return NULL otherwise.
  */
 WN *Create_Intrinsic_from_OP(INTRINSIC intrnidx, int nbkids, WN *kids[],
-			     TYPE_ID dsttype, WN** new_stmts,
-			     BOOL* modified);
+                             INT nboutputs,  ST* outputs[],
+                             TYPE_ID dsttype, WN** new_stmts,
+			     bool* modified);
 
 /**
  * Function that generates an intrinsic OP from extension code generation.
@@ -61,4 +63,13 @@ WN *Create_Intrinsic_from_OP(INTRINSIC intrnidx, int nbkids, WN *kids[],
  */
 WN *BETARG_Create_Intrinsic_from_OP(INTRINSIC intrnidx, int nbkids, WN *kids[],
 				    TYPE_ID dsttype, WN** new_stmts,
-				    BOOL* modified);
+				    bool* modified);
+
+/** 
+ * retrun the value of the extension option mask (takes into account
+ * presence of pragmas modifying the Enable_Extension_Native_Support value)
+ * 
+ * 
+ * @return the mask value
+ */
+INT32 ext_lower_get_local_ext_gen_mask();
