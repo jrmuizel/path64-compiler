@@ -152,14 +152,14 @@ PARSER_ConnectParser ( char * Name )
 {
   int find_static_subset = 0;
   ISA_SUBSET subset;
-  for(subset = ISA_SUBSET_MIN; subset < ISA_SUBSET_static_count; subset++) {
+  for(subset = ISA_SUBSET_MIN; subset < ISA_SUBSET_count; subset++) {
     if(strcasecmp(Name,ISA_SUBSET_Name(subset)) == 0) {
       PARSER_ParserT    *ParserLib = (PARSER_ParserT *) malloc (sizeof(PARSER_ParserT));
       PARSER_GetParserT GetParser = ISA_PARSE_GetParser(subset);
       const char *ErrMsg = 0;
       memset(ParserLib,0,sizeof(PARSER_ParserT));
-      if(GetParser(&(ParserLib->Xi)) != PARSER_OK) {
-	PARSER_fatal_error("Unable to load static parser for subset %s\n",ISA_SUBSET_Name(subset));
+      if(NULL == GetParser || PARSER_OK != GetParser(&(ParserLib->Xi))) {
+	PARSER_fatal_error("Unable to load parser for subset %s\n",ISA_SUBSET_Name(subset));
       }
       if (0==ParserLib->Xi.Version_key)      ErrMsg="Bad version number";
       if (0==ParserLib->Xi.Version_str)      ErrMsg="Unable to find out version";
@@ -182,19 +182,22 @@ PARSER_ConnectParser ( char * Name )
                  (0!=memcmp(ParserList[NextAvailable]->Xi.Port,ParserLib->Xi.Port,
                             ParserList[NextAvailable]->Xi.PortSize))
                  ||
-                 (0!=strcmp(ParserList[NextAvailable]->Name,ParserLib->Name))
+                 (0!=strcmp(ParserList[NextAvailable]->Name,ParserLib->Xi.Name))
 		 )
 		)
 	      {
 		PARSER_ParserT * FormerLib;
                
 		PARSER_warning("[%s]: takes precedence on [%s] for port %d\n",
-			       ParserLib->Name,ParserList[NextAvailable]->Name,i);
+			       ParserLib->Xi.Name,ParserList[NextAvailable]->Name,i);
 
 		/* New connexion wins. Former lib of this port is disconnected */
 		FormerLib = ParserList[NextAvailable];
 		ParserList[NextAvailable] = ParserLib;
 		SetCallbacks(&ParserLib->Xi);
+	        ParserLib->Name = (char *)malloc(strlen(Name)+1);
+	        strcpy(ParserLib->Name,Name);
+	        ISA_SUBSET_LIST_Add(ISA_SUBSET_List,subset);
 
 		/* Free former parser */
 		free(FormerLib->Name);
@@ -213,14 +216,11 @@ PARSER_ConnectParser ( char * Name )
 	ParserLib->Name = (char *)malloc(strlen(Name)+1);
 	strcpy(ParserLib->Name,Name);
 	ISA_SUBSET_LIST_Add(ISA_SUBSET_List,subset);
-	find_static_subset = 1;
-	break;
+	return;
       }
     }
   }
-  if(!find_static_subset) {
-    PARSER_ConnectDynamicParser(Name);
-  }
+  PARSER_fatal_error("Unable to find parser for %s", Name);
 }
 
 void

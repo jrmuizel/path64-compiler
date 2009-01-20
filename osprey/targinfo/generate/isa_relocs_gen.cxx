@@ -55,6 +55,11 @@ using std::list;
 
 #include "W_limits.h"
 #include "gen_util.h"
+#ifdef DYNAMIC_CODE_GEN
+#include "dyn_isa_subset.h"
+#else
+#include "targ_isa_subset.h"
+#endif
 #include "isa_relocs_gen.h"
 
 // Forward declarations.
@@ -244,7 +249,6 @@ static const char * const interface[] = {
   " * ====================================================================",
   " *",
   " *   Relocations and subsets.",
-  " *   TODO: dynamic case not handled yet!!!!!!!!!",
   " *",
   " *   void ISA_RELOC_Initialize(void)",
   " *       Initialize the relocations package for use with subsets and",
@@ -267,9 +271,15 @@ static const char * const interface[] = {
   " *        or 0 (index of the virtual UNDEFINED relocation) if",
   " *        an error has occured.",
   " *", 
-  " *   INT ISA_RELOC_Number_Relocs(ISA_SUBSET subset)",
+  " *   UINT32 ISA_RELOC_Number_Relocs(ISA_SUBSET subset)",
   " *       Returns the number of relocations supported by the",
   " *       considered subset.",
+  " *",
+  " *   ISA_VIRTUAL_RELOC ISA_RELOC_Max_Virtual_Id(ISA_SUBSET subset)",
+  " *       Returns the highest virtual id used by the considered subset.",
+  " *",
+  " *   void ISA_RELOC_Set_Max_Virtual_Id(ISA_SUBSET subset,ISA_VIRTUAL_RELOC id)",
+  " *       Sets the highest virtual id used by the considered subset.",
   " *",
   " * ====================================================================",
   " */",
@@ -291,6 +301,10 @@ static char *efilename     = NULL;
 // Whether we generate code for the core or for
 // an extension.
 static bool gen_static_code = false;
+
+// For extension, identify core subset the extension
+// is leaving with.
+static const char * CoreSubset = "stxp70_v3";
 
 // Currently we don't accept more than 256 class
 // of literals. In fact, this limit is too high
@@ -407,14 +421,15 @@ void ISA_Relocs_Begin (void)
 	    " */\n\n");
    }
 
-  // For dynamic extensions, we want to emit C and not C++.
-  if(!gen_static_code) {    /* For a pure interface, start     */
-    Emit_C_Header(cfile);   /* "C" block.                      */
-  }
+  Emit_C_Header(cfile);   /* "C" block.                      */
 
   fprintf(cfile,"#include <stdio.h>   /* NULL pointer */\n");
-  fprintf(cfile,"#include \"%s\"\n\n",
-          gen_static_code ? hfilename : "dyn_isa_relocs.h");
+  if (gen_static_code) {
+     fprintf(cfile,"#include \"%s\"\n\n",hfilename);
+  } else {
+     fprintf(cfile,"#include \"dyn_isa_relocs.h\"\n");
+     fprintf(cfile,"#include \"dyn_isa_subset.h\"\n\n");
+  }
   
   Emit_Header (hfile, FNAME_TARG_ISA_RELOCS, interface,extname);
 
@@ -450,11 +465,11 @@ void ISA_Relocs_Begin (void)
 
   if(gen_static_code) {
     fprintf(cfile, 
-	    "static const ISA_RELOC_INFO ISA_RELOC_static_info[] = {\n");
+	    "static ISA_RELOC_INFO ISA_RELOC_static_info[] = {\n");
   }
   else {
     fprintf(cfile, 
-	    "static const ISA_RELOC_INFO ISA_RELOC_dynamic_info [] = {\n");
+	    "static ISA_RELOC_INFO ISA_RELOC_dynamic_info [] = {\n");
   }
 
   // UNDEFINED entry is reserved to static table
@@ -474,16 +489,14 @@ void ISA_Relocs_Begin (void)
       underflow_name(relocations[undefined_reloc_id]->underflow),
       relocations[undefined_reloc_id]->name,
       relocations[undefined_reloc_id]->virtual_id);
-  }
-
-  // For dynamic code generation, we include in the
-  // table the static part of the table.
-  if(!gen_static_code) {
-    fprintf(cfile,
-	    "\n"
-	    "#include \"%s\"\n\n",
-	    cincfilename
-            );
+  } else {
+    fprintf(
+      cfile, 
+      "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\", %d },\n",
+      overflow_name (relocations[undefined_reloc_id]->overflow),
+      underflow_name(relocations[undefined_reloc_id]->underflow),
+      relocations[undefined_reloc_id]->name,
+      relocations[undefined_reloc_id]->virtual_id);
   }
 
   Gen_Free_Filename(file_name_isa_lits);
@@ -666,13 +679,13 @@ ISA_VIRTUAL_RELOC_TYPE ISA_Create_Reloc (int virtual_id,
   else {
     const char* const extname  = Get_Extension_Name();
     fprintf(hfile,
-            "#define ISA_RELOC_dyn_%s_%-17s (ISA_RELOC_STATIC_MAX+1+%d)\n",
-            extname,ret->name,ret->internal_id);
+            "#define ISA_RELOC_dyn_%s_%-17s (dynamic_reloc_offset_%s + %d)\n",
+            extname,ret->name,extname,ret->internal_id);
     fprintf(hfile,
-            "#define TN_is_reloc_dyn_%s_%s(r)\t\t(TN_relocs(r) == ISA_RELOC_dyn_%s_%s)\n",
+            "#define TN_is_reloc_dyn_%s_%s(r)      (TN_relocs(r) == (ISA_RELOC_dyn_%s_%s))\n",
             extname,ret->name,extname,ret->name); 
     fprintf(hfile,
-            "#define Set_TN_is_reloc_dyn_%s_%s(r)\t\tSet_TN_relocs(r,ISA_RELOC_dyn_%s_%s)\n"
+            "#define Set_TN_is_reloc_dyn_%s_%s(r)  Set_TN_relocs(r,(ISA_RELOC_dyn_%s_%s))\n"
             "\n",
             extname,ret->name,extname,ret->name); 
   }
@@ -766,6 +779,14 @@ ISA_VIRTUAL_RELOC_TYPE ISA_Create_Reloc (int virtual_id,
 
 
 /////////////////////////////////////
+void ISA_Reloc_Set_Core_Subset(const char * subset_name)
+/////////////////////////////////////
+//  See interface description.
+/////////////////////////////////////
+{ CoreSubset = subset_name;
+}
+
+/////////////////////////////////////
 void ISA_Reloc_Subset(ISA_SUBSET subset,
                       ...)
 /////////////////////////////////////
@@ -852,15 +873,11 @@ static void ISA_Reloc_Check_Subset(ISA_SUBSET subset,
 static void ISA_Relocs_Subsets_End(FILE *hfile, FILE *cfile)
 //////////////////////////////////////
 // Subroutine called by ISA_Relocs_End
-// TODO: there remains some further work for
-// the dynamic case that hasn't been tested yet.
 //////////////////////////////////////
 {
   int i;
   int j;
-  int limit;
   int size;
-  int res;
   const char *name_format = gen_static_code ? "reloc_subset_tab":
                                               "dyn_reloc_subset_tab";
   const char *format_1 = "  %d, /* %-15s */\n";
@@ -869,12 +886,7 @@ static void ISA_Relocs_Subsets_End(FILE *hfile, FILE *cfile)
   int  *subsets_nb_relocs;
   int   nb_iterations;
 
-  limit = gen_static_code ? 0 : ISA_SUBSET_static_count;
-  nb_iterations = ISA_SUBSET_count - limit;
-
-
-  if(!gen_static_code)   // dynamic case not handled yet !!!!!!!
-   return;
+  nb_iterations = ISA_SUBSET_count - ISA_SUBSET_MIN;
 
   if(nb_iterations<=0) {
     fprintf(stderr,"### Error: unexpected case: no new subset defined.\n");
@@ -885,34 +897,31 @@ static void ISA_Relocs_Subsets_End(FILE *hfile, FILE *cfile)
   virtual_id_max      = new int[nb_iterations];
   virtual_id_max_all_subsets = 0;
 
-  for(i=limit;i<ISA_SUBSET_count;i++) {
+  for(i=ISA_SUBSET_MIN;i<ISA_SUBSET_count;i++) {
 
      ISA_Reloc_Check_Subset(
        i,
-      &virtual_id_max   [i-limit], 
-      &subsets_nb_relocs[i-limit]);
+      &virtual_id_max   [i-ISA_SUBSET_MIN], 
+      &subsets_nb_relocs[i-ISA_SUBSET_MIN]);
 
-     if(virtual_id_max_all_subsets<virtual_id_max[i-limit])
-       virtual_id_max_all_subsets = virtual_id_max[i-limit];
+     if(virtual_id_max_all_subsets<virtual_id_max[i-ISA_SUBSET_MIN])
+       virtual_id_max_all_subsets = virtual_id_max[i-ISA_SUBSET_MIN];
 
      // By construction, relocs_count can't be 0, since
      // we have at least the UNDEFINED relocation. Therefore
      // the following table can't be empty.
-     fprintf(cfile,"static BOOL %s_%s_%d [%d] = {\n",
+     fprintf(cfile,"static mUINT32 %s_%s_%d [] = {\n",
              name_format,
              ISA_SUBSET_Name(i),
-             i,
-             relocs_count);
+             i);
 
-     fprintf(cfile,format_1,1,relocations[undefined_reloc_id]->name);
+     fprintf(cfile,format_1,undefined_reloc_id,relocations[undefined_reloc_id]->name);
 
      size = subset_relocations[i].size();
 
-     for(j=1;j<relocs_count;++j) {
-       res = 0;
+     for(j=1;j<relocs_count;j++) {
        if(j<size && true==subset_relocations[i][j]) 
-         res = 1;
-       fprintf(cfile,format_1,res,relocations[j]->name); 
+         fprintf(cfile,format_1,j,relocations[j]->name); 
       }
 
      fprintf(cfile,
@@ -935,15 +944,14 @@ static void ISA_Relocs_Subsets_End(FILE *hfile, FILE *cfile)
       " *  - max_virtual_id is the greatest virtual relocation identifier\n"
       " *    of the subset (helps build dynamic mapping from virtual to\n"
       " *    internal identifier).\n"
-      " *  - size_tab_subset is the size of the next table.\n"
       " *  - a table (tab_subset reloc), where each item is set to 1 if the\n"
-      " *    relocation is supported in the subset.\n"
+      " *    relocation is supported in the subset. This table size is\n"
+      " *    <nb_subset_relocs>.\n"
       " */\n"
       "typedef struct {\n"
       "  UINT32            nb_subset_relocs;\n"
       "  ISA_VIRTUAL_RELOC max_virtual_id;\n"
-      "  UINT32            size_tab_subset;\n"
-      "  BOOL             *tab_subset_reloc;\n"
+      "  UINT32           *tab_subset_reloc;\n"
       "} ISA_RELOC_SUBSET_INFO;\n"
       "\n"
       "\n",
@@ -955,120 +963,144 @@ static void ISA_Relocs_Subsets_End(FILE *hfile, FILE *cfile)
       cfile,
       "static ISA_RELOC_SUBSET_INFO %s [%d] = {\n",
       name_format,
-      ISA_SUBSET_count - limit);
+      ISA_SUBSET_count - ISA_SUBSET_MIN);
 
-   for(i=limit;i<ISA_SUBSET_count;i++)
+   for(i=ISA_SUBSET_MIN;i<ISA_SUBSET_count;i++)
       fprintf(
         cfile,
-        " { %3d, %3d, %3d, %s_%s_%d  },\n",
+        " { %3d, %3d, %s_%s_%d  },\n",
         subsets_nb_relocs[i],
         virtual_id_max[i],
-        relocs_count,
         name_format,ISA_SUBSET_Name(i),i
         );
 
-   fprintf(
-         cfile,
-         "};\n"
-         "\n"
-         "BE_EXPORTED ISA_RELOC_SUBSET_INFO * ISA_%s = %s;\n"
-         "\n\n",
-         name_format,name_format);
+   fprintf(cfile,"};\n\n");
+   
+   if (gen_static_code) {
+      fprintf(cfile,
+              "BE_EXPORTED ISA_RELOC_SUBSET_INFO * ISA_%s = %s;\n\n",
+              name_format,name_format);
+      fprintf(hfile,
+              "\n"
+              "BE_EXPORTED extern ISA_RELOC_SUBSET_INFO * ISA_%s;\n\n",
+              name_format);
 
-   fprintf(hfile,
-          "\n"
-          "BE_EXPORTED extern ISA_RELOC_SUBSET_INFO * ISA_%s;\n"
+      fprintf(hfile,
+           "\n"
+           "inline BOOL ISA_Reloc_Member_Subset(\n"
+           "    ISA_SUBSET subset,\n"
+           "    ISA_RELOC reloc)\n"
+           "{\n"
+           " UINT32 i;\n\n"
+	   " for (i=0;i<ISA_%s[subset].nb_subset_relocs;i++) {\n"
+	   "     if (ISA_%s[subset].tab_subset_reloc[i] == reloc) {\n"
+	   "        return TRUE;\n"
+	   "     }\n"
+	   " }\n"
+	   " return FALSE;\n"
+           "}\n"
+           "\n"
+           "inline UINT32 ISA_RELOC_Number_Relocs(ISA_SUBSET subset)\n"
+           "{\n"
+           "  return ISA_%s[subset].nb_subset_relocs;\n" 
+           "}\n"
+           "\n"
+           "inline ISA_VIRTUAL_RELOC ISA_RELOC_Max_Virtual_Id(ISA_SUBSET subset)\n"
+           "{\n"
+           "  return ISA_%s[subset].max_virtual_id;\n" 
+           "}\n"
+           "\n"
+           "inline void ISA_RELOC_Set_Max_Virtual_Id(ISA_SUBSET subset, ISA_VIRTUAL_RELOC id)\n"
+           "{\n"
+           "  ISA_%s[subset].max_virtual_id = id;\n" 
+           "}\n"
+           "\n",
+           name_format,name_format,name_format,name_format,name_format); 
+
+      fprintf(hfile,
+           "inline ISA_VIRTUAL_RELOC ISA_RELOC_Virtual_Id(ISA_RELOC reloc)\n"
+           "{\n"
+           "  return ISA_RELOC_info[reloc].virtual_id;\n"
+           "}\n"
+           "\n"
+           "extern void ISA_RELOC_Initialize(void);\n"
+           "\n");
+
+      fprintf(cfile,
+           "#define STATIC_SZ_TAB_VIRT %d\n"
+           "static ISA_RELOC static_virtual_tab [STATIC_SZ_TAB_VIRT]={\n",
+           virtual_id_max_all_subsets+1);
+
+      for(i=0;i<virtual_id_max_all_subsets+1;++i)
+          fprintf(cfile,"   ISA_RELOC_%s,\n",
+                  relocations[undefined_reloc_id]->name);
+      fprintf(
+           cfile,
+           "};\n"
+           "\n"
+           "BE_EXPORTED ISA_RELOC *reloc_virtual_tab   = static_virtual_tab;\n"
+           "BE_EXPORTED mUINT32    sz_reloc_virtual_tab= STATIC_SZ_TAB_VIRT;\n" 
+           "\n"
+           "\n"
+           );
+
+      fprintf(hfile, 
+           "BE_EXPORTED extern ISA_RELOC *reloc_virtual_tab   ;\n"
+           "BE_EXPORTED extern mUINT32    sz_reloc_virtual_tab;\n" 
+           "\n");
+
+      fprintf(
+           cfile,
+           "void ISA_RELOC_Initialize(void)\n"
+           "{\n"
+           "  UINT32    index;\n"
+           "  UINT32    mask = ISA_SUBSET_LIST_Mask(ISA_SUBSET_List);\n"
+           "  INT       subset;\n"
+           "  ISA_RELOC intern_reloc;\n"
+           "  ISA_VIRTUAL_RELOC virt_reloc;\n"
+           "\n"
+           "  for (subset = ISA_SUBSET_MIN, index=1U<<ISA_SUBSET_MIN;\n"
+           "       subset <= ISA_SUBSET_count;\n"
+           "     ++subset, index <<=1U) {\n"
+           "         if((mask&index)==0U) continue;\n"
+           "\n"
+           "         for(intern_reloc = 1;\n"
+           "             intern_reloc<= ISA_RELOC_MAX;\n"
+           "             intern_reloc++) {\n" 
+           "               if(!ISA_Reloc_Member_Subset(subset,intern_reloc))\n"
+           "                  continue;\n"
+           "               virt_reloc = ISA_RELOC_Virtual_Id(intern_reloc);\n"
+           "               reloc_virtual_tab[virt_reloc]=intern_reloc;\n"
+           "               \n"
+           "         }\n"
+           "  }\n"
+           "  return;\n"
+           "}\n"
+           "\n");
+
+      fprintf(
+          hfile,
+          "inline ISA_RELOC ISA_RELOC_Id(ISA_VIRTUAL_RELOC virtual_reloc)\n"
+          "{\n"
+          "  if(virtual_reloc>sz_reloc_virtual_tab)\n"
+          "     return ISA_RELOC_%s;\n"
+          "  return reloc_virtual_tab[virtual_reloc];\n"
+          "}\n"
           "\n",
-          name_format);
-
-  if(gen_static_code) {
-     fprintf(hfile,
-          "\n"
-          "inline BOOL ISA_Reloc_Member_Subset(\n"
-          "    ISA_SUBSET subset,\n"
-          "    ISA_RELOC reloc)\n"
-          "{\n"
-          " return reloc<ISA_%s[subset].size_tab_subset ?\n"
-          "              ISA_%s[subset].tab_subset_reloc[reloc] : FALSE;\n"
-          "}\n"
-          "\n"
-          "inline UINT32 ISA_RELOC_Number_Relocs(ISA_SUBSET subset)\n"
-          "{\n"
-          "  return ISA_%s[subset].nb_subset_relocs;\n" 
-          "}\n"
-          "\n",
-          name_format,name_format,name_format); 
-
-     fprintf(hfile,
-          "inline ISA_VIRTUAL_RELOC ISA_RELOC_Virtual_Id(ISA_RELOC reloc)\n"
-          "{\n"
-          "  return ISA_RELOC_info[reloc].virtual_id;\n"
-          "}\n"
-          "\n"
-          "extern void ISA_RELOC_Initialize(void);\n"
-          "\n");
-
-     fprintf(cfile,
-          "#define STATIC_SZ_TAB_VIRT %d\n"
-          "static ISA_RELOC static_virtual_tab [STATIC_SZ_TAB_VIRT]={\n",
-          virtual_id_max_all_subsets+1);
-     for(i=0;i<virtual_id_max_all_subsets+1;++i)
-         fprintf(cfile,"   ISA_RELOC_%s,\n",
-                 relocations[undefined_reloc_id]->name);
-     fprintf(
-          cfile,
-          "};\n"
-          "\n"
-          "BE_EXPORTED ISA_RELOC *reloc_virtual_tab   = static_virtual_tab;\n"
-          "BE_EXPORTED mUINT32    sz_reloc_virtual_tab= STATIC_SZ_TAB_VIRT;\n" 
-          "\n"
-          "\n"
-          );
-
-     fprintf(hfile, 
-          "BE_EXPORTED extern ISA_RELOC *reloc_virtual_tab   ;\n"
-          "BE_EXPORTED extern mUINT32    sz_reloc_virtual_tab;\n" 
-          "\n");
-
-     fprintf(
-          cfile,
-          "void ISA_RELOC_Initialize(void)\n"
-          "{\n"
-          "  UINT32    index;\n"
-          "  UINT32    mask = ISA_SUBSET_LIST_Mask(ISA_SUBSET_List);\n"
-          "  INT       subset;\n"
-          "  ISA_RELOC intern_reloc;\n"
-          "  ISA_VIRTUAL_RELOC virt_reloc;\n"
-          "\n"
-          "  for (subset = ISA_SUBSET_MIN, index=1U<<ISA_SUBSET_MIN;\n"
-          "       subset <= ISA_SUBSET_MAX;\n"
-          "     ++subset, index <<=1U) {\n"
-          "         if((mask&index)==0U) continue;\n"
-          "\n"
-          "         for(intern_reloc = 1;\n"
-          "             intern_reloc<= ISA_RELOC_MAX;\n"
-          "             intern_reloc++) {\n" 
-          "               if(!ISA_Reloc_Member_Subset(subset,intern_reloc))\n"
-          "                  continue;\n"
-          "               virt_reloc = ISA_RELOC_Virtual_Id(intern_reloc);\n"
-          "               reloc_virtual_tab[virt_reloc]=intern_reloc;\n"
-          "               \n"
-          "         }\n"
-          "  }\n"
-          "  return;\n"
-          "}\n"
-          "\n");
-
-     fprintf(
-         hfile,
-         "inline ISA_RELOC ISA_RELOC_Id(ISA_VIRTUAL_RELOC virtual_reloc)\n"
-         "{\n"
-         "  if(virtual_reloc>sz_reloc_virtual_tab)\n"
-         "     return ISA_RELOC_%s;\n"
-         "  return reloc_virtual_tab[virtual_reloc];\n"
-         "}\n"
-         "\n",
-         relocations[undefined_reloc_id]->name);
+          relocations[undefined_reloc_id]->name);
+  } else {
+      fprintf(cfile,
+              "ISA_RELOC_SUBSET_INFO* dyn_get_ISA_RELOC_SUBSET_info_tab ( void )\n"
+              "{ return %s;\n"
+              "}\n\n",name_format);
+      fprintf(cfile,
+              "const mUINT32 dyn_get_ISA_RELOC_SUBSET_info_tab_sz ( void )\n"
+              "{ return %d;\n"
+              "}\n\n",ISA_SUBSET_count - ISA_SUBSET_MIN);
+      fprintf(hfile,
+              "extern       ISA_RELOC_SUBSET_INFO* dyn_get_ISA_RELOC_SUBSET_info_tab ( void );\n");
+      fprintf(hfile,
+              "extern const mUINT32                dyn_get_ISA_RELOC_SUBSET_info_tab_sz ( void );\n");
   }
 
   delete[] subsets_nb_relocs;
@@ -1083,93 +1115,39 @@ void ISA_Relocs_End(void)
 //  See interface description.
 /////////////////////////////////////
 {
-  if(gen_static_code) {
-    fprintf(hfile,
-	    "\n"
-	    "BE_EXPORTED extern mUINT32 ISA_RELOC_MAX;\n\n"
-	    "#define %-20s %d\n" 
-	    "#define %-20s %d\n\n"
-	    "typedef mUINT32 ISA_RELOC;         /* used to be an enum */\n"
-            "typedef mUINT32 ISA_VIRTUAL_RELOC; /* virtual identifier */\n\n",
-	    "ISA_RELOC_STATIC_MAX",relocs_count-1,"ISA_RELOCS_MAX_LIMIT",relocs_max_limit);
-  }
-
-
+  /* Closing definition of relocations in C file */
   fprintf(cfile, "};\n\n");
   if(gen_static_code) {
     fprintf(cincfile,"\n\n");
   }
 
   if(gen_static_code) {
-    fprintf(cfile,
-	    "BE_EXPORTED const ISA_RELOC_INFO * ISA_RELOC_info = ISA_RELOC_static_info;\n");
-  }
-  else {
-    const char *fct_name1= "dyn_get_ISA_RELOC_info_tab";
-    const char *fct_name2= "dyn_get_ISA_RELOC_info_tab_sz";
-    const char *fct_name3= "dyn_get_ISA_RELOC_static_max";
-    
-    fprintf(sfile,
-	    "BE_EXPORTED const ISA_RELOC_INFO * ISA_RELOC_info = NULL;\n");
-
-    fprintf(cfile,
-	    "\n\n"
-	    "const ISA_RELOC_INFO* %s ( void )\n"
-	    "{ return ISA_RELOC_dynamic_info;\n"
-	    "};\n\n",
-	    fct_name1);
-    
-    fprintf(cfile,
-	    "const mUINT32 %s ( void )\n"
-	    "{ return (const mUINT32) (ISA_RELOC_STATIC_MAX + 1/*UNDEFINED*/ + %d);\n"
-	    "}\n\n",
-	    fct_name2,relocs_count);
-    
-    fprintf(cfile,
-	    "const mUINT32 %s ( void )\n"
-	    "{ return (const mUINT32) (ISA_RELOC_STATIC_MAX);\n"
-	    "}\n\n",
-	    fct_name3);
-    
     fprintf(hfile,
-	    "\n\n"
-	    "extern const ISA_RELOC_INFO* %s ( void );\n"
-	    "extern const mUINT32 %s ( void );\n"
-	    "extern const mUINT32 %s ( void );\n",
-	    fct_name1,fct_name2,fct_name3);
-  }
+	    "\n"
+	    "#define %-20s %d\n" 
+	    "#define %-20s %d\n"
+            "#define %-20s %d\n\n"
+	    "typedef mUINT32 ISA_RELOC;         /* used to be an enum */\n"
+            "typedef mUINT32 ISA_VIRTUAL_RELOC; /* virtual identifier */\n\n",
+	    "ISA_RELOC_STATIC_MAX",relocs_count-1,"ISA_RELOCS_MAX_LIMIT",relocs_max_limit,
+	    "MAX_BITFIELDS_STATIC",max_bitfields_static);
 
-  if(gen_static_code) {
-    fprintf(cfile,"\n"
-	    "BE_EXPORTED mUINT32 ISA_RELOC_MAX = ISA_RELOC_STATIC_MAX;\n");
-  }
-  else {
-    fprintf(sfile,"\n"
-	    "BE_EXPORTED mUINT32 ISA_RELOC_MAX = 0;\n");
-  }
-
-  if(gen_static_code) {
     fprintf(hfile,
-            "#define MAX_BITFIELDS_STATIC %d\n"
-            "\n",
-	    max_bitfields_static);
-    
-    fprintf(hfile,
-	    "\ntypedef enum {\n"
+	    "typedef enum {\n"
 	    "  ISA_RELOC_NO_OVERFLOW,\n"
 	    "  ISA_RELOC_OVERFLOW_BITFIELD,\n"
 	    "  ISA_RELOC_OVERFLOW_SIGNED,\n"
 	    "  ISA_RELOC_OVERFLOW_UNSIGNED,\n"
-	    "} ISA_RELOC_OVERFLOW_TYPE;\n");
+	    "} ISA_RELOC_OVERFLOW_TYPE;\n\n");
     
     fprintf(hfile,
-	    "\ntypedef enum {\n"
+	    "typedef enum {\n"
 	    "  ISA_RELOC_NO_UNDERFLOW,\n"
 	    "  ISA_RELOC_UNDERFLOW,\n"
-	    "} ISA_RELOC_UNDERFLOW_TYPE;\n");
+	    "} ISA_RELOC_UNDERFLOW_TYPE;\n\n");
     
     fprintf(hfile, 
-	    "\ntypedef struct {\n"
+	    "typedef struct {\n"
 	    "  struct { UINT8 elf_id; UINT8 start_bit; UINT8 stop_bit; } bitfield[MAX_BITFIELDS_STATIC];\n"
 	    "  mUINT8 bitfields;\n"
 	    "  BOOL main_symbol;\n"
@@ -1184,12 +1162,125 @@ void ISA_Relocs_End(void)
 	    "  const char *syntax;\n"
 	    "  const char *name;\n"
             "  ISA_VIRTUAL_RELOC virtual_id;\n"
-	    "} ISA_RELOC_INFO;\n");
-    
+	    "} ISA_RELOC_INFO;\n\n");
+
     fprintf(hfile,
-	    "\n"
-	    "BE_EXPORTED extern const ISA_RELOC_INFO * ISA_RELOC_info;\n");
+            "BE_EXPORTED extern mUINT32 ISA_RELOC_MAX;\n\n");
+
+    fprintf(cfile,
+	    "BE_EXPORTED mUINT32 ISA_RELOC_MAX = ISA_RELOC_STATIC_MAX;\n\n");
+
+    fprintf(hfile,
+            "BE_EXPORTED extern const ISA_RELOC_INFO * ISA_RELOC_info;\n\n");
+
+    fprintf(cfile,
+            "BE_EXPORTED const ISA_RELOC_INFO * ISA_RELOC_info = ISA_RELOC_static_info;\n\n");
+
     fprintf(efile, "ISA_RELOC_info\n");
+
+    fprintf(efile, "ISA_reloc_subset_tab\n");
+
+  } else {
+
+#if 0
+    fprintf(sfile,
+	    "BE_EXPORTED mUINT32 dynamic_reloc_offset_%s = 0;\n\n",Get_Extension_Name());
+#endif
+	    
+    fprintf(sfile,
+	    "BE_EXPORTED mUINT32 ISA_RELOC_MAX = 0;\n\n");
+	    
+    fprintf(sfile,
+	    "BE_EXPORTED const ISA_RELOC_INFO * ISA_RELOC_info = NULL;\n");
+
+    fprintf(sfile,
+	    "BE_EXPORTED ISA_RELOC_SUBSET_INFO * ISA_reloc_subset_tab = NULL;\n");
+
+  }
+      
+  ISA_Relocs_Subsets_End(hfile,cfile);
+
+  if(!gen_static_code) {
+    const char *fct_name1= "dyn_get_ISA_RELOC_info_tab";
+    const char *fct_name2= "dyn_get_ISA_RELOC_info_tab_sz";
+    const char *fct_name3= "dyn_get_ISA_RELOC_max_static_virtual_id_core_subset";
+    const char *fct_name4= "dyn_set_ISA_RELOC_dynamic_reloc_offset";
+    const char *fct_name5= "dyn_get_ISA_RELOC_dynamic_reloc_offset";
+    const char *fct_name6= "dyn_get_ISA_RELOC_subset_info_tab";
+    const char *fct_name7= "dyn_get_ISA_RELOC_subset_info_tab_sz";
+    
+    fprintf(cfile,
+            "\nmUINT32 dynamic_reloc_offset_%s = 0;\n",
+	    Get_Extension_Name());
+
+    fprintf(cfile,
+	    "\n\n"
+	    "ISA_RELOC_INFO* %s ( void )\n"
+	    "{ return ISA_RELOC_dynamic_info;\n"
+	    "};\n\n",
+	    fct_name1);
+    
+    fprintf(cfile,
+	    "const mUINT32 %s ( void )\n"
+	    "{ return (const mUINT32) (%d);\n"
+	    "}\n\n",
+	    fct_name2,relocs_count);
+    
+    if (!strcmp(CoreSubset,"stxp70_v3")) {
+       /* Specific relocs are numbered for x3 & fpx for V3 architecture */
+       fprintf(cfile,
+	       "const ISA_SUBSET %s ( void )\n"
+	       "{ ISA_SUBSET subset;\n\n"
+	       "  subset = ISA_SUBSET_%s;\n"
+	       "  if (ISA_RELOC_Max_Virtual_Id(ISA_SUBSET_%s_ext_x3) > ISA_RELOC_Max_Virtual_Id(subset)) {\n"
+	       "     subset = ISA_SUBSET_%s_ext_x3;\n"
+	       "  }\n"
+	       "  if (ISA_RELOC_Max_Virtual_Id(ISA_SUBSET_%s_ext_fpx) > ISA_RELOC_Max_Virtual_Id(subset)) {\n"
+	       "     subset = ISA_SUBSET_%s_ext_fpx;\n"
+	       "  }\n"
+	       "  return subset;\n"
+	       "}\n\n",
+	       fct_name3,CoreSubset,CoreSubset,CoreSubset,CoreSubset,CoreSubset);
+    } else if (!strcmp(CoreSubset,"stxp70_v4")) {
+       /* Specific relocs are numbered for x3 for V4 architecture */
+       fprintf(cfile,
+	       "const ISA_SUBSET %s ( void )\n"
+	       "{ ISA_SUBSET subset;\n\n"
+	       "  subset = ISA_SUBSET_%s;\n"
+	       "  if (ISA_RELOC_Max_Virtual_Id(ISA_SUBSET_%s_ext_x3) > ISA_RELOC_Max_Virtual_Id(subset)) {\n"
+	       "     subset = ISA_SUBSET_%s_ext_x3;\n"
+	       "  }\n"
+	       "  return subset;\n"
+	       "}\n\n",
+	       fct_name3,CoreSubset,CoreSubset,CoreSubset);
+    } else {
+       fprintf(cfile,
+	       "const ISA_SUBSET %s ( void )\n"
+	       "{ return (const ISA_SUBSET) ISA_SUBSET_%s;\n"
+	       "}\n\n",
+	       fct_name3,CoreSubset);
+    }
+    
+    fprintf(cfile,"void %s ( mUINT32 offset )\n",fct_name4);
+    fprintf(cfile,"{ dynamic_reloc_offset_%s = offset;\n", Get_Extension_Name());
+    fprintf(cfile,"}\n");
+
+    fprintf(cfile,"mUINT32 %s ( void )\n", fct_name5);
+    fprintf(cfile,"{ return dynamic_reloc_offset_%s;\n", Get_Extension_Name());
+    fprintf(cfile,"}\n");
+
+    fprintf(hfile,
+	    "\n\n"
+	    "extern       mUINT32                dynamic_reloc_offset_%s;\n\n"
+	    "extern       ISA_RELOC_INFO*        %s ( void );\n"
+	    "extern const mUINT32                %s ( void );\n"
+	    "extern const ISA_SUBSET             %s ( void );\n"
+	    "extern       void                   %s ( mUINT32 offset );\n"
+	    "extern       mUINT32                %s ( void );\n"
+	    "extern       ISA_RELOC_SUBSET_INFO* %s ( void );\n"
+	    "extern       mUINT32                %s ( void );\n",
+	    Get_Extension_Name(),fct_name1,fct_name2,fct_name3,fct_name4,fct_name5,fct_name6,fct_name7);
+
   }
 
   if(gen_static_code) {
@@ -1197,118 +1288,83 @@ void ISA_Relocs_End(void)
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].name;\n"
 	    "}\n\n");
-  }
 
-  if(gen_static_code) {
     fprintf(hfile, "inline const char * ISA_RELOC_Syntax (ISA_RELOC reloc)\n"
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].syntax;\n"
 	    "}\n\n");
-  }
 
-  if(gen_static_code) {
     fprintf(hfile, "inline BOOL ISA_RELOC_Is_Implicit (ISA_RELOC reloc)\n"
 	    "{\n"
 	    "  return *(ISA_RELOC_info[reloc].syntax) == 0;\n"
 	    "}\n\n");
-  }
 
-  if(gen_static_code) {
     fprintf(hfile, "inline UINT8 ISA_RELOC_Bit_Field_Stop_Bit (ISA_RELOC reloc, INT bf)\n"
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].bitfield[bf].stop_bit;\n"
 	    "}\n\n");
-  }
 
-  if(gen_static_code) {
     fprintf(hfile, "inline UINT8 ISA_RELOC_Bit_Field_Start_Bit (ISA_RELOC reloc, INT bf)\n"
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].bitfield[bf].start_bit;\n"
 	    "}\n\n");
-  }
 
-  if(gen_static_code) {
     fprintf(hfile, "inline UINT8 ISA_RELOC_Bit_Field_Elf_ID (ISA_RELOC reloc, INT bf)\n"
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].bitfield[bf].elf_id;\n"
 	    "}\n\n");
-  }
 
-  if(gen_static_code) {
     fprintf(hfile, "inline UINT8 ISA_RELOC_Bit_Fields (ISA_RELOC reloc)\n"
 	    "{\n"
 	    "  return (UINT8)ISA_RELOC_info[reloc].bitfields;\n"
 	    "}\n\n");
-  }
 
-  if(gen_static_code) {
     fprintf(hfile, "inline BOOL ISA_RELOC_On_Symbol (ISA_RELOC reloc)\n"
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].main_symbol;\n"
 	    "}\n\n");
-  }
 
-  if(gen_static_code) {
     fprintf(hfile, "inline BOOL ISA_RELOC_On_Second_Symbol (ISA_RELOC reloc)\n"
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].second_symbol;\n"
 	    "}\n\n");
-  }
 
-  if(gen_static_code) {
     fprintf(hfile, "inline BOOL ISA_RELOC_Has_Addend (ISA_RELOC reloc)\n"
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].addend;\n"
 	    "}\n\n");
-  }
 
-  if(gen_static_code) {
     fprintf(hfile, "inline BOOL ISA_RELOC_Is_PC_Rel (ISA_RELOC reloc)\n"
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].pcrel;\n"
 	    "}\n\n");
-  }
 
-  if(gen_static_code) {
     fprintf(hfile, "inline BOOL ISA_RELOC_Is_GP_Rel (ISA_RELOC reloc)\n"
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].gprel;\n"
 	    "}\n\n");
-  }
 
-  if(gen_static_code) {
     fprintf(hfile, "inline BOOL ISA_RELOC_Is_GOT_Rel (ISA_RELOC reloc)\n"
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].gotrel;\n"
 	    "}\n\n");
-  }
 
-  if(gen_static_code) {
     fprintf(hfile, "inline ISA_RELOC_OVERFLOW_TYPE ISA_RELOC_Check_Overflow (ISA_RELOC reloc)\n"
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].overflow;\n"
 	    "}\n\n");
-  }
 
-  if(gen_static_code) {
     fprintf(hfile, "inline INT32 ISA_RELOC_Right_Shift (ISA_RELOC reloc)\n"
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].right_shift;\n"
 	    "}\n\n");
-  }
 
-  if(gen_static_code) {
     fprintf(hfile, "inline ISA_RELOC_UNDERFLOW_TYPE ISA_RELOC_Check_Underflow (ISA_RELOC reloc)\n"
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].underflow;\n"
 	    "}\n\n");
-  }
+  } else {
 
-  fprintf(hfile, "#ifdef DYNAMIC_CODE_GEN\n");
-  fprintf(hfile, "extern void ISA_RELOCS_Initialize_Stub(void);\n");
-  fprintf(hfile, "#endif\n");
-
-  if(!gen_static_code) {
     fprintf(sfile,
 	    "/*\n"
 	    " * Exported routine.\n"
@@ -1317,17 +1373,20 @@ void ISA_Relocs_End(void)
 	    "ISA_RELOCS_Initialize_Stub( void )\n"
 	    "{\n"
 	    "  ISA_RELOC_info = (ISA_RELOC_INFO*)dyn_get_ISA_RELOC_info_tab();\n"
+	    "  ISA_reloc_subset_tab = (ISA_RELOC_SUBSET_INFO*)dyn_get_ISA_RELOC_SUBSET_info_tab();\n"
 	    "  ISA_RELOC_MAX = dyn_get_ISA_RELOC_info_tab_sz();\n"
+	    "  dynamic_reloc_offset_%s = dyn_get_ISA_RELOC_dynamic_reloc_offset();\n"
 	    "  return;\n"
-	    "}\n");
-  }
+	    "}\n",Get_Extension_Name());
 
-  ISA_Relocs_Subsets_End(hfile,cfile);
-
-  Emit_Footer (hfile);
-  if(!gen_static_code) {
-    Emit_C_Footer(cfile);          // Ending "C" block.
   }
+  
+  fprintf(hfile, "#ifdef DYNAMIC_CODE_GEN\n");
+  fprintf(hfile, "extern       void                   ISA_RELOCS_Initialize_Stub(void);\n");
+  fprintf(hfile, "#endif\n");
+
+  Emit_Footer  (hfile);
+  Emit_C_Footer(cfile);
   
   // Closing file handlers
   Gen_Close_File_Handle(cfile,cfilename);

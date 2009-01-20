@@ -332,44 +332,6 @@ extern PARSER_InstanceT * currParserInstance;
     Set_AIR_TN_exp_reloc_relocid(tn,relocid);				\
   }
 
-/*----------------------*
- * Macro to be used for *
- * configurable IP      *
- * management           *
- *----------------------*/
-#define GET_CORECFG()                     \
-   ((NULL != PARSER_Instance->ConfReg) ? \
-    PARSER_Instance->ConfReg->ConfVal  : \
-    0xFFFFFFFF                            \
-   )
-
-#define GET_CORECFG2()                    \
-   ((NULL != PARSER_Instance->ConfReg) ? \
-    PARSER_Instance->ConfReg->ConfVal2 : \
-    0xFFFFFFFF                            \
-   )
-
-#define CHECK_CORECFG_BOUND(Field,Low,High)        \
-   ( ((Field).expr->typeExp != EXPCST) ||          \
-     (MSB32((Field).expr)==0  &&                   \
-      LSB32((Field).expr)>=(Low) &&                \
-      LSB32((Field).expr)<=(High)                  \
-     )                                             \
-   )
-
-#define CHECK_CORECFG_BIT(Field,BitField)          \
-   ( ((Field).expr->typeExp != EXPCST) ||          \
-     (MSB32((Field).expr)==0  &&                   \
-      (LSB32((Field).expr) & (BitField))           \
-     )                                             \
-   )
-
-#define CORECFG_ERROR()                                    \
-   if ((NULL != PARSER_Instance->ConfReg) &&              \
-       (NULL != PARSER_Instance->ConfReg->ConfigError)) { \
-      PARSER_Instance->ConfReg->ConfigError();            \
-   }
-
 #endif /* JUST_WANT_API_VERSION */
 
 #ifdef __cplusplus

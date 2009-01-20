@@ -60,8 +60,13 @@ extern "C" {
 #include "targ_isa_enums.h"
 #include "targ_isa_bundle.h"
 #include "targ_isa_hazards.h"
+#include "targ_isa_decode.h"
+#include "targ_isa_binutils.h"
+#include "targ_isa_relocs.h"
 #include "ti_si.h"
 #include "targ_isa_variants.h"
+#include "air.h"
+#include "parser.h"
   //#endif
 
 #ifndef DLL_EXPORTED
@@ -69,7 +74,7 @@ extern "C" {
 #endif
 
 
-#define MAGIC_NUMBER_EXT_ISA_API   20080307  /* Magic number. Interface checking */
+#define MAGIC_NUMBER_EXT_ISA_API   20081010  /* Magic number. Interface checking */
 
 /* ===========================================
  * Base register available for addressing mode
@@ -266,6 +271,36 @@ struct ISA_EXT_Interface {
  /* Handling bundling information: Added here for backward compatibility issue*/
  const ISA_EXEC_UNIT_SLOTS*      (*get_ISA_EXEC_unit_slots_tab)         (void);
  const mUINT8*                   (*get_ISA_BUNDLE_slot_count_tab)       (void);
+
+ /* Handling parser structure: Added for GBU binutils */
+ const PARSER_GetParserT*        (*get_ISA_PARSE_tab)                   (void);
+ const mUINT32                   (*get_ISA_PARSE_tab_sz)                (void);
+
+ /* Handling pack information: Added for GBU binutils ---------------------- */
+ const ISA_PACK_OPND_INFO*       (*get_ISA_PACK_OPND_info_tab)          (void);
+ const mUINT32                   (*get_ISA_PACK_OPND_info_tab_sz)       (void);
+ const mUINT16*                  (*get_ISA_PACK_OPND_info_index_tab)    (void);
+ const ISA_PACK_INFO*            (*get_ISA_PACK_info_tab)               (void);
+ const mUINT8*                   (*get_ISA_PACK_inst_words_tab)         (void);
+ const ISA_PACK_ADJ_INFO*        (*get_ISA_PACK_adj_info_tab)           (void);
+ const mUINT32                   (*get_ISA_PACK_adj_info_tab_sz)        (void);
+ const mUINT8*                   (*get_ISA_PACK_adj_info_index_tab)     (void);
+
+ /* Handling decoding information: Added for GBU binutils ------------------ */
+ const ISA_DECODE_DECODING**     (*get_ISA_DECODE_decoding_tab)         (void);
+ const mUINT32                   (*get_ISA_DECODE_decoding_tab_sz)      (void);
+
+ /* Handling ISA relocs ---------------------------------------------------- */
+       ISA_RELOC_INFO*           (*get_ISA_RELOC_info_tab)              (void);
+ const mUINT32                   (*get_ISA_RELOC_info_tab_sz)           (void);
+       ISA_RELOC_SUBSET_INFO*    (*get_ISA_RELOC_SUBSET_info_tab)       (void);
+ const mUINT32                   (*get_ISA_RELOC_SUBSET_info_tab_sz)    (void);
+ const ISA_SUBSET                (*get_ISA_RELOC_max_static_virtual_id_core_subset)           (void);
+       void                      (*set_ISA_RELOC_dynamic_reloc_offset)  (mUINT32 offset);
+
+ /* Handling binutils information: Added for GBU binutils ------------------ */
+       ISA_BINUTILS_INFO*        (*get_ISA_BINUTILS_info_tab)           (void);
+       mUINT32                   (*get_ISA_BINUTILS_info_tab_sz)        (void);
 };
 
 typedef struct ISA_EXT_Interface ISA_EXT_Interface_t;

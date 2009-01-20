@@ -126,15 +126,21 @@ extern "C" {
     top = TI_ASM_Unpack_Inst(
 			     &(inst->inst),
 			     inst->unit,
+			     inst->decodeinst,
 			     result,
 			     opnd,
 			     0);
 
     /* Create a new air instruction */
     inst->air_inst = AIR_new_op_with_TOP(top);
-    if(TOP_UNDEFINED==top)
-      return AIR_EVENT_NEXT;
-
+    if(TOP_UNDEFINED==top) {
+      if(inst->decodeunknown) {
+        return AIR_EVENT_NEXT;
+      } else {
+        return AIR_EVENT_END_ERROR;
+      }
+    }
+    
     pinfo     = ISA_PACK_OPND_Info(top);
     oinfo     = ISA_OPERAND_Info(top);
     comp      = ISA_PACK_OPND_INFO_Comp(pinfo);

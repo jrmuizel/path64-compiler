@@ -41,12 +41,11 @@ Contact information:
 #include "dyn_isa_api_access.h"
 #include "ext_info.h"
 
-/* Initialization and cleanup functions */
-void Lai_Initialize_Extension_Loader(int nb_ext, const struct Extension_dll *ext_tab);
-void Lai_Cleanup_Extension_Loader();
+#include "isa_loader_api.h"
 
-/* Return a pointer to the description of the extension register class <rc> */
-BE_EXPORTED extern const EXTENSION_Regclass_Info *EXTENSION_get_REGISTER_CLASS_info(ISA_REGISTER_CLASS rc);
+/* Initialization and cleanup functions */
+bool Lai_Initialize_Extension_Loader(const int ext_inter_count, const struct Extension_dll *ext_inter_tab);
+void Lai_Cleanup_Extension_Loader();
 
 /* Return the register class associated to <mtype> parameter */
 BE_EXPORTED extern ISA_REGISTER_CLASS EXTENSION_MTYPE_to_REGISTER_CLASS(TYPE_ID mtype);
@@ -56,9 +55,6 @@ BE_EXPORTED extern ISA_REGISTER_SUBCLASS EXTENSION_MTYPE_to_REGISTER_SUBCLASS(TY
 
 /* Return the MTYPE associated to registers of register class <rc> with size <size> */
 BE_EXPORTED extern TYPE_ID EXTENSION_REGISTER_CLASS_to_MTYPE(ISA_REGISTER_CLASS rc, INT size);
-
-/* Return the register class associated to <preg> */
-BE_EXPORTED extern ISA_REGISTER_CLASS EXTENSION_PREG_to_REGISTER_CLASS(PREG_NUM preg);
 
 /* Return the register number of <preg> in its extension register class */
 BE_EXPORTED extern int EXTENSION_PREG_to_REGISTER_NUM(PREG_NUM preg);
@@ -75,27 +71,11 @@ inline BOOL EXTENSION_Is_Extension_INTRINSIC(INTRINSIC id) {
   return (id > INTRINSIC_STATIC_COUNT && id <= INTRINSIC_COUNT);
 }
 
-/*
- * Return TRUE if the parameter TOP Id belongs to an extension
- */
-inline BOOL EXTENSION_Is_Extension_TOP(TOP id) {
-  return (id >= TOP_static_count && id < TOP_count);
-}
-
-/*
- * Return TRUE if the parameter register class rc belongs to an extension
- */
-inline BOOL EXTENSION_Is_Extension_REGISTER_CLASS(ISA_REGISTER_CLASS rc) {
-  return (rc > ISA_REGISTER_CLASS_STATIC_MAX && rc <= ISA_REGISTER_CLASS_MAX);
-}
-
 BE_EXPORTED extern const char *EXTENSION_Get_Extension_Name_From_INTRINSIC(INTRINSIC id);
 
 BE_EXPORTED extern const char *EXTENSION_Get_Extension_Name_From_TOP(TOP id);
 
 BE_EXPORTED extern const char *EXTENSION_Get_Extension_Name_From_REGISTER_CLASS(ISA_REGISTER_CLASS rc);
-
-BE_EXPORTED extern EXTENSION_ISA_Info *EXTENSION_Get_ISA_Info_From_TOP(TOP id);
 
 BE_EXPORTED extern TOP  EXTENSION_INTRINSIC_to_TOP(INTRINSIC id);
 

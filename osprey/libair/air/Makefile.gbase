@@ -43,7 +43,7 @@
 
 LIBRARY = libair.a
 TARGET  = $(LIBRARY)
-SRC_DIRS= $(BUILD_BASE)
+SRC_DIRS= $(BUILD_BASE) $(COMMON_COM_DIR) $(COMMON_UTIL_DIR)
 
 #----------------------------------------------------------------------
 #  Include the usual commondefs
@@ -63,7 +63,13 @@ OBJS     = air.o          \
            air_hash.o     \
            air_disasm.o   \
            air_services.o \
-	   air_utils.o
+	   air_utils.o    \
+	   air_loader.o   \
+           dso.o          \
+	   memory.o       \
+	   dyn_isa_api_access.o  \
+           dll_loader.o   \
+           isa_loader.o
 
 ifeq ($(BUILD_TARGET),STxP70)
 OBJS    += air_stxp70.o
@@ -73,11 +79,16 @@ HFILES   = air.h          \
            air_hash.h     \
            air_disasm.h   \
            air_services.h \
-           targ_air.h 
+           air_loader.h   \
+           targ_air.h     \
+           dll_loader.h   \
+           isa_loader.h   \
+           isa_loader_api.h
 
 #----------------------------------------------------------------------
 #  List of directories, and source files of interest
 #----------------------------------------------------------------------
+COMMON_UTIL_DIR = $(BUILD_TOT)/common/util
 COMMON_COM_DIR  = $(BUILD_TOT)/common/com
 TARG_INFO_DIR   = $(BUILD_AREA)/targ_info
 
@@ -85,19 +96,46 @@ TARGINFO_DIR              = $(BUILD_TOT)/targinfo
 TARGINFO_ACCESS_DIR       = $(TARGINFO_DIR)/access
 TARGINFO_GENERATE_DIR 	  = $(TARGINFO_DIR)/generate
 TARGINFO_GENERATE_DYN_DIR = $(TARGINFO_GENERATE_DIR)/dyn 
+TARGINFO_PARSER_INC_DIR	  = $(TARGINFO_DIR)/parser/inc
+LIBAIR_DIR                = $(BUILD_TOT)/libair/air
 
-LCINCS += -I$(TARG_INFO_DIR) -I$(COMMON_COM_DIR)
+LCINCS += -I$(TARG_INFO_DIR) -I$(COMMON_COM_DIR) -I$(COMMON_UTIL_DIR)
 LCINCS += -I$(TARGINFO_GENERATE_DYN_DIR) -I$(TARGINFO_ACCESS_DIR)
+LCINCS += -I$(TARGINFO_PARSER_INC_DIR) -I$(LIBAIR_DIR)
+
+# find better than this ?
+LCINCS += -I$(BUILD_AREA)/gccfe
+
+ifeq ($(BUILD_TARGET),STxP70)
+LCINCS += -I$(TARGINFO_DIR)/stxp70/config
+endif
+
+ifeq ($(BUILD_TARGET),ST200)
+LCINCS += -I$(TARGINFO_DIR)/st200/config
+endif
+
+LCXXINCS = $(LCINCS)
 
 ifeq (MINGW,$(HOST_OS))
-CFLAGS += -DBE_EXPORTED= -DTARGINFO_EXPORTED=
+CFLAGS += -DBE_EXPORTED= -DTARGINFO_EXPORTED= -DCG_EXPORTED=
 endif
+
+CXXFLAGS += -DBE_EXPORTED= -DTARGINFO_EXPORTED= -DCG_EXPORTED= -DBACK_END -DMONGOOSE_BE -DBINUTILS
 
 install: last
 default: local
 local: all
 
 all: $(TARGET) install_files
+
+$(BUILD_TOT)/libair/air/air_loader.cxx: $(BUILD_AREA)/gccfe/extension_include.h
+
+$(COMMON_COM_DIR)/dll_loader.cxx: $(BUILD_AREA)/gccfe/extension_include.h
+
+$(COMMON_COM_DIR)/isa_loader.cxx: $(BUILD_AREA)/gccfe/extension_include.h
+
+$(BUILD_AREA)/gccfe/extension_include.h: $(BUILD_TOT)/gccfe/extension_include.hin
+	cd $(BUILD_AREA)/gccfe/ ; $(MAKE) extension_include.h
 
 $(TARGET): $(OBJS)
 	-$(RM) $(TARGET)

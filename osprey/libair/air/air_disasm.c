@@ -108,9 +108,11 @@ AIR_disasm_run( AIR_Disasm *inst )
    /* TODO: manage error cases */
 
    /* initialization of structure decode */
-   decode.unit     = inst->unit;
-   decode.inst     = inst->inst;
-   decode.air_inst = NULL;
+   decode.unit          = inst->unit;
+   decode.decodeinst    = inst->decodeinst;
+   decode.inst          = inst->inst;
+   decode.air_inst      = NULL;
+   decode.decodeunknown = 0;
 
    if(disasm_run.decode_preprocess)
      disasm_run.decode_preprocess(&decode);

@@ -37,6 +37,7 @@
 
 #include "extension_include.h"
 #include "dyn_dll_api_access.h"
+#include "dll_loader.h"
 #include "wn.h"
 
 #ifdef TARG_ST
@@ -44,9 +45,7 @@
  * Description of an extension dll
  * =============================== */
 struct Extension_dll {
-  char                     *extname;
-  char                     *dllname;
-  void                     *handler;
+  Extension_dll_handler    *handler;
   EXTENSION_HighLevel_Info *hooks;
 
   // Base indexes for dynamic components of current extension
@@ -119,9 +118,9 @@ typedef struct Extension_dll Extension_dll_t;
  * ============================================ */
 /* Load extension dlls and return a pointer to the extension table
    and the count of loaded extensions */
-extern void Load_Extension_dlls(Extension_dll_t **ext_tab,
-				int *ext_count,
-				BOOL verbose);
+extern bool Load_Extension_dlls(BOOL verbose);
+extern Extension_dll_t * Get_Extension_dll_tab(void);
+extern int Get_Extension_dll_count(void);
 
 /* Define the dynamic count: to be place in the loader section*/
 extern TYPE_ID Add_MTypes(const Extension_dll_t *dll_instance, int **local_mtype_to_rclass, int *mtype_count, BOOL verbose);
@@ -148,19 +147,13 @@ extern void Init_Mtypes(int nb_mtype_to_add);
 extern void Cleanup_Extension_Loader(void);
 
 /* Common things: these functions are shared between wfe_loader and lai_loader */
-#include "loader_internal.h"
-/* Return a pointer to the newly allocated API used to access to the 
-   ISA description of the specified extension. */
-extern EXTENSION_ISA_Info *Generate_EXTENSION_ISA_Info(const Extension_dll_t *dll_instance, BOOL verbose);
+#include "dyn_isa_api_access.h"
+#include "dyn_dll_api_access.h"
 
-/* Isa register init */
-extern void Initialize_ISA_RegisterClasses(Lai_Loader_Info_t &ext_info);
+#include "isa_loader.h"
+#include "isa_loader_api.h"
 
-/* ABI init */
-extern void Initialize_ABI_Properties(Lai_Loader_Info_t &ext_info);
-
-/* Map between preg and register in the extension */
-BE_EXPORTED extern ISA_REGISTER_CLASS EXTENSION_PREG_to_REGISTER_CLASS(PREG_NUM preg);
+#include "dll_loader.h"
 
 /* Map between gcc machine mode preg and open64 MTYPE */
 BE_EXPORTED extern TYPE_ID MachineMode_To_Mtype(machine_mode_t mode);

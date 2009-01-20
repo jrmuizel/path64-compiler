@@ -47,7 +47,8 @@ extern "C" {
 
 typedef struct{
 
-   ISA_EXEC_UNIT        unit;
+   INT                  unit;
+   ISA_DECODE_INST      decodeinst;
    ISA_PACK_INST        inst;
    AIR_OP              *air_inst;
    AIR_String           string;

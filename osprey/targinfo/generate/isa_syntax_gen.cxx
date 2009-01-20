@@ -812,39 +812,82 @@ Emit_Valtypes_Identifiers( ISA_SUBSET subset, FILE *file )
 static void
 Emit_Parser_Driver( void )
 {
-  /* Only in static mode */
-  if(dhfile == 0 || dcfile == 0) { return; }
+  if (gen_static_code) {
+    if(dhfile == 0 || dcfile == 0) { return; }
 
-  fprintf(dcfile,"\n");
-  fprintf(dcfile,"#include \"air.h\"\n");
-  fprintf(dcfile,"#include \"parser.h\"\n");
-  fprintf(dcfile,"\n");
+    fprintf(dcfile,"\n");
+    fprintf(dcfile,"#include \"air.h\"\n");
+    fprintf(dcfile,"#include \"parser.h\"\n");
+    fprintf(dcfile,"\n");
 
-  fprintf(dhfile,
-	  "BE_EXPORTED extern PARSER_GetParserT ISA_PARSE_tab[];\n\n");
+    fprintf(dhfile,
+	    "BE_EXPORTED extern PARSER_GetParserT * ISA_PARSE_tab;\n\n");
 
-  fprintf(dhfile,
-	  "inline PARSER_GetParserT ISA_PARSE_GetParser(ISA_SUBSET subset)\n"
-	  "{\n"
-	  "  BE_EXPORTED extern PARSER_GetParserT ISA_PARSE_tab[];\n"
-	  "  return ISA_PARSE_tab[subset];\n"
-	  "}\n");
+    fprintf(dhfile,
+	    "inline PARSER_GetParserT ISA_PARSE_GetParser(ISA_SUBSET subset)\n"
+	    "{\n"
+	    "  BE_EXPORTED extern PARSER_GetParserT * ISA_PARSE_tab;\n"
+	    "  return ISA_PARSE_tab[subset];\n"
+	    "}\n");
 
-  for(int i=0; i<parsers;i++) {
-    fprintf(dcfile,"extern PARSER_ReturnT %s_PARSER_GetParser (PARSER_InstanceT *Parser);\n",
-	    ISA_SUBSET_Name(i));
+    for(int i=0; i<parsers;i++) {
+      fprintf(dcfile,"extern PARSER_ReturnT %s_PARSER_GetParser (PARSER_InstanceT *Parser);\n",
+	      ISA_SUBSET_Name(i));
+    }
+    fprintf(dcfile,"\n");
+    fprintf(dcfile,
+	    "static PARSER_GetParserT static_ISA_PARSE_tab[] = {\n");
+    const char *comma = ",";
+    for(int i=0; i<parsers;i++) {
+      if(i == parsers-1) { comma = ""; }
+      fprintf(dcfile,"  &%s_PARSER_GetParser%s\n",
+	      ISA_SUBSET_Name(i),comma);
+    }
+    fprintf(dcfile,"};\n");
+    fprintf(dcfile,
+	    "PARSER_GetParserT * ISA_PARSE_tab = &static_ISA_PARSE_tab[0];\n");
+    fprintf(dcfile,"\n");
+  } else {
+    if(dhfile == 0 || dcfile == 0) { return; }
+
+    fprintf(dhfile,
+            "extern const PARSER_GetParserT * dyn_get_ISA_PARSE_tab ( void );\n");
+    fprintf(dhfile,
+            "extern const mUINT32 dyn_get_ISA_PARSE_tab_sz ( void );\n");
+
+    fprintf(dcfile,"\n");
+    fprintf(dcfile,"#include \"air.h\"\n");
+    fprintf(dcfile,"#include \"parser.h\"\n");
+    fprintf(dcfile,"\n");
+
+    for(int i=0; i<parsers;i++) {
+      fprintf(dcfile,"extern PARSER_ReturnT %s_PARSER_GetParser (PARSER_InstanceT *Parser);\n",
+	      ISA_SUBSET_Name(i));
+    }
+
+    fprintf(dcfile,
+            "static const PARSER_GetParserT ISA_PARSE_dyn_tab[] = {\n");
+    const char *comma = ",";
+    for(int i=0; i<parsers;i++) {
+      if(i == parsers-1) { comma = ""; }
+      fprintf(dcfile,"  &%s_PARSER_GetParser%s\n",
+	      ISA_SUBSET_Name(i),comma);
+    }
+    fprintf(dcfile,"};\n");
+
+    fprintf(dcfile,
+            "const PARSER_GetParserT * dyn_get_ISA_PARSE_tab ( void )\n"
+	    "{\n"
+	    "  return ISA_PARSE_dyn_tab;\n"
+	    "}\n");
+
+    fprintf(dcfile,
+            "const mUINT32 dyn_get_ISA_PARSE_tab_sz ( void )\n"
+            "{\n"
+	    "  return (const mUINT32) %d;\n"
+	    "}\n",parsers);
   }
-  fprintf(dcfile,"\n");
-  fprintf(dcfile,
-	  "PARSER_GetParserT ISA_PARSE_tab[] = {\n");
-  const char *comma = ",";
-  for(int i=0; i<parsers;i++) {
-    if(i == parsers-1) { comma = ""; }
-    fprintf(dcfile,"  &%s_PARSER_GetParser%s\n",
-	    ISA_SUBSET_Name(i),comma);
-  }
-  fprintf(dcfile,"};\n");
-
+  
   Emit_Footer (dhfile);
   Emit_C_Footer(dcfile);
 }
@@ -2024,21 +2067,19 @@ static void Emit_Reloc_Opnd_rules( FILE *file, ISA_SUBSET subset )
 	  "#include \"targ_isa_relocs.h\"\n"
 	  "#include \"topcode.h\"\n\n");
 
-  if(gen_static_code) {
-    fprintf(file,
+  fprintf(file,
 	    "\n"
 	    "/* Rename PARSER_GetParser to mangle it with subset name in static mode. */\n"
 	    "#define PARSER_GetParser %s_PARSER_GetParser\n"
 	    "\n",
 	    ISA_SUBSET_Name(subset));
 
-    fprintf(file,
+   fprintf(file,
 	    "\n"
 	    "/* Rename sccsid what string. */\n"
 	    "#define sccsid %s_sccsid\n"
 	    "\n",
 	    ISA_SUBSET_Name(subset));
-  }
 
   fprintf(file,"/* AIR_TNs used to build relocatable operands.*/\n");
   for(int i=0; i<ISA_OPERAND_types_count;i++) {
@@ -2231,22 +2272,22 @@ void ISA_Syntax_Begin( void )
   memset(parse_lit_classes,0,sizeof(char*)*ISA_SUBSET_count);
   
   for(int i=0; i<ISA_SUBSET_count; i++) {
-    pfilename[i] = Gen_Build_Filename(bname_pr,(char*)ISA_SUBSET_Name(i),gen_util_file_type_pfile);
+    char prefix[128];
+    
+    snprintf(prefix,sizeof(prefix),"%s_subset",(char*)ISA_SUBSET_Name(i));
+    pfilename[i] = Gen_Build_Filename(bname_pr,prefix,gen_util_file_type_pfile);
     pfile[i]     = Gen_Open_File_Handle(pfilename[i], "w");
   }
   parsers = ISA_SUBSET_count;
 
-  if(gen_static_code) {
     efilename = Gen_Build_Filename(bname_c,extname,gen_util_file_type_efile);
     efile     = Gen_Open_File_Handle(efilename, "w");
-    dcfilename = Gen_Build_Filename(bname_pr,"",gen_util_file_type_cfile);
+    dcfilename = Gen_Build_Filename(bname_pr,extname,gen_util_file_type_cfile);
     dcfile     = Gen_Open_File_Handle(dcfilename, "w");
-    dhfilename = Gen_Build_Filename(bname_pr,"",gen_util_file_type_hfile);
+    dhfilename = Gen_Build_Filename(bname_pr,extname,gen_util_file_type_hfile);
     dhfile     = Gen_Open_File_Handle(dhfilename, "w");
-
     Emit_C_Header(dcfile);     /* Emit ifdef _cplusplus directive */
-    Emit_Header (dhfile, bname_pr, parser_driver_interface,"");
-  }
+    Emit_Header (dhfile, bname_pr, parser_driver_interface,extname);
 
   /* For dynamic extensions, we want to emit C and not C++     */
   Emit_C_Header(cfile);     /* Emit ifdef _cplusplus directive */
@@ -2338,9 +2379,7 @@ void ISA_Syntax_End( void )
     Emit_Valtypes_Identifiers(i,pfile[i]);
   }
 
-  if(gen_static_code) {
-    Emit_Parser_Driver();
-  }
+  Emit_Parser_Driver();
 		       
   Emit_Footer (hfile);
   Emit_C_Footer(cfile);
@@ -2351,16 +2390,9 @@ void ISA_Syntax_End( void )
   for(int i=0; i<parsers;i++) {
     Gen_Close_File_Handle(pfile[i],pfilename[i]);
   }
-  if(efile) {
-    Gen_Close_File_Handle(efile,efilename);
-  }
-  if(dcfile) {
-    Gen_Close_File_Handle(dcfile,dcfilename);
-  }
-
-  if(dhfile) {
-    Gen_Close_File_Handle(dhfile,dhfilename);
-  }
+  Gen_Close_File_Handle(efile,efilename);
+  Gen_Close_File_Handle(dcfile,dcfilename);
+  Gen_Close_File_Handle(dhfile,dhfilename);
 
   /* Memory deallocation */
   delete [] top2group;
@@ -2372,17 +2404,9 @@ void ISA_Syntax_End( void )
     Gen_Free_Filename(pfilename[i]);
   }
 
-  if(efilename) {
-    Gen_Free_Filename(efilename);
-  }
-
-  if(dcfilename) {
-    Gen_Free_Filename(dcfilename);
-  }
-
-  if(dhfilename) {
-    Gen_Free_Filename(dhfilename);
-  }
+  Gen_Free_Filename(efilename);
+  Gen_Free_Filename(dcfilename);
+  Gen_Free_Filename(dhfilename);
 
   free(pfile);
   pfile = 0;

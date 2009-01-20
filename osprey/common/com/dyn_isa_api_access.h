@@ -281,6 +281,36 @@ class EXTENSION_ISA_Info {
   /* Handling hazards -------------------------------------------------------- */
   inline const mUINT8*                   get_ISA_HAZARDS_index_tab           (void) const;
   
+  /* Handling ISA parse ----------------------------------------------------- */
+  inline const PARSER_GetParserT*        get_ISA_PARSE_tab                   (void) const;
+  inline const mUINT32                   get_ISA_PARSE_tab_sz                (void) const;
+
+  /* Handling ISA pack ------------------------------------------------------ */
+  inline const ISA_PACK_OPND_INFO*       get_ISA_PACK_OPND_info_tab          (void) const;
+  inline const mUINT32                   get_ISA_PACK_OPND_info_tab_sz       (void) const;
+  inline const mUINT16*                  get_ISA_PACK_OPND_info_index_tab    (void) const;
+  inline const ISA_PACK_INFO*            get_ISA_PACK_info_tab               (void) const;
+  inline const mUINT8*                   get_ISA_PACK_inst_words_tab         (void) const;
+  inline const ISA_PACK_ADJ_INFO*        get_ISA_PACK_adj_info_tab           (void) const;
+  inline const mUINT32                   get_ISA_PACK_adj_info_tab_sz        (void) const;
+  inline const mUINT8*                   get_ISA_PACK_adj_info_index_tab     (void) const;
+
+  /* Handling ISA decode ---------------------------------------------------- */
+  inline const ISA_DECODE_DECODING**     get_ISA_DECODE_decoding_tab         (void) const;
+  inline const mUINT32                   get_ISA_DECODE_decoding_tab_sz      (void) const;
+
+  /* Handling ISA relocs ---------------------------------------------------- */
+  inline       ISA_RELOC_INFO*           get_ISA_RELOC_info_tab              (void) const;
+  inline const mUINT32                   get_ISA_RELOC_info_tab_sz           (void) const;
+  inline       ISA_RELOC_SUBSET_INFO*    get_ISA_RELOC_SUBSET_info_tab       (void) const;
+  inline const mUINT32                   get_ISA_RELOC_SUBSET_info_tab_sz    (void) const;
+  inline const ISA_SUBSET                get_ISA_RELOC_max_static_virtual_id_core_subset (void) const;
+               void                      set_ISA_RELOC_dynamic_reloc_offset  (mUINT32 offset) const;
+
+  /* Handling ISA binutils -------------------------------------------------- */
+  inline       ISA_BINUTILS_INFO*        get_ISA_BINUTILS_info_tab           (void) const;
+  inline       mUINT32                   get_ISA_BINUTILS_info_tab_sz        (void) const;
+
  private:
   ISA_EXT_Interface_t           * own_isa_ext;
   const ISA_EXT_Interface_t     * isa_ext;
@@ -293,6 +323,25 @@ class EXTENSION_ISA_Info {
   const ISA_LIT_CLASS_INFO      * overridden_ISA_LIT_CLASS_info_tab;
   EXTENSION_Regclass_Info       * regclass_access_tab;
   EXTENSION_SI_Info             * si_access_tab;
+  PARSER_GetParserT const       * overridden_ISA_PARSE_tab;
+  mUINT32                         overridden_ISA_PARSE_tab_sz;
+  const ISA_PACK_OPND_INFO      * overridden_ISA_PACK_OPND_info_tab;
+  mUINT32                         overridden_ISA_PACK_OPND_info_tab_sz;
+  const mUINT16                 * overridden_ISA_PACK_OPND_info_index_tab;
+  const ISA_PACK_INFO           * overridden_ISA_PACK_info_tab;
+  const mUINT8                  * overridden_ISA_PACK_inst_words_tab;
+  const ISA_PACK_ADJ_INFO       * overridden_ISA_PACK_adj_info_tab;
+  mUINT32                         overridden_ISA_PACK_adj_info_tab_sz;
+  const mUINT8                  * overridden_ISA_PACK_adj_info_index_tab;
+  const ISA_DECODE_DECODING    ** overridden_ISA_DECODE_decoding_tab;
+  mUINT32                         overridden_ISA_DECODE_decoding_tab_sz;
+  ISA_RELOC_INFO                * overridden_ISA_RELOC_info_tab;
+  mUINT32                         overridden_ISA_RELOC_info_tab_sz;
+  ISA_RELOC_SUBSET_INFO         * overridden_ISA_RELOC_SUBSET_info_tab;
+  mUINT32                         overridden_ISA_RELOC_SUBSET_info_tab_sz;
+  ISA_SUBSET                      overridden_ISA_RELOC_max_static_virtual_id_core_subset;
+  ISA_BINUTILS_INFO             * overridden_ISA_BINUTILS_info_tab;
+  mUINT32                         overridden_ISA_BINUTILS_info_tab_sz;
 };
 
 
@@ -743,5 +792,90 @@ EXTENSION_ISA_Info::get_ISA_HAZARDS_index_tab           (void) const {
   return  (isa_ext->get_ISA_HAZARDS_index_tab());
 }
 
+/* Handling ISA parse ----------------------------------------------------- */
+inline const PARSER_GetParserT*
+EXTENSION_ISA_Info::get_ISA_PARSE_tab                   (void) const {
+  return  (overridden_ISA_PARSE_tab);
+}
+inline const mUINT32
+EXTENSION_ISA_Info::get_ISA_PARSE_tab_sz                (void) const {
+  return  (overridden_ISA_PARSE_tab_sz);
+}
+
+/* Handling ISA pack ------------------------------------------------------ */
+inline const ISA_PACK_OPND_INFO*
+EXTENSION_ISA_Info::get_ISA_PACK_OPND_info_tab          (void) const {
+  return (overridden_ISA_PACK_OPND_info_tab);
+}
+inline const mUINT32
+EXTENSION_ISA_Info::get_ISA_PACK_OPND_info_tab_sz       (void) const {
+  return (overridden_ISA_PACK_OPND_info_tab_sz);
+}
+inline const mUINT16*
+EXTENSION_ISA_Info::get_ISA_PACK_OPND_info_index_tab    (void) const {
+  return (overridden_ISA_PACK_OPND_info_index_tab);
+}
+inline const ISA_PACK_INFO*
+EXTENSION_ISA_Info::get_ISA_PACK_info_tab               (void) const {
+  return (overridden_ISA_PACK_info_tab);
+}
+inline const mUINT8*
+EXTENSION_ISA_Info::get_ISA_PACK_inst_words_tab         (void) const {
+  return  (overridden_ISA_PACK_inst_words_tab);
+}
+inline const ISA_PACK_ADJ_INFO*
+EXTENSION_ISA_Info::get_ISA_PACK_adj_info_tab           (void) const {
+  return  (overridden_ISA_PACK_adj_info_tab);
+}
+inline const mUINT32
+EXTENSION_ISA_Info::get_ISA_PACK_adj_info_tab_sz        (void) const {
+  return  (overridden_ISA_PACK_adj_info_tab_sz);
+}
+inline const mUINT8*
+EXTENSION_ISA_Info::get_ISA_PACK_adj_info_index_tab     (void) const {
+  return  (overridden_ISA_PACK_adj_info_index_tab);
+}
+
+/* Handling ISA decode ---------------------------------------------------- */
+inline const ISA_DECODE_DECODING**
+EXTENSION_ISA_Info::get_ISA_DECODE_decoding_tab         (void) const {
+  return (overridden_ISA_DECODE_decoding_tab);
+}
+inline const mUINT32
+EXTENSION_ISA_Info::get_ISA_DECODE_decoding_tab_sz      (void) const {
+  return (overridden_ISA_DECODE_decoding_tab_sz);
+}
+
+/* Handling ISA relocs ---------------------------------------------------- */
+inline ISA_RELOC_INFO*
+EXTENSION_ISA_Info::get_ISA_RELOC_info_tab              (void) const {
+  return (overridden_ISA_RELOC_info_tab);
+}
+inline const mUINT32
+EXTENSION_ISA_Info::get_ISA_RELOC_info_tab_sz           (void) const {
+  return (overridden_ISA_RELOC_info_tab_sz);
+}
+inline ISA_RELOC_SUBSET_INFO*
+EXTENSION_ISA_Info::get_ISA_RELOC_SUBSET_info_tab       (void) const {
+  return (overridden_ISA_RELOC_SUBSET_info_tab);
+}
+inline const mUINT32
+EXTENSION_ISA_Info::get_ISA_RELOC_SUBSET_info_tab_sz    (void) const {
+  return (overridden_ISA_RELOC_SUBSET_info_tab_sz);
+}
+inline const ISA_SUBSET
+EXTENSION_ISA_Info::get_ISA_RELOC_max_static_virtual_id_core_subset (void) const {
+  return (overridden_ISA_RELOC_max_static_virtual_id_core_subset);
+}
+
+/* Handling ISA binutils -------------------------------------------------- */
+inline ISA_BINUTILS_INFO*
+EXTENSION_ISA_Info::get_ISA_BINUTILS_info_tab           (void) const {
+  return (overridden_ISA_BINUTILS_info_tab);
+}
+inline mUINT32
+EXTENSION_ISA_Info::get_ISA_BINUTILS_info_tab_sz        (void) const {
+  return (overridden_ISA_BINUTILS_info_tab_sz);
+}
 
 #endif /* DYN_ISA_API_ACCESS_H */
