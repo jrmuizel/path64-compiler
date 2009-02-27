@@ -105,12 +105,6 @@ void
 ErrMsg ( INT ecode, ... )
 {
 }
-FILE *Get_Trace_File(void) {return NULL;}
-BOOL
-Get_Trace ( INT func, INT arg )
-{
-return FALSE;
-}
 #endif				/* BINUTILS */
 
 
