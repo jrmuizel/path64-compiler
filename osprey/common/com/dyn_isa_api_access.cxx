@@ -63,6 +63,12 @@
  * |          | - Introduced ISA_RELOC dynamic loading in extensions.          |
  * |          | - Introduced ISA_BINUTILS dynamic loading in extensions.       |
  * +----------+----------------------------------------------------------------+
+ * | 20090126 | - ISA_LIT_CLASS_INFO has been extended with 'max_right_rotate' |
+ * |          |   and 'right_rotate_mask' to managed ARM immediate rotate.     |
+ * |          | - ISA_OPERAND_INFO has been extended with 'conflicts' to avoid |
+ * |          |   to allocate the same register between specified result and   |
+ * |          |   operand.                                                     |
+ * +----------+----------------------------------------------------------------+
  *
  */
 #include <stdlib.h>
@@ -75,17 +81,19 @@ BE_EXPORTED extern EXTENSION_ISA_Info *EXTENSION_Get_ISA_Info_From_TOP(TOP id);
 // ========================================================================
 // List of compatible API revisions for ISA part of the library description
 // ========================================================================
-#define    NB_SUPPORTED_ISA_REV 5
+#define    NB_SUPPORTED_ISA_REV 6
 #define    REV_20070126        (20070126)
 #define    REV_20070615        (20070615)
 #define    REV_20070924        (20070924)
 #define    REV_20080307        (20080307)
 #define    REV_20081010        (20081010)
+#define    REV_20090126        (20090126)
 static INT supported_ISA_rev_tab[NB_SUPPORTED_ISA_REV] = {
   REV_20070126,
   REV_20070615,
   REV_20070924,
   REV_20080307,
+  REV_20081010,
   MAGIC_NUMBER_EXT_ISA_API   /* current one */
 };
 
@@ -179,6 +187,27 @@ typedef struct {
   const char *format;
   mUINT8 comp[55];
 } ISA_PRINT_INFO_pre_20070924;
+
+// -------- Changed after rev 20090126 -----------------------------------------
+
+typedef struct {
+  struct { INT64 min; INT64 max; INT32 scaling_value; INT32 scaling_mask; } range[MAX_RANGE_STATIC];
+  mUINT8 num_ranges;
+  mBOOL is_signed;
+  mBOOL is_negative;
+  const char *name;
+} ISA_LIT_CLASS_INFO_pre_20090126;
+
+typedef struct {
+  mUINT8 opnds;
+  mUINT8 opnd[ISA_OPERAND_max_operands];
+  mUINT16 ouse[ISA_OPERAND_max_operands];
+  mUINT8 results;
+  mUINT8 result[ISA_OPERAND_max_results];
+  mUINT16 ruse[ISA_OPERAND_max_results];
+  mINT8 same_res[ISA_OPERAND_max_results];
+} ISA_OPERAND_INFO_pre_20090126;
+
 
 inline const char* ISA_PRINT_INFO_pre_20070924_Format(const ISA_PRINT_INFO_pre_20070924 *info) {
   return info->format;
@@ -518,6 +547,8 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
 	  new_tab[i].range[j].max           = old_tab[i].range[j].max;
 	  new_tab[i].range[j].scaling_value = old_tab[i].range[j].scaling_value;
 	  new_tab[i].range[j].scaling_mask  = old_tab[i].range[j].scaling_mask;
+	  new_tab[i].range[j].max_right_rotate = 0;
+	  new_tab[i].range[j].right_rotate_mask = 0;
 	}
 	new_tab[i].num_ranges   = old_tab[i].num_ranges;
 	new_tab[i].is_signed    = old_tab[i].is_signed;
@@ -526,8 +557,7 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
       }
       overridden_ISA_LIT_CLASS_info_tab = new_tab;
     }
-  }
-  else {
+  } else {
     overridden_ISA_OPERAND_operand_types_tab = input_isa_ext->get_ISA_OPERAND_operand_types_tab();
     overridden_ISA_EXEC_unit_prop_tab = input_isa_ext->get_ISA_EXEC_unit_prop_tab();
     overridden_ISA_EXEC_unit_slots_tab = input_isa_ext->get_ISA_EXEC_unit_slots_tab();
@@ -535,6 +565,37 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
     overridden_ISA_PRINT_info_tab = input_isa_ext->get_ISA_PRINT_info_tab();
     overridden_ISA_LIT_CLASS_info_tab = input_isa_ext->get_ISA_LIT_CLASS_info_tab();
   }
+
+  // -------- Changed after rev 20090126 -----------------------------------------
+  if (!(input_isa_ext->magic < REV_20080307) /* This case is already treated above */) {
+    if (input_isa_ext->magic < REV_20090126) {
+      // Convert ISA_LIT_CLASS_INFO
+      int j;
+      int nb_entry = isa_ext->get_ISA_LIT_CLASS_info_tab_sz();
+      ISA_LIT_CLASS_INFO_pre_20090126 *old_tab;
+      ISA_LIT_CLASS_INFO              *new_tab;
+      old_tab = (ISA_LIT_CLASS_INFO_pre_20090126*)isa_ext->get_ISA_LIT_CLASS_info_tab();
+      new_tab = new ISA_LIT_CLASS_INFO[nb_entry];
+      for (i=0; i<nb_entry; i++) {
+	for (j=0; j<=old_tab[i].num_ranges; j++) {
+	  new_tab[i].range[j].min           = old_tab[i].range[j].min;
+	  new_tab[i].range[j].max           = old_tab[i].range[j].max;
+	  new_tab[i].range[j].scaling_value = old_tab[i].range[j].scaling_value;
+	  new_tab[i].range[j].scaling_mask  = old_tab[i].range[j].scaling_mask;
+	  new_tab[i].range[j].max_right_rotate = 0;
+	  new_tab[i].range[j].right_rotate_mask = 0;
+	}
+	new_tab[i].num_ranges   = old_tab[i].num_ranges;
+	new_tab[i].is_signed    = old_tab[i].is_signed;
+	new_tab[i].is_negative  = old_tab[i].is_negative;
+	new_tab[i].name         = old_tab[i].name; // No need to really duplicate string
+      }
+      overridden_ISA_LIT_CLASS_info_tab = new_tab;
+    } else {
+      overridden_ISA_LIT_CLASS_info_tab = input_isa_ext->get_ISA_LIT_CLASS_info_tab();
+    }
+  }
+
 
   if (input_isa_ext->magic < REV_20081010) {
      static ISA_RELOC_INFO ISA_RELOC_dynamic_info [] = {
@@ -612,6 +673,34 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
     overridden_ISA_BINUTILS_info_tab_sz        = isa_ext->get_ISA_BINUTILS_info_tab_sz();
   }
   
+  if (input_isa_ext->magic < REV_20090126) {
+    // Convert ISA_OPERAND_INFO
+    int j;
+    int nb_entry = isa_ext->get_ISA_OPERAND_info_tab_sz();
+    ISA_OPERAND_INFO_pre_20090126 *old_tab;
+    ISA_OPERAND_INFO              *new_tab;
+    old_tab = (ISA_OPERAND_INFO_pre_20090126*)isa_ext->get_ISA_OPERAND_info_tab();
+    new_tab = new ISA_OPERAND_INFO[nb_entry];
+    for (i=0; i<nb_entry; i++) {
+      new_tab[i].opnds = old_tab[i].opnds;
+      for (j=0; j<ISA_OPERAND_max_operands; j++) {
+	new_tab[i].opnd[j]           = old_tab[i].opnd[j];
+	new_tab[i].ouse[j]           = old_tab[i].ouse[j];
+      }
+      new_tab[i].results             = old_tab[i].results;
+      for (j=0; j<ISA_OPERAND_max_results; j++) {
+	new_tab[i].result[j]           = old_tab[i].result[j];
+	new_tab[i].ruse[j]             = old_tab[i].ruse[j];
+	new_tab[i].same_res[j]         = old_tab[i].same_res[j];
+	new_tab[i].conflicts[j]        = 0;
+      }
+    }
+    overridden_ISA_OPERAND_info_tab = new_tab;
+  }
+  else {
+    overridden_ISA_OPERAND_info_tab = input_isa_ext->get_ISA_OPERAND_info_tab();
+  }
+
   // Create REGISTER CLASS Info wrappers (register class to TOP)
   INT nb_rc;
   nb_rc = get_ISA_REGISTER_CLASS_tab_sz();
@@ -648,7 +737,10 @@ EXTENSION_ISA_Info::~EXTENSION_ISA_Info() {
       delete[] (ISA_EXEC_UNIT_SLOTS*)overridden_ISA_EXEC_unit_slots_tab;
       delete[] (mUINT8*)overridden_ISA_BUNDLE_slot_count_tab;
       delete[] (ISA_PRINT_INFO*)overridden_ISA_PRINT_info_tab;
+    }
+    if(initial_rev < REV_20090126) {
       delete[] (ISA_LIT_CLASS_INFO*)overridden_ISA_LIT_CLASS_info_tab;
+      delete[] (ISA_OPERAND_INFO*)overridden_ISA_OPERAND_info_tab;
     }
   }
   delete[] regclass_access_tab;
@@ -672,3 +764,4 @@ EXTENSION_ISA_Info::set_ISA_RELOC_dynamic_reloc_offset  (mUINT32 offset) const {
      isa_ext->set_ISA_RELOC_dynamic_reloc_offset(offset);
   }
 }
+

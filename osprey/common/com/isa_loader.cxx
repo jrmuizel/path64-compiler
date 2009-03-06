@@ -1083,7 +1083,7 @@ static void Initialize_ISA_Operands(Lai_Loader_Info_t &ext_info, MEM_POOL       
 	  // Update references to operand uses
 	  for (k=0; k<tgt_info->opnds; k++) {
 	    // Remap mUINT16 ouse info for each operand.
-	    if (!remapper.remapMask(tgt_info->ouse[k], tgt_info->ouse[k])) 
+	    if (!remapper.remapMask(tgt_info->ouse[k], tgt_info->ouse[k]))
 	      RaiseErrorIncompatibleLibrary(ext_info.handler_tab[ext].dllname, 
 					    "Incompatible target description,"
 					    "OPERAND_USE attribute name in Extension not found in Core.");

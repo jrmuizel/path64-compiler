@@ -114,6 +114,10 @@ ifeq ($(BUILD_TARGET),ST200)
 LCINCS += -I$(TARGINFO_DIR)/st200/config
 endif
 
+ifeq ($(BUILD_TARGET),ARM)
+LCINCS += -I$(TARGINFO_DIR)/arm/config
+endif
+
 LCXXINCS = $(LCINCS)
 
 ifeq (MINGW,$(HOST_OS))

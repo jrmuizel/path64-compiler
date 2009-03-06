@@ -149,7 +149,13 @@ AIR_disasm_run( AIR_Disasm *inst )
 int
 AIR_disasm_init( void )
 {
-    ABI_PROPERTIES_ABI_Value = ABI_PROPERTIES_ABI_embedded;
+  /* Set default ABI to:
+     stxp70: ABI_PROPERTIES_ABI_embedded
+     st200 : ABI_PROPERTIES_ABI_embedded
+     arm   : ABI_PROPERTIES_ABI_arm_PIC
+  */
+    ABI_PROPERTIES_ABI_Value = (ABI_PROPERTIES_ABI)0; 
+
     ABI_PROPERTIES_Initialize();
     AIR_init();
     AIR_target_init();

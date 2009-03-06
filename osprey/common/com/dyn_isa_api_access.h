@@ -321,6 +321,7 @@ class EXTENSION_ISA_Info {
   const mUINT8                  * overridden_ISA_BUNDLE_slot_count_tab;
   const ISA_PRINT_INFO          * overridden_ISA_PRINT_info_tab;
   const ISA_LIT_CLASS_INFO      * overridden_ISA_LIT_CLASS_info_tab;
+  const ISA_OPERAND_INFO        * overridden_ISA_OPERAND_info_tab;
   EXTENSION_Regclass_Info       * regclass_access_tab;
   EXTENSION_SI_Info             * si_access_tab;
   PARSER_GetParserT const       * overridden_ISA_PARSE_tab;
@@ -612,7 +613,7 @@ EXTENSION_ISA_Info::get_ISA_OPERAND_operand_types_tab_sz(void) const {
 }
 const ISA_OPERAND_INFO*
 EXTENSION_ISA_Info::get_ISA_OPERAND_info_tab            (void) const {
-  return  (isa_ext->get_ISA_OPERAND_info_tab());
+  return  (overridden_ISA_OPERAND_info_tab);
 }
 const mUINT32
 EXTENSION_ISA_Info::get_ISA_OPERAND_info_tab_sz         (void) const {

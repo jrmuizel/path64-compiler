@@ -1,0 +1,510 @@
+#*******************************************************************************
+#
+# File:    makefile
+# Purpose: makefile for: 
+#				- test SX builtin on OPEN64 stxp70cc	  	 
+#
+#*******************************************************************************
+# v1.0 Creation by T.TORRET (2005/Oct/17)
+#----------------------------------------------------------------------
+#*******************************************************************************
+
+ifndef MYTEST
+export MYTEST=SX
+endif
+
+#---------------------------------------------------------------  
+listbuiltin_ax= ax_clr	 ax_m2xl ax_m2xh  \
+	ax_addhl 	ax_subhl	ax_addhlr 	ax_subhlr		\
+	ax_shl_r 	ax_shr_r 	ax_shlr_r		ax_shrr_r	  ax_shru_r	\
+	ax_shli_r ax_shri_r ax_shliu_r	ax_shriu_r 	\
+	ax_shli_i6 ax_shri_i6 ax_shliu_i6	ax_shriu_i6	\
+	ax_m2rl	ax_m2rh		 \
+	ax_abs 	ax_rndc 	ax_rnd16  ax_rndc16	ax_clp32	ax_neg \
+	ax_shl_i6 	ax_shr_i6 	ax_shlr_i6	ax_shrr_i6	ax_shru_i6  \
+	ax_shlm2rl_r	ax_shlm2rh_r  ax_shrm2rl_r  ax_shrm2rh_r	\
+	ax_shlm2rl_i6 ax_shlm2rh_i6 ax_shrm2rl_i6 ax_shrm2rh_i6	\
+	ax_shlf 	ax_shrf 	ax_m2xhl						\
+	ax_add 	ax_sub 	ax_addr 	ax_subr 	\
+	ax_addf  	ax_subf	ax_addfr  ax_subfr 	\
+	ax_addi	ax_subi	ax_addiu  ax_subiu 	\
+	ax_m2xf	ax_m2xi	ax_m2xiu		  		    	\
+	ax_mpssl	ax_mnssl	  										\
+	ax_mpfh 	ax_mnfh 	ax_mpfhr 	ax_mnfhr	\
+	ax_mpss 	ax_mnss 	ax_mpf 	ax_mnf 	\
+	ax_mpfr 	ax_mnfr											\
+	ax_maf  	ax_mafr 	ax_mafh  	ax_mafhr  \
+	ax_mass  	ax_massl								 			\
+	ax_msf	ax_msfr	ax_msfh	ax_msfhr \
+	ax_msss	ax_msssl
+
+listbuiltin_sx=     \
+    sx_neghp		sx_neguhp 	sx_negbp 		sx_negubp	  \
+    sx_maxbp_r	sx_minbp_r  	sx_maxubp_r  	sx_minubp_r \
+    sx_maxbp_i8	sx_minbp_i8  	sx_maxubp_i8 	sx_minubp_i8 \
+    sx_maxhp_r	sx_minhp_r  	sx_maxuhp_r  	sx_minuhp_r \
+    sx_maxhp_i8	sx_minhp_i8  	sx_maxuhp_i8 	sx_minuhp_i8 \
+    sx_addbp_i8	sx_addubp_i8 	sx_subbp_i8 	sx_sububp_i8 \
+    sx_addbp_r	sx_addubp_r 	sx_subbp_r	sx_sububp_r \
+    sx_addhp_r 	sx_adduhp_r  	sx_subhp_r	sx_subuhp_r \
+    sx_addhp_i8 	sx_adduhp_i8 	sx_subhp_i8  	sx_subuhp_i8 \
+    sx_absbp	 	sx_abshp 		sx_absubp 	sx_absuhp	  \
+    sx_make	 	sx_more										\
+    sx_shlmu_r 	sx_shlmu_i5 	sx_shrmu_r 	sx_shrmu_i5 \
+    sx_neg 		sx_negu 		sx_not							\
+    sx_exth 		sx_extuh 		sx_extb 		sx_extub 	\
+    sx_prior		sx_lzc 		sx_clamph							\
+    sx_absu 		sx_abs 		  							\
+    sx_rotl_r 	sx_rotl_i5 	sx_shrnu 		sx_shlnu 	\
+    sx_shlu_r 	sx_shlu_i5	sx_shru_r 	sx_shru_i5	\
+    sx_shl_r 		sx_shl_i5		sx_shr_r 		sx_shr_i5 	\
+    sx_xor_r 		sx_xor_i8 	sx_or_r 		sx_or_i8  	\
+    sx_and_r 		sx_and_i8		sx_andn  		sx_norn	\
+    sx_max_i8  	sx_maxu_i8	sx_min_i8  	sx_minu_i8	\
+    sx_max_r  	sx_maxu_r  	sx_min_r 		sx_minu_r	\
+    sx_bclr_i5 	sx_bset_i5  	sx_bnot_i5			\
+    sx_bclr_r 	sx_bset_r  	sx_bnot_r			\
+    sx_add_r  	sx_sub_r   	sx_add_i8   	sx_sub_i8  		\
+    sx_addu_r 	sx_subu_r  	sx_addu_i8  	sx_subu_i8 	   
+	# sx_moveh2h   sx_moveh2l  sx_movel2h  sx_movel2l 
+	# sx_labs
+
+#---------------------------------------------------------------  
+# PB Instruction not implemented in Microarchitecture
+#	sx_shlhp_r  sx_shrhp_r  sx_shluhp_r	sx_shruhp_r  \
+#   sx_shlbp_r  sx_shrbp_r  sx_shlubp_r  sx_shrubp_r \
+#	sx_shlhp_i4  sx_shrhp_i4  sx_shluhp_i4	sx_shruhp_i4  \
+#	sx_shlbp_i3  sx_shrbp_i3  sx_shlubp_i3  sx_shrubp_i3  \
+#---------------------------------------------------------------  
+	  
+listbuiltin_x3= x3_mpssll  x3_mpsslh  x3_mpsshl  x3_mpsshh	  \
+    x3_mpuull  x3_mpuulh  x3_mpuuhl  x3_mpuuhh	  \
+	x3_mpusll  x3_mpuslh  x3_mpushl  x3_mpushh	  \
+	x3_mpsull  x3_mpsulh  x3_mpsuhl  x3_mpsuhh		   
+
+   
+#---------------------------------------------------------------
+
+.PHONY: none list
+
+ifeq ($(MYTEST),SX)
+listbuiltin=$(listbuiltin_sx)
+endif
+
+ifeq ($(MYTEST),X3)
+listbuiltin=$(listbuiltin_x3)
+endif
+
+ifeq ($(MYTEST),AX)
+listbuiltin=$(listbuiltin_ax)
+endif
+
+none:
+	@echo "-----------------------------------------------"
+	@echo "       HPC /STS / Compilation  Team            "
+	@echo "    STxP70 SX TOOLSET Built-ins model test     "
+	@echo "        (c) STMicroelectronics 2005-2006	  	  "
+	@echo "-----------------------------------------------"
+	@echo ""
+	@echo "This system aims at validate the Built-ins model on SX TOOLSET (OPEN64 /stxp70cc)"
+	@echo ""
+	@echo ""
+	@echo "BE CAREFUL all builtins tested are list in an internal makefile variable"
+	@echo ""
+	@echo "This system aims at validate the Built-ins model on SX TOOLSET "
+	@echo ""
+	@echo "Available high level targets for validation are:"
+	@echo ""
+	@echo "   reference => generates on stxp70cc toolchain all original builtin: compile, run "
+	@echo "   cbuilt    => generates on gcc all C builtin: compile, run "
+	@echo "       ------------------"
+	@echo "         To test for CORE:   make reference/cbuilt MYTEST=SX  (by default)"
+	@echo "         To test for X3:   	make reference/cbuilt MYTEST=X3  "
+	@echo "         To test for AX:     make reference/cbuilt MYTEST=AX  "
+	@echo "       ------------------"
+	@echo "   						  "
+	@echo "   check     => verify builtin result and report"
+	@echo "   						  "
+	@echo "--------------------------------------------------------------------"
+	@echo "Other available high level targets are:"
+	@echo "   						  "
+	@echo "   list    => echo the builtin list. "
+	@echo "   						  "
+	@echo "   data    => generates data files for input of built-ins. "
+	@echo "   gensrc  => generates builtin test files. "
+	@echo "   dodir   => generates directories where we test built-ins. "
+	@echo "   						  "
+	@echo "   clean     (low clean)     => removes all intermediate files but validation results."
+	@echo "   clobber   (middle clean)  => removes all generated files including validation results."
+	@echo "   erase     (high clean)    => removes all files  including data files"
+	@echo "   						  "
+	@echo "   checklist    => check that builtin list in model is equal to list in Compiler. "
+	@echo "   						  "
+	@echo "   help    => display this screen."
+	@echo "--------------------------------------------------------------------"
+	@echo builtin list of -$(MYTEST)- is :
+	@echo $(listbuiltin)
+	@echo "--------------------------------------------------------------------"
+
+help : none
+
+list:
+	@echo builtin list of -$(MYTEST)- is :
+	@echo      $(listbuiltin)
+
+
+ifndef SILICON_TARGET
+SILICON_TARGET=sx14
+endif
+
+export UNAME= $(shell uname -a)
+
+ifneq (,$(findstring CYGWIN,$(UNAME)))
+export UNIX=0
+export CYGWIN=1
+ifndef VOB_ROOT 
+VOB_ROOT=c:/ws/vob
+endif
+else
+export UNIX=1
+export CYGWIN=0
+ifndef VOB_ROOT 
+#VOB_ROOT=/vob
+VOB_ROOT=/home/torrett/
+endif
+endif
+
+ifndef ROOT_TEST
+ROOT_TEST= $(shell pwd)
+endif
+
+
+ifndef BUILTIN_AUTOMATON
+#export BUILTIN_AUTOMATON=$(VOB_ROOT)/DMD-Compil/SXCompiler/builtin_model
+export BUILTIN_AUTOMATON=$(ROOT_TEST)/..
+endif
+
+#-------------------------------------------------------------------------------
+# OS specific definitions
+#
+# awk executable definition: gawk for Windows distructions, awk for Solaris one.
+#
+
+export AWK= awk
+export RM= rm
+
+#-------------------------------------------------------------------------------
+# Path construction for correct behavior
+#
+#
+# Any CYGWIN distribution
+#
+ifeq ($(CYGWIN),1)
+export COMMON_DIR_0= $(shell cygpath -u '${BUILTIN_AUTOMATON}')
+export COMMON_DIR= $(subst \,/,$(shell cygpath -w '${BUILTIN_AUTOMATON}'))
+export MAKE_DIR_0= $(COMMON_DIR_0)/makedir
+export MAKE_DIR=$(MAKE_DIR_0)
+export PERL_ADD_ON_DIR=$(MAKE_DIR)/perl_add_on
+export SRC_DIR_0:= $(COMMON_DIR_0)/src
+export SRC_DIR:= $(subst \,/,$(shell cygpath -w '$(SRC_DIR_0)'))
+
+export CUR_DIR_0:= $(shell pwd)
+export CUR_DIR:= $(subst \,/,$(shell cygpath -w '$(CUR_DIR_0)'))
+export SRC_LOCAL_DIR_0:= $(ROOT_TEST)/src
+export SRC_LOCAL_DIR:= $(subst \,/,$(shell cygpath -w '$(SRC_LOCAL_DIR_0)'))
+
+
+
+
+else
+#
+# Solaris native distribution
+#
+export COMMON_DIR_0= ${BUILTIN_AUTOMATON}
+export COMMON_DIR=$(COMMON_DIR_0)
+export MAKE_DIR_0= $(COMMON_DIR_0)/makedir
+export MAKE_DIR=$(MAKE_DIR_0)
+export PERL_ADD_ON_DIR=$(MAKE_DIR)/perl_add_on
+export SRC_DIR_0:= $(COMMON_DIR_0)/src
+export SRC_DIR:= $(SRC_DIR_0)
+
+export CUR_DIR_0:= $(shell pwd)
+export CUR_DIR:=$(CUR_DIR_0)
+export SRC_LOCAL_DIR_0:=$(ROOT_TEST)/src
+export SRC_LOCAL_DIR:=$(SRC_LOCAL_DIR_0)
+endif
+
+
+#-------------------------------------------------------------------------------
+ 
+export VPATH= $(SRC_LOCAL_DIR_0) $(SRC_DIR_0) 
+
+#-------------------------------------------------------------------------------
+
+DIR_REF=./ref
+OBJ_DIR_REF=$(DIR_REF)/obj
+EXE_DIR_REF=$(DIR_REF)/bin
+IO_DIR_REF=$(DIR_REF)/IO
+					
+DIR_TEST=./test
+EXE_DIR=$(DIR_TEST)/bin
+IO_DIR=$(DIR_TEST)/IO
+
+ifeq ($(CYGWIN),1)
+override DIR_REF:= $(subst \,/,$(shell cygpath -w '$(DIR_REF)'))
+override OBJ_DIR_REF:= $(subst \,/,$(shell cygpath -w '$(OBJ_DIR_REF)'))
+override EXE_DIR_REF:= $(subst \,/,$(shell cygpath -w '$(EXE_DIR_REF)'))
+override IO_DIR_REF:=  $(subst \,/,$(shell cygpath -w '$(IO_DIR_REF)'))
+endif
+
+
+
+ifndef NBDATA
+export NBDATA=50
+endif 
+
+ifndef EXTENSION
+export EXTENSION=CORE_ONLY
+endif
+
+ifndef SIMU_TARGET
+export SIMU_TARGET=valid_iss
+endif
+
+ifndef FPGA_REF 
+export RUN_TARGET_REF=_$(SIMU_TARGET)
+else
+export RUN_TARGET_REF=_$(SIMU_TARGET)_FPGA
+endif
+
+
+ifndef RUN
+export RUN=sxrun
+endif
+
+VALID_CC=stxp70cc 
+OPT= -O0
+VALID_COMMON_CFLAGS= -Mkeepasm -keep_dir $(OBJ_DIR_REF) -Mconfig=context:1
+
+ifeq ($(MYTEST),AX)
+VALID_CFLAGS= $(VALID_COMMON_CFLAGS) -Mextension=ax:0  -D__AX_BUILTIN_TEST
+VALID_LDFLAGS= 
+VALID_RUNFLAGS= -ext=ax
+CFLAGS=  -D__AX_BUILTIN_TEST
+endif
+
+ifeq ($(MYTEST),SX)
+VALID_CFLAGS=  $(VALID_COMMON_CFLAGS) -D__SX_BUILTIN_TEST
+VALID_LDFLAGS= 
+VALID_RUNFLAGS=
+CFLAGS=  -D__SX_BUILTIN_TEST
+endif
+
+ifeq ($(MYTEST),X3)
+VALID_CFLAGS=  $(VALID_COMMON_CFLAGS) -Mconfig=mult:yes -D__X3_BUILTIN_TEST
+VALID_LDFLAGS= -Mconfig=mult:yes
+VALID_RUNFLAGS=  
+CFLAGS=  -D__X3_BUILTIN_TEST 
+endif
+
+ 
+
+#---------------------------------------------------------------
+.PRECIOUS:   .result .sum .stdout .s 
+#---------------------------------------------------------------
+
+
+#-------------------------------------------------------------------------------
+# Application arguments
+#
+
+# do "make STCC-run	NOBUILD=on"   when only execution is wanted
+export NOBUILD=off
+
+export EXT_RESULT= stdout
+export EXT_RESULT_GCC= stdout
+
+export EXT_LOG=log
+export EXT_CONSOLE=console
+ifneq ($(APPLI_ARGS),)
+ifeq (,$(findstring --,$(APPLI_ARGS)))
+APPLI_ARGS := -- $(APPLI_ARGS)
+endif
+endif
+export RUN_CMD = 
+
+#---------------------------------------------------------------
+
+$(DIR_REF):
+	if (test -d $(DIR_REF)) then echo ; else mkdir $(DIR_REF) ; fi
+	chmod -R 775 $(DIR_REF)
+
+$(OBJ_DIR_REF):	$(DIR_REF)
+	if (test -d $(OBJ_DIR_REF)) then echo ; else mkdir $(OBJ_DIR_REF) ; fi
+	chmod -R 775 $(OBJ_DIR_REF)
+
+$(EXE_DIR_REF):	$(DIR_REF)
+	if (test -d $(EXE_DIR_REF)) then echo ; else mkdir $(EXE_DIR_REF) ; fi
+	chmod -R 775 $(EXE_DIR_REF)
+
+$(IO_DIR_REF): $(DIR_REF)
+	if (test -d $(IO_DIR_REF)) then echo ; else mkdir $(IO_DIR_REF) ; fi
+	chmod -R 775 $(IO_DIR_REF)
+#---------------------------------------------------------------
+
+$(DIR_TEST):
+	if (test -d $(DIR_TEST)) then echo ; else mkdir $(DIR_TEST) ; fi
+	chmod -R 775 $(DIR_TEST)
+
+$(OBJ_DIR):	$(DIR_TEST)
+	if (test -d $(OBJ_DIR)) then echo ; else mkdir $(OBJ_DIR) ; fi
+	chmod -R 775 $(OBJ_DIR)
+
+$(EXE_DIR):	$(DIR_TEST)
+	if (test -d $(EXE_DIR)) then echo ; else mkdir $(EXE_DIR) ; fi
+	chmod -R 775 $(EXE_DIR)
+	touch $@
+
+$(IO_DIR): $(DIR_TEST)
+	if (test -d $(IO_DIR)) then echo ; else mkdir $(IO_DIR) ; fi
+	chmod -R 775 $(IO_DIR)
+	touch $@
+
+#---------------------------------------------------------------
+
+test_c=$(addprefix main, $(addsuffix .c, $(listbuiltin) ) )
+test_s=$(test_c:.c=.s)
+
+
+ifeq ($(MYTEST),AX)
+list_model  = builtins_model_ax.c
+list_model_ogcc= builtins_model_ax.ogcc
+test_model_ogcc= ./test/bin/builtins_model_ax.ogcc
+endif
+
+ifeq ($(MYTEST),X3)
+list_model  = builtins_model_x3.c
+list_model_ogcc= builtins_model_x3.ogcc
+test_model_ogcc= ./test/bin/builtins_model_x3.ogcc
+endif
+
+ifeq ($(MYTEST),SX)
+list_model  = builtins_model_sx.c
+list_model_ogcc= builtins_model_sx.ogcc
+test_model_ogcc= ./test/bin/builtins_model_sx.ogcc
+endif
+
+list_exe=$(test_c:.c=.u)
+list_out=$(test_c:.c=.$(EXT_RESULT))
+list_outgcc=$(test_c:.c=.$(EXT_RESULT_GCC) )
+
+test_exe=$(addprefix $(EXE_DIR_REF), $(addprefix /, $(list_exe) )  )
+test_out=$(addprefix $(IO_DIR_REF), $(addprefix /, $(list_out) )  )
+test_outgcc= $(addprefix $(IO_DIR), $(addprefix /, $(list_outgcc) )  )
+
+test_result=$(test_c:.c=.result)
+
+
+# Creating Data in
+#-------------------------------
+.PHONY: data	gensrc	 reference	cbuilt  dodir	check
+
+checklist: 
+	$(VALID_CC) -show  | grep DEFSTDINC    > temp.txt
+	perl $(MAKE_DIR)/verify_builtin_list.pl	 -CCPathFile=temp.txt > checklist.lst
+	- rm temp.txt
+
+data: dodir 
+	perl $(MAKE_DIR)/generate_builtin_datavector.pl -DataNb=$(NBDATA)
+
+gensrc:  dodir
+	perl $(MAKE_DIR)/generate_builtin_src_test.pl
+
+reference: dodir $(test_exe) $(test_out)
+
+cbuilt:  dodir $(test_outgcc) 
+
+dodir: $(IO_DIR) $(EXE_DIR) $(IO_DIR_REF) $(OBJ_DIR_REF) $(EXE_DIR_REF)
+
+
+check: 	check.sum
+
+
+
+#-----------------------------REFERENCE RULES-------------------
+
+$(OBJ_DIR_REF)/get_SR.o: get_SR.s
+	$(VALID_CC)  -I$(SRC_DIR) $(VALID_CFLAGS)  -o $@ -c $(SRC_DIR)/get_SR.s
+
+$(OBJ_DIR_REF)/%.o: %.c
+	@echo doing REFERENCE object  
+	$(VALID_CC)  -I$(SRC_LOCAL_DIR) -I$(SRC_DIR) $(OPT) $(VALID_CFLAGS)  -o $@ -c $(SRC_LOCAL_DIR)/$*.c
+
+$(EXE_DIR_REF)/%.u: $(OBJ_DIR_REF)/%.o $(OBJ_DIR_REF)/get_SR.o
+	@echo doing REFERENCE executable  
+	$(VALID_CC) $(OPT) $(VALID_LDFLAGS) -map $(EXE_DIR_REF)/$(*F).map $<  $(OBJ_DIR_REF)/get_SR.o -o $@	 
+
+$(IO_DIR_REF)/%.$(EXT_RESULT): $(EXE_DIR_REF)/%.u $(IO_DIR_REF)
+	@echo doing REFERENCE Execution
+	- $(RUN) -target=$(SILICON_TARGET)$(RUN_TARGET_REF) $(VALID_RUNFLAGS) -on=no_output_prefix  -outputfile=$@ \
+       $< $(APPLI_ARGS) > $(IO_DIR_REF)/$(*F).$(EXT_CONSOLE)
+	@echo REFERENCE Execution result is available in $(IO_DIR_REF)/$(*F).$(EXT_RESULT)
+	sleep 5
+	- rm $(*F).result 
+
+#-----------------------------MODEL RULES-------------------
+#we must put by hand 2 files of toolchain (builtin_XXX_aux.h) in SRC_LOCAL_DIR_0
+$(EXE_DIR)/%.ogcc: %.c	
+	@echo doing MODEL object
+	gcc -I$(SRC_DIR_0) -I$(SRC_LOCAL_DIR_0) $(CFLAGS)  $< -c -o $@ 
+
+
+$(EXE_DIR)/%.ugcc: $(EXE_DIR)/%.ogcc   $(test_model_ogcc)	 
+	@echo doing MODEL executable  
+	gcc $< $(test_model_ogcc) -o $@ 
+
+
+$(IO_DIR)/%.$(EXT_RESULT_GCC):  $(EXE_DIR)/%.ugcc  $(IO_DIR) 
+	@echo doing MODEL Execution
+	- $< > $@
+	@echo MODEL Execution result is available  in $(IO_DIR)/$(*F).$(EXT_RESULT_GCC)
+	- rm $(*F).result 
+
+#----------------------------------------------------
+#%.result: %.$(EXT_RESULT_GCC) %.$(EXT_RESULT)
+%.result:
+	perl -I$(PERL_ADD_ON_DIR) $(MAKE_DIR)/check_builtin.pl -ref=$(IO_DIR_REF)/$*.$(EXT_RESULT) -tocheck=$(IO_DIR)/$*.$(EXT_RESULT_GCC)  -out=$@ >$*_check.console
+	
+
+
+
+#----------------------------------------------------
+
+check.sum: $(test_result) 
+	-rm $@
+	echo  'ALL BUILTIN CHECK RESULT' > $@
+	echo '-------------------------' >> $@
+	for i in $(test_result); do \
+		cat $$i | egrep -e 'Name|Status' >> $@  ; \
+		echo ' '  >> $@  ; \
+		echo '-------------------------'  >> $@  ; \
+	done
+	cat  $@
+
+#----------------------------------------------------
+clean:
+	- $(RM) -rf $(EXE_DIR)
+	- $(RM) -rf $(OBJ_DIR_REF)
+	- $(RM) -rf $(EXE_DIR_REF)
+
+
+clobber: clean
+	- $(RM) -rf $(IO_DIR)
+	- $(RM) -rf $(IO_DIR_REF)
+	- $(RM) -f *.result *.console
+	- $(RM) -f check.sum
+	- $(RM) -f $(SRC_LOCAL_DIR)/*.c
+
+
+erase: clobber
+	- $(RM) -rf data_in 
