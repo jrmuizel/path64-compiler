@@ -445,7 +445,7 @@ static void Initialize_ISA_Reloc(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_memp
 	
         ext_optypes_tab[ext_optypes_id].default_reloc += ext_num_reloc_info;
 	for (i=0;
-	     ISA_OPERAND_VALTYP_Is_Valid_Reloc(&ext_optypes_tab[ext_optypes_id],i) && i<ISA_OPERAND_VALTYP_Relocs(&ext_optypes_tab[ext_optypes_id]);
+	     i<ISA_OPERAND_VALTYP_Relocs(&ext_optypes_tab[ext_optypes_id]) && ISA_OPERAND_VALTYP_Is_Valid_Reloc(&ext_optypes_tab[ext_optypes_id],i);
 	     i++) {
 	  ext_optypes_tab[ext_optypes_id].reloc[i] += ext_num_reloc_info;
 	}
@@ -933,6 +933,10 @@ static void Initialize_ISA_Operands(Lai_Loader_Info_t &ext_info, MEM_POOL       
     mUINT16            *opinfo_idx_tab;
 
     optypes_tab = TYPE_MEM_POOL_ALLOC_N(ISA_OPERAND_VALTYP, Malloc_Mem_Pool, nb_optypes);
+    if (nb_optypes > ISA_OPERAND_TYPES_STATIC_COUNT) {
+      memset(&optypes_tab[ISA_OPERAND_TYPES_STATIC_COUNT],0,
+	     (nb_optypes-ISA_OPERAND_TYPES_STATIC_COUNT) * sizeof(ISA_OPERAND_VALTYP));
+    }
     memcpy(optypes_tab, ISA_OPERAND_operand_types,
 	   ISA_OPERAND_TYPES_STATIC_COUNT * sizeof(ISA_OPERAND_VALTYP));
 

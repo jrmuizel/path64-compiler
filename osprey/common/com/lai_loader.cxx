@@ -52,13 +52,7 @@
 #include "targ_sim.h"
 #include "isa_loader.h"
 #include "lai_loader_api.h"
-extern "C" {
-#include "W_dlfcn.h"		    /* for sgidladd(), dlerror() */
-};
 #include "register_preg.h"
-
-/* Include local helpers. */
-#include "attribute_map_template.cxx"
 
 // ==========================================
 // MType <-> Register Class Conversion tables

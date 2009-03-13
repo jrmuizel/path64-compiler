@@ -64,13 +64,6 @@ BE_EXPORTED extern int EXTENSION_PREG_to_REGISTER_NUM(PREG_NUM preg);
  */
 BE_EXPORTED extern INT EXTENSION_get_Min_Offset(ISA_REGISTER_CLASS rc);
 
-/*
- * Return TRUE if the parameter intrinsic Id belongs to an extension
- */
-inline BOOL EXTENSION_Is_Extension_INTRINSIC(INTRINSIC id) {
-  return (id > INTRINSIC_STATIC_COUNT && id <= INTRINSIC_COUNT);
-}
-
 BE_EXPORTED extern const char *EXTENSION_Get_Extension_Name_From_INTRINSIC(INTRINSIC id);
 
 BE_EXPORTED extern const char *EXTENSION_Get_Extension_Name_From_TOP(TOP id);

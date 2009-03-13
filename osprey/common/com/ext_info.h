@@ -34,6 +34,7 @@
 #ifndef EXT_INFO_H
 #define EXT_INFO_H
 
+#define INVALID_EXTENSION_ID (0)
 /*
  * Bit used to activate traces of extension support
  */
@@ -41,6 +42,8 @@
 #define TRACE_EXTENSION_REG_PLACEMENT_MASK 0x0002 /* Trace of register placement
 						     at whirl level for native 
 						     support */
+
+BE_EXPORTED extern INT32 EXTENSION_Get_ExtensionId_From_ExtensionName(const char *extname);
 
 /* Return TRUE if conversion from src to tgt is allowed, FALSE otherwise.
  * At least one of the type is expected to be an extension one. */
@@ -54,9 +57,21 @@ BE_EXPORTED extern INTRINSIC EXTENSION_Get_CLR_Intrinsic(TYPE_ID ty);
 
 BE_EXPORTED extern INTRINSIC EXTENSION_Get_Convert_From_U32_Intrinsic(TYPE_ID ty);
 
-BE_EXPORTED extern INT EXTENSION_Get_Equivalent_Mtype_Status();
+BE_EXPORTED extern BOOL EXTENSION_Is_ExtGen_Enabled_For_Intrinsic(INTRINSIC intrn);
 
-BE_EXPORTED extern void EXTENSION_Set_Equivalent_Mtype_Status(INT val);
+BE_EXPORTED extern BOOL EXTENSION_Is_Defined(const char *extname);
+
+/*
+ * Return TRUE if native codegen is enabled for at least one extension
+ */
+BE_EXPORTED extern BOOL EXTENSION_Has_ExtGen_Enabled();
+
+/*
+ * Return TRUE if the parameter intrinsic Id belongs to an extension
+ */
+inline BOOL EXTENSION_Is_Extension_INTRINSIC(INTRINSIC id) {
+  return (id > INTRINSIC_STATIC_COUNT && id <= INTRINSIC_COUNT);
+}
 
 
 #include <vector>

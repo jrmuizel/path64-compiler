@@ -48,6 +48,8 @@ struct Extension_dll {
   Extension_dll_handler    *handler;
   EXTENSION_HighLevel_Info *hooks;
 
+  INT32 extension_id;
+
   // Base indexes for dynamic components of current extension
   int  base_mtypes;
   int  base_mmodes;
@@ -118,7 +120,7 @@ typedef struct Extension_dll Extension_dll_t;
  * ============================================ */
 /* Load extension dlls and return a pointer to the extension table
    and the count of loaded extensions */
-extern bool Load_Extension_dlls(BOOL verbose);
+extern bool Load_Extension_dlls(bool verbose);
 extern Extension_dll_t * Get_Extension_dll_tab(void);
 extern int Get_Extension_dll_count(void);
 
@@ -133,6 +135,9 @@ BE_EXPORTED extern void Initialize_Extension_Loader_Register(void);
 
 /* Initialize PU specific options */
 BE_EXPORTED extern void Initialize_Extension_Loader_PU(WN *pu);
+
+/* Specific initiliazation for extension support */
+void Initialize_Extension_Support();
 
 /* OPEN64 Intrinsics init */
 extern void Init_Intrinsics(int nb_builtins_to_add);
