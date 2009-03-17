@@ -712,6 +712,12 @@ static TOP
 TOP_opnd_immediate_variant_default(TOP regform, int opnd, INT64 imm)
 {
   TOP immform;
+
+  // VCDV - bug #63273. avoid immediate variant for var-arg TOPs like top_asm
+  if (opnd>=ISA_OPERAND_INFO_Operands(ISA_OPERAND_Info(regform))) {
+    return TOP_UNDEFINED;
+  }
+
   // Check if it is already an immediate form
   if (ISA_SUBSET_LIST_Member (ISA_SUBSET_List, regform)) {
     const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info (regform);
