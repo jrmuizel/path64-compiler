@@ -389,3 +389,21 @@ float CGTARG_Compute_est_cost_after(CG_SCHED_EST *se1, CG_SCHED_EST *se2, CG_SCH
 BOOL CGTARG_Check_Profitable_Select(CG_SCHED_EST *se1, CG_SCHED_EST *se2,int size_se1, int size_se2, float est_cost_before, float est_cost_after, float fallthr_prob) {
     return KnuthCompareLE(est_cost_after, est_cost_before);
 }
+
+
+BOOL CGTARG_apply_min_max_transformation(OP *cmp, OP* phi, BOOL cmp_order) {
+ 	return FALSE;
+}
+
+BOOL CGTARG_IsNegOP(OP* op) {
+ 	return FALSE; 
+}
+ 
+BOOL CGTARG_apply_abs_transformation(OP *cmp, OP* phi, BOOL cmp_order) {
+	return FALSE;
+}
+ 
+BOOL CGTARG_OP_is_float_cst_load(OP *op, INT32 val) {
+	return FALSE; 
+}
+ 

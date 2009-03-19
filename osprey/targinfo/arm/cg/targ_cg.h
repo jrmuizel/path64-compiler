@@ -168,6 +168,14 @@ CGTARG_Have_Indexed_Mem_Insts(void)
   return FALSE;
 }
 
+inline BOOL
+CGTARG_Has_min_max_abs(void)
+{
+  return TRUE;
+}
+ 
+
+
 /* ====================================================================
  *   Prefetching:
  * ====================================================================
