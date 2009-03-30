@@ -339,7 +339,7 @@ void Initialize_ABI_Properties(Lai_Loader_Info_t &ext_info) {
  * extension defined ones. Initialized data are:
  * - ISA_Decode_Decoding      (array)
  * ===========================================================================*/
-static void Initialize_ISA_Reloc(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
+void Initialize_ISA_Reloc(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
   ISA_RELOC_INFO * new_reloc_info;
   int ext_num_reloc_info;
   ISA_RELOC_SUBSET_INFO * new_reloc_subset_info;
@@ -502,7 +502,7 @@ Lai_Loader_Info_t * Get_Lai_Loader_Info_Table() { return global_Lai_Loader_Info_
  *
  * Invoke call-back routines for base_TOP and TOP_UNDEFINED.
  * ===========================================================================*/
-static void Initialize_ISA_Top(Lai_Loader_Info_t &ext_info) {
+void Initialize_ISA_Top(Lai_Loader_Info_t &ext_info) {
   int ext;
   const char **TOP_names_tab;
   ISA_PROPERTY_FLAGS     *TOP_prop_tab;
@@ -612,7 +612,7 @@ static void Initialize_ISA_Top(Lai_Loader_Info_t &ext_info) {
  * - ISA_PRINT_info_index   (array [TOP_count])
  * - ISA_PRINT_asmname      (array [TOP_count+1], with UNDEFINED at the end)
  * ===========================================================================*/
-static void Initialize_ISA_Print(Lai_Loader_Info_t &ext_info) {
+void Initialize_ISA_Print(Lai_Loader_Info_t &ext_info) {
   int ext, j;
   ISA_PRINT_INFO *info_tab;
   mUINT16        *info_index_tab;
@@ -700,7 +700,7 @@ static void Initialize_ISA_Print(Lai_Loader_Info_t &ext_info) {
  *       - ISA_BUNDLE_pack_info
  *       - ISA_BUNDLE_info
  * ===========================================================================*/
-static void Initialize_ISA_Bundle(Lai_Loader_Info_t &ext_info) {
+void Initialize_ISA_Bundle(Lai_Loader_Info_t &ext_info) {
   int ext;
   ISA_EXEC_UNIT_PROPERTY *unit_prop_tab;
   ISA_EXEC_UNIT_SLOTS    *unit_slots_tab;
@@ -783,7 +783,7 @@ static void Initialize_ISA_Bundle(Lai_Loader_Info_t &ext_info) {
  *       between the ones defined for the core and the ones embedded
  *       in extensions.
  * ===========================================================================*/
-static void Initialize_ISA_Literals(Lai_Loader_Info_t &ext_info) {
+void Initialize_ISA_Literals(Lai_Loader_Info_t &ext_info) {
   int ext;
   ISA_LIT_CLASS_INFO *lc_tab;
 
@@ -829,7 +829,7 @@ static void Initialize_ISA_Literals(Lai_Loader_Info_t &ext_info) {
  * - ISA_ENUM_CLASS_VALUE_info  (array [ISA_ECV_MAX] UNDEFINED at 0)
  *
  * ===========================================================================*/
-static void Initialize_ISA_Enum(Lai_Loader_Info_t &ext_info) {
+void Initialize_ISA_Enum(Lai_Loader_Info_t &ext_info) {
   int ext, j;
   int base_ecv;
   ISA_ENUM_CLASS_INFO       *ec_tab;
@@ -902,7 +902,7 @@ static void Initialize_ISA_Enum(Lai_Loader_Info_t &ext_info) {
  * - Extension TOPs use only extension defined OPERAND_info, not core ones
  *   (not a problem if they are duplicated)
  * ===========================================================================*/
-static void Initialize_ISA_Operands(Lai_Loader_Info_t &ext_info, MEM_POOL        &tmp_mempool) {
+void Initialize_ISA_Operands(Lai_Loader_Info_t &ext_info, MEM_POOL        &tmp_mempool) {
   int ext, j, k;
   int *ext_base_OPERAND_TYPE; // base for additionnal operands types
   int *ext_base_OPERAND_info;
@@ -1133,7 +1133,7 @@ static void Initialize_ISA_Operands(Lai_Loader_Info_t &ext_info, MEM_POOL       
  * greatly the initialization procedure (ISA subsets were previously to be array
  * of bits).
  * ===========================================================================*/
-static void Initialize_ISA_Subsets(Lai_Loader_Info_t &ext_info) {
+void Initialize_ISA_Subsets(Lai_Loader_Info_t &ext_info) {
   int ext;
   int i;
   for (ext=0; ext<ext_info.nb_ext; ext++) {      // Iterate on all extensions.
@@ -1165,7 +1165,7 @@ static void Initialize_ISA_Subsets(Lai_Loader_Info_t &ext_info) {
  *
  * ISA PARSE table is indexed with ISA_SUBSET_count.
  * ===========================================================================*/
-static void Initialize_ISA_Parse(Lai_Loader_Info_t &ext_info) {
+void Initialize_ISA_Parse(Lai_Loader_Info_t &ext_info) {
   int ext;
   int i;
   int ext_num_parse = ISA_SUBSET_static_count;
@@ -1205,7 +1205,7 @@ static void Initialize_ISA_Parse(Lai_Loader_Info_t &ext_info) {
  * - ISA_PACK_adj_info        (array)
  * - ISA_PACK_adj_info_index  (array)
  * ===========================================================================*/
-static void Initialize_ISA_Pack(Lai_Loader_Info_t &ext_info) {
+void Initialize_ISA_Pack(Lai_Loader_Info_t &ext_info) {
 
   ISA_PACK_OPND_INFO* new_pack_opnd_info;
   mUINT16*            new_pack_opnd_info_index;
@@ -1330,7 +1330,7 @@ static void Initialize_ISA_Pack(Lai_Loader_Info_t &ext_info) {
  * extension defined ones. Initialized data are:
  * - ISA_Decode_Decoding      (array)
  * ===========================================================================*/
-static void Initialize_ISA_Decode(Lai_Loader_Info_t &ext_info) {
+void Initialize_ISA_Decode(Lai_Loader_Info_t &ext_info) {
   int ext;
   const ISA_DECODE_DECODING ** new_decode_decoding;
   int ext_num_decode;
@@ -1368,7 +1368,7 @@ static void Initialize_ISA_Decode(Lai_Loader_Info_t &ext_info) {
  * extension defined ones. Initialized data are:
  * - ISA_BINUTILS_xxx         (array)
  * ===========================================================================*/
-static void Initialize_ISA_Binutils(Lai_Loader_Info_t &ext_info) {
+void Initialize_ISA_Binutils(Lai_Loader_Info_t &ext_info) {
   int ext;
   int ext_num_binutils;
   ISA_BINUTILS_INFO * new_binutils_info;
@@ -1409,7 +1409,7 @@ static void Initialize_ISA_Binutils(Lai_Loader_Info_t &ext_info) {
  * - ISA_HAZARD_hazard_index   (array)
  *
  * ===========================================================================*/
-static void Initialize_ISA_Hazards(Lai_Loader_Info_t &ext_info) {
+void Initialize_ISA_Hazards(Lai_Loader_Info_t &ext_info) {
 
   mUINT8 *new_hazards_index_tab;
   int ext;
@@ -1457,7 +1457,7 @@ static void Initialize_ISA_Hazards(Lai_Loader_Info_t &ext_info) {
  * - SI_ID_si             (array [SI_ID_count])
  * - SI_top_si            (array [TOP_count])
  * ===========================================================================*/
-static void Initialize_SI(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
+void Initialize_SI(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
   const EXTENSION_SI_Info ** ext_proc_si_info;
   int  ext, j;
   // ...ptrs to newly allocated tables
@@ -1925,7 +1925,7 @@ static void Initialize_SI(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
  * Initialized data are:
  * - ISA_VARIANT_infos    (array [TOP_Count + 1])
  * ===========================================================================*/
-static void Initialize_ISA_VARIANTS(Lai_Loader_Info_t &ext_info) {
+void Initialize_ISA_VARIANTS(Lai_Loader_Info_t &ext_info) {
   int  ext, top, var;
   ISA_TOP_VARIANT *variant_list, *variant_ptr;
   ISA_VARIANT_INFO *variants_table;
@@ -2020,7 +2020,7 @@ static void Initialize_ISA_VARIANTS(Lai_Loader_Info_t &ext_info) {
  *   EXTENSION_description_tab         (array[EXTENSION_count])
  *   EXTENSION_description_reg_tab     (array[ISA_REGISTER_CLASS_MAX+1])
  * ===========================================================================*/
-static void Initialize_DW_DEBUG_info(Lai_Loader_Info_t &ext_info)
+void Initialize_DW_DEBUG_info(Lai_Loader_Info_t &ext_info)
 {
    int          ext, rc, rc2;
    int          nb_added_rclass;          /* Number of added register classes */

@@ -43,6 +43,18 @@
 //      Initialize to generate relocation information for an architecture.
 //      The information will be written to the files targ_isa_relocs.[ch].  
 //
+//  void ISA_Reloc_Duplicate_Relocation_for_Relaxation( ISA_SUBSET subset, ...)
+//      Setup relocation generator so that it creates two entries for each
+//      relocation required in order to deal with relaxation purposes on
+//      cores that have a variable-length instruction set. When activated
+//      this features uses virtual id numbers for relocation as 2n for the
+//      relaxing version of the relocation and 2n+1 for associated 
+//      non-relaxing one. Therefore the core contains twice the number of
+//      relocations declared in isa_relocs.cxx file.
+//      Takes a list of subset concerned by relaxation (may be all core subsets
+//      are not concerned with this feature). List closing value is 
+//      ISA_SUBSET_UNDEFINED.
+//
 //  TYPE RELOC_TYPE
 //      An abstract type that represents a relocation function.
 //
@@ -189,6 +201,9 @@ typedef struct isa_virtual_reloc_type *ISA_VIRTUAL_RELOC_TYPE;
 
 extern void ISA_Relocs_Begin (void);
 
+extern void ISA_Reloc_Duplicate_Relocation_for_Relaxation(ISA_SUBSET subset,
+                                                          ...);
+
 extern RELOC_TYPE ISA_Create_Reloc_Type(const char *name,
 					RELOC_MAIN_SYMBOL main_symbol,
 					RELOC_SECOND_SYMBOL second_symbol,
@@ -213,6 +228,8 @@ extern ISA_VIRTUAL_RELOC_TYPE ISA_Create_Reloc
 
 extern void ISA_Reloc_Subset          (ISA_SUBSET subset,
                                        ...);
+
+extern void ISA_Reloc_Set_Core_Subset(const char * subset_name);
 
 extern void ISA_Relocs_End (void);
 

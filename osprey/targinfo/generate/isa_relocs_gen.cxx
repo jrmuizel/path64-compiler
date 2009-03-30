@@ -116,6 +116,10 @@ static vector<Reloc_Subset> subset_relocations;
 // index == internal_id
 static vector<ISA_VIRTUAL_RELOC_TYPE> relocations;
 
+// Indicates if relocations must be duplicated for relaxation stuff purposes
+static int duplicate_reloc_for_relax = 0;
+static vector<ISA_SUBSET> relaxing_subsets;
+
 static const char * const interface[] = {
   "/* ====================================================================",
   " * ====================================================================",
@@ -317,6 +321,7 @@ static const int relocs_max_limit = 255;
 // (Virtual and internal) id. of UNDEFINED and empty
 // relocations.
 static const int undefined_reloc_id = 0;
+static const int undefined_no_relax_reloc_id = 1;
 
 // C file generated when static code generation is done,
 // included in C ISA_LIT_info table when dynamic code
@@ -325,6 +330,7 @@ static FILE *cincfile = NULL;
 static char *cincfilename  = NULL;
 
 ISA_VIRTUAL_RELOC_TYPE undefined_reloc;
+ISA_VIRTUAL_RELOC_TYPE undefined_reloc_no_relax;
 
 //////////////////////////////////////////////////////////////////////////
 // Beginning of code.
@@ -473,15 +479,15 @@ void ISA_Relocs_Begin (void)
   }
 
   // UNDEFINED entry is reserved to static table
-  if(gen_static_code) {
-    fprintf(
-      cfile, 
-      "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\", %d },\n",
-      overflow_name (relocations[undefined_reloc_id]->overflow),
-      underflow_name(relocations[undefined_reloc_id]->underflow),
-      relocations[undefined_reloc_id]->name,
-      relocations[undefined_reloc_id]->virtual_id);
+  fprintf(
+    cfile, 
+    "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\", %d },\n",
+    overflow_name (relocations[undefined_reloc_id]->overflow),
+    underflow_name(relocations[undefined_reloc_id]->underflow),
+    relocations[undefined_reloc_id]->name,
+    relocations[undefined_reloc_id]->virtual_id);
 
+  if(gen_static_code) {
     fprintf(
       cincfile, 
       "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\" , %d },\n",
@@ -489,14 +495,7 @@ void ISA_Relocs_Begin (void)
       underflow_name(relocations[undefined_reloc_id]->underflow),
       relocations[undefined_reloc_id]->name,
       relocations[undefined_reloc_id]->virtual_id);
-  } else {
-    fprintf(
-      cfile, 
-      "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\", %d },\n",
-      overflow_name (relocations[undefined_reloc_id]->overflow),
-      underflow_name(relocations[undefined_reloc_id]->underflow),
-      relocations[undefined_reloc_id]->name,
-      relocations[undefined_reloc_id]->virtual_id);
+      
   }
 
   Gen_Free_Filename(file_name_isa_lits);
@@ -504,6 +503,60 @@ void ISA_Relocs_Begin (void)
   return;
 }
 
+/////////////////////////////////////
+void ISA_Reloc_Duplicate_Relocation_for_Relaxation( ISA_SUBSET subset, ... )
+/////////////////////////////////////
+//  See interface description.
+/////////////////////////////////////
+{
+  va_list ap;
+  ISA_SUBSET new_subset;
+  static int First_Pass = 1;
+  
+  relaxing_subsets.resize(ISA_SUBSET_count);
+  relaxing_subsets[duplicate_reloc_for_relax++] = subset;
+  va_start(ap,subset);
+  while ((new_subset = va_arg(ap,ISA_SUBSET)) != ISA_SUBSET_UNDEFINED) {
+    relaxing_subsets[duplicate_reloc_for_relax++] = new_subset;
+  }
+  va_end(ap);
+
+  if (First_Pass) {
+    // Enter UNDEFINED_norelax relocation in the relocation table.
+    undefined_reloc_no_relax               = new isa_virtual_reloc_type; 
+    undefined_reloc_no_relax->virtual_id   = undefined_no_relax_reloc_id;
+    undefined_reloc_no_relax->internal_id  = relocs_count++;
+    undefined_reloc_no_relax->name         ="UNDEFINED_norelax";
+    undefined_reloc_no_relax->syntax       = "";
+    undefined_reloc_no_relax->overflow     = ISA_RELOC_NO_OVERFLOW;
+    undefined_reloc_no_relax->underflow    = ISA_RELOC_NO_UNDERFLOW;
+    undefined_reloc_no_relax->rel_type     = (RELOC_TYPE)0;
+    undefined_reloc_no_relax->nb_bitfields = 0;
+
+    relocations.push_back(undefined_reloc_no_relax);
+
+    fprintf(
+      cfile, 
+      "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\", %d },\n",
+      overflow_name (relocations[undefined_no_relax_reloc_id]->overflow),
+      underflow_name(relocations[undefined_no_relax_reloc_id]->underflow),
+      relocations[undefined_no_relax_reloc_id]->name,
+      relocations[undefined_no_relax_reloc_id]->virtual_id);
+    
+    if(gen_static_code) {
+      fprintf(
+        cincfile, 
+        "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\" , %d },\n",
+        overflow_name (relocations[undefined_no_relax_reloc_id]->overflow),
+        underflow_name(relocations[undefined_no_relax_reloc_id]->underflow),
+        relocations[undefined_no_relax_reloc_id]->name,
+        relocations[undefined_no_relax_reloc_id]->virtual_id);
+    }
+    
+    First_Pass = 0;
+  }
+  
+}
 
 /////////////////////////////////////
 BITFIELD ISA_Create_BitField(const char *name, int start_bit, int bit_size)
@@ -572,97 +625,9 @@ underflow_name(ISA_RELOC_UNDERFLOW_TYPE underflow) {
 }
 
 
-/////////////////////////////////////
-ISA_VIRTUAL_RELOC_TYPE ISA_Create_Reloc (int virtual_id,
-                                         const char *name,
-                                         const char *syntax,
-                                         ISA_RELOC_OVERFLOW_TYPE overflow,
-                                         ISA_RELOC_UNDERFLOW_TYPE underflow,
-                                         int right_shift,
-                                         RELOC_TYPE rel_type,
-                                         ...)
-/////////////////////////////////////
-//  See interface description.
-/////////////////////////////////////
-{
-  va_list ap;
-  int elf_id;
-  BITFIELD bf;
+static void print_out_relocation_entry ( ISA_VIRTUAL_RELOC_TYPE ret, int cur_index ) {
+  int walk_index;
   const char *string_template;
-  int cur_index;
-
-  ///////////////////////////////////////////////////
-  // A few checks before beginning the real work.
-  ///////////////////////////////////////////////////
-  if(NULL==name) {
-    fprintf(stderr,"### Error: can't have a relocation with a NULL name.\n");
-    exit(EXIT_FAILURE);
-  }
-  if(relocs_count==relocs_max_limit) {
-     fprintf(
-      stderr, 
-      "### Error: number of relocations is greater than allowed limit (%d)\n",
-      relocs_max_limit);
-      exit(EXIT_FAILURE);
-   }
-
-  if(0==virtual_id) {
-    fprintf(
-      stderr,
-      "### Error: virtual identifier 0 (\"%s\") is reserved\n"
-      "### for UNDEFINED relocation.\n",
-      relocations[undefined_reloc_id]->name);
-    exit(EXIT_FAILURE);
-  } else if (virtual_id<0) {
-     fprintf(
-      stderr,
-      "### Error: can't have a negative virtual identifier for reloc. \"%s\"\n",
-      name);
-     exit(EXIT_FAILURE);
-  }
-    
-  // An implicit relocation can be described either
-  // with an empty string or with a NULL string.
-  // Unify both cases.
-  if(syntax==NULL)
-    syntax="";
-
-  // Allocate and fill in isa_virtual_reloc_type structure.
-  ISA_VIRTUAL_RELOC_TYPE ret = new isa_virtual_reloc_type;
-
-  ret->virtual_id   = virtual_id;
-  ret->internal_id  = relocs_count++;
-  ret->name         = name;
-  ret->syntax       = syntax;
-  ret->overflow     = overflow;
-  ret->underflow    = underflow;
-  ret->right_shift  = right_shift;
-  ret->rel_type     = rel_type;
-  ret->nb_bitfields = 0;
-
-  // Find the smallest min and largest max for all ranges, and
-  // count the number of ranges.
-  va_start(ap,rel_type);
-  while ((elf_id = va_arg(ap,int)) != BITFIELD_END && 
-         (bf = va_arg(ap,BITFIELD))) {
-            ++(ret->nb_bitfields);
-  }
-  va_end(ap);
-
-  if (ret->nb_bitfields > max_bitfields_static) {
-     if(ret->nb_bitfields > MAX_BITFIELDS) {
-        fprintf(
-          stderr,
-          "### Error: number of bitfields (%d) for relocation %s\n"
-          "is greater than the maximum number of bitfields allowed (%d)\n",
-           max_bitfields_static,
-           ret->syntax,
-           MAX_BITFIELDS);
-        exit(EXIT_FAILURE);
-     }
-
-     max_bitfields_static = ret->nb_bitfields; // Update.
-  }
 
   if(gen_static_code) {
     fprintf(hfile,
@@ -675,8 +640,7 @@ ISA_VIRTUAL_RELOC_TYPE ISA_Create_Reloc (int virtual_id,
             "#define Set_TN_is_reloc_%s(r)\t\tSet_TN_relocs(r,ISA_RELOC_%s)\n"
             "\n",
             ret->name,ret->name);
-  }
-  else {
+  } else {
     const char* const extname  = Get_Extension_Name();
     fprintf(hfile,
             "#define ISA_RELOC_dyn_%s_%-17s (dynamic_reloc_offset_%s + %d)\n",
@@ -690,34 +654,27 @@ ISA_VIRTUAL_RELOC_TYPE ISA_Create_Reloc (int virtual_id,
             extname,ret->name,extname,ret->name); 
   }
 
-
-  cur_index = 0;
-  va_start(ap,rel_type);
+  walk_index = 0;
   fprintf(cfile, "  { {");
   if(gen_static_code) {
     fprintf(cincfile, "  { {");
   }
-  while ((elf_id = va_arg(ap,int)) != BITFIELD_END && 
-         (bf = va_arg(ap,BITFIELD))) {
-
-    ret->elf_id   [cur_index] = elf_id;
-    ret->bitfields[cur_index] = bf;
+  while (walk_index<cur_index) {
 
     fprintf(cfile, " { %3d, %2d, %2d, },", 
-	    ret->elf_id   [cur_index], 
-            ret->bitfields[cur_index]->start_bit, 
-            ret->bitfields[cur_index]->stop_bit);
+	    ret->elf_id   [walk_index], 
+            ret->bitfields[walk_index]->start_bit, 
+            ret->bitfields[walk_index]->stop_bit);
 
     if(gen_static_code) {
       fprintf(cincfile, " { %3d, %2d, %2d, },", 
-	      ret->elf_id   [cur_index], 
-              ret->bitfields[cur_index]->start_bit, 
-              ret->bitfields[cur_index]->stop_bit);
+	      ret->elf_id   [walk_index], 
+              ret->bitfields[walk_index]->start_bit, 
+              ret->bitfields[walk_index]->stop_bit);
     }
 
-    cur_index++;
+    walk_index++;
   }
-  va_end(ap);
 
   string_template = gen_static_code ?
 " }, %d, %d, %d, %d, %d, %d, %d, %s, %s, %d, \"%s\", \"RELOC_%s\", %d },\n":
@@ -773,7 +730,144 @@ ISA_VIRTUAL_RELOC_TYPE ISA_Create_Reloc (int virtual_id,
             ret->virtual_id);
   }
 
+}
+
+/////////////////////////////////////
+ISA_VIRTUAL_RELOC_TYPE ISA_Create_Reloc (int virtual_id,
+                                         const char *name,
+                                         const char *syntax,
+                                         ISA_RELOC_OVERFLOW_TYPE overflow,
+                                         ISA_RELOC_UNDERFLOW_TYPE underflow,
+                                         int right_shift,
+                                         RELOC_TYPE rel_type,
+                                         ...)
+/////////////////////////////////////
+//  See interface description.
+/////////////////////////////////////
+{
+  va_list ap;
+  int elf_id;
+  BITFIELD bf;
+  int cur_index;
+  
+  ///////////////////////////////////////////////////
+  // A few checks before beginning the real work.
+  ///////////////////////////////////////////////////
+  if(NULL==name) {
+    fprintf(stderr,"### Error: can't have a relocation with a NULL name.\n");
+    exit(EXIT_FAILURE);
+  }
+  if(relocs_count==relocs_max_limit) {
+     fprintf(
+      stderr, 
+      "### Error: number of relocations is greater than allowed limit (%d)\n",
+      relocs_max_limit);
+      exit(EXIT_FAILURE);
+   }
+
+  if(0==virtual_id) {
+    fprintf(
+      stderr,
+      "### Error: virtual identifier 0 (\"%s\") is reserved\n"
+      "### for UNDEFINED relocation.\n",
+      relocations[undefined_reloc_id]->name);
+    exit(EXIT_FAILURE);
+  } else if (virtual_id<0) {
+     fprintf(
+      stderr,
+      "### Error: can't have a negative virtual identifier for reloc. \"%s\"\n",
+      name);
+     exit(EXIT_FAILURE);
+  }
+    
+  // An implicit relocation can be described either
+  // with an empty string or with a NULL string.
+  // Unify both cases.
+  if(syntax==NULL)
+    syntax="";
+
+  // Allocate and fill in isa_virtual_reloc_type structure.
+  ISA_VIRTUAL_RELOC_TYPE ret = new isa_virtual_reloc_type;
+  
+  if (duplicate_reloc_for_relax) {
+    ret->virtual_id   = 2*virtual_id;
+  } else {
+    ret->virtual_id   = virtual_id;
+  }
+  ret->internal_id  = relocs_count++;
+  ret->name         = name;
+  ret->syntax       = syntax;
+  ret->overflow     = overflow;
+  ret->underflow    = underflow;
+  ret->right_shift  = right_shift;
+  ret->rel_type     = rel_type;
+  ret->nb_bitfields = 0;
+
+  // Find the smallest min and largest max for all ranges, and
+  // count the number of ranges.
+  va_start(ap,rel_type);
+  while ((elf_id = va_arg(ap,int)) != BITFIELD_END && 
+         (bf = va_arg(ap,BITFIELD))) {
+            ++(ret->nb_bitfields);
+  }
+  va_end(ap);
+
+  if (ret->nb_bitfields > max_bitfields_static) {
+     if(ret->nb_bitfields > MAX_BITFIELDS) {
+        fprintf(
+          stderr,
+          "### Error: number of bitfields (%d) for relocation %s\n"
+          "is greater than the maximum number of bitfields allowed (%d)\n",
+           max_bitfields_static,
+           ret->syntax,
+           MAX_BITFIELDS);
+        exit(EXIT_FAILURE);
+     }
+
+     max_bitfields_static = ret->nb_bitfields; // Update.
+  }
+
+  cur_index = 0;
+  va_start(ap,rel_type);
+  while ((elf_id = va_arg(ap,int)) != BITFIELD_END && 
+         (bf = va_arg(ap,BITFIELD))) {
+
+    ret->elf_id   [cur_index] = elf_id;
+    ret->bitfields[cur_index] = bf;
+
+   cur_index++;
+  }
+  va_end(ap);
+
+  print_out_relocation_entry ( ret, cur_index );
+
   relocations.push_back(ret);
+  
+  if (duplicate_reloc_for_relax) {
+    // Allocate, fill and print non-relaxing version of reloc
+    ISA_VIRTUAL_RELOC_TYPE ret_no_relax;
+    char * name_no_relax;
+    int walk_index;
+    
+    ret_no_relax = new isa_virtual_reloc_type;
+    name_no_relax = (char *)malloc(strlen(name)+strlen("_norelax")+1);
+    *ret_no_relax = *ret;
+    ret_no_relax->virtual_id = 2*virtual_id+1;
+    ret_no_relax->internal_id  = relocs_count++;
+    sprintf(name_no_relax,"%s_norelax",name);
+    ret_no_relax->name = name_no_relax;
+    walk_index = 0;
+    while (walk_index<cur_index) {
+      ret_no_relax->elf_id   [walk_index] = ret->elf_id   [walk_index] ;
+      ret_no_relax->bitfields[walk_index] = ret->bitfields[walk_index];
+      walk_index++;
+    }
+    
+    print_out_relocation_entry ( ret_no_relax, cur_index );
+
+    relocations.push_back(ret_no_relax);
+  }
+  
   return ret;
 }
 
@@ -786,6 +880,17 @@ void ISA_Reloc_Set_Core_Subset(const char * subset_name)
 { CoreSubset = subset_name;
 }
 
+static int is_relaxing_subset ( ISA_SUBSET subset ) {
+  int i;
+	
+  for (i=0;i<duplicate_reloc_for_relax;i++) {
+     if (relaxing_subsets[i] == subset) {
+        return 1;
+     }
+  }
+  return 0;
+}
+
 /////////////////////////////////////
 void ISA_Reloc_Subset(ISA_SUBSET subset,
                       ...)
@@ -795,12 +900,15 @@ void ISA_Reloc_Subset(ISA_SUBSET subset,
 { ISA_VIRTUAL_RELOC_TYPE rel;
   int size;
   va_list ap;
+  int this_one_is_relaxing;
 
   if(subset >= ISA_SUBSET_count)
    { fprintf(stderr,"### Error: uncorrect subset identifier %d\n",subset);
      exit(EXIT_FAILURE);
    }
-
+  
+  this_one_is_relaxing = is_relaxing_subset(subset);
+  
   size = subset_relocations[subset].size();
 
   // Find out the greater virtual identifier
@@ -809,8 +917,12 @@ void ISA_Reloc_Subset(ISA_SUBSET subset,
     subset_relocations[subset].resize(relocs_count,false);
 
   va_start(ap,subset);
-  while((rel=va_arg(ap,ISA_VIRTUAL_RELOC_TYPE))!= NULL)
+  while((rel=va_arg(ap,ISA_VIRTUAL_RELOC_TYPE))!= NULL) {
     subset_relocations[subset][rel->internal_id] = true;
+    if (this_one_is_relaxing) {
+      subset_relocations[subset][rel->internal_id+1] = true;
+    }
+  }
   va_end(ap);
 
   return;
@@ -832,6 +944,10 @@ static void ISA_Reloc_Check_Subset(ISA_SUBSET subset,
 
  *virtual_id_max = undefined_reloc_id;
  *nb_subset_relocs=1;
+  if (is_relaxing_subset(subset)) {
+    *virtual_id_max = undefined_no_relax_reloc_id;
+    *nb_subset_relocs=2;
+  }
 
   // First, get the greatest virtual identifier. We don't
   // require virtual identifiers to be contiguous.
@@ -916,7 +1032,10 @@ static void ISA_Relocs_Subsets_End(FILE *hfile, FILE *cfile)
              i);
 
      fprintf(cfile,format_1,undefined_reloc_id,relocations[undefined_reloc_id]->name);
-
+     if (is_relaxing_subset(i)) {
+        fprintf(cfile,format_1,undefined_no_relax_reloc_id,relocations[undefined_no_relax_reloc_id]->name);
+     }
+     
      size = subset_relocations[i].size();
 
      for(j=1;j<relocs_count;j++) {
@@ -1403,6 +1522,9 @@ void ISA_Relocs_End(void)
   if(cincfilename) Gen_Free_Filename(cincfilename);
   
   delete undefined_reloc;
+  if (duplicate_reloc_for_relax) {
+     delete undefined_reloc_no_relax;
+  }
   return;
 }
 

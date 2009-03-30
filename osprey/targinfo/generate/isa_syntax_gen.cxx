@@ -1499,7 +1499,7 @@ static void Emit_Printed_Syntax() {
              "\n"
              "const ISA_PRINT_INFO *ISA_PRINT_info      = ISA_PRINT_static_info;\n"
              "mUINT32               ISA_PRINT_info_size = %d;\n\n",
-             all_syntax_groups.size());
+             all_syntax_groups.size() + 1);
    }
   else
    { const char * const routine1 = "dyn_get_ISA_PRINT_info_tab";

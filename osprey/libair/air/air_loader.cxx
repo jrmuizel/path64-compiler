@@ -68,16 +68,11 @@ extern "C" int
 	if (0!=ext) strcat(Extension_Names,",");
 	strcat(Extension_Names,extensions[ext]);
     }
-    printf("Connecting extension [%s]\n",Extension_Names);
     
     if(!Load_Extension_dll_handlers(FALSE)) return FALSE;
 
-    printf("DLLs loaded\n");
-
     if (!Load_Lai_Loader_Info()) return FALSE;
 
-    printf("Targinfo extended\n");
-    
     return TRUE;
   }
 
