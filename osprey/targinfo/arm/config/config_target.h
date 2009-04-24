@@ -181,6 +181,10 @@ BE_EXPORTED extern char *Isa_Name (TARGET_ISA target_isa);
 /* maximum gspace (gp-relative) size */
 #define DEFAULT_GSPACE		0x3fffff
 
+/* maximum sda/da sizes (for automatic mem placement)*/
+#define DEFAULT_SDA_SPACE	0x0
+#define DEFAULT_DA_SPACE	0x0
+
 /* The ST200 can handle arbitrary sized short data sections, so place
  * as much as possible in them.  Set these to their maximum values.
  */
