@@ -75,7 +75,7 @@ EXTENSION_ISA_Info * Generate_EXTENSION_ISA_Info(const Extension_dll_handler_t *
     if (verbose) {
       get_extension_name_t get_extname = (get_extension_name_t)Get_dll_Symbol(dll_instance, "get_extension_name");
       const char *extname = (*get_extname)();
-      fprintf(TFile, "  [Extension '%s'] ISA API revision: lib=%d, compiler=%d\n", extname, magic, MAGIC_NUMBER_EXT_API);
+      fprintf(TFile, "  [Extension '%s'] ISA API revision: lib=%d, compiler=%d\n", extname, magic, MAGIC_NUMBER_EXT_ISA_API);
     }
     isa_ext_access = new EXTENSION_ISA_Info(isa_ext);
   }

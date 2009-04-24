@@ -46,6 +46,12 @@
  * +----------+----------------------------------------------------------------+
  * | 20080715 | - extension codegen support                                    |
  * +----------+----------------------------------------------------------------+
+ * | 20090410 | - Added support of pointer type machine mode (PSI) for         |
+ * |          |   builtins parameters (previously, pointer parameters were     |
+ * |          |   specified as INT, leading to too minimal type checking in FE)|
+ * |          |   Note: no real API change for this revision but useful to     |
+ * |          |         check that older compiler not used with recent RTK     |
+ * +----------+----------------------------------------------------------------+
  *
  */
 #include "../gccfe/extension_include.h"
@@ -55,15 +61,17 @@
 // List of compatible API revisions for high level part of the library
 // description
 // ========================================================================
-#define    NB_SUPPORTED_HL_REV  4
+#define    NB_SUPPORTED_HL_REV  5
 #define    REV_20070131        (20070131)
 #define    REV_20070615        (20070615)
 #define    REV_20070924        (20070924)
 #define    REV_20080715        (20080715)
+#define    REV_20090410        (20090410)
 static INT supported_HL_rev_tab[NB_SUPPORTED_HL_REV] = {
   REV_20070131,
   REV_20070615,
   REV_20070924,
+  REV_20080715,
   MAGIC_NUMBER_EXT_API   /* current one */
 };
 

@@ -39,7 +39,7 @@
 extern "C" {
 #endif
 
-#define MAGIC_NUMBER_EXT_API   20080715  /* Magic number. Interface checking */
+#define MAGIC_NUMBER_EXT_API   20090410  /* Magic number. Interface checking */
 
 struct extension_machine_types
 {
