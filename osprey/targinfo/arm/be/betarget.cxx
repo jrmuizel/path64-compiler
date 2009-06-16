@@ -381,6 +381,20 @@ Can_Do_Fast_Divide (TYPE_ID mtype, INT64 dividend)
 }
 
 /* =============================================================
+*  Target_Inlines_Remainder (mtype, dividend)
+*  return whether REM will be translated into asm sequence 
+*  Related to bug #65153
+* 
+*   TODO: To be checked on ARM if must return TRUE depending on mtype.
+* =============================================================
+*/
+extern BOOL
+Target_Inlines_Remainder(TYPE_ID mtype, INT64 dividend)
+{
+  return FALSE;
+}
+
+/* =============================================================
  *   Can_Do_Fast_Remainder (mtype, dividend)
  *
  *   return whether REM or MOD will be translated into shifts 

@@ -1363,6 +1363,20 @@ CGTARG_Branches_On_True (
   return FALSE;
 }
 
+#ifdef TARG_ST
+/* ====================================================================
+ *   CGTARG_Able_To_Calculate_Remainder
+ *   Return TRUE as being able to calculate the remainder number of
+ *   iterations after unrolling
+ * ====================================================================
+ */
+BOOL
+CGTARG_Able_To_Calculate_Remainder (UINT32 ntimes)
+{
+  return TRUE;
+}
+#endif
+
 /* ====================================================================
  *   CGTARG_Generate_Remainder_Branch
  * ====================================================================
