@@ -1,0 +1,70 @@
+/* 
+
+  Copyright (C) 2009 ST Microelectronics, Inc.  All Rights Reserved. 
+
+  This program is free software; you can redistribute it and/or modify it 
+  under the terms of version 2 of the GNU General Public License as 
+  published by the Free Software Foundation. 
+  This program is distributed in the hope that it would be useful, but 
+  WITHOUT ANY WARRANTY; without even the implied warranty of 
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+
+  Further, this software is distributed without any warranty that it is 
+  free of the rightful claim of any third person regarding infringement 
+  or the like.  Any license provided herein, whether implied or 
+  otherwise, applies only to this software file.  Patent licenses, if 
+  any, provided herein do not apply to combinations of this program with 
+  other software, or any other product whatsoever. 
+  You should have received a copy of the GNU General Public License along 
+  with this program; if not, write the Free Software Foundation, Inc., 59 
+  Temple Place - Suite 330, Boston MA 02111-1307, USA. 
+
+  Contact information:  ST Microelectronics, Inc., 
+  , or: 
+
+  http://www.st.com 
+
+  For further information regarding this notice, see: 
+
+  http: 
+*/
+
+Applicfg file are dedicated to application configuration at file and function level using configuration file:
+
+Open64 based compilers do not allow a fine grain parametrization, meaning that except for already implemented pragmas and attributes (such as inlining), 
+we cannot specify options for a given function or file. If this limitation can be easily workrarounded when IPA is disabled (by applying different options 
+to the files and by splitting files if needed), this is no longer the case when IPA is enabled. This may cause severe problems while debugging and tuning applications, 
+as well as during support actions to the customers. The purpose of this wiki is to propose a solution to implement fine grain control of compilation options in Open64 compilers.
+
+The idea is to provide an application configuration file at compiler level, which will contain a structured information to be attached to the corresponding variables/functions/files. 
+The main driver will parse the application configuration file, apply options either globally or to the specified files. This will modify command line used for all subsequent 
+tools (IPL/inline/BE). BE driver will parse the application file as well, and apply file/function options. 
+We plan to implement option control first. Data placement and variable control will be handled later on. To ease user's work, we will also implement and provide a 
+template generator for application configuration files.
+
+Content:
+	applicfg.lex: lexical analyzer and data manipulation functions. 
+	applicfg.yacc: syntax analyzer. 
+	applicfg_common.h: Data structure definition and manipulation functions header to be included by the drivers. 
+
+Example:
+
+configuration "c1" {                                    // Starts the definition of a configuration called c1
+        -Os                                             // Size optimization will be used for the whole compilation
+        ...
+        file "f1" {                                     // Configuration specification for file f1
+                -O3                                     // In file f1, use speed optimization level => overhide the global Os option
+                ...
+                function "foo" {                        // Configuration specification for function foo
+                        -WOPT:tailmerge=false           // In function foo, disable tailmerge
+                }
+                ...
+        }
+        ...
+}
+
+configuration "c2" {                                    // Other configuration
+        ...
+}
+
+active configuration "c1"                               // Configuration selection, this may also be difined at command line level
