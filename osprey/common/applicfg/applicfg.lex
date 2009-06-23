@@ -50,6 +50,7 @@ extern int yyparse();
 %x FL_comment
 %x FL_string
 %x FL_include
+%x FL_line_comment
 %%
 [\n]				++line_num;
 [ \t\r]			;
@@ -60,6 +61,9 @@ extern int yyparse();
 <FL_comment>"*"+[^*/\n]*
 <FL_comment>"*"+[^*/\n]*\n	++line_num;
 <FL_comment>"*"+"/"		BEGIN(INITIAL);
+
+"//"				    	BEGIN(FL_line_comment);
+<FL_line_comment>[^\n]*\n   { ++line_num; BEGIN(INITIAL);}
 
 
 "\""			BEGIN(FL_string);
