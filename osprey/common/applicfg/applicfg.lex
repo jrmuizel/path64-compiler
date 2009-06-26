@@ -45,6 +45,7 @@ int line_num;
 char *current_compiled_file;
 FILE *current_file;
 extern int yyparse();
+void yyerror (char *s);
 %}
 
 %x FL_comment
@@ -121,6 +122,8 @@ extern int yyparse();
 
 "-"[^ \t\n\r]+	{yylval.name = strdup(yytext); return (FL_OPTION); }
 
+.  { yyerror(yytext); }
+
 %%
 
 static void set_applicfg_input_file(FILE *file_pt) {
@@ -155,6 +158,8 @@ void yyerror (char *s) {
 	printf ("\nsyntax error: %s while parsing file : %s\n",s,current_compiled_file);
 	printf("yychar = %d, yytext = %s\n", yychar, yytext);
 	printf ("yylineno = %d\n", line_num);
+	//FmtAssert(FALSE,("Stop parsing of Application configuration File"));
+	exit(1);
 }
 
 int yywrap () {	return (1);}
