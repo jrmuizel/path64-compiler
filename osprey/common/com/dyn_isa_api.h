@@ -74,7 +74,7 @@ extern "C" {
 #endif
 
 
-#define MAGIC_NUMBER_EXT_ISA_API   20090408  /* Magic number. Interface checking */
+#define MAGIC_NUMBER_EXT_ISA_API   20090416  /* Magic number. Interface checking */
 
 /* ===========================================
  * Base register available for addressing mode
@@ -301,6 +301,13 @@ struct ISA_EXT_Interface {
  /* Handling binutils information: Added for GBU binutils ------------------ */
        ISA_BINUTILS_INFO*        (*get_ISA_BINUTILS_info_tab)           (void);
        mUINT32                   (*get_ISA_BINUTILS_info_tab_sz)        (void);
+
+ /* Handling register classes - Added in REV_20090416 ---------------------- */
+       void                      (*set_ISA_REGISTER_CLASS_offset)       (mUINT32); /* Set extension register class offset    */
+       void                      (*set_ISA_REGISTER_SUBCLASS_offset)    (mUINT32); /* Set extension register subclass offset */
+
+ /* Handling literal classes - Added in REV_20090416 ----------------------- */
+       void                      (*set_ISA_LIT_CLASS_offset)            (mUINT32); /* Set extension literal class offset     */
 };
 
 typedef struct ISA_EXT_Interface ISA_EXT_Interface_t;

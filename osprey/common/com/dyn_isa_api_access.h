@@ -209,6 +209,8 @@ class EXTENSION_ISA_Info {
   inline const ISA_LIT_CLASS_INFO*       get_ISA_LIT_CLASS_info_tab          (void) const;
   inline const mUINT32                   get_ISA_LIT_CLASS_info_tab_sz       (void) const;
   inline const mUINT32                   get_ISA_LIT_CLASS_static_max        (void) const;
+  // Following is new from REV_20090416
+               void                      set_ISA_LIT_CLASS_offset            (mUINT32 offs) const;
   
   /* Handling operands ------------------------------------------------------ */
   inline const ISA_OPERAND_VALTYP*       get_ISA_OPERAND_operand_types_tab   (void) const;
@@ -242,6 +244,9 @@ class EXTENSION_ISA_Info {
   inline const extension_regclass_t*     get_REGISTER_CLASS_info_tab         (void) const;
  public:  
   inline EXTENSION_Regclass_Info        *get_Regclass_Info_tab               (void) const;
+  // Two following are new from REV_20090416
+               void                      set_ISA_REGISTER_CLASS_offset       (mUINT32 offs) const;
+               void                      set_ISA_REGISTER_SUBCLASS_offset    (mUINT32 offs) const;
 
   /* Handling ABI properties ------------------------------------------------ */
   inline const ABI_PROPERTIES*           get_ABI_PROPERTIES_tab              (void) const;

@@ -702,11 +702,23 @@ Emit_Valtypes_Identifiers( ISA_SUBSET subset, FILE *file )
       const ISA_REGISTER_SUBCLASS_INFO *sc_info = ISA_REGISTER_SUBCLASS_Info(ISA_OPERAND_VALTYP_Register_Subclass(valtype));
       fprintf(file,
 	      "    case '%c':\n"
-	      "      SET_RCLASS(ISA_REGISTER_CLASS_%s);\n"
-	      "      SET_RSCLASS(ISA_REGISTER_SUBCLASS_%s);\n"
+	      "      #ifdef ISA_REGISTER_CLASS_%s_gbu\n"
+	      "         SET_RCLASS(ISA_REGISTER_CLASS_%s_gbu);\n"
+	      "      #else\n"
+	      "         SET_RCLASS(ISA_REGISTER_CLASS_%s);\n"
+	      "      #endif\n"
+	      "      #ifdef ISA_REGISTER_SUBCLASS_%s_gbu\n"
+	      "         SET_RSCLASS(ISA_REGISTER_SUBCLASS_%s_gbu);\n"
+	      "      #else\n"
+	      "         SET_RSCLASS(ISA_REGISTER_SUBCLASS_%s);\n"
+	      "      #endif\n"
 	      "      break;\n",
 	      *(ident+1),
 	      ISA_REGISTER_CLASS_INFO_Name(rc_info),
+	      ISA_REGISTER_CLASS_INFO_Name(rc_info),
+	      ISA_REGISTER_CLASS_INFO_Name(rc_info),
+	      ISA_REGISTER_SUBCLASS_INFO_Name(sc_info),
+	      ISA_REGISTER_SUBCLASS_INFO_Name(sc_info),
 	      ISA_REGISTER_SUBCLASS_INFO_Name(sc_info)
 	      );
     }
@@ -764,9 +776,15 @@ Emit_Valtypes_Identifiers( ISA_SUBSET subset, FILE *file )
       ISA_LIT_CLASS lc = ISA_OPERAND_VALTYP_Literal_Class(valtype);
       fprintf(file,
 	      "    case '%c':\n"
-	      "      *lclass = %s;\n"
+	      "      #ifdef %s_gbu\n"
+	      "        *lclass = %s_gbu;\n"
+	      "      #else\n"
+	      "        *lclass = %s;\n"
+	      "      #endif\n"
 	      "      break;\n",
 	      *(ident+1),
+	      ISA_LC_Name(lc),
+	      ISA_LC_Name(lc),
 	      ISA_LC_Name(lc)
 	      );
     }

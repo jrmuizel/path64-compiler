@@ -2224,6 +2224,7 @@ bool Load_Lai_Loader_Info() {
     ext_info->base_INTRINSIC[ext] = 0;
 
     ext_info->base_LIT_CLASS[ext] = lc_max+1;
+    ext_info->ISA_tab[ext]->set_ISA_LIT_CLASS_offset(ext_info->base_LIT_CLASS[ext]);
     lc_max += ext_info->ISA_tab[ext]->get_ISA_LIT_CLASS_info_tab_sz() - (ext_info->ISA_tab[ext]->get_ISA_LIT_CLASS_static_max()+1);
     
     ext_info->base_ENUM_CLASS[ext] = nb_enum;
@@ -2233,6 +2234,7 @@ bool Load_Lai_Loader_Info() {
     nb_enum_value += ext_info->ISA_tab[ext]->get_ISA_ENUM_CLASS_INFO_VALUE_tab_sz();
 	
     ext_info->base_REGISTER_CLASS[ext] = rc_max+1;
+    ext_info->ISA_tab[ext]->set_ISA_REGISTER_CLASS_offset(ext_info->base_REGISTER_CLASS[ext]);
     int rc_in_ext    = ext_info->ISA_tab[ext]->get_ISA_REGISTER_CLASS_tab_sz();
     const ISA_REGISTER_CLASS_INFO *rc_tab = ext_info->ISA_tab[ext]->get_ISA_REGISTER_CLASS_tab();
     rc_max  += rc_in_ext;
@@ -2251,6 +2253,7 @@ bool Load_Lai_Loader_Info() {
 #endif
 
     ext_info->base_REGISTER_SUBCLASS[ext] = subrc_max+1;
+    ext_info->ISA_tab[ext]->set_ISA_REGISTER_SUBCLASS_offset(ext_info->base_REGISTER_SUBCLASS[ext]);
     subrc_max += ext_info->ISA_tab[ext]->get_ISA_REGISTER_SUBCLASS_tab_sz();
 
     if (ext_info->trace_on) {

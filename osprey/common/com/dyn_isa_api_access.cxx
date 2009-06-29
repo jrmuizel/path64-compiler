@@ -72,6 +72,10 @@
  * | 20090408 | - ISA_OPERAND_VALTYP resized relocs internal array from 70 to  |
  * |          |   149. Introduction of 2 new relocations for STxP70 v4.        |
  * +----------+----------------------------------------------------------------+
+ * | 20090416 | - Introduce callback for ISA_REGISTER_CLASS and                |
+ * |          |   ISA_REGISTER_SUBCLASS offset of extensions.                  |
+ * |          | - Introduce callback for ISA_LIT_CLASS offset of extensions.   |
+ * +----------+----------------------------------------------------------------+
  *
  */
 #include <stdlib.h>
@@ -84,7 +88,7 @@ BE_EXPORTED extern EXTENSION_ISA_Info *EXTENSION_Get_ISA_Info_From_TOP(TOP id);
 // ========================================================================
 // List of compatible API revisions for ISA part of the library description
 // ========================================================================
-#define    NB_SUPPORTED_ISA_REV 7
+#define    NB_SUPPORTED_ISA_REV 8
 #define    REV_20070126        (20070126)
 #define    REV_20070615        (20070615)
 #define    REV_20070924        (20070924)
@@ -92,6 +96,7 @@ BE_EXPORTED extern EXTENSION_ISA_Info *EXTENSION_Get_ISA_Info_From_TOP(TOP id);
 #define    REV_20081010        (20081010)
 #define    REV_20090126        (20090126)
 #define    REV_20090408        (20090408)
+#define    REV_20090416        (20090416)
 static INT supported_ISA_rev_tab[NB_SUPPORTED_ISA_REV] = {
   REV_20070126,
   REV_20070615,
@@ -99,6 +104,7 @@ static INT supported_ISA_rev_tab[NB_SUPPORTED_ISA_REV] = {
   REV_20080307,
   REV_20081010,
   REV_20090126,
+  REV_20090408,
   MAGIC_NUMBER_EXT_ISA_API   /* current one */
 };
 
@@ -813,6 +819,28 @@ void
 EXTENSION_ISA_Info::set_ISA_RELOC_dynamic_reloc_offset  (mUINT32 offset) const {
   if (isa_ext->magic >= REV_20081010) {
      isa_ext->set_ISA_RELOC_dynamic_reloc_offset(offset);
+  }
+}
+
+/* Introduced at REV_20090416 */
+void 
+EXTENSION_ISA_Info::set_ISA_LIT_CLASS_offset (mUINT32 offs) const {
+  if (isa_ext->magic >= REV_20090416) {
+     isa_ext->set_ISA_LIT_CLASS_offset(offs);
+  }
+}
+
+void 
+EXTENSION_ISA_Info::set_ISA_REGISTER_CLASS_offset (mUINT32 offs) const {
+  if (isa_ext->magic >= REV_20090416) {
+     isa_ext->set_ISA_REGISTER_CLASS_offset(offs);
+  }
+}
+ 
+void
+EXTENSION_ISA_Info::set_ISA_REGISTER_SUBCLASS_offset (mUINT32 offs) const {
+  if (isa_ext->magic >= REV_20090416) {
+     isa_ext->set_ISA_REGISTER_SUBCLASS_offset(offs);
   }
 }
 
