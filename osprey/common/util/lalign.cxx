@@ -45,6 +45,11 @@
  *
  * ====================================================================
  */
+/*
+-------------------------------------------------------------------------------
+Returns the gcd of 2 unsigned 64-bit numbers a and b
+-------------------------------------------------------------------------------
+*/
 static UINT64 gcd(UINT64 u, UINT64 v)
 {
     int shift;
@@ -83,7 +88,38 @@ static UINT64 gcd(UINT64 u, UINT64 v)
     return u << shift;
 }
 
+/*
+-------------------------------------------------------------------------------
+Extended Euclidean algorithm
+reference: http://fr.wikipedia.org/wiki/Algorithme_d'Euclide_étendu
+Computes the gcd of 2 unsigned 64-bit numbers a and b, as well as 2 signed 64-bit
+numbers u and v, such as gcd(a, b) = u*a + v*b 
+(u,v) are called the Bezout coeficients
+-------------------------------------------------------------------------------
+*/
+static void extended_euclid(UINT64 a, UINT64 b, UINT64 *gcd, INT64 *u, INT64 *v)
+{
+  UINT64 rr, q, rs;
+  INT64 uu, vv, us, vs;
 
+  *gcd = a;
+  rr = b;
+  *u = 1;
+  *v = 0;
+  uu = 0;
+  vv = 1;
+
+  while ( rr != 0) {
+    q = *gcd / rr;
+    rs = *gcd; us = *u; vs = *v;
+    *gcd = rr; *u = uu; *v = vv;
+    rr = rs - q * rr; uu = us - q * uu; vv = vs - q * vv;
+  }
+  
+  FmtAssert ((*gcd == (*u * a + *v * b)), ("incompatible output for extended_euclid"));
+  return;
+}
+  
 /*
 -------------------------------------------------------------------------------
 Returns the number of leading 0 bits before the most-significant 1 bit of
@@ -212,48 +248,50 @@ LAlign::Normalize () const
 
 const LAlign Meet (const LAlign &a, const LAlign &b)
 {
-  LAlign a1, a2;
-  ZInt base;
+  LAlign result;
+  ZInt base, bias_diff;
   if (b.isTop ())
     return a;
   else if (a.isTop ())
     return b;
   else {
-    if ((a.base_ | b.base_) == 0) { // case of 2 constant values
-      return LAlign(abs(a.bias_ - b.bias_), Min(a.bias_, b.bias_)).Normalize ();
-    }
-    else if ( a.base_ == 0) { 
-      if (a.bias_ % b.base_ == b.bias_)
-	return b;
-      else
-	return LAlign::Bottom ();
-    }
-    else if ( b.base_ == 0) { 
-      if (b.bias_ % a.base_ == a.bias_)
-	return a;
-      else
-	return LAlign::Bottom ();
-    }
-    else {
-      UINT64 basint = gcd(a.base_.to_INT64 (), b.base_.to_INT64 ());
-      base = (ZInt)basint;
-      a1 = LAlign(base, a.bias_).Normalize ();
-      a2 =  LAlign(base, b.bias_).Normalize ();
-      if (a1.Equal (a2))
-	return a1;
-      else {
-	int i;
-	for (i = Max(a1.bias_, a2.bias_).to_INT (); i > 1; i--)
-	  if ((a1.base_ % i) == 0 && ((a1.bias_ % i) == (a2.bias_ % i)))
-	    return LAlign(i, a1.bias_ % i);
-	return LAlign::Bottom ();
-      }
-    } 
+    bias_diff = abs(a.bias_-b.bias_);
+    if (! bias_diff.isFinite ()) // case of a negative constant incurring an overflow in a.bias_-b.bias_
+      return LAlign::Bottom ();  
+    result.base_ = (ZInt)gcd(gcd(a.base_.to_INT64 (), b.base_.to_INT64 ()), bias_diff.to_INT64 ());
+    result.bias_ = a.bias_;
+    return result.Normalize ();
   }
 }
 
+/*
+Implement the Join operator as the result of the linear congruence system:
+   x = C1 [M1]  
+   x = C2 [M2]
+which is equivalent to:
+   M2*k = C1 - C2 [M1] (for C1 >= C2)
+or M1*k = C2 - C1 [M2] (for C2 >= C1)
+
+The condition of existence of a set of solution for k is the following:
+   abs(C1 - C2) % gcd(M1, M2) = 0
+
+If this condition is fullfiled, then the solution of the system is the set :
+   (M, C) = (lcm(M1, M2), M2 * (C1 - C2) * s / gcd(M1, M2) + C2) for C1 >= C2
+          = (lcm(M1, M2), M1 * (C2 - C1) * r / gcd(M1, M2) + C1) for C2 >= C1
+
+where (r,s) are the Bezout coefficients of the numbers (M1, M2), i.e the integers such as
+  r * M1 + s * M2 = gcd(M1,M2)
+and 
+  lcm(M1, M2) is the least common multiple of (M1, M2), i.e: lcm(M1, M2) * gcd(M1, M2) = M1 * M2
+*/
 const LAlign Join (const LAlign &a, const LAlign &b)
 {
+  ZInt bias_diff = abs(a.bias_-b.bias_);
+  UINT64 gcd;
+  INT64 r, s;
+
+  extended_euclid(a.base_.to_INT64 (), b.base_.to_INT64 (), &gcd, &r, &s);
+
   if (a.isTop ())
     return a;
   else if (b.isTop ())
@@ -268,31 +306,18 @@ const LAlign Join (const LAlign &a, const LAlign &b)
     else
       return LAlign::Top ();
   }
-  else if ( b.base_ == 0) {
-    if (b.bias_ % a.base_ == a.bias_)
-	return b;
-      else
-	return LAlign::Top ();
+  else if (! bias_diff.isFinite ()){
+      return LAlign::Top ();
   }
-  else if ( a.base_ == 0) {
-    if (a.bias_ % b.base_ == b.bias_)
-	return a;
-      else
-	return LAlign::Top ();
-  }
-  else {
+  else if (bias_diff % gcd == 0){ // condition of existence of a non-null intersection
     LAlign result;
-    int i;
-    UINT64 igcd = gcd(a.base_.to_INT64 (), b.base_.to_INT64 ());
-    ZInt ilcm = a.base_ * b.base_ / (ZInt)igcd;
-    for (i=0; i <= (ilcm - b.bias_)/b.base_; i++)
-      if ((((b.base_ * (ZInt)i) + b.bias_ - a.bias_) % a.base_) == 0){
-	result.base_ = ilcm;
-	result.bias_ = (b.base_ * (ZInt)i) + b.bias_;
-	return result;
-      }
-    return LAlign::Top ();
+    result.base_ = a.base_ * b.base_ / (ZInt)gcd;
+    result.bias_ = (a.bias_ >= b.bias_) ? bias_diff * b.base_ * (ZInt)s / (ZInt)gcd + b.bias_ : 
+      bias_diff * a.base_ * (ZInt)r / (ZInt)gcd + a.bias_;
+    return result.Normalize ();
   }
+  return LAlign::Top ();
+  
 }
 
 
@@ -352,58 +377,41 @@ LAlign::getbias () const
 
 // Operators
 
-const LAlign MakeUnsigned(const LAlign &a, INT width)
+static ZInt ZeroExtend (ZInt a, INT width)
 {
-  ZInt mostneg = 0;
-  ZInt mostpos = (ZInt(1) << width) - ZInt(1);
-  if (a.isTop ())
-    return a;
-  else if (width >= 64)
-    return  LAlign::Bottom ();
-  else if ( !a.hasValue ()){
-    if (a.base_ > mostpos || a.base_ < mostneg) 
-      return  LAlign::Bottom ();
-    else
-      return a;
-  }
-  else { // a.hasValue ()
-    ZInt val = a.getValue ();
-    if (val > mostpos || val < mostneg){
-      INT64 res = (UINT64)((val.to_INT64 ()) << (64 - width)) >> (64 - width);
-      return LAlign (res);
-    }
-    else
-      return a;
+  return a & (((INT64)1 << width) - 1);
+}
+
+static ZInt SignExtend (ZInt a, INT width)
+{
+  if ((a & ((INT64)1 << (width - 1))) != ZInt(0)) {
+    return a | ((INT64)-1 << width);
+  } else {
+    return a & (((INT64)1 << width) - 1);
   }
 }
 
-
+const LAlign MakeUnsigned(const LAlign &a, INT width)
+{
+  if (a.isTop () || width > 63)
+    return a;
+  else {
+    ZInt base = ZeroExtend (a.base_, width);
+    ZInt bias = ZeroExtend (a.bias_, width);
+    return LAlign(base, bias).Normalize();
+  }
+}
 
 const LAlign MakeSigned (const LAlign &a, INT width)
 {
-  ZInt mostpos = (ZInt(1) << (width - 1)) - ZInt(1);
-  ZInt mostneg = ZInt(-1) << (width - 1);
-  if (a.isTop ())
+  if (a.isTop () || width > 63) {
     return a;
-  else if (width >= 64)
-    return  LAlign::Bottom ();
-  else if ( !a.hasValue ()){
-    if (a.base_ > mostpos || a.base_ < mostneg) 
-      return  LAlign::Bottom ();
-    else
-      return a;
-  }
-  else { // a.hasValue ()
-    ZInt val = a.getValue ();
-    if (val > mostpos || val < mostneg){
-      INT64 res = ((val.to_INT64 ()) << (64 - width)) >> (64 - width);
-      return LAlign (res);
-    }
-    else
-      return a;
+  } else {
+    ZInt base = SignExtend (a.base_, width);
+    ZInt bias = SignExtend (a.bias_, width);
+    return LAlign(base, bias).Normalize();
   }
 }
-
 
 const LAlign LeftShift (const LAlign &a, INT width)
 {
@@ -414,7 +422,7 @@ const LAlign LeftShift (const LAlign &a, INT width)
   else {
     ZInt base =  a.base_ << width;
     ZInt bias =  a.bias_ << width;
-    return LAlign (base, bias);
+    return LAlign (base, bias).Normalize ();
   }
 }
 
@@ -440,7 +448,7 @@ const LAlign RightShift (const LAlign &a, INT width)
   else {
     ZInt base =  a.base_ >> width;
     ZInt bias =  a.bias_ >> width ;
-    return LAlign (base, bias);
+    return LAlign (base, bias).Normalize ();
   }
 }
 
