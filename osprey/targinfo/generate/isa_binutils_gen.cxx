@@ -145,6 +145,7 @@ void ISA_Binutils_Begin( int portsize )
 /////////////////////////////////////
 {
 #ifdef DYNAMIC_CODE_GEN
+  ISA_PACK_Initialize_Stub();
   ISA_RELOCS_Initialize_Stub();
 #endif
   
@@ -432,13 +433,14 @@ void ISA_Binutils_End(void)
   } else {
   }
 
+  // base case to avoid generation of zero sized arrays
   fprintf(cfile,
           "static mUINT32 No_Extension_Relocate_Encoding ( ISA_BINUTILS_EXTENSION_RELOCATE_ENCODING_INFO ** Encoding, mUINT32 Size ) {\n"
           "  return 0;\n"
-	  "}\n\n"
+          "}\n\n"
           "static mUINT32 No_Extension_Relocate_Encoding_Nr ( void ) {\n"
           "  return 0;\n"
-	  "}\n\n");
+          "}\n\n");
 
   nb_subsets = ISA_SUBSET_count - ISA_SUBSET_MIN;
 
@@ -461,54 +463,75 @@ void ISA_Binutils_End(void)
 	        binutils[subset]->port[pindex],
 		(pindex<PORT_SIZE-1)?", ":"");
       }
-      fprintf(cfile,"};\n");
+      fprintf(cfile," };\n\n");
+
       if (binutils[subset]->ext_rel_enc) {
-         int size;
-	 
-         size = extension_relocate_encoding[subset].size();
+ 
+         int size = extension_relocate_encoding[subset].size();
+
+         // Set symbols, top, masks and encodings, in a static array
          fprintf(cfile,
-                 "static ISA_BINUTILS_EXTENSION_RELOCATE_ENCODING_INFO Extension_Relocate_Encoding_info_tab_%s [] = {\n",
-   	         ISA_SUBSET_Name(subset));
-	 for (encindex=0;encindex<size;encindex++) {
-	    unsigned int nb_op;
-	    
-	    fprintf(cfile,"  { \"%s\", TOP_%s, ",
-	            extension_relocate_encoding[subset][encindex]->symbol,
-		    TOP_Name(extension_relocate_encoding[subset][encindex]->top));
-            fprintf(cfile,"0x%llXULL, 0x%llXULL }%s\n",
-	            extension_relocate_encoding[subset][encindex]->mask,
-		    extension_relocate_encoding[subset][encindex]->encoding,
-		    encindex!=size-1?",":"");
+            "static ISA_BINUTILS_EXTENSION_RELOCATE_ENCODING_INFO Extension_Relocate_Encoding_info_tab_%s [] = {\n",
+            ISA_SUBSET_Name(subset)
+         );
+         for (encindex=0;encindex<size;encindex++) {
+            fprintf(cfile,
+               "  { \"%s\", TOP_%s%s, 0x%016llXULL, 0x%016llXULL }%s\n",
+               extension_relocate_encoding[subset][encindex]->symbol,
+               gen_static_code ? "" : "local_",
+	       TOP_Name(extension_relocate_encoding[subset][encindex]->top),
+               extension_relocate_encoding[subset][encindex]->mask,
+               extension_relocate_encoding[subset][encindex]->encoding,
+               encindex!=size-1?",":""
+            );
          }
          fprintf(cfile,"};\n\n");
-	 
-         fprintf(cfile,
-                 "static mUINT32 Extension_Relocate_Encoding_%s ( ISA_BINUTILS_EXTENSION_RELOCATE_ENCODING_INFO ** Encoding, mUINT32 Size ) {\n",
-   	         ISA_SUBSET_Name(subset));
-         size = extension_relocate_encoding[subset].size();
-         fprintf(cfile,
-  	        "  mUINT32 l_size;\n\n"
-		"  if (Size<%d) return 0;\n",
-		size);
-	 for (encindex=0;encindex<size;encindex++) {
-            fprintf(cfile,
-                   "  Encoding[%d] = &Extension_Relocate_Encoding_info_tab_%s[%d];\n",
-	           encindex,ISA_SUBSET_Name(subset),encindex);
-         }	 
-         fprintf(cfile,
-                 "  for (l_size=%d; l_size<Size; l_size++) {\n"
-		 "    Encoding[l_size] = NULL;\n"
-		 "  }\n",size);
-         fprintf(cfile,
-                 "  return 1;\n"
-   	         "}\n\n");
 
+         // Generate function to send back encoding relocation informations
          fprintf(cfile,
-                 "static mUINT32 Extension_Relocate_Encoding_Nr_%s ( void ) {\n",
-   	         ISA_SUBSET_Name(subset));
+            "static mUINT32 Extension_Relocate_Encoding_%s ( ISA_BINUTILS_EXTENSION_RELOCATE_ENCODING_INFO ** Encoding, mUINT32 Size ) {\n",
+            ISA_SUBSET_Name(subset)
+         );
+
+	 // Check if given array is big enough
          fprintf(cfile,
-	         "  return %d;\n"
-		 "}\n\n",extension_relocate_encoding[subset].size());
+            "  mUINT32 l_size;\n\n"
+            "  if (Size<%d) return 0;\n\n",
+            size
+         );
+
+	 // Fill caller array with local definitions
+         fprintf(cfile,
+            "  for (l_size=0; l_size<%d; l_size++) {\n"
+            "    Encoding[l_size] = &Extension_Relocate_Encoding_info_tab_%s[l_size];\n"
+            "  }\n\n",
+            size,
+            ISA_SUBSET_Name(subset)
+         );
+
+	 // Finalize caller array if bigger than expected
+         fprintf(cfile,
+            "  for (l_size=%d; l_size<Size; l_size++) {\n"
+            "    Encoding[l_size] = NULL;\n"
+            "  }\n\n",
+            size
+         );
+
+	 // End of Extension_Relocate_Encoding_...()
+         fprintf(cfile,
+            "  return 1;\n"
+            "}\n\n"
+         );
+
+         // callback to return number of encoding relocation
+         fprintf(cfile,
+            "static mUINT32 Extension_Relocate_Encoding_Nr_%s ( void ) {\n"
+            "  return %d;\n"
+            "}\n\n",
+            ISA_SUBSET_Name(subset),
+            size
+         );
+
       }
     }
   }
