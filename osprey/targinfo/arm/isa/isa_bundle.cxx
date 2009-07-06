@@ -1210,6 +1210,7 @@ main()
 		 TOP_orr_i5_ror_r_r_npc_cond, 
 		 TOP_orr_npc_ror_npc_npc_npc_cond, 
 		 TOP_armv5e_orr_r_r_npc_cond, 
+		 TOP_PCOPY, 
 		 TOP_phi, 
 		 TOP_pkhbt_i5_lsl_npc_npc, 
 		 TOP_pkhbt_npc_npc, 

@@ -464,6 +464,7 @@ main()
 		 TOP_KILL,	/* 'KILL' */ /* MDS Operator: Operator:arm:KILL */
 		 TOP_label,	/* 'LABEL %1' */ /* MDS Operator: Operator:arm:LABEL */
 		 TOP_nop,	/* 'nop' */ /* MDS Operator: Operator:arm:nop */
+		 TOP_PCOPY,	/* 'PCOPY' */ /* MDS Operator: Operator:arm:PCOPY */
 		 TOP_phi,	/* 'PHI' */ /* MDS Operator: Operator:arm:PHI */
 		 TOP_psi,	/* 'PSI' */ /* MDS Operator: Operator:arm:PSI */
 		 TOP_SIGMA,	/* 'SIGMA' */ /* MDS Operator: Operator:arm:SIGMA */

@@ -44,7 +44,7 @@
 #include "targ_isa_subset.h"
 #include "isa_syntax_gen.h"
 
-static const char *mnemonic_names[2173] = { 
+static const char *mnemonic_names[2174] = { 
   "adc", 	 /* TOP_adc_i5_asr_r_r_npc_sflags */  
   "adc", 	 /* TOP_adc_npc_asr_npc_npc_npc_sflags */  
   "adc", 	 /* TOP_adc_i8_r_npc_sflags */  
@@ -1208,6 +1208,7 @@ static const char *mnemonic_names[2173] = {
   "orr", 	 /* TOP_orr_i5_ror_r_r_npc_cond */  
   "orr", 	 /* TOP_orr_npc_ror_npc_npc_npc_cond */  
   "orr", 	 /* TOP_armv5e_orr_r_r_npc_cond */  
+  "PCOPY", 	 /* TOP_PCOPY */  
   "PHI", 	 /* TOP_phi */  
   "pkhbt", 	 /* TOP_pkhbt_i5_lsl_npc_npc */  
   "pkhbt", 	 /* TOP_pkhbt_npc_npc */  

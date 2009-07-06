@@ -1211,6 +1211,7 @@ main ()
 		 "orr_i5_ror_r_r_npc_cond",
 		 "orr_npc_ror_npc_npc_npc_cond",
 		 "armv5e_orr_r_r_npc_cond",
+		 "PCOPY",	 // dummy
 		 "phi",	 // ssa
 		 "pkhbt_i5_lsl_npc_npc",
 		 "pkhbt_npc_npc",
