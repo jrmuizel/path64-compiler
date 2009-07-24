@@ -42,6 +42,8 @@ http:
 #include <string.h>
 #include <stdarg.h>
 
+#include <cmplrs/rcodes.h>
+
 #include "air_loader.h"
 #include "dll_loader.h"
 #include "isa_loader.h"
@@ -83,24 +85,96 @@ char *DBar =
 char *Sharps =
 "#######################################################################\n";
 
+/* 
+ * The 4 following functions (Fail_FmtAssertion, Abort_Compiler_Location,
+ * DevWarn and ErrMsg) are stubs for functions normally contained in
+ * common/utils/errors.cxx. Their current implementation is still
+ * rudimentary and could be improved.
+ *
+ */
+
+static char *libair_file_name = NULL;
+static INT   libair_line_number = 0;
+
+#ifdef __RELEASE__
+static BOOL  libair_devwarn_enabled = FALSE;
+#else
+static BOOL  libair_devwarn_enabled = TRUE;
+#endif
+
+static char *libair_phase_name = 
+             "Open64 Based Assembly Intermediate Representation";
+
 void
 Fail_FmtAssertion ( const char *fmt, ... )
 {
+   va_list args;
+   FILE *outfile = stderr;
+
+   va_start( args, fmt );
+   fprintf( outfile, "Fatal Error: ");
+   vfprintf( outfile, fmt, args );
+   fprintf ( outfile, "\n" );
+   fflush( outfile );
+   va_end( args );
+
+   exit(RC_INTERNAL_ERROR);
 }
+
 void Abort_Compiler_Location (
   char * file_name,
   INT    line_number )
 {
+  libair_file_name   = file_name;
+  libair_line_number = line_number;
+
+  return;
 }
+
 void
 DevWarn( const char *fmt, ... )
 {
+  va_list args;
+  const char *phase_name = libair_phase_name;
+  FILE *outfile = stderr;
+
+  va_start ( args, fmt );
+
+  if(libair_devwarn_enabled) {
+    /* Write to standard error first: */
+    fprintf ( outfile, "!!! DevWarn during %s: ", phase_name );
+    vfprintf ( outfile, fmt, args );
+    fprintf ( outfile, "\n" );
+    fflush ( outfile );
+   }
+
+  va_end(args);
+
+  return;
 }
+
 void
 ErrMsg ( INT ecode, ... )
 {
+  /* We can't reuse the overall system normally used
+   * in the compiler. Therefore, we just deliver
+   * some elementary information without any
+   * further detail.
+   */
+
+  const char *phase_name = libair_phase_name;
+  FILE *outfile = stderr; 
+
+  fprintf(outfile,"Error during %s ",phase_name);
+  if(libair_file_name!=NULL && libair_line_number!= 0)
+     fprintf(outfile, ": file %s: line %d ",libair_file_name,libair_line_number);
+  fprintf(outfile,"\n");
+  fflush(outfile);
+ 
+  return;
 }
+
 #endif				/* BINUTILS */
 
 
-#endif                               /* __AIR_LOADER_CXX__ */
+#endif				/* __AIR_LOADER_CXX__ */

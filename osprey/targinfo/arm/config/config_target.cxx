@@ -363,7 +363,8 @@ Prepare_Target ( void )
   }
 
   /* Set descriptive variables: */
-  Use_32_Bit_Pointers = TRUE; /* Always true for ST200 ABIs. */
+  Use_32_Bit_Pointers = TRUE; /* Always true for ARM ABIs. */
+  Use_ELF_32          = TRUE; /* ELF32 file format.        */
 
   return;
 }
@@ -690,7 +691,8 @@ Configure_Target ()
 void
 IPA_Configure_Target (void)
 {
-  Use_32_Bit_Pointers = TRUE; /* Always true for ST200 ABIs. */
+  Use_32_Bit_Pointers = TRUE; /* Always true for ARM ABIs. */
+  Use_ELF_32          = TRUE; /* Always true for ARM.      */
 
   // Any ST200 ABI define these.
   Pointer_Size = 4;
