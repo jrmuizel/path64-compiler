@@ -4432,3 +4432,36 @@ BOOL
 CGTARG_do_not_unroll_p(BB* bb) {
     return FALSE;
 }
+
+
+/**
+ * Return TRUE if it exists a single non-simulated instruction to copy
+ * a composite register of class <rc> made of <nhardregs> atomic regs.
+ */
+BOOL
+CGTARG_Exist_Single_OP_Copy(ISA_REGISTER_CLASS rc, INT nhardregs)
+{
+  return (nhardregs == 1);
+}
+
+
+/**
+ * Return TRUE if the 2 TNs compose a single composite register.
+ * All parameter TNs are expected to be allocated register TNs.
+ */
+BOOL
+CGTARG_Is_Register_Pair(TN *tn1, TN * tn2)
+{
+  return FALSE;
+}
+
+
+/*
+ * Return TRUE if the 4 TNs compose a single composite register.
+ * All parameter TNs are expected to be allocated register TNs.
+ */
+BOOL
+CGTARG_Is_Register_Quad(TN *tn1, TN *tn2, TN *tn3, TN *tn4)
+{
+  return FALSE;
+}
