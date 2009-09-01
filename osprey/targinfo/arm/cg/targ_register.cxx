@@ -300,20 +300,20 @@ CGTARG_Forbidden_Prolog_Epilog_Registers (ISA_REGISTER_CLASS rclass)
 
 #ifdef TARG_ST
 /* ====================================================================
- *   CGTARG_Prefered_GRA_Registers 
+ *   CGTARG_Preferred_GRA_Registers 
  * ====================================================================
  */
 REGISTER_SET
-CGTARG_Prefered_GRA_Registers(ISA_REGISTER_CLASS rclass)
+CGTARG_Preferred_GRA_Registers(ISA_REGISTER_CLASS rclass)
 {
   REGISTER_SET s = REGISTER_SET_EMPTY_SET;
   return s;
 }
 
 REGISTER_SET
-CGTARG_Prefered_LRA_Registers(ISA_REGISTER_CLASS rclass)
+CGTARG_Preferred_LRA_Registers(ISA_REGISTER_CLASS rclass)
 {
-  return CGTARG_Prefered_GRA_Registers (rclass);
+  return CGTARG_Preferred_GRA_Registers (rclass);
 }
 
 /* ====================================================================
