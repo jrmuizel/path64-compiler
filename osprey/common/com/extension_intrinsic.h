@@ -22,8 +22,10 @@
 
 */
 
+#include "extension_pattern_rec.h"
 #include "wintrinsic.h"
 #include "wn.h"
+#include <list>
 
 /** 
  * Get INTRINSIC idx from intrinsic name.
@@ -36,17 +38,6 @@ INTRINSIC EXTENSION_INTRINSIC_From_Name(const char * name);
 void EXTENSION_add_INTRINSIC_to_Map(const char* c, INTRINSIC i);
 
 
-/** 
- * Initialize pattern_rec
- */
-void init_pattern_rec(void);
-/**
- * main function of pattern_rec. Check the set of target specific
- * patterns in the WN tree. 
- */
-INTRINSIC targ_pattern_rec(WN *tree, INT *nbkids,  WN *kids[],
-                           INT *nboutputs,  ST* outputs[]);
-
 /**
  * Function that generates an intrinsic OP from extension code generation.
  * Note: This function should only be called from BETARG_Create_Intrinsic_from_OP()
@@ -56,6 +47,13 @@ WN *Create_Intrinsic_from_OP(INTRINSIC intrnidx, int nbkids, WN *kids[],
                              INT nboutputs,  ST* outputs[],
                              TYPE_ID dsttype, WN** new_stmts,
 			     bool* modified);
+
+/** 
+ * Initialize pattern_rec
+ * 
+ */
+void
+BETARG_Init_Pattern_Rec(void);
 
 /**
  * Function that generates an intrinsic OP from extension code generation.
@@ -73,3 +71,10 @@ WN *BETARG_Create_Intrinsic_from_OP(INTRINSIC intrnidx, int nbkids, WN *kids[],
  * @return the mask value
  */
 INT32 ext_lower_get_local_ext_gen_mask();
+
+
+typedef std::list<recog_rule*> ListOfRules;
+typedef ListOfRules::const_iterator ListOfRulesCIt;
+extern ListOfRules*  Get_rules_per_opcode(OPCODE opc);
+extern ListOfRules*  Get_rules_per_intrinsic(INTRINSIC opc);
+extern ListOfRules*  Get_Extension_pattern_rules();

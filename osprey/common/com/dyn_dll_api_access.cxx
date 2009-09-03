@@ -52,7 +52,10 @@
  * |          |   Note: no real API change for this revision but useful to     |
  * |          |         check that older compiler not used with recent RTK     |
  * +----------+----------------------------------------------------------------+
- *
+ * | 20090813 | - Introduce pattern recognition rule definitions inside
+ * |          |   the extension dll.
+ * +----------+----------------------------------------------------------------+
+*
  */
 #include "../gccfe/extension_include.h"
 #include "dyn_dll_api_access.h"
@@ -61,17 +64,19 @@
 // List of compatible API revisions for high level part of the library
 // description
 // ========================================================================
-#define    NB_SUPPORTED_HL_REV  5
+#define    NB_SUPPORTED_HL_REV  6
 #define    REV_20070131        (20070131)
 #define    REV_20070615        (20070615)
 #define    REV_20070924        (20070924)
 #define    REV_20080715        (20080715)
 #define    REV_20090410        (20090410)
+#define    REV_20090813        (20090813)
 static INT supported_HL_rev_tab[NB_SUPPORTED_HL_REV] = {
   REV_20070131,
   REV_20070615,
   REV_20070924,
   REV_20080715,
+  REV_20090410,
   MAGIC_NUMBER_EXT_API   /* current one */
 };
 
@@ -143,6 +148,11 @@ struct extension_builtins_pre_20080715
   
 typedef struct extension_builtins_pre_20080715 extension_builtins_t_pre_20080715;
 
+#ifdef TARG_STxP70
+// bwd compatibility
+#include "../../targinfo/stxp70/be/extension_compatibility.inc"
+#endif
+
 // #############################################################################
 // ##
 // ## Class: EXTENSION_HighLevel_Info
@@ -157,6 +167,40 @@ EXTENSION_HighLevel_Info::EXTENSION_HighLevel_Info(const extension_hooks *input_
   // =====================================================
   // Perform revision migration here
   // =====================================================
+
+  if ( hooks->magic < REV_20090813 ) { /* any version older than
+                                          REV_20090813 */
+    overriden_recrules = NULL;
+    overriden_recrules_count = 0;
+
+#ifdef TARG_STxP70
+
+    if ( hooks->magic >= REV_20080715) { /* only MP1x with api
+                                            version more recent than
+                                            20080715 are concerned */ 
+      // backward compatibility
+      /* as the extension name is not accessible in the hooks,
+       * I check MP1x on the first builtin name
+       */
+      if (input_hooks->get_builtins_count()>0) {
+        const char* name = input_hooks->get_builtins()[0].c_name;
+        
+        
+        if (strstr(name, "MP1x")!=NULL) {
+          // backward compatiblity. use static rule table.
+          overriden_recrules = mpx_recog_rules; 
+          overriden_recrules_count = mpx_recog_rules_count;
+        }
+      }
+    }
+#endif
+    
+  } else {
+    overriden_recrules = hooks->get_recrules();
+    overriden_recrules_count = hooks->get_recrules_count();
+  }
+
+
   if ( hooks->magic < REV_20080715 ) {  /* any version older than
                                            REV_20080715 */
     int i;

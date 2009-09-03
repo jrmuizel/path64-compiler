@@ -39,7 +39,10 @@
 extern "C" {
 #endif
 
-#define MAGIC_NUMBER_EXT_API   20090410  /* Magic number. Interface checking */
+#define MAGIC_NUMBER_EXT_API   20090813  /* Magic number. Interface checking */
+
+
+#include "extension_pattern_rec.h"
 
 struct extension_machine_types
 {
@@ -250,6 +253,11 @@ struct extension_hooks
   /* Return the base intrinsic count for that extension dll. */
   INTRINSIC (*get_intrinsics_base_count) (void);
 
+  /* Return the rec pattern rules array */
+  recog_rule** (*get_recrules) (void);
+  
+  /* Return the number of rec pattern rules  */
+  unsigned int (*get_recrules_count) (void);
 };
 
 typedef struct extension_hooks extension_hooks_t;

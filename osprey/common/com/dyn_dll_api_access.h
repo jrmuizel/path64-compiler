@@ -78,6 +78,12 @@ class EXTENSION_HighLevel_Info {
   /* Return the base mtype count for that extension dll. */
   inline TYPE_ID get_mtypes_base_count (void) const;
 
+  /* Return the number of rec pattern rules  */
+  inline unsigned int get_recrules_count (void) const;
+
+  /* Return the rec pattern rules array */
+  inline recog_rule ** get_recrules (void);
+
   /* ============================
      ==  Builtins information  ==
      ============================ */
@@ -97,7 +103,10 @@ class EXTENSION_HighLevel_Info {
   BOOL                   own_hooks;
   const extension_hooks *hooks;
   const extension_machine_types_t * overriden_machine_types;
-  const  extension_builtins_t * overriden_builtins;
+  const extension_builtins_t * overriden_builtins;
+
+  recog_rule ** overriden_recrules;
+  unsigned int overriden_recrules_count;
 };
 
 
@@ -158,6 +167,19 @@ EXTENSION_HighLevel_Info::get_builtins_base_count (void) const {
 inline INTRINSIC 
 EXTENSION_HighLevel_Info::get_intrinsics_base_count (void) const {
   return          (hooks->get_intrinsics_base_count());
+}
+
+
+  /* Return the rec pattern rules array */
+inline  recog_rule**
+EXTENSION_HighLevel_Info::get_recrules (void) {
+  return          (overriden_recrules);
+}
+
+  /* Return the number of rec pattern rules  */
+inline unsigned int 
+EXTENSION_HighLevel_Info::get_recrules_count (void) const {
+  return          (overriden_recrules_count);
 }
 
 #endif /* _DYN_DLL_API_ACCESS_H_ */
