@@ -682,7 +682,7 @@ Apply_Interleave (
 class Critical_Recurrence {
   static const INT NEG_INF = -999;
   vector< vector<INT> >  mindist;
-  INT size() const { mindist.size(); }
+  INT size() const { return mindist.size(); }
 public:
   INT operator()(INT i) const { return mindist[i][i] > 0; }
   void Print(FILE *fp) const;
