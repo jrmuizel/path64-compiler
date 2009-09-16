@@ -52,10 +52,12 @@
  * |          |   Note: no real API change for this revision but useful to     |
  * |          |         check that older compiler not used with recent RTK     |
  * +----------+----------------------------------------------------------------+
- * | 20090813 | - Introduce pattern recognition rule definitions inside
- * |          |   the extension dll.
+ * | 20090813 | - Introduce pattern recognition rule definitions inside        |
+ * |          |   the extension dll.                                           |
  * +----------+----------------------------------------------------------------+
-*
+ * | 20090903 | - Support extension type size up to 2048 bits                  |
+ * +----------+----------------------------------------------------------------+
+ *
  */
 #include "../gccfe/extension_include.h"
 #include "dyn_dll_api_access.h"
@@ -64,19 +66,21 @@
 // List of compatible API revisions for high level part of the library
 // description
 // ========================================================================
-#define    NB_SUPPORTED_HL_REV  6
+#define    NB_SUPPORTED_HL_REV  7
 #define    REV_20070131        (20070131)
 #define    REV_20070615        (20070615)
 #define    REV_20070924        (20070924)
 #define    REV_20080715        (20080715)
 #define    REV_20090410        (20090410)
 #define    REV_20090813        (20090813)
+#define    REV_20090903        (20090903)
 static INT supported_HL_rev_tab[NB_SUPPORTED_HL_REV] = {
   REV_20070131,
   REV_20070615,
   REV_20070924,
   REV_20080715,
   REV_20090410,
+  REV_20090813,
   MAGIC_NUMBER_EXT_API   /* current one */
 };
 
@@ -101,18 +105,18 @@ BOOL EXTENSION_Is_Supported_HighLevel_Revision(INT hooks_rev) {
 
 typedef struct
 {
-  machine_mode_t mmode; 
-  const char *name; 
+  machine_mode_t  mmode; 
+  const char     *name; 
   enum mode_class mclass;
-  unsigned short mbitsize; 
-  unsigned char msize;
-  unsigned char munitsize;
-  unsigned char mwidermode; 
-  machine_mode_t innermode;
-  TYPE_ID mtype;
-  unsigned short alignment;
-  int local_REGISTER_CLASS_id;
-  int local_REGISTER_SUBCLASS_id;
+  unsigned short  mbitsize; 
+  unsigned char   msize;
+  unsigned char   munitsize;
+  unsigned char   mwidermode; 
+  machine_mode_t  innermode;
+  TYPE_ID         mtype;
+  unsigned short  alignment;
+  int             local_REGISTER_CLASS_id;
+  int             local_REGISTER_SUBCLASS_id;
 } extension_machine_types_t_pre_20070615;
 
 struct extension_builtins_pre_20080715
@@ -148,6 +152,25 @@ struct extension_builtins_pre_20080715
   
 typedef struct extension_builtins_pre_20080715 extension_builtins_t_pre_20080715;
 
+
+typedef struct
+{
+  machine_mode_t   mmode; 
+  const char      *name; 
+  enum mode_class  mclass;
+  unsigned short   mbitsize; 
+  unsigned char    msize;
+  unsigned char    munitsize;
+  unsigned char    mwidermode; 
+  machine_mode_t   innermode;
+  TYPE_ID          mtype;
+  unsigned short   alignment;
+  int              local_REGISTER_CLASS_id;
+  int              local_REGISTER_SUBCLASS_id;
+  unsigned char    mpixelsize;
+} extension_machine_types_t_pre_20090813;
+
+
 #ifdef TARG_STxP70
 // bwd compatibility
 #include "../../targinfo/stxp70/be/extension_compatibility.inc"
@@ -168,6 +191,9 @@ EXTENSION_HighLevel_Info::EXTENSION_HighLevel_Info(const extension_hooks *input_
   // Perform revision migration here
   // =====================================================
 
+  //
+  // Conversion of PATTERN RECOGNITION RULES
+  //
   if ( hooks->magic < REV_20090813 ) { /* any version older than
                                           REV_20090813 */
     overriden_recrules = NULL;
@@ -200,7 +226,9 @@ EXTENSION_HighLevel_Info::EXTENSION_HighLevel_Info(const extension_hooks *input_
     overriden_recrules_count = hooks->get_recrules_count();
   }
 
-
+  //
+  // Conversion of BUILTIN datatypes
+  //
   if ( hooks->magic < REV_20080715 ) {  /* any version older than
                                            REV_20080715 */
     int i;
@@ -235,22 +263,56 @@ EXTENSION_HighLevel_Info::EXTENSION_HighLevel_Info(const extension_hooks *input_
     overriden_builtins = hooks->get_builtins();
   }
 
-  if ( hooks->magic < REV_20070924 ) { /* any version older than
-                                            REV_20070924 */
-      int i;
-      int nb_entry = hooks->get_modes_count();
-      extension_machine_types_t_pre_20070615 *old_tab;
-      extension_machine_types_t              *new_tab;
-      old_tab = (extension_machine_types_t_pre_20070615*)hooks->get_modes();
-      new_tab = new extension_machine_types_t[nb_entry];
+  //
+  // Conversion of MTYPE datatypes
+  //
+  if ( hooks->magic < REV_20090903 ) {
+    int i;
+    int nb_entry = hooks->get_modes_count();
+    extension_machine_types_t              *new_tab;
+    new_tab = new extension_machine_types_t[nb_entry];
 
+    if ( hooks->magic < REV_20070924 ) {
+      extension_machine_types_t_pre_20070615 *old_tab;
+      old_tab = (extension_machine_types_t_pre_20070615*)hooks->get_modes();
+    
       for (i=0; i<nb_entry; i++)  {
-        /* new extension_machine_types_t has an extra field
-           'mpixelsize' at the end */
-        memcpy(&(new_tab[i]), &(old_tab[i]), sizeof(extension_machine_types_t_pre_20070615));
-        new_tab[i].mpixelsize = 0;
+        new_tab[i].mmode      = old_tab[i].mmode;
+        new_tab[i].name       = old_tab[i].name;
+        new_tab[i].mclass     = old_tab[i].mclass;
+        new_tab[i].mbitsize   = old_tab[i].mbitsize;  // uchar to ushort
+        new_tab[i].msize      = old_tab[i].msize;     // uchar to ushort
+        new_tab[i].munitsize  = old_tab[i].munitsize;
+        new_tab[i].mwidermode = old_tab[i].mwidermode;
+        new_tab[i].innermode  = old_tab[i].innermode;
+        new_tab[i].mtype      = old_tab[i].mtype;
+        new_tab[i].alignment  = old_tab[i].alignment;
+        new_tab[i].local_REGISTER_CLASS_id    = old_tab[i].local_REGISTER_CLASS_id;
+        new_tab[i].local_REGISTER_SUBCLASS_id = old_tab[i].local_REGISTER_SUBCLASS_id;
+        new_tab[i].mpixelsize = 0;                    // additional field
       }
-      overriden_machine_types = new_tab;
+    }
+    else {
+      extension_machine_types_t_pre_20090813 *old_tab;
+      old_tab = (extension_machine_types_t_pre_20090813*)hooks->get_modes();
+    
+      for (i=0; i<nb_entry; i++)  {
+        new_tab[i].mmode      = old_tab[i].mmode;
+        new_tab[i].name       = old_tab[i].name;
+        new_tab[i].mclass     = old_tab[i].mclass;
+        new_tab[i].mbitsize   = old_tab[i].mbitsize;  // uchar to ushort
+        new_tab[i].msize      = old_tab[i].msize;     // uchar to ushort
+        new_tab[i].munitsize  = old_tab[i].munitsize;
+        new_tab[i].mwidermode = old_tab[i].mwidermode;
+        new_tab[i].innermode  = old_tab[i].innermode;
+        new_tab[i].mtype      = old_tab[i].mtype;
+        new_tab[i].alignment  = old_tab[i].alignment;
+        new_tab[i].local_REGISTER_CLASS_id    = old_tab[i].local_REGISTER_CLASS_id;
+        new_tab[i].local_REGISTER_SUBCLASS_id = old_tab[i].local_REGISTER_SUBCLASS_id;
+        new_tab[i].mpixelsize = old_tab[i].mpixelsize;
+      }
+    }
+    overriden_machine_types = new_tab;
   }
   else {
     // Extension library uses latest API.
@@ -264,7 +326,7 @@ EXTENSION_HighLevel_Info::~EXTENSION_HighLevel_Info() {
   if (own_hooks) {
     delete hooks;
   }
-  if ( hooks->magic < REV_20070924 ) {
+  if ( hooks->magic < REV_20090903 ) {
     delete [] (extension_machine_types_t*) overriden_machine_types;
   }
   if ( hooks->magic < REV_20080715 ) {

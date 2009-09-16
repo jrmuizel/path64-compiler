@@ -39,7 +39,7 @@
 extern "C" {
 #endif
 
-#define MAGIC_NUMBER_EXT_API   20090813  /* Magic number. Interface checking */
+#define MAGIC_NUMBER_EXT_API   20090903  /* Magic number. Interface checking */
 
 
 #include "extension_pattern_rec.h"
@@ -63,11 +63,11 @@ struct extension_machine_types
   /*    so we can have modes smaller than 1 byte. */
   unsigned short mbitsize; 
   /* gives the length of the mode, in bytes */
-  unsigned char msize;
+  unsigned short msize;
   /*    relative size of subunits of the object. */
   /*    It is same as the msize argument except for complexes and vectors, */
   /*    since they are really made of many equal size subunits. */
-  unsigned char munitsize;
+  unsigned short munitsize;
   /*    next wider natural mode of the same class.  0 if */
   /*    there is none.  Vector modes use this field to point to the next */
   /*    vector size, so we can iterate through the different vectors modes. */
