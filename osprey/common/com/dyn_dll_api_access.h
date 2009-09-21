@@ -42,6 +42,8 @@
 
 #include "opcode.h"
 #include "dyn_dll_api.h"
+#include <map>
+#include <string>
 
 // Return TRUE if the specified revision is compatible with current compiler,
 // FALSE otherwise.
@@ -84,6 +86,9 @@ class EXTENSION_HighLevel_Info {
   /* Return the rec pattern rules array */
   inline recog_rule ** get_recrules (void);
 
+  /* Return the extension option flag  */
+  inline long long get_extoption_flag_by_name (const char*);
+
   /* ============================
      ==  Builtins information  ==
      ============================ */
@@ -100,6 +105,8 @@ class EXTENSION_HighLevel_Info {
   inline INTRINSIC get_intrinsics_base_count (void) const;
 
  private:
+  void initialize(void);
+
   BOOL                   own_hooks;
   const extension_hooks *hooks;
   const extension_machine_types_t * overriden_machine_types;
@@ -107,6 +114,12 @@ class EXTENSION_HighLevel_Info {
 
   recog_rule ** overriden_recrules;
   unsigned int overriden_recrules_count;
+
+  const char** overriden_extoption_array;
+  unsigned int overriden_extoption_count;
+
+  std::map<std::string, long long> extoption_map;
+
 };
 
 
@@ -180,6 +193,17 @@ EXTENSION_HighLevel_Info::get_recrules (void) {
 inline unsigned int 
 EXTENSION_HighLevel_Info::get_recrules_count (void) const {
   return          (overriden_recrules_count);
+}
+
+  /* Return the extopt flag */
+inline  long long
+EXTENSION_HighLevel_Info::get_extoption_flag_by_name (const char* opt) {
+  std::string option(opt);
+  if (extoption_map.find(option)!=extoption_map.end ()) {
+    return          (extoption_map[option]);
+  } else {
+    return 0;
+  }
 }
 
 #endif /* _DYN_DLL_API_ACCESS_H_ */

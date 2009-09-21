@@ -57,6 +57,9 @@
  * +----------+----------------------------------------------------------------+
  * | 20090903 | - Support extension type size up to 2048 bits                  |
  * +----------+----------------------------------------------------------------+
+ * | 20090908 | - Introduce extension options handling and add new flags field |
+ * |          |   to wn_record structure.                                      |
+ * +----------+----------------------------------------------------------------+
  *
  */
 #include "../gccfe/extension_include.h"
@@ -74,6 +77,8 @@
 #define    REV_20090410        (20090410)
 #define    REV_20090813        (20090813)
 #define    REV_20090903        (20090903)
+#define    REV_20090908        (20090908)
+
 static INT supported_HL_rev_tab[NB_SUPPORTED_HL_REV] = {
   REV_20070131,
   REV_20070615,
@@ -152,6 +157,16 @@ struct extension_builtins_pre_20080715
   
 typedef struct extension_builtins_pre_20080715 extension_builtins_t_pre_20080715;
 
+struct wn_record_pre_20090908 {
+  int wn_opc;               // whirl-node opcode
+  int cycles;               // cost in cycles
+  int size;                 // cost in size
+  char*  asm_stmt_behavior; // asm statement code
+  char** asm_stmt_results;  // asm statement "results": out, in/out and tmp
+  char** asm_stmt_operands; // asm statement "operands": in
+};
+typedef struct wn_record_pre_20090908 wn_record_t_pre_20090908;
+
 
 typedef struct
 {
@@ -169,6 +184,7 @@ typedef struct
   int              local_REGISTER_SUBCLASS_id;
   unsigned char    mpixelsize;
 } extension_machine_types_t_pre_20090813;
+
 
 
 #ifdef TARG_STxP70
@@ -190,6 +206,57 @@ EXTENSION_HighLevel_Info::EXTENSION_HighLevel_Info(const extension_hooks *input_
   // =====================================================
   // Perform revision migration here
   // =====================================================
+  
+  if ( hooks->magic < REV_20090908 ) { /* any version older than REV_20090908 */
+    overriden_extoption_array = NULL; 
+    overriden_extoption_count = 0;
+
+#ifdef TARG_STxP70
+
+    if ( hooks->magic >= REV_20080715) { /* only MP1x with api
+                                            version more recent than
+                                            20080715 are concerned */ 
+      // backward compatibility
+      /* as the extension name is not accessible in the hooks,
+       * I check MP1x on the first builtin name
+       */
+      if (input_hooks->get_builtins_count()>0) {
+        const char* name = input_hooks->get_builtins()[0].c_name;
+        
+        
+        if (strstr(name, "MP1x")!=NULL) {
+          overriden_extoption_array = mpx_extoption_array; 
+          overriden_extoption_count = mpx_extoption_count;
+        }
+      }
+    }
+#endif
+    
+
+    if (hooks->magic>REV_20080715) {
+      int i;
+      int nb_entry = hooks->get_builtins_count();
+      extension_builtins_t* builtins;
+      builtins = (extension_builtins_t*) hooks->get_builtins();
+
+      for (i=0; i<nb_entry; i++) {
+        wn_record_t_pre_20090908* old_record;
+        old_record = (wn_record_t_pre_20090908*) builtins[i].wn_table;
+        if (old_record!=NULL) {
+          wn_record_t* new_record = new wn_record_t[1];
+          memcpy(new_record, old_record, sizeof(wn_record_t_pre_20090908));
+          new_record->flags = EXTOPT_none;
+          builtins[i].wn_table = new_record;
+        } else {
+          builtins[i].wn_table= NULL;
+        }
+      }
+    }
+  } else {
+    overriden_extoption_array = hooks->get_extoption_array();
+    overriden_extoption_count = hooks->get_extoption_count();
+  }
+
 
   //
   // Conversion of PATTERN RECOGNITION RULES
@@ -319,6 +386,9 @@ EXTENSION_HighLevel_Info::EXTENSION_HighLevel_Info(const extension_hooks *input_
     // No migration required.
     overriden_machine_types = hooks->get_modes();
   }
+
+  // Initialization
+  initialize();
 }
 
 // Destructor
@@ -326,11 +396,42 @@ EXTENSION_HighLevel_Info::~EXTENSION_HighLevel_Info() {
   if (own_hooks) {
     delete hooks;
   }
+  if ( hooks->magic > REV_20080715 &&
+       hooks->magic < REV_20090908 ) {
+    int nb_entry = hooks->get_builtins_count();
+    extension_builtins_t* builtins;
+    builtins = (extension_builtins_t*) hooks->get_builtins();
+    int i;
+    for (i=0; i<nb_entry; i++) {
+      if (builtins[i].wn_table!=NULL)
+        delete [] builtins[i].wn_table;
+    }
+
+
+  }
+
+
   if ( hooks->magic < REV_20090903 ) {
     delete [] (extension_machine_types_t*) overriden_machine_types;
   }
   if ( hooks->magic < REV_20080715 ) {
     delete [] (extension_builtins_t*) overriden_builtins;
   }
+
 }
 
+/** 
+ * Initialization of internal data structures
+ * 
+ */
+void EXTENSION_HighLevel_Info::initialize(void) {
+  if (overriden_extoption_count>0 &&
+      overriden_extoption_array!=NULL) {
+    int r;
+    for (r=0; r<overriden_extoption_count; r++) {
+      std::string opt(overriden_extoption_array[r]);
+      
+      extoption_map[opt]= 1<<r;
+    }
+  }
+}

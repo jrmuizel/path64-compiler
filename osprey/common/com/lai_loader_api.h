@@ -97,6 +97,8 @@ BE_EXPORTED extern int EXTENSION_Get_Meta_INTRINSIC_Asm_Cycles(INTRINSIC id);
 
 BE_EXPORTED extern int EXTENSION_Get_Meta_INTRINSIC_Asm_Size(INTRINSIC id);
 
+BE_EXPORTED extern long long EXTENSION_Get_INTRINSIC_Flags(INTRINSIC id);
+
 BE_EXPORTED extern int  EXTENSION_Get_ComposeExtract_Index(INTRINSIC id);
 
 BE_EXPORTED extern TOP EXTENSION_TOP_AM_automod_variant(TOP top,

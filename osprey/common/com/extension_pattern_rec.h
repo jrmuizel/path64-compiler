@@ -91,12 +91,24 @@ typedef struct {
 } recog_rule;
 
 
-#define RULE_FLAG_NONE       0
-#define RULE_FLAG_FRAC     0x1
-#define RULE_FLAG_DISABLED 0x2
-
 #define Is_Rule_Flag_Set(rule, flg) (rule->flags & (flg))
 #define Set_Rule_Flag(rule, flg)    (rule->flags |= (flg))
 #define Clear_Rule_Flag(rule, flg)  (rule->flags &= (~(flg)))
+
+
+enum {EXTOPT_none = 0LL,
+      EXTOPT_mult=1LL<<32,
+      EXTOPT_nomult=1LL<<33,
+      EXTOPT_hwloop=1LL<<34,
+      EXTOPT_nohwloop=1LL<<35,
+      EXTOPT_mode32=1LL<<36,
+      EXTOPT_mode16=1LL<<37,
+      EXTOPT_shortdouble = 1LL<<38,
+      EXTOPT_noshortdouble = 1LL<<39,
+      EXTOPT_dualcoreALU=1LL<<40,
+      EXTOPT_singlecoreALU=1LL<<41,
+      EXTOPT_noextlibs=1LL<<62,
+      EXTOPT_disabled=1LL<<63
+};
 
 #endif

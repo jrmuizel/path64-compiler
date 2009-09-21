@@ -57,9 +57,13 @@ BE_EXPORTED extern INTRINSIC EXTENSION_Get_CLR_Intrinsic(TYPE_ID ty);
 
 BE_EXPORTED extern INTRINSIC EXTENSION_Get_Convert_From_U32_Intrinsic(TYPE_ID ty);
 
-BE_EXPORTED extern BOOL EXTENSION_Is_ExtGen_Enabled_For_Intrinsic(INTRINSIC intrn);
+BE_EXPORTED extern BOOL EXTENSION_Is_ExtGen_Enabled_For_Intrinsic(INTRINSIC intrn, long long flags);
+
+BE_EXPORTED extern long long
+EXTENSION_Get_ExtOption_Flag_By_Name(int extid, const char* optionname);
 
 BE_EXPORTED extern BOOL EXTENSION_Is_Defined(const char *extname);
+BE_EXPORTED extern int EXTENSION_Get_ExtensionRank_From_Intrinsic(INTRINSIC);
 
 /*
  * Return TRUE if native codegen is enabled for at least one extension
@@ -79,5 +83,6 @@ typedef std::vector<INTRINSIC> INTRINSIC_Vector_t;
 #define OPCODE_MAPPED_ON_CORE INTRINSIC_INVALID
 BE_EXPORTED extern INTRINSIC_Vector_t* Get_Intrinsic_from_OPCODE(OPCODE opc);
 BE_EXPORTED extern void Add_Intrinsic_for_OPCODE(OPCODE opc, INTRINSIC intrn);
+
 
 #endif /* EXT_INFO_H */

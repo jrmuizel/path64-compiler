@@ -39,7 +39,7 @@
 extern "C" {
 #endif
 
-#define MAGIC_NUMBER_EXT_API   20090903  /* Magic number. Interface checking */
+#define MAGIC_NUMBER_EXT_API   20090908  /* Magic number. Interface checking */
 
 
 #include "extension_pattern_rec.h"
@@ -178,6 +178,7 @@ struct wn_record {
   char*  asm_stmt_behavior; // asm statement code
   char** asm_stmt_results;  // asm statement "results": out, in/out and tmp
   char** asm_stmt_operands; // asm statement "operands": in
+  long long flags;          // activation flags
 };
 typedef struct wn_record wn_record_t;
 
@@ -258,6 +259,12 @@ struct extension_hooks
   
   /* Return the number of rec pattern rules  */
   unsigned int (*get_recrules_count) (void);
+
+  /* Return the ext option array */
+  const char** (*get_extoption_array) (void);
+  
+  /* Return the number of ext options  */
+  unsigned int (*get_extoption_count) (void);
 };
 
 typedef struct extension_hooks extension_hooks_t;

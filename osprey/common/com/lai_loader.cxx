@@ -80,6 +80,7 @@ typedef struct {
   char** asm_stmt_operands;
   int    asm_stmt_cycles;
   int    asm_stmt_size;
+  long long flags;
 } extension_intrinsic_info_t;
 
 static extension_intrinsic_info_t *extension_INTRINSIC_table = (extension_intrinsic_info_t*)NULL;
@@ -332,6 +333,22 @@ int EXTENSION_Get_Meta_INTRINSIC_Asm_Size(INTRINSIC id) {
     if (is_DYN_INTRN_WHIRLNODE_META(extension_INTRINSIC_table[itrnidx])) {
       return extension_INTRINSIC_table[itrnidx].asm_stmt_size;
     }
+  }
+  return -1;
+}
+
+/** 
+ * return the require options flags corresponding to the intrinsic.
+ * 
+ * @param id : extension intrinsic id.  
+ * 
+ * @return 
+ */
+long long EXTENSION_Get_INTRINSIC_Flags(INTRINSIC id) {
+  FmtAssert((extension_INTRINSIC_table!=NULL), ("Unexpected NULL extension_INTRINSIC_table"));
+  if (EXTENSION_Is_Extension_INTRINSIC(id)) {
+    int itrnidx = id - (INTRINSIC_STATIC_COUNT+1);
+    return extension_INTRINSIC_table[itrnidx].flags;
   }
   return -1;
 }
@@ -653,6 +670,7 @@ bool Lai_Initialize_Extension_Loader(const int ext_inter_count, const Extension_
           intrn_isa_info->asm_stmt_operands = NULL;
           intrn_isa_info->asm_stmt_cycles = -1;
           intrn_isa_info->asm_stmt_size = -1;
+          intrn_isa_info->flags = EXTOPT_none;
 
           if (is_DYN_INTRN_TOP(*intrn_isa_info)) {
 	    intrn_isa_info->u1.top = (TOP)(ext_info->base_TOP[ext] + intrn_tab[j].u1.local_TOP_id);
@@ -669,6 +687,8 @@ bool Lai_Initialize_Extension_Loader(const int ext_inter_count, const Extension_
               intrn_tab[j].wn_table->cycles;
             intrn_isa_info->asm_stmt_size = 
               intrn_tab[j].wn_table->size;
+            intrn_isa_info->flags =
+              intrn_tab[j].wn_table->flags;
           } else {
 	    intrn_isa_info->u1.compose_extract_idx = intrn_tab[j].u1.compose_extract_idx;
 	  }
