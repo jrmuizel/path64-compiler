@@ -45,7 +45,7 @@ typedef struct {
 
 /* This size is probably over conservative, however we do not recycle
  entries, so we keep some margin */
-enum { MAX_MMAP_RECORD = 128 } ;
+enum { MAX_MMAP_RECORD = 512 } ;
 static MMAPRECORD mmapRecord[MAX_MMAP_RECORD]  ;
 
 static int setMmapRecord(void *addr, void *lpBaseAddress, int len, HANDLE hmap)
@@ -114,7 +114,7 @@ void *mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     /* Form the Win32's handle from the file descriptor */
     HANDLE hFile = (HANDLE)_get_osfhandle(fildes) ;
 
-    mmap_debug(("mmap: addr:%p, len:%u, prot:%d, flags:%x, f:%d, off:%ld\n",
+    mmap_debug(("mmap: addr:%p, len:%u, prot:%d, flags:%x, fildes:%d, off:%ld\n",
 		addr, len, prot, (unsigned)flags, fildes, off));
     
     if (hFile && (hFile != INVALID_HANDLE_VALUE)) {	
