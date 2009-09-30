@@ -371,8 +371,13 @@ CGEMIT_Prn_File_Dir_In_Asm(
   if(!CG_emit_asm_dwarf) {
     fprintf (Asm_File, ASM_CMNT_LINE); //turn the rest into comment
   }
-  fprintf (Asm_File, "\t%s\t\"%s/%s\"\n", AS_FILE, 
-		pathname,filename);
+  if (pathname == NULL) {
+    fprintf (Asm_File, "\t%s\t\"%s\"\n", AS_FILE, 
+	     filename);
+  } else {
+    fprintf (Asm_File, "\t%s\t\"%s/%s\"\n", AS_FILE, 
+	     pathname,filename);
+  }
 }
 
 /* ====================================================================
