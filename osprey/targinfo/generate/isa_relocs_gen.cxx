@@ -65,6 +65,7 @@ using std::list;
 // Forward declarations.
 static const char* overflow_name(ISA_RELOC_OVERFLOW_TYPE overflow);
 static const char* underflow_name(ISA_RELOC_UNDERFLOW_TYPE underflow);
+static const char* rllib_mode_name(ISA_RELOC_RLLIB_MODE rllib_mode);
 
 // Declaration of structures.
 struct reloc_type {
@@ -93,10 +94,12 @@ struct isa_virtual_reloc_type {
   ISA_RELOC_UNDERFLOW_TYPE underflow;
   int                      right_shift;
   RELOC_TYPE               rel_type;
-
+  
   int                      nb_bitfields;
   int                      elf_id[MAX_BITFIELDS];
   BITFIELD                 bitfields[MAX_BITFIELDS];
+
+  ISA_RELOC_RLLIB_MODE     rllib_mode;
 };
 
 typedef vector<bool> Reloc_Subset;
@@ -481,20 +484,22 @@ void ISA_Relocs_Begin (void)
   // UNDEFINED entry is reserved to static table
   fprintf(
     cfile, 
-    "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\", %d },\n",
+    "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\", %d, %s },\n",
     overflow_name (relocations[undefined_reloc_id]->overflow),
     underflow_name(relocations[undefined_reloc_id]->underflow),
     relocations[undefined_reloc_id]->name,
-    relocations[undefined_reloc_id]->virtual_id);
+    relocations[undefined_reloc_id]->virtual_id,
+    rllib_mode_name(relocations[undefined_reloc_id]->rllib_mode));
 
   if(gen_static_code) {
     fprintf(
       cincfile, 
-      "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\" , %d },\n",
+      "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\" , %d, %s },\n",
       overflow_name (relocations[undefined_reloc_id]->overflow),
       underflow_name(relocations[undefined_reloc_id]->underflow),
       relocations[undefined_reloc_id]->name,
-      relocations[undefined_reloc_id]->virtual_id);
+      relocations[undefined_reloc_id]->virtual_id,
+      rllib_mode_name(relocations[undefined_reloc_id]->rllib_mode));
       
   }
 
@@ -532,25 +537,28 @@ void ISA_Reloc_Duplicate_Relocation_for_Relaxation( ISA_SUBSET subset, ... )
     undefined_reloc_no_relax->underflow    = ISA_RELOC_NO_UNDERFLOW;
     undefined_reloc_no_relax->rel_type     = (RELOC_TYPE)0;
     undefined_reloc_no_relax->nb_bitfields = 0;
+    undefined_reloc_no_relax->rllib_mode   = ISA_RELOC_NO_RLLIB;
 
     relocations.push_back(undefined_reloc_no_relax);
 
     fprintf(
       cfile, 
-      "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\", %d },\n",
+      "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\", %d, %s },\n",
       overflow_name (relocations[undefined_no_relax_reloc_id]->overflow),
       underflow_name(relocations[undefined_no_relax_reloc_id]->underflow),
       relocations[undefined_no_relax_reloc_id]->name,
-      relocations[undefined_no_relax_reloc_id]->virtual_id);
+      relocations[undefined_no_relax_reloc_id]->virtual_id,
+      rllib_mode_name(relocations[undefined_no_relax_reloc_id]->rllib_mode));
     
     if(gen_static_code) {
       fprintf(
         cincfile, 
-        "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\" , %d },\n",
+        "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\" , %d, %s },\n",
         overflow_name (relocations[undefined_no_relax_reloc_id]->overflow),
         underflow_name(relocations[undefined_no_relax_reloc_id]->underflow),
         relocations[undefined_no_relax_reloc_id]->name,
-        relocations[undefined_no_relax_reloc_id]->virtual_id);
+        relocations[undefined_no_relax_reloc_id]->virtual_id,
+        rllib_mode_name(relocations[undefined_no_relax_reloc_id]->rllib_mode));
     }
     
     First_Pass = 0;
@@ -624,6 +632,23 @@ underflow_name(ISA_RELOC_UNDERFLOW_TYPE underflow) {
   return "ISA_RELOC_UNDEFLOW_UNKNOWN";
 }
 
+///////////////////////////////////////
+// Helper subroutine.
+//////////////////////////////////////
+static const char*
+rllib_mode_name(ISA_RELOC_RLLIB_MODE rllib_mode) {
+  switch(rllib_mode) {
+  case ISA_RELOC_NO_RLLIB      : return "ISA_RELOC_NO_RLLIB"; break;
+  case ISA_RELOC_RLLIB_GOTOFFS : return "ISA_RELOC_RLLIB_GOTOFFS"; break;
+  case ISA_RELOC_RLLIB_NEGGPREL: return "ISA_RELOC_RLLIB_NEGGPREL"; break;
+  case ISA_RELOC_RLLIB_GPREL   : return "ISA_RELOC_RLLIB_GPREL"; break;
+  case ISA_RELOC_RLLIB_DYNPLT  : return "ISA_RELOC_RLLIB_DYNPLT"; break;
+  case ISA_RELOC_RLLIB_DYN     : return "ISA_RELOC_RLLIB_DYN"; break;
+  default                      : return "ISA_RELOC_RLLIB_UNKNOWN"; break;
+  }
+  return "ISA_RELOC_RLLIB_UNKNOWN";
+}
+
 
 static void print_out_relocation_entry ( ISA_VIRTUAL_RELOC_TYPE ret, int cur_index ) {
   int walk_index;
@@ -677,8 +702,8 @@ static void print_out_relocation_entry ( ISA_VIRTUAL_RELOC_TYPE ret, int cur_ind
   }
 
   string_template = gen_static_code ?
-" }, %d, %d, %d, %d, %d, %d, %d, %s, %s, %d, \"%s\", \"RELOC_%s\", %d },\n":
-" }, %d, %d, %d, %d, %d, %d, %d, %s, %s, %d, \"%s\", \"RELOC_dyn_%s_%s\", %d },\n";
+" }, %d, %d, %d, %d, %d, %d, %d, %s, %s, %d, \"%s\", \"RELOC_%s\", %d, %s },\n":
+" }, %d, %d, %d, %d, %d, %d, %d, %s, %s, %d, \"%s\", \"RELOC_dyn_%s_%s\", %d, %s },\n";
 
   if(gen_static_code) {
     fprintf(cfile,string_template,
@@ -694,7 +719,8 @@ static void print_out_relocation_entry ( ISA_VIRTUAL_RELOC_TYPE ret, int cur_ind
             ret->right_shift,
             ret->syntax,
             ret->name,
-            ret->virtual_id);
+            ret->virtual_id,
+	    rllib_mode_name(ret->rllib_mode));
 
     fprintf(cincfile,string_template,
             ret->nb_bitfields,
@@ -709,7 +735,8 @@ static void print_out_relocation_entry ( ISA_VIRTUAL_RELOC_TYPE ret, int cur_ind
             ret->right_shift,
             ret->syntax,
             ret->name,
-            ret->virtual_id);
+            ret->virtual_id,
+	    rllib_mode_name(ret->rllib_mode));
   }
   else {
     const char* const extname  = Get_Extension_Name();
@@ -727,7 +754,8 @@ static void print_out_relocation_entry ( ISA_VIRTUAL_RELOC_TYPE ret, int cur_ind
             ret->syntax,
             extname,
             ret->name,
-            ret->virtual_id);
+            ret->virtual_id,
+	    rllib_mode_name(ret->rllib_mode));
   }
 
 }
@@ -740,6 +768,7 @@ ISA_VIRTUAL_RELOC_TYPE ISA_Create_Reloc (int virtual_id,
                                          ISA_RELOC_UNDERFLOW_TYPE underflow,
                                          int right_shift,
                                          RELOC_TYPE rel_type,
+					 ISA_RELOC_RLLIB_MODE rllib_mode,
                                          ...)
 /////////////////////////////////////
 //  See interface description.
@@ -802,10 +831,11 @@ ISA_VIRTUAL_RELOC_TYPE ISA_Create_Reloc (int virtual_id,
   ret->right_shift  = right_shift;
   ret->rel_type     = rel_type;
   ret->nb_bitfields = 0;
-
+  ret->rllib_mode   = rllib_mode;
+  
   // Find the smallest min and largest max for all ranges, and
   // count the number of ranges.
-  va_start(ap,rel_type);
+  va_start(ap,rllib_mode);
   while ((elf_id = va_arg(ap,int)) != BITFIELD_END && 
          (bf = va_arg(ap,BITFIELD))) {
             ++(ret->nb_bitfields);
@@ -828,7 +858,7 @@ ISA_VIRTUAL_RELOC_TYPE ISA_Create_Reloc (int virtual_id,
   }
 
   cur_index = 0;
-  va_start(ap,rel_type);
+  va_start(ap,rllib_mode);
   while ((elf_id = va_arg(ap,int)) != BITFIELD_END && 
          (bf = va_arg(ap,BITFIELD))) {
 
@@ -1265,6 +1295,17 @@ void ISA_Relocs_End(void)
 	    "  ISA_RELOC_UNDERFLOW,\n"
 	    "} ISA_RELOC_UNDERFLOW_TYPE;\n\n");
     
+    fprintf(hfile,
+	    "typedef enum {\n"
+	    "  ISA_RELOC_NO_RLLIB,\n"
+	    "  ISA_RELOC_RLLIB_GOTOFFS,\n"
+	    "  ISA_RELOC_RLLIB_NEGGPREL,\n"
+	    "  ISA_RELOC_RLLIB_GPREL,\n"
+	    "  ISA_RELOC_RLLIB_DYNPLT,\n"
+	    "  ISA_RELOC_RLLIB_DYN,\n"
+	    "  ISA_RELOC_RLLIB_UNKNOWN,\n"
+	    "} ISA_RELOC_RLLIB_MODE;\n\n");
+
     fprintf(hfile, 
 	    "typedef struct {\n"
 	    "  struct { UINT8 elf_id; UINT8 start_bit; UINT8 stop_bit; } bitfield[MAX_BITFIELDS_STATIC];\n"
@@ -1281,6 +1322,7 @@ void ISA_Relocs_End(void)
 	    "  const char *syntax;\n"
 	    "  const char *name;\n"
             "  ISA_VIRTUAL_RELOC virtual_id;\n"
+            "  ISA_RELOC_RLLIB_MODE rllib_mode;\n"
 	    "} ISA_RELOC_INFO;\n\n");
 
     fprintf(hfile,
@@ -1481,6 +1523,11 @@ void ISA_Relocs_End(void)
     fprintf(hfile, "inline ISA_RELOC_UNDERFLOW_TYPE ISA_RELOC_Check_Underflow (ISA_RELOC reloc)\n"
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].underflow;\n"
+	    "}\n\n");
+
+    fprintf(hfile, "inline ISA_RELOC_RLLIB_MODE ISA_RELOC_rllib_mode (ISA_RELOC reloc)\n"
+	    "{\n"
+	    "  return ISA_RELOC_info[reloc].rllib_mode;\n"
 	    "}\n\n");
   } else {
 

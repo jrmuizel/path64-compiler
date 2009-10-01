@@ -74,7 +74,7 @@ extern "C" {
 #endif
 
 
-#define MAGIC_NUMBER_EXT_ISA_API   20090416  /* Magic number. Interface checking */
+#define MAGIC_NUMBER_EXT_ISA_API   20090727  /* Magic number. Interface checking */
 
 /* ===========================================
  * Base register available for addressing mode

@@ -774,6 +774,11 @@ Emit_Valtypes_Identifiers( ISA_SUBSET subset, FILE *file )
 		"    switch(*curChar) {\n",current_base);
       }
       ISA_LIT_CLASS lc = ISA_OPERAND_VALTYP_Literal_Class(valtype);
+      if (NULL==ISA_LC_Name(lc)) {
+        fprintf(stderr, "%s:%d: ### Error: extract literal class name %d\n",
+	      __FILE__,__LINE__,lc);
+      	exit(EXIT_FAILURE);
+      }
       fprintf(file,
 	      "    case '%c':\n"
 	      "      #ifdef %s_gbu\n"

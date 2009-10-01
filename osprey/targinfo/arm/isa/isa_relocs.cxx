@@ -71,32 +71,32 @@ main()
   ISA_VIRTUAL_RELOC_TYPE R_ARM_CALL  =
                    ISA_Create_Reloc(1,"R_ARM_CALL", "",
  		   ISA_RELOC_NO_OVERFLOW, ISA_RELOC_UNDERFLOW, 1,
-		   rel_s_a_pc, 1, bf_0_24, 2, bf_24_1, BITFIELD_END);
+		   rel_s_a_pc, ISA_RELOC_RLLIB_DYNPLT, 1, bf_0_24, 2, bf_24_1, BITFIELD_END);
 
   ISA_VIRTUAL_RELOC_TYPE R_ARM_JUMP24  =
                    ISA_Create_Reloc(2,"R_ARM_JUMP24", "",
  		   ISA_RELOC_NO_OVERFLOW, ISA_RELOC_UNDERFLOW, 2,
-		   rel_s_a_pc, 3, bf_0_24, BITFIELD_END);
+		   rel_s_a_pc, ISA_RELOC_RLLIB_DYNPLT, 3, bf_0_24, BITFIELD_END);
 
   ISA_VIRTUAL_RELOC_TYPE R_ARM_OFFSET12  =
                    ISA_Create_Reloc(3,"offset12", "",
  		   ISA_RELOC_NO_OVERFLOW, ISA_RELOC_NO_UNDERFLOW, 0,
-		   rel_s_a, 4, bf_0_12, BITFIELD_END);
+		   rel_s_a, ISA_RELOC_RLLIB_UNKNOWN, 4, bf_0_12, BITFIELD_END);
 
   ISA_VIRTUAL_RELOC_TYPE R_ARM_OFFSET12PC  =
                    ISA_Create_Reloc(4,"offset12PC", "=",
  		   ISA_RELOC_NO_OVERFLOW, ISA_RELOC_NO_UNDERFLOW, 0,
-		   rel_s_a_pc, 5, bf_0_12, BITFIELD_END);
+		   rel_s_a_pc, ISA_RELOC_RLLIB_UNKNOWN, 5, bf_0_12, BITFIELD_END);
 
   ISA_VIRTUAL_RELOC_TYPE R_ARM_OFFSET8  =
                    ISA_Create_Reloc(5,"offset8", "",
  		   ISA_RELOC_NO_OVERFLOW, ISA_RELOC_NO_UNDERFLOW, 0,
-		   rel_s_a, 6, bf_0_4, 7, bf_8_4, BITFIELD_END);
+		   rel_s_a, ISA_RELOC_RLLIB_UNKNOWN, 6, bf_0_4, 7, bf_8_4, BITFIELD_END);
 
   ISA_VIRTUAL_RELOC_TYPE R_ARM_OFFSET8PC  =
                    ISA_Create_Reloc(6,"offset8PC", "=",
  		   ISA_RELOC_NO_OVERFLOW, ISA_RELOC_NO_UNDERFLOW, 0,
-		   rel_s_a_pc, 8, bf_0_4, 9, bf_8_4, BITFIELD_END);
+		   rel_s_a_pc, ISA_RELOC_RLLIB_UNKNOWN, 8, bf_0_4, 9, bf_8_4, BITFIELD_END);
 
 
   ///////////////////////////////////////////////////////

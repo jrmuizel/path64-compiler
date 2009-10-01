@@ -76,6 +76,11 @@
  * |          |   ISA_REGISTER_SUBCLASS offset of extensions.                  |
  * |          | - Introduce callback for ISA_LIT_CLASS offset of extensions.   |
  * +----------+----------------------------------------------------------------+
+ * | 20090727 | - Introduced new relocations to deal with dynamic loading.     |
+ * |          |   Relocs internal array is moved from 149 to 193.              |
+ * |          | - Introduced field in relocation to tackle RLLIB relocation    |
+ * |          |   specific action.                                             |
+ * +----------+----------------------------------------------------------------+
  *
  */
 #include <stdlib.h>
@@ -88,7 +93,7 @@ BE_EXPORTED extern EXTENSION_ISA_Info *EXTENSION_Get_ISA_Info_From_TOP(TOP id);
 // ========================================================================
 // List of compatible API revisions for ISA part of the library description
 // ========================================================================
-#define    NB_SUPPORTED_ISA_REV 8
+#define    NB_SUPPORTED_ISA_REV 9
 #define    REV_20070126        (20070126)
 #define    REV_20070615        (20070615)
 #define    REV_20070924        (20070924)
@@ -97,6 +102,7 @@ BE_EXPORTED extern EXTENSION_ISA_Info *EXTENSION_Get_ISA_Info_From_TOP(TOP id);
 #define    REV_20090126        (20090126)
 #define    REV_20090408        (20090408)
 #define    REV_20090416        (20090416)
+#define    REV_20090727        (20090727)
 static INT supported_ISA_rev_tab[NB_SUPPORTED_ISA_REV] = {
   REV_20070126,
   REV_20070615,
@@ -105,6 +111,7 @@ static INT supported_ISA_rev_tab[NB_SUPPORTED_ISA_REV] = {
   REV_20081010,
   REV_20090126,
   REV_20090408,
+  REV_20090416,
   MAGIC_NUMBER_EXT_ISA_API   /* current one */
 };
 
@@ -346,6 +353,36 @@ typedef struct {
   mUINT8  relocs;
   mINT8   reloc[ISA_RELOC_STATIC_MAX_pre_20090408];
 } ISA_OPERAND_VALTYP_pre_20090408;
+
+// -------- Changed after rev 20090727 -----------------------------------------
+#define ISA_RELOC_STATIC_MAX_pre_20090727 149
+typedef struct {
+  mUINT8  rclass;
+  mUINT8  rsubclass;
+  mUINT8  lclass;
+  mUINT8  eclass;
+  mUINT16 size;
+  mUINT8  flags;
+  mUINT8  default_reloc;
+  mUINT8  relocs;
+  mINT8   reloc[ISA_RELOC_STATIC_MAX_pre_20090727];
+} ISA_OPERAND_VALTYP_pre_20090727;
+typedef struct {
+  struct { UINT8 elf_id; UINT8 start_bit; UINT8 stop_bit; } bitfield[MAX_BITFIELDS_STATIC];
+  mUINT8 bitfields;
+  BOOL main_symbol;
+  BOOL second_symbol;
+  BOOL addend;
+  BOOL pcrel;
+  BOOL gprel;
+  BOOL gotrel;
+  ISA_RELOC_OVERFLOW_TYPE overflow;
+  ISA_RELOC_UNDERFLOW_TYPE underflow;
+  INT32 right_shift;
+  const char *syntax;
+  const char *name;
+  ISA_VIRTUAL_RELOC virtual_id;
+} ISA_RELOC_INFO_pre_20090727;
 
 // #############################################################################
 // ##
@@ -757,6 +794,73 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
     }
     overridden_ISA_OPERAND_operand_types_tab = new_tab;
   }
+  
+  // -------- Changed after rev 20090727 -----------------------------------------
+  // Be careful that changes in OPERAND_VALTYP have also been done for REV_20081010
+  // and REV_20090408. Therefore the following code should apply only on extension 
+  // package built with a version later than REV_20090408, but earlier to 
+  // REV_20090727
+  if ((input_isa_ext->magic < REV_20090727) && 
+      (input_isa_ext->magic >= REV_20090408)) {
+    // Convert ISA_OPERAND_VALTYP increasing relocs field size from 68 to 149 entries
+    int nb_entry = isa_ext->get_ISA_OPERAND_operand_types_tab_sz();
+    ISA_OPERAND_VALTYP_pre_20090727 *old_tab;
+    ISA_OPERAND_VALTYP              *new_tab;
+    old_tab = (ISA_OPERAND_VALTYP_pre_20090727*)overridden_ISA_OPERAND_operand_types_tab;
+    new_tab = new ISA_OPERAND_VALTYP[nb_entry];
+    for (i=0; i<nb_entry; i++) {
+      int j;
+      new_tab[i].rclass        = old_tab[i].rclass;
+      new_tab[i].rsubclass     = old_tab[i].rsubclass;
+      new_tab[i].lclass        = old_tab[i].lclass;
+      new_tab[i].eclass        = old_tab[i].eclass;
+      new_tab[i].size          = old_tab[i].size;
+      new_tab[i].flags         = old_tab[i].flags;
+      new_tab[i].default_reloc = old_tab[i].default_reloc;
+      new_tab[i].relocs        = old_tab[i].relocs;
+      for (j=0; j<ISA_RELOC_STATIC_MAX_pre_20090727; j++) {
+          new_tab[i].reloc[j] = old_tab[i].reloc[j];
+      }
+      for (; j<ISA_RELOC_STATIC_MAX; j++) {
+          new_tab[i].reloc[j] = ISA_RELOC_UNDEFINED;
+      }
+    }
+    overridden_ISA_OPERAND_operand_types_tab = new_tab;
+  }
+  // Initializing new ISA_RELOC_RLLIB_MODE field for extension earlier than dynamic 
+  // loading introduction
+  if (input_isa_ext->magic < REV_20090727) {
+    int nb_entry = overridden_ISA_RELOC_info_tab_sz;
+    ISA_RELOC_INFO_pre_20090727 *old_tab;
+    ISA_RELOC_INFO              *new_tab;
+
+    old_tab = (ISA_RELOC_INFO_pre_20090727*)overridden_ISA_RELOC_info_tab;
+    new_tab = new ISA_RELOC_INFO[nb_entry];
+    for (i=0; i<nb_entry; i++) {
+      int j;
+      
+      for (j=0;j<MAX_BITFIELDS_STATIC;j++) {
+        new_tab[i].bitfield[j].elf_id    = old_tab[i].bitfield[j].elf_id; 
+	new_tab[i].bitfield[j].start_bit = old_tab[i].bitfield[j].start_bit;
+	new_tab[i].bitfield[j].stop_bit  = old_tab[i].bitfield[j].stop_bit;
+      }
+      new_tab[i].bitfields     = old_tab[i].bitfields;
+      new_tab[i].main_symbol   = old_tab[i].main_symbol;
+      new_tab[i].second_symbol = old_tab[i].second_symbol;
+      new_tab[i].addend        = old_tab[i].addend;
+      new_tab[i].pcrel         = old_tab[i].pcrel;
+      new_tab[i].gprel         = old_tab[i].gprel;
+      new_tab[i].gotrel        = old_tab[i].gotrel;
+      new_tab[i].overflow      = old_tab[i].overflow;
+      new_tab[i].underflow     = old_tab[i].underflow;
+      new_tab[i].right_shift   = old_tab[i].right_shift;
+      new_tab[i].syntax        = old_tab[i].syntax;
+      new_tab[i].name          = old_tab[i].name;
+      new_tab[i].virtual_id    = old_tab[i].virtual_id;
+      new_tab[i].rllib_mode    = ISA_RELOC_NO_RLLIB;
+    }
+    overridden_ISA_RELOC_info_tab = new_tab;
+   }
   
   // Create REGISTER CLASS Info wrappers (register class to TOP)
   INT nb_rc;

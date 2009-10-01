@@ -101,6 +101,24 @@
 //         - ISA_RELOC_NO_UNDERFLOW: no check.
 //         - ISA_RELOC_UNDERFLOW: check if lowest bits are 0 in case of scaling.
 //
+//  TYPE ISA_RELOC_RLLIB_MODE
+//      Enumeration of RL_LIB associated action to do on relocation at static 
+//      link time:
+//         - ISA_RELOC_NO_RLLIB      : no action.
+//         - ISA_RELOC_RLLIB_GOTOFFS : relocate value relative to GP GOT offset 
+//                                     base and create a GOT entry. Symbol must be
+//                                     dynamic.
+//         - ISA_RELOC_RLLIB_NEGGPREL: relocate relative to GP GOT offset base and
+//                                     negate the value. Symbol must be local.
+//         - ISA_RELOC_RLLIB_GPREL   : relocate relative to GP GOT offset base.
+//                                     Symbol must be dynamic.
+//         - ISA_RELOC_RLLIB_DYNPLT  : if the symbol is dynamic, create a GOT entry 
+//                                     for the symbol and a procedure linkage table
+//                                     (PLT) entry. Then relocate to this PLT entry.
+//         - ISA_RELOC_RLLIB_DYN     : if the symbol is dynamic, create a GOT entry
+//                                     and relocate to it.
+//         - ISA_RELOC_RLLIB_UNKNOWN : unknown RLLIB mode.
+//
 //  ISA_RELOC_TYPE ISA_Create_Reloc (
 //                         int logic_id,
 //                         const char *name,
@@ -189,6 +207,16 @@ typedef enum {
   ISA_RELOC_UNDERFLOW,
 } ISA_RELOC_UNDERFLOW_TYPE;
 
+typedef enum {
+  ISA_RELOC_NO_RLLIB,
+  ISA_RELOC_RLLIB_GOTOFFS,
+  ISA_RELOC_RLLIB_NEGGPREL,
+  ISA_RELOC_RLLIB_GPREL,
+  ISA_RELOC_RLLIB_DYNPLT,
+  ISA_RELOC_RLLIB_DYN,
+  ISA_RELOC_RLLIB_UNKNOWN,
+} ISA_RELOC_RLLIB_MODE;
+
 typedef struct reloc_type *RELOC_TYPE;
 
 typedef struct bitfield *BITFIELD;
@@ -224,6 +252,7 @@ extern ISA_VIRTUAL_RELOC_TYPE ISA_Create_Reloc
                                        ISA_RELOC_UNDERFLOW_TYPE underflow,
                                        int right_shift,
                                        RELOC_TYPE rel_type,
+				       ISA_RELOC_RLLIB_MODE rllib_mode,
                                        ...);
 
 extern void ISA_Reloc_Subset          (ISA_SUBSET subset,
