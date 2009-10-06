@@ -243,12 +243,19 @@ EXTENSION_HighLevel_Info::EXTENSION_HighLevel_Info(const extension_hooks *input_
         wn_record_t_pre_20090908* old_record;
         old_record = (wn_record_t_pre_20090908*) builtins[i].wn_table;
         if (old_record!=NULL) {
-          wn_record_t* new_record = new wn_record_t[1];
-          memcpy(new_record, old_record, sizeof(wn_record_t_pre_20090908));
-          new_record->flags = EXTOPT_none;
+          int nb_wn = 1;
+          while (old_record[nb_wn-1].wn_opc != OPCODE_UNKNOWN) {
+            nb_wn++;
+          }
+          wn_record_t* new_record = new wn_record_t[nb_wn];
+          int j;
+          for (j=0; j<nb_wn; j++) {
+            memcpy(&new_record[j], &old_record[j], sizeof(wn_record_t_pre_20090908));
+            new_record[j].flags = EXTOPT_none;
+          }
           builtins[i].wn_table = new_record;
         } else {
-          builtins[i].wn_table= NULL;
+          builtins[i].wn_table = NULL;
         }
       }
     }
