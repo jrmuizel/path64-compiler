@@ -69,7 +69,7 @@
 // List of compatible API revisions for high level part of the library
 // description
 // ========================================================================
-#define    NB_SUPPORTED_HL_REV  7
+#define    NB_SUPPORTED_HL_REV  8
 #define    REV_20070131        (20070131)
 #define    REV_20070615        (20070615)
 #define    REV_20070924        (20070924)
@@ -86,6 +86,7 @@ static INT supported_HL_rev_tab[NB_SUPPORTED_HL_REV] = {
   REV_20080715,
   REV_20090410,
   REV_20090813,
+  REV_20090903,
   MAGIC_NUMBER_EXT_API   /* current one */
 };
 
@@ -167,6 +168,38 @@ struct wn_record_pre_20090908 {
 };
 typedef struct wn_record_pre_20090908 wn_record_t_pre_20090908;
 
+typedef struct
+{
+  enum built_in_function 		gcc_builtin_def;
+  INTRINSIC	open64_intrincic;
+
+  // Builtins flags follow the WHIRL semantic (opposed to the gcc one
+  // for has_no_side_effects and is_pure)
+  // has_no_side_effects means is_pure + no access to memory
+  char		is_by_val;
+  char		is_pure;
+  char		has_no_side_effects;
+  char		never_returns;
+  char		is_actual;
+  char		is_cg_intrinsic;
+  const char   *c_name;
+  const char   *runtime_name;
+
+  /* Prototype information   */
+  machine_mode_t             return_type;
+  unsigned char	             arg_count;
+  const machine_mode_t 	    *arg_type;     /* Number of items in table: arg_count */
+  const BUILTARG_INOUT_TYPE *arg_inout;    /* Number of items in table: arg_count */
+
+  // targ_info information
+  DYN_INTRN_TYPE type; // standard TOP intrinsic or compose/extract
+  union {
+    int		 local_TOP_id;        // TOP id if TOP intrinsic
+    int		 compose_extract_idx; // subpart access index if compose/extract
+  } u1;
+
+  const wn_record_t_pre_20090908 *wn_table;
+} extension_builtins_t_pre_20090908;
 
 typedef struct
 {
@@ -231,34 +264,6 @@ EXTENSION_HighLevel_Info::EXTENSION_HighLevel_Info(const extension_hooks *input_
       }
     }
 #endif
-    
-
-    if (hooks->magic>REV_20080715) {
-      int i;
-      int nb_entry = hooks->get_builtins_count();
-      extension_builtins_t* builtins;
-      builtins = (extension_builtins_t*) hooks->get_builtins();
-
-      for (i=0; i<nb_entry; i++) {
-        wn_record_t_pre_20090908* old_record;
-        old_record = (wn_record_t_pre_20090908*) builtins[i].wn_table;
-        if (old_record!=NULL) {
-          int nb_wn = 1;
-          while (old_record[nb_wn-1].wn_opc != OPCODE_UNKNOWN) {
-            nb_wn++;
-          }
-          wn_record_t* new_record = new wn_record_t[nb_wn];
-          int j;
-          for (j=0; j<nb_wn; j++) {
-            memcpy(&new_record[j], &old_record[j], sizeof(wn_record_t_pre_20090908));
-            new_record[j].flags = EXTOPT_none;
-          }
-          builtins[i].wn_table = new_record;
-        } else {
-          builtins[i].wn_table = NULL;
-        }
-      }
-    }
   } else {
     overriden_extoption_array = hooks->get_extoption_array();
     overriden_extoption_count = hooks->get_extoption_count();
@@ -303,35 +308,64 @@ EXTENSION_HighLevel_Info::EXTENSION_HighLevel_Info(const extension_hooks *input_
   //
   // Conversion of BUILTIN datatypes
   //
-  if ( hooks->magic < REV_20080715 ) {  /* any version older than
-                                           REV_20080715 */
+  if (hooks->magic < REV_20090908) {
     int i;
     int nb_entry = hooks->get_builtins_count();
-    extension_builtins_t_pre_20080715* old_builtins;
     extension_builtins_t* new_builtins;
-    
-    old_builtins = (extension_builtins_t_pre_20080715*)hooks->get_builtins();
     new_builtins = new extension_builtins_t[nb_entry];
-    
-    for (i=0; i<nb_entry; i++) {
-      /* new extension_builtins_t has an extra field wn_table at the end */
-      memcpy(&(new_builtins[i]), &(old_builtins[i]),
-             sizeof(extension_builtins_t_pre_20080715));
 
-      switch(old_builtins[i].type) {
-      case 0: 
-        new_builtins[i].type = DYN_INTRN_TOP; break;
-      case 1: new_builtins[i].type = DYN_INTRN_PARTIAL_COMPOSE; break;
-      case 2: new_builtins[i].type = DYN_INTRN_PARTIAL_EXTRACT; break;
-      case 3: new_builtins[i].type = DYN_INTRN_COMPOSE; break;
-      case 4: new_builtins[i].type = DYN_INTRN_CONVERT_TO_PIXEL; break;
-      case 5: new_builtins[i].type = DYN_INTRN_CONVERT_FROM_PIXEL; break;
-      default:
-        FmtAssert((false),
-                  ("unrecognized builtin type %d", old_builtins[i].type));
+    if ( hooks->magic < REV_20080715 ) {  /* any version older than
+                                           REV_20080715 */
+      extension_builtins_t_pre_20080715* old_builtins;
+      old_builtins = (extension_builtins_t_pre_20080715*)hooks->get_builtins();
+
+      for (i=0; i<nb_entry; i++) {
+        /* new extension_builtins_t has an extra field wn_table at the end */
+        memcpy(&(new_builtins[i]), &(old_builtins[i]),
+               sizeof(extension_builtins_t_pre_20080715));
+        switch(old_builtins[i].type) {
+        case 0: 
+          new_builtins[i].type = DYN_INTRN_TOP; break;
+        case 1: new_builtins[i].type = DYN_INTRN_PARTIAL_COMPOSE; break;
+        case 2: new_builtins[i].type = DYN_INTRN_PARTIAL_EXTRACT; break;
+        case 3: new_builtins[i].type = DYN_INTRN_COMPOSE; break;
+        case 4: new_builtins[i].type = DYN_INTRN_CONVERT_TO_PIXEL; break;
+        case 5: new_builtins[i].type = DYN_INTRN_CONVERT_FROM_PIXEL; break;
+        default:
+          FmtAssert((false),
+                    ("unrecognized builtin type %d", old_builtins[i].type));
+        }
+        new_builtins[i].wn_table = NULL;
+      } 
+    }
+    else if ( hooks->magic < REV_20090908 ) {
+      /* In extension_builtins_t, the type of wn_record_t has changed.
+       * It is then required to duplicate the array in order to patch it
+       * afterwards */
+      extension_builtins_t_pre_20090908* old_builtins;
+      old_builtins = (extension_builtins_t_pre_20090908*) hooks->get_builtins();
+      memcpy(new_builtins, old_builtins,
+             sizeof(extension_builtins_t_pre_20090908)*nb_entry);
+      
+      for (i=0; i<nb_entry; i++) {
+        const wn_record_t_pre_20090908* old_record;
+        old_record = old_builtins[i].wn_table;
+        /* Patch the wn_record_t entries when they exist */
+        if (old_record != NULL) {
+          int nb_wn = 1;
+          while (old_record[nb_wn-1].wn_opc != OPCODE_UNKNOWN) {
+            nb_wn++;
+          }
+          wn_record_t* new_record = new wn_record_t[nb_wn];
+          int j;
+          for (j=0; j<nb_wn; j++) {
+            memcpy(&new_record[j], &old_record[j], sizeof(wn_record_t_pre_20090908));
+            new_record[j].flags = EXTOPT_none;
+          }
+          new_builtins[i].wn_table = new_record;
+        }
       }
-      new_builtins[i].wn_table = NULL;
-    } 
+    }
     overriden_builtins = new_builtins;
   } else { // no migration needed for newer extensions.
     overriden_builtins = hooks->get_builtins();
