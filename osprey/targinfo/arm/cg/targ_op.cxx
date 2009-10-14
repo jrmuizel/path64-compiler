@@ -714,7 +714,7 @@ TOP_opnd_immediate_variant_default(TOP regform, int opnd, INT64 imm)
   TOP immform;
 
   // VCDV - bug #63273. avoid immediate variant for var-arg TOPs like top_asm
-  if (opnd>=ISA_OPERAND_INFO_Operands(ISA_OPERAND_Info(regform))) {
+  if (opnd >= TOP_fixed_opnds(regform)) {
     return TOP_UNDEFINED;
   }
 
@@ -785,7 +785,12 @@ static TOP
 TOP_opnd_register_variant_default(TOP immform, int opnd, ISA_REGISTER_CLASS regclass)
 {
   TOP regform;
- 
+
+  // Extra arguments of 'var_opnds' TOP are not candidates
+  if (opnd >= TOP_fixed_opnds(immform)) {
+    return TOP_UNDEFINED;
+  }
+
   // Check if already a register variant.
   if (ISA_SUBSET_LIST_Member (ISA_SUBSET_List, immform)) {
     const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info (immform);
@@ -1016,6 +1021,11 @@ TOP_opnd_use_bits(TOP top, int opnd)
   int use_bits;
   const ISA_OPERAND_INFO *oinfo;
   const ISA_OPERAND_VALTYP *vtype;
+
+  // No info on extra arguments of 'var_opnds' TOP
+  if (opnd >= TOP_fixed_opnds(top)) {
+    return -1;
+  }
   
   // Default cases depend on register class.
   // ISA_REGISTER_CLASS_integer defaults to 32 bits, signed
@@ -1084,6 +1094,11 @@ TOP_opnd_use_signed(TOP top, int opnd)
   const ISA_OPERAND_INFO *oinfo;
   const ISA_OPERAND_VALTYP *vtype;
   ISA_REGISTER_CLASS rc;
+
+  // Undefined semantic for extra arguments of 'var_opnds' TOP
+  if (opnd >= TOP_fixed_opnds(top)) {
+    return -1;
+  }
   
   // Default cases depend on operand value type.
   oinfo = ISA_OPERAND_Info(top);

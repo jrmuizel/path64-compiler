@@ -187,10 +187,10 @@ EBO_Verify_Op(OP *op)
   // Moved in EBO_Verify_Operand
   if (!EBO_in_peep) return TRUE;
 #endif
-  for (i = 0; i < OP_opnds(op); i++) {
+  for (i = 0; i < OP_fixed_opnds(op); i++) {
     if (!EBO_Verify_Operand(op, i, FALSE)) return FALSE;
   }
-  for (i = 0; i < OP_results(op); i++) {
+  for (i = 0; i < OP_fixed_results(op); i++) {
     if (!EBO_Verify_Operand(op, i, TRUE)) return FALSE;
   }
   return TRUE;

@@ -203,7 +203,7 @@ class EXTENSION_ISA_Info {
   inline const mUINT16*                  get_ISA_PRINT_info_index_tab        (void) const;
   inline const char**                    get_ISA_PRINT_name_tab              (void) const;
 
-  inline const void*                     get_ISA_PRINT_info_20070924_tab     (void) const;
+  inline const void*                     get_ISA_PRINT_info_pre_20080307_tab (void) const;
   
   /* Handling literal classes ----------------------------------------------- */
   inline const ISA_LIT_CLASS_INFO*       get_ISA_LIT_CLASS_info_tab          (void) const;

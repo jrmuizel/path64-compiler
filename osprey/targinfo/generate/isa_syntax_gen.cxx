@@ -1875,7 +1875,6 @@ print_parser_syntax( FILE *file, ISA_SYNTAX_Parsed_Opnd *opnd_types, ISA_SYNTAX 
       }
     }
     else if(COMP_RESULT <= comp->type && comp->type < (COMP_RESULT + MAX_RESULTS)) {
-      const ISA_OPERAND_VALTYP *valtype = ISA_OPERAND_INFO_Operand(oinfo,comp->type-COMP_RESULT);
       if(comp->parse_rule != 0) {
 	ostringstream rule_str;
 	rule_str << "<" << comp->parse_rule << ">";
