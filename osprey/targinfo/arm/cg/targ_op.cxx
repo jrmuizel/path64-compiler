@@ -1509,3 +1509,33 @@ OP_condition_is_true( OP *op, INT64 pred_val ) {
 
   return condition;
 }
+
+/**
+ * CGTARG_OP_Make_movc
+ *
+ * Generate a conditional move with predicate information.
+ * If no real operation exists, generate a simulated one.
+ */
+void
+CGTARG_OP_Make_movc( TN *guard,
+                     TN *dst,
+                     TN *src,
+                     OPS *cmov_ops,
+                     bool on_false
+                     ) {
+  FmtAssert(0,("Not implemented"));
+}
+
+/**
+ * CGTARG_OP_Lower_movc
+ *
+ * If argument <op> is a simulated operation representing a conditional move,
+ * generates the real target code to perform the move and return TRUE.
+ * Otherwise return FALSE.
+ */
+BOOL
+CGTARG_OP_Lower_movc( OP *op,
+                      OPS *lowered_ops
+                      ) {
+  return FALSE;
+}
