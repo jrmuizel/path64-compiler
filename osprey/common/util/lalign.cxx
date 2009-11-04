@@ -217,6 +217,11 @@ LAlign::Bottom ()
 // + base is >= 0
 // + 0 <= bias < base
 //
+// Fix for codex bug #72153
+// + normalize base to the biggest power of two, which divides the input base
+//  (this is a conservative normalization such that the alignment operators remains valid 
+//   in case of wrap-around)
+//
 LAlign
 LAlign::Normalize () const
 {
@@ -233,8 +238,10 @@ LAlign::Normalize () const
   else
     result.base_ = base_;
 
+  result.base_ = (ZInt(1) << countTrailingZeros64( result.base_.to_INT64 ()));
   
   result.bias_ = bias_ % result.base_;
+
   if ( result.bias_ < 0 )
     result.bias_ += result.base_;
 
@@ -242,6 +249,7 @@ LAlign::Normalize () const
   FmtAssert (result.base_ >= 0, ("Negative base value encountered"));
   FmtAssert (result.bias_ >= 0 && result.bias_ < result.base_, ("Non-normalized bias value encountered"));
 
+ 
   result.rtype = normal;
   return result;
 }
