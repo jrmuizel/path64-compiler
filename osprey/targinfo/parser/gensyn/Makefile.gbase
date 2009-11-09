@@ -89,24 +89,21 @@ CFILES=	            \
     gensyn_version.c \
     lname.c
 
-LDIRT = *.bo
+LDIRT = *.bo gensyn
 
 default: first
 	$(MAKE) local last
 
 first:
-
-first_local:
 ifndef PARALLEL
-	cd $(BUILD_AREA)/include && $(MAKE)
 	cd $(BUILD_AREA)/librtkutils && $(MAKE)
 endif
 
-local: first_local
-	$(MAKE) $(TARGETS)
+first_local:
 
-last: local
-	$(MAKE) make_deps
+local: $(TARGETS)
+
+last: make_deps
 
 install: last
 

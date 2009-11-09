@@ -50,15 +50,13 @@ default: first
 	$(MAKE) local last
 
 first:
-	cd $(BUILD_AREA)/include && $(MAKE)
+	cd $(BUILD_AREA)/include && $(MAKE) install
 
 first_local:
 
-local: first_local
-	$(MAKE) $(TARGETS)
+local: $(TARGETS)
 
-last: local
-	$(MAKE) make_deps
+last: make_deps
 
 install: last
 

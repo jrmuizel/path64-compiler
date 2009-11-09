@@ -195,17 +195,17 @@ include $(COMMONRULES)
 VPATH =  $(SRC_DIRS)
 
 first:
-
-first_local:
 ifndef PARALLEL
 	cd $(BUILD_AREA)/targ_info && $(MAKE)
 endif
 
-local: first_local
-	$(MAKE) $(TARGETS)
+first_local:
 
-last: local 
-	$(MAKE) make_libdeps
+$(TARGETS): | first_local
+local: $(TARGETS)
+
+make_libdeps: local
+last: make_libdeps
 
 exports: default
 #	$(INSTALL) -m 444 -F $(STD_LIBRARY_LOC) $(TARGETS)

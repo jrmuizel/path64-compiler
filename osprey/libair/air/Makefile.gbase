@@ -127,9 +127,15 @@ endif
 CFLAGS += -DBINUTILS
 CXXFLAGS += -DBE_EXPORTED= -DTARGINFO_EXPORTED= -DCG_EXPORTED= -DBACK_END -DMONGOOSE_BE -DBINUTILS
 
-install: last
-default: local
+default: first
+	$(MAKE) local last
 local: all
+install: last
+
+first:
+ifndef PARALLEL
+	cd $(BUILD_AREA)/targ_info && $(MAKE)
+endif
 
 all: $(TARGET) install_files
 
@@ -151,7 +157,6 @@ install_files:
 	-$(RM) $(BUILD_AREA)/libair/defs_exported.h
 	$(INSTALL) $(COMMON_COM_DIR)/defs_exported.h $(BUILD_AREA)/libair
 
-last: local
-	$(MAKE) make_deps
+last: make_deps
 
 include $(COMMONRULES)
