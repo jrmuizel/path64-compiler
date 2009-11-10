@@ -640,7 +640,6 @@ bool Lai_Initialize_Extension_Loader(const int ext_inter_count, const Extension_
       fprintf(TFile, "   -> First Register class id    (if any) : %d\n", ext_info->base_REGISTER_CLASS[ext]);
       fprintf(TFile, "   -> First Register subclass id (if any) : %d\n", ext_info->base_REGISTER_SUBCLASS[ext]);
       fprintf(TFile, "   -> First PREG id              (if any) : %d\n", ext_info->base_PREG[ext]);
-      fprintf(TFile, "PROUT\n");
     }
   }
 
