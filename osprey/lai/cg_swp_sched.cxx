@@ -58,7 +58,7 @@
 #else
 #include <pair.h>
 #endif // __GNUC__ >= 3
-#include "W_math.h"
+#include <cmath>
 /*
 #include "cg_swp.h"
 #include "cg_swp_options.h"

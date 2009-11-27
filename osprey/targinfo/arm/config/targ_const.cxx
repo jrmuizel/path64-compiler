@@ -97,7 +97,7 @@
 #include "const.h"
 #include "quad.h"
 #include "quadsim.h"
-#include "W_math.h"
+#include <cmath>
 
 #if 0 /* target-independent now */
 
