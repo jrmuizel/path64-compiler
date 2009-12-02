@@ -32,7 +32,9 @@
 #ifdef TARG_ST
 #include <stdlib.h>
 
+
 static SI_RRW SI_RRW_initial_reservations;
+
 #endif
 
 /****************************************************************************
@@ -405,7 +407,7 @@ SI_RESOURCE_ID_Set_Max_Avail(SI_RESOURCE_ID id, INT max)
 
   pre_requierement = ((SI_RRW)pre_reserve << bit_index);
   pre_requierement_mask = (((SI_RRW)-1) >> (sizeof(SI_RRW)*8 - get_field_width(avail_per_cycle)) << bit_index);
-  SI_RRW_initial_reservations = 
+  SI_RRW_initial_reservations =
     (SI_RRW_initial_reservations & ~pre_requierement_mask)
     | pre_requierement;
 
@@ -436,6 +438,97 @@ SI_RESOURCE_ID_Set_Max_Avail(SI_RESOURCE_ID id, INT max)
     }
   }
 }
+
+
+
+/** 
+ * backup_resource_tables() stores a copy of SI_ID_si array in 
+ * backup_SI_ID_si.
+ *
+ * @bug the copy si *not* a full deep-copy. Only fields modified
+ * by above function *SI_RESOURCE_ID_Set_Max_Avail* are deeply-copied,
+ * for other fields, pointers are copied instead.
+ * 
+ */
+
+static SI **backup_SI_ID_si = NULL;
+static SI_RRW backup_init_reservations;
+
+void backup_resource_tables(void) {
+  if (backup_SI_ID_si != NULL) {
+    // backup already done before
+    return;
+  }
+  
+  backup_init_reservations = SI_RRW_initial_reservations;
+  
+  int count = SI_ID_count;
+  backup_SI_ID_si = (SI **)malloc (sizeof (SI*)*count);
+  
+  int r, si_id;
+  for (si_id = 0; si_id < SI_ID_count; si_id++) {
+    SI* si= SI_ID_si[si_id];
+    if (si == NULL) {
+      backup_SI_ID_si[si_id]= NULL;
+      continue;
+    }
+    backup_SI_ID_si[si_id]= (SI*)malloc(sizeof(SI));
+    SI* new_si= backup_SI_ID_si[si_id];
+    memcpy(backup_SI_ID_si[si_id], SI_ID_si[si_id], sizeof(SI));
+    
+    int size = si->resource_total_vector_size;
+    new_si->resource_total_vector =
+      (SI_RESOURCE_TOTAL*) malloc(sizeof(SI_RESOURCE_TOTAL)*size);
+
+    for (r=0; r<size; r++) {
+      new_si->resource_total_vector[r].total_used = 
+        si->resource_total_vector[r].total_used;
+    }
+
+    size= si->rr[0];
+    new_si->rr =  (SI_RRW*) malloc (sizeof(SI_RRW)*(1+size));
+    for (r=0; r<size; r++) {
+      new_si->rr[1+r] = si->rr[1+r];
+    }
+  }
+}
+
+/** 
+ * restores backup_SI_ID_si into SI_ID_si table.
+ * (see backup_resource_tables() comment).
+ */
+void restore_resource_tables(void) {
+  if (backup_SI_ID_si == NULL) {
+    return;
+  }
+  
+  SI_RRW_initial_reservations = backup_init_reservations;
+
+  int r, si_id;
+  for (si_id = 0; si_id < SI_ID_count; si_id++) {
+    SI* new_si= backup_SI_ID_si[si_id];
+    if (new_si == NULL) {
+      SI_ID_si[si_id]= NULL;
+      continue;
+    }
+    SI* si= SI_ID_si[si_id];
+
+    int size = si->resource_total_vector_size;
+
+    for (r=0; r<size; r++) {
+      si->resource_total_vector[r].total_used = 
+        new_si->resource_total_vector[r].total_used;
+    }
+
+    size= si->rr[0];
+    for (r=0; r<size; r++) {
+      si->rr[1+r] = new_si->rr[1+r];
+    }
+  }
+}
+
+
+
 #endif
 
 /****************************************************************************
