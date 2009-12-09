@@ -66,6 +66,10 @@
 #ifndef targ_grouping_INCLUDED
 #define targ_grouping_INCLUDED
 
+#if __GNUC__ >=3 || defined(_MSC_VER)
+#include <climits>	// For *MAX 
+#endif
+
 #include <vector>
 #include "mempool_allocator.h"
 #include "ti_si.h"
