@@ -641,7 +641,7 @@ Range::Print (FILE *f) const
 
 Range::Range (RangeSign Sign, INT lowbit, INT width)
 {
-  FmtAssert (width >= 0, ("Attempt to create an invalid range"));
+  FmtAssert (width >= 0, ("Attempt to create an invalid range of <0 width %d", width));
   if (Sign == NoSign) Sign = Unsigned;
   if (width == 0){
     rtype = normal;
@@ -685,7 +685,8 @@ Range::Range (INT64 a)
 Range::Range (ZInt minval, ZInt maxval) : min (minval), max (maxval)
 {
   rtype = normal;
-  FmtAssert (minval <= maxval, ("Range min and max error"));
+  FmtAssert (minval <= maxval, ("Range min and max error : minval %lld > maxval %lld", 
+				minval.to_INT64(), maxval.to_INT64()));
 }
 
 Range::Range (const Range &a)
