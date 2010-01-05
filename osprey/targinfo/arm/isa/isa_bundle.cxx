@@ -32,6 +32,9 @@
 
 // AUTOMATICALLY GENERATED FROM MDS DATA BASE !!! 
 
+ enum { armv5e = 1, armv6 = 2};
+
+
 //  
 //  Generate ISA bundle information 
 /////////////////////////////////////// 
@@ -2226,7 +2229,7 @@ main()
   ISA_BUNDLE_PACK_INFO bundle_0 = ISA_Bundle_Pack_Create("bundle_0", ISA_Bundle_Pack_Little_Endian, 32);
   Pack_Slot(0,0,0,32);
 
-  ISA_Bundle_Type_Create("Template_0", ".Template_0", 1, bundle_0, 0x0);
+  ISA_Bundle_Type_Create("Template_0", ".Template_0", 1, bundle_0, 0x0, armv5e |armv6);
   Alignment(0, 32);
   Slot(0, ALL_Unit);
   Stop(0);

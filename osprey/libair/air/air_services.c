@@ -448,6 +448,60 @@ r_value( AIR_TN *tn )
     return AIR_EVENT_NEXT;
   }
 
+
+  /** 
+   * Function finds out bunlde id corresponding to bundle_props[]
+   * array
+   * Function takes care of checking that the bundle definition is
+   * available for the proc given as parameter
+   * 
+   * @param bundle_props array of EXEC_UNIT
+   * @param n_bundle_props size if bundle_props 
+   * @param proc current processor identifier
+   * 
+   * @return bundle id or -1
+   */
+  int 
+  AIR_find_matching_template_proc (ISA_EXEC_UNIT_PROPERTY bundle_props[ISA_MAX_SLOTS],
+                                   int n_bundle_props, PROCESSOR proc)
+  {
+    int t;
+    static int template_initialized = 0;
+    static ISA_EXEC_UNIT_PROPERTY template_props[ISA_MAX_BUNDLES][ISA_BUNDLE_MAX_SLOTS];
+  
+    if(!template_initialized) {
+      template_initialized=1;
+      for(t = 0; t < ISA_MAX_BUNDLES; ++t) {
+        int n_props = ISA_EXEC_Slot_Count(t);
+
+        int i;
+
+        for(i = 0; i < n_props; ++i) {
+          template_props[t][i] = ISA_EXEC_Slot_Prop(t, i);
+        }
+      }
+    }
+    for(t = 0; t < ISA_MAX_BUNDLES; ++t) {
+      const ISA_EXEC_UNIT_PROPERTY *t_props = template_props[t];
+      int n_t_props = ISA_EXEC_Slot_Count(t);
+      /* Check whether bundle is available on current proc*/
+      if (! ISA_EXEC_BUNDLE_activated(t, proc)) {
+        continue;
+      }
+      if(n_t_props > ISA_MAX_SLOTS) {
+        continue;
+      }
+      if(n_bundle_props == n_t_props
+	 && memcmp(bundle_props, t_props,
+		   sizeof(ISA_EXEC_UNIT_PROPERTY) * n_bundle_props) == 0) {
+        // Perfect match.
+        return t;
+      }
+    }
+    return -1;
+  }
+
+
   int 
   AIR_find_matching_template (ISA_EXEC_UNIT_PROPERTY bundle_props[ISA_MAX_SLOTS],
 	  		      int n_bundle_props)

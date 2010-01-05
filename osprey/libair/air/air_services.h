@@ -39,6 +39,7 @@
 #include "targ_isa_decode.h"
 
 #include "air.h"
+#include "targ_proc.h"
 
 /* AIR is strictly in C */
 #ifdef __cplusplus
@@ -81,6 +82,8 @@ extern unsigned int AIR_assemble_binary(AIR_OP *, ISA_PACK_INST *);
 
 extern int AIR_find_matching_template(ISA_EXEC_UNIT_PROPERTY bundle_props[ISA_MAX_SLOTS],
 	  		              int);
+extern int AIR_find_matching_template_proc(ISA_EXEC_UNIT_PROPERTY bundle_props[ISA_MAX_SLOTS],
+                                           int, PROCESSOR);
 #ifdef __cplusplus
 }
 #endif
