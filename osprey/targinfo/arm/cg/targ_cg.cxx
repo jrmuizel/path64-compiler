@@ -4471,3 +4471,15 @@ CGTARG_Is_Register_Quad(TN *tn1, TN *tn2, TN *tn3, TN *tn4)
 {
   return FALSE;
 }
+
+#ifdef TARG_ST
+BOOL
+CGTARG_SSA_dedicated_candidate_tn(TN *tn) {
+  ISA_REGISTER_CLASS cl = TN_register_class(tn);
+  // The PC is explicitely used and defined on calls, but must not be
+  // renamed
+  if (!REGISTER_allocatable(cl, TN_register(tn)) && !TN_is_sp_reg(tn))
+    return FALSE;
+  return TRUE;
+}
+#endif

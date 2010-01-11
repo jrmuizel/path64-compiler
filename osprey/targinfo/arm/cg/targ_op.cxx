@@ -1523,7 +1523,13 @@ CGTARG_OP_Make_movc( TN *guard,
                      OPS *cmov_ops,
                      bool on_false
                      ) {
-  FmtAssert(0,("Not implemented"));
+
+  Expand_Copy(dst, guard, src, cmov_ops);
+
+  if (on_false) {
+    OP *mop = OPS_last(cmov_ops);
+    Set_OP_Pred_False(mop, OP_find_opnd_use(mop, OU_predicate));
+  }
 }
 
 /**
