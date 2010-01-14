@@ -93,19 +93,22 @@
  * |          | - In ISA_OPERAND_VALTYP, literal class is now encoded on 16bits|
  * |          |   (used to be 8bits), and the fields have been reorganized     |
  * +----------+----------------------------------------------------------------+
+ * | 20100114 | - ISA_EXEC_UNIT_PROPERTY changed from 16 to 32 bits      
+ * +----------+----------------------------------------------------------------+
  * 
  */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "dyn_isa_api_access.h"
+#include "errors.h"
 
 BE_EXPORTED extern EXTENSION_ISA_Info *EXTENSION_Get_ISA_Info_From_TOP(TOP id);
 
 // ========================================================================
 // List of compatible API revisions for ISA part of the library description
 // ========================================================================
-#define    NB_SUPPORTED_ISA_REV 10
+#define    NB_SUPPORTED_ISA_REV 11
 #define    REV_20070126        (20070126)
 #define    REV_20070615        (20070615)
 #define    REV_20070924        (20070924)
@@ -116,6 +119,8 @@ BE_EXPORTED extern EXTENSION_ISA_Info *EXTENSION_Get_ISA_Info_From_TOP(TOP id);
 #define    REV_20090416        (20090416)
 #define    REV_20090727        (20090727)
 #define    REV_20090915        (20090915)
+#define    REV_20100114        (20100114)
+
 static INT supported_ISA_rev_tab[NB_SUPPORTED_ISA_REV] = {
   REV_20070126,
   REV_20070615,
@@ -126,6 +131,7 @@ static INT supported_ISA_rev_tab[NB_SUPPORTED_ISA_REV] = {
   REV_20090408,
   REV_20090416,
   REV_20090727,
+  REV_20090915,
   MAGIC_NUMBER_EXT_ISA_API   /* current one */
 };
 
@@ -425,6 +431,10 @@ typedef struct {
   mUINT8  relocs;
   mINT8   reloc[ISA_RELOC_STATIC_MAX_pre_20090915];
 } ISA_OPERAND_VALTYP_pre_20090915;
+
+// -------- Changed at rev 20100114 --------------------------------------------
+typedef mUINT16 ISA_EXEC_UNIT_PROPERTY_pre_20100114;
+
 
 // #############################################################################
 // ##
@@ -806,7 +816,7 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
       new_bundle_slot_count_tab = new mUINT8[ext_num_subsets];
       memset(new_bundle_slot_count_tab,1,ext_num_subsets*sizeof(mUINT8));
       for (i=0; i<nb_entry; i++) {
-	new_tab[i] = (mUINT16)old_tab[i];
+	new_tab[i] = (mUINT32)old_tab[i];
 	// For STxP70 v3 number of slots is 1. V4 or other targets are
 	// described using new targinfo.
 	new_slots_tab[i] = 1;
@@ -825,12 +835,38 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
       }
       overridden_ISA_PRINT_info_tab = new_tab;
     }
-  } else {
+  } else if (input_isa_ext->magic < REV_20100114 ) {
+      {
+      // Convert ISA_EXEC_UNIT_PROPERTY (bundling)
+      int nb_entry = isa_ext->get_TOP_count();
+
+      ISA_EXEC_UNIT_PROPERTY_pre_20100114 *old_tab;
+      ISA_EXEC_UNIT_PROPERTY              *new_tab;
+
+      old_tab = (ISA_EXEC_UNIT_PROPERTY_pre_20100114*)isa_ext->get_ISA_EXEC_unit_prop_tab();
+      new_tab = new ISA_EXEC_UNIT_PROPERTY[nb_entry];
+
+      for (i=0; i<nb_entry; i++) {
+	new_tab[i] = (mUINT32)old_tab[i];
+      }
+      overridden_ISA_EXEC_unit_prop_tab = new_tab;
+
+      overridden_ISA_EXEC_unit_slots_tab = input_isa_ext->get_ISA_EXEC_unit_slots_tab();
+      overridden_ISA_BUNDLE_slot_count_tab = input_isa_ext->get_ISA_BUNDLE_slot_count_tab();
+      overridden_ISA_PRINT_info_tab = input_isa_ext->get_ISA_PRINT_info_tab();
+
+    }
+  }
+  else {
+
     overridden_ISA_EXEC_unit_prop_tab = input_isa_ext->get_ISA_EXEC_unit_prop_tab();
     overridden_ISA_EXEC_unit_slots_tab = input_isa_ext->get_ISA_EXEC_unit_slots_tab();
     overridden_ISA_BUNDLE_slot_count_tab = input_isa_ext->get_ISA_BUNDLE_slot_count_tab();
     overridden_ISA_PRINT_info_tab = input_isa_ext->get_ISA_PRINT_info_tab();
   }
+
+  FmtAssert((sizeof(ISA_EXEC_UNIT_PROPERTY)==4), ("Internal Compiler Error : ISA_EXEC_UNIT_PROPERTY size no equal to 32bits\n"));
+
 
   // ---------------------------------------------------------------------------
   // ---------------------------------------------------------------------------
@@ -1053,7 +1089,6 @@ EXTENSION_ISA_Info::~EXTENSION_ISA_Info() {
       delete[] (ISA_REGISTER_CLASS_INFO*)overridden_ISA_REGISTER_CLASS_tab;
     }
     if (initial_rev < REV_20080307) {
-      delete[] (ISA_EXEC_UNIT_PROPERTY*)overridden_ISA_EXEC_unit_prop_tab;
       delete[] (ISA_EXEC_UNIT_SLOTS*)overridden_ISA_EXEC_unit_slots_tab;
       delete[] (mUINT8*)overridden_ISA_BUNDLE_slot_count_tab;
       delete[] (ISA_PRINT_INFO*)overridden_ISA_PRINT_info_tab;
@@ -1064,6 +1099,9 @@ EXTENSION_ISA_Info::~EXTENSION_ISA_Info() {
     }
     if (initial_rev < REV_20090915) {
       delete[] (ISA_OPERAND_VALTYP*)overridden_ISA_OPERAND_operand_types_tab;
+    }
+    if (initial_rev < REV_20100114) {
+      delete[] (ISA_EXEC_UNIT_PROPERTY*)overridden_ISA_EXEC_unit_prop_tab;      
     }
   }
   delete[] regclass_access_tab;
