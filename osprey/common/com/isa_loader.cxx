@@ -1460,6 +1460,7 @@ void Initialize_ISA_Hazards(Lai_Loader_Info_t &ext_info) {
 void Initialize_SI(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
   const EXTENSION_SI_Info ** ext_proc_si_info;
   int  ext, j;
+  char err_msg[256];
   // ...ptrs to newly allocated tables
   SI            **top_si_tab;
   SI            **si_tab;
@@ -1537,7 +1538,6 @@ void Initialize_SI(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
      */
     {
       int u;
-      char err_msg[256];
       bool ok = true;
 
       // ...Check Resources
@@ -1761,6 +1761,19 @@ void Initialize_SI(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
       while (mask) {
 	mask = mask >> 1;
 	nb_ext_bits++;
+      }
+
+      // Check if resource requirements can be encoded on a 64 bits word.
+      // In order to remove this limitation, it would be required to
+      // extend SI_RRW table (res_req#) to support multi word entries.
+      // Note that the limitation is also present in RES_WORD structure
+      // of the SI generator.
+      if (res_tab[ext_base_res]->bit_index + nb_ext_bits > 63) {
+        sprintf(err_msg,
+                "Failed to load extension because maximum number"
+                " of scheduling info resources has been reached");
+        RaiseErrorIncompatibleLibrary(ext_info.handler_tab[ext].dllname,
+                                      err_msg);
       }
 
       // Update SI information
