@@ -342,6 +342,8 @@ void Initialize_ABI_Properties(Lai_Loader_Info_t &ext_info) {
 void Initialize_ISA_Reloc(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
   ISA_RELOC_INFO * new_reloc_info;
   int ext_num_reloc_info;
+  ISA_RELOC_VARIANT_INFO * new_reloc_variant_info;
+  int ext_num_reloc_variant_info;
   ISA_RELOC_SUBSET_INFO * new_reloc_subset_info;
   int ext_num_reloc_subset_info;
   ISA_RELOC * new_reloc_virt;
@@ -372,21 +374,27 @@ void Initialize_ISA_Reloc(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
   // Count number of reloc_info to be dynamically added  
   ext_num_reloc_subset_info = ISA_SUBSET_static_count;
   ext_num_reloc_info = ISA_RELOC_STATIC_MAX+1;
+  ext_num_reloc_variant_info = ISA_RELOC_STATIC_MAX+1;
   for (ext=0; ext<ext_info.nb_ext; ext++) {      // Iterate on all extensions.
      ext_num_reloc_subset_info += ext_info.ISA_tab[ext]->get_ISA_RELOC_SUBSET_info_tab_sz();
      ext_num_reloc_info += ext_info.ISA_tab[ext]->get_ISA_RELOC_info_tab_sz();
+     ext_num_reloc_variant_info += ext_info.ISA_tab[ext]->get_ISA_RELOC_variant_info_tab_sz();
   }
   new_reloc_subset_info = TYPE_MEM_POOL_ALLOC_N(ISA_RELOC_SUBSET_INFO, Malloc_Mem_Pool, ext_num_reloc_subset_info);
   memcpy(new_reloc_subset_info, ISA_reloc_subset_tab, ISA_SUBSET_static_count * sizeof(ISA_RELOC_SUBSET_INFO));
   new_reloc_info = TYPE_MEM_POOL_ALLOC_N(ISA_RELOC_INFO, Malloc_Mem_Pool, ext_num_reloc_info);
   memcpy(new_reloc_info, ISA_RELOC_info, (ISA_RELOC_STATIC_MAX+1) * sizeof(ISA_RELOC_INFO));
+  new_reloc_variant_info = TYPE_MEM_POOL_ALLOC_N(ISA_RELOC_VARIANT_INFO, Malloc_Mem_Pool, ext_num_reloc_variant_info);
+  memcpy(new_reloc_variant_info, ISA_RELOC_info, (ISA_RELOC_STATIC_MAX+1) * sizeof(ISA_RELOC_VARIANT_INFO));
   
   ext_num_reloc_subset_info = ISA_SUBSET_static_count;
   ext_num_reloc_info = ISA_RELOC_STATIC_MAX+1;
+  ext_num_reloc_variant_info = ISA_RELOC_STATIC_MAX+1;
   ext_optypes_num = ISA_OPERAND_TYPES_STATIC_COUNT;
   for (ext=0; ext<ext_info.nb_ext; ext++) {      // Iterate on all extensions.
      ISA_VIRTUAL_RELOC ext_virtual_id_base;
      ISA_RELOC_INFO * ext_reloc_info;
+     ISA_RELOC_VARIANT_INFO * ext_reloc_variant_info;
      int ext_reloc_num;
      ISA_RELOC_SUBSET_INFO * ext_reloc_subset_info;
      int ext_reloc_subset_num;
@@ -400,8 +408,13 @@ void Initialize_ISA_Reloc(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
      subset = ext_info.ISA_tab[ext]->get_ISA_RELOC_max_static_virtual_id_core_subset();
      ext_virtual_id_base = subset_max_virtual_id[subset]+1;
      ext_reloc_info = ext_info.ISA_tab[ext]->get_ISA_RELOC_info_tab();
+     ext_reloc_variant_info = ext_info.ISA_tab[ext]->get_ISA_RELOC_variant_info_tab();
      for (ext_reloc_num=0; ext_reloc_num<ext_info.ISA_tab[ext]->get_ISA_RELOC_info_tab_sz(); ext_reloc_num++) {
         ext_reloc_info[ext_reloc_num].virtual_id += ext_virtual_id_base;
+     }
+     for (ext_reloc_num=0; ext_reloc_num<ext_info.ISA_tab[ext]->get_ISA_RELOC_variant_info_tab_sz(); ext_reloc_num++) {
+        ext_reloc_variant_info[ext_reloc_num].reloc_prev_encoding += ext_virtual_id_base;
+        ext_reloc_variant_info[ext_reloc_num].reloc_next_encoding += ext_virtual_id_base;
      }
 
      ext_reloc_subset_info = ext_info.ISA_tab[ext]->get_ISA_RELOC_SUBSET_info_tab();
@@ -437,6 +450,13 @@ void Initialize_ISA_Reloc(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
 	       ext_info.ISA_tab[ext]->get_ISA_RELOC_info_tab_sz() * sizeof(ISA_RELOC_INFO));
      }
 
+     /* Copy RELOC_VARIANT_INFO from ext into global one */
+     if (NULL != ext_info.ISA_tab[ext]->get_ISA_RELOC_variant_info_tab()) {
+        memcpy(&new_reloc_variant_info[ext_num_reloc_info], 
+               ext_info.ISA_tab[ext]->get_ISA_RELOC_variant_info_tab(), 
+	       ext_info.ISA_tab[ext]->get_ISA_RELOC_variant_info_tab_sz() * sizeof(ISA_RELOC_VARIANT_INFO));
+     }
+
      /* Now we have to perform renumbering of relocation ids within OPERAND_VALTYPE array */
      ext_optypes_tab = &ISA_OPERAND_operand_types[ext_optypes_num];
      ext_optypes_nr = ext_info.ISA_tab[ext]->get_ISA_OPERAND_operand_types_tab_sz();
@@ -454,6 +474,7 @@ void Initialize_ISA_Reloc(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
      /* Let's go to next extension
      ext_num_reloc_subset_info += ext_info.ISA_tab[ext]->get_ISA_RELOC_SUBSET_info_tab_sz();
      ext_num_reloc_info += ext_info.ISA_tab[ext]->get_ISA_RELOC_info_tab_sz();
+     ext_num_reloc_variant_info += ext_info.ISA_tab[ext]->get_ISA_RELOC_variant_info_tab_sz();
      ext_optypes_num += ext_info.ISA_tab[ext]->get_ISA_OPERAND_operand_types_tab_sz();
      
      /* Add relocation number of extension to MAX */
@@ -466,6 +487,7 @@ void Initialize_ISA_Reloc(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
   // Switch to extended ISA_RELOC
   ISA_reloc_subset_tab = new_reloc_subset_info;
   ISA_RELOC_info = new_reloc_info;
+  ISA_RELOC_variant_info = new_reloc_variant_info;
   reloc_virtual_tab = new_reloc_virtual;
   sz_reloc_virtual_tab = max_virtual_id;
 }

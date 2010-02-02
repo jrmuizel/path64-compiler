@@ -103,6 +103,24 @@ struct isa_virtual_reloc_type {
   ISA_RELOC_RLLIB_MODE     rllib_mode;
 };
 
+/* Indicate which relocations are linked for instruction *
+ * encoding variants:                                    *
+ *   rel_variant_next_encoding[i] == j means                      *
+ *     reloc virt id 'j' must replace reloc virt id 'i'  *
+ *     in case of instruction encoding size increase.    *
+ *   rel_variant_next_encoding[i] == 0 means                      *
+ *     reloc virt id 'i' has no variant in case of       *
+ *     instruction encoding size increase.               *
+ *   rel_variant_prev_encoding[i] == j means                      *
+ *     reloc virt id 'j' must replace reloc virt id 'i'  *
+ *     in case of instruction encoding size decrease.    *
+ *   rel_variant_prev_encoding[i] == 0 means                      *
+ *     reloc virt id 'i' has no variant in case of       *
+ *     instruction encoding size decrease.               *
+ */
+static vector<int> rel_variant_next_encoding;
+static vector<int> rel_variant_prev_encoding;
+
 typedef vector<bool> Reloc_Subset;
 
 // A dynamic bidimensional table of booleans.
@@ -362,6 +380,15 @@ static void init_structure( void )
 
   // Set correct size for subset_relocations vector.
   subset_relocations.resize(ISA_SUBSET_count);
+
+  unsigned int size = rel_variant_next_encoding.size();
+  if (size==0 || size < relocs_count) {
+  	rel_variant_next_encoding.resize(relocs_count,0);
+  }
+  size = rel_variant_prev_encoding.size();
+  if (size==0 || size < relocs_count) {
+  	rel_variant_prev_encoding.resize(relocs_count,0);
+  }
   return;
 }
 
@@ -542,6 +569,14 @@ void ISA_Reloc_Duplicate_Relocation_for_Relaxation( ISA_SUBSET subset, ... )
 
     relocations.push_back(undefined_reloc_no_relax);
 
+    unsigned int size = rel_variant_next_encoding.size();
+    if (size==0 || size < relocs_count) {
+  	rel_variant_next_encoding.resize(relocs_count,0);
+    }
+    size = rel_variant_prev_encoding.size();
+    if (size==0 || size < relocs_count) {
+  	rel_variant_prev_encoding.resize(relocs_count,0);
+    }
     fprintf(
       cfile, 
       "  { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, %s, %s, 0, \"\",  \"RELOC_%s\", %d, %s },\n",
@@ -899,6 +934,15 @@ ISA_VIRTUAL_RELOC_TYPE ISA_Create_Reloc (int virtual_id,
     relocations.push_back(ret_no_relax);
   }
   
+  unsigned int size = rel_variant_next_encoding.size();
+  if (size==0 || size < relocs_count) {
+  	rel_variant_next_encoding.resize(relocs_count,0);
+  }
+  size = rel_variant_prev_encoding.size();
+  if (size==0 || size < relocs_count) {
+  	rel_variant_prev_encoding.resize(relocs_count,0);
+  }
+
   return ret;
 }
 
@@ -1015,6 +1059,19 @@ static void ISA_Reloc_Check_Subset(ISA_SUBSET subset,
   return;
 }
 
+/////////////////////////////////////
+void ISA_Relocs_Variant (ISA_VIRTUAL_RELOC_TYPE reloc1, ISA_VIRTUAL_RELOC_TYPE reloc2)
+/////////////////////////////////////
+//  See interface description.
+/////////////////////////////////////
+{
+  rel_variant_next_encoding[reloc2->internal_id] = reloc1->internal_id;
+  rel_variant_prev_encoding[reloc1->internal_id] = reloc2->internal_id;
+  if (duplicate_reloc_for_relax) {
+    rel_variant_next_encoding[reloc2->internal_id+1] = reloc1->internal_id+1;
+    rel_variant_prev_encoding[reloc1->internal_id+1] = reloc2->internal_id+1;
+  }
+}
 
 //////////////////////////////////////
 static void ISA_Relocs_Subsets_End(FILE *hfile, FILE *cfile)
@@ -1271,6 +1328,24 @@ void ISA_Relocs_End(void)
     fprintf(cincfile,"\n\n");
   }
 
+  /* Generates reloc variant info */
+  if(gen_static_code) {
+    fprintf(cfile, 
+	    "static ISA_RELOC_VARIANT_INFO ISA_RELOC_static_variant_info[] = {\n");
+  }
+  else {
+    fprintf(cfile, 
+	    "static ISA_RELOC_VARIANT_INFO ISA_RELOC_dynamic_variant_info [] = {\n");
+  }
+  for (int i=0;i<relocs_count;i++) {
+    fprintf(cfile, 
+	    "/* ISA_RELOC_%s */ { ISA_RELOC_%s, ISA_RELOC_%s },\n",
+	    relocations[i]->name,
+	    relocations[rel_variant_next_encoding[i]]->name,
+	    relocations[rel_variant_prev_encoding[i]]->name);
+  }
+  fprintf(cfile, "};\n\n");
+
   if(gen_static_code) {
     fprintf(hfile,
 	    "\n"
@@ -1326,6 +1401,12 @@ void ISA_Relocs_End(void)
             "  ISA_RELOC_RLLIB_MODE rllib_mode;\n"
 	    "} ISA_RELOC_INFO;\n\n");
 
+    fprintf(hfile, 
+	    "typedef struct {\n"
+            "  ISA_RELOC reloc_next_encoding;\n"
+            "  ISA_RELOC reloc_prev_encoding;\n"
+	    "} ISA_RELOC_VARIANT_INFO;\n\n");
+
     fprintf(hfile,
             "BE_EXPORTED extern mUINT32 ISA_RELOC_MAX;\n\n");
 
@@ -1335,10 +1416,18 @@ void ISA_Relocs_End(void)
     fprintf(hfile,
             "BE_EXPORTED extern const ISA_RELOC_INFO * ISA_RELOC_info;\n\n");
 
+    fprintf(hfile,
+            "BE_EXPORTED extern const ISA_RELOC_VARIANT_INFO * ISA_RELOC_variant_info;\n\n");
+
     fprintf(cfile,
             "BE_EXPORTED const ISA_RELOC_INFO * ISA_RELOC_info = ISA_RELOC_static_info;\n\n");
 
+    fprintf(cfile,
+            "BE_EXPORTED const ISA_RELOC_VARIANT_INFO * ISA_RELOC_variant_info = ISA_RELOC_static_variant_info;\n\n");
+
     fprintf(efile, "ISA_RELOC_info\n");
+
+    fprintf(efile, "ISA_RELOC_variant_info\n");
 
     fprintf(efile, "ISA_reloc_subset_tab\n");
 
@@ -1356,6 +1445,9 @@ void ISA_Relocs_End(void)
 	    "BE_EXPORTED const ISA_RELOC_INFO * ISA_RELOC_info = NULL;\n");
 
     fprintf(sfile,
+	    "BE_EXPORTED const ISA_RELOC_VARIANT_INFO * ISA_RELOC_variant_info = NULL;\n");
+
+    fprintf(sfile,
 	    "BE_EXPORTED ISA_RELOC_SUBSET_INFO * ISA_reloc_subset_tab = NULL;\n");
 
   }
@@ -1365,6 +1457,8 @@ void ISA_Relocs_End(void)
   if(!gen_static_code) {
     const char *fct_name1= "dyn_get_ISA_RELOC_info_tab";
     const char *fct_name2= "dyn_get_ISA_RELOC_info_tab_sz";
+    const char *fct_name1_1= "dyn_get_ISA_RELOC_variant_info_tab";
+    const char *fct_name2_1= "dyn_get_ISA_RELOC_variant_info_tab_sz";
     const char *fct_name3= "dyn_get_ISA_RELOC_max_static_virtual_id_core_subset";
     const char *fct_name4= "dyn_set_ISA_RELOC_dynamic_reloc_offset";
     const char *fct_name5= "dyn_get_ISA_RELOC_dynamic_reloc_offset";
@@ -1383,10 +1477,23 @@ void ISA_Relocs_End(void)
 	    fct_name1);
     
     fprintf(cfile,
+	    "\n\n"
+	    "ISA_RELOC_VARIANT_INFO* %s ( void )\n"
+	    "{ return ISA_RELOC_dynamic_variant_info;\n"
+	    "};\n\n",
+	    fct_name1_1);
+    
+    fprintf(cfile,
 	    "const mUINT32 %s ( void )\n"
 	    "{ return (const mUINT32) (%d);\n"
 	    "}\n\n",
 	    fct_name2,relocs_count);
+    
+    fprintf(cfile,
+	    "const mUINT32 %s ( void )\n"
+	    "{ return (const mUINT32) (%d);\n"
+	    "}\n\n",
+	    fct_name2_1,relocs_count);
     
     if (!strcmp(CoreSubset,"stxp70_v3")) {
        /* Specific relocs are numbered for x3 & fpx for V3 architecture */
@@ -1433,15 +1540,17 @@ void ISA_Relocs_End(void)
 
     fprintf(hfile,
 	    "\n\n"
-	    "extern       mUINT32                dynamic_reloc_offset_%s;\n\n"
-	    "extern       ISA_RELOC_INFO*        %s ( void );\n"
-	    "extern const mUINT32                %s ( void );\n"
-	    "extern const ISA_SUBSET             %s ( void );\n"
-	    "extern       void                   %s ( mUINT32 offset );\n"
-	    "extern       mUINT32                %s ( void );\n"
-	    "extern       ISA_RELOC_SUBSET_INFO* %s ( void );\n"
-	    "extern       mUINT32                %s ( void );\n",
-	    Get_Extension_Name(),fct_name1,fct_name2,fct_name3,fct_name4,fct_name5,fct_name6,fct_name7);
+	    "extern       mUINT32                 dynamic_reloc_offset_%s;\n\n"
+	    "extern       ISA_RELOC_INFO*         %s ( void );\n"
+	    "extern       ISA_RELOC_VARIANT_INFO* %s ( void );\n"
+	    "extern const mUINT32                 %s ( void );\n"
+	    "extern const mUINT32                 %s ( void );\n"
+	    "extern const ISA_SUBSET              %s ( void );\n"
+	    "extern       void                    %s ( mUINT32 offset );\n"
+	    "extern       mUINT32                 %s ( void );\n"
+	    "extern       ISA_RELOC_SUBSET_INFO*  %s ( void );\n"
+	    "extern       mUINT32                 %s ( void );\n",
+	    Get_Extension_Name(),fct_name1,fct_name1_1,fct_name2,fct_name2_1,fct_name3,fct_name4,fct_name5,fct_name6,fct_name7);
 
   }
 
@@ -1530,6 +1639,16 @@ void ISA_Relocs_End(void)
 	    "{\n"
 	    "  return ISA_RELOC_info[reloc].rllib_mode;\n"
 	    "}\n\n");
+
+    fprintf(hfile, "inline ISA_RELOC ISA_RELOC_next_encoding (ISA_RELOC reloc)\n"
+	    "{\n"
+	    "  return ISA_RELOC_variant_info[reloc].reloc_next_encoding;\n"
+	    "}\n\n");
+
+    fprintf(hfile, "inline ISA_RELOC ISA_RELOC_prev_encoding (ISA_RELOC reloc)\n"
+	    "{\n"
+	    "  return ISA_RELOC_variant_info[reloc].reloc_prev_encoding;\n"
+	    "}\n\n");
   } else {
 
     fprintf(sfile,
@@ -1540,6 +1659,7 @@ void ISA_Relocs_End(void)
 	    "ISA_RELOCS_Initialize_Stub( void )\n"
 	    "{\n"
 	    "  ISA_RELOC_info = (ISA_RELOC_INFO*)dyn_get_ISA_RELOC_info_tab();\n"
+	    "  ISA_RELOC_variant_info = (ISA_RELOC_VARIANT_INFO *)dyn_get_ISA_RELOC_variant_info_tab();\n"
 	    "  ISA_reloc_subset_tab = (ISA_RELOC_SUBSET_INFO*)dyn_get_ISA_RELOC_SUBSET_info_tab();\n"
 	    "  ISA_RELOC_MAX = dyn_get_ISA_RELOC_info_tab_sz();\n"
 	    "  dynamic_reloc_offset_%s = dyn_get_ISA_RELOC_dynamic_reloc_offset();\n"

@@ -93,7 +93,11 @@
  * |          | - In ISA_OPERAND_VALTYP, literal class is now encoded on 16bits|
  * |          |   (used to be 8bits), and the fields have been reorganized     |
  * +----------+----------------------------------------------------------------+
- * | 20100114 | - ISA_EXEC_UNIT_PROPERTY changed from 16 to 32 bits      
+ * | 20100114 | - ISA_EXEC_UNIT_PROPERTY changed from 16 to 32 bits            |
+ * +----------+----------------------------------------------------------------+
+ * | 20100120 | - Introduce ISA_RELOC_VARIANT_INFO                             |
+ * |          | - Introduce new relocations to deal with STxP70 v4 dynamic     |
+ * |          |   loading. Reclos internal array is moved from 193 to 307.     |
  * +----------+----------------------------------------------------------------+
  * 
  */
@@ -108,7 +112,7 @@ BE_EXPORTED extern EXTENSION_ISA_Info *EXTENSION_Get_ISA_Info_From_TOP(TOP id);
 // ========================================================================
 // List of compatible API revisions for ISA part of the library description
 // ========================================================================
-#define    NB_SUPPORTED_ISA_REV 11
+#define    NB_SUPPORTED_ISA_REV 12
 #define    REV_20070126        (20070126)
 #define    REV_20070615        (20070615)
 #define    REV_20070924        (20070924)
@@ -120,6 +124,7 @@ BE_EXPORTED extern EXTENSION_ISA_Info *EXTENSION_Get_ISA_Info_From_TOP(TOP id);
 #define    REV_20090727        (20090727)
 #define    REV_20090915        (20090915)
 #define    REV_20100114        (20100114)
+#define    REV_20100120        (20100120)
 
 static INT supported_ISA_rev_tab[NB_SUPPORTED_ISA_REV] = {
   REV_20070126,
@@ -132,6 +137,7 @@ static INT supported_ISA_rev_tab[NB_SUPPORTED_ISA_REV] = {
   REV_20090416,
   REV_20090727,
   REV_20090915,
+  REV_20100114,
   MAGIC_NUMBER_EXT_ISA_API   /* current one */
 };
 
@@ -435,6 +441,19 @@ typedef struct {
 // -------- Changed at rev 20100114 --------------------------------------------
 typedef mUINT16 ISA_EXEC_UNIT_PROPERTY_pre_20100114;
 
+// -------- Changed at rev 20100120 --------------------------------------------
+#define ISA_RELOC_STATIC_MAX_pre_20100120 193
+typedef struct {
+  mUINT8  rclass;
+  mUINT8  rsubclass;
+  mUINT8  lclass;
+  mUINT8  eclass;
+  mUINT16 size;
+  mUINT8  flags;
+  mUINT8  default_reloc;
+  mUINT8  relocs;
+  mINT8   reloc[ISA_RELOC_STATIC_MAX_pre_20100120];
+} ISA_OPERAND_VALTYP_pre_20100120;
 
 // #############################################################################
 // ##
@@ -609,10 +628,12 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
   // [4] REV_20090727: Increase of <relocs> size from 149 to 193
   // [5] REV_20090915: Conversion of <lclass> field from 8 to 16 bits
   //                   + Changed field ordering
+  // [6] REV_20100120: Increase of <relocs> size from 193 to 307
+  //                   + Changed types of default_reloc, relocs and reloc[] fields
   //
   // ---------------------------------------------------------------------------
   // ---------------------------------------------------------------------------
-  if (input_isa_ext->magic < REV_20090915) {
+  if (input_isa_ext->magic < REV_20100120) {
     int nb_entry = isa_ext->get_ISA_OPERAND_operand_types_tab_sz();
     ISA_OPERAND_VALTYP              *new_tab;
     new_tab = new ISA_OPERAND_VALTYP[nb_entry];
@@ -716,6 +737,28 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
         new_tab[i].relocs        = old_tab[i].relocs;
         for (j=0; j<ISA_RELOC_STATIC_MAX_pre_20090915; j++) {
           new_tab[i].reloc[j] = old_tab[i].reloc[j];
+        }
+        for (; j<ISA_RELOC_STATIC_MAX; j++) {
+          new_tab[i].reloc[j] = ISA_RELOC_UNDEFINED;
+        }
+      }
+    }
+    else if (input_isa_ext->magic < REV_20100120) {
+      int nb_entry = isa_ext->get_ISA_OPERAND_operand_types_tab_sz();
+      ISA_OPERAND_VALTYP_pre_20100120 *old_tab;
+      old_tab = (ISA_OPERAND_VALTYP_pre_20100120*)isa_ext->get_ISA_OPERAND_operand_types_tab();
+      for (i=0; i<nb_entry; i++) {
+        int j;
+        new_tab[i].rclass        = old_tab[i].rclass;
+        new_tab[i].rsubclass     = old_tab[i].rsubclass;
+        new_tab[i].lclass        = old_tab[i].lclass;    // [5]
+        new_tab[i].eclass        = old_tab[i].eclass;
+        new_tab[i].size          = old_tab[i].size;
+        new_tab[i].flags         = old_tab[i].flags;
+        new_tab[i].default_reloc = old_tab[i].default_reloc;  // [6]
+        new_tab[i].relocs        = old_tab[i].relocs;         // [6]
+        for (j=0; j<ISA_RELOC_STATIC_MAX_pre_20100120; j++) { // [6]
+          new_tab[i].reloc[j] = old_tab[i].reloc[j];          // [6]
         }
         for (; j<ISA_RELOC_STATIC_MAX; j++) {
           new_tab[i].reloc[j] = ISA_RELOC_UNDEFINED;
@@ -881,6 +924,9 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
      };
      static mUINT32 dyn_reloc_subset_tab_0 [] = { 0 /* UNDEFINED       */ };
      static ISA_RELOC_SUBSET_INFO dyn_reloc_subset_tab [1] = { {   1,   0, dyn_reloc_subset_tab_0  } };
+     static ISA_RELOC_VARIANT_INFO ISA_RELOC_dynamic_variant_info [] = {
+       { ISA_RELOC_UNDEFINED, ISA_RELOC_UNDEFINED }
+     };
 
     /* Setup default functions */
     overridden_ISA_PARSE_tab                   = NULL;
@@ -902,6 +948,8 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
     overridden_ISA_RELOC_max_static_virtual_id_core_subset = ISA_SUBSET_MIN;
     overridden_ISA_BINUTILS_info_tab           = NULL;
     overridden_ISA_BINUTILS_info_tab_sz        = 0;
+    overridden_ISA_RELOC_variant_info_tab      = ISA_RELOC_dynamic_variant_info;
+    overridden_ISA_RELOC_variant_info_tab_sz   = 1;
   } else {
     //
     // -------- Changed after rev 20090727 -----------------------------------------
@@ -943,6 +991,26 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
       overridden_ISA_RELOC_info_tab = isa_ext->get_ISA_RELOC_info_tab();
     }
 
+    //
+    // -------- Changed after rev 20100120 -----------------------------------------
+    // Introduce ISA_RELOC_VARIANT_INFO to deal with multiple relocation for the
+    // same instruction when relaxation is activated. 
+    if (input_isa_ext->magic < REV_20100120) {
+      int nb_entry = isa_ext->get_ISA_RELOC_info_tab_sz();
+      ISA_RELOC_VARIANT_INFO * ISA_RELOC_dynamic_variant_info;
+      
+      ISA_RELOC_dynamic_variant_info = new ISA_RELOC_VARIANT_INFO[nb_entry];
+      for (i=0;i<nb_entry;i++) {
+         ISA_RELOC_dynamic_variant_info->reloc_next_encoding = ISA_RELOC_UNDEFINED;
+         ISA_RELOC_dynamic_variant_info->reloc_prev_encoding = ISA_RELOC_UNDEFINED;
+      }
+      overridden_ISA_RELOC_variant_info_tab    = ISA_RELOC_dynamic_variant_info;
+      overridden_ISA_RELOC_variant_info_tab_sz = nb_entry;
+    } else {
+      overridden_ISA_RELOC_variant_info_tab    = isa_ext->get_ISA_RELOC_variant_info_tab();
+      overridden_ISA_RELOC_variant_info_tab_sz = isa_ext->get_ISA_RELOC_variant_info_tab_sz();
+    }
+    
     overridden_ISA_PARSE_tab                   = isa_ext->get_ISA_PARSE_tab();
     overridden_ISA_PARSE_tab_sz                = isa_ext->get_ISA_PARSE_tab_sz();
     overridden_ISA_PACK_OPND_info_tab          = isa_ext->get_ISA_PACK_OPND_info_tab();

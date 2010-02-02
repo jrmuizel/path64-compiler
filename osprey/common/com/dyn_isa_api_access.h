@@ -311,6 +311,9 @@ class EXTENSION_ISA_Info {
   inline const mUINT32                   get_ISA_RELOC_SUBSET_info_tab_sz    (void) const;
   inline const ISA_SUBSET                get_ISA_RELOC_max_static_virtual_id_core_subset (void) const;
                void                      set_ISA_RELOC_dynamic_reloc_offset  (mUINT32 offset) const;
+  // Two following are new from REV_20100120
+  inline       ISA_RELOC_VARIANT_INFO*   get_ISA_RELOC_variant_info_tab      (void) const;
+  inline const mUINT32                   get_ISA_RELOC_variant_info_tab_sz   (void) const;
 
   /* Handling ISA binutils -------------------------------------------------- */
   inline       ISA_BINUTILS_INFO*        get_ISA_BINUTILS_info_tab           (void) const;
@@ -348,6 +351,8 @@ class EXTENSION_ISA_Info {
   ISA_SUBSET                      overridden_ISA_RELOC_max_static_virtual_id_core_subset;
   ISA_BINUTILS_INFO             * overridden_ISA_BINUTILS_info_tab;
   mUINT32                         overridden_ISA_BINUTILS_info_tab_sz;
+  ISA_RELOC_VARIANT_INFO        * overridden_ISA_RELOC_variant_info_tab;
+  mUINT32                         overridden_ISA_RELOC_variant_info_tab_sz;
 };
 
 
@@ -872,6 +877,14 @@ EXTENSION_ISA_Info::get_ISA_RELOC_SUBSET_info_tab_sz    (void) const {
 inline const ISA_SUBSET
 EXTENSION_ISA_Info::get_ISA_RELOC_max_static_virtual_id_core_subset (void) const {
   return (overridden_ISA_RELOC_max_static_virtual_id_core_subset);
+}
+inline ISA_RELOC_VARIANT_INFO*
+EXTENSION_ISA_Info::get_ISA_RELOC_variant_info_tab      (void) const {
+  return (overridden_ISA_RELOC_variant_info_tab);
+}
+inline const mUINT32
+EXTENSION_ISA_Info::get_ISA_RELOC_variant_info_tab_sz   (void) const {
+  return (overridden_ISA_RELOC_variant_info_tab_sz);
 }
 
 /* Handling ISA binutils -------------------------------------------------- */

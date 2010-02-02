@@ -74,7 +74,7 @@ extern "C" {
 #endif
 
 
-#define MAGIC_NUMBER_EXT_ISA_API   20100114  /* Magic number. Interface checking */
+#define MAGIC_NUMBER_EXT_ISA_API   20100120  /* Magic number. Interface checking */
 
 /* ===========================================
  * Base register available for addressing mode
@@ -308,6 +308,10 @@ struct ISA_EXT_Interface {
 
  /* Handling literal classes - Added in REV_20090416 ----------------------- */
        void                      (*set_ISA_LIT_CLASS_offset)            (mUINT32); /* Set extension literal class offset     */
+
+ /* Handling Relocation variants - Added in REV_20100120 ------------------- */
+       ISA_RELOC_VARIANT_INFO*   (*get_ISA_RELOC_variant_info_tab)      (void);
+ const mUINT32                   (*get_ISA_RELOC_variant_info_tab_sz)   (void);
 };
 
 typedef struct ISA_EXT_Interface ISA_EXT_Interface_t;

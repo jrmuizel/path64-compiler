@@ -146,6 +146,19 @@
 //         - reloc: variadic argument of type ISA_VIRTUAL_RELOC_TYPE.
 //           variadic list is to be finished by NULL pointer.
 //
+//  void ISA_Relocs_Variant( ISA_RELOC_TYPE reloc1, ISA_RELOC_TYPE reloc2 )
+//      Create a link between reloc1 and reloc2 indicating that reloc1 must
+//      be replaced by reloc2 when instruction containing reloc1 is replaced
+//      by an instruction of immediately smaller size:                  
+//         - if reloc1 is attached to 48-bit instruction and this instruction
+//           is changed to a 32-bit one, reloc1 must be changed to reloc2.
+//         - if reloc1 is attached to 32-bit instruction and this instruction
+//           is changed to a 16-bit one, reloc1 must be changed to reloc2.
+//         - if reloc2 is attached to 32-bit instruction and this instruction
+//           is changed to a 48-bit one, reloc2 must be changed to reloc1.
+//         - if reloc2 is attached to 16-bit instruction and this instruction
+//           is changed to a 32-bit one, reloc2 must be changed to reloc1.
+//
 //  void ISA_Relocs_End(void)
 //      Complete processing of relocations.
 //
@@ -258,6 +271,9 @@ extern ISA_VIRTUAL_RELOC_TYPE ISA_Create_Reloc
 extern void ISA_Reloc_Subset          (ISA_SUBSET subset,
                                        ...);
 
+extern void ISA_Relocs_Variant        (ISA_VIRTUAL_RELOC_TYPE reloc1, 
+                                       ISA_VIRTUAL_RELOC_TYPE reloc2);
+				       
 extern void ISA_Reloc_Set_Core_Subset(const char * subset_name);
 
 extern void ISA_Relocs_End (void);
