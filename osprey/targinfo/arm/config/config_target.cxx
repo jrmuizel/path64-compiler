@@ -810,6 +810,19 @@ Configure_Source_Target ( char * /* filename */ )
 
 /* ====================================================================
  *
+ * Get_Extension_MTYPE_From_Asm_Constraints
+ *
+ * Return the extension MTYPE used in <constraint_string>, if any.
+ * Otherwise return MTYPE_UNKNOWN.
+ *
+ * ====================================================================
+ */
+UINT8 Get_Extension_MTYPE_From_Asm_Constraints(const char *constraint_string) {
+  return MTYPE_UNKNOWN;
+}
+
+/* ====================================================================
+ *
  * Check_Asm_Constraints
  *
  * Chech that asm constraints are compatible with the given MTYPE

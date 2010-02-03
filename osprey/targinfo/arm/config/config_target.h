@@ -348,6 +348,17 @@ BE_EXPORTED extern BOOL FP_packed_arithmetic;
  */
 BE_EXPORTED extern BOOL Check_Asm_Constraints(char* constraint_string, UINT8 mtype);
 
+/* ====================================================================
+ *
+ * Get_Extension_MTYPE_From_Asm_Constraints
+ *
+ * Return the extension MTYPE used in <constraint_string>, if any.
+ * Otherwise return MTYPE_UNKNOWN.
+ *
+ * ====================================================================
+ */
+BE_EXPORTED extern UINT8 Get_Extension_MTYPE_From_Asm_Constraints(const char *constraint_string);
+
 // [TTh] Maximum number of arguments for intrinsic ops
 // (Added to fix codex bug #43451)
 // On xp70, extension builtins can have many parameters as SFR accesses
