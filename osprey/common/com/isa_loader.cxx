@@ -385,7 +385,7 @@ void Initialize_ISA_Reloc(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
   new_reloc_info = TYPE_MEM_POOL_ALLOC_N(ISA_RELOC_INFO, Malloc_Mem_Pool, ext_num_reloc_info);
   memcpy(new_reloc_info, ISA_RELOC_info, (ISA_RELOC_STATIC_MAX+1) * sizeof(ISA_RELOC_INFO));
   new_reloc_variant_info = TYPE_MEM_POOL_ALLOC_N(ISA_RELOC_VARIANT_INFO, Malloc_Mem_Pool, ext_num_reloc_variant_info);
-  memcpy(new_reloc_variant_info, ISA_RELOC_info, (ISA_RELOC_STATIC_MAX+1) * sizeof(ISA_RELOC_VARIANT_INFO));
+  memcpy(new_reloc_variant_info, ISA_RELOC_variant_info, (ISA_RELOC_STATIC_MAX+1) * sizeof(ISA_RELOC_VARIANT_INFO));
   
   ext_num_reloc_subset_info = ISA_SUBSET_static_count;
   ext_num_reloc_info = ISA_RELOC_STATIC_MAX+1;
