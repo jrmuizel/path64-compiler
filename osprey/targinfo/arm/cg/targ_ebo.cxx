@@ -3386,6 +3386,11 @@ Build_AutoMod_OP(TOP automod_top, TN *base, TN *offset, OP *old_op, OPS *ops)
   }
   OP  *op = Mk_VarOP(automod_top, TOP_fixed_results(automod_top), TOP_fixed_opnds(automod_top), results, opnds);
   Copy_WN_For_Memory_OP(op, old_op);
+  // FdF 20100210: Unrolling information must be copied, it is used
+  // for memory dependence analysis
+  Set_OP_unrolling(op, OP_unrolling(old_op));
+  Set_OP_orig_idx(op, OP_map_idx(old_op));
+  Set_OP_unroll_bb(op, OP_unroll_bb(old_op));
 
   // (cbr) Support for guards on false
   CGTARG_Predicate_OP (NULL, op, OP_Predicate (old_op),
