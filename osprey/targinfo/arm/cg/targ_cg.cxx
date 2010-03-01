@@ -722,6 +722,21 @@ OP_pop(OP *op)
   return FALSE;
 }
 
+/** 
+ * GCM code ignores (by default) dummy operation.
+ *
+ * Some dummy operations (like HWBRANCH on stxp70) have dependencies to
+ * non-dummy instructions (setl?) and thus cannot be ignored by GCM.
+ * 
+ * @param op 
+ * 
+ * @return 
+ */
+BOOL
+CGTARG_dummy_op_has_sideeffects(OP *op) {
+  return FALSE;
+}
+
 BOOL 
 CGTARG_gcm_should_not_move_op(OP *op) {
     INT i;
@@ -4359,15 +4374,15 @@ CGTARG_registerclass_may_be_copied(ISA_REGISTER_CLASS cl)
 
 /** 
  * check target specific rules on whether op may be moved
- * into loophead
+ * into targetbb
  * 
  * @param op 
- * @param loophead 
+ * @param targetbb 
  * 
  * @return 
  */
 BOOL
-CGTARG_Code_Motion_To_LoopHead_Is_Legal(const OP* op, BB* loophead)
+CGTARG_Code_Motion_To_BB_Is_Legal(const OP* op, BB* targetbb)
 {
   return TRUE;
 }
