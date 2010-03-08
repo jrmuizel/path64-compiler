@@ -1179,7 +1179,6 @@ void Initialize_ISA_Subsets(Lai_Loader_Info_t &ext_info) {
   }
 }
 
-#ifdef BINUTILS
 /* ===========================================================================
  * Initialize ISA Parse from statically defined ones concatenated with
  * extension defined ones. Initialized data are:
@@ -1422,7 +1421,6 @@ void Initialize_ISA_Binutils(Lai_Loader_Info_t &ext_info) {
   // Switch to extended ISA_BINUTILS_info
   ISA_BINUTILS_info = new_binutils_info;
 }
-#endif
 
 #ifndef BINUTILS
 /* ===========================================================================
@@ -2363,7 +2361,7 @@ bool Load_Lai_Loader_Info() {
 
 #ifndef BINUTILS
   Initialize_DW_DEBUG_info(*ext_info);
-#else
+#endif
   Initialize_ISA_Parse(*ext_info);
 
   Initialize_ISA_Pack(*ext_info);
@@ -2371,7 +2369,6 @@ bool Load_Lai_Loader_Info() {
   Initialize_ISA_Decode(*ext_info);
 
   Initialize_ISA_Binutils(*ext_info);
-#endif
 
   Initialize_ISA_Reloc(*ext_info, lai_loader_pool);
 

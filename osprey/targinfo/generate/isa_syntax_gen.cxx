@@ -844,20 +844,21 @@ Emit_Parser_Driver( void )
     fprintf(dcfile,"\n");
 
     fprintf(dhfile,
-	    "BE_EXPORTED extern PARSER_GetParserT * ISA_PARSE_tab;\n\n");
+	    "extern PARSER_GetParserT * ISA_PARSE_tab;\n\n");
 
     fprintf(dhfile,
-	    "inline PARSER_GetParserT ISA_PARSE_GetParser(ISA_SUBSET subset)\n"
-	    "{\n"
-	    "  BE_EXPORTED extern PARSER_GetParserT * ISA_PARSE_tab;\n"
-	    "  return ISA_PARSE_tab[subset];\n"
-	    "}\n");
+	    "BE_EXPORTED PARSER_GetParserT ISA_PARSE_GetParser(ISA_SUBSET subset);\n\n");
 
     for(int i=0; i<parsers;i++) {
       fprintf(dcfile,"extern PARSER_ReturnT %s_PARSER_GetParser (PARSER_InstanceT *Parser);\n",
 	      ISA_SUBSET_Name(i));
     }
     fprintf(dcfile,"\n");
+    fprintf(dcfile,"BE_EXPORTED PARSER_GetParserT * ISA_PARSE_GetParser(ISA_SUBSET subset)\n"
+	    "{\n"
+	    "  extern PARSER_GetParserT * ISA_PARSE_tab;\n"
+	    "  return ISA_PARSE_tab[subset];\n"
+	    "}\n");
     fprintf(dcfile,
 	    "static PARSER_GetParserT static_ISA_PARSE_tab[] = {\n");
     const char *comma = ",";

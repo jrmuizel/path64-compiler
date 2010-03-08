@@ -1,6 +1,10 @@
 #ifndef __ExtEngine_H__
 #define __ExtEngine_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "analyzer.h"
 
 extern char ** stringTable_Glb;
@@ -37,4 +41,7 @@ extern void PARSER_ConnectParser ( char * Name );
 extern void PARSER_DisconnectParsers ( void );
 extern char *PARSER_GetProcPath( char *proc_name);
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* __ExtEngine_H__ */

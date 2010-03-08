@@ -246,7 +246,7 @@ PARSER_parse(char *buffer, AIR_OPS *_ops) {
 #endif
     if (NULL!=ParserList[ParserId]) {
 #ifdef PARSER_DEBUG
-      printf ("CONNECTED. Trying...\n");
+      printf ("CONNECTED. Trying...(parser %s)\n", ParserList[ParserId]->Name);
 #endif
       currParserInstance = &(ParserList[ParserId]->Xi);
       currParserInstance->ExtConnect(&semTable_Glb,&semTableSize_Glb,&stringTable_Glb,&stringTableSize_Glb,

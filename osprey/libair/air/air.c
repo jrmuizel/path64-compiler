@@ -752,6 +752,13 @@ extern "C" {
    
 	    break;
 
+          case AIR_Expression_enum:
+	    (void)fprintf(f,
+			  "enum of ecv %s, ec %s\n",
+			  ISA_ECV_Name(Get_AIR_TN_exp_enum_ecv(tn)),
+			  ISA_EC_Name(Get_AIR_TN_exp_enum_ec(tn)));
+	    break;
+
           default:
 	    (void)fprintf(f,"tn - expression of unknown type\n");
 	    exit(1);
