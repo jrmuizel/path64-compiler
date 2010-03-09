@@ -4498,3 +4498,7 @@ CGTARG_SSA_dedicated_candidate_tn(TN *tn) {
   return TRUE;
 }
 #endif
+
+BOOL CGTARG_Should_Hoist_Return(BB* ret_bb) {
+   return FALSE;
+}
