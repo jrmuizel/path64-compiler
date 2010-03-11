@@ -390,6 +390,10 @@ BOOL CGTARG_Check_Profitable_Select(CG_SCHED_EST *se1, CG_SCHED_EST *se2,int siz
     return KnuthCompareLE(est_cost_after, est_cost_before);
 }
 
+BOOL CGTARG_Check_Profitable_Logif(float cycles1, float est_cost_before, float select_factor, BB *bb1, BB *bb2) {
+	float est_cost_after = cycles1 / select_factor;
+	return KnuthCompareLE(est_cost_after, est_cost_before);
+}
 
 BOOL CGTARG_apply_min_max_transformation(OP *cmp, OP* phi, BOOL cmp_order) {
  	return FALSE;
