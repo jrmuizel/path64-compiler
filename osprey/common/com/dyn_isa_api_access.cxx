@@ -93,11 +93,23 @@
  * |          | - In ISA_OPERAND_VALTYP, literal class is now encoded on 16bits|
  * |          |   (used to be 8bits), and the fields have been reorganized     |
  * +----------+----------------------------------------------------------------+
+ * | NONE !!  | WARNING: The number of relocations has been increased on       |
+ * |          |          trunk at rev #24898, from 193 to 195.                 |
+ * |          |          No revision has been created, it is then not possible |
+ * |          |          to maintain compatibility.                            |
+ * |          |          --> We consider that the switch to 195 has been done  |
+ * |          |          for REV_20090915, and extension generated with a trunk|
+ * |          |          compiler between rev #24176(2009/10/01) and           |
+ * |          |          rev #24898 (2009/11/04) will assert when loaded       |
+ * |          |          with a more recent compiler.                          |
+ * |          |          Hopefully, no release has been generated between      |
+ * |          |          these revisions.                                      |
+ * +----------+----------------------------------------------------------------+
  * | 20100114 | - ISA_EXEC_UNIT_PROPERTY changed from 16 to 32 bits            |
  * +----------+----------------------------------------------------------------+
  * | 20100120 | - Introduce ISA_RELOC_VARIANT_INFO                             |
  * |          | - Introduce new relocations to deal with STxP70 v4 dynamic     |
- * |          |   loading. Reclos internal array is moved from 193 to 307.     |
+ * |          |   loading. Reclos internal array is moved from 195 to 307.     |
  * +----------+----------------------------------------------------------------+
  * 
  */
@@ -442,13 +454,13 @@ typedef struct {
 typedef mUINT16 ISA_EXEC_UNIT_PROPERTY_pre_20100114;
 
 // -------- Changed at rev 20100120 --------------------------------------------
-#define ISA_RELOC_STATIC_MAX_pre_20100120 193
+#define ISA_RELOC_STATIC_MAX_pre_20100120 195
 typedef struct {
   mUINT8  rclass;
   mUINT8  rsubclass;
-  mUINT8  lclass;
-  mUINT8  eclass;
   mUINT16 size;
+  mUINT16 lclass;
+  mUINT8  eclass;
   mUINT8  flags;
   mUINT8  default_reloc;
   mUINT8  relocs;
