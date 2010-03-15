@@ -65,6 +65,8 @@ class LAlign {
   UINT64 getbias () const; // The value if isLiteral.
   friend const LAlign MakeSigned (const LAlign &a, INT width);
   friend const LAlign MakeUnsigned (const LAlign &a, INT width);
+  friend const LAlign SignExtend (const LAlign &a, INT width);
+  friend const LAlign ZeroExtend (const LAlign &a, INT width);
   friend const LAlign LeftShift (const LAlign &a, INT width);
   friend const LAlign LeftShiftRange (const LAlign &a, const LAlign &b);
   friend const LAlign RightShift (const LAlign &a, INT width);

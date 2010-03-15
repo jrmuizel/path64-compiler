@@ -130,6 +130,15 @@ BOOL LARange::ContainsOrEqual (const LRange *a) const {
   return arange_.ContainsOrEqual (vrange->arange_);
 }
 
+LRange *LARange::makeSignExtend (INT width) const {
+  LRange *r = new LARange(SignExtend (this->arange_, width));
+  return r;
+}
+LRange *LARange::makeZeroExtend (INT width) const {
+  LRange *r = new LARange(ZeroExtend (this->arange_, width));
+  return r;
+}
+
 LRange *LARange::makeLeftShift (INT width) const {
   LRange *r = new LARange(LeftShift (this->arange_, width));
   return r;

@@ -399,26 +399,76 @@ static ZInt SignExtend (ZInt a, INT width)
   }
 }
 
+const LAlign SignExtend (const LAlign &a, INT width)
+{
+  if (width == 0)
+    return LAlign (0, 0);
+  else
+    return MakeSigned (a, width);
+}
+
+const LAlign ZeroExtend (const LAlign &a, INT width)
+{
+  if (width == 0)
+    return LAlign (0, 0);
+  else
+    return MakeUnsigned (a, width);
+}
+
 const LAlign MakeUnsigned(const LAlign &a, INT width)
 {
-  if (a.isTop () || width > 63)
+  if (a.isTop () || a.isBottom() || (width > 63))
     return a;
-  else {
-    ZInt base = ZeroExtend (a.base_, width);
-    ZInt bias = ZeroExtend (a.bias_, width);
-    return LAlign(base, bias).Normalize();
+
+  UINT64 max_2n = (UINT64)1<<width;
+  ZInt base, bias;
+
+  // For constants (getbase == 0), keep them as constants if they are
+  // in the interval [0,2^width[, otherwise create an expression (2^(width-1),
+  // bias) that can represent the constant
+
+  // For modulo expression (getbase > 0), keep them as is if base is
+  // in the interval [1,2^width[, otherwise create an expression
+  // (2^(width-1),bias) that can represent the expression
+
+  if ((a.base_ >= max_2n) ||
+      (a.bias_ >= max_2n) /* base_ == 0 */ ) {
+    base = max_2n/2; /* 2^(n-1) */
+    bias = a.bias_ & (base-1);
   }
+  else {
+    base = ZeroExtend (a.base_, width);
+    bias = ZeroExtend (a.bias_, width);
+  }
+  return LAlign(base, bias).Normalize();
 }
 
 const LAlign MakeSigned (const LAlign &a, INT width)
 {
-  if (a.isTop () || width > 63) {
+  if (a.isTop () || a.isBottom() || (width > 63))
     return a;
-  } else {
-    ZInt base = SignExtend (a.base_, width);
-    ZInt bias = SignExtend (a.bias_, width);
-    return LAlign(base, bias).Normalize();
+
+  UINT64 max_2n = (UINT64)1<<width;
+  ZInt base, bias;
+
+  // For constants (getbase == 0), keep them as constants if they are
+  // in the interval [0,2^width[, otherwise create an expression (2^(width-1),
+  // bias) that can represent the constant
+
+  // For modulo expression (getbase > 0), keep them as is if base is
+  // in the interval [1,2^width[, otherwise create an expression
+  // (2^(width-1),bias) that can represent the expression
+
+  if ((a.base_ >= max_2n) ||
+      (a.bias_ >= max_2n) /* base_ == 0 */ ) {
+    base = max_2n/2; /* 2^(n-1) */
+    bias = a.bias_ & (base-1);
   }
+  else {
+    base = SignExtend (a.base_, width);
+    bias = SignExtend (a.bias_, width);
+  }
+  return LAlign(base, bias).Normalize();
 }
 
 const LAlign LeftShift (const LAlign &a, INT width)

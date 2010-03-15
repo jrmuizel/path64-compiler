@@ -72,6 +72,8 @@ public:
   virtual BOOL StrictlyContains (const LRange *a) const;
   virtual BOOL Equal (const LRange *a) const;
   virtual BOOL ContainsOrEqual (const LRange *a) const;
+  virtual LRange *makeSignExtend (INT width) const;
+  virtual LRange *makeZeroExtend (INT width) const;
   virtual LRange *makeMakeSigned (INT width) const;
   virtual LRange *makeMakeUnsigned (INT width) const;
   virtual LRange *makeLeftShift (INT width) const;
