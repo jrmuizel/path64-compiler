@@ -197,7 +197,9 @@ PARSER_ConnectParser ( char * Name )
 		SetCallbacks(&ParserLib->Xi);
 	        ParserLib->Name = (char *)malloc(strlen(Name)+1);
 	        strcpy(ParserLib->Name,Name);
-	        ISA_SUBSET_LIST_Add(ISA_SUBSET_List,subset);
+		if (!ISA_SUBSET_LIST_Contains(ISA_SUBSET_List,subset)) {
+		  ISA_SUBSET_LIST_Add(ISA_SUBSET_List,subset);
+		}
 
 		/* Free former parser */
 		free(FormerLib->Name);
@@ -215,7 +217,9 @@ PARSER_ConnectParser ( char * Name )
 	SetCallbacks(&ParserLib->Xi);
 	ParserLib->Name = (char *)malloc(strlen(Name)+1);
 	strcpy(ParserLib->Name,Name);
-	ISA_SUBSET_LIST_Add(ISA_SUBSET_List,subset);
+	if (!ISA_SUBSET_LIST_Contains(ISA_SUBSET_List,subset)) {
+	  ISA_SUBSET_LIST_Add(ISA_SUBSET_List,subset);
+	}
 	return;
       }
     }
