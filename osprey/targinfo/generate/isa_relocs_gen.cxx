@@ -1332,19 +1332,29 @@ void ISA_Relocs_End(void)
   if(gen_static_code) {
     fprintf(cfile, 
 	    "static ISA_RELOC_VARIANT_INFO ISA_RELOC_static_variant_info[] = {\n");
+    for (int i=0;i<relocs_count;i++) {
+      fprintf(cfile, 
+  	      "/* ISA_RELOC_%s */ { ISA_RELOC_%s, ISA_RELOC_%s },\n",
+	      relocations[i]->name,
+	      relocations[rel_variant_next_encoding[i]]->name,
+	      relocations[rel_variant_prev_encoding[i]]->name);
+    }
+    fprintf(cfile, "};\n\n");
   }
   else {
     fprintf(cfile, 
 	    "static ISA_RELOC_VARIANT_INFO ISA_RELOC_dynamic_variant_info [] = {\n");
-  }
-  for (int i=0;i<relocs_count;i++) {
-    fprintf(cfile, 
-	    "/* ISA_RELOC_%s */ { ISA_RELOC_%s, ISA_RELOC_%s },\n",
+    for (int i=0;i<relocs_count;i++) {
+      fprintf(cfile, 
+	    "/* ISA_RELOC_%s */ { %d /* %s */, %d /* %s */ },\n",
 	    relocations[i]->name,
+	    rel_variant_next_encoding[i],
 	    relocations[rel_variant_next_encoding[i]]->name,
+	    rel_variant_prev_encoding[i],
 	    relocations[rel_variant_prev_encoding[i]]->name);
+    }
+    fprintf(cfile, "};\n\n");
   }
-  fprintf(cfile, "};\n\n");
 
   if(gen_static_code) {
     fprintf(hfile,

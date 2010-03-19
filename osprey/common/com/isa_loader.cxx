@@ -413,8 +413,8 @@ void Initialize_ISA_Reloc(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
         ext_reloc_info[ext_reloc_num].virtual_id += ext_virtual_id_base;
      }
      for (ext_reloc_num=0; ext_reloc_num<ext_info.ISA_tab[ext]->get_ISA_RELOC_variant_info_tab_sz(); ext_reloc_num++) {
-        ext_reloc_variant_info[ext_reloc_num].reloc_prev_encoding += ext_virtual_id_base;
-        ext_reloc_variant_info[ext_reloc_num].reloc_next_encoding += ext_virtual_id_base;
+        ext_reloc_variant_info[ext_reloc_num].reloc_prev_encoding += ext_num_reloc_variant_info;
+        ext_reloc_variant_info[ext_reloc_num].reloc_next_encoding += ext_num_reloc_variant_info;
      }
 
      ext_reloc_subset_info = ext_info.ISA_tab[ext]->get_ISA_RELOC_SUBSET_info_tab();

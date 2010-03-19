@@ -74,6 +74,12 @@ extern char SYS_getDirSeparator(void);
    */
 extern int SYS_isDirSeparator(char c);
 
+   /*
+    * SYS_isAbsolute()
+    * Returns true if the given path is an absolute path.
+    */
+extern int SYS_isAbsolute(const char *filename);
+
   /* 
    * SYS_makePath()
    * Returns a newly allocated and canonicalized pathname 
