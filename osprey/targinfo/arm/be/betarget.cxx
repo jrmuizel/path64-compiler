@@ -380,6 +380,20 @@ Can_Do_Fast_Divide (TYPE_ID mtype, INT64 dividend)
   return FALSE;
 }
 
+/*====================================================================
+ * Whether signed division by a power of two dividend
+ * is to be expanded (in wn_lower.cxx) into a predication free sequence.
+ *
+ * No benefits on arm.
+ *====================================================================
+ */
+extern BOOL
+Expand_Power_Of_Two_Div_Without_Pred (TYPE_ID mtype, INT64 dividend)
+{
+   return FALSE;
+}
+
+
 /* =============================================================
 *  Target_Inlines_Remainder (mtype, dividend)
 *  return whether REM will be translated into asm sequence 
