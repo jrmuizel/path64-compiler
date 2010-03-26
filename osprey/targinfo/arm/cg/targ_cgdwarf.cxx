@@ -633,6 +633,16 @@ void Analyze_OP_For_Unwind_Info (OP *op, UINT when, BB *bb)
                 DevWarn("unwind: unable to compute frame size");
             }
 
+	    // [CL] bug #59412.
+	    // I got no example to reproduce on arm the problem
+	    // identified on st200, but use the same code, in case it
+	    // happens.
+	    if (OP_iadd(op) ) {  // assume we always use positive
+	                         // numbers and use sub/add at
+			         // creation/destruction point.
+	      ue.offset = 0;
+	    }
+
         case1_OK:
             if (OP_Defs_TN(op,SP_TN)) {
                 ue.rc_reg =
@@ -647,7 +657,7 @@ void Analyze_OP_For_Unwind_Info (OP *op, UINT when, BB *bb)
 
                     ue.kind = UE_CREATE_FRAME;
                 } else if ( ( ue.offset < 0 && OP_isub(op) )
-                              || ( ue.offset > 0 && OP_iadd(op) )
+                              || ( ue.offset >= 0 && OP_iadd(op) )
                             ) {
                     // SP is increased
                     DbgPrintUnwind((debugOutput, "** %s destroy frame\n",
