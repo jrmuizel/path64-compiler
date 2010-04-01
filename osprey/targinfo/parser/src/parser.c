@@ -228,6 +228,74 @@ PARSER_ConnectParser ( char * Name )
 }
 
 void
+PARSER_ConnectParserToCompiler ( char * Name, PARSER_GetParserT GetParser )
+{
+  int find_static_subset = 0;
+  PARSER_ParserT    *ParserLib = (PARSER_ParserT *) malloc (sizeof(PARSER_ParserT));
+  const char *ErrMsg = 0;
+
+  memset(ParserLib,0,sizeof(PARSER_ParserT));
+  if(NULL == GetParser || PARSER_OK != GetParser(&(ParserLib->Xi))) {
+     PARSER_fatal_error("Unable to load parser for subset %s\n",Name);
+  }
+  if (0==ParserLib->Xi.Version_key)      ErrMsg="Bad version number";
+  if (0==ParserLib->Xi.Version_str)      ErrMsg="Unable to find out version";
+  if (NULL==ParserLib->Xi.Abstract)      ErrMsg="No abstract available";
+  if (NULL==ParserLib->Xi.ShortAbstract) ErrMsg="No short abstract available";
+  if (NULL==ParserLib->Xi.ExtConnect)    ErrMsg="No assembling entry";
+  if (NULL != ErrMsg) {
+     PARSER_fatal_error("%s",ErrMsg);
+  } else {
+     int NextAvailable;
+     int i;
+      
+     for (NextAvailable=0;(NextAvailable<MAX_PARSER_NR) && (NULL!=ParserList[NextAvailable]);NextAvailable++) {
+       for (i=0;(i<ParserList[NextAvailable]->Xi.PortSize) && (i<ParserLib->Xi.PortSize);i++) {
+         if ((ParserList[NextAvailable]->Xi.Port[i] & ParserLib->Xi.Port[i]) && 
+             (
+              (ParserList[NextAvailable]->Xi.PortSize!=ParserLib->Xi.PortSize)
+              ||
+              (0!=memcmp(ParserList[NextAvailable]->Xi.Port,ParserLib->Xi.Port,
+                         ParserList[NextAvailable]->Xi.PortSize))
+              ||
+              (0!=strcmp(ParserList[NextAvailable]->Name,ParserLib->Xi.Name))
+	     )
+	    )
+	    {
+	     PARSER_ParserT * FormerLib;
+               
+	     PARSER_warning("[%s]: takes precedence on [%s] for port %d\n",
+	 	            ParserLib->Xi.Name,ParserList[NextAvailable]->Name,i);
+
+  	     /* New connexion wins. Former lib of this port is disconnected */
+	     FormerLib = ParserList[NextAvailable];
+	     ParserList[NextAvailable] = ParserLib;
+	     SetCallbacks(&ParserLib->Xi);
+	     ParserLib->Name = (char *)malloc(strlen(Name)+1);
+	     strcpy(ParserLib->Name,Name);
+
+	     /* Free former parser */
+	     free(FormerLib->Name);
+	     free(FormerLib);
+	     return;
+	    }
+       }
+     }
+     if (NextAvailable==MAX_PARSER_NR) {
+       PARSER_fatal_error("[%s]: No more extension slot available\n",ParserLib->Name);
+       free(ParserLib);
+       return;
+     }
+     ParserList[NextAvailable] = ParserLib;
+     SetCallbacks(&ParserLib->Xi);
+     ParserLib->Name = (char *)malloc(strlen(Name)+1);
+     strcpy(ParserLib->Name,Name);
+     return;
+  }
+  PARSER_fatal_error("Unable to find parser for %s", Name);
+}
+
+void
 PARSER_Finalize( void ) {
   FinalizeAnalyzer() ;
 }

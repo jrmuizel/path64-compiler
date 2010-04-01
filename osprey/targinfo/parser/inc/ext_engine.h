@@ -38,6 +38,7 @@ extern void SetCallbacks ( PARSER_InstanceT * Extension );
 
 extern void PARSER_ExtensionUsage ( FILE *stream );
 extern void PARSER_ConnectParser ( char * Name );
+extern void PARSER_ConnectParserToCompiler ( char * Name, PARSER_GetParserT GetParser );
 extern void PARSER_DisconnectParsers ( void );
 extern char *PARSER_GetProcPath( char *proc_name);
 
