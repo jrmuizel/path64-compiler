@@ -739,17 +739,8 @@ CGTARG_dummy_op_has_sideeffects(OP *op) {
 
 BOOL 
 CGTARG_gcm_should_not_move_op(OP *op) {
-    INT i;
-    TOP top = OP_code(op);
-    if (top == TOP_asm)   return TRUE;
-    if (OP_has_implicit_interactions(op)) return TRUE;
 
-    for (i = OP_results(op) - 1; i >= 0; --i) {
-        TN *tn = OP_result(op,i);
-        if (TN_is_register(tn) && !ABI_PROPERTY_Is_allocatable(TN_register_class(tn),TN_register(tn))) return TRUE;
-    }
     if (OP_epilogue(op)) return TRUE;
-    if (OP_Has_Flag_Effect(op)) return TRUE;
 
     return FALSE;
 }
