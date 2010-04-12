@@ -4445,11 +4445,6 @@ CGTARG_do_not_unroll_p(BB* bb) {
     return FALSE;
 }
 
-INT
-CGTARG_Check_Optimize_IV(IV_ref_t *iv_refs, INT ref_count, INT iv_step, INT iv_adjust) {
-  // Never do the transformation
-  return -ref_count;
-}
 
 /**
  * Return TRUE if it exists a single non-simulated instruction to copy
