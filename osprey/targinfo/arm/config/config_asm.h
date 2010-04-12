@@ -279,8 +279,6 @@ BE_EXPORTED extern char *AS_ADDRESS_UNALIGNED;
 #define ASM_DIR_ZERO(fl, l)	fprintf(fl, "\t%s %d\n", AS_SPACE, l) 
 #define ASM_DIR_SKIP(fl, l) 	fprintf(fl, "\t%s %d\n", AS_SPACE, l)
 
-#define ASM_SLEB128_SUPPORTED()   (1)
-
 #ifdef __cplusplus
 }
 #endif
