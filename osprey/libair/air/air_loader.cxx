@@ -96,7 +96,7 @@ char *Sharps =
 static char *libair_file_name = NULL;
 static INT   libair_line_number = 0;
 
-#ifdef __RELEASE__
+#if (defined __RELEASE__) || (defined RELEASE)
 static BOOL  libair_devwarn_enabled = FALSE;
 #else
 static BOOL  libair_devwarn_enabled = TRUE;
