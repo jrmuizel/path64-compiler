@@ -754,55 +754,5 @@ bool Lai_Initialize_Extension_Loader(const int ext_inter_count, const Extension_
 void Lai_Cleanup_Extension_Loader() {
 }
 
-/**
- * @see lai_loader_api.h
- */
-INT EXTENSION_get_REGISTER_SUBCLASS_bit_size(ISA_REGISTER_SUBCLASS subclass)
-{
-    const ISA_REGISTER_SUBCLASS_INFO * subclassInfo =
-        ISA_REGISTER_SUBCLASS_Info(subclass);
-    ISA_REGISTER_CLASS rclass = ISA_REGISTER_SUBCLASS_INFO_Class(subclassInfo);
-    const ISA_REGISTER_CLASS_INFO* rcInfo = ISA_REGISTER_CLASS_Info(rclass);
-    INT size = ISA_REGISTER_CLASS_INFO_Bit_Size(rcInfo);
-
-    if(rclass > ISA_REGISTER_CLASS_STATIC_MAX)
-        {
-            INT globalSize = size * (ISA_REGISTER_CLASS_INFO_Last_Reg(rcInfo) -
-                                     ISA_REGISTER_CLASS_INFO_First_Reg(rcInfo)
-                                     + 1);
-            size = globalSize / ISA_REGISTER_SUBCLASS_INFO_Count(subclassInfo);
-        }
-    return size;
-}
-
-/**
- * @see lai_loader_api.h
- */
-INT EXTENSION_get_REGISTER_CLASS_max_bit_size(ISA_REGISTER_CLASS rc)
-{
-    const ISA_REGISTER_CLASS_INFO* rcInfo = ISA_REGISTER_CLASS_Info(rc);
-    INT size = ISA_REGISTER_CLASS_INFO_Bit_Size(rcInfo);
-
-    if(rc > ISA_REGISTER_CLASS_STATIC_MAX)
-        {
-            INT globalSize = size * (ISA_REGISTER_CLASS_INFO_Last_Reg(rcInfo) -
-                                     ISA_REGISTER_CLASS_INFO_First_Reg(rcInfo)
-                                     + 1);
-            ISA_REGISTER_SUBCLASS subclass;
-            FOR_ALL_ISA_REGISTER_SUBCLASS(subclass)
-            {
-                const ISA_REGISTER_SUBCLASS_INFO * subclassInfo =
-                    ISA_REGISTER_SUBCLASS_Info(subclass);
-                if(rc == ISA_REGISTER_SUBCLASS_INFO_Class(subclassInfo))
-                    {
-                        INT tmpSize = globalSize /
-                            ISA_REGISTER_SUBCLASS_INFO_Count(subclassInfo);
-                        size = tmpSize > size? tmpSize: size;
-                    }
-            }
-        }
-    return size;
-}
-
 #endif  /* defined (BACK_END) */
 

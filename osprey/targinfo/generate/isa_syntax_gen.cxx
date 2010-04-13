@@ -1809,9 +1809,15 @@ generate_implicits( FILE *file, TOP top, bool result, ISA_SYNTAX_Parsed_Opnd *op
   tmp_str << tmp_var << tmp_var_idx++;
   opnd_types[opnd_type_idx].type = OPND_TYPE_IMPLICIT;
   opnd_types[opnd_type_idx].u1.tmp_var = strdup((char*)tmp_str.str().data());
-  fprintf(file,"  AIR_TN *%s = AIR_NEW_REG_TN(ISA_REGISTER_CLASS_%s,ISA_REGISTER_SUBCLASS_%s,0);\n",
-	  opnd_types[opnd_type_idx].u1.tmp_var,ISA_REGISTER_CLASS_INFO_Name(rc_info),
-	  ISA_REGISTER_SUBCLASS_INFO_Name(sc_info));
+  fprintf(file,"  #if defined(ISA_REGISTER_CLASS_%s_gbu) && defined(ISA_REGISTER_SUBCLASS_%s_gbu)\n"
+               "      AIR_TN *%s = AIR_NEW_REG_TN(ISA_REGISTER_CLASS_%s_gbu,ISA_REGISTER_SUBCLASS_%s_gbu,0);\n"
+               "  #else\n"
+               "      AIR_TN *%s = AIR_NEW_REG_TN(ISA_REGISTER_CLASS_%s,ISA_REGISTER_SUBCLASS_%s,0);\n"
+               "  #endif\n",
+               ISA_REGISTER_CLASS_INFO_Name(rc_info),ISA_REGISTER_SUBCLASS_INFO_Name(sc_info),
+               opnd_types[opnd_type_idx].u1.tmp_var,ISA_REGISTER_CLASS_INFO_Name(rc_info), ISA_REGISTER_SUBCLASS_INFO_Name(sc_info),
+               opnd_types[opnd_type_idx].u1.tmp_var,ISA_REGISTER_CLASS_INFO_Name(rc_info), ISA_REGISTER_SUBCLASS_INFO_Name(sc_info)
+         );
 }
 
 

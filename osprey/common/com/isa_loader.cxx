@@ -38,12 +38,56 @@
  */
 
 #ifndef BINUTILS
+
 // Table to save PREG -> reg class association
 static ISA_REGISTER_CLASS *extension_Preg_To_RegClass_table;
+
 // Table to save PREG -> reg number association
 int *extension_Preg_To_RegNum_table;
+
 // Table containing Rclass to preg min offset
 INT *extension_RegClass_To_Preg_Min_Offset_table;
+
+// Table containing maximum bitsize width of registers
+// in a given extension register class, based on size
+// of enclosed subclasses
+INT *extension_RegClass_Max_Bitsize_table;
+
+// Table containing maximum bitsize width of registers
+// in a given extension register subclass
+INT *extension_RegSubClass_Bitsize_table;
+
+
+/**
+ * @see isa_loader_api.h
+ */
+INT EXTENSION_get_REGISTER_CLASS_max_bit_size(ISA_REGISTER_CLASS rclass) {
+  FmtAssert((rclass >  ISA_REGISTER_CLASS_STATIC_MAX &&
+             rclass <= ISA_REGISTER_CLASS_MAX),
+            ("EXTENSION_get_REGISTER_CLASS_max_bit_size(): non-extension class specified"));
+  INT rc_idx = rclass - (ISA_REGISTER_CLASS_STATIC_MAX + 1);
+  return extension_RegClass_Max_Bitsize_table[rc_idx];
+}
+
+/**
+ * @see isa_loader_api.h
+ */
+INT EXTENSION_get_REGISTER_SUBCLASS_bit_size(ISA_REGISTER_SUBCLASS subclass) {
+  INT size;
+  FmtAssert((subclass >  ISA_REGISTER_SUBCLASS_STATIC_MAX &&
+             subclass <= ISA_REGISTER_SUBCLASS_MAX),
+            ("EXTENSION_get_REGISTER_SUBCLASS_bit_size(): non-extension subclass specified"));
+  INT subrc_idx = subclass - (ISA_REGISTER_SUBCLASS_STATIC_MAX + 1);
+  size = extension_RegSubClass_Bitsize_table[subrc_idx];
+  if (size == -1) {
+    // Rescue code in case no size was specified for subclass
+    const ISA_REGISTER_SUBCLASS_INFO *subclassInfo = ISA_REGISTER_SUBCLASS_Info(subclass);
+    ISA_REGISTER_CLASS rclass = ISA_REGISTER_SUBCLASS_INFO_Class(subclassInfo);
+    return EXTENSION_get_REGISTER_CLASS_max_bit_size(rclass);
+  }
+  return size;
+}
+
 /*
  * Return the register class associated to the specified PREG number .
  */
@@ -137,6 +181,21 @@ void Initialize_ISA_RegisterClasses(Lai_Loader_Info_t &ext_info) {
   extension_RegClass_To_Preg_Min_Offset_table = TYPE_MEM_POOL_ALLOC_N(INT,
 								      Malloc_Mem_Pool,
 								      nb_added_rclass);
+
+  extension_RegSubClass_Bitsize_table = TYPE_MEM_POOL_ALLOC_N(INT,
+                                                              Malloc_Mem_Pool,
+                                                              nb_added_rsubclass+1);
+  for (j=0; j<nb_added_rsubclass; j++) {
+    extension_RegSubClass_Bitsize_table[j] = -1;
+  }
+
+  extension_RegClass_Max_Bitsize_table = TYPE_MEM_POOL_ALLOC_N(INT,
+                                                               Malloc_Mem_Pool,
+                                                               nb_added_rclass+1);
+  for (j=0; j<nb_added_rclass; j++) {
+    extension_RegClass_Max_Bitsize_table[j] = -1;
+  }
+
 #endif
 
   // Resize register class index table
@@ -1042,8 +1101,23 @@ void Initialize_ISA_Operands(Lai_Loader_Info_t &ext_info, MEM_POOL        &tmp_m
 	  tgt_op->rsubclass = src_op->rsubclass;
 	  if (tgt_op->rclass > rc_static_max_in_ext) {
 	    tgt_op->rclass += ext_info.base_REGISTER_CLASS[ext] - (rc_static_max_in_ext+1);
+
+#ifndef BINUTILS
+            INT rc_idx = tgt_op->rclass - (ISA_REGISTER_CLASS_STATIC_MAX + 1);
+            if (extension_RegClass_Max_Bitsize_table[rc_idx] < src_op->size) {
+              extension_RegClass_Max_Bitsize_table[rc_idx] = src_op->size;
+            }
+#endif
+
 	    if (tgt_op->rsubclass != ISA_REGISTER_SUBCLASS_UNDEFINED) {
 	      tgt_op->rsubclass += ext_info.base_REGISTER_SUBCLASS[ext] - (subrc_static_max_in_ext+1);
+
+#ifndef BINUTILS
+              if (src_op->size != -1) {
+                INT subrc_idx = tgt_op->rsubclass - (ISA_REGISTER_SUBCLASS_STATIC_MAX + 1);
+                extension_RegSubClass_Bitsize_table[subrc_idx] = src_op->size;
+              }
+#endif
 	    }
 	  }
 	  else if (tgt_op->rclass != ISA_REGISTER_CLASS_UNDEFINED) {
