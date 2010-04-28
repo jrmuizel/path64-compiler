@@ -240,7 +240,11 @@ void Initialize_ISA_RegisterClasses(Lai_Loader_Info_t &ext_info) {
 	 i.e. this information is not used.
 	 For instance on stxp70, the stxp70 RTK may generate either the mask (1<<ISA_SUBSET_stxp70) or
 	 the mask (1<<ISA_SUBSET_stxp70_ext) while ISA_SUBSET_stxp70_ext is now obsolete. */
-      rc_tab[ext_info.base_REGISTER_CLASS[ext]].isa_mask = (1<<*(ISA_SUBSET_LIST_Begin(ISA_SUBSET_List)));
+      for (int regcl = ext_info.base_REGISTER_CLASS[ext]; 
+	   regcl < ext_info.base_REGISTER_CLASS[ext] + rc_in_ext; 
+	   regcl++) {
+        rc_tab[regcl].isa_mask = (1<<*(ISA_SUBSET_LIST_Begin(ISA_SUBSET_List)));
+      }
 
 #ifndef BINUTILS
       //TB: Update PREG with regclass
