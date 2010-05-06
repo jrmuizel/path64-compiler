@@ -1,0 +1,22 @@
+Dependencies:
+    cmake-2.8.1 or later
+
+
+1. Create a build directory and go there
+    % mkdir $BUILDDIR
+    % cd $BUILDDIR
+
+2. Run cmake
+    % cmake -DCMAKE_INSTALL_PREFIX=$INSTDIR $SOURCEDIR
+
+   Possible options (incomplete list):
+      -DPATH64_ENABLE_TARGETS=<target>  e.g. "x8664"
+      -DCMAKE_BUILD_TYPE=<Debug|Release>
+      -DCMAKE_Fortran_COMPILER=<compiler>
+      -DPATH64_ENABLE_MATHLIBS=<ON|OFF>
+      -DPATH64_ENABLE_HUGEPAGES=<ON|OFF>
+
+3. Run make:
+    % make
+ To increase build verbosity
+    % make VERBOSE=1
