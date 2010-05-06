@@ -26,14 +26,10 @@
  
 
 # define INDENT_SIZE	3
-
-# if defined(_HOST32) && defined(_TARGET64)
-#    define LONG_TYPE_FMT	"lld"
-#    define LONG_TYPE_X_FMT	"llx"
-# else
-#    define LONG_TYPE_FMT	"d"
-#    define LONG_TYPE_X_FMT	"x"
-# endif
+/* This is a little ugly little, but should be portable */
+#    define LONG_TYPE_FMT	PRIdPTR
+#    define LONG_TYPE_X_FMT	PRIxPTR
+#    define INTPTR_TYPE_O_FMT	PRIoPTR
 
 # ifdef _DEBUG
 #    define PRINT_BLK_STK						       \

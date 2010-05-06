@@ -36,6 +36,7 @@
 
 static char USMID[] = "\n@(#)5.0_pl/sources/debug.c	5.17	10/14/99 12:53:57\n";
 
+#include <stdint.h>
 # include "defines.h"		/* Machine dependent ifdefs */
 
 # include "host.m"		/* Host machine dependent macros.*/
@@ -2643,30 +2644,31 @@ void dump_mem_trace_info (trace_type	 trace,
 
    switch (trace) {
       case Mem_Alloc:
-	 fprintf (trace_file, "ALLOC           %s (%#o) BSIZE=%ld(%d ENTRIES)\n",
-			      struct_name, (uint) new_struct_ptr,
+	 fprintf (trace_file, "ALLOC           %s (%#" INTPTR_TYPE_O_FMT ") BSIZE=%ld(%d ENTRIES)\n",
+			      struct_name, (uintptr_t) new_struct_ptr,
 			      struct_bsize_or_num_used, num_entries);
 	 break;
 
       case Mem_Realloc:
 	 if (new_struct_ptr == old_struct_ptr) {
-	    fprintf (trace_file, "REALLOC      %s (%#o) BSIZE=%ld(%d ENTRIES)\n",
-				 struct_name, (uint) new_struct_ptr,
+	    fprintf (trace_file, "REALLOC      %s (%#" INTPTR_TYPE_O_FMT ") BSIZE=%ld(%d ENTRIES)\n",
+				 struct_name, (uintptr_t) new_struct_ptr,
 				 struct_bsize_or_num_used, num_entries);
 	 }
 	 else {			/* realloced with move */
-	    fprintf (trace_file, "REALLOC/MOVE %s (%#o->%#o) "
+	    fprintf (trace_file, "REALLOC/MOVE %s (%#" INTPTR_TYPE_O_FMT "->%#" INTPTR_TYPE_O_FMT ") "
 				 "BSIZE=%ld(%d ENTRIES)\n",
-				 struct_name, (uint) old_struct_ptr, (uint) new_struct_ptr,
+				 struct_name, (uintptr_t) old_struct_ptr,
+				 (uintptr_t) new_struct_ptr,
 				 struct_bsize_or_num_used, num_entries);
 	 }
 	 break;
 
       case Mem_Free:
-	 fprintf (trace_file, "FREE         %s (%#o) (%d ENTRIES) "
+	 fprintf (trace_file, "FREE         %s (%#" INTPTR_TYPE_O_FMT ") (%d ENTRIES) "
                               "(%ld USED ENTRIES)\n", 
                               struct_name,
-                              (uint) new_struct_ptr,
+                              (uintptr_t) new_struct_ptr,
                               num_entries,
                               struct_bsize_or_num_used);
 	 break;

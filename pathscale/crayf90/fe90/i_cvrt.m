@@ -61,10 +61,10 @@ fprintf(debug_file, "i_cvrt(%5d): %s()\n", __LINE__, NAME);
 fprintf(debug_file, "i_cvrt(%5d):     %-20s= %-30s (string)\n", __LINE__, STR1, VAR1);
 
 # define PDG_DBG_PRINT_LLD(STR1, VAR1)                                         \
-fprintf(debug_file, "i_cvrt(%5d):     %-20s= %-30lld (decimal)\n", __LINE__, STR1, VAR1);
+fprintf(debug_file, "i_cvrt(%5d):     %-20s= %-30lld (decimal)\n", __LINE__, STR1, (long long) VAR1);
 
 # define PDG_DBG_PRINT_LLO(STR1, VAR1)					       \
-fprintf(debug_file, "i_cvrt(%5d):     %-20s= %-30llo (octal)\n", __LINE__, STR1, VAR1);
+fprintf(debug_file, "i_cvrt(%5d):     %-20s= %-30llo (octal)\n", __LINE__, STR1, (long long) VAR1);
 
 
 # if defined(_HOST32) && defined(_TARGET64)
