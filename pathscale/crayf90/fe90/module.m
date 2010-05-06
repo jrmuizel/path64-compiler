@@ -72,6 +72,7 @@
 # define MD_POINTER8			mit_header.tbl.pointer8
 # define MD_TARGET			mit_header.tbl.target
 # define MD_VERSION_NUM			mit_header.tbl.version_num
+# define MD_POOLS_64_BITS		mit_header.tbl.pools_64_bits
 
 # define MD_PDT_HDR_TYPE		mit_header.tbl.hdr.hdr_type
 # define MD_PDT_HDR_LEN			mit_header.tbl.hdr.hdr_len

@@ -62,7 +62,8 @@ union	mit_descriptor_entry	{
 
 struct	mit_inside_entry	{pdt_tbl_hdr_type       hdr;
 				 Uint           	version_num     :  8;
-                        	 Uint           	unused1		:  5;
+				 Uint			pools_64_bits	:  1;
+                        	 Uint		     	unused1		:  4;
                         	 boolean        	dalign          :  1;
                         	 boolean        	mod_has_errors  :  1;
                         	 boolean        	dp_hit_me       :  1;
