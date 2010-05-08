@@ -175,6 +175,7 @@ target_link_libraries(be-static targinfo m ${libdl})
 add_library(be SHARED ${PATHSCALE_BE_BE_SRCS})
 set_property(TARGET be PROPERTY PREFIX "")
 set_target_properties(be PROPERTIES COMPILE_DEFINITIONS "SHARED_BUILD")
+set_target_properties(be PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
 target_link_libraries(be targinfo m ${libdl})
 add_dependencies(be be-static) # serialize to generate preg_list.cxx only once
 
@@ -184,6 +185,7 @@ add_executable (be-exec driver.cxx driver_util.cxx iter.cxx  ../com/phase.cxx)
 # TODO : Make sure link targets are static
 target_link_libraries (be-exec -Wl,-whole-archive be-static cg wopt -Wl,-no-whole-archive iberty dwarf elfutil elf targinfo)
 SET_TARGET_PROPERTIES(be-exec PROPERTIES OUTPUT_NAME "be")
+set_target_properties(be-exec PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
 
 install(TARGETS be be-exec DESTINATION ${PATH64_LIB_PATH})
 
