@@ -36,6 +36,10 @@ SET(PATHSCALE_MPATH_SRCS        "amd/pow_errorl.c"
 				"amd/w_expf.c"
 				"amd/w_hypot.c"
 				"amd/w_hypotf.c"
+				"amd/w_log2.c"
+				"amd/w_log2f.c"
+				"amd/w_log10.c"
+				"amd/w_log10f.c"
 				"amd/w_powf.c"
 				"amd/w_remainder.c"
 				"amd/w_remainderf.c"
@@ -70,17 +74,21 @@ SET(PATHSCALE_MPATH_S_SRCS      "amd/w_copysignf.s"
 				"amd/w_fastsincos.S"
 				"amd/w_pow.S")
 
+
 INCLUDE_DIRECTORIES(
     ../libmpath/amd
     ../libm
 )
 
-
 ADD_DEFINITIONS(
 	-D_IP_NAN_SETS_ERRNO
 	-D_HDW_SQRT
 	-D_libm_weak=1)
+
 IF(PATH64_ENABLE_MATHLIBS)
+
+set_source_files_properties("amd/w_log2.c" "amd/w_log2f.c" PROPERTIES COMPILE_DEFINITIONS "COMPILING_LOG2")
+set_source_files_properties("amd/w_log10.c" "amd/w_log10f.c" PROPERTIES COMPILE_DEFINITIONS "COMPILING_LOG10")
 
 set_source_files_properties(${PATHSCALE_MPATH_S_SRCS} PROPERTIES LANGUAGE C)
 add_library(mpath-static STATIC ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
@@ -90,6 +98,7 @@ add_library(mpath SHARED ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
 set_property(TARGET mpath PROPERTY COMPILE_DEFINITIONS PIC)
 set_property(TARGET mpath PROPERTY SOVERSION 1)
 set_property(TARGET mpath PROPERTY LINK_FLAGS "-Wl,-x -Wl,--version-script=${libmpath_SOURCE_DIR}/libmpath.vs")
+
 target_link_libraries(mpath m)
 
 install(TARGETS mpath-static mpath
