@@ -45,24 +45,6 @@
 // FALSE otherwise.
 BOOL EXTENSION_Is_Supported_ISA_Revision(INT rev);
 
-// ========================================================================
-// List of compatible API revisions for ISA part of the library description
-// ========================================================================
-#define    NB_SUPPORTED_ISA_REV 13
-#define    EXT_ISA_API_20070126        (20070126)
-#define    EXT_ISA_API_20070615        (20070615)
-#define    EXT_ISA_API_20070924        (20070924)
-#define    EXT_ISA_API_20080307        (20080307)
-#define    EXT_ISA_API_20081010        (20081010)
-#define    EXT_ISA_API_20090126        (20090126)
-#define    EXT_ISA_API_20090408        (20090408)
-#define    EXT_ISA_API_20090416        (20090416)
-#define    EXT_ISA_API_20090727        (20090727)
-#define    EXT_ISA_API_20090915        (20090915)
-#define    EXT_ISA_API_20100114        (20100114)
-#define    EXT_ISA_API_20100120        (20100120)
-#define    EXT_ISA_API_20100426        (20100426)
-
 
 // #############################################################################
 // ##
@@ -227,7 +209,7 @@ class EXTENSION_ISA_Info {
   inline const ISA_LIT_CLASS_INFO*       get_ISA_LIT_CLASS_info_tab          (void) const;
   inline const mUINT32                   get_ISA_LIT_CLASS_info_tab_sz       (void) const;
   inline const mUINT32                   get_ISA_LIT_CLASS_static_max        (void) const;
-  // Following is new from EXT_ISA_API_20090416
+  // Following is new from REV_20090416
                void                      set_ISA_LIT_CLASS_offset            (mUINT32 offs) const;
   
   /* Handling operands ------------------------------------------------------ */
@@ -262,7 +244,7 @@ class EXTENSION_ISA_Info {
   inline const extension_regclass_t*     get_REGISTER_CLASS_info_tab         (void) const;
  public:  
   inline EXTENSION_Regclass_Info        *get_Regclass_Info_tab               (void) const;
-  // Two following are new from EXT_ISA_API_20090416
+  // Two following are new from REV_20090416
                void                      set_ISA_REGISTER_CLASS_offset       (mUINT32 offs) const;
                void                      set_ISA_REGISTER_SUBCLASS_offset    (mUINT32 offs) const;
 
@@ -329,7 +311,7 @@ class EXTENSION_ISA_Info {
   inline const mUINT32                   get_ISA_RELOC_SUBSET_info_tab_sz    (void) const;
   inline const ISA_SUBSET                get_ISA_RELOC_max_static_virtual_id_core_subset (void) const;
                void                      set_ISA_RELOC_dynamic_reloc_offset  (mUINT32 offset) const;
-  // Two following are new from EXT_ISA_API_20100120
+  // Two following are new from REV_20100120
   inline       ISA_RELOC_VARIANT_INFO*   get_ISA_RELOC_variant_info_tab      (void) const;
   inline const mUINT32                   get_ISA_RELOC_variant_info_tab_sz   (void) const;
 
@@ -914,13 +896,5 @@ inline mUINT32
 EXTENSION_ISA_Info::get_ISA_BINUTILS_info_tab_sz        (void) const {
   return (overridden_ISA_BINUTILS_info_tab_sz);
 }
-
-typedef struct mystruct {
-  ISA_EXEC_UNIT_PROPERTY oldval;
-  ISA_EXEC_UNIT_PROPERTY newval;
-} extension_unit_property_pairing;
-
-BE_EXPORTED extension_unit_property_pairing* CGTARG_get_Extension_Unit_Map(INT32, INT32*);
-
 
 #endif /* DYN_ISA_API_ACCESS_H */

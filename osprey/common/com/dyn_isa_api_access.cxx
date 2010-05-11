@@ -111,9 +111,6 @@
  * |          | - Introduce new relocations to deal with STxP70 v4 dynamic     |
  * |          |   loading. Reclos internal array is moved from 195 to 307.     |
  * +----------+----------------------------------------------------------------+
- * | 20100426 | - ISA_EXEC_PROPERTY_*_Unit generated identifiers have          |
- * |          |   been modified and thus should be updated in the extentions.  |
- * +----------+----------------------------------------------------------------+
  * 
  */
 #include <stdlib.h>
@@ -127,19 +124,32 @@ BE_EXPORTED extern EXTENSION_ISA_Info *EXTENSION_Get_ISA_Info_From_TOP(TOP id);
 // ========================================================================
 // List of compatible API revisions for ISA part of the library description
 // ========================================================================
+#define    NB_SUPPORTED_ISA_REV 12
+#define    REV_20070126        (20070126)
+#define    REV_20070615        (20070615)
+#define    REV_20070924        (20070924)
+#define    REV_20080307        (20080307)
+#define    REV_20081010        (20081010)
+#define    REV_20090126        (20090126)
+#define    REV_20090408        (20090408)
+#define    REV_20090416        (20090416)
+#define    REV_20090727        (20090727)
+#define    REV_20090915        (20090915)
+#define    REV_20100114        (20100114)
+#define    REV_20100120        (20100120)
+
 static INT supported_ISA_rev_tab[NB_SUPPORTED_ISA_REV] = {
-  EXT_ISA_API_20070126,
-  EXT_ISA_API_20070615,
-  EXT_ISA_API_20070924,
-  EXT_ISA_API_20080307,
-  EXT_ISA_API_20081010,
-  EXT_ISA_API_20090126,
-  EXT_ISA_API_20090408,
-  EXT_ISA_API_20090416,
-  EXT_ISA_API_20090727,
-  EXT_ISA_API_20090915,
-  EXT_ISA_API_20100114,
-  EXT_ISA_API_20100120,
+  REV_20070126,
+  REV_20070615,
+  REV_20070924,
+  REV_20080307,
+  REV_20081010,
+  REV_20090126,
+  REV_20090408,
+  REV_20090416,
+  REV_20090727,
+  REV_20090915,
+  REV_20100114,
   MAGIC_NUMBER_EXT_ISA_API   /* current one */
 };
 
@@ -244,7 +254,7 @@ inline INT ISA_PRINT_INFO_pre_20080307_Comp(const ISA_PRINT_INFO_pre_20080307 *i
 
 /*
  * Generic function used to print an extension instruction.
- * For new extension (rev >= EXT_ISA_API_20080307), this function is not used as the
+ * For new extension (rev >= REV_20080307), this function is not used as the
  * targinfo generator should have automatically generated it. But for  older
  * one, we use this generic function.
  * This code is based on the former version of TI_ASM_Print_Inst()
@@ -503,9 +513,9 @@ EXTENSION_Regclass_Info::operator= (const EXTENSION_Regclass_Info &rc_access) {
 // Memory accesses
 TOP
 EXTENSION_Regclass_Info::get_load_TOP (INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr, INT mpixel_size) const {
-  /* revision number before EXT_ISA_API_20070924 do support pixel, using the
+  /* revision number before REV_20070924 do support pixel, using the
      older api */
-  if (revision_number < EXT_ISA_API_20070924) {
+  if (revision_number < REV_20070924) {
     const extension_regclass_t_pre_20070924* rc = 
       (extension_regclass_t_pre_20070924*) rc_info;
     return       (rc->get_load_TOP(size, base_reg, offs_is_imm, offs_is_incr));
@@ -517,9 +527,9 @@ EXTENSION_Regclass_Info::get_load_TOP (INT size, AM_Base_Reg_Type base_reg, BOOL
 
 TOP
 EXTENSION_Regclass_Info::get_store_TOP(INT size, AM_Base_Reg_Type base_reg, BOOL offs_is_imm, BOOL offs_is_incr, INT mpixel_size) const {
-  /* revision number before EXT_ISA_API_20070924 do support pixel, using the
+  /* revision number before REV_20070924 do support pixel, using the
      older api */
-  if (revision_number < EXT_ISA_API_20070924) {
+  if (revision_number < REV_20070924) {
     const extension_regclass_t_pre_20070924* rc = 
       (extension_regclass_t_pre_20070924*) rc_info;
     return       (rc->get_store_TOP(size, base_reg, offs_is_imm, offs_is_incr));
@@ -590,11 +600,11 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
   // 
   // Changes are:
   // -----------
-  // [1] EXT_ISA_API_20070615: Conversion of <bit_size> field from mUINT8 to mUINT16
+  // [1] REV_20070615: Conversion of <bit_size> field from mUINT8 to mUINT16
   //
   // ---------------------------------------------------------------------------
   // ---------------------------------------------------------------------------
-  if (input_isa_ext->magic < EXT_ISA_API_20070615) {
+  if (input_isa_ext->magic < REV_20070615) {
     int nb_entry = isa_ext->get_ISA_REGISTER_CLASS_tab_sz();
     ISA_REGISTER_CLASS_INFO_pre_20070615 *old_tab;
     ISA_REGISTER_CLASS_INFO              *new_tab;
@@ -624,23 +634,23 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
   //
   // Changes are:
   // -----------
-  // [1] EXT_ISA_API_20080307: Addition of reloc information fields
-  // [2] EXT_ISA_API_20081010: Increase of <relocs> size from 58 to 68
-  // [3] EXT_ISA_API_20090408: Increase of <relocs> size from 68 to 149
-  // [4] EXT_ISA_API_20090727: Increase of <relocs> size from 149 to 193
-  // [5] EXT_ISA_API_20090915: Conversion of <lclass> field from 8 to 16 bits
+  // [1] REV_20080307: Addition of reloc information fields
+  // [2] REV_20081010: Increase of <relocs> size from 58 to 68
+  // [3] REV_20090408: Increase of <relocs> size from 68 to 149
+  // [4] REV_20090727: Increase of <relocs> size from 149 to 193
+  // [5] REV_20090915: Conversion of <lclass> field from 8 to 16 bits
   //                   + Changed field ordering
-  // [6] EXT_ISA_API_20100120: Increase of <relocs> size from 193 to 307
+  // [6] REV_20100120: Increase of <relocs> size from 193 to 307
   //                   + Changed types of default_reloc, relocs and reloc[] fields
   //
   // ---------------------------------------------------------------------------
   // ---------------------------------------------------------------------------
-  if (input_isa_ext->magic < EXT_ISA_API_20100120) {
+  if (input_isa_ext->magic < REV_20100120) {
     int nb_entry = isa_ext->get_ISA_OPERAND_operand_types_tab_sz();
     ISA_OPERAND_VALTYP              *new_tab;
     new_tab = new ISA_OPERAND_VALTYP[nb_entry];
     
-    if (input_isa_ext->magic < EXT_ISA_API_20080307) {
+    if (input_isa_ext->magic < REV_20080307) {
       ISA_OPERAND_VALTYP_pre_20080307 *old_tab;
       old_tab = (ISA_OPERAND_VALTYP_pre_20080307*)isa_ext->get_ISA_OPERAND_operand_types_tab();
       for (i=0; i<nb_entry; i++) {
@@ -659,7 +669,7 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
         }                                                // [1]
       }
     }
-    else if (input_isa_ext->magic < EXT_ISA_API_20081010) {
+    else if (input_isa_ext->magic < REV_20081010) {
       ISA_OPERAND_VALTYP_pre_20081010 *old_tab;
       old_tab = (ISA_OPERAND_VALTYP_pre_20081010*)isa_ext->get_ISA_OPERAND_operand_types_tab();
       for (i=0; i<nb_entry; i++) {
@@ -680,7 +690,7 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
 	}
       }
     }
-    else if (input_isa_ext->magic < EXT_ISA_API_20090408) {
+    else if (input_isa_ext->magic < REV_20090408) {
       int nb_entry = isa_ext->get_ISA_OPERAND_operand_types_tab_sz();
       ISA_OPERAND_VALTYP_pre_20090408 *old_tab;
       old_tab = (ISA_OPERAND_VALTYP_pre_20090408*)isa_ext->get_ISA_OPERAND_operand_types_tab();
@@ -702,7 +712,7 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
         }
       }
     }
-    else if (input_isa_ext->magic < EXT_ISA_API_20090727) {
+    else if (input_isa_ext->magic < REV_20090727) {
       ISA_OPERAND_VALTYP_pre_20090727 *old_tab;
       old_tab = (ISA_OPERAND_VALTYP_pre_20090727*)isa_ext->get_ISA_OPERAND_operand_types_tab();
       for (i=0; i<nb_entry; i++) {
@@ -723,7 +733,7 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
         }
       }
     }
-    else if (input_isa_ext->magic < EXT_ISA_API_20090915) {
+    else if (input_isa_ext->magic < REV_20090915) {
       int nb_entry = isa_ext->get_ISA_OPERAND_operand_types_tab_sz();
       ISA_OPERAND_VALTYP_pre_20090915 *old_tab;
       old_tab = (ISA_OPERAND_VALTYP_pre_20090915*)isa_ext->get_ISA_OPERAND_operand_types_tab();
@@ -745,7 +755,7 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
         }
       }
     }
-    else if (input_isa_ext->magic < EXT_ISA_API_20100120) {
+    else if (input_isa_ext->magic < REV_20100120) {
       int nb_entry = isa_ext->get_ISA_OPERAND_operand_types_tab_sz();
       ISA_OPERAND_VALTYP_pre_20100120 *old_tab;
       old_tab = (ISA_OPERAND_VALTYP_pre_20100120*)isa_ext->get_ISA_OPERAND_operand_types_tab();
@@ -780,18 +790,18 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
   //
   // Changes are:
   // -----------
-  // [1] EXT_ISA_API_20080307: Addition of <is_negative> field
-  // [2] EXT_ISA_API_20090126: Addition of <max_right_rotate> and
+  // [1] REV_20080307: Addition of <is_negative> field
+  // [2] REV_20090126: Addition of <max_right_rotate> and
   //                               <right_rotate_mask> fields
   //
   // ---------------------------------------------------------------------------
   // ---------------------------------------------------------------------------
-  if (input_isa_ext->magic < EXT_ISA_API_20090126) {
+  if (input_isa_ext->magic < REV_20090126) {
     int nb_entry = isa_ext->get_ISA_LIT_CLASS_info_tab_sz();
     ISA_LIT_CLASS_INFO *new_tab;
     new_tab = new ISA_LIT_CLASS_INFO[nb_entry];
     
-    if (input_isa_ext->magic < EXT_ISA_API_20080307) {
+    if (input_isa_ext->magic < REV_20080307) {
       int j;
       ISA_LIT_CLASS_INFO_pre_20080307 *old_tab;
       old_tab = (ISA_LIT_CLASS_INFO_pre_20080307*)isa_ext->get_ISA_LIT_CLASS_info_tab();
@@ -810,7 +820,7 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
 	new_tab[i].name         = old_tab[i].name;
       }
     }
-    else if (input_isa_ext->magic < EXT_ISA_API_20090126) {
+    else if (input_isa_ext->magic < REV_20090126) {
       int j;
       ISA_LIT_CLASS_INFO_pre_20090126 *old_tab;
       old_tab = (ISA_LIT_CLASS_INFO_pre_20090126*)isa_ext->get_ISA_LIT_CLASS_info_tab();
@@ -846,7 +856,7 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
   //
   // ---------------------------------------------------------------------------
   // ---------------------------------------------------------------------------
-  if (input_isa_ext->magic < EXT_ISA_API_20080307) {
+  if (input_isa_ext->magic < REV_20080307) {
     {
       // Convert ISA_EXEC_UNIT_PROPERTY (bundling)
       int nb_entry = isa_ext->get_TOP_count();
@@ -880,7 +890,7 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
       }
       overridden_ISA_PRINT_info_tab = new_tab;
     }
-  } else if (input_isa_ext->magic < EXT_ISA_API_20100114 ) {
+  } else if (input_isa_ext->magic < REV_20100114 ) {
       {
       // Convert ISA_EXEC_UNIT_PROPERTY (bundling)
       int nb_entry = isa_ext->get_TOP_count();
@@ -894,41 +904,6 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
       for (i=0; i<nb_entry; i++) {
 	new_tab[i] = (mUINT32)old_tab[i];
       }
-      overridden_ISA_EXEC_unit_prop_tab = new_tab;
-
-      overridden_ISA_EXEC_unit_slots_tab = input_isa_ext->get_ISA_EXEC_unit_slots_tab();
-      overridden_ISA_BUNDLE_slot_count_tab = input_isa_ext->get_ISA_BUNDLE_slot_count_tab();
-      overridden_ISA_PRINT_info_tab = input_isa_ext->get_ISA_PRINT_info_tab();
-
-      }
-  } else if (input_isa_ext->magic < EXT_ISA_API_20100426 ) {
-    {
-      INT32 unit_compat_count;
-
-      extension_unit_property_pairing* m = CGTARG_get_Extension_Unit_Map(input_isa_ext->magic, &unit_compat_count);
-
-      // Convert ISA_EXEC_UNIT_PROPERTY (bundling)
-      int nb_entry = isa_ext->get_TOP_count();
-
-      const ISA_EXEC_UNIT_PROPERTY *old_tab;
-      ISA_EXEC_UNIT_PROPERTY *new_tab;
-
-      old_tab = isa_ext->get_ISA_EXEC_unit_prop_tab();
-      new_tab = new ISA_EXEC_UNIT_PROPERTY[nb_entry];
-
-      for (i=0; i<nb_entry; i++) {
-        int j;
-        for (j=0; j<unit_compat_count; j++) {
-          if (old_tab[i] == m[j].oldval ) {
-            new_tab[i] = m[j].newval;
-            break;
-          }
-          if (j==unit_compat_count) {
-            new_tab[i] = old_tab[i];
-          }
-        }
-      }
-
       overridden_ISA_EXEC_unit_prop_tab = new_tab;
 
       overridden_ISA_EXEC_unit_slots_tab = input_isa_ext->get_ISA_EXEC_unit_slots_tab();
@@ -955,7 +930,7 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
   //
   // ---------------------------------------------------------------------------
   // ---------------------------------------------------------------------------
-  if (input_isa_ext->magic < EXT_ISA_API_20081010) {
+  if (input_isa_ext->magic < REV_20081010) {
      static ISA_RELOC_INFO ISA_RELOC_dynamic_info [] = {
        { { {   0,  0,  0, }, }, 0, 0, 0, 0, 0, 0, 0, ISA_RELOC_NO_OVERFLOW, ISA_RELOC_NO_UNDERFLOW, 0, "",  "RELOC_UNDEFINED", 0 }
      };
@@ -992,7 +967,7 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
     // -------- Changed after rev 20090727 -----------------------------------------
     // Initializing new ISA_RELOC_RLLIB_MODE field for extension earlier than dynamic 
     // loading introduction
-    if (input_isa_ext->magic < EXT_ISA_API_20090727) {
+    if (input_isa_ext->magic < REV_20090727) {
       int nb_entry = isa_ext->get_ISA_RELOC_info_tab_sz();
       ISA_RELOC_INFO_pre_20090727 *old_tab;
       ISA_RELOC_INFO              *new_tab;
@@ -1032,7 +1007,7 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
     // -------- Changed after rev 20100120 -----------------------------------------
     // Introduce ISA_RELOC_VARIANT_INFO to deal with multiple relocation for the
     // same instruction when relaxation is activated. 
-    if (input_isa_ext->magic < EXT_ISA_API_20100120) {
+    if (input_isa_ext->magic < REV_20100120) {
       int nb_entry = isa_ext->get_ISA_RELOC_info_tab_sz();
       ISA_RELOC_VARIANT_INFO * ISA_RELOC_dynamic_variant_info;
       
@@ -1075,21 +1050,21 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
   //
   // Changes are:
   // -----------
-  // [1] EXT_ISA_API_20090126: Addition of <conflicts> array
-  // [2] EXT_ISA_API_20090915: Arrays are no more embedded in this structure.
+  // [1] REV_20090126: Addition of <conflicts> array
+  // [2] REV_20090915: Arrays are no more embedded in this structure.
   //                   They have been replaced by pointers.
-  // [3] EXT_ISA_API_20090915: Elements of <opnd> and <result> arrays are now mUINT16
+  // [3] REV_20090915: Elements of <opnd> and <result> arrays are now mUINT16
   //                   (used to be mUINT8)
   //
   // ---------------------------------------------------------------------------
   // ---------------------------------------------------------------------------
-  if (input_isa_ext->magic < EXT_ISA_API_20090915) {
+  if (input_isa_ext->magic < REV_20090915) {
     int j;
     int nb_entry = isa_ext->get_ISA_OPERAND_info_tab_sz();
     ISA_OPERAND_INFO              *new_tab;
     new_tab = new ISA_OPERAND_INFO[nb_entry];
 
-    if (input_isa_ext->magic < EXT_ISA_API_20090126) {
+    if (input_isa_ext->magic < REV_20090126) {
       ISA_OPERAND_INFO_pre_20090126 *old_tab;
       old_tab = (ISA_OPERAND_INFO_pre_20090126*)isa_ext->get_ISA_OPERAND_info_tab();
       for (i=0; i<nb_entry; i++) {
@@ -1190,22 +1165,22 @@ EXTENSION_ISA_Info::~EXTENSION_ISA_Info() {
   
   if (initial_rev < MAGIC_NUMBER_EXT_ISA_API) {
     delete own_isa_ext;
-    if (initial_rev < EXT_ISA_API_20070615) {
+    if (initial_rev < REV_20070615) {
       delete[] (ISA_REGISTER_CLASS_INFO*)overridden_ISA_REGISTER_CLASS_tab;
     }
-    if (initial_rev < EXT_ISA_API_20080307) {
+    if (initial_rev < REV_20080307) {
       delete[] (ISA_EXEC_UNIT_SLOTS*)overridden_ISA_EXEC_unit_slots_tab;
       delete[] (mUINT8*)overridden_ISA_BUNDLE_slot_count_tab;
       delete[] (ISA_PRINT_INFO*)overridden_ISA_PRINT_info_tab;
     }
-    if(initial_rev < EXT_ISA_API_20090126) {
+    if(initial_rev < REV_20090126) {
       delete[] (ISA_LIT_CLASS_INFO*)overridden_ISA_LIT_CLASS_info_tab;
       delete[] (ISA_OPERAND_INFO*)overridden_ISA_OPERAND_info_tab;
     }
-    if (initial_rev < EXT_ISA_API_20090915) {
+    if (initial_rev < REV_20090915) {
       delete[] (ISA_OPERAND_VALTYP*)overridden_ISA_OPERAND_operand_types_tab;
     }
-    if (initial_rev < EXT_ISA_API_20100114) {
+    if (initial_rev < REV_20100114) {
       delete[] (ISA_EXEC_UNIT_PROPERTY*)overridden_ISA_EXEC_unit_prop_tab;      
     }
   }
@@ -1215,7 +1190,7 @@ EXTENSION_ISA_Info::~EXTENSION_ISA_Info() {
 
 const void*
 EXTENSION_ISA_Info::get_ISA_PRINT_info_pre_20080307_tab() const {
-  if (isa_ext->magic < EXT_ISA_API_20080307) {
+  if (isa_ext->magic < REV_20080307) {
     return (isa_ext->get_ISA_PRINT_info_tab());
   }
   else {
@@ -1226,29 +1201,29 @@ EXTENSION_ISA_Info::get_ISA_PRINT_info_pre_20080307_tab() const {
 
 void
 EXTENSION_ISA_Info::set_ISA_RELOC_dynamic_reloc_offset  (mUINT32 offset) const {
-  if (isa_ext->magic >= EXT_ISA_API_20081010) {
+  if (isa_ext->magic >= REV_20081010) {
      isa_ext->set_ISA_RELOC_dynamic_reloc_offset(offset);
   }
 }
 
-/* Introduced at EXT_ISA_API_20090416 */
+/* Introduced at REV_20090416 */
 void 
 EXTENSION_ISA_Info::set_ISA_LIT_CLASS_offset (mUINT32 offs) const {
-  if (isa_ext->magic >= EXT_ISA_API_20090416) {
+  if (isa_ext->magic >= REV_20090416) {
      isa_ext->set_ISA_LIT_CLASS_offset(offs);
   }
 }
 
 void 
 EXTENSION_ISA_Info::set_ISA_REGISTER_CLASS_offset (mUINT32 offs) const {
-  if (isa_ext->magic >= EXT_ISA_API_20090416) {
+  if (isa_ext->magic >= REV_20090416) {
      isa_ext->set_ISA_REGISTER_CLASS_offset(offs);
   }
 }
  
 void
 EXTENSION_ISA_Info::set_ISA_REGISTER_SUBCLASS_offset (mUINT32 offs) const {
-  if (isa_ext->magic >= EXT_ISA_API_20090416) {
+  if (isa_ext->magic >= REV_20090416) {
      isa_ext->set_ISA_REGISTER_SUBCLASS_offset(offs);
   }
 }

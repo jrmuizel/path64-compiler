@@ -75,9 +75,6 @@ typedef unsigned char an_integer_kind;
 #include "targ_abi_properties.h" // TB: For ABI_PROPERTIES_ABI_Value
 #endif
 
-#include "dyn_isa_api_access.h"
-#include "targ_isa_bundle.h"
-
 /* =====================================================================
  *    Architecture specific definitions: 
  * =====================================================================
@@ -935,17 +932,3 @@ Apply_Opt_Size_Target(UINT32 level)
 
 }
 
-
-/** 
- * Extension Unit identifiers nedd to be updated in order to follow
- * modifications in isa_bundle.c Unit definitions.
- * 
- * @param api_revision
- * @param count 
- * 
- * @return 
- */
-extension_unit_property_pairing* CGTARG_get_Extension_Unit_Map(INT32 api_revision, INT32* count) {
-  *count=0;
-  return NULL;
-}
