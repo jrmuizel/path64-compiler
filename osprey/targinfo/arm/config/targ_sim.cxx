@@ -127,6 +127,13 @@ Init_Pregs( void ) {
   if (Static_Last_Dedicated_Preg_Offset != 0)
     //TB: Init already done
     return;
+
+  // In some cases we may reach this point with an already
+  // modified value in ISA_REGISTER_CLASS_MAX, which is not
+  // compliant with initial assumption (#97483)
+  ISA_REGISTER_CLASS_MAX=ISA_REGISTER_CLASS_STATIC_MAX;
+  ISA_REGISTER_CLASS_COUNT=ISA_REGISTER_CLASS_STATIC_COUNT;
+
   /* some definitions for the dedicated hardware pregs: */
 
   Int_Preg_Min_Offset =             CGTARG_Regclass_Preg_Min(ISA_REGISTER_CLASS_integer);
@@ -141,10 +148,10 @@ Init_Pregs( void ) {
    
   Fcc_Preg_Min_Offset =             1;
   Fcc_Preg_Max_Offset =             0;
-  Last_Dedicated_Preg_Offset_Var =      CGTARG_Regclass_Preg_Max(ISA_REGISTER_CLASS_MAX);
-  //[TB]: Keep a trace of last dedicated offet of the core
-  // Last_Dedicated_Preg_Offset_Var will be incremented by the extension loader
-  Static_Last_Dedicated_Preg_Offset = Last_Dedicated_Preg_Offset_Var;
+  Last_Dedicated_Preg_Offset_Var    = CGTARG_Regclass_Preg_Max(ISA_REGISTER_CLASS_STATIC_MAX);
+  //[TB]: Keep a trace of last dedicated offset of the core
+  //Last_Dedicated_Preg_Offset_Var will be incremented by the extension loader
+  Static_Last_Dedicated_Preg_Offset = CGTARG_Regclass_Preg_Max(ISA_REGISTER_CLASS_STATIC_MAX);
 
 /* The offsets for return registers are fixed: */
   First_Int_Preg_Return_Offset =    CGTARG_Regclass_Preg_Min(ISA_REGISTER_CLASS_integer) + 0;	/* register r0 */
