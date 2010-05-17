@@ -2772,15 +2772,7 @@ run_ld (void)
         //Supply ld with additional arguments required on x8664
         // TODO: Make sure ld is called correctly for -m32
         if ( ldphase != P_ipa_link ) {
-            add_string(args, "--eh-frame-hdr");
-            //add_string(args, "--build-id");  /* Not supported by ld 2.17.50.0.6-12.el5 20061020 CentOS 5.4 */
-            add_string(args, "-m");
-            add_string(args, "elf_x86_64");
-            add_string(args, "--hash-style=gnu");
-            add_string(args, "-dynamic-linker");
-            add_string(args, "/lib64/ld-linux-x86-64.so.2");
-            add_string(args, "-rpath");
-            add_string(args, PSC_INSTALL_PREFIX LIBPATH);
+                add_multi_strings(args, AUXILIARY_LD_FLAGS, FALSE);
         }
 #endif
 

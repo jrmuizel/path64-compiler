@@ -47,6 +47,7 @@
  */
 
 #include <sys/wait.h>
+#include <sys/types.h>
 #include <errno.h>
 #include "cmplrs/host.h"
 
