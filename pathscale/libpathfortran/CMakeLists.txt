@@ -1010,14 +1010,14 @@ add_custom_command(
     DEPENDS massage
 )
 add_custom_command(
-    OUTPUT lib.i
-    COMMAND cpp -DKEY -E -traditional -I. ${CMAKE_CURRENT_SOURCE_DIR}/../libu/errmsg/lib.msg > lib.i
+    OUTPUT lib.msgs
+    COMMAND cpp -DKEY -E -traditional -I. ${CMAKE_CURRENT_SOURCE_DIR}/../libu/errmsg/lib.msg > lib.msgs
     DEPENDS numbers.h
 )
 add_custom_command(
     OUTPUT lib.cat
-    COMMAND ${PATHSCALE_SOURCE_DIR}/linux/tools/caterr -c lib.cat lib.i
-    DEPENDS lib.i
+    COMMAND ${PATHSCALE_SOURCE_DIR}/linux/tools/caterr -c lib.cat lib.msgs
+    DEPENDS lib.msgs
 )
 add_custom_target(
     generate_lib_cat ALL
@@ -1032,4 +1032,5 @@ add_custom_target(
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ISO_C_BINDING.mod ${CMAKE_CURRENT_BINARY_DIR}/IEEE_EXCEPTIONS.mod ${CMAKE_CURRENT_BINARY_DIR}/IEEE_FEATURES.mod ${CMAKE_CURRENT_BINARY_DIR}/ISO_FORTRAN_ENV.mod ${CMAKE_CURRENT_BINARY_DIR}/IEEE_ARITHMETIC.mod DESTINATION ${PATH64_LIB_PATH}/include)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib.cat DESTINATION ${PATH64_LIB_PATH})
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib.msgs DESTINATION ${PATH64_LIB_PATH})
 ENDIF(PATH64_ENABLE_FORTRAN)
