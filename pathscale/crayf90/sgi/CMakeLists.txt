@@ -84,6 +84,9 @@ ADD_DEFINITIONS(
 -DFRONT_END
 -DFRONT_F90
 -D_TARGET_MONGOOSE)
+IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	ADD_DEFINITIONS(-D_DEBUG)
+ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 add_executable (mfef95 ${PATHSCALE_MFEF95_SRCS})
 target_link_libraries (mfef95 comutil fe90 fe90-pathf arith cif pathfortran-static m)

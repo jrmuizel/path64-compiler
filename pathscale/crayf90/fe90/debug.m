@@ -24,6 +24,7 @@
 
 /* USMID:  "\n@(#)5.0_pl/macros/debug.m	5.1	04/29/99 21:22:31\n" */
  
+#include <inttypes.h>
 
 # define INDENT_SIZE	3
 /* This is a little ugly little, but should be portable */
