@@ -926,14 +926,17 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
       old_tab = isa_ext->get_ISA_EXEC_unit_prop_tab();
       new_tab = new ISA_EXEC_UNIT_PROPERTY[nb_entry];
 
+#define OLD_ISA_EXEC_PROPERTY_ALL_Unit        (0x1U)
 #define OLD_ISA_EXEC_PROPERTY_isa_32b_Unit_1  (0x800U)
 #define OLD_ISA_EXEC_PROPERTY_isa_48b_Unit_1  (0x100000U)
 #define OLD_ISA_EXEC_PROPERTY_isa_32m_Unit_1  (0x10000U)
 #define OLD_ISA_EXEC_PROPERTY_isa_48m_Unit_1  (0x2000000U)
-      
 
       for (i=0; i<nb_entry; i++) {
         switch((mUINT32)old_tab[i]) {
+        case OLD_ISA_EXEC_PROPERTY_ALL_Unit:
+          new_tab[i] = ISA_EXEC_PROPERTY_ALL_Unit;
+          break;
         case OLD_ISA_EXEC_PROPERTY_isa_32b_Unit_1:
           new_tab[i] = ISA_EXEC_PROPERTY_isa_32b_Unit_1;
           break;
