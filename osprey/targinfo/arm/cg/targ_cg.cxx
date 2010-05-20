@@ -4498,3 +4498,15 @@ CGTARG_SSA_dedicated_candidate_tn(TN *tn) {
 BOOL CGTARG_Should_Hoist_Return(BB* ret_bb) {
    return FALSE;
 }
+
+/** 
+ * Some operations should not be hoisted by cflow-Hoist_Common_Ops()
+ * optimization.
+ * 
+ * @param op 
+ * 
+ * @return 
+ */
+BOOL CGTARG_Allow_Operation_To_Be_Hoisted_In_Succs(OP* op) {
+  return TRUE;
+}
