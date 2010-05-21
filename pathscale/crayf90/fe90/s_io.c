@@ -3557,12 +3557,7 @@ static boolean io_ctl_list_semantics(opnd_type     *list_opnd,
    /* put checks here that can be done after all list items */
    /* are processed. They are only done once.               */
 
-   if (internal_file && is_namelist) {
-      find_opnd_line_and_column((opnd_type *) &IL_OPND(list_array[FMT_IDX]),
-                                &line, &col);
-      PRINTMSG(line, 472, Error, col);
-      semantically_correct = FALSE;
-   }
+   // For F2003, deleted prohibition against using namelist with internal file
 
    if (is_call) {
       /* copy list_array to arg_list */

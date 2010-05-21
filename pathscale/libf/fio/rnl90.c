@@ -276,8 +276,8 @@ _FRN(ControlListType *cilist, nmlist_group *namlist, void *stck)
 	/* The compiler flags namelist with fmt flag */
 	assert( (cilist->fmt == CI_NAMELIST));
 
-	/* The compiler disallows namelist with internal files */
-	assert( !(cilist->internal && cilist->fmt == CI_NAMELIST));
+	// For F2003, we have eliminated the prohibition against internal
+	// files and imitated the existing code for internal files in rf90.c
 
 	/* The compiler disallows namelist with direct files */
 	assert( !(cilist->dflag && cilist->fmt == CI_NAMELIST));
@@ -300,16 +300,22 @@ _FRN(ControlListType *cilist, nmlist_group *namlist, void *stck)
 	else
 		unum	= *cilist->unit.wa;
 
-	STMT_BEGIN(unum, 0, T_RNL, NULL, css, cup);
+	if (cilist->internal) {
+	  STMT_BEGIN(-1, 1, T_RNL, NULL, css, cup);
+	  cup->uft90 = 1;
+	}
+	else {
+	  STMT_BEGIN(unum, 0, T_RNL, NULL, css, cup);
 
-	if (cup == NULL) {	/* If not connected */
-		cup	= _imp_open(css, SEQ, FMT, unum, errf, &errn);
-		/*
-		 * If the open failed, cup is NULL and errn contains
-		 * the error number.
-		 */
-		if (cup == NULL)
-			goto finalization;
+	  if (cup == NULL) {	/* If not connected */
+		  cup	= _imp_open(css, SEQ, FMT, unum, errf, &errn);
+		  /*
+		   * If the open failed, cup is NULL and errn contains
+		   * the error number.
+		   */
+		  if (cup == NULL)
+			  goto finalization;
+	  }
 	}
 	/* All paths which lead here have set cup to a non-null value */
 	assert (cup != NULL);
@@ -357,7 +363,49 @@ _FRN(ControlListType *cilist, nmlist_group *namlist, void *stck)
 		ERROR0(endf, css, errn);
 	}
 
-	css->u.fmt.endrec	= _sr_endrec;
+	if (cilist->internal) {
+	  css->u.fmt.endrec	= _ir_endrec;
+	  css->u.fmt.tempicp = 0;
+	  if (cilist->uflag == CI_UNITCHAR) {
+	    css->u.fmt.iiae = 1;
+	    css->u.fmt.icp = _fcdtocp(cilist->unit.fcd);
+	    css->u.fmt.icl = _fcdlen(cilist->unit.fcd);
+	  }
+	  else {
+	    DopeVectorType *dv = cilist->unit.dv;
+	    void *newar = 0;
+	    int nocontig = 0;
+	    long extent = 0;
+	    long nbytes = 0;
+
+	    css->u.fmt.icp = _fcdtocp(dv->base_addr.charptr);
+	    css->u.fmt.icl = _fcdlen(dv->base_addr.charptr);
+	    errn = (dv->p_or_a && dv->assoc == 0) ?
+	      FEUNOTAL : // Not allocated/associated
+	      _cntig_chk(dv, &newar, &nocontig, &extent, &nbytes);
+	    if (errn) {
+	      goto finalization;
+	    }
+	    css->u.fmt.iiae = extent; // Number of elements in array
+	    if (nocontig) {
+	      css->u.fmt.icp = newar;
+	      css->u.fmt.tempicp = newar;
+	    }
+	    // If size of internal record exceeds existing line buffer, realloc
+	    // else just decrease urecsize
+	    if (css->u.fmt.icl > cup->urecsize) {
+	      cup->ulinebuf = (long *) realloc(cup->ulinebuf,
+	        sizeof(long) * (css->u.fmt.icl + 1));
+	      if (cup->ulinebuf == 0) {
+	        errn = FENOMEMY; // No memory
+	      }
+	    }
+	    cup->urecsize = css->u.fmt.icl;
+	  }
+	}
+	else {
+	  css->u.fmt.endrec	= _sr_endrec;
+	}
 
 	if (cup->pnonadv == 0)		/* if previous ADVANCE='YES' */
 		errn	= (*css->u.fmt.endrec)(css, cup, 1); /* Read a record */
@@ -599,6 +647,14 @@ rqte:
  *	Statement Finalization Section
  ***************************************************************************/
 finalization:
+
+        // If we allocated memory for an internal file, move the output file
+	// from the temporary array to the noncontiguous array and free the
+	// temporary array
+	if (cilist->internal && css->u.fmt.tempicp != 0) {
+	  (void) _unpack_arry(css->u.fmt.tempicp, cilist->unit.dv);
+	  free(css->u.fmt.tempicp);
+	}
 
 	/* Set IOSTAT variable to 0 if no error, >0 error code otherwise */
 	if (cilist->iostat_spec != NULL)
