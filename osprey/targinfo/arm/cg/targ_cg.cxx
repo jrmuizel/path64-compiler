@@ -4500,6 +4500,17 @@ BOOL CGTARG_Should_Hoist_Return(BB* ret_bb) {
 }
 
 /** 
+ * Depending on the target processor, applying
+ * cg_select logif transformation might be profitable (or not)
+ * in Os.
+ * 
+ * @return 
+ */
+BOOL CGTARG_Profitable_Logif_Transformation() {
+  return TRUE;
+}
+
+/** 
  * Some operations should not be hoisted by cflow-Hoist_Common_Ops()
  * optimization.
  * 
