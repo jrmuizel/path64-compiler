@@ -29,7 +29,7 @@
 
 #include "cmplrs/host.h"
 
-int32 not_l(int32 *m)
+int32_t not_l(int32_t *m)
 {
 	return(~*m);
 }

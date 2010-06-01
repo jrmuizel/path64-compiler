@@ -27,7 +27,7 @@
 
 
 #include "config.h"
-#include "libdwarfdefs.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 /*#include <elfaccess.h> */

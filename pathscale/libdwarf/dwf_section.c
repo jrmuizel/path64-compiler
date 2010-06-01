@@ -41,10 +41,10 @@
 
 #include "config.h"
 #include "dwarf_stuff.h"
-#include "libdwarfdefs.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #ifdef   HAVE_ELFACCESS_H
 #include <elfaccess.h>
 #endif

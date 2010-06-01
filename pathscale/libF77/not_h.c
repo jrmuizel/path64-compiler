@@ -29,7 +29,7 @@
 
 #include "cmplrs/host.h"
 
-int16 not_h(int16 *m)
+int16_t not_h(int16_t *m)
 {
 	return(~*m);
 }

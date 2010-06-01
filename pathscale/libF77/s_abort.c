@@ -36,10 +36,10 @@
 extern int up_low(char);
 
 void
-s_abort(int32 errno)
+s_abort(int32_t errno)
 {
 char *dumpflag, *getenv();
-int32 coredump=0;
+int32_t coredump=0;
 #ifndef FTN90_IO
 void _cleanup();
 #endif

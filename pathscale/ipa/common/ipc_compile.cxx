@@ -79,13 +79,18 @@
 #include "ipc_defs.h"                   // for IPA_Target_Type
 #endif
 
+
+#if !defined(__FreeBSD__)
+#include <alloca.h>
+#endif
+
 #pragma weak tos_string
 #pragma weak outfilename
 
 using std::vector;
 using __gnu_cxx::hash_map;
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 #define _USE_GNU_MAKE_
 #endif
 

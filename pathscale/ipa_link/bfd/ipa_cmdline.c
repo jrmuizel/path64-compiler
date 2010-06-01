@@ -30,7 +30,9 @@
 #include <sys/stat.h>		/* for chmod(2) */
 #include <sys/mman.h>		/* for mmap(2) */
 #include <fcntl.h>		/* for open(2) */
+#ifndef __sun
 #include <sys/dir.h>		/* for opendir(2), readdir, closedir */
+#endif
 #include <sys/wait.h>		/* for waitpid(2) */
 #if !defined(__FreeBSD__)
 #include <alloca.h>		/* for alloca(3) */

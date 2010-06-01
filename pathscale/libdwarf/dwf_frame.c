@@ -20,11 +20,11 @@
 #include "config.h"
 #include "config.h"
 #include "dwarf_stuff.h"
-#include "libdwarfdefs.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <stdint.h>
 #include "pro_incl.h"
 #include "pro_frame.h"
 

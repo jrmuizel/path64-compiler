@@ -42,10 +42,10 @@
  * k = 0 => no shift.
  */
 
-int64 shft_ll(int64 *m,int64 *k)
+int64_t shft_ll(int64_t *m,int64_t *k)
 {
-	int64 l;
-	int32 left;
+	int64_t l;
+	int32_t left;
 
 	left = (*k > 0);
 	l = left ? *k : -*k;

@@ -29,9 +29,7 @@
 */
 
 
-#ifndef _LP64
-#include <sgidefs.h>
-#endif /* _LP64 */
+#include <stdint.h>
 #include <cmplrs/leb128.h>
 
 /*
@@ -42,9 +40,9 @@
     of the leb128 encoding are in the Dwarf document.
 */
 int
-_leb128_unsigned_decode64(char *data, __uint64_t *value)
+_leb128_unsigned_decode64(char *data, uint64_t *value)
 {
-    __uint64_t lvalue;
+    uint64_t lvalue;
     unsigned char byte;
 
     byte = *data;
@@ -80,7 +78,7 @@ _leb128_unsigned_decode64(char *data, __uint64_t *value)
 	lvalue |= (*(data + 1) & 0x7f) << 7;
 	lvalue |= (*(data + 2) & 0x7f) << 14;
 	lvalue |= (*(data + 3) & 0x7f) << 21;
-	lvalue |= ((__uint64_t)(*(data + 4) & 0x7f)) << 28;
+	lvalue |= ((uint64_t)(*(data + 4) & 0x7f)) << 28;
 	*value = lvalue;
 	return 5;
     }
@@ -89,8 +87,8 @@ _leb128_unsigned_decode64(char *data, __uint64_t *value)
 	lvalue |= (*(data + 1) & 0x7f) << 7;
 	lvalue |= (*(data + 2) & 0x7f) << 14;
 	lvalue |= (*(data + 3) & 0x7f) << 21;
-	lvalue |= ((__uint64_t)(*(data + 4) & 0x7f)) << 28;
-	lvalue |= ((__uint64_t)(*(data + 5) & 0x7f)) << 35;
+	lvalue |= ((uint64_t)(*(data + 4) & 0x7f)) << 28;
+	lvalue |= ((uint64_t)(*(data + 5) & 0x7f)) << 35;
 	*value = lvalue;
 	return 6;
     }
@@ -99,9 +97,9 @@ _leb128_unsigned_decode64(char *data, __uint64_t *value)
 	lvalue |= (*(data + 1) & 0x7f) << 7;
 	lvalue |= (*(data + 2) & 0x7f) << 14;
 	lvalue |= (*(data + 3) & 0x7f) << 21;
-	lvalue |= ((__uint64_t)(*(data + 4) & 0x7f)) << 28;
-	lvalue |= ((__uint64_t)(*(data + 5) & 0x7f)) << 35;
-	lvalue |= ((__uint64_t)(*(data + 6) & 0x7f)) << 42;
+	lvalue |= ((uint64_t)(*(data + 4) & 0x7f)) << 28;
+	lvalue |= ((uint64_t)(*(data + 5) & 0x7f)) << 35;
+	lvalue |= ((uint64_t)(*(data + 6) & 0x7f)) << 42;
 	*value = lvalue;
 	return 7;
     }
@@ -110,10 +108,10 @@ _leb128_unsigned_decode64(char *data, __uint64_t *value)
 	lvalue |= (*(data + 1) & 0x7f) << 7;
 	lvalue |= (*(data + 2) & 0x7f) << 14;
 	lvalue |= (*(data + 3) & 0x7f) << 21;
-	lvalue |= ((__uint64_t)(*(data + 4) & 0x7f)) << 28;
-	lvalue |= ((__uint64_t)(*(data + 5) & 0x7f)) << 35;
-	lvalue |= ((__uint64_t)(*(data + 6) & 0x7f)) << 42;
-	lvalue |= ((__uint64_t)(*(data + 7) & 0x7f)) << 49;
+	lvalue |= ((uint64_t)(*(data + 4) & 0x7f)) << 28;
+	lvalue |= ((uint64_t)(*(data + 5) & 0x7f)) << 35;
+	lvalue |= ((uint64_t)(*(data + 6) & 0x7f)) << 42;
+	lvalue |= ((uint64_t)(*(data + 7) & 0x7f)) << 49;
 	*value = lvalue;
 	return 8;
     }
@@ -122,11 +120,11 @@ _leb128_unsigned_decode64(char *data, __uint64_t *value)
 	lvalue |= (*(data + 1) & 0x7f) << 7;
 	lvalue |= (*(data + 2) & 0x7f) << 14;
 	lvalue |= (*(data + 3) & 0x7f) << 21;
-	lvalue |= ((__uint64_t)(*(data + 4) & 0x7f)) << 28;
-	lvalue |= ((__uint64_t)(*(data + 5) & 0x7f)) << 35;
-	lvalue |= ((__uint64_t)(*(data + 6) & 0x7f)) << 42;
-	lvalue |= ((__uint64_t)(*(data + 7) & 0x7f)) << 49;
-	lvalue |= ((__uint64_t)(*(data + 8) & 0x7f)) << 56;
+	lvalue |= ((uint64_t)(*(data + 4) & 0x7f)) << 28;
+	lvalue |= ((uint64_t)(*(data + 5) & 0x7f)) << 35;
+	lvalue |= ((uint64_t)(*(data + 6) & 0x7f)) << 42;
+	lvalue |= ((uint64_t)(*(data + 7) & 0x7f)) << 49;
+	lvalue |= ((uint64_t)(*(data + 8) & 0x7f)) << 56;
 	*value = lvalue;
 	return 9;
     }
@@ -135,12 +133,12 @@ _leb128_unsigned_decode64(char *data, __uint64_t *value)
 	lvalue |= (*(data + 1) & 0x7f) << 7;
 	lvalue |= (*(data + 2) & 0x7f) << 14;
 	lvalue |= (*(data + 3) & 0x7f) << 21;
-	lvalue |= ((__uint64_t)(*(data + 4) & 0x7f)) << 28;
-	lvalue |= ((__uint64_t)(*(data + 5) & 0x7f)) << 35;
-	lvalue |= ((__uint64_t)(*(data + 6) & 0x7f)) << 42;
-	lvalue |= ((__uint64_t)(*(data + 7) & 0x7f)) << 49;
-	lvalue |= ((__uint64_t)(*(data + 8) & 0x7f)) << 56;
-	lvalue |= ((__uint64_t)(*(data + 9) & 0x7f)) << 63;
+	lvalue |= ((uint64_t)(*(data + 4) & 0x7f)) << 28;
+	lvalue |= ((uint64_t)(*(data + 5) & 0x7f)) << 35;
+	lvalue |= ((uint64_t)(*(data + 6) & 0x7f)) << 42;
+	lvalue |= ((uint64_t)(*(data + 7) & 0x7f)) << 49;
+	lvalue |= ((uint64_t)(*(data + 8) & 0x7f)) << 56;
+	lvalue |= ((uint64_t)(*(data + 9) & 0x7f)) << 63;
 
 	*value = lvalue;
 	return 10;

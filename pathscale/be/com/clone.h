@@ -414,7 +414,7 @@ public:
              BOOL same_file=TRUE,
              mUINT16 filenum=0) :
     _orig_pu(NULL), _cloned_pu(NULL),
-#if (!((defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)) && defined(_LP64)))
+#if (!((defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)) && defined(_LP64)))
     _sym(cloned_symtab? cloned_symtab : 
 	(callee_scope_tab == NULL? NULL : 
 				  CXX_NEW(IPO_SYMTAB(callee_scope_tab,
@@ -423,13 +423,13 @@ public:
 						    caller_symtab_idx, 
 						    Malloc_Mem_Pool, same_file),
  						    Malloc_Mem_Pool))),
-#endif /* (!((defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)) && defined(_LP64))) */
+#endif /* (!((defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)) && defined(_LP64))) */
     _orig_map_tab (callee), _cloned_map_tab(caller), _parent_map(parent),
     _mem(map_pool),             // mem pool for map tables
     _cloned_node_file_id(filenum), 
     _same_file(same_file), _raw_buf_size (0)
   {
-#if (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)) && defined(_LP64)
+#if (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)) && defined(_LP64)
     if ((cloned_symtab == NULL) && (callee_scope_tab != NULL))
       _sym = CXX_NEW (IPO_SYMTAB (callee_scope_tab,
 				  caller_scope_tab, 
@@ -439,7 +439,7 @@ public:
 		      Malloc_Mem_Pool);
     else
       _sym = cloned_symtab;
-#endif /* (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)) && defined(_LP64) */
+#endif /* (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)) && defined(_LP64) */
   };
 
   // 3. used only for cloning dynamic array bound expressions

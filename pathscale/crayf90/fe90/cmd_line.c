@@ -61,6 +61,11 @@ static char USMID[] = "\n@(#)5.0_pl/sources/cmd_line.c	5.16	10/20/99 17:17:46\n"
 # include "config_targ.h"
 #endif /* KEY F2003 */
 
+#if !defined(__FreeBSD__)
+#include <alloca.h>
+#endif
+
+
 /*****************************************************************\
 |* function prototypes of static functions declared in this file *|
 \*****************************************************************/

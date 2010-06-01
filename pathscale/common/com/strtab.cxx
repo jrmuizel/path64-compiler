@@ -59,7 +59,7 @@
 
 typedef STR_IDX STR_INDEX;
 
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 
 #define STR_INDEX_size(xxx) (xxx & 0xff)
 #define STR_INDEX_index(xxx) (xxx >> 8)

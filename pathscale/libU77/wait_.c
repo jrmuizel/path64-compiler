@@ -55,7 +55,7 @@ pid_t
 wait_(pid_t *status)
 {
 	pid_t stat;
-	pid_t chid = wait((int32 *)&stat);
+	pid_t chid = wait((int32_t *)&stat);
 	if (chid < 0)
 #ifdef __sgi
 		return((pid_t)-1);

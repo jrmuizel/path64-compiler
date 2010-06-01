@@ -25,6 +25,6 @@
 #define __S_CMP_H__
 #include <string.h>
 
-extern int32 s_cmp (register string, register string, fsize_t, fsize_t);
+extern int32_t s_cmp (register string, register string, fsize_t, fsize_t);
 
 #endif /* __S_CMP_H__ */

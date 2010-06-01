@@ -35,7 +35,7 @@ add_library(arith STATIC ${PATHSCALE_ARITH_SRCS})
 
 add_custom_command(
     OUTPUT arith.msgs
-    COMMAND cpp -DKEY -E -traditional -I. ${CMAKE_CURRENT_SOURCE_DIR}/arith.msg > arith.msgs
+    COMMAND ${CMAKE_C_COMPILER} -xc -E -DKEY -traditional -I. ${CMAKE_CURRENT_SOURCE_DIR}/arith.msg > arith.msgs
 )
 
 add_custom_command(

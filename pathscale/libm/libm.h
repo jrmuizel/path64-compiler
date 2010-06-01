@@ -221,7 +221,7 @@ int	round(double);
 
 #endif /* mips */
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 
 extern	float	fabsf(float);
 

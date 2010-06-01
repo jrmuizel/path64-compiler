@@ -590,7 +590,7 @@ void
 Configure_Target ( void )
 {
 
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
   Target_Byte_Sex = LITTLE_ENDIAN;
 #else  
   Target_Byte_Sex = BIG_ENDIAN;
@@ -720,7 +720,7 @@ IPA_Configure_Target (void)
     Boolean_type2 = MTYPE_I4;
 
 #ifdef KEY // Tell IPA the target byte-order
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
   Target_Byte_Sex = LITTLE_ENDIAN;
 #else  
   Target_Byte_Sex = BIG_ENDIAN;

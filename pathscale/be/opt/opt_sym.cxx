@@ -2067,7 +2067,7 @@ OPT_STAB::Make_st_group(void)
 	  sorted[i]->Byte_size() * 8 : sorted[i]->Bit_size();
         if (ofst < hi) {
            // Merge
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 //         hi = (( hi > ofst + size ) ?  hi : ofst + size ) ;
            if (hi < ofst + size)
              hi = ofst + size;

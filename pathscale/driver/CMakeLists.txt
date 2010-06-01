@@ -30,12 +30,19 @@ set(PATHSCALE_TABLE_SRCS  ${PATHSCALE_COMMON_DRIVER_SRCS}
 
 add_executable(table ${PATHSCALE_TABLE_SRCS})
 
-#GET_TARGET_PROPERTY(TABLE_EXE table LOCATION)
+
+# Detecting gawk and gcc and configuring sort_options script
+set(SORT_OPTIONS ${CMAKE_CURRENT_BINARY_DIR}/sort_options.sh)
+set(PATH64_GCC ${CMAKE_C_COMPILER})
+find_program(PATH64_GAWK gawk PATHS /usr/bin /usr/gnu/bin ENV PATH)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh.cmake.in
+               ${SORT_OPTIONS})
+
 
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS -DX8664 -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
-        DEPENDS sort_options.sh OPTIONS
+        COMMAND ${SORT_OPTIONS} ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS -DX8664 -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
+        DEPENDS ${SORT_OPTIONS} OPTIONS
         )
 
 add_custom_command(

@@ -39,9 +39,9 @@
  *	[  b1   |   k2   |   d   ]       [  b1   |   d   |   k2   ]
  */
 
-int8 shftc_b(int8 *m,int8 *k,int8 *ic)
+int8_t shftc_b(int8_t *m,int8_t *k,int8_t *ic)
 {
-	int8 b1, b2, b3, k2, d, left;
+	int8_t b1, b2, b3, k2, d, left;
 
 	left = (*k > 0);
 	k2 = left ? *k : -*k;

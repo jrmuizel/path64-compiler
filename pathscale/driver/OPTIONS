@@ -1155,8 +1155,10 @@ I-u%s		;		Cc	ld	"-u %s"
 	""
 
 % CC options:
+#ifndef __sun
 -demangle	;		CC	ld	self
 	""
+#endif
 -prelink	;		CC	NONE	""
 	"use prelinker (default)"
 -no_prelink	prelink_flag=FALSE;		CC	cfe	self

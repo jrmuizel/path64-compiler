@@ -24,7 +24,7 @@
 
 #include <cmplrs/host.h>
 
-int8 b_abs(int8 *x)
+int8_t b_abs(int8_t *x)
 {
   if(*x >= 0)
     return(*x);

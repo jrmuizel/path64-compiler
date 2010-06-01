@@ -38,8 +38,8 @@ Copyright 2004, 2005, 2006 PathScale, Inc.  All Rights Reserved.
  * it "external" in Fortran but expects to get it from the library instead
  * of defining it themselves.
  */
-extern __int32_t
-chmod_ (char *name, char *mode, __int32_t namlen, __int32_t modlen) {
+extern int32_t
+chmod_ (char *name, char *mode, int32_t namlen, int32_t modlen) {
   return pathf90_chmod(name, mode, 0, namlen, modlen);
   }
 

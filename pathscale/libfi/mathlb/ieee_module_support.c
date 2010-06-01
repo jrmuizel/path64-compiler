@@ -349,7 +349,9 @@ void _Ieee_get_halting_mode_(ieee_flag_type *flag, int4 *halting) {
   }
 
 void _Ieee_set_halting_mode_(ieee_flag_type *flag, int4 *halting) {
+#ifndef __sun   // FIXME
   ((*halting) ? feenableexcept : fedisableexcept)(flag->value);
+#endif
   }
 
 void _Ieee_get_status_(FENV_T *status_value) {
@@ -566,9 +568,11 @@ _Ieee_value_4_(float *x, float *unused, int *class) {
     case FP_ZERO:
       *x = * (float *) &zero;
       break;
+#if FP_ZERO
     case -FP_ZERO:
       *x = * (float *) &neg_zero;
       break;
+#endif /* FP_ZERO */
     case FP_INFINITE:
       * (unsigned long *) x = * (unsigned long *) &inf;
       break;
@@ -612,9 +616,11 @@ _Ieee_value_8_(double *x, double *unused, int *class) {
     case FP_ZERO:
       *x = * (double *) &zero;
       break;
+#if FP_ZERO
     case -FP_ZERO:
       *x = * (double *) &neg_zero;
       break;
+#endif /* FP_ZERO */
     case FP_INFINITE:
       * (unsigned long long *) x = * (unsigned long long *) &inf;
       break;

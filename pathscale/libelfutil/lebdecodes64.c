@@ -29,9 +29,7 @@
     $Date$
 */
 
-#ifndef _LP64
-#include <sgidefs.h>
-#endif /* _LP64 */
+#include <stdint.h>
 #include <cmplrs/leb128.h>
 
 #define TRUE 1
@@ -46,11 +44,11 @@
     of the leb128 encoding are in the Dwarf document.
 */
 int
-_leb128_signed_decode64(char *data, __int64_t	*value)
+_leb128_signed_decode64(char *data, int64_t	*value)
 {
     unsigned char 	byte = *data;
     unsigned char    	sign = 0;
-    __int64_t   lvalue;
+    int64_t   lvalue;
 
     byte = *(data);
     if ((byte & 0x80) == 0) {
@@ -104,7 +102,7 @@ _leb128_signed_decode64(char *data, __int64_t	*value)
 	lvalue |= (*(data + 2) & 0x7f) << 14;
 	lvalue |= (*(data + 3) & 0x7f) << 21;
 	byte = *(data +4);
-	lvalue |= ((__uint64_t)(byte & 0x7f)) << 28;
+	lvalue |= ((uint64_t)(byte & 0x7f)) << 28;
 	sign = byte & 0x40;
 	if(sign) {
 	   lvalue |= - (1ULL << 35);
@@ -117,9 +115,9 @@ _leb128_signed_decode64(char *data, __int64_t	*value)
 	lvalue |= (*(data + 1) & 0x7f) << 7;
 	lvalue |= (*(data + 2) & 0x7f) << 14;
 	lvalue |= (*(data + 3) & 0x7f) << 21;
-	lvalue |= ((__uint64_t)(*(data + 4) & 0x7f)) << 28;
+	lvalue |= ((uint64_t)(*(data + 4) & 0x7f)) << 28;
 	byte = *(data +5);
-	lvalue |= ((__uint64_t)(byte & 0x7f)) << 35;
+	lvalue |= ((uint64_t)(byte & 0x7f)) << 35;
 	sign = byte & 0x40;
 	if(sign) {
 	   lvalue |= - (1ULL << 42);
@@ -132,10 +130,10 @@ _leb128_signed_decode64(char *data, __int64_t	*value)
 	lvalue |= (*(data + 1) & 0x7f) << 7;
 	lvalue |= (*(data + 2) & 0x7f) << 14;
 	lvalue |= (*(data + 3) & 0x7f) << 21;
-	lvalue |= ((__uint64_t)(*(data + 4) & 0x7f)) << 28;
-	lvalue |= ((__uint64_t)(*(data + 5) & 0x7f)) << 35;
+	lvalue |= ((uint64_t)(*(data + 4) & 0x7f)) << 28;
+	lvalue |= ((uint64_t)(*(data + 5) & 0x7f)) << 35;
 	byte = *(data +6);
-	lvalue |= ((__uint64_t)(byte & 0x7f)) << 42;
+	lvalue |= ((uint64_t)(byte & 0x7f)) << 42;
 	sign = byte & 0x40;
 	if(sign) {
 	   lvalue |= - (1ULL << 49);
@@ -148,11 +146,11 @@ _leb128_signed_decode64(char *data, __int64_t	*value)
 	lvalue |= (*(data + 1) & 0x7f) << 7;
 	lvalue |= (*(data + 2) & 0x7f) << 14;
 	lvalue |= (*(data + 3) & 0x7f) << 21;
-	lvalue |= ((__uint64_t)(*(data + 4) & 0x7f)) << 28;
-	lvalue |= ((__uint64_t)(*(data + 5) & 0x7f)) << 35;
-	lvalue |= ((__uint64_t)(*(data + 6) & 0x7f)) << 42;
+	lvalue |= ((uint64_t)(*(data + 4) & 0x7f)) << 28;
+	lvalue |= ((uint64_t)(*(data + 5) & 0x7f)) << 35;
+	lvalue |= ((uint64_t)(*(data + 6) & 0x7f)) << 42;
 	byte = *(data +7);
-	lvalue |= ((__uint64_t)(byte & 0x7f)) << 49;
+	lvalue |= ((uint64_t)(byte & 0x7f)) << 49;
 	sign = byte & 0x40;
 	if(sign) {
 	   lvalue |= - (1ULL << 56);
@@ -165,12 +163,12 @@ _leb128_signed_decode64(char *data, __int64_t	*value)
 	lvalue |= (*(data + 1) & 0x7f) << 7;
 	lvalue |= (*(data + 2) & 0x7f) << 14;
 	lvalue |= (*(data + 3) & 0x7f) << 21;
-	lvalue |= ((__uint64_t)(*(data + 4) & 0x7f)) << 28;
-	lvalue |= ((__uint64_t)(*(data + 5) & 0x7f)) << 35;
-	lvalue |= ((__uint64_t)(*(data + 6) & 0x7f)) << 42;
-	lvalue |= ((__uint64_t)(*(data + 7) & 0x7f)) << 49;
+	lvalue |= ((uint64_t)(*(data + 4) & 0x7f)) << 28;
+	lvalue |= ((uint64_t)(*(data + 5) & 0x7f)) << 35;
+	lvalue |= ((uint64_t)(*(data + 6) & 0x7f)) << 42;
+	lvalue |= ((uint64_t)(*(data + 7) & 0x7f)) << 49;
 	byte = *(data +8);
-	lvalue |= ((__uint64_t)(byte & 0x7f)) << 56;
+	lvalue |= ((uint64_t)(byte & 0x7f)) << 56;
 	sign = byte & 0x40;
 	if(sign) {
 	   /* here just apply the sign to the remaining bit */
@@ -184,14 +182,14 @@ _leb128_signed_decode64(char *data, __int64_t	*value)
 	lvalue |= (*(data + 1) & 0x7f) << 7;
 	lvalue |= (*(data + 2) & 0x7f) << 14;
 	lvalue |= (*(data + 3) & 0x7f) << 21;
-	lvalue |= ((__uint64_t)(*(data + 4) & 0x7f)) << 28;
-	lvalue |= ((__uint64_t)(*(data + 5) & 0x7f)) << 35;
-	lvalue |= ((__uint64_t)(*(data + 6) & 0x7f)) << 42;
-	lvalue |= ((__uint64_t)(*(data + 7) & 0x7f)) << 49;
-	lvalue |= ((__uint64_t)(*(data + 8) & 0x7f)) << 56;
+	lvalue |= ((uint64_t)(*(data + 4) & 0x7f)) << 28;
+	lvalue |= ((uint64_t)(*(data + 5) & 0x7f)) << 35;
+	lvalue |= ((uint64_t)(*(data + 6) & 0x7f)) << 42;
+	lvalue |= ((uint64_t)(*(data + 7) & 0x7f)) << 49;
+	lvalue |= ((uint64_t)(*(data + 8) & 0x7f)) << 56;
 	byte = *(data +9);
 	/* this just applies one bit */
-	lvalue |= ((__uint64_t)(byte & 0x7f)) << 63;
+	lvalue |= ((uint64_t)(byte & 0x7f)) << 63;
 	/* there are no bits left over, so no need to
 	** sign extend
 	*/

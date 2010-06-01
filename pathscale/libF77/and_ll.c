@@ -29,8 +29,8 @@
 /*	actual or intended publication of such source code.	*/
 #include <cmplrs/host.h>
 
-int64
-and_ll (int64 *m, int64 *n)    
+int64_t
+and_ll (int64_t *m, int64_t *n)    
 {
     return(*m & *n);
 }

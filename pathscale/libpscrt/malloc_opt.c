@@ -21,7 +21,7 @@
  */
 
 
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 #include <stdlib.h>
 #else /* defined(BUILD_OS_DARWIN) */
 #include <malloc.h>
@@ -31,7 +31,7 @@
 void
 __pathscale_malloc_alg (int alg_num)
 {
-#if ! (defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)) /* Mallopt not supported */
+#if ! (defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)) /* Mallopt not supported */
   // Currently there are three alternate algorithms.  Bug 10736
   switch (alg_num){
    case 1:

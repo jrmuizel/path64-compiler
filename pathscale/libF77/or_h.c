@@ -29,7 +29,7 @@
 
 #include "cmplrs/host.h"
 
-int16 or_h(int16 *m,int16 *n)
+int16_t or_h(int16_t *m,int16_t *n)
 {
 	return(*m | *n);
 }

@@ -38,7 +38,7 @@ void
 s_stop(string s, fsize_t n)
 {
     fsize_t i;
-    int32 return_code=0;
+    int32_t return_code=0;
     int convert=1;
 
 /* Do not print this if no string ( this routine gets a '\0' because of 

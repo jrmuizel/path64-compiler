@@ -28,7 +28,7 @@
 /*	actual or intended publication of such source code.	*/
 #include "cmplrs/host.h"
 
-int8 xor_b(int8 *m,int8 *n)
+int8_t xor_b(int8_t *m,int8_t *n)
 {
 	return(*m ^ *n);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003, 2004, 2005, 2006 PathScale, Inc.  All Rights Reserved.
+ * Copyright 2004, 2005, 2006 PathScale, Inc.  All Rights Reserved.
  */
 
 /*
@@ -31,36 +31,18 @@
 
 */
 
-/* $Header: /home/bos/bk/kpro64-pending/libU77/getpid_.c 1.6 04/12/21 14:58:07-08:00 bos@eng-25.internal.keyresearch.com $ */
-/*
- *
- * get process id
- *
- * calling sequence:
- *	integer getpid, pid
- *	pid = getpid()
- * where:
- *	pid will be the current process id
- */
-#include <sys/types.h>
-#include <unistd.h>
-#ifndef KEY
-#include <sgidefs.h>
-#endif
 
-#ifdef KEY /* Bug 1683 */
+#include "sys_ctime.h"
 
-#include "pathf90_libU_intrin.h"
 
-pathf90_i4
-pathf90_getpid(void)
-
-#else
-
-extern int32_t
-getpid_(void)
-
-#endif /* KEY Bug 1683 */
+char *
+call_sys_ctime_r(const time_t * clock, char * buf, int buflen)
 {
-	return((int32_t)getpid());
+#if defined(__sun)
+	char *s = ctime_r(clock, buf, buflen);
+#else
+	char *s = ctime_r(clock, buf);
+#endif  // defined(__sun)
 }
+
+

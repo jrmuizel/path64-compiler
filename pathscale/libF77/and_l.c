@@ -29,8 +29,8 @@
 /*	actual or intended publication of such source code.	*/
 #include <cmplrs/host.h>
 
-int32
-and_l (int32 *m, int32 *n)    
+int32_t
+and_l (int32_t *m, int32_t *n)    
 {
     return(*m & *n);
 }

@@ -39,10 +39,10 @@
  *	[  b1   |   k2   |   d   ]       [  b1   |   d   |   k2   ]
  */
 
-int32 shftc_l(int32 *m,int32 *k,int32 *ic)
+int32_t shftc_l(int32_t *m,int32_t *k,int32_t *ic)
 {
-	int32 b1, b2, b3, k2, d;
-	int16 left;
+	int32_t b1, b2, b3, k2, d;
+	int16_t left;
 
 	left = (*k > 0);
 	k2 = left ? *k : -*k;

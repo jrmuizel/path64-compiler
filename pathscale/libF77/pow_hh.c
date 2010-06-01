@@ -24,9 +24,9 @@
 /* $Header$ */
 #include "cmplrs/host.h"
 
-int16 pow_hh(int16 *ap, int16 *bp)
+int16_t pow_hh(int16_t *ap, int16_t *bp)
 {
-int16 pow, x, n;
+int16_t pow, x, n;
 
 pow = 1;
 x = *ap;

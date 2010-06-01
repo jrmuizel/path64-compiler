@@ -449,9 +449,9 @@ void KEY_SCH::Init()
   // increase table size by the maximum number of resource cycles needed by
   // any OP.
   rtable_size += max_resource_cycles;
-  _U = rtable_size;
+  __U = rtable_size;
 
-  mrt.Init( bb, _U, trace, mem_pool );
+  mrt.Init( bb, __U, trace, mem_pool );
 }
 
 
@@ -480,9 +480,9 @@ void KEY_SCH::Build_OPR()
   FOR_ALL_BB_OPs_FWD( bb, op ){
     OPR* opr = Get_OPR( op );
     OPR_release_time(opr) = 0;
-    OPR_deadline(opr) = _U-1;
-    OPR_sched_order(opr) = _U;
-    OPR_pred_order(opr) = _U;
+    OPR_deadline(opr) = __U-1;
+    OPR_sched_order(opr) = __U;
+    OPR_pred_order(opr) = __U;
 
     OPR_uses(opr) = 0;
     OPR_latency(opr) = 0;

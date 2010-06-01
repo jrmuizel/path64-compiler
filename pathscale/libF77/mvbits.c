@@ -37,9 +37,9 @@
  */
 
 void
-mvbits_long_long(int64 *m,int64 *i,int64 *len,int64 *n,int64 *j)
+mvbits_long_long(int64_t *m,int64_t *i,int64_t *len,int64_t *n,int64_t *j)
 {
-        uint64 b;
+        uint64_t b;
 
 	if ( (*i + *len > NBLL) || (*j + *len > NBLL) ||
 	     (*len <= 0ll) || (*i < 0ll) || (*j < 0ll) ) return;
@@ -49,9 +49,9 @@ mvbits_long_long(int64 *m,int64 *i,int64 *len,int64 *n,int64 *j)
 	*n |= (b << *j);                        /* position bits and insert */
 }
 void
-mvbits_long(int32 *m,int32 *i,int32 *len,int32 *n,int32 *j)
+mvbits_long(int32_t *m,int32_t *i,int32_t *len,int32_t *n,int32_t *j)
 {
-	uint32 b;
+	uint32_t b;
 
 	if ( (*i + *len > NBI) || (*j + *len > NBI) ||
 	     (*len <= 0) || (*i < 0) || (*j < 0) ) return;
@@ -61,9 +61,9 @@ mvbits_long(int32 *m,int32 *i,int32 *len,int32 *n,int32 *j)
 	*n |= (b << *j);			/* position bits and insert */
 }
 void
-mvbits_short(int16 *m,int16 *i,int16 *len,int16 *n,int16 *j)
+mvbits_short(int16_t *m,int16_t *i,int16_t *len,int16_t *n,int16_t *j)
 {
-	uint16 b;
+	uint16_t b;
 
 	/* The following test is correct (NBI versus NBSI) for VAX compatibility PV130932 */
 	if ( (*i + *len > NBI) || (*j + *len > NBI) ||
@@ -74,9 +74,9 @@ mvbits_short(int16 *m,int16 *i,int16 *len,int16 *n,int16 *j)
 	*n |= (b << *j);			/* position bits and insert */
 }
 void
-mvbits_byte(int8 *m,int8 *i,int8 *len,int8 *n,int8 *j)
+mvbits_byte(int8_t *m,int8_t *i,int8_t *len,int8_t *n,int8_t *j)
 {
-	uint8 b;
+	uint8_t b;
 
 	/* The following test is correct (NBI versus NBB) for VAX compatibility PV130932 */
 	if ( (*i + *len > NBI) || (*j + *len > NBI) ||

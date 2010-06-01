@@ -44,6 +44,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <strings.h>
 #if !defined(__FreeBSD__)
 #include <alloca.h>
 #endif

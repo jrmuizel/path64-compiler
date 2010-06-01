@@ -17,20 +17,9 @@
 
 #include "common.h"
 
-asm(	"	.section .ctors\n"
-#if defined(__x86_64__) || defined(__sparc64__)
-	"	.quad 0\n"
-#else
-	"	.long 0\n"
-#endif
-);
-
-asm(	"	.section .dtors\n"
-#if defined(__x86_64__) || defined(__sparc64__)
-	"	.quad 0\n"
-#else
-	"	.long 0\n"
-#endif
-);
+static void (*__CTOR_LIST__[1])(void)
+    __attribute__((section(".ctors"))) = { (void *)0 };
+static void (*__DTOR_LIST__[1])(void)
+    __attribute__((section(".dtors"))) = { (void *)0 };
 
 IDENT("$Id: crtend.c,v 1.2 2009/08/16 23:07:08 gmcgarry Exp $");

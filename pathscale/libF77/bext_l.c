@@ -34,11 +34,11 @@
  * and extending left for len bits. The right most bit is bit 0.
  */
 
-int32
-bext_l (int32 *m, int32 *i, int32 *len)
+int32_t
+bext_l (int32_t *m, int32_t *i, int32_t *len)
 {
     if ((*i + *len > NBI) || (*i < 0) || (*len < 0) || (*i >= NBI) ||
 	(*len > NBI))
 	return(*m);
-    return((uint32)(*m & F77mask[*i + *len]) >> *i);
+    return((uint32_t)(*m & F77mask[*i + *len]) >> *i);
 }

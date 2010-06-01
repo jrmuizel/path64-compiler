@@ -105,7 +105,12 @@ ELSE()
 ENDIF()
 
 # TODO : This should use FIND_FILE and be more logical when it comes to cross compiles and multilib
+IF(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+SET(PSC_CRT_PATH "/usr/lib/amd64" CACHE STRING "Location of crt1.o crti.o and crtn.o")
+ELSE()
 SET(PSC_CRT_PATH "/usr/lib" CACHE STRING "Location of crt1.o crti.o and crtn.o")
+ENDIF()
+
 IF(PSC_CRT_PATH)
 	MESSAGE(STATUS "PSC_CRT_PATH is set to "${PSC_CRT_PATH})
 ELSE()
@@ -180,6 +185,21 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 ELSE()
     set(libdl "")
 ENDIF()
+
+
+# Selecting macro for enabling int types formats for C++
+SET(PATH64_STDC_FORMAT_MACROS -D__STDC_FORMAT_MACROS)
+
+# Forching build for 64-bit on osol
+IF(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+SET(CMAKE_CXX_FLAGS "-m64")
+SET(CMAKE_C_FLAGS "-m64")
+SET(CMAKE_Fortran_FLAGS "-m64")
+SET(CMAKE_EXE_LINKER_FLAGS "-m64")
+SET(CMAKE_MODULE_LINKER_FLAGS "-m64")
+SET(CMAKE_SHARED_LINKER_FLAGS "-m64")
+ENDIF()
+
 
 # Tell GCC_XML that we are providing gccxml_cc1plus for it.
 SET(GCCXML_NATIVE_CC1PLUS 1)

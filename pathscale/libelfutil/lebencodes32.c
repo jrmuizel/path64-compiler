@@ -28,9 +28,6 @@
     $Date$
 */
 
-#ifndef _LP64
-#include <sgidefs.h>
-#endif /* _LP64 */
 #include <cmplrs/leb128.h>
 
 
@@ -47,7 +44,7 @@
     5 bytes in buffer are all that is needed.
 */
 int
-_leb128_signed_encode32(__int32_t number, char *buffer)
+_leb128_signed_encode32(int32_t number, char *buffer)
 {
     int		sign;
     char	*bufPtr;

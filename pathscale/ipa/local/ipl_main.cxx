@@ -105,7 +105,7 @@ BOOL Do_Split_Commons_Set = FALSE;
 BOOL Do_Common_Const = FALSE;
 BOOL IPL_Enable_Outline = FALSE;
 BOOL IPL_Enable_Unknown_Frequency = FALSE;
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 BOOL IPL_Generate_Elf_Symtab = TRUE;
 #else
 BOOL IPL_Generate_Elf_Symtab = FALSE;
@@ -311,7 +311,7 @@ Ipl_Extra_Output (Output_File *ir_output)
     if (driver_argc > 0)
 	WN_write_flags (driver_argc, driver_argv, ir_output);
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
     // write out the Elf version of global symtab
     IPL_Write_Elf_Symtab (ir_output);
 #endif // __linux__

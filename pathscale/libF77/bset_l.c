@@ -34,10 +34,10 @@
  * The right most bit is bit 0.
  */
 
-int32
-bset_l(int32 *n, int32 *i)
+int32_t
+bset_l(int32_t *n, int32_t *i)
 {
     if (*i < 0 || *i >= NBI)
 	return(0L);
-    return(*n | ((uint32) 1L << (uint32) *i));
+    return(*n | ((uint32_t) 1L << (uint32_t) *i));
 }

@@ -34,7 +34,9 @@
 #include <stdint.h>
 #if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 #include <darwin_elf.h>
-#else /* defined(BUILD_OS_DARWIN) */
+#elif defined(__sun)
+#include "elf_stuff.h"
+#else
 #include <elf.h>
 #endif /* defined(BUILD_OS_DARWIN) */
 #include <sys/elf_whirl.h>
