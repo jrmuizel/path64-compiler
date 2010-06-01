@@ -64,6 +64,10 @@
 #include "profile_type.h"    /* for PROFILE_TYPE */
 #include "get_options.h"
 
+#if !defined(__FreeBSD__)
+#include <alloca.h>
+#endif
+
 #include "license.h"
 
 char *outfile = NULL;		/* from -o <outfile> */
@@ -659,7 +663,7 @@ add_isystem_dirs(string_list_t *args)
 static void
 add_abi(string_list_t *args) {
 #ifdef TARG_X8664
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(__sun)
 		add_string(args, (abi == ABI_N32) ? "-m32" : "-m64");
 #else /* defined(BUILD_OS_DARWIN) */
 		if( abi == ABI_N32 ){
@@ -1536,7 +1540,9 @@ add_file_args (string_list_t *args, phases_t index)
 #ifdef TARG_MIPS
 		add_sysroot(args, index);
 #endif
+#ifndef __sun
 		add_abi(args);
+#endif
 		set_library_paths(args);
 		if (outfile != NULL) {
 			add_string(args, "-o");
@@ -2776,6 +2782,7 @@ run_ld (void)
         }
 #endif
 
+#if !defined(__sun)
 #ifdef KEY
 	// Pass "-m elf_i386" and "-m elf_x86_64" to linker.  Bug 8441.
 	if (option_was_seen(O_melf_i386)) {
@@ -2784,6 +2791,7 @@ run_ld (void)
 	if (option_was_seen(O_melf_x86_64)) {
 	    add_string(args, "-m elf_x86_64");
 	}
+#endif
 #endif
 	if (ipa == TRUE) {
 	    ldpath = get_phase_dir (ldphase);

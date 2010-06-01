@@ -40,9 +40,9 @@
  * k = 0 => no shift.
  */
 
-int32 shft_l(int32 *m, int32 *k)
+int32_t shft_l(int32_t *m, int32_t *k)
 {
-	int32 l;
+	int32_t l;
 	short left;
 
 	left = (*k > 0);

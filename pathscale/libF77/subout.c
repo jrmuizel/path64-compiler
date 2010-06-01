@@ -31,9 +31,9 @@
 #include "cmplrs/host.h"
 
 void
-subout(char *varn, int32 offset, char *procn, int32 line)
+subout(char *varn, int32_t offset, char *procn, int32_t line)
 {
-	register int32 i;
+	register int32_t i;
 	extern void _cleanup(void);
 
 	fprintf(stderr, "Subscript out of range on line %d of procedure ", line);

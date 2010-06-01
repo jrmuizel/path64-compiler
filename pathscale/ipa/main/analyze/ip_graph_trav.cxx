@@ -25,6 +25,7 @@
 
 */
 
+#include <strings.h>
 
 #include "defs.h"
 #include "cxx_base.h"

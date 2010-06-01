@@ -27,7 +27,9 @@ set_property(TARGET pscrt-static PROPERTY OUTPUT_NAME pscrt)
 
 IF(PATH64_ENABLE_PROFILING)
 add_library(pscrt_p STATIC ${pscrt_sources} ${pscrt_static_sources})
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")   # temporary workaround for bug in gcc on osol
 set_property(TARGET pscrt_p PROPERTY COMPILE_FLAGS -pg)
+endif()
 ENDIF()
 
 #add_library(pscrt SHARED ${pscrt_sources})

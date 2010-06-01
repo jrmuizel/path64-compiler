@@ -158,6 +158,8 @@
 #include "be_util.h"    // for Current_PU_Count
 #endif
 
+#include "pathscale_defs.h"
+
 #ifdef TARG_X8664
 extern void EETARG_Emit_IP_Calc_Func(void);
 #endif
@@ -201,7 +203,7 @@ extern BOOL PU_has_trampoline;  // defined in wn_lower.cxx
  * ====================================================================
  */
 
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 BOOL CG_emit_asm_dwarf    = TRUE;
 BOOL CG_emit_unwind_info  = TRUE;
 #ifdef TARG_IA64

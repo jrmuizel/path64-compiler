@@ -36,9 +36,6 @@
 
 */
 
-#ifndef _LP64
-#include <sgidefs.h>
-#endif /* _LP64 */
 #include <stdio.h> /* for debug printf and for NULL decl */
 #include "xlatebase.h"
 #include "syn.h"

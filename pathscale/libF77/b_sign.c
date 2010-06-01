@@ -24,16 +24,16 @@
 
 #include <cmplrs/host.h>
 
-int8 b_sign(int8 *a, int8 *b)
+int8_t b_sign(int8_t *a, int8_t *b)
 {
-  register int8 x;
+  register int8_t x;
   x = (*a >= 0 ? *a : - *a);
   return( *b >= 0 ? x : -x);
 }
 
-int8 __bsign(int8 a, int8 b)
+int8_t __bsign(int8_t a, int8_t b)
 {
-  register int8 x;
+  register int8_t x;
   x = (a >= 0 ? a : - a);
   return( b >= 0 ? x : -x);
 }

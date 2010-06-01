@@ -21,6 +21,6 @@
 #define PSC_CRT_BEGINEND_PATH LIBPATH
 #cmakedefine PSC_CRT_PATH "${PSC_CRT_PATH}"
 #define PSC_BUILD_DATE "2010-04-04/07:45:28"
-#define AUXILIARY_LD_FLAGS "${LD_HASH_STYLE_FLAG} --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -rpath " PSC_INSTALL_PREFIX LIBPATH
+#define AUXILIARY_LD_FLAGS ${PATH64_AUXILARY_LD_FLAGS}
 #endif
 

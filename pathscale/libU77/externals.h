@@ -63,7 +63,7 @@ extern void _cleanup (void);			/* unknown */
 #define find_luno 2U$
 #define _fio_du_flush 2U$
 #define flush_connected_units 2U$
-#define _cleanup 2U$
+//#define _cleanup 2U$
 #endif /* FTN90_IO */
 
 #if defined(__mips)
@@ -74,7 +74,7 @@ extern void _cleanup (void);			/* unknown */
    extern int f77argc;		/* from libF77/main.c */
    extern char **f77argv;
 # endif
-#elif defined(__linux)
+#elif defined(__linux) || defined(__sun)
   extern int f__xargc;
   extern char **f__xargv;
 #endif
@@ -85,7 +85,7 @@ extern void _cleanup (void);			/* unknown */
 #else
 #define ARGC f77argc
 #endif
-#elif defined(__linux)
+#elif defined(__linux) || defined(__sun)
 #define ARGC f__xargc
 #endif
 
@@ -97,7 +97,7 @@ extern void _cleanup (void);			/* unknown */
 #define ARGC f77argc
 #define ARGV f77argv
 #endif
-#elif defined(__linux)
+#elif defined(__linux) || defined(__sun)
 #define ARGC f__xargc
 #define ARGV f__xargv 
 #endif

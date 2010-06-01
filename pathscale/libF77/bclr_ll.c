@@ -34,7 +34,7 @@
  * The right most bit is bit 0.
  */
 
-int64 bclr_ll(int64 *n, int64 *i)
+int64_t bclr_ll(int64_t *n, int64_t *i)
 {
   if (*i < 0 || *i >= NBLL)
     return 0;

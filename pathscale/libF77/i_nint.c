@@ -34,14 +34,14 @@
 #include "moremath.h"
 #include <cmplrs/host.h>
 
-int32 i_nint(float *x)
+int32_t i_nint(float *x)
 {
-  return ((*x) >= 0.0F ? (int32)(*x + .5F) : -(int32)(.5F - *x));
+  return ((*x) >= 0.0F ? (int32_t)(*x + .5F) : -(int32_t)(.5F - *x));
 }
 
 #ifdef KEY /* Bug 3869 */
-int32 i_nint_d(double *x)
+int32_t i_nint_d(double *x)
 {
-  return ((*x) >= 0.0 ? (int32)(*x + .5) : -(int32)(.5 - *x));
+  return ((*x) >= 0.0 ? (int32_t)(*x + .5) : -(int32_t)(.5 - *x));
 }
 #endif /* KEY Bug 3869 */

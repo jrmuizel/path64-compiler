@@ -1,6 +1,13 @@
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+set(PATH64_M64_OPTION "-m64")
+else()
+set(PATH64_M64_OPTION "")
+endif()
+
 add_custom_command(
         OUTPUT ${Path64_BINARY_DIR}/lib/crtbegin.o
-        COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -c ${CMAKE_CURRENT_SOURCE_DIR}/crtbegin.c -o ${Path64_BINARY_DIR}/lib/crtbegin.o
+        COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} ${PATH64_M64_OPTION} -c ${CMAKE_CURRENT_SOURCE_DIR}/crtbegin.c -o ${Path64_BINARY_DIR}/lib/crtbegin.o
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/crtbegin.c
 	VERBATIM
 )
@@ -14,7 +21,7 @@ add_custom_command(
 
 add_custom_command(
         OUTPUT ${Path64_BINARY_DIR}/lib/crtend.o
-        COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -c ${CMAKE_CURRENT_SOURCE_DIR}/crtend.c -o ${Path64_BINARY_DIR}/lib/crtend.o
+        COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -c ${PATH64_M64_OPTION} ${CMAKE_CURRENT_SOURCE_DIR}/crtend.c -o ${Path64_BINARY_DIR}/lib/crtend.o
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/crtend.c
 	VERBATIM
 )

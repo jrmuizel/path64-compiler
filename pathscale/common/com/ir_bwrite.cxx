@@ -115,7 +115,7 @@ extern void Depgraph_Write (void *depgraph, Output_File *fl, WN_MAP off_map);
     mmap((void *)(addr), (size_t)(len), (int)(prot), (int)(flags),	\
 	 (int)(fd), (off_t)(off))
 
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN)) || defined(__FreeBSD__)
+#if ! (defined(linux) || defined(BUILD_OS_DARWIN)) || defined(__FreeBSD__) || defined(__sun)
 #define MUNMAP(addr, len)						\
     munmap((void *)(addr), (size_t)(len))
 #else
@@ -131,7 +131,7 @@ static void (*old_sigbus) (int);   /* the previous signal handler */
 
 Output_File *Current_Output = 0;
 
-#if (defined(linux) || defined(BUILD_OS_DARWIN)) || defined(__FreeBSD__)
+#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 #define MAPPED_SIZE 0x400000
 #endif
 
@@ -297,7 +297,7 @@ write_output (UINT64 e_shoff, const typename ELF::Elf_Shdr& strtab_sec,
     typename ELF::Elf_Ehdr* ehdr = (typename ELF::Elf_Ehdr *) fl->map_addr;
     strcpy ((char *) ehdr->e_ident, ELFMAG);
     ehdr->e_ident[EI_CLASS] = tag.Elf_class ();
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
     ehdr->e_ident[EI_DATA] = ELFDATA2MSB; /* assume MSB for now */
 #else
     ehdr->e_ident[EI_DATA] = ELFDATA2LSB; /* assume LSB for now */
@@ -425,7 +425,7 @@ WN_open_output (char *file_name)
     if (fl->output_fd < 0)
 	return NULL;
 
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
     ftruncate(fl->output_fd, MAPPED_SIZE);
 #endif
 
@@ -1436,7 +1436,7 @@ Close_Output_Info (void)
 }
 
 
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 extern "C" void
 WN_write_elf_symtab (const void* symtab, UINT64 size, UINT64 entsize,
 		     UINT align, Output_File* fl)

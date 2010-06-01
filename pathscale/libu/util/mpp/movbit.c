@@ -31,7 +31,6 @@
 #pragma ident "@(#) libu/util/mpp/movbit.c	92.3	10/29/99 21:40:31"
 
 #include <fortran.h>
-#include <clibdefs.h>
 #include <cray/portdefs.h>
 
 #ifndef _CRAYMPP

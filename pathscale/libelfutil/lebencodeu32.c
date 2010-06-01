@@ -28,9 +28,7 @@
     $Date$
 */
 
-#ifndef _LP64
-#include <sgidefs.h>
-#endif /* _LP64 */
+#include <stdint.h>
 #include <cmplrs/leb128.h>
 
 /* 
@@ -44,7 +42,7 @@
 
 */
 int
-_leb128_unsigned_encode32(__uint32_t number, char *buffer)
+_leb128_unsigned_encode32(uint32_t number, char *buffer)
 {
     char	*bufPtr;
     char	byte;

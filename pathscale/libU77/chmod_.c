@@ -76,7 +76,7 @@ pathf90_chmod(char *name, char *mode, pathf90_i4 *status, int namlen,
 {
         pathf90_i4 junk;
 	char	*modbuf;
-	__int32_t retcode;
+	int32_t retcode;
 	status = (0 == status) ? (&junk) : status;
 
 	if (!bufarg && !(bufarg=malloc(bufarglen=namlen+modlen+2)))
@@ -110,11 +110,11 @@ pathf90_chmod(char *name, char *mode, pathf90_i4 *status, int namlen,
 
 #else
 
-extern __int32_t
-chmod_ (char *name, char *mode, __int32_t namlen, __int32_t modlen)
+extern int32_t
+chmod_ (char *name, char *mode, int32_t namlen, int32_t modlen)
 {
 	char	*modbuf;
-	__int32_t retcode;
+	int32_t retcode;
 
 	if (!bufarg && !(bufarg=malloc(bufarglen=namlen+modlen+2)))
 #ifdef __sgi

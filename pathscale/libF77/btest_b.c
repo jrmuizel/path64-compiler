@@ -34,10 +34,10 @@
  * otherwise return .FALSE. The right most bit is bit 0.
  */
 
-int8
-btest_b (int8 *n, int8 *i)
+int8_t
+btest_b (int8_t *n, int8_t *i)
 {
     if (*i < 0 || *i >= NBB)
 	return(0);
-    return((uint8)(*n & F77zmask[*i]) >> *i);
+    return((uint8_t)(*n & F77zmask[*i]) >> *i);
 }

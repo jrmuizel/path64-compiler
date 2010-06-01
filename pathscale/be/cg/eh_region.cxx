@@ -73,6 +73,11 @@
 #include "whirl2ops.h"
 #include "label_util.h"
 
+
+#if !defined(__FreeBSD__)
+#include <alloca.h>
+#endif
+
 extern "C" {
 #include "pro_encode_nm.h"
 }

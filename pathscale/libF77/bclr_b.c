@@ -34,8 +34,8 @@
  * The right most bit is bit 0.
  */
 
-int8
-bclr_b (int8 *n, int8 *i)    
+int8_t
+bclr_b (int8_t *n, int8_t *i)    
 {
     if (*i < 0 || *i >= NBB)
 	return(0);

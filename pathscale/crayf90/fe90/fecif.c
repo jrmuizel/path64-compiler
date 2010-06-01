@@ -42,6 +42,9 @@ static char USMID[] = "\n@(#)5.0_pl/sources/fecif.c	5.9	10/14/99 12:53:57\n";
 # include <nlcatmsg.h>
 # endif
 
+#ifdef __sun
+#include <netdb.h>      /* For MAXHOSTNAMELEN */
+#endif
 
 
 # include <time.h>

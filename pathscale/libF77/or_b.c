@@ -29,7 +29,7 @@
 
 #include "cmplrs/host.h"
 
-int8 or_b(int8 *m,int8 *n)
+int8_t or_b(int8_t *m,int8_t *n)
 {
 	return(*m | *n);
 }

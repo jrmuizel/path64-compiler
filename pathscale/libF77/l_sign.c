@@ -24,18 +24,18 @@
 /* $Header$ */
 #include <cmplrs/host.h>
 
-int64 l_sign(a,b)
-int64 *a, *b;
+int64_t l_sign(a,b)
+int64_t *a, *b;
 {
-int64 x;
+int64_t x;
 x = (*a >= 0 ? *a : - *a);
 return( *b >= 0 ? x : -x);
 }
 
-int64 __lsign(a,b)
-int64 a, b;
+int64_t __lsign(a,b)
+int64_t a, b;
 {
-int64 x;
+int64_t x;
 x = (a >= 0 ? a : - a);
 return( b >= 0 ? x : -x);
 }

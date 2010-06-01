@@ -56,6 +56,7 @@ static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/crayf90/sgi/SCCS/s.c
 #endif /* _KEEP_RCS_ID */
 
 #include <ctype.h>
+#include <strings.h>
 
 /* sgi includes */
 

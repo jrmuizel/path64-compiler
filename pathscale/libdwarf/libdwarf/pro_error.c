@@ -27,7 +27,7 @@
 
 
 #include "config.h"
-#include "libdwarfdefs.h"
+#include <stdint.h>
 #ifdef HAVE_ELF_H
 #include <elf.h>
 #endif

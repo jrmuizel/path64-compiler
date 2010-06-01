@@ -1713,9 +1713,14 @@ get_default_cpu_name (char *msg)
   return cpu_name;
 }
 
+
+#ifdef TARG_X8664
+
+#ifdef __linux__
+
 // Get CPU name from /proc/cpuinfo.
 char *
-get_auto_cpu_name ()
+get_x86_auto_cpu_name ()
 {
 #if defined(BUILD_OS_DARWIN)
   /* The Linux strategy (fetch the cpu name and look in a table to find
@@ -1925,8 +1930,246 @@ get_auto_cpu_name ()
   return cpu_name;
 }
 
+#else // __linux__
+
+/// GetX86CpuIDAndInfo - Execute the specified cpuid and return the 4 values in the
+/// specified arguments.  If we can't run cpuid on the host, return true.
+boolean
+get_x86_cpuid_and_info(unsigned value, unsigned *rEAX,
+                       unsigned *rEBX, unsigned *rECX, unsigned *rEDX) {
+#if defined(__x86_64__) || defined(_M_AMD64) || defined (_M_X64)
+    // gcc doesn't know cpuid would clobber ebx/rbx. Preseve it manually.
+    asm ("movq\t%%rbx, %%rsi\n\t"
+         "cpuid\n\t"
+         "xchgq\t%%rbx, %%rsi\n\t"
+         : "=a" (*rEAX),
+           "=S" (*rEBX),
+           "=c" (*rECX),
+           "=d" (*rEDX)
+         :  "a" (value));
+    return FALSE;
+#elif defined(i386) || defined(__i386__) || defined(__x86__) || defined(_M_IX86)
+    asm ("movl\t%%ebx, %%esi\n\t"
+         "cpuid\n\t"
+         "xchgl\t%%ebx, %%esi\n\t"
+         : "=a" (*rEAX),
+           "=S" (*rEBX),
+           "=c" (*rECX),
+           "=d" (*rEDX)
+         :  "a" (value));
+    return FALSE;
+#endif
+  return TRUE;
+}
+
+
+void
+detect_x86_family_model(unsigned EAX, unsigned *Family, unsigned *Model) {
+  *Family = (EAX >> 8) & 0xf; // Bits 8 - 11
+  *Model  = (EAX >> 4) & 0xf; // Bits 4 - 7
+  if (*Family == 6 || *Family == 0xf) {
+    if (*Family == 0xf)
+      // Examine extended family ID if family ID is F.
+      *Family += (EAX >> 20) & 0xff;    // Bits 20 - 27
+    // Examine extended model ID if family ID is 6 or F.
+    *Model += ((EAX >> 16) & 0xf) << 4; // Bits 16 - 19
+  }
+}
+
+// Get CPU name for x86
+char *
+get_x86_auto_cpu_name ()
+{
+  unsigned EAX = 0, EBX = 0, ECX = 0, EDX = 0;
+  unsigned Family = 0;
+  unsigned Model  = 0;
+  boolean Em64T;
+  boolean HasSSE3;
+
+  union {
+    unsigned u[3];
+    char     c[12];
+  } text;
+
+  if (get_x86_cpuid_and_info(0x1, &EAX, &EBX, &ECX, &EDX))
+    return get_default_cpu_name("can not get cpuid");
+  detect_x86_family_model(EAX, &Family, &Model);
+
+  get_x86_cpuid_and_info(0x80000001, &EAX, &EBX, &ECX, &EDX);
+  Em64T = (EDX >> 29) & 0x1;
+  HasSSE3 = (ECX & 0x1);
+
+  get_x86_cpuid_and_info(0, &EAX, text.u+0, text.u+2, text.u+1);
+  if (memcmp(text.c, "GenuineIntel", 12) == 0) {
+    switch (Family) {
+    case 3:
+      return "i386";
+    case 4:
+      switch (Model) {
+      case 0: // Intel486TM DX processors
+      case 1: // Intel486TM DX processors
+      case 2: // Intel486 SX processors
+      case 3: // Intel487TM processors, IntelDX2 OverDrive® processors,
+              // IntelDX2TM processors
+      case 4: // Intel486 SL processor
+      case 5: // IntelSX2TM processors
+      case 7: // Write-Back Enhanced IntelDX2 processors
+      case 8: // IntelDX4 OverDrive processors, IntelDX4TM processors
+      default: return "i486";
+      }
+    case 5:
+      switch (Model) {
+      case  1: // Pentium OverDrive processor for Pentium processor (60, 66),
+               // Pentium® processors (60, 66)
+      case  2: // Pentium OverDrive processor for Pentium processor (75, 90,
+               // 100, 120, 133), Pentium processors (75, 90, 100, 120, 133,
+               // 150, 166, 200)
+      case  3: // Pentium OverDrive processors for Intel486 processor-based
+               // systems
+      case  4: // Pentium OverDrive processor with MMXTM technology for Pentium
+               // processor (75, 90, 100, 120, 133), Pentium processor with
+               // MMXTM technology (166, 200)
+      default:
+          return "i586";
+      }
+    case 6:
+      switch (Model) {
+      case  1: // Pentium Pro processor
+
+      case  3: // Intel Pentium II OverDrive processor, Pentium II processor,
+               // model 03
+      case  5: // Pentium II processor, model 05, Pentium II Xeon processor,
+               // model 05, and Intel® Celeron® processor, model 05
+      case  6: // Celeron processor, model 06
+
+      case  7: // Pentium III processor, model 07, and Pentium III Xeon
+               // processor, model 07
+      case  8: // Pentium III processor, model 08, Pentium III Xeon processor,
+               // model 08, and Celeron processor, model 08
+      case 10: // Pentium III Xeon processor, model 0Ah
+      case 11: // Pentium III processor, model 0Bh
+
+      case  9: // Intel Pentium M processor, Intel Celeron M processor model 09.
+      case 13: // Intel Pentium M processor, Intel Celeron M processor, model
+               // 0Dh. All processors are manufactured using the 90 nm process.
+        return "i686";
+
+      case 14: // Intel CoreTM Duo processor, Intel CoreTM Solo processor, model
+               // 0Eh. All processors are manufactured using the 65 nm process.
+        return "core";
+
+      case 15: // Intel CoreTM2 Duo processor, Intel CoreTM2 Duo mobile
+               // processor, Intel CoreTM2 Quad processor, Intel CoreTM2 Quad
+               // mobile processor, Intel CoreTM2 Extreme processor, Intel
+               // Pentium Dual-Core processor, Intel Xeon processor, model
+               // 0Fh. All processors are manufactured using the 65 nm process.
+      case 22: // Intel Celeron processor model 16h. All processors are
+               // manufactured using the 65 nm process
+        return "core";
+
+      case 21: // Intel EP80579 Integrated Processor and Intel EP80579
+               // Integrated Processor with Intel QuickAssist Technology
+        return "i686"; // FIXME: ???
+
+      case 23: // Intel CoreTM2 Extreme processor, Intel Xeon processor, model
+               // 17h. All processors are manufactured using the 45 nm process.
+               //
+               // 45nm: Penryn , Wolfdale, Yorkfield (XE)
+        return "wolfdale";
+
+      case 26: // Intel Core i7 processor and Intel Xeon processor. All
+               // processors are manufactured using the 45 nm process.
+      case 29: // Intel Xeon processor MP. All processors are manufactured using
+               // the 45 nm process.
+        return "core";  // FIXME: ???
+
+      case 28: // Intel Atom processor. All processors are manufactured using
+               // the 45 nm process
+        return "any_64bit_x86";
+
+      default: return "i686";
+      }
+    case 15: {
+      switch (Model) {
+      case  0: // Pentium 4 processor, Intel Xeon processor. All processors are
+               // model 00h and manufactured using the 0.18 micron process.
+      case  1: // Pentium 4 processor, Intel Xeon processor, Intel Xeon
+               // processor MP, and Intel Celeron processor. All processors are
+               // model 01h and manufactured using the 0.18 micron process.
+      case  2: // Pentium 4 processor, Mobile Intel Pentium 4 processor – M,
+               // Intel Xeon processor, Intel Xeon processor MP, Intel Celeron
+               // processor, and Mobile Intel Celeron processor. All processors
+               // are model 02h and manufactured using the 0.13 micron process.
+      case  3: // Pentium 4 processor, Intel Xeon processor, Intel Celeron D
+               // processor. All processors are model 03h and manufactured using
+               // the 90 nm process.
+      case  4: // Pentium 4 processor, Pentium 4 processor Extreme Edition,
+               // Pentium D processor, Intel Xeon processor, Intel Xeon
+               // processor MP, Intel Celeron D processor. All processors are
+               // model 04h and manufactured using the 90 nm process.
+      case  6: // Pentium 4 processor, Pentium D processor, Pentium processor
+               // Extreme Edition, Intel Xeon processor, Intel Xeon processor
+               // MP, Intel Celeron D processor. All processors are model 06h
+               // and manufactured using the 65 nm process.
+      default:
+        return (Em64T) ? "em64t" : "pentium4";
+      }
+    }
+
+    default:
+      return "generic";
+    }
+  } else if (memcmp(text.c, "AuthenticAMD", 12) == 0) {
+    // FIXME: this poorly matches the generated SubtargetFeatureKV table.  There
+    // appears to be no way to generate the wide variety of AMD-specific targets
+    // from the information returned from CPUID.
+    switch (Family) {
+      case 4:
+        return "i486";
+      case 5:
+        switch (Model) {
+        case 6:
+        case 7:
+        case 8:
+        case 9:
+        case 13:
+        default: return "i586";
+        }
+      case 6:
+        switch (Model) {
+        case 4:  return "athlon";
+        case 6:
+        case 7:
+        case 8:  return "athlon-mp";
+        case 10: return "athlon-xp";
+        default: return "athlon";
+        }
+      case 15:
+        if (HasSSE3) {
+          return "k8";
+        } else {
+          switch (Model) {
+          case 1:  return "opteron";
+          case 5:  return "athlon64-fx"; // also opteron
+          default: return "athlon64";
+          }
+        }
+      case 16:
+        return "barcelona";     // FIXME??
+    default:
+      return "generic";
+    }
+  }
+  return "generic";
+}
+
+#endif // __linux__
+
+#endif // TARG_X8664
+
+
 // Find the target name from the CPU name.
-static void
+void
 set_cpu(char *name, m_flag flag_type)
 {
   // If parsing the default options, don't change the target cpu if it is
@@ -1979,7 +2222,7 @@ Get_x86_ISA ()
 
   // Get a more specific cpu name.
   if (!strcmp(target_cpu, "auto")) {		// auto
-    target_cpu = get_auto_cpu_name();		// may return anyx86
+    target_cpu = get_x86_auto_cpu_name();	// may return anyx86
     if (target_cpu == NULL)
       return;
   }

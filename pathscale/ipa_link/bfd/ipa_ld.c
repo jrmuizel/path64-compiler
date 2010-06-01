@@ -49,7 +49,9 @@
 #include <sys/stat.h>		/* for chmod(2) */
 #include <sys/mman.h>		/* for mmap(2) */
 #include <fcntl.h>		/* for open(2) */
+#ifndef __sun
 #include <sys/dir.h>		/* for opendir(2), readdir, closedir */
+#endif
 #include <sys/wait.h>		/* for waitpid(2) */
 #if !defined(__FreeBSD__)
 #include <alloca.h>		/* for alloca(3) */
@@ -59,6 +61,10 @@
 #include <errno.h>
 #include <string.h>
 #include <dlfcn.h>
+
+#ifdef __sun
+#include <dirent.h>
+#endif
 
 #include "aout/ar.h"
 
@@ -459,7 +465,11 @@ create_tmpdir ( int tracing )
 	if ( errno == EEXIST && fixedname ) {
 	    /* We have an old instance of this directory -- clear it out: */
 	    DIR *dirp;
+#ifndef __sun
 	    struct direct *entryp;
+#else
+	    struct dirent *entryp;
+#endif
 	    char *prefix;
 
 	    dirp = opendir ( tmpdir );
@@ -472,6 +482,8 @@ create_tmpdir ( int tracing )
 		     */
 #ifdef _D_EXACT_NAMLEN
 		  if (_D_EXACT_NAMLEN(entryp) > 2)
+#elif defined(__sun)
+		  if ( entryp->d_reclen > 2 )
 #else
 		  if ( entryp->d_namlen > 2 )
 #endif

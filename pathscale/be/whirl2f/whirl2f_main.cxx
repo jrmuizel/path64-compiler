@@ -37,6 +37,8 @@
 #include <string.h>		    /* for strcpy(),etc. */
 #if defined(__FreeBSD__)
 #include <sys/syslimits.h>          
+#elif defined(__sun)
+#include <limits.h>
 #else
 #include <linux/limits.h>	    /* for PATH_MAX */
 #endif

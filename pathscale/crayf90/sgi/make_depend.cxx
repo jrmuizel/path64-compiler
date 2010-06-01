@@ -75,7 +75,7 @@
  *
  ****************************************************************************
  */
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 #include <bstring.h>
 #endif
 #include <ctype.h>

@@ -114,7 +114,9 @@ set_defaults (void)
 	prepend_option_seen(O_cpp_fortran);
 	prepend_option_seen(O_cpp_assembly);
 	prepend_option_seen(O_prelink);
+#ifndef __sun
 	prepend_option_seen(O_demangle);
+#endif
 	if (shared == UNDEFINED && abi == ABI_IA32) {
 		toggle(&shared,NON_SHARED);
 #ifndef KEY

@@ -31,7 +31,7 @@
     Sgidefs included to define __uint32_t, 
     a guaranteed 4-byte quantity.            
 */
-#include "libdwarfdefs.h"
+#include <stdint.h>
 
 #define true                    1
 #define false                   0
@@ -67,8 +67,8 @@ typedef signed short Dwarf_Shalf;
 /* these 2 are fixed sizes which must not vary with the
 ** ILP32/LP64 model. These two stay at 32 bit.
 */
-typedef __uint32_t Dwarf_ufixed;
-typedef __int32_t Dwarf_sfixed;
+typedef uint32_t Dwarf_ufixed;
+typedef int32_t Dwarf_sfixed;
 
 /* 
 	producer:
