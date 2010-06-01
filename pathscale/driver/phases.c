@@ -279,8 +279,8 @@ copy_phase_options (string_list_t *phase_list, phases_t phase)
 			// option in the first place?)
 			//
 			// Pass -OPT: options to wgen for bug 10262.
-			if (gnu_major_version == 4 &&
-			    !strcmp("-OPT:", get_option_name(iflag))) {
+			if (gnu_major_version == 4 && !strcmp("-OPT:", get_option_name(iflag))) 
+			{
 			  if (phase == P_spin_cc1 ||
 			      phase == P_spin_cc1plus)
 			    continue;
@@ -288,7 +288,12 @@ copy_phase_options (string_list_t *phase_list, phases_t phase)
 			    matches_phase = TRUE;
 			  else
 			    matches_phase = option_matches_phase(iflag, phase);
-			} else
+			}
+			else
+			//zwu
+			if(strcmp("-fpic", get_option_name(iflag)) == 0 && phase == P_wgen)
+			  matches_phase = TRUE;
+			else
 #endif
 			matches_phase = option_matches_phase(iflag, phase);
 

@@ -420,6 +420,8 @@ WGEN_Expand_Function_Body (gs_t decl)
   add_deferred_DST_types();
 #endif
 
+  //zwu
+  begin_expand_stmt = false;
   WGEN_Finish_Function(decl);
   Pop_Current_Function_Decl();
   WGEN_PU_count++;

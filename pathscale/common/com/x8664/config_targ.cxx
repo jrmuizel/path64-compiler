@@ -596,8 +596,7 @@ Configure_Target ( void )
   Target_Byte_Sex = BIG_ENDIAN;
 #endif
   Same_Byte_Sex = ( Target_Byte_Sex == Host_Byte_Sex );
-
-  Gen_PIC_Calls = FALSE;
+	  Gen_PIC_Calls = FALSE;
   GP_Is_Preserved = FALSE;
 
   /* Set up the target processor and ISA: */

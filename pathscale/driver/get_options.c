@@ -208,7 +208,7 @@ check_for_driver_controls (int argc, char *argv[])
 			} else if (strcmp(s, "all") == 0) {
                                 print_warnings = FALSE;
                         }
-		} 
+		}
 		else if (strcmp(argv[i], "-fullwarn") == 0) {
 			fullwarn = TRUE;
 		} 

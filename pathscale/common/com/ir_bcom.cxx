@@ -246,7 +246,6 @@ ir_b_create_map (Output_File *fl)
 extern IP_FILE_HDR_TABLE IP_File_header;
 IP_FILE_HDR_TABLE *IP_File_header_p;
 #define IP_File_header (*IP_File_header_p)
-
 #include <ipo_tlog_utils.h>
 #include <ipa_cg.h>
 // ******************** IPA weak symbols$
@@ -268,7 +267,7 @@ ir_b_write_tree (WN *node, off_t base_offset, Output_File *fl, WN_MAP off_map)
 				 (char *)(node) - real_addr, fl); 
 
     opcode = (OPCODE) WN_opcode (node);
-
+    
 #ifdef BACK_END
     if (off_map != WN_MAP_UNDEFINED &&
 	(Write_BE_Maps ||

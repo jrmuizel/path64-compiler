@@ -314,7 +314,6 @@ typedef enum {
   TN_RELOC_X8664_TPOFF32    = 0x34,	 /* thread-local storage (TLS) */
   TN_RELOC_X8664_TPOFF32_seg_reg = 0x35, /* like above, with segment register */
   TN_RELOC_X8664_GOTTPOFF   = 0x36,	 /* TLS with GOT entry */
-
 				     /* IA-32 relocations start at 0x40 */
   TN_RELOC_IA32_ALL   = 0x40,	     /* All 32 bits of a symbol value. */
   TN_RELOC_IA32_GOT   = 0x41,
