@@ -113,11 +113,11 @@ ir_size (char *input_file, BOOL verbose)
     INT info_size = 0;
     handle = Open_Input_Info (input_file);
 
-    gsym_size = Get_Elf_Section_Size (handle, SHT_MIPS_WHIRL, WT_GLOBALS);
-    const_size = Get_Elf_Section_Size (handle, SHT_MIPS_WHIRL, WT_CONSTAB);
-    dst_size = Get_Elf_Section_Size (handle, SHT_MIPS_WHIRL, WT_DST);
-    str_size = Get_Elf_Section_Size (handle, SHT_MIPS_WHIRL, WT_STRTAB);
-    ipa_size = Get_Elf_Section_Size (handle, SHT_MIPS_WHIRL, WT_IPA_SUMMARY);
+    gsym_size = Get_Elf_Section_Size (handle, SHT_WHIRL_SECTION, WT_GLOBALS);
+    const_size = Get_Elf_Section_Size (handle, SHT_WHIRL_SECTION, WT_CONSTAB);
+    dst_size = Get_Elf_Section_Size (handle, SHT_WHIRL_SECTION, WT_DST);
+    str_size = Get_Elf_Section_Size (handle, SHT_WHIRL_SECTION, WT_STRTAB);
+    ipa_size = Get_Elf_Section_Size (handle, SHT_WHIRL_SECTION, WT_IPA_SUMMARY);
 
     pu_tree = WN_get_PU_Infos (handle, NULL);
     if (pu_tree == (PU_Info *)-1) {

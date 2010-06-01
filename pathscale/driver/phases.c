@@ -1327,9 +1327,19 @@ add_file_args (string_list_t *args, phases_t index)
 #endif
 				          (invoked_lang==L_CC))))
 			{
-			  sprintf(buf, "-fo,%s", outfile);
+#ifdef FAT_WHIRL_OBJECTS
+			  if(ipa == TRUE){
+    			      sprintf(buf, "-fo,.ipa-%s", outfile);
+			  } else 
+#endif //FAT_WHIRL_OBJECTS
+			      sprintf(buf, "-fo,%s", outfile);
 			} else {
 #ifdef KEY
+#ifdef FAT_WHIRL_OBJECTS
+			  if(ipa == TRUE){
+			     sprintf(buf, "-fo,.ipa-%s", get_object_file(the_file));
+			  } else 
+#endif //FAT_WHIRL_OBJECTS
 			  // Create unique .o files for a.c and foo/a.c.
 			  // Bug 9097.
 			  sprintf(buf, "-fo,%s", get_object_file(the_file));
@@ -1350,6 +1360,30 @@ add_file_args (string_list_t *args, phases_t index)
 		    append_string_lists (args, ipl_cmds);
 		}
 		break; 
+#ifdef FAT_WHIRL_OBJECTS
+        case P_merge:
+		add_string(args, "-r");
+                if (outfile != NULL && last_phase == current_phase && !multiple_source_files){
+                    sprintf(buf, ".native-%s",outfile);
+		    add_string(args, buf);
+                    sprintf(buf, ".ipa-%s",outfile);
+		    add_string(args, buf);
+                    add_string(args,"-o");
+                    sprintf(buf, "%s",outfile);
+		    add_string(args, buf);
+                } else {
+                    char *o_name;
+                    o_name = get_object_file(the_file);
+                    sprintf(buf, ".native-%s",construct_given_name(the_file,"o",(keep_flag || multiple_source_files || ((shared == RELOCATABLE) && (ipa == TRUE))) ? TRUE : FALSE));
+		    add_string(args, buf);
+                    sprintf(buf, ".ipa-%s",construct_given_name(the_file,"o",(keep_flag || multiple_source_files || ((shared == RELOCATABLE) && (ipa == TRUE))) ? TRUE : FALSE));
+		    add_string(args, buf);
+                    add_string(args,"-o");
+                    sprintf(buf, "%s",o_name);
+		    add_string(args, buf);
+                }
+	        break; 
+#endif //FAT_WHIRL_OBJECTS
 	case P_be:
 		add_language_option ( args );
 		add_targ_options ( args );
@@ -1508,6 +1542,13 @@ add_file_args (string_list_t *args, phases_t index)
 #endif
 			 )
 		{
+#ifdef FAT_WHIRL_OBJECTS
+                    if(ipa == TRUE){
+		 	strcpy(buf, ".native-");
+			strcat(buf, outfile);
+			add_string(args, buf);
+                    } else
+#endif
 			add_string(args, outfile);
 		} else {
 			// bug 2025
@@ -1518,9 +1559,19 @@ add_file_args (string_list_t *args, phases_t index)
 			     remember_last_phase == P_any_as)) {
 			  char *temp_obj_file = get_object_file (the_file);
 			  add_string(args, temp_obj_file);
-			} else
-			add_string(args, construct_given_name(the_file,"o",
-			  (keep_flag || multiple_source_files || ((shared == RELOCATABLE) && (ipa == TRUE))) ? TRUE : FALSE));
+			} else {
+                            char * o_name;
+                            o_name = construct_given_name(the_file,"o",
+                              (keep_flag || multiple_source_files || ((shared == RELOCATABLE) && (ipa == TRUE))) ? TRUE : FALSE);
+#ifdef FAT_WHIRL_OBJECTS
+                            if(ipa == TRUE){
+                                strcpy(buf, ".native-");
+                                strcat(buf, o_name);
+                                add_string(args, buf);
+                            } else 
+#endif //FAT_WHIRL_OBJECTS
+			    add_string(args, o_name);
+                        }
 		}
 		break;
 	case P_ld:
@@ -2420,6 +2471,10 @@ determine_phase_order (void)
 			break;
 		case P_ipl:
 			add_phase(next_phase);
+#ifdef FAT_WHIRL_OBJECTS
+			next_phase = P_be;
+			break;
+#endif
 			if (option_was_seen(O_ar)) {
 			    next_phase = P_ar;
 			}
@@ -2427,6 +2482,18 @@ determine_phase_order (void)
 			    next_phase = link_phase;
 			}
 			break;
+#ifdef FAT_WHIRL_OBJECTS
+		case P_merge:
+			add_phase(next_phase);
+
+			if (option_was_seen(O_ar)) {
+			    next_phase = P_ar;
+			}
+			else {
+			    next_phase = link_phase;
+			}
+			break;
+#endif
 		case P_be:
 			add_phase(next_phase);
 			/* may or may not generate objects directly */
@@ -2443,6 +2510,14 @@ determine_phase_order (void)
 		case P_as:
 		case P_gas:
 			add_phase(next_phase);
+#ifdef FAT_WHIRL_OBJECTS
+                        /* After be produces assembler and it is copiled into .o
+                         * we're going to call P_ipl and P_merge */
+			if(ipa == TRUE){
+			   next_phase = P_merge;
+			   break;
+			}
+#endif
 			if (option_was_seen(O_ar)) {
 			    next_phase = P_ar;
 			}

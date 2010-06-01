@@ -990,6 +990,12 @@ enum {
 #define SHT_MIPS_WHIRL	     0x70000026
 #define SHT_MIPS_XLATE_OLD   0x70000028
 
+#ifdef X86_WHIRL_OBJECTS
+#define SHT_WHIRL_SECTION SHT_PROGBITS
+#else 
+#define SHT_WHIRL_SECTION SHT_MIPS_WHIRL
+#endif
+
 /* Legal values for sh_flags field of Elf32_Shdr.  */
 
 #define SHF_MIPS_GPREL	0x10000000	/* Must be part of global data area */

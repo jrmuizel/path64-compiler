@@ -66,6 +66,8 @@
 #include "libbfd.h"
 #include "elf-bfd.h"
 
+#include "sys/elf_whirl.h"
+
 #include "ipa_ld.h"
 
 #define DEFAULT_TOOLROOT "/usr/bin/sgicc"
@@ -938,6 +940,21 @@ ld_get_section_size(void *pobj, int sect_ndx)
     return ((unsigned long long)i_shdrp[sect_ndx]->sh_size);
 }
 
+        /*******************************************************
+                Function: ld_get_section_info
+
+
+         *******************************************************/
+unsigned long 
+ld_get_section_info(void *pobj, int sect_ndx)
+{
+    const bfd *abfd = (bfd *) pobj;
+    Elf_Internal_Shdr **i_shdrp = elf_elfsections (abfd);
+
+    return ((unsigned long)i_shdrp[sect_ndx]->sh_info);
+}
+
+
 	/*******************************************************
 		Function: ld_get_section_name
 
@@ -1076,9 +1093,24 @@ ipa_is_whirl(bfd *abfd)
 
     i_ehdrp = elf_elfheader (abfd);
 
+#ifdef X86_WHIRL_OBJECTS
+    if (i_ehdrp->e_type == ET_REL) {
+        int i;
+        for(i=0; i < i_ehdrp->e_shnum; i++){
+            char *name = ld_get_section_name(abfd, i);
+            const char *pattern = ".debug.WHIRL";
+
+            if(ld_get_section_info(abfd, i) == WT_PU_SECTION ||
+               !strncmp(name, pattern, strlen(pattern))){
+                return(TRUE);
+            }
+        }
+    }
+#else
     if (i_ehdrp->e_type == ET_SGI_IR) {
     	    return(TRUE);
     }
+#endif //X86_WHIRL_OBJECTS
 
     return(FALSE);
 }
@@ -1115,7 +1147,7 @@ ipa_process_whirl ( bfd *abfd)
 #endif
       (PTR)(*p_ipa_open_input)((char *)abfd->filename, &mapped_size);
 
-#if !defined(__ALWAYS_USE_64BIT_ELF__)
+#if !defined(__ALWAYS_USE_64BIT_ELF__) && !defined(FAT_WHIRL_OBJECTS)
     /* Should be sync. with Config_Target_From_ELF() defined in be.so
      */
     if( ( elf_elfheader (abfd)->e_flags & EF_IRIX_ABI64 ) == 0 )

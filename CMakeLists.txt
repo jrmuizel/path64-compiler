@@ -132,6 +132,25 @@ ELSE()
 	MESSAGE(STATUS "Optimized math libraries disabled")
 ENDIF()
 
+# Use X86 elf file format for whirl objects
+OPTION(X86_WHIRL_OBJECTS "Use x86 elf file format for whirl object files" OFF)
+IF(X86_WHIRL_OBJECTS)
+        MESSAGE(STATUS "Using x86 elf file format for whirl object files")
+        ADD_DEFINITIONS(-DX86_WHIRL_OBJECTS)
+ELSE()
+        MESSAGE(STATUS "Using MIPS elf file format for whirl object files")
+ENDIF()
+
+# Fuse WHIRL and native code in IPA objects
+OPTION(FAT_WHIRL_OBJECTS " Fuse WHIRL and native code in IPA objects" OFF)
+IF(FAT_WHIRL_OBJECTS)
+        MESSAGE(STATUS "Configuring for fat IPA objects")
+        ADD_DEFINITIONS(-DFAT_WHIRL_OBJECTS)
+ELSE()
+        MESSAGE(STATUS "Configuring for simple WHIRL IPA objects")
+ENDIF()
+
+
 # Are we using the PathScale runtime
 OPTION(PATH64_ENABLE_PSCRUNTIME "Using the PathScale c and c++ runtime" OFF)
 IF(PATH64_ENABLE_PSCRUNTIME)

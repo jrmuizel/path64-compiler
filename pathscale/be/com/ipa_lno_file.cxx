@@ -348,7 +348,11 @@ void IPA_LNO_WRITE_FILE::Write_Headers(Elf64_Off e_shoff,
   ehdr->e_ident[EI_CLASS] = ELFCLASS64;
   ehdr->e_ident[EI_DATA] = ELFDATA2MSB; /* assume MSB for now */
   ehdr->e_ident[EI_VERSION] = EV_CURRENT;
+#ifdef X86_WHIRL_OBJECTS
+  ehdr->e_type = ET_REL;
+#else
   ehdr->e_type = ET_IR;
+#endif //X86_WHIRL_OBJECTS
   ehdr->e_machine = Get_Elf_Target_Machine();
   ehdr->e_version = EV_CURRENT;
   ehdr->e_shoff = e_shoff;
@@ -603,8 +607,14 @@ INT IPA_LNO_READ_FILE::Check_Elf_Header()
     if (ehdr->e_ident[EI_VERSION] != EV_CURRENT ||
       ehdr->e_version != EV_CURRENT)
       return IPALNO_FORMAT_ERROR;
-    if (ehdr->e_type != ET_IR ||
-      ehdr->e_machine != Get_Elf_Target_Machine() ||
+#ifdef X86_WHIRL_OBJECTS
+    if (ehdr->e_type != ET_REL)
+      return IPALNO_FORMAT_ERROR;
+#else
+    if (ehdr->e_type != ET_IR)
+      return IPALNO_FORMAT_ERROR;
+#endif // X86_WHIRL_OBJECTS
+    if (ehdr->e_machine != Get_Elf_Target_Machine() ||
       ehdr->e_shentsize != sizeof(Elf64_Shdr))
       return IPALNO_FORMAT_ERROR;
     Config_Target_From_ELF (ehdr->e_flags, &is_64bit, &isa);

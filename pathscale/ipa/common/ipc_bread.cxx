@@ -41,6 +41,8 @@
 #include <errno.h>
 #include <sys/types.h>
 
+#include "elf_stuff.h" //SHT_WHIRL_SECTION
+
 #include "defs.h"
 #include "wn.h"
 #include "pu_info.h"
@@ -542,7 +544,7 @@ IP_READ_get_tree (void *handle, PU_Info *pu,
     Elf64_Word offset = PU_Info_subsect_offset(pu, WT_TREE);
     Elf64_Word size = PU_Info_subsect_size(pu, WT_TREE);
 
-    OFFSET_AND_SIZE shdr = get_section (handle, SHT_MIPS_WHIRL, WT_PU_SECTION);
+    OFFSET_AND_SIZE shdr = get_section (handle, SHT_WHIRL_SECTION, WT_PU_SECTION);
     if (shdr.offset == 0)
       return reinterpret_cast<WN*>(ERROR_VALUE);
 
