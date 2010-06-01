@@ -2406,10 +2406,7 @@ extern WN* SNL_GEN_Permute_Loops(WN* wn_outer,
   if (nloops == 0 || Identity_Permutation(permutation, nloops))
     return wn_outer; 
 
-  if (LNO_Verbose || LNO_Lno_Verbose) 
-    Print_Interchange(stdout, wn_outer, permutation, nloops);
-  if (LNO_Verbose) 
-    Print_Interchange(TFile, wn_outer, permutation, nloops); 
+  Print_Interchange( wn_outer, permutation, nloops);
   
   IMAT* unimodular = 
     CXX_NEW(IMAT(nloops, nloops, &LNO_local_pool), &LNO_local_pool);

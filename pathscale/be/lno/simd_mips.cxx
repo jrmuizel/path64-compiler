@@ -4558,8 +4558,11 @@ static BOOL Simd(WN* innerloop)
   char verbose_msg[128];
   if (! Simd_Pre_Analysis(innerloop, verbose_msg)) {
     if (debug || LNO_Simd_Verbose || LNO_Lno_Verbose) {
-      printf("(%s:%d) %s Loop was not vectorized.\n", Src_File_Name,
-	     Srcpos_To_Line(WN_Get_Linenum(innerloop)), verbose_msg);
+        LNO_Trace( LNO_VECTORIZE_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(innerloop)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 "loop was not vectorized", verbose_msg);
     }
     return FALSE;
   }
@@ -4584,8 +4587,11 @@ static BOOL Simd(WN* innerloop)
     if (! Simd_Analysis(innerloop, verbose_msg)) {
       MEM_POOL_Pop(&SIMD_default_pool);
       if (debug || LNO_Simd_Verbose || LNO_Lno_Verbose) {
-	printf("(%s:%d) %s Loop was not vectorized.\n", Src_File_Name,
-	       Srcpos_To_Line(WN_Get_Linenum(innerloop)), verbose_msg);
+          LNO_Trace( LNO_VECTORIZE_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(innerloop)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 "loop was not vectorized", verbose_msg);
       }
       return FALSE;
     }
@@ -4795,10 +4801,12 @@ static BOOL Simd(WN* innerloop)
   }
   MEM_POOL_Pop(&SIMD_default_pool);
 
-  if (debug || LNO_Simd_Verbose || LNO_Lno_Verbose) {
-    printf("(%s:%d) LOOP WAS VECTORIZED.\n",
-	   Src_File_Name,
-	   Srcpos_To_Line(WN_Get_Linenum(innerloop)));
+  if (debug || LNO_Simd_Verbose || LNO_Lno_Verbose){
+     LNO_Trace( LNO_VECTORIZE_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(innerloop)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 "loop was vectorized", "");
 #ifdef Is_True_On
     printf("Loop has %d super vectors\n", good_vector);
 #endif

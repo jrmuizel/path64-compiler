@@ -95,6 +95,7 @@ static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/lno/SCCS/s.inner_
 #include "sxlimit.h"
 #include "prompf.h"
 #include "anl_driver.h"
+#include "lno_trace.h"
 
 typedef HASH_TABLE<WN*,VINDEX16> WN2VINDEX;
 typedef HASH_TABLE<WN*,UINT> WN2UINT;
@@ -133,7 +134,14 @@ static void inner_fission_verbose_info(
   SRCPOS        srcpos,
   const char*   message)
 {
-  printf("#### Inner Fission(%d): %s\n", Srcpos_To_Line(srcpos), message);
+    if ( LNO_Verbose || LNO_Lno_Verbose )
+    {
+        LNO_Trace( LNO_INNER_FISSION_EVENT, 
+                   Src_File_Name,
+                   Srcpos_To_Line(srcpos),
+                   ST_name(WN_entry_name(Current_Func_Node)),
+                   message);
+    }
 }
 
 static void inner_fission_tlog_info(

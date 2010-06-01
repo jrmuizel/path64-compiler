@@ -73,6 +73,11 @@ static const char *rcs_id =   snl_dist_CXX "$Revision: 1.5 $";
 #include "debug.h" 
 #include "anl_driver.h"
 #include "prompf.h"
+#include "lno_trace.h"
+#include <string>
+#include <iostream>
+#include <sstream>
+using namespace std;
 
 #pragma weak New_Construct_Id
 
@@ -492,30 +497,53 @@ extern BOOL SNL_Is_Distributable(WN* wn_dist,
 //   which has been performed.
 //-----------------------------------------------------------------------
 
-static void Print_Distribution(FILE* file, 
-			       DOLOOP_STACK* stack, 
+static void Print_Distribution(DOLOOP_STACK* stack, 
 			       INT outer, 
 			       INT inner, 
 			       BOOL above) 
-{ 
-  if (above) 
-    fprintf(file, "Distributing Above ("); 
-  else 
-    fprintf(file, "Distributing Below ("); 
+{
+    ostringstream os;
+    string msg;
+    WN * wn_outer;
 
-  INT i;
-  for (i = outer; i <= inner; i++) {
-    fprintf(file, "%s", WB_Whirl_Symbol(stack->Bottom_nth(i))); 
-    if (i < inner) 
-      fprintf(file, ","); 
-  } 
-  fprintf(file, ") at ("); 
-  for (i = outer; i <= inner; i++) { 
-    fprintf(file, "%d", (INT) WN_linenum(stack->Bottom_nth(i))); 
-    if (i < inner) 
-      fprintf(file, ","); 
-  } 
-  fprintf(file, ")\n"); 
+    if (above) 
+        msg = "distributing above ("; 
+    else 
+        msg = "distributing below ("; 
+
+    wn_outer = stack->Bottom_nth(outer);
+    INT i;
+    for (i = outer; i <= inner; i++) {
+        msg.append( WB_Whirl_Symbol(stack->Bottom_nth(i))); 
+        if (i < inner) 
+            msg.append(","); 
+    } 
+    msg.append( ") at ("); 
+    for (i = outer; i <= inner; i++) { 
+        os.str("");
+        os << (INT) WN_linenum(stack->Bottom_nth(i));
+        msg.append( os.str());
+        if (i < inner) 
+            msg.append(","); 
+    } 
+    msg.append(")");
+
+    if (LNO_Verbose || LNO_Lno_Verbose) 
+    {
+        LNO_Trace( LNO_SNL_DIST_EVENT, 
+                   Src_File_Name,
+                   Srcpos_To_Line(WN_Get_Linenum(wn_outer)),
+                   ST_name(WN_entry_name(Current_Func_Node)),
+                   msg.c_str());
+
+    }
+
+    if (LNO_Verbose) 
+    {
+        msg.append("\n");
+        fprintf( TFile, "%s", msg.c_str());
+    }
+
 } 
 
 //-----------------------------------------------------------------------
@@ -573,10 +601,7 @@ WN* SNL_Distribute(DOLOOP_STACK* stack, INT inner, INT loopd, BOOL above)
   if (imperfect == loopd)
     return NULL;
 
-  if (LNO_Verbose || LNO_Lno_Verbose) 
-    Print_Distribution(stdout, stack, imperfect, inner, above); 
-  if (LNO_Verbose)
-    Print_Distribution(TFile, stack, imperfect, inner, above); 
+  Print_Distribution( stack, imperfect, inner, above); 
   
 
   // build inside out

@@ -71,7 +71,7 @@ static char *rcs_id = "$Source$ $Revision$";
 #include "tile.h"
 #include "move.h"
 #include "tlog.h"
-
+#include "lno_trace.h"
 #include "ir_reader.h"
 
 #define MAX_NAME_LENGTH 132 
@@ -925,9 +925,18 @@ static void Lego_Peel_Traverse(WN* wn_tree)
       if (front_peel > 0) {
         create_loop = (front_peel > 1 &&
                        (statement_count*front_peel > PEEL_UNROLL_LIMIT));
-        if (LNO_Verbose || LNO_Lno_Verbose) 
-	  fprintf(stdout, "Lego Peeling Loop %s, %d iterations\n", 
-	    WB_Whirl_Symbol(wn_tree), front_peel);
+        if (LNO_Verbose || LNO_Lno_Verbose)
+        {
+            LNO_Trace( LNO_PEELING_EVENT, 
+                       Src_File_Name,
+                       Srcpos_To_Line(WN_Get_Linenum(wn_tree)),
+                       ST_name(WN_entry_name(Current_Func_Node)),
+                       "front", front_peel);
+        }
+
+       // if (LNO_Verbose || LNO_Lno_Verbose) 
+	//  fprintf(stdout, "Lego Peeling Loop %s, %d iterations\n", 
+	 //   WB_Whirl_Symbol(wn_tree), front_peel);
         if (LNO_Verbose)
 	  fprintf(TFile, "Lego Peeling Loop %s, %d iterations\n", 
 	    WB_Whirl_Symbol(wn_tree), front_peel);
@@ -952,8 +961,16 @@ static void Lego_Peel_Traverse(WN* wn_tree)
         create_loop = (back_peel > 1 &&
                        (statement_count*back_peel > PEEL_UNROLL_LIMIT));
         if (LNO_Verbose || LNO_Lno_Verbose)
-	  fprintf(stdout, "Lego Peeling Loop %s, %d iterations\n", 
-	    WB_Whirl_Symbol(wn_tree), back_peel);
+        {
+            LNO_Trace( LNO_PEELING_EVENT, 
+                       Src_File_Name,
+                       Srcpos_To_Line(WN_Get_Linenum(wn_tree)),
+                       ST_name(WN_entry_name(Current_Func_Node)),
+                       "back", back_peel);
+        }
+       // if (LNO_Verbose || LNO_Lno_Verbose)
+	//  fprintf(stdout, "Lego Peeling Loop %s, %d iterations\n", 
+	  //  WB_Whirl_Symbol(wn_tree), back_peel);
         if (LNO_Verbose)
 	  fprintf(TFile, "Lego Peeling Loop %s, %d iterations\n", 
 	    WB_Whirl_Symbol(wn_tree), back_peel);

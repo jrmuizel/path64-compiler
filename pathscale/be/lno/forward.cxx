@@ -70,7 +70,9 @@ static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/lno/SCCS/s.forwar
 #include "move.h"
 #include "dead.h" 
 #include "targ_sim.h"
-#include "ipl_lno_util.h" 
+#include "ipl_lno_util.h"
+#include "lno_trace.h"
+
 
 static ARRAY_DIRECTED_GRAPH16* dg; 
 static DU_MANAGER* du; 
@@ -272,10 +274,21 @@ static void FS_Substitute(WN* wn_orig,
     Fix_Access_Arrays_In_Copy_Block(wn_true_copy); 
     Fix_Deps_In_Copy_Block(loop_ls, WN_kid0(wn_orig), wn_true_copy, position); 
   } 
+# if 0
   if (LNO_Verbose || LNO_Lno_Verbose)
     fprintf(stdout, "  Forward Substituting %d occurences of %s in loop %s\n", 
       sub_count, WB_Whirl_Symbol(wn_orig), 
       WB_Whirl_Symbol(Enclosing_Loop(wn_orig)));
+#endif
+  if ( LNO_Verbose || LNO_Lno_Verbose )
+  {
+      LNO_Trace( LNO_SUBST_STMT_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(Enclosing_Loop(wn_orig))),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 "forward", sub_count, WB_Whirl_Symbol(wn_orig));
+  }
+
   if (LNO_Verbose)
     fprintf(TFile, "  Forward Substituting %d occurences of %s in loop %s\n", 
       sub_count, WB_Whirl_Symbol(wn_orig), 
@@ -994,13 +1007,30 @@ static void BS_Substitute(WN* wn_store,
 			  LS_IN_LOOP* loop_ls)
 {
   WN* wn_orig = WN_kid0(wn_store);
+#if 0
   if (LNO_Verbose || LNO_Lno_Verbose) {
     INT sub_count = scalar_stack->Elements();
     FmtAssert(sub_count > 0,
       ("Backward substituting less than one occurrence."));
     fprintf(stdout, "  Backward Substituting %d occurences of %s in loop %s\n",
       sub_count, WB_Whirl_Symbol(wn_orig), WB_Whirl_Symbol(wn_loop));
+  }
+#endif
+  if ( LNO_Verbose || LNO_Lno_Verbose )
+  {
+      INT sub_count = scalar_stack->Elements();
+      FmtAssert(sub_count > 0,
+                ("Backward substituting less than one occurrence."));
+
+      LNO_Trace( LNO_SUBST_STMT_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(wn_loop)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 "backward", sub_count, WB_Whirl_Symbol(wn_orig));
+  }
   if (LNO_Verbose)
+  {
+      INT sub_count = scalar_stack->Elements();
     fprintf(TFile, "  Backward Substituting %d occurences of %s in loop %s\n",
       sub_count, WB_Whirl_Symbol(wn_orig), WB_Whirl_Symbol(wn_loop));
   }
@@ -1242,15 +1272,30 @@ static void FS_Array_Substitute(WN* wn_def,
   DU_MANAGER* du = Du_Mgr; 
   REDUCTION_MANAGER* rm = red_manager; 
   INT32 count = 0;
+#if 0
   if (LNO_Verbose || LNO_Lno_Verbose) {
     char buffer[FS_MAX_STRING_LENGTH]; 
     WB_Dep_Symbol(wn_def, buffer, FS_MAX_STRING_LENGTH - 1); 
     fprintf(stdout, "   Forward Substituting Array %s in loop %s\n", 
-      buffer, WB_Whirl_Symbol(Enclosing_Loop(wn_def)));
-   if (LNO_Verbose)
-     fprintf(TFile, "   Forward Substituting Array %s in loop %s\n", 
-       buffer, WB_Whirl_Symbol(Enclosing_Loop(wn_def)));
-  } 
+      buffer, WB_Whirl_Symbol(Enclosing_Loop(wn_def)));}
+#endif
+    if ( LNO_Verbose || LNO_Lno_Verbose )
+    {
+        char buffer[FS_MAX_STRING_LENGTH]; 
+        WB_Dep_Symbol(wn_def, buffer, FS_MAX_STRING_LENGTH - 1); 
+
+        LNO_Trace( LNO_SUBST_ARRAY_EVENT, 
+                   Src_File_Name,
+                   Srcpos_To_Line(WN_Get_Linenum(Enclosing_Loop(wn_def))),
+                   ST_name(WN_entry_name(Current_Func_Node)),
+                   buffer);
+
+
+        if (LNO_Verbose){
+            fprintf(TFile, "   Forward Substituting Array %s in loop %s\n", 
+                    buffer, WB_Whirl_Symbol(Enclosing_Loop(wn_def)));
+        }
+    } 
   if (Cur_PU_Feedback) 
     count = WN_MAP32_Get(WN_MAP_FEEDBACK, wn_use);
   INT position = loop_ls->In(wn_use);
@@ -1383,8 +1428,10 @@ extern void Array_Substitution(WN* func_nd)
   LS_IN_LOOP* loop_ls = NULL; 
   if (!LNO_Forward_Substitution && !LNO_Backward_Substitution) 
     return; 
+# if 0
   if (LNO_Verbose || LNO_Lno_Verbose) 
     fprintf(stdout, " Applying Array Substitution\n"); 
+#endif
   if (LNO_Verbose)
     fprintf(TFile,  " Applying Array Substitution\n"); 
   
@@ -1392,8 +1439,10 @@ extern void Array_Substitution(WN* func_nd)
   du = Du_Mgr;
   rm = red_manager;  
   (void) AS_Traverse(func_nd, loop_ls); 
+#if 0
  if (LNO_Verbose || LNO_Lno_Verbose)  
     fprintf(stdout, " Array Substitution Complete\n");
+#endif
  if (LNO_Verbose)
     fprintf(TFile,  " Array Substitution Complete\n"); 
   
@@ -1625,9 +1674,21 @@ extern void Forward_Substitute_Ldids(WN* wn_exp,
   if (WN_operator(wn_exp) == OPR_LDID) {
     WN* wn_def = Forward_Substitutable(wn_exp, du);
     if (wn_def != NULL) {
+#if 0
       if (LNO_Verbose || LNO_Lno_Verbose) 
 	fprintf(stdout, "   FS: Forward substituting %s at 0x%p\n",
 	  WB_Whirl_Symbol(wn_def), wn_def);
+#endif
+
+      if ( LNO_Verbose || LNO_Lno_Verbose )
+      {
+          LNO_Trace( LNO_SUBST_ARRAY_EVENT, 
+                     Src_File_Name,
+                     Srcpos_To_Line(WN_Get_Linenum(wn_def)),
+                     ST_name(WN_entry_name(Current_Func_Node)),
+                     WB_Whirl_Symbol(wn_def));
+      }
+
       if (LNO_Verbose)
 	fprintf(TFile,  "   FS: Forward substituting %s at 0x%p\n",
 	  WB_Whirl_Symbol(wn_def), wn_def);
