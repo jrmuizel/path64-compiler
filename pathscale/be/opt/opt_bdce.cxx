@@ -475,7 +475,7 @@ BITWISE_DCE::Mark_tree_bits_live(CODEREP *cr, UINT64 live_bits,
 	new_livebits = Livebits(cr) & Bits_in_type(dtyp) & Bits_in_type(dsctyp);
         if ((dsctyp == MTYPE_I4 || MTYPE_size_min(dtyp) == 32) && 
 	    (Livebits(cr) >> 32) != 0)
-	  new_livebits |= (1 << 31);  // make the 31st bit live
+	  new_livebits |= (1U << 31);  // make the 31st bit live
         Mark_tree_bits_live(cr->Opnd(0), new_livebits, stmt_visit);
       }
       else if (visit_all)
@@ -512,7 +512,7 @@ BITWISE_DCE::Mark_tree_bits_live(CODEREP *cr, UINT64 live_bits,
     case OPR_MINPART: case OPR_MAXPART:
       new_livebits = Bits_in_type(dsctyp) & Livebits(cr);
       if (MTYPE_size_min(dsctyp) == 32 && (Livebits(cr) >> 32) != 0)
-	new_livebits |= (1 << 31);  // make the 31st bit live
+	new_livebits |= (1U << 31);  // make the 31st bit live
       Mark_tree_bits_live(cr->Opnd(0), new_livebits, stmt_visit);
       return;
 
@@ -550,7 +550,7 @@ BITWISE_DCE::Mark_tree_bits_live(CODEREP *cr, UINT64 live_bits,
     case OPR_BXOR:
       new_livebits = Livebits(cr) & Bits_in_type(dsctyp);
       if (MTYPE_size_min(dsctyp) == 32 && (Livebits(cr) >> 32) != 0)
-	new_livebits |= (1 << 31);  // make the 31st bit live
+	new_livebits |= (1U << 31);  // make the 31st bit live
       Mark_tree_bits_live(cr->Opnd(0), new_livebits, stmt_visit);
       Mark_tree_bits_live(cr->Opnd(1), new_livebits, stmt_visit);
       return;
@@ -571,7 +571,7 @@ BITWISE_DCE::Mark_tree_bits_live(CODEREP *cr, UINT64 live_bits,
     case OPR_BIOR: case OPR_BNOR: 
       new_livebits = Livebits(cr) & Bits_in_type(dsctyp);
       if (MTYPE_size_min(dsctyp) == 32 && (Livebits(cr) >> 32) != 0)
-	new_livebits |= (1 << 31);  // make the 31st bit live
+	new_livebits |= (1U << 31);  // make the 31st bit live
       if (cr->Opnd(0)->Kind() == CK_CONST) 
         Mark_tree_bits_live(cr->Opnd(1), new_livebits &
 			    (~cr->Opnd(0)->Const_val()), stmt_visit);
@@ -585,7 +585,7 @@ BITWISE_DCE::Mark_tree_bits_live(CODEREP *cr, UINT64 live_bits,
     case OPR_BAND: 
       new_livebits = Livebits(cr) & Bits_in_type(dsctyp);
       if (MTYPE_size_min(dsctyp) == 32 && (Livebits(cr) >> 32) != 0)
-	new_livebits |= (1 << 31);  // make the 31st bit live
+	new_livebits |= (1U << 31);  // make the 31st bit live
       if (cr->Opnd(0)->Kind() == CK_CONST) 
         Mark_tree_bits_live(cr->Opnd(1), new_livebits &
 			    cr->Opnd(0)->Const_val(), stmt_visit);
