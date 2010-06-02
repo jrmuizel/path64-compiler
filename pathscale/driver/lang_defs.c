@@ -440,7 +440,7 @@ get_named_language (const char *name)
 			continue;
 		/* look for language name at end of string */
 		p = nomen + strlen(nomen) - strlen(language_info[i].name[j]);
-		if (strcmp(language_info[i].name[j], p) == 0) {
+		if (p > nomen && strcmp(language_info[i].name[j], p) == 0) {
 			/* as does not invoke ld */
 			if (i == L_as)
 			    last_phase = P_any_as;
