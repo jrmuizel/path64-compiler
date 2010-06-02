@@ -2079,7 +2079,7 @@ bfd_section_from_shdr (bfd *abfd, unsigned int shindex)
 	   them.  We scan through the section headers; if we find only
 	   one suitable symbol table, we clobber the sh_link to point
 	   to it.  I hope this doesn't break anything.  */
-#ifdef FAT_WHIRL_OBJECTS
+#ifndef FAT_WHIRL_OBJECTS
 	if (elf_elfsections (abfd)[hdr->sh_link]->sh_type != SHT_SYMTAB
 	    && elf_elfsections (abfd)[hdr->sh_link]->sh_type != SHT_DYNSYM)
 #else
