@@ -133,7 +133,10 @@ enum PRE_KIND {
 extern const char *pre_kind_name(PRE_KIND);
 
 class REHASH_INFO;
-template <class NODE_TYPE, class KEY_TYPE> class ID_MAP;
+
+// This definition is already made in id_map.h which is
+// included from opt_htable.h
+// template <class NODE_TYPE, class KEY_TYPE> class ID_MAP;
 
 class EXP_OCCURS_LIST : public SLIST_NODE {
 private:
