@@ -12293,7 +12293,7 @@ static TYPE	send_derived_type(int	type_idx)
 #ifdef KEY /* Bug 14150 */
   if (c_ptr_abi_trouble(dt_attr_idx)) {
     pdg_type_idx = fei_descriptor(0, Basic, bit_size_tbl[Integer_4], Integral,
-      0 /* unused */, pdg_align[Word_Align]);
+      0 /* unused */, Word_Align);
     return pdg_type_idx;
   }
 #endif /* KEY Bug 14150 */
