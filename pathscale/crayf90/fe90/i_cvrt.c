@@ -1370,7 +1370,7 @@ opr_to_dv_hdr_fld(int ir_idx)
     default:
          PRINTMSG(IR_LINE_NUM(ir_idx), 1044, Internal, IR_COL_NUM(ir_idx),
 	   "opr_to_dv_hdr_fld");
-	 return 0;
+	 return DV_BASE_IDX;
          break;
   }
 }
