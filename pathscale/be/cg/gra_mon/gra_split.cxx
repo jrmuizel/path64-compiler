@@ -382,7 +382,7 @@ Max_Colorable_LUNIT( LUNIT** result, BOOL reclaim )
 //
 /////////////////////////////////////
 {
-  LUNIT*              maxlunit;
+  LUNIT*              maxlunit = (LUNIT*)NULL;
   LRANGE_LUNIT_ITER   iter;
   BOOL                found       = FALSE;
   ISA_REGISTER_CLASS  rc          = split_lrange->Rc();
