@@ -125,6 +125,7 @@ Is_Int_Output_Preg (PREG_NUM preg)
 {
   Fail_FmtAssertion (
     ("Is_Int_Output_Preg not applicable to x8664 targets"));
+  /*NOTREACHED*/
 }
 
 /* return whether preg is an input preg */
@@ -275,6 +276,7 @@ INT Classify_Aggregate(const TY_IDX ty,
     default:
 	FmtAssert (FALSE, ("Classify_Aggregate:  mtype %s",
 			   MTYPE_name(TY_mtype(ty))));
+	/*NOTREACHED*/
     }
 }
 #if defined(BUILD_OS_DARWIN)
