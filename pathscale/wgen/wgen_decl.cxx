@@ -3594,6 +3594,8 @@ AGGINIT::Traverse_Aggregate_Constructor (
 
   INITV_IDX last_initv_save;
 
+  last_initv_save = _last_initv;
+
   if (gen_initv) {
 
     WGEN_Add_Init_Block();
