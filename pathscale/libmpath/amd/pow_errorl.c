@@ -51,9 +51,10 @@ regulations applicable in licensee's jurisdiction.
 #undef USE_ZERO_WITH_FLAGS
 #undef USE_NAN_WITH_FLAGS
 
+#include "libm_errno_amd.h"
+#include "lib_version.h"
 
 /* Deal with errno for out-of-range result */
-#include "libm_errno_amd.h"
 static inline double retval_errno_erange_overflow(double x, double y, int sign)
 {
   struct exception exc;
@@ -61,7 +62,7 @@ static inline double retval_errno_erange_overflow(double x, double y, int sign)
   exc.arg2 = y;
   exc.type = OVERFLOW;
   exc.name = (char *)"pow";
-  if (_LIB_VERSION == _SVID_)
+  if (PATH64_LIB_VERSION_SVID)
     {
       if (sign == 1)
         exc.retval = HUGE;
@@ -75,7 +76,7 @@ static inline double retval_errno_erange_overflow(double x, double y, int sign)
       else /* sign == -1 */
         exc.retval = -infinity_with_flags(AMD_F_OVERFLOW);
     }
-  if (_LIB_VERSION == _POSIX_)
+  if (PATH64_LIB_VERSION_POSIX)
     __set_errno(ERANGE);
   else if (!matherr(&exc))
     __set_errno(ERANGE);
@@ -93,7 +94,7 @@ static inline double retval_errno_erange_underflow(double x, double y, int sign)
     exc.retval = zero_with_flags(AMD_F_UNDERFLOW | AMD_F_INEXACT);
   else /* sign == -1 */
     exc.retval = -zero_with_flags(AMD_F_UNDERFLOW | AMD_F_INEXACT);
-  if (_LIB_VERSION == _POSIX_)
+  if (PATH64_LIB_VERSION_POSIX)
     __set_errno(ERANGE);
   else if (!matherr(&exc))
     __set_errno(ERANGE);
@@ -108,7 +109,7 @@ static inline double retval_errno_edom(double x, double y, int type)
   exc.arg2 = y;
   exc.type = DOMAIN;
   exc.name = (char *)"pow";
-  if (_LIB_VERSION == _SVID_)
+  if (PATH64_LIB_VERSION_SVID)
     exc.retval = 0.0;
   else if (type == 1)
     exc.retval = infinity_with_flags(AMD_F_DIVBYZERO);
@@ -116,11 +117,11 @@ static inline double retval_errno_edom(double x, double y, int type)
     exc.retval = -infinity_with_flags(AMD_F_DIVBYZERO);
   else /* type == 3 */
     exc.retval = nan_with_flags(AMD_F_INVALID);
-  if (_LIB_VERSION == _POSIX_)
+  if (PATH64_LIB_VERSION_POSIX)
     __set_errno (EDOM);
   if (!matherr(&exc))
     {
-      if (_LIB_VERSION == _SVID_)
+      if (PATH64_LIB_VERSION_SVID)
         (void)fputs("pow: DOMAIN error\n", stderr);
       __set_errno(EDOM);
     }

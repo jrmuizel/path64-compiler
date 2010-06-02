@@ -55,6 +55,7 @@ regulations applicable in licensee's jurisdiction.
 #undef USE_HANDLE_ERROR
 
 #include "libm_errno_amd.h"
+#include "lib_version.h"
 
 /* Deal with errno for out-of-range result */
 static inline double retval_errno_erange_overflow(double x, double y)
@@ -64,11 +65,11 @@ static inline double retval_errno_erange_overflow(double x, double y)
   exc.arg2 = y;
   exc.type = OVERFLOW;
   exc.name = (char *)"hypot";
-  if (_LIB_VERSION == _SVID_)
+  if (PATH64_LIB_VERSION_SVID)
     exc.retval = HUGE;
   else
     exc.retval = infinity_with_flags(AMD_F_OVERFLOW | AMD_F_INEXACT);
-  if (_LIB_VERSION == _POSIX_)
+  if (PATH64_LIB_VERSION_POSIX)
     __set_errno(ERANGE);
   else if (!matherr(&exc))
     __set_errno(ERANGE);

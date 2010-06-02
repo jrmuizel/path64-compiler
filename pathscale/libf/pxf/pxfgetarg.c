@@ -49,7 +49,7 @@ extern  int     __Argc;         /* Number of argv fields */
 #pragma weak    __Argc
 extern  char    **__Argv;       /* Pointer to pointer to arguments */
 #pragma weak    __Argv
-#elif defined(__linux)
+#elif defined(__linux) || defined(__sun)
 extern	int	f__xargc;	/* Number of argv fields */
 extern	char	**f__xargv;	/* Pointer to pointer to arguments */
 #elif defined(BUILD_OS_DARWIN)
@@ -89,7 +89,7 @@ _PXFGETARG(
 	if (argnum < 0 || argnum >= _argc) {
 #elif defined(__mips)
 	if (argnum < 0 || argnum >= __Argc) {
-#elif defined(__linux)
+#elif defined(__linux) || defined(__sun)
 	if (argnum < 0 || argnum >= f__xargc) {
 #elif defined(BUILD_OS_DARWIN)
 	if (argnum < 0 || argnum >= NXArgc) {
@@ -105,7 +105,7 @@ _PXFGETARG(
 		argstr	= _argv[argnum];
 #elif defined(__mips)
 		argstr	= __Argv[argnum];
-#elif defined(__linux)
+#elif defined(__linux) || defined(__sun)
 		argstr	= f__xargv[argnum];
 #elif defined(BUILD_OS_DARWIN)
 		argstr	= NXArgv[argnum];

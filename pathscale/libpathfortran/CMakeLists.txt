@@ -946,6 +946,7 @@ ADD_DEFINITIONS(
 	-DPLI
 	-DI90
 	-DFTN90_IO
+    -D__C99FEATURES__               # for fpclassify on osol
 # Add this for only the gfortran and gcc build, but enable the fortran stuff
 # for c source makes a lot of noise
 #	-DBUILD_COMPILER_GNU -fcray-pointer -fsecond-underscore -m96bit-long-double

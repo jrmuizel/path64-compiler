@@ -53,7 +53,7 @@
 
 struct tb { float usrtime; float systime; };
 
-#if defined(sgi) || defined (__linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(sgi) || defined (__linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 #include <sys/time.h>
 #include <sys/resource.h>
 
