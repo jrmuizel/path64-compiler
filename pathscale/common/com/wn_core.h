@@ -473,7 +473,7 @@ public:
        WN          *dummy1;
        TY_IDX       ty;		/* ty used for lda,ldid,stid,iload */
      } ty_fields;
-     WN	           *kids[2];
+     WN	           *kids[4];
      INT64	    const_val;
      struct {
        UINT32	    num_inputs;

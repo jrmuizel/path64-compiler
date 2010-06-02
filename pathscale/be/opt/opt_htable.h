@@ -383,7 +383,7 @@ private:
       mUINT16   ifieldid;	     // field id
       MU_NODE  *mu_node;	     // MU-list for this memory ref
       STMTREP  *defstmt;             // defining stmt for ILOD
-      CODEREP  *base[2];             // the base address expr, base[0]
+      CODEREP  *base[5];             // the base address expr, base[0]
       //IDTYPE  occ;                 // dynamically created, access base[1]
       //TY     *ilod_ty;             // dynamically created, access base[2]
       //CODEREP *base[3];            // dynamically created, give STORE's
@@ -599,7 +599,7 @@ public:
   MTYPE     Asm_input_rtype(void)  const    { return u2.isop._asm_input_dtyp; }
   void      Set_asm_input_rtype(MTYPE dt)   { u2.isop._asm_input_dtyp = dt; }
   MTYPE     Asm_input_dsctype(void) const   { return u2.isop._asm_input_dsctyp; }
-  MTYPE     Set_asm_input_dsctype(MTYPE dt) {  u2.isop._asm_input_dsctyp = dt; }
+  void     Set_asm_input_dsctype(MTYPE dt) {  u2.isop._asm_input_dsctyp = dt; }
 #endif  
 #ifndef TARG_X8664
   void	    Set_dtyp_const_val(MTYPE dt, INT64 v) { Is_True(Kind() == CK_CONST,
