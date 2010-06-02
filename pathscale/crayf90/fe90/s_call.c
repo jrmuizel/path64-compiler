@@ -2935,7 +2935,7 @@ gen_ieee_save_or_restore(glb_tbl_idx_type which_call, char *name,
  * line		line number
  * column	column number
  */
-int
+void
 gen_ieee_save_and_restore(int curr_scp_idx, int line, int column) {
 
   /* Create temporary in which we can save the FPU state */
