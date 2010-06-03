@@ -49,7 +49,7 @@ ADD_DEFINITIONS(-DALMOST_STDC
                 -Wwrite-strings
                 -Wstrict-prototypes
                 -Wmissing-prototypes
-                -Wold-style-definition
+#                -Wold-style-definition  #pathcc does not support this flag
                 -Wmissing-format-attribute)
 
 SUBDIRS(config_cmake libiberty libdecnumber libcpp libspin gcc)

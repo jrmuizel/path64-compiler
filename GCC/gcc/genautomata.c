@@ -984,48 +984,12 @@ decl_mode_check_failed (enum decl_mode mode, const char *expected_mode_str,
 }
 
 
-#define REGEXP_UNIT(r) __extension__					\
-(({ struct regexp *const _regexp = (r);					\
-     if (_regexp->mode != rm_unit)					\
-       regexp_mode_check_failed (_regexp->mode, "rm_unit",		\
-			       __FILE__, __LINE__, __FUNCTION__);	\
-     &(_regexp)->regexp.unit; }))
-
-#define REGEXP_RESERV(r) __extension__					\
-(({ struct regexp *const _regexp = (r);					\
-     if (_regexp->mode != rm_reserv)					\
-       regexp_mode_check_failed (_regexp->mode, "rm_reserv",		\
-			       __FILE__, __LINE__, __FUNCTION__);	\
-     &(_regexp)->regexp.reserv; }))
-
-#define REGEXP_SEQUENCE(r) __extension__				\
-(({ struct regexp *const _regexp = (r);					\
-     if (_regexp->mode != rm_sequence)					\
-       regexp_mode_check_failed (_regexp->mode, "rm_sequence",		\
-			       __FILE__, __LINE__, __FUNCTION__);	\
-     &(_regexp)->regexp.sequence; }))
-
-#define REGEXP_REPEAT(r) __extension__					\
-(({ struct regexp *const _regexp = (r);					\
-     if (_regexp->mode != rm_repeat)					\
-       regexp_mode_check_failed (_regexp->mode, "rm_repeat",		\
-			       __FILE__, __LINE__, __FUNCTION__);	\
-     &(_regexp)->regexp.repeat; }))
-
-#define REGEXP_ALLOF(r) __extension__					\
-(({ struct regexp *const _regexp = (r);					\
-     if (_regexp->mode != rm_allof)					\
-       regexp_mode_check_failed (_regexp->mode, "rm_allof",		\
-			       __FILE__, __LINE__, __FUNCTION__);	\
-     &(_regexp)->regexp.allof; }))
-
-#define REGEXP_ONEOF(r) __extension__					\
-(({ struct regexp *const _regexp = (r);					\
-     if (_regexp->mode != rm_oneof)					\
-       regexp_mode_check_failed (_regexp->mode, "rm_oneof",		\
-			       __FILE__, __LINE__, __FUNCTION__);	\
-     &(_regexp)->regexp.oneof; }))
-
+#define REGEXP_UNIT(r) (&(r->regexp.unit))
+#define REGEXP_RESERV(r) (&(r->regexp.reserv))
+#define REGEXP_SEQUENCE(r) (&(r->regexp.sequence))
+#define REGEXP_REPEAT(r) (&(r->regexp.repeat))
+#define REGEXP_ALLOF(r) (&(r->regexp.allof))
+#define REGEXP_ONEOF(r) (&(r->regexp.oneof))
 static const char *regexp_name (enum regexp_mode);
 static void regexp_mode_check_failed (enum regexp_mode, const char *,
 				      const char *, int,

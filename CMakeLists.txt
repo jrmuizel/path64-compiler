@@ -159,6 +159,7 @@ ENDIF()
 # Are we using the PathScale runtime
 OPTION(PATH64_ENABLE_PSCRUNTIME "Using the PathScale c and c++ runtime" OFF)
 IF(PATH64_ENABLE_PSCRUNTIME)
+	ADD_DEFINITIONS(-DPATH64_ENABLE_PSCRUNTIME)
 	MESSAGE(STATUS "PathScale runtime enabled")
 ELSE()
 	MESSAGE(STATUS "GNU runtime enabled")

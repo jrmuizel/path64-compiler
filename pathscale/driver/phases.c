@@ -1917,10 +1917,9 @@ add_final_ld_args (string_list_t *args)
 	    return;
 	}
 #ifdef PATH64_ENABLE_PSCRUNTIME
-            add_library(args, "gcc_eh");
-            add_libgcc_s(args);  //adding gcc_s is tricky. Need to consider if gcc_eh and supc++ deserve special prcessing too.
-            add_library(args, "supc++");
-            add_library(args, "std");  //new runtime
+            add_library(args, "stdcxx");  //apache runtime
+            add_library(args, "gcc");  //compiler-rt
+            add_library(args, "unwind_x86-64");  
 #endif
 #endif
 	
