@@ -15,7 +15,10 @@ ENDIF()
 # Search for various include files and functions
 include(${Path64_SOURCE_DIR}/cmake/Modules/ConfigureChecks.cmake)
 
-SET(CMAKE_CXX_FLAGS_DEBUG  "-O0 -g -D_DEBUG")
+# Force the build_type=debug flags to sane values overriding users choices
+SET(CMAKE_C_FLAGS_DEBUG  "-O0 -g -D_DEBUG" CACHE STRING "Flags used by the compiler during debug builds." FORCE)
+SET(CMAKE_CXX_FLAGS_DEBUG  "-O0 -g -D_DEBUG" CACHE STRING "Flags used by the compiler during debug builds." FORCE)
+SET(CMAKE_Fortran_FLAGS_DEBUG  "-O0 -g3 -D_DEBUG" CACHE STRING "Flags used by the compiler during debug builds." FORCE)
 
 # Define user option whether to build the Fortran compiler.
 OPTION(PATH64_ENABLE_FORTRAN "Build Fortran compiler" ON)

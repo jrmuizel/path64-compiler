@@ -2676,7 +2676,7 @@ Cg_Dwarf_Process_PU (Elf64_Word	scn_index,
   Dwarf_Unsigned adjustsp_entry   = Cg_Dwarf_Symtab_Entry(CGD_LABIDX,
 							  eh_adjustsp_label[0],
 							  scn_index);
-  Dwarf_Unsigned callee_saved_reg;
+  Dwarf_Unsigned callee_saved_reg = 0;
   INT num_callee_saved_regs;
   if (num_callee_saved_regs = Cgdwarf_Num_Callee_Saved_Regs())
     callee_saved_reg = Cg_Dwarf_Symtab_Entry(CGD_LABIDX,

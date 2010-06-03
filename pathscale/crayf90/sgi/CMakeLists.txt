@@ -84,6 +84,9 @@ ADD_DEFINITIONS(
 -DFRONT_END
 -DFRONT_F90
 -D_TARGET_MONGOOSE)
+IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	ADD_DEFINITIONS(-D_DEBUG)
+ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 add_executable (mfef95 ${PATHSCALE_MFEF95_SRCS})
 target_link_libraries (mfef95 comutil fe90 fe90-pathf arith cif pathfortran-static m)
@@ -142,7 +145,7 @@ add_custom_target(
     switch_fc
     DEPENDS ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
     VERBATIM
-    COMMAND echo -e "#!/bin/sh\\n${Path64_BINARY_DIR}/bin/pathf90 -Wf,-eQ -Wf,-intrinsic_module_gen -Wf,-intrinsic_module_path=. \"$\@\"" > ${Path64_BINARY_DIR}/fc-wrap.sh
+    COMMAND printf "#!/bin/sh\\n${Path64_BINARY_DIR}/bin/pathf90 -Wf,-eQ -Wf,-intrinsic_module_gen -Wf,-intrinsic_module_path=. \"$\@\"\\n" > ${Path64_BINARY_DIR}/fc-wrap.sh
 )
 
 add_dependencies(switch_fc generate_cf95_cat mfef95-tmp be-exec inline crtendS)

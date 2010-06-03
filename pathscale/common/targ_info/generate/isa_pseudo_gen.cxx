@@ -486,7 +486,7 @@ void ISA_Pseudo_End(void)
 		 "  if (dir == ISA_PSEUDO_to_pseudo) {\n"
 		 "    do {\n"
 		 "      for (i = 0;; ++i) {\n"
-		 "        BOOL val;\n"
+		 "        BOOL val = FALSE;\n"
 		 "        n = pop->require[i];\n"
 		 "        switch (n) {\n"
 		 "        case 0:\n"

@@ -45,8 +45,14 @@
  * The first character in line buffer is used for carriage control.
  */
 
+// cup->uid == -1 indicates internal file, which F2003 allows with namelist
 #define NLWFLUSH() {                            \
-        if (_fwch(cup, cup->ulinebuf, cup->ulinemax, 1) < 0) { \
+	if (cup->uid == -1) {			\
+	  if(_iw_endrec(css, cup, 1)) {		\
+	    ERROR0(errf, css, errno);		\
+	  }					\
+	}					\
+        else if (_fwch(cup, cup->ulinebuf, cup->ulinemax, 1) < 0) { \
                 ERROR0(errf, css, errno);       \
         }                                       \
         cup->ulineptr   = cup->ulinebuf;        \

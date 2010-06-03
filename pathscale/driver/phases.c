@@ -2055,6 +2055,12 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
 	        p->name[strlen("-rpath")] = '\0';
 	        add_after_string(args, p, p->name + strlen("-rpath") + 1);
 	    }
+	    if (!strncmp(p->name, "-soname,", strlen("-soname,"))) {
+	    //"-soname,/path" should be -soname /path
+	    //to be accepted and processed by ld.
+	        p->name[strlen("-soname")] = '\0';
+	        add_after_string(args, p, p->name + strlen("-soname") + 1);
+	    }
 	    /*TODO: probably we need here additional processing
 	     * for some other -Wl, stuff
 	     */

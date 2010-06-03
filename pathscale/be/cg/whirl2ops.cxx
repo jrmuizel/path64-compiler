@@ -2237,6 +2237,8 @@ Handle_SELECT(WN *select, TN *result, OPCODE opcode)
   WN	*compare;
   VARIANT variant;
 
+  compare = WN_kid0(select);
+  variant = WHIRL_Compare_To_OP_variant (WN_opcode(compare), FALSE);
   // 14850: Don't try to reuse a preprovided result TN; it might
   // appear within the compare expression.
   if (result == NULL) {
@@ -2272,7 +2274,6 @@ Handle_SELECT(WN *select, TN *result, OPCODE opcode)
   */
   trueop = Expand_Expr (WN_kid1(select), select, trueop);
   falseop = Expand_Expr (WN_kid2(select), select, falseop);
-  compare = WN_kid0(select);
 
 #ifdef KEY
   // 14866, 14863, 14840: Expand_Expr may set remateralize/homeable for
@@ -2282,7 +2283,6 @@ Handle_SELECT(WN *select, TN *result, OPCODE opcode)
   Set_TN_home(result, NULL);
 #endif
 
-  variant = WHIRL_Compare_To_OP_variant (WN_opcode(compare), FALSE);
 #ifndef KEY
   if (Check_Select_Expansion (WN_opcode(compare)) || (variant == V_BR_NONE)) {
 #else

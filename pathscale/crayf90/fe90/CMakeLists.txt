@@ -72,6 +72,8 @@ add_custom_target(
 )
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cf95.cat DESTINATION ${PATH64_LIB_PATH})
+install(FILES cf95.msgs DESTINATION ${PATH64_LIB_PATH})
+install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"cf95.msgs\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/pathf95.msgs\")")
 
 add_library(fe90-pathf STATIC ${PATHSCALE_FE90_F_SRCS})
 add_dependencies(fe90-pathf switch_fc)
@@ -80,3 +82,7 @@ add_library(fe90-tmp STATIC ${PATHSCALE_FE90_F_SRCS})
 
 add_library(fe90 STATIC ${PATHSCALE_FE90_C_SRCS})
 set_target_properties(fe90 PROPERTIES COMPILE_FLAGS "-std=gnu99")
+
+IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	ADD_DEFINITIONS(-D_DEBUG)
+ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")

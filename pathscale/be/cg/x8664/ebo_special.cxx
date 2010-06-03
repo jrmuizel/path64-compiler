@@ -5643,6 +5643,8 @@ EBO_Lea_Insertion( OP* op, TN** opnd_tn, EBO_TN_INFO** actual_tninfo )
       break;
   }
 
+  base = base_tmp = NULL;
+
   switch (code) {
   case TOP_imul32:
   case TOP_imul64:
@@ -5925,7 +5927,6 @@ EBO_Lea_Insertion( OP* op, TN** opnd_tn, EBO_TN_INFO** actual_tninfo )
   case TOP_addi32:
   case TOP_addi64:
     {
-      base = base_tmp = NULL;
       offset = offset_tmp = 0;
       if (TN_is_symbol (OP_opnd(op, 1))) {
 	if (!EBO_in_peep)

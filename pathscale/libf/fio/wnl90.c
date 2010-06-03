@@ -95,9 +95,8 @@ _FWN(ControlListType *cilist, nmlist_group *namlist, void *stck)
 
 	assert ((cilist->fmt == CI_NAMELIST));
 
-	/* The compiler disallows namelist with internal files */
-
-	assert(!(cilist->internal && cilist->fmt == CI_NAMELIST));
+	// For F2003, we have eliminated the prohibition against internal
+	// files and imitated the existing code for internal files in wf90.c
 
 	/* The compiler disallows namelist with direct files */
 
@@ -121,18 +120,24 @@ _FWN(ControlListType *cilist, nmlist_group *namlist, void *stck)
 	else
 		unum	= *cilist->unit.wa;
 
-	STMT_BEGIN(unum, 0, T_WNL, NULL, css, cup);
+	if (cilist->internal) {
+	  STMT_BEGIN(-1, 1, T_WNL, NULL, css, cup);
+	  cup->uft90 = 1;
+	}
+	else {
+	  STMT_BEGIN(unum, 0, T_WNL, NULL, css, cup);
 
-	if (cup == NULL) {	/* If not connected */
+	  if (cup == NULL) {	/* If not connected */
 
-		cup	= _imp_open(css, SEQ, FMT, unum, errf, &errn);
+		  cup	= _imp_open(css, SEQ, FMT, unum, errf, &errn);
 
-		/*
-		 * If the open failed, cup is NULL and errn contains
-		 * the error number.
-		 */
-		if (cup == NULL)
-			goto finalization;
+		  /*
+		   * If the open failed, cup is NULL and errn contains
+		   * the error number.
+		   */
+		  if (cup == NULL)
+			  goto finalization;
+	  }
 	}
 
 	/* All paths which lead here have set cup to a non-null value */
@@ -169,6 +174,50 @@ _FWN(ControlListType *cilist, nmlist_group *namlist, void *stck)
 	if (cup->useq == 0) {	/* seq-io attempted on direct file */
 		errn	= FESEQTIV;	/* Sequential not allowed */
 		ERROR0(errf, css, errn);
+	}
+
+	if (cilist->internal) {
+	  cup->ulinecnt = 0; // Num characters written
+	  cup->ulinemax = 0; // Highwater mark
+	  css->u.fmt.tempicp = 0;
+	  if (cilist->uflag == CI_UNITCHAR) {
+	    css->u.fmt.iiae = 1;
+	    css->u.fmt.icp = _fcdtocp(cilist->unit.fcd);
+	    css->u.fmt.icl = _fcdlen(cilist->unit.fcd);
+	    }
+	  else {
+	    DopeVectorType *dv = cilist->unit.dv;
+	    void *newar = 0;
+	    int nocontig = 0;
+	    long extent = 0;
+	    long nbytes = 0;
+	    css->u.fmt.icp = _fcdtocp(dv->base_addr.charptr);
+	    css->u.fmt.icl = _fcdlen(dv->base_addr.charptr);
+	    // Check for contiguous array
+	    errn = (dv->p_or_a && dv->assoc == 0) ?
+	      FEUNOTAL : // Not allocated/associated
+	      _cntig_chk(dv, &newar, &nocontig, &extent, &nbytes);
+	    if (errn > 0) {
+	      goto finalization;
+	    }
+	    css->u.fmt.iiae = extent;
+	    if (nocontig) {
+	      css->u.fmt.icp = newar;
+	      css->u.fmt.tempicp = newar;
+	    }
+	  }
+	  cup->uldwsize = css->u.fmt.icl;
+	  // if size of internal record exceeds existing line buffer, realloc
+	  // another; else just decrease urecsize
+	  if (css->u.fmt.icl > cup->urecsize) {
+	    cup->ulinebuf = (long *) realloc(cup->ulinebuf,
+	      sizeof(long) * (css->u.fmt.icl + 1));
+	    if (cup->ulinebuf == 0) {
+	      errn = FENOMEMY; // No memory
+	    }
+	  }
+	  cup->urecsize = css->u.fmt.icl;
+	  cup->ulineptr = cup->ulinebuf;
 	}
 
 	/* external sequential formatted I/O */
@@ -268,7 +317,7 @@ _FWN(ControlListType *cilist, nmlist_group *namlist, void *stck)
 		ERROR0(errf, css, errn);
 	}
 
-	css->u.fmt.endrec	= _sw_endrec;
+	css->u.fmt.endrec	= cilist->internal ? _iw_endrec : _sw_endrec;
 	cup->pnonadv 		= 0;
 	cup->uwrt		= 1;		/* set write mode */
 
@@ -615,6 +664,14 @@ finalization:
 
 	if (cilist->iostat_spec != NULL)
 		*cilist->iostat_spec	= errn;
+
+        // If we allocated memory for an internal file, move the ouput file
+	// from the temporary array to the noncontiguous array and free the
+	// temporary array
+	if (cilist->internal && css->u.fmt.tempicp != 0) {
+	  (void) _unpack_arry(css->u.fmt.tempicp, cilist->unit.dv);
+	  free(css->u.fmt.tempicp);
+	}
 
 	/* End the Beguine */
 

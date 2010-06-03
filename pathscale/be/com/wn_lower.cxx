@@ -12383,6 +12383,7 @@ static ST_IDX find_trampoline(ST_IDX func_st_idx) {
   }
   Fail_FmtAssertion("cannot find trampoline for nested function (%s)",
 		    ST_name(func_st_idx));
+  /*NOTREACHED*/
 }
 
 static void generate_trampoline_symbol(ST *st) {

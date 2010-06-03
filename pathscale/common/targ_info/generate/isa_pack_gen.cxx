@@ -441,7 +441,7 @@ void ISA_Pack_End(void)
   FILE* cfile = fopen(buf, "w");
   sprintf (buf, "%s.Exported", FNAME);
   FILE* efile = fopen(buf, "w");
-  int w, i, index;
+  int w, i, index = 0;
   const char * const isa_pack_index_format = "  %3d,  /* %s: %s */\n";
   const char * const isa_pack_words_format = "  %3d,  /* %s */\n";
   const char * const isa_pack_null_format = 

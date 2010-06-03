@@ -2685,7 +2685,7 @@ Initialize_Symbol_Tables (BOOL reserve_index_zero)
 
 	Initialize_Strtab (0x1000);	// start with 4Kbytes for strtab.
 
-	UINT dummy_idx;
+	UINT64 dummy_idx=0;
 	bzero (&New_PU ((PU_IDX&) dummy_idx), sizeof(PU));
 	bzero (&New_TY ((TY_IDX&) dummy_idx), sizeof(TY));
 	bzero (New_FLD ().Entry(), sizeof(FLD));

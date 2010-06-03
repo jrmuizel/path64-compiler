@@ -34,9 +34,14 @@ ADD_DEFINITIONS(
 add_library(arith STATIC ${PATHSCALE_ARITH_SRCS})
 
 add_custom_command(
+    OUTPUT arith.msgs
+    COMMAND cpp -DKEY -E -traditional -I. ${CMAKE_CURRENT_SOURCE_DIR}/arith.msg > arith.msgs
+)
+
+add_custom_command(
     OUTPUT arith.cat
-    COMMAND ${PATHSCALE_SOURCE_DIR}/linux/tools/caterr -c arith.cat ${CMAKE_CURRENT_SOURCE_DIR}/arith.msg
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/arith.msg
+    COMMAND ${PATHSCALE_SOURCE_DIR}/linux/tools/caterr -c arith.cat arith.msgs
+    DEPENDS arith.msgs
 )
 add_custom_target(
     gen_arith_cat
@@ -45,4 +50,4 @@ add_custom_target(
 add_dependencies(arith gen_arith_cat)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/arith.cat DESTINATION ${PATH64_LIB_PATH})
-#install(FILES arith.msgs DESTINATION ${PATH64_LIB_PATH})
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/arith.msgs DESTINATION ${PATH64_LIB_PATH})

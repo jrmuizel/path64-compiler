@@ -1370,7 +1370,7 @@ opr_to_dv_hdr_fld(int ir_idx)
     default:
          PRINTMSG(IR_LINE_NUM(ir_idx), 1044, Internal, IR_COL_NUM(ir_idx),
 	   "opr_to_dv_hdr_fld");
-	 return 0;
+	 return DV_BASE_IDX;
          break;
   }
 }
@@ -12293,7 +12293,7 @@ static TYPE	send_derived_type(int	type_idx)
 #ifdef KEY /* Bug 14150 */
   if (c_ptr_abi_trouble(dt_attr_idx)) {
     pdg_type_idx = fei_descriptor(0, Basic, bit_size_tbl[Integer_4], Integral,
-      0 /* unused */, pdg_align[Word_Align]);
+      0 /* unused */, Word_Align);
     return pdg_type_idx;
   }
 #endif /* KEY Bug 14150 */
