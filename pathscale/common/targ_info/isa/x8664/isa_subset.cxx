@@ -1166,6 +1166,7 @@ main()
 		    TOP_maskmovq,
                     TOP_extrq,
                     TOP_insertq,
+                    TOP_pcmpistri,
 		    TOP_UNDEFINED);
 
   ISA_Subset_End();

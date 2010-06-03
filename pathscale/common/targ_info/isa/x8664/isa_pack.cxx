@@ -1149,8 +1149,9 @@ main()
 		    TOP_movmskpd, 0x000000ff,
 		    TOP_maskmovdqu, 0x000000ff,
 		    TOP_maskmovq, 0x000000ff,
-                    TOP_extrq,   0x000000ff,
-                    TOP_insertq,   0x000000ff,
+            TOP_extrq,   0x000000ff,
+            TOP_insertq,   0x000000ff,
+            TOP_pcmpistri, 0x000000ff,        
 		    TOP_UNDEFINED);
 
   ISA_Pack_End();

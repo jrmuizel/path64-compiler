@@ -6643,6 +6643,9 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TYPE_ID m
   case INTRN_PADDW128:
     Build_OP( TOP_add128v16, result, op0, op1, ops );
     break;
+  case INTRN_PADDQ128:
+    Build_OP( TOP_add128v64, result, op0, op1, ops );
+    break;
   case INTRN_PADDUSW:
     Build_OP( TOP_paddusw, result, op0, op1, ops );
     break;
@@ -7301,6 +7304,15 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TYPE_ID m
     break;
    case INTRN_INSERTQ:
     Build_OP(TOP_insertq, result, op0, op1, ops );
+    break;
+   case INTRN_ADDSUBPS:
+    Build_OP(TOP_faddsub128v32, result, op0, op1, ops );
+    break;
+   case INTRN_PCMPISTRI128:
+    if ( !TN_is_constant(op2) ) {
+        op2 = Gen_Literal_TN(TN_value(op2), 1);
+    }
+    Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
     break;
   }
 

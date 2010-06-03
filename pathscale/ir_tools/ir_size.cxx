@@ -31,7 +31,7 @@
 #endif /* ! defined(BUILD_OS_DARWIN) */
 #if defined(__FreeBSD__)
 #include <darwin_elf.h>
-#elif defined(__sun)
+#else 
 #include "elf_stuff.h"
 #endif
 #include <errno.h>		    /* for sys_errlist */

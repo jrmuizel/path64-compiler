@@ -1109,7 +1109,6 @@ main()
 			   TOP_maskmovq,
 			   TOP_UNDEFINED );
 
-#if 0
   /* No result / three operands */
   ISA_PRINT_TYPE opopop =  ISA_Print_Type_Create("opopop", "%s %s,%s,%s");
   Name();
@@ -1117,8 +1116,8 @@ main()
   Operand(1);
   Operand(2);
   Instruction_Print_Group( opopop,
+               TOP_pcmpistri,
 			   TOP_UNDEFINED );
-#endif
 
   /* regular load */
   ISA_PRINT_TYPE load =  ISA_Print_Type_Create("load", "%s %s%s(%s),%s");

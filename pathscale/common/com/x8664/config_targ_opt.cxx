@@ -90,6 +90,9 @@ BOOL Target_3DNow_Set = FALSE;
 BOOL Target_SSE4a = FALSE;       // -TARG:sse4a=on/off
 BOOL Target_SSE4a_Set = FALSE;
 
+BOOL Target_SSE4_2 = FALSE;       // -TARG:sse4_2=on/off
+BOOL Target_SSE4_2_Set = FALSE;
+
 // bug 4327
 int Target_x87_Precision = 80;	// -TARG:x87_precision=32/64/80
 
@@ -137,6 +140,10 @@ static OPTION_DESC Options_TARG[] = {
   { OVK_BOOL,   OV_VISIBLE,     FALSE, "sse4a",         "sse4a",
     0, 0, 0,    &Target_SSE4a,  &Target_SSE4a_Set,
     "Enable SSE4a extensions" },
+
+  { OVK_BOOL,   OV_VISIBLE,     FALSE, "sse4_2",         "sse4_2",
+    0, 0, 0,    &Target_SSE4_2,  &Target_SSE4_2_Set,
+    "Enable SSE4_2 extensions" },
 
   { OVK_INT32,	OV_VISIBLE,	FALSE, "x87-precision", "x87-precision",
     80, 32, 80, &Target_x87_Precision,	NULL,

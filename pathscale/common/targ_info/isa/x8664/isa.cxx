@@ -1164,6 +1164,9 @@ main ()
 	      "fisttps",  // st0 -> short int
 	      "fisttpl",  // st0 -> int
 	      "fisttpll", // st0 -> long long
+
+          /* sse4_2 instructions */
+          "pcmpistri",
 	      
 	      /* instructions to support -mcmodel=medium */
 	      "movabsq",

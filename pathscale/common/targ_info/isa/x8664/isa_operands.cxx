@@ -2232,6 +2232,14 @@ main()
   Operand(1, fp128,  opnd2);
   Operand(2, simm8, opnd3);
 
+  Instruction_Group("qi vector compare",
+		    TOP_pcmpistri,
+		    TOP_UNDEFINED);
+  Result(0, int64);
+  Operand(0, fp128,  opnd1);
+  Operand(1, fp128,  opnd2);
+  Operand(2, simm8, opnd3);
+
   Instruction_Group("fp vector compare I",
 		    TOP_cmpeqps,
 		    TOP_cmpltps,

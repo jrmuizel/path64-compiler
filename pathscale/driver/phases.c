@@ -385,6 +385,11 @@ add_targ_options ( string_list_t *args )
   else
     add_string(args, "-TARG:sse3=off");
 
+  if (sse4_2 == TRUE)
+    add_string(args, "-TARG:sse4_2=on");
+  else
+    add_string(args, "-TARG:sse4_2=off");
+
   if (m3dnow == TRUE)
     add_string(args, "-TARG:3dnow=on");
   else
@@ -1217,6 +1222,11 @@ add_file_args (string_list_t *args, phases_t index)
 		if (sse2 == TRUE)
 			add_string(args, "-msse2");
 		// add -msse3 later when fe support is available
+		if (sse3 == TRUE)
+			add_string(args, "-msse3");
+
+		if (sse4_2 == TRUE)
+			add_string(args, "-msse4_2");
 
 		if (show_but_not_run)
 			add_string(args, "-###");
