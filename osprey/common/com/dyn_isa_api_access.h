@@ -45,25 +45,6 @@
 // FALSE otherwise.
 BOOL EXTENSION_Is_Supported_ISA_Revision(INT rev);
 
-// ========================================================================
-// List of compatible API revisions for ISA part of the library description
-// ========================================================================
-#define    NB_SUPPORTED_ISA_REV 13
-#define    EXT_ISA_API_20070126        (20070126)
-#define    EXT_ISA_API_20070615        (20070615)
-#define    EXT_ISA_API_20070924        (20070924)
-#define    EXT_ISA_API_20080307        (20080307)
-#define    EXT_ISA_API_20081010        (20081010)
-#define    EXT_ISA_API_20090126        (20090126)
-#define    EXT_ISA_API_20090408        (20090408)
-#define    EXT_ISA_API_20090416        (20090416)
-#define    EXT_ISA_API_20090727        (20090727)
-#define    EXT_ISA_API_20090915        (20090915)
-#define    EXT_ISA_API_20100114        (20100114)
-#define    EXT_ISA_API_20100120        (20100120)
-#define    EXT_ISA_API_20100426        (20100426)
-
-
 // #############################################################################
 // ##
 // ## Class: EXTENSION_Regclass_Info

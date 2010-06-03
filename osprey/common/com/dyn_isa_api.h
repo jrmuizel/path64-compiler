@@ -67,14 +67,13 @@ extern "C" {
 #include "targ_isa_variants.h"
 #include "air.h"
 #include "parser.h"
+#include "dyn_isa_api_versions.h"
+
   //#endif
 
 #ifndef DLL_EXPORTED
 #define DLL_EXPORTED 
 #endif
-
-
-#define MAGIC_NUMBER_EXT_ISA_API   20100426  /* Magic number. Interface checking */
 
 /* ===========================================
  * Base register available for addressing mode
@@ -319,7 +318,6 @@ typedef struct ISA_EXT_Interface ISA_EXT_Interface_t;
 /* Function that returns an instance for the dll*/
 typedef const ISA_EXT_Interface_t *(*get_isa_extension_instance_t)(void);
 DLL_EXPORTED extern const ISA_EXT_Interface_t   *get_isa_extension_instance();
-
 
 #ifdef __cplusplus
 }                /* extern "C" */

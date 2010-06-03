@@ -120,6 +120,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "dyn_isa_api_access.h"
+#include "targinfo_config.h"
 #include "errors.h"
 
 BE_EXPORTED extern EXTENSION_ISA_Info *EXTENSION_Get_ISA_Info_From_TOP(TOP id);
@@ -140,6 +141,7 @@ static INT supported_ISA_rev_tab[NB_SUPPORTED_ISA_REV] = {
   EXT_ISA_API_20090915,
   EXT_ISA_API_20100114,
   EXT_ISA_API_20100120,
+  EXT_ISA_API_20100426,
   MAGIC_NUMBER_EXT_ISA_API   /* current one */
 };
 
@@ -901,79 +903,45 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
       overridden_ISA_PRINT_info_tab = input_isa_ext->get_ISA_PRINT_info_tab();
 
       }
+      
+  }  else {
 
-      /*
-       * Target specific code should not occur in this file.
-       * This code is a temporary fix than we plan to remove asap.
-       * Codex bug #99800 has been filled to track this issue.
-       *
-       * This compatibility fix is blocking and thus requires to be
-       * delivered as-is.
-       *
-       * In the current build system, we have no way to introduce
-       * target specific compatibility apis in the gbu build (based on
-       * targinfo and libair open64 libraries).
-       */
-#ifdef TARG_STxP70
-  } else if (input_isa_ext->magic < EXT_ISA_API_20100426 ) {
-    {
-      // Convert ISA_EXEC_UNIT_PROPERTY (bundling)
-      int nb_entry = isa_ext->get_TOP_count();
-
-      const ISA_EXEC_UNIT_PROPERTY *old_tab;
-      ISA_EXEC_UNIT_PROPERTY *new_tab;
-
-      old_tab = isa_ext->get_ISA_EXEC_unit_prop_tab();
-      new_tab = new ISA_EXEC_UNIT_PROPERTY[nb_entry];
-
-#define OLD_ISA_EXEC_PROPERTY_ALL_Unit        (0x1U)
-#define OLD_ISA_EXEC_PROPERTY_isa_32b_Unit_1  (0x800U)
-#define OLD_ISA_EXEC_PROPERTY_isa_48b_Unit_1  (0x100000U)
-#define OLD_ISA_EXEC_PROPERTY_isa_32m_Unit_1  (0x10000U)
-#define OLD_ISA_EXEC_PROPERTY_isa_48m_Unit_1  (0x2000000U)
-
-      for (i=0; i<nb_entry; i++) {
-        switch((mUINT32)old_tab[i]) {
-        case OLD_ISA_EXEC_PROPERTY_ALL_Unit:
-          new_tab[i] = ISA_EXEC_PROPERTY_ALL_Unit;
+    INT32 unit_compat_count;
+    extension_unit_property_pairing* m = CGTARG_get_Extension_Unit_Map(input_isa_ext->magic, &unit_compat_count);
+    
+    // Convert ISA_EXEC_UNIT_PROPERTY (bundling)
+    int nb_entry = isa_ext->get_TOP_count();
+    
+    const ISA_EXEC_UNIT_PROPERTY *old_tab;
+    ISA_EXEC_UNIT_PROPERTY *new_tab;
+    
+    old_tab = isa_ext->get_ISA_EXEC_unit_prop_tab();
+    new_tab = new ISA_EXEC_UNIT_PROPERTY[nb_entry];
+    
+    for (i=0; i<nb_entry; i++) {
+      int j;
+      for (j=0; j<unit_compat_count; j++) {
+        if (old_tab[i] == m[j].oldval ) {
+          new_tab[i] = m[j].newval;
           break;
-        case OLD_ISA_EXEC_PROPERTY_isa_32b_Unit_1:
-          new_tab[i] = ISA_EXEC_PROPERTY_isa_32b_Unit_1;
-          break;
-        case OLD_ISA_EXEC_PROPERTY_isa_48b_Unit_1:
-          new_tab[i] = ISA_EXEC_PROPERTY_isa_48b_Unit_1;
-          break;
-        case OLD_ISA_EXEC_PROPERTY_isa_32m_Unit_1:
-          new_tab[i] = ISA_EXEC_PROPERTY_isa_32m_Unit_1;
-          break;
-        case OLD_ISA_EXEC_PROPERTY_isa_48m_Unit_1:
-          new_tab[i] = ISA_EXEC_PROPERTY_isa_48m_Unit_1;
-          break;
-        default:
-          FmtAssert(0,("Unkown exec property value %d", old_tab[i]));
+        }
+        if (j==unit_compat_count) {
+          new_tab[i] = old_tab[i];
         }
       }
-      overridden_ISA_EXEC_unit_prop_tab = new_tab;
-
-      overridden_ISA_EXEC_unit_slots_tab = input_isa_ext->get_ISA_EXEC_unit_slots_tab();
-      overridden_ISA_BUNDLE_slot_count_tab = input_isa_ext->get_ISA_BUNDLE_slot_count_tab();
-      overridden_ISA_PRINT_info_tab = input_isa_ext->get_ISA_PRINT_info_tab();
-
-
     }
-#endif
-  }
-  else {
     
-    overridden_ISA_EXEC_unit_prop_tab = input_isa_ext->get_ISA_EXEC_unit_prop_tab();
+    overridden_ISA_EXEC_unit_prop_tab = new_tab;
+    
     overridden_ISA_EXEC_unit_slots_tab = input_isa_ext->get_ISA_EXEC_unit_slots_tab();
     overridden_ISA_BUNDLE_slot_count_tab = input_isa_ext->get_ISA_BUNDLE_slot_count_tab();
     overridden_ISA_PRINT_info_tab = input_isa_ext->get_ISA_PRINT_info_tab();
+    
   }
 
   FmtAssert((sizeof(ISA_EXEC_UNIT_PROPERTY)==4), ("Internal Compiler Error : ISA_EXEC_UNIT_PROPERTY size no equal to 32bits\n"));
-
-
+  
+  
   // ---------------------------------------------------------------------------
   // ---------------------------------------------------------------------------
   //
