@@ -65,6 +65,7 @@
 #include <errno.h>
 
 #include <liberrno.h>
+#include <fp.h>
 
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
@@ -221,7 +222,7 @@ feclearexcept(int excepts)
 #  define FEGETENV fegetenv
 #endif /* defined(TARG_whatever) */
 
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(__sun)
 /* Environment doesn't provide these functions */
 
 int
@@ -344,14 +345,14 @@ void _Ieee_set_flag_(ieee_flag_type *flag, int4 *flag_value) {
   }
 
 void _Ieee_get_halting_mode_(ieee_flag_type *flag, int4 *halting) {
+#ifndef __sun       // FIXME
   int4 temp = fegetexcept();
   *halting = !!(temp & flag->value);
+#endif // __sun
   }
 
 void _Ieee_set_halting_mode_(ieee_flag_type *flag, int4 *halting) {
-#ifndef __sun   // FIXME
   ((*halting) ? feenableexcept : fedisableexcept)(flag->value);
-#endif
   }
 
 void _Ieee_get_status_(FENV_T *status_value) {

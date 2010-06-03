@@ -97,7 +97,9 @@ SET_TARGET_PROPERTIES(mpath-static PROPERTIES OUTPUT_NAME "mpath")
 add_library(mpath SHARED ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
 set_property(TARGET mpath PROPERTY COMPILE_DEFINITIONS PIC)
 set_property(TARGET mpath PROPERTY SOVERSION 1)
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 set_property(TARGET mpath PROPERTY LINK_FLAGS "-Wl,-x -Wl,--version-script=${libmpath_SOURCE_DIR}/libmpath.vs")
+endif()
 
 target_link_libraries(mpath m)
 
@@ -108,7 +110,9 @@ install(TARGETS mpath-static mpath
 
 IF(PATH64_ENABLE_PROFILING)
 add_library(mpath_p STATIC ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 set_property(TARGET mpath_p PROPERTY COMPILE_FLAGS -pg)
+endif()
 install(TARGETS mpath_p
         LIBRARY DESTINATION ${PATH64_LIB_PATH}
         ARCHIVE DESTINATION ${PATH64_LIB_PATH})

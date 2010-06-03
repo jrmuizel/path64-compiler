@@ -28,13 +28,12 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 ADD_SUBDIRECTORY(libopenmp)
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 ADD_SUBDIRECTORY(libfi)
-IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-# TODO : Will require some porting
+
 # All the math stuff seems to be built from libmpath
 # libmv == vector math functions
 ADD_SUBDIRECTORY(libm)
 ADD_SUBDIRECTORY(libmpath)
-ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+
 ADD_SUBDIRECTORY(instrumentation)
 ADD_SUBDIRECTORY(arith)
 # TODO : Can't determine linking method
@@ -42,7 +41,7 @@ ADD_SUBDIRECTORY(arith)
 IF(${PATH64_ENABLE_FORTRAN})
 ADD_SUBDIRECTORY(libpathfortran)
 ADD_SUBDIRECTORY(crayf90)
-IF(${PATH64_ENABLE_MATHLIBS} AND ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+IF(${PATH64_ENABLE_MATHLIBS})
 ADD_SUBDIRECTORY(f95_coco)
 ENDIF()
 ENDIF(${PATH64_ENABLE_FORTRAN})
