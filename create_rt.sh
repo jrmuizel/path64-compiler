@@ -14,6 +14,10 @@ cd build-12D
 make lib -j20
 make locales -j20
 cp lib/libstd12D.so $LIB_DIR/libstdcxx.so
+mkdir /opt/path64/include
+mkdir /opt/path64/include/3.9.99
+mkdir /opt/path64/include/3.9.99/stdcxx
+cp -r ../include/* /opt/path64/include/3.9.99/stdcxx
 
 
 # libunwind
@@ -28,7 +32,7 @@ make -j20
 cp src/.libs/libunwind*.so $LIB_DIR
 
 # compiler-rt (aka libgcc)
-cd ..
+cd ../..
 svn co http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
 mkdir compiler-rt/build
 cd compiler-rt
@@ -37,3 +41,4 @@ patch -p1 < /mnt/psc/src/patches/compiler-rt-x86_64.diff
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=/opt/path64 -DCMAKE_BUILD_TYPE=Release ..
 make -j20
+cp lib/libCompilerRT-x86_64.a $LIB_DIR/libgcc.a

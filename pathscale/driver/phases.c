@@ -866,11 +866,13 @@ add_file_args (string_list_t *args, phases_t index)
 			}
 			add_inc_path(args, "%s/include", root);
 #else
+                        add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stdcxx/ansi",
+                                 root);
                         add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stdcxx",
                                  root);
                         if(stdcxx_threadsafe){
                             add_string(args,"-D_RWSTD_POSIX_THREADS");
-                            add_string(args,"-nostdinc");
+                            add_string(args,"-nostdinc++");
                         }
 #endif //PATH64_ENABLE_PSCRUNTIME
 		}
