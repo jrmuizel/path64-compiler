@@ -3,12 +3,12 @@ PROJECT(Path64)
 
 # Disallow in-source build
 IF("${Path64_SOURCE_DIR}" STREQUAL "${Path64_BINARY_DIR}")
-  MESSAGE(FATAL_ERROR "Path64 must be built out-of-source.  Remove files from the source tree that were created by this attempt:
+  MESSAGE(FATAL_ERROR "Project must be built out-of-source.  Remove files from the source tree that were created by this attempt:
   rm -rf CMakeFiles CMakeCache.txt
 Then create a separate build directory and run CMake there.
-  mkdir ../Path64-build
-  cd ../Path64-build
-  cmake ../Path64
+  mkdir ../build
+  cd ../build
+  cmake ../
 This approach keeps the source tree pristine.")
 ENDIF()
 
@@ -67,7 +67,7 @@ IF(PATH64_ENABLE_TARGETS)
 ELSE()
 	MESSAGE( FATAL_ERROR "Must specify at least one target.
 Supported targets are : x8664 and mips
-Please add -DPATH64_ENABLE_TARGETS=x8664 to your cmake ../Path64 line
+Please add -DPATH64_ENABLE_TARGETS=x8664 to your cmake line
 Multiple targets can be specified like \"-DPATH64_ENABLE_TARGETS=x8664;mips\"" )
 ENDIF()
 # Multi target support is indefinitely delayed
@@ -115,7 +115,7 @@ IF(PATH64_ENABLE_HUGEPAGES)
 	IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		MESSAGE(STATUS "Building with huge pages support.")
 	ELSE()
-		MESSAGE(FATAL_ERROR "Huge pages not supported on this platform yet.  Please disable this option or contact PathScale for adding support")
+		MESSAGE(FATAL_ERROR "Huge pages not supported on this platform yet.  Please disable this option or contact PathScale for support")
 	ENDIF()
 ELSE()
 	MESSAGE(STATUS "Not building with huge pages support")
