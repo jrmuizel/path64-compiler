@@ -2041,7 +2041,13 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
 	//we intercept -Wl,<option> and pass to ld <option>
 	//here we deal with the -Wl passed explicitly only
 	if (!strncmp(p->name, "-Wl,", 4)) {
-	    //cut -Wl, prefix in pieces at each ","
+	    // cut away -Wl, prefix and split the rest in pieces at each ","
+	    // advance p to avoid iterating over the newly added strings
+	    // 
+	    // pathcc -v f1.o -Wl,-whole-archive somelib.a -Wl,-no-whole-archive,-arg1,-arg2 f2.o -o somelib.so -Wl,-soname,thelib -Wl, f3.o
+	    // This produces (as far as the -Wl, args are concerned)
+	    // ld ... f1.o -whole-archive somelib.a -no-whole-archive -arg1 -arg2 f2.o -soname thelib f3.o
+	    // Note that the empty -Wl, is removed (turned into an empty string).
 	    int i, prev;
 	    char *s;
 	    string_item_t *q;
