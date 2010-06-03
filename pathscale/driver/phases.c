@@ -866,13 +866,15 @@ add_file_args (string_list_t *args, phases_t index)
 			}
 			add_inc_path(args, "%s/include", root);
 #else
-                        add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stdcxx/ansi",
-                                 root);
-                        add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stdcxx",
-                                 root);
-                        if(stdcxx_threadsafe){
-                            add_string(args,"-D_RWSTD_POSIX_THREADS");
-                            add_string(args,"-nostdinc++");
+                        if (source_lang == L_CC) {
+                                add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stdcxx/ansi",
+                                         root);
+                                add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stdcxx",
+                                         root);
+                                if(stdcxx_threadsafe){
+                                    add_string(args,"-D_RWSTD_POSIX_THREADS");
+                                }
+                                add_string(args,"-nostdinc++");
                         }
 #endif //PATH64_ENABLE_PSCRUNTIME
 		}
@@ -1921,7 +1923,7 @@ add_final_ld_args (string_list_t *args)
 #ifdef PATH64_ENABLE_PSCRUNTIME
             add_library(args, "stdcxx");  //apache runtime
             add_library(args, "gcc");  //compiler-rt
-            add_library(args, "unwind_x86-64");  
+            add_library(args, "unwind-x86_64");  
 #endif
 #endif
 	

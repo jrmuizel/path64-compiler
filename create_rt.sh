@@ -9,6 +9,7 @@ tar -xf stdcxx-4.2.1.tar.gz
 cd stdcxx-4.2.1
 # svn co http://svn.apache.org/repos/asf/stdcxx/trunk stdcxx
 # cd stdcxx/
+patch -p1 /mnt/psc/src/patches/traits_memchr.diff
 make BUILDDIR=build-12D BUILDTYPE=12D CONFIG=gcc.config config -j20
 cd build-12D
 make lib -j20
@@ -18,6 +19,7 @@ mkdir /opt/path64/include
 mkdir /opt/path64/include/3.9.99
 mkdir /opt/path64/include/3.9.99/stdcxx
 cp -r ../include/* /opt/path64/include/3.9.99/stdcxx
+cp include/config.h /opt/path64/include/3.9.99/stdcxx
 
 
 # libunwind
