@@ -84,8 +84,7 @@ extern INT32
 cwh_next_table_entry( table_p t)
 {
    if (t->current_size == 0) {
-      t->ptr = (void**) malloc(sizeof(void *) * TABLE_INCREMENT);
-      bzero(t->ptr,sizeof (void *) * TABLE_INCREMENT);
+      t->ptr = (void**) calloc(TABLE_INCREMENT, sizeof(void *));
       t->current_size = TABLE_INCREMENT;
    } 
 
@@ -94,7 +93,7 @@ cwh_next_table_entry( table_p t)
       /* reallocate the table */
       t->current_size += TABLE_INCREMENT;
       t->ptr = (void **) realloc (t->ptr, sizeof (void *) * t->current_size);
-      bzero(t->ptr+(t->current_size-TABLE_INCREMENT),sizeof (void *) * TABLE_INCREMENT);
+      memset(t->ptr+(t->current_size-TABLE_INCREMENT), 0, sizeof (void *) * TABLE_INCREMENT);
    }
    return (t->current_idx);
 }

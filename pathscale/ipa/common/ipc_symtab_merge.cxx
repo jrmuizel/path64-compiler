@@ -1543,7 +1543,7 @@ Verify_Predefined_Symbols (const ST& st)
     ST mapped_st = st;
     Set_ST_name_idx (mapped_st, (*New_Symstr_Idx)[ST_name_idx (st)]);
     
-    FmtAssert (bcmp (&mapped_st, &St_Table[ST_st_idx (st)], sizeof(ST)) == 0,
+    FmtAssert (memcmp (&mapped_st, &St_Table[ST_st_idx (st)], sizeof(ST)) == 0,
 	       ("Incompatible predefined pregs in global symbol table"));
     (*New_St_Idx).set_map (ST_st_idx (st), ST_st_idx (st));
 }

@@ -432,7 +432,7 @@ static char *model_rcs_id = "$Source: ../../be/lno/SCCS/s.model.h $ $Revision: 1
 #endif
 
 #define USE_STANDARD_TYPES
-#include <bstring.h>
+#include <string.h>
 #include "defs.h"
 #ifndef access_vector_INCLUDED
 #include "access_vector.h"

@@ -112,10 +112,10 @@ MOVBITZ(void *a, _f_int8 *az, _f_int8 *nb, void *b, _f_int8 *bz)
 	register int64	a0;	/* Zero-based source bit offset */
 	register int64	b0;	/* Zero-based destination bit offset */
 	register int64	n;	/* number of bits to move */
-	register uint64	azero;	/* Bit address of start of source */
+	register uint64	astart;	/* Bit address of start of source */
 	register uint64	alast;	/* Bit address of end of source */
 	register uint64	blast;	/* Bit address of end of destination */
-	register uint64	bzero;	/* Bit address of start of destination*/
+	register uint64	bstart;	/* Bit address of start of destination*/
 	register uint64	first;	/* contents of first word of destination */
 	register uint64	last;	/* contents of last word of destination */
 	uint64		*afwa;	/* Address of first word of source */
@@ -166,18 +166,18 @@ MOVBITZ(void *a, _f_int8 *az, _f_int8 *nb, void *b, _f_int8 *bz)
 	 * bits.
 	 */
 
-	azero	= (((uint64) a) << 3) + a0;
-	bzero	= (((uint64) b) << 3) + b0;
+	astart	= (((uint64) a) << 3) + a0;
+	bstart	= (((uint64) b) << 3) + b0;
 
 	/* mask off the byte offset */
 
-	af_byte	= (azero >> 3) & MASKOFFBYTE;
-	bf_byte	= (bzero >> 3) & MASKOFFBYTE;
+	af_byte	= (astart >> 3) & MASKOFFBYTE;
+	bf_byte	= (bstart >> 3) & MASKOFFBYTE;
 
-	af_bit	= azero & BITMASK;
-	bf_bit	= bzero & BITMASK;
-	alast	= azero + n - 1;
-	blast	= bzero + n - 1;
+	af_bit	= astart & BITMASK;
+	bf_bit	= bstart & BITMASK;
+	alast	= astart + n - 1;
+	blast	= bstart + n - 1;
 	
 	al_byte	= (alast >> 3) & MASKOFFBYTE;
 	bl_byte	= (blast >> 3) & MASKOFFBYTE;

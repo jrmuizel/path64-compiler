@@ -1497,7 +1497,7 @@ Preprocess_PU (PU_Info *current_pu)
 			    *pu_hdr);
 	// turn off other feedback I/O
 	Instrumentation_Enabled = FALSE;
-	bzero (Feedback_Enabled, (PROFILE_PHASE_LAST-1) * sizeof(BOOL));
+	memset (Feedback_Enabled, 0, (PROFILE_PHASE_LAST-1) * sizeof(BOOL));
     } else
 	Cur_PU_Feedback = NULL;
   } else {			    /* retrieve transferred maps */
@@ -1517,7 +1517,7 @@ Preprocess_PU (PU_Info *current_pu)
 	  Is_True(Cur_PU_Feedback, ("invalid PU_Info for feedback"));
               // turn off other feedback I/O
 	  Instrumentation_Enabled = FALSE;
-          bzero(Feedback_Enabled, (PROFILE_PHASE_LAST-1) * sizeof(BOOL));
+          memset(Feedback_Enabled, 0, (PROFILE_PHASE_LAST-1) * sizeof(BOOL));
       } else
           Cur_PU_Feedback = NULL;
 #ifdef KEY

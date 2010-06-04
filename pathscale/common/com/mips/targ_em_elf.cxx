@@ -45,7 +45,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <errno.h>
-#include <bstring.h>
+#include <string.h>
 #include "elf_stuff.h"
 #include <elfaccess.h>
 #include "libelf/libelf.h"

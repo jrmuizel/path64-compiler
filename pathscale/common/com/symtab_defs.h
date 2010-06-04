@@ -343,11 +343,7 @@ struct ARB
 	
     // operations
 
-#ifdef really_call_bzero	// don't call bzero if it is poisoned
-    ARB () { really_call_bzero (this, sizeof(ARB)); }
-#else
-    ARB () { bzero (this, sizeof(ARB)); }
-#endif
+    ARB () { memset (this, 0, sizeof(ARB)); }
 
     void Verify (mUINT16 dim) const;
     
@@ -729,11 +725,7 @@ public:
 
 	BLK () : size (0), section_idx(0), scninfo_idx(0), flags (0) {}
 
-#ifdef really_call_bzero	// don't call bzero if it is poisoned
-	void Init (void)	{ really_call_bzero (this, sizeof(BLK)); }
-#else
-	void Init (void)	{ bzero (this, sizeof(BLK)); }
-#endif
+	void Init (void)	{ memset (this, 0, sizeof(BLK)); }
 
 public:
 
@@ -1015,11 +1007,7 @@ struct SYMTAB_HEADER_TABLE
     SYMTAB_HEADER_TABLE () {
 	size = sizeof(self);
 	entries = table_size;
-#ifdef really_call_bzero	// don't call bzero if it is poisoned
-	really_call_bzero (header, sizeof(header));
-#else
-	bzero (header, sizeof(header));
-#endif
+	memset (header, 0, sizeof(header));
     }
 
 }; // SYMTAB_HEADER_TABLE

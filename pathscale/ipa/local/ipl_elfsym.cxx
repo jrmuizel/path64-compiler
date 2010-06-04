@@ -130,7 +130,7 @@ namespace
 	Elf_Symtab (UINT n) : size (1), max_size (n+1) {
 	    table = (Sym*) MEM_POOL_Alloc (Malloc_Mem_Pool,
 					   (n+1) * sizeof(Sym));
-	    bzero (table, sizeof(Sym));	// first entry always zero
+	    memset (table, 0, sizeof(Sym));	// first entry always zero
 	}
 
 	~Elf_Symtab () {

@@ -236,7 +236,7 @@ Initialize_Annotation ( DF_T *dataflow, IN_T **, OUT_T ** )
     if ( in == NULL ) {
       ErrMsg ( EC_No_Mem, "Initialize_Annotation: input annotations" );
     } else {
-      bzero ( in, size_in );
+      memset ( in, 0, size_in );
       dataflow->Set_in ( in );
     }
   }
@@ -249,7 +249,7 @@ Initialize_Annotation ( DF_T *dataflow, IN_T **, OUT_T ** )
     if ( out == NULL ) {
       ErrMsg ( EC_No_Mem, "Initialize_Annotation: output annotations" );
     } else {
-      bzero ( out, size_out );
+      memset ( out, 0, size_out );
       dataflow->Set_out ( out );
     }
   }

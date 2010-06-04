@@ -120,12 +120,6 @@
 // temporary placeholder until feedback is fixed
 // BOOL FB_PU_Has_Feedback = FALSE;
 
-#ifndef KEY
-#define BZERO(b, len) \
-bzero((void *)(b), (int)(len))
-/* copied for now from ld3264/ld_defs.h */
-#endif /* KEY */
-
 const UINT32 inliner_main_file_index = 0;
 SCOPE** Inliner_Aux_Pu_Table;	// for mapping PUs to SCOPE
 

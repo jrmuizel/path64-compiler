@@ -131,39 +131,7 @@ char *malloc ();
 char *realloc ();
 #  endif
 
-/* When used in Emacs's lib-src, we need to get bzero and bcopy somehow.
-   If nothing else has been done, use the method below.  */
-#  ifdef INHIBIT_STRING_HEADER
-#   if !(defined HAVE_BZERO && defined HAVE_BCOPY)
-#    if !defined bzero && !defined bcopy
-#     undef INHIBIT_STRING_HEADER
-#    endif
-#   endif
-#  endif
-
-/* This is the normal way of making sure we have a bcopy and a bzero.
-   This is used in most programs--a few other programs avoid this
-   by defining INHIBIT_STRING_HEADER.  */
-#  ifndef INHIBIT_STRING_HEADER
-#   if defined HAVE_STRING_H || defined STDC_HEADERS || defined _LIBC
-#    include <string.h>
-#    ifndef bzero
-#     ifndef _LIBC
-#      define bzero(s, n)	(memset (s, '\0', n), (s))
-#     else
-#      define bzero(s, n)	__bzero (s, n)
-#     endif
-#    endif
-#   else
-#    include <strings.h>
-#    ifndef memcmp
-#     define memcmp(s1, s2, n)	bcmp (s1, s2, n)
-#    endif
-#    ifndef memcpy
-#     define memcpy(d, s, n)	(bcopy (s, d, n), (d))
-#    endif
-#   endif
-#  endif
+#include <string.h>
 
 /* Define the syntax stuff for \<, \>, etc.  */
 
@@ -281,7 +249,7 @@ init_syntax_once (void)
 
    if (done)
      return;
-   bzero (re_syntax_table, sizeof re_syntax_table);
+   memset (re_syntax_table, 0, sizeof re_syntax_table);
 
    for (c = 0; c < CHAR_SET_SIZE; ++c)
      if (ISALNUM (c))
@@ -3121,7 +3089,7 @@ PREFIX(regex_compile) (const char *ARG_PREFIX(pattern),
             BUF_PUSH ((1 << BYTEWIDTH) / BYTEWIDTH);
 
             /* Clear the whole map.  */
-            bzero (b, (1 << BYTEWIDTH) / BYTEWIDTH);
+            memset (b, 0, (1 << BYTEWIDTH) / BYTEWIDTH);
 
             /* charset_not matches newline according to a syntax bit.  */
             if ((re_opcode_t) b[-2] == charset_not
@@ -4579,7 +4547,7 @@ PREFIX(re_compile_fastmap) (struct re_pattern_buffer *bufp)
   assert (fastmap != NULL && p != NULL);
 
   INIT_FAIL_STACK ();
-  bzero (fastmap, 1 << BYTEWIDTH);  /* Assume nothing's valid.  */
+  memset (fastmap, 0, 1 << BYTEWIDTH);  /* Assume nothing's valid.  */
   bufp->fastmap_accurate = 1;	    /* It will be when we're done.  */
   bufp->can_be_null = 0;
 

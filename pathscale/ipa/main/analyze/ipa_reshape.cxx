@@ -104,7 +104,7 @@ PROJECTED_REGION* Projected_Region_To_Memory(IPA_NODE* node,
   INT pr_count = pr->Get_num_dims();
   PROJECTED_NODE* pn_memory = 
     TYPE_MEM_POOL_ALLOC_N(PROJECTED_NODE, mem_pool, pr_count);
-  bcopy(pn, pn_memory, pr_count * sizeof(PROJECTED_NODE));
+  memcpy(pn_memory, pn, pr_count * sizeof(PROJECTED_NODE));
   TERM* term_array = IPA_get_term_array(node);
   for (INT i = 0; i < pr_count; i++) { 
     pn_memory[i].Set_Mem_Pool(mem_pool);

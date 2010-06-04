@@ -106,7 +106,7 @@ void extern WGEN_CS_push( WGEN_CHECK_KIND kind, int lnum,int fnum)
   }
   omp_check_sp++;
 
-  bzero (omp_check_sp, sizeof(CHECK_STMT));
+  memset(omp_check_sp, 0, sizeof(CHECK_STMT));
 
   omp_check_sp->kind=kind;
   omp_check_sp->linenum=lnum;

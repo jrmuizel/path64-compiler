@@ -374,7 +374,7 @@ REASSOC::REASSOC(void)
 
   _hash_vec = CXX_NEW_ARRAY(WNREP*, CODE_HTABLE_SIZE, &_mem_pool);
   _wnrep_id_to_wnrep = CXX_NEW(DYN_ARRAY<WNREP *>(&_mem_pool), &_mem_pool);
-  bzero(_hash_vec, sizeof(WNREP *) * CODE_HTABLE_SIZE);
+  memset(_hash_vec, 0, sizeof(WNREP *) * CODE_HTABLE_SIZE);
   _reassoc_cands = CXX_NEW(DYN_ARRAY<WNREP_DYN_ARRAY>(&_mem_pool), &_mem_pool);
   _max_cses = CXX_NEW(DYN_ARRAY<WNREP *>(&_mem_pool), &_mem_pool);
   _used_opnds = CXX_NEW(IDX_32_SET(256, &_mem_pool, OPTS_FALSE), &_mem_pool);

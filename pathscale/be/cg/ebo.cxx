@@ -733,7 +733,7 @@ void EBO_Init(void)
   EBO_first_opinfo = NULL;
   EBO_last_opinfo = NULL;
 
-  bzero(EBO_opinfo_table,sizeof(EBO_opinfo_table));
+  memset(EBO_opinfo_table, 0, sizeof(EBO_opinfo_table));
 
   EBO_num_tninfo_entries = 0;
   EBO_tninfo_entries_reused = 0;

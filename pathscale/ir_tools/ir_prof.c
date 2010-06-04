@@ -243,7 +243,7 @@ void hashinit()
    
     if ((p = (unsigned *)malloc(DEF_NSYM *sizeof(unsigned))) == (unsigned *)0)
 	ir_prof_error(ER_FATAL, "Malloc error in %s\n", "hashtab");
-    bzero (p, DEF_NSYM * sizeof(unsigned));
+    memset (p, 0, DEF_NSYM * sizeof(unsigned));
     h_tab.chain = p;
     h_tab.nsym = DEF_NSYM;
     return ;
@@ -259,7 +259,7 @@ expand_htab()
     if ((pnew = (unsigned *)realloc(h_tab.chain, nsym*sizeof(unsigned))) == 0)
 	ir_prof_error(ER_FATAL, "Realloc error when %s", "expanding hash");
     h_tab.chain = pnew;
-    bzero (&pnew[h_tab.nsym], h_tab.nsym * sizeof(unsigned));
+    memset (&pnew[h_tab.nsym], 0, h_tab.nsym * sizeof(unsigned));
     h_tab.nsym = nsym;
 }
 

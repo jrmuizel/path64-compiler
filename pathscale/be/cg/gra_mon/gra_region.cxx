@@ -128,7 +128,7 @@ GRA_REGION_MGR::Initialize(void)
   _first_prev_alloc_region = NULL;
   _complement_region_created = FALSE;
   _map = TYPE_MEM_POOL_ALLOC_N(GRA_REGION*, GRA_pool, Last_Region_Id() + 1);
-  bzero(_map, sizeof(GRA_REGION*) * (Last_Region_Id() + 1));
+  memset(_map, 0, sizeof(GRA_REGION*) * (Last_Region_Id() + 1));
   _alloc_count = 0;
 }
 

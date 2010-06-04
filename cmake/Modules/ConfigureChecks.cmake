@@ -14,7 +14,6 @@ check_include_files(sys/types.h HAVE_SYS_TYPES_H)
 check_include_files(unistd.h    HAVE_UNISTD_H)
 
 include(CheckFunctionExists)
-check_function_exists(bcopy        HAVE_BCOPY)
 check_function_exists(fseek64      HAVE_FSEEK64)
 check_function_exists(fseeko       HAVE_FSEEKO)
 check_function_exists(ftell64      HAVE_FTELL64)

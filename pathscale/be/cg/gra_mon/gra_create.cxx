@@ -717,7 +717,7 @@ Initialize_Wired_LRANGEs(void)
   FOR_ALL_ISA_REGISTER_CLASS( rc ) {
     LRANGE** vec =
       TYPE_MEM_POOL_ALLOC_N(LRANGE*,&MEM_local_nz_pool, REGISTER_MAX + 1);
-    bzero(vec,(REGISTER_MAX + 1) * sizeof(LRANGE*));
+    memset(vec, 0, (REGISTER_MAX + 1) * sizeof(LRANGE*));
     wired_lranges[rc] = vec;
   }
 }
@@ -1168,7 +1168,7 @@ Scan_Complement_BB_For_Referenced_TNs( GRA_BB* gbb )
   LRANGE_LIST *wired_locals[ISA_REGISTER_CLASS_MAX+1];
   hTN_MAP live_data;
   std::list<GRA_PREF_CAND*> pref_list;
-  bzero(&wired_locals, (ISA_REGISTER_CLASS_MAX+1) * sizeof(LRANGE_LIST*));
+  memset(&wired_locals, 0, (ISA_REGISTER_CLASS_MAX+1) * sizeof(LRANGE_LIST*));
 
   MEM_POOL_Push(&MEM_local_nz_pool);
   live_data = hTN_MAP_Create(&MEM_local_nz_pool);

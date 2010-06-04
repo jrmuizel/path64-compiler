@@ -352,7 +352,7 @@ Build_Transformation_Order (IPA_NODE_VECTOR& vect, IPA_GRAPH* cg,
 			    NODE_INDEX root)
 {
     mBOOL *visited = (mBOOL *) alloca (GRAPH_vmax (cg) * sizeof(mBOOL));
-    bzero (visited, GRAPH_vmax (cg) * sizeof(mBOOL));
+    memset (visited, 0, GRAPH_vmax (cg) * sizeof(mBOOL));
     vect.reserve (GRAPH_vcnt (cg));
     Trans_Order_Walk (vect, visited, cg, root);
 

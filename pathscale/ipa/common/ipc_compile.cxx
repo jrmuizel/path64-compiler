@@ -480,14 +480,14 @@ get_command_line (const IP_FILE_HDR& hdr, ARGV& argv, const char* inpath,
         strcat(buf, command);
 
         if (!file_exists(buf)) {
-	   bzero(buf, strlen(buf));
+	   memset(buf, 0, strlen(buf));
 	   strcpy(buf, toolroot);
 	   strcat(buf, BINPATH "/");
            strcat(buf, command);
 	}
 
         if (!file_exists(buf)) {
-	   bzero(buf, strlen(buf));
+	   memset(buf, 0, strlen(buf));
 	   strcpy(buf, toolroot);
            strcat(buf, ALTBINPATH "/");
 	}
@@ -757,7 +757,7 @@ char* ipc_copy_of (char *str)
   len = strlen(str) + 1;
   p = (char *) MALLOC (len);
   MALLOC_ASSERT (p);
-  BCOPY (str, p, len);
+  memcpy(p, str, len);
   return p;
 } /* ipc_copy_of */
 

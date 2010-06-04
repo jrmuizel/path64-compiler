@@ -13803,7 +13803,7 @@ WN *WN_Lower(WN *tree, LOWER_ACTIONS actions, struct ALIAS_MANAGER *alias,
 
 #ifdef TARG_X8664
   current_loop_nest_depth = 0;
-  bzero( loop_info_stack, sizeof(loop_info_stack) );
+  memset( loop_info_stack, 0, sizeof(loop_info_stack) );
 #endif
 
   // Don't do any lowering on trees that merely wrap up file-scope

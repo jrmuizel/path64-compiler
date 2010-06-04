@@ -110,7 +110,7 @@ public:
   ST_IDX_PAIR_TO_INT32_HASH_TABLE (MEM_POOL* mem_pool) :
     _mem_pool (mem_pool)
   {
-    bzero(_table, sizeof(_table));
+    memset(_table, 0, sizeof(_table));
   }
  
   void Enter (ST_IDX symbol_st_idx, ST_IDX func_st_idx, INT32 symbol_index) 
@@ -545,7 +545,7 @@ IPA_preopt_initialize ()
 
   UINT32 bytes = IP_File_header.size() * sizeof(AUX_FILE_INFO);
   Aux_file_info = (AUX_FILE_INFO*) MEM_POOL_Alloc (&IPA_preopt_pool, bytes);
-  bzero (Aux_file_info, bytes);
+  memset (Aux_file_info, 0, bytes);
 }
 
 

@@ -173,7 +173,7 @@ ipa_copy_of (char *str)
     len = strlen(str) + 1;
     p = (char *) MALLOC (len);
     MALLOC_ASSERT (p);
-    BCOPY (str, p, len);
+    memcpy(p, str, len);
     return p;
 } /* ipa_copy_of */
 

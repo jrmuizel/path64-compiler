@@ -100,11 +100,10 @@ int xlate_pro_init(xlate_table_pro *    ret_table,
    xlate_tablekind tabkind;
    xlate_table_pro newtab;
 
-   newtab = (xlate_table_pro)malloc(sizeof(struct xlate_table_pro_s));
+   newtab = (xlate_table_pro)calloc(1, sizeof(struct xlate_table_pro_s));
    if(newtab == NULL) {
         return XLATE_TB_STATUS_ALLOC_FAIL;
    }
-   bzero(newtab,sizeof(struct xlate_table_pro_s));
 
    newtab->tb_con_table = compose_with_table;
    newtab->tb_is64bit = is64Bit;

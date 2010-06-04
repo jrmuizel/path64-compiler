@@ -211,7 +211,7 @@ daVinci::Translate_Call_Graph (void)
 	return;
 
     mUINT8 *visit = CXX_NEW_ARRAY (mUINT8, GRAPH_vmax (g), m);
-    bzero (visit, sizeof(mUINT8)*GRAPH_vmax(g));
+    memset (visit, 0, sizeof(mUINT8)*GRAPH_vmax(g));
 
     fprintf (to_display, "new_term([");
     NODE_ITER vitr(g, GRAPH_root(g));

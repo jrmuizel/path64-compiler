@@ -37,7 +37,7 @@ static const char rcs_id[] = "$Source: /home/bos/bk/kpro64-pending/common/targ_i
 
 #include <stdio.h>
 #include <assert.h>
-#include <strings.h>
+#include <string.h>
 
 #include "defs.h"
 #include "glob.h"
@@ -78,8 +78,8 @@ INT TI_ASM_Pack_Inst(
   INT64 bopnd[ISA_OPERAND_max_operands];
   INT64 bresult[ISA_OPERAND_max_results];
 
-  bcopy(opnd, bopnd, sizeof(bopnd));
-  bcopy(result, bresult, sizeof(bresult));
+  memcpy(bopnd, opnd, sizeof(bopnd));
+  memcpy(bresult, result, sizeof(bresult));
 
   topcode = ISA_PSEUDO_Translate(topcode, 
 				 bresult, 
@@ -601,8 +601,8 @@ TOP TI_ASM_Unpack_Inst(
 
   /* Unpack the raw operands and results.
    */
-  bzero(result, sizeof(*result) * ISA_OPERAND_max_results);
-  bzero(opnd, sizeof(*opnd) * ISA_OPERAND_max_operands);
+  memset(result, 0, sizeof(*result) * ISA_OPERAND_max_results);
+  memset(opnd, 0, sizeof(*opnd) * ISA_OPERAND_max_operands);
   pinfo = ISA_PACK_Info(topcode);
   words = ISA_PACK_Inst_Words(topcode);
   for (j = 0; j < words; ++j) {

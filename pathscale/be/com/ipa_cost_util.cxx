@@ -142,9 +142,7 @@ static INT IPL_EX_Copy_Value(DYN_ARRAY<SUMMARY_VALUE>* sv,
                              INT sv_old_index)
 {
   INT sv_new_index = sv->Newidx();
-  SUMMARY_VALUE* svv_old = &(*sv)[sv_old_index];
-  SUMMARY_VALUE* svv_new = &(*sv)[sv_new_index];
-  bcopy(svv_old, svv_new, sizeof(SUMMARY_VALUE));
+  (*sv)[sv_new_index] = (*sv)[sv_old_index];
   return sv_new_index;
 }
 
@@ -159,9 +157,7 @@ static INT IPL_EX_Copy_Expr(DYN_ARRAY<SUMMARY_EXPR>* sx,
                             INT sx_old_index)
 {
   INT sx_new_index = sx->Newidx();
-  SUMMARY_EXPR* sxx_old = &(*sx)[sx_old_index];
-  SUMMARY_EXPR* sxx_new = &(*sx)[sx_new_index];
-  bcopy(sxx_old, sxx_new, sizeof(SUMMARY_EXPR));
+  (*sx)[sx_new_index] = (*sx)[sx_old_index];
   return sx_new_index;
 }
 
@@ -397,11 +393,9 @@ static void Eliminate_Expr(DYN_ARRAY<SUMMARY_EXPR>* sx,
     } 
   } 
 
-  for (i = expr_index + 1; i <= sx->Lastidx(); i++) { 
-    SUMMARY_EXPR* sxx_old = &(*sx)[i]; 
-    SUMMARY_EXPR* sxx_new = &(*sx)[i-1]; 
-    bcopy(sxx_old, sxx_new, sizeof(SUMMARY_EXPR));
-  } 
+  /* TODO: use memmove */
+  for (i = expr_index + 1; i <= sx->Lastidx(); i++)
+    (*sx)[i-1] = (*sx)[i];
 
   sx->Decidx();
 } 
@@ -478,11 +472,9 @@ extern void IPL_EX_Eliminate_Value(DYN_ARRAY<SUMMARY_VALUE>* sv,
 {
   INT i;
   
-  for (i = value_index + 1; i <= sv->Lastidx(); i++) {
-    SUMMARY_VALUE* svv_old = &(*sv)[i];
-    SUMMARY_VALUE* svv_new = &(*sv)[i-1];
-    bcopy(svv_old, svv_new, sizeof(SUMMARY_VALUE));
-  }
+  /* TODO: use memmove */
+  for (i = value_index + 1; i <= sv->Lastidx(); i++)
+    (*sv)[i-1] = (*sv)[i];
 
   sv->Decidx();
   for (i = 0; i <= sx->Lastidx(); i++) {
@@ -576,10 +568,8 @@ static void IPL_EXS_Sort_Exprs(DYN_ARRAY<SUMMARY_VALUE>* sv,
   SUMMARY_EXPR* new_exprs 
     = (SUMMARY_EXPR*) alloca(index_count * sizeof(SUMMARY_EXPR));
 
-  for (i = 0; i <= sx->Lastidx(); i++) {
-    SUMMARY_EXPR* sxx = &(*sx)[i];
-    bcopy(sxx, &new_exprs[new_index[i]], sizeof(SUMMARY_EXPR));
-  }
+  for (i = 0; i <= sx->Lastidx(); i++)
+    new_exprs[new_index[i]] = (*sx)[i];
 
   sx->Resetidx();
   for (i = 0; i < index_count; i++)

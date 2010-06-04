@@ -193,7 +193,7 @@ static BOOL IPA_EX_Valid_Value(IPA_NODE* ipan_caller,
       ("IPA_EX_Valid_Value: Expecting global in symbol index format"));
     IPAA_NODE_INFO* ipaa = ipan_caller->Mod_Ref_Info();
     SUMMARY_VALUE svv_test; 
-    bcopy(svv, &svv_test, sizeof(SUMMARY_VALUE));
+    memcpy(&svv_test, svv, sizeof(SUMMARY_VALUE));
     Convert_Global_To_St_Idx(ipan_caller, &svv_test);
     ST_IDX st_idx = svv_test.Get_global_st_idx(); 
     ST_IDX st_idx_test = 0; 
@@ -286,7 +286,7 @@ static INT IPA_EX_Copy_Value(IPA_NODE* ipan_caller,
   INT sv_new_index = sv_new->Newidx();
   SUMMARY_VALUE* svv_old = &sv_old[sv_old_index];
   SUMMARY_VALUE* svv_new = &(*sv_new)[sv_new_index];
-  bcopy(svv_old, svv_new, sizeof(SUMMARY_VALUE));
+  memcpy(svv_new, svv_old, sizeof(SUMMARY_VALUE));
   if (svv_new->Is_formal()) { 
     SUMMARY_PROCEDURE* sp_caller = ipan_caller->Summary_Proc();
     INT base_caller_formal = sp_caller->Get_formal_index();
@@ -309,9 +309,7 @@ static INT IPA_EX_Copy_Expr(SUMMARY_EXPR* sx_old,
                             INT sx_old_index)
 {
   INT sx_new_index = sx_new->Newidx();
-  SUMMARY_EXPR* sxx_old = &sx_old[sx_old_index];
-  SUMMARY_EXPR* sxx_new = &(*sx_new)[sx_new_index];
-  bcopy(sxx_old, sxx_new, sizeof(SUMMARY_EXPR));
+  (*sx_new)[sx_new_index] = sx_old[sx_old_index];
   return sx_new_index;
 }
 

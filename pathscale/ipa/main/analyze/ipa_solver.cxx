@@ -284,7 +284,7 @@ DFBASE::Connect_graph ( MEM_POOL *pool )
   }
 
   // Phase 2:  Mark nodes reachable from the entry:
-  bzero ( reach, sizeof(mBOOL) * vertex_max );
+  memset ( reach, 0, sizeof(mBOOL) * vertex_max );
   Forward_Visit ( g, entry, reach );
 
   // Phase 3:  Find unconnected components and connect them:
@@ -299,7 +299,7 @@ DFBASE::Connect_graph ( MEM_POOL *pool )
   }
 
   // Phase 4:  Mark nodes reachable from the exit:
-  bzero ( reach, sizeof(mBOOL) * vertex_max );
+  memset ( reach, 0, sizeof(mBOOL) * vertex_max );
   Backward_Visit ( g, exit, reach );
 
   // Phase 5:  Find unconnected components and connect them:

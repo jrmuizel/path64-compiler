@@ -14,17 +14,8 @@
 /* Define to 1 if you have the `basename' function. */
 #cmakedefine HAVE_BASENAME @HAVE_BASENAME@
 
-/* Define to 1 if you have the `bcmp' function. */
-#cmakedefine HAVE_BCMP @HAVE_BCMP@
-
-/* Define to 1 if you have the `bcopy' function. */
-#cmakedefine HAVE_BCOPY @HAVE_BCOPY@
-
 /* Define to 1 if you have the `bsearch' function. */
 #cmakedefine HAVE_BSEARCH @HAVE_BSEARCH@
-
-/* Define to 1 if you have the `bzero' function. */
-#cmakedefine HAVE_BZERO @HAVE_BZERO@
 
 /* Define to 1 if you have the `calloc' function. */
 #cmakedefine HAVE_CALLOC @HAVE_CALLOC@

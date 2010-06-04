@@ -664,7 +664,7 @@ Create_LR_For_TN (TN *tn, BB *bb, BOOL in_lra, MEM_POOL *pool)
   lr = (LIVE_RANGE *) hTN_MAP_Get (live_range_map, tn);
   if (lr == NULL) {
     lr = TYPE_MEM_POOL_ALLOC (LIVE_RANGE, pool);
-    bzero (lr, sizeof(LIVE_RANGE));
+    memset (lr, 0, sizeof(LIVE_RANGE));
     LR_tn(lr) = orig_tn;
     LR_next(lr) = Live_Range_List;
 
@@ -1190,9 +1190,9 @@ Init_Avail_Regs (void)
   REGISTER reg;
   ISA_REGISTER_CLASS cl;
 
-  bzero(avail_regs, sizeof(avail_regs));
+  memset(avail_regs, 0, sizeof(avail_regs));
 #ifdef KEY
-  bzero(last_freed, sizeof(last_freed));
+  memset(last_freed, 0, sizeof(last_freed));
 #endif
 
   FOR_ALL_ISA_REGISTER_CLASS(cl) {
@@ -1603,7 +1603,7 @@ Init_Fat_Point_Calculation(ISA_REGISTER_CLASS cl, INT opnum, BB *bb)
   fat_point_regs_map = hTN_MAP_Create (&lra_pool);
   use_fat_point_regs = TRUE;
   fat_points = TYPE_MEM_POOL_ALLOC_N(FAT_POINTS_TYPE, &lra_pool, BB_length(bb) + 1);
-  bzero(fat_points, (BB_length(bb)+1)*sizeof(FAT_POINTS_TYPE));
+  memset(fat_points, 0, (BB_length(bb)+1)*sizeof(FAT_POINTS_TYPE));
   failing_class = cl;
   reg_infinite = REGISTER_MAX;
 
@@ -5296,7 +5296,7 @@ Make_Dedicated_TNs_Available (BB *bb)
   INT orig_bb_length = BB_length(bb);
 
   // Identify OPs requiring preallocation.
-  bzero(prealloc_opnums, sizeof(prealloc_opnums));
+  memset(prealloc_opnums, 0, sizeof(prealloc_opnums));
   for (opnum = orig_bb_length; opnum > 0; opnum--) {
     OP *op = OP_VECTOR_element(Insts_Vector, opnum);
 

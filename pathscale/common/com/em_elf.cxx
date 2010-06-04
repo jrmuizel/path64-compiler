@@ -48,7 +48,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <errno.h>
-#include <bstring.h>
+#include <string.h>
 #include "elf_stuff.h"
 #include <elfaccess.h>
 #include "libelf/libelf.h"
@@ -138,7 +138,7 @@ Increase_Data_Buffer_Size ( pSCNINFO scninfo, Elf64_Xword newsize )
   if ( newbuf == NULL ) {
     ErrMsg ( EC_No_Mem, "Increase_Data_Buffer_Size" );
   }
-  bzero ( newbuf + (INTPS) SCNINFO_limit(scninfo),
+  memset ( newbuf + (INTPS) SCNINFO_limit(scninfo), 0,
 	  newsize32 - (INT32) SCNINFO_limit(scninfo) );
 
   SCNINFO_buffer(scninfo) = newbuf;
@@ -1185,7 +1185,7 @@ Read_Section (pSCNINFO scninfo, Elf64_Word scndx)
     Elf_Scn *scn;
 
     /* initialize the SCNINFO to all zeros */
-    bzero (scninfo, sizeof(SCNINFO));
+    memset (scninfo, 0, sizeof(SCNINFO));
     scn = elf_getscn (Elf_Ptr, scndx);
     scndata = elf_getdata (scn, (Elf_Data *)0);
     elf_flagscn (scn, ELF_C_SET, ELF_F_DIRTY);
@@ -1331,10 +1331,9 @@ pSCNINFO Em_New_Section (
     Elf_Scn *scn;
     pSCNINFO scninfo;
 
-    scninfo = (pSCNINFO) malloc (sizeof (SCNINFO));
+    scninfo = (pSCNINFO) calloc (1, sizeof (SCNINFO));
     if (scninfo == NULL) 
 	ErrMsg ( EC_No_Mem, "Em_New_Section" );
-    bzero (scninfo, sizeof(SCNINFO));
     scn = Create_New_Section (scnname, scntype, scnflags, scnentsize);
     SCNINFO_scnptr(scninfo) = scn;
     SCNINFO_align(scninfo) = scnalign;

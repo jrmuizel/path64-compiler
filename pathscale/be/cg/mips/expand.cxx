@@ -2557,7 +2557,7 @@ Exp_Intrinsic_Call (INTRINSIC id, TN *op0, TN *op1, TN *op2, OPS *ops,
 	OP *asm_op = Mk_VarOP(TOP_asm, 0, 1, NULL, opnd);
 	Set_OP_volatile(asm_op);
 	ASM_OP_ANNOT* asm_info = TYPE_PU_ALLOC(ASM_OP_ANNOT);
-	bzero(asm_info, sizeof(ASM_OP_ANNOT));
+	memset(asm_info, 0, sizeof(ASM_OP_ANNOT));
 	WN *asm_wn = WN_CreateAsm_Stmt (0, asm_string);
 	ASM_OP_wn(asm_info) = asm_wn;
 	OP_MAP_Set(OP_Asm_Map, asm_op, asm_info);

@@ -1,7 +1,6 @@
 
 
 SET(LINUX_HFILES
-	bstring.h
 	elf_stuff.h
 	sgidefs.h
 	standards.h

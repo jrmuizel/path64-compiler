@@ -544,7 +544,7 @@ static INT IPA_LNO_Map_Value(SUMMARY_VALUE* svv_old,
   DYN_ARRAY<SUMMARY_VALUE>* value_array = IPA_LNO_Summary->Value_Array();
   INT idx = value_array->Newidx();
   SUMMARY_VALUE* svv_new = &((*value_array)[idx]);
-  bcopy(svv_old, svv_new, sizeof(SUMMARY_VALUE));
+  memcpy(svv_new, svv_old, sizeof(SUMMARY_VALUE));
   if (svv_old->Is_formal()) { 
     svv_new->Set_formal_index(formal_index_base + svv_old->Get_formal_index());
   } else if (svv_old->Is_global()) { 
@@ -596,7 +596,7 @@ static INT IPA_LNO_Map_Expr(SUMMARY_EXPR* sxx_old,
   DYN_ARRAY<SUMMARY_EXPR>* expr_array = IPA_LNO_Summary->Expr_Array();
   INT idx = expr_array->Newidx();
   SUMMARY_EXPR* sxx_new = &((*expr_array)[idx]);
-  bcopy(sxx_old, sxx_new, sizeof(SUMMARY_EXPR));
+  memcpy(sxx_new, sxx_old, sizeof(SUMMARY_EXPR));
   if (sxx_old->Has_const_operand()) {
     IPA_LNO_Map_Expr_Node(sxx_old, sxx_new, value_index_base,
       expr_index_base, 0);

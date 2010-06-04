@@ -911,7 +911,7 @@ WN_write_feedback (PU_Info* pu, Output_File* fl)
 		   pu_hdr.pu_value_fp_bin_offset);   
 #endif
 
-    bcopy (&pu_hdr, fl->map_addr + feedback_base, sizeof(pu_hdr));
+    memcpy(fl->map_addr + feedback_base, &pu_hdr, sizeof(pu_hdr));
     
 
     Set_PU_Info_state (pu, WT_FEEDBACK, Subsect_Written);

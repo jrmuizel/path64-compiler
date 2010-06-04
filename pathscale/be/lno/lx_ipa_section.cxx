@@ -1411,7 +1411,7 @@ LOOPINFO::Add_bound(LINEX *l,
   }
 
   mINT32* v = (mINT32*) alloca(sizeof(mINT32) * vector_size);
-  bzero (v, sizeof(mINT32)*vector_size);
+  memset (v, 0, sizeof(mINT32)*vector_size);
   
    // for each term store the coeff in the right place in the
   // vector
@@ -1767,7 +1767,7 @@ pop_and_return:
 void 
 PROJECTED_KERNEL::Init(PROJECTED_REGION* a, LOOPINFO* loop)
 {
-  bzero(this, sizeof(PROJECTED_KERNEL));
+  memset(this, 0, sizeof(PROJECTED_KERNEL));
   _mem_pool = a->Mem_Pool();
   _depth = loop->Get_nest_level() + 1;
   _projected_level = _depth + 1;

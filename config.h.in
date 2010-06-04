@@ -15,7 +15,6 @@
 #cmakedefine HAVE_SYS_TYPES_H  1
 #cmakedefine HAVE_UNISTD_H     1
 
-#cmakedefine HAVE_BCOPY	       1
 #cmakedefine HAVE_FSEEK64      1
 #cmakedefine HAVE_FSEEKO       1
 #cmakedefine HAVE_FTELL64      1

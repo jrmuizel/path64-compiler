@@ -349,7 +349,7 @@ initialize_strtab (STRTAB& strtab, const char *buf, UINT32 size)
                                 strtab.hash_table.end());
     strtab.buffer_size = size;
     strtab.buffer = (char *) MEM_POOL_Alloc (Malloc_Mem_Pool, size);
-    bcopy (buf, strtab.buffer, size);
+    memcpy(strtab.buffer, buf, size);
     strtab.last_idx = size;
     strtab.init_hash ();
     

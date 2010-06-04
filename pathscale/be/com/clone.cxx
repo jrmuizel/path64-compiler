@@ -321,7 +321,7 @@ IPO_CLONE::Copy_Node (const WN *src_wn)
 	while (new_size < size)
 	    new_size *= 2;
 	_raw_buffer = (WN *)MEM_POOL_Alloc(WN_mem_pool_ptr, new_size);
- 	bzero (_raw_buffer, new_size);
+ 	memset (_raw_buffer, 0, new_size);
 	_raw_buf_size = new_size;
     }
 

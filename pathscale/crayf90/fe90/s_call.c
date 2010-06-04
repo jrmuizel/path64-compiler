@@ -4110,7 +4110,7 @@ boolean final_arg_work(opnd_type	*list_opnd,
 //Bug 3230
 # if  defined(KEY)
       char dim[MAX_DIMENSION];
-      bzero(dim, sizeof(dim));
+      memset(dim, 0, sizeof(dim));
       /* Bug 5186: If LANG_Copy_Inout set and LANG_Copy_Inout_Level > 0, then
        * don't require the call to be inside a loop. */
       if (LANG_Copy_Inout &&

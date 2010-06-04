@@ -1163,7 +1163,7 @@ Connect_call_graph()
 {
     UINT num_nodes = GRAPH_vcnt (IPA_Call_Graph->Graph());
     mBOOL *visited = (mBOOL *) alloca ((GRAPH_vmax(IPA_Call_Graph->Graph())+1) * sizeof(mBOOL)); // Adding one to prepare for the dummy ROOT
-    bzero (visited, (GRAPH_vmax(IPA_Call_Graph->Graph())+1) * sizeof(mBOOL));
+    memset (visited, 0, (GRAPH_vmax(IPA_Call_Graph->Graph())+1) * sizeof(mBOOL));
 
     UINT32 visited_count = 0;
 
@@ -1849,7 +1849,7 @@ Eliminate_Dead_Func (BOOL update_modref_count)
 {
     mUINT8 *visited = (mUINT8 *)
 	alloca (GRAPH_vmax (IPA_Call_Graph->Graph()) * sizeof(mUINT8));
-    bzero (visited, sizeof(mUINT8) * GRAPH_vmax(IPA_Call_Graph->Graph()));
+    memset (visited, 0, sizeof(mUINT8) * GRAPH_vmax(IPA_Call_Graph->Graph()));
 
     NODE_INDEX vi;
 
@@ -1954,7 +1954,7 @@ IPA_NODE::Scope()
     INT size = (Lexical_Level()+1) * sizeof(SCOPE);
     SCOPE *new_scope_tab = (SCOPE *)
         MEM_POOL_Alloc (Malloc_Mem_Pool, size);
-    bzero(new_scope_tab, size);
+    memset(new_scope_tab, 0, size);
 
     // Copy only the Global SYMTAB info
     memcpy(new_scope_tab, Scope_tab, sizeof(SCOPE)*2);
@@ -2480,16 +2480,16 @@ Add_Mod_Ref_Info (IPA_NODE * node)
 
   // MOD
   mUINT8 * MOD = CXX_NEW_ARRAY (mUINT8, bv_size, Malloc_Mem_Pool);
-  bzero (MOD, bv_size);
+  memset (MOD, 0, bv_size);
 
   // REF
   mUINT8 * REF = CXX_NEW_ARRAY (mUINT8, bv_size, Malloc_Mem_Pool);
-  bzero (REF, bv_size);
+  memset (REF, 0, bv_size);
 
   // SAME_ENTRY_EXIT_VALUE_OR_1
   mUINT8 * SAME_ENTRY_EXIT_VALUE_OR_1 = CXX_NEW_ARRAY (mUINT8, bv_size,
     Malloc_Mem_Pool);
-  bzero (SAME_ENTRY_EXIT_VALUE_OR_1, bv_size);
+  memset (SAME_ENTRY_EXIT_VALUE_OR_1, 0, bv_size);
 
   same_entry_exit_value_or_1_var_st_index =
     analyze_global_var_returns_same_entry_value_or_1(node); // currently, there
@@ -2796,7 +2796,7 @@ IPA_add_new_procedure (const IPA_NODE* node)
   if (max_proc_in_file == NULL) {
     UINT32 bytes = IP_File_header.size() * sizeof(INT32);
     max_proc_in_file = (INT32*) MEM_POOL_Alloc(Malloc_Mem_Pool, bytes);
-    bzero (max_proc_in_file, bytes);
+    memset (max_proc_in_file, 0, bytes);
   }
   
   INT32& max_proc_size = max_proc_in_file[node->File_Index()];

@@ -622,7 +622,7 @@ class IPAA_SUMMARY
   // Constructor for use in IPAA -- build a new summary:
   IPAA_SUMMARY ( MEM_POOL *pool )
 	{
-	  bzero ( this, sizeof (IPAA_SUMMARY) );
+	  memset ( this, 0, sizeof (IPAA_SUMMARY) );
 	  _major = IPAA_MAJOR;
 	  _minor = IPAA_MINOR;
 	  IPAA_Summary = this;

@@ -2771,14 +2771,14 @@ SUMMARIZE<program>::Copy_summary_ctrl_dep (SUMMARY_CONTROL_DEPENDENCE *cd)
     if (cd->Get_true_count ()) {
 	ctrl_dep->Set_true_stmt_index (stmt_idx + 1);
 	stmts = Get_stmt (ctrl_dep->Get_true_stmt_index ());
-	bcopy (Get_summary_stmts (cd, TRUE), stmts,
+	memcpy(stmts, Get_summary_stmts (cd, TRUE),
 	       sizeof(SUMMARY_STMT) * cd->Get_true_count ());
     }
 
     if (cd->Get_false_count ()) {
 	ctrl_dep->Set_false_stmt_index (stmt_idx + cd->Get_true_count () + 1);
 	stmts = Get_stmt (ctrl_dep->Get_false_stmt_index ());
-	bcopy (Get_summary_stmts (cd, FALSE), stmts,
+	memcpy(stmts, Get_summary_stmts (cd, FALSE),
 	       sizeof(SUMMARY_STMT) * cd->Get_false_count ());
     }
 

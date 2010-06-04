@@ -1536,7 +1536,7 @@ Build_Option_String (INT argc, char **argv)
 		register INT len = strlen (argv[i]) + 1;
 		if (p != option_string)
 		    *p++ = ' ';
-		bcopy (argv[i], p, len);
+		memcpy(p, argv[i], len);
 		p += len - 1;
 	    }
 	

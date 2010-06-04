@@ -60,6 +60,7 @@
 
 
 #include <math.h>			// for sqrt() used in htable stats
+#include <string.h>
 
 #include "defs.h"
 #include "erglob.h"
@@ -75,7 +76,6 @@
 #include "w2op.h"
 #include "config_opt.h"         // for Delay_U64_Lowering
 
-#include "opt_sys.h"            // BZERO definition
 #include "opt_config.h"
 #include "opt_wn.h"
 #include "opt_util.h"
@@ -93,8 +93,6 @@
 #include "bb_node_set.h"
 #include "opt_bb.h"
 #include "opt_cvtl_rule.h"
-
-#include <strings.h>   // bcopy
 
 EXP_KIDS_ITER::EXP_KIDS_ITER(mUINT32 cnt, CODEREP **kp)
 {
@@ -1596,7 +1594,7 @@ CODEMAP::Alloc_hash_vec(void)
   // called by the constructor
   hash_vec = CXX_NEW_ARRAY(CODEREP*, size+1, mem_pool);
   if (hash_vec == NULL) ErrMsg ( EC_No_Mem, "CODEREP::Alloc_hash_vec" );
-  BZERO(hash_vec, sizeof(CODEREP*) * (size+1));
+  memset(hash_vec, 0, sizeof(CODEREP*) * (size+1));
 }
 
 void
@@ -5372,7 +5370,7 @@ CODEMAP::Insert_var_phi(CODEREP *new_lhs, BB_NODE *bb)
 
 void STMTREP::Clone(STMTREP *sr, CODEMAP *htable, MEM_POOL *pool)
 {
-  bcopy(sr,this,sizeof(STMTREP));
+  memcpy(this, sr, sizeof(STMTREP));
   
   Set_Next(NULL); Set_Prev(NULL);
 

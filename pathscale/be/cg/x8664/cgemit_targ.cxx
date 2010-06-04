@@ -658,7 +658,7 @@ static void Init_OP_Name()
     return;
 
   bInit = TRUE;
-  bzero( OP_Name, sizeof(OP_Name) );
+  memset( OP_Name, 0, sizeof(OP_Name) );
 
   // Only put in the name which is different from isa.cxx.
 

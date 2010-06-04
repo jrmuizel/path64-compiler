@@ -152,7 +152,7 @@ GRA_GRANT_Initialize(void)
   grant_mem =
     TYPE_MEM_POOL_ALLOC_N(REGISTER_SET,&grant_pool,
                                        ISA_REGISTER_CLASS_COUNT*PU_BB_Count + 2);
-  bzero(grant_mem,sizeof(GRANT)*ISA_REGISTER_CLASS_COUNT*PU_BB_Count + 2);
+  memset(grant_mem, 0, sizeof(GRANT)*ISA_REGISTER_CLASS_COUNT*PU_BB_Count + 2);
   grant_map = BB_MAP_Create();
 
   for ( bb = REGION_First_BB; bb != NULL; bb = BB_next(bb) ) {

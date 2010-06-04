@@ -39,9 +39,6 @@
 #ifndef __IPA_LD_H__
 #define __IPA_LD_H__
 
-#define BCOPY(src, dst, len) \
-    bcopy((const void *)(src), (void *)(dst), (int)(len))    	       
-
 #define FREE(ptr) \
     free((void *) (ptr))
 
