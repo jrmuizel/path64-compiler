@@ -75,7 +75,7 @@
 #include "ipa_summary.h"
 #include "ipa_cg.h"
 #include "ipa_reshape.h"
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

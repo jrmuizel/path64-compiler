@@ -1394,7 +1394,7 @@ static char *rcs_id = cache_model_CXX "$Revision: 1.6 $";
 #include "model.h"
 #include "cache_model.h"
 #include "lnopt_main.h"
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include "lu_mat.h"

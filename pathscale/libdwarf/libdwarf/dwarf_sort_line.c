@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "dwarf_line.h"
-#ifdef HAVE_ALLOCA_H
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #if ! defined(BUILD_OS_DARWIN) && ! defined(__FreeBSD__)

@@ -101,7 +101,7 @@ static const char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/lno/SCCS/s.
 #include <sys/types.h>
 #include <ctype.h>
 #include <limits.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

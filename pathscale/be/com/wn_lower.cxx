@@ -52,7 +52,7 @@
 #include <values.h>
 #endif /* defined(BUILD_OS_DARWIN) */
 #include <isam.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <sys/signal.h>

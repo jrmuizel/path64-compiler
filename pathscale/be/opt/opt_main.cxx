@@ -296,7 +296,6 @@
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #define USE_STANDARD_TYPES
-/*#include <alloca.h>*/
 #include "pu_info.h"		/* for PU_Info_state and related things */
 
 #include "unistd.h"

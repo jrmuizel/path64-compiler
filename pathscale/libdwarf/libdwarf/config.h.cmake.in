@@ -1,7 +1,7 @@
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
 /* Define to 1 if you have the <alloca.h> header file. */
-#cmakedefine HAVE_ALLOCA_H
+#cmakedefine HAVE_ALLOCA_H 1
 
 /* Define 1 if want producer to build with 32/64bit section offsets per dwarf3
    */

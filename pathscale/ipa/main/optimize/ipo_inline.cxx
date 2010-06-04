@@ -42,7 +42,7 @@
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

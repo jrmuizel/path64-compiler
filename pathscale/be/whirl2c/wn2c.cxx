@@ -59,7 +59,7 @@ static char *rcs_id = "$Source: be/whirl2c/SCCS/s.wn2c.cxx $ $Revision: 1.16 $";
 #endif /* _KEEP_RCS_ID */
 
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include "whirl2c_common.h"

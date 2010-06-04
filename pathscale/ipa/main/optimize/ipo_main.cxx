@@ -72,7 +72,7 @@
 #endif /* defined(BUILD_OS_DARWIN) */
 #include <sys/types.h>
 #include <signal.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <cmplrs/rcodes.h>		// for RC_SYSTEM_ERROR

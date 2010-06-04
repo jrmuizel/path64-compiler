@@ -28,7 +28,7 @@
 #pragma hdrstop
 
 #include <sys/types.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include "pu_info.h"

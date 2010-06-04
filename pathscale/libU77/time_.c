@@ -65,7 +65,9 @@
 
 #include "pathf90_libU_intrin.h"
 
+#if HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
 
 #define CTIME_BUFLEN	26
 

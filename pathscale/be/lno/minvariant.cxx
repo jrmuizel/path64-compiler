@@ -216,7 +216,7 @@ static char *rcs_id = "$Source: be/lno/SCCS/s.minvariant.cxx $ $Revision: 1.17 $
 #endif
 
 #include <sys/types.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include "defs.h"

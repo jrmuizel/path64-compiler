@@ -60,7 +60,7 @@
 #include <sys/elf_whirl.h>
 #endif /* defined(BUILD_OS_DARWIN) */
 #include <sys/types.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

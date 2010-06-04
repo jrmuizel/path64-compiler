@@ -38,7 +38,7 @@
 #include <unistd.h>		    /* for unlink() */
 #include <fcntl.h>		    /* for open() */
 #include <sys/mman.h>		    /* for mmap() */
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>		    /* for alloca() */
 #endif
 #include <signal.h>		    /* for signal() */

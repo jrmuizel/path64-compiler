@@ -54,7 +54,7 @@
 #include <elfaccess.h>
 #include "libelf/libelf.h"
 #include <stamp.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <cmplrs/leb128.h>

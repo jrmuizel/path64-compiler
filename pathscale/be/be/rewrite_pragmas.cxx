@@ -30,7 +30,7 @@
 #include "config_targ.h"
 #include "wn_util.h"
 #include "region_util.h"
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include "data_layout.h"

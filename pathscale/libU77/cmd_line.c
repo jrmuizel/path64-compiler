@@ -4,9 +4,11 @@
 
 /* Code to implement F2003 intrinsics related to command line */
 
-#include <string.h>
+#if HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
 #include <stdlib.h>
+#include <string.h>
 
 #include "pathf90_libU_intrin.h"
 #include "externals.h"

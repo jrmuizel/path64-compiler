@@ -67,7 +67,7 @@
 #include "dwarf_stuff.h"
 #endif /* KEY Mac port */
 #include <elfaccess.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <stdlib.h>

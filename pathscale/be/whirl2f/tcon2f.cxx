@@ -54,7 +54,7 @@ static char *rcs_id = "$Source$ $Revision$";
 
 #include "whirl2f_common.h"
 #include "tcon2f.h"
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

@@ -58,7 +58,7 @@
 #include <sys/procfs.h>
 #endif /* ! defined(BUILD_OS_DARWIN) */
 #include <limits.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <cmplrs/rcodes.h>

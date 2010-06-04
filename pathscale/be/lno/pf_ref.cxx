@@ -144,7 +144,7 @@
 #include "whirl2src.h"
 #include "dep.h"
 #include "tlog.h"
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include "targ_sim.h"
