@@ -26,12 +26,7 @@
 
 #include <stdio.h>
 #include <ffio.h>
-#if defined(BUILD_OS_DARWIN)
 #include <limits.h>
-#define MAXLONG	LONG_MAX
-#else /* defined(BUILD_OS_DARWIN) */
-#include <values.h>
-#endif /* defined(BUILD_OS_DARWIN) */
 #include <errno.h>
 #include "ccaio.h"
 
@@ -79,9 +74,9 @@ char            read_write_mode) /* called by ccaread('r') or ccawrite('w') */
  *	Find the least-recently accessed buffers.
  *	Free buffers are counted as if their last access time was 0.
  */
-	lru_tm         = MAXLONG;      /* min CHRONOMETER value */
+	lru_tm         = LONG_MAX;      /* min CHRONOMETER value */
 	lru_id         = -1;
-	lru_tm_exempt  = MAXLONG;      /* min CHRONOMETER value */
+	lru_tm_exempt  = LONG_MAX;      /* min CHRONOMETER value */
 	lru_id_exempt  = -1;
 	for (i=0; i<nbu; i++) {
 		if( cbufs[i].protected ) continue;
