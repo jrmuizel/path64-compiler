@@ -30,11 +30,6 @@
 
 #include <errno.h>
 #include <foreign.h>
-#ifndef	_ABSOFT
-#if ! defined(BUILD_OS_DARWIN)
-#include <malloc.h>
-#endif /* defined(BUILD_OS_DARWIN) */
-#endif
 #include <stdlib.h>
 #include <liberrno.h>
 #include "fio.h"

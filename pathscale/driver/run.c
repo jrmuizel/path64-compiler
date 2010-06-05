@@ -49,9 +49,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
-#if ! defined(BUILD_OS_DARWIN) && ! defined(__FreeBSD__)
-#include <malloc.h>
-#endif /* defined(BUILD_OS_DARWIN) */
 #include <sys/param.h>
 #include <sys/times.h>
 #if ! defined(BUILD_OS_DARWIN)

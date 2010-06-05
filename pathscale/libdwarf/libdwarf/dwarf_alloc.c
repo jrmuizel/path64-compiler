@@ -32,9 +32,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#if ! defined(BUILD_OS_DARWIN) && ! defined(__FreeBSD__)
-#include <malloc.h>
-#endif /* defined(BUILD_OS_DARWIN) */
 
 /*
     These files are included to get the sizes

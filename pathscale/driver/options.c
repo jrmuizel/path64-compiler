@@ -26,11 +26,7 @@
 */
 
 
-#if 1 /* defined(BUILD_OS_DARWIN) */
 #include <stdlib.h>
-#else /* defined(BUILD_OS_DARWIN) */
-#include <malloc.h>
-#endif /* defined(BUILD_OS_DARWIN) */
 #include "phases.h"
 #include "options.h"
 #include "string_utils.h"

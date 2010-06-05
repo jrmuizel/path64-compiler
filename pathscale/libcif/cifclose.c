@@ -37,11 +37,7 @@ static char USMID[] = "@(#) libcif/cifclose.c	30.2	07/26/96 07:19:13";
 #include <cif.h>
 #endif
 
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 #include <stdlib.h>
-#else /* defined(BUILD_OS_DARWIN) */
-#include <malloc.h>
-#endif /* defined(BUILD_OS_DARWIN) */
 #include <unistd.h>
 #include <stdio.h>
 
