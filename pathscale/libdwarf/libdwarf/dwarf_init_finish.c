@@ -52,9 +52,6 @@
 #include <sys/types.h>
 #include <string.h>
 #include <stdlib.h>
-#if ! defined(BUILD_OS_DARWIN) && ! defined(__FreeBSD__)
-#include <malloc.h>
-#endif /* ! defined(BUILD_OS_DARWIN) */
 
 #include "dwarf_incl.h"
 
