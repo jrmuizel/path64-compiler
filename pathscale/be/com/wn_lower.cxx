@@ -46,11 +46,7 @@
 #include "be_com_pch.h"
 #endif /* USE_PCH */
 #pragma hdrstop
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 #include <limits.h>
-#else /* defined(BUILD_OS_DARWIN) */
-#include <values.h>
-#endif /* defined(BUILD_OS_DARWIN) */
 #include <isam.h>
 #if HAVE_ALLOCA_H
 #include <alloca.h>
