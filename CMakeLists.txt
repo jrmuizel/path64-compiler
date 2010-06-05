@@ -192,21 +192,17 @@ ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D_MIPS_SZLONG=32
                )
 
-# GNU-style hashing needs support of the dynamic linker, so white-list
-# potential platforms.
-IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    # Build the actual ld line to be used in driver
-    execute_process(COMMAND "ld --help 2>&1 | grep hash-style > /dev/null"
-      RESULT_VARIABLE LD_NOT_SUPPORTS_HASH_STYLE)
+# Build the actual ld line to be used in driver
 
-    if(LD_NOT_SUPPORTS_HASH_STYLE)
-    SET(LD_HASH_STYLE_FLAG "")
-    else()
-    SET(LD_HASH_STYLE_FLAG "--hash-style=gnu")
-    endif()
-ELSE(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    SET(LD_HASH_STYLE_FLAG "")
-ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+execute_process(COMMAND "ld --help 2>&1 | grep hash-style > /dev/null"
+ RESULT_VARIABLE LD_NOT_SUPPORTS_HASH_STYLE)
+
+if(${LD_NOT_SUPPORTS_HASH_STYLE})
+SET(LD_HASH_STYLE_FLAG "")
+else()
+SET(LD_HASH_STYLE_FLAG "--hash-style=gnu")
+endif()
+
 
 # Build GCC and pathscale.
 ADD_SUBDIRECTORY(GCC)
