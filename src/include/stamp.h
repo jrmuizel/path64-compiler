@@ -36,10 +36,10 @@ extern "C" {
 #endif
 
 #if defined(__linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
-#include "pathscale_defs.h"
+#include "main_defs.h"
 
 #ifndef PSC_MAJOR_VERSION
-#error PSC_MAJOR_VERSION not defined - check include path for pathscale_defs.h
+#error PSC_MAJOR_VERSION not defined - check include path for main_defs.h
 #endif
 
 #define	MS_STAMP PSC_MAJOR_VERSION_NUM

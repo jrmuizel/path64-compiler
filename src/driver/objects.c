@@ -53,7 +53,7 @@
 #include "lang_defs.h"
 #include "file_names.h"
 #include "file_utils.h"
-#include "pathscale_defs.h"
+#include "main_defs.h"
 #include "run.h"
 
 string_list_t *objects;

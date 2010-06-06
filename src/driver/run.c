@@ -67,7 +67,7 @@
 #include "opt_actions.h"
 #include "option_seen.h"
 #include "file_utils.h"
-#include "pathscale_defs.h"
+#include "main_defs.h"
 #include "option_names.h"
 
 boolean show_flag = FALSE;

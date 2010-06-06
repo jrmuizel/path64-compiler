@@ -83,11 +83,11 @@ SET(LDIRT dwarf.h)
 
 ## To prevent repetitious submakes to this subdirectory, Makefile.gsetup
 ## files in other subdirectories invoke submake here only when the file
-## pathscale_defs.h is absent or out of date.  The dependencies for
-## pathscale_defs.h are provided in linux/make/gcommonrules for
+## main_defs.h is absent or out of date.  The dependencies for
+## main_defs.h are provided in linux/make/gcommonrules for
 ## Makefile.gbase files in other build subdirectories.
 #
-#default: pathscale_defs.h
+#default: main_defs.h
 #	@: Make directories in case they do not exist.
 #	@for d in sys cmplrs libelf; do \
 #	    if [ ! -d $$d ]; then \
@@ -173,13 +173,13 @@ ENDFOREACH(H)
 
 
 #
-## If you change these prerequisites, also update pathscale_defs.h in
+## If you change these prerequisites, also update main_defs.h in
 ## linux/make/gcommonrules.
-#pathscale_defs.h: $(BUILD_TOT)/include/pathscale_defs.h
-#	cp $(BUILD_TOT)/include/pathscale_defs.h $@
+#main_defs.h: $(BUILD_TOT)/include/main_defs.h
+#	cp $(BUILD_TOT)/include/main_defs.h $@
 #
-CONFIGURE_FILE(include/pathscale_defs.h.in
-               ${PATHSCALE_INCLUDE_DIR}/pathscale_defs.h)
+CONFIGURE_FILE(include/main_defs.h.in
+               ${PATHSCALE_INCLUDE_DIR}/main_defs.h)
 
 
 

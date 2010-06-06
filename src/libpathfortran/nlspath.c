@@ -23,7 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "pathscale_defs.h"
+#include "main_defs.h"
 
 const char __pathscale_compiler[] __attribute__((weak))
      = PSC_ROOT_PREFIX "/bin/" PSC_NAME_PREFIX "cc";

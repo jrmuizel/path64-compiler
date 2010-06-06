@@ -41,7 +41,7 @@
 
 #include <stamp.h>
 
-#include "pathscale_defs.h"
+#include "main_defs.h"
 /* TODO : This really should be a --prefix option during configure */
 #if defined(VENDOR_PSC)
 /*

@@ -61,7 +61,7 @@ static char USMID[] = "\n@(#)5.0_pl/sources/main.c	5.15	10/14/99 15:25:09\n";
 # include "type.h"
 # include "intrin.h"
 
-#include "pathscale_defs.h"
+#include "main_defs.h"
 
 extern	const	char	*fe_vers_ID(void);
 extern	const	char	*fe_vers_number(void);

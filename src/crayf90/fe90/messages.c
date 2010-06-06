@@ -66,7 +66,7 @@ static char USMID[] = "\n@(#)5.0_pl/sources/messages.c	5.9	10/14/99 14:08:59\n";
 # include "globals.h"
 # include "tokens.h"
 # include "sytb.h"
-# include "pathscale_defs.h"
+# include "main_defs.h"
 # include "messages.h"
 #ifdef KEY /* Bug 3632 */
 # include "src_input.m"

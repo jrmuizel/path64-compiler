@@ -1,5 +1,5 @@
-#ifndef __pathscale_defs_h
-#define __pathscale_defs_h
+#ifndef __main_defs_h
+#define __main_defs_h
 #cmakedefine PSC_MAJOR_VERSION "${PSC_MAJOR_VERSION}"
 #cmakedefine PSC_MINOR_VERSION "${PSC_MINOR_VERSION}"
 #cmakedefine PSC_FULL_VERSION "${PSC_FULL_VERSION}"

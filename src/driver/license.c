@@ -41,7 +41,7 @@
 
 #include "lang_defs.h"
 #include "license.h"
-#include "pathscale_defs.h"
+#include "main_defs.h"
 #include "run.h"
 #include "file_utils.h"
 #include "errors.h"

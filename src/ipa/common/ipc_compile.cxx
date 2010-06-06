@@ -297,7 +297,7 @@ ipa_compile_init ()
 
 #elif defined(TARG_X8664) || defined(TARG_MIPS)
 
-#include "pathscale_defs.h"
+#include "main_defs.h"
 
   static const char* smake_base = ALTBINPATH "/usr/bin/make";
   static const char* tmp_cc_name_base = PSC_INSTALL_PREFIX "/bin/" PSC_NAME_PREFIX "cc";
