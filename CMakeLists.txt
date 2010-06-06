@@ -206,4 +206,4 @@ endif()
 
 # Build GCC and pathscale.
 ADD_SUBDIRECTORY(GCC)
-ADD_SUBDIRECTORY(pathscale)
+ADD_SUBDIRECTORY(src)
