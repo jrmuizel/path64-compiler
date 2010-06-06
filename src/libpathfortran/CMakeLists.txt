@@ -958,8 +958,8 @@ IF(PATH64_ENABLE_FORTRAN)
 add_executable( gen_ieee_cpp_macros  ../libfi/mathlb/gen_ieee_cpp_macros.c)
 
 add_custom_command(
-		OUTPUT ${CMAKE_BINARY_DIR}/pathscale/include/ieee_cpp_macros.h
-		COMMAND  gen_ieee_cpp_macros > ${CMAKE_BINARY_DIR}/pathscale/include/ieee_cpp_macros.h
+		OUTPUT ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h
+		COMMAND  gen_ieee_cpp_macros > ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h
 		DEPENDS gen_ieee_cpp_macros)
 
 add_dependencies(gen_ieee_cpp_macros switch_fc)
@@ -975,18 +975,18 @@ set_source_files_properties(../libfi/mathlb/ieee_arithmetic.F90 PROPERTIES OBJEC
 #SET(CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES "m;c")
 
 
-add_library(pathfortran-static STATIC ${PATHSCALE_PATHFORTRAN_C_SRCS} ${PATHSCALE_PATHFORTRAN_F_SRCS} ${CMAKE_BINARY_DIR}/pathscale/include/ieee_cpp_macros.h)
+add_library(pathfortran-static STATIC ${PATHSCALE_PATHFORTRAN_C_SRCS} ${PATHSCALE_PATHFORTRAN_F_SRCS} ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h)
 
 SET_TARGET_PROPERTIES(pathfortran-static PROPERTIES OUTPUT_NAME "pathfortran")
 
-add_library(pathfortran SHARED ${PATHSCALE_PATHFORTRAN_C_SRCS} ${PATHSCALE_PATHFORTRAN_F_SRCS} ${CMAKE_BINARY_DIR}/pathscale/include/ieee_cpp_macros.h)
+add_library(pathfortran SHARED ${PATHSCALE_PATHFORTRAN_C_SRCS} ${PATHSCALE_PATHFORTRAN_F_SRCS} ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h)
 set_property(TARGET pathfortran PROPERTY LINKER_LANGUAGE C)
 
 set_property(TARGET pathfortran PROPERTY SOVERSION 1)
 set_property(TARGET pathfortran PROPERTY LINK_FLAGS -Wl,--version-script="${libpathfortran_SOURCE_DIR}/libpathfortran.vs")
 
 IF(PATH64_ENABLE_PROFILING)
-add_library(pathfortran_p STATIC ${PATHSCALE_PATHFORTRAN_SRCS} ${PATHSCALE_PATHFORTRAN_F_SRCS} ${CMAKE_BINARY_DIR}/pathscale/include/ieee_cpp_macros.h)
+add_library(pathfortran_p STATIC ${PATHSCALE_PATHFORTRAN_SRCS} ${PATHSCALE_PATHFORTRAN_F_SRCS} ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h)
 set_property(TARGET pathfortran_p PROPERTY COMPILE_FLAGS -pg)
 install(TARGETS pathfortran_p  ARCHIVE DESTINATION ${PATH64_LIB_PATH})
 ENDIF(PATH64_ENABLE_PROFILING)

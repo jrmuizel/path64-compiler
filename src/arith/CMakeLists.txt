@@ -27,7 +27,7 @@ INCLUDE_DIRECTORIES(
 	.
 	../clibinc)
 
-# -DEDITION used to come from pathscale/arith/edition
+# -DEDITION used to come from src/arith/edition
 ADD_DEFINITIONS(
 	-DEDITION=\"23\")
 

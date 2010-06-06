@@ -7,7 +7,7 @@ SET(CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES "m;c")
 
 INCLUDE(includes.cmake)
 
-# This kills the libpathfortran build at pathscale/libu/numconv/mpp/defgu2s.c
+# This kills the libpathfortran build at src/libu/numconv/mpp/defgu2s.c
 #ADD_DEFINITIONS(-D_GNU_SOURCE)
 
 ADD_SUBDIRECTORY(driver)
