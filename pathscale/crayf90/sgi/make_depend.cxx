@@ -75,9 +75,6 @@
  *
  ****************************************************************************
  */
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
-#include <bstring.h>
-#endif
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -232,8 +229,8 @@ char * MDstrcatdup ( const char *s1, const char *s2 ) {
 	s2_len	= strlen(s2);
 	targ_len= s1_len + s2_len;
 	targ = (char*)malloc(targ_len);
-	bcopy(s1,targ,s1_len);
-	bcopy(s2,&targ[s1_len], s2_len);
+	memcpy(targ, s1, s1_len);
+	memcpy(targ + s1_len, s2, s2_len);
 	targ[targ_len]='\0';
 	return targ;
 }

@@ -404,11 +404,11 @@ public:
 	if ( WOPT_Enable_DCE_Branch ) {
 	  _cond_eval = TYPE_OPT_POOL_ALLOC_N( COND_EVAL, 
 		cfg->Loc_pool(), cfg->Total_bb_count(), DCE_DUMP_FLAG );
-	  BZERO( _cond_eval, sizeof(COND_EVAL)*cfg->Total_bb_count());
+	  memset( _cond_eval, 0, sizeof(COND_EVAL)*cfg->Total_bb_count());
 
 	  _cond_coderep = TYPE_OPT_POOL_ALLOC_N( CODEREP*, 
 		cfg->Loc_pool(), cfg->Total_bb_count(), DCE_DUMP_FLAG );
-	  BZERO(_cond_coderep,sizeof(CODEREP*)*cfg->Total_bb_count());
+	  memset(_cond_coderep, 0, sizeof(CODEREP*)*cfg->Total_bb_count());
 	}
 	else {
 	  _cond_eval = NULL;

@@ -38,7 +38,7 @@
 //  $Author: bos@eng-25.internal.keyresearch.com $
 //  $Source: /home/bos/bk/kpro64-pending/common/targ_info/generate/SCCS/s.isa_bundle_gen.cxx $
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <stddef.h>
@@ -616,7 +616,7 @@ void ISA_Bundle_Pack_Create (ISA_BUNDLE_PACK_ENDIAN endian)
   }
 
   bundle_pack_info = new(BUNDLE_PACK_INFO);
-  bzero(bundle_pack_info, sizeof(*bundle_pack_info));
+  memset(bundle_pack_info, 0, sizeof(*bundle_pack_info));
   bundle_pack_info->endian = endian;
 }
 

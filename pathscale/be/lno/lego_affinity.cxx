@@ -32,7 +32,7 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include <limits.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

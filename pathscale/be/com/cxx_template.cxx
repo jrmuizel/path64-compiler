@@ -124,7 +124,7 @@ template <class T>
 void
 DYN_ARRAY<T>::Bzero_array()
 {
-  if (_array != NULL) bzero(_array,sizeof(T) * _size);
+  if (_array != NULL) memset(_array, 0, sizeof(T) * _size);
 }
 
 template <class T>

@@ -331,7 +331,7 @@ static const char *source_file = __FILE__;
 static const char *rcs_id = "$Source: ../../be/lno/SCCS/s.model.cxx $ $Revision: 1.21 $";
 
 #include <sys/types.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <math.h>
@@ -3666,7 +3666,7 @@ COST_V::COST_V() {
 void COST_V::Push(UINT16 latency, UINT16 distance, MEM_POOL *pool) {
   if (_length == _alloc_length) {
     COST *tmp = CXX_NEW_ARRAY(COST,((INT) 2*_alloc_length),pool);
-    bcopy(_costs,tmp,_length*sizeof(COST));
+    memcpy(tmp, _costs, _length*sizeof(COST));
     CXX_DELETE_ARRAY(_costs,pool);
     _costs = tmp;
     _alloc_length *= 2;

@@ -59,7 +59,7 @@ static char *rcs_id = "$Source: be/whirl2c/SCCS/s.wn2c.cxx $ $Revision: 1.16 $";
 #endif /* _KEEP_RCS_ID */
 
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include "whirl2c_common.h"
@@ -2070,7 +2070,7 @@ WN2C_create_ref_param_lda(WN *lda, const WN *ldid)
 {
    const TY_IDX lhs_addr_ty = Stab_Pointer_To(WN_ty(ldid));
 
-   bzero(lda, sizeof(WN));
+   memset(lda, 0, sizeof(WN));
    WN_set_opcode(lda, OPCODE_make_op(OPR_LDA, TY_mtype(lhs_addr_ty), MTYPE_V));
    WN_set_kid_count(lda, 0);
    WN_set_map_id(lda, (WN_MAP_ID) (-1));

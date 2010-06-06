@@ -58,7 +58,7 @@ static char **rcs_dummy[] = { &rcs_id, (char **)&rcs_dummy,
 #include <sys/types.h>
 #include <ctype.h>
 #include <limits.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

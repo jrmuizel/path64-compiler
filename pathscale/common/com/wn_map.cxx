@@ -337,7 +337,7 @@ WN_MAP_realloc_array (WN_MAP_TAB *maptab, OPERATOR_MAPCAT category,
   /* make sure the new storage is zeroed */
   if (!(maptab->_pool[wn_map]->bz)) {
       INTPS address = ((INTPS) maptab->_mapping[category][wn_map]) + (old_size * elemsz);
-      bzero((void *) address, (new_size - old_size) * elemsz);
+      memset((void *) address, 0, (new_size - old_size) * elemsz);
   }
 }
 

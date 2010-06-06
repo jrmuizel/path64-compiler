@@ -52,7 +52,7 @@
 #endif // USE_PCH
 #pragma hdrstop
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <math.h>
@@ -848,11 +848,11 @@ Handle_All_Hazards (BB *bb)
   if (PROC_has_branch_delay_slot())
     Check_For_Delay_Slot_Hazards(bb);
 
-  bzero (post_Q, sizeof(post_Q));
+  memset (post_Q, 0, sizeof(post_Q));
 
   VECTOR bundle_vector = VECTOR_Init (BB_length(bb) + 1, &MEM_local_pool);
   TI_BUNDLE *bundle = TYPE_MEM_POOL_ALLOC (TI_BUNDLE, &MEM_local_pool);
-  bzero (bundle, sizeof(bundle));
+  memset (bundle, 0, sizeof(bundle));
   bundle->bundle_info = TYPE_MEM_POOL_ALLOC (ISA_BUNDLE_INFO, &MEM_local_pool);
   TI_BUNDLE_Clear(bundle);
   

@@ -24,7 +24,10 @@
 
 #pragma ident "@(#) libf/fio/fstring.c	92.3	08/27/99 17:38:17"
 
+#if HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
+#include <stdlib.h>
 #include <string.h>
 
 /*

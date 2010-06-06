@@ -43,7 +43,7 @@
 #include "access_vector.h"
 #include "ipl_lno_util.h"
 #include "ipl_summary.h"
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include "ipa_cost_util.h"

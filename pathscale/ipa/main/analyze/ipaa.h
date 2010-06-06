@@ -85,7 +85,7 @@ public:
 	if ( fcount > 32 ) {
 	    INT32 dw = (fcount+63)/64;
 	    _fbv._fdata = (INT64 *) MEM_POOL_Alloc ( pool, dw*sizeof(INT64) );
-	    bzero ( _fbv._fdata, dw*sizeof(INT64) );
+	    memset ( _fbv._fdata, 0, dw*sizeof(INT64) );
 	} else
 	    _fbv._fbits = 0;
     }
@@ -94,7 +94,7 @@ public:
 	if (fcount > 32) {
 	    INT32 dw = (fcount+63)/64;
 	    _fbv._fdata = (INT64 *) MEM_POOL_Alloc ( pool, dw*sizeof(INT64) );
-	    bcopy (fbv._fbv._fdata, _fbv._fdata, dw*sizeof(INT64));
+	    memcpy(_fbv._fdata, fbv._fbv._fdata, dw*sizeof(INT64));
 	} else
 	    _fbv._fbits = fbv._fbv._fbits;
     }
@@ -272,7 +272,7 @@ private:
 public:
     // Construct an empty set of IPAA node information:
     IPAA_NODE_INFO ( INT32 formal_count ) {
-	bzero ( this, sizeof(IPAA_NODE_INFO) );
+	memset ( this, 0, sizeof(IPAA_NODE_INFO) );
 	_fcount = formal_count;
     }
 

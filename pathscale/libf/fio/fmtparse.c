@@ -148,9 +148,8 @@ big_endian_store (struct fmt_entry * in, int length)
   while (i < length)
   {
     iptr = (unsigned int *) (&in[i]);
-    bzero (&tmp, sizeof (struct fmt_entry));
     memcpy (&tmp, &in[i], sizeof (struct fmt_entry));
-    bzero (&in[i], sizeof (struct fmt_entry));
+    memset (&in[i], 0, sizeof (struct fmt_entry));
     iptr[0] = (tmp.op_code << 25) | (tmp.default_digits << 24) | tmp.digits_field;
     iptr[1] = (tmp.exponent << 26) | (tmp.reserved2 << 24) | tmp.field_width;
     iptr[2] = (tmp.rgcdedf << 31) | (tmp.reserved3 << 16) | tmp.offset;

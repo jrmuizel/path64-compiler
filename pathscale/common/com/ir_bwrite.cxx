@@ -38,7 +38,7 @@
 #include <unistd.h>		    /* for unlink() */
 #include <fcntl.h>		    /* for open() */
 #include <sys/mman.h>		    /* for mmap() */
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>		    /* for alloca() */
 #endif
 #include <signal.h>		    /* for signal() */
@@ -911,7 +911,7 @@ WN_write_feedback (PU_Info* pu, Output_File* fl)
 		   pu_hdr.pu_value_fp_bin_offset);   
 #endif
 
-    bcopy (&pu_hdr, fl->map_addr + feedback_base, sizeof(pu_hdr));
+    memcpy(fl->map_addr + feedback_base, &pu_hdr, sizeof(pu_hdr));
     
 
     Set_PU_Info_state (pu, WT_FEEDBACK, Subsect_Written);

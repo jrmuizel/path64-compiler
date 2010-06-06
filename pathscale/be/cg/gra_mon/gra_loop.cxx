@@ -100,7 +100,7 @@ GRA_LOOP_MGR::Create(LOOP_DESCR *ld)
 
   GRA_LOOP* gloop = TYPE_MEM_POOL_ALLOC(GRA_LOOP, GRA_pool);
 #ifdef KEY
-  bzero( gloop, sizeof(gloop[0]) );
+  memset( gloop, 0, sizeof(gloop[0]) );
   gloop->Loop_Descr_Set(ld);
 #endif
   gloop->Nest_Level_Set(LOOP_DESCR_nestlevel(ld));

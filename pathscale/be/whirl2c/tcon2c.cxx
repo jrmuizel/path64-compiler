@@ -56,7 +56,7 @@ static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/whirl2c/SCCS/s.tc
 
 #include "whirl2c_common.h"
 #include "tcon2c.h"
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

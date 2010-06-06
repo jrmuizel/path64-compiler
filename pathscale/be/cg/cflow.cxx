@@ -55,7 +55,7 @@
  * ====================================================================
  */
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <stdlib.h>
@@ -682,7 +682,7 @@ Alloc_BB_Like(BB *model)
   }
   deleted_bbs = BB_next(new_bb);
   id = BB_id(new_bb);
-  bzero(new_bb, sizeof(*new_bb));
+  memset(new_bb, 0, sizeof(*new_bb));
   new_bb->id = id;
   if (model) BB_rid(new_bb) = BB_rid(model);
   return new_bb;
@@ -2946,7 +2946,7 @@ Optimize_Branches(void)
   BOOL changed;
 
   used_branch_around = (mBOOL *)alloca((PU_BB_Count + 2) * sizeof(*used_branch_around));
-  bzero(used_branch_around, (PU_BB_Count + 2) * sizeof(*used_branch_around));
+  memset(used_branch_around, 0, (PU_BB_Count + 2) * sizeof(*used_branch_around));
   pass = 0;
   do {
     BB *bp;
@@ -4543,7 +4543,7 @@ Init_Edges(EDGE *edges)
    * for given BB.
    */
   bb_preds = (EDGE **)alloca((PU_BB_Count + 2) * sizeof(EDGE *));
-  bzero(bb_preds, (PU_BB_Count + 2) * sizeof(EDGE *));
+  memset(bb_preds, 0, (PU_BB_Count + 2) * sizeof(EDGE *));
 
   /* Visit all the BBs and create and initialize the edges.
    * On this pass the weighting only accounts for things we can
@@ -6042,7 +6042,7 @@ Estimate_Callee_Saves(void)
 
   MEM_POOL_Push(&MEM_local_pool);
 
-  bzero(callee_saves, sizeof(callee_saves));
+  memset(callee_saves, 0, sizeof(callee_saves));
   for (bb = REGION_First_BB; bb; bb = BB_next(bb)) {
     INT tn_count[ISA_REGISTER_CLASS_MAX + 1];
     TN *tn;
@@ -6064,7 +6064,7 @@ Estimate_Callee_Saves(void)
     /* Count up the number of GTNs that need a register for each
      * register class.
      */
-    bzero(tn_count, sizeof(tn_count));
+    memset(tn_count, 0, sizeof(tn_count));
     for (tn = GTN_SET_Choose(need_reg);
 	 tn != GTN_SET_CHOOSE_FAILURE;
 	 tn = GTN_SET_Choose_Next(need_reg, tn))
@@ -6136,7 +6136,7 @@ Estimate_BB_Length(BB *bb)
   if (!CG_localize_tns && (BB_exit(bb) || BB_entry(bb))) {
     INT callees_needed[ISA_REGISTER_CLASS_MAX + 1];
     OP *op;
-    bcopy(callee_saves, callees_needed, sizeof(callee_saves));
+    memcpy(callees_needed, callee_saves, sizeof(callee_saves));
     FOR_ALL_BB_OPs(bb, op) {
       ISA_REGISTER_CLASS rc;
       TN *tn;
@@ -6177,7 +6177,7 @@ Create_Sched_Est(BB *bb, MEM_POOL *pool)
   if (!CG_localize_tns && (BB_entry(bb) || BB_exit(bb))) {
     INT callees_needed[ISA_REGISTER_CLASS_MAX + 1];
     OP *op;
-    bcopy(callee_saves, callees_needed, sizeof(callee_saves));
+    memcpy(callees_needed, callee_saves, sizeof(callee_saves));
     FOR_ALL_BB_OPs(bb, op) {
       ISA_REGISTER_CLASS rc;
       TN *tn;

@@ -74,7 +74,6 @@
  *
  ****************************************************************************
  */
-#include <bstring.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -222,14 +221,14 @@ MDtargcmp ( const char *targ, const char *s, int slen ) {
  */
 static
 char * MDstrcatdup ( const char *s1, const char *s2 ) {
-	int s1_len, s2_len, targ_len;
+	size_t s1_len, s2_len, targ_len;
 	char *targ;
 	s1_len	= strlen(s1);
 	s2_len	= strlen(s2);
 	targ_len= s1_len + s2_len;
 	targ = (char*)malloc(targ_len);
-	bcopy(s1,targ,s1_len);
-	bcopy(s2,&targ[s1_len], s2_len);
+	memcpy(targ, s1, s1_len);
+	memcpy(targ + s1_len, s2, s2_len)
 	targ[targ_len]='\0';
 	return targ;
 }

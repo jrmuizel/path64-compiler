@@ -1,17 +1,19 @@
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
 /* Define to 1 if you have the <alloca.h> header file. */
-#cmakedefine HAVE_ALLOCA_H
+#cmakedefine HAVE_ALLOCA_H 1
 
 /* Define 1 if want producer to build with 32/64bit section offsets per dwarf3
    */
 #cmakedefine HAVE_DWARF2_99_EXTENSION
 
+#if __LIBELF64
 /* Define to 1 if the elf64_getehdr function is in libelf.a. */
-#cmakedefine HAVE_ELF64_GETEHDR
+#define HAVE_ELF64_GETEHDR 1
 
 /* Define to 1 if the elf64_getshdr function is in libelf.a. */
-#cmakedefine HAVE_ELF64_GETSHDR
+#define HAVE_ELF64_GETSHDR 1
+#endif
 
 /* Define to 1 if you have the <elfaccess.h> header file. */
 #cmakedefine HAVE_ELFACCESS_H
@@ -19,48 +21,21 @@
 /* Define to 1 if you have the <elf.h> header file. */
 #cmakedefine HAVE_ELF_H
 
-/* Define to 1 if you have the <inttypes.h> header file. */
-#cmakedefine HAVE_INTTYPES_H
-
-/* Define to 1 if you have the <libelf.h> header file. */
-#cmakedefine HAVE_LIBELF_H
-
 /* Define to 1 if you have the <libelf/libelf.h> header file. */
-#cmakedefine HAVE_LIBELF_LIBELF_H
-
-/* Define to 1 if you have the <memory.h> header file. */
-#cmakedefine HAVE_MEMORY_H
+#define HAVE_LIBELF_LIBELF_H 1
 
 /* Define 1 if want producer to build with only 32bit section offsets per
    strict dwarf2 */
-#cmakedefine HAVE_OLD_DWARF2_32BIT_OFFSET
+#define HAVE_OLD_DWARF2_32BIT_OFFSET 1
 
 /* Define 1 if R_IA_64_DIR32LSB is defined (might be enum value). */
 #cmakedefine HAVE_R_IA_64_DIR32LSB
 
-/* Define to 1 if you have the <stdint.h> header file. */
-#cmakedefine HAVE_STDINT_H
-
-/* Define to 1 if you have the <stdlib.h> header file. */
-#cmakedefine HAVE_STDLIB_H
-
-/* Define to 1 if you have the <strings.h> header file. */
-#cmakedefine HAVE_STRINGS_H
-
-/* Define to 1 if you have the <string.h> header file. */
-#cmakedefine HAVE_STRING_H
-
 /* Define to 1 if you have the <sys/ia64/elf.h> header file. */
 #cmakedefine HAVE_SYS_IA64_ELF_H
 
-/* Define to 1 if you have the <sys/stat.h> header file. */
-#cmakedefine HAVE_SYS_STAT_H
-
 /* Define to 1 if you have the <sys/types.h> header file. */
 #cmakedefine HAVE_SYS_TYPES_H
-
-/* Define to 1 if you have the <unistd.h> header file. */
-#cmakedefine HAVE_UNISTD_H
 
 /* See if __uint32_t is predefined in the compiler. */
 #cmakedefine HAVE___UINT32_T

@@ -756,9 +756,9 @@ class CXX_MEM_POOL {
 public:
   MEM_POOL *operator()() { return &mem_pool; }
 
-  CXX_MEM_POOL(const char *name, BOOL do_bzero) {
+  CXX_MEM_POOL(const char *name, BOOL do_zero) {
     mem_pool.magic_num = 0;		/* force it to be uninitialized */
-    MEM_POOL_Initialize(&mem_pool, name, do_bzero);
+    MEM_POOL_Initialize(&mem_pool, name, do_zero);
     MEM_POOL_Push(&mem_pool);
   };
   ~CXX_MEM_POOL() {

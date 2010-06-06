@@ -42,7 +42,7 @@
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 
@@ -2340,8 +2340,8 @@ Disambiguate_Aliased_Actuals (PARM_ATTR_VEC& parm_attr, PU& pu)
     BOOL* aliased = (BOOL*) alloca (num_parm * sizeof(BOOL));
     BOOL* scalar = (BOOL*) alloca (num_parm * sizeof(BOOL));
 
-    bzero (aliased, sizeof(BOOL)*num_parm);
-    bzero (scalar, sizeof(BOOL)*num_parm);
+    memset (aliased, 0, sizeof(BOOL)*num_parm);
+    memset (scalar, 0, sizeof(BOOL)*num_parm);
 
     // record those ST that are aliased
     for (i = 0; i < num_parm; ++i) {

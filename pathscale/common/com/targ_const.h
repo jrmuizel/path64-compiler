@@ -247,11 +247,7 @@ typedef struct TCON TCON;
 #define TCON_add_null(c)	((c).flags & TCON_ADD_NULL)
 #define Set_TCON_add_null(c)	((c).flags |= TCON_ADD_NULL)
 
-#ifdef really_call_bzero
-#define TCON_clear(c)	really_call_bzero (&c, sizeof(TCON))
-#else
-#define TCON_clear(c)	bzero (&c, sizeof(TCON))
-#endif
+#define TCON_clear(c)	memset (&c, 0, sizeof(TCON))
 
 
 /* ====================================================================

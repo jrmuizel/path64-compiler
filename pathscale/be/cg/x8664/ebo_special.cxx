@@ -3477,7 +3477,7 @@ static BOOL Compose_Addr( OP* mem_op, EBO_TN_INFO* pt_tninfo,
     TN* scale;
   } a, b;
 
-  bzero( &a, sizeof(a) );
+  memset( &a, 0, sizeof(a) );
   a.scale = Gen_Literal_TN( 1, 4 );
 
   /* First, extract the address components from a previous op that

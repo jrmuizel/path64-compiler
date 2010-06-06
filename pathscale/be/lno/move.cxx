@@ -46,7 +46,7 @@
 static char *rcs_id = "$Source: be/lno/SCCS/s.move.cxx $ $Revision: 1.9 $";
 #endif /* _KEEP_RCS_ID */
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <sys/types.h>

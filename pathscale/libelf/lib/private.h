@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 # include <string.h>
 #else /* STDC_HEADERS */
 extern void *malloc(), *realloc();
-extern void free(), bcopy(), abort();
+extern void free(), abort();
 extern int strcmp(), strncmp(), memcmp();
 extern void *memcpy(), *memmove(), *memset();
 #endif /* STDC_HEADERS */
@@ -63,21 +63,6 @@ extern int ftruncate();
 #ifndef SEEK_END
 #define SEEK_END	2
 #endif /* SEEK_END */
-
-#if !HAVE_MEMCMP
-# define memcmp	strncmp
-#endif /* !HAVE_MEMCMP */
-#if !HAVE_MEMCPY
-# define memcpy(d,s,n)	bcopy(s,d,n)
-#endif /* !HAVE_MEMCPY */
-#if !HAVE_MEMMOVE
-# define memmove(d,s,n)	bcopy(s,d,n)
-#endif /* !HAVE_MEMMOVE */
-
-#if !HAVE_MEMSET
-# define memset _elf_memset
-extern void *_elf_memset();
-#endif /* !HAVE_MEMSET */
 
 #if HAVE_STRUCT_NLIST_DECLARATION
 # define nlist __override_nlist_declaration

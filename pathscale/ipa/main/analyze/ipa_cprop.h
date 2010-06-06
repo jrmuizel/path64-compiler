@@ -139,14 +139,14 @@ public:
     _pool (mem_pool)
   {
     _gvals_array = CXX_NEW_ARRAY (GLOBAL_DYN_ARRAY*, Size, mem_pool);
-    bzero (_gvals_array, Size * sizeof(GLOBAL_DYN_ARRAY*));
+    memset (_gvals_array, 0, Size * sizeof(GLOBAL_DYN_ARRAY*));
   }
 
   GLOBAL_ANNOT (const GLOBAL_ANNOT* gannot, MEM_POOL* mem_pool) : 
     _pool (mem_pool)
   {
     _gvals_array = CXX_NEW_ARRAY (GLOBAL_DYN_ARRAY*, Size, mem_pool);
-    bzero (_gvals_array, Size * sizeof(GLOBAL_DYN_ARRAY*));
+    memset (_gvals_array, 0, Size * sizeof(GLOBAL_DYN_ARRAY*));
 
     for (UINT32 i = 0; i < Size; ++i) {
       if (!gannot->Top(i)) {

@@ -47,7 +47,7 @@
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 
@@ -306,8 +306,7 @@ update_projected_region(IPA_NODE* node, PROJECTED_REGION* p)
   // they need to be copied, rathern than changed in places
   PROJECTED_NODE* copy_pn = (PROJECTED_NODE*) 
     MEM_POOL_Alloc(&IPA_array_prop_pool, count * sizeof(PROJECTED_NODE));
-  bcopy(IPA_get_projected_node_array(node) + start_idx, 
-        copy_pn, 
+  memcpy(copy_pn, IPA_get_projected_node_array(node) + start_idx, 
         count * sizeof(PROJECTED_NODE));
   for (i = 0; i < count; i++) {
     copy_pn[i].Set_Mem_Pool(&IPA_array_prop_pool);
@@ -397,8 +396,7 @@ update_region(IPA_NODE* node, REGION_ARRAYS* r)
   // they need to be copied, rather than changed in place
   PROJECTED_REGION* copy_pr = (PROJECTED_REGION*)
     MEM_POOL_Alloc(&IPA_array_prop_pool, sizeof(PROJECTED_REGION) * count);
-  bcopy(IPA_get_proj_region_array(node) + start_idx, 
-        copy_pr, 
+  memcpy(copy_pr, IPA_get_proj_region_array(node) + start_idx, 
         count * sizeof(PROJECTED_REGION));
   for (i = 0; i < count; i++) {
     copy_pr[i].Set_Mem_Pool(&IPA_array_prop_pool);
@@ -530,7 +528,7 @@ update_mod_const_sections(IPA_NODE *node)
 	LOOPINFO* l = &ipa_loopinfo[cfg_info->Get_loop_index()-1];
 	LOOPINFO* copy_li = (LOOPINFO*)
 	  MEM_POOL_Alloc(&IPA_array_prop_pool, sizeof(LOOPINFO));
-	bcopy(l, copy_li, sizeof(LOOPINFO));
+	memcpy(l, copy_li, sizeof(LOOPINFO));
 	copy_li->Set_Mem_Pool(&IPA_array_prop_pool);
 	update_loop_info(node, copy_li);
       } 
@@ -955,7 +953,7 @@ IPA_FORMALS_IN_ARRAY_SECTION_DF::Trans(void*,
           // Map the actual argument to the caller's formals (if any)
           INT32 actual_value_idx = call_actuals[i].Get_value_index();
           if (actual_value_idx != -1) {
-            bzero(formals_used, num_formals * sizeof(mBOOL));
+            memset(formals_used, 0, num_formals * sizeof(mBOOL));
             SUMMARY_VALUE* actual_value = values + actual_value_idx;
             if (Value_has_only_formals(actual_value, formals_used)) {
               // Set used_in_array_section bits based on formals_used

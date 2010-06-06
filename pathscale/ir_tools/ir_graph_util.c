@@ -54,20 +54,20 @@ GRAPH* build_graph_u(VINDEX vertex_size, EINDEX edge_size, MEM_POOL* m)
 
  g = (GRAPH*) MEM_POOL_Alloc(m, sizeof(GRAPH));
  GR_ASSERT (g != 0, "build_graph_u g == 0\n");
- bzero(g, sizeof(GRAPH));
+ memset(g, 0, sizeof(GRAPH));
 
  if (vertex_size != 0)    /* build the vertices */
    {
    GRAPH_v(g) = (VERTEX*) MEM_POOL_Alloc(m, sizeof(VERTEX)*vertex_size);
    GR_ASSERT (GRAPH_v(g) != 0, "build_graph_u graph_v(g) == 0\n");
-   bzero(GRAPH_v(g), sizeof(VERTEX)*vertex_size);
+   memset(GRAPH_v(g), 0, sizeof(VERTEX)*vertex_size);
    }
 
  if (edge_size != 0)      /* build the edges    */
    {
    GRAPH_e(g) = (EDGE*) MEM_POOL_Alloc(m, sizeof(EDGE)*edge_size);
    GR_ASSERT (GRAPH_e(g) != 0, "build_graph_u graph_e(g) == 0\n");
-   bzero(GRAPH_e(g), sizeof(EDGE)*edge_size);
+   memset(GRAPH_e(g), 0, sizeof(EDGE)*edge_size);
    }
 
 /*----------------------------set up the vertices-------------------------*/
@@ -114,7 +114,7 @@ GRAPH* build_graph(MEM_POOL* m)
  GRAPH *g;
 
  g = (GRAPH*) MEM_POOL_Alloc(m, sizeof(GRAPH));
- bzero(g, sizeof(GRAPH));
+ memset(g, 0, sizeof(GRAPH));
  GR_ASSERT (g != 0, "build_graph g == 0\n");
 
  GRAPH_vcnt(g) = 0;      /* total vertices  */
@@ -175,7 +175,7 @@ static void grow_edge(GRAPH *g)
  GRAPH_e(g) = (EDGE*) MEM_POOL_Realloc(m,GRAPH_e(g), sizeof(EDGE)*GRAPH_emax(g),
                                                    sizeof(EDGE)*max);
 /*  diff = max - GRAPH_emax(g); */
-/*  bzero(&GRAPH_e_i(g,GRAPH_emax(g)), sizeof(EDGE)*(diff));  */
+/*  memset(&GRAPH_e_i(g,GRAPH_emax(g)), 0, sizeof(EDGE)*(diff));  */
 
  for (i = GRAPH_emax(g); i<max; ++i) {
   EDGE_nfrom(&GRAPH_e_i(g,i)) = i+1; /* set the linked list of free edges */
@@ -782,7 +782,7 @@ printf ("Depth_First_Ordering: vertex count = %d \n", vertex_count );
   visit = (BOOL *) MEM_POOL_Alloc ( m, sizeof(BOOL)*vertex_max );
   GR_ASSERT ( visit != NULL, "Depth_First_Ordering: visit" );
 
-  bzero ( visit, sizeof(BOOL)*vertex_max );
+  memset ( visit, 0, sizeof(BOOL)*vertex_max );
 
   /* Initialize the DFN struct -- set end and first to point beyond
    * the first element:

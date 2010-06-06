@@ -185,7 +185,7 @@ Increase_Incl_Table_Size (UINT16 incl_idx)
     if (incl_table == NULL) {
       ErrMsg ( EC_No_Mem, "Increase_Incl_Table_Size" );
     }
-    bzero (&incl_table[incl_table_size], new_idx - incl_table_size);
+    memset (&incl_table[incl_table_size], 0, new_idx - incl_table_size);
     incl_table_size = new_idx;
   }
 }
@@ -219,7 +219,7 @@ Increase_File_Table_Size (UINT16 file_idx)
     if (file_table == NULL) {
       ErrMsg ( EC_No_Mem, "Increase_File_Table_Size" );
     }
-    bzero (&file_table[file_table_size], new_idx - file_table_size);
+    memset (&file_table[file_table_size], 0, new_idx - file_table_size);
     file_table_size = new_idx;
   }
 }

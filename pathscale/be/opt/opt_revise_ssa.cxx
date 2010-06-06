@@ -174,7 +174,7 @@ OCC_TAB_ENTRY *
 OPT_REVISE_SSA::Get_new_occ(CODEREP *cr, BOOL is_store)
 {
   WN *wn = WN_Create(cr->Op(), 1);  // OCC_TAB_ENTRY needs a wn
-  bzero(wn, sizeof(WN));
+  memset(wn, 0, sizeof(WN));
   WN_set_operator(wn, OPR_ILOAD);
   WN_set_desc(wn, cr->Dsctyp());
   WN_set_rtype(wn, cr->Dtyp());
@@ -247,7 +247,7 @@ OPT_REVISE_SSA::Find_scalars_from_lowering_bitfld_cr(CODEREP *cr)
   case CK_VAR: 
     if (cr->Bit_field_valid()) {
       WN wn;
-      bzero(&wn, sizeof(WN));
+      memset(&wn, 0, sizeof(WN));
       WN_set_operator(&wn, OPR_LDID);
       WN_set_desc(&wn, cr->Dsctyp());
       WN_set_rtype(&wn, cr->Dtyp());
@@ -371,7 +371,7 @@ OPT_REVISE_SSA::Find_scalars_from_lowering_bitfld(void)
 	  _symbols_to_revise->Union1D(lhs->Aux_id()); // pv 805267
 
           WN wn;
-          bzero(&wn, sizeof(WN));
+          memset(&wn, 0, sizeof(WN));
 	  WN_set_operator(&wn, OPR_STID);
 	  WN_set_desc(&wn, stmt->Desc());
 	  WN_set_rtype(&wn, MTYPE_V);
@@ -573,7 +573,7 @@ OPT_REVISE_SSA::Find_scalars_from_lda_indirects(void)
 #endif
 	  // this indirect can be folded
 	  CODEREP *lda = lhs->Istr_base();
-          bzero(&wn, sizeof(WN));
+          memset(&wn, 0, sizeof(WN));
 	  WN_set_operator(&wn, opr == OPR_ISTORE ? OPR_STID : OPR_STBITS);
 	  WN_set_desc(&wn, stmt->Desc());
 	  WN_set_rtype(&wn, MTYPE_V);

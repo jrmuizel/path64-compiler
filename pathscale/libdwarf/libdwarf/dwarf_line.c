@@ -29,8 +29,9 @@
 #include "config.h"
 #include "dwarf_incl.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "dwarf_line.h"
-#ifdef HAVE_ALLOCA_H
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

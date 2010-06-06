@@ -25,6 +25,8 @@
 
 #include <liberrno.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 #include <cray/dopevec.h>
 #include <cray/portdefs.h>
 #include "arraydefs.h"

@@ -45,12 +45,14 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <errno.h>
-#include <bstring.h>
+#include <string.h>
 #include "elf_stuff.h"
 #include <elfaccess.h>
 #include "libelf/libelf.h"
 #include <stamp.h>
+#if HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
 #include <cmplrs/leb128.h>
 #include <cmplrs/elf_interfaces.h>
 #include <sys/unwindP.h>

@@ -130,7 +130,7 @@ private:
   {
     e->decoded_ops = e->mem_ops = e->fp_ops = 0;
 
-    bzero( e->resources, sizeof(e->resources) );
+    memset( e->resources, 0, sizeof(e->resources) );
     for( int i = NONE; i <= FMISC; i++ ){
       for( int j = 0; j < num_fu[i]; j++ ){
 	e->resources[i][j] = true;
@@ -425,7 +425,7 @@ void KEY_SCH::Init()
 
   opr_array = (OPR*) MEM_POOL_Alloc( mem_pool,
 				     sizeof(opr_array[0]) * max_indx );
-  bzero( opr_array, ( sizeof(opr_array[0]) * max_indx ) );
+  memset( opr_array, 0, ( sizeof(opr_array[0]) * max_indx ) );
 
   // Init resource table.
   int rtable_size = 0;
@@ -475,7 +475,7 @@ void KEY_SCH::Build_OPR()
   int mem_ops = 0;
   _true_cp = _cp = 0;
 
-  bzero( defop_by_reg, sizeof(defop_by_reg) );
+  memset( defop_by_reg, 0, sizeof(defop_by_reg) );
 
   FOR_ALL_BB_OPs_FWD( bb, op ){
     OPR* opr = Get_OPR( op );

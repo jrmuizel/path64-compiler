@@ -72,14 +72,14 @@ GRAPH::Build()
   if (vmax != 0) {
     v = (GRAPH::NODE_TYPE *) 
       MEM_POOL_Alloc(m, sizeof(GRAPH::NODE_TYPE) * vmax);
-    bzero(v, sizeof(GRAPH::NODE_TYPE) * vmax);
+    memset(v, 0, sizeof(GRAPH::NODE_TYPE) * vmax);
   }
   
   /* build the edges    */
   if (emax != 0) {
     e = (GRAPH::EDGE_TYPE *)
       MEM_POOL_Alloc(m, sizeof(GRAPH::EDGE_TYPE) * emax);
-    bzero(e, sizeof(GRAPH::EDGE_TYPE) * emax);
+    memset(e, 0, sizeof(GRAPH::EDGE_TYPE) * emax);
   }
 
   /*----------------------------set up the vertices-----------------------*/
@@ -536,7 +536,7 @@ Depth_First_Ordering ( GRAPH *g, MEM_POOL* m )
   if ( visit == NULL ) {
     ErrMsg ( EC_No_Mem, "Depth_First_Ordering: visit" );
   }
-  bzero ( visit, sizeof(mBOOL)*vertex_max );
+  memset ( visit, 0, sizeof(mBOOL)*vertex_max );
 
   /* Initialize the DFN struct -- set end and first to point beyond
    * the first element:

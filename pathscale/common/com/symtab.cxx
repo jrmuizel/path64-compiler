@@ -40,7 +40,7 @@
 #endif /* USE_PCH */
 #pragma hdrstop
 #include <stdio.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 
@@ -2675,10 +2675,10 @@ Initialize_Symbol_Tables (BOOL reserve_index_zero)
     
     Scope_tab = (SCOPE *) MEM_POOL_Alloc (Malloc_Mem_Pool,
 					  Max_scope * sizeof(SCOPE));
-    bzero(Scope_tab, Max_scope * sizeof(SCOPE));
+    memset(Scope_tab, 0, Max_scope * sizeof(SCOPE));
 
-    bzero (MTYPE_TO_PREG_array, sizeof(ST*) * (MTYPE_LAST + 1));
-    bzero (MTYPE_TO_TY_array, sizeof(TY_IDX) * (MTYPE_LAST + 1));
+    memset (MTYPE_TO_PREG_array, 0, sizeof(ST*) * (MTYPE_LAST + 1));
+    memset (MTYPE_TO_TY_array, 0, sizeof(TY_IDX) * (MTYPE_LAST + 1));
 
     if (reserve_index_zero) {
 	// For producer, we reserve first entry for all global tables
@@ -2686,13 +2686,13 @@ Initialize_Symbol_Tables (BOOL reserve_index_zero)
 	Initialize_Strtab (0x1000);	// start with 4Kbytes for strtab.
 
 	UINT64 dummy_idx=0;
-	bzero (&New_PU ((PU_IDX&) dummy_idx), sizeof(PU));
-	bzero (&New_TY ((TY_IDX&) dummy_idx), sizeof(TY));
-	bzero (New_FLD ().Entry(), sizeof(FLD));
-	bzero (&New_TYLIST ((TYLIST_IDX&) dummy_idx), sizeof(TYLIST));
-	bzero (New_ARB ().Entry(), sizeof(ARB));
-	bzero (&New_BLK ((BLK_IDX&) dummy_idx), sizeof(BLK));
-	bzero (&Initv_Table.New_entry ((INITV_IDX&) dummy_idx), sizeof(INITV));
+	memset (&New_PU ((PU_IDX&) dummy_idx), 0, sizeof(PU));
+	memset (&New_TY ((TY_IDX&) dummy_idx), 0, sizeof(TY));
+	memset (New_FLD ().Entry(), 0, sizeof(FLD));
+	memset (&New_TYLIST ((TYLIST_IDX&) dummy_idx), 0, sizeof(TYLIST));
+	memset (New_ARB ().Entry(), 0, sizeof(ARB));
+	memset (&New_BLK ((BLK_IDX&) dummy_idx), 0, sizeof(BLK));
+	memset (&Initv_Table.New_entry ((INITV_IDX&) dummy_idx), 0, sizeof(INITV));
 	Init_Constab ();
 	New_Scope (GLOBAL_SYMTAB, Malloc_Mem_Pool, TRUE);
 	Create_Special_Global_Symbols ();
@@ -2702,7 +2702,7 @@ Initialize_Symbol_Tables (BOOL reserve_index_zero)
     if (!Read_Global_Data) {
        // reserve zero index in BLK table
        UINT blk_idx;
-       bzero (&New_BLK ((BLK_IDX&) blk_idx), sizeof(BLK));
+       memset (&New_BLK ((BLK_IDX&) blk_idx), 0, sizeof(BLK));
     }
 #endif
 }
@@ -2732,7 +2732,7 @@ Init_Constab ()
     if (Tcon_Table.Size () == 0) {
 	TCON Zero;
 	UINT32 idx;
-        bzero (&Zero, sizeof(TCON));
+        memset (&Zero, 0, sizeof(TCON));
         idx = Tcon_Table.Insert (Zero);	// index 0: dummy
 	Set_TCON_ty (Zero, MTYPE_F4); 
         idx = Tcon_Table.Insert (Zero);	// index 1: float (0.0)

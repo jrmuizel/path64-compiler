@@ -48,7 +48,7 @@ _X_PROP_CREATE_(
   UINT32 words = (  (universe_size + _X_PROP_TYPE_SIZE_ - 1)
 		  >> _X_PROP_TYPE_SIZE_LOG2_) + 1;
   _X_PROP_TYPE_ *prop = TYPE_MEM_POOL_ALLOC_N(_X_PROP_TYPE_, pool, words);
-  if ( ! MEM_POOL_Zeroed(pool) ) bzero(prop, words * sizeof(_X_PROP_TYPE_));
+  if ( ! MEM_POOL_Zeroed(pool) ) memset(prop, 0, words * sizeof(_X_PROP_TYPE_));
   prop[0] = universe_size;
   return prop;
 }

@@ -38,7 +38,7 @@
  * ====================================================================
  */
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include "defs.h"
@@ -195,8 +195,8 @@ int Get_OP_stack_reg( OP* op, int opnd )
 static void Create_OP_stinfo( OP* op )
 {
   OP_stinfo* stinfo = TYPE_MEM_POOL_ALLOC( OP_stinfo, pu_mem_pool );
-  // Because of using bzero, the stack registers have to start from 1, not 0.
-  bzero( stinfo, sizeof(stinfo[0]) );
+  // Because of using memset, the stack registers have to start from 1, not 0.
+  memset( stinfo, 0, sizeof(stinfo[0]) );
   FmtAssert( OP_bb(op) != NULL, ("NYI") );
   BB_OP_MAP bb_map = (BB_OP_MAP)BB_MAP_Get( BBs_Map, OP_bb(op) );
   BB_OP_MAP_Set( bb_map, op, stinfo );

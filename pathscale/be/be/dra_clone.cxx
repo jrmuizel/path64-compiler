@@ -44,7 +44,7 @@
 #define ONST(x, y) (y)
 
 #define __STDC_LIMIT_MACROS
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>             // alloca
 #endif
 #include <unistd.h>             // write

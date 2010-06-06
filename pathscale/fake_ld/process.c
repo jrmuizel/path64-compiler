@@ -68,7 +68,9 @@
 #include <fcntl.h>		/* for open(2) */
 #include <sys/dir.h>		/* for opendir(2), readdir, closedir */
 #include <sys/wait.h>		/* for waitpid(2) */
+#if HAVE_ALLOCA_H
 #include <alloca.h>		/* for alloca(3) */
+#endif
 #include <signal.h>		/* for kill(2) */
 #include <limits.h>		/* for PATH_MAX */
 

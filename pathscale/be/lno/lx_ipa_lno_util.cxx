@@ -24,7 +24,9 @@
 
 //* -*-Mode: c++;-*- (Tell emacs to use c++ mode) */
 
+#if HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
 #include "ipa_section.h"
 #include "ipa_lno_file.h"
 #include "ipa_lno_util.h"

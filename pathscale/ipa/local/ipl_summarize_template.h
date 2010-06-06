@@ -2465,7 +2465,7 @@ SUMMARIZE<program>::Process_formal (WN *w, INT num_formals, SUMMARY_PROCEDURE *p
 {
     for (INT i = 0; i < num_formals; i++) {
 	SUMMARY_FORMAL *formal = New_formal ();
-	bzero (formal, sizeof(SUMMARY_FORMAL));
+	memset (formal, 0, sizeof(SUMMARY_FORMAL));
 	const ST* formal_st = WN_st (WN_formal (w, i));
 	INT sym_idx = Get_symbol_index (formal_st);
 	formal->Set_symbol_index (sym_idx);
@@ -2494,7 +2494,7 @@ SUMMARIZE<program>::Process_formal_alt (WN *w, INT kid_count)
 {
     for (INT i = 0; i < kid_count; i++) {
 	SUMMARY_FORMAL *formal = New_formal ();
-	bzero (formal, sizeof(SUMMARY_FORMAL));
+	memset (formal, 0, sizeof(SUMMARY_FORMAL));
 	const ST* formal_st = WN_st(WN_kid(w, i));
 	INT sym_idx = Get_symbol_index (formal_st);
 	formal->Set_symbol_index (sym_idx);

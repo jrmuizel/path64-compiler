@@ -352,7 +352,7 @@ public:
   void Clear_w2fc_flags(void) 
   {
     if (_flags != NULL) {
-      bzero(_flags,_size*sizeof(mUINT8)) ;
+      memset(_flags, 0, _size*sizeof(mUINT8)) ;
     }
   }
 };

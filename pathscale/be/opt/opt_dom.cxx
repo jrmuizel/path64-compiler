@@ -263,7 +263,7 @@ DOM_INFO::DOM_INFO( const CFG *cfg, MEM_POOL *mempool )
   // clear out the array
   // WARNING: I'm assuming that no real constructor is called for
   // each element of the array
-  BZERO( recs, bbs*sizeof(recs[0]) );
+  memset( recs, 0, bbs*sizeof(recs[0]) );
 
   // now init anything that doesn't need to be zero
   for ( INT i = 0; i < bbs; i++ ) {

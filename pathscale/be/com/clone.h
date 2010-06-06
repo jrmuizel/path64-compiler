@@ -126,7 +126,7 @@ public:
   IPO_ADDR_HASH (MEM_POOL *m) {
     mem = m;
     table_empty = TRUE;
-    bzero (table, sizeof(table));
+    memset (table, 0, sizeof(table));
   };
 
   void Insert (void *orig, void *copy);
@@ -135,7 +135,7 @@ public:
 
   void Clear (void) {
     if (!table_empty) {
-      bzero (table, sizeof(table));
+      memset (table, 0, sizeof(table));
       table_empty = TRUE;
     }
   };

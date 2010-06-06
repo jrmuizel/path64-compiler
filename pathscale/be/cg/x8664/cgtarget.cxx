@@ -963,7 +963,7 @@ CGTARG_Compute_PRC_INFO(
 {
   OP *op;
 
-  bzero (info, sizeof (PRC_INFO));
+  memset (info, 0, sizeof (PRC_INFO));
 
   for ( op = BB_first_op(bb); op != NULL; op = OP_next(op) ) {
     INT num_insts = OP_Real_Ops (op);
@@ -2629,7 +2629,7 @@ BOOL Op_In_Working_Set ( OP* op )
     TN* scale;
   } a, b;
 
-  bzero( &a, sizeof(a) );
+  memset( &a, 0, sizeof(a) );
   a.scale  = OP_opnd_use( op, OU_scale );
   a.base   = OP_opnd_use( op, OU_base );
   a.index  = OP_opnd_use( op, OU_index );
@@ -2640,7 +2640,7 @@ BOOL Op_In_Working_Set ( OP* op )
   for (INT i = 0; i < Working_Set.Elements(); i++) {
     OP* last = Working_Set.Top_nth(i);
 
-    bzero( &b, sizeof(b) );
+    memset( &b, 0, sizeof(b) );
     b.scale  = OP_opnd_use( last, OU_scale );
     b.base   = OP_opnd_use( last, OU_base );
     b.index  = OP_opnd_use( last, OU_index );

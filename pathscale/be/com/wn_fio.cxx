@@ -41,11 +41,7 @@
 #include "be_com_pch.h"
 #endif /* USE_PCH */
 #pragma hdrstop
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 #include <limits.h>
-#else /* defined(BUILD_OS_DARWIN) */
-#include <values.h>
-#endif /* defined(BUILD_OS_DARWIN) */
 #include <isam.h>
 #include "defs.h"
 #include "strtab.h"
@@ -8874,8 +8870,8 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
   /*  Clear all potential control items and then extract the ones specified.
       Do some partial pre-processing on specific items for efficiency.  */
 
-  bzero ( items,  sizeof(items)  );
-  bzero ( itemsx, sizeof(itemsx) );
+  memset ( items,  0, sizeof(items)  );
+  memset ( itemsx, 0, sizeof(itemsx) );
 
   for (iolist=2; iolist<WN_kid_count(tree); iolist++) {
 

@@ -51,7 +51,7 @@
 #include <fcntl.h>		/* for open(2) */
 #include <sys/dir.h>		/* for opendir(2), readdir, closedir */
 #include <sys/wait.h>		/* for waitpid(2) */
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>		/* for alloca(3) */
 #endif
 #include <signal.h>		/* for kill(2) */
@@ -173,7 +173,7 @@ ipa_copy_of (char *str)
     len = strlen(str) + 1;
     p = (char *) MALLOC (len);
     MALLOC_ASSERT (p);
-    BCOPY (str, p, len);
+    memcpy(p, str, len);
     return p;
 } /* ipa_copy_of */
 

@@ -43,7 +43,7 @@
 #include <fcntl.h> 
 #include <errno.h>
 #include <signal.h>
-#include <bstring.h>
+#include <string.h>
 #define USE_STANDARD_TYPES
 #include "defs.h"
 #include "cxx_memory.h"

@@ -170,9 +170,7 @@ cwh_auxst_find(ST *st, BOOL create)
 
   if (o == NULL) { 
     if (create) {
-      o = (AUXST *) malloc(sizeof(AUXST));
-
-      bzero(o,sizeof(AUXST));
+      o = (AUXST *) calloc(1, sizeof(AUXST));
 
       AUXST_OwningST(o)= st ;
       AUXST_Next(o)    = Top_Auxst[ST_level(st)];

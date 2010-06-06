@@ -26,7 +26,9 @@
 // all system headers included directly from LNO
 //
 
+#if HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>

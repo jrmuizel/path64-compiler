@@ -50,11 +50,7 @@ extern "C" {
 #include "gspin-wgen-interface.h"
 }
 
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 #include <limits.h>
-#else /* defined(BUILD_OS_DARWIN) */
-#include <values.h>
-#endif /* defined(BUILD_OS_DARWIN) */
 #include <sys/types.h>
 #if defined(BUILD_OS_DARWIN)
 #include <darwin_elf.h>

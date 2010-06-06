@@ -121,7 +121,7 @@
 static const char source_file[] = __FILE__;
 #endif /* _KEEP_RCS_ID */
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 
@@ -733,7 +733,7 @@ void EBO_Init(void)
   EBO_first_opinfo = NULL;
   EBO_last_opinfo = NULL;
 
-  bzero(EBO_opinfo_table,sizeof(EBO_opinfo_table));
+  memset(EBO_opinfo_table, 0, sizeof(EBO_opinfo_table));
 
   EBO_num_tninfo_entries = 0;
   EBO_tninfo_entries_reused = 0;

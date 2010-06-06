@@ -75,7 +75,7 @@
 #include "prompf.h"
 #include "anl_driver.h"
 #include "stab.h"
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include "fiz_fuse.h"

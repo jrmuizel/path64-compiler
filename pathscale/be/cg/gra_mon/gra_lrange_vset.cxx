@@ -39,11 +39,7 @@ static char *rcs_id = "$Source$ $Revision$";
 #endif
 
 #include "defs.h"
-#ifndef __GNUC__
-#include "bstring.h"
-#else
-#include "string.h"
-#endif
+#include <string.h>
 #include "gra_bb.h"
 #include "gra_lrange.h"
 #include "gra_lrange_vset.h"
@@ -58,13 +54,11 @@ LRANGE_VSET_Create( LRANGE** vec, size_t count, MEM_POOL *pool )
   LRANGE_VSET* result =
     (LRANGE_VSET*) MEM_POOL_Alloc(pool,  sizeof(LRANGE_VSET)
                                        + (count - 1) * sizeof(LRANGE*));
-  //  To use bcopy or not?  I think that on banyon (due to improved shared
+  //  To use memcopy or not?  I think that on banyon (due to improved shared
   //  library version), it will probably do better with long vectors than
   //  anything we can write in simple C without really understanding which
   //  compiler will be used.  *Sigh*
-  bcopy((void*) vec,
-        (void*) (result->vec),
-        count * sizeof(LRANGE*));
+  memcpy(result->vec, vec, count * sizeof(LRANGE*));
   result->count = count;
   return result;
 }

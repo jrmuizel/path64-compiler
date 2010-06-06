@@ -158,7 +158,7 @@ WN2F_Initiate_ZeroInt(void)
    WN       *wn = (WN*) &ZeroInt;
    OPCODE    opcode = OPCODE_make_op(OPR_INTCONST, MTYPE_I4, MTYPE_V);
 
-   bzero(wn, sizeof(WN));
+   memset(wn, 0, sizeof(WN));
    WN_set_opcode(wn, opcode);
    WN_set_kid_count(wn, 0);
    WN_set_map_id(wn, WN_MAP_UNDEFINED);
@@ -173,7 +173,7 @@ WN2F_Initiate_OneInt(void)
    WN       *wn = (WN*) &OneInt;
    OPCODE    opcode = OPCODE_make_op(OPR_INTCONST, MTYPE_I4, MTYPE_V);
 
-   bzero(wn, sizeof(WN));
+   memset(wn, 0, sizeof(WN));
    WN_set_opcode(wn, opcode);
    WN_set_kid_count(wn, 0);
    WN_set_map_id(wn, WN_MAP_UNDEFINED);

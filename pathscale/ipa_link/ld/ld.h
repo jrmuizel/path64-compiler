@@ -36,7 +36,7 @@
 # undef alloca
 # define alloca __builtin_alloca
 #else
-# if defined(HAVE_ALLOCA_H) && !defined(C_ALLOCA)
+# if HAVE_ALLOCA_H && !defined(C_ALLOCA)
 #  include <alloca.h>
 # else
 #  ifndef alloca /* predefined by HP cc +Olibcalls */

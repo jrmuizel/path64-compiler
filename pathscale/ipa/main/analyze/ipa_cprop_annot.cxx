@@ -41,7 +41,7 @@
 #else /* defined(BUILD_OS_DARWIN) */
 #include <elf.h>
 #endif /* defined(BUILD_OS_DARWIN) */
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 
@@ -790,7 +790,7 @@ Get_callee (SUMMARY_CALLSITE *callsite, INT sym_idx, BOOL must_be_an_actual)
     // build the map if not already done so
     INT size = sizeof(IPA_NODE *) * ipa_proc->Get_callsite_count ();
     callsite_map = (IPA_NODE **) MEM_POOL_Alloc (&Ipa_cprop_pool, size);
-    bzero (callsite_map, size);
+    memset (callsite_map, 0, size);
 	
     base = &ipa_callsite[ipa_proc->Get_callsite_index()];
 
@@ -1589,7 +1589,7 @@ Process_cond_branches (BOOL *call_deleted)
 	MEM_POOL_Alloc (&Ipa_cprop_pool, sizeof(CONDITION_STATE) *
 			ipa_proc->Get_ctrl_dep_count ());
 
-    bzero (cd_status, sizeof(CONDITION_STATE) * ipa_proc->Get_ctrl_dep_count ());
+    memset (cd_status, 0, sizeof(CONDITION_STATE) * ipa_proc->Get_ctrl_dep_count ());
 
     for (INT i = 0; i < ipa_proc->Get_ctrl_dep_count (); i++) {
 
@@ -1894,7 +1894,7 @@ Intra_PU_Formal_Cprop (IPA_NODE *node)
 
     INT call_count = ipa_proc->Get_callsite_count ();
     BOOL* call_deleted = (BOOL*) alloca (sizeof(BOOL) * call_count);
-    bzero (call_deleted, sizeof(BOOL) * call_count);
+    memset (call_deleted, 0, sizeof(BOOL) * call_count);
 
     Current_caller = node;
     callsite_map = 0;

@@ -36,7 +36,9 @@ extern char *sys_errlist[];
 #endif
 
 #ifdef KEY /* Bug 1683, 5019 */
+#if HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
 #endif /* KEY Bug 1683, 5019 */
 
 extern void s_copy (register char *a, register char *b, ftnlen la, ftnlen lb);

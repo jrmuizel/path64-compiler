@@ -136,7 +136,7 @@ IP_FILE_HDR_Add_New_PU (IP_FILE_HDR& hdr)
   
   // allocate and initialize a new PU_Info struct
   PU_Info* pu = (PU_Info*) MEM_POOL_Alloc (Malloc_Mem_Pool, sizeof(PU_Info));
-  bzero(pu, sizeof(PU_Info));
+  memset(pu, 0, sizeof(PU_Info));
   PU_Info_init(pu);
   
   // connect it to the list of IPA-created PUs

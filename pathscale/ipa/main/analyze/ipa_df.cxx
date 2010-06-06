@@ -264,11 +264,11 @@ void IPA_DATA_FLOW::dataflow(DFS *df)
     MEM_POOL_Alloc ( m, sizeof(void*) * GRAPH_vmax(IPA_Call_Graph->Graph()) );
 
   assert(DFS_in(df) != 0);
-  bzero(DFS_in(df), sizeof(void*)*GRAPH_vmax(IPA_Call_Graph->Graph()));
+  memset(DFS_in(df), 0, sizeof(void*)*GRAPH_vmax(IPA_Call_Graph->Graph()));
 
   DFS_out(df) = (void**)
     MEM_POOL_Alloc(m, sizeof(void*)*GRAPH_vmax(IPA_Call_Graph->Graph()));
-  bzero(DFS_out(df), sizeof(void*)*GRAPH_vmax(IPA_Call_Graph->Graph()));
+  memset(DFS_out(df), 0, sizeof(void*)*GRAPH_vmax(IPA_Call_Graph->Graph()));
   assert(DFS_out(df) != 0);
 
   DFS_change(df) = 1;

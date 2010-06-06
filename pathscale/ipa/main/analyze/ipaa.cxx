@@ -485,12 +485,12 @@ IPAA_FORMAL_MAP::Union_2 ( const IPAA_FORMAL_MAP *map )
   // There are at least two elements in map -- look at this:
   if ( this->_count == 0 ) {
     Expand ( map->_count );
-    bcopy ( _mvec, map->_mvec, map->_count * sizeof(MAP_ELMT) );
+    memcpy ( map->_mvec, _mvec, map->_count * sizeof(MAP_ELMT) );
     return TRUE;
   } else if ( this->_count <= 1 || this->_mvec[1] == MAP_NONE ) {
     valt = ( this->_count <= 1 ) ? this->_single : this->_mvec[0];
     Expand ( map->_count );
-    bcopy ( _mvec, map->_mvec, map->_count * sizeof(MAP_ELMT) );
+    memcpy (map->_mvec, _mvec, map->_count * sizeof(MAP_ELMT) );
     (void) Add_elmt ( valt );
     return TRUE;
   }
@@ -686,7 +686,7 @@ Force_Map ( IPAA_NODE_INFO &info, INT16 f )
     if ( mapvec == NULL ) {
       ErrMsg ( EC_No_Mem, "Force_Map: map vector" );
     }
-    bzero ( mapvec, sizeof(IPAA_FORMAL_MAP *) * info.Get_fcount() );
+    memset ( mapvec, 0, sizeof(IPAA_FORMAL_MAP *) * info.Get_fcount() );
     info.Set_fmap ( mapvec );
   }
   if ( info.Get_fmap(f) == NULL ) {
@@ -695,7 +695,7 @@ Force_Map ( IPAA_NODE_INFO &info, INT16 f )
     if ( map == NULL ) {
       ErrMsg ( EC_No_Mem, "Force_Map: map" );
     }
-    bzero ( map, sizeof(IPAA_FORMAL_MAP) );
+    memset ( map, 0, sizeof(IPAA_FORMAL_MAP) );
     info.Set_fmap ( f, map );
   }
 
@@ -882,7 +882,7 @@ IPAA_STEP::Init_Summary_Pointers ( void )
 
 IPAA_STEP::IPAA_STEP ( IPA_CALL_GRAPH &callgraph, IPA_NODE &cg_node )
 {
-  bzero ( this, sizeof(IPAA_STEP) );
+  memset ( this, 0, sizeof(IPAA_STEP) );
   this->_cg = &callgraph;
   this->_nd = &cg_node;
   _fsize = cg_node.Summary_Proc()->Get_formal_count();

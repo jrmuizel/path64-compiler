@@ -34,9 +34,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libgen.h>
-#if ! defined(BUILD_OS_DARWIN) && ! defined(__FreeBSD__)
-#include <malloc.h>
-#endif /* defined(BUILD_OS_DARWIN) */
 #include "string_utils.h"
 
 #define BLANK	' '

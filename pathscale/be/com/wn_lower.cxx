@@ -46,13 +46,9 @@
 #include "be_com_pch.h"
 #endif /* USE_PCH */
 #pragma hdrstop
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 #include <limits.h>
-#else /* defined(BUILD_OS_DARWIN) */
-#include <values.h>
-#endif /* defined(BUILD_OS_DARWIN) */
 #include <isam.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <sys/signal.h>
@@ -13803,7 +13799,7 @@ WN *WN_Lower(WN *tree, LOWER_ACTIONS actions, struct ALIAS_MANAGER *alias,
 
 #ifdef TARG_X8664
   current_loop_nest_depth = 0;
-  bzero( loop_info_stack, sizeof(loop_info_stack) );
+  memset( loop_info_stack, 0, sizeof(loop_info_stack) );
 #endif
 
   // Don't do any lowering on trees that merely wrap up file-scope

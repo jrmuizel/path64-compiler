@@ -47,7 +47,7 @@ static void Make_Mangled_Name(char *dst, const char *src)
   const char *ptr;
   int underscores;
 
-  bzero (dst, sizeof(char)*strlen(dst));
+  memset (dst, 0, sizeof(char)*strlen(dst));
   underscores = 1;
   for (ptr = src; ptr && *ptr && *ptr != ' ' ; ptr++){
     *dst++ = towlower(*ptr) ;

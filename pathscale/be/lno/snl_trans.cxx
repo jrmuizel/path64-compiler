@@ -46,7 +46,7 @@
 static const char *rcs_id =   snl_CXX "$Revision: 1.8 $";
 
 #include <sys/types.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include "snl.h"

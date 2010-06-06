@@ -575,7 +575,7 @@ CGTARG_Compute_PRC_INFO(
 {
   OP *op;
 
-  bzero (info, sizeof (PRC_INFO));
+  memset (info, 0, sizeof (PRC_INFO));
 
   for ( op = BB_first_op(bb); op != NULL; op = OP_next(op) ) {
     INT num_insts = OP_Real_Ops (op);

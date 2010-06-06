@@ -113,7 +113,7 @@
 // ***********************************************************************
 
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <sys/types.h>
@@ -138,7 +138,7 @@
 #include "data_layout.h"
 #include "lego_affinity.h"
 #include "region_util.h"
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include "prompf.h"

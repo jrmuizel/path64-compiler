@@ -77,7 +77,7 @@ static char *rcs_id = "$Source: be/com/SCCS/s.dep_graph.cxx $ $Revision: 1.7 $";
 
 #define USE_STANDARD_TYPES	    /* override unwanted defines in "defs.h" */
 
-#include <bstring.h>
+#include <string.h>
 #include "wn.h"
 #include "erglob.h"
 #include "errors.h"

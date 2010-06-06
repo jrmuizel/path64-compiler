@@ -29,7 +29,7 @@
 static const char source_file[] = __FILE__;
 static const char rcs_id[] = "$Source$ $Revision$";
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <limits.h>

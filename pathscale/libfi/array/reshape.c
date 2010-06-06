@@ -25,7 +25,8 @@ static const char USMID[] = "@(#) libfi/array/reshape.c	92.0	10/08/98 14:37:14";
 
 #include <stddef.h>
 #include <liberrno.h>
-#include <stddef.h>
+#include <string.h>
+#include <stdlib.h>
 #include <cray/dopevec.h>
 #include <cray/portdefs.h>
 #include "arraydefs.h"

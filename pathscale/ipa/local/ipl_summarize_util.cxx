@@ -496,7 +496,7 @@ public:
     /* operations */
 
     void Init () {
-	bzero (this, sizeof(CTRL_DEP));
+	memset (this, 0, sizeof(CTRL_DEP));
 	_head_of_chain = FALSE;
     }
 

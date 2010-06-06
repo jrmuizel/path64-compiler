@@ -283,9 +283,7 @@ Read_PU_Infos (char *base, INT32 size, INT32 *p_num_PUs)
 	return NULL;
     }
 
-    pu_array = (PU_Info *)malloc(sizeof(PU_Info) * num_PUs);
-
-    bzero(pu_array, sizeof(PU_Info) * num_PUs);
+    pu_array = (PU_Info *)calloc(num_PUs, sizeof(PU_Info));
 
     for (n = 0, pu = pu_array; n < num_PUs; n++, pu++) {
 	/* initialize */

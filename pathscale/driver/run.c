@@ -49,16 +49,13 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
-#if ! defined(BUILD_OS_DARWIN) && ! defined(__FreeBSD__)
-#include <malloc.h>
-#endif /* defined(BUILD_OS_DARWIN) */
 #include <sys/param.h>
 #include <sys/times.h>
 #if ! defined(BUILD_OS_DARWIN)
 #include <sys/procfs.h>
 #endif /* ! defined(BUILD_OS_DARWIN) */
 #include <limits.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <cmplrs/rcodes.h>

@@ -24,7 +24,7 @@
 
 //* -*-Mode: c++;-*- (Tell emacs to use c++ mode) */
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include "ipa_section.h"

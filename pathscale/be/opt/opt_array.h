@@ -147,7 +147,7 @@ void
 ARRAY<TT>::Bzero_array(void)
 {
   if (_array != NULL)
-    BZERO(_array,sizeof(TT) * _size);
+    memset(_array, 0, sizeof(TT) * _size);
 }
 
 #endif //opt_array_INCLUDED

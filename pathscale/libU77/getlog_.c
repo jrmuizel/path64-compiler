@@ -51,7 +51,9 @@
 
 #ifdef KEY /* Bug 1683, 5019 */
 
+#if HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
 
 #include "pathf90_libU_intrin.h"
 

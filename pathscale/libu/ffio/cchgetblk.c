@@ -26,12 +26,7 @@
 
 #include <stdio.h>
 #include <ffio.h>
-#if defined(BUILD_OS_DARWIN)
 #include <limits.h>
-#define MAXLONG LONG_MAX
-#else /* defined(BUILD_OS_DARWIN) */
-#include <values.h>
-#endif /* defined(BUILD_OS_DARWIN) */
 #include <errno.h>
 #include "cchio.h"
 
@@ -124,7 +119,7 @@ struct ffsw	*stat		/* pointer to status return word */
  *	reduce fragmentation of the cache.  When nblk>1, this algorithm
  *	approximates LRU and, most importantly, is deterministic.
  */
-	lru_tm  = MAXLONG;	      /* min _rtc() value in upcoming loop */
+	lru_tm  = LONG_MAX;	      /* min _rtc() value in upcoming loop */
 	lru_id  = 0;
 	for (i=0; i<(nbu-nblk+1); i+=nblk) {
 		long last_access = 0;    /* free pages have last_access == 0 */

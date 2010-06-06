@@ -23,7 +23,8 @@ add_custom_command(
 )
 
 ADD_DEFINITIONS(
-	-std=gnu99)
+	-std=gnu99
+	-D_GNU_SOURCE)
 
 IF(PATH64_ENABLE_OPENMP)
 add_library (openmp-static STATIC ${PATHSCALE_OPENMP_SRCS})
