@@ -192,16 +192,38 @@ ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D_MIPS_SZLONG=32
                )
 
-# Build the actual ld line to be used in driver
+# GNU-style hashing needs support of the dynamic linker, so white-list
+# potential platforms.
+IF (NOT DEFINED SUPPORT_HASH_STYLE_GNU)
+    SET(SOURCE_FILE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/hash-style.c")
 
-execute_process(COMMAND "ld --help 2>&1 | grep hash-style > /dev/null"
- RESULT_VARIABLE LD_NOT_SUPPORTS_HASH_STYLE)
+    FILE(WRITE "${SOURCE_FILE}" "#include <stdio.h>
+int main(void)
+{
+	return printf(\"\");
+}
+")
 
-if(${LD_NOT_SUPPORTS_HASH_STYLE})
-SET(LD_HASH_STYLE_FLAG "")
-else()
-SET(LD_HASH_STYLE_FLAG "--hash-style=gnu")
-endif()
+    MESSAGE(STATUS "Checking for --hash-style=gnu support")
+    TRY_RUN(SUPPORT_HASH_STYLE_GNU SUPPORT_HASH_STYLE_GNU_BUILD
+	${CMAKE_BINARY_DIR} ${SOURCE_FILE}
+        CMAKE_FLAGS -DLINK_LIBRARIES:STRING=-Wl,--hash-style=gnu
+	OUTPUT_VARIABLE OUTPUT)
+    IF (SUPPORT_HASH_STYLE_GNU_BUILD AND SUPPORT_HASH_STYLE_GNU EQUAL 0)
+	MESSAGE(STATUS "Checking for --hash-style=gnu support -- found ")
+    ELSE()
+	MESSAGE(STATUS "Checking for --hash-style=gnu support -- not found ")
+    	FILE(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
+    	    "Checking support for --hash-style=gnu support failed with the following output:\n"
+    	    "${OUTPUT}\n")
+    ENDIF()
+ENDIF()
+
+IF (SUPPORT_HASH_STYLE_GNU)
+    SET(LD_HASH_STYLE_FLAG "--hash-style=gnu")
+ELSE()
+    SET(LD_HASH_STYLE_FLAG "")
+ENDIF()
 
 
 # Build GCC and pathscale.
