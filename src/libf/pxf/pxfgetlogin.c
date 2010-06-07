@@ -36,7 +36,7 @@
 #ifndef _UNICOS
 #include <stddef.h>
 #endif
-#if defined(BUILD_OS_DARWIN)
+#if 1
 #include <sys/types.h>
 #include <unistd.h>
 #include <pwd.h>
@@ -99,9 +99,9 @@ _PXFGETLOGIN(
 
 
   /* get user's login name */
-#if defined(BUILD_OS_DARWIN)
+#if 1 /* cuserid() is deprecated */
   struct passwd *p_passwd = getpwuid(geteuid());
-  if (p_passwd != NULL & (loginptr = p_passwd->pw_name) != NULL)
+  if (p_passwd != NULL && (loginptr = p_passwd->pw_name) != NULL)
 #else /* defined(BUILD_OS_DARWIN) */
   if ((loginptr = cuserid(NULL)) != NULL)
 #endif /* defined(BUILD_OS_DARWIN) */

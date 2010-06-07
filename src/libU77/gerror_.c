@@ -47,7 +47,7 @@ G77_gerror_0 (char *str, ftnlen Lstr)
 {
 #ifdef KEY /* Bug 1683, 5019 */
   char *buf = alloca(Lstr + 1);
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE)
   /* Standard version uses "buf" */
   strerror_r(errno, buf, Lstr + 1);
   char *s = buf;
