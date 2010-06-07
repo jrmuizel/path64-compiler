@@ -421,3 +421,6 @@ BOOL CGTARG_OP_is_float_cst_load(OP *op, INT32 val) {
 	return FALSE; 
 }
  
+BOOL  CGTARG_is_bool_expand(OP *op) {
+	return FALSE; 
+}
