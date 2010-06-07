@@ -9,7 +9,7 @@ include_directories(
   ../ipa/local
   ../ipa/main/analyze
   ../ipa/main/optimize
-
+  ../../GCC/libspin
   ../be/com
   )
 
