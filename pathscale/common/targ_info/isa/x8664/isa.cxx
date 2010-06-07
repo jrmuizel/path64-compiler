@@ -1017,6 +1017,7 @@ main ()
 	      "psrad_mmx",
 	      "pand_mmx",
 	      "pandn_mmx",
+             "pand128",
 	      "por_mmx",
 	      "pxor_mmx",
 	      "unpckhpd",

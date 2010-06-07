@@ -351,6 +351,7 @@ main()
 		     TOP_max128v16,
 		     TOP_min128v8,
 		     TOP_min128v16,
+		     TOP_pand128,
 		     TOP_UNDEFINED);
   Result(0, fp128);
   Operand(0, fp128, opnd1);
@@ -2236,9 +2237,9 @@ main()
 		    TOP_pcmpistri,
 		    TOP_UNDEFINED);
   Result(0, int64);
-  Operand(0, fp128,  opnd1);
+  Operand(0, fp128,  opnd3);
   Operand(1, fp128,  opnd2);
-  Operand(2, simm8, opnd3);
+  Operand(2, simm8, opnd1);
 
   Instruction_Group("fp vector compare I",
 		    TOP_cmpeqps,

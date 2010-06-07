@@ -1423,6 +1423,10 @@ static void Init_OP_Name()
   OP_Name[TOP_cvtpd2ps_xxx] = "cvtpd2ps";
   OP_Name[TOP_cvttps2dq_xxx] = "cvttps2dq";
   OP_Name[TOP_cvttpd2dq_xxx] = "cvttpd2dq";
+
+  /* SSE4_2 */
+  OP_Name[TOP_pcmpistri] = "pcmpistri";
+
 //**********************************************************
 // For barcelona (bug 13108)
 // (1) "movlpd reg, mem"  ==> "movsd reg, mem"
@@ -1544,6 +1548,7 @@ static void Init_OP_Name()
   OP_Name[TOP_psrad_mmx] = "psrad";
   OP_Name[TOP_pand_mmx] = "pand";
   OP_Name[TOP_pandn_mmx] = "pandn";
+  OP_Name[TOP_pand128] = "pand";
   OP_Name[TOP_por_mmx] = "por";
   OP_Name[TOP_pxor_mmx] = "pxor";
   OP_Name[TOP_extrq] = "extrq";

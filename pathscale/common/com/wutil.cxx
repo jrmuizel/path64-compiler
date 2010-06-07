@@ -1243,6 +1243,7 @@ static const struct {
   INTRN_PADDQ128,               "INTRN_PADDQ128",
   INTRN_ADDSUBPS,               "INTRN_ADDSUBPS",
   INTRN_PCMPISTRI128,           "INTRN_PCMPISTRI128",
+  INTRN_PAND128,                "INTRN_PAND128",
   INTRN_V16F4LOG10,             "INTRN_V16F4LOG10",
 #endif
 #endif
