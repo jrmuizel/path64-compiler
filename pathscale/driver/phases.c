@@ -687,6 +687,16 @@ add_abi(string_list_t *args) {
 		  add_string(args, "-mabi=64");
 #endif
 }
+
+
+static void
+add_linker_abi(string_list_t *args) {
+#if defined(__sun)
+    add_string(args, (abi == ABI_N32) ? "-32" : "-64");
+#else
+    add_string(args, (abi == ABI_N32) ? "-melf_i386" : "-melf_x86_64");
+#endif
+}
 #endif /* KEY Mac port */
 
 #ifdef TARG_MIPS
@@ -1611,7 +1621,7 @@ add_file_args (string_list_t *args, phases_t index)
 		add_sysroot(args, index);
 #endif
 #ifndef __sun
-		add_abi(args);
+		add_linker_abi(args);
 #endif
 		set_library_paths(args);
 		if (outfile != NULL) {
@@ -1648,7 +1658,7 @@ add_file_args (string_list_t *args, phases_t index)
 #ifdef TARG_MIPS
 		add_sysroot(args, index);
 #endif
-		add_abi(args);
+		add_linker_abi(args);
 #ifdef TARG_X8664
 		if( abi == ABI_N32 ) {
 		  add_string(args, "-m");
@@ -2875,17 +2885,6 @@ run_ld (void)
         }
 #endif
 
-#if !defined(__sun)
-#ifdef KEY
-	// Pass "-m elf_i386" and "-m elf_x86_64" to linker.  Bug 8441.
-	if (option_was_seen(O_melf_i386)) {
-	    add_string(args, "-m elf_i386");
-	}
-	if (option_was_seen(O_melf_x86_64)) {
-	    add_string(args, "-m elf_x86_64");
-	}
-#endif
-#endif
 	if (ipa == TRUE) {
 	    ldpath = get_phase_dir (ldphase);
 	    ldpath = concat_strings (ldpath, "/ipa.so");

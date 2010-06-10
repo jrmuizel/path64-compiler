@@ -1,5 +1,12 @@
 project(libmpath)
 
+IF(PATH64_BUILD_32)
+
+SET(PATHSCALE_MPATH_SRCS dummy.c)
+SET(PATHSCALE_MPATH_S_SRCS )
+
+ELSE()
+
 SET(PATHSCALE_MPATH_SRCS        "amd/pow_errorl.c"
 				"amd/remainder_piby2d2f.c"
 				"amd/s_atan2.c"
@@ -73,6 +80,8 @@ SET(PATHSCALE_MPATH_S_SRCS      "amd/w_copysignf.s"
 				"amd/w_fastsin.S"
 				"amd/w_fastsincos.S"
 				"amd/w_pow.S")
+
+ENDIF()
 
 
 INCLUDE_DIRECTORIES(

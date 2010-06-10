@@ -104,11 +104,15 @@ ELSE()
 	MESSAGE(FATAL_ERROR "Must set PSC_FULL_VERSION")
 ENDIF()
 
-# TODO : This should use FIND_FILE and be more logical when it comes to cross compiles and multilib
-IF(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-SET(PSC_CRT_PATH "/usr/lib/amd64" CACHE STRING "Location of crt1.o crti.o and crtn.o")
+IF(PSC_CRT_PATH)
 ELSE()
-SET(PSC_CRT_PATH "/usr/lib" CACHE STRING "Location of crt1.o crti.o and crtn.o")
+    IF(PATH64_BUILD_32)
+        FIND_PATH(PSC_CRT_PATH crt1.o
+                  PATHS /lib32 /usr/lib32 /lib /usr/lib)
+    ELSE()
+        FIND_PATH(PSC_CRT_PATH crt1.o
+                  PATHS /lib64 /lib/amd64 /usr/lib64 /usr/lib/amd64 /lib /usr/lib)
+    ENDIF()
 ENDIF()
 
 IF(PSC_CRT_PATH)
@@ -191,14 +195,23 @@ ENDIF()
 # Selecting macro for enabling int types formats for C++
 SET(PATH64_STDC_FORMAT_MACROS -D__STDC_FORMAT_MACROS)
 
+OPTION(PATH64_BUILD_32 "Build 32-bit version" OFF)
+
+IF(PATH64_BUILD_32)
+    SET(CMAKE_CXX_FLAGS "-m32")
+    SET(CMAKE_C_FLAGS "-m32")
+    SET(CMAKE_Fortran_FLAGS "-m32")
+    SET(CMAKE_EXE_LINKER_FLAGS "-m32")
+    SET(CMAKE_MODULE_LINKER_FLAGS "-m32")
+    SET(CMAKE_SHARED_LINKER_FLAGS "-m32")
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 # Forching build for 64-bit on osol
-IF(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-SET(CMAKE_CXX_FLAGS "-m64")
-SET(CMAKE_C_FLAGS "-m64")
-SET(CMAKE_Fortran_FLAGS "-m64")
-SET(CMAKE_EXE_LINKER_FLAGS "-m64")
-SET(CMAKE_MODULE_LINKER_FLAGS "-m64")
-SET(CMAKE_SHARED_LINKER_FLAGS "-m64")
+    SET(CMAKE_CXX_FLAGS "-m64")
+    SET(CMAKE_C_FLAGS "-m64")
+    SET(CMAKE_Fortran_FLAGS "-m64")
+    SET(CMAKE_EXE_LINKER_FLAGS "-m64")
+    SET(CMAKE_MODULE_LINKER_FLAGS "-m64")
+    SET(CMAKE_SHARED_LINKER_FLAGS "-m64")
 ENDIF()
 
 

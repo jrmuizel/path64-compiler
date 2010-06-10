@@ -1,8 +1,8 @@
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-set(PATH64_M64_OPTION "-m64")
+if(PATH64_BUILD_32)
+    set(PATH64_M64_OPTION "-m32")
 else()
-set(PATH64_M64_OPTION "")
+    set(PATH64_M64_OPTION "-m64")
 endif()
 
 add_custom_command(

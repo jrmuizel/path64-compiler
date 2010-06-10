@@ -1,5 +1,11 @@
 project(libmv)
 
+IF(PATH64_BUILD_32)
+
+SET(PATHSCALE_MV_SRCS ../libmpath/dummy.c)
+
+ELSE()
+
 SET(PATHSCALE_MV_SRCS   	"../libmpath/amd/vrdacos.S"
 				"../libmpath/amd/vrdaexp.s"
 				"../libmpath/amd/vrdalog.s"
@@ -56,6 +62,8 @@ SET(PATHSCALE_MV_SRCS   	"../libmpath/amd/vrdacos.S"
 				"../libmpath/vtanf.c"
 				"../libmpath/amd/vrdapow.c"
 				"../libmpath/amd/vrsapowf.c")
+
+ENDIF()
 
 INCLUDE_DIRECTORIES(
 	../libmpath/amd
