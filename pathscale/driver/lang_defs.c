@@ -149,7 +149,7 @@ static phase_info_t phase_info[] = {
    /* We use 'B' for options to be passed to be via ipacom. */
 
    {'a',  0x0000001000000000LL,	"asm",	PHASEPATH,	FALSE},	/* as */
-   {'a',  0x0000002000000000LL,	"gcc", "", FALSE}, /* gcc */
+   {'a',  0x0000002000000000LL,        "pathas", PHASEPATH, FALSE}, /* gas */
    {'a',  0x0000003000000000LL,	"",	"",		FALSE},	/* any_as */
 
    {'d',  0x0000008000000000LL, "dsm_prelink", PHASEPATH,FALSE},/* dsm_prelink*/
