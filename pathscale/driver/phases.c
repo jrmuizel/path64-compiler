@@ -2041,29 +2041,34 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
 	//we intercept -Wl,<option> and pass to ld <option>
 	//here we deal with the -Wl passed explicitly only
 	if (!strncmp(p->name, "-Wl,", 4)) {
-	    //cut -Wl, prefix
-	    p->name+=4;
-	    if (!strncmp(p->name, "-rpath-link,", strlen("-rpath-link,"))) {
-	    //"-rpath-link,/path" should be -rpath-link=/path
-	    //to be accepted and processed by ld.
-	        p->name[strlen("-rpath-link")] = '\0';
-	        add_after_string(args, p, p->name + strlen("-rpath-link") + 1);
+	    // cut away -Wl, prefix and split the rest in pieces at each ","
+	    // advance p to avoid iterating over the newly added strings
+	    // 
+	    // pathcc -v f1.o -Wl,-whole-archive somelib.a -Wl,-no-whole-archive,-arg1,-arg2 f2.o -o somelib.so -Wl,-soname,thelib -Wl, f3.o
+	    // This produces (as far as the -Wl, args are concerned)
+	    // ld ... f1.o -whole-archive somelib.a -no-whole-archive -arg1 -arg2 f2.o -soname thelib f3.o
+	    // Note that the empty -Wl, is removed (turned into an empty string).
+	    int i, prev;
+	    char *s;
+	    string_item_t *q;
+	    p->name[3] = '\0';
+	    p->name+=3;
+	    q = p;
+	    prev = 1;
+	    s = p->name;
+	    for (i = 1; s[i]; i++) {
+		if (s[i] == ',') {
+		    s[i] = '\0';
+		    add_after_string(args, q, s + prev);
+		    p = q;
+		    q = q->next;
+		    prev = i+1;
+		}
 	    }
-	    if (!strncmp(p->name, "-rpath,", strlen("-rpath,"))) {
-	    //"-rpath,/path" should be -rpath /path
-	    //to be accepted and processed by ld.
-	        p->name[strlen("-rpath")] = '\0';
-	        add_after_string(args, p, p->name + strlen("-rpath") + 1);
-	    }
-	    if (!strncmp(p->name, "-soname,", strlen("-soname,"))) {
-	    //"-soname,/path" should be -soname /path
-	    //to be accepted and processed by ld.
-	        p->name[strlen("-soname")] = '\0';
-	        add_after_string(args, p, p->name + strlen("-soname") + 1);
-	    }
-	    /*TODO: probably we need here additional processing
-	     * for some other -Wl, stuff
-	     */
+	    add_after_string(args, q, s + prev);
+	    p = q->next;
+
+	    continue;
 	}
 
 	if (strncmp(p->name, "-L", 2))
