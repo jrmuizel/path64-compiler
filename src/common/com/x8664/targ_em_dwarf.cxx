@@ -149,7 +149,7 @@ Em_Dwarf_Symbolic_Relocs_To_Elf(next_buffer_retriever     get_buffer,
       }
       else {
 #if 0
-	fprintf(TFile, "translating pair (0x%lx) aimed at offset %" SCNd64 "\n",
+	fprintf(TFile, "translating pair (0x%lx) aimed at offset %" PRIu64 "\n",
 		reloc_buf, reloc_buf->drd_offset);
 #endif
 
@@ -177,7 +177,7 @@ Em_Dwarf_Symbolic_Relocs_To_Elf(next_buffer_retriever     get_buffer,
 	  buffer = get_buffer();
 	  bufsize = get_bufsize();
 #if 0
-	  fprintf(TFile, "buffer = 0x%lx, bufsize = %" SCNd64 "\n", buffer, bufsize);
+	  fprintf(TFile, "buffer = 0x%lx, bufsize = %" PRIu64 "\n", buffer, bufsize);
 #endif
 	}
 	if (is_64bit) {
@@ -194,7 +194,7 @@ Em_Dwarf_Symbolic_Relocs_To_Elf(next_buffer_retriever     get_buffer,
     }
     else {
 #if 0
-	fprintf(TFile, "translating simple (0x%lx) aimed at offset %" SCNd64 "\n",
+	fprintf(TFile, "translating simple (0x%lx) aimed at offset %" PRIu64 "\n",
 		reloc_buf, reloc_buf->drd_offset);
 #endif
 
@@ -206,7 +206,7 @@ Em_Dwarf_Symbolic_Relocs_To_Elf(next_buffer_retriever     get_buffer,
 	  buffer = get_buffer();
 	  bufsize = get_bufsize();
 #if 0
-	  fprintf(TFile, "buffer = 0x%lx, bufsize = %" SCNd64 "\n", buffer, bufsize);
+	  fprintf(TFile, "buffer = 0x%lx, bufsize = %" PRIu64 "\n", buffer, bufsize);
 #endif
 	}
       if (is_64bit) {

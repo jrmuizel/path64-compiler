@@ -202,7 +202,7 @@ static void
 DST_put_hex64_attribute(const char *at_name, UINT64 num)
 {
    DST_put_string(at_name);
-   sprintf(&tmp_buffer[0], "(0x%" SCNx64 ")", num);
+   sprintf(&tmp_buffer[0], "(0x%" PRIx64 ")", num);
    DST_put_string(&tmp_buffer[0]);
 }
 
@@ -236,7 +236,7 @@ static void
 DST_put_C8_attribute(const char *at_name, UINT64 real, UINT64 imag)
 {
   DST_put_string(at_name);
-  sprintf(&tmp_buffer[0], "(%" SCNd64 ", %" SCNd64 ")", real, imag);
+  sprintf(&tmp_buffer[0], "(%" PRIu64 ", %" PRIu64 ")", real, imag);
   DST_put_string(&tmp_buffer[0]);
 }
 #endif // KEY
@@ -245,7 +245,7 @@ static void
 DST_put_INT64_attribute(const char *at_name, INT64 num)
 {
    DST_put_string(at_name);
-   sprintf(&tmp_buffer[0], "(%" SCNd64 ")", num);
+   sprintf(&tmp_buffer[0], "(%" PRId64 ")", num);
    DST_put_string(&tmp_buffer[0]);
 }
 
@@ -253,7 +253,7 @@ static void
 DST_put_UINT64_attribute(const char *at_name, UINT64 num)
 {
    DST_put_string(at_name);
-   sprintf(&tmp_buffer[0], "(%" SCNd64 ")", num);
+   sprintf(&tmp_buffer[0], "(%" PRIu64 ")", num);
    DST_put_string(&tmp_buffer[0]);
 }
 
