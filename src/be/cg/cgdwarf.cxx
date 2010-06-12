@@ -257,7 +257,7 @@ Dwarf_Unsigned Cg_Dwarf_Symtab_Entry(CGD_SYMTAB_ENTRY_TYPE  type,
 	    "New CGD_Symtab entry: %lu --> (CGD_%s,%llu)\n",
 	    (long unsigned int) (CGD_Symtab.size() - 1),
 #else /* defined(BUILD_OS_DARWIN) */
-	    "New CGD_Symtab entry: %" PRIuPTR " --> (CGD_%s,%llu)\n",
+	    "New CGD_Symtab entry: %" PRIuPTR " --> (CGD_%s,%" PRIu64 ")\n",
 	    CGD_Symtab.size() - 1,
 #endif /* defined(BUILD_OS_DARWIN) */
 	    (type == CGD_LABIDX ? "LABIDX" : "ELFSYM"),
@@ -333,7 +333,7 @@ Elf64_Word Cg_Dwarf_Translate_Offset(Dwarf_Unsigned idx_from_sym_reloc)
     fflush(TFile);
     fprintf(TFile, "through index %llu ",
 	    CGD_Symtab[idx_from_sym_reloc].index);
-    fprintf(TFile, "to %" SCNd64 "\n",
+    fprintf(TFile, "to %" PRId64 "\n",
 	    Get_Label_Offset(CGD_Symtab[idx_from_sym_reloc].index));
   }
   Is_True(CGD_Symtab[idx_from_sym_reloc].type == CGD_LABIDX,
@@ -917,7 +917,7 @@ put_location (
 							     EMT_Put_Elf_Symbol(base_st)),
 				       &dw_error);
 		if (Trace_Dwarf) {
-	  		fprintf (TFile,"LocExpr: symbol = %s, offset = %" SCNd64 "\n", 
+	  		fprintf (TFile,"LocExpr: symbol = %s, offset = %" PRId64 "\n", 
 #ifdef KEY
 			      ST_name(base_st), base_ofst + ST_ofst(st) + offs);
 #else
@@ -969,7 +969,7 @@ put_location (
 						     EMT_Put_Elf_Symbol(base_st)),
 			       &dw_error);
 	if (Trace_Dwarf) {
-	  fprintf (TFile,"LocExpr: symbol = %s, offset = %" SCNd64 "\n", 
+	  fprintf (TFile,"LocExpr: symbol = %s, offset = %" PRId64 "\n", 
 #ifdef KEY
 			      ST_name(base_st), base_ofst + ST_ofst(st) + offs); 
 #else
