@@ -1,0 +1,26 @@
+#ifndef __main_defs_h
+#define __main_defs_h
+#cmakedefine PSC_MAJOR_VERSION "${PSC_MAJOR_VERSION}"
+#cmakedefine PSC_MINOR_VERSION "${PSC_MINOR_VERSION}"
+#cmakedefine PSC_FULL_VERSION "${PSC_FULL_VERSION}"
+#define PSC_NAME_PREFIX "path"
+#cmakedefine PSC_GCC_VERSION "${PSC_GCC_VERSION}"
+#define PSC_GCC40_VERSION PSC_GCC_VERSION
+#define PSC_GCC42_VERSION PSC_GCC_VERSION
+#define PSC_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
+#define PSC_PATCH_LEVEL "0"
+#define PSC_ROOT_PREFIX "${CMAKE_INSTALL_PREFIX}"
+#define PSC_TARGET "x86_64-pathscale-linux"
+#define BINPATH "${CMAKE_INSTALL_PREFIX}/bin"
+#cmakedefine NAMEPREFIX "${NAMEPREFIX}"
+#define LIBPATH "/${PATH64_LIB_PATH}"
+#define ALTBINPATH      BINPATH
+#define ALTLIBPATH      LIBPATH
+#define PHASEPATH       PSC_INSTALL_PREFIX LIBPATH
+#define GNUPHASEPATH    PHASEPATH
+#define PSC_CRT_BEGINEND_PATH LIBPATH
+#cmakedefine PSC_CRT_PATH "${PSC_CRT_PATH}"
+#define PSC_BUILD_DATE "2010-04-04/07:45:28"
+#define AUXILIARY_LD_FLAGS "${LD_HASH_STYLE_FLAG} --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -rpath " PSC_INSTALL_PREFIX LIBPATH
+#endif
+
