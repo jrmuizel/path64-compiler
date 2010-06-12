@@ -1633,7 +1633,7 @@ ST::Print (FILE *f, BOOL verbose) const
 
     if (!verbose) {
 	/* quick address */
-	fprintf (f, " @ 0x%" SCNd64 "", offset);
+	fprintf (f, " @ 0x%" PRIx64 "", offset);
 	if (base_idx != 0)
 	    fprintf (f, "(%s)", ST_name (base_idx));
     }
@@ -2025,7 +2025,7 @@ PREG::Print (FILE *f) const
 void
 ST_ATTR::Print (FILE* f) const
 {
-    fprintf (f, "0x%" PRIuPTR " (%s) --> ", st_idx, ST_name (st_idx));
+    fprintf (f, "0x%" PRIxPTR " (%s) --> ", st_idx, ST_name (st_idx));
     switch (kind) {
     case ST_ATTR_UNKNOWN:
 	fprintf (f, "(NOT USED)\n");

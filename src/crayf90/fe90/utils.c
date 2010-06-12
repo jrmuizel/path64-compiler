@@ -51,7 +51,7 @@ static char USMID[] = "\n@(#)5.0_pl/sources/utils.c	5.9	10/14/99 12:53:57\n";
 # if defined(_HOST32) && defined(_TARGET64)
 
 # define OCT_FMT "%llo"
-# define HEX_FMT "%" SCNd64 ""
+# define HEX_FMT "%" SCNx64 ""
 # define DEC_FMT "%" SCNd64 ""
 
 # else
@@ -63,7 +63,7 @@ static char USMID[] = "\n@(#)5.0_pl/sources/utils.c	5.9	10/14/99 12:53:57\n";
 # endif
 
 # define LLOCT_FMT "%llo"
-# define LLHEX_FMT "%" SCNd64 ""
+# define LLHEX_FMT "%" SCNx64 ""
 # define LLDEC_FMT "%" SCNd64 ""
 
 

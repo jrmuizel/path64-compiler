@@ -539,7 +539,7 @@ ID_MAP<NODE_TYPE, KEY_TYPE>::Print(FILE *fp) const
       Id_map_fprint(fp, _table[i]._node);
     }
     else {
-      fprintf(fp, "<-- %d, 0x%" PRIuPTR ", %d -->\n",
+      fprintf(fp, "<-- %d, 0x%" PRIxPTR ", %d -->\n",
 	      _table[i]._prev, (INTPTR) _table[i]._node, _table[i]._next);
     }
   }
