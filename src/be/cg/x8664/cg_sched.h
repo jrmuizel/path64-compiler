@@ -44,7 +44,7 @@ private:
   OP* defop_by_reg[ISA_REGISTER_CLASS_MAX+1][REGISTER_MAX+1];
   int Addr_Generation( OP* );
 
-  int _U;
+  int cg_U;
   int _true_cp;
   int _cp;
   void Summary_BB();
