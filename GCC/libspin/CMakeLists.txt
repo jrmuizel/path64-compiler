@@ -1,6 +1,11 @@
 
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    INCLUDE_DIRECTORIES(BEFORE ${GCC_SOURCE_DIR}/include)
+    SET(GSPIN_MMAP_C gspin-mmap.c)
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 ADD_LIBRARY(spin
+            ${GSPIN_MMAP_C}
             gspin-alloc.c
             gspin-assert.c
             gspin-io.c
