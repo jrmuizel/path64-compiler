@@ -21,7 +21,7 @@ ADD_DEFINITIONS(
 add_library(whirl2c SHARED ${WHIRL2C_SRC})
 ADD_DEPENDENCIES(whirl2c generate_preg_list)
 set_property(TARGET whirl2c PROPERTY PREFIX "")
-install(TARGETS whirl2c LIBRARY DESTINATION ${PATH64_LIB_PATH})
+# install(TARGETS whirl2c LIBRARY DESTINATION ${PATH64_LIB_PATH})
 
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 ADD_EXECUTABLE(whirl2c-exec whirl2c_main.cxx)

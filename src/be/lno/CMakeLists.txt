@@ -123,4 +123,4 @@ set_property(TARGET lno PROPERTY PREFIX "")
 ADD_DEPENDENCIES(lno generate_preg_list)
 ADD_DEPENDENCIES(lno generate_topcode)
 
-install(TARGETS lno LIBRARY DESTINATION ${PATH64_LIB_PATH})
+# install(TARGETS lno LIBRARY DESTINATION ${PATH64_LIB_PATH})
