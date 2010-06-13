@@ -57,3 +57,7 @@ ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 # http://docs.sun.com/app/docs/doc/816-0210/6m6nb7mf1?a=view
 # http://cvs.opensolaris.org/source/xref/onnv/onnv-gate/usr/src/uts/sun4/os/startup.c
 # 
+
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+     ADD_SUBDIRECTORY(windows)
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
