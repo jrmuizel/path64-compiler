@@ -184,7 +184,7 @@ ADD_DEFINITIONS(-D_SGI_SOURCE
                 -DTARG_X8664
                 -DKEY
                 -DFE_GNU_4_2_0
-                -DLONGLONG
+                -D_LONGLONG
                 -D_MIPSEL
                 -DTARG_LINUX
                 -D_MIPS_SZINT=32
