@@ -199,10 +199,17 @@ void ISA_Properties_End(void)
 	flag_value |= (1ULL << property->bit_position);
       }
     }
+#ifdef _WIN32
+    fprintf (cfile, "  0x%0*I64x%s, /* %s:", int_size / 4,
+					    flag_value, 
+					    int_suffix,
+					    TOP_Name((TOP)code));
+#else
     fprintf (cfile, "  0x%0*llx%s, /* %s:", int_size / 4,
 					    flag_value, 
 					    int_suffix,
 					    TOP_Name((TOP)code));
+#endif
     for ( isi = properties.begin(); isi != properties.end(); ++isi ) {
       ISA_PROPERTY property = *isi;
       if (property->members[code]) fprintf (cfile, " %s", property->name);
@@ -215,10 +222,17 @@ void ISA_Properties_End(void)
     ISA_PROPERTY property = *isi;
     int bit_position = property->bit_position;
     if (bit_position >= 0) {
+#ifdef _WIN32
+      fprintf (hfile, "#define PROP_%-16s 0x%I64x%s\n", 
+		      property->name, 
+		      (1ULL << bit_position),
+		      int_suffix);
+#else
       fprintf (hfile, "#define PROP_%-16s 0x%llx%s\n", 
 		      property->name, 
 		      (1ULL << bit_position),
 		      int_suffix);
+#endif
     }
   }
 
