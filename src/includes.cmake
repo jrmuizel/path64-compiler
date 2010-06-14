@@ -16,6 +16,7 @@ SET(WINDOWS_HFILES
 	strings.h
 	stdlib.h
 	unistd.h
+	locale.h
    )
 
 SET(WINDOWS_SYS_HFILES

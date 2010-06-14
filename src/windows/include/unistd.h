@@ -1,4 +1,4 @@
 
 #include_next <unistd.h>
 
-ssize_t readlink(const char *restrict path, char *restrict buf, size_t bufsize);
+ssize_t readlink(const char * path, char * buf, size_t bufsize);
