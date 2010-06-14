@@ -48,14 +48,6 @@ ELSE()
 	MESSAGE(STATUS "OpenMP build disabled")
 ENDIF()
 
-# Define user option whether to build both 32/64bit libraries
-OPTION(PATH64_ENABLE_MULTILIB "Multilib build" OFF)
-IF(PATH64_ENABLE_MULTILIB)
-	MESSAGE(STATUS "Multilib not supported yet, but enabled")
-#ELSE()
-#	MESSAGE(STATUS "Multilib not supported yet disabled")
-ENDIF()
-
 #-----------------------------------------------------------------------------
 # Target architecture table.
 include(${Path64_SOURCE_DIR}/pathscale/targets.cmake)

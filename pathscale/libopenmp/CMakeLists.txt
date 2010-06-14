@@ -15,17 +15,14 @@ SET(PATHSCALE_OPENMP_SRCS       "affinity.c"
 
 SET(PATHSCALE_OPENMP_HEADER_SRCS "../include/omp/omp_lib.f" )
 
-# Macro to add openmp libraries for given target architecture bits.
+# Macro to add openmp libraries for given target architecture.
 # The logical CMake library names are mangled by the bit count, but
 # their OUTPUT_NAME on disk is not.  The build output and install
 # locations include the bit count.
-macro(libopenmp_add bits)
-  # Compiler flag selecting this many bits.
-  if(bits)
-    set(bits_flag -m${bits})
-  else()
-    set(bits_flag "")
-  endif()
+macro(libopenmp_add arch)
+  # Compiler ABI.
+  set(bits ${_PATH64_TARGET_BITS_${arch}})
+  set(bits_flag ${_PATH64_TARGET_FLAG_${arch}})
 
   add_custom_command(
     OUTPUT ${Path64_BINARY_DIR}/lib${bits}/omp_lib.f.o
@@ -74,13 +71,9 @@ macro(libopenmp_add bits)
 endmacro(libopenmp_add)
 
 if(PATH64_ENABLE_OPENMP)
-  if(PATH64_ENABLE_MULTILIB)
-    # For now we hard-code 32-bit and 64-bit architectures.
-    # This can be a loop later.
-    libopenmp_add(32)
-    libopenmp_add(64)
-  else()
-    # Use the native tool default architecture.
-    libopenmp_add("")
-  endif()
+  # Loop over target architectures.
+  # Currently we support at most one architecture, but multiple ABIs.
+  foreach(arch ${PATH64_ENABLE_TARGETS})
+    libopenmp_add(${arch})
+  endforeach()
 endif()
