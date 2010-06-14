@@ -16,64 +16,68 @@ SET(PATHSCALE_OPENMP_SRCS       "affinity.c"
 SET(PATHSCALE_OPENMP_HEADER_SRCS "../include/omp/omp_lib.f" )
 
 # Macro to add openmp libraries for given target architecture.
-# The logical CMake library names are mangled by the bit count, but
+# The logical CMake library names are mangled by the architecture, but
 # their OUTPUT_NAME on disk is not.  The build output and install
-# locations include the bit count.
-macro(libopenmp_add arch)
+# locations include the architecture.
+macro(libopenmp_add target)
   # Compiler ABI.
-  set(bits ${_PATH64_TARGET_BITS_${arch}})
-  set(bits_flag ${_PATH64_TARGET_FLAG_${arch}})
+  set(arch ${_PATH64_TARGET_ARCH_${target}})
+  set(bits ${_PATH64_TARGET_BITS_${target}})
+  set(arch_flag ${_PATH64_TARGET_FLAG_${target}})
+  set(build_lib_dir ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${arch}/${bits})
+  set(install_lib_dir ${PATH64_LIB_PATH}/${arch}/${bits})
+  set(install_inc_dir ${install_lib_dir}/include)
 
   add_custom_command(
-    OUTPUT ${Path64_BINARY_DIR}/lib${bits}/omp_lib.f.o
-    COMMAND ${CMAKE_Fortran_COMPILER} ${CMAKE_Fortran_FLAGS} -c ${CMAKE_CURRENT_SOURCE_DIR}/../include/omp/omp_lib.f -o ${Path64_BINARY_DIR}/lib${bits}/omp_lib.f.o
+    OUTPUT ${build_lib_dir}/omp_lib.f.o
+    COMMAND ${CMAKE_Fortran_COMPILER} ${CMAKE_Fortran_FLAGS} -c ${CMAKE_CURRENT_SOURCE_DIR}/../include/omp/omp_lib.f -o ${build_lib_dir}/omp_lib.f.o
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../include/omp/omp_lib.f
     VERBATIM
     )
 
   add_definitions(-std=gnu99)
 
-  add_library (openmp${bits}-static STATIC ${PATHSCALE_OPENMP_SRCS})
-  add_library (openmp${bits} SHARED ${PATHSCALE_OPENMP_SRCS})
-  set_property(TARGET openmp${bits} PROPERTY SOVERSION 1)
-  set_property(TARGET openmp${bits} PROPERTY LINK_FLAGS "-Wl,--version-script=\"${libopenmp_SOURCE_DIR}/libopenmp.vs\" ${bits_flag}")
-  set_property(TARGET openmp${bits} openmp${bits}-static PROPERTY OUTPUT_NAME "openmp")
-  set_property(TARGET openmp${bits} openmp${bits}-static PROPERTY COMPILE_FLAGS ${bits_flag})
+  add_library (openmp-${target}-static STATIC ${PATHSCALE_OPENMP_SRCS})
+  add_library (openmp-${target} SHARED ${PATHSCALE_OPENMP_SRCS})
+  set_property(TARGET openmp-${target} PROPERTY SOVERSION 1)
+  set_property(TARGET openmp-${target} PROPERTY LINK_FLAGS "-Wl,--version-script=\"${libopenmp_SOURCE_DIR}/libopenmp.vs\" ${arch_flag}")
+  set_property(TARGET openmp-${target} openmp-${target}-static PROPERTY OUTPUT_NAME "openmp")
+  set_property(TARGET openmp-${target} openmp-${target}-static PROPERTY COMPILE_FLAGS ${arch_flag})
 
-  set_property(TARGET openmp${bits}        PROPERTY LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}${bits})
-  set_property(TARGET openmp${bits}-static PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}${bits})
+  set_property(TARGET openmp-${target}        PROPERTY LIBRARY_OUTPUT_DIRECTORY ${build_lib_dir})
+  set_property(TARGET openmp-${target}-static PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${build_lib_dir})
 
-  install(TARGETS openmp${bits} openmp${bits}-static
-    LIBRARY DESTINATION ${PATH64_LIB_PATH}${bits}
-    ARCHIVE DESTINATION ${PATH64_LIB_PATH}${bits})
+  install(TARGETS openmp-${target} openmp-${target}-static
+    LIBRARY DESTINATION ${install_lib_dir}
+    ARCHIVE DESTINATION ${install_lib_dir})
 
   if(PATH64_ENABLE_PROFILING)
-    add_library(openmp${bits}_p STATIC ${PATHSCALE_OPENMP_SRCS})
-    set_property(TARGET openmp${bits}_p PROPERTY COMPILE_FLAGS "-pg ${bits_flag}")
-    set_property(TARGET openmp${bits}_p PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}${bits})
-    set_property(TARGET openmp${bits}_p PROPERTY OUTPUT_NAME "openmp_p")
-    install(TARGETS openmp${bits}_p ARCHIVE DESTINATION ${PATH64_LIB_PATH}${bits})
+    add_library(openmp-${target}_p STATIC ${PATHSCALE_OPENMP_SRCS})
+    set_property(TARGET openmp-${target}_p PROPERTY COMPILE_FLAGS "-pg ${arch_flag}")
+    set_property(TARGET openmp-${target}_p PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${build_lib_dir})
+    set_property(TARGET openmp-${target}_p PROPERTY OUTPUT_NAME "openmp_p")
+    install(TARGETS openmp-${target}_p ARCHIVE DESTINATION ${install_lib_dir})
   endif()
 
   if(PATH64_ENABLE_FORTRAN)
-    add_custom_target(OMP_LIB${bits} ALL
-      DEPENDS ${Path64_BINARY_DIR}/lib${bits}/omp_lib.f.o
+    add_custom_target(OMP_LIB-${target} ALL
+      DEPENDS ${build_lib_dir}/omp_lib.f.o
       )
-    add_dependencies(OMP_LIB${bits} switch_fc mfef95-tmp)
+    add_dependencies(OMP_LIB-${target} switch_fc mfef95-tmp)
   endif()
 
-  install(FILES omp.h DESTINATION ${PATH64_LIB_PATH}${bits}/include)
+  install(FILES omp.h DESTINATION ${install_inc_dir})
   if(PATH64_ENABLE_FORTRAN)
-    install(FILES ../include/omp/omp_lib.f DESTINATION ${PATH64_LIB_PATH}${bits}/include)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OMP_LIB.mod DESTINATION ${PATH64_LIB_PATH}${bits}/include)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OMP_LIB_KINDS.mod DESTINATION ${PATH64_LIB_PATH}${bits}/include)
+    install(FILES ../include/omp/omp_lib.f DESTINATION ${install_inc_dir})
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OMP_LIB.mod DESTINATION ${install_inc_dir})
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OMP_LIB_KINDS.mod DESTINATION ${install_inc_dir})
   endif()
 endmacro(libopenmp_add)
 
 if(PATH64_ENABLE_OPENMP)
   # Loop over target architectures.
   # Currently we support at most one architecture, but multiple ABIs.
-  foreach(arch ${PATH64_ENABLE_TARGETS})
-    libopenmp_add(${arch})
+  foreach(target ${PATH64_ENABLE_TARGETS})
+    libopenmp_add(${target})
   endforeach()
 endif()
