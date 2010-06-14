@@ -12,12 +12,15 @@ SET(LINUX_SYS_HFILES
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 SET(WINDOWS_HFILES
+    alloca.h
 	string.h
 	strings.h
 	stdlib.h
 	unistd.h
 	locale.h
    )
+
+add_definitions(-DHAVE_ALLOCA_H=1)
 
 SET(WINDOWS_SYS_HFILES
 	stat.h
