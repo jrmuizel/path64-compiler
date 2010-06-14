@@ -1,0 +1,24 @@
+/* This file is a dummy added to ease migration to the gcc4 frontend.
+
+   We have a mutual dependency:
+     stxp70-binutils depends on the names of the files containing intrinsics
+     definitions in open64, and
+     open64 depends on the stxp70-binutils version
+
+   The gcc4 frontend migration adds an extra file, intrn_info.def,  containing
+   intrinsics definitions in open64, and so it is necessary to break this
+   mutual dependency.
+
+   The idea is to:
+     1. Introduce a dummy intrn_info.def (this file) to the open64 trunk.
+     2. Update the trunk stxp70-binutils to refer to this file.
+     3. Move the open64 trunk dependency to the new stxp70-binutils trunk.
+     4. Rebase the dev-gcc4-frontend branch to include this
+        stxp70-binutils dependency.
+
+   Then the gcc4 frontend branch delivery can proceed.
+ */
+
+/* With the merge of the dev-gcc4-frontend work, this file will
+   centralize all the whirl intrinsic info. */
+   
