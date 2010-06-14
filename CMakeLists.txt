@@ -71,7 +71,10 @@ Please edit PATH64_ENABLE_TARGETS to list only valid architectures.
     set(_targets "${_targets}${_sep}${arch}")
     set(_sep ", ")
   endforeach(arch)
-  message(STATUS "Building support for targets ${_targets}.")
+  # First list element is the default.
+  list(GET PATH64_ENABLE_TARGETS 0 PATH64_DEFAULT_TARGET)
+  message(STATUS
+    "Building support for targets ${_targets}.  Default is ${PATH64_DEFAULT_TARGET}.")
 else()
   message( FATAL_ERROR "Must specify at least one target architecture.
 ${_PATH64_SUPPORTED_TARGETS_STRING}
