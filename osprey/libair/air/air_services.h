@@ -80,9 +80,9 @@ extern int AIR_print_service(AIR_Print*);
 
 extern unsigned int AIR_assemble_binary(AIR_OP *, ISA_PACK_INST *);
 
-extern int AIR_find_matching_template(ISA_EXEC_UNIT_PROPERTY bundle_props[ISA_MAX_SLOTS],
+extern int AIR_find_matching_template(ISA_EXEC_UNIT_PROPERTY bundle_props[],
 	  		              int);
-extern int AIR_find_matching_template_proc(ISA_EXEC_UNIT_PROPERTY bundle_props[ISA_MAX_SLOTS],
+extern int AIR_find_matching_template_proc(ISA_EXEC_UNIT_PROPERTY bundle_props[],
                                            int, PROCESSOR);
 #ifdef __cplusplus
 }

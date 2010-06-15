@@ -449,6 +449,8 @@ r_value( AIR_TN *tn )
   }
 
 
+  const ISA_BUNDLE_INFO ISA_BUNDLE_info[];
+
   /** 
    * Function finds out bunlde id corresponding to bundle_props[]
    * array
