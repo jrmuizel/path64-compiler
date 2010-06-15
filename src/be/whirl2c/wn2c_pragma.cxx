@@ -152,7 +152,7 @@ WN2C_Start_Prompf_Construct(TOKEN_BUFFER tokens, const WN *pragma)
    WN2C_Append_Prompf_Flag_Newline(tokens);
    Append_Token_String(tokens, "/*$SGI");
    Append_Token_String(tokens, "start");
-   Append_Token_String(tokens, Number_as_String(construct_id, "%" SCNd64 ""));
+   Append_Token_String(tokens, Number_as_String(construct_id, "%" SCNu64 ""));
    Append_Token_String(tokens, "*/");
 } /* WN2C_Start_Prompf_Construct */
 
@@ -165,7 +165,7 @@ WN2C_End_Prompf_Construct(TOKEN_BUFFER tokens, const WN *pragma)
    WN2C_Append_Prompf_Flag_Newline(tokens);
    Append_Token_String(tokens, "/*$SGI");
    Append_Token_String(tokens, "end");
-   Append_Token_String(tokens, Number_as_String(construct_id, "%" SCNd64 ""));
+   Append_Token_String(tokens, Number_as_String(construct_id, "%" SCNu64 ""));
    Append_Token_String(tokens, "*/");
 } /* WN2C_End_Prompf_Construct */
 

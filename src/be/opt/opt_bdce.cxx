@@ -351,7 +351,7 @@ BITWISE_DCE::Mark_tree_bits_live(CODEREP *cr, UINT64 live_bits,
 {
   UINT64 new_livebits;
   if (Tracing())
-    fprintf(TFile, "Mark_tree_bits_live(cr%d,%" SCNd64 ",%d)\n",
+    fprintf(TFile, "Mark_tree_bits_live(cr%d,%" SCNx64 ",%d)\n",
 	    cr->Coderep_id(), live_bits, stmt_visit);
 
   if (stmt_visit && cr->Kind() != CK_VAR) // Avoid redundant VAR IncUsecnt

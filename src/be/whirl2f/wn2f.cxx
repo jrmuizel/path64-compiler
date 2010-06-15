@@ -276,7 +276,7 @@ WN2F_Begin_Prompf_Transformed_Func(TOKEN_BUFFER tokens, INT32 func_id)
 {
    Append_F77_Directive_Newline(tokens, sgi_comment_str) ;
    Append_Token_String(tokens, "start");
-   Append_Token_String(tokens, Number_as_String(func_id, "%" SCNd64 ""));
+   Append_Token_String(tokens, Number_as_String(func_id, "%" SCNu64 ""));
 }
 
 static void
@@ -284,7 +284,7 @@ WN2F_End_Prompf_Transformed_Func(TOKEN_BUFFER tokens, INT32 func_id)
 {
    Append_F77_Directive_Newline(tokens, sgi_comment_str) ;
    Append_Token_String(tokens, "end");
-   Append_Token_String(tokens, Number_as_String(func_id, "%" SCNd64 ""));
+   Append_Token_String(tokens, Number_as_String(func_id, "%" SCNu64 ""));
 } 
 
 
