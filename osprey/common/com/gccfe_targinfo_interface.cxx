@@ -96,33 +96,33 @@ extern int GCCTARG_Map_Reg_To_Preg_Size() {
 }
 
 //Return GCC register id
-extern int GCCTARG_Gp_Arg_Regnum(void){
+extern unsigned int GCCTARG_Gp_Arg_Regnum(void){
   return Gp_Arg_Regnum;
 }
-extern int GCCTARG_Return_Pointer_Regnum(void) {
+extern unsigned int GCCTARG_Return_Pointer_Regnum(void) {
   return Return_Pointer_Regnum;
 }
-extern int GCCTARG_Stack_Pointer_Regnum(void) {
+extern unsigned int GCCTARG_Stack_Pointer_Regnum(void) {
   return Stack_Pointer_Regnum;
 }
 
-extern int GCCTARG_Static_last_Regnum() {
+extern unsigned int GCCTARG_Static_last_Regnum() {
   return Get_Static_Last_Dedicated_Preg_Offset() - 1;
 }
 
-extern int GCCTARG_First_Branch_Regnum() {
+extern unsigned int GCCTARG_First_Branch_Regnum() {
   return Branch_Preg_Min_Offset - 1;
 }
 
-extern int GCCTARG_Last_Branch_Regnum() {
+extern unsigned int GCCTARG_Last_Branch_Regnum() {
   return Branch_Preg_Max_Offset - 1;
 }
 
-extern int GCCTARG_First_Int_Regnum() {
+extern unsigned int GCCTARG_First_Int_Regnum() {
   return Int_Preg_Min_Offset - 1;
 }
 
-extern int GCCTARG_Last_Int_Regnum() {
+extern unsigned int GCCTARG_Last_Int_Regnum() {
   return Int_Preg_Max_Offset - 1;
 }
 
@@ -324,7 +324,7 @@ extern void GCCTARG_Mark_Disabled_Gcc_Reg() {
 
 
 //[TB] Return the dwarf id associated to gcc register gcc_reg
-int GCCTARG_Dwarf_Get_Reg_Id_From_Gcc_Reg(int gcc_reg) {
+unsigned int GCCTARG_Dwarf_Get_Reg_Id_From_Gcc_Reg(int gcc_reg) {
   ISA_REGISTER_CLASS rclass;
   int regnum;
   //Mapping between gcc numbering and open64

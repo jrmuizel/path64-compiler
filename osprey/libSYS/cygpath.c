@@ -29,7 +29,6 @@
    It is limited to absolute paths only.  I.e. Those beginning with Cygwin
    mounts, such as /cygdrive/...  See the comment on cygpath() below.  */
 
-#include "libiberty.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -80,7 +79,7 @@ read_string_from_registry (HKEY key, const char *name)
 		       NULL, &valuesize) == ERROR_SUCCESS
       && valuetype == REG_SZ)
     {
-      value = xmalloc (valuesize);
+      value = malloc (valuesize);
       if (RegQueryValueEx (key, name, NULL, &valuetype, (unsigned char *)value,
 			   &valuesize) != ERROR_SUCCESS)
 	{
@@ -100,7 +99,7 @@ static void
 read_mounts (HKEY key)
 {
   int mountsize = 15;
-  char *mount = xmalloc (mountsize);
+  char *mount = malloc (mountsize);
   DWORD size = mountsize;
   int index = 0;
   int retval = 0;
@@ -121,7 +120,7 @@ read_mounts (HKEY key)
 	   Note that this code path does NOT increment index.
        	   Most of the time we will only be dealing with short strings.  */
 	mountsize += 10;
-	mount = xrealloc (mount, mountsize);
+	mount = realloc (mount, mountsize);
 	break;
 
       case ERROR_SUCCESS:
@@ -140,8 +139,8 @@ read_mounts (HKEY key)
 	  }
 
 	/* Create the new entry in the mount table.  */
-	newmount = xmalloc (sizeof (struct mount));
-	newmount->mount = xstrdup (mount);
+	newmount = malloc (sizeof (struct mount));
+	newmount->mount = strdup (mount);
 	newmount->actual = actual;
 	newmount->next = mounts;
 	mounts = newmount;
@@ -269,7 +268,7 @@ cygpath (const char *path)
   if ((isalpha (path[0]) && path[1] == ':')
       || ((path[0] == '\\' || path[0] == '/')
 	  && (path[1] == '\\' || path[1] == '/')))
-    result = xstrdup (path);
+    result = strdup (path);
 
   /* Second, handle /cygdrive/<letter>/ (or whatever) paths.  */
   if (!result && cygdrive != NULL && (mode == mode_normal || mode == mode_full))
@@ -281,7 +280,7 @@ cygpath (const char *path)
 	      || path[length] == '\0')
 	  && isalpha (path[length+1]))
         {
-	  result = xmalloc (strlen (path) - length+1 + 1);
+	  result = malloc (strlen (path) - length+1 + 1);
 	  result[0] = path[length+1];
 	  result[1] = ':';
 	  strcpy (result + 2, path + length + 2);
@@ -323,7 +322,7 @@ cygpath (const char *path)
 	     directory separator.  */
 	  if (matched == 1)
 	    matched = 0;
-	  result = xmalloc (strlen (foundat->actual) + strlen (path) + 1
+	  result = malloc (strlen (foundat->actual) + strlen (path) + 1
 			    - matched);
 	  strcpy (result, foundat->actual);
 	  strcat (result, path + matched);
@@ -338,7 +337,7 @@ cygpath (const char *path)
       int length = strlen(result);
       if (result[length-1] == ':')
 	{
-	  result = xrealloc (result, length+2);
+	  result = realloc (result, length+2);
 	  result[length] = '/';
 	  result[length+1] = '\0';
 	}
@@ -346,7 +345,7 @@ cygpath (const char *path)
     }
 
   /* If we get here then it must have been some other kind of path.  */
-  return xstrdup (path);
+  return strdup (path);
 }
 
 

@@ -20,7 +20,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-#include "libiberty/libiberty.h"
+#include "SYS.h"
 
 /*
  * Declare real versions of functions.

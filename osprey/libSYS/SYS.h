@@ -267,9 +267,32 @@ char *SYS_getenv(const char *var_name);
    */
 extern int SYS_execute(const char *program, char * const *argv, int flags);
 
+#ifdef __MINGW32__
+char *cygpath (const char *path);
+void cygpath_replace (char **path);
+
+/* The following macros are just to prevent putting #ifdef MINGW everywhere.
+   You still need to if you don't want to overwite the original pointer.  */
+
+/* Reassign the pointer PATH without freeing anything.  */
+#define CYGPATH(path) do {path = cygpath (path);} while(0)
+
+/* Free memory. Intended to be used in conjunction with CYGPATH().  */
+#define CYGPATH_FREE(path) free (path)
+
+/* Reassign the pointer PATH and free the previous content.  */
+#define CYGPATH_REPLACE(path) cygpath_replace (path)
+
+#else
+/* If these were properly empty statements then there might be warnings
+   which would kill a -Werror build.  */
+#define CYGPATH(path) do {} while (0)
+#define CYGPATH_FREE(path) do {} while (0)
+#define CYGPATH_REPLACE(path) do {} while (0)
+#endif
+
 #ifdef  __cplusplus
 }
 #endif
-
 
 #endif /*__SYS_H__*/

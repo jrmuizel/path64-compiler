@@ -38,23 +38,23 @@
 extern "C" {
 #endif
 //Return GCC register id
-extern int GCCTARG_Gp_Arg_Regnum(void);
-extern int GCCTARG_Return_Pointer_Regnum(void);
-extern int GCCTARG_Stack_Pointer_Regnum(void);
-extern int GCCTARG_Static_last_Regnum(void);
-extern int GCCTARG_First_Branch_Regnum(void); 
-extern int GCCTARG_Last_Branch_Regnum(void); 
-extern int GCCTARG_First_Int_Regnum(void); 
-extern int GCCTARG_Last_Int_Regnum(void);
+extern unsigned int GCCTARG_Gp_Arg_Regnum(void);
+extern unsigned int GCCTARG_Return_Pointer_Regnum(void);
+extern unsigned int GCCTARG_Stack_Pointer_Regnum(void);
+extern unsigned int GCCTARG_Static_last_Regnum(void);
+extern unsigned int GCCTARG_First_Branch_Regnum(void); 
+extern unsigned int GCCTARG_Last_Branch_Regnum(void); 
+extern unsigned int GCCTARG_First_Int_Regnum(void); 
+extern unsigned int GCCTARG_Last_Int_Regnum(void);
 
 //Funcs returning data needed by gccfe
-extern gcc_register_map_t *GCCTARG_Additional_Register_Names();
-extern int GCCTARG_Additional_Register_Names_Size();
-extern char *GCCTARG_Initial_Call_Used_Regs();
-extern char *GCCTARG_Initial_Fixed_Regs();
-extern int *GCCTARG_Map_Reg_To_Preg();
-extern int GCCTARG_Map_Reg_To_Preg_Size();
-extern int GCCTARG_Initial_Number_Of_Registers();
+extern gcc_register_map_t *GCCTARG_Additional_Register_Names(void);
+extern int GCCTARG_Additional_Register_Names_Size(void);
+extern char *GCCTARG_Initial_Call_Used_Regs(void);
+extern char *GCCTARG_Initial_Fixed_Regs(void);
+extern int *GCCTARG_Map_Reg_To_Preg(void);
+extern int GCCTARG_Map_Reg_To_Preg_Size(void);
+extern int GCCTARG_Initial_Number_Of_Registers(void);
 
 //Funcs that returns the open64 register class and the register number
 //associated to the gcc register index gcc_index
@@ -68,10 +68,10 @@ extern int GCCTARG_Initial_Number_Of_Registers();
 extern void TI_Initialize_Extension_Loader(void);
 
 // [TTh] Mark disabled Gcc registers based on command line option -mdisabled-reg
-extern void GCCTARG_Mark_Disabled_Gcc_Reg();
+extern void GCCTARG_Mark_Disabled_Gcc_Reg(void);
 
 //[TB] Return the dwarf id associated to gcc register gcc_reg
-extern int GCCTARG_Dwarf_Get_Reg_Id_From_Gcc_Reg(int gcc_reg);
+extern unsigned int GCCTARG_Dwarf_Get_Reg_Id_From_Gcc_Reg(int gcc_reg);
 
 //[SC] Return the size in bits of gcc register gcc_reg
 extern int GCCTARG_Gcc_Reg_Bit_Size (int gcc_reg);

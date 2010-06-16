@@ -19,6 +19,7 @@ endif
 
 ifeq ($(HOST_OS),MINGW)
 CFILES += \
+        cygpath.c \
 	missing.c \
 	getsubopt.c \
 	vasprintf.c \

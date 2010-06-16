@@ -1,0 +1,265 @@
+
+#
+#
+#  Copyright (C) 2009 STMicroelectronics. All Rights Reserved.
+#
+#  This program is free software; you can redistribute it and/or modify it
+#  under the terms of version 2 of the GNU General Public License as
+#  published by the Free Software Foundation.
+#
+#  This program is distributed in the hope that it would be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+#
+#  Further, this software is distributed without any warranty that it is
+#  free of the rightful claim of any third person regarding infringement 
+#  or the like.  Any license provided herein, whether implied or 
+#  otherwise, applies only to this software file.  Patent licenses, if 
+#  any, provided herein do not apply to combinations of this program with 
+#  other software, or any other product whatsoever.  
+#
+#  You should have received a copy of the GNU General Public License along
+#  with this program; if not, write the Free Software Foundation, Inc., 59
+#  Temple Place - Suite 330, Boston MA 02111-1307, USA.
+#
+#  Contact information:  Silicon Graphics, Inc., 1600 Amphitheatre Pky,
+#  Mountain View, CA 94043, or:
+#
+#  http://www.sgi.com
+#
+#  For further information regarding this notice, see:
+#
+#  http://oss.sgi.com/projects/GenInfo/NoticeExplan
+#
+#
+
+#
+# Makefile for libfereconf
+#
+
+LIBRARY = libfereconf.a
+TARGET  = $(LIBRARY)
+
+TARGDIR = $(BUILD_AREA)
+
+#----------------------------------------------------------------------
+#  Include the usual commondefs
+#----------------------------------------------------------------------
+
+include	$(COMMONDEFS)
+
+HOSTDEFS += -DIN_GCC -DHAVE_CONFIG_H
+
+HOSTDEFS += -DLONGLONG
+HOSTDEFS += -DFRONT_END
+HOSTDEFS += -DFE_GNU_4_2_0
+HOSTDEFS += -DUSE_DECL_SRCPOS
+HOSTDEFS += -D_NEW_SYMTAB
+HOSTDEFS += -DFRONT_END_C
+HOSTDEFS += -DCFE -DCIL
+HOSTDEFS += -DDO_IL_LOWERING=0
+HOSTDEFS += -DNO_USR_INCLUDE=TRUE
+HOSTDEFS += -DAUTOMATIC_TEMPLATE_INSTANTIATION=0
+HOSTDEFS += -DINSTANTIATION_BY_IMPLICIT_INCLUSION=0
+HOSTDEFS += -DBACK_END_IS_C_GEN_BE=0
+
+HOSTDEFS += -DCPLUSPLUSIL # [CL] needed for dwarf_DST_producer
+
+ifneq ($(TARGET_FROM_ST),)
+ # ST target
+HOSTDEFS += -DHANDLE_WFE_PRAGMAS
+else
+ # not a ST target
+HOSTDEFS += -DMONGOOSE_CIF
+HOSTDEFS += -DSGI_RAG_BACKEND
+ ifneq ($(BUILD_COMPILER), SGI)
+HOSTDEFS += -DMIPSEL
+ endif
+endif
+
+HOSTDEFS += -DSGI_MONGOOSE
+
+ifeq ($(BUILD_OPTIMIZE), DEBUG)
+HOSTDEFS += -DIs_True_On
+HOSTDEFS += -DInsist_On 
+HOSTDEFS += -DDEBUG=1
+HOSTDEFS += -DCHECKING=1
+else
+HOSTDEFS += -DDEBUG=0 
+HOSTDEFS += -DCHECKING=0 
+endif
+
+ifeq ($(DSO_MODE),DLL)
+HOSTDEFS += -DBE_EXPORTED= -DCG_EXPORTED= -DTARGINFO_EXPORTED=
+endif
+
+# stuff to be removed by clobber
+
+LDIRT  = $(TARGET) a.out *.o *.[ch]
+
+VPATH    =  $(SRC_DIRS)
+
+#----------------------------------------------------------------------
+#  List of directories, and source files of interest
+#----------------------------------------------------------------------
+
+GCC_DIR          = $(BUILD_TOT)/osprey-gcc-4.2.0/gcc
+COMMON_UTIL_DIR = $(BUILD_TOT)/common/util
+COMMON_COM_DIR  = $(BUILD_TOT)/common/com
+BE_DIR 			= $(BUILD_TOT)/be
+BE_WHIRL2C_DIR		= $(BE_DIR)/whirl2c
+BE_COM_DIR 		= $(BE_DIR)/com
+
+# ST compilers have a different target info directory structure:
+ifneq ($(TARGET_FROM_ST),)
+COMMON_COM_TARG_DIR	    = 
+COMMON_TARG_INFO_ACCESS_DIR = $(BUILD_TOT)/targinfo/access
+COMMON_TARGINFO_CONFIG_DIR  = $(BUILD_TOT)/targinfo/$(BUILD_TARGET_DIR)/config
+COMMON_TARGINFO_ISA_DIR     = $(BUILD_TOT)/targinfo/$(BUILD_TARGET_DIR)/isa
+COMMON_UTIL_TARG_DIR	    = $(BUILD_TOT)/targinfo/$(BUILD_TARGET_DIR)/util
+endif
+ifeq ($(BUILD_TARGET), IA64)
+COMMON_COM_TARG_DIR	    = $(BUILD_TOT)/common/com/$(BUILD_TARGET_DIR)
+COMMON_TARG_INFO_ACCESS_DIR = $(BUILD_TOT)/common/targ_info/access
+COMMON_TARGINFO_CONFIG_DIR  = 
+COMMON_TARGINFO_ISA_DIR     =
+COMMON_UTIL_TARG_DIR	    = $(BUILD_TOT)/common/util/$(BUILD_TARGET_DIR)
+endif
+TARG_TARG_INFO_DIR	= $(TARGDIR)/targ_info
+
+ifeq ($(BUILD_OS), IRIX)
+INCLUDE_DIR 		= $(BUILD_TOT)/include
+else
+INCLUDE_DIR 		= $(BUILD_AREA)/include
+endif
+
+TARGINFO_PARSER_INC_DIR	  = $(BUILD_TOT)/targinfo/parser/inc
+LIBAIR_DIR                = $(BUILD_TOT)/libair/air
+
+TARG_GCCFE_DIR            = $(TARGDIR)/gccfe
+
+SRC_DIRS= \
+  $(BUILD_BASE) \
+  $(COMMON_COM_DIR) \
+  $(COMMON_UTIL_DIR) \
+  $(COMMON_TARGINFO_CONFIG_DIR)
+
+INC_DIRS = \
+  $(INCLUDE_DIR)	\
+  $(COMMON_COM_DIR) \
+  $(COMMON_COM_TARG_DIR)\
+  $(COMMON_UTIL_DIR) \
+  $(COMMON_UTIL_TARG_DIR)\
+  $(COMMON_TARG_INFO_ACCESS_DIR) \
+  $(COMMON_TARGINFO_CONFIG_DIR) \
+  $(COMMON_TARGINFO_ISA_DIR) \
+  $(TARG_TARG_INFO_DIR) \
+  $(TARGINFO_PARSER_INC_DIR) \
+  $(LIBAIR_DIR)         \
+  $(TARG_GCCFE_DIR) \
+  $(GCC_DIR) \
+  $(BE_WHIRL2C_DIR) \
+  $(BE_COM_DIR)
+
+LCOPTS = $(STD_COMPILE_OPTS)
+LCDEFS = $(HOSTDEFS) $(TARGDEFS)
+LCINCS = $(addprefix -I, $(INC_DIRS))
+LC++OPTS = $(STD_COMPILE_OPTS)
+LC++DEFS = $(HOSTDEFS) $(TARGDEFS)
+LC++INCS = $(LCINCS)
+
+#----------------------------------------------------------------------
+#  List of source files.
+#----------------------------------------------------------------------
+
+# there is no way to distinguish between config_targ.cxx and
+# config_TARG.cxx on windows platforms... we use a different name for
+# ST targets...
+ifneq ($(TARGET_FROM_ST),)
+CONFIG_TARGET_NAME=config_target
+else
+CONFIG_TARGET_NAME=config_targ
+endif
+
+LOCAL_CXX_SRCS = \
+  gccfe_loader.cxx \
+  fe_loader.cxx
+
+LOCAL_C_SRCS = \
+  gccfe_errors.c
+
+COMMON_COM_CXX_SRCS = \
+  config.cxx		\
+  const.cxx		\
+  controls.cxx		\
+  dwarf_DST.cxx		\
+  dwarf_DST_dump.cxx	\
+  dwarf_DST_mem.cxx	\
+  dwarf_DST_producer.cxx \
+  err_host.cxx		\
+  glob.cxx		\
+  intrn_info.cxx	\
+  ir_bcom.cxx		\
+  ir_bwrite.cxx		\
+  ir_reader.cxx		\
+  irbdata.cxx		\
+  mtypes.cxx		\
+  opcode.cxx		\
+  opcode_core.cxx	\
+  pu_info.cxx		\
+  strtab.cxx		\
+  symtab.cxx		\
+  symtab_verify.cxx	\
+  ttype.cxx		\
+  wn.cxx		\
+  wn_map.cxx		\
+  wn_pragmas.cxx	\
+  wn_simp.cxx		\
+  wn_util.cxx		\
+  wutil.cxx		\
+  xstats.cxx            \
+  gccfe_targinfo_interface.cxx
+
+COMMON_COM_TARG_SRCS =	\
+  config_host.c		\
+  config_platform.c
+
+COMMON_COM_TARG_CXX_SRCS = \
+  $(CONFIG_TARGET_NAME).cxx \
+  config_elf_targ.cxx	\
+  targ_const.cxx	\
+  targ_sim.cxx          \
+  targ_register_common.cxx
+
+LIBCXXSRCS = \
+  $(LOCAL_CXX_SRCS) \
+  $(COMMON_COM_CXX_SRCS) \
+  $(COMMON_COM_TARG_CXX_SRCS)
+
+LIBCSRCS = \
+  $(COMMON_COM_TARG_SRCS) \
+  $(LOCAL_C_SRCS)
+
+OBJS = $(LIBCXXSRCS:.cxx=.o) $(LIBCSRCS:.c=.o)
+
+CXXFILES = $(COMMON_COM_CXX_SRCS)
+
+install: last
+default: first
+	 $(MAKE) local last
+
+first:
+	cd $(TARG_GCCFE_DIR) && $(MAKE)
+
+local: all
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	-$(RM) $(TARGET)
+	$(AR) $(ARFLAGS) $(TARGET) $(OBJS)
+
+last: local
+	$(MAKE) make_deps
+
+include $(COMMONRULES)
