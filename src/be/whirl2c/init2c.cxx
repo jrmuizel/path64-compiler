@@ -445,7 +445,7 @@ INITV2C_struct_fill(TOKEN_BUFFER tokens,
 	    if (pad_byte > 0)
 	       Append_Token_Special(tokens, ',');
 	    Append_Token_String(tokens, 
-	       Number_as_String(tcon_bytes.byte[pad_byte], "%" SCNd64 ""));
+	       Number_as_String(tcon_bytes.byte[pad_byte], "%" SCNu64 ""));
 	 }
 	 *current_offset += tcon_size;
 	 break;

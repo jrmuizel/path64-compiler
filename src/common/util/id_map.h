@@ -532,14 +532,14 @@ ID_MAP<NODE_TYPE, KEY_TYPE>::Print(FILE *fp) const
   for (mINT32 i = 0; i < _table_size; i++) {
     fprintf(fp, "ID_MAP table[%d] : ", i);
     if (_table[i]._node != _not_found_value) {
-      fprintf(fp, "[H(%" SCNd64 ")=%d; %d -->] ",
+      fprintf(fp, "[H(%" SCNu64 ")=%d; %d -->] ",
 	      Key_as_llu(_table[i]._key),
 	      Hash(_table[i]._key, _table_size),
 	      _table[i]._next);
       Id_map_fprint(fp, _table[i]._node);
     }
     else {
-      fprintf(fp, "<-- %d, 0x%" PRIuPTR ", %d -->\n",
+      fprintf(fp, "<-- %d, 0x%" PRIxPTR ", %d -->\n",
 	      _table[i]._prev, (INTPTR) _table[i]._node, _table[i]._next);
     }
   }

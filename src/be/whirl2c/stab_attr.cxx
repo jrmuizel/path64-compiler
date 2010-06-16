@@ -953,7 +953,7 @@ Ptr_as_String(const void *ptr)
    if (sizeof(void *) == sizeof(UINT32))
       sprintf(new_name, "%u", ptr_as_number.u32);
    else if (sizeof(void *) == sizeof(UINT64))
-      sprintf(new_name, "%" SCNd64 "", ptr_as_number.u64);
+      sprintf(new_name, "%" PRIu64 "", ptr_as_number.u64);
    else
       Is_True(FALSE, ("Unknown pointer size in Ptr_as_String()"));
    

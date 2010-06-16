@@ -339,7 +339,7 @@ static void Fill_Align_Symbol (WN* wn, WN* func_wn) {
 
   /* Only common variables can have an offset */
   FmtAssert (Common_Variable(st) || ST_ofst(st) == 0,
-             ("Fill/Align_Symbol (%s): ST has an unexpected offset %" SCNd64 "\n",
+             ("Fill/Align_Symbol (%s): ST has an unexpected offset %" SCNu64 "\n",
               ST_name(st), ST_ofst(st)));
 
 
@@ -440,7 +440,7 @@ static void Fill_Align_Symbol (WN* wn, WN* func_wn) {
         Set_ST_type(st, new_ty);
                 
         FmtAssert (ST_ofst(st) == 0,
-                   ("Fill/Align_Symbol (%s): ST has an unexpected offset %" SCNd64 "\n",
+                   ("Fill/Align_Symbol (%s): ST has an unexpected offset %" SCNu64 "\n",
                     ST_name(st), ST_ofst(st)));
       }
     }

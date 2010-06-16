@@ -244,7 +244,7 @@ INIT2F_Append_Initializer(TOKEN_BUFFER  tokens,
    if (repeat > 1)
    {
       Prepend_Token_Special(*init_tokens, '*');
-      Prepend_Token_String(*init_tokens, Number_as_String(repeat, "%" SCNd64 ""));
+      Prepend_Token_String(*init_tokens, Number_as_String(repeat, "%" SCNu64 ""));
    }
    if (!Is_Empty_Token_Buffer(tokens))
       Append_Token_Special(tokens, ',');
@@ -627,10 +627,10 @@ INIT2F_Translate_Char_Ref(TOKEN_BUFFER  tokens, /* Append reference here */
    {
       Append_Token_Special(tokens, '(');
       Append_Token_String(tokens, 
-			  Number_as_String(string_ofst+1, "%" SCNd64 ""));
+			  Number_as_String(string_ofst+1, "%" SCNu64 ""));
       Append_Token_Special(tokens, ':');
       Append_Token_String(tokens, 
-			  Number_as_String(string_ofst+string_size, "%" SCNd64 ""));
+			  Number_as_String(string_ofst+string_size, "%" SCNu64 ""));
       Append_Token_Special(tokens, ')');
    }
 } /* INIT2F_Translate_Char_Ref */
@@ -862,13 +862,13 @@ INIT2F_Implied_DoLoop(TOKEN_BUFFER  tokens,        /* Append to this buffer */
    Append_Token_Special(tokens, '=');
    Append_Token_String(tokens, 
 	    Number_as_String(aseg->start_ofst/TY_size(aseg->etype) + 1,
-			     "%" SCNd64 ""));
+			     "%" SCNu64 ""));
    Append_Token_Special(tokens, ',');
    Append_Token_String(tokens, 
 		       Number_as_String(aseg->end_ofst/TY_size(aseg->etype),
-					"%" SCNd64 ""));
+					"%" SCNu64 ""));
    Append_Token_Special(tokens, ',');
-   Append_Token_String(tokens, Number_as_String(1, "%" SCNd64 ""));
+   Append_Token_String(tokens, Number_as_String(1, "%" SCNu64 ""));
    Append_Token_Special(tokens, ')');
 
    Stab_Unlock_Tmpvar(ivar_idx);

@@ -53,7 +53,7 @@ extern void Generate_Tlog(
   if (keyword[0]=='\0')
     keyword=dummy_word;
 
-  fprintf(Tlog_File, "\n%s %s %" SCNd64 " %s\n",
+  fprintf(Tlog_File, "\n%s %s %" SCNu64 " %s\n",
     phase_name, trans_name, srcpos, keyword);
   fprintf(Tlog_File, "{ %s }\n", input_string);
   fprintf(Tlog_File, "{ %s }\n", output_string);
