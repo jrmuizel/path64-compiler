@@ -45,6 +45,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <assert.h>
 #include <list>
 #include "gen_util.h"
@@ -323,7 +325,7 @@ void ABI_Properties_End(void)
   for (prop_iter = props.begin(); prop_iter != props.end(); ++prop_iter) {
     ABI_PROPERTY prop = *prop_iter;
     assert(prop->is_flag);
-    fprintf(hfile, "#define ABI_PROPERTY_%-20s 0x%0*llx%s\n",
+    fprintf(hfile, "#define ABI_PROPERTY_%-20s 0x%0*" PRIx64 "%s\n",
 		   prop->name,
 		   Type_Size(prop_count[true][prop->is_reg]) / 4,
 		   prop->v,
@@ -354,7 +356,7 @@ void ABI_Properties_End(void)
 	ABI_PROPERTY prop = *prop_iter;
 	mask |= prop->v;
       }
-      fprintf(cfile, "    0x%0*llx%s,\n",
+      fprintf(cfile, "    0x%0*"PRIx64"%s,\n",
 		     Type_Size(count) / 4,
 		     mask,
 		     Type_Suffix(count));
@@ -382,7 +384,7 @@ void ABI_Properties_End(void)
 	    fprintf(cfile, "\n");
 	    cursor = fprintf(cfile, "       ");
 	  }
-	  cursor += fprintf(cfile, " 0x%0*llx%s,",
+	  cursor += fprintf(cfile, " 0x%0*"PRIx64"%s,",
 				   Type_Size(count) / 4,
 				   mask,
 				   Type_Suffix(count));
