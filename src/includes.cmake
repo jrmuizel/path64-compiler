@@ -26,6 +26,8 @@ add_definitions(-DHAVE_ALLOCA_H=1)
 SET(WINDOWS_SYS_HFILES
 	stat.h
 	mman.h
+	wait.h
+	utsname.h
    )
 
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
