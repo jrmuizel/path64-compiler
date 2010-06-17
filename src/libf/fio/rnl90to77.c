@@ -24,6 +24,7 @@
 
 #pragma ident "@(#) libf/fio/rnl90to77.c	92.3	06/21/99 10:37:55"
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <errno.h>
 #include <liberrno.h>
@@ -1245,7 +1246,7 @@ _setunit(
 		(void) strncpy(string, (char *)u, sizeof(long) - 1);
 	else {
 		unum	= *((unum_t *)u);
-		(void) sprintf(string, "%lld", unum);
+		(void) sprintf(string, "%"PRId64, unum);
 	}
 
 	return;

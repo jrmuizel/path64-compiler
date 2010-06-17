@@ -28,6 +28,7 @@
 
 #include "config.h"
 #include "dwarf_incl.h"
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -245,7 +246,7 @@ _dwarf_internal_printlines(Dwarf_Die die, Dwarf_Error * error)
     }
 
     printf("total line info length %ld bytes, "
-	   "line offset 0x%llx %lld\n",
+	   "line offset 0x%llx %"PRId64"\n",
 	   (long) total_length,
 	   (long long) line_offset, (long long) line_offset);
     printf("compilation_directory %s\n",
@@ -352,7 +353,7 @@ _dwarf_internal_printlines(Dwarf_Die die, Dwarf_Error * error)
 	return (DW_DLV_ERROR);
     }
 
-    printf("  statement prog offset in section: %lld 0x%llx\n",
+    printf("  statement prog offset in section: %"PRId64" 0x%llx\n",
 	   (long long) (line_ptr - orig_line_ptr),
 	   (long long) (line_ptr - orig_line_ptr));
 
@@ -431,7 +432,7 @@ _dwarf_internal_printlines(Dwarf_Die die, Dwarf_Error * error)
 		    }
 
 		    DECODE_LEB128_UWORD(line_ptr, utmp2)
-			printf("DW_LNS_advance_pc val %lld 0x%llx\n",
+			printf("DW_LNS_advance_pc val %"PRId64" 0x%llx\n",
 			       (long long) (Dwarf_Word) utmp2,
 			       (long long) (Dwarf_Word) utmp2);
 		    leb128_num = (Dwarf_Word) utmp2;
@@ -452,7 +453,7 @@ _dwarf_internal_printlines(Dwarf_Die die, Dwarf_Error * error)
 
 		    DECODE_LEB128_SWORD(line_ptr, stmp)
 			advance_line = (Dwarf_Sword) stmp;
-		    printf("DW_LNS_advance_line val %lld 0x%llx\n",
+		    printf("DW_LNS_advance_line val %"PRId64" 0x%llx\n",
 			   (long long) advance_line,
 			   (long long) advance_line);
 		    line = line + advance_line;
@@ -485,7 +486,7 @@ _dwarf_internal_printlines(Dwarf_Die die, Dwarf_Error * error)
 
 		    DECODE_LEB128_UWORD(line_ptr, utmp2)
 			column = (Dwarf_Word) utmp2;
-		    printf("DW_LNS_set_column val %lld 0x%llx\n",
+		    printf("DW_LNS_set_column val %"PRId64" 0x%llx\n",
 			   (long long) column, (long long) column);
 		    break;
 		}
@@ -535,7 +536,7 @@ _dwarf_internal_printlines(Dwarf_Die die, Dwarf_Error * error)
 				   line_ptr, sizeof(Dwarf_Half));
 		    line_ptr += sizeof(Dwarf_Half);
 		    address = address + fixed_advance_pc;
-		    printf("DW_LNS_fixed_advance_pc val %lld 0x%llx"
+		    printf("DW_LNS_fixed_advance_pc val %"PRId64" 0x%llx"
 			   " new address 0x%llx\n",
 			   (long long) fixed_advance_pc,
 			   (long long) fixed_advance_pc,

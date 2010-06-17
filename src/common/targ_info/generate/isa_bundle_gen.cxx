@@ -710,7 +710,7 @@ static void Emit_Pack_Component(
   if (first_comps[comp] < 0) first_comps[comp] = *pack_index;
 
   if (comp == END) {
-    fprintf (cfile, "  { %-30s, %2d, %2d, %2d,   %16lld },  /* %s */\n",
+    fprintf (cfile, "  { %-30s, %2d, %2d, %2d,   %16"PRId64" },  /* %s */\n",
 		    pack_comp_name[comp],
 		    -1,
 		    -1,

@@ -4060,7 +4060,7 @@ Targ_Print ( const char *fmt, TCON c )
 
     case MTYPE_I8:
     case MTYPE_U8:
-      if (fmt == NULL) fmt = "%1lld";
+      if (fmt == NULL) fmt = "%1"PRId64;
       sprintf(r, fmt, TCON_I8(c));
       break;
 

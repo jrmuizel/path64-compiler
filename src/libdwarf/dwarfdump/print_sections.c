@@ -25,6 +25,7 @@
 
 
 $Header: /plroot/cmplrs.src/v7.4.4m/.RCS/PL/dwarfdump/RCS/print_sections.c,v 1.55 2003/10/07 02:50:13 davea Exp $ */
+#include <inttypes.h>
 #include "globals.h"
 #include "dwarf_names.h"
 
@@ -143,7 +144,7 @@ print_line_numbers_this_cu(Dwarf_Debug dbg, Dwarf_Die cu_die)
 	    if (cores == DW_DLV_NO_ENTRY) {
 		column = -1LL;
 	    }
-	    printf("%s:\t[%3llu,%2lld]\t%#llx", filename, lineno,
+	    printf("%s:\t[%3llu,%2"PRId64"]\t%#llx", filename, lineno,
 		   column, pc);
 	    if (sres == DW_DLV_OK)
 		dwarf_dealloc(dbg, filename, DW_DLA_STRING);
@@ -599,7 +600,7 @@ print_frame_inst_bytes(Dwarf_Debug dbg,
 	    off += uleblen;
 	    printf("\t%2u DW_CFA_offset ", loff);
 	    printreg(reg);
-	    printf(" %lld", (signed long long)
+	    printf(" %"PRId64, (signed long long)
 		   (((Dwarf_Signed) uval) * data_alignment_factor));
 	    if (verbose) {
 		printf("  (%llu * %d)", (unsigned long long) uval,
@@ -698,7 +699,7 @@ print_frame_inst_bytes(Dwarf_Debug dbg,
 		off += uleblen;
 		printf("\t%2u DW_CFA_offset_extended ", loff);
 		printreg(uval);
-		printf(" %lld", (signed long long)
+		printf(" %"PRId64, (signed long long)
 		       (((Dwarf_Signed) uval2) *
 			data_alignment_factor));
 		if (verbose) {
@@ -965,7 +966,7 @@ print_frames(Dwarf_Debug dbg)
 		}
 		temps = get_fde_proc_name(dbg, low_pc);
 		printf
-		    ("<%3lld><%#llx:%#llx><%s><fde offset 0x%llx length: 0x%llx>",
+		    ("<%3"PRId64"><%#llx:%#llx><%s><fde offset 0x%llx length: 0x%llx>",
 		     cie_index, low_pc, (low_pc + func_length),
 		     temps ? temps : "", fde_offset, fde_bytes_length);
 
@@ -1022,7 +1023,7 @@ print_frames(Dwarf_Debug dbg)
 				printreg(reg);
 				printf(" ");
 			    } else {
-				printf("%02lld", offset);
+				printf("%02"PRId64, offset);
 				printf("(");
 				printreg(reg);
 				printf(") ");
@@ -1085,7 +1086,7 @@ print_frames(Dwarf_Debug dbg)
 						   &err);
 			if (cires == DW_DLV_ERROR) {
 			    printf
-				("Bad cie index %lld with fde index %lld!\n",
+				("Bad cie index %"PRId64" with fde index %"PRId64"!\n",
 				 (long long) cie_index, (long long) i);
 			    print_error(dbg, "dwarf_get_cie_info",
 					cires, err);
@@ -1149,7 +1150,7 @@ print_frames(Dwarf_Debug dbg)
 			;	/* ? */
 		    }
 		    if (verbose) {
-			printf("<%3lld>\tversion\t\t\t\t%d\n", i,
+			printf("<%3"PRId64">\tversion\t\t\t\t%d\n", i,
 			       version);
 			cires =
 			    _dwarf_cie_section_offset(dbg, cie_data[i],
@@ -1164,14 +1165,14 @@ print_frames(Dwarf_Debug dbg)
 			printf("\taugmentation\t\t\t%s\n", augmenter);
 			printf("\tcode_alignment_factor\t\t%llu\n",
 			       code_alignment_factor);
-			printf("\tdata_alignment_factor\t\t%lld\n",
+			printf("\tdata_alignment_factor\t\t%"PRId64"\n",
 			       data_alignment_factor);
 			printf("\treturn_address_register\t\t%d\n",
 			       return_address_register_rule);
 			printf
-			    ("\tbytes of initial instructions:\t%lld\n",
+			    ("\tbytes of initial instructions:\t%"PRId64"\n",
 			     (long long) initial_instructions_length);
-			printf("\tcie length :\t\t\t%lld\n",
+			printf("\tcie length :\t\t\t%"PRId64"\n",
 			       (long long) cie_length);
 			print_frame_inst_bytes(dbg,
 					       initial_instructions,
@@ -1241,8 +1242,8 @@ print_pubnames(Dwarf_Debug dbg)
 	    if (cudres != DW_DLV_OK) {
 		print_error(dbg, "dwarf_offdie", cudres, err);
 	    }
-	    printf("global %-15s die %lld, cu-die %lld,"
-		   " off-in-cu %lld, cu %lld",
+	    printf("global %-15s die %"PRId64", cu-die %"PRId64","
+		   " off-in-cu %"PRId64", cu %"PRId64"",
 		   name, (long long) die_off, (long long) cu_off,
 		   /* the cu die offset */
 		   (long long) die_CU_off,
@@ -1314,7 +1315,7 @@ print_one_macro_entry_detail(long i,
 {
     /*"DW_MACINFO_*: section-offset file-index [line] string\n" */
     if(mdp->dmd_macro) {
-        printf( "%3ld %s: %6llu %2lld [%4lld] \"%s\" \n",
+        printf( "%3ld %s: %6llu %2"PRId64" [%4"PRId64"] \"%s\" \n",
                         i,
                         type,
                         mdp->dmd_offset,
@@ -1322,7 +1323,7 @@ print_one_macro_entry_detail(long i,
                         mdp->dmd_lineno,
                           mdp->dmd_macro);
     }else {
-        printf( "%3ld %s: %6llu %2lld [%4lld] 0\n",
+        printf( "%3ld %s: %6llu %2"PRId64" [%4"PRId64"] 0\n",
                         i,
                         type,
                         mdp->dmd_offset,
@@ -1475,7 +1476,7 @@ print_locs(Dwarf_Debug dbg)
 					   &data, &entry_len,
 					   &next_entry,
 					   &err)) == DW_DLV_OK) {
-	printf("\t <obel> 0x%08llx 0x%09llx " "0x%08llx " "%8lld\n",
+	printf("\t <obel> 0x%08llx 0x%09llx " "0x%08llx " "%8"PRId64"\n",
 	       (long long) offset, (long long) lopc_offset,
 	       (long long) hipc_offset, (long long) entry_len);
 	offset = next_entry;
@@ -1514,12 +1515,12 @@ print_abbrevs(Dwarf_Debug dbg)
 	if (attr_count == 0) {
 	    /* Simple innocuous zero : null abbrev entry */
 	    if (dense) {
-		printf("<%lld><%lld><%lld><%s>\n",
+		printf("<%"PRId64"><%"PRId64"><%"PRId64"><%s>\n",
 		       abbrev_num,
 		       offset, (signed long long) /* abbrev_code */ 0,
 		       "null .debug_abbrev entry");
 	    } else {
-		printf("<%4lld><%5lld><code: %2lld> %-20s\n",
+		printf("<%4"PRId64"><%5"PRId64"><code: %2"PRId64"> %-20s\n",
 		       abbrev_num,
 		       offset, (signed long long) /* abbrev_code */ 0,
 		       "null .debug_abbrev entry");
@@ -1538,10 +1539,10 @@ print_abbrevs(Dwarf_Debug dbg)
 	    print_error(dbg, "dwarf_get_abbrev_code", tres, err);
 	}
 	if (dense)
-	    printf("<%lld><%lld><%lld><%s>", abbrev_num,
+	    printf("<%"PRId64"><%"PRId64"><%"PRId64"><%s>", abbrev_num,
 		   offset, abbrev_code, get_TAG_name(dbg, tag));
 	else
-	    printf("<%4lld><%5lld><code: %2lld> %-20s", abbrev_num,
+	    printf("<%4"PRId64"><%5"PRId64"><code: %2"PRId64"> %-20s", abbrev_num,
 		   offset, abbrev_code, get_TAG_name(dbg, tag));
 	++abbrev_num;
 	acres = dwarf_get_abbrev_children_flag(ab, &child_flag, &err);
@@ -1602,7 +1603,7 @@ print_strings(Dwarf_Debug dbg)
     printf("\n.debug_string\n");
     while ((sres = dwarf_get_str(dbg, offset, &name, &length, &err))
 	   == DW_DLV_OK) {
-	printf("name at offset %lld, length %lld is %s\n",
+	printf("name at offset %"PRId64", length %"PRId64" is %s\n",
 	       offset, length, name);
 	offset += length + 1;
     }
@@ -1709,7 +1710,7 @@ print_aranges(Dwarf_Debug dbg)
 			dwarf_dealloc(dbg, attrib, DW_DLA_ATTR);
 		    }
 		    printf("\narange starts at %llx, "
-			   "length of %lld, cu_die_offset = %lld",
+			   "length of %"PRId64", cu_die_offset = %"PRId64"",
 			   start, length, cu_die_offset);
 		    /* get the offset of the cu header itself in the
 		       section */
@@ -1787,8 +1788,8 @@ print_static_funcs(Dwarf_Debug dbg)
 	    if (dores != DW_DLV_OK) {
 		print_error(dbg, "dwarf_offdie2", dores, err);
 	    }
-	    printf("static-func %-15s die %lld, cu-die %lld,"
-		   " off-in-cu %lld, cu %lld",
+	    printf("static-func %-15s die %"PRId64", cu-die %"PRId64","
+		   " off-in-cu %"PRId64", cu %"PRId64"",
 		   name, (long long) die_off, (long long) cu_off,
 		   /* the cu die offset */
 		   (long long) die_CU_off,
@@ -1863,8 +1864,8 @@ print_static_vars(Dwarf_Debug dbg)
 	    if (dores != DW_DLV_OK) {
 		print_error(dbg, "dwarf_offdie2", dores, err);
 	    }
-	    printf("static-var %-15s die %lld, cu-die %lld,"
-		   " off-in-cu %lld, cu %lld",
+	    printf("static-var %-15s die %"PRId64", cu-die %"PRId64","
+		   " off-in-cu %"PRId64", cu %"PRId64"",
 		   name, (long long) die_off, (long long) cu_off,
 		   /* the cu die offset */
 		   (long long) die_CU_off,
@@ -1943,8 +1944,8 @@ print_types(Dwarf_Debug dbg)
 	    if (dores != DW_DLV_OK) {
 		print_error(dbg, "dwarf_offdie2", dores, err);
 	    }
-	    printf("type %-15s die %lld, cu-die %lld,"
-		   " off-in-cu %lld, cu %lld",
+	    printf("type %-15s die %"PRId64", cu-die %"PRId64","
+		   " off-in-cu %"PRId64", cu %"PRId64,
 		   name, (long long) die_off, (long long) cu_off,
 		   /* the cu die offset */
 		   (long long) die_CU_off,
@@ -2023,8 +2024,8 @@ print_weaknames(Dwarf_Debug dbg)
 	    if (dores != DW_DLV_OK) {
 		print_error(dbg, "dwarf_offdie2", dores, err);
 	    }
-	    printf("weakname %-15s die %lld, cu-die %lld,"
-		   " off-in-cu %lld, cu %lld",
+	    printf("weakname %-15s die %"PRId64", cu-die %"PRId64","
+		   " off-in-cu %"PRId64", cu %"PRId64,
 		   name, (long long) die_off, (long long) cu_off,
 		   /* the cu die offset */
 		   (long long) die_CU_off,

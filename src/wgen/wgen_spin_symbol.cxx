@@ -1050,7 +1050,7 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 				// (e.g. int f: 16;).  But we need it set
 				// so we know how to pack it, because 
 				// otherwise the field type is wrong.
-				DevWarn("field size %lld doesn't match type size %" SCNd64, 
+				DevWarn("field size %"PRId64" doesn't match type size %" PRId64, 
 					gs_get_integer_value(gs_decl_size(field)),
 					TY_size(Get_TY(gs_tree_type(field)))
 						* BITSPERBYTE );

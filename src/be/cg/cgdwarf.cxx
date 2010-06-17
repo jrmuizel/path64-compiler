@@ -905,7 +905,7 @@ put_location (
   switch (ST_sclass(st)) {
     case SCLASS_FORMAL:
 	if (base_st != SP_Sym && base_st != FP_Sym) {
-                //printf ("[1] base_offset: %lld, ofst: %lld, offs: %d\n", base_ofst, ST_ofst(st), offs) ;
+                //printf ("[1] base_offset: %"PRId64", ofst: %"PRId64", offs: %d\n", base_ofst, ST_ofst(st), offs) ;
 		dwarf_add_expr_addr_b (expr,
 #ifdef KEY
 			           base_ofst + offs,               // need to add base offset because if the symbols has
@@ -957,7 +957,7 @@ put_location (
     case SCLASS_FSTATIC:
     case SCLASS_PSTATIC:
       if (base_st != NULL) {
-         //printf ("[2] %s (%s): real base_ofst: %llx, calc base_offset: %lld, ofst: %lld, offs: %d, base_st: %p, st: %p\n", ST_name(st), ST_name(base_st), ST_ofst(base_st), base_ofst, ST_ofst(st), offs, base_st, st) ;
+         //printf ("[2] %s (%s): real base_ofst: %llx, calc base_offset: %"PRId64", ofst: %"PRId64", offs: %d, base_st: %p, st: %p\n", ST_name(st), ST_name(base_st), ST_ofst(base_st), base_ofst, ST_ofst(st), offs, base_st, st) ;
 	dwarf_add_expr_addr_b (expr,
 #ifdef KEY      
 			           base_ofst + offs,               // need to add base offset because if the symbols has

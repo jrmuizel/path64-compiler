@@ -21,6 +21,7 @@
 
 /* Copyright (c) 2005, 2006. PathScale, Inc.  All Rights Reserved. */
 
+#include <inttypes.h>
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
@@ -264,8 +265,8 @@ int __pmp_get_stack_size_limit(const char *new_limit, long long *max_stack_ptr,
  
   phys_mem = (long long) page_size * npages;
  
-  dprint("Physical memory: %lld bytes\n", phys_mem);
-  dprint("Number of CPUs: %lld\n", ncpus);
+  dprint("Physical memory: %"PRId64" bytes\n", phys_mem);
+  dprint("Number of CPUs: %"PRId64"\n", ncpus);
   dprint("Default number of threads per team: %d\n", nthreads);
  
   max_stack = phys_mem - 64LL * 1048576;
@@ -285,7 +286,7 @@ int __pmp_get_stack_size_limit(const char *new_limit, long long *max_stack_ptr,
     max_stack /= nthreads;
   }
 
-  dprint("Automatic maximum stack size limit: %lld (%lld%% of RAM)\n",
+  dprint("Automatic maximum stack size limit: %"PRId64" (%"PRId64"%% of RAM)\n",
     max_stack, (max_stack * 100) / phys_mem);
 
   if (new_limit && *new_limit) {
@@ -330,14 +331,14 @@ int __pmp_get_stack_size_limit(const char *new_limit, long long *max_stack_ptr,
  
     if (max_stack != RLIM_INFINITY && max_stack < STACK_MIN) {
       __pmp_warning("bad maximum stack size "
-                    "limit of %lld (specified as \"%s\")\n",
+                    "limit of %"PRId64" (specified as \"%s\")\n",
         max_stack, new_limit);
       return -1;
     }
  
     if (max_stack > ULONG_MAX) {
       __pmp_warning("treating requested stack "
-                    "size limit of %lld as no limit\n",
+                    "size limit of %"PRId64" as no limit\n",
         max_stack);
       max_stack = RLIM_INFINITY;
     }
@@ -346,13 +347,13 @@ int __pmp_get_stack_size_limit(const char *new_limit, long long *max_stack_ptr,
       dprint("You have asked for no stack size limit\n");
     } else {
       dprint("You have asked for a stack size limit of "
-        "%lld (%lld%% of RAM)\n",
+        "%"PRId64" (%"PRId64"%% of RAM)\n",
         max_stack, (max_stack * 100) / phys_mem);
     }
  
     if (max_stack > phys_mem) {
       __pmp_warning("your requested stack "
-                    "size limit is %lld%% of physical memory\n",
+                    "size limit is %"PRId64"%% of physical memory\n",
                     (max_stack * 100) / phys_mem);
     }
   }

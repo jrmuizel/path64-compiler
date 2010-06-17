@@ -4130,7 +4130,7 @@ void kludge_output_conversion (long_type *the_constant,
       break;
 
    case Integer_8:
-      sprintf(str, "%lld" , *(long long *)the_constant);
+      sprintf(str, "%"PRId64 , *(long long *)the_constant);
       break;
 
    case Real_4:
