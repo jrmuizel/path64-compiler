@@ -32,11 +32,39 @@ add_executable(table ${PATHSCALE_TABLE_SRCS})
 
 #GET_TARGET_PROPERTY(TABLE_EXE table LOCATION)
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
+  set(sort_options_command sort_options.bat)
+  set(gen_version_command gen_version.bat)
+
+add_executable(sort_options sort_options.cpp)
+GET_TARGET_PROPERTY(sort_options_exe sort_options LOCATION)
+
+add_custom_command(
+        OUTPUT tmp.options.cpp
+        COMMAND cpp -traditional -P -DX8664 -DPSC_PRODNAME='"Compiler"' -DKEY -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT ${CMAKE_CURRENT_SOURCE_DIR}/OPTIONS > tmp.options.cpp
+        DEPENDS OPTIONS
+        )
+
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS -DX8664 -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
-        DEPENDS sort_options.sh OPTIONS
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/${sort_options_command} ${sort_options_exe} > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
+        DEPENDS ${sort_options_command} OPTIONS sort_options tmp.options.cpp
         )
+
+else()
+
+  set(sort_options_command sort_options.sh)
+  set(gen_version_command gen_version.sh)
+
+add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/${sort_options_command} ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS -DX8664 -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
+        DEPENDS ${sort_options_command} OPTIONS sort_options
+        )
+
+endif()
+
 
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/check_combos.c ${CMAKE_CURRENT_BINARY_DIR}/implicits.c
@@ -47,8 +75,8 @@ add_custom_command(
 
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version_hg.c
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/gen_version.sh > ${CMAKE_CURRENT_BINARY_DIR}/version_hg.c
-        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gen_version.sh
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/${gen_version_command} > ${CMAKE_CURRENT_BINARY_DIR}/version_hg.c
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${gen_version_command}
         )
 
 
@@ -72,6 +100,10 @@ add_executable(${exe_refix}pathcc ${PATHSCALE_DRIVER_SRCS})
 install(TARGETS ${exe_prefix}pathcc
         RUNTIME DESTINATION bin)
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+target_link_libraries(table iberty windows_crt)
+target_link_libraries(${exe_refix}pathcc iberty windows_crt)
+endif()
 
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/bin/pathCC${CMAKE_EXECUTABLE_SUFFIX}\")")
 if(PATH64_ENABLE_FORTRAN)
