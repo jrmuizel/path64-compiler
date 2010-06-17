@@ -80,7 +80,7 @@ __dtors(void)
 		(**p++)();
 }
 
-void
+static void
 __do_global_ctors_aux(void)
 {
 	static int initialized;

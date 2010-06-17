@@ -360,8 +360,11 @@ add_special_options (void)
 	 * -g to change the generated code so we leave it off always.
 	 * See bugs 1917 and 7595.
 	 */
-	if (olevel == 0 && inline_t == UNDEFINED)
-	  inline_t = FALSE;
+	/* Instead of skipping inline at -O0 we now run it with -INLINE:none
+	 * so it will remove unused static inline declarations.
+	 */
+	/* if (olevel == 0 && inline_t == UNDEFINED) */
+	  /* inline_t = FALSE; */
 #endif
 
 #ifdef KEY /* Bug 5367 */
