@@ -15,6 +15,7 @@ SET(WINDOWS_HFILES
     alloca.h
 	string.h
 	strings.h
+	stdio.h
 	stdlib.h
 	unistd.h
 	locale.h
