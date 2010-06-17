@@ -43,6 +43,8 @@
 #if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 
 #include <ext/hash_map>			// stl hash table
 #include <ext/algorithm>
@@ -1985,7 +1987,7 @@ PU::Print (FILE *f) const
 	     "\tMisc. Info (misc) %d\n",
 	     flags, lexical_level, src_lang, target_idx, misc); 
 #else
-    fprintf (f, ", flags 0x%016llx,\n"
+    fprintf (f, ", flags 0x%016"PRIx64",\n"
 	     "\tlexical level %d, LANG 0x%02x, TARGET_INFO %d\n",
 	     flags, lexical_level, src_lang, target_idx); 
 #endif

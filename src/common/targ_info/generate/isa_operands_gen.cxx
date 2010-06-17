@@ -41,6 +41,8 @@
 
 typedef struct operand_value_type *OPERAND_VALUE_TYPE;
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -844,7 +846,7 @@ void ISA_Operands_End(void)
 
   fprintf(hfile, "\ninline BOOL ISA_OPERAND_Any_Use(ISA_OPERAND_USE ouse)\n"
 		 "{\n"
-		 "  return (0x%016llxULL & (1ULL << ouse)) != 0;\n"
+		 "  return (0x%016"PRIx64"ULL & (1ULL << ouse)) != 0;\n"
 		 "}\n",
 		 use_mask);
 

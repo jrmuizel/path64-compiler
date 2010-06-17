@@ -46,6 +46,8 @@
 //  $Source: /home/bos/bk/kpro64-pending/common/targ_info/generate/SCCS/s.si_gen.cxx $
 
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -297,9 +299,9 @@ void RES_WORD::Output_All(FILE* fd)
   else {
     // Important special case.  We don't need a vector of resource words at all
     // and can just use a scalar.
-    fprintf(fd,"const SI_RRW SI_RRW_initializer = 0x%llx;\n",
+    fprintf(fd,"const SI_RRW SI_RRW_initializer = 0x%"PRIx64";\n",
                res_words.front()->initializer);
-    fprintf(fd,"const SI_RRW SI_RRW_overuse_mask = 0x%llx;\n",
+    fprintf(fd,"const SI_RRW SI_RRW_overuse_mask = 0x%"PRIx64";\n",
                res_words.front()->overuse_mask);
   }
 }
@@ -697,7 +699,7 @@ void RES_REQ::Output(FILE* fd)
              max_res_cycle + 1);
 
   for ( i = 0; i <= max_res_cycle; ++i )
-    fprintf(fd,",\n  0x%llx",res_vec[i]);
+    fprintf(fd,",\n  0x%"PRIx64,res_vec[i]);
 
   fprintf(fd,"\n};\n");
 
@@ -712,7 +714,7 @@ void RES_REQ::Output(FILE* fd)
   bool is_first = true;
   for ( i = 0; i <= max_res_cycle; ++i ) {
     Maybe_Print_Comma(fd,is_first);
-    fprintf(fd,"\n  0x%llx",res_used_set[i]);
+    fprintf(fd,"\n  0x%"PRIx64,res_used_set[i]);
   }
 
   fprintf(fd,"\n};\n");
@@ -1201,7 +1203,7 @@ void INSTRUCTION_GROUP::Output(FILE* fd)
              ii_res_id_set_gname.Gname());
   fprintf(fd,"  {{");
   for ( i = 0; i < sizeof(bad_iis) / sizeof(bad_iis[0]); ++i ) {
-    fprintf(fd, "0x%llx", bad_iis[i]);
+    fprintf(fd, "0x%"PRIx64, bad_iis[i]);
     if ( i < sizeof(bad_iis) / sizeof(bad_iis[0]) - 1 ) fprintf(fd, ",");
   }
   fprintf(fd, "}}    , /* Bad IIs */\n");

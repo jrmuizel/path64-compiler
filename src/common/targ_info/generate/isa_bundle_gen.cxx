@@ -38,6 +38,8 @@
 //  $Author: bos@eng-25.internal.keyresearch.com $
 //  $Source: /home/bos/bk/kpro64-pending/common/targ_info/generate/SCCS/s.isa_bundle_gen.cxx $
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
@@ -366,7 +368,7 @@ static void Emit_Bundle_Scheduling(FILE *hfile, FILE *cfile, FILE *efile)
   fprintf (hfile, "\n");
   for (iei = all_exec_types.begin(); iei != all_exec_types.end(); ++iei) {
     ISA_EXEC_UNIT_TYPE curr_exec_type = *iei;
-    fprintf (hfile, "#define ISA_EXEC_PROPERTY_%-15s (0x%llx%s)\n",
+    fprintf (hfile, "#define ISA_EXEC_PROPERTY_%-15s (0x%"PRIx64"%s)\n",
 		    curr_exec_type->name,
 		    (1ULL << curr_exec_type->bit_position), int_suffix);
   }
@@ -446,7 +448,7 @@ static void Emit_Bundle_Scheduling(FILE *hfile, FILE *cfile, FILE *efile)
 
     fprintf(cfile, "\n    %2d,", curr_exec_type->pack_code);
     fprintf(cfile, " 0x%1x,", stop_mask);
-    fprintf(cfile, " 0x%0*llx\n  },\n", slot_mask_digits, slot_mask);
+    fprintf(cfile, " 0x%0*"PRIx64"\n  },\n", slot_mask_digits, slot_mask);
   }
   fprintf (cfile, "  {\n    \"template_MAX\", \"\", -1,\n    { -1 /* ??????? */");
   for (i = 1; i < max_slots; ++i) fprintf (cfile, ", -1 /* ??????? */");
@@ -737,7 +739,7 @@ static void Emit_Pack_Component(
       int b = bundle_pos % incr;
       int w = width;
       if (b + width > incr) w = incr - b;
-      fprintf (cfile, "  { %-30s, %2d, %2d, %2d, 0x%016llx },  /* %s */\n",
+      fprintf (cfile, "  { %-30s, %2d, %2d, %2d, 0x%016"PRIx64" },  /* %s */\n",
 		      pack_comp_name[comp],
 		      index,
 		      comp_pos,
