@@ -3060,7 +3060,7 @@ WN2C_Append_Purple_Funcinfo(TOKEN_BUFFER tokens)
       sclass = SCLASS_TEXT;
       export_class = EXPORT_INTERNAL;
    }
-   Append_Token_String(tokens, Number_as_String(id, "%" SCNd64 ""));
+   Append_Token_String(tokens, Number_as_String(id, "%" SCNu64 ""));
    Append_Token_Special(tokens, ',');
    Append_Token_String(tokens, Number_as_String(sclass, "%" SCNd64 ""));
    Append_Token_Special(tokens, ',');
@@ -3187,7 +3187,7 @@ WN2C_Prompf_Construct_Start(TOKEN_BUFFER tokens, const WN *construct)
       WN2C_Append_Prompf_Flag_Newline(tokens);
       Append_Token_String(tokens, "/*$SGI");
       Append_Token_String(tokens, "start");
-      Append_Token_String(tokens, Number_as_String(construct_id, "%" SCNd64 ""));
+      Append_Token_String(tokens, Number_as_String(construct_id, "%" SCNu64 ""));
       Append_Token_String(tokens, "*/");
    }
 } /* WN2C_Prompf_Construct_Start */
@@ -3203,7 +3203,7 @@ WN2C_Prompf_Construct_End(TOKEN_BUFFER tokens, const WN *construct)
       WN2C_Append_Prompf_Flag_Newline(tokens);
       Append_Token_String(tokens, "/*$SGI");
       Append_Token_String(tokens, "end");
-      Append_Token_String(tokens, Number_as_String(construct_id, "%" SCNd64 ""));
+      Append_Token_String(tokens, Number_as_String(construct_id, "%" SCNu64 ""));
       Append_Token_String(tokens, "*/");
    }
 } /* WN2C_Prompf_Construct_End */

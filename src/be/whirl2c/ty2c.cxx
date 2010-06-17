@@ -518,7 +518,7 @@ TY2C_array(TOKEN_BUFFER decl_tokens, TY_IDX ty, CONTEXT context)
        * array otherwise. 
        *
        * Is_True(TY_size(ty) == 0,
-       *      ("Expected size of dynamic array to be zero (size=%" SCNd64 ")",
+       *      ("Expected size of dynamic array to be zero (size=%" SCNu64 ")",
        *       (UINT64)TY_size(ty)));
        */
       if (CONTEXT_incomplete_ty2c(context))

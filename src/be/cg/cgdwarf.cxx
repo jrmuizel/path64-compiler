@@ -331,7 +331,7 @@ Elf64_Word Cg_Dwarf_Translate_Offset(Dwarf_Unsigned idx_from_sym_reloc)
   if (Trace_Dwarf) {
     fprintf(TFile, "Translating %llu ", idx_from_sym_reloc);
     fflush(TFile);
-    fprintf(TFile, "through index %llu ",
+    fprintf(TFile, "through index %" PRIu64 " ",
 	    CGD_Symtab[idx_from_sym_reloc].index);
     fprintf(TFile, "to %" PRId64 "\n",
 	    Get_Label_Offset(CGD_Symtab[idx_from_sym_reloc].index));

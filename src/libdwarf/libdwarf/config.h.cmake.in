@@ -31,6 +31,9 @@
 /* Define 1 if R_IA_64_DIR32LSB is defined (might be enum value). */
 #cmakedefine HAVE_R_IA_64_DIR32LSB
 
+/* Define 1 if R_IA64_DIR32LSB is defined (might be enum value). */
+#cmakedefine HAVE_R_IA64_DIR32LSB
+
 /* Define to 1 if you have the <sys/ia64/elf.h> header file. */
 #cmakedefine HAVE_SYS_IA64_ELF_H
 

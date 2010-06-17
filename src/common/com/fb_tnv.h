@@ -52,7 +52,7 @@ struct FB_TNV{
   FB_TNV():_address(0),_sample_counter(0),_zero_std_counter(0),_stride_steps(0){}
     
   void Print( FILE *fp ) const {
-    fprintf(fp, "id(%u), exec_counter(%" SCNd64 "), flag(%d), zero_std_counter(%" SCNd64 "), (values(counters)=( %" SCNd64 "(%" SCNd64 "), %" SCNd64 "(%" SCNd64 "), %" SCNd64 "(%" SCNd64 "), %" SCNd64 "(%" SCNd64 "), %" SCNd64 "(%" SCNd64 "), %" SCNd64 "(%" SCNd64 "), %" SCNd64 "(%" SCNd64 "), %" SCNd64 "(%" SCNd64 "), %" SCNd64 "(%" SCNd64 "), %" SCNd64 "(%" SCNd64 ") ) )\n",
+    fprintf(fp, "id(%u), exec_counter(%" SCNu64 "), flag(%d), zero_std_counter(%" SCNu64 "), (values(counters)=( %" SCNd64 "(%" SCNu64 "), %" SCNd64 "(%" SCNu64 "), %" SCNd64 "(%" SCNu64 "), %" SCNd64 "(%" SCNu64 "), %" SCNd64 "(%" SCNu64 "), %" SCNd64 "(%" SCNu64 "), %" SCNd64 "(%" SCNu64 "), %" SCNd64 "(%" SCNu64 "), %" SCNd64 "(%" SCNu64 "), %" SCNd64 "(%" SCNu64 ") ) )\n",
 	    _id, _exec_counter, _flag, _zero_std_counter,
 	    _values[0], _counters[0] , _values[1], _counters[1], 
 	    _values[2], _counters[2], _values[3], _counters[3], _values[4], _counters[4], 

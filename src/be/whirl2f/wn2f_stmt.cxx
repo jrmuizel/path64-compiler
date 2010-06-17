@@ -1083,7 +1083,7 @@ WN2F_Prompf_Construct_Start(TOKEN_BUFFER tokens, WN *construct)
    {
       Append_F77_Directive_Newline(tokens,sgi_comment_str);
       Append_Token_String(tokens, "start");
-      Append_Token_String(tokens, Number_as_String(construct_id, "%" SCNd64 ""));
+      Append_Token_String(tokens, Number_as_String(construct_id, "%" SCNu64 ""));
    }
 } /* WN2F_Prompf_Construct_Start */
 
@@ -1097,7 +1097,7 @@ WN2F_Prompf_Construct_End(TOKEN_BUFFER tokens, WN *construct)
    {
       Append_F77_Directive_Newline(tokens, sgi_comment_str);
       Append_Token_String(tokens, "end");
-      Append_Token_String(tokens, Number_as_String(construct_id, "%" SCNd64 ""));
+      Append_Token_String(tokens, Number_as_String(construct_id, "%" SCNu64 ""));
    }
 } /* WN2F_Prompf_Construct_End */
 
@@ -1507,7 +1507,7 @@ WN2F_Append_Purple_Funcinfo(TOKEN_BUFFER tokens)
       sclass = SCLASS_TEXT;
       export_class = EXPORT_INTERNAL;
    }
-   Append_Token_String(tokens, Number_as_String(id, "%" SCNd64 ""));
+   Append_Token_String(tokens, Number_as_String(id, "%" SCNu64 ""));
    Append_Token_Special(tokens, ',');
    Append_Token_String(tokens, Number_as_String(sclass, "%" SCNd64 ""));
    Append_Token_Special(tokens, ',');

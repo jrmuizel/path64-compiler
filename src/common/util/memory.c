@@ -996,7 +996,7 @@ Allocate_Block (MEM_POOL *pool)
   if (special_address >= ((char *) MEM_BLOCK_ptr(block)) &&
       special_address < (((char *) MEM_BLOCK_ptr(block)) +
 			 MEM_BLOCK_avail(block))) {
-    fprintf(TFile, "Pool %s given %" SCNd64 " bytes from 0x%p to 0x%p\n",
+    fprintf(TFile, "Pool %s given %" SCNu64 " bytes from 0x%p to 0x%p\n",
 	    MEM_POOL_name(pool), (UINT64)MEM_BLOCK_avail(block),
 	    (char *) MEM_BLOCK_ptr(block),
 	    ((char *) MEM_BLOCK_ptr(block)) + MEM_BLOCK_avail(block));
@@ -1156,7 +1156,7 @@ MEM_POOL_Alloc_P
     *(MEM_PTR*)ret_val = MEM_POOL_last_alloc(pool);
     MEM_POOL_last_alloc(pool) = ret_val;
     if (purify_pools_trace)
-      printf ("pool %s, alloc 0x%p, size %" SCNd64 ", (0x%p - 0x%p)\n",
+      printf ("pool %s, alloc 0x%p, size %" SCNu64 ", (0x%p - 0x%p)\n",
 	      MEM_POOL_name(pool), (char *)ret_val+8, (UINT64)size,
 	      (char *)ret_val+8, (char *)ret_val+size);
     return ((MEM_PTR) ((size_t)ret_val+8));
@@ -1284,7 +1284,7 @@ MEM_POOL_Realloc_P
         memset((char*)ret_val + old_size, 0, new_size - old_size);
     }
     if (purify_pools_trace)
-      printf ("pool %s, realloc 0x%p, new size %" SCNd64 ", (0x%p - 0x%p)\n",
+      printf ("pool %s, realloc 0x%p, new size %" SCNu64 ", (0x%p - 0x%p)\n",
 	      MEM_POOL_name(pool), ret_val, (UINT64)new_size,
 	      ret_val, (char *)ret_val + new_size - 8);
     return ret_val;
@@ -1589,7 +1589,7 @@ MEM_POOL_Pop_P
     if (special_address >= (char *) MEM_BLOCK_first_ptr(bp) &&
 	special_address < ((char *) MEM_BLOCK_ptr(bp) +
 			   MEM_BLOCK_avail(bp))) {
-      fprintf(TFile, "Pool %s freed %" SCNd64 " bytes from 0x%p to 0x%p\n",
+      fprintf(TFile, "Pool %s freed %" SCNu64 " bytes from 0x%p to 0x%p\n",
 	      MEM_POOL_name(pool),
 	      (UINT64)(MEM_BLOCK_avail(bp) +
 	       (char *) MEM_BLOCK_ptr(bp) -
