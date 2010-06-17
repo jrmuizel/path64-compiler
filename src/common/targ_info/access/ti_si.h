@@ -399,7 +399,7 @@ inline UINT SI_RESOURCE_Bit_Index( const SI_RESOURCE* res )
   return res->bit_index;
 }
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 
 extern const int * SI_resource_count_p;
 #define SI_resource_count (*SI_resource_count_p)
@@ -470,7 +470,7 @@ SI_RESOURCE_ID_SET_Complement( SI_RESOURCE_ID_SET s )
 /****************************************************************************
  ****************************************************************************/
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 
 extern const SI_RRW * SI_RRW_initializer_p;
 #define SI_RRW_initializer (*SI_RRW_initializer_p)
@@ -523,7 +523,7 @@ inline INT SI_ISSUE_SLOT_Avail_Per_Cycle( const SI_ISSUE_SLOT* slot )
   return slot->avail_per_cycle;
 }
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 
 extern const int * SI_issue_slot_count_p;
 #define SI_issue_slot_count (*SI_issue_slot_count_p)
@@ -591,7 +591,7 @@ inline SI_RRW SI_RR_Cycle_RRW( SI_RR req, UINT cycle )
 /****************************************************************************
  ****************************************************************************/
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 
 extern const SI * const * SI_top_si_p;
 #define SI_top_si SI_top_si_p
@@ -698,7 +698,7 @@ inline INT TSI_Write_Write_Interlock( TOP top )
 /****************************************************************************
  ****************************************************************************/
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 
 extern const int * SI_ID_count_p;
 #define SI_ID_count (*SI_ID_count_p)
