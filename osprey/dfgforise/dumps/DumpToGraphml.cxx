@@ -50,7 +50,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-
+#include <cassert>
 
 
 namespace DfgForIse {

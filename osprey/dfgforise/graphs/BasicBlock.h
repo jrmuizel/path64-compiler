@@ -190,14 +190,14 @@ namespace DfgForIse {
      * @param labels A string representing the list of labels 
      *               associated to the bb.
      */
-    void BasicBlock::setLabels(const std::string labels);
+    void setLabels(const std::string labels);
 
 
     /** Gets the list of labels associated to the bb.
      * @return The string representing the list of labels 
      *               associated to the bb.
      */
-    std::string BasicBlock::getLabels() const ;
+    std::string getLabels() const ;
 
     
     /** Sets the line of the code in source file.
