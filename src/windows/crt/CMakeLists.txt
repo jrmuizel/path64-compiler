@@ -2,7 +2,9 @@
 set(WINDOWS_CRT_SRC	"mkstemp.c"
                     "rawmemchr.c"
                     "readlink.c"
-                    "strtok_r.c")
+                    "strtok_r.c"
+                    "tempname.c"
+                    "win2unixpath.c")
 
 ADD_DEFINITIONS(
 	-DWINDOWS_CRT
