@@ -1,12 +1,16 @@
 
 set(WINDOWS_CRT_SRC	"mkstemp.c"
+                    "rawmemchr.c"
                     "readlink.c"
-                    "strtok_r.c"
-                    "vasprintf.c")
+                    "strtok_r.c")
 
 ADD_DEFINITIONS(
 	-DWINDOWS_CRT
+	-DHAVE_CONFIG_H
+	-D__MSVCRT_VERSION__=0x0601
 )
+
+include_directories(BEFORE .)
 
 ADD_LIBRARY(windows_crt STATIC ${WINDOWS_CRT_SRC})
 
