@@ -27,12 +27,15 @@
 
 #pragma ident "@(#) libfi/mathlb/nearest.c	92.1	07/09/99 11:00:36"
 
+#if defined(__mips) || defined(KEY) /* Bug 10771 */
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <math.h>
+#endif
 #include <fortran.h>
 #include <liberrno.h>
 #include <fmath.h>
-#if defined(__mips) || defined(KEY) /* Bug 10771 */
-#include <math.h>
-#endif
 #include "inline.h"
 
 /* NEAREST - return the nearest different machine representable number in a 
