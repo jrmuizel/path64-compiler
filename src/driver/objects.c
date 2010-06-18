@@ -589,7 +589,7 @@ finalize_maybe_linker_options (boolean is_linker)
   }
 }
 
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(_WIN32)
 /* Need to fix this eventually */
 static int check_for_whirl(char *name) { return 0; }
 #else /* defined(BUILD_OS_DARWIN) */

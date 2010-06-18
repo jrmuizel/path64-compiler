@@ -135,56 +135,56 @@ SET(PATHSCALE_CG_SRCS
 
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/bb_list.cxx ${PATHSCALE_BINARY_DIR}/be/bb_list.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_bb_list.sh ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_bb_list.sh
+	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_bb_list.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
+	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_bb_list.${SHELL_EXT}
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/gra_bb_list.cxx ${PATHSCALE_BINARY_DIR}/be/gra_bb_list.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gra_mon/gen_gra_bb_list.sh ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gra_mon/gen_gra_bb_list.sh
+	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gra_mon/gen_gra_bb_list.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
+	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gra_mon/gen_gra_bb_list.${SHELL_EXT}
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/lrange_list.cxx ${PATHSCALE_BINARY_DIR}/be/lrange_list.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gra_mon/gen_lrange_list.sh ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gra_mon/gen_lrange_list.sh
+	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gra_mon/gen_lrange_list.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
+	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gra_mon/gen_lrange_list.${SHELL_EXT}
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/op_list.cxx ${PATHSCALE_BINARY_DIR}/be/op_list.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_op_list.sh ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_op_list.sh
+	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_op_list.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
+	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_op_list.${SHELL_EXT}
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/st_list.cxx ${PATHSCALE_BINARY_DIR}/be/st_list.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_st_list.sh ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_st_list.sh
+	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_st_list.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
+	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_st_list.${SHELL_EXT}
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/tn_list.cxx ${PATHSCALE_BINARY_DIR}/be/tn_list.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_tn_list.sh ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_tn_list.sh
+	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_tn_list.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
+	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_tn_list.${SHELL_EXT}
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/void_list.cxx ${PATHSCALE_BINARY_DIR}/be/void_list.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_void_list.sh ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_void_list.sh
+	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_void_list.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
+	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_void_list.${SHELL_EXT}
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/cg_loop_scc_prop.cxx ${PATHSCALE_BINARY_DIR}/be/cg_loop_scc_prop.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_cg_loop_scc_prop.sh ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_cg_loop_scc_prop.sh
+	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_cg_loop_scc_prop.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
+	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_cg_loop_scc_prop.${SHELL_EXT}
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/tn_prop.cxx ${PATHSCALE_BINARY_DIR}/be/tn_prop.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_tn_prop.sh ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_tn_prop.sh
+	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_tn_prop.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
+	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_tn_prop.${SHELL_EXT}
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(

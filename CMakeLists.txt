@@ -225,6 +225,12 @@ ELSE()
     SET(LD_HASH_STYLE_FLAG "")
 ENDIF()
 
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    SET(SHELL_EXT cmd)
+ELSE()
+    SET(SHELL_EXT sh)
+ENDIF()
+
 
 # Build GCC and pathscale.
 ADD_SUBDIRECTORY(GCC)
