@@ -197,7 +197,7 @@ case ${host} in
     out_host_hook_obj="${out_host_hook_obj} host-ppc64-darwin.o"
     host_xmake_file="${host_xmake_file} rs6000/x-darwin64"
     ;;
-  *-*-solaris2*)
+  *-*-solaris2*|*-*-netbsd*)
     out_host_hook_obj=host-solaris.o
     host_xmake_file="${host_xmake_file} x-solaris"
     ;;
