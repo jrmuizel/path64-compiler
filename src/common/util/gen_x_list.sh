@@ -36,7 +36,7 @@
 ###                              lists onto a base type.  This is something
 ###                              you really can't do with the CPP.
 ###
-### Usage:      sh gen_x_list TYPE PREFIX ALLOC [INCLUDE...]
+### Usage:      sh gen_x_list TYPE PREFIX [INCLUDE...]
 ###
 ###             Creates the files type_prop.h and type_prop.cxx that
 ###             implement a module for manipulating very simple bit
