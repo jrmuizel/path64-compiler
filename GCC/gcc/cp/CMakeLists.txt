@@ -56,6 +56,12 @@ IF(BORLAND)
   SET_TARGET_PROPERTIES(cc1plus42 PROPERTIES LINK_FLAGS "-lx")
 ENDIF(BORLAND)
 
+add_custom_target(
+    stageit-cc1plus42 ALL
+    DEPENDS cc1plus42
+    COMMAND ln -s ../bin/cc1plus42 ${CMAKE_BINARY_DIR}/lib
+)
+
 # Install cc1plus42 next to the gcc executable.
 INSTALL(TARGETS cc1plus42
   RUNTIME DESTINATION ${PATH64_GCC_INSTALL_PATH}

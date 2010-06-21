@@ -82,6 +82,12 @@ SET_TARGET_PROPERTIES(ld PROPERTIES OUTPUT_NAME "ipa_link")
 target_link_libraries(ld bfd iberty ${libdl})
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
+add_custom_target(
+    stageit-ipa_link ALL
+    DEPENDS ld
+    COMMAND ln -s ../bin/ipa_link ${CMAKE_BINARY_DIR}/lib
+)
+
 install(TARGETS ld
     RUNTIME DESTINATION ${PATH64_LIB_PATH}
     LIBRARY DESTINATION ${PATH64_LIB_PATH})

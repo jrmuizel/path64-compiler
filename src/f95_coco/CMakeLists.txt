@@ -8,4 +8,10 @@ add_dependencies(coco pathfortran pathfstart mv mpath)
 install(TARGETS coco
     RUNTIME DESTINATION ${PATH64_LIB_PATH})
 
+add_custom_target(
+    stageit-coco ALL
+    DEPENDS coco
+    COMMAND ln -s ../bin/coco ${CMAKE_BINARY_DIR}/lib
+)
+
 endif()

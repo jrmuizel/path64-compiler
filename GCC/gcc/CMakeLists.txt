@@ -591,6 +591,12 @@ SET_TARGET_PROPERTIES(cc142
                       PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY ${GCC_EXECUTABLE_OUTPUT_PATH})
 
+add_custom_target(
+    stageit-cc142 ALL
+    DEPENDS cc142
+    COMMAND ln -s ../bin/cc142 ${CMAKE_BINARY_DIR}/lib
+)
+
 
 # Install cc142
 INSTALL(TARGETS cc142
