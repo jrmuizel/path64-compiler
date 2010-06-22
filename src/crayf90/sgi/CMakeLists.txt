@@ -91,11 +91,17 @@ ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 add_executable (mfef95 ${PATHSCALE_MFEF95_SRCS})
 target_link_libraries (mfef95 comutil fe90 fe90-pathf arith cif pathfortran-static m)
 
+add_custom_command(
+    OUTPUT ${Path64_BINARY_DIR}/lib/mfef95-stage
+    COMMAND rm -f ${Path64_BINARY_DIR}/lib/mfef95
+    COMMAND ln -fs ../bin/mfef95 ${Path64_BINARY_DIR}/lib/mfef95
+    COMMAND touch ${Path64_BINARY_DIR}/lib/mfef95-stage
+)
+
 add_custom_target(
     mfef95-stage ALL
-    DEPENDS mfef95
-    COMMAND rm -f ${Path64_BINARY_DIR}/lib/mfef95
-    COMMAND ln -s ../bin/mfef95 ${Path64_BINARY_DIR}/lib/mfef95
+    DEPENDS ${Path64_BINARY_DIR}/bin/mfef95
+    DEPENDS ${Path64_BINARY_DIR}/lib/mfef95-stage
 )
 
 install(TARGETS mfef95
