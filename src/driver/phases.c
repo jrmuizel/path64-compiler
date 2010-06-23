@@ -2902,6 +2902,9 @@ run_ar(void)
 void
 run_pixie (void)
 {
+#ifdef _WIN32
+    error("run_pixie is unimplemented\n");
+#else
  int link_status;
  string_list_t *args = init_string_list();
  char *pixie_file;
@@ -2929,11 +2932,15 @@ run_pixie (void)
       }
    }
  }
+#endif
 }
 
 void
 run_prof (void)
 {
+#ifdef _WIN32
+    error("run_prof is unimplemented\n");
+#else
  int link_status;
  string_list_t *args = init_string_list();
  char *bin_dot_pixie, *bin_plain;
@@ -2971,7 +2978,7 @@ run_prof (void)
       perror(program_name);
     }
  }
-				
+#endif
 }
 
 void
