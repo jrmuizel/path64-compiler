@@ -2048,7 +2048,7 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
 
 	//we intercept -Wl,<option> and pass to ld <option>
 	//here we deal with the -Wl passed explicitly only
-	if (!strncmp(p->name, "-Wl,", 4)) {
+	if (phase != P_ipa_link && !strncmp(p->name, "-Wl,", 4)) {
 	    // cut away -Wl, prefix and split the rest in pieces at each ","
 	    // advance p to avoid iterating over the newly added strings
 	    // 
