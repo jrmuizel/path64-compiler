@@ -72,6 +72,17 @@ add_executable(${exe_refix}pathcc ${PATHSCALE_DRIVER_SRCS})
 install(TARGETS ${exe_prefix}pathcc
         RUNTIME DESTINATION bin)
 
+add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/bin/pathf95
+    DEPENDS pathcc
+    COMMAND ln -s pathcc ${CMAKE_BINARY_DIR}/bin/pathCC
+    COMMAND ln -s pathcc ${CMAKE_BINARY_DIR}/bin/pathf95
+)
+
+add_custom_target(
+    stageit-driver ALL
+    DEPENDS ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/bin/pathf95
+)
 
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/bin/pathCC${CMAKE_EXECUTABLE_SUFFIX}\")")
 if(PATH64_ENABLE_FORTRAN)

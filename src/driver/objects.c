@@ -427,7 +427,7 @@ dump_objects (void)
 void
 add_library_dir (char *path)
 {
-	add_string(library_dirs, path);
+	add_string_if_new(library_dirs, path);
 }
 
 string_list_t *

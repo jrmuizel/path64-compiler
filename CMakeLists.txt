@@ -225,6 +225,9 @@ ELSE()
     SET(LD_HASH_STYLE_FLAG "")
 ENDIF()
 
+# build runtime search paths
+include(${Path64_SOURCE_DIR}/cmake/Modules/GCCRuntimeDirs.cmake)
+
 
 # Build GCC and pathscale.
 ADD_SUBDIRECTORY(GCC)
