@@ -1849,6 +1849,21 @@ add_final_ld_args (string_list_t *args)
             add_libgcc_s(args);  //adding gcc_s is tricky. Need to consider if gcc_eh and supc++ deserve special prcessing too.
             add_library(args, "supc++");
             add_library(args, "std");  //new runtime
+#else
+            if (option_was_seen(O_static) || option_was_seen(O__static)){
+                add_arg(args, "--start-group");
+                add_arg(args, "-L%s", CONFIGURED_LIBGCC_DIR);
+                add_arg(args, "-L%s", CONFIGURED_LIBGCC_EH_DIR);
+                add_library(args, "gcc");
+                add_library(args, "gcc_eh");
+                add_library(args, "c");  /* the above libs should be grouped together */
+                add_arg(args, "--end-group");
+                 
+                if(invoked_lang == L_CC){
+                    add_arg(args, "-L%s", CONFIGURED_LIBSUPCXX_DIR);
+                    add_library(args, "supc++");
+                }
+            }
 #endif
 #endif
 	
@@ -1954,6 +1969,7 @@ add_final_ld_args (string_list_t *args)
 	if (ipa == TRUE) {
 #ifndef PATH64_ENABLE_PSCRUNTIME
 	    	if (invoked_lang == L_CC) {
+                        add_arg(args, "-L%s", CONFIGURED_LIBSTDCXX_DIR);
 			add_library(args, "stdc++");
 	    	}
 #endif
@@ -1962,14 +1978,6 @@ add_final_ld_args (string_list_t *args)
 		    !option_was_seen(O__static)) {
 			add_libgcc_s (args);
 		}
-		//add_library (args, "gcc");
-		//add_library (args, "c");
-		if (invoked_lang == L_CC &&
-		    !option_was_seen(O_static) &&
-		    !option_was_seen(O__static)) {
-			add_libgcc_s (args);
-		}
-		//add_library(args, "gcc");
 	}
 	if (shared != RELOCATABLE) {
 	  if ( fbuiltin != 0 && ! option_was_seen(O_fbootstrap_hack) ) {
