@@ -89,6 +89,17 @@ set_property(SOURCE ../common/com/wn_util.cxx PROPERTY COMPILE_DEFINITIONS MONGO
 add_executable(wgen42 ${wgen42_sources})
 target_link_libraries(wgen42 comutil iberty spin cmplrs m)
 
+add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/lib/wgen42
+    DEPENDS wgen42
+    COMMAND ln -s ../bin/wgen42 ${CMAKE_BINARY_DIR}/lib
+)
+
+add_custom_target(
+    stageit-wgen42 ALL
+    DEPENDS ${CMAKE_BINARY_DIR}/lib/wgen42
+)
+
 install(TARGETS wgen42
         RUNTIME DESTINATION ${PATH64_LIB_PATH})
 #install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${CMAKE_INSTALL_PREFIX}/${PATH64_LIB_PATH}/wgen42${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/${PATH64_LIB_PATH}/wgen${CMAKE_EXECUTABLE_SUFFIX}\")")
