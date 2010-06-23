@@ -3,7 +3,9 @@ set(WINDOWS_CRT_SRC	"mkstemp.c"
                     "rawmemchr.c"
                     "readlink.c"
                     "strtok_r.c"
+                    "stubs.c"
                     "tempname.c"
+                    "times.c"
                     "win2unixpath.c")
 
 ADD_DEFINITIONS(
