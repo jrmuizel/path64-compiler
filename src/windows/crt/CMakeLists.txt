@@ -2,6 +2,7 @@
 set(WINDOWS_CRT_SRC	"mkstemp.c"
                     "rawmemchr.c"
                     "readlink.c"
+                    "rlimit.c"
                     "strtok_r.c"
                     "stubs.c"
                     "tempname.c"
