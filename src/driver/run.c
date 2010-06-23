@@ -51,7 +51,7 @@
 #include <signal.h>
 #include <sys/param.h>
 #include <sys/times.h>
-#if ! defined(BUILD_OS_DARWIN)
+#if ! defined(BUILD_OS_DARWIN) && !defined(_WIN32)
 #include <sys/procfs.h>
 #endif /* ! defined(BUILD_OS_DARWIN) */
 #include <limits.h>
@@ -122,6 +122,9 @@ static void my_execv(const char *name, char *const argv[])
 void
 run_simple_program (char *name, char **argv, char *output)
 {
+#ifdef _WIN32
+    error("run_simple_program is unimplemented for WIN32\n");
+#else
 	int forkpid;
 	int fdout;
 	int waitpid;
@@ -203,6 +206,7 @@ run_simple_program (char *name, char **argv, char *output)
 			return;
 		}
 	}
+#endif
 }
 
 static void my_putenv(const char *name, const char *fmt, ...)
@@ -327,6 +331,7 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 	}
 	argv[argc] = NULL;
 
+#ifndef _WIN32
 	/* fork a process */
 	forkpid = fork();
 	if (forkpid == -1) {
@@ -702,6 +707,8 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 			return;
 		}
 	}
+#endif
+
 }
 
 /*
@@ -714,6 +721,16 @@ handler (int sig)
 	cleanup ();
 	do_exit (RC_SYSTEM_ERROR);
 }
+
+// FIXME
+#ifdef _WIN32
+#define SIGHUP -1
+#define SIGQUIT -1
+#define SIGTRAP -1
+#define SIGIOT -1
+#define SIGBUS -1
+#define SIGPIPE -1
+#endif
 
 /* set signal handler */
 void
@@ -763,7 +780,7 @@ print_time (char *phase)
     clock_t time1, wtime;
     double utime, stime;
     struct tms tm1;
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
     int HZ = CLK_TCK;
 #endif /* defined(BUILD_OS_DARWIN) */
 
