@@ -31,10 +31,10 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#if ! defined(BUILD_OS_DARWIN) && ! defined(__FreeBSD__)
+#if ! defined(BUILD_OS_DARWIN) && ! defined(__FreeBSD__) && !defined(_WIN32)
 #include <wait.h>
 #endif /* ! defined(BUILD_OS_DARWIN) */
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(_WIN32)
 #include <sys/wait.h>
 #endif
 #include <sys/utsname.h>
