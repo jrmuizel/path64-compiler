@@ -79,6 +79,7 @@ ENDFOREACH(f)
 #ADD_LIBRARY(iberty ${iberty_SRCS})
 add_executable(ld ${LD_SRCS})
 SET_TARGET_PROPERTIES(ld PROPERTIES OUTPUT_NAME "ipa_link")
+SET_TARGET_PROPERTIES(ld PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
 target_link_libraries(ld bfd iberty ${libdl})
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
