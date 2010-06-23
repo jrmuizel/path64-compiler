@@ -1,4 +1,6 @@
 
+#include <time.h>
+
 struct tms
 {
     clock_t tms_utime;
