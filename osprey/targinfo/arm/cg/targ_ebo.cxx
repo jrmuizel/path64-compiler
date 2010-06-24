@@ -1792,6 +1792,10 @@ find_equivalent_tn(OP *op, EBO_TN_INFO *input_tninfo, int use_bits, TN **equiv_t
     return FALSE;
   if (match_tninfo != NULL && !EBO_tn_available (OP_bb(op), match_tninfo)) return FALSE;
       
+  // FdF 20100617: Don't propagate prolog uses of dedicated registers,
+  // they are needed for SSA
+  if (EBO_in_pre && TN_is_dedicated(match_tn) && OP_prologue(def_opinfo->in_op)) return FALSE;
+
   *equiv_tninfo = match_tninfo;
   *equiv_tn = match_tn;
       
