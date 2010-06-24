@@ -29,7 +29,6 @@
 #ifndef DWARF_INCL_H
 #define DWARF_INCL_H
 
-#include "libdwarfdefs.h"
 #include <string.h>
 
 #if defined(BUILD_OS_DARWIN)

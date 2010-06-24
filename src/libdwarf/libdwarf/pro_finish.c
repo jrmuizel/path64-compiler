@@ -27,7 +27,6 @@
 
 
 #include "config.h"
-#include "libdwarfdefs.h"
 #include "pro_incl.h"
 
 /*---------------------------------------------------------------
