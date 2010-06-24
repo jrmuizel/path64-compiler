@@ -1852,15 +1852,21 @@ add_final_ld_args (string_list_t *args)
 #else
             if (option_was_seen(O_static) || option_was_seen(O__static)){
                 add_arg(args, "--start-group");
+#  ifdef CONFIGURED_LIBGCC_DIR)
                 add_arg(args, "-L%s", CONFIGURED_LIBGCC_DIR);
+#  endif
+#  ifdef CONFIGURED_LIBGCC_EH_DIR
                 add_arg(args, "-L%s", CONFIGURED_LIBGCC_EH_DIR);
+#  endif
                 add_library(args, "gcc");
                 add_library(args, "gcc_eh");
                 add_library(args, "c");  /* the above libs should be grouped together */
                 add_arg(args, "--end-group");
                  
                 if(invoked_lang == L_CC){
+#  ifdef CONFIGURED_LIBSUPCXX_DIR
                     add_arg(args, "-L%s", CONFIGURED_LIBSUPCXX_DIR);
+#  endif
                     add_library(args, "supc++");
                 }
             }
@@ -1969,7 +1975,9 @@ add_final_ld_args (string_list_t *args)
 	if (ipa == TRUE) {
 #ifndef PATH64_ENABLE_PSCRUNTIME
 	    	if (invoked_lang == L_CC) {
+#  ifdef CONFIGURED_LIBSTDCXX_DIR
                         add_arg(args, "-L%s", CONFIGURED_LIBSTDCXX_DIR);
+#  endif
 			add_library(args, "stdc++");
 	    	}
 #endif
