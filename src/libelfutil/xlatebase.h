@@ -34,6 +34,8 @@ $Date$
 
 */
 
+#include <inttypes.h>
+
 /*
 The following go with the size of the address space that
 can be used given how the library is compiled.
