@@ -556,9 +556,9 @@ struct getvnode {
 
 #ifdef _KERNEL
 struct irix5_getvnode {
-	__int32_t g_fsid;
-	__uint32_t g_nodeid;
-	__int32_t g_minrss;
+	int32_t g_fsid;
+	uint32_t g_nodeid;
+	int32_t g_minrss;
 };
 #endif
 

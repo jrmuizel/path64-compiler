@@ -48,7 +48,7 @@
     10 bytes in buffer are all that is needed.
 */
 int
-_leb128_signed_encode64(__int64_t number, char *buffer)
+_leb128_signed_encode64(int64_t number, char *buffer)
 {
     int		sign;
     char	*bufPtr;

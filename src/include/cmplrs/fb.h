@@ -27,15 +27,9 @@
 
 #include <sys/types.h>
 
-#if defined(__GNUC__)
-typedef u_int64_t	FB_offset;
-typedef u_int64_t	FB_xword;
-typedef u_int32_t	FB_word;
-#else
-typedef __uint64_t	FB_offset;
-typedef __uint64_t	FB_xword;
-typedef __uint32_t	FB_word;
-#endif
+typedef uint64_t	FB_offset;
+typedef uint64_t	FB_xword;
+typedef uint32_t	FB_word;
 typedef unsigned short	FB_half;
 
 /* file header:  must be at the beginning of the file */

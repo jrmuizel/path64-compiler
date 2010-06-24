@@ -36,8 +36,8 @@ extern "C" {
 typedef struct {
     unsigned cm_tag;
     union {
-	__uint32_t cm_val;
-	__uint32_t cm_ptr;
+	uint32_t cm_val;
+	uint32_t cm_ptr;
     } cm_un;
 } CM;
 
@@ -47,9 +47,9 @@ typedef struct {
 
 struct full_rlc {
     int type;
-    __uint32_t konst;
-    __uint32_t vaddr;
-    __uint32_t dist2lo;
+    uint32_t konst;
+    uint32_t vaddr;
+    uint32_t dist2lo;
 };
 
 #define CM_R_TYPE_NULL      0
@@ -66,9 +66,9 @@ typedef struct {
     char *scn_praw;
     char *rlc_ptr;
     char *cur_rlc_ptr;
-    __uint32_t  rlc_no;
-    __uint32_t  cur_rlc_no;
-    __uint32_t last_base;
+    uint32_t  rlc_no;
+    uint32_t  cur_rlc_no;
+    uint32_t last_base;
     struct full_rlc rlc_entry;
 } cm_struct ;
 
@@ -91,18 +91,18 @@ struct COMPACT_RELOC {
 
 struct COMPACT_RELOC_C {
     struct COMPACT_RELOC _rlc;
-    __uint32_t addend_const;         /* k of addend */
+    uint32_t addend_const;         /* k of addend */
 };
 
 struct COMPACT_RELOC_C_BASE {
     struct COMPACT_RELOC _rlc;
-    __uint32_t addend_const;         /* k of addend */
-    __uint32_t base;                 /* base for next delta */
+    uint32_t addend_const;         /* k of addend */
+    uint32_t base;                 /* base for next delta */
 };
 
 struct COMPACT_RELOC_BASE {
     struct COMPACT_RELOC _rlc;
-    __uint32_t base;                 /* base for next delta */
+    uint32_t base;                 /* base for next delta */
 };
 
 
