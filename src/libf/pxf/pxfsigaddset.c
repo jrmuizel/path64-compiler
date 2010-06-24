@@ -69,7 +69,7 @@
 #include <fortran.h>
 #include <liberrno.h>
 #include <string.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include "pxfstruct.h"
 #include "pxfstructtable.h"
 #include "table.h"

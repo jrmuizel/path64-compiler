@@ -51,7 +51,7 @@
 #if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
-#include <sys/signal.h>
+#include <signal.h>
 #if defined(BUILD_OS_DARWIN)
 #include <darwin_elf.h>
 #else /* defined(BUILD_OS_DARWIN) */
