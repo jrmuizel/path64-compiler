@@ -24,7 +24,7 @@ FILE(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
     "collect2 command:\n"
     "${COLLECT2_COMMAND}\n")
 
-STRING(REGEX MATCHALL "-L\([^ ]*\)" LIBS ${COLLECT2_COMMAND})
+STRING(REGEX MATCHALL "-L\([^ ]*\)" LIBS "${COLLECT2_COMMAND}")
 
 FOREACH(libdir ${LIBS})
     STRING(REPLACE "-L" "" stripped_dir ${libdir})
