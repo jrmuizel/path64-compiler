@@ -31,12 +31,7 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#if ! defined(BUILD_OS_DARWIN) && ! defined(__FreeBSD__)
-#include <wait.h>
-#endif /* ! defined(BUILD_OS_DARWIN) */
-#if defined(__FreeBSD__)
 #include <sys/wait.h>
-#endif
 #include <sys/utsname.h>
 
 #include "lang_defs.h"
