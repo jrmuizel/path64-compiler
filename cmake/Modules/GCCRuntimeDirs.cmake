@@ -37,7 +37,7 @@ message(STATUS "${output}")
 
 include(${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/GetGccRuntimeDir/result.cmake OPTIONAL)
 
-if ("${result}" strequal "0")
+if ("${result}" STREQUAL "0")
     STRING(REGEX MATCHALL "collect2.*$"
 		    COLLECT2_COMMAND "${GCCRTDATA}")
     FILE(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
