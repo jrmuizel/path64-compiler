@@ -44,7 +44,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/param.h>
-#include <sys/utsname.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include "main_defs.h"
@@ -572,20 +571,8 @@ add_inc_path(string_list_t *args, const char *fmt, ...)
 
 boolean platform_is_64bit(void)
 {
-	static boolean _64bit_set;
-	static boolean _64bit;
 
-	if (!_64bit_set) {
-		struct utsname u;
-
-		uname(&u);
-
-		_64bit = strcmp(u.machine, "x86_64") == 0;
-		
-		_64bit_set = TRUE;
-	}
-
-	return _64bit;
+	return get_platform_abi() == ABI_64;
 }
 
 boolean
@@ -1185,12 +1172,10 @@ add_file_args (string_list_t *args, phases_t index)
 #ifdef KEY
 	case P_spin_cc1:
 	case P_spin_cc1plus:
-		{
-		  struct utsname uts;
-		  uname(&uts);
-		  if (strstr(uts.machine, "x86_64") == NULL) {
-		    add_string(args, "-fi386-host");		// bug 10532
-		  }
+		if (platform_is_64bit()) {
+		    add_string(args, "-m64");
+		} else {
+		    add_string(args, "-m32");
 		}
 		if (gnu_exceptions == FALSE) {			// bug 11732
 		  add_string(args, "-fno-gnu-exceptions");

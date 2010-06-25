@@ -32,7 +32,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <sys/utsname.h>
 
 #include "lang_defs.h"
 #include "license.h"
@@ -144,15 +143,6 @@ void obtain_license (char *exedir, int argc, char *argv[]) {
     }
 
     {
-#ifdef TARG_MIPS
-      {	// bug 12667
-        struct utsname u;
-	uname(&u);
-	if (!strcmp(u.machine, "mips64")) {
-	  return;
-	}
-      }
-#endif
       // bug 12667
       char *dir = get_executable_dir();
       prodname = "Compiler";
