@@ -1852,7 +1852,7 @@ add_final_ld_args (string_list_t *args)
 #else
             if (option_was_seen(O_static) || option_was_seen(O__static)){
                 add_arg(args, "--start-group");
-#  ifdef CONFIGURED_LIBGCC_DIR)
+#  ifdef CONFIGURED_LIBGCC_DIR
                 add_arg(args, "-L%s", CONFIGURED_LIBGCC_DIR);
 #  endif
 #  ifdef CONFIGURED_LIBGCC_EH_DIR
