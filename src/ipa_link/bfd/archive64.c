@@ -27,6 +27,7 @@
 #include "sysdep.h"
 #include "libbfd.h"
 #include "aout/ar.h"
+#include <time.h>
 
 /* Irix 6 defines a 64bit archive map format, so that they can
    have archives more than 4 GB in size.  */
