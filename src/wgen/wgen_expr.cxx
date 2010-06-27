@@ -3881,6 +3881,8 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
       break;
     case GSBI_IX86_BUILTIN_PCMPESTRM128:
       *iopc = INTRN_PCMPESTRM128;
+    case GSBI_IX86_BUILTIN_PAND128:
+      *iopc = INTRN_PAND128;
       break;
     default:
 unsupported:
