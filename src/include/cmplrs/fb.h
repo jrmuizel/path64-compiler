@@ -27,7 +27,11 @@
 
 #include <sys/types.h>
 
-#if defined(__GNUC__)
+#if defined(_WIN32)
+typedef unsigned __int64	FB_offset;
+typedef unsigned __int64	FB_xword;
+typedef unsigned int	FB_word;
+#elif defined(__GNUC__)
 typedef u_int64_t	FB_offset;
 typedef u_int64_t	FB_xword;
 typedef u_int32_t	FB_word;
