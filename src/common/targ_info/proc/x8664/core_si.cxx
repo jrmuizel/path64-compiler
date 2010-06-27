@@ -1439,6 +1439,7 @@ int main (int argc, char *argv[])
 		    TOP_psrad_mmx,
 		    TOP_pand_mmx,
 		    TOP_pandn_mmx,
+            TOP_pand128,
 		    TOP_por_mmx,
 		    TOP_pxor_mmx,
 		    TOP_UNDEFINED);

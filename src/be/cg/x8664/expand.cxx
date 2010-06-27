@@ -7302,6 +7302,9 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TYPE_ID m
    case INTRN_INSERTQ:
     Build_OP(TOP_insertq, result, op0, op1, ops );
     break;
+   case INTRN_PAND128:
+    Build_OP(TOP_pand128, result, op0, op1, ops );
+    break;
   }
 
   if (id <= INTRN_ISUNORDERED && id >= INTRN_ISGREATER )
