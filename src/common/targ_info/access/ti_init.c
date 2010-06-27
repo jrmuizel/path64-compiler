@@ -100,7 +100,7 @@ TI_Initialize(ABI_PROPERTIES_ABI tabi, ISA_SUBSET tisa, PROCESSOR tproc, char *t
   }
 }
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 
 #include "ti_si_types.h"
 
