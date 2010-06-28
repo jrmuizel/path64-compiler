@@ -177,6 +177,9 @@ set_property(TARGET be PROPERTY PREFIX "")
 set_target_properties(be PROPERTIES COMPILE_DEFINITIONS "SHARED_BUILD")
 set_target_properties(be PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
 target_link_libraries(be targinfo m ${libdl})
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+target_link_libraries(be winlib)
+ENDIF()
 add_dependencies(be be-static) # serialize to generate preg_list.cxx only once
 
 
@@ -184,6 +187,9 @@ add_executable (be-exec driver.cxx driver_util.cxx iter.cxx  ../com/phase.cxx)
 # TODO : Must be the elf, elfutil and dwarf built from the source and not a system installed one
 # TODO : Make sure link targets are static
 target_link_libraries (be-exec -Wl,-whole-archive be-static cg wopt -Wl,-no-whole-archive iberty dwarf elfutil elf targinfo)
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+target_link_libraries(be-exec winlib)
+ENDIF()
 SET_TARGET_PROPERTIES(be-exec PROPERTIES OUTPUT_NAME "be")
 set_target_properties(be-exec PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
 

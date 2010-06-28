@@ -88,6 +88,9 @@ set_property(SOURCE ../common/com/wn_util.cxx PROPERTY COMPILE_DEFINITIONS MONGO
 
 add_executable(wgen42 ${wgen42_sources})
 target_link_libraries(wgen42 comutil iberty spin cmplrs m)
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+target_link_libraries(wgen42 winlib)
+ENDIF()
 
 install(TARGETS wgen42
         RUNTIME DESTINATION ${PATH64_LIB_PATH})
