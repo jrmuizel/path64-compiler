@@ -4,6 +4,10 @@
 
 #include <sys/time.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PRIO_PROCESS 0
 #define PRIO_PGRP    1
 #define PRIO_USER    2
@@ -41,5 +45,9 @@ int	getrlimit(int, struct rlimit *);
 int	getrusage(int, struct rusage *);
 int	setpriority(int, int, int);
 int	setrlimit(int, const struct rlimit *);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* !_SYS_RESOURCE_H_ */
