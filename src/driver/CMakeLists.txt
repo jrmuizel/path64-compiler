@@ -95,8 +95,8 @@ install(TARGETS ${exe_prefix}pathcc
         RUNTIME DESTINATION bin)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-target_link_libraries(table iberty windows_crt)
-target_link_libraries(${exe_refix}pathcc iberty windows_crt)
+target_link_libraries(table iberty winlib)
+target_link_libraries(${exe_refix}pathcc iberty winlib)
 endif()
 
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/bin/pathCC${CMAKE_EXECUTABLE_SUFFIX}\")")

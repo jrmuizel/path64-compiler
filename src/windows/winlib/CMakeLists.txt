@@ -1,5 +1,5 @@
 
-set(WINDOWS_CRT_SRC	"mkstemp.c"
+set(winlib_SRC	"mkstemp.c"
                     "rawmemchr.c"
                     "readlink.c"
                     "rlimit.c"
@@ -10,17 +10,17 @@ set(WINDOWS_CRT_SRC	"mkstemp.c"
                     "win2unixpath.c")
 
 ADD_DEFINITIONS(
-	-DWINDOWS_CRT
+	-D_WINLIB_
 	-DHAVE_CONFIG_H
 	-D__MSVCRT_VERSION__=0x0601
 )
 
 include_directories(BEFORE .)
 
-ADD_LIBRARY(windows_crt STATIC ${WINDOWS_CRT_SRC})
+ADD_LIBRARY(winlib STATIC ${winlib_SRC})
 
-# SET_TARGET_PROPERTIES(windows_crt PROPERTIES OUTPUT_NAME "windows_crt")
+# SET_TARGET_PROPERTIES(winlib PROPERTIES OUTPUT_NAME "winlib")
 
-install(TARGETS windows_crt
+install(TARGETS winlib
         ARCHIVE DESTINATION ${PATH64_LIB_PATH})
 
