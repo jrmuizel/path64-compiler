@@ -12,6 +12,8 @@
 #define MAP_COPY MAP_PRIVATE
 #define MAP_AUTOGROW 0x0040
 
+#define MAP_FAILED ((void*)(-1))
+
 void *mmap(void *, size_t, int, int, int, off_t);
 int	munmap(void *, size_t);
 
