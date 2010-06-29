@@ -1,13 +1,16 @@
 
 set(winlib_SRC	"mkstemp.c"
-                    "rawmemchr.c"
-                    "readlink.c"
-                    "rlimit.c"
-                    "strtok_r.c"
-                    "stubs.c"
-                    "tempname.c"
-                    "times.c"
-                    "win2unixpath.c")
+				"mmap.c"
+				"mmap64.c"
+				"munmap.c"
+				"rawmemchr.c"
+				"readlink.c"
+				"rlimit.c"
+				"strtok_r.c"
+				"stubs.c"
+				"tempname.c"
+				"times.c"
+				"win2unixpath.c")
 
 ADD_DEFINITIONS(
 	-D_WINLIB_
