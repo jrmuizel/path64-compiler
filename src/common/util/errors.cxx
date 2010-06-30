@@ -69,7 +69,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#if !( defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !( defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32))
 #define _LANGUAGE_C			/* work around system header bug */
 extern "C" {
 #include <sys/fpu.h>			/* we don't have a C++ sys/fpu.h */
@@ -103,6 +103,10 @@ extern "C" {
 #include "wn.h"
 #include "wn_map.h"
 #include "ir_reader.h"
+#endif
+
+#ifdef _WIN32
+extern "C" int kill(pid_t pid, int sig);
 #endif
 
 
@@ -242,7 +246,7 @@ static void dump_backtrace(FILE *fp = stderr, size_t start_frame = 1)
  *
  * ====================================================================
  */
-
+#ifndef _WIN32
 static void
 catch_signal (INT sig, INT error_num)
 {
@@ -327,6 +331,8 @@ Handle_Signals ( void )
     syssgi(SGI_SET_FP_PRESERVE, 1);
 #endif
 }
+#endif
+
 
 /* ====================================================================
  *
