@@ -76,6 +76,9 @@ static char *defs_rcs_id = "$Source: /home/bos/bk/kpro64-pending/common/com/SCCS
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>
 #include <stdbool.h>
 
@@ -413,6 +416,6 @@ INT Min(INT i, INT j)
 #endif
 
 /* C++ standard doesn't cover ISO C99: 7.8 Format conversion of integer types so we're doing a hack for all the c code which was stupidly coverted to c++ */
-#include "../../common/targ_info/generate/intdefs.h"
+//#include "../../common/targ_info/generate/intdefs.h"
 
 #endif /* defs_INCLUDED */
