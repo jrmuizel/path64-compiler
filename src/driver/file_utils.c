@@ -44,6 +44,9 @@
 
 extern int errno;
 static char *saved_orig_program_name;
+#ifdef _WIN32
+unsigned int __stdcall GetModuleFileNameA(void*, char*, unsigned int);
+#endif
 
 #ifdef KEY /* Mac port */
 int compat_gcc;
@@ -206,17 +209,23 @@ file_utils_get_program_name()
 }
 #endif
 
+#ifdef _WIN32
+#define SEPERATOR ";"
+#else
+#define SEPERATOR ":"
+#endif
+
 // Get program path from PATH variable.
 static char *
 get_executable_dir_from_path(char *name)
 {
-  if (name[0] != '/') {
+  if (name[0] != '/' && name[0] !='\\') {
     char *path = getenv("PATH");
     if (path != NULL) {
       char *p = string_copy(path);
       char *tmp;
       char *dir;
-      while ((dir = strtok_r(p, ":", &tmp)) != NULL) {
+      while ((dir = strtok_r(p, SEPERATOR, &tmp)) != NULL) {
 	if (is_directory(dir)) {
 	  char filename[MAXPATHLEN];
 	  snprintf(filename, MAXPATHLEN, "%s/%s", dir, name);
@@ -234,6 +243,13 @@ get_executable_dir_from_path(char *name)
 char *
 get_executable_dir (void)
 {
+#ifdef _WIN32
+	char path[MAXPATHLEN];
+	if (GetModuleFileNameA(0, path, MAXPATHLEN)) {
+		return string_copy (path);
+	}
+	return NULL;
+#else
 	char path[MAXPATHLEN];
 	int rval;
 	int i;
@@ -272,6 +288,7 @@ get_executable_dir (void)
 
 	/* Can't get anything reasonable. */
 	return NULL;
+#endif
 }
 
 void
