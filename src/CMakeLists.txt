@@ -10,6 +10,7 @@ INCLUDE(includes.cmake)
 # This kills the libpathfortran build at src/libu/numconv/mpp/defgu2s.c
 #ADD_DEFINITIONS(-D_GNU_SOURCE)
 
+ADD_SUBDIRECTORY(csu)
 ADD_SUBDIRECTORY(driver)
 ADD_SUBDIRECTORY(libcif)
 ADD_SUBDIRECTORY(libcmplrs)
