@@ -74,3 +74,10 @@ int gethostname(char *name, size_t namelen)
     snprintf(name, namelen, "fakehostname");
     return 0;
 }
+
+void
+Handle_Signals(void)
+{
+    fprintf(stderr, "Handle_Signals() is unimplemented\n");
+}
+
