@@ -156,7 +156,7 @@ Get_Resources (
 
     /* Get the elapsed time: */
 #if (1)
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32))
     gettimeofday(&now);
 #else
     gettimeofday(&now, NULL);
@@ -308,7 +308,7 @@ Resource_Init ( void )
 {
     /* Initialize elapsed time base: */
 #if (1)
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32))
     gettimeofday(&start_time);
 #else
     gettimeofday(&start_time, NULL);

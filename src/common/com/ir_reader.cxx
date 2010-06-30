@@ -218,7 +218,7 @@ extern void fdump_dep_tree(FILE *, const WN *, struct ALIAS_MANAGER *);
 
 /*  Suppress warning if not resolved at link-time. */
 /* CG_Dump_Region is defined in cg.so, only call if cg.so is loaded */
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 extern void (*CG_Dump_Region_p) (FILE*, WN*);
 #define CG_Dump_Region (*CG_Dump_Region_p)
 #else

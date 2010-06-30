@@ -49,7 +49,7 @@
 #include "opt_sym.h"
 #include "opt_util.h"
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 #ifdef SHARED_BUILD
 extern AUX_ID (*WN_aux_p) (const WN*);
 #define WN_aux (*WN_aux_p)

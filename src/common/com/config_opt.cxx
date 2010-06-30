@@ -219,7 +219,7 @@ BOOL Inline_Intrinsics_Early=FALSE;    /* Inline intrinsics just after VHO */
 BOOL Enable_extract_bits=TRUE;     /* This is also forced off for MIPS and IA32 in
 					  config_targ.cxx */
 BOOL Enable_compose_bits=FALSE;
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 BOOL Enable_WFE_DFE = FALSE;
 #endif /* __linux __ */
 

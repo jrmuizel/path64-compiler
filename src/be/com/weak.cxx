@@ -46,7 +46,7 @@
 // without finding and fixing those references.
 #endif /* KEY Mac port */
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 
 // Work around the "undefined weak symbol" bug in Linux.
 //

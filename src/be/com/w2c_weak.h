@@ -31,7 +31,7 @@
 // and used in be, be.so and lno.so
 // (additional ones may be needed for prompf_anl.so)
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 
 extern void (*W2C_Cleanup_p)(void);
 extern void (*W2C_Init_p)(void);
