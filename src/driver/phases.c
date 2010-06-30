@@ -47,6 +47,9 @@
 #include <sys/utsname.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#ifdef _WIN32
+#include <alloca.h>
+#endif
 #include "main_defs.h"
 
 #include "phases.h"

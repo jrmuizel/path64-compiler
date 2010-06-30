@@ -41,6 +41,9 @@
 #include <time.h>
 #include <unistd.h>
 #include <errno.h>
+#ifdef _WIN32
+#include <alloca.h>
+#endif
 #include "phases.h"
 #include "lang_defs.h"
 #include "string_utils.h"

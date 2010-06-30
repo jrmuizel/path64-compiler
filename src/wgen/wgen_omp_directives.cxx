@@ -50,6 +50,9 @@ extern "C"{
 #include "errors.h"
 #include "const.h"
 #include "erglob.h"
+#ifdef _WIN32
+#include <alloca.h>
+#endif
 
 #include <stack>
 // The structure of the stack is expected to be:
