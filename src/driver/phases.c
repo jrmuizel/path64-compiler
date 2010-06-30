@@ -1959,6 +1959,12 @@ add_final_ld_args (string_list_t *args)
 	if (!option_was_seen(O_fno_fast_stdlib) &&
 	    !option_was_seen(O_nolibpscrt)) {	// bug 9611
 	    add_library(args, "pscrt");
+#  if !defined(PATH64_ENABLE_PSCRUNTIME)
+#    if defined(CONFIGURED_LIBGCC_DIR)
+	    add_arg(args, "-L%s", CONFIGURED_LIBGCC_DIR);
+#    endif
+	    add_library(args, "gcc");
+#  endif
 	}
 #endif
 #ifdef TARG_MIPS
