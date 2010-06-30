@@ -35,6 +35,16 @@
 #include "elf_stuff.h"
 #include "sections.h"
 
+#ifdef _WIN32 // FIXME
+#define SHF_IA_64_SHORT 0x10000000
+#define SHF_MIPS_LOCAL 0x04000000
+#define SHF_MIPS_MERGE 0x20000000
+#define SHF_MIPS_NAMES 0x02000000
+#define MIPS_EH_REGION "MIPS_EH_REGION"
+#define MIPS_EH_REGION_SUPP "MIPS_EH_REGION_SUPP"
+#define MIPS_LBSS ".lbss"
+#endif
+
 #define INST_BYTES 16
 
 SECTION Sections[_SEC_INDEX_MAX] = {
