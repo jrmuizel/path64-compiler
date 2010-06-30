@@ -260,7 +260,7 @@ static char *config_rcs_id = "$Source: common/com/SCCS/s.config.h $ $Revision: 1
 #include "config_targ.h"	/* in TARGET/com */
 #if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 #include <machine/endian.h>	/* for BIG_ENDIAN, LITTLE_ENDIAN */
-#elif !(defined(linux))
+#elif !(defined(linux)) && !defined(_WIN32)
 #include <sys/endian.h>		/* for BIG_ENDIAN, LITTLE_ENDIAN */
 #else
 #include <endian.h>		/* for BIG_ENDIAN, LITTLE_ENDIAN */
@@ -537,7 +537,7 @@ extern BOOL Simp_Unsafe_Relops;         /* Allow foldings which might cause erro
 extern BOOL Enable_NaryExpr;		/* Allow nary expr in the lowerer */
 extern BOOL Enable_NaryExpr_Set;	/* ... option seen? */
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 extern BOOL Enable_WFE_DFE;		/* frontend dead function elimination? */
 #endif /* __linux __ */
 
@@ -903,6 +903,10 @@ extern void List_Compile_Options (
 #endif
 #ifndef Is_Target_ISA_I1Plus
 #define Is_Target_ISA_I1Plus()	(0)
+#endif
+
+#ifdef _WIN32
+#define MAXHOSTNAMELEN 128
 #endif
 
 #ifdef __cplusplus
