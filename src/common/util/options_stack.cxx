@@ -172,7 +172,11 @@ OPTIONS_STACK::Process_Pragma_Options(char *options_string)
   // create an argv from the options string
   INT32 argc = str2argv(options_string, &argv, &Options_pool);
   // set the various options based on options string
+#ifdef _WIN32
+  fprintf(stderr, "FIXME: where to get Process_Command_Line from?\n");
+#else
   Process_Command_Line(argc, argv);
+#endif
   MEM_POOL_Pop(&Options_pool);
 
 #ifdef Is_True_On

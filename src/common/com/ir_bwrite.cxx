@@ -161,6 +161,9 @@ cleanup (Output_File *fl)
 static void
 ir_bwrite_signal_handler (int sig, int err_num)
 {
+#ifdef _WIN32
+    fprintf(stderr, "ir_bwrite_signal_handler is unimplemented\n");
+#else
     void (*old_handler) (int) = 0;
 
     errno = 0;
@@ -195,7 +198,7 @@ ir_bwrite_signal_handler (int sig, int err_num)
       (*old_handler)(sig);
     }
     return;
-
+#endif
 } /* ir_bwrite_signal_handler */
 
 
@@ -400,6 +403,9 @@ create_temp_file (Output_File *fl)
 Output_File *
 WN_open_output (char *file_name)
 {
+#ifdef _WIN32
+    fprintf(stderr, "WN_open_output is unimplemented\n");
+#else
     Output_File *fl;
     Section *cur_section;
 
@@ -455,6 +461,7 @@ WN_open_output (char *file_name)
     fl->file_size += sizeof(Elf64_Word);
 
     return fl;
+#endif
 } /* WN_open_output */
 
 

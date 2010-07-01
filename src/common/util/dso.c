@@ -27,7 +27,9 @@
 #endif
 #include <stdio.h>		    /* for fprintf() */
 #include <string.h>
+#ifndef _WIN32
 #include <dlfcn.h>		    /* for sgidladd(), dlerror() */
+#endif
 #include <cmplrs/rcodes.h>
 
 #include "defs.h"
@@ -45,6 +47,9 @@
 void
 load_so (const char *soname, char *path, BOOL verbose)
 {
+#ifdef _WIN32
+    fprintf(stderr, "load_so is unimplemented\n");
+#else
     register char *full_path;
 
     if (path != 0) {
@@ -69,4 +74,5 @@ load_so (const char *soname, char *path, BOOL verbose)
 	fprintf (stderr, "Error loading %s: %s\n", full_path, dlerror());
 	exit (RC_SYSTEM_ERROR);
     }
+#endif
 } /* load_so */

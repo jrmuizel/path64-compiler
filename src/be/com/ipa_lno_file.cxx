@@ -75,6 +75,8 @@
 #define MAPPED_SIZE 0x400000
 #endif
 
+extern "C" int kill(int,int);
+
 // Put this here for now.  Later move it on to /usr/sys/include/elfwhirl.h? 
 static char IPALNO_REVISION[] = "IPALNO:1.1"; 
 
@@ -110,9 +112,11 @@ static void Ir_Lno_Signal_Handler(int sig,
 
   // Otherwise, handle this as a normal SIGSEGV or SIGBUS
   switch (sig) {
+#ifndef _WIN32
   case SIGBUS:
     old_handler = old_sigbus;
     break;
+#endif
   case SIGSEGV:
     old_handler = old_sigsegv;
     break;
@@ -239,11 +243,11 @@ void IPA_LNO_WRITE_FILE::Open_Write_File(char *file_name)
   if (old_sigsegv == 0)
     old_sigsegv = signal(SIGSEGV, reinterpret_cast<void (*)(int)>
       (Ir_Lno_Signal_Handler));
-
+#ifndef _WIN32
   if (old_sigbus == 0)
     old_sigbus = signal (SIGBUS, reinterpret_cast<void (*)(int)>
       (Ir_Lno_Signal_Handler)); 
-
+#endif
   // Create a file descriptor for the output file 
   ofl = (Output_File *) malloc(sizeof(Output_File));
   if (!ofl) 

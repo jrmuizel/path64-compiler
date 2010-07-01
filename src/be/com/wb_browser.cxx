@@ -835,7 +835,9 @@ void WB_BROWSER::Access_Array()
       = (ACCESS_ARRAY *) WN_MAP_Get(Access_Array_Map(), Cnode());
     if (array != NULL) {
       fprintf(stdout, "The access array is \n"); 
+#ifndef _WIN32
       array->Print(stdout);
+#endif
     } else {
       fprintf(stdout, "Null ACCESS_ARRAY\n");
     }
@@ -843,7 +845,9 @@ void WB_BROWSER::Access_Array()
     IF_INFO *info = (IF_INFO *) WN_MAP_Get(Access_Array_Map(), Cnode());
     if (info != NULL) {
       fprintf(stdout, "The if info is \n"); 
+#ifndef _WIN32
       info->Print(stdout);
+#endif
     } else {
       fprintf(stdout, "Null IF_INFO\n");
     }
@@ -852,7 +856,9 @@ void WB_BROWSER::Access_Array()
       = (DO_LOOP_INFO_BASE*) WN_MAP_Get(Access_Array_Map(), Cnode());
     if (info != NULL) {
       fprintf(stdout, "The loop info is \n");
+#ifndef _WIN32
       info->Print(stdout);
+#endif
     } else {
       fprintf(stdout, "NulleDO_LOOP_INFO_BASE\n");
     }
@@ -1779,7 +1785,11 @@ void WB_BROWSER::Invoke_Command(char ch)
     DaVinci_Toggle();
     break; 
   case '~': 
+#ifdef _WIN32
+    fprintf(stderr, "Summary() is unimplemented\n");
+#else
     Summary(stdout);
+#endif
     break;
   default: 
     fprintf(stdout, "Bad character: %c\n", ch);
