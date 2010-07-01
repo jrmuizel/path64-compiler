@@ -72,6 +72,12 @@
 #define EC_ASM_Bad_Operand EC_BASE_CG+4 /* int (line number), 
                                            int (bad operand number), 
                                            string (what was expected) */
+#ifdef TARG_ST
+/* Register allocation: (additional) */
+#define EC_Warn_Misaligned_Spill EC_BASE_CG+8   /* string, string, int */
+/* Stack alignment in IT */
+#define EC_Warn_ITStackAlignOpt  EC_BASE_CG+9   /* int, int */
+#endif
 
 /* Start all target-specific codes here: */
 #define EC_TARGET	EC_BASE_CG+200

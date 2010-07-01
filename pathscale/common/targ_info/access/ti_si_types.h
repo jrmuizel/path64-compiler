@@ -36,11 +36,22 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#ifndef TARG_ST
 typedef enum topcode TOPCODE;
-
+#endif
 #include <topcode.h>
 
+#ifdef TARG_ST
+/* Redefining TOP type */
+typedef TOP TOPCODE;
+
+/* Do not define types and scheduling information as const in order
+ * to configure them at runtime
+ */
+#define TI_SI_CONST
+#else
+#define TI_SI_CONST const
+#endif
 /****************************************************************************
  ****************************************************************************/
 
@@ -87,7 +98,7 @@ typedef struct {
 /****************************************************************************
  ****************************************************************************/
 
-typedef const struct {
+typedef TI_SI_CONST struct {
   const SI_RESOURCE* resource;
   mINT32 total_used;
 } SI_RESOURCE_TOTAL;
@@ -95,7 +106,7 @@ typedef const struct {
 /****************************************************************************
  ****************************************************************************/
 
-typedef const SI_RRW* SI_RR;
+typedef TI_SI_CONST SI_RRW* SI_RR;
 
 /****************************************************************************
  ****************************************************************************/
@@ -104,19 +115,25 @@ typedef UINT SI_ID;
 typedef struct {
   const char* name;
   SI_ID id;
-  const mUINT8 *operand_access_times;
-  const mUINT8 *result_available_times;
+  TI_SI_CONST mUINT8 *operand_access_times;
+  TI_SI_CONST mUINT8 *result_available_times;
+#ifdef TARG_ST
+  mUINT8 n_opds;
+  mUINT8 n_results;
+  mBOOL operand_access_times_overridden;
+  mBOOL result_available_times_overridden;
+#endif
   mINT32 load_access_time;
   mINT32 last_issue_cycle;
   mINT32 store_available_time;
   SI_RR rr;
-  const SI_RESOURCE_ID_SET *resources_used;
+  TI_SI_CONST SI_RESOURCE_ID_SET *resources_used;
   mUINT32 ii_info_size;
-  const SI_RR *ii_rr;
-  const SI_RESOURCE_ID_SET * const *ii_resources_used;
+  TI_SI_CONST SI_RR *ii_rr;
+  TI_SI_CONST SI_RESOURCE_ID_SET * TI_SI_CONST *ii_resources_used;
   SI_BAD_II_SET bad_iis;
   mINT32 valid_issue_slot_count;
-  const SI_ISSUE_SLOT * const *valid_issue_slots;
+  TI_SI_CONST SI_ISSUE_SLOT * TI_SI_CONST *valid_issue_slots;
   mINT32 resource_total_vector_size;
   SI_RESOURCE_TOTAL *resource_total_vector;
   mUINT8 write_write_interlock;

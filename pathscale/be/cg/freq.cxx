@@ -722,7 +722,20 @@ static BOOL Is_Pointer(TN *tn, OP *use_op)
 
 	/* The 'tn' is a copy -- analyze the source of the copy.
 	 */
+#ifdef TARG_ST
+	use_tn = OP_opnd(def_op, OP_Copy_Operand(def_op));
+#else
 	use_tn = OP_opnd(def_op, OP_COPY_OPND);
+#endif
+#ifdef TARG_ST
+	// TB 02 2006: FIX bug pro-release-1-9-0-B/39: Do not create ops for node such as
+	// U4U4LDID 76 <1,4,.preg_U4> T<8,.predef_U4,4> # <preg>
+	// U4STID 76 <1,4,.preg_U4> T<8,.predef_U4,4> # <preg> {freq: 0, ln: 110, col: 0}
+	// Otherwise freq.cxx module will not finish (function Is_Pointer) (see whirl2ops.cxx)
+	// Fix is_pointer in the case the def == use, otherwise it does not finish
+ 	if (use_op == def_op)
+ 	  return FALSE;
+#endif
 	use_op = def_op;
 	continue;
       }
@@ -789,6 +802,17 @@ Pointer_Heuristic(
    * br OP is also an EQ or NE test.
    */
   variant = CGTARG_Analyze_Compare(br_op, &tn1, &tn2, &cmp);
+#ifdef TARG_ST
+  // TDR To be trunk camparable
+  if (V_br_condition(variant) == V_BR_U4NE || V_br_condition(variant) == V_BR_U4EQ) return FALSE;
+
+  
+  /* [CG]: We handle V_BR_FALSE case. */
+  if (V_false_br(variant)) invert = !invert;
+  variant = V_br_condition(variant);
+  if (variant == V_BR_NONE) return FALSE;
+#endif
+
   switch (variant) {
   case V_BR_I4EQ:
   case V_BR_U4EQ:
@@ -855,6 +879,12 @@ Opcode_Heuristic(
   /* Determine what type of branch we have.
    */
   variant = CGTARG_Analyze_Compare(br_op, &tn1, &tn2, &cmp);
+#ifdef TARG_ST
+  /* [CG]: We handle V_BR_FALSE case. */
+  if (V_false_br(variant)) invert = !invert;
+  variant = V_br_condition(variant);
+  if (variant == V_BR_NONE) return FALSE;
+#endif
 
   /* Determine if any of the operands are constant. Also check the
    * operands to make sure they are not pointers.
@@ -927,6 +957,12 @@ Opcode_Heuristic(
   case V_BR_U8GE:
     if ((UINT64)val > 1) return FALSE;
     break;
+#ifdef TARG_ST
+    // [CG] The ball larus heuristic does not
+    // compare integers to constant!
+  default:
+    return FALSE;
+#else
   case V_BR_I4EQ:
   case V_BR_U4EQ:
   case V_BR_I8EQ:
@@ -943,6 +979,7 @@ Opcode_Heuristic(
     DevWarn("Opcode_Heuristic: unexpected branch variant %s", 
 	    BR_Variant_Name(variant));
     return FALSE;
+#endif
   }
 
   /* We've satisfied the condition -- return the probability according
@@ -973,9 +1010,15 @@ LOOPINFO_Trip_Count(LOOPINFO* linfo, INT* tc)
 
   if (!linfo) {
     return FALSE;
+#ifdef TARG_ST
+  } else if (    (trip_tn = LOOPINFO_exact_trip_count_tn(linfo))
+              && TN_is_constant(trip_tn)
+  ) {
+#else
   } else if (    (trip_tn = LOOPINFO_trip_count_tn(linfo))
               && TN_is_constant(trip_tn)
   ) {
+#endif
     *tc = TN_value(trip_tn);
     return TRUE;
   } else if (    (wn = LOOPINFO_wn(linfo))
@@ -1185,6 +1228,10 @@ Is_Return_BB(BB *bb)
   while (BB_call(BBLIST_item(succ)) && BB_succs(BBLIST_item(succ))) {
     succ = BB_succs(BBLIST_item(succ));
   }
+#ifdef TARG_ST
+  // FdF 20100316: Support for BB_LIST_item(succ) being a tail-call
+  if (BB_call(BBLIST_item(succ)) && BB_exit(BBLIST_item(succ))) return TRUE;
+#endif
   return BBLIST_next(succ) == NULL && BB_succs(BBLIST_item(succ)) == NULL;
 }
 
@@ -2237,6 +2284,9 @@ Compute_Frequencies(void)
      */
     BB_LIST *ent;
     INT n_entries;
+#ifdef TARG_ST
+    INT n_handlers=0;
+#endif
     BB_SET **reachable;
     BB **entries;
     INT i;
@@ -2246,6 +2296,10 @@ Compute_Frequencies(void)
     n_entries = 0;
     for (ent = Entry_BB_Head; ent != NULL; ent = BB_LIST_rest(ent)) {
       n_entries++;
+#ifdef TARG_ST
+      BB *bb = BB_LIST_first(ent);
+      if (BB_handler(bb)) n_handlers++;
+#endif
     }
 
     /* Create a set of reachable BBs for each entry point.
@@ -2273,14 +2327,25 @@ Compute_Frequencies(void)
        * all entry points are equally likely.
        */
       if (BB_handler(bb)) {
+#ifdef TARG_ST
+        freq = EH_Freq/n_handlers;
+#else
 	freq = EH_Freq;
+#endif
       } else {
+#ifdef TARG_ST
+	freq = 1.0-EH_Freq;
+#else
 	freq = 1.0;
+#endif
 	for (j = (i + 1) % n_entries; j != i; j = ++j % n_entries) {
 	  if (BB_SET_IntersectsP(reachable[i], reachable[j])) {
 	    freq += 1.0;
 	  }
 	}
+#ifdef TARG_ST
+        if (freq > 1.0)
+#endif
 	freq = 1.0 / freq;
       }
 
@@ -2300,6 +2365,34 @@ Compute_Frequencies(void)
   }
 }
 
+
+#ifdef TARG_ST
+/* ====================================================================
+ * [GS-DFGforISE]
+ * Copy_Entry_point_Frequency
+ *
+ * Copy the not already normalized entry point frequency to the global
+ * variable PU_freq: in order to be able to unnormalize the basic block
+ * frequencies later on
+ *
+ * ====================================================================
+ */
+static void
+Copy_Entry_point_Frequency(void)
+{
+  BB    *bb;
+
+  PU_freq = 1.0;
+
+  if (Compiling_Proper_REGION) {
+    bb = CGRIN_entry(RID_Find_Cginfo(REGION_First_BB));
+    PU_freq = BB_freq_fb_based(bb) ? BB_freq(bb) : 0.0;
+  } else if (BB_LIST_rest(Entry_BB_Head) == NULL) {
+    bb = BB_LIST_first(Entry_BB_Head);
+    PU_freq = BB_freq_fb_based(bb) ? BB_freq(bb) : 0.0;
+  }
+}
+#endif
 
 /* ====================================================================
  *
@@ -2807,6 +2900,11 @@ FREQ_Compute_BB_Frequencies(void)
 
     Finalize_Compute_BB_Frequencies();
 
+#ifdef TARG_ST
+    // [GS-DFGforISE] for completing the entry point frequency.
+    PU_freq = CG_enable_feedback ? 0.0 : 1.0;
+#endif
+
     if (CFLOW_Trace_Freq) {
       #pragma mips_frequency_hint NEVER
       BB *bb;
@@ -3303,6 +3401,13 @@ FREQ_Incorporate_Feedback(const WN* entry)
     #pragma mips_frequency_hint NEVER
     FREQ_View_CFG("Before feedback-based freq computation");
   }
+
+#ifdef TARG_ST
+  /* [GS-DFGforISE] for completing the entry point frequency before
+   *               normalization.
+   */
+  Copy_Entry_point_Frequency();
+#endif
   
   /* The frequency data we have created from the feedback is absolute.
    * CG conventions expect it to be normalized such that the entry

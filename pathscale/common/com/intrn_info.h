@@ -30,7 +30,10 @@
 
 #include "defs.h"
 #include "wintrinsic.h"
-
+#ifdef TARG_ST
+#include "mtypes.h" //For TYPE_ID
+#include "errors.h" // For FmtAssert
+#endif
 /* Enumeration of mnemonic names for the return types of intrinsic
  * functions and operators.  
  */
@@ -59,6 +62,9 @@ typedef enum INTRN_RETKIND {
   IRETURN_SZT,               /* size_t */
   IRETURN_PC,                /* pointer to char */
   IRETURN_F10,               /* MTYPE_F10 */
+#ifdef TARG_ST
+  IRETURN_DYNAMIC,           /* dynamically added mtype */
+#endif
 #ifdef TARG_X8664
   IRETURN_V16I2,	     /* MTYPE_V16I2 */
   IRETURN_V16I4,	     /* MTYPE_V16I4 */
@@ -87,6 +93,37 @@ typedef enum INTRN_RETKIND {
 #define NOT_ACTUAL	FALSE
 #define CGINTRINSIC	TRUE
 #define NOT_CGINTRINSIC	FALSE
+#ifdef TARG_ST
+typedef enum {
+   INTRN_UNDEF = 0,      /* Invalid value   -- only for debugging purpose.        */
+   INTRN_OUT      ,      /* Out argument    -- C++ style (reference) par. passing */
+   INTRN_IN       ,      /* In argument     -- par. passed by value               */
+   INTRN_INOUT    ,      /* In/out argument -- C++ style (reference) par. passing */
+} INTRN_INOUT_TYPE;
+
+//TB: Add some proto info for multiple results
+//Support for multiple results
+struct proto_intrn_info
+{
+  // Proto Info
+  unsigned char     argument_count;
+  TYPE_ID 	    *arg_type;     /* Number of items in table: arg_count */
+  INTRN_INOUT_TYPE *arg_inout;    /* Number of items in table: arg_count */
+  //Internal info
+  TYPE_ID return_type; //Resulting MTYPE for multiple res intrinsic
+  unsigned char     arg_out_count;
+  unsigned char     arg_in_count;
+};
+typedef struct proto_intrn_info proto_intrn_info_t;
+#ifdef TARG_ST
+//TB: Add some proto info for multiple results
+// Use to get parameter information on the gcc tree, to know if a
+// parameter is an input, an output or an inout parameter.
+// This array is internal to the WHIRL translator.
+BE_EXPORTED extern proto_intrn_info_t *Proto_Intrn_Info_Array;
+#endif
+
+#endif
 
 // the info we store for each intrinsic
 typedef struct intrn_info_t {
@@ -101,8 +138,21 @@ typedef struct intrn_info_t {
  const char	*specific_name;
  const char	*runtime_name;
 } intrn_info_t;
-
+#ifdef TARG_ST
+//TB: dynamic intrinsics support
+BE_EXPORTED extern const intrn_info_t intrn_info_static[INTRINSIC_STATIC_COUNT+1];
+BE_EXPORTED extern intrn_info_t *intrn_info;
+// Use to get parameter information on the gcc tree, to know if a
+// parameter is an input, an output or an inout parameter.
+// This array is internal to the WHIRL translator.
+inline proto_intrn_info_t *INTRN_proto_info(const INTRINSIC i) {
+  FmtAssert(i > INTRINSIC_STATIC_COUNT,
+	    ("Intrinsic proto info only available for extension intrinsic."));
+  return &(Proto_Intrn_Info_Array[i - INTRINSIC_STATIC_COUNT - 1]);
+}
+#else
 extern const intrn_info_t intrn_info[INTRINSIC_LAST+1];
+#endif
 
 inline BOOL INTRN_by_value (const INTRINSIC i)
 {
@@ -153,5 +203,81 @@ inline const char * INTRN_rt_name (const INTRINSIC i)
 {
   return intrn_info[i].runtime_name;
 }
+
+#ifdef TARG_ST
+BE_EXPORTED BOOL is_intrinsic_rt_name(const char *) ;
+
+
+/** 
+ * Function returns whether intrinsic can be implemented via
+ * a runtime function call.
+ * 
+ * @param i 
+ * 
+ * @return 
+ */
+inline BOOL INTRN_runtime_exists(const INTRINSIC i)
+{
+  return (INTRN_rt_name(i)!=NULL);
+}
+
+#endif
+//TB: Multiple result builtin support.
+
+// Returm true if the param number
+//num is an input or an inout param
+inline BOOL INTRN_is_in_param(int num, proto_intrn_info_t  *built_info)
+{
+  //Out param come first, then inout and then out
+  FmtAssert (num < built_info->argument_count,
+	     ("Prototype mismatch for builtins: too many parameters"));
+
+  return (built_info->arg_inout[num] == INTRN_IN || built_info->arg_inout[num] == INTRN_INOUT);
+}
+
+//Answer TRUE when at least one parameter is passed by reference for this intrinsics
+inline BOOL INTRN_is_by_reference(proto_intrn_info_t  *built_info)
+{
+ return (built_info->arg_out_count >= 1);
+}
+
+// Return true if the param number
+// num is an out or an inout param
+inline BOOL INTRN_is_out_param(int num, proto_intrn_info_t  *built_info){
+  //Out param come first, then inout and then out
+  FmtAssert (num < built_info->argument_count,
+	     ("Prototype mismatch for builtins: too many parameters"));
+
+  return (built_info->arg_inout[num] == INTRN_OUT || built_info->arg_inout[num] == INTRN_INOUT);
+}
+
+inline BOOL INTRN_is_inout_param(int num, proto_intrn_info_t  *built_info){
+  //Out param come first, then inout and then out
+  FmtAssert (num < built_info->argument_count,
+	     ("Prototype mismatch for builtins: too many parameters"));
+  return (built_info->arg_inout[num] == INTRN_INOUT);
+}
+
+//Return the cumulated number of inout and out parameters
+inline int INTRN_number_of_out_param(proto_intrn_info_t  *built_info){
+  return (built_info->arg_out_count);
+}
+
+//Return the cumulated number of inout and in parameters
+inline int INTRN_number_of_in_param(proto_intrn_info_t  *built_info){
+  return (built_info->arg_in_count);
+}
+
+//Return the buitin return type.
+inline TYPE_ID INTRN_return_type(proto_intrn_info_t  *built_info){
+  return built_info->return_type;
+}
+
+#ifdef TARG_ST
+//[TB] To map info for extension intrinsic from dll to return kind
+BE_EXPORTED INTRN_RETKIND INTRN_return_kind_for_mtype (const TYPE_ID mtype);
+BE_EXPORTED TYPE_ID INTRN_mtype_for_return_kind(const INTRN_RETKIND kind);
+
+#endif //TARG_ST
 
 #endif

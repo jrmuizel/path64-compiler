@@ -161,6 +161,9 @@ static const char rcs_id[] = "";
 #include "gtn_universe.h"
 #include "gtn_set.h"
 #include "cg_cflow.h"
+#ifdef TARG_ST
+#include "wn_util.h"
+#endif
 #include "whirl2ops.h"
 #include "cg_db_op.h"
 #include "cio.h"
@@ -170,6 +173,9 @@ static const char rcs_id[] = "";
 
 #include <map>
 #include "cxx_memory.h"
+#ifdef TARG_ST
+#include "stblock.h" // for ST_alignment
+#endif
 
 
 // ======================================================================
@@ -499,6 +505,12 @@ private:
   BOOL  Read_Candidate_Arc( ARC *arc );
   BOOL  Write_Candidate_Arc( ARC *arc );
 
+#ifdef TARG_ST
+  // FdF 30/09/2004: max_omega takes the loop trip estimate into
+  // account, in order to fix ddts MBTst17742
+  INT32 _max_omega;
+#endif
+
   // --------------------------------------------------------------------
   // Read/CICSE elimination TRANSFORMATION fields and methods
   // --------------------------------------------------------------------
@@ -581,6 +593,10 @@ public:
 				   LOOP_DESCR_loophead( loop ) ) ),
       _trace_CG_Chkpnt( Get_Trace( TP_CGLOOP, 0x400,
 				   LOOP_DESCR_loophead( loop ) ) ),
+#ifdef TARG_ST
+      _max_omega( CIO_rw_max_omega ),
+#endif
+
       _trip_count_tn(   CG_LOOP_Trip_Count( loop ) ),
       _ordering_count(  0 ),
       _op_ordering(     NULL ),
@@ -921,6 +937,14 @@ CIO_RWTRAN::CIO_Copy_Remove( BB *body )
   FOR_ALL_BB_OPs_FWD( body, op ) {
     // Note: Could use CGTARG_Is_Copy and CGTARG_Copy_Operand instead
     // of OP_copy and OP_COPY_OPND ?
+#ifdef TARG_ST
+      BOOL candidate = (OP_copy( op ) && ( !OP_has_predicate( op ) ||  TN_is_true_pred( OP_opnd( op, OP_find_opnd_use(op, OU_predicate)))) &&
+
+          // FdF: Fix bug on R06253.cxx: cannot perform copy
+          // propagation on x = x;
+          OP_opnd(op, OP_Copy_Operand(op)) != OP_result(op, OP_Copy_Result(op)) &&
+          OP_omega(op, OP_Copy_Operand(op)) > 0);
+#else
     BOOL candidate = ( OP_copy( op ) && ! OP_cond_def( op ) &&
 		       OP_omega( op, OP_COPY_OPND ) > 0 );
 #ifdef KEY
@@ -933,14 +957,17 @@ CIO_RWTRAN::CIO_Copy_Remove( BB *body )
     // let CIO_Invariant_Copy_Remove deal with that case.
     candidate = candidate && tn_src != OP_result( op, 0 );
 #endif
+#endif
 
     if (candidate) {
       Set_OP_flag1( op );
       eligible_OP_count++;
       // Code below assumes that copy OPs have exactly one result TN.
+#ifndef TARG_ST
       Is_True( OP_results( op ) == 1,
 	       ( "CIO_RWTRAN::CIO_Copy_Remove copy OP has %d != 1"
 		 " result TNs", OP_results( op ) ) );
+#endif
     } else {
       Reset_OP_flag1( op );
     }
@@ -952,6 +979,12 @@ CIO_RWTRAN::CIO_Copy_Remove( BB *body )
   // If none of the OPs in the loop body are predicated, then our
   // algorithm can skip one step.
   BOOL predicated_OPs = FALSE;
+#ifdef TARG_ST
+  // [CG]: We cannot propagate acrosss same_res ops.
+  // As for predicated ops, we will disable copy prop if one of the operation
+  // in the loop is a same res op that read/write the copy destination.
+  BOOL same_res_OPs = FALSE;
+#endif
 
   // For each result TN of an eligible copy OP, cio_copy_table
   // remembers the most recent OP that stores to that TN.
@@ -966,11 +999,25 @@ CIO_RWTRAN::CIO_Copy_Remove( BB *body )
   // Initialize predicated_OPs and cio_copy_table: find the last
   // unpredicated OP into each result TN.
   FOR_ALL_BB_OPs_FWD( body, op ) {
-    if ( OP_cond_def( op ) ) {
+    if ( OP_cond_def( op ) &&
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+      ! TN_is_true_pred(OP_opnd(op, OP_find_opnd_use(op, OU_predicate))))
+#else
+      ! TN_is_true_pred(OP_opnd(op, OP_PREDICATE_OPND)))
+#endif
+      {
       predicated_OPs = TRUE;
     } else {
       for ( INT res = OP_results( op ) - 1; res >= 0; --res ) {
 	TN *tn = OP_result( op, res );
+#ifdef TARG_ST
+	// Detect results that have a same res operand.
+	if (OP_same_res(op, res) >= 0) {
+	  same_res_OPs = TRUE;
+	  continue;
+	}
+#endif
 	INT index;
 	for ( index = cio_copy_table_size - 1; index >= 0; --index )
 	  if ( cio_copy_table[index].tn_result == tn )
@@ -993,14 +1040,34 @@ CIO_RWTRAN::CIO_Copy_Remove( BB *body )
   // Identify any copy OPs that cannot be propagated.  In particular,
   // predicated OPs may prevent the removal of earlier copy OPs with the
   // same result TNs.
-  if ( predicated_OPs ) {
+#ifdef TARG_ST
+  if ( predicated_OPs || same_res_OPs) 
+#else
+  if ( predicated_OPs )
+#endif
+  {
     FOR_ALL_BB_OPs_FWD( body, op ) {
-      BOOL predicated = OP_cond_def( op );
+      BOOL predicated = (OP_cond_def( op )&&
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+            ! TN_is_true_pred(OP_opnd(op, OP_find_opnd_use(op, OU_predicate))));
+#else
+	    ! TN_is_true_pred( OP_opnd( op, OP_PREDICATE_OPND ) ) );
+#endif
+
       for ( INT res = OP_results( op ) - 1; res >= 0; --res ) {
 	TN *tn = OP_result( op, res );
+#ifdef TARG_ST
+        BOOL same_res = OP_same_res(op, res) >= 0;
+#endif
 	for ( INT index = cio_copy_table_size - 1; index >= 0; --index )
 	  if ( cio_copy_table[index].tn_result == tn ) {
-	    if ( predicated ) {
+#ifdef TARG_ST
+	    if ( predicated || same_res) 
+#else
+	    if ( predicated )
+#endif
+            {
 	      // Cannot propagate this source OP
 	      Reset_OP_flag1( cio_copy_table[index].op );
 	    } else {
@@ -1025,9 +1092,15 @@ CIO_RWTRAN::CIO_Copy_Remove( BB *body )
     OP *op = cio_copy_table[index].op;
     if ( ! OP_flag1( op ) ) continue;
 
+#ifdef TARG_ST
+    TN *tn_old = OP_result(op, OP_Copy_Result(op));
+    TN *tn_new = OP_opnd(op, OP_Copy_Operand(op));
+    UINT8 omega_change = OP_omega(op, OP_Copy_Operand(op));
+#else
     TN *tn_old = OP_result( op, 0 );
     TN *tn_new = OP_opnd( op, OP_COPY_OPND );
     UINT8 omega_change = OP_omega( op, OP_COPY_OPND );
+#endif
 
     // Check the prolog backpatches for conflicts.
     CG_LOOP_BACKPATCH *bp;
@@ -1063,16 +1136,28 @@ CIO_RWTRAN::CIO_Copy_Remove( BB *body )
 	  if ( cio_copy_table[index].tn_result == tn ) {
 	    OP *op_src = cio_copy_table[index].op;
 	    if ( OP_flag1( op_src ) ) {
+#ifdef TARG_ST
+	      Set_OP_opnd(op, opnd, OP_opnd(op_src, OP_Copy_Operand(op_src)));
+	      Set_OP_omega(op, opnd, OP_omega(op, opnd)
+			    + OP_omega(op_src, OP_Copy_Operand(op_src)));
+#else
 	      Set_OP_opnd( op, opnd, OP_opnd( op_src, OP_COPY_OPND ) );
 	      Set_OP_omega( op, opnd, OP_omega( op, opnd )
 			    + OP_omega( op_src, OP_COPY_OPND ) );
+#endif
 	    }
 	    break;
 	  }
     }
 
     // Update cio_copy_table
-    if ( ! OP_cond_def( op ) )
+    if ( ! OP_cond_def( op ) ||
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+       TN_is_true_pred(OP_opnd(op, OP_find_opnd_use(op, OU_predicate))))
+#else
+	TN_is_true_pred( OP_opnd( op, OP_PREDICATE_OPND ) ) )
+#endif
       for ( INT res = OP_results( op ) - 1; res >= 0; --res ) {
 	TN *tn = OP_result( op, res );
 	for ( INT index = cio_copy_table_size - 1; index >= 0; --index )
@@ -1091,6 +1176,28 @@ CIO_RWTRAN::CIO_Copy_Remove( BB *body )
     if ( ! OP_flag1( op ) ) continue;
 
     // Perform the propagation by substituting operand TNs if omega is > 0
+#ifdef TARG_ST
+    if (OP_omega(op, OP_Copy_Operand(op)) > 0 ) { 
+      // TN_is_register(tn) == TRUE 
+      TN *tn = OP_opnd(op, OP_Copy_Operand(op));
+      for ( INT index = cio_copy_table_size - 1; index >= 0; --index )
+	if ( cio_copy_table[index].tn_result == tn ) {
+	  OP *op_src = cio_copy_table[index].op;
+	  if ( ! OP_flag1( op_src ) )
+	    break;
+	  tn = OP_opnd(op_src, OP_Copy_Operand(op_src));
+	  Set_OP_opnd(op, OP_Copy_Operand(op), tn );
+	  Set_OP_omega(op, OP_Copy_Operand(op), 
+		       OP_omega(op, OP_Copy_Operand(op))
+			+ OP_omega(op_src, OP_Copy_Operand(op_src)));
+	  // Restart loop, in case this operand is also being substituted
+	  index = cio_copy_table_size;
+	  Is_True(OP_omega(op, OP_Copy_Operand(op)) < MAX_OMEGA,
+		   ( "CIO_RWTRAN::CIO_Copy_Remove overflowed MAX_OMEGA;"
+		     " infinite loop?" ) );
+	}
+    }
+#else
     if ( OP_omega( op, OP_COPY_OPND ) > 0 ) { // TN_is_register( tn ) == TRUE 
       TN *tn = OP_opnd( op, OP_COPY_OPND );
       for ( INT index = cio_copy_table_size - 1; index >= 0; --index )
@@ -1117,6 +1224,7 @@ CIO_RWTRAN::CIO_Copy_Remove( BB *body )
 		     " infinite loop?" ) );
 	}
     }
+#endif
   }
 
   // Substitute all remaining operands (with omega > 0).  We know these
@@ -1131,9 +1239,15 @@ CIO_RWTRAN::CIO_Copy_Remove( BB *body )
 	  if ( cio_copy_table[index].tn_result == tn ) {
 	    OP *op_src = cio_copy_table[index].op;
 	    if ( OP_flag1( op_src ) ) {
+#ifdef TARG_ST
+	      Set_OP_opnd(op, opnd, OP_opnd(op_src, OP_Copy_Operand(op_src)));
+	      Set_OP_omega( op, opnd, OP_omega( op, opnd )
+			    + OP_omega(op_src, OP_Copy_Operand(op_src)));
+#else
 	      Set_OP_opnd( op, opnd, OP_opnd( op_src, OP_COPY_OPND ) );
 	      Set_OP_omega( op, opnd, OP_omega( op, opnd )
 			    + OP_omega( op_src, OP_COPY_OPND ) );
+#endif
 	    }
 	    break;
 	  }
@@ -1148,8 +1262,13 @@ CIO_RWTRAN::CIO_Copy_Remove( BB *body )
 
     // Update any occurances in the prolog and epilog backpatch lists
     TN *tn_old = cio_copy_table[index].tn_result;
+#ifdef TARG_ST
+    TN *tn_new = OP_opnd(op, OP_Copy_Operand(op));
+    UINT8 omega_change = OP_omega(op, OP_Copy_Operand(op));
+#else
     TN *tn_new = OP_opnd( op, OP_COPY_OPND );
     UINT8 omega_change = OP_omega( op, OP_COPY_OPND );
+#endif
     CG_LOOP_Backpatch_Replace_Body_TN( CG_LOOP_epilog,
 				       tn_old, tn_new, omega_change );
     CG_LOOP_Backpatch_Replace_Body_TN( CG_LOOP_prolog,
@@ -1259,6 +1378,11 @@ CIO_RWTRAN::Mark_Op_For_Prolog( OP *op, const UINT8 omega )
 #endif
   if ( Is_DB_OP_Init( op ) )
     DB_Copy_Aux_OP( op_prolog, op );
+
+#ifdef TARG_ST
+  //[CG]: Propagate memory information
+  Copy_WN_For_Memory_OP(op_prolog, op);
+#endif
 
   // Step (4)  Recursively copy definitions of all operands into prolog
   ARC_LIST *arcs = ARC_LIST_Find( OP_preds( op ), CG_DEP_REGIN, DONT_CARE );
@@ -1732,17 +1856,43 @@ CIO_RWTRAN::Predicate_Write( OPS *ops, OP *op, TN *tn_predicate )
   Is_True( OP_memory( op ), ( "OP_memory(op) == FALSE" ) );
   Is_True( OP_store( op ), ( "OP_store(op) == FALSE" ) );
   Is_True( tn_predicate != NULL, ( "tn_predicate == NULL" ) );
+#ifdef TARG_ST
+  Is_True( !OP_automod( op ), ( "OP_automod(op) == TRUE" ) );
+#endif
 
   // Use predication, if available
   if ( OP_has_predicate( op ) ) {
     TN *tn_pred = tn_predicate;
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+    if ( ! TN_is_true_pred(OP_opnd(op, OP_find_opnd_use(op, OU_predicate)))) {
+#else
     if ( ! TN_is_true_pred( OP_opnd( op, OP_PREDICATE_OPND ) ) ) {
+#endif
       ; // CHANGE tn_pred !!!
     }
-    Set_OP_opnd( op, OP_PREDICATE_OPND, tn_pred );
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+    CGTARG_Predicate_OP(NULL, op, tn_pred, false);
+#else
+    Set_OP_opnd( op, OP_PREDICATE_OPND, tn_pred);
+#endif
     return;
   }
 
+#ifdef TARG_ST
+  extern void Expand_Cond_Store (TN *, OP *, OP *, UINT8, OPS *ops);
+  // [CG]: Use target dependent cond store generation
+  UINT8 opnd_base   = OP_find_opnd_use( op, OU_base   );
+  OPS ops_cond_store = OPS_EMPTY;
+  Expand_Cond_Store (tn_predicate, op, NULL, opnd_base, &ops_cond_store);
+
+  Copy_WN_For_Memory_OP(OPS_last(&ops_cond_store), op);
+
+  OPS_Insert_Ops_After( ops, op, &ops_cond_store );
+  OPS_Remove_Op( ops, op );
+
+#else
   Generate_Black_Holes();
 
   // If the OP is an indexed memory OP, the offset is a symbol, or if
@@ -1767,8 +1917,11 @@ CIO_RWTRAN::Predicate_Write( OPS *ops, OP *op, TN *tn_predicate )
     OPS_Insert_Ops_Before( ops, op, &ops_addr );
 
     // Update op
-
+#ifdef TARG_ST
+    TOP new_opcode = TOP_equiv_nonindex_memory(OP_code(op));
+#else
     TOP new_opcode = CGTARG_Equiv_Nonindex_Memory_Op( op );
+#endif
     if ( new_opcode != TOP_UNDEFINED ) {
       OP_Change_Opcode( op, new_opcode );
     }
@@ -1815,6 +1968,13 @@ CIO_RWTRAN::Predicate_Write( OPS *ops, OP *op, TN *tn_predicate )
   Set_OP_opnd( op, opnd_base, tn_safe_base );
   OPS_Insert_Op_Before( ops, op, op_select );
 #endif
+  #ifdef TARG_ST
+  // [CG]: Set the OP_blackhole flag for the balck hole store
+  // It may be used by mem deps.
+  Set_OP_black_hole(op);
+#endif
+#endif
+
 }
 
 
@@ -1840,6 +2000,12 @@ CIO_RWTRAN::Mark_Op_For_Epilog( OP *op, const UINT8 omega )
 {
   Is_True( OP_store( op ),
 	   ( "CIO_RWTRAN::Mark_Op_For_Epilog op is not store" ) );
+#ifdef TARG_ST
+  // FdF 02/11/2005: Do not perform Write_Removal on predicated store
+  // operations (more work is needed).
+  if (OP_has_predicate(op))
+    return NULL;
+#endif
 
   // If trip count is constant and less than omega, don't copy op to epilog
   if ( TN_has_value( _trip_count_tn ) && TN_value( _trip_count_tn ) < omega )
@@ -1856,6 +2022,10 @@ CIO_RWTRAN::Mark_Op_For_Epilog( OP *op, const UINT8 omega )
   OP *op_epilog = Dup_OP( op );
   if ( Is_DB_OP_Init( op ) )
     DB_Copy_Aux_OP( op_epilog, op );
+#ifdef TARG_ST
+  //[CG]: Propagate memory information
+  Copy_WN_For_Memory_OP(op_epilog, op);
+#endif
 
   // Step (3)  Determine state of each operand:
   //   0 = loop invariant
@@ -2130,14 +2300,24 @@ CIO_RWTRAN::Read_CICSE_Candidate_Op( OP *op )
        OP_unalign_ld( op )    ||
 
        // Skip predicated writes
+#ifdef TARG_ST
+       ( OP_store( op ) && OP_has_predicate( op ) && OP_opnd( op, OP_find_opnd_use(op, OU_predicate)) != True_TN) ||
+#else
        ( OP_store( op ) && OP_cond_def( op ) ) ||
+#endif
 
        // If we optimize small loads/stores then we need to
        // introduce a truncation or sign-extension operation.
        // Until we figure out how to do that, keep the problem
        // from happening (pv647031).
 
+#ifdef TARG_ST
+       // FdF 20070523: Add suport for char and short types
+       // OP_Mem_Ref_Bytes(op) < 4 )
+       0)
+#else
        CGTARG_Mem_Ref_Bytes( op ) < 4 )
+#endif
     return FALSE;
 
   return TRUE;
@@ -2156,7 +2336,13 @@ CIO_RWTRAN::Write_Candidate_Op( OP *op )
 		  // Until we figure out how to do that, keep the problem
 		  // from happening (pv647031).
 
+#ifdef TARG_ST
+		  // FdF 20070606: Add suport for char and short types
+	          // (OP_Mem_Ref_Bytes( op ) < 4 ) ) );
+		  0 ) );
+#else
 		  CGTARG_Mem_Ref_Bytes( op ) < 4 ) );
+#endif
 }
 
 
@@ -2167,7 +2353,11 @@ CIO_RWTRAN::Read_Candidate_Arc( ARC *arc )
 	     ARC_kind( arc ) == CG_DEP_MEMREAD )
 	   && ARC_is_definite( arc )
 	   && ARC_pred( arc ) != ARC_succ( arc )
+#ifdef TARG_ST
+	   && ARC_omega( arc ) <= _max_omega
+#else
 	   && ARC_omega( arc ) <= CIO_rw_max_omega
+#endif
 	   && ARC_omega( arc ) < MAX_OMEGA );
 }
 
@@ -2178,7 +2368,11 @@ CIO_RWTRAN::Write_Candidate_Arc( ARC *arc )
   return ( ARC_kind( arc ) == CG_DEP_MEMOUT
 	   && ARC_is_definite( arc )
 	   && ARC_pred( arc ) != ARC_succ( arc )
+#ifdef TARG_ST
+	   && ARC_omega( arc ) <= _max_omega
+#else
 	   && ARC_omega( arc ) <= CIO_rw_max_omega 
+#endif
 	   && ARC_omega( arc ) < MAX_OMEGA );
 }
 
@@ -2529,6 +2723,41 @@ CIO_RWTRAN::Append_TN_Copy( TN *tn_dest, TN *tn_from, OP *point, UINT8 omega )
   return op_copy;
 }
 
+#ifdef TARG_ST
+// ======================================================================
+//
+// Check if CICSE can be used on <pred_op> to <op> sequence.
+// <op> is a load and <pred_op> can be either a load or a store.
+// 
+// [1] LOAD R1, @(addr1)    or   [1] STORE @(addr1), R1        
+// [2] LOAD X1, @(addr1)         [2] LOAD  X1, @(addr1)
+//
+// Replacing instruction [2] by a register copy is allowed only
+// if X1 and R1 are using the same register class.
+//
+// ======================================================================
+static BOOL
+Is_CICSE_Allowed_Between_OP(OP *op, OP *pred_op) {
+  INT op_res = OP_load_result(op);
+  if (op_res == -1) {
+    return FALSE;
+  }
+  ISA_REGISTER_CLASS opnd_rc = TN_register_class( OP_result( op, op_res ) );
+
+  if (OP_load(pred_op)) {
+    INT pred_op_res =  OP_load_result(pred_op);
+    return (pred_op_res != -1 &&
+            opnd_rc == TN_register_class( OP_result( pred_op, pred_op_res ) ) );
+  }
+  else if (OP_store(pred_op)) {
+    return (opnd_rc == TN_register_class( OP_Storeval( pred_op ) ) );
+  }
+
+  Is_True(0, ("Is_CICSE_Allowed_Between_OP(): Unexpected operation type for pred_op"));
+  return FALSE;
+}
+#endif
+
 
 // ======================================================================
 //
@@ -2581,6 +2810,10 @@ CIO_RWTRAN::CICSE_Transform( BB *body )
   // for read/write elimination or cicse elimination.
   INT index, index1, index2;
   op = BB_first_op( body );
+#ifdef TARG_ST
+  int const INT_size = 4;
+  BOOL INT_candidates = TRUE;
+#endif
   for ( index = 1; index <= op_count; ++index ) {
 
     // Initialize the table entry for this OP
@@ -2596,6 +2829,10 @@ CIO_RWTRAN::CICSE_Transform( BB *body )
     if ( Read_CICSE_Candidate_Op( op ) ) {
       Set_OP_flag1( op );
       entry.source = index;
+#ifdef TARG_ST
+      if (OP_memory(op) && OP_Mem_Ref_Bytes(op) < INT_size)
+	INT_candidates = FALSE;
+#endif
     } else {
       Reset_OP_flag1( op );
       entry.source = 0;
@@ -2665,6 +2902,41 @@ CIO_RWTRAN::CICSE_Transform( BB *body )
     CICSE_entry& entry = cicse_table[index];
     if ( OP_load( entry.op ) && OP_flag1( entry.op ) ) {
 
+#ifdef TARG_ST
+      BOOL same_size = TRUE;
+      BOOL incompatible_regclass = FALSE;
+      if (!INT_candidates) {
+	// FdF 20070523: Add support for char and short types
+	int mem_size = OP_Mem_Ref_Bytes(entry.op);
+	// Do not allow optimizations between operations of different
+	// size
+	ARC_LIST *arcs = OP_preds( entry.op );
+	while ( arcs ) {
+	  ARC *arc = ARC_LIST_first( arcs );
+	  arcs = ARC_LIST_rest( arcs );
+	  if ( Read_Candidate_Arc( arc ) && OP_flag1( ARC_pred( arc ) ) ) {
+	    INT index_pred = CICSE_Lookup_Op( cicse_table,
+					      op_count, ARC_pred( arc ) );
+	    Is_True( index_pred > 0,
+		     ( "CIO_RWTRAN::CICSE_Transform didn't find op_pred" ) );
+	    int pred_mem_size = OP_Mem_Ref_Bytes(ARC_pred( arc ));
+	    if (pred_mem_size != mem_size) {
+	      same_size = FALSE;
+	      break;
+	    }
+	    if (!Is_CICSE_Allowed_Between_OP(entry.op, ARC_pred (arc) ) ) {
+	      incompatible_regclass = TRUE;
+	      break;
+	    }
+	  }
+	}
+	if ((!same_size && (mem_size != INT_size)) || incompatible_regclass) {
+	  Reset_OP_flag1( entry.op );
+	  entry.source = 0;
+	  entry.basis = FALSE;
+	}
+      }
+#endif
       ARC_LIST *arcs = OP_preds( entry.op );
       while ( arcs ) {
 	ARC *arc = ARC_LIST_first( arcs );
@@ -2676,6 +2948,24 @@ CIO_RWTRAN::CICSE_Transform( BB *body )
 					    op_count, ARC_pred( arc ) );
 	  Is_True( index_pred > 0,
 		   ( "CIO_RWTRAN::CICSE_Transform didn't find op_pred" ) );
+ #ifdef TARG_ST
+	  if (!Is_CICSE_Allowed_Between_OP(entry.op, ARC_pred (arc) ) ) {
+	    Reset_OP_flag1( ARC_pred( arc ) );
+	    cicse_table[index_pred].source = 0;
+	    cicse_table[index_pred].basis = FALSE;
+	    continue;
+	  }
+	  // FdF 20070523
+	  if (!same_size) {
+	    int pred_mem_size = OP_Mem_Ref_Bytes(ARC_pred( arc ));
+	    if (pred_mem_size != INT_size) {
+	      Reset_OP_flag1( ARC_pred( arc ) );
+	      cicse_table[index_pred].source = 0;
+	      cicse_table[index_pred].basis = FALSE;
+	    }
+	    continue;
+	  }
+#endif
 	  entry.source = index_pred;
 	  entry.omega = ARC_omega( arc );
 	  entry.basis = TRUE;
@@ -3151,10 +3441,17 @@ CIO_RWTRAN::CICSE_Transform( BB *body )
 	       ( "CIO_RWTRAN:CICSE_Transform: Read has multiple results" ) );
 
       // For now, don't handle predicated write source
-
+      //
+#ifdef TARG_ST
+      /* (cbr) predicate operand # is not necessary constant */
+      Is_True( ! OP_has_predicate( change.source )
+	       || OP_opnd( change.source, OP_find_opnd_use(change.source, OU_predicate)) == True_TN,
+	       ( "Can't handle predicated write source" ) );
+#else
       Is_True( ! OP_has_predicate( change.source )
 	       || OP_opnd( change.source, OP_PREDICATE_OPND ) == True_TN,
 	       ( "Can't handle predicated write source" ) );
+#endif
 
       // If source TN occurs later as a result, then new TN is required
       // NOT ALWAYS NECESSARY!  IMPROVE THIS!
@@ -3176,7 +3473,12 @@ CIO_RWTRAN::CICSE_Transform( BB *body )
 
       // If source is predicated, new TNs and TN copies are required
       if ( OP_has_predicate( change.source )
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+	   && OP_opnd( change.source, OP_find_opnd_use(change.source, OU_predicate)) != True_TN )
+#else
 	   && OP_opnd( change.source, OP_PREDICATE_OPND ) != True_TN )
+#endif
 	for ( INT res = OP_results( change.source ) - 1; res >= 0; --res )
 	  change.new_tns[res] = Build_TN_Like( change.new_tns[res] );
 
@@ -3193,7 +3495,12 @@ CIO_RWTRAN::CICSE_Transform( BB *body )
     // Determine whether removing op will require inserting TN copies
     // IMPROVE THIS LATER!
     if ( ! OP_has_predicate( change.op )
-	 || OP_opnd( change.op, OP_PREDICATE_OPND ) == True_TN ){
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+	 || OP_opnd( change.op, OP_find_opnd_use(change.op, OU_predicate)) == True_TN ) {
+#else
+	 || OP_opnd( change.op, OP_PREDICATE_OPND ) == True_TN ) {
+#endif
       for ( INT res = OP_results( change.op ) - 1; res >= 0; --res ) {
 	TN *tn_result = OP_result( change.op, res );
 	change.need_copy[res] =
@@ -3203,13 +3510,33 @@ CIO_RWTRAN::CICSE_Transform( BB *body )
 #ifdef KEY
 	/* A copy is needed if <tn_result> is exposed. */
 	if( !change.need_copy[res] ){
-	  for( index_dup = oppor_index - 2; index_dup >= 0; index_dup-- ){
-	    if( tn_result == opportunities[index_dup].new_tns[res] ){
-	      change.need_copy[res] = TRUE;
-	      break;
-	    }
-	  }
-	}
+            for( index_dup = oppor_index - 2; index_dup >= 0; index_dup-- ){
+                if( tn_result == opportunities[index_dup].new_tns[res] ){
+#ifdef TARG_ST
+                    change.new_tns[res] = Build_TN_Like( tn_result );
+                    // FdF 20071204: For further processing (codex #35792)
+                    change.duplicate_source = FALSE;
+#endif
+                    change.need_copy[res] = TRUE;
+                    break;
+                }
+#ifdef TARG_ST
+                // FdF 20060126: Need also to check that there is no two
+                // identicals new_tns.
+                if ((change.new_tns[res] == opportunities[index_dup].new_tns[res]) &&
+                    (change.omega == opportunities[index_dup].omega) &&
+                    // FdF 20071112: But no copy if one is a duplicate of
+                    // the other (codex #35792)
+                    (change.source != opportunities[index_dup].source)) {
+                    change.new_tns[res] = Build_TN_Like( change.new_tns[res] );
+                    change.need_copy[res] = TRUE;
+                    // FdF 20071204: For further processing (codex #35792)
+                    change.duplicate_source = FALSE;
+                    break;
+                }
+#endif
+            }
+        }
 #endif
       }
     }
@@ -3243,9 +3570,22 @@ CIO_RWTRAN::CICSE_Transform( BB *body )
   for ( index = oppor_count - 1; index >= 0; --index ) {
     CICSE_change& change = opportunities[index];
     if ( change.duplicate_source || ! change.okay ) continue;
+#ifdef TARG_ST
+    // FdF 20050922: Copy Removal on predicated operations will
+    // speculate operations and use conditional copy operations. This
+    // requires more checks and some changes in the code, we currently
+    // disable this optimization.
+    if ((OP_has_predicate(change.source) &&
+	 (OP_opnd(change.source, OP_find_opnd_use(change.source, OU_predicate) ) != True_TN)) ||
+	(OP_has_predicate(change.op) &&
+	 (OP_opnd(change.op, OP_find_opnd_use(change.op, OU_predicate)) != True_TN)) ||
+	! Backpatch_Op_In_Prolog( change.op, change.new_tns,
+				  1, change.omega ) ) {
+#else
 
     if ( ! Backpatch_Op_In_Prolog( change.op, change.new_tns,
 				   1, change.omega ) ) {
+#endif
 
       // Cancel all optimizations with this source
       for ( INT ch_index = oppor_count; ch_index >= 0; --ch_index )
@@ -3296,9 +3636,16 @@ CIO_RWTRAN::CICSE_Transform( BB *body )
       // source predication
       // ALTERNATIVELY: REPEAT SOURCE OP?
       if ( OP_has_predicate( change.source )
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+	   && OP_opnd( change.source, OP_find_opnd_use(change.source, OU_predicate) ) != True_TN ) {
+	TN *tn_pred = OP_opnd( change.source, OP_find_opnd_use(change.source, OU_predicate) );
+        CGTARG_Predicate_OP(body, change.source, True_TN, false);
+#else
 	   && OP_opnd( change.source, OP_PREDICATE_OPND ) != True_TN ) {
 	TN *tn_pred = OP_opnd( change.source, OP_PREDICATE_OPND );
 	Set_OP_opnd( change.source, OP_PREDICATE_OPND, True_TN );
+#endif
 	for ( INT res = OP_results( change.source ) - 1; res >= 0; --res ) {
 	  TN *tn_old = OP_result( change.source, res );
 	  TN *tn_new = change.new_tns[res];
@@ -3306,7 +3653,13 @@ CIO_RWTRAN::CICSE_Transform( BB *body )
 
 	  // Insert (tn_pred) tn_old <-- tn_new after source
 	  OP *op_copy = Append_TN_Copy( tn_old, tn_new, change.source, 0 );
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+          CGTARG_Predicate_OP(body, op_copy, tn_pred,
+                              OP_Pred_False (change.source, OP_find_opnd_use(change.source, OU_predicate)));
+#else
 	  Set_OP_opnd( op_copy, OP_PREDICATE_OPND, tn_pred );
+#endif
 	  if ( _trace_CG_RTran ) {
 	    #pragma mips_frequency_hint NEVER
 	    fprintf( TFile, "CIO_RWTRAN::Transform_Arcs inserts:\n\t" );
@@ -3347,8 +3700,14 @@ CIO_RWTRAN::CICSE_Transform( BB *body )
 
     // read/common subexpression elimination; insert TN copies if necessary
     if ( OP_has_predicate( change.op )
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+	 && OP_opnd( change.op, OP_find_opnd_use(change.op, OU_predicate)) != True_TN ) {
+      TN *tn_pred = OP_opnd( change.op, OP_find_opnd_use(change.op, OU_predicate));
+#else
 	 && OP_opnd( change.op, OP_PREDICATE_OPND ) != True_TN ) {
       TN *tn_pred = OP_opnd( change.op, OP_PREDICATE_OPND );
+#endif
       for ( INT res = OP_results( change.op ) - 1; res >= 0; --res ) {
 	TN *tn_old = OP_result( change.op, res );
 	TN *tn_new = change.new_tns[res];
@@ -3356,7 +3715,13 @@ CIO_RWTRAN::CICSE_Transform( BB *body )
 	// Insert a new copy  (tn_pred) tn_old <-- tn_new[omega]
 	OP *op_copy = Append_TN_Copy( tn_old, tn_new,
 				      change.op, change.omega );
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+        CGTARG_Predicate_OP(body ,op_copy, tn_pred,
+                            OP_Pred_False (change.op, OP_find_opnd_use(change.source, OU_predicate)));
+#else
 	Set_OP_opnd( op_copy, OP_PREDICATE_OPND, tn_pred );
+#endif
 	if ( _trace_CG_RTran ) {
 	  #pragma mips_frequency_hint NEVER
 	  fprintf( TFile, "\t" );
@@ -3465,6 +3830,11 @@ CIO_RWTRAN::Sort_Ops_Preorder( OP *op_current, BOOL current_has_arc )
     // Is this ARC potentially optimizable and its predecessor OP unvisited?
     ARC *arc = ARC_LIST_first( arclist );
     if ( ! Write_Candidate_Arc( arc ) ) continue;
+#ifdef TARG_ST
+    // FdF 20070606: Add suport for char and short types
+    if (OP_Mem_Ref_Bytes(ARC_pred(arc)) != OP_Mem_Ref_Bytes(ARC_succ(arc)))
+      continue;
+#endif
     OP *op_pred = ARC_pred( arc );
     if ( ! OP_flag1( op_pred ) ) continue;
 
@@ -3562,7 +3932,13 @@ CIO_RWTRAN::Sort_Arcs( void )
     for ( ARC_LIST *arcs = OP_preds( op_succ );
 	  arcs != NULL; arcs = ARC_LIST_rest( arcs ) ) {
       ARC *arc = ARC_LIST_first( arcs );
+#ifdef TARG_ST
+      // FdF 20070606: Add suport for char and short types
+      if ( ARC_pred( arc ) == op_pred && Write_Candidate_Arc( arc ) &&
+	   (OP_Mem_Ref_Bytes(ARC_pred(arc)) == OP_Mem_Ref_Bytes(ARC_succ(arc))) ) {
+#else
       if ( ARC_pred( arc ) == op_pred && Write_Candidate_Arc( arc ) ) {
+#endif
 	_arc_ordering[t - 1] = arc;
 	break;
       }
@@ -3720,7 +4096,8 @@ CIO_RWTRAN::Transform_Arcs( BB *body )
 BOOL
 CIO_RWTRAN::Write_Removal( BB *body )
 {
-  // Until the alternate predication code is ready, only remove writes
+#ifndef TARG_ST
+    // Until the alternate predication code is ready, only remove writes
   // if the trip count is a known constant value, or if predication is
   // available on this target.
 #ifndef KEY
@@ -3730,6 +4107,8 @@ CIO_RWTRAN::Write_Removal( BB *body )
 #endif
     DevWarn( "CIO_RWTRAN::Read_Write_Removal predication not activated" );
     return FALSE;
+#endif
+
   }
 
   // Identify and sort potentially optimizable OPs and ARCs
@@ -3833,6 +4212,21 @@ CIO_RWTRAN::Read_CICSE_Write_Removal( LOOP_DESCR *loop )
     }
     CG_DEP_Trace_Graph( body );
   }
+
+#ifdef TARG_ST
+  // FdF 30/09/2004: Fix for ddts MBTst17742
+  ANNOTATION *annot = ANNOT_Get(BB_annotations(body), ANNOT_LOOPINFO);
+  if ( annot ) {
+    LOOPINFO *loopinfo = ANNOT_loopinfo(annot);
+    if ( loopinfo ) {
+      WN *wn = LOOPINFO_wn(loopinfo);
+      if ( wn ) {
+ 	INT32 trip_est = WN_loop_trip_est(wn);
+ 	if ( trip_est && trip_est <= _max_omega) _max_omega = trip_est - 1;
+      }
+    }
+  }
+#endif
 
   // Preform CIO read and CICSE removal
   BOOL changed_loop_read = FALSE;

@@ -31,7 +31,8 @@
 
 
 #include "basic.h"
-
+// [HK] added to have the string_list_t type defined
+#include "string_utils.h"
 extern char *option_name;	/* current option name */
 
 extern char *optargs;          /* string argument following fixed prefix */

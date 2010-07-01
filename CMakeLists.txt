@@ -60,7 +60,7 @@ ENDIF()
 # Which targets are we going to build.  Currently supported is x8664,mips
 # We may want to dodge multilib and just treat x86 as it's own target.
 # Then we could test is for the the native build environment is and make that the default
-SET(PATH64_ENABLE_TARGETS "" CACHE STRING "Target archs (x8664;mips)")
+SET(PATH64_ENABLE_TARGETS "" CACHE STRING "Target archs (x8664;mips;arm)")
 IF(PATH64_ENABLE_TARGETS)
 
 	foreach(arg ${PATH64_ENABLE_TARGETS})
@@ -69,12 +69,12 @@ IF(PATH64_ENABLE_TARGETS)
 	MESSAGE(STATUS "We are going to build the following targets${targetsX}")
 ELSE()
 	MESSAGE( FATAL_ERROR "Must specify at least one target.
-Supported targets are : x8664 and mips
+Supported targets are : x8664 and mips and arm
 Please add -DPATH64_ENABLE_TARGETS=x8664 to your cmake ../Path64 line
 Multiple targets can be specified like \"-DPATH64_ENABLE_TARGETS=x8664;mips\"" )
 ENDIF()
 # Multi target support is indefinitely delayed
-set(BUILD_TARGET_DIR "x8664")
+set(BUILD_TARGET_DIR "arm")
 
 # Define if we are doing a supported build
 OPTION(PATH64_ENABLE_SUPPORTED "Enabling supported build" OFF)
@@ -181,7 +181,6 @@ SET(PATH64_GCC_INSTALL_PATH ${PATH64_LIB_PATH})
 
 ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D__GNU_BUG_WORKAROUND
-                -DTARG_X8664
                 -DKEY
                 -DFE_GNU_4_2_0
                 -DLONGLONG
@@ -190,6 +189,10 @@ ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D_MIPS_SZINT=32
                 -D_MIPS_SZPTR=32
                 -D_MIPS_SZLONG=32
+                -DTARG_ST
+                -DTARG_ARM
+                -DBE_EXPORTED=
+                -DTARGINFO_EXPORTED=
                )
 
 # Build the actual ld line to be used in driver

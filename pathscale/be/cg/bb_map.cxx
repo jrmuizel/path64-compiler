@@ -192,3 +192,10 @@ void BB_MAP_grow(BB_MAP map, BB *bb)
 
   map->length = new_length;
 }
+
+#ifdef TARG_ST
+bool Op_Map_Cmp::operator()(const OP* x,const OP* y) const {
+	DevAssert(((x->g_map_idx != y->g_map_idx) ||(x==y)), ("OP Global Map IDX not unique !!!"));
+	return (x->g_map_idx < y->g_map_idx);
+}
+#endif

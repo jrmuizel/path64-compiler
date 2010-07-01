@@ -248,6 +248,10 @@ BOOL  WOPT_Enable_Verbose = FALSE;
 INT32 WOPT_Enable_Verify = 1;
 BOOL  WOPT_Enable_Vsym_Unique = FALSE;
 BOOL  WOPT_Enable_While_Loop = TRUE;
+#ifdef TARG_ST
+//TB
+BOOL  WOPT_Enable_While_Loop_Set = FALSE;
+#endif
 BOOL  WOPT_Enable_Worklist_Pruning = TRUE;
 BOOL  WOPT_Enable_Zero_Version = TRUE;
 BOOL  WOPT_Enable_Call_Zero_Version = TRUE;
@@ -706,6 +710,25 @@ static OPTION_DESC Options_WOPT[] = {
     INT32_MAX, 0, INT32_MAX,    &WOPT_Tail_Dup_Max_Clone, NULL },
   { OVK_INT32,  OV_VISIBLE,    FALSE, "pro_loop_fusion_func_limit",              "",
     INT32_MAX, 0, INT32_MAX,    &WOPT_Enable_Pro_Loop_Fusion_Func_Limit, NULL },
+#ifdef TARG_ST
+  // TB: from PathScale 2.1: add -Wuninitialized support
+  { OVK_BOOL,	OV_INTERNAL,	TRUE, "warn_uninit",		"",
+    0, 0, 0,	&WOPT_Enable_Warn_Uninit, NULL },
+  { OVK_BOOL,	OV_INTERNAL,	TRUE, "tailmerge_opt",		"",
+    0, 0, 0,	&WOPT_Enable_Tailmerge, NULL },
+ { OVK_BOOL,	OV_INTERNAL,	TRUE, "compare_hoisting", "",
+    0, 0, 0,	&WOPT_Enable_Compare_Hoisting, NULL },
+  { OVK_INT32,	OV_INTERNAL,	TRUE, "dowhile_conversion",		"",
+    1, 0, 3,	&WOPT_Enable_DoWhile_Conversion, &WOPT_Enable_DoWhile_Conversion_Set },
+  { OVK_BOOL,	OV_INTERNAL,	TRUE, "simp_flow_in_tailmerge_opt",		"",
+    0, 0, 0,	&WOPT_Enable_Flow_Simplification_In_Tailmerge, NULL },
+  { OVK_UINT32,	OV_INTERNAL,	TRUE, "Pre_Small_Immediate",		"",
+    16, 0, UINT32_MAX, &WOPT_Pre_Small_Immediate, NULL },
+  // FdF 20080528: PRE on Iload/Istore for zero offset. Max value must
+  // be in sync with size of offset in opt_etable.h:EXP_OCCURS
+  { OVK_UINT32,	OV_INTERNAL,	TRUE, "Pre_LoadStore_offset",		"",
+    512, 0, 65535, &WOPT_Pre_LoadStore_offset, NULL },
+#endif
   
 
 #ifdef KEY

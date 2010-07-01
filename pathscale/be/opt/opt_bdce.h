@@ -60,7 +60,9 @@ private:
   BOOL	      _tracing; 
   UINT64     *_livebits;        // array of bit mask for each coderep node;
                                 // tells which of the 64 integer bits are live
+#ifndef TARG_ST
   UINT	     _livebits_size;
+#endif
   UINT8      *_usecnt;          // array of integers for each coderep node;
                                 // counts number of times variable appears;
   BB_NODE_SET *_cd_bbs;		// set of bbs for which a live statement is 
@@ -73,18 +75,27 @@ private:
   CODEMAP  *Htable(void) const 	{ return _htable; }
   MEM_POOL *Loc_pool(void)const { return _loc_pool; }
   BOOL	    Tracing(void) const { return _tracing; }
+#ifdef TARG_ST
+  UINT64    Livebits(CODEREP *cr) const { return _livebits[cr->Coderep_id()]; }
+#else
   UINT64    Livebits(CODEREP *cr) const { 
 			      if (cr->Coderep_id() >= _livebits_size)
 				return UINT64_MAX;
 			      return _livebits[cr->Coderep_id()]; }
+#endif
   BOOL	    More_bits_live(CODEREP *cr, UINT64 live_bits) const
 		    { return (live_bits & ~_livebits[cr->Coderep_id()]) != 0; }
   void	    Union_livebits(CODEREP *cr, UINT64 live_bits)
 				{ _livebits[cr->Coderep_id()] |= live_bits; }
+#ifdef TARG_ST
+  UINT8     Usecnt(CODEREP *cr) const
+                                { return _usecnt[cr->Coderep_id()]; }
+#else
   UINT8     Usecnt(CODEREP *cr) const { 
 			      Is_True(cr->Coderep_id() < _livebits_size,
 				("BITWISE_DCE::Usecnt: index out of range"));
 			      return _usecnt[cr->Coderep_id()]; }
+#endif
   void      IncUsecnt(CODEREP *cr) const
                                 { if (_usecnt[cr->Coderep_id()] < 2)
 				    _usecnt[cr->Coderep_id()]++; }
@@ -126,7 +137,9 @@ public:
     {
       _livebits = (UINT64 *) CXX_NEW_ARRAY(UINT64, _htable->Coderep_id_cnt(),
 				      _loc_pool);
+#ifndef TARG_ST
       _livebits_size = _htable->Coderep_id_cnt();
+#endif
       _usecnt = (UINT8 *) CXX_NEW_ARRAY(UINT8, _htable->Coderep_id_cnt(),
 				      _loc_pool);
       BZERO(_livebits, _htable->Coderep_id_cnt() * sizeof(UINT64));

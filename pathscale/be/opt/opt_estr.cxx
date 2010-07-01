@@ -174,6 +174,16 @@ static char *rcs_id = opt_estr_CXX"$Revision: 1.12 $";
 BOOL
 STR_RED::Is_cvt_linear( const CODEREP *cr ) const
 {
+#ifdef TARG_ST
+  // FdF 20070921: Allow conversion between signed types into IV
+  // cycles, so as to better handle signed char and short induction
+  // variables. (Enhancement #18858)
+  if (Allow_wrap_around_opt &&
+      ((cr->Dsctyp() == MTYPE_I1) || (cr->Dsctyp() == MTYPE_I2)) &&
+      (cr->Dtyp() == MTYPE_I4))
+    return TRUE;
+#endif
+
   // screen out non-register size types
   if (MTYPE_size_min(cr->Dsctyp()) < MTYPE_size_min(MTYPE_I4))
     return FALSE;
@@ -205,7 +215,7 @@ STR_RED::Is_cvt_linear( const CODEREP *cr ) const
   // allow U8U4CVT strength reduction if the CVT is a 1st order expr
   if ((cr->Dtyp() == MTYPE_U8 || cr->Dtyp() == MTYPE_I8)
       && cr->Dsctyp() == MTYPE_U4) {
-#ifdef TARG_MIPS
+#if defined( TARG_MIPS) || defined(TARG_ST)
     Is_True(cr->Opnd(0)->Kind() == CK_VAR, 
 	    ("STR_RED::Is_cvt_linear:  invalid str red expr."));
     if (!Htable()->Opt_stab()->Aux_stab_entry(cr->Opnd(0)->Aux_id())->EPRE_temp())
@@ -1310,6 +1320,13 @@ STR_RED::Find_iv_and_mult_phi_res( const EXP_OCCURS *def, CODEREP **iv_def,
       }
     }
     else {
+#ifdef TARG_ST
+      // FdF 20060622: Temporary fix for bug 190B/55: Do not perform
+      // strength reduction in this case. See also
+      // opt_cse.cxx:Repair_injury_phi_real
+      *iv_use = NULL;
+      return;
+#endif
       FmtAssert( FALSE,
 	("STR_RED::Find_iv_and_mult_phi_res: not a candidate") );
     }

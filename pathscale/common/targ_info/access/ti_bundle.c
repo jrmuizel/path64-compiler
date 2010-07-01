@@ -31,9 +31,22 @@
 
 #include "ti_si.h"
 #include "ti_errors.h"
+#include "targ_isa_subset.h"
 #include "targ_isa_bundle.h"
 #include "ti_bundle.h"
 
+
+#ifdef TARG_ST
+/* ====================================================================
+ *  TI_BUNDLE_initialize
+ *  Thid function aim to propagate targinfo value pre-computed in case 
+ *  of reentrance in targinfo
+ * ====================================================================
+ */
+void TI_BUNDLE_initialize(int max_slot) {
+	Isa_Max_Slots=max_slot;
+}
+#endif
 
 /* ====================================================================
  *
@@ -156,6 +169,9 @@ void TI_BUNDLE_Clear(
   TI_BUNDLE *bundle
 )
 {
+ #ifdef TARG_ST
+  ISA_EXEC_MASK slot_mask = { 0 };
+#endif
   INT i;
   for (i = 0; i < ISA_MAX_SLOTS; i++) {
     TI_BUNDLE_slot_filled(bundle, i) =  0;
@@ -165,7 +181,11 @@ void TI_BUNDLE_Clear(
 
   Set_TI_BUNDLE_pack_code(bundle, 0);
   Set_TI_BUNDLE_stop_mask(bundle, 0x0);
+#ifdef TARG_ST
+  Set_TI_BUNDLE_slot_mask(bundle, slot_mask);
+#else
   Set_TI_BUNDLE_slot_mask(bundle, 0x0);
+#endif
   Set_TI_BUNDLE_slot_count(bundle, ISA_MAX_SLOTS);
 
 }
@@ -272,6 +292,55 @@ BOOL TI_BUNDLE_Stop_Bit_Available(
   return FALSE;
 }
 
+#ifdef TARG_ST
+/* ====================================================================
+ *
+ *  TI_BUNDLE_Set_Slot_Mask_Property
+ *
+ *  See interface description
+ *
+ * ====================================================================
+ */
+ISA_EXEC_MASK TI_BUNDLE_Set_Slot_Mask_Property(
+  ISA_EXEC_MASK slot_mask,
+  INT slot,
+  ISA_EXEC_UNIT_PROPERTY property)
+{
+  UINT shift = ISA_TAG_SHIFT * (ISA_MAX_SLOTS - slot - 1);
+  UINT word = shift / 64;
+  UINT w_shift = shift - (word * 64);
+
+  slot_mask.v[word] |= ((UINT64)property << w_shift);
+  if (w_shift > 0) {
+    slot_mask.v[word+1] |= ((UINT64)property >> (64 - w_shift));
+  }
+  return slot_mask;
+}
+
+/* ====================================================================
+ *
+ *  TI_BUNDLE_Get_Slot_Mask_Property
+ *
+ *  See interface description
+ *
+ * ====================================================================
+ */
+ISA_EXEC_UNIT_PROPERTY TI_BUNDLE_Get_Slot_Mask_Property(
+  ISA_EXEC_MASK slot_mask,
+  INT slot)
+{
+  UINT64 r;
+  UINT shift = ISA_TAG_SHIFT * (ISA_MAX_SLOTS - slot - 1);
+  UINT word = shift / 64;
+  UINT w_shift = shift - (word * 64);
+  r = slot_mask.v[word] >> w_shift;
+  if (w_shift > 0) {
+    r |= slot_mask.v[word+1] << (64 - w_shift);
+  }
+  return (ISA_EXEC_UNIT_PROPERTY)(r & ((1 << ISA_TAG_SHIFT) - 1));
+}
+#endif
+
 /* ====================================================================
  *
  *  TI_BUNDLE_Reserve_Slot
@@ -289,8 +358,17 @@ void TI_BUNDLE_Reserve_Slot(
 
   TI_BUNDLE_slot_filled(bundle, slot) = TRUE;
   Set_TI_BUNDLE_exec_property(bundle, slot, property);
+#ifdef TARG_ST
+  {
+    ISA_EXEC_MASK slot_mask;
+    slot_mask = TI_BUNDLE_slot_mask(bundle);
+    slot_mask = TI_BUNDLE_Set_Slot_Mask_Property(slot_mask, slot, property);
+    Set_TI_BUNDLE_slot_mask(bundle, slot_mask);
+  }
+#else
   TI_BUNDLE_slot_mask(bundle) |= property << 
     (ISA_TAG_SHIFT * (ISA_MAX_SLOTS - slot - 1));
+#endif
 }
 
 /* ====================================================================

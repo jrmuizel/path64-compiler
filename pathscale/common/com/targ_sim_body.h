@@ -64,14 +64,23 @@ typedef struct subprogram_interface {
 
   /* Registers used for parameters and results */
   Preg_Range int_args;
+#ifdef TARG_ST
+  Preg_Range ptr_args;
+#endif
   Preg_Range flt_args;
   Preg_Range dbl_args;
   Preg_Range int_results;
+#ifdef TARG_ST
+  Preg_Range ptr_results;
+#endif
   Preg_Range flt_results;
   Preg_Range dbl_results;
 
   /* Argument conversion: */
   mTYPE_ID int_type;	/* Convert to at least this type */
+#ifdef TARG_ST
+  mTYPE_ID ptr_type;    /* Convert to at least this type */
+#endif
   mTYPE_ID flt_type;	/* Convert to at least this type */
   mTYPE_ID dbl_type;	/* Convert to at least this type */
 
@@ -162,11 +171,14 @@ Fix_TY_mtype (TY_IDX ty)
     return type;
 }
 
+#ifndef TARG_ST
 static INT Current_Param_Num = -1;
+#endif
         /* number of current logical parameter register, start at 0 */
 static INT Last_Param_Offset = 0;       /* stack offset */
 static INT Last_Fixed_Param = INT_MAX;  /* # of last fixed param (varargs) */
 
+#ifndef TARG_ST
 
 static inline PREG_NUM
 Get_Current_Preg_Num (Preg_Range pr)
@@ -178,21 +190,39 @@ Get_Current_Preg_Num (Preg_Range pr)
 	else
 		return i;
 }
-
+#endif
+#ifdef TARG_ST
+static PLOC Setup_Parameter_Locations (TY_IDX pu_type, BOOL first_hidden_param_is_lowered );
+#else
 static PLOC Setup_Parameter_Locations (TY_IDX pu_type);
+#endif
 static PLOC Get_Parameter_Location (TY_IDX ty, BOOL is_output);
-
+#ifdef TARG_ST
+extern PLOC
+Setup_Input_Parameter_Locations (TY_IDX pu_type, BOOL first_hidden_param_is_lowered )
+{
+  return Setup_Parameter_Locations (pu_type,first_hidden_param_is_lowered);
+}
+#else
 extern PLOC
 Setup_Input_Parameter_Locations (TY_IDX pu_type)
 {
     return Setup_Parameter_Locations (pu_type);
 }
-
+#endif
+#ifdef TARG_ST
+extern PLOC
+Setup_Output_Parameter_Locations (TY_IDX pu_type, BOOL first_hidden_param_is_lowered )
+{
+    return Setup_Parameter_Locations (pu_type,first_hidden_param_is_lowered);
+}
+#else
 extern PLOC
 Setup_Output_Parameter_Locations (TY_IDX pu_type)
 {
     return Setup_Parameter_Locations (pu_type);
 }
+#endif
 
 extern PLOC
 Get_Input_Parameter_Location (TY_IDX ty)
@@ -241,9 +271,21 @@ Get_Preg_Size (PREG_NUM p)
 	else
 		return MTYPE_RegisterSize(SIM_INFO.int_type);
 }
+static BOOL Is_Struct_Parameter (TY_IDX struct_ty);
 
 static void Setup_Struct_Parameter_Locations (TY_IDX struct_ty);
 static PLOC Get_Struct_Parameter_Location (PLOC prev);
+extern BOOL
+Is_Struct_Input_Parameter (TY_IDX struct_ty)
+{
+    return Is_Struct_Parameter (struct_ty);
+}
+
+extern BOOL
+Is_Struct_Output_Parameter (TY_IDX struct_ty)
+{
+    return Is_Struct_Parameter (struct_ty);
+}
 
 extern void
 Setup_Struct_Input_Parameter_Locations (TY_IDX struct_ty)
@@ -271,9 +313,44 @@ Get_Struct_Output_Parameter_Location (PLOC prev)
 
 
 static TYPE_ID ploc_parm_mtype;
+#ifdef TARG_ST
+static PLOC ploc_last;
+static INT preg_num;
+#else
 static INT32 ploc_last_offset;
+#endif
 
+#ifdef TARG_ST
+static PLOC
+First_PLOC_Reg (PLOC ploc, TY_IDX parm_ty)
+{
+  ploc_parm_mtype = Fix_TY_mtype (parm_ty);	/* Target type */
+  ploc_last = ploc;
 
+  switch (ploc_parm_mtype) {
+  case MTYPE_M:
+    Setup_Struct_Parameter_Locations (parm_ty);
+    ploc_last = Get_Struct_Parameter_Location (ploc);
+    break;
+  case MTYPE_I8:
+  case MTYPE_U8:
+  case MTYPE_F8:
+    if (Only_32_Bit_Ops) {
+      preg_num = 2;
+      PLOC_size(ploc_last) = 4;
+    } else {
+      preg_num = 1;
+    }
+    break;
+  default:
+    preg_num = 1;
+    break;
+  }
+  if (preg_num > 0) preg_num--;
+  return ploc_last;
+}
+
+#else
 static PLOC
 First_PLOC_Reg (PLOC ploc, TY_IDX parm_ty)
 {
@@ -298,7 +375,7 @@ First_PLOC_Reg (PLOC ploc, TY_IDX parm_ty)
 	}
 	return first;
 }
-
+#endif
 extern PLOC
 First_Input_PLOC_Reg (PLOC ploc, TY_IDX parm_ty)
 {
@@ -310,7 +387,41 @@ First_Output_PLOC_Reg (PLOC ploc, TY_IDX parm_ty)
 {
     return First_PLOC_Reg (ploc, parm_ty);
 }
+#ifdef TARG_ST
+static PLOC
+Next_PLOC_Reg (void)
+{
+  PLOC next;
+  
+  PLOC_clear(next);
 
+  switch (ploc_parm_mtype) {
+  case MTYPE_M:
+    ploc_last = Get_Struct_Parameter_Location (ploc_last);
+    next = ploc_last;
+    break;
+  case MTYPE_I8:
+  case MTYPE_U8:
+  case MTYPE_F8:
+    next = ploc_last;
+    if (preg_num == 0) {
+      PLOC_size(next) = 0;
+    } else {
+      Preg_Range args = IS_INT_PREG(PLOC_reg(ploc_last)) ? SIM_INFO.int_args : SIM_INFO.flt_args;
+      PLOC_reg(next) = PLOC_reg(ploc_last) + PR_skip_value(args);
+      if (PLOC_reg(next) > PR_last_reg(args)) {
+	PLOC_reg(next) = 0;
+      }
+    } 
+    break;
+  default:
+    PLOC_size(next) = 0;
+    break;
+  }
+  if (preg_num > 0) preg_num--;
+  return next;
+}
+#else
 static PLOC
 Next_PLOC_Reg (PLOC prev)
 {
@@ -344,15 +455,30 @@ Next_PLOC_Reg (PLOC prev)
 	}
 	return next;
 }
-
+#endif
+#ifdef TARG_ST
+extern PLOC
+Next_Input_PLOC_Reg (void)
+{
+  return Next_PLOC_Reg ();
+}
+#else
 extern PLOC
 Next_Input_PLOC_Reg (PLOC prev)
 {
 	return Next_PLOC_Reg (prev);
 }
-
+#endif
+#ifdef TARG_ST
+extern PLOC
+Next_Output_PLOC_Reg (void)
+{
+  return Next_PLOC_Reg ();
+}
+#else
 extern PLOC
 Next_Output_PLOC_Reg (PLOC prev)
 {
 	return Next_PLOC_Reg (prev);
 }
+#endif

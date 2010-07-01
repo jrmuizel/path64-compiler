@@ -26,6 +26,7 @@
 #define	cg_region_INCLUDED
 
 #include "bb.h"
+#include "bb_map.h"
 #include "tn.h"
 #include "tn_list.h"
 

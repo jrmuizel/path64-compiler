@@ -28,7 +28,9 @@
 
 #ifndef variants_INCLUDED
 #define variants_INCLUDED
-
+#ifdef TARG_ST
+#   include "errors.h"
+#endif
 /* ====================================================================
  * ====================================================================
  *
@@ -238,17 +240,50 @@ extern const char *BR_Variant_Name(VARIANT variant);
  * V_ALIGN_UNKNOWN is set.
  */
 #define V_ALIGNMENT		0x000f	/* Assume this alignment (2**n) */
+#ifdef TARG_ST
+#define V_ALIGN_OFFSET		0x1ff0	/* Actual alignment if known */
+#define V_ALIGN_OFFSET_UNKNOWN	0x2000	/* Is actual alignment unknown? */
+#define V_ALIGN_OVERALIGN       0x4000  /* Is an overalignment info? */
+#define V_ALIGN_ALL		0x7fff	/* All alignment variant fields */
+#else
 #define V_ALIGN_OFFSET		0x00f0	/* Actual alignment if known */
 #define V_ALIGN_OFFSET_UNKNOWN	0x0100	/* Is actual alignment unknown? */
 #define V_ALIGN_ALL		0x01ff	/* All alignment variant fields */
+#endif
 
-#define	V_alignment(v)			((v) & V_ALIGNMENT)
+#ifdef TARG_ST
+// Alignment encoded as 2^(n-1) (special case if n=0)
+#define	V_alignment(v)			(((v) & V_ALIGNMENT)?(1 << (((v) & V_ALIGNMENT)-1)):0)
+#define V_overalign(v)                  ((v) & V_ALIGN_OVERALIGN)
+#define V_misalign(v)                   (!V_overalign(v))
+#else
+#define	V_alignment(v)			(((v) & V_ALIGNMENT))
+#endif
+
 #define V_align_offset(v)		(((v) & V_ALIGN_OFFSET) >> 4)
 #define V_align_offset_unknown(v)	((v) & V_ALIGN_OFFSET_UNKNOWN)
 #define V_align_offset_known(v)		(!V_align_offset_unknown(v))
 #define V_align_all(v)			((v) & V_ALIGN_ALL)
-
+#ifdef TARG_ST
+// Alignment encoded as 2^(n-1) (special case if n=0)
+inline UINT Compute_alignment_exponent(INT align) {
+  UINT result = 0;
+  if (!align) {
+    return (0);
+  }
+  FmtAssert(align > 0, ("An alignment cannot be negative"));
+  while ((align & 0x7) == 0) {
+    result += 3;
+    align >>= 3;
+  }
+  return result + (align >> 1) + 1;
+}
+#define	Set_V_alignment(v,a)		((v) = ((v) & ~V_ALIGNMENT) | (Compute_alignment_exponent(a)&V_ALIGNMENT))
+#define Set_V_overalign(v)              ((v) |= V_ALIGN_OVERALIGN)
+#define Set_V_misalign(v)               ((v) &= ~V_ALIGN_OVERALIGN)
+#else
 #define	Set_V_alignment(v,a)		((v) = ((v) & ~V_ALIGNMENT) | ((a)&V_ALIGNMENT))
+#endif
 #define Set_V_align_offset(v,a)		((v) = ((v) & ~V_ALIGN_OFFSET) | (((a)&V_ALIGNMENT)<<4))
 #define	Set_V_align_offset_unknown(v)	((v) |= V_ALIGN_OFFSET_UNKNOWN)
 #define Set_V_align_offset_known(v)	((v) &= ~V_ALIGN_OFFSET_UNKNOWN)
@@ -257,7 +292,11 @@ extern const char *BR_Variant_Name(VARIANT variant);
 
 /* Volatile flag: If the load/store is volatile, then this flag is set.
  */
+#ifdef TARG_ST
+#define V_VOLATILE		0x8000	/* MemOp is volatile */
+#else
 #define V_VOLATILE		0x0200	/* MemOp is volatile */
+#endif
 
 #define V_volatile(v)			((v) & V_VOLATILE)
 #define Set_V_volatile(v)		((v) |= V_VOLATILE)
@@ -332,5 +371,70 @@ extern const char *BR_Variant_Name(VARIANT variant);
 #define V_SHUFFLE_REVERSE	0x0000	/* Reverse */
 // TODO : add more shuffle operations
 #endif
+#ifdef TARG_ST
+/* ====================================================================
+ *
+ * Variants for TOP_is_cond() and TOP_is_select() operations
+ * as returned by TOP_cond_variant(top)
+ *
+ * V_COND_TRUE : applies if comparison is condition != 0
+ * V_COND_FALSE : applies if comparison is condition == 0
+ * V_COND_NONE : can be used if comparison condition as a non obvious
+ * or target dependent semantic.
+ *
+ * Currently, cond property exists for conditional branch and select
+ * operation.
+ * The select (TOP_is_select()) semantic is:
+ *   (OU_condition == 0 ? OU_opnd1: OU_opnd2) if variant = V_COND_FALSE
+ *   else OU_condition != 0 ? OU_opnd1: OU_opnd2) if variant != V_COND_FALSE
+ * The cond branch (TOP_is_cond()) semantic is:
+ *   branch taken if OU_condition == 0 if variant == V_COND_FALSE
+ *   branch taken if OU_condition != 0 if variant != V_COND_FALSE
+
+ * ====================================================================
+ */
+#define V_COND_NONE		0
+#define V_COND_TRUE		1
+#define V_COND_FALSE		2
+
+/* ====================================================================
+ *
+ * Variants for is_cmp operations
+ * as returned by OP_cmp_variant(op)
+ *
+ * ====================================================================
+ */
+#define V_CMP_NONE		0
+#define V_CMP_EQ		1	/* opnd1 == opnd2 */
+#define V_CMP_NE		2	/* opnd1 != opnd2 */
+#define V_CMP_GT		3	/* opnd1 > opnd2 */
+#define V_CMP_GTU		4	/* opnd1 u> opnd2 */
+#define V_CMP_GE		5	/* opnd1 >= opnd2 */
+#define V_CMP_GEU		6	/* opnd1 u>= opnd2 */
+#define V_CMP_LT		7	/* opnd1 < opnd2 */
+#define V_CMP_LTU		8	/* opnd1 u< opnd2 */
+#define V_CMP_LE		9	/* opnd1 <= opnd2 */
+#define V_CMP_LEU	       10	/* opnd1 u<= opnd2 */
+#define V_CMP_ANDL	       11	/* (opnd1 != 0) && (opnd2 != 0) */
+#define V_CMP_NANDL	       12	/* !((opnd1 != 0) && (opnd2 != 0)) */
+#define V_CMP_ORL	       13	/* (opnd1 != 0) || (opnd2 != 0) */
+#define V_CMP_NORL	       14	/* !((opnd1 != 0) || (opnd2 != 0)) */
+
+/*
+ * Negate a compare variant (also see Invert_CMP_Variant)
+ */
+extern VARIANT Negate_CMP_Variant(VARIANT variant);
+
+/*
+ * Invert a compare variant (also see Negate_CMP_Variant)
+ */
+extern VARIANT Invert_CMP_Variant(VARIANT variant);
+
+/*
+ * Return the name of a compare variant
+ */
+extern const char *CMP_Variant_Name(VARIANT variant);
+
+#endif /*TARG_ST*/
 
 #endif /* variants_INCLUDED */

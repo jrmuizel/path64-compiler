@@ -108,7 +108,11 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
 	Expand_Lda_Label (result, op1, ops);
 	break;
   case OPR_INTCONST:
+#ifdef TARG_ST
+	Expand_Immediate (result, op1, rtype, ops);
+#else
 	Expand_Immediate (result, op1, TRUE /* is_signed */, ops);
+#endif
 	break;
   case OPR_CONST:
 	Expand_Const (result, op1, rtype, ops);
@@ -145,6 +149,15 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
   case OPR_ILOADX:
   case OPR_ILOAD:
   case OPR_LDID:
+#ifdef TARG_ST
+	if ((V_alignment(variant) != V_NONE) && V_misalign(variant)) {
+	  Expand_Misaligned_Load ( opcode, result, op1, op2, variant, ops);
+	}
+	else {
+	  // variant might contain an overalignment information
+	  Expand_Load (opcode, result, op1, op2, ops, variant);
+	}
+#else
 	if ( V_align_all(variant) != 0 ) {
 		Expand_Misaligned_Load ( opcode, result, op1, op2, variant, ops);
 	}
@@ -155,10 +168,20 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
 		Expand_Load (opcode, result, op1, op2, variant, ops);
 #endif
 	}
+#endif
 	break;
   case OPR_ISTOREX:
   case OPR_ISTORE:
   case OPR_STID:
+#ifdef TARG_ST
+    if ((V_alignment(variant) != V_NONE) && V_misalign(variant)) {
+	  Expand_Misaligned_Store (desc, op1, op2, op3, variant, ops);
+	}
+	else {
+	  // variant might contain an overalignment information
+	  Expand_Store (desc, op1, op2, op3, ops, variant);
+    }
+#else        
 	if ( V_align_all(variant) != 0 ) {
 		Expand_Misaligned_Store (desc, op1, op2, op3, variant, ops);
 	}
@@ -169,6 +192,7 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
 		Expand_Store (desc, op1, op2, op3, variant, ops);
 #endif
 	}
+#endif
 	break;
   case OPR_ABS:
 	Expand_Abs (result, op1, rtype, ops);
@@ -181,7 +205,11 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
 #endif
 		Expand_Flop (opcode, result, op1, op2, op3, ops);
 	else
+#ifdef TARG_ST
+		Expand_Multiply (result, rtype, op1, rtype, op2, rtype, ops);
+#else
 		Expand_Multiply (result, op1, op2, rtype, ops);
+#endif
 	break;
   case OPR_HIGHMPY:
 	Expand_High_Multiply (result, op1, op2, rtype, ops);
@@ -276,6 +304,11 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
 		Exp_Stid_And_VComp(result, op1, op2, opcode, ops);
 	else if (MTYPE_is_float(desc))
 #else
+#ifdef TARG_ST
+        if (MTYPE_is_class_pointer(desc)) {
+          Expand_Ptr_Not_Equal (result, op1, op2, desc, ops);
+        } else
+#endif
 	if (MTYPE_is_float(desc))
 #endif
 		Expand_Float_Not_Equal (result, op1, op2, variant, desc, ops);
@@ -318,7 +351,31 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
 #ifdef TARG_X8664
 		Expand_Float_To_Float (result, op1, rtype, desc, ops);
 #else
+#ifdef TARG_ST
 		Expand_Float_To_Float (result, op1, rtype, ops);
+	}
+	else if (MTYPE_is_float(rtype) && MTYPE_is_signed(desc)) {
+		// desc is int
+		Expand_Int_To_Float (result, op1, desc, rtype, ops);
+	}
+	else if (MTYPE_is_float(rtype)) {
+		// desc is unsigned int
+		Expand_Unsigned_To_Float (result, op1, desc, rtype, ops);
+	}
+	else if (MTYPE_is_float(desc) && MTYPE_is_signed(rtype)) {
+		// rtype is int
+	        Expand_Float_To_Int_Cvt (result, op1, rtype, desc, ops);
+	}
+	else if (MTYPE_is_float(desc)) {
+		// rtype is unsigned int
+		Expand_Float_To_Unsigned_Cvt (result, op1, rtype, desc, ops);
+	} else {
+                Expand_Convert (result, op1, op2, rtype, desc, ops);
+        }
+#else
+
+		Expand_Float_To_Float (result, op1, rtype, ops);
+#endif
 #endif
 	}
 	else if (MTYPE_is_float(rtype)) {
@@ -363,13 +420,38 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
 	break;
 #endif
   case OPR_RND:
-	Expand_Float_To_Int_Round (result, op1, rtype, desc, ops);
+        if(MTYPE_is_signed(rtype)) {
+	  Expand_Float_To_Int_Round (result, op1, rtype, desc, ops);
+	}
+#ifdef MERGED_CODE
+	else {
+	  Expand_Float_To_Unsigned_Round (result, op1, rtype, desc, ops);
+	}
+#endif
 	break;
   case OPR_TRUNC:
+#ifdef TARG_ST
+	if (MTYPE_is_float(desc) && MTYPE_is_signed(rtype)) {
+		// rtype is int
+		Expand_Float_To_Int_Trunc (result, op1, rtype, desc, ops);
+	}
+	else if (MTYPE_is_float(desc)) {
+		// rtype is unsigned int
+		Expand_Float_To_Unsigned_Trunc (result, op1, rtype, desc, ops);
+	}
+#else
 	Expand_Float_To_Int_Trunc (result, op1, rtype, desc, ops);
+#endif
 	break;
   case OPR_CEIL:
-	Expand_Float_To_Int_Ceil (result, op1, rtype, desc, ops);
+       if(MTYPE_is_signed(rtype)) {
+	  Expand_Float_To_Int_Ceil (result, op1, rtype, desc, ops);
+	}
+#ifdef MERGED_CODE
+	else {
+	  Expand_Float_To_Unsigned_Ceil (result, op1, rtype, desc, ops);
+	}
+#endif
 	break;
   case OPR_FLOOR:
 #ifdef TARG_X8664

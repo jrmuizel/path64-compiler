@@ -84,7 +84,7 @@ private:
   // routines to interface to simplifier
   CODEREP *CR_Simplify_Tree(CODEREP *);
   CODEREP *CR_Simplify_Expr(CODEREP *);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   CODEREP *CR_Simplify_Iload(CODEREP *);
 #endif
 
@@ -130,6 +130,11 @@ typedef CODEREP * simpnode;
 #define SIMPNODE_i_bit_offset(x)	(x)->I_bit_offset()
 #define SIMPNODE_op_bit_offset(x)	(x)->Op_bit_offset()
 #define SIMPNODE_op_bit_size(x)		(x)->Op_bit_size()
+#ifdef TARG_ST
+#define SIMPNODE_label_number(x)	(x)->Offset()
+#define SIMPNODE_base_ty(x)             (x)->Ilod_base_ty()
+#define SIMPNODE_subpart_index(x)             (x)->Subpart_index()
+#endif
 
 /* on/off switch and trace file */
 #define SIMPNODE_enable			WOPT_Enable_CRSIMP

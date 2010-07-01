@@ -816,7 +816,7 @@ OPT_FEEDBACK::OPT_FEEDBACK( CFG *cfg, MEM_POOL *pool )
 
       OPERATOR opr = WN_operator( wn_last );
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       node.orig_wn = NULL;
 
       if( opr == OPR_ICALL ){
@@ -860,7 +860,7 @@ OPT_FEEDBACK::OPT_FEEDBACK( CFG *cfg, MEM_POOL *pool )
 
       case OPR_RETURN:
       case OPR_RETURN_VAL:
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       case OPR_GOTO_OUTER_BLOCK:
 #endif
 	break;
@@ -1042,7 +1042,14 @@ OPT_FEEDBACK::~OPT_FEEDBACK()
 // ====================================================================
 
 void
+#ifdef TARG_ST
+//TB: orig_wn is the original WN (before WOPT cfg construction).
+//The WN is used to retrieve feedback info that are not carried by
+//the OPT FEEDBACK CFG (icall specific info).
+OPT_FEEDBACK::Emit_feedback( WN *wn, BB_NODE *bb, WN *orig_wn ) const
+#else
 OPT_FEEDBACK::Emit_feedback( WN *wn, BB_NODE *bb ) const
+#endif
 {
   IDTYPE nx = bb->Id();
   const OPT_FB_NODE& node = _fb_opt_nodes[nx];
@@ -1075,7 +1082,7 @@ OPT_FEEDBACK::Emit_feedback( WN *wn, BB_NODE *bb ) const
 
   case OPR_RETURN:
   case OPR_RETURN_VAL:
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   case OPR_GOTO_OUTER_BLOCK:
 #endif
     {
@@ -1218,7 +1225,50 @@ OPT_FEEDBACK::Emit_feedback( WN *wn, BB_NODE *bb ) const
       if( !fb_info_icall.Is_uninit() ){
 	FmtAssert( fb_info_icall.tnv._exec_counter >= fb_info_icall.tnv._counters[0],
 		   ("icall execution counter is invalid") );
-
+#ifdef TARG_ST
+        
+      if( !fb_info_icall.Is_uninit() ){
+	FmtAssert( fb_info_icall.tnv._exec_counter >= fb_info_icall.tnv._counters[0],
+		   ("icall execution counter is invalid") );
+	//TB: fix: when orig_wn has been split into 2 nodes, icall fb
+	//info for the wn is not the same has for the original one.
+	FB_Info_Call fb_info_call = Cur_PU_Feedback->Query_call(wn);
+	if (!fb_info_call.freq_entry.Uninitialized() && !fb_info_call.freq_exit.Uninitialized() && 
+	    fb_info_call.freq_entry._value == fb_info_call.freq_exit._value && 
+	    fb_info_icall.tnv._exec_counter != 0 && fb_info_icall.tnv._exec_counter != fb_info_call.freq_entry._value){
+	  //  Re-emit fb_info_icall with adequate values:
+	  // rescale fb_info_icall with the scale factor got with fb_info_call
+	  float scale = (float)fb_info_call.freq_entry._value / (float)fb_info_icall.tnv._exec_counter;
+	  float total = 0.0;
+	  int i;
+	  for(i = 0; i < FB_TNV_SIZE; i ++ ){
+	    if( fb_info_icall.tnv._values[i] == 0 )
+	      break;
+	    fb_info_icall.tnv._counters[i] =
+	      (fb_info_icall.tnv._counters[i] * scale);
+	    total += fb_info_icall.tnv._counters[i];
+	  }
+	  fb_info_icall.tnv._exec_counter = (fb_info_icall.tnv._exec_counter * scale);
+// 	  FmtAssert( total  == fb_info_icall.tnv._exec_counter,
+// 		     ("icall total exec counters don't match sum of sub counters") );
+	  if (total != fb_info_icall.tnv._exec_counter)
+	    fb_info_icall.tnv._counters[0] = fb_info_icall.tnv._counters[0] + (fb_info_icall.tnv._exec_counter - total); 
+	} else if (fb_info_icall.tnv._exec_counter == 0.0 ) {
+	  FB_Info_Call new_fb_info_call(FB_FREQ(0.0));
+	  Cur_PU_Feedback->Annot_call( wn, new_fb_info_call );
+	  fb_info_call = Cur_PU_Feedback->Query_call(wn);
+	}
+	Cur_PU_Feedback->Annot_icall( wn, fb_info_icall );
+#ifdef TARG_ST
+	  //TB: info_call.freq_entry._value is a float value and is guessed.
+	  // info_icall.tnv._exec_counter is an integer and is a counted valus
+	FmtAssert( fabs(fb_info_icall.tnv._exec_counter - (float)fb_info_call.freq_entry._value) < 1.0 ,
+		   ("icall and call exec counters don't match") );
+#else
+ 	FmtAssert( fb_info_icall.tnv._exec_counter == fb_info_call.freq_entry._value,
+ 		   ("icall and call exec counters don't match") );
+#endif
+#endif
 	/* We cannot do the following checking, because the representation of
 	   _exec_counter is UINT64, and node.freq_total_in is float.
 	   TODO:
@@ -1768,7 +1818,7 @@ OPT_FEEDBACK::Print( FILE *fp ) const
   fprintf( fp, "OPT_FEEDBACK annotation:\n" );
 
   // Display nodes
-#ifdef KEY /* Mac port */
+#if defined( KEY) && !defined(TARG_ST) /* Mac port */
   fprintf( fp, "%ld nodes:\n", (long) (_fb_opt_nodes.size() - 1) );
 #else /* KEY Mac port */
   fprintf( fp, "%d nodes:\n", _fb_opt_nodes.size() - 1 );
@@ -1778,7 +1828,7 @@ OPT_FEEDBACK::Print( FILE *fp ) const
   }
 
   // Display edges
-#ifdef KEY /* Mac port */
+#if defined( KEY) && !defined(TARG_ST) /* Mac port */
   fprintf( fp, "%ld edges:\n", (long) (_fb_opt_edges.size() - 1) );
 #else /* KEY Mac port */
   fprintf( fp, "%d edges:\n", _fb_opt_edges.size() - 1 );
@@ -1903,7 +1953,7 @@ OPT_FEEDBACK::Verify( CFG *cfg, const char *const phase )
     if ( bb->Id() >= _fb_opt_nodes.size() ) {
       valid = false;
       if ( _trace )
-#ifdef KEY /* Mac port */
+#if defined( KEY) && !defined(TARG_ST) /* Mac port */
 	fprintf( TFile, "  CFG bb%" PRIdPTR " missing feedback! (_fb_opt_nodes.size()"
 		 " = %ld)\n", bb->Id(), (long) _fb_opt_nodes.size() );
 #else /* KEY Mac port */

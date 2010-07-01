@@ -43,8 +43,13 @@ inline void Set_OP_Tag (OP *op, LABEL_IDX tag)
 
 inline LABEL_IDX Get_OP_Tag (const OP *op)
 {
+#ifdef TARG_ST
+  // If no tags, no OP_Tag_Map => no cost
+  if (OP_Tag_Map == NULL) return (LABEL_IDX)NULL;
+#else
   Is_True(OP_has_tag(op), ("OP doesn't have tag"));
   Is_True(OP_Tag_Map != NULL, ("OP_Tag_Map not created"));
+#endif
   return (LABEL_IDX) OP_MAP32_Get (OP_Tag_Map, op);
 }
 

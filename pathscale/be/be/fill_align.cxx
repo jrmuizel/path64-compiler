@@ -300,7 +300,7 @@ static void Fill_Align_Symbol (WN* wn, WN* func_wn) {
                                       Global_Variable(st) ||
                                       Common_Variable(st)))) {
     ErrMsgSrcpos (EC_Bad_Pragma_Abort, WN_Get_Linenum(wn),
-                  WN_pragmas[WN_pragma(wn)].name,
+                  WN_Pragma_Name(WN_pragma(wn)),
                   ST_name(st),
                   "must be supplied a variable");
   }
@@ -309,7 +309,7 @@ static void Fill_Align_Symbol (WN* wn, WN* func_wn) {
   /* global variables must be completely specified */
   if  (Global_Variable(st) && !Known_Size(st)) {
     ErrMsgSrcpos (EC_Bad_Pragma_Abort, WN_Get_Linenum(wn),
-                  WN_pragmas[WN_pragma(wn)].name,
+                  WN_Pragma_Name(WN_pragma(wn)),
                   ST_name(st),
                   "global variable must be completely specified");
   }
@@ -318,7 +318,7 @@ static void Fill_Align_Symbol (WN* wn, WN* func_wn) {
   /* cannot align local fixed-size variables to greater than 16 bytes */
   if (Local_Variable(st) && Known_Size(st) && !is_fill && fa_value > 16) {
     ErrMsgSrcpos (EC_Bad_Pragma_Abort, WN_Get_Linenum(wn),
-                  WN_pragmas[WN_pragma(wn)].name,
+                  WN_Pragma_Name(WN_pragma(wn)),
                   ST_name(st),
                   "cannot align automatic variables to greater than 16 bytes");
   }

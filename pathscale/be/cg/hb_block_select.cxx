@@ -116,6 +116,13 @@ Verify_HB(
           break;
         }
       }
+#ifdef TARG_ST
+      // (cbr) This code crashes if the region is a loop. need to test
+      // if the block has already been processed, meaning we are in a loop.
+      // Don't recurse in that case.
+      if (BB_SET_MemberP(*processed_bbs, succ) || (bb == succ))
+        skip_succ = TRUE;
+#endif
 
       if (!skip_succ) Verify_HB(succ, processed_bbs, hb_bbs);
     }

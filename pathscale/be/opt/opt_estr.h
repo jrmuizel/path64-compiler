@@ -121,8 +121,9 @@ private:
 
   // Determine if bb1 is in the same loop as bb2, or if bb1 is in a
   // loop enclosed by bb2's loop (if any)
+#ifndef TARG_ST
   BOOL In_same_or_lower_nesting( BB_NODE *bb1, BB_NODE *bb2 ) const;
-
+#endif
   // private functions so they cannot be used incorrectly.
   STR_RED(const STR_RED&);
   STR_RED& operator = (const STR_RED&);
@@ -207,7 +208,12 @@ public:
   BOOL Repaired(const STMTREP *stmt) const { return stmt->Repaired(); }
 
   void Perform_per_expr_cleanup(void);
-
+  
+  // Determine if bb1 is in the same loop as bb2, or if bb1 is in a
+  // loop enclosed by bb2's loop (if any)
+#ifdef TARG_ST
+  BOOL In_same_or_lower_nesting( BB_NODE *bb1, BB_NODE *bb2 ) const;
+#endif
   BOOL Update_happens_rarely_enough(      BB_NODE *update_bb,
 				          BB_NODE *innermost_use_bb,
 				    const CODEREP *use_expr) const;

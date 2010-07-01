@@ -79,6 +79,9 @@
 #include "pf_cg.h"
 
 #include "cxx_base.h"
+#ifdef TARG_ST
+#include "erbe.h"
+#endif
 
 #include "opt_base.h"
 #include "opt_bb.h"
@@ -98,7 +101,9 @@
 #include "opt_util.h"
 #include "opt_project.h"
 #include "opt_dce.h"
-
+#ifdef TARG_ST
+#include "glob.h"	// TB: for Cur_PU_Name
+#endif
 // ====================================================================
 //
 // DCE class - This unexported class holds the (minimal) data and 
@@ -316,7 +321,7 @@ class DCE {
     void Find_assumed_goto_blocks( BB_NODE_SET *assumed_goto ) const;
     void Insert_required_gotos( void ) const;
     void Update_branch_to_bb_labels( BB_NODE *bb ) const;
-#ifdef KEY
+#if defined(KEY) && !defined(TARG_ST)
     void Update_branch_to_bbs_labels( BB_LIST *bbs ) const;
 #endif
     BOOL Remove_dead_statements( void ) ;
@@ -342,8 +347,8 @@ class DCE {
 		    case OPR_RETURN:
 		    case OPR_RETURN_VAL:
 		    case OPR_TRUEBR:
-#ifdef KEY
-		    case OPR_GOTO_OUTER_BLOCK:
+#if defined(KEY) && !defined(TARG_ST)
+                    case OPR_GOTO_OUTER_BLOCK:
 #endif
 		      return TRUE;
 		    default:
@@ -622,12 +627,13 @@ DCE::Check_constant_cond_br( BB_NODE *bb ) const
     case BB_REPEATBODY:// first BB in repeat body
     case BB_SUMMARY:   // summary BB
       return ( FALSE );
-
+#ifndef TARG_ST
     case BB_WHILEEND:  // ending condition for while statement
 #ifdef KEY // bug 7905: to enable while (1) to be preserved by ipl's preopt
       if (_opt_phase == PREOPT_IPA0_PHASE)
 	return ( FALSE ); 
       // fall thru
+#endif
 #endif
     case BB_LOGIF:     // logical if
     case BB_VARGOTO:   // variable goto
@@ -1187,7 +1193,7 @@ Eval_redundant_cond_br( CODEREP *origcond, CODEREP *evalcond, COND_EVAL eval )
 	}
       }
 
-#ifdef KEY // bug 11685
+#if defined(KEY) && !defined(TARG_ST) // bug 11685
      if (origcond->Dsctyp() != evalcond->Dsctyp())
        return EVAL_UNKNOWN;
 #endif
@@ -1360,7 +1366,7 @@ DCE::Check_for_label( BB_NODE *bb ) const
     // Allocate label number
     if (bb->Labnam() == 0) {
       bb->Set_labnam( _cfg->Alloc_label());
-#ifdef KEY // bug 3152
+#if defined(KEY) && !defined(TARG_ST) // bug 3152
       _cfg->Append_label_map( bb->Labnam(), bb );
 #endif
     }
@@ -1552,7 +1558,7 @@ void Remove_region_entry(BB_NODE *bb)
   RID_Delete2(rid);
 
   // the region entry BB will soon be a BB_GOTO, don't point to it anymore
-#ifndef KEY // bug 5714
+#if !defined( KEY) || defined(TARG_ST) // bug 5714
   bb_region->Set_region_start(NULL);
   bb_region->Set_rid(NULL);
 #endif
@@ -1923,6 +1929,15 @@ DCE::Required_store( const STMTREP *stmt, OPERATOR oper ) const
   ST *s = Opt_stab()->St(lhs->Aux_id());
   if ( ST_class(s) == CLASS_PREG && Preg_Is_Dedicated(lhs->Offset()) )
     return ( TRUE );
+#ifdef TARG_ST
+ // store to an ASM output register
+  const CODEREP *rhs = stmt->Rhs();
+  if ( rhs->Kind() == CK_VAR && 
+       ST_class(Opt_stab()->St(rhs->Aux_id())) == CLASS_PREG &&
+       ( rhs->Offset() < 0 )) {
+    return ( TRUE );
+  }
+#endif
 
   // the ... part of vararg parameters needs to be always homed at PU entry
   // because we don't know if they are used
@@ -1937,7 +1952,7 @@ DCE::Required_store( const STMTREP *stmt, OPERATOR oper ) const
     }
   }
 
-#ifdef KEY // deleting fetch of MTYPE_M return value can cause lowerer to omit
+#if defined(KEY) && !defined(TARG_ST)// deleting fetch of MTYPE_M return value can cause lowerer to omit
   	   // inserting the fake parm
   if (Opt_stab()->Phase() == PREOPT_IPA0_PHASE && lhs->Dsctyp() == MTYPE_M &&
       stmt->Rhs()->Kind() == CK_VAR &&
@@ -1980,7 +1995,7 @@ DCE::Required_istore( const STMTREP *stmt, OPERATOR oper ) const
   if (stmt->Lhs()->Points_to(Opt_stab())->Restricted()) 
     return TRUE;
 
-#ifdef KEY // deleting fetch of MTYPE_M return value can cause lowerer to omit
+#if defined(KEY) && !defined(TARG_ST) // deleting fetch of MTYPE_M return value can cause lowerer to omit
   	   // inserting the fake parm
   if (Opt_stab()->Phase() == PREOPT_IPA0_PHASE && stmt->Lhs()->Dsctyp() == MTYPE_M &&
       stmt->Rhs()->Kind() == CK_VAR &&
@@ -2047,7 +2062,9 @@ DCE::Loop_pragma(WN_PRAGMA_ID pragma) const
     case WN_PRAGMA_FUSE:
     case WN_PRAGMA_FUSEABLE:
     case WN_PRAGMA_INTERCHANGE:
+#ifndef TARG_ST
     case WN_PRAGMA_IVDEP:
+#endif
     case WN_PRAGMA_KAP_ASSERT_CONCURRENT_CALL:
     case WN_PRAGMA_KAP_ASSERT_DO:
     case WN_PRAGMA_KAP_ASSERT_DOPREFER:
@@ -2057,8 +2074,16 @@ DCE::Loop_pragma(WN_PRAGMA_ID pragma) const
     case WN_PRAGMA_NO_FISSION:
     case WN_PRAGMA_NO_FUSION:
     case WN_PRAGMA_NO_INTERCHANGE:
+#ifndef TARG_ST
     case WN_PRAGMA_UNROLL:
+#endif
       return TRUE;
+#ifdef TARG_ST
+    /* All loop scope pragmas must be removed also. */
+    if (WN_Pragma_Scope(pragma) == WN_PRAGMA_SCOPE_LOOP)
+      return TRUE;
+#endif
+    break;
   }
   return FALSE;
 }
@@ -2072,7 +2097,7 @@ inline BOOL
 DCE::Required_pragma( const STMTREP *stmt ) const
 {
   WN_PRAGMA_ID pragma = (WN_PRAGMA_ID)WN_pragma(stmt->Orig_wn());
-#ifdef KEY
+#if defined(KEY) && !defiend(TARG_ST)
   if (pragma == WN_PRAGMA_UNROLL) return TRUE;
 #endif
   if (Loop_pragma(pragma)) return FALSE;
@@ -2108,7 +2133,7 @@ DCE::Required_stmt( const STMTREP *stmt ) const
   if ( WOPT_Enable_Zero_Version && stmt->Has_zver())
     return TRUE;
 
-#ifdef KEY // bugs 5401 and 5267
+#if defined(KEY) && !defiend(TARG_ST) // bugs 5401 and 5267
   if (OPERATOR_is_scalar_store(opr) && 
       Opt_stab()->Aux_stab_entry(stmt->Lhs()->Aux_id())->Mp_no_dse())
     return TRUE;
@@ -2134,8 +2159,27 @@ DCE::Required_stmt( const STMTREP *stmt ) const
   case OPR_TRUEBR:
   case OPR_FALSEBR:
   case OPR_GOTO:
+#ifdef TARG_ST
+    // FdF 20041022: Fix for DDTS 19402. In Preopt, cannot
+    // discriminate between infinite loops and finite loops with
+    // unused side effect.
+    if (stmt->Bb()->Kind() == BB_WHILEEND &&
+	(stmt->Bb()->Loop()->Flags() & LOOP_PREOPT))
+      return TRUE;
+    // FdF 20091127: Check if the condition to exit the loop is
+    // invariant in the loop, in which case the loop maybe an infinite
+    // loop. Infinite loops must not be removed.
+    if (((opr == OPR_TRUEBR) || (opr == OPR_FALSEBR)) &&
+	(stmt->Bb()->Kind() == BB_REPEATEND)) {
+      if (!_cfg->Loops_valid())
+	_cfg->Analyze_loops();
+      if ((stmt->Bb()->Loop() != NULL) &&
+	  (stmt->Bb()->Loop()->Invariant_cr(stmt->Rhs())))
+	return TRUE;
+    }
+#endif
     return ( !Enable_aggressive_dce() );
-
+#ifndef TARG_ST
   case OPR_COMPGOTO:
 #ifdef KEY 
     if ((PU_has_mp(Get_Current_PU()) || PU_mp_lower_generated(Get_Current_PU()))
@@ -2143,7 +2187,7 @@ DCE::Required_stmt( const STMTREP *stmt ) const
       return TRUE; // deleting COMPGOTO related to SECTIONS caused bug 5553
 #endif
     return ( !Enable_aggressive_dce() );
-
+#endif
   case OPR_LABEL:
     return ( !Enable_aggressive_dce() ||
 	     LABEL_addr_saved( stmt->Label_number() ) );
@@ -2166,7 +2210,11 @@ DCE::Required_stmt( const STMTREP *stmt ) const
   case OPR_RETURN_VAL:
   case OPR_REGION_EXIT:
   case OPR_OPT_CHI: // entry chi is required, pv 454154
-#ifdef KEY
+#ifdef TARG_ST
+  case OPR_AFFIRM:
+#endif
+
+#if defined(KEY) && !defiend(TARG_ST) 
   case OPR_GOTO_OUTER_BLOCK:
 #endif
     return TRUE;
@@ -2216,6 +2264,13 @@ DCE::Required_bb( const BB_NODE *bb ) const
     if ( RID_TYPE_guard(bb_region->Rid()) )
       return TRUE;
   }
+#ifdef TARG_ST
+  // FdF 20060119: Do not optimize away blocks that will not reach
+  // exit, since their side effects are difficult to know (ddts 24412).
+  if (!bb->Willexit() && (bb != _cfg->Fake_entry_bb()) && (bb != _cfg->Fake_exit_bb()))
+    return TRUE;
+#endif
+
   return FALSE;
 }
 
@@ -3059,7 +3114,7 @@ DCE::Prop_return_vsym_new_result( CODEREP *cr ) const
       // dead statements skip over this, so return the chi operand
       // which should have been updated to the correct value by now
 //Bug 2659
-# ifdef KEY
+#if defined(KEY) && !defiend(TARG_ST)
       if (!cr->Defchi()->Live())
         return Prop_return_vsym_new_result(cr->Defchi()->OPND());
       else
@@ -3106,9 +3161,10 @@ DCE::Propagate_return_vsym_cr( CODEREP *cr ) const
 
 	if ( cr->Opr() == OPR_MLOAD )
 	  Propagate_return_vsym_cr( cr->Mload_size() );
+#ifndef TARG_ST
 	else if ( cr->Opr() == OPR_ILOADX )
 	  Propagate_return_vsym_cr( cr->Index() );
-
+#endif
 	MU_NODE *mu = cr->Ivar_mu_node();
 	if ( mu && mu->OPND()->Aux_id() == Return_vsym() ) {
 	  mu->Set_OPND( Prop_return_vsym_new_result(mu->OPND()) );
@@ -3425,6 +3481,29 @@ DCE::Mark_infinite_loops_live( void ) const
 void
 DCE::Mark_block_live( BB_NODE *bb ) const
 {
+#ifdef TARG_ST
+  // FdF 20060119: If this block will not reach the exit, mark ALL
+  // statements live, since the side effects of this code are
+  // difficult to know (ddts 24412).
+
+  // FdF 20060613: Do not keep scalar store to local variables. They
+  // must be deleted if not used, since this is expected during copy
+  // propagation (COPYPROP::Copy_propagate).
+
+  if (!bb->Willexit() && (bb != _cfg->Fake_entry_bb()) && (bb != _cfg->Fake_exit_bb())) {
+    STMTREP_ITER stmt_iter(bb->Stmtlist());
+    STMTREP *stmt;
+    FOR_ALL_NODE(stmt, stmt_iter, Init()) {
+      // Do not force STID operations to be live
+      if (OPERATOR_is_scalar_store (stmt->Opr()) &&
+	  (stmt->Lhs()->Kind() == CK_VAR)) {
+      }
+      else
+	Mark_statement_live( stmt );
+    }
+  }
+#endif
+
   if ( bb->Reached() ) {
     return;
   }
@@ -3462,6 +3541,44 @@ DCE::Mark_block_live( BB_NODE *bb ) const
       }
     }
   }
+#ifdef TARG_ST
+  // FdF 22/04/2004: Pragmas in the preheader block of all kinds of
+  // loops must be marked live.
+  // FdF 10/05/2004: Search also in predecessors of the preheader (or
+  // start) node.
+  BB_NODE *preloop = NULL;
+  if (bb->Kind() == BB_DOEND || bb->Kind() == BB_WHILEEND || bb->Kind() == BB_REPEATEND) {
+    if (bb->Loopstart())
+      preloop = bb->Loopstart();
+    else if (bb->Loop() && bb->Loop()->Preheader())
+      preloop = bb->Loop()->Preheader();
+  }
+  // FdF 20070831: Loops made from gotos in the WHIRL may also have
+  // loop pragmas
+  else if ((bb->Loop() != NULL) && (bb->Loop()->Header() == bb)) {
+    BB_LOOP *loop = bb->Loop();
+    // Look for the predecessor node outside this loop
+    BB_NODE *pred;
+    BB_LIST_ITER bb_pred_iter;
+    FOR_ALL_ELEM(pred, bb_pred_iter, Init(bb->Pred()) ) {
+      if (!loop->True_body_set()->MemberP(pred)) {
+	preloop = pred;
+	break;
+      }
+    }
+  }
+
+  while (preloop) {
+    if (!preloop->Reached())
+      Mark_block_live( preloop );
+    // Go up, while the block has a unique predecessor that has a
+    // unique successor.
+    if ((preloop->Pred()->Len() == 1) && (preloop->Pred()->Node()->Succ()->Len() == 1))
+      preloop = preloop->Pred()->Node();
+    else
+      preloop = NULL;
+  }
+#else
 
   // In preopt, if this block is a DOEND block and the DOSTART block
   // is not marked live, then mark the DOSTART block as live.  This
@@ -3490,6 +3607,7 @@ DCE::Mark_block_live( BB_NODE *bb ) const
       }
     }
   }
+#endif
 }
 
 // ====================================================================
@@ -3711,7 +3829,7 @@ DCE::Replace_control_dep_succs( BB_NODE *bb ) const
 {
   BOOL all_cd = TRUE;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   if (bb->Succ() == NULL)
     return;
 #endif
@@ -4405,7 +4523,7 @@ DCE::Find_required_statements( void ) const
 // Update_branch_to_bb_labels update labels and branch statements so
 // that all branches to this block target its successor instead.
 // ====================================================================
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 void
 DCE::Update_branch_to_bbs_labels( BB_LIST *bbs ) const
 {
@@ -4580,6 +4698,12 @@ DCE::Remove_dead_statements( void )
       {
 	nextstmt = stmt->Next();
 	if ( ! stmt->Live_stmt() ) {
+#ifdef TARG_ST
+	  if ( stmt->Opr() == OPR_PRAGMA &&
+	       Loop_pragma( (WN_PRAGMA_ID)WN_pragma(stmt->Orig_wn()) ) ) {
+	    DevWarn( "BB:%d Loop pragma (%s) deleted", bb->Id(), WN_Pragma_Name(WN_pragma(stmt->Orig_wn())));
+	  }
+#endif
 	  bb->Remove_stmtrep(stmt);
 	}
         else {
@@ -4607,6 +4731,10 @@ DCE::Remove_dead_statements( void )
         Is_True( _cfg->Removable_bb(bb),
 	  ("DCE::Remove_dead_statements: BB%d not removable",
 	   bb->Id()) );
+#ifdef TARG_ST
+        	Update_branch_to_bb_labels( bb );
+	_cfg->Delete_bb( bb, _mod_phis );
+#else
 #ifdef KEY
         if (WOPT_Enable_Aggressive_dce_for_bbs)
           removable_bbs = removable_bbs->Append(bb, _cfg->Loc_pool());
@@ -4614,6 +4742,7 @@ DCE::Remove_dead_statements( void )
 	  Update_branch_to_bb_labels( bb );
 	  _cfg->Delete_bb( bb, _mod_phis );
         }
+#endif
 #endif
 	changed_cflow = TRUE;
 
@@ -4624,14 +4753,14 @@ DCE::Remove_dead_statements( void )
       else {
 	bb->Set_reached();
       }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       if ( !removable_bbs->Contains(bb) || !WOPT_Enable_Aggressive_dce_for_bbs ) 
 #endif
         Remove_unreached_statements( bb );
     }
   } // end loop through blocks
 //Bug# 1278
-#ifdef KEY  
+#if defined( KEY) && !defined(TARG_ST)
   if ( !Enable_aggressive_dce() || !WOPT_Enable_Aggressive_dce_for_bbs) 
     return  ( changed_cflow );
 
@@ -4841,7 +4970,7 @@ DCE::Insert_required_gotos( void ) const
     if (bb->Last_stmtrep() && bb->Last_stmtrep()->Opr() == OPR_REGION )
       continue;
 
-#ifdef KEY // needed due to fix for bug 8690
+#if defined( KEY) && !defined(TARG_ST) // needed due to fix for bug 8690
     if (bb->MP_region() && _opt_phase != MAINOPT_PHASE &&
         bb->Kind() == BB_REGIONSTART) {
       // see if the assumed goto is due to a SINGLE pragma
@@ -5010,6 +5139,16 @@ COMP_UNIT::Find_uninit_locals_for_entry(BB_NODE *bb)
       continue;
     if (ST_is_temp_var(sym->St()))
       continue;
+#ifdef TARG_ST
+  // TB: add support for automatic variables defined in try block and
+  // used in catck block
+    if (sym->Belongs_to_eh()) {
+      DevWarn(( "Warning: variable %s in %s might be used uninitialized. Since it is used in eh I don't take care of it\n",
+	      &Str_Table[sym->St()->u1.name_idx], Cur_PU_Name));
+      
+      continue;
+    }
+#endif
     if (sym->Is_volatile())
       continue;
     if (sym->Mp_shared())
@@ -5022,7 +5161,12 @@ COMP_UNIT::Find_uninit_locals_for_entry(BB_NODE *bb)
       continue;
     if (sym->Points_to()->F_param())
       continue;
-
+#ifdef TARG_ST
+    // TB: Add a warning when the compiler has created an uninit var
+    if (ST_is_temp_var(sym->St())) 
+      DevWarn(("COMP_UNIT::Find_uninit_locals_for_entry find a temporary var that might be used unitialized %s in %s", 
+	       cplus_demangle(&Str_Table[sym->St()->u1.name_idx], DMGL_NO_OPTS), cplus_demangle(Cur_PU_Name, DMGL_NO_OPTS)));
+#endif
     char *output_pu_name = Cur_PU_Name;
     char *output_var_name = &Str_Table[sym->St()->u1.name_idx];
     char *p = NULL;

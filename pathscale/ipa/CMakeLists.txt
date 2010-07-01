@@ -8,7 +8,7 @@ include_directories(
    ../common/com 
    ../be/region 
    ../be/opt 
-   ../common/com/x8664 
+   ../common/com/${BUILD_TARGET_DIR}
    ../common/util 
    ../fake_ld/common 
    ../fake_ld 

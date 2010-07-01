@@ -41,6 +41,16 @@ extern void EETARG_Restore_Extra_Callee_Tns (OPS *ops);
 
 // target-specific adjustments to entry ops
 extern void EETARG_Fixup_Entry_Code (BB *bb);
+#ifdef TARG_ST
+extern void EETARG_Fixup_Exit_Code (BB *bb);
+extern void EETARG_Set_Frame_Len (INT64 frame_len);
+#endif
+
+#ifdef TARG_ST
+// Should returns a super scratch (not allocatable) or defined register.
+// This register will be used to initialize stack pointer in entry block.
+extern TN *EETARG_get_temp_for_spadjust( BB *bb);
+#endif
 
 //  Replace the call OP with a jump.
 extern OP *EETARG_Build_Jump_Instead_Of_Call(OP *call_op);

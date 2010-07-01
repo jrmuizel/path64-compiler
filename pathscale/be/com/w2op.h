@@ -36,6 +36,23 @@ extern "C" {
  * else TOP_UNDEFINED if not an exact correspondence.
  */
 extern TOP OPCODE_To_TOP (OPCODE opcode);
+/* Given a WHIRL opcode, return the corresponding INTRINSIC.
+ * This will only return INTRINSICs for operators that have
+ * them defined.
+ */
+BE_EXPORTED extern INTRINSIC OPCODE_To_INTRINSIC (OPCODE opcode);
+
+#ifdef TARG_ST
+/* [CG]
+ * Given a WHIRL opcode and WN kids, return the corresponding INTRINSIC.
+ * kids array may be modified.
+ * returns the INTRINSIC id and the kids to be used as params.
+ * returns INTRINSIC_INVALID if not intrinsic match the opcode.
+ * In addition to OPCODE_To_INTRINSIC, this function may look at kids
+ * to get a more efficient intrinsic op.
+ */
+BE_EXPORTED extern INTRINSIC WN_To_INTRINSIC (OPCODE opcode, WN* kids[]);
+#endif
 
 /* Given a WHIRL node, return the corresponding TOP. 
  * This will only return machine ops, 
@@ -47,7 +64,25 @@ extern TOP WHIRL_To_TOP (WN *wn);
 /* return whether MPY, DIV, or REM will be translated into shifts and adds */
 extern BOOL Can_Do_Fast_Multiply (TYPE_ID mtype, INT64 val);
 extern BOOL Can_Do_Fast_Divide (TYPE_ID mtype, INT64 val);
+extern BOOL Expand_Power_Of_Two_Div_Without_Pred (TYPE_ID mtype, INT64 val);
 extern BOOL Can_Do_Fast_Remainder (TYPE_ID mtype, INT64 val);
+
+#ifdef TARG_ST
+/* Returns whether SELECT can be translated, otherwise if will be lowered as if/then/else. */
+BE_EXPORTED extern BOOL Can_Do_Select (TYPE_ID mtype);
+BE_EXPORTED extern BOOL Target_Inlines_Divide (TYPE_ID mtype, INT64 val);
+BE_EXPORTED extern BOOL Target_Inlines_Remainder (TYPE_ID mtype, INT64 val);
+#endif
+
+#ifndef TARG_ST
+  /* [CG] Obsolete for ST targets. See LOWER_CNST_DIV/LOWER_CNST_MUL. */
+/* When trying to convert a multiply or divide operation into a series
+ * of shifts/adds/subtracts, there is some limit (cycles? ops?) at
+ * which the conversion is not profitable.  Return that limit.
+ */
+BE_EXPORTED extern INT Multiply_Limit ( BOOL is_64bit, INT64 val);
+BE_EXPORTED extern INT Divide_Limit ( BOOL is_64bit);
+#endif
 
 /* When trying to convert a multiply or divide operation into a series
  * of shifts/adds/subtracts, there is some limit (cycles? ops?) at
@@ -75,6 +110,11 @@ extern BOOL TOP_Can_Be_Speculative (TOP opcode);
 extern BOOL WN_Can_Be_Speculative (WN *wn, struct ALIAS_MANAGER *alias);
 extern BOOL WN_Expr_Can_Be_Speculative (WN *wn, struct ALIAS_MANAGER *alias);
 extern BOOL OPCODE_Can_Be_Speculative(OPCODE opcode);
+#ifdef TARG_ST
+/* TRUE if the low-order word of a multi-word parameter/result should be
+   passed in the lowest numbered register. */
+BE_EXPORTED extern BOOL Pass_Low_First(TYPE_ID type);
+#endif
 
 #ifdef __cplusplus
 }

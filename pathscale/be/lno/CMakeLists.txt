@@ -1,7 +1,7 @@
 set(PATHSCALE_LNO_SRCS
 				"../com/cxx_template.cxx"
 				"../com/dep_graph.cxx"
-				"x8664/lnotarget.cxx"
+				"${BUILD_TARGET_DIR}/lnotarget.cxx"
 				"lnodriver.cxx"
 				"lnopt_main.cxx"
 				"lnoutils.cxx"

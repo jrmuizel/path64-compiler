@@ -119,7 +119,7 @@ CODEREP::Exp_has_e_num(void) const
     return FALSE;
   case OPR_INTRINSIC_OP:
     return WOPT_Enable_Move_Intrinsicop;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   case OPR_PURE_CALL_OP:
 #endif
   case OPR_CVT:
@@ -192,11 +192,26 @@ EOCC::Collect_real_occurrences( void )
 	  CODEREP *rhs_cr = stmt->Rhs();
 	  CODEREP *lhs = stmt->Lhs();
 	  if (WOPT_Enable_Cvt_Folding && rhs_cr->Kind() == CK_OP && 
-#ifdef KEY // bug 11797
+#if defined( KEY) && !defined(TARG_ST)/ bug 11797
 	      ! MTYPE_is_vector(rhs_cr->Dsctyp()) &&
 	      ! MTYPE_is_vector(rhs_cr->Dtyp()) &&
 #endif
-	      (rhs_cr->Opr() == OPR_CVT && MTYPE_is_integral(rhs_cr->Dsctyp()) 
+	      (rhs_cr->Opr() == OPR_CVT && 
+#ifdef TARG_ST
+	       //
+	       // Arthur: a CVT can be removed if Dtyp() and Dsctyp()
+	       //         are both either integer or pointer class
+	       // but not if Only_32_Bit_Ops is ON
+	       //
+	       !Only_32_Bit_Ops &&
+	       ((MTYPE_is_class_integer(rhs_cr->Dtyp()) && 
+		 MTYPE_is_class_integer(rhs_cr->Dsctyp())) ||
+		(MTYPE_is_class_pointer(rhs_cr->Dtyp()) && 
+		 MTYPE_is_class_pointer(rhs_cr->Dsctyp())))
+#else
+
+               MTYPE_is_integral(rhs_cr->Dsctyp()) 
+#endif
 	       || rhs_cr->Opr() == OPR_CVTL) &&
 #ifdef TARG_X8664
 	      !MTYPE_is_vector(lhs->Dsctyp()) &&
@@ -465,6 +480,13 @@ EXP_WORKLST::Generate_ivariable_phi_list_addr(BB_NODE_SET &var_phi_list,
   FOR_ALL_NODE (exp_occ, exp_occ_iter, Init(Real_occurs().Head())) {
     cr = exp_occ->Occurrence();
     Is_True(cr,("EXP_WORKLST::Generate_variable_phi_list: indirect occurrence with null CODEREP"));
+    #ifdef TARG_ST
+    // FdF 20100108: There may be a CVTL operation
+    if (cr->Kind() != CK_IVAR) {
+      Is_True(cr->Opr() == OPR_CVTL, ("EXP_WORKLST::Generate_ivariable_phi_list_addr: Unexpected operator"));
+      cr = cr->Opnd(0);
+    }
+#endif
     cr = cr->Ilod_base() ? cr->Ilod_base() : cr->Istr_base();
     Is_True(cr,("EXP_WORKLST::Generate_variable_phi_list: indirect occurrence with null CODEREP as Ilod_base() and Istr_base()"));
     if (cr->Is_flag_set(CF_DEF_BY_PHI) && ( (phi_node=cr->Defphi()) != NULL )) 
@@ -494,6 +516,13 @@ EXP_WORKLST::Generate_ivariable_phi_list_vsym(BB_NODE_SET &var_phi_list,
   FOR_ALL_NODE (exp_occ, exp_occ_iter, Init(Real_occurs().Head())) {
     if (!exp_occ->Occurs_as_lvalue()) {
       cr = exp_occ->Occurrence();
+#ifdef TARG_ST
+      // FdF 20100108: There may be a CVTL operation
+      if (cr->Kind() != CK_IVAR) {
+	Is_True(cr->Opr() == OPR_CVTL, ("EXP_WORKLST::Generate_ivariable_phi_list_vsym: Unexpected operator"));
+	cr = cr->Opnd(0);
+      }
+#endif
       if (cr->Ivar_mu_node()) {
 	vsym = cr->Ivar_mu_node()->OPND();
 	if (vsym) Set_indirect_defphi_recursive(vsym, var_phi_list, tracing, cr);
@@ -523,6 +552,69 @@ EXP_WORKLST::Insert_exp_phi(ETABLE *etable)
   if (Real_occurs().Head() == Real_occurs().Tail() &&
       !Real_occurs().Head()->Mult_real() &&
       Real_occurs().Head()->Bb()->Dom_frontier()->EmptyP()) return FALSE;
+#ifdef TARG_ST
+  // FdF 20071129: Fix for enhancement #33585. Do not create a new
+  // variable for an expression that is only an increment with a small
+  // value, and is used only once.
+  if ((Real_occurs().Head() == Real_occurs().Tail()) &&
+      !Real_occurs().Head()->Mult_real()) {
+    CODEREP *occur = Real_occurs().Head()->Occurrence();
+    BOOL cost_is_low = (occur->Kind() == CK_OP) && (occur->Opr() == OPR_ADD || occur->Opr() == OPR_SUB);
+
+    // Must be used directly on an STID statement that is not an
+    // IV_update
+    if (cost_is_low) {
+      STMTREP *stmt = Real_occurs().Head()->Stmt();
+      if (!(OPERATOR_is_scalar_store(stmt->Opr()) &&
+	    !stmt->Iv_update() &&
+	    (stmt->Rhs() == occur))) {
+	cost_is_low = FALSE;
+      }
+    }
+
+    if (cost_is_low) {
+      CODEREP *kid0 = occur->Opnd(0);
+      CODEREP *kid1 = occur->Opnd(1);
+
+      if ((kid0->Kind() == CK_CONST) && (kid1->Kind() == CK_VAR)) {
+	CODEREP *tmp_cr = kid0;
+	kid0 = kid1;
+	kid1 = tmp_cr;
+      }
+
+      // Must be an ADD/SUB between a variable and an immediate value
+      // in the range ]-16,16[. This range has been choosen because
+      // such an immediate should not require an extra instruction
+      if (!((kid0->Kind() == CK_VAR) && (kid1->Kind() == CK_CONST) &&
+	    (kid0->Usecnt() > 2) &&
+	    (kid1->Const_val() > -WOPT_Pre_Small_Immediate ) &&
+	    (kid1->Const_val() < WOPT_Pre_Small_Immediate))) {
+	cost_is_low = FALSE;
+      }
+
+      // The variable must be an induction variable
+      if (cost_is_low) {
+	if (kid0->Is_flag_set(CF_DEF_BY_PHI)) {
+	  PHI_NODE *defphi = kid0->Defphi();
+	  if ((defphi == NULL) || !defphi->Opnd_iv_update())
+	    cost_is_low = FALSE;
+	}
+	else if (!kid0->Is_flag_set((CR_FLAG)(CF_DEF_BY_PHI|CF_DEF_BY_CHI|CF_IS_ZERO_VERSION))) {
+	  STMTREP *defstmt = kid0->Defstmt();
+	  if ((defstmt == NULL) || !defstmt->Iv_update())
+	    cost_is_low = FALSE;
+	}
+	else
+	  cost_is_low = FALSE;
+      }
+    }
+
+    if (cost_is_low) {
+      // No gain expected by optimizing this expression, skip it.
+      return FALSE;
+    }
+  }
+#endif
 
   BB_NODE_SET        &phi_list = etable->Phi_work_set();
   BB_NODE_SET        &var_phi_list = etable->Var_phi_set();

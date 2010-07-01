@@ -189,6 +189,10 @@ OPT_MTYPE_B::Do_mtype_b_cr(CODEREP *cr)
     }
     return NULL;
   case CK_OP:
+#if defined(TARG_ST)
+    if (MTYPE_is_float(cr->Dsctyp()) || MTYPE_is_double(cr->Dsctyp()) || MTYPE_is_longlong(cr->Dsctyp()) || cr->Opr() == OPR_DIV || cr->Opr() == OPR_REM || cr->Opr() == OPR_MOD)
+      return NULL;
+#endif
     need_rehash = FALSE;
     new_cr->Copy(*cr);
     new_cr->Set_usecnt(0);
@@ -226,6 +230,10 @@ OPT_MTYPE_B::Do_mtype_b_cr(CODEREP *cr)
 	    return new_cr->Opnd(0);	// delete the NE or EQ
 	  else if (opr == OPR_EQ && new_cr->Opnd(1)->Const_val() == 0 ||
 		   opr == OPR_NE && new_cr->Opnd(1)->Const_val() == 1) {
+#ifdef TARG_ST
+	    // Arthur: but LNOT must have dsctype V
+	    new_cr->Set_dsctyp(MTYPE_V);
+#endif
 	    new_cr->Set_opr(OPR_LNOT);
 	    opr = OPR_LNOT;
 	    new_cr->Set_kid_count(1);

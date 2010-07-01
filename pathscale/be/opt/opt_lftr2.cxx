@@ -978,7 +978,7 @@ LFTR::Replace_comparison(EXP_OCCURS *comp, BOOL cur_expr_is_sr_candidate)
 	return; // 1, 2
       }
 //Bug# 1164
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       if (iv_defstmt->Iv_update() && iv_defstmt->Repaired() && tempcr->Aux_id() == cr->Aux_id()) {
 #else
       if (iv_defstmt->Iv_update() && tempcr->Aux_id() == cr->Aux_id()) {
@@ -1230,7 +1230,7 @@ LFTR::Replace_comparison(EXP_OCCURS *comp, BOOL cur_expr_is_sr_candidate)
 
     // adjust operator of new comparison
     OPERATOR new_compare_opr = comparison_cr->Opr();
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     MTYPE new_compare_type = tempcr->Dtyp();
     // do not change signedness of comparison since that could change semantics
     new_compare_type = Mtype_TransferSign(comparison_cr->Dsctyp(), 
@@ -1356,7 +1356,7 @@ LFTR::Replace_lftr_var(CODEREP *templt, AUX_ID lftr_var, CODEREP *new_expr)
 	CODEREP *kid = templt->Opnd(i);
 	CODEREP *tmp = Replace_lftr_var(kid, lftr_var, new_expr);
 	if (tmp != NULL && tmp != kid) {
-#ifdef KEY // bug 12770
+#if defined( KEY) && !defined(TARG_ST)// bug 12770
 	  CODEREP *cr = Alloc_stack_cr(0);
 	  if (MTYPE_byte_size(templt->Dtyp()) > MTYPE_byte_size(tmp->Dtyp())) {
 	    cr->Init_expr(OPC_I8I4CVT, tmp);

@@ -68,9 +68,13 @@ static const char ti_init_rcs_id[] = "$Source: /home/bos/bk/kpro64-pending/commo
 extern "C" {
 #endif
 
+#ifdef TARG_ST
+    extern void*
+TI_Initialize (ABI_PROPERTIES_ABI, ISA_SUBSET, PROCESSOR, INT, const ISA_SUBSET *, char *tpath);
+#else
 extern void
 TI_Initialize (ABI_PROPERTIES_ABI, ISA_SUBSET, PROCESSOR, char *tpath);
-
+#endif
 #ifdef __cplusplus
 }
 #endif

@@ -383,3 +383,71 @@ BR_Variant_Name(VARIANT variant)
 
   return "--UNKNOWN--";
 }
+
+#ifdef TARG_ST
+
+static const struct {
+  VARIANT v;
+  const char *name;
+  VARIANT inverted;
+  VARIANT negated;
+} CMP_Variant_Info [] =
+  {
+    { V_CMP_NONE,   "NONE",  V_CMP_NONE,   V_CMP_NONE  },  
+    { V_CMP_EQ,     "EQ",    V_CMP_EQ,     V_CMP_NE    },
+    { V_CMP_NE,     "NE",    V_CMP_NE,     V_CMP_EQ    },
+    { V_CMP_GT,     "GT",    V_CMP_LT,     V_CMP_LE    },
+    { V_CMP_GTU,    "GTU",   V_CMP_LTU,    V_CMP_LEU   },
+    { V_CMP_GE,     "GE",    V_CMP_LE,     V_CMP_LT    },
+    { V_CMP_GEU,    "GEU",   V_CMP_LEU,    V_CMP_LTU   },
+    { V_CMP_LT,     "LT",    V_CMP_GT,     V_CMP_GE    },
+    { V_CMP_LTU,    "LTU",   V_CMP_GTU,    V_CMP_GEU   },
+    { V_CMP_LE,     "LE",    V_CMP_GE,     V_CMP_GT    },
+    { V_CMP_LEU,    "LEU",   V_CMP_GEU,    V_CMP_GTU   },
+    { V_CMP_ANDL,   "ANDL",  V_CMP_ANDL,   V_CMP_NANDL },
+    { V_CMP_NANDL,  "NANDL", V_CMP_NANDL,  V_CMP_ANDL  },
+    { V_CMP_ORL,    "ORL",   V_CMP_ORL,    V_CMP_NORL  },
+    { V_CMP_NORL,   "NORL",  V_CMP_NORL,   V_CMP_ORL   }
+  };
+
+/* ====================================================================
+ *   Invert_CMP_Variant
+ *
+ *   See interface description.
+ * ====================================================================
+ */
+VARIANT
+Invert_CMP_Variant (
+  VARIANT variant
+)
+{
+  FmtAssert (CMP_Variant_Info[variant].v == variant,
+	     ("variant mismatch in CMP_Variant_Info (%d)", variant));
+  return CMP_Variant_Info[variant].inverted;
+}
+
+/* ====================================================================
+ *   Negate_CMP_Variant
+ *
+ *   See interface description.
+ * ====================================================================
+ */
+VARIANT
+Negate_CMP_Variant (
+  VARIANT variant
+)
+{
+  FmtAssert (CMP_Variant_Info[variant].v == variant,
+	     ("variant mismatch in CMP_Variant_Info (%d)", variant));
+  return CMP_Variant_Info[variant].negated;
+}
+
+const char *
+CMP_Variant_Name (
+  VARIANT variant
+)
+{
+  return CMP_Variant_Info[variant].name;
+}
+#endif
+

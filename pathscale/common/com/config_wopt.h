@@ -271,6 +271,7 @@ extern INT32 WOPT_Enable_CFG_Opt2_Limit;
 extern BOOL  WOPT_Enable_CFG_Opt3;
 extern BOOL  WOPT_Enable_CFG_Opt4;
 extern BOOL  WOPT_Enable_CFG_Opt_Limit;
+extern BOOL  WOPT_Enable_CFG_Opt_Limit_Set;
 extern BOOL  WOPT_Enable_Bits_Load_Store;
 extern BOOL  WOPT_Enable_Epre_Before_Ivr; // For running epre early
 extern BOOL  WOPT_Enable_Lpre_Before_Ivr; // For running lpre early
@@ -284,6 +285,28 @@ extern INT32 WOPT_Enable_Pro_Loop_Fusion_Func_Limit; // Enable proactive loop fu
 extern INT32 WOPT_Enable_If_Merge_Limit;  // Limit number of if-merging transformations per function.
 extern INT32 WOPT_Enable_Tail_Dup_Limit;  // Limit number of tail-duplication transformations per function.
 extern INT32 WOPT_Tail_Dup_Max_Clone; // Limit code size bloats (in statement count)
+#ifdef TARG_ST
+BE_EXPORTED extern BOOL  WOPT_Enable_FPFSA; // Enables fix point flow sensitive analysis
+//TB
+BE_EXPORTED extern BOOL WOPT_Enable_Warn_Uninit;   // enable warning for detected uninitialized locals
+BE_EXPORTED extern BOOL WOPT_Enable_Tailmerge;   // enable tailmerge optimization
+BE_EXPORTED extern BOOL WOPT_Enable_Compare_Hoisting;   // enable hoisting of compare expression
+// FdF
+enum DOWHILE_CONV {
+  DOWHILE_CONV_NEVER,	 /* Never perform do-while conversion */
+  DOWHILE_CONV_FOR_SIZE, /* Perform do-while conversion if it reduces code size */
+  DOWHILE_CONV_FOR_PERF, /* Perform do-while conversion if this increase performance */
+  DOWHILE_CONV_ALWAYS	 /* Always perform do-while conversion */
+};
+BE_EXPORTED extern INT32 WOPT_Enable_DoWhile_Conversion;   // enable warning for detected uninitialized locals
+BE_EXPORTED extern BOOL WOPT_Enable_DoWhile_Conversion_Set;
+BE_EXPORTED extern BOOL WOPT_Enable_Flow_Simplification_In_Tailmerge;   // enable flow simplification in tailmerge optimization
+BE_EXPORTED extern INT32 WOPT_Pre_Small_Immediate; // Simple expressions derived from an IV with a
+                                                   // small immediate offset are not subject to PRE
+// FdF 20080528: PRE on Iload/Istore for zero offset.
+BE_EXPORTED extern UINT32 WOPT_Pre_LoadStore_offset; // Create ILoad/Istore with 0 offset,
+                                                     // if the nearest zero offset is lower than this value
+#endif
 
 
 #ifdef KEY

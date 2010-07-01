@@ -67,6 +67,11 @@
 #include <wn_fio.h>
 #include "opt_points_to.h"
 #include "fb_whirl.h"
+#ifdef TARG_ST
+#define NOT_SUPPORT_ST(expr)
+#else
+#define NOT_SUPPORT_ST(expr) expr
+#endif
 
 #define STACK_LENGTH 25
 #define DIM_OFFSET 56
@@ -1876,7 +1881,40 @@ lower_f77_record_items (WN *, WN *, WN *, WN *, WN *, WN *,
 			INT32 *, INT32 *, INT32, TY_IDX , INT64);
 
 /*  The following table gives the I/O mask code for each of the basic types.  */
-
+#ifdef TARG_ST
+//TB: extension reconfiguration: check that array accesses do not
+//overlap static counter
+#define fio_maskcode(t) \
+     ((t > MTYPE_STATIC_LAST) ? \
+       FmtAssert (FALSE, ("fio_maskcode: no access for dynamic MTYPE %d", (t))), 0 \
+     : \
+       fio_maskcode[t])
+#define fio_maskcode_set(t) \
+       FmtAssert (t <= MTYPE_STATIC_LAST, ("MTYPE_TO_PREG: no access for dynamic MTYPE %d", (t))), fio_maskcode[t]
+static INT32 fio_maskcode [MTYPE_STATIC_LAST + 1] = {
+  0,	/* MTYPE_UNKNOWN */
+  0,	/* MTYPE_B */
+  1,	/* MTYPE_I1 */
+  2,	/* MTYPE_I2 */
+  0,	/* MTYPE_I4 */
+  3,	/* MTYPE_I8 */
+  1,	/* MTYPE_U1 */
+  2,	/* MTYPE_U2 */
+  0,	/* MTYPE_U4 */
+  3,	/* MTYPE_U8 */
+  0,	/* MTYPE_F4 */
+  0,	/* MTYPE_F8 */
+  0,	/* MTYPE_F10 */
+  0,	/* MTYPE_F16 */
+  0,	/* MTYPE_STRING */
+  0,	/* MTYPE_FQ */
+  0,	/* MTYPE_M */
+  0,	/* MTYPE_C4 */
+  0,	/* MTYPE_C8 */
+  0,	/* MTYPE_CQ */
+  0	/* MTYPE_V */
+};
+#else
 static INT32 fio_maskcode [MTYPE_LAST + 1] = {
   0,	/* MTYPE_UNKNOWN */
   0,	/* MTYPE_B */
@@ -1907,7 +1945,7 @@ static INT32 fio_maskcode [MTYPE_LAST + 1] = {
   0,	/* MTYPE_I16 */
   0	/* MTYPE_U16 */
 };
-
+#endif
 
 
 typedef enum {
@@ -4321,12 +4359,12 @@ static WN *extract_calls ( WN * block, WN * tree )
       case INTRN_U8FQADRTMP:	dtype    = MTYPE_FQ;
 				loadaddr = TRUE;
 				break;
-
+#ifndef TARG_ST
       case INTRN_U4F16ADRTMP:
       case INTRN_U8F16ADRTMP:	dtype    = MTYPE_F16;
 				loadaddr = TRUE;
 				break;
-
+#endif
       case INTRN_U4C4ADRTMP:
       case INTRN_U8C4ADRTMP:	dtype    = MTYPE_C4;
 				loadaddr = TRUE;
@@ -4341,12 +4379,12 @@ static WN *extract_calls ( WN * block, WN * tree )
       case INTRN_U8CQADRTMP:	dtype    = MTYPE_CQ;
 				loadaddr = TRUE;
 				break;
-
+#ifndef TARG_ST
       case INTRN_U4C16ADRTMP:
       case INTRN_U8C16ADRTMP:	dtype    = MTYPE_C16;
 				loadaddr = TRUE;
 				break;
-
+#endif
       case INTRN_U4VADRTMP:
       case INTRN_U8VADRTMP:	WN_Delete ( tree );
 				WN_INSERT_BlockLast ( block, kid0 );
@@ -4382,11 +4420,11 @@ static WN *extract_calls ( WN * block, WN * tree )
       case INTRN_FQVALTMP:	dtype    = MTYPE_FQ;
 				loadaddr = FALSE;
 				break;
-
+#ifndef TARG_ST
       case INTRN_F16VALTMP:	dtype    = MTYPE_F16;
 				loadaddr = FALSE;
 				break;
-
+#endif
       case INTRN_C4VALTMP:	dtype    = MTYPE_C4;
 				loadaddr = FALSE;
 				break;
@@ -4398,11 +4436,11 @@ static WN *extract_calls ( WN * block, WN * tree )
       case INTRN_CQVALTMP:	dtype    = MTYPE_CQ;
 				loadaddr = FALSE;
 				break;
-
+#ifndef TARG_ST
       case INTRN_C16VALTMP:	dtype    = MTYPE_C16;
 				loadaddr = FALSE;
 				break;
-
+#endif
       default:			return (tree);
 
     }
@@ -4431,8 +4469,11 @@ static WN *extract_calls ( WN * block, WN * tree )
 	  Fail_FmtAssertion ("extract_calls: more than 2 return registers");
       }
       else
+#ifdef TARG_ST
+	FmtAssert(FALSE,("Get_Return_Mtypes/Pregs shouldn't be called"));
+#else
 	Get_Return_Pregs ( dtype, MTYPE_UNKNOWN, &reg1, &reg2 );
-
+#endif
       WN_INSERT_BlockLast ( block, WN_Stid ( dtype, 0, temp, ttype,
 				   WN_LdidPreg ( dtype, reg1 )));
 
@@ -4679,7 +4720,11 @@ static void process_iostat ( WN **block1, WN **block2, BOOL flag, WN *iostat,
   }
 
   else
+#ifdef TARG_ST
+    FmtAssert(FALSE,("Get_Return_Mtypes/Pregs shouldn't be called"));
+#else
     Get_Return_Pregs ( MTYPE_I4, MTYPE_UNKNOWN, &rreg1, &rreg2 );
+#endif
 
   pregst = MTYPE_To_PREG ( MTYPE_I4 );
   pregnum = Create_Preg ( MTYPE_I4, "io_status");
@@ -4935,7 +4980,11 @@ static void process_inqvar ( WN ** block, WN * var)
     }
 
     else
+#ifdef TARG_ST
+      FmtAssert(FALSE,("Get_Return_Mtypes/Pregs shouldn't be called"));
+#else
       Get_Return_Pregs ( MTYPE_I4, MTYPE_UNKNOWN, &rreg1, &rreg2 );
+#endif
 
     pregst = MTYPE_To_PREG ( MTYPE_I4 );
     pregnum = Create_Preg ( MTYPE_I4, "io_status");

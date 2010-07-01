@@ -33,18 +33,18 @@ set (IR_COMMON_SRCS
 "../common/com/wn_util.cxx"
 "../common/com/wutil.cxx"
 "../common/com/xstats.cxx"
-"../common/com/x8664/config_elf_targ.cxx"
-"../common/com/x8664/config_targ.cxx"
-"../common/com/x8664/targ_const.cxx"
-"../common/com/x8664/targ_sim.cxx"
-"../common/com/x8664/config_host.c"
-"../common/com/x8664/config_platform.c"
+"../common/com/${BUILD_TARGET_DIR}/config_elf_targ.cxx"
+"../common/com/${BUILD_TARGET_DIR}/config_targ.cxx"
+"../common/com/${BUILD_TARGET_DIR}/targ_const.cxx"
+"../common/com/${BUILD_TARGET_DIR}/targ_sim.cxx"
+"../common/com/${BUILD_TARGET_DIR}/config_host.c"
+"../common/com/${BUILD_TARGET_DIR}/config_platform.c"
 )
 
 INCLUDE_DIRECTORIES(
                     .
 					../common/com
-					../common/com/x8664
+					../common/com/${BUILD_TARGET_DIR}
 					../common/util
 					../ipa/common
 					../ipa/local

@@ -90,6 +90,7 @@
 #endif
 
 class CG_LOOP;
+class CG_LOOP_DEF;
 
 // Define BASE_UPDATE kind
 enum BASE_UPDATE {
@@ -108,6 +109,8 @@ SWP_Loop_Init_Fini (BOOL is_doloop,
                     OPS *prolog_ops,
 		    OPS *body_ops,
 		    OPS *epilog_ops);
+
+extern INT32 SWP_Max_Slots_Per_Cycle();
 
 extern BOOL 
 Prepare_Loop_For_SWP_1 (CG_LOOP& cl, bool trace);

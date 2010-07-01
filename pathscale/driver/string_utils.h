@@ -62,6 +62,7 @@ extern boolean has_blank (const char *s);
 extern char *expand_template_string (const char *template, const char *arg);
 
 /* return true if strings are identical */
+#define same_string(x,y)	(strcmp(x,y) == 0)
 #define same_string_prefix(x,y)	(strncmp(x,y,strlen(y)) == 0)
 
 /* Replace old_pattern in base string with new_pattern */

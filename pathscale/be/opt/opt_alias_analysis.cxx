@@ -126,6 +126,52 @@ extern "C" {
 #include "bitset.h"
 }
 
+#ifdef TARG_ST
+// [CG] These functions are locally used here and have been removed from
+// the ALIAS_RULE class which is is be/com. It avoids interdependency link
+// time problems between wopt and be under win32.
+static const BS *Alias_Set_Indirect(const ALIAS_RULE *rule, const OPT_STAB *aux_stab);
+static const BS *Alias_Set_Call_By_Value(const ALIAS_RULE *rule, const OPT_STAB *aux_stab);
+static const BS *Alias_Set_Call_By_Ref(const ALIAS_RULE *rule, const OPT_STAB *aux_stab);
+static const BS *Alias_Set_Asm(const ALIAS_RULE *rule, const OPT_STAB *aux_stab);
+#endif
+
+#ifdef TARG_ST
+// ======================================================================
+// [CG 2005/01/06]: Support for fix point FSA.
+//
+// FPFSA() is true if the fix point flow sensitive analysis was enabled
+// with the WOPT_Enable_FPFSA flag.
+// This analysis is a replacement for the original FSA recursive analysis
+// that exhibit bugs in the presence of non trivial induction variables.
+// See bug 1-6-0-B/10.
+// FPFSA is enabled by default.
+//
+// The FPFSA algorithm first enumerate all variables versions in the use-def chains
+// of a memory access and apply a fix point optimistic algorithm on the
+// points to associated with the versions.
+// Once the variable versions points to are computed the Analyze_Base_Flow_Sensitive()
+// method is called to retrieve the points to for the memory access.
+// This is implemented in Analyze_Base_Flow_Sensitive_Fix_Point() which must be called
+// in place of Analyze_Base_Flow_Sensitive if FPFSA is enabled.
+// The FPFSA computation is done by Compute_FSA() if FPFSA() is true, otherwise
+// the original recursive FSA computation is performed.
+//
+// Implementation:
+//     Analyze_Base_Flow_sensitive
+//     Simplify_Pointer_Ver
+//    Analyze_Base_Flow_Sensitive_Fix_Point
+//   Compute_FSA_stmt_or_expr
+//  Compute_FSA_dominator_order
+// Compute_FSA
+//
+// ======================================================================
+static BOOL
+FPFSA() {
+  return WOPT_Enable_FPFSA;
+}
+#endif
+
 
 // ======================================================================
 //
@@ -407,6 +453,16 @@ void OPT_STAB::Simplify_Pointer_Arith(WN *wn_expr, POINTS_TO *ai)
   case OPR_NMSUB:
   case OPR_CVT:
   case OPR_CVTL:
+#ifdef TARG_ST
+  // [CG]: Assume intrinsic_op returns arithmetic.
+  // This allow fixing of alias information when we
+  // have a ILOAD(INTRINSIC_OP) ref bug 1-4-0-B/ddts/17276.
+  // The effect of this is that Adjust_vsym does not create a
+  // default vsym when there is an obvious access to a variable
+  // through LDA. The current Adjust_vsym() scheme is really
+  // instable and should be reworked as noted below (RK 981021).
+  case OPR_INTRINSIC_OP:
+#endif
     ai->Set_expr_kind(EXPR_IS_INT);
     ai->Set_base_kind(BASE_IS_UNKNOWN);
     ai->Set_ofst_kind(OFST_IS_UNKNOWN);
@@ -427,11 +483,22 @@ void OPT_STAB::Simplify_Pointer_Arith(WN *wn_expr, POINTS_TO *ai)
 
 //  Follow the DU Chain to expand the pointer expresssion.
 //
+#ifdef TARG_ST
+// In FPFSA we allow recomputation of points to.
+static BOOL force_Simplify_Pointer_Ver;
+#endif
 void OPT_STAB::Simplify_Pointer_Ver(VER_ID ver, POINTS_TO *ai)
 {
   INT32 vtype = Ver_stab_entry(ver)->Type();
   POINTS_TO  *pt = Ver_stab_entry(ver)->Points_to();
   
+#ifdef TARG_ST
+  // In FPFSA we allow the points to to be already allocated
+  // but recomputed if the force flag is set for the first level of recursion.
+  if (FPFSA() && force_Simplify_Pointer_Ver)
+    force_Simplify_Pointer_Ver = false;
+  else
+#endif
   //  There is already some information associated with this version.
   //  Simply return it.
   if (pt) {
@@ -474,12 +541,21 @@ void OPT_STAB::Simplify_Pointer_Ver(VER_ID ver, POINTS_TO *ai)
       if (def) {
 	FmtAssert ( WN_operator(def) == OPR_STID,
 		    ("Simplify_Pointer_Ver: def must be STID.") );
+#ifdef TARG_ST
+	// If in FPFSA we may have already allocated it
+	if (!FPFSA() || pt == NULL)
+#endif
+
 	pt = CXX_NEW(POINTS_TO, &_ver_pool);
 	pt->Init();
 	pt->Set_expr_kind(EXPR_IS_BEING_PROCESSED);
 	Ver_stab_entry(ver)->Set_points_to(pt);
 	Simplify_Pointer(WN_kid0(def), ai);
 	pt->Copy_fully(ai);
+#ifdef TARG_ST
+	// If in FPFSA we don't need this
+	if (!FPFSA())
+#endif
 	// reset pt IS_BEING_PROCESSED
 	if (pt->Expr_kind() == EXPR_IS_BEING_PROCESSED) {
 	  pt->Set_expr_kind(EXPR_IS_UNKNOWN);
@@ -500,6 +576,10 @@ void OPT_STAB::Simplify_Pointer_Ver(VER_ID ver, POINTS_TO *ai)
       POINTS_TO summary_pt;
     
       // allocate a POINTS_TO to the PHI function
+#ifdef TARG_ST
+      // If in FPFSA we may have already allocated it
+      if (!FPFSA() || pt == NULL)
+#endif
       pt = CXX_NEW(POINTS_TO, &_ver_pool);
       pt->Init();
       pt->Set_expr_kind(EXPR_IS_BEING_PROCESSED);
@@ -520,7 +600,10 @@ void OPT_STAB::Simplify_Pointer_Ver(VER_ID ver, POINTS_TO *ai)
 	  Simplify_Pointer_Ver(opnd_vid, &pt2);
 	  opnd_pt = &pt2;
 	} 
-
+#ifdef TARG_ST
+	// If in FPFSA we don't need this
+	if (!FPFSA())
+#endif
 	// Only accepts EXPR_IS_BEING_PROCESSED for the phi opnds defined
 	// in BBs dominated by the phi result.  This guarantees
 	// EXPR_IS_BEING_PROCESSED is resolved in the dominator tree order
@@ -697,7 +780,9 @@ OPT_STAB::Collect_f90_pointer_info(POINTS_TO *pt, const WN *wn)
 
   switch (WN_operator(wn)) {
   case OPR_ILOAD:
+#ifndef TARG_ST
   case OPR_ILOADX:
+#endif
   case OPR_ILDBITS:
     addr_ty = WN_load_addr_ty(wn);
     break;
@@ -728,9 +813,11 @@ void OPT_STAB::Analyze_Base_Flow_Free(POINTS_TO *pt, WN *wn)
   case OPR_MLOAD:
     Simplify_Pointer(WN_kid0(wn), pt);
     break;
+#ifndef TARG_ST
   case OPR_ILOADX:
     Simplify_Pointer(WN_kid1(wn), pt);
     break;
+#endif
   case OPR_ISTORE:
   case OPR_ISTBITS:
   case OPR_MSTORE:
@@ -747,6 +834,476 @@ void OPT_STAB::Analyze_Base_Flow_Free(POINTS_TO *pt, WN *wn)
   Update_From_Restricted_Map(wn, pt);
 }
 
+#ifdef TARG_ST
+// ======================================================================
+// [CG 2005/01/06]: Implementation of FPFSA, fix point flow sensitive analysis
+// of pointers.
+//
+// Analyze_Base_Flow_Sensitive_Fix_Point(POINTS_TO *pt, WN *wn)
+// This function must be called in replacement of Analyze_Base_Flow_Sensitive()
+// when FPFSA is enabled. It returns the computed points to for the given
+// wn which must be an indirect memory access.
+//
+// VER_ID_VISITOR class is an helper class that visits the SSA graph variable
+// versions following the use-def chains of pointer expressions. 
+// It visits the variables versions the same way as Analyze_Base_Flow_sensitive
+// does.
+// It is used to detect the set of variables versions that must be considered for
+// the FSA algorithm.
+//   VER_ID_VISITOR::Visit(T_FUNCTION function, WN *wn)
+//   Visits the set of VER_ID in the use-def chains of the memory access, it
+//   apply the class function for each encountered VER_ID.
+//   VER_ID_VISITOR::Cycle_found()
+//   Returns true if a cycle was found during the visit.
+//   
+// ======================================================================
+typedef std::vector<VER_ID, mempool_allocator<VER_ID> > VER_ID_VECTOR;
+
+// ========================================
+// VER_ID_VISITOR class implementation
+//
+class VER_ID_VISITOR {
+public:
+  VER_ID_VISITOR(OPT_STAB *opt_stab) : 
+    opt_stab_(opt_stab), 
+    visited_(opt_stab->Ver_stab()->Size(),0), 
+    cycle_found_(0) {};
+  template <class T_FUNCTION>
+  void Visit(T_FUNCTION function, WN *wn);
+  BOOL Cycle_found() const { return cycle_found_; }
+private:
+  template <class T_FUNCTION>
+  void Visit_Pointer_Ver(T_FUNCTION function, VER_ID ver);
+  template <class T_FUNCTION>
+  void Visit_Pointer(T_FUNCTION function, WN *wn_addr);
+  template <class T_FUNCTION>
+  void Visit_Pointer_Arith(T_FUNCTION function, WN *wn_expr);
+  std::vector<bool, mempool_allocator<bool> > visited_;
+  OPT_STAB *opt_stab_;
+  BOOL cycle_found_;
+};
+
+
+template <class T_FUNCTION> void
+VER_ID_VISITOR::Visit_Pointer_Ver(T_FUNCTION function, VER_ID ver_id)
+{
+  // Skip if already visited and mark cycle found
+  if (visited_[ver_id] != 0) {
+    cycle_found_ = true;
+    return;
+  }
+  visited_[ver_id] = 1;
+  
+  INT32 vtype = opt_stab_->Ver_stab_entry(ver_id)->Type();
+  switch (vtype) {
+  case ENTRY_STMT:
+    break;
+  case WHIRL_STMT: 
+    {
+      WN *def = opt_stab_->Ver_stab_entry(ver_id)->Wn();
+      if (def) {
+	Visit_Pointer(function, WN_kid0(def));
+      }
+    } 
+    break;
+  case PHI_STMT:
+    {
+      INT32 in_degree = opt_stab_->Ver_stab_entry(ver_id)->Bb()->Pred()->Len();
+      PHI_NODE *phi = opt_stab_->Ver_stab_entry(ver_id)->Phi();
+      for(INT i = 0; i < in_degree; i++) {
+	VER_ID opnd_vid = phi->Opnd(i);
+	Visit_Pointer_Ver(function, opnd_vid);
+      }
+    }
+    break;
+  case CHI_STMT:
+    if (opt_stab_->Ver_stab_entry(ver_id)->Synonym()) {
+      Visit_Pointer_Ver(function, opt_stab_->Ver_stab_entry(ver_id)->Synonym());
+    }
+    break;
+  default:
+    Warn_todo("unknown ver type");
+  }  
+  function(ver_id);
+}
+
+template <class T_FUNCTION> void
+VER_ID_VISITOR::Visit_Pointer_Arith(T_FUNCTION function, WN *wn_expr)
+{
+  switch (WN_operator(wn_expr)) {
+  case OPR_LDBITS:
+  case OPR_ILDBITS:
+  case OPR_LDID:
+  case OPR_ILOAD:
+    {
+      TY_IDX ty = WN_ty(wn_expr);
+      if (TY_kind(ty) == KIND_POINTER) {
+	Visit_Pointer(function, wn_expr);
+      }
+    }
+    break; 
+  case OPR_LDA:
+  case OPR_ARRAY:
+    Visit_Pointer(function, wn_expr);
+    break;
+  case OPR_PAREN:
+  case OPR_NEG:
+    Visit_Pointer_Arith(function, WN_kid0(wn_expr));
+    break;
+  case OPR_ADD:
+  case OPR_SUB: 
+    Visit_Pointer_Arith(function, WN_kid0(wn_expr));
+    Visit_Pointer_Arith(function, WN_kid1(wn_expr));
+    break;
+  default:
+    break;
+  }
+}
+
+template <class T_FUNCTION> void
+VER_ID_VISITOR::Visit_Pointer(T_FUNCTION function, WN *wn_addr)
+{
+  switch (WN_operator(wn_addr)) {
+  case OPR_ARRAY:
+    Visit_Pointer(function, WN_kid0(wn_addr));
+    break;
+  case OPR_LDBITS:
+  case OPR_LDID:
+    {
+      VER_ID ver = WN_ver(wn_addr);
+      Visit_Pointer_Ver(function, ver);
+    }
+    break;
+  case OPR_ADD:  
+  case OPR_SUB: 
+  case OPR_NEG:
+    Visit_Pointer_Arith(function, wn_addr);
+    break;
+  case OPR_CVT:
+  case OPR_PAREN:
+    Visit_Pointer(function, WN_kid0(wn_addr));
+    break;
+  default:
+    break;
+  }     
+}
+
+template <class T_FUNCTION> void
+VER_ID_VISITOR::Visit(T_FUNCTION function, WN *wn)
+{
+  switch (WN_operator(wn)) {
+  case OPR_ILDBITS:
+  case OPR_ILOAD:
+  case OPR_MLOAD:
+    Visit_Pointer(function, WN_kid0(wn));
+    break;
+  case OPR_ISTORE:
+  case OPR_ISTBITS:
+  case OPR_MSTORE:
+    Visit_Pointer(function, WN_kid1(wn));
+    break;
+  case OPR_ILOADX:
+  case OPR_ISTOREX:
+    FmtAssert ( FALSE, ("ILOADX/ISTOREX not handled.") );
+    break;
+  }
+}
+
+// ========================================
+// Some helper function classes to apply on VER_ID
+// for debugging/tracing purpose
+// PRINT_VER_ID: prints a ver_id 
+// PRINT_VER_POINTS_TO: prints a ver_id and its points to information
+// CHECK_VER_POINTS_TO_IS_PROCESSED: checks that after FPFSA the
+// points to information for a VER_ID is correctly finalized
+//
+
+struct PRINT_VER_ID {
+  void operator() (VER_ID ver_id) { fprintf(TFile, "(%d)", ver_id); }
+};
+
+struct PRINT_VER_POINTS_TO {
+  OPT_STAB *opt_stab_;
+  PRINT_VER_POINTS_TO(OPT_STAB *opt_stab) : opt_stab_(opt_stab) {}
+  void operator() (VER_ID ver_id) { 
+    fprintf(TFile, "points to for ver %d:", ver_id);
+    POINTS_TO *pt = opt_stab_->Ver_stab_entry(ver_id)->Points_to();
+    if (pt == NULL) fprintf(TFile, "<null>\n");
+    else pt->Print(TFile);
+  }
+};
+
+struct CHECK_VER_POINTS_TO_IS_PROCESSED {
+  OPT_STAB *opt_stab_;
+  CHECK_VER_POINTS_TO_IS_PROCESSED(OPT_STAB *opt_stab) : opt_stab_(opt_stab) {}
+  void operator() (VER_ID ver_id) { 
+    POINTS_TO *pt = opt_stab_->Ver_stab_entry(ver_id)->Points_to();
+    FmtAssert(pt != NULL, 
+	      ("Points to is <null> for ver_id %d\n", ver_id));
+    FmtAssert(pt->Expr_kind() != EXPR_IS_ANY,
+	      ("Points to is ANY for ver_id %d\n", ver_id));
+    FmtAssert(pt->Expr_kind() != EXPR_IS_BEING_PROCESSED,
+	      ("Points to is BEING_PROCESSED for ver_id %d\n", ver_id));
+  }
+};
+
+
+// ========================================
+// Some helper function classes to apply on VER_ID
+// used by the algorithm
+struct PUSH_VER_ID_NO_POINTS_TO {
+  VER_ID_VECTOR &vector_;
+  OPT_STAB *opt_stab_;
+  PUSH_VER_ID_NO_POINTS_TO(VER_ID_VECTOR &vector, OPT_STAB *opt_stab) : 
+    vector_(vector),
+    opt_stab_(opt_stab) {}
+  void operator() (VER_ID ver_id) {
+    POINTS_TO *pt  = opt_stab_->Ver_stab_entry(ver_id)->Points_to();
+    if (pt == NULL) vector_.push_back(ver_id); 
+  }
+};
+
+
+// ========================================
+// The principal helper function class for VER_ID used in the
+// FPFSA computation.
+// 
+// UPDATE_VER_POINTS_TO
+// Performs the update of the points to associated with a ver_id.
+// The updating is done by invoking the Simplify_Pointer_Ver function.
+//
+//
+struct UPDATE_VER_POINTS_TO {
+  BOOL *changed_;
+  OPT_STAB *opt_stab_;
+  UPDATE_VER_POINTS_TO(OPT_STAB *opt_stab, BOOL *changed) :
+    opt_stab_(opt_stab),
+    changed_(changed) {}
+  void operator() (VER_ID ver_id);
+};
+
+//
+// point_to_equiv()
+//
+// Returns TRUE if the two points to are equivalent.
+// This is used for the termination test.
+// This should be part of the POINTS_TO interface.
+//
+static BOOL
+points_to_equiv(POINTS_TO *this_pt, POINTS_TO *pt) {
+  if (this_pt->Expr_kind() == pt->Expr_kind() &&
+      this_pt->Base_kind() == pt->Base_kind() &&
+      this_pt->Ofst_kind() == pt->Ofst_kind() &&
+      this_pt->Base() == pt->Base() &&
+      this_pt->Byte_Ofst() == pt->Byte_Ofst() &&
+      this_pt->Byte_Size() == pt->Byte_Size() &&
+      this_pt->Bit_Ofst() == pt->Bit_Ofst() &&
+      this_pt->Bit_Size() == pt->Bit_Size() &&
+      this_pt->Attr() == pt->Attr() &&
+      this_pt->Based_sym() == pt->Based_sym() &&
+      this_pt->Alias_class() == pt->Alias_class() &&
+      this_pt->Ip_alias_class() == pt->Ip_alias_class() &&
+      this_pt->Ty() == pt->Ty()) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+void
+UPDATE_VER_POINTS_TO::operator() (VER_ID ver_id)
+{
+  POINTS_TO *stab_pt = opt_stab_->Ver_stab_entry(ver_id)->Points_to();
+  POINTS_TO old_pt;
+  POINTS_TO new_pt;
+  BOOL has_changed = FALSE;
+  Is_True(stab_pt != NULL, ("unexpected null stab points to for ver_id %d", ver_id));
+
+  old_pt.Copy_fully(stab_pt);
+  
+#if Is_True_On
+  if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+    fprintf(TFile, " [UPDATE_VER_POINTS_TO() for ver_id %d:\n", ver_id);
+    fprintf(TFile, "  ...old_pt:");
+    old_pt.Print(TFile);
+  }
+#endif
+  
+  new_pt.Init();
+  
+  // Force recomputation of version points to
+  force_Simplify_Pointer_Ver = true;
+  opt_stab_->Simplify_Pointer_Ver(ver_id, &new_pt);
+
+#if Is_True_On
+  if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+    fprintf(TFile, "  ...new pt for ver_id %d:", ver_id);
+    new_pt.Print(TFile);
+  }
+#endif
+
+  // Mark if changed
+  if (!points_to_equiv(&old_pt, &new_pt)) {
+    has_changed = TRUE;
+#if Is_True_On
+    if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+      fprintf(TFile, "  ...pt changed for ver_id %d\n", ver_id);
+    }
+#endif
+  }
+
+  // Apply enlarging operator to avoid infinite iteration.
+  // Enlarge if expression base is same but offset/size different
+  if (has_changed &&
+      old_pt.Expr_kind() == new_pt.Expr_kind() &&
+      old_pt.Base_kind() == new_pt.Base_kind() &&
+      old_pt.Ofst_kind() == new_pt.Ofst_kind() &&
+      old_pt.Expr_kind() == EXPR_IS_ADDR &&
+      (old_pt.Base_kind() == BASE_IS_FIXED ||
+       old_pt.Base_kind() == BASE_IS_DYNAMIC) &&
+      old_pt.Base() == new_pt.Base()) {
+    new_pt.Set_ofst_kind(OFST_IS_UNKNOWN);
+#if Is_True_On
+    if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+      fprintf(TFile, "  ...enlarged points to  for ver_id %d:", ver_id);
+      new_pt.Print(TFile);
+    }
+#endif
+  }
+  
+  // Update the points to information in the vesrion table
+  // in case it was not done by Simplify_Pointer_Ver or
+  // the enlarging operator wa applyied
+  stab_pt->Copy_fully(new_pt);
+
+  // Update the changed pointer
+  if (has_changed) *changed_ = TRUE;
+
+#if Is_True_On
+  if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+    fprintf(TFile, " ]UPDATE_VER_POINTS_TO()\n");
+  }
+#endif
+}
+
+//========================================
+// Analyze_Base_Flow_Sensitive_Fix_Point()
+// implementation
+void OPT_STAB::Analyze_Base_Flow_Sensitive_Fix_Point(POINTS_TO *pt, WN *wn)
+{
+  POINTS_TO ai;
+  int n_iter = 0;
+  INT ver_size = Ver_stab()->Size();
+
+#if Is_True_On
+  if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+    fprintf(TFile, " [Analyze_Base_Flow_Sensitive_Fix_Point():\n");
+    fprintf(TFile, "  ...pt:");
+    pt->Print(TFile);
+    fprintf(TFile, "  ...wn:");
+    fdump_tree_no_st(TFile, wn);
+  }
+#endif
+
+  /* Visit in DFS order the set of version id. */
+  VER_ID_VISITOR visitor(this);
+  VER_ID_VECTOR ver_id_vector;
+  visitor.Visit(PUSH_VER_ID_NO_POINTS_TO(ver_id_vector, this), wn);
+#if Is_True_On
+  if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+    fprintf(TFile, "  ...enumerated ver id to process in DFS order: ");
+    for_each(ver_id_vector.begin(), ver_id_vector.end(), PRINT_VER_ID());
+    fprintf(TFile, "\n");
+    fprintf(TFile, "  ...cycle_found? %d\n", visitor.Cycle_found());
+  }
+#endif
+
+  /* If all ver points to are already processed, invoke recursive FSA. */
+  if (ver_id_vector.size() == 0) {
+#if Is_True_On
+    if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+      fprintf(TFile, "  ...all ver points to are available, invoke recursive FSA\n");
+    }
+#endif
+    Analyze_Base_Flow_Sensitive(pt, wn);
+    return;
+  }
+  
+  /* If no cycle was found, simply invoke recursive FSA. */
+  if (!visitor.Cycle_found()) {
+#if Is_True_On
+    if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+      fprintf(TFile, "  ...no cycle found, invoke recursive FSA\n");
+    }
+#endif
+    Analyze_Base_Flow_Sensitive(pt, wn);
+    return;
+  }
+
+  /* Initialize version list with initial points to. */
+  for (VER_ID_VECTOR::iterator iter = ver_id_vector.begin(); iter != ver_id_vector.end(); iter++) {
+    POINTS_TO *pt = Ver_stab_entry(*iter)->Points_to();
+    Is_True(pt == NULL, ("Unexpected non NULL points to in version list"));
+    pt = CXX_NEW(POINTS_TO, &_ver_pool);
+    Ver_stab_entry(*iter)->Set_points_to(pt);
+    pt->Init();
+    pt->Set_expr_kind(EXPR_IS_BEING_PROCESSED);
+  }
+  
+#if Is_True_On
+  if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+    fprintf(TFile, "  ...initial ver points to in DFS order: {\n");
+    for_each(ver_id_vector.begin(), ver_id_vector.end(), PRINT_VER_POINTS_TO(this));
+    fprintf(TFile, "  ...}\n");
+  }
+#endif
+
+  BOOL changed;
+  do {
+    n_iter++;
+#if Is_True_On
+    if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+      fprintf(TFile, "  ...iteration %d\n", n_iter);
+    }
+#endif
+    /* Update the points_to for the version ids. */
+    changed = false;
+    for_each(ver_id_vector.begin(), ver_id_vector.end(), UPDATE_VER_POINTS_TO(this, &changed));
+    if (changed) {
+#if Is_True_On
+      if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+	fprintf(TFile, "  ...updated ver and points to in DFS order after iteration %d: {\n", n_iter);
+	for_each(ver_id_vector.begin(), ver_id_vector.end(), PRINT_VER_POINTS_TO(this));
+	fprintf(TFile, "  ...}\n");
+      }
+#endif
+    }
+  } while(changed);
+
+#if Is_True_On
+  if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+    fprintf(TFile, "  ...final points to after %d iterations: {\n", n_iter);
+    for_each(ver_id_vector.begin(), ver_id_vector.end(), PRINT_VER_POINTS_TO(this));
+    fprintf(TFile, "  ...}\n");
+  }
+#endif
+
+#if Is_True_On
+  /* Check that all ver points to are correctly processed. */
+  for_each(ver_id_vector.begin(), ver_id_vector.end(), CHECK_VER_POINTS_TO_IS_PROCESSED(this));
+#endif
+    
+  /* Now perform the recursive flow sensitive analysis. */
+  Analyze_Base_Flow_Sensitive(pt, wn);
+  
+#if Is_True_On
+  if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+    fprintf(TFile, "  ...iterations=%d, resulting pt:", n_iter);
+    pt->Print(TFile);
+    fprintf(TFile, " ]Analyze_Base_Flow_Sensitive_Fix_Point\n");
+  }
+#endif
+}
+#endif
 
 // Analyze indirect load/store with var bases.
 //  -- depending on information on DU-chain
@@ -859,7 +1416,7 @@ OPT_STAB::Find_Based_Pointer(WN *wn, INT *depth)
 	AUX_ID aux_id = Ver_stab_entry(ver_id)->Aux_id();
 	ST *st = St(aux_id);
 	if (ST_sclass(st) != SCLASS_REG) {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	  // SiCortex 5409: A temporary var will alias with others, so
 	  // recursively look up its definition to determine the base.
 	  if (ST_is_temp_var(st) &&
@@ -908,7 +1465,7 @@ OPT_STAB::Find_Based_Pointer(WN *wn, INT *depth)
       return tmp_st;
     }
     return NULL;
-
+#ifndef TARG_ST
   case OPR_ILOADX:
     if (Alias_Pointer_Disjoint) {
       ST *tmp_st = Find_Based_Pointer(WN_kid1(wn),depth);
@@ -916,7 +1473,7 @@ OPT_STAB::Find_Based_Pointer(WN *wn, INT *depth)
       return tmp_st;
     }
     return NULL;
-
+#endif
   case OPR_ADD:  
   case OPR_SUB: 
     ST *based_pointer0, *based_pointer1;
@@ -1622,8 +2179,11 @@ void
 OPT_STAB::Update_aux_id_list(AUX_ID vp_idx) 
 {
   // update the aux_id list for RVI 
-
+#ifdef TARG_ST
+  const BS *alias_set = Alias_Set_Indirect(Rule(), this); // all scalars + virtuals
+#else
   const BS *alias_set = Rule()->Alias_Set_Indirect(this); // all scalars + virtuals
+#endif
   AUX_ID_LIST *alist = CXX_NEW(AUX_ID_LIST, mem_pool);
   alist->Clear();
   aux_stab[vp_idx].Set_aux_id_list(alist);
@@ -1639,7 +2199,7 @@ OPT_STAB::Update_aux_id_list(AUX_ID vp_idx)
        }
 }
 
-#ifdef KEY
+#if defined (KEY) && !defined(TARG_ST)
 extern BOOL ST_Has_Dope_Vector(ST *);
 
 // ======================================================================
@@ -2008,7 +2568,7 @@ OPT_STAB::Adjust_vsym(AUX_ID vp_idx, OCC_TAB_ENTRY *occ)
   if (vp_idx == Default_vsym())
     pt->Set_default_vsym();
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   Is_True(WOPT_Enable_Vsym_Unique || vp_idx == Default_vsym() ||
           pt->Base_is_fixed() || pt->Based_sym() ||
           aux_stab[vp_idx].Unique_vsym(),
@@ -2064,6 +2624,7 @@ void OPT_STAB::Allocate_mu_chi_and_virtual_var(WN *wn, BB_NODE *bb)
   case OPR_ILOAD:
   case OPR_ILDBITS:
   case OPR_MLOAD:
+#ifndef TARG_ST
   case OPR_ILOADX:
 #ifdef KEY
     if (WOPT_Enable_New_Vsym_Allocation) {
@@ -2082,6 +2643,7 @@ void OPT_STAB::Allocate_mu_chi_and_virtual_var(WN *wn, BB_NODE *bb)
       occ = Enter_occ_tab(wn , vp_idx, &pt);
     } else
 #endif
+#endif
     {
       vp_idx = Identify_vsym(wn);
       occ = Enter_occ_tab(wn, vp_idx);
@@ -2093,6 +2655,7 @@ void OPT_STAB::Allocate_mu_chi_and_virtual_var(WN *wn, BB_NODE *bb)
   case OPR_ISTORE:
   case OPR_ISTBITS:
   case OPR_MSTORE:
+#ifndef TARG_ST
   case OPR_ISTOREX:
 #ifdef KEY
     if (WOPT_Enable_New_Vsym_Allocation) {
@@ -2111,6 +2674,7 @@ void OPT_STAB::Allocate_mu_chi_and_virtual_var(WN *wn, BB_NODE *bb)
       occ = Enter_occ_tab(wn , vp_idx, &pt);
     } else
 #endif
+#endif
     {
       vp_idx = Identify_vsym(wn);
       occ = Enter_occ_tab(wn, vp_idx);
@@ -2126,7 +2690,7 @@ void OPT_STAB::Allocate_mu_chi_and_virtual_var(WN *wn, BB_NODE *bb)
     break;
 
   case OPR_INTRINSIC_OP:
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   case OPR_PURE_CALL_OP:
 #endif
     // no more mu-list for INTRINSIC_OP
@@ -2134,7 +2698,7 @@ void OPT_STAB::Allocate_mu_chi_and_virtual_var(WN *wn, BB_NODE *bb)
 
   case OPR_PARM:
     if ( WN_Parm_By_Reference(wn) ) {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       if (WOPT_Enable_New_Vsym_Allocation) {
         POINTS_TO pt;
         pt.Init();
@@ -2193,7 +2757,7 @@ void OPT_STAB::Allocate_mu_chi_and_virtual_var(WN *wn, BB_NODE *bb)
   case OPR_PREFETCH:
   case OPR_RETURN:
   case OPR_RETURN_VAL:
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   case OPR_GOTO_OUTER_BLOCK:
 #endif
     Enter_occ_tab(wn, 0);
@@ -2291,8 +2855,11 @@ OPT_STAB::Generate_call_mu_chi_by_ref(WN *wn, ST *call_st,
 {
   AUX_ID idx;
   const BS *alias_set;
-
+#ifdef TARG_ST
+  alias_set = Alias_Set_Call_By_Ref(Rule(), this);
+#else
   alias_set = Rule()->Alias_Set_Call_By_Ref(this);
+#endif
   for (idx = BS_Choose( alias_set );
        idx != (AUX_ID) BS_CHOOSE_FAILURE;
        idx = BS_Choose_Next ( alias_set, idx ))  {
@@ -2302,9 +2869,20 @@ OPT_STAB::Generate_call_mu_chi_by_ref(WN *wn, ST *call_st,
 	!Aux_stab_entry(idx)->Is_virtual() )
       continue;
     
+#ifdef TARG_ST
+    READ_WRITE how;
+    if (WN_operator(wn) == OPR_INTRINSIC_CALL) {
+      how = Rule()->Aliased_with_Intrinsic_Call(wn,							 aux_stab[idx].Points_to());
+    } else {
+      how = Rule()->Aliased_with_Call(call_st,
+				      WN_call_flag(wn),
+				      aux_stab[idx].Points_to());
+    }
+#else
     READ_WRITE how = Rule()->Aliased_with_Call(call_st,
 					       WN_call_flag(wn),
 					       aux_stab[idx].Points_to());
+#endif
     
     // skip the following if function has no parm_mod
     if (how != READ_AND_WRITE)
@@ -2319,7 +2897,7 @@ OPT_STAB::Generate_call_mu_chi_by_ref(WN *wn, ST *call_st,
 	  }
 	}
       }
-#ifdef KEY // bug 8607
+#if defined( KEY) && !defined(TARG_ST) // bug 8607
     if (WN_operator(wn) == OPR_CALL)
       if (WN_st(wn) && strcmp(ST_name(WN_st(wn)), "_Copyin" ) == 0)  {
 	/* if (Aux_stab_entry(idx)->Is_real_var())*/ {
@@ -2338,7 +2916,7 @@ OPT_STAB::Generate_call_mu_chi_by_ref(WN *wn, ST *call_st,
 	}
       }
 #endif
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 //Bug 1976
     if ( Aux_stab_entry(idx)->St() && IS_FORTRAN && (idx != Return_vsym() || idx != Default_vsym())){
 
@@ -2426,7 +3004,7 @@ OPT_STAB::Has_read_only_parm(AUX_ID idx, WN *wn, INT32 num_parms)
   return FALSE;
 }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 #include "be_ipa_util.h"
 // Brute force method for now
 // TODO: Keep a map internal to wopt so that we need to search once for a pu
@@ -2499,8 +3077,11 @@ OPT_STAB::Generate_call_mu_chi_by_value(WN *wn, ST *call_st,
 {
   AUX_ID idx;
   const BS *alias_set;
-
+#ifdef TARG_ST
+  alias_set = Alias_Set_Call_By_Value(Rule(),this);
+#else
   alias_set = Rule()->Alias_Set_Call_By_Value(this);
+#endif
   for (idx = BS_Choose( alias_set );
        idx != (AUX_ID) BS_CHOOSE_FAILURE;
        idx = BS_Choose_Next ( alias_set, idx )) {
@@ -2511,9 +3092,20 @@ OPT_STAB::Generate_call_mu_chi_by_value(WN *wn, ST *call_st,
       continue;
 
     POINTS_TO *pt = aux_stab[idx].Points_to();
+#ifdef TARG_ST
+    READ_WRITE how;
+    if (WN_operator(wn) == OPR_INTRINSIC_CALL) {
+      how = Rule()->Aliased_with_Intrinsic_Call(wn, pt);
+    } else {
+      how = Rule()->Aliased_with_Call(call_st,
+					       WN_call_flag(wn),
+					       pt);
+    }
+#else
     READ_WRITE how = Rule()->Aliased_with_Call(call_st,
 					       WN_call_flag(wn),
 					       pt);
+#endif
     
     if ((how & WRITE) && // no need to do the following if !write-able
 	pt->Not_addr_saved()) { // the only way is modification thru the parameters
@@ -2527,7 +3119,7 @@ OPT_STAB::Generate_call_mu_chi_by_value(WN *wn, ST *call_st,
       }
     }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     // TODO: Check if the code above can add redundant READ, when
     //       how == WRITE.
     // For vintrinsic_call to memcpy for example, call_st is null. Why
@@ -2654,8 +3246,16 @@ OPT_STAB::Generate_asm_mu_chi(WN *wn, MU_LIST *mu, CHI_LIST *chi)
     // PREG are not allowed to be in mu/chi list
     // (they cannot be modified by asm statements).
     if (Aux_stab_entry(idx)->Is_preg()) 
+    {
+#ifdef TARG_ST
+        if (!Aux_stab_entry(idx)->Is_dedicated_preg())
+#endif
       continue;
-#ifdef KEY //Bug 607 && bug 1672 and bug 5022
+    } 
+#ifdef TARG_ST
+    else
+#endif
+#if defined( KEY) && !defined(TARG_ST)//Bug 607 && bug 1672 and bug 5022
     if (idx == Return_vsym()){ // bug 1524
       how = READ_AND_WRITE;
       goto label_how;
@@ -2695,7 +3295,10 @@ OPT_STAB::Generate_asm_mu_chi(WN *wn, MU_LIST *mu, CHI_LIST *chi)
     
     how |= Rule()->Aliased_with_Asm(wn, aux_stab[idx].Points_to());
 #endif
-
+#ifdef TARG_ST
+    // [CG 2004/11/18] No need to set disable local rvi if no alias at all
+    if (how == NO_READ_NO_WRITE) continue;
+#endif
 label_how:
     if (how & READ) {
       mu->New_mu_node(idx, Occ_pool());
@@ -2855,7 +3458,9 @@ OPT_STAB::Generate_mu_and_chi_list(WN *wn, BB_NODE *bb)
   case OPR_ILDBITS:
   case OPR_ILOAD:
   case OPR_MLOAD:
+#ifndef TARG_ST
   case OPR_ILOADX:
+#endif
     occ = Get_occ(wn);
     Is_True(!WOPT_Enable_Alias_Classification ||
 	    REGION_has_black_regions(g_comp_unit->Rid()) ||
@@ -2878,7 +3483,9 @@ OPT_STAB::Generate_mu_and_chi_list(WN *wn, BB_NODE *bb)
   case OPR_ISTORE:    // ST that are addr_taken are affected
   case OPR_ISTBITS:
   case OPR_MSTORE:
+#ifndef TARG_ST
   case OPR_ISTOREX:
+#endif
     occ = Get_occ(wn);
     Is_True(!WOPT_Enable_Alias_Classification ||
 	    REGION_has_black_regions(g_comp_unit->Rid()) ||
@@ -2896,7 +3503,11 @@ OPT_STAB::Generate_mu_and_chi_list(WN *wn, BB_NODE *bb)
     if (aux_stab[vp_idx].Aux_id_list() == NULL) 
       Update_aux_id_list(vp_idx);
       
+#ifdef TARG_ST
+    alias_set = Alias_Set_Indirect(Rule(), this);
+#else
     alias_set = Rule()->Alias_Set_Indirect(this);
+#endif
     wn_ty = WN_object_ty(wn);
     for (idx = BS_Choose( alias_set );
 	 idx != (AUX_ID) BS_CHOOSE_FAILURE;
@@ -2920,7 +3531,7 @@ OPT_STAB::Generate_mu_and_chi_list(WN *wn, BB_NODE *bb)
     break;
 
   case OPR_INTRINSIC_OP:
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   case OPR_PURE_CALL_OP:
 #endif
     {
@@ -3020,7 +3631,7 @@ OPT_STAB::Generate_mu_and_chi_list(WN *wn, BB_NODE *bb)
     
   case OPR_RETURN: 
   case OPR_RETURN_VAL: 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   case OPR_GOTO_OUTER_BLOCK:
 #endif
     Generate_exit_mu(wn);
@@ -3234,7 +3845,7 @@ OPT_STAB::Transfer_alias_class_to_occ_and_aux(RID *const rid,
       if (occ != NULL) {
 	POINTS_TO *occ_pt = occ->Points_to();
 	IDTYPE alias_class = Alias_classification()->Alias_class(wn);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	Is_True (!WOPT_Enable_New_Vsym_Allocation ||
 	         occ_pt->Alias_class() == alias_class ||
 	         (opr != OPR_ILOAD && opr != OPR_ISTORE),
@@ -3244,7 +3855,7 @@ OPT_STAB::Transfer_alias_class_to_occ_and_aux(RID *const rid,
 	occ_pt->Set_alias_class(alias_class);
 
 	IDTYPE ip_alias_class = WN_MAP32_Get(WN_MAP_ALIAS_CLASS, wn);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	Is_True (!WOPT_Enable_New_Vsym_Allocation ||
 	         occ_pt->Ip_alias_class() == ip_alias_class ||
 	         (opr != OPR_ILOAD && opr != OPR_ISTORE),
@@ -3560,7 +4171,7 @@ void OPT_STAB::Compute_FFA(RID *const rid)
 	    DBar,DBar);
     Print_alias_info(TFile);
     fprintf( TFile, "%sOcc table after flow free alias analysis\n%s", DBar, DBar );
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     FOR_ALL_ELEM (bb, cfg_iter, Init(_cfg)) {
       FOR_ALL_ELEM (wn, stmt_iter, Init(bb->Firststmt(), bb->Laststmt())) {
          Print_occ_tab(TFile,wn);
@@ -3641,8 +4252,39 @@ OPT_STAB::Compute_FSA_stmt_or_expr(WN *wn)
       BOOL is_unique_pt = occ->Points_to()->Unique_pt();
       BOOL is_restricted = occ->Points_to()->Restricted();
       ST *based_sym = occ->Points_to()->Based_sym();
-
-      Analyze_Base_Flow_Sensitive(occ->Points_to(), wn);
+#ifdef TARG_ST
+      if (FPFSA()) {
+#if Is_True_On
+	if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+	  fprintf(TFile, "Before analyse Base FPFSA:\n");
+	  occ->Print(TFile);
+	}
+#endif
+	Analyze_Base_Flow_Sensitive_Fix_Point(occ->Points_to(), wn);
+#if Is_True_On
+	if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+	  fprintf(TFile, "After analyse Base FPFSA:\n");
+	  occ->Print(TFile);
+	}
+#endif
+      } else {
+#if Is_True_On
+	if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+	  fprintf(TFile, "Before analyse Base FSA:\n");
+	  occ->Print(TFile);
+	}
+#endif
+	Analyze_Base_Flow_Sensitive(occ->Points_to(), wn);
+#if Is_True_On
+	if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+	  fprintf(TFile, "After analyse Base FSA:\n");
+	  occ->Print(TFile);
+	}
+#endif
+      }
+#else	
+     Analyze_Base_Flow_Sensitive(occ->Points_to(), wn);
+#endif
       Is_True(Rule()->Aliased_Memop(occ->Points_to(), occ->Points_to())
               || occ->Points_to()->Const(),
 	       ("iload not aliased to itself!"));
@@ -3656,6 +4298,12 @@ OPT_STAB::Compute_FSA_stmt_or_expr(WN *wn)
 	occ->Points_to()->Set_restricted();
 	occ->Points_to()->Set_based_sym(based_sym);
       }
+#ifdef TARG_ST
+      else {
+	occ->Points_to()->Reset_restricted();
+	occ->Points_to()->Set_based_sym(based_sym);
+      }
+#endif
 
       if (WOPT_Enable_Update_Vsym)
 	Update_iload_vsym(occ);
@@ -3685,8 +4333,40 @@ OPT_STAB::Compute_FSA_stmt_or_expr(WN *wn)
       BOOL is_unique_pt = occ->Points_to()->Unique_pt();
       BOOL is_restricted = occ->Points_to()->Restricted();
       ST *based_sym = occ->Points_to()->Based_sym();
+#ifdef TARG_ST
+      if (FPFSA()) {
+#if Is_True_On
+	if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+	  fprintf(TFile, "Before analyse Base FPFSA:\n");
+	  occ->Print(TFile);
+	}
+#endif
+	Analyze_Base_Flow_Sensitive_Fix_Point(occ->Points_to(), wn);
+#if Is_True_On
+	if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+	  fprintf(TFile, "After analyse Base FPFSA:\n");
+	  occ->Print(TFile);
+	}
+#endif
+      } else {
+#if Is_True_On
+	if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+	  fprintf(TFile, "Before analyse Base FSA:\n");
+	  occ->Print(TFile);
+	}
+#endif
+	Analyze_Base_Flow_Sensitive(occ->Points_to(), wn);
+#if Is_True_On
+	if (Get_Trace(TP_WOPT2, ALIAS_DUMP_FLAG)) {
+	  fprintf(TFile, "After analyse Base FSA:\n");
+	  occ->Print(TFile);
+	}
+#endif
+      }
+#else	
 
       Analyze_Base_Flow_Sensitive(occ->Points_to(), wn);
+#endif
 
       if (is_unique_pt) {
 	occ->Points_to()->Set_unique_pt();
@@ -3696,6 +4376,12 @@ OPT_STAB::Compute_FSA_stmt_or_expr(WN *wn)
 	occ->Points_to()->Set_restricted();
 	occ->Points_to()->Set_based_sym(based_sym);
       }
+#ifdef TARG_ST
+      else {
+	occ->Points_to()->Reset_restricted();
+	occ->Points_to()->Set_based_sym(based_sym);
+      }
+#endif
 
       if (occ->Points_to()->Const()) {
         USRCPOS srcpos;
@@ -3728,7 +4414,7 @@ OPT_STAB::Compute_FSA_stmt_or_expr(WN *wn)
       cnode = chi_list->Head();
       while (cnode != NULL) {
 	AUX_ID v = cnode->Aux_id();
-#ifdef KEY // work around bug 7421: return_vsym aliases with a fixed global var
+#if defined( KEY) && !defined(TARG_ST) // work around bug 7421: return_vsym aliases with a fixed global var
 	if (v == Return_vsym() && 
 	    occ->Points_to()->Base_kind() == BASE_IS_FIXED &&
 	    occ->Points_to()->Not_addr_saved() && occ->Points_to()->Global()) {
@@ -3903,35 +4589,60 @@ void OPT_STAB::Update_return_mu(void)
 //  Return the set of var possibly aliased by an generic indirect
 //  memory access.   The list can be refined by calling Aliased_Memop again.
 //
+#ifdef TARG_ST
+static const BS *Alias_Set_Indirect(const ALIAS_RULE *rule, const OPT_STAB *aux_stab)
+{
+  return aux_stab->Indirect();
+}
+#else
 const BS *ALIAS_RULE::Alias_Set_Indirect(const OPT_STAB *aux_stab) const
 {
   return aux_stab->Indirect();
 }
-
+#endif
 
 //  Return a set of var possibly aliased by a call.
 //  The list can be refined by calling Aliased_with_Call again.
 //
+#ifdef TARG_ST
+static const BS *Alias_Set_Call_By_Value(const ALIAS_RULE *rule, const OPT_STAB *aux_stab)
+{
+  return aux_stab->Call_by_value();
+}
+#else
 const BS *ALIAS_RULE::Alias_Set_Call_By_Value(const OPT_STAB *aux_stab) const
 {
   return aux_stab->Call_by_value();
 }
-
+#endif
 
 //  Return a set of parameter possibly aliased by a call.
 //  The list can be refined by calling Aliased_with_Call again.
 //
+#ifdef TARG_ST
+static const BS *Alias_Set_Call_By_Ref(const ALIAS_RULE *rule, const OPT_STAB *aux_stab)
+{
+  return aux_stab->Call_by_ref();
+}
+#else
 const BS *ALIAS_RULE::Alias_Set_Call_By_Ref(const OPT_STAB *aux_stab) const
 {
   return aux_stab->Call_by_ref();
 }
+#endif
 
 // Return a set of variables possibly aliased with an ASM statement.
+#ifdef TARG_ST
+static const BS *Alias_Set_Asm(const ALIAS_RULE *rule, const OPT_STAB *aux_stab)
+{
+  return aux_stab->Asm_alias();
+}
+#else
 const BS *ALIAS_RULE::Alias_Set_Asm(const OPT_STAB *aux_stab) const
 {
   return aux_stab->Asm_alias();
 }
-
+#endif
 
 // update with alias-set with virtual variables
 //

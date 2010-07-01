@@ -455,6 +455,11 @@ extern EAGER_LEVEL Eager_Level;
 /* Should idict commute operands in seeking match? */
 extern BOOL Idict_Commutable_Match;
 extern BOOL Enable_FE_Optimization;	/* Enable FE (KAP) scalar opt? */
+#ifdef TARG_ST
+BE_EXPORTED extern BOOL  FE_Cvtl_Opt;                /* Keep CVTs for STOREs ? */
+  // FdF 20050203: Fine tuning of prefetch optimizations
+BE_EXPORTED extern INT32 Prefetch_Optimize;
+#endif
 extern BOOL Alias_Pointer_Parms;	/* Reference parms indep? */
 extern BOOL Alias_Pointer_Types;	/* Ptrs to distinct basic types indep? */
 extern BOOL Alias_Not_In_Union;          /* C++ ONLY rule: assume ptrs to objects with user-constructors are NOT in unions */
@@ -488,7 +493,12 @@ typedef enum {
 	 */
   IEEE_ACCURATE = 1,	/* Do not degrade IEEE accuracy */
   IEEE_INEXACT = 2,	/* Inexact results may not be IEEE */
+#ifdef TARG_ST
+  IEEE_ASSOC = 3,	/* Reassociations allowed */
+  IEEE_ANY = 4		/* Anything goes */
+#else
   IEEE_ANY = 3		/* Anything goes */
+#endif
 } IEEE_LEVEL;
 extern IEEE_LEVEL IEEE_Arithmetic;  /* IEEE arithmetic? */
 extern  BOOL IEEE_Arith_Set;	/* ... option seen? */
@@ -548,10 +558,18 @@ extern BOOL GCM_Eager_Null_Ptr_Deref;   /* allow speculation past the NULL
 extern BOOL GCM_Eager_Null_Ptr_Deref_Set; /* ... option seen? */
 
 /***** Miscellaneous GOPT options *****/
+#ifdef TARG_ST
+#define MAX_OPT_LEVEL	INT32_MAX
+#else
 #define MAX_OPT_LEVEL	3
+#endif
 #define DEF_O_LEVEL	2	/* Level implied by -O */
 #define DEF_OPT_LEVEL	1
 extern INT32 Opt_Level;		/* -On level */
+#ifdef TARG_ST
+BE_EXPORTED extern BOOL UnrollLoops;
+BE_EXPORTED extern BOOL UnrollLoops_Set;
+#endif
 extern INT32 OPT_unroll_times;
 extern INT32 OPT_unroll_level;
 extern BOOL OPT_keep_extsyms;
@@ -565,18 +583,33 @@ extern BOOL OPT_Space;
 extern INT32 Olimit;	/* stop optimization or use regions at this limit */
 extern BOOL Olimit_opt;	/* FALSE => stop optimization if Olimit reached;
 			 * TRUE  => use regions to optimize if Olimit reached */
-extern BOOL CG_mem_intrinsics;
 extern BOOL Emulate_memset;
-extern INT32 CG_memmove_inst_count;
-extern BOOL CG_memmove_inst_count_overridden;
 #ifdef KEY
 extern INT32 CG_memmove_align_inst_count;
 extern BOOL CG_memmove_align_inst_count_overridden;
 #endif
+#ifdef TARG_ST
+BE_EXPORTED extern BOOL  OPT_Cnst_DivRem;
+BE_EXPORTED extern BOOL  OPT_Cnst_DivRem_Set;
+BE_EXPORTED extern BOOL  OPT_Cnst_Mul;
+BE_EXPORTED extern BOOL  OPT_Cnst_Mul_Set;
+BE_EXPORTED extern BOOL OPT_Mul_by_cst_threshold_Set;
+BE_EXPORTED extern UINT32 OPT_Mul_by_cst_threshold;
+BE_EXPORTED extern BOOL OPT_Lower_While_Do_For_Space_Set;
+BE_EXPORTED extern BOOL OPT_Lower_While_Do_For_Space;
+BE_EXPORTED extern BOOL OPT_Expand_Switch_For_Space_Set;
+BE_EXPORTED extern BOOL OPT_Expand_Switch_For_Space;
+#endif
+BE_EXPORTED extern INT32  OPTION_Space;
+BE_EXPORTED extern BOOL  CG_mem_intrinsics;
+BE_EXPORTED extern INT32 CG_memmove_inst_count;
+BE_EXPORTED extern BOOL  CG_memmove_inst_count_overridden;
+
 extern BOOL CG_bcopy_cannot_overlap;
 extern BOOL CG_memcpy_cannot_overlap;
 extern BOOL CG_memmove_cannot_overlap;
 extern BOOL CG_memmove_nonconst;
+BE_EXPORTED extern BOOL  CG_floating_const_in_memory;
 extern BOOL Allow_wrap_around_opt;
 #define DEF_FOLD_ARITH_MAX_INS_CNT 1000
 extern INT32 Fold_Arith_Max_INS_CNT;
@@ -615,6 +648,21 @@ extern BOOL UnweaveCopyForStructs;      /* clump loads before stores */
 /***** Miscellaneous code generation options *****/
 extern BOOL Gen_PIC_Call_Shared; /* CPIC */
 extern BOOL Gen_PIC_Shared;	/* PIC */
+#ifdef TARG_ST
+BE_EXPORTED extern BOOL  Gen_PIC_Call_Shared_Set; /* CPIC */
+BE_EXPORTED extern BOOL  Gen_PIC_Shared_Set;	/* PIC */
+BE_EXPORTED extern BOOL  No_Shared_Warning;
+#endif
+#ifdef TARG_ST
+BE_EXPORTED extern INT32 ENV_Symbol_Visibility;
+BE_EXPORTED extern char *ENV_Symbol_Visibility_String;
+BE_EXPORTED extern char *ENV_Symbol_Visibility_Spec_Filename;
+#endif
+#ifdef TARG_ST
+BE_EXPORTED extern BOOL CG_LOOP_fix_recurrences;
+BE_EXPORTED extern BOOL CG_LOOP_fix_recurrences_specified;
+#endif
+
 extern BOOL Gen_PIC_Calls;	/* do calls as PIC code */
 extern BOOL Guaranteed_Small_GOT; /* GOT < 64kB? */
 extern BOOL Non_Volatile_GOT;	/* GOT entries volatile? */
@@ -629,14 +677,14 @@ extern INT32 Short_Lits;	/* Literals of this size in .litX */
 extern INT32 Max_Sdata_Elt_Size;/* -Gn: sdata size */
 extern INT32 Gspace_Available;	/* -Gspace: available space for gprel objects */
 extern BOOL Force_GP_Prolog;	/* force usage of gp prolog */
+ extern INT32 Max_Sdata_Elt_Size;/* -Gn: sdata size */
+ extern INT32 Max_Srdata_Elt_Size;/* -Gn: sdata size */
 extern INT32 Heap_Allocation_Threshold; /* Allocate objects > this on the heap 
 					 * (-1 means always use stack), 
 					 * 0 always use heap
 					 * default is 0
 					 */
 extern BOOL Strings_Not_Gprelative;	/* don't make strings gp-relative */
-#define MAX_SDATA_ELT_SIZE	32760
-#define DEF_SDATA_ELT_SIZE	8
 extern BOOL Varargs_Prototypes;	/* Varargs have prototypes for FP? */
 extern BOOL Gen_Profile;
 extern const char *Gen_Profile_Name;
@@ -649,6 +697,19 @@ extern char *Read_Global_Data;	/* only read global data */
 
 extern char *Library_Name;              /* -TENV:io_library=xxx */
 extern INT  target_io_library;
+#ifdef TARG_ST
+BE_EXPORTED extern BOOL  Instrument_Functions_Enabled;	/* generate calls to instrumentation for function entries and exits. */
+BE_EXPORTED extern BOOL Instrument_Functions_Enabled_For_PG; /* generate calls to instrumentation for profiling function entries and exits (gprof method used for stxp70). */
+BE_EXPORTED extern BOOL Profile_Arcs_Enabled_Cgir; /* Create data files for the `gcov' code-coverage utility and instrument code. */
+BE_EXPORTED extern BOOL Profile_Arcs_Enabled; /* Create data files for the `gcov' code-coverage utility and instrument code. */
+BE_EXPORTED extern BOOL Test_Coverage_Enabled; /* Create data files for the `gcov' code-coverage utility and instrument code. */
+BE_EXPORTED extern BOOL Coverage_Counter64; /* Use 64 bits counters instead of 32. */
+BE_EXPORTED extern BOOL Branch_Probabilities; /* Use .gcda file as feedback. */
+#endif
+BE_EXPORTED extern BOOL  Gen_GP_Relative;    /* generate GP-relative addressing ? */
+BE_EXPORTED extern BOOL  GP_Is_Preserved;	/* GP is neither caller or callee-save */
+BE_EXPORTED extern BOOL  Constant_GP;	/* GP never changes */
+
 
 #ifdef TARG_X8664
 extern char* Mcmodel_Name;              /* -TENV:mcmodel=xxx */
@@ -687,7 +748,7 @@ extern BOOL Enable_CVT_Opt;	/* Optimize expansion of CVT operators */
 extern BOOL Indexed_Loads_Allowed; /* enable generation of indexed loads/stores */
 extern BOOL Early_MP_Processing; /* Do MP lowering before LNO/PREOPT */
 extern BOOL Implied_Do_Io_Opt;   /* Do implied-do loop optimization for I/O */
-
+extern BOOL  Enable_LAI;          /* Do generate Lai_Code */
 /* back end phases options */
 #ifdef BACK_END
 extern BOOL Run_lno;		    /* run loop-nest optimizer */
@@ -702,6 +763,9 @@ extern BOOL Run_w2fc_early;	    /* run whirl2f after LNO parallelization */
 extern BOOL Run_prompf;		    /* create prompf analysis file */
 extern BOOL Run_purple;		    /* run purple instrumenter */
 extern BOOL Run_ipl;		    /* run summary phase of IPA */
+#ifdef TARG_ST
+ extern BOOL   Run_extension_check_only;   /* run extension compatibility check only */
+#endif
 extern char *LNO_Path;		    /* path to lno.so */
 extern char *WOPT_Path;		    /* path to wopt.so */
 extern char *CG_Path;		    /* path to cg.so */
@@ -748,6 +812,11 @@ extern BOOL SIMD_PMask;
 extern BOOL Use_Sse_Reg_Parm;
 extern INT32 Use_Reg_Parm;
 #endif
+#ifdef TARG_ST
+/* Enable automatic alignment of stack based on stack data alignments */
+BE_EXPORTED extern BOOL  Auto_align_stack;
+#endif
+
 /* put each function in its own text section */
 extern BOOL Section_For_Each_Function;
 
@@ -756,6 +825,12 @@ extern OPTION_LIST *Registers_Not_Allocatable;
 
 /* Unique ident from IPA */
 extern INT32 Ipa_Ident_Number;
+#ifdef TARG_ST
+/* list of registers that are disabled (not allocatable and not available
+ * in asm statement clobber list and declaration with register keyword)
+ */
+BE_EXPORTED extern OPTION_LIST *Disabled_Registers;
+#endif
 
 #ifdef KEY
 /* Tell ipa_link about the LD_LIBRARY_PATH that was in effect before the
@@ -770,6 +845,14 @@ extern char *IPA_lang;
 
 /* 14839: Tell ipa_link which gcc linker to invoke. */
 extern char *IPA_linker;
+#endif
+#ifdef TARG_ST
+// [CL] unique label suffix
+BE_EXPORTED extern char *Ipa_Label_Suffix;
+BE_EXPORTED extern char *Ipa_Exec_Name;
+#endif
+#ifdef TARG_ST
+BE_EXPORTED extern BOOL Ignore_Builtin_Prefetch;
 #endif
 
 extern BOOL Scalar_Formal_Ref;		/* for fortran formal scalar refs */
@@ -903,6 +986,101 @@ extern void List_Compile_Options (
 #endif
 #ifndef Is_Target_ISA_I1Plus
 #define Is_Target_ISA_I1Plus()	(0)
+#endif
+ extern BOOL Only_32_Bit_Ops;
+#ifdef TARG_ST
+/* Does target provide only 32-bit instructions? */
+BE_EXPORTED extern BOOL Only_32_Bit_Ops;
+/* Does target support single and double floating point */
+BE_EXPORTED extern BOOL Emulate_FloatingPoint_Ops;
+BE_EXPORTED extern BOOL Emulate_FloatingPoint_Ops_Set;
+/* Does target support single floating point */
+BE_EXPORTED extern BOOL Emulate_Single_Float_Type;
+BE_EXPORTED extern BOOL Emulate_Single_Float_Type_Set;
+/* Does target support double floating point */
+BE_EXPORTED extern BOOL Emulate_Double_Float_Type;
+BE_EXPORTED extern BOOL Emulate_Double_Float_Type_Set;
+/* Does target support integer division and modulus operations */
+BE_EXPORTED extern BOOL Emulate_DivRem_Integer_Ops;
+BE_EXPORTED extern BOOL Emulate_DivRem_Integer_Ops_Set;
+  // TB: Reset the common default options.
+  BE_EXPORTED void Reset_Default_Options(void);
+  // TB: Save current values for the common  options.
+  BE_EXPORTED void Save_Default_Options(void);
+  // TB: set option for size.
+  BE_EXPORTED void Apply_Opt_Size_For_Common(UINT32 level);
+  // TB: set option for optimization level.
+  BE_EXPORTED void Apply_Opt_Level_For_Common(UINT32 level);
+  
+BE_EXPORTED extern BOOL appli_config_file_set;
+BE_EXPORTED extern char *appli_config_file_name;
+BE_EXPORTED extern char *active_appli_config_file_name;
+
+#endif
+
+#ifdef TARG_ST
+/* Enable expansion of front-end builtins. */
+BE_EXPORTED extern BOOL Enable_Expand_Builtin;
+BE_EXPORTED extern BOOL Enable_Expand_Builtin_Set;
+/* TB: extension is present? */
+BE_EXPORTED extern char *Extension_Names;
+BE_EXPORTED extern BOOL Extension_Is_Present;
+/* Control of extension native support */
+#define EXTENSION_NATIVE_CODEGEN                0x1
+#define EXTENSION_NATIVE_REG_PLACEMENT          0x2
+#define EXTENSION_NATIVE_CVTGEN                 0x4
+#define EXTENSION_NATIVE_TYEQUIV_UNSIGNED_ONLY  0x8
+#define EXTENSION_NATIVE_TARGET_CODEGEN         0x10
+#define EXTENSION_NATIVE_ENABLE_FIRST_PASS      0x20
+#define EXTENSION_NATIVE_SUPPORT_DEFAULT (EXTENSION_NATIVE_CODEGEN \
+                                          | EXTENSION_NATIVE_REG_PLACEMENT \
+                                          | EXTENSION_NATIVE_CVTGEN \
+                                          | EXTENSION_NATIVE_TARGET_CODEGEN \
+                                          | EXTENSION_NATIVE_ENABLE_FIRST_PASS)
+BE_EXPORTED extern INT32 Enable_Extension_Native_Support;
+BE_EXPORTED extern BOOL Enable_Extension_Native_Support_Set;
+BE_EXPORTED extern INT32 Activate_Extension_Native_Support_Bits;
+BE_EXPORTED extern BOOL Activate_Extension_Native_Support_Bits_Set;
+BE_EXPORTED extern INT32 Block_Extension_Native_Support_Bits;
+BE_EXPORTED extern BOOL Block_Extension_Native_Support_Bits_Set;
+BE_EXPORTED extern char *Disabled_Native_Extensions;
+BE_EXPORTED extern BOOL Disabled_Native_Extensions_Set;
+BE_EXPORTED extern char *Ext_Options;
+BE_EXPORTED extern BOOL Ext_Options_Set;
+
+
+BE_EXPORTED extern BOOL Meta_Instruction_Threshold_Set;
+BE_EXPORTED extern INT32 Meta_Instruction_Threshold ;
+BE_EXPORTED extern BOOL Meta_Instruction_By_Size_Set;
+BE_EXPORTED extern BOOL Meta_Instruction_By_Size;
+
+#ifdef TARG_ST
+BE_EXPORTED extern INT32 Align_Functions;	/* Align funcs, has priority over Align_Instructions. */
+BE_EXPORTED extern INT32 Align_Loops;		/* Align loops, has priority over Align_Instructions. */
+#ifdef TARG_STxP70
+BE_EXPORTED extern INT32 Align_Loopends;        /* Align loop ends, has priority over Align_Instructions. */
+BE_EXPORTED extern INT32 Align_Callreturns;     /* Align call returns, has priority over Align_Instructions. */
+#endif
+BE_EXPORTED extern INT32 Align_Labels;		/* Align all labels, has priority over Align_Instructions. */
+BE_EXPORTED extern INT32 Align_Jumps;		/* Align labels reached by jump, has priority over Align_Instructions and Align_Labels. */
+#endif
+#endif
+
+
+#ifdef TARG_ST
+/* Switch targinfo internal var for code size : */
+BE_EXPORTED extern void Apply_Opt_Size_Target (UINT32);
+#endif
+
+#ifdef TARG_ST
+  //Option tuning at function level
+  //TB: Save options that are now default values for the PUs.  Each PU
+  //can overridden these to get its own compiler option
+  BE_EXPORTED extern void Save_Default_Options();
+  //TB: Restore default options
+  BE_EXPORTED extern void Restore_Default_Options();
+  //TB: Change options for code size
+  BE_EXPORTED extern void Adjust_Options_for_Space();
 #endif
 
 #ifdef __cplusplus

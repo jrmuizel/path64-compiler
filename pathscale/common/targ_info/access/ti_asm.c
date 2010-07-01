@@ -52,10 +52,313 @@ static const char rcs_id[] = "$Source: /home/bos/bk/kpro64-pending/common/targ_i
 #include "targ_isa_operands.h"
 #include "targ_abi_properties.h"
 #include "targ_proc_properties.h"
-
+#ifdef TARG_ST
+#include "targ_isa_lits.h"
+#endif
 #include "ti_errors.h"
 #include "ti_asm.h"
 
+#ifdef TARG_ST
+/* ====================================================================
+ *
+ *  TI_ASM_Pack_Inst
+ *
+ *  See interface description
+ *  [JV] Note: Does not work for multi slot instructions.
+ * ====================================================================
+ */
+INT TI_ASM_Pack_Inst(
+  TOP topcode,
+  const INT64 *result,
+  const INT64 *opnd,
+  ISA_PACK_INST *pinst)
+{
+  INT comp;
+  INT words;
+  INT w;
+  const ISA_PACK_OPND_INFO *opnd_info;
+  const ISA_PACK_ADJ_INFO *ainfo;
+  INT64 bopnd[ISA_OPERAND_max_operands];
+  INT64 bresult[ISA_OPERAND_max_results];
+  const ISA_PACK_OPND_INFO *oinfo = ISA_PACK_OPND_Info(topcode);
+  const ISA_PACK_INFO *pinfo = ISA_PACK_Info(topcode);
+
+  /* [JV] bcopy not supported by libSYS.
+   * As buffers do not overlap, memcpy can
+   * be used in place of bcopy.
+   */
+  memcpy(bopnd, opnd, sizeof(bopnd));
+  memcpy(bresult, result, sizeof(bresult));
+
+  topcode = ISA_PSEUDO_Translate(topcode, 
+				 bresult, 
+				 bopnd,
+				 ISA_PSEUDO_to_machine);
+
+  opnd_info = ISA_PACK_OPND_Info(topcode);
+  if (!opnd_info) {
+    #pragma mips_frequency_hint NEVER
+    sprintf(TI_errmsg, "no ISA_PACK_OPND_INFO for %s", TOP_Name(topcode));
+    return TI_RC_ERROR;
+  }
+
+  ainfo = ISA_PACK_Adj_Info(topcode);
+  if (ainfo) ISA_PACK_Adjust_Operands(ainfo, bopnd, FALSE);
+
+  words = ISA_PACK_Inst_Words(topcode);
+  for (w = 0; w < words; ++w) {
+    ISA_PACK_INST inst = ISA_PACK_INFO_Init_Mask(pinfo, w);
+    do {
+      UINT64 mask = ISA_PACK_OPND_INFO_Mask(oinfo);
+      UINT opndpos = ISA_PACK_OPND_INFO_OpndPos(oinfo);
+      UINT instpos = ISA_PACK_OPND_INFO_InstPos(oinfo);
+      comp = ISA_PACK_OPND_INFO_Comp(oinfo);
+      
+      if(ISA_PACK_COMP_opnd <= comp &&
+	 comp < ISA_PACK_COMP_opnd + ISA_OPERAND_max_operands) {
+	INT n = comp - ISA_PACK_COMP_opnd;
+	inst |= ((bopnd[n] >> opndpos) & mask) << instpos;
+      }
+      else if(ISA_PACK_COMP_result <= comp &&
+	      comp < ISA_PACK_COMP_result + ISA_OPERAND_max_results) {
+	INT n = comp - ISA_PACK_COMP_result;
+	inst |= ((bresult[n] >> opndpos) & mask) << instpos;
+      }
+      else if(comp == ISA_PACK_COMP_end) {
+	pinst[w] = inst;
+      }
+      else {
+#pragma mips_frequency_hint NEVER
+	sprintf(TI_errmsg, "Unhandled packing component %d for %s",
+		comp, TOP_Name(topcode));
+	return TI_RC_ERROR;
+      }
+    } while (++oinfo, comp != ISA_PACK_COMP_end);
+  }
+
+  return words;
+}
+
+/* ====================================================================
+ *
+ *  TI_ASM_Print_Inst
+ *
+ *  See interface description
+ *
+ * ====================================================================
+ */
+INT TI_ASM_Print_Inst(
+  TOP topcode,
+  ISA_PRINT_OPND_INFO *result,
+  ISA_PRINT_OPND_INFO *opnd,
+  FILE *f)
+{
+  INT st;
+
+  if((st = ISA_PRINT_Inst((ISA_PRINT_INFO_print)fprintf,f,topcode,ISA_PRINT_AsmName(topcode),result,opnd)) < 0) {
+    #pragma mips_frequency_hint NEVER
+    sprintf(TI_errmsg, "no ISA_PRINT_INFO for %s", TOP_Name(topcode));
+    return TI_RC_ERROR;
+  }
+  return st;
+}
+
+
+/* ====================================================================
+ *
+ *  TI_ASM_Set_Bundle_Comp
+ *
+ *  See interface description
+ *
+ * ====================================================================
+ */
+void TI_ASM_Set_Bundle_Comp(
+			    INT bundle_id,
+			    ISA_BUNDLE           *bundle,
+			    ISA_BUNDLE_PACK_COMP  comp,
+			    UINT64                val
+			    )
+{
+  assert(0);
+#if 0
+  UINT8 pack_index = ISA_EXEC_Pack_Index(bundle_id);
+  const ISA_BUNDLE_PACK_INFO *pinfo = ISA_BUNDLE_Pack_Info(pack_index);
+  if(comp ==  ISA_BUNDLE_PACK_COMP_template) {
+    if(pinfo->pack_template != NULL) {
+      pinfo->pack_template(bundle_id, bundle, val);
+    }
+  }
+  else if(ISA_BUNDLE_PACK_COMP_slot <= comp &&
+	  comp <= ISA_BUNDLE_PACK_COMP_MAX) {
+    if(pinfo->pack_slot[comp-ISA_BUNDLE_PACK_COMP_slot] != NULL) {
+      pinfo->pack_slot[comp-ISA_BUNDLE_PACK_COMP_slot](bundle_id, bundle, val);
+    }
+  }
+#endif
+}
+
+
+/* ====================================================================
+ *
+ *  TI_ASM_Unpack_Inst
+ *
+ *  See interface description
+ *  [JV] Note: Does not work for multi slot instructions.
+ * ====================================================================
+ */
+TOP TI_ASM_Unpack_Inst(
+  const ISA_PACK_INST *pinst,
+  ISA_EXEC_UNIT ex_unit, 
+  ISA_DECODE_INST decodeinst,
+  INT64 *result, 
+  INT64 *opnd,
+  BOOL xlate_pseudo)
+{
+  INT comp;
+  INT i;
+  INT w;
+  INT words;
+  const ISA_PACK_OPND_INFO *pinfo;
+  const ISA_PACK_ADJ_INFO *ainfo;
+  const ISA_OPERAND_INFO *oinfo;
+  TOP topcode;
+
+  /* Decode the instruction opcode.
+   */
+  topcode = decodeinst(pinst, ex_unit);
+  if (topcode == TOP_UNDEFINED) return topcode;
+
+  /* Unpack the raw operands and results.
+   */
+
+  /* [JV] bzero not supported by libSYS.
+   * Replace them by memset.
+   */
+
+  memset(result, 0, sizeof(*result) * ISA_OPERAND_max_results);
+  memset(opnd, 0, sizeof(*opnd) * ISA_OPERAND_max_operands);
+  pinfo = ISA_PACK_OPND_Info(topcode);
+  words = ISA_PACK_Inst_Words(topcode);
+  for (w = 0; w < words; ++w) {
+    ISA_PACK_INST inst = *pinst >> (w*ISA_PACK_INST_WORD_SIZE);
+    do {
+      UINT64 mask = ISA_PACK_OPND_INFO_Mask(pinfo);
+      UINT32 opndpos = ISA_PACK_OPND_INFO_OpndPos(pinfo);
+      UINT32 instpos = ISA_PACK_OPND_INFO_InstPos(pinfo);
+      INT64 val = ((inst >> instpos) & mask) << opndpos;
+
+      comp = ISA_PACK_OPND_INFO_Comp(pinfo);
+
+#ifdef TARG_ST
+      if(ISA_PACK_Is_Component_Operand(comp)) {
+	INT n = comp - ISA_PACK_COMP_opnd;
+	opnd[n] |= val;
+      }
+      else if(ISA_PACK_Is_Component_Result(comp)) {
+	INT n = comp - ISA_PACK_COMP_result;
+	result[n] |= val;
+      }
+      else if(ISA_PACK_COMP_end != comp) {
+	assert(0);   /* TODO: set a new error message */ 
+      }
+#else
+      switch (comp) {
+      case ISA_PACK_COMP_opnd:
+      case ISA_PACK_COMP_opnd+1:
+      case ISA_PACK_COMP_opnd+2:
+      case ISA_PACK_COMP_opnd+3:
+      case ISA_PACK_COMP_opnd+4:
+      case ISA_PACK_COMP_opnd+5:
+	{
+	  INT n = comp - ISA_PACK_COMP_opnd;
+	  opnd[n] |= val;
+	}
+	break;
+	  
+      case ISA_PACK_COMP_result:
+      case ISA_PACK_COMP_result+1:
+	{
+	  INT n = comp - ISA_PACK_COMP_result;
+	  result[n] |= val;
+	}
+	break;
+	  
+      case ISA_PACK_COMP_end:
+	break;
+
+      default:
+	assert(0);
+	/*NOTREACHED*/
+      }
+#endif
+    } while (++pinfo, comp != ISA_PACK_COMP_end);
+  }
+
+  /* Provide any adjustments for the operands between packed and assembly
+   * language forms.
+   */
+  ainfo = ISA_PACK_Adj_Info(topcode);
+  if (ainfo) ISA_PACK_Adjust_Operands(ainfo, opnd, TRUE);
+
+  /* If desired, translated pseudo instructions.
+   */
+  if (xlate_pseudo) {
+    topcode = ISA_PSEUDO_Translate(topcode, result, opnd, ISA_PSEUDO_to_pseudo);
+  }
+
+  /* Provide any normalization to any operands: convert enums to their
+   * 'biased' form and sign-extend signed literals.
+   * Also manage scaling factor.
+   */
+  oinfo = ISA_OPERAND_Info(topcode);
+  for (i = 0; i < ISA_OPERAND_INFO_Operands(oinfo); ++i) {
+    const ISA_OPERAND_VALTYP *vtype = ISA_OPERAND_INFO_Operand(oinfo, i);
+    UINT64 val;
+
+    val = opnd[i];
+    if (ISA_OPERAND_VALTYP_Is_Enum(vtype)) {
+      ISA_ENUM_CLASS_VALUE e;
+#ifdef TARG_ST
+      ISA_ENUM_CLASS_VALUE ecv = ISA_ECV_UNDEFINED;
+#else
+      ISA_ENUM_CLASS_VALUE ecv = ECV_UNDEFINED;
+#endif
+      ISA_ENUM_CLASS ec = ISA_OPERAND_VALTYP_Enum_Class(vtype);
+
+      for (e = ISA_EC_First_Value(ec);
+	   e <= ISA_EC_Last_Value(ec);
+	   e = (ISA_ENUM_CLASS_VALUE)(e + 1))
+      {
+        if (ISA_ECV_Intval(e) == val) {
+	  ecv = e;
+	  break;
+	}
+      }
+      opnd[i] = ecv;
+    } else if (ISA_OPERAND_VALTYP_Is_Literal(vtype)) {
+      if (ISA_LC_Is_Negative(ISA_OPERAND_VALTYP_Literal_Class(vtype))) {
+        /* switch to negative values */
+        opnd[i] = -1 * opnd[i];
+      } else if (ISA_OPERAND_VALTYP_Is_Signed(vtype)) {
+        INT size = ISA_OPERAND_VALTYP_Size(vtype);
+        INT shift;
+      
+        shift = 64 - size;
+        opnd[i] = ((INT64)val << shift) >> shift;
+      }
+#ifdef TARG_ST
+      /* Get abstract value (getting rid of scaling factors, rotating... and related
+         problems). For some explanations, see targ_isa_lits.h header file.
+       */
+       opnd[i] = ISA_LC_Abstract_Value(opnd[i],ISA_OPERAND_VALTYP_Literal_Class(vtype));
+#endif
+    }
+
+  }
+
+  return topcode;
+}
+#else
 /* ====================================================================
  *
  *  TI_ASM_Pack_Inst
@@ -689,3 +992,4 @@ TOP TI_ASM_Unpack_Inst(
 
   return topcode;
 }
+#endif

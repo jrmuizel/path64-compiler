@@ -127,12 +127,20 @@ INITV_Init_String (INITV_IDX inv, char *str, INT size, UINT16 repeat)
     TCON tc = Host_To_Targ_String (MTYPE_STR, str, size);
     INITV_Set_VAL (Initv_Table[inv], Enter_tcon(tc), repeat);
 }
-
+#ifdef TARG_ST
+  /* (cbr) support for half address relocation */
+void
+INITV_Init_Symoff (INITV_IDX inv, ST *st, INT64 ofst, UINT16 repeat, BOOL halfword)
+{
+    INITV_Set_SYMOFF (Initv_Table[inv], repeat, ST_st_idx(st), ofst, halfword);
+}
+#else
 void
 INITV_Init_Symoff (INITV_IDX inv, ST *st, INT64 ofst, UINT16 repeat)
 {
     INITV_Set_SYMOFF (Initv_Table[inv], repeat, ST_st_idx(st), ofst);
 }
+#endif
 
 void
 INITV_Init_Label (INITV_IDX inv, LABEL_IDX lab, UINT16 repeat)
@@ -147,6 +155,16 @@ INITV_Init_Symdiff (INITV_IDX inv,
     INITV_Set_SYMDIFF (Initv_Table[inv], repeat, 
 		lab1, ST_st_idx (st2), halfword);
 }
+#ifdef TARG_ST
+/* (cbr) DDTSst24451. add support for label diffs initializers */
+void
+INITV_Init_Labdiff (INITV_IDX inv,  
+	LABEL_IDX lab1, LABEL_IDX lab2, UINT16 repeat)
+{
+    INITV_Set_LABDIFF (Initv_Table[inv], repeat, 
+		lab1, lab2);
+}
+#endif
 
 void
 INITV_Init_Pad (INITV_IDX inv, UINT32 pad_bytes) 
@@ -455,6 +473,10 @@ Print_INITV (const INITV& initv)
 	break;
 	
     case INITVKIND_SYMOFF:
+#ifdef TARG_ST
+      /* (cbr) support for half address relocation */
+    case INITVKIND_SYMOFF16:
+#endif
 	repeat = INITV_repeat1 (initv);
 	fprintf (TFile," SYMOFF: %s(0x%" PRIxPTR ")+%d(0x%x)",
 		ST_class(INITV_st(initv)) == CLASS_CONST ?
@@ -479,6 +501,15 @@ Print_INITV (const INITV& initv)
 		ST_name (INITV_st2 (initv)), INITV_st2 (initv));
 	break;
 	
+#ifdef TARG_ST
+/* (cbr) DDTSst24451. add support for label diffs initializers */
+    case INITVKIND_LABDIFF:
+	repeat = INITV_repeat1 (initv);
+        fputs (" LABDIFF: ", TFile);
+	fprintf (TFile," %s-%s(0x%%x)", LABEL_name (INITV_labd0 (initv)), 
+                 LABEL_name (INITV_labd1 (initv)));
+	break;
+#endif
     case INITVKIND_BLOCK:
 	repeat = INITV_repeat1 (initv);
 	fprintf (TFile," BLOCK: \n");
@@ -574,6 +605,22 @@ Get_INITV_Size (INITV_IDX inv)
 	case INITVKIND_LABEL:
 		size = Pointer_Size;
 		break;
+
+#ifdef TARG_ST
+        /* (cbr) support for half address relocation */
+	case INITVKIND_SYMDIFF16:
+	case INITVKIND_SYMOFF16:
+          size = Pointer_Size/2;
+          break;
+#endif
+
+#ifdef TARG_ST
+/* (cbr) DDTSst24451. add support for label diffs initializers */
+	case INITVKIND_LABDIFF:
+          size = Pointer_Size;
+          break;
+#endif
+
 	case INITVKIND_VAL:
 		if (TCON_ty(INITV_tc_val(inv)) == MTYPE_STR)
 			size = TCON_str_len(INITV_tc_val(inv));
@@ -589,11 +636,19 @@ Get_INITV_Size (INITV_IDX inv)
 		break;
 	case INITVKIND_BLOCK:
 		size = 0;
+#ifdef TARG_ST
+		for (INITV_IDX blkinv = INITV_blk(inv);
+		     blkinv != 0;
+		     blkinv = INITV_next(blkinv)) {
+		  size += Get_INITV_Size (blkinv);
+		}
+#else
 		inv = INITV_blk(inv);
 		while (inv != 0) {
 			size += Get_INITV_Size (inv);
 			inv = INITV_next(inv);
 		}
+#endif
 		break;
 	default:
 		FmtAssert(FALSE, ("Get_INITV_Size unexpected kind"));

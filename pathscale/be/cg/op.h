@@ -113,6 +113,23 @@
  *	If the client can't guarantee these conditions, then a
  *	new OP should be created.
  *
+#ifdef TARG_ST
+ *   void OP_Copy_Properties(OP *op, OP *src_op)
+ *      Copy all properties from src_op to op.
+ *      This function can be used for instance when tranforming an 
+ *      operation and if OP_Change_Opcode does not apply.
+ *	The properties that are NOT copied are:
+ *	- opcode/arguments: OP_code(), OP_variant(), OP_results(), OP_opnds()
+ *	- BB related stuffs: OP_bb(), OP_map_idx(), OP_order() : 
+ *	- OPS related stuffs: OP_prev(), OP_next()
+ *      Creating an op with the same opcode and results/operands as src_op
+ *	and calling OP_Copy_Properties creates a strictly equivalent
+ *	operation with the expection of BB related properties that
+ *	are created only when the op is inserted into a BB.
+ *	Note that external mappings are not updated, for instance
+ *	Copy_WN_For_Memory_OP must be called explicitly for updating
+ *	the OP->WN map of memory operations.
+#endif
  *   void OP_Change_To_Noop(OP *op)
  *	Change the specified OP into a generic noop (TOP_noop).
  *
@@ -192,6 +209,11 @@
  *     Return a boolean that indicates whether <op> is a floating point
  *     memory operation, i.e. a floating point load or store.
  *
+#ifdef TARG_ST
+ *   INT OP_same_res(const OP *op, INT i)
+ *     Returns index of the operand that must be same register as result <i>
+ *     if any. Otherwise return -1.
+#else
  *   BOOL OP_same_res(OP *op)
  *     OPER_same_res(OP_code(op)) indicates that an OP *may* have an
  *     operand that needs to be the same register as the result. This
@@ -199,6 +221,7 @@
  *     load instruction in an unaligned load pair does NOT need to have
  *     its last operand be the same as the result.)
  *     OP_same_res is target-specific; it's defined in TARGET/op_targ.h
+#endif
  *
  *   BOOL OP_Defs_TN(const OP *op, const struct tn *res)
  *   BOOL OP_Refs_TN(const OP *op, const struct tn *opnd)
@@ -208,6 +231,15 @@
  *   BOOL OP_Refs_Reg(const OP *op, ISA_REGISTER_CLASS rclass, REGISTER reg)
  *     Determine if the OP defines/references the given register.
  *
+#ifdef TARG_ST
+ *   INT OP_Defs_Regs(const OP *op, ISA_REGISTER_CLASS rclass, REGISTER reg,
+ *                    INT nregs)
+ *   INT OP_Refs_Regs(const OP *op, ISA_REGISTER_CLASS rclass, REGISTER reg,
+ *                    INT nregs)
+ *     Determine the number of registers in [ REG : REG + NREGS - 1 ] that
+ *     the OP defines/references.
+ *
+#endif
  *   void OP_Base_Offset_TNs(OP *memop, TN **base_tn, TN **offset_tn)
  *     A generic utility routine which returns the <base_tn> and the
  *     <offset_tn> for the given <memory_op>.
@@ -279,6 +311,10 @@
 #include "mempool.h"
 
 #include "tracing.h"
+ #ifdef TARG_ST
+#include "targ_isa_variants.h"
+#endif
+
 
 /* Declare some structures from elsewhere: */
 struct tn;
@@ -310,15 +346,35 @@ typedef struct op {
   mUINT16	map_idx;	/* index used by OP_MAPs; unique in BB */
   mUINT16	orig_idx;	/* index of orig op before unrolling */
   mINT16	scycle;		/* Start cycle */
+#ifdef TARG_ST
+  mUINT16	flags2;		/* [CL] attributes extension */
+  mUINT8	unrolling;	/* which unrolled replication (if any) */
+  UINT64	g_map_idx;	/* Global unique id for OP */
+  mTOP		opr;		/* Opcode. topcode.h */
+  // FdF 20090507: The limit of 255 operands is reached for PHI
+  // operations in basic blocks with more than 256 predecessors.
+  // FdF 20090514: The limit of 255 results may be reached on parallel
+  // copies
+  mUINT32	opnds;		/* Number of operands */
+  mUINT32	results;	/* Number of results */
+#else
   mTOP		opr;		/* Opcode. topcode.h */
   mUINT8	unrolling;	/* which unrolled replication (if any) */
   mUINT8	results;	/* Number of results */
   mUINT8	opnds;		/* Number of operands */
+#endif
+  #ifdef TARG_ST
+  struct tn	*spilled_tn;	/* Spilled TN if OP_spill(). */
+#endif
   struct tn     *res_opnd[10];	/* result/operand array (see OP_sizeof for info)
-				 * !!! THIS FIELD MUST BE LAST !!!
+	
+                                 * !!! THIS FIELD MUST BE LAST !!!
 				 */
 } OP;
 
+#ifdef TARG_ST
+extern void Verify_Instruction_Simple ( OP *op );
+#endif
 /* Return the 'sizeof' the OP struct needed for the specified number
  * of operands and results. For the sake of simplicity, the result of 
  * the calculation is not rounded up to the alignment of the struct. 
@@ -327,8 +383,16 @@ typedef struct op {
  * in printing structs in the debugger (OP_sizeof's result is independent 
  * of the dimension).
  */
+#ifdef TARG_ST
+// (cbr) add effect supports to operands. Currently only used for false guards.
+//  no effects on results until necessary to save space.
+typedef int TN_effect;
+#define OP_sizeof(nresults, nopnds) \
+	((size_t)(offsetof(OP, res_opnd[0]) + ((nresults) + (nopnds)) * sizeof(TN *)) + ((nopnds) * sizeof(TN_effect)))
+#else
 #define OP_sizeof(nresults, nopnds) \
 	((size_t)(offsetof(OP, res_opnd[0]) + ((nresults) + (nopnds)) * sizeof(TN *)))
+#endif
 
 /* Both the operand and result TNs are stored in _res_opnds.
  * OP_opnd_offset and OP_result_offset give the offset into the
@@ -337,6 +401,10 @@ typedef struct op {
  */
 #define OP_opnd_offset(o)	(0)
 #define OP_result_offset(o)	OP_opnds(o)
+#ifdef TARG_ST
+// (cbr) add effect supports to operands. Currently used for false guards.
+#define OP_effects_offset(o)	(OP_opnds(o)+OP_results(o))
+#endif
 
 /* Define the access functions: */
 #define OP_srcpos(o)	((o)->srcpos)
@@ -345,6 +413,9 @@ typedef struct op {
 #endif
 #define OP_scycle(o)	((o)->scycle)
 #define OP_flags(o)	((o)->flags)
+#ifdef TARG_ST // [CL] attributes extension
+#define OP_flags2(o)	((o)->flags2)
+#endif
 
 /* These are rvalues */
 #define OP_next(o)	((o)->next+0)
@@ -357,8 +428,23 @@ typedef struct op {
 #define OP_results(o)	((o)->results+0)
 #define OP_opnds(o)	((o)->opnds+0)
 #define OP_code(o)	((TOP)(o)->opr)
+#ifdef TARG_ST
+#define OP_result(o,n) \
+        (Is_True((n)>=0,("invalid result number")), \
+         (struct tn *)(o)->res_opnd[(n)+OP_result_offset(o)])
+#define OP_opnd(o,n) \
+  (Is_True((n)>=0,("invalid operand number (%d(%s),%d)", OP_code(o), TOP_Name (OP_code(o)),n)), \
+   (struct tn *)(o)->res_opnd[(n)+OP_opnd_offset(o)])
+
+#ifdef TARG_ST
+// (cbr) add effect supports to operands. Currently used for false guards.
+#define OP_effects(o,n)	((TN_effect)(o)->res_opnd[(n)+OP_effects_offset(o)])
+#endif
+
+#else
 #define OP_result(o,n)	((struct tn *)(o)->res_opnd[(n)+OP_result_offset(o)])
 #define OP_opnd(o,n)	((struct tn *)(o)->res_opnd[(n)+OP_opnd_offset(o)])
+#endif
 
 /* Mutators: */
 #define Set_OP_orig_idx(op,idx) ((op)->orig_idx = (idx))
@@ -368,6 +454,37 @@ typedef struct op {
 	((o)->res_opnd[(result) + OP_result_offset(o)] = (tn))
 #define Set_OP_opnd(o,opnd,tn) \
 	((o)->res_opnd[(opnd) + OP_opnd_offset(o)] = (tn))
+// [HK] added opr setting macro to avoid casts to non reference type on lvalue
+#define Set_OP_opr(op,c) ((op)->opr = (mTOP)(c))
+
+#ifdef TARG_ST
+// (cbr) add effect supports to operands. Currently used for false guards.
+#define Set_OP_effects(o,opnd,v) \
+	((o)->res_opnd[(opnd) + OP_effects_offset(o)] = \
+	 (TN*)((TN_effect)((o)->res_opnd[(opnd) + OP_effects_offset(o)]) | (v)))
+#define Reset_OP_effects(o,opnd,v) \
+	((o)->res_opnd[(opnd) + OP_effects_offset(o)] = (TN*)((TN_effect)((o)->res_opnd[(opnd) + OP_effects_offset(o)]) & ~(v)))
+
+#ifdef TARG_STxP70
+#define EFFECT_PRED_FALSE 0x1
+#define Set_OP_Pred_True(o, opnd) (Reset_OP_effects((o), (opnd), EFFECT_PRED_FALSE))
+#define Set_OP_Pred_False(o, opnd) (Set_OP_effects((o), (opnd) ,EFFECT_PRED_FALSE))
+#define OP_Pred_False(o, opnd) ((opnd) == -1 ? false \
+				: OP_effects((o), (opnd)) & EFFECT_PRED_FALSE)
+#define Invert_OP_Pred(o, opnd) (OP_Pred_False((o), (opnd)) ? Set_OP_Pred_True((o), (opnd)) \
+                                 : Set_OP_Pred_False((o), (opnd)))
+#else
+#define Set_OP_Pred_True(o, opnd) false
+#define Set_OP_Pred_False(o, opnd) false
+#define OP_Pred_False(o, opnd) false
+#define Invert_OP_Pred(o, opnd) false
+#endif /* TARG_STxP70 */
+
+#define OP_PredOnFalse(o) OP_Pred_False(o, OP_find_opnd_use(o, OU_predicate))
+
+BOOL Set_OP_opnd_Immediate_Variant(OP *op, INT idx, TN *tn);
+
+#endif /* TARG_ST */
 
 /*
  * Define the OP cond def mask.
@@ -476,9 +593,19 @@ enum OP_COND_DEF_KIND {
 # define Reset_OP_no_ci_alias(o) (OP_flags(o) &= ~OP_MASK_NO_CI_ALIAS)
 # define OP_no_move_before_gra(o) (OP_flags(o) & OP_MASK_NO_MOVE_BEFORE_GRA)
 # define Set_OP_no_move_before_gra(o) (OP_flags(o) |= OP_MASK_NO_MOVE_BEFORE_GRA)
+#ifdef TARG_ST
+# define OP_spill(o)		(OP_flags(o) & OP_MASK_SPILL)
+# define Set_OP_spill(o)	(OP_flags(o) |= OP_MASK_SPILL)
+# define Reset_OP_spill(o) 	(OP_flags(o) &= ~OP_MASK_SPILL)
+# define OP_spilled_tn(o)		((o)->spilled_tn)
+# define Set_OP_spilled_tn(o,tn)	((o)->spilled_tn = (tn))
+# define Reset_OP_spilled_tn(o,tn) ((o)->spilled_tn = NULL)
+#else
+
 # define OP_has_tag(o)		(OP_flags(o) & OP_MASK_TAG)
 # define Set_OP_has_tag(o)	(OP_flags(o) |= OP_MASK_TAG)
 # define Reset_OP_has_tag(o) 	(OP_flags(o) &= ~OP_MASK_TAG)
+#endif
 # define OP_spadjust_plus(o)	(OP_flags(o) & OP_MASK_SPADJ_PLUS)
 # define Set_OP_spadjust_plus(o)(OP_flags(o) |= OP_MASK_SPADJ_PLUS)
 # define Reset_OP_spadjust_plus(o) (OP_flags(o) &= ~OP_MASK_SPADJ_PLUS)
@@ -502,6 +629,47 @@ enum OP_COND_DEF_KIND {
 # define Set_OP_prefetch_deleted(o) (OP_flags(o) |= OP_MASK_PREFETCH_DELETED)
 # define Reset_OP_prefetch_deleted(o) (OP_flags(o) &= ~OP_MASK_PREFETCH_DELETED)
 #endif // KEY
+
+#ifdef TARG_ST
+// [CL] attributes extension to track prologue/epilogue (used for debug)
+# define OP_prologue(o)		(OP_flags2(o) & OP_MASK_PROLOGUE)
+# define Set_OP_prologue(o)	(OP_flags2(o) |= OP_MASK_PROLOGUE)
+# define Reset_OP_prologue(o)	(OP_flags2(o) &= ~OP_MASK_PROLOGUE)
+# define OP_epilogue(o)		(OP_flags2(o) & OP_MASK_EPILOGUE)
+# define Set_OP_epilogue(o)	(OP_flags2(o) |= OP_MASK_EPILOGUE)
+# define Reset_OP_epilogue(o)	(OP_flags2(o) &= ~OP_MASK_EPILOGUE)
+# define OP_black_hole(o)	(OP_flags2(o) & OP_MASK_BLACK_HOLE)
+# define Set_OP_black_hole(o)	(OP_flags2(o) |= OP_MASK_BLACK_HOLE)
+# define Reset_OP_black_hole(o)	(OP_flags2(o) &= ~OP_MASK_BLACK_HOLE)
+// FdF
+# define OP_pft_scheduled(o)	(OP_flags2(o) & OP_MASK_PFT_SCHEDULED)
+# define Set_OP_pft_scheduled(o)	(OP_flags2(o) |= OP_MASK_PFT_SCHEDULED)
+# define Reset_OP_pft_scheduled(o)	(OP_flags2(o) &= ~OP_MASK_PFT_SCHEDULED)
+# define OP_pft_before(o)	(OP_flags2(o) & OP_MASK_PFT_BEFORE)
+# define Set_OP_pft_before(o)	(OP_flags2(o) |= OP_MASK_PFT_BEFORE)
+# define Reset_OP_pft_before(o)	(OP_flags2(o) &= ~OP_MASK_PFT_BEFORE)
+# define OP_nop2goto(o)		(OP_flags2(o) & OP_MASK_NOP2GOTO)
+# define Set_OP_nop2goto(o)	(OP_flags2(o) |= OP_MASK_NOP2GOTO)
+# define Reset_OP_nop2goto(o)	(OP_flags2(o) &= ~OP_MASK_NOP2GOTO)
+# define OP_preload(o)		(OP_flags2(o) & OP_MASK_PRELOAD)
+# define Set_OP_preload(o)	(OP_flags2(o) |= OP_MASK_PRELOAD)
+# define Reset_OP_preload(o)	(OP_flags2(o) &= ~OP_MASK_PRELOAD)
+# define OP_packed(o)		(OP_flags2(o) & OP_MASK_PACKED)
+# define Set_OP_packed(o)	(OP_flags2(o) |= OP_MASK_PACKED)
+# define Reset_OP_packed(o)	(OP_flags2(o) &= ~OP_MASK_PACKED)
+# define OP_multi_exit_loop(o)		(OP_flags2(o) & OP_MASK_MULTI_EXIT_LOOP)
+# define Set_OP_multi_exit_loop(o)	(OP_flags2(o) |= OP_MASK_MULTI_EXIT_LOOP)
+# define Reset_OP_multi_exit_loop(o)	(OP_flags2(o) &= ~OP_MASK_MULTI_EXIT_LOOP)
+# define OP_sameres(o)		(OP_flags2(o) & OP_MASK_SAMERES)
+# define Set_OP_sameres(o)	(OP_flags2(o) |= OP_MASK_SAMERES)
+# define Reset_OP_sameres(o)	(OP_flags2(o) &= ~OP_MASK_SAMERES)
+# define OP_carryisignored(o)		(OP_flags2(o) & OP_MASK_CARRY_IS_IGNORED)
+# define Set_OP_carryisignored(o)	(OP_flags2(o) |= OP_MASK_CARRY_IS_IGNORED)
+# define Reset_OP_carryisignored(o)	(OP_flags2(o) &= ~OP_MASK_CARRY_IS_IGNORED)
+# define OP_uniqres(o)		(OP_flags2(o) & OP_MASK_UNIQRES)
+# define Set_OP_uniqres(o)	(OP_flags2(o) |= OP_MASK_UNIQRES)
+# define Reset_OP_uniqres(o)	(OP_flags2(o) &= ~OP_MASK_UNIQRES)
+#endif
 
 extern BOOL OP_cond_def(const OP*);
 extern BOOL OP_has_implicit_interactions(OP*);

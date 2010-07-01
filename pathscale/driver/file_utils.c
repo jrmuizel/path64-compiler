@@ -41,7 +41,6 @@
 #include "errors.h"
 #include "string_utils.h"
 #include "file_utils.h"
-
 extern int errno;
 static char *saved_orig_program_name;
 
@@ -97,7 +96,6 @@ concat_path (char *d, char *f)
 		return path;
 	}
 }
-
 boolean
 file_exists (char *path)
 {

@@ -582,6 +582,23 @@ IVR::Reset_dont_prop(CODEREP *cr, const BB_LOOP *loop)
   return;
 }
 
+#ifdef TARG_ST
+// FdF 20060105: Use an id_map to cache previous results from calls to
+// Expand_expr, so as to avoid quadratic complexity of the algorithm.
+
+// Note that this does not strictly gives the same results as the
+// original algorithm. The reason is that the limit parameter is used
+// to avoid too much propagation through variables, which occurs less
+// often with this new implementation.
+ID_MAP<CODEREP *, INT32> *expand_cr_map = NULL;
+
+// FdF 20100111: Use a map so as to collect the fact that a CR does
+// not contain a given CR, when recursisevly traversing a CR
+// tree. This is needed to reduce compilation time on very large
+// expressions
+static ID_MAP<INT32, INT32> *contains_cr_map = NULL;
+ID_MAP<INT32, INT32> *HTABLE_contains_cr_map = NULL;
+#endif
 
 // Expand an expression (try to expand it into a vars
 // defined by phi, chi, or is loop-invariant.
@@ -635,7 +652,21 @@ CODEMAP::Expand_expr(CODEREP *cr, const BB_LOOP *loop, INT32 *limit)
 	  }
 	}
 	if (identical_rhs != NULL) {
+#ifdef TARG_ST
+	  CODEREP *expr;
+	  // FdF 20060105: Avoid quadratic complexity of the algorithm.
+	  if (expand_cr_map) {
+	    expr = expand_cr_map->Lookup(identical_rhs->Coderep_id());
+	    if (((INT32) expr) == -1) {
+	      expr = Expand_expr(identical_rhs, loop, limit);
+	      expand_cr_map->Insert(identical_rhs->Coderep_id(), expr);
+	    }
+	  }
+	  else
+	    expr = Expand_expr(identical_rhs, loop, limit);
+#else           
 	  CODEREP *expr = Expand_expr(identical_rhs, loop, limit);
+#endif
 	  --(*limit);
 	  if (expr)
 	    return expr;
@@ -644,7 +675,21 @@ CODEMAP::Expand_expr(CODEREP *cr, const BB_LOOP *loop, INT32 *limit)
 	}
       } else if (cr->Defstmt() != NULL && !cr->Is_flag_set(CF_DEF_BY_CHI)) {
 	if (cr->Defstmt()->Rhs()->Propagatable_for_ivr(Opt_stab())) {
+#ifdef TARG_ST
+	  // FdF 20060105: Avoid quadratic complexity of the algorithm.
+	  CODEREP *expr;
+	  if (expand_cr_map) {
+	    expr = expand_cr_map->Lookup(cr->Defstmt()->Rhs()->Coderep_id());
+	    if (((INT32) expr) == -1) {
+	      expr = Expand_expr(cr->Defstmt()->Rhs(), loop, limit);
+	      expand_cr_map->Insert(cr->Defstmt()->Rhs()->Coderep_id(), expr);
+	    }
+	  }
+	  else
+	    expr = Expand_expr(cr->Defstmt()->Rhs(), loop, limit);
+#else
 	  CODEREP *expr = Expand_expr(cr->Defstmt()->Rhs(), loop, limit);
+#endif
 	  --(*limit);
 	  if (expr)
 	    return expr;
@@ -663,7 +708,20 @@ CODEMAP::Expand_expr(CODEREP *cr, const BB_LOOP *loop, INT32 *limit)
       FOLD ftmp;
       newcr->Copy(*cr);
       for  (INT32 i = 0; i < cr->Kid_count(); i++) {
+#ifdef TARG_ST
+	// FdF 20060105: Avoid quadratic complexity of the algorithm.
+	if (expand_cr_map) {
+	  expr = expand_cr_map->Lookup(cr->Opnd(i)->Coderep_id());
+	  if (((INT32) expr) == -1) {
+	    expr = Expand_expr( cr->Opnd(i), loop, limit);
+	    expand_cr_map->Insert(cr->Opnd(i)->Coderep_id(), expr);
+	  }
+	}
+	else
+	  expr = Expand_expr( cr->Opnd(i), loop, limit);
+#else
 	expr = Expand_expr( cr->Opnd(i), loop, limit);
+#endif
 	if (expr) {
 	  need_rehash = TRUE;
 	  newcr->Set_opnd(i, expr);
@@ -742,7 +800,7 @@ CODEREP::Propagatable_along_path(const BB_NODE *dest /* inclusive */,
       if (! Opnd(i)->Propagatable_along_path(dest, src))
 	return FALSE;
     if (Opr() == OPR_INTRINSIC_OP
-#ifdef KEY
+#if defined( KEY) &7 !defined(TARG_ST)
 	|| Opr() == OPR_PURE_CALL_OP
 #endif
        )
@@ -780,8 +838,8 @@ CODEREP::Propagatable_into_loop(const BB_LOOP *loop) const
       if (! Opnd(i)->Propagatable_into_loop(loop))
 	return FALSE;
     if (Opr() == OPR_INTRINSIC_OP
-#ifdef KEY
-	|| Opr() == OPR_PURE_CALL_OP
+#if defined( KEY) &7 !defined(TARG_ST)
+        || Opr() == OPR_PURE_CALL_OP
 #endif
 #if defined(TARG_IA32) || defined(TARG_X8664)
 	|| Opr() == OPR_SELECT
@@ -826,7 +884,7 @@ CODEREP::Propagatable_for_ivr(OPT_STAB *sym) const
     // Reference 644395 for situations when INTRINSIC_OP cannot be
     // copy propagated.
     if (Opr() == OPR_INTRINSIC_OP
-#ifdef KEY
+#if defined( KEY) &7 !defined(TARG_ST)
 	|| Opr() == OPR_PURE_CALL_OP
 #endif
        )
@@ -879,7 +937,7 @@ CODEMAP::Convert_to_loop_invar(CODEREP *cr, BB_LOOP *loop)
 #ifdef KEY
     temp_rtype = TY_mtype(ST_type(MTYPE_To_PREG(cr->Dtyp())));
 #endif
-#ifdef KEY // bug 11467
+#if defined( KEY) &7 !defined(TARG_ST)// bug 11467
     if (temp_type == MTYPE_BS)
       temp_type = temp_rtype;
 #endif
@@ -928,7 +986,12 @@ CODEMAP::Convert_to_loop_invar(CODEREP *cr, BB_LOOP *loop)
 
   } else {
     STMTREP *stmt = cr->Create_cpstmt(new_cr, Mem_pool());
+#ifdef TARG_ST
+    // FdF 20090115
+    loop->Preheader()->Append_stmt_before_branch(stmt);
+#else
     loop->Preheader()->Append_stmtrep(stmt);
+#endif
   }
 
   return new_cr;
@@ -985,9 +1048,23 @@ IVR::Generate_step(CODEREP *nv, CODEREP *iv) const
   
   // The step expression contains the induction variable, either the
   // simplifier is not good enough, or it is not a valid candidate.
+#ifdef TARG_ST
+  if (contains_cr_map) {
+    // This call to Contains will use HTABLE_contains_cr_map to store
+    // results of recursive calls to Contains, so as to reduce
+    // compilation time on large expressions.
+    contains_cr_map->Init();
+    HTABLE_contains_cr_map = contains_cr_map;
+  }
+  if (delta && delta->Contains(iv))
+    delta = NULL;
+  // HTABLE_contains_cr_map *must* be set to NULL here so that later
+  // calls to Contains do not use results from this call.
+  HTABLE_contains_cr_map = NULL;
+#else
   if (delta && delta->Contains(iv))
     return NULL;
-  
+#endif
   return delta;
 }
 
@@ -1012,7 +1089,12 @@ IVR::Ident_all_iv_cands(const BB_LOOP *loop, const BB_NODE *bb)
   BOOL is_mp_loop = IS_MP_LOOP(loop);
 
   if (bb->Pred()->Len() != 2) return;
-  
+#ifdef TARG_ST  
+  // FdF 20060105: Avoid quadratic complexity of the algorithm.
+  if (expand_cr_map)
+    expand_cr_map->Init();
+#endif
+
 #ifdef KEY
 #ifdef Is_True_On
   static INT32 ivr_cand_idx = 0;
@@ -1230,6 +1312,154 @@ Primary_IV_preference(IV_CAND *iv, OPT_STAB *opt_stab)
 
   return score > MIN_SCORE ? score : MIN_SCORE;
 }
+#ifdef TARG_ST
+// FdF 20060124: Promote an induction variable on less than 32 bit
+// into a 32 bit integer variable.
+IV_CAND*
+IVR::Promote_IV(const BB_LOOP *loop, IV_CAND * iv, MTYPE mtype)
+{
+
+  // We only support real statement on the init and incr statements.
+  if (iv->Init_var()->Is_flag_set((CR_FLAG)(CF_DEF_BY_CHI|CF_DEF_BY_PHI)) ||
+      iv->Incr_var()->Is_flag_set((CR_FLAG)(CF_DEF_BY_CHI|CF_DEF_BY_PHI)))
+    return NULL;
+
+  //  fprintf(stdout, "Promote_IV for BB %d, in Phase %d\n", loop->Body()->Id(), Phase());
+  //  Cfg()->Print(stdout, 1, -1);
+  // generate a new IV
+  AUX_STAB_ENTRY *aux_iv = Opt_stab()->Aux_stab_entry(iv->Var()->Aux_id());
+  IDTYPE new_temp = Opt_stab()->Create_preg( mtype, aux_iv->St_name());
+
+  Add_new_auxid_to_entry_chis(new_temp, Cfg(), Htable(), Opt_stab());
+
+  CODEREP *init_cr = Htable()->Add_def(new_temp, 1, NULL, mtype, mtype,
+				       Opt_stab()->Aux_stab_entry(new_temp)->St_ofst(),
+				       MTYPE_To_TY(mtype), 0, TRUE);
+      
+  CODEREP *phi_cr = Htable()->Add_def(new_temp, 2, NULL, mtype, mtype,
+				      Opt_stab()->Aux_stab_entry(new_temp)->St_ofst(),
+				      MTYPE_To_TY(mtype), 0, TRUE);
+
+  CODEREP *incr_cr = Htable()->Add_def(new_temp, 3, NULL, mtype, mtype,
+				       Opt_stab()->Aux_stab_entry(new_temp)->St_ofst(),
+				       MTYPE_To_TY(mtype), 0, TRUE);
+  // FdF: PHI arguments must be marked DONT_PROP
+  init_cr->Set_flag(CF_DONT_PROP);
+  incr_cr->Set_flag(CF_DONT_PROP);
+
+  PHI_NODE *phi = loop->Header()->Phi_list()->
+    New_phi_node(new_temp, Htable()->Ssa()->Mem_pool(), loop->Header());
+
+  phi_cr->Set_flag(CF_DEF_BY_PHI);
+  phi_cr->Set_defphi(phi);
+  phi->Reset_dse_dead();
+  phi->Reset_dce_dead();
+  phi->Set_res_is_cr();
+  phi->Set_live();
+  phi->Set_result(phi_cr);
+  phi->Set_incomplete();
+      
+  STMTREP *init_stmt = iv->Init_value()->Create_cpstmt(init_cr, Htable()->Mem_pool());
+  iv->Init_var()->Defbb()->Insert_stmtrep_after(init_stmt, iv->Init_var()->Defstmt());
+  init_stmt->Set_bb(iv->Init_var()->Defbb());
+
+  OPCODE addop = OPCODE_make_op(OPR_ADD, mtype, MTYPE_V);
+  CODEREP *incr_rhs = Htable()->Add_bin_node_and_fold(addop, phi_cr, iv->Step_value());
+
+  STMTREP *incr_stmt =
+    incr_rhs->Create_cpstmt(incr_cr, Htable()->Mem_pool());
+  iv->Incr_var()->Defbb()->Insert_stmtrep_after(incr_stmt, iv->Incr_var()->Defstmt());
+  incr_stmt->Set_bb(iv->Incr_var()->Defbb());
+
+  Htable()->Enter_var_phi_hash(phi);
+  Htable()->Insert_var_phi(phi->RESULT(), phi->Bb());
+  Htable()->Insert_var_phi(incr_stmt->Lhs(), incr_stmt->Bb());
+  Htable()->Insert_var_phi(init_stmt->Lhs(), init_stmt->Bb());
+
+  phi->Set_opnd(Loop()->Preheader_pred_num(), init_cr);
+  phi->Set_opnd(Loop()->Loopback_pred_num(),  incr_cr);
+
+  IV_CAND *new_cand =
+    CXX_NEW(IV_CAND(phi, init_cr, incr_cr, iv->Step_value(), mtype), Mem_pool());
+  new_cand->Set_init_value( iv->Init_value() );
+
+  iv_cand_container.push_back(new_cand);
+
+  if (_trace) {
+    fprintf(TFile, "IVR: generate primary IV with aux-id %d\n", new_temp);
+    fprintf(TFile, "IVR: insert phi at BB%d, init at BB%d, incr at BB%d\n",
+	    phi->Bb()->Id(), init_stmt->Bb()->Id(), incr_stmt->Bb()->Id());
+  }
+
+  return new_cand;
+}
+
+static CODEREP *
+subst_cr_occurrences(CODEREP *cr, const IV_CAND *iv_from, const IV_CAND *iv_to) {
+
+  if (cr == iv_from->Var())
+    return iv_to->Var();
+  else if (cr == iv_from->Init_var())
+    return iv_to->Init_var();
+  else if (cr == iv_from->Incr_var())
+    return iv_to->Incr_var();
+
+  switch (cr->Kind())
+    {
+    case CK_CONST:
+    case CK_RCONST:
+    case CK_LDA:
+    case CK_VAR:
+      break;
+
+    case CK_IVAR:
+      if (cr->Ilod_base())
+	cr->Set_ilod_base(subst_cr_occurrences(cr->Ilod_base(), iv_from, iv_to));
+      else
+	cr->Set_istr_base(subst_cr_occurrences(cr->Istr_base(), iv_from, iv_to));
+      break;
+
+    case CK_OP:
+      for (INT32 i=0; i<cr->Kid_count(); i++) { 
+	cr->Set_opnd(i, subst_cr_occurrences(cr->Opnd(i), iv_from, iv_to));
+      }
+      break;
+
+    case CK_DELETED:	// should never happen
+    default:		// illegal kind
+      FmtAssert(FALSE, 
+		("VNFRE::insert_cr_occurrences(), unexpected kind 0x%x",
+		 cr->Kind()));
+      break;
+    }
+
+  return cr;
+}
+
+void
+IVR::Substitute_IV(const IV_CAND *iv,
+		   const IV_CAND *new_iv,
+		   BB_NODE *startbb,
+		   BB_LOOP *loop)
+{
+  BB_NODE *bb;
+  BB_NODE_SET_ITER bb_iter;
+  FOR_ALL_ELEM(bb, bb_iter, Init(loop->True_body_set())) {
+    STMTREP_ITER      stmt_iter(bb->Stmtlist());
+    STMTREP          *stmt;
+    FOR_ALL_NODE(stmt, stmt_iter, Init()) {
+      if (stmt != iv->Incr_var()->Defstmt()) {
+	if (stmt->Lhs())
+	  stmt->Set_lhs(subst_cr_occurrences(stmt->Lhs(), iv, new_iv));
+	if (stmt->Rhs())
+	  stmt->Set_rhs(subst_cr_occurrences(stmt->Rhs(), iv, new_iv));
+      }
+    }
+  }
+  if (loop->Iv() == iv->Var())
+    loop->Set_iv(new_iv->Var());
+}
+#endif
 
 
 //  Choose an IV to be the primary induction variable based on the
@@ -1284,7 +1514,7 @@ IVR::Choose_primary_IV(const BB_LOOP *loop)
 
       IDTYPE new_temp = Opt_stab()->Create_preg( mtype, "whiledo_var" );
 
-#ifdef KEY // bug 5778
+#if defined( KEY) && !defined(TARG_ST) // bug 5778
       if (ST_class(Opt_stab()->St(new_temp)) != CLASS_PREG &&
 	  Phase() != MAINOPT_PHASE && loop->Body()->MP_region()) {
 	// add a WN_PRAGMA_LOCAL pragma to the enclosing OMP parallel region
@@ -1983,6 +2213,27 @@ IVR::Compute_trip_count(const OPCODE cmp_opc,
   }
 
   if (trip_count) {
+#ifdef TARG_ST
+    // FdF 20041123: Check if a CVTL is needed to convert the
+    // expression of the loop trip count into the type of the
+    // induction variable (bug 1-5-0-B/66).
+    MTYPE iv_type = var->Dsctyp();
+    CODEREP *expr = trip_count->Fixup_type(iv_type, Htable());
+    FOLD ftmp;
+    CODEREP *tc = ftmp.Fold_Expr(expr);
+    // FdF 20041213, ddts 19941: Use expr if tc is NULL
+    if (!tc) tc = expr;
+    if (tc != trip_count) {
+      if (_trace) {
+	fprintf(TFile, "Trip_count was changed when using var->Dsctyp()\n");
+	fprintf(TFile, "Old: \n");
+	trip_count->Print(0, TFile);
+	fprintf(TFile, "New: \n");
+	tc->Print(0, TFile);
+      }
+      trip_count = tc;
+    }
+#endif
     CODEREP *tmp = Htable()->Canon_rhs(trip_count);
     if (tmp) trip_count = tmp;
   }
@@ -2375,7 +2626,7 @@ IVR::Determine_trip_IV_and_exit_count(BB_LOOP *loopinfo,
   if (trip_init == NULL || trip_step == NULL || trip_bound == NULL)
     return;
 
-#ifdef KEY // bug 13728: if there is wraparound, do not continue
+#if defined( KEY) && !defined(TARG_ST) // bug 13728: if there is wraparound, do not continue
   if (trip_init->Kind() == CK_CONST && trip_step->Kind() == CK_CONST &&
       trip_bound->Kind() == CK_CONST) {
     if (MTYPE_signed(trip_cand->Var()->Dtyp()))
@@ -2779,13 +3030,42 @@ IVR::Update_exit_stmt(const IV_CAND *secondary,
   Inc_exit_value_counter();
 }
 
+#ifdef TARG_ST
+IV_CAND*
+IVR::Choose_promote_IV(const BB_LOOP *loop, IV_CAND *trip_iv)
+{
+  WN *index = loop->Index();
+  
+  vector<IV_CAND*>::iterator iv_cand_iter;
+
+  if (Phase() != MAINOPT_PHASE)
+    return NULL;
+
+  // FdF 20060124: In case the trip_iv will not wrap (either a
+  // constant has been computed or the type is a signed type in C or
+  // C++,and its type is lower than I4), then promote it to type I4
+  if (Trip_count() && (MTYPE_size_min(trip_iv->Var()->Dsctyp()) < MTYPE_size_min(MTYPE_I4)) &&
+      ((Trip_count()->Kind() == CK_CONST) ||
+       (!PU_mixed_lang(Get_Current_PU()) &&
+	(PU_c_lang(Get_Current_PU()) || PU_cxx_lang(Get_Current_PU())) &&
+	MTYPE_signed(trip_iv->Var()->Dsctyp()))))
+    return trip_iv;
+
+  return NULL;
+}
+#endif
+
 
 // ====================================================================
 //
 // Convert_all_ivs is the driver for IVR on a particular loop.
 //
 // ====================================================================
-
+#ifdef TARG_ST
+static int trc_loop_nb = 0;
+static int trc_loop_short_before = 0;
+static int trc_loop_short_after = 0;
+#endif
 
 void
 IVR::Convert_all_ivs(BB_LOOP *loop)
@@ -2818,6 +3098,57 @@ IVR::Convert_all_ivs(BB_LOOP *loop)
   IV_CAND *trip_iv = NULL;
   Determine_trip_IV_and_exit_count(loop, &trip_iv, primary);
   CODEREP *trip_count = Trip_count();
+#ifdef TARG_ST
+  int trc_iv_count = 0;
+  int trc_short_iv_count = 0;
+  int trc_short_iv_count_opt = 0;
+
+  if ((Phase() == MAINOPT_PHASE) && Get_Trace(TP_GLOBOPT, IVR_DUMP_FLAG)) {
+    // Add a trace on how much induction variables are on types <
+    // I4/U4.
+    trc_loop_nb ++;
+    for (iv_cand_iter = iv_cand_container.begin(); 
+	 iv_cand_iter != iv_cand_container.end();
+	 iv_cand_iter++) {
+      IV_CAND *cur_iv = *iv_cand_iter;
+      trc_iv_count ++;
+      if (MTYPE_size_min(cur_iv->Var()->Dsctyp()) < MTYPE_size_min(MTYPE_I4))
+	trc_short_iv_count ++;
+    }
+    if (trc_short_iv_count > 0)
+      trc_loop_short_before ++;
+  }
+
+  IV_CAND *promote_iv = Choose_promote_IV(loop, trip_iv);
+
+  if (promote_iv) {
+
+    IV_CAND *new_iv = Promote_IV(loop, promote_iv, MTYPE_I4);
+    if (new_iv != NULL) {
+      if (Get_Trace(TP_GLOBOPT, IVR_DUMP_FLAG)) {
+	trc_short_iv_count_opt ++;
+      }
+
+      // Check also if this new IV can be a primary_IV.
+      if (primary == NULL) {
+	primary = Choose_primary_IV(loop);
+      }
+
+      // Then, process all loop statements, and replace the use of
+      // trip_iv->Init, trip_iv->Var and trip_iv->Incr by the
+      // corresponding variables from new_iv.
+      Update_exit_stmt(new_iv, loop->Merge(), loop);
+      Substitute_IV(trip_iv, new_iv, loop->Header(), loop);
+      trip_iv = new_iv;
+    }
+  }
+
+  if ((Phase() == MAINOPT_PHASE) && Get_Trace(TP_GLOBOPT, IVR_DUMP_FLAG)) {
+    fprintf(TFile, "<IVp> %s: IVs %d, short IV %d(%d)\n", Cur_PU_Name, trc_iv_count, trc_short_iv_count, trc_short_iv_count-trc_short_iv_count_opt);
+    if (trc_short_iv_count > trc_short_iv_count_opt)
+      trc_loop_short_after ++;
+  }
+#endif
 
   // ************************************************************************
   //    Update the BB_LOOP entry test condition
@@ -2912,6 +3243,14 @@ IVR::Convert_all_ivs(BB_LOOP *loop)
 
   loop->Set_iv(primary->Var());
   if (_trace) { fprintf(TFile, "PRIMARY "); primary->Print(TFile); }
+#ifdef TARG_ST
+  // FdF 20060531: Do not replace secondary IVs on loops that are
+  // detected invalid. This detection is made in PREOPT, and the only
+  // known case of invalid do loop is when a normalized IV (.do_ivar)
+  // is introduced (bug 190B/59)
+  if (!loop->Valid_doloop())
+    return;
+#endif
 
   for (iv_cand_iter = iv_cand_container.begin(); 
        iv_cand_iter != iv_cand_container.end();
@@ -2982,7 +3321,15 @@ IVR::Convert_all_ivs(BB_LOOP *loop)
 		secondary->Var()->Aux_id());
       continue;
     }
-
+#ifdef TARG_ST
+    // FdF 20060425: For performance reason, and util strength
+    // reduction is not improved to handle more complex expression,
+    // disable secondary IV replacement when this will introduce a MUL
+    // operation.
+    if (((secondary->Step_value()->Kind() != CK_CONST) ||
+	 (secondary->Step_value()->Const_val() != 1)))
+      continue;
+#endif
     if (secondary->Init_value() != NULL) {
       // Update_exit_stmt must run before Replace_secondary_IV because
       // it needs to access the phi node at the loop start and
@@ -3342,9 +3689,39 @@ COMP_UNIT::Do_iv_recognition(void)
     IVR iv_recog(this, trace_ivr);
     BB_LOOP_ITER loop_iter(loop_list);
     BB_LOOP *loop;
+#ifdef TARG_ST
+    // FdF 20060105: Use an id_map to cache previous results from
+    // calls to Expand_expr, so as to avoid quadratic complexity of
+    // the algorithm. This is only needed in MAINOPT phase when LNO is
+    // used, because code has been transformed in such a way that
+    // expressions may be very large and contain many occurences of
+    // the same CODEREP.
+    if ((Opt_Level > 2) && (Phase() == MAINOPT_PHASE)) {
+      typedef ID_MAP<CODEREP *, INT32> EXPAND_CR_MAP;
+      expand_cr_map = CXX_NEW(EXPAND_CR_MAP(256,
+					    (CODEREP *)-1,
+					    Mem_pool(),
+					    FALSE),
+			      Mem_pool());
+
+      typedef ID_MAP<INT32, INT32> CONTAINS_CR_MAP;
+      contains_cr_map = CXX_NEW(CONTAINS_CR_MAP(256,
+						-1,
+						Mem_pool(),
+						FALSE),
+				Mem_pool());
+      HTABLE_contains_cr_map = NULL;
+    }
+#endif
+
+#ifdef TARG_ST
+    trc_loop_nb = 0;
+    trc_loop_short_before = 0;
+    trc_loop_short_after = 0;
+#endif
 
     FOR_ALL_NODE(loop, loop_iter, Init()){
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 #ifdef Is_True_On
       if (WOPT_Enable_Ivr_Limit != -1 && ivr_idx >= WOPT_Enable_Ivr_Limit)
         break;
@@ -3353,7 +3730,17 @@ COMP_UNIT::Do_iv_recognition(void)
 #endif
       iv_recog.Process_one_loop(loop);
     }
-
+#ifdef TARG_ST
+    // FdF 20060105
+    if (expand_cr_map) {
+      CXX_DELETE(expand_cr_map, Mem_pool());
+      expand_cr_map = NULL;
+    }
+    if (contains_cr_map) {
+      CXX_DELETE(contains_cr_map, Mem_pool());
+      contains_cr_map = NULL;
+    }
+#endif
     if (iv_recog.Rebuild_loops()) {
       // rebuild the loop structure because some loops are disassembled.
       _cfg->Invalidate_loops();

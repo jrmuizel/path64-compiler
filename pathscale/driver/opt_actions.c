@@ -97,6 +97,13 @@ static boolean target_prefers_sse3 = FALSE;
 static boolean target_supports_3dnow = FALSE;
 static boolean target_supports_sse4a = FALSE;
 #endif
+#ifdef TARG_ST
+ extern int ExtensionSeen;
+int c_std;
+/* TB: to warm if olevel is not enough if uninitialized var warning is
+   aked*/
+boolean Wuninitialized_is_asked = FALSE; 
+#endif
 
 extern boolean parsing_default_options;
 extern boolean drop_option;
@@ -108,7 +115,10 @@ static void add_hugepage_desc(HUGEPAGE_ALLOC, HUGEPAGE_SIZE, int);
 void set_memory_model(char *model);
 static int get_platform_abi();
 #endif
-
+#ifdef TARG_ST
+char *print_name;
+int print_kind;
+#endif
 #ifdef TARG_X8664
 static void Get_x86_ISA();
 static boolean Get_x86_ISA_extensions();
@@ -128,6 +138,56 @@ static boolean Get_x86_ISA_extensions();
  * ====================================================================
  */
 
+static struct {
+  char * pname;
+  PROCESSOR pid;
+} Proc_Map[] =
+{
+  { "r4000",	PROC_R4K },
+  { "r4k",	PROC_R4K },
+  { "r5000",	PROC_R5K },
+  { "r5k",	PROC_R5K },
+  { "r8000",	PROC_R8K },
+  { "r8k",	PROC_R8K },
+  { "r10000",	PROC_R10K },
+  { "r10k",	PROC_R10K },
+  { "r12000",	PROC_R10K },
+  { "r12k",	PROC_R10K },
+  { "r14000",	PROC_R10K },
+  { "r14k",	PROC_R10K },
+  { "r16000",	PROC_R10K },
+  { "r16k",	PROC_R10K },
+  { "itanium",	PROC_ITANIUM },
+  { "st100",    PROC_ST100 },
+  { "st210",    PROC_ST210 },
+  { "st220",    PROC_ST220 },
+  { "st231",    PROC_ST231 },
+  { "st240",    PROC_ST240 },
+  { "arm9",     PROC_armv5 },
+  { "arm11",    PROC_armv6 },
+  { "stxp70_v3",PROC_stxp70_v3 },
+  { "stxp70_v4",PROC_stxp70_v4_novliw},
+  { "stxp70v3", PROC_stxp70_v3 },
+  { "stxp70v4", PROC_stxp70_v4_novliw },
+  { "stxp70v4novliw", PROC_stxp70_v4_novliw },
+  { "stxp70v4singlecoreALU",PROC_stxp70_v4_single },
+  { "stxp70v4dualcoreALU",PROC_stxp70_v4_dual},
+  { NULL,	PROC_NONE }
+};
+
+
+#ifdef MUMBLE_ARM_BSP
+static struct {
+  char * pname;
+  RUNTIME pid;
+} Runtime_Map[] =
+{
+  { NULL,	RUNTIME_NONE }
+};
+#endif
+
+
+char *Ofast_Name = NULL;/* -Ofast= name */
 int ofast = UNDEFINED;	/* -Ofast toggle -- implicit in Process_Ofast */
 
 
@@ -365,6 +425,10 @@ Process_Opt_Group ( char *opt_args )
   if ( debug ) {
     fprintf ( stderr, "Process_Opt_Group: %s\n", opt_args );
   }
+#ifdef TARG_ST
+  if (strncmp("enable_instrument", opt_args, strlen("enable_instrument")) == 0)
+     instrumentation_invoked = TRUE;
+#endif  
   
   /* Go look for -OPT:instrument */
   optval = Get_Group_Option_Value ( opt_args, "instrument", "instr");
@@ -412,6 +476,17 @@ Process_Default_Group (char *default_args)
   if (s != NULL && same_string_prefix (s, "mips")) {
 	default_isa = atoi(s + strlen("mips"));
   }
+
+  /* Go look for -DEFAULT:proc=rN000: */
+  s = Get_Group_Option_Value ( default_args, "proc", "proc");
+  if (s != NULL) {
+	for (i = 0; Proc_Map[i].pname != NULL; i++) {
+		if (same_string(s, Proc_Map[i].pname)) {
+			default_proc = Proc_Map[i].pid;
+		}
+	}
+  }
+
   /* Go look for -DEFAULT:opt=[0-3]: */
   s = Get_Group_Option_Value ( default_args, "opt", "opt");
   if (s != NULL) {
@@ -623,7 +698,61 @@ Process_Targ_Group ( char *targ_args )
   }
 }
 
-
+
+#ifdef TARG_ARM
+/* ====================================================================
+ *
+ * add_arm_phase_for_option
+ *
+ *   Add flag to all needed phase for ARM target option
+ *
+ * ====================================================================
+ */
+static void
+add_arm_phase_for_option( int flag )
+{
+  add_phase_for_option(flag, P_be);
+  add_phase_for_option(flag, p_any_ipl);
+  add_phase_for_option(flag, P_any_fe);
+#if (GNU_FRONT_END==33)
+  /* (cbr) -TARG now passed to cpp */
+  add_phase_for_option(flag, P_gcpp);
+  add_phase_for_option(flag, P_gcpp_plus);
+#endif
+  if (!already_provided(flag)) {
+    /* [CL] Only prepend this option if
+       not already provided by the user */
+    prepend_option_seen (flag);
+  }
+}
+
+
+static void
+add_arm_int_option(char* option_name, int imm, phases_t phase)
+{
+  char *str = alloca(strlen(option_name)+16);
+  int flag;
+  sprintf(str, option_name, imm);
+  flag = add_new_option(str);
+  add_phase_for_option(flag, phase);
+  if (!already_provided(flag)) {
+    prepend_option_seen (flag);
+  }
+}
+
+static void
+check_range(char* m1, char* m2, int min1, int max1, int min2, int max2)
+{
+  if ((max1>0) && (max2>0) &&
+       ((min1<=min2 && min2<=max1) ||
+        (min2<=min1 && min1<=max2)))
+   warning("Conflict between size ranges %s [%d:%d] and "
+           "%s [%d:%d]\n",
+           m1, min1, max1, m2, min2, max2);
+}
+
+#endif /* TARG_ARM */
+
 /* ====================================================================
  *
  * Check_Target
@@ -638,6 +767,7 @@ Check_Target ( void )
 {
   int opt_id;
   int opt_val;
+  int flag;
 
   if ( debug ) {
     fprintf ( stderr, "Check_Target ABI=%d ISA=%d Processor=%d\n",
@@ -662,6 +792,24 @@ Check_Target ( void )
     target_cpu = "mips5kf";
   } else if (! strcmp(target_cpu, "twc9")) {
     target_cpu = "twc9a";
+  }
+#endif
+
+#ifdef TARG_ARM
+  switch (proc) {
+  case UNDEFINED:
+    toggle(&proc, PROC_armv5);
+    /* fallthru arm default (armv5). */
+  case PROC_armv5:
+    flag = add_new_option("-TARG:proc=armv5");
+    break;
+  case PROC_armv6:
+    flag = add_new_option("-TARG:proc=armv6");
+    break;
+  }
+
+  if (proc != PROC_NONE) {
+    add_arm_phase_for_option(flag);
   }
 #endif
 
@@ -695,6 +843,9 @@ Check_Target ( void )
 	  add_option_seen (O_m64);
 	else
 	  add_option_seen (O_m32);
+#elif defined( TARG_ARM )
+	toggle(&abi, ABI_ARM_ver1);
+
 #else
 	warning("abi should have been specified by driverwrap");
   	/* If nothing is defined, default to -n32 */
@@ -1532,6 +1683,349 @@ print_file_path (char *fname, int exe)
   exit(1);
 }
 
+#ifdef BCO_ENABLED /* Thierry */
+
+/* ====================================================================
+ *
+ * Process_ICache_Group
+ *
+ * We've found a ---icache-opt option group.  Inspect it and toggle
+ * the state appropriately.
+ *
+ * NOTE: We ignore anything that doesn't match what's expected -- the
+ * compiler will produce reasonable error messages for junk.
+ *
+ * ====================================================================
+ */
+void
+Process_ICache_Group (string cache_args)
+{
+
+  char *cp = cache_args;
+
+  if ( debug ) {
+    fprintf ( stderr, "Process_ICache_Group: %s\n", cache_args );
+  }
+
+  icache_opt = Bool_Group_Value(cp);
+}
+
+/* ====================================================================
+ *
+ * Process_ICachestatic_Group
+ *
+ * We've found a --icache-static=%s option group.  Inspect it and toggle
+ * the state appropriately.
+ *
+ * NOTE: We ignore anything that doesn't match what's expected -- the
+ * compiler will produce reasonable error messages for junk.
+ *
+ * ====================================================================
+ */
+void
+Process_ICachestatic_Group (string cache_args)
+{
+
+  char *cp = cache_args;
+
+  if ( debug ) {
+    fprintf ( stderr, "Process_ICachestatic_Group: %s\n", cache_args );
+  }
+
+  icache_static = Bool_Group_Value(cp);
+}
+
+
+/* ====================================================================
+ *
+ * Process_ICacheprofile_Group
+ *
+ * We've found a ---icache-profile=file option.  Inspect it and toggle
+ * the state appropriately.
+ *
+ * ====================================================================
+ */
+void
+Process_ICacheprofile_Group (string cache_args)
+{
+  char *cp = cache_args;
+
+  if ( debug ) {
+    fprintf ( stderr, "Process_ICacheprofile_Group: %s\n", cache_args );
+  }
+
+  if (file_exists(cp))
+    icache_profile = cp;
+  else
+    warning ("--icache-profile=%s does not exist, option ignored ", cp);
+}
+
+/* ====================================================================
+ *
+ * Process_ICacheprofileExe_Group
+ *
+ * We've found a --icache-profile-exe=file option.  Inspect it and toggle
+ * the state appropriately.
+ *
+ * ====================================================================
+ */
+void
+Process_ICacheprofileExe_Group (string cache_args)
+{
+  char *cp = cache_args;
+
+  if ( debug ) {
+    fprintf ( stderr, "Process_ICacheprofileExe_Group: %s\n", cache_args );
+  }
+  if (file_exists(cp))
+    icache_profile_exe = cp;
+  else
+    warning ("--icache-profile-exe=%s does not exist, option ignored ", cp);
+}
+/* ====================================================================
+ *
+ * Process_ICachemapping_Group
+ *
+ * We've found a ---icache-mapping=file option. Inspect it and toggle
+ * the state appropriately.
+ *
+ * ====================================================================
+ */
+void
+Process_ICachemapping_Group (string cache_args)
+{
+  char *cp = cache_args;
+
+  if ( debug ) {
+    fprintf ( stderr, "Process_ICachemapping_Group: %s\n", cache_args );
+  }
+
+  if (file_exists(cp))
+    icache_mapping = cp;
+  else
+    warning ("--icache-mapping=%s does not exist, option ignored ", cp);
+}
+
+/* ====================================================================
+ *
+ * Process_ICachealgo_Group
+ *
+ * We've found a ---icache-algo=name option group.  Inspect it and toggle
+ * the state appropriately.
+ *
+ * NOTE: We ignore anything that doesn't match what's expected -- the
+ * compiler will produce reasonable error messages for junk.
+ *
+ * ====================================================================
+ */
+void
+Process_ICachealgo_Group (string cache_args)
+{
+  char *cp = cache_args;
+
+  if ( debug ) {
+    fprintf ( stderr, "Process_ICachealgo_Group: %s\n", cache_args );
+  }
+
+  if ( strncasecmp ( cp, "ph", 2 ) == 0) 
+    icache_algo = algo_PH;
+  else if ( strncasecmp ( cp, "col", 3 ) == 0) 
+    icache_algo = algo_COL;
+  else if ( strncasecmp ( cp, "ph_col", 6 ) == 0) 
+    icache_algo = algo_PH_COL;
+  else if ( strncasecmp ( cp, "trg", 3 ) == 0) 
+    icache_algo = algo_TRG;
+  else if ( strncasecmp ( cp, "ltrg", 4 ) == 0) 
+    icache_algo = algo_LTRG;
+  else
+    warning("Unknown --icache-algo=%s option", cp);
+}
+
+#endif /* BCO_Enabled Thierry */
+
+#ifdef TARG_ST
+void
+Process_Std(char * option_args) {
+  int flag = LAST_PREDEFINED_OPTION ;
+
+  if ( debug ) {
+    fprintf ( stderr, "Process_Std: %s\n", option_args);
+  }
+
+  /* Select the appropriate language standard.  We currently
+     recognize:
+     -std=iso9899:1990		same as -ansi
+     -std=iso9899:199409	ISO C as modified in amend. 1
+     -std=iso9899:1999		ISO C 99
+     -std=c89			same as -std=iso9899:1990
+     -std=c99			same as -std=iso9899:1999
+     -std=gnu89			default, iso9899:1990 + gnu extensions
+     -std=gnu99			iso9899:1999 + gnu extensions
+     (cbr) recognize c++ standards
+     -std=c++98                 iso14882
+     -std=gnu++98               iso14882 + gnu extensions
+  */
+  if (!strcmp (option_args, "iso9899:1990")
+      || !strcmp (option_args, "c89")) {
+      flag = add_new_option("-std=c89") ;
+      c_std = C_STD_C89;
+      toggle(&ansi,STRICT_ANSI);
+  } else if (!strcmp (option_args, "iso9899:199409")) {
+      flag = add_new_option("-std=iso9899:199409") ;    
+      c_std = C_STD_C94;
+      toggle(&ansi,STRICT_ANSI);
+  }
+  else if (!strcmp (option_args, "iso9899:199x")
+	   || !strcmp (option_args, "iso9899:1999")
+	   || !strcmp (option_args, "c9x")
+	   || !strcmp (option_args, "c99")) {
+      flag = add_new_option("-std=c99") ;    
+      c_std = C_STD_C99;
+      toggle(&ansi,STRICT_ANSI);
+  } else if (!strcmp (option_args, "gnu89")) {
+      flag = add_new_option("-std=gnu89") ;    
+      c_std = C_STD_GNU89;
+  }
+#ifdef TARG_ST
+  /* (cbr) handle C++ */
+  else if (!strcmp (option_args, "c++98")) {
+      flag = add_new_option("-std=c++98") ;    
+      c_std = C_STD_CXX98;
+      toggle(&ansi,STRICT_ANSI);
+  }
+  else if (!strcmp (option_args, "gnu++98")) {
+      flag = add_new_option("-std=gnu++98") ;    
+      c_std = C_STD_GNU98;
+      /* (cm) gnu++98 (default mode) does not trigger strict ansi toggle(&ansi,STRICT_ANSI); */
+  }
+#endif
+  else if (!strcmp (option_args, "gnu9x") || !strcmp (option_args, "gnu99")) {   
+      flag = add_new_option("-std=gnu99") ;    
+      c_std = C_STD_GNU99;
+  } else {
+      warning("unknown C standard `%s'", option_args) ;
+  }
+  if (flag != LAST_PREDEFINED_OPTION) {
+      /* Need to pass to tools recognizing this option*/
+      add_phase_for_option(flag, P_gcpp);
+      add_phase_for_option(flag, P_c_gfe);
+      add_option_seen (flag);
+  }
+
+}
+
+#endif
+
+#ifdef TARG_ST
+/* TB: add -Wuninitialized option with -Wall */
+void Add_Wuninitialized() {
+  int flag = add_new_option("-WOPT:warn_uninit=on") ;    
+  add_phase_for_option(flag, P_be);
+  if (!already_provided(flag)) {
+    prepend_option_seen (flag);
+  }
+}
+/* TB: add -Wuninitialized option with -Wall */
+void Add_Wreturn_type() {
+  int flag = add_new_option("-OPT:warn_return_void") ;    
+  add_phase_for_option(flag, P_be);
+  if (!already_provided(flag)) {
+    prepend_option_seen (flag);
+  }
+}
+#endif
+
+#ifdef TARG_ARM
+
+#ifdef MUMBLE_ARM_BSP
+char * arm_core, arm_soc, arm_board;
+char * arm_core_name, arm_soc_name, arm_board_name;
+RUNTIME arm_runtime = UNDEFINED;
+char * arm_targetdir ; /* Set iff targetdir is command-line overriden */
+char * arm_libdir;
+#endif
+
+void
+Process_ARM_Targ (char * option,  char * targ_args )
+{
+  char *targ;
+  int i;
+  int flag;
+  buffer_t buf;
+#ifdef MUMBLE_ARM_BSP
+  char * spath;
+#endif
+
+  if (debug)
+    fprintf ( stderr, "Process_ARM_Targ %s%s\n", option,targ_args);
+
+#ifdef MUMBLE_ARM_BSP
+  if (strncasecmp (option, "-mlibdir", 8) == 0) {
+    if (is_directory(targ_args)) 
+      arm_libdir = string_copy (targ_args);
+    else
+      warning("libdir %s undefined. ", targ_args);
+  }
+
+  if (strncasecmp (option, "-mtargetdir", 11) == 0) {
+      if (is_directory(targ_args)) {
+	/* Substitution should happen only if core/soc/board hiearchy exists */
+	/* So we cannot use the obvious set_phase_dir (get_phase_mask(P_alt_library), targ_args) ; */
+	arm_targetdir = string_copy (targ_args);
+      } else {
+	warning("targetdir %s undefined. setting to default", targ_args);
+      }
+  }
+
+  if (arm_targetdir) 
+    spath = arm_targetdir;
+  else
+    spath = get_phase_dir(P_alt_library);
+#endif
+
+  if (strncasecmp (option, "-mcore", 6) == 0) {
+    for (i = 0; Proc_Map[i].pname != NULL; i++) {
+      if (same_string(targ_args, Proc_Map[i].pname)) {
+	toggle (&proc, Proc_Map[i].pid);
+      }
+    }
+    if ( proc == UNDEFINED ) {
+      warning("unsupported processor %s\n", targ_args);
+      proc = PROC_NONE;
+    }
+#ifdef MUMBLE_ARM_BSP
+    arm_core = concat_path(spath, concat_path("core", targ_args));
+    arm_core_name = string_copy (targ_args);
+#endif
+  }
+
+#ifdef MUMBLE_ARM_BSP
+  else if (strncasecmp (option, "-msoc", 5) == 0) {
+    arm_soc = concat_path(spath, concat_path("soc", targ_args));
+    arm_soc_name = string_copy (targ_args);
+  }
+
+  else if (strncasecmp (option, "-mboard", 7) == 0) {
+    arm_board = concat_path(spath, concat_path("board", targ_args));
+    arm_board_name = string_copy (targ_args);
+  }
+
+  else if (strncasecmp (option, "-mruntime", 9) == 0) {
+    for (i = 0; Runtime_Map[i].pname != NULL; i++) {
+      if (same_string(targ_args, Runtime_Map[i].pname)) {
+	toggle (&arm_runtime, Runtime_Map[i].pid);
+      }
+    }
+    if (arm_runtime == UNDEFINED ) {
+      arm_runtime = RUNTIME_BARE;
+      warning("runtime %s undefined. setting to bare", targ_args);
+    }
+  }
+
+#endif
+}
+#endif /* TARG_ARM */
+
 void
 print_multi_lib ()
 {
@@ -2297,5 +2791,6 @@ Process_Hugepage_Group(char * hugepage_args)
     if (!has_err) 
         add_option_seen(O_HP);
 }
+
 
 #include "opt_action.i"

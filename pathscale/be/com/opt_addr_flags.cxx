@@ -103,8 +103,10 @@ Set_addr_saved_stmt(WN *wn, BOOL use_passed_not_saved)
   OPCODE opc = WN_opcode(wn);
 
   if (OPCODE_is_call(opc)
+#ifndef TARG_ST
 #ifdef KEY
       || OPCODE_operator(opc) == OPR_PURE_CALL_OP
+#endif
 #endif
       ) {
     for (INT32 i = 0; i < WN_kid_count(wn); i++) {

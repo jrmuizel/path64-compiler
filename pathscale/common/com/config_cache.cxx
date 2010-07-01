@@ -188,13 +188,13 @@ void MHD_LEVEL::Merge_Options(const MHD_LEVEL& o)
 
   if (Valid() && recompute_ecs)
     Compute_Effective_Size();
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   if(Valid())
    Reset_CS_String();
 #endif
 }
 
-#ifdef KEY /* Bug 10252: set cache size */
+#if defined( KEY) && !defined(TARG_ST) /* Bug 10252: set cache size */
 void MHD_LEVEL::Reset_CS_String()
 {
    if(Size < 0) return; /*nothing to do */
@@ -252,7 +252,7 @@ void MHD_LEVEL::Compute_Effective_Size()
   }
 
   Effective_Size = (INT64) (pct*Size);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   if (LNO_EffectiveCacheSizePct != 0)
     Effective_Size = (INT64) ((double)LNO_EffectiveCacheSizePct/100.0*Size);
 #endif
@@ -313,6 +313,13 @@ void MHD::Merge_Options(const MHD& o)
     Loop_Overhead_Base = o.Loop_Overhead_Base;
   if (o.Loop_Overhead_Memref >= 0)
     Loop_Overhead_Memref = o.Loop_Overhead_Memref;
+  #ifdef TARG_ST
+  if (o.DCache_Prefetch_Buffers >= 0)
+    DCache_Prefetch_Buffers = o.DCache_Prefetch_Buffers;
+  if (o.Prefetch_Padding >= 0)
+    Prefetch_Padding = o.Prefetch_Padding;
+#endif
+
 #ifdef KEY
   if (o.TLB_Trustworthiness >= 0)
     TLB_Trustworthiness = o.TLB_Trustworthiness;
@@ -323,6 +330,10 @@ void MHD::Print(FILE* f) const
 {
   fprintf(f, "CACHE PARAMETERS: non_blocking_loads=%d loop_overhead=(%d,%d)\n",
           Non_Blocking_Loads, Loop_Overhead_Base, Loop_Overhead_Memref);
+#ifdef TARG_ST
+  fprintf(f, "\tPrefetch_Buffers=%d Prefetch_Padding=%d\n",
+	  DCache_Prefetch_Buffers, Prefetch_Padding);
+#endif
   for (INT i = 0; i < MHD_MAX_LEVELS; i++) {
     if (L[i].Valid()) {
       fprintf(f, "L[%d]: ", i);
@@ -331,4 +342,7 @@ void MHD::Print(FILE* f) const
   }
   fprintf(f, "\n"); 
 }
-
+BOOL MHD::Has_No_Memory_Hierarchy()
+{
+   return First()==-1 ? TRUE : FALSE;
+}

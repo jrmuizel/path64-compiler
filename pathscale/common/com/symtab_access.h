@@ -163,6 +163,21 @@ ST_export (const ST& s)			{ return s.export_class; }
 inline void
 Set_ST_export (ST& s, ST_EXPORT eclass) { s.export_class = eclass; }
 
+#ifdef TARG_ST // [SC] TLS support
+inline ST_TLS_MODEL
+ST_tls_model (const ST& s)              { return s.tls_model; }
+inline void
+Set_ST_tls_model (ST& s, ST_TLS_MODEL tls) { s.tls_model = tls; }
+
+#ifdef TARG_STxP70
+// (cbr)
+inline ST_MEMORY_SPACE
+ST_memory_space (const ST& s)              { return s.memory_space; }
+inline void
+Set_ST_memory_space (ST& s, ST_MEMORY_SPACE space) { s.memory_space = space; }
+#endif
+
+#endif
 inline TY_IDX
 ST_type (const ST& s) {
 #ifdef Is_True_On
@@ -528,7 +543,11 @@ inline void
 Set_ST_one_per_pu (ST* s)	{ s->flags_ext |= ST_ONE_PER_PU; }
 inline void
 Clear_ST_one_per_pu (ST* s)	{ s->flags_ext &= ~ST_ONE_PER_PU; }
-
+#ifdef TARG_ST
+#define ST_is_thread_local( s)     FALSE
+#define ST_initv_in_other_st( s)   FALSE
+#define ST_copy_constructor_st(s)  FALSE
+#else
 inline BOOL
 ST_copy_constructor_st(const ST* s)	{ return s->flags_ext & ST_COPY_CONSTRUCTOR_ST; }
 inline void
@@ -550,6 +569,51 @@ Set_ST_is_thread_local (ST* s)		{ s->flags_ext |= ST_IS_THREAD_LOCAL; }
 inline void
 Clear_ST_is_thread_local (ST* s)	{ s->flags_ext &= ~ST_IS_THREAD_LOCAL; }
 #endif
+#endif
+
+#ifdef TARG_ST
+/* (cbr) vague linkage */
+inline BOOL
+ST_is_comdat (const ST* s)	{ return s->flags_ext & ST_IS_COMDAT; }
+inline void
+Set_ST_is_comdat (ST* s)	{ s->flags_ext |= ST_IS_COMDAT; }
+inline void
+Clear_ST_is_comdat (ST* s)	{ s->flags_ext &= ~ST_IS_COMDAT; }
+
+// [CL] is symbol base of aliases?
+inline BOOL
+ST_is_alias_base (const ST* s)	{ return s->flags_ext & ST_HAS_ALIAS; }
+inline void
+Set_ST_is_alias_base (ST* s)	{ s->flags_ext |= ST_HAS_ALIAS; }
+inline void
+Clear_ST_is_alias_base (ST* s)	{ s->flags_ext &= ~ST_HAS_ALIAS; }
+
+// [TB] the size known?
+inline BOOL
+ST_is_not_sized (const ST* s)	{ return s->flags_ext & ST_IS_NOT_SIZED; }
+inline void
+Set_ST_is_not_sized (ST* s)	{ s->flags_ext |= ST_IS_NOT_SIZED; }
+inline void
+Clear_ST_is_not_sized (ST* s)	{ s->flags_ext &= ~ST_IS_NOT_SIZED; }
+
+// [CL] is alias referenced?
+inline BOOL
+ST_is_alias_used (const ST* s)	{ return s->flags_ext & ST_ALIAS_USED; }
+inline void
+Set_ST_is_alias_used (ST* s)	{ s->flags_ext |= ST_ALIAS_USED; }
+inline void
+Clear_ST_is_alias_used (ST* s)	{ s->flags_ext &= ~ST_ALIAS_USED; }
+
+// [CL] has used attribute?
+inline BOOL
+ST_is_used (const ST* s)	{ return s->flags_ext & ST_IS_USED; }
+inline void
+Set_ST_is_used (ST* s)	        { s->flags_ext |= ST_IS_USED; }
+inline void
+Clear_ST_is_used (ST* s)	{ s->flags_ext &= ~ST_IS_USED; }
+
+#endif
+
 
 //----------------------------------------------------------------------
 // access functions for PU
@@ -569,17 +633,24 @@ inline UINT8
 PU_gp_group (const PU& pu)		{ return pu.gp_group; }
 inline void
 Set_PU_gp_group (PU& pu, mUINT8 grp)	{ pu.gp_group = grp; }
+#ifdef TARG_ST
+//TB" Add size optimization level for this PU
+inline UINT8
+PU_size_opt (const PU& pu)		{ return pu.size_opt; }
+inline void
+Set_PU_size_opt (PU& pu, enum PU_OPTLEVEL sizeopt)	{ pu.size_opt = sizeopt; }
+#endif
 
 inline SYMTAB_IDX
 PU_lexical_level (const PU& pu)		{ return pu.lexical_level; }
 inline void
 Set_PU_lexical_level (PU& pu, SYMTAB_IDX l) { pu.lexical_level = l; }
-
+#ifndef TARG_ST
 inline INITO_IDX
 PU_misc_info (const PU& pu)		{ return pu.misc; }
 inline void
 Set_PU_misc_info (PU& pu, INITO_IDX i)	{ pu.misc = i; }
-
+#endif
 //----------------------------------------------------------------------
 // PU flags
 //----------------------------------------------------------------------
@@ -885,6 +956,62 @@ inline BOOL
 PU_has_goto_outer_block (const PU& pu) { return (pu.flags & PU_HAS_GOTO_OUTER_BLOCK) != 0; }
 inline void
 Set_PU_has_goto_outer_block (PU& pu)	{ pu.flags |= PU_HAS_GOTO_OUTER_BLOCK; }
+#endif
+#ifdef TARG_ST
+/* (cbr) gnu extern inline support */
+inline BOOL
+PU_must_delete (const PU& pu)		{ return (pu.flags & PU_MUST_DELETE) != 0; }
+inline void
+Set_PU_must_delete (PU& pu)		{ pu.flags |= PU_MUST_DELETE; }
+inline void
+Clear_PU_must_delete (PU& pu)		{ pu.flags &= ~PU_MUST_DELETE; }
+
+/* (cbr) for C++ const object initializers (cdtors can write into consts) */
+inline BOOL
+PU_is_static_initializer (const PU& pu)	{ return (pu.flags & PU_STATIC_INITIALIZER) != 0; }
+inline void
+Set_PU_static_initializer (PU& pu)	{ pu.flags |= PU_STATIC_INITIALIZER; }
+inline void
+Clear_PU_static_initializer (PU& pu)	{ pu.flags &= ~PU_STATIC_INITIALIZER; }
+
+#endif
+#ifdef TARG_ST
+/* [CG] Support for no_instrument_function attribute. */
+inline BOOL
+PU_no_instrument_function (const PU& pu)		{ return (pu.flags & PU_NO_INSTRUMENT_FUNCTION) != 0; }
+inline void
+Set_PU_no_instrument_function (PU& pu)		{ pu.flags |= PU_NO_INSTRUMENT_FUNCTION; }
+inline void
+Clear_PU_no_instrument_function (PU& pu)		{ pu.flags &= ~PU_NO_INSTRUMENT_FUNCTION; }
+
+/* [CR] Support for interrupt attribute. */
+inline BOOL
+PU_is_interrupt (const PU& pu)		{ return (pu.flags & PU_IS_INTERRUPT) != 0; }
+inline void
+Set_PU_is_interrupt (PU& pu)		{ pu.flags |= PU_IS_INTERRUPT; }
+inline void
+Clear_PU_is_interrupt (PU& pu)		{ pu.flags &= ~PU_IS_INTERRUPT; }
+inline BOOL
+PU_is_interrupt_nostkaln (const PU& pu)		{ return (pu.flags & PU_IS_INTERRUPT_NOSTKALN) != 0; }
+inline void
+Set_PU_is_interrupt_nostkaln (PU& pu)		{ pu.flags |= PU_IS_INTERRUPT_NOSTKALN; }
+inline void
+Clear_PU_is_interrupt_nostkaln (PU& pu)		{ pu.flags &= ~PU_IS_INTERRUPT_NOSTKALN; }
+
+/* [VL-HMP] Support for HMP tasks */
+inline BOOL
+PU_is_task (const PU& pu)         { return (pu.flags & PU_IS_TASK) != 0; }
+inline void
+Set_PU_is_task (PU& pu)           { pu.flags |= PU_IS_TASK; }
+inline void
+Clear_PU_is_task (PU& pu)         { pu.flags &= ~PU_IS_TASK; }
+
+/* [VB] Support for stack alignment attribute. */
+inline UINT64
+PU_aligned_stack (const PU& pu)		{ return pu.stkaln; }
+inline void
+Set_PU_aligned_stack (PU& pu, UINT64 i)	{ pu.stkaln = i; }
+
 #endif
 
 #ifdef TARG_X8664
@@ -1198,7 +1325,7 @@ inline void
 Set_TY_is_non_pod (TY_IDX tyi)    { Set_TY_is_non_pod(Ty_Table[tyi]); }
 inline void
 Clear_TY_is_non_pod (TY_IDX tyi)  { Clear_TY_is_non_pod(Ty_Table[tyi]); }
-
+#ifndef TARG_ST
 #ifdef KEY
 inline BOOL
 TY_return_in_mem (const TY& ty)		{ return ty.flags & TY_RETURN_IN_MEM; }
@@ -1269,6 +1396,22 @@ Set_TY_complete_struct_relayout_candidate(TY_IDX tyi)
 inline void
 Clear_TY_complete_struct_relayout_candidate(TY_IDX tyi)
   { Clear_TY_complete_struct_relayout_candidate(Ty_Table[tyi]); }
+#endif
+#endif
+#ifdef TARG_ST
+// (cbr) type doesn't throws */
+inline BOOL
+TY_is_nothrow (const TY& ty)		{ return ty.flags & TY_IS_NOTHROW; }
+inline void
+Set_TY_is_nothrow (TY& ty)		{ ty.flags |= TY_IS_NOTHROW; }
+inline void
+Clear_TY_is_nothrow (TY& ty)		{ ty.flags &= ~TY_IS_NOTHROW; }
+inline BOOL
+TY_is_nothrow (const TY_IDX tyi)	{ return TY_is_nothrow(Ty_Table[tyi]); }
+inline void
+Set_TY_is_nothrow (TY_IDX tyi)    { Set_TY_is_nothrow(Ty_Table[tyi]); }
+inline void
+Clear_TY_is_nothrow (TY_IDX tyi)  { Clear_TY_is_nothrow(Ty_Table[tyi]); }
 #endif
 
 // TY pu_flags
@@ -1611,6 +1754,16 @@ Set_LABEL_addr_passed (LABEL& l)	{ l.flags |= LABEL_ADDR_PASSED; }
 inline void
 Clear_LABEL_addr_passed (LABEL& l)	{ l.flags &= ~LABEL_ADDR_PASSED; }
 
+#ifdef TARG_ST
+// [CL]
+inline BOOL
+LABEL_emitted (const LABEL& l)	{ return l.flags & LABEL_EMITTED;}
+inline void
+Set_LABEL_emitted (LABEL& l)		{ l.flags |= LABEL_EMITTED; }
+inline void
+Clear_LABEL_emitted (LABEL& l)	{ l.flags &= ~LABEL_EMITTED; }
+#endif
+
 
 //----------------------------------------------------------------------
 // access functions for PREG
@@ -1639,6 +1792,34 @@ inline void
 Set_ST_ATTR_st_idx (ST_ATTR& st_attr, ST_IDX st) { st_attr.st_idx = st; }
 inline ST_ATTR_KIND
 ST_ATTR_kind (const ST_ATTR& st_attr)		{ return st_attr.kind; }
+#ifdef TARG_ST
+inline PREG_NUM
+ST_ATTR_reg_id (const ST_ATTR& st_attr)
+{
+    Is_True (st_attr.kind == ST_ATTR_DEDICATED_REGISTER,
+	     ("attribute is not for a dedicated register"));
+    return st_attr.u.reg_id;
+}
+inline void
+Set_ST_ATTR_reg_id (ST_ATTR& st_attr, PREG_NUM id)
+{
+    st_attr.kind = ST_ATTR_DEDICATED_REGISTER;
+    st_attr.u.reg_id = id;
+}
+inline STR_IDX
+ST_ATTR_section_name (const ST_ATTR& st_attr)
+{
+    Is_True (st_attr.kind == ST_ATTR_SECTION_NAME,
+	     ("attribute is not for a section name"));
+    return st_attr.u.section_name;
+}
+inline void
+Set_ST_ATTR_section_name (ST_ATTR& st_attr, STR_IDX name)
+{
+    st_attr.kind = ST_ATTR_SECTION_NAME;
+    st_attr.u.section_name = name;
+}
+#else
 inline PREG_NUM
 ST_ATTR_reg_id (const ST_ATTR& st_attr)
 {
@@ -1665,7 +1846,7 @@ Set_ST_ATTR_section_name (ST_ATTR& st_attr, STR_IDX name)
     st_attr.kind = ST_ATTR_SECTION_NAME;
     st_attr.Set_section_name (name);
 }
-
+#endif
 //----------------------------------------------------------------------
 // access functions for FILE_INFO
 //----------------------------------------------------------------------
@@ -1737,7 +1918,8 @@ INITO_TABLE::operator() (SYMTAB_IDX level, UINT32 index) {
     Is_True (Scope_tab[level].inito_tab != NULL, ("Uninitialized INITO_TAB"));
     return Scope_tab[level].inito_tab->Entry (index);
 }
-
+#endif
+#ifdef TARG_ST
 inline LABEL&
 LABEL_TABLE::operator[] (LABEL_IDX idx) {
     return Scope_tab[CURRENT_SYMTAB].label_tab->Entry (idx);

@@ -126,7 +126,11 @@ typedef struct isa_pack_type *ISA_PACK_TYPE;
 typedef struct opnd_adj_type *OPND_ADJ_TYPE;
 
 extern void ISA_Pack_Begin ( const char* archname, int inst_bit_size );
+#ifdef TARG_ST
+extern ISA_PACK_TYPE ISA_Pack_Type_Create ( const char* name, int size );
+#else
 extern ISA_PACK_TYPE ISA_Pack_Type_Create ( const char* name );
+#endif
 extern OPND_ADJ_TYPE Create_Operand_Adjustment(const char *name,
 					       const char *adj);
 extern void Instruction_Pack_Group (ISA_PACK_TYPE pack_type, ...);
@@ -137,7 +141,14 @@ extern void Operand (int operand_index,
 extern void Adjust_Operand(int operand_index, 
 			   OPND_ADJ_TYPE pack_adj,
 			   OPND_ADJ_TYPE unpack_adj);
+#ifdef TARG_ST
+extern void Result (int result_index,
+		    int result_position,
+		    int bit_position,
+		    int width);
+#else
 extern void Result (int result_index, int bit_position, int width);
+#endif
 extern void Next_Word (void);
 extern void ISA_Pack_End(void);
 

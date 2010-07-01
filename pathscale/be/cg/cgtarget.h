@@ -536,15 +536,59 @@
 #include "cg_flags.h"
 #include "cg_dep_graph.h"
 #include "cg_vector.h"
+ #ifdef TARG_ST 
+#include "config_target.h"
+#include "cg_loop.h"
+#else
 #include "config_targ.h"
-#include "targ_isa_bundle.h"
-#include "ti_bundle.h"
+#endif
 #include "cg_thr.h"
+
+#include "targ_proc_properties.h"
+#include "targ_abi_properties.h"
+#include "targ_isa_lits.h"
+#include "targ_isa_registers.h"
+#include "targ_isa_enums.h"
+#include "targ_isa_pack.h"
+#include "targ_isa_bundle.h"
+#include "targ_isa_print.h"
+#ifdef TARG_ST
+#include "targ_grouping.h"
+#endif
+#include "ti_errors.h"
+#include "ti_bundle.h"
+#include "ti_latency.h"
+#ifdef TARG_ST
+/* Target-specific information */
+#include "targ_cg.h"
+#endif
+/* placeholder for all hardware workarounds */
+extern void Hardware_Workarounds (void);
+
+/* --------------------------------------------------------------------
+ *   Perform one-time initialization.
+ * --------------------------------------------------------------------
+ */
+extern void CGTARG_Initialize(void);
+
+/* ====================================================================
+ *    Branch related interface:
+ * ====================================================================
+ */
+
 
 extern UINT32 CGTARG_branch_taken_penalty;
 extern BOOL CGTARG_branch_taken_penalty_overridden;
 
 #include "cgtarget_arch.h"
+// If a BB ends in an unconditional branch, turn it into a 
+// conditional branch with TRUE predicate.
+#ifdef TARG_ST
+extern void Make_Branch_Conditional(BB *bb, TN *pred_tn, BOOL cond);
+#else
+extern void Make_Branch_Conditional(BB *bb);
+#endif
+
 
 class CG_GROUPING; // Defined only for isa where it is used (e.g. IA-64).
 
@@ -646,7 +690,9 @@ extern void CGTARG_Compute_Branch_Parameters(INT32 *mispredict,
 						    INT32 *fixed,
 						    INT32 *brtaken,
 						    double *factor);
-
+#ifdef TARG_ST
+extern BOOL CGTARG_Able_To_Calculate_Remainder(UINT32 ntimes);
+#endif
 extern BOOL CGTARG_Can_Change_To_Brlikely(OP *xfer_op, TOP *new_opcode);
 extern TOP CGTARG_Negate_Branch(TOP op);
 extern BOOL CGTARG_Is_Long_Latency(TOP op);
@@ -785,9 +831,15 @@ extern void CGTARG_Generate_Remainder_Branch(TN *trip_count, TN *label_tn,
 					     OPS *prolog_ops, OPS *body_ops);
 
 extern BOOL CGTARG_OP_is_counted_loop(OP *op);
-
+#ifdef TARG_ST
+extern BOOL CGTARG_Generate_Branch_Cloop(LOOP_DESCR* cl,
+                                         OP *op, TN *trip_count,
+					 TN *label_tn, 
+                                         BB *prolog, BB *tail);
+#else
 extern void CGTARG_Generate_Branch_Cloop(OP *op, TN *unrolled_trip_count, TN *trip_count,
 					 INT32 ntimes, TN *label_tn, OPS *prolog_ops, OPS *body_ops);
+#endif
 #ifdef TARG_X8664
 extern void CGTARG_Generate_Countdown_Loop(TN *trip_count_tn, BB *tail, 
 					   OPS *prolog_ops, OPS *body_ops, 
@@ -795,7 +847,9 @@ extern void CGTARG_Generate_Countdown_Loop(TN *trip_count_tn, BB *tail,
 extern void CGTARG_LOOP_Optimize( LOOP_DESCR* loop );
 extern TN* CGTARG_Process_Asm_m_constraint(WN*, void**, int, OPS*, OPS*);
 #endif
-
+#ifdef TARG_ST
+extern BOOL CGTARG_Can_Negate_Branch(OP *br);
+#endif
 /* call init routine once per asm stmt */
 extern void CGTARG_Init_Asm_Constraints (void);
 

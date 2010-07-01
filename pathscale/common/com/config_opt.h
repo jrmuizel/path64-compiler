@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2007, 2008 PathScale, LLC.  All Rights Reserved.
  */
@@ -117,12 +118,23 @@ extern BOOL Enable_Cfold_Intrinsics;	/* Intrinsic constant folding? */
 extern BOOL Cfold_Intrinsics_Set;	/* ... option seen? */
 extern BOOL CIS_Allowed;	/* sin(x) and cos(x) => cis(x) ? */
 extern BOOL Div_Split_Allowed;	/* Change a/b --> a*1/b ? */
+#ifdef TARG_ST
+BE_EXPORTED extern BOOL Float_Eq_Simp;	/* change a==b (float cmp) --> a==b (integer cmp if a or b is cst)) ? */
+BE_EXPORTED extern BOOL OPT_fb_div_simp;	// Apply division simplification with feedback info 
+BE_EXPORTED extern BOOL OPT_fb_mpy_simp;	// Apply multiply simplification with feedback info 
+#endif
+
 #ifdef KEY
 extern UINT32 Div_Exe_Counter;	  /* Change a/b --> a/N if b==N ?             */
 extern UINT32 Div_Exe_Ratio;	  /* Change a/b --> a/N if b has high ratio   */
 extern UINT32 Div_Exe_Candidates; /* The top entries that will be taken care. */
 extern UINT32 Mpy_Exe_Counter;	/* Change a*b to a if b==N or 0.0 if b == 0.0 */
 extern UINT32 Mpy_Exe_Ratio;	/* Change a*b to a if b==N or 0.0 if b == 0.0 */
+#endif
+#ifdef TARG_ST
+BE_EXPORTED extern UINT32 Freq_Threshold_For_Space;      /* If the PU is executed less than this, OPT_Space is set to true. */
+BE_EXPORTED extern UINT32 Size_Threshold_For_Space;      /* If the PU is bigger than this, OPT_Space is set to true. */
+BE_EXPORTED extern BOOL FB_CodeSize_Perf_Ratio;	 /* Optimize for size when freq < Freq_Threshold_For_Space or when size > Size_Threshold_For_Space */
 #endif
 extern BOOL Fast_Exp_Allowed;	/* Avoid exp() calls? */
 extern BOOL Fast_IO_Allowed;	/* Fast printf/scanf/printw */
@@ -133,6 +145,54 @@ extern BOOL Force_IEEE_Comparisons;	/* IEEE NaN comparisons? */
 extern BOOL Inline_Intrinsics_Early;    /* Inline intrinsics just after VHO */
 extern BOOL Enable_extract_bits;     /* Enable use of the extract whirl op */
 extern BOOL Enable_compose_bits;     /* Enable use of the compose whirl op */
+#ifdef TARG_ST
+BE_EXPORTED extern BOOL Enable_Rotate;     /* Enable use of the rotate whirl ops */
+BE_EXPORTED extern BOOL Enable_Rotate_overriden;     /* ... option seen? */
+#endif
+ extern BOOL Enable_extract;     /* Enable use of the extract whirl ops */
+ extern BOOL Enable_extract_overriden;     /* ... option seen? */
+ extern BOOL Enable_compose;     /* Enable use of the compose whirl ops */
+ extern BOOL Enable_compose_overriden;     /* ... option seen? */
+
+
+
+#ifdef TARG_ST
+  /* Enable optimisation of comparisons using minmax */
+BE_EXPORTED extern BOOL Enable_simplify_comparisons_per_minmax;
+
+/***** Floating point optimizations options *****/
+BE_EXPORTED extern BOOL No_Math_Errno;  /* Do not set ERRNO ? */
+BE_EXPORTED extern BOOL No_Math_Errno_Set;  /* ... option seen? */
+BE_EXPORTED extern BOOL Finite_Math;  /* Finite math optimizations ? */
+BE_EXPORTED extern BOOL Finite_Math_Set;  /* ... option seen? */
+BE_EXPORTED extern BOOL No_Rounding;  /*  ? */
+BE_EXPORTED extern BOOL No_Rounding_Set;  /* ... option seen? */
+BE_EXPORTED extern BOOL No_Trapping;  /* No trapping math ? */
+BE_EXPORTED extern BOOL No_Trapping_Set;  /* ... option seen? */
+BE_EXPORTED extern BOOL Unsafe_Math;  /* Unsafe math allowed ? */
+BE_EXPORTED extern BOOL Unsafe_Math_Set;  /* ... option seen? */
+BE_EXPORTED extern BOOL Fused_FP;  /* Fused FP ops allowed ? */
+BE_EXPORTED extern BOOL Fused_FP_Set;  /* ... option seen? */
+BE_EXPORTED extern BOOL Fused_Madd;  /* Fused madd allowed ? */
+BE_EXPORTED extern BOOL Fused_Madd_Set;  /* ... option seen? */
+BE_EXPORTED extern BOOL No_Denormals;  /* No denormals support  ? */
+BE_EXPORTED extern BOOL No_Denormals_Set;  /* ... option seen? */
+BE_EXPORTED extern BOOL OPT_Expand_Assume; /* Expand __builtin_assume ? */
+BE_EXPORTED extern BOOL OPT_Expand_Assume_Set; /* ... option seen? */
+// FdF 20080305: Emit warning on unsupported expressions in __builtin_assume
+BE_EXPORTED extern BOOL OPT_Enable_Warn_Assume;
+// TB: 20081020 Check that non void function always return a value
+BE_EXPORTED extern BOOL OPT_Enable_Warn_ReturnVoid;
+typedef enum {
+  REASSOC_NONE,	/* No roundoff-inducing transformations */
+  REASSOC_SIMPLE,	/* Simple roundoff transformations */
+  REASSOC_ASSOC,	/* Reassociation transformations */
+  REASSOC_ANY		/* Anything goes */
+} REASSOC;
+BE_EXPORTED extern REASSOC Reassoc_Level; /* reassociations level */
+BE_EXPORTED extern BOOL Reassoc_Set;  /* ... option seen? */
+#endif
+
 
 /***** Miscellaneous optimization options *****/
 extern BOOL OPT_Pad_Common;	/* Do internal common block padding? */
@@ -196,6 +256,11 @@ extern INT32 OPT_Madd_Chains;
 extern BOOL OPT_Freestanding;
 extern BOOL OPT_Reassoc_For_Cse;;
 #endif
+#ifdef TARG_ST
+BE_EXPORTED extern char* disable_instrument;
+BE_EXPORTED extern char* enable_instrument;
+#endif
+
 #ifdef __cplusplus
 }
 #endif

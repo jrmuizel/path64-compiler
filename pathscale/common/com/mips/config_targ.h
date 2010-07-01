@@ -240,6 +240,13 @@ extern TYPE_ID Integer_type;
 /* maximum gspace (gp-relative) size */
 #define DEFAULT_GSPACE		0x00ffff
 
+#define MAX_SDATA_ELT_SIZE	32760
+#define DEF_SDATA_ELT_SIZE	8
+#define MAX_SFSEG_BYTES		0x7FFFFFFFFFFFFFFFLL
+#define MAX_LARGE_FRAME_OFFSET	0x7FFFFFFFFFFFFFFFLL
+/*FIXME Need check*/
+#define DEFAULT_TEMP_SPACE_BYTES 4096
+
 /* ================== */
 /* Comparison Results */
 /* ================== */

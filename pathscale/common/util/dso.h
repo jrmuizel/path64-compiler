@@ -51,8 +51,13 @@ extern "C" {
  * Load dso of given name in given path.
  * If verbose and non-standard path, then print path on stderr.
  */
+#ifdef TARG_ST
+    BE_EXPORTED extern void* load_so (char *soname, char *path, BOOL verbose);
+BE_EXPORTED extern void* load_so_no_RTLD_GLOBAL (char *soname, char *path, BOOL verbose);
+BE_EXPORTED extern void close_so (void* handler);
+#else
 extern void load_so (const char *soname, char *path, BOOL verbose);
-
+#endif
 #ifdef __cplusplus
 }
 #endif

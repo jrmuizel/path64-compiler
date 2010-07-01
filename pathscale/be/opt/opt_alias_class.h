@@ -348,7 +348,7 @@ public:
   void              Merge_pending(ALIAS_CLASS_REP &);
   void              Process_pending(ALIAS_CLASSIFICATION &);
   PENDING_LIST     &Pending(void) { return _pending; }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   BOOL              Pending_rep_match(ALIAS_CLASS_REP *);
 #endif
   void              Join_object_class(ALIAS_CLASS_REP &,
@@ -546,6 +546,12 @@ private:
   BOOL                Collapsed_nested_references(void)
     { return _collapsed_nested_references; }
 
+#ifdef TARG_ST
+  WN                 *Handle_asm(WN *);
+  BOOL		      Stmt_stores_asm_output(const WN *const stmt);
+  BOOL		      Stmt_Uses_asm_output(const WN *const stmt);
+#endif
+
   WN                 *Handle_assignment(WN *);
   WN                 *Handle_call(WN *);
   void                Handle_call_of_nested_PU(ST *);
@@ -655,13 +661,25 @@ public:
   void                Classify_memops(WN *);
 
   IDTYPE              Alias_class(const WN *) const;
-
   void                Copy_alias_class(const WN *, WN *);
-
   BOOL                Non_alloca_memop(IDTYPE) const;
 
   BOOL                Writable_by_call(IDTYPE) const;
 
   void                Print(FILE *) const;
 };
+
+#ifdef TARG_ST
+// This function is now defined locally in wopt as
+// it is referenced only there.
+void
+Transfer_alias_class_to_alias_manager(ALIAS_CLASSIFICATION &ac,
+				      WN                   *wn,
+				      ALIAS_MANAGER *alias_mgr);
+// This function is now defined locally in wopt as
+// it is referenced only there.
+void
+Forget_alias_class_info(ALIAS_MANAGER *alias_mgr);
+#endif
+
 #endif

@@ -78,6 +78,7 @@
 #include "strtab.h"
 #include "tn.h"
 #include "bb.h"
+#include "cgir.h"
 #include "gra_live.h"
 #include "op.h"
 #include "cg_region.h"
@@ -99,6 +100,10 @@
 #include "DaVinci.h"
 #ifdef KEY
 #include "cg.h"
+#endif
+#ifdef TARG_ST
+#include "cg.h"
+#include "ipra.h"
 #endif
 
 /* Allocate basic blocks for the duration of the PU. */
@@ -126,6 +131,9 @@ static BB_MAP bb_st_map;	/* map BBs to their STs */
 static INT32 bb_st_count = 0;	/* number of BB STs created
 				 * (per compilation, not just PU)
 				 */
+#ifdef SPLIT_BCO_ENABLED
+static BB_NUM Cur_PU_split_index = 0;
+#endif
 
 /* ====================================================================
  *
@@ -144,6 +152,9 @@ BB_PU_Initialize(void)
   Entry_BB_Head = NULL;
   Exit_BB_Head = NULL;
   bb_st_map = 0;
+#ifdef SPLIT_BCO_ENABLED
+  Cur_PU_split_index = 0;
+#endif
 }
 
 /* ====================================================================
@@ -1205,7 +1216,19 @@ void Print_All_BB_Headers ( void )
       fprintf ( TFile,"\n" );
   }
 }
-
+#ifdef TARG_ST
+/* ================================================================= */
+void Print_BB_id ( int id ) 
+{
+  BB *bp;
+  for (bp = REGION_First_BB; bp; bp = BB_next(bp)) {
+	  if (BB_id(bp)==id) {
+		  Print_BB ( bp );
+		  fprintf ( TFile,"\n" );
+	  }
+  }
+}
+#endif
 /* ====================================================================
  *
  * Print_Entry_Chain
@@ -1271,6 +1294,12 @@ BB_branch_op( BB *bb )
   /* Test the last two OPs looking for the terminating branch (it may not 
    * be the last OP if we have put something in the delay slot).
    */
+#ifdef TARG_ST
+  // FdF 20050921: The bundler may add "nop" or "goto 1" instructions
+  // at the end of a basic block.
+  while (op && (OP_noop(op) || OP_nop2goto(op)))
+    op = OP_prev(op);
+#endif
   if (op) {
     if (OP_br(op)) return op;
 
@@ -1301,6 +1330,12 @@ BB_xfer_op( BB *bb )
   /* Test the last two OPs looking for the terminating xfer OP (it may not
    * be the last OP if we have put something in the delay slot).
    */
+#ifdef TARG_ST
+  // FdF 20051010: The bundler may add "nop" or "goto 1" instructions
+  // at the end of a basic block.
+  while (op && (OP_noop(op) || OP_nop2goto(op)))
+    op = OP_prev(op);
+#endif
   if (op) {
     if (OP_xfer(op)) return op;
 
@@ -1409,6 +1444,10 @@ BB_Add_Annotation (BB *bb, ANNOTATION_KIND kind, void *info)
   case ANNOT_ROTATING_KERNEL:
     Set_BB_rotating_kernel(bb);
     break;
+#ifdef TARG_ST
+  case ANNOT_REMAINDERINFO:
+    break;
+#endif
   default:
     FmtAssert(FALSE, ("unexpected annotation kind: %d", kind));
     /*NOTREACHED*/
@@ -1540,6 +1579,64 @@ Gen_Label_For_BB(BB *bb)
 #undef EXTRA_NAME_LEN
 }
 
+#ifdef SPLIT_BCO_ENABLED
+/* ====================================================================
+ *
+ * Gen_Split_Label_For_BB
+ *
+ * Create a split label entry in the symbol table for the given BB,
+ * attach it to the BB, and return it. Increment Cur_PU_split_index
+ *
+ * ====================================================================
+ */
+
+LABEL_IDX
+Gen_Split_Label_For_BB(BB *bb)
+{
+  char *buf;
+  LABEL_IDX lab;
+  LABEL *label;
+#define  EXTRA_NAME_LEN  32
+
+  FmtAssert (BB_id(bb) != 0, ("Gen_Split_Label_For_BB: BB_id not set for BB"));
+
+  Cur_PU_split_index++;
+  /* Name this label: */
+  buf = (char *)alloca(strlen(Cur_PU_Name) + EXTRA_NAME_LEN);
+  sprintf(buf, BB_Split_Label_Format, Cur_PU_Name, Cur_PU_split_index);
+
+  label = &New_LABEL(CURRENT_SYMTAB, lab);
+  LABEL_Init (*label, Save_Str(buf), LKIND_DEFAULT);
+
+  Set_Label_BB (lab, bb);
+  BB_Add_Annotation (bb, ANNOT_LABEL, (void *)lab);
+  return lab;
+
+#undef EXTRA_NAME_LEN
+}
+
+/* ====================================================================
+ *
+ * Gen_Split_Label_For_BB
+ *
+ * Create a split label entry in the symbol table for the given BB,
+ * attach it to the BB, and return it. Increment Cur_PU_split_index
+ *
+ * ====================================================================
+ */
+
+void
+Gen_EndSplit_Label(FILE *file)
+{
+  if (Cur_PU_split_index != 0) {
+    fprintf(file, BB_EndSplit_Label_Format, Cur_PU_Name, Cur_PU_split_index);
+    fprintf(file, ":\n");
+  }
+}
+
+
+
+#endif
 
 /* =======================================================================
  *
@@ -1937,7 +2034,7 @@ BB_MAP BB_Depth_First_Map(BB_SET *region, BB *entry)
     BB_LIST *entries;
     INT32 max_id = 0;
     for (entries = Entry_BB_Head; entries; entries = BB_LIST_rest(entries)){
-#ifdef KEY
+#if defined (KEY) || defined(TARG_ST)
       /* bug#1458
 	 Don't visit an unrecognizable region twice.
        */
@@ -1976,8 +2073,88 @@ BB_MAP BB_Depth_First_Map(BB_SET *region, BB *entry)
   }
   return dfo_map;
 }
+#ifdef TARG_ST
+static BB_MAP visited_map
+static INT32 map_postorder(BB_MAP map, BB_SET *region, BB *bb, INT32 max_id)
+/* -----------------------------------------------------------------------
+ * Workhorse for BB_Postorder_Map.
+ * -----------------------------------------------------------------------
+ */
+{
+  BBLIST *succs;
 
+  Is_True(BB_MAP32_Get(map, bb) == 0, ("BB_Postorder_Map visited BB:%d twice", BB_id(bb)));
 
+  BB_MAP32_Set(visited_map, bb, TRUE);
+
+  /* Visit a bb after all its successors in the region.
+   */
+  FOR_ALL_BB_SUCCS(bb, succs) {
+    BB *succ = BBLIST_item(succs);
+    if ((region == NULL || BB_SET_MemberP(region, succ)) &&
+	BB_MAP32_Get(visited_map, succ) == FALSE)
+      max_id = map_postorder(map, region, succ, max_id);
+  }
+
+  BB_MAP32_Set(map, bb, ++max_id);
+
+  return max_id;
+}
+BB_MAP BB_Postorder_Map(BB_SET *region, BB *entry)
+/* -----------------------------------------------------------------------
+ * See "bb.h" for interface specification.
+ * -----------------------------------------------------------------------
+ */
+{
+  BB_MAP por_map = BB_MAP32_Create();
+
+  visited_map = BB_MAP32_Create();
+
+  Is_True(region == NULL || entry, ("<entry> not specified"));
+  Is_True(region == NULL || BB_SET_MemberP(region, entry),
+	    ("<entry> not in <region>"));
+
+  if (region) {
+    map_postorder(por_map, region, entry, 0);
+  } else if (Compiling_Proper_REGION) {
+    map_postorder(por_map, region,
+                  CGRIN_entry(RID_Find_Cginfo(REGION_First_BB)), 0);
+  } else {
+    BB_LIST *entries;
+    INT32 max_id = 0;
+    for (entries = Entry_BB_Head; entries; entries = BB_LIST_rest(entries))
+#ifdef TARG_ST
+      // (cbr) don't visit blocks reached by multiple entries twice
+      if(! BB_MAP32_Get(por_map, BB_LIST_first(entries)))
+#endif
+      max_id = map_postorder(por_map, region, BB_LIST_first(entries),
+                             max_id);
+  }
+
+  BB_MAP_Delete(visited_map);
+
+  return por_map;
+}
+#endif
+
+#ifdef TARG_ST
+// FdF 20060419: Support for backedges in the region
+static BOOL all_bbs_mapped(BB *bb, BBLIST *bbs, BB_MAP map)
+/* -----------------------------------------------------------------------
+ * Return TRUE iff every BB in <bbs> has a nonzero entry in <map>.
+ * -----------------------------------------------------------------------
+ */
+{
+  while (bbs) {
+    if (BB_MAP32_Get(map, BBLIST_item(bbs)) == 0) {
+      if (!BB_loophead(bb) || (BB_loop_head_bb(BBLIST_item(bbs)) != bb))
+	return FALSE;
+    }
+    bbs = BBLIST_next(bbs);
+  }
+  return TRUE;
+}
+#else
 static BOOL all_bbs_mapped(BBLIST *bbs, BB_MAP map)
 /* -----------------------------------------------------------------------
  * Return TRUE iff every BB in <bbs> has a nonzero entry in <map>.
@@ -1991,7 +2168,7 @@ static BOOL all_bbs_mapped(BBLIST *bbs, BB_MAP map)
   }
   return TRUE;
 }
-
+#endif
 
 static INT32 map_topologically(BB_MAP map, BB_SET *region, BB *bb,
 			       INT32 max_id)
@@ -2012,7 +2189,13 @@ static INT32 map_topologically(BB_MAP map, BB_SET *region, BB *bb,
     fall_thru = BB_next(bb);
   if (fall_thru && BB_MAP32_Get(map, fall_thru) == 0 &&
       (region == NULL || BB_SET_MemberP(region, fall_thru)) &&
-      all_bbs_mapped(BB_preds(fall_thru), map))
+#ifdef TARG_ST
+      // FdF 20060419: Support for backedges in the region
+      all_bbs_mapped(fall_thru, BB_preds(fall_thru), map)
+#else
+      all_bbs_mapped(BB_preds(fall_thru), map)
+#endif
+     )
     /* <bb> and <fall_thru> already topologically ordered. */
     max_id = map_topologically(map, region, fall_thru, max_id);
 
@@ -2022,7 +2205,13 @@ static INT32 map_topologically(BB_MAP map, BB_SET *region, BB *bb,
     BB *succ = BBLIST_item(succs);
     if (succ != fall_thru && BB_MAP32_Get(map, succ) == 0 &&
 	(region == NULL || BB_SET_MemberP(region, succ)) &&
-	all_bbs_mapped(BB_preds(succ), map))
+#ifdef TARG_ST
+      // FdF 20060419: Support for backedges in the region
+	all_bbs_mapped(succ, BB_preds(succ), map)
+#else
+	all_bbs_mapped(BB_preds(succ), map)
+#endif
+       )
       /* <succ> can be next in topological ordering. */
       max_id = map_topologically(map, region, succ, max_id);
   }
@@ -2552,6 +2741,40 @@ static BOOL OP_defs_argument( OP* op )
   return FALSE;
 }
 #endif
+#ifdef TARG_ST
+/* =======================================================================
+ *
+ *  BB_call_clobbered
+ *
+ *  See interface description.
+ *
+ * =======================================================================
+ */
+REGISTER_SET BB_call_clobbered(BB *bb, ISA_REGISTER_CLASS rc)
+{
+  if (!BB_call(bb)) {
+    return REGISTER_SET_EMPTY_SET;
+  }
+  if (GRA_use_interprocedural_info) {
+    ANNOTATION *annot = ANNOT_Get(BB_annotations(bb),ANNOT_CALLINFO);
+    if (annot) {
+      ST *st = CALLINFO_call_st(ANNOT_callinfo(annot));
+
+      if (st &&
+	  ! (ST_is_preemptible(st) && Gen_PIC_Shared)
+	  // (cbr) linkonce can be compiled with other regs
+	  && ! ST_is_comdat (st)
+	  && ! ST_is_weak_symbol (st)) {
+	IPRA_INFO info = cg_ipra.Get_Info (st);
+	if (info) {
+	  return info->used_regs[rc];
+	}
+      }
+    }
+  }
+  return REGISTER_CLASS_caller_saves(rc);
+}
+#endif
 
 
 /* =======================================================================
@@ -2570,13 +2793,19 @@ static void Split_BB(BB *bb)
   const INT len = BB_length(bb);
   const INT high  = (INT)(Split_BB_Length * 1.25);
   const INT low = (len <= high) ? (Split_BB_Length / 2) : (INT)(Split_BB_Length * .75);
+#ifndef TARG_ST
   mINT8 fatpoint[ISA_REGISTER_CLASS_MAX+1];
+#endif
   INT* regs_in_use = (INT *)alloca(sizeof(INT) * (len+1));
   INT* splits = (INT *)alloca(sizeof(INT) * ((len / low)+1));
   OP** op_vec = (OP **)alloca(sizeof(OP*) * (len+1));
 					       
   MEM_POOL_Push(&MEM_local_pool);
+#ifdef TARG_ST
+  LRA_Estimate_Fat_Points(bb, NULL, regs_in_use, &MEM_local_pool);
+#else
   LRA_Estimate_Fat_Points(bb, fatpoint, regs_in_use, &MEM_local_pool);
+#endif
   MEM_POOL_Pop(&MEM_local_pool);
 
   //
@@ -2823,6 +3052,10 @@ struct BB_REGION_SET {
       MEM_POOL_Push(&pool);
       bbs = BB_SET_Create_Empty(PU_BB_Count+2, &pool);
     }
+#ifdef TARG_ST
+    else
+      BB_SET_ClearD(bbs);
+#endif
   }
 
   BB_REGION_SET():bbs(NULL) {}
@@ -2902,7 +3135,12 @@ BB_SET *BB_REGION_to_BB_SET(BB_SET *bbs, const BB_REGION& r, MEM_POOL *pool)
     BBLIST *succs;
     FOR_ALL_BB_SUCCS(bb, succs) {
       BB *succ = BBLIST_item(succs);
+#ifdef TARG_ST
+      // FdF 20060419: bug fix
+      if (!BB_SET_MemberP(bbs, succ) && !region_exits(succ))
+#else
       if (!BB_SET_MemberP(bbs, succ) && !region_exits(bb))
+#endif
 	stack.push_back(succ);
     }
   }
@@ -2945,7 +3183,10 @@ BB_REGION::BB_REGION(BB_SET *included, MEM_POOL *pool)
 	region_exits.Set(succ);
       }
     }
+#ifndef TARG_ST
+    // FdF 20060419: bug fi
     region_exits.Reset(exits);
+#endif
 
     // A "included" block that has at least one predecessor not included
     // is an entry block.
@@ -3023,7 +3264,12 @@ void BB_REGION::Verify() const
       BBLIST *succs;
       FOR_ALL_BB_SUCCS(bb, succs) {
 	BB *succ = BBLIST_item(succs);
+#ifdef TARG_ST
+      // FdF 20060419: bug fix
+	if (!region_exits(succ))
+#else
 	if (!region_exits(bb))
+#endif
 	  stack.push_back(succ);
       }
     }
@@ -3163,4 +3409,47 @@ verify_flow_graph(void)
   }
   MEM_POOL_Pop(&MEM_local_pool);
 }
- 
+
+#ifdef TARG_ST
+/*
+ * See interface description
+ */
+void
+BB_Modified_Registers(BB *bb, REGISTER_SET *register_sets, BOOL self)
+{
+  OP *op;
+  ISA_REGISTER_CLASS rc;
+
+  FOR_ALL_BB_OPs_FWD (bb, op) {
+    for (INT resnum = 0; resnum < OP_results(op); resnum++) {
+      TN *res_tn = OP_result(op,resnum);
+      if (TN_is_register(res_tn)) {
+	rc = TN_register_class(res_tn);
+	register_sets[rc] = REGISTER_SET_Union(register_sets[rc],
+					       TN_registers (res_tn));
+      }
+    }
+  }
+
+  /* We ignore call clobbered if we wnat only modified by the function itself. */
+  if (!self && BB_call(bb)) {
+    FOR_ALL_ISA_REGISTER_CLASS(rc) {
+      REGISTER_SET clobbers = BB_call_clobbered(bb, rc);
+      register_sets[rc] = REGISTER_SET_Union(register_sets[rc],
+					     clobbers);
+    }
+  }
+  
+  if (BB_asm(bb)) {
+    ANNOTATION *ant = ANNOT_Get (BB_annotations(bb), ANNOT_ASMINFO);
+    Is_True(ant, ("ASMINFO annotation info not present"));
+    ASMINFO *annot_info = ANNOT_asminfo(ant);
+    FOR_ALL_ISA_REGISTER_CLASS(rc) {
+      REGISTER_SET clobbers = ASMINFO_kill(annot_info)[rc];
+      register_sets[rc] = REGISTER_SET_Union(register_sets[rc],
+					     clobbers);
+    }
+  }
+}
+
+#endif

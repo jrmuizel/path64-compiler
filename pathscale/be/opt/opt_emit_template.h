@@ -100,7 +100,10 @@ Gen_exp_wn(CODEREP *exp, EMITTER *emitter)
 
 	  CODEREP *kid = exp->Get_opnd(0);
 	  if (cvt_kind == NEED_CVT) {
-	    
+#ifdef TARG_ST
+	    if (!Only_32_Bit_Ops &&
+		MTYPE_is_integral(exp->Dsctyp()) && MTYPE_is_integral(exp->Dtyp())
+#else
 	    if (MTYPE_is_integral(exp->Dsctyp())
 #ifdef TARG_X8664 // bug 11797
 	        && ! MTYPE_is_vector(exp->Dsctyp())
@@ -108,6 +111,7 @@ Gen_exp_wn(CODEREP *exp, EMITTER *emitter)
 		&& MTYPE_is_integral(exp->Dtyp())
 #ifdef TARG_X8664 // bug 11797
 	        && ! MTYPE_is_vector(exp->Dtyp())
+#endif
 #endif
 		&& ! (Only_Unsigned_64_Bit_Ops && MTYPE_signed(exp->Dtyp()))
 		&& MTYPE_size_min(kid->Dsctyp()) >= MTYPE_size_min(MTYPE_I4)
@@ -318,7 +322,7 @@ Gen_exp_wn(CODEREP *exp, EMITTER *emitter)
     case OPR_FORWARD_BARRIER:
     case OPR_BACKWARD_BARRIER:
     case OPR_DEALLOCA:
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     case OPR_PURE_CALL_OP:
 #endif
       {
@@ -329,7 +333,7 @@ Gen_exp_wn(CODEREP *exp, EMITTER *emitter)
 	else if ( opr == OPR_INTRINSIC_CALL || opr == OPR_INTRINSIC_OP ) {
 	  WN_intrinsic(wn) = exp->Intrinsic();
 	}
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	else if ( opr == OPR_PURE_CALL_OP ) {
 	  WN_st_idx (wn) = exp->Call_op_aux_id();
 	}
@@ -360,7 +364,7 @@ Gen_exp_wn(CODEREP *exp, EMITTER *emitter)
 	for (INT i = 0; i < exp->Kid_count(); ++i) {
 	  CODEREP *opnd = exp->Get_opnd(i);
 	  WN_kid(wn, i) = Gen_exp_wn(opnd, emitter);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
           if (opnd->Kind() == CK_OP){
             if (opnd->Opr() == OPR_CVT){
               TYPE_ID ty = exp->Asm_input_dsctype();
@@ -415,7 +419,13 @@ Gen_exp_wn(CODEREP *exp, EMITTER *emitter)
 	}
       }
       break;
-
+#ifdef TARG_ST
+      case OPR_SUBPART:
+	wn = WN_CreateSubPart( Gen_exp_wn(exp->Get_opnd(0), emitter)/* kid0*/ ,
+			       /*rtype*/exp->Dtyp(), /*desc*/exp->Dsctyp(), 
+			       exp->Subpart_index());
+	break;
+#endif
     default:
       {
 	STMTREP *proj_defstmt;
@@ -447,14 +457,16 @@ Gen_exp_wn(CODEREP *exp, EMITTER *emitter)
 	} else if (exp->Kid_count() == 2) {
           WN *opnd0 = Gen_exp_wn(exp->Get_opnd(0), emitter);
           WN *opnd1 = Gen_exp_wn(exp->Get_opnd(1), emitter);
-#ifdef KEY // make the desc type of the comparison smaller if possible
+#if defined( KEY) && !defined(TARG_ST)
+ // make the desc type of the comparison smaller if possible
 	  if (MTYPE_byte_size(WN_rtype(opnd0))==MTYPE_byte_size(WN_rtype(opnd1))
 	     && MTYPE_byte_size(WN_rtype(opnd0))< MTYPE_byte_size(exp->Dsctyp())
 	     && OPERATOR_is_compare(exp->Opr()))
 	    // sct 8240: preserve the sign
 	    exp->Set_dsctyp(Mtype_TransferSize(WN_rtype(opnd0),exp->Dsctyp()));
 #endif
-#ifdef KEY // bug 13230: fix INTCONSTs kids of compare unnecessarily made 64-bit
+#if defined( KEY) && !defined(TARG_ST)
+// bug 13230: fix INTCONSTs kids of compare unnecessarily made 64-bit
 	  else if (OPERATOR_is_compare(exp->Opr()) &&
 	      	   MTYPE_byte_size(exp->Dsctyp()) == 4) {
 	    if (WN_operator(opnd0) == OPR_INTCONST && 
@@ -465,7 +477,8 @@ Gen_exp_wn(CODEREP *exp, EMITTER *emitter)
 	      WN_set_rtype(opnd1, Mtype_TransferSize(exp->Dsctyp(), WN_rtype(opnd1)));
 	  }
 #endif
-#ifdef KEY // bug 3347: fix INTCONSTs unnecessarily made 64-bit
+#if defined( KEY) && !defined(TARG_ST)
+ // bug 3347: fix INTCONSTs unnecessarily made 64-bit
 	  else if (! OPERATOR_is_compare(exp->Opr()) &&
 	      	   MTYPE_byte_size(exp->Dtyp()) == 4) {
 	    if (WN_operator(opnd0) == OPR_INTCONST && 
@@ -561,7 +574,8 @@ Gen_exp_wn(CODEREP *exp, EMITTER *emitter)
     }
     else if ( exp->Opr() == OPR_PARM ) {
       wn = Gen_exp_wn(exp->Ilod_base(), emitter);
-#ifdef KEY // bug 12161: fix INTCONSTs unnecessarily made 64-bit
+#if defined( KEY) && !defined(TARG_ST)
+ // bug 12161: fix INTCONSTs unnecessarily made 64-bit
       if (WN_operator(wn) == OPR_INTCONST && MTYPE_byte_size(WN_rtype(wn)) == 8
 	  && MTYPE_byte_size(exp->Dtyp()) == 4) {
 	if ((WN_const_val(wn) << 32 >> 32) == WN_const_val(wn))
@@ -574,7 +588,8 @@ Gen_exp_wn(CODEREP *exp, EMITTER *emitter)
 	Is_True(pt != NULL, ("Reference parameter has NULL POINTS_TO."));
 	emitter->Alias_Mgr()->Gen_alias_id(wn, pt);
       }
-#ifdef KEY // bug 7766
+#if defined( KEY) && !defined(TARG_ST)
+ // bug 7766
       else if (IS_FORTRAN && exp->Ilod_base()->Kind() == CK_LDA &&
 	       ! exp->Ilod_base()->Is_flag_set(CF_LDA_LABEL) &&
 	       ! WN_Parm_By_Reference(wn)) {
@@ -615,7 +630,8 @@ Gen_exp_wn(CODEREP *exp, EMITTER *emitter)
       wn = WN_LdaLabel(exp->Dtyp(), exp->Offset());
     }
     else {
-      wn = WN_CreateLda(OPR_LDA, exp->Dtyp(), MTYPE_V, exp->Offset(), exp->Lda_ty(), exp->Lda_base_st(), exp->Afield_id());
+      wn = WN_CreateLda(OPR_LDA, exp->Dtyp(), MTYPE_V, exp->Offset(), 
+                        exp->Lda_ty(), exp->Lda_base_st(), exp->Afield_id());
       // Generate a small amount of alias information for LDA nodes as
       // well, since LNO may use the LDA's as handles on symbols that it
       // wants to equivalence. In that situation, it may need to
@@ -878,7 +894,7 @@ Gen_stmt_wn(STMTREP *srep, STMT_CONTAINER *stmt_container, EMITTER *emitter)
       OPCODE opc = srep->Op();
       OPERATOR opr = OPCODE_operator(opc);
       rwn = Gen_exp_wn( srep->Rhs(), emitter );
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       // bug 8941: If possible replace ICALL with a CALL.
       if (WN_operator (rwn) == OPR_ICALL)
       {
@@ -928,7 +944,20 @@ Gen_stmt_wn(STMTREP *srep, STMT_CONTAINER *stmt_container, EMITTER *emitter)
 	     WOPT_Enable_Cvt_Folding &&
              rhs_cr->Kind() == CK_OP && 
 	     ( rhs_cr->Opr() == OPR_CVT &&
+#ifdef TARG_ST
+	       //
+	       // Arthur: a CVT can be removed if Dtyp() and Dsctyp()
+	       //         are both either integer or pointer class
+	       // but not if Only_32_Bit_Ops is ON
+	       //
+	       !Only_32_Bit_Ops &&
+	       ((MTYPE_is_class_integer(rhs_cr->Dtyp()) && 
+	             MTYPE_is_class_integer(rhs_cr->Dsctyp())) ||
+	        (MTYPE_is_class_pointer(rhs_cr->Dtyp()) && 
+		     MTYPE_is_class_pointer(rhs_cr->Dsctyp()))  )
+#else
 	       MTYPE_is_integral( rhs_cr->Dsctyp() ) 
+#endif
 	      || rhs_cr->Opr() == OPR_CVTL ) &&
 	     MTYPE_is_integral( rhs_cr->Dtyp() ) && 
              MTYPE_is_integral( lhs->Dsctyp() )
@@ -1000,7 +1029,7 @@ Gen_stmt_wn(STMTREP *srep, STMT_CONTAINER *stmt_container, EMITTER *emitter)
 	        ("Gen_stmt_wn: non-boolean value stored to boolean variable"));
 	  WN_set_rtype(rhs_wn, MTYPE_B);
 	}
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	if (OPERATOR_is_load(WN_operator(rhs_wn)) && 
 	    lhs->Dsctyp() != MTYPE_BS /* bug 14453 */) {
 	  if (MTYPE_byte_size(WN_rtype(rhs_wn)) < 
@@ -1055,14 +1084,28 @@ Gen_stmt_wn(STMTREP *srep, STMT_CONTAINER *stmt_container, EMITTER *emitter)
       CODEREP *lhs = srep->Lhs();
       /* CVTL-RELATED start (performance) */
       if (
-#ifndef KEY // bug 5695
+#if !defined (KEY) || defined(TARG_ST) // bug 5695
 	  !emitter->For_preopt() &&
 #endif
 	  WOPT_Enable_Cvt_Folding &&
 	  rhs_cr->Kind() == CK_OP && 
 	  ( rhs_cr->Opr() == OPR_CVT &&
+#ifdef TARG_ST
+	       //
+	       // Arthur: a CVT can be removed if Dtyp() and Dsctyp()
+	       //         are both either integer or pointer class
+	       // but not if Only_32_Bit_Ops is ON
+	       //
+	    !Only_32_Bit_Ops &&
+	    ((MTYPE_is_class_integer(rhs_cr->Dtyp()) && 
+	      MTYPE_is_class_integer(rhs_cr->Dsctyp())) ||
+	     (MTYPE_is_class_pointer(rhs_cr->Dtyp()) && 
+	      MTYPE_is_class_pointer(rhs_cr->Dsctyp())))
+#else
 	   MTYPE_is_integral( rhs_cr->Dsctyp() ) 
-#ifdef KEY // bug 10346
+#endif
+#if defined( KEY) && !defined(TARG_ST)
+ // bug 10346
 	   && !MTYPE_is_vector( rhs_cr->Dsctyp() )
 	   && !MTYPE_is_vector( rhs_cr->Dtyp() )
 #endif
@@ -1131,7 +1174,20 @@ Gen_stmt_wn(STMTREP *srep, STMT_CONTAINER *stmt_container, EMITTER *emitter)
 	  WOPT_Enable_Cvt_Folding &&
 	  rhs_cr->Kind() == CK_OP && 
 	  ( rhs_cr->Opr() == OPR_CVT &&
+#ifdef TARG_ST
+	       //
+	       // Arthur: a CVT can be removed if Dtyp() and Dsctyp()
+	       //         are both either integer or pointer class
+	       // but not if Only_32_Bit_Ops is ON
+	       //
+	    !Only_32_Bit_Ops &&
+	    ((MTYPE_is_class_integer(rhs_cr->Dtyp()) && 
+	      MTYPE_is_class_integer(rhs_cr->Dsctyp())) ||
+	     (MTYPE_is_class_pointer(rhs_cr->Dtyp()) && 
+	      MTYPE_is_class_pointer(rhs_cr->Dsctyp())))
+#else
 	   MTYPE_is_integral( rhs_cr->Dsctyp() ) 
+#endif
 	   || rhs_cr->Opr() == OPR_CVTL ) &&
 	  MTYPE_is_integral( rhs_cr->Dtyp() ) && 
 	  MTYPE_is_integral( lhs->Dsctyp() )
@@ -1210,7 +1266,8 @@ Gen_stmt_wn(STMTREP *srep, STMT_CONTAINER *stmt_container, EMITTER *emitter)
   case OPR_RETURN_VAL:
     rwn = WN_COPY_Tree_With_Map(srep->Orig_wn());
     rhs_wn = Gen_exp_wn( srep->Rhs(), emitter );
-#ifdef KEY // bug 5224
+#if defined( KEY) && !defined(TARG_ST)
+ // bug 5224
     if (srep->Opr() == OPR_RETURN_VAL &&
 	OPERATOR_is_load(WN_operator(rhs_wn)) &&
 	MTYPE_byte_size(WN_rtype(rhs_wn)) < MTYPE_byte_size(WN_rtype(rwn))){
@@ -1222,7 +1279,7 @@ Gen_stmt_wn(STMTREP *srep, STMT_CONTAINER *stmt_container, EMITTER *emitter)
   
   case OPR_RETURN:
   case OPR_PRAGMA:
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   case OPR_GOTO_OUTER_BLOCK:
 #endif
     rwn = WN_COPY_Tree_With_Map(srep->Orig_wn());
@@ -1231,7 +1288,7 @@ Gen_stmt_wn(STMTREP *srep, STMT_CONTAINER *stmt_container, EMITTER *emitter)
     break;
 
   case OPR_XPRAGMA:
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (emitter->Htable()->Phase() == MAINOPT_PHASE && 
 	WN_pragma(srep->Orig_wn()) == WN_PRAGMA_COPYIN_BOUND)
       return NULL; // delete here instead of in opt_ssa.cxx
@@ -1259,6 +1316,12 @@ Gen_stmt_wn(STMTREP *srep, STMT_CONTAINER *stmt_container, EMITTER *emitter)
       rwn = WN_CreateEval(rhs_wn);
     break;
 
+#ifdef TARG_ST
+  case OPR_AFFIRM:
+    rhs_wn = Gen_exp_wn( srep->Rhs(), emitter );
+    rwn = WN_CreateAffirm(rhs_wn);
+    break;    
+#endif
   case OPR_REGION: // black box region, previously processed
     rwn = srep->Black_box_wn(); 
     break;
@@ -1283,7 +1346,7 @@ Gen_stmt_wn(STMTREP *srep, STMT_CONTAINER *stmt_container, EMITTER *emitter)
     rwn = WN_COPY_Tree_With_Map(srep->Black_box_wn());
     emitter->Alias_Mgr()->Gen_black_box_alias(rwn);
     break;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   case OPR_COMMENT:
     return NULL;
 #endif
@@ -1295,7 +1358,14 @@ Gen_stmt_wn(STMTREP *srep, STMT_CONTAINER *stmt_container, EMITTER *emitter)
   WN_Set_Linenum(rwn, srep->Linenum());
 
   if (emitter->Cfg()->Feedback())
+#ifdef TARG_ST
+//TB: orig_wn is the original WN (before WOPT cfg construction).
+//The WN is used to retrieve feedback info that are not carried by
+//the OPT FEEDBACK CFG (icall specific info).
+    emitter->Cfg()->Feedback()->Emit_feedback( rwn, srep->Bb(), srep->Wn() );
+#else
     emitter->Cfg()->Feedback()->Emit_feedback( rwn, srep->Bb() );
+#endif
 
   stmt_container->Append(rwn);
 

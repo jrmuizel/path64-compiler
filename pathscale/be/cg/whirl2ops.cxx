@@ -115,11 +115,32 @@
 #include "cgexp_internals.h"
 #include "cxx_template.h" // for STACK
 #endif
+#ifdef TARG_ST
+#include "betarget.h"    /* for Target_Has_Immediate_Operand */
+#include "bb_map.h"
+#include "register_preg.h" /* For CGTARG_Regclass_Preg_Min() */
+#include "config_opt.h" /* For OPT_Enable_Warn_Assume */
+#include "cg_affirm.h"
+#include "insn-config.h" /* for MAX_RECOG_OPERANDS */
+#endif
 
+#ifdef TARG_ST200
+#define ENABLE_64_BITS  /* Activate 64 bits support for st200 family. */
+#endif
 #ifdef EMULATE_LONGLONG
 extern void Add_TN_Pair (TN*, TN*);
 extern TN *If_Get_TN_Pair(TN*);
 extern TN *Gen_Literal_TN_Pair(UINT64);
+#endif
+#if defined(CGG_ENABLED)
+#include "targ_cgg_exp.h"
+static TN * Expand_Expr_local (WN *expr, WN *parent, TN *result);
+static void Expand_Statement_local (WN *stmt);
+static TN * Expand_Expr (WN *expr, WN *parent, TN *result);
+static void Expand_Statement (WN *stmt);
+#define CGG_STATIC 
+#else
+#define CGG_STATIC static
 #endif
 
 BOOL Compiling_Proper_REGION;
@@ -127,8 +148,11 @@ static BOOL Trace_WhirlToOp = FALSE;
 
 /* reference to a dedicated TN in Cur_BB */
 static BOOL dedicated_seen;
-
+#ifdef CGG_ENABLED
+CGG_STATIC BOOL In_Glue_Region = FALSE;	/* in glue-code region */
+#else
 static BOOL In_Glue_Region = FALSE;	/* in glue-code region */
+#endif
 
 /* Forward declarations. */
 static TN * Expand_Expr (WN *expr, WN *parent, TN *result);
@@ -144,6 +168,22 @@ static VARIANT WHIRL_Compare_To_OP_variant (OPCODE opcode, BOOL invert);
 #else
 #define WHIRL2OPS_STATIC static
 #endif
+#ifdef TARG_ST
+/* Declaration of a structure used to
+ * managed result of intrinsics.
+ */
+typedef struct{
+   UINT   numres;
+   TN    *res[ISA_OPERAND_max_results];
+} INTRINSIC_RESULT;
+
+static INTRINSIC_RESULT *Intrinsic_Result_Sav = NULL;
+static UINT              Intrinsic_Count      = 0;
+
+/* Forward declaration */
+static void               push_intrinsic_result(WN* intrincall, TN **res, INT numres);
+static INTRINSIC_RESULT*  get_last_intrinsic_result(void);
+#endif                       /* TARG_ST */
 
 /* The cgexp routines now take as input an OPS to which the
  * expanded OPs are added.
@@ -151,11 +191,19 @@ static VARIANT WHIRL_Compare_To_OP_variant (OPCODE opcode, BOOL invert);
 WHIRL2OPS_STATIC OPS New_OPs;
 
 WHIRL2OPS_STATIC OP *Last_Processed_OP;
+#ifdef CGG_ENABLED
+CGG_STATIC SRCPOS current_srcpos;
+#else
 WHIRL2OPS_STATIC SRCPOS current_srcpos;
+#endif
 WHIRL2OPS_STATIC INT total_bb_insts;
 
 /* The current basic block being generated. */
+#ifdef CGG_ENABLED
+CGG_STATIC BB *Cur_BB;
+#else
 WHIRL2OPS_STATIC BB *Cur_BB;
+#endif
 
 static RID **region_stack_base;
 static RID **region_stack_ptr;
@@ -163,23 +211,34 @@ static INT   region_stack_size;
 #define current_region (*(region_stack_ptr - 1))
 #define region_depth   (region_stack_ptr - region_stack_base)
 static BB_NUM min_bb_id;
-
+#ifdef TARG_ST
+static BB_MAP loop_pragma_map;
+#else
 static WN *last_loop_pragma;
+#endif
 
 #define return_max 3
-
+#ifdef TARG_ST
+static WN *last_asmparse_pragma;
+#endif
 /*
  * Last_Mem_OP is used to keep track of the last
  * op processed for the memory op to wn mapping.
  */
-
+#ifdef CGG_ENABLED
+CGG_STATIC OP *Last_Mem_OP;
+#else
 static OP *Last_Mem_OP;
+#endif
 OP_MAP OP_to_WN_map;
 static OP_MAP predicate_map = NULL;
 static WN_MAP WN_to_OP_map;
 
 OP_MAP OP_Asm_Map;
 
+#ifdef TARG_ST
+OP_MAP OP_to_callinfo_map;
+#endif
 TN *
 Get_Complement_TN(TN *tn)
 {
@@ -193,6 +252,142 @@ Get_Complement_TN(TN *tn)
   }
   return c_tn;
 }
+
+#ifdef TARG_ST
+// FdF 20070510: For an operation created by load/store packing,
+// associate the list of original operations.
+
+static OP_MAP OP_packed_to_ops_map = NULL;
+
+static OP *
+Link_Packed_Op(OP *opi, OP *opj) {
+  // If opj is already a packed operation, be sure to get down to the
+  // chain
+  int dummy;
+  OP *op;
+
+  OP *opfirst = opj;
+  if (OP_packed(opfirst))
+    opfirst = Get_First_Packed_Op(opfirst, &dummy);
+
+  OP_MAP_Set(OP_packed_to_ops_map, opi, opfirst);
+
+  // Then, find the end of the chain for linking with a next op
+  OP *oplast = opfirst;
+  while ((op = Get_Next_Packed_Op(opfirst, oplast, &dummy)) != NULL)
+    oplast = op;
+
+  return oplast;
+}
+
+void
+Set_Packed_Ops(OP *packed_op, INT n, OP *op1, ...) {
+
+  if (OP_packed_to_ops_map == NULL)
+    OP_packed_to_ops_map = OP_MAP_Create();
+
+  OP *dup_op;
+
+  // FdF 20070515: Call Dup_OP since op1 may later be converted into a
+  // noop when removed from the code.
+  dup_op = Dup_OP(op1);
+  dup_op->bb = OP_bb(op1);
+  Copy_WN_For_Memory_OP (dup_op, op1);
+
+  // If op1 is already a packed operation, be sure to get down to the
+  // chain
+  op1 = Link_Packed_Op(packed_op, dup_op);
+  
+  INT i;
+  va_list ops;
+  OP* opi = op1, *opj;
+
+  va_start(ops, op1);
+  for (i = 1; i < n; i++) {
+    opj = va_arg(ops, OP *);
+
+    // FdF 20070515: Call Dup_OP since opj may later be converted into
+    // a noop when removed from the code.
+    dup_op = Dup_OP(opj);
+    dup_op->bb = OP_bb(opj);
+    Copy_WN_For_Memory_OP (dup_op, opj);
+    opj = dup_op;
+    opi = Link_Packed_Op(opi, opj);
+  }
+  va_end(ops);
+
+  Set_OP_packed(packed_op);
+}
+
+void
+Copy_Packed_Ops(OP *dest_packed, OP *src_packed) {
+
+  Is_True(OP_packed(src_packed) && (OP_packed_to_ops_map != NULL),
+	  ("Copy_Packed_Ops_N: Must be called with a packed op.\n"));
+
+  OP *opi = dest_packed, *opj;
+  int dummy;
+
+  // OP_MAP_Set(OP_packed_to_ops_map, dest_packed, Get_First_Packed_Op(src_packed, &dummy));
+
+  // FdF 20071022: The entire chain is now duplicated, so that each
+  // packed operation points to its own copies of the original
+  // operations. This way, it is possible in cg_dep_graph to update
+  // these copies of original operations with information on the
+  // packed operation (unoll_bb, unrollings, orig_idx).
+  for (opj = Get_First_Packed_Op(src_packed, &dummy); opj; opj = Get_Next_Packed_Op(src_packed, opj, &dummy)) {
+    OP *dup_opj;
+    dup_opj = Dup_OP(opj);
+    dup_opj->bb = OP_bb(opj);
+    Copy_WN_For_Memory_OP (dup_opj, opj);
+    opi = Link_Packed_Op(opi, dup_opj);
+  }
+
+  Set_OP_packed(dest_packed);
+}
+
+// FdF 20070510: For a packed operation, return the first operation
+// associated to packed_op. For a non packed operation, return the
+// original operation.
+
+OP *
+Get_First_Packed_Op(OP *packed_op, int *offset) {
+
+  // *offset must be set to zero in any case.
+  *offset = 0;
+
+  // If not a packed op, return NULL
+  if ((OP_packed_to_ops_map == NULL) || !OP_packed(packed_op))
+    return NULL;
+
+  return (OP *)OP_MAP_Get(OP_packed_to_ops_map, packed_op);
+}
+
+// FdF 20070510: For a packed operation, return the next operation
+// after opi associated to packed_op. For a non packed operation,
+// return NULL;
+
+OP *
+Get_Next_Packed_Op(OP *packed_op, OP *opi, int *offset) {
+
+  // If not a packed op, or the last unit op of a packed op, return
+  // NULL
+  if ((OP_packed_to_ops_map == NULL) || !OP_packed(packed_op))
+    return NULL;
+
+  // For example, 4 16 bit load (h1-h4) can be packed into one 64 bit load (l1) and
+  // also in 2 32 bit load (w1,w2). This gives the following chain:
+  // l1->h1->h2->h3->h4
+  //   /       /
+  // w1      w2
+  // When looking at packed ops for w1, we must stop after h2.
+  
+  *offset += OP_Mem_Ref_Bytes(opi);
+  if (*offset >= OP_Mem_Ref_Bytes(packed_op))
+    return NULL;
+  return (OP *)OP_MAP_Get(OP_packed_to_ops_map, opi);
+}
+#endif
 
 
 void Copy_WN_For_Memory_OP(OP *dest, const OP *src)
@@ -209,8 +404,33 @@ void Copy_WN_For_Memory_OP(OP *dest, const OP *src)
     Set_OP_memory_hi( dest );
   }
 #endif
+#ifdef TARG_ST
+  // FdF 20070627: Need also to copy on a packed operation the map to
+  // the unit elements of the original packed operation.
+  if (OP_packed(src)) {
+    Is_True(OP_Mem_Ref_Bytes(dest) == OP_Mem_Ref_Bytes(src),
+	    ("Copy_WN_For_Memory_OP: src and dst do not have the same size."));
+    Copy_Packed_Ops(dest, src);
+  }
+#endif
+
 }
 
+#ifdef TARG_ST
+/* [TTh] Test if the memory OP is associated to a WN and
+ * if its memory access is smaller than the WN memory access
+ * (case of splitted memory accesses)
+ */
+BOOL Memory_OP_Is_Partial_WN_Access(OP *op) {
+  if (OP_memory(op) && !OP_hoisted(op)) {
+    WN *wn = Get_WN_From_Memory_OP(op);
+    if (wn && (TOP_Mem_Bytes(OP_code(op)) < MTYPE_byte_size(WN_desc(wn)))) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+#endif
 
 OP *Get_OP_From_WN(WN *wn ) 
 {
@@ -359,7 +579,7 @@ Process_New_OPs (void)
   Last_Processed_OP = OPS_last(&New_OPs);
 }
 
-#ifdef EMULATE_LONGLONG
+#if defined TARG_ST || defined EMULATE_LONGLONG
 /***********************************************************************
  *
  * Assume that orig_bb was split into orig_bb followed by new_bb,
@@ -470,6 +690,19 @@ Split_Jumpy_BB (BB *bb) {
       }
 
       Update_BB_Properties (bb, new_bb);
+#ifdef TARG_ST
+      if (OP_call(BB_last_op(bb))) {
+	// [SC] if bb now ends in a call, there must have been
+	// a call in the middle of it.
+	// Callinfo for calls that are not at the end of a block
+	// should have been added to OP_to_callinfo_map.
+	// Extract that information here and add it to bb.
+	CALLINFO *call_info = (CALLINFO *) OP_MAP_Get (OP_to_callinfo_map, BB_last_op(bb));
+	BB_Add_Annotation (bb, ANNOT_CALLINFO, call_info);
+        Set_BB_call(bb);
+	region_stack_eh_set_has_call ();
+      }
+#endif
       bb = new_bb;
       op = BB_first_op(new_bb);
       continue;
@@ -511,7 +744,7 @@ Split_Jumpy_BB (BB *bb) {
   
   return bb;
 }
-#endif /* EMULATE_LONGLONG */
+#endif /* TARG_ST || EMULATE_LONGLONG */
 
 
 /* Start a new basic block. Any OPs that have not been put into a BB
@@ -535,7 +768,7 @@ Start_New_Basic_Block (void)
     Process_New_OPs ();
     BB_Append_Ops(bb, &New_OPs);
     OPS_Init(&New_OPs);
-#ifdef EMULATE_LONGLONG
+#if defined TARG_ST || defined EMULATE_LONGLONG
     bb = Split_Jumpy_BB (bb);
 #endif
     if ( dedicated_seen )
@@ -549,6 +782,31 @@ Start_New_Basic_Block (void)
     // will be added later to the entry/exit bb.
     bb = Gen_And_Append_BB (bb);
   }
+#ifdef TARG_ST
+  // FdF 23/04/2004: Because loop pragmas must now be associated with
+  // the pre-header of the loop, before being moved to the loop
+  // header.
+  else if (BB_MAP_Get(loop_pragma_map, bb)) {
+    bb = Gen_And_Append_BB (bb);
+  }
+  // FdF 12/05/2004: Frequency_Hint pragmas are attached to a specific
+  // basic block. Even if empty, a basic block must be created to
+  // attach this pragma.
+  else if (BB_has_pragma(bb)) {
+    ANNOTATION *ant;
+
+    for ( ant = ANNOT_First(BB_annotations(bb), ANNOT_PRAGMA);
+	  ant != NULL;
+	  ant = ANNOT_Next(ant, ANNOT_PRAGMA)) {
+      WN *wn = ANNOT_pragma(ant);
+      WN_PRAGMA_ID pragma = (WN_PRAGMA_ID) WN_pragma(wn);
+      if (pragma == WN_PRAGMA_MIPS_FREQUENCY_HINT) {
+	bb = Gen_And_Append_BB (bb);
+	break;
+      }
+    }
+  }
+#endif
 
   if (PU_has_region(Get_Current_PU()))
     BB_rid(bb) = Non_Transparent_RID(current_region);
@@ -590,6 +848,25 @@ Process_OPs_For_Stmt (void)
 #endif
 }
 
+#ifdef TARG_ST
+/* [TTh] Annotate operations of previously generated BBs
+ * as belonging to the prologue.
+ */
+static void
+Annotate_Previous_BB_As_Prologue(void)
+{
+  BB *prev_bb;
+  prev_bb = BB_prev(Cur_BB);
+  while (prev_bb) {
+    OP *op = BB_first_op(prev_bb);
+    while (op) {
+      Set_OP_prologue(op);
+      op = OP_next(op);
+    }
+    prev_bb = BB_prev(prev_bb);
+  }
+}
+#endif
 
 /* Create a new result TN for the WHIRL node wn. We pass in the opnd_tn
  * array that contains the TNs allocated for each operand. This could
@@ -628,7 +905,11 @@ Allocate_Result_TN (WN *wn, TN **opnd_tn)
 
 /* set the op2wn mappings for memory ops
  */
+#ifdef CGG_ENABLED
+CGG_STATIC void
+#else
 static void
+#endif
 Set_OP_To_WN_Map(WN *wn)
 {
   OP *op;
@@ -794,10 +1075,98 @@ static void Realloc_Preg_To_TN_Arrays (PREG_NUM preg_num)
 	 PREG_To_TN_Mtype, max_preg_to_tn_index, max_preg_to_tn_index + 10);
   max_preg_to_tn_index += 10;
 }
+/* ====================================================================
+ *   Set_TN_For_PREG
+ *
+ *   create a TN for this PREG.
+ * ====================================================================
+ */
+TN*
+Set_TN_For_PREG (
+  PREG_NUM preg_num,
+  TYPE_ID mtype
+)
+{
+  TN *tn;
+  ISA_REGISTER_CLASS rclass;
+  REGISTER reg;
+
+#ifdef EMULATE_LONGLONG
+  if (mtype == MTYPE_I8 || mtype == MTYPE_U8) {
+    mtype = (mtype == MTYPE_I8 ? MTYPE_I4 : MTYPE_U4);
+    tn = Build_TN_Of_Mtype(mtype);
+    Add_TN_Pair (tn, Build_TN_Of_Mtype(mtype));
+  } else {
+    tn = Build_TN_Of_Mtype (mtype);
+  }
+#else
+  tn = Build_TN_Of_Mtype (mtype);
+#endif
+
+  TN_MAP_Set(TN_To_PREG_Map, tn, (void *)preg_num);
+
+  if (Is_Predicate_REGISTER_CLASS(TN_register_class(tn))) {
+
+    // When we create a predicate TN, we actually need to create
+    // a pair. The "true" TN corresponds to preg_num; the "false"
+    // TN corresponds to preg_num+1.
+    Is_True(!TN_is_gra_homeable(tn) && !TN_is_rematerializable(tn),
+	  ("don't support homeable or rematerializable predicate preg"));
+    PREG_NUM preg2_num = preg_num + 1;
+    TN *tn2 = Build_TN_Of_Mtype (mtype);
+    TN_MAP_Set(TN_To_PREG_Map, tn2, (void *)preg2_num);
+    PREG_To_TN_Array[preg2_num] = tn2;
+    PREG_To_TN_Mtype[preg2_num] = mtype;
+  }
+
+  PREG_To_TN_Array[preg_num] = tn;
+  PREG_To_TN_Mtype[preg_num] = mtype;
+
+  return tn;
+}
+
+#ifdef TARG_ST
+struct wn_home_hilo {
+  WN *hi;
+  WN *lo;
+};
+
+static WN_MAP WN_To_Hilo_map = WN_MAP_UNDEFINED;
+
+static WN *
+Get_hilo_home(WN *home, WN *wn)
+{
+  struct wn_home_hilo *hilo;
+
+  PARITY par = WN_parity(wn);
+  if (WN_To_Hilo_map == WN_MAP_UNDEFINED)
+    WN_To_Hilo_map = WN_MAP_Create(&MEM_phase_pool);
+
+  hilo = (struct wn_home_hilo *)WN_MAP_Get(WN_To_Hilo_map, home);
+  if (! hilo) {
+    hilo = (struct wn_home_hilo *)malloc (sizeof (struct wn_home_hilo));
+
+    HILO_lower_wn (home, &hilo->hi, &hilo->lo);
+    WN_MAP_Set(WN_To_Hilo_map, home, (void*)hilo);
+  }
+
+  if (par == PARITY_DOUBLE_HI || par == PARITY_LONGLONG_HI)
+    return hilo->hi;
+  if (par == PARITY_DOUBLE_LO || par == PARITY_LONGLONG_LO)
+    return hilo->lo;
+
+  FmtAssert (FALSE, ("Get_hilo_home: unknown or no parity"));
+}
+#endif
 
 /* function exported externally for use in LRA. */
 TN *
-PREG_To_TN (ST *preg_st, PREG_NUM preg_num)
+PREG_To_TN (ST *preg_st, 
+            PREG_NUM preg_num
+#ifdef TARG_ST
+  , WN *wn
+#endif
+            )
 {
   TN *tn;
 
@@ -816,8 +1185,30 @@ PREG_To_TN (ST *preg_st, PREG_NUM preg_num)
 
     if (CGTARG_Preg_Register_And_Class(preg_num, &rclass, &reg))
     {
+#ifdef TARG_ST
+      //TB: Add a check that the rlass is compatible with preg_st
+#define DEFAULT_RCLASS_SIZE(rc)	\
+	((REGISTER_bit_size(rc, REGISTER_CLASS_last_register(rc))+7)/8)
+      if (ST_size(preg_st)!=0 && ST_size(preg_st) != DEFAULT_RCLASS_SIZE(rclass))
+	{
+#ifdef TARG_ST
+	  // [TTh] Check size compatibility with register class
+	  if (!ISA_OPERAND_Exist_With_Register_Class_Bitsize(rclass, ST_size(preg_st)*8)) {
+#endif
+	    unsigned line;
+	    USRCPOS usrcpos;
+	    USRCPOS_srcpos(usrcpos) = WN_Get_Linenum(wn);
+	    line = USRCPOS_linenum(usrcpos);
+	    ErrMsgSrcpos(EC_CG_Generic_Fatal, USRCPOS_srcpos(usrcpos), "type mismatch");
+#ifdef TARG_ST
+	  }
+#endif
+	}
+#endif
+#ifndef TARG_ST
 	Is_True(!Is_Predicate_REGISTER_CLASS(rclass),
 		("don't support dedicate predicate pregs"));
+#endif
 #ifdef HAS_STACKED_REGISTERS
 	if (ABI_PROPERTY_Is_stacked(
 		rclass,
@@ -921,6 +1312,26 @@ PREG_To_TN (ST *preg_st, PREG_NUM preg_num)
 
 	if (home)
 	{
+#ifdef TARG_ST
+        //
+        // Christian: 'home' is set by WOPT.
+        //            it may happen that 'home' is a 64-bit
+        //            thing, which we can't handle on a 32-bit
+        //            machine.
+#ifdef ENABLE_64_BITS
+        if (!Enable_64_Bits_Ops &&
+            (MTYPE_is_double(WN_rtype(home)) || 
+             MTYPE_is_longlong(WN_rtype(home)))) {
+          home = Get_hilo_home (home, wn);
+        }
+#else
+        if (Only_32_Bit_Ops &&
+            (MTYPE_is_double(WN_rtype(home)) || 
+             MTYPE_is_longlong(WN_rtype(home)))) {
+          home = Get_hilo_home (home, wn);
+        }
+#endif
+#endif
 	  if (gra_homeable) {
 	    if (TN_number(tn) < GRA_non_home_lo ||
 		TN_number(tn) > GRA_non_home_hi) {
@@ -1001,17 +1412,24 @@ TN_To_Assigned_PREG (TN *tn)
 
   FmtAssert (TN_register(tn) != REGISTER_UNDEFINED, 
     ("TN_To_Assigned_PREG: no assigned register for TN%d", TN_number(tn)));
-
+#ifdef TARG_ST
+  // TB: New way of mapping machine id to preg num.
+  // work for core and extension register classes.
+  i = REGISTER_machine_id(TN_register_class(tn), TN_register(tn));
+  i += CGTARG_Regclass_Preg_Min(TN_register_class(tn));
+#else
+// TB: New way of mapping machine id to preg num
   i = REGISTER_machine_id(TN_register_class(tn), TN_register(tn));
   if (TN_is_float(tn)) {
     i += Float_Preg_Min_Offset;
   }
-#if defined(TARG_IA32) || defined(TARG_X8664)
+#if defined(TARG_IA32) || defined(TARG_X8664) || defined(TARG_ST)
   // There's no ZERO register: eax has machine_id 0, but preg_id 1
   else {
     i += Int_Preg_Min_Offset;
   }
 #endif  
+#endif
   return i;
 }
 
@@ -1253,6 +1671,12 @@ Handle_Call_Site (WN *call, OPERATOR call_opr)
   call_info = TYPE_PU_ALLOC (CALLINFO);
   CALLINFO_call_st(call_info) = call_st;
   CALLINFO_call_wn(call_info) = call;
+#ifdef TARG_ST
+  CALLINFO_call_opnds(call_info) = 0;
+  CALLINFO_call_results(call_info) = 0;
+  CALLINFO_call_opnd(call_info) = NULL;
+  CALLINFO_call_result(call_info) = NULL;
+#endif
   BB_Add_Annotation (Cur_BB, ANNOT_CALLINFO, call_info);
 
   region_stack_eh_set_has_call();
@@ -1261,6 +1685,18 @@ Handle_Call_Site (WN *call, OPERATOR call_opr)
    * it has finer granularity. It is also easier for LRA to make the
    * assumption that a procedure call breaks a basic block. 
    */
+#ifdef TARG_ST
+  // FdF 20041105: A "noreturn" call is also an exit block, so as to
+  // enable tail call optimization and optimization of the call
+  // sequence.
+  if (WN_Call_Never_Return( call ) && !PU_has_region(Get_Current_PU())) {
+    EXITINFO *exit_info = TYPE_PU_ALLOC (EXITINFO);
+    EXITINFO_srcpos(exit_info) = current_srcpos;
+    BB_Add_Annotation (Cur_BB, ANNOT_EXITINFO, exit_info);
+    Set_BB_exit(Cur_BB);
+  }
+#endif
+
   Start_New_Basic_Block ();
 
   // if caller-save-gp and not defined in own dso, then restore gp.
@@ -1283,6 +1719,35 @@ Handle_Call_Site (WN *call, OPERATOR call_opr)
   }
 }
 
+/* ====================================================================
+ *   Address_Align
+ *
+ *   Determine the alignment of the symbol type when taking an address
+ *   through an OPR_ LDA.
+ * ====================================================================
+ */
+static INT 
+Address_Align(
+  WN *wn
+)
+{
+  OPCODE opcode = WN_opcode(wn);
+  if (OPCODE_operator(opcode) == OPR_LDA) {
+    return (TY_align(ST_type(WN_st(wn))));
+  }
+  INT i;
+  WN * wn2;
+  for (i = 0; i < WN_kid_count(wn); i++) {
+    wn2 = WN_kid(wn,i);
+    if (wn2) {
+      INT addr_align = Address_Align(wn2);
+      if (addr_align != -1) {
+	return (addr_align);
+      }
+    }
+  }
+  return -1;
+}
 
 /*
  * Determine the Exp_OP variant for a memory operation.
@@ -1290,7 +1755,11 @@ Handle_Call_Site (WN *call, OPERATOR call_opr)
 static VARIANT Memop_Variant(WN *memop)
 {
   VARIANT variant = V_NONE;
+#ifdef TARG_ST
+  INT     required_alignment = MTYPE_alignment(WN_desc(memop));
+#else
   INT     required_alignment = MTYPE_RegisterSize(WN_desc(memop));
+#endif
 
 #ifndef KEY
   /* If volatile, set the flag.
@@ -1350,7 +1819,23 @@ static VARIANT Memop_Variant(WN *memop)
     align = ty_align;
 #ifndef TARG_X8664 // bug 8640: for enabling generation of 128-bit-aligned accesses from SIMD
     if (offset) {
+#ifdef TARG_ST
+      // [TTh] Do not use directly the offset as an alignment,
+      //       as it is not always a power of 2.
+      INT offset_align = 0;
+      // Fix for bug #23667. Offset can be negative, hence offset_abs too.
+      // But negative values are meaningless for alignment.
+      INT offset_abs = (offset < 0? -offset: offset) % required_alignment;
+      if (offset_abs) {
+	offset_align = 1;
+	while (!(offset_abs & 0x1)) {
+	  offset_align <<= 1;
+	  offset_abs   >>= 1;
+	}
+      }
+#else
       INT offset_align = offset % required_alignment;
+#endif
       if (offset_align) align = MIN(ty_align, offset_align);
     }
 #endif
@@ -1376,6 +1861,15 @@ static VARIANT Memop_Variant(WN *memop)
 		   "reference to unaligned volatile:  volatile atomicity is ignored");
       }
     }
+#ifdef TARG_ST
+    else if (align > required_alignment) {
+      // [TTh] Create an alignment variant in case of 'overaligned'
+      // access, to benefit from this information at code selection.
+      Set_V_overalign(variant);
+      Set_V_alignment(variant, align);
+      Set_V_align_offset_unknown(variant); 
+    }
+#endif
   }
 
   /* Now get prefetch flags if any
@@ -1413,6 +1907,13 @@ Handle_LDA (WN *lda, WN *parent, TN *result, OPCODE opcode)
     }
   }
 
+#ifdef TARG_ST
+  TN *tmp_tn=NULL;
+  if (TN_is_dedicated(result)) {
+    tmp_tn=result;
+    result=Build_TN_Like(tmp_tn);
+  }
+#endif
   Last_Mem_OP = OPS_last(&New_OPs);
   Exp_Lda (
       OPCODE_rtype(opcode),
@@ -1422,6 +1923,11 @@ Handle_LDA (WN *lda, WN *parent, TN *result, OPCODE opcode)
       call_op,
       &New_OPs);
   Set_OP_To_WN_Map(lda);
+
+#ifdef TARG_ST
+  if(tmp_tn != NULL)
+    Exp_COPY (tmp_tn,result, &New_OPs);
+#endif
 
   return result;
 }
@@ -1448,6 +1954,11 @@ Find_PREG_For_Symbol (const ST *st)
     return ST_ATTR_reg_id(St_Attr_Table(ST_IDX_level (idx), d));
 } 
 
+#ifdef ENABLE_64_BITS
+#define MTYPE_bsize(type) ((MTYPE_bit_size(type)+7)/8)
+extern void Expand_Multi(TN *tgt_tn, TN *src_tn, OPS *ops);
+#endif
+
 
 static TN *
 Handle_LDID (WN *ldid, WN *parent, TN *result, OPCODE opcode)
@@ -1460,15 +1971,74 @@ Handle_LDID (WN *ldid, WN *parent, TN *result, OPCODE opcode)
   /* Check if we have an LDID of a PREG. Just return the TN corresponding
    * to the PREG. If there is a result TN, generate a copy.
    */
-  if (WN_class(ldid) == CLASS_PREG)
-  {
+  if (WN_class(ldid) == CLASS_PREG) {
+#ifdef TARG_ST
+    TN *ldid_result;
+    INTRINSIC_RESULT *res;
+
+    /*
+     * [YJ]: For intrinsic call with dynamic mtype, we don't have lowered yet 
+     * negative PREG_NUM (see what happens in wn_lower.cxx).
+     * It is time now to deal with this special case.
+     * Notice that this mechanism could be further extended to
+     * "normal intrinsic".
+     */
+    if(WN_load_offset(ldid)<0) { 
+        FmtAssert(MTYPE_is_dynamic(WN_rtype(ldid)),("Not a dynamic type"));
+
+     /*
+      * For multiple result intrinsics, Handle_SUBPART
+      * routine should have caught the following case. 
+      * Hence the assertion.
+      *             LDID
+      *           SUBPART
+      *         STID
+      *             LDID
+      *           SUBPART
+      *         STID
+      */
+        res = get_last_intrinsic_result();
+        FmtAssert(res->numres==1,("Unexpected multiple results builtin"));
+
+        ldid_result = res->res[0];
+      } else {
+      /* Managing the normal case */
+        ldid_result = PREG_To_TN (WN_st(ldid), WN_load_offset(ldid), ldid);
+      }
+#else
     TN *ldid_result = PREG_To_TN (WN_st(ldid), WN_load_offset(ldid));
+#endif    
+    // TB 02 2006: FIX bug pro-release-1-9-0-B/39: DO not create ops for node such as
+    // U4U4LDID 76 <1,4,.preg_U4> T<8,.predef_U4,4> # <preg>
+    // U4STID 76 <1,4,.preg_U4> T<8,.predef_U4,4> # <preg> {freq: 0, ln: 110, col: 0}
+    // Otherwise freq.cxx module will not finished (function Is_Pointer)
+    if (ldid_result == result)
+      return result;
+
+#ifdef ENABLE_64_BITS
+    FmtAssert(result == NULL || TN_size(result) == MTYPE_bsize(OPCODE_rtype(opcode)), ("Unexpected result size for LDID"));
+
+    if (MTYPE_bsize(OPCODE_rtype(opcode)) > TN_size(ldid_result)) {
+      if (result == NULL) result = Allocate_Result_TN (ldid, NULL);
+      Expand_Multi(result, ldid_result, &New_OPs);
+    } else 
+#endif
     if (result == NULL) {
       result = ldid_result;
     }
     else {
 #ifdef EMULATE_LONGLONG
       {
+#ifdef TARG_ST
+	// Arthur:
+	// Expand_Copy() should not be seen here !!
+	// should be able to handle everything in Exp_COPY !!
+	// But I feel something should be done about the
+	// EMULATE_LONGLONG ??
+	//
+        TYPE_ID mtype =  ST_mtype(WN_st(ldid));
+	Exp_COPY (result, ldid_result, &New_OPs);
+#else
         extern void
           Expand_Copy (TN *result, TN *src, TYPE_ID mtype, OPS *ops);
         TYPE_ID mtype =  ST_mtype(WN_st(ldid));
@@ -1477,6 +2047,7 @@ Handle_LDID (WN *ldid, WN *parent, TN *result, OPCODE opcode)
         } else {
           Exp_COPY (result, ldid_result, &New_OPs);
         }
+#endif
       }
 #else
 #if defined(TARG_X8664)
@@ -1501,6 +2072,11 @@ Handle_LDID (WN *ldid, WN *parent, TN *result, OPCODE opcode)
   else
   {
     VARIANT variant;
+#ifdef TARG_ST
+  /* Fix for bug #33969: make sure st is allocated to get
+   * correct alignment information from Memop_Variant() */
+  Allocate_Object (WN_st(ldid));
+#endif
 
     if (opcode == OPC_U4U8LDID)
     {
@@ -1533,6 +2109,51 @@ Handle_LDID (WN *ldid, WN *parent, TN *result, OPCODE opcode)
   return result;
 }
 
+#ifdef TARG_ST
+/* ====================================================================
+ *   Handle_SUBPART
+ *
+ *   SUBPART operator has been created so as to get back
+ *   results of a multiple result intrinsic call.
+ * ====================================================================
+ */
+static TN *
+Handle_SUBPART (
+  WN *subpart, 
+  TN *result, 
+  OPCODE opcode
+)
+{
+   WN               *kid0; 
+   WN_OFFSET         subpart_idx;
+   INTRINSIC_RESULT *res;
+
+   kid0        = WN_kid0(subpart);
+   subpart_idx = WN_subpart_index(subpart);
+
+   // Get result TNs of last intrinsic call.
+   res         = get_last_intrinsic_result();
+
+   // Check that index of result is OK.
+   // Check that kid is indeed an LDID with a negative PREG
+   FmtAssert(subpart_idx>=0 && subpart_idx<res->numres,
+             ("Internal error in intrinsic representation"));
+   FmtAssert(WN_operator_is(kid0,OPR_LDID) && WN_load_offset(kid0)<0,
+             ("Internal error in intrinsic representation"));
+
+   if(NULL==result)
+     result=res->res[subpart_idx];
+
+   // Similarly to what has been done in Handle_LDID, we
+   // avoid to create a copy when both result and 
+   // operand are identical. See TB's comments on that point.
+   if(result!=res->res[subpart_idx])
+      Exp_COPY (result, res->res[subpart_idx], &New_OPs);
+
+   return result;
+}
+#endif     /* TARG_ST */
+
 static TN *
 Handle_LDBITS (WN *ldbits, TN *result, OPCODE opcode)
 {
@@ -1542,7 +2163,11 @@ Handle_LDBITS (WN *ldbits, TN *result, OPCODE opcode)
 
   if (WN_class(ldbits) == CLASS_PREG)
   { /* LDBITS of a PREG */
+#ifdef TARG_ST
+    src_tn = PREG_To_TN (WN_st(ldbits), WN_load_offset(ldbits), ldbits);
+#else
     src_tn = PREG_To_TN (WN_st(ldbits), WN_load_offset(ldbits));
+#endif
   } 
   else
   {
@@ -1648,8 +2273,14 @@ Handle_DIVREM(WN *expr, WN *parent, TN *result, OPCODE opcode)
 
   Is_True ((parent && WN_class(parent) == CLASS_PREG), 
 	   ("DIVREM: expected store of preg"));
+#ifdef TARG_ST
+  Is_True ((result == PREG_To_TN(WN_st(parent), WN_store_offset(parent),
+                                 parent)), 
+	   ("DIVREM: bad result tn"));
+#else
   Is_True ((result == PREG_To_TN(WN_st(parent), WN_store_offset(parent))), 
 	   ("DIVREM: bad result tn"));
+#endif
 
   kid0_tn =	Expand_Expr (WN_kid0(expr), expr, NULL);
   kid1_tn =	Expand_Expr (WN_kid1(expr), expr, NULL);
@@ -1668,8 +2299,11 @@ Handle_DIVPART(WN *expr, WN *parent, TN *result)
   WN *kid = WN_kid0(expr);
 
   Is_True ((WN_class(kid) == CLASS_PREG), ("DIVPART: expected preg"));
-
+#ifdef TARG_ST
+  pregTN =  PREG_To_TN(WN_st(kid), WN_store_offset(kid), kid);
+#else
   pregTN =  PREG_To_TN(WN_st(kid), WN_store_offset(kid));
+#endif
 
   if (result==NULL)
   {
@@ -1692,8 +2326,11 @@ Handle_REMPART(WN *expr, WN *parent, TN *result)
   WN *kid = WN_kid0(expr);
 
   Is_True ((WN_class(kid) == CLASS_PREG), ("REMPART: expected preg"));
-
+#ifdef TARG_ST
+  pregTN =	PREG_To_TN(WN_st(kid), WN_store_offset(kid), kid);
+#else
   pregTN =	PREG_To_TN(WN_st(kid), WN_store_offset(kid));
+#endif
   pregTN =	TN_CORRESPOND_Get(pregTN, expr);
 
   Is_True ((pregTN),("expected tn correspondence"));
@@ -1719,8 +2356,14 @@ Handle_MINMAX(WN *expr, WN *parent, TN *result, OPCODE opcode)
 
   Is_True ((parent && WN_class(parent) == CLASS_PREG), 
 	   ("MINMAX: expected store of preg"));
+#ifdef TARG_ST
+  Is_True ((result == PREG_To_TN(WN_st(parent), WN_store_offset(parent),
+                                 parent)), 
+	   ("MINMAX: bad result tn"));
+#else
   Is_True ((result == PREG_To_TN(WN_st(parent), WN_store_offset(parent))), 
 	   ("MINMAX: bad result tn"));
+#endif
 
   kid0_tn =	Expand_Expr (WN_kid0(expr), expr, NULL);
   kid1_tn =	Expand_Expr (WN_kid1(expr), expr, NULL);
@@ -1739,8 +2382,11 @@ Handle_MINPART(WN *expr, WN *parent, TN *result)
   WN *kid = WN_kid0(expr);
 
   Is_True ((WN_class(kid) == CLASS_PREG), ("MINPART: expected preg"));
-
+#ifdef TARG_ST
+  pregTN =  PREG_To_TN(WN_st(kid), WN_store_offset(kid), kid);
+#else
   pregTN =  PREG_To_TN(WN_st(kid), WN_store_offset(kid));
+#endif
 
   if (result==NULL)
   {
@@ -1764,8 +2410,11 @@ Handle_MAXPART(WN *expr, WN *parent, TN *result)
   WN *kid = WN_kid0(expr);
 
   Is_True ((WN_class(kid) == CLASS_PREG), ("MAXPART: expected preg"));
-
+#ifdef TARG_ST
+  pregTN =	PREG_To_TN(WN_st(kid), WN_store_offset(kid), kid);
+#else
   pregTN =	PREG_To_TN(WN_st(kid), WN_store_offset(kid));
+#endif
   pregTN =	TN_CORRESPOND_Get(pregTN, expr);
 
   Is_True ((pregTN),("expected tn correspondende"));
@@ -1920,8 +2569,11 @@ Handle_STID (WN *stid, OPCODE opcode)
    */
   if (WN_class(stid) == CLASS_PREG) {
       WN *kid = WN_kid0(stid);
-
+#ifdef TARG_ST
+    result = PREG_To_TN (WN_st(stid), WN_store_offset(stid), stid);
+#else
       result = PREG_To_TN (WN_st(stid), WN_store_offset(stid));
+#endif
 
 #ifdef KEY
       // When returning a float that is smaller than the size of the fp return
@@ -2007,19 +2659,64 @@ Handle_STID (WN *stid, OPCODE opcode)
 	}
 	Set_OP_glue(OPS_last(&New_OPs));
       }
+#ifdef TARG_ST
+   /* Reconfigurability
+    * case 1: we have an intrinsic call with multiple
+    *         resuls. Pattern look typically:
+    *
+    *     INTRINSIC_CALL xxxxx
+    *         LDID -1<xxxxx>
+    *       SUBPART1 <xxxxx>
+    *     STID <xxxxx>
+    *         LDID -1<xxxxx>
+    *       SUBPART2 <xxxxx>
+    *     STID <xxxxx>
+    *
+    * The negative PREG comes from the fact that we
+    * don't have lowered the WHIRL for this specific
+    * construction.
+    *
+    * Following copy expansion is skipped.
+    */
+   if (WN_operator_is(kid,OPR_SUBPART))
+    { WN *kidkid = WN_kid0(kid);
+
+      if(WN_operator_is(kidkid,OPR_LDID) && 
+         WN_class(kidkid)==CLASS_PREG    &&
+         WN_load_offset(kidkid)<0)
+           return;
+
+      FmtAssert(0,("SUBPART operator uncorrectly handled"));
+    }
+#endif
 
      /* If the child is a PREG and has a corresponding TN, it was part of 
       * a DIVREM or MTYPE_B pair. We need to create a correspondence for the 
       * STID, and do an assignment
       */
       if (WN_operator_is(kid, OPR_LDID) && WN_class(kid) == CLASS_PREG) {
-        TN *ldidTN = PREG_To_TN (WN_st(kid), WN_load_offset(kid));
 
+#ifdef TARG_ST
+      /* Reconfigurability.
+       * case 2: we have an intrinsic call with a single result.
+       *         Therefore SUBPART operator is useless.
+       *
+       * As previously, we skip copy expansion.
+       */
+      if(WN_load_offset(kid)<0)
+         return;
+
+      TN *ldidTN = PREG_To_TN (WN_st(kid), WN_load_offset(kid), kid);
+#else
+        TN *ldidTN = PREG_To_TN (WN_st(kid), WN_load_offset(kid));
+#endif
+        
 	TN *ldidTN2 = TN_CORRESPOND_Lookup(ldidTN);
 	if (ldidTN2 != NULL) {
 	  TN *stidTN = TN_CORRESPOND_Get(result, kid);
 	  Exp_COPY(stidTN, ldidTN2, &New_OPs);
 	} else if (Is_Predicate_REGISTER_CLASS(TN_register_class(ldidTN))) {
+#if !defined(TARG_ST)
 	  Is_True(Is_Predicate_REGISTER_CLASS(TN_register_class(result)),
 		  ("result should be predicate register class"));
 	  PREG_NUM cpreg_num = WN_load_offset(kid) + 1;
@@ -2027,22 +2724,63 @@ Handle_STID (WN *stid, OPCODE opcode)
 	  PREG_NUM cresult_num = WN_store_offset(stid) + 1;
 	  TN *cresult = PREG_To_TN_Array[cresult_num];
 	  Exp_COPY (cresult, ctn, &New_OPs);
+#endif
 	}
       }
-  }
-  else {
-    VARIANT variant = Memop_Variant(stid);
-    Last_Mem_OP = OPS_last(&New_OPs);
-    Exp_Store (
-      OPCODE_desc(opcode), 
-      Expand_Expr (WN_kid0(stid), stid, NULL),
-      WN_st(stid), 
-      WN_store_offset(stid),
-      &New_OPs,
-      variant);
-    Set_OP_To_WN_Map(stid);
+
+      #ifdef TARG_ST
+    // FdF ipa-align: Handle STID to add an AFFIRM if needed. This
+    // handles functions parameters, on which IPA may have set an
+    // alignment information. This also handle return values from
+    // call, on which range analysis may have set an alignment
+    // information. Finally, pointers on structs that includes a long
+    // long or a double are also aligned on 8, this information is
+    // lost after this point, so add also an AFFIRM.
+    if (TY_kind(WN_ty(stid)) == KIND_POINTER) {
+      int alignment = TY_align(TY_pointed(WN_ty(stid)));
+      if ((WN_prev(stid) != NULL) &&
+	  (WN_operator(WN_prev(stid)) == OPR_CALL)) {
+	WN *call_wn = WN_prev(stid);
+	ST *call_st = WN_st(call_wn);
+	IPRA_INFO info = cg_ipra.Get_Info(call_st);
+	alignment = (info != NULL) ? info->alignment : 1;
+      }
+
+      // FdF ipa-align: add an assume instruction if there is a more
+      // accurate alignment information.
+      // TBD: Compare WN_ty(stid) with
+      // MTYPE_alignment(WN_desc/WN_rtype(stdid))
+      if (alignment > ST_alignment(WN_st(stid))) {
+	OPS_Insert_Affirm_for_modulo(&New_OPs, result, alignment, 0);
+	if (Get_Trace(TP_CGEXP, 8))
+	  fprintf(TFile, "For PU %s, added AFFIRM for alignment %d\n", Cur_PU_Name, alignment);
+      }
+      else if (Get_Trace(TP_CGEXP, 8))
+	fprintf(TFile, "For PU %s, no AFFIRM for pointer parameter with alignment %d\n", Cur_PU_Name, alignment);
+    }
+#endif
+
+    return;
 
   }
+  // generate a store:
+#ifdef TARG_ST
+  /* Fix for bug #33969: make sure st is allocated to get
+   * correct alignment information from Memop_Variant() */
+  Allocate_Object (WN_st(stid));
+#endif
+
+  VARIANT variant = Memop_Variant(stid);
+  Last_Mem_OP = OPS_last(&New_OPs);
+  Exp_Store (
+             OPCODE_desc(opcode), 
+             Expand_Expr (WN_kid0(stid), stid, NULL),
+             WN_st(stid), 
+             WN_store_offset(stid),
+             &New_OPs,
+             variant);
+  Set_OP_To_WN_Map(stid);
+
 }
 
 
@@ -2066,7 +2804,11 @@ Handle_STBITS (WN *stbits)
   /* Check if we have an STBITS of a PREG. Get the TN corresponding to
    * the PREG */
   if (WN_class(stbits) == CLASS_PREG) {
+#ifdef TARG_ST
+    field_tn = PREG_To_TN (WN_st(stbits), WN_store_offset(stbits), stbits);
+#else
     field_tn = PREG_To_TN (WN_st(stbits), WN_store_offset(stbits));
+#endif
     result = field_tn;
   } else {
     variant = Memop_Variant(stbits);
@@ -2114,8 +2856,41 @@ Handle_COMPOSE_BITS (WN *compbits, TN *result, OPCODE opcode)
 
   return result;
 }
+#ifdef TARG_ST
+/* ====================================================================
+ *   Handle_LROTATE
+ * ====================================================================
+ */
+static TN *
+Handle_LROTATE (WN *lrotate, TN *result, OPCODE opcode)
+{
+  TN *kid0_tn = Expand_Expr (WN_kid0(lrotate), lrotate, NULL);
+  TN *kid1_tn = Expand_Expr (WN_kid1(lrotate), lrotate, NULL);
+  if (result == NULL) result = Allocate_Result_TN (lrotate, NULL);
 
+  Exp_LRotate(OPCODE_rtype(opcode), result, kid0_tn, kid1_tn, &New_OPs);
 
+  return result;
+}
+#endif
+
+#ifdef TARG_ST
+/* ====================================================================
+ *   Handle_RROTATE
+ * ====================================================================
+ */
+static TN *
+Handle_RROTATE (WN *rrotate, TN *result, OPCODE opcode)
+{
+  TN *kid0_tn = Expand_Expr (WN_kid0(rrotate), rrotate, NULL);
+  TN *kid1_tn = Expand_Expr (WN_kid1(rrotate), rrotate, NULL);
+  if (result == NULL) result = Allocate_Result_TN (rrotate, NULL);
+
+  Exp_RRotate(OPCODE_rtype(opcode), result, kid0_tn, kid1_tn, &New_OPs);
+
+  return result;
+}
+#endif
 static void
 Handle_ISTORE (WN *istore, OPCODE opcode)
 {
@@ -2505,6 +3280,10 @@ Is_CVT_Noop(WN *cvt, WN *parent)
      /*
       *  if 32-bit ints are sign-extended to 64-bit, then is a nop.
       */
+#ifdef TARG_ST
+      // [CG] Not a noop in 64 bits mode
+      if (!Enable_64_Bits_Ops)
+#endif
       if ( ! Split_64_Bit_Int_Ops && ! Only_Unsigned_64_Bit_Ops)
       {
 #ifdef TARG_X8664
@@ -2521,6 +3300,10 @@ Is_CVT_Noop(WN *cvt, WN *parent)
       /*
       *  if we can determine the upper bit:31 is zero, the cast is a nop
       */
+#ifdef TARG_ST
+      // [CG] Not a noop in 64 bits mode
+      if (!Enable_64_Bits_Ops)
+#endif
       if (U4ExprHasUpperBitZero(WN_kid0(cvt))
 #ifdef TARG_X8664
           && !Is_Target_32bit() // bug 6134
@@ -2559,6 +3342,10 @@ Is_CVT_Noop(WN *cvt, WN *parent)
       *  For truncation converts, the memory operation will
       *  perform the necessary truncation.
       */
+#ifdef TARG_ST
+      // [CG] Not a noop in 64 bits mode
+      if (!Enable_64_Bits_Ops)
+#endif
       if (parent)
       {
 	switch(WN_opcode(parent))
@@ -2632,6 +3419,310 @@ Is_CVTL_Opcode (OPCODE opc)
 		return FALSE;
 	}
 }
+
+/* ====================================================================
+ *   Get_mtype_for_mult
+ *
+ *   This determines which mtype is really needed for a multiply.
+ *   This mimics the Expand_Expr () handling of some OPERATORs. If
+ *   you make a change here - look there too.
+ * ====================================================================
+ */
+static TYPE_ID
+Get_mtype_for_mult (
+  WN *expr,
+  WN *parent
+)
+{
+  TYPE_ID mtype;
+
+  switch (WN_operator(expr)) {
+    /*
+     * MTYPEs of LDID. ILOAD should be derived from WN_desc() rather
+     * than WN_rtype 
+     * TODO: perhaps it's just a OPERATOR_is_load()
+     *       which would include ILDBITS, LDBITS, MLOAD as well ??)
+     */
+    case OPR_LDID:
+    case OPR_ILOAD:
+      mtype = WN_desc(expr);
+      break;
+
+    case OPR_CVTL:
+      if (Is_CVT_Noop(expr, parent)) {
+	mtype = Get_mtype_for_mult (WN_kid0(expr), parent);
+      }
+      else {
+	mtype = MTYPE_TransferSize(WN_cvtl_bits(expr)>>3, WN_rtype(expr));
+      }
+      break;
+
+    case OPR_CVT:
+      if (Is_CVT_Noop(expr, parent)) {
+	mtype = Get_mtype_for_mult (WN_kid0(expr), parent);
+      }
+      else {
+	mtype = WN_rtype(expr);
+      }
+
+    default:
+      mtype = WN_rtype(expr);
+  }
+
+  return mtype;
+}
+
+/* ====================================================================
+ *   Expand_Expr_Mult
+ *
+ *   This determines which mtype is really needed for a multiply.
+ *   This mimics the Expand_Expr () handling of some OPERATORs. 
+ * ====================================================================
+ */
+static TN*
+Expand_Expr_Mult (
+  WN      *expr,
+  TYPE_ID *mtype,
+  WN *parent
+)
+{
+  TN *kid_tn;
+
+  switch (WN_operator(expr)) {
+    /*
+     * MTYPEs of LDID. ILOAD should be derived from WN_desc() rather
+     * than WN_rtype 
+     * TODO: perhaps it's just a OPERATOR_is_load()
+     *       which would include ILDBITS, LDBITS, MLOAD as well ??)
+     */
+    case OPR_LDID:
+    case OPR_ILOAD:
+      kid_tn = Expand_Expr (expr, parent, NULL);
+      *mtype = WN_desc(expr);
+      break;
+
+    case OPR_CVTL:
+      if (Is_CVT_Noop(expr, parent)) {
+	kid_tn = Expand_Expr_Mult (WN_kid0(expr), mtype, parent);
+      }
+      else {
+	kid_tn = Expand_Expr (expr, parent, NULL);
+	*mtype = MTYPE_TransferSize(WN_cvtl_bits(expr)>>3, WN_rtype(expr));
+      }
+      break;
+
+    case OPR_CVT:
+      if (Is_CVT_Noop(expr, parent)) {
+	kid_tn = Expand_Expr_Mult (WN_kid0(expr), mtype, parent);
+      }
+      else {
+	kid_tn = Expand_Expr (expr, parent, NULL);
+	*mtype = WN_rtype(expr);
+      }
+      break;
+
+    default:
+      kid_tn = Expand_Expr (expr, parent, NULL);
+      *mtype = WN_rtype(expr);
+  }
+
+  return kid_tn;
+}
+
+#ifdef TARG_ST
+
+/* ====================================================================
+ *   Handle_MPY
+ * ====================================================================
+ */
+static TN *
+Handle_MPY (
+  WN *expr, 
+  TN *result,
+  OPCODE opcode
+)
+{
+  OP *Last_OP;
+  TN *kid0_tn, *kid1_tn;
+  TYPE_ID mtype0, mtype1;
+
+  if (result == NULL) {
+    result = Allocate_Result_TN (expr, NULL);
+  }
+
+  if (MTYPE_is_float(OPCODE_rtype(opcode))) {
+    kid0_tn = Expand_Expr (WN_kid0(expr), expr, NULL);
+    kid1_tn = Expand_Expr (WN_kid1(expr), expr, NULL);
+    Exp_OP2 (opcode, result, kid0_tn, kid1_tn, &New_OPs);
+    return result;
+  }
+
+  /* call make MULT with mtypes of arguments: */
+  kid0_tn = Expand_Expr_Mult (WN_kid0(expr), &mtype0, expr);
+  kid1_tn = Expand_Expr_Mult (WN_kid1(expr), &mtype1, expr);
+    
+  if (Trace_Exp) {
+    #pragma mips_frequency_hint NEVER
+    fprintf(TFile, "exp_mul %s: ", OPCODE_name(opcode));
+    Print_TN(result, FALSE);
+    fprintf(TFile, " (%s) :- ", MTYPE_name(WN_rtype(expr)));
+    Print_TN(kid0_tn, FALSE);
+    fprintf(TFile, " (%s) ", MTYPE_name(mtype0));
+    Print_TN(kid1_tn, FALSE);
+    fprintf(TFile, " (%s) \n", MTYPE_name(mtype1));
+  }
+
+  /* for debuggging */
+  Last_OP = OPS_last(&New_OPs);
+  Expand_Multiply (result, WN_rtype(expr), 
+		   kid0_tn, mtype0, 
+		   kid1_tn, mtype1, 
+		   &New_OPs);
+
+  if (Trace_Exp) {
+    OP *op;
+    if (Last_OP) op = OP_next(Last_OP);
+    else op = OPS_first(&New_OPs);
+
+    while (op != NULL) {
+      fprintf(TFile, " into "); Print_OP (op);
+      op = OP_next(op);
+    }
+  }
+
+  return result;
+}
+
+/* ====================================================================
+ *   Handle_MADD
+ * ====================================================================
+ */
+static TN *
+Handle_MADD (
+  WN *expr, 
+  TN *result,
+  OPCODE opcode
+)
+{
+  OP *Last_OP;
+  TN *kid0_tn, *kid1_tn, *kid2_tn;
+
+  if (result == NULL) {
+    result = Allocate_Result_TN (expr, NULL);
+  }
+
+  if (MTYPE_is_float(OPCODE_rtype(opcode))) {
+    kid0_tn = Expand_Expr (WN_kid0(expr), expr, NULL);
+    kid1_tn = Expand_Expr (WN_kid1(expr), expr, NULL);
+    kid2_tn = Expand_Expr (WN_kid2(expr), expr, NULL);
+    Exp_OP3 (opcode, result, kid0_tn, kid1_tn, kid2_tn, &New_OPs);
+    return result;
+  }
+
+  /* call make MADD with mtypes of arguments: */
+  kid0_tn = Expand_Expr (WN_kid0(expr), expr, NULL);
+  kid1_tn = Expand_Expr (WN_kid1(expr), expr, NULL);
+  kid2_tn = Expand_Expr (WN_kid2(expr), expr, NULL);
+
+  if (Trace_Exp) {
+    #pragma mips_frequency_hint NEVER
+    fprintf(TFile, "exp_madd %s: ", OPCODE_name(opcode));
+    Print_TN(result, FALSE);
+    fprintf(TFile, " :- ");
+    Print_TN(kid0_tn, FALSE);
+    fprintf(TFile, " ");
+    Print_TN(kid1_tn, FALSE);
+    fprintf(TFile, " ");
+    Print_TN(kid2_tn, FALSE);
+    fprintf(TFile, " \n");
+  }
+
+  /* for debuggging */
+  Last_OP = OPS_last(&New_OPs);
+  Expand_Madd (result, WN_rtype(expr), 
+	       kid0_tn, WN_rtype(WN_kid0(expr)), 
+	       kid1_tn, Get_mtype_for_mult(WN_kid1(expr), expr),
+	       kid2_tn, Get_mtype_for_mult(WN_kid2(expr), expr),
+	       WN_operator(expr) == OPR_NMADD,
+	       &New_OPs);
+
+  if (Trace_Exp) {
+    OP *op = OP_next(Last_OP);
+    while (op != NULL) {
+      fprintf(TFile, " into "); Print_OP (op);
+      op = OP_next(op);
+    }
+  }
+
+  return result;
+}
+
+/* ====================================================================
+ *   Handle_MSUB
+ * ====================================================================
+ */
+static TN *
+Handle_MSUB (
+  WN *expr, 
+  TN *result,
+  OPCODE opcode
+)
+{
+  OP *Last_OP;
+  TN *kid0_tn, *kid1_tn, *kid2_tn;
+
+  if (result == NULL) {
+    result = Allocate_Result_TN (expr, NULL);
+  }
+
+  if (MTYPE_is_float(OPCODE_rtype(opcode))) {
+    kid0_tn = Expand_Expr (WN_kid0(expr), expr, NULL);
+    kid1_tn = Expand_Expr (WN_kid1(expr), expr, NULL);
+    kid2_tn = Expand_Expr (WN_kid2(expr), expr, NULL);
+    Exp_OP3 (opcode, result, kid0_tn, kid1_tn, kid2_tn, &New_OPs);
+    return result;
+  }
+
+  /* call make MADD with mtypes of arguments: */
+  kid0_tn = Expand_Expr (WN_kid0(expr), expr, NULL);
+  kid1_tn = Expand_Expr (WN_kid1(expr), expr, NULL);
+  kid2_tn = Expand_Expr (WN_kid2(expr), expr, NULL);
+
+  if (Trace_Exp) {
+    #pragma mips_frequency_hint NEVER
+    fprintf(TFile, "exp_msub %s: ", OPCODE_name(opcode));
+    Print_TN(result, FALSE);
+    fprintf(TFile, " :- ");
+    Print_TN(kid0_tn, FALSE);
+    fprintf(TFile, " ");
+    Print_TN(kid1_tn, FALSE);
+    fprintf(TFile, " ");
+    Print_TN(kid2_tn, FALSE);
+    fprintf(TFile, " \n");
+  }
+
+  /* for debuggging */
+  Last_OP = OPS_last(&New_OPs);
+  Expand_Msub (result, WN_rtype(expr), 
+	       kid0_tn, WN_rtype(WN_kid0(expr)), 
+	       kid1_tn, Get_mtype_for_mult(WN_kid1(expr), expr),
+	       kid2_tn, Get_mtype_for_mult(WN_kid2(expr), expr),
+	       WN_operator(expr) == OPR_NMSUB,
+	       &New_OPs);
+
+  if (Trace_Exp) {
+    OP *op = OP_next(Last_OP);
+    while (op != NULL) {
+      fprintf(TFile, " into "); Print_OP (op);
+      op = OP_next(op);
+    }
+  }
+
+  return result;
+}
+
+#endif /* TARG_ST */
+
 
 static TN* 
 Handle_ALLOCA (WN *tree, TN *result)
@@ -2769,6 +3860,338 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
 }
 #endif
 
+
+#ifdef TARG_ST
+/* ======================================================================
+ *   Get_Intrinsic_Call_Dedicated_Tn
+ *
+ *   Implement a small forward pass in order to determine
+ *   if some INTRINSIC_CALL results of are in fact dedicated TNs.
+ *   Resemble routine Find_Asm_Out_Parameter_Load.
+ * ======================================================================
+ */
+static TN* 
+Get_Intrinsic_Call_Dedicated_Tn( WN *intr, INT numout )
+{
+    TN  *result = NULL;   // Default value.
+    bool found = false;   // Whether nth result has been found.
+    WN  *stmt;
+    WN  *kid0;
+    INT  index_res = -1;  // Return current index of results.
+    ST  *ded_st;
+
+    /* Looking for nth output of an intrinsic call */
+    for(stmt  = WN_next(intr);
+        found == false && stmt && !OPERATOR_is_call(WN_operator(stmt));
+        stmt  = WN_next(stmt))
+     {
+       if(!WN_operator_is(stmt,OPR_STID))
+           continue;
+
+       kid0 = WN_kid0(stmt);
+       index_res = 0;
+       if(WN_operator_is(kid0,OPR_SUBPART)) {
+	 index_res = WN_subpart_index(kid0);
+	 kid0 = WN_kid0(kid0);
+       }
+
+       if(WN_operator_is(kid0,OPR_LDID) &&
+          WN_load_offset(kid0)<0 &&
+	  index_res == numout) {
+           found = true;
+           ded_st = WN_st(stmt);
+           if (ST_assigned_to_dedicated_preg(ded_st))
+                 result = PREG_To_TN(MTYPE_To_PREG(ST_mtype(ded_st)),
+                                     Find_PREG_For_Symbol(ded_st), stmt);
+          }
+      }
+
+    // It is possible to not find any use of the INSTRINSIC output
+    // if the result is dead but the INTRINSIC is side effect.
+    // Return NULL in this case. Note that this must happen only
+    // for allocatable register classes of the corresponding output.
+    // I.e. an intrinsic result store to a dedicated ST should never be
+    // removed by deadcode.
+
+   return result;
+}
+
+
+/* ======================================================================
+ *   Is_Intrinsic_InOut_Param_Single_TN
+ *
+ *   Return TRUE if the specified in/out parameter of the multi-result 
+ *   intrinsic call <intrn_expr> uses the same TN as input and output.
+ *   The input TN is specified <source_tn>, as well as the index
+ *   in the output parameter list (<result_idx>).
+ * ======================================================================
+ */
+static BOOL
+Is_Intrinsic_InOut_Param_Single_TN(WN *intrn_expr, INT result_idx, TN *source_tn) {
+  // For multi-result intrinsic call, the effective call is 
+  // followed by a list of load/store statements that walk
+  // through all result subparts.
+  WN *next_expr = WN_next(intrn_expr);
+  while (next_expr) {
+    OPERATOR opr = WN_operator(next_expr);
+    if (opr == OPR_INTRINSIC_CALL) {
+      return (FALSE); // Found another intrinsic call, break the walk.
+    }
+    else if (opr == OPR_STID) {
+      WN *stid = next_expr;
+      if (WN_operator(WN_kid0(stid)) == OPR_SUBPART) {
+	WN       *subpart     = WN_kid0(stid);
+	WN_OFFSET subpart_idx = WN_subpart_index(subpart);
+	
+	if (subpart_idx == result_idx) {
+	  // OK, found access to expected result subpart
+	  if (WN_class(stid) == CLASS_PREG) {
+	    TN *result_tn = PREG_To_TN (WN_st(stid), WN_store_offset(stid), stid);
+	    if (result_tn != source_tn) {
+	      return (FALSE);
+	    }
+	  }
+	  return (TRUE);
+	}
+      }
+    }
+    next_expr = WN_next(next_expr);
+  }
+  return (FALSE);
+}
+#endif                    /* TARG_ST */
+
+/* ======================================================================
+ *   Get_Intrinsic_Op_Parameters
+ * ======================================================================
+ */
+
+static void
+Get_Intrinsic_Op_Parameters( WN *expr, TN **result, TN ***opnds, INT *numopnds, TN ***res, INT *numrests )
+{
+
+  INT i;
+  INTRINSIC id = (INTRINSIC) WN_intrinsic (expr);
+  INTRN_RETKIND rkind = INTRN_return_kind(id);
+  INT numkids = WN_kid_count(expr);
+
+  INT allocated_results_nb = 2;
+  INT allocated_opnds_nb = 10;
+  *numrests = 0;
+  *numopnds = 0;
+
+  *res = TYPE_MEM_POOL_ALLOC_N(TN*, Malloc_Mem_Pool,allocated_results_nb);  
+  *opnds = TYPE_MEM_POOL_ALLOC_N(TN*, Malloc_Mem_Pool,allocated_opnds_nb);  
+
+#define CHECK_RESULTS(results_nb)					\
+  if((results_nb) > allocated_results_nb) {				\
+    INT new_size = allocated_results_nb*2;				\
+    while ((results_nb) > new_size) {					\
+      new_size *= 2;							\
+    }									\
+    *res = TYPE_MEM_POOL_REALLOC_N(TN*, Malloc_Mem_Pool,*res,allocated_results_nb,new_size); \
+    allocated_results_nb = new_size;					\
+  }
+
+#define CHECK_OPNDS(opnds_nb)						\
+  if((opnds_nb) > allocated_opnds_nb) {					\
+    INT new_size = allocated_opnds_nb*2;				\
+    while ((opnds_nb) > new_size) {					\
+      new_size *= 2;							\
+    }									\
+    *opnds = TYPE_MEM_POOL_REALLOC_N(TN*, Malloc_Mem_Pool,*opnds,allocated_opnds_nb,new_size); \
+    allocated_opnds_nb = new_size;					\
+  }
+
+  TYPE_ID result_mtype = WN_rtype(expr);
+  
+#ifdef TARG_ST  
+  // This function is now common to intrinsic op and intrinsic call.
+  // For intrinsic call, the actual result may be void in the following cases:
+  // 1. the intrinsic call is a void result
+  // 2. the intrinsic call is a non-void result but the actual tree as
+  // been forced to MTYPE_V because the result is not used.
+  // For the second case we must anyway create an artificial result
+  // because the intrinsic expaansion function must have all results
+  // available as TNs even if they are dead.
+  if (WN_operator_is(expr,OPR_INTRINSIC_CALL) &&
+      rkind != IRETURN_UNKNOWN && rkind != IRETURN_V && 
+      WN_rtype(expr) == MTYPE_V) {
+    // The node was forced to a VOID rtype.
+    // Get the result mtype from the intrinsic description
+    result_mtype = INTRN_mtype_for_return_kind(rkind);
+  }
+#endif
+
+#ifdef TARG_ST
+  //
+  // Handling dynamic mtype (whether composed or not)
+  // for INTRINSIC_CALL. 
+  //
+  // For INTRINSIC_OP, see below.
+  //
+  if (MTYPE_is_dynamic(WN_rtype(expr)) &&
+      WN_operator_is(expr,OPR_INTRINSIC_CALL)) {
+   
+     proto_intrn_info_t *intr_call_info;
+     mUINT32             i;
+     mUINT32             in = 0;
+     mUINT32             out= 0;
+
+     intr_call_info = INTRN_proto_info((const INTRINSIC) WN_intrinsic(expr));
+
+     // In/out parameters are counted both in
+     // *numopnds and in *numrests.
+    *numopnds = INTRN_number_of_in_param(intr_call_info);
+    *numrests = INTRN_number_of_out_param(intr_call_info);
+
+     CHECK_RESULTS(*numrests);
+     CHECK_OPNDS(*numopnds);
+
+     // If an in/out *real* parameter is described as consisting
+     // of two parameters (one IN and one OUT), we either use the
+     // same TN (if both parameter correspond to the same data)
+     // or 2 differents TNs.
+     // In a following step, the Expand_Intrinsic will be able
+     // to detect the "same_res" constraint and generate a copy
+     // if necessary (so if 2 TNs were generated).
+     for(i=0;i<intr_call_info->argument_count;++i) {
+
+        if(INTRN_is_in_param(i,intr_call_info)) {
+           (*opnds)[in] = Expand_Expr(WN_kid(expr,in), expr, NULL);
+
+           if(INTRN_is_inout_param(i,intr_call_info)) {
+             (*res)[out] = Get_Intrinsic_Call_Dedicated_Tn(expr,out);
+	     if(NULL==(*res)[out]) {
+	       if (Is_Intrinsic_InOut_Param_Single_TN(expr, out, (*opnds)[in])) {
+		 // Use same TN for both input and output
+		 (*res)[out] = (*opnds)[in];
+	       } else {
+		 // Insure that source TN will not be modified
+		 (*res)[out] = Build_TN_Of_Mtype(intr_call_info->arg_type[i]);
+	       }
+	     }
+            ++out;
+            }
+           ++in;
+
+         } else if (!INTRN_is_inout_param(i,intr_call_info)) {
+           // Looking for a dedicated tn (forward pass). If we haven't
+           // found a dedicated one, we create a "normal" one.
+           (*res)[out] = Get_Intrinsic_Call_Dedicated_Tn(expr,out);
+           if(NULL==(*res)[out])
+             (*res)[out] = Build_TN_Of_Mtype(intr_call_info->arg_type[i]);
+           ++out;
+         }                                  // End if else if...
+     }                                      // End for
+
+     // Special case: we have to manage the functional form
+     // Not very clean: functional and procedural forms for intrinsic
+     // call are stuff for front-end.
+     if(INTRN_return_type(intr_call_info) != MTYPE_V &&
+        !MTYPE_is_composed(INTRN_return_type(intr_call_info))) {
+           (*numrests)++;
+           CHECK_RESULTS(*numrests);
+           FmtAssert(*numrests==1,
+              ("cannot mix functional and procedural form for intrinsic call"));
+
+           (*res)[out] = Get_Intrinsic_Call_Dedicated_Tn(expr,out);
+           if(NULL==(*res)[out])
+             (*res)[out] = Build_TN_Of_Mtype(INTRN_return_type(intr_call_info));
+           ++out;
+         }
+
+
+   } else
+#endif
+#ifdef ENABLE_64_BITS
+  if (Enable_64_Bits_Ops) {
+    if (rkind != IRETURN_UNKNOWN) {
+      if (*result == NULL && rkind != IRETURN_V) {
+	*result = Build_TN_Of_Mtype (result_mtype);
+      }
+
+      if(rkind != IRETURN_V) {
+	if (TN_size(*result) == 8) {
+	  *numrests = 2;
+	  CHECK_RESULTS(*numrests);
+	  (*res)[0] = Build_TN_Of_Mtype (MTYPE_U4);
+	  (*res)[1] = Build_TN_Of_Mtype (MTYPE_U4);
+	} else {
+	  *numrests = 1;
+	  CHECK_RESULTS(*numrests);
+	  (*res)[0] = *result;
+	}
+      }
+
+      *numopnds = 0;
+      for (i = 0; i < numkids; i++) {
+	TN *kid = Expand_Expr(WN_kid(expr,i), expr, NULL);
+	if (TN_size(kid) == 8) {
+	  CHECK_OPNDS((*numopnds)+2);
+	  (*opnds)[*numopnds] = Build_TN_Of_Mtype (MTYPE_U4);
+	  (*opnds)[(*numopnds)+1] = Build_TN_Of_Mtype (MTYPE_U4);
+	  Expand_Extract((*opnds)[*numopnds], (*opnds)[(*numopnds)+1], kid, &New_OPs);
+	  (*numopnds) += 2;
+	} else {
+	  CHECK_OPNDS((*numopnds)+1);
+	  (*opnds)[*numopnds] = kid;
+	  (*numopnds) += 1;
+	}
+      }
+    }
+  } else
+#endif
+  if (Only_32_Bit_Ops && 
+      (MTYPE_is_longlong(WN_rtype(expr)) || MTYPE_is_double(WN_rtype(expr))))
+  {
+
+    // This intrinsic op should has been preprocessed so that a pair
+    // of result values that it returns are parameters.
+    Is_True(*result == NULL, ("result set for 64 bit intrinsic"));
+    //
+    // There are 2 results normally:
+    //
+    *numrests = 2;
+    CHECK_RESULTS(*numrests);
+    for (i = 0; i < *numrests; i++) {
+      (*res)[i] = Expand_Expr(WN_kid(expr,i), expr, NULL);
+    }
+    //
+    // The rest of kids are operands
+    //
+    *numopnds = numkids - *numrests;
+    CHECK_OPNDS(*numopnds);
+    for (i = 0; i < *numopnds; i++) {
+      (*opnds)[i] = Expand_Expr(WN_kid(expr,i+*numrests), expr, NULL);
+    }
+  }
+  else if (rkind != IRETURN_UNKNOWN) {
+    if (*result == NULL &&  rkind != IRETURN_V) {
+      *result = Build_TN_Of_Mtype (result_mtype);
+    }
+
+    if (rkind != IRETURN_V) {
+      *numrests = 1;
+    }
+
+    CHECK_RESULTS(*numrests);
+    (*res)[0] = *result;
+    //
+    // All kids are operands
+    //
+    *numopnds = numkids;
+    CHECK_OPNDS(*numopnds);
+    for (i = 0; i < *numopnds; i++) {
+      (*opnds)[i] = Expand_Expr(WN_kid(expr,i), expr, NULL);
+    }
+  }
+
+#undef CHECK_RESULTS
+#undef CHECK_OPNDS
+}
+
+
 static TN*
 Handle_INTRINSIC_OP (WN *expr, TN *result)
 {
@@ -2776,6 +4199,49 @@ Handle_INTRINSIC_OP (WN *expr, TN *result)
   INTRN_RETKIND rkind = INTRN_return_kind(id);
   INT numkids = WN_kid_count(expr);
   TN *kid0 = Expand_Expr(WN_kid0(expr), expr, NULL);
+
+#ifdef TARG_ST
+ Get_Intrinsic_Op_Parameters( expr, &result, &kids, &numopnds, &res, &numrests );
+  FmtAssert(Inline_Intrinsics_Allowed || !INTRN_runtime_exists(id),
+            ("inlining intrinsics not allowed"));
+  
+  if (Trace_Exp) {
+    fprintf(TFile, "exp_intrinsic_op %s: ", INTRN_c_name(id));
+    for (i = 0; i < numrests-1; i++) {
+      Print_TN(res[i], FALSE);
+      fprintf(TFile, ", ");
+    }
+    if(numrests > 0) {
+      Print_TN(res[numrests-1], TRUE);
+    }
+    fprintf(TFile, " :- ");
+    for (i = 0; i < numopnds-1; i++) {
+      Print_TN(kids[i], FALSE);
+      fprintf(TFile, ", ");
+    }
+    if(numopnds > 0) {
+      Print_TN(kids[numopnds-1], FALSE);
+    }
+    fprintf(TFile, "\n");
+  }
+
+  /* for debuggging */
+  OP *Last_OP = OPS_last(&New_OPs);
+  BB *Last_BB = Cur_BB;
+
+  Exp_Intrinsic_Op (id, numrests, numopnds, res, kids, &New_OPs, current_srcpos,
+                    Last_BB);
+
+#ifdef ENABLE_64_BITS
+  if (Enable_64_Bits_Ops) {
+    if (TN_size(result) == 8) {
+      Expand_Compose(result, res[0], res[1], &New_OPs);
+    }
+  }
+#endif
+
+#endif // TARG_ST
+
 #ifdef TARG_X8664
   INT imm_kidno = 0;
   // Get any immediate operand in intrinsic.
@@ -2839,10 +4305,17 @@ Handle_INTRINSIC_OP (WN *expr, TN *result)
 static STR_IDX
 Get_Non_Local_Label_Name (SYMTAB_IDX level, LABEL_IDX index)
 {
+#ifdef TARG_ST
+  // [CG] We have BB_Label_Name_Scope_Index in config_asm.h for ST targets
+  char name[128];
+  sprintf(name, BB_Label_Name_Scope_Index, "nonlocal", level, index);
+#else
+
 	// create special label name .Lnonlocal.<level>.<index>
   	char *name = (char *) alloca (11 + 1 + 8 + 1 + 8 + 1);
 	sprintf(name, ".Lnonlocal%s%d%s%d" , Label_Name_Separator, 
 		level, Label_Name_Separator, index);
+#endif
 	return Save_Str(name);
 }
 
@@ -2850,10 +4323,14 @@ Get_Non_Local_Label_Name (SYMTAB_IDX level, LABEL_IDX index)
 // It is much simpler since now we don't need to create STs for
 // label numbers.  The only thing we might need to do is create a
 // LABEL_name.
+#ifdef CGG_ENABLED
+CGG_STATIC LABEL_IDX
+#else
 #ifndef KEY
 static
 #endif
 LABEL_IDX
+#endif
 Get_WN_Label (WN *wn, BOOL *is_non_local_label = NULL)
 {
   LABEL_IDX label = WN_label_number(wn);
@@ -2870,6 +4347,22 @@ Get_WN_Label (WN *wn, BOOL *is_non_local_label = NULL)
   if (is_non_local_label != NULL)
 	*is_non_local_label = FALSE;
 #endif
+#ifdef TARG_ST
+  // [CG] Simplified label generation. 
+  if (LABEL_name_idx(label) == 0) {
+    STR_IDX label_name_idx;
+    if (LABEL_target_of_goto_outer_block(label)) {
+      label_name_idx = Get_Non_Local_Label_Name (CURRENT_SYMTAB, label);
+    } else {
+      char buffer[128];
+      // Same name as  Gen_Temp_Label() in label_util.cxx
+      sprintf(buffer, BB_Label_Name_Scope_Index, "", 
+	      Current_PU_Count(), label);
+      label_name_idx = Save_Str(buffer);
+    }
+    Set_LABEL_name_idx (Label_Table[label], label_name_idx);
+  }
+#else
 
   if (LABEL_name_idx(label) == 0) {
 	if (LABEL_target_of_goto_outer_block(label)) {
@@ -2900,6 +4393,7 @@ Get_WN_Label (WN *wn, BOOL *is_non_local_label = NULL)
 		Label_Name_Separator, label);
 	Set_LABEL_name_idx (Label_Table[label], Save_Str(name));
   }
+#endif
   return label;
 }
 
@@ -2919,8 +4413,14 @@ Get_WN_Label (WN *wn, BOOL *is_non_local_label = NULL)
  * is also NULL for cases where there is no parent (i.e. statement
  * level nodes).
  */
+#if defined(CGG_ENABLED)
 static TN *
-Expand_Expr (WN *expr, WN *parent, TN *result)
+Expand_Expr_local (
+#else
+static TN *
+Expand_Expr (
+#endif
+             WN *expr, WN *parent, TN *result)
 {
   OPCODE opcode;
   OPERATOR opr;
@@ -2971,17 +4471,51 @@ Expand_Expr (WN *expr, WN *parent, TN *result)
     num_opnds = OPCODE_nkids(opcode);
   }
   FmtAssert(num_opnds <= OP_MAX_FIXED_OPNDS, ("too many operands (%d)", num_opnds));
+#ifdef TARG_ST
+  //
+  // Arthur: for floating-point constants, it is not always
+  //         necessary to keep them in memory. On ST targets,
+  //         for example, a floating-point constant can be
+  //         loaded into a integer register in the same way
+  //         as an integer constant.
+  //
+  //         In WHIRL, however, only INTCONST opcode allows not
+  //         to have an associated symbol. There are two 
+  //         possibilities:
+  //
+  //          1. generate CONST for floating-point constants
+  //             as usual but not allocate memory here and
+  //             handle expand into a proper sequence of bits;
+  //          2. make front-end generate F4TAS(I4INTCONST)
+  //             something like this
+  //
+  //         Here we try the first possibility, we don't want
+  //         to loose that high-level information on the
+  //         constant too early. Is this good ?
+  //
 
+  if (OPCODE_has_sym(opcode) && WN_st(expr) != NULL) {
+    if (opr == OPR_CONST && 
+	(!MTYPE_is_float(WN_rtype(expr)) || CG_floating_const_in_memory))
+      /* make sure st is allocated */
+      Allocate_Object (WN_st(expr));
+  }
+#else
   if (OPCODE_has_sym(opcode) && WN_st(expr) != NULL) {
     /* make sure st is allocated */
     Allocate_Object (WN_st(expr));
   }
-
+#endif
   /* Setup the operands */
   switch (opr) {
 
   case OPR_LDID:
     return Handle_LDID (expr, parent, result, opcode);
+
+#ifdef TARG_ST
+  case OPR_SUBPART:
+    return Handle_SUBPART(expr, result, opcode);
+#endif
 
   case OPR_LDBITS:
     return Handle_LDBITS (expr, result, opcode);
@@ -3214,12 +4748,16 @@ Expand_Expr (WN *expr, WN *parent, TN *result)
     {
       return Expand_Expr(WN_kid0(expr), parent, result);
     }
+#ifndef TARG_ST
+    // [CG] This code is not valid with 32 bits ops or
+    // paired 64 bits ops
     else if (Is_CVTL_Opcode(opcode))
     {
       opnd_tn[0] = Expand_Expr (WN_kid0(expr), expr, NULL);
       opnd_tn[1] = Gen_Literal_TN (32, 4);
       num_opnds = 2;
     }
+#endif
     else
     {
       Is_True(WN_desc(expr) != MTYPE_B || WN_rtype(WN_kid0(expr)) == MTYPE_B,
@@ -3250,6 +4788,16 @@ Expand_Expr (WN *expr, WN *parent, TN *result)
       Set_OP_To_WN_Map(expr);
     }
     return NULL;
+#ifdef TARG_ST
+  case OPR_MPY:
+    return Handle_MPY (expr, result, opcode);
+  case OPR_MADD:
+  case OPR_NMADD:
+    return Handle_MADD (expr, result, opcode);
+  case OPR_MSUB:
+  case OPR_NMSUB:
+    return Handle_MSUB (expr, result, opcode);
+#endif
 
   case OPR_DIVREM:
       return Handle_DIVREM(expr, parent, result, opcode);
@@ -3834,6 +5382,36 @@ static void Build_CFG(void)
 	continue;	// no successor
       } 
       else {
+#ifdef TARG_ST
+        // (cbr) call to Unwind_Resume is followed by a end_eh_range bblock.
+        // will not be caught on preceding test. catch it here.
+        if (BB_has_label(bb)) {
+          ANNOTATION *ant;
+          for (ant = ANNOT_First(BB_annotations(bb), ANNOT_LABEL);
+               ant != NULL;
+               ant = ANNOT_Next(ant, ANNOT_LABEL)) {
+            LABEL_IDX lab = ANNOT_label(ant);
+            if (LABEL_kind(Label_Table[lab]) == 
+                LKIND_END_EH_RANGE) {
+              BB *pred = BB_prev(bb);
+              if (BB_call(pred) &&
+		  WN_Call_Never_Return(CALLINFO_call_wn(ANNOT_callinfo(ANNOT_Get(BB_annotations(pred), ANNOT_CALLINFO))))) {
+		// FdF 2009: Link the call to _Unwind_Return with the
+		// next basic block which ends an EH handler. Mark
+		// this block as Exit.
+		if (BB_preds_len(bb) == 0) {
+		  Link_Pred_Succ (pred, bb);
+		  EXITINFO *exit_info = TYPE_PU_ALLOC (EXITINFO);
+		  EXITINFO_srcpos(exit_info) = current_srcpos;
+		  BB_Add_Annotation (bb, ANNOT_EXITINFO, exit_info);
+		  Set_BB_exit(bb);
+		}
+	      }
+            }
+          }
+        }
+        if (!BB_exit(bb))
+#endif
 	Link_Pred_Succ (bb, BB_next(bb));
       }
     }
@@ -4027,9 +5605,19 @@ Handle_CONDBR (WN *branch)
   TN *target_tn;
   BOOL invert;
 
+#ifdef TARG_ST
+  condition = WN_kid0 (branch);
+
+  // Inverting a FALSEBR depends on the target implementation.
+  // For example, on the ST100 branches are active on FALSE condition
+  // and should not be inverted. Thus, inverting should be delegated
+  // to the machine dependent Expand_Branch.
+  variant = WHIRL_Compare_To_OP_variant (WN_opcode(condition));
+#else
   condition = WN_kid0 (branch);
   invert = (WN_opcode(branch) == OPC_FALSEBR);
   variant = WHIRL_Compare_To_OP_variant (WN_opcode(condition), invert);
+#endif
   if (variant != V_BR_NONE) {
     operand0 = Expand_Expr (WN_kid0(condition), condition, NULL);
     operand1 = Expand_Expr (WN_kid1(condition), condition, NULL);
@@ -4048,10 +5636,12 @@ Handle_CONDBR (WN *branch)
 	      ("MTYPE_B TRUEBR/FALSEBR condition must be preg or relop"));
       operand1 = NULL;
       variant = V_BR_P_TRUE;
+#ifndef TARG_ST
       if (invert) {
 	PREG_NUM preg2_num = WN_load_offset(condition) + 1;
 	operand0 = PREG_To_TN_Array[preg2_num];
       }
+#endif
     } else {
 #if !defined(TARG_IA32) && !defined(TARG_X8664)
       operand1 = Zero_TN;
@@ -4218,6 +5808,32 @@ static void Handle_Return (void)
   Start_New_Basic_Block ();
 }
 
+#ifdef TARG_ST
+static void Handle_EH_Return (TN *stackadj, TN *handler)
+{
+  if (! PU_Has_EH_Return) {
+    PU_Has_EH_Return = TRUE;
+  }
+  EH_Return_Stackadj_TN = CGTARG_EH_Gen_Return_Stackadj_TN ();
+  if (EH_Return_Stackadj_TN) {
+    Exp_COPY (EH_Return_Stackadj_TN, stackadj, &New_OPs);
+  }
+  Exp_COPY (RA_TN, handler, &New_OPs);
+  BB *exit_bb = Cur_BB;
+  Handle_Return ();
+  EXITINFO *exit_info = ANNOT_exitinfo(ANNOT_Get(BB_annotations(exit_bb), ANNOT_EXITINFO));
+  EXITINFO_is_eh_return(exit_info) = TRUE;
+}
+
+static void Handle_Frame_Address (TN *result, TN *frame_number)
+{
+  if (TN_is_zero(frame_number)) {
+    Exp_Lda (Pointer_type, result, Get_UpFormal_Base_Symbol (), -STACK_OFFSET_ADJUSTMENT, OPERATOR_UNKNOWN, &New_OPs);
+  } else {
+    Exp_Immediate (result, Gen_Literal_TN(0, Pointer_Size), FALSE, &New_OPs);
+  }
+}
+#endif
 
 /* Handle traps (from OP_ASSERT or OP_TRAP) */
 static void Handle_Trap(WN *trap) 
@@ -4235,11 +5851,22 @@ Find_Asm_Out_Parameter_Load (const WN* stmt, PREG_NUM preg_num, ST** ded_st)
 {
   WN* ret_load = NULL;
   for(; stmt != NULL; stmt = WN_next(stmt)) {
+#ifdef TARG_ST
+    // [CG]: If we encounter another ASM statement we stop the search.
+    // Otherwise we will attach the load to the wrong asm statement.
+    if (WN_opcode(stmt) == OPC_ASM_STMT) break;
+#endif
 #ifdef KEY // bug 5733: need to stop searching at the next ASM statement
     if (WN_operator(stmt) == OPR_ASM_STMT)
       return NULL;
 #endif
     if (OPERATOR_is_store(WN_operator(stmt))) {
+#ifdef TARG_ST
+	// [TTh] At low optimization levels (-O0, -O1),
+	// the store might have been optimized away
+	// and replaced by EVAL node.
+	|| WN_operator(stmt) == OPR_EVAL
+#endif
       WN* load = WN_kid0(stmt);
       OPERATOR opr = WN_operator(load);
       if (opr == OPR_CVT || opr == OPR_CVTL) {
@@ -4261,10 +5888,15 @@ Find_Asm_Out_Parameter_Load (const WN* stmt, PREG_NUM preg_num, ST** ded_st)
         ST_assigned_to_dedicated_preg(WN_st(stmt))) {
       *ded_st = WN_st(stmt);
     }
-  }
+  }  
+  // [CG] It is possible to not find any use of the ASM output
+  // if the result is dead but the asm is volatile or has
+  // side effect. Thus do not need a warning, and return NULL.
+#ifndef TARG_ST
   else {
     DevWarn("didn't find out store for asm preg %d", preg_num);
   }
+#endif
   return ret_load;
 }
 
@@ -4301,11 +5933,23 @@ Handle_ASM (const WN* asm_wn)
 {
   // 'result' and 'opnd' below have a fixed size as well as
   // the arrays in ASM_OP_ANNOT. Define here so we can sanity check.
+#ifdef TARG_ST
+  // [TTh] Max number of operands and results retrieved from gccfe constant
+  // Note that arrays in ASM_OP_ANNOT are now dynamically allocated
+  // when calling Create_Empty_ASM_OP_ANNOT(nb_res, nb_opnd)
+  enum { MAX_OPNDS = MAX_RECOG_OPERANDS, MAX_RESULTS = MAX_RECOG_OPERANDS };
+#else
   enum { MAX_OPNDS = ASM_OP_size, MAX_RESULTS = ASM_OP_size };
+#endif
 
   // these two arrays may have to be reallocatable
+#ifdef TARG_ST
   TN* result[MAX_RESULTS];
   TN* opnd[MAX_OPNDS]; 
+#else
+  TN* result[MAX_RESULTS];
+  TN* opnd[MAX_OPNDS];
+#endif 
   INT num_results = 0;
   INT num_opnds = 0;
 
@@ -4320,9 +5964,23 @@ Handle_ASM (const WN* asm_wn)
   bzero(opnd_sc, sizeof(opnd_sc));
   
   CGTARG_Init_Asm_Constraints();
-
+#ifdef TARG_ST
+  // [TTh] Use new API to allocate ASM_OP_ANNOT. Need to know 
+  //       result and operand counts.
+  WN* asm_output_constraints = WN_asm_constraints(asm_wn);
+  FmtAssert(WN_operator(asm_output_constraints) == OPR_BLOCK,
+	    ("asm output constraints not a block?"));
+  for (WN* out_pragma = WN_first(asm_output_constraints);
+       out_pragma != NULL; 
+       out_pragma = WN_next(out_pragma)) {
+    num_results++;
+  }
+  ASM_OP_ANNOT* asm_info = Create_Empty_ASM_OP_ANNOT(num_results, WN_kid_count(asm_wn)-2);
+  num_results = 0;
+#else
   ASM_OP_ANNOT* asm_info = TYPE_PU_ALLOC(ASM_OP_ANNOT);
   bzero(asm_info, sizeof(ASM_OP_ANNOT));
+#endif
 
   ASM_OP_wn(asm_info) = asm_wn;
 
@@ -4384,7 +6042,11 @@ Handle_ASM (const WN* asm_wn)
 	}
       }
 #endif // KEY
+#ifdef TARG_ST
+      TN* tn = PREG_To_TN(WN_st(idname), WN_offset(idname), idname);
+#else
       TN* tn = PREG_To_TN(WN_st(idname), WN_offset(idname));
+#endif
       FmtAssert(tn && TN_is_register(tn) && TN_is_dedicated(tn),
                 ("Wrong TN for PREG from ASM clobber list"));
       ISA_REGISTER_CLASS rc = TN_register_class(tn);
@@ -4393,13 +6055,20 @@ Handle_ASM (const WN* asm_wn)
     }
   }
   
+#ifdef TARG_ST
+  OPS reload_ops = OPS_EMPTY;
+#endif
+
   // process ASM output parameters:
   // the out stores must directly follow the ASM,
   // while the constraints are in kid1
+#ifdef TARG_ST
+  // [TTh] Now retrieved at start of function
+#else
   WN* asm_output_constraints = WN_asm_constraints(asm_wn);
   FmtAssert(WN_operator(asm_output_constraints) == OPR_BLOCK,
             ("asm output constraints not a block?"));
-
+#endif
 #ifdef TARG_MIPS
   // Hold the TNs that need the values from LO (0th element) and
   // HI (1st element).
@@ -4425,8 +6094,13 @@ Handle_ASM (const WN* asm_wn)
 #endif
     TN* pref_tn = NULL;
     if (pref_st) {
+#ifdef TARG_ST
+      pref_tn = PREG_To_TN(MTYPE_To_PREG(ST_mtype(pref_st)),
+                           Find_PREG_For_Symbol(pref_st), load);
+#else
       pref_tn = PREG_To_TN(MTYPE_To_PREG(ST_mtype(pref_st)),
                            Find_PREG_For_Symbol(pref_st));
+#endif
     }
     ISA_REGISTER_SUBCLASS subclass = ISA_REGISTER_SUBCLASS_UNDEFINED;
 
@@ -4451,7 +6125,11 @@ Handle_ASM (const WN* asm_wn)
 #else
       (strchr(constraint, 'm') != NULL);
 #endif
-    
+#ifdef TARG_ST
+    // Initialize same res info to -1
+    ASM_OP_result_same_opnd(asm_info)[num_results] = -1;
+#endif
+
     result[num_results] = tn;
     num_results++;
 
@@ -4469,6 +6147,25 @@ Handle_ASM (const WN* asm_wn)
     // negative preg with new_preg mapped to ASM operand TN
     // it is possible that wopt optimized away the output store
     if (load) {
+
+#ifdef TARG_ST
+      if (TN_register_class(tn) != Register_Class_For_Mtype(WN_rtype(load))) {
+	/* We may need to convert to the correct register class. */
+	TN* tmp = Build_RCLASS_TN (Register_Class_For_Mtype(WN_rtype(load)));
+
+        /* exp_copy is a physical copy. We need here a logical
+         *   copy. For booleans (guards), it might not be the same.
+         *  [see bug #47469 on stxp70_v4 only]
+         */
+        if (TN_size(tn) == 1) {  /* boolean */
+          Expand_Bool_To_Int(tmp, tn, WN_rtype(load), &reload_ops);
+        } else {
+          Exp_COPY(tmp, tn, &reload_ops);
+        }
+	tn = tmp;
+      }
+#endif
+
       PREG_NUM new_preg = TN_To_PREG(tn);
       if (new_preg == 0) {
         char preg_name[16];
@@ -4499,8 +6196,13 @@ Handle_ASM (const WN* asm_wn)
     if (OPERATOR_has_sym(WN_operator(load))) {
       ST* pref_st = WN_st(load);
       if (ST_assigned_to_dedicated_preg(pref_st)) {
+#ifdef TARG_ST
+        pref_tn = PREG_To_TN(MTYPE_To_PREG(ST_mtype(pref_st)),
+                             Find_PREG_For_Symbol(pref_st), load);
+#else
         pref_tn = PREG_To_TN(MTYPE_To_PREG(ST_mtype(pref_st)),
                              Find_PREG_For_Symbol(pref_st));
+#endif
       }
     }
     ISA_REGISTER_SUBCLASS subclass = ISA_REGISTER_SUBCLASS_UNDEFINED;
@@ -4539,6 +6241,16 @@ Handle_ASM (const WN* asm_wn)
 	Expand_Float_To_Float( tn, tmp_tn, MTYPE_FQ, rtype, &New_OPs );
       } else
 #endif // TARG_X8664
+#ifdef TARG_ST
+      if (TN_register_class(tn) != Register_Class_For_Mtype(WN_rtype(load))) {
+	/* We may need to convert to the corect register class. */
+	TN* tmp = Build_RCLASS_TN (Register_Class_For_Mtype(WN_rtype(load)));
+	Expand_Expr (load, NULL, tmp);
+	Exp_COPY(tn, tmp, &New_OPs);
+      }
+      else
+#endif
+
 	Expand_Expr (load, NULL, tn);
     }
 
@@ -4564,7 +6276,13 @@ Handle_ASM (const WN* asm_wn)
 	tn = new_opnd_tn;
     }
 #endif // TARG_X8664
-
+#ifdef TARG_ST
+    // Update result_same_opnd if the operand matches a result
+    if (isdigit(*constraint)) {
+      INT res_idx = *constraint-'0';
+      ASM_OP_result_same_opnd(asm_info)[res_idx] = num_opnds;
+    }
+#endif
     opnd[num_opnds] = tn;    
     num_opnds++;
   }
@@ -4632,6 +6350,71 @@ Handle_ASM (const WN* asm_wn)
 #endif
 }
 
+#ifdef TARG_ST
+static BOOL
+WN_Find_Unique_LDID(WN *expr, WN **ldid) {
+
+  if (WN_operator(expr) == OPR_LDID) {
+    if (*ldid == NULL) {
+      // The first time a variable is seen
+      *ldid = expr;
+      return TRUE;
+    }
+    else if (WN_Equiv(*ldid, expr)) {
+      // The same variable is used several times
+      return TRUE;
+    }
+    else {
+      return FALSE;
+    }
+  }
+  else {
+    int i;
+    for (i = 0; i < WN_kid_count(expr); i++) {
+      if (!WN_Find_Unique_LDID(WN_kid(expr,i), ldid))
+	return FALSE;
+    }
+    return TRUE;
+  }
+}
+
+// First, check that wn_affirm node references one and only one LDID
+// variable. Then, look for the TN associated to this LDID variable
+// and generate a copy tn = tn, on which the property 'affirm' is set.
+static void
+Handle_AFFIRM(WN *wn_affirm) {
+  // First, look for the single PREG that should be used in the
+  // expression.
+  WN *ldid = NULL;
+  OP *op_assume = NULL;
+
+  if (Get_Trace(TP_CGEXP, 8)) {
+    fprintf(TFile, "<%d> [ASSUME] WN_AFFIRM attached to CGIR OP:\n", Current_PU_Count());
+    fdump_tree(TFile, wn_affirm);
+  }
+
+  if (!WN_Find_Unique_LDID(wn_affirm, &ldid)) {
+    if (OPT_Enable_Warn_Assume)
+      DevWarn("__builtin_assume uses more than one variable (line %d). Ignored.",
+	      Srcpos_To_Line(WN_Get_Linenum(wn_affirm)));
+  }
+  else if (ldid == NULL) {
+    if (OPT_Enable_Warn_Assume) {
+      DevWarn("No variable found in __builtin_assume (line %d). Ignored.", Srcpos_To_Line(WN_Get_Linenum(wn_affirm)));
+    }
+    if (Get_Trace(TP_CGEXP, 8))
+      fprintf(TFile, "*** Cannot analyze WHIRL node WN_AFFIRM ***\n");
+  }
+  else {
+    TN *result = Handle_LDID(ldid, NULL, WN_opcode (ldid));
+    Exp_COPY(result, result, &New_OPs);
+    op_assume = OPS_last(&New_OPs);
+    OP_Set_Affirm(op_assume, wn_affirm);
+    if (Get_Trace(TP_CGEXP, 8))
+      Print_OP_No_SrcLine(op_assume);
+  }
+}
+#endif
 
 // replace all occurrences of match string with new string in s string.
 static void
@@ -4693,7 +6476,14 @@ static SRCPOS get_loop_srcpos(WN *body_label)
 /* Expand a WHIRL statement into a list of OPs and add 
  * them to the current basic block.
  */
-static void Expand_Statement (WN *stmt) 
+#if defined(CGG_ENABLED)
+void
+Expand_Statement_local (
+#else
+static void 
+Expand_Statement (
+#endif
+                  WN *stmt) 
 {
   BB *bb;
   WN *loop_info;
@@ -4738,6 +6528,15 @@ static void Expand_Statement (WN *stmt)
      * the exit_bb in the region.
      */
     Handle_Return ();
+#ifdef TARG_ST
+    //If the RETURN WN is not due to the lowering of a RETURN_VAL WN flag it:
+    if (!WN_is_return_val_lowered(stmt)) {
+      BB *exit_bb1 = BB_prev(Cur_BB);
+      FmtAssert( BB_exit(exit_bb1), ("BB_prev of Cur_BB is not an exit BB") );
+      EXITINFO *exit_info = ANNOT_exitinfo(ANNOT_Get(BB_annotations(exit_bb1), ANNOT_EXITINFO));
+      EXITINFO_is_noval_return(exit_info) = TRUE;
+    }
+#endif
     break;
   case OPC_LABEL:
     loop_info = WN_label_loop_info(stmt);
@@ -4760,6 +6559,18 @@ static void Expand_Statement (WN *stmt)
 	WN_set_loop_trip(loop_info, NULL);
 	trip_wn = NULL;
       }
+#ifdef TARG_ST
+      // [CG]: In the case where the machine is 32 bits we discard
+      // 64 bits trip count information as we can't handle it in CG.
+      if (Only_32_Bit_Ops && trip_wn && 
+	  MTYPE_byte_size(WN_rtype(trip_wn)) > 4) {
+	DevWarn("removing loop trip count (line %d) "
+		"(trip count byte size > 4)",
+		Srcpos_To_Line(srcpos));
+	WN_set_loop_trip(loop_info, NULL);
+	trip_wn = NULL;
+      }
+#endif
       if (trip_wn == NULL) {
 	trip_tn = NULL;
       } else {
@@ -4794,6 +6605,14 @@ static void Expand_Statement (WN *stmt)
       LOOPINFO_wn(info) = loop_info;
       LOOPINFO_srcpos(info) = srcpos;
       LOOPINFO_trip_count_tn(info) = trip_tn;
+#ifdef TARG_ST
+      LOOPINFO_is_exact_trip_count(info) = TRUE;
+      LOOPINFO_is_HWLoop(info) = FALSE;
+#endif
+#ifdef TARG_ST
+      LOOPINFO_trip_min(info) = -1;
+      LOOPINFO_kunroll(info) = 0;
+#endif
       if (!CG_PU_Has_Feedback && WN_loop_trip_est(loop_info) == 0)
 	WN_loop_trip_est(loop_info) = 100;
     }
@@ -4817,6 +6636,12 @@ static void Expand_Statement (WN *stmt)
     	bb = Add_Label(Get_WN_Label (stmt));
 #endif
     }
+#ifdef TARG_ST
+    // (cbr) we don't necessary have LOOPINFO. put keep pragma
+    if (info) {
+      BB_Add_Annotation(bb, ANNOT_LOOPINFO, info);
+    }
+#else    
     if (info) {
       BB_Add_Annotation(bb, ANNOT_LOOPINFO, info);
       if (last_loop_pragma) {
@@ -4824,12 +6649,32 @@ static void Expand_Statement (WN *stmt)
 	last_loop_pragma = NULL;
       }
     }
+#endif
     break;
   case OPC_ALTENTRY:
     Handle_Entry (stmt);
     break;
   case OPC_PRAGMA:
   case OPC_XPRAGMA:
+#ifdef TARG_ST
+    if (WN_Pragma_Users(WN_pragma(stmt)) & PUSER_CG) {
+      if (WN_Pragma_Scope(WN_pragma(stmt)) == WN_PRAGMA_SCOPE_LOOP) {
+	ANNOTATION *loop_pragmas = (ANNOTATION *)BB_MAP_Get(loop_pragma_map, Cur_BB);
+	loop_pragmas = ANNOT_Add(loop_pragmas, ANNOT_PRAGMA, (void *)stmt, &MEM_pu_pool);
+	BB_MAP_Set(loop_pragma_map, Cur_BB, loop_pragmas);
+
+	// [CL] Mark prologue for debug output
+      } else if (WN_pragma(stmt) == WN_PRAGMA_PREAMBLE_END) {
+	OP* op;
+	for (op=OPS_first(&New_OPs); op != NULL ; op=OP_next(op)) {
+	  Set_OP_prologue(op);
+	}
+	Annotate_Previous_BB_As_Prologue();
+      }
+      else if (WN_pragma(stmt) == WN_PRAGMA_ASM_PARSE) {
+	last_asmparse_pragma = stmt;
+      }
+#else
     if (WN_pragmas[WN_pragma(stmt)].users == PUSER_CG) {
       if (WN_pragma(stmt) == WN_PRAGMA_UNROLL)
 	/*
@@ -4838,6 +6683,7 @@ static void Expand_Statement (WN *stmt)
 	 * for tracking this.
 	 */
 	last_loop_pragma = stmt;
+#endif
       else
 	BB_Add_Annotation(Cur_BB, ANNOT_PRAGMA, stmt);
     }
@@ -4862,6 +6708,11 @@ static void Expand_Statement (WN *stmt)
   case OPC_ASM_STMT:
     Handle_ASM (stmt);
     break;
+#ifdef TARG_ST
+  case OPC_AFFIRM:
+    Handle_AFFIRM (stmt);
+    break;
+#endif
   default:
     PU_WN_Cnt--;	/* don't want to count node twice */
     Expand_Expr (stmt, NULL, NULL);
@@ -4869,6 +6720,52 @@ static void Expand_Statement (WN *stmt)
   }
 }
 
+#ifdef TARG_ST
+/* ====================================================================
+ * Push_Intrinsic_Result
+ *
+ * This function (and the following one) are auxiliary routines used
+ * to save/get TN results of the last intrinsic.
+ * ====================================================================
+ */
+static void push_intrinsic_result(
+   WN *intrncall, 
+   TN **res, 
+   INT numres)
+{
+   INT i;
+
+
+   FmtAssert(0<=numres && numres<ISA_OPERAND_max_results,
+              ("too many results for intrinsic"));
+   Intrinsic_Result_Sav = TYPE_PU_ALLOC(INTRINSIC_RESULT);
+
+   ++Intrinsic_Count;
+
+   Intrinsic_Result_Sav->numres = numres;
+   for(i=0;i<numres;i++)
+     Intrinsic_Result_Sav->res[i] = res[i];
+
+   return;
+}
+
+static INTRINSIC_RESULT* get_last_intrinsic_result(void)
+{
+   INTRINSIC_RESULT *ret;
+   INT               i;
+
+   FmtAssert(NULL!=Intrinsic_Result_Sav && Intrinsic_Count>0,
+             ("Internal error in intrinsic management"));
+
+   ret = TYPE_PU_ALLOC(INTRINSIC_RESULT);
+
+   ret->numres = Intrinsic_Result_Sav->numres;
+   for(i=0;i<Intrinsic_Result_Sav->numres;i++)
+      ret->res[i]=Intrinsic_Result_Sav->res[i];
+
+   return ret;
+}
+#endif     /* TARG_ST */
 
 static WN *
 Handle_INTRINSIC_CALL (WN *intrncall)
@@ -4974,6 +6871,11 @@ Handle_INTRINSIC_CALL (WN *intrncall)
     // which may not be ideal for some intrinsics like fetch_and_add.
     opnd_tn[i] = Expand_Expr (WN_kid(intrncall, i), intrncall, NULL);
   }
+#ifdef TARG_ST
+  Get_Intrinsic_Op_Parameters( intrncall, &result, &opnd_tn, &numopnds, &res, &numrests );
+  // Store the result for the followings LDID or SUBPART
+  push_intrinsic_result(intrncall,res,numrests);
+#endif
 
   // if straight-line code, then label and loop_ops are unused,
   // but might create a loop in which case we need to create bb for it.
@@ -4981,8 +6883,23 @@ Handle_INTRINSIC_CALL (WN *intrncall)
   // or multiple exp_ calls for the different parts).
 
   OPS_Init(&loop_ops);
+#ifdef TARG_ST
+  if (id == INTRN_BUILTIN_EH_RETURN) {
+    Handle_EH_Return (opnd_tn[0], opnd_tn[1]);
+  } else if (id == INTRN_BUILTIN_UNWIND_INIT) {
+    PU_Has_EH_Return = TRUE;
+  } else if (id == INTRN_BUILTIN_FRAME_ADDRESS) {
+    Handle_Frame_Address (res[0], opnd_tn[0]);
+  } else {
+    Exp_Intrinsic_Call (id, numrests, numopnds, res, opnd_tn, &New_OPs, &label, &loop_ops, current_srcpos);
+  }
+
+  // [CG]:We keep the last generated op
+  OP *last_intr_op =  OPS_last(&New_OPs);
+#else
   result = Exp_Intrinsic_Call (id, 
 	opnd_tn[0], opnd_tn[1], opnd_tn[2], &New_OPs, &label, &loop_ops);
+#endif
 
 #ifdef KEY
   last_op_from_intrn_call = OPS_last(&New_OPs);
@@ -5020,7 +6937,13 @@ Handle_INTRINSIC_CALL (WN *intrncall)
       if (op == last_op_from_intrn_call)	// bug 14415
 	break;
 #else
+#ifdef TARG_ST
+      // [CG]:We stop at the  last generated op
+      // An intrinsic call may not be expanded into a TOP_intrcall!
+      if (op == last_intr_op) break;
+#else
       if (OP_code(op) == TOP_intrncall) break;
+#endif
 #endif
       for (i = 0; i < OP_opnds(op); i++) {
 	TN *otn = OP_opnd(op,i);
@@ -5205,6 +7128,12 @@ Convert_WHIRL_To_OPs (WN *tree)
 
   switch ( WN_opcode( tree ) ) {
   case OPC_FUNC_ENTRY:
+#if defined(CGG_ENABLED) //CGG_DEV
+    if (CG_enable_cgg) {
+      CGG_Start_function(tree);
+      CGG_Start_bb(tree);
+    }
+#endif
     Compiling_Proper_REGION = FALSE;
     if (RID_cginfo(rid) == NULL) {
       RID_cginfo(rid) = CGRIN_Create(RID_num_exits(rid));
@@ -5213,6 +7142,12 @@ Convert_WHIRL_To_OPs (WN *tree)
     stmt = WN_entry_first( tree );
     break;
   case OPC_REGION:
+#if defined(CGG_ENABLED) //CGG_DEV
+    if (CG_enable_cgg) {
+      CGG_Start_region(tree);
+      CGG_Start_bb(tree);
+    }
+#endif
     Compiling_Proper_REGION = TRUE;
     if ( RID_level( rid ) < RL_CG ) {      /* it is WHIRL */
       num_exits = RID_num_exits( rid );
@@ -5299,9 +7234,128 @@ Convert_WHIRL_To_OPs (WN *tree)
 
   /* Build the control flow graph */
   Build_CFG();
+#ifdef TARG_ST
+  // FdF 23/04/2004: Now, move pragma LOOP annotation to loop head.
+  for (BB *bp = REGION_First_BB; bp; bp = BB_next(bp)) {
+    ANNOTATION *loop_pragmas;
+    if ((loop_pragmas = (ANNOTATION *)BB_MAP_Get(loop_pragma_map, bp)) != NULL) {
+      // find the loop header in the successors of this node. This may
+      // be the unique successor of the current node, or the successor
+      // of this one if it has one single predecessor (and thus is not
+      // a loop head).
+      BB *loop_head = BB_Unique_Successor(bp);
+      while (loop_head && BB_Unique_Predecessor(loop_head))
+	loop_head = BB_Unique_Successor(loop_head);
+      if (loop_head == NULL) {
+	if (CG_opt_level > 1)
+	  ErrMsgSrcpos(EC_LNO_Bad_Pragma_String, WN_Get_Linenum((WN *)ANNOT_info(ANNOT_First(loop_pragmas, ANNOT_PRAGMA))),
+		       WN_Pragma_Name(WN_pragma((WN *)ANNOT_info(ANNOT_First(loop_pragmas, ANNOT_PRAGMA)))),
+		       "not followed by a loop, ignored");
+	continue;
+      }
+      ANNOTATION *ant, *next;
+      for (ant = ANNOT_First(loop_pragmas, ANNOT_PRAGMA); ant; ant = next) {
+	next = ANNOT_Next(ant, ANNOT_PRAGMA);
+#ifdef TARG_ST
+	if (WN_pragma(ANNOT_pragma(ant)) == WN_PRAGMA_IVDEP) {
+	  // FdF: Canonicalize a pragma IVDEP into its LOOPDEP form
+	  LOOPDEP loopdep;
+	  if (Cray_Ivdep) loopdep = LOOPDEP_VECTOR;
+	  else if (Liberal_Ivdep) loopdep = LOOPDEP_LIBERAL;
+	  else loopdep = LOOPDEP_PARALLEL;
+	  WN *pragma = WN_CreatePragma(WN_PRAGMA_LOOPDEP, (ST_IDX) NULL,
+				       loopdep, 0);
+	  ANNOT_info(ant) = pragma;
+	}
+#endif
+	BB_Add_Annotation(loop_head, ANNOT_PRAGMA, ANNOT_info(ant));
+	ANNOT_Unlink(loop_pragmas, ant);
+      }
 
+      // FdF 30/09/2004: Set WN_loop_trip_est with the value of
+      // #pragma LOOPTRIP(n)
+      ant = ANNOT_Get(BB_annotations(loop_head), ANNOT_PRAGMA);
+      while (ant && WN_pragma(ANNOT_pragma(ant)) != WN_PRAGMA_LOOPTRIP)
+	ant = ANNOT_Get(ANNOT_next(ant), ANNOT_PRAGMA);
+      if (ant) {
+	ANNOTATION *annot = ANNOT_Get(BB_annotations(loop_head), ANNOT_LOOPINFO);
+	LOOPINFO *info = annot ? ANNOT_loopinfo(annot) : NULL;
+	if (info) {
+	  WN *wn = ANNOT_pragma(ant);
+#ifdef TARG_ST
+	  TN *trip_count = LOOPINFO_exact_trip_count_tn(info);
+#else
+	  TN *trip_count = LOOPINFO_trip_count_tn(info);
+#endif
+	  if (trip_count && TN_is_constant(trip_count)) {
+	    if (TN_value(trip_count) !=  WN_pragma_arg1(wn))
+	      ErrMsgSrcpos(EC_LNO_Bad_Pragma_String, WN_Get_Linenum(wn), WN_Pragma_Name(WN_pragma(wn)),
+			   "inconsistent with computed value, ignored");
+	  }
+	  else 
+	    WN_loop_trip_est(LOOPINFO_wn(info)) = WN_pragma_arg1(wn);
+	}
+      }
+
+      // FdF 20060912: Set LOOPINFO_trip_min with the value of #pragma
+      // LOOPMINITERCOUNT
+      ant = ANNOT_Get(BB_annotations(loop_head), ANNOT_PRAGMA);
+      int loopmin = 0;
+      ANNOTATION *ant_loopmin = NULL;
+      while (ant) {
+	if (WN_pragma(ANNOT_pragma(ant)) == WN_PRAGMA_LOOPMINITERCOUNT) {
+	  ant_loopmin = ant;
+	  loopmin = MAX(loopmin, WN_pragma_arg1(ANNOT_pragma(ant)));
+	}
+	// FdF 20070914: LOOPMOD also defines a minimum iteration
+	// count with its second argument
+	else if (WN_pragma(ANNOT_pragma(ant)) == WN_PRAGMA_LOOPMOD)
+	  loopmin = MAX(loopmin, WN_pragma_arg2(ANNOT_pragma(ant)));
+	ant = ANNOT_Get(ANNOT_next(ant), ANNOT_PRAGMA);
+      }
+      if (loopmin > 0) {
+	ANNOTATION *annot = ANNOT_Get(BB_annotations(loop_head), ANNOT_LOOPINFO);
+	LOOPINFO *info = annot ? ANNOT_loopinfo(annot) : NULL;
+	if (info)
+	  LOOPINFO_trip_min(info) = loopmin;
+	// FdF 20060913: Then remove this pragma
+	if (ant_loopmin != NULL)
+	  BB_annotations(loop_head) = ANNOT_Unlink(BB_annotations(loop_head), ant_loopmin);
+      }
+      
+    }
+  }
+#endif
+
+#ifdef TARG_ST
+  //TB: bug #31540 warning: control reaches end of non-void function
+  // Start the analysis of non void function that has a path that
+  // returns void
+
+  //Run the check only on non void function
+  if ( OPT_Enable_Warn_ReturnVoid && TY_mtype(TY_ret_type(ST_pu_type(WN_st(tree)))) != MTYPE_V) {
+    // Find reachable blocks
+    BB_Mark_Unreachable_Blocks();
+    BB *bb;
+    for (bb = REGION_First_BB; bb != NULL; bb = BB_next(bb)) {
+      //Scan only exit block that are reachable
+      if (BB_exit(bb) && !BB_unreachable(bb)) {
+	ANNOTATION *ant = ANNOT_Get (BB_annotations(bb), ANNOT_EXITINFO);
+	EXITINFO *exit_info = ANNOT_exitinfo(ant);
+	if (EXITINFO_is_noval_return(exit_info)) {
+	  SRCPOS srcpos = EXITINFO_srcpos(exit_info);
+	  //We find a BB that was not originally a RETURN_VAL WN 
+	  ErrMsgSrcpos(EC_CG_Generic_Warning, srcpos, "control reaches end of non-void function");
+	}
+      }
+    }
+  }
+#endif
   switch ( WN_opcode( tree ) ) {
   case OPC_FUNC_ENTRY:
+#if defined(CGG_ENABLED) //CGG_DEV
+    if (CG_enable_cgg) CGG_End_function(tree);
+#endif
     break;
   case OPC_REGION:
     region_stack_pop();
@@ -5333,6 +7387,9 @@ Convert_WHIRL_To_OPs (WN *tree)
         Add_PregTNs_To_BB (RID_pregs_out_i(rid,i), CGRIN_exit_i(cgrin,i),
 		FALSE /*prepend*/);
     }
+#if defined(CGG_ENABLED) //CGG_DEV
+    if (CG_enable_cgg) CGG_End_region(tree);
+#endif
     break;
   default:
     #pragma mips_frequency_hint NEVER
@@ -5356,8 +7413,24 @@ void Whirl2ops_Initialize(struct ALIAS_MANAGER *alias_mgr)
     OP_to_WN_map = NULL;
     WN_to_OP_map = WN_MAP_UNDEFINED;
   }
+#ifdef TARG_ST
+  loop_pragma_map = BB_MAP_Create();
+#else
   last_loop_pragma = NULL;
+#endif
   OP_Asm_Map = OP_MAP_Create();
+
+#ifdef TARG_ST
+  OP_to_callinfo_map = OP_MAP_Create();
+#endif
+
+#ifdef CGG_ENABLED
+  if (CG_enable_cgg) {
+    CGG_Set_Level(CG_cgg_level);
+    if (Get_Trace (TP_CGEXP, 2)) CGG_Set_Trace(1);
+    CGG_Initialize();
+  }
+#endif
 }
 
 void Whirl2ops_Finalize(void)
@@ -5375,6 +7448,25 @@ void Whirl2ops_Finalize(void)
     WN_MAP_Delete(WN_to_OP_map);
     WN_to_OP_map = WN_MAP_UNDEFINED;
   }
+#ifndef TARG_ST
+  if (last_loop_pragma && 
+      !WN_pragma_compiler_generated(last_loop_pragma) &&
+      CG_opt_level > 1) {
+    ErrMsgSrcpos(EC_LNO_Bad_Pragma_String, WN_Get_Linenum(last_loop_pragma),
+		 WN_pragmas[WN_pragma(last_loop_pragma)].name,
+		 "not followed by a loop, ignored");
+  }
+#endif
+
+#ifdef TARG_ST
+  OP_MAP_Delete(OP_to_callinfo_map);
+  if (OP_packed_to_ops_map != NULL) {
+    OP_MAP_Delete(OP_packed_to_ops_map);
+    OP_packed_to_ops_map = NULL;
+  }
+  OP_Affirm_delete_map();
+#endif
+
   if (last_loop_pragma && 
       !WN_pragma_compiler_generated(last_loop_pragma) &&
       CG_opt_level > 1) {
@@ -5383,4 +7475,205 @@ void Whirl2ops_Finalize(void)
 		 "not followed by a loop, ignored");
   }
   OP_MAP_Delete(OP_Asm_Map);
+
+  #ifdef TARG_ST
+  BB_MAP_Delete(loop_pragma_map);
+  if (WN_To_Hilo_map != WN_MAP_UNDEFINED) {
+    WN_MAP_Delete(WN_To_Hilo_map);
+    WN_To_Hilo_map = WN_MAP_UNDEFINED;
+  }
+#endif
+
+#ifdef CGG_ENABLED
+  if (CG_enable_cgg) CGG_Finalize();
+#endif
+
 }
+
+
+//CGG_DEV{
+#ifdef CGG_ENABLED
+
+/*
+ * Do we have a BB frontier.
+ * 0: no, 
+ * 1: start bb before,
+ * 2: start bb after,
+ * 3: start bb before and after,
+ */
+static int 
+cgg_test_start_bb (WN *stmt) 
+{
+  OPCODE opc = WN_opcode(stmt);
+  int do_bb = 0;
+  
+  switch(opc) {
+  case OPC_REGION:
+  case OPC_FUNC_ENTRY:
+  case OPC_ALTENTRY:
+  case OPC_LABEL:
+    do_bb = 1;
+    break;
+  case OPC_RETURN:
+  case OPC_TRUEBR:
+  case OPC_FALSEBR:
+  case OPC_GOTO:
+  case OPC_AGOTO:
+  case OPC_COMPGOTO:
+  case OPC_XGOTO:
+  case OPC_REGION_EXIT:
+  case OPC_GOTO_OUTER_BLOCK:
+    do_bb = 2;
+    break;
+  case OPC_ASM_STMT:
+    do_bb = 3;
+    break;
+  case OPC_TRAP:
+  case OPC_EVAL:
+  case OPC_COMMENT:
+  case OPC_PRAGMA:
+  case OPC_XPRAGMA:
+  case OPC_EXC_SCOPE_END:
+  case OPC_EXC_SCOPE_BEGIN:
+  default:
+    break;
+  }
+  return do_bb;
+}
+
+static void
+cgg_may_start_bb(WN *stmt)
+{
+  static WN *last_stmt;
+  static int after_last;
+  if (stmt != last_stmt) {
+    int do_bb = cgg_test_start_bb(stmt);
+    
+    if (after_last || (do_bb & 1)) {
+      CGG_Start_bb(stmt);
+      after_last = 0;
+    }
+    if (do_bb & 2) after_last = 1;
+    last_stmt = stmt;
+  }
+}
+
+/* From Handle_XGOTO. */
+static void
+cgg_handle_xgoto(WN *stmt)
+{
+  TN *target_tn;
+  WN *wn;
+  INT i;
+  ST *st;
+  INITO_IDX ino;
+  INITV_IDX inv, prev_inv;
+
+
+  /* build jump table in init-data list */
+  /* get table address */
+  st = WN_st(stmt);
+  BB_Add_Annotation (Cur_BB, ANNOT_SWITCH, st);
+  /* make sure st is allocated */
+  Allocate_Object(st);
+  ino = New_INITO(st);
+  prev_inv = INITV_IDX_ZERO;
+
+  wn = WN_first(WN_kid1(stmt));	/* first goto */
+  for (i = 0; i < WN_num_entries(stmt); i++) {
+    FmtAssert ((wn && WN_opcode(wn) == OPC_GOTO),
+	       ("XGOTO block doesn't have goto's? (%d)", WN_opcode(wn)));
+    LABEL_IDX lab = WN_label_number(wn);
+    inv = New_INITV();
+    INITV_Init_Label (inv, lab);
+    prev_inv = Append_INITV (inv, ino, prev_inv);
+    wn = WN_next(wn);
+  }
+}
+
+/* From Convert_Branch. */
+static void
+cgg_convert_branch(WN *stmt)
+{
+  BB_branch_wn(Cur_BB) = stmt;
+  /* Terminate the basic block. */
+  Start_New_Basic_Block ();
+}
+
+static void
+Expand_Statement(WN *stmt)
+{
+  int do_cgg = 0;
+  int do_convert_branch = 0;
+  int do_handle_xgoto = 0;
+  if (CG_enable_cgg) {  
+    if (Trace_WhirlToOp) fprintf(TFile, "-- Expand_Statement\n");
+    cgg_may_start_bb(stmt);
+    CGG_Start_stmt(stmt);
+
+    switch(WN_opcode(stmt)) {
+    case OPC_TRUEBR:
+    case OPC_FALSEBR:
+    case OPC_REGION_EXIT:
+    case OPC_GOTO:
+    case OPC_AGOTO:
+      do_convert_branch = 1;
+      do_cgg = 1;
+      break;
+    case OPC_XGOTO:
+      do_handle_xgoto = 1;
+      do_convert_branch = 1;
+      do_cgg = 1;
+      break;
+    case OPC_COMPGOTO: /* not implemented. */
+    default:
+      do_cgg = 0;
+      if (Trace_WhirlToOp) fprintf (TFile, "-! Skipped CGG_Expand_Statement\n");
+    }
+  }
+
+  if (do_cgg) {
+    if (Trace_WhirlToOp) fprintf(TFile, "-> CGG_Expand_Statement\n");
+    CGG_Expand_Expr(stmt, NULL, NULL, &New_OPs);
+    if (do_handle_xgoto) cgg_handle_xgoto(stmt);
+    if (do_convert_branch) cgg_convert_branch(stmt);
+  } else {
+    Expand_Statement_local(stmt);
+  }
+}
+
+static TN *
+Expand_Expr(WN *expr, WN *parent, TN *result)
+{
+  int do_cgg = 0;
+
+  if (CG_enable_cgg) {  
+    if (Trace_WhirlToOp) fprintf(TFile, "-- Expand_Expr\n");
+    switch(WN_operator(expr)) {
+    case OPR_GOTO_OUTER_BLOCK:
+    case OPR_LDA_LABEL:
+    case OPR_CALL:
+    case OPR_ICALL:
+    case OPR_PICCALL:
+    case OPR_PREFETCH:
+    case OPR_PREFETCHX:
+    case OPR_ALLOCA:
+    case OPR_DEALLOCA:
+    case OPR_INTRINSIC_OP:
+    case OPR_INTRINSIC_CALL:
+      do_cgg = 0;
+      if (Trace_WhirlToOp) fprintf (TFile, "!- Skipped CGG_Expand_Expr\n");
+      break;
+    default:
+      do_cgg = 1;
+    }
+  }
+  if (do_cgg) {
+    if (Trace_WhirlToOp) fprintf(TFile, "-> CGG_Expand_Expr\n");
+    result = CGG_Expand_Expr(expr, parent, result, &New_OPs);
+  } else {
+    result = Expand_Expr_local(expr, parent, result);
+  }
+  return result;
+}
+#endif

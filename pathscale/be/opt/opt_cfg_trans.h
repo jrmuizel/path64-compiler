@@ -252,7 +252,7 @@ public:
   cluster_vector()   { cluster.push_back( cluster_type()); }
 };
 
-#ifdef KEY // fix g++ 3.2 problems
+#if defined( KEY) // fix g++ 3.2 problems
 template <class C>
   bool operator!=(C x, C y) { return !(x == y); }
 #endif

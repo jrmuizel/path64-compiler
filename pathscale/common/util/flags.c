@@ -236,6 +236,9 @@ typedef struct odesc_aux {
   OPTION_DESC *primary;	/* Primary option for ODK_LIST option */
   OPTVAL orig;		/* Original value */
   OPTVAL last;		/* Last value */
+  #ifdef TARG_ST
+  void * backup;
+#endif
 } ODESC_AUX;
 
 #define ODF_SET_USER	0x01	/* Set since a user print */
@@ -450,6 +453,9 @@ Initialize_Option_Group ( OPTION_GROUP *ogroup )
   INT16 count, i;
   OPTION_DESC *odesc;
   ODESC_AUX *odaux;
+#ifdef TARG_ST
+  ODESC_AUX *odbackup;
+#endif 
 
   /* If we've already done it, never mind: */
   if ( OGROUP_aux(ogroup) != NULL ) return;
@@ -474,18 +480,34 @@ Initialize_Option_Group ( OPTION_GROUP *ogroup )
   if ( odaux == NULL ) {
     ErrMsg ( EC_No_Mem, "Initialize_Option_Group: ODESC_aux" );
   }
+#ifdef TARG_ST
+  odbackup = (ODESC_AUX *) calloc ( count, sizeof (ODESC_AUX) );
+  if ( odbackup == NULL ) {
+    ErrMsg ( EC_No_Mem, "Initialize_Option_Group: ODESC_backup" );
+  }
+#endif
   OGA_odesc_aux(ogaux) = odaux;
   OGA_count(ogaux) = count-1;	/* Not including terminator */
 
   /* Initialize the auxiliary option descriptors: */
   for ( i = 0, odesc = OGROUP_options(ogroup);
 	i < count;
+#ifdef TARG_ST
+	++i, ++odesc, ++odaux, ++odbackup )
+#else
 	++i, ++odesc, ++odaux )
+#endif
   {
     ODA_specified(odaux) = ODESC_orig_specified(odesc);
     Set_ODESC_aux ( odesc, odaux );
     Duplicate_Value ( odesc, &ODA_orig(odaux) );
     ODA_last(odaux) = ODA_orig(odaux);
+#ifdef TARG_ST
+    odaux->backup = (ODESC_AUX *)odbackup;
+    Duplicate_Value ( odesc, &ODA_orig(odbackup) );
+    ODA_last(odbackup) = ODA_orig(odbackup);
+#endif
+
   }
 
   /* Special initialization for OVK_LIST options.  Several such options
@@ -588,7 +610,96 @@ Initialize_Option_Groups ( OPTION_GROUP *ogroups )
     if ( OGROUP_name(group) == NULL ) break;
   }
 }
-
+
+#ifdef TARG_ST
+
+static void
+Save_Option ( OPTION_DESC *odesc )
+{
+  //  void *var = ODESC_variable(odesc);
+  ODESC_AUX *aux = (ODESC_AUX *)ODESC_aux(odesc)->backup;
+  Duplicate_Value(odesc, &ODA_last(aux));;
+}
+
+static void
+Save_Option_Group ( OPTION_GROUP *ogroup )
+{
+  OPTION_DESC *odesc;
+  /* Save the option descriptors: */
+  for ( odesc = OGROUP_options(ogroup);
+	ODESC_kind(odesc) != OVK_COUNT
+     && ODESC_kind(odesc) != OVK_OLD_COUNT;
+	++odesc ) {
+    Save_Option(odesc);
+  }
+}
+
+void
+Save_Option_Groups(OPTION_GROUP *ogroups)
+{
+  OPTION_GROUP *group;
+  
+  for (group = ogroups; group && OGROUP_options(group); group++) {
+    Save_Option_Group ( group );
+    
+    /* We may terminate with an null name list of dummy options: */
+    if ( OGROUP_name(group) == NULL ) break;
+  }
+}
+
+static void Update_Scalar_Value ( OPTION_DESC *odesc, UINT64 val );
+static void Update_Pointer_Value ( OPTION_DESC *odesc, void *val );
+//TB: Reset the default value for each option
+static void
+Reset_Option ( OPTION_DESC *odesc )
+{
+  ODESC_AUX *aux = (ODESC_AUX *)ODESC_aux(odesc)->backup;
+  switch ( ODESC_kind(odesc) ) {
+    case OVK_NONE:
+    case OVK_BOOL:
+    case OVK_INT32:
+    case OVK_UINT32:
+    case OVK_INT64:
+    case OVK_UINT64:
+      Update_Scalar_Value ( odesc, ODA_last_i(aux));
+      break;
+    case OVK_NAME:
+    case OVK_SELF:
+    case OVK_LIST:
+      Update_Pointer_Value ( odesc, ODA_last_p(aux));
+    default:
+      break;
+  }
+}
+
+static void
+Reset_Option_Group ( OPTION_GROUP *ogroup )
+{
+  OPTION_DESC *odesc;
+  /* Reset the option descriptors: */
+  for ( odesc = OGROUP_options(ogroup);
+	ODESC_kind(odesc) != OVK_COUNT
+     && ODESC_kind(odesc) != OVK_OLD_COUNT;
+	++odesc ) {
+    Reset_Option(odesc);
+  }
+}
+
+void
+Reset_Option_Groups(OPTION_GROUP *ogroups)
+{
+  OPTION_GROUP *group;
+  
+  for (group = ogroups; group && OGROUP_options(group); group++) {
+    Reset_Option_Group ( group );
+    
+    /* We may terminate with an null name list of dummy options: */
+    if ( OGROUP_name(group) == NULL ) break;
+  }
+}
+#endif
+
+
 /* ====================================================================
  *
  * Update_Scalar_Value
@@ -691,6 +802,20 @@ Process_Command_Line_Group (char *flag, OPTION_GROUP *opt_groups)
     INT64 ival;
     OPTION_DESC *odesc, *found, *first_found;
     OPTION_LIST *olist, *ol;
+#ifdef TARG_ST
+    /* If the option group is of the form: -<GROUP>::<option>, we consider
+       that there is only one option. I.e. if an option group separator
+       appears in <option> it is ignored. This is to parse correctly option
+       values that contain the option group separator (':' for instance).
+       For instance the option: -IPA:command_line=C:/file
+       can't be parsed as the ':' is the option group separator.
+       Thus the right way to write an option with a win32 path name is
+       -IPA::command_line=C:\file
+       Where in this case only the command_line option can be passed as
+       part of the group.
+    */
+    BOOL one_option_only = FALSE;
+#endif
 
     /* Just in case: */
     Initialize_Option_Groups ( opt_groups );
@@ -711,6 +836,14 @@ Process_Command_Line_Group (char *flag, OPTION_GROUP *opt_groups)
 	     * and quit searching.
 	     */
 	    option = flag + group_name_len + 1;
+#ifdef TARG_ST
+	    /* If the option group separator is duplicated, we are in one 
+	       option only mode. */
+	    if (*option == OGROUP_separator(group)) {
+	      one_option_only = TRUE;
+	      option++;
+	    }
+#endif
 	    break;
 	}
     }
@@ -721,12 +854,23 @@ Process_Command_Line_Group (char *flag, OPTION_GROUP *opt_groups)
 
     cp = copy = strdup ( option );	/* Make a permanent, modifiable copy */
     next_cp = cp;
-
+#ifdef TARG_ST
+    /* Set up a separator string: */
+    /* If we are in one option only mode, we ignore the option group separator. */
+    if (one_option_only == TRUE) {
+      sep[0] = OGROUP_valmarker(group);
+      sep[1] = 0;
+    } else {
+      sep[0] = OGROUP_valmarker(group);
+      sep[1] = OGROUP_separator(group);
+      sep[2] = 0;
+    }
+#else
     /* Set up a separator string: */
     sep[0] = OGROUP_valmarker(group);
     sep[1] = OGROUP_separator(group);
     sep[2] = 0;
-
+#endif
 #ifdef Is_True_On
     /* Configuration check: make sure each non-NULL abbreviation is
      * actual prefix of option name.  Otherwise, we'll never match.
@@ -765,7 +909,11 @@ Process_Command_Line_Group (char *flag, OPTION_GROUP *opt_groups)
 	    next_cp = ( val[tidx] == 0 ) ? NULL : val+tidx+1;
 	    val[tidx] = 0;
 	}
-
+#ifdef TARG_ST // [CL] don't forget to reset val
+	else {
+	  val = NULL;
+	}
+#endif
 	/* Construct string containing only the current flag,
 	 * with group name for context.  This lets us emit
 	 * clearer error messages.
@@ -1008,6 +1156,9 @@ Modified_Option ( OPTION_DESC *odesc )
     case OVK_LIST:
       return ( *((void**)var) != ODA_last_p(aux) );
     default:
+#ifdef TARG_ST // [CL] avoid UMR on cur
+      return FALSE;
+#endif
       break;
   }
 

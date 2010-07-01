@@ -375,6 +375,13 @@ extern OPTION_GROUP Common_Option_Groups[];
 
 /* Initialize auxiliary info for an array of OPTION_GROUPs: */
 extern void Initialize_Option_Groups ( OPTION_GROUP *ogroups );
+#ifdef TARG_ST
+/*TB: Reset the default values for an array of OPTION_GROUPs */
+BE_EXPORTED extern void Reset_Option_Groups ( OPTION_GROUP *ogroups );
+/*TB: Save the current values for an array of OPTION_GROUPs */
+BE_EXPORTED extern void Save_Option_Groups ( OPTION_GROUP *ogroups );
+#endif
+
 
 /* Set the given option in the given group internal, meaning that it
  * won't appear on user listings.  If the option name is NULL, the

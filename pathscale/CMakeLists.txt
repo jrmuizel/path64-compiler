@@ -28,6 +28,8 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 ADD_SUBDIRECTORY(libopenmp)
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 ADD_SUBDIRECTORY(libfi)
+#ADD_SUBDIRECTORY(libair)
+
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 # TODO : Will require some porting
 # All the math stuff seems to be built from libmpath

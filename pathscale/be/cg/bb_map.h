@@ -184,4 +184,13 @@ inline INT64 BB_MAP64_Get(BB_MAP map, BB *bb)
 
 #define BB_MAP64_Create() BB_MAP_create_kind(_BB_MAP_I64)
 
+#ifdef TARG_ST
+//TDR - Add determinist selection mode to avoid diffs between -g / not -g mode
+//bug #39949
+class Op_Map_Cmp {
+public:
+    bool operator()(const OP*,const OP*)const;
+};
+#endif
+
 #endif /* BB_MAP_INCLUDED */
