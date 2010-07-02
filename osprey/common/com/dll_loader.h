@@ -49,7 +49,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "extension_include.h"
 #include "dyn_dll_api.h"
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)

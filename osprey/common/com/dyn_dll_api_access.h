@@ -75,7 +75,7 @@ class EXTENSION_HighLevel_Info {
   inline unsigned int get_modes_count (void) const;
 
   /* Return the base count for that extension dll. */
-  inline machine_mode_t get_modes_base_count (void) const;
+  inline extension_machine_mode_t get_modes_base_count (void) const;
 
   /* Return the base mtype count for that extension dll. */
   inline TYPE_ID get_mtypes_base_count (void) const;
@@ -99,7 +99,7 @@ class EXTENSION_HighLevel_Info {
   inline unsigned int get_builtins_count (void) const;
 
   /* Return the base count for that extension dll. */
-  inline machine_mode_t get_builtins_base_count (void) const;
+  inline extension_machine_mode_t get_builtins_base_count (void) const;
 
   /* Return the base intrinsic count for that extension dll. */
   inline INTRINSIC get_intrinsics_base_count (void) const;
@@ -147,7 +147,7 @@ EXTENSION_HighLevel_Info::get_modes_count (void) const {
 }
 
 /* Return the base count for that extension dll. */
-inline machine_mode_t 
+inline extension_machine_mode_t 
 EXTENSION_HighLevel_Info::get_modes_base_count (void) const {
   return          (hooks->get_modes_base_count());
 }
@@ -171,7 +171,7 @@ EXTENSION_HighLevel_Info::get_builtins_count (void) const {
 }
 
 /* Return the base count for that extension dll. */
-inline machine_mode_t 
+inline extension_machine_mode_t 
 EXTENSION_HighLevel_Info::get_builtins_base_count (void) const {
   return          (hooks->get_builtins_base_count());
 }

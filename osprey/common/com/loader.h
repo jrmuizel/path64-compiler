@@ -35,12 +35,15 @@
 #ifndef LOADER_H
 #define LOADER_H
 
-#include "extension_include.h"
+#include "dyn_isa_api_access.h"
 #include "dyn_dll_api_access.h"
 #include "dll_loader.h"
-#include "wn.h"
+// #include "wn.h"
+typedef struct WN;
 
-#ifdef TARG_ST
+#include "isa_loader.h"
+#include "isa_loader_api.h"
+
 /* ===============================
  * Description of an extension dll
  * =============================== */
@@ -48,13 +51,16 @@ struct Extension_dll {
   Extension_dll_handler    *handler;
   EXTENSION_HighLevel_Info *hooks;
 
+  // Unique identifier of an extension (based on its name)
   INT32 extension_id;
+
+  // Rank associated to a loaded extension,
+  // (value between 0 and nb_loaded_extensions-1)
+  INT32 rank;
 
   // Base indexes for dynamic components of current extension
   int  base_mtypes;
-  int  base_mmodes;
   int  base_intrinsics;
-  int  base_builtins;
 };
 
 typedef struct Extension_dll Extension_dll_t;
@@ -69,26 +75,18 @@ typedef struct Extension_dll Extension_dll_t;
  *  resources + all extensions)
  *
  * For example, considers that:
- *  - MACHINE_MODE_STATIC_LAST = 29
- *     --> id 0 to 29 are reserved for static mmodes
- *  - Extension dll 'a' contains 2 additional machine modes,
+ *  - MTYPE_STATIC_LAST = 29
+ *     --> id 0 to 29 are reserved for static mtypes
+ *  - Extension dll 'a' contains 2 additional mtypes,
  *      a_mm_0 and a_mm_1 with id 30 and 31 in the dll
- *  - Extension dll 'b' contains 1 additional machine mode,
+ *  - Extension dll 'b' contains 1 additional mtype,
  *      b_mm_0 with id 30 in the dll
  * 
  * The global numbering will be:
- *  - [0..29] : static mmodes
+ *  - [0..29] : static mtypes
  *  - 30,31   : a_mm_0 and a_mm_1
  *  - 32      : b_mm_0
  * ============================================================ */
-/* machine_mode_t DLL_TO_GLOBAL_MMODE (Extension_dll_t*, machine_mode_t) */
-#define DLL_TO_GLOBAL_MMODE(ext_dll, mmode)				\
-  ((mmode >= (int)ext_dll->hooks->get_modes_base_count())		\
-   ?(machine_mode_t)((int)mmode						\
-		     - (int)ext_dll->hooks->get_modes_base_count()	\
-		     + ext_dll->base_mmodes				\
-		     )							\
-   :mmode)
 /* TYPE_ID DLL_TO_GLOBAL_MTYPE (Extension_dll_t*, TYPE_ID) */
 #define DLL_TO_GLOBAL_MTYPE(ext_dll, mtype)				\
   ((mtype >= (int)ext_dll->hooks->get_mtypes_base_count())		\
@@ -105,27 +103,24 @@ typedef struct Extension_dll Extension_dll_t;
 		+ ext_dll->base_intrinsics				\
 		)							\
    :intrinsic)
-/* machine_mode_t DLL_TO_GLOBAL_BUILTIN (Extension_dll_t*, machine_mode_t) */
-#define DLL_TO_GLOBAL_BUILTIN(ext_dll, builtin)				\
-  ((builtin >= (int)ext_dll->hooks->get_builtins_base_count())		\
-   ?(enum built_in_function)((int)builtin				\
-		- (int)ext_dll->hooks->get_builtins_base_count()	\
-		+ ext_dll->base_builtins				\
-		)							\
-   :builtin)
 
 
-/* ============================================
- * MType and Intrinsic initialization functions
- * ============================================ */
-/* Load extension dlls and return a pointer to the extension table
-   and the count of loaded extensions */
+/* ==================================
+ * Initialization of extension loader
+ * ================================== */
+
+/* Load extension dlls and return TRUE if successful */
 extern bool Load_Extension_dlls(bool verbose);
+
+/* Return a pointer to the extension table */
 extern Extension_dll_t * Get_Extension_dll_tab(void);
+
+/* Return Count of loaded extensions */
 extern int Get_Extension_dll_count(void);
 
-/* Define the dynamic count: to be place in the loader section*/
-extern TYPE_ID Add_MTypes(const Extension_dll_t *dll_instance, int **local_mtype_to_rclass, int *mtype_count, BOOL verbose);
+/* Get dll extension table. */
+BE_EXPORTED extern void Get_Loader_Extension_Table( Extension_dll_t **ext_tab, 
+                                                    mUINT32 *ext_count);
 
 /* Initialize all needed stuff for machine mode */
 BE_EXPORTED extern void Initialize_Extension_Loader(void);
@@ -139,41 +134,31 @@ BE_EXPORTED extern void Initialize_Extension_Loader_PU(WN *pu);
 /* Specific initiliazation for extension support */
 void Initialize_Extension_Support();
 
+/* Cleanup code for the loader */
+extern void Cleanup_Extension_Loader(void);
+
+
+/* ============================================
+ * MType and Intrinsic initialization functions
+ * ============================================ */
+
 /* OPEN64 Intrinsics init */
 extern void Init_Intrinsics(int nb_builtins_to_add);
 
 /* Add new intrinsic from an extension */
-extern void Add_Intrinsics(const Extension_dll_t *dll_instance, BOOL verbose);
+extern void Add_Intrinsics(const Extension_dll_t *dll_instance,
+                           BOOL verbose);
 
 /* Dynamic OPEN64 MTYPES initialization */
 extern void Init_Mtypes(int nb_mtype_to_add);
 
-/* Cleanup code for the loader */
-extern void Cleanup_Extension_Loader(void);
+/* Define the dynamic count: to be place in the loader section */
+extern TYPE_ID Add_MTypes(const Extension_dll_t *dll_instance,
+                          int **local_mtype_to_rclass,
+                          int *mtype_count,
+                          BOOL verbose);
 
-/* Common things: these functions are shared between wfe_loader and lai_loader */
-#include "dyn_isa_api_access.h"
-#include "dyn_dll_api_access.h"
-
-#include "isa_loader.h"
-#include "isa_loader_api.h"
-
-#include "dll_loader.h"
-
-/* Map between gcc machine mode preg and open64 MTYPE */
-BE_EXPORTED extern TYPE_ID MachineMode_To_Mtype(machine_mode_t mode);
-
-/* Map between gcc machine mode preg and open64 MTYPE */
-BE_EXPORTED extern machine_mode_t Mtype_To_MachineMode(TYPE_ID mode);
-
-/* Run thru extension intrinsic to create composed mtype for multiple result support */
-extern void Add_Composed_Mtype(void);
-
-/* Get dll extension table. */
-BE_EXPORTED extern void Get_Loader_Extension_Table( Extension_dll_t **ext_tab, 
-                                                    mUINT32 *ext_count);
-
-
-#endif /* TARG_ST */
+/* Run thru extension intrinsics to create composed MTYPE for multiple result support */
+extern void Add_Composed_Mtypes(void);
 
 #endif /* LOADER_H */

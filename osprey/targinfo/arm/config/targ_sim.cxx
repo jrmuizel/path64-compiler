@@ -557,14 +557,14 @@ Get_Current_Int_Preg_Num ( Preg_Range pr ) {
   i = PR_first_reg(pr) + (Current_Int_Param_Num * PR_skip_value(pr));
   if (i > PR_last_reg(pr)) {
     if(TRACE_ON) {
-      fprintf(TFile,"%s: return null, i = %d, PR_last_reg(pr) = %d, Current_Int_Param_Num\n",
+      fprintf(TFile,"%s: return null, i = %d, PR_last_reg(pr) = %d, Current_Int_Param_Num = %d\n",
 	      __FUNCTION__,i,PR_last_reg(pr),Current_Int_Param_Num);
     }
     return 0;
   }
   else {
     if(TRACE_ON) {
-      fprintf(TFile,"%s: return %d, i = %d, PR_last_reg(pr) = %d, Current_Int_Param_Num\n",
+      fprintf(TFile,"%s: return %d, i = %d, PR_last_reg(pr) = %d, Current_Int_Param_Num = %d\n",
 	      __FUNCTION__,i,i,PR_last_reg(pr),Current_Int_Param_Num);
     }
     return i;

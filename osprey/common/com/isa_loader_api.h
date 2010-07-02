@@ -38,7 +38,6 @@
 
 #ifdef BACK_END
 
-#include "../gccfe/extension_include.h"
 #include "dyn_isa_api_access.h"
 #include "ext_info.h"
 

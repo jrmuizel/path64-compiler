@@ -40,7 +40,6 @@
 
 #include "tracing.h"
 #include "opcode.h"
-#include "extension_include.h"
 #include "ext_info.h"
 
 #include "dyn_isa_api_access.h"

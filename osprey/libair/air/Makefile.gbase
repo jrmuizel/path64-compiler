@@ -139,15 +139,6 @@ endif
 
 all: $(TARGET) install_files
 
-$(BUILD_TOT)/libair/air/air_loader.cxx: $(BUILD_AREA)/gccfe/extension_include.h
-
-$(COMMON_COM_DIR)/dll_loader.cxx: $(BUILD_AREA)/gccfe/extension_include.h
-
-$(COMMON_COM_DIR)/isa_loader.cxx: $(BUILD_AREA)/gccfe/extension_include.h
-
-$(BUILD_AREA)/gccfe/extension_include.h: $(BUILD_TOT)/gccfe/extension_include.hin
-	cd $(BUILD_AREA)/gccfe/ ; $(MAKE) extension_include.h
-
 $(TARGET): $(OBJS)
 	-$(RM) $(TARGET)
 	$(AR) $(ARFLAGS) $(TARGET) $(OBJS)

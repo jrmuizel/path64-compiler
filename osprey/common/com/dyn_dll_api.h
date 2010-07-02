@@ -41,24 +41,114 @@ extern "C" {
 
 #define MAGIC_NUMBER_EXT_API   20090908  /* Magic number. Interface checking */
 
+#include "mtypes.h"
+#include "wintrinsic.h"
 
 #include "extension_pattern_rec.h"
+
+// Extension libraries use the following extension specific machine mode type,
+// and its associated enumeration for standard types.
+// It will be converted to real machine mode type at run-time, depending on
+// the front-end definition (it differs between gcc3 and gcc4).
+typedef int extension_machine_mode_t;
+
+enum extension_machine_mode {
+  EXT_VOIDmode = 0,  // used
+  EXT_BImode,
+  EXT_QImode,        // used
+  EXT_HImode,        // used
+  EXT_SImode,        // used
+  EXT_DImode,        // used
+  EXT_TImode,
+  EXT_OImode,
+  EXT_PQImode,
+  EXT_PHImode,
+  EXT_PSImode,       // used
+  EXT_PDImode,
+  EXT_QFmode,
+  EXT_HFmode,
+  EXT_TQFmode,
+  EXT_SFmode,        // used
+  EXT_DFmode,        // used
+  EXT_XFmode,
+  EXT_TFmode,
+  EXT_QCmode,
+  EXT_HCmode,
+  EXT_SCmode,
+  EXT_DCmode,
+  EXT_XCmode,
+  EXT_TCmode,
+  EXT_CQImode,
+  EXT_CHImode,
+  EXT_CSImode,
+  EXT_CDImode,
+  EXT_CTImode,
+  EXT_COImode,
+  EXT_V1DImode,
+  EXT_V2QImode,
+  EXT_V2HImode,
+  EXT_V2SImode,
+  EXT_V2DImode,
+  EXT_V4QImode,
+  EXT_V4HImode,
+  EXT_V4SImode,
+  EXT_V4DImode,
+  EXT_V8QImode,
+  EXT_V8HImode,
+  EXT_V8SImode,
+  EXT_V8DImode,
+  EXT_V16QImode,
+  EXT_V2SFmode,
+  EXT_V2DFmode,
+  EXT_V4SFmode,
+  EXT_V4DFmode,
+  EXT_V8SFmode,
+  EXT_V8DFmode,
+  EXT_BLKmode,
+  EXT_CCmode,
+  EXT_MACHINE_MODE_STATIC_COUNT
+};
+
+#define EXT_MACHINE_MODE_STATIC_LAST (EXT_MACHINE_MODE_STATIC_COUNT-1)
+
+// Extension libraries use the following machine mode class enumeration,
+// that will be converted to effective machine mode class at run-time,
+// based on the front-end definition (it differs between gcc3 and gcc4).
+enum extension_mode_class {
+  EXT_MODE_RANDOM = 0,
+  EXT_MODE_INT,
+  EXT_MODE_FLOAT,
+  EXT_MODE_PARTIAL_INT,
+  EXT_MODE_CC,
+  EXT_MODE_COMPLEX_INT,
+  EXT_MODE_COMPLEX_FLOAT,
+  EXT_MODE_VECTOR_INT,
+  EXT_MODE_VECTOR_FLOAT,
+  EXT_MAX_MODE_CLASS
+};
+
+typedef enum extension_mode_class extension_mode_class_t;
+
+// Extension built-in type.
+typedef int extension_built_in_function;
+#define EXT_BUILT_IN_STATIC_LAST 0
+
 
 struct extension_machine_types
 {
   /* GCC Machine mode*/
-  machine_mode_t mmode; 
+  extension_machine_mode_t mmode; 
   /* mode attribute string */
   const char *name; 
   /*    This argument states the kind of representation: */
-  /*    MODE_INT - integer */
-  /*    MODE_FLOAT - floating */
-  /*    MODE_PARTIAL_INT - PQImode, PHImode, PSImode and PDImode */
-  /*    MODE_CC - modes used for representing the condition code in a register */
-  /*    MODE_COMPLEX_INT, MODE_COMPLEX_FLOAT - complex number */
-  /*    MODE_VECTOR_INT, MODE_VECTOR_FLOAT - vector */
-  /*    MODE_RANDOM - anything else */
-  enum mode_class mclass;
+  /*    EXT_MODE_INT         - integer */
+  /*    EXT_MODE_FLOAT       - floating */
+  /*    EXT_MODE_PARTIAL_INT - PQImode, PHImode, PSImode and PDImode */
+  /*    EXT_MODE_CC          - modes used for representing the condition code in a register */
+  /*    EXT_MODE_COMPLEX_INT, MODE_COMPLEX_FLOAT   - complex number */
+  /*    EXT_MODE_VECTOR_INT, EXT_MODE_VECTOR_FLOAT - vector */
+  /*    EXT_MODE_RANDOM      - anything else */
+  extension_mode_class_t mclass;
   /*    the relative size of the object, in bits, */
   /*    so we can have modes smaller than 1 byte. */
   unsigned short mbitsize; 
@@ -76,7 +166,7 @@ struct extension_machine_types
   unsigned char mwidermode; 
   /*    the mode of the internal elements in a vector or */
   /*    complex, and VOIDmode if not applicable. */
-  machine_mode_t innermode;
+  extension_machine_mode_t innermode;
   /* OPEN64 mtype */
   TYPE_ID mtype;
   unsigned short alignment;
@@ -185,7 +275,7 @@ typedef struct wn_record wn_record_t;
 
 struct extension_builtins
 {
-  enum built_in_function 		gcc_builtin_def;
+  extension_built_in_function	gcc_builtin_def;
   INTRINSIC	open64_intrincic;
 
   // Builtins flags follow the WHIRL semantic (opposed to the gcc one
@@ -201,10 +291,10 @@ struct extension_builtins
   const char   *runtime_name;
 
   /* Prototype information   */
-  machine_mode_t             return_type;
-  unsigned char	             arg_count;
-  const machine_mode_t 	    *arg_type;     /* Number of items in table: arg_count */
-  const BUILTARG_INOUT_TYPE *arg_inout;    /* Number of items in table: arg_count */
+  extension_machine_mode_t         return_type;
+  unsigned char	                   arg_count;
+  const extension_machine_mode_t  *arg_type;     /* Number of items in table: arg_count */
+  const BUILTARG_INOUT_TYPE       *arg_inout;    /* Number of items in table: arg_count */
 
   // targ_info information
   DYN_INTRN_TYPE type; // standard TOP intrinsic or compose/extract
@@ -234,7 +324,7 @@ struct extension_hooks
   unsigned int (*get_modes_count) (void);
 
   /* Return the base count for that extension dll. */
-  machine_mode_t (*get_modes_base_count) (void);
+  extension_machine_mode_t (*get_modes_base_count) (void);
 
   /* Return the base mtype count for that extension dll. */
   TYPE_ID (*get_mtypes_base_count) (void);
@@ -249,7 +339,7 @@ struct extension_hooks
   unsigned int (*get_builtins_count) (void);
 
   /* Return the base count for that extension dll. */
-  machine_mode_t (*get_builtins_base_count) (void);
+  extension_machine_mode_t (*get_builtins_base_count) (void);
 
   /* Return the base intrinsic count for that extension dll. */
   INTRINSIC (*get_intrinsics_base_count) (void);

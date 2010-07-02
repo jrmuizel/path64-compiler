@@ -36,14 +36,16 @@
  * It supports extending the targinfo model, not shrinking it.
  *
  */
-#include "extension_include.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
 #include "loader.h"
 #include "erglob.h"
 #include "errors.h"
 #include "config.h"
 #include "tracing.h"
 #include "intrn_info.h"
-#include <stdlib.h>
 
 #ifdef BACK_END
 #include "dyn_isa_api_access.h"

@@ -34,6 +34,9 @@
 #ifndef EXT_INFO_H
 #define EXT_INFO_H
 
+#include "mtypes.h"
+#include "wintrinsic.h"
+
 #define INVALID_EXTENSION_ID (0)
 /*
  * Bit used to activate traces of extension support

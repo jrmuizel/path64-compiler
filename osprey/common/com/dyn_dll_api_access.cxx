@@ -62,7 +62,6 @@
  * +----------+----------------------------------------------------------------+
  *
  */
-#include "../gccfe/extension_include.h"
 #include "dyn_dll_api_access.h"
 
 // ========================================================================
@@ -111,24 +110,24 @@ BOOL EXTENSION_Is_Supported_HighLevel_Revision(INT hooks_rev) {
 
 typedef struct
 {
-  machine_mode_t  mmode; 
-  const char     *name; 
-  enum mode_class mclass;
-  unsigned short  mbitsize; 
-  unsigned char   msize;
-  unsigned char   munitsize;
-  unsigned char   mwidermode; 
-  machine_mode_t  innermode;
-  TYPE_ID         mtype;
-  unsigned short  alignment;
-  int             local_REGISTER_CLASS_id;
-  int             local_REGISTER_SUBCLASS_id;
+  extension_machine_mode_t  mmode; 
+  const char               *name; 
+  extension_mode_class_t    mclass;
+  unsigned short            mbitsize; 
+  unsigned char             msize;
+  unsigned char             munitsize;
+  unsigned char             mwidermode; 
+  extension_machine_mode_t  innermode;
+  TYPE_ID                   mtype;
+  unsigned short            alignment;
+  int                       local_REGISTER_CLASS_id;
+  int                       local_REGISTER_SUBCLASS_id;
 } extension_machine_types_t_pre_20070615;
 
 struct extension_builtins_pre_20080715
 {
-  enum built_in_function 		gcc_builtin_def;
-  INTRINSIC	open64_intrincic;
+  extension_built_in_function  gcc_builtin_def;
+  INTRINSIC                    open64_intrincic;
 
   // Builtins flags follow the WHIRL semantic (opposed to the gcc one
   // for has_no_side_effects and is_pure)
@@ -143,10 +142,10 @@ struct extension_builtins_pre_20080715
   const char   *runtime_name;
 
   /* Prototype information   */
-  machine_mode_t             return_type;
-  unsigned char	             arg_count;
-  const machine_mode_t 	    *arg_type;     /* Number of items in table: arg_count */
-  const BUILTARG_INOUT_TYPE *arg_inout;    /* Number of items in table: arg_count */
+  extension_machine_mode_t         return_type;
+  unsigned char	                   arg_count;
+  const extension_machine_mode_t  *arg_type;     /* Number of items in table: arg_count */
+  const BUILTARG_INOUT_TYPE       *arg_inout;    /* Number of items in table: arg_count */
 
   // targ_info information
   int type; // standard TOP intrinsic or compose/extract
@@ -170,8 +169,8 @@ typedef struct wn_record_pre_20090908 wn_record_t_pre_20090908;
 
 typedef struct
 {
-  enum built_in_function 		gcc_builtin_def;
-  INTRINSIC	open64_intrincic;
+  extension_built_in_function  gcc_builtin_def;
+  INTRINSIC	               open64_intrincic;
 
   // Builtins flags follow the WHIRL semantic (opposed to the gcc one
   // for has_no_side_effects and is_pure)
@@ -186,10 +185,10 @@ typedef struct
   const char   *runtime_name;
 
   /* Prototype information   */
-  machine_mode_t             return_type;
-  unsigned char	             arg_count;
-  const machine_mode_t 	    *arg_type;     /* Number of items in table: arg_count */
-  const BUILTARG_INOUT_TYPE *arg_inout;    /* Number of items in table: arg_count */
+  extension_machine_mode_t         return_type;
+  unsigned char	                   arg_count;
+  const extension_machine_mode_t  *arg_type;     /* Number of items in table: arg_count */
+  const BUILTARG_INOUT_TYPE       *arg_inout;    /* Number of items in table: arg_count */
 
   // targ_info information
   DYN_INTRN_TYPE type; // standard TOP intrinsic or compose/extract
@@ -203,19 +202,19 @@ typedef struct
 
 typedef struct
 {
-  machine_mode_t   mmode; 
-  const char      *name; 
-  enum mode_class  mclass;
-  unsigned short   mbitsize; 
-  unsigned char    msize;
-  unsigned char    munitsize;
-  unsigned char    mwidermode; 
-  machine_mode_t   innermode;
-  TYPE_ID          mtype;
-  unsigned short   alignment;
-  int              local_REGISTER_CLASS_id;
-  int              local_REGISTER_SUBCLASS_id;
-  unsigned char    mpixelsize;
+  extension_machine_mode_t   mmode; 
+  const char                *name; 
+  extension_mode_class_t     mclass;
+  unsigned short             mbitsize; 
+  unsigned char              msize;
+  unsigned char              munitsize;
+  unsigned char              mwidermode; 
+  extension_machine_mode_t   innermode;
+  TYPE_ID                    mtype;
+  unsigned short             alignment;
+  int                        local_REGISTER_CLASS_id;
+  int                        local_REGISTER_SUBCLASS_id;
+  unsigned char              mpixelsize;
 } extension_machine_types_t_pre_20090813;
 
 
