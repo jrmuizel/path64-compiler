@@ -228,6 +228,9 @@ ENDIF()
 # build runtime search paths
 include(${Path64_SOURCE_DIR}/cmake/Modules/GCCRuntimeDirs.cmake)
 
+IF (PATH64_DEFAULT_ABI)
+    ADD_DEFINITIONS(-DPATH64_DEFAULT_ABI=${PATH64_DEFAULT_ABI})
+ENDIF()
 
 # Build GCC and pathscale.
 ADD_SUBDIRECTORY(GCC)

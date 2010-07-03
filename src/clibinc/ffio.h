@@ -510,7 +510,7 @@ struct ffp_settp_s
 	int		ffp_nvs_p;	/* forward, backward or absolute nv */
 	int		ffp_nv;		/* number of volumes (always positive) */
 #if	defined(__mips)
-	__int64_t	ffp_vi;		/* volume identifier */
+	int64_t	ffp_vi;		/* volume identifier */
 #elif	defined(_LITTLE_ENDIAN)
 	long long	ffp_vi;		/* volume identifier */
 #else
@@ -535,7 +535,7 @@ struct ffp_skiptpmk_s
 	struct ffp_abs
 	{
 #if defined(__mips)
-	__int64_t	ffp_absaddr;
+	int64_t	ffp_absaddr;
 #elif	defined(_LITTLE_ENDIAN)
 	long long	ffp_absaddr;
 #else
@@ -554,7 +554,7 @@ struct ffp_skiptpmk_s
 	int	ffp_type;
 	int	ffp_blockno;
 #if	defined(__mips)
-	__int64_t	ffp_vsn;
+	int64_t	ffp_vsn;
 #elif	defined(_LITTLE_ENDIAN)
 	long long	ffp_vsn;
 #else
@@ -743,7 +743,7 @@ struct	fflistreq
  */
 
 #ifdef	__mips
-typedef __int64_t bitptr;	
+typedef int64_t bitptr;	
 #elif	defined(_WORD32)
 typedef long long bitptr;
 #elif	defined(_LITTLE_ENDIAN) && defined(_LP64)

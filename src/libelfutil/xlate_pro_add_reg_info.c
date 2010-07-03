@@ -110,7 +110,7 @@ int xlate_pro_add_reg_info(xlate_table_pro     table,
 	      memcpy(&regAssemble[1], &val1, sizeof(val1));
 	      regAssembleSize = 1 + sizeof(val1);
 	    } else {
-	      __uint32_t val32 = val1;
+	      uint32_t val32 = val1;
 	      memcpy(&regAssemble[1], &val32, sizeof(val32));
 	      regAssembleSize = 1 + sizeof(val32);
 	    }
@@ -140,7 +140,7 @@ int xlate_pro_add_reg_info(xlate_table_pro     table,
 
 	case DW_CFA_advance_loc4 :
 	    delta = val1 >> 2;
-	    { __uint32_t ldelta = delta;
+	    { uint32_t ldelta = delta;
 	      if (delta > 0xffffffff) {
 		return XLATE_TB_STATUS_BAD_REG_VAL;
 	      }

@@ -34,20 +34,14 @@ $Date$
 
 */
 
+#include <inttypes.h>
+
 /*
 The following go with the size of the address space that
 can be used given how the library is compiled.
 */
-#if _MIPS_SIM == _MIPS_SIM_ABI64
-
-typedef __uint64_t Uword;
-typedef __int64_t  Sword;
-
-#else
-typedef __uint32_t Uword;
-typedef __int32_t  Sword;
-
-#endif
+typedef uintptr_t Uword;
+typedef intptr_t  Sword;
 
 /* 
    The following are 64 bits always , since we
@@ -57,8 +51,8 @@ typedef __int32_t  Sword;
    present if compiling the library 32 bit.
 */
 
-typedef __uint64_t Xuword;
-typedef __int64_t  Xsword;
+typedef uint64_t Xuword;
+typedef int64_t  Xsword;
 
 #define INSTRUCTION_SIZE 4
 

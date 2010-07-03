@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <sys/termios.h>
 #ifdef __mips
 #include <sys/ttydev.h>

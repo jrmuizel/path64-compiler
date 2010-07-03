@@ -42,7 +42,6 @@ static char USMID[] = "\n@(#)5.0_pl/sources/messages.c	5.9	10/14/99 14:08:59\n";
 # define  __NLS_INTERNALS  1
 
 # if defined(_HOST_OS_LINUX) || defined(_HOST_OS_DARWIN)
-/*  typedef __int32_t;  */
 # include <nl_types.h>
 # include <nlcatmsg.h>
 

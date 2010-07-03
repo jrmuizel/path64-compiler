@@ -37,7 +37,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/utsname.h>
 #include <time.h>
 #include <unistd.h>
 #include <errno.h>
@@ -282,7 +281,6 @@ save_cpp_output (char *path)
 	char *save_dir, *save_path, *final_path;
 	FILE *ifp = NULL, *ofp = NULL;
 	char *name = drop_path(path);
-	struct utsname uts;
 	char buf[4096];
 	int saved = 0;
 	size_t nread;
@@ -334,10 +332,8 @@ save_cpp_output (char *path)
 		"source file\n"
 		"that may have led to this problem occurring.\n");
 
-	uname(&uts);
-	fprintf(ofp, "\nCompiler command line (%s ABI used on %s system):\n",
-		abi == ABI_N32 ? "32-bit" : "64-bit",
-		uts.machine);
+	fprintf(ofp, "\nCompiler command line (%s ABI used):\n",
+		abi == ABI_N32 ? "32-bit" : "64-bit");
 
 	fprintf(ofp, " ");
 	for (i = 0; i < saved_argc; ++i)

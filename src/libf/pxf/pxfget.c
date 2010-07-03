@@ -40,7 +40,7 @@
 #include <pwd.h>
 #include "pxfstruct.h"
 #include "table.h"
-#include <sys/signal.h>
+#include <signal.h>
 #include <sys/termios.h>
 
 #define SETIFMATCH(_A_,_B_,_C_) if (strcmp(_A_,#_C_) == 0) {\
