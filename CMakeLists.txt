@@ -3,12 +3,12 @@ PROJECT(Path64)
 
 # Disallow in-source build
 IF("${Path64_SOURCE_DIR}" STREQUAL "${Path64_BINARY_DIR}")
-  MESSAGE(FATAL_ERROR "Path64 must be built out-of-source.  Remove files from the source tree that were created by this attempt:
+  MESSAGE(FATAL_ERROR "Project must be built out-of-source.  Remove files from the source tree that were created by this attempt:
   rm -rf CMakeFiles CMakeCache.txt
 Then create a separate build directory and run CMake there.
-  mkdir ../Path64-build
-  cd ../Path64-build
-  cmake ../Path64
+  mkdir ../build
+  cd ../build
+  cmake ../
 This approach keeps the source tree pristine.")
 ENDIF()
 
@@ -69,8 +69,8 @@ IF(PATH64_ENABLE_TARGETS)
 	MESSAGE(STATUS "We are going to build the following targets${targetsX}")
 ELSE()
 	MESSAGE( FATAL_ERROR "Must specify at least one target.
-Supported targets are : x8664 and mips and arm
-Please add -DPATH64_ENABLE_TARGETS=x8664 to your cmake ../Path64 line
+Supported targets are : x8664 and mips
+Please add -DPATH64_ENABLE_TARGETS=x8664 to your cmake line
 Multiple targets can be specified like \"-DPATH64_ENABLE_TARGETS=x8664;mips\"" )
 ENDIF()
 # Multi target support is indefinitely delayed
@@ -118,7 +118,7 @@ IF(PATH64_ENABLE_HUGEPAGES)
 	IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		MESSAGE(STATUS "Building with huge pages support.")
 	ELSE()
-		MESSAGE(FATAL_ERROR "Huge pages not supported on this platform yet.  Please disable this option or contact PathScale for adding support")
+		MESSAGE(FATAL_ERROR "Huge pages not supported on this platform yet.  Please disable this option or contact PathScale for support")
 	ENDIF()
 ELSE()
 	MESSAGE(STATUS "Not building with huge pages support")
@@ -195,18 +195,43 @@ ADD_DEFINITIONS(-D_SGI_SOURCE
                 -DTARGINFO_EXPORTED=
                )
 
-# Build the actual ld line to be used in driver
+# GNU-style hashing needs support of the dynamic linker, so white-list
+# potential platforms.
+IF (NOT DEFINED SUPPORT_HASH_STYLE_GNU)
+    SET(SOURCE_FILE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/hash-style.c")
 
-execute_process(COMMAND "ld --help 2>&1 | grep hash-style > /dev/null"
- RESULT_VARIABLE LD_NOT_SUPPORTS_HASH_STYLE)
+    FILE(WRITE "${SOURCE_FILE}" "#include <stdio.h>
+int main(void)
+{
+	return printf(\"\");
+}
+")
 
-if(${LD_NOT_SUPPORTS_HASH_STYLE})
-SET(LD_HASH_STYLE_FLAG "")
-else()
-SET(LD_HASH_STYLE_FLAG "--hash-style=gnu")
-endif()
+    MESSAGE(STATUS "Checking for --hash-style=gnu support")
+    TRY_RUN(SUPPORT_HASH_STYLE_GNU SUPPORT_HASH_STYLE_GNU_BUILD
+	${CMAKE_BINARY_DIR} ${SOURCE_FILE}
+        CMAKE_FLAGS -DLINK_LIBRARIES:STRING=-Wl,--hash-style=gnu
+	OUTPUT_VARIABLE OUTPUT)
+    IF (SUPPORT_HASH_STYLE_GNU_BUILD AND SUPPORT_HASH_STYLE_GNU EQUAL 0)
+	MESSAGE(STATUS "Checking for --hash-style=gnu support -- found ")
+    ELSE()
+	MESSAGE(STATUS "Checking for --hash-style=gnu support -- not found ")
+    	FILE(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
+    	    "Checking support for --hash-style=gnu support failed with the following output:\n"
+    	    "${OUTPUT}\n")
+    ENDIF()
+ENDIF()
+
+IF (SUPPORT_HASH_STYLE_GNU_BUILD AND SUPPORT_HASH_STYLE_GNU EQUAL 0)
+    SET(LD_HASH_STYLE_FLAG "--hash-style=gnu")
+ELSE()
+    SET(LD_HASH_STYLE_FLAG "")
+ENDIF()
+
+# build runtime search paths
+include(${Path64_SOURCE_DIR}/cmake/Modules/GCCRuntimeDirs.cmake)
 
 
 # Build GCC and pathscale.
 ADD_SUBDIRECTORY(GCC)
-ADD_SUBDIRECTORY(pathscale)
+ADD_SUBDIRECTORY(src)

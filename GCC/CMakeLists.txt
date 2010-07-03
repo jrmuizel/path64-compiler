@@ -49,7 +49,6 @@ ADD_DEFINITIONS(-DALMOST_STDC
                 -Wwrite-strings
                 -Wstrict-prototypes
                 -Wmissing-prototypes
-                -Wold-style-definition
                 -Wmissing-format-attribute)
 
 SUBDIRS(config_cmake libiberty libdecnumber libcpp libspin gcc)
