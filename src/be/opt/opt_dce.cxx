@@ -409,11 +409,11 @@ public:
 	if ( WOPT_Enable_DCE_Branch ) {
 	  _cond_eval = TYPE_OPT_POOL_ALLOC_N( COND_EVAL, 
 		cfg->Loc_pool(), cfg->Total_bb_count(), DCE_DUMP_FLAG );
-	  BZERO( _cond_eval, sizeof(COND_EVAL)*cfg->Total_bb_count());
+          memset( _cond_eval, 0, sizeof(COND_EVAL)*cfg->Total_bb_count());
 
 	  _cond_coderep = TYPE_OPT_POOL_ALLOC_N( CODEREP*, 
 		cfg->Loc_pool(), cfg->Total_bb_count(), DCE_DUMP_FLAG );
-	  BZERO(_cond_coderep,sizeof(CODEREP*)*cfg->Total_bb_count());
+          memset(_cond_coderep, 0, sizeof(CODEREP*)*cfg->Total_bb_count());
 	}
 	else {
 	  _cond_eval = NULL;
@@ -2097,7 +2097,7 @@ inline BOOL
 DCE::Required_pragma( const STMTREP *stmt ) const
 {
   WN_PRAGMA_ID pragma = (WN_PRAGMA_ID)WN_pragma(stmt->Orig_wn());
-#if defined(KEY) && !defiend(TARG_ST)
+#if defined(KEY) && !defined(TARG_ST)
   if (pragma == WN_PRAGMA_UNROLL) return TRUE;
 #endif
   if (Loop_pragma(pragma)) return FALSE;
@@ -2133,7 +2133,7 @@ DCE::Required_stmt( const STMTREP *stmt ) const
   if ( WOPT_Enable_Zero_Version && stmt->Has_zver())
     return TRUE;
 
-#if defined(KEY) && !defiend(TARG_ST) // bugs 5401 and 5267
+#if defined(KEY) && !defined(TARG_ST) // bugs 5401 and 5267
   if (OPERATOR_is_scalar_store(opr) && 
       Opt_stab()->Aux_stab_entry(stmt->Lhs()->Aux_id())->Mp_no_dse())
     return TRUE;
@@ -2214,7 +2214,7 @@ DCE::Required_stmt( const STMTREP *stmt ) const
   case OPR_AFFIRM:
 #endif
 
-#if defined(KEY) && !defiend(TARG_ST) 
+#if defined(KEY) && !defined(TARG_ST) 
   case OPR_GOTO_OUTER_BLOCK:
 #endif
     return TRUE;
@@ -3114,7 +3114,7 @@ DCE::Prop_return_vsym_new_result( CODEREP *cr ) const
       // dead statements skip over this, so return the chi operand
       // which should have been updated to the correct value by now
 //Bug 2659
-#if defined(KEY) && !defiend(TARG_ST)
+#if defined(KEY) && !defined(TARG_ST)
       if (!cr->Defchi()->Live())
         return Prop_return_vsym_new_result(cr->Defchi()->OPND());
       else

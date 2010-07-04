@@ -175,7 +175,6 @@
 extern "C" {
 #endif
 
-#include "targ_isa_lits.h"
 #include "targ_isa_subset.h"
 
 typedef enum {

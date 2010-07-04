@@ -63,7 +63,7 @@
 
 
 #define opt_cse_CXX	"opt_cse.cxx"
-
+#include <limits.h>
 #include "defs.h"
 #include "errors.h"
 #include "erglob.h"
@@ -950,12 +950,15 @@ CSE::Repair_injury_rec(CODEREP *iv_def, CODEREP *iv_use,
 	new_temp = temp_owner_cr;
       }
       Generate_injury_repair( injury, new_temp, old_temp, multiplier );
+#ifndef TARG_ST
       if (_worklist->Exp()->Kind() == CK_OP &&
 	  (_worklist->Exp()->Opr() == OPR_ADD || 
 	   _worklist->Exp()->Opr() == OPR_SUB))
 	injury->Inc_str_red_num();
+#endif 
     }
-    else {
+    else
+    {
       // injury was fixed already, so find the temp that the repair
       // generates.
       new_temp = Find_injury_update( injury->Lhs(), temp );

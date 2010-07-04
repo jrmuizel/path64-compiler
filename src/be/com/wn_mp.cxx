@@ -52,7 +52,6 @@
 
 #define USE_STANDARD_TYPES          /* override unwanted defines in "defs.h" */
 
-#include <bstring.h>
 #include "wn.h"
 #include "wn_util.h"
 #include "erglob.h"

@@ -1,6 +1,4 @@
 
-ADD_SUBDIRECTORY(crt)
-
 Set(PATHSCALE_COMMON_DRIVER_SRCS "errors.c"
                                  "file_utils.c"
                                  "lang_defs.c"
