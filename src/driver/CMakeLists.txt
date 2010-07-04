@@ -1,4 +1,6 @@
 
+ADD_SUBDIRECTORY(crt)
+
 Set(PATHSCALE_COMMON_DRIVER_SRCS "errors.c"
                                  "file_utils.c"
                                  "lang_defs.c"
@@ -30,11 +32,18 @@ add_executable(table ${PATHSCALE_TABLE_SRCS})
 
 #GET_TARGET_PROPERTY(TABLE_EXE table LOCATION)
 
+#add_custom_command(
+#        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P
+#        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS -DX8664 -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
+ #       DEPENDS sort_options.sh OPTIONS
+  #      )
+
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS -DX8664 -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS -DTARG_ST -DTARG_ARM -DARM  -DPSC_PRODNAME='"Compiler"' -DKEY -DMUMBLE_ARM_BSP  -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
         DEPENDS sort_options.sh OPTIONS
         )
+
 
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/check_combos.c ${CMAKE_CURRENT_BINARY_DIR}/implicits.c
@@ -58,7 +67,9 @@ include_directories(.
 # TODO: set proper build date and time 
 add_definitions(-std=gnu99
                 -DLITTLE_ENDIAN_HOST
-                -DHOST_IA32
+                -DTARG_ST 
+                -DTARG_ARM -DARM
+                -DMUMBLE_ARM_BSP 
                 -DNOOPT
 		-DNO_LICENSE_CHECK
                 )
@@ -70,17 +81,6 @@ add_executable(${exe_refix}pathcc ${PATHSCALE_DRIVER_SRCS})
 install(TARGETS ${exe_prefix}pathcc
         RUNTIME DESTINATION bin)
 
-add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/bin/pathf95
-    DEPENDS pathcc
-    COMMAND ln -s pathcc ${CMAKE_BINARY_DIR}/bin/pathCC
-    COMMAND ln -s pathcc ${CMAKE_BINARY_DIR}/bin/pathf95
-)
-
-add_custom_target(
-    stageit-driver ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/bin/pathf95
-)
 
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/bin/pathCC${CMAKE_EXECUTABLE_SUFFIX}\")")
 if(PATH64_ENABLE_FORTRAN)

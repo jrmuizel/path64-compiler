@@ -68,12 +68,21 @@ typedef struct abi {
   const char *name;		// Name
   std::list<ABI_PROPERTY> flags;	// Non-register flag properties
   std::list<ABI_PROPERTY> values;	// Non-register value properties
+#ifdef TARG_ST
+  std::list<ABI_PROPERTY> reg_flags[ISA_REGISTER_CLASS_MAX_LIMIT+1][ISA_REGISTER_MAX+1];
+				// Register flag properties
+  std::list<ABI_PROPERTY> reg_values[ISA_REGISTER_CLASS_MAX_LIMIT+1][ISA_REGISTER_MAX+1];
+				// Register value properties
+  const char *reg_names[ISA_REGISTER_CLASS_MAX_LIMIT+1][ISA_REGISTER_MAX+1];
+				// Register names
+#else
   std::list<ABI_PROPERTY> reg_flags[ISA_REGISTER_CLASS_MAX+1][ISA_REGISTER_MAX+1];
 				// Register flag properties
   std::list<ABI_PROPERTY> reg_values[ISA_REGISTER_CLASS_MAX+1][ISA_REGISTER_MAX+1];
 				// Register value properties
   const char *reg_names[ISA_REGISTER_CLASS_MAX+1][ISA_REGISTER_MAX+1];
 				// Register names
+#endif
 } *ABI;
 
 
@@ -169,7 +178,7 @@ void Begin_ABI(const char *name)
   ABI result = new abi;
 
   result->name = name;
-  memset(result->reg_names, 0, sizeof(result->reg_names));
+  bzero(result->reg_names, sizeof(result->reg_names));
 
   current_abi = result;
 

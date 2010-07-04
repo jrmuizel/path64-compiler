@@ -76,6 +76,7 @@ static char *defs_rcs_id = "$Source: /home/bos/bk/kpro64-pending/common/com/SCCS
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <bstring.h>	/* for bzero */
 #include <inttypes.h>
 #include <stdbool.h>
 
@@ -113,7 +114,9 @@ extern "C" {
 #if HOST_WORD_SIZE == 8
 # define EIGHT_BYTE_WORDS
 #endif
-#define BITSPERBYTE	CHAR_BIT
+#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+# define BITSPERBYTE	CHAR_BIT
+#endif /* defined(BUILD_OS_DARWIN) */
 
 /* Map low indices to low-order bits in the bit vector package: */
 #define BV_LITTLE_ENDIAN_BIT_NUMBERING	1
@@ -198,7 +201,6 @@ extern "C" {
 #endif
 #endif
 
-
 /* ====================================================================
  *
  * Type mapping
@@ -246,6 +248,66 @@ typedef unsigned long	UINTSC;	/* Scaled integer */
 /* Define pointer-sized integers for the host machine: */
 typedef intptr_t	INTPS;	/* Pointer-sized integer */
 typedef uintptr_t	UINTPS;	/* Pointer-sized integer */
+/* Provide some limits that match the above types */
+#ifndef INT8_MAX
+#define INT8_MAX        127             /* Max 8-bit int */
+#endif
+#ifndef INT8_MIN
+#define INT8_MIN        (-127)          /* Min 8-bit int */
+#endif
+#ifndef UINT8_MAX
+#define UINT8_MAX       255u            /* Max 8-bit unsigned int */
+#endif
+#ifndef INT16_MAX
+#define INT16_MAX       32767           /* Max 16-bit int */
+#endif
+#ifndef INT16_MIN 
+#define INT16_MIN       (-32768)        /* Min 16-bit int */
+#endif
+#ifndef UINT16_MAX  
+#define UINT16_MAX      65535u          /* Max 16-bit unsigned int */
+#endif
+#ifndef INT32_MAX  
+#define INT32_MAX       2147483647      /* Max 32-bit int */
+#endif
+#ifndef INT32_MIN
+#define INT32_MIN       (-2147483647-1) /* Min 32-bit int */
+#endif
+#ifndef UINT32_MAX
+#define UINT32_MAX      4294967295u     /* Max 32-bit unsigned int */
+#endif
+
+/* There is a problem in sys/int_limits.h on Solaris 5.7
+ * It does not specify an LL at the end of the INT64_MIN, INT64_MAX
+ * constants. This causes the gcc to complain badly.
+ */
+#if defined (__sun__)
+#ifdef INT64_MAX
+#undef INT64_MAX
+#endif
+#define INT64_MAX       0x7fffffffffffffffll    /* Max 64-bit int */
+
+#ifdef INT64_MIN
+#undef INT64_MIN
+#endif
+#define INT64_MIN       0x8000000000000000ll    /* Min 64-bit int */
+
+#ifdef UINT64_MAX
+#undef UINT64_MAX
+#endif
+#define UINT64_MAX      0xffffffffffffffffull   /* Max 64-bit unsigned int */
+
+#else /* __linux__ */
+#ifndef INT64_MAX
+#define INT64_MAX       0x7fffffffffffffffll    /* Max 64-bit int */
+#endif
+#ifndef INT64_MIN
+#define INT64_MIN       0x8000000000000000ll    /* Min 64-bit int */
+#endif
+#ifndef UINT64_MAX
+#define UINT64_MAX      0xffffffffffffffffull   /* Max 64-bit unsigned int */
+#endif
+#endif /* __sun__ */
 
 #define	INTSC_MAX	INT32_MAX	/* Max scaled int */
 #define	INTSC_MIN	INT32_MIN	/* Min scaled int */
@@ -327,6 +389,30 @@ typedef uint64_t	mTARG_UINT;
 # define int	SYNTAX_ERROR_int
 # define long	SYNTAX_ERROR_long
 #endif /* USE_STANDARD_TYPES */
+#ifdef TARG_ST
+#include <float.h>
+
+inline
+BOOL KnuthCompare(float af, float bf, float relError)
+{
+    float aaf = af < 0.0F ? -af : af ;
+    float abf = bf < 0.0F ? -bf : bf ;
+    float afmbf = af - bf ; 
+    float aafmbf =  afmbf < 0.0F ? -afmbf : afmbf ;
+    float mxaafabf = aaf > abf ? aaf : abf ; 
+    return aafmbf <= relError * mxaafabf ;
+}
+
+/* [TTh] FLT_EPSILON is much too small (~1e-7) to be relevant.
+ *  KNUTH_FLT_EPSILON defines a more relevant value */
+#define KNUTH_FLT_EPSILON (1000.0F*FLT_EPSILON)
+#define KnuthCompareEQ(af, bf) (((af) == (bf)) ||  KnuthCompare(af, bf, KNUTH_FLT_EPSILON))
+#define KnuthCompareNE(af, bf) (((af) != (bf)) && !KnuthCompare(af, bf, KNUTH_FLT_EPSILON))
+#define KnuthCompareLE(af, bf) (((af) <= (bf)) ||  KnuthCompare(af, bf, KNUTH_FLT_EPSILON))
+#define KnuthCompareLT(af, bf) (((af) <  (bf)) && !KnuthCompare(af, bf, KNUTH_FLT_EPSILON))
+#define KnuthCompareGE(af, bf) (((af) >= (bf)) ||  KnuthCompare(af, bf, KNUTH_FLT_EPSILON))
+#define KnuthCompareGT(af, bf) (((af) >  (bf)) && !KnuthCompare(af, bf, KNUTH_FLT_EPSILON))
+#endif
 
 
 

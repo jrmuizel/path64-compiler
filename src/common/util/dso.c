@@ -22,7 +22,7 @@
 */
 
 
-#if HAVE_ALLOCA_H
+#if !defined(__FreeBSD__)
 #include <alloca.h>
 #endif
 #include <stdio.h>		    /* for fprintf() */
@@ -38,7 +38,110 @@
  * and should not depend on other mongoose-specific files 
  * (e.g. this is why verbose is a parameter rather than a global variable).
  */
+#ifdef TARG_ST
+/*
+ * Assume that LD_LIBRARY_PATH has already been set up correctly.
+ */
+BE_EXPORTED void* 
+load_so (char *soname, char *path, BOOL verbose)
+{
+#ifdef STATIC_BACKEND
+  return NULL;
+#else
+  register char *full_path;
+  void* handler = NULL;
+  
+  if (path != 0) {
+      full_path = (char *) alloca (strlen(path)+strlen(soname)+2);
+	strcpy (full_path, path);
+	strcat (full_path, "/");
+	strcat (full_path, soname);
+    
+    if (verbose) {
+      fprintf (stderr, "\nReplacing default %s with %s (path:%s)\n", soname, full_path, path);
+    }
+  } else {
+    full_path = soname;
+  }
+  
+#ifdef sgi
+  if (sgidladd (full_path, RTLD_LAZY) == NULL)
+#else
+    if (! (handler = dlopen (full_path, RTLD_NOW | RTLD_GLOBAL)) )
+#endif
+    {
+      fprintf (stderr, "error while loading shared library: %s: %s\n", full_path, dlerror());
+      exit (RC_SYSTEM_ERROR);
+    }
 
+#ifdef sgi
+    return NULL;
+#else
+    return handler;
+#endif
+
+#endif // STATIC_BACKEND
+
+} /* load_so */
+
+
+/*
+ * Assume that LD_LIBRARY_PATH has already been set up correctly.
+ */
+BE_EXPORTED void* 
+load_so_no_RTLD_GLOBAL (char *soname, char *path, BOOL verbose)
+{
+#ifdef STATIC_BACKEND
+  return NULL;
+#else
+  register char *full_path;
+  void* handler = NULL;
+  
+  if (path != 0) {
+      full_path = (char *) alloca (strlen(path)+strlen(soname)+2);
+	strcpy (full_path, path);
+	strcat (full_path, "/");
+	strcat (full_path, soname);
+    
+    if (verbose) {
+      fprintf (stderr, "\nReplacing default %s with %s (path:%s)\n", soname, full_path, path);
+    }
+  } else {
+    full_path = soname;
+  }
+  
+#ifdef sgi
+  if (sgidladd (full_path, RTLD_LAZY) == NULL)
+#else
+    if (! (handler = dlopen (full_path, RTLD_NOW)) )
+#endif
+    {
+      fprintf (stderr, "error while loading shared library: %s: %s\n", full_path, dlerror());
+      exit (RC_SYSTEM_ERROR);
+    }
+
+  if (path != 0) {
+	SYS_free(full_path);
+  }
+
+#ifdef sgi
+    return NULL;
+#else
+    return handler;
+#endif
+
+#endif // STATIC_BACKEND
+
+} /* load_so */
+
+BE_EXPORTED void close_so (void * handler)
+{
+#ifndef STATIC_BACKEND
+  if (handler) 
+    dlclose(handler);
+#endif
+}
+#else
 /*
  * Assume that LD_LIBRARY_PATH has already been set up correctly.
  */
@@ -70,3 +173,4 @@ load_so (const char *soname, char *path, BOOL verbose)
 	exit (RC_SYSTEM_ERROR);
     }
 } /* load_so */
+#endif

@@ -178,7 +178,7 @@ private:
 public:
 
   SUMMARY_FILE_HEADER() {
-    memset(this, 0, sizeof(SUMMARY_FILE_HEADER));
+    bzero(this, sizeof(SUMMARY_FILE_HEADER));
   };
 
   void Set_version_number(mINT32 i) { _version_number = i;};
@@ -731,7 +731,7 @@ public:
     /* operations */
 
     void Init (void) {
-	memset (this, 0, sizeof(SUMMARY_PROCEDURE));
+	bzero (this, sizeof(SUMMARY_PROCEDURE));
 	_bb_count = MIN (PU_WN_BB_Cnt, UINT16_MAX);
 	_stmt_count = MIN (PU_WN_Stmt_Cnt, UINT16_MAX);
 
@@ -821,7 +821,7 @@ public:
 
     /* operations */
 
-    void Init () { memset (this, 0, sizeof(SUMMARY_FEEDBACK)); }
+    void Init () { bzero (this, sizeof(SUMMARY_FEEDBACK)); }
 
     // Tracing
     void Print (FILE *f) const;
@@ -987,7 +987,7 @@ public:
 
 
     void Init () {
-	memset (this, 0, sizeof(SUMMARY_CALLSITE));
+	bzero (this, sizeof(SUMMARY_CALLSITE));
     }
 	
     // Tracing:
@@ -1470,7 +1470,7 @@ public:
 
     /* operations */
     
-    void Init ()		{ memset (this, 0, sizeof(SUMMARY_VALUE)); }
+    void Init ()		{ bzero (this, sizeof(SUMMARY_VALUE)); }
 
     // print the constant value in ascii form
     void Print_const_value (FILE *f, const SUMMARY_SYMBOL* symbol = NULL) const;
@@ -1534,7 +1534,7 @@ public:
     
     /* operations */
 
-    void Init ()		{ memset (this, 0, sizeof(SUMMARY_PHI)); }
+    void Init ()		{ bzero (this, sizeof(SUMMARY_PHI)); }
 
     /* print functions */
 
@@ -1642,9 +1642,16 @@ private:
 	} _s2[2];
     } _u;
 
+#ifdef TARG_ST
+  // [TTh] Reconfigurability: extended mtype encoding from 5 to 8 bits
+    OPCODE _opcode : 24;
+
+    mINT32 _pad    : 30;
+#else
     OPCODE _opcode : 20;
 
     mINT32 _pad    : 2;
+#endif
 
     mBOOL _is_trip_count : 1;	        // is a trip count (can be simplified) 
     mBOOL _has_const_operand : 1;	// specify which struct in _u is used
@@ -1762,7 +1769,7 @@ public:
 
     /* operations */
 
-    void Init ()		{ memset (this, 0, sizeof(SUMMARY_EXPR)); }
+    void Init ()		{ bzero (this, sizeof(SUMMARY_EXPR)); }
 
     void Print_node (FILE *f, INT kid = 0) const;
 
@@ -1890,7 +1897,7 @@ public:
 
     /* operations */
 
-    void Init ()	{ memset (this, 0, sizeof(SUMMARY_STMT)); }
+    void Init ()	{ bzero (this, sizeof(SUMMARY_STMT)); }
 
     /* print functions */
 
@@ -1967,7 +1974,7 @@ public:
 
     /* operations */
 
-    void Init ()	{ memset (this, 0, sizeof(SUMMARY_CONTROL_DEPENDENCE)); }
+    void Init ()	{ bzero (this, sizeof(SUMMARY_CONTROL_DEPENDENCE)); }
 
     /* print functions */
     
@@ -2187,7 +2194,7 @@ public:
 
     /* operations */
        
-    void Init ()		{ memset (this, 0, sizeof(SUMMARY_SYMBOL)); }
+    void Init ()		{ bzero (this, sizeof(SUMMARY_SYMBOL)); }
 
     
     // Tracing:
@@ -2263,7 +2270,7 @@ public:
 
     /* operations */
 
-    void Init (void)		{ memset (this, 0, sizeof(SUMMARY_GLOBAL));}
+    void Init (void)		{ bzero (this, sizeof(SUMMARY_GLOBAL));}
 
     // Tracing:
     void Print ( FILE *fp ) const;
@@ -2357,7 +2364,7 @@ public:
   INT16 Has_equivalences() const { return  _state & IPL_HAS_EQUIVALENCES;};
 
   /* operations */
-  void Init ()		{ memset (this, 0, sizeof(SUMMARY_COMMON)); }
+  void Init ()		{ bzero (this, sizeof(SUMMARY_COMMON)); }
 
   void Print_array(FILE *fp, INT32 size) const;
   void Trace_array(INT32 size) const ;
@@ -2453,7 +2460,7 @@ public:
 
   /* operations */
   void Init ()	{ 
-    memset(this, 0, sizeof(SUMMARY_COMMON_SHAPE)); 
+    bzero(this, sizeof(SUMMARY_COMMON_SHAPE)); 
     Set_symbol_index(-1); 
   }
 
@@ -2571,7 +2578,7 @@ public:
     /* operations */
 
     void Init (mUINT32 ty_index,mUINT32 flatten_flds,MEM_POOL * mem){ 
-	    memset(this, 0, sizeof(SUMMARY_STRUCT_ACCESS)); 
+	    bzero(this, sizeof(SUMMARY_STRUCT_ACCESS)); 
 	    _mem=mem;
 	    Set_ty(ty_index); 
 	    Set_flatten_flds(flatten_flds);
@@ -2612,7 +2619,7 @@ class SUMMARY_TY_INFO
     void Set_ty_no_split (void)      { _flags |= IPL_TY_NO_SPLIT; }
     BOOL Is_ty_no_split (void) const { return _flags & IPL_TY_NO_SPLIT; }
 
-    void Init (void)                 { memset (this, 0, sizeof(SUMMARY_TY_INFO)); }
+    void Init (void)                 { bzero (this, sizeof(SUMMARY_TY_INFO)); }
     void Print_array(FILE *fp, INT32 size) const;
     void Trace_array(INT32 size) const ;
     void Print(FILE *f) const;
