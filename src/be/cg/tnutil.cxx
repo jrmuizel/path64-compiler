@@ -271,7 +271,7 @@ Check_TN_Vec_Size ( void )
     else {
       TN_Count += TN_VEC_INCR;
       TN_Vec = (TN **) realloc ( TN_Vec, (TN_Count+1)*sizeof(TN *) );
-      bzero ( &TN_Vec[TN_Count-TN_VEC_INCR+1], (TN_VEC_INCR)*sizeof(TN *) );
+      memset ( &TN_Vec[TN_Count-TN_VEC_INCR+1], 0, (TN_VEC_INCR)*sizeof(TN *) );
     }
   }
 }
@@ -1192,7 +1192,7 @@ Init_TNs_For_PU (void)
   }
 
   /* clear out the hash table */
-  bzero(Hash_Table, sizeof(Hash_Table));
+  memset(Hash_Table, 0, sizeof(Hash_Table));
 
   /* reset Last_TN*/
   Last_TN = Last_Dedicated_TN;

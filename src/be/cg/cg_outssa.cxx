@@ -544,7 +544,7 @@ static void
 SSA_EquiValues() {
 
   BOOL visited[PU_BB_Count+2];
-  BZERO(visited, sizeof(BOOL)*(PU_BB_Count+2));
+  memset(visited, 0, sizeof(BOOL)*(PU_BB_Count+2));
 
   //
   // visit nodes in the dominator tree order, propagating values
@@ -676,7 +676,7 @@ IGRAPH_Initialize ()
   tn_imap = (BS **)TYPE_MEM_POOL_ALLOC_N(BS *, &MEM_local_pool, Igraph_Size);
 
   // initialize interference to NULL
-  BZERO(tn_imap, sizeof(BS*)*Igraph_Size);
+  memset(tn_imap, 0, sizeof(BS*)*Igraph_Size);
 
   Igraph_Used = TRUE;
 
@@ -977,7 +977,7 @@ SSA_Build_IGraph ()
   // successors. When all successors have been seen and the BB
   // processed, we unset to FALSE, so we know that only those BBs with
   // visited set to TRUE are left.
-  BZERO(visited, sizeof(BOOL)*(PU_BB_Count+2));
+  memset(visited, 0, sizeof(BOOL)*(PU_BB_Count+2));
 
   const BB_SET *region_entry_set = SSA_region_entries();
   FOR_ALL_BB_SET_members(region_entry_set,bb) {
@@ -1366,10 +1366,10 @@ static void
 SSA_expose_copies() {
 
   BOOL visited[PU_BB_Count+2];
-  BZERO(visited, sizeof(BOOL)*(PU_BB_Count+2));
+  memset(visited, 0, sizeof(BOOL)*(PU_BB_Count+2));
 
   BOOL has_pcopy[PU_BB_Count+2];
-  BZERO(has_pcopy, sizeof(BOOL)*(PU_BB_Count+2));
+  memset(has_pcopy, 0, sizeof(BOOL)*(PU_BB_Count+2));
 
   //
   // visit nodes in the dominator tree order
@@ -2435,7 +2435,7 @@ SSA_Undo_Renaming() {
   phi_op_map = NULL;
 
   BOOL visited[PU_BB_Count+2];
-  BZERO(visited, sizeof(BOOL)*(PU_BB_Count+2));
+  memset(visited, 0, sizeof(BOOL)*(PU_BB_Count+2));
 
   //
   // visit nodes in the dominator tree order

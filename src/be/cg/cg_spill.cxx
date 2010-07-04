@@ -241,7 +241,7 @@ Gen_Spill_Symbol (TY_IDX ty, const char *root)
 					  spill_ids,
 					  max_spill_level+1,
 					  level+1);
-      bzero(spill_ids + max_spill_level + 1, 
+      memset(spill_ids + max_spill_level + 1, 0,
 	    (level - max_spill_level) * sizeof(*spill_ids));
       max_spill_level = level;
     }

@@ -134,7 +134,7 @@ LFTR::Alloc_hash_vec(INT32 hash_size)
   _hash_vec = CXX_NEW_ARRAY(LFTR_VAR *, _hash_size+1, &_mem_pool);
   if (_hash_vec == NULL)
     ErrMsg (EC_No_Mem, "LFTR::Alloc_hash_vec, hash_vec");
-  BZERO(_hash_vec, sizeof(LFTR_VAR *) * (_hash_size+1));
+  memset(_hash_vec, 0, sizeof(LFTR_VAR *) * (_hash_size+1));
 
   Is_Trace(Trace(),(TFile,"LFTR::Alloc_hash_vec(%d)\n",hash_size));
 }

@@ -147,7 +147,7 @@ struct OPT_FB_NODE {
   EDGES incoming_edges;
   EDGES outgoing_edges;
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY) 
   WN* orig_wn;
 #endif
 
@@ -232,14 +232,7 @@ public:
   OPT_FEEDBACK( CFG *cfg, MEM_POOL *pool );
   ~OPT_FEEDBACK();
 
-#ifdef TARG_ST
-  //TB: orig_wn is the original WN (before WOPT cfg construction).
-  //The WN is used to retrieve feedback info that are not carried by
-  //the OPT FEEDBACK CFG.
-  void Emit_feedback( WN *wn, BB_NODE *bb, WN *orig_wn ) const;
-#else
   void Emit_feedback( WN *wn, BB_NODE *bb ) const;
-#endif
 
   bool Trace() const     { return _trace; }
 

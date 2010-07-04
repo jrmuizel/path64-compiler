@@ -60,6 +60,7 @@ set(PATHSCALE_WOPT_SRCS
 				"opt_stable.cxx"
 				"opt_sym.cxx"
 				"opt_tail.cxx"
+                                "opt_tailmerge.cxx"
 				"opt_util.cxx"
 				"opt_vn.cxx"
 				"opt_vn_expr.cxx"

@@ -112,7 +112,9 @@ static char *rcs_id = 	opt_ivr_CXX"$Revision: 1.19 $";
 #include "opt_mu_chi.h"
 #include "opt_fold.h"
 #include "stab.h"
-
+#ifdef TARG_ST
+#include "glob.h"	// FdF: for Cur_PU_Name
+#endif
 #ifdef TARG_X8664
 #include "config_opt.h"  // for OPT_Freestanding
 #endif
@@ -657,7 +659,7 @@ CODEMAP::Expand_expr(CODEREP *cr, const BB_LOOP *loop, INT32 *limit)
 	  // FdF 20060105: Avoid quadratic complexity of the algorithm.
 	  if (expand_cr_map) {
 	    expr = expand_cr_map->Lookup(identical_rhs->Coderep_id());
-	    if (((INT32) expr) == -1) {
+	    if ((expr) == NULL) { // in st-pro64 ((INT32) expr) == -1)
 	      expr = Expand_expr(identical_rhs, loop, limit);
 	      expand_cr_map->Insert(identical_rhs->Coderep_id(), expr);
 	    }
@@ -680,7 +682,7 @@ CODEMAP::Expand_expr(CODEREP *cr, const BB_LOOP *loop, INT32 *limit)
 	  CODEREP *expr;
 	  if (expand_cr_map) {
 	    expr = expand_cr_map->Lookup(cr->Defstmt()->Rhs()->Coderep_id());
-	    if (((INT32) expr) == -1) {
+	    if ((expr) == NULL) { // in st-pro64 ((INT32) expr) == -1)
 	      expr = Expand_expr(cr->Defstmt()->Rhs(), loop, limit);
 	      expand_cr_map->Insert(cr->Defstmt()->Rhs()->Coderep_id(), expr);
 	    }
@@ -712,7 +714,7 @@ CODEMAP::Expand_expr(CODEREP *cr, const BB_LOOP *loop, INT32 *limit)
 	// FdF 20060105: Avoid quadratic complexity of the algorithm.
 	if (expand_cr_map) {
 	  expr = expand_cr_map->Lookup(cr->Opnd(i)->Coderep_id());
-	  if (((INT32) expr) == -1) {
+	  if ((expr) == NULL) { // in st-pro64 ((INT32) expr) == -1)
 	    expr = Expand_expr( cr->Opnd(i), loop, limit);
 	    expand_cr_map->Insert(cr->Opnd(i)->Coderep_id(), expr);
 	  }
@@ -800,7 +802,7 @@ CODEREP::Propagatable_along_path(const BB_NODE *dest /* inclusive */,
       if (! Opnd(i)->Propagatable_along_path(dest, src))
 	return FALSE;
     if (Opr() == OPR_INTRINSIC_OP
-#if defined( KEY) &7 !defined(TARG_ST)
+#if defined( KEY) && !defined(TARG_ST)
 	|| Opr() == OPR_PURE_CALL_OP
 #endif
        )
@@ -838,7 +840,7 @@ CODEREP::Propagatable_into_loop(const BB_LOOP *loop) const
       if (! Opnd(i)->Propagatable_into_loop(loop))
 	return FALSE;
     if (Opr() == OPR_INTRINSIC_OP
-#if defined( KEY) &7 !defined(TARG_ST)
+#if defined( KEY) && !defined(TARG_ST)
         || Opr() == OPR_PURE_CALL_OP
 #endif
 #if defined(TARG_IA32) || defined(TARG_X8664)
@@ -884,7 +886,7 @@ CODEREP::Propagatable_for_ivr(OPT_STAB *sym) const
     // Reference 644395 for situations when INTRINSIC_OP cannot be
     // copy propagated.
     if (Opr() == OPR_INTRINSIC_OP
-#if defined( KEY) &7 !defined(TARG_ST)
+#if defined( KEY) && !defined(TARG_ST)
 	|| Opr() == OPR_PURE_CALL_OP
 #endif
        )
@@ -937,7 +939,7 @@ CODEMAP::Convert_to_loop_invar(CODEREP *cr, BB_LOOP *loop)
 #ifdef KEY
     temp_rtype = TY_mtype(ST_type(MTYPE_To_PREG(cr->Dtyp())));
 #endif
-#if defined( KEY) &7 !defined(TARG_ST)// bug 11467
+#if defined( KEY) && !defined(TARG_ST)// bug 11467
     if (temp_type == MTYPE_BS)
       temp_type = temp_rtype;
 #endif

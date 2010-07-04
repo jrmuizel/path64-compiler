@@ -792,7 +792,7 @@ DSE::Dead_store_elim( void ) const
   }
 
   if (Opt_stab()->Has_exc_handler()
-#if dened(f KEY) && !defined(TARG_ST)
+#if defined(KEY) && !defined(TARG_ST)
       || Opt_stab()->Has_nonlocal_goto_target()
 #endif
      ) {
@@ -1010,7 +1010,7 @@ DSE::Add_EH_exposed_use(WN *call) const
   }
 }
 #endif
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 void
 DSE::Add_entry_exposed_uses(WN *call) const
 {

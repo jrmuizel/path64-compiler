@@ -5961,7 +5961,7 @@ Handle_ASM (const WN* asm_wn)
 #endif
 
   ISA_REGISTER_SUBCLASS opnd_sc[OP_MAX_FIXED_OPNDS];
-  bzero(opnd_sc, sizeof(opnd_sc));
+  memset(opnd_sc, 0, sizeof(opnd_sc));
   
   CGTARG_Init_Asm_Constraints();
 #ifdef TARG_ST
@@ -5979,7 +5979,7 @@ Handle_ASM (const WN* asm_wn)
   num_results = 0;
 #else
   ASM_OP_ANNOT* asm_info = TYPE_PU_ALLOC(ASM_OP_ANNOT);
-  bzero(asm_info, sizeof(ASM_OP_ANNOT));
+  memset(asm_info, 0, sizeof(ASM_OP_ANNOT));
 #endif
 
   ASM_OP_wn(asm_info) = asm_wn;
@@ -6302,7 +6302,7 @@ Handle_ASM (const WN* asm_wn)
     ISA_REGISTER_CLASS rc;
 
     ASMINFO *asm_bb_info = TYPE_PU_ALLOC(ASMINFO);
-    bzero(asm_bb_info, sizeof(ASMINFO));
+    memset(asm_bb_info, 0, sizeof(ASMINFO));
 
     FOR_ALL_ISA_REGISTER_CLASS(rc) {
       ASMINFO_livein(asm_bb_info)[rc] = REGISTER_SET_EMPTY_SET;

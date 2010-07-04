@@ -131,21 +131,21 @@ Create_Empty_ASM_OP_ANNOT(INT num_results, INT num_opnds)
   bool *p_bool;
 
   ASM_OP_ANNOT* asm_info = TYPE_PU_ALLOC(ASM_OP_ANNOT);
-  BZERO(asm_info, sizeof(ASM_OP_ANNOT));
+  memset(asm_info, 0, sizeof(ASM_OP_ANNOT));
 
   /* Allocate tables 'shared' by results and operands */
   if (num_results + num_opnds > 0) {
     p_const_char_p = TYPE_PU_ALLOC_N(const char *, num_results + num_opnds);
-    BZERO(p_const_char_p, sizeof(const char *) *  (num_results + num_opnds));
+    memset(p_const_char_p, 0, sizeof(const char *) *  (num_results + num_opnds));
 
     p_SUBCLASS = TYPE_PU_ALLOC_N(ISA_REGISTER_SUBCLASS,  num_results + num_opnds);
-    BZERO(p_SUBCLASS, sizeof(ISA_REGISTER_SUBCLASS) * (num_results + num_opnds));
+    memset(p_SUBCLASS, 0, sizeof(ISA_REGISTER_SUBCLASS) * (num_results + num_opnds));
 
     p_mUINT32 = TYPE_PU_ALLOC_N(mUINT32, num_results + num_opnds);
-    BZERO(p_mUINT32, sizeof(mUINT32) *  (num_results + num_opnds));
+    memset(p_mUINT32, 0, sizeof(mUINT32) *  (num_results + num_opnds));
 
     p_bool =  TYPE_PU_ALLOC_N(bool, (2 * num_results) + num_opnds);
-    BZERO(p_bool, sizeof(bool) *   ((2 * num_results) + num_opnds));
+    memset(p_bool, 0, sizeof(bool) *   ((2 * num_results) + num_opnds));
   }
 
   if (num_results > 0) {
@@ -156,7 +156,7 @@ Create_Empty_ASM_OP_ANNOT(INT num_results, INT num_opnds)
     asm_info->result_memory     = p_bool;          p_bool         += num_results;
 
     asm_info->result_same_opnd  = TYPE_PU_ALLOC_N(mINT8, num_results);
-    BZERO(asm_info->result_same_opnd, sizeof(mINT8) * num_results);
+    memset(asm_info->result_same_opnd, 0, sizeof(mINT8) * num_results);
   }
 
   if (num_opnds > 0) {

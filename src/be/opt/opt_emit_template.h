@@ -1358,14 +1358,7 @@ Gen_stmt_wn(STMTREP *srep, STMT_CONTAINER *stmt_container, EMITTER *emitter)
   WN_Set_Linenum(rwn, srep->Linenum());
 
   if (emitter->Cfg()->Feedback())
-#ifdef TARG_ST
-//TB: orig_wn is the original WN (before WOPT cfg construction).
-//The WN is used to retrieve feedback info that are not carried by
-//the OPT FEEDBACK CFG (icall specific info).
-    emitter->Cfg()->Feedback()->Emit_feedback( rwn, srep->Bb(), srep->Wn() );
-#else
     emitter->Cfg()->Feedback()->Emit_feedback( rwn, srep->Bb() );
-#endif
 
   stmt_container->Append(rwn);
 

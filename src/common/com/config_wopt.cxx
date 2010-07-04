@@ -165,6 +165,7 @@ INT32 WOPT_Enable_Ivr_Cand_Limit = -1;
 #endif
 BOOL  WOPT_Enable_Ldx = FALSE;
 BOOL  WOPT_Enable_Lego_Opt = FALSE;
+BOOL  WOPT_Enable_LFTR = TRUE;
 BOOL  WOPT_Enable_LFTR_Ivar = FALSE;
 #ifndef TARG_IA64
 BOOL  WOPT_Enable_LFTR2 = TRUE;
@@ -238,6 +239,7 @@ BOOL  WOPT_Enable_SSA_PRE = TRUE;
 BOOL  WOPT_Enable_Store_PRE = TRUE;
 INT32 WOPT_Enable_Store_PRE_Limit = -1;
 INT32 WOPT_Enable_Local_Rvi_Limit = -1;
+BOOL  WOPT_Enable_Strength_Reduction = TRUE;
 BOOL  WOPT_Enable_Update_Vsym = TRUE;
 BOOL  WOPT_Enable_Unique_Pt_Vsym = TRUE;
 INT32 WOPT_Enable_Value_Numbering = 1; /* 0=OFF, 1=after_pre, 2=befr_n_aftr */
@@ -492,6 +494,8 @@ static OPTION_DESC Options_WOPT[] = {
     0, 0, 0,	&WOPT_Enable_Ldx, NULL },
   { OVK_BOOL,	OV_VISIBLE,	TRUE, "lego_opt",		"lego",
     0, 0, 0,	&WOPT_Enable_Lego_Opt, NULL },
+  { OVK_BOOL,	OV_INTERNAL,	TRUE, "lftr",			"lftr",
+    0, 0, 0,	&WOPT_Enable_LFTR, NULL },
   { OVK_BOOL,	OV_VISIBLE,	TRUE, "lftr_ivar",		"lftr_ivar",
     0, 0, 0,	&WOPT_Enable_LFTR_Ivar, NULL },
   { OVK_BOOL,	OV_VISIBLE,	TRUE, "lftr2",		"lftr2",
@@ -592,6 +596,8 @@ static OPTION_DESC Options_WOPT[] = {
     0, 0, 0,	&WOPT_Enable_Store_PRE, NULL },
   { OVK_INT32,	OV_VISIBLE,	TRUE, "spre_limit",		"",
     INT32_MAX, 0, INT32_MAX,	&WOPT_Enable_Store_PRE_Limit, NULL },
+  { OVK_BOOL,	OV_INTERNAL,	TRUE, "strength_reduction",	"str",
+    0, 0, 0,	&WOPT_Enable_Strength_Reduction, NULL },
   { OVK_INT32,	OV_VISIBLE,	TRUE, "trip_count",		"trip",
     2, 0, 2,	&WOPT_Enable_Generate_Trip_Count, NULL },
   { OVK_BOOL,	OV_VISIBLE,	TRUE, "update_vsym",		"update_vsym",

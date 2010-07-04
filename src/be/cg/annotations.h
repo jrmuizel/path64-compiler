@@ -426,8 +426,8 @@ struct ASM_OP_ANNOT
 
 #ifdef TARG_ST
 // [TTh] Constructor for ASM_OP_ANNOT
-CG_EXPORTED extern ASM_OP_ANNOT *Create_Empty_ASM_OP_ANNOT(INT num_results, INT num_opnds);
-CG_EXPORTED extern void Copy_ASM_OP_Non_Parameter_Fields(ASM_OP_ANNOT *dest, const ASM_OP_ANNOT *src);
+extern ASM_OP_ANNOT *Create_Empty_ASM_OP_ANNOT(INT num_results, INT num_opnds);
+extern void Copy_ASM_OP_Non_Parameter_Fields(ASM_OP_ANNOT *dest, const ASM_OP_ANNOT *src);
 #endif
 
 #define ASM_OP_wn(x)			((x)->wn)

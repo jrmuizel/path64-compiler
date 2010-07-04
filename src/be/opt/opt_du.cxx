@@ -1837,7 +1837,7 @@ DU_MANAGER::Alloc_IPA_summary(CFG *cfg)
 {
   _bb_cnt = cfg->Total_bb_count();
   _bb_summary = (BB_SUMMARY_INFO *) CXX_NEW_ARRAY(BB_SUMMARY_INFO, _bb_cnt, &_mem_pool);
-  bzero(_bb_summary, sizeof(BB_SUMMARY_INFO) * _bb_cnt);
+  memset(_bb_summary, 0,sizeof(BB_SUMMARY_INFO) * _bb_cnt);
 }
 
 

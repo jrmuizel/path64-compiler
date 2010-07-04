@@ -55,7 +55,7 @@
 #if !defined(__FreeBSD__)
 #include <alloca.h>
 #endif
-#include <sys/signal.h>
+#include <signal.h>
 #if defined(BUILD_OS_DARWIN)
 #include <darwin_elf.h>
 #else /* defined(BUILD_OS_DARWIN) */
@@ -19547,7 +19547,7 @@ void Lower_Init(void)
    parity_map_array[parity_map_index] = lowering_parity_map;
 #ifdef TARG_ST
    // [CG] Map of mtypes to aliasing types for ansi rules
-   bzero(TY_alias_array, sizeof(TY_IDX) * (MTYPE_STATIC_LAST + 1));
+   memset(TY_alias_array, 0, sizeof(TY_IDX) * (MTYPE_STATIC_LAST + 1));
 #endif
 
 }
@@ -19719,7 +19719,7 @@ WN *WN_Lower(WN *tree, LOWER_ACTIONS actions, struct ALIAS_MANAGER *alias,
 
 #ifdef TARG_X8664
   current_loop_nest_depth = 0;
-  bzero( loop_info_stack, sizeof(loop_info_stack) );
+  memset( loop_info_stack, 0, sizeof(loop_info_stack) );
 #endif
 
   // Don't do any lowering on trees that merely wrap up file-scope

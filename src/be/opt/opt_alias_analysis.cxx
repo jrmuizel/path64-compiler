@@ -3293,7 +3293,7 @@ OPT_STAB::Generate_asm_mu_chi(WN *wn, MU_LIST *mu, CHI_LIST *chi)
     if (!asm_clobbers_mem)   // non-volatile asm cannot modify memory
       continue;
     
-    how |= Rule()->Aliased_with_Asm(wn, aux_stab[idx].Points_to());
+    how = Rule()->Aliased_with_Asm(wn, aux_stab[idx].Points_to());
 #endif
 #ifdef TARG_ST
     // [CG 2004/11/18] No need to set disable local rvi if no alias at all

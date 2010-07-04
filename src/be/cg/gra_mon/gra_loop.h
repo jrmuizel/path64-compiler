@@ -38,7 +38,11 @@ class GRA_BB;
 // this way, we can keep track of the register usage and such of inner loops.
 class GRA_LOOP {
 friend class GRA_LOOP_MGR;
+#ifdef TARG_ST
+  REGISTER_SET registers_used[ISA_REGISTER_CLASS_MAX_LIMIT+1];
+#else
   REGISTER_SET registers_used[ISA_REGISTER_CLASS_MAX+1]; 
+#endif
 	      // registers used by all blocks and inner loops within the loop
   GRA_LOOP*    parent; 		// parent of this loop, i.e. the next outer loop
   GRA_LOOP*    outermost; 	// outermost loop in this nest

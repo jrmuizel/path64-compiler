@@ -2588,7 +2588,7 @@ BB_SET *FREQ_Find_Never_BBs(MEM_POOL *pool)
 
   topo_map = BB_Topological_Map(NULL, NULL);
   topo_vec = (BB **)alloca(sizeof(BB *) * PU_BB_Count);
-  bzero(topo_vec, sizeof(BB *) * PU_BB_Count);
+  memset(topo_vec, 0, sizeof(BB *) * PU_BB_Count);
   max_topo_idx = 0;
   for (bb = REGION_First_BB; bb != NULL; bb = BB_next(bb)) {
     INT32 topo_id = BB_MAP32_Get(topo_map, bb);

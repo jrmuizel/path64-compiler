@@ -1289,7 +1289,7 @@ SSA_Compute_Dominance_Frontier ()
 					PU_BB_Count+2 );
 
   visited = (BOOL *)alloca(sizeof(BOOL)*(PU_BB_Count+2));
-  BZERO(visited, sizeof(BOOL)*(PU_BB_Count+2));
+  memset(visited, 0, sizeof(BOOL)*(PU_BB_Count+2));
 
   DF_bb = BB_SET_Create_Empty(PU_BB_Count+2, &ssa_pool);
 
@@ -2082,7 +2082,7 @@ SSA_Rename (BOOL incremental)
   initialize_tn_stack();
 
   BOOL *visited = (BOOL *)alloca(sizeof(BOOL)*(PU_BB_Count+2));
-  BZERO(visited, sizeof(BOOL)*(PU_BB_Count+2));
+  memset(visited, 0, sizeof(BOOL)*(PU_BB_Count+2));
 
   //
   // initialize tn_ssa_map, deleted by the SSA_Remove_Pseudo_OPs()

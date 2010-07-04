@@ -470,7 +470,7 @@ void OPT_TAIL::Fixup_exit(BB_NODE *bb)
     TYPE_ID arg_type_id = WN_rtype(arg);
 
     arg = WN_kid0(arg);
-#ifdef KEY
+#if defined(KEY) && !defined(TARG_ST)
 // Bug 1640
     static INT Temp_Index = 0;
     UINT len = strlen("_temp_") + 17;
@@ -556,7 +556,9 @@ void OPT_TAIL::Mutate()
   
   CFG_ITER cfg_iter(_cfg);
   BB_NODE *bb;
-
+#ifdef TARG_ST
+  PrepareCfg();
+#endif
   FOR_ALL_NODE(bb, cfg_iter, Init()) {
 
     // make sure we're dealing with an exit block
@@ -591,9 +593,389 @@ void OPT_TAIL::Mutate()
       }
     }
   }
+#ifdef TARG_ST
+  FinalizeCfg();
+#endif
+
   
   if (_do_trace) {
     fprintf(TFile, "%sCFG on exit from tail recursion\n%s", DBar, DBar);
     _cfg->Print(TFile);
   }
 }
+#ifdef TARG_ST
+// All added functions are documented in opt_tail.h
+
+typedef std::set<BB_NODE*> SetOfBBs;
+typedef SetOfBBs::iterator ItSetOfBBs;
+
+OPT_TAIL::Modification::Modification(BB_NODE* a_bb, enum BB_KIND a_newKind,
+                                     WN* a_old, WN* a_replacement)
+    // We invert the value of field because we apply Undo function to perform
+    // the modification
+    : bb(a_bb), oldKind(a_newKind), old(a_replacement), current(a_old)
+{
+    if(bb)
+        {
+            Undo();
+        }
+    else
+        {
+            old = a_old;
+            current = a_replacement;
+        }
+}
+
+void
+OPT_TAIL::Modification::Undo()
+{
+    DevAssert(bb, ("Restoration on invalid basic block is forbidden"));
+
+    WN* next = NULL;
+    WN* prev = NULL;
+    if(current)
+        {
+            next = WN_next(current);
+            prev = WN_prev(current);
+        }
+    else
+        {
+            prev = bb->Laststmt();
+        }
+    if(old)
+        {
+            if(prev)
+                {
+                    WN_next(prev) = old;
+                }
+            if(next)
+                {
+                    WN_prev(next) = old;
+                }
+            WN_prev(old) = prev;
+            WN_next(old) = next;
+            if(!current || current == bb->Laststmt())
+                {
+                    bb->Set_laststmt(old);
+                }
+        }
+    else if(current == bb->Laststmt())
+        {
+            bb->Set_laststmt(prev);
+        }
+    // Since we support only simple modifications, if current is first
+    // statement, this means current is the only statement or old is not nil.
+    if(current == bb->Firststmt())
+        {
+            DevAssert(next == NULL || old,
+                      ("Not simple modification -> Not supported"));
+            bb->Set_firststmt(old);
+        }
+    WN* tmp = old;
+    old = current;
+    current = tmp;
+    enum BB_KIND tmpKind = bb->Kind();
+    bb->Set_kind(oldKind);
+    oldKind = tmpKind;
+}
+
+void
+OPT_TAIL::StripExitBB(BB_NODE* exitBB, OPT_TAIL::Modifications& modifiedBBs)
+{
+    DevAssert(exitBB && exitBB->Kind() == BB_EXIT, ("Given argument is not an"
+                                                    " exit basic block"));
+    WN* returnStmt = exitBB->Laststmt();
+    WN* stmtToRemove = NULL;
+    if(returnStmt && (WN_operator(returnStmt) == OPR_RETURN ||
+                      WN_operator(returnStmt) == OPR_RETURN_VAL))
+        {
+            stmtToRemove = returnStmt;
+        }
+    modifiedBBs.push_back(Modification(exitBB, BB_EXIT, stmtToRemove, NULL));
+}
+
+void
+OPT_TAIL::SetExitBB(BB_NODE* exitBB, OPT_TAIL::Modifications& modifiedBBs)
+{
+    // This operation creation must be changed to support return_val node
+    WN* op = WN_CreateReturn();
+    WN_next(op) = NULL;
+    WN_prev(op) = NULL;
+
+    Modification mod(exitBB, BB_EXIT, NULL, op);
+    modifiedBBs.push_back(mod);
+}
+
+
+void
+OPT_TAIL::PrepareCfg()
+{
+    BBs exitBBs;
+    GetExitBlocks(exitBBs);
+    ItBBs itExitBBs;
+    for(itExitBBs = exitBBs.begin(); itExitBBs != exitBBs.end(); ++itExitBBs)
+        {
+            WN* returnStmt = (*itExitBBs)->Laststmt();
+            if(WN_operator(returnStmt) == OPR_RETURN_VAL)
+                {
+                    DevWarn("Return val is not yet supported, since we do not"
+                            " expect one in wopt level\n");
+                }
+            if(!returnStmt || WN_operator(returnStmt) != OPR_RETURN)
+                {
+                    continue;
+                }
+            WN* returnValLoadStore = WN_prev(returnStmt);
+            int countLoad = 0;
+            int countStore = 0;
+
+            StripExitBB(*itExitBBs, _modifiedBbs);
+            if(MayBeReturnValueLoadOrStore(returnValLoadStore, countStore,
+                                           countLoad) == NO)
+                {
+                    returnValLoadStore = NULL;
+                }
+            FindCandidates(*itExitBBs, returnValLoadStore);
+            UndoAndRemoveModifications(*itExitBBs);
+        }
+}
+
+void
+OPT_TAIL::FinalizeCfg()
+{
+    RItModifications itModifiedBBs;
+    for(itModifiedBBs = _modifiedBbs.rbegin();
+        itModifiedBBs != _modifiedBbs.rend(); ++itModifiedBBs)
+        {
+            if(itModifiedBBs->bb->Kind() != BB_GOTO)
+                {
+                    itModifiedBBs->Undo();
+                }
+            else
+                {
+                    for(BB_LIST* tmp = itModifiedBBs->bb->Succ(); tmp;
+                        tmp = tmp->Next())
+                        {
+                            if(tmp->Node() != _label_bb)
+                                {
+                                    _cfg->DisConnect_predsucc(itModifiedBBs->bb,
+                                                             tmp->Node());
+                                }
+                        }
+                }
+        }
+}
+
+void
+OPT_TAIL::GetExitBlocks(BBs& exitBBs) const
+{
+    if(_cfg->Exit_bb())
+        {
+            if(_cfg->Exit_bb() == _cfg->Fake_exit_bb())
+                {
+                    for(BB_LIST* tmp = _cfg->Exit_bb()->Pred(); tmp;
+                        tmp = tmp->Next())
+                        {
+                            if(tmp->Node()->Kind() == BB_EXIT)
+                                {
+                                    exitBBs.push_back(tmp->Node());
+                                }
+                        }
+                }
+            else
+                {
+                    exitBBs.push_back(_cfg->Exit_bb());
+                }
+        }
+    // Exit information may not be available at this point (typical call is
+    // from CFG::Create
+    else
+        {
+            CFG_ITER cfg_iter(_cfg);
+            BB_NODE *bb;
+
+            FOR_ALL_NODE(bb, cfg_iter, Init())
+            {
+                if(bb->Kind() == BB_EXIT)
+                    {
+                        exitBBs.push_back(bb);
+                    }
+            }
+        }
+}
+
+enum OPT_TAIL::EIsReturnVal
+OPT_TAIL::MayBeReturnValueLoadOrStore(WN* stmt, int& countStore,
+                                      int& countLoad, WN* returnValLoadStore)
+{
+    bool result = stmt && WN_operator(stmt) == OPR_STID &&
+        WN_operator(WN_kid0(stmt)) == OPR_LDID;
+    bool withModification = false;
+    if(result)
+        {
+            ST *stid_st = _opt_stab->St((IDTYPE)WN_st_idx(stmt));
+            ST *ldid_st = _opt_stab->St((IDTYPE)WN_st_idx(WN_kid0(stmt)));
+
+            ST *ldid_st_ret_val = returnValLoadStore? _opt_stab->
+                St((IDTYPE)WN_st_idx(WN_kid0(returnValLoadStore))): NULL;
+            // These conditions are used during the processing phase, so
+            // recognize them
+            if(ST_class(stid_st) == CLASS_PREG &&
+               Preg_Is_Dedicated(WN_store_offset(stmt)))
+                {
+                    ++countStore;
+                }
+            // If storage class is auto and store symbol is the same as loaded
+            // one for the return statement, then the store can be converted to
+            // set the return value. The storage class is important, because
+            // when it is not auto the assignment cannot be removed
+            else if(ST_sclass(stid_st) == SCLASS_AUTO &&
+                    ldid_st_ret_val == stid_st)
+                {
+                    ++countStore;
+                    withModification = true;
+                }
+            else if(ST_class(ldid_st) == CLASS_PREG &&
+                    Preg_Is_Dedicated(WN_load_offset(WN_kid0(stmt))))
+                {
+                    ++countLoad;
+                }
+            else
+                {
+                    result = false;
+                }
+        }
+    return result? (withModification? WITH_MODIFICATION: YES): NO;
+}
+
+void
+OPT_TAIL::FindCandidates(BB_NODE* exitBB, WN* returnValLoadStore)
+{
+    typedef std::list<BB_NODE*> ListOfBBs;
+    typedef ListOfBBs::const_iterator CItListOfBBs;
+
+    ListOfBBs candidates;
+    SetOfBBs doneBBs;
+
+    candidates.push_back(exitBB);
+    doneBBs.insert(exitBB);
+
+    CItListOfBBs itCandidates;
+    for(itCandidates = candidates.begin(); itCandidates != candidates.end();
+        ++itCandidates)
+        {
+            if(IsSimpleBlock(exitBB, *itCandidates, returnValLoadStore))
+                {
+                    // Check all its predecessor
+                    for(BB_LIST* tmp = (*itCandidates)->Pred(); tmp;
+                        tmp = tmp->Next())
+                        {
+                            // Not goto basic blocks are not simple
+                            if(tmp->Node()->Kind() == BB_GOTO &&
+                               doneBBs.find(tmp->Node()) == doneBBs.end())
+                                {
+                                    candidates.push_back(tmp->Node());
+                                    doneBBs.insert(tmp->Node());
+                                }
+                        }
+                }
+        }
+}
+
+bool
+OPT_TAIL::IsSimpleBlock(BB_NODE* exitBB, BB_NODE* bb, WN* returnValLoadStore)
+{
+    DevAssert(exitBB && bb, ("Basic blocks must be valid"));
+    WN* curStmt = bb->Laststmt();
+    int countLoad = 0;
+    int countStore = 0;
+    static const int allowedLoadOperation = 1;
+    static const int allowedStoreOperation = 1;
+    bool hasModification = false;
+    bool removeModification = false;
+    // Check whether we can connect current return to a call
+    while(curStmt)
+        {
+            if(WN_operator(curStmt) == OPR_CALL &&
+               WN_st(curStmt) == WN_st(_entry_wn) &&
+               WN_num_actuals(curStmt) == WN_num_formals(_entry_wn))
+                {
+                    // if bb is exitBB then we do not perform the modification,
+                    // since calling to UndoAndRemoveModifications already
+                    // restore the previous state of that basic block
+                    if(bb != exitBB)
+                        {
+                            // The setting of hasModification boolean is
+                            // useless, since, to this point, we never have to
+                            // remove the modifications
+                            SetExitBB(bb, _modifiedBbs);
+                        }
+                    break;
+                }
+            // In whirl labels exist only at basic block entry (jumping
+            // in the middle of a basic block is not supported). So
+            // we can ignore them for our purpose.
+            // For goto, they are only at the end of a basic block and
+            // by construction arrived through simple basic blocks to
+            // related return
+            if(WN_operator(curStmt) == OPR_GOTO && curStmt == bb->Laststmt())
+                {
+                    hasModification = true;
+                    _modifiedBbs.push_back(Modification(bb, bb->Kind(),
+                                                        curStmt, NULL));
+                }
+            else if(WN_operator(curStmt) != OPR_LABEL)
+                {
+                    enum EIsReturnVal res = 
+                        MayBeReturnValueLoadOrStore(curStmt, countStore,
+                                                    countLoad,
+                                                    returnValLoadStore);
+                    if(res == NO || countStore > allowedStoreOperation
+                       || countLoad > allowedLoadOperation)
+                        {
+                            removeModification = true;
+                            break;
+                        }
+                    else if(res == WITH_MODIFICATION)
+                        {
+                            // Do proper modifications
+                            hasModification = true;
+                            WN* loadPart = WN_copy(WN_kid0(curStmt));
+                            WN* storePart = WN_copy(returnValLoadStore);
+                            WN_kid0(storePart) = loadPart;
+                            _modifiedBbs.push_back(Modification(bb, bb->Kind(),
+                                                                curStmt,
+                                                                storePart));
+                        }
+                }
+            curStmt = WN_prev(curStmt);
+        }
+    removeModification |= !curStmt;
+    if(removeModification && hasModification)
+        {
+            UndoAndRemoveModifications(bb);
+        }
+    // Current basic block is simple if we traverse all operations
+    return !curStmt;
+}
+
+void
+OPT_TAIL::UndoAndRemoveModifications(BB_NODE* bb)
+{
+    ItModifications itMod = _modifiedBbs.end();
+    while(--itMod != _modifiedBbs.end())
+        {
+            if(itMod->bb == bb)
+                {
+                    itMod->Undo();
+                    // erase return an iterator to the next element in
+                    // _modifiedBbs. Since we traverse this list in reverse
+                    // order, we have already visited it. But the --itMod in
+                    // the while condition do what we want in all cases
+                    itMod = _modifiedBbs.erase(itMod);
+                }
+        }
+}
+
+#endif // ifdef TARG_ST
+

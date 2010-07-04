@@ -307,7 +307,7 @@ void CG_LOOP_Init_Op(OP *op)
   } else {
     info = (_CG_LOOP_INFO *)MEM_POOL_Alloc(&MEM_phase_nz_pool, sizeof_info);
   }
-  bzero(info, sizeof_info);
+  memset(info, 0, sizeof_info);
   OP_MAP_Set(_CG_LOOP_info_map, op, info);
 }
 

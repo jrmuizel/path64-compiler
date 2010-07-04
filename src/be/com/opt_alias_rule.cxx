@@ -357,14 +357,29 @@ static hash_map<const TY_IDX, INT, __gnu_cxx::hash<unsigned long>, TY_IDX_EQ> St
 //  Use bit 0 to bit 30 for mtypes.
 //  Use bit 31 for pointers.
 //
+#ifdef TARG_ST
+// Reconfigurability: Extended container to support more than 31 mtypes
+static const INT32 MTYPE_PTR = 63;
+static const INT64 ALL_TYPE = 0xffffffffffffffffLL;
+static const INT64 NO_TYPE  = 0LL;
+static const INT64 CST_ONE  = 1LL;
+#else
 static const INT32 MTYPE_PTR = 31;
 static const INT32 ALL_TYPE = 0xffffffff;
 static const INT32 NO_TYPE  = 0;
-
+#endif
+#ifdef TARG_ST
+INT64 ALIAS_RULE::Get_stripped_mtype(TY_IDX ty_idx) const
+#else
 INT32 ALIAS_RULE::Get_stripped_mtype(TY_IDX ty_idx) const
+#endif
 {
   const TY& ty = Ty_Table[ty_idx];
+#ifdef TARG_ST
+  INT64 ret_type = 0;
+#else
   INT32 ret_type = 0;
+#endif
   switch (TY_kind(ty)) {
   case KIND_SCALAR:
     //  Get the de-qualified and unsigned basic type for KIND_SCALAR.
@@ -837,7 +852,20 @@ READ_WRITE ALIAS_RULE::Aliased_with_Asm(const WN *wn, const POINTS_TO *mem) cons
 {
   if (mem->Dedicated())
     return READ_AND_WRITE;
-
+#ifdef TARG_ST
+  // [CG 2004/11/18]: 
+  // Asm do not alias if not maked "memory" clobber.
+  // Also, do not alias with const, local that are not addr_saved/addr_taken.
+  // that are not address saved.
+  // In addition the previous code did not test the right think as the
+  // passed wn is the asm wn, not the memory wn.
+  if (!WN_Asm_Clobbers_Mem(wn))
+    return NO_READ_NO_WRITE;
+  if (mem->Const())
+    return NO_READ_NO_WRITE;
+  if (mem->Local() && mem->Not_addr_saved() && mem->Not_addr_passed())
+    return NO_READ_NO_WRITE;
+#else
   OPERATOR opr = WN_operator(wn);
   if ((OPERATOR_is_scalar_load (opr) || OPERATOR_is_scalar_store (opr)) &&
       ST_sclass(WN_st(wn)) == SCLASS_REG)
@@ -845,7 +873,7 @@ READ_WRITE ALIAS_RULE::Aliased_with_Asm(const WN *wn, const POINTS_TO *mem) cons
 
   if (!WN_Asm_Clobbers_Mem(wn) && !Asm_Memory)
     return NO_READ_NO_WRITE;
-  
+#endif
   return READ_AND_WRITE;
 }
 

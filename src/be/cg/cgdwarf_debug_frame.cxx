@@ -808,7 +808,7 @@ static void Tag_Irrelevant_Saves_And_Restores_TOP(INT64* frame_size_bb)
   BOOL* visited;
 
   visited = (BOOL *)alloca(sizeof(BOOL)*(PU_BB_Count+1));
-  BZERO(visited, sizeof(BOOL)*(PU_BB_Count+1));
+  memset(visited, 0, sizeof(BOOL)*(PU_BB_Count+1));
 
   Tag_Irrelevant_Saves_And_Restores_BB_List(Entry_BB_Head, visited, frame_size_bb);
 }

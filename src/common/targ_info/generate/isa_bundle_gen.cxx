@@ -1261,7 +1261,7 @@ ISA_BUNDLE_PACK_INFO ISA_Bundle_Pack_Create (const char* name, ISA_BUNDLE_PACK_E
   ISA_BUNDLE_PACK_INFO bundle_pack_info = NULL;
   std::list<ISA_BUNDLE_PACK_INFO>::reverse_iterator bundle_pack_iter = bundle_packs.rbegin();
   bundle_pack_info = new(bundle_pack_info_t);
-  bzero(bundle_pack_info, sizeof(bundle_pack_info_t));
+  memset(bundle_pack_info, 0, sizeof(bundle_pack_info_t));
   bundle_pack_info->name = name;
   bundle_pack_info->endian = endian;
   bundle_pack_info->bundle_size = _bundle_size;
@@ -2515,7 +2515,7 @@ void ISA_Bundle_Pack_Create (ISA_BUNDLE_PACK_ENDIAN endian)
   }
 
   bundle_pack_info = new(BUNDLE_PACK_INFO);
-  bzero(bundle_pack_info, sizeof(*bundle_pack_info));
+  memset(bundle_pack_info, 0, sizeof(*bundle_pack_info));
   bundle_pack_info->endian = endian;
 }
 

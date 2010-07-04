@@ -623,6 +623,11 @@ void SSA::Construct(CODEMAP *htable, CFG *cfg, OPT_STAB *opt_stab)
   OPT_POOL_Delete(&rename_pool, SSA_DUMP_FLAG);
 
   if ( Get_Trace(TP_GLOBOPT, SSA_DUMP_FLAG)) {
+#ifdef TARG_ST
+    // Dump the CFG
+    fprintf(TFile,"%s\t\t After SSA Construct\n%s\n", DBar, DBar);
+    cfg->Print(TFile);
+#else
     // Dump phi functions
     fprintf(TFile, "PHI INSERTION: \n");
     FOR_ALL_ELEM (bb, cfg_iter, Init(cfg)) 
@@ -630,6 +635,7 @@ void SSA::Construct(CODEMAP *htable, CFG *cfg, OPT_STAB *opt_stab)
 	fprintf(TFile, "BB%" PRIdPTR ": \n", bb->Id());
 	bb->Phi_list()->PRINT(TFile);
       }
+#endif
   }
 }
 
@@ -798,7 +804,8 @@ SSA::Find_zero_versions(void)
 
     v->Set_cr_list(NULL);    // initialize this field unioned with nonzerophis
     }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
+           
   if ( Get_Trace(TP_GLOBOPT, SSA_DUMP_FLAG)) {
     CFG_ITER cfg_iter;
     BB_NODE *bb;
@@ -829,7 +836,7 @@ SSA::Find_zero_versions(void)
 #endif
   OPT_POOL_Pop(loc_pool, SSA_DUMP_FLAG);
 }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 void SSA::Print_ssa_ver_for_wn(WN* wn)
 {
   OPCODE opc = WN_opcode(wn);
@@ -997,7 +1004,11 @@ SSA::Get_zero_version_CR(AUX_ID aux_id, OPT_STAB *opt_stab, VER_ID du)
     if (st != NULL) ty = ST_type(st);
     MTYPE dtype, rtype;
     AUX_STAB_ENTRY *sym = opt_stab->Aux_stab_entry(aux_id);
-   
+   #ifdef TARG_ST
+      // Reconfigurability: Removed direct access to mclass, that is
+      //                    not supported for dynamic mtypes
+    rtype = Mtype_from_AUX_STAB_ENTRY(sym);
+#else
     if (sym->Mtype()==MTYPE_M || MTYPE_is_vector(sym->Mtype())
 #ifdef KEY // bug 7733: if dedicated-preg, Mtype() is MTYPE_UNKNOWN
         || (sym->Mclass() & MTYPE_CLASS_VECTOR)
@@ -1012,11 +1023,20 @@ SSA::Get_zero_version_CR(AUX_ID aux_id, OPT_STAB *opt_stab, VER_ID du)
 	  rtype = Mtype_TransferSign(MTYPE_U4, rtype);
 #endif
 	}
-
+#endif
     dtype = rtype;
     if (rtype != MTYPE_UNKNOWN && rtype != MTYPE_M) {
+#ifdef TARG_ST
+      if (MTYPE_is_class_integer(rtype) &&
+#else
       if (MTYPE_is_integral(rtype) &&
+#endif
           sym->Byte_size() < (MTYPE_size_min(MTYPE_I4)/8)) {
+#ifdef TARG_ST
+        // Reconfigurability: Sanity check
+        FmtAssert((!MTYPE_is_dynamic(sym->Mtype())),
+		  ("Extension Mtype not supported here: no corresponding mclass"));
+#endif
         rtype = Mtype_from_mtype_class_and_size(sym->Mclass(),
                                                 MTYPE_size_min(MTYPE_I4)/8);
 #ifdef KEY // bug 8186
@@ -1093,6 +1113,11 @@ SSA::Du2cr( CODEMAP *htable, OPT_STAB *opt_stab, VER_ID du,
 			   TRUE);
     } else {
       AUX_STAB_ENTRY *sym = opt_stab->Aux_stab_entry(vse->Aux_id());
+#ifdef TARG_ST
+      // Reconfigurability: Removed direct access to mclass, that is
+      //                    not supported for dynamic mtypes
+      rtype = Mtype_from_AUX_STAB_ENTRY(sym);
+#else
 
       ty = TY_IDX_ZERO;
       ST *st = opt_stab->St(vse->Aux_id());
@@ -1108,12 +1133,17 @@ SSA::Du2cr( CODEMAP *htable, OPT_STAB *opt_stab, VER_ID du,
 	  rtype = Mtype_TransferSign(MTYPE_U4, rtype);
 #endif
 	}
-
+#endif
       dtype = rtype;
 
       if (rtype != MTYPE_UNKNOWN && rtype != MTYPE_M) {
         if (MTYPE_is_integral(rtype) &&
             sym->Byte_size() < (MTYPE_size_min(MTYPE_I4)/8)) {
+#ifdef TARG_ST
+	  // Reconfigurability: Sanity check
+	  FmtAssert((!MTYPE_is_dynamic(sym->Mtype())),
+		    ("Extension Mtype not supported here: no corresponding mclass"));
+#endif
           rtype = Mtype_from_mtype_class_and_size(sym->Mclass(),
                                                   MTYPE_size_min(MTYPE_I4)/8);
 #ifdef KEY // bug 8186
@@ -1193,7 +1223,7 @@ void SSA::Value_number(CODEMAP *htable, OPT_STAB *opt_stab, BB_NODE *bb,
     if (OPERATOR_is_scalar_store (WN_operator(wn)) &&
 	! opt_stab->Du_any_use(WN_ver(wn)))
       continue; // skip the statement that DSE has recongnized dead code
-#ifndef KEY // move deletion to emit phase because htable.cxx needs to mark
+#if !defined( KEY) || defined(TARG_ST) // move deletion to emit phase because htable.cxx needs to mark
 	    // with DONT_PROP flag
     else if (Htable()->Phase() == MAINOPT_PHASE && 
 	     WN_operator(wn) == OPR_XPRAGMA &&
@@ -1219,7 +1249,7 @@ void SSA::Value_number(CODEMAP *htable, OPT_STAB *opt_stab, BB_NODE *bb,
 	istore_live = TRUE;
       else if (TY_kind(ty) == KIND_POINTER && Ilod_TY_is_volatile(ty))
 	istore_live = TRUE;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       else if ((WN_operator(WN_kid1(wn)) == OPR_LDA || WN_operator(WN_kid1(wn)) ==OPR_ILDA) &&
                TY_kind(WN_ty(WN_kid1(wn))) == KIND_POINTER && Ilod_TY_is_volatile(WN_ty(WN_kid1(wn))))
 	istore_live = TRUE;
@@ -1250,7 +1280,7 @@ void SSA::Value_number(CODEMAP *htable, OPT_STAB *opt_stab, BB_NODE *bb,
     stmt->Enter_rhs(htable, opt_stab, copyprop, exc);
     stmt->Enter_lhs(htable, opt_stab, copyprop);
 
-#ifdef KEY // bug 3130
+#if defined( KEY) && !defined(TARG_ST) // bug 3130
     // Simplification of CVT in identity assignments as in:
     //   I8I4LDID sym10
     //  I4I8CVT
@@ -1301,6 +1331,12 @@ void SSA::Value_number(CODEMAP *htable, OPT_STAB *opt_stab, BB_NODE *bb,
     INT32 linenum = Srcpos_To_Line(stmt->Linenum());	// for debugging
 
     // should no longer need the Wn
+#ifdef TARG_ST
+    // [TB]: For ICALL nodes we need to keep orig_wn for a longer time
+    // (until feedback emition). This WN is used to retrive icall
+    // feedback specific info when reemitting the whirl
+    if (WN_operator(wn) != OPR_ICALL)
+#endif
     stmt->Set_wn(NULL);
 
     BOOL set_dont_prop = TRUE;	// control whether to set any dont_prop flag
@@ -1316,7 +1352,7 @@ void SSA::Value_number(CODEMAP *htable, OPT_STAB *opt_stab, BB_NODE *bb,
 
       stmt->Set_mu_list( opt_stab->Get_stmt_mu_list(wn) );
       if (stmt->Opr() == OPR_RETURN || stmt->Opr() == OPR_RETURN_VAL
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	  || stmt->Opr() == OPR_GOTO_OUTER_BLOCK
 #endif
 	 )
@@ -1402,11 +1438,15 @@ void SSA::Value_number(CODEMAP *htable, OPT_STAB *opt_stab, BB_NODE *bb,
     } 
 
     if (OPERATOR_is_scalar_store (stmt->Opr()) &&
+#ifdef TARG_ST
+	opt_stab->Aux_stab_entry(stmt->Lhs()->Aux_id())->Is_return_preg())
+#else
 	opt_stab->Aux_stab_entry(stmt->Lhs()->Aux_id())->Is_dedicated_preg())
+#endif
       copyprop->Set_past_ret_reg_def();
     else if (stmt->Opr() == OPR_RETURN || 
 	     stmt->Opr() == OPR_RETURN_VAL ||
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   	     stmt->Opr() ==  OPR_GOTO_OUTER_BLOCK ||
 #endif
 	     stmt->Opr() == OPR_REGION)

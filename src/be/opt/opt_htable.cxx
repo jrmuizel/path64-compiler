@@ -1739,7 +1739,7 @@ CODEMAP::Alloc_hash_vec(void)
   // called by the constructor
   hash_vec = CXX_NEW_ARRAY(CODEREP*, size+1, mem_pool);
   if (hash_vec == NULL) ErrMsg ( EC_No_Mem, "CODEREP::Alloc_hash_vec" );
-  BZERO(hash_vec, sizeof(CODEREP*) * (size+1));
+  memset(hash_vec, 0, sizeof(CODEREP*) * (size+1));
 }
 
 void
@@ -5618,7 +5618,9 @@ void STMTREP::Clone(STMTREP *sr, CODEMAP *htable, MEM_POOL *pool)
   case OPR_ISTORE:
   case OPR_ISTBITS:
   case OPR_MSTORE:
+#ifndef TARG_ST
   case OPR_ISTOREX:
+#endif
     {
       CODEREP *cr = sr->Lhs();
       OCC_TAB_ENTRY *occ = (OCC_TAB_ENTRY*) CXX_NEW(OCC_TAB_ENTRY, pool);
@@ -5633,10 +5635,10 @@ void STMTREP::Clone(STMTREP *sr, CODEMAP *htable, MEM_POOL *pool)
       Chi_list()->Clone_chi_list(sr->Chi_list(), pool);
     }
     break;
- 
+#ifdef TARG_ST
   case OPR_ISTOREX:
     Is_True(FALSE, ("OPR_ISTOREX not expected."));
-
+#endif
   default:
     if (sr->Has_mu()) {
       Set_mu_list( CXX_NEW(MU_LIST, pool));

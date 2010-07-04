@@ -810,7 +810,7 @@ add_reloc_type (Elf64_AltRela *preloc, unsigned char reloc_type, pSCNINFO scn)
   if (REL64_type3(*preloc) != 0) {
     Elf64_Addr sv_offset = REL_offset(*preloc);
     Em_Add_New_Composite_Rela (preloc, scn);
-    bzero (preloc, sizeof (Elf64_Rela));
+    memset (preloc, 0, sizeof (Elf64_Rela));
     REL_offset(*preloc) = sv_offset;
     REL64_type(*preloc) = reloc_type;
   }

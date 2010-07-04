@@ -209,48 +209,6 @@ EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER(EXC_SCOPE *exc_scope)
   }
 }
 #else
-#else
-  _exc_scope = exc_scope;
-  Is_True (_exc_scope->Is_try_region(),
-           ("EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER: not a try_region"));
-  Is_True(WN_operator(_exc_scope->Begin_wn()) == OPR_REGION &&
-	  REGION_is_EH(_exc_scope->Begin_wn()),
-	  ("EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER, invalid input"));
-
-  // local mem_pool for chi list copy
-  OPT_POOL_Initialize(&_mem_pool, "EXC_SCOPE_TRY_ITER mem pool", 
-		      FALSE, EXC_TRACE_FLAG);
-  OPT_POOL_Push(&_mem_pool, EXC_TRACE_FLAG);
-
-  // Creates the chi list for this call, may be a conglomerate of the
-  // CHIs from many catches so need to allocate and copy
-  _chi_list = NULL;
-  WN *stmt, *pragmas = WN_region_pragmas(_exc_scope->Begin_wn());
-  STMT_ITER stmt_iter;
-  FOR_ALL_ELEM(stmt, stmt_iter, Init(WN_first(pragmas),WN_last(pragmas))) {
-    if (WN_opcode(stmt) == OPC_GOTO) {
-      mINT32 goto_label = WN_label_number(stmt);
-      BB_NODE *handler_bb = _exc_scope->Exc()->Cfg()->Get_bb_from_label(goto_label);
-      Is_True(handler_bb != NULL,
-	      ("EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER NULL label BB"));
-      WN *stmt = handler_bb->Firststmt();
-      Is_True(WN_operator(stmt) == OPR_OPT_CHI,
-          ("EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER: cannot find chi-list"));
-      CHI_LIST *chi = _exc_scope->Exc()->Opt_stab()->Get_stmt_chi_list(stmt);
-      Is_True(chi != NULL,
-	      ("EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER, NULL chi"));
-
-      // now copy chi to conglomerate list
-      CHI_NODE *cnode;
-      if (_chi_list == NULL)
-        _chi_list = CXX_NEW(CHI_LIST, &_mem_pool);
-      FOR_ALL_NODE(cnode, _chi_iter, Init(chi))
-	_chi_list->Append(cnode->Copy_chi_node(&_mem_pool));
-    }
-  }
-  // set up iterator
-  _chi_iter.Init(_chi_list);
-#endif
 
 EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER(EXC_SCOPE *exc_scope)
 {
@@ -326,7 +284,7 @@ EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER(EXC_SCOPE *exc_scope)
   // set up iterator
   _chi_iter.Init(_chi_list);
 }
-
+#endif
 AUX_ID
 EXC_SCOPE_TRY_ITER::Elem(CHI_NODE *chi)
 {

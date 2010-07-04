@@ -82,6 +82,7 @@
 #include "opt_verify.h"		// Def_before_use
 #include "opt_cvtl_rule.h"
 #include "opt_fold.h"
+#include "betarget.h"
 
 #include "data_layout.h"	// for ST_has_formal_preg_num
 
@@ -158,7 +159,7 @@ EXP_PHI::Init(EXP_ID e_num, INT opnd_count, BB_NODE *bb, MEM_POOL *pool)
   _result = NULL;
   Set_uses((USE_LIST_ENTRY *) NULL);
   _vec = (PHI_ELEM*) CXX_NEW_ARRAY(PHI_ELEM, opnd_count, pool);
-  BZERO(_vec, sizeof(PHI_ELEM) * opnd_count);
+  memset(_vec, 0, sizeof(PHI_ELEM) * opnd_count);
 }
 
 void
@@ -2331,7 +2332,7 @@ ETABLE::Alloc_and_generate_cur_expr(const CODEREP *result_expr,
       newcr->Set_ivar_mu_node(CXX_NEW(MU_NODE(*result_expr->Ivar_mu_node()), mpool));
 					      
     } else if (newcr->Kind() == CK_OP && (newcr->Opr() == OPR_INTRINSIC_OP
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	       || newcr->Opr() == OPR_PURE_CALL_OP
 #endif
       )) {
@@ -3491,7 +3492,7 @@ ETABLE::Recursive_rehash_and_replace(CODEREP           *x,
     if (Pre_kind() == PK_VNFRE)
        VNFRE::replace_occurs(original_cr, x, occur->Stmt());
 
-#if !defined( KEY) || defined(TARG_ST)
+#if defined( KEY) && !defined(TARG_ST)
     if (WOPT_Enable_Preserve_Mem_Opnds && opc != OPCODE_UNKNOWN &&
 	MTYPE_is_float(OPCODE_rtype(opc)) &&
 	(OPCODE_operator(opc) == OPR_ADD ||
@@ -3555,7 +3556,7 @@ ETABLE::Recursive_rehash_and_replace(CODEREP           *x,
       cr->Copy(*x);	
       cr->Set_usecnt(0);
       for  (INT32 i = 0; i < x->Kid_count(); i++) {
-#if !defined( KEY) || defined(TARG_ST) // bug 12471: __builtin_expect's first kid must be constant
+#if defined( KEY) && !defined(TARG_ST) // bug 12471: __builtin_expect's first kid must be constant
 	if (cr->Opr() == OPR_INTRINSIC_OP && cr->Intrinsic() == INTRN_EXPECT &&
 	    i == 1)
 	  continue;
@@ -4758,7 +4759,7 @@ ETABLE::Perform_PRE_optimization(void)
 void
 ETABLE::Clear_dpo_exp_phi(void)
 {
-  BZERO( _dpo_exp_phi, Cfg()->Total_bb_count()*sizeof(_dpo_exp_phi[0]));
+  memset( _dpo_exp_phi, 0, Cfg()->Total_bb_count()*sizeof(_dpo_exp_phi[0]));
 }
     
 void
@@ -4812,7 +4813,7 @@ void
 ETABLE::Per_worklst_cleanup(EXP_WORKLST *exp_worklst) const
 {
   // Clear phi pred cr
-  BZERO(_phi_pred_cr, Cfg()->Total_bb_count() * sizeof(_phi_pred_cr[0]));
+  memset(_phi_pred_cr, 0, Cfg()->Total_bb_count() * sizeof(_phi_pred_cr[0]));
 
   // Clear LFTR Def_occur() pointers (comp occurs live across worklsts)
   Lftr()->Clear_def_occurs(exp_worklst);

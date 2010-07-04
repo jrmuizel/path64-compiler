@@ -4769,8 +4769,8 @@ Cg_Dwarf_Output_Asm_Bytes_Sym_Relocs (FILE                 *asm_file,
 	  // multiple CIEs not supported
 	  FmtAssert (cie_count == 1, ("Multiple CIEs not supported"));
 
-	  bzero (dwarf_begin, buflen);
-	  bzero (dwarf_end, buflen);
+	  memset(dwarf_begin, 0, buflen);
+	  memset(dwarf_end, 0, buflen);
 	  // CIE begin and end labels
 	  strcpy (dwarf_begin, ".LEHCIE_begin");
 	  strcpy (dwarf_end, ".LEHCIE_end");
@@ -4802,8 +4802,8 @@ Cg_Dwarf_Output_Asm_Bytes_Sym_Relocs (FILE                 *asm_file,
 	  // Begin current frame
 	  static int count = 1;
 	  int this_count = count++;
-	  bzero (dwarf_begin, buflen);
-	  bzero (dwarf_end, buflen);
+	  memset(dwarf_begin, 0, buflen);
+	  memset(dwarf_end, 0, buflen);
 
 	  // FDE begin and end labels
 	  sprintf (dwarf_begin, ".LFDE%d_begin", this_count);

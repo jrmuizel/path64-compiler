@@ -178,7 +178,7 @@ void Begin_ABI(const char *name)
   ABI result = new abi;
 
   result->name = name;
-  bzero(result->reg_names, sizeof(result->reg_names));
+  memset(result->reg_names, 0, sizeof(result->reg_names));
 
   current_abi = result;
 

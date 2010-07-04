@@ -292,13 +292,7 @@ EMITTER::Raise_func_entry(BB_NODE *bb, BB_NODE *last_bb)
   bb->Init_stmt(_opt_func);
   WN_Set_Linenum(stmt, WN_Get_Linenum(_opt_func));
   if (Cfg()->Feedback()) {
-#ifdef TARG_ST
-    //TB: Add a third argument used only on icall nodes, here not possible
-    //so put NULL.
-    Cfg()->Feedback()->Emit_feedback(_opt_func, bb, NULL);
-#else
     Cfg()->Feedback()->Emit_feedback(_opt_func, bb);
-#endif
   }
 
   WN *pragmas;
@@ -387,13 +381,7 @@ Raise_if_stmt(EMITTER *emitter, BB_NODE **bb)
   WN *rwn = WN_CreateIf(WN_kid0(bb_cond->Laststmt()), block_then, block_else);
   WN_Set_Linenum(rwn, bb_cond->Linenum());
   if (emitter->Cfg()->Feedback()) {
-#ifdef TARG_ST
-    //TB: Add a third argument used only on icall nodes, here not possible
-    //so put NULL.
-    emitter->Cfg()->Feedback()->Emit_feedback( rwn, bb_cond, NULL );
-#else
     emitter->Cfg()->Feedback()->Emit_feedback( rwn, bb_cond );
-#endif
   }
   emitter->Connect_sr_wn( bb_cond->Branch_stmtrep(), rwn );
 
@@ -828,13 +816,7 @@ Raise_doloop_stmt(EMITTER *emitter, BB_NODE **bb)
 
   WN_Set_Linenum(rwn, bb_start->Linenum());
   if (emitter->Cfg()->Feedback()) {  // NOTE: Use Orig_wn()?
-#ifdef TARG_ST
-    //TB: Add a third argument used only on icall nodes, here not possible
-    //so put NULL.
-    emitter->Cfg()->Feedback()->Emit_feedback( rwn, bb_end, NULL );
-#else
     emitter->Cfg()->Feedback()->Emit_feedback( rwn, bb_end );
-#endif
   }
   bb_end->Set_loopstmt(rwn);
   emitter->Connect_sr_wn( bb_end->Branch_stmtrep(), rwn );
@@ -919,13 +901,7 @@ Raise_whiledo_stmt_to_whileloop(EMITTER *emitter, BB_NODE *bb, BB_NODE **next_bb
   WN *rwn = WN_CreateWhileDo(cond, block_body);
   WN_Set_Linenum(rwn, bb_end->Linenum());
   if (emitter->Cfg()->Feedback()) {
-#ifdef TARG_ST
-    //TB: Add a third argument used only on icall nodes, here not possible
-    //so put NULL.
-    emitter->Cfg()->Feedback()->Emit_feedback( rwn, bb_end, NULL );
-#else
     emitter->Cfg()->Feedback()->Emit_feedback( rwn, bb_end );
-#endif
   }
 
   // This cannot be set for a non-do loop.  Otherwise, it
@@ -1105,13 +1081,7 @@ Raise_whiledo_stmt_to_doloop(EMITTER *emitter, BB_NODE *bb, BB_NODE *prev_bb, BB
   //  It has been like that in 7.2.
   WN_Set_Linenum(rwn, header->Linenum());
   if (emitter->Cfg()->Feedback()) {
-#ifdef TARG_ST
-    //TB: Add a third argument used only on icall nodes, here not possible
-    //so put NULL.
-    emitter->Cfg()->Feedback()->Emit_feedback( rwn, header, NULL );
-#else
     emitter->Cfg()->Feedback()->Emit_feedback( rwn, header );
-#endif
   }
   header->Set_loopstmt(rwn);
   emitter->Set_has_do_loop();
@@ -1252,13 +1222,7 @@ Raise_dowhile_stmt(EMITTER *emitter, BB_NODE **bb)
 			     block_body);
   WN_Set_Linenum(rwn, bb_end->Linenum());
   if (emitter->Cfg()->Feedback()) {
-#ifdef TARG_ST
-    //TB: Add a third argument used only on icall nodes, here not possible
-    //so put NULL.
-    emitter->Cfg()->Feedback()->Emit_feedback( rwn, bb_end, NULL );
-#else
     emitter->Cfg()->Feedback()->Emit_feedback( rwn, bb_end );
-#endif
   }
   emitter->Connect_sr_wn( bb_end->Branch_stmtrep(), rwn );
 

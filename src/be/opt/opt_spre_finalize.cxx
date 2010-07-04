@@ -490,7 +490,10 @@ ETABLE::RHS_is_fully_avail(CODEREP *lhs, CODEREP *rhs)
 BOOL
 ETABLE::Stmt_is_redundant(STMTREP *stmt)
 {
+    #ifndef TARG_ST
+  // [CG]: If WOPT_Enable_DCE is false, dead statements may be not removed
   Is_True(stmt->Live_stmt(), ("ETABLE::Delete_redundant_stmt: stmt already dead."));
+#endif
 
   // must be STID
   if (! OPERATOR_is_scalar_store (stmt->Opr()))

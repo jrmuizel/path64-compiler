@@ -131,9 +131,7 @@ CODEREP::Same_bitpos(const CODEREP *cr) const
 	  lcr = cr->Istr_base();
 	if (!lcr->Same_bitpos(gcr))
 	  return FALSE;
-#ifndef TARG_ST
 	if (Opr() != OPR_ILOADX) 
-#endif
         {
 	  if (Offset() != cr->Offset())
 	    return FALSE;

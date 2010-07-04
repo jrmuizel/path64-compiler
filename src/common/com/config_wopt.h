@@ -173,6 +173,7 @@ extern INT32 WOPT_Enable_Ivr_Cand_Limit;
 extern BOOL WOPT_Enable_IVR_Outermost_Loop_Parallel_Region; 
 extern BOOL WOPT_Enable_Ldx;            /* index load optimization */
 extern BOOL WOPT_Enable_Lego_Opt;       /* max optimization for lego */
+extern BOOL WOPT_Enable_LFTR;           /* linear function test replacement */
 extern BOOL WOPT_Enable_LFTR_Ivar;      /* handle expr containing ivars */
 extern BOOL WOPT_Enable_LFTR2;          /* linear function test replacement */
 extern BOOL WOPT_Enable_LFTR2_Limit;
@@ -236,6 +237,7 @@ extern BOOL WOPT_Enable_SSA_Minimization; /* SSA minimization in SSAPRE */
 extern BOOL WOPT_Enable_SSA_PRE;
 extern BOOL WOPT_Enable_Store_PRE;
 extern INT32 WOPT_Enable_Store_PRE_Limit;
+extern BOOL WOPT_Enable_Strength_Reduction;
 extern BOOL WOPT_Enable_Tail_Recur;	/* tail recursion opt */
 extern BOOL WOPT_Enable_Update_Vsym;
 extern char *WOPT_Set_Unique_Pt;

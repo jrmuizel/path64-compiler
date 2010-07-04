@@ -346,6 +346,9 @@
 
 #include "regex.h"                      // For regcomp and regexec
 #include "xstats.h"                     // For PU_WN_BB_Cnt
+#ifdef TARG_ST
+#   include "opt_tailmerge.h"   // For tailmerge optimization
+#endif
 
 extern "C" void
 Perform_Procedure_Summary_Phase (WN* w, struct DU_MANAGER *du_mgr,
@@ -1236,9 +1239,9 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
 	actions |= LOWER_BIT_FIELD_ID;
     else
 	actions |= LOWER_BITS_OP;
-                                                                                                                                                             
+#ifndef TARG_ST 
     actions |= LOWER_TO_MEMLIB; // add memlib transformation
- 
+#endif
     wn_tree = WN_Lower(wn_orig, actions, alias_mgr, "Pre_Opt");
 
 #ifdef TARG_X8664
@@ -1247,12 +1250,12 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
     BOOL target_64bit = TRUE;
 #endif
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (target_64bit && WOPT_Enable_Retype_Expr)
       WN_retype_expr(wn_tree);
 #endif
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     WN_unroll(wn_tree);
 #endif
 
@@ -2249,7 +2252,7 @@ identify_complete_struct_relayout_candidates(WN *wn)
   // not interested in any leaf nodes
   return;
 }
-
+#ifndef TARG_ST
 // This function is called after the last function in the file has been
 // compiled.  Among all the structures that have been marked (more precisely,
 // all the structures whose fields that were accessed in some loops have been
@@ -2298,3 +2301,4 @@ choose_from_complete_struct_for_relayout_candidates()
   }
   return;
 }
+#endif

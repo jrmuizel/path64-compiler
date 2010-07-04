@@ -45,6 +45,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include <strings.h>
 #include <assert.h>
 #include <list>
@@ -183,7 +184,7 @@ ISA_HAZARD Hazard_Create( const char *name )
    }
 
   ISA_HAZARD result = new isa_hazard;
-  bzero(result, sizeof(isa_hazard));
+  memset(result, 0, sizeof(isa_hazard));
   hazards.push_back(result);
   result->name = name;
   return result;
@@ -214,7 +215,7 @@ void Hazard_Group( TOP topcode, ... )
              static_cast<TOP>(-1);
 
   current_haz_desc = new haz_desc;
-  bzero(current_haz_desc, sizeof(haz_desc));
+  memset(current_haz_desc, 0, sizeof(haz_desc));
 
   va_start(ap,topcode);
   for (opcode = topcode;
@@ -704,7 +705,7 @@ ISA_HAZARD Hazard_Create( const char *name )
 /////////////////////////////////////
 {
   ISA_HAZARD result = new isa_hazard;
-  bzero(result, sizeof(isa_hazard));
+  memset(result, 0, sizeof(isa_hazard));
   hazards.push_back(result);
   result->name = name;
   return result;
@@ -721,7 +722,7 @@ void Hazard_Group( TOP topcode, ... )
   int count = 0;
 
   current_haz_desc = new haz_desc;
-  bzero(current_haz_desc, sizeof(haz_desc));
+  memset(current_haz_desc, 0, sizeof(haz_desc));
 
   va_start(ap,topcode);
   for (opcode = topcode;

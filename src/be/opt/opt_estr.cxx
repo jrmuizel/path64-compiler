@@ -451,13 +451,13 @@ STR_RED::Find_iv_and_incr( STMTREP *stmt, CODEREP **updated_iv,
 
   Is_True( lhs->Kind() == CK_VAR,
     ("STR_RED::Find_iv_and_incr: Lhs not a var") );
-
+#ifndef TARG_ST
   if (aggstr_cand)
     // check if the number of induction expression injured by this stmt
     // exceeds the threshold 
     if (stmt->Str_red_num() >= Local_autoaggstr_reduction_threshold(stmt->Bb()))
       return FALSE;
-
+#endif
   // it's possible we've CSE'd the rhs of the iv update, so we need
   // to find the true update.  Only true if we already know the stmt
   // is an iv update.
@@ -689,13 +689,13 @@ STR_RED::Updated_by_iv_update(const CODEREP *first,
   }
 
   STMTREP *last_def = last->Defstmt();
-
+#ifndef TARG_ST
   if (aggstr_cand)
     // check if the number of induction expression injured by this stmt
     // exceeds the threshold 
     if (last_def->Str_red_num() >= Local_autoaggstr_reduction_threshold(last_def->Bb()))
       return FALSE;
-
+#endif
   // Continue following the chain of IV updates only if the innermost
   // loop containing last_def also contains the point of eventual use
   // of the putative injury repair result.

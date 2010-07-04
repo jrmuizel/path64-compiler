@@ -904,8 +904,8 @@ TOP TI_ASM_Unpack_Inst(
 
   /* Unpack the raw operands and results.
    */
-  bzero(result, sizeof(*result) * ISA_OPERAND_max_results);
-  bzero(opnd, sizeof(*opnd) * ISA_OPERAND_max_operands);
+  memset(result, 0, sizeof(*result) * ISA_OPERAND_max_results);
+  memset(opnd, 0, sizeof(*opnd) * ISA_OPERAND_max_operands);
   pinfo = ISA_PACK_Info(topcode);
   words = ISA_PACK_Inst_Words(topcode);
   for (j = 0; j < words; ++j) {

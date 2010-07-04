@@ -245,6 +245,10 @@ extern OPCODE Ldid_from_mtype( MTYPE mtype );
 
 // Get an MTYPE given an mtype class and size.
 extern MTYPE Mtype_from_mtype_class_and_size( INT mtype_class, INT bytes );
+#ifdef TARG_ST
+// Get an MTYPE given an AUX_STAB_ENTRY symbol
+extern MTYPE Mtype_from_AUX_STAB_ENTRY( AUX_STAB_ENTRY * );
+#endif
 
 // Determine the opcode to use to load a value of the given mtype 
 // class and size in bytes.

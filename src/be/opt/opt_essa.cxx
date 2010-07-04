@@ -528,7 +528,7 @@ ESSA::Same_e_version_real_occ_real_occ(const EXP_OCCURS *def,
       } 
   } else if (use->Occurrence()->Kind() == CK_OP && 
 	     (OPCODE_operator(use->Occurrence()->Op()) == OPR_INTRINSIC_OP
-#if defined(KEY) && !defined(TARG_ST
+#if defined(KEY) && !defined(TARG_ST)
 	      || OPCODE_operator(use->Occurrence()->Op()) == OPR_PURE_CALL_OP
 #endif
 	     )) {

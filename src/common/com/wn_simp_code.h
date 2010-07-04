@@ -6066,7 +6066,7 @@ simpnode SIMPNODE_SimplifyIntrinsic(OPCODE opc, UINT32 intrinsic, INT32 n, simpn
       }
 #endif /* KEY */
    }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST) 
 #ifdef WN_SIMP_WORKING_ON_WHIRL
    else if (OPT_Enable_Simp_Fold)
    {

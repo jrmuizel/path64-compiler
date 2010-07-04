@@ -884,7 +884,7 @@ HB_Schedule::Fixup_Reganti (OP *op, BOOL is_fwd)
   Set_hbs_must_emit_sched();
 
   OPSCH *copy_opsch = TYPE_MEM_POOL_ALLOC (OPSCH, &_hb_pool);
-  bzero(copy_opsch, sizeof(OPSCH));
+  memset(copy_opsch, 0, sizeof(OPSCH));
   OPSCH_lstart(copy_opsch) = 0x7fff;
   BB_OP_MAP bb_map = (BB_OP_MAP) BB_MAP_Get(_hb_map, OP_bb(copy_op));
   BB_OP_MAP_Set(bb_map, copy_op, copy_opsch);
@@ -1053,7 +1053,7 @@ Init_OPSCH_For_BB (BB *bb, BB_MAP value_map, BOOL compute_bitsets,
 
   FOR_ALL_BB_OPs_FWD (bb, op) {
     opsch = TYPE_MEM_POOL_ALLOC (OPSCH, pool);
-    bzero (opsch, sizeof (OPSCH));
+    memset (opsch, 0, sizeof (OPSCH));
     OPSCH_lstart(opsch) = 0x7fff;
     BB_OP_MAP bb_map = (BB_OP_MAP) BB_MAP_Get(value_map, bb);
     BB_OP_MAP_Set (bb_map, op, opsch);
@@ -2097,7 +2097,7 @@ HB_Schedule::Add_OP_To_Sched_Vector (OP *op, BOOL is_fwd)
     OP_srcpos(nop) = OP_srcpos(op);
 
     OPSCH *opsch = TYPE_MEM_POOL_ALLOC (OPSCH, &_hb_pool);
-    bzero (opsch, sizeof (OPSCH));
+    memset (opsch, 0, sizeof (OPSCH));
     OPSCH_lstart(opsch) = 0x7fff;
     BB_OP_MAP bb_map = (BB_OP_MAP) BB_MAP_Get(_hb_map, OP_bb(nop));
     BB_OP_MAP_Set (bb_map, nop, opsch);

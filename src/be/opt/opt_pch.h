@@ -38,9 +38,7 @@
 
 // All system headers included directly from OPT
 
-#if HAVE_ALLOCA_H
 #include <alloca.h>
-#endif
 
 #include "defs.h"
 #include "config_targ.h"

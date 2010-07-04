@@ -603,13 +603,13 @@ WN_Create (OPERATOR opr, TYPE_ID rtype, TYPE_ID desc, mINT16 kid_count)
 	    ("Illegal number of kids for WN_Create"));
 
     /* Find the memory.  First try a free list, then go to the MEM_POOL.
-     * Note: For safety, we use a bzero'd MEM_POOL and bzero new nodes
+     * Note: For safety, we use a zero'd MEM_POOL and bzero new nodes
      *       popped from a free list, but clients should not be relying
      *	   on uninitialized fields being zeroed.
      */
     if (free_list && !WN_FREE_LIST_Empty(free_list)) {
 	wn = WN_FREE_LIST_Pop(free_list);
-	bzero(wn, size);
+	memset(wn, 0,size);
     } else {
 	if (WN_mem_pool_ptr == &WN_mem_pool && !WN_mem_pool_initialized) {
 	    MEM_POOL_Initialize(WN_mem_pool_ptr, "WHIRL Nodes", TRUE);
@@ -617,7 +617,7 @@ WN_Create (OPERATOR opr, TYPE_ID rtype, TYPE_ID desc, mINT16 kid_count)
 	    WN_mem_pool_initialized = TRUE;
 	}
 	wn = (WN *)MEM_POOL_Alloc(WN_mem_pool_ptr, size);
- 	bzero(wn, size);
+ 	memset(wn, 0, size);
     }
 
     /* Some nodes have next and previous pointers grow off the bottom.

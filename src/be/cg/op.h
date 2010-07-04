@@ -303,6 +303,9 @@
 
 /* to get Is_True */
 #include "errors.h"
+ 
+ /* to get definition of TN */
+#include "tn.h"
 
 /* to get definition of REGISTER */
 #include "register.h"
@@ -1256,8 +1259,8 @@ TN_Opernum_In_OP (OP* op, struct tn *tn)
              ("TN_Opernum_in_OP: Could not find <tn> in operands list\n"));
   return -1;
 }
-
+#ifndef TARG_ST
 #include "op_targ.h"
-
+#endif
 #endif /* op_INCLUDED */
 

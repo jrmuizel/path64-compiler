@@ -51,7 +51,7 @@
 // ====================================================================
 // ====================================================================
 
-
+#include <cmath>
 #include "opt_fb.h"
 #include <stack>
 #include "opt_htable.h" // for STMTREP
@@ -1042,14 +1042,7 @@ OPT_FEEDBACK::~OPT_FEEDBACK()
 // ====================================================================
 
 void
-#ifdef TARG_ST
-//TB: orig_wn is the original WN (before WOPT cfg construction).
-//The WN is used to retrieve feedback info that are not carried by
-//the OPT FEEDBACK CFG (icall specific info).
-OPT_FEEDBACK::Emit_feedback( WN *wn, BB_NODE *bb, WN *orig_wn ) const
-#else
 OPT_FEEDBACK::Emit_feedback( WN *wn, BB_NODE *bb ) const
-#endif
 {
   IDTYPE nx = bb->Id();
   const OPT_FB_NODE& node = _fb_opt_nodes[nx];
@@ -1217,8 +1210,9 @@ OPT_FEEDBACK::Emit_feedback( WN *wn, BB_NODE *bb ) const
     // Cur_PU_Feedback->Annot(wn, FB_EDGE_CALL_INCOMING, node.freq_total_out);
     }
 #ifdef KEY
-    if( opr == OPR_ICALL &&
-	node.orig_wn != NULL ){
+    if( opr == OPR_ICALL 
+        && node.orig_wn != NULL 
+        ){
       FB_Info_Icall fb_info_icall = Cur_PU_Feedback->Query_icall(node.orig_wn);
       Cur_PU_Feedback->Annot_icall( wn, fb_info_icall );
 
@@ -1227,9 +1221,6 @@ OPT_FEEDBACK::Emit_feedback( WN *wn, BB_NODE *bb ) const
 		   ("icall execution counter is invalid") );
 #ifdef TARG_ST
         
-      if( !fb_info_icall.Is_uninit() ){
-	FmtAssert( fb_info_icall.tnv._exec_counter >= fb_info_icall.tnv._counters[0],
-		   ("icall execution counter is invalid") );
 	//TB: fix: when orig_wn has been split into 2 nodes, icall fb
 	//info for the wn is not the same has for the original one.
 	FB_Info_Call fb_info_call = Cur_PU_Feedback->Query_call(wn);

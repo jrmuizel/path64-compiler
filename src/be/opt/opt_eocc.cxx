@@ -192,7 +192,7 @@ EOCC::Collect_real_occurrences( void )
 	  CODEREP *rhs_cr = stmt->Rhs();
 	  CODEREP *lhs = stmt->Lhs();
 	  if (WOPT_Enable_Cvt_Folding && rhs_cr->Kind() == CK_OP && 
-#if defined( KEY) && !defined(TARG_ST)/ bug 11797
+#if defined( KEY) && !defined(TARG_ST) // bug 11797
 	      ! MTYPE_is_vector(rhs_cr->Dsctyp()) &&
 	      ! MTYPE_is_vector(rhs_cr->Dtyp()) &&
 #endif
