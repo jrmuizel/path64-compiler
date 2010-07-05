@@ -61,13 +61,6 @@ int getdomainname(char *name, size_t len)
     return 0;
 }
 
-int gethostname(char *name, size_t namelen)
-{
-    fprintf(stderr, "gethostname() is unimplemented\n");
-    snprintf(name, namelen, "fakehostname");
-    return 0;
-}
-
 void
 Handle_Signals(void)
 {

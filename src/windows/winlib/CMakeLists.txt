@@ -1,5 +1,6 @@
 
-set(winlib_SRC	"mkstemp.c"
+set(winlib_SRC	"gethostname.c"
+				"mkstemp.c"
 				"mmap.c"
 				"mmap64.c"
 				"munmap.c"
