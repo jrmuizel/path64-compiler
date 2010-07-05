@@ -9,13 +9,6 @@ pid_t wait(int *stat_loc)
     return 0;
 }
 
-int uname(struct utsname *name)
-{
-    fprintf(stderr, "uname() is unimplemented\n");
-    return 0;
-}
-
-
 const char * Anl_File_Path()
 {
     fprintf(stderr, "Anl_File_Path() is unimplemented\n");

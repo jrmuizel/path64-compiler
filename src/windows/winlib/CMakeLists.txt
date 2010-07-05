@@ -10,6 +10,7 @@ set(winlib_SRC	"mkstemp.c"
 				"stubs.c"
 				"tempname.c"
 				"times.c"
+				"uname.c"
 				"win2unixpath.c")
 
 ADD_DEFINITIONS(
