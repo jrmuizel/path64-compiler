@@ -643,7 +643,7 @@ public:
   BOOL Has_prolog() const { return flags & CG_LOOP_HAS_PROLOG; }
   BOOL Has_epilog() const { return flags & CG_LOOP_HAS_EPILOG; }
   BOOL Has_prolog_epilog() const { return Has_prolog() && Has_epilog(); }
-#ifdef KEY
+#if defined (KEY) && !defined(TARG_ST)
   BOOL Has_post_remainder_loop() const
 	{ return flags & CG_LOOP_HAS_POST_REMAINDER_LOOP; }
 #endif
@@ -653,7 +653,8 @@ public:
   BOOL Is_while_loop() const { return flags & CG_LOOP_IS_WHILE_LOOP; }
   void Set_is_while_loop()   { flags |= CG_LOOP_IS_WHILE_LOOP; }
 #endif
-#ifdef KEY
+ 
+#if defined (KEY) && !defined(TARG_ST)
   void Set_has_post_remainder_loop()
 	{ flags |= CG_LOOP_HAS_POST_REMAINDER_LOOP; }
 #endif

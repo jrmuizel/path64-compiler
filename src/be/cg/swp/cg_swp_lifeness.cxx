@@ -37,7 +37,7 @@
 
 /* Standard Template Library (STL) related include files */
 #include <functional>
-
+#ifndef TARG_ST
 using namespace std;
 
 
@@ -134,4 +134,4 @@ SWP_LIFENESS::Verify (void) const {
 
   return;
 }
-
+#endif

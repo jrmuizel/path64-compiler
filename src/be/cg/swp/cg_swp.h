@@ -45,6 +45,7 @@
 #include "tn.h"
 #include "tn_set.h"
 #include "op.h"
+#include "bb.h"
 
 // #define for SWP INTERNAL USE only
 //
@@ -279,7 +280,7 @@ enum SCHED_DIRECTION {
 extern INT *swp_map_tbl;
 
 inline INT SWP_index(OP *op) { return swp_map_tbl[OP_map_idx(op)]; }
-
+#ifdef TARG_ST
 // inline INT SWP_index(OP *op) { return OP_map_idx(op); }
 struct SWP_OP {
   SCHED_DIRECTION direction;  // direction
@@ -348,7 +349,7 @@ public:
   SWP_OP_vector(struct bb *body, BOOL doloop, MEM_POOL *pool);
 };
 
-
+#endif
 //************************************************************************
 //   MinDist calculation
 //************************************************************************

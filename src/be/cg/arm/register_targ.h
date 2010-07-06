@@ -87,9 +87,14 @@ extern char * REGISTER_Stacked_Output_Name (REGISTER reg);
 extern REGISTER REGISTER_First_Rotating_Registers(ISA_REGISTER_CLASS rclass);
 extern REGISTER REGISTER_Last_Rotating_Registers(ISA_REGISTER_CLASS rclass);
 extern void REGISTER_Request_Stacked_Rotating_Register();
-
+/* ====================================================================
+ *   Is_Predicate_REGISTER_CLASS
+ *   Returns TRUE if the rclass is the predicate register class.
+ * ====================================================================
+ */
 inline BOOL Is_Predicate_REGISTER_CLASS(ISA_REGISTER_CLASS rclass) {
-  return FALSE;
+  // Should get subclass cpsrcond
+  return rclass == ISA_REGISTER_CLASS_cpsr;
 }
 
 extern REGISTER_SET REGISTER_Get_Requested_Rotating_Registers(ISA_REGISTER_CLASS rclass);

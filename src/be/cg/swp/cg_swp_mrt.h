@@ -32,7 +32,7 @@
 
 /* Software Pipelinig (SWP) related include files */
 #include "cg_swp_op_vector.h"
-
+#ifndef TARG_ST
 
 
 enum SWP_RESOURCE_TYPE {
@@ -173,6 +173,6 @@ SWP_MRT::Print (FILE *f) {
   
   return;
 }
-
+#endif
 #endif /* cg_swp_mrt_INCLUDED */
 

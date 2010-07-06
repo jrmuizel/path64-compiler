@@ -59,7 +59,7 @@
 /* Standard Template Library (STL) related include files */
 #include <algorithm>
 #include <cmath>
-
+#ifndef TARG_ST
 using namespace std;
 
 
@@ -1057,4 +1057,4 @@ SWP_DRIVER::Restore_Backpatches (void) {
   return;
 }
 
-
+#endif

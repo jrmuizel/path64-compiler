@@ -565,7 +565,9 @@ private:
 #endif
 #ifdef KEY
   void Add_OP_To_Ready_Vector (OPSCH *);
+#ifndef TARG_ST
   void Adjust_Ldst_Offsets (BOOL is_fwd);
+#endif
   OP *Fixup_Reganti (OP *op, BOOL is_fwd);
   void Update_Least_Constrained (OPSCH *, BOOL);
   void DFS_Update_Least_Constrained (OPSCH *, BOOL);

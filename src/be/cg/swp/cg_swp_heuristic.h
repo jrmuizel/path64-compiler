@@ -41,7 +41,7 @@
 #include "cg_swp_slack.h"
 #include "cg_swp_minlt.h"
 
-
+#ifndef TARG_ST
 
 class SWP_HEURISTIC {
   private:
@@ -135,6 +135,6 @@ SWP_HEURISTIC::Adjust_OP (INT x) const {
            ("SWP_HEURISTIC: Out of bounds!"));
   return _adjust[x];
 }
-
+#endif
 #endif /* cg_swp_heuristic_INCLUDED */
 

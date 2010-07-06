@@ -658,10 +658,6 @@ BE_EXPORTED extern INT32 ENV_Symbol_Visibility;
 BE_EXPORTED extern char *ENV_Symbol_Visibility_String;
 BE_EXPORTED extern char *ENV_Symbol_Visibility_Spec_Filename;
 #endif
-#ifdef TARG_ST
-BE_EXPORTED extern BOOL CG_LOOP_fix_recurrences;
-BE_EXPORTED extern BOOL CG_LOOP_fix_recurrences_specified;
-#endif
 
 extern BOOL Gen_PIC_Calls;	/* do calls as PIC code */
 extern BOOL Guaranteed_Small_GOT; /* GOT < 64kB? */

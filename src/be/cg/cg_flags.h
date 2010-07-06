@@ -763,6 +763,7 @@ extern BOOL  HB_exclude_calls;
 extern BOOL  HB_exclude_pgtns;
 extern BOOL  HB_skip_hammocks;
 extern BOOL  GRA_LIVE_Predicate_Aware;
+extern BOOL  HB_superblocks;
 
 extern BOOL Use_Page_Zero;  /* set bit in object to allow use of page 0 */
 
@@ -795,12 +796,6 @@ extern BOOL HB_complex_non_loop_if_conversion;
 
 
 /* Recurrence breaking flags */
-#ifndef TARG_ST
-// FdF 20090318: Moved into config.h
-extern BOOL CG_LOOP_fix_recurrences;
-extern BOOL CG_LOOP_fix_recurrences_specified;
-#endif
-
 extern BOOL CG_LOOP_fix_recurrences;
 extern BOOL CG_LOOP_fix_recurrences_specified;
 extern BOOL CG_LOOP_back_substitution;

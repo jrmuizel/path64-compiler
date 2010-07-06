@@ -769,7 +769,7 @@ HB_Schedule::Adjust_Ldst_Offsets (void)
   }
 }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 void HB_Schedule::Adjust_Ldst_Offsets( BOOL is_fwd )
 {
   for( INT i = is_fwd ? 0 : VECTOR_count(_sched_vector) - 1; 

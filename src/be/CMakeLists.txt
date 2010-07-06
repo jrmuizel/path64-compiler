@@ -27,12 +27,15 @@ INCLUDE_DIRECTORIES(
 
   ../ipa_link/include
 
+  ../libair
   ../common/com
   ../common/com/${BUILD_TARGET_DIR}
   ../common/instrument
   ../common/targ_info/access
   ../common/util
-  ../common/stl
+  ../common/stl  
+  ../common/targ_info/parser/inc/
+
 
   ../libdwarf/libdwarf
   )

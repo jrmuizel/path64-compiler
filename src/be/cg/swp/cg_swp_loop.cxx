@@ -28,7 +28,7 @@
 
 /* Software Pipelining (SWP) related include files */
 #include "cg_swp_loop.h"
-
+#ifndef TARG_ST
 
 
 SWP_LOOP::SWP_LOOP (void) :
@@ -118,4 +118,4 @@ SWP_LOOP::Verify (void) const {
   
   return;
 }
-
+#endif

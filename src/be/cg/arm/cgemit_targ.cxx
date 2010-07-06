@@ -27,7 +27,7 @@
 
 */
 
-#include <elf.h>
+#include <elf_stuff.h>
 
 #define	USE_STANDARD_TYPES 1
 #include "defs.h"

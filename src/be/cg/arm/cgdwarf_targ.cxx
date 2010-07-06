@@ -46,7 +46,7 @@ using std::list;
 #include "cgdwarf.h"               /* [CL] for CGD_LABIDX */
 #include "cgdwarf_debug_frame.h"
 #include "tracing.h" // For TFile definition
-#include "config_TARG.h"
+#include "config_targ_opt.h"
 #include "targ_em_dwarf.h" // For debug identifier macro (DBGREG_SP, etc.)
 
 // Uncomment the following define macro and add -Wb,-tt56:64 on your comment
@@ -868,7 +868,7 @@ Compute_Push_Pop_Regs(OP* op, INT& spOffset, UINT when)
         }
 }
 
-#include <elf.h>
+#include <elf_stuff.h>
 #include <elfaccess.h>
 
 void
@@ -880,7 +880,7 @@ Check_Dwarf_Rel(const Elf32_Rel &current_reloc)
 }
 
 void
-Check_Dwarf_Rel(const Elf64_Rel &current_reloc)
+Check_Dwarf_Rel(const Elf64_AltRel &current_reloc)
 {
   FmtAssert(REL64_type(current_reloc) == R_IA_64_DIR64MSB,
 	    ("Unimplemented 64-bit relocation type %d",
@@ -888,7 +888,7 @@ Check_Dwarf_Rel(const Elf64_Rel &current_reloc)
 }
 
 void
-Check_Dwarf_Rela(const Elf64_Rela &current_reloc)
+Check_Dwarf_Rela(const Elf64_AltRela &current_reloc)
 {
   FmtAssert(FALSE,
 	    ("Unimplemented 64-bit relocation type %d",

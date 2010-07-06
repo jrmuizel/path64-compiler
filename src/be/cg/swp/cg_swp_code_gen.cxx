@@ -48,7 +48,7 @@
 #include <algorithm>
 
 using namespace std;
-
+#ifndef TARG_ST
 
 
 SWP_CODE_GEN::SWP_CODE_GEN (SWP_LOOP& swp_loop,
@@ -1511,4 +1511,4 @@ SWP_CODE_GEN::Rename_Prologue_TN_to_Kernel_TN (TN *kernel_tn) {
     
   return FALSE;
 }
-
+#endif

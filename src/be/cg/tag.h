@@ -34,7 +34,9 @@ extern LABEL_IDX Gen_Tag (void);
 
 inline void Set_OP_Tag (OP *op, LABEL_IDX tag)
 {
+#ifndef TARG_ST
   Set_OP_has_tag(op);
+#endif
   // create map on the fly, so no cost if no tags
   if (OP_Tag_Map == NULL)
 	OP_Tag_Map = OP_MAP32_Create();

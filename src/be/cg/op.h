@@ -292,6 +292,8 @@
 
 #ifndef op_INCLUDED
 #define op_INCLUDED
+/* Include the values for the variant field: */
+#include "variants.h"
 
 /* to get the definition of SRCPOS. */
 #include "srcpos.h"
@@ -676,6 +678,37 @@ enum OP_COND_DEF_KIND {
 
 extern BOOL OP_cond_def(const OP*);
 extern BOOL OP_has_implicit_interactions(OP*);
+#ifdef TARG_ST
+/* [SC] Sugar for finding OU_xxxx operands. */
+#define OP_findopnd(op,type) ((OP_find_opnd_use((op),type) == (-1)) \
+                              ? NULL \
+                              : OP_opnd((op), OP_find_opnd_use((op),type)))
+#define OP_Opnd1(op)      OP_findopnd(op,OU_opnd1)
+#define OP_Opnd2(op)      OP_findopnd(op,OU_opnd2)
+#define OP_Condition(op)  OP_findopnd(op,OU_condition)
+#define OP_Storeval(op)   OP_findopnd(op,OU_storeval)
+#define OP_Base(op)       OP_findopnd(op,OU_base)
+#define OP_Offset(op)     OP_findopnd(op,OU_offset)
+#define OP_Predicate(op)  OP_findopnd(op,OU_predicate)
+#endif
+#ifdef TARG_ST
+#define OP_automod(o)		(TOP_is_automod(OP_code(o)))
+//[CG]: Added semantic queries
+#define OP_ishl(o)		(TOP_is_shl(OP_code(o)) && OP_intop(o))
+#define OP_ishr(o)		(TOP_is_shr(OP_code(o)) && OP_intop(o))
+#define OP_ishru(o)		(TOP_is_shru(OP_code(o)) && OP_intop(o))
+#define OP_sext(o)		(TOP_is_sext(OP_code(o)))
+#define OP_zext(o)		(TOP_is_zext(OP_code(o)))
+#define OP_phi(o)               (OP_code(o) == TOP_phi)
+#define OP_psi(o)               (OP_code(o) == TOP_psi)
+#define OP_PCOPY(o)		(OP_code(o) == TOP_PCOPY)
+
+//[SC]: Added multi-op queries
+#define OP_multi(o)             (TOP_is_multi(OP_code(o)))
+#define OP_extract(o)           (TOP_is_extract(OP_code(o)))
+#define OP_compose(o)           (TOP_is_compose(OP_code(o)))
+#define OP_widemove(o)          (TOP_is_widemove(OP_code(o)))
+#endif
 
 /* Convenience access macros for properties of the OP */
 /* TODO: define all the macros for OP properties. */
@@ -700,6 +733,22 @@ extern BOOL OP_has_implicit_interactions(OP*);
 #define OP_fmul(o)		(TOP_is_fmul(OP_code(o)))
 #define OP_fmisc(o)		(TOP_is_fmisc(OP_code(o)))
 #define OP_fsub(o)		(TOP_is_fsub(OP_code(o)))
+#define OP_intop(o)             (TOP_is_intop(OP_code(o)))
+#define OP_ptrop(o)             (TOP_is_ptrop(OP_code(o)))
+#define OP_flop(o)		(TOP_is_flop(OP_code(o)))
+
+#ifdef TARG_ST
+#define OP_iadd(o)		(TOP_is_add(OP_code(o)) && OP_intop(o))
+#define OP_ior(o)		(TOP_is_or(OP_code(o)) && OP_intop(o))
+#define OP_ixor(o)		(TOP_is_xor(OP_code(o)) && OP_intop(o))
+#define OP_iand(o)		(TOP_is_and(OP_code(o)) && OP_intop(o))
+#define OP_icmp(o)		(TOP_is_cmp(OP_code(o)) && OP_intop(o))
+#define OP_idiv(o)		(TOP_is_div(OP_code(o)) && OP_intop(o))
+#define OP_imul(o)		(TOP_is_mul(OP_code(o)) && OP_intop(o))
+#define OP_isub(o)		(TOP_is_sub(OP_code(o)) && OP_intop(o))
+#define OP_imin(o)		(TOP_is_min(OP_code(o)) && OP_intop(o))
+#define OP_imax(o)		(TOP_is_max(OP_code(o)) && OP_intop(o))
+#else
 #define OP_iadd(o)		(TOP_is_iadd(OP_code(o)))
 #define OP_ior(o)		(TOP_is_ior(OP_code(o)))
 #define OP_ixor(o)		(TOP_is_ixor(OP_code(o)))
@@ -708,6 +757,7 @@ extern BOOL OP_has_implicit_interactions(OP*);
 #define OP_idiv(o)		(TOP_is_idiv(OP_code(o)))
 #define OP_imul(o)		(TOP_is_imul(OP_code(o)))
 #define OP_isub(o)		(TOP_is_isub(OP_code(o)))
+#endif
 #define OP_madd(o)		(TOP_is_madd(OP_code(o)))
 #define OP_sqrt(o)		(TOP_is_sqrt(OP_code(o)))
 #define OP_mmmul(o)		(TOP_is_mmmul(OP_code(o)))
@@ -715,7 +765,49 @@ extern BOOL OP_has_implicit_interactions(OP*);
 #define OP_mmalu(o)		(TOP_is_mmalu(OP_code(o)))
 #define OP_select(o)		(TOP_is_select(OP_code(o)))
 #define OP_cond_move(o)		(TOP_is_cond_move(OP_code(o)))
+#define OP_operand_info(o)	(ISA_OPERAND_Info(OP_code(o)))
+
+#ifdef TARG_ST
+/* Result must not be same as operand */ 
+inline BOOL OP_uniq_res(OP *op, INT i) { 
+  const ISA_OPERAND_INFO *oinfo = OP_operand_info(op);
+  if (i >= ISA_OPERAND_INFO_Results(oinfo)) return FALSE;
+  ISA_OPERAND_USE this_def = ISA_OPERAND_INFO_Def(oinfo, i); 
+  if (this_def & OU_uniq_res)  
+    return TRUE; 
+ 
+#ifdef TARG_ST
+  if(ISA_OPERAND_INFO_Conflicts(oinfo, i)) {
+    return TRUE;
+  }
+#endif
+
+  return FALSE; 
+} 
+#else
 #define OP_uniq_res(o)		(TOP_is_uniq_res(OP_code(o)))
+#endif
+#ifdef TARG_ST
+/* Check if a given result and operand must not share the same
+   register. */
+inline BOOL OP_conflict(OP *op, INT res_idx, INT opnd_idx) { 
+  const ISA_OPERAND_INFO *oinfo = OP_operand_info(op);
+  if (res_idx >= ISA_OPERAND_INFO_Results(oinfo) ||
+      opnd_idx >= ISA_OPERAND_INFO_Operands(oinfo))
+    return FALSE;
+  ISA_OPERAND_USE this_def = ISA_OPERAND_INFO_Def(oinfo, res_idx);
+  // This result must not share a register with any operand
+  if (this_def & OU_uniq_res)  
+    return TRUE;
+ 
+  if(ISA_OPERAND_INFO_Conflicts(oinfo, res_idx) &&
+     ISA_OPERAND_INFO_Has_Conflict(oinfo, res_idx, opnd_idx))
+    return TRUE;
+
+  return FALSE; 
+}
+#endif
+
 #define OP_unalign_ld(o)	(TOP_is_unalign_ld(OP_code(o)))
 #define OP_unalign_store(o)	(TOP_is_unalign_store(OP_code(o)))
 #define OP_unalign_mem(o)	(OP_unalign_ld(o) | OP_unalign_store(o))
@@ -759,7 +851,6 @@ extern BOOL OP_has_implicit_interactions(OP*);
 #endif	// ICE9A_HW_WORKAROUND
 #endif
 
-#define OP_operand_info(o)	(ISA_OPERAND_Info(OP_code(o)))
 #define OP_has_hazard(o)	(ISA_HAZARD_TOP_Has_Hazard(OP_code(o)))
 #define OP_immediate_opnd(o)	(TOP_Immediate_Operand(OP_code(o),NULL))
 #define OP_has_immediate(o)	(OP_immediate_opnd(o) >= 0)
@@ -885,7 +976,9 @@ inline ISA_OPERAND_USE OP_opnd_use(OP *op, INT opnd)
 }
 
 #define OP_has_result(o) (OP_results(o) != 0)
-
+#ifdef TARG_ST // [CL]
+#define OP_find_result_with_usage(o,u)	(TOP_Find_Result_With_Usage(OP_code(o),(u)))
+#endif
 /* Is OP a branch ? */
 #define  OP_br(o) (OP_xfer(o) && !OP_call(o))
 
@@ -897,6 +990,135 @@ inline ISA_OPERAND_USE OP_opnd_use(OP *op, INT opnd)
 #define TOP_fixed_opnds(o)	(ISA_OPERAND_INFO_Operands(ISA_OPERAND_Info(o)))
 #define OP_fixed_results(o)	(TOP_fixed_results(OP_code(o)))
 #define OP_fixed_opnds(o)	(TOP_fixed_opnds(OP_code(o)))
+#ifdef TARG_ST
+/*
+ * Returns whether the operations are plain load or store.
+ * A plain load or store is defined by:
+ * - is OP_load() or OP_store(),
+ * - no implicit interaction,
+ * - no partial definition,
+ * - not predicated, or statically proved not conditional.
+ */
+extern BOOL OP_plain_load(OP *op);
+extern BOOL OP_plain_store(OP *op);
+#endif
+/*
+ * If 'op' performs a copy operation, return the index of
+ * the source operand; otherwise return -1.
+ */
+#ifdef TARG_ST
+extern INT OP_Copy_Operand(OP *op);
+extern INT OP_Copy_Result(OP *op);
+
+//inline INT OP_Predicate_Operand(OP *op) {
+//  return OP_find_opnd_use(op, OU_predicate);
+//}
+#else
+extern INT CGTARG_Copy_Operand(OP *op);
+#endif
+
+#ifdef TARG_ST
+/* ====================================================================
+ *
+ * OP_Find_TN_Def_In_BB - Return the definer op of <tn> within a BB scope
+ * by walking backward starting from <op>. BB is implicitly defined as
+ * being <op> container.
+ * Return NULL if not found.
+ *
+ * ====================================================================
+ */
+extern OP * OP_Find_TN_Def_In_BB(const OP *op, TN *tn);
+
+/* ====================================================================
+ *
+ * OP_opnd_is_multi - return TRUE if opnd is part of a multi-register
+ * operand.
+ *
+ * ====================================================================
+ */
+extern BOOL OP_opnd_is_multi(const OP *op, INT opnd);
+
+/* ====================================================================
+ *
+ * OP_result_is_multi - return TRUE if result is part of a multi-register
+ * result.
+ *
+ * ====================================================================
+ */
+extern BOOL OP_result_is_multi(const OP *op, INT result);
+
+// OP is associative
+extern BOOL OP_is_associative(OP *op);
+
+// The other opnd involved in reassociation
+extern INT OP_other_opnd(OP *op, INT this_opnd);
+
+// Give the opposite form, e.g,  - => +,  + => -.
+// TODO: move to targ_info
+extern TOP TOP_opposite (TOP top);
+
+// Give immediate form.
+// TODO: move to targ_info
+extern TOP TOP_immediate(TOP top);
+
+// Return the nonindexed OP code corresponding to a indexed memory
+// TOP or TOP_UNDEFINED if code is not an indexed memory OP.
+// TODO: move to targ_info
+extern TOP TOP_equiv_nonindex_memory (TOP top);
+
+// If given operand can be associated
+extern BOOL OP_opnd_can_be_reassociated (OP *op, INT opnd);
+
+/*
+ * If a load/store OP autoincrements/decrements its base TN, by
+ * convention that's the following one
+ * NOTE: moved here from cg_swp_target.h
+ */
+inline INT TOP_base_update_tn(TOP top)
+{
+  if (TOP_is_load(top)) {
+    if (ISA_OPERAND_INFO_Results(ISA_OPERAND_Info(top)) == 2)
+      return 1;
+  } else if (TOP_is_store(top)) {
+    if (ISA_OPERAND_INFO_Results(ISA_OPERAND_Info(top)) == 1)
+      return 0;
+  }
+  return -1;
+}
+
+inline TN *OP_base_update_tn(OP *op)
+{
+  INT opnd = TOP_base_update_tn(OP_code(op));
+  if (opnd >= 0)
+    return OP_opnd(op,opnd);
+  return NULL;
+}
+
+extern TOP TOP_opnd_register_variant(TOP top, int opnd, ISA_REGISTER_CLASS regclass);
+extern TOP TOP_opnd_immediate_variant(TOP top, int opnd, INT64 imm);
+extern TOP TOP_Combine_Opcodes( TOP opcode1, TOP opcode2, INT opnd_idx, BOOL *opnd_swapped );
+extern TOP TOP_result_register_variant(TOP top, int rslt, ISA_REGISTER_CLASS regclass);
+extern INT TOP_opnd_use_bits(TOP top, int opnd);
+extern BOOL TOP_opnd_use_signed(TOP top, int opnd);
+
+extern BOOL TOP_opnd_value_in_range (TOP top, int opnd, INT64 imm);
+extern TOP TOP_AM_automod_variant(TOP top, BOOL post_mod, BOOL inc_mod, ISA_REGISTER_CLASS regclass);
+extern BOOL TOP_evaluate_top( OP *op, INT64 *opnd_values, INT64 *result_val, int result_idx );
+
+extern OP *OP_get_unconditional_variant( OP *op );
+extern BOOL OP_condition_is_true( OP *op, INT64 pred_val );
+
+extern VARIANT TOP_cond_variant(TOP top);
+#ifdef TARG_ST
+extern VARIANT OP_cmp_variant(const OP* op);
+extern VARIANT OP_br_variant(const OP* op);
+extern TOP OP_opnd_swapped_variant(OP *op, int opnd1, int opnd2);
+#else
+extern VARIANT TOP_cmp_variant(TOP top);
+extern TOP TOP_opnd_swapped_variant(TOP top, int opnd1, int opnd2);
+#endif
+
+#endif
 
 
 #define FOR_ALL_OP_RESULTs_FWD(op, res) \

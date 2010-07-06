@@ -30,7 +30,7 @@
 #include <algorithm>
 
 
-
+#ifndef TARG_ST
 SWP_OPTIONS::SWP_OPTIONS (void) {
   Enable_Verbose_Mode = FALSE;
 
@@ -105,4 +105,5 @@ SWP_OPTIONS::PU_Configure (void) {
 
 
 SWP_OPTIONS SWP_Options;
+#endif
 

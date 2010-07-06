@@ -25,17 +25,12 @@
 #define INCLUDING_IN_REGISTER // we modify register classes and we're
                               // really part of the register implementation
 
-#ifdef TARG_ST
-#include "W_alloca.h"         // using alloca()
-#endif
-
-
 #include "defs.h"
 #include "errors.h"
 #include "tracing.h"
 #include "mempool.h"
 #include "config.h"
-#include "config_TARG.h"
+#include "config_targ_opt.h"
 #include "glob.h"
 #include "util.h"
 #include "data_layout.h"
@@ -303,16 +298,6 @@ REGISTER_SET
 CGTARG_Preferred_LRA_Registers(ISA_REGISTER_CLASS rclass)
 {
   return CGTARG_Preferred_GRA_Registers (rclass);
-}
-
-/* ====================================================================
- *   Is_Predicate_REGISTER_CLASS
- *   Returns TRUE if the rclass is the predicate register class.
- * ====================================================================
- */
-BOOL Is_Predicate_REGISTER_CLASS(ISA_REGISTER_CLASS rclass) {
-  // Should get subclass cpsrcond
-  return rclass == ISA_REGISTER_CLASS_cpsr;
 }
 
 #endif                   // TARG_ST

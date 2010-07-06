@@ -811,7 +811,7 @@ SWP_ALLOCATOR::_print_location_map(FILE *outf,
 } // SWP_ALLOCATOR::_print_location_map
   
 
-
+#ifndef TARG_ST
 SWP_DIST::SWP_DIST (const SWP_LIFETIME& lt,
                     const SWP_LOOP& swp_loop,
                     MEM_POOL *m) :
@@ -840,6 +840,7 @@ SWP_DIST::SWP_DIST (const SWP_LIFETIME& lt,
 
   return;
 }
+#endif
 void
 SWP_ALLOCATOR::print(FILE *outf, INT32 num_iterations, INT32 plot_width)
 {
@@ -1544,6 +1545,7 @@ void SWP_REG_ASSIGNMENT::Print_Allocation(FILE *file)
 }
 
 #endif // ifndef STANDALONE_SWP_ALLOCATOR
+#ifndef TARG_ST
 void 
 SWP_DIST::Print (FILE *f) const {
   fprintf (f, 
@@ -1585,8 +1587,8 @@ SWP_DIST::Verify (void) const {
   return;
 }
 
-
-
+#endif
+#ifndef TARG_ST
 SWP_ALLOCATOR::SWP_ALLOCATOR (const SWP_OP_VECTOR& mve_ops,
 			      const SWP_MVE& mve,
                               const SWP_LIFENESS& lifeness,
@@ -1834,8 +1836,9 @@ SWP_ALLOCATOR::Allocate_Loop_Variant (ISA_REGISTER_CLASS rclass) {
 
   return TRUE;
 } /* SWP_ALLOCATOR::Allocate_Loop_Variant */
+#endif
 
-
+#ifndef TARG_ST
 REGISTER 
 SWP_ALLOCATOR::Best_Fit (INT selected_lt,
                          ISA_REGISTER_CLASS rclass) const
@@ -1930,4 +1933,4 @@ SWP_ALLOCATOR::Verify (void) const {
 
   return;
 }
-
+#endif

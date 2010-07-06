@@ -33,7 +33,7 @@
 #include "cg_swp_target.h"
 
 
-
+#ifndef TARG_ST
 SWP_SCHEDULER::SWP_SCHEDULER (SWP_OP_VECTOR& ops, 
                               INT ii,
                               INT budget,
@@ -237,4 +237,4 @@ SWP_SCHEDULER::Verify (void) const {
 
   return;
 }
-
+#endif

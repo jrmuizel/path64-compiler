@@ -52,6 +52,9 @@ static const char rcs_id[] = "$Source: common/com/SCCS/s.em_dwarf.cxx $ $Revisio
 #include "config_targ.h"  // For Is_Target_64bit() 
 #include "config_debug.h" // For DEBUG_Emit_Ehframe
 #endif
+#ifdef TARG_ST
+#include "targ_isa_pack.h"
+#endif
 
 
 INT data_alignment_factor;
@@ -64,8 +67,13 @@ static pSCNINFO dwarf_scn[MAX_DWARF_SECTIONS];
 static size_t num_dwarf_scns = 0;
 /* Allocate only one cie for the whole file. */
 static Dwarf_Unsigned cie_index;
+#ifndef TARG_ST
 #ifdef KEY
 static Dwarf_Unsigned eh_cie_index;
+#endif
+#endif
+#ifdef TARG_ST
+static MEM_POOL mempool;
 #endif
 
 typedef struct {
@@ -253,6 +261,18 @@ Em_Dwarf_Add_File (
 #include "symtab.h"
 #include "irbdata.h"
 #endif // KEY
+#ifdef TARG_ST
+// (cbr)
+extern BOOL CG_emit_asm_dwarf;
+#endif
+#ifdef TARG_ST
+// [CL] provide external interface to file_table
+Dwarf_Unsigned File_Dwarf_Idx(UINT16 file_idx)
+{
+  return file_table[file_idx].dwarf_idx;
+}
+#endif
+
 extern "C" void Assign_ST_To_Named_Section (ST *, STR_IDX);
 
 Dwarf_P_Debug 
@@ -620,6 +640,12 @@ void
 Em_Dwarf_End (void)
 {
   dwarf_producer_finish (dw_dbg, &dw_error);
+#ifdef TARG_ST
+    Clear_CIEs(&mempool);
+    MEM_POOL_Pop(&mempool);
+    MEM_POOL_Delete(&mempool);
+#endif
+
 }
 
 
@@ -699,8 +725,24 @@ Em_Dwarf_End_Text_Arange (pSCNINFO scninfo, INT end_offset)
 
 void
 Em_Dwarf_End_Text_Arange_Symbolic(Dwarf_Unsigned last_label,
+#ifdef TARG_ST
+				  Dwarf_Unsigned end_label,
+#endif
 				  Dwarf_Addr     offset_from_last_label)
 {
+#ifdef TARG_ST
+  if (end_label != 0) {
+      dwarf_add_arange_b (dw_dbg,
+			  Offset_From_Text_Start_Label,
+			  0 /* dummy length */, 
+			  Text_Start_Label,
+			  end_label,
+			  0,
+			  &dw_error);
+  }
+  else {
+#endif
+
   dwarf_add_arange_b (dw_dbg,
 		      Offset_From_Text_Start_Label,
 		      0 /* dummy length */, 
@@ -708,6 +750,10 @@ Em_Dwarf_End_Text_Arange_Symbolic(Dwarf_Unsigned last_label,
 		      last_label,
 		      offset_from_last_label,
 		      &dw_error);
+#ifdef TARG_ST
+  }
+#endif
+
 }
 
 void
@@ -721,11 +767,24 @@ void
 Em_Dwarf_End_Text_Region_Semi_Symbolic(pSCNINFO       scninfo,
 				       INT            end_offset,
 				       Dwarf_Unsigned last_label,
+#ifdef TARG_ST
+				       Dwarf_Unsigned end_label,
+#endif
+
 				       Dwarf_Addr     offset_from_last_label)
 {
+    #ifdef TARG_ST
+  Em_Dwarf_End_Text_Arange_Symbolic(last_label,
+				    end_label,
+				    offset_from_last_label);
+  dwarf_lne_end_sequence_symbolic (dw_dbg, end_offset - Text_Start_Offset,
+				   last_label, end_label, &dw_error);
+#else
+
   Em_Dwarf_End_Text_Arange_Symbolic(last_label,
 				    offset_from_last_label);
   Em_Dwarf_End_Text_Lines(scninfo, end_offset);
+#endif
 }
 
 void Em_Dwarf_Process_PU (Dwarf_Unsigned begin_label,
@@ -749,11 +808,23 @@ void Em_Dwarf_Process_PU (Dwarf_Unsigned begin_label,
 			       end_offset, (Dwarf_Unsigned) end_label,
 			       &dw_error);
 
+#ifndef TARG_ST
   if (fde == NULL)
 	return;
+#endif
+
+#ifdef TARG_ST
+  // (cbr) we enter here either for debug dwarf emission or exceptions frame dwarf unwinding 
+  if (CG_emit_asm_dwarf && fde)
+#endif 
   /* emit the debug_frame information for this procedure. */
   if (eh_offset == DW_DLX_NO_EH_OFFSET)	/* no exception handler */
-  	dwarf_add_frame_fde_b (dw_dbg, fde, PU_die, cie_index, 
+  	dwarf_add_frame_fde_b (dw_dbg, fde, PU_die,
+#   ifdef TARG_ST
+                           CIE_index(Get_Current_PU()),
+#   else
+                               cie_index, 
+#endif
 			       begin_offset,
 			       0 /* dummy code length */,
 			       (Dwarf_Unsigned) begin_label,
@@ -761,7 +832,12 @@ void Em_Dwarf_Process_PU (Dwarf_Unsigned begin_label,
 			       end_offset,
 			       &dw_error);
   else
-  	dwarf_add_frame_info_b (dw_dbg, fde, PU_die, cie_index, 
+  	dwarf_add_frame_info_b (dw_dbg, fde, PU_die,
+#   ifdef TARG_ST
+                            CIE_index(Get_Current_PU()),
+#   else
+                                cie_index, 
+#endif
 				begin_offset,
 				0 /* dummy code length */,
 				(Dwarf_Unsigned) begin_label,
@@ -818,4 +894,540 @@ void Em_Dwarf_Add_PU_Entries (Dwarf_Unsigned begin_label,
 			 end_offset,
 			 &dw_error);
 }
+#ifdef TARG_ST
+
+#   include <assert.h>	// temporary
+#   define USE_STANDARD_TYPES 1
+#   include "dwarf_DST.h" // To access compilation unit's dwarf information
+#   include "cxx_memory.h" // For call to CXX_NEW/DELETE_ARRAY
+#   include "register.h" // For REGISTER_MIN and CGTARG_DW_DEBUG_Get_Extension_Id
+#   include "symtab.h" // For Save_Str call
+
+FILE* ciedbgOutput = stdout;
+
+BOOL Trace_CIE = FALSE;
+
+CIEIndexToInfo CIEs;
+
+const DebugRegId DebugRegId_undef = (DebugRegId)-1;
+
+typedef map<INT, Dwarf_Unsigned> HashValueToCIEIndex;
+
+/**
+ * Number of bit store in one byte of the dwarf LEB128 representation
+ */
+static const INT DW_BIT_BY_LEB = 7;
+
+/**
+ * Mask used for dwarf 2 translation to set padding bit for LEB128
+ */
+static const INT MORE_BYTE = (1 << DW_BIT_BY_LEB);
+
+/**
+ * Mask used for dwarf 2 translation in LEB128
+ */
+static const INT DATA_MASK = MORE_BYTE - 1;
+
+/**
+ * Pointer to global libdwarf debug information.
+ * This information is needed to be able to create libdwarf objects like CIE
+ */
+static Dwarf_P_Debug g_current_dw_dbg = NULL;
+
+
+//------------------------------------------------------------------------------
+// CIE initialization support function declared in this file
+//------------------------------------------------------------------------------
+
+// Use for template readability
+typedef Dwarf_Unsigned (*CIECreation)(PU&, const Dwarf_Small&, unsigned char*,
+                                      Dwarf_Unsigned);
+
+template<CIECreation fct>
+static Dwarf_Unsigned
+GenericInitCIE(PU& pu);
+
+template<CIECreation fct>
+static Dwarf_Unsigned
+GenericCIEIndex(PU& pu);
+
+Dwarf_Unsigned
+CreateEhCIE(PU& pu, const Dwarf_Small& retAddr, unsigned char* initialBytes,
+            Dwarf_Unsigned size_of_init_bytes);
+
+Dwarf_Unsigned
+CreateCIE(PU& pu, const Dwarf_Small& retAddr, unsigned char* initialBytes,
+          Dwarf_Unsigned size_of_init_bytes);
+
+//------------------------------------------------------------------------------
+// CCIEInfo class definition
+//------------------------------------------------------------------------------
+MEM_POOL* CCIEInfo::m_memPool = NULL;
+CCIEInfo::ListOfBytes CCIEInfo::m_listOfInitialBytes;
+
+CCIEInfo::CCIEInfo(PU& a_pu)
+    : m_initBytes(ByteAllocator(CCIEInfo::MemPool())), m_returnAddressRegId(0),
+      m_saved(CCIEInfo::LessThanDebugRegId(),
+              DebugRegIdAllocator(CCIEInfo::MemPool())), m_cfaOffset(0)
+{
+    BuildCIEBytesList(a_pu);
+}
+
+CCIEInfo::CCIEInfo(const CCIEInfo& a_cieInfo)
+    : m_initBytes(ByteAllocator(CCIEInfo::MemPool())),
+      m_returnAddressRegId(0),
+      m_saved(CCIEInfo::LessThanDebugRegId(),
+              DebugRegIdAllocator(CCIEInfo::MemPool())), m_cfaOffset(0)
+{
+    CopyMembers(a_cieInfo);
+}
+
+CCIEInfo&
+CCIEInfo::operator=(const CCIEInfo& a_cieInfo)
+{
+    if(this != &a_cieInfo)
+        {
+            CopyMembers(a_cieInfo);
+        }
+    return *this;
+}
+
+CCIEInfo::~CCIEInfo()
+{
+}
+
+unsigned char*
+CCIEInfo::InitialBytes(Dwarf_Unsigned& sizeOfReturnedTab) const
+{
+    sizeOfReturnedTab = InitBytes().size();
+    return static_cast<unsigned char*>(TranslateBytesList(InitBytes(),
+                                                          MemPool()));
+}
+
+const Bytes&
+CCIEInfo::InitBytes() const
+{
+    return m_initBytes;
+}
+
+BOOL
+CCIEInfo::IsSaved(const DebugRegId& a_debugRegId) const
+{
+    return BOOL(Saved().find(a_debugRegId) != Saved().end());
+}
+
+void
+CCIEInfo::MemPool(MEM_POOL* a_mempool)
+{
+    m_memPool = a_mempool;
+}
+
+MEM_POOL*
+CCIEInfo::MemPool()
+{
+    return m_memPool;
+}
+
+const DebugRegId&
+CCIEInfo::ReturnAddressRegId() const
+{
+    return m_returnAddressRegId;
+}
+
+const CCIEInfo::SavedList&
+CCIEInfo::Saved() const
+{
+    return m_saved;
+}
+
+UINT
+CCIEInfo::CfaOffset() const
+{
+    return m_cfaOffset;
+}
+
+void
+CCIEInfo::CopyMembers(const CCIEInfo& a_cieInfo)
+{
+    m_initBytes = a_cieInfo.InitBytes();
+    m_returnAddressRegId = a_cieInfo.ReturnAddressRegId();
+    m_saved = a_cieInfo.Saved();
+    m_cfaOffset = a_cieInfo.CfaOffset();
+}
+
+void
+CCIEInfo::AddToSaved(const DebugRegId& a_debugRegId)
+{
+    m_saved.insert(a_debugRegId);
+}
+
+void
+CCIEInfo::ReleaseListOfInitialBytes()
+{
+    ItListOfBytes it;
+    for(it = m_listOfInitialBytes.begin(); it != m_listOfInitialBytes.end();
+        ++it)
+        {
+            CXX_DELETE_ARRAY(*it, CCIEInfo::MemPool());
+        }
+}
+
+void
+CCIEInfo::BuildCIEBytesList(PU& pu)
+{
+    ISA_REGISTER_CLASS register_class;
+
+    DbgPrintCIE((ciedbgOutput, "CIE initialization\n"));
+
+    m_initBytes.push_back(DW_CFA_def_cfa);
+    DebugRegId baseId;
+    CfaDef(baseId, m_cfaOffset, pu);
+
+    EmitBytes(baseId);
+    EmitBytes(DebugRegId(CfaOffset()));
+
+    DebugRegId raId;
+    UINT offset;
+    if(ReturnAddressDef(raId, offset, pu))
+        {
+            DbgPrintCIE((ciedbgOutput, "CIE has special return address\n"));
+            m_initBytes.push_back(DW_CFA_offset_extended);
+            EmitBytes(raId);
+            EmitBytes(offset);
+        }
+    m_returnAddressRegId = raId;
+
+    FOR_ALL_ISA_REGISTER_CLASS(register_class)
+    {
+        if(ShouldGenerateInformation(register_class, pu))
+            {
+                const ISA_REGISTER_CLASS_INFO* info =
+                    ISA_REGISTER_CLASS_Info(register_class);
+                int i = ISA_REGISTER_CLASS_INFO_First_Reg(info) + REGISTER_MIN;
+                int bitSize = ISA_REGISTER_CLASS_INFO_Bit_Size(info);
+                for(; i <= ISA_REGISTER_CLASS_INFO_Last_Reg(info) +
+                        REGISTER_MIN; ++i)
+                    {
+                        DebugRegId regId = Get_Debug_Reg_Id(register_class, i,
+                                                            bitSize);
+                        EmitReg(regId, register_class, i, pu);
+                    }
+            }
+    }
+}
+
+void
+CCIEInfo::EmitReg(const DebugRegId& regId, ISA_REGISTER_CLASS register_class,
+                  REGISTER i, PU& pu)
+{
+    UINT offset;
+    if(HasSpecialDef(regId, offset, register_class, i, pu))
+        {
+            DbgPrintCIE((ciedbgOutput, "Special Def: %u\n", offset));
+// There is a bad interaction with st200gdb when emitting the bytes for CIE
+// definition. It seems to be misled when the list of saved register is
+// emitted. Problem with the unwind mechanism?
+#ifdef TARG_ST200
+            if(getenv("O64_FULLCIE") != NULL)
+              {
+#endif
+            m_initBytes.push_back(DW_CFA_offset_extended);
+            EmitBytes(regId);
+            EmitBytes(offset);
+#ifdef TARG_ST200
+              } // end if O64_FULLCIE
+#endif
+        }
+    else
+        {
+            if(::IsSaved(regId, register_class, i, pu))
+                {
+                    DbgPrintCIE((ciedbgOutput, "Same value\n"));
+// Same remarks
+#ifdef TARG_ST200
+                    if(getenv("O64_FULLCIE") != NULL)
+                      {
+#endif
+                    m_initBytes.push_back(DW_CFA_same_value);
+#ifdef TARG_ST200
+                      } // end if O64_FULLCIE
+#endif
+                    AddToSaved(regId);
+                }
+            else
+                {
+                    DbgPrintCIE((ciedbgOutput, "Undefined\n"));
+#ifdef TARG_ST200
+                    if(getenv("O64_FULLCIE") != NULL)
+                      {
+#endif
+                    m_initBytes.push_back(DW_CFA_undefined);
+#ifdef TARG_ST200
+                      } // end if O64_FULLCIE
+#endif
+                }
+// Same remarks
+#ifdef TARG_ST200
+            if(getenv("O64_FULLCIE") != NULL)
+              {
+#endif
+            // dwarf representation is ULEB128: Little Endian Base
+            // 128. See dwarf 2 norm to have more details
+            EmitBytes(regId);
+#ifdef TARG_ST200
+              } // end if O64_FULLCIE
+#endif
+        }
+}
+
+void
+CCIEInfo::EmitBytes(const DebugRegId& a_regId)
+{
+    DebugRegId regId(a_regId);
+    do
+        {
+            // Take the seven low bits
+            Byte val = regId & DATA_MASK;
+            regId >>= DW_BIT_BY_LEB;
+            if(regId)
+                {
+                    // Set the high bit
+                    val |= MORE_BYTE;
+                }
+            m_initBytes.push_back(val);
+        }
+    while(regId);
+}
+
+Byte*
+CCIEInfo::TranslateBytesList(const Bytes& init_bytes, MEM_POOL* mempool)
+{
+    int i;
+    CItBytes it;
+    Byte* result = CXX_NEW_ARRAY(Byte, init_bytes.size(), mempool);
+    for(i = 0, it = init_bytes.begin(); it != init_bytes.end(); ++i, ++it)
+        {
+            result[i] = *it;
+        }
+    // We do not keep allocated pointer in the object, because these objects
+    // have a smaller liveness than the one requiered by libdwarf for initial
+    // cie bytes
+    m_listOfInitialBytes.push_back(result);
+    return result;
+}
+
+//------------------------------------------------------------------------------
+// CIE initialization function definitions
+//------------------------------------------------------------------------------
+Dwarf_Unsigned
+CIE_index(PU& pu)
+{
+    return GenericCIEIndex<CreateCIE>(pu);
+}
+
+Dwarf_Unsigned
+eh_CIE_index(PU& pu)
+{
+    return GenericCIEIndex<CreateEhCIE>(pu);
+}
+
+void
+Init_CIEs(Dwarf_P_Debug dw_dbg, MEM_POOL* a_memPool)
+{
+    g_current_dw_dbg = dw_dbg;
+    CCIEInfo::MemPool(a_memPool);
+}
+
+void
+Clear_CIEs(MEM_POOL* a_memPool)
+{
+    CCIEInfo::ReleaseListOfInitialBytes();
+    CIEs.clear();
+}
+
+/**
+ * Generic CIE index initialization.
+ * This initialization consists in:
+ * @li Creating a CCIEInfo for given program unit and return address
+ * @li Creating the libdwarf CIE object with template parameter using created
+ *     CCIEInfo object information
+ * @li Binding created CCIEInfo to the index of the created libdwarf CIE object
+ *
+ * @param  pu [in] Program unit for which we create a CIE
+ *
+ * @pre    Init_CIEs has been called
+ * @post   CIEs[result] is set to created CCIEInfo object
+ *
+ * @return The index of the created libdwarf cie object
+ */
+template<CIECreation fct>
+static Dwarf_Unsigned
+GenericInitCIE(PU& pu)
+{
+    CCIEInfo cieInfo(pu);
+    Dwarf_Unsigned size_of_init_bytes;
+    unsigned char* initialBytes = cieInfo.InitialBytes(size_of_init_bytes);
+    Dwarf_Unsigned cieIndex = fct(pu, (Dwarf_Small)cieInfo.ReturnAddressRegId(),
+                                  initialBytes, size_of_init_bytes);
+    FmtAssert(cieIndex != DW_DLV_NOCOUNT, ("Unable to create CIE information"));
+    CIEs[cieIndex] = cieInfo;
+    return cieIndex;
+}
+
+/**
+ * Create a libdwarf CIE with given parameter.
+ *
+ * @param  pu [in] Program unit for which we create the cie
+ * @param  retAddr Debug register identifier of return address
+ * @param  initialBytes Pointer to the array of the initial CIE bytes
+ * @param  size_of_init_bytes Size of initialBytes parameter
+ *
+ * @pre    Init_CIEs has been called and size_of_init_bytes =
+ *         initialBytes->length()
+ * @post   result <> DW_DLV_NOCOUNT implies a libdwarf CIE has been created
+ *
+ * @return An index to the CIE just created on success. On error it returns
+ *         DW_DLV_NOCOUNT.
+ *
+ * @remarks This function match CIECreation type definition
+ */
+Dwarf_Unsigned
+CreateCIE(PU& pu, const Dwarf_Small& retAddr, unsigned char* initialBytes,
+          Dwarf_Unsigned size_of_init_bytes)
+{
+    char *augmenter="";
+    Dwarf_Error dw_error;
+    return dwarf_add_frame_cie(g_current_dw_dbg, augmenter,
+                               Dwarf_Small(CodeAlignmentFactor(pu)),
+                               Dwarf_Small(DataAlignmentFactor(pu)),
+                               retAddr, initialBytes, size_of_init_bytes,
+                               &dw_error);
+}
+
+/**
+ * Create a libdwarf CIE with given parameter for EH frame.
+ *
+ * @param  pu [in] Program unit for which we create the cie
+ * @param  retAddr Debug register identifier of return address
+ * @param  initialBytes Pointer to the array of the initial CIE bytes
+ * @param  size_of_init_bytes Size of initialBytes parameter
+ *
+ * @pre    Init_CIEs has been called and size_of_init_bytes =
+ *         initialBytes->length()
+ * @post   result <> DW_DLV_NOCOUNT implies a libdwarf CIE has been created
+ *
+ * @return An index to the CIE just created on success. On error it returns
+ *         DW_DLV_NOCOUNT.
+ *
+ * @remarks This function match CIECreation type definition
+ */
+Dwarf_Unsigned
+CreateEhCIE(PU& pu, const Dwarf_Small& retAddr, unsigned char* initialBytes,
+            Dwarf_Unsigned size_of_init_bytes)
+{
+#ifndef TARG_ST
+    char *augmenter = DW_CIE_AUGMENTER_STRING_V0;
+#endif
+    Dwarf_Unsigned personality;
+    DST_INFO* cuInfo = DST_INFO_IDX_TO_PTR(DST_get_compile_unit());
+    DST_COMPILE_UNIT *cu = DST_ATTR_IDX_TO_PTR(DST_INFO_attributes(cuInfo),
+                                               DST_COMPILE_UNIT);
+#ifdef TARG_ST
+    BOOL pic = Gen_PIC_Shared || Gen_PIC_Call_Shared;
+    const char* personality_str = 0;
+    char *augmenter;
+    if (PU_has_exc_scopes(pu)) {
+      if (pic) {
+	augmenter = PIC_DW_CIE_AUGMENTER_STRING_V0;
+      } else {
+	augmenter = DW_CIE_AUGMENTER_STRING_V0;
+      }
+      if (PU_cxx_lang (pu))
+	personality_str = pic ? "DW.ref.__gxx_personality_v0" : "__gxx_personality_v0";
+      else if (PU_c_lang (pu))
+	personality_str = pic ? "DW.ref.__gcc_personality_v0" : "__gcc_personality_v0";
+    } else {
+      if (pic) {
+	augmenter = z_PIC_DW_CIE_AUGMENTER_STRING_V0;
+      } else {
+	augmenter = z_DW_CIE_AUGMENTER_STRING_V0;
+      }
+    }
+    personality = Save_Str (personality_str);
+#else
+    if(DST_COMPILE_UNIT_language(cu) == DW_LANG_C_plus_plus)
+        {
+            personality = Save_Str ("__gxx_personality_v0");
+        }
+    else
+        {
+            personality = Save_Str ("__gcc_personality_v0");
+        }
+#endif
+    Dwarf_Error dw_error;
+    return dwarf_add_ehframe_cie(g_current_dw_dbg, augmenter,
+                                 Dwarf_Small(CodeAlignmentFactor(pu)),
+                                 Dwarf_Small(DataAlignmentFactor(pu)), retAddr,
+                                 personality, initialBytes, size_of_init_bytes,
+#ifdef TARG_ST
+				 pic,
+#endif
+                                 &dw_error);
+}
+
+/**
+ * Generic CIE index retrieving.
+ * Creates or returns a cie index according to given program unit properties.
+ *
+ * @param  pu [in] Program unit for which we want a CIE index
+ *
+ * @pre    Init_CIEs has been called
+ * @post   result <> DW_DLV_NOCOUNT implies result is an index of a libdwarf CIE
+ *         object which represents pu
+ *
+ * @return An index to the CIE just created on success. On error it returns
+ *         DW_DLV_NOCOUNT.
+ */
+template<CIECreation fct>
+static Dwarf_Unsigned
+GenericCIEIndex(PU& pu)
+{
+    /**
+     * Contains CIE index for PU hash value.
+     */
+    static HashValueToCIEIndex indexes;
+
+    Dwarf_Unsigned cieIndex;
+    INT hashValue = HashValue(pu);
+    if(indexes.find(hashValue) == indexes.end())
+        {
+            indexes[hashValue] = GenericInitCIE<fct>(pu);
+        }
+    cieIndex = indexes[hashValue];
+    return cieIndex;
+}
+
+DebugRegId
+Get_Debug_Reg_Id(const CLASS_REG_PAIR& regPair)
+{
+    const ISA_REGISTER_CLASS_INFO* info =
+        ISA_REGISTER_CLASS_Info(CLASS_REG_PAIR_rclass(regPair));
+    int bitSize = ISA_REGISTER_CLASS_INFO_Bit_Size(info);
+
+    return Get_Debug_Reg_Id(CLASS_REG_PAIR_rclass(regPair),
+                            CLASS_REG_PAIR_reg(regPair), bitSize);
+}
+
+DebugRegId
+Get_Debug_Reg_Id(TN* tn)
+{
+    DevAssert(TN_is_register(tn), ("%s: Must be called only with register",
+                                   __FUNCTION__));
+    return Get_Debug_Reg_Id(CLASS_REG_PAIR_rclass(TN_class_reg(tn)),
+                            CLASS_REG_PAIR_reg(TN_class_reg(tn)),
+                            TN_size(tn) * CHAR_BIT);
+}
+
+#endif
+
 #endif

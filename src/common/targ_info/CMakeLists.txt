@@ -94,6 +94,7 @@ gen_info(isa isa_hazards      targ_isa_subset isa_gen_topcode)
 gen_info(isa isa_registers    targ_isa_subset isa_gen_topcode)
 target_link_libraries(targ_isa_registers targ_isa_subset)
 gen_info(isa isa_variants      isa_gen_topcode)
+gen_info(isa isa_binutils      targ_isa_subset targ_isa_pack isa_gen_topcode)
 gen_info(isa isa_relocs       targ_isa_subset isa_gen_topcode)
 gen_info(isa isa_operands     targ_isa_relocs targ_isa_properties targ_isa_registers targ_isa_enums targ_isa_lits isa_gen_topcode)
 gen_info(isa isa_pseudo       targ_isa_operands targ_isa_registers targ_isa_enums isa_gen_topcode)
@@ -119,6 +120,8 @@ add_library(targinfo STATIC
 	targ_isa_operands.c
 	targ_isa_registers.c
         targ_isa_relocs.c
+        targ_isa_variants.c
+        targ_isa_binutils.c
 	targ_isa_decode.c
 	targ_isa_pseudo.c
 	targ_abi_properties.c

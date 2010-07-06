@@ -34,7 +34,7 @@
 
 /* Standard Template Library (STL) related include files */
 #include <cmath>
-
+#ifndef TARG_ST
 using namespace std;
 
 
@@ -617,4 +617,4 @@ SWP_HEURISTIC::Search_Direction (INT u) const {
     return SWP_Backward;
   }
 } /* SWP_HEURISTIC::Search_Direction */
-
+#endif

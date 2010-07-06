@@ -537,11 +537,9 @@
 #include "cg_dep_graph.h"
 #include "cg_vector.h"
  #ifdef TARG_ST 
-#include "config_target.h"
 #include "cg_loop.h"
-#else
-#include "config_targ.h"
 #endif
+#include "config_targ.h"
 #include "cg_thr.h"
 
 #include "targ_proc_properties.h"
@@ -552,16 +550,10 @@
 #include "targ_isa_pack.h"
 #include "targ_isa_bundle.h"
 #include "targ_isa_print.h"
-#ifdef TARG_ST
-#include "targ_grouping.h"
-#endif
+#include "cg_grouping.h"
 #include "ti_errors.h"
 #include "ti_bundle.h"
 #include "ti_latency.h"
-#ifdef TARG_ST
-/* Target-specific information */
-#include "targ_cg.h"
-#endif
 /* placeholder for all hardware workarounds */
 extern void Hardware_Workarounds (void);
 
@@ -596,11 +588,14 @@ class CG_GROUPING; // Defined only for isa where it is used (e.g. IA-64).
 inline TOP
 CGTARG_Invert(TOP opr)
 {
+#ifdef TARG_ST
+  extern TOP *CGTARG_Invert_Table;
+#else
   extern TOP CGTARG_Invert_Table[TOP_count+1];
-
+#endif
   return CGTARG_Invert_Table[(INT)opr];
 }
-
+#ifndef TARG_ST
 inline TOP
 CGTARG_Immed_To_Reg(TOP opr)
 {
@@ -608,7 +603,7 @@ CGTARG_Immed_To_Reg(TOP opr)
 
   return CGTARG_Immed_To_Reg_Table[(INT)opr];
 }
-
+#endif
 extern void CGTARG_Perform_THR_Code_Generation(OP *load_op, OP *check_load,
 					       THR_TYPE type);
 extern INT  CGTARG_ARC_Sched_Latency( ARC *arc );
@@ -722,28 +717,30 @@ typedef enum {
 } CGTARG_ASSOC_BASE_FNC;
 
 extern void CGTARG_Init_Assoc_Base(void);
-
+#ifndef TARG_ST
 inline OPCODE CGTARG_Assoc_Base_Opr(TOP topcode)
 {
   extern OPCODE CGTARG_Assoc_Base_Opr_Table[TOP_count];
 
   return CGTARG_Assoc_Base_Opr_Table[(INT)topcode];
 }
-
+#endif
+#ifndef TARG_ST
 inline TOP CGTARG_Assoc_Base_Top(TOP topcode)
 {
   extern mTOP CGTARG_Assoc_Base_Top_Table[TOP_count];
 
   return (TOP)CGTARG_Assoc_Base_Top_Table[(INT)topcode];
 }
-
+#endif
+#ifndef TARG_ST
 inline CGTARG_ASSOC_BASE_FNC CGTARG_Assoc_Base_Fnc(TOP topcode)
 {
   extern mTOP CGTARG_Assoc_Base_Fnc_Table[TOP_count];
 
   return (CGTARG_ASSOC_BASE_FNC)CGTARG_Assoc_Base_Fnc_Table[(INT)topcode];
 }
-
+#endif
 extern INT CGTARG_Copy_Operand(OP *op);
 
 inline BOOL CGTARG_Is_Copy(OP *op)
@@ -774,7 +771,7 @@ inline TN *CGTARG_Copy_Operand_TN(OP *op)
   INT iopnd = CGTARG_Copy_Operand(op);
   return (iopnd < 0) ? NULL : OP_opnd(op,iopnd);
 }
-
+#ifndef TARG_ST
 inline TOP CGTARG_Inter_RegClass_Copy(ISA_REGISTER_CLASS dst,
 				      ISA_REGISTER_CLASS src,
 				      BOOL is_double)
@@ -784,7 +781,7 @@ inline TOP CGTARG_Inter_RegClass_Copy(ISA_REGISTER_CLASS dst,
 
   return (TOP)CGTARG_Inter_RegClass_Copy_Table[src][dst][is_double];
 }
-
+#endif
 
 extern BOOL CGTARG_Can_Fit_Immediate_In_Add_Instruction (INT64 immed);
 extern BOOL CGTARG_Can_Load_Immediate_In_Single_Instruction (INT64 immed);
