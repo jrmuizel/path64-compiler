@@ -10,6 +10,8 @@ char *__strtok_r(char *s1, const char *s2, char **s3);
 
 char * __rawmemchr(const char * s, int c_in);
 
+char *strsignal(int sig);
+
 #ifdef __cplusplus
 }
 #endif
