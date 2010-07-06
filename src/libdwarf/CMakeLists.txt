@@ -33,12 +33,24 @@ ADD_EXECUTABLE(tag_attr_build
 GET_TARGET_PROPERTY(TAG_TREE_BUILD_EXE tag_tree_build LOCATION)
 GET_TARGET_PROPERTY(TAG_ATTR_BUILD_EXE tag_attr_build LOCATION)
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
+ADD_EXECUTABLE(dwarf_names_gen dwarfdump/dwarf_names_gen.cxx)
+
+ADD_CUSTOM_COMMAND(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dwarf_names.c
+        COMMAND dwarf_names_gen ${CMAKE_CURRENT_SOURCE_DIR}/libdwarf/dwarf.h ${CMAKE_CURRENT_BINARY_DIR}/dwarf_names.c ${CMAKE_CURRENT_BINARY_DIR}/dwarf_names.h
+        DEPENDS dwarf_names_gen ${CMAKE_CURRENT_SOURCE_DIR}/libdwarf/dwarf.h
+        )
+
+else()
 
 ADD_CUSTOM_COMMAND(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dwarf_names.c
         COMMAND awk -f ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/dwarf_names.awk ${CMAKE_CURRENT_SOURCE_DIR}/libdwarf/dwarf.h > ${CMAKE_CURRENT_BINARY_DIR}/dwarf_names.c
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/dwarf_names.awk ${CMAKE_CURRENT_SOURCE_DIR}/libdwarf/dwarf.h
         )
+endif()
 
 ADD_CUSTOM_COMMAND(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/_tag_attr_table.c
