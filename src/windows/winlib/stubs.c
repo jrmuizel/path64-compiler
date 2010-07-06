@@ -3,12 +3,6 @@
 #include <sys/utsname.h>
 #include <stdio.h>
 
-pid_t wait(int *stat_loc)
-{
-    fprintf(stderr, "wait() is unimplemented\n");
-    return 0;
-}
-
 const char * Anl_File_Path()
 {
     fprintf(stderr, "Anl_File_Path() is unimplemented\n");

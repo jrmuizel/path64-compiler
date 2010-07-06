@@ -12,6 +12,7 @@ set(winlib_SRC	"gethostname.c"
 				"tempname.c"
 				"times.c"
 				"uname.c"
+				"wait.c"
 				"win2unixpath.c")
 
 ADD_DEFINITIONS(
