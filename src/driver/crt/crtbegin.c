@@ -104,13 +104,19 @@ __dso_handle(void)
 	finished = 1;
 }
 
+#ifdef _WIN32
+#define PREVIOUS()
+#else
+#define PREVIOUS() asm volatile (".previous")
+#endif
+
 #define MD_CALL_STATIC_FUNCTION(section, func)				\
 void __call_##func(void);						\
 void __call_##func(void)						\
 {									\
 	asm volatile (".section " #section);				\
 	func();								\
-	asm volatile (".previous");					\
+	PREVIOUS();					\
 }
 
 MD_CALL_STATIC_FUNCTION(.init, __do_global_ctors_aux)
