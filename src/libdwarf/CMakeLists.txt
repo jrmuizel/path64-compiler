@@ -55,6 +55,18 @@ ADD_CUSTOM_COMMAND(
         DEPENDS tag_attr_build _tag_attr_table.in
         )
 
+ADD_CUSTOM_COMMAND(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/_tag_tree_table.in
+        COMMAND ${CMAKE_C_COMPILER} -xc -E -I${CMAKE_CURRENT_SOURCE_DIR}/libdwarf ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/tag_tree.list > _tag_tree_table.in
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/tag_tree.list
+        )
+
+ADD_CUSTOM_COMMAND(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/_tag_tree_table.c
+        COMMAND ${TAG_TREE_BUILD_EXE} < _tag_tree_table.in > _tag_tree_table.c
+        DEPENDS tag_tree_build ${CMAKE_CURRENT_BINARY_DIR}/_tag_tree_table.in
+        )
+
 else()
 
 ADD_CUSTOM_COMMAND(
@@ -69,14 +81,13 @@ ADD_CUSTOM_COMMAND(
         DEPENDS tag_attr_build ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/tag_attr.list
         )
 
-endif()
-
 ADD_CUSTOM_COMMAND(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/_tag_tree_table.c
         COMMAND ${CMAKE_C_COMPILER} -xc -E -I${CMAKE_CURRENT_SOURCE_DIR}/libdwarf ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/tag_tree.list | awk '!/^\#/ && !/^[ \\t]*$$/' | ${TAG_TREE_BUILD_EXE} > _tag_tree_table.c
         DEPENDS tag_tree_build ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/tag_tree.list
         )
 
+endif()
 
 SET(DWARF_DEPS ${CMAKE_CURRENT_BINARY_DIR}/_tag_attr_table.c     
                ${CMAKE_CURRENT_BINARY_DIR}/_tag_tree_table.c)
