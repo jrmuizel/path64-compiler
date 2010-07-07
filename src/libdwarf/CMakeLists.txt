@@ -43,6 +43,18 @@ ADD_CUSTOM_COMMAND(
         DEPENDS dwarf_names_gen ${CMAKE_CURRENT_SOURCE_DIR}/libdwarf/dwarf.h
         )
 
+ADD_CUSTOM_COMMAND(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/_tag_attr_table.in
+        COMMAND ${CMAKE_C_COMPILER} -xc -E -I${CMAKE_CURRENT_SOURCE_DIR}/libdwarf ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/tag_attr.list > _tag_attr_table.in
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/tag_attr.list
+        )
+
+ADD_CUSTOM_COMMAND(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/_tag_attr_table.c
+        COMMAND ${TAG_ATTR_BUILD_EXE} < _tag_attr_table.in > _tag_attr_table.c
+        DEPENDS tag_attr_build _tag_attr_table.in
+        )
+
 else()
 
 ADD_CUSTOM_COMMAND(
@@ -50,7 +62,6 @@ ADD_CUSTOM_COMMAND(
         COMMAND awk -f ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/dwarf_names.awk ${CMAKE_CURRENT_SOURCE_DIR}/libdwarf/dwarf.h > ${CMAKE_CURRENT_BINARY_DIR}/dwarf_names.c
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/dwarf_names.awk ${CMAKE_CURRENT_SOURCE_DIR}/libdwarf/dwarf.h
         )
-endif()
 
 ADD_CUSTOM_COMMAND(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/_tag_attr_table.c
@@ -58,6 +69,7 @@ ADD_CUSTOM_COMMAND(
         DEPENDS tag_attr_build ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/tag_attr.list
         )
 
+endif()
 
 ADD_CUSTOM_COMMAND(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/_tag_tree_table.c
