@@ -121,6 +121,10 @@
 #include "bb_node_set.h"
 #include "opt_bdce.h"
 
+#if !defined(__FreeBSD__)
+#include <alloca.h>
+#endif
+
 /* CVTL-RELATED start (performance) */
 
 // ====================================================================

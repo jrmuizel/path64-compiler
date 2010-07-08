@@ -30,8 +30,8 @@
 
 #include <cmplrs/host.h>
 
-int16
-and_h (int16 *m, int16 *n)
+int16_t
+and_h (int16_t *m, int16_t *n)
 {
     return(*m & *n);
 }

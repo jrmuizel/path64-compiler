@@ -87,7 +87,8 @@
 #include "be_symtab.h"
 #include "ipa_lno_read.h" 
 #include "lnodriver.h" 
-#include "ipa_lno_cost.h" 
+#include "ipa_lno_cost.h"
+#include "lno_trace.h"
 
 
 #pragma weak New_Construct_Id 
@@ -3459,11 +3460,23 @@ extern BOOL Inside_Lego_Tiled_Loop(WN* wn_loop)
 //   this loop after all, because its trip count is too small. 
 //-----------------------------------------------------------------------
 
-static void Print_Non_Parallel_Loop(FILE* fp, 
-				    WN* wn_loop)
+static void Print_Non_Parallel_Loop( WN* wn_loop,
+                                     INT parallel_debug_level)
 {
-  fprintf(fp, "NOT Auto Parallelizing Loop %s at %d (SMALL TRIP COUNT)\n",
-    WB_Whirl_Symbol(wn_loop), (INT) WN_linenum(wn_loop));
+    if (LNO_Verbose || LNO_Lno_Verbose || parallel_debug_level >= 1) 
+    {
+        LNO_Trace( LNO_ARA_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(wn_loop)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 "NOT Auto Parallelizing Loop(SMALL TRIP COUNT)");
+    }
+    if (!LNO_Lno_Verbose)
+    {
+        fprintf(TFile, "NOT Auto Parallelizing Loop %s at %d (SMALL TRIP COUNT)\n",
+                WB_Whirl_Symbol(wn_loop), (INT) WN_linenum(wn_loop));
+    }
+
 }
 
 #ifdef KEY
@@ -3576,11 +3589,7 @@ ARA_LOOP_INFO::Generate_Parallel_Pragma()
 	  dli->Suggested_Parallel = FALSE; 
 	  dli->Not_Enough_Parallel_Work = TRUE; 
           dli->Auto_Parallelized = FALSE; 
-	  if (LNO_Verbose || LNO_Lno_Verbose || parallel_debug_level >= 1) {
-	    Print_Non_Parallel_Loop(stdout, _loop); 
-           if (!LNO_Lno_Verbose)
-	    Print_Non_Parallel_Loop(TFile, _loop); 
-          } 
+	  Print_Non_Parallel_Loop(_loop, parallel_debug_level); 
 	  return;
 	} else {
 	  LWN_Delete_Tree(if_cond);
@@ -3934,11 +3943,7 @@ ARA_LOOP_INFO::Generate_Copyout_Loop()
         dli->Suggested_Parallel = FALSE;
         dli->Not_Enough_Parallel_Work = TRUE;
         dli->Auto_Parallelized = FALSE; 
-        if (LNO_Verbose || LNO_Lno_Verbose || parallel_debug_level >= 1) {
-          Print_Non_Parallel_Loop(stdout, _loop);
-         if (!LNO_Lno_Verbose) 
-          Print_Non_Parallel_Loop(TFile, _loop);
-        }
+        Print_Non_Parallel_Loop( _loop, parallel_debug_level);
 	return;
       } else {
 	LWN_Delete_Tree(if_cond);

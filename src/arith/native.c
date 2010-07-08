@@ -39,7 +39,7 @@
 int ar_rounding_modes = 0xf;	/* All rounding modes allowed */
 int ar_underflow_modes = 1<<AR_UNDERFLOW_TO_DENORM;
 
-#if _Solaris || defined(_CRAYMPP) || defined(__mips) || defined(__x86_64)
+#if 1
 
 /* Call native, F90-compiled routines to evaluate all functions */
 /* This seems wrong

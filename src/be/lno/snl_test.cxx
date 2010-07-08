@@ -75,6 +75,12 @@ static const char *rcs_id =   snl_test_CXX "$Revision: 1.9 $";
 #include "config.h"
 #include "split_tiles.h"
 #include "config_opt.h"
+#include "lno_trace.h"
+#include <string>
+#include <iostream>
+#include <sstream>
+using namespace std;
+
 
 // Bug 6010: an upper bound for the number of nests in a procedure
 //           to unroll outmost loop, to reduce memory requirement 
@@ -84,7 +90,73 @@ static const char *rcs_id =   snl_test_CXX "$Revision: 1.9 $";
 static void SNL_Optimize_Bounds_With_Access_Vectors(WN* wn_loop, 
 					    	    DU_MANAGER* du);
 
+//-----------------------------------------------------------------------
+// NAME: Make_Snl_Transformation_Msg
+// FUNCTION: Makes an informative message which describes transformation
+//   which has been performed. Later the messgae is printed by LNO_Trace. 
+//-----------------------------------------------------------------------
 
+static string Make_Snl_Transformation_Msg( SNL_NEST_INFO* ni,
+                                           INT nloops,
+                                           INT * order,
+                                           INT * regstripsz,
+                                           BOOL cachestripping,
+                                           INT lmNstrips,
+                                           INT * lmIloop,
+                                           INT * lmStripsz,
+                                           INT * lmStriplevel,
+                                           INT lmStripdepth)
+{
+    INT outerdepth = ni->Depth_Inner() + 1 - nloops;
+    INT i;
+
+    ostringstream os;
+    string msg (" [");
+    for (i = 0; i < nloops; i++) {
+        INT depth = i + outerdepth;
+        if (i > 0)
+            msg.append(",");
+        msg.append(SYMBOL(WN_index(ni->Dostack().Bottom_nth(depth))).Name());
+    }
+    msg.append(" --> ");
+    for (i = 0; i < nloops; i++) {
+        INT depth1 = order[i] + outerdepth;
+        if (i > 0)
+            msg.append(",");
+        msg.append( SYMBOL(WN_index(ni->Dostack().Bottom_nth(depth1))).Name());
+        if (regstripsz[i] > 1)
+        {
+            os.str("");
+            os << "(u=" <<regstripsz[i] <<")";
+            msg.append( os.str());
+        }
+    }
+    if (cachestripping) {
+        msg.append( " block");
+        msg.append( lmNstrips > 1 ? "s " : " ");
+        for (i = 0; i < lmNstrips; i++) {
+            INT depth = order[lmIloop[i] - outerdepth] + outerdepth;
+            if (i > 0)
+                msg.append(",");
+            msg.append( SYMBOL(WN_index(ni->Dostack().Bottom_nth(depth))).Name());
+            msg.append("(");
+            os.str("");
+            os << lmStripsz[i];
+            msg.append(os.str());
+            os.str("");
+            msg.append(")[L");
+            os << lmStriplevel[i];
+            msg.append(os.str());
+            os.str("");
+            msg.append("]");
+        }
+        INT d = order[lmStripdepth - outerdepth] + outerdepth;
+        msg.append(" outside ");
+        msg.append( SYMBOL(WN_index(ni->Dostack().Bottom_nth(d))).Name());
+    }
+    msg.append("]");
+    return(msg);
+}
 
 //-----------------------------------------------------------------------
 // NAME: Inner_Loop_Is_Trapezoidal
@@ -610,9 +682,11 @@ static SNL_REGION Do_Automatic_Transformation(WN* wn,
       }
     }
     if (LNO_Verbose || LNO_Lno_Verbose) {
-      printf(" Line %d: SNL nest not transformable\n",
-        Srcpos_To_Line(WN_Get_Linenum(ni->Dostack().
-          Bottom_nth(ni->Depth_Inner() - nloops + 1))));
+        LNO_Trace( LNO_SNL_TRANSFORM_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(ni->Dostack().Bottom_nth(ni->Depth_Inner() - nloops + 1))),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 "SNL nest not transformable");
     }
     if (!Valid_SNL_Region(region))
       DevWarn("Do_Automatic_Transformation: Invalid SNL_REGION [0x%p,0x%p]",
@@ -753,8 +827,11 @@ static SNL_REGION Do_Automatic_Transformation(WN* wn,
     DO_LOOP_INFO* dli = Get_Do_Loop_Info(innerloop);
     dli->Est_Register_Usage = reg_usage;
     if (LNO_Verbose || LNO_Lno_Verbose) {
-      printf(" Line %d: SNL not transforming nest\n",
-             Srcpos_To_Line(WN_Get_Linenum(ni->Dostack().Bottom_nth(ni->Depth_Inner() - nloops + 1))));
+        LNO_Trace( LNO_SNL_TRANSFORM_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(ni->Dostack().Bottom_nth(ni->Depth_Inner() - nloops + 1))),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 "SNL not transforming nest");
     }
 
     // Run outer loop invariance algorithm
@@ -909,79 +986,29 @@ static SNL_REGION Do_Automatic_Transformation(WN* wn,
   }
 
   if (LNO_Verbose || LNO_Lno_Verbose) {
-    INT outerdepth = ni->Depth_Inner() + 1 - nloops;
+      string msg;
+      INT outerdepth = ni->Depth_Inner() + 1 - nloops;
 
-    printf(" Line %d:", Srcpos_To_Line(WN_Get_Linenum(ni->Dostack().Bottom_nth(outerdepth))));
-    printf(" [");
-    for (i = 0; i < nloops; i++) {
-      INT depth = i + outerdepth;
-      if (i > 0)
-        printf(",");
-      printf("%s", SYMBOL(WN_index(ni->Dostack().Bottom_nth(depth))).Name());
-    }
-    printf(" --> ");
-    for (i = 0; i < nloops; i++) {
-      INT depth1 = order[i] + outerdepth;
-      if (i > 0)
-        printf(",");
-      printf("%s",
-             SYMBOL(WN_index(ni->Dostack().Bottom_nth(depth1))).Name());
-      if (regstripsz[i] > 1)
-        printf("(u=%d)", regstripsz[i]);
-    }
-    if (cachestripping) {
-      printf(" block%s ", lm.Nstrips() > 1 ? "s" : "");
-      for (i = 0; i < lm.Nstrips(); i++) {
-        INT depth = order[lm.Iloop(i) - outerdepth] + outerdepth;
-        if (i > 0)
-          printf(",");
-        printf("%s(%d)[L%d]",
-               SYMBOL(WN_index(ni->Dostack().Bottom_nth(depth))).Name(),
-               lm.Stripsz(i), lm.Striplevel(i));
-      }
-      INT d = order[lm.Stripdepth() - outerdepth] + outerdepth;
-      printf(" outside %s",
-             SYMBOL(WN_index(ni->Dostack().Bottom_nth(d))).Name());
-    }
-    printf("]\n");
+      msg = Make_Snl_Transformation_Msg( ni, nloops, order, regstripsz, cachestripping, 
+                                         lm.Nstrips(), lm.Iloop(),
+                                         lm.Stripsz(), lm.Striplevel(), lm.Stripdepth());
+      LNO_Trace( LNO_SNL_TRANSFORM_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(ni->Dostack().Bottom_nth(outerdepth))),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 msg.c_str());
+
   }
   if (snl_debug >= 1) {
-    INT outerdepth = ni->Depth_Inner() + 1 - nloops;
+      string msg;
+      msg = Make_Snl_Transformation_Msg( ni, nloops, order, regstripsz, cachestripping, 
+                                         lm.Nstrips(), lm.Iloop(),
+                                         lm.Stripsz(), lm.Striplevel(), lm.Stripdepth());
 
-    fprintf(TFile, "Line %d:", Srcpos_To_Line(WN_Get_Linenum(ni->Dostack().Bottom_nth(outerdepth))));
-    fprintf(TFile, " [");
-    for (i = 0; i < nloops; i++) {
-      INT depth = i + outerdepth;
-      if (i > 0)
-        fprintf(TFile, ",");
-      fprintf(TFile,
-              "%s", SYMBOL(WN_index(ni->Dostack().Bottom_nth(depth))).Name());
-    }
-    fprintf(TFile, " --> ");
-    for (i = 0; i < nloops; i++) {
-      INT depth1 = order[i] + outerdepth;
-      if (i > 0)
-        fprintf(TFile, ",");
-      fprintf(TFile, "%s",
-              SYMBOL(WN_index(ni->Dostack().Bottom_nth(depth1))).Name());
-      if (regstripsz[i] > 1)
-        fprintf(TFile, "(u=%d)", regstripsz[i]);
-    }
-    if (cachestripping) {
-      fprintf(TFile, " block%s ", lm.Nstrips() > 1 ? "s" : "");
-      for (i = 0; i < lm.Nstrips(); i++) {
-        INT depth = order[lm.Iloop(i) - outerdepth] + outerdepth;
-        if (i > 0)
-          fprintf(TFile, ",");
-        fprintf(TFile, "%s(%d)[L%d]",
-                SYMBOL(WN_index(ni->Dostack().Bottom_nth(depth))).Name(),
-                lm.Stripsz(i), lm.Striplevel(i));
-      }
-      INT d = order[lm.Stripdepth() - outerdepth] + outerdepth;
-      fprintf(TFile, " outside %s",
-              SYMBOL(WN_index(ni->Dostack().Bottom_nth(d))).Name());
-    }
-    fprintf(TFile, "]\n");
+      INT outerdepth = ni->Depth_Inner() + 1 - nloops;
+
+      fprintf(TFile, "Line %d:", Srcpos_To_Line(WN_Get_Linenum(ni->Dostack().Bottom_nth(outerdepth))));
+      fprintf(TFile, " %s", msg.c_str());
   }
 
   if (!reordering && !cachestripping && !regstripping) {
@@ -1551,8 +1578,11 @@ static void SNL_Transform(WN* wn,
 
   if (nloops <= 1) {
     if (LNO_Verbose || LNO_Lno_Verbose) {
-     printf(" SNL not transforming nest,");
-     printf(" transformable depth is less than two.\n");
+        LNO_Trace( LNO_SNL_TRANSFORM_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(wn)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 "SNL not transforming nest, transformable depth is less than two");
     }
     SNL_Optimize_Bounds(SNL_REGION(wn, wn));
     SNL_Transform(Find_Next_Innermost_Do(wn_original), nloops_original - 1); 

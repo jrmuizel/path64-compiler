@@ -34,8 +34,8 @@
  * The right most bit is bit 0.
  */
 
-int16
-bclr_h (int16 *n, int16 *i)    
+int16_t
+bclr_h (int16_t *n, int16_t *i)    
 {
     if (*i < 0 || *i >= NBSI)
 	return(0);

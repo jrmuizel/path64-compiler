@@ -25,8 +25,8 @@
 
 #include <cmplrs/host.h>
 
-int16
-h_mod (int16 *a, int16 *b)
+int16_t
+h_mod (int16_t *a, int16_t *b)
 {
     return( *a % *b);
 }

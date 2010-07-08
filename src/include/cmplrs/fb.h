@@ -25,7 +25,7 @@
 #ifndef __FB_H__
 #define __FB_H__
 
-#include <inttypes.h>
+#include <stdint.h>
 
 typedef uint64_t	FB_offset;
 typedef uint64_t	FB_xword;

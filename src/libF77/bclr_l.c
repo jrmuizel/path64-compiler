@@ -34,8 +34,8 @@
  * The right most bit is bit 0.
  */
 
-int32
-bclr_l (int32 *n, int32 *i)    
+int32_t
+bclr_l (int32_t *n, int32_t *i)    
 {
     if (*i < 0 || *i >= NBI)
 	return(0);

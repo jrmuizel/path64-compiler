@@ -25,18 +25,18 @@
 
 #include <cmplrs/host.h>
 
-int32
-i_sign (int32 *a, int32 *b)
+int32_t
+i_sign (int32_t *a, int32_t *b)
 {
-    int32 x;
+    int32_t x;
     x = (*a >= 0 ? *a : - *a);
     return( *b >= 0 ? x : -x);
 }
 
-int32
-__isign (int32 a, int32 b)
+int32_t
+__isign (int32_t a, int32_t b)
 {
-    int32 x;
+    int32_t x;
     x = (a >= 0 ? a : - a);
     return( b >= 0 ? x : -x);
 }

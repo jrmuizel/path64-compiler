@@ -104,8 +104,17 @@ ELSE()
 	MESSAGE(FATAL_ERROR "Must set PSC_FULL_VERSION")
 ENDIF()
 
-# TODO : This should use FIND_FILE and be more logical when it comes to cross compiles and multilib
-SET(PSC_CRT_PATH "/usr/lib" CACHE STRING "Location of crt1.o crti.o and crtn.o")
+IF(PSC_CRT_PATH)
+ELSE()
+    IF(PATH64_BUILD_32)
+        FIND_PATH(PSC_CRT_PATH crt1.o
+                  PATHS /lib32 /usr/lib32 /lib /usr/lib)
+    ELSE()
+        FIND_PATH(PSC_CRT_PATH crt1.o
+                  PATHS /lib64 /lib/amd64 /usr/lib64 /usr/lib/amd64 /lib /usr/lib)
+    ENDIF()
+ENDIF()
+
 IF(PSC_CRT_PATH)
 	MESSAGE(STATUS "PSC_CRT_PATH is set to "${PSC_CRT_PATH})
 ELSE()
@@ -132,9 +141,29 @@ ELSE()
 	MESSAGE(STATUS "Optimized math libraries disabled")
 ENDIF()
 
+# Use X86 elf file format for whirl objects
+OPTION(X86_WHIRL_OBJECTS "Use x86 elf file format for whirl object files" OFF)
+IF(X86_WHIRL_OBJECTS)
+        MESSAGE(STATUS "Using x86 elf file format for whirl object files")
+        ADD_DEFINITIONS(-DX86_WHIRL_OBJECTS)
+ELSE()
+        MESSAGE(STATUS "Using MIPS elf file format for whirl object files")
+ENDIF()
+
+# Fuse WHIRL and native code in IPA objects
+OPTION(FAT_WHIRL_OBJECTS " Fuse WHIRL and native code in IPA objects" OFF)
+IF(FAT_WHIRL_OBJECTS)
+        MESSAGE(STATUS "Configuring for fat IPA objects")
+        ADD_DEFINITIONS(-DFAT_WHIRL_OBJECTS)
+ELSE()
+        MESSAGE(STATUS "Configuring for simple WHIRL IPA objects")
+ENDIF()
+
+
 # Are we using the PathScale runtime
 OPTION(PATH64_ENABLE_PSCRUNTIME "Using the PathScale c and c++ runtime" OFF)
 IF(PATH64_ENABLE_PSCRUNTIME)
+	ADD_DEFINITIONS(-DPATH64_ENABLE_PSCRUNTIME)
 	MESSAGE(STATUS "PathScale runtime enabled")
 ELSE()
 	MESSAGE(STATUS "GNU runtime enabled")
@@ -161,6 +190,30 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 ELSE()
     set(libdl "")
 ENDIF()
+
+
+# Selecting macro for enabling int types formats for C++
+SET(PATH64_STDC_FORMAT_MACROS -D__STDC_FORMAT_MACROS)
+
+OPTION(PATH64_BUILD_32 "Build 32-bit version" OFF)
+
+IF(PATH64_BUILD_32)
+    SET(CMAKE_CXX_FLAGS "-m32")
+    SET(CMAKE_C_FLAGS "-m32")
+    SET(CMAKE_Fortran_FLAGS "-m32")
+    SET(CMAKE_EXE_LINKER_FLAGS "-m32")
+    SET(CMAKE_MODULE_LINKER_FLAGS "-m32")
+    SET(CMAKE_SHARED_LINKER_FLAGS "-m32")
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+# Forching build for 64-bit on osol
+    SET(CMAKE_CXX_FLAGS "-m64")
+    SET(CMAKE_C_FLAGS "-m64")
+    SET(CMAKE_Fortran_FLAGS "-m64")
+    SET(CMAKE_EXE_LINKER_FLAGS "-m64")
+    SET(CMAKE_MODULE_LINKER_FLAGS "-m64")
+    SET(CMAKE_SHARED_LINKER_FLAGS "-m64")
+ENDIF()
+
 
 # Tell GCC_XML that we are providing gccxml_cc1plus for it.
 SET(GCCXML_NATIVE_CC1PLUS 1)

@@ -64,6 +64,10 @@
 #include "opt_ssa.h"
 #include "opt_main.h"
 
+#if !defined(__FreeBSD__)
+#include <alloca.h>
+#endif
+
 // Search in a CODEREP expr
 //
 template <class Pred>

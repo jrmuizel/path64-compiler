@@ -27,6 +27,7 @@
 
 
 #include "config.h"
+#include <stdint.h>
 #ifdef HAVE_ELF_H
 #include <elf.h>
 #endif

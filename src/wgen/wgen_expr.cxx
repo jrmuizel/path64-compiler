@@ -2944,7 +2944,7 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
     case GSBI_IX86_BUILTIN_PADDQ:
     case GSBI_IX86_BUILTIN_ADDPD:
     case GSBI_IX86_BUILTIN_PADDB128:
-    case GSBI_IX86_BUILTIN_PADDQ128:
+    //case GSBI_IX86_BUILTIN_PADDQ128:
       wn = WN_Add (res_type, arg0, arg1);
       *intrinsic_op = FALSE;
       break;
@@ -3011,6 +3011,9 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
       break;
     case GSBI_IX86_BUILTIN_PADDW128:
       *iopc = INTRN_PADDW128;
+      break;
+    case GSBI_IX86_BUILTIN_PADDQ128:
+      *iopc = INTRN_PADDQ128;
       break;
     case GSBI_IX86_BUILTIN_PSUBSB:
       *iopc = INTRN_PSUBSB;
@@ -3869,6 +3872,15 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
       break;
     case GSBI_IX86_BUILTIN_INSERTQ:
       *iopc = INTRN_INSERTQ;
+      break;
+    case GSBI_IX86_BUILTIN_ADDSUBPS:
+      *iopc = INTRN_ADDSUBPS;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPISTRI128:
+      *iopc = INTRN_PCMPISTRI128;
+      break;
+    case GSBI_IX86_BUILTIN_PAND128:
+      *iopc = INTRN_PAND128;
       break;
     default:
 unsupported:

@@ -29,7 +29,7 @@
 
 #include "cmplrs/host.h"
 
-int64 not_ll(int64 *m)
+int64_t not_ll(int64_t *m)
 {
 	return(~*m);
 }

@@ -33,7 +33,7 @@
  * Fortran 90 compiler on mips and on some little endian systems.
  * In the future, do not use the libF77 routine with Fortran 90.
  */
-#if     defined(__linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if     defined(__linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 extern void MAIN__(void);
 
 extern void __f90_set_args(int argc, char **argv);

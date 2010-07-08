@@ -60,6 +60,7 @@
 #include "prompf.h" 
 #include "anl_driver.h"
 #include "parallel.h"
+#include "lno_trace.h"
 
 #pragma weak New_Construct_Id 
 
@@ -73,15 +74,28 @@ typedef HASH_TABLE<INT,void *> INT2PTR;
 static BOOL fusion_initialized=FALSE;
 
 static void fusion_verbose_info(
+  BOOL          is_success,  
   SRCPOS	srcpos1,
   SRCPOS	srcpos2,
   UINT32	fusion_level,
   const char*	message)
 {
-  printf("#### Fusion(%d+%d:%d): %s\n",
-    Srcpos_To_Line(srcpos1),
-    Srcpos_To_Line(srcpos2),
-    fusion_level, message);
+    if (LNO_Verbose || LNO_Lno_Verbose)
+    {
+        LNO_Trace( LNO_FUSION_EVENT, 
+                   Src_File_Name,
+                   Srcpos_To_Line(srcpos1),
+                   ST_name(WN_entry_name(Current_Func_Node)),
+                   Srcpos_To_Line( srcpos1),
+                   Srcpos_To_Line( srcpos2),
+                   fusion_level, message);
+#if 0
+        printf("#### Fusion(%d+%d:%d): %s\n",
+               Srcpos_To_Line(srcpos1),
+               Srcpos_To_Line(srcpos2),
+               fusion_level, message);
+#endif
+    }
 }
 
 static void fusion_analysis_info(
@@ -830,8 +844,7 @@ mINT32 offset[])
   OPERATOR opr=
            WN_operator(WN_kid0(WN_start(in_loop1)));
   if (opr == OPR_MAX || opr==OPR_MIN) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+      fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
         "Loop with MIN, MAX lower bound cannot be fused.");
     if (LNO_Analysis)
       fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -843,8 +856,7 @@ mINT32 offset[])
   }
   opr=WN_operator(WN_kid1(WN_end(in_loop1)));
   if (opr == OPR_MAX || opr==OPR_MIN) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+      fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
         "Loop with MIN, MAX upper bound cannot be fused.");
     if (LNO_Analysis)
       fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -858,8 +870,7 @@ mINT32 offset[])
   loop_nest2[0]=in_loop2;
   opr=WN_operator(WN_kid0(WN_start(in_loop2)));
   if (opr == OPR_MAX || opr==OPR_MIN) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+      fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
         "Loop with MIN, MAX lower bound cannot be fused.");
     if (LNO_Analysis)
       fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -871,8 +882,7 @@ mINT32 offset[])
   }
   opr=WN_operator(WN_kid1(WN_end(in_loop2)));
   if (opr == OPR_MAX || opr==OPR_MIN) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+      fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
         "Loop with MIN, MAX upper bound cannot be fused.");
     if (LNO_Analysis)
       fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -886,8 +896,7 @@ mINT32 offset[])
   if (!Do_Loop_Is_Good(in_loop1) || !Do_Loop_Is_Good(in_loop2) ||
        Do_Loop_Has_Calls(in_loop1) || Do_Loop_Has_Calls(in_loop2) ||
        Do_Loop_Has_Gotos(in_loop1) || Do_Loop_Has_Gotos(in_loop2)) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+      fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
         "Loops with calls, exits, or gotos cannot be fused.");
     if (LNO_Analysis)
       fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -904,8 +913,7 @@ mINT32 offset[])
    DO_LOOP_INFO* dli2 = Get_Do_Loop_Info(in_loop2);
    if (LNO_Run_Simd > 0 && LNO_Simd_Avoid_Fusion && 
        (dli1->Vectorizable ^ dli2->Vectorizable)) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+      fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
 	"Vectorizable loop can not be fused with a serial loop.");
     if (LNO_Analysis)
       fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -920,8 +928,7 @@ mINT32 offset[])
   for (i=1; i<fusion_level; i++) {
     WN* lwn= Get_Only_Loop_Inside(loop_nest1[i-1],FALSE);
     if (!lwn) {
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
           "Non-simply nested loops cannot be fused.");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -934,8 +941,7 @@ mINT32 offset[])
 
     opr=WN_operator(WN_kid0(WN_start(lwn)));
     if (opr == OPR_MAX || opr==OPR_MIN) {
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
           "Loop with MIN, MAX lower bound cannot be fused.");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -947,8 +953,7 @@ mINT32 offset[])
     }
     opr=WN_operator(WN_kid1(WN_end(lwn)));
     if (opr == OPR_MAX || opr==OPR_MIN) {
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
           "Loop with MIN, MAX upper bound cannot be fused.");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -963,8 +968,7 @@ mINT32 offset[])
 
     lwn= Get_Only_Loop_Inside(loop_nest2[i-1],FALSE);
     if (!lwn) {
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
           "Non-simply nested loops cannot be fused.");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -977,8 +981,7 @@ mINT32 offset[])
 
     opr=WN_operator(WN_kid0(WN_start(lwn)));
     if (opr == OPR_MAX || opr==OPR_MIN) {
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
           "Loop with MIN, MAX lower bound cannot be fused.");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -990,8 +993,7 @@ mINT32 offset[])
     }
     opr=WN_operator(WN_kid1(WN_end(lwn)));
     if (opr == OPR_MAX || opr==OPR_MIN) {
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
           "Loop with MIN, MAX upper bound cannot be fused.");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1038,8 +1040,7 @@ mINT32 offset[])
 
     if (!diff->Is_Const() || diff->Const_Offset != 0) {
       
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
           "Steps have to be equal in both loops.");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1077,8 +1078,7 @@ mINT32 offset[])
 
       } else if (Bound_Is_Too_Messy(dli1->LB) || dli1->LB->Num_Vec()!=1 ||
       		 Bound_Is_Too_Messy(dli2->LB) || dli2->LB->Num_Vec()!=1){
-        if (LNO_Verbose || LNO_Lno_Verbose)
-          fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+          fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
             "Loops with messy lower bounds cannot be fused.");
         if (LNO_Analysis)
           fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1102,8 +1102,7 @@ mINT32 offset[])
 
       } else if (Bound_Is_Too_Messy(dli1->UB) || dli1->UB->Num_Vec()!=1 ||
       		 Bound_Is_Too_Messy(dli2->UB) || dli2->UB->Num_Vec()!=1){
-        if (LNO_Verbose || LNO_Lno_Verbose)
-          fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+          fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
             "Loops with messy upper bounds cannot be fused.");
         if (LNO_Analysis)
           fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1122,8 +1121,7 @@ mINT32 offset[])
     if (identical_expression)
 	lb_diff[i] = 0;
     else if (!diff->Is_Const()) {
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE, srcpos1,srcpos2,fusion_level,
           "Difference in lower bounds must be constant.");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1142,8 +1140,7 @@ mINT32 offset[])
         loop_coeff=loop_info1[i]->UB->Dim(0)->Loop_Coeff(
                        loop_info1[i]->UB->Dim(0)->Nest_Depth()-1);
       if ( (diff->Const_Offset % loop_coeff) != 0) {
-        if (LNO_Verbose || LNO_Lno_Verbose)
-          fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+          fusion_verbose_info(FALSE, srcpos1,srcpos2,fusion_level,
             "Difference in lower bounds must be constant.");
         if (LNO_Analysis)
           fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1169,8 +1166,7 @@ mINT32 offset[])
 
       } else if (Bound_Is_Too_Messy(dli1->UB) || dli1->UB->Num_Vec()!=1 ||
       		 Bound_Is_Too_Messy(dli2->UB) || dli2->UB->Num_Vec()!=1){
-        if (LNO_Verbose || LNO_Lno_Verbose)
-          fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+          fusion_verbose_info(FALSE, srcpos1,srcpos2,fusion_level,
             "Loops with messy upper bounds cannot be fused.");
         if (LNO_Analysis)
           fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1193,8 +1189,7 @@ mINT32 offset[])
 
       } else if (Bound_Is_Too_Messy(dli1->LB) || dli1->LB->Num_Vec()!=1 ||
       		 Bound_Is_Too_Messy(dli2->LB) || dli2->LB->Num_Vec()!=1){
-        if (LNO_Verbose || LNO_Lno_Verbose)
-          fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+          fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
             "Loops with messy lower bounds cannot be fused.");
         if (LNO_Analysis)
           fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1213,8 +1208,7 @@ mINT32 offset[])
     if (identical_expression)
       ub_diff[i]=0;
     else if (!diff->Is_Const()) {
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE, srcpos1,srcpos2,fusion_level,
           "Difference in upper bounds must be constant.");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1232,8 +1226,7 @@ mINT32 offset[])
         loop_coeff=loop_info1[i]->LB->Dim(0)->Loop_Coeff(
                        loop_info1[i]->LB->Dim(0)->Nest_Depth()-1);
       if ( (diff->Const_Offset % loop_coeff) != 0) {
-        if (LNO_Verbose || LNO_Lno_Verbose)
-          fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+          fusion_verbose_info(FALSE, srcpos1,srcpos2,fusion_level,
             "Difference in upper bounds must be constant.");
         if (LNO_Analysis)
           fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1258,8 +1251,7 @@ mINT32 offset[])
 
   WN* scalar_wn;
   if (scalar_wn=Scalar_Dependence_Prevent_Fusion(in_loop1,in_loop2)) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+      fusion_verbose_info(FALSE, srcpos1,srcpos2,fusion_level,
         "Failed because of scalar dependences.");
     if (LNO_Analysis)
       fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1278,8 +1270,7 @@ mINT32 offset[])
   mINT32* dist =
 	Max_Dep_Distance(in_loop1,in_loop2,fusion_level,step,bounds_are_equal);
   if (dist[fusion_level-1]==MAX_INT32) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+      fusion_verbose_info(FALSE, srcpos1,srcpos2,fusion_level,
         "Failed because of backward dependences.");
     if (LNO_Analysis)
       fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1302,8 +1293,7 @@ mINT32 offset[])
   for (i=0; i<fusion_level; i++) {
 
     if (!steps_are_constant && offset[i]!=0) {
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
    "Failed due to non-zero offset required at a level with non-constant step");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1335,8 +1325,7 @@ mINT32 offset[])
   	  lb_diff[i] != ub_diff[i]) {
             if (abs(offset[i]-lb_diff[i])>threshold ||
                 abs(offset[i]-ub_diff[i])>threshold) {
-              if (LNO_Verbose || LNO_Lno_Verbose)
-                fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+                fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
     "Failed because of too many pre-peeled iterations required after fusion.");
               if (LNO_Analysis)
                 fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1349,8 +1338,7 @@ mINT32 offset[])
             } else if (i==0 && i!=inner_most_level)
 	      outer_peeling=TRUE;
             else if (i!=inner_most_level) {
-              if (LNO_Verbose || LNO_Lno_Verbose)
-                fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+                fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
                   "Peeling needed for middle loops.");
               if (LNO_Analysis)
                 fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1397,8 +1385,7 @@ mINT32 offset[])
   	  lb_diff[i] != ub_diff[i]) {
             if (abs(offset[i]+lb_diff[i])>threshold ||
                 abs(offset[i]+ub_diff[i])>threshold) {
-              if (LNO_Verbose || LNO_Lno_Verbose)
-                fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+                fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
     "Failed because of too many pre-peeled iterations required after fusion.");
               if (LNO_Analysis)
                 fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1411,8 +1398,7 @@ mINT32 offset[])
             } else if (i==0 && i!=inner_most_level)
 	      outer_peeling=TRUE;
             else if (i!=inner_most_level) {
-              if (LNO_Verbose || LNO_Lno_Verbose)
-                fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+                fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
                   "Peeling needed for middle loops.");
               if (LNO_Analysis)
                 fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -1477,8 +1463,7 @@ mINT32 offset[])
   if (! loop1_iter->Is_Const()) {
     if ( step[inner_most_level] != 1) {
       offset[inner_most_level] = MAX_INT32;
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
           "Iteration count has to be constant for non-stride-1 loop.");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3180,8 +3165,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
   TYPE_ID ty_index1 = WN_desc(WN_start(in_loop1));
   TYPE_ID ty_index2 = WN_desc(WN_start(in_loop2));
   if ( ty_index1 != ty_index2 ) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+      fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
         "(pv 597324 temp fix) loop index types differ, don't fuse");
     if (LNO_Analysis)
       fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3195,8 +3179,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
   if (dli1->No_Fusion || dli2->No_Fusion
     || !Cannot_Concurrentize(in_loop1) && Cannot_Concurrentize(in_loop2)
     || Cannot_Concurrentize(in_loop1) && !Cannot_Concurrentize(in_loop2)) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+      fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
         "Loops with fission/fusion pragmas cannot be fused.");
     if (LNO_Analysis)
       fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3225,8 +3208,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
   if (!Do_Loop_Is_Good(in_loop1) || !Do_Loop_Is_Good(in_loop2) ||
       Do_Loop_Has_Calls(in_loop1) || Do_Loop_Has_Calls(in_loop2)||
       Do_Loop_Has_Gotos(in_loop1) || Do_Loop_Has_Gotos(in_loop2)) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+      fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
         "Loops with calls, exits, or gotos cannot be fused.");
     if (LNO_Analysis)
       fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3240,8 +3222,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
   // Move_Adjacent(in_loop1, in_loop2);
 
   if (WN_next(in_loop1)!=in_loop2) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+      fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
         "Loops to be fused are not adjacent.");
     if (LNO_Analysis)
       fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3255,8 +3236,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
   FmtAssert(fusion_level>0, ("Illegal level number."));
 
   if (Upper_Bound_Standardize(WN_end(in_loop1),TRUE)==FALSE) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+      fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
         "Upper bound of loop1 is too complicated.");
     if (LNO_Analysis)
       fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3271,8 +3251,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
   scalar_rename(WN_start(in_loop1));
 
   if (Upper_Bound_Standardize(WN_end(in_loop2),TRUE)==FALSE) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+      fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
         "Upper bound of loop2 is too complicated.");
     if (LNO_Analysis)
       fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3309,8 +3288,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
   if (WN_next(in_loop1)!=in_loop2)
     if (Good_Do_Depth(in_loop1)>0)
       if (Move_Adjacent(in_loop1, in_loop2)==FALSE) {
-        if (LNO_Verbose || LNO_Lno_Verbose)
-          fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+          fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
             "Cannot move statement in between after reversal");
         if (LNO_Analysis)
           fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3322,8 +3300,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
       }
       else;
     else {
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
           "Cannot move statement in between after reversal");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3350,8 +3327,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
 	&& Cannot_Concurrentize(loop_nest2[i])
 	|| Cannot_Concurrentize(loop_nest1[i]) 
 	&& !Cannot_Concurrentize(loop_nest2[i])) {
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
           "Loops with fission/fusion pragmas cannot be fused.");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3391,8 +3367,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
         RV_Reverse_Loop(loop_nest1[i]);
 
     if (Upper_Bound_Standardize(WN_end(loop_nest1[i]),TRUE)==FALSE) {
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
           "Upper bound of loop1 is too complicated.");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3407,8 +3382,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
     scalar_rename(WN_start(loop_nest1[i]));
 
     if (Upper_Bound_Standardize(WN_end(loop_nest2[i]),TRUE)==FALSE) {
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
           "Upper bound of loop2 is too complicated.");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3425,8 +3399,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
 
     lwn= loop_nest1[i];
     if (Move_Adjacent(lwn, NULL)==FALSE) {
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE,srcpos1,srcpos2,fusion_level,
           "Statements after the first loop forbid fusion.");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3442,8 +3415,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
 
     lwn= loop_nest2[i];
     if (Move_Adjacent(NULL, lwn)==FALSE) {
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+        fusion_verbose_info(FALSE, srcpos1,srcpos2,fusion_level,
           "Statements before the second loop forbid fusion.");
       if (LNO_Analysis)
         fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3478,8 +3450,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
 
     if (prolog > threshold) {
       if (prolog<MAX_INT32) {
-        if (LNO_Verbose || LNO_Lno_Verbose)
-          fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+          fusion_verbose_info(FALSE, srcpos1,srcpos2,fusion_level,
     "Failed because of too many pre-peeled iterations required after fusion.");
         if (LNO_Analysis)
           fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3494,8 +3465,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
 
     if (epilog > threshold) {
       if (epilog<MAX_INT32) {
-        if (LNO_Verbose || LNO_Lno_Verbose)
-          fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+          fusion_verbose_info(FALSE, srcpos1,srcpos2,fusion_level,
     "Failed because of too many post-peeled iterations required after fusion.");
         if (LNO_Analysis)
           fusion_analysis_info(FALSE,srcpos1,srcpos2,fusion_level,
@@ -3902,8 +3872,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
             LWN_Delete_From_Block(LWN_Get_Parent(tmp),tmp);
           }
           inner_loop_removed = TRUE;
-          if (LNO_Verbose || LNO_Lno_Verbose)
-            fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+            fusion_verbose_info(TRUE,srcpos1,srcpos2,fusion_level,
               "Empty innermost loop is removed after fusion!!");
           if (LNO_Analysis)
             fusion_analysis_info(TRUE,srcpos1,srcpos2,fusion_level,
@@ -3991,8 +3960,7 @@ WN** epilog_loop_out, mINT32 offset_out[])
 
   if (LNO_Test_Dump) adg->Print(stdout);
 
-  if (LNO_Verbose || LNO_Lno_Verbose)
-    fusion_verbose_info(srcpos1,srcpos2,fusion_level,
+    fusion_verbose_info(TRUE, srcpos1,srcpos2,fusion_level,
       "Successfully fused !!");
   if (LNO_Analysis)
     fusion_analysis_info(TRUE,srcpos1,srcpos2,fusion_level,

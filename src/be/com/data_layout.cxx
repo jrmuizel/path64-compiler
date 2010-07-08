@@ -2470,7 +2470,7 @@ if(! Is_Target_64bit() ) {
 	if (Trace_Frame) fprintf(TFile, "<lay> stack-model underflowed\n");
 
   {	/* check that stacksize does not exceed system max */
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
         struct rlimit rlp;
         getrlimit(RLIMIT_STACK, &rlp);
 #else

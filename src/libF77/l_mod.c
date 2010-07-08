@@ -25,8 +25,8 @@
 
 #include <cmplrs/host.h>
 
-int64
-l_mod (int64 *a, int64 *b)
+int64_t
+l_mod (int64_t *a, int64_t *b)
 {
     return( *a % *b);
 }

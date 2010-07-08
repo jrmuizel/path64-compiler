@@ -185,6 +185,8 @@ flush_(
 			{
 # if defined(BUILD_OS_DARWIN)
 			int writeable = cup->ufp.std->_flags & (__SWR | __SRW);
+# elif defined(__sun)
+            int writeable = TRUE;   // FIXME
 # else /* defined(BUILD_OS_DARWIN) */
 			int writeable = !(cup->ufp.std->_flags & _IO_NO_WRITES);
 # endif /* defined(BUILD_OS_DARWIN) */

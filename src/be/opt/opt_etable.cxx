@@ -83,6 +83,10 @@
 #include "opt_cvtl_rule.h"
 #include "opt_fold.h"
 
+#if !defined(__FreeBSD__)
+#include <alloca.h>
+#endif
+
 #include "data_layout.h"	// for ST_has_formal_preg_num
 
 #ifdef KEY

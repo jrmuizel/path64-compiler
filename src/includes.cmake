@@ -79,6 +79,17 @@ SET(LIBELF_HFILES
 
 SET(LDIRT dwarf.h)
 
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    IF(PATH64_BUILD_32)
+        SET(PATH64_DYNAMIC_LINKER /lib/ld-linux.so.2)
+    ELSE()
+        SET(PATH64_DYNAMIC_LINKER /lib/ld-linux-x86-64.so.2)
+    ENDIF()
+	SET(PATH64_AUXILARY_LD_FLAGS "\"${LD_HASH_STYLE_FLAG} --eh-frame-hdr -dynamic-linker ${PATH64_DYNAMIC_LINKER} -rpath \" PSC_INSTALL_PREFIX LIBPATH")
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+	SET(PATH64_AUXILARY_LD_FLAGS "\"-rpath \" PSC_INSTALL_PREFIX LIBPATH")
+ENDIF()
+
 
 ## To prevent repetitious submakes to this subdirectory, Makefile.gsetup
 ## files in other subdirectories invoke submake here only when the file

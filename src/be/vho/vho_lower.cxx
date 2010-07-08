@@ -41,6 +41,10 @@
 
 #ifndef FRONT_END
 
+#if !defined(__FreeBSD__)
+#include <alloca.h>
+#endif
+
 #include "defs.h"
 #include "config.h"
 #include "config_opt.h"

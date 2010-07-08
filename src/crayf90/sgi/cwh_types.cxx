@@ -2390,7 +2390,7 @@ cwh_types_get_dope_info(
       *mask = 0;
    }
    if (shift != 0 || size != 0) {
-# if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+# if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
       *rshift = shift;
 # else
       *rshift = ty_size - shift - size;

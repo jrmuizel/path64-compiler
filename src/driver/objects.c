@@ -56,6 +56,8 @@
 #include "main_defs.h"
 #include "run.h"
 
+#include "sys/elf_whirl.h"
+
 string_list_t *objects;
 string_list_t *lib_objects;
 static string_list_t *cxx_prelinker_objects;
@@ -602,6 +604,34 @@ static int check_for_whirl(char *name) { return 0; }
 #include <sys/stat.h>
 #include <stdint.h>
 
+#ifdef X86_WHIRL_OBJECTS
+static int look_for_elf32_section (const Elf32_Ehdr* ehdr, Elf32_Word type, Elf32_Word info)
+{
+    int i;
+
+    Elf32_Shdr* shdr = (Elf32_Shdr*)((char*)ehdr + ehdr->e_shoff);
+    for (i = 1; i < ehdr->e_shnum; ++i) {
+        if (shdr[i].sh_type == type && shdr[i].sh_info == info)
+            return 1;
+    }
+
+    return 0;
+}
+
+static int look_for_elf64_section (const Elf64_Ehdr* ehdr, Elf64_Word type, Elf64_Word info)
+{
+    int i;
+
+    Elf64_Shdr* shdr = (Elf64_Shdr*)((char*)ehdr + ehdr->e_shoff);
+    for (i = 1; i < ehdr->e_shnum; ++i) {
+        if (shdr[i].sh_type == type && shdr[i].sh_info == info)
+            return 1;
+    }
+
+    return 0;
+}
+#endif
+
 // Check to see if this is an ELF file and then if it is a WHIRL object.
 #define ET_SGI_IR   (ET_LOPROC + 0)
 static int
@@ -648,14 +678,36 @@ check_for_whirl(char *name)
 
     if(p_ehdr->e_ident[EI_CLASS] == ELFCLASS32){
     	Elf32_Ehdr *p32_ehdr = (Elf32_Ehdr *)raw_bits;
-	if (p32_ehdr->e_type == ET_SGI_IR) {
+#ifdef X86_WHIRL_OBJECTS
+        char *second_buf = NULL; 
+
+        int new_size = p32_ehdr->e_shoff + sizeof(Elf32_Shdr)*p32_ehdr->e_shnum;
+        lseek(fd, 0, SEEK_SET);
+        second_buf = (char *)alloca(new_size);
+        size = read(fd, second_buf, new_size);
+        p32_ehdr = (Elf32_Ehdr *)second_buf;
+        if (p32_ehdr->e_type == ET_REL && look_for_elf32_section(p32_ehdr, SHT_PROGBITS, WT_PU_SECTION)) {
+#else
+        if (p32_ehdr->e_type == ET_SGI_IR) {
+#endif
 	    close(fd);
 	    return TRUE;
 	}
     }
     else {
 	Elf64_Ehdr *p64_ehdr = (Elf64_Ehdr *)raw_bits;
-	if (p64_ehdr->e_type == ET_SGI_IR) {
+#ifdef X86_WHIRL_OBJECTS
+        char *second_buf = NULL; 
+
+        int new_size = p64_ehdr->e_shoff + sizeof(Elf64_Shdr)*p64_ehdr->e_shnum;
+        lseek(fd, 0, SEEK_SET);
+        second_buf = (char *)alloca(new_size);
+        size = read(fd, second_buf, new_size);
+        p64_ehdr = (Elf64_Ehdr *)second_buf;
+        if (p64_ehdr->e_type == ET_REL && look_for_elf64_section(p64_ehdr, SHT_PROGBITS, WT_PU_SECTION)) {
+#else
+        if (p64_ehdr->e_type == ET_SGI_IR) {
+#endif
 	    close(fd);
 	    return TRUE;
 	}

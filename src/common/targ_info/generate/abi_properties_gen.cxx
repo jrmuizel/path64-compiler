@@ -41,6 +41,7 @@
 //  $Source: /home/bos/bk/kpro64-pending/common/targ_info/generate/SCCS/s.abi_properties_gen.cxx $
 
 #include <string.h>
+#include <strings.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>

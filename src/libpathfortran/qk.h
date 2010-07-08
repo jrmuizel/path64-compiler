@@ -27,6 +27,7 @@
 #include <sys/param.h>
 #include <sys/mount.h>
 #else /* defined(BUILD_OS_DARWIN) */
+#include <sys/types.h>
 #include <sys/statfs.h>
 #endif /* defined(BUILD_OS_DARWIN) */
 #include <signal.h>

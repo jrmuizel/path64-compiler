@@ -34,11 +34,11 @@
  * and extending left for len bits. The right most bit is bit 0.
  */
 
-int16
-bext_h (int16 *m, int16 *i, int16 *len)    
+int16_t
+bext_h (int16_t *m, int16_t *i, int16_t *len)    
 {
     if ((*i + *len > NBSI) || (*i < 0) || (*len < 0) || (*i >= NBSI) ||
 	(*len > NBSI))
 	return(*m);
-    return((uint16)(*m & F77mask[*i + *len]) >> *i);
+    return((uint16_t)(*m & F77mask[*i + *len]) >> *i);
 }

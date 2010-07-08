@@ -1233,6 +1233,8 @@ Handle_Call_Site (WN *call, OPERATOR call_opr)
   else {
     /* For PIC calls, force t9 to be the result register. */
     tgt_tn = Gen_PIC_Calls ? Ep_TN : NULL;
+    //zwu
+    //tgt_tn = Gen_PIC_Call_Shared ? Ep_TN : NULL;
     tgt_tn = Expand_Expr (WN_kid(call,WN_kid_count(call)-1), call, tgt_tn);
 
     /* If call-shared and the call is to a non PREEMPTIBLE symbol,
@@ -2743,6 +2745,10 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
 #endif
       *kidno = 2;
       return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 4);
+    case INTRN_PCMPISTRI128:
+      *kidno = 2;
+      return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 1);
+
 
     case INTRN_PSLLDQ:
     case INTRN_PSRLDQ:

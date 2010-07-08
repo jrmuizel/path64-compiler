@@ -27,6 +27,7 @@
 
 
 #include "config.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #ifdef HAVE_ELFACCESS_H

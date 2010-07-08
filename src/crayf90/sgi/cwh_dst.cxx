@@ -69,6 +69,7 @@ static char *rcs_id = "$Source: crayf90/sgi/SCCS/s.cwh_dst.cxx $ $Revision: 1.40
 #include <limits.h>
 #include <sys/stat.h>  
 #include <unistd.h>    
+#include <strings.h>
 
 #include "defs.h"
 #include "glob.h"
@@ -93,6 +94,10 @@ static char *rcs_id = "$Source: crayf90/sgi/SCCS/s.cwh_dst.cxx $ $Revision: 1.40
 // for tolower
 #include <ctype.h>
 #include "stamp.h"      /* For INCLUDE_STAMP */
+
+#ifdef __sun
+#include <netdb.h>      /* For MAXHOSTNAMELEN */
+#endif
 
 // Bug 4457 - for DW_AT_comp_dir
 #include <sys/param.h>  /* For MAXHOSTNAMELEN */
@@ -167,12 +172,15 @@ cwh_dst_init_file(char *src_path)
 	// domain name) don't add the domain again...
 	// Somehow.
       } else {
+#ifndef __sun
+        //opensolaris don't have "domainname" interface
 	current_host_dir[host_name_length] = '.';
 	if (getdomainname(&current_host_dir[host_name_length+1], 
 			  MAXHOSTNAMELEN-host_name_length) == 0) {
 	  /* Domain name is ok */
 	  host_name_length += strlen(&current_host_dir[host_name_length]);
 	}
+#endif
       }      
     }
     current_host_dir[host_name_length++] = ':';  /* Prefix cwd with ':' */

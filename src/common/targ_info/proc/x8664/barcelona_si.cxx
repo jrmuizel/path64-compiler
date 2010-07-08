@@ -1416,6 +1416,7 @@ int main (int argc, char *argv[])
 		    TOP_psraw_mmx,
 		    TOP_psrad_mmx,
 		    TOP_pand_mmx,
+                   TOP_pand128,
 		    TOP_pandn_mmx,
 		    TOP_por_mmx,
 		    TOP_pxor_mmx,
@@ -1478,6 +1479,7 @@ int main (int argc, char *argv[])
 		    TOP_cmpnltps,
 		    TOP_cmpnleps,
 		    TOP_cmpordps,
+            TOP_pcmpistri,
                     TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(2);
