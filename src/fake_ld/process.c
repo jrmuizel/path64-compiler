@@ -105,7 +105,7 @@
 #define MEMCPY(s1, s2, n) \
     memcpy((void *)(s1), (void *)(s2), (size_t)(n))
 
-define ELF_WORD int
+#define ELF_WORD int
 
 #define OBJ_ASSERT(EX, obj, str) \
     if (!(EX)) {fprintf(stderr,"%s: %s\n", obj->name, str); exit(1);}

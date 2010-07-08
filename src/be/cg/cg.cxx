@@ -58,6 +58,9 @@
 
 #include "defs.h"
 #include "wn.h"
+#include "pu_info.h"     /* for Current_PU_Info */
+#include "dep_graph.h"   /* for CG_Dep_Graph */
+
 #include "cg.h"
 #include "cg_internal.h"
 #include "cg_flags.h"
@@ -108,6 +111,7 @@
 #include "cgtarget.h"
 #include "ebo.h"
 #include "hb.h"
+#include "cg_automod.h"
 #include "pqs_cg.h"
 #include "tag.h"
 #ifdef KEY
@@ -124,6 +128,9 @@
 #include "cg_tailmerge.h"
 #include "cg_coalesce.h"
 #endif
+#ifdef SUPPORTS_SELECT
+#include "cg_select.h"
+#endif
 
 #ifdef LAO_ENABLED
 #include "lao_stub.h"
@@ -133,10 +140,6 @@
 #include "top_properties.h"
 #include "mexpand.h"
 
-// [TB] gcov coverage utilities  
-#include "gcov_profile.h"
-
-// [GS-DFGforISE] : for exportation to DFGs
 #include "ExportFromBackEnd.h"
 #endif
 
@@ -1204,7 +1207,7 @@ CG_Generate_Code(
   Check_for_Dump (TP_ALLOC, NULL);
 #endif
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   /* Optimize control flow (third pass).  Callapse empty GOTO BBs which GRA
      didn't find useful in placing spill code.  Bug 9063. */
   if (CFLOW_opt_after_cgprep &&

@@ -40,13 +40,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include "W_errno.h"
-#include "W_bstring.h"
-#include <elf.h>
+#include <elf_stuff.h>
 #include <elfaccess.h>
-#include <libelf.h>
 #include <stamp.h>
-#include "W_alloca.h"
 #include <cmplrs/leb128.h>
 #include <cmplrs/elf_interfaces.h>
 /* #include <sys/unwindP.h> */

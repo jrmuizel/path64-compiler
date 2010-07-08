@@ -106,6 +106,10 @@
 #include <float.h> // needed to pick up FLT_MAX at PathScale
 #endif
 
+#ifdef TARG_ST
+#   include <set>
+#include "wn_util.h" // for WN_Equiv_Tree
+#endif
 
 #define DEBUG_CFLOW Is_True_On
 
@@ -1852,7 +1856,64 @@ Is_Empty_BB(BB *bb)
   }
   return FALSE;
 }
-
+
+#ifdef TARG_ST
+
+typedef std::set<BB*> SetOfBBs;
+typedef SetOfBBs::const_iterator CItSetOfBBs;
+
+/**
+ * Set of basic blocks to be re-scheduled after cflow
+ */
+static SetOfBBs g_toBeSched;
+
+/**
+ * Add bb in to be scheduled set (g_toBeSched), if bb was already scheduled.
+ *
+ * @param  bb A basic block
+ *
+ * @pre    true
+ * @post   BB_scheduled(bb@pre) implies g_toBeSched->contains(bb) and
+ *         !BB_scheduled(bb) and !BB_scheduled_hbs(bb)
+ */
+static void
+AddBBToSchedule(BB* bb)
+{
+    if(bb && BB_scheduled(bb))
+        {
+            Reset_BB_scheduled(bb);
+            Reset_BB_scheduled_hbs(bb);
+            g_toBeSched.insert(bb);
+        }
+}
+
+/**
+ * Call backward scheduler on all basic blocks contained in g_toBeSched.
+ *
+ * @pre    g_toBeSched->forAll(!BB_scheduled(bb))
+ * @post   g_toBeSched@pre->forAll(BB_scheduled(bb))
+ */
+static void
+ScheduleBBs()
+{
+    CItSetOfBBs it;
+    HBS_TYPE hbs_type = HBS_CRITICAL_PATH;
+    if(PROC_has_bundles())
+        {
+            hbs_type |= HBS_MINIMIZE_BUNDLES;
+        }
+    for(it = g_toBeSched.begin(); it != g_toBeSched.end(); ++it)
+        {
+            HB_Schedule sched;
+            DevAssert(!BB_scheduled(*it), ("test"));
+           	sched.Init(*it, hbs_type, INT32_MAX, NULL, NULL);
+            sched.Schedule_BB(*it, NULL, FALSE);
+        }
+    g_toBeSched.clear();
+}
+
+#endif
+
 /* ====================================================================
  * ====================================================================
  *
@@ -4179,7 +4240,7 @@ Append_Succ(
     Rename_TNs_For_BB(b, NULL);
 #endif
   }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   else {
     // Rename duplicated local TNs.  Otherwise, those (non-GTN) TNs would
     // appear in <suc> as well as in the merged BB, causing LRA's
@@ -7687,7 +7748,12 @@ Estimate_BB_Length(BB *bb)
 #else
       if (   !TN_is_save_reg(tn = OP_result(op,0))
 #endif 
-	  && !TN_is_save_reg(tn = OP_opnd(op,OP_COPY_OPND))) continue;
+#ifdef TARG_ST
+          && !TN_is_save_reg(tn = OP_opnd(op, OP_Copy_Operand(op)))
+#else
+	  && !TN_is_save_reg(tn = OP_opnd(op,OP_COPY_OPND))
+#endif
+          ) continue;
 
       rc = TN_register_class(tn);
       if (callees_needed[rc]) {
@@ -7736,7 +7802,12 @@ Create_Sched_Est(BB *bb, MEM_POOL *pool)
 #else
       if (   !TN_is_save_reg(tn = OP_result(op,0)) 
 #endif
-	  && !TN_is_save_reg(tn = OP_opnd(op,OP_COPY_OPND))) continue;
+#ifdef TARG_ST
+          && !TN_is_save_reg(tn = OP_opnd(op, OP_Copy_Operand(op)))
+#else   
+	  && !TN_is_save_reg(tn = OP_opnd(op,OP_COPY_OPND))
+#endif
+          ) continue;
 
       rc = TN_register_class(tn);
       if (callees_needed[rc]) {
@@ -8555,7 +8626,7 @@ CFLOW_Initialize(void)
 
   CGTARG_Compute_Branch_Parameters(&mispredict, &fixed, &taken, &factor);
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   if (CGTARG_Branch_Always_Predicted_Taken ()) {
     br_taken_cost = fixed + taken;
     br_fall_cost  = fixed + mispredict;

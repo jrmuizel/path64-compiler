@@ -61,7 +61,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
-#include <bstring.h>
 #include "elf_stuff.h"
 #ifdef KEY /* Mac port */
 #include "dwarf_stuff.h"
@@ -90,7 +89,6 @@
 #include "strtab.h"
 #include "symtab.h"
 #include "wn.h"
-
 #include "erglob.h"
 #include "erlib.h"
 #include "ercg.h"
@@ -144,6 +142,7 @@
 #include "vstring.h"
 #include "label_util.h"
 #include "cgemit_targ.h"
+#include "errors.h"
 #include "tag.h"
 
 #ifdef TARG_IA64
@@ -156,6 +155,13 @@
 #include "config_lno.h" // for LNO_Run_Simd
 #include "config_opt.h" // for OPT_Cyg_Instrument
 #include "be_util.h"    // for Current_PU_Count
+#endif
+#ifdef TARG_ST
+/* (cbr) demangler interface */
+#include <cxxabi.h>
+
+/* [SC] For ST_has_inito */
+#include "be_symtab.h"
 #endif
 
 #ifdef TARG_X8664
@@ -1192,6 +1198,7 @@ static void Print_Label (FILE *pfile, ST *st, INT64 size)
 #endif
 
 #endif
+  }
     if (ST_class(st) == CLASS_VAR
 #if defined(BUILD_OS_DARWIN)
 	&& 0 // Mach-O as 1.38 doesn't support .type
@@ -1290,8 +1297,9 @@ Print_Common (FILE *pfile, ST *st)
   }
   
 #ifndef TARG_ST  
-  if (TY_size(ST_type(st)) > 0) {
+  if (TY_size(ST_type(st)) > 0) 
 #endif
+  {
     if (ST_is_weak_symbol(st)) {
 	fprintf ( pfile, "\t%s\t", AS_WEAK);
 	EMT_Write_Qualified_Name(pfile, st);
@@ -1341,7 +1349,7 @@ Print_Common (FILE *pfile, ST *st)
     // this is needed so that we don't emit commons more than once
     if (!generate_elf_symbols) Set_ST_elf_index(st, 1);
   }
-#ifdef KEY
+#if defined( KEY) && !defined( TARG_ST)
   else {
     // Emit symbol even though type size is 0, in order to avoid undefined
     // symbol in C++.  Bug 3739.
@@ -2002,11 +2010,18 @@ r_apply_l_const (
     	print_TN_offset = FALSE;
   }
   else if (TN_is_enum(t)) {
+#ifndef TARG_ST
     if (ISA_PRINT_Operand_Is_Part_Of_Name(OP_code(op), opidx)) {
       vstr_sprintf (buf, vstr_len(*buf), "%s", ISA_ECV_Name(TN_enum(t)) );
     } else {
       vstr_sprintf (buf, vstr_len(*buf), "%d", ISA_ECV_Intval(TN_enum(t)) );
     }
+#endif
+#ifdef TARG_ST
+     if (TN_enum(t)<ISA_ECV_STATIC_MAX) {  /* fix [vcdv] */
+      vstr_sprintf (buf, vstr_len(*buf), "%s", ISA_ECV_Name(TN_enum(t)) );
+    }
+#endif
     print_TN_offset = FALSE;	/* because value used instead */
   }
   else if ( TN_has_value(t) ) {
@@ -2164,11 +2179,16 @@ r_assemble_opnd (
     if (OP_has_predicate(op) && i == OP_find_opnd_use(op,OU_predicate)) {
 #endif
 
-#ifndef TARG_STxP70
+ #ifdef TARG_IA64
       vstr_sprintf(buf, start, ISA_PRINT_PREDICATE, rname);
-#else
+#elif defined( TARG_STxP70 )
       // [JV] Now treated in isa_print.
       vstr_sprintf(buf, start, "%s", rname);
+#else
+      if (TOP_is_guard_t(OP_code(op)))
+	vstr_sprintf(buf, start, True_Predicate_Format, rname);
+      else if (TOP_is_guard_f(OP_code(op)))
+	vstr_sprintf(buf, start, False_Predicate_Format, rname);
 #endif
     }
     else {
@@ -2327,9 +2347,9 @@ static void r_assemble_list (
   INT i;
   INT lc = 0;
   BOOL add_name = FALSE;
-
+#ifndef TARG_ST
   Emit_Unwind_Directives_For_OP(op, Asm_File);
-
+#endif
 #ifdef GAS_TAGS_WORKED
 // un-ifdef this when gas can handle tags inside explicit bundle
 #ifdef TARG_ST
@@ -2451,7 +2471,7 @@ extern BOOL Hack_For_Printing_Push_Pop (OP *op, FILE *file);
 #endif
    if (Assembly) {
        fputc ('\t', Asm_File);
-#ifdef KEY
+#if defined( KEY) && !defined( TARG_ST)
   lc = CGEMIT_Print_Inst( op, result, opnd, Asm_File );
 #else
   lc = TI_ASM_Print_Inst( OP_code(op), result, opnd, Asm_File );
@@ -2461,7 +2481,11 @@ extern BOOL Hack_For_Printing_Push_Pop (OP *op, FILE *file);
        fputc ('\t', Lai_File);
 
        if (OP_code(op) == TOP_intrncall) {
-           lc = CGEMIT_Print_Inst( op, result, opnd, Lai_File );
+#ifdef TARG_ST
+            lc = CGEMIT_Print_Intrinsic_OP(op, result, opnd, Lai_File);
+#else
+          lc = CGEMIT_Print_Inst( op, result, opnd, Lai_File );
+#endif
        }
        else {
            lc = TI_ASM_Print_Inst(OP_code(op), result, opnd, Lai_File);
@@ -2639,7 +2663,7 @@ static void Verify_Operand(
       if (ISA_REGISTER_SUBCLASS_INFO_Count (info) == 1) {
           // Register TN for a singleton subclass must use a
           // dedicated register.
-          FmtAssert(TN_is_dedicated(tn)),
+          FmtAssert(TN_is_dedicated(tn),
               ("incorrect register for %s %d", res_or_opnd, opnd));
 
       }
@@ -2787,16 +2811,21 @@ static void Verify_Instruction(OP *op)
   TOP top = OP_code(op);
 
   // ??? check for valid topcode?
+#ifdef TARG_ST
+   FmtAssert(ISA_SUBSET_LIST_Member(ISA_SUBSET_List, top),
+	    ("%s is a member of available ISA subsets", 
+	     TOP_Name(top)));
 
+#else
   FmtAssert(ISA_SUBSET_Member(ISA_SUBSET_Value, top),
 	    ("%s is a member of ISA %s", 
 	     TOP_Name(top), 
 	     ISA_SUBSET_Name(ISA_SUBSET_Value)));
-
+#endif
 #ifdef TARG_X8664
   if( OP_x86_style( op ) ){
     if( TN_register_and_class( OP_opnd( op, 0 ) ) !=
-	TN_register_and_class( OP_result( op , 0 ) ) )
+	TN_register_and_class( OP_result( op , 0 ) ) nn)
       FmtAssert( false, ("Result and the first opnd use different register.") );
   }
 
@@ -2849,7 +2878,7 @@ static void Verify_Instruction(OP *op)
     Verify_Operand(oinfo, op, i, FALSE);
   }
 
-#ifdef KEY
+#if defined( KEY) && !defined( TARG_ST)
   // Check for unique operand and result registers.
   if (OP_uniq_res(op)) {
     for (i = 0; i < results; i++) {
@@ -3022,7 +3051,7 @@ if (Get_Trace ( TP_EMIT,0x100 )) {
 
   return words;
 }
-
+#ifndef TARG_ST
 /* ====================================================================
  *
  * r_assemble_binary
@@ -3202,7 +3231,7 @@ static INT r_assemble_binary ( OP *op, BB *bb, ISA_PACK_INST *pinst )
   FmtAssert (words > 0, ("%s", TI_errmsg));
   return words;
 }
-
+#endif
 
 #if Is_True_On
 
@@ -3507,7 +3536,7 @@ lru_fp_reg()
   return oldest_reg;
 }
 #endif
-
+#ifndef TARG_ST
 /* Write out the 'op' into the object file and/or into the assembly file.
  */
 static INT
@@ -4083,9 +4112,8 @@ if (Get_Trace ( TP_EMIT,0x100 )) {
 
   return words;
 }
-
-
-#ifdef KEY
+#endif
+#if defined( KEY) && !defined( TARG_ST)
 #include "cxx_memory.h"
 
 static char* 
@@ -5276,7 +5304,7 @@ Assemble_Bundles(BB *bb)
 #else
     } while (slot < ISA_MAX_SLOTS);
 #endif
-
+#ifndef TARG_ST
     /* Bundle suffix
      */
     if (Object_Code) {
@@ -5286,6 +5314,7 @@ Assemble_Bundles(BB *bb)
 
       Em_Add_Bytes_To_Scn (PU_section, (char *)&bundle, INST_BYTES, INST_BYTES);
     }
+#endif
       if (Assembly) {
          if(EMIT_explicit_bundles) {
           fprintf(Asm_File, " %s", ISA_PRINT_END_BUNDLE);
@@ -5390,8 +5419,12 @@ Assemble_Ops(BB *bb)
 #ifdef TARG_STxP70
     Emit_Unwind_Directives_For_OP(op, Asm_File, FALSE, FALSE);
 #endif
-
+#ifdef TARG_ST
+    // Perform_Sanity_Checks_For_OP(op, TRUE);
+    words = Assemble_OP (op, bb, bundle, 0);
+#else
     words = r_assemble_op(op, bb, bundle, 0);
+#endif
 #ifdef TARG_STxP70
     Emit_Unwind_Directives_For_OP(op, Asm_File, TRUE, FALSE);
 #endif
@@ -9293,8 +9326,8 @@ Create_Cold_Text_Section(void)
 #else
 	if (generate_elf_symbols) {
 	  cold_section = em_scn[STB_scninfo_idx(cold_base)].scninfo;
+          }
 #endif
-	}
       }
 
       /* Check the remaining BBs in the region to verify they are
@@ -9814,6 +9847,45 @@ emit_virtual_registers ()
 
   return;
 }
+
+/* ====================================================================
+ *    emit_global_symbols
+ *
+ *    initialize any new global sections.
+ *    We don't do this in EMT_Begin_File because may not have done
+ *    data layout at that point.
+ * ====================================================================
+ */
+static void
+emit_global_symbols ()
+{
+  INT i;
+  static UINT last_global_index = 1;
+
+  for (i = last_global_index; i < ST_Table_Size(GLOBAL_SYMTAB); ++i) {
+    ST* sym = &St_Table(GLOBAL_SYMTAB,i);
+
+    if (ST_class(sym) == CLASS_BLOCK && STB_section(sym)) {
+      Init_Section(sym);
+    }
+
+    // emit commons here so order is preserved for datapools
+    if (ST_sclass(sym) == SCLASS_COMMON) {
+      if (ST_is_not_used (sym)) continue;
+      (void)EMT_Put_Elf_Symbol (sym);
+    }
+  }
+  last_global_index = ST_Table_Size(GLOBAL_SYMTAB);
+
+  if (Assembly)
+    fprintf(Asm_File,"\n");
+  if (Lai_Code)
+    fprintf(Lai_File,"\n");
+
+  return;
+}
+
+
 /* ====================================================================
  * EMT_Emit_PU
  *
@@ -10353,7 +10425,7 @@ EMT_Emit_PU ( ST *pu, DST_IDX pu_dst, WN *rwn )
   Finalize_Unwind_Info();
 }
 
-
+#ifndef TARG_ST
 static INT format_operand(
   char *buf, 
   INT n,
@@ -10397,7 +10469,8 @@ static INT format_operand(
 
   return len;
 }
-
+#endif
+#ifndef TARG_ST
 static void Enumerate_Insts(void)
 {
   TOP top;
@@ -10487,7 +10560,7 @@ static void Enumerate_Insts(void)
     } while (i < nenums);
   }
 }
-
+#endif
 static char ism_name[40];
 
 /* get ism name from __Release_ID */
@@ -10515,42 +10588,6 @@ Get_Ism_Name (void)
 
     strncpy (ism_name, s, p-s);
     ism_name[p-s] = '\0';
-}
-/* ====================================================================
- *    emit_global_symbols
- *
- *    initialize any new global sections.
- *    We don't do this in EMT_Begin_File because may not have done
- *    data layout at that point.
- * ====================================================================
- */
-static void
-emit_global_symbols ()
-{
-  INT i;
-  static UINT last_global_index = 1;
-
-  for (i = last_global_index; i < ST_Table_Size(GLOBAL_SYMTAB); ++i) {
-    ST* sym = &St_Table(GLOBAL_SYMTAB,i);
-
-    if (ST_class(sym) == CLASS_BLOCK && STB_section(sym)) {
-      Init_Section(sym);
-    }
-
-    // emit commons here so order is preserved for datapools
-    if (ST_sclass(sym) == SCLASS_COMMON) {
-      if (ST_is_not_used (sym)) continue;
-      (void)EMT_Put_Elf_Symbol (sym);
-    }
-  }
-  last_global_index = ST_Table_Size(GLOBAL_SYMTAB);
-
-  if (Assembly)
-    fprintf(Asm_File,"\n");
-  if (Lai_Code)
-    fprintf(Lai_File,"\n");
-
-  return;
 }
 
 /* ====================================================================
@@ -10640,10 +10677,10 @@ EMT_Begin_File (
   // Which one to write into ?
   if (Assembly) Output_File = Asm_File;
   if (Lai_Code) Output_File = Lai_File;
-
+#ifndef TARG_ST
   // Enumerate all instructions:
   if (Get_Trace (TP_CG, 0x100)) Enumerate_Insts();
-
+#endif
   text_PC = 0;
   cold_PC = 0;
   Get_Ism_Name();
@@ -10670,7 +10707,7 @@ EMT_Begin_File (
     // [CL] when generating .s file, do not
     // overwrite/remove existing .o file
     if ( ! Object_Code) {
-      Obj_File_Name = make_temp_file("cctpo");
+      Obj_File_Name = mktemp("cctpo");
     }
 #endif
 

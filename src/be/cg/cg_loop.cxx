@@ -131,6 +131,7 @@
 #include "config.h"
 #include "errors.h"
 #include "mempool.h"
+#include "glob.h"
 #include "cg_flags.h"
 #include "cgir.h"
 #include "tracing.h"
@@ -179,6 +180,14 @@
 #include "ebo.h"
 #include "hb.h"
 #include "gra_live.h"
+#ifdef TARG_ST
+#include "cg_ivs.h"
+#include "config_targ_opt.h"
+#include "cg_dud.h"
+#include "config_cache.h"
+#include "cg_affirm.h"
+#include "ir_reader.h"	/* needed for IR_Srcpos_Filename() */
+#endif
 
 #ifdef KEY
 #include "config_lno.h"		// for LNO_Prefetch_Ahead
@@ -226,6 +235,7 @@ INT32 Loop_packing_flags = -1;
 // Default value for the alignment of streams in loops candidate for packing.
 INT32 CG_LOOP_stream_align = 1;
 #endif
+BOOL CG_LOOP_ignore_pragmas = FALSE;
 
 #ifdef MIPS_UNROLL
 BOOL CG_LOOP_unroll_analysis = TRUE;
@@ -1172,7 +1182,7 @@ void CG_LOOP::Build_CG_LOOP_Info(BOOL single_bb)
   if (single_bb) {
     CG_LOOP_DEF tn_def(body);
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Identify the iv TN, which is needed for the post-epilogue remainder loop.
   TN *iv_tn = NULL;
   if (Post_ntimes() > 0) {
@@ -1261,7 +1271,7 @@ void CG_LOOP::Build_CG_LOOP_Info(BOOL single_bb)
     }
   }
 
-#ifdef KEY
+#if defined( KEY) && !defined( TARG_ST)
   // Make the iv TN live-out of the loop body so that it is available to the
   // post-epilogue remainder loop.
   if (iv_tn != NULL &&
@@ -1479,7 +1489,7 @@ CG_LOOP::Recompute_Liveness()
   BBLIST *succs;
   FOR_ALL_BB_SUCCS(Epilog_end(), succs) {
     BB *succ = BBLIST_item(succs);
-#ifdef KEY
+#if defined( KEY) && !defined( TARG_ST)
     // The post-remainder loop at the end of the epilogue is part of the
     // region.
     if (Has_post_remainder_loop() &&
@@ -2987,9 +2997,11 @@ static void unroll_guard_unrolled_body(LOOP_DESCR *loop,
 
     Is_True(is_power_of_two(ntimes), ("not power of two"));
     Is_True(!TN_is_constant(orig_trip_count_tn), ("trip count is constant"));
-
+#ifdef TARG_ST
+    LOOPINFO_primary_trip_count_tn(unrolled_info) = new_trip_count_tn;
+#else
     LOOPINFO_trip_count_tn(unrolled_info) = new_trip_count_tn;
-
+#endif
     extend_epilog(loop);
     continuation_bb = CG_LOOP_epilog;
     continuation_lbl = Gen_Label_For_BB(continuation_bb);
@@ -3118,7 +3130,7 @@ static void unroll_xfer_annotations(BB *unrolled_bb, BB *orig_bb)
 
 static BB *
 Unroll_Replicate_Body(LOOP_DESCR *loop, INT32 ntimes, BOOL unroll_fully
-#ifdef KEY
+#if defined( KEY) && !defined( TARG_ST)
 		      , CG_LOOP *cl = NULL, OPS *pre_prolog_ops = NULL
 #endif
 		     )
@@ -3140,7 +3152,11 @@ Unroll_Replicate_Body(LOOP_DESCR *loop, INT32 ntimes, BOOL unroll_fully
   OP *op;
   ANNOTATION *annot = ANNOT_Get(BB_annotations(body), ANNOT_LOOPINFO);
   LOOPINFO *info = ANNOT_loopinfo(annot);
+#ifdef TARG_ST
+  TN *trip_count = LOOPINFO_exact_trip_count_tn(info);
+#else
   TN *trip_count = LOOPINFO_trip_count_tn(info);
+#endif
 #ifdef KEY
   INT64 new_trip_count_val;	// bug 14623
 #else
@@ -3185,7 +3201,11 @@ Unroll_Replicate_Body(LOOP_DESCR *loop, INT32 ntimes, BOOL unroll_fully
   LOOPINFO_wn(unrolled_info) = wn;
   LOOPINFO_srcpos(unrolled_info) = LOOPINFO_srcpos(info);
   if (TN_is_constant(trip_count))
+#ifdef TARG_ST
+     LOOPINFO_primary_trip_count_tn( unrolled_info) =
+#else
     LOOPINFO_trip_count_tn(unrolled_info) =
+#endif
       Gen_Literal_TN(new_trip_count_val, TN_size(trip_count));
   Set_BB_unrollings(unrolled_body, ntimes);
   if (unroll_fully) Set_BB_unrolled_fully(unrolled_body);
@@ -3297,7 +3317,7 @@ Unroll_Replicate_Body(LOOP_DESCR *loop, INT32 ntimes, BOOL unroll_fully
     INT loop_count = WN_loop_trip_est(wn) ? WN_loop_trip_est(wn) : 100;
     Link_Pred_Succ_with_Prob(unrolled_body, unrolled_body,
 			     (loop_count - 1.0) / loop_count);
-#ifdef KEY
+#if defined( KEY) && !defined( TARG_ST)
     // Reduce the trip count by the number of iterations in the post-remainder
     // loop.
     if (cl->Has_post_remainder_loop()) {
@@ -4121,7 +4141,13 @@ void Unroll_Make_Remainder_Loop(CG_LOOP& cl, INT32 ntimes)
 			 WN_CreateExp2(opc_rem, WN_loop_trip(wn), ntimes_wn));
 	WN_loop_trip_est(wn) = trip_est;
 	WN_Set_Loop_Unimportant_Misc(wn);
+#ifdef TARG_ST
+        LOOPINFO_primary_trip_count_tn(info) = new_trip_count;
+#else
 	LOOPINFO_trip_count_tn(info) = new_trip_count;
+#endif
+        /* FdF 20060913: No trip_min for remainder loop. */
+	LOOPINFO_trip_min(info) = -1;
 #ifdef TARG_ST
 	// FdF: remove the PRAGMA UNROLL annotation from the remainder loop
 	ANNOTATION *unroll_ant = ANNOT_Get(BB_annotations(body), ANNOT_PRAGMA);
@@ -5307,8 +5333,13 @@ static BOOL unroll_multi_make_remainder_loop(LOOP_DESCR *loop, UINT8 ntimes,
 		     WN_CreateExp2(opc_rem, WN_loop_trip(wn), ntimes_wn));
     WN_loop_trip_est(wn) = trip_est;
     WN_Set_Loop_Unimportant_Misc(wn);
+#ifdef TARG_ST
+    LOOPINFO_primary_trip_count_tn(info) = new_trip_count;
+    /* FdF 20060913: No trip_min on remainder loop. */
+    LOOPINFO_trip_min(info) = -1;
+#else
     LOOPINFO_trip_count_tn(info) = new_trip_count;
-
+#endif
     /*
      * Modify actual trip count of remainder loop:
      *   Append to prolog (if <new_trip_count> is constant, otherwise
@@ -5465,7 +5496,11 @@ static BOOL unroll_multi_bb(LOOP_DESCR *loop, UINT8 ntimes)
       WN_set_loop_trip(wn, WN_CreateExp2(opc_div, WN_loop_trip(wn),
 					 ntimes_wn));
       if (TN_is_constant(trip_count_tn))
+#ifdef TARG_ST
+        LOOPINFO_primary_trip_count_tn(unrolled_info) =
+#else
 	LOOPINFO_trip_count_tn(unrolled_info) =
+#endif
 	  Gen_Literal_TN(new_trip_count_val, TN_size(trip_count_tn));
     }
   }
@@ -6172,7 +6207,7 @@ CG_LOOP::Determine_Post_Ntimes()
 #endif
   }
 }
-
+#ifndef TARG_ST
 // Decide if a post-remainder loop is needed.  (The post-remainder loop comes
 // after loop unrolling's epilogue and is different from loop unrolling's
 // remainder loop, which comes before the unrolled body.)  If it is needed,
@@ -6256,7 +6291,9 @@ Unroll_Make_Post_Remainder_Loop (CG_LOOP &cg_loop)
     CG_LOOP_Backpatch_Add(epilog, tn, tn, 0);
   }
 }
+#endif
 
+#ifndef TARG_ST
 // Link the post-epilogue remainder loop into the rest of the BBs.
 static void
 Unroll_Insert_Post_Remainder_Loop (CG_LOOP &cg_loop)
@@ -6288,6 +6325,7 @@ Unroll_Insert_Post_Remainder_Loop (CG_LOOP &cg_loop)
   cg_loop.Set_epilog_end(bb);
 }
 #endif
+#endif
 
 #ifdef TARG_ST
 static void Unroll_Do_Loop_guard(LOOP_DESCR *loop,
@@ -6312,9 +6350,11 @@ void Unroll_Do_Loop_guard(LOOP_DESCR *loop,
   OPS ops = OPS_EMPTY;
   BB *continuation_bb;
   LABEL_IDX continuation_lbl;
-
+#ifdef TARG_ST
+   LOOPINFO_primary_trip_count_tn(unrolled_info) = unrolled_trip_count;
+#else
   LOOPINFO_trip_count_tn(unrolled_info) = unrolled_trip_count;
-
+#endif
   extend_epilog(loop);
   continuation_bb = CG_LOOP_epilog;
   continuation_lbl = Gen_Label_For_BB(continuation_bb);
@@ -6460,7 +6500,7 @@ void Unroll_Do_Loop(CG_LOOP& cl, UINT32 ntimes)
 #endif
 
   if (TN_is_constant(trip_count_tn)) {
-#ifdef KEY
+#if defined( KEY) && !defined( TARG_ST)
     if (cl.Has_post_remainder_loop()) {
       Is_True(cl.Post_ntimes() > 0, ("Unroll_Do_Loop: Post_ntimes zero"));
       INT64 new_value = TN_value(trip_count_tn) - cl.Post_ntimes();
@@ -6494,7 +6534,7 @@ void Unroll_Do_Loop(CG_LOOP& cl, UINT32 ntimes)
       gen_remainder_loop = FALSE;
   } else {
     INT32 trip_size = TN_size(trip_count_tn);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (cl.Has_post_remainder_loop()) {
       Is_True(cl.Post_ntimes() > 0, ("Unroll_Do_Loop: Post_ntimes zero"));
       // Calculate the new trip count, which is the original trip count minus
@@ -6610,7 +6650,7 @@ void Unroll_Do_Loop(CG_LOOP& cl, UINT32 ntimes)
 
   /* Replicate the loop body <ntimes> and replace <head>
    * with unrolled version. */
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   unrolled_body = Unroll_Replicate_Body(loop, ntimes, FALSE, &cl,
 					&pre_prolog_ops);
 #else
@@ -6620,7 +6660,7 @@ void Unroll_Do_Loop(CG_LOOP& cl, UINT32 ntimes)
   FmtAssert(annot, ("unrolled body has no LOOPINFO annotation"));
   unrolled_info = ANNOT_loopinfo(annot);
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   if (cl.Has_post_remainder_loop()) {
     Set_BB_keep_prefetch(unrolled_body);
 
@@ -7301,6 +7341,20 @@ void CG_LOOP::Determine_Unroll_Factor()
     }
   }
 #endif
+
+#ifdef TARG_ST
+  // FdF 20060207: Determine_Sched_Est_Unroll_Factor may have computed
+  // an estimate Unroll_Factor.
+  const char *reason = NULL;
+  if (Unroll_sched_est() > 0 && Unroll_sched_est() < unroll_times_max) {
+    unroll_times_max = Unroll_sched_est();
+    reason = "Schedule estimate gives unroll=%d";
+  }
+  if (Get_Trace(TP_CGLOOP, 0x10)) {
+    fprintf(TFile, "<unroll> Unroll times max with schedule estimate (%d) gives unroll: %d\n", Unroll_sched_est(), unroll_times_max);
+  }
+#endif
+
 #ifdef TARG_ST
   INT32 trip_estimate = -1;
 
@@ -7359,7 +7413,7 @@ void CG_LOOP::Determine_Unroll_Factor()
   FOR_ALL_BB_SET_members(LOOP_DESCR_bbset(loop), bb) {
 
     if (BB_Has_Exc_Label(bb)) {
-      char *reason = "in exception region or handler";
+      const char *reason = "in exception region or handler";
       note_not_unrolled(head, reason);
       if (trace) fprintf(TFile, "<unroll> not unrolling; %s\n", reason);
       return;
@@ -7451,7 +7505,7 @@ void CG_LOOP::Determine_Unroll_Factor()
 	while ((const_trip_count % ntimes) && !is_power_of_two(ntimes))
 	  ntimes --;
 #ifdef TARG_ST
-	char *trace_str = "<unroll> const_trip_count %d, ntimes=%d\n";
+	const char *trace_str = "<unroll> const_trip_count %d, ntimes=%d\n";
 	if ((Packing_factor() == 1) || (ntimes&(Packing_factor()-1))) {
 	  /* See if we can eliminate the residue by choosing ntimes-1
 	     or ntimes+1. */
@@ -8075,7 +8129,7 @@ void CG_LOOP::Determine_SWP_Unroll_Factor()
     }
   }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // For a small loop body, allow unrolling before SWP
   if (unroll_times < 2 && loop_size <= 20 && max_unr >= 2)
     unroll_times = 2;
@@ -8175,6 +8229,7 @@ static BOOL Skip_Loop_For_Reason(LOOP_DESCR *loop)
   const char	*reason = NULL;
   BB	*bb;
   BOOL trace_general = Get_Trace(TP_CGLOOP, 1);
+  bool has_exit = FALSE;
 
   FOR_ALL_BB_SET_members(LOOP_DESCR_bbset(loop), bb)
   {
@@ -8467,7 +8522,8 @@ BOOL CG_LOOP_Optimize(LOOP_DESCR *loop, vector<SWP_FIXUP>& fixup)
     SINGLE_BB_DOLOOP_UNROLL,
     SINGLE_BB_WHILELOOP_SWP,
     SINGLE_BB_WHILELOOP_UNROLL,
-    MULTI_BB_DOLOOP
+    MULTI_BB_DOLOOP,
+    MULTI_BB_WHILELOOP
   };
 
   if (CG_LOOP_unroll_level == 0)
@@ -8542,13 +8598,21 @@ BOOL CG_LOOP_Optimize(LOOP_DESCR *loop, vector<SWP_FIXUP>& fixup)
   } 
   else if (has_trip_count) {
     action = MULTI_BB_DOLOOP;
+#ifndef TARG_ST
     #ifndef TARG_IA64
     SWP_DRIVER::Print_Status_Message (loop, SWP_Multi_BB_Loop);
     #endif
-  } 
+#endif
+  }
+#ifdef TARG_ST
+  else {
+    action = MULTI_BB_WHILELOOP;
+  }
+#else 
   else {
     action = NO_LOOP_OPT;
   }
+#endif
 #ifdef TARG_ST
   if (trace_optimize_verbose) {
     fprintf(stdout, "  <unroll> action = ");
@@ -8781,7 +8845,7 @@ BOOL CG_LOOP_Optimize(LOOP_DESCR *loop, vector<SWP_FIXUP>& fixup)
 #endif
 #endif
 
-#ifdef KEY
+#if defined( KEY) && !defined( TARG_ST)
       // These need to happen in this sequence.
       cg_loop.Determine_Unroll_Factor();
       // Unroll factor determines if post-remainder loop is needed.
@@ -8829,7 +8893,7 @@ BOOL CG_LOOP_Optimize(LOOP_DESCR *loop, vector<SWP_FIXUP>& fixup)
       // Should it be moved to the end of this function ???
       CGTARG_LOOP_Optimize( loop );
 #endif
-#ifdef KEY
+#if defined( KEY) && !defined( TARG_ST)
       Unroll_Insert_Post_Remainder_Loop(cg_loop);
 #endif
       cg_loop.Recompute_Liveness();
@@ -8919,8 +8983,12 @@ BOOL CG_LOOP_Optimize(LOOP_DESCR *loop, vector<SWP_FIXUP>& fixup)
     break;
 
     case MULTI_BB_DOLOOP:
+    case MULTI_BB_WHILELOOP:
     {
       CG_LOOP cg_loop(loop);
+
+       if (action == MULTI_BB_WHILELOOP)
+	cg_loop.Set_is_while_loop();
 
       // prolog needed to load loop counter
       if (!cg_loop.Has_prolog_epilog()) return FALSE;
@@ -9051,7 +9119,7 @@ void CG_LOOP_Enter_Details(FILE *f, LOOP_DESCR *loop)
   FILE *save_tfile = TFile;
   Set_Trace_File_internal(f);
   char *dirname;
-  char *srcName;
+  const char *srcName;
 
   BB *head = LOOP_DESCR_loophead(loop);
   /* Get filename from SRCPOS */

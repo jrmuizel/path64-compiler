@@ -308,7 +308,10 @@ Em_Dwarf_Begin (BOOL is_64bit, BOOL dwarf_trace, BOOL is_cplus,
   flags = DW_DLC_WRITE | ((is_64bit) ? DW_DLC_SIZE_64 : DW_DLC_SIZE_32);
   flags |= DWARF_TARGET_FLAG;
   flags |= DW_DLC_SYMBOLIC_RELOCATIONS;
-  dw_dbg = dwarf_producer_init_b (flags, setup_new_section_for_dwarf, 
+  dw_dbg = dwarf_producer_init_b (flags, setup_new_section_for_dwarf,
+#ifdef TARG_ST
+				  ISA_PACK_INST_WORD_SIZE/8,
+#endif
 		      0, 0, &dw_error);
 
 #ifdef TARG_X8664
@@ -393,6 +396,14 @@ Em_Dwarf_Begin (BOOL is_64bit, BOOL dwarf_trace, BOOL is_cplus,
   cie_init_bytes = init_bytes;
   cie_init_byte_len = sizeof(init_bytes);
 #endif
+// [CQ1]: Initialization of cie is no more statically known because of
+// reconfigurability and interruption function.
+#ifdef TARG_ST
+  MEM_POOL_Initialize(&mempool, "CIE initialization", TRUE);
+  MEM_POOL_Push (&mempool);
+
+  Init_CIEs(dw_dbg, &mempool);
+#else
 
   cie_index = dwf_add_frame_cie (dw_dbg,
 				 cie_augmenter,
@@ -438,7 +449,7 @@ Em_Dwarf_Begin (BOOL is_64bit, BOOL dwarf_trace, BOOL is_cplus,
 		    sizeof(init_bytes),
 		    &dw_error);
 #endif
-
+#endif
   return dw_dbg;
 }
 
@@ -848,9 +859,20 @@ void Em_Dwarf_Process_PU (Dwarf_Unsigned begin_label,
 #ifdef KEY
   if (eh_fde == NULL)
   	return;
+#ifdef TARG_ST
+  extern BOOL PU_Has_Calls;
 
+  if( CXX_Exceptions_On &&
+      PU_Has_Calls) {
+    Dwarf_Unsigned cie_index = eh_CIE_index(Get_Current_PU());
+#endif
   if (eh_offset == DW_DLX_NO_EH_OFFSET)	/* no exception handler */
-  	dwf_add_ehframe_fde_b (dw_dbg, eh_fde, PU_die, eh_cie_index, 
+  	dwf_add_ehframe_fde_b (dw_dbg, eh_fde, PU_die, 
+#ifdef TARG_ST
+                               cie_index,
+#else
+                               eh_cie_index, 
+#endif
 			       begin_offset,
 			       0 /* dummy code length */,
 			       (Dwarf_Unsigned) begin_label,
@@ -858,13 +880,21 @@ void Em_Dwarf_Process_PU (Dwarf_Unsigned begin_label,
 			       end_offset,
 			       &dw_error);
   else
-  	dwf_add_ehframe_info_b (dw_dbg, eh_fde, PU_die, eh_cie_index, 
+  	dwf_add_ehframe_info_b (dw_dbg, eh_fde, PU_die, 
+#ifdef TARG_ST
+                               cie_index,
+#else
+                               eh_cie_index, 
+#endif
 				begin_offset,
 				0 /* dummy code length */,
 				(Dwarf_Unsigned) begin_label,
 				(Dwarf_Unsigned) end_label,
 				end_offset,
 				eh_offset, eh_symindex, &dw_error);
+#endif
+#ifdef TARG_ST
+  }
 #endif
 }
 #ifdef TARG_X8664

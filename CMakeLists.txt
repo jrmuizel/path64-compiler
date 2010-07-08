@@ -191,6 +191,9 @@ ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D_MIPS_SZLONG=32
                 -DTARG_ST
                 -DTARG_ARM
+                -DARM
+                -DMUMBLE_ARM_BSP 
+                -DSUPPORTS_SELECT
                 -DBE_EXPORTED=
                 -DTARGINFO_EXPORTED=
                )

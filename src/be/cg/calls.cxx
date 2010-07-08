@@ -62,12 +62,9 @@
 #include "erbe.h"
 #include "glob.h"
 #include "tracing.h"
-#ifdef TARG_ST 
-#include "config_target.h"
-#else
 #include "config_targ.h"
-#endif
 #include "config.h"
+#include "config_targ_opt.h"
 
 #include "symtab.h"
 #include "strtab.h"
@@ -169,8 +166,9 @@ BOOL Gen_Frame_Pointer;
 
 /* Trace flags: */
 #ifndef TARG_ST
-static BOOL Trace_EE = FALSE;	/* Trace entry/exit processing */
+static 
 #endif
+BOOL Trace_EE = FALSE;	/* Trace entry/exit processing */
 
 #ifdef TARG_ST
 /* [JV] When set, use this register for spadjust. */
@@ -1127,8 +1125,13 @@ Can_Be_Tail_Call(ST *pu_st, BB *exit_bb)
 
   FOR_ALL_BB_OPs_FWD(exit_bb, op) {
     if (OP_copy(op)) {
+#ifdef TARG_ST
+        TN *src = OP_opnd(op, OP_copy(op) ? OP_Copy_Operand(op) : 0);
+      TN *dst = OP_result(op, OP_copy(op) ? OP_Copy_Result(op) : 0);
+#else
       TN *src = OP_opnd(op,OP_COPY_OPND);
       TN *dst = OP_result(op,0);
+#endif
       BOOL src_is_fval = Is_Function_Value(src);
       BOOL dst_is_fval = Is_Function_Value(dst);
 
@@ -1381,7 +1384,7 @@ Target_Unique_Exit (
 	       TN_size measures a TN size in bytes.
 	     */
 	    INT tn_size = OP_result_size(op,i) / 8;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	    // When storing a value into a function return register where the
 	    // size of the value is smaller than the size of the return
 	    // register, Handle_STID will store the value into a temp TN and
@@ -2367,11 +2370,13 @@ Adjust_Entry(BB *bb)
      */
     if (!CGTARG_Can_Fit_Immediate_In_Add_Instruction (frame_len)) {
       REGISTER_SET temps[ISA_REGISTER_CLASS_MAX+1];
+      ISA_REGISTER_CLASS cl;
+      REGISTER reg;
 
       /* Get the frame size into a register
        */
       REG_LIVE_Prolog_Temps(bb, sp_adj, fp_adj, temps);
-      #ifdef TARG_ST
+#ifdef TARG_ST
       cl = TN_register_class(SP_TN);
 
       reg = REGISTER_SET_Choose(temps[cl]);

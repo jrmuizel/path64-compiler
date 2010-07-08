@@ -1,33 +1,43 @@
 /*
- * Copyright 2005, 2006 PathScale, Inc.  All Rights Reserved.
- */
 
-/*
+  Copyright (C) 2000, 2001 Silicon Graphics, Inc.  All Rights Reserved.
 
-  Copyright (C) 2000,2004 Silicon Graphics, Inc.  All Rights Reserved.
+  This program is free software; you can redistribute it and/or modify it
+  under the terms of version 2.1 of the GNU Lesser General Public License 
+  as published by the Free Software Foundation.
 
-   Path64 is free software; you can redistribute it and/or modify it
-   under the terms of the GNU Lesser General Public License as published by
-   the Free Software Foundation version 2.1
+  This program is distributed in the hope that it would be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
 
-   Path64 is distributed in the hope that it will be useful, but WITHOUT
-   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-   License for more details.
+  Further, this software is distributed without any warranty that it is
+  free of the rightful claim of any third person regarding infringement 
+  or the like.  Any license provided herein, whether implied or 
+  otherwise, applies only to this software file.  Patent licenses, if
+  any, provided herein do not apply to combinations of this program with 
+  other software, or any other product whatsoever.  
 
-   You should have received a copy of the GNU General Public License
-   along with Path64; see the file COPYING.  If not, write to the Free
-   Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+  You should have received a copy of the GNU Lesser General Public 
+  License along with this program; if not, write the Free Software 
+  Foundation, Inc., 59 Temple Place - Suite 330, Boston MA 02111-1307, 
+  USA.
 
-   Special thanks goes to SGI for their continued support to open source
+  Contact information:  Silicon Graphics, Inc., 1600 Amphitheatre Pky,
+  Mountain View, CA 94043, or:
+
+  http://www.sgi.com
+
+  For further information regarding this notice, see:
+
+  http://oss.sgi.com/projects/GenInfo/NoticeExplan
 
 */
 
 
 /* libdwarfdefs.h
 */
-
+#if 0
+#include"config.h"
 #ifndef LIBDWARFDEFS_H
 #define LIBDWARFDEFS_H
 
@@ -42,41 +52,34 @@
 */
 
 
-#if (!defined(HAVE___UINT32_T)) && defined(HAVE___UINT32_T_IN_SGIDEFS_H)
-#include <sgidefs.h>		/* sgidefs.h defines them */
+#if (!defined(HAVE___UINT32_T)) && defined(HAVE_SGIDEFS_H)
+#include <sgidefs.h> /* sgidefs.h defines them */
 #define HAVE___UINT32_T 1
-#endif
-
-#if (!defined(HAVE___UINT64_T)) && defined(HAVE___UINT64_T_IN_SGIDEFS_H)
-#include <sgidefs.h>		/* sgidefs.h defines them */
 #define HAVE___UINT64_T 1
 #endif
+
 
 
 #if (!defined(HAVE___UINT32_T)) &&   \
 	defined(HAVE_SYS_TYPES_H) &&   \
 	defined(HAVE___UINT32_T_IN_SYS_TYPES_H)
 #  include <sys/types.h>
+/* we assume __[u]int32_t and __[u]int64_t defined 
+   since __uint32_t defined in the sys/types.h in use */
 #define HAVE___UINT32_T 1
-#endif
-
-#if (!defined(HAVE___UINT64_T)) &&   \
-	defined(HAVE_SYS_TYPES_H) &&   \
-	defined(HAVE___UINT64_T_IN_SYS_TYPES_H)
-#  include <sys/types.h>
 #define HAVE___UINT64_T 1
 #endif
 
 #ifndef HAVE___UINT32_T
 typedef int __int32_t;
-typedef unsigned __uint32_t;
+typedef unsigned  __uint32_t;
 #define HAVE___UINT32_T 1
 #endif
-
 #ifndef HAVE___UINT64_T
 typedef long long __int64_t;
-typedef unsigned long long __uint64_t;
+typedef unsigned long long  __uint64_t;
 #define HAVE___UINT64_T 1
 #endif
 
-#endif /* LIBDWARFDEFS_H */
+#endif
+#endif

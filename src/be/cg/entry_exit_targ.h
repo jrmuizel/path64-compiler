@@ -1,10 +1,8 @@
 /*
- * Copyright 2003, 2004, 2005, 2006 PathScale, Inc.  All Rights Reserved.
- */
 
-/*
+  Copyright (C) 2000 Silicon Graphics, Inc.  All Rights Reserved.
 
-  Copyright (C) 2000, 2001 Silicon Graphics, Inc.  All Rights Reserved.
+   Copyright (C) STMicroelectronics All Rights Reserved.
 
    Path64 is free software; you can redistribute it and/or modify it
    under the terms of the GNU General Public License as published by
@@ -21,23 +19,21 @@
    Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 
-   Special thanks goes to SGI for their continued support to open source
-
 */
 
-
-// target-specific entry_exit code
+// target-specific entry_exit code found for now in st100/cg/cg_targ.cxx
 
 // PFS = Previous Function State
 extern void EETARG_Save_Pfs (TN *saved_pfs, OPS *ops);
 
 extern void EETARG_Restore_Pfs (TN *saved_pfs, OPS *ops);
 
-extern void EETARG_Init_Entry_Exit_Code (WN *pu_wn, BOOL need_frame_pointer);
-
 // save and restore any extra callee-tns that need special processing
 extern void EETARG_Save_Extra_Callee_Tns (OPS *ops);
 extern void EETARG_Restore_Extra_Callee_Tns (OPS *ops);
+
+// Do not save specific register classes.
+extern BOOL EETARG_Do_Not_Save_Callee_Reg_Class( ISA_REGISTER_CLASS cl );
 
 // target-specific adjustments to entry ops
 extern void EETARG_Fixup_Entry_Code (BB *bb);
@@ -61,7 +57,10 @@ extern OP* EETARG_High_Level_Procedure_Exit();
 inline OP* EETARG_High_Level_Procedure_Exit() { return NULL; }
 #endif
 
-#ifdef TARG_X8664
-void EETARG_Generate_PIC_Entry_Code( BB* bb, OPS* ops );
-void EETARG_Generate_PIC_Exit_Code( BB* bb, OPS* ops );
+extern void EETARG_Init_Entry_Exit_Code (WN *, BOOL);
+
+#ifdef TARG_ST
+// Target specific stack frame fixup before finalizing the stack frame
+// layout.
+extern void EETARG_Fixup_Stack_Frame (void);
 #endif

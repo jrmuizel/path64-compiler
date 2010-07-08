@@ -66,7 +66,7 @@ SET(PATHSCALE_CG_SRCS
 			"../../be/cg/cgemit.cxx"
 			"../../be/cg/cgexp.cxx"
 			"../../be/cg/cg_flags.cxx"
-			"../../be/cg/cg_gcov.cxx"
+		#	"../../be/cg/cg_gcov.cxx"
 			"../../be/cg/cg_loop.cxx"
 			"../../be/cg/cg_loop_mii.cxx"
 			"../../be/cg/cg_loop_scc.cxx"

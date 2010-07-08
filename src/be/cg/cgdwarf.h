@@ -153,16 +153,15 @@ extern void Cg_Dwarf_Translate_To_Elf(Dwarf_Unsigned,
 				      Dwarf_Unsigned *,
 				      Dwarf_Unsigned *);
 
-#ifdef TARG_ST
 //TB: export these type for accessing file_table and incl_table for
 //gcov support
 typedef struct {
-  char *path_name;
+  const char *path_name;
   BOOL already_processed;
 } include_info;
   
 typedef struct {
-  char *filename;
+  const char *filename;
   INT incl_index;
   FILE *fileptr;
   INT max_line_printed;
@@ -170,6 +169,7 @@ typedef struct {
   Dwarf_Unsigned mod_time;
   Dwarf_Unsigned file_size;
 } file_info;
+#ifdef TARG_ST
 
 extern file_info Cg_Dwarf_File_Table(INT /* idx */);
 extern include_info Cg_Dwarf_Include_Table(INT /* idx */);

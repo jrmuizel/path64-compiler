@@ -179,6 +179,10 @@ Em_Get_Symbol_Value (Elf64_Word symindex);
 
 extern char *
 Em_Get_Symbol_Name (Elf64_Word symindex);
+#ifdef TARG_ST
+unsigned char
+Em_Get_Symbol_Type (Elf64_Word symindex);
+#endif
 
 /* Add a new relocation entry to the section 'scninfo'. */
 extern void 

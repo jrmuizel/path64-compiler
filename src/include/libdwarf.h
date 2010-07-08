@@ -168,6 +168,18 @@ enum Dwarf_Rel_Type {
 				for .word end - begin
 			 	case */
                 dwarf_drt_second_of_length_pair
+#ifdef TARG_ST
+		, /* [TTh] The 2 next entries are used for reloc of kind:
+		     .sleb128   (end - begin) / Min_Inst_word
+		     It is used for .debug_line section, when code offset
+		     cannot be statically computed. */
+		dwarf_drt_first_of_length_pair_inst_word, 
+		dwarf_drt_second_of_length_pair_inst_word,
+                dwarf_drt_data_reloc_pcrel,
+		dwarf_drt_data_reloc_pcrel_by_str_id,
+		dwarf_drt_segment_rel_pcrel,
+#endif
+
 };
 typedef struct Dwarf_Relocation_Data_s  * Dwarf_Relocation_Data;
 struct Dwarf_Relocation_Data_s {
@@ -209,6 +221,12 @@ typedef Dwarf_Unsigned 		   	Dwarf_Tag;
 */
 typedef void  (*Dwarf_Handler)(Dwarf_Error /*error*/, Dwarf_Ptr /*errarg*/); 
 
+#ifdef TARG_ST
+// Define a dummy size that will be used to identify LEB128 relocation
+// in drd_length field
+#define LEB128_SYMBOLIC_RELOC_DUMMY_SIZE   1
+#endif
+
 
 /* 
     Dwarf_dealloc() alloc_type arguments.
@@ -245,6 +263,14 @@ typedef void  (*Dwarf_Handler)(Dwarf_Error /*error*/, Dwarf_Ptr /*errarg*/);
 
 /* The augmenter string for CIE */
 #define DW_CIE_AUGMENTER_STRING_V0              "z"
+#ifdef TARG_ST
+#define z_PIC_DW_CIE_AUGMENTER_STRING_V0        "zLR"
+  /* (cbr) no lsda */
+#define zP_DW_CIE_AUGMENTER_STRING_V0		"zP"
+#endif
+#ifdef TARG_ST
+#define DW_CIE_AUGMENTER_HAS_AUGMENTATION_DATA  'z'
+#endif
 
 /* dwarf_init() access arguments
 */
@@ -1223,6 +1249,9 @@ typedef int (*Dwarf_Callback_Func)(
 Dwarf_P_Debug dwarf_producer_init(
     Dwarf_Unsigned      /*creation_flags*/, 
     Dwarf_Callback_Func	/*func*/,
+#ifdef TARG_ST
+    Dwarf_Unsigned      /*min_inst_word*/,
+#endif
     Dwarf_Handler 	/*errhand*/, 
     Dwarf_Ptr 		/*errarg*/, 
     Dwarf_Error* 	/*error*/);
@@ -1241,6 +1270,9 @@ typedef int (*Dwarf_Callback_Func_b)(
 Dwarf_P_Debug dwarf_producer_init_b(
     Dwarf_Unsigned        /*flags*/,
     Dwarf_Callback_Func_b /*func*/,
+#ifdef TARG_ST
+    Dwarf_Unsigned      /*min_inst_word*/,
+#endif
     Dwarf_Handler         /*errhand*/,
     Dwarf_Ptr             /*errarg*/,
     Dwarf_Error *         /*error*/);
@@ -1383,6 +1415,13 @@ Dwarf_Unsigned dwarf_lne_set_address(Dwarf_P_Debug /*dbg*/,
 Dwarf_Unsigned dwarf_lne_end_sequence(Dwarf_P_Debug /*dbg*/, 
     Dwarf_Addr		/*end_address*/,
     Dwarf_Error* 	/*error*/);
+#ifdef TARG_ST
+Dwarf_Unsigned dwarf_lne_end_sequence_symbolic(Dwarf_P_Debug /*dbg*/, 
+    Dwarf_Addr		/*end_address*/,
+    Dwarf_Unsigned 	/*begin_symbol_index*/,
+    Dwarf_Unsigned 	/*end_symbol_index*/,
+    Dwarf_Error* 	/*error*/);
+#endif
 
 /* Producer .debug_frame functions */
 Dwarf_Unsigned dwarf_add_frame_cie(Dwarf_P_Debug /*dbg*/, 

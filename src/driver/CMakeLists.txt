@@ -38,7 +38,7 @@ add_executable(table ${PATHSCALE_TABLE_SRCS})
 
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS -DTARG_ST -DTARG_ARM -DARM  -DPSC_PRODNAME='"Compiler"' -DKEY -DMUMBLE_ARM_BSP  -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS  -DSUPPORTS_SELECT -DTARG_ST -DTARG_ARM -DARM  -DPSC_PRODNAME='"Compiler"' -DKEY -DMUMBLE_ARM_BSP  -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
         DEPENDS sort_options.sh OPTIONS
         )
 
@@ -66,6 +66,7 @@ include_directories(.
 add_definitions(-std=gnu99
                 -DLITTLE_ENDIAN_HOST
                 -DTARG_ST 
+                -DSUPPORTS_SELECT
                 -DTARG_ARM -DARM
                 -DMUMBLE_ARM_BSP 
                 -DNOOPT

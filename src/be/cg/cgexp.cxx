@@ -346,12 +346,9 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
 	Expand_Convert_Length ( result, op1, op2, rtype, MTYPE_is_signed(rtype), ops);
 	break;
   case OPR_CVT:
+#ifdef TARG_ST
 	Is_True(rtype != MTYPE_B, ("conversion to bool unsupported"));
 	if (MTYPE_is_float(rtype) && MTYPE_is_float(desc)) {
-#ifdef TARG_X8664
-		Expand_Float_To_Float (result, op1, rtype, desc, ops);
-#else
-#ifdef TARG_ST
 		Expand_Float_To_Float (result, op1, rtype, ops);
 	}
 	else if (MTYPE_is_float(rtype) && MTYPE_is_signed(desc)) {
@@ -374,8 +371,12 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
         }
 #else
 
+	Is_True(rtype != MTYPE_B, ("conversion to bool unsupported"));
+	if (MTYPE_is_float(rtype) && MTYPE_is_float(desc)) {
+#ifdef TARG_X8664
+		Expand_Float_To_Float (result, op1, rtype, desc, ops);
+#else
 		Expand_Float_To_Float (result, op1, rtype, ops);
-#endif
 #endif
 	}
 	else if (MTYPE_is_float(rtype)) {
@@ -409,6 +410,7 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
 			|| (MTYPE_bit_size(desc) > MTYPE_bit_size(rtype) ) ),
 			ops);
 	}
+#endif
 	break;
 #ifdef TARG_X8664
   case OPR_TAS:
@@ -499,7 +501,7 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
 	Expand_Flop (opcode, result, op1, op2, op3, ops);
 	break;
 
-#ifdef KEY
+#if defined( KEY) && !defined( TARG_ST)
   case OPR_REPLICATE:
         Expand_Replicate (opcode, result, op1, ops);
 	break;
@@ -571,14 +573,21 @@ Exp_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant, O
 	// trailing arguments.
 	if (result) args[i++] = result;
 	if (TOP_is_predicated(top)) {
+#ifdef TARG_ST
+      Is_True(TOP_Find_Operand_Use(top, OU_predicate) == 0,
+	      ("predicate operand is not 0"));
+#else
 	  Is_True(OP_PREDICATE_OPND == 0, ("predicate operand is not 0"));
+#endif
 	  args[i++] = True_TN;
 	}
 	args[i++] = op1;
 	args[i++] = op2;
 	args[i] = op3;
 	op = Mk_OP(top, args[0], args[1], args[2], args[3], args[4]);
+#ifndef TARG_ST
 	if (OP_defs_fpu_int(op)) Set_TN_is_fpu_int(result);
+#endif
     	/* Add the new OPs to the end of the list passed in */
 	OPS_Append_Op(ops, op);
   	if (Trace_Exp) {

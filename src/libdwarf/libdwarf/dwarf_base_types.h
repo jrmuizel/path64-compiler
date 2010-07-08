@@ -26,7 +26,8 @@
 
 
 
-#include "libdwarfdefs.h"
+#include <inttypes.h>
+
 
 #define true                    1
 #define false                   0
@@ -77,8 +78,8 @@ typedef Dwarf_Small *Dwarf_Byte_Ptr;
 /* these 2 are fixed sizes which must not vary with the
 ** ILP32/LP64 model. Between these two, stay at 32 bit.
 */
-typedef __uint32_t Dwarf_ufixed;
-typedef __int32_t Dwarf_sfixed;
+typedef uint32_t Dwarf_ufixed;
+typedef int32_t Dwarf_sfixed;
 
 /*
         In various places the code mistakenly associates
@@ -86,8 +87,8 @@ typedef __int32_t Dwarf_sfixed;
 	This is not a very portable assumption.
         The following should be used instead for 64 bit integers.
 */
-typedef __uint32_t Dwarf_ufixed64;
-typedef __int32_t Dwarf_sfixed64;
+typedef uint32_t Dwarf_ufixed64;
+typedef int32_t Dwarf_sfixed64;
 
 
 typedef struct Dwarf_Abbrev_List_s *Dwarf_Abbrev_List;

@@ -478,7 +478,9 @@ extern BOOL CG_gen_callee_saved_regs_mask; /* generate register mask */
 extern BOOL CG_save_return_address;
 extern BOOL CG_safe_memmove;
 #endif
-
+extern BOOL CG_enable_ssa;	/* Enable SSA in cg */
+extern BOOL CG_enable_select;
+extern BOOL CG_enable_peephole;
 extern BOOL CG_tail_call;
 extern BOOL CG_unique_exit;
 extern BOOL CG_cond_defs_allowed;
@@ -507,6 +509,36 @@ extern INT32 CG_range_recompute_limit;
 extern BOOL CG_enable_rename_after_GRA;
 extern BOOL CG_enable_min_max_abs;
 #endif
+
+#ifdef TARG_ST
+ extern INT32 CG_LAO_activation;	/* LAO activation */
+ extern INT32 CG_LAO_regiontype;	/* LAO scheduling region type */
+ extern INT32 CG_LAO_conversion;	/* LAO SSA construction flags */
+ extern INT32 CG_LAO_coalescing;	/* LAO SSA coalescing flags */
+ extern INT32 CG_LAO_predication;	/* LAO predication algorithm */
+ extern INT32 CG_LAO_scheduling;	/* LAO scheduling algorithm */
+ extern INT32 CG_LAO_allocation;	/* LAO allocation algorithm */
+ extern INT32 CG_LAO_rcmssolving;	/* LAO RCMS solving flags */
+ extern INT32 CG_LAO_preloading;	/* LAO memory preloading level */
+ extern INT32 CG_LAO_l1missextra;	/* LAO extra latency for preloading */
+ extern INT32 CG_LAO_compensation;	/* LAO compensation level */
+ extern INT32 CG_LAO_speculation;	/* LAO speculation level */
+ extern INT32 CG_LAO_relaxation;	/* LAO relaxation level */
+ extern INT32 CG_LAO_pipelining;	/* LAO software pipelining level */
+ extern INT32 CG_LAO_logtimeout;	/* LAO integer linear programming timeout */
+ extern INT32 CG_LAO_renaming;	/* LAO register renaming level */
+ extern INT32 CG_LAO_boosting;	/* LAO operation boosting level */
+ extern INT32 CG_LAO_aliasing;	/* LAO memory aliasing level */
+ extern INT32 CG_LAO_prepadding;	/* LAO data pre-padding in bytes */
+ extern INT32 CG_LAO_postpadding;	/* LAO data post-padding in bytes */
+ extern INT32 CG_LAO_overrun;	/* LAO pipeline overrun */
+ extern INT32 CG_LAO_opslimit;	/* LAO maximum number of OPs to compute memory dependences */
+#endif
+extern BOOL CG_enable_BB_splitting;
+#define CG_bblength_default 300      /* default value for CG_split_BB_length */
+#define CG_bblength_min	 100	     /* don't let the value get too small */
+#define CG_bblength_max	5000	     /* don't let the value get too big */
+extern INT32 CG_split_BB_length;     /* split BBs that are > than this */
 
 
 #define CG_maxinss_default 100
@@ -651,8 +683,13 @@ extern INT32 EMIT_Long_Branch_Limit;	/* max distance (in bytes) for branches */
 extern BOOL EMIT_stop_bits_for_asm;
 extern BOOL EMIT_stop_bits_for_volatile_asm;
 extern BOOL EMIT_explicit_bundles;
+#ifdef TARG_ST
+extern BOOL EMIT_space;
+#endif
 
 extern INT32 CGEXP_expandconstant;	/* maximum # instructions to expand constants */
+extern BOOL CGEXP_expandconstant_set;	/* user set? */
+
 #define DEFAULT_CGEXP_CONSTANT	3
 
 extern BOOL CGEXP_use_copyfcc;

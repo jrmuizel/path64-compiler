@@ -41,7 +41,6 @@
 #ifndef targ_const_private_INCLUDED
 #define targ_const_private_INCLUDED
 
-#if 0 /* in target-independent part now */
 
 #undef  TCON_ty
 #define TCON_ty(c)	((c).ty)
@@ -63,7 +62,6 @@
 #define TCON_I8(c)	((c).vals.i0)
 #define TCON_U8(c)	((c).vals.k0)
 
-#endif
 
 /* special TCON accessors for simplifier:
 	I8I4CVT and U8I4CVT are nops for MIPS III and above and are removed.
@@ -72,7 +70,6 @@
 		    ((TCON_ty(c) == MTYPE_I8) ? TCON_I8(c) : TCON_I4(c)) : \
 		    ((TCON_ty(c) == MTYPE_U8) ? TCON_U8(c) : TCON_U4(c)))
 
-#if 0
 #define TCON_R8(c)	((c).vals.dval)
 #define TCON_R16(c)	((c).vals.qval)
 
@@ -103,10 +100,8 @@
 /* WARNING:  We haven't carefully checked the implications of using
  * doubles for 32-bit floats -- must be done if turned on.
  */
-#endif
 #define TCON_cp(c)	((c).vals.sval.cp)
 #define TCON_len(c)	((c).vals.sval.len)
-#if 0
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -115,6 +110,5 @@ BE_EXPORTED extern char *Targ_Append_To_Dbuf (char *, char);
 }
 #endif
 
-#endif /* 0 */
 
 #endif /* targ_const_private_INCLUDED */

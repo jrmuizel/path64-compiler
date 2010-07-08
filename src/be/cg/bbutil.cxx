@@ -890,11 +890,24 @@ Print_LOOPINFO(LOOPINFO *info)
   if (WN_Loop_Nz_Trip(loop_info)) fprintf(TFile, "NZ_TRIP ");
   if (WN_Loop_Symb_Trip(loop_info)) fprintf(TFile, "SYMB_TRIP ");
   fprintf(TFile, "\n");
+#ifdef TARG_ST
+  if (LOOPINFO_primary_trip_count_tn(info)) {
+    fprintf(TFile, "    primary trip count TN = ");
+    Print_TN(LOOPINFO_primary_trip_count_tn(info),FALSE);
+    fprintf(TFile, "\n");
+  }
+  if (LOOPINFO_exact_trip_count_tn(info)) {
+    fprintf(TFile, "    exact trip count TN = ");
+    Print_TN(LOOPINFO_exact_trip_count_tn(info),FALSE);
+    fprintf(TFile, "\n");
+  }
+#else
   if (LOOPINFO_trip_count_tn(info)) {
     fprintf(TFile, "    trip count TN = ");
     Print_TN(LOOPINFO_trip_count_tn(info),FALSE);
     fprintf(TFile, "\n");
   }
+#endif
 }
 
 /* ====================================================================
@@ -2074,7 +2087,7 @@ BB_MAP BB_Depth_First_Map(BB_SET *region, BB *entry)
   return dfo_map;
 }
 #ifdef TARG_ST
-static BB_MAP visited_map
+static BB_MAP visited_map;
 static INT32 map_postorder(BB_MAP map, BB_SET *region, BB *bb, INT32 max_id)
 /* -----------------------------------------------------------------------
  * Workhorse for BB_Postorder_Map.

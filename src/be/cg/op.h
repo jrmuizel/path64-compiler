@@ -302,7 +302,7 @@
 #include "targ_isa_properties.h"
 #include "targ_isa_hazards.h"
 #include "targ_isa_pack.h"
-
+#include "targ_isa_bundle.h"
 /* to get Is_True */
 #include "errors.h"
  
@@ -537,14 +537,66 @@ enum OP_COND_DEF_KIND {
 #define OP_MASK_VOLATILE  0x00000010 /* Is OP a volatile Memop? */
 #define OP_MASK_HOISTED   0x00000020 /* Is there a WN map attatched to a hoisted OP */
 #define OP_MASK_END_GROUP 0x00000040 /* Is OP end of an instruction group */
+#ifdef TARG_ST
+#define OP_MASK_SSA_MOVE  0x00000080 /* Is OP a move result of SSA algorithm */
+#else
 #define OP_MASK_M_UNIT	  0x00000080 /* Is OP assigned to M unit */
+#endif
 #define OP_MASK_TAIL_CALL 0x00000100 /* Is OP a tail call? */
 #define OP_MASK_BUNDLED	  0x00000200 /* Is OP bundled? */
 #define OP_MASK_SPECULATIVE  0x00000400 /* Is OP a speculative live-range op? */
 /* OP_MAKS_COND_DEF  0x00001800  -- See enum defined above  */
 #define OP_MASK_NO_CI_ALIAS  0x00002000 /* no cross-iteration alias */
 #define OP_MASK_NO_MOVE_BEFORE_GRA 0x00004000 /* do not move this op before GRA */
+#ifdef TARG_ST
+/* 
+ * Arthur: we need a flag for OP_MASK_SPILL because the way spill OPs
+ *         are detected seems wrong. Tagged OPs are OP_MAPed, so
+ *         it is easy to detect when there is a tag for an OP without
+ *         this flag (perhaps more expensive looking at a map).
+ */
+#define OP_MASK_SPILL     0x00008000 /* OP is a spill OP */
+#else
 #define OP_MASK_TAG 	  0x00008000 /* OP has tag */
+#endif
+
+#ifdef TARG_ST // [CL] attributes extension
+#define OP_MASK_PROLOGUE  0x00000001 /* OP belongs to prologue */
+#define OP_MASK_EPILOGUE  0x00000002 /* OP belongs to epilogue */
+#define OP_MASK_BLACK_HOLE 0x00000004 /* Store OP may store into a black hole */
+// FdF 20041221
+#define OP_MASK_PFT_SCHEDULED 0x00000008 /* PFT OP was scheduled in pre-pass. */
+#define OP_MASK_PFT_BEFORE    0x00000010 /* PFT OP is placed before a memop
+				     for prefetch in the current
+				     iteration. */
+#define OP_MASK_NOP2GOTO   0x00000020 /* A goto operation replacing two
+				     NOPs, for scheduling/bundling. */
+// BD3 20073008
+#define OP_MASK_PRELOAD    0x00000040 /* A load that must be scheduled at L1 miss latency */
+
+// FdF 20071023
+#define OP_MASK_PACKED     0x00000080 /* This is is a compiler generated packed operation. */
+
+// VCDV 20080401 codex #41195
+#define OP_MASK_MULTI_EXIT_LOOP   0x00000100 /* this operation
+                                              correspond to a
+                                              multi-exit loop */
+// FdF 20080320
+#define OP_MASK_SAMERES	   0x00000200 /* This op has one or more SameRes constraint. */
+
+/* on STxP70, add/sub intructions are not "pure. These instructions
+   write the carry flag. To avoid a preformance regression, this flag
+   can be used to mark add/sub instructions that do not generate a
+   usefull carry (meaning a carry value that is always ignored)
+ */
+#define OP_MASK_CARRY_IS_IGNORED    0x00000400 /* carry result can be ignored for
+                                              this op */
+
+// FdF 20090605
+#define OP_MASK_UNIQRES   0x00000800 /* This op has one or more Conflict constraint. */
+
+#endif
+
 #define OP_MASK_SPADJ_PLUS  0x00010000 /* Is OP de-alloca spadjust (plus)? */
 #define OP_MASK_SPADJ_MINUS 0x00020000 /* Is OP alloca spadjust (minus)? */
 #ifdef KEY
@@ -579,9 +631,15 @@ enum OP_COND_DEF_KIND {
 # define OP_end_group(o)	(OP_flags(o) & OP_MASK_END_GROUP)
 # define Set_OP_end_group(o)	(OP_flags(o) |= OP_MASK_END_GROUP)
 # define Reset_OP_end_group(o)	(OP_flags(o) &= ~OP_MASK_END_GROUP)
+#ifdef TARG_ST
+# define OP_ssa_move(o)		(OP_flags(o) & OP_MASK_SSA_MOVE)
+# define Set_OP_ssa_move(o)	(OP_flags(o) |= OP_MASK_SSA_MOVE)
+# define Reset_OP_ssa_move(o)	(OP_flags(o) &= ~OP_MASK_SSA_MOVE)
+#else
 # define OP_m_unit(o)		(OP_flags(o) & OP_MASK_M_UNIT)
 # define Set_OP_m_unit(o)	(OP_flags(o) |= OP_MASK_M_UNIT)
 # define Reset_OP_m_unit(o)	(OP_flags(o) &= ~OP_MASK_M_UNIT)
+#endif
 # define OP_tail_call(o)	(OP_flags(o) & OP_MASK_TAIL_CALL)
 # define Set_OP_tail_call(o)	(OP_flags(o) |= OP_MASK_TAIL_CALL)
 # define Reset_OP_tail_call(o)	(OP_flags(o) &= ~OP_MASK_TAIL_CALL)
@@ -678,6 +736,22 @@ enum OP_COND_DEF_KIND {
 
 extern BOOL OP_cond_def(const OP*);
 extern BOOL OP_has_implicit_interactions(OP*);
+/* 
+ * If target supports predication, predicate operand is always 0.
+ * Otherwise, -1.
+ */
+#ifdef TARG_ST
+/* (cbr) poison. should not use */
+/* [JV] Use 'OP_find_opnd_use(op,OU_predicate)' instead */
+#define OP_PREDICATE_OPND (abort(), 0)
+#else
+#ifdef SUPPORTS_PREDICATION
+#define OP_PREDICATE_OPND 0
+#else
+#define OP_PREDICATE_OPND -1
+#endif
+#endif
+
 #ifdef TARG_ST
 /* [SC] Sugar for finding OU_xxxx operands. */
 #define OP_findopnd(op,type) ((OP_find_opnd_use((op),type) == (-1)) \
@@ -762,6 +836,9 @@ extern BOOL OP_has_implicit_interactions(OP*);
 #define OP_sqrt(o)		(TOP_is_sqrt(OP_code(o)))
 #define OP_mmmul(o)		(TOP_is_mmmul(OP_code(o)))
 #define OP_mmshf(o)		(TOP_is_mmshf(OP_code(o)))
+#ifdef TARG_ST
+#define OP_move(o)		(TOP_is_move(OP_code(o)))
+#endif
 #define OP_mmalu(o)		(TOP_is_mmalu(OP_code(o)))
 #define OP_select(o)		(TOP_is_select(OP_code(o)))
 #define OP_cond_move(o)		(TOP_is_cond_move(OP_code(o)))
@@ -823,6 +900,13 @@ inline BOOL OP_conflict(OP *op, INT res_idx, INT opnd_idx) {
 #define OP_l_group(o)           (TOP_is_l_group(OP_code(o)))
 #define OP_privileged(o)        (TOP_is_privileged(OP_code(o)))
 #define OP_simulated(o)		(TOP_is_simulated(OP_code(o)))
+
+#define TOP_is_predicated(t)    (TOP_is_guard_t(t) || TOP_is_guard_f(t))
+#define OP_is_predicated(o)     (TOP_is_predicated(OP_code(o)))
+#define OP_is_guard_t(o)        (TOP_is_guard_t(OP_code(o)))
+#define OP_is_guard_f(o)         (OP_is_guard_t(o) && \
+                                 OP_Pred_False(o, OP_find_opnd_use(o, OU_predicate)))
+
 #define OP_has_predicate(o)	(TOP_is_predicated(OP_code(o)))
 #define OP_access_reg_bank(o)	(TOP_is_access_reg_bank(OP_code(o)))
 #define OP_side_effects(o)	(TOP_is_side_effects(OP_code(o)))
@@ -856,6 +940,19 @@ inline BOOL OP_conflict(OP *op, INT res_idx, INT opnd_idx) {
 #define OP_has_immediate(o)	(OP_immediate_opnd(o) >= 0)
 #define OP_inst_words(o)	(ISA_PACK_Inst_Words(OP_code(o)))
 #define OP_find_opnd_use(o,u)	(TOP_Find_Operand_Use(OP_code(o),(u)))
+#ifdef TARG_ST
+/* Returns index of operand that must be same register as result i.
+   This has been moved into oputil.cxx as now this handles the
+   case of asm statements with same result/opnd constraints.
+*/
+extern INT OP_same_res(OP *op, INT i);
+#else
+/* Returns index of operand that must be same register as result i */ 
+inline INT OP_same_res(OP *op, INT i) { 
+  const ISA_OPERAND_INFO *oinfo = OP_operand_info(op);
+  return ISA_OPERAND_INFO_Same_Res(oinfo, i); 
+}
+#endif
 
 inline INT OP_result_size(OP *op, INT result)
 {
@@ -965,6 +1062,13 @@ inline ISA_REGISTER_SUBCLASS OP_opnd_reg_subclass(OP *op, INT opnd)
 inline ISA_REGISTER_SUBCLASS OP_result_reg_subclass(OP *op, INT opnd)
 {
   const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info(OP_code(op));
+#ifdef TARG_ST
+  if (opnd >= ISA_OPERAND_INFO_Results(oinfo)) {
+    FmtAssert (OP_var_opnds (op) || OP_call(op), ("Invalid operand number (%d) in OP_result_reg_subclass", opnd));
+    return ISA_REGISTER_SUBCLASS_UNDEFINED;
+  }
+#endif
+
   const ISA_OPERAND_VALTYP *otype = ISA_OPERAND_INFO_Result(oinfo, opnd);
   return ISA_OPERAND_VALTYP_Register_Subclass(otype);
 }
@@ -972,8 +1076,92 @@ inline ISA_REGISTER_SUBCLASS OP_result_reg_subclass(OP *op, INT opnd)
 inline ISA_OPERAND_USE OP_opnd_use(OP *op, INT opnd)
 {
   const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info(OP_code(op));
+#ifdef TARG_ST
+  FmtAssert (opnd < ISA_OPERAND_INFO_Operands(oinfo),
+	     ("Invalid operand (%d) in OP_opnd_use", opnd));
+#endif
+  
   return ISA_OPERAND_INFO_Use(oinfo, opnd);
 }
+extern TOP CGTARG_Noop_Top (ISA_EXEC_UNIT_PROPERTY);
+extern void CGTARG_Init_OP_cond_def_kind(OP *);
+
+/*
+ * If 'op' performs a copy operation, return the index of
+ * the source operand; otherwise return -1.
+ */
+#ifdef TARG_ST
+extern INT OP_Copy_Operand(OP *op);
+extern INT OP_Copy_Result(OP *op);
+
+//inline INT OP_Predicate_Operand(OP *op) {
+//  return OP_find_opnd_use(op, OU_predicate);
+//}
+#else
+extern INT CGTARG_Copy_Operand(OP *op);
+#endif
+
+// Return a boolean indicating if 'op' performs a copy operation.
+inline BOOL OP_Is_Copy(OP *op)
+{
+#ifdef TARG_ST
+  return OP_Copy_Operand(op) >= 0;
+#else
+  return CGTARG_Copy_Operand(op) >= 0;
+#endif
+}
+
+// If 'op' performs a copy operation, return the TN of
+// the source operand; otherwise return NULL.
+#ifdef TARG_ST
+inline TN *OP_Copy_Operand_TN(OP *op)
+{
+  INT iopnd = OP_Copy_Operand(op);
+  return (iopnd < 0) ? NULL : OP_opnd(op,iopnd);
+}
+inline TN *OP_Copy_Result_TN(OP *op)
+{
+  INT ires = OP_Copy_Result(op);
+  return (ires < 0) ? NULL : OP_result(op,ires);
+}
+#else
+inline TN *CGTARG_Copy_Operand_TN(OP *op)
+{
+  INT iopnd = CGTARG_Copy_Operand(op);
+  return (iopnd < 0) ? NULL : OP_opnd(op,iopnd);
+}
+#endif
+#ifdef TARG_ST
+// Is this 'op' a long latency OP for the purpose of GCM.
+// TODO: define a cut-out latency CGTARG_long_latency_limit and
+//       a compiler switch allowing to change it. Then implement
+//       this routine.
+inline BOOL OP_Is_Long_Latency (TOP opcode)
+{
+  return FALSE;
+}
+#else
+extern BOOL CGTARG_Is_Long_Latency (TOP *opcode);
+#endif
+#ifdef TARG_ST
+extern BOOL OP_is_ext_op(OP *op);
+extern BOOL OP_Is_Barrier(OP *op);
+extern BOOL OP_Is_Counted_Loop(OP* op);
+extern BOOL OP_Is_Copy_Immediate_Into_Register(OP *op);
+extern BOOL OP_Has_Latency(OP *op);
+extern BOOL OP_Is_Speculative_Load(OP* memop);
+extern BOOL OP_Is_Advanced_Load(OP* memop);
+extern BOOL OP_Is_Check_Load(OP* memop);
+extern BOOL OP_Is_Speculative(OP *op);
+extern BOOL OP_Can_Be_Speculative (OP *op);
+extern BOOL OP_Is_Unconditional_Compare (OP *op);
+extern BOOL OP_Performance_Effects (OP *op);
+extern BOOL OP_Safe_Effects (OP *op);
+#else
+inline BOOL CGTARG_Is_OP_Barrier(OP *op) { return FALSE; }
+extern BOOL CGTARG_Can_Be_Speculative(OP* op);
+#endif
+
 
 #define OP_has_result(o) (OP_results(o) != 0)
 #ifdef TARG_ST // [CL]
@@ -1001,20 +1189,6 @@ inline ISA_OPERAND_USE OP_opnd_use(OP *op, INT opnd)
  */
 extern BOOL OP_plain_load(OP *op);
 extern BOOL OP_plain_store(OP *op);
-#endif
-/*
- * If 'op' performs a copy operation, return the index of
- * the source operand; otherwise return -1.
- */
-#ifdef TARG_ST
-extern INT OP_Copy_Operand(OP *op);
-extern INT OP_Copy_Result(OP *op);
-
-//inline INT OP_Predicate_Operand(OP *op) {
-//  return OP_find_opnd_use(op, OU_predicate);
-//}
-#else
-extern INT CGTARG_Copy_Operand(OP *op);
 #endif
 
 #ifdef TARG_ST
@@ -1360,6 +1534,10 @@ inline INT32 OP_Order(OP *op1, OP *op2)
  */
 extern INT16 OP_Real_Ops( const OP *op );
 extern INT OP_Real_Inst_Words( const OP *op );
+#ifdef TARG_ST
+// Count the number of real unit slots used by the op.
+extern INT OP_Real_Unit_Slots( const OP *op );
+#endif
 
 
 /* ======================================================================

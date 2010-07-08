@@ -77,6 +77,10 @@ extern void Em_Dwarf_Add_File (
     Dwarf_Unsigned modification_time,
     Dwarf_Unsigned file_size);
 
+#ifdef TARG_ST
+  // [CL] provide external interface to file_table
+extern Dwarf_Unsigned File_Dwarf_Idx(UINT16 file_idx);
+#endif
 
 /* Given a file_index, return the filename and the path for the file. */
 extern void Em_Dwarf_File_Index_To_Name (
@@ -118,6 +122,9 @@ extern void Em_Dwarf_End_Text_Region (pSCNINFO scninfo, INT end_offset);
 extern void Em_Dwarf_End_Text_Region_Semi_Symbolic (pSCNINFO,
 						    INT,
 						    Dwarf_Unsigned,
+#ifdef TARG_ST
+						    Dwarf_Unsigned,
+#endif
 						    Dwarf_Addr);
 #if defined(__cplusplus)
 }

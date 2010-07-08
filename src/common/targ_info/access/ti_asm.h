@@ -190,7 +190,9 @@
 #include "targ_isa_pack.h"
 #include "targ_isa_bundle.h"
 #include "targ_isa_decode.h"
-
+#ifdef TARG_ST
+ #include "targ_isa_print.h"
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif

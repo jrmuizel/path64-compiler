@@ -88,6 +88,7 @@ extern PREG_NUM TN_To_PREG (TN *tn);
  * only if the TN has an assigned register.
  */
 extern PREG_NUM TN_To_Assigned_PREG (TN *tn);
+extern PREG_NUM Find_PREG_For_Symbol (const ST *st);
 
 extern WN * Preg_Is_Rematerializable(PREG_NUM preg, BOOL *gra_homeable);
 

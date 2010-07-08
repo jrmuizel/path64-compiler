@@ -96,11 +96,12 @@
 #include "cio.h"                    /* for rw, cicse etc ...*/
 #include "cg_loop.h"                /* for unrolling */
 #include "cg_loop_recur.h"	    /* recurrence fixing */
+#include "loop_invar_hoist.h"	    /* For loop invariant hoisting */
 #include "cgtarget.h"		    /* target-dependent stuff */
 #include "gcm.h"		    /* for GCM options */
 #include "cg_sched_est.h"	    /* for CG_SCHED_EST options */
 #include "targ_proc_properties.h"
-#include "cgdriver_arch.h"
+//#include "cgdriver_arch.h"
 #include "cgdriver.h"
 #include "register.h"
 #include "pqs_cg.h"
@@ -119,6 +120,13 @@
 
 // [GS-DFGforISE] for exportation to DFGs
 #include "ExportFromBackEnd.h"
+#endif
+#ifdef TARG_ST
+#include "cg_ssa.h"                 /* for SSA flags */
+#include "cg_outssa.h"
+#include "cg_select.h"              /* for SELECT flags */
+#include "cg_ivs.h"		    /* for packing flags */
+#include "cg_affirm.h"		    /* for Affirm flags */
 #endif
 
 extern void Set_File_In_Printsrc(char *);	/* defined in printsrc.c */
@@ -320,12 +328,13 @@ static OPTION_DESC Options_CG_SWP[] = {
 #else
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "", NULL,
     0, 0, 0,	&Enable_SWP, &Enable_SWP_overridden },
-#endif
+
   { OVK_BOOL,	OV_INTERNAL,	FALSE, "verbose", "v",
     TRUE, 0, 0,	&SWP_Options.Enable_Verbose_Mode, NULL },
+#endif
   { OVK_INT32,	OV_INTERNAL,	TRUE, "sched_direction", "sched_dir",
     0, 0, INT32_MAX,	&SWP_Options.Sched_Direction, NULL },
-#ifdef TARG_IA64
+#if defined( TARG_IA64) || defined(TARG_ST)
   { OVK_INT32,	OV_INTERNAL,	TRUE, "heuristics", "heur",
     0, 0, INT32_MAX,	&SWP_Options.Heuristics, NULL },
   { OVK_INT32,	OV_INTERNAL,	TRUE, "opt", "opt",
@@ -337,9 +346,11 @@ static OPTION_DESC Options_CG_SWP[] = {
     0, 0, INT32_MAX,	&SWP_Options.Min_Unroll_Times, &SWP_Options.Min_Unroll_Times_Set },
   { OVK_INT32,	OV_INTERNAL,	TRUE, "max_unroll_times", "max_unr",
     0, 0, INT32_MAX,	&SWP_Options.Max_Unroll_Times, &SWP_Options.Max_Unroll_Times_Set },
+#ifndef TARG_ST
   { OVK_BOOL,	OV_INTERNAL,	FALSE, "pow2_unroll_times", "pow2_unr",
     TRUE, 0, 0, &SWP_Options.Pow2_Unroll_Times, NULL },
-#ifdef TARG_IA64
+#endif
+#if defined( TARG_IA64) || defined(TARG_ST)
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "bundle", NULL,
     TRUE, 0, 0,	&SWP_Options.Enable_Bundling, NULL },
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "postincr", "posti",
@@ -347,13 +358,13 @@ static OPTION_DESC Options_CG_SWP[] = {
 #endif
   { OVK_INT32,	OV_INTERNAL,	TRUE, "start_ii", "start",
     0, 0, INT32_MAX,	&SWP_Options.Starting_II, NULL },
-#ifdef TARG_IA64
+#if defined( TARG_IA64) || defined(TARG_ST)
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "workaround", "work", 
     0, 0, 0,	&SWP_Options.Enable_Workaround, NULL },
 #endif
   { OVK_INT32,	OV_INTERNAL,	TRUE, "critical_threshold", "critical",
     0, 0, INT32_MAX,	&SWP_Options.Critical_Threshold, NULL },
-#ifdef TARG_IA64
+#if defined( TARG_IA64) || defined(TARG_ST)
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "prep_only", "", 
     0, 0, 0,	&SWP_Options.Prep_Only, NULL },
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "min_retry", "", 
@@ -365,6 +376,7 @@ static OPTION_DESC Options_CG_SWP[] = {
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "enable_brp", "", 
     0, 0, 0,	&SWP_Options.Enable_BRP, NULL },
 #endif
+#ifndef TARG_ST
 #ifndef TARG_IA64
   { OVK_INT32,	OV_INTERNAL,	TRUE, "budget", NULL,
     0, 0, INT32_MAX,	&SWP_Options.Budget, &SWP_Options.Budget_Set },
@@ -387,7 +399,7 @@ static OPTION_DESC Options_CG_SWP[] = {
   { OVK_INT32,	OV_INTERNAL, TRUE, "offset_skip_equal", NULL,
     0, 0, INT32_MAX, &SWP_Options.Offset_Skip_Equal, NULL }, 
 #endif
-
+#endif
   { OVK_COUNT }		/* List terminator -- must be last */
 };
 
@@ -498,7 +510,7 @@ static OPTION_DESC Options_GRA[] = {
   },    
   { OVK_NAME,   OV_INTERNAL, TRUE,"call_split_freq", "",
 #ifdef TARG_ST
-    0, 0, 0,	&GRA_call_split_freq_string, NULL,
+    0, 0, 0,	&GRA_call_split_freq_string,
 #else
     0, 0, 0,	&GRA_call_split_freq_string,
 #endif
@@ -509,7 +521,7 @@ static OPTION_DESC Options_GRA[] = {
   },    
   { OVK_NAME,   OV_INTERNAL, TRUE,"spill_count_factor", "",
 #ifdef TARG_ST
-    0, 0, 0,	&GRA_spill_count_factor_string, NULL,
+    0, 0, 0,	&GRA_spill_count_factor_string,
 #else
     0, 0, 0,	&GRA_spill_count_factor_string,
 #endif
@@ -561,8 +573,7 @@ static OPTION_DESC Options_GRA[] = {
     "Overlay spill locations",
   },
 #endif
-
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   { OVK_BOOL,   OV_INTERNAL, TRUE,"exclude_saved_regs", "",
     0, 0, 0,	&GRA_exclude_callee_saved_regs, NULL,
     "If true, callee-saved registers are never used to allocate to variables by GRA"
@@ -629,8 +640,10 @@ static OPTION_DESC Options_CG[] = {
     0, 0, 0,	&CG_skip_local_swp, NULL },
   { OVK_BOOL,	OV_INTERNAL, TRUE, "skip_local_ebo", "",
     0, 0, 0,	&CG_skip_local_ebo, NULL },
+#ifndef TARG_ST
   { OVK_BOOL,	OV_VISIBLE, TRUE, "cmp_peep", "",
     0, 0, 0,	&CG_cmp_load_exec, NULL },
+#endif
   { OVK_BOOL,	OV_INTERNAL, TRUE, "skip_local_sched", "",
     0, 0, 0,	&CG_skip_local_sched, NULL },
   { OVK_INT32,	OV_INTERNAL, TRUE, "optimization_level", "",
@@ -996,8 +1009,13 @@ static OPTION_DESC Options_CG[] = {
     0, 0, 0, &CGEXP_sqrt_algorithm, NULL },
   { OVK_BOOL,	OV_INTERNAL, TRUE,"use_copyfcc", "",
     0, 0, 0, &CGEXP_use_copyfcc, NULL },
+#ifdef TARG_ST
+  { OVK_INT32,	OV_INTERNAL, TRUE,"expconst", "",
+    DEFAULT_CGEXP_CONSTANT, 0, INT32_MAX, &CGEXP_expandconstant, &CGEXP_expandconstant_set },
+#else
   { OVK_INT32,	OV_INTERNAL, TRUE,"expconst", "",
     DEFAULT_CGEXP_CONSTANT, 0, INT32_MAX, &CGEXP_expandconstant, NULL },
+#endif
   { OVK_BOOL,	OV_INTERNAL, TRUE,"normalize_logical", "normalize",
     0, 0, 0, &CGEXP_normalize_logical, NULL },
   { OVK_BOOL,	OV_INTERNAL, TRUE,"gp_prolog_call_shared", "gp_prolog",
@@ -1860,7 +1878,7 @@ disable_prefetch:
     CG_enable_z_conf_prefetch = FALSE;
   if ( ! CG_enable_nz_conf_prefetch_overridden )
     CG_enable_nz_conf_prefetch = TRUE;
-
+#ifndef TARG_ST
   if (Enable_Prefetch_For_Target()) {
     if ( ! CG_L1_ld_latency_overridden ) CG_L1_ld_latency = 8;
 #ifdef KEY
@@ -1878,7 +1896,7 @@ disable_prefetch:
     if ( ! CG_enable_pf_L2_ld_overridden ) CG_enable_pf_L2_ld = TRUE;
     if ( ! CG_enable_pf_L2_st_overridden ) CG_enable_pf_L2_st = TRUE;
   }
-
+#endif
   /* Finally, check to see if we actually will do any prefetching, and
    * if not, disable prefetching all together.
    */
@@ -2018,7 +2036,7 @@ Configure_CG_Options(void)
 	  ) {
     CGEXP_cvrt_int_div_to_mult = (!OPT_Space) && (CG_opt_level > 0);
   } 
-
+#ifndef TARG_ST
   if (!Integer_Divide_Use_Float_overridden
 #ifdef KEY
       && CGEXP_cvrt_int_div_to_fdiv
@@ -2029,7 +2047,7 @@ Configure_CG_Options(void)
 				 && !OPT_Space
 				 && CG_opt_level > 0;
   }
-
+#endif
 #ifdef KEY
   if (!Integer_Multiply_By_Constant_overridden &&
       CGEXP_cvrt_int_mult_to_add_shift) {
@@ -2053,10 +2071,10 @@ Configure_CG_Options(void)
   if (!CGTARG_Branch_Taken_Prob_overridden)
     CGTARG_Branch_Taken_Prob = "0.95";
   CGTARG_Branch_Taken_Probability = atof(CGTARG_Branch_Taken_Prob);
-  
+#ifndef TARG_ST 
   if ( !CG_enable_spec_idiv_overridden && Enable_Spec_Idiv_For_Target() )
     CG_enable_spec_idiv = FALSE;
-
+#endif
   if ( ! CG_LOOP_fix_recurrences_specified
        && (      CG_LOOP_back_substitution
               && CG_LOOP_back_substitution_specified
@@ -2723,7 +2741,7 @@ INT be_command_line_argc = 0;
 void
 CG_Save_Default_Options(void)
 {
-  Save_Option_Groups(CG_Option_Groups);
+  Save_Option_Groups(Cg_Option_Groups);
 }
 /* ====================================================================
  *   CG_Reset_Default_Options(void)
@@ -2734,7 +2752,7 @@ CG_Save_Default_Options(void)
 void
 CG_Reset_Default_Options(void)
 {
-  Reset_Option_Groups(CG_Option_Groups);
+  Reset_Option_Groups(Cg_Option_Groups);
 }
 
 /* ====================================================================
@@ -3075,7 +3093,7 @@ CG_Fini (void)
     MEM_POOL_Delete (&MEM_local_region_pool);
     MEM_POOL_Delete (&MEM_local_region_nz_pool);
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     // Check to see if the asm file was written correctly.  Do this by writing
     // one extra char and checking its status.  Bug 11361.
     if (Assembly) {

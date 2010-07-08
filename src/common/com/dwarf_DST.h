@@ -235,6 +235,9 @@ typedef UINT8  DST_bitsize;       /* Used for bit_offset and bit_size */
 typedef UINT64 DST_size_t;        /* Used for byte_size of types */
 typedef INT64  DST_bounds_t;	  /* Used to hold array bounds */
 typedef void  *DST_die_ptr;	  /* Used in backend for die ptr. */
+#ifdef TARG_ST
+typedef UINT64  DST_count_t;	  /* Used to hold array size */
+#endif
 
 
 /* Different types of indices to DST entries.  Note that when accessing
@@ -969,6 +972,11 @@ typedef struct DST_subrange_type
    DST_cval_ref lower;		/* lower bound */
    DST_cval_ref upper;		/* upper bound */
    DST_cval_ref stride;		/* stride - for non-contiguous sections (F90) */
+#ifdef TARG_ST
+   DST_count_t count_val;	/* size */
+   DST_INFO_IDX type; /* Defining type, NULL for incomplete declaration */
+#endif
+
 } DST_SUBRANGE_TYPE;
 
 #define DST_SUBRANGE_TYPE_count(attr) ((attr)->upper.cval - (attr)->lower.cval + 1)
@@ -977,6 +985,10 @@ typedef struct DST_subrange_type
 #define DST_SUBRANGE_TYPE_lower_ref(attr) ((attr)->lower.ref)
 #define DST_SUBRANGE_TYPE_upper_ref(attr) ((attr)->upper.ref)
 #define DST_SUBRANGE_TYPE_stride_ref(attr) ((attr)->stride.ref)
+#ifdef TARG_ST
+#define DST_SUBRANGE_TYPE_count_val(attr) ((attr)->count_val)
+#define DST_SUBRANGE_TYPE_type(attr) ((attr)->type)
+#endif
 
 
 /* [tag==DW_TAG_string_type]: Represents FORTRAN or pascal string 
@@ -1006,6 +1018,11 @@ typedef struct DST_structure_type
    DST_INFO_IDX abstract_origin; /* Inside inlined instance of proc. */
    DST_INFO_IDX inheritance; /* Inheritance entries (DW_TAG_inheritance) */
    DST_CHILDREN child;     /* Struct members (DW_TAG_member) */
+#ifdef TARG_ST // [CL]
+   DST_INFO_IDX containing_type; /* containing type */
+   int being_built; /* struct in the process of being built. Avoid recursion */
+#endif
+
 } DST_STRUCTURE_TYPE;
 
 #define DST_STRUCTURE_TYPE_decl(attr) ((attr)->decl)
@@ -1015,6 +1032,10 @@ typedef struct DST_structure_type
 #define DST_STRUCTURE_TYPE_inheritance(attr) ((attr)->inheritance)
 #define DST_STRUCTURE_TYPE_first_child(attr) ((attr)->child.first)
 #define DST_STRUCTURE_TYPE_last_child(attr) ((attr)->child.last)
+#ifdef TARG_ST // [CL]
+#define DST_STRUCTURE_TYPE_containing_type(attr) ((attr)->containing_type)
+#define DST_STRUCTURE_TYPE_being_built(attr) ((attr)->being_built)
+#endif
 
 
 

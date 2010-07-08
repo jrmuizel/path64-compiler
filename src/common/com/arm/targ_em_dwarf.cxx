@@ -26,9 +26,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <elf.h>
+#include <elf_stuff.h>
 #include <elfaccess.h>
-#include <libelf.h>
 #include <libdwarf.h>
 #include "targ_em_dwarf.h"
 #include <assert.h>	// temporary

@@ -91,8 +91,34 @@ BOOL CG_x87_store = FALSE;
 #endif
 BOOL LOCALIZE_using_stacked_regs = TRUE;
 BOOL CG_unique_exit = TRUE;
+BOOL  CG_enable_BB_splitting = TRUE;
+INT32 CG_split_BB_length = CG_bblength_default;
 
+INT32 CG_L1_ld_latency = 0;
+INT32 CG_L2_ld_latency = 0;
+INT32 CG_z_conf_L1_ld_latency = 0;
+INT32 CG_z_conf_L2_ld_latency = 0;
+INT32 CG_ld_latency = 0;
+INT32 CG_L1_pf_latency = 12;
+INT32 CG_L2_pf_latency = 12;
+
+INT32 CG_branch_mispredict_penalty= -1;		/* means not set */
+INT32 CG_branch_mispredict_factor= -1;		/* means not set */
+
+#ifdef BCO_ENABLED /* Thierry */
+BOOL CG_emit_bb_freqs = FALSE;
+BOOL CG_emit_bb_freqs_arcs = FALSE;
+#endif /* BCO_Enabled Thierry */
+#ifdef TARG_ST
+// [CL] force spill of return address (RA) so that
+// unwinding/backtracing is still possible
+BOOL CG_save_return_address = FALSE;
+#endif
+#ifdef TARG_ST
+BOOL CG_enable_feedback = FALSE;
+#else
 BOOL CG_enable_feedback	     = TRUE;
+#endif
 BOOL CG_enable_reverse_if_conversion = TRUE;
 BOOL CG_enable_reverse_if_conversion_overridden = FALSE;
 BOOL CG_enable_spec_imul = TRUE;
@@ -168,6 +194,8 @@ INT32 CG_COLOR_pref_regs_priority = PREF_REGS_PRIORITY_MEDIUM;
 BOOL CG_split_bb = TRUE;
 BOOL CG_split_bb_Set = FALSE;
 #endif
+#ifdef TARG_ST
+
 INT32 CG_LAO_activation = 0;
 INT32 CG_LAO_regiontype = 0;
 INT32 CG_LAO_conversion = 0;
@@ -190,35 +218,22 @@ INT32 CG_LAO_prepadding = 0;
 INT32 CG_LAO_postpadding = 0;
 INT32 CG_LAO_overrun = 0;
 INT32 CG_LAO_opslimit = 0;
-
+#endif
 #ifdef CGG_ENABLED
 BOOL CG_enable_cgg;
 INT32 CG_cgg_level;
 #endif
 
-INT32 CG_L1_ld_latency = 0;
-INT32 CG_L2_ld_latency = 0;
-INT32 CG_z_conf_L1_ld_latency = 0;
-INT32 CG_z_conf_L2_ld_latency = 0;
-INT32 CG_ld_latency = 0;
-INT32 CG_L1_pf_latency = 12;
-INT32 CG_L2_pf_latency = 12;
-
-INT32 CG_branch_mispredict_penalty= -1;		/* means not set */
-INT32 CG_branch_mispredict_factor= -1;		/* means not set */
 
 BOOL CGSPILL_Rematerialize_Constants = TRUE;
 BOOL CGSPILL_Enable_Force_Rematerialization = FALSE;
 #ifdef BCO_ENABLED /* Thierry */
 BOOL CG_emit_bb_freqs = FALSE;
 BOOL CG_emit_bb_freqs_arcs = FALSE;
-#endif 
-#ifdef TARG_ST
-// [CL] force spill of return address (RA) so that
-// unwinding/backtracing is still possible
-BOOL CG_save_return_address = FALSE;
 #endif
-#ifdef TARG_IA64
+#if defined TARG_ST
+BOOL CG_tail_call = FALSE;
+#elif defined TARG_IA64
 BOOL CG_enable_thr = TRUE;
 BOOL CG_cond_defs_allowed = TRUE;
 BOOL LOCS_Enable_Bundle_Formation = TRUE;
@@ -250,7 +265,11 @@ BOOL IGLS_Enable_HB_Scheduling = TRUE;
 BOOL IGLS_Enable_PRE_HB_Scheduling = FALSE;
 BOOL IGLS_Enable_POST_HB_Scheduling = TRUE;
 BOOL IGLS_Enable_All_Scheduling = TRUE;
+#ifdef TARG_ST
+BOOL CG_enable_loop_optimizations = FALSE;
+#else
 BOOL CG_enable_loop_optimizations = TRUE;
+#endif
 BOOL GCM_Motion_Across_Calls = TRUE;
 BOOL GCM_Min_Reg_Usage = TRUE;
 BOOL GCM_Pointer_Spec= TRUE;

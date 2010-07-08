@@ -114,7 +114,7 @@ BOOL Trace_Dwarf;
 #include "pro_incl.h"
 #define SIZEOF_SECTION_LENGTH dw_dbg->de_offset_size
 #endif
-
+#define cast_to_LABEL(x) ((LABEL_IDX) (uintptr_t) (void *)x)
 static Dwarf_P_Debug dw_dbg;
 static Dwarf_Error dw_error;
 static BOOL Disable_DST = FALSE;
@@ -949,7 +949,7 @@ put_location (
 	&& ST_sclass(st) != SCLASS_COMMON && ST_sclass(st) != SCLASS_EXTERN) 
   {
 	/* symbol was not allocated, so doesn't have dwarf location */
-#ifndef KEY
+#if !defined( KEY) || defined( TARG_ST)
 	return;
 #else
 	// Bug 4723 - Allocate any object not allocated because the rest of 
@@ -965,8 +965,8 @@ put_location (
 	if (base_st != SP_Sym && base_st != FP_Sym) {
                 //printf ("[1] base_offset: %lld, ofst: %lld, offs: %d\n", base_ofst, ST_ofst(st), offs) ;
 		dwarf_add_expr_addr_b (expr,
-#ifdef KEY
-			           base_ofst + offs,               // need to add base offset because if the symbols has
+#if defined( KEY) && !defined( TARG_ST) 
+                                       base_ofst + offs,               // need to add base offset because if the symbols has
                                                                     // a base, the offset is not necessarily set
 #else
 				       ST_ofst(st) + offs,
@@ -976,7 +976,7 @@ put_location (
 				       &dw_error);
 		if (Trace_Dwarf) {
 	  		fprintf (TFile,"LocExpr: symbol = %s, offset = %" SCNd64 "\n", 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 			      ST_name(base_st), base_ofst + ST_ofst(st) + offs);
 #else
 			      ST_name(base_st), ST_ofst(st) + offs);
@@ -1047,7 +1047,7 @@ put_location (
 #endif
          //printf ("[2] %s (%s): real base_ofst: %llx, calc base_offset: %lld, ofst: %lld, offs: %d, base_st: %p, st: %p\n", ST_name(st), ST_name(base_st), ST_ofst(base_st), base_ofst, ST_ofst(st), offs, base_st, st) ;
 	dwarf_add_expr_addr_b (expr,
-#ifdef KEY      
+#if defined( KEY) && !defined(TARG_ST)      
 			           base_ofst + offs,               // need to add base offset because if the symbols has
                                                                     // a base, the offset is not necessarily set
 #else
@@ -1058,7 +1058,7 @@ put_location (
 			       &dw_error);
 	if (Trace_Dwarf) {
 	  fprintf (TFile,"LocExpr: symbol = %s, offset = %" SCNd64 "\n", 
-#ifdef KEY
+#if defined( KEY) && !defined( TARG_ST)
 			      ST_name(base_st), base_ofst + ST_ofst(st) + offs); 
 #else
 			      ST_name(base_st), ST_ofst(st) + offs); 
@@ -1155,8 +1155,8 @@ put_lexical_block(DST_flag flag, DST_LEXICAL_BLOCK *attr, Dwarf_P_Die die)
   put_name (DST_LEXICAL_BLOCK_name(attr), die, pb_none);
 #if 1
 #ifdef TARG_ST
-  LABEL_IDX low = (LABEL_IDX) DST_ASSOC_INFO_fe_ptr(DST_LEXICAL_BLOCK_low_pc(attr));
-  LABEL_IDX high = (LABEL_IDX) DST_ASSOC_INFO_fe_ptr(DST_LEXICAL_BLOCK_high_pc(attr));
+  LABEL_IDX low =cast_to_LABEL(DST_ASSOC_INFO_fe_ptr(DST_LEXICAL_BLOCK_low_pc(attr)));
+  LABEL_IDX high = cast_to_LABEL( DST_ASSOC_INFO_fe_ptr(DST_LEXICAL_BLOCK_high_pc(attr)));
   // [CL] if the lexical block was optimized out (ie labels not
   // created), don't emit low and high bounds
   //  if (!LABEL_name_idx(low) || !LABEL_name_idx(high)) {
@@ -2662,7 +2662,7 @@ Traverse_Global_DST (void)
      * of the compile_unit die.
      */
     parent = CGD_enclosing_proc[GLOBAL_LEVEL];
-#ifdef KEY /* Bug 3507 */
+#if defined( KEY) && !defined( TARG_ST) /* Bug 3507 */
     Dwarf_P_Die die = preorder_visit (idx, parent, NULL, LOCAL_LEVEL,
       TRUE /* visit children */);
     if (DST_INFO_tag(info) == DW_TAG_module) {
@@ -2679,6 +2679,8 @@ Traverse_Global_DST (void)
 #ifdef TARG_ST
     // [CL] keep on looping
       found_new_ref = TRUE;
+    }
+  }
 #endif
   }
 }
@@ -3405,22 +3407,6 @@ void Cg_Dwarf_Finish (pSCNINFO text_scninfo)
 #endif
 }
 
-#ifndef TARG_ST
-typedef struct {
-  const char *path_name;
-  BOOL already_processed;
-} include_info;
-  
-typedef struct {
-  const char *filename;
-  INT incl_index;
-  FILE *fileptr;
-  INT max_line_printed;
-  BOOL already_processed;
-  Dwarf_Unsigned mod_time;
-  Dwarf_Unsigned file_size;
-} file_info;
-#endif
 static file_info *file_table;
 static include_info *incl_table;
 static INT cur_file_index = 0;
@@ -4058,7 +4044,11 @@ namespace {
     Dwarf_Unsigned vsp_print_bytes(
 		FILE * asm_file,
 		Dwarf_Unsigned current_reloc_target,
-                Dwarf_Unsigned cur_byte_in);
+                Dwarf_Unsigned cur_byte_in
+#ifdef TARG_ST
+		, INT skip_n_bytes=0
+#endif              
+                );
 
   };
 }

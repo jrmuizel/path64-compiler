@@ -20,6 +20,7 @@ INCLUDE_DIRECTORIES(
   cg/gra_mon
   cg/swp
 
+  ../dfgforise
   ../ipa/common
   ../ipa/local
   ../ipa/main/analyze

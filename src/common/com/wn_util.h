@@ -425,6 +425,10 @@ WN *WN_LOOP_InductionVariable(
 	const WN *loop
 );
 
+UINT32 OPR_INTCONST_get_align(INT64 val);
+UINT32 OPR_ADD_get_align(UINT32 align1, UINT32 align2);
+UINT32 OPR_MPY_get_align(UINT32 align1, UINT32 align2);
+UINT32 WN_get_align (WN *wn);
 
 
 /*  Other WN utilities */
@@ -439,7 +443,9 @@ inline BOOL WN_is_black_box(const WN *wn)
 { 
   return OPCODE_is_black_box( WN_opcode(wn) ); 
 }
-
+#ifdef TARG_ST
+BOOL WN_Equiv_Tree (WN *wn1, WN* wn2);
+#endif
 #ifdef __cplusplus
 } /* close extern "C" */
 

@@ -595,6 +595,15 @@ CGTARG_Invert(TOP opr)
 #endif
   return CGTARG_Invert_Table[(INT)opr];
 }
+
+#ifdef TARG_ST
+// [CL] handle inverses that involve using ops with a different number
+// of arguments
+extern OP* CGTARG_Invert_OP(OP* op);
+extern OP* CGTARG_Negate_OP(OP* op);
+#endif
+
+
 #ifndef TARG_ST
 inline TOP
 CGTARG_Immed_To_Reg(TOP opr)
@@ -609,6 +618,16 @@ extern void CGTARG_Perform_THR_Code_Generation(OP *load_op, OP *check_load,
 extern INT  CGTARG_ARC_Sched_Latency( ARC *arc );
 extern void CGTARG_Handle_Errata_Hazard (OP *op, INT erratnum, 
 					 INT ops_to_check);
+#ifdef TARG_ST
+extern void CGTARG_Make_Bundles_Postpass(BB *bb);
+// Perform target-specific instruction size adjustments.
+extern void CGTARG_Resize_Instructions ();
+// Perform pseudo MAKE expansion.
+extern BOOL CGTARG_Pseudo_Make_Expand ();
+// Perform target-specific ASM adjustment.
+extern void  CGTARG_Fixup_ASM_Code ();
+#endif
+
 extern void CGTARG_Handle_Bundle_Hazard(OP                     *op, 
 					TI_BUNDLE              *bundle, 
 					VECTOR                 *bundle_vector, 
@@ -646,6 +665,51 @@ extern void CGTARG_Interference_Initialize( INT32 cycle_count,
 extern void CGTARG_Result_Live_Range( void* lrange, OP* op, INT32 offset );
 extern void CGTARG_Operand_Live_Range( void * lrange, INT opnd, OP* op,
                                        INT32  offset );
+#ifdef TARG_ST
+/* ====================================================================
+ *   Target specific spill information:
+ * ====================================================================
+ */
+// Count of valid entries is specified by CGTARG_NUM_SPILL_TYPES,
+// that is no more constant (reconfigurability)
+extern TY_IDX CGTARG_Spill_Type[MTYPE_MAX_LIMIT+1];
+extern CLASS_INDEX CGTARG_Spill_Mtype[MTYPE_MAX_LIMIT+1];
+
+
+// Should we save reg with regmask mechanism?
+extern BOOL EETARG_Save_With_Regmask (ISA_REGISTER_CLASS cl, REGISTER reg);
+#endif
+#ifdef TARG_ST 	 
+extern BOOL CGTARG_Is_Simple_Jump(const OP* op);
+extern BOOL CGTARG_bb_is_hwloop_init(const BB* bb);
+extern BOOL CGTARG_op_may_alias_with_call(const OP* op);
+extern BOOL CGTARG_registerclass_may_be_copied(ISA_REGISTER_CLASS cl);
+extern BOOL CGTARG_Code_Motion_To_BB_Is_Legal(const OP* op, BB* targetbb);
+extern BOOL CGTARG_OP_Has_Loop_Sideeffects(BB* bb, OP* op);
+extern BOOL CGTARG_do_not_unroll_p(BB* bb);
+extern BOOL CGTARG_Detect_Bundle_Id(ISA_EXEC_MASK slot_mask, BOOL* order_changed);
+extern void CGTARG_FixBundle(ISA_EXEC_MASK slot_mask, OP *slot_op[], INT ibundle);
+
+// FdF 20090318: Target specific function to decide whether or not a
+// set of IV references in a loop is worth replacing by a new IV
+typedef struct {
+  OP *op;
+  INT op_idx;
+  INT opnd_idx;
+  INT iv_offset;
+} IV_ref_t;
+
+extern INT CGTARG_Check_Optimize_IV(IV_ref_t *iv_refs, INT ref_count, INT iv_step, INT iv_adjust);
+
+extern BOOL CGTARG_Exist_Single_OP_Copy(ISA_REGISTER_CLASS rc, INT nhardregs);
+extern BOOL CGTARG_Is_Register_Pair(TN *tn1, TN * tn2);
+extern BOOL CGTARG_Is_Register_Quad(TN *tn1, TN *tn2, TN *tn3, TN *tn4);
+extern BOOL CGTARG_Should_Hoist_Return(BB* ret_bb);
+extern BOOL CGTARG_Profitable_Logif_Transformation();
+extern BOOL CGTARG_Allow_Operation_To_Be_Hoisted_In_Succs(OP* op);
+
+#endif
+
 extern void CGTARG_Interference_Finalize(void);
 extern TOP CGTARG_Invert_Branch(BB* bb);
 
@@ -698,6 +762,14 @@ extern VARIANT CGTARG_Analyze_Compare(OP *br, TN **tn1, TN **tn2,
 	 			      OP **compare_op);
 
 extern INT32 CGTARG_Special_Min_II(BB* loop_body, BOOL trace);
+#ifdef TARG_ST
+extern UINT32 CGTARG_max_issue_width;
+extern BOOL CGTARG_max_issue_width_overriden;
+inline INT32 CGTARG_Max_Issue_Width(void)
+{
+  return CGTARG_max_issue_width;
+}
+#endif
 
 /* placeholder for all hardware workarounds */
 extern void Hardware_Workarounds (void);
@@ -811,6 +883,21 @@ typedef enum {
   COMPARE_TYPE_and_orcm,
   COMPARE_TYPE_normal
 } COMPARE_TYPE;
+inline BOOL CGTARG_Can_Predicate_Calls() { 
+  return PROC_has_predicate_calls(); 
+}
+inline BOOL CGTARG_Can_Predicate_Returns() { 
+  return PROC_has_predicate_returns(); 
+}
+inline BOOL CGTARG_Can_Predicate_Branches() { 
+  return PROC_has_predicate_branches(); 
+}
+inline BOOL CGTARG_Can_Predicate() { 
+  return PROC_is_ia64_predication() || PROC_is_predicated(); 
+}
+inline BOOL CGTARG_Can_Select() { 
+  return PROC_is_select(); 
+}
 
 extern TOP CGTARG_Parallel_Compare(OP* cmp_op, COMPARE_TYPE ctype);
 
@@ -818,12 +905,40 @@ extern BOOL CGTARG_Dependence_Required(OP *pred_op, OP *succ_op);
 
 extern void CGTARG_Adjust_Latency(OP *pred_op, OP *succ_op, CG_DEP_KIND kind, UINT8 opnd, INT *latency);
 
+
+/* ---------------------------------------------------------------------
+ *    Given a compare opcode, return the unconditional variant form. 
+ *    Return the opcode if there is no such form.
+ * ---------------------------------------------------------------------
+ */
+extern TOP CGTARG_Get_unc_Variant(TOP top);
+
+/* ====================================================================
+ *   Target specific scheduling and dependence graph:
+ * ====================================================================
+ */
+
+inline INT32 CGTARG_Branch_Taken_Penalty(void)
+{
+  return CGTARG_branch_taken_penalty_overridden ?
+    CGTARG_branch_taken_penalty : 1;
+}
+
+INT32 CGTARG_Max_OP_Latency(OP *op);
+#ifdef TARG_ST
+INT32 CGTARG_Max_RES_Latency(OP *op, INT i);
+#endif
+
+
 extern BOOL CGTARG_Unconditional_Compare(OP* op, TOP* uncond_ver);
 
 extern BOOL CGTARG_Branches_On_True(OP* br_op, OP* cmp_op);
-
+#ifdef TARG_ST
+// (cbr) Support for op effects
+extern void CGTARG_Predicate_OP(BB *bb, OP *op, TN *pred_tn, bool on_false);
+#else
 extern void CGTARG_Predicate_OP(BB* bb, OP* op, TN* pred_tn);
-
+#endif
 extern void CGTARG_Generate_Remainder_Branch(TN *trip_count, TN *label_tn,
 					     OPS *prolog_ops, OPS *body_ops);
 
@@ -847,6 +962,18 @@ extern TN* CGTARG_Process_Asm_m_constraint(WN*, void**, int, OPS*, OPS*);
 #ifdef TARG_ST
 extern BOOL CGTARG_Can_Negate_Branch(OP *br);
 #endif
+
+/* ====================================================================
+ *    Properties:
+ * ====================================================================
+ */
+
+inline INT
+CGTARG_Text_Alignment (void) {
+  return DEFAULT_TEXT_ALIGNMENT;
+}
+
+
 /* call init routine once per asm stmt */
 extern void CGTARG_Init_Asm_Constraints (void);
 

@@ -836,6 +836,28 @@ Em_Get_Symbol_Name (Elf64_Word symindex)
 	return Index_To_String(&Strtab_Info, symtable[symindex].st_name);
     }
 }
+#ifdef TARG_ST
+unsigned char
+Em_Get_Symbol_Type (Elf64_Word symindex)
+{
+    if (Sixtyfour_Bit) {
+	Elf64_Sym *symtable;
+
+	symtable = (Elf64_Sym *)SCNINFO_buffer(Symtab_Info);
+	if (symindex >= (SCNINFO_size(Symtab_Info) / sizeof(Elf64_Sym)))
+	    ErrMsg (EC_Elf_Idx, symindex, "Em_Get_Symbol_Type");
+	return ELF64_ST_TYPE(symtable[symindex].st_info);
+    }
+    else {
+	Elf32_Sym *symtable;
+
+	symtable = (Elf32_Sym *)SCNINFO_buffer(Symtab_Info);
+	if (symindex >= (SCNINFO_size(Symtab_Info) / sizeof(Elf32_Sym)))
+	    ErrMsg (EC_Elf_Idx, symindex, "Em_Get_Symbol_Type");
+	return ELF32_ST_TYPE(symtable[symindex].st_info);
+    }
+}
+#endif
 
 /* Add an entry to the .symtab section. Returns the index for the entry */
 Elf64_Word
