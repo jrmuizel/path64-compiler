@@ -1,9 +1,10 @@
 /*
   Copyright (C) 2006, STMicroelectronics, All Rights Reserved.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
 
   This program is distributed in the hope that it would be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -36,6 +37,7 @@
 
 #include "W_limits.h"
 #include "defs.h"
+#include "clz.h"
 #include "errors.h"
 #include "lbitmask.h"
 
@@ -45,8 +47,8 @@ const LBitMask
 LBitMask::Top ()
 {
   LBitMask result;
-  result.rtype = top;
-  // Initialize for valgrind.
+  // Top is represented by a Zero mask
+  // We don't use the ctor since it is built to assert when creating such a value
   result.bmask_= (UINT64)0;
   return result;
 }
@@ -54,21 +56,18 @@ LBitMask::Top ()
 const LBitMask
 LBitMask::Bottom ()
 {
-  LBitMask result;
-  result.bmask_ = UINT64_MAX;
-  result.rtype = normal;
-  return result;
+  return LBitMask(UINT64_MAX);
 }
 
 const LBitMask Meet (const LBitMask &a, const LBitMask &b)
 {
-  UINT64 bmask;
   if (b.isTop ())
     return a;
   else if (a.isTop ())
     return b;
   else {
-    bmask = a.bmask_ | b.bmask_;
+    UINT64 bmask = a.bmask_ | b.bmask_;
+    Is_True(bmask,("%s : unexpected zero non-top bmask created from a=%#llx b=%#llx",__PRETTY_FUNCTION__, a.bmask_, b.bmask_));
     return LBitMask (bmask);
   }
 }
@@ -104,82 +103,10 @@ LBitMask::StrictlyContains (const LBitMask &a) const
 BOOL
 LBitMask::Equal (const LBitMask &a) const
 {
-  if (isTop () && a.isTop ())
-    return TRUE;
+  // If both are Top, they are equal
+  // Else if both masks are equal, they are equal
+  // Meaning we need to test masks only
   return (bmask_ == a.bmask_);
-}
-
-/* ====================================================================
- *
- * Support functions.
- *
- * ====================================================================
- */
-
-/*
--------------------------------------------------------------------------------
-Returns the number of leading 0 bits before the most-significant 1 bit of
-`a'.  If `a' is zero, 32 is returned.
--------------------------------------------------------------------------------
-*/
-static int countLeadingZeros32( UINT a )
-{
-    static const int countLeadingZerosHigh[] = {
-        8, 7, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4,
-        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    };
-    int shiftCount;
-
-    shiftCount = 0;
-    if ( a < 0x10000 ) {
-        shiftCount += 16;
-        a <<= 16;
-    }
-    if ( a < 0x1000000 ) {
-        shiftCount += 8;
-        a <<= 8;
-    }
-    shiftCount += countLeadingZerosHigh[ a>>24 ];
-    return shiftCount;
-}
-
-
-
- 
-
-/*
--------------------------------------------------------------------------------
-Returns the number of leading 0 bits before the most-significant 1 bit of
-`a'.  If `a' is zero, 64 is returned.
--------------------------------------------------------------------------------
-*/
-static int countLeadingZeros64( UINT64 a )
-{
-    int shiftCount;
-
-    shiftCount = 0;
-    if ( a < ( (UINT64) 1 )<<32 ) {
-        shiftCount += 32;
-    }
-    else {
-        a >>= 32;
-    }
-    shiftCount += countLeadingZeros32( a );
-    return shiftCount;
 }
 
 
@@ -245,50 +172,32 @@ LBitMask::Print (FILE *f) const
   }
 }
 
+// Constructors
 LBitMask::LBitMask (INT lowbit, INT width)
 {
   
-  if (width == 0)
-    rtype = top;
-  else if ((width + lowbit) >= 64) {
-    rtype = normal;
+  if (width == 0) {
+    // This represents Top
+    bmask_ = 0;
+  } else if ((width + lowbit) >= 64) {
     bmask_ = UINT64_MAX;// bottom
   } else {
-    rtype = normal;
     UINT64 mask_low  = (lowbit >= 64) ? 0 : UINT64_MAX << lowbit;
     UINT64 mask_high  = UINT64_MAX >> (64 - (width + lowbit));    
     bmask_ = mask_low & mask_high;
+    Is_True(bmask_,("%s : unexpected zero non-top bmask created from lowbit=%#x width=%d", __PRETTY_FUNCTION__, lowbit, width));
   }
 }
 
 LBitMask::LBitMask (INT width)
 {
   LBitMask r(0, width);
-  rtype = r.rtype;
   bmask_ = r.bmask_;
-}
-
-
-LBitMask::LBitMask (const LBitMask &a)
-{
-  rtype = a.rtype;
-  bmask_ = a.bmask_;
 }
 
 LBitMask::LBitMask (INT64 a)
 {
-  rtype = normal;
   bmask_= UINT64_MAX >> countLeadingZeros64(a);
+  Is_True(bmask_,("%s : unexpected zero non-top bmask created from a=%#llx",__PRETTY_FUNCTION__, a));
 }
 
-LBitMask::LBitMask (UINT64 bitmask)
-{
-  rtype = normal;
-  bmask_= bitmask;
-}
-
-LBitMask::LBitMask ()
-{
-  rtype = normal;
-  bmask_= UINT64_MAX;
-}

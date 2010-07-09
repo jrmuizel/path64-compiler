@@ -1,9 +1,10 @@
 /*
   Copyright (C) 2006, STMicroelectronics, All Rights Reserved.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
 
   This program is distributed in the hope that it would be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -42,6 +43,7 @@
 #endif /* defs_INCLUDED */
 
 #include <queue>
+#include <algorithm>
 
 template<class T>
 class Worklist {
@@ -49,7 +51,7 @@ class Worklist {
   typedef std::queue<T> Members;
   Members members;
  public:
-  void clear ()         { while (! members.empty()) members.pop(); }
+  void clear ()         { Members empty; std::swap(members, empty); }
   void push (T v)       { members.push (v); }
   void initialize (T v) { clear(); push (v); }
   BOOL empty ()         { return members.empty (); }

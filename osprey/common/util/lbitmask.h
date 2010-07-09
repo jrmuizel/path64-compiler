@@ -1,9 +1,10 @@
 /*
   Copyright (C) 2006, STMicroelectronics, All Rights Reserved.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
 
   This program is distributed in the hope that it would be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -39,8 +40,6 @@
 
 class LBitMask {
  private:
-  enum RangeType { normal, top };
-  mUINT8 rtype;
   UINT64 bmask_;
  public:
   // lattice properties
@@ -53,7 +52,7 @@ class LBitMask {
   BOOL ContainsOrEqual (const LBitMask &a) const {
     return StrictlyContains(a) || Equal(a); }
   // queries
-  BOOL isTop () const { return rtype == top; }
+  BOOL isTop () const { return bmask_ == 0LL; }
   BOOL isBottom () const { return bmask_ == UINT64_MAX; }
   INT bits () const;
   UINT64 getbitmask () const;
@@ -61,12 +60,13 @@ class LBitMask {
   friend const LBitMask LeftShift (const LBitMask &a, INT width);
   void Print (FILE *f) const;
   // constructors
+  LBitMask () : bmask_(UINT64_MAX) {}
+  LBitMask (const LBitMask &a) : bmask_(a.bmask_) {}
+  LBitMask (UINT64 bitmask) : bmask_(bitmask)
+  { Is_True(bmask_,("%s : unexpected zero non-top bmask created from bitmask=%#llx",__PRETTY_FUNCTION__, bitmask)); }
   LBitMask (INT bitwidth);
   LBitMask (INT lowbit, INT bitwidth);
-  LBitMask (const LBitMask &a);
   LBitMask (INT64 a);
-  LBitMask (UINT64 bitmask);
-  LBitMask ();
 };
 
 

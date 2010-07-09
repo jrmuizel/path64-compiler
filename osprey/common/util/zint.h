@@ -1,9 +1,10 @@
 /*
   Copyright (C) 2006, STMicroelectronics, All Rights Reserved.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
 
   This program is distributed in the hope that it would be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -76,39 +77,39 @@ class ZInt {
   BE_EXPORTED ZInt (INT64);
   BE_EXPORTED ZInt (UINT64);
   BE_EXPORTED ZInt (const ZInt&);
-  BE_EXPORTED friend const ZInt operator+(const ZInt& a, const ZInt& b);
+  BE_EXPORTED friend ZInt operator+(const ZInt& a, const ZInt& b);
   BE_EXPORTED friend ZInt& operator+=(ZInt& a, const ZInt& b);
-  BE_EXPORTED friend const ZInt operator-(const ZInt& a, const ZInt& b);
+  BE_EXPORTED friend ZInt operator-(const ZInt& a, const ZInt& b);
   BE_EXPORTED friend ZInt& operator-=(ZInt& a, const ZInt& b);
-  BE_EXPORTED friend const ZInt operator-(const ZInt& a);
-  BE_EXPORTED friend const ZInt operator*(const ZInt& a, const ZInt& b);
-  BE_EXPORTED friend const ZInt operator/(const ZInt& a, const ZInt& b);
-  BE_EXPORTED friend const ZInt operator%(const ZInt& a, const ZInt& b);
-  BE_EXPORTED friend const ZInt operator|(const ZInt& a, const ZInt& b);
-  BE_EXPORTED friend const ZInt operator&(const ZInt& a, const ZInt& b);
-  BE_EXPORTED friend const ZInt operator~(const ZInt& a);
-  BE_EXPORTED friend const ZInt operator<<(const ZInt& a, const ZInt& b);
-  BE_EXPORTED friend const ZInt operator>>(const ZInt& a, const ZInt& b);
-  BE_EXPORTED friend const BOOL operator>(const ZInt &a, const ZInt &b);
-  BE_EXPORTED friend const BOOL operator>=(const ZInt &a, const ZInt &b);
-  BE_EXPORTED friend const BOOL operator<(const ZInt &a, const ZInt &b);
-  BE_EXPORTED friend const BOOL operator<=(const ZInt &a, const ZInt &b);
-  BE_EXPORTED friend const BOOL operator==(const ZInt &a, const ZInt &b);
-  BE_EXPORTED friend const BOOL operator!=(const ZInt &a, const ZInt &b);
-  BE_EXPORTED friend const ZInt Max(const ZInt &a, const ZInt &b);
-  BE_EXPORTED friend const ZInt Min(const ZInt &a, const ZInt &b);
-  BE_EXPORTED friend const ZInt abs(const ZInt& a);
-  BE_EXPORTED INT64  const to_INT64 () const;
-  BE_EXPORTED INT  const to_INT () const;
-  BE_EXPORTED static const ZInt MinusInf ();
-  BE_EXPORTED static const ZInt PlusInf ();
-  const BOOL isPlusInf () const { return value == ZINT_MAX; }
-  const BOOL isMinusInf () const { return value == ZINT_MIN; }
-  const BOOL isFinite () const {
+  BE_EXPORTED friend ZInt operator-(const ZInt& a);
+  BE_EXPORTED friend ZInt operator*(const ZInt& a, const ZInt& b);
+  BE_EXPORTED friend ZInt operator/(const ZInt& a, const ZInt& b);
+  BE_EXPORTED friend ZInt operator%(const ZInt& a, const ZInt& b);
+  BE_EXPORTED friend ZInt operator|(const ZInt& a, const ZInt& b);
+  BE_EXPORTED friend ZInt operator&(const ZInt& a, const ZInt& b);
+  BE_EXPORTED friend ZInt operator~(const ZInt& a);
+  BE_EXPORTED friend ZInt operator<<(const ZInt& a, const ZInt& b);
+  BE_EXPORTED friend ZInt operator>>(const ZInt& a, const ZInt& b);
+  BE_EXPORTED friend BOOL operator>(const ZInt &a, const ZInt &b);
+  BE_EXPORTED friend BOOL operator>=(const ZInt &a, const ZInt &b);
+  BE_EXPORTED friend BOOL operator<(const ZInt &a, const ZInt &b);
+  BE_EXPORTED friend BOOL operator<=(const ZInt &a, const ZInt &b);
+  BE_EXPORTED friend BOOL operator==(const ZInt &a, const ZInt &b);
+  BE_EXPORTED friend BOOL operator!=(const ZInt &a, const ZInt &b);
+  BE_EXPORTED friend ZInt Max(const ZInt &a, const ZInt &b);
+  BE_EXPORTED friend ZInt Min(const ZInt &a, const ZInt &b);
+  BE_EXPORTED friend ZInt abs(const ZInt& a);
+  BE_EXPORTED INT64 to_INT64 () const;
+  BE_EXPORTED INT   to_INT () const;
+  BE_EXPORTED static ZInt MinusInf ();
+  BE_EXPORTED static ZInt PlusInf ();
+  BOOL isPlusInf () const { return value == ZINT_MAX; }
+  BOOL isMinusInf () const { return value == ZINT_MIN; }
+  BOOL isFinite () const {
     return ! isPlusInf () && ! isMinusInf ();
   }
-  BE_EXPORTED const INT bits () const;
-  BE_EXPORTED const INT highest_set_bit () const;
+  BE_EXPORTED INT bits () const;
+  BE_EXPORTED INT highest_set_bit () const;
   BE_EXPORTED void Print (FILE *f) const;
 };
 

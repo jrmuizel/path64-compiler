@@ -1,9 +1,10 @@
 /*
   Copyright (C) 2006, STMicroelectronics, All Rights Reserved.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
 
   This program is distributed in the hope that it would be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -35,6 +36,7 @@
  */
 
 #include "defs.h"
+#include "clz.h"
 #include "errors.h"
 #include "lalign.h"
 
@@ -120,73 +122,6 @@ static void extended_euclid(UINT64 a, UINT64 b, UINT64 *gcd, INT64 *u, INT64 *v)
   return;
 }
   
-/*
--------------------------------------------------------------------------------
-Returns the number of leading 0 bits before the most-significant 1 bit of
-`a'.  If `a' is zero, 32 is returned.
--------------------------------------------------------------------------------
-*/
-static int countLeadingZeros32( UINT a )
-{
-    static const int countLeadingZerosHigh[] = {
-        8, 7, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4,
-        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    };
-    int shiftCount;
-
-    shiftCount = 0;
-    if ( a < 0x10000 ) {
-        shiftCount += 16;
-        a <<= 16;
-    }
-    if ( a < 0x1000000 ) {
-        shiftCount += 8;
-        a <<= 8;
-    }
-    shiftCount += countLeadingZerosHigh[ a>>24 ];
-    return shiftCount;
-}
-
-
-/*
--------------------------------------------------------------------------------
-Returns the number of leading 0 bits before the most-significant 1 bit of
-`a'.  If `a' is zero, 64 is returned.
--------------------------------------------------------------------------------
-*/
-static int countLeadingZeros64( UINT64 a )
-{
-    int shiftCount;
-
-    shiftCount = 0;
-    if ( a < ( (UINT64) 1 )<<32 ) {
-        shiftCount += 32;
-    }
-    else {
-        a >>= 32;
-    }
-    shiftCount += countLeadingZeros32( a );
-    return shiftCount;
-}
-
-static int countTrailingZeros64( UINT64 a )
-{
-  return 64 - countLeadingZeros64(~a & (a - 1));
-}
 
 // Latice operators
 
@@ -194,7 +129,7 @@ const LAlign
 LAlign::Top ()
 {
   LAlign result;
-  result.rtype = top;
+  result.rtype_ = top;
   // Initialize for valgrind.
   result.base_ = (ZInt)0;
   result.bias_ = (ZInt)0;
@@ -207,7 +142,7 @@ LAlign::Bottom ()
   LAlign result;
   result.base_ = (ZInt)1;
   result.bias_ = (ZInt)0;
-  result.rtype = normal;
+  result.rtype_ = normal;
   return result;
 }
 
@@ -250,7 +185,7 @@ LAlign::Normalize () const
   FmtAssert (result.bias_ >= 0 && result.bias_ < result.base_, ("Non-normalized bias value encountered"));
 
  
-  result.rtype = normal;
+  result.rtype_ = normal;
   return result;
 }
 
@@ -709,32 +644,3 @@ LAlign::Print (FILE *f) const
   }
 }
 
-// Constructors
-
-LAlign::LAlign (const LAlign &a)
-{
-  rtype = a.rtype;
-  base_ = a.base_;
-  bias_ = a.bias_;
-}
-
-LAlign::LAlign (ZInt base, ZInt bias)
-{
-  rtype = normal;
-  base_= base;
-  bias_= bias;
-}
-
-LAlign::LAlign (INT64 value)
-{
-  rtype = normal;
-  base_= 0;
-  bias_= value;
-}
-
-LAlign::LAlign ()
-{
-  rtype = normal;
-  base_= (ZInt)0;
-  bias_= (ZInt)0;
-}

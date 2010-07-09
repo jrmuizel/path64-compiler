@@ -1,9 +1,10 @@
 /*
   Copyright (C) 2006, STMicroelectronics, All Rights Reserved.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
 
   This program is distributed in the hope that it would be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -46,22 +47,27 @@ class LBRange: public LRange {
 private:
   LBitMask brange_;
   static MEM_POOL mempool_;
+  static LBRange *top_ ; 
+  static LBRange *bottom_ ; 
+  static LBRange *universe_ ;
 public:
   // constructors
   LBRange(const LBRange &that) { *this = that; }
   LBRange(const LBitMask &that): brange_(that) { }
   LBRange(): brange_(LBitMask::Bottom()) {}
+  virtual ~LBRange() {}
 
+  static LBitMask Top(){ return LBitMask::Top();}
   static LBitMask Bottom(){ return LBitMask::Bottom();}
 
-  virtual LRange *makeRangeBitWidth (INT bitwidth) const;
-  virtual LRange *makeRangeValue (INT64 bmask) const;
-  virtual LRange *makeRangeLowBitWidth (INT lowbit, INT bitwidth) const;
-  virtual LRange *makeUniverse () const;
-  virtual LRange *makeTop () const;
-  virtual LRange *makeBottom () const;
-  virtual LRange *makeMeet (const LRange *a, const LRange *b) const;
-  virtual LRange *makeJoin (const LRange *a, const LRange *b) const;
+  virtual LBRange *makeRangeBitWidth (INT bitwidth) const;
+  virtual LBRange *makeRangeValue (INT64 bmask) const;
+  virtual LBRange *makeRangeLowBitWidth (INT lowbit, INT bitwidth) const;
+  virtual LBRange *makeUniverse () const;
+  virtual LBRange *makeTop () const;
+  virtual LBRange *makeBottom () const;
+  virtual LBRange *makeMeet (const LRange *a, const LRange *b) const;
+  virtual LBRange *makeJoin (const LRange *a, const LRange *b) const;
   // queries
 
   virtual BOOL isTop () const;
@@ -70,23 +76,23 @@ public:
   virtual BOOL ContainsOrEqual (const LRange *a) const;
   virtual INT bits() const;
   virtual UINT64 getBitMask() const;
-  virtual LRange *makeMakeUnsigned (INT width) const;
-  virtual LRange *makeLeftShift (INT width) const;
+  virtual LBRange *makeMakeUnsigned (INT width) const;
+  virtual LBRange *makeLeftShift (INT width) const;
 
   virtual void Print (FILE *f) const;
 
 
   // cloning
-  virtual LRange *clone(void) const;
+  virtual LBRange *clone(void) const;
 
   // instance
-  BE_EXPORTED  static LRange *getInstance(void);
-
-  static void* operator new (size_t size); 
-  static void operator delete (void *p);
+  BE_EXPORTED  static LBRange *getInstance(void);
 
   // mempool initialization
   BE_EXPORTED  static void MEMPOOL_Initialize(MEM_POOL mempool);
+
+  // mempool visibility
+  virtual MEM_POOL *Mem_pool() { return &mempool_; }
 };
 
 #endif /*LBRANGE_H_INCLUDED */

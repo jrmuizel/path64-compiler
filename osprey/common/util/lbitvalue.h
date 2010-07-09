@@ -39,8 +39,6 @@
 
 class LBitValue {
  private:
-  enum RangeType { normal, top };
-  mUINT8 rtype;
   UINT64 zeromask_;
   UINT64 onemask_;
  public:
@@ -55,7 +53,7 @@ class LBitValue {
   BOOL ContainsOrEqual (const LBitValue &a) const {
     return StrictlyContains(a) || Equal(a); }
   // queries
-  BOOL isTop () const { return rtype == top; }
+  BOOL isTop () const { return zeromask_== UINT64_MAX && onemask_ == UINT64_MAX; }
   BOOL isBottom () const { return (zeromask_ | onemask_) == 0; }
   BOOL hasValue () const;  // TRUE if a single finite literal value.
   INT64 getValue () const; // The value if isLiteral.
@@ -85,11 +83,14 @@ class LBitValue {
 					 const LBitValue &b);
   void Print (FILE *f) const;
   // constructors
-  LBitValue (const LBitValue &a);
-  LBitValue (INT64 a);
-  LBitValue (const UINT64 bmask, const UINT64 valmask);
+  LBitValue () : zeromask_(0ULL), onemask_(0ULL) {}
+  LBitValue (const LBitValue &a) : zeromask_(a.zeromask_), onemask_(a.onemask_) {}
+  LBitValue (INT64 a) : onemask_(a), zeromask_(~a) {}
+  LBitValue (const UINT64 zeromask, const UINT64 onemask) : zeromask_(zeromask), onemask_(onemask)
+  {Is_True(!(zeromask_== UINT64_MAX && onemask_ == UINT64_MAX),
+	  ("%s : unexpected non-top bvalue created from zeromask=%llx onemask=%#llx",
+	   __PRETTY_FUNCTION__, zeromask, onemask));}
   LBitValue (RangeSign sign, int bitwidth);
-  LBitValue ();
 };
 
 

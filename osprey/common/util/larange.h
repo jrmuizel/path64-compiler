@@ -1,9 +1,10 @@
 /*
   Copyright (C) 2006, STMicroelectronics, All Rights Reserved.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
 
   This program is distributed in the hope that it would be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -47,21 +48,27 @@ class LARange: public LRange {
 private:
   LAlign arange_;
   static MEM_POOL mempool_;
+  static LARange *top_ ; 
+  static LARange *bottom_ ; 
+  static LARange *universe_ ;
 public:
   // constructors
   LARange(const LARange &that) { *this = that; }
   LARange(const LAlign &that): arange_(that) { }
   LARange(): arange_(LAlign::Bottom()) {}
+  virtual ~LARange() {} 
 
+  static LAlign Top(){ return LAlign::Top();}
   static LAlign Bottom(){ return LAlign::Bottom();}
+  static LAlign Universe(){ return LAlign::Bottom();}
 
-  virtual LRange *makeRangeValue (INT64 value) const;
-  virtual LRange *makeAlign (ZInt base, ZInt bias) const;
-  virtual LRange *makeUniverse () const;
-  virtual LRange *makeTop () const;
-  virtual LRange *makeBottom () const;
-  virtual LRange *makeMeet (const LRange *a, const LRange *b) const;
-  virtual LRange *makeJoin (const LRange *a, const LRange *b) const;
+  virtual LARange *makeRangeValue (INT64 value) const;
+  virtual LARange *makeAlign (ZInt base, ZInt bias) const;
+  virtual LARange *makeUniverse () const;
+  virtual LARange *makeTop () const;
+  virtual LARange *makeBottom () const;
+  virtual LARange *makeMeet (const LRange *a, const LRange *b) const;
+  virtual LARange *makeJoin (const LRange *a, const LRange *b) const;
   // queries
 
   virtual BOOL hasValue(void) const;
@@ -72,39 +79,39 @@ public:
   virtual BOOL StrictlyContains (const LRange *a) const;
   virtual BOOL Equal (const LRange *a) const;
   virtual BOOL ContainsOrEqual (const LRange *a) const;
-  virtual LRange *makeSignExtend (INT width) const;
-  virtual LRange *makeZeroExtend (INT width) const;
-  virtual LRange *makeMakeSigned (INT width) const;
-  virtual LRange *makeMakeUnsigned (INT width) const;
-  virtual LRange *makeLeftShift (INT width) const;
-  virtual LRange *makeLeftShiftRange (const LRange *count) const;
-  virtual LRange *makeSignedRightShift (INT width) const;
-  virtual LRange *makeSignedRightShiftRange (const LRange *count) const;
-  virtual LRange *makeBitAnd (const LRange *b) const;
-  virtual LRange *makeBitOr (const LRange *b) const;
-  virtual LRange *makeAdd (const LRange *b) const;
-  virtual LRange *makeSub (const LRange *b) const;
-  virtual LRange *makeMul (const LRange *b) const;
-  virtual LRange *makeAddModulo (const LRange *b, INT width) const;
-  virtual LRange *makeSubModulo (const LRange *b, INT width) const;
-  virtual LRange *makeMulModulo (const LRange *b, INT width) const;
-  virtual LRange *makeDiv (const LRange *b) const;
-  virtual LRange *makeMod (const LRange *b) const;
+  virtual LARange *makeSignExtend (INT width) const;
+  virtual LARange *makeZeroExtend (INT width) const;
+  virtual LARange *makeMakeSigned (INT width) const;
+  virtual LARange *makeMakeUnsigned (INT width) const;
+  virtual LARange *makeLeftShift (INT width) const;
+  virtual LARange *makeLeftShiftRange (const LRange *count) const;
+  virtual LARange *makeSignedRightShift (INT width) const;
+  virtual LARange *makeSignedRightShiftRange (const LRange *count) const;
+  virtual LARange *makeBitAnd (const LRange *b) const;
+  virtual LARange *makeBitOr (const LRange *b) const;
+  virtual LARange *makeAdd (const LRange *b) const;
+  virtual LARange *makeSub (const LRange *b) const;
+  virtual LARange *makeMul (const LRange *b) const;
+  virtual LARange *makeAddModulo (const LRange *b, INT width) const;
+  virtual LARange *makeSubModulo (const LRange *b, INT width) const;
+  virtual LARange *makeMulModulo (const LRange *b, INT width) const;
+  virtual LARange *makeDiv (const LRange *b) const;
+  virtual LARange *makeMod (const LRange *b) const;
 
   virtual void Print (FILE *f) const;
 
 
   // cloning
-  virtual LRange *clone(void) const;
+  virtual LARange *clone(void) const;
 
   // instance
-  BE_EXPORTED  static LRange *getInstance(void);
-
-  static void* operator new (size_t size); 
-  static void operator delete (void *p);
+  BE_EXPORTED  static LARange *getInstance(void);
 
   // mempool initialization
   BE_EXPORTED  static void MEMPOOL_Initialize(MEM_POOL mempool);
+
+  // mempool visibility
+  virtual MEM_POOL *Mem_pool() { return &mempool_; }
 };
 
 #endif /*LARANGE_H_INCLUDED */

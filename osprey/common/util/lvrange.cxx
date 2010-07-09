@@ -1,9 +1,10 @@
 /*
   Copyright (C) 2006, STMicroelectronics, All Rights Reserved.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
 
   This program is distributed in the hope that it would be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -37,239 +38,233 @@
 #include "defs.h"
 #include "errors.h"
 #include "tracing.h"
+#include "cxx_memory.h"
 #include "lvrange.h"
 
 MEM_POOL LVRange::mempool_;
+LVRange::LVRange *LVRange::top_ = new LVRange(Range::Empty ()) ; 
+LVRange::LVRange *LVRange::bottom_ = new LVRange(Range::Universe ()) ;
+LVRange::LVRange *LVRange::universe_ = new LVRange(Range::Universe ()) ;
 
-// new and delete overriding
-void* LVRange::operator new (size_t size) {
-  FmtAssert(&LVRange::mempool_ != NULL, ("LVRange mempool not initialized"));
-  return TYPE_MEM_POOL_ALLOC(LVRange, &LVRange::mempool_);
-}
-
-void LVRange::operator delete (void *p) {
-  FmtAssert(0, ("LVRange delete operator should never be called"));
-}
-
-LRange *LVRange::makeRangeValue(INT64 i) const { 
-  LRange *r = new LVRange(Range(i));
+LVRange *LVRange::makeRangeValue(INT64 i) const { 
+  LVRange *r = CXX_NEW (LVRange(Range(i)), &mempool_);
   return r;
 }
 
-LRange *LVRange::makeRangeMinMax(ZInt min, ZInt max) const { 
-  LRange *r = new LVRange(Range(min, max));
+LVRange *LVRange::makeRangeMinMax(ZInt min, ZInt max) const { 
+  LVRange *r = CXX_NEW (LVRange(Range(min, max)), &mempool_);
   return r;
 }
 
-LRange *LVRange::makeRangeWidth (INT Sign, INT bitwidth) const {
-  LRange *r = new LVRange(Range((Range::RangeSign)Sign, bitwidth));
+LVRange *LVRange::makeRangeWidth (INT Sign, INT bitwidth) const {
+  LVRange *r = CXX_NEW (LVRange(Range((Range::RangeSign)Sign, bitwidth)), &mempool_);
   return r;
 }
 
-LRange *LVRange::makeRangeLowbit (INT Sign, INT lowbit, INT bitwidth) const {
-  LRange *r = new LVRange(Range((Range::RangeSign)Sign, lowbit, bitwidth));
+LVRange *LVRange::makeRangeLowbit (INT Sign, INT lowbit, INT bitwidth) const {
+  LVRange *r = CXX_NEW (LVRange(Range((Range::RangeSign)Sign, lowbit, bitwidth)), &mempool_);
   return r;
 }
 
-LRange *LVRange::makeUniverse () const { 
-  LRange *r = new LVRange(Range::Universe ());
+LVRange *LVRange::makeUniverse () const { 
+  Is_True(universe_, ("%s : unexpected uninitialized universe", __PRETTY_FUNCTION__));
+  return universe_;
+}
+
+LVRange *LVRange::makeTop () const { 
+  Is_True(top_, ("%s : unexpected uninitialized top", __PRETTY_FUNCTION__));
+  return top_;
+}
+
+LVRange *LVRange::makeBottom () const { 
+  Is_True(bottom_, ("%s : unexpected uninitialized bottom", __PRETTY_FUNCTION__));
+  return bottom_;
+}
+
+LVRange *LVRange::makeMeet (const LRange *a, const LRange *b) const { 
+  const LVRange *vrange1 = static_cast<const LVRange *>(a);
+  const LVRange *vrange2 = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Union (vrange1->range_, vrange2->range_)), &mempool_);
   return r;
 }
 
-LRange *LVRange::makeTop () const { 
-  LRange *r = new LVRange(Range::Empty ());
-  return r;
-}
-
-LRange *LVRange::makeBottom () const { 
-  LRange *r = new LVRange(Range::Universe ());
-  return r;
-}
-
-LRange *LVRange::makeMeet (const LRange *a, const LRange *b) const { 
-  const LVRange *vrange1 = LRANGE_CAST(const LVRange *, a);
-  const LVRange *vrange2 = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Union (vrange1->range_, vrange2->range_));
-  return r;
-}
-
-LRange *LVRange::makeJoin (const LRange *a, const LRange *b) const { 
-  const LVRange *vrange1 = LRANGE_CAST(const LVRange *, a);
-  const LVRange *vrange2 = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Intersect (vrange1->range_, vrange2->range_));
+LVRange *LVRange::makeJoin (const LRange *a, const LRange *b) const { 
+  const LVRange *vrange1 = static_cast<const LVRange *>(a);
+  const LVRange *vrange2 = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Intersect (vrange1->range_, vrange2->range_)), &mempool_);
   return r;
 }
 
 
 // queries
-LRange *LVRange::makeSignExtend (INT width) const {
-  LRange *r = new LVRange(SignExtend (this->range_, width));
+LVRange *LVRange::makeSignExtend (INT width) const {
+  LVRange *r = CXX_NEW (LVRange(SignExtend (this->range_, width)), &mempool_);
   return r;
 }
-LRange *LVRange::makeZeroExtend (INT width) const {
-  LRange *r = new LVRange(ZeroExtend (this->range_, width));
+LVRange *LVRange::makeZeroExtend (INT width) const {
+  LVRange *r = CXX_NEW (LVRange(ZeroExtend (this->range_, width)), &mempool_);
   return r;
 }
-LRange *LVRange::makeLeftShift (INT count) const {
-  LRange *r = new LVRange(LeftShift (this->range_, count));
+LVRange *LVRange::makeLeftShift (INT count) const {
+  LVRange *r = CXX_NEW (LVRange(LeftShift (this->range_, count)), &mempool_);
   return r;
 }
-LRange *LVRange::makeLeftShiftRange (const LRange *count) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, count);
-  LRange *r = new LVRange(LeftShift (this->range_, vrange->range_));
+LVRange *LVRange::makeLeftShiftRange (const LRange *count) const {
+  const LVRange *vrange = static_cast<const LVRange *>(count);
+  LVRange *r = CXX_NEW (LVRange(LeftShift (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeSignedRightShift (INT count) const {
-  LRange *r = new LVRange(SignedRightShift (this->range_, count));
+LVRange *LVRange::makeSignedRightShift (INT count) const {
+  LVRange *r = CXX_NEW (LVRange(SignedRightShift (this->range_, count)), &mempool_);
   return r;
 }
-LRange *LVRange::makeSignedRightShiftRange (const LRange *count) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, count);
-  LRange *r = new LVRange(SignedRightShift (this->range_, vrange->range_));
+LVRange *LVRange::makeSignedRightShiftRange (const LRange *count) const {
+  const LVRange *vrange = static_cast<const LVRange *>(count);
+  LVRange *r = CXX_NEW (LVRange(SignedRightShift (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeModulo (INT width) const {
-  LRange *r = new LVRange(Modulo (this->range_, width));
+LVRange *LVRange::makeModulo (INT width) const {
+  LVRange *r = CXX_NEW (LVRange(Modulo (this->range_, width)), &mempool_);
   return r;
 }
-LRange *LVRange::makeAdd (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Add (this->range_, vrange->range_));
+LVRange *LVRange::makeAdd (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Add (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeAddModulo (const LRange *b, INT width) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(AddModulo (this->range_, vrange->range_, width));
+LVRange *LVRange::makeAddModulo (const LRange *b, INT width) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(AddModulo (this->range_, vrange->range_, width)), &mempool_);
   return r;
 }
-LRange *LVRange::makeSub (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Sub (this->range_, vrange->range_));
+LVRange *LVRange::makeSub (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Sub (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeSubModulo (const LRange *b, INT width) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(SubModulo (this->range_, vrange->range_, width));
+LVRange *LVRange::makeSubModulo (const LRange *b, INT width) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(SubModulo (this->range_, vrange->range_, width)), &mempool_);
   return r;
 }
-LRange *LVRange::makeMul (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Mul (this->range_, vrange->range_));
+LVRange *LVRange::makeMul (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Mul (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeMulModulo (const LRange *b, INT width) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(MulModulo (this->range_, vrange->range_, width));
+LVRange *LVRange::makeMulModulo (const LRange *b, INT width) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(MulModulo (this->range_, vrange->range_, width)), &mempool_);
   return r;
 }
-LRange *LVRange::makeMin (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Min (this->range_, vrange->range_));
+LVRange *LVRange::makeMin (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Min (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeMax (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Max (this->range_, vrange->range_));
+LVRange *LVRange::makeMax (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Max (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeBitAnd (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(BitAnd (this->range_, vrange->range_));
+LVRange *LVRange::makeBitAnd (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(BitAnd (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeBitOr (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(BitOr (this->range_, vrange->range_));
+LVRange *LVRange::makeBitOr (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(BitOr (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeBitXor (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(BitXor (this->range_, vrange->range_));
+LVRange *LVRange::makeBitXor (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(BitXor (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeBitNot () const {
-  LRange *r = new LVRange(BitNot (this->range_));
+LVRange *LVRange::makeBitNot () const {
+  LVRange *r = CXX_NEW (LVRange(BitNot (this->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeEq (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Eq (this->range_, vrange->range_));
+LVRange *LVRange::makeEq (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Eq (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeNe (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Ne (this->range_, vrange->range_));
+LVRange *LVRange::makeNe (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Ne (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeGe (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Ge (this->range_, vrange->range_));
+LVRange *LVRange::makeGe (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Ge (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeGt (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Gt (this->range_, vrange->range_));
+LVRange *LVRange::makeGt (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Gt (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeLe (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Le (this->range_, vrange->range_));
+LVRange *LVRange::makeLe (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Le (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeLt (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Lt (this->range_, vrange->range_));
+LVRange *LVRange::makeLt (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Lt (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeAndl (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Andl (this->range_, vrange->range_));
+LVRange *LVRange::makeAndl (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Andl (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeNandl (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Nandl (this->range_, vrange->range_));
+LVRange *LVRange::makeNandl (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Nandl (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeOrl (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Orl (this->range_, vrange->range_));
+LVRange *LVRange::makeOrl (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Orl (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeNorl (const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Norl (this->range_, vrange->range_));
+LVRange *LVRange::makeNorl (const LRange *b) const {
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Norl (this->range_, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeNotl () const {
-  LRange *r = new LVRange(Notl (this->range_));
+LVRange *LVRange::makeNotl () const {
+  LVRange *r = CXX_NEW (LVRange(Notl (this->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeHighestSetBit () const {
-  LRange *r = new LVRange(HighestSetBit (this->range_));
+LVRange *LVRange::makeHighestSetBit () const {
+  LVRange *r = CXX_NEW (LVRange(HighestSetBit (this->range_)), &mempool_);
   return r;
 }
-/*   LRange *LVRange::makeByteSwap () const { */
-/*     LRange *r = new LVRange(ByteSwap (this->range_)); */
+/*   LVRange *LVRange::makeByteSwap () const { */
+/*     LVRange *r = CXX_NEW (LVRange(ByteSwap (this->range_)), &mempool_); */
 /*     return r; */
 /*   } */
-LRange *LVRange::makeExtract (INT start, INT width) const {
-  LRange *r = new LVRange(Extract (this->range_, start, width));
+LVRange *LVRange::makeExtract (INT start, INT width) const {
+  LVRange *r = CXX_NEW (LVRange(Extract (this->range_, start, width)), &mempool_);
   return r;
 }
-LRange *LVRange::makeInsert (INT start, INT width,
+LVRange *LVRange::makeInsert (INT start, INT width,
 				     const LRange *b) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, b);
-  LRange *r = new LVRange(Insert (this->range_, start, width, vrange->range_));
+  const LVRange *vrange = static_cast<const LVRange *>(b);
+  LVRange *r = CXX_NEW (LVRange(Insert (this->range_, start, width, vrange->range_)), &mempool_);
   return r;
 }
-LRange *LVRange::makeMakeUnsigned (INT width) const {
-  LRange *r = new LVRange(MakeUnsigned (this->range_, width));
+LVRange *LVRange::makeMakeUnsigned (INT width) const {
+  LVRange *r = CXX_NEW (LVRange(MakeUnsigned (this->range_, width)), &mempool_);
   return r;
 }
 
-LRange *LVRange::makeMakeSigned (INT width) const {
-  LRange *r = new LVRange(MakeSigned (this->range_, width));
+LVRange *LVRange::makeMakeSigned (INT width) const {
+  LVRange *r = CXX_NEW (LVRange(MakeSigned (this->range_, width)), &mempool_);
   return r;
 }
 BOOL LVRange::hasValue(void) const { 
@@ -286,17 +281,17 @@ BOOL LVRange::isTop () const {
 }
 
 BOOL LVRange::StrictlyContains (const LRange *a) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, a);
+  const LVRange *vrange = static_cast<const LVRange *>(a);
   return range_.StrictlyContains (vrange->range_);
 }
 
 BOOL LVRange::Equal (const LRange *a) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, a);
+  const LVRange *vrange = static_cast<const LVRange *>(a);
   return range_.Equal (vrange->range_);
 }
 
 BOOL LVRange::ContainsOrEqual (const LRange *a) const {
-  const LVRange *vrange = LRANGE_CAST(const LVRange *, a);
+  const LVRange *vrange = static_cast<const LVRange *>(a);
   return range_.ContainsOrEqual (vrange->range_);
 }
 
@@ -321,10 +316,10 @@ void LVRange::Print (FILE *f) const {
 }
 
 // cloning
-LRange *LVRange::clone(void) const { return new LVRange(*this); }
+LVRange *LVRange::clone(void) const { return CXX_NEW (LVRange(*this), &mempool_); }
 
 // instance
-LRange *LVRange::getInstance(void) { return new LVRange(); }
+LVRange *LVRange::getInstance(void) { return CXX_NEW (LVRange(), &mempool_); }
 
 // mempool initialization
 void LVRange::MEMPOOL_Initialize(MEM_POOL mempool) {LVRange::mempool_ = mempool;}

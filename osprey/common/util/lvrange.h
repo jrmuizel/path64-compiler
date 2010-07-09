@@ -1,9 +1,10 @@
 /*
   Copyright (C) 2006, STMicroelectronics, All Rights Reserved.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
 
   This program is distributed in the hope that it would be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -47,6 +48,9 @@ class LVRange: public LRange {
 private:
   Range range_;
   static MEM_POOL mempool_;
+  static LVRange *top_ ; 
+  static LVRange *bottom_ ; 
+  static LVRange *universe_ ;
 //   // constructors
 //   LVRange(const LVRange &that) { *this = that; }
 //   LVRange(const Range &that): range_(that) { }
@@ -56,68 +60,71 @@ public:
   LVRange(const LVRange &that) { *this = that; }
   LVRange(const Range &that): range_(that) { }
   LVRange(): range_(Range::Universe()) {}
+  virtual ~LVRange() {} 
 
+  static Range Top(){ return Range::Empty();}
   static Range Bottom(){ return Range::Universe();}
+  static Range Universe(){ return Range::Universe();}
 
-  virtual LRange *makeRangeValue(INT64 i) const;
+  virtual LVRange *makeRangeValue(INT64 i) const;
 
-  virtual LRange *makeRangeMinMax(ZInt min, ZInt max) const;
+  virtual LVRange *makeRangeMinMax(ZInt min, ZInt max) const;
 
-  virtual LRange *makeRangeWidth (INT Sign, INT bitwidth) const;
+  virtual LVRange *makeRangeWidth (INT Sign, INT bitwidth) const;
 
-  virtual LRange *makeRangeLowbit (INT Sign, INT lowbit, INT bitwidth) const;
+  virtual LVRange *makeRangeLowbit (INT Sign, INT lowbit, INT bitwidth) const;
 
-  virtual LRange *makeUniverse () const;
+  virtual LVRange *makeUniverse () const;
 
-  virtual LRange *makeTop () const;
+  virtual LVRange *makeTop () const;
 
-  virtual LRange *makeBottom () const;
+  virtual LVRange *makeBottom () const;
 
-  virtual LRange *makeMeet (const LRange *a, const LRange *b) const;
+  virtual LVRange *makeMeet (const LRange *a, const LRange *b) const;
 
-  virtual LRange *makeJoin (const LRange *a, const LRange *b) const;
+  virtual LVRange *makeJoin (const LRange *a, const LRange *b) const;
 
   // queries
-  virtual LRange *makeSignExtend (INT width) const;
-  virtual LRange *makeZeroExtend (INT width) const;
-  virtual LRange *makeLeftShift (INT count) const;
-  virtual LRange *makeLeftShiftRange (const LRange *count) const;
-  virtual LRange *makeSignedRightShift (INT count) const;
-  virtual LRange *makeSignedRightShiftRange (const LRange *count) const;
-  virtual LRange *makeModulo (INT width) const;
-  virtual LRange *makeAdd (const LRange *b) const;
-  virtual LRange *makeAddModulo (const LRange *b, INT width) const;
-  virtual LRange *makeSub (const LRange *b) const;
-  virtual LRange *makeSubModulo (const LRange *b, INT width) const;
-  virtual LRange *makeMul (const LRange *b) const;
-  virtual LRange *makeMulModulo (const LRange *b, INT width) const;
-  virtual LRange *makeMin (const LRange *b) const;
-  virtual LRange *makeMax (const LRange *b) const;
-  virtual LRange *makeBitAnd (const LRange *b) const;
-  virtual LRange *makeBitOr (const LRange *b) const;
-  virtual LRange *makeBitXor (const LRange *b) const;
-  virtual LRange *makeBitNot () const;
-  virtual LRange *makeEq (const LRange *b) const;
-  virtual LRange *makeNe (const LRange *b) const;
-  virtual LRange *makeGe (const LRange *b) const;
-  virtual LRange *makeGt (const LRange *b) const;
-  virtual LRange *makeLe (const LRange *b) const;
-  virtual LRange *makeLt (const LRange *b) const;
-  virtual LRange *makeAndl (const LRange *b) const;
-  virtual LRange *makeNandl (const LRange *b) const;
-  virtual LRange *makeOrl (const LRange *b) const;
-  virtual LRange *makeNorl (const LRange *b) const;
-  virtual LRange *makeNotl () const;
-  virtual LRange *makeHighestSetBit () const;
-/*   virtual LRange *makeByteSwap () const { */
-/*     LRange *r = TYPE_MEM_POOL_ALLOC (LRange, &mempool_); r = LVRange(ByteSwap (this->range_)); */
+  virtual LVRange *makeSignExtend (INT width) const;
+  virtual LVRange *makeZeroExtend (INT width) const;
+  virtual LVRange *makeLeftShift (INT count) const;
+  virtual LVRange *makeLeftShiftRange (const LRange *count) const;
+  virtual LVRange *makeSignedRightShift (INT count) const;
+  virtual LVRange *makeSignedRightShiftRange (const LRange *count) const;
+  virtual LVRange *makeModulo (INT width) const;
+  virtual LVRange *makeAdd (const LRange *b) const;
+  virtual LVRange *makeAddModulo (const LRange *b, INT width) const;
+  virtual LVRange *makeSub (const LRange *b) const;
+  virtual LVRange *makeSubModulo (const LRange *b, INT width) const;
+  virtual LVRange *makeMul (const LRange *b) const;
+  virtual LVRange *makeMulModulo (const LRange *b, INT width) const;
+  virtual LVRange *makeMin (const LRange *b) const;
+  virtual LVRange *makeMax (const LRange *b) const;
+  virtual LVRange *makeBitAnd (const LRange *b) const;
+  virtual LVRange *makeBitOr (const LRange *b) const;
+  virtual LVRange *makeBitXor (const LRange *b) const;
+  virtual LVRange *makeBitNot () const;
+  virtual LVRange *makeEq (const LRange *b) const;
+  virtual LVRange *makeNe (const LRange *b) const;
+  virtual LVRange *makeGe (const LRange *b) const;
+  virtual LVRange *makeGt (const LRange *b) const;
+  virtual LVRange *makeLe (const LRange *b) const;
+  virtual LVRange *makeLt (const LRange *b) const;
+  virtual LVRange *makeAndl (const LRange *b) const;
+  virtual LVRange *makeNandl (const LRange *b) const;
+  virtual LVRange *makeOrl (const LRange *b) const;
+  virtual LVRange *makeNorl (const LRange *b) const;
+  virtual LVRange *makeNotl () const;
+  virtual LVRange *makeHighestSetBit () const;
+/*   virtual LVRange *makeByteSwap () const { */
+/*     LVRange *r = TYPE_MEM_POOL_ALLOC (LRange, &mempool_); r = LVRange(ByteSwap (this->range_)); */
 /*     return r; */
 /*   } */
-  virtual LRange *makeExtract (INT start, INT width) const;
-  virtual LRange *makeInsert (INT start, INT width,
+  virtual LVRange *makeExtract (INT start, INT width) const;
+  virtual LVRange *makeInsert (INT start, INT width,
 			      const LRange *b) const;
-  virtual LRange *makeMakeUnsigned (INT width) const;
-  virtual LRange *makeMakeSigned (INT width) const;
+  virtual LVRange *makeMakeUnsigned (INT width) const;
+  virtual LVRange *makeMakeSigned (INT width) const;
   virtual BOOL hasValue(void) const;
   virtual INT64 getValue(void) const;
 
@@ -133,16 +140,16 @@ public:
   virtual void Print (FILE *f) const;
 
   // cloning
-  virtual LRange *clone(void) const;
+  virtual LVRange *clone(void) const;
 
   // instance
-  BE_EXPORTED  static LRange *getInstance(void);
-
-  static void* operator new (size_t size); 
-  static void operator delete (void *p);
+  BE_EXPORTED  static LVRange *getInstance(void);
 
   // mempool initialization
   BE_EXPORTED static void MEMPOOL_Initialize(MEM_POOL mempool);
+
+  // mempool visibility
+  virtual MEM_POOL *Mem_pool() { return &mempool_; }
 };
 
 #endif /*LVRANGE_H_INCLUDED */

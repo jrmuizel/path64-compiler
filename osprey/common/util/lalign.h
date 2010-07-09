@@ -1,9 +1,10 @@
 /*
   Copyright (C) 2006, STMicroelectronics, All Rights Reserved.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
 
   This program is distributed in the hope that it would be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -42,7 +43,7 @@
 class LAlign {
  private:
   enum RangeType { normal, top };
-  mUINT8 rtype;
+  mUINT8 rtype_;
   ZInt base_;
   ZInt bias_;
  public:
@@ -57,7 +58,7 @@ class LAlign {
   BOOL ContainsOrEqual (const LAlign &a) const {
     return StrictlyContains(a) || Equal(a); }
   // queries
-  BOOL isTop () const { return rtype == top; }
+  BOOL isTop () const { return rtype_ == top; }
   BOOL isBottom () const { return base_ == 1; }
   BOOL hasValue () const;  // TRUE if a single finite literal value.
   INT64 getValue () const; // The value if isLiteral.
@@ -81,10 +82,10 @@ class LAlign {
 
   void Print (FILE *f) const;
   // constructors
-  LAlign (const LAlign &a);
-  LAlign (const ZInt base, const ZInt bias);
-  LAlign (INT64 a);
-  LAlign ();
+  LAlign () : rtype_(normal), base_(0), bias_(0) {}
+  LAlign (const LAlign &a) : rtype_(a.rtype_), base_(a.base_), bias_(a.bias_) {}
+  LAlign (const ZInt base, const ZInt bias) : rtype_(normal), base_(base), bias_(bias) {}
+  LAlign (INT64 value) : rtype_(normal), base_(0), bias_(value) {}
 };
 
 

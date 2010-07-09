@@ -1,9 +1,10 @@
 /*
   Copyright (C) 2006, STMicroelectronics, All Rights Reserved.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
 
   This program is distributed in the hope that it would be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -41,8 +42,6 @@
 
 class Range {
  private:
-  enum RangeType { normal, empty };
-  mUINT8 rtype;
   ZInt min, max;
  public:
   enum RangeSign { Signed, Unsigned, UnknownSign, NoSign };
@@ -93,7 +92,7 @@ class Range {
   BE_EXPORTED BOOL Equal (const Range &a) const;      // TRUE if this == v.
   BOOL ContainsOrEqual (const Range &a) const {
     return StrictlyContains(a) || Equal(a); }
-  BOOL isEmpty () const { return rtype == empty; }
+  BOOL isEmpty () const { return min.isPlusInf () && max.isMinusInf (); }
   BOOL isUniverse () const { return min.isMinusInf () && max.isPlusInf (); }
   BE_EXPORTED BOOL isNonZero () const;  // TRUE if definitely non-zero.
   BE_EXPORTED BOOL isZero () const;     // TRUE if definitely zero.

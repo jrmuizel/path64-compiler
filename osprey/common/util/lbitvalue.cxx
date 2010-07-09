@@ -36,6 +36,7 @@
 
 #include "defs.h"
 #include "errors.h"
+#include "clz.h"
 #include "lbitvalue.h"
 
 
@@ -44,9 +45,9 @@ const LBitValue
 LBitValue::Top ()
 {
   LBitValue result;
-  result.rtype = top;
-  // Initialize for valgrind.
-  result.zeromask_= (UINT64)0;
+  // Represent Top by 'all proved zero' and 'all proved one' that should not happen
+  // We don't use the ctor since it is built to assert when creating such a value
+  result.zeromask_= UINT64_MAX;
   result.onemask_= UINT64_MAX;
   return result;
 }
@@ -54,21 +55,17 @@ LBitValue::Top ()
 const LBitValue
 LBitValue::Bottom ()
 {
-  LBitValue result;
-  result.zeromask_ = (UINT64)0;
-  result.onemask_ = (UINT64)0;
-  result.rtype = normal;
-  return result;
+  return LBitValue(0ULL, 0ULL);
 }
 
 const LBitValue Meet (const LBitValue &a, const LBitValue &b)
 {
-  UINT64 zeromask, onemask;
   if (b.isTop ())
     return a;
   else if (a.isTop ())
     return b;
   else {
+    UINT64 zeromask, onemask;
     zeromask = a.zeromask_ & b.zeromask_;
     onemask = a.onemask_ & b.onemask_;
     return LBitValue (zeromask, onemask);
@@ -77,12 +74,12 @@ const LBitValue Meet (const LBitValue &a, const LBitValue &b)
 
 const LBitValue Join (const LBitValue &a, const LBitValue &b)
 {
-  UINT64 zeromask, onemask;
   if (a.isTop ())
     return a;
   else if (b.isTop ())
     return b;
   else {
+    UINT64 zeromask, onemask;
     zeromask = a.zeromask_ | b.zeromask_;
     onemask = a.onemask_ | b.onemask_;
     return LBitValue (zeromask, onemask);
@@ -93,12 +90,12 @@ const LBitValue Join (const LBitValue &a, const LBitValue &b)
 BOOL
 LBitValue::StrictlyContains (const LBitValue &a) const
 {
-  UINT64 valmask, avalmask;
   if (isTop ())
     return FALSE;
   else if (a.isTop ())
     return TRUE;
   else {
+    UINT64 valmask, avalmask;
     avalmask = a.zeromask_ ^ a.onemask_;
     valmask = zeromask_ ^ onemask_;
     return ((valmask & avalmask) == valmask
@@ -109,8 +106,9 @@ LBitValue::StrictlyContains (const LBitValue &a) const
 BOOL
 LBitValue::Equal (const LBitValue &a) const
 {
-  if (isTop () && a.isTop ())
-    return TRUE;
+  // If both are Top, they are equal
+  // Else if both masks are equal, they are equal
+  // Meaning we need to test masks only
   return (zeromask_ == a.zeromask_ && onemask_ == a.onemask_);
 }
 
@@ -120,78 +118,6 @@ LBitValue::Equal (const LBitValue &a) const
  *
  * ====================================================================
  */
-
-/*
--------------------------------------------------------------------------------
-Returns the number of leading 0 bits before the most-significant 1 bit of
-`a'.  If `a' is zero, 32 is returned.
--------------------------------------------------------------------------------
-*/
-static int countLeadingZeros32( UINT a )
-{
-    static const int countLeadingZerosHigh[] = {
-        8, 7, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4,
-        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    };
-    int shiftCount;
-
-    shiftCount = 0;
-    if ( a < 0x10000 ) {
-        shiftCount += 16;
-        a <<= 16;
-    }
-    if ( a < 0x1000000 ) {
-        shiftCount += 8;
-        a <<= 8;
-    }
-    shiftCount += countLeadingZerosHigh[ a>>24 ];
-    return shiftCount;
-}
-
-
-
- 
-
-/*
--------------------------------------------------------------------------------
-Returns the number of leading 0 bits before the most-significant 1 bit of
-`a'.  If `a' is zero, 64 is returned.
--------------------------------------------------------------------------------
-*/
-static int countLeadingZeros64( UINT64 a )
-{
-    int shiftCount;
-
-    shiftCount = 0;
-    if ( a < ( (UINT64) 1 )<<32 ) {
-        shiftCount += 32;
-    }
-    else {
-        a >>= 32;
-    }
-    shiftCount += countLeadingZeros32( a );
-    return shiftCount;
-}
-
-static int countTrailingZeros64( UINT64 a )
-{
-  return 64 - countLeadingZeros64(~a & (a - 1));
-}
-
 static int byteperm(int mask, int val){
   // perform a 32-bit byte permutation, 
   // defined by the 8-bit value val
@@ -473,32 +399,9 @@ LBitValue::Print (FILE *f) const
 }
 
 // Constructors
-
-LBitValue::LBitValue (const LBitValue &a)
-{
-  rtype = a.rtype;
-  zeromask_ = a.zeromask_;
-  onemask_ = a.onemask_;
-}
-
-LBitValue::LBitValue (INT64 a)
-{
-  rtype = normal;
-  onemask_ = a;
-  zeromask_ = ~a;
-}
-
-LBitValue::LBitValue (UINT64 zeromask, UINT64 onemask)
-{
-  rtype = normal;
-  zeromask_= zeromask;
-  onemask_= onemask;
-}
-
 LBitValue::LBitValue (RangeSign sign, INT bitwidth)
 {
   FmtAssert (bitwidth >= 0, ("Attempt to construct a range with negative bitwidth"));
-  rtype = normal;
   if (bitwidth >= 64) {
     zeromask_= (UINT64)0;
     onemask_= (UINT64)0;
@@ -518,9 +421,3 @@ LBitValue::LBitValue (RangeSign sign, INT bitwidth)
   }
 }
 
-LBitValue::LBitValue ()
-{
-  rtype = normal;
-  zeromask_= (UINT64)0;
-  onemask_= (UINT64)0;
-}

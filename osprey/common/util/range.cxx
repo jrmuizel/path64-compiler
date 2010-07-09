@@ -1,9 +1,10 @@
 /*
   Copyright (C) 2006, STMicroelectronics, All Rights Reserved.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
 
   This program is distributed in the hope that it would be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -45,9 +46,8 @@ const Range
 Range::Empty ()
 {
   Range result;
-  result.rtype = empty;
-  // Initialize for valgrind.
-  result.min = 1; result.max = 0;
+  result.min = ZInt::PlusInf ();
+  result.max = ZInt::MinusInf ();
   return result;
 }
 
@@ -57,7 +57,6 @@ Range::Universe ()
   Range result;
   result.min = ZInt::MinusInf ();
   result.max = ZInt::PlusInf ();
-  result.rtype = normal;
   return result;
 }
 
@@ -644,16 +643,13 @@ Range::Range (RangeSign Sign, INT lowbit, INT width)
   FmtAssert (width >= 0, ("Attempt to create an invalid range of <0 width %d", width));
   if (Sign == NoSign) Sign = Unsigned;
   if (width == 0){
-    rtype = normal;
     min = 0;
     max = 0;
   }    
   else if ((width + lowbit) >= 64) {
-    rtype = normal;
     min = ZInt::MinusInf ();
     max = ZInt::PlusInf ();
   } else {
-    rtype = normal;
     INT64 wanted_mask  = (lowbit >= 64) ? 0 : (INT64)-1 << lowbit;
     ZInt mostneg_signed = ZInt(-1) << (lowbit + width - 1);
     ZInt mostpos_signed = ZInt((((INT64)1 << (lowbit + width - 1)) - 1)
@@ -670,35 +666,30 @@ Range::Range (RangeSign Sign, INT width)
 {
   if (Sign == NoSign) Sign = Unsigned;
   Range r(Sign, 0, width);
-  rtype = r.rtype;
   min = r.min;
   max = r.max;
 }
 
 Range::Range (INT64 a)
 {
-  rtype = normal;
   min = ZInt (a);
   max = ZInt (a);
 }
 
 Range::Range (ZInt minval, ZInt maxval) : min (minval), max (maxval)
 {
-  rtype = normal;
   FmtAssert (minval <= maxval, ("Range min and max error : minval %lld > maxval %lld", 
 				minval.to_INT64(), maxval.to_INT64()));
 }
 
 Range::Range (const Range &a)
 {
-  rtype = a.rtype;
   min = a.min;
   max = a.max;
 }
 
 Range::Range ()
 {
-  rtype = normal;
   min = ZInt::MinusInf ();
   max = ZInt::PlusInf ();
 }

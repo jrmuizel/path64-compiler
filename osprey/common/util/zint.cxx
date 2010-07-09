@@ -1,9 +1,10 @@
 /*
   Copyright (C) 2006, STMicroelectronics, All Rights Reserved.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
 
   This program is distributed in the hope that it would be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -293,7 +294,7 @@ ZInt::ZInt(const ZInt& v)
   value = v.value;
 }
 
-const ZInt operator+(const ZInt& a, const ZInt& b)
+ZInt operator+(const ZInt& a, const ZInt& b)
 {
   return ZInt (add_zint (a.value, b.value));
 }
@@ -304,7 +305,7 @@ ZInt& operator+=(ZInt &a, const ZInt &b)
   return a;
 }
 
-const ZInt operator-(const ZInt& a, const ZInt& b)
+ZInt operator-(const ZInt& a, const ZInt& b)
 {
   return ZInt (sub_zint (a.value, b.value));
 }
@@ -315,124 +316,124 @@ ZInt& operator-=(ZInt &a, const ZInt &b)
   return a;
 }
 
-const ZInt operator-(const ZInt& a)
+ZInt operator-(const ZInt& a)
 {
   return ZInt (neg_zint (a.value));
 }
 
-const ZInt operator*(const ZInt& a, const ZInt& b)
+ZInt operator*(const ZInt& a, const ZInt& b)
 {
   return ZInt (mul_zint (a.value, b.value));
 }
 
-const ZInt operator/(const ZInt& a, const ZInt& b)
+ZInt operator/(const ZInt& a, const ZInt& b)
 {
   return ZInt (div_zint (a.value, b.value));
 }
 
-const ZInt operator%(const ZInt& a, const ZInt& b)
+ZInt operator%(const ZInt& a, const ZInt& b)
 {
   return ZInt (mod_zint (a.value, b.value));
 }
 
-const ZInt operator|(const ZInt& a, const ZInt& b)
+ZInt operator|(const ZInt& a, const ZInt& b)
 {
   return ZInt (bitor_zint (a.value, b.value));
 }
 
-const ZInt operator&(const ZInt& a, const ZInt& b)
+ZInt operator&(const ZInt& a, const ZInt& b)
 {
   return ZInt (bitand_zint (a.value, b.value));
 }
 
-const ZInt operator~(const ZInt& a)
+ZInt operator~(const ZInt& a)
 {
   return ZInt (bitnot_zint (a.value));
 }
 
-const ZInt operator<<(const ZInt &a, const ZInt &b)
+ZInt operator<<(const ZInt &a, const ZInt &b)
 {
   return ZInt (shl_zint (a.value, b.value));
 }
 
-const ZInt operator>>(const ZInt& a, const ZInt &b)
+ZInt operator>>(const ZInt& a, const ZInt &b)
 {
   return ZInt (shr_zint (a.value, b.value));
 }
 
-const BOOL operator>(const ZInt &a, const ZInt &b)
+BOOL operator>(const ZInt &a, const ZInt &b)
 {
   return a.value > b.value;
 }
 
-const BOOL operator>=(const ZInt &a, const ZInt &b)
+BOOL operator>=(const ZInt &a, const ZInt &b)
 {
   return a.value >= b.value;
 }
 
-const BOOL operator<(const ZInt &a, const ZInt &b)
+BOOL operator<(const ZInt &a, const ZInt &b)
 {
   return a.value < b.value;
 }
 
-const BOOL operator<=(const ZInt &a, const ZInt &b)
+BOOL operator<=(const ZInt &a, const ZInt &b)
 {
   return a.value <= b.value;
 }
 
-const BOOL operator==(const ZInt &a, const ZInt &b)
+BOOL operator==(const ZInt &a, const ZInt &b)
 {
   return a.value == b.value;
 }
 
-const BOOL operator!=(const ZInt &a, const ZInt &b)
+BOOL operator!=(const ZInt &a, const ZInt &b)
 {
   return a.value != b.value;
 }
 
-const ZInt abs(const ZInt& a)
+ZInt abs(const ZInt& a)
 {
   return ZInt (abs_zint (a.value));
 }
 
-const ZInt Min(const ZInt& a, const ZInt& b)
+ZInt Min(const ZInt& a, const ZInt& b)
 {
   return ZInt (min_zint (a.value, b.value));
 }
 
-const ZInt Max(const ZInt& a, const ZInt& b)
+ZInt Max(const ZInt& a, const ZInt& b)
 {
   return ZInt (max_zint (a.value, b.value));
 }
 
 
-INT64  const
+INT64
 ZInt::to_INT64 () const
 {
   FmtAssert (isFinite(), ("Attempt to convert non-finite ZInt to INT64"));
   return value;
 }
 
-INT  const
+INT
 ZInt::to_INT () const
 {
   FmtAssert (isFinite(), ("Attempt to convert non-finite ZInt to INT64"));
   return (INT)value;
 }
 
-const ZInt
+ZInt
 ZInt::PlusInf ()
 {
   return PlusInfValue;
 }
 
-const ZInt
+ZInt
 ZInt::MinusInf ()
 {
   return MinusInfValue;
 }
 
-const INT
+INT
 ZInt::bits () const
 {
   if (! isFinite ())
@@ -453,7 +454,7 @@ ZInt::bits () const
   return msb;
 }
 
-const INT
+INT
 ZInt::highest_set_bit () const
 {
   if (value < 0) {

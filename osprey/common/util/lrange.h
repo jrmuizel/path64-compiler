@@ -38,7 +38,9 @@
 #ifndef LRANGE_H_INCLUDED
 #define LRANGE_H_INCLUDED
 
+#include <typeinfo>
 #include "W_limits.h"
+#include "mempool.h"
 #include "zint.h"
 
 class LRange {
@@ -53,6 +55,8 @@ public:
     return makeBottom ();}
   virtual LRange *makeJoin (const LRange *a, const LRange *b) const {
     return makeBottom ();}
+
+  virtual ~LRange() {}
 
   // queries
   virtual LRange *makeSignExtend (INT width) const {
@@ -267,23 +271,11 @@ public:
   // cloning method
   virtual LRange *clone () const { return makeBottom (); }
 
+  // mempool visibility
+  virtual MEM_POOL *Mem_pool() { return NULL; }
 };
 
 typedef LRange *LRange_p;
 typedef LRange *LRange_pc;
-
-/*
- * Support macro for dynamic cast of a LRange * to a pointer to a base class.
- * To be used in place of:
- * Base *t = (Base *)lrange_ptr;
- * with:
- * Base *t = LRANGE_CAST(Base *, lrange_ptr);
- */
-#if defined(__GNUC__)
-#define LRANGE_CAST(t,e) ({ t tmp = dynamic_cast<t>(e); DevAssert(tmp != NULL,("Invalid cast to " #t)); tmp; })
-#else
-#define LRANGE_CAST(t,e) ((t)(e))
-#endif
-
 
 #endif /*RANGE_H_INCLUDED */
