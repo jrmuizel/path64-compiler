@@ -86,7 +86,7 @@
 #include "data_layout.h"	// for FP/SP
 
 #ifdef TARG_ST
-#include "config_TARG.h"	// for Enable_64_Bits_Ops
+#include "config_targ_opt.h"	// for Enable_64_Bits_Ops
 #include "cg_flags.h"  // for GRA_LIVE_Phase_Invoked
 #include "gra_live.h"
 //TB; for List_Software_Names
@@ -528,7 +528,7 @@ Init_Dedicated_TNs (void)
   tnum++;
 #endif
 
-
+#ifndef TARG_ST
     for (reg = REGISTER_MIN; 
 	 reg <= REGISTER_CLASS_last_register(ISA_REGISTER_CLASS_float);
 	 reg++
@@ -558,6 +558,7 @@ Init_Dedicated_TNs (void)
   	Set_TN_size(i4_ded_tns[reg], 4);
     }
 #endif // KEY
+#endif // !TARG_ST
 #ifdef TARG_ST200
   // [CG]: Have to initialize paired dedicated TNs used in prolog/epilog
   // generation. This code is target dependent but there is currently
@@ -590,8 +591,9 @@ Init_Dedicated_TNs (void)
 TN *
 Build_Dedicated_TN (ISA_REGISTER_CLASS rclass, REGISTER reg, INT size)
 {
-#ifdef KEY
-  // check for F4 tns and 16-byte vector tns
+#ifndef TARG_ST
+#if defined( KEY)
+    // check for F4 tns and 16-byte vector tns
   if (rclass == ISA_REGISTER_CLASS_float
 	&& size != DEFAULT_RCLASS_SIZE(rclass) )
   {
@@ -608,7 +610,7 @@ Build_Dedicated_TN (ISA_REGISTER_CLASS rclass, REGISTER reg, INT size)
 	return f4_ded_tns[reg];
   }
 #endif
-
+#endif //!TARG_ST
 #ifdef KEY
   // check for I4 tns
   if (rclass == ISA_REGISTER_CLASS_integer
@@ -726,7 +728,7 @@ Get_Normalized_TN_Value(INT64 ivalue, INT size, INT is_signed)
 
 #endif
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 TN *
 Gen_Typed_Register_TN (TYPE_ID mtype, INT size)
 {

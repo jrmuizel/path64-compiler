@@ -124,6 +124,7 @@ static const char source_file[] = __FILE__;
 #if !defined(__FreeBSD__)
 #include <alloca.h>
 #endif
+#include <stdarg.h>
 
 #include "defs.h"
 #include "errors.h"
@@ -151,6 +152,8 @@ static const char source_file[] = __FILE__;
 #include "cflow.h"
 #include "cg_spill.h"
 #include "targ_proc_properties.h"
+#include "top_properties.h"
+#include "data_layout.h"
 
 #include "ebo.h"
 #include "ebo_info.h"
@@ -171,6 +174,10 @@ static const char source_file[] = __FILE__;
 static void Init_Remove_Dead_LRA_Stores(BS **bs, MEM_POOL *pool);
 static void Mark_LRA_Spill_Reference(OP *op, BS **bs, MEM_POOL *pool);
 static BOOL Delete_Dead_LRA_Spill(OP *op, BS **bs);
+#endif
+#include "config_opt.h" // [HK] for Finite_Math
+#ifdef TARG_ST
+#include "tn.h"
 #endif
 
 #ifdef KEY
@@ -208,10 +215,11 @@ BOOL EBO_in_before_unrolling = FALSE;
 BOOL EBO_in_after_unrolling = FALSE;
 LOOP_DESCR *EBO_loop = NULL;
 INT EBO_loop_size = 0;
-BOOL EBO_in_peep = FALSE;
 BOOL EBO_flow_safe = FALSE;
 BOOL EBO_doms_calculated = FALSE;
-
+BOOL EBO_in_peep = FALSE;
+#define EBO_in_main (!EBO_in_pre && !EBO_in_peep && \
+		     !EBO_in_before_unrolling && !EBO_in_after_unrolling)
 /* Are OMEGA entries present? */
 BOOL EBO_in_loop = FALSE;
 
@@ -533,7 +541,7 @@ OP_opnds_ptr(OP *op)
 static BOOL in_delay_slot = FALSE;
 static BOOL rerun_cflow = FALSE;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 /* ===================================================================== */
 /* Track register pressure within a basic block:                         */
 /* ===================================================================== */
@@ -785,10 +793,15 @@ BOOL EBO_Fix_Same_Res_Op (OP *op,
   if (EBO_in_loop) return FALSE;;
 
   if (OP_unalign_ld (op)) {
+#ifndef TARG_ST
     UINT8 idx = OP_find_opnd_use (op, OU_same_res);
+#endif
     TN   *res = OP_result (op, 0);
+#ifdef TARG_ST
+    TN *tnl = OP_opnd(op, OP_opnds(op)-1);
+#else
     TN   *tnl = OP_opnd (op, idx);
-
+#endif
     if (!TN_is_zero_reg(tnl) && !tn_registers_identical(res, tnl)) {
      /* Allocate a new TN for the result. */
       OPS ops = OPS_EMPTY;
@@ -1027,8 +1040,10 @@ inline BOOL op_is_needed_globally(OP *op)
   if (OP_glue(op) && !has_assigned_reg(OP_result(op,0)))
     return TRUE;
   if (CGTARG_Is_OP_Intrinsic(op))
+  {
    /* Intrinsic ops may have side effects we don't understand */
     return TRUE;
+  }
   if (OP_call(op)) 
    /* Calls may have side effects we don't understand */
     return TRUE;
@@ -1221,7 +1236,7 @@ void EBO_Init(void)
   EBO_opinfo_entries_reused = 0;
   EBO_trace_pfx = "<ebo> ";
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Find the number of registers available in each register class.
   ISA_REGISTER_CLASS cl;
   FOR_ALL_ISA_REGISTER_CLASS(cl) {
@@ -1261,7 +1276,7 @@ static void EBO_Start()
   }
 #endif
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   ISA_REGISTER_CLASS cl;
   FOR_ALL_ISA_REGISTER_CLASS(cl) {
     Regs_Delta_Map[cl] = OP_MAP32_Create();
@@ -1278,7 +1293,7 @@ static void EBO_Finish(void)
  * -----------------------------------------------------------------------
  */
 {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   ISA_REGISTER_CLASS cl;
   FOR_ALL_ISA_REGISTER_CLASS(cl) {
     OP_MAP_Delete(Regs_Delta_Map[cl]);
@@ -3398,10 +3413,10 @@ EBO_Constant_Operand0 (
   tn1 = opnd_tn[l0_opnd2_idx];
 
   if (EBO_Trace_Execution) {
-    fprintf(TFile, "%s operands OU_opnd1: const: %d, has_val: %d, , val: %lld\n",
+    fprintf(TFile, "%s operands OU_opnd1: const: %d, has_val: %d, , val: %"SCNd64"\n",
 	    EBO_trace_pfx, TN_Is_Constant(tn0), TN_Has_Value(tn0), TN_Has_Value(tn0) ? TN_Value(tn0): 0);
     if (tn1) {
-      fprintf(TFile, "%s operands OU_opnd2: const: %d, has_val: %d, , val: %lld\n",
+      fprintf(TFile, "%s operands OU_opnd2: const: %d, has_val: %d, , val: %"SCNd64"\n",
 	      EBO_trace_pfx, TN_Is_Constant(tn1), TN_Has_Value(tn1), TN_Has_Value(tn1) ? TN_Value(tn1): 0);
     }
   }
@@ -3627,10 +3642,10 @@ EBO_Constant_Operand1 (
   tn1 = opnd_tn[l0_opnd2_idx];
 
   if (EBO_Trace_Execution) {
-    fprintf(TFile, "%s operands OU_opnd1: const: %d, has_val: %d, , val: %lld\n",
+    fprintf(TFile, "%s operands OU_opnd1: const: %d, has_val: %d, , val: %"SCNd64"\n",
 	    EBO_trace_pfx, TN_Is_Constant(tn0), TN_Has_Value(tn0), TN_Has_Value(tn0) ? TN_Value(tn0): 0);
     if (tn1) {
-      fprintf(TFile, "%s operands OU_opnd2: const: %d, has_val: %d, , val: %lld\n",
+      fprintf(TFile, "%s operands OU_opnd2: const: %d, has_val: %d, , val: %"SCNd64"\n",
 	      EBO_trace_pfx, TN_Is_Constant(tn1), TN_Has_Value(tn1), TN_Has_Value(tn1) ? TN_Value(tn1): 0);
     }
   }
@@ -5127,10 +5142,13 @@ find_duplicate_mem_op (BB *bb,
                        OP *op,
                        TN **opnd_tn,
                        EBO_TN_INFO **opnd_tninfo,
-                       EBO_TN_INFO **actual_tninfo,
-		       int op_num,
+                       EBO_TN_INFO **actual_tninfo
+#ifndef TARG_ST
+                       , int op_num,
 		       int *regs_used,
-		       int *last_fat_point)
+		       int *last_fat_point
+#endif
+                       )
 /* -----------------------------------------------------------------------
  * Requires: 
  * Returns TRUE if the operands of each OP are identical.
@@ -5144,7 +5162,7 @@ find_duplicate_mem_op (BB *bb,
   EBO_OP_INFO *adjacent_location = NULL;
   INT64 adjacent_offset_pred;
   INT64 adjacent_offset_succ;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // TRUE if OP is inside the live range of the replacement TN.
   BOOL inside_lr = TRUE;
   // If extending the live range of the replacement TN, this is the replacement
@@ -5178,7 +5196,7 @@ find_duplicate_mem_op (BB *bb,
   if (OP_automod(op)) return FALSE;
 #endif
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Take OP_prefetch into account.
   if( OP_prefetch(op) ){
     return Combine_L1_L2_Prefetches( op, opnd_tn, opnd_tninfo );
@@ -5346,7 +5364,7 @@ find_duplicate_mem_op (BB *bb,
 			    (CGTARG_Is_Thread_Local_Memory_OP(op) ==
 			     CGTARG_Is_Thread_Local_Memory_OP(pred_op)) &&
 #endif
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 			    (pred_index_tn == succ_index_tn)         &&
 			    (pred_index_tninfo == succ_index_tninfo) &&
 			    (pred_scale_tn == succ_scale_tn)         &&
@@ -5738,8 +5756,8 @@ find_duplicate_mem_op (BB *bb,
 	  if (!inside_lr)
 	    extend_lr_tninfo = opinfo->actual_opnd[pred_stored_idx];
 #endif
-#endif
         }
+#endif
       } else {
 /* The previous result needs to be available at this point. */
 #ifdef TARG_ST
@@ -5812,7 +5830,15 @@ find_duplicate_mem_op (BB *bb,
         fprintf(TFile,"%sMatch after searching %d items on hash chain %d\n",
                       EBO_trace_pfx,hash_search_length,hash_value);
       }
-
+#ifdef TARG_ST
+      if (intervening_opinfo != NULL) {
+        op_replaced = EBO_delete_reload_across_dependency (op, opnd_tninfo, opinfo, intervening_opinfo);
+      } else if (op_is_subset) {
+        op_replaced = EBO_delete_subset_mem_op (op, opnd_tninfo, opinfo, offset_pred, offset_succ);
+      } else {
+        op_replaced = EBO_delete_duplicate_op (op, opnd_tninfo, opinfo);
+      }
+#else
       if (intervening_opinfo != NULL) {
         op_replaced = delete_reload_across_dependency (op, opnd_tninfo, opinfo, intervening_opinfo);
       } else if (op_is_subset) {
@@ -5824,9 +5850,9 @@ find_duplicate_mem_op (BB *bb,
 #endif
 					  );
       }
-
+#endif
       if (op_replaced) {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	if (extend_lr_tninfo != NULL)
 	  Extend_Live_Range(regs_used, last_fat_point, op_num, extend_lr_tninfo,
 			    reginfo, bb);
@@ -5855,7 +5881,12 @@ do_next:
   }
 
   if (adjacent_location != NULL) {
-    BOOL op_replaced = combine_adjacent_loads (op, 
+#ifdef TARG_ST
+     BOOL op_replaced = EBO_combine_adjacent_loads 
+#else
+    BOOL op_replaced = combine_adjacent_loads 
+#endif
+    (op, 
 #ifdef TARG_ST
 						   opnd_tn,
 #endif
@@ -6130,8 +6161,12 @@ find_duplicate_op (BB *bb,
         fprintf(TFile,"%sMatch after searching %d items on expression hash chain %d\n",
                       EBO_trace_pfx,hash_search_length,hash_value);
       }
-
-      if (delete_duplicate_op (op, opnd_tninfo, opinfo)) {
+#ifdef TARG_ST
+      if (EBO_delete_duplicate_op (op, opnd_tninfo, opinfo)) 
+#else
+      if (delete_duplicate_op (op, opnd_tninfo, opinfo)) 
+#endif
+      {
         return TRUE;
       } else {
        /* If we matched once and failed to eliminate it,
@@ -6433,7 +6468,7 @@ Find_BB_TNs (BB *bb)
     Print_BB(bb);
   }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   Estimate_Reg_Usage(bb, &MEM_local_pool);
 #endif
 
@@ -6484,7 +6519,7 @@ Find_BB_TNs (BB *bb)
 
   in_delay_slot = FALSE;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   int op_num = 0;
   int *regs_used;
   // For CSE purposes, a fat point is where register demand exceeds the number
@@ -6527,7 +6562,7 @@ Find_BB_TNs (BB *bb)
    /* The assumption is that this can never occur, but make sure it doesn't! */
     FmtAssert(num_opnds <= max_opnds, ("dynamic array allocation was too small!"));
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     // Must sync op_num with the op_num in Estimate_Reg_Usage.
     if (op == op_with_reg_usage_info) {
       op_num++;
@@ -6539,7 +6574,12 @@ Find_BB_TNs (BB *bb)
 #else
     if (CGTARG_Is_OP_Barrier(op) || OP_access_reg_bank(op)) {
 #endif
-      if (Special_Sequence(op, NULL, NULL)) {
+#ifdef TARG_ST
+      if (EBO_Special_Sequence(op, NULL, NULL)) 
+#else
+      if (Special_Sequence(op, NULL, NULL))
+#endif
+      {
        /* We were able to restrict propagation of the specific registers. */
         if (EBO_Trace_Execution) {
           #pragma mips_frequency_hint NEVER
@@ -6618,7 +6658,7 @@ Find_BB_TNs (BB *bb)
 #endif
 
     if ((num_opnds == 0) && (OP_results(op) == 0))
-#ifdef KEY
+#if defined( KEY) && !defined( TARG_ST)
       goto finish;
 #else
       continue;
@@ -6638,23 +6678,52 @@ Find_BB_TNs (BB *bb)
     for (opndnum = 0; opndnum < num_opnds; opndnum++) {
       BOOL replace_result = FALSE;
       mUINT8 operand_omega = 0;
+       TN *new_tn = NULL;
+      EBO_TN_INFO *new_tninfo = NULL;
+      TN *tn_replace = NULL;
+      EBO_TN_INFO *tninfo_replace = NULL;
+      TN *actual_tn = NULL;
+      EBO_TN_INFO *actual_tninfo = NULL;
+#ifdef TARG_ST
+      TN *tn_copy = NULL;
+      EBO_TN_INFO *tninfo_copy = NULL;
+      // [TTh] On ST side, an operation can have several same_res operands.
+      // It is then required to reset the description of associated result
+      // for each operand.
+      rslt_tn  = NULL;
+      rslt_num = 0;
+#endif
+
 #ifdef KEY
       BOOL dont_replace = FALSE;      
 #endif
 
+      actual_tn = OP_opnd(op, opndnum);
+      actual_tninfo = NULL;
+      
       tn = OP_opnd(op, opndnum);
       tninfo = NULL;
       tn_replace = NULL;
+#ifdef TARG_ST
+          opnd_tn[opndnum] = actual_tn;
+      opnd_tninfo[opndnum] = actual_tninfo;
+      orig_tninfo[opndnum] = actual_tninfo;
+#else
       opnd_tn[opndnum] = tn;
       opnd_tninfo[opndnum] = NULL;
       orig_tninfo[opndnum] = NULL;
+#endif
       operand_omega = check_omegas ? OP_omega(op,opndnum) : 0;
-
+#ifdef TARG_ST
+         if (actual_tn == NULL || TN_is_constant(actual_tn) || TN_is_label(actual_tn)) {
+        continue;
+      }
+#else
       if (tn == NULL || TN_is_constant(tn) || TN_is_label(tn)) {
         continue;
       }
-
-#ifdef KEY
+#endif
+#if defined( KEY) && !defined(TARG_ST)
       // Don't handle asm OPs where a result may have to be the same as a src
       // operand.  The asm can have multiple such results, but the EBO code
       // expects at most one.
@@ -6701,6 +6770,15 @@ Find_BB_TNs (BB *bb)
       }
 #endif
 
+#ifdef TARG_ST
+         if (actual_tn != True_TN) {
+	mUINT8 operand_omega = check_omegas ? OP_omega(op,opndnum) : 0;
+        actual_tninfo = tn_info_use (bb, op, actual_tn, op_predicate_tn, op_predicate_tninfo, operand_omega);
+        tn_replace = actual_tninfo->replacement_tn;
+	tninfo_replace = actual_tninfo->replacement_tninfo;
+	tn_copy = actual_tninfo->copy_tn;
+      }
+#else
       if (tn != True_TN) {
 #ifdef TARG_X8664
 	TN* tmp_tn = CGTARG_Gen_Dedicated_Subclass_TN( op, opndnum, FALSE );
@@ -6855,10 +6933,15 @@ Find_BB_TNs (BB *bb)
 	}
 #endif
       }
-
+#endif
 #ifdef KEY
       if (!dont_replace)
 #endif
+#ifdef TARG_ST
+          opnd_tninfo[opndnum] = actual_tninfo;
+      orig_tninfo[opndnum] = actual_tninfo;
+#endif
+
 #ifdef TARG_ST
       /* Arthur: OP_same_res() return what is needed
        *         This logic assumes that only one result matches 
@@ -6936,7 +7019,7 @@ Find_BB_TNs (BB *bb)
         tn = tninfo->replacement_tn;
         tninfo = tninfo->replacement_tninfo;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	EBO_REG_ENTRY reginfo;
 	BOOL inside_lr = TRUE;
 	// opinfo of OP defining the replacement TN
@@ -7000,11 +7083,11 @@ Find_BB_TNs (BB *bb)
 	    (!(has_assigned_reg(actual_tn) && OP_code(op) == TOP_asm)) &&
 #endif
             (has_assigned_reg(tn_replace) &&
-#ifdef TARG_ST
-              (REGISTER_SET_MemberP(REGISTER_SUBCLASS_members(OP_opnd_reg_subclass(op,opndnum)), TN_register(tn_replace)))
-#else
+//#ifdef TARG_ST
+//              (REGISTER_SET_MemberP(REGISTER_SUBCLASS_members(OP_opnd_reg_subclass(op,opndnum)), TN_register(tn_replace)))
+//#else
              (REGISTER_SET_MemberP(REGISTER_SUBCLASS_members(ISA_OPERAND_VALTYP_Register_Subclass(ISA_OPERAND_INFO_Operand(ISA_OPERAND_Info(OP_code(op)),opndnum))), TN_register(tn_replace))))) &&
-#endif
+//#endif
             (TN_size(old_tn) <= TN_size(tn_replace)) &&
             (TN_is_float(old_tn) == TN_is_float(tn_replace)) &&
             (TN_is_fpu_int(old_tn) == TN_is_fpu_int(tn_replace)) &&
@@ -7016,7 +7099,7 @@ Find_BB_TNs (BB *bb)
              !OP_uniq_res(op) ||
 #endif
              !tn_registers_identical(tn, OP_result(op,0)))
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
             && (TN_is_global_reg(tn_replace) ||
 	    	// OP is inside the live range of the replacement TN?
 		(EBO_REG_ENTRY_ptr(reginfo) = hTN_MAP_Get(regs_map,tn_replace),
@@ -7066,7 +7149,7 @@ Find_BB_TNs (BB *bb)
          /* Update information about the actual expression. */
           orig_tninfo[opndnum] = tninfo;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	  // Extend the live range of the replacement TN if OP is outside of
 	  // this live range.
 	  if (!inside_lr)
@@ -7109,7 +7192,11 @@ Find_BB_TNs (BB *bb)
          /* The instruction will not be executed - it can be deleted!
             However, Branch instructions should go through
             Resolve_Conditional_Branch so that links between blocks can be updated. */
+#ifdef TARG_ST
+           op_replaced = EBO_Fold_Constant_Expression (op, opnd_tn, opnd_tninfo);
+#else
           op_replaced = Fold_Constant_Expression (op, opnd_tn, opnd_tninfo);
+#endif
   #ifdef TARG_ST
 	  // FdF 20090126: This operation is not executed because
 	  // predicate is always FALSE. The definitions are replaced
@@ -7152,6 +7239,18 @@ Find_BB_TNs (BB *bb)
     if (EBO_in_pre && !EBO_in_loop && CG_cmp_load_exec )
       do_load_execute = op_is_cmp_merge_cand;
 #endif
+#ifdef TARG_ST
+    // Arthur: it looks inefficient but really the entire logic
+    //         should be replaced. I need the same_res to replace
+    //         the old OP_same_res(op)
+    BOOL same_res = FALSE;
+    for (INT i = 0; i < OP_results(op); i++) {
+      if (OP_same_res(op,i) >= 0) {
+	same_res = TRUE;
+	break;
+      }
+    }
+#endif
 
     if (OP_memory(op)) {
 #ifdef TARG_ST
@@ -7175,13 +7274,21 @@ Find_BB_TNs (BB *bb)
       if (!op_replaced &&
           !in_delay_slot &&
           OP_store(op)) {
+#ifdef TARG_ST
+         op_replaced = EBO_Special_Sequence ( op, opnd_tn, orig_tninfo);
+#else
         op_replaced = Special_Sequence ( op, opnd_tn, orig_tninfo);
+#endif
       }
       if (!op_replaced &&
           no_barriers_encountered) {
         op_replaced = find_duplicate_mem_op (bb, op, opnd_tn, opnd_tninfo,
-					     orig_tninfo, op_num, regs_used,
-					     last_fat_point);
+					     orig_tninfo
+#ifndef TARG_ST
+                                             , op_num, regs_used,
+					     last_fat_point
+#endif
+                                             );
       }
 
 #ifdef TARG_MIPS //bug 14905
@@ -7222,7 +7329,11 @@ Find_BB_TNs (BB *bb)
         op_replaced = find_previous_constant(op, opnd_tninfo);
       }
       if (!op_replaced) {
+#ifdef TARG_ST
+         op_replaced = EBO_Special_Sequence ( op, opnd_tn, orig_tninfo);
+#else
         op_replaced = Special_Sequence (op, opnd_tn, opnd_tninfo);
+#endif
       }
     } else if ( op_is_cmp_merge_cand &&
                 !op_replaced ) {
@@ -7240,12 +7351,12 @@ Find_BB_TNs (BB *bb)
 #endif
     } else if (!op_replaced &&
                !OP_effectively_copy(op) &&
-               !OP_glue(op) &&
+               !OP_glue(op) 
 #ifdef TARG_ST
 	       // Side effects checks have been delegated to the functions called below
 	       && !OP_has_implicit_interactions(op)
 #else
-               !OP_side_effects(op) &&
+               && !OP_side_effects(op) &&
                !OP_access_reg_bank(op)
 #endif
                ) {
@@ -7256,7 +7367,11 @@ Find_BB_TNs (BB *bb)
            /* If we remove a conditional branch and alter the flow, we
               may have created dead code that could cause later processing
               to get into trouble. This needs to be looked into. */
+#ifdef TARG_ST
+            op_replaced = EBO_Resolve_Conditional_Branch (op, opnd_tn);
+#else
             op_replaced = Resolve_Conditional_Branch (op, opnd_tn);
+#endif
             rerun_cflow |= op_replaced;
           } else if (OP_results(op) >= 1) {
 #ifdef TARG_ST
@@ -7303,7 +7418,11 @@ Find_BB_TNs (BB *bb)
               if (!op_replaced &&
                   (tn != NULL) &&
                   TN_Is_Constant(tn) && TN_Has_Value(tn)) {
+#ifdef TARG_ST
+                op_replaced = EBO_Constant_Operand1 (op, opnd_tn, opnd_tninfo);
+#else
                 op_replaced = Constant_Operand1 (op, opnd_tn, opnd_tninfo);
+#endif
               }
             }
             if (o1_idx >= 0) {
@@ -7311,7 +7430,11 @@ Find_BB_TNs (BB *bb)
               if (!op_replaced &&
                   (tn != NULL) &&
                   TN_Is_Constant(tn) && TN_Has_Value(tn)) {
+#ifdef TARG_ST
+                  op_replaced = EBO_Constant_Operand0 (op, opnd_tn, opnd_tninfo);
+#else
                   op_replaced = Constant_Operand0 (op, opnd_tn, opnd_tninfo);
+#endif
               }
             }
           }
@@ -7336,7 +7459,11 @@ Find_BB_TNs (BB *bb)
 	}
 #endif
           if (!op_replaced) {
+#ifdef TARG_ST
+             op_replaced = EBO_Special_Sequence ( op, opnd_tn, orig_tninfo);
+#else
             op_replaced = Special_Sequence (op, opnd_tn, orig_tninfo);
+#endif
           }
 #ifdef TARG_ST
 	if (!op_replaced && OP_select(op))
@@ -7404,7 +7531,7 @@ Find_BB_TNs (BB *bb)
         fprintf(TFile,"%sin BB:%d remove simplified op - ",EBO_trace_pfx,BB_id(bb));
         Print_OP_No_SrcLine(op);
       }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       // If the deleted OP is a load, then update the source register usage (in
       // case the src live range(s) ends here) but don't reserve a register for
       // the result.
@@ -7442,7 +7569,7 @@ Find_BB_TNs (BB *bb)
       FmtAssert(((EBO_last_opinfo != NULL) && (EBO_last_opinfo->in_op == op)),
                   ("OP wasn't added to hash table"));
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       EBO_last_opinfo->op_num = op_num;
 #endif
 
@@ -7468,7 +7595,11 @@ Find_BB_TNs (BB *bb)
 	    }
 	  } else 
 #endif
-          if (!OP_glue(op) && (cix >= 0)) {
+          if (!OP_glue(op) && (cix >= 0)
+#ifdef TARG_ST
+              && !(EBO_in_pre && OP_Is_Affirm(op))
+#endif
+              ) {
             tninfo->replacement_tn = opnd_tn[cix];
             tninfo->replacement_tninfo = opnd_tninfo[cix];
 #ifdef TARG_ST
@@ -7525,8 +7656,6 @@ Find_BB_TNs (BB *bb)
             Print_TN(tnr,FALSE); fprintf(TFile,"\n");
           }
         }
-
-      } 
 #ifdef TARG_ST
       } else if (rslt_tn == NULL) {
 	TN *replacement_tn;
@@ -7557,8 +7686,8 @@ Find_BB_TNs (BB *bb)
 	}
 #endif
 
-      else if (rslt_tn != NULL) {
-#ifdef KEY
+      }else if (rslt_tn != NULL) {
+#if defined( KEY) && !defined(TARG_ST)
         if (op->opr == TOP_asm && TN_is_constant(rslt_tn))
 	  ;
 	else {
@@ -7581,7 +7710,7 @@ Find_BB_TNs (BB *bb)
           Print_TN(tnr,FALSE); fprintf(TFile," with ");
           Print_TN(rslt_tn, FALSE); fprintf(TFile,"\n");
         }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
         }
 #endif
 
@@ -7593,7 +7722,7 @@ Find_BB_TNs (BB *bb)
 
     if (PROC_has_branch_delay_slot()) in_delay_slot = OP_xfer(op);
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 finish:
 
 #ifdef TARG_X8664
@@ -8571,7 +8700,7 @@ EBO_Add_BB_to_EB (BB * bb)
   EBO_OP_INFO *save_last_opinfo = EBO_last_opinfo;
   BBLIST *succ_list;
   BOOL normal_conditions;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   hTN_MAP save_regs_map = regs_map;
 #endif
 
@@ -8660,7 +8789,7 @@ EBO_Add_BB_to_EB (BB * bb)
  /* Remove information about TN's and OP's in this block. */
   backup_tninfo_list(save_last_tninfo);
   backup_opinfo_list(save_last_opinfo);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   regs_map = save_regs_map;
 #endif
 
@@ -8977,7 +9106,7 @@ EBO_Post_Process_Region ( RID *rid )
 }
 
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 // Run EBO after second instruction scheduling phase (after register
 // allocation).
 void

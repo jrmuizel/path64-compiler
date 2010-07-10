@@ -93,6 +93,11 @@
 #include "cgexp.h"
 #include "xstats.h"
 #include "tag.h"
+#ifdef TARG_ST
+#include "cg_ssa.h"
+#include "op_map.h"			/* For using OP_Asm_Map */
+#include "cg_affirm.h"
+#endif
 
 /* Allocate OPs for the duration of the PU. */
 #define OP_Alloc(size)  ((OP *)Pu_Alloc(size))
@@ -126,7 +131,14 @@ Copy_Asm_OP_Annot(OP* new_op, const OP* op)
     OP_MAP_Set(OP_Asm_Map, new_op, OP_MAP_Get(OP_Asm_Map, op));
   }
 }
-
+// ----------------------------------------
+// Copy ASM_OP_ANNOT when duplicating an OP
+// ----------------------------------------
+static void
+Copy_OP_Annot(OP* new_op, OP* op) 
+{
+  Copy_Asm_OP_Annot (new_op, op);
+}
 
 /* ====================================================================
  *
@@ -962,8 +974,9 @@ Mk_OP(TOP opr, ...)
     TN *result = va_arg(ap, TN *);
     Set_OP_result(op, i, result);
   }
+#ifndef TARG_ST
   if (TOP_is_defs_fpu_int(opr)) Set_TN_is_fpu_int(OP_result(op, 0));
-
+#endif
   for (i = 0; i < opnds; ++i) {
     TN *opnd = va_arg(ap, TN *);
     Set_OP_opnd(op, i, opnd);
@@ -1041,8 +1054,9 @@ Mk_VarOP(TOP opr, INT results, INT opnds, TN **res_tn, TN **opnd_tn)
   Set_OP_code(op, opr);
 
   for (i = 0; i < results; ++i) Set_OP_result(op, i, res_tn[i]);
+#ifndef TARG_ST
   if (TOP_is_defs_fpu_int(opr)) Set_TN_is_fpu_int(res_tn[0]);
-
+#endif
   for (i = 0; i < opnds; ++i) Set_OP_opnd(op, i, opnd_tn[i]);
 
   CGTARG_Init_OP_cond_def_kind(op);
@@ -1097,7 +1111,7 @@ void Print_OP_No_SrcLine (const OP *op, FILE *f) {
   }
 #ifdef TARG_ST
   if (OP_code(op) == TOP_psi) {
-    for (i=0; i<PSI_opnds(op); i++) {
+    for (INT i=0; i<PSI_opnds(op); i++) {
       TN *guard = PSI_guard(op, i);
       if (guard) {
         // (cbr) Support for guards on false

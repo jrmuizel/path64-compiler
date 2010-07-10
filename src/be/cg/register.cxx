@@ -54,6 +54,8 @@
 
 #include "defs.h"
 #include "errors.h"
+#include "erglob.h"
+
 #include "tracing.h"
 #include "mempool.h"
 #include "config.h"
@@ -1343,6 +1345,11 @@ Set_Register_Never_Allocatable (char *regname)
 	ISA_REGISTER_CLASS rclass;
 #endif
 	REGISTER reg;
+
+#ifdef TARG_ST
+        	if (rclass == ISA_REGISTER_CLASS_UNDEFINED)
+	  ErrMsg (EC_Inv_Register, regname);
+#else
 	switch (regname[0]) {
 	case 'r':
 		rclass = ISA_REGISTER_CLASS_integer;
@@ -1353,6 +1360,7 @@ Set_Register_Never_Allocatable (char *regname)
 	default:
 		FmtAssert(FALSE, ("unexpected reg letter %c", regname[0]));
 	}
+#endif
 #ifdef TARG_ST
 	reg = REGISTER_MIN + regnum;
 #else
@@ -1428,17 +1436,7 @@ REGISTER_Get_Requested_Rotating_Registers (ISA_REGISTER_CLASS rclass)
   return REGISTER_SET_EMPTY_SET;
 }
 
-BOOL
-REGISTER_Has_Stacked_Registers(ISA_REGISTER_CLASS rclass)
-{
-  return FALSE;
-}
 
-BOOL
-REGISTER_Has_Rotating_Registers(ISA_REGISTER_CLASS rclass)
-{
-  return FALSE;
-}
 /* [CG]: End of Comment on non useful functions. */
 
 #endif

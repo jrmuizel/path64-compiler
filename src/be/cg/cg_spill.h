@@ -262,14 +262,8 @@ typedef enum {
   CGSPILL_LGRA
 } CGSPILL_CLIENT;
 
-#ifdef TARG_ST
-//
-// Arthur: moved to targinfo/<targ>/cg/targ_cg.h
-//
-#else
 #define CGSPILL_DEFAULT_STORE_COST 1.25F
 #define CGSPILL_DEFAULT_RESTORE_COST 1.25F
-#endif
 
 extern void CGSPILL_Initialize_For_PU (void);
 extern void CGSPILL_Finalize_For_PU (void);
@@ -298,7 +292,11 @@ extern void CGSPILL_Force_Rematerialization (void);
 extern void CGSPILL_Force_Rematerialization_For_BB (BB *bb);
 
 extern void CGSPILL_Attach_Lda_Remat(TN *tn, TYPE_ID typ, INT64 offset, ST *st);
+#ifdef TARG_ST
+extern void CGSPILL_Attach_Intconst_Remat(TN *tn, TYPE_ID rtype, INT64 val);
+#else
 extern void CGSPILL_Attach_Intconst_Remat(TN *tn, INT64 val);
+#endif
 extern void CGSPILL_Attach_Floatconst_Remat(TN *tn, TYPE_ID typ, double val);
 extern void CGSPILL_Attach_Const_Remat(TN *tn, TYPE_ID typ, ST *st);
 

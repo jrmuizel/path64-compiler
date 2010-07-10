@@ -115,7 +115,7 @@ OP_Has_Latency(OP *op)
  * ====================================================================
  */
 BOOL
-OP_Is_Advanced_Load( OP *memop )
+CGTARG_Is_OP_Advanced_Load( OP *memop )
 {
   // no advanced loads for st200
   return FALSE;

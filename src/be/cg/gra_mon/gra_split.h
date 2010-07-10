@@ -75,12 +75,12 @@ static char *gra_split_rcs_id = "$Source$ $Revision$";
 extern BOOL
 LRANGE_Split( LRANGE* lrange, LRANGE_CLIST_ITER* iter,
                               LRANGE**           alloc_lrange
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
                               , BOOL reclaim = FALSE
 #endif
 	      );
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 extern void LRANGE_Split_Reclaimed_BBs (LRANGE *lrange, REGISTER reg);
 extern BOOL Has_Live_In_Successor (GRA_BB *gbb, LRANGE *lrange);
 #endif

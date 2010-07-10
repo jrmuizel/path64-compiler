@@ -92,7 +92,7 @@ SET(PATHSCALE_CG_SRCS
 			"../../be/cg/hb_sched.cxx"
 			"../../be/cg/hb_tail_duplication.cxx"
 			"../../be/cg/hb_trace.cxx"
-			"../../be/cg/iface_scn.cxx"
+		#	"../../be/cg/iface_scn.cxx"
 			"../../be/cg/igls.cxx"
 			"../../be/cg/init.cxx"
 			"../../be/cg/label_util.cxx"

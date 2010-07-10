@@ -57,6 +57,7 @@
 #ifdef _KEEP_RCS_ID
 static char *rcs_id = "$Source$ $Revision$";
 #endif
+#include <cmath>
 
 #include "defs.h"
 #include "mempool.h"
@@ -188,6 +189,31 @@ Clear_Spill_BB_Flags(void)
     Reset_BB_gra_spill(bb);
   }
 }
+#ifdef TARG_ST
+// FdF 20090309
+/////////////////////////////////////
+static void
+Remove_Handler_Entries_Prologue(void)
+/////////////////////////////////////
+//  Callee-save registers must not be saved in handler entries. They
+//  are saved in main entry only and restored in every exits,
+//  including handler exits.
+/////////////////////////////////////
+{
+  BB *bb;
+
+  for (bb = REGION_First_BB; bb; bb = BB_next(bb)) {
+    if (BB_entry(bb) && BB_handler(bb)) {
+      OP *op, *next_op;
+      for (op = BB_first_op(bb); op != NULL; op = next_op) {
+	next_op = OP_next(op);
+	if (OP_prologue(op))
+	  BB_Remove_Op(bb, op);
+      }
+    }
+  }
+}
+#endif
 
 /////////////////////////////////////
 static void
@@ -201,6 +227,9 @@ Initialize_Flags()
   gra_spill_around_save_tn_copies = FALSE;
   GRA_call_split_freq = atof(GRA_call_split_freq_string);
   GRA_spill_count_factor = atof(GRA_spill_count_factor_string);
+#ifdef TARG_ST
+  GRA_local_spill_multiplier = atof(GRA_local_spill_multiplier_string);
+#endif
 
 #ifdef TARG_MIPS
 #ifdef ICE9A_HW_WORKAROUND
@@ -273,6 +302,12 @@ GRA_Allocate_Global_Registers( BOOL is_region )
   gra_region_mgr.Finalize();
 
   GRA_Join_Entry_And_Exit_BBs();
+#ifdef TARG_ST
+  // FdF 20090309: Remove all callee-save copies in handler entries,
+  // they were inserted to allow correct register allocation in
+  // handler code.
+  Remove_Handler_Entries_Prologue();
+#endif
 
   Clear_Spill_BB_Flags();
 
@@ -286,6 +321,26 @@ GRA_Allocate_Global_Registers( BOOL is_region )
 
   Stop_Timer ( T_GRA_CU );
 }
+#ifdef TARG_ST
+///////////////////////////////////////////////////////////////
+// Some utilitary functions that may be used locally to gra_mon
+// Must be explicitly declared in the module using it.
+BOOL
+Compare_Float_Nearly_Equal(float p1, float p2)
+{
+  if (p1 == p2) {
+    return TRUE;
+  }
+  float max = p1 = fabs(p1);
+  p2 = fabs(p2);
+  if (max == 0.0 || p2 > max) {
+    max = p2;
+  }
+
+  // FdF: Fix floating point difference between SunOS and Linux/Cygwin
+  return (fabs(p1-p2) < 0.005 || (fabs(p1-p2)/max) < .01);
+}
+#endif
 
 /////////////////////////////////////
 void

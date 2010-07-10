@@ -38,6 +38,8 @@ INCLUDE_DIRECTORIES(
   ../common/targ_info/parser/inc/
 
 
+  ${PATHSCALE_BINARY_DIR}/../GCC/gcc
+  ../../GCC/include
   ../libdwarf/libdwarf
   )
 

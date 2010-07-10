@@ -58,7 +58,7 @@
 #endif
 #include <ctype.h>
 #include <vector>
-
+#include <stdarg.h>
 #include <stdint.h>
 #include "defs.h"
 #include "cg_flags.h"
@@ -67,8 +67,10 @@
 #include "symtab.h"
 #include "const.h"
 #include "erbe.h"
+#include "ercg.h"
 #include "erglob.h"
 #include "tracing.h"
+#include "glob.h"
 #include "config.h"
 #include "config_targ_opt.h"
 #include "topcode.h"
@@ -111,7 +113,7 @@
 #include "be_util.h"
 #include "config_asm.h"
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 #include "cgexp_internals.h"
 #include "cxx_template.h" // for STACK
 #endif
@@ -160,8 +162,11 @@ static void initialize_region_stack(WN *);
 static RID *region_stack_pop(void);
 static void region_stack_push(RID *value);
 static void region_stack_eh_set_has_call(void);
+#ifdef TARG_ST
+static VARIANT WHIRL_Compare_To_OP_variant (OPCODE opcode);
+#else
 static VARIANT WHIRL_Compare_To_OP_variant (OPCODE opcode, BOOL invert);
-
+#endif
 #ifdef KEY
 // Expose the vars to the target-specific expand routines.
 #define WHIRL2OPS_STATIC
@@ -390,7 +395,7 @@ Get_Next_Packed_Op(OP *packed_op, OP *opi, int *offset) {
 #endif
 
 
-void Copy_WN_For_Memory_OP(OP *dest, const OP *src)
+void Copy_WN_For_Memory_OP(OP *dest, OP *src)
 {
   WN *wn = Get_WN_From_Memory_OP(src);
   UINT64 predicate = predicate_map ? OP_MAP64_Get(predicate_map, src) : 0;
@@ -920,13 +925,19 @@ Set_OP_To_WN_Map(WN *wn)
   op = Last_Mem_OP ? OP_next(Last_Mem_OP) : OPS_first(&New_OPs);
   for ( ; op != NULL; op = OP_next(op)) {
     if ( (!OP_memory(op) 
-#ifndef KEY // GRA's homing rely on WN node to determine if an op is a home
+#if !defined( KEY) || defined(TARG_ST) // GRA's homing rely on WN node to determine if an op is a home
 	    // location load/store; since no_alias variables are also homeable,
 	    // need to remove !no_alias as condition to create the WN mapping
 			 || OP_no_alias(op)
 #endif
 					) && !OP_call(op) 
-	&& !CGTARG_Is_OP_Barrier(op) && OP_code(op) != TOP_spadjust) 
+	&& 
+#ifdef TARG_ST
+        !OP_Is_Barrier(op)
+#else
+        !CGTARG_Is_OP_Barrier(op)
+#endif
+        && OP_code(op) != TOP_spadjust) 
 	continue;
     if (OP_memory(op) && WN_Is_Volatile_Mem(wn)) Set_OP_volatile(op);
     if (OP_prefetch(op)) {
@@ -1961,7 +1972,11 @@ extern void Expand_Multi(TN *tgt_tn, TN *src_tn, OPS *ops);
 
 
 static TN *
-Handle_LDID (WN *ldid, WN *parent, TN *result, OPCODE opcode)
+Handle_LDID (WN *ldid, 
+#ifndef TARG_ST
+             WN *parent, 
+#endif
+             TN *result, OPCODE opcode)
 {
   if (ST_assigned_to_dedicated_preg(WN_st(ldid))) {
 	// replace st with dedicated preg
@@ -3049,15 +3064,18 @@ Handle_SELECT(WN *select, TN *result, OPCODE opcode)
   falseop = Expand_Expr (WN_kid2(select), select, falseop);
   compare = WN_kid0(select);
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // 14866, 14863, 14840: Expand_Expr may set remateralize/homeable for
   // trueop/falseop.  Don't rematerialize if TN is reused as result TN.
   Reset_TN_is_rematerializable(result);
   Reset_TN_is_gra_homeable(result);
   Set_TN_home(result, NULL);
 #endif
-
+#ifdef TARG_ST
+  variant = WHIRL_Compare_To_OP_variant (WN_opcode(compare));
+#else
   variant = WHIRL_Compare_To_OP_variant (WN_opcode(compare), FALSE);
+#endif
 #ifndef KEY
   if (Check_Select_Expansion (WN_opcode(compare)) || (variant == V_BR_NONE)) {
 #else
@@ -4201,6 +4219,11 @@ Handle_INTRINSIC_OP (WN *expr, TN *result)
   TN *kid0 = Expand_Expr(WN_kid0(expr), expr, NULL);
 
 #ifdef TARG_ST
+  TN  **kids;
+  TN  **res;
+  INT numopnds = 0;
+  INT numrests = 0;
+  INT i;
  Get_Intrinsic_Op_Parameters( expr, &result, &kids, &numopnds, &res, &numrests );
   FmtAssert(Inline_Intrinsics_Allowed || !INTRN_runtime_exists(id),
             ("inlining intrinsics not allowed"));
@@ -4239,8 +4262,21 @@ Handle_INTRINSIC_OP (WN *expr, TN *result)
     }
   }
 #endif
+ if (Trace_Exp) {
+    OP *op;
+    if (Last_OP) op = OP_next(Last_OP);
+    else op = OPS_first(&New_OPs);
 
-#endif // TARG_ST
+    while (op != NULL) {
+      fprintf(TFile, " into "); Print_OP (op);
+      op = OP_next(op);
+    }
+  }
+
+  MEM_POOL_FREE(Malloc_Mem_Pool, res);
+  MEM_POOL_FREE(Malloc_Mem_Pool, kids);
+
+#else // TARG_ST
 
 #ifdef TARG_X8664
   INT imm_kidno = 0;
@@ -4295,7 +4331,7 @@ Handle_INTRINSIC_OP (WN *expr, TN *result)
 #else
   Exp_Intrinsic_Op (id, result, kid0, kid1, &New_OPs);
 #endif // KEY
-
+#endif // TARG_ST
   return result;
 }
 
@@ -4510,8 +4546,11 @@ Expand_Expr (
   switch (opr) {
 
   case OPR_LDID:
+#ifdef TARG_ST
+    return Handle_LDID (expr, result, opcode);
+#else
     return Handle_LDID (expr, parent, result, opcode);
-
+#endif
 #ifdef TARG_ST
   case OPR_SUBPART:
     return Handle_SUBPART(expr, result, opcode);
@@ -4832,7 +4871,7 @@ Expand_Expr (
 	return NULL;
 
   case OPR_INTRINSIC_OP:
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	if (WN_intrinsic(expr) == INTRN_EXPECT)
 	  return (Expand_Expr(WN_kid0(WN_kid0(expr)), WN_kid0(expr), result));
 #endif
@@ -5127,7 +5166,7 @@ BOOL Has_External_Fallthru( BB *bb )
   }
 }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 // Takes a BB. If the branch condition had a __builtin_expect, then
 // return the user-expected probability the branch would be taken.
 // Return -1 if unable to compute a probability.
@@ -5245,7 +5284,7 @@ static void Build_CFG(void)
 	  OP *br_op = BB_branch_op( bb );
 	  if ( br_op == NULL || OP_cond( br_op ) ) {
 	    if ( ! Has_External_Fallthru( bb ) ) {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	      if ((confidence = get_branch_confidence( bb )) != -1.0) {
 	        if (BB_next(bb) != Get_Label_BB(Get_WN_Label(branch_wn)))
 	          confidence = 1 - confidence;
@@ -5428,7 +5467,11 @@ static void Build_CFG(void)
  // KEY: (bug 11573) Added opcodes with U4 rtype, so that an appropriate
  // variant is returned.
 static VARIANT
-WHIRL_Compare_To_OP_variant (OPCODE opcode, BOOL invert)
+WHIRL_Compare_To_OP_variant (OPCODE opcode
+#ifndef TARG_ST
+                             , BOOL invert
+#endif
+                             )
 {
   VARIANT variant = V_BR_NONE;
   switch (opcode) {
@@ -5586,8 +5629,9 @@ WHIRL_Compare_To_OP_variant (OPCODE opcode, BOOL invert)
   case OPC_BBEQ: variant = V_BR_PEQ; break;
 // << WHIRL 0.30: replaced OPC_T1{EQ,NE,GT,GE,LT,LE} by OPC_BT1, OPC_I4T1 variants
   }
+#ifndef TARG_ST
   if (invert) variant = Negate_BR_Variant(variant);
-
+#endif
 #ifdef Is_True_On
   if (variant == V_BR_NONE && OPERATOR_is_compare(OPCODE_operator(opcode)))
     DevWarn ("KEY: Unknown branch variant found for %s!", OPCODE_name(opcode));
@@ -5860,13 +5904,14 @@ Find_Asm_Out_Parameter_Load (const WN* stmt, PREG_NUM preg_num, ST** ded_st)
     if (WN_operator(stmt) == OPR_ASM_STMT)
       return NULL;
 #endif
-    if (OPERATOR_is_store(WN_operator(stmt))) {
+    if (OPERATOR_is_store(WN_operator(stmt))
 #ifdef TARG_ST
 	// [TTh] At low optimization levels (-O0, -O1),
 	// the store might have been optimized away
 	// and replaced by EVAL node.
 	|| WN_operator(stmt) == OPR_EVAL
 #endif
+       ){
       WN* load = WN_kid0(stmt);
       OPERATOR opr = WN_operator(load);
       if (opr == OPR_CVT || opr == OPR_CVTL) {
@@ -6009,7 +6054,7 @@ Handle_ASM (const WN* asm_wn)
       WN* idname = WN_kid0(clobber_pragma);
       Is_True(WN_operator(idname) == OPR_IDNAME,
               ("Wrong kid operator for ASM clobber PREG"));
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       clobber_count++;
 
       // bug 4583: keep track of asm clobbered callee-saved registers, we
@@ -6604,7 +6649,11 @@ Expand_Statement (
       info = TYPE_P_ALLOC(LOOPINFO);
       LOOPINFO_wn(info) = loop_info;
       LOOPINFO_srcpos(info) = srcpos;
+#ifdef TARG_ST
+       LOOPINFO_primary_trip_count_tn(info) = trip_tn;
+#else
       LOOPINFO_trip_count_tn(info) = trip_tn;
+#endif
 #ifdef TARG_ST
       LOOPINFO_is_exact_trip_count(info) = TRUE;
       LOOPINFO_is_HWLoop(info) = FALSE;
@@ -6772,7 +6821,14 @@ Handle_INTRINSIC_CALL (WN *intrncall)
 {
   enum {max_intrinsic_opnds = 3};
   TN *result;
+#ifdef TARG_ST
+  TN **opnd_tn;
+  INT numopnds;
+  TN **res;
+  INT numrests;
+#else 
   TN *opnd_tn[max_intrinsic_opnds];
+#endif
   INT i;
   LABEL_IDX label = LABEL_IDX_ZERO;
   OPS loop_ops;
@@ -7466,7 +7522,7 @@ void Whirl2ops_Finalize(void)
   }
   OP_Affirm_delete_map();
 #endif
-
+#ifndef TARG_ST
   if (last_loop_pragma && 
       !WN_pragma_compiler_generated(last_loop_pragma) &&
       CG_opt_level > 1) {
@@ -7474,6 +7530,8 @@ void Whirl2ops_Finalize(void)
 		 WN_pragmas[WN_pragma(last_loop_pragma)].name,
 		 "not followed by a loop, ignored");
   }
+#endif
+
   OP_MAP_Delete(OP_Asm_Map);
 
   #ifdef TARG_ST

@@ -376,7 +376,7 @@ private:
   // CIO Register Pressure
   // --------------------------------------------------------------------
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // CIO_Estimate_Register_Pressure calculates the number of integer
   // and float registers available for storing values between loop
   // iterations.
@@ -394,7 +394,7 @@ private:
   // CIO Copy Propagation
   // --------------------------------------------------------------------
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   BOOL CIO_Invariant_Copy_Remove( BB *body );
 #endif
   BOOL CIO_Copy_Remove( BB *body );
@@ -519,10 +519,12 @@ private:
 			     const char *message );
   void  Trace_CICSE_Changes( CICSE_change *table, INT count,
 			     BOOL trace_results, const char *message );
+#ifndef TARG_ST
   void  Trace_CICSE_Costs(   CICSE_cost *table, INT count,
 			     CICSE_change *changes, const char *message );
   void  Trace_CICSE_Costs(   CICSE_cost *table, INT count,
 			     ARC **arcs, const char *message );
+#endif
   INT   CICSE_Lookup_Op( CICSE_entry *cicse_table, INT op_count, OP *op );
   void  Replace_Tn( BB *body, TN *tn_old, TN *tn_new, UINT8 omega_change );
   OP *  Append_TN_Copy( TN *tn_dest, TN *tn_from, OP *point, UINT8 omega );
@@ -562,7 +564,7 @@ private:
   void  Sort_Ops( BB *body );
   void  Sort_Arcs( void );
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Filter Arcs shrinks _arc_ordering to prevent excess register pressure
   void  Filter_Arcs();
 #endif
@@ -621,7 +623,7 @@ public:
 // ======================================================================
 
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 void
 CIO_RWTRAN::CIO_Estimate_Register_Pressure( BB *body )
 {
@@ -769,7 +771,7 @@ struct CIO_copy {
 };
 
 
-#ifdef KEY
+#if defined( KEY) && !defined( TARG_ST)
 BOOL
 CIO_RWTRAN::CIO_Invariant_Copy_Remove( BB *body )
 {
@@ -2285,7 +2287,7 @@ CIO_RWTRAN::Read_CICSE_Candidate_Op( OP *op )
        OP_opnds( op ) > OP_MAX_FIXED_OPNDS )
     return FALSE;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // 6255: Don't eliminate OP if its result is a global TN.
   for ( INT res = OP_results(op) - 1; res >= 0; --res ) {
     if ( TN_is_global_reg( OP_result( op, res ) ) ) return FALSE;
@@ -2557,7 +2559,7 @@ CIO_RWTRAN::Trace_CICSE_Changes( CICSE_change *table, INT count,
   fprintf( TFile, "\n\n" );
 }
 
-
+#ifndef TARG_ST
 void
 CIO_RWTRAN::Trace_CICSE_Costs( CICSE_cost *table, INT count,
 			       CICSE_change *changes, const char *message )
@@ -2574,8 +2576,8 @@ CIO_RWTRAN::Trace_CICSE_Costs( CICSE_cost *table, INT count,
 	     changes[cost.change_idx].okay);
   }
 }
-
-
+#endif
+#ifndef TARG_ST
 void
 CIO_RWTRAN::Trace_CICSE_Costs( CICSE_cost *table, INT count,
 			       ARC **arcs, const char *message )
@@ -2592,7 +2594,7 @@ CIO_RWTRAN::Trace_CICSE_Costs( CICSE_cost *table, INT count,
 	     arcs[cost.change_idx]);
   }
 }
-
+#endif
 
 // ======================================================================
 // CICSE_Lookup_Op  returns an index with cicse_table[index].op == op.
@@ -3297,7 +3299,7 @@ CIO_RWTRAN::CICSE_Transform( BB *body )
 			 "During CIO_RWTRAN:CICSE_Transform 2" );
   }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Allocate costs
   CICSE_cost *costs
     = (CICSE_cost *) CXX_NEW_ARRAY( CICSE_cost, oppor_count,
@@ -3975,7 +3977,7 @@ CIO_RWTRAN::Sort_Arcs( void )
 // ======================================================================
 
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 void
 CIO_RWTRAN::Filter_Arcs()
 {
@@ -4107,10 +4109,8 @@ CIO_RWTRAN::Write_Removal( BB *body )
 #endif
     DevWarn( "CIO_RWTRAN::Read_Write_Removal predication not activated" );
     return FALSE;
-#endif
-
   }
-
+#endif
   // Identify and sort potentially optimizable OPs and ARCs
   Sort_Ops( body );                            // Generate _op_ordering
   if ( _ordering_count == 0 ) return FALSE;    // If none, quit early
@@ -4126,7 +4126,7 @@ CIO_RWTRAN::Write_Removal( BB *body )
     }
   }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Filter out optimizations that create excessive register pressure
   Filter_Arcs();
 #endif
@@ -4181,14 +4181,14 @@ CIO_RWTRAN::Read_CICSE_Write_Removal( LOOP_DESCR *loop )
     CG_LOOP_Trace_Loop( loop, "<cio> Before CIO Copy Propagation" );
   }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Initialize heuristics
   CIO_Estimate_Register_Pressure( body );
 #endif
 
   // Preform CIO copy propagation
   BOOL changed_loop_copy = FALSE;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   if ( CIO_enable_invariant_copy_removal )
     changed_loop_copy = CIO_Invariant_Copy_Remove( body );
 #endif

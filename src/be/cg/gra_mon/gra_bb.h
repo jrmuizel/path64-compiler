@@ -88,6 +88,9 @@ static char *gra_bb_rcs_id = "$Source: ../../be/cg/gra_mon/SCCS/s.gra_bb.h $ $Re
 #ifdef KEY
 #include <float.h>	// FLT_MAX
 #endif
+#ifdef TARG_ST
+#include "cg_flags.h"
+#endif
 
 class INTERFERE_DEREF;
 typedef INTERFERE_DEREF* INTERFERE;
@@ -351,7 +354,12 @@ public:
   void Make_Glue_Register_Used(ISA_REGISTER_CLASS rc, REGISTER reg ) {
 			    glue_registers_used[rc] =
 			      REGISTER_SET_Union1(glue_registers_used[rc],reg);}
-
+#ifdef TARG_ST
+  void Make_Glue_Registers_Used(ISA_REGISTER_CLASS rc, REGISTER reg, INT nregs ) {
+    glue_registers_used[rc] = REGISTER_SET_Union(glue_registers_used[rc],
+                                 REGISTER_SET_Range (reg, reg+nregs-1));
+  }
+#endif
   void Clear_Flags(void) 	{ flags = GRA_BB_FLAGS_clear_value; }
     //Clear the flags field of a gbb, i.e. all flags unset.
   BOOL Loop_Prolog(void)	{ return flags & GRA_BB_FLAGS_loop_prolog; }
@@ -417,9 +425,14 @@ public:
     // Push <new_elt> onto the the internally linked _Split_List
     // headed by <head> and return <new_elt> which will be the new_elt
     // head.  See the iterator type GRA_BB_SPLIT_LIST_ITER.
-  float Freq(void) { if (OPT_Space) 
+  float Freq(void) { 
+#ifdef TARG_ST
+      if (GRA_spill_count_factor_for_size)
+#else
+      if (OPT_Space) 
+#endif
 		       return BB_freq(bb) + GRA_spill_count_factor;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 		     // Prevent spilling on software-pipelined BBs.
 		     else if (BB_reg_alloc(bb))
 		       return FLT_MAX;
@@ -439,8 +452,13 @@ public:
 
   // non-inlined
   INT Register_Girth( ISA_REGISTER_CLASS rc );
+#ifdef TARG_ST
+  void Create_Local_LRANGEs();
+  LRANGE* Create_Wired_LRANGE(ISA_REGISTER_CLASS  cl, REGISTER reg, INT nregs);
+#else
   void Create_Local_LRANGEs(ISA_REGISTER_CLASS  cl, INT32 coun);
   LRANGE* Create_Wired_LRANGE(ISA_REGISTER_CLASS  cl, REGISTER reg);
+#endif
   void Create_Global_Interferences(void);
   void Rename_TN_References( TN*     orig_tn, TN*     new_tn);
   void Add_Live_Out_LRANGE( LRANGE* lrange );
@@ -452,13 +470,20 @@ public:
   BOOL Has_Multiple_Predecessors(void);
   BOOL Region_Is_Complement(void);
   void Add_LUNIT(LUNIT *lunit);
+#ifdef TARG_ST
+  void Make_Register_Used(ISA_REGISTER_CLASS rc, REGISTER reg);
+#else
   void Make_Register_Used(ISA_REGISTER_CLASS rc, REGISTER reg,
 			  LRANGE* lrange = NULL, BOOL reclaim = FALSE);
+#endif
   REGISTER_SET Registers_Used(ISA_REGISTER_CLASS  rc);
 #ifdef KEY
   void Make_Register_Referenced(ISA_REGISTER_CLASS rc, REGISTER reg,
 				LRANGE* lrange = NULL);
   REGISTER_SET Registers_Referenced(ISA_REGISTER_CLASS  rc);
+#endif
+#ifdef TARG_ST
+  void Make_Registers_Used(ISA_REGISTER_CLASS rc, REGISTER reg, INT nregs);
 #endif
   BOOL Spill_Above_Check(LRANGE *lrange);
   void Spill_Above_Set(LRANGE *lrange);

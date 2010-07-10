@@ -1166,7 +1166,11 @@ Predicate_Block(BB* bb, TN *pred_tn, BB_SET *hb_blocks)
       if ( ! OP_has_predicate(op)) continue;
 
       if (TN_is_true_pred(OP_opnd(op, OP_PREDICATE_OPND))) {
+#ifdef TARG_ST
+        CGTARG_Predicate_OP(bb, op, pred_tn, false);
+#else
 	CGTARG_Predicate_OP(bb, op, pred_tn);
+#endif
 #ifdef TARG_IA64
 	if (OP_icmp(op)) {
 		// if had a default, non-unconditional compare,
@@ -2472,11 +2476,11 @@ HB_If_Convert(HB* hb, std::list<HB_CAND_TREE*>& candidate_regions)
   if (!multiple_dependencies)
 #endif
   Remove_Branches(hb, predicate_tns, block_order, block_class, candidate_regions);
-#endif
 #ifdef KEY
   else
     // If hb_formation did not succeed then,no need of hb_sched phase.
     IGLS_Enable_HB_Scheduling = 0;
+#endif
 #endif
 #ifdef TARG_ST
   BB_MAP_Delete(predicate_info);

@@ -477,17 +477,21 @@ HB_Schedule::Update_Regs_For_OP (OP *op)
 // such that the addiu and the load/store can be interchanged.
 // ======================================================================
 static BOOL
-Is_Ldst_Addiu_Pair (OPSCH *opsch1, OPSCH *opsch2, OP *op1, OP *op2, ARC *arc)
+Is_Ldst_Addiu_Pair (OPSCH *opsch1, OPSCH *opsch2, OP *op1, OP *op2
+#ifndef TARG_ST
+                    , ARC *arc
+#endif
+                    )
 {
   OP *addiu_op;
   OP *ldst_op;
   INT64 multiplier;
-
+#ifndef TARG_ST
   // Respect the CG_DEP_MISC arcs added by HBS_No_Reorder to prevent
   // reordering.  Bug 14742.
   if (ARC_kind(arc) == CG_DEP_MISC)
     return FALSE;
-
+#endif
   if (((OPSCH_flags(opsch1) | OPSCH_flags(opsch2)) & OPSCH_ADDIU_LDST_PAIR) !=
       OPSCH_ADDIU_LDST_PAIR) 
   {
@@ -584,8 +588,9 @@ Is_Ldst_Addiu_Pair (OPSCH *opsch1, OPSCH *opsch2, OP *op1, OP *op2, ARC *arc)
     return FALSE;
   }
 #endif
-
+#ifndef TARG_ST
   INT64 addiu_const = TN_value (OP_opnd(addiu_op, 1));
+#endif
   INT offset_opndnum = Memory_OP_Offset_Opndnum(ldst_op);
   INT64 ldst_const;
 
@@ -709,7 +714,7 @@ HB_Schedule::Adjust_Ldst_Offsets (void)
     ARC_LIST *arcs;
     for (arcs = OP_succs(op); arcs != NULL; arcs = ARC_LIST_rest(arcs)) {
       ARC *arc = ARC_LIST_first(arcs);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       if( ARC_kind(arc) != CG_DEP_REGIN ){
 	continue;
       }
@@ -717,7 +722,7 @@ HB_Schedule::Adjust_Ldst_Offsets (void)
       OP *succ_op = ARC_succ(arc);
       OPSCH *succ_opsch = OP_opsch (succ_op, _hb_map);
       if (OPSCH_ldst (succ_opsch) && OPSCH_visited (succ_opsch)
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	  // Don't Fixup_Ldst_Offset if the ldst/addiu were swapped due to copy
 	  // insertion.
 	  && (!HBS_Relax_Reganti() ||
@@ -730,7 +735,7 @@ HB_Schedule::Adjust_Ldst_Offsets (void)
 	if (ARC_kind(arc) == CG_DEP_REGIN || ARC_kind(arc) == CG_DEP_REGANTI)
 #endif
 	Fixup_Ldst_Offset (succ_op, addiu_const, +1, type());
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	Set_hbs_must_emit_sched();
 #endif
       }
@@ -738,7 +743,7 @@ HB_Schedule::Adjust_Ldst_Offsets (void)
     for (arcs = OP_preds(op); arcs != NULL; arcs = ARC_LIST_rest(arcs)) {
       ARC *arc = ARC_LIST_first(arcs);
       OP *pred_op = ARC_pred(arc);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       if (ARC_kind(arc) != CG_DEP_REGANTI){
 	// We only care about any REGANTI really.
 	// And there may be multiple arcs between two nodes.
@@ -749,7 +754,7 @@ HB_Schedule::Adjust_Ldst_Offsets (void)
 #endif /* KEY */
       OPSCH *pred_opsch = OP_opsch (pred_op, _hb_map);
       if (OPSCH_ldst (pred_opsch) && !OPSCH_visited (pred_opsch)
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	  // Don't Fixup_Ldst_Offset if the ldst/addiu were swapped due to copy
 	  // insertion.
 	  && (!HBS_Relax_Reganti() ||
@@ -761,7 +766,7 @@ HB_Schedule::Adjust_Ldst_Offsets (void)
 	if (ARC_kind(arc) == CG_DEP_REGIN || ARC_kind(arc) == CG_DEP_REGANTI)
 #endif
 	Fixup_Ldst_Offset (pred_op, addiu_const, -1, type());
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	Set_hbs_must_emit_sched();
 #endif
       }
@@ -1333,7 +1338,7 @@ DFS_Search (OP *op, BB_MAP value_map, BOOL is_fwd)
     }
   } else {
     // visit all the predecessors.
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     // Heuristic for DFS ordering.  When picking a child to continue the
     // depth-first traversal (in the reverse direction), choose a child with
     // the lowest depth in the dependence graph.  The hope is that this child's
@@ -1365,7 +1370,7 @@ DFS_Search (OP *op, BB_MAP value_map, BOOL is_fwd)
 	OP *pred_op = OPSCH_op(pred_opsch);
 	if (!OPSCH_visited(pred_opsch))
 	  DFS_Search(pred_op, value_map, FALSE);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	Update_Blocker_Info(opsch, pred_opsch);
 #endif
       }
@@ -1375,10 +1380,15 @@ DFS_Search (OP *op, BB_MAP value_map, BOOL is_fwd)
       ARC *arc = ARC_LIST_first(arcs);
       OP *pred_op = ARC_pred(arc);
       OPSCH *pred_opsch = OP_opsch (pred_op, value_map);
-      if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op, arc)) {
+#ifdef TARG_ST
+      if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op))
+#else
+      if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op, arc)) 
+#endif
+      {
 	if (!OPSCH_visited(pred_opsch))
 	  DFS_Search(pred_op, value_map, FALSE);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	Update_Blocker_Info(opsch, pred_opsch);
 #endif
       }
@@ -1466,7 +1476,7 @@ Priority_Selector::Build_Ready_Vector (BB* bb, BOOL is_fwd)
     FOR_ALL_BB_OPs_REV (bb, op) {
       OPSCH *opsch = OP_opsch(op, _cur_sched->hb_map());
       // Add it to the ready vector if there are no successors.
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       if (OPSCH_num_succs(opsch) == 0 ||
 	  _cur_sched->Ignore_Unsched_Succs(opsch)) {
 	Add_Element_Sorted (_cur_sched->ready_vector(), op, sort_by_estart);
@@ -1558,7 +1568,12 @@ Compute_Fwd_OPSCH (BB *bb, BB_MAP value_map, INT *max_lstart,
       ARC *arc = ARC_LIST_first(arcs);
       OP *succ_op = ARC_succ(arc);
       OPSCH *succ_opsch = OP_opsch(succ_op, value_map);
-      if (!Is_Ldst_Addiu_Pair (opsch, succ_opsch, op, succ_op, arc)) {
+#ifdef TARG_ST
+      if (!Is_Ldst_Addiu_Pair (opsch, succ_opsch, op, succ_op))
+#else
+      if (!Is_Ldst_Addiu_Pair (opsch, succ_opsch, op, succ_op, arc)) 
+#endif
+      {
         INT cur_estart = Calculate_Adjust_Latency(arc) + op_estart;
         if (OPSCH_estart(succ_opsch) < cur_estart) {
           OPSCH_estart(succ_opsch) = cur_estart;
@@ -1603,7 +1618,12 @@ Compute_Bkwd_OPSCH (BB *bb, BB_MAP value_map, INT max_lstart,
       ARC *arc = ARC_LIST_first(arcs);
       OP *pred_op = ARC_pred(arc);
       OPSCH *pred_opsch = OP_opsch(pred_op, value_map);
-      if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op, arc)) {
+#ifdef TARG_ST
+      if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op))
+#else
+      if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op, arc)) 
+#endif
+      {
         INT cur_lstart = OPSCH_lstart(opsch) - Calculate_Adjust_Latency(arc);
         if (OPSCH_lstart(pred_opsch) > cur_lstart) {
           OPSCH_lstart(pred_opsch) = cur_lstart;
@@ -1968,8 +1988,12 @@ HB_Schedule::Add_OP_To_Sched_Vector (OP *op, BOOL is_fwd)
 	  VECTOR_Add_Element (_ready_vector, succ_op);
 	}
 #else // !KEY
-	
-	if( !Is_Ldst_Addiu_Pair( opsch, succ_opsch, op, succ_op, arc ) ){
+#ifdef TARG_ST
+        if( !Is_Ldst_Addiu_Pair( opsch, succ_opsch, op, succ_op) )
+#else        
+	if( !Is_Ldst_Addiu_Pair( opsch, succ_opsch, op, succ_op, arc ) )
+#endif
+        {
 	  FmtAssert( OPSCH_num_preds(succ_opsch) > 0, 
 		     ("HBS: invalid count of succs"));
 	  
@@ -2035,12 +2059,17 @@ HB_Schedule::Add_OP_To_Sched_Vector (OP *op, BOOL is_fwd)
 	INT scycle = Clock - ARC_latency(arc);
 	// update the OPSCH_scycle field for the predecessor OP.
 	OPSCH_scycle(pred_opsch) = MIN (scycle, OPSCH_scycle(pred_opsch));
-	if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op, arc)) {
+#ifdef TARG_ST
+        if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op))
+#else
+	if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op, arc)) 
+#endif
+        {
 	  FmtAssert (OPSCH_num_succs(pred_opsch) != 0, 
 		     ("HBS: invalid count of succs"));
 	  
 	  OPSCH_num_succs(pred_opsch)--;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	  if (!OPSCH_ready(pred_opsch)) {
 	    if (OPSCH_num_succs(pred_opsch) == 0 ||
 		Ignore_Unsched_Succs(pred_opsch)) {
@@ -2725,7 +2754,6 @@ HB_Schedule::Put_Sched_Vector_Into_BB (BB *bb, BBSCH *bbsch, BOOL is_fwd)
   }
 #endif
 #ifdef TARG_ST
-  INT32 cur_cycle;
   {
     OP *op = BB_last_op(bb);
     OPSCH *opsch = OP_opsch(op, _hb_map);
@@ -2820,16 +2848,10 @@ HB_Schedule::Put_Sched_Vector_Into_BB (BB *bb, BBSCH *bbsch, BOOL is_fwd)
   if (cur_cycle < _max_sched) 
 #endif
   {
-#ifdef KEY
-    Adjust_Ldst_Offsets( is_fwd );
-#else
 #ifdef TARG_ST
 	computed_max_sched=cur_cycle;
+#endif
     Adjust_Ldst_Offsets (is_fwd);
-#else
-    Adjust_Ldst_Offsets ();
-#endif
-#endif
 
     if (bbsch != NULL) {
       Compute_BBSCH (bb, bbsch);
@@ -2845,7 +2867,7 @@ HB_Schedule::Put_Sched_Vector_Into_BB (BB *bb, BBSCH *bbsch, BOOL is_fwd)
 	 (is_fwd) ? i++ : i--) {
       OP *op = OP_VECTOR_element(_sched_vector, i);
       BB_Append_Op(bb, op);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       // Mark the prefetches deleted by the current schedule.
       if (OP_prefetch(op)) {
 	if (prefetches_to_delete > 0) {
@@ -2858,7 +2880,7 @@ HB_Schedule::Put_Sched_Vector_Into_BB (BB *bb, BBSCH *bbsch, BOOL is_fwd)
 #endif
     }
   }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Reusing the old schedule.  Restore the old scycle numbers for more
   // accurate asm annotation.
   else {

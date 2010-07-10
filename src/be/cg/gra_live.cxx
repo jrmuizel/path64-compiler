@@ -86,7 +86,9 @@
 #include "reg_live.h"
 #include "cg_loop.h"
 #include "pqs_cg.h"
-
+#ifdef TARG_ST
+#include "cg_ssa.h"
+#endif
 static BB_LIST *region_entry_list;
 static BB_SET  *region_exit_set;
 static MEM_POOL gra_live_pool;
@@ -762,7 +764,11 @@ GRA_LIVE_Init_BB_End(BB *bb)
   ANNOTATION *annot = ANNOT_Get(BB_annotations(bb), ANNOT_LOOPINFO);
   if (annot) {
     LOOPINFO *info = ANNOT_loopinfo(annot);
+#ifdef TARG_ST
+    TN *tn = LOOPINFO_primary_trip_count_tn(info);
+#else
     TN *tn = LOOPINFO_trip_count_tn(info);
+#endif
     if (tn != NULL && TN_is_register(tn)) {
       GTN_UNIVERSE_Add_TN(tn);
       TN_BB_LIST_MAP_Add(tn_live_use_bbs_map,tn,bb);
@@ -830,7 +836,11 @@ Detect_GTNs (void)
     ANNOTATION *annot = ANNOT_Get(BB_annotations(bb), ANNOT_LOOPINFO);
     if (annot) {
       LOOPINFO *info = ANNOT_loopinfo(annot);
+#ifdef TARG_ST
+      TN *tn = LOOPINFO_primary_trip_count_tn(info);
+#else
       TN *tn = LOOPINFO_trip_count_tn(info);
+#endif
       if (tn != NULL && TN_is_register(tn)) 
 	GTN_UNIVERSE_Add_TN(tn);
     }
@@ -2554,7 +2564,7 @@ Rename_TNs_For_BB (BB *bb, GTN_SET *multiple_defined_set
 #endif
 
   FOR_ALL_BB_OPs_FWD (bb, op) {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     // Rename local TNs starting at rename_local_TN_op, if it exists,
     // Bug 4327.
     rename_local_TNs |= (rename_local_TN_op == op);

@@ -1616,6 +1616,11 @@ OP_LIST *defop_by_reg[ISA_REGISTER_CLASS_MAX_LIMIT+1][REGISTER_MAX+1];
 #else
 OP_LIST *defop_by_reg[ISA_REGISTER_CLASS_MAX+1][REGISTER_MAX+1];
 #endif
+#ifdef TARG_ST
+static MEM_POOL DefOp_Pool;
+static OP_MAP DefOp_Map;
+static INT32 DefOp_Map_Idx;
+#endif
 
 // See above for specification.
 inline void defop_init(void)
@@ -2963,13 +2968,8 @@ static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
   }
 
   /* Advanced loads don't alias with anything. */
-#ifdef TARG_ST
-  if ((OP_load(pred_op) && OP_Is_Advanced_Load(pred_op)) ||
-      (OP_load(succ_op) && OP_Is_Advanced_Load(succ_op)))
-#else
   if ((OP_load(pred_op) && CGTARG_Is_OP_Advanced_Load(pred_op)) ||
       (OP_load(succ_op) && CGTARG_Is_OP_Advanced_Load(succ_op)))
-#endif
       { return_value =  FALSE; goto return_point; }
 
 
@@ -2977,7 +2977,7 @@ static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
    * is marked as not definite to prevent removal by r/w elimination).
    */
   if (   (OP_volatile (pred_op) && OP_volatile (succ_op))
-      #ifdef KEY // bug 4850
+#if defined( KEY) && !defined(TARG_ST) // bug 4850
       || CGTARG_Is_OP_Barrier (pred_op)
       || CGTARG_Is_OP_Barrier (succ_op)
       #endif

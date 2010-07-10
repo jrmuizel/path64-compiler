@@ -49,7 +49,7 @@ friend class GRA_LOOP_MGR;
   GRA_LOOP*    next_loop; 	// next in list of loops in nest (outermost first)
   INT          nest_level; 	// nesting level of the loop
   BB*	       loop_head; 	// bb at head of loop
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   LOOP_DESCR   *loop_descr;	// the LOOP_DESCR for this loop
 #endif
 
@@ -60,7 +60,7 @@ friend class GRA_LOOP_MGR;
   void Next_Loop_Set(GRA_LOOP *p) { next_loop = p; }
   void Nest_Level_Set(INT i) 	{ nest_level = i; }
   void Loop_Head_Set(BB *b) 	{ loop_head = b; }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   void Loop_Descr_Set(LOOP_DESCR *ld)	{ loop_descr = ld; };
   LOOP_DESCR *Loop_Descr(void)	{ return loop_descr; }
 #endif
@@ -78,14 +78,15 @@ public:
   GRA_LOOP *Next_Loop(void)	{ return next_loop; }
   INT Nest_Level(void)		{ return nest_level; }
   BB *Loop_Head(void)		{ return loop_head; }
-#ifdef KEY
-#endif
 
   // non-inlined member functions
-  void Make_Register_Used(ISA_REGISTER_CLASS rc, REGISTER reg,
-			  BOOL reclaim = FALSE);
+  void Make_Register_Used(ISA_REGISTER_CLASS rc, REGISTER reg
+#ifndef TARG_ST
+                          , BOOL reclaim = FALSE
+#endif
+                          );
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   REGISTER_SET Registers_Referenced(ISA_REGISTER_CLASS rc);
 #endif
 };

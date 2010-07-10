@@ -73,6 +73,7 @@
 #include <cmplrs/rcodes.h>
 #include <stamp.h>
 #include <vector>
+#include "libiberty.h"
 #if defined(BUILD_OS_DARWIN)
 #include <set>
 #include <string>
@@ -10707,7 +10708,7 @@ EMT_Begin_File (
     // [CL] when generating .s file, do not
     // overwrite/remove existing .o file
     if ( ! Object_Code) {
-      Obj_File_Name = mktemp("cctpo");
+      Obj_File_Name = make_temp_file("cctpo");
     }
 #endif
 

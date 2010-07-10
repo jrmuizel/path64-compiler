@@ -973,6 +973,7 @@ extern CLASS_REG_PAIR		CLASS_REG_PAIR_fone;
 #define CLASS_AND_REG_fone	CLASS_REG_PAIR_class_n_reg(CLASS_REG_PAIR_fone)
 
 extern const CLASS_REG_PAIR		CLASS_REG_PAIR_undef;
+extern CLASS_REG_PAIR		CLASS_REG_PAIR_link;
 #define REGISTER_link		CLASS_REG_PAIR_reg(CLASS_REG_PAIR_link)
 #define REGISTER_CLASS_link	CLASS_REG_PAIR_rclass(CLASS_REG_PAIR_link)
 #define CLASS_AND_REG_link	CLASS_REG_PAIR_class_n_reg(CLASS_REG_PAIR_link)

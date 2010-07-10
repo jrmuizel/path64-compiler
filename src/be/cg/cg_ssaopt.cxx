@@ -1505,7 +1505,7 @@ is_Op_Required (OP *op)
       || (OP_memory (op)  && ! OP_load (op))
       || OP_has_implicit_interactions (op)
       || OP_glue (op)
-      || OP_Is_Intrinsic (op)
+      || OCGTARG_Is_OP_Intrinsic (op)
       || op == BB_exit_sp_adj_op (OP_bb (op))
       || op == BB_entry_sp_adj_op (OP_bb (op)))
     return TRUE;

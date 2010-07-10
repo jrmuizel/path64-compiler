@@ -655,7 +655,6 @@ CGSPILL_Get_TN_Spill_Location (TN *tn, CGSPILL_CLIENT client)
 	fprintf (TFile, "<gra> Creating %s for TN%d\n",
 		 ST_name (mem_location), TN_number (tn));
       }
-    }
 #endif
     }
     break;
@@ -1073,7 +1072,18 @@ CGSPILL_Load_From_Memory (TN *tn, ST *mem_loc, OPS *ops, CGSPILL_CLIENT client,
 #else
     CGTARG_Load_From_Memory(tn, mem_loc, ops);
 #endif
-#ifdef KEY
+
+#ifdef TARG_ST
+    //
+    // Mark the actual load as a spill
+    //
+    OP *op = OPS_last(ops);
+    while(!OP_load(op)) op = OP_prev(op);
+    Set_OP_spill(op);
+    Set_OP_spilled_tn(op, tn);
+#endif
+
+#if defined( KEY) && !defined(TARG_ST)
     CGSPILL_Inc_Restore_Count(mem_loc);
 #endif
 #ifdef TARG_ST
@@ -1226,7 +1236,12 @@ static OP* Find_First_Copy(BB *bb)
     OP *tmp_op;
     for (tmp_op = OP_prev(first_copy_op); tmp_op;
 	 tmp_op = OP_prev(tmp_op)) {
-      if (OP_copy(tmp_op) && TN_is_save_reg(OP_opnd(tmp_op, OP_COPY_OPND))) {
+#ifdef TARG_ST
+      if (OP_copy(tmp_op) && TN_is_save_reg(OP_opnd(tmp_op, OP_Copy_Operand(tmp_op))))
+#else
+      if (OP_copy(tmp_op) && TN_is_save_reg(OP_opnd(tmp_op, OP_COPY_OPND))) 
+#endif
+      {
 	first_copy_op = tmp_op;
       }
     }

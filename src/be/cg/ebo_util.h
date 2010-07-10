@@ -164,7 +164,16 @@ EBO_tn_available(BB *bb,
   return TRUE;
 }
 
-
+#ifdef TARG_ST
+inline
+BOOL
+OP_effectively_copy(OP *op)
+{
+  if (OP_copy(op)) return TRUE;
+  if (OP_Is_Copy(op)) return TRUE;
+  return FALSE;
+}
+#else
 inline
 BOOL
 OP_effectively_copy(OP *op)
@@ -174,7 +183,7 @@ OP_effectively_copy(OP *op)
   if (EBO_Copy_Operand(op) >= 0) return TRUE;
   return FALSE;
 }
-
+#endif
 
 
 inline

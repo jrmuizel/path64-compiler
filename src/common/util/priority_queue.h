@@ -20,6 +20,12 @@
    Special thanks goes to SGI for their continued support to open source
 
 */
+#ifdef TARG_ST
+/* [SC] Added PRQ_Update.  Due to the way macros are written in this
+ * file, it is not possible to follow normal convention and put
+ * ifdef TARG_ST around this addition.
+ */
+#endif
 
 
 /**
@@ -343,6 +349,11 @@ PRQ_Remove(
     PRQ*    prq,
     void*   element
 );
+ extern void
+PRQ_Update(
+    PRQ*    prq,
+    void*   element
+);
 
 extern void
 PRQ_Reset(
@@ -378,6 +389,7 @@ PRQ_Ith(
               prq_type##_Top,                                           \
               prq_type##_Insert,                                        \
               prq_type##_Remove,                                        \
+              prq_type##_Update,                                        \
               prq_type##_Reset,                                         \
               prq_type##_Size,                                          \
               prq_type##_Ith)
@@ -395,6 +407,7 @@ PRQ_Ith(
                   top_function_name,                                    \
                   insert_function_name,                                 \
                   remove_function_name,                                 \
+                  update_function_name,                                 \
                   reset_function_name,                                  \
                   size_function_name,                                   \
                   ith_function_name)                                    \
@@ -442,7 +455,15 @@ remove_function_name(                                                   \
 {                                                                       \
   PRQ_Remove((PRQ*)prq,(void*)element);                                 \
 }                                                                       \
-                                                                        \
+/*REFERENCED*/								\
+inline void                                                             \
+update_function_name(                                                   \
+  prq_type*   prq,                                                      \
+  base_type*  element                                                   \
+)                                                                       \
+{                                                                       \
+  PRQ_Update((PRQ*)prq,(void*)element);                                 \
+}                                                                       \
 /*REFERENCED*/								\
 inline void                                                             \
 reset_function_name(                                                    \

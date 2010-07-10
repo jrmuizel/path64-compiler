@@ -580,7 +580,7 @@ Find_Global_TNs ( RID *rid )
             /* this use is just a copy of the def */
             continue;
 	  }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	  /* Bug#931
 	     We cannot assume <op> has only one result. An extension
 	     of the previous checking.

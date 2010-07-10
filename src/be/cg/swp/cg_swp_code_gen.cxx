@@ -36,7 +36,6 @@
 #include "cgexp.h"
 #include "freq.h"
 #include "gra_live.h"
-
 /* Software Pipelinig (SWP) related include files */
 #include "cg_swp_op_vector.h"
 #include "cg_swp_options.h"

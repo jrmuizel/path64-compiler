@@ -92,6 +92,9 @@
 #include "gtn_set.h"
 #include "gtn_tn_set.h"
 #include "tn_set.h"
+#ifdef TARG_ST
+#include "tn_list.h"
+#endif
 #include "cg.h"
 #include "cg_flags.h"
 #include "cg_internal.h"
@@ -112,10 +115,14 @@
 #include "targ_proc_properties.h"
 #include "hb_sched.h"
 #include "ebo.h"
+#ifdef TARG_ST
+#include "cg_color.h"
+#endif
+
 #ifdef TARG_X8664
 #include "config_lno.h"  // for LNO_Run_Simd
 #endif
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 static BOOL large_asm_clobber_set[ISA_REGISTER_CLASS_MAX+1];
 #endif
 
@@ -164,7 +171,7 @@ static REGISTER last_assigned_reg[ISA_REGISTER_CLASS_MAX_LIMIT+1];
 static REGISTER last_assigned_reg[ISA_REGISTER_CLASS_MAX+1];
 #endif
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 // Data structure to keep track of the OP number that a register was last
 // freed.  Supports the least-recently-used method of register assignment.
 typedef struct {
@@ -1868,11 +1875,15 @@ Mark_Use (TN *tn, OP *op, INT opnum, BB *bb, BOOL in_lra,
 	  INT res_opnd_idx, BOOL is_result, MEM_POOL *pool)
 {
   LIVE_RANGE *clr;
+#ifdef TARG_ST
+    ASM_OP_ANNOT* asm_info = (OP_code(op) == TOP_asm) ?
+      (ASM_OP_ANNOT*) OP_MAP_Get(OP_Asm_Map, op) : NULL;
+#endif
 
   clr = Create_LR_For_TN (tn, bb, in_lra, pool);
 #ifdef TARG_ST
       ISA_REGISTER_SUBCLASS subclass = asm_info ?
-        ASM_OP_opnd_subclass(asm_info)[opndnum] : OP_opnd_reg_subclass(op, opndnum);
+        ASM_OP_opnd_subclass(asm_info)[res_opnd_idx] : OP_opnd_reg_subclass(op, res_opnd_idx);
       if (subclass != ISA_REGISTER_SUBCLASS_UNDEFINED
 	  && subclass_rank[subclass] < subclass_rank[LR_subclass(clr)]) {
 	Set_LR_subclass(clr, subclass);
@@ -1889,7 +1900,7 @@ Mark_Use (TN *tn, OP *op, INT opnum, BB *bb, BOOL in_lra,
     }
     /* Add this use to the live range for this TN. */
     LR_use_cnt(clr)++;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     // If the live range is not live-out, then set the last use so that we can
     // determine which OPs the live range spans.  This is needed for making the
     // live range a candidate for spilling.  Bug 7649.
@@ -2046,7 +2057,6 @@ Setup_Live_Ranges (BB *bb, BOOL in_lra, MEM_POOL *pool)
     ASM_OP_ANNOT* asm_info = (OP_code(op) == TOP_asm) ?
       (ASM_OP_ANNOT*) OP_MAP_Get(OP_Asm_Map, op) : NULL;
 #endif
-
     /* process all the operand TNs. */
     for (opndnum = 0; opndnum < OP_opnds(op); opndnum++) {
       TN *tn = OP_opnd(op, opndnum);
@@ -2360,21 +2370,6 @@ Setup_Live_Ranges (BB *bb, BOOL in_lra, MEM_POOL *pool)
 #endif
           }
         }
-      }
-#ifdef TARG_X8664
-      // If the result is a byte, must allocate to a byte-accessible register.
-      if (OP_code(op) == TOP_asm) {
-	ASM_OP_ANNOT* asm_info = (ASM_OP_ANNOT*) OP_MAP_Get(OP_Asm_Map, op);
-	ISA_REGISTER_SUBCLASS subclass =
-	  ASM_OP_result_subclass(asm_info)[resnum];
-	if (subclass == ISA_REGISTER_SUBCLASS_m32_8bit_regs) {
-	  Set_LR_byteable(clr);
-	}
-      } else if (Is_Target_32bit() &&
-		 OP_result_size(op, resnum) == 8) {
-	Set_LR_byteable(clr);
-      }
-#endif
 #ifdef TARG_ST
 	else if (OP_compose(op)) {
 	  // [SC} Preference compose result to an operand
@@ -2422,8 +2417,23 @@ Setup_Live_Ranges (BB *bb, BOOL in_lra, MEM_POOL *pool)
 	  }
 	}
 #endif
+#ifdef TARG_X8664
+      // If the result is a byte, must allocate to a byte-accessible register.
+      if (OP_code(op) == TOP_asm) {
+	ASM_OP_ANNOT* asm_info = (ASM_OP_ANNOT*) OP_MAP_Get(OP_Asm_Map, op);
+	ISA_REGISTER_SUBCLASS subclass =
+	  ASM_OP_result_subclass(asm_info)[resnum];
+	if (subclass == ISA_REGISTER_SUBCLASS_m32_8bit_regs) {
+	  Set_LR_byteable(clr);
+	}
+      } else if (Is_Target_32bit() &&
+		 OP_result_size(op, resnum) == 8) {
+	Set_LR_byteable(clr);
+      }
+#endif
     }
   }
+ }
 #ifdef TARG_ST
   if (LRA_overlap_coalescing) {
     // Initialize array of widest local TN found in current BB
@@ -2543,7 +2553,7 @@ Is_OP_Spill_Load (OP *op, ST *spill_loc)
 {
   if (!OP_load(op)) return FALSE;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // 14329: Filter out indexed loads
   if (TOP_Find_Operand_Use(OP_code(op), OU_index) >= 0)
     return FALSE;
@@ -2564,8 +2574,7 @@ static BOOL
 Is_OP_Spill_Store (OP *op, ST *spill_loc)
 {
   if (!OP_store(op)) return FALSE;
-
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // 14329: Filter out indexed stores
   if (TOP_Find_Operand_Use(OP_code(op), OU_index) >= 0)
     return FALSE;
@@ -2845,14 +2854,14 @@ Init_Avail_Regs (void)
   ISA_REGISTER_CLASS cl;
 
   memset(avail_regs, 0, sizeof(avail_regs));
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   memset(last_freed, 0, sizeof(last_freed));
 #endif
 
   FOR_ALL_ISA_REGISTER_CLASS(cl) {
     FOR_ALL_REGISTER_SET_members (avail_set[cl], reg) {
       avail_regs[cl].reg[reg] = TRUE;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       last_freed[cl].reg[reg] = INT_MAX;
 #endif
     }
@@ -2942,7 +2951,7 @@ Add_Avail_Reg (ISA_REGISTER_CLASS regclass, REGISTER reg, INT cur_op)
   }
   Is_True (!avail_regs[regclass].reg[reg], (" LRA: Error in Add_Avail_Reg"));
   avail_regs[regclass].reg[reg] = TRUE;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 #ifdef TARG_MIPS
   last_assigned_reg[regclass] = reg;
 #else	// This should be removed.  See check-in comment on 3/19/2008.
@@ -3401,7 +3410,7 @@ Get_Avail_Reg (ISA_REGISTER_CLASS regclass,
 #endif
   REGISTER reg = REGISTER_UNDEFINED;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Find the least-recently-used register.
   //
   // For x86-64, handle least-recently-used before legacy-regs because
@@ -4195,7 +4204,7 @@ Assign_Registers_For_OP (OP *op, INT opnum, TN **spill_tn, BB *bb)
   if (Do_LRA_Trace(Trace_LRA_Detail)) {
     fprintf (TFile, "OP:%d>> ", opnum);
     Print_OP_No_SrcLine (op);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     fprintf (TFile, "Avail integer registers: ");
     for (reg = REGISTER_MIN; reg <= REGISTER_MAX; reg++) {
       if (avail_regs[ISA_REGISTER_CLASS_integer].reg[reg])
@@ -4905,7 +4914,7 @@ Assign_Registers_For_OP (OP *op, INT opnum, TN **spill_tn, BB *bb)
     }
   }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Free early_clobber ASM results.
   for (resnum = 0; resnum < nresults; resnum++) {
     if (free_result[resnum] &&
@@ -5391,7 +5400,7 @@ Can_Use_Be_Moved (
        LIVE_RANGE *lr = LR_For_TN (tn);
 #ifdef TARG_ST
        if (LR_last_use(lr) == use_opnum) regs_needed += TN_nhardregs (tn);
-#els
+#else
        if (LR_last_use(lr) == use_opnum) regs_needed++;
 #endif
     }
@@ -7224,7 +7233,7 @@ Fix_LRA_Blues (BB *bb, TN *tn, HB_Schedule *Sched)
   INT failure_point;
   INT opnum;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   if (Trip_Count > MAX_TRIP_COUNT &&		// Bug 12183
       large_asm_clobber_set[cl]) {
     ErrMsg(EC_Misc_Asm,
@@ -7579,7 +7588,7 @@ static void Adjust_X86_Style_For_BB( BB*, BOOL*, MEM_POOL* );
 static void Adjust_eight_bit_regs (BB*);
 static void Presplit_x87_MMX_Live_Ranges (BB*, MEM_POOL*);
 #endif
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 static void Detect_large_asm_clobber (BB*);
 #endif /* TARG_X8664 */
 
@@ -7602,7 +7611,7 @@ void Alloc_Regs_For_BB (BB *bb, HB_Schedule *Sched)
   Trip_Count = 0;
   Magic_Spill_Location = Local_Spill_Sym;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Detect ASM clobber sets that are too large which may cause LRA to fail.
   Detect_large_asm_clobber(bb);
 #endif
@@ -8445,7 +8454,7 @@ Presplit_x87_MMX_Live_Ranges(BB *bb, MEM_POOL *pool)
 }
 #endif	// TARG_X8664
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 // If the BB has an ASM, see if its clobber set is so large that it may cause
 // LRA to run out of registers.
 static void
@@ -9663,7 +9672,7 @@ LRA_Compute_Register_Request (BB *bb, MEM_POOL *pool)
 #endif
     Reg_Table_Size = PU_BB_Count;
   }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Scratch BBs can be created to run the BB scheduler multiple times.
   if (BB_id(bb) > Reg_Table_Size) {
     // The above code adds 2 to PU_BB_Count.  Don't know why; so do same here.
@@ -9797,7 +9806,7 @@ LRA_Register_Request (BB *bb,  ISA_REGISTER_CLASS cl)
   return regs_needed;
 }
 #endif
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 // Copy the register requests.
 void
 LRA_Copy_Register_Request (BB *to_bb, BB *from_bb)

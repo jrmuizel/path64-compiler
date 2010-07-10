@@ -644,6 +644,22 @@ extern BOOL CGTARG_Bundle_Slot_Available(TI_BUNDLE              *bundle,
 					 BOOL                   stop_bit_reqd,
                                          const CG_GROUPING      *grouping);
 
+#ifdef TARG_ST
+extern void  CGTARG_Get_Info_For_Common_Base_Opt( INT *min_offset_alignment, INT *min_offset, INT *max_offset);
+extern BOOL CGTARG_offset_is_extended(TN *offset, INT64 *val);
+extern BOOL CGTARG_need_extended_Opcode(OP *op, TOP *etop);
+extern BOOL CGTARG_is_expensive_load_imm(OP* op);
+extern void EBO_Combine_Imm_Base_Offset();
+extern INT CGTARG_expensive_load_imm_immediate_index(OP* op);
+extern INT CGTARG_expensive_load_imm_base_index(OP* op);
+extern BOOL CGTARG_sequence_is_cheaper_than_load_imm(OPS* ops, OP* op);
+extern TOP CGTARG_TOP_To_Multi(TOP top);
+extern TOP CGTARG_TOP_From_Multi(TOP top);
+extern BOOL CGTARG_should_factorize(OP* first, OP* last);
+extern BOOL CGTARG_gcm_should_not_move_op(OP *op);
+extern BOOL CGTARG_dummy_op_has_sideeffects(OP *op);
+#endif
+
 extern BOOL CGTARG_Bundle_Stop_Bit_Available(TI_BUNDLE *bundle, INT slot);
 
 extern void CGTARG_Branch_Info ( const OP* op, INT* tfirst, INT* tcount );
@@ -774,11 +790,29 @@ inline INT32 CGTARG_Max_Issue_Width(void)
 /* placeholder for all hardware workarounds */
 extern void Hardware_Workarounds (void);
 extern void Insert_Stop_Bits(BB *bb);
+extern void CGTARG_Insert_Stop_Bits(BB *bb);
 
 extern void CGTARG_Initialize(void);
-
+#ifdef TARG_ST
+extern void CGTARG_Load_From_Memory(TN *tn, ST *mem_loc, OPS *ops, VARIANT variant=V_NONE);
+extern void CGTARG_Store_To_Memory(TN *tn, ST *mem_loc, OPS *ops, VARIANT variant=V_NONE);
+#else
 extern void CGTARG_Load_From_Memory(TN *tn, ST *mem_loc, OPS *ops);
 extern void CGTARG_Store_To_Memory(TN *tn, ST *mem_loc, OPS *ops);
+#endif
+
+/*
+ * Get speculative load opcode given 'op'
+ */
+extern TOP CGTARG_Speculative_Load (OP *op);
+extern TOP CGTARG_Predicated_Store (OP *op);
+extern TOP CGTARG_Predicated_Load (OP *op);
+
+#ifdef TARG_ST
+extern OP *CGTARG_Dup_OP_Predicate (OP* op, TN *new_pred);
+#else
+extern OP *CGTARG_Dup_OP_Predicate (OP* op, TN *new_pred);
+#endif
 
 typedef enum {
   ASSOC_BASE_null,
@@ -900,9 +934,11 @@ inline BOOL CGTARG_Can_Select() {
 }
 
 extern TOP CGTARG_Parallel_Compare(OP* cmp_op, COMPARE_TYPE ctype);
-
+#ifdef TARG_ST
+extern BOOL CGTARG_Dependence_Required(OP *pred_op, OP *succ_op, INT16 *latency);
+#else
 extern BOOL CGTARG_Dependence_Required(OP *pred_op, OP *succ_op);
-
+#endif
 extern void CGTARG_Adjust_Latency(OP *pred_op, OP *succ_op, CG_DEP_KIND kind, UINT8 opnd, INT *latency);
 
 

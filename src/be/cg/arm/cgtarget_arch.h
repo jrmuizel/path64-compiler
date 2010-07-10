@@ -55,8 +55,6 @@ CGTARG_Use_Brlikely(float branch_taken_probability)
  *   Spilling:
  * ====================================================================
  */
-#define CGSPILL_DEFAULT_STORE_COST 1.25F
-#define CGSPILL_DEFAULT_RESTORE_COST 3.25F
 
 extern UINT32 CGTARG_NUM_SPILL_TYPES;
 
@@ -199,4 +197,11 @@ CGTARG_EH_Gen_Return_Stackadj_TN ()
   FmtAssert (FALSE, ("EH_Return not supported"));
   return NULL;
 }
+
+inline BOOL
+CGTARG_Is_OP_Intrinsic(OP *op)
+{
+  return OP_code(op) == TOP_intrncall;
+}
+
 #endif /* targ_cg_INCLUDED */

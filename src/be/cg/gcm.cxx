@@ -295,7 +295,23 @@ Print_Trace_File(OP *cand_op, BB *src_bb, BB *cand_bb, BOOL success)
   fprintf (TFile,"	FROM BB:%d => TO BB:%d:\n", 
 	   BB_id(src_bb), BB_id(cand_bb));
 }
-
+//
+// Returns true if op is a self add with a constant: rx = rx + cst
+//
+static BOOL
+OP_Is_Addr_Incr(OP *op)
+{
+  TOP opcode = OP_code(op);
+  INT opnd1_idx, opnd2_idx;
+  if (OP_iadd(op)) {
+    opnd1_idx = OP_find_opnd_use(op, OU_opnd1);
+    opnd2_idx = OP_find_opnd_use(op, OU_opnd2);
+    if (TN_has_value(OP_opnd(op, opnd2_idx)) &&
+	OP_result(op, 0) == OP_opnd(op, opnd1_idx))
+      return TRUE;
+  }
+  return FALSE;
+}
 // =======================================================================
 // OP_Is_Expensive
 // checks to see if <cur_op> is expensive. These ops are long latency
@@ -612,7 +628,6 @@ static BOOL
 OP_Has_Restrictions(OP *op, BB *source_bb, BB *target_bb, mINT32 motion_type)
 {
   if (CGTARG_Is_OP_Intrinsic(op)) return TRUE;
-
 #ifdef TARG_X8664
   if( OP_icmp(op) )
     return TRUE;
@@ -2786,7 +2801,13 @@ Perform_Post_GCM_Steps(BB *bb, BB *cand_bb, OP *cand_op, mINT32 motion_type,
     // adjusting the load/store offsets back to their original form. This
     // is faster than actually calling the dep_graph builder and walking thru
     // the succ arcs.
-    if (CGTARG_Is_OP_Addr_Incr(cand_op) &&
+    if (
+#ifdef TARG_ST
+        OP_Is_Addr_Incr(cand_op)
+#else
+        CGTARG_Is_OP_Addr_Incr(cand_op) 
+#endif
+        &&
 	!TN_is_sp_reg(OP_result(cand_op,0 /*???*/))) {
 #ifdef TARG_ST
     INT64 addiu_const = TN_value (OP_Opnd2(cand_op));
@@ -2850,7 +2871,12 @@ Perform_Post_GCM_Steps(BB *bb, BB *cand_bb, OP *cand_op, mINT32 motion_type,
 	     succ_op != NULL; 
 	     succ_op = OP_next(succ_op))
 	  {
-	    if (CGTARG_Is_OP_Addr_Incr(succ_op)) {
+#ifdef TARG_ST
+              if (OP_Is_Addr_Incr(succ_op))
+#else
+	    if (CGTARG_Is_OP_Addr_Incr(succ_op)) 
+#endif
+            {
 	      if ((Ignore_TN_Dep && 
 		   (TN_register(OP_opnd(cand_op, base_opndnum)) ==
 		    TN_register(OP_result(succ_op,0 /*???*/)))) ||
@@ -2944,7 +2970,7 @@ OP_To_Move (BB *bb, BB *tgt_bb, BB_SET **pred_bbs, mINT32 motion_type, mUINT8 *s
     // don't consider dummy or transfer ops
     if (OP_xfer(cur_op) || OP_noop(cur_op)) continue;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (CGTARG_Is_OP_Barrier(cur_op)) continue;	// bug 4850
 
     // Don't move volatile ASM.

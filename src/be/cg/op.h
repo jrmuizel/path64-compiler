@@ -468,7 +468,7 @@ typedef int TN_effect;
 	((o)->res_opnd[(opnd) + OP_effects_offset(o)] = \
 	 (TN*)((TN_effect)((o)->res_opnd[(opnd) + OP_effects_offset(o)]) | (v)))
 #define Reset_OP_effects(o,opnd,v) \
-	((o)->res_opnd[(opnd) + OP_effects_offset(o)] = (TN*)((TN_effect)((o)->res_opnd[(opnd) + OP_effects_offset(o)]) & ~(v)))
+	((o)->res_opnd[(opnd) + OP_effects_offset(o)] = (TN*)((TN_effect)(uintptr_t) (void *)((o)->res_opnd[(opnd) + OP_effects_offset(o)]) & ~(v)))
 
 #ifdef TARG_STxP70
 #define EFFECT_PRED_FALSE 0x1
@@ -843,7 +843,7 @@ extern BOOL OP_has_implicit_interactions(OP*);
 #define OP_select(o)		(TOP_is_select(OP_code(o)))
 #define OP_cond_move(o)		(TOP_is_cond_move(OP_code(o)))
 #define OP_operand_info(o)	(ISA_OPERAND_Info(OP_code(o)))
-
+#define OP_dismissible(o)	(TOP_is_dismissible(OP_code(o)))
 #ifdef TARG_ST
 /* Result must not be same as operand */ 
 inline BOOL OP_uniq_res(OP *op, INT i) { 
@@ -884,9 +884,13 @@ inline BOOL OP_conflict(OP *op, INT res_idx, INT opnd_idx) {
   return FALSE; 
 }
 #endif
-
+#ifdef TARG_ST
+#define OP_unalign_ld(o)	(TOP_is_load(OP_code(o)) && TOP_is_unalign(OP_code(o)))
+#define OP_unalign_store(o)	(TOP_is_store(OP_code(o)) && TOP_is_unalign(OP_code(o)))
+#else
 #define OP_unalign_ld(o)	(TOP_is_unalign_ld(OP_code(o)))
 #define OP_unalign_store(o)	(TOP_is_unalign_store(OP_code(o)))
+#endif
 #define OP_unalign_mem(o)	(OP_unalign_ld(o) | OP_unalign_store(o))
 #define OP_defs_fcc(o)		(TOP_is_defs_fcc(OP_code(o)))
 #define OP_defs_fcr(o)		(TOP_is_defs_fcr(OP_code(o)))
@@ -913,6 +917,16 @@ inline BOOL OP_conflict(OP *op, INT res_idx, INT opnd_idx) {
 #define OP_branch_predict(o)	(TOP_is_branch_predict(OP_code(o)))
 #define OP_var_opnds(o)		(TOP_is_var_opnds(OP_code(o)))
 #define OP_uncond(o)            (OP_xfer(o) && !OP_cond(o))
+
+#define OP_operand_info(o)	(ISA_OPERAND_Info(OP_code(o)))
+#define OP_has_hazard(o)	(ISA_HAZARD_TOP_Has_Hazard(OP_code(o)))
+#define OP_immediate_opnd(o,lc)	(TOP_Immediate_Operand(OP_code(o), lc))
+#define OP_has_immediate(o)	(OP_immediate_opnd(o, NULL) >= 0)
+#define OP_inst_words(o)	(ISA_PACK_Inst_Words(OP_code(o)))
+#define OP_unit_slots(o)	(ISA_EXEC_Unit_Slots(OP_code(o)))
+#define OP_find_opnd_use(o,u)	(TOP_Find_Operand_Use(OP_code(o),(u)))
+#define OP_has_result(o)        (OP_results(o) != 0)
+
 #ifdef TARG_X8664
 #define OP_x86_style(o)	        (TOP_is_x86_style(OP_code(o)))
 #define OP_reads_rflags(o)      (TOP_is_read_rflags(OP_code(o)))
@@ -935,11 +949,6 @@ inline BOOL OP_conflict(OP *op, INT res_idx, INT opnd_idx) {
 #endif	// ICE9A_HW_WORKAROUND
 #endif
 
-#define OP_has_hazard(o)	(ISA_HAZARD_TOP_Has_Hazard(OP_code(o)))
-#define OP_immediate_opnd(o)	(TOP_Immediate_Operand(OP_code(o),NULL))
-#define OP_has_immediate(o)	(OP_immediate_opnd(o) >= 0)
-#define OP_inst_words(o)	(ISA_PACK_Inst_Words(OP_code(o)))
-#define OP_find_opnd_use(o,u)	(TOP_Find_Operand_Use(OP_code(o),(u)))
 #ifdef TARG_ST
 /* Returns index of operand that must be same register as result i.
    This has been moved into oputil.cxx as now this handles the
@@ -1055,7 +1064,18 @@ inline ISA_REGISTER_CLASS OP_result_reg_class(OP *op, INT opnd)
 inline ISA_REGISTER_SUBCLASS OP_opnd_reg_subclass(OP *op, INT opnd)
 {
   const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info(OP_code(op));
+#ifdef TARG_ST
+  if (opnd >= ISA_OPERAND_INFO_Operands(oinfo)) {
+    FmtAssert (OP_var_opnds (op) || OP_call(op), ("Invalid operand number (%d) in OP_opnd_reg_subclass", opnd));
+    return ISA_REGISTER_SUBCLASS_UNDEFINED;
+  }
+#endif
   const ISA_OPERAND_VALTYP *otype = ISA_OPERAND_INFO_Operand(oinfo, opnd);
+#ifdef EFFECT_PRED_FALSE
+// (cbr) add effect supports to operands. Currently used for false guards.
+  if (OP_Pred_False(op, opnd))
+    return ISA_REGISTER_SUBCLASS_gr_false;
+#endif
   return ISA_OPERAND_VALTYP_Register_Subclass(otype);
 }
 
@@ -1109,7 +1129,50 @@ inline BOOL OP_Is_Copy(OP *op)
 #else
   return CGTARG_Copy_Operand(op) >= 0;
 #endif
+}// Return a boolean indicating if 'op' performs a copy operation
+// that is a candidate for preferencing.  Does extra consistency
+// checks.  This is the preferred method for testing for a copy
+// before invoking OP_Copy_Operand() and friends.
+inline BOOL OP_Is_Preference_Copy (OP* op) 
+{
+  if (OP_copy(op)) {
+    if (OP_Is_Copy(op)) {
+      return TRUE;
+    } else {
+      //
+      // Ops that are to be deleted sometimes have their opcode temporarily
+      // set to nop prior to deletion (principally in lra).
+      //
+      Is_True(OP_code(op) == TOP_noop, 
+          ("Op_copy set on non-copy op %s", TOP_Name(OP_code(op))));
+      return FALSE;
+    }
+  }
+  return FALSE;
 }
+
+// Returns the right opcode for simulated TOP which matches 
+// ISA_EXEC_UNIT_PROPERTY.
+inline TOP OP_Simulated_Top (OP *op, ISA_EXEC_UNIT_PROPERTY unit)
+{
+  TOP top = OP_code(op);
+ 
+  /* Prune the obvious cases. */
+  if (!TOP_is_simulated(top)) return top;
+
+  /* Placeholder for itemizing specific simulated ops */
+  switch (top) {
+
+  case TOP_noop:
+    return CGTARG_Noop_Top(unit);
+
+  default:
+    // TOP_intrncall, TOP_spadjust, TOP_copy_br, TOP_asm,
+    return top;
+  }
+}
+
+
 
 // If 'op' performs a copy operation, return the TN of
 // the source operand; otherwise return NULL.
@@ -1131,6 +1194,14 @@ inline TN *CGTARG_Copy_Operand_TN(OP *op)
   return (iopnd < 0) ? NULL : OP_opnd(op,iopnd);
 }
 #endif
+
+#ifdef TARG_ST
+#define OP_Mem_Ref_Bytes(o)  TOP_Mem_Bytes(OP_code(o))
+#else
+extern UINT32 CGTARG_Mem_Ref_Bytes(const OP *memop);
+#endif
+
+
 #ifdef TARG_ST
 // Is this 'op' a long latency OP for the purpose of GCM.
 // TODO: define a cut-out latency CGTARG_long_latency_limit and
@@ -1150,7 +1221,6 @@ extern BOOL OP_Is_Counted_Loop(OP* op);
 extern BOOL OP_Is_Copy_Immediate_Into_Register(OP *op);
 extern BOOL OP_Has_Latency(OP *op);
 extern BOOL OP_Is_Speculative_Load(OP* memop);
-extern BOOL OP_Is_Advanced_Load(OP* memop);
 extern BOOL OP_Is_Check_Load(OP* memop);
 extern BOOL OP_Is_Speculative(OP *op);
 extern BOOL OP_Can_Be_Speculative (OP *op);
@@ -1162,6 +1232,26 @@ inline BOOL CGTARG_Is_OP_Barrier(OP *op) { return FALSE; }
 extern BOOL CGTARG_Can_Be_Speculative(OP* op);
 #endif
 
+// Copy ASM_OP_ANNOT when duplicating an OP.
+#ifdef TARG_ST
+void Copy_Asm_OP_Annot(OP* new_op, OP* op);
+#else
+inline void
+Copy_Asm_OP_Annot(OP* new_op, OP* op) 
+{
+  /*
+  if (OP_code(op) == TOP_asm) {
+    OP_MAP_Set(OP_Asm_Map, new_op, OP_MAP_Get(OP_Asm_Map, op));
+  }
+  */
+  return;
+}
+#endif
+// check if an operation that saves all the predicate registers
+extern BOOL OP_save_predicates(OP *op);
+
+// check if an operation that restores all the predicate registers
+extern BOOL OP_restore_predicates(OP *op);
 
 #define OP_has_result(o) (OP_results(o) != 0)
 #ifdef TARG_ST // [CL]
@@ -1400,6 +1490,10 @@ void OPS_Insert_Ops(OPS *ops, OP *point, OPS *insert_ops, BOOL before);
 
 /* Basic OP generators: */
 extern OP *Dup_OP (const OP *op);
+#ifdef TARG_ST
+extern OP *Resize_OP(OP *op, int results, int opnds);
+extern void OP_Copy_Properties(OP *op, OP *src_op);
+#endif
 
 extern void Free_OP_List ( OP *op );	/* Free OP list's space */
 
@@ -1479,7 +1573,12 @@ inline void Build_OP(TOP opc, struct tn *t1, struct tn *t2, struct tn *t3,
 {
   OPS_Append_Op(ops, Mk_OP(opc, t1, t2, t3, t4, t5, t6, t7, t8, t9));
 }
-
+#ifdef TARG_ST
+// (cbr) Support for op effects
+extern void CGTARG_Predicate_OP(struct bb *bb, OP *op, struct tn *pred_tn, bool on_false);
+#else
+extern void CGTARG_Predicate_OP(struct bb *bb, OP *op, struct tn *pred_tn);
+#endif
 /* Determine if the op defines/references the given TN result/operand. */
 extern BOOL OP_Defs_TN(const OP *op, const struct tn *res);
 extern BOOL OP_Refs_TN(const OP *op, const struct tn *opnd);
@@ -1487,6 +1586,13 @@ extern BOOL OP_Refs_TN(const OP *op, const struct tn *opnd);
 /* Determine if the op defines/references the given register. */
 extern BOOL OP_Defs_Reg(const OP *op, ISA_REGISTER_CLASS rclass, REGISTER reg);
 extern BOOL OP_Refs_Reg(const OP *op, ISA_REGISTER_CLASS rclass, REGISTER reg);
+/* Determine the number of registers in [ REG : REG + NREGS - 1 ] that
+ * the OP defines/references.
+ */
+extern INT OP_Defs_Regs(const OP *op, ISA_REGISTER_CLASS rclass, REGISTER reg,
+                        INT nregs);
+extern INT OP_Refs_Regs(const OP *op, ISA_REGISTER_CLASS rclass, REGISTER reg,
+                        INT nregs);
 
 inline void OP_Change_Opcode(OP *op, TOP opc)
 {
@@ -1507,7 +1613,61 @@ inline void OP_Change_To_Noop(OP *op)
   op->opnds = 0;
   op->results = 0;
   OP_flags(op) = 0;
+  #ifdef TARG_ST // [CL] attributes extension
+  OP_flags2(op) = 0;
+#endif
+
 }
+#ifdef TARG_ST
+// Determine which opcode to use to copy TNs based upon whether or
+// not the value being copied is floating point, its size in bits,
+// and whether the condition to be used is a floating CC or integer
+// register.
+//
+// Arthur: moved over from cgtarg.h
+// TODO: what is it really ??
+//
+extern TOP CGTARG_Which_OP_Select (UINT16 bit_size, BOOL is_float,
+				    BOOL is_fcc);
+
+/*
+ * Handling of implicit architectural flags (or other resources) 
+ * effects that are not described accurately with the architecture description.
+ * We do not distinguish different flag effects, but we track operations that
+ * have flag effects whatever the flags. This is an inaccuracy.
+ * The possible flag effects as:
+ * - OP_FE_NONE: no flag access
+ * - OP_FE_READ: the operation read an implicit flag,
+ * - OP_FE_WRITE: the operation writes a useful flag value,
+ * - OP_FE_CLOBBER: the operation clobbers flag values (write useless value) .
+ * For instance an operation which is OP_FA_WRITE can't be deleted, while
+ * a OP_FE_CLOBBER can be deleted is it does not generate value otherwise.
+ * For dependencies between operations, there is a dependence between
+ * two operations that access flags if:
+ * 1. both operations access the flag (~OP_FE_NONE),
+ * 2. at least one is a usefull write (OP_FE_WRITE).
+ * Note that an operation may have multiple flag effect at the same time,
+ * for instance OP_FE_WRITE|OP_FE_READ.
+ * We distinguish such operations from OP_side_effects operations, though
+ * we must handle the flag effects in the code generator for avoiding deletion
+ * of usefull flag settings.
+ */
+typedef enum {
+  OP_FE_NONE = 0,
+  OP_FE_READ = 1,
+  OP_FE_WRITE = 2,
+  OP_FE_CLOBBER = 4
+} OP_Flag_Effect;
+typedef int OP_Flag_Effects;
+
+/*
+ * Target dependent interface for getting the flag effects of an operation.
+ */
+extern OP_Flag_Effects CGTARG_OP_Get_Flag_Effects(const OP *op);
+
+#define OP_Get_Flag_Effects(op) CGTARG_OP_Get_Flag_Effects(op)
+#define OP_Has_Flag_Effect(op) (CGTARG_OP_Get_Flag_Effects(op) & OP_FE_WRITE)
+#endif
 
 inline BOOL OP_Precedes(OP *op1, OP *op2)
 {
@@ -1662,5 +1822,103 @@ TN_Opernum_In_OP (OP* op, struct tn *tn)
 #ifndef TARG_ST
 #include "op_targ.h"
 #endif
+
+#ifdef TARG_ST
+/* =====================================================================
+ * OPs_Are_Equivalent
+ *
+ * Returns true is 2 ops are equivalent.
+ * If true, it is useless to replace one by hte other
+ * for instance.
+ * 2 ops are equivalent if the intruction is the same
+ * and arguments are the same that is:
+ * 1. opcode are the same
+ * 2. all non register operands are the same
+ * 3. all register operands are the same, or if allocated
+ *    allocated registers are the same.
+ * Note that flags attached to ops are not tested.
+ * =====================================================================
+ */
+extern BOOL OPs_Are_Equivalent(OP *op1, OP *op2);
+
+/* =====================================================================
+   Opnds_Are_Equivalent
+   Returns TRUE if TNs have the same base TN number or that they are
+   assigned the same register.
+ ===================================================================== */
+extern BOOL Opnds_Are_Equivalent(OP *op1, OP *op2, int idx1, int idx2);
+
+/* =====================================================================
+   OPS_Copy_Predicate  
+   Copy predicate from src_op to ops.
+ ===================================================================== */
+extern void OPS_Copy_Predicate(OPS* ops, OP *src_op);
+
+/* ====================================================================
+ *
+ * OP_storeval_byte_offset
+ *
+ * OP is a memory store.
+ * Returns the byte offset at which operand opndno is stored, ofset from
+ * the start of the memory area written by op.
+ * ====================================================================
+ */
+extern INT OP_storeval_byte_offset (OP *op, INT opndno);
+
+/* ====================================================================
+ *
+ * OP_loadval_byte_offset
+ *
+ * OP is a memory load.
+ * Returns the byte offset from which result resno is loaded, ofset from
+ * the start of the memory area read by op.
+ * ====================================================================
+ */
+extern INT OP_loadval_byte_offset (OP *op, INT resno);
+
+// FdF: Returns 0 if op is not an auto-mod operation, or if tn is not
+// the auto-modified register, or is redefined also by the operation.
+// Otherwise, return -1 for a pre-automod, and 1 for a post-automod.
+extern INT TN_isAutoMod(OP *op, TN *tn);
+
+/* ====================================================================
+ *
+ * OP_load_result
+ *
+ * OP is a memory load.
+ * Returns the index of the result that will contains the loaded value.
+ * -1 is returned if it cannot be determined (load with several 
+ * candidate results).
+ * ====================================================================
+ */
+extern INT OP_load_result (OP *op);
+
+/**
+ * Generate a conditional move with predicate information.
+ * If no real operation exists, generate a simulated one.
+ * ([CG]: we might use a temporary pseudo OP for SSA repairs
+ *        as it has a predicate information and thus avoid
+ *        multiple repairs (see repair code in cg_ssa.cxx).
+ *        After the out of SSA all movc are replaced by select
+ *        operations or the corresponding target dependent
+ *        conditional)
+ */
+void
+CGTARG_OP_Make_movc( TN *guard,
+                     TN *dst,
+                     TN *src,
+                     OPS *cmov_ops,
+                     bool on_false );
+
+/**
+ * If argument <op> is a simulated operation representing a conditional move,
+ * generates the real target code to perform the move and return TRUE.
+ * Otherwise return FALSE.
+ */
+BOOL
+CGTARG_OP_Lower_movc( OP *op,
+                      OPS *lowered_ops );
+#endif
+
 #endif /* op_INCLUDED */
 

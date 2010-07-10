@@ -36,6 +36,7 @@
 #include "label_util.h"
 #include "be_util.h"
 #include "bb.h"
+#include "config_asm.h"
 
 // Map LABEL number to offset and defining BB.
 typedef struct {
