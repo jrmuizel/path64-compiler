@@ -61,3 +61,45 @@ Handle_Signals(void)
     fprintf(stderr, "Handle_Signals() is unimplemented\n");
 }
 
+void Anl_Process_Command_Line(int phase_argc, char *phase_argv[], int argc, char *argv[])
+{
+    fprintf(stderr, "Anl_Process_Command_Line() is unimplemented\n");
+}
+
+int Anl_Needs_Whirl2c(void)
+{
+    return 0;
+}
+
+int Anl_Needs_Whirl2f(void)
+{
+    return 0;
+}
+
+void Anl_Init(void)
+{
+    fprintf(stderr, "Anl_Init() is unimplemented\n");
+}
+
+int Anl_Init_Map(int *id_map_pool)
+{
+    fprintf(stderr, "Anl_Init_Map() is unimplemented\n");
+    return 0;
+}
+
+void Anl_Fini(void)
+{
+    fprintf(stderr, "Anl_Fini() is unimplemented\n");
+}
+
+void Anl_Static_Analysis(int *pu, int id_map)
+{
+    fprintf(stderr, "Anl_Fini() is unimplemented\n");
+}
+
+int* Pre_Optimizer (int a1, int* a2, int* a3, int* a4)
+{
+    fprintf(stderr, "Pre_Optimizer() is unimplemented\n");
+    return 0;
+}
+
