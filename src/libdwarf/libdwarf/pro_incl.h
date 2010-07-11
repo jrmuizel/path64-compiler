@@ -27,6 +27,8 @@
 
 #ifdef HAVE_ELF_H
 #include <elf.h>
+#elif defined(_WIN32)
+#include <elf.h>
 #elif defined(HAVE_LIBELF_H) 
 /* On one platform without elf.h this gets Elf32_Rel 
    type defined (a required type). */

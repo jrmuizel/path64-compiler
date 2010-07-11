@@ -34,6 +34,9 @@
 #include "pro_section.h"	/* for MAGIC_SECT_NO */
 #include "pro_reloc_symbolic.h"
 #include "pro_reloc_stream.h"
+#ifdef _WIN32
+#include <elf.h>
+#endif
 
 
 static void common_init(Dwarf_P_Debug dbg, Dwarf_Unsigned flags);
