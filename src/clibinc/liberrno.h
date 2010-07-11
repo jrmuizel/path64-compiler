@@ -37,13 +37,7 @@
 #ifndef	_LIBERRNO_H
 #define	_LIBERRNO_H
 
-#if defined(_HOST_OS_DARWIN) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 #include <errno.h>
-#elif defined(_LITTLE_ENDIAN)
-#include <asm/errno.h>
-#else
-#include <sys/errno.h>
-#endif
 
 /*
  * Symbolic library run-time error codes
