@@ -172,7 +172,7 @@ extern void EH_Generate_Range_List (WN *);
 #endif // __linux__
 
 // symbols defined in wopt.so
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 
 extern void wopt_main (INT argc, char **argv, INT, char **);
 extern void Wopt_Init ();
@@ -201,7 +201,7 @@ extern BOOL Verify_alias (ALIAS_MANAGER *, WN *);
 #endif // __linux__
 
 // symbols defined in lno.so
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 
 extern void (*lno_main_p) (INT, char**, INT, char**);
 #define lno_main (*lno_main_p)
@@ -226,7 +226,7 @@ extern WN* (*Perform_Loop_Nest_Optimization_p) (PU_Info*, WN*, WN*, BOOL);
 
 // symbols defined in ipl.so
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 
 extern void (*Ipl_Extra_Output_p) (Output_File *);
 #define Ipl_Extra_Output (*Ipl_Extra_Output_p)
@@ -262,7 +262,7 @@ extern void (*Preprocess_struct_access_p)(void);
 #include "w2c_weak.h"
 #include "w2f_weak.h"
 
-#if ! defined(BUILD_OS_DARWIN)
+#if ! defined(BUILD_OS_DARWIN) && !defined(_WIN32)
 #pragma weak Prp_Process_Command_Line
 #pragma weak Prp_Needs_Whirl2c
 #pragma weak Prp_Needs_Whirl2f

@@ -48,7 +48,7 @@
 #include <sys/types.h>              // for pid_t
 #include <unistd.h>                 // for fork(), pipe(), etc.
 #include <signal.h>                 // for SIGINT
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 #include <sys/wait.h>                   // for waitpid()
 #else /* defined(BUILD_OS_DARWIN) */
 #include <wait.h>                   // for waitpid()
