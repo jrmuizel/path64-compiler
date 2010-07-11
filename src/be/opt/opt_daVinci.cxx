@@ -91,6 +91,9 @@ public:
 
 DAVINCI::DAVINCI(void)
 {
+#ifdef _WIN32
+  fprintf(stderr, "DAVINCI::DAVINCI is unimplemented\n");
+#else
   to_display = from_display = NULL;
   
   if (isatty (1) == 0 && isatty (2) == 0)
@@ -142,6 +145,7 @@ DAVINCI::DAVINCI(void)
       fprintf(to_display, "menu(view_menu(fit_scale_to_window))\n");
     }
   }
+#endif
 } 
 
 
@@ -185,8 +189,8 @@ DAVINCI::cleanup (void)
   int stat;
   
   display_ok = FALSE;
-  kill (pid, SIGINT);
-  waitpid (pid, &stat, WNOHANG);  // capture any SIGCHLD so not to
+//  kill (pid, SIGINT);
+//  waitpid (pid, &stat, WNOHANG);  // capture any SIGCHLD so not to
   // confuse ipacom.
   fclose (to_display);
   fclose (from_display);
