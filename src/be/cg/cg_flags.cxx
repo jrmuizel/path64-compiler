@@ -189,7 +189,8 @@ BOOL  CG_warn_prefetch_padding = 0;
 BOOL  CG_COLOR_use_pref_regs = TRUE;
 INT32 CG_COLOR_pref_regs_priority = PREF_REGS_PRIORITY_MEDIUM;
 #endif
-
+BOOL CG_enable_range_propagation = FALSE;
+BOOL CG_enable_select = FALSE;
 #ifdef KEY
 BOOL CG_split_bb = TRUE;
 BOOL CG_split_bb_Set = FALSE;

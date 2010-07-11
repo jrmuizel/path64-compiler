@@ -36,10 +36,9 @@ static const char rcs_id[] = "$Source: common/com/SCCS/s.em_dwarf.cxx $ $Revisio
 #endif
 
 #include <stdio.h>
-
 #include "libelf/libelf.h"
 #include "elf_stuff.h"
-
+#include <limits.h>
 #define	USE_STANDARD_TYPES 1
 #include "defs.h"
 #include "erglob.h"
@@ -924,6 +923,9 @@ void Em_Dwarf_Add_PU_Entries (Dwarf_Unsigned begin_label,
 			 end_offset,
 			 &dw_error);
 }
+
+#endif
+
 #ifdef TARG_ST
 
 #   include <assert.h>	// temporary
@@ -1325,7 +1327,7 @@ Dwarf_Unsigned
 CreateCIE(PU& pu, const Dwarf_Small& retAddr, unsigned char* initialBytes,
           Dwarf_Unsigned size_of_init_bytes)
 {
-    char *augmenter="";
+    const char *augmenter="";
     Dwarf_Error dw_error;
     return dwarf_add_frame_cie(g_current_dw_dbg, augmenter,
                                Dwarf_Small(CodeAlignmentFactor(pu)),
@@ -1356,7 +1358,7 @@ CreateEhCIE(PU& pu, const Dwarf_Small& retAddr, unsigned char* initialBytes,
             Dwarf_Unsigned size_of_init_bytes)
 {
 #ifndef TARG_ST
-    char *augmenter = DW_CIE_AUGMENTER_STRING_V0;
+    const char *augmenter = DW_CIE_AUGMENTER_STRING_V0;
 #endif
     Dwarf_Unsigned personality;
     DST_INFO* cuInfo = DST_INFO_IDX_TO_PTR(DST_get_compile_unit());
@@ -1365,7 +1367,7 @@ CreateEhCIE(PU& pu, const Dwarf_Small& retAddr, unsigned char* initialBytes,
 #ifdef TARG_ST
     BOOL pic = Gen_PIC_Shared || Gen_PIC_Call_Shared;
     const char* personality_str = 0;
-    char *augmenter;
+    const char *augmenter;
     if (PU_has_exc_scopes(pu)) {
       if (pic) {
 	augmenter = PIC_DW_CIE_AUGMENTER_STRING_V0;
@@ -1460,4 +1462,3 @@ Get_Debug_Reg_Id(TN* tn)
 
 #endif
 
-#endif

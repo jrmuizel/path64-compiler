@@ -13,6 +13,7 @@ SET(PATHSCALE_CG_SRCS
 			"${PATHSCALE_BINARY_DIR}/be/lrange_set.cxx"
 			"${PATHSCALE_BINARY_DIR}/be/tn_set.cxx"
 			"${PATHSCALE_BINARY_DIR}/be/gtn_set.cxx"
+                        "../../be/cg/swp/cg_swp.cxx" #st
 			"../../be/cg/swp/cg_swp_allocator.cxx"
 			"../../be/cg/swp/cg_swp_code_gen.cxx"
 			"../../be/cg/swp/cg_swp_driver.cxx"
@@ -33,7 +34,8 @@ SET(PATHSCALE_CG_SRCS
 			"../../be/cg/${BUILD_TARGET_DIR}/cg_swp_target.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/cgdwarf_targ.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/cgemit_targ.cxx"
-		#	"../../be/cg/${BUILD_TARGET_DIR}/cgtarget.cxx"
+			"../../be/cg/${BUILD_TARGET_DIR}/cgtarget.cxx"
+                        "../../be/cg/${BUILD_TARGET_DIR}/targ_op.cxx" #st
 			"../../be/cg/${BUILD_TARGET_DIR}/cg_loop_recur.cxx"
 		#	"../../be/cg/${BUILD_TARGET_DIR}/ebo_special.cxx"
 		#	"../../be/cg/${BUILD_TARGET_DIR}/entry_exit_targ.cxx"
@@ -41,7 +43,7 @@ SET(PATHSCALE_CG_SRCS
 		#	"../../be/cg/${BUILD_TARGET_DIR}/exp_divrem.cxx"
 		#	"../../be/cg/${BUILD_TARGET_DIR}/exp_loadstore.cxx"
 		#	"../../be/cg/${BUILD_TARGET_DIR}/exp_predicate.cxx"
-		#	"../../be/cg/${BUILD_TARGET_DIR}/expand.cxx"
+			"../../be/cg/${BUILD_TARGET_DIR}/expand.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/pqs_cg.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/pqs.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/register_targ.cxx"
@@ -63,6 +65,7 @@ SET(PATHSCALE_CG_SRCS
 			"../../be/cg/cg_db_op.cxx"
 			"../../be/cg/cgdriver.cxx"
 			"../../be/cg/cgdwarf.cxx"
+                        "../../be/cg/cgdwarf_debug_frame.cxx" #st
 			"../../be/cg/cgemit.cxx"
 			"../../be/cg/cgexp.cxx"
 			"../../be/cg/cg_flags.cxx"

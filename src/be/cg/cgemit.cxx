@@ -1269,7 +1269,7 @@ static void Print_Label (FILE *pfile, ST *st, INT64 size)
     EMT_Write_Qualified_Name (pfile, st);
 #ifdef TARG_ST
   if (List_Notes) {
-    fprintf (pfile, ":\t%s 0x%llx\n", ASM_CMNT_LINE, base_ofst);
+    fprintf (pfile, ":\t%s 0x" SCNx64"\n", ASM_CMNT_LINE, base_ofst);
   } else {
     fprintf (pfile, ":\n");
   }

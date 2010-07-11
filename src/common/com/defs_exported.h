@@ -2,28 +2,39 @@
 
   Copyright (C) 2000, 2001 Silicon Graphics, Inc.  All Rights Reserved.
 
-   Copyright (C) STMicroelectronics All Rights Reserved.
+  This program is free software; you can redistribute it and/or modify it
+  under the terms of version 2 of the GNU General Public License as
+  published by the Free Software Foundation.
 
-   Path64 is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
+  This program is distributed in the hope that it would be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
 
-   Path64 is distributed in the hope that it will be useful, but WITHOUT
-   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-   License for more details.
+  Further, this software is distributed without any warranty that it is
+  free of the rightful claim of any third person regarding infringement 
+  or the like.  Any license provided herein, whether implied or 
+  otherwise, applies only to this software file.  Patent licenses, if 
+  any, provided herein do not apply to combinations of this program with 
+  other software, or any other product whatsoever.  
 
-   You should have received a copy of the GNU General Public License
-   along with Path64; see the file COPYING.  If not, write to the Free
-   Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write the Free Software Foundation, Inc., 59
+  Temple Place - Suite 330, Boston MA 02111-1307, USA.
+
+  Contact information:  Silicon Graphics, Inc., 1600 Amphitheatre Pky,
+  Mountain View, CA 94043, or:
+
+  http://www.sgi.com
+
+  For further information regarding this notice, see:
+
+  http://oss.sgi.com/projects/GenInfo/NoticeExplan
 
 */
 
 #ifndef defs_exported_INCLUDED
 #define defs_exported_INCLUDED
-
+#include <inttypes.h>
 /* ====================================================================
  *
  * Type mapping
@@ -43,25 +54,25 @@
 
 #if (defined(HOST_SGI) || defined(__GNUC__) || defined(_MSC_VER))
 typedef signed int	INT;	/* The natural integer on the host */
-typedef signed int	INT8;	/* Use the natural integer */
-typedef signed int	INT16;	/* Use the natural integer */
-typedef signed int	INT32;	/* The natural integer matches */
-typedef signed long long INT64;	
-typedef unsigned long	INTPTR;	/* Integer the same size as pointer*/
+typedef signed int	INT8;	/* Use the natural integer FIXME: Not portable */
+typedef signed int 	INT16;	/* Use the natural integer - FIXME: This is not correct or portable */
+typedef int32_t 	INT32;	/* The natural integer matches */
+typedef int64_t 	INT64;	
+typedef uintptr_t 	INTPTR;	/* Integer the same size as pointer*/
 typedef unsigned int	UINT;	/* The natural integer on the host */
-typedef unsigned int	UINT8;	/* Use the natural integer */
+typedef unsigned int 	UINT8;	/* Use the natural integer FIXME: Not portable */
 typedef unsigned int	UINT16;	/* Use the natural integer */
-typedef unsigned int	UINT32;	/* The natural integer matches */
-typedef unsigned long long UINT64;
-typedef int		BOOL;	/* Natural size Boolean value */
-typedef signed char	mINT8;	/* Avoid - often very inefficient */
-typedef signed short	mINT16;	/* Use a 16-bit integer */
-typedef signed int	mINT32;	/* The natural integer matches */
-typedef signed long long mINT64;
-typedef unsigned char	mUINT8;	/* Use the natural integer */
-typedef unsigned short	mUINT16;/* Use a 16-bit integer */
-typedef unsigned int	mUINT32;/* The natural integer matches */
-typedef unsigned long long mUINT64;
+typedef uint32_t	UINT32;	/* The natural integer matches */
+typedef uint64_t	UINT64;
+typedef int		BOOL;	/* Natural size Boolean value... which should be bool, but was defined int a long time ago */ 
+typedef int8_t		mINT8;	/* Avoid - often very inefficient */
+typedef int16_t		mINT16;	/* Use a 16-bit integer */
+typedef int32_t		mINT32;	/* The natural integer matches */
+typedef int64_t		mINT64;
+typedef uint8_t		mUINT8;	/* Use the natural integer */
+typedef uint16_t	mUINT16;/* Use a 16-bit integer */
+typedef uint32_t	mUINT32;/* The natural integer matches */
+typedef uint64_t	mUINT64;
 typedef unsigned char	mBOOL;	/* Minimal size Boolean value */
 
 /* Define largest efficient integers for the host machine: */
@@ -69,8 +80,8 @@ typedef signed long	INTSC;	/* Scaled integer */
 typedef unsigned long	UINTSC;	/* Scaled integer */
 
 /* Define pointer-sized integers for the host machine: */
-typedef signed long	INTPS;	/* Pointer-sized integer */
-typedef unsigned long	UINTPS;	/* Pointer-sized integer */
+typedef intptr_t	INTPS;	/* Pointer-sized integer */
+typedef uintptr_t	UINTPS;	/* Pointer-sized integer */
 
 /* Provide some limits that match the above types */
 #ifndef INT8_MAX
@@ -100,7 +111,6 @@ typedef unsigned long	UINTPS;	/* Pointer-sized integer */
 #ifndef UINT32_MAX
 #define UINT32_MAX      4294967295u     /* Max 32-bit unsigned int */
 #endif
-
 /* There is a problem in sys/int_limits.h on Solaris 5.7
  * It does not specify an LL at the end of the INT64_MIN, INT64_MAX
  * constants. This causes the gcc to complain badly.
@@ -147,22 +157,19 @@ typedef unsigned long	UINTPS;	/* Pointer-sized integer */
  * avoid needing to allow the standard type names whenever
  * targ_const.h is included.
  */
-/*
- * Arthur: this is defined in Makefile.gsetup now and depends on host
-#if (defined(_COMPILER_VERSION) && (_COMPILER_VERSION >= 400) && _SGIAPI) || defined(__GNUC__)
+#if (defined(_COMPILER_VERSION) && (_COMPILER_VERSION >= 400) && _SGIAPI) || (defined(__GNUC__) && !defined(TARG_MIPS))
 #define HOST_SUPPORTS_QUAD_FLOAT 1
 #else
 #define HOST_SUPPORTS_QUAD_FLOAT 0
 #endif
-*/
 
-/* #if HOST_SUPPORTS_QUAD_FLOAT */
-#ifdef HOST_SUPPORTS_QUAD_FLOAT
+#if HOST_SUPPORTS_QUAD_FLOAT
 /* Temporarily remove this to get rid of warnings: */
 typedef long double	QUADFP;		/* 128-bit floating point */
 #else 
 typedef double	QUADFP;		/* 128-bit floating point */
 #endif
+
 
 #endif /* HOST_SGI || __GNUC__ || _MSC_VER */
 
@@ -212,6 +219,6 @@ typedef INT32 PREG_NUM;		/* Individual objects */
 typedef mINT32 mPREG_NUM;	/* Table components */
 
 /* Define the IDTYPE used by wopt */
-typedef mUINT32 IDTYPE;
+typedef INTPTR IDTYPE;
 
 #endif /* defs_exported_INCLUDED */

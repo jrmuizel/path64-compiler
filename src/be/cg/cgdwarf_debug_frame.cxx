@@ -52,13 +52,14 @@ using std::list;
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <libelf.h>
+#include <elf.h>
 #include <map>
 #include <vector>
 #include <set>
 #include <algorithm>
 
-#include "W_alloca.h"
+#include "elf_stuff.h"
+
 #include "tracing.h"
 #include "config_asm.h"
 #include "config_list.h"
@@ -123,20 +124,20 @@ typedef CCIEInfo::DebugRegIdAllocator DbgIdAllocator;
 static SetOfDbgId PU_saved_dbgid; // Set of DebugId to be tracked for debug_frame
 
 void
-Print_Unwind_Elem (UNWIND_ELEM ue, char *msg)
+Print_Unwind_Elem (UNWIND_ELEM ue, const char *msg)
 {
 	fprintf(TFile, "<%s> at bb %d when %d: ", msg, ue.bb->id, ue.when);
 	switch (ue.kind) {
 	case UE_CREATE_FRAME:
-		fprintf(TFile, " create_frame, size %lld",
+		fprintf(TFile, " create_frame, size " SCNd64" ",
 			ue.offset); 
 		break;
 	case UE_DESTROY_FRAME:
-		fprintf(TFile, " destroy_frame, size %lld",
+		fprintf(TFile, " destroy_frame, size " SCNd64"",
 			ue.offset);
 		break;
 	case UE_CREATE_FP:
-		fprintf(TFile, " create_fp, size %lld",
+		fprintf(TFile, " create_fp, size " SCNd64"",
 			ue.offset); 
 		break;
 	case UE_DESTROY_FP:
@@ -161,10 +162,10 @@ Print_Unwind_Elem (UNWIND_ELEM ue, char *msg)
 	case UE_SAVE_FP:
 		fprintf(TFile, " save %lld", (long long)ue.rc_reg);
 #ifdef PROPAGATE_DEBUG
-		fprintf(TFile, " to mem %lld(%s) %lld(entry-%s)", ue.offset,
+		fprintf(TFile, " to mem %"SCNd64"(%s) %"SCNd64"(entry-%s)", ue.offset,
 			(ue.kind == UE_SAVE_SP ? "sp" : "fp"), ue.top_offset,
 #else
-		fprintf(TFile, " to mem %lld(%s)", ue.offset,
+		fprintf(TFile, " to mem " SCNd64"(%s)", ue.offset,
 #endif
 			(ue.kind == UE_SAVE_SP ? "sp" : "fp") );
 		break;
@@ -177,7 +178,7 @@ Print_Unwind_Elem (UNWIND_ELEM ue, char *msg)
 	case UE_RESTORE_SP:
 	case UE_RESTORE_FP:
 #ifdef PROPAGATE_DEBUG
-		fprintf(TFile, " restore %lld from mem %lld(%s) %lld(entry-%s)",
+		fprintf(TFile, " restore %lld from mem %"SCNd64"(%s) %"SCNd64"(entry-%s)",
 			(long long)ue.rc_reg,
 			ue.offset, (ue.kind == UE_RESTORE_SP ? "sp" : "fp"),
 			ue.top_offset,
@@ -212,7 +213,7 @@ Print_Unwind_Elem (UNWIND_ELEM ue, char *msg)
 }
 
 void
-Print_All_Unwind_Elem (char *msg)
+Print_All_Unwind_Elem ( const char *msg)
 {
   for (ue_iter = ue_list.begin(); ue_iter != ue_list.end(); ++ue_iter) {
     	Print_Unwind_Elem (*ue_iter, msg);
@@ -544,7 +545,7 @@ static void Tag_Irrelevant_Saves_And_Restores_For_BB(BB* bb,
   DebugRegId p;
 
   if (Trace_Unwind) {
-    fprintf(TFile, "Recursing to BB %d current frame size %lld\n", BB_id(bb),
+    fprintf(TFile, "Recursing to BB %d current frame size %"SCNd64"\n", BB_id(bb),
 	    current_frame_size);
   }
 
@@ -1618,7 +1619,7 @@ Finalize_Unwind_Info(void)
 }
 
 
-static void Generate_Label_For_Unwinding2(LABEL_IDX* label, INT* idx, char* txt,
+static void Generate_Label_For_Unwinding2(LABEL_IDX* label, INT* idx, const char* txt,
 				      UNWIND_ELEM& ue_iter, BOOL post_process)
 {
   LABEL* tmp_lab;
@@ -1646,7 +1647,7 @@ static void Generate_Label_For_Unwinding2(LABEL_IDX* label, INT* idx, char* txt,
   }
 }
 
-static void Generate_Label_For_Unwinding(LABEL_IDX* label, INT* idx, char* txt,
+static void Generate_Label_For_Unwinding(LABEL_IDX* label, INT* idx, const char* txt,
 				      UNWIND_ELEM& ue_iter, BOOL post_process)
 {
 #ifdef PROPAGATE_DEBUG
@@ -1963,7 +1964,7 @@ Create_Unwind_Descriptors (Dwarf_P_Fde fde, Elf64_Word	scn_index,
 			 frame_size + STACK_OFFSET_ADJUSTMENT,
 			 0, &dw_error);
       if (Trace_Unwind) {
-	fprintf(TFile, "create stack frame of size %lld at when %d\n",
+	fprintf(TFile, "create stack frame of size %"SCNd64" at when %d\n",
 		frame_size, ue_iter->when);
       }
 
@@ -1997,7 +1998,7 @@ Create_Unwind_Descriptors (Dwarf_P_Fde fde, Elf64_Word	scn_index,
 			 0, &dw_error);
 
       if (Trace_Unwind) {
-	fprintf(TFile, "destroy stack frame of size %lld at when %d, remaining %lld\n",
+	fprintf(TFile, "destroy stack frame of size %"SCNd64" at when %d, remaining %"SCNd64"\n",
 		ue_iter->offset, ue_iter->when, frame_size);
       }
 
@@ -2024,7 +2025,7 @@ Create_Unwind_Descriptors (Dwarf_P_Fde fde, Elf64_Word	scn_index,
 			 STACK_OFFSET_ADJUSTMENT,
 			 &dw_error);
       if (Trace_Unwind) {
-	fprintf(TFile, "create dynamic frame of size %lld at when %d\n",
+	fprintf(TFile, "create dynamic frame of size %"SCNd64" at when %d\n",
 		frame_size, ue_iter->when);
       }
 
@@ -2054,7 +2055,7 @@ Create_Unwind_Descriptors (Dwarf_P_Fde fde, Elf64_Word	scn_index,
 			     &dw_error);
       }
       if (Trace_Unwind) {
-	fprintf(TFile, "destroy dynamic frame of size %lld at when %d\n",
+	fprintf(TFile, "destroy dynamic frame of size %"SCNd64" at when %d\n",
 		frame_size, ue_iter->when);
       }
 
@@ -2096,7 +2097,7 @@ Create_Unwind_Descriptors (Dwarf_P_Fde fde, Elf64_Word	scn_index,
 			 &dw_error);
 
       if (Trace_Unwind) {
-	fprintf(TFile, "save reg to sp mem offset %lld at when %d\n",
+	fprintf(TFile, "save reg to sp mem offset %"SCNd64" at when %d\n",
 		frame_offset, ue_iter->when);
 	if (ue_iter->frame_changed)
 	  fprintf(TFile, "  frame changed in the same bundle\n");

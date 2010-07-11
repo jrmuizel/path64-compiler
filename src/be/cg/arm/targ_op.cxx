@@ -45,7 +45,7 @@
 #include "lai_loader_api.h"
 
 #include "cgtarget.h"
-
+#include "cgexp_internals.h"
 #include "exp_targ.h"
 
 /* [JV] Defined in exp_targ.cxx */
@@ -162,7 +162,7 @@ OP_Is_Speculative (
   if (!OP_load(op)) return FALSE;
 
   // speculative and advanced loads are safe to speculate.
-  if (OP_Is_Advanced_Load(op) || OP_Is_Speculative_Load(op))
+  if (CGTARG_Is_OP_Advanced_Load(op) || OP_Is_Speculative_Load(op))
     return TRUE;
 
   return FALSE;

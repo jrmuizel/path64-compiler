@@ -31,11 +31,8 @@
 
 #include "tracing.h"
 #include "opcode.h"
-#include "extension_include.h"
 #include "ext_info.h"
 
-#include "dyn_isa_api_access.h"
-#include "dll_loader.h"
 
 #include "symtab_idx.h"
 #include "targ_sim.h"
@@ -56,7 +53,6 @@ struct Lai_Loader_Info {
   int                              nb_ext;
   EXTENSION_ISA_Info            ** ISA_tab;
   const Extension_dll_handler_t  * handler_tab;
-
   // Base offsets for each element of each extension
   // (only those that need to be global are here)
   int  *base_TOP;
@@ -69,11 +65,9 @@ struct Lai_Loader_Info {
   int  *base_PREG;
 };
 typedef struct Lai_Loader_Info Lai_Loader_Info_t;
-
 /* Return a pointer to the newly allocated API used to access to the 
    ISA description of the specified extension. */
 extern EXTENSION_ISA_Info *Generate_EXTENSION_ISA_Info(const Extension_dll_handler_t *dll_instance, BOOL verbose);
-
 #include "isa_loader_api.h"
 
 // Table to save PREG -> reg number association

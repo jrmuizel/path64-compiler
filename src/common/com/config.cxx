@@ -1265,7 +1265,6 @@ char *ENV_Symbol_Visibility_Spec_Filename; /* Visibility spec. file. */
 #ifdef TARG_ST
 // FdF 20090318: Deactivate loop recurrences until it is retargeted.
 BOOL CG_LOOP_fix_recurrences = FALSE;
-BOOL CG_LOOP_fix_recurrences_specified = FALSE;
 #endif
 BOOL Gen_PIC_Calls = FALSE;	/* PIC calls */
 BOOL Guaranteed_Small_GOT = TRUE; /* GOT < 64kB? */
@@ -2748,4 +2747,52 @@ List_Compile_Options (
 			  internal ? full : List_All_Options , update );
   }
 }
+// MAPPING between register class and preg
 
+typedef struct {
+  PREG_NUM min;
+  PREG_NUM max;
+} preg_range_t;
+static preg_range_t *Rclass_To_Preg_array;
+//TB:Initilaize rclass to preg mapping
+static void Initialize_RegisterClass_To_Preg(void)
+{
+  int preg_index = 1; //First PREG must not be 0
+  ISA_REGISTER_CLASS rclass;
+  Rclass_To_Preg_array = TYPE_MEM_POOL_ALLOC_N(preg_range_t, Malloc_Mem_Pool,
+					       ISA_REGISTER_CLASS_MAX+1);
+
+  FOR_ALL_ISA_REGISTER_CLASS( rclass ) {
+    const ISA_REGISTER_CLASS_INFO *icinfo = ISA_REGISTER_CLASS_Info(rclass);
+    INT first_isa_reg  = ISA_REGISTER_CLASS_INFO_First_Reg(icinfo);
+    INT last_isa_reg   = ISA_REGISTER_CLASS_INFO_Last_Reg(icinfo);
+    INT register_count = last_isa_reg - first_isa_reg + 1;
+    Rclass_To_Preg_array[rclass].min = preg_index;
+    Rclass_To_Preg_array[rclass].max = preg_index + register_count - 1;
+    // Next index
+    preg_index = preg_index + register_count;
+  }
+}
+
+//TB:Reset rclass to preg mapping This to has to be done when the
+//targinfo has loaded the extension to rebuild Rclass_To_Preg_array
+//with the new extended targinfo
+void Reset_RegisterClass_To_Preg(void)
+{
+  MEM_POOL_FREE(Malloc_Mem_Pool, Rclass_To_Preg_array);
+  Rclass_To_Preg_array = NULL;
+}
+
+PREG_NUM CGTARG_Regclass_Preg_Min(  ISA_REGISTER_CLASS rclass)
+{
+  if (Rclass_To_Preg_array == NULL)
+    Initialize_RegisterClass_To_Preg();    
+  return Rclass_To_Preg_array[rclass].min;
+}
+
+PREG_NUM CGTARG_Regclass_Preg_Max(  ISA_REGISTER_CLASS rclass)
+{
+  if (Rclass_To_Preg_array == NULL)
+    Initialize_RegisterClass_To_Preg();    
+  return Rclass_To_Preg_array[rclass].max;
+}

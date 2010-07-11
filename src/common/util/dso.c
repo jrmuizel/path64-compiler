@@ -42,8 +42,8 @@
 /*
  * Assume that LD_LIBRARY_PATH has already been set up correctly.
  */
-BE_EXPORTED void* 
-load_so (char *soname, char *path, BOOL verbose)
+ void* 
+load_so (const char *soname, char *path, BOOL verbose)
 {
 #ifdef STATIC_BACKEND
   return NULL;
@@ -61,7 +61,7 @@ load_so (char *soname, char *path, BOOL verbose)
       fprintf (stderr, "\nReplacing default %s with %s (path:%s)\n", soname, full_path, path);
     }
   } else {
-    full_path = soname;
+    full_path = (char *)soname;
   }
   
 #ifdef sgi
@@ -88,8 +88,8 @@ load_so (char *soname, char *path, BOOL verbose)
 /*
  * Assume that LD_LIBRARY_PATH has already been set up correctly.
  */
-BE_EXPORTED void* 
-load_so_no_RTLD_GLOBAL (char *soname, char *path, BOOL verbose)
+ void* 
+load_so_no_RTLD_GLOBAL (const char *soname, char *path, BOOL verbose)
 {
 #ifdef STATIC_BACKEND
   return NULL;
@@ -107,7 +107,7 @@ load_so_no_RTLD_GLOBAL (char *soname, char *path, BOOL verbose)
       fprintf (stderr, "\nReplacing default %s with %s (path:%s)\n", soname, full_path, path);
     }
   } else {
-    full_path = soname;
+    full_path = (char *)soname;
   }
   
 #ifdef sgi
@@ -134,7 +134,7 @@ load_so_no_RTLD_GLOBAL (char *soname, char *path, BOOL verbose)
 
 } /* load_so */
 
-BE_EXPORTED void close_so (void * handler)
+ void close_so (void * handler)
 {
 #ifndef STATIC_BACKEND
   if (handler) 

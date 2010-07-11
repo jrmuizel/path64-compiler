@@ -80,7 +80,7 @@
 #include "topcode.h"
 #include "targ_isa_lits.h"
 #include "targ_isa_properties.h"
-#include "config_TARG.h"
+#include "config_targ_opt.h"
 
 #include "symtab_defs.h"  /* for memory space enum */
 #include "targ_sections.h"

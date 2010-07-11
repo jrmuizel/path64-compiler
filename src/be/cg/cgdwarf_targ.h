@@ -118,4 +118,39 @@ extern void Emit_Unwind_Directives_For_OP(OP *op, FILE *f, BOOL after_op,
 extern void Emit_Unwind_Directives_For_OP(OP *op, FILE *f);
 #endif
 
+#ifdef TARG_ST
+void Analyze_OP_For_Unwind_Info (OP *op, UINT when, BB *bb);
+// enum of all preserved regs (PR) that can be saved/restored
+typedef enum {
+    PR_R6,
+    PR_R7,
+    PR_R8,
+    PR_R9,
+    PR_R10,
+    PR_R11,
+    PR_R24,
+    PR_R25,
+    PR_R26,
+    PR_R27,
+    PR_R28,
+    PR_R29,
+    PR_R30,
+    PR_R31,
+    PR_LK,
+    PR_SP,
+    PR_GR,
+    PR_LC0,
+    PR_LS0,
+    PR_LE0,
+    PR_LR0,
+    PR_GP,
+    PR_LAST
+} PR_TYPE;
+#define PR_FIRST PR_R6
+
+PR_TYPE CR_To_PR (CLASS_REG_PAIR crp);
+CLASS_REG_PAIR PR_To_CR (PR_TYPE p);
+
+#endif
+
 #endif /* cgdwarf_targ_INCLUDED */

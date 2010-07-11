@@ -2080,8 +2080,13 @@ Setup_Live_Ranges (BB *bb, BOOL in_lra, MEM_POOL *pool)
           TN_is_global_reg(tn) &&
           (!TN_is_dedicated(tn) ||
            (CGTARG_Is_Preference_Copy(op) &&
+#ifdef TARG_ST
+            TN_is_local_reg(OP_opnd(op, OP_Copy_Operand(op))) &&
+            TN_spill(OP_opnd(op, OP_Copy_Operand(op))))) &&
+#else
             TN_is_local_reg(OP_opnd(op,CGTARG_Copy_Operand(op))) &&
             TN_spill(OP_opnd(op,CGTARG_Copy_Operand(op))))) &&
+#endif
           (LRA_TN_register(tn) != REGISTER_UNDEFINED) &&
           !REGISTER_SET_MemberP(avail_set[TN_register_class(tn)], LRA_TN_register(tn))) {
        /* Note: This series of checks was added because

@@ -50,7 +50,10 @@
 #else
 #define NOT_SUPPORT_ST(expr1, expr2) expr1, expr2,
 #endif
-
+#ifdef TARG_ST
+//TB: dynamic intrinsics support
+INTRINSIC INTRINSIC_COUNT;
+#endif
 static const struct {
   INTRINSIC   opcode;
   const char  * name;

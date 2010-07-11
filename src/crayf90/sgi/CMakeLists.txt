@@ -13,7 +13,7 @@ include_directories(
 ../../arith
 ../../common/util
 ../../common/com
-../../common/com/x8664
+../../common/com/${BUILD_TARGET_DIR}
 ../../linux/mfef90_includes
 ../../clibinc/cray
 ../include
@@ -50,10 +50,10 @@ set(PATHSCALE_MFEF95_SRCS       "../../common/com/config.cxx"
 				"../../common/com/wn_simp.cxx"
 				"../../common/com/wn_util.cxx"
 				"../../common/com/wutil.cxx"
-				"../../common/com/x8664/config_targ.cxx"
-				"../../common/com/x8664/config_elf_targ.cxx"
-				"../../common/com/x8664/targ_const.cxx"
-				"../../common/com/x8664/targ_sim.cxx"
+				"../../common/com/${BUILD_TARGET_DIR}/config_targ.cxx"
+				"../../common/com/${BUILD_TARGET_DIR}/config_elf_targ.cxx"
+				"../../common/com/${BUILD_TARGET_DIR}/targ_const.cxx"
+				"../../common/com/${BUILD_TARGET_DIR}/targ_sim.cxx"
 				"../../crayf90/sgi/cwh_unimp.cxx"
 				"../../crayf90/sgi/cwh_addr.cxx"
 				"../../crayf90/sgi/cwh_auxst.cxx"
@@ -77,8 +77,8 @@ set(PATHSCALE_MFEF95_SRCS       "../../common/com/config.cxx"
 				"../../crayf90/sgi/sgi_cmd_line.cxx"
 				"../../crayf90/sgi/path_intrinsic_list.cxx"
 				"../../crayf90/sgi/make_depend.cxx"
-				"../../common/com/x8664/config_host.c"
-				"../../common/com/x8664/config_platform.c")
+				"../../common/com/${BUILD_TARGET_DIR}/config_host.c"
+				"../../common/com/${BUILD_TARGET_DIR}/config_platform.c")
 
 ADD_DEFINITIONS(
 -DFRONT_END

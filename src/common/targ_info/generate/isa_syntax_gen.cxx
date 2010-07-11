@@ -832,6 +832,11 @@ Emit_Parser_Driver( void )
     fprintf(dcfile,"#include \"parser.h\"\n");
     fprintf(dcfile,"\n");
 
+    fprintf(dhfile,"\n");
+    fprintf(dhfile,"#include \"air.h\"\n");
+    fprintf(dhfile,"#include \"parser.h\"\n");
+    fprintf(dhfile,"\n");
+
     fprintf(dhfile,
 	    "extern PARSER_GetParserT * ISA_PARSE_tab;\n\n");
 

@@ -36,12 +36,11 @@
  */
 
 #include <ctype.h>
-#include "W_alloca.h"
 
 #include "defs.h"
 #include "util.h"
 #include "config.h"
-#include "config_TARG.h"
+#include "config_targ_opt.h"
 #include "config_asm.h"
 #include "erglob.h"
 #include "ercg.h"
@@ -73,7 +72,7 @@
 #include "stblock.h"
 #include "register_preg.h"
 
-#include "../../../gccfe/gnu/arm/insn-config.h" /* for MAX_RECOG_OPERANDS */
+#include "insn-config.h" /* for MAX_RECOG_OPERANDS */
 #endif
 
 /* Import from targ_cgemit.cxx. */
@@ -930,7 +929,7 @@ CGTARG_TN_For_Asm_Operand (
 	}
     TYPE_ID rtype = WN_rtype(load);
     *subclass = Register_Subclass_For_Mtype(rtype);
-    char *mtype_name = MTYPE_name(rtype);
+    const char *mtype_name = MTYPE_name(rtype);
     if (strcmp(constraint, mtype_name) == 0) {
       ret_tn = (pref_tn ? pref_tn : Build_TN_Of_Mtype(rtype));
       // Skip the general asm treatment
@@ -1127,7 +1126,7 @@ CGTARG_Modify_Asm_String (
     name = (char*) REGISTER_name(cl, reg);
 #endif
     if (memory) {
-      char *fmt = "@( %s + 0 )";
+      const char *fmt = "@( %s + 0 )";
       char *buf = (char*) alloca(strlen(name)+strlen(fmt)+1);
       sprintf(buf, fmt, name);
       name = buf;
@@ -1138,7 +1137,7 @@ CGTARG_Modify_Asm_String (
               ("ASM operand must be a register, a literal constant or a symbolic constant"));
     if (TN_has_value(tn)) {
       char* buf = (char*) alloca(32);
-      sprintf(buf, "%lld", TN_value(tn));
+      sprintf(buf, "%"SCNd64"", TN_value(tn));
       name = buf;
     } else if (TN_is_symbol(tn) && 
 	       ST_name(TN_var(tn)) &&
@@ -1211,12 +1210,11 @@ CGTARG_Modify_Asm_String (
  *
  * ====================================================================
  */
-char *
+void 
 CGTARG_Postprocess_Asm_String (
   char *s
 )
 {
-  return s;
 }
 
 /* ====================================================================
@@ -3842,7 +3840,7 @@ CGTARG_Print_PRC_INFO(
   const char *suffix
 )
 {
-  char *s;
+  const char *s;
   INT madds_per_cycle[2];
   INT memrefs_per_cycle[2];
   INT flops_per_cycle[2];
@@ -3971,7 +3969,7 @@ CGTARG_Compute_PRC_INFO(
 {
   OP *op;
 
-  BZERO (info, sizeof (PRC_INFO));
+  memset(info, 0, sizeof (PRC_INFO));
 
   for ( op = BB_first_op(bb); op != NULL; op = OP_next(op) ) {
     INT num_insts = OP_Real_Ops (op);

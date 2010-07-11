@@ -80,7 +80,7 @@ extern "C" {
 #endif
 #ifdef TARG_ST
 
-    typedef enum{
+     enum{
 
   INTRINSIC_INVALID = -1,
   INTRINSIC_NONE = 0,
@@ -1088,7 +1088,7 @@ extern "C" {
 #ifndef TARG_ST
   INTRINSIC_LAST  = INTRINSIC_TARG_LAST
 #endif
-} INTRINSIC;
+}/* INTRINSIC */; ;
 #else
 typedef enum 
 {
@@ -2634,6 +2634,7 @@ typedef enum
 #endif
 
 #ifdef TARG_ST
+typedef int INTRINSIC;
 #define INTRINSIC_LAST	 INTRINSIC_COUNT
 
   /* [TB] extension support */

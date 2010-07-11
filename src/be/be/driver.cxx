@@ -309,7 +309,7 @@ static BOOL Saved_run_prompf = FALSE; /* TODO: Remove when uses are removed */
 static BOOL Saved_run_w2c = FALSE;        /* TODO: Remove */
 static BOOL Saved_run_w2f = FALSE;        /* TODO: Remove */
 static BOOL Saved_run_w2fc_early = FALSE; /* TODO: Remove */
-
+static BOOL saved_Instrumentatin_Enabled = FALSE; /* Saved Instrumentation to restore it for next function */
 extern WN_MAP Prompf_Id_Map; /* Maps WN constructs to unique identifiers */
 
 /* Keep track of which optional components are loaded, where we need
@@ -704,7 +704,7 @@ Adjust_Opt_Level (PU_Info* current_pu, WN *pu, char *pu_name)
         if (Run_prompf) 
 	  Prompf_Emit_Whirl_to_Source(current_pu, pu);
     }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 #define OLIMIT_WARN_THRESHOLD 50000
     else if (Opt_Level > 1 && !Olimit_opt && 
 	     (PU_Olimit > OLIMIT_WARN_THRESHOLD) && Show_OPT_Warnings) {
@@ -1309,7 +1309,7 @@ Backend_Processing (PU_Info *current_pu, WN *pu)
 		       "RETURN_VAL & MLDID/MSTID lowering");
     }
 
-#ifdef KEY // bug 9171
+#if defined( KEY) && !defined(TARG_ST) // bug 9171
     if (Run_autopar && Early_MP_Processing) {
       Early_MP_Processing = FALSE;
       ErrMsg (EC_No_Apo_Early_Mp);
@@ -1456,6 +1456,9 @@ Preprocess_PU (PU_Info *current_pu)
   Cur_PU_Feedback    = NULL;
 
   BOOL is_mp_nested_pu = FALSE;
+#ifdef TARG_ST
+  saved_Instrumentatin_Enabled = Instrumentation_Enabled;
+#endif
 
   /* read from mmap area */
   Start_Timer ( T_ReadIR_CU );
@@ -1672,12 +1675,12 @@ Postprocess_PU (PU_Info *current_pu)
   if (Tlog_File) {
     fprintf (Tlog_File, "END %s\n", ST_name(PU_Info_proc_sym(current_pu)));
   }
-
+#ifndef TARG_ST
   if (Run_ipl != 0 && (Run_wopt || Run_preopt))
     choose_from_complete_struct_for_relayout_candidates(); // among all the
     // structures marked by ipl while compiling all the functions in this file,
     // choose the most profitable one
-
+#endif
   Current_Map_Tab = PU_Info_maptab(current_pu);
  
   REGION_Finalize();
@@ -1720,6 +1723,10 @@ Postprocess_PU (PU_Info *current_pu)
     Saved_run_w2f = FALSE;
     Saved_run_w2fc_early = FALSE;
   }
+#ifdef TARG_ST
+  /* [TB] Restore Instrumentation_Enabled */
+  Instrumentation_Enabled = saved_Instrumentatin_Enabled;
+#endif
 } /* Postprocess_PU */
 
 /* compile each PU through all phases before going to the next PU */
@@ -1873,7 +1880,7 @@ Process_Feedback_Options (OPTION_LIST* olist)
 
     INT prefix_len = strlen(prefix);
     DIR* dirp = opendir(path);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (dirp == NULL)
       ErrMsg(EC_FB_No_File, Feedback_File_Name);
 #endif
@@ -1892,7 +1899,7 @@ Process_Feedback_Options (OPTION_LIST* olist)
     }
     closedir(dirp);
 
-#ifdef KEY	// bug 4837
+#if defined( KEY) && !defined(TARG_ST)	// bug 4837
     if (fb_file_count == 0) {
       ErrMsg(EC_FB_No_File, prefix);
     }

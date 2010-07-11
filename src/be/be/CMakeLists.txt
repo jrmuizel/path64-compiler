@@ -84,7 +84,7 @@ SET(PATHSCALE_BE_BE_SRCS "../../common/targ_info/access/ti_init.c"
                          "../com/wn_mp.cxx"
                          "../com/wn_verifier.cxx"
                          "../com/wn_retype_expr.cxx"
-                         "../com/wn_unroll.cxx"
+                     #    "../com/wn_unroll.cxx"
                          "../com/wn_reassoc.cxx"
                          "../com/wb.cxx"
                          "../com/wb_browser.cxx"
@@ -106,6 +106,7 @@ SET(PATHSCALE_BE_BE_SRCS "../../common/targ_info/access/ti_init.c"
                          "../../common/com/intrn_info.cxx"
                          "../../common/com/ll.cxx"
                          "../../common/com/mtypes.cxx"
+                         "../../common/com/loader.cxx"
                          "../../common/com/opcode.cxx"
                          "../../common/com/opcode_core.cxx"
                          "../../common/com/wutil.cxx"
@@ -185,7 +186,7 @@ add_dependencies(be be-static) # serialize to generate preg_list.cxx only once
 add_executable (be-exec driver.cxx driver_util.cxx iter.cxx  ../com/phase.cxx)
 # TODO : Must be the elf, elfutil and dwarf built from the source and not a system installed one
 # TODO : Make sure link targets are static
-target_link_libraries (be-exec -Wl,-whole-archive be-static cg wopt -Wl,-no-whole-archive iberty dwarf elfutil elf targinfo)
+target_link_libraries (be-exec -Wl,-whole-archive be-static SYS cg wopt -Wl,-no-whole-archive iberty dwarf elfutil elf targinfo)
 SET_TARGET_PROPERTIES(be-exec PROPERTIES OUTPUT_NAME "be")
 set_target_properties(be-exec PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
 

@@ -87,7 +87,6 @@
 #include "quadsim.h"
 #include <cmath>
 
-#if 0 /* target-independent now */
 
 /* For fp_class */
 
@@ -2327,8 +2326,8 @@ Targ_Conv (
 #ifdef TARG_NEEDS_QUAD_OPS
   INT32 err;
 #endif
-
-#define FROM_TO(type_from, type_to) (type_from)*(MTYPE_LAST+1)+(type_to)
+// [TB] Extension support
+#define FROM_TO(type_from, type_to) (type_from)*(MTYPE_MAX_LIMIT+1)+(type_to)
 
   r = MTYPE_size_min(ty_to) <= 32 ? Zero_I4_Tcon : Zero_I8_Tcon;
 
@@ -3141,7 +3140,7 @@ Targ_Hexfptoc(const TYPE_ID ty, const char * const str)
  */
 
 char *
-Targ_Print ( char *fmt, TCON c )
+Targ_Print ( const char *fmt, TCON c )
 {
    INT slen,i;
    char *bytes;
@@ -6017,4 +6016,3 @@ TCON Targ_IntrinsicOp ( UINT32 intrinsic, TCON c[], BOOL *folded)
    return (c0);
 }
 
-#endif /* 0 */

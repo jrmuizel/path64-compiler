@@ -301,6 +301,26 @@ BOOL  WOPT_Enable_Spre_Before_Ivr = FALSE; // For running spre early
 BOOL  WOPT_Enable_Bdce_Before_Ivr = FALSE; // For running bdce early
 BOOL  WOPT_Enable_New_Phase_Ordering = TRUE; // Enables some phases before ivr
 
+BOOL WOPT_Enable_Warn_Uninit = FALSE;   // enable warning for detected uninitialized locals
+#ifdef TARG_ST
+// [CG 2005/01/06] Fix point analysis as a replacement to 
+// the original recursive analysis which is bogus (bug 1-6-0-B/10).
+BOOL  WOPT_Enable_FPFSA = TRUE; // Enables fix point flow sensitive analysis
+
+//TB
+BOOL WOPT_Enable_Tailmerge = FALSE;     // enable tailmerge optimization
+BOOL WOPT_Enable_Compare_Hoisting=TRUE;  //enable hoisting of compare expression
+BOOL WOPT_Enable_Flow_Simplification_In_Tailmerge = FALSE;   // enable flow simplification in tailmerge optimization
+// FdF 20070731: 0 means never, 1 means biased for code size, 2 means
+// biased for performance, 3 means always.
+INT32 WOPT_Enable_DoWhile_Conversion = DOWHILE_CONV_FOR_PERF;
+BOOL WOPT_Enable_DoWhile_Conversion_Set = FALSE;
+INT32 WOPT_Pre_Small_Immediate = 16; // Simple expressions derived from an IV with a
+                                     // small immediate offset are not subject to PRE
+UINT32 WOPT_Pre_LoadStore_offset = 0; // Create ILoad/Istore with 0 offset,
+                                 // if the nearest zero offset is lower than this value
+#endif
+
 BOOL  WOPT_Enable_Noreturn_Attr_Opt = TRUE;
 INT32 WOPT_Enable_If_Merge_Limit = -1;  // Limit number of if-merging transformations per function.
 INT32 WOPT_Enable_Tail_Dup_Limit = -1; // Limit number of tail-duplication transformations per function.
@@ -310,7 +330,7 @@ INT32 WOPT_Enable_Pro_Loop_Fusion_Func_Limit = -1; // Enable proactive loop fusi
                                                   // functions within the limit.
 BOOL  WOPT_Enable_Pro_Loop_Fusion_Trans = TRUE;  // Enables proactive loop fusion transformation
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 BOOL  WOPT_Enable_Preserve_Mem_Opnds = FALSE; // if TRUE, suppress EPRE on 
 				// iloads that are operands of FP operations
 BOOL  WOPT_Enable_Retype_Expr = FALSE;   // whether to call WN_retype_expr to 
@@ -319,7 +339,6 @@ INT32 WOPT_Enable_Folded_Scalar_Limit = 1000; // limit to number of scalars
 					// formed by Fold_lda_iload_istore()
 INT32 WOPT_Enable_Bdceprop_Limit = -1; 	// to limit the BBs in which BDCE's
 					// copy propagation is performed
-BOOL WOPT_Enable_Warn_Uninit = FALSE;   // enable warning for detected uninitialized locals
 INT32 WOPT_Enable_WN_Unroll = 1;	// 0: disable; 
 					// 1: unroll only loop bodies with IFs
 					// 2: unroll all loop bodies
@@ -737,7 +756,7 @@ static OPTION_DESC Options_WOPT[] = {
 #endif
   
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   { OVK_BOOL,	OV_VISIBLE,	TRUE, "mem_opnds", "mem_opnds",
     TRUE, 0, 0,	&WOPT_Enable_Preserve_Mem_Opnds, NULL },
   { OVK_BOOL,	OV_VISIBLE,	TRUE, "retype_expr", "retype_expr",

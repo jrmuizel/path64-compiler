@@ -166,6 +166,16 @@ typedef UINT64 VARIANT;
 #define V_BR_PEQ	82	/* Predicate A = B */
 #define V_BR_PNE	83	/* Predicate A != B */
 
+/* Julien: add cond variant aliased for now on 4-bytes type */
+#define V_BR_PGT 	V_BR_I4GT /* Predicate signed A > B */
+#define V_BR_PGE 	V_BR_I4GE /* Predicate signed A >= B */
+#define V_BR_PLT 	V_BR_I4LT /* Predicate signed A < B */
+#define V_BR_PLE 	V_BR_I4LE /* Predicate signed A <= B */
+#define V_BR_PUGT	V_BR_U4GT /* Predicate unsigned A > B */
+#define V_BR_PUGE	V_BR_U4GE /* Predicate unsigned A >= B */
+#define V_BR_PULT	V_BR_U4LT /* Predicate unsigned A < B */
+#define V_BR_PULE	V_BR_U4LE /* Predicate unsigned A <= B */
+
 #define V_BR_CLOOP	84	/* Counted loop */
 #define V_BR_CTOP	85	/* Mod-sched counted loop (top) */
 #define V_BR_CEXIT	86	/* Mod-sched counted loop (exit) */

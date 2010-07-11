@@ -35,7 +35,6 @@
 
 #include <string>
 
-#include "extension_include.h"
 #include "extension_intrinsic.h"
 
 
@@ -69,7 +68,7 @@ extern "C" { extern const ISA_EXT_Interface_t* get_ISA_extension_instance();};
 #include "lai_loader_api.h"
 #include "pixel_mtypes.h"
 #include "ext_info.h"
-#include "config_TARG.h"
+#include "config_targ_opt.h"
 
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -346,7 +345,7 @@ static void Add_Mtype(machine_mode_t mmode, const char *name,
 	       ("Unknown translation between GCC mode class and OPEN64 MTYPE class %d", mclass));
     break;
   }
-  Machine_Types[MTYPE_COUNT].type_class = type_class;
+  Machine_Types[MTYPE_COUNT].type_class_bits = type_class;
   Machine_Types[MTYPE_COUNT].type_order = mbitsize;
   Machine_Types[MTYPE_COUNT].complement = mtype;
 }

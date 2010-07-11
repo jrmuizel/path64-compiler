@@ -327,6 +327,42 @@ Is_Simulated_Type (
   }
 }
 
+/* This routine figures out the mtypes of the return registers that are 
+ * used for returning an object of the given type.
+ * This returns the mtypes to use for the CALL opcode in high-level whirl.
+ * This means that returns of simulated objects, like FQ, are just shown
+ * as returning FQ, which will later be split into F8F8.
+ * However, structures that return in registers are specified explicitly.
+ */
+/*ARGSUSED*/
+extern void
+Get_Return_Mtypes (
+  TY_IDX rtype,		/* The result type */
+  Mtype_Return_Level level,	/* whether to lower the mtypes */
+  TYPE_ID *mreg1,	/* out: mtype for result register 1 */
+  TYPE_ID *mreg2)	/* out: mtype for result register 2 */
+{
+  Fail_FmtAssertion (
+    ("Get_Return_Mtypes should not be invoked; invoke Get_Return_Info instead"));
+}
+
+/* This routine figures out which return registers are to be used
+ * for returning an object with the given mtypes.
+ * It is assumed that the mtypes will be determined by calling
+ * Get_Return_Mtypes.
+ */
+/*ARGSUSED*/
+extern void
+Get_Return_Pregs (
+  TYPE_ID mreg1,	/* in:  mtype for result register 1 */
+  TYPE_ID mreg2,	/* in:  mtype for result register 2 */
+  PREG_NUM *rreg1,	/* out: result register 1 */
+  PREG_NUM *rreg2)	/* out: result register 2 */
+{
+  Fail_FmtAssertion (
+    ("Get_Return_Pregs should not be invoked; invoke Get_Return_Info instead"));
+}
+
 /* ====================================================================
  *   Get_Return_Info
  *

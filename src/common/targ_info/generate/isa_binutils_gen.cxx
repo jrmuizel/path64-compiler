@@ -469,7 +469,7 @@ void ISA_Binutils_End(void)
          );
          for (encindex=0;encindex<size;encindex++) {
             fprintf(cfile,
-               "  { \"%s\", TOP_%s%s, 0x%016llXULL, 0x%016llXULL }%s\n",
+               "  { \"%s\", TOP_%s%s, 0x%016lXULL, 0x%016lXULL }%s\n",
                extension_relocate_encoding[subset][encindex]->symbol,
                gen_static_code ? "" : "local_",
 	       TOP_Name(extension_relocate_encoding[subset][encindex]->top),
