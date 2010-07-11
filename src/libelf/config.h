@@ -29,7 +29,7 @@
 /* #undef HAVE_CATGETS */
 
 /* Define if you have the gettext function. */
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
 #undef HAVE_GETTEXT
 #else /* defined(BUILD_OS_DARWIN) */
 #define HAVE_GETTEXT 1
@@ -121,7 +121,11 @@
 #define HAVE_MEMSET 1
 
 /* Define if you have the <ar.h> header file.  */
+#if defined(_WIN32)
+#undef HAVE_AR_H
+#else
 #define HAVE_AR_H 1
+#endif
 
 /* Define if you have the <elf.h> header file.  */
 #define HAVE_ELF_H 1
