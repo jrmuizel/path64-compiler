@@ -11,6 +11,8 @@ extern "C" {
 extern int vasprintf(char**, const char*, __VALIST);
 int asprintf(char **strp, const char *fmt, ...);
 
+#define setlinebuf(stream) setvbuf(stream, 0, _IONBF, 0)
+
 #ifdef __cplusplus
 }
 #endif
