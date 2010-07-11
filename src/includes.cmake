@@ -16,6 +16,7 @@ SET(WINDOWS_HFILES
 	endian.h
 	elf.h
 	fcntl.h
+	regex.h
 	string.h
 	strings.h
 	stdio.h
