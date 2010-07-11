@@ -132,89 +132,93 @@ SET(PATHSCALE_CG_SRCS
 			"../../be/cg/gra_mon/gra_split.cxx"
 			"../../be/cg/gra_mon/gra_trace.cxx")
 
-
+GET_TARGET_PROPERTY(gen_x_list_exe gen_x_list LOCATION)
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/bb_list.cxx ${PATHSCALE_BINARY_DIR}/be/bb_list.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_bb_list.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_bb_list.${SHELL_EXT}
+	COMMAND ${gen_x_list_exe} "BB *" BB defs.h errors.h mempool.h cgir.h bb_list.h
+	DEPENDS gen_x_list
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/gra_bb_list.cxx ${PATHSCALE_BINARY_DIR}/be/gra_bb_list.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gra_mon/gen_gra_bb_list.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gra_mon/gen_gra_bb_list.${SHELL_EXT}
+	COMMAND ${gen_x_list_exe} "GRA_BB *" GRA_BB defs.h errors.h mempool.h gra_bb.h gra_bb_list.h
+	DEPENDS gen_x_list
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/lrange_list.cxx ${PATHSCALE_BINARY_DIR}/be/lrange_list.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gra_mon/gen_lrange_list.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gra_mon/gen_lrange_list.${SHELL_EXT}
+	COMMAND ${gen_x_list_exe} "LRANGE *" LRANGE defs.h errors.h mempool.h gra_bb.h gra_lrange.h lrange_list.h
+	DEPENDS gen_x_list
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/op_list.cxx ${PATHSCALE_BINARY_DIR}/be/op_list.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_op_list.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_op_list.${SHELL_EXT}
+	COMMAND ${gen_x_list_exe} "OP *" OP defs.h mempool.h cgir.h op_list.h
+	DEPENDS gen_x_list
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/st_list.cxx ${PATHSCALE_BINARY_DIR}/be/st_list.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_st_list.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_st_list.${SHELL_EXT}
+	COMMAND ${gen_x_list_exe} "ST *" ST defs.h errors.h mempool.h cgir.h st_list.h
+	DEPENDS gen_x_list
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/tn_list.cxx ${PATHSCALE_BINARY_DIR}/be/tn_list.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_tn_list.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_tn_list.${SHELL_EXT}
+	COMMAND ${gen_x_list_exe} "TN *" TN defs.h errors.h mempool.h cgir.h tn_list.h
+	DEPENDS gen_x_list
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/void_list.cxx ${PATHSCALE_BINARY_DIR}/be/void_list.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_void_list.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_void_list.${SHELL_EXT}
+	COMMAND ${gen_x_list_exe} "void *" VOID defs.h errors.h mempool.h cgir.h void_list.h
+	DEPENDS gen_x_list
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
+
+GET_TARGET_PROPERTY(gen_x_prop_exe gen_x_prop LOCATION)
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/cg_loop_scc_prop.cxx ${PATHSCALE_BINARY_DIR}/be/cg_loop_scc_prop.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_cg_loop_scc_prop.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_cg_loop_scc_prop.${SHELL_EXT}
+	COMMAND ${gen_x_prop_exe} "struct cg_loop_scc *" "CG_LOOP_SCC" "CG_LOOP_SCC_id(x)" defs.h mempool.h cgir.h cg_loop_scc_prop.h cg_loop_scc.h
+	DEPENDS gen_x_prop
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/tn_prop.cxx ${PATHSCALE_BINARY_DIR}/be/tn_prop.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_tn_prop.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_tn_prop.${SHELL_EXT}
+	COMMAND ${gen_x_prop_exe} "TN *" TN "TN_number(x)" defs.h mempool.h tn.h tn_prop.h
+	DEPENDS gen_x_prop
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
+
+GET_TARGET_PROPERTY(gen_x_set_exe gen_x_set LOCATION)
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/bb_set.cxx ${PATHSCALE_BINARY_DIR}/be/bb_set.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_bb_set ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_bb_set
+	COMMAND ${gen_x_set_exe} ${PATHSCALE_SOURCE_DIR}/common/util bb_set "BB *" BB_SET BB_id BBvec defs.h mempool.h bb.h
+	DEPENDS gen_x_set
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/opsch_set.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_opsch_set ${PATHSCALE_SOURCE_DIR}/common/util
+	COMMAND ${gen_x_set_exe} ${PATHSCALE_SOURCE_DIR}/common/util opsch_set "OPSCH *" OPSCH_SET OPSCH_id OPSCHvec defs.h mempool.h hb_sched.h
+	DEPENDS gen_x_set
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_opsch_set
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/lrange_set.cxx ${PATHSCALE_BINARY_DIR}/be/lrange_set.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gra_mon/gen_lrange_set ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gra_mon/gen_lrange_set
+	COMMAND ${gen_x_set_exe} -s ${PATHSCALE_SOURCE_DIR}/common/util lrange_set "LRANGE *" LRANGE_SET LRANGE_INT INT_LRANGE LRANGE_Universe_ID_S INT_LRANGE_Sub defs.h gra_bb.h gra_lrange.h gra_lrange_subuniverse.h mempool.h
+	DEPENDS gen_x_set
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/tn_set.cxx ${PATHSCALE_BINARY_DIR}/be/tn_set.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_tn_set ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_tn_set
+	COMMAND ${gen_x_set_exe} ${PATHSCALE_SOURCE_DIR}/common/util tn_set "TN *" TN_SET TN_number TNvec defs.h tn.h mempool.h
+	DEPENDS gen_x_set
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 add_custom_command(
 	OUTPUT ${PATHSCALE_BINARY_DIR}/be/gtn_set.cxx ${PATHSCALE_BINARY_DIR}/be/gtn_set.h
-	COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/cg/gen_gtn_set ${PATHSCALE_SOURCE_DIR}/common/util
-	DEPENDS ${PATHSCALE_SOURCE_DIR}/be/cg/gen_gtn_set
+	COMMAND ${gen_x_set_exe} "${PATHSCALE_SOURCE_DIR}/common/util" "gtn_set" "TN *" "GTN_SET" GTN_UNIVERSE_TN_int GTN_UNIVERSE_INT_tn defs.h tn.h gtn_universe.h mempool.h
+	DEPENDS gen_x_set
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 
