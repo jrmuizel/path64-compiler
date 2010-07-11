@@ -31,3 +31,9 @@ add_library(comutil STATIC
   c_qtenscale.c
   ${BUILD_TARGET_DIR}/c_qwmultu.c
   )
+
+add_executable(gen_x_set gen_x_set.c)
+
+add_executable(gen_x_list gen_x_list.c)
+
+add_executable(gen_x_prop gen_x_prop.c)
