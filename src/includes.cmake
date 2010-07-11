@@ -28,11 +28,11 @@ add_definitions(-DHAVE_ALLOCA_H=1)
 
 SET(WINDOWS_SYS_HFILES
 	cdefs.h
-	elftypes.h
 	mman.h
 	resource.h
 	stat.h
 	times.h
+	types.h
 	utsname.h
 	wait.h
    )
