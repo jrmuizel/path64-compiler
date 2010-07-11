@@ -72,6 +72,9 @@
 #include "bb.h"
 #include "whirl2ops.h"
 #include "label_util.h"
+#ifdef _WIN32
+#include <alloca.h>
+#endif
 
 extern "C" {
 #include "pro_encode_nm.h"

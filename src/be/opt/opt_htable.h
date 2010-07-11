@@ -98,6 +98,9 @@
 #include "tracing.h"
 #include "id_map.h"
 #include "opt_ssa.h"
+#ifdef _WIN32
+#include <alloca.h>
+#endif
 
 #include <vector>
 

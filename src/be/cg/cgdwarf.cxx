@@ -101,6 +101,9 @@
 #include <strings.h>
 #include <string.h>
 #endif
+#ifdef _WIN32
+#include <alloca.h>
+#endif
 
 BOOL Trace_Dwarf;
 
