@@ -1,2 +1,3 @@
 
 ADD_SUBDIRECTORY(winlib)
+ADD_SUBDIRECTORY(regex)
