@@ -2,27 +2,11 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-int asprintf(char **strp, const char *fmt, ...)
-{
-    va_list args;
-    char buf[2];
-    int len;
-
-    va_start(args, fmt);
-    len = _vsnprintf(0,0,fmt,args);
-    *strp = malloc(len+2);
-    len = _vsnprintf(*strp,len+1,fmt,args);
-    va_end(args);
-    (*strp)[len] = '\0';
-    return len;
-}
-
 int main(int argc, char * argv[])
 {
     char *base_type, *prefix, *l_prefix, *id_access;
-    char *h_rcs_id, *type, *create, *set, *reset, *get, *uniond, *intersect;
-    char *h_file_name, *c_file_name;
-    FILE *h_file, *c_file;
+    char filename[260];
+    FILE *file;
     int i;
     
     if (argc < 4)
@@ -39,91 +23,67 @@ int main(int argc, char * argv[])
     strcpy(l_prefix, prefix);
     strlwr(l_prefix);
 
-    // Make the derived names
-    asprintf(&h_rcs_id, "%s_prop_rcs_id", l_prefix);
-    asprintf(&type, "%s_PROP", prefix);
-    asprintf(&create, "%s_PROP_Create", prefix);
-    asprintf(&set, "%s_PROP_Set", prefix);
-    asprintf(&reset, "%s_PROP_Reset", prefix);
-    asprintf(&get, "%s_PROP_Get", prefix);
-    asprintf(&uniond, "%s_PROP_UnionD", prefix);
-    asprintf(&intersect, "%s_PROP_Intersection_Is_NonEmpty", prefix);
-
-    // Make the names of the output files
-    asprintf(&h_file_name, "%s_prop.h", prefix);
-    asprintf(&c_file_name, "%s_prop.cxx", prefix);
-
     // Generate the .h file
-    h_file = fopen(h_file_name, "w");
-    if (!h_file)
+    sprintf(filename, "%s_prop.h", prefix);
+    file = fopen(filename, "w");
+    if (!file)
     {
-        fprintf(stderr, "Error: failed to open '%s'\n", h_file_name);
+        fprintf(stderr, "Error: failed to open '%s'\n", filename);
         return -1;
     }
-    fprintf(h_file, "/* Constructed by gen_x_prop $rev\n");
-    fprintf(h_file, " */\n");
-    fprintf(h_file, "#ifndef %s_prop_included\n", l_prefix);
-    fprintf(h_file, "#define %s_prop_included\n", l_prefix);
-    fprintf(h_file, "#define _X_PROP_TYPE_ %s\n", type);
-    fprintf(h_file, "#define _X_BASE_TYPE_ %s\n", base_type);
-    fprintf(h_file, "#define _X_RCS_ID_ %s\n", h_rcs_id);
-    fprintf(h_file, "#define _X_PROP_CREATE_ %s\n", create);
-    fprintf(h_file, "#define _X_PROP_SET_ %s\n", set);
-    fprintf(h_file, "#define _X_PROP_RESET_ %s\n", reset);
-    fprintf(h_file, "#define _X_PROP_GET_ %s\n", get);
-    fprintf(h_file, "#define _X_PROP_UNIOND_ %s\n", uniond);
-    fprintf(h_file, "#define _X_PROP_INTERSECTION_IS_NONEMPTY_ %s\n", intersect);
-    fprintf(h_file, "#define _X_PROP_LOCAL_BASE_TYPE_ %s_PROP_LOCAL_BASE_TYPE_\n", prefix);
-    fprintf(h_file, "#include \"x_prop.h\"\n");
-    fprintf(h_file, "#undef _X_PROP_TYPE_\n");
-    fprintf(h_file, "#undef _X_BASE_TYPE_\n");
-    fprintf(h_file, "#undef _X_RCS_ID_\n");
-    fprintf(h_file, "#undef _X_PROP_CREATE_\n");
-    fprintf(h_file, "#undef _X_PROP_SET_\n");
-    fprintf(h_file, "#undef _X_PROP_RESET_\n");
-    fprintf(h_file, "#undef _X_PROP_GET_\n");
-    fprintf(h_file, "#undef _X_PROP_UNIOND_\n");
-    fprintf(h_file, "#undef _X_PROP_LOCAL_BASE_TYPE_\n");
-    fprintf(h_file, "#undef _X_PROP_INTERSECTION_IS_NONEMPTY_\n");
-    fprintf(h_file, "#endif\n");
-    fclose(h_file);
+    fprintf(file, "/* Constructed by gen_x_prop $rev\n");
+    fprintf(file, " */\n");
+    fprintf(file, "#ifndef %s_prop_included\n", l_prefix);
+    fprintf(file, "#define %s_prop_included\n", l_prefix);
+    fprintf(file, "#define _X_PROP_TYPE_ %s_PROP\n", prefix);
+    fprintf(file, "#define _X_BASE_TYPE_ %s\n", base_type);
+    fprintf(file, "#define _X_RCS_ID_ %s_prop_rcs_id\n", l_prefix);
+    fprintf(file, "#define _X_PROP_CREATE_ %s_PROP_Create\n", prefix);
+    fprintf(file, "#define _X_PROP_SET_ %s_PROP_Set\n", prefix);
+    fprintf(file, "#define _X_PROP_RESET_ %s_PROP_Reset\n", prefix);
+    fprintf(file, "#define _X_PROP_GET_ %s_PROP_Get\n", prefix);
+    fprintf(file, "#define _X_PROP_UNIOND_ %s_PROP_UnionD\n", prefix);
+    fprintf(file, "#define _X_PROP_INTERSECTION_IS_NONEMPTY_ %s_PROP_Intersection_Is_NonEmpty\n", prefix);
+    fprintf(file, "#define _X_PROP_LOCAL_BASE_TYPE_ %s_PROP_LOCAL_BASE_TYPE_\n", prefix);
+    fprintf(file, "#include \"x_prop.h\"\n");
+    fprintf(file, "#undef _X_PROP_TYPE_\n");
+    fprintf(file, "#undef _X_BASE_TYPE_\n");
+    fprintf(file, "#undef _X_RCS_ID_\n");
+    fprintf(file, "#undef _X_PROP_CREATE_\n");
+    fprintf(file, "#undef _X_PROP_SET_\n");
+    fprintf(file, "#undef _X_PROP_RESET_\n");
+    fprintf(file, "#undef _X_PROP_GET_\n");
+    fprintf(file, "#undef _X_PROP_UNIOND_\n");
+    fprintf(file, "#undef _X_PROP_LOCAL_BASE_TYPE_\n");
+    fprintf(file, "#undef _X_PROP_INTERSECTION_IS_NONEMPTY_\n");
+    fprintf(file, "#endif\n");
+    fclose(file);
 
     // Generate the .cxx file
-    c_file = fopen(c_file_name, "w");
-    if (!h_file)
+    sprintf(filename, "%s_prop.cxx", prefix);
+    file = fopen(filename, "w");
+    if (!file)
     {
-        fprintf(stderr, "Error: failed to open '%s'\n", c_file_name);
+        fprintf(stderr, "Error: failed to open '%s'\n", filename);
         return -1;
     }
-    fprintf(c_file, "/* Constructed by gen_x_prop $rev\n");
-    fprintf(c_file, " */\n");
+    fprintf(file, "/* Constructed by gen_x_prop $rev\n");
+    fprintf(file, " */\n");
     for (i = 4; i < argc; i++)
-        fprintf(c_file, "#include \"%s\"\n", argv[i]);
+        fprintf(file, "#include \"%s\"\n", argv[i]);
 
-    fprintf(c_file, "#define _X_PROP_TYPE_ %s\n", type);
-    fprintf(c_file, "#define _X_BASE_TYPE_ %s\n", base_type);
-    fprintf(c_file, "#define _X_id_(x) %s\n", id_access);
-    fprintf(c_file, "#define _X_PROP_CREATE_ %s\n", create);
-    fprintf(c_file, "#define _X_PROP_SET_ %s\n", set);
-    fprintf(c_file, "#define _X_PROP_RESET_ %s\n", reset);
-    fprintf(c_file, "#define _X_PROP_GET_ %s\n", get);
-    fprintf(c_file, "#define _X_PROP_UNIOND_ %s\n", uniond);
-    fprintf(c_file, "#define _X_PROP_INTERSECTION_IS_NONEMPTY_ %s\n", intersect);
-    fprintf(c_file, "#define _X_PROP_LOCAL_BASE_TYPE_ %s_PROP_LOCAL_BASE_TYPE_\n", prefix);
-    fprintf(c_file, "#include \"x_prop.c\"\n");
-    fclose(c_file);
-
-    // cleanup
-    free(h_rcs_id);
-    free(type);
-    free(create);
-    free(set);
-    free(reset);
-    free(get);
-    free(uniond);
-    free(intersect);
-    free(h_file_name);
-    free(c_file_name);
+    fprintf(file, "#define _X_PROP_TYPE_ %s_PROP\n", prefix);
+    fprintf(file, "#define _X_BASE_TYPE_ %s\n", base_type);
+    fprintf(file, "#define _X_id_(x) %s\n", id_access);
+    fprintf(file, "#define _X_PROP_CREATE_ %s_PROP_Create\n", prefix);
+    fprintf(file, "#define _X_PROP_SET_ %s_PROP_Set\n", prefix);
+    fprintf(file, "#define _X_PROP_RESET_ %s_PROP_Reset\n", prefix);
+    fprintf(file, "#define _X_PROP_GET_ %s_PROP_Get\n", prefix);
+    fprintf(file, "#define _X_PROP_UNIOND_ %s_PROP_UnionD\n", prefix);
+    fprintf(file, "#define _X_PROP_INTERSECTION_IS_NONEMPTY_ %s_PROP_Intersection_Is_NonEmpty\n", prefix);
+    fprintf(file, "#define _X_PROP_LOCAL_BASE_TYPE_ %s_PROP_LOCAL_BASE_TYPE_\n", prefix);
+    fprintf(file, "#include \"x_prop.c\"\n");
+    fclose(file);
 
     return 0;
 }
