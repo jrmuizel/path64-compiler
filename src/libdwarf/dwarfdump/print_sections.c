@@ -625,7 +625,7 @@ print_frame_inst_bytes(Dwarf_Debug dbg,
 		switch (addr_size) {
 		case 4:
 		    {
-			__uint32_t v32;
+			uint32_t v32;
 
 			memcpy(&v32, instp + 1, addr_size);
 			uval = v32;
@@ -633,7 +633,7 @@ print_frame_inst_bytes(Dwarf_Debug dbg,
 		    break;
 		case 8:
 		    {
-			__uint64_t v64;
+			uint64_t v64;
 
 			memcpy(&v64, instp + 1, addr_size);
 			uval = v64;
