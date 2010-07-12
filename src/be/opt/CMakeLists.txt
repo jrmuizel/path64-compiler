@@ -89,7 +89,7 @@ ADD_DEPENDENCIES(wopt-shared generate_preg_list)
 ADD_DEPENDENCIES(wopt-shared generate_topcode)
 
 # TODO : double check this is correct. wopt.so just includes be.os at the end of the list of objects
-target_link_libraries(wopt-shared be)
+target_link_libraries(wopt-shared be regex)
 
 
 install(TARGETS wopt-shared
