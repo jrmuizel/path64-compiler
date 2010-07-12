@@ -21,7 +21,11 @@ extern "C" {
 
 typedef void * __ptr_t;
 typedef long long __off64_t;
+#ifdef _WIN64
 typedef unsigned long long caddr_t;
+#else
+typedef unsigned long caddr_t;
+#endif
 
 void *mmap(void *, size_t, int, int, int, off_t);
 int	munmap(void *, size_t);
