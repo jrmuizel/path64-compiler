@@ -103,3 +103,9 @@ int* Pre_Optimizer (int a1, int* a2, int* a3, int* a4)
     return 0;
 }
 
+char *cplus_demangle(const char * a1, int a2)
+{
+    fprintf(stderr, "cplus_demangle() is unimplemented\n");
+    return 0;
+}
+
