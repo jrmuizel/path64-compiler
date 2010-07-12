@@ -290,6 +290,13 @@ extern void (*Preprocess_struct_access_p)(void);
 
 extern void Prompf_Emit_Whirl_to_Source(PU_Info* current_pu, WN* func_nd);
 
+#ifdef _WIN32
+extern void Prompf_Emit_Whirl_to_Source(PU_Info* current_pu, WN* func_nd)
+{
+    fprintf(stderr, "Prompf_Emit_Whirl_to_Source() is unimplemented\n");
+}
+#endif
+
 static INT ecount = 0;
 static BOOL need_wopt_output = FALSE;
 static BOOL need_lno_output = FALSE;
