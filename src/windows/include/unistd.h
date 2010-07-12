@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 ssize_t readlink(const char * path, char * buf, size_t bufsize);
+void *sbrk(intptr_t increment);
 
 #ifdef __cplusplus
 }
