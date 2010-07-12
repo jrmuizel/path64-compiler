@@ -52,6 +52,7 @@
 #include "config_targ_opt.h"
 #include "mempool.h"
 #include "bb.h"
+#include "cgtarget.h"
 #include "bb_set.h"
 #include "tracing.h"
 #include "timing.h"
@@ -62,7 +63,6 @@
 #include "cg_flags.h"
 #include "cg_thr.h"
 #include "ercg.h"
-#include "cgtarget.h"
 #include "cxx_memory.h"
 #include "cg_spill.h"
 #include "targ_isa_enums.h"
@@ -106,9 +106,12 @@ Remove_Unnecessary_Check_Instrs(BB *bb)
 
 	if (OP_load(prev_op) &&
 	    CGTARG_Is_OP_Advanced_Load(prev_op) && !store_present) {
-
+#ifdef TARG_ST
+          CGTARG_Perform_THR_Code_Generation(prev_op, THR_DATA_SPECULATION_NO_RB_CLEANUP);
+#else
 	  CGTARG_Perform_THR_Code_Generation(prev_op, op, 
 					THR_DATA_SPECULATION_NO_RB_CLEANUP);
+#endif
 
 	  Reset_BB_scheduled(bb);  // Need to reschedule the BB.
 	} /* CGTARG_Is_OP_Advanced_Load */
@@ -202,8 +205,11 @@ CG_THR::Perform_THR_Code_Generation ()
 
       OP *succ_op = ARC_succ(*arc_iter);
       if (OP_visited_thr(succ_op)) continue;
-
+#ifdef TARG_ST
+      CGTARG_Perform_THR_Code_Generation(succ_op, _thr_type);
+#else
       CGTARG_Perform_THR_Code_Generation(succ_op, NULL, _thr_type);
+#endif
       Set_OP_visited_thr(succ_op);
       _chk_instr_inserted = TRUE;
     }

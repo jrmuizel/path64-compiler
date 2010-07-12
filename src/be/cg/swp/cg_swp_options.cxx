@@ -22,7 +22,9 @@
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
-
+#include "bb.h"
+#include "op.h"
+#include "tn.h"
 #include "cgtarget.h"
 
 #include "cg_swp_options.h"

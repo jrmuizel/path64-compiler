@@ -66,6 +66,7 @@
 #include "symtab.h"
 #include "opcode.h"
 #include "op.h"
+#include "bb.h"
 #include "cgexp.h"
 #include "w2op.h"
 

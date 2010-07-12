@@ -530,6 +530,16 @@
 #ifndef CGTARGET_INCLUDED
 #define CGTARGET_INCLUDED
 
+#include "targ_proc_properties.h"
+#include "targ_abi_properties.h"
+#include "targ_isa_lits.h"
+#include "targ_isa_registers.h"
+#include "targ_isa_enums.h"
+#include "targ_isa_pack.h"
+#include "targ_isa_bundle.h"
+#include "targ_isa_print.h"
+
+#include "cgtarget_arch.h"
 #include "defs.h"
 #include "cgir.h"
 #include "variants.h"
@@ -542,14 +552,6 @@
 #include "config_targ.h"
 #include "cg_thr.h"
 
-#include "targ_proc_properties.h"
-#include "targ_abi_properties.h"
-#include "targ_isa_lits.h"
-#include "targ_isa_registers.h"
-#include "targ_isa_enums.h"
-#include "targ_isa_pack.h"
-#include "targ_isa_bundle.h"
-#include "targ_isa_print.h"
 #include "cg_grouping.h"
 #include "ti_errors.h"
 #include "ti_bundle.h"
@@ -572,7 +574,6 @@ extern void CGTARG_Initialize(void);
 extern UINT32 CGTARG_branch_taken_penalty;
 extern BOOL CGTARG_branch_taken_penalty_overridden;
 
-#include "cgtarget_arch.h"
 // If a BB ends in an unconditional branch, turn it into a 
 // conditional branch with TRUE predicate.
 #ifdef TARG_ST
@@ -613,8 +614,12 @@ CGTARG_Immed_To_Reg(TOP opr)
   return CGTARG_Immed_To_Reg_Table[(INT)opr];
 }
 #endif
+#ifdef TARG_IA64
 extern void CGTARG_Perform_THR_Code_Generation(OP *load_op, OP *check_load,
 					       THR_TYPE type);
+#else
+extern void CGTARG_Perform_THR_Code_Generation(OP *load_op, THR_TYPE type);
+#endif
 extern INT  CGTARG_ARC_Sched_Latency( ARC *arc );
 extern void CGTARG_Handle_Errata_Hazard (OP *op, INT erratnum, 
 					 INT ops_to_check);
@@ -668,6 +673,7 @@ extern BOOL CGTARG_Is_OP_Speculative(OP *op);
 extern BOOL CGTARG_Is_OP_Speculative_Load( OP* memop );
 extern BOOL CGTARG_Is_OP_Advanced_Load( OP* memop );
 extern BOOL CGTARG_Is_OP_Check_Load( OP* memop );
+extern BOOL CGTARG_Is_OP_Inter_RegClass_Bool_Copy(OP *op);
 
 extern BOOL CGTARG_OP_Defs_TN( OP* op, TN* tn );
 extern BOOL CGTARG_OP_Refs_TN( OP* op, TN* tn );
@@ -1016,7 +1022,7 @@ extern void CGTARG_Init_Asm_Constraints (void);
 /* Given a constraint for an ASM parameter, and the load of the matching
  * argument passed to ASM (possibly NULL), choose an appropriate TN for it
  */
-#ifndef KEY
+#if !defined( KEY) || defined(TARG_ST)
 extern TN* CGTARG_TN_For_Asm_Operand(const char* constraint, 
                                      const WN* load,
                                      TN* pref_tn,

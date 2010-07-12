@@ -39,6 +39,7 @@
 #include "bb.h"
 #include "cg.h"
 #include "cgprep.h"
+#include "cgtarget.h"
 #include "cg_swp.h"
 #include "cg_swp_allocator.h"
 #include "cg_swp_options.h"

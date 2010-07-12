@@ -33,7 +33,7 @@
  * API used by both Front-end, Back-end and AIR to load extension 
  * dlls.
  */
-
+#include <dlfcn.h>
 #include "dll_loader.h"
 
 /*------------------------------------------------------------------------------

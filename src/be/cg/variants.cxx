@@ -75,6 +75,13 @@ Negate_BR_Variant(VARIANT variant)
   case V_BR_I8LT0: variant = V_BR_I8GE0; break;
   case V_BR_I8LE0: variant = V_BR_I8GT0; break;
 
+  case V_BR_I4EQ0: variant = V_BR_I4NE0; break;
+  case V_BR_I4NE0: variant = V_BR_I4EQ0; break;
+  case V_BR_I4GT0: variant = V_BR_I4LE0; break;
+  case V_BR_I4GE0: variant = V_BR_I4LT0; break;
+  case V_BR_I4LT0: variant = V_BR_I4GE0; break;
+  case V_BR_I4LE0: variant = V_BR_I4GT0; break;
+
   case V_BR_I8EQ: variant = V_BR_I8NE; break;
   case V_BR_I8NE: variant = V_BR_I8EQ; break;
   case V_BR_I8GT: variant = V_BR_I8LE; break;
@@ -89,13 +96,27 @@ Negate_BR_Variant(VARIANT variant)
   case V_BR_U8LT0: variant = V_BR_U8GE0; break;
   case V_BR_U8LE0: variant = V_BR_U8GT0; break;
 
+  case V_BR_U4EQ0: variant = V_BR_U4NE0; break;
+  case V_BR_U4NE0: variant = V_BR_U4EQ0; break;
+  case V_BR_U4GT0: variant = V_BR_U4LE0; break;
+  case V_BR_U4GE0: variant = V_BR_U4LT0; break;
+  case V_BR_U4LT0: variant = V_BR_U4GE0; break;
+  case V_BR_U4LE0: variant = V_BR_U4GT0; break;
+
   case V_BR_U8EQ: variant = V_BR_U8NE; break;
   case V_BR_U8NE: variant = V_BR_U8EQ; break;
   case V_BR_U8GT: variant = V_BR_U8LE; break;
   case V_BR_U8GE: variant = V_BR_U8LT; break;
   case V_BR_U8LT: variant = V_BR_U8GE; break;
   case V_BR_U8LE: variant = V_BR_U8GT; break;
-
+ 
+  case V_BR_A8EQ: variant = V_BR_A8NE; break;
+  case V_BR_A8NE: variant = V_BR_A8EQ; break;
+  case V_BR_A8GT: variant = V_BR_A8LE; break;
+  case V_BR_A8GE: variant = V_BR_A8LT; break;
+  case V_BR_A8LT: variant = V_BR_A8GE; break;
+  case V_BR_A8LE: variant = V_BR_A8GT; break;
+  
   case V_BR_I4EQ: variant = V_BR_I4NE; break;
   case V_BR_I4NE: variant = V_BR_I4EQ; break;
   case V_BR_I4GT: variant = V_BR_I4LE; break;
@@ -110,6 +131,27 @@ Negate_BR_Variant(VARIANT variant)
   case V_BR_U4LT: variant = V_BR_U4GE; break;
   case V_BR_U4LE: variant = V_BR_U4GT; break;
 
+  case V_BR_I5EQ: variant = V_BR_I5NE; break;
+  case V_BR_I5NE: variant = V_BR_I5EQ; break;
+  case V_BR_I5GT: variant = V_BR_I5LE; break;
+  case V_BR_I5GE: variant = V_BR_I5LT; break;
+  case V_BR_I5LT: variant = V_BR_I5GE; break;
+  case V_BR_I5LE: variant = V_BR_I5GT; break;
+
+  case V_BR_U5EQ: variant = V_BR_U5NE; break;
+  case V_BR_U5NE: variant = V_BR_U5EQ; break;
+  case V_BR_U5GT: variant = V_BR_U5LE; break;
+  case V_BR_U5GE: variant = V_BR_U5LT; break;
+  case V_BR_U5LT: variant = V_BR_U5GE; break;
+  case V_BR_U5LE: variant = V_BR_U5GT; break;
+
+  case V_BR_A4EQ: variant = V_BR_A4NE; break;
+  case V_BR_A4NE: variant = V_BR_A4EQ; break;
+  case V_BR_A4GT: variant = V_BR_A4LE; break;
+  case V_BR_A4GE: variant = V_BR_A4LT; break;
+  case V_BR_A4LT: variant = V_BR_A4GE; break;
+  case V_BR_A4LE: variant = V_BR_A4GT; break;
+  
   case V_BR_F_FALSE: variant = V_BR_F_TRUE;  break;
   case V_BR_F_TRUE:  variant = V_BR_F_FALSE; break;
 
@@ -200,6 +242,13 @@ Invert_BR_Variant(VARIANT variant)
   case V_BR_U8GE: variant = V_BR_U8LE; break;
   case V_BR_U8LT: variant = V_BR_U8GT; break;
   case V_BR_U8LE: variant = V_BR_U8GE; break;
+ 
+  case V_BR_A8EQ: variant = V_BR_A8EQ; break;
+  case V_BR_A8NE: variant = V_BR_A8NE; break;
+  case V_BR_A8GT: variant = V_BR_A8LT; break;
+  case V_BR_A8GE: variant = V_BR_A8LE; break;
+  case V_BR_A8LT: variant = V_BR_A8GT; break;
+  case V_BR_A8LE: variant = V_BR_A8GE; break;
 
   case V_BR_FEQ: variant = V_BR_FEQ; break;
   case V_BR_FNE: variant = V_BR_FNE; break;
@@ -235,6 +284,27 @@ Invert_BR_Variant(VARIANT variant)
   case V_BR_U4GE: variant = V_BR_U4LE; break;
   case V_BR_U4LT: variant = V_BR_U4GT; break;
   case V_BR_U4LE: variant = V_BR_U4GE; break;
+  
+  case V_BR_I5EQ: variant = V_BR_I5EQ; break;
+  case V_BR_I5NE: variant = V_BR_I5NE; break;
+  case V_BR_I5GT: variant = V_BR_I5LT; break;
+  case V_BR_I5GE: variant = V_BR_I5LE; break;
+  case V_BR_I5LT: variant = V_BR_I5GT; break;
+  case V_BR_I5LE: variant = V_BR_I5GE; break;
+
+  case V_BR_U5EQ: variant = V_BR_U5EQ; break;
+  case V_BR_U5NE: variant = V_BR_U5NE; break;
+  case V_BR_U5GT: variant = V_BR_U5LT; break;
+  case V_BR_U5GE: variant = V_BR_U5LE; break;
+  case V_BR_U5LT: variant = V_BR_U5GT; break;
+  case V_BR_U5LE: variant = V_BR_U5GE; break;
+
+  case V_BR_A4EQ: variant = V_BR_A4EQ; break;
+  case V_BR_A4NE: variant = V_BR_A4NE; break;
+  case V_BR_A4GT: variant = V_BR_A4LT; break;
+  case V_BR_A4GE: variant = V_BR_A4LE; break;
+  case V_BR_A4LT: variant = V_BR_A4GT; break;
+  case V_BR_A4LE: variant = V_BR_A4GE; break;
 
   case V_BR_PEQ: variant = V_BR_PEQ; break;
   case V_BR_PNE: variant = V_BR_PNE; break;
@@ -251,6 +321,18 @@ Invert_BR_Variant(VARIANT variant)
   case V_BR_U8GE0:
   case V_BR_U8LT0:
   case V_BR_U8LE0:
+  case V_BR_I4EQ0:
+  case V_BR_I4NE0:
+  case V_BR_I4GT0:
+  case V_BR_I4GE0:
+  case V_BR_I4LT0:
+  case V_BR_I4LE0:
+  case V_BR_U4EQ0:
+  case V_BR_U4NE0:
+  case V_BR_U4GT0:
+  case V_BR_U4GE0:
+  case V_BR_U4LT0:
+  case V_BR_U4LE0:
   case V_BR_F_FALSE:
   case V_BR_F_TRUE:
   case V_BR_P_TRUE:
@@ -308,6 +390,13 @@ BR_Variant_Name(VARIANT variant)
   case V_BR_I8LT0:   return is_false ? "!I8LT0"   : "I8LT0";
   case V_BR_I8LE0:   return is_false ? "!I8LE0"   : "I8LE0";
 
+  case V_BR_I4EQ0:   return is_false ? "!I4EQ0"   : "I4EQ0";
+  case V_BR_I4NE0:   return is_false ? "!I4NE0"   : "I4NE0";
+  case V_BR_I4GT0:   return is_false ? "!I4GT0"   : "I4GT0";
+  case V_BR_I4GE0:   return is_false ? "!I4GE0"   : "I4GE0";
+  case V_BR_I4LT0:   return is_false ? "!I4LT0"   : "I4LT0";
+  case V_BR_I4LE0:   return is_false ? "!I4LE0"   : "I4LE0";
+
   case V_BR_I8EQ:    return is_false ? "!I8EQ"    : "I8EQ";
   case V_BR_I8NE:    return is_false ? "!I8NE"    : "I8NE";
   case V_BR_I8GT:    return is_false ? "!I8GT"    : "I8GT";
@@ -321,6 +410,13 @@ BR_Variant_Name(VARIANT variant)
   case V_BR_U8GE0:   return is_false ? "!U8GE0"   : "U8GE0";
   case V_BR_U8LT0:   return is_false ? "!U8LT0"   : "U8LT0";
   case V_BR_U8LE0:   return is_false ? "!U8LE0"   : "U8LE0";
+ 
+  case V_BR_U4EQ0:   return is_false ? "!U4EQ0"   : "U4EQ0";
+  case V_BR_U4NE0:   return is_false ? "!U4NE0"   : "U4NE0";
+  case V_BR_U4GT0:   return is_false ? "!U4GT0"   : "U4GT0";
+  case V_BR_U4GE0:   return is_false ? "!U4GE0"   : "U4GE0";
+  case V_BR_U4LT0:   return is_false ? "!U4LT0"   : "U4LT0";
+  case V_BR_U4LE0:   return is_false ? "!U4LE0"   : "U4LE0";
 
   case V_BR_U8EQ:    return is_false ? "!U8EQ"    : "U8EQ";
   case V_BR_U8NE:    return is_false ? "!U8NE"    : "U8NE";
@@ -328,6 +424,14 @@ BR_Variant_Name(VARIANT variant)
   case V_BR_U8GE:    return is_false ? "!U8GE"    : "U8GE";
   case V_BR_U8LT:    return is_false ? "!U8LT"    : "U8LT";
   case V_BR_U8LE:    return is_false ? "!U8LE"    : "U8LE";
+
+  case V_BR_A8EQ:    return is_false ? "!A8EQ"    : "A8EQ";
+  case V_BR_A8NE:    return is_false ? "!A8NE"    : "A8NE";
+  case V_BR_A8GT:    return is_false ? "!A8GT"    : "A8GT";
+  case V_BR_A8GE:    return is_false ? "!A8GE"    : "A8GE";
+  case V_BR_A8LT:    return is_false ? "!A8LT"    : "A8LT";
+  case V_BR_A8LE:    return is_false ? "!A8LE"    : "A8LE";
+
 
   case V_BR_FEQ:     return is_false ? "!FEQ"     : "FEQ";
   case V_BR_FNE:     return is_false ? "!FNE"     : "FNE";
@@ -363,6 +467,27 @@ BR_Variant_Name(VARIANT variant)
   case V_BR_U4GE:    return is_false ? "!U4GE"    : "U4GE";
   case V_BR_U4LT:    return is_false ? "!U4LT"    : "U4LT";
   case V_BR_U4LE:    return is_false ? "!U4LE"    : "U4LE";
+                 
+  case V_BR_I5EQ:    return is_false ? "!I5EQ"    : "I5EQ";
+  case V_BR_I5NE:    return is_false ? "!I5NE"    : "I4NE";
+  case V_BR_I5GT:    return is_false ? "!I5GT"    : "I4GT"; 
+  case V_BR_I5GE:    return is_false ? "!I5GE"    : "I4GE";
+  case V_BR_I5LT:    return is_false ? "!I5LT"    : "I4LT";
+  case V_BR_I5LE:    return is_false ? "!I5LE"    : "I4LE";
+
+  case V_BR_U5EQ:    return is_false ? "!U5EQ"    : "U5EQ";
+  case V_BR_U5NE:    return is_false ? "!U5NE"    : "U5NE";
+  case V_BR_U5GT:    return is_false ? "!U5GT"    : "U5GT";
+  case V_BR_U5GE:    return is_false ? "!U5GE"    : "U5GE";
+  case V_BR_U5LT:    return is_false ? "!U5LT"    : "U5LT";
+  case V_BR_U5LE:    return is_false ? "!U5LE"    : "U5LE";
+
+  case V_BR_A4EQ:    return is_false ? "!A4EQ"    : "A4EQ";
+  case V_BR_A4NE:    return is_false ? "!A4NE"    : "A4NE";
+  case V_BR_A4GT:    return is_false ? "!A4GT"    : "A4GT";
+  case V_BR_A4GE:    return is_false ? "!A4GE"    : "A4GE";
+  case V_BR_A4LT:    return is_false ? "!A4LT"    : "A4LT";
+  case V_BR_A4LE:    return is_false ? "!A4LE"    : "A4LE";
 
   case V_BR_F_FALSE: return is_false ? "!F_FALSE" : "F_FALSE";
   case V_BR_F_TRUE:  return is_false ? "!F_TRUE"  : "F_TRUE";

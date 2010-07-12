@@ -608,8 +608,7 @@ CG_Generate_Code(
     Add_Float_Stores();
   }
 #endif
-
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   extern BOOL profile_arcs;
   if (flag_test_coverage || profile_arcs)
 //    CG_Compute_Checksum();
@@ -866,7 +865,7 @@ CG_Generate_Code(
       CFLOW_Optimize(CFLOW_MERGE|CFLOW_CLONE,
 		     "CFLOW (after ssa)", TRUE);
 #endif
-      if (CG_enable_peephole) {
+      if (Enable_CG_Peephole) {
 	Set_Error_Phase("Extended Block Optimizer (after ssa)");
 	Start_Timer(T_EBO_CU);
 	EBO_Pre_Process_Region (region ? REGION_get_rid(rwn) : NULL);
@@ -1259,7 +1258,7 @@ CG_Generate_Code(
   CGTARG_Resize_Instructions ();
   BOOL modified = CGTARG_Pseudo_Make_Expand();
   //[TDR] - Fix for bug #32432 : After Make Expand, some small constants may be propagated by EBO
-  if (CG_enable_peephole && modified) {
+  if (Enable_CG_Peephole && modified) {
     Set_Error_Phase("Extended Block Optimizer (After Make Expand)");
     Start_Timer(T_EBO_CU);
     EBO_Post_Process_Region (region ? REGION_get_rid(rwn) : NULL);

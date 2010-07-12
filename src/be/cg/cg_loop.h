@@ -307,7 +307,10 @@
 
 #ifndef CG_LOOP_INCLUDED
 #define CG_LOOP_INCLUDED
-
+#include "op.h"
+#include "tn.h"
+#include "bb.h"
+#include "cgtarget.h"
 
 #include "cg_dep_graph.h"
 #include "cg_loop_scc.h"

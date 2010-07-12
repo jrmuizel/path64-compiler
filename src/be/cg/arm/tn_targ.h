@@ -77,6 +77,56 @@
 
 /* Target-specific special registers: */
 
+ /* ====================================================================
+ *   CGTARG_TN_Value
+ * ====================================================================
+ */
+inline INT64
+CGTARG_TN_Value (
+  TN      *t,
+  INT64   base_ofst
+)
+{
+  INT64 val = base_ofst + TN_offset(t);
+  ST *base_st;
+
+  Base_Symbol_And_Offset (TN_var(t), &base_st, &base_ofst);
+#if 0
+  if (base_st == SP_Sym ) {
+    FmtAssert(val >= 0,("Cannot load/store with base SP and offset < 0"));
+  }
+  if (base_st == FP_Sym ) {
+    if(val < 0) {
+      /* Code selection should has generated load/store with base - ofst. */
+      val = -val;
+    }
+  }
+#endif
+
+  FmtAssert (TN_is_reloc_none(t), ("CGTARG_TN_Value: unexpected reloc TN"));
+
+  return val;
+
+}
+
+/* ====================================================================
+ *   Gen_Predicate_TN
+ * ====================================================================
+ */
+inline TN*
+Gen_Predicate_TN()
+{
+  FmtAssert(FALSE,("Not implemented"));
+#if 0
+  //
+  // We will generate a integer TN always, so we can conduct boolean
+  // arithmetic on it
+  //
+  return Build_RCLASS_TN(ISA_REGISTER_CLASS_gr);
+
+#endif
+  return NULL;
+}
 
 /* ====================================================================
  * ====================================================================

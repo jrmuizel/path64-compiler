@@ -37,7 +37,7 @@
  * ====================================================================
  */
 
-#include "W_limits.h"
+#include <limits.h>
 #include "defs.h"
 #include "errors.h"
 #include "zint.h"
@@ -471,5 +471,5 @@ ZInt::Print (FILE *f) const
   else if (isPlusInf())
     fputs ("+Inf", f);
   else
-    fprintf (f, "%lld", (INT64)value);
+    fprintf (f, "%"SCNd64"", (INT64)value);
 }

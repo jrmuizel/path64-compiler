@@ -40,11 +40,10 @@ static const char source_file[] = __FILE__;
 static const char rcs_id[] = "";
 #endif /* _KEEP_RCS_ID */
 
-#include "W_alloca.h"
 #include "defs.h"
 #include "resource.h"
 #include "config.h"
-#include "config_TARG.h"
+#include "config_targ_opt.h"
 #include "errors.h"
 #include "mempool.h"
 #include "cg.h"

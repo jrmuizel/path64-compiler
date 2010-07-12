@@ -71,11 +71,10 @@
 #else
 #include <list.h>
 #endif // __GNUC__ >=3
-#include "namespace_trans.h"
 
 #include "defs.h"
 #include "config.h"
-#include "config_TARG.h"
+#include "config_targ_opt.h"
 #include "tracing.h"
 #include "timing.h"
 #include "cgir.h"
@@ -3909,11 +3908,11 @@ sPrint_TN (
 
   if (TN_is_constant(tn)) {
     if ( TN_has_value(tn)) {
-      buf += sprintf ( buf, "(0x%llx)", TN_value(tn) );
+      buf += sprintf ( buf, "(0x%"SCNx64")", TN_value(tn) );
       if (TN_size(tn) == 4 && 
 	  TN_value(tn) >> 32 != 0 &&
 	  TN_value(tn) >> 31 != -1)
-	buf += sprintf ( buf, "!!! TN_value=0x%llx is too big to fit in a word",
+	buf += sprintf ( buf, "!!! TN_value=0x"SCNx64" is too big to fit in a word",
 			 TN_value(tn));
     }
     else if (TN_is_enum(tn)) {
@@ -3927,7 +3926,7 @@ sPrint_TN (
 	buf += sprintf ( buf, "(lab:%s)", name );
       }
       else {
-	buf += sprintf ( buf, "(lab:%s+%lld)", name, offset );
+	buf += sprintf ( buf, "(lab:%s+%"SCNd64")", name, offset );
       }
     } 
     else if ( TN_is_tag(tn) ) {
@@ -3944,7 +3943,7 @@ sPrint_TN (
       if (ST_class(var) == CLASS_CONST)
       	buf += sprintf ( buf, ":%s)", Targ_Print(NULL, ST_tcon_val(var)));
       else
-      	buf += sprintf ( buf, ":%s%+lld)", ST_name(var), TN_offset(tn) );
+      	buf += sprintf ( buf, ":%s%+"SCNd64")", ST_name(var), TN_offset(tn) );
     } 
   }
   else {  /* register TN */

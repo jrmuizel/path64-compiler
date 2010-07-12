@@ -39,16 +39,16 @@
 #include "op.h"
 #include "bb.h"
 #include "cg.h"
-#include "cgexp.h"   // for Exp_COPY 
 #include "cg_swp.h"
 #include "cg_swp_bundle.h"
 #include "cg_swp_options.h"
 #include "cgprep.h"
+#include "cgtarget.h"
+#include "cgexp.h"   // for Exp_COPY 
 #include "cg_swp_target.h"
 #include "cg_dep_graph.h"
 #include "cg_loop.h"
 #include "cg_loop_mii.h"
-#include "cgtarget.h"
 #include "findloops.h"
 #include "ti_res_count.h"
 #include "tag.h"

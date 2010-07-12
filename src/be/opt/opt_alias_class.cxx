@@ -2644,9 +2644,6 @@ ALIAS_MANAGER::Transfer_alias_class_to_alias_manager(const
 }
 #endif
 
-#ifdef TARG_ST
-// This function is now defined in be/com 
-#else
 void
 ALIAS_MANAGER::Forget_alias_class_info(void)
 {
@@ -2656,6 +2653,5 @@ ALIAS_MANAGER::Forget_alias_class_info(void)
     }
   }
 }
-#endif
 
 // ======================================================================

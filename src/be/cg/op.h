@@ -807,6 +807,7 @@ extern BOOL OP_has_implicit_interactions(OP*);
 #define OP_fmul(o)		(TOP_is_fmul(OP_code(o)))
 #define OP_fmisc(o)		(TOP_is_fmisc(OP_code(o)))
 #define OP_fsub(o)		(TOP_is_fsub(OP_code(o)))
+#define OP_fcmp(o)              (TOP_is_cmp(OP_code(o)) && OP_flop(o))
 #define OP_intop(o)             (TOP_is_intop(OP_code(o)))
 #define OP_ptrop(o)             (TOP_is_ptrop(OP_code(o)))
 #define OP_flop(o)		(TOP_is_flop(OP_code(o)))
@@ -891,6 +892,7 @@ inline BOOL OP_conflict(OP *op, INT res_idx, INT opnd_idx) {
 #define OP_unalign_ld(o)	(TOP_is_unalign_ld(OP_code(o)))
 #define OP_unalign_store(o)	(TOP_is_unalign_store(OP_code(o)))
 #endif
+#define OP_unsigned_ld(o)	(TOP_is_load(OP_code(o)) && TOP_is_unsign(OP_code(o)))
 #define OP_unalign_mem(o)	(OP_unalign_ld(o) | OP_unalign_store(o))
 #define OP_defs_fcc(o)		(TOP_is_defs_fcc(OP_code(o)))
 #define OP_defs_fcr(o)		(TOP_is_defs_fcr(OP_code(o)))
@@ -1234,7 +1236,7 @@ extern BOOL CGTARG_Can_Be_Speculative(OP* op);
 
 // Copy ASM_OP_ANNOT when duplicating an OP.
 #ifdef TARG_ST
-void Copy_Asm_OP_Annot(OP* new_op, OP* op);
+void Copy_Asm_OP_Annot(OP* new_op, const OP* op);
 #else
 inline void
 Copy_Asm_OP_Annot(OP* new_op, OP* op) 

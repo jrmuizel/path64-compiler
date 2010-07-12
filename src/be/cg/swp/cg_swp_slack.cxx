@@ -20,6 +20,10 @@
 /* Basic compiler include files */
 #include "defs.h"
 #include "mempool.h"
+#include "bb.h"
+#include "op.h"
+#include "tn.h"
+#include "cgtarget.h"
 
 /* Code Generator related include files */
 #include "cg_dep_graph.h"

@@ -186,8 +186,8 @@ static void Emit_Repeated_Constant(
   do {
     INT i;
     this_rc = MIN(rc, maxc);
-    fprintf(fl, "\t%s\t%lld", dir, val);
-    for (i = 1; i < this_rc; ++i) fprintf(fl, ", %lld", val);
+    fprintf(fl, "\t%s\t%"SCNd64"", dir, val);
+    for (i = 1; i < this_rc; ++i) fprintf(fl, ", %"SCNd64"", val);
     fprintf(fl, "\n");
   } while (rc -= this_rc);
 }

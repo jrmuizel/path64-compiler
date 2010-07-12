@@ -4061,7 +4061,7 @@ r_assemble_op(OP *op, BB *bb, ISA_BUNDLE *bundle, INT slot)
     }
   }
 #endif
-
+#ifndef TARG_ST
   if (Object_Code) {
     ISA_PACK_INST inst[ISA_PACK_MAX_INST_WORDS];
     words = r_assemble_binary ( op, bb, inst );
@@ -4096,7 +4096,7 @@ if (Get_Trace ( TP_EMIT,0x100 )) {
     }
 }
   }
-
+#endif
   PC = PC_Incr_N(PC, words);
 
   // hack to keep track of last label and offset for assembly dwarf (suneel)
@@ -5974,11 +5974,13 @@ EMT_Assemble_BB ( BB *bb, WN *rwn )
 			Print_Label (Asm_File, entry_sym, 0 );
       		}
 		EMT_Put_Elf_Symbol (entry_sym);
+#ifndef TARG_ST
       		if ( Object_Code ) {
         		Em_Define_Symbol (
 			    EMT_Put_Elf_Symbol(entry_sym), PC, 0, PU_section);
 			Em_Add_New_Event (EK_ENTRY, PC, 0, 0, 0, PU_section);
       		}
+#endif
     	}
     	if (Object_Code) {
       		if ( EMIT_interface_section && !BB_handler(bb))
@@ -6101,7 +6103,7 @@ EMT_Assemble_BB ( BB *bb, WN *rwn )
          ) {
 #ifdef TARG_ST
       if (List_Notes) {
-	fprintf (Output_File, "%s:\t%s 0x%llx\n", ST_name(st), ASM_CMNT_LINE, ST_ofst(st));
+	fprintf (Output_File, "%s:\t%s 0x%"SCNx64"\n", ST_name(st), ASM_CMNT_LINE, ST_ofst(st));
       } else {
 	fprintf (Output_File, "%s:\n", ST_name(st));
       }
@@ -6214,10 +6216,11 @@ EMT_Assemble_BB ( BB *bb, WN *rwn )
   } else {
     Assemble_Ops(bb);
   }
-
+#ifndef TARG_ST
   if (Object_Code && BB_exit(bb)) {
     Em_Add_New_Event (EK_EXIT, PC - 2*INST_BYTES, 0, 0, 0, PU_section);
   }
+#endif
   #ifdef TARG_STxP70
   CGEMIT_Loop_End_Directive(bb);
 #endif
@@ -7562,7 +7565,7 @@ Write_Symbol (
 	basesym = PU_base;
   }
   base_ofst += sym_ofst;
-
+#ifndef TARG_ST
   if (Object_Code && repeat != 0) {
     if (Use_32_Bit_Pointers) {
       Em_Add_New_Content (CK_SADDR_32, scn_ofst, 4*repeat, 0, scn);
@@ -7571,7 +7574,7 @@ Write_Symbol (
       Em_Add_New_Content (CK_SADDR_64, scn_ofst, 8*repeat, 0, scn);
     }
   }
-
+#endif
   for ( i = 0; i < repeat; i++ ) {
     // do object code first so base section initialized
     if (Object_Code) {
@@ -7615,7 +7618,7 @@ Write_Symbol (
 	  fprintf (Output_File, " %s(", AS_FPTR);
 	}
 	EMT_Write_Qualified_Name (Output_File, sym);
-	fprintf (Output_File, "%+lld", sym_ofst);
+	fprintf (Output_File, "%+"SCNd64"", sym_ofst);
 	if (AS_FPTR) {
 	  fputc (')', Output_File);
 	}
@@ -7726,7 +7729,7 @@ Write_Label (
 	basesym = PU_base;
   }
   base_ofst = Get_Label_Offset(lab) + lab_ofst;
-
+#ifndef TARG_ST 
   if (Object_Code && repeat != 0) {
     if (Use_32_Bit_Pointers) {
       Em_Add_New_Content (CK_SADDR_32, scn_ofst, 4*repeat, 0, scn);
@@ -7735,7 +7738,7 @@ Write_Label (
       Em_Add_New_Content (CK_SADDR_64, scn_ofst, 8*repeat, 0, scn);
     }
   }
-
+#endif
   for ( i = 0; i < repeat; i++ ) {
     if (Assembly) {
 #ifdef TARG_MIPS
@@ -8528,7 +8531,7 @@ Change_Section_Origin (ST *base, INT64 ofst)
             if (current_ofst <= ofst) {
                 INT64 padding = ofst - current_ofst;
                 if (padding > 0) {
-                    fprintf(Output_File, "\t%s %lld\n", AS_SPACE, padding);
+                    fprintf(Output_File, "\t%s %"SCNd64"\n", AS_SPACE, padding);
                 }
             } else {
                 FmtAssert(0,
@@ -10032,10 +10035,11 @@ EMT_Emit_PU ( ST *pu, DST_IDX pu_dst, WN *rwn )
      Perform branch target optimization.
   */
   R_Resolve_Branches (pu);
-
+#ifndef TARG_ST
   if (Object_Code) {
     Em_Add_New_Event (EK_ENTRY, PC, 0, 0, 0, PU_section);
   }
+#endif
   if ( Assembly ) {
 #ifdef TARG_X8664
     if (CG_p2align) 
@@ -10258,7 +10262,7 @@ EMT_Emit_PU ( ST *pu, DST_IDX pu_dst, WN *rwn )
   Gen_EndSplit_Label(Asm_File);  
 #endif /* BCO_Enabled Thierry */
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Emit Last_Label at the end of the PU to guide Dwarf DW_AT_high_pc
   fprintf( Asm_File, "%s:\n", LABEL_name(Last_Label));
   Label_Last_BB_PU_Entry[pu_entries] = Last_Label;
@@ -10311,8 +10315,10 @@ EMT_Emit_PU ( ST *pu, DST_IDX pu_dst, WN *rwn )
     Elf64_Word symindex;
     INT eh_offset;
     BOOL has_exc_scopes = PU_has_exc_scopes(ST_pu(pu));
+#ifndef TARG_ST
     if (Object_Code)
     	Em_Add_New_Event (EK_PEND, PC - INST_BYTES, 0, 0, 0, PU_section);
+#endif
     /* get exception handling info */ 
     if (!CXX_Exceptions_On && has_exc_scopes) {
       eh_offset = symindex = (Elf64_Word)DW_DLX_EH_OFFSET_UNAVAILABLE;
@@ -10817,7 +10823,7 @@ EMT_Begin_File (
 
 BOOL pad_data_section = FALSE;
 
-
+#ifndef TARG_ST
 static void
 Em_Options_Scn(void)
 {
@@ -10890,7 +10896,7 @@ Em_Options_Scn(void)
 #endif
     }
 }
-
+#endif
 
 #ifdef KEY
 // stores the command line arguments passed to 'be'
@@ -11241,9 +11247,12 @@ EMT_End_File( void )
     end_previous_text_region(PU_section, Em_Get_Section_Offset(PU_section));
   }
 #endif
+
+#ifndef TARG_ST
   if (Object_Code) {
     Em_Options_Scn();
   }
+#endif
   if (generate_dwarf) {
     // must write out dwarf unwind info before text section is ended
     Cg_Dwarf_Finish (PU_section);

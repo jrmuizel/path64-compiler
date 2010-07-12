@@ -19,6 +19,10 @@
 
 /* Basic compiler include files */
 #include "defs.h"
+#include "op.h"
+#include "tn.h"
+#include "bb.h"
+#include "cgtarget.h"
 
 /* Code Generator (CG) related include files */
 #include "cg_dep_graph.h"

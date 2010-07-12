@@ -64,6 +64,8 @@
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include "defs.h"
+#include "bb.h"
+#include "op.h"
 #include "cg_flags.h"
 #include "cgtarget.h"
 
@@ -93,6 +95,7 @@ BOOL LOCALIZE_using_stacked_regs = TRUE;
 BOOL CG_unique_exit = TRUE;
 BOOL  CG_enable_BB_splitting = TRUE;
 INT32 CG_split_BB_length = CG_bblength_default;
+BOOL CG_gen_callee_saved_regs_mask = FALSE; /* generate register mask */
 
 INT32 CG_L1_ld_latency = 0;
 INT32 CG_L2_ld_latency = 0;
@@ -180,7 +183,6 @@ BOOL CG_enable_pf_L1_st = FALSE;
 BOOL CG_enable_pf_L2_ld = FALSE;
 BOOL CG_enable_pf_L2_st = FALSE;
 BOOL CG_exclusive_prefetch = FALSE;
-BOOL CG_enable_peephole = FALSE;
 BOOL CG_enable_ssa = FALSE;	/* Enable SSA in cg */
 #ifdef TARG_ST
 // FdF 20070206
@@ -191,6 +193,9 @@ INT32 CG_COLOR_pref_regs_priority = PREF_REGS_PRIORITY_MEDIUM;
 #endif
 BOOL CG_enable_range_propagation = FALSE;
 BOOL CG_enable_select = FALSE;
+INT32 CG_range_recompute_limit = 2;
+BOOL CG_enable_cbpo;
+
 #ifdef KEY
 BOOL CG_split_bb = TRUE;
 BOOL CG_split_bb_Set = FALSE;
@@ -232,9 +237,8 @@ BOOL CGSPILL_Enable_Force_Rematerialization = FALSE;
 BOOL CG_emit_bb_freqs = FALSE;
 BOOL CG_emit_bb_freqs_arcs = FALSE;
 #endif
-#if defined TARG_ST
-BOOL CG_tail_call = FALSE;
-#elif defined TARG_IA64
+
+#ifdef TARG_IA64
 BOOL CG_enable_thr = TRUE;
 BOOL CG_cond_defs_allowed = TRUE;
 BOOL LOCS_Enable_Bundle_Formation = TRUE;

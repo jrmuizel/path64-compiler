@@ -1,5 +1,4 @@
 
-#include "W_alloca.h"
 // [HK]
 #if __GNUC__ >= 3
 #include <list>
@@ -15,7 +14,7 @@
 #include "cxx_memory.h"
 #include "glob.h"
 #include "bitset.h"
-#include "config_target.h"
+#include "config_targ.h"
 #include "config.h"
 
 #include "symtab.h"

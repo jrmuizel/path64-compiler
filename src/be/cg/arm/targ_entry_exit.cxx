@@ -25,9 +25,9 @@
 #include "erbe.h"
 #include "glob.h"
 #include "tracing.h"
-#include "config_target.h"
+#include "config_targ.h"
 #include "config.h"
-#include "config_TARG.h"
+#include "config_targ_opt.h"
 
 #include "symtab.h"
 #include "strtab.h"
@@ -56,7 +56,6 @@
 #include "mexpand.h"
 #include "reg_live.h"
 #include "bb.h"
-#include "config_TARG.h"
 
 
 static std::vector<CLASS_REG_PAIR> callee_saved_vector;

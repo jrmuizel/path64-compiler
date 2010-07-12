@@ -111,6 +111,15 @@ typedef uintptr_t	UINTPS;	/* Pointer-sized integer */
 #ifndef UINT32_MAX
 #define UINT32_MAX      4294967295u     /* Max 32-bit unsigned int */
 #endif
+
+# if __WORDSIZE == 64
+#  define __INT64_C(c)	c ## L
+#  define __UINT64_C(c)	c ## UL
+# else
+#  define __INT64_C(c)	c ## LL
+#  define __UINT64_C(c)	c ## ULL
+# endif
+
 /* There is a problem in sys/int_limits.h on Solaris 5.7
  * It does not specify an LL at the end of the INT64_MIN, INT64_MAX
  * constants. This causes the gcc to complain badly.
@@ -119,27 +128,27 @@ typedef uintptr_t	UINTPS;	/* Pointer-sized integer */
 #ifdef INT64_MAX
 #undef INT64_MAX
 #endif
-#define INT64_MAX       0x7fffffffffffffffll    /* Max 64-bit int */
+#define INT64_MAX       __INT64_C(0x7fffffffffffffff)    /* Max 64-bit int */
 
 #ifdef INT64_MIN
 #undef INT64_MIN
 #endif
-#define INT64_MIN       0x8000000000000000ll    /* Min 64-bit int */
+#define INT64_MIN       __INT64_C(0x8000000000000000)    /* Min 64-bit int */
 
 #ifdef UINT64_MAX
 #undef UINT64_MAX
 #endif
-#define UINT64_MAX      0xffffffffffffffffull   /* Max 64-bit unsigned int */
+#define UINT64_MAX      __UINT64_C(0xffffffffffffffff)   /* Max 64-bit unsigned int */
 
 #else /* __linux__ */
 #ifndef INT64_MAX
-#define INT64_MAX       0x7fffffffffffffffll    /* Max 64-bit int */
+#define INT64_MAX       __INT64_C(0x7fffffffffffffff)    /* Max 64-bit int */
 #endif
 #ifndef INT64_MIN
-#define INT64_MIN       0x8000000000000000ll    /* Min 64-bit int */
+#define INT64_MIN       __INT64_C(0x8000000000000000)    /* Min 64-bit int */
 #endif
 #ifndef UINT64_MAX
-#define UINT64_MAX      0xffffffffffffffffull   /* Max 64-bit unsigned int */
+#define UINT64_MAX      __UINT64_C(0xffffffffffffffff)   /* Max 64-bit unsigned int */
 #endif
 #endif /* __sun__ */
 

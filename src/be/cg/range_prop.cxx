@@ -35,7 +35,7 @@
 
 #include "defs.h"
 #include "tracing.h"
-#include "config_target.h"
+#include "config_targ.h"
 #include "cgir.h"
 #include "range_prop.h"
 #include "cg_ssa.h"

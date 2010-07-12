@@ -91,13 +91,13 @@
 #include "gra.h"                    /* for GRA_optimize_placement... */
 #include "ebo.h"		    /* for EBO options */
 #include "cgprep.h"		    /* for CGPREP knobs */
+#include "cgtarget.h"		    /* target-dependent stuff */
 #include "cg_dep_graph.h"	    /* for CG_DEP knobs */
 #include "cg_dep_graph_update.h"    /* more CG_DEP knobs */
 #include "cio.h"                    /* for rw, cicse etc ...*/
 #include "cg_loop.h"                /* for unrolling */
 #include "cg_loop_recur.h"	    /* recurrence fixing */
 #include "loop_invar_hoist.h"	    /* For loop invariant hoisting */
-#include "cgtarget.h"		    /* target-dependent stuff */
 #include "gcm.h"		    /* for GCM options */
 #include "cg_sched_est.h"	    /* for CG_SCHED_EST options */
 #include "targ_proc_properties.h"
@@ -3057,9 +3057,8 @@ extern void CG_End_Final();
 void
 CG_Fini (void)
 {
-#ifdef KEY
-    extern BOOL profile_arcs;
-    #ifdef TARG_ST
+
+#ifdef TARG_ST
   // [GS-DFGforISE] End of exportation to DfgForIse classes.
   if ( (CG_dfg_ise_mask & 0xff)
        || (CG_dfg_debug_mask & 0xff) ) {
@@ -3076,6 +3075,10 @@ CG_Fini (void)
     lao_fini();
   }
 #endif
+
+
+#if defined( KEY) && !defined(TARG_ST)
+    extern BOOL profile_arcs;
 
     if (profile_arcs)
         CG_End_Final();

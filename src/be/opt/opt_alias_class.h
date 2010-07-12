@@ -661,7 +661,9 @@ public:
   void                Classify_memops(WN *);
 
   IDTYPE              Alias_class(const WN *) const;
+#ifndef TARG_ST
   void                Copy_alias_class(const WN *, WN *);
+#endif
   BOOL                Non_alloca_memop(IDTYPE) const;
 
   BOOL                Writable_by_call(IDTYPE) const;

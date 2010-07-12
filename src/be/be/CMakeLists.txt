@@ -135,6 +135,20 @@ SET(PATHSCALE_BE_BE_SRCS "../../common/targ_info/access/ti_init.c"
                          "../../common/util/cxx_memory.cxx"
                          "../../common/util/errors.cxx"
                          "../../common/util/options_stack.cxx"
+                         "../../common/util/zint.cxx" #st
+                         "../../common/util/lbitmask.cxx" #st
+                         "../../common/util/lbrange.cxx" #st
+                         "../../common/util/larange.cxx" #st
+                         "../../common/util/lvrange.cxx" #st
+                         "../../common/util/lbvalrange.cxx" #st
+                         "../../common/util/lbitvalue.cxx" #st
+                         "../../common/util/lalign.cxx" #st
+                         "../../common/util/paired_lattice.cxx" #st
+                         "../../common/util/range.cxx" #st
+                         "../../common/com/isa_loader.cxx" #st
+                         "../../common/com/dll_loader.cxx" #st
+                         "../../common/com/extension_intrinsic.cxx" #st
+                         "../../common/com/dyn_isa_api_access.cxx" #st
                          "../region/ori.cxx"
                          "../region/rbi.cxx"
                          "../region/region_init.cxx"

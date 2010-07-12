@@ -1437,7 +1437,7 @@ CFG::Is_simple_expr(WN *wn) {
 #endif
   return 0;
 }
-
+#ifndef TARG_ST
 // ====================================================================
 // copy the address expression tree recursively
 // ====================================================================
@@ -1462,7 +1462,7 @@ static WN *Copy_addr_expr(WN *wn, ALIAS_CLASSIFICATION *ac)
   }
   return new_wn;
 }
-
+#endif
 // ====================================================================
 // check if the address expression has an LDA base that is a read-only symbol
 // ====================================================================
@@ -1834,6 +1834,7 @@ CFG::Lower_if_stmt( WN *wn, END_BLOCK *ends_bb, BOOL if_conv_only )
 		       WN_field_id(stmt));
 	WN_set_aux(load, WN_aux(stmt)); // setting mapping to indicate ST_is_aux
       }
+#ifndef TARG_ST
       else {
 	MTYPE rtype = WN_rtype(WN_kid0(stmt));
 	if (MTYPE_byte_size(rtype) < MTYPE_byte_size(dsctyp))
@@ -1852,6 +1853,7 @@ CFG::Lower_if_stmt( WN *wn, END_BLOCK *ends_bb, BOOL if_conv_only )
 	if (ip_alias_class != OPTIMISTIC_AC_ID)
 	  WN_MAP32_Set(WN_MAP_ALIAS_CLASS, load, ip_alias_class);
       }
+#endif
     }
     WN *then_expr = empty_then ? load : WN_kid0(WN_first(then_wn));
     WN *else_expr = empty_else ? load : WN_kid0(WN_first(else_wn));

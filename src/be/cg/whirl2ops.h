@@ -136,7 +136,7 @@ extern void Get_Memory_OP_Predicate_Info(OP *memop, TN **pred_tn,
  * Get_WN_From_Memory_OP(dest) == Get_WN_From_Memory_OP(src).
  * Also copies predicate information (see above).
  */
-extern void Copy_WN_For_Memory_OP(OP *dest, const OP *src);
+extern void Copy_WN_For_Memory_OP(OP *dest,  OP *src);
 #ifdef TARG_ST
 /* [TTh] Test if the memory OP is associated to a WN and
  * if its memory access is smaller than the WN memory access

@@ -59,6 +59,7 @@
 #include <cmplrs/rcodes.h>
 #include <sys/resource.h>
 #include <ext/slist>
+#include <stdint.h>
 #include "defs.h"
 #include "erglob.h"
 #include "erbe.h"

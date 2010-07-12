@@ -157,10 +157,32 @@ extern void CG_PU_Initialize (WN*);
 extern void CG_PU_Finalize ();
 extern WN* CG_Generate_Code (WN*, ALIAS_MANAGER*, DST_IDX, BOOL);
 extern void EH_Generate_Range_List (WN *);
+#ifdef TARG_ST
+//TB: Add reset option at source level
+ extern void (*CG_Reset_Default_Options_p) (void);
+#define CG_Reset_Default_Options (*CG_Reset_Default_Options_p)
+//TB: Add save option at source level
+ extern void (*CG_Save_Default_Options_p) (void);
+#define CG_Save_Default_Options (*CG_Save_Default_Options_p)
+//TB: set size option for CG
+ extern void (*CG_Apply_Opt_Size_p) (UINT32);
+#define CG_Apply_Opt_Size (*CG_Apply_Opt_Size_p)
+//TB: set optim options for CG
+ extern void (*CG_Apply_Opt_Level_p) (UINT32);
+#define CG_Apply_Opt_Level (*CG_Apply_Opt_Level_p)
+#endif
 
 #else
 
 #pragma weak CG_Process_Command_Line
+#ifdef TARG_ST
+//TB
+#pragma weak CG_Reset_Default_Options
+#pragma weak CG_Save_Default_Options
+#pragma weak CG_Apply_Opt_Size
+#pragma weak CG_Apply_Opt_Level
+#endif
+
 #pragma weak CG_Init
 #pragma weak CG_Fini
 #pragma weak CG_PU_Finalize

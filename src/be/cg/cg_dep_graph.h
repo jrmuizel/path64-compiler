@@ -402,7 +402,6 @@ static char *cg_dep_graph_rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/cg/S
 #include "tn.h"
 #include "tn_set.h"
 #include "cg_dep_graph_update.h"
-
 /* Exported symbolic constants. */
 
 #define INCLUDE_ASSIGNED_REG_DEPS TRUE
@@ -643,6 +642,47 @@ inline ARC *ARC_LIST_Find_First(ARC_LIST *list, CG_DEP_KIND kind, INT16 opnd)
   return arcs ? ARC_LIST_first(arcs) : NULL;
 }
 
+// FdF: Moved from cg_dep_graph.cxx because loop_invar_hoist.cxx needs them.
+
+// =====================================================================
+//		      Barrier/Intrinsic Support
+// =====================================================================
+//
+
+// All that's necessary is to treat the barrier and intrinsic OPs
+// like stores when constructing the graph.  WOPT alias analysis
+// (or our conservative assumptions when no Alias_Manager given)
+// will do the right thing.
+
+inline BOOL OP_like_barrier(OP *op)
+{
+#ifdef TARG_ST
+  return (OP_Is_Barrier(op) || OP_Alloca_Barrier(op));
+#else
+  return (CGTARG_Is_OP_Barrier(op) || OP_Alloca_Barrier(op));
+#endif
+}
+
+inline BOOL OP_like_store(OP *op)
+{
+  BOOL like_store = (OP_store(op) || CGTARG_Is_OP_Intrinsic(op) ||
+#ifdef TARG_ST
+		     OP_like_barrier(op));
+#else 
+		     CGTARG_Is_OP_Barrier(op) || OP_code(op) == TOP_asm);
+#endif
+
+#ifdef TARG_X8664
+  like_store |= OP_load_exe_store(op);
+#endif
+#ifdef KEY
+  like_store |= (OP_code(op) == TOP_intrncall);  // 14955
+#endif
+
+  like_store |= OP_like_barrier(op);
+
+  return like_store;
+}
 
 
 typedef BOOL (*COMPARE_FUNCTION)(const void*, const void*);

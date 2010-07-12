@@ -73,7 +73,6 @@ typedef enum {
 
 extern void Expand_Symbol ( TN *dest, TN *src, OPS *ops);
 
-extern void Expand_Immediate (TN *dest, TN *src, TYPE_ID mtype, OPS *ops);
 extern void Exp_Immediate ( TN *dest, TN *src, BOOL is_signed,  OPS *ops);
 
 extern void Expand_Const (TN *dest, TN *src, TYPE_ID mtype, OPS *ops);

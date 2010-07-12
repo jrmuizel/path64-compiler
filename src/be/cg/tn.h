@@ -822,8 +822,12 @@ inline BOOL TN_is_dedicated_class_and_reg( TN *tn, UINT16 class_n_reg )
 extern	TN *Gen_Literal_TN ( INT64 val, INT size );
 #endif
 // normally literals are hashed and reused; this creates unique TN
-extern TN *Gen_Unique_Literal_TN (INT64 ivalue, INT size);
 
+#ifdef TARG_ST
+extern TN *Gen_Unique_Literal_TN (INT64 ivalue, INT size, INT is_signed = 1);
+#else
+extern TN *Gen_Unique_Literal_TN (INT64 ivalue, INT size);
+#endif
 extern TN *Gen_Enum_TN (ISA_ENUM_CLASS_VALUE ecv);
 
 extern  TN *Gen_Symbol_TN ( ST *s, INT64 offset, INT32 relocs);
@@ -869,8 +873,6 @@ extern BOOL Potential_Immediate_TN_Expr (
 /* Initialize machine specific dedicated TNs */
 extern void Init_Dedicated_TNs (void);
 
-/* Format const TN value depending on relocation*/
-extern INT64 CGTARG_TN_Value (TN *t, INT64 base_ofst);
 #ifdef TARG_ST
 inline const char * TN_RELOCS_Syntax (mUINT8 rc)
 {
@@ -882,7 +884,6 @@ inline const char * TN_RELOCS_Name (mUINT8 rc)
   return ISA_RELOC_Name(rc);
 }
 #endif
-extern TN* Gen_Predicate_TN(void);
 extern BOOL TN_Use_Base_ST_For_Reloc (INT reloc, ST *st);
 #ifdef TARG_ST
 extern INT  TN_Relocs_In_Asm (TN *t, ST *st, vstring *buf, INT64 *val);

@@ -73,6 +73,7 @@ static char *rcs_id = 	opt_alias_rule_CXX"$Revision: 1.8 $";
 #include "opt_points_to.h"
 #include "opt_alias_class.h"
 #include "opt_alias_rule.h"
+#include "intrn_info.h"
 #ifdef KEY
 #include "config_opt.h"
 #endif
@@ -463,7 +464,11 @@ INT32 ALIAS_RULE::Get_stripped_mtype(TY_IDX ty_idx) const
     ret_type = NO_TYPE;
     break;
   case KIND_POINTER:  // All pointers considered equal.
+#ifdef TARG_ST
+    ret_type = (CST_ONE << MTYPE_PTR);
+#else
     ret_type = (1 << MTYPE_PTR);
+#endif
     break;
   case KIND_VOID:  // Void aliased to all types.
     ret_type = ALL_TYPE;
@@ -846,6 +851,30 @@ READ_WRITE ALIAS_RULE::Aliased_with_Call(ST *st, INT32 flags, const POINTS_TO *m
     return READ;
 
   return NO_READ_NO_WRITE;
+}
+
+READ_WRITE ALIAS_RULE::Aliased_with_Intrinsic_Call(const WN *call_wn, const POINTS_TO *mem) const
+{
+  FmtAssert(WN_operator(call_wn) == OPR_INTRINSIC_CALL, ("Expected intrinsic call"));
+  INTRINSIC id = (INTRINSIC) WN_intrinsic(call_wn);
+
+  if (mem->Dedicated()) 
+    return WRITE;
+  
+  if (mem->Const())
+    return NO_READ_NO_WRITE;
+
+  if (Rule_enabled(CALL_RULE) && mem->Local() && mem->Not_addr_saved() && mem->Not_addr_passed())
+    return NO_READ_NO_WRITE;
+  
+  if (INTRN_is_pure(id))
+    return NO_READ_NO_WRITE;
+  
+  if (INTRN_has_no_side_effects(id))
+    //  return NO_READ_NO_WRITE;
+    return READ;
+
+  return READ_AND_WRITE;
 }
 
 READ_WRITE ALIAS_RULE::Aliased_with_Asm(const WN *wn, const POINTS_TO *mem) const

@@ -26,6 +26,7 @@
 #include "cg_flags.h"
 #include "cg_loop.h"      /* for cg_loop flags */
 #include "cio.h"          /* for cio_rwtran flags */
+BOOL  HB_complex_non_loop = FALSE;
 
 void Configure_CG_Target() {
 

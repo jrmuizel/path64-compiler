@@ -53,11 +53,7 @@
 #include "cxx_memory.h"
 #include "glob.h"
 #include "bitset.h"
-#ifndef TARG_ST 
 #include "config_targ.h"
-#else
-#include "config_target.h"
-#endif
 #include "config.h"
 
 #include "symtab.h"
@@ -194,8 +190,8 @@ Print_base_ops(FILE *file, base_ops &base_list) {
     fprintf(file, "\t(op %d", OP_map_idx(BO_op(op_offset[i])));
     fPrint_TN(file, ", base %s", BO_base_tn(op_offset[i]));
     fPrint_TN(file, ", offset %s", BO_offset_tn(op_offset[i]));
-    fprintf(file, ", base distance 0x%llx", BO_base_dist(op_offset[i]));
-    fprintf(file, ", addr distance 0x%llx", BO_addr_dist(op_offset[i]));
+    fprintf(file, ", base distance 0x%"SCNx64"", BO_base_dist(op_offset[i]));
+    fprintf(file, ", addr distance 0x%"SCNx64"", BO_addr_dist(op_offset[i]));
     fprintf(file, ")\n");
   }
 }
@@ -1352,14 +1348,14 @@ Generate_Common_Base(vec_base_ops& Base_Ops_List) {
     if ((common_base_tn != NULL) && TN_is_dedicated(common_base_tn) && !TN_is_const_reg(common_base_tn)) {
       if (Trace_SSA_CBPO) {
           fPrint_TN(TFile, "Generate_Common_Base: %s is not optimized", VEC_BASE_base(base_list));
-          fprintf(TFile, " (gain would be at most %d bytes)\n", (op_offset.size()-2)*4);
+          fprintf(TFile, " (gain would be at most %"SCNd32" bytes)\n", (op_offset.size()-2)*4);
       }
       continue;
     }
 
     if (Trace_SSA_CBPO) {
       fPrint_TN(TFile, "Generate_Common_Base: %s is optimized", VEC_BASE_base(base_list));
-      fprintf(TFile, " (gain will be at most %d bytes)\n", (op_offset.size()-2)*4);
+      fprintf(TFile, " (gain will be at most %"SCNd32" bytes)\n", (op_offset.size()-2)*4);
     }
 
     // Sort according to the offsets
@@ -1505,7 +1501,7 @@ is_Op_Required (OP *op)
       || (OP_memory (op)  && ! OP_load (op))
       || OP_has_implicit_interactions (op)
       || OP_glue (op)
-      || OCGTARG_Is_OP_Intrinsic (op)
+      || CGTARG_Is_OP_Intrinsic (op)
       || op == BB_exit_sp_adj_op (OP_bb (op))
       || op == BB_entry_sp_adj_op (OP_bb (op)))
     return TRUE;

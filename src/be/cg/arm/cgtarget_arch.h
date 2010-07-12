@@ -91,13 +91,6 @@ CGTARG_Spill_on_Xfer(TN *tn, BB *bb, OPS *ops);
 /* call init routine once per asm stmt */
 extern void CGTARG_Init_Asm_Constraints(void);
 
-/* Given a constraint for an ASM parameter, and the load of the matching
- * argument passed to ASM (possibly NULL), choose an appropriate TN for it
- */
-extern TN* CGTARG_TN_For_Asm_Operand(const char* constraint, 
-                                     const WN* load,
-                                     TN* pref_tn,
-                                     ISA_REGISTER_SUBCLASS* subclass);
 /* given asm constraint and mtype, 
  * pick appropriate dedicated tn and string name */
 extern void CGTARG_TN_And_Name_For_Asm_Constraint (char *constraint, 

@@ -32,6 +32,7 @@
 /* Code Generator (CG) related include files */
 #include "tn.h"
 #include "bb.h"
+#include "cgtarget.h"
 #include "cg_loop.h"
 #include "cgexp.h"
 #include "freq.h"

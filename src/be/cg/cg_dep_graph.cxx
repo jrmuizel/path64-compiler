@@ -270,47 +270,6 @@ static BOOL get_cg_loopseq(OP *pred_op, OP *succ_op, UINT8 *omega, int lex_neg);
 #endif
 
 //
-// =====================================================================
-//		      Barrier/Intrinsic Support
-// =====================================================================
-//
-
-// All that's necessary is to treat the barrier and intrinsic OPs
-// like stores when constructing the graph.  WOPT alias analysis
-// (or our conservative assumptions when no Alias_Manager given)
-// will do the right thing.
-
-inline BOOL OP_like_barrier(OP *op)
-{
-#ifdef TARG_ST
-  return (OP_Is_Barrier(op) || OP_Alloca_Barrier(op));
-#else
-  return (CGTARG_Is_OP_Barrier(op) || OP_Alloca_Barrier(op));
-#endif
-}
-
-inline BOOL OP_like_store(OP *op)
-{
-  BOOL like_store = (OP_store(op) || CGTARG_Is_OP_Intrinsic(op) ||
-#ifdef TARG_ST
-		     OP_like_barrier(op));
-#else 
-		     CGTARG_Is_OP_Barrier(op) || OP_code(op) == TOP_asm);
-#endif
-
-#ifdef TARG_X8664
-  like_store |= OP_load_exe_store(op);
-#endif
-#ifdef KEY
-  like_store |= (OP_code(op) == TOP_intrncall);  // 14955
-#endif
-
-  like_store |= OP_like_barrier(op);
-
-  return like_store;
-}
-
-//
 // -----------------------------------------------------------------------
 // TRUE if the control dependence between <op> and <xfer_op> 
 // must be preserved for all practical purposes.
@@ -2259,8 +2218,13 @@ symbolic_addr_subtract (OP *pred_op, OP *succ_op, SAME_ADDR_RESULT *res)
     }
 
     /* Use offsets and sizes to determine conflicts. */
+#ifdef TARG_ST
+      INT32 size1 = OP_Mem_Ref_Bytes(pred_op);
+      INT32 size2 = OP_Mem_Ref_Bytes(succ_op);
+#else
     INT32 size1 = CGTARG_Mem_Ref_Bytes (pred_op);
     INT32 size2 = CGTARG_Mem_Ref_Bytes (succ_op);
+#endif
     if (pred_offset == succ_offset) {
       *res = (size1 == size2) ? IDENTICAL : OVERLAPPING;
     } 

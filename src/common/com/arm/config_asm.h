@@ -266,7 +266,7 @@ BE_EXPORTED extern char *AS_ADDRESS_UNALIGNED;
 
 /* gas .skip fills with zeroes */
 #define ASM_DIR_ZERO(fl, l)	fprintf(fl, "\t%s %d\n", AS_SPACE, l) 
-#define ASM_DIR_SKIP(fl, l) 	fprintf(fl, "\t%s %d\n", AS_SPACE, l)
+#define ASM_DIR_SKIP(fl, l) 	fprintf(fl, "\t%s %"SCNd64"\n", AS_SPACE, l)
 
 #define ASM_SLEB128_SUPPORTED()   (1)
 

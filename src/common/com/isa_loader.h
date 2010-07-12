@@ -31,8 +31,10 @@
 
 #include "tracing.h"
 #include "opcode.h"
+#include "wintrinsic.h"
 #include "ext_info.h"
-
+#include "dll_loader.h"
+#include "dyn_isa_api_access.h"
 
 #include "symtab_idx.h"
 #include "targ_sim.h"

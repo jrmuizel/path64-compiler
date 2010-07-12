@@ -347,6 +347,10 @@ UINT32 Div_Exe_Ratio = 50;      /* A cut-off percentage for value profiling. */
 UINT32 Div_Exe_Candidates = 2;  /* The top entries that will be considered. */
 UINT32 Mpy_Exe_Counter = 90000000;  
 UINT32 Mpy_Exe_Ratio = 100;      /* A cut-off percentage for value profiling. */
+UINT32 Freq_Threshold_For_Space = 100;      /* If the PU is executed less than this, OPT_Space is set to true. */
+UINT32 Size_Threshold_For_Space = 100;      /* If the PU is bigger than this, OPT_Space is set to true. */
+BOOL FB_CodeSize_Perf_Ratio = FALSE;		/* Optimize for size when freq < Freq_Threshold_For_Space or when size > Size_Threshold_For_Space */
+
 BOOL   profile_arcs = FALSE;
 BOOL   OPT_Lower_To_Memlib = TRUE;  /* transform to library calls */
 #ifdef TARG_MIPS

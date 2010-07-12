@@ -181,10 +181,41 @@ typedef UINT64 VARIANT;
 #define V_BR_CEXIT	86	/* Mod-sched counted loop (exit) */
 #define V_BR_WTOP	87	/* Mod-sched while loop (top) */
 #define V_BR_WEXIT	88	/* Mod-sched while loop (exit) */
+#ifdef TARG_ST
+/* Arthur: add branch variants for pointer arithmetic: */
+#define V_BR_A4EQ	89	/* 4-byte pointer A = B */
+#define V_BR_A4NE	90	/* 4-byte pointer A != B */
+#define V_BR_A4GT	91	/* 4-byte pointer A > B */
+#define V_BR_A4GE	92	/* 4-byte pointer A >= B */
+#define V_BR_A4LT	93	/* 4-byte pointer A < B */
+#define V_BR_A4LE	94	/* 4-byte pointer A <= B */
 
-#define V_BR_ALWAYS	89	/* Unconditional branch */
-#define V_BR_NEVER	90	/* Never branch */
-#define V_BR_LAST	91	/* Last one defined */
+#define V_BR_A8EQ	95	/* 8-byte pointer A = B */
+#define V_BR_A8NE	96	/* 8-byte pointer A != B */
+#define V_BR_A8GT	100	/* 8-byte pointer A > B */
+#define V_BR_A8GE	101	/* 8-byte pointer A >= B */
+#define V_BR_A8LT	102	/* 8-byte pointer A < B */
+#define V_BR_A8LE	103	/* 8-byte pointer A <= B */
+
+/* Arthur: add branch variants for 40-bit arithmetic: */
+
+#define V_BR_I5EQ	104	/* 4-byte signed integer A = B */
+#define V_BR_I5NE	105	/* 4-byte signed integer A != B */
+#define V_BR_I5GT	106	/* 4-byte signed integer A > B */
+#define V_BR_I5GE	107	/* 4-byte signed integer A >= B */
+#define V_BR_I5LT	108	/* 4-byte signed integer A < B */
+#define V_BR_I5LE	109	/* 4-byte signed integer A <= B */
+
+#define V_BR_U5EQ	110	/* 4-byte unsigned integer A = B */
+#define V_BR_U5NE       111	/* 4-byte unsigned integer A != B */
+#define V_BR_U5GT	112	/* 4-byte unsigned integer A > B */
+#define V_BR_U5GE	113	/* 4-byte unsigned integer A >= B */
+#define V_BR_U5LT	114	/* 4-byte unsigned integer A < B */
+#define V_BR_U5LE	115	/* 4-byte unsigned integer A <= B */
+#endif // TARG_ST
+#define V_BR_ALWAYS	200	/* Unconditional branch */
+#define V_BR_NEVER	201	/* Never branch */
+#define V_BR_LAST	202	/* Last one defined */
 
 /* V_BR_MASK *must* be 2^n - 1, and be at least as large as  */
 /* V_BR_LAST */

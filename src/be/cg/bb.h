@@ -1126,6 +1126,7 @@ extern void BB_Mark_Unreachable_Blocks (void);
 extern void BB_Transfer_Exitinfo(BB* from, BB* to);
 extern void BB_Transfer_Entryinfo(BB* from, BB* to);
 extern void BB_Transfer_Callinfo(BB* from, BB* to);
+extern void BB_Transfer_Asminfo(BB *from, BB *to);
 
 /* Print the given BB or BBLIST: */
 extern void Print_BB_Header ( BB *bp,

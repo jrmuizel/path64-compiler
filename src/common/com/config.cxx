@@ -1311,9 +1311,7 @@ BOOL Attempt_Bypass = FALSE;	/* Attempt to use bypass registers */
 BOOL Isolate_Lines = FALSE;	/* Don't overlap source	lines */
 BOOL Fill_Delay_Slots = FALSE;  /* Attempt to fill branch delay slots */
 BOOL Enable_GDSE = FALSE;       /* Allow global dead store elimination */
-#ifndef TARG_ST
 BOOL Enable_CG_Peephole =FALSE;	/* Enable peephole optimization in cgprep */
-#endif
 
 
 #ifdef BACK_END

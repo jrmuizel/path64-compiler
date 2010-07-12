@@ -330,8 +330,13 @@ Detect_Post_Hazard (OP *op1, INT opnd, OP *op2)
     tn = OP_opnd(op1, opnd);
     cl = TN_register_class(tn);
     reg = TN_register(tn);
-
+#ifndef TARG_ST
     return OP_Defs_Reg (op2, cl, reg) || CGTARG_OP_Defs_TN (op2, tn);
+#else
+    // Arthur: implicitely defined results should be explicitely
+    //         included in OPs
+    return OP_Defs_Reg (op2, cl, reg);
+#endif
   }
   /*NOTREACHED*/
 }
@@ -352,7 +357,11 @@ Detect_Pre_Hazard (OP *op1, OP *op2, INT opnd)
   operand = OP_opnd(op2,opnd);
   cl = TN_register_class(operand);
   reg = TN_register(operand);
+#ifndef TARG_ST
   return OP_Defs_Reg (op1, cl, reg) || CGTARG_OP_Defs_TN (op1, operand);
+#else
+  return OP_Defs_Reg (op1, cl, reg);
+#endif
 }
 
 
@@ -505,11 +514,19 @@ Is_There_OP_Dependence(OP *op, OP *prev_op)
     ISA_REGISTER_CLASS cl = TN_register_class(result_tn);
     REGISTER reg = TN_register(result_tn);
 
-    BOOL read_dependence = 
+    BOOL read_dependence =
+#ifndef TARG_ST
       OP_Refs_Reg (op, cl, reg) || CGTARG_OP_Refs_TN (op, result_tn);
+#else
+      OP_Refs_Reg (op, cl, reg);
+#endif
 
     BOOL write_dependence =
+#ifndef TARG_ST
       OP_Defs_Reg (op, cl, reg) || CGTARG_OP_Defs_TN (op, result_tn);
+#else
+      OP_Defs_Reg (op, cl, reg);
+#endif
 
     if (read_dependence || write_dependence) {
 

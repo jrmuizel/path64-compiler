@@ -36,25 +36,30 @@ SET(PATHSCALE_CG_SRCS
 			"../../be/cg/${BUILD_TARGET_DIR}/cgemit_targ.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/cgtarget.cxx"
                         "../../be/cg/${BUILD_TARGET_DIR}/targ_op.cxx" #st
+                        "../../be/cg/${BUILD_TARGET_DIR}/targ_ebo.cxx" #st
+                        "../../be/cg/${BUILD_TARGET_DIR}/targ_entry_exit.cxx" #st
 			"../../be/cg/${BUILD_TARGET_DIR}/cg_loop_recur.cxx"
 		#	"../../be/cg/${BUILD_TARGET_DIR}/ebo_special.cxx"
 		#	"../../be/cg/${BUILD_TARGET_DIR}/entry_exit_targ.cxx"
-		#	"../../be/cg/${BUILD_TARGET_DIR}/exp_branch.cxx"
-		#	"../../be/cg/${BUILD_TARGET_DIR}/exp_divrem.cxx"
-		#	"../../be/cg/${BUILD_TARGET_DIR}/exp_loadstore.cxx"
+			"../../be/cg/${BUILD_TARGET_DIR}/exp_branch.cxx"
+			"../../be/cg/${BUILD_TARGET_DIR}/exp_divrem.cxx"
+			"../../be/cg/${BUILD_TARGET_DIR}/exp_loadstore.cxx"
 		#	"../../be/cg/${BUILD_TARGET_DIR}/exp_predicate.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/expand.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/pqs_cg.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/pqs.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/register_targ.cxx"
+                        "../../be/cg/${BUILD_TARGET_DIR}/targ_select.cxx" #st
 		#	"../../be/cg/${BUILD_TARGET_DIR}/cg_sched.cxx"
 	#		"../../be/cg/${BUILD_TARGET_DIR}/cg_convert_x87.cxx"
 		#	"../../be/cg/${BUILD_TARGET_DIR}/cg_misc.cxx"
 			"../../common/com/em_dwarf.cxx"
 			"../../common/com/em_elf.cxx"
+                        "../../common/com/lai_loader.cxx" #st
 			"../../common/com/${BUILD_TARGET_DIR}/targ_em_const.cxx"
 			"../../common/com/${BUILD_TARGET_DIR}/targ_em_elf.cxx"
 			"../../common/com/${BUILD_TARGET_DIR}/targ_em_dwarf.cxx"
+                        "../../common/com/${BUILD_TARGET_DIR}/targ_register_common.cxx"
 			"../../be/cg/annotations.cxx"
 			"../../be/cg/bblist.cxx"
 			"../../be/cg/bb_map.cxx"
@@ -117,6 +122,21 @@ SET(PATHSCALE_CG_SRCS
 			"../../be/cg/oputil.cxx"
 			"../../be/cg/tn_map.cxx"
 			"../../be/cg/tnutil.cxx"
+                        "../../be/cg/loop_invar_hoist.cxx" #st
+                        "../../be/cg/cg_ssa.cxx" #st
+                        "../../be/cg/cg_ssaopt.cxx" #st
+                        "../../be/cg/cg_outssa.cxx" #st
+                        "../../be/cg/cg_affirm.cxx" #st
+                        "../../be/cg/cg_select.cxx" #st
+                        "../../be/cg/top_properties.cxx" #st
+                        "../../be/cg/range_analysis.cxx" #st
+                        "../../be/cg/cg_coalesce.cxx" #st
+                        "../../be/cg/cg_color.cxx" #st
+                        "../../be/cg/swp/cg_swp_emit.cxx" #st
+                        "../../be/cg/${BUILD_TARGET_DIR}/cg_swp_bundle.cxx" #st
+                        "../../be/cg/${BUILD_TARGET_DIR}/targ_pqs.cxx" #st
+                        "../../be/cg/cg_ivs.cxx" #st
+                        "../../be/cg/range_prop.cxx" #st
 			"../../be/cg/gra_mon/gra.cxx"
 			"../../be/cg/gra_mon/gra_bb.cxx"
 			"../../be/cg/gra_mon/gra_cflow.cxx"

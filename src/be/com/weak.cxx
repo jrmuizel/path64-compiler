@@ -151,7 +151,10 @@ BB_NODE* (CODEREP::*Defbb_p) () const;
 void (*CG_Init_p) ();
 void (*CG_Fini_p) ();
 void (*CG_Process_Command_Line_p) (INT, char **, INT, char **);
-
+ void (*CG_Reset_Default_Options_p) (void);
+ void (*CG_Save_Default_Options_p) (void);
+ void (*CG_Apply_Opt_Size_p) (void);
+ void (*CG_Apply_Opt_Level_p) (UINT32);
 // from be/cg/cg.h
 void (*CG_PU_Initialize_p) (WN*);
 void (*CG_PU_Finalize_p) ();

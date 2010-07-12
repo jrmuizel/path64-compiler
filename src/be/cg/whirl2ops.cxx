@@ -6149,7 +6149,7 @@ Handle_ASM (const WN* asm_wn)
     }
     ISA_REGISTER_SUBCLASS subclass = ISA_REGISTER_SUBCLASS_UNDEFINED;
 
-#ifndef KEY
+#if !defined( KEY) || defined(TARG_ST)
     TN* tn = CGTARG_TN_For_Asm_Operand(constraint, load, pref_tn, &subclass);
 #else
     TN* tn = CGTARG_TN_For_Asm_Operand(constraint, load, pref_tn, &subclass, 
@@ -6252,7 +6252,7 @@ Handle_ASM (const WN* asm_wn)
     }
     ISA_REGISTER_SUBCLASS subclass = ISA_REGISTER_SUBCLASS_UNDEFINED;
 
-#ifndef KEY
+#if !defined( KEY) || defined(TARG_ST)
     TN* tn = CGTARG_TN_For_Asm_Operand(constraint, load, pref_tn, &subclass);
 #else
     TN* tn = CGTARG_TN_For_Asm_Operand(constraint, load, pref_tn, &subclass, 

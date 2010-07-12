@@ -1081,7 +1081,8 @@ CCIEInfo::CfaOffset() const
 void
 CCIEInfo::CopyMembers(const CCIEInfo& a_cieInfo)
 {
-    m_initBytes = a_cieInfo.InitBytes();
+    //FIXME compile error with gcc 4.4
+//    m_initBytes = a_cieInfo.InitBytes();
     m_returnAddressRegId = a_cieInfo.ReturnAddressRegId();
     m_saved = a_cieInfo.Saved();
     m_cfaOffset = a_cieInfo.CfaOffset();

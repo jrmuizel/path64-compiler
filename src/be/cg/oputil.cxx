@@ -82,10 +82,10 @@
 #include "cgir.h"
 #include "cg.h"
 #include "register.h"
+#include "cgtarget.h"
 #include "cg_dep_graph.h"
 #include "cgprep.h"
 #include "cg_loop.h"
-#include "cgtarget.h"
 #include "cg_spill.h"
 
 #include "wn.h"
@@ -124,8 +124,8 @@ Set_OP_opnd_Immediate_Variant(OP *op, INT idx, TN *tn) {
 // ----------------------------------------
 // Copy ASM_OP_ANNOT when duplicating an OP
 // ----------------------------------------
-static inline void
-Copy_Asm_OP_Annot(OP* new_op, const OP* op) 
+inline void
+Copy_Asm_OP_Annot(OP* new_op, const  OP* op) 
 {
   if (OP_code(op) == TOP_asm) {
     OP_MAP_Set(OP_Asm_Map, new_op, OP_MAP_Get(OP_Asm_Map, op));
@@ -1541,6 +1541,25 @@ OP_Real_Inst_Words( const OP *op )
   return OP_inst_words(op);
 }
 
+/* ====================================================================
+ *
+ * OP_Real_Unit_Slots - How many Unit slots does this op really 
+ * represent, i.e. will be emitted.
+ *
+ * ====================================================================
+ */
+
+INT
+OP_Real_Unit_Slots( const OP *op )
+{
+  if ( op == NULL || OP_dummy(op) ) {
+    return 0;
+  }
+  else if ( OP_simulated(op) ) {
+    return Simulated_Op_Real_Inst_Words (op);
+  }
+  return OP_unit_slots(op);
+}
 
 /* ====================================================================
  *

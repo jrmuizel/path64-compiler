@@ -249,6 +249,15 @@ static const char *Type_Name(int bits)
 //  type that can hold values of that size.
 /////////////////////////////////////
 {
+#ifdef TARG_ST
+    if(bits>32)
+   { fprintf(stderr,
+             "###Fatal: type is too wide (%d bits).\n",
+             bits);
+     exit(EXIT_FAILURE);
+   }
+   return "mUINT32";
+#else
   if (bits <= 8) {
     return "mUINT8";
   } else if (bits <= 16) {
@@ -259,6 +268,7 @@ static const char *Type_Name(int bits)
     assert (bits <= 64);
     return "mUINT64";
   }
+#endif
 }
 
 

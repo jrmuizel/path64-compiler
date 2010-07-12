@@ -26,7 +26,7 @@
 #include "tracing.h"
 #include "mempool.h"
 #include "config.h"
-#include "config_TARG.h"
+#include "config_targ_opt.h"
 #include "targ_isa_registers.h"
 #include "targ_abi_properties.h"
 #include "targ_isa_operands.h"

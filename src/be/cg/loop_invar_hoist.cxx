@@ -127,7 +127,7 @@
 
 #ifdef TARG_ST
 #include "cgexp.h"
-#include "config_TARG.h"
+#include "config_targ_opt.h"
 #include "cg_select.h"
 #include "cg_affirm.h"
 
@@ -377,7 +377,7 @@ LI_OP_INFO_MGR :: Init_OP_Level (void) {
                 OP* last = BB_last_op (pred);
                 if (last) {
                     INT32 l = Get(last)->Level ();
-                    start_level = max(start_level, l);
+                    start_level = std::max(start_level, l);
                 }
             }
         }

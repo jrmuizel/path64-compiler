@@ -8167,7 +8167,7 @@ void CG_LOOP::Determine_SWP_Unroll_Factor()
 
 void CG_LOOP::EBO_Before_Unrolling()
 {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   if( !Enable_CG_Peephole )
     return;
 #endif
@@ -8192,11 +8192,10 @@ void CG_LOOP::EBO_Before_Unrolling()
 
 void CG_LOOP::EBO_After_Unrolling()
 {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   if( !Enable_CG_Peephole )
     return;
 #endif
-
   MEM_POOL_Push(&MEM_local_pool);
   {
     BB_REGION bb_region(&MEM_local_pool);
@@ -8641,7 +8640,7 @@ BOOL CG_LOOP_Optimize(LOOP_DESCR *loop, vector<SWP_FIXUP>& fixup)
     }
     fprintf(stdout, "\n");
     if (has_trip_count && TN_is_constant(CG_LOOP_Trip_Count(loop)))
-      fprintf(stdout, "  <unroll> loop trip count = %lld\n", TN_value(CG_LOOP_Trip_Count(loop)));
+      fprintf(stdout, "  <unroll> loop trip count = %"SCNd64"\n", TN_value(CG_LOOP_Trip_Count(loop)));
   }
 #endif
 
@@ -8807,7 +8806,7 @@ BOOL CG_LOOP_Optimize(LOOP_DESCR *loop, vector<SWP_FIXUP>& fixup)
       if (trace_loop_opt) 
 	CG_LOOP_Trace_Loop(loop, "*** Before SINGLE_BB_DOLOOP_UNROLL ***");
 #ifdef TARG_ST
-#if !defined(TARG_STxP70) && !defined(TARG_ARM)
+#if !(defined(TARG_STxP70) && !defined(TARG_ARM))
       BOOL can_be_packed = FALSE;
       Loop_packing_flags = Loop_Packing_Options(cg_loop);
       if ((Loop_packing_flags & (PACKING_LOAD|PACKING_STORE)) != 0) {
