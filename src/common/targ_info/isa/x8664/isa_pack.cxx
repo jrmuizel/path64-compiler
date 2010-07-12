@@ -1153,6 +1153,7 @@ main()
                     TOP_extrq,   0x000000ff,
                     TOP_insertq,   0x000000ff,
             TOP_pcmpistri, 0x000000ff,
+            TOP_pcmpistrm, 0x000000ff,        
             TOP_pcmpestri, 0x000000ff,
 		    TOP_UNDEFINED);
 

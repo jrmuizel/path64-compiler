@@ -1127,6 +1127,7 @@ main()
   Operand(0);
   Instruction_Print_Group( opopop,
   TOP_pcmpistri,
+  TOP_pcmpistrm,
   TOP_UNDEFINED );
 
   /* No result / three operands */

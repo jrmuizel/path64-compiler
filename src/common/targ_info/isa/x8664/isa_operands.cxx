@@ -112,6 +112,10 @@ main()
     ISA_Reg_Opnd_Type_Create("ecx", ISA_REGISTER_CLASS_integer,
                  ISA_REGISTER_SUBCLASS_rcx,
                  32, SIGNED, INVALID);
+  const OPERAND_VALUE_TYPE xmm0 =
+    ISA_Reg_Opnd_Type_Create("xmm0", ISA_REGISTER_CLASS_float,
+			     ISA_REGISTER_SUBCLASS_xmm0,
+			     128, SIGNED, INVALID);
   const OPERAND_VALUE_TYPE ax =
     ISA_Reg_Opnd_Type_Create("ax", ISA_REGISTER_CLASS_integer,
 			     ISA_REGISTER_SUBCLASS_rax,
@@ -2270,6 +2274,13 @@ main()
   Operand(1, fp128,  opnd2);
   Operand(2, simm8, opnd1);
 
+  Instruction_Group("qi vector compare implicit length returns mask",
+            TOP_pcmpistrm,
+		    TOP_UNDEFINED);
+  Result(0, xmm0);
+  Operand(0, fp128,  opnd3);
+  Operand(1, fp128,  opnd2);
+  Operand(2, simm8, opnd1);
 
   Instruction_Group("qi vector compare explicit length retruns index",
 		    TOP_pcmpestri,

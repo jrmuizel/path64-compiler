@@ -1179,6 +1179,7 @@ main ()
 
           /* sse4_2 instructions */
           "pcmpistri",  
+          "pcmpistrm",
           "pcmpestri",
 
 	      /* instructions to support Open MP. */

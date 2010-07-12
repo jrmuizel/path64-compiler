@@ -3873,6 +3873,9 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
     case GSBI_IX86_BUILTIN_PCMPISTRI128:
       *iopc = INTRN_PCMPISTRI128;
       break;
+    case GSBI_IX86_BUILTIN_PCMPISTRM128:
+      *iopc = INTRN_PCMPISTRM128;
+      break;
     case GSBI_IX86_BUILTIN_PCMPESTRI128:
       *iopc = INTRN_PCMPESTRI128;
       break;

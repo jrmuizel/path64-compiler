@@ -7305,6 +7305,9 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
    case INTRN_PCMPISTRI128:
     Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
     break;
+  case INTRN_PCMPISTRM128:
+    Build_OP(TOP_pcmpistrm, result, op0, op1, op2, ops );
+    break;
   case INTRN_PCMPESTRI128:
     Build_OP(TOP_pcmpestri, result, op0, op1, op2, op3, op4, ops);
     break;
@@ -7519,12 +7522,6 @@ Exp_Intrinsic_Call (INTRINSIC id, TN *op0, TN *op1, TN *op2,
 	Build_OP(TOP_neg64, neg_tn, op1, ops);
       }
       result = Exp_Fetch_and_Add(op0, neg_tn, mtype, ops);
-    }
-    break;
-  case INTRN_PCMPESTRI128:
-    {
-        result = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RCX, 4);
-        Build_OP(TOP_pcmpestri, result, op0, op1, op2, ops);
     }
     break;
 

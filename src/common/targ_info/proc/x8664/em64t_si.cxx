@@ -1443,6 +1443,7 @@ int main (int argc, char *argv[])
 		    TOP_cmpnleps,
 		    TOP_cmpordps,
             TOP_pcmpistri,
+            TOP_pcmpistrm,
             TOP_pcmpestri,
                     TOP_UNDEFINED);
   Any_Operand_Access_Time(0);

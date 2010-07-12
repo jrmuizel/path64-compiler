@@ -1424,6 +1424,8 @@ static void Init_OP_Name()
 
   /* SSE4_2 */
   OP_Name[TOP_pcmpistri] = "pcmpistri";
+  OP_Name[TOP_pcmpistrm] = "pcmpistrm";
+  OP_Name[TOP_pcmpestri] = "pcmpestri";
 
 //**********************************************************
 // For barcelona (bug 13108)
@@ -1432,8 +1434,6 @@ static void Init_OP_Name()
 // NOTE: there are regardless of CG_use_movlpd TRUE or FALSE
 //***********************************************************
 
-  /* SSE4_2 */
-  OP_Name[TOP_pcmpistri] = "pcmpistri";
 
   if (CG_use_movlpd &&
       !Is_Target_Pentium4() &&

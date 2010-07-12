@@ -3211,6 +3211,7 @@ main()
                      TOP_extrq,
                      TOP_insertq,
              TOP_pcmpistri,
+             TOP_pcmpistrm,
              TOP_pcmpestri,
              TOP_pand128,
 		     TOP_UNDEFINED );
