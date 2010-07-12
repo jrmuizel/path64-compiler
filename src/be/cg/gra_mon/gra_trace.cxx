@@ -619,13 +619,9 @@ void
 GRA_Init_Trace_Memory(void)
 /////////////////////////////////////
 {
-#ifdef _WIN32
-  fprintf(stderr, "GRA_Init_Trace_Memory is unimplemented\n");
-#else
   if (trace_memory) {
     last_brk = sbrk(0);
   }
-#endif
 }
 
 /////////////////////////////////////
@@ -633,14 +629,10 @@ void
 GRA_Trace_Memory(const char *string)
 /////////////////////////////////////
 {
-#ifdef _WIN32
-  fprintf(stderr, "GRA_Init_Trace_Memory is unimplemented\n");
-#else
   if (trace_memory) {
     unsigned usage = ((INTPTR) sbrk(0)) - (INTPTR) last_brk;
     fprintf(TFile,"<gra> Memory use %s: %d\n", string, usage);
   }
-#endif
 }
 
 /////////////////////////////////////
