@@ -92,7 +92,6 @@
 #define FC_GETLK	20	/* get file lock */
 #define FC_SETLK	21	/* set file lock */
 #define FC_SETLKW	22	/* set file lock wait */
-#define FC_FSTATFS	23	/* bottom layer call fstatfs */
 #define FC_DIOINFO	24	/* get direct info (IRIX only) */
 #define FC_CHECKEOV	25	/* check end-of-volume status (IRIX only) */
 #define FC_TSDATA	26	/* get tape status information (IRIX only) */
