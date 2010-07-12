@@ -276,12 +276,12 @@ c_qtenscale(p,exp,bexp)
 #endif
     c_qwmultu(prod, p, tenpow[hi]);
 #if QUAD_DEBUG
-    printf("After c_qwmultu: prod = %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 "\n", 
+    printf("After c_qwmultu: prod = %" SCNx64 " %" SCNx64 " %" SCNx64 " %" SCNx64 "\n", 
 	   prod[0], prod[1], prod[2], prod[3]);
 #endif
     qnorm_and_round(p, &norm, prod);
 #if QUAD_DEBUG
-    printf("After qnorm_and_round: p = %" SCNd64 " %" SCNd64 "\n", 
+    printf("After qnorm_and_round: p = %" SCNx64 " %" SCNx64 "\n", 
 	   p[0], p[1]);
 #endif
     *bexp += twoexp[hi] - norm;
@@ -297,12 +297,12 @@ c_qtenscale(p,exp,bexp)
 #endif
     c_qwmultu(prod, p, tenpow[lo]);
 #if QUAD_DEBUG
-    printf("After c_qwmultu: prod = %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 "\n", 
+    printf("After c_qwmultu: prod = %" SCNx64 " %" SCNx64 " %" SCNx64 " %" SCNx64 "\n", 
 	   prod[0], prod[1], prod[2], prod[3]);
 #endif
     qnorm_and_round(p, &norm, prod);
 #if QUAD_DEBUG
-    printf("After qnorm_and_round: p = %" SCNd64 " %" SCNd64 "\n", 
+    printf("After qnorm_and_round: p = %" SCNx64 " %" SCNx64 "\n", 
 	   p[0], p[1]);
 #endif
     *bexp += twoexp[lo] - norm;

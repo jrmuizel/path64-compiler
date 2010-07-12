@@ -219,7 +219,7 @@ int main(void)
     ENDIF()
 ENDIF()
 
-IF (SUPPORT_HASH_STYLE_GNU)
+IF (SUPPORT_HASH_STYLE_GNU_BUILD AND SUPPORT_HASH_STYLE_GNU EQUAL 0)
     SET(LD_HASH_STYLE_FLAG "--hash-style=gnu")
 ELSE()
     SET(LD_HASH_STYLE_FLAG "")
@@ -231,7 +231,12 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 ELSE()
     SET(SHELL_EXT sh)
 ENDIF()
+# build runtime search paths
+include(${Path64_SOURCE_DIR}/cmake/Modules/GCCRuntimeDirs.cmake)
 
+IF (PATH64_DEFAULT_ABI)
+    ADD_DEFINITIONS(-DPATH64_DEFAULT_ABI=${PATH64_DEFAULT_ABI})
+ENDIF()
 
 # Build GCC and pathscale.
 ADD_SUBDIRECTORY(GCC)

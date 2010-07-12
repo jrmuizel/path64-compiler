@@ -3,7 +3,6 @@
 SET(LINUX_HFILES
 	elf_stuff.h
 	sgidefs.h
-	standards.h
    )
 
 SET(LINUX_SYS_HFILES

@@ -227,7 +227,7 @@ const char* Print_Name(int print_index)
 /////////////////////////////////////
 {
   static const char *comp_name[MAX_LISTING_OPERANDS];
-  static bool initialized;
+  static bool initialized = false;
 
   if (!initialized) {
     int i;
@@ -313,7 +313,7 @@ void Instruction_Pack_Group(ISA_PACK_TYPE pack_type, ...)
     for (i = 0; i < words; ++i) {
       unsigned long long opcode_mask;
       opcode_mask = inst_bits > 32 ? va_arg(ap,unsigned long long)
-				   : va_arg(ap,unsigned long);
+				   : (va_arg(ap,unsigned long) & ((1ULL << inst_bits)-1));
       op_pack->opcode_mask[i] = opcode_mask;
     }
     for (i = words; i < MAX_WORDS; ++i) op_pack->opcode_mask[i] = 0;

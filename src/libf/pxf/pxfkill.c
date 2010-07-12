@@ -91,7 +91,7 @@
 #include <errno.h>
 #include <fortran.h>
 #include <sys/types.h>
-#include <sys/signal.h>
+#include <signal.h>
 
 #ifdef _UNICOS
 void

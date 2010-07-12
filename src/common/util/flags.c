@@ -1134,7 +1134,7 @@ Print_Option_Group ( FILE *tf, OPTION_GROUP *og, const char *prefix,
 	fprintf ( tf, "%u", *((UINT32 *) ODESC_variable(desc)));
 	break;
     case OVK_UINT64:
-	fprintf ( tf, "%" SCNd64 "", *((UINT64 *) ODESC_variable(desc)));
+	fprintf ( tf, "%" SCNu64 "", *((UINT64 *) ODESC_variable(desc)));
 	break;
 
     case OVK_NAME:

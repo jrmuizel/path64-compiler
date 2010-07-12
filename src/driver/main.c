@@ -545,22 +545,9 @@ main (int argc, char *argv[])
 		fputc('\n', stderr);
 	    char *exe_dir = get_executable_dir();
 
-	    fprintf(stderr, "Copyright 2000, 2001 Silicon Graphics, Inc.  "
-		    "All Rights Reserved.\n");
-	    fprintf(stderr, "Copyright 2002, 2003, 2004, 2005, 2006 PathScale, Inc.  All Rights Reserved.\n");
-	    fprintf(stderr, "Copyright 2006, 2007 QLogic Corporation.  All Rights Reserved.\n");
-	    fprintf(stderr, "Copyright 2007, 2008, 2009 PathScale LLC.  All Rights Reserved.\n");
-	    fprintf(stderr, "See complete copyright, patent and legal notices "
-		    "in the\n");
-#ifdef KEY /* Mac port */
-	    fprintf(stderr, "%.*s/share/doc/pathscale-compilers-" 
-	    	    PSC_FULL_VERSION "/LEGAL.pdf file.\n",
-		    (int) (strlen(exe_dir) - 4), exe_dir);
-#else /* KEY Mac port */
-	    fprintf(stderr, "%.*s/share/doc/pathscale-compilers-" 
-	    	    PSC_FULL_VERSION "/LEGAL.pdf file.\n",
-		    strlen(exe_dir) - 4, exe_dir);
-#endif /* KEY Mac port */
+	    fprintf(stderr, "Copyright 2000, 2001 Silicon Graphics, Inc. All Rights Reserved.\n");
+	    fprintf(stderr, "Copyright 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010 PathScale Inc.  All Rights Reserved.\n");
+	    fprintf(stderr, "You can find complete copyright, patent and legal notices in the corresponding documentation\n");
 	}
 	if ((show_version || dump_version) &&
 	    (!execute_flag || source_kind == S_NONE)) {
@@ -912,11 +899,11 @@ print_help_msg (void)
 	int i;
 	char *msg;
 	char *name;
-	fprintf(stderr, "usage:  %s <options> <files>\n", program_name);
+	fprintf(stdout, "usage:  %s <options> <files>\n", program_name);
 	if (help_pattern != NULL)
-	  fprintf(stderr, "available options that contain %s:\n", help_pattern);
+	  fprintf(stdout, "available options that contain %s:\n", help_pattern);
 	else
-	  fprintf(stderr, "available options:\n");
+	  fprintf(stdout, "available options:\n");
 
 	FOREACH_OPTION(i) {
 		msg = get_option_help(i);
@@ -930,12 +917,12 @@ print_help_msg (void)
 			{
 				continue;	/* to next option */
 			}
-			fprintf(stderr, "\t%s:  %s\n", name, msg);
+			fprintf(stdout, "\t%s:  %s\n", name, msg);
 		    }
 		}
 	}
 	if (help_pattern == NULL && invoked_lang == L_cc) {
-	  fprintf(stderr, "The environment variable PSC_CC is also checked\n");
+	  fprintf(stdout, "The environment variable PSC_CC is also checked\n");
 	}
 	do_exit(RC_OKAY);
 }

@@ -52,9 +52,9 @@
 #include <elf.h>		    // for ipa_cg.h (Elf64_Word)
 #endif /* defined(BUILD_OS_DARWIN) */
 #include <sys/types.h>		    // for pid_t
+#include <sys/wait.h>		    // for waitpid()
 #include <unistd.h>		    // for fork(), pipe(), etc.
 #include <signal.h>		    // for SIGINT
-#include <wait.h>		    // for waitpid()
 
 #define USE_STANDARD_TYPES          /* override unwanted defines in defs.h */
 #include "defs.h"

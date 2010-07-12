@@ -1056,7 +1056,7 @@ VHO_Lower_Switch ( WN * wn )
   case MTYPE_U8:
 
 #ifdef VHO_DEBUG
-    VHO_Switch_Format = "  [%2d] value = %" SCNd64 ", label = %d\n";
+    VHO_Switch_Format = "  [%2d] value = %" SCNu64 ", label = %d\n";
 #endif /* VHO_DEBUG */
 
     VHO_Switch_Signed = FALSE;
@@ -4802,7 +4802,7 @@ vho_lower_icall ( WN * wn, WN * block )
   }
 
   char * nameoffoo1 = extract_pu_name(nameoffootmp);
-  Is_True(nameoffoo1!=NULL,("Devirtualize: did not extract right pu_name in PU_Addr_Name_Map for address <%" SCNd64 ">",info_icall.tnv._values[0]));
+  Is_True(nameoffoo1!=NULL,("Devirtualize: did not extract right pu_name in PU_Addr_Name_Map for address <%" SCNu64 ">",info_icall.tnv._values[0]));
 
   
   ST * st_foo1 = NULL;

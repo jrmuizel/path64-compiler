@@ -105,7 +105,7 @@ WN2F_Append_Purple_Xsym(TOKEN_BUFFER tokens, ST *st)
 
    Append_Token_String(tokens, name);
    Append_Token_Special(tokens, ',');
-   Append_Token_String(tokens, Number_as_String(id, "%" SCNd64 ""));
+   Append_Token_String(tokens, Number_as_String(id, "%" SCNu64 ""));
    Append_Token_Special(tokens, ',');
    Append_Token_String(tokens, Number_as_String(sclass, "%" SCNd64 ""));
    Append_Token_Special(tokens, ',');
@@ -255,12 +255,12 @@ TY2F_Append_Assumed_Single_Dim(TOKEN_BUFFER decl_tokens,
    Append_Token_String(decl_tokens, "<#PRP_XSYM:ASSUMED");
    WN2F_Append_Purple_Xsym(decl_tokens, st);
    Append_Token_Special(decl_tokens, ',');
-   Append_Token_String(decl_tokens, Number_as_String(1, "%" SCNd64 ""));
+   Append_Token_String(decl_tokens, Number_as_String(1, "%" SCNu64 ""));
    Append_Token_Special(decl_tokens, '<');
    Append_Token_Special(decl_tokens, '>');
    Append_Token_Special(decl_tokens, ',');
    Append_Token_String(decl_tokens, 
-		       Number_as_String(TY_size(element_ty), "%" SCNd64 ""));
+		       Number_as_String(TY_size(element_ty), "%" SCNu64 ""));
    Append_Token_String(decl_tokens, "#>");
 } /* TY2F_Append_Assumed_Single_Dim */
 
@@ -328,7 +328,7 @@ TY2F_Purple_Assumed_Sized_Array(TOKEN_BUFFER decl_tokens, ST *st, TY_IDX ty)
       WN2F_Append_Purple_Xsym(decl_tokens, st);
       Append_Token_Special(decl_tokens, ',');
       Append_Token_String(decl_tokens,
-			  Number_as_String(TY_AR_ndims(ty), "%" SCNd64 ""));
+			  Number_as_String(TY_AR_ndims(ty), "%" SCNu64 ""));
       Append_Token_Special(decl_tokens, '<');
       
       while ( dim >= 0)
@@ -345,7 +345,7 @@ TY2F_Purple_Assumed_Sized_Array(TOKEN_BUFFER decl_tokens, ST *st, TY_IDX ty)
       Append_Token_Special(decl_tokens, '>');
       Append_Token_Special(decl_tokens, ',');
       Append_Token_String(decl_tokens, 
-			  Number_as_String(TY_size(TY_AR_etype(ty)), "%" SCNd64 ""));
+			  Number_as_String(TY_size(TY_AR_etype(ty)), "%" SCNu64 ""));
       Append_Token_String(decl_tokens, "#>");
       Append_Token_Special(decl_tokens, ')');
    }

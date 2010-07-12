@@ -124,7 +124,7 @@ extern void _u_sysclock_restart();
 void
 _init_hw_clock(void)
 {
-	__psunsigned_t phys_addr, raddr;
+	uintptr_t phys_addr, raddr;
 	int cycsz;
 	int fd;
 	int poffmask;
@@ -175,7 +175,7 @@ _init_hw_clock(void)
 		return;
 	}
 
-	clockaddr = (void *)((__psunsigned_t)clockaddr + (phys_addr&poffmask));
+	clockaddr = (void *)((uintptr_t)clockaddr + (phys_addr&poffmask));
 
 	if (cycsz == 64) {
 		_rtc_clockaddr	= (long long *)clockaddr;
@@ -249,7 +249,7 @@ _sysclock_nowrap(void)
 void
 _u_sysclock_checkpoint()
 {
-	__psunsigned_t vbase;
+	uintptr_t vbase;
 	int mask;
 	int page;
 
@@ -258,7 +258,7 @@ _u_sysclock_checkpoint()
 	if (_rtc_clockaddr != NULL) {
 		page	= getpagesize();
 		mask	= page - 1;
-		vbase	= (__psunsigned_t)_rtc_clockaddr & ~mask;
+		vbase	= (uintptr_t)_rtc_clockaddr & ~mask;
 		munmap((void *)vbase, page);
 	}
 	return;
@@ -267,7 +267,7 @@ _u_sysclock_checkpoint()
 void
 _u_sysclock_restart()
 {
-	__psunsigned_t vbase,  raddr, phys_addr;
+	uintptr_t vbase,  raddr, phys_addr;
 	unsigned int pico_per_clk;
 	int cycsz;
 	int fd;
@@ -282,7 +282,7 @@ _u_sysclock_restart()
 		cycsz	= syssgi(SGI_CYCLECNTR_SIZE);
 		raddr	= phys_addr & ~poffmask;
 		fd	= open("/dev/mmem", O_RDONLY);
-		vbase	= (__psunsigned_t)_rtc_clockaddr & ~poffmask;
+		vbase	= (uintptr_t)_rtc_clockaddr & ~poffmask;
 		mmap((void *)vbase, page, PROT_READ,
 			MAP_PRIVATE | MAP_FIXED, fd, (off_t) raddr);
 	}

@@ -70,6 +70,7 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA. 
 #include "bfdlink.h"
 #include "libbfd.h"
 #include "elf-bfd.h"
+#include <time.h>
 
 /* Renaming structures, typedefs, macros and functions to be size-specific.  */
 #define Elf_External_Ehdr	NAME(Elf,External_Ehdr)

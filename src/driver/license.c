@@ -31,13 +31,7 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#if ! defined(BUILD_OS_DARWIN) && ! defined(__FreeBSD__) && !defined(_WIN32)
-#include <wait.h>
-#endif /* ! defined(BUILD_OS_DARWIN) */
-#if defined(__FreeBSD__) || defined(_WIN32)
 #include <sys/wait.h>
-#endif
-#include <sys/utsname.h>
 
 #include "lang_defs.h"
 #include "license.h"
@@ -149,15 +143,6 @@ void obtain_license (char *exedir, int argc, char *argv[]) {
     }
 
     {
-#ifdef TARG_MIPS
-      {	// bug 12667
-        struct utsname u;
-	uname(&u);
-	if (!strcmp(u.machine, "mips64")) {
-	  return;
-	}
-      }
-#endif
       // bug 12667
       char *dir = get_executable_dir();
       prodname = "Compiler";

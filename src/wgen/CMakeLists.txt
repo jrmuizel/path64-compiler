@@ -92,6 +92,17 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 target_link_libraries(wgen42 winlib ws2_32)
 ENDIF()
 
+add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/lib/wgen42
+    DEPENDS wgen42
+    COMMAND ln -s ../bin/wgen42 ${CMAKE_BINARY_DIR}/lib
+)
+
+add_custom_target(
+    stageit-wgen42 ALL
+    DEPENDS ${CMAKE_BINARY_DIR}/lib/wgen42
+)
+
 install(TARGETS wgen42
         RUNTIME DESTINATION ${PATH64_LIB_PATH})
 #install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${CMAKE_INSTALL_PREFIX}/${PATH64_LIB_PATH}/wgen42${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/${PATH64_LIB_PATH}/wgen${CMAKE_EXECUTABLE_SUFFIX}\")")

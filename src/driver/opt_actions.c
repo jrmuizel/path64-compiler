@@ -40,7 +40,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <sys/utsname.h>
 #include <unistd.h>
 #include <ctype.h>
 #include "cmplrs/rcodes.h"
@@ -106,7 +105,6 @@ static void add_hugepage_desc(HUGEPAGE_ALLOC, HUGEPAGE_SIZE, int);
 
 #ifdef KEY
 void set_memory_model(char *model);
-static int get_platform_abi();
 #endif
 
 #ifdef TARG_X8664
@@ -666,41 +664,7 @@ Check_Target ( void )
 #endif
 
   if (abi == UNDEFINED) {
-#ifdef TARG_IA64
-	toggle(&abi, ABI_I64);
-    	add_option_seen ( O_i64 );
-#elif 0
-/* #elif TARG_IA32 */
-/* O_ia32 is not defined or used anywhere else in the codebase */
-	toggle(&abi, ABI_IA32);
-    	add_option_seen ( O_ia32 );
-#elif TARG_MIPS
-	// Change default to -64
-	toggle(&abi, ABI_64);
-    	add_option_seen ( O_64 );
-#elif defined(TARG_X8664) || defined (TARG_IA32)
-	// User didn't specify ABI.  Use the ABI supported on host.  Bug 8488.
-	if (target_supported_abi == ABI_N32) {
-	  abi = ABI_N32;
-	} else if (target_supported_abi == ABI_64) {
-	  abi = (get_platform_abi() == ABI_N32) ?
-		  ABI_N32 : target_supported_abi;
-	} else if (target_supported_abi == UNDEFINED) {
-	  abi = (get_platform_abi() == ABI_64) ? ABI_64 : ABI_N32;
-	} else {
-	  internal_error ("illegal target_supported_abi");
-	}
-
-	if (abi == ABI_64)
-	  add_option_seen (O_m64);
-	else
-	  add_option_seen (O_m32);
-#else
-	warning("abi should have been specified by driverwrap");
-  	/* If nothing is defined, default to -n32 */
-    	toggle ( &abi, ABI_N32 );
-    	add_option_seen ( O_n32 );
-#endif
+       abi = get_platform_abi();
   }
 
 #ifdef TARG_X8664
@@ -1648,32 +1612,24 @@ get_sysctl_str(char *name, char *value, size_t value_nbytes) {
 #endif /* ! defined(BUILD_OS_DARWIN) */
 
 // Get the platform's default ABI.
-static int
-get_platform_abi()
+ABI
+get_platform_abi(void)
 {
-#if defined(BUILD_OS_DARWIN)
-  /* "hw.machine" says "i386" for both 32 and 64 bit machines.
-   * "machdep.cpu.extfeatures" says "EM64T" on 64 bit machine. Not as general
-   * as one would like--what about AMD someday?--but good enough for now. */
-  char u[256];
-# define SYSCTL_MACHDEP_CPU_EXTFEATURES "machdep.cpu.extfeatures"
-  char *tmp = get_sysctl_str(SYSCTL_MACHDEP_CPU_EXTFEATURES, u, sizeof u);
-  return (tmp && strstr(tmp, "EM64T")) ? ABI_64 : ABI_N32;
-#else /* defined(BUILD_OS_DARWIN) */
-  struct utsname u;
-
-  // Note:  One can determine if it is a 64-bit x86 CPU by checking for the
-  // "lm" bit in "flags" in /proc/cpuinfo.  Maybe this can be used instead of
-  // uname.
-  uname(&u);
-  if (!strcmp(u.machine, "x86_64"))
-    return ABI_64;
+#if defined(PATH64_DEFAULT_ABI)
+#  if PATH64_DEFAULT_ABI == 32
   return ABI_N32;
-#endif /* defined(BUILD_OS_DARWIN) */
+#  elif PATH64_DEFAULT_ABI == 64
+  return ABI_64;
+#  else
+#    error Unsupported value for PATH64_DEFAULT_ABI
+#  endif
+#else
+  return (sizeof(void *) == 8) ? ABI_64 : ABI_N32;
+#endif
 }
 
 // Return the numeric value after ':' in a line in /proc/cpuinfo.
-static int
+int
 get_num_after_colon (char *str)
 {
   char *p;

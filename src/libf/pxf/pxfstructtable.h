@@ -32,7 +32,7 @@
 #include <utime.h>
 #include <pwd.h>
 #include <dirent.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <sys/termios.h>
 
 struct strtble {

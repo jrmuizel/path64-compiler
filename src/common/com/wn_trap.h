@@ -22,7 +22,7 @@
 */
 
 
-/* Trap codes in addition to those in <sys/signal.h> */
+/* Trap codes in addition to those in <signal.h> */
 
 #define WN_TRAP_F77_BOUNDS_ERROR	0x100000
 #define WN_TRAP_C_BOUNDS_ERROR		0x100001

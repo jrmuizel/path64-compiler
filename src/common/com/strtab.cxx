@@ -144,7 +144,7 @@ struct CHARACTER_ARRAY
 
     static UINT32 get_length (const char *buffer) {
 	if (*(const unsigned char *)buffer != 0xff)
-	    return *buffer;
+	    return ((UINT32)*buffer) & 0xff;
 	else {
 	    UNALIGN_INT32 unalign (buffer + 1);
 	    return unalign.n;

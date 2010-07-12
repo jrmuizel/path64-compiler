@@ -1,6 +1,4 @@
 
-ADD_SUBDIRECTORY(crt)
-
 Set(PATHSCALE_COMMON_DRIVER_SRCS "errors.c"
                                  "file_utils.c"
                                  "lang_defs.c"
@@ -98,6 +96,18 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 target_link_libraries(table iberty winlib)
 target_link_libraries(${exe_refix}pathcc iberty winlib ws2_32)
 endif()
+
+add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/bin/pathf95
+    DEPENDS pathcc
+    COMMAND ln -s pathcc ${CMAKE_BINARY_DIR}/bin/pathCC
+    COMMAND ln -s pathcc ${CMAKE_BINARY_DIR}/bin/pathf95
+)
+
+add_custom_target(
+    stageit-driver ALL
+    DEPENDS ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/bin/pathf95
+)
 
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/bin/pathCC${CMAKE_EXECUTABLE_SUFFIX}\")")
 if(PATH64_ENABLE_FORTRAN)

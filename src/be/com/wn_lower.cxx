@@ -52,7 +52,7 @@
 #include <alloca.h>
 #endif
 #ifndef _WIN32
-#include <sys/signal.h>
+#include <signal.h>
 #endif
 #if defined(BUILD_OS_DARWIN)
 #include <darwin_elf.h>

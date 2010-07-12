@@ -61,15 +61,6 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
 
-/* See if __uint32_t is predefined in the compiler. */
-/* #undef HAVE___UINT32_T */
-
-/* Define 1 if sys/types.h defines __uint32_t. */
-#define HAVE___UINT32_T_IN_SYS_TYPES_H 1
-
-/* See if __uint64_t is predefined in the compiler. */
-/* #undef HAVE___UINT64_T */
-
 /* Define to header that first defines elf. */
 #define LOCATION_OF_LIBELFHEADER <elf.h>
 

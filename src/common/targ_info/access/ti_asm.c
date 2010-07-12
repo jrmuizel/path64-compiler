@@ -267,7 +267,7 @@ static INT Format_Operand(
   } else if (ISA_OPERAND_VALTYP_Is_Signed(vtype)) {
     return sprintf(buf, "%" SCNd64 "", val) + 1;
   } else {
-    return sprintf(buf, "%" SCNd64 "", val) + 1;
+    return sprintf(buf, "%" SCNu64 "", val) + 1;
   }
 }
 

@@ -2219,7 +2219,7 @@ Adjust_Exit(ST *pu_st, BB *bb)
     fprintf(TFile,
 	    "\n%s<calls> Adjusting exit for %s (BB:%d)\n",
             DBar, ST_name(pu_st), BB_id(bb));
-    fprintf(TFile, "\nFinal frame size: %" SCNd64 " (0x%" SCNx64 ")\n", frame_len, frame_len);
+    fprintf(TFile, "\nFinal frame size: %" SCNu64 " (0x%" SCNx64 ")\n", frame_len, frame_len);
     fprintf(TFile, "\nOld stack frame de-allocation:\n");
     Print_OP_No_SrcLine(sp_adj);
   }

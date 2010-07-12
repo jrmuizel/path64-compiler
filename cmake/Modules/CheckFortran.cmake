@@ -61,7 +61,7 @@ file(WRITE \"\${CMAKE_CURRENT_BINARY_DIR}/result.cmake\"
         SET(REAL_Fortran_COMPILER_FLAGS "-DBUILD_COMPILER_GNU -fcray-pointer -fsecond-underscore -m96bit-long-double")
     ELSEIF("${BASE_COMPILER}" MATCHES "pathf90")
         SET(REAL_Fortran_COMPILER_FLAGS " -Wf,-eQ ")
-	SET(MFEF95_TMP_FORTRAN_LINK_LIB "-lpathfortran")
+	SET(MFEF95_TMP_FORTRAN_LINK_LIB "-Wl,-dn -lpathfortran -Wl,-dy")
     ELSE()
         MESSAGE(FATAL_ERROR "Unsupported Fortran compiler found.  We support PathScale and GNU Fortran for bootstrap at this time.")
     ENDIF()
