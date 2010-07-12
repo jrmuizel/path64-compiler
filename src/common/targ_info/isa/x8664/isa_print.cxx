@@ -1129,6 +1129,16 @@ main()
   TOP_pcmpistri,
   TOP_UNDEFINED );
 
+  /* No result / three operands */
+  ISA_PRINT_TYPE opopop1 =  ISA_Print_Type_Create("opopop", "%s %s,%s,%s");
+  Name();
+  Operand(4);
+  Operand(2);
+  Operand(0);
+  Instruction_Print_Group( opopop1,
+               TOP_pcmpestri,
+			   TOP_UNDEFINED );
+
   /* regular load */
   ISA_PRINT_TYPE load =  ISA_Print_Type_Create("load", "%s %s%s(%s),%s");
   Name();
@@ -1615,6 +1625,7 @@ main()
 			   TOP_psrad_mmx,
 			   TOP_pand_mmx,
 			   TOP_pandn_mmx,
+			   TOP_pand128,
 			   TOP_por_mmx,
 			   TOP_pxor_mmx,
 			   TOP_UNDEFINED );

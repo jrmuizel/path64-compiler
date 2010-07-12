@@ -204,6 +204,10 @@ main()
   const OPERAND_USE_TYPE opnd2 = Create_Operand_Use("opnd2");
   // third operand of an alu operator
   const OPERAND_USE_TYPE opnd3 = Create_Operand_Use("opnd3");
+  // fourth operand of an alu operator
+  const OPERAND_USE_TYPE opnd4 = Create_Operand_Use("opnd4");
+  // fifth operand of an alu operator
+  const OPERAND_USE_TYPE opnd5 = Create_Operand_Use("opnd5");
   // addend/subtrahend operand of a madd
   const OPERAND_USE_TYPE maddend = Create_Operand_Use("maddend");
   // operand has same register as result
@@ -355,6 +359,7 @@ main()
 		     TOP_max128v16,
 		     TOP_min128v8,
 		     TOP_min128v16,
+             TOP_pand128,
 		     TOP_UNDEFINED);
   Result(0, fp128);
   Operand(0, fp128, opnd1);
@@ -2264,6 +2269,17 @@ main()
   Operand(0, fp128,  opnd3);
   Operand(1, fp128,  opnd2);
   Operand(2, simm8, opnd1);
+
+
+  Instruction_Group("qi vector compare explicit length retruns index",
+		    TOP_pcmpestri,
+		    TOP_UNDEFINED);
+  Result(0, ecx);
+  Operand(0, fp128, opnd3);
+  Operand(1, eax,   opnd5);
+  Operand(2, fp128, opnd2);
+  Operand(3, edx,   opnd4);
+  Operand(4, simm8, opnd1);
 
   Instruction_Group("load64 effective addr",
 		    TOP_lea64,

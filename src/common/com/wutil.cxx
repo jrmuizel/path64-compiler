@@ -1241,6 +1241,7 @@ static const struct {
   INTRN_PADDD128,               "INTRN_PADDD128",
   INTRN_PADDW128,               "INTRN_PADDW128",
   INTRN_PCMPISTRI128,           "INTRN_PCMPISTRI128",
+  INTRN_PAND128,                "INTRN_PAND128",
   INTRN_V16F4LOG10,             "INTRN_V16F4LOG10",
 #endif
 #endif

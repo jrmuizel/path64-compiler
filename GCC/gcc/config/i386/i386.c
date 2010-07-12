@@ -15675,6 +15675,13 @@ ix86_init_mmx_sse_builtins (void)
   
   def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpistri128", ftype, IX86_BUILTIN_PCMPISTRI128);
 
+  /* ftype for IX86_BUILTIN_PCMPESTRI128 = INT_FTYPE_V16QI_INT_V16QI_INT_INT */
+  ftype = build_function_type_list (integer_type_node, V16QI_type_node, integer_type_node,
+                                                       V16QI_type_node, integer_type_node,
+                                                       integer_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpestri128", ftype, IX86_BUILTIN_PCMPESTRI128);
+
   /* Access to the vec_init patterns.  */
   ftype = build_function_type_list (V2SI_type_node, integer_type_node,
 				    integer_type_node, NULL_TREE);

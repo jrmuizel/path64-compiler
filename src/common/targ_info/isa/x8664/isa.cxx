@@ -1017,6 +1017,7 @@ main ()
 	      "psrad_mmx",
 	      "pand_mmx",
 	      "pandn_mmx",
+	      "pand128",
 	      "por_mmx",
 	      "pxor_mmx",
 	      "unpckhpd",
@@ -1178,6 +1179,7 @@ main ()
 
           /* sse4_2 instructions */
           "pcmpistri",  
+          "pcmpestri",
 
 	      /* instructions to support Open MP. */
 	      "lock_add32",

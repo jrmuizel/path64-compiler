@@ -6447,7 +6447,7 @@ Expand_Count_Leading_Zeros (TN *result, TN *op, TYPE_ID mtype,
 }
 
 void
-Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TYPE_ID mtype, OPS *ops)
+Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, TN *op4, TYPE_ID mtype, OPS *ops)
 {
   TN* rflags = Rflags_TN();
   TN *result_tmp = Build_TN_Of_Mtype( MTYPE_U1 );
@@ -7305,6 +7305,9 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TYPE_ID m
    case INTRN_PCMPISTRI128:
     Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
     break;
+  case INTRN_PCMPESTRI128:
+    Build_OP(TOP_pcmpestri, result, op0, op1, op2, op3, op4, ops);
+    break;
   }
 
   if (id <= INTRN_ISUNORDERED && id >= INTRN_ISGREATER )
@@ -7516,6 +7519,12 @@ Exp_Intrinsic_Call (INTRINSIC id, TN *op0, TN *op1, TN *op2,
 	Build_OP(TOP_neg64, neg_tn, op1, ops);
       }
       result = Exp_Fetch_and_Add(op0, neg_tn, mtype, ops);
+    }
+    break;
+  case INTRN_PCMPESTRI128:
+    {
+        result = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RCX, 4);
+        Build_OP(TOP_pcmpestri, result, op0, op1, op2, ops);
     }
     break;
 
