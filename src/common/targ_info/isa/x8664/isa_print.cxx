@@ -1138,6 +1138,7 @@ main()
   Operand(0);
   Instruction_Print_Group( opopop1,
                TOP_pcmpestri,
+               TOP_pcmpestrm,
 			   TOP_UNDEFINED );
 
   /* regular load */

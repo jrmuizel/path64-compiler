@@ -1506,6 +1506,7 @@ int main (int argc, char *argv[])
             TOP_pcmpistri,
             TOP_pcmpistrm,
             TOP_pcmpestri,
+            TOP_pcmpestrm,
                     TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(1);

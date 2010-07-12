@@ -7311,6 +7311,9 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
   case INTRN_PCMPESTRI128:
     Build_OP(TOP_pcmpestri, result, op0, op1, op2, op3, op4, ops);
     break;
+  case INTRN_PCMPESTRM128:
+    Build_OP(TOP_pcmpestrm, result, op0, op1, op2, op3, op4, ops);
+    break;
   }
 
   if (id <= INTRN_ISUNORDERED && id >= INTRN_ISGREATER )

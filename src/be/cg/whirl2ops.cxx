@@ -2749,6 +2749,7 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
       *kidno = 2;
       return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 1);
     case INTRN_PCMPESTRI128:
+    case INTRN_PCMPESTRM128:
       *kidno = 4;
       return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid (expr, 4))), 1);
 

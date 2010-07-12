@@ -3213,6 +3213,7 @@ main()
              TOP_pcmpistri,
              TOP_pcmpistrm,
              TOP_pcmpestri,
+             TOP_pcmpestrm,
              TOP_pand128,
 		     TOP_UNDEFINED );
 

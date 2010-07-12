@@ -2292,6 +2292,16 @@ main()
   Operand(3, edx,   opnd4);
   Operand(4, simm8, opnd1);
 
+  Instruction_Group("qi vector compare explicit length retruns mask",
+		    TOP_pcmpestrm,
+		    TOP_UNDEFINED);
+  Result(0, xmm0);
+  Operand(0, fp128, opnd3);
+  Operand(1, eax,   opnd5);
+  Operand(2, fp128, opnd2);
+  Operand(3, edx,   opnd4);
+  Operand(4, simm8, opnd1);
+
   Instruction_Group("load64 effective addr",
 		    TOP_lea64,
 		    TOP_UNDEFINED);

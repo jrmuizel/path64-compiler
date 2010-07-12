@@ -1181,6 +1181,7 @@ main ()
           "pcmpistri",  
           "pcmpistrm",
           "pcmpestri",
+          "pcmpestrm",
 
 	      /* instructions to support Open MP. */
 	      "lock_add32",

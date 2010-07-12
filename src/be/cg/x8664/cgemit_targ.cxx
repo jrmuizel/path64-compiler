@@ -1426,6 +1426,7 @@ static void Init_OP_Name()
   OP_Name[TOP_pcmpistri] = "pcmpistri";
   OP_Name[TOP_pcmpistrm] = "pcmpistrm";
   OP_Name[TOP_pcmpestri] = "pcmpestri";
+  OP_Name[TOP_pcmpestri] = "pcmpestrm";
 
 //**********************************************************
 // For barcelona (bug 13108)

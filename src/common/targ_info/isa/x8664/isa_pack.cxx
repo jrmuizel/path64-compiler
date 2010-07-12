@@ -1155,6 +1155,7 @@ main()
             TOP_pcmpistri, 0x000000ff,
             TOP_pcmpistrm, 0x000000ff,        
             TOP_pcmpestri, 0x000000ff,
+            TOP_pcmpestrm, 0x000000ff,
 		    TOP_UNDEFINED);
 
   ISA_Pack_End();

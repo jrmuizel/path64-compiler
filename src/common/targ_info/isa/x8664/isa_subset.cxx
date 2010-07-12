@@ -1170,6 +1170,7 @@ main()
             TOP_pcmpistri,
             TOP_pcmpistrm,
             TOP_pcmpestri,
+            TOP_pcmpestrm,
 		    TOP_UNDEFINED);
 
   ISA_Subset_End();
