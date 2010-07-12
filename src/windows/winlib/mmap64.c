@@ -93,7 +93,7 @@ __mmap64 (__ptr_t addr, size_t len, int prot, int flags, int fd,
 	fprintf (stderr, "Offset before: %#I64X\n", gran_offset);
 	if (flags & MAP_FIXED) {
 		gran_offset = offset;
-		gran_addr = addr;
+		gran_addr = (caddr_t) addr;
 	}
 	else {
 		gran_offset = offset & ~(sysgran - 1);
