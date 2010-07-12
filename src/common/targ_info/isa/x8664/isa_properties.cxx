@@ -3208,6 +3208,7 @@ main()
 		     TOP_storent64_fm,
                      TOP_extrq,
                      TOP_insertq,
+             TOP_pcmpistri,
 		     TOP_UNDEFINED );
 
   /* ==== x86 style instructions ==== */

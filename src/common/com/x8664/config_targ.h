@@ -116,6 +116,7 @@ extern BOOL Target_SSE3;
 extern BOOL Target_3DNow;
 extern BOOL Target_SSE4a;
 extern int Target_x86_Precision;
+extern BOOL Target_SSE4_2;
 
 /* ================ */
 /* Target processor */
@@ -152,6 +153,7 @@ extern const char *Targ_Name (TARGET_PROCESSOR target);
 #define Is_Target_SSE3()        (Target_SSE3 == TRUE)
 #define Is_Target_3DNow()       (Target_3DNow == TRUE)
 #define Is_Target_SSE4a()       (Target_SSE4a == TRUE)
+#define Is_Target_SSE4_2()       (Target_SSE4_2 == TRUE)
 #define Is_Target_Pentium4()    (Target == TARGET_pentium4)
 #define Is_Target_EM64T()	(Target == TARGET_em64t)
 #define Is_Target_Core()	(Target == TARGET_core)

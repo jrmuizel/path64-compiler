@@ -108,6 +108,10 @@ main()
     ISA_Reg_Opnd_Type_Create("eax", ISA_REGISTER_CLASS_integer,
 			     ISA_REGISTER_SUBCLASS_rax,
 			     32, SIGNED, INVALID);
+  const OPERAND_VALUE_TYPE ecx =
+    ISA_Reg_Opnd_Type_Create("ecx", ISA_REGISTER_CLASS_integer,
+                 ISA_REGISTER_SUBCLASS_rcx,
+                 32, SIGNED, INVALID);
   const OPERAND_VALUE_TYPE ax =
     ISA_Reg_Opnd_Type_Create("ax", ISA_REGISTER_CLASS_integer,
 			     ISA_REGISTER_SUBCLASS_rax,
@@ -2252,6 +2256,14 @@ main()
   Result(0, int32);
   Operand(0, int64, base);
   Operand(1, simm32, offset);
+
+  Instruction_Group("qi vector compare implicit length returns index",
+          TOP_pcmpistri,      
+          TOP_UNDEFINED);
+  Result(0, ecx);
+  Operand(0, fp128,  opnd3);
+  Operand(1, fp128,  opnd2);
+  Operand(2, simm8, opnd1);
 
   Instruction_Group("load64 effective addr",
 		    TOP_lea64,

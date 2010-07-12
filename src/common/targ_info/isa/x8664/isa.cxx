@@ -1176,6 +1176,9 @@ main ()
 	      "ld32_abs",
 	      "ld64_abs",
 
+          /* sse4_2 instructions */
+          "pcmpistri",  
+
 	      /* instructions to support Open MP. */
 	      "lock_add32",
 	      "lock_adc32",

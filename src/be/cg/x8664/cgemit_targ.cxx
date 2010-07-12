@@ -1427,6 +1427,10 @@ static void Init_OP_Name()
 // (2) "movsd reg, reg"   ==> "movapd reg, reg"
 // NOTE: there are regardless of CG_use_movlpd TRUE or FALSE
 //***********************************************************
+
+  /* SSE4_2 */
+  OP_Name[TOP_pcmpistri] = "pcmpistri";
+
   if (CG_use_movlpd &&
       !Is_Target_Pentium4() &&
       !Is_Target_EM64T() &&

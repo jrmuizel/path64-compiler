@@ -1120,6 +1120,15 @@ main()
 			   TOP_UNDEFINED );
 #endif
 
+  ISA_PRINT_TYPE opopop =  ISA_Print_Type_Create("opopop", "%s %s,%s,%s");
+  Name();   
+  Operand(2);
+  Operand(1);
+  Operand(0);
+  Instruction_Print_Group( opopop,
+  TOP_pcmpistri,
+  TOP_UNDEFINED );
+
   /* regular load */
   ISA_PRINT_TYPE load =  ISA_Print_Type_Create("load", "%s %s%s(%s),%s");
   Name();

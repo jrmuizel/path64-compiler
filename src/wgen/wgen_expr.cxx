@@ -3870,6 +3870,9 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
     case GSBI_IX86_BUILTIN_INSERTQ:
       *iopc = INTRN_INSERTQ;
       break;
+    case GSBI_IX86_BUILTIN_PCMPISTRI128:
+      *iopc = INTRN_PCMPISTRI128;
+      break;
     default:
 unsupported:
       if (Opt_Level > 0)

@@ -1502,6 +1502,13 @@ ix86_handle_option (size_t code, const char *arg ATTRIBUTE_UNUSED, int value)
         }
        return true;
 
+    case OPT_msse4_2:
+      if (!value)
+       {
+         target_flags &= ~MASK_SSE4_2; 
+         target_flags_explicit |= MASK_SSE4_2; 
+       }
+         return true;
 
     default:
       return true;
@@ -1571,7 +1578,8 @@ override_options (void)
           PTA_CX16 = 256,
           PTA_POPCNT = 512,
           PTA_ABM = 1024,
-          PTA_SSE4A = 2048
+          PTA_SSE4A = 2048,
+          PTA_SSE4_2 = 4096
 	} flags;
     }
   const processor_alias_table[] =
@@ -1629,7 +1637,7 @@ override_options (void)
       {"barcelona", PROCESSOR_AMDFAM10, PTA_MMX | PTA_PREFETCH_SSE | PTA_3DNOW
                                        | PTA_64BIT | PTA_3DNOW_A | PTA_SSE
                                        | PTA_SSE2 | PTA_SSE3 | PTA_POPCNT
-                                       | PTA_ABM | PTA_SSE4A | PTA_CX16},
+                                       | PTA_ABM | PTA_SSE4A | PTA_SSE4_2 | PTA_CX16},
       {"generic32", PROCESSOR_GENERIC32, 0 /* flags are only used for -march switch.  */ },
       {"generic64", PROCESSOR_GENERIC64, PTA_64BIT /* flags are only used for -march switch.  */ },
     };
@@ -1791,6 +1799,9 @@ override_options (void)
         if (processor_alias_table[i].flags & PTA_SSE4A
             && !(target_flags_explicit & MASK_SSE4A))
           target_flags |= MASK_SSE4A;
+    if (processor_alias_table[i].flags & PTA_SSE4_2 
+            && !(target_flags_explicit & MASK_SSE4_2))
+      target_flags |= MASK_SSE4_2;
 
 	if (TARGET_64BIT && !(processor_alias_table[i].flags & PTA_64BIT))
 	  error ("CPU you selected does not support x86-64 "
@@ -15657,6 +15668,12 @@ ix86_init_mmx_sse_builtins (void)
   def_builtin (MASK_SSE4A, "__builtin_ia32_extrq", v2di_ftype_v2di_v16qi,  IX86_BUILTIN_EXTRQ);
   def_builtin (MASK_SSE4A, "__builtin_ia32_insertqi",v2di_ftype_v2di_v2di_unsigned_unsigned, IX86_BUILTIN_INSERTQI);
   def_builtin (MASK_SSE4A, "__builtin_ia32_insertq",v2di_ftype_v2di_v2di, IX86_BUILTIN_INSERTQ);
+
+  /* sse4_2 */
+  /* ftype for IX86_BUILTIN_PCMPISTRI128 = INT_FTYPE_V16QI_V16QI_INT */
+  ftype = build_function_type_list (integer_type_node, V16QI_type_node, V16QI_type_node, integer_type_node, NULL_TREE);
+  
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpistri128", ftype, IX86_BUILTIN_PCMPISTRI128);
 
   /* Access to the vec_init patterns.  */
   ftype = build_function_type_list (V2SI_type_node, integer_type_node,
