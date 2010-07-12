@@ -25,8 +25,8 @@
 #ifndef __FB_H__
 #define __FB_H__
 
-#ifndef #define __STDC_FORMAT_MACROS
-#define #define __STDC_FORMAT_MACROS
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
 #endif
 #include <inttypes.h>
 
