@@ -26,12 +26,7 @@
 
 
 #include <stddef.h>
-
-/* 
-    Sgidefs included to define __uint32_t, 
-    a guaranteed 4-byte quantity.            
-*/
-#include "libdwarfdefs.h"
+#include <inttypes.h>
 
 #define true                    1
 #define false                   0

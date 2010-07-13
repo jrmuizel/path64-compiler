@@ -44,7 +44,7 @@
 
 */
 int
-_leb128_unsigned_encode64(__uint64_t number, char *buffer)
+_leb128_unsigned_encode64(uint64_t number, char *buffer)
 {
     char	*bufPtr;
     char	byte;

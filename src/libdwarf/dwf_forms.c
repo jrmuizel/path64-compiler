@@ -19,7 +19,6 @@
 
 #include "config.h"
 #include "dwarf_stuff.h"
-#include "libdwarfdefs.h"
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>

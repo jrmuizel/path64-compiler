@@ -47,11 +47,11 @@
     of the leb128 encoding are in the Dwarf document.
 */
 int
-_leb128_signed_decode32(char *data, __int32_t	*value)
+_leb128_signed_decode32(char *data, int32_t	*value)
 {
     unsigned char 	byte = *data;
     unsigned char    	sign = 0;
-    __int32_t   lvalue;
+    int32_t   lvalue;
 
     byte = *(data);
     if ((byte & 0x80) == 0) {

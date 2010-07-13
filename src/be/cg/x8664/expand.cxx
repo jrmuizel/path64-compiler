@@ -6447,7 +6447,7 @@ Expand_Count_Leading_Zeros (TN *result, TN *op, TYPE_ID mtype,
 }
 
 void
-Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TYPE_ID mtype, OPS *ops)
+Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, TN *op4, TYPE_ID mtype, OPS *ops)
 {
   TN* rflags = Rflags_TN();
   TN *result_tmp = Build_TN_Of_Mtype( MTYPE_U1 );
@@ -7301,6 +7301,18 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TYPE_ID m
     break;
    case INTRN_INSERTQ:
     Build_OP(TOP_insertq, result, op0, op1, ops );
+    break;
+   case INTRN_PCMPISTRI128:
+    Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
+    break;
+  case INTRN_PCMPISTRM128:
+    Build_OP(TOP_pcmpistrm, result, op0, op1, op2, ops );
+    break;
+  case INTRN_PCMPESTRI128:
+    Build_OP(TOP_pcmpestri, result, op0, op1, op2, op3, op4, ops);
+    break;
+  case INTRN_PCMPESTRM128:
+    Build_OP(TOP_pcmpestrm, result, op0, op1, op2, op3, op4, ops);
     break;
   }
 

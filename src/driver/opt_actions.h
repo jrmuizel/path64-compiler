@@ -284,6 +284,8 @@ extern void Process_Cray_Mp (void);
 
 extern void print_file_path (char *, int);	/* print path to named file */
 
+extern ABI get_platform_abi(void);
+
 extern int subverbose ;
 
 extern char *target_cpu;

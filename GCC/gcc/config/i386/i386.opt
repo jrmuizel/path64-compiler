@@ -201,6 +201,10 @@ msse4a
 Target Report Mask(SSE4A)
 Support MMX, SSE, SSE2, SSE3 and SSE4A built-in functions and code generation
 
+msse4_2
+Target Report Mask(SSE4_2)
+Support MMX, SSE, SSE2, SSE3, SSE4A, SSE4_1 and SSE4_2 built-in functions and code generation
+
 msseregparm
 Target RejectNegative Mask(SSEREGPARM)
 Use SSE register passing conventions for SF and DF mode

@@ -40,39 +40,39 @@
 		 * thus size is less of a concern.
 		 */
 typedef struct {
-    __uint64_t	fevnt_arg1;	    /* 	First argument 
+    uint64_t	fevnt_arg1;	    /* 	First argument 
 					(Zero if no arguments
 					for this event)
 				    */
-    __uint64_t	fevnt_pre_arg1;	    /* 	Raw arg1 value. 
+    uint64_t	fevnt_pre_arg1;	    /* 	Raw arg1 value. 
 					Zero for leb128 values.
 					For other values, same
 					as the fevent_arg1 value 
 				    */
-    __uint64_t	fevnt_arg2;	    /* 	Second argument 
+    uint64_t	fevnt_arg2;	    /* 	Second argument 
 					(Zero if one or 0 arguments).
 				    */
-    __uint64_t	fevnt_pre_arg2;	    /* 	Raw arg2 value.
+    uint64_t	fevnt_pre_arg2;	    /* 	Raw arg2 value.
 					Like fevnt_pre_arg1.
 				    */
-    __uint64_t	fevnt_arg3;	    /* 	Third argument 
+    uint64_t	fevnt_arg3;	    /* 	Third argument 
 					(zero if less than 3
 					arguments).
 				    */
-    __uint64_t	fevnt_pre_arg3;	    /* 	Raw arg3 value .
+    uint64_t	fevnt_pre_arg3;	    /* 	Raw arg3 value .
 					Like fevnt_pre_arg1.
 				    */
-    __uint64_t	fevnt_base;	    /* 	Section base address?
+    uint64_t	fevnt_base;	    /* 	Section base address?
 					Not filled in or used
 					by 
 					event_find_record() or
 					event_get_next_rec(). 
 				    */
-    __uint32_t	fevnt_type;	    /* 	Record type.
+    uint32_t	fevnt_type;	    /* 	Record type.
 					the EK_*  value of this
 					event.
 			 	    */
-    __uint32_t	fevnt_offset;	    /* 	Section offset.
+    uint32_t	fevnt_offset;	    /* 	Section offset.
 				       	incremented by 
 				       	event_get_next_rec()
 				       	by the length of the encoding
@@ -83,7 +83,7 @@ typedef struct {
 					incremented by the net number
 					of events bytes.) 
 				    */
-    __uint32_t	fevnt_index;	    /* 	text section index, not
+    uint32_t	fevnt_index;	    /* 	text section index, not
 					filled in or used by
 					event_find_record() or
 					event_get_next_rec(). 
@@ -99,7 +99,7 @@ typedef struct {
 		 */
 char *event_get_next_rec(
 	char *,			/* pointer into section */
-	__uint32_t ,		/* current offset into text section */
+	uint32_t ,		/* current offset into text section */
 	Full_Events *);		/* information from record */
 
 	/*******************************************************/
@@ -114,10 +114,10 @@ char *event_get_next_rec(
 		 * 
 		 * Returns EK_NULL if type not found.
 		 */
-__uint32_t event_find_record(
+uint32_t event_find_record(
 	char *,			/* pointer into the events section */
 	Full_Events *,		/* structure for events record info */
-	__uint32_t, 		/* event section type */
+	uint32_t, 		/* event section type */
 	char *);		/* end of the current events section */
 
 	/*******************************************************/
@@ -134,7 +134,7 @@ __uint32_t event_find_record(
 		 * buffer.
 		 * 
 		 */
-char *event_kind_string(__uint32_t );
+char *event_kind_string(uint32_t );
 
 	/*******************************************************/
 	/*******************************************************/

@@ -67,7 +67,7 @@
 #include <errno.h>
 #include <fortran.h>
 #include <sys/types.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <unistd.h>
 
 #ifdef _UNICOS

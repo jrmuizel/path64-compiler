@@ -145,9 +145,9 @@ int _xlate_expand_reg_info_internal_given_ptrs(
     Dwarf_Small                 instr;
     Dwarf_Small                 op;
     Dwarf_Small                 extOp;
-    __uint32_t                  reg;
-    __uint32_t                  reg2;
-    __uint32_t		   val32;
+    uint32_t                  reg;
+    uint32_t                  reg2;
+    uint32_t		   val32;
     Xuword		   offset;
     Uword                 storeInstrIndex;
     Uword                 storeInstrSize;
@@ -238,10 +238,10 @@ int _xlate_expand_reg_info_internal_given_ptrs(
 		  val1 = newLoc;
 		  reginfo += sizeof(Elf64_Addr);
 		} else {
-		  memcpy(&val32, reginfo, sizeof(__uint32_t));
+		  memcpy(&val32, reginfo, sizeof(uint32_t));
 		  val1 = val32;
 		  newLoc = val32;
-		  reginfo += sizeof(__uint32_t);
+		  reginfo += sizeof(uint32_t);
 		}
 		break;
 
@@ -270,7 +270,7 @@ int _xlate_expand_reg_info_internal_given_ptrs(
 		break;
 
 	    case DW_CFA_advance_loc4 :
-		{ __uint32_t adv;
+		{ uint32_t adv;
 		if(table_version <= XLATE_TB_OLD_V1) {
 		  /* old tables stored in little-endian order! silly. */
 		  adv = (unsigned char)reginfo[0];

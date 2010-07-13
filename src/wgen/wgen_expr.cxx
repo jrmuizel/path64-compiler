@@ -1573,7 +1573,7 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
         wn = NULL;
       }
       else {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	// The store target could be an INDIRECT_REF that kg++fe added to make
 	// the store write to the area pointed to by the fake first param.  If
 	// so, check that copying the object does not involve a copy
@@ -3869,6 +3869,18 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
       break;
     case GSBI_IX86_BUILTIN_INSERTQ:
       *iopc = INTRN_INSERTQ;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPISTRI128:
+      *iopc = INTRN_PCMPISTRI128;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPISTRM128:
+      *iopc = INTRN_PCMPISTRM128;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPESTRI128:
+      *iopc = INTRN_PCMPESTRI128;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPESTRM128:
+      *iopc = INTRN_PCMPESTRM128;
       break;
     default:
 unsupported:
