@@ -594,7 +594,7 @@ SET_TARGET_PROPERTIES(cc142
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/lib/cc142
     DEPENDS cc142
-    COMMAND ln -s ../bin/cc142 ${CMAKE_BINARY_DIR}/lib
+    COMMAND ${SYMLINK_COMMAND} ../bin/cc142 ${CMAKE_BINARY_DIR}/lib
 )
 
 add_custom_target(

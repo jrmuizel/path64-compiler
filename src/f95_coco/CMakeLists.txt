@@ -11,7 +11,7 @@ install(TARGETS coco
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/lib/coco
     DEPENDS coco
-    COMMAND ln -s ../bin/coco ${CMAKE_BINARY_DIR}/lib
+    COMMAND ${SYMLINK_COMMAND} ../bin/coco ${CMAKE_BINARY_DIR}/lib
 )
 
 add_custom_target(

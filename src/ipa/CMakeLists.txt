@@ -179,7 +179,7 @@ ADD_DEPENDENCIES(inline inline_hack)
 
 add_custom_command(
     OUTPUT   ${Path64_BINARY_DIR}/lib/inline
-    COMMAND ln -sf  ../bin/inline ${Path64_BINARY_DIR}/lib/inline
+    COMMAND ${SYMLINK_COMMAND} -f ../bin/inline ${Path64_BINARY_DIR}/lib/inline
 )
 
 add_custom_target(

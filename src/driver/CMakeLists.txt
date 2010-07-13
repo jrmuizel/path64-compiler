@@ -100,8 +100,8 @@ endif()
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/bin/pathf95
     DEPENDS pathcc
-    COMMAND ln -s pathcc ${CMAKE_BINARY_DIR}/bin/pathCC
-    COMMAND ln -s pathcc ${CMAKE_BINARY_DIR}/bin/pathf95
+    COMMAND ${SYMLINK_COMMAND} pathcc ${CMAKE_BINARY_DIR}/bin/pathCC
+    COMMAND ${SYMLINK_COMMAND} pathcc ${CMAKE_BINARY_DIR}/bin/pathf95
 )
 
 add_custom_target(

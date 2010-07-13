@@ -227,9 +227,11 @@ ENDIF()
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     SET(SHELL_EXT cmd)
+    SET(SYMLINK_COMMAND ${CMAKE_BINARY_DIR}/bin/symlink.exe)
     ADD_DEFINITIONS(-DPSC_FULL_VERSION="${PSC_FULL_VERSION}")
 ELSE()
     SET(SHELL_EXT sh)
+    SET(SYMLINK_COMMAND ln -s)
 ENDIF()
 # build runtime search paths
 include(${Path64_SOURCE_DIR}/cmake/Modules/GCCRuntimeDirs.cmake)

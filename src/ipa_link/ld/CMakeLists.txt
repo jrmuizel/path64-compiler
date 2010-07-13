@@ -86,7 +86,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DI
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/lib/ipa_link
     DEPENDS ld
-    COMMAND ln -s ../bin/ipa_link ${CMAKE_BINARY_DIR}/lib
+    COMMAND ${SYMLINK_COMMAND} ../bin/ipa_link ${CMAKE_BINARY_DIR}/lib
 )
 
 add_custom_target(

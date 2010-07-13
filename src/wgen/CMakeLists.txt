@@ -95,7 +95,7 @@ ENDIF()
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/lib/wgen42
     DEPENDS wgen42
-    COMMAND ln -s ../bin/wgen42 ${CMAKE_BINARY_DIR}/lib
+    COMMAND ${SYMLINK_COMMAND} ../bin/wgen42 ${CMAKE_BINARY_DIR}/lib
 )
 
 add_custom_target(

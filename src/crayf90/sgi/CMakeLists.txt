@@ -94,7 +94,7 @@ target_link_libraries (mfef95 comutil fe90 fe90-pathf arith cif pathfortran-stat
 add_custom_command(
     OUTPUT ${Path64_BINARY_DIR}/lib/mfef95-stage
     COMMAND rm -f ${Path64_BINARY_DIR}/lib/mfef95
-    COMMAND ln -fs ../bin/mfef95 ${Path64_BINARY_DIR}/lib/mfef95
+    COMMAND ${SYMLINK_COMMAND} -f ../bin/mfef95 ${Path64_BINARY_DIR}/lib/mfef95
     COMMAND touch ${Path64_BINARY_DIR}/lib/mfef95-stage
 )
 
@@ -148,10 +148,10 @@ target_link_libraries (mfef95-tmp comutil fe90 fe90-tmp arith cif ${MFEF95_TMP_F
 
 add_custom_command(
     OUTPUT ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION} ${Path64_BINARY_DIR}/lib/mfef95 ${Path64_BINARY_DIR}/lib/be ${Path64_BINARY_DIR}/bin/pathf90
-    COMMAND ln -s . ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
-    COMMAND ln -s ../bin/mfef95-tmp ${Path64_BINARY_DIR}/lib/mfef95
-    COMMAND ln -s ../bin/be ${Path64_BINARY_DIR}/lib/be
-    COMMAND ln -s pathcc ${Path64_BINARY_DIR}/bin/pathf90
+    COMMAND ${SYMLINK_COMMAND} . ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+    COMMAND ${SYMLINK_COMMAND} ../bin/mfef95-tmp ${Path64_BINARY_DIR}/lib/mfef95
+    COMMAND ${SYMLINK_COMMAND} ../bin/be ${Path64_BINARY_DIR}/lib/be
+    COMMAND ${SYMLINK_COMMAND} pathcc ${Path64_BINARY_DIR}/bin/pathf90
 )
 # TODO : Fix the intrinsic_module_path since I know this isn't correct
 add_custom_target(
