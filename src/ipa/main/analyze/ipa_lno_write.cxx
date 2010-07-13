@@ -67,7 +67,7 @@
 #include "ipa_option.h"
 #include "ipa_summary.h"
 #include "linker.h" 
-#include "process.h" 
+#include "process_p.h" 
 #include "ipo_defs.h" 
 #include "ipc_symtab_merge.h"
 #include "ipa_reshape.h"

@@ -53,7 +53,7 @@
 #include <sys/param.h>                  // for MAXPATHLEN
 
 #include "linker.h"                     // std. linker's headers
-#include "process.h"                    // for tmpdir, etc.
+#include "process_p.h"                    // for tmpdir, etc.
 #include "main.h"                       // for arg_vectors
 #include "ipc_weak.h"
 

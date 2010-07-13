@@ -33,7 +33,7 @@
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include "linker.h"			/* linker headers */
-#include "process.h"                    /* For create_tmpdir. */
+#include "process_p.h"                    /* For create_tmpdir. */
 
 #include "errors.h"			/* for Set_Error_Phase() */
 #include "glob.h"			/* for Cleanup_Files() */
