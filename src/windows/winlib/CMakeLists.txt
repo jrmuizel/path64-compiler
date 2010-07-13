@@ -9,9 +9,11 @@ set(winlib_SRC	"gethostname.c"
 				"rlimit.c"
 				"strtok_r.c"
 				"stubs.c"
+				"symlink.c"
 				"tempname.c"
 				"times.c"
 				"uname.c"
+				"unix2winpath.c"
 				"wait.c"
 				"win2unixpath.c")
 
