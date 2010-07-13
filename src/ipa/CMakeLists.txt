@@ -168,6 +168,7 @@ set_property(TARGET ipa PROPERTY COMPILE_DEFINITIONS MONGOOSE_BE;_SUPPORT_IPA;__
 set_property(TARGET ipl PROPERTY COMPILE_DEFINITIONS MONGOOSE_BE;IPA_SUMMARY;__STDC_FORMAT_MACROS;__MIPS_AND_IA64_ELF_H)
 
 target_link_libraries(ipa be ipl)
+target_link_libraries(ipl be)
 
 ADD_DEPENDENCIES(ipl generate_preg_list)
 
