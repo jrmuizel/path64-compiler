@@ -1,5 +1,5 @@
 
-set(winlib_SRC	"gethostname.c"
+set(winlib_SRC	
 				"mkstemp.c"
 				"mmap.c"
 				"mmap64.c"
@@ -25,7 +25,8 @@ ADD_DEFINITIONS(
 
 include_directories(BEFORE .)
 
-ADD_LIBRARY(winlib STATIC ${winlib_SRC})
+ADD_LIBRARY(winlib SHARED ${winlib_SRC})
+target_link_libraries(winlib ws2_32)
 
 # SET_TARGET_PROPERTIES(winlib PROPERTIES OUTPUT_NAME "winlib")
 
