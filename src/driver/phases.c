@@ -1847,7 +1847,11 @@ add_final_ld_args (string_list_t *args)
             add_library(args, "std");  //new runtime
 #else
             if (option_was_seen(O_static) || option_was_seen(O__static)){
-                add_arg(args, "--start-group");
+	        if(ipa != TRUE){
+                    add_arg(args, "--start-group");
+	        } else {
+	            add_arg(args, "-Wl,--start-group");
+	        }
 #  ifdef CONFIGURED_LIBGCC_DIR
                 add_arg(args, "-L%s", CONFIGURED_LIBGCC_DIR);
 #  endif
@@ -1857,7 +1861,12 @@ add_final_ld_args (string_list_t *args)
                 add_library(args, "gcc");
                 add_library(args, "gcc_eh");
                 add_library(args, "c");  /* the above libs should be grouped together */
-                add_arg(args, "--end-group");
+
+                if(ipa != TRUE){
+                    add_arg(args, "--end-group");
+                } else {
+                    add_arg(args, "-Wl,--end-group");
+                }
                  
                 if(invoked_lang == L_CC){
 #  ifdef CONFIGURED_LIBSUPCXX_DIR
