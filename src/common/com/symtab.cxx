@@ -43,6 +43,8 @@
 #if !defined(__FreeBSD__)
 #include <alloca.h>
 #endif
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
 
 #include <ext/hash_map>			// stl hash table
 #include <ext/algorithm>
@@ -51,7 +53,7 @@
 #include "config.h"
 #include "tracing.h"			// for DBar
 #include "cxx_memory.h"			// for CXX_NEW
-
+#include "config_targ.h"
 #include "symtab.h"
 #include "irbdata.h"                    // for INITO_st_idx
 #include "const.h"                      // for MAX_SYMBOLIC_CONST_NAME_LEN
@@ -2167,7 +2169,7 @@ PU::Print (FILE *f) const
 	     "\tMisc. Info (misc) %d\n",
 	     flags, lexical_level, src_lang, target_idx, misc); 
 #else
-    fprintf (f, ", flags 0x%016llx,\n"
+    fprintf (f, ", flags 0x%016"SCNx64",\n"
 	     "\tlexical level %d, LANG 0x%02x, TARGET_INFO %d\n",
 	     flags, lexical_level, src_lang, target_idx); 
 #endif
@@ -2516,7 +2518,7 @@ TY_IDX Quad_Type, Void_Type;
 #ifndef TARG_ST
 TY_ID XFE_int_Type, FE_double_Type;
 #endif
-TY_IDX Spill_Int_Type, Spill_Float_Type;
+TY_IDX Spill_Int_Type, Spill_Ptr_Type, Spill_Float_Type;
 #ifdef KEY
 TY_IDX Spill_Int32_Type;
 TY_IDX Spill_Float32_Type;
@@ -2781,6 +2783,8 @@ Create_Special_Global_Symbols ()
 	    Spill_Int_Type = ty_idx;
 	} else if ( i == Spill_Float_Mtype ) {
 	    Spill_Float_Type = ty_idx;
+	} else if (i == Spill_Ptr_Mtype) {
+	    Spill_Ptr_Type = ty_idx;
 	}
 	if ( i == MTYPE_FQ || i == MTYPE_F16 )
 	    Quad_Type = ty_idx;
@@ -2884,6 +2888,7 @@ Initialize_Special_Global_Symbols ()
     Create_Special_Global_Symbols ();
 	    
     Spill_Int_Type = MTYPE_To_TY (Spill_Int_Mtype);
+    Spill_Ptr_Type = MTYPE_To_TY (Spill_Ptr_Mtype);
     Spill_Float_Type = MTYPE_To_TY (Spill_Float_Mtype);
 #ifdef KEY
     /* Bug#246

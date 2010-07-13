@@ -76,7 +76,7 @@
 #define Reset_OP_visited_thr(o)                Reset_OP_flag1(o)
 
 BOOL Trace_THR = FALSE;
-
+#ifndef TARG_ST
 // ======================================================================
 // Remove_Unnecessary_Check_Instrs
 //
@@ -119,7 +119,7 @@ Remove_Unnecessary_Check_Instrs(BB *bb)
     } /* OP_load(op) && ... */
   } /* FOR_ALL_BB_OPs_REV */
 }
-
+#endif
 // ======================================================================
 // CG_THR::Check_THR_Profitability
 //

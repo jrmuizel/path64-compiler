@@ -1,10 +1,9 @@
-#include "W_alloca.h"
 #define GCOV_LINKAGE
 #include <time.h> // for time()
-#include <W_alloca.h> // for alloca()
+#include "cxx_memory.h"
 #include "gcov_coverage.h"
-#include "gcov-io.h"
 #include "gcov_hwint.h"
+#include "gcov-io.h"
 #include "gcov-io.c"
 #include "srcpos.h"
 #include "cgdwarf.h"

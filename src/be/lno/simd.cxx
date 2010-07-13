@@ -1382,12 +1382,19 @@ BOOL Is_Vectorizable_Intrinsic (WN *wn)
 {
   INTRINSIC intrn = WN_intrinsic(wn);
   
-  if (intrn == INTRN_SUBSU2 ||
+  if (
+#ifndef TARG_ST
+      intrn == INTRN_SUBSU2 ||
+#endif
       intrn == INTRN_F4SIGN ||
       intrn == INTRN_F8SIGN )
     return TRUE;
 
-  if (!OPT_Fast_Math || Is_Target_32bit())
+  if (!OPT_Fast_Math 
+#ifndef TARG_ST
+      || Is_Target_32bit()
+#endif
+      )
     return FALSE;
 
   switch (intrn) {
@@ -4720,9 +4727,11 @@ static void Simd_Vectorize_SimdOp_And_Kids(WN *simd_op, TYPE_ID vmtype, BOOL *in
      WN_set_rtype(simd_op, vec_rtype);
      WN_set_desc(simd_op, vec_desc);
      if(!invarkid[0]){
-         WN *operand0 = WN_kid0(simd_op);
+         WN *operand0 = WN_kid0(uimd_op);
+#ifndef TARG_ST
          if(WN_operator(operand0)==OPR_SHUFFLE)
            operand0 = WN_kid0(operand0); //shuffle, down a level
+#endif
          if (!MTYPE_is_vector(WN_rtype(operand0)))
             WN_set_rtype(operand0, vec_desc);
          if(!MTYPE_is_vector(WN_desc(operand0)) && WN_desc(operand0) != MTYPE_V)
@@ -4731,8 +4740,10 @@ static void Simd_Vectorize_SimdOp_And_Kids(WN *simd_op, TYPE_ID vmtype, BOOL *in
   }//end CVT
 
   WN *istore = LWN_Get_Parent(simd_op);
+#ifndef TARG_ST
   if(WN_operator(istore) == OPR_SHUFFLE)
      istore =  LWN_Get_Parent(istore); //up one level
+#endif
   if (WN_operator(istore) != OPR_STID && WN_operator(istore) != OPR_CVT &&
         WN_operator(istore) != OPR_TRUNC &&
         !OPCODE_is_compare(WN_opcode(istore))) {

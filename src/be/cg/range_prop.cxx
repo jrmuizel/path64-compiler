@@ -32,6 +32,8 @@
  *
  * ====================================================================
  */
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
 
 #include "defs.h"
 #include "tracing.h"

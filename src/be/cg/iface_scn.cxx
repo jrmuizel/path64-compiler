@@ -704,8 +704,13 @@ Set_Parameter_Info(
     	if (Preg_Offset_Is_Float(PLOC_reg(ploc))) {
       		flt_regs |= (1 << (PLOC_reg(ploc) - Float_Preg_Min_Offset));
     	}
+#ifdef TARG_ST
+        ploc = func_entry ? Next_Input_PLOC_Reg ()
+                          : Next_Output_PLOC_Reg ();
+#else
         ploc = func_entry ? Next_Input_PLOC_Reg (ploc)
                           : Next_Output_PLOC_Reg (ploc);
+#endif
     }
 
   }

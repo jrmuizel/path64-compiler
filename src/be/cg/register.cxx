@@ -635,7 +635,10 @@ REGISTER_Begin(void)
 #endif
   }
   Initialize_Register_Subclasses();
+
+#ifndef TARG_ST
   Init_Mtype_RegClass_Map();
+#endif
 #ifdef TARG_ST
   // [CG] Implemented in targ_register.cxx.
   CGTARG_REGISTER_Begin();

@@ -607,7 +607,7 @@ WN_Tree_Type(const WN *wn)
          ty = WN_ty(wn);
          break;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       case OPR_REPLICATE:
       case OPR_REDUCE_ADD:
       case OPR_REDUCE_MPY:

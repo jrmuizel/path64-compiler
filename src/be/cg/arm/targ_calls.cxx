@@ -25,7 +25,7 @@
 #include "erbe.h"
 #include "glob.h"
 #include "tracing.h"
-#include "config_target.h"
+#include "config_targ.h"
 #include "config.h"
 
 #include "symtab.h"

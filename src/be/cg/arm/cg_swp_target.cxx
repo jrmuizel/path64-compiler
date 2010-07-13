@@ -159,7 +159,7 @@ BOOL Prepare_Loop_For_SWP_2(CG_LOOP& cl, bool trace)
  * ====================================================================
  */
 void
-SWP_Loop_Init_Fini(bool is_doloop,
+SWP_Loop_Init_Fini(BOOL is_doloop,
 		   INT stage_count,
 		   OPS *prolog_ops,
 		   OPS *body_ops,

@@ -688,93 +688,8 @@ Fixup_Ldst_Offset (OP *ldst_op, INT64 addiu_const, INT64 multiplier,
 // or store OPs that have been moved across corresponding addiu OPs. For
 // all such load/store OPs, adjust their offset field.
 // ======================================================================
-#ifdef TARG_ST
-  // Handle fwd/bwd cases
-void
-HB_Schedule::Adjust_Ldst_Offsets (BOOL is_fwd)
-#else
-void
-HB_Schedule::Adjust_Ldst_Offsets (void)
-#endif
-{
-#ifdef TARG_ST
-  // Handle fwd/bwd cases
-  for (INT i = (is_fwd) ? 0 : VECTOR_count(_sched_vector) - 1; 
-       (is_fwd) ? i < VECTOR_count(_sched_vector) : i >= 0; 
-       (is_fwd) ? i++ : i--) 
-#else
-  for (INT i = VECTOR_count(_sched_vector)-1; i >= 0; i--)
-#endif
-  {
-    OP *op = OP_VECTOR_element(_sched_vector, i);
-    OPSCH *opsch = OP_opsch(op, _hb_map);
-    Set_OPSCH_visited (opsch);
-    if (!OPSCH_addiu (opsch)) continue;
-    INT64 addiu_const = TN_value (OP_opnd(op,1));
-    ARC_LIST *arcs;
-    for (arcs = OP_succs(op); arcs != NULL; arcs = ARC_LIST_rest(arcs)) {
-      ARC *arc = ARC_LIST_first(arcs);
-#if defined( KEY) && !defined(TARG_ST)
-      if( ARC_kind(arc) != CG_DEP_REGIN ){
-	continue;
-      }
-#endif
-      OP *succ_op = ARC_succ(arc);
-      OPSCH *succ_opsch = OP_opsch (succ_op, _hb_map);
-      if (OPSCH_ldst (succ_opsch) && OPSCH_visited (succ_opsch)
-#if defined( KEY) && !defined(TARG_ST)
-	  // Don't Fixup_Ldst_Offset if the ldst/addiu were swapped due to copy
-	  // insertion.
-	  && (!HBS_Relax_Reganti() ||
-	      Is_Ldst_Addiu_Pair(opsch, succ_opsch, op, succ_op, arc))
-#endif
-	 ) {
-#ifdef TARG_ST
-	// FdF 15/12/2003: Do not call twice when there are a REGANTI
-	// and a MISC dependence for example (see Is_Ldst_addiu_Pair).
-	if (ARC_kind(arc) == CG_DEP_REGIN || ARC_kind(arc) == CG_DEP_REGANTI)
-#endif
-	Fixup_Ldst_Offset (succ_op, addiu_const, +1, type());
-#if defined( KEY) && !defined(TARG_ST)
-	Set_hbs_must_emit_sched();
-#endif
-      }
-    }
-    for (arcs = OP_preds(op); arcs != NULL; arcs = ARC_LIST_rest(arcs)) {
-      ARC *arc = ARC_LIST_first(arcs);
-      OP *pred_op = ARC_pred(arc);
-#if defined( KEY) && !defined(TARG_ST)
-      if (ARC_kind(arc) != CG_DEP_REGANTI){
-	// We only care about any REGANTI really.
-	// And there may be multiple arcs between two nodes.
-	// In that case, the following will update the offset many times.
-	// To avoid such cases, we will skip arcs of kind CG_DEP_MISC.
-	continue;
-      }
-#endif /* KEY */
-      OPSCH *pred_opsch = OP_opsch (pred_op, _hb_map);
-      if (OPSCH_ldst (pred_opsch) && !OPSCH_visited (pred_opsch)
-#if defined( KEY) && !defined(TARG_ST)
-	  // Don't Fixup_Ldst_Offset if the ldst/addiu were swapped due to copy
-	  // insertion.
-	  && (!HBS_Relax_Reganti() ||
-	      Is_Ldst_Addiu_Pair(pred_opsch, opsch, pred_op, op, arc))
-#endif
-	 ) {
-#ifdef TARG_ST
-	// FdF 15/12/2003: Do not call more than once
-	if (ARC_kind(arc) == CG_DEP_REGIN || ARC_kind(arc) == CG_DEP_REGANTI)
-#endif
-	Fixup_Ldst_Offset (pred_op, addiu_const, -1, type());
-#if defined( KEY) && !defined(TARG_ST)
-	Set_hbs_must_emit_sched();
-#endif
-      }
-    }
-  }
-}
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY) 
 void HB_Schedule::Adjust_Ldst_Offsets( BOOL is_fwd )
 {
   for( INT i = is_fwd ? 0 : VECTOR_count(_sched_vector) - 1; 
@@ -798,11 +713,19 @@ void HB_Schedule::Adjust_Ldst_Offsets( BOOL is_fwd )
       OPSCH *succ_opsch = OP_opsch (succ_op, _hb_map);
       if (OPSCH_ldst (succ_opsch) && OPSCH_visited (succ_opsch)
 	  // Don't Fixup_Ldst_Offset if the ldst/addiu were swapped due to copy
+#ifndef TARG_ST
 	  // insertion.
 	  && (!HBS_Relax_Reganti() ||
-	      Is_Ldst_Addiu_Pair(opsch, succ_opsch, op, succ_op, arc))) {
+	      Is_Ldst_Addiu_Pair(opsch, succ_opsch, op, succ_op, arc))
+#endif
+          ) {
+#ifdef TARG_ST
+	// FdF 15/12/2003: Do not call twice when there are a REGANTI
+	// and a MISC dependence for example (see Is_Ldst_addiu_Pair).
+	if (ARC_kind(arc) == CG_DEP_REGIN || ARC_kind(arc) == CG_DEP_REGANTI)
+#endif
 	Fixup_Ldst_Offset (succ_op, addiu_const, +1, type());
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	Set_hbs_must_emit_sched();
 #endif
       }
@@ -823,11 +746,19 @@ void HB_Schedule::Adjust_Ldst_Offsets( BOOL is_fwd )
       OPSCH *pred_opsch = OP_opsch (pred_op, _hb_map);
       if (OPSCH_ldst (pred_opsch) && !OPSCH_visited (pred_opsch)
 	  // Don't Fixup_Ldst_Offset if the ldst/addiu were swapped due to copy
+#ifndef TARG_ST
 	  // insertion.
 	  && (!HBS_Relax_Reganti() ||
-	      Is_Ldst_Addiu_Pair(pred_opsch, opsch, pred_op, op, arc))) {
+	      Is_Ldst_Addiu_Pair(pred_opsch, opsch, pred_op, op, arc))
+#endif
+          ) {
+#ifdef TARG_ST
+	// FdF 15/12/2003: Do not call more than once
+	if (ARC_kind(arc) == CG_DEP_REGIN || ARC_kind(arc) == CG_DEP_REGANTI)
+#endif
+
 	Fixup_Ldst_Offset (pred_op, addiu_const, -1, type());
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	Set_hbs_must_emit_sched();
 #endif
       }
@@ -862,7 +793,12 @@ HB_Schedule::Fixup_Reganti (OP *op, BOOL is_fwd)
 
     if (ARC_kind(arc) == CG_DEP_REGANTI &&
 	// Scheduler can swap ldst/addiu pairs.
-	!Is_Ldst_Addiu_Pair(pred_opsch, opsch, pred_op, op, arc)) {
+#ifdef TARG_ST
+        !Is_Ldst_Addiu_Pair(pred_opsch, opsch, pred_op, op)
+#else 
+	!Is_Ldst_Addiu_Pair(pred_opsch, opsch, pred_op, op, arc)
+#endif
+        ) {
       if (OPSCH_scheduled(pred_opsch)) {
 	// REGANTI dependence is violated.  Create new TN for renaming.
 	old_tn = OP_opnd(pred_op, ARC_opnd(arc));
@@ -937,7 +873,11 @@ HB_Schedule::Ignore_Arcs (OPSCH *pred_opsch, OPSCH *succ_opsch, ARC_LIST *arcs)
 	  return FALSE;
 	// The scheduler already knows how to swap the OPs of a ldst-addiu
 	// pair.
+#ifdef TARG_ST
+        if (Is_Ldst_Addiu_Pair(pred_opsch, succ_opsch, pred_op, succ_op))
+#else
 	if (Is_Ldst_Addiu_Pair(pred_opsch, succ_opsch, pred_op, succ_op, arc))
+#endif
 	  return FALSE;
 	// Only GTNs should have REGANTI.
 	if (!TN_is_global_reg(tn))	// todo: revisit this restriction
@@ -1944,7 +1884,7 @@ HB_Schedule::Add_OP_To_Sched_Vector (OP *op, BOOL is_fwd)
   // Remove <op> from Ready_Vector.
   VECTOR_Delete_Element (_ready_vector, op);
 
-#ifdef KEY
+#if defined( KEY) //&& !defined(TARG_ST)
   Reset_OPSCH_ready(opsch);
 
   // Insert copy to fix REGANTI dependence.

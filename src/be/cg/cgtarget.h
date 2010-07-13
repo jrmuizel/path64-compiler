@@ -854,12 +854,14 @@ inline CGTARG_ASSOC_BASE_FNC CGTARG_Assoc_Base_Fnc(TOP topcode)
 }
 #endif
 extern INT CGTARG_Copy_Operand(OP *op);
-
 inline BOOL CGTARG_Is_Copy(OP *op)
 {
+    #ifdef TARG_ST
+  return OP_Copy_Operand(op) >= 0;
+#else
   return CGTARG_Copy_Operand(op) >= 0;
+#endif
 }
-
 inline BOOL CGTARG_Is_Preference_Copy(OP* op) 
 {
   if (OP_copy(op)) {
@@ -877,7 +879,6 @@ inline BOOL CGTARG_Is_Preference_Copy(OP* op)
   }
   return FALSE;
 }
-
 inline TN *CGTARG_Copy_Operand_TN(OP *op)
 {
   INT iopnd = CGTARG_Copy_Operand(op);

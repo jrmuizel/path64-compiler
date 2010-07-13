@@ -120,6 +120,19 @@ BE_EXPORTED extern char *Targ_Name (TARGET_PROCESSOR target);
 #define Is_Target_armv5()	(Target==TARGET_armv5)
 #define Is_Target_armv6()	(Target==TARGET_armv6)
 
+#define Is_Target_x86_64()	(FALSE)
+#define Is_Target_SSE()        (FALSE)
+#define Is_Target_SSE2()       (FALSE)
+#define Is_Target_SSE3()       (FALSE)
+#define Is_Target_3DNow()      (FALSE)
+#define Is_Target_SSE4a()      (FALSE)
+#define Is_Target_Pentium4()   (FALSE)
+#define Is_Target_EM64T()	(FALSE)
+#define Is_Target_Core()	(FALSE)
+#define Is_Target_Wolfdale()	(FALSE)
+#define Is_Target_Anyx86()     (FALSE)
+#define Target_x87_precision()	(FALSE)
+#define Is_Target_Barcelona()  (FALSE)
 /* ========== */
 /* Target ISA */
 /* ========== */

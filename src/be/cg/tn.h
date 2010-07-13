@@ -868,11 +868,6 @@ extern BOOL Potential_Immediate_TN_Expr (
   struct tn *tn1,	/* The primary TN (constant) */
   INT32	disp		/* Displacement from value */
 );
-
-#include "tn_targ.h"
-/* Initialize machine specific dedicated TNs */
-extern void Init_Dedicated_TNs (void);
-
 #ifdef TARG_ST
 inline const char * TN_RELOCS_Syntax (mUINT8 rc)
 {
@@ -884,6 +879,11 @@ inline const char * TN_RELOCS_Name (mUINT8 rc)
   return ISA_RELOC_Name(rc);
 }
 #endif
+
+#include "tn_targ.h"
+/* Initialize machine specific dedicated TNs */
+extern void Init_Dedicated_TNs (void);
+
 extern BOOL TN_Use_Base_ST_For_Reloc (INT reloc, ST *st);
 #ifdef TARG_ST
 extern INT  TN_Relocs_In_Asm (TN *t, ST *st, vstring *buf, INT64 *val);

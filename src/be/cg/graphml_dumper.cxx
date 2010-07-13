@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
+
 
 #include "graphml_dumper.h"
 #include "mempool.h"

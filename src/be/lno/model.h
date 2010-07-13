@@ -480,7 +480,18 @@ static char *model_rcs_id = "$Source: ../../be/lno/SCCS/s.model.h $ $Revision: 1
 #ifdef TARG_X8664
 #define	Target_INTRs	16
 #endif
+#ifdef TARG_ST
+/* ST220 integer registers */
+#define	Target_INTRs	64
 
+/* ST220 ptr registers */
+#define	Target_PTRs	0
+
+/* ST220 Branch registers */
+#define	Target_BRs	8
+
+#endif
+enum REF_TYPE {REF_INTEGER, REF_POINTER, REF_BOOLEAN, REF_FLOAT};
 typedef HASH_TABLE<WN*,INT> WN2INT;
 
 // full declarations are in "ti_res_count.h"
@@ -508,17 +519,39 @@ class LOOP_MODEL {
   INT _stripdepth_inner;
   INT *_new_order_inner;
   INT _inner_loop_inner;
+  #ifdef TARG_ST
   INT _num_fp_array_refs;  // how many fp array refs in the loop pre-unrolling
   INT _num_fp_scalar_refs; // how many fp scalar refs in the loop pre-unrolling
   INT _num_int_array_refs;  // how many int array refs in the loop pre-unrolling
   INT _num_int_scalar_refs; // how many int scalar refs in the loop pre-unrolling
+  INT _num_ptr_array_refs;  // how many array address refs in the loop pre-unrolling
+  INT _num_ptr_scalar_refs; // how many scalar address refs in the loop pre-unrolling
+  INT _num_bool_array_refs;  // how many array boolean refs in the loop pre-unrolling
+  INT _num_bool_scalar_refs;  // how many scalar boolean refs in the loop pre-unrolling
+#else
+  INT _num_fp_array_refs;  // how many fp array refs in the loop pre-unrolling
+  INT _num_fp_scalar_refs; // how many fp scalar refs in the loop pre-unrolling
+  INT _num_int_array_refs;  // how many int array refs in the loop pre-unrolling
+  INT _num_int_scalar_refs; // how many int scalar refs in the loop pre-unrolling
+#endif
   BOOL *_can_be_inner;
   INT _num_loops;
   double _num_cycles_inner;
+  #ifdef TARG_ST
   INT _num_fp_regs_inner;
   INT _num_fp_refs_inner;
   INT _num_int_regs_inner;
   INT _num_int_refs_inner;
+  INT _num_ptr_regs_inner;
+  INT _num_ptr_refs_inner;
+  INT _num_bool_regs_inner;
+  INT _num_bool_refs_inner;
+#else
+  INT _num_fp_regs_inner;
+  INT _num_fp_refs_inner;
+  INT _num_int_regs_inner;
+  INT _num_int_refs_inner;
+#endif
   INT _unroll_prod_inner;
   INT64 *_est_num_iterations;  // how many iterations in each loop
   INT *_required_unroll;       // input: >0 -> must unroll by that amount
@@ -534,10 +567,21 @@ class LOOP_MODEL {
   INT _stripdepth;     // result, cache blocking
   INT _inner_loop;     // results
   double _num_cycles;     // results
+  #ifdef TARG_ST
   INT _num_fp_regs;    // results
   INT _num_fp_refs;    // results
   INT _num_int_regs;    // results
   INT _num_int_refs;    // results
+  INT _num_ptr_regs;    // results
+  INT _num_ptr_refs;    // results
+  INT _num_bool_regs;    // results
+  INT _num_bool_refs;    // results
+#else
+  INT _num_fp_regs;    // results
+  INT _num_fp_refs;    // results
+  INT _num_int_regs;    // results
+  INT _num_int_refs;    // results
+#endif
   INT _num_tlb;    // results
   INT _unroll_prod;    // results
 
@@ -560,10 +604,21 @@ class LOOP_MODEL {
      double *num_fp_instr);
   static INT FP_Cycles_Intrinsic(WN *wn,TI_RES_COUNT *resource_count,
      double *num_fp_instr);
+#ifdef TARG_ST
   INT Unique_Unstored_Fp_Scalar_Refs(WN *wn, class ARRAY_REF *ar,
 					SX_INFO *pi);
   INT Unique_Unstored_Int_Scalar_Refs(WN *wn, class ARRAY_REF *ar,
 					SX_INFO *pi);
+  INT Unique_Unstored_Ptr_Scalar_Refs(WN *wn, class ARRAY_REF *ar,
+					SX_INFO *pi);
+  INT Unique_Unstored_Bool_Scalar_Refs(WN *wn, class ARRAY_REF *ar,
+					SX_INFO *pi);
+#else
+  INT Unique_Unstored_Fp_Scalar_Refs(WN *wn, class ARRAY_REF *ar,
+					SX_INFO *pi);
+  INT Unique_Unstored_Int_Scalar_Refs(WN *wn, class ARRAY_REF *ar,
+					SX_INFO *pi);
+#endif
   void Try_Inner(BOOL *can_be_unrolled, INT outermost_can_be_tiled,
 		 INT inner, INT num_loops);
   void Try_Unroll(BOOL *can_be_unrolled, INT inner, INT num_loops,
@@ -589,8 +644,12 @@ class LOOP_MODEL {
   double _latency_cycles;  // bound due to latency 
   INT _base_fp_regs;  // how many regs needed to keep pipeline full
   INT _base_int_regs;  // how many int regs needed in each inner loop
+  INT _base_ptr_regs;  // how many registers needed for addresses
+  INT _base_bool_regs; // how many boolean registers needed
   INT _scalar_fp_regs;
   INT _scalar_int_regs;
+  INT _scalar_ptr_regs;
+  INT _scalar_bool_regs;
   double _num_mem_units;
 
   enum MODEL_LIMIT {MODEL_LIMIT_UNSET, MODEL_LIMIT_IDEAL, MODEL_LIMIT_RES,
@@ -598,10 +657,21 @@ class LOOP_MODEL {
   MODEL_LIMIT _model_limit;
 public:
   friend class REGISTER_MODEL;
+  #ifdef TARG_ST
   INT Num_Fp_Regs() const {return _num_fp_regs;}
   INT Num_Fp_Refs() const {return _num_fp_refs;}
   INT Num_Int_Regs() const {return _num_int_regs;}
   INT Num_Int_Refs() const {return _num_int_refs;}
+  INT Num_Ptr_Regs() const {return _num_ptr_regs;}
+  INT Num_Ptr_Refs() const {return _num_ptr_refs;}
+  INT Num_Bool_Regs() const {return _num_bool_regs;}
+  INT Num_Bool_Refs() const {return _num_bool_refs;}
+#else
+  INT Num_Fp_Regs() const {return _num_fp_regs;}
+  INT Num_Fp_Refs() const {return _num_fp_refs;}
+  INT Num_Int_Regs() const {return _num_int_regs;}
+  INT Num_Int_Refs() const {return _num_int_refs;}
+#endif
   INT Num_TLB() const {return _num_tlb;}
   static INT Model_No() {return _model_no;}
   INT Block_Number(INT i) const { return _block_number[i];}
@@ -632,7 +702,11 @@ public:
              INT outermost_can_be_tiled, 
              class ARRAY_DIRECTED_GRAPH16 *array_graph,
              class SX_INFO *pi, INT SNL_Depth,
-	     HASH_TABLE<WN *,BIT_VECTOR *> *invar_table); 
+	     HASH_TABLE<WN *,BIT_VECTOR *> *invar_table);
+ #ifdef TARG_ST
+  void Initialize_Machine_Model_Parameters ();
+#endif
+
   ~LOOP_MODEL();
 };
 
@@ -754,11 +828,24 @@ public:
   ARRAY_REF_LIST(MEM_POOL *pool, SYMBOL *base_array) :
     _pool(pool), Base_Array(base_array) { _is_scalar_expanded = FALSE; }
   ARRAY_REF_LIST(ARRAY_REF_LIST *orig, MEM_POOL *pool); 
+#ifdef TARG_ST
   void Calc_Regs_And_Refs(
 	INT *num_fp_regs, INT *num_fp_refs,
 	INT *num_fp_variant_stores, INT *num_fp_invariant_stores,
 	INT *num_int_regs, INT *num_int_refs,
-	INT *num_int_variant_stores, INT *num_int_invariant_stores) ;
+	INT *num_int_variant_stores, INT *num_int_invariant_stores,
+	INT *num_ptr_regs, INT *num_ptr_refs,
+	INT *num_ptr_variant_stores, INT *num_ptr_invariant_stores,
+	INT *num_bool_regs, INT *num_bool_refs,
+	INT *num_bool_variant_stores, INT *num_bool_invariant_stores
+#else
+  void Calc_Regs_And_Refs(
+	INT *num_fp_regs, INT *num_fp_refs,
+	INT *num_fp_variant_stores, INT *num_fp_invariant_stores,
+	INT *num_int_regs, INT *num_int_refs,
+	INT *num_int_variant_stores, INT *num_int_invariant_stores);
+#endif
+	) ;
   INT Conflict_Refs(INT max_dim, BOOL *can_be_unrolled, INT num_loops);
   void Remove_Cse(INT inner, INT max_dist, INT step);
   void Remove_Invariants(INT loop_no);
@@ -766,8 +853,15 @@ public:
   void Unroll(INT loop_no, INT num_copies);
   INT Num_Invariants(INT loop_no);
   BOOL Is_Scalar_Expanded() const { return _is_scalar_expanded;}
+#ifdef TARG_ST
   INT Num_Fp_Refs() const;
   INT Num_Int_Refs() const;
+  INT Num_Ptr_Refs() const;
+  INT Num_Bool_Refs() const;
+#else
+  INT Num_Fp_Refs() const;
+  INT Num_Int_Refs() const;
+#endif
   SYMBOL *Base_Array;
   void Print(FILE *fp) const;
   ~ARRAY_REF_LIST();
@@ -790,11 +884,24 @@ typedef STACK<DO_LOOP_INFO *> DLI_STACK;
 class ARRAY_REF
 {
 public:
+ #ifdef TARG_ST
+  void Calc_Regs_And_Refs(
+	INT *num_fp_regs, INT *num_fp_refs,
+	INT *num_fp_variant_stores, INT *num_fp_invariant_stores,
+	INT *num_int_regs, INT *num_int_refs,
+	INT *num_int_variant_stores, INT *num_int_invariant_stores,
+	INT *num_ptr_regs, INT *num_ptr_refs,
+	INT *num_ptr_variant_stores, INT *num_ptr_invariant_stores,
+	INT *num_bool_regs, INT *num_bool_refs,
+	INT *num_bool_variant_stores, INT *num_bool_invariant_stores) ;
+#else
   void Calc_Regs_And_Refs(
 	INT *num_fp_regs, INT *num_fp_refs,
 	INT *num_fp_variant_stores, INT *num_fp_invariant_stores,
 	INT *num_int_regs, INT *num_int_refs,
 	INT *num_int_variant_stores, INT *num_int_invariant_stores) ;
+#endif
+
   INT Conflict_Refs(BOOL *can_be_unrolled, INT num_loops);
   void Remove_Cse(INT inner, INT max_dist, INT step);
   void Remove_Invariants(INT loop_no);
@@ -804,18 +911,50 @@ public:
   ARRAY_REF(WN *wn, INT SNL_Depth, MEM_POOL *pool,
 	HASH_TABLE<WN *,BIT_VECTOR *> *invar_table) : _stack(pool) {
     _pool = pool;
+#ifdef TARG_ST
     _num_bad_fp = 0;
     _num_bad_int = 0;
+    _num_bad_ptr = 0;
+    _num_bad_bool = 0;
+#else
+    _num_bad_fp = 0;
+    _num_bad_int = 0;
+#endif
     _lex_number = 0;
     Build(wn, SNL_Depth,invar_table);
   }
-  INT Num_Fp_Refs() const;
-  INT Num_Int_Refs() const;
   ARRAY_REF(MEM_POOL *pool) : _stack(pool) {
     _pool = pool;
+    #ifdef TARG_ST
     _num_bad_fp = 0;
     _num_bad_int = 0;
+    _num_bad_ptr = 0;
+    _num_bad_bool = 0;
+#else
+    _num_bad_fp = 0;
+    _num_bad_int = 0;
+#endif
   }
+  #ifdef TARG_ST
+  INT Num_Fp_Refs() const;
+  INT Num_Int_Refs() const;
+  INT Num_Ptr_Refs() const;
+  INT Num_Bool_Refs() const;
+
+  INT Num_Fp_Bad() const { return _num_bad_fp; }
+  INT Num_Int_Bad() const { return _num_bad_int; }
+  INT Num_Ptr_Bad() const { return _num_bad_ptr; }
+  INT Num_Bool_Bad() const { return _num_bad_bool; }
+  INT Num_Bad() const { return _num_bad_int+_num_bad_fp+_num_bad_ptr+_num_bad_bool; }
+#else
+  INT Num_Fp_Refs() const;
+  INT Num_Int_Refs() const;
+
+  INT Num_Fp_Bad() const { return _num_bad_fp; }
+  INT Num_Int_Bad() const { return _num_bad_int; }
+  INT Num_Bad() const { return _num_bad_int+_num_bad_fp; }
+#endif
+
   void Add_References(WN *wn, INT SNL_Depth,HASH_TABLE<WN *,BIT_VECTOR *> *invar_table) {
     Build(wn, SNL_Depth,invar_table);
   }
@@ -826,9 +965,6 @@ public:
   void Enter_Innermost_Scalar_Expand(WN *wn);
   ARRAY_REF(ARRAY_REF *orig, MEM_POOL *pool);
   void Push(ARRAY_REF_LIST *arl) { _stack.Push(arl); }
-  INT Num_Fp_Bad() const { return _num_bad_fp; };
-  INT Num_Int_Bad() const { return _num_bad_int; };
-  INT Num_Bad() const { return _num_bad_int+_num_bad_fp; };
   ARRAY_REF_LIST *Array_Ref_List(INT i) { return _stack.Bottom_nth(i); }
   const ARRAY_REF_LIST *Array_Ref_List(INT i) const { return _stack.Bottom_nth(i); }
   INT Elements() const { return _stack.Elements(); }
@@ -837,8 +973,15 @@ public:
 private:
   ARRAY_REF_STACK _stack;
   MEM_POOL *_pool;
+  #ifdef TARG_ST
   INT _num_bad_fp;
   INT _num_bad_int;
+  INT _num_bad_ptr;
+  INT _num_bad_bool;
+#else
+  INT _num_bad_fp;
+  INT _num_bad_int;
+#endif
   void Build(WN *wn, INT SNL_Depth,HASH_TABLE<WN *,BIT_VECTOR *> *invar_table);
   void Build_Rec(WN *wn, DLI_STACK *dli_stack, INT SNL_Depth,
 			HASH_TABLE<WN *,BIT_VECTOR *> *invar_table);
@@ -941,10 +1084,17 @@ public:
 private:
   INT Add_Vertices_Op_Edges_Rec(VINDEX16 store,WN *wn, INT latency,
 			HASH_TABLE<WN *,BIT_VECTOR *> *invar_table);
+  #ifdef TARG_ST
+  // Arthur: I believe that this should be available for integers
+  INT LNO_Latency_Madd(VINDEX16 store, WN *wn, INT latency,
+			HASH_TABLE<WN *,BIT_VECTOR *> *invar_table);
+  INT LNO_Latency_Intrinsic(WN *wn);
+#else
   INT FP_Latency_Madd(VINDEX16 store,WN *wn, INT latency,
 			HASH_TABLE<WN *,BIT_VECTOR *> *invar_table);
   INT FP_Latency_Cvt(OPCODE opcode);
   INT FP_Latency_Intrinsic(WN *wn);
+#endif
 };
 
 // Cost table, stores sets of maximal paths between i and j
@@ -1010,6 +1160,11 @@ public:
   }
   INT Num_Fp_Unstored() const;
   INT Num_Int_Unstored() const;
+  #ifdef TARG_ST
+  INT Num_Ptr_Unstored() const;
+  INT Num_Bool_Unstored() const;
+#endif
+
   INT Symbol_Compare(SYMBOL *s) { // is this <,= or > s
     if (_symbol.ST_Base() < s->ST_Base()) return(-1);
     else if (_symbol.ST_Base() > s->ST_Base()) return(1);
@@ -1044,11 +1199,21 @@ public:
       _symbol_node->Enter(symbol,_pool,is_store,weight); 
     }
   };
+#ifdef TARG_ST
+  BOOL Ref_Needs_Reg(WN* wn);
+  void Enter_Scalar_Refs(REF_TYPE kind, WN *wn, INT *num_scalar_refs,
+			 WN2INT* se_needed=NULL, ARRAY_REF *ar=NULL);
+  void Enter_Scalar_Refs(REF_TYPE kind, WN *wn, ARRAY_REF *ar, SX_INFO *pi,
+  			BOOL *can_be_inner, INT num_loops, INT outer,
+			INT *num_scalar_refs);
+#else
   void Enter_Scalar_Refs(WN *wn, INT *num_scalar_refs,
 			 WN2INT* se_needed=NULL, ARRAY_REF *ar=NULL);
   void Enter_Scalar_Refs(WN *wn, ARRAY_REF *ar, SX_INFO *pi,
   			BOOL *can_be_inner, INT num_loops, INT outer,
 			INT *num_scalar_refs);
+#endif
+
   INT Num_Fp_Unstored() const { 
     if (_symbol_node) return _symbol_node->Num_Fp_Unstored(); 
     return(0);
@@ -1057,6 +1222,16 @@ public:
     if (_symbol_node) return _symbol_node->Num_Int_Unstored(); 
     return(0);
   }
+  #ifdef TARG_ST
+  INT Num_Ptr_Unstored() const { 
+    if (_symbol_node) return _symbol_node->Num_Ptr_Unstored(); 
+    return(0);
+  }
+  INT Num_Bool_Unstored() const { 
+    if (_symbol_node) return _symbol_node->Num_Bool_Unstored(); 
+    return(0);
+  }
+#endif
 };
     
 

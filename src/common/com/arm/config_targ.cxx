@@ -92,6 +92,7 @@ CLASS_INDEX Spill_Int_Mtype = 0;
 CLASS_INDEX Spill_Float_Mtype = 0;
 CLASS_INDEX Spill_Int32_Mtype = 0;
 CLASS_INDEX Spill_Float32_Mtype = 0;
+CLASS_INDEX Spill_Ptr_Mtype = MTYPE_UNKNOWN;
 
 /* The assembler directive for emitting an address depends on the target
  * pointer size.  The following is declared in config_asm.h:

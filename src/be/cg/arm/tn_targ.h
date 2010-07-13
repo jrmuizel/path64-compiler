@@ -207,4 +207,51 @@ inline BOOL TN_is_fcc_register (const TN *tn)
   return FALSE;
 }
 
+/* ====================================================================
+ * TN_Reloc_has_parenthesis
+ *   Returns true if reloc syntax is with parenthesis.
+ *
+ * ====================================================================
+ */
+inline BOOL
+TN_Reloc_has_parenthesis( INT32 reloc ) {
+
+  switch(reloc) {
+  case ISA_RELOC_offset12PC:
+  case ISA_RELOC_offset8PC:
+    return FALSE;
+    break;
+  default:
+    return TRUE;
+  }
+
+  return TRUE;
+}
+
+/* ====================================================================
+ *   TN_Relocs_In_Asm
+ * ====================================================================
+ */
+inline INT
+TN_Relocs_In_Asm (
+  TN *t, 
+  ST *st, 
+  vstring *buf, 
+  INT64 *val
+)
+{
+  INT paren = TN_Reloc_has_parenthesis(TN_relocs(t)) ? 1 : 0;	// num parens
+  const char *str;
+  const char *c;
+
+  str = TN_RELOCS_Syntax(TN_relocs(t));
+  FmtAssert (str, ("TN_Relocs_In_Asm: illegal reloc TN (%d)", (int)TN_relocs(t)));
+  *buf = vstr_concat (*buf, str);
+  for (c = strchr (str, '('); c; c = strchr (c + 1, '('))
+    paren++;
+
+  return paren;
+}
+
+
 #endif /* tn_targ_INCLUDED */

@@ -107,11 +107,15 @@ Get_TY (gs_t type_tree)
 	    if (gs_tree_code(type_tree) == GS_RECORD_TYPE ||
 	        gs_tree_code(type_tree) == GS_UNION_TYPE) {
 	      FLD_HANDLE elt_fld = TY_fld(idx);
-	      if (elt_fld.Is_Null() && TY_content_seen(idx) == 0)
+	      if (elt_fld.Is_Null() 
+#ifndef TARG_ST
+                  && TY_content_seen(idx) == 0
+#endif
+                  )
 		return Create_TY_For_Tree (type_tree, idx); // forward declared
 	      else return idx;
 	    }
-#ifdef KEY /* bug 8346 */
+#if defined( KEY) && !defined(TARG_ST) /* bug 8346 */
 	    else if (expanding_function_definition &&
 	             (TY_is_incomplete(idx) ||
 		      (TY_kind(idx)==KIND_POINTER &&

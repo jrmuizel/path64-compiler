@@ -480,7 +480,6 @@ extern BOOL CG_safe_memmove;
 #endif
 extern BOOL CG_enable_ssa;	/* Enable SSA in cg */
 extern BOOL CG_enable_select;
-extern BOOL CG_enable_peephole;
 extern BOOL CG_tail_call;
 extern BOOL CG_unique_exit;
 extern BOOL CG_cond_defs_allowed;

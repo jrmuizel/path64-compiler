@@ -74,7 +74,7 @@ add_custom_command(
     COMMAND isa_syntax_gen
     DEPENDS isa_syntax_gen
     )
-  add_library(targ_isa_parse targ_isa_parse.c targ_isa_parse.h)
+#  add_library(targ_isa_parse targ_isa_parse.c targ_isa_parse.h)
 
   # The final targinfo library depends on all individual sources.
   list(APPEND targinfo_deps targ_isa_parse)
@@ -102,7 +102,19 @@ gen_info(isa isa_pseudo       targ_isa_operands targ_isa_registers targ_isa_enum
 gen_info(proc proc            gen_util)
 gen_info(proc proc_properties targ_proc gen_util)
 gen_info(abi  abi_properties  targ_isa_subset targ_isa_registers gen_util)
+#debater
+add_custom_command(
+  OUTPUT armv5e_subset_targ_isa_parse.c
+  COMMAND gensyn armv5e_subset_targ_isa_parse.pr -t extension -ac armv5e_subset_targ_isa_parse.c
+  DEPENDS gensyn
+  )
+add_custom_command(
+  OUTPUT armv6_subset_targ_isa_parse.c
+  COMMAND gensyn armv6_subset_targ_isa_parse.pr -t extension -ac armv6_subset_targ_isa_parse.c
+  DEPENDS gensyn
+  )
 
+#debater
 # Collect the rest of the sources in a 'targinfo' library.
 add_library(targinfo STATIC
 	access/ti_asm.c
@@ -128,6 +140,9 @@ add_library(targinfo STATIC
 	targ_isa_bundle.c
 	targ_proc.c
 	targ_proc_properties.c
+        targ_isa_parse.c
+        armv5e_subset_targ_isa_parse.c #debater
+        armv6_subset_targ_isa_parse.c #debater
 )
 add_dependencies(targinfo ${targinfo_deps})
 

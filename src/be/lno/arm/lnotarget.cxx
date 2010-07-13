@@ -21,10 +21,18 @@
 
 */
 
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
+
 
 #include "lnotarget.h"
 #include "w2op.h"
 #include "model.h"
+#define Reserved_Int_Regs	4	// [(load-use-store latency) + 1]*2DUs
+                                        // so the pipeline is kept busy
+#define Reserved_Ptr_Regs	5       // $sp, $fp, $gp, $pr, $lr
+#define Reserved_Bool_Regs	1       // g0 ?
+
 
 /* ====================================================================
  *   Mult_Latency

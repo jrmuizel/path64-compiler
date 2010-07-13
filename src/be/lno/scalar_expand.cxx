@@ -1860,8 +1860,20 @@ static void Mark_Calls(WN* wn)
 }
 
 static INT unique_se_id = 0;
-
+#ifdef TARG_ST
+//TB: extension reconfiguration: check that array accesses do not
+//overlap static counter
+#define se_type_array(t) \
+     ((t > MTYPE_STATIC_LAST) ? \
+       FmtAssert (FALSE, ("se_type_array: no access for dynamic MTYPE %d", (t))), 0 \
+     : \
+       se_type_array[t])
+#define se_type_array_set(t) \
+       FmtAssert (t <= MTYPE_STATIC_LAST, ("MTYPE_TO_PREG: no access for dynamic MTYPE %d", (t))), se_type_array[t]
+static TY_IDX se_type_array[MTYPE_STATIC_LAST + 1]; 
+#else
 static TY_IDX se_type_array[MTYPE_LAST + 1]; 
+#endif
 
 extern void SE_Symbols_For_SE(SYMBOL* ptr_array, const char* pref, INT unique_id, 
   TYPE_ID mtype)

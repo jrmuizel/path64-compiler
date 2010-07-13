@@ -1,24 +1,24 @@
 /*
-  Copyright (C) 2002, STMicroelectronics, All Rights Reserved.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
+  Copyright (C) 2000, 2001 Silicon Graphics, Inc.  All Rights Reserved.
 
-  This program is distributed in the hope that it would be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+   Copyright (C) STMicroelectronics All Rights Reserved.
 
-  Further, this software is distributed without any warranty that it is
-  free of the rightful claim of any third person regarding infringement 
-  or the like.  Any license provided herein, whether implied or 
-  otherwise, applies only to this software file.  Patent licenses, if 
-  any, provided herein do not apply to combinations of this program with 
-  other software, or any other product whatsoever.  
+   Path64 is free software; you can redistribute it and/or modify it
+   under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2, or (at your option)
+   any later version.
 
-  You should have received a copy of the GNU General Public License along
-  with this program; if not, write the Free Software Foundation, Inc., 59
-  Temple Place - Suite 330, Boston MA 02111-1307, USA.
+   Path64 is distributed in the hope that it will be useful, but WITHOUT
+   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+   License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with Path64; see the file COPYING.  If not, write to the Free
+   Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+
 */
 
 /* ====================================================================
@@ -511,7 +511,7 @@ void DUD_REGION::Trace_DUD() {
       DUD_LIST ud_list;
       if (Get_Use_Def(op, opnd, ud_list) > 0) {
 	fprintf(TFile, ": ud");
-	char *sep = " ";
+	const char *sep = " ";
 	for (INT i = 0; i < ud_list.size(); i++) {
 	  DUD_SITE ud_site;
 	  ud_list.site(i, ud_site);
@@ -529,7 +529,7 @@ void DUD_REGION::Trace_DUD() {
       DUD_LIST du_list;
       if (Get_Def_Use(op, res, du_list) > 0) {
 	fprintf(TFile, ": du");
-	char *sep = " ";
+	const char *sep = " ";
 	for (INT i = 0; i < du_list.size(); i++) {
 	  DUD_SITE du_site;
 	  du_list.site(i, du_site);

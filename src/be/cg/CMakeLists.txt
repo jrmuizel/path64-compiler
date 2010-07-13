@@ -74,7 +74,7 @@ SET(PATHSCALE_CG_SRCS
 			"../../be/cg/cgemit.cxx"
 			"../../be/cg/cgexp.cxx"
 			"../../be/cg/cg_flags.cxx"
-		#	"../../be/cg/cg_gcov.cxx"
+			"../../be/cg/cg_gcov.cxx"
 			"../../be/cg/cg_loop.cxx"
 			"../../be/cg/cg_loop_mii.cxx"
 			"../../be/cg/cg_loop_scc.cxx"
@@ -100,7 +100,7 @@ SET(PATHSCALE_CG_SRCS
 			"../../be/cg/hb_sched.cxx"
 			"../../be/cg/hb_tail_duplication.cxx"
 			"../../be/cg/hb_trace.cxx"
-		#	"../../be/cg/iface_scn.cxx"
+			"../../be/cg/iface_scn.cxx"
 			"../../be/cg/igls.cxx"
 			"../../be/cg/init.cxx"
 			"../../be/cg/label_util.cxx"
@@ -135,8 +135,20 @@ SET(PATHSCALE_CG_SRCS
                         "../../be/cg/swp/cg_swp_emit.cxx" #st
                         "../../be/cg/${BUILD_TARGET_DIR}/cg_swp_bundle.cxx" #st
                         "../../be/cg/${BUILD_TARGET_DIR}/targ_pqs.cxx" #st
+                        "../../be/cg/${BUILD_TARGET_DIR}/exp_intrinsic.cxx" #st 
+                        "../../be/cg/${BUILD_TARGET_DIR}/targ_range_prop.cxx" #st
+                        "../../be/cg/${BUILD_TARGET_DIR}/targ_range_analysis.cxx" #st
+                        "../../be/cg/${BUILD_TARGET_DIR}/targ_calls.cxx" #st
                         "../../be/cg/cg_ivs.cxx" #st
+                        "../../be/cg/ipra.cxx" #st
+                        "../../be/cg/cg_tailmerge.cxx" #st
                         "../../be/cg/range_prop.cxx" #st
+                        "../../be/cg/cg_dud.cxx" #st
+                        "../../be/cg/graphml_dumper.cxx" #st
+                        "../../be/cg/mexpand.cxx" #st
+                        "../../be/cg/cg_automod.cxx" #st
+                        "../../be/cg/swp/cg_swp_sched.cxx"#st
+                        "../../dfgforise/ExportFromBackEnd.cxx"#st
 			"../../be/cg/gra_mon/gra.cxx"
 			"../../be/cg/gra_mon/gra_bb.cxx"
 			"../../be/cg/gra_mon/gra_cflow.cxx"

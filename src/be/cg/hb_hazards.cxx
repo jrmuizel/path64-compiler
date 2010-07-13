@@ -552,11 +552,11 @@ Is_There_OP_Dependence(OP *op, OP *prev_op)
       // (4) If a STOP bit already exists in the bundle for that specific
       // position, then the dependence can be relaxed.
       // if (TI_BUNDLE_stop_bit(bundle, i)) continue;
-
+#ifndef TARG_ST
       // (5) A check load and a subsequent instruction that reads the
       // target of the check load may exist in the same instruction group.
       if (read_dependence && CGTARG_Is_OP_Speculative(prev_op)) continue;
-
+#endif
       return TRUE;
     }
   }

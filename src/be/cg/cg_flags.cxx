@@ -446,6 +446,7 @@ BOOL  HB_skip_hammocks = FALSE;
 #endif
 BOOL  HB_simple_ifc = TRUE;
 BOOL  HB_simple_ifc_set = FALSE;
+BOOL  HB_superblocks = FALSE;
 INT   HB_min_blocks = 2;
 BOOL  GRA_LIVE_Predicate_Aware = FALSE;
 #ifdef TARG_ST

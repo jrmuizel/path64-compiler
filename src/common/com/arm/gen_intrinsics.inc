@@ -69,7 +69,7 @@ Check_Opd_Literal( TN *tn_opnd, ISA_LIT_CLASS lc, INT32 arg_idx, const char *int
 
   // Check immediate value is in range
   if (!ISA_LC_Value_In_Class(TN_value(current_value), lc)) {
-    sprintf(error_msg, "Immediate value '%lld' of arg %d out of bounds"
+    sprintf(error_msg, "Immediate value '%"SCNd64"' of arg %d out of bounds"
           " for intrinsic call '%s'.",
           TN_value(current_value), arg_idx, intrn_name);
     if (SRCPOS_linenum(srcpos)>0) {
@@ -122,7 +122,7 @@ Check_Opd_Literal_For_Dedicated( TN *tn_opnd, INT32 reg_file_size, INT32 arg_idx
 
   // Check immediate value is in range
   if ( ! (0 <= TN_value(current_value) && TN_value(current_value) < reg_file_size) ) {
-    sprintf(error_msg, "Immediate value '%lld' of arg %d out of bounds"
+    sprintf(error_msg, "Immediate value '%"SCNd64"' of arg %d out of bounds"
           " or wrong alignment for intrinsic call '%s'.",
           TN_value(current_value), arg_idx, intrn_name);
     if (SRCPOS_linenum(srcpos)>0) {

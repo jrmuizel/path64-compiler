@@ -819,7 +819,7 @@ CG_Generate_Code(
 #endif
       // Initialize the predicate query system in the hyperblock formation phase
       HB_Form_Hyperblocks(region ? REGION_get_rid(rwn) : NULL, NULL);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       // We do not have a slot in the BB structure to store predicate TNs.
       // Instead, we remember the last seen block and the associated 
       // predicate TNs. So, we need to reinitialize the TNs and the basic block

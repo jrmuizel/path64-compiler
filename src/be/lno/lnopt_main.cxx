@@ -410,7 +410,11 @@ INT64 Loop_Size(WN* wn)
   } else if (OPCODE_is_store(opcode)) {
     count++;
     kid_cnt = kid_cnt - 1;
-  } else if ((oper == OPR_CALL) || (oper == OPR_PURE_CALL_OP)) {
+  } else if ((oper == OPR_CALL) 
+#ifndef TARG_ST
+             || (oper == OPR_PURE_CALL_OP)
+#endif
+             ) {
     count = count + LNO_Full_Unrolling_Loop_Size_Limit;
   }
   

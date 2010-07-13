@@ -7147,6 +7147,26 @@ void Unroll_Dowhile_Loop(LOOP_DESCR *loop, UINT32 ntimes)
   MEM_POOL_Pop(&MEM_local_nz_pool);
 }
 
+INT32 CG_LOOP::Get_Unroll_Times(ANNOTATION *&pragma_unroll)
+{
+  BB *head = LOOP_DESCR_loophead(loop);
+  INT32 unroll_times;
+
+  pragma_unroll = NULL;
+  unroll_times = CG_LOOP_unroll_times_max;
+
+  if (!CG_LOOP_ignore_pragmas) {
+    ANNOTATION *unroll_ant = ANNOT_Get(BB_annotations(head), ANNOT_PRAGMA);
+    while (unroll_ant && WN_pragma(ANNOT_pragma(unroll_ant)) != WN_PRAGMA_UNROLL)
+      unroll_ant = ANNOT_Get(ANNOT_next(unroll_ant), ANNOT_PRAGMA);
+    if (unroll_ant) {
+      WN *wn = ANNOT_pragma(unroll_ant);
+      unroll_times = MAX(1, WN_pragma_arg1(wn));
+      pragma_unroll = unroll_ant;
+    }
+  }
+  return unroll_times;
+}
 
 /*
  * Unroll constant trip count loop fully iff:
@@ -7624,6 +7644,31 @@ void CG_LOOP::Determine_Unroll_Factor()
 #endif
 }
 
+// FdF 20060207: For single BB do-loop only, use scheduling estimate
+// information to reduce the unrolling factor when it will not have a
+// significant impact on the performance of the loop.
+// 
+
+void CG_LOOP::Determine_Sched_Est_Unroll_Factor()
+{ 
+  int sched_unroll_factor = CG_LOOP_unroll_times_max;
+  ANNOTATION *pragma_unroll;
+
+  // Just check if there is a pragma unroll on the loop.
+  int unroll_times_max = Get_Unroll_Times(pragma_unroll);
+
+  // Compute a maximum unroll factor based on a schedule estimate of
+  // the loop
+  Set_unroll_sched_est(-1);
+  if ((CG_LOOP_unroll_heuristics & SCHED_HEURISTIC) && !pragma_unroll) {
+    sched_unroll_factor = LOOP_DESCR_Estimate_Factor_For_Unrolling (Loop(), unroll_times_max);
+    if (sched_unroll_factor > 0)
+      Set_unroll_sched_est(sched_unroll_factor);
+  }
+
+  // Then, call the normal function to determine the unrolling factor
+  Determine_Unroll_Factor();
+}
 
 // Returns TRUE if OP is live
 //   
@@ -8806,7 +8851,7 @@ BOOL CG_LOOP_Optimize(LOOP_DESCR *loop, vector<SWP_FIXUP>& fixup)
       if (trace_loop_opt) 
 	CG_LOOP_Trace_Loop(loop, "*** Before SINGLE_BB_DOLOOP_UNROLL ***");
 #ifdef TARG_ST
-#if !(defined(TARG_STxP70) && !defined(TARG_ARM))
+#if !defined(TARG_STxP70) && !defined(TARG_ARM)
       BOOL can_be_packed = FALSE;
       Loop_packing_flags = Loop_Packing_Options(cg_loop);
       if ((Loop_packing_flags & (PACKING_LOAD|PACKING_STORE)) != 0) {

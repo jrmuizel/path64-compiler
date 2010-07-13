@@ -1882,6 +1882,7 @@ r_apply_l_const (
 #endif /* defined(BUILD_OS_DARWIN) */
     }
     if (TN_relocs(t) != 0) {
+#ifndef TARG_ST
 	// use base if referring to current pu or local data
 	if (CGEMIT_Use_Base_ST_For_Reloc (TN_relocs(t), st)) {
 		ST *base_st;
@@ -1890,6 +1891,7 @@ r_apply_l_const (
 		val += base_ofst;
 		st = base_st;
     	}
+#endif
     	if (Use_Separate_PU_Section(current_pu,st)) {
 		/* use PU text section rather than generic one */
 		st = PU_base;
@@ -1898,7 +1900,11 @@ r_apply_l_const (
 	print_TN_offset = TRUE;
 	// add name to comments in case was confused by gp_disp.
 	add_name = TRUE;
+#ifdef TARG_ST
+        paren = TN_Relocs_In_Asm (t, st, buf, &val);
+#else
 	paren = CGEMIT_Relocs_In_Asm (t, st, buf, &val);
+#endif
     } 
     else {
 #if defined(BUILD_OS_DARWIN)
@@ -4043,7 +4049,7 @@ r_assemble_op(OP *op, BB *bb, ISA_BUNDLE *bundle, INT slot)
   }
 #endif // TARG_X8664
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Bug 4204 - move the ctrl register setup after the preamble. This 
   // causes the debug information generated to let the debugger to stop
   // at the right spot for the main entry function. Otherwise, the parameters
@@ -6163,7 +6169,7 @@ EMT_Assemble_BB ( BB *bb, WN *rwn )
   fp_reg_state[24] = OK;	// 24 is f23
 #endif
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 // Assumption: REGION_First_BB is the first BB in the PU. If in future,
 // we start having multiple regions in a PU here, we need to change the 
 // following. 
@@ -7466,11 +7472,12 @@ Write_TCON (
     else
 #endif // KEY
     Targ_Emit_Const ( Asm_File, *tcon, add_null, repeat, scn_ofst32 );
-  } 
+  }
+#ifndef TARG_ST 
   if (Object_Code) {
     Em_Targ_Emit_Const ( scn, *tcon, add_null, repeat );
   }
-
+#endif
   if ( TCON_ty(*tcon) == MTYPE_STRING )
     scn_ofst += (Targ_String_Length (*tcon) + (add_null ? 1 : 0)) * repeat;
   else
@@ -9227,9 +9234,9 @@ Process_Bss_Data (SYMTAB_IDX stab)
 		    else
 #endif
                         if (Assembly)
-                            ASM_DIR_SKIP(Asm_File, (INT32)size_to_skip);
+                            ASM_DIR_SKIP(Asm_File, size_to_skip);
                     if (Lai_Code)
-                        fprintf(Lai_File, "\t%s %ld\n", AS_SPACE, size_to_skip);
+                        fprintf(Lai_File, "\t%s %"SCNd64"\n", AS_SPACE, size_to_skip);
                     not_yet_skip_amt = MAX(0, not_yet_skip_amt-size_to_skip); // bug 10678
                 }
 #ifdef TARG_ST
@@ -9940,7 +9947,7 @@ EMT_Emit_PU ( ST *pu, DST_IDX pu_dst, WN *rwn )
   muld_shadow = 0;
   round_hazard_op = NULL;
 #endif
-
+#ifndef TARG_ST
   /* In the IA-32 case, we need to convert fp register references
    * so that they reference entries in the fp register stack with the
    * proper offset.
@@ -9952,7 +9959,7 @@ EMT_Emit_PU ( ST *pu, DST_IDX pu_dst, WN *rwn )
     anl_file = fopen(path, "a");
     fputc ('\n', anl_file);
   }
-
+#endif
   Init_ST_elf_index(CURRENT_SYMTAB);
 
   cur_section = NULL;
@@ -10108,7 +10115,9 @@ EMT_Emit_PU ( ST *pu, DST_IDX pu_dst, WN *rwn )
     }
 #endif
     Print_Label (Asm_File, pu, 0);
+#ifndef TARG_ST
     CGEMIT_Gen_Asm_Frame (Frame_Len);
+#endif
   }
   
  if (Lai_Code) {
@@ -11360,6 +11369,7 @@ EMT_End_File( void )
     }
 #endif
   }
+#ifndef TARG_ST
   if (Object_Code && !CG_emit_asm_dwarf) {
     /* TODO: compute the parameters more accurately. For now we assume 
      * that all integer and FP registers are used. If we change the GP
@@ -11378,7 +11388,7 @@ EMT_End_File( void )
     Em_Dwarf_End ();
     Em_Cleanup_Unwind ();
   }
-
+#endif
   if (Emit_Global_Data) {
 	// prepare block data to be written to .G file.
 	// need to remove section info so can be reset when read.

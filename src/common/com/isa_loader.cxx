@@ -2008,8 +2008,8 @@ void Initialize_SI(Lai_Loader_Info_t &ext_info, MEM_POOL &tmp_mempool) {
 	    new_islot_count, static_islot_count);
     fprintf(TFile, "  -> Sched Info (SI) count : %8d (static: %d)\n",
 	    new_si_count, static_si_count);
-    fprintf(TFile, "  -> SI_RRW_initializer    : 0x%llx\n", new_RRW_initializer);
-    fprintf(TFile, "  -> SI_RRW_overuse_mask   : 0x%llx\n", new_RRW_overuse_mask);
+    fprintf(TFile, "  -> SI_RRW_initializer    : 0x%"SCNx64"\n", new_RRW_initializer);
+    fprintf(TFile, "  -> SI_RRW_overuse_mask   : 0x%"SCNx64"\n", new_RRW_overuse_mask);
 
     fprintf(TFile, "  -> Resource table = \n");
     for (int k=0; k<new_res_count; k++) {

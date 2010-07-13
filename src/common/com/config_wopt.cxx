@@ -293,6 +293,7 @@ INT32 WOPT_Enable_CFG_Opt2_Limit = 80;    /* Loop butterfly should produce a min
 BOOL  WOPT_Enable_CFG_Opt3 = FALSE;
 BOOL  WOPT_Enable_CFG_Opt4 = FALSE;
 INT32  WOPT_Enable_CFG_Opt_Limit = 10;
+BOOL  WOPT_Enable_CFG_Opt_Limit_Set = FALSE;
 char *WOPT_Set_Unique_Pt = NULL;
 BOOL  WOPT_Enable_Bits_Load_Store = TRUE; // accept LDBITS, STBITS, etc.
 BOOL  WOPT_Enable_Epre_Before_Ivr = FALSE; // For running epre early
@@ -705,8 +706,13 @@ static OPTION_DESC Options_WOPT[] = {
     0, 0, 0,    &WOPT_Enable_CFG_Opt3, NULL },
   { OVK_BOOL,   OV_VISIBLE,    FALSE, "cfo4",              "",
     0, 0, 0,    &WOPT_Enable_CFG_Opt4, NULL },
+#ifdef TARG_ST
+  { OVK_INT32,  OV_INTERNAL,    FALSE, "cfo_limit",              "",
+    INT32_MAX, 0, INT32_MAX,    &WOPT_Enable_CFG_Opt_Limit, &WOPT_Enable_CFG_Opt_Limit_Set },
+#else
   { OVK_INT32,  OV_VISIBLE,    FALSE, "cfo_limit",              "",
     INT32_MAX, 0, INT32_MAX,    &WOPT_Enable_CFG_Opt_Limit, NULL },
+#endif
   { OVK_INT32,  OV_VISIBLE,    TRUE,  "vn_ivc",	"",
     1, 0, 8,    &WOPT_Enable_Vn_Ivc, NULL },
   { OVK_UINT32,	OV_VISIBLE,	TRUE, "vnfre_after",		"vnfre_a",

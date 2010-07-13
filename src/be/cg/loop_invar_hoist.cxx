@@ -100,6 +100,8 @@
 #include <vector.h>  /* for STL vector and list */
 #include <list.h>
 #endif // __GNUC__ >= 3
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
 
 #include "tracing.h"
 
@@ -1595,7 +1597,7 @@ LOOP_INVAR_CODE_MOTION :: Code_Motion_Is_Profitable (OP* op) {
     freq1 = (freq1 < 1.0f) ? 1.0f : freq1;
     INT32 div = (INT32)(freq2 * PROG_SCALE/ freq1);
 
-    if (OP_Is_Long_Latency (OP_code (op))) {
+    if (CGTARG_Is_Long_Latency (OP_code (op))) {
         if (div < LOW_PROB_FOR_LONG_LATENCY) { 
 	    sprintf(diagnostic, "long latency operation, probability too low: %d/100 < %d/100",
 		    div, LOW_PROB_FOR_LONG_LATENCY);

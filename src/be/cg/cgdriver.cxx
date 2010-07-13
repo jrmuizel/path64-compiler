@@ -2108,7 +2108,7 @@ Configure_CG_Options(void)
 #endif
   #ifdef TARG_ST
   if (!Enable_CG_Peephole_overridden) {
-    CG_enable_peephole = (CG_opt_level > 1 ) ? TRUE : FALSE;
+    Enable_CG_Peephole = (CG_opt_level > 1 ) ? TRUE : FALSE;
   }
 
   // [CG]: turned on ssa
@@ -3018,10 +3018,11 @@ CG_Init (void)
   }
 #endif
 #ifdef TARG_ST
+# if 0 //probably it's enough to use path64 CG_Init_Gcov
   // TB: initialize coverage module
   if (Profile_Arcs_Enabled_Cgir)
     gcov_init (Remove_Extension(Src_File_Name));
-
+#endif
   // [GS-DFGforISE] Init of exportation to DfgForIseclasses.
   if ( (CG_dfg_ise_mask & 0xff)
        || (CG_dfg_debug_mask & 0xff) ) {
@@ -3064,10 +3065,11 @@ CG_Fini (void)
        || (CG_dfg_debug_mask & 0xff) ) {
     DfgForIse::ExportFromBackEnd_Finalize();
   }
-
+#if 0 //probably it's enough to use CG_End_Gcov
   // TB: finalize coverage module
   if (Profile_Arcs_Enabled_Cgir)
     gcov_finish (Asm_File);
+#endif
 #endif
 
 #ifdef LAO_ENABLED
@@ -3077,7 +3079,7 @@ CG_Fini (void)
 #endif
 
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY) 
     extern BOOL profile_arcs;
 
     if (profile_arcs)

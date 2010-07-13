@@ -84,6 +84,7 @@
 
 #include "symtab_defs.h"  /* for memory space enum */
 #include "targ_sections.h"
+BOOL Trace_Exp2 = FALSE;            /* extra cgexp trace*/
 BOOL Reuse_Temp_TNs = FALSE;
 /* Do we force inlining of extended immediates. */
 static BOOL Inline_Extended_Immediate = FALSE;
@@ -4419,4 +4420,27 @@ Exp_True_False_Preds_For_Block (
 #endif
 #endif
    return;
+}
+/* ====================================================================
+ *   Init_CG_Expand ()
+ *
+ *   Initialize the tracing flags for the expander.
+ * ====================================================================
+ */
+void
+Init_CG_Expand (void)
+{
+  static BOOL Initialized = FALSE;
+
+  // per PU:
+  Trace_Exp = Get_Trace (TP_CGEXP, 1);
+  /* whirl2ops uses -ttexp:2 */
+  Trace_Exp2 = Get_Trace (TP_CGEXP, 4);
+  //  Disable_Const_Mult_Opt = Get_Trace (TP_CGEXP, 32);
+  /* calls.c use -ttexp:64 */
+
+  if (Initialized) return;
+  Initialized = TRUE;
+  // once per file:
+  Initialize_Branch_Variants();
 }

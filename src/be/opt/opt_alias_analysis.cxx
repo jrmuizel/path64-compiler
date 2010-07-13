@@ -1019,14 +1019,14 @@ VER_ID_VISITOR::Visit(T_FUNCTION function, WN *wn)
 //
 
 struct PRINT_VER_ID {
-  void operator() (VER_ID ver_id) { fprintf(TFile, "(%d)", ver_id); }
+  void operator() (VER_ID ver_id) { fprintf(TFile, "(%"SCNdPTR")", ver_id); }
 };
 
 struct PRINT_VER_POINTS_TO {
   OPT_STAB *opt_stab_;
   PRINT_VER_POINTS_TO(OPT_STAB *opt_stab) : opt_stab_(opt_stab) {}
   void operator() (VER_ID ver_id) { 
-    fprintf(TFile, "points to for ver %d:", ver_id);
+    fprintf(TFile, "points to for ver %"SCNdPTR":", ver_id);
     POINTS_TO *pt = opt_stab_->Ver_stab_entry(ver_id)->Points_to();
     if (pt == NULL) fprintf(TFile, "<null>\n");
     else pt->Print(TFile);
@@ -3004,7 +3004,7 @@ OPT_STAB::Has_read_only_parm(AUX_ID idx, WN *wn, INT32 num_parms)
   return FALSE;
 }
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY) //&& !defined(TARG_ST)
 #include "be_ipa_util.h"
 // Brute force method for now
 // TODO: Keep a map internal to wopt so that we need to search once for a pu

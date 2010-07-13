@@ -130,6 +130,7 @@ static INT32 Ignore_Int;
 #ifdef SINGLE_PROCESS
 INT16 In_Front_End = TRUE;	/* Start out there */
 #endif
+
 /* The maximum integer machine type corresponding directly to the
  * machine registers, and the default integer machine type:
  */
@@ -411,6 +412,10 @@ static BOOL Short_Lits_Set = FALSE;	/* ... option seen? */
 INT32 Max_Sdata_Elt_Size = DEF_SDATA_ELT_SIZE;	/* -Gn: sdata size */
 INT32 Max_Srdata_Elt_Size = DEF_SRDATA_ELT_SIZE;
 static BOOL Max_Srdata_Elt_Size_Set = FALSE;
+BOOL appli_config_file_set          = FALSE;
+
+char *appli_config_file_name        = NULL;
+char *active_appli_config_file_name = NULL;
 
 BOOL Constant_GP = FALSE;		/* gp never changes? */
 
@@ -2195,7 +2200,7 @@ Configure_Source ( char	*filename )
     Trace_Option_Groups ( TFile, Common_Option_Groups, FALSE );
   }
 
-#ifdef KEY // bug 12939
+#if defined( KEY) && !defined(TARG_ST) // bug 12939
   if (Language == LANG_CPLUS && ! WOPT_Enable_Tail_Recur_Set)
     WOPT_Enable_Tail_Recur = FALSE;
 #endif
@@ -2710,6 +2715,24 @@ List_Compile_Options (
   BOOL update )
 {
   char *bar = SBar+12;	/* Shorten it a bit */
+#ifdef BACK_END
+  //TDR - Dump application configuration file info in .s
+  if (appli_config_file_set) 
+    {
+      FILE* fappli_config = fopen(appli_config_file_name, "r");
+      const int bufsize = 256;
+      char buf[bufsize];
+      fprintf(f , "\n%s%s%s Application Configuration file used: \n", pfx, 
+    		  bar, pfx);
+      if (fappli_config!=NULL)
+        {
+    	  while (fgets(buf, sizeof(buf), fappli_config))
+    	    fprintf(f , "%s%s", pfx,buf); 
+          fclose(fappli_config);
+        }
+      fprintf(f , "%s%s\n", pfx,  bar);
+    }
+#endif
 
   fprintf ( f, "\n%s%s%s Compiling %s (%s)\n%s%s",
 	    pfx, bar, pfx, Src_File_Name, Irb_File_Name, pfx, bar ); 

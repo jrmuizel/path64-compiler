@@ -1430,6 +1430,27 @@ Fix_Recurrences_After_Unrolling(CG_LOOP& cl)
     p = q;
   }
 }
+/* =======================================================================
+ *   OP_Apply_Back_Sub_Variant
+ * =======================================================================
+ */
+BOOL
+OP_Apply_Back_Sub_Variant (
+  OP *op
+)
+{
+  // Update loop body
+  switch (OP_code(op)) {
+#if 0
+  case ??:
+    return TRUE; // BB changed
+#endif
+  default:
+    Is_True(FALSE, ("Apply_Back_Sub_Variant: op not supported."));
+  }
+
+  return FALSE;
+}
 
 
 

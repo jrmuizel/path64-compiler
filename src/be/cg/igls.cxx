@@ -814,7 +814,7 @@ Run_One_Sched (HB_Schedule *Sched, BOOL is_fwd, BB *bb, HBS_TYPE hbs_type,
   }
   return optimal;
 }
-
+#ifndef TARG_ST
 // Run the BB scheduler.  Run it multiple times if necessary to pick the best
 // schedule.  Return TRUE if the schedule was generated using forward
 // scheduling.
@@ -934,6 +934,7 @@ Run_Sched (HB_Schedule *Sched, BB *bb, HBS_TYPE hbs_type, INT32 max_sched)
 
   return best_is_fwd;
 }
+#endif
 #endif
 
 // ======================================================================
@@ -1119,7 +1120,7 @@ IGLS_Schedule_Region (BOOL before_regalloc)
 	if (!Sched) {
 	  Sched = CXX_NEW(HB_Schedule(), &MEM_local_pool);
 	}
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	Run_Sched(Sched, bb, hbs_type, INT32_MAX);
 #else
 	Sched->Init(bb, hbs_type, INT32_MAX, NULL, NULL);
@@ -1226,9 +1227,9 @@ IGLS_Schedule_Region (BOOL before_regalloc)
 	continue;
 
       BOOL skip_bb = BB_scheduled(bb) && !BB_scheduled_hbs(bb);
-
+#ifndef TARG_ST
       if (should_we_do_thr && !skip_bb) Remove_Unnecessary_Check_Instrs(bb);
-
+#endif
 #ifdef KEY_1873
       /* The original code with Reschedule_BB is meanlingless. I think the original
 	 author meant BB_scheduled(bb), not Reschedule_BB(bb).
@@ -1271,7 +1272,7 @@ IGLS_Schedule_Region (BOOL before_regalloc)
 	  if (!Sched) {
 	    Sched = CXX_NEW(HB_Schedule(), &MEM_local_pool);
 	  }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	  BOOL is_fwd = Run_Sched(Sched, bb, hbs_type, max_sched);
 
 	  // Regenerate the schedule in the forward direction to make the

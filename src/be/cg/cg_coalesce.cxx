@@ -51,6 +51,9 @@
  *             (cannot use the same GTN, as they have different sizes).
  *             (For this task, doing the coalescing in GRA could be better).
  */
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
+
 #include "defs.h"
 #include "mempool.h"
 #include "config.h"

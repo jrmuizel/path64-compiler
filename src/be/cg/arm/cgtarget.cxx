@@ -107,6 +107,31 @@ static INT earliest_assigned_reg_use[ISA_REGISTER_CLASS_MAX+1][ISA_REGISTER_MAX+
 #endif
 
 BOOL saveHWloopRegisterLR0 = FALSE;
+/* ====================================================================
+ *   CGTARG_Check_OP_For_HB_Suitability
+ *
+ *   Returns TRUE if OP is a suitable candidate for HBF. 
+ *   Otherwise, return FALSE.
+ * ====================================================================
+ */
+BOOL 
+CGTARG_Check_OP_For_HB_Suitability (
+  OP *op
+)
+{
+  //  extern void dump_OP(const OP *op);
+  //  fprintf (TFile, "CGTARG_Check_OP_For_HB_Suitability op \n");
+  //  dump_OP (op);
+#ifdef IFCONV_IN_SSA
+  //
+  // Arthur: we won't if-convert all of'em
+  //
+  if (OP_memory(op))
+    return FALSE;
+#endif
+
+  return TRUE; 
+}
 
 /* ====================================================================
  *   CGTARG_Preg_Register_And_Class
@@ -4503,3 +4528,13 @@ BOOL CGTARG_Profitable_Logif_Transformation() {
 BOOL CGTARG_Allow_Operation_To_Be_Hoisted_In_Succs(OP* op) {
   return TRUE;
 }
+
+// Is this 'op' a long latency OP for the purpose of GCM.
+// TODO: define a cut-out latency CGTARG_long_latency_limit and
+//       a compiler switch allowing to change it. Then implement
+//       this routine.
+BOOL CGTARG_Is_Long_Latency (TOP opcode)
+{
+  return FALSE;
+}
+

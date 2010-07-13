@@ -32,6 +32,10 @@
 #else
 #include <pair.h>
 #endif // __GNUC__ >= 3
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
+
+
 #include "defs.h"
 #include "glob.h"    // for Cur_PU_Name
 #include "timing.h"

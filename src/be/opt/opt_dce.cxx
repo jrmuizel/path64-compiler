@@ -4701,7 +4701,7 @@ DCE::Remove_dead_statements( void )
 #ifdef TARG_ST
 	  if ( stmt->Opr() == OPR_PRAGMA &&
 	       Loop_pragma( (WN_PRAGMA_ID)WN_pragma(stmt->Orig_wn()) ) ) {
-	    DevWarn( "BB:%d Loop pragma (%s) deleted", bb->Id(), WN_Pragma_Name(WN_pragma(stmt->Orig_wn())));
+	    DevWarn( "BB:%"SCNdPTR" Loop pragma (%s) deleted", bb->Id(), WN_Pragma_Name(WN_pragma(stmt->Orig_wn())));
 	  }
 #endif
 	  bb->Remove_stmtrep(stmt);

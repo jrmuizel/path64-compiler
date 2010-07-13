@@ -3111,7 +3111,7 @@ Handle_SELECT(WN *select, TN *result, OPCODE opcode)
   return result;
 }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 /*
 **	Handle the SHUFFLE operator.
 **

@@ -4,6 +4,7 @@ include_directories(
   ../common/com
   ../common/com/${BUILD_TARGET_DIR}
   ../common/util
+  ${PATHSCALE_BINARY_DIR}/common/targ_info
 
   ../ipa/common
   ../ipa/local

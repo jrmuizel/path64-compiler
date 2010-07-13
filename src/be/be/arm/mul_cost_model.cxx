@@ -47,7 +47,7 @@
 
 
 #include "defs.h"
-#include "config_TARG.h"// For Enable_Mx
+#include "config_targ_opt.h"// For Enable_Mx
 #include "wn_lower_mul.h"
 
 

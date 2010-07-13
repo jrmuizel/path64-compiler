@@ -21,6 +21,7 @@ SET(PATHSCALE_BE_BE_SRCS "../../common/targ_info/access/ti_init.c"
                          "../../common/util/tracing.c"
                          "../../common/util/util.c"
                          "../../common/util/vstring.c"
+                         "../../common/util/priority_queue.c" #st
                          "../../common/com/${BUILD_TARGET_DIR}/config_host.c"
                          "../../common/com/${BUILD_TARGET_DIR}/config_platform.c"
                          "cleanup.cxx"
@@ -39,6 +40,7 @@ SET(PATHSCALE_BE_BE_SRCS "../../common/targ_info/access/ti_init.c"
                          "wb_anl.cxx"
                          "${BUILD_TARGET_DIR}/fill_align_targ.cxx"
                          "${BUILD_TARGET_DIR}/driver_targ.cxx"
+                         "${BUILD_TARGET_DIR}/mul_cost_model.cxx" #st
                          "../com/be_util.cxx"
                          "../com/be_version.cxx"
                          "../com/cxx_base.cxx"
@@ -149,6 +151,7 @@ SET(PATHSCALE_BE_BE_SRCS "../../common/targ_info/access/ti_init.c"
                          "../../common/com/dll_loader.cxx" #st
                          "../../common/com/extension_intrinsic.cxx" #st
                          "../../common/com/dyn_isa_api_access.cxx" #st
+                         "../../common/com/dyn_dll_api_access.cxx" #st
                          "../region/ori.cxx"
                          "../region/rbi.cxx"
                          "../region/region_init.cxx"
@@ -200,7 +203,7 @@ add_dependencies(be be-static) # serialize to generate preg_list.cxx only once
 add_executable (be-exec driver.cxx driver_util.cxx iter.cxx  ../com/phase.cxx)
 # TODO : Must be the elf, elfutil and dwarf built from the source and not a system installed one
 # TODO : Make sure link targets are static
-target_link_libraries (be-exec -Wl,-whole-archive be-static SYS cg wopt -Wl,-no-whole-archive iberty dwarf elfutil elf targinfo)
+target_link_libraries (be-exec -Wl,-whole-archive be-static SYS rtkutils cg wopt -Wl,-no-whole-archive iberty dwarf elfutil elf targinfo)
 SET_TARGET_PROPERTIES(be-exec PROPERTIES OUTPUT_NAME "be")
 set_target_properties(be-exec PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
 

@@ -55,6 +55,8 @@
 #ifdef USE_PCH
 #include "be_com_pch.h"
 #endif /* USE_PCH */
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
 #pragma hdrstop
 #include <cmplrs/rcodes.h>
 #include <sys/resource.h>

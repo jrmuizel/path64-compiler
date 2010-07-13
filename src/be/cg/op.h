@@ -1204,18 +1204,7 @@ extern UINT32 CGTARG_Mem_Ref_Bytes(const OP *memop);
 #endif
 
 
-#ifdef TARG_ST
-// Is this 'op' a long latency OP for the purpose of GCM.
-// TODO: define a cut-out latency CGTARG_long_latency_limit and
-//       a compiler switch allowing to change it. Then implement
-//       this routine.
-inline BOOL OP_Is_Long_Latency (TOP opcode)
-{
-  return FALSE;
-}
-#else
 extern BOOL CGTARG_Is_Long_Latency (TOP *opcode);
-#endif
 #ifdef TARG_ST
 extern BOOL OP_is_ext_op(OP *op);
 extern BOOL OP_Is_Barrier(OP *op);
