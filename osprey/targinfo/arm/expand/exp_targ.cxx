@@ -1197,13 +1197,14 @@ Expand_Shift_Multiply (
 
   // see if I can do a shift instead of the multiply
   if (Is_Power_Of_2(TN_value(src2), mtype)) {
+    TN *r = (TN_Value(src2) < 0) ? Build_TN_Like (result) : result;
     val = Get_Power_Of_2(TN_value(src2), mtype);
     TN *tmp = Gen_Literal_TN (val, MTYPE_byte_size(mtype));
-    Expand_Shift (result, src1, tmp, mtype, shift_left, ops);
+    Expand_Shift (r, src1, tmp, mtype, shift_left, ops);
     
     // do we need to negate the result ?
     if (TN_value(src2) < 0) {
-      Expand_Neg (result, result, mtype, ops);      
+      Expand_Neg (result, r, mtype, ops);      
     }
 
     return TRUE;
