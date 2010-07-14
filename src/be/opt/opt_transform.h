@@ -64,6 +64,10 @@
 #include "opt_ssa.h"
 #include "opt_main.h"
 
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 // Search in a CODEREP expr
 //
 template <class Pred>

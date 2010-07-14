@@ -64,7 +64,7 @@ extern int gs_decode_reg_name (const char *asmspec);
 }
 
 extern char *WGEN_Tree_Node_Name(gs_t exp);
-
+bool begin_expand_stmt;
 #define ENLARGE(x) (x + (x >> 1))
 
 static BOOL  *if_else_info_stack;
@@ -4195,6 +4195,8 @@ WGEN_Expand_DO (gs_t stmt)
 void
 WGEN_Expand_Stmt(gs_t stmt, WN* target_wn)
 {
+	//zwu
+	begin_expand_stmt = true;
     if (gs_tree_code(stmt) == GS_LABEL_DECL)
       lineno = gs_decl_source_line(stmt);
     else

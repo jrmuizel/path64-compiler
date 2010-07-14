@@ -70,6 +70,10 @@
 #include "main_defs.h"
 #include "option_names.h"
 
+#ifndef WCOREFLAG  
+#define WCOREFLAG WCOREFLG //osol compatibility
+#endif
+
 boolean show_flag = FALSE;
 boolean show_but_not_run = FALSE;
 boolean execute_flag = TRUE;

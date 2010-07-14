@@ -1,4 +1,7 @@
 /*
+   Copyright (C) 2010 PathScale Inc. All Rights Reserved.
+*/
+/*
  * Copyright (C) 2008-2009 Advanced Micro Devices, Inc.  All Rights Reserved.
  */
 
@@ -65,6 +68,10 @@
 #include "opt_actions.h"
 #include "profile_type.h"    /* for PROFILE_TYPE */
 #include "get_options.h"
+
+#if !defined(__FreeBSD__)
+#include <alloca.h>
+#endif
 
 #include "license.h"
 
@@ -277,8 +284,8 @@ copy_phase_options (string_list_t *phase_list, phases_t phase)
 			// option in the first place?)
 			//
 			// Pass -OPT: options to wgen for bug 10262.
-			if (gnu_major_version == 4 &&
-			    !strcmp("-OPT:", get_option_name(iflag))) {
+			if (gnu_major_version == 4 && !strcmp("-OPT:", get_option_name(iflag))) 
+			{
 			  if (phase == P_spin_cc1 ||
 			      phase == P_spin_cc1plus)
 			    continue;
@@ -286,7 +293,12 @@ copy_phase_options (string_list_t *phase_list, phases_t phase)
 			    matches_phase = TRUE;
 			  else
 			    matches_phase = option_matches_phase(iflag, phase);
-			} else
+			}
+			else
+			//zwu
+			if(strcmp("-fpic", get_option_name(iflag)) == 0 && phase == P_wgen)
+			  matches_phase = TRUE;
+			else
 #endif
 			matches_phase = option_matches_phase(iflag, phase);
 
@@ -377,6 +389,11 @@ add_targ_options ( string_list_t *args )
     add_string(args, "-TARG:sse3=on");
   else
     add_string(args, "-TARG:sse3=off");
+
+  if (sse4_2 == TRUE)
+    add_string(args, "-TARG:sse4_2=on");
+  else
+    add_string(args, "-TARG:sse4_2=off");
 
   if (m3dnow == TRUE)
     add_string(args, "-TARG:3dnow=on");
@@ -649,7 +666,7 @@ add_isystem_dirs(string_list_t *args)
 static void
 add_abi(string_list_t *args) {
 #ifdef TARG_X8664
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(__sun)
 		add_string(args, (abi == ABI_N32) ? "-m32" : "-m64");
 #else /* defined(BUILD_OS_DARWIN) */
 		if( abi == ABI_N32 ){
@@ -661,6 +678,16 @@ add_abi(string_list_t *args) {
 		  add_string(args, "-mabi=n32");
 		else
 		  add_string(args, "-mabi=64");
+#endif
+}
+
+
+static void
+add_linker_abi(string_list_t *args) {
+#if defined(__sun)
+    add_string(args, (abi == ABI_N32) ? "-32" : "-64");
+#else
+    add_string(args, (abi == ABI_N32) ? "-melf_i386" : "-melf_x86_64");
 #endif
 }
 #endif /* KEY Mac port */
@@ -842,11 +869,15 @@ add_file_args (string_list_t *args, phases_t index)
 			}
 			add_inc_path(args, "%s/include", root);
 #else
-                        add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stdcxx",
-                                 root);
-                        if(stdcxx_threadsafe){
-                            add_string(args,"-D_RWSTD_POSIX_THREADS");
-                            add_string(args,"-nostdinc");
+                        if (source_lang == L_CC) {
+                                add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stdcxx/ansi",
+                                         root);
+                                add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stdcxx",
+                                         root);
+                                if(stdcxx_threadsafe){
+                                    add_string(args,"-D_RWSTD_POSIX_THREADS");
+                                }
+                                add_string(args,"-nostdinc++");
                         }
 #endif //PATH64_ENABLE_PSCRUNTIME
 		}
@@ -1195,7 +1226,12 @@ add_file_args (string_list_t *args, phases_t index)
 	case P_cplus_gfe:
 		if (sse2 == TRUE)
 			add_string(args, "-msse2");
-		// add -msse3 later when fe support is available
+
+        if (sse3 == TRUE)
+            add_string(args, "-msse3");
+
+        if (sse4_2 == TRUE)
+            add_string(args, "-msse4_2");
 
 		if (show_but_not_run)
 			add_string(args, "-###");
@@ -1315,9 +1351,19 @@ add_file_args (string_list_t *args, phases_t index)
 #endif
 				          (invoked_lang==L_CC))))
 			{
-			  sprintf(buf, "-fo,%s", outfile);
+#ifdef FAT_WHIRL_OBJECTS
+			  if(ipa == TRUE){
+    			      sprintf(buf, "-fo,.ipa-%s", outfile);
+			  } else 
+#endif //FAT_WHIRL_OBJECTS
+			      sprintf(buf, "-fo,%s", outfile);
 			} else {
 #ifdef KEY
+#ifdef FAT_WHIRL_OBJECTS
+			  if(ipa == TRUE){
+			     sprintf(buf, "-fo,.ipa-%s", get_object_file(the_file));
+			  } else 
+#endif //FAT_WHIRL_OBJECTS
 			  // Create unique .o files for a.c and foo/a.c.
 			  // Bug 9097.
 			  sprintf(buf, "-fo,%s", get_object_file(the_file));
@@ -1338,6 +1384,30 @@ add_file_args (string_list_t *args, phases_t index)
 		    append_string_lists (args, ipl_cmds);
 		}
 		break; 
+#ifdef FAT_WHIRL_OBJECTS
+        case P_merge:
+		add_string(args, "-r");
+                if (outfile != NULL && last_phase == current_phase && !multiple_source_files){
+                    sprintf(buf, ".native-%s",outfile);
+		    add_string(args, buf);
+                    sprintf(buf, ".ipa-%s",outfile);
+		    add_string(args, buf);
+                    add_string(args,"-o");
+                    sprintf(buf, "%s",outfile);
+		    add_string(args, buf);
+                } else {
+                    char *o_name;
+                    o_name = get_object_file(the_file);
+                    sprintf(buf, ".native-%s",construct_given_name(the_file,"o",(keep_flag || multiple_source_files || ((shared == RELOCATABLE) && (ipa == TRUE))) ? TRUE : FALSE));
+		    add_string(args, buf);
+                    sprintf(buf, ".ipa-%s",construct_given_name(the_file,"o",(keep_flag || multiple_source_files || ((shared == RELOCATABLE) && (ipa == TRUE))) ? TRUE : FALSE));
+		    add_string(args, buf);
+                    add_string(args,"-o");
+                    sprintf(buf, "%s",o_name);
+		    add_string(args, buf);
+                }
+	        break; 
+#endif //FAT_WHIRL_OBJECTS
 	case P_be:
 		add_language_option ( args );
 		add_targ_options ( args );
@@ -1496,6 +1566,13 @@ add_file_args (string_list_t *args, phases_t index)
 #endif
 			 )
 		{
+#ifdef FAT_WHIRL_OBJECTS
+                    if(ipa == TRUE){
+		 	strcpy(buf, ".native-");
+			strcat(buf, outfile);
+			add_string(args, buf);
+                    } else
+#endif
 			add_string(args, outfile);
 		} else {
 			// bug 2025
@@ -1506,9 +1583,19 @@ add_file_args (string_list_t *args, phases_t index)
 			     remember_last_phase == P_any_as)) {
 			  char *temp_obj_file = get_object_file (the_file);
 			  add_string(args, temp_obj_file);
-			} else
-			add_string(args, construct_given_name(the_file,"o",
-			  (keep_flag || multiple_source_files || ((shared == RELOCATABLE) && (ipa == TRUE))) ? TRUE : FALSE));
+			} else {
+                            char * o_name;
+                            o_name = construct_given_name(the_file,"o",
+                              (keep_flag || multiple_source_files || ((shared == RELOCATABLE) && (ipa == TRUE))) ? TRUE : FALSE);
+#ifdef FAT_WHIRL_OBJECTS
+                            if(ipa == TRUE){
+                                strcpy(buf, ".native-");
+                                strcat(buf, o_name);
+                                add_string(args, buf);
+                            } else 
+#endif //FAT_WHIRL_OBJECTS
+			    add_string(args, o_name);
+                        }
 		}
 		break;
 	case P_ld:
@@ -1524,7 +1611,9 @@ add_file_args (string_list_t *args, phases_t index)
 #ifdef TARG_MIPS
 		add_sysroot(args, index);
 #endif
-		add_abi(args);
+#ifndef __sun
+		add_linker_abi(args);
+#endif
 		set_library_paths(args);
 		if (outfile != NULL) {
 			add_string(args, "-o");
@@ -1560,7 +1649,7 @@ add_file_args (string_list_t *args, phases_t index)
 #ifdef TARG_MIPS
 		add_sysroot(args, index);
 #endif
-		add_abi(args);
+		add_linker_abi(args);
 #ifdef TARG_X8664
 		if( abi == ABI_N32 ) {
 		  add_string(args, "-m");
@@ -1622,6 +1711,10 @@ add_file_args (string_list_t *args, phases_t index)
 		  sprintf(buf, "-IPA:propagate_annotation_file=%s", opt_file);
 		  add_string(args,buf);
 		}
+                
+                if(show_flag){
+                  add_string(args,"-show");
+                }
 
 		/* object file should be in list of options */
 		break;
@@ -1839,7 +1932,11 @@ add_final_ld_args (string_list_t *args)
             add_library(args, "std");  //new runtime
 #else
             if (option_was_seen(O_static) || option_was_seen(O__static)){
-                add_arg(args, "--start-group");
+	        if(ipa != TRUE){
+                    add_arg(args, "--start-group");
+	        } else {
+	            add_arg(args, "-Wl,--start-group");
+	        }
 #  ifdef CONFIGURED_LIBGCC_DIR
                 add_arg(args, "-L%s", CONFIGURED_LIBGCC_DIR);
 #  endif
@@ -1849,7 +1946,12 @@ add_final_ld_args (string_list_t *args)
                 add_library(args, "gcc");
                 add_library(args, "gcc_eh");
                 add_library(args, "c");  /* the above libs should be grouped together */
-                add_arg(args, "--end-group");
+
+                if(ipa != TRUE){
+                    add_arg(args, "--end-group");
+                } else {
+                    add_arg(args, "-Wl,--end-group");
+                }
                  
                 if(invoked_lang == L_CC){
 #  ifdef CONFIGURED_LIBSUPCXX_DIR
@@ -2441,6 +2543,10 @@ determine_phase_order (void)
 			break;
 		case P_ipl:
 			add_phase(next_phase);
+#ifdef FAT_WHIRL_OBJECTS
+			next_phase = P_be;
+			break;
+#endif
 			if (option_was_seen(O_ar)) {
 			    next_phase = P_ar;
 			}
@@ -2448,6 +2554,18 @@ determine_phase_order (void)
 			    next_phase = link_phase;
 			}
 			break;
+#ifdef FAT_WHIRL_OBJECTS
+		case P_merge:
+			add_phase(next_phase);
+
+			if (option_was_seen(O_ar)) {
+			    next_phase = P_ar;
+			}
+			else {
+			    next_phase = link_phase;
+			}
+			break;
+#endif
 		case P_be:
 			add_phase(next_phase);
 			/* may or may not generate objects directly */
@@ -2464,6 +2582,14 @@ determine_phase_order (void)
 		case P_as:
 		case P_gas:
 			add_phase(next_phase);
+#ifdef FAT_WHIRL_OBJECTS
+                        /* After be produces assembler and it is copiled into .o
+                         * we're going to call P_ipl and P_merge */
+			if(ipa == TRUE){
+			   next_phase = P_merge;
+			   break;
+			}
+#endif
 			if (option_was_seen(O_ar)) {
 			    next_phase = P_ar;
 			}
@@ -2797,15 +2923,6 @@ run_ld (void)
         }
 #endif
 
-#ifdef KEY
-	// Pass "-m elf_i386" and "-m elf_x86_64" to linker.  Bug 8441.
-	if (option_was_seen(O_melf_i386)) {
-	    add_string(args, "-m elf_i386");
-	}
-	if (option_was_seen(O_melf_x86_64)) {
-	    add_string(args, "-m elf_x86_64");
-	}
-#endif
 	if (ipa == TRUE) {
 	    ldpath = get_phase_dir (ldphase);
 	    ldpath = concat_strings (ldpath, "/ipa.so");
@@ -2865,6 +2982,9 @@ run_ld (void)
 
 	if (invoked_lang == L_CC) {
 #ifndef PATH64_ENABLE_PSCRUNTIME
+#  ifdef CONFIGURED_LIBSTDCXX_DIR
+            add_arg(args, "-L%s", CONFIGURED_LIBSTDCXX_DIR);
+#  endif
             add_library(args, "stdc++");
 #endif
 	    if (!multiple_source_files && !((shared == RELOCATABLE) && (ipa == TRUE) && (outfile == NULL)) && !keep_flag)

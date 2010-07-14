@@ -26,7 +26,7 @@
 #include <cmplrs/host.h>
 #include <string.h>
 
-int32
+int32_t
 i_indx(string a, string b, fsize_t la, fsize_t lb)
 {
     fsize_t i, n;

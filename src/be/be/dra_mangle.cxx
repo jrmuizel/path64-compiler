@@ -64,7 +64,7 @@
 
 #include "dra_internal.h"       // Internal DRA interface
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32)
 extern void (*CG_Change_Elf_Symbol_To_Undefined_p) (ST*);
 #define CG_Change_Elf_Symbol_To_Undefined (*CG_Change_Elf_Symbol_To_Undefined_p)
 #else

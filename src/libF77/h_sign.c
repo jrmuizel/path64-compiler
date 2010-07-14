@@ -25,18 +25,18 @@
 
 #include <cmplrs/host.h>
 
-int16
-h_sign (int16 *a, int16 *b)
+int16_t
+h_sign (int16_t *a, int16_t *b)
 {
-    register int16 x;
+    register int16_t x;
     x = (*a >= 0 ? *a : - *a);
     return( *b >= 0 ? x : -x);
 }
 
-int16
-__hsign (int16 a, int16 b)
+int16_t
+__hsign (int16_t a, int16_t b)
 {
-    register int16 x;
+    register int16_t x;
     x = (a >= 0 ? a : - a);
     return( b >= 0 ? x : -x);
 }

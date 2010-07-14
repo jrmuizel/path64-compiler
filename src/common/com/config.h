@@ -260,10 +260,14 @@ static char *config_rcs_id = "$Source: common/com/SCCS/s.config.h $ $Revision: 1
 #include "config_targ.h"	/* in TARGET/com */
 #if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 #include <machine/endian.h>	/* for BIG_ENDIAN, LITTLE_ENDIAN */
-#elif !(defined(linux)) && !defined(_WIN32)
+#elif !(defined(linux) || defined(__sun) || defined(_WIN32))
 #include <sys/endian.h>		/* for BIG_ENDIAN, LITTLE_ENDIAN */
-#else
+#elif !defined(__sun)
 #include <endian.h>		/* for BIG_ENDIAN, LITTLE_ENDIAN */
+#elif defined(__sun)
+#define LITTLE_ENDIAN 1234
+#define BIG_ENDIAN 4321
+#define BYTE_ORDER LITTLE_ENDIAN
 #endif
 #include "mempool.h"	/* Include the "fundamental" routines */
 #include "flags.h"
@@ -537,7 +541,7 @@ extern BOOL Simp_Unsafe_Relops;         /* Allow foldings which might cause erro
 extern BOOL Enable_NaryExpr;		/* Allow nary expr in the lowerer */
 extern BOOL Enable_NaryExpr_Set;	/* ... option seen? */
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32)
 extern BOOL Enable_WFE_DFE;		/* frontend dead function elimination? */
 #endif /* __linux __ */
 

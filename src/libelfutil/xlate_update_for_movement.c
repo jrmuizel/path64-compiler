@@ -55,9 +55,6 @@
 
 */
 
-#ifndef _LP64
-#include <sgidefs.h> /* for types to use. */
-#endif /* _LP64 */
 #include <stdio.h>
 #include "xlateincl.h"
 

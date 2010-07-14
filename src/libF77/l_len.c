@@ -26,7 +26,7 @@
 #include <cmplrs/host.h>
 #include <string.h>
 
-int64
+int64_t
 l_len (string notused_s, fsize_t n)
 {
     return(n);

@@ -69,7 +69,7 @@ file(WRITE \"\${CMAKE_CURRENT_BINARY_DIR}/result.cmake\"
     file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
       "${_desc} passed with the following output:\n"
       "${output}\n")
-    set(CMAKE_Fortran_COMPILER "${Path64_BINARY_DIR}/fc-wrap.sh" CACHE FILEPATH "Overriding Fortran compiler" FORCE)
+    set(CMAKE_Fortran_COMPILER "${Path64_BINARY_DIR}/fc-wrap.sh")
     file(WRITE "${Path64_BINARY_DIR}/fc-wrap.sh"
     "#!/bin/sh
 ${REAL_Fortran_COMPILER} ${REAL_Fortran_COMPILER_FLAGS} \"\$@\"

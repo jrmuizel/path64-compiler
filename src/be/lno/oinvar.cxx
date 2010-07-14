@@ -92,11 +92,15 @@ static const char *rcs_id = "$Source$ $Revision$";
 #include "cond.h"
 #include "prompf.h"
 #include "anl_driver.h"
+#include "lno_trace.h"
+#ifdef KEY
+#include "glob.h"  
+#endif /*KEY*/
 
 #pragma weak New_Construct_Id
 
 static void Transform_Expression(BIT_VECTOR *bv, WN *exp, DOLOOP_STACK *do_stack, INT num_loops, 
-		INT outer_reg_tile, BOOL can_tile);
+		INT outer_reg_tile, BOOL can_tile, WN* wn_inner);
 static BOOL Process_Load(WN *load, BIT_VECTOR *result,DOLOOP_STACK *do_stack, 
 	INT num_elements,HASH_TABLE<WN *,BIT_VECTOR *> *htable, MEM_POOL *pool, BOOL outer_only);
 static BOOL Compatible_Expressions(BIT_VECTOR *input, BIT_VECTOR *output, BOOL outer_only);
@@ -115,7 +119,7 @@ void Mark_Invar(WN *region, INT num_loops, DOLOOP_STACK *do_stack,
 static BIT_VECTOR *Mark_Expression(WN *wn, INT num_loops, DOLOOP_STACK *do_stack,
 		HASH_TABLE<WN *,BIT_VECTOR *> *htable, MEM_POOL *pool, BOOL outer_only);
 static INT First_Invariant(BIT_VECTOR *bv,INT num_loops);
-static void Hoist_Inner_Invar(BIT_VECTOR *bv,WN *exp, DOLOOP_STACK *do_stack, INT num_loops);
+static void Hoist_Inner_Invar(BIT_VECTOR *bv,WN *exp, DOLOOP_STACK *do_stack, INT num_loops, WN * wn_inner);
 static BOOL Sufficient_Iterations(BIT_VECTOR *bv, DOLOOP_STACK *stack,
 					INT num_loops) ;
 typedef STACK<WN *> STACK_OF_WN;
@@ -173,7 +177,8 @@ void Hoist_Outer_Invar(WN *wn_inner, INT num_loops, INT outer_reg_tile, BOOL can
   }
 
   MEM_POOL_Push(&LNO_local_pool);
-  if (LNO_Verbose || LNO_Lno_Verbose)  
+# if 0
+  if  (LNO_Verbose || LNO_Lno_Verbose)  
     fprintf(stdout, 
       "# Hoisting outer invariants from loop on line %d (begin)\n", 
       (INT) WN_linenum(wn_inner));
@@ -181,7 +186,7 @@ void Hoist_Outer_Invar(WN *wn_inner, INT num_loops, INT outer_reg_tile, BOOL can
     fprintf(TFile, 
       "# Hoisting outer invariants from loop on line %d (begin)\n", 
       (INT) WN_linenum(wn_inner)); 
-  
+#endif
   DOLOOP_STACK *do_stack = CXX_NEW(DOLOOP_STACK(&LNO_local_pool),
 					&LNO_local_pool);
   WN_BV_STACK *invar_stack = CXX_NEW(WN_BV_STACK(&LNO_local_pool),
@@ -201,15 +206,16 @@ void Hoist_Outer_Invar(WN *wn_inner, INT num_loops, INT outer_reg_tile, BOOL can
       BIT_VECTOR *bv = invar_stack->Bottom_nth(i).bv;
       if (bv->Test(bv->Size()-1)) {
 	if (outer_reg_tile == num_loops && Contains_Indirect_Load(wn))
-		Hoist_Inner_Invar(bv,wn,do_stack,num_loops);
+		Hoist_Inner_Invar(bv,wn,do_stack,num_loops, wn_inner);
       } else {
 	if (Sufficient_Iterations(bv,do_stack,num_loops)) {
           Transform_Expression(bv,wn,do_stack,num_loops,outer_reg_tile,
-	    can_tile);
+	    can_tile, wn_inner);
         }
       }
     }
   }
+#if 0
   if (LNO_Verbose || LNO_Lno_Verbose)  
     fprintf(stdout, 
       "# Hoisting outer invariants from loop on line %d (end)\n", 
@@ -218,7 +224,7 @@ void Hoist_Outer_Invar(WN *wn_inner, INT num_loops, INT outer_reg_tile, BOOL can
     fprintf(TFile, 
       "# Hoisting outer invariants from loop on line %d (end)\n", 
       (INT) WN_linenum(wn_inner)); 
-  
+#endif
   MEM_POOL_Pop(&LNO_local_pool);
 }
 
@@ -760,7 +766,7 @@ static BOOL Perfectly_Nested(WN *loop, INT num_outer)
 
 // do the transformation
 static void Transform_Expression(BIT_VECTOR *bv, WN *exp, DOLOOP_STACK *do_stack, INT num_loops,
-				INT outer_reg_tile, BOOL can_tile)
+				INT outer_reg_tile, BOOL can_tile, WN *wn)
 {
   INT first_invariant=First_Invariant(bv,num_loops);
   first_invariant = MIN(first_invariant,outer_reg_tile);
@@ -810,6 +816,15 @@ static void Transform_Expression(BIT_VECTOR *bv, WN *exp, DOLOOP_STACK *do_stack
   // do the fission
   WN *new_outer_loop = Fission_Statement(new_statement,do_stack,num_loops);
 
+   if (LNO_Verbose || LNO_Lno_Verbose){ 
+      LNO_Trace( LNO_INVARIANT_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(exp)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 Srcpos_To_Line(WN_Get_Linenum(new_statement)));
+  }
+
+
   // get rid of the uneeded loops
   DOLOOP_STACK *stack = CXX_NEW(DOLOOP_STACK(&LNO_local_pool), &LNO_local_pool);
   WN *tmp = rhs;
@@ -838,7 +853,7 @@ static void Transform_Expression(BIT_VECTOR *bv, WN *exp, DOLOOP_STACK *do_stack
 // For inner invariants there is no point in hoisting other things because WOPT
 // will do it better
 
-static void Hoist_Inner_Invar(BIT_VECTOR *bv,WN *exp, DOLOOP_STACK *do_stack, INT num_loops)
+static void Hoist_Inner_Invar(BIT_VECTOR *bv,WN *exp, DOLOOP_STACK *do_stack, INT num_loops, WN *wn)
 {
   INT i=num_loops-1;
   while (i>=0 && bv->Test(i)) i--;
@@ -846,6 +861,14 @@ static void Hoist_Inner_Invar(BIT_VECTOR *bv,WN *exp, DOLOOP_STACK *do_stack, IN
   WN *new_statement = Split_Using_Preg(LWN_Get_Statement(exp),
 	exp,Array_Dependence_Graph, FALSE);
   WN *new_outer_loop = Fission_Statement(new_statement,do_stack,num_loops);
+  
+  if (LNO_Verbose || LNO_Lno_Verbose){ 
+      LNO_Trace( LNO_INVARIANT_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(exp)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 Srcpos_To_Line(WN_Get_Linenum(new_statement)));
+  }
 
   MEM_POOL_Push(&LNO_local_pool);
   DOLOOP_STACK *stack = CXX_NEW(DOLOOP_STACK(&LNO_local_pool), &LNO_local_pool);

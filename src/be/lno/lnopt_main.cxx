@@ -725,8 +725,8 @@ extern WN * Lnoptimizer(PU_Info* current_pu,
 
   LNO_Verbose = Get_Trace(TP_LNOPT, TT_LNO_VERBOSE);
 
-  if(LNO_Verbose || LNO_Lno_Verbose)
-    fprintf(stdout, "LNO processing procedure: %s\n", Cur_PU_Name);
+//  if(LNO_Verbose || LNO_Lno_Verbose)
+//    fprintf(stdout, "LNO processing procedure: %s\n", Cur_PU_Name);
   if(LNO_Verbose)
     fprintf(TFile, "LNO processing procedure: %s\n", Cur_PU_Name);
   
@@ -1165,8 +1165,8 @@ return_point:
   WN_Remove_Delete_Cleanup_Function(LWN_Delete_DU);
   GRAPH16_CAPACITY = save_graph_capacity; 
 
-  if (LNO_Verbose || LNO_Lno_Verbose) 
-    fprintf(stdout, "LNO DONE processing procedure: %s\n", Cur_PU_Name);
+//  if (LNO_Verbose || LNO_Lno_Verbose) 
+//    fprintf(stdout, "LNO DONE processing procedure: %s\n", Cur_PU_Name);
   if (LNO_Verbose)
     fprintf(TFile, "LNO DONE processing procedure: %s\n", Cur_PU_Name);
   

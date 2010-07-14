@@ -35,6 +35,10 @@
 #ifdef IPA_LINK
 #include "ipa_ld.h"
 
+#ifdef FAT_WHIRL_OBJECTS
+#include "sys/elf_whirl.h"
+#endif
+
 #define SHN_IPA_TEXT    0xff01          /* Allocated text symbols.  */
 #define SHN_IPA_DATA    0xff02          /* Allocated data symbols.  */
 

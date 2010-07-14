@@ -1233,6 +1233,8 @@ Handle_Call_Site (WN *call, OPERATOR call_opr)
   else {
     /* For PIC calls, force t9 to be the result register. */
     tgt_tn = Gen_PIC_Calls ? Ep_TN : NULL;
+    //zwu
+    //tgt_tn = Gen_PIC_Call_Shared ? Ep_TN : NULL;
     tgt_tn = Expand_Expr (WN_kid(call,WN_kid_count(call)-1), call, tgt_tn);
 
     /* If call-shared and the call is to a non PREEMPTIBLE symbol,
@@ -2744,6 +2746,15 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
       *kidno = 2;
       return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 4);
 
+    case INTRN_PCMPISTRI128:
+    case INTRN_PCMPISTRM128:
+      *kidno = 2;
+      return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 1);
+    case INTRN_PCMPESTRI128:
+    case INTRN_PCMPESTRM128:
+      *kidno = 4;
+      return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid (expr, 4))), 1);
+
     case INTRN_PSLLDQ:
     case INTRN_PSRLDQ:
     case INTRN_PSHUFD:
@@ -2781,23 +2792,36 @@ Handle_INTRINSIC_OP (WN *expr, TN *result)
   // Get any immediate operand in intrinsic.
   TN * imm_kid = Handle_Imm_Op (expr, &imm_kidno);
 
-  TN * kid1 = NULL, * kid2 = NULL;
+  TN * kid1 = NULL, * kid2 = NULL, * kid3 = NULL, * kid4 = NULL;
 
   if (imm_kid)
   {
     Is_True (imm_kidno == 1 || imm_kidno == 2,
              ("Immediate kid0 of intrinsic not supported"));
-    if (imm_kidno == 1)
-    {
-      kid1 = imm_kid;
-      if (numkids == 3)
-        kid2 = Expand_Expr(WN_kid2(expr), expr, NULL);
-    }
-    else
-    { // kid2 is immediate operand
-      Is_True (numkids == 3, ("Invalid # of kids for intrinsic"));
-      kid1 = Expand_Expr(WN_kid1(expr), expr, NULL);
-      kid2 = imm_kid;
+    switch ( imm_kidno ) {
+        case 1:
+        {
+          kid1 = imm_kid;
+          if (numkids == 3)
+            kid2 = Expand_Expr(WN_kid2(expr), expr, NULL);
+        }
+        break;
+        case 2:
+        { // kid2 is immediate operand
+          Is_True (numkids == 3, ("Invalid # of kids for intrinsic"));
+          kid1 = Expand_Expr(WN_kid1(expr), expr, NULL);
+          kid2 = imm_kid;
+        }
+        break;
+        case 4:
+        { // kid4 is immediate operand
+          Is_True (numkids == 5, ("Invalid # of kids for intrinsic"));
+          kid1 = Expand_Expr(WN_kid1(expr), expr, NULL);
+          kid2 = Expand_Expr(WN_kid2(expr), expr, NULL);
+          kid3 = Expand_Expr(WN_kid(expr,3), expr, NULL);
+          kid4 = imm_kid;
+        }
+        break;
     }
   }
   else
@@ -2808,8 +2832,8 @@ Handle_INTRINSIC_OP (WN *expr, TN *result)
       kid2 = Expand_Expr(WN_kid2(expr), expr, NULL);
     }
   }
-  
-  FmtAssert(numkids <= 3, ("unexpected number of kids in intrinsic_op"));
+
+  FmtAssert(numkids <= 5, ("unexpected number of kids in intrinsic_op"));
 #else
   TN *kid1 = (numkids == 2) ? Expand_Expr(WN_kid1(expr), expr, NULL) : NULL;
   FmtAssert(numkids <= 2, ("unexpected number of kids in intrinsic_op"));
@@ -2822,7 +2846,7 @@ Handle_INTRINSIC_OP (WN *expr, TN *result)
 #ifdef KEY
   const TYPE_ID mtype = WN_rtype( WN_kid0(expr) );
 #ifdef TARG_X8664
-  Exp_Intrinsic_Op (id, result, kid0, kid1, kid2, mtype, &New_OPs);
+  Exp_Intrinsic_Op (id, result, kid0, kid1, kid2, kid3, kid4, mtype, &New_OPs);
 #else
   Exp_Intrinsic_Op (id, result, kid0, kid1, mtype, &New_OPs);
 #endif

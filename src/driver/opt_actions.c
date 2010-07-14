@@ -1,4 +1,7 @@
 /*
+   Copyright (C) 2010 PathScale Inc. All Rights Reserved.
+*/
+/*
  * Copyright (C) 2008-2009 Advanced Micro Devices, Inc.  All Rights Reserved.
  */
 
@@ -1671,7 +1674,6 @@ get_default_cpu_name (char *msg)
 
 
 #ifdef TARG_X8664
-#define get_x86_auto_cpu_name get_auto_cpu_name
 
 #ifdef __linux__
 
@@ -1966,7 +1968,7 @@ get_x86_auto_cpu_name ()
       case 0: // Intel486TM DX processors
       case 1: // Intel486TM DX processors
       case 2: // Intel486 SX processors
-      case 3: // Intel487TM processors, IntelDX2 OverDrive® processors,
+      case 3: // Intel487TM processors, IntelDX2 OverDriveÂ® processors,
               // IntelDX2TM processors
       case 4: // Intel486 SL processor
       case 5: // IntelSX2TM processors
@@ -1977,7 +1979,7 @@ get_x86_auto_cpu_name ()
     case 5:
       switch (Model) {
       case  1: // Pentium OverDrive processor for Pentium processor (60, 66),
-               // Pentium® processors (60, 66)
+               // PentiumÂ® processors (60, 66)
       case  2: // Pentium OverDrive processor for Pentium processor (75, 90,
                // 100, 120, 133), Pentium processors (75, 90, 100, 120, 133,
                // 150, 166, 200)
@@ -1996,7 +1998,7 @@ get_x86_auto_cpu_name ()
       case  3: // Intel Pentium II OverDrive processor, Pentium II processor,
                // model 03
       case  5: // Pentium II processor, model 05, Pentium II Xeon processor,
-               // model 05, and Intel® Celeron® processor, model 05
+               // model 05, and IntelÂ® CeleronÂ® processor, model 05
       case  6: // Celeron processor, model 06
 
       case  7: // Pentium III processor, model 07, and Pentium III Xeon
@@ -2053,7 +2055,7 @@ get_x86_auto_cpu_name ()
       case  1: // Pentium 4 processor, Intel Xeon processor, Intel Xeon
                // processor MP, and Intel Celeron processor. All processors are
                // model 01h and manufactured using the 0.18 micron process.
-      case  2: // Pentium 4 processor, Mobile Intel Pentium 4 processor – M,
+      case  2: // Pentium 4 processor, Mobile Intel Pentium 4 processor â€“ M,
                // Intel Xeon processor, Intel Xeon processor MP, Intel Celeron
                // processor, and Mobile Intel Celeron processor. All processors
                // are model 02h and manufactured using the 0.13 micron process.
@@ -2179,7 +2181,7 @@ Get_x86_ISA ()
 
   // Get a more specific cpu name.
   if (!strcmp(target_cpu, "auto")) {		// auto
-    target_cpu = get_auto_cpu_name();		// may return anyx86
+    target_cpu = get_x86_auto_cpu_name();	// may return anyx86
     if (target_cpu == NULL)
       return;
   }

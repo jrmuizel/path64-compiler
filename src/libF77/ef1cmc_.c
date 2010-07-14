@@ -27,8 +27,8 @@
 #include <cmplrs/host.h>
 #include "s_cmp.h"
 
-int32 
-ef1cmc_ (char *a, int32 *la, char *b, int32 *lb)
+int32_t 
+ef1cmc_ (char *a, int32_t *la, char *b, int32_t *lb)
 {
     return( s_cmp( a, b, *la, *lb) );
 }

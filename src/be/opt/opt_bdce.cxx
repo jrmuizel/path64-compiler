@@ -121,6 +121,10 @@
 #include "bb_node_set.h"
 #include "opt_bdce.h"
 
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 /* CVTL-RELATED start (performance) */
 
 // ====================================================================

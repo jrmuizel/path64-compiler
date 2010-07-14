@@ -29,7 +29,6 @@ static const char USMID[] = "@(#) libu/util/posix/utilintrin.c	92.0	10/08/98 14:
 
 
 #include <fortran.h>
-#include <clibdefs.h>
 #include <cray/portdefs.h>
 
 static int32 numbits[256] = {

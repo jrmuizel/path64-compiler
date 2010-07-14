@@ -47,6 +47,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include "externals.h"
+#include "sys_ctime.h"
 
 #ifdef KEY /* Bug 1683, 5019 */
 
@@ -59,7 +60,7 @@ pathf90_ctime4(char *str, int len, pathf90_i4 *clock)
 {
 	char buf[CTIME_BUFLEN];
 	time_t ctemp = (time_t) *clock;
-	char *s = ctime_r(&ctemp, buf);
+	char *s = call_sys_ctime_r(&ctemp, buf, CTIME_BUFLEN);
 	s[24] = '\0';
 	b_char(s, str, len);
 }
@@ -75,7 +76,7 @@ pathf90_ctime8(char *str, int len, pathf90_i8 *clock)
 {
 	char buf[CTIME_BUFLEN];
 	time_t ctemp = (time_t) *clock;
-	char *s = ctime_r(&ctemp, buf);
+	char *s = call_sys_ctime_r(&ctemp, buf, CTIME_BUFLEN);
 	s[24] = '\0';
 	b_char(s, str, len);
 }

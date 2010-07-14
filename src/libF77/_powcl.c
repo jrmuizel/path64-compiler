@@ -29,7 +29,7 @@
 #include "cmplx.h"
 #include "c_div.h"
 
-complex __powcl(float areal, float aimag, int64 n)   /* __powcl = a**n  */
+complex __powcl(float areal, float aimag, int64_t n)   /* __powcl = a**n  */
 {
   float t;
   complex x, p;

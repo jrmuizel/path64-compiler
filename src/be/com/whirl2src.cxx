@@ -176,7 +176,7 @@ Whirl2Src_Emit (FILE* fp, WN* wn)
   }
 }
 
-#if ! (defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32))
+#if ! (defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32))
 
 // These functions are needed only for prompf_anl.so
 

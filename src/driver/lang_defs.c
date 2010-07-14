@@ -1,4 +1,7 @@
 /*
+   Copyright (C) 2010 PathScale Inc. All Rights Reserved.
+*/
+/*
  * Copyright (C) 2007, 2008 PathScale, LLC.  All Rights Reserved.
  */
 
@@ -140,6 +143,10 @@ static phase_info_t phase_info[] = {
    {'i',  0x0000000010000000LL,	"inline",PHASEPATH,	TRUE},	/* inline */
    {'i',  0x0000000020000000LL,	"ipl",	PHASEPATH,	TRUE},	/* ipl */
    {'i',  0x00000000f0000000LL,	"",	"",		TRUE},	/* ipl, inline*/
+#ifdef FAT_WHIRL_OBJECTS
+   /* Use generic settings for now */
+   {'l',  0x1000000000000000LL,	"ld",	"",		FALSE},	/* P_merge*/
+#endif
 
    {'b',  0x0000000100000000LL,	"be",	PHASEPATH,	TRUE},	/* be */
    /* We use 'B' for options to be passed to be via ipacom. */

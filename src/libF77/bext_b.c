@@ -34,11 +34,11 @@
  * and extending left for len bits. The right most bit is bit 0.
  */
 
-int8
-bext_b (int8 *m, int8 *i, int8 *len)    
+int8_t
+bext_b (int8_t *m, int8_t *i, int8_t *len)    
 {
     if ((*i + *len > NBB) || (*i < 0) || (*len < 0) || (*i >= NBB) ||
 	(*len > NBB))
 	return(*m);
-    return((uint8)(*m & F77mask[*i + *len]) >> *i);
+    return((uint8_t)(*m & F77mask[*i + *len]) >> *i);
 }

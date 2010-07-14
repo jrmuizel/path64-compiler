@@ -29,7 +29,7 @@
 
 #include "cmplrs/host.h"
 
-int8 not_b(int8 *m)
+int8_t not_b(int8_t *m)
 {
 	return(~*m);
 }

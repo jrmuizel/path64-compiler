@@ -78,7 +78,11 @@ static const char *rcs_id =   snl_CXX "$Revision: 1.8 $";
 #include "ff_utils.h"
 #include "fb_info.h"
 #include "fb_whirl.h"
-
+#include "lno_trace.h"
+#include <string>
+#include <iostream>
+#include <sstream>
+using namespace std;
 #pragma weak New_Construct_Id 
 
 //-----------------------------------------------------------------------
@@ -513,40 +517,79 @@ extern void Remove_Useless_Loops(SNL_REGION* region)
 //-----------------------------------------------------------------------
 // NAME: Print_Interchange
 // FUNCTION: Print an informative message which describes an interchange
-//   which has been performed.  The message is printed to 'file', and 
+//   which has been performed.  The message is printed to stdout or TFile, and 
 //   indicates that the SNL with outermost loop 'outer_loop' has had the
 //   'permutation' of length 'nloops' applied to it. 
 //-----------------------------------------------------------------------
 
-extern void Print_Interchange(FILE* file,
-                              WN* outer_loop,
+extern void Print_Interchange(WN* outer_loop,
                               INT permutation[],
                               INT nloops)
 {
-  fprintf(file, "Interchange: (");
-  INT i;
-  for (i = 0; i < nloops; i++) {
-    const char *name=WB_Whirl_Symbol(SNL_Get_Inner_Snl_Loop(outer_loop,i + 1));
-    fprintf(file, "%s", name);
-    if (i < nloops - 1)
-      fprintf(file, ",");
-  }
-  fprintf(file, ") -> (");
-  for (i = 0; i < nloops; i++) {
-    const char *name = WB_Whirl_Symbol(SNL_Get_Inner_Snl_Loop(outer_loop,
-      permutation[i] + 1));
-    fprintf(file, "%s", name);
-    if (i < nloops - 1)
-      fprintf(file, ",");
-  }
-  fprintf(file, ") at ("); 
-  for (i = 0; i < nloops; i++) {
-    fprintf(file, "%d", (INT) WN_linenum(SNL_Get_Inner_Snl_Loop(outer_loop, 
-      i + 1)));
-    if (i < nloops - 1)
-      fprintf(file, ",");
-  }
-  fprintf(file, ")\n");
+    ostringstream os;
+    string msg( "Interchange :(");
+    //char buf[1024];
+
+    //sprintf( buf, "Interchange: (");
+    INT i;
+    for (i = 0; i < nloops; i++) {
+        const char *name=WB_Whirl_Symbol(SNL_Get_Inner_Snl_Loop(outer_loop,i + 1));
+        //sprintf(buf, "%s", name);
+        msg.append( name);
+        if (i < nloops - 1)
+        {
+            //sprintf(buf, ",");
+            msg.append( ",");
+        }
+    }
+    //sprintf(buf, ") -> (");
+    msg.append( ") -> (");
+    for (i = 0; i < nloops; i++) {
+        const char *name = WB_Whirl_Symbol(SNL_Get_Inner_Snl_Loop(outer_loop,
+                                                                  permutation[i] + 1));
+        //sprintf(buf, "%s", name);
+        msg.append( name);
+        if (i < nloops - 1)
+        {
+         //   sprintf(buf, ",");
+            msg.append( ",");
+        }
+    }
+
+    //sprintf(buf, ") at (");
+    msg.append(  ") at (");
+    for (i = 0; i < nloops; i++) {
+        //sprintf(buf, "%d", (INT) WN_linenum(SNL_Get_Inner_Snl_Loop(outer_loop, 
+        //                                                           i + 1)));
+        os << (INT) WN_linenum(SNL_Get_Inner_Snl_Loop(outer_loop, i + 1));
+        msg.append(os.str());
+        os.str(""); 
+        if (i < nloops - 1)
+        {
+            //sprintf(buf, ",");
+            msg.append( ",");
+        }
+    }
+    //sprintf(buf, ")");
+    msg.append( ")");
+
+    if (LNO_Verbose || LNO_Lno_Verbose) 
+    {
+        LNO_Trace( LNO_INTERCHANGE_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(outer_loop)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 msg.c_str());
+
+    }
+
+    if (LNO_Verbose) 
+    {
+        //sprintf(buf, "\n");
+        msg.append("\n");
+        fprintf( TFile, "%s", msg.c_str());
+    }
+  
 }
 
 //-----------------------------------------------------------------------

@@ -72,7 +72,7 @@
 #include "em_elf.h"
 #include "targ_em_elf.h"
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__sun)
 /* from mips.h */
 #define SHF_MIPS_NOSTRIP	0x08000000
 #define EF_MIPS_XGOT		0x00000008
@@ -1131,7 +1131,7 @@ Create_Elf_Header (INT isa, BOOL old_abi, BOOL big_endian, BOOL pic,
     	Set_Elf_Version ((unsigned char *) &(ehdr64->e_ident));
 	ehdr64->e_machine = Get_Elf_Target_Machine();
 	ehdr64->e_type = ET_REL;
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 	ehdr64->e_flags = e_flags;
 #else
 	ehdr64->e_flags = 0x23000000LL | e_flags;

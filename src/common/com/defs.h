@@ -232,7 +232,11 @@ typedef unsigned int	UINT16;	/* Use the natural integer */
 typedef uint32_t	UINT32;	/* The natural integer matches */
 typedef uint64_t	UINT64;
 typedef int		BOOL;	/* Natural size Boolean value... which should be bool, but was defined int a long time ago */ 
+#ifdef __sun
+typedef signed char	mINT8;	/* int8_t defined as unsigned on osol when -funsigned-char option is specified */
+#else
 typedef int8_t		mINT8;	/* Avoid - often very inefficient */
+#endif
 typedef int16_t		mINT16;	/* Use a 16-bit integer */
 typedef int32_t		mINT32;	/* The natural integer matches */
 typedef int64_t		mINT64;
@@ -414,8 +418,5 @@ INT Min(INT i, INT j)
 #ifdef __cplusplus
 }
 #endif
-
-/* C++ standard doesn't cover ISO C99: 7.8 Format conversion of integer types so we're doing a hack for all the c code which was stupidly coverted to c++ */
-//#include "../../common/targ_info/generate/intdefs.h"
 
 #endif /* defs_INCLUDED */

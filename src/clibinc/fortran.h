@@ -529,9 +529,10 @@ typedef	void	*_fcd;	/* Temporary, to ensure fortran functions work	*/
 
 #endif	/* CRAY X-MP */
 
-#include <sys/cdefs.h>
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
-__BEGIN_DECLS
 extern	_fcd		_cptofcd (char *_Ccp, unsigned _Len);
 extern	char *		_fcdtocp (_fcd _Fcd);
 extern	unsigned long	_fcdlen (_fcd _Fcd);
@@ -555,7 +556,9 @@ extern	void		*_S2PC (void *_SDP, unsigned int _ELSZ);
 
 extern	unsigned long	_dvel_len (long _DVEL);
 
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #if	!defined(_UNICOS)		/* IRIX, Solaris */
 

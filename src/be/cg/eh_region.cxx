@@ -76,6 +76,11 @@
 #include <alloca.h>
 #endif
 
+
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 extern "C" {
 #include "pro_encode_nm.h"
 }

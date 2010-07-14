@@ -25,10 +25,7 @@
 #ifndef __FB_H__
 #define __FB_H__
 
-#ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
-#endif
-#include <inttypes.h>
+#include <stdint.h>
 
 typedef uint64_t	FB_offset;
 typedef uint64_t	FB_xword;

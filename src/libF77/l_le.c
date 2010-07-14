@@ -26,7 +26,7 @@
 #include <cmplrs/host.h>
 #include "s_cmp.h"
 
-int32
+int32_t
 l_le (string a, string b, fsize_t la, fsize_t lb)
 {
     return(s_cmp(a,b,la,lb) <= 0);

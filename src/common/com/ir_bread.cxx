@@ -202,7 +202,7 @@ INT
 WN_get_global_symtab (void *handle)
 {
 
-    OFFSET_AND_SIZE shdr = get_section (handle, SHT_MIPS_WHIRL, WT_GLOBALS);
+    OFFSET_AND_SIZE shdr = get_section (handle, SHT_WHIRL_SECTION, WT_GLOBALS);
     if (shdr.offset == 0)
 	return ERROR_RETURN;
 
@@ -304,7 +304,7 @@ WN_get_symtab (void *handle, PU_Info *pu)
     else if (st != Subsect_Exists)
 	return ERROR_RETURN;
 
-    OFFSET_AND_SIZE shdr = get_section (handle, SHT_MIPS_WHIRL, WT_PU_SECTION);
+    OFFSET_AND_SIZE shdr = get_section (handle, SHT_WHIRL_SECTION, WT_PU_SECTION);
     if (shdr.offset == 0)
 	return ERROR_RETURN;
 
@@ -379,7 +379,7 @@ WN_get_symtab (void *handle, PU_Info *pu)
 INT
 WN_get_strtab (void *handle)
 {
-    OFFSET_AND_SIZE shdr = get_section (handle, SHT_MIPS_WHIRL, WT_STRTAB);
+    OFFSET_AND_SIZE shdr = get_section (handle, SHT_WHIRL_SECTION, WT_STRTAB);
     if (shdr.offset == 0)
 	return ERROR_RETURN;
 
@@ -504,8 +504,14 @@ check_elf_header (char* baseaddr, Elf64_Word size, const ELF& tag)
     if (ehdr->e_ident[EI_VERSION] != EV_CURRENT ||
 	ehdr->e_version != EV_CURRENT)
 	return ERROR_RETURN;
-    if (ehdr->e_type != ET_IR ||
-	ehdr->e_shentsize != sizeof(typename ELF::Elf_Shdr))
+#ifdef X86_WHIRL_OBJECTS
+    if (ehdr->e_type != ET_REL) 
+        return ERROR_RETURN;
+#else 
+    if (ehdr->e_type != ET_IR)
+        return ERROR_RETURN;
+#endif //X86_WHIRL_OBJECTS
+    if (ehdr->e_shentsize != sizeof(typename ELF::Elf_Shdr))
 	return ERROR_RETURN;
     if (Target_ABI != ABI_UNDEF && 
 	// only check if expecting a certain target
@@ -771,7 +777,7 @@ WN_get_PU_Infos (void *handle, INT32 *p_num_PUs)
     INT32 size;
     PU_Info *pu_tree;
 
-    OFFSET_AND_SIZE shdr = get_section (handle, SHT_MIPS_WHIRL, WT_PU_SECTION);
+    OFFSET_AND_SIZE shdr = get_section (handle, SHT_WHIRL_SECTION, WT_PU_SECTION);
     if (shdr.offset == 0) return (PU_Info *)ERROR_RETURN;
 
     base = (char *) handle + shdr.offset;
@@ -791,7 +797,7 @@ WN_get_section_base (void *handle, INT sect)
 {
     char *base;
 
-    OFFSET_AND_SIZE shdr = get_section (handle, SHT_MIPS_WHIRL, sect);
+    OFFSET_AND_SIZE shdr = get_section (handle, SHT_WHIRL_SECTION, sect);
     if (shdr.offset == 0) return (void *) ERROR_RETURN;
 
     base = (char *) handle + shdr.offset;
@@ -847,7 +853,7 @@ WN_get_tree (void *handle, PU_Info *pu)
     offset = PU_Info_subsect_offset(pu, WT_TREE);
     size = PU_Info_subsect_size(pu, WT_TREE);
 
-    OFFSET_AND_SIZE shdr = get_section (handle, SHT_MIPS_WHIRL, WT_PU_SECTION);
+    OFFSET_AND_SIZE shdr = get_section (handle, SHT_WHIRL_SECTION, WT_PU_SECTION);
     if (shdr.offset == 0) return (WN *) ERROR_RETURN;
 
     if (offset + size > shdr.size) {
@@ -898,7 +904,7 @@ WN_get_flags (void *handle, char ***argv)
     Elf64_Word argc;
     char *baseaddr;
 
-    OFFSET_AND_SIZE shdr = get_section (handle, SHT_MIPS_WHIRL, WT_COMP_FLAGS);
+    OFFSET_AND_SIZE shdr = get_section (handle, SHT_WHIRL_SECTION, WT_COMP_FLAGS);
     if (shdr.offset == 0) return 0;
 
     baseaddr = (char *) handle + shdr.offset;
@@ -924,7 +930,7 @@ WN_get_dst (void *handle)
     char *base, *ptr, *blk;
     DST_BLOCK_IDX j;
 
-    OFFSET_AND_SIZE shdr = get_section (handle, SHT_MIPS_WHIRL, WT_DST);
+    OFFSET_AND_SIZE shdr = get_section (handle, SHT_WHIRL_SECTION, WT_DST);
     if (shdr.offset == 0) return ERROR_RETURN;
 
     base = (char *) handle + shdr.offset;
@@ -971,7 +977,7 @@ WN_get_feedback (void* handle, PU_Info* pu, MEM_POOL* pool)
 
     Elf64_Word offset = PU_Info_subsect_offset (pu, WT_FEEDBACK);
     Elf64_Word size = PU_Info_subsect_size (pu, WT_FEEDBACK);
-    OFFSET_AND_SIZE shdr = get_section (handle, SHT_MIPS_WHIRL, WT_PU_SECTION);
+    OFFSET_AND_SIZE shdr = get_section (handle, SHT_WHIRL_SECTION, WT_PU_SECTION);
     if (shdr.offset == 0)
 	return ERROR_RETURN;
 
@@ -1012,7 +1018,7 @@ WN_get_depgraph (void *handle, PU_Info *pu)
     offset = PU_Info_subsect_offset(pu, WT_DEPGRAPH);
     size = PU_Info_subsect_size(pu, WT_DEPGRAPH);
 
-    OFFSET_AND_SIZE shdr = get_section (handle, SHT_MIPS_WHIRL, WT_PU_SECTION);
+    OFFSET_AND_SIZE shdr = get_section (handle, SHT_WHIRL_SECTION, WT_PU_SECTION);
     if (shdr.offset == 0) return (void *) ERROR_RETURN;
 
     if (offset + size >= shdr.size) {
@@ -1064,7 +1070,7 @@ WN_get_prefetch (void *handle, PU_Info *pu)
     offset = PU_Info_subsect_offset(pu, WT_PREFETCH);
     size = PU_Info_subsect_size(pu, WT_PREFETCH);
 
-    OFFSET_AND_SIZE shdr = get_section (handle, SHT_MIPS_WHIRL, WT_PU_SECTION);
+    OFFSET_AND_SIZE shdr = get_section (handle, SHT_WHIRL_SECTION, WT_PU_SECTION);
     if (shdr.offset == 0) return ERROR_RETURN;
 
     if (offset + size >= shdr.size) {
@@ -1131,7 +1137,7 @@ WN_get_prefetch (void *handle, PU_Info *pu)
 static void
 WN_get_mod_ref_table (void * handle)
 {
-  OFFSET_AND_SIZE shdr = get_section (handle, SHT_MIPS_WHIRL, WT_IPA_SUMMARY);
+  OFFSET_AND_SIZE shdr = get_section (handle, SHT_WHIRL_SECTION, WT_IPA_SUMMARY);
 
   if (shdr.offset == 0)
     return;
@@ -1209,7 +1215,7 @@ WN_read_generic_map(void           *handle,
     return 0;
   }
 
-  OFFSET_AND_SIZE shdr = get_section (handle, SHT_MIPS_WHIRL, WT_PU_SECTION);
+  OFFSET_AND_SIZE shdr = get_section (handle, SHT_WHIRL_SECTION, WT_PU_SECTION);
   if (shdr.offset == 0) {
     return ERROR_RETURN;
   }

@@ -63,7 +63,7 @@
 /* this next header should be after the external declarations in the others */
 #include "pragma_weak.h"	/* weak pragmas for Valid_alias...	*/
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32)
 extern void (*Print_points_to_p) (FILE *fp, POINTS_TO *ptmp);
 #define Print_points_to (*Print_points_to_p)
 #else

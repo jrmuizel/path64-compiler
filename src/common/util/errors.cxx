@@ -69,7 +69,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#if !( defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32))
+#if !( defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32))
 #define _LANGUAGE_C			/* work around system header bug */
 extern "C" {
 #include <sys/fpu.h>			/* we don't have a C++ sys/fpu.h */
@@ -202,7 +202,7 @@ static bool do_traceback = false;
 #define Phase_List(n)	(Phases[n].descriptors)
 #define Phase_Name(n)	(Phases[n].name)
 
-#if !( defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !( defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 extern char *sys_siglist[];
 #endif
 
@@ -318,14 +318,14 @@ Handle_Signals ( void )
     setup_signal_handler (SIGILL);
     setup_signal_handler (SIGTRAP);
     setup_signal_handler (SIGIOT);
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(__sun))
     setup_signal_handler (SIGEMT);
 #endif
     setup_signal_handler (SIGFPE);
     setup_signal_handler (SIGBUS);
     setup_signal_handler (SIGSEGV);
     setup_signal_handler (SIGTERM);
-#if !( defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !( defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(__sun))
     syssgi(SGI_SET_FP_PRECISE, 1);
     set_fpc_csr(get_fpc_csr() & ~FPCSR_FLUSH_ZERO);
     syssgi(SGI_SET_FP_PRESERVE, 1);

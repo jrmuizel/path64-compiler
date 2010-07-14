@@ -34,10 +34,10 @@
  * The right most bit is bit 0.
  */
 
-int64
-bset_ll(int64 *n, int64 *i)
+int64_t
+bset_ll(int64_t *n, int64_t *i)
 {
-    int64 temp ;
+    int64_t temp ;
 
     if (*i < 0 || *i >= NBLL)
 	return 0;

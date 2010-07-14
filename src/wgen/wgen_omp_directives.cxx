@@ -54,6 +54,10 @@ extern "C"{
 #include <alloca.h>
 #endif
 
+#if !defined(__FreeBSD__)
+#include <alloca.h>
+#endif
+
 #include <stack>
 // The structure of the stack is expected to be:
 //   dtor1

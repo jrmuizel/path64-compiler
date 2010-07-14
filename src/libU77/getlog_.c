@@ -61,7 +61,12 @@ void
 pathf90_getlog(char *name, int len)
 {
 	char *l = alloca(len + 1);
+#ifdef __sun
+    char *res = getlogin_r(l, len + 1);
+	int err = res == NULL;
+#else
 	int err = getlogin_r(l, len + 1);
+#endif
 
 	b_char((err == 0) ?l:" ", name, len);
 }

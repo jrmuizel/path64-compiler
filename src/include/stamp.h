@@ -35,7 +35,7 @@
 extern "C" {
 #endif
 
-#if defined(__linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 #include "main_defs.h"
 
 #ifndef PSC_MAJOR_VERSION

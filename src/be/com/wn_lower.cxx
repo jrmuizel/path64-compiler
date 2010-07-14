@@ -10169,7 +10169,7 @@ static WN *lower_assert(WN *block, WN *tree, LOWER_ACTIONS actions)
 
 	/* __C_runtime_error ( BRK_RANGE, PU_name, line_no, fmt, ...);
 	 */
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32))
+#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32))
 	kids[0] = WN_Intconst ( MTYPE_I4, BRK_RANGE );
 #else
 	fprintf(stderr, "Don't know how to do BRK_RANGE\n");
@@ -10194,7 +10194,7 @@ static WN *lower_assert(WN *block, WN *tree, LOWER_ACTIONS actions)
 	trap = WN_Create_Intrinsic ( OPC_VINTRINSIC_CALL,
 				     INTRN_RT_ERR, 4, kids );
       } else {
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32))
+#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32))
 	trap = WN_CreateTrap ( BRK_RANGE );
 #else   
 	fprintf(stderr, "Don't know how to do BRK_RANGE\n");

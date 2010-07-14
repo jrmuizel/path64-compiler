@@ -57,7 +57,7 @@
 #ifndef IPA_SUMMARY
 INT IPA_Ivar_Global_Count;
 INT IPA_Ivar_Count;
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 mINT32
 SYSTEM_OF_EQUATIONS::_work_cols;
 mINT32
@@ -184,7 +184,7 @@ void PROJECTED_NODE::Fill_Out()
     lx_upper->Set_term(lx_lower->Get_term(i));
 }
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 //=====================================
 // Set the linexs in the projected node
 //=====================================

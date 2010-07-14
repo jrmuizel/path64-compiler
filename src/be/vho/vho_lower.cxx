@@ -44,6 +44,10 @@
 
 #ifndef FRONT_END
 
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 #include "defs.h"
 #include "config.h"
 #include "config_opt.h"

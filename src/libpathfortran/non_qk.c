@@ -26,7 +26,12 @@
 /* Wrappers allow normal libraries to refer to fstatfs and sigaltstack */
 
 int _Qk_fstatfs(int fd, struct statfs *buf) {
+#ifndef __sun
   return fstatfs(fd, buf);
+#else // __sun
+  errno = ENOSYS;
+  return -1;
+#endif
   }
 
 int _Qk_sigaltstack(const stack_t *ss, stack_t *oss) {

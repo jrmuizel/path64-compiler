@@ -105,6 +105,10 @@
 #include <alloca.h>
 #endif
 
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 BOOL Trace_Dwarf;
 
 static Dwarf_P_Debug dw_dbg;

@@ -64,7 +64,8 @@ gs_t program;
 /*       MAX_DEBUG_LEVEL        2  :: Defined in flags.h */
 # define DEF_DEBUG_LEVEL        0
 INT Debug_Level = DEF_DEBUG_LEVEL;	/* -gn: debug level */
-
+//zwu
+int wgen_pic;
 extern void WGEN_Weak_Finish(void);
 extern void WGEN_Expand_Top_Level_Decl(gs_t);
 extern void WGEN_Expand_Defers(void);
@@ -81,6 +82,9 @@ Process_Command_Line(INT argc, char **argv)
 {
   INT i;
   char *cp;
+
+	//zwu
+	wgen_pic = 0;
 
   for (i = 1; i < argc; i++) {
       if ( argv[i] != NULL && *(argv[i]) == '-' ) {
@@ -114,7 +118,8 @@ Process_Command_Line(INT argc, char **argv)
 		  case 'S':	   /* Spin file */
 		      Spin_File_Name = cp + 2;
 		      break;
-
+		  case 'i':
+			wgen_pic = 1;
 		  default:
 		      break;
 		  }
@@ -130,7 +135,6 @@ Process_Command_Line(INT argc, char **argv)
 	      Show_Progress = TRUE;
 	      break;
 
-	    
 	  default:		    /* What's this? */
 	      break;
 	  }
