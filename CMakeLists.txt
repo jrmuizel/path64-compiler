@@ -104,22 +104,11 @@ ELSE()
 	MESSAGE(FATAL_ERROR "Must set PSC_FULL_VERSION")
 ENDIF()
 
-IF(PSC_CRT_PATH)
-ELSE()
-    IF(PATH64_BUILD_32)
-        FIND_PATH(PSC_CRT_PATH crt1.o
-                  PATHS /lib32 /usr/lib32 /lib /usr/lib)
-    ELSE()
-        FIND_PATH(PSC_CRT_PATH crt1.o
-                  PATHS /lib64 /lib/amd64 /usr/lib64 /usr/lib/amd64 /lib /usr/lib)
-    ENDIF()
-ENDIF()
-
-IF(PSC_CRT_PATH)
-	MESSAGE(STATUS "PSC_CRT_PATH is set to "${PSC_CRT_PATH})
-ELSE()
+IF(NOT PSC_CRT_PATH)
+	SET(PSC_CRT_PATH "/usr/lib")
 	MESSAGE(FATAL_ERROR "Must set PSC_CRT_PATH")
 ENDIF()
+MESSAGE(STATUS "PSC_CRT_PATH is set to "${PSC_CRT_PATH})
 
 # Do we build with huge pages support
 OPTION(PATH64_ENABLE_HUGEPAGES "Enabling supported huge pages" OFF)
