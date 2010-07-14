@@ -2882,6 +2882,9 @@ run_ld (void)
 
 	if (invoked_lang == L_CC) {
 #ifndef PATH64_ENABLE_PSCRUNTIME
+#  ifdef CONFIGURED_LIBSTDCXX_DIR
+            add_arg(args, "-L%s", CONFIGURED_LIBSTDCXX_DIR);
+#  endif
             add_library(args, "stdc++");
 #endif
 	    if (!multiple_source_files && !((shared == RELOCATABLE) && (ipa == TRUE) && (outfile == NULL)) && !keep_flag)
