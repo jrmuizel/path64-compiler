@@ -119,6 +119,7 @@ public:
   WN        *Get_call(INT i)              { return (*_call_list)[i]; }
 };
 
+#ifdef  TARG_ST
 
 // iterator to traverse the exc_scope through its parent chain
 class EXC_SCOPE_ITER {
@@ -167,7 +168,7 @@ public:
   AUX_ID  Next_elem(void)	{ return _exc_scope->Destruct_object(Next()); }
 };
 
-
+#endif
 class EXC_SCOPE_TRY_ITER {
 private:
   EXC_SCOPE	*_exc_scope;	// the related exc_scope;
@@ -200,7 +201,6 @@ public:
   AUX_ID  First_elem(void)             { return Elem(_chi_iter.First()); }
   AUX_ID  Next_elem(void)              { return Elem(_chi_iter.Next()); }  
 };
-
 
 class EXC {
   CFG                  *_cfg;         // handle on the control-flow graph

@@ -64,3 +64,10 @@ extern void EETARG_Init_Entry_Exit_Code (WN *, BOOL);
 // layout.
 extern void EETARG_Fixup_Stack_Frame (void);
 #endif
+
+
+#ifdef TARG_X8664
+void EETARG_Generate_PIC_Entry_Code( BB* bb, OPS* ops );
+void EETARG_Generate_PIC_Exit_Code( BB* bb, OPS* ops );
+#endif
+

@@ -1037,11 +1037,7 @@ struct sort_on_filter : public binary_function<type_filter_entry,
 static INITO*
 Create_Type_Filter_Map (void)
 {
-#ifdef TARG_ST
-   INITV_IDX i = INITV_next (INITV_next (INITO_val (Get_Current_PU().unused)));
-#else 
   INITV_IDX i = INITV_next (INITV_next (INITO_val (PU_misc_info (Get_Current_PU()))));
-#endif
   INITO* ino;
   INITO_IDX idx = TCON_uval (INITV_tc_val(i));
   if (idx)	// idx for typeinfo_table
@@ -1102,11 +1098,7 @@ Create_INITO_For_Range_Table(ST * st, ST * pu)
 // 4th field in a call-site record.
   int running_ofst=1;
   int bytes_for_filter;
-#ifdef TARG_ST
-  INITO_IDX tmp = Get_Current_PU().unused;
-#else
   INITO_IDX tmp = PU_misc_info (Get_Current_PU());
-#endif
   INITO* eh_spec = (tmp) ? Create_Type_Filter_Map () : NULL ;
 
   vector<INITV_IDX> action_chains;

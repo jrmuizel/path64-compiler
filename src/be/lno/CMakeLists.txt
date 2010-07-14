@@ -1,4 +1,4 @@
-set(PATHSCALE_LNO_SRCS
+set(PATHSCALE_LNO_COMMON_SRCS
 				"../com/cxx_template.cxx"
 				"../com/dep_graph.cxx"
 				"${BUILD_TARGET_DIR}/lnotarget.cxx"
@@ -107,8 +107,14 @@ set(PATHSCALE_LNO_SRCS
 				"cross_snl.cxx"
 				"cross_cache.cxx"
 				"init.cxx"
-			#	"simd.cxx"
 				"lx_prompf_anl.cxx")
+
+set(PATHSCALE_LNO_X8664_SRCS "simd.cxx")
+IF (${BUILD_TARGET_DIR} MATCHES "arm")
+set(PATHSCALE_LNO_SRCS ${PATHSCALE_LNO_COMMON_SRCS} )
+ELSE()
+set(PATHSCALE_LNO_SRCS ${PATHSCALE_LNO_COMMON_SRCS} ${PATHSCALE_LNO_X8664_SRCS})
+ENDIF()
 
 ADD_DEFINITIONS(
 	-DLNO

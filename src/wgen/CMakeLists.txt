@@ -12,6 +12,13 @@ include_directories(
   ../ipa/main/optimize
 
   ../be/com
+  ${PATHSCALE_BINARY_DIR}/../GCC/gcc
+  ../../GCC/include
+  ../../GCC/gcc
+  ../libair
+  ../common/targ_info/parser/inc/
+  ../common/targ_info/access
+
   )
 
 add_definitions(
@@ -35,7 +42,7 @@ add_definitions(
   -DGPLUSPLUS_FE
   )
 
-set(wgen42_sources
+set(wgen42_sources_common
   ../common/com/config.cxx
   ../common/com/const.cxx
   ../common/com/controls.cxx
@@ -84,12 +91,22 @@ set(wgen42_sources
   varasm.c
   c_int_model.c
   )
+set (wgen42_sources_arm ../common/com/gccfe_targinfo_interface.cxx #st
+                        ../common/com/${BUILD_TARGET_DIR}/targ_register_common.cxx )
 
+IF (${BUILD_TARGET_DIR} MATCHES "arm")
+set(wgen42_sources ${wgen42_sources_common} ${wgen42_sources_arm})
+ELSE()
+set(wgen42_sources ${wgen42_sources_common})
+ENDIF()
 set_property(SOURCE ../common/com/wn_util.cxx PROPERTY COMPILE_DEFINITIONS MONGOOSE_BE)
 
 add_executable(wgen42 ${wgen42_sources})
-target_link_libraries(wgen42 comutil iberty spin cmplrs m)
-
+IF (${BUILD_TARGET_DIR} MATCHES "arm")
+target_link_libraries(wgen42 comutil targinfo fereconf iberty spin cmplrs m)
+ELSE()
+target_link_libraries(wgen42 comutil targinfo iberty spin cmplrs m)
+ENDIF()
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/lib/wgen42
     DEPENDS wgen42

@@ -4146,9 +4146,10 @@ void Unroll_Make_Remainder_Loop(CG_LOOP& cl, INT32 ntimes)
 #else
 	LOOPINFO_trip_count_tn(info) = new_trip_count;
 #endif
+#ifdef TARG_ST
         /* FdF 20060913: No trip_min for remainder loop. */
 	LOOPINFO_trip_min(info) = -1;
-#ifdef TARG_ST
+
 	// FdF: remove the PRAGMA UNROLL annotation from the remainder loop
 	ANNOTATION *unroll_ant = ANNOT_Get(BB_annotations(body), ANNOT_PRAGMA);
 	while (unroll_ant && WN_pragma(ANNOT_pragma(unroll_ant)) != WN_PRAGMA_UNROLL)
@@ -7643,7 +7644,7 @@ void CG_LOOP::Determine_Unroll_Factor()
   }
 #endif
 }
-
+#ifdef TARG_ST
 // FdF 20060207: For single BB do-loop only, use scheduling estimate
 // information to reduce the unrolling factor when it will not have a
 // significant impact on the performance of the loop.
@@ -7669,7 +7670,7 @@ void CG_LOOP::Determine_Sched_Est_Unroll_Factor()
   // Then, call the normal function to determine the unrolling factor
   Determine_Unroll_Factor();
 }
-
+#endif
 // Returns TRUE if OP is live
 //   
 inline bool CG_LOOP_OP_is_live(OP *op, TN_SET *live_set, bool keep_prefetch)
@@ -9030,10 +9031,10 @@ BOOL CG_LOOP_Optimize(LOOP_DESCR *loop, vector<SWP_FIXUP>& fixup)
     case MULTI_BB_WHILELOOP:
     {
       CG_LOOP cg_loop(loop);
-
+#ifdef TARG_ST
        if (action == MULTI_BB_WHILELOOP)
 	cg_loop.Set_is_while_loop();
-
+#endif
       // prolog needed to load loop counter
       if (!cg_loop.Has_prolog_epilog()) return FALSE;
 

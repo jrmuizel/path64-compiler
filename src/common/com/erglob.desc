@@ -402,7 +402,7 @@ ERROR_DESC EDESC_Globals[] = {
     "Invalid treenum %d for (0x%x: %s) at line %d",
     4, ET_INT, ET_POINTER, ET_NODE, ET_INT, 0, 0 },
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   { EC_Bad_Omp,		EM_User | ES_ERRABORT,		RAG_EN_NONE,
     "%s", 1, ET_STRING, 0, 0, 0, 0, 0 },
   { EC_Ill_Alias,	EM_User | ES_ERRABORT,		RAG_EN_NONE,

@@ -2351,7 +2351,6 @@ Split_Consistency_Check()
   Check_Local_Interferences(alloc_lrange);
   Check_Local_Interferences(deferred_lrange);
 }
-#ifndef TARG_ST
 static BOOL
 Compare_Priorities(float p1, float p2)
 /////////////////////////////////////
@@ -2369,27 +2368,6 @@ Compare_Priorities(float p1, float p2)
     max = p2;
   }
 
-  return ((fabs(p1-p2)/max) < .01);
-}
-#endif
-
-/////////////////////////////////////
-static BOOL
-Compare_Priorities(float p1, float p2)
-/////////////////////////////////////
-//
-// compare floating point values with tolerance 
-//
-/////////////////////////////////////
-{
-  if (p1 == p2) {
-    return TRUE;
-  }
-  float max = p1 = fabs(p1);
-  p2 = fabs(p2);
-  if (max == 0.0 || p2 > max) {
-    max = p2;
-  }
   return ((fabs(p1-p2)/max) < .01);
 }
 

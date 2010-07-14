@@ -131,54 +131,11 @@ static INT32 Ignore_Int;
 INT16 In_Front_End = TRUE;	/* Start out there */
 #endif
 
-/* The maximum integer machine type corresponding directly to the
- * machine registers, and the default integer machine type:
- */
-CLASS_INDEX Max_Int_Mtype = 0;
-CLASS_INDEX Max_Uint_Mtype = 0;
-CLASS_INDEX Def_Int_Mtype = 0;
-CLASS_INDEX Def_Uint_Mtype = 0;
-
-/* On MIPS III targets, should we use 32-bit pointers? */
-BOOL Use_32_Bit_Pointers = FALSE;
-
 #ifdef TARG_ST
 BOOL Use_ELF_32          = Use_32_Bit_Pointers;
 #endif
 
-/* For various targets, what are the characteristics of pointers */
-INT		Pointer_Size; 
-#ifdef TARG_ST
-ISA_REGISTER_CLASS Pointer_Register_Class;
-#endif
-CLASS_INDEX	Pointer_Mtype;
-CLASS_INDEX	Pointer_Mtype2;
 
-/* What are pointers and booleans aliased to in WHIRL */
-TYPE_ID Pointer_type;
-TYPE_ID Pointer_type2;
-TYPE_ID Boolean_type;
-TYPE_ID Boolean_type2;
-TYPE_ID Integer_type;
-
-/* For various targets, what is the comparison result type? */
-INT		Comparison_Result_Size;		/* in bytes */
-CLASS_INDEX	Comparison_Result_Mtype;
-
-/* ====================================================================
- *
- * Target debugging options
- * Arhtur: this comes from ia64/config_targ.cxx
- * ====================================================================
- */
-
-/* Symbolic Debug mode as specified on command line.  (The mode can
- * change from PU to PU because, for example, we encounter a call to
- * the routine 'alloca()' -- we must restore the mode to the value as
- * it was specified on the command line, so we remember it.)
- */
-INT16 Symbolic_Debug_Mode;
-INT16 Max_Symbolic_Debug_Mode;	/* Maximum for any PU */
 /* ====================================================================
  *
  * Global option flags
@@ -410,13 +367,14 @@ static BOOL Short_Data_Set = FALSE;	/* ... option seen? */
 INT32 Short_Lits = DEF_SDATA_ELT_SIZE;	/* Literals of this size in .litX */
 static BOOL Short_Lits_Set = FALSE;	/* ... option seen? */
 INT32 Max_Sdata_Elt_Size = DEF_SDATA_ELT_SIZE;	/* -Gn: sdata size */
+#ifdef TARG_ST
 INT32 Max_Srdata_Elt_Size = DEF_SRDATA_ELT_SIZE;
 static BOOL Max_Srdata_Elt_Size_Set = FALSE;
+#endif
 BOOL appli_config_file_set          = FALSE;
 
 char *appli_config_file_name        = NULL;
 char *active_appli_config_file_name = NULL;
-
 BOOL Constant_GP = FALSE;		/* gp never changes? */
 
 /* ====================================================================

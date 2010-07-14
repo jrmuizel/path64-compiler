@@ -271,10 +271,12 @@ Get_Preg_Size (PREG_NUM p)
 	else
 		return MTYPE_RegisterSize(SIM_INFO.int_type);
 }
+#ifdef TARG_ST
 static BOOL Is_Struct_Parameter (TY_IDX struct_ty);
-
+#endif
 static void Setup_Struct_Parameter_Locations (TY_IDX struct_ty);
 static PLOC Get_Struct_Parameter_Location (PLOC prev);
+#ifdef TARG_ST
 extern BOOL
 Is_Struct_Input_Parameter (TY_IDX struct_ty)
 {
@@ -286,7 +288,7 @@ Is_Struct_Output_Parameter (TY_IDX struct_ty)
 {
     return Is_Struct_Parameter (struct_ty);
 }
-
+#endif
 extern void
 Setup_Struct_Input_Parameter_Locations (TY_IDX struct_ty)
 {

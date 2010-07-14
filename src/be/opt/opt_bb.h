@@ -669,11 +669,9 @@ public:
   BB_NODE *Then(void) const      { return _then; }
   BB_NODE *Else(void) const      { return _else; }
   BB_NODE *Merge(void) const     { return _merge; }
-#ifdef TARG_ST
   void     Set_then(BB_NODE * i) { _then = i; }
   void     Set_else(BB_NODE * i) { _else = i; }
   void     Set_merge(BB_NODE * i) { _merge = i; }
-#endif
 };
 
 enum LOOP_FLAGS {
@@ -1693,7 +1691,6 @@ public:
 			const BVECTOR *cr_vol_map = NULL);
 
   INT32	       Code_size_est(void) const;
-#ifdef TARG_ST
   // Does this BB dominate every BB in the given  SC_NODE?
   BOOL Is_dom(SC_NODE *);
   // Does this BB post-dominate every BB in the given SC_NODE?
@@ -1705,7 +1702,6 @@ public:
   int  Real_stmt_count();
   // Does this BB_NODE end with a branch targeting the given BB_NODE?
   BOOL Is_branch_to(BB_NODE *);
-#endif
 
 }; // end BB_NODE class
 

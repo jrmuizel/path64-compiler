@@ -538,6 +538,14 @@
 #include "targ_isa_pack.h"
 #include "targ_isa_bundle.h"
 #include "targ_isa_print.h"
+/* ====================================================================
+ *    Branch related interface:
+ * ====================================================================
+ */
+
+
+extern UINT32 CGTARG_branch_taken_penalty;
+extern BOOL CGTARG_branch_taken_penalty_overridden;
 
 #include "cgtarget_arch.h"
 #include "defs.h"
@@ -564,15 +572,6 @@ extern void Hardware_Workarounds (void);
  * --------------------------------------------------------------------
  */
 extern void CGTARG_Initialize(void);
-
-/* ====================================================================
- *    Branch related interface:
- * ====================================================================
- */
-
-
-extern UINT32 CGTARG_branch_taken_penalty;
-extern BOOL CGTARG_branch_taken_penalty_overridden;
 
 // If a BB ends in an unconditional branch, turn it into a 
 // conditional branch with TRUE predicate.
@@ -614,12 +613,8 @@ CGTARG_Immed_To_Reg(TOP opr)
   return CGTARG_Immed_To_Reg_Table[(INT)opr];
 }
 #endif
-#ifdef TARG_IA64
 extern void CGTARG_Perform_THR_Code_Generation(OP *load_op, OP *check_load,
 					       THR_TYPE type);
-#else
-extern void CGTARG_Perform_THR_Code_Generation(OP *load_op, THR_TYPE type);
-#endif
 extern INT  CGTARG_ARC_Sched_Latency( ARC *arc );
 extern void CGTARG_Handle_Errata_Hazard (OP *op, INT erratnum, 
 					 INT ops_to_check);
@@ -924,6 +919,7 @@ typedef enum {
   COMPARE_TYPE_and_orcm,
   COMPARE_TYPE_normal
 } COMPARE_TYPE;
+#ifdef TARG_ST
 inline BOOL CGTARG_Can_Predicate_Calls() { 
   return PROC_has_predicate_calls(); 
 }
@@ -939,7 +935,7 @@ inline BOOL CGTARG_Can_Predicate() {
 inline BOOL CGTARG_Can_Select() { 
   return PROC_is_select(); 
 }
-
+#endif
 extern TOP CGTARG_Parallel_Compare(OP* cmp_op, COMPARE_TYPE ctype);
 #ifdef TARG_ST
 extern BOOL CGTARG_Dependence_Required(OP *pred_op, OP *succ_op, INT16 *latency);
@@ -955,18 +951,6 @@ extern void CGTARG_Adjust_Latency(OP *pred_op, OP *succ_op, CG_DEP_KIND kind, UI
  * ---------------------------------------------------------------------
  */
 extern TOP CGTARG_Get_unc_Variant(TOP top);
-
-/* ====================================================================
- *   Target specific scheduling and dependence graph:
- * ====================================================================
- */
-
-inline INT32 CGTARG_Branch_Taken_Penalty(void)
-{
-  return CGTARG_branch_taken_penalty_overridden ?
-    CGTARG_branch_taken_penalty : 1;
-}
-
 INT32 CGTARG_Max_OP_Latency(OP *op);
 #ifdef TARG_ST
 INT32 CGTARG_Max_RES_Latency(OP *op, INT i);
@@ -1005,17 +989,6 @@ extern TN* CGTARG_Process_Asm_m_constraint(WN*, void**, int, OPS*, OPS*);
 #ifdef TARG_ST
 extern BOOL CGTARG_Can_Negate_Branch(OP *br);
 #endif
-
-/* ====================================================================
- *    Properties:
- * ====================================================================
- */
-
-inline INT
-CGTARG_Text_Alignment (void) {
-  return DEFAULT_TEXT_ALIGNMENT;
-}
-
 
 /* call init routine once per asm stmt */
 extern void CGTARG_Init_Asm_Constraints (void);

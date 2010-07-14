@@ -744,12 +744,6 @@ extern BOOL OP_has_implicit_interactions(OP*);
 /* (cbr) poison. should not use */
 /* [JV] Use 'OP_find_opnd_use(op,OU_predicate)' instead */
 #define OP_PREDICATE_OPND (abort(), 0)
-#else
-#ifdef SUPPORTS_PREDICATION
-#define OP_PREDICATE_OPND 0
-#else
-#define OP_PREDICATE_OPND -1
-#endif
 #endif
 
 #ifdef TARG_ST
@@ -906,9 +900,10 @@ inline BOOL OP_conflict(OP *op, INT res_idx, INT opnd_idx) {
 #define OP_l_group(o)           (TOP_is_l_group(OP_code(o)))
 #define OP_privileged(o)        (TOP_is_privileged(OP_code(o)))
 #define OP_simulated(o)		(TOP_is_simulated(OP_code(o)))
-
+#ifdef TARG_ST
 #define TOP_is_predicated(t)    (TOP_is_guard_t(t) || TOP_is_guard_f(t))
 #define OP_is_predicated(o)     (TOP_is_predicated(OP_code(o)))
+#endif
 #define OP_is_guard_t(o)        (TOP_is_guard_t(OP_code(o)))
 #define OP_is_guard_f(o)         (OP_is_guard_t(o) && \
                                  OP_Pred_False(o, OP_find_opnd_use(o, OU_predicate)))
@@ -925,7 +920,9 @@ inline BOOL OP_conflict(OP *op, INT res_idx, INT opnd_idx) {
 #define OP_immediate_opnd(o,lc)	(TOP_Immediate_Operand(OP_code(o), lc))
 #define OP_has_immediate(o)	(OP_immediate_opnd(o, NULL) >= 0)
 #define OP_inst_words(o)	(ISA_PACK_Inst_Words(OP_code(o)))
+#ifdef TARG_ST
 #define OP_unit_slots(o)	(ISA_EXEC_Unit_Slots(OP_code(o)))
+#endif
 #define OP_find_opnd_use(o,u)	(TOP_Find_Operand_Use(OP_code(o),(u)))
 #define OP_has_result(o)        (OP_results(o) != 0)
 
@@ -957,12 +954,6 @@ inline BOOL OP_conflict(OP *op, INT res_idx, INT opnd_idx) {
    case of asm statements with same result/opnd constraints.
 */
 extern INT OP_same_res(OP *op, INT i);
-#else
-/* Returns index of operand that must be same register as result i */ 
-inline INT OP_same_res(OP *op, INT i) { 
-  const ISA_OPERAND_INFO *oinfo = OP_operand_info(op);
-  return ISA_OPERAND_INFO_Same_Res(oinfo, i); 
-}
 #endif
 
 inline INT OP_result_size(OP *op, INT result)
@@ -1189,12 +1180,6 @@ inline TN *OP_Copy_Result_TN(OP *op)
   INT ires = OP_Copy_Result(op);
   return (ires < 0) ? NULL : OP_result(op,ires);
 }
-#else
-inline TN *CGTARG_Copy_Operand_TN(OP *op)
-{
-  INT iopnd = CGTARG_Copy_Operand(op);
-  return (iopnd < 0) ? NULL : OP_opnd(op,iopnd);
-}
 #endif
 
 #ifdef TARG_ST
@@ -1218,9 +1203,6 @@ extern BOOL OP_Can_Be_Speculative (OP *op);
 extern BOOL OP_Is_Unconditional_Compare (OP *op);
 extern BOOL OP_Performance_Effects (OP *op);
 extern BOOL OP_Safe_Effects (OP *op);
-#else
-inline BOOL CGTARG_Is_OP_Barrier(OP *op) { return FALSE; }
-extern BOOL CGTARG_Can_Be_Speculative(OP* op);
 #endif
 
 // Copy ASM_OP_ANNOT when duplicating an OP.

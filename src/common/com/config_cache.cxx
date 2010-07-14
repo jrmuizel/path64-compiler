@@ -342,7 +342,9 @@ void MHD::Print(FILE* f) const
   }
   fprintf(f, "\n"); 
 }
+#ifdef TARG_ST
 BOOL MHD::Has_No_Memory_Hierarchy()
 {
    return First()==-1 ? TRUE : FALSE;
 }
+#endif

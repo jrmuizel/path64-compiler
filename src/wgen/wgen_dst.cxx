@@ -1284,8 +1284,11 @@ typedef struct type_trans {
 	const char *name;
 	DST_ATE_encoding encoding;
 } type_trans;
-
+#ifdef TARG_ST
+static DST_INFO_IDX base_types[MTYPE_STATIC_LAST+5] =
+#else
 static DST_INFO_IDX base_types[MTYPE_LAST+5] =  
+#endif
 {
 DST_INVALID_INIT,DST_INVALID_INIT,DST_INVALID_INIT,DST_INVALID_INIT,	
 DST_INVALID_INIT,DST_INVALID_INIT,DST_INVALID_INIT,DST_INVALID_INIT,	
@@ -1452,9 +1455,11 @@ DST_enter_subroutine_type(gs_t type_tree)
 
     // If the front-end adds the fake first param, then convert the function to
     // return void.
+
+#ifndef TARG_ST
     if (TY_return_in_mem(ret_ty_idx))
       ret_ty_idx = Be_Type_Tbl(MTYPE_V);
-
+#endif
     DST_INFO_IDX ret_ty_dst_idx = DST_INVALID_IDX;
     if (ret_ty_idx != Be_Type_Tbl(MTYPE_V)) {
       gs_t type = gs_tree_type(type_tree);

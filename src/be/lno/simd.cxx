@@ -4727,7 +4727,7 @@ static void Simd_Vectorize_SimdOp_And_Kids(WN *simd_op, TYPE_ID vmtype, BOOL *in
      WN_set_rtype(simd_op, vec_rtype);
      WN_set_desc(simd_op, vec_desc);
      if(!invarkid[0]){
-         WN *operand0 = WN_kid0(uimd_op);
+         WN *operand0 = WN_kid0(simd_op);
 #ifndef TARG_ST
          if(WN_operator(operand0)==OPR_SHUFFLE)
            operand0 = WN_kid0(operand0); //shuffle, down a level

@@ -311,7 +311,7 @@ static int Type_Size(int bits)
     return 64;
   }
 }
-
+#ifdef TARG_ST
 /////////////////////////////////////
 static unsigned int 
 get_low_register_class_index(bool gen_static_code)
@@ -323,7 +323,6 @@ get_low_register_class_index(bool gen_static_code)
 {
    return gen_static_code ? 0 : ISA_REGISTER_CLASS_STATIC_MAX+1;
 }
-
 /////////////////////////////////////
 static unsigned int
 get_upper_register_class_index(bool gen_static_code)
@@ -358,7 +357,7 @@ get_upper_register_class_index(bool gen_static_code)
 
    return idx_max;
 }
-
+#endif
 //////////////////////////////////////
 static void exit_failure( const char *msg )
 //////////////////////////////////////

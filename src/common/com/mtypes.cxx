@@ -360,6 +360,7 @@ TYPE_ID Mtype_TransferSize(TYPE_ID x, TYPE_ID y)
   }
   return MTYPE_UNKNOWN;
 }
+#ifdef TARG_ST
 /* ==================================================================== 
  * 
  * MTYPE_TransferSize 
@@ -399,6 +400,7 @@ TYPE_ID MTYPE_TransferSize(INT32 x, TYPE_ID y)
 
   return MTYPE_UNKNOWN; 
 }
+#endif
 #ifdef TARG_ST
 
 static TYPE_ID Table_complex_to_real[] = { 

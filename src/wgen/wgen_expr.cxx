@@ -64,11 +64,117 @@ extern "C"{
 #include "wgen_omp_directives.h"
 #endif
 
+
 #define BITS_PER_UNIT 8
 
 extern void WGEN_Expand_Return(gs_t, gs_t);
 
 LABEL_IDX loop_expr_exit_label = 0; // exit label for LOOP_EXPRs
+#ifdef TARG_ST
+// [HK] add functions to treat expansion of EXACT_DIV_EXPR in case of division by power of 2 
+/* ====================================================================
+ *   Is_Power_OF_2
+ *
+ *   return TRUE if the val is a power of 2
+ * ====================================================================
+ */
+#define IS_POWER_OF_2(val)	((val != 0) && ((val & (val-1)) == 0))
+
+static BOOL 
+Is_Power_Of_2 (
+  INT64 val, 
+  TYPE_ID mtype
+)
+{
+  if (MTYPE_is_signed(mtype) && val < 0) val = -val;
+
+  if (mtype == MTYPE_U4) val &= 0xffffffffull;
+
+  return IS_POWER_OF_2(val);
+}
+
+/* ====================================================================
+ *   Get_Power_OF_2
+ * ====================================================================
+ */
+static INT
+Get_Power_Of_2 (
+  INT64 val, 
+  TYPE_ID mtype
+)
+{
+  INT i;
+  INT64 pow2mask;
+
+  if (MTYPE_is_signed(mtype) && val < 0) val = -val;
+
+  if (mtype == MTYPE_U4) val &= 0xffffffffull;
+
+  pow2mask = 1;
+  for ( i = 0; i < MTYPE_size_reg(mtype); ++i ) {
+    if (val == pow2mask) return i;
+    pow2mask <<= 1;
+  }
+
+  FmtAssert(FALSE, ("Get_Power_Of_2 unexpected value"));
+  /* NOTREACHED */
+}
+// [HK]
+
+static gs_t
+string_constant (gs_t arg, gs_long_long_t *offset)
+{
+  // See gcc version in tree.c, which does a lot more analysis
+  // here.
+  *offset = -1;
+  if (gs_tree_code (arg) == GS_ADDR_EXPR) {
+    gs_t arg0 = gs_tree_operand (arg, 0);
+    gs_code_t arg0code = gs_tree_code (arg0);
+    if (arg0code == GS_STRING_CST) {
+      *offset = 0;
+      return arg0;
+    } else 
+      return 0;
+  } else
+    return 0;
+}
+
+static gs_long_long_t
+c_strlen (gs_t src)
+{
+  gs_long_long_t offset;
+  gs_long_long_t max;
+  const char *ptr;
+
+  while ((gs_tree_code (src) == GS_NOP_EXPR
+	  || gs_tree_code (src) == GS_CONVERT_EXPR
+	  || gs_tree_code (src) == GS_NON_LVALUE_EXPR)
+	 && (TY_mtype (Get_TY (gs_tree_type (src)))
+	     == TY_mtype (Get_TY (gs_tree_type (gs_tree_operand (src, 0)))))) {
+    src = gs_tree_operand (src, 0);
+  }
+
+  if (gs_tree_code (src) == GS_COND_EXPR) {
+    gs_long_long_t len1 = c_strlen (gs_tree_operand (src, 1));
+    gs_long_long_t len2 = c_strlen (gs_tree_operand (src, 2));
+    return (len1 == len2) ? len1 : -1;
+  }
+  if (gs_tree_code (src) == GS_COMPOUND_EXPR)
+    return c_strlen (gs_tree_operand (src, 1));
+
+  src = string_constant (src, &offset);
+  if (src == 0)
+    return -1;
+
+  max = gs_tree_string_length (src) - 1;
+  ptr = gs_tree_string_pointer (src);
+
+  if (offset < 0 || offset > max)
+    return -1;
+
+  return strlen (ptr + offset);
+}
+#endif /* TARG_ST */
 
 gs_t enclosing_cleanup_point_expr = NULL;
 
@@ -693,7 +799,7 @@ WGEN_Save_Expr (gs_t save_exp,
     wgen_save_expr_stack [i].level = wgen_save_expr_level;
 #endif
     wgen_save_expr_stack [i].st  = 0;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     // If exp is a CALL_EXPR that returns a ptr-to-member-function, then call
     // WGEN_Expand_Ptr_To_Member_Func_Call_Expr to expand it.  Otherwise, call
     // WGEN_Expand_Expr to do regular expansion.  Bug 3400.
@@ -4279,7 +4385,7 @@ WGEN_Expand_Expr (gs_t exp,
 	}
 	else 
 	{
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	  gs_t ret_type = NULL;
 	  if (gs_tree_code(t) == GS_AGGR_INIT_EXPR)
 	  { // bug 11159: Get the return type.
@@ -4908,7 +5014,7 @@ WGEN_Expand_Expr (gs_t exp,
 			        gs_get_integer_value(gs_decl_field_bit_offset(arg1)))
 			      / BITSPERBYTE;
 	else ofst = 0;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	FmtAssert (DECL_FIELD_ID(arg1) != 0,
                    ("WGEN_Expand_Expr: DECL_FIELD_ID used but not set"));
 
@@ -5873,7 +5979,7 @@ WGEN_Expand_Expr (gs_t exp,
       {
 	if (gs_tree_code(gs_tree_operand(exp, 1)) == GS_ERROR_MARK)
 	    break;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	// If gs_tree_operand(exp, 1) is a CALL_EXPR that returns a
 	// ptr-to-member-function, then call
 	// WGEN_Expand_Ptr_To_Member_Func_Call_Expr to expand it.  Otherwise,
@@ -6120,7 +6226,7 @@ WGEN_Expand_Expr (gs_t exp,
           }
           else
             ret_mtype = TY_mtype (ty_idx);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	  // If the type must be returned in memory, create a symbol and pass
 	  // its address as the first param.
           if (TY_return_in_mem (ty_idx)) {
@@ -6324,7 +6430,7 @@ WGEN_Expand_Expr (gs_t exp,
               case GSBI_BUILT_IN_STRCPY:
 		iopc = INTRN_STRCPY;
                 break;
-
+#ifndef TARG_ST
 	      case GSBI_BUILT_IN_STRCHR:
 		iopc = INTRN_STRCHR;
 		break;
@@ -6332,7 +6438,7 @@ WGEN_Expand_Expr (gs_t exp,
 	      case GSBI_BUILT_IN_STRCAT:
 		iopc = INTRN_STRCAT;
 		break;
-
+#endif
               case GSBI_BUILT_IN_STRCMP:
 #ifdef GPLUSPLUS_FE
 		iopc = INTRN_STRCMP;
@@ -6594,7 +6700,7 @@ WGEN_Expand_Expr (gs_t exp,
 		  intrinsic_op = TRUE;
 		}
 		break;
-
+#ifndef TARG_ST
 	      case GSBI_BUILT_IN_POWI: // bug 10963
 		if (ret_mtype == MTYPE_V) ret_mtype = MTYPE_F8;
 		FmtAssert(ret_mtype == MTYPE_F8,
@@ -6611,13 +6717,14 @@ WGEN_Expand_Expr (gs_t exp,
 		iopc = INTRN_F4F4I4EXPEXPR;
 		break;
 
-	      case GSBI_BUILT_IN_POWIL: // bug 11246
+              case GSBI_BUILT_IN_POWIL: // bug 11246
 		if (ret_mtype == MTYPE_V) ret_mtype = MTYPE_FQ;
 		FmtAssert(ret_mtype == MTYPE_FQ,
 			  ("unexpected mtype for intrinsic 'powil'"));
 		intrinsic_op = TRUE;
 		iopc = INTRN_FQFQI4EXPEXPR;
 		break;
+#endif
 #endif // KEY
 
               case GSBI_BUILT_IN_CONSTANT_P:
@@ -6631,7 +6738,7 @@ WGEN_Expand_Expr (gs_t exp,
                   wn = WN_Intconst (MTYPE_I4, 1);
 		  whirl_generated = TRUE; // KEY
 		}
-#ifdef KEY  // bugs 1058, 14470
+#if defined( KEY) && !defined(TARG_ST)  // bugs 1058, 14470
 // If not yet compile-time constant, let the backend decide if it is 
 // a constant
 		else
@@ -6701,7 +6808,7 @@ WGEN_Expand_Expr (gs_t exp,
 				WN_Intconst(Pointer_Mtype, -2));
                 whirl_generated = TRUE;
 		break;
-
+#ifndef TARG_ST
               case GSBI_BUILT_IN_FRAME_ADDRESS:
 		Set_PU_has_alloca(Get_Current_PU());
 		iopc = MTYPE_byte_size(Pointer_Mtype) == 4 ?
@@ -6882,7 +6989,7 @@ WGEN_Expand_Expr (gs_t exp,
 	        whirl_generated = TRUE;
 #endif
 	        break;
-
+#endif
               case GSBI_BUILT_IN_FFS:
                 iopc = INTRN_I4FFS;
                 intrinsic_op = TRUE;
@@ -6894,7 +7001,7 @@ WGEN_Expand_Expr (gs_t exp,
 		wn = WGEN_Expand_Expr (gs_tree_value (gs_tree_operand (exp, 1)));
 		whirl_generated = TRUE;
 	        break;
-	
+#ifndef TARG_ST	
 	      case GSBI_BUILT_IN_POPCOUNT:
 	      case GSBI_BUILT_IN_POPCOUNTL:
 	      case GSBI_BUILT_IN_POPCOUNTLL:
@@ -6908,6 +7015,7 @@ WGEN_Expand_Expr (gs_t exp,
 	        iopc = INTRN_PARITY;
 		intrinsic_op = TRUE;
 		break;
+#endif
 
 #ifdef TARG_MIPS
 	      case GSBI_BUILT_IN_CLZ:
@@ -6925,7 +7033,8 @@ WGEN_Expand_Expr (gs_t exp,
 		iopc = INTRN_CTZ;
 		intrinsic_op = TRUE;
 		break;
-#else	
+#else
+#ifndef TARG_ST        
 	      case GSBI_BUILT_IN_CLZ:
 		// INTRN_CLZ32 is inline-expanded
 	        iopc = INTRN_CLZ32; 
@@ -6952,6 +7061,7 @@ WGEN_Expand_Expr (gs_t exp,
 	        iopc = TARGET_64BIT ? INTRN_CTZ : INTRN_CTZ64;
 		intrinsic_op = TRUE;
 		break;
+#endif
 #endif
 	      case GSBI_BUILT_IN_TRAP:
 		call_wn = WN_Create (OPR_CALL, MTYPE_V, MTYPE_V, 0);
@@ -7485,7 +7595,8 @@ WGEN_Expand_Expr (gs_t exp,
 	 arg_mtype  = TY_mtype(arg_ty_idx);
 	 ikids[1] = WN_CreateParm(arg_mtype, arg_wn, arg_ty_idx, 
 				  WN_PARM_BY_VALUE);
-	 switch (code) {
+#ifndef TARG_ST 
+         switch (code) {
 	 case GS_UNGE_EXPR: iopc = INTRN_ISGREATEREQUAL; break;
 	 case GS_UNGT_EXPR: iopc = INTRN_ISGREATER; break;
 	 case GS_UNLE_EXPR: iopc = INTRN_ISLESSEQUAL; break;
@@ -7495,6 +7606,7 @@ WGEN_Expand_Expr (gs_t exp,
 	 case GS_UNEQ_EXPR:
 	 case GS_UNORDERED_EXPR: iopc = INTRN_ISUNORDERED; break;
 	 }
+#endif
 	 wn = WN_Create_Intrinsic(OPR_INTRINSIC_OP, Boolean_type, MTYPE_V,
 				  iopc, 2, ikids);
 	 if (code == GS_UNEQ_EXPR) {
@@ -8044,7 +8156,7 @@ WGEN_Tree_Node_Name (gs_t exp)
 {
   return gs_code_name(gs_tree_code (exp));
 }
-
+#ifndef TARG_ST
 // g++ uses a record to hold a ptr-to-member-function.  Return TRUE iff EXP is
 // a CALL_EXPR that returns a ptr-to-member-function and the ABI requires that
 // such a record be returned in memory.
@@ -8066,7 +8178,7 @@ WGEN_Call_Returns_Ptr_To_Member_Func (gs_t exp)
   }
   return FALSE;
 }
-
+#endif
 // See comment for WGEN_Call_Returns_Ptr_To_Member_Func.
 static WN*
 WGEN_Expand_Ptr_To_Member_Func_Call_Expr (gs_t exp, TY_IDX nop_ty_idx,

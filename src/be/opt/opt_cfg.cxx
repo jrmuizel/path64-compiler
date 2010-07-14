@@ -4366,7 +4366,7 @@ CFG::Remove_fake_entryexit_arcs( void )
     }
   }
 }
-
+#ifdef TARG_ST
 // ====================================================================
 // CFG::Attach_fake_entryexit_arcs()
 //
@@ -4400,7 +4400,7 @@ CFG::Attach_fake_entryexit_arcs(void)
     }
   }
 }
-
+#endif
 // ====================================================================
 // CFG::Func_entry_bb
 //   The BB that contains the OPR_FUNC_ENTRY node.  Note: This

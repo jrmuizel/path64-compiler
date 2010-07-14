@@ -3437,7 +3437,7 @@ Is_CVTL_Opcode (OPCODE opc)
 		return FALSE;
 	}
 }
-
+#ifdef TARG_ST
 /* ====================================================================
  *   Get_mtype_for_mult
  *
@@ -3489,7 +3489,8 @@ Get_mtype_for_mult (
 
   return mtype;
 }
-
+#endif
+#ifdef TARG_ST
 /* ====================================================================
  *   Expand_Expr_Mult
  *
@@ -3546,7 +3547,7 @@ Expand_Expr_Mult (
 
   return kid_tn;
 }
-
+#endif
 #ifdef TARG_ST
 
 /* ====================================================================

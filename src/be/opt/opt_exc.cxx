@@ -70,7 +70,7 @@ EXC_SCOPE::EXC_SCOPE(WN *begin_wn, EXC *exc)
   _vcall = NULL;
   _call_list = CXX_NEW(DYN_ARRAY<WN*>(exc->Mem_pool()), exc->Mem_pool());
 }
-
+#ifdef TARG_ST
 // Returns TRUE if this exception region is for cleanup region
 BOOL
 EXC_SCOPE::Is_cleanup_region(void) const
@@ -85,7 +85,7 @@ EXC_SCOPE::Is_cleanup_region(void) const
   }
   return TRUE;
 }
-
+#endif
 // Returns TRUE if this exception region is for try region
 BOOL
 EXC_SCOPE::Is_try_region(void) const
@@ -107,7 +107,7 @@ EXC_SCOPE::Is_try_region(void) const
   return FALSE;
 #endif
 }
-
+#ifdef TARG_ST
 INT
 EXC_SCOPE::Destruct_object_cnt(void)
 {
@@ -143,7 +143,7 @@ EXC_SCOPE::Destruct_object(INT kid)
   } else
     return 0;
 }
-
+#endif
 #ifdef TARG_ST
 /* (cbr) handler regions can be pointed either by gotos from the landing pad, 
    either a list of labels see action table */

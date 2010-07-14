@@ -361,7 +361,7 @@ Irb_Init_Quad (INT size, QUAD_TYPE value, INT32 repeat, INITO_IDX ino,
     TCON tc = Host_To_Targ_Quad (value);
     return Irb_Init_Val (ino, inv, repeat, Enter_tcon (tc));
 }
-
+#ifndef TARG_ST
 INITV_IDX
 Irb_Init_F16 (INT size, F16_TYPE value, INT32 repeat, INITO_IDX ino,
 	      INITV_IDX inv)
@@ -369,7 +369,7 @@ Irb_Init_F16 (INT size, F16_TYPE value, INT32 repeat, INITO_IDX ino,
     TCON tc = Host_To_Targ_F16 (value);
     return Irb_Init_Val (ino, inv, repeat, Enter_tcon (tc));
 }
-
+#endif
 
 
 INITV_IDX
@@ -399,7 +399,7 @@ Irb_Init_Complex_Quad (INT size, QUAD_TYPE real, QUAD_TYPE imag,
     TCON tc = Host_To_Targ_Complex_Quad (real, imag);
     return Irb_Init_Val (ino, inv, repeat, Enter_tcon (tc));
 }
-
+#ifndef TARG_ST
 INITV_IDX
 Irb_Init_Complex_F16 (INT size, F16_TYPE real, F16_TYPE imag,
 		      INT32 repeat, INITO_IDX ino, INITV_IDX inv)
@@ -407,6 +407,7 @@ Irb_Init_Complex_F16 (INT size, F16_TYPE real, F16_TYPE imag,
     TCON tc = Host_To_Targ_Complex_F16 (real, imag);
     return Irb_Init_Val (ino, inv, repeat, Enter_tcon (tc));
 }
+#endif
 #endif /* MONGOOSE_BE */
 
 

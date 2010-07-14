@@ -109,14 +109,14 @@ Negate_BR_Variant(VARIANT variant)
   case V_BR_U8GE: variant = V_BR_U8LT; break;
   case V_BR_U8LT: variant = V_BR_U8GE; break;
   case V_BR_U8LE: variant = V_BR_U8GT; break;
- 
+#ifdef TARG_ST 
   case V_BR_A8EQ: variant = V_BR_A8NE; break;
   case V_BR_A8NE: variant = V_BR_A8EQ; break;
   case V_BR_A8GT: variant = V_BR_A8LE; break;
   case V_BR_A8GE: variant = V_BR_A8LT; break;
   case V_BR_A8LT: variant = V_BR_A8GE; break;
   case V_BR_A8LE: variant = V_BR_A8GT; break;
-  
+#endif
   case V_BR_I4EQ: variant = V_BR_I4NE; break;
   case V_BR_I4NE: variant = V_BR_I4EQ; break;
   case V_BR_I4GT: variant = V_BR_I4LE; break;
@@ -130,28 +130,26 @@ Negate_BR_Variant(VARIANT variant)
   case V_BR_U4GE: variant = V_BR_U4LT; break;
   case V_BR_U4LT: variant = V_BR_U4GE; break;
   case V_BR_U4LE: variant = V_BR_U4GT; break;
-
+#ifdef TARG_ST
   case V_BR_I5EQ: variant = V_BR_I5NE; break;
   case V_BR_I5NE: variant = V_BR_I5EQ; break;
   case V_BR_I5GT: variant = V_BR_I5LE; break;
   case V_BR_I5GE: variant = V_BR_I5LT; break;
   case V_BR_I5LT: variant = V_BR_I5GE; break;
   case V_BR_I5LE: variant = V_BR_I5GT; break;
-
   case V_BR_U5EQ: variant = V_BR_U5NE; break;
   case V_BR_U5NE: variant = V_BR_U5EQ; break;
   case V_BR_U5GT: variant = V_BR_U5LE; break;
   case V_BR_U5GE: variant = V_BR_U5LT; break;
   case V_BR_U5LT: variant = V_BR_U5GE; break;
   case V_BR_U5LE: variant = V_BR_U5GT; break;
-
   case V_BR_A4EQ: variant = V_BR_A4NE; break;
   case V_BR_A4NE: variant = V_BR_A4EQ; break;
   case V_BR_A4GT: variant = V_BR_A4LE; break;
   case V_BR_A4GE: variant = V_BR_A4LT; break;
   case V_BR_A4LT: variant = V_BR_A4GE; break;
   case V_BR_A4LE: variant = V_BR_A4GT; break;
-  
+#endif 
   case V_BR_F_FALSE: variant = V_BR_F_TRUE;  break;
   case V_BR_F_TRUE:  variant = V_BR_F_FALSE; break;
 
@@ -242,14 +240,14 @@ Invert_BR_Variant(VARIANT variant)
   case V_BR_U8GE: variant = V_BR_U8LE; break;
   case V_BR_U8LT: variant = V_BR_U8GT; break;
   case V_BR_U8LE: variant = V_BR_U8GE; break;
- 
+#ifdef TARG_ST 
   case V_BR_A8EQ: variant = V_BR_A8EQ; break;
   case V_BR_A8NE: variant = V_BR_A8NE; break;
   case V_BR_A8GT: variant = V_BR_A8LT; break;
   case V_BR_A8GE: variant = V_BR_A8LE; break;
   case V_BR_A8LT: variant = V_BR_A8GT; break;
   case V_BR_A8LE: variant = V_BR_A8GE; break;
-
+#endif
   case V_BR_FEQ: variant = V_BR_FEQ; break;
   case V_BR_FNE: variant = V_BR_FNE; break;
   case V_BR_FGT: variant = V_BR_FLT; break;
@@ -284,7 +282,7 @@ Invert_BR_Variant(VARIANT variant)
   case V_BR_U4GE: variant = V_BR_U4LE; break;
   case V_BR_U4LT: variant = V_BR_U4GT; break;
   case V_BR_U4LE: variant = V_BR_U4GE; break;
-  
+#ifdef TARG_ST
   case V_BR_I5EQ: variant = V_BR_I5EQ; break;
   case V_BR_I5NE: variant = V_BR_I5NE; break;
   case V_BR_I5GT: variant = V_BR_I5LT; break;
@@ -305,7 +303,7 @@ Invert_BR_Variant(VARIANT variant)
   case V_BR_A4GE: variant = V_BR_A4LE; break;
   case V_BR_A4LT: variant = V_BR_A4GT; break;
   case V_BR_A4LE: variant = V_BR_A4GE; break;
-
+#endif
   case V_BR_PEQ: variant = V_BR_PEQ; break;
   case V_BR_PNE: variant = V_BR_PNE; break;
 
@@ -424,14 +422,14 @@ BR_Variant_Name(VARIANT variant)
   case V_BR_U8GE:    return is_false ? "!U8GE"    : "U8GE";
   case V_BR_U8LT:    return is_false ? "!U8LT"    : "U8LT";
   case V_BR_U8LE:    return is_false ? "!U8LE"    : "U8LE";
-
+#ifdef TARG_ST
   case V_BR_A8EQ:    return is_false ? "!A8EQ"    : "A8EQ";
   case V_BR_A8NE:    return is_false ? "!A8NE"    : "A8NE";
   case V_BR_A8GT:    return is_false ? "!A8GT"    : "A8GT";
   case V_BR_A8GE:    return is_false ? "!A8GE"    : "A8GE";
   case V_BR_A8LT:    return is_false ? "!A8LT"    : "A8LT";
   case V_BR_A8LE:    return is_false ? "!A8LE"    : "A8LE";
-
+#endif
 
   case V_BR_FEQ:     return is_false ? "!FEQ"     : "FEQ";
   case V_BR_FNE:     return is_false ? "!FNE"     : "FNE";
@@ -467,7 +465,7 @@ BR_Variant_Name(VARIANT variant)
   case V_BR_U4GE:    return is_false ? "!U4GE"    : "U4GE";
   case V_BR_U4LT:    return is_false ? "!U4LT"    : "U4LT";
   case V_BR_U4LE:    return is_false ? "!U4LE"    : "U4LE";
-                 
+#ifdef TARG_ST      
   case V_BR_I5EQ:    return is_false ? "!I5EQ"    : "I5EQ";
   case V_BR_I5NE:    return is_false ? "!I5NE"    : "I4NE";
   case V_BR_I5GT:    return is_false ? "!I5GT"    : "I4GT"; 
@@ -488,7 +486,7 @@ BR_Variant_Name(VARIANT variant)
   case V_BR_A4GE:    return is_false ? "!A4GE"    : "A4GE";
   case V_BR_A4LT:    return is_false ? "!A4LT"    : "A4LT";
   case V_BR_A4LE:    return is_false ? "!A4LE"    : "A4LE";
-
+#endif
   case V_BR_F_FALSE: return is_false ? "!F_FALSE" : "F_FALSE";
   case V_BR_F_TRUE:  return is_false ? "!F_TRUE"  : "F_TRUE";
 

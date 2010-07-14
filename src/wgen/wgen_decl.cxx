@@ -548,12 +548,14 @@ WGEN_Generate_Thunk (gs_t decl)
 
   // modify this parameter by the delta
 #ifdef KEY
+#ifndef TARG_ST
   // If kg++fe added a fake arg0 (because the function needs to return the
   // object in memory), then the "this" pointer is at arg1.  Bug 5017.
   TY_IDX ret_ty_idx = Get_TY(gs_tree_type(gs_tree_type(decl)));
   if (TY_return_in_mem(ret_ty_idx))
     arg_st = WN_st (WN_kid1 (entry_wn));
   else
+#endif
 #endif
   arg_st = WN_st (WN_kid0 (entry_wn));
   arg_ty = ST_type (arg_st);
@@ -1467,16 +1469,17 @@ WGEN_Start_Function(gs_t fndecl)
     // memory.  Here we only handle the types that the front-end says must
     // return in memory.
     TY_IDX ret_ty_idx = Get_TY(gs_tree_type(gs_tree_type(fndecl)));
+#ifndef TARG_ST
     if (TY_return_in_mem(ret_ty_idx)) {
       num_args++;
     }
- 
+#endif
     WN *body, *wn;
     body = WN_CreateBlock ( );
     entry_wn = WN_CreateEntry (num_args, func_st, body, NULL, NULL );
     /* from 1..nkids=num_args, create IDNAME args for OPR_FUNC_ENTRY */
     INT i = 0;
- 
+#ifndef TARG_ST 
     // Create the fake first param.
     if (TY_return_in_mem(ret_ty_idx)) {
       ST *st = New_ST ();
@@ -1486,7 +1489,7 @@ WGEN_Start_Function(gs_t fndecl)
       WN_kid(entry_wn,i) = WN_CreateIdname ( 0, ST_st_idx(st) );
       ++i;
     }
-
+#endif
     for (pdecl = thunk ?
 		    gs_decl_arguments (WGEN_get_final_thunk_target (fndecl))
                        : gs_decl_arguments (fndecl);
@@ -1539,13 +1542,14 @@ WGEN_Start_Function(gs_t fndecl)
       }
     }
 #ifdef KEY // wgen
+#ifndef TARG_ST
     if (! thunk)
       decl_arguments = gs_decl_arguments (fndecl);
 
     // bug 8346: if ty is incomplete, complete it now.
     if (TY_is_incomplete(PU_prototype(Pu_Table[ST_pu(func_st)])))
       Set_PU_prototype (Pu_Table[ST_pu(func_st)], Get_TY(gs_tree_type(fndecl)));
-
+#endif
 #endif
 
     PU_Info *pu_info;
@@ -1607,11 +1611,13 @@ WGEN_Start_Function(gs_t fndecl)
       Set_TY_align (ty_idx, 1);
       uint32_t tylist_idx;
 #ifdef KEY
+#ifndef TARG_ST
       // If the front-end adds the fake first param, then convert the function
       // to return void.
       if (TY_return_in_mem(Get_TY(gs_tree_type(gs_tree_type(fndecl))))) {
 	Set_TYLIST_type (New_TYLIST (tylist_idx), Be_Type_Tbl(MTYPE_V));
       } else
+#endif
 #endif
       Set_TYLIST_type (New_TYLIST (tylist_idx),
                        Get_TY(gs_tree_type(gs_tree_type(fndecl))));
@@ -2159,8 +2165,10 @@ AGGINIT::WGEN_Add_Aggregate_Init_Address (gs_t init)
 	st = Get_ST (init);
 	WGEN_Add_Aggregate_Init_Symbol (st);
 #ifdef KEY // bug 11308
+#ifndef TARG_ST
 	if (gs_tree_code (init) == GS_VAR_DECL)
 	  Set_ST_initv_in_other_st (st);
+#endif
 #endif
 	}
 	break;
@@ -2195,7 +2203,9 @@ AGGINIT::WGEN_Add_Aggregate_Init_Address (gs_t init)
 					       WN_offset (init_wn));
 // bugs 555, 11308
 #ifdef KEY
+#ifndef TARG_ST
 		Set_ST_initv_in_other_st (WN_st(init_wn));
+#endif
 #endif
 		WN_Delete (init_wn);
 	}
@@ -2641,6 +2651,7 @@ Gen_Assign_Of_Init_Val (ST *st, gs_t init, UINT offset, UINT array_elem_offset,
 	TY_IDX ty, BOOL is_bit_field, UINT field_id, FLD_HANDLE fld, INT &bytes)
 {
 #ifdef KEY
+#ifndef TARG_ST
     // If the initializer is a call expr and the type must be returned in
     // memory, then tell the call expr to put the result directly into ST.
     if (TY_return_in_mem(ty) &&
@@ -2649,6 +2660,7 @@ Gen_Assign_Of_Init_Val (ST *st, gs_t init, UINT offset, UINT array_elem_offset,
       WGEN_Expand_Expr (init, TRUE, 0, 0, 0, 0, FALSE, FALSE, target);
       return;
     }
+#endif
 #endif
 
     WN *init_wn = WGEN_Expand_Expr (init);
@@ -3651,7 +3663,9 @@ AGGINIT::Add_Init_For_WHIRL(WN *init_wn, UINT size, INT64 ofst)
     WGEN_Add_Aggregate_Init_Symbol(WN_st(init_wn), WN_offset(init_wn)+ofst);
 // bugs 555, 11308
 #ifdef KEY
+#ifndef TARG_ST
     Set_ST_initv_in_other_st (WN_st(init_wn));
+#endif
 #endif
     return;
   case OPR_ADD:
@@ -4899,9 +4913,10 @@ WGEN_Handle_Named_Return_Value (gs_t fn)
 
   // The return type should be returned in memory.
   TY_IDX ret_ty_idx = Get_TY(gs_tree_type(gs_tree_type(fn)));
+#ifndef TARG_ST
   FmtAssert(TY_return_in_mem(ret_ty_idx),
 	    ("WGEN_Handle_Named_Return_Value: nrv type not in mem"));
-
+#endif
   // Get the ST for the fake first parm.
   WN *first_formal = WN_formal(Current_Entry_WN(), 0);
 

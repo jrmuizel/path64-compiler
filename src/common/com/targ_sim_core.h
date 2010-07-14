@@ -141,7 +141,7 @@ extern void Get_Return_Pregs (
   PREG_NUM *rreg2);	/* out: result register 2 */
 #ifdef TARG_ST
 /* [SC] Return the type of a nested function trampoline for the target. */
-BE_EXPORTED extern TYPE_ID Get_Nested_Fn_Trampoline_Type (void);
+ extern TYPE_ID Get_Nested_Fn_Trampoline_Type (void);
 #endif
 
 /* PLOC contains information about the location of a parameter.
@@ -222,7 +222,7 @@ typedef struct {
  *
  */
 #ifdef TARG_ST
-BE_EXPORTED extern PLOC Setup_Input_Parameter_Locations (TY_IDX pu_type, BOOL first_hidden_param_is_lowered = TRUE);
+ extern PLOC Setup_Input_Parameter_Locations (TY_IDX pu_type, BOOL first_hidden_param_is_lowered = TRUE);
 #else
 extern PLOC Setup_Input_Parameter_Locations (TY_IDX pu_type);
 #endif
@@ -235,7 +235,7 @@ extern PLOC Next_Input_PLOC_Reg (void);
 extern PLOC Next_Input_PLOC_Reg (PLOC prev);
 #endif
 #ifdef TARG_ST
-BE_EXPORTED extern PLOC Setup_Output_Parameter_Locations (TY_IDX pu_type, BOOL first_hidden_param_is_lowered = TRUE);
+ extern PLOC Setup_Output_Parameter_Locations (TY_IDX pu_type, BOOL first_hidden_param_is_lowered = TRUE);
 #else
 extern PLOC Setup_Output_Parameter_Locations (TY_IDX pu_type);
 #endif
@@ -243,7 +243,7 @@ extern PLOC Get_Output_Parameter_Location (TY_IDX ptype);
 
 extern PLOC First_Output_PLOC_Reg (PLOC ploc, TY_IDX parm_ty);
 #ifdef TARG_ST
-BE_EXPORTED extern PLOC Next_Output_PLOC_Reg (void);
+ extern PLOC Next_Output_PLOC_Reg (void);
 #else
 extern PLOC Next_Output_PLOC_Reg (PLOC prev);
 #endif
@@ -263,8 +263,8 @@ extern INT32 Get_Preg_Size (PREG_NUM p);
  * returns PLOC_is_empty.
  */
 #ifdef TARG_ST
-BE_EXPORTED extern BOOL Is_Struct_Input_Parameter (TY_IDX struct_ty);
-BE_EXPORTED extern BOOL Is_Struct_Output_Parameter (TY_IDX struct_ty);
+ extern BOOL Is_Struct_Input_Parameter (TY_IDX struct_ty);
+ extern BOOL Is_Struct_Output_Parameter (TY_IDX struct_ty);
 #endif
 extern void Setup_Struct_Input_Parameter_Locations (TY_IDX struct_ty);
 extern PLOC Get_Struct_Input_Parameter_Location ( PLOC prev );
@@ -284,7 +284,7 @@ extern TYPE_ID Fix_TY_mtype(TY_IDX);
 
 extern BOOL Is_Caller_Save_GP;	/* whether GP is caller-save */
 /* Amount of space available in stack frame to save register formals. */
-BE_EXPORTED extern INT Max_Formal_Save_Area_Size;
+ extern INT Max_Formal_Save_Area_Size;
 
 
 /* Amount of space available in stack frame to save register formals. */
@@ -295,10 +295,12 @@ extern INT Stack_Offset_Adjustment;
 
 extern void Init_Targ_Sim (void);	/* initialize the info */
 //TB Extend PREG registers to extension
-BE_EXPORTED extern   INT Get_Static_Last_Dedicated_Preg_Offset(void);
+ extern   INT Get_Static_Last_Dedicated_Preg_Offset(void);
+#ifdef TARG_ST
 #define Last_Dedicated_Preg_Offset Get_Last_Dedicated_Preg_Offset_Func()
-BE_EXPORTED extern   INT Get_Last_Dedicated_Preg_Offset_Func(void);
-BE_EXPORTED extern   void Set_Last_Dedicated_Preg_Offset(INT offset);
+#endif
+ extern   INT Get_Last_Dedicated_Preg_Offset_Func(void);
+ extern   void Set_Last_Dedicated_Preg_Offset(INT offset);
 
 // PREG_IDX == PREG_NUM - Last_Dedicated_Preg_Offset
 

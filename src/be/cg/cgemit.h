@@ -78,7 +78,7 @@ extern void EMT_Change_Symbol_To_Weak (ST *sym);
 #ifdef TARG_ST
 extern INT32 Check_If_Should_Align_BB (BB *bb);
 #else
-extern INT32 Check_If_Should_Align_BB (BB *bb, INT32 curpc);
+extern INT Check_If_Should_Align_BB (BB *bb, INT32 curpc);
 #endif
 
 extern BOOL CG_emit_asm_dwarf;

@@ -30,6 +30,8 @@
 #include "tracing.h"
 #include "tn.h"
 #include "op.h"
+#include "bb.h"
+#include "op_map.h"
 #include "cgexp.h"
 #include "cgexp_internals.h"
 

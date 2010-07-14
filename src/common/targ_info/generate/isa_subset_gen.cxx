@@ -76,12 +76,13 @@ static std::vector<ISA_SUBSET> opcode_subset;
 // In following loops, we iterate on the number of
 // TOP. This number differs following we generate
 // static or dynamic TOP.
+#ifdef TARG_ST
 #ifndef DYNAMIC_CODE_GEN
 static TOP TOP_count_limit = TOP_static_count;
 #else
 static TOP TOP_count_limit = TOP_dyn_count;
 #endif
-
+#endif
 
 static const char * const interface[] = {
   "/* ====================================================================",

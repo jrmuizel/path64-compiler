@@ -70,6 +70,9 @@ extern "C"{
 #include <ctype.h>
 #endif
 //#include "tree_cmp.h"
+#ifdef TARG_ST
+#include "gccfe_targinfo_interface.h"
+#endif
 
 extern int pstatic_as_global;
 extern BOOL flag_no_common;
@@ -542,7 +545,7 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 		break;
 	case GS_ARRAY_TYPE:
 		{	// new scope for local vars
-#ifdef KEY /* bug 8346 */
+#if defined( KEY) && !defined(TARG_ST) /* bug 8346 */
 		TY &ty = (idx == TY_IDX_ZERO) ? New_TY(idx) : Ty_Table[idx];
 		Clear_TY_is_incomplete (idx);
 #else
@@ -571,6 +574,7 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 				/ BITSPERBYTE);
 		}
 #ifdef KEY /* bug 8346 */
+#ifndef TARG_ST
 		else if (!expanding_function_definition &&
 		         processing_function_prototype)
 		{
@@ -579,6 +583,7 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 			Set_ARB_stride_val (arb, 4);
 			Set_TY_is_incomplete (idx);
 		}
+#endif
 #endif
 		else {
 			WN *swn;
@@ -618,7 +623,9 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 			Clear_ARB_const_stride (arb);
 			Set_ARB_stride_var (arb, (ST_IDX) ST_st_idx (st));
 #ifdef KEY /* bug 8346 */
+#ifndef TARG_ST
 			Clear_TY_is_incomplete (idx);
+#endif
 #endif
 		}
 
@@ -642,6 +649,7 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 				gs_type_max_value (gs_type_domain (type_tree)) ));
 		    }
 #ifdef KEY /* bug 8346 */
+#ifndef TARG_ST
 		    else if (!expanding_function_definition &&
 		             processing_function_prototype) {
 			Set_ARB_const_ubnd (arb);
@@ -649,6 +657,7 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 			Set_ARB_ubnd_val (arb, 8);
 			Set_TY_is_incomplete (idx);
 		    }
+#endif
 #endif
 		    else {
 			WN *uwn = WGEN_Expand_Expr (gs_type_max_value (gs_type_domain (type_tree)) );
@@ -678,7 +687,9 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 			Clear_ARB_const_ubnd (arb);
 			Set_ARB_ubnd_var (arb, ST_st_idx (st));
 #ifdef KEY /* bug 8346 */
+#ifndef TARG_ST
 			Clear_TY_is_incomplete (idx);
+#endif
 #endif
 		    }
 		}
@@ -690,11 +701,13 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 		// ==================== Array size ====================
 		if (variable_size) {
 #ifdef KEY /* bug 8346 */
+#ifndef TARG_ST
 		   if (!expanding_function_definition &&
 		       processing_function_prototype) {
 		     Set_TY_is_incomplete (idx);
 		   }
 		   else
+#endif
 #endif
 		   {
 			WN *swn, *wn;
@@ -734,7 +747,9 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 				WGEN_Stmt_Append (wn, Get_Srcpos());
 			}
 #ifdef KEY /* bug 8346 */
+#ifndef TARG_ST
 			Clear_TY_is_incomplete (idx);
+#endif
 #endif
 		   }
 		}
@@ -769,9 +784,11 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 			Set_TY_is_union(idx);
 		}
 #ifdef KEY
+#ifndef TARG_ST
 		if (gs_aggregate_value_p(type_tree)) {
 			Set_TY_return_in_mem(idx);
 		}
+#endif
 #endif
 		if (align == 0) align = 1;	// in case incomplete type
 		Set_TY_align (idx, align);
@@ -784,7 +801,9 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
                 for (gs_t field =  get_first_real_or_virtual_field (type_tree);
                           field;
                           field = next_real_field(type_tree, field)) {
+#ifndef TARG_ST
 		  	Set_TY_content_seen(idx); // bug 10851
+#endif
                         if (gs_tree_code(field) == GS_TYPE_DECL ||
 			    gs_tree_code(field) == GS_FIELD_DECL) {
                                 gs_t field_type = gs_tree_type(field);
@@ -1106,7 +1125,7 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 		{	// new scope for local vars
 		gs_t arg;
 		INT32 num_args, i;
-#ifdef KEY /* bug 8346 */
+#if defined( KEY) && !defined(TARG_ST) /* bug 8346 */
 		TY &ty = (idx == TY_IDX_ZERO) ? New_TY(idx) : Ty_Table[idx];
 		Clear_TY_is_incomplete (idx);
 #else
@@ -1129,10 +1148,12 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 		{
 		  arg_ty_idx = Get_TY(gs_tree_value(arg));
 #ifdef KEY /* bug 8346 */
+#ifndef TARG_ST
 		  if (TY_is_incomplete (arg_ty_idx) ||
 		      (TY_kind(arg_ty_idx) == KIND_POINTER &&
 		       TY_is_incomplete(TY_pointed(arg_ty_idx))))
 		    Set_TY_is_incomplete (idx);
+#endif
 #endif
 		}
 
@@ -1147,12 +1168,14 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 		}
 
 #ifdef KEY
+#ifndef TARG_ST
 		// If the front-end adds the fake first param, then convert the
 		// function to return void.
 		if (TY_return_in_mem(ret_ty_idx)) {
 		  ret_ty_idx = Be_Type_Tbl (MTYPE_V);
 		  Set_TY_return_to_param(idx);		// bugs 2423 2424
 		}
+#endif
 #endif
 		Set_TYLIST_type (New_TYLIST (tylist_idx), ret_ty_idx);
 		Set_TY_tylist (ty, tylist_idx);
@@ -1161,9 +1184,11 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 		     num_args++, arg = gs_tree_chain(arg))
 		{
 			arg_ty_idx = Get_TY(gs_tree_value(arg));
+#ifndef TARG_ST
 			Is_True (!TY_is_incomplete (arg_ty_idx) ||
 			          TY_is_incomplete (idx),
 				  ("Create_TY_For_Tree: unexpected TY flag"));
+#endif
 			if (!WGEN_Keep_Zero_Length_Structs    &&
 			    TY_mtype (arg_ty_idx) == MTYPE_M &&
 			    TY_size (arg_ty_idx) == 0) {
@@ -1348,7 +1373,7 @@ Create_TY_For_Tree (gs_t type_tree, TY_IDX idx)
 #endif
 	TYPE_TY_IDX(type_tree) = idx;
         if(Debug_Level >= 2) {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	  // DSTs for records were entered into the defer list in the order
 	  // that the records are declared, in order to preserve their scope.
 	  // Bug 4168.
@@ -1876,9 +1901,16 @@ Create_ST_For_Tree (gs_t decl_node)
   // number assigned by an "asm".
   if (gs_tree_code(decl_node) == GS_VAR_DECL && gs_decl_register(decl_node) &&
       gs_decl_asmreg(decl_node) != -1) {
+#ifndef TARG_ST
+    // [SC] For ST, Map_Reg_To_Preg is declared in fe_loader.h
     extern PREG_NUM Map_Reg_To_Preg []; // defined in common/com/arch/config_targ.cxx
+#endif
     int reg = gs_decl_asmreg(decl_node);
+#ifdef TARG_ST
+    PREG_NUM preg = GCCTARG_Map_Reg_To_Preg()[reg];
+#else
     PREG_NUM preg = Map_Reg_To_Preg [reg];
+#endif
     FmtAssert (preg >= 0,
                ("mapping register %d to preg failed\n", reg));
     TY_IDX ty_idx = ST_type (st);
@@ -1904,7 +1936,9 @@ Create_ST_For_Tree (gs_t decl_node)
              (lang_cplus && !gs_cp_decl_threadprivate_p(decl_node)))
 #endif
        ) {
+#ifndef TARG_ST
       Set_ST_is_thread_local(st);
+#endif
     }
   }
 

@@ -4754,8 +4754,8 @@ static WN *lower_madd(WN *block, WN *tree, LOWER_ACTIONS actions)
     for (UINT kidno=0; kidno<WN_kid_count(tree); kidno++) {
       WN_kid(tree, kidno) = lower_madd(block, WN_kid(tree, kidno), actions);
     }
-    break;
 #endif
+    break;
   }
 
 #ifdef TARG_ST
@@ -6234,9 +6234,6 @@ static WN *lower_return_ldid(WN *block, WN *tree, LOWER_ACTIONS actions)
 	WN_load_offset(tree) = First_Int_Preg_Return_Offset;
 	tree = WN_Tas(mtype, ty_idx, tree);
       }
-#else
-      WN_st_idx(tree) = ST_st_idx(Ptr_Preg);
-      WN_load_offset(tree) = First_Ptr_Preg_Return_Offset;
 #endif
       break;
 
@@ -6946,7 +6943,7 @@ Get_Intconst_Val(WN *wn)
   DevAssert(intconst != NULL, ("unexpected call to Get_Intconst_Val"));
   return WN_const_val(intconst);
 }
-
+#ifdef TARG_ST
 BOOL
 WN_Is_Emulated_Operator (OPERATOR opr, TYPE_ID rtype, TYPE_ID desc)
 {
@@ -6959,7 +6956,7 @@ WN_Is_Emulated_Operator (OPERATOR opr, TYPE_ID rtype, TYPE_ID desc)
   // in targinfo.
   return BETARG_is_emulated_operator(opr,rtype,desc);
 }
-
+#endif
 /*
  * Is_Intconst_Val()
  *
@@ -6978,7 +6975,7 @@ Is_Intconst_Val(WN *wn)
     intconst = wn;
   return intconst != NULL ? TRUE: FALSE;
 }
-
+#ifdef TARG_ST
 static BOOL
 Should_Call_Divide (WN *tree) 
 {
@@ -6994,7 +6991,8 @@ Should_Call_Divide (WN *tree)
   /* In all other cases, we fall back to per operator check. */
   return WN_Is_Emulated_Operator(WN_operator(tree), rtype, WN_desc(tree));
 }
-
+#endif
+#ifdef TARG_ST
 static BOOL
 Should_Call_Remainder (WN *tree) 
 {
@@ -7013,8 +7011,8 @@ Should_Call_Remainder (WN *tree)
   /* In all other cases, we fall back to per operator check. */
   return WN_Is_Emulated_Operator(WN_operator(tree), rtype, WN_desc(tree));
 }
-
-
+#endif
+#ifdef TARG_ST
 BOOL
 WN_Is_Emulated(WN *tree)
 {
@@ -7035,7 +7033,6 @@ WN_Is_Emulated(WN *tree)
   TYPE_ID desc = WN_desc(tree);
   return WN_Is_Emulated_Operator(opr, res, desc);
 }
-
 BOOL
 WN_Is_Emulated_Type (TYPE_ID type)
 {
@@ -7048,7 +7045,6 @@ WN_Is_Emulated_Type (TYPE_ID type)
   /* Otherwise call a target dependent function to find more emulated types. */
   return BETARG_is_emulated_type(type);
 }
-
 
 BOOL
 WN_Madd_Allowed (TYPE_ID type)
@@ -7065,7 +7061,7 @@ WN_Madd_Allowed (TYPE_ID type)
     BETARG_is_enabled_operator(OPR_NMADD, type, type) &&
     BETARG_is_enabled_operator(OPR_NMSUB, type, type);
 }
-
+#endif
 BOOL
 WN_STBITS_Allowed (TYPE_ID type)
 {
@@ -18616,11 +18612,7 @@ static WN *lower_landing_pad_entry(WN *tree)
 {
   WN * block = WN_CreateBlock();
   WN_INSERT_BlockAfter (block, NULL, tree);
-#ifdef TARG_ST
-   ST_IDX exc_ptr_param = TCON_uval (INITV_tc_val (INITO_val (Get_Current_PU().unused)));
-#else
   ST_IDX exc_ptr_param = TCON_uval (INITV_tc_val (INITO_val (PU_misc_info (Get_Current_PU()))));
-#endif
   ST exc_ptr_st = St_Table[exc_ptr_param];
 #ifdef TARG_X8664
   // Store rax into exc_ptr variable
@@ -18631,11 +18623,7 @@ static WN *lower_landing_pad_entry(WN *tree)
 #endif
   WN *exc_ptr_stid = WN_Stid (Pointer_Mtype, 0, &exc_ptr_st, 
 			ST_type(exc_ptr_st), exc_ptr_rax);
-#ifdef TARG_ST
-  ST_IDX filter_param = TCON_uval (INITV_tc_val (INITV_next (INITO_val (Get_Current_PU().unused))));
-#else
   ST_IDX filter_param = TCON_uval (INITV_tc_val (INITV_next (INITO_val (PU_misc_info (Get_Current_PU())))));
-#endif
   ST filter_st = St_Table[filter_param];
 #ifdef TARG_X8664
   // Store rdx into filter variable

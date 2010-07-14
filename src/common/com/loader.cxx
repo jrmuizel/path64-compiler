@@ -26,7 +26,7 @@
  */
 
 #include <string>
-
+#include "extension_include.h"
 #include "extension_intrinsic.h"
 
 

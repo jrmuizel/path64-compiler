@@ -639,8 +639,9 @@ public:
   friend inline TYPE_ID     WN_desc (const WN *);
   friend inline void        WN_set_desc (WN *, TYPE_ID);
   friend inline INT32       WN_map_id (const WN *);
+#ifdef TARG_ST
   friend inline INT32&      WN_map_id (WN *);
-
+#endif
   friend inline TY_IDX      WN_ty (const WN *, const int);
   friend inline TY_IDX&     WN_ty (WN *, const int);
   friend inline WN*         WN_kid (const WN *, const int);
@@ -780,7 +781,9 @@ inline void	  WN_set_bit_offset_size (WN* wn, UINT ofst, UINT siz) { wn->common.
 inline TYPE_ID    WN_desc (const WN* wn) { return wn->common.desc; }
 inline void       WN_set_desc (WN* wn, TYPE_ID ty) { wn->common.desc = ty; }
 inline INT32      WN_map_id (const WN* wn) { return wn->common.map_id; }
+#ifdef TARG_ST
 inline INT32&     WN_map_id (WN* wn) { return wn->common.map_id; }
+#endif
 inline void       WN_set_map_id (WN* wn, INT32 m) { wn->common.map_id = m; }
 
 inline WN* WN_kid (const WN* wn, int i) { return wn->u3.kids [i]; }

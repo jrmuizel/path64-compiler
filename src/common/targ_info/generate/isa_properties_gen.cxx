@@ -52,7 +52,7 @@
 #include "gen_util.h"
 #include "isa_properties_gen.h"
 
-
+#ifdef TARG_ST
 // In following loops, we iterate on the number of
 // TOP. This number differs following we generate
 // static or dynamic TOP.
@@ -61,7 +61,7 @@ static TOP TOP_count_limit = TOP_static_count;
 #else
 static TOP TOP_count_limit = TOP_dyn_count;
 #endif
-
+#endif
 struct isa_property {
   const char* name;         // Name given for documentation and debugging
   int bit_position;         // bit postion in flag word
@@ -119,7 +119,7 @@ void ISA_Properties_Begin( const char* /* name */ )
 {
 }
 #endif
-
+#ifdef TARG_ST
 /* ====================================================================
  *   ISA_Memory_Access
  * ====================================================================
@@ -153,7 +153,8 @@ void ISA_Memory_Access (int bytes, ... ) {
   }
   va_end(ap);
 }
-
+#endif
+#ifdef  TARG_ST
 /* ====================================================================
  *   ISA_Memory_Alignment
  * ====================================================================
@@ -187,6 +188,7 @@ void ISA_Memory_Alignment(int bytes, ... ) {
   }
   va_end(ap);
 }
+#endif
 #ifdef TARG_ST
 /////////////////////////////////////
 ISA_PROPERTY ISA_Property_Create( const char* name )

@@ -5656,7 +5656,6 @@ static ST * Create_Name_Lock (ST* lock_name)
     Set_TY_fld(ty, field);
     Set_TY_align(struct_ty, TY_align(FLD_type(field)));
   }
-#endif
   // Now create the ST entry for the COMMON block 
   name = (char*) alloca (Targ_String_Length(ST_tcon_val(lock_name)) + 30);
   sprintf (name, "__namelock_common_%s",
@@ -5665,7 +5664,7 @@ static ST * Create_Name_Lock (ST* lock_name)
   base_st            = New_ST(GLOBAL_SYMTAB);
   ST_Init(base_st, Save_Str(name), CLASS_VAR, SCLASS_COMMON,
           EXPORT_PREEMPTIBLE, struct_ty);
-  
+#endif 
   /* now create the real ST for the variable */
   Create_Lock_Type( );
   sprintf (name, "__namelock_%s",
@@ -10102,7 +10101,7 @@ Rewrite_Do ( WN * do_tree )
 
 
 /*  Transform a pdo.  */
-
+#ifdef TARG_ST
 static WN * Transform_PDO ( WN * tree )
 {
   INT32      i;
@@ -10794,7 +10793,7 @@ static WN * Transform_PDO ( WN * tree )
 
   return (body_block);
 } // Transform_PDO()
-
+#endif
 
 /*
 Transform do statement. This is a new version
@@ -13564,7 +13563,7 @@ Process_Parallel_Region ( void )
   Localize_Parent_Stack lps(FALSE, NULL);
   stmt_block = Walk_and_Localize ( stmt_block, var_table, &lps, TRUE , 
                                    &non_pod_finalization_nodes );
-#if defined (KEY) && !defined(TARG_ST)
+#if defined (KEY) 
   if (LANG_Enable_CXX_Openmp && PU_misc_info(PU_Info_pu(ppuinfo)))
   { // C++
     Is_True (parallel_proc, ("Parallel block unavailable"));

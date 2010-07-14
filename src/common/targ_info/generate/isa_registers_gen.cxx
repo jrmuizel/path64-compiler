@@ -56,8 +56,9 @@
  * below are useless in following algorithms.
  *
  */
+#ifdef TARG_ST
 #include "isa_ext_limits.h"
-
+#endif
 typedef struct isa_register_set {
   int isa_mask;
   int min_regnum;
@@ -93,13 +94,13 @@ struct isa_register_class {
 
 static std::list<ISA_REGISTER_CLASS> rclasses; // All the classes
 static std::list<ISA_REGISTER_SUBCLASS> subclasses; // All the sub classes
-
+#ifdef TARG_ST
 static const int extension_max_registers  = EXTENSION_NB_REGISTER_MAX != 0 ? 
                                             EXTENSION_NB_REGISTER_MAX-1 : 0;
 
 static const int extension_max_rclasses   = EXTENSION_NB_REGISTER_CLASS_MAX;
 static const int extension_max_subclasses = EXTENSION_NB_REGISTER_SUBCLASS_MAX;
-
+#endif
 static const char * const interface[] = {
   "/* ====================================================================",
   " * ====================================================================",

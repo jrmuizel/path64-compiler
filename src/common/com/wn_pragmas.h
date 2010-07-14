@@ -525,11 +525,11 @@ enum {
  * of this interface and as been moved to wn_pragmas.cxx.
  * ====================================================================
  */
-BE_EXPORTED extern WN_PRAGMA_USERS WN_Pragma_Users(INT pragma_id);
-BE_EXPORTED extern WN_PRAGMA_SCOPE WN_Pragma_Scope(INT pragma_id);
+ extern WN_PRAGMA_USERS WN_Pragma_Users(INT pragma_id);
+ extern WN_PRAGMA_SCOPE WN_Pragma_Scope(INT pragma_id);
 #endif /* if !TARG_ST */
 
-BE_EXPORTED extern const char *WN_Pragma_Name(INT pragma_id);
+ extern const char *WN_Pragma_Name(INT pragma_id);
 
 
 /* ====================================================================

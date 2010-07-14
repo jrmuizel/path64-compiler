@@ -943,20 +943,10 @@ template <PROGRAM program>
 void
 SUMMARIZE<program>::Process_eh_globals (void)
 {
-#ifdef TARG_ST
-     if (!(PU_src_lang (Get_Current_PU()) & PU_CXX_LANG) || 
-    	!Get_Current_PU().unused)
-    	return;
-#else
     if (!(PU_src_lang (Get_Current_PU()) & PU_CXX_LANG) || 
     	!PU_misc_info (Get_Current_PU()))
     	return;
-#endif
-#ifdef TARG_ST
-    INITV_IDX i = INITV_next (INITV_next (INITO_val (Get_Current_PU().unused)));
-#else
     INITV_IDX i = INITV_next (INITV_next (INITO_val (PU_misc_info (Get_Current_PU()))));
-#endif
     INITO_IDX idx = TCON_uval (INITV_tc_val(i));
     if (idx)	// typeinfo
     {

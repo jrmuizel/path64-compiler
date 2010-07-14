@@ -179,9 +179,11 @@ Promoted_Mtype(TYPE_ID mtype) {
     return MTYPE_U4;
 
     case MTYPE_I8: 
-    case MTYPE_U8: 
+    case MTYPE_U8:
+#ifdef TARG_ST 
     case MTYPE_I5:
     case MTYPE_U5:
+#endif
     case MTYPE_A4:
     case MTYPE_A8:
     case MTYPE_F4:

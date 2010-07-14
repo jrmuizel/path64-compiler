@@ -1550,7 +1550,7 @@ OP_Real_Inst_Words( const OP *op )
  *
  * ====================================================================
  */
-
+#ifdef TARG_ST
 INT
 OP_Real_Unit_Slots( const OP *op )
 {
@@ -1562,7 +1562,7 @@ OP_Real_Unit_Slots( const OP *op )
   }
   return OP_unit_slots(op);
 }
-
+#endif
 /* ====================================================================
  *
  * OP_Is_Float_Mem - Is OP a floating point memory operation?

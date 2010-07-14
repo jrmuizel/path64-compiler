@@ -377,16 +377,16 @@ inline SI_BAD_II_SET SI_BAD_II_SET_Empty( void )
 
 // [HK]
 // extern const INT SI_resource_count;
-BE_EXPORTED extern INT SI_resource_count; // resource count variable in be executable
+extern INT SI_resource_count; // resource count variable in be executable
 extern INT TI_SI_resource_count;          // resource count variable in targinfo library
 #ifndef TARG_ST
 #pragma weak SI_resource_count
 #endif
 
 #ifdef TARG_ST
-TARGINFO_EXPORTED extern SI_RESOURCE * TI_SI_CONST * SI_resources;
+extern SI_RESOURCE * TI_SI_CONST * SI_resources;
 #else
-TARGINFO_EXPORTED extern SI_RESOURCE * TI_SI_CONST SI_resources[];
+extern SI_RESOURCE * TI_SI_CONST SI_resources[];
 #endif
 #ifndef _NO_WEAK_SUPPORT_
 #pragma weak SI_resources

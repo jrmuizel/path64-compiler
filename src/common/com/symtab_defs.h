@@ -834,22 +834,21 @@ struct PU
 
     TY_IDX prototype;			// function prototype
     SYMTAB_IDX lexical_level;		// lexical level (of nested proc).
+    INITO_IDX misc;		        // store misc such EH related TYPE/TYPE_SPEC info. 32bits
     mUINT8 gp_group;			// gp_group id
     mUINT8 src_lang;			// source language
 #ifdef TARG_ST
    mUINT64 stkaln;                     // stack alignment (0 or >8 && <=256)
 // TODO:  can put flags in 40-bit unused field and remove 64-bit flag field.
 // TODO:  do this when can make incompatible change.
+#endif
+
 #ifdef TARG_ST
   //TB" Add size optimization level for this PU
-  mUINT8 size_opt;
-  mUINT64 unused : 32;		// for alignment for flags
+    mUINT8 size_opt;
+#define PU_HAS_NO_UNUSED
 #else
-    mUINT64 unused : 40;		// for alignment for flags
-#endif
-#else
-    mUINT8 unused;			// for alignment for flags
-    INITO_IDX misc;			// inito to store miscellaneous info.
+    mUINT8 unused;		        // for alignment for flags
 #endif
     mUINT64 flags;			// misc. attributes about this func.
 

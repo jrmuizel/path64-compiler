@@ -221,7 +221,6 @@ inline BOOL INTRN_runtime_exists(const INTRINSIC i)
   return (INTRN_rt_name(i)!=NULL);
 }
 
-#endif
 //TB: Multiple result builtin support.
 
 // Returm true if the param number
@@ -272,7 +271,7 @@ inline int INTRN_number_of_in_param(proto_intrn_info_t  *built_info){
 inline TYPE_ID INTRN_return_type(proto_intrn_info_t  *built_info){
   return built_info->return_type;
 }
-
+#endif
 #ifdef TARG_ST
 //[TB] To map info for extension intrinsic from dll to return kind
 BE_EXPORTED INTRN_RETKIND INTRN_return_kind_for_mtype (const TYPE_ID mtype);

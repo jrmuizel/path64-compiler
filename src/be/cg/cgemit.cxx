@@ -1197,9 +1197,8 @@ static void Print_Label (FILE *pfile, ST *st, INT64 size)
 	fprintf(pfile, "\n");
       }
 #endif
-
-#endif
   }
+#endif
     if (ST_class(st) == CLASS_VAR
 #if defined(BUILD_OS_DARWIN)
 	&& 0 // Mach-O as 1.38 doesn't support .type
@@ -2111,6 +2110,7 @@ r_value( TN *tn )
   if(TN_is_register(tn)) { return TN_register(tn)-1; }
   return 0;
 }
+#ifdef TARG_ST
 /* ====================================================================
  *   r_assemble_opnd
  * ====================================================================
@@ -2208,6 +2208,7 @@ r_assemble_opnd (
 
   return vstr_str(*buf)+start;
 }
+#endif
 #ifdef TARG_ST
 /* ====================================================================
  *   r_assemble_result
@@ -2832,7 +2833,7 @@ static void Verify_Instruction(OP *op)
 #ifdef TARG_X8664
   if( OP_x86_style( op ) ){
     if( TN_register_and_class( OP_opnd( op, 0 ) ) !=
-	TN_register_and_class( OP_result( op , 0 ) ) nn)
+	TN_register_and_class( OP_result( op , 0 ) ) )
       FmtAssert( false, ("Result and the first opnd use different register.") );
   }
 

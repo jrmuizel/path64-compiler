@@ -54,6 +54,7 @@ typedef struct operand_value_type *OPERAND_VALUE_TYPE;
 #include "targ_isa_properties.h"
 #include "gen_util.h"
 #include "isa_operands_gen.h"
+#ifdef TARG_ST
 #include "isa_ext_limits.h"
 
 #ifdef DYNAMIC_CODE_GEN
@@ -68,7 +69,7 @@ static mUINT32 TOP_count_limit = TOP_static_count;
 #else
 static mUINT32 TOP_count_limit = TOP_dyn_count;
 #endif
-
+#endif
 struct operand_value_type {
   const char* name;         // Name given for documentation and debugging
   ISA_REGISTER_CLASS register_class;	

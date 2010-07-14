@@ -74,7 +74,7 @@ Please add -DPATH64_ENABLE_TARGETS=x8664 to your cmake line
 Multiple targets can be specified like \"-DPATH64_ENABLE_TARGETS=x8664;mips\"" )
 ENDIF()
 # Multi target support is indefinitely delayed
-set(BUILD_TARGET_DIR "arm")
+set(BUILD_TARGET_DIR "x8664")
 
 # Define if we are doing a supported build
 OPTION(PATH64_ENABLE_SUPPORTED "Enabling supported build" OFF)
@@ -189,7 +189,9 @@ ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D_MIPS_SZINT=32
                 -D_MIPS_SZPTR=32
                 -D_MIPS_SZLONG=32
-                -DTARG_ST
+               )
+IF (${BUILD_TARGET_DIR} MATCHES "arm")
+ADD_DEFINITIONS( -DTARG_ST
                 -DTARG_ARM
                 -DARM
                 -DMUMBLE_ARM_BSP 
@@ -197,7 +199,9 @@ ADD_DEFINITIONS(-D_SGI_SOURCE
                 -DBE_EXPORTED=
                 -DTARGINFO_EXPORTED=
                )
-
+ELSE()
+ADD_DEFINITIONS( -DTARG_X8664)
+ENDIF()
 # GNU-style hashing needs support of the dynamic linker, so white-list
 # potential platforms.
 IF (NOT DEFINED SUPPORT_HASH_STYLE_GNU)

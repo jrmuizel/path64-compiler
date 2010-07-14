@@ -1,5 +1,5 @@
 # TODO : This should build libwopt.a
-set(PATHSCALE_WOPT_SRCS
+set(PATHSCALE_WOPT_COMMON_SRCS
 				"../com/cxx_template.cxx"
 				"opt_alias_class.cxx"
 				"opt_base.cxx"
@@ -60,7 +60,6 @@ set(PATHSCALE_WOPT_SRCS
 				"opt_stable.cxx"
 				"opt_sym.cxx"
 				"opt_tail.cxx"
-                                "opt_tailmerge.cxx"
 				"opt_util.cxx"
 				"opt_vn.cxx"
 				"opt_vn_expr.cxx"
@@ -73,6 +72,13 @@ set(PATHSCALE_WOPT_SRCS
 				"opt_mtype_b.cxx"
 				"opt_revise_ssa.cxx"
 				"wodriver.cxx")
+
+set(PATHSCALE_WOPT_ARM_SRCS "opt_tailmerge.cxx")
+IF (${BUILD_TARGET_DIR} MATCHES "arm")
+set(PATHSCALE_WOPT_SRCS  ${PATHSCALE_WOPT_COMMON_SRCS} ${PATHSCALE_WOPT_ARM_SRCS})
+ELSE()
+set(PATHSCALE_WOPT_SRCS  ${PATHSCALE_WOPT_COMMON_SRCS} )
+ENDIF()
 
 ADD_DEFINITIONS(
 	-DMONGOOSE_BE)

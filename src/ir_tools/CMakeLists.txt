@@ -43,7 +43,8 @@ set (IR_COMMON_SRCS
 
 INCLUDE_DIRECTORIES(
                     .
-					../common/com
+                                       ${PATHSCALE_BINARY_DIR}/common/targ_info				
+                                 	../common/com
 					../common/com/${BUILD_TARGET_DIR}
 					../common/util
 					../ipa/common
@@ -62,8 +63,8 @@ IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 ADD_EXECUTABLE(ir_b2a ${IR_B2A_SRCS} ${IR_COMMON_SRCS})
 ADD_EXECUTABLE(ir_size ${IR_SIZE_SRCS} ${IR_COMMON_SRCS})
 
-target_link_libraries(ir_b2a comutil m )
-target_link_libraries(ir_size comutil m )
+target_link_libraries(ir_b2a  targinfo comutil m )
+target_link_libraries(ir_size targinfo comutil m )
 
 install(TARGETS ir_b2a ir_size
     RUNTIME DESTINATION bin

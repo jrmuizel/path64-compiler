@@ -852,7 +852,7 @@ READ_WRITE ALIAS_RULE::Aliased_with_Call(ST *st, INT32 flags, const POINTS_TO *m
 
   return NO_READ_NO_WRITE;
 }
-
+#ifdef TARG_ST
 READ_WRITE ALIAS_RULE::Aliased_with_Intrinsic_Call(const WN *call_wn, const POINTS_TO *mem) const
 {
   FmtAssert(WN_operator(call_wn) == OPR_INTRINSIC_CALL, ("Expected intrinsic call"));
@@ -876,7 +876,7 @@ READ_WRITE ALIAS_RULE::Aliased_with_Intrinsic_Call(const WN *call_wn, const POIN
 
   return READ_AND_WRITE;
 }
-
+#endif
 READ_WRITE ALIAS_RULE::Aliased_with_Asm(const WN *wn, const POINTS_TO *mem) const
 {
   if (mem->Dedicated())

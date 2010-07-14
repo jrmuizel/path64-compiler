@@ -232,7 +232,7 @@ static char *erglob_rcs_id = "$Source: common/com/SCCS/s.erglob.h $ $Revision: 1
 #define EC_Null_Tree	EC_Undef_Code+114	/* str */
 #define EC_Inv_Treenum	EC_Undef_Code+115	/* int, tree, tree, int */
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY) 
 #define EC_Bad_Omp	EC_Undef_Code+116	/* str */
 #define EC_Ill_Alias	EC_Undef_Code+117	/* str, str, str */
 #endif /* KEY */
@@ -353,6 +353,7 @@ static char *erglob_rcs_id = "$Source: common/com/SCCS/s.erglob.h $ $Revision: 1
 #ifdef TARG_ST
 /* Extension code expansion errors */
 #define EC_Ext_Expand   EC_Undef_Code+340        /* str */
+#define EC_Misc_Asm EC_Undef_Code+341		/* str */
 #else
 #ifdef KEY
 /* ASM operands: */

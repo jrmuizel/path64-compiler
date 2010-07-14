@@ -53,6 +53,7 @@
 #include "cg_region.h"
 #include "cg_flags.h"
 #include "cgexp.h"
+#include "cgexp_internals.h"
 #include "cxx_memory.h"
 #include "data_layout.h"
 #include "defs.h"

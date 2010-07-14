@@ -46,6 +46,9 @@
 #include "cgdriver.h"
 #include "cg.h"
 #include "eh_region.h"
+#include "op.h"
+#include "op_map.h"
+#include "bb.h"
 #ifdef TARG_X8664
 #include "cgexp.h"
 #include "calls.h"

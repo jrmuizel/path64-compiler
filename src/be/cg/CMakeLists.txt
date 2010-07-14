@@ -1,5 +1,5 @@
 # TODO : These should not have a hard coded ${BUILD_TARGET_DIR} and should be per target
-SET(PATHSCALE_CG_SRCS
+SET(PATHSCALE_CG_COMMON_SRCS
 			"${PATHSCALE_BINARY_DIR}/be/bb_list.cxx"
 			"${PATHSCALE_BINARY_DIR}/be/gra_bb_list.cxx"
 			"${PATHSCALE_BINARY_DIR}/be/lrange_list.cxx"
@@ -13,7 +13,6 @@ SET(PATHSCALE_CG_SRCS
 			"${PATHSCALE_BINARY_DIR}/be/lrange_set.cxx"
 			"${PATHSCALE_BINARY_DIR}/be/tn_set.cxx"
 			"${PATHSCALE_BINARY_DIR}/be/gtn_set.cxx"
-                        "../../be/cg/swp/cg_swp.cxx" #st
 			"../../be/cg/swp/cg_swp_allocator.cxx"
 			"../../be/cg/swp/cg_swp_code_gen.cxx"
 			"../../be/cg/swp/cg_swp_driver.cxx"
@@ -35,31 +34,20 @@ SET(PATHSCALE_CG_SRCS
 			"../../be/cg/${BUILD_TARGET_DIR}/cgdwarf_targ.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/cgemit_targ.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/cgtarget.cxx"
-                        "../../be/cg/${BUILD_TARGET_DIR}/targ_op.cxx" #st
-                        "../../be/cg/${BUILD_TARGET_DIR}/targ_ebo.cxx" #st
-                        "../../be/cg/${BUILD_TARGET_DIR}/targ_entry_exit.cxx" #st
 			"../../be/cg/${BUILD_TARGET_DIR}/cg_loop_recur.cxx"
-		#	"../../be/cg/${BUILD_TARGET_DIR}/ebo_special.cxx"
-		#	"../../be/cg/${BUILD_TARGET_DIR}/entry_exit_targ.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/exp_branch.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/exp_divrem.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/exp_loadstore.cxx"
-		#	"../../be/cg/${BUILD_TARGET_DIR}/exp_predicate.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/expand.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/pqs_cg.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/pqs.cxx"
 			"../../be/cg/${BUILD_TARGET_DIR}/register_targ.cxx"
-                        "../../be/cg/${BUILD_TARGET_DIR}/targ_select.cxx" #st
-		#	"../../be/cg/${BUILD_TARGET_DIR}/cg_sched.cxx"
-	#		"../../be/cg/${BUILD_TARGET_DIR}/cg_convert_x87.cxx"
-		#	"../../be/cg/${BUILD_TARGET_DIR}/cg_misc.cxx"
 			"../../common/com/em_dwarf.cxx"
 			"../../common/com/em_elf.cxx"
-                        "../../common/com/lai_loader.cxx" #st
 			"../../common/com/${BUILD_TARGET_DIR}/targ_em_const.cxx"
 			"../../common/com/${BUILD_TARGET_DIR}/targ_em_elf.cxx"
 			"../../common/com/${BUILD_TARGET_DIR}/targ_em_dwarf.cxx"
-                        "../../common/com/${BUILD_TARGET_DIR}/targ_register_common.cxx"
+                        "../../be/cg/${BUILD_TARGET_DIR}/entry_exit_targ.cxx"
 			"../../be/cg/annotations.cxx"
 			"../../be/cg/bblist.cxx"
 			"../../be/cg/bb_map.cxx"
@@ -70,7 +58,6 @@ SET(PATHSCALE_CG_SRCS
 			"../../be/cg/cg_db_op.cxx"
 			"../../be/cg/cgdriver.cxx"
 			"../../be/cg/cgdwarf.cxx"
-                        "../../be/cg/cgdwarf_debug_frame.cxx" #st
 			"../../be/cg/cgemit.cxx"
 			"../../be/cg/cgexp.cxx"
 			"../../be/cg/cg_flags.cxx"
@@ -122,6 +109,30 @@ SET(PATHSCALE_CG_SRCS
 			"../../be/cg/oputil.cxx"
 			"../../be/cg/tn_map.cxx"
 			"../../be/cg/tnutil.cxx"
+			"../../be/cg/gra_mon/gra.cxx"
+			"../../be/cg/gra_mon/gra_bb.cxx"
+			"../../be/cg/gra_mon/gra_cflow.cxx"
+			"../../be/cg/gra_mon/gra_color.cxx"
+			"../../be/cg/gra_mon/gra_create.cxx"
+			"../../be/cg/gra_mon/gra_grant.cxx"
+			"../../be/cg/gra_mon/gra_interfere.cxx"
+			"../../be/cg/gra_mon/gra_loop.cxx"
+			"../../be/cg/gra_mon/gra_lrange.cxx"
+			"../../be/cg/gra_mon/gra_lrange_subuniverse.cxx"
+			"../../be/cg/gra_mon/gra_lrange_vset.cxx"
+			"../../be/cg/gra_mon/gra_lunit.cxx"
+			"../../be/cg/gra_mon/gra_pref.cxx"
+			"../../be/cg/gra_mon/gra_region.cxx"
+			"../../be/cg/gra_mon/gra_spill.cxx"
+			"../../be/cg/gra_mon/gra_split.cxx"
+			"../../be/cg/gra_mon/gra_trace.cxx")
+
+SET( PATHSCALE_CG_ARM_SRCS "../../be/cg/swp/cg_swp.cxx" #st
+                        "../../be/cg/${BUILD_TARGET_DIR}/targ_op.cxx" #st
+                        "../../be/cg/${BUILD_TARGET_DIR}/targ_ebo.cxx" #st
+                        "../../be/cg/${BUILD_TARGET_DIR}/targ_select.cxx" #st
+                        "../../common/com/${BUILD_TARGET_DIR}/targ_register_common.cxx"
+                        "../../be/cg/cgdwarf_debug_frame.cxx" #st
                         "../../be/cg/loop_invar_hoist.cxx" #st
                         "../../be/cg/cg_ssa.cxx" #st
                         "../../be/cg/cg_ssaopt.cxx" #st
@@ -148,24 +159,20 @@ SET(PATHSCALE_CG_SRCS
                         "../../be/cg/mexpand.cxx" #st
                         "../../be/cg/cg_automod.cxx" #st
                         "../../be/cg/swp/cg_swp_sched.cxx"#st
-                        "../../dfgforise/ExportFromBackEnd.cxx"#st
-			"../../be/cg/gra_mon/gra.cxx"
-			"../../be/cg/gra_mon/gra_bb.cxx"
-			"../../be/cg/gra_mon/gra_cflow.cxx"
-			"../../be/cg/gra_mon/gra_color.cxx"
-			"../../be/cg/gra_mon/gra_create.cxx"
-			"../../be/cg/gra_mon/gra_grant.cxx"
-			"../../be/cg/gra_mon/gra_interfere.cxx"
-			"../../be/cg/gra_mon/gra_loop.cxx"
-			"../../be/cg/gra_mon/gra_lrange.cxx"
-			"../../be/cg/gra_mon/gra_lrange_subuniverse.cxx"
-			"../../be/cg/gra_mon/gra_lrange_vset.cxx"
-			"../../be/cg/gra_mon/gra_lunit.cxx"
-			"../../be/cg/gra_mon/gra_pref.cxx"
-			"../../be/cg/gra_mon/gra_region.cxx"
-			"../../be/cg/gra_mon/gra_spill.cxx"
-			"../../be/cg/gra_mon/gra_split.cxx"
-			"../../be/cg/gra_mon/gra_trace.cxx")
+                        "../../dfgforise/ExportFromBackEnd.cxx")
+
+SET( PATHSCALE_CG_X8664_SRCS 		"../../be/cg/${BUILD_TARGET_DIR}/ebo_special.cxx"
+                                    	"../../be/cg/${BUILD_TARGET_DIR}/exp_predicate.cxx"
+		"../../be/cg/${BUILD_TARGET_DIR}/cg_sched.cxx"
+		"../../be/cg/${BUILD_TARGET_DIR}/cg_convert_x87.cxx"
+			"../../be/cg/${BUILD_TARGET_DIR}/cg_misc.cxx")
+IF( ${BUILD_TARGET_DIR} MATCHES "arm" )
+SET( PATHSCALE_CG_SRCS ${PATHSCALE_CG_COMMON_SRCS} ${PATHSCALE_CG_ARM_SRCS})
+ELSE()
+SET( PATHSCALE_CG_SRCS ${PATHSCALE_CG_COMMON_SRCS} ${PATHSCALE_CG_X8664_SRCS})
+ENDIF()
+
+
 
 
 add_custom_command(

@@ -101,7 +101,9 @@
 #include "gcm.h"		    /* for GCM options */
 #include "cg_sched_est.h"	    /* for CG_SCHED_EST options */
 #include "targ_proc_properties.h"
-//#include "cgdriver_arch.h"
+#ifndef TARG_ST
+#include "cgdriver_arch.h"
+#endif
 #include "cgdriver.h"
 #include "register.h"
 #include "pqs_cg.h"

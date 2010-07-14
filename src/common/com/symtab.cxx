@@ -2516,7 +2516,7 @@ TY_IDX MTYPE_TO_TY_array[MTYPE_LAST+1];
 #endif
 TY_IDX Quad_Type, Void_Type;
 #ifndef TARG_ST
-TY_ID XFE_int_Type, FE_double_Type;
+TY_IDX XFE_int_Type, FE_int_Type, FE_double_Type;
 #endif
 TY_IDX Spill_Int_Type, Spill_Ptr_Type, Spill_Float_Type;
 #ifdef KEY
@@ -2612,7 +2612,8 @@ Setup_Preg_Pointers ()
 #ifdef TARG_X8664
     X87_Preg = MTYPE_To_PREG( MTYPE_FQ );
 #endif
-     /*
+#ifdef TARG_ST 
+    /*
    * For some reason only one ST is valid at any time, so I
    * need to hack:
    */
@@ -2620,7 +2621,7 @@ Setup_Preg_Pointers ()
     Ptr_Preg = Ptr64_Preg;
   else
     Ptr_Preg = Ptr32_Preg;
-
+#endif
 } // Setup_Preg_Pointers
 
 
@@ -2783,8 +2784,10 @@ Create_Special_Global_Symbols ()
 	    Spill_Int_Type = ty_idx;
 	} else if ( i == Spill_Float_Mtype ) {
 	    Spill_Float_Type = ty_idx;
+#ifdef TARG_ST
 	} else if (i == Spill_Ptr_Mtype) {
 	    Spill_Ptr_Type = ty_idx;
+#endif
 	}
 	if ( i == MTYPE_FQ || i == MTYPE_F16 )
 	    Quad_Type = ty_idx;
@@ -2888,7 +2891,9 @@ Initialize_Special_Global_Symbols ()
     Create_Special_Global_Symbols ();
 	    
     Spill_Int_Type = MTYPE_To_TY (Spill_Int_Mtype);
+#ifdef TAR_ST
     Spill_Ptr_Type = MTYPE_To_TY (Spill_Ptr_Mtype);
+#endif
     Spill_Float_Type = MTYPE_To_TY (Spill_Float_Mtype);
 #ifdef KEY
     /* Bug#246

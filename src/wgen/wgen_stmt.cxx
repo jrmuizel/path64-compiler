@@ -52,6 +52,10 @@ extern "C"{
 #include "wgen_spin_symbol.h"
 #include "targ_sim.h"
 #include <ctype.h>
+#ifdef TARG_ST
+#include "erfe.h"
+#include "gccfe_targinfo_interface.h"
+#endif
 //#include "tree_cmp.h"
 
 #include "wn.h"		// New_Region_Id()
@@ -1062,8 +1066,12 @@ idname_from_regnum (int gcc_reg)
   	return NULL;
   }
   else {
-	extern PREG_NUM Map_Reg_To_Preg [];
+#ifdef TARG_ST
+      PREG_NUM preg = GCCTARG_Map_Reg_To_Preg()[gcc_reg];
+#else
+     	extern PREG_NUM Map_Reg_To_Preg [];
 	PREG_NUM preg = Map_Reg_To_Preg [gcc_reg];
+#endif
 	if (preg < 0) {
 		DevWarn("couldn't map asm regname to preg");
 		return NULL;
@@ -1073,12 +1081,25 @@ idname_from_regnum (int gcc_reg)
 		st = Int_Preg;
 	else if (Preg_Offset_Is_Float(preg))
 		st = Float_Preg;
+#ifdef TARG_ST
+	else if (preg >= Branch_Preg_Min_Offset && 
+		                 preg <= Branch_Preg_Max_Offset) {
+	  st = MTYPE_To_PREG (MTYPE_B);
+	}
+#endif
+
 #ifdef TARG_X8664
 	else if (Preg_Offset_Is_X87(preg))
 		st = X87_Preg;
 #endif
 	else
+#ifdef TARG_ST
+	  //TB: Return specific PREG to handle think like non general register in
+	  //clobber asm list
+	  st = Untyped_Preg();
+#else
 		FmtAssert (FALSE, ("unexpected preg %d", preg));
+#endif
   	return WN_CreateIdname((WN_OFFSET) preg, st);
   }
 }
@@ -2354,6 +2375,7 @@ WGEN_Expand_Return (gs_t stmt, gs_t retval)
     // If the return object must be passed through memory and the return
     // object is created by a TARGET_EXPR, have the TARGET_EXPR write directly
     // to the memory return area.
+#ifndef TARG_ST
     if (TY_return_in_mem(ret_ty_idx)) {
       FmtAssert (TY_mtype (ret_ty_idx) == MTYPE_M,
 	         ("WGEN_Expand_Return: return_in_mem type is not MTYPE_M"));
@@ -2384,6 +2406,7 @@ WGEN_Expand_Return (gs_t stmt, gs_t retval)
         copied_return_value = TRUE;
       }
     }
+#endif
 #endif
 
     rhs_wn = WGEN_Expand_Expr_With_Sequence_Point (
@@ -2538,6 +2561,7 @@ WGEN_Expand_Return (gs_t stmt, gs_t retval)
       wn = WN_CreateReturn ();
     }
 #ifdef KEY
+#ifndef TARG_ST
     else if (TY_return_in_mem(ret_ty_idx)) {
       // Copy the return value into the return area.  Based on code in
       // lower_return_val().
@@ -2564,6 +2588,7 @@ WGEN_Expand_Return (gs_t stmt, gs_t retval)
       // Create return.
       wn = WN_CreateReturn ();
     }
+#endif // !TARG_ST
 #endif
     else if (rhs_wn) {
       WGEN_Set_ST_Addr_Saved (rhs_wn);

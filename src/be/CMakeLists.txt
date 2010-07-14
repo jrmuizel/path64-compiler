@@ -39,8 +39,7 @@ INCLUDE_DIRECTORIES(
 
 
   ${PATHSCALE_BINARY_DIR}/../GCC/gcc
-  ../../GCC/include
-  ../../GCC/gcc
+  ../include
   ../libdwarf/libdwarf
   )
 

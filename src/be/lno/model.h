@@ -837,7 +837,7 @@ public:
 	INT *num_ptr_regs, INT *num_ptr_refs,
 	INT *num_ptr_variant_stores, INT *num_ptr_invariant_stores,
 	INT *num_bool_regs, INT *num_bool_refs,
-	INT *num_bool_variant_stores, INT *num_bool_invariant_stores
+	INT *num_bool_variant_stores, INT *num_bool_invariant_stores);
 #else
   void Calc_Regs_And_Refs(
 	INT *num_fp_regs, INT *num_fp_refs,
@@ -845,7 +845,6 @@ public:
 	INT *num_int_regs, INT *num_int_refs,
 	INT *num_int_variant_stores, INT *num_int_invariant_stores);
 #endif
-	) ;
   INT Conflict_Refs(INT max_dim, BOOL *can_be_unrolled, INT num_loops);
   void Remove_Cse(INT inner, INT max_dist, INT step);
   void Remove_Invariants(INT loop_no);

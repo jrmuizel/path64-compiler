@@ -1,6 +1,6 @@
 PROJECT(BE)
 
-SET(PATHSCALE_BE_BE_SRCS "../../common/targ_info/access/ti_init.c"
+SET(PATHSCALE_BE_BE_COMMON_SRCS "../../common/targ_info/access/ti_init.c"
                          "../../common/targ_info/access/ti_res.c"
                          "../../common/targ_info/access/ti_res_count.c"
                          "../../common/targ_info/access/ti_res_res.c"
@@ -21,7 +21,6 @@ SET(PATHSCALE_BE_BE_SRCS "../../common/targ_info/access/ti_init.c"
                          "../../common/util/tracing.c"
                          "../../common/util/util.c"
                          "../../common/util/vstring.c"
-                         "../../common/util/priority_queue.c" #st
                          "../../common/com/${BUILD_TARGET_DIR}/config_host.c"
                          "../../common/com/${BUILD_TARGET_DIR}/config_platform.c"
                          "cleanup.cxx"
@@ -40,7 +39,6 @@ SET(PATHSCALE_BE_BE_SRCS "../../common/targ_info/access/ti_init.c"
                          "wb_anl.cxx"
                          "${BUILD_TARGET_DIR}/fill_align_targ.cxx"
                          "${BUILD_TARGET_DIR}/driver_targ.cxx"
-                         "${BUILD_TARGET_DIR}/mul_cost_model.cxx" #st
                          "../com/be_util.cxx"
                          "../com/be_version.cxx"
                          "../com/cxx_base.cxx"
@@ -80,13 +78,10 @@ SET(PATHSCALE_BE_BE_SRCS "../../common/targ_info/access/ti_init.c"
                          "../com/whirl2src.cxx"
                          "../com/wn_fio.cxx"
                          "../com/wn_lower.cxx"
-                         "../com/rt_lower_wn.cxx"
-                         "../com/wn_lower_mul.cxx"
                          "../com/u64_lower_wn.cxx"
                          "../com/wn_mp.cxx"
                          "../com/wn_verifier.cxx"
                          "../com/wn_retype_expr.cxx"
-                     #    "../com/wn_unroll.cxx"
                          "../com/wn_reassoc.cxx"
                          "../com/wb.cxx"
                          "../com/wb_browser.cxx"
@@ -108,7 +103,6 @@ SET(PATHSCALE_BE_BE_SRCS "../../common/targ_info/access/ti_init.c"
                          "../../common/com/intrn_info.cxx"
                          "../../common/com/ll.cxx"
                          "../../common/com/mtypes.cxx"
-                         "../../common/com/loader.cxx"
                          "../../common/com/opcode.cxx"
                          "../../common/com/opcode_core.cxx"
                          "../../common/com/wutil.cxx"
@@ -137,21 +131,6 @@ SET(PATHSCALE_BE_BE_SRCS "../../common/targ_info/access/ti_init.c"
                          "../../common/util/cxx_memory.cxx"
                          "../../common/util/errors.cxx"
                          "../../common/util/options_stack.cxx"
-                         "../../common/util/zint.cxx" #st
-                         "../../common/util/lbitmask.cxx" #st
-                         "../../common/util/lbrange.cxx" #st
-                         "../../common/util/larange.cxx" #st
-                         "../../common/util/lvrange.cxx" #st
-                         "../../common/util/lbvalrange.cxx" #st
-                         "../../common/util/lbitvalue.cxx" #st
-                         "../../common/util/lalign.cxx" #st
-                         "../../common/util/paired_lattice.cxx" #st
-                         "../../common/util/range.cxx" #st
-                         "../../common/com/isa_loader.cxx" #st
-                         "../../common/com/dll_loader.cxx" #st
-                         "../../common/com/extension_intrinsic.cxx" #st
-                         "../../common/com/dyn_isa_api_access.cxx" #st
-                         "../../common/com/dyn_dll_api_access.cxx" #st
                          "../region/ori.cxx"
                          "../region/rbi.cxx"
                          "../region/region_init.cxx"
@@ -173,6 +152,36 @@ SET(PATHSCALE_BE_BE_SRCS "../../common/targ_info/access/ti_init.c"
                          "../../common/instrument/instr_reader.cxx"
                          "../../ipa/main/optimize/ipo_tlog_utils.cxx")
 
+SET(PATHSCALE_BE_BE_X8664_SRCS  "../com/wn_unroll.cxx")
+
+SET(PATHSCALE_BE_BE_ARM_SRCS
+                           "../com/wn_lower_mul.cxx"
+                         "../com/rt_lower_wn.cxx"
+                         "${BUILD_TARGET_DIR}/mul_cost_model.cxx" #st
+                         "../../common/util/zint.cxx" #st
+                         "../../common/util/lbitmask.cxx" #st
+                         "../../common/util/lbrange.cxx" #st
+                         "../../common/util/larange.cxx" #st
+                         "../../common/util/lvrange.cxx" #st
+                         "../../common/util/lbvalrange.cxx" #st
+                         "../../common/util/lbitvalue.cxx" #st
+                         "../../common/util/lalign.cxx" #st
+                         "../../common/util/paired_lattice.cxx" #st
+                         "../../common/util/range.cxx" #st
+                         "../../common/com/loader.cxx"
+                         "../../common/com/isa_loader.cxx" #st
+                         "../../common/com/dll_loader.cxx" #st
+                         "../../common/com/lai_loader.cxx" #st
+                         "../../common/com/extension_intrinsic.cxx" #st
+                         "../../common/com/dyn_isa_api_access.cxx" #st
+                         "../../common/com/dyn_dll_api_access.cxx" #st
+                           )
+
+IF( ${BUILD_TARGET_DIR} MATCHES "arm" )
+SET( PATHSCALE_BE_BE_SRCS ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_ARM_SRCS})
+ELSE()
+SET( PATHSCALE_BE_BE_SRCS ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_X8664_SRCS})
+ENDIF()
 ADD_DEFINITIONS(
 # Apparently someone likes legos
 	-D_LEGO_CLONER)
@@ -187,6 +196,12 @@ SET_SOURCE_FILES_PROPERTIES(${PATHSCALE_BINARY_DIR}/be/preg_list.h PROPERTIES GE
 SET_SOURCE_FILES_PROPERTIES(${PATHSCALE_BINARY_DIR}/be/preg_list.cxx PROPERTIES GENERATED 1)
 ADD_CUSTOM_TARGET(generate_preg_list DEPENDS ${PATHSCALE_BINARY_DIR}/be/preg_list.h ${PATHSCALE_BINARY_DIR}/be/preg_list.cxx)
 
+add_custom_command(
+    OUTPUT   extension_include.h
+    COMMAND  ${PATHSCALE_SOURCE_DIR}/scripts/common/preprocess.pl -I${PATHSCALE_SOURCE_DIR}/common/com -I${PATHSCALE_SOURCE_DIR}/common/com/${BUILD_TARGET_DIR} -I${PATHSCALE_BINARY_DIR}/../GCC/gcc -I${PATHSCALE_SOURCE_DIR}/../GCC/gcc -MD  ${PATHSCALE_SOURCE_DIR}/include/extension_include.hin -o ${PATHSCALE_BINARY_DIR}/include/extension_include.h
+)
+SET_SOURCE_FILES_PROPERTIES(extension_include.h PROPERTIES GENERATED 1)
+ADD_CUSTOM_TARGET(generate_extension DEPENDS extension_include.h)
 
 add_library(be-static STATIC ${PATHSCALE_BE_BE_SRCS})
 set_property(TARGET be-static PROPERTY OUTPUT_NAME be)
@@ -196,8 +211,9 @@ add_library(be SHARED ${PATHSCALE_BE_BE_SRCS})
 set_property(TARGET be PROPERTY PREFIX "")
 set_target_properties(be PROPERTIES COMPILE_DEFINITIONS "SHARED_BUILD")
 set_target_properties(be PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
-target_link_libraries(be targinfo m ${libdl})
-add_dependencies(be be-static) # serialize to generate preg_list.cxx only once
+target_link_libraries(be targinfo SYS m ${libdl})
+add_dependencies( be be-static) # serialize to generate preg_list.cxx only once
+#add_dependencies( be-static generate_extension)
 
 
 add_executable (be-exec driver.cxx driver_util.cxx iter.cxx  ../com/phase.cxx)

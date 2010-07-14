@@ -260,13 +260,15 @@ PU_Init (PU& pu, TY_IDX prototype, SYMTAB_IDX level)
     pu.lexical_level = level;
     pu.gp_group = 0;
     pu.src_lang = PU_UNKNOWN_LANG;
+    pu.misc = 0;
 #ifdef TARG_ST
     pu.stkaln = Target_Stack_Alignment;
+  //TB" Add size optimization level for this PU
     pu.size_opt = PU_OPTLEVEL_UNDEF;
-#else
-    pu.misc = 0;
 #endif
+#if ! defined(TARG_ST) || defined(PU_HAS_UNUSED)
     pu.unused = 0;
+#endif
     pu.flags = 0;
 }
 

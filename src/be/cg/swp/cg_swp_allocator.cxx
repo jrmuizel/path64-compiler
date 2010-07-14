@@ -137,7 +137,7 @@ static const char PlotChar[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8',
 
 //============== SWP_LIFETIME definitions ===============
 //=======================================================
-
+#ifdef TARG_ST
 void 
 SWP_LIFETIME::print(FILE *outf)
 {
@@ -148,10 +148,10 @@ SWP_LIFETIME::print(FILE *outf)
     fprintf(outf, "[start,end,omega,alpha]=[%d %d %d %d] pseudo-loc=%d\n",
 	    start(), end(), omega(), alpha(), location());
 } // SWP_LIFETIME::print
-
+#endif
 //============ Minimal distance calculation =============
 //=======================================================
-
+#ifdef TARG_ST
 INT32
 SWP_ALLOCATOR::_regnum_dist(const SWP_LIFETIME &lt1, 
 			    const SWP_LIFETIME &lt2) const
@@ -198,7 +198,9 @@ SWP_ALLOCATOR::_regnum_dist(const SWP_LIFETIME &lt1,
 
   return d;
 } // SWP_ALLOCATOR::_regnum_dist
+#endif
 
+#ifdef TARG_ST
 void
 SWP_ALLOCATOR::_calculate_dist(INT32_MATRIX &dist)
 {
@@ -217,7 +219,9 @@ SWP_ALLOCATOR::_calculate_dist(INT32_MATRIX &dist)
       dist(j,i) = _regnum_dist(_lifetime[j], _lifetime[i]);
     }
 } // SWP_ALLOCATOR::_calculate_dist
+#endif
 
+#ifdef TARG_ST
 //============ Sorting heuristics =============
 //=============================================
 
@@ -250,7 +254,8 @@ public:
 	    _lt(i).start() < _lt(j).start());
   }
 }; // START_TIME_CMP
-
+#endif
+#ifdef TARG_ST
 INT32
 SWP_ALLOCATOR::_adjacency_order_dist(const INT32_MATRIX &dist,
 				     INT32               from_lt, 
@@ -815,7 +820,7 @@ SWP_ALLOCATOR::_print_location_map(FILE *outf,
   }
 } // SWP_ALLOCATOR::_print_location_map
   
-
+#endif
 #ifndef TARG_ST
 SWP_DIST::SWP_DIST (const SWP_LIFETIME& lt,
                     const SWP_LOOP& swp_loop,
@@ -846,6 +851,7 @@ SWP_DIST::SWP_DIST (const SWP_LIFETIME& lt,
   return;
 }
 #endif
+#ifdef TARG_ST
 void
 SWP_ALLOCATOR::print(FILE *outf, INT32 num_iterations, INT32 plot_width)
 {
@@ -905,11 +911,10 @@ bool SWP_ALLOCATOR::has_conflicts()
   
   return conflict;
 } // SWP_ALLOCATOR::has_conflicts
-
-
+#endif
 //============== SWP_ALLOCATOR algorithm ==================
 //=========================================================
-
+#ifdef TARG_ST
 SWP_ALLOCATOR::STATUS 
 SWP_ALLOCATOR::_allocate(bool use_adjacency)
 {
@@ -994,11 +999,11 @@ SWP_ALLOCATOR::_allocate(bool use_adjacency)
   return status;
   
 } // SWP_ALLOCATOR::_allocate
-
+#endif
 
 //========= SWP_REG_ASSIGNMENT::Allocate_Loop_Variants =========
 //==============================================================
-
+#ifdef TARG_ST
 #ifndef STANDALONE_SWP_ALLOCATOR
 
 typedef SWP_ALLOCATOR::LIFETIME_SET    LIFETIME_SET;
@@ -1550,6 +1555,7 @@ void SWP_REG_ASSIGNMENT::Print_Allocation(FILE *file)
 }
 
 #endif // ifndef STANDALONE_SWP_ALLOCATOR
+#endif
 #ifndef TARG_ST
 void 
 SWP_DIST::Print (FILE *f) const {

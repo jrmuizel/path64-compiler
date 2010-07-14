@@ -1896,9 +1896,6 @@ Allocate_Entry_Formal(ST *formal, PLOC ploc)
 			PLOC_lpad_overlap(ploc));
   
 }
-#else /* !TARG_ST */
-static void
-Allocate_Entry_Formal(ST *formal, BOOL on_stack, BOOL in_formal_reg)
 #endif
 
 /* Implementation of Allocate_Entry_Formal(). */
@@ -2650,7 +2647,7 @@ Calc_Formal_Area (WN *pu_tree, INT32 *formal_size, INT32 *upformal_size)
   *upformal_size = MAX (maxsize - Formal_Save_Area_Size, 0);
 }
 #endif
-
+#ifdef TARG_ST
 /* ====================================================================
  * Initialize_Formal_Area
  *
@@ -2678,7 +2675,7 @@ Initialize_Formal_Area (WN *pu_tree)
   Formal_Save_Area_Size = formal_size;
   Upformal_Area_Size = upformal_size;
 }
-
+#endif
 
 
 /* estimate stack space needed for local variables */
@@ -3907,7 +3904,6 @@ Shorten_Section ( ST *st, SECTION_IDX sec )
 
    if (ST_class(st) == CLASS_VAR && ST_not_gprel(st)) 
 	return sec;	/* user says not gp-relative */
-
    if (size > Max_Sdata_Elt_Size) { 
 	/* Object size is greater than the -G number.
 	 * Unless user or previous phase has specified it to be GPREL,
@@ -3918,7 +3914,6 @@ Shorten_Section ( ST *st, SECTION_IDX sec )
 	else if (!ST_gprel(st) && !ST_force_gprel(st))
 		return sec;
    }
-
    if (Strings_Not_Gprelative && Is_String_Literal(st)) {
 	/* don't put strings in a gp-relative section */
 	return sec;

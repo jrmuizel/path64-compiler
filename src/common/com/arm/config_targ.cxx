@@ -64,6 +64,41 @@ typedef unsigned char an_integer_kind;
 #include "targ_abi_properties.h" // TB: For ABI_PROPERTIES_ABI_Value
 #endif
 
+/* The maximum integer machine type corresponding directly to the
+ * machine registers, and the default integer machine type:
+ */
+CLASS_INDEX Max_Int_Mtype = 0;
+CLASS_INDEX Max_Uint_Mtype = 0;
+CLASS_INDEX Def_Int_Mtype = 0;
+CLASS_INDEX Def_Uint_Mtype = 0;
+/* On MIPS III targets, should we use 32-bit pointers? */
+BOOL Use_32_Bit_Pointers = FALSE;
+/* For various targets, what are the characteristics of pointers */
+INT		Pointer_Size; 
+#ifdef TARG_ST
+ISA_REGISTER_CLASS Pointer_Register_Class;
+#endif
+CLASS_INDEX	Pointer_Mtype;
+CLASS_INDEX	Pointer_Mtype2;
+/* What are pointers and booleans aliased to in WHIRL */
+TYPE_ID Pointer_type;
+TYPE_ID Pointer_type2;
+TYPE_ID Boolean_type;
+TYPE_ID Boolean_type2;
+TYPE_ID Integer_type;
+
+/* For various targets, what is the comparison result type? */
+INT		Comparison_Result_Size;		/* in bytes */
+CLASS_INDEX	Comparison_Result_Mtype;
+
+/* Symbolic Debug mode as specified on command line.  (The mode can
+ * change from PU to PU because, for example, we encounter a call to
+ * the routine 'alloca()' -- we must restore the mode to the value as
+ * it was specified on the command line, so we remember it.)
+ */
+INT16 Symbolic_Debug_Mode;
+INT16 Max_Symbolic_Debug_Mode;	/* Maximum for any PU */
+
 /* =====================================================================
  *    Architecture specific definitions: 
  * =====================================================================

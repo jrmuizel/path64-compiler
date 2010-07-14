@@ -196,5 +196,24 @@ CGTARG_Is_OP_Intrinsic(OP *op)
 {
   return OP_code(op) == TOP_intrncall;
 }
+/* ====================================================================
+ *   Target specific scheduling and dependence graph:
+ * ====================================================================
+ */
+
+inline INT32 CGTARG_Branch_Taken_Penalty(void)
+{
+  return CGTARG_branch_taken_penalty_overridden ?
+    CGTARG_branch_taken_penalty : 1;
+}
+/* ====================================================================
+ *    Properties:
+ * ====================================================================
+ */
+
+inline INT
+CGTARG_Text_Alignment (void) {
+  return DEFAULT_TEXT_ALIGNMENT;
+}
 
 #endif /* targ_cg_INCLUDED */

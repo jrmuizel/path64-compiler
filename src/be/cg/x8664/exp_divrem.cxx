@@ -52,6 +52,7 @@
 #include "tn.h"
 #include "cg_flags.h"
 #include "op.h"
+#include "op_map.h"
 #include "cgexp.h"
 #include "cgexp_internals.h"
 #include "whirl2ops.h"

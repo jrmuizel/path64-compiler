@@ -645,12 +645,10 @@ inline SYMTAB_IDX
 PU_lexical_level (const PU& pu)		{ return pu.lexical_level; }
 inline void
 Set_PU_lexical_level (PU& pu, SYMTAB_IDX l) { pu.lexical_level = l; }
-#ifndef TARG_ST
 inline INITO_IDX
 PU_misc_info (const PU& pu)		{ return pu.misc; }
 inline void
 Set_PU_misc_info (PU& pu, INITO_IDX i)	{ pu.misc = i; }
-#endif
 //----------------------------------------------------------------------
 // PU flags
 //----------------------------------------------------------------------

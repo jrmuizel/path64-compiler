@@ -226,8 +226,8 @@ struct TN_LIST;
 #include "targ_isa_enums.h"
 #include "tracing.h"
 /* Target-specific TN info */
-#include "targ_isa_relocs.h"
 #ifdef TARG_ST
+#include "targ_isa_relocs.h"
 #include "pixel_mtypes.h"
 #endif
 class WN;
