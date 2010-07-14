@@ -12,6 +12,7 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 SET(WINDOWS_HFILES
 	alloca.h
+	ar.h
 	endian.h
 	elf.h
 	fcntl.h
