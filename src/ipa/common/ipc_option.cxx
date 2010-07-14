@@ -59,7 +59,9 @@
 #include <ctype.h>
 #include <string.h>
 #include <ar.h>         /* for support of -INLINE:library= */
+#ifndef _WIN32
 #include <sys/errno.h>  /* for EBADF */
+#endif
 #include "defs.h"
 #include "config.h"
 #include "config_ipa.h"	/* -INLINE/-IPA group options */
