@@ -66,7 +66,7 @@
 #include "ipa_option.h"			// option flags
 #include "ipa_cg.h"			// call graph
 #include "ipaa.h"			// for Mod_Ref_Set
-#include "ipc_compile.h"		// for ipacom_add_comment
+#include "ipc_compile.h"		
 #include "ipc_dst_merge.h"		// for IPC_merge_DSTs
 #include "ipc_dst_utils.h"		// for DST_create
 #include "ipo_alias_class.h"
@@ -702,16 +702,6 @@ output_queue::pu_tree_add_comments(size_t index, size_t count, PU_Info* head)
         ErrMsg (EC_No_Mem, "pu_tree_add_comment"); 
     }
 
-#ifdef KEY
-    // Bug 14465: Update buffer with makefile comments in
-    // multiple names.
-    if (num_new_lines)
-      fill_in_buffer (buf, count++, pu_name);
-    else
-#endif
-    sprintf(buf, " %zd: %s", count++, pu_name);
-    ipacom_add_comment(index, buf);
-
     if (buf != static_buf)
       free(buf);
 
@@ -734,7 +724,6 @@ void output_queue::flush() {
     if (IPA_Enable_ipacom) {
       const size_t index = ipacom_process_file(out_file->file_name, head,
 					       ProMP_next_idx);
-      ipacom_add_comment(index, "pu's contained in this file:");
       pu_tree_add_comments(index, 0, head);
     }
 

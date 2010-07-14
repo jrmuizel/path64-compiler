@@ -1,4 +1,7 @@
 /*
+   Copyright (C) 2010 PathScale Inc. All Rights Reserved.
+*/
+/*
  * Copyright (C) 2008-2009 Advanced Micro Devices, Inc.  All Rights Reserved.
  */
 
@@ -1630,6 +1633,10 @@ add_file_args (string_list_t *args, phases_t index)
 		  sprintf(buf, "-IPA:propagate_annotation_file=%s", opt_file);
 		  add_string(args,buf);
 		}
+                
+                if(show_flag){
+                  add_string(args,"-show");
+                }
 
 		/* object file should be in list of options */
 		break;
