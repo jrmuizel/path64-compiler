@@ -83,7 +83,7 @@
 #include "opt_cvtl_rule.h"
 #include "config_wopt.h"
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

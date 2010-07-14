@@ -87,7 +87,7 @@ static char *rcs_id = opt_fold_CXX"$Revision: 1.9 $";
 #include "opt_fold.h"		// FOLD class, includes opt_htable.h, config.h
 #include "opt_htable.h"		// hash functions, ISOP flags
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

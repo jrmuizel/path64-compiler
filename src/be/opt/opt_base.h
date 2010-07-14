@@ -71,7 +71,7 @@ static char *opt_basercs_id = 	opt_base_INCLUDED"$Revision: 1.8 $";
 #include "cxx_base.h"
 #include "cxx_template.h"
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

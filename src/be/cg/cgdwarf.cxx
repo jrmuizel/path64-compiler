@@ -102,7 +102,7 @@
 #include <string.h>
 #endif
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

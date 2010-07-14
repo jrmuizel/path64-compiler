@@ -121,7 +121,7 @@
 #include "bb_node_set.h"
 #include "opt_bdce.h"
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 
