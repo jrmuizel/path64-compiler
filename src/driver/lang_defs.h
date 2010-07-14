@@ -129,6 +129,9 @@ typedef enum {
 	P_inline,	/* single-file inliner */
 	P_ipl,		/* pre-ipa */
 	p_any_ipl,	/* either ipl or inline */
+#ifdef FAT_WHIRL_OBJECTS
+        P_merge,        /* partial link command */
+#endif
 
 	P_be,		/* composite optimizing back-end */
 

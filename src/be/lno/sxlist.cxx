@@ -49,6 +49,7 @@
 #include "lnoutils.h"
 #include "scalar_expand.h"
 #include "sxlist.h"
+#include "lno_trace.h"
 
 //---------------------------------------------------------------------------
 // SX_INFO::Make_Sx_Info() constructs a list of privatizable
@@ -200,9 +201,18 @@ SX_INFO::SX_INFO(const SX_INFO& pinfo,
     if (n->Reduction_Carried_By()) {
       red = ht->Find(n->Reduction_Carried_By());
       if (red == NULL && (LNO_Verbose || LNO_Lno_Verbose)) {
-        fprintf(stdout, "pnode: ");
-        n->Print(stdout);
-        fprintf(stdout, " is broken\n");
+          char buf[128];
+          sprintf( buf, "loop %s had bad pnode reduction",SYMBOL(WN_index(wn_orig)).Name());
+          LNO_Trace( LNO_SX_INFO_EVENT, 
+                     Src_File_Name,
+                     Srcpos_To_Line(WN_Get_Linenum(wn_orig)),
+                     ST_name(WN_entry_name(Current_Func_Node)),
+                     buf);
+# if 0
+          fprintf(stdout, "pnode: ");
+          n->Print(stdout);
+          fprintf(stdout, " is broken\n");
+#endif
       }
       FmtAssert(red, ("Loop 0x%p(%s) had bad pnode reduction",
         wn_orig, SYMBOL(WN_index(wn_orig)).Name()));
@@ -227,9 +237,18 @@ SX_INFO::SX_INFO(const SX_INFO& pinfo,
     if (n->Reduction_Carried_By()) {
       red = ht->Find(n->Reduction_Carried_By());
       if (red == NULL && (LNO_Verbose || LNO_Lno_Verbose)) {
+          char buf[128];
+          sprintf( buf, "loop %s had bad pnode reduction",SYMBOL(WN_index(wn_orig)).Name());
+          LNO_Trace( LNO_SX_INFO_EVENT, 
+                     Src_File_Name,
+                     Srcpos_To_Line(WN_Get_Linenum(wn_orig)),
+                     ST_name(WN_entry_name(Current_Func_Node)),
+                     buf);
+#if 0
         fprintf(stdout, "pnode: ");
         n->Print(stdout);
         fprintf(stdout, " is broken\n");
+#endif
       }
       FmtAssert(red, ("Loop 0x%p(%s) had bad pnode reduction",
         wn_orig, SYMBOL(WN_index(wn_orig)).Name()));
@@ -384,9 +403,15 @@ void SX_INFO::Handle_Use(WN* wn_use,
     WN* wn_def = node->Wn();
     if (Index_Variable_Outside_Loop(wn_use, wn_def, loops)) {
       Enter(wn_use, SYMBOL(wn_use), NULL, depth + 1, depth + 1, 0, -1, FALSE);
-      if (LNO_Verbose || LNO_Lno_Verbose)
-        fprintf(stdout, "ivar %s used outside loop makes untransformable\n",
-                (SYMBOL(wn_use)).Name());
+      if (LNO_Verbose || LNO_Lno_Verbose){
+          char buf[128];
+          sprintf( buf, "ivar %s used outside loop makes untransformable", (SYMBOL(wn_use)).Name());
+          LNO_Trace( LNO_SX_INFO_EVENT, 
+                     Src_File_Name,
+                     Srcpos_To_Line(WN_Get_Linenum(wn_use)),
+                     ST_name(WN_entry_name(Current_Func_Node)),
+                     buf);
+      }
       SNL_DEBUG1(2, "ivar %s used outside loop makes untransformable\n",
                  (SYMBOL(wn_use)).Name());
       return;
@@ -433,8 +458,15 @@ void SX_INFO::Handle_Index_Variable_Def(WN* wn_def,
       }
       const char* name = OPCODE_has_sym(WN_opcode(wn_use)) 
 	? (SYMBOL(wn_use)).Name() : "<NONAME>";
-      if (LNO_Verbose || LNO_Lno_Verbose)
-	fprintf(stdout, "ivar %s has link to use %s\n", sym.Name(), name);
+      if (LNO_Verbose || LNO_Lno_Verbose){
+          char buf[128];
+          sprintf( buf, "ivar %s has link to use %s\n", sym.Name(), name);
+          LNO_Trace( LNO_SX_INFO_EVENT, 
+                     Src_File_Name,
+                     Srcpos_To_Line(WN_Get_Linenum(wn_use)),
+                     ST_name(WN_entry_name(Current_Func_Node)),
+                     buf);
+      }
       SNL_DEBUG2(2, "ivar %s has link to use %s\n", sym.Name(), name); 
     }
   }

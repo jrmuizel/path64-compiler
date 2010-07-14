@@ -108,6 +108,7 @@ set(PATHSCALE_LNO_SRCS
 				"cross_cache.cxx"
 				"init.cxx"
 				"simd.cxx"
+                                "lno_trace.cxx"
 				"lx_prompf_anl.cxx")
 
 ADD_DEFINITIONS(

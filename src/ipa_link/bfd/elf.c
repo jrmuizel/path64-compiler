@@ -45,6 +45,8 @@ SECTION
 #include "elf-bfd.h"
 #include "libiberty.h"
 
+#include "sys/elf_whirl.h"
+
 static int elf_sort_sections (const void *, const void *);
 static bfd_boolean assign_file_positions_except_relocs (bfd *, struct bfd_link_info *);
 static bfd_boolean prep_headers (bfd *);
@@ -475,7 +477,11 @@ group_signature (bfd *abfd, Elf_Internal_Shdr *ghdr)
   /* First we need to ensure the symbol table is available.  Make sure
      that it is a symbol table section.  */
   hdr = elf_elfsections (abfd) [ghdr->sh_link];
+#ifdef FAT_WHIRL_OBJECTS
+  if ((hdr->sh_type != SHT_IPA_SYMTAB || (hdr->sh_type != SHT_SYMTAB && !ipa_is_whirl(abfd)))
+#else
   if (hdr->sh_type != SHT_SYMTAB
+#endif
       || ! bfd_section_from_shdr (abfd, ghdr->sh_link))
     return NULL;
 
@@ -1895,12 +1901,26 @@ bfd_section_from_shdr (bfd *abfd, unsigned int shindex)
 	}
       break;
 
+#ifdef FAT_WHIRL_OBJECTS
+    case SHT_SYMTAB:
+      if(ipa_is_whirl(abfd))
+          break;
+      /* fall-thru */
+    case SHT_IPA_SYMTAB:		/* A symbol table */
+#else
     case SHT_SYMTAB:		/* A symbol table */
+#endif
       if (elf_onesymtab (abfd) == shindex)
 	return TRUE;
 
+#ifdef FAT_WHIRL_OBJECTS
+      if (hdr->sh_entsize != bed->s->sizeof_sym){
+        hdr->sh_entsize = bed->s->sizeof_sym;
+      }
+#else
       if (hdr->sh_entsize != bed->s->sizeof_sym)
-	return FALSE;
+        return FALSE;
+#endif
       BFD_ASSERT (elf_onesymtab (abfd) == 0);
       elf_onesymtab (abfd) = shindex;
       elf_tdata (abfd)->symtab_hdr = *hdr;
@@ -2059,8 +2079,13 @@ bfd_section_from_shdr (bfd *abfd, unsigned int shindex)
 	   them.  We scan through the section headers; if we find only
 	   one suitable symbol table, we clobber the sh_link to point
 	   to it.  I hope this doesn't break anything.  */
+#ifndef FAT_WHIRL_OBJECTS
 	if (elf_elfsections (abfd)[hdr->sh_link]->sh_type != SHT_SYMTAB
 	    && elf_elfsections (abfd)[hdr->sh_link]->sh_type != SHT_DYNSYM)
+#else
+	if (elf_elfsections (abfd)[hdr->sh_link]->sh_type != SHT_IPA_SYMTAB
+	    && elf_elfsections (abfd)[hdr->sh_link]->sh_type != SHT_DYNSYM)
+#endif
 	  {
 	    unsigned int scan;
 	    int found;
@@ -2068,8 +2093,13 @@ bfd_section_from_shdr (bfd *abfd, unsigned int shindex)
 	    found = 0;
 	    for (scan = 1; scan < num_sec; scan++)
 	      {
+#ifdef FAT_WHIRL_OBJECTS
+		if (elf_elfsections (abfd)[scan]->sh_type == SHT_IPA_SYMTAB
+		    || elf_elfsections (abfd)[scan]->sh_type == SHT_DYNSYM)
+#else
 		if (elf_elfsections (abfd)[scan]->sh_type == SHT_SYMTAB
 		    || elf_elfsections (abfd)[scan]->sh_type == SHT_DYNSYM)
+#endif
 		  {
 		    if (found != 0)
 		      {
@@ -2084,8 +2114,16 @@ bfd_section_from_shdr (bfd *abfd, unsigned int shindex)
 	  }
 
 	/* Get the symbol table.  */
+#ifdef FAT_WHIRL_OBJECTS
+	if (((elf_elfsections (abfd)[hdr->sh_link]->sh_type == SHT_IPA_SYMTAB
+	          || elf_elfsections (abfd)[hdr->sh_link]->sh_type == SHT_DYNSYM) ||
+             (elf_elfsections (abfd)[hdr->sh_link]->sh_type == SHT_SYMTAB
+                  && !ipa_is_whirl(abfd)) 
+            )
+#else
 	if ((elf_elfsections (abfd)[hdr->sh_link]->sh_type == SHT_SYMTAB
 	     || elf_elfsections (abfd)[hdr->sh_link]->sh_type == SHT_DYNSYM)
+#endif
 	    && ! bfd_section_from_shdr (abfd, hdr->sh_link))
 	  return FALSE;
 
@@ -2211,11 +2249,15 @@ bfd_section_from_shdr (bfd *abfd, unsigned int shindex)
 	}
       else if (hdr->sh_type >= SHT_LOPROC
 	       && hdr->sh_type <= SHT_HIPROC)
+#ifdef FAT_WHIRL_OBJECTS
+         break;
+#else
 	/* FIXME: We should handle this section.  */
 	(*_bfd_error_handler)
 	  (_("%B: don't know how to handle processor specific section "
 	     "`%s' [0x%8x]"),
 	   abfd, name, hdr->sh_type);
+#endif //FAT_WHIRL_OBJECTS
       else if (hdr->sh_type >= SHT_LOOS && hdr->sh_type <= SHT_HIOS)
 	{
 	  /* Unrecognised OS-specific sections.  */
@@ -2389,7 +2431,11 @@ static const struct bfd_elf_special_section special_sections_s[] =
 {
   { STRING_COMMA_LEN (".shstrtab"), 0, SHT_STRTAB, 0 },
   { STRING_COMMA_LEN (".strtab"),   0, SHT_STRTAB, 0 },
+#ifdef FAT_WHIRL_OBJECTS
+  { STRING_COMMA_LEN (".IPA.symtab"),   0, SHT_IPA_SYMTAB, 0 },
+#else
   { STRING_COMMA_LEN (".symtab"),   0, SHT_SYMTAB, 0 },
+#endif
   /* See struct bfd_elf_special_section declaration for the semantics of
      this special case where .prefix_length != strlen (.prefix).  */
   { ".stabstr",			5,  3, SHT_STRTAB, 0 },
@@ -6017,7 +6063,12 @@ _bfd_elf_copy_private_section_data (bfd *ibfd,
 
   ohdr->sh_entsize = ihdr->sh_entsize;
 
+#ifdef FAT_WHIRL_OBJECTS
+  if (ihdr->sh_type == SHT_IPA_SYMTAB ||
+      (ihdr->sh_type == SHT_SYMTAB && !ipa_is_whirl(ibfd))
+#else
   if (ihdr->sh_type == SHT_SYMTAB
+#endif
       || ihdr->sh_type == SHT_DYNSYM
       || ihdr->sh_type == SHT_GNU_verneed
       || ihdr->sh_type == SHT_GNU_verdef)
@@ -6154,7 +6205,13 @@ swap_out_syms (bfd *abfd,
   bed = get_elf_backend_data (abfd);
   symcount = bfd_get_symcount (abfd);
   symtab_hdr = &elf_tdata (abfd)->symtab_hdr;
+#ifdef FAT_WHIRL_OBJECTS
+  if(ipa_is_whirl(abfd))
+      symtab_hdr->sh_type = SHT_IPA_SYMTAB;
+  else
+#else
   symtab_hdr->sh_type = SHT_SYMTAB;
+#endif
   symtab_hdr->sh_entsize = bed->s->sizeof_sym;
   symtab_hdr->sh_size = symtab_hdr->sh_entsize * (symcount + 1);
   symtab_hdr->sh_info = elf_num_locals (abfd) + 1;

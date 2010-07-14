@@ -38,6 +38,7 @@ Boston, MA 02111-1307, USA.  */
 #else
 #  include <strings.h>
 #endif
+#include "sys_ctime.h"
 
 #include "f2c.h"
 
@@ -60,7 +61,10 @@ pathf90_fdate(char *ret_val, int ret_val_len)
   tloc = time (NULL);
   /* Allow a length other than 24 for compatibility with what other
      systems do, despite it being documented as 24. */
-  s_copy (ret_val, ctime_r ((time_t *) & tloc, buf), ret_val_len, 24);
+  s_copy (ret_val,
+          call_sys_ctime_r ((time_t *) & tloc, buf, CTIME_BUFLEN),
+          ret_val_len,
+          24);
 }
 
 #else

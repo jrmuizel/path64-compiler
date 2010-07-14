@@ -29,7 +29,7 @@
 
 #include "cmplrs/host.h"
 
-int32 xor_l(int32 *m,int32 *n)
+int32_t xor_l(int32_t *m,int32_t *n)
 {
 	return(*m ^ *n);
 }

@@ -127,7 +127,7 @@ static int __cpuid_check ()
 static void __cpuid_asm_cpuid (uint32_t eax, cpuid_results_t *results) __attribute__((__noinline__));
 static void __cpuid_asm_cpuid (uint32_t eax, cpuid_results_t *results)
 {
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || !defined(_LP64)
   __asm __volatile("mov %%esi, %%ebx\n\t"
      "cpuid\n\t"
      "xchg %%esi, %%ebx" :

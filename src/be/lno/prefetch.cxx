@@ -228,6 +228,7 @@
 #include "lnoutils.h"
 #include "pf_manual.h"
 #include "whirl2src.h"
+#include "lno_trace.h"
 
 CACHE_PARAMETERS Cache;
 
@@ -651,12 +652,19 @@ static void Prefetch_Auto (WN* func_nd,
 #endif
     childnode->Gen_Prefetch (NULL);
 #ifdef KEY
-    if (Num_Prefetches > 0 && (LNO_Prefetch_Verbose || LNO_Lno_Verbose)) {
+    if (Num_Prefetches > 0 && (LNO_Prefetch_Verbose || LNO_Lno_Verbose)){ 
+        LNO_Trace( LNO_PREFETCH_EVENT, 
+                   Src_File_Name,
+                   Srcpos_To_Line(WN_Get_Linenum(childnode->Get_Code())),
+                   ST_name(WN_entry_name(func_nd)),
+                   Num_Prefetches);
+#if 0
       printf("(%s:%d) ", 
 	     Src_File_Name, 
 	     Srcpos_To_Line(WN_Get_Linenum(childnode->Get_Code())));
       printf ("Generated %d prefetch instructions for this loop\n", 
 	      Num_Prefetches);
+#endif 
     }      
 #endif
 

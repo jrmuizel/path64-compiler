@@ -45,6 +45,8 @@
 #ifdef KEY
 #if defined(__FreeBSD__)
 #include <sys/syslimits.h>
+#elif defined(__sun)
+#include <limits.h>
 #else
 #include <linux/limits.h>
 #endif

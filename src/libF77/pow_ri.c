@@ -29,19 +29,19 @@
 #include <math.h>
 #include "cmplrs/host.h"
 
-extern float __powri(float x, int32 n);
-extern float __powrl(float x, int64 n);
+extern float __powri(float x, int32_t n);
+extern float __powrl(float x, int64_t n);
 
 /* By-reference versions for backward compatibility. */
 
-float pow_ri(float *ap, int32 *bp)
+float pow_ri(float *ap, int32_t *bp)
 {
 float pow;
 pow=__powri(*ap,*bp);
 return pow;
 }
 
-float pow_rl(float *ap, int64 *bp)
+float pow_rl(float *ap, int64_t *bp)
 {
 float pow;
 pow=__powrl(*ap,*bp);

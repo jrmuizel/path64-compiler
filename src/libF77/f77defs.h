@@ -32,9 +32,9 @@
 #ifndef _f77_defs_h
 #define _f77_defs_h
 
-extern int8 shft_b(int8 *m,int8 *k);
-extern int16 shft_h(int16 *m,int16 *k);
-extern int32 shft_l(int32 *m, int32 *k);
-extern int64 shft_ll(int64 *m,int64 *k);
+extern int8_t shft_b(int8_t *m,int8_t *k);
+extern int16_t shft_h(int16_t *m,int16_t *k);
+extern int32_t shft_l(int32_t *m, int32_t *k);
+extern int64_t shft_ll(int64_t *m,int64_t *k);
 
 #endif

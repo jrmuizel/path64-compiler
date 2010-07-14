@@ -50,7 +50,7 @@ struct an_object_file {
         char	gp_status; 	    /* does this object contains a unique
 				       partition group for all its symbols? */
 	char	flags;		    /* tells us something more about the partitioning characteristics */
-        int16	partition_grp; 	    /* All symbols defined in this object belongs
+        int16_t	partition_grp; 	    /* All symbols defined in this object belongs
 				       to this partition group */
     } ipa_info;
 };
@@ -288,13 +288,13 @@ typedef enum {
 #ifdef _64BIT_OBJECTS
 
 #if defined(__GNUC__)
-typedef u_int64_t ADDR;	    /* 64-bit virtual address */
+typedef uint64_t ADDR;	    /* 64-bit virtual address */
 typedef int64_t OFFSET;	    /* 64-bit file offset */
 typedef int64_t FILE_SZ;    /* 64-bit file size/length */
 #else
-typedef uint64 ADDR;	    /* 64-bit virtual address */
-typedef int64 OFFSET;	    /* 64-bit file offset */
-typedef int64 FILE_SZ;	    /* 64-bit file size/length */
+typedef uint64_t ADDR;	    /* 64-bit virtual address */
+typedef int64_t OFFSET;	    /* 64-bit file offset */
+typedef int64_t FILE_SZ;	/* 64-bit file size/length */
 #endif
 
 #define ELF_ADDR	Elf64_Addr
@@ -322,9 +322,9 @@ typedef int64 FILE_SZ;	    /* 64-bit file size/length */
 
 #else
 
-typedef uint32 ADDR;		    /* 32-bit virtual address */
-typedef int32 OFFSET;		    /* 32-bit file offset */
-typedef int32 FILE_SZ;		    /* 32-bit file size/length */
+typedef uint32_t ADDR;		    /* 32-bit virtual address */
+typedef int32_t OFFSET;		    /* 32-bit file offset */
+typedef int32_t FILE_SZ;		/* 32-bit file size/length */
 
 #define ELF_ADDR	Elf32_Addr
 #define ELF_HALF	Elf32_Half
@@ -334,7 +334,7 @@ typedef int32 FILE_SZ;		    /* 32-bit file size/length */
 #define ELF_SIZE        Elf32_Word  /* 32-bit ELF size/length */
 #define ELF_INT		Elf32_Sword  /* the natural host unit size */
 
-typedef longlong_t	ELF_SXWORD; /* These three should never be used in */
+typedef int64_t         ELF_SXWORD; /* These three should never be used in */
 typedef unsigned char	ELF_BYTE;   /* 32-bit mode? */
 typedef unsigned short	ELF_SECTION;	
 #define ELF_FLAGS	Elf32_Word

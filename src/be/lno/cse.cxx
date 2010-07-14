@@ -123,6 +123,8 @@ static const char *rcs_id = "$Source: be/lno/SCCS/s.cse.cxx $ $Revision: 1.13 $"
 #include "cse.h"
 #include "reduc.h"
 #include "config_opt.h"
+#include "lno_trace.h"
+
 
 enum EQUIVALENCE_TYPE { EQ_NONE=0, EQ_ADD, EQ_MPY, EQ_MIN, EQ_MAX, EQ_RECIP, EQ_DIV,
 			EQ_RSQRT,EQ_SQRT,EQ_LOAD };
@@ -1631,11 +1633,23 @@ static BOOL Factorize_Statement(STACK_OF_WN *current_stmt_group, WN *loop)
     if(common_invar->Elements()==0) 
         return FALSE; //no common invar
  }
-if (LNO_Invar_Factor_Verbose || LNO_Lno_Verbose){
+
+ if ( LNO_Invar_Factor_Verbose || LNO_Verbose || LNO_Lno_Verbose )
+ {
+     LNO_Trace( LNO_CSE_EVENT, 
+                Src_File_Name,
+                Srcpos_To_Line(WN_Get_Linenum(loop)),
+                ST_name(WN_entry_name(Current_Func_Node)),
+                current_stmt_group->Elements(),
+                common_invar->Elements());
+ }
+#if 0
+ if (LNO_Invar_Factor_Verbose || LNO_Lno_Verbose){
      printf("  %d statements with %d common_invariants have been factorized.\n", 
-           current_stmt_group->Elements(),
-           common_invar->Elements());
-}
+            current_stmt_group->Elements(),
+            common_invar->Elements());
+ }
+#endif
  Handle_Stmt(current_stmt_group, common_invar, loop);
  return TRUE;
 }
@@ -1884,8 +1898,11 @@ extern void Invariant_Factorization(WN *func_nd)
    current_level=0;
    if(Factorize_Loop(loop)){    
       if (LNO_Invar_Factor_Verbose || LNO_Lno_Verbose){
-        printf("(%s:%d) Loop invariants were factorized.\n", Src_File_Name,
-          Srcpos_To_Line(WN_Get_Linenum(loop)));
+          LNO_Trace( LNO_INV_FACTOR_EVENT, 
+                Src_File_Name,
+                Srcpos_To_Line(WN_Get_Linenum(loop)),
+                ST_name(WN_entry_name(Current_Func_Node)),
+                "loop invariants were factorized");
       }
      factorized_loops++;
     }

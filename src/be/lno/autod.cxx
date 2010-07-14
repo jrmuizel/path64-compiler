@@ -110,6 +110,7 @@ static const char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/lno/SCCS/s.
 #include "lego_pragma.h"
 #include "fiz_fuse.h"
 #include "snl_utils.h"
+#include "lno_trace.h"
 
 static MEM_POOL Distr_Local_Pool;
 static BOOL distributed_something=FALSE;
@@ -707,13 +708,23 @@ void TRANSPOSE_DIRECTED_GRAPH16::Record(ARRAY_TRANSPOSE_TREE *arrays)
           BINARY_TREE_NODE<ARRAY_TRANSPOSE_DESCRIPTOR> *find = arrays->Find(atd);
 	  find->Get_Data()->Set_Dimension(_v[i].value);
 	  Transpose_Array(_v[i].tvertex_union.st,_v[i].value);
-	  if (LNO_Verbose || LNO_Lno_Verbose) {
-	    fprintf(stdout,"Transposing array %s \n",
-	    	ST_name(_v[i].tvertex_union.st));
+          if ( LNO_Verbose || LNO_Lno_Verbose )
+          {
+              LNO_Trace( LNO_TRANSPOSE_EVENT, 
+                         Src_File_Name,
+                         0 /*FIXME here should statement linenumber */,
+                         ST_name(WN_entry_name(Current_Func_Node)),
+                         ST_name(_v[i].tvertex_union.st));
           }
-	  _did_transpose = TRUE;
+# if 0
+          if (LNO_Verbose || LNO_Lno_Verbose) {
+              fprintf(stdout,"Transposing array %s \n",
+                      ST_name(_v[i].tvertex_union.st));
+          }
+#endif
+          _did_transpose = TRUE;
         }
-	Delete_Vertex(i);
+        Delete_Vertex(i);
       }
     }
   }

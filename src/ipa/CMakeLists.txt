@@ -162,6 +162,8 @@ set(PATHSCALE_INLINE_SRCS
 	"../be/lno/lwn_util.cxx"
 )
 
+add_definitions(${PATH64_STDC_FORMAT_MACROS})
+
 ADD_LIBRARY(ipa SHARED ${libipa_sources})
 ADD_LIBRARY(ipl SHARED ${libipl_sources})
 set_property(TARGET ipa PROPERTY PREFIX "")

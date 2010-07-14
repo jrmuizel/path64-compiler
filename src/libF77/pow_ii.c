@@ -29,12 +29,12 @@
 
 #include "cmplrs/host.h"
 
-extern int32 __powii(int32 ap, int32 n);
-extern int64 __powll(int64 ap, int64 n);
+extern int32_t __powii(int32_t ap, int32_t n);
+extern int64_t __powll(int64_t ap, int64_t n);
 
-int64 __powli(int64 ap, int32 n)
+int64_t __powli(int64_t ap, int32_t n)
 {
-int64 pow;
+int64_t pow;
 /* 10/9/89 fix bug 5116 */
 
 if(n != 0) {
@@ -61,9 +61,9 @@ if(n != 0) {
 else return(1);
 }
 
-int32 __powil(int32 ap, int64 n)
+int32_t __powil(int32_t ap, int64_t n)
 {
-int32 pow;
+int32_t pow;
 /* 10/9/89 fix bug 5116 */
 
 if(n != 0) {
@@ -92,30 +92,30 @@ else return(1);
 
 /* By-reference versions for backward compatibility. */
 
-int32 pow_ii(int32 *ap, int32 *bp)
+int32_t pow_ii(int32_t *ap, int32_t *bp)
 {
-int32 pow;
+int32_t pow;
 pow=__powii(*ap,*bp);
 return pow;
 }
 
-int64 pow_il(int32 *ap, int64 *bp)
+int64_t pow_il(int32_t *ap, int64_t *bp)
 {
-int64 pow;
+int64_t pow;
 pow=__powil(*ap,*bp);
 return pow;
 }
 
-int64 pow_li(int64 *ap, int32 *bp)
+int64_t pow_li(int64_t *ap, int32_t *bp)
 {
-int64 pow;
+int64_t pow;
 pow=__powli(*ap,*bp);
 return pow;
 }
 
-int64 pow_ll(int64 *ap, int64 *bp)
+int64_t pow_ll(int64_t *ap, int64_t *bp)
 {
-int64 pow;
+int64_t pow;
 pow=__powll(*ap,*bp);
 return pow;
 }

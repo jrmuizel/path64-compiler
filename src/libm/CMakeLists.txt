@@ -1,5 +1,11 @@
 project(libmv)
 
+IF(PATH64_BUILD_32)
+
+SET(PATHSCALE_MV_SRCS ../libmpath/dummy.c)
+
+ELSE()
+
 SET(PATHSCALE_MV_SRCS   	"../libmpath/amd/vrdacos.S"
 				"../libmpath/amd/vrdaexp.s"
 				"../libmpath/amd/vrdalog.s"
@@ -57,6 +63,8 @@ SET(PATHSCALE_MV_SRCS   	"../libmpath/amd/vrdacos.S"
 				"../libmpath/amd/vrdapow.c"
 				"../libmpath/amd/vrsapowf.c")
 
+ENDIF()
+
 INCLUDE_DIRECTORIES(
 	../libmpath/amd
 	../libm
@@ -76,12 +84,16 @@ SET_TARGET_PROPERTIES(mv-static PROPERTIES OUTPUT_NAME "mv")
 add_library(mv SHARED ${PATHSCALE_MV_SRCS})
 set_property(TARGET mv PROPERTY COMPILE_DEFINITIONS PIC)
 set_property(TARGET mv PROPERTY SOVERSION 1)
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 set_property(TARGET mv PROPERTY LINK_FLAGS "-Wl,-x -Wl,--version-script=${libmv_SOURCE_DIR}/libmv.vs")
+endif()
 target_link_libraries(mv m)
 
 IF(PATH64_ENABLE_PROFILING)
 add_library(mv_p STATIC ${PATHSCALE_MV_SRCS})
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 set_property(TARGET mv_p PROPERTY COMPILE_FLAGS -pg)
+endif()
 install(TARGETS mv_p ARCHIVE DESTINATION ${PATH64_LIB_PATH})
 ENDIF(PATH64_ENABLE_PROFILING)
 

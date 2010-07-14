@@ -37,10 +37,14 @@
 #include <stdint.h>
 #if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 #include <darwin_elf.h>
-#else /* defined(BUILD_OS_DARWIN) */
+#elif defined(__sun)
+#include "elf_stuff.h"
+#else 
 #include <elf.h>
 #endif /* defined(BUILD_OS_DARWIN) */
 #include <sys/elf_whirl.h>		// for WHIRL_REVISION
+
+#include "elf_stuff.h" //SHT_WHIRL_SECTION
 
 #include "linker.h"			// interface exported by ld
 #include "read.h"			// for read_one_section
@@ -324,9 +328,23 @@ process_whirl (an_object_file_ptr p_obj, int nsec, const Shdr* section_table,
 			    section_table[i].sh_size, file_name);
 	} 
 	
-	if (section_table[i].sh_type != SHT_MIPS_WHIRL)
+	if (section_table[i].sh_type != SHT_WHIRL_SECTION)
 	    continue;
 
+#ifdef FAT_WHIRL_OBJECTS
+        if(!strncmp(ld_get_section_name (p_obj, i), MIPS_WHIRL_GLOBALS, strlen(MIPS_WHIRL_GLOBALS))){
+		gsymtab_idx = i;
+	} 
+        if(!strncmp(ld_get_section_name (p_obj, i), MIPS_WHIRL_STRTAB, strlen(MIPS_WHIRL_STRTAB))){
+		strtab_idx = i;
+	}
+        if(!strncmp(ld_get_section_name (p_obj, i), MIPS_WHIRL_SUMMARY, strlen(MIPS_WHIRL_SUMMARY))){
+		found_summary = i;
+	}
+        if(!strncmp(ld_get_section_name (p_obj, i), MIPS_WHIRL_PU_SECTION, strlen(MIPS_WHIRL_PU_SECTION))){
+		pu_section_idx = i;
+	} 
+#else
 	switch (section_table[i].sh_info) {
 	case WT_GLOBALS:
 	    gsymtab_idx = i;
@@ -343,6 +361,7 @@ process_whirl (an_object_file_ptr p_obj, int nsec, const Shdr* section_table,
 	default:
 	    break;
 	}
+#endif
     }
 
     if (gsymtab_idx == 0 || strtab_idx == 0 || pu_section_idx == 0)
@@ -492,7 +511,7 @@ Process_Global_Symtab (void* handle, IP_FILE_HDR& file_header)
     // now only be entered in the global symbol table with our new symbol 
     // table format.
     //
-    OFFSET_AND_SIZE shdr = get_section (handle, SHT_MIPS_WHIRL, WT_GLOBALS);
+    OFFSET_AND_SIZE shdr = get_section (handle, SHT_WHIRL_SECTION, WT_GLOBALS);
     char *base = (char *) handle + shdr.offset;
 
     const GLOBAL_SYMTAB_HEADER_TABLE *gsymtab =
@@ -500,7 +519,7 @@ Process_Global_Symtab (void* handle, IP_FILE_HDR& file_header)
 
     IPC_GLOBAL_TABS gtabs;
 
-    shdr = get_section (handle, SHT_MIPS_WHIRL, WT_STRTAB);
+    shdr = get_section (handle, SHT_WHIRL_SECTION, WT_STRTAB);
     base = (char *) handle + shdr.offset;
     gtabs.symstr_tab_size = shdr.size;
     gtabs.symstr_tab = base;

@@ -30,19 +30,19 @@
 #include <math.h>
 #include "moremath.h"
 
-extern double __powdi(double x, int32 n);
-extern double __powdl(double x, int64 n);
+extern double __powdi(double x, int32_t n);
+extern double __powdl(double x, int64_t n);
 
 /* By-reference versions for backward compatibility. */
 
-double pow_di(double *ap, int32 *bp)
+double pow_di(double *ap, int32_t *bp)
 {
 double pow;
 pow=__powdi(*ap,*bp);
 return pow;
 }
 
-double pow_dl(double *ap, int64 *bp)
+double pow_dl(double *ap, int64_t *bp)
 {
 double pow;
 pow=__powdl(*ap,*bp);

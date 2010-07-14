@@ -27,17 +27,17 @@
 #include "moremath.h"
 #include <cmplrs/host.h>
 
-int16 __iirint (float *x)
+int16_t __iirint (float *x)
 {
-  return((int16)*x);
+  return((int16_t)*x);
 }
 
-int32 __jirint (float *x)
+int32_t __jirint (float *x)
 {
-  return((int32)*x);
+  return((int32_t)*x);
 }
 
-int64 __kirint (float *x)
+int64_t __kirint (float *x)
 {
-  return((int64)*x);
+  return((int64_t)*x);
 }

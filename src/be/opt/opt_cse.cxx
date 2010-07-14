@@ -83,6 +83,10 @@
 #include "opt_cvtl_rule.h"
 #include "config_wopt.h"
 
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 class CSE {
 private:
   MEM_POOL		_mempool;	// CSE private mempool

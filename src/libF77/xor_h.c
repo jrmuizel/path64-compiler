@@ -28,7 +28,7 @@
 /*	actual or intended publication of such source code.	*/
 #include "cmplrs/host.h"
 
-int16 xor_h(int16 *m,int16 *n)
+int16_t xor_h(int16_t *m,int16_t *n)
 {
 	return(*m ^ *n);
 }

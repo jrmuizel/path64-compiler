@@ -497,30 +497,30 @@ return temp;
 
 /* Routines for RSHIFT.  No error checking is done. */
 
-int8 rshft_b(int8 *m, int8 *k)
+int8_t rshft_b(int8_t *m, int8_t *k)
 {
-  int8 l;
+  int8_t l;
   l = -*k;
   return(shft_b(m, &l));
 }
 
-int16 rshft_h(int16 *m, int16 *k)
+int16_t rshft_h(int16_t *m, int16_t *k)
 {
-  int16 l;
+  int16_t l;
   l = -*k;
   return(shft_h(m, &l));
 }
 
-int32 rshft_l(int32 *m, int32 *k)
+int32_t rshft_l(int32_t *m, int32_t *k)
 {
-  int32 l;
+  int32_t l;
   l = -*k;
   return(shft_l(m, &l));
 }
 
-int64 rshft_ll(int64 *m, int64 *k)
+int64_t rshft_ll(int64_t *m, int64_t *k)
 {
-  int64 l;
+  int64_t l;
   l = -*k;
   return(shft_ll(m, &l));
 }

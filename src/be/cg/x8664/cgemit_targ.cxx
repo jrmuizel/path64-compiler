@@ -460,10 +460,12 @@ CGEMIT_Relocs_In_Asm (TN *t, ST *st, vstring *buf, INT64 *val)
 	  *buf = vstr_concat(*buf, ST_name(st));
 	  *buf = vstr_concat(*buf, Is_Target_32bit() ? "@NTPOFF" : "@TPOFF");
 	  return 0;
-	case TN_RELOC_X8664_GOTTPOFF:
+	case TN_RELOC_X8664_GOTTPOFF:		
 	  *buf = vstr_concat(*buf, ST_name(st));
-	  *buf = vstr_concat(*buf,
-			     Is_Target_32bit() ? "@INDNTPOFF" : "@GOTTPOFF");
+	  //*buf = vstr_concat(*buf,  Is_Target_32bit() ? "@INDNTPOFF" : "@GOTTPOFF");
+	  //zwu
+	  *buf = vstr_concat(*buf,  Is_Target_32bit() ? "@INDNTPOFF" : "@TLSGD");
+	  //end 
 	  return 0;
     	default:
 		#pragma mips_frequency_hint NEVER

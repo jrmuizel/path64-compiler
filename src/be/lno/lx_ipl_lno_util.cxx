@@ -65,7 +65,7 @@ Machine_Type(WN* wn_argument)
 #if (!defined(_STANDALONE_INLINER) && !defined(_LIGHTWEIGHT_INLINER))
 
 extern SUMMARY *Summary;
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 extern ARRAY_SUMMARY Array_Summary;
 #endif
 // ---------------------------------------------------------
@@ -335,7 +335,7 @@ static void Exp_To_Linex_Array(WN* wn_exp,
       ivar_idx = IPA_LNO_File->Add_Translated_Ivar_Unique(ivar);
     } 
     else {
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
       if (ST_IDX_level(ST_st_idx(st)) == GLOBAL_SYMTAB) {
         new (&ivar) IVAR(st, offset, mtype);
       }

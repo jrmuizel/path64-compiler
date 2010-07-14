@@ -81,6 +81,7 @@
 #include "eliminate.h"
 #include "fb_whirl.h"
 #include "wn_simp.h" // for WN_Simplify_Tree
+#include "lno_trace.h"
 
 
 extern WN* Find_SCF_Inside(WN* parent_wn, OPCODE opc); // in ff_utils.cxx
@@ -190,16 +191,29 @@ void COND_BOUNDS_INFO::Kill_Written_Symbols(ACCESS_VECTOR* av,
           def = LWN_Get_Parent(def);
           if (def == wnouter) {
             bad_write = TRUE;
+#if 0 /*FIXME What is this fprintf for*/ 
 	    if (LNO_Verbose || LNO_Lno_Verbose) fprintf(stderr, "def at %d, wnouter at %d\n",
 	      Srcpos_To_Line(WN_Get_Linenum(def)),
 	      Srcpos_To_Line(WN_Get_Linenum(wnouter)));
+#endif
 	    }
 	 }
       }
     }
 
     if (bad_write) {
+#if 0
       if (LNO_Verbose || LNO_Lno_Verbose) fprintf(stderr, "Bad write for %s\n", symbol.Name());
+#endif
+      if (LNO_Verbose || LNO_Lno_Verbose)
+      {
+          LNO_Trace( LNO_REDN_COND_EVENT, 
+                     Src_File_Name,
+                     Srcpos_To_Line(WN_Get_Linenum(code)),
+                     ST_name(WN_entry_name(Current_Func_Node)),
+                     symbol.Name(), Srcpos_To_Line(WN_Get_Linenum(wnouter)));
+
+      }
       // go through every equation and remove those containing
       // this variable.
       Symbol_Info().Bottom_nth(entry).Outer_Nondef = control;
@@ -1889,9 +1903,24 @@ extern void Update_Guarded_Do_FB(WN *if_wn, WN *do_wn, FEEDBACK *feedback)
 #include "ff_utils.h"                   // for scalar_rename
 #include "glob.h"                       // For Src_File_Name
 #include "ir_reader.h"			// for fdump_tree
-
 BOOL debug_loop_unswitch = FALSE;
 static INT Last_Unswitchable_Loop_Id = 0;
+
+static void unswitch_verbose_info(
+  SRCPOS	srcpos,
+  const char*	message)
+{
+    if (debug_loop_unswitch || LNO_Unswitch_Verbose || LNO_Lno_Verbose)
+    {
+        LNO_Trace( LNO_UNSWITCH_EVENT, 
+                   Src_File_Name,
+                   Srcpos_To_Line(srcpos),
+                   ST_name(WN_entry_name(Current_Func_Node)),
+                   message);
+    }
+}
+
+
 
 // Return TRUE if unswitched any loop.
 static BOOL Loop_Unswitch_InnerDo (WN *wn)
@@ -1906,21 +1935,13 @@ static BOOL Loop_Unswitch_InnerDo (WN *wn)
   info->Collect_Do_Info(wn);
   info->Bounds().Copy_To_Work();
   if (!info->Bounds().SVPC_Applicable()) { 
-    if (debug_loop_unswitch || LNO_Unswitch_Verbose || LNO_Lno_Verbose) {
-      printf("(%s:%d) ", 
-	     Src_File_Name, 
-	     Srcpos_To_Line(WN_Get_Linenum(wn)));
-      printf("Loop has multi-variate constraint. Loop was not unswitched.\n");
-    }
+      unswitch_verbose_info( WN_Get_Linenum(wn), 
+          "Loop has multi-variate constraint. Loop was not unswitched.");
     return FALSE;
   }
   if (info->Bounds().Work_Cols() != 1) {
-    if (debug_loop_unswitch || LNO_Unswitch_Verbose ||  LNO_Lno_Verbose) {
-      printf("(%s:%d) ", 
-	     Src_File_Name, 
-	     Srcpos_To_Line(WN_Get_Linenum(wn)));
-      printf("Loop termination condition has multi-variate constraint. Loop was not unswitched.\n");
-    }
+      unswitch_verbose_info( WN_Get_Linenum(wn), 
+          "Loop termination condition has multi-variate constraint. Loop was not unswitched.");
     return FALSE;
   }
 
@@ -1929,12 +1950,8 @@ static BOOL Loop_Unswitch_InnerDo (WN *wn)
    WN *ubd = WN_kid1(WN_end(wn));
    if(WN_operator(lbd) != OPR_INTCONST ||
       WN_operator(ubd) != OPR_INTCONST ){
-     if (debug_loop_unswitch || LNO_Unswitch_Verbose ||  LNO_Lno_Verbose) {
-        printf("(%s:%d) ",
-               Src_File_Name,
-               Srcpos_To_Line(WN_Get_Linenum(wn)));
-        printf("Non-constant loop bound exists. Loop was not unswitched.\n");
-      }
+        unswitch_verbose_info( WN_Get_Linenum(wn), 
+                               "Non-constant loop bound exists. Loop was not unswitched.");
       return FALSE;
     }
 
@@ -1964,12 +1981,8 @@ static BOOL Loop_Unswitch_InnerDo (WN *wn)
     info->Collect_If_Info(stmt, TRUE);
     info->Bounds().Copy_To_Work();
     if (!info->Bounds().SVPC_Applicable()) {
-      if (debug_loop_unswitch || LNO_Unswitch_Verbose ||  LNO_Lno_Verbose) {
-	printf("(%s:%d) ", 
-	       Src_File_Name, 
-	       Srcpos_To_Line(WN_Get_Linenum(wn)));
-	printf("If-stmt condition has multi-variate constraint. Loop was not unswitched.\n");
-      }
+	unswitch_verbose_info(WN_Get_Linenum(wn), 
+                              "if-stmt condition has multi-variate constraint. Loop was not unswitched.");
       return FALSE;
     }
     const_lbi = info->Bounds().Lower_Bound(0);
@@ -1988,12 +2001,8 @@ static BOOL Loop_Unswitch_InnerDo (WN *wn)
   }
  
   if (stack_of_ifs.Elements() == 0) {
-    if (debug_loop_unswitch || LNO_Unswitch_Verbose ||  LNO_Lno_Verbose) {
-      printf("(%s:%d) ", 
-	     Src_File_Name, 
-	     Srcpos_To_Line(WN_Get_Linenum(wn)));
-      printf("Loop has no suitable if statements. Loop was not unswitched.\n");
-    }
+      unswitch_verbose_info( WN_Get_Linenum(wn),
+                             "Loop has no suitable if statements. Loop was not unswitched.");
     return FALSE;
   }
 
@@ -2057,12 +2066,8 @@ static BOOL Loop_Unswitch_InnerDo (WN *wn)
   LNO_Erase_Dg_From_Here_In(loop_copy, Array_Dependence_Graph);  
   LNO_Erase_Vertices_In_Loop(loop_copy, Array_Dependence_Graph);
   if (Has_Dependencies) {
-    if (debug_loop_unswitch || LNO_Unswitch_Verbose ||  LNO_Lno_Verbose) {
-      printf("(%s:%d) ", 
-	     Src_File_Name, 
-	     Srcpos_To_Line(WN_Get_Linenum(wn)));
-      printf("Loop may have loop carried dependency. Loop was not unswitched.\n");
-    }
+      unswitch_verbose_info( WN_Get_Linenum(wn),
+                             "Loop may have loop carried dependency. Loop was not unswitched.");
     return FALSE;
   }    
 
@@ -2188,12 +2193,8 @@ static BOOL Loop_Unswitch_InnerDo (WN *wn)
     scalar_rename(LWN_Get_Parent(wn_starts[i]));
   Array_Dependence_Graph->Fission_Dep_Update(new_loops[0],total_loops);
   
-  if (debug_loop_unswitch || LNO_Unswitch_Verbose ||  LNO_Lno_Verbose) {
-    printf("(%s:%d) ", 
-	   Src_File_Name, 
-	   Srcpos_To_Line(WN_Get_Linenum(wn)));
-    printf("Loop was unswitched.\n");    
-  }
+    unswitch_verbose_info( WN_Get_Linenum(wn),
+                           "Loop was unswitched.\n");    
 
   return TRUE;
 }
@@ -2477,12 +2478,8 @@ static BOOL Loop_Simple_Unswitch_InnerDo (WN * wn)
   scalar_rename(LWN_Get_Parent(wn_starts[0]));
   scalar_rename(LWN_Get_Parent(wn_starts[1]));
 
-  if (debug_loop_unswitch || LNO_Unswitch_Verbose ||  LNO_Lno_Verbose) {
-    printf("(%s:%d) ", 
-	   Src_File_Name, 
-	   Srcpos_To_Line(WN_Get_Linenum(wn)));
-    printf("LNO Unswitch Second Try: Loop was unswitched.\n");    
-  }
+    unswitch_verbose_info( WN_Get_Linenum(wn),
+                           "LNO Unswitch Second Try: Loop was unswitched.");    
 
   LWN_Delete_Tree (wn);
   return TRUE;

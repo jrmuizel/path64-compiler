@@ -2815,7 +2815,7 @@ cwh_stmt_return_scalar(ST *st, WN * rv, TY_IDX  rty, BOOL callee_return)
       }
       else {
 
-# if (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+# if (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
         wn2 = cwh_addr_load_ST(st,0,0);
         wn = WN_CreateReturn_Val (OPR_RETURN_VAL, TY_mtype (rty), MTYPE_V, wn2);
 # else
@@ -3963,7 +3963,7 @@ fei_allocate(INT32 count)
    /* Fill in the temp */
    DevAssert((WN_opcode(ver) == OPC_I8INTCONST),("Expected I8INTCONST for allocate version."));
    if (Pointer_Size == 4) {
-# if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+# if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
       vernum = WN_const_val(ver) & (0xffffffff);
       cwh_block_append(cwh_addr_stid(temp_st,0,pty,
                                       WN_Intconst(Pointer_Mtype,vernum)));

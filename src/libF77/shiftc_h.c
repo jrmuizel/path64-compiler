@@ -39,9 +39,9 @@
  *	[  b1   |   k2   |   d   ]       [  b1   |   d   |   k2   ]
  */
 
-int16 shftc_h(int16 *m,int16 *k,int16 *ic)
+int16_t shftc_h(int16_t *m,int16_t *k,int16_t *ic)
 {
-	int16 b1, b2, b3, k2, d, left;
+	int16_t b1, b2, b3, k2, d, left;
 
 	left = (*k > 0);
 	k2 = left ? *k : -*k;

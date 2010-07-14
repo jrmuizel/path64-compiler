@@ -24,7 +24,7 @@
 
 #include <cmplrs/host.h>
 
-int8 b_mod(int8 *a, int8 *b)
+int8_t b_mod(int8_t *a, int8_t *b)
 {
   return(*a % *b);
 }

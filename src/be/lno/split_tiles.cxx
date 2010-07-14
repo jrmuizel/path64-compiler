@@ -49,11 +49,59 @@
 #include "reduc.h" 
 #include "small_trips.h" 
 #include "wind_down.h"
-#include "forward.h" 
+#include "forward.h"
+#include "lno_trace.h"
+#include <string>
+#include <iostream>
+#include <sstream>
+using namespace std;
 
 #define SPL_NO_SPLIT 	0 
 #define SPL_SPLIT_INNER 1
 #define SPL_SPLIT_ALL	2 
+
+
+//-----------------------------------------------------------------------
+// NAME: Print_Split_Tiles
+// FUNCTION: Print an informative message which describes a split of outer_loop
+//   which has been performed.  The message is printed to stdout or TFile,, and 
+//   indicates that the  'outer_loop' has been tiled. 
+//-----------------------------------------------------------------------
+
+static void Print_Split_Tiles( WN* outer_loop,
+                               DOLOOP_STACK* inner_tile_stack)
+{
+    ostringstream os;
+
+    string msg ( " Splitting cache tiles: (");
+    INT i;
+    for (i = 0; i < inner_tile_stack->Elements(); i++) {
+        os.str("");
+        os << inner_tile_stack->Bottom_nth(i);
+        msg.append(os.str());
+        if (i < inner_tile_stack->Elements() - 1)
+            msg.append(",");
+    }
+    msg.append( ")");
+
+    if (LNO_Verbose || LNO_Lno_Verbose) 
+    {
+        LNO_Trace( LNO_SPLIT_TILES_EVENT, 
+                   Src_File_Name,
+                   Srcpos_To_Line(WN_Get_Linenum(outer_loop)),
+                   ST_name(WN_entry_name(Current_Func_Node)),
+                   msg.c_str());
+
+    }
+
+    if (LNO_Verbose) 
+    {
+        msg.append( "\n");
+        fprintf( TFile, "%s", msg.c_str());
+    }
+  
+}
+
 
 //-----------------------------------------------------------------------
 // NAME: SNL_SPL_Is_Tile_Plus_Constant 
@@ -705,25 +753,7 @@ static BOOL SNL_SPL_Split_Tile_Sets(WN* outer_tile_loop,
    }
 
    // Record the optimization. 
-   if (LNO_Verbose || LNO_Lno_Verbose) {
-     fprintf(stdout, " Splitting cache tiles: (");
-     INT i;
-     for (i = 0; i < inner_tile_stack->Elements(); i++) { 
-       fprintf(stdout, "0x%p", inner_tile_stack->Bottom_nth(i));  
-       if (i < inner_tile_stack->Elements() - 1)
-	 fprintf(stdout, ",");
-     }
-     fprintf(stdout, ")\n");
-    if (LNO_Verbose) {
-     fprintf(TFile, " Splitting cache tiles: (");
-     for (i = 0; i < inner_tile_stack->Elements(); i++) { 
-       fprintf(TFile, "0x%p", inner_tile_stack->Bottom_nth(i));  
-       if (i < inner_tile_stack->Elements() - 1)
-	 fprintf(TFile, ",");
-     }
-     fprintf(TFile, ")\n");
-    }
-   }
+   Print_Split_Tiles( outer_tile_loop, inner_tile_stack);
    return TRUE; 
 } 
 

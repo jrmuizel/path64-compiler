@@ -32,7 +32,7 @@
 #ifdef _UNICOS
 #include <sys/types.h>
 #include <sys/param.h>
-#elif	defined(_LITTLE_ENDIAN)
+#elif	defined(_LITTLE_ENDIAN) && !defined(__sun)
 #include <sys/types.h>
 #include <sys/param.h>
 #else

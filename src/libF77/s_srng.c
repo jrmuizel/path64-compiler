@@ -33,10 +33,10 @@
 /* called when a substring lower bound is out of range */
 
 void
-s_srng(char *varn, int32 lower, int32 upper, char *procn, int32 line)
+s_srng(char *varn, int32_t lower, int32_t upper, char *procn, int32_t line)
 {
-	register int32 i;
-	extern void s_abort(int32);
+	register int32_t i;
+	extern void s_abort(int32_t);
 
 	fprintf(stderr, "Substring bound(s) out of range on file line %d, procedure ", line);
 	for(i = 0 ; i < 8 && *procn!='_' ; ++i)

@@ -299,6 +299,9 @@ ld_get_section_base (void *, int );
 extern unsigned long long
 ld_get_section_size(void *, int );
 
+extern unsigned long
+ld_get_section_info(void *, int );
+
 extern char *
 ld_get_section_name(void *, int );
 

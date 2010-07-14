@@ -1117,7 +1117,7 @@ main()
   Operand(1);
   Operand(2);
   Instruction_Print_Group( opopop,
-			   TOP_UNDEFINED );
+                           TOP_UNDEFINED );
 #endif
 
   ISA_PRINT_TYPE opopop =  ISA_Print_Type_Create("opopop", "%s %s,%s,%s");

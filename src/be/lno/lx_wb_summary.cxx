@@ -30,7 +30,7 @@
 #include "wn_util.h"
 #include <stdio.h>
 #include "dwarf_DST.h"
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 #include "ipc_file.h"
 #include "ipc_symtab_merge.h"
 #endif
@@ -40,7 +40,7 @@
 
 // From be/com/wb_summary.cxx: 
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 //-----------------------------------------------------------------------
 // NAME: SUMMARY_SYMBOL::WB_Print
 // FUNCTION: Print SUMMARY_SYMBOL in whirl browser format
@@ -464,7 +464,7 @@ void SUMMARY_VALUE::WB_Print(FILE* fp,
   fprintf(fp, "\n");
 } 
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 //-----------------------------------------------------------------------
 // NAME: CFG_NODE_INFO::WB_Print
 // FUNCTION: Print CFG_NODE_INFO in whirl browser format 
@@ -829,7 +829,7 @@ void SUMMARY_EXPR::WB_Print(FILE* fp,
   fprintf(fp, "\n");
 }
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 //-----------------------------------------------------------------------
 // NAME: SUMMARY_STID::WB_Print
 // FUNCTION: Print SUMMARY_STID in whirl browser format 

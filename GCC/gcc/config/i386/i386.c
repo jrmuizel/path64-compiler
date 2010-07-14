@@ -1505,10 +1505,10 @@ ix86_handle_option (size_t code, const char *arg ATTRIBUTE_UNUSED, int value)
     case OPT_msse4_2:
       if (!value)
        {
-         target_flags &= ~MASK_SSE4_2; 
-         target_flags_explicit |= MASK_SSE4_2; 
-       }
-         return true;
+         target_flags &= ~MASK_SSE4_2;
+         target_flags_explicit |= MASK_SSE4_2;
+        }
+       return true;
 
     default:
       return true;
@@ -1796,12 +1796,12 @@ override_options (void)
 	  target_flags |= MASK_SSE3;
 	if (processor_alias_table[i].flags & PTA_PREFETCH_SSE)
 	  x86_prefetch_sse = true;
-        if (processor_alias_table[i].flags & PTA_SSE4A
-            && !(target_flags_explicit & MASK_SSE4A))
-          target_flags |= MASK_SSE4A;
-    if (processor_alias_table[i].flags & PTA_SSE4_2 
-            && !(target_flags_explicit & MASK_SSE4_2))
-      target_flags |= MASK_SSE4_2;
+    if (processor_alias_table[i].flags & PTA_SSE4A
+        && !(target_flags_explicit & MASK_SSE4A))
+      target_flags |= MASK_SSE4A;
+	if (processor_alias_table[i].flags & PTA_SSE4_2
+	    && !(target_flags_explicit & MASK_SSE4_2))
+	  target_flags |= MASK_SSE4_2;
 
 	if (TARGET_64BIT && !(processor_alias_table[i].flags & PTA_64BIT))
 	  error ("CPU you selected does not support x86-64 "
@@ -15373,6 +15373,7 @@ ix86_init_mmx_sse_builtins (void)
   tree v2di_ftype_v2di_v16qi
     = build_function_type_list (V2DI_type_node, V2DI_type_node, V16QI_type_node,
                                 NULL_TREE);
+
 
   tree float80_type;
   tree float128_type;

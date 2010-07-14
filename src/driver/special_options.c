@@ -114,7 +114,9 @@ set_defaults (void)
 	prepend_option_seen(O_cpp_fortran);
 	prepend_option_seen(O_cpp_assembly);
 	prepend_option_seen(O_prelink);
+#ifndef __sun
 	prepend_option_seen(O_demangle);
+#endif
 	if (shared == UNDEFINED && abi == ABI_IA32) {
 		toggle(&shared,NON_SHARED);
 #ifndef KEY
@@ -423,10 +425,20 @@ add_special_options (void)
 	    if (option_was_seen (O_ftest_coverage))
 	      error ("IPA not supported with -ftest-coverage");
 #endif
+#ifdef FAT_WHIRL_OBJECTS
+	    /* Merge phase options for be and ipl. */
+	    if (olevel <= 1 || source_kind == S_O)
+		flag = add_string_option(O_PHASE_, "c:i");
+	    else if (olevel == 2 || source_kind == S_N)
+		flag = add_string_option(O_PHASE_, "w:c:p:i");
+	    else 
+		flag = add_string_option(O_PHASE_, "l:w:c:p:i");
+#else
 	    if (olevel <= 1)
 		flag = add_string_option (O_PHASE_, "i");
 	    else
 		flag = add_string_option (O_PHASE_, "p:i");
+#endif //FAT_WHIRL_OBJECTS
 	} else {
 	    /*
 	     * Determine which back end phase(s) need to be run.

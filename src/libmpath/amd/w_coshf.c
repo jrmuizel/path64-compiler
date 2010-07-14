@@ -56,6 +56,7 @@ regulations applicable in licensee's jurisdiction.
 #undef USE_VALF_WITH_FLAGS
 
 #include "libm_errno_amd.h"
+#include "lib_version.h"
 
 /* Deal with errno for out-of-range result */
 static inline float retval_errno_erange(float x, int xneg)
@@ -65,7 +66,7 @@ static inline float retval_errno_erange(float x, int xneg)
   exc.arg2 = (double)x;
   exc.type = OVERFLOW;
   exc.name = (char *)"coshf";
-  if (_LIB_VERSION == _SVID_)
+  if (PATH64_LIB_VERSION_SVID)
     {
       if (xneg)
         exc.retval = -HUGE;
@@ -79,7 +80,7 @@ static inline float retval_errno_erange(float x, int xneg)
       else
         exc.retval = infinityf_with_flags(AMD_F_OVERFLOW);
     }
-  if (_LIB_VERSION == _POSIX_)
+  if (PATH64_LIB_VERSION_POSIX)
     __set_errno(ERANGE);
   else if (!matherr(&exc))
     __set_errno(ERANGE);

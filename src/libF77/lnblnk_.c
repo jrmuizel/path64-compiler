@@ -37,12 +37,12 @@
 #ifdef KEY /* Bug 1683 */
 
 /* Don't pollute the Fortran namespace */
-int32
+int32_t
 pathf90_lnblnk(string s, fsize_t len)
 
 #else
 
-int32
+int32_t
 lnblnk_ (string s, fsize_t len)
 
 #endif /* KEY Bug 1683 */
