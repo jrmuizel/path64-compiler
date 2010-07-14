@@ -35,7 +35,6 @@
 #ifndef _FFIO_H
 #define _FFIO_H
 
-#include <clibdefs.h>
 #include <sys/types.h>		/* ffc_stat_s structure field declarations */
 #include <cray/fortio.h>	/* unum_t typedef */
 #if defined(__mips)
@@ -1948,7 +1947,11 @@ extern int _ff_fdinfo_to_int(_ffopen_t fd, struct ffsw *pstat);
 #endif	/* _LIB_INTERNAL */
 
 #if	defined(__mips) || defined(_LITTLE_ENDIAN)
-__BEGIN_DECLS
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int ffassign (char *cmd);
 extern int ffbksp (int _Fd);
 extern int ffclose (int _Fd);
@@ -1964,13 +1967,21 @@ extern off_t ffpos (int _Fd, int _Cmd, void *_Arg, int _Len,
 	struct ffsw *_Stat);
 extern int ffflush (int _Fd, struct ffsw *_Stat);
 extern char *ffstrerror(int _Errnum);
-__END_DECLS
+
+#ifdef __cplusplus
+}
+#endif
+
 #else
 #include <cray/clibinc_config.h>
 #if	!defined(_CRAYT3E) && _CRAYLIBS_RELEASE < 3000
 #define _USE_OLD_PROTOTYPE 1
 #endif
-__BEGIN_DECLS
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int ffbksp (int _Fd, ...);
 extern int ffclose (int _Fd, ...);
 extern int fffcntl (int _Fd, int _Cmd, ...);
@@ -2003,9 +2014,17 @@ extern int ffwrite (int _Fd, const void *_Buf, size_t _Nb, ...);
 #endif
 extern int ffwritea (int _Fd, char *_Buf, int _Nb, struct ffsw *_Stat, ...);
 extern int ffwritec (int _Fd, char *_Buf, int _Nb, ...);
-__END_DECLS
+
+#ifdef __cplusplus
+}
 #endif
-__BEGIN_DECLS
+
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int ffbkspf (int _Fd, struct ffsw *_Stat);
 extern int ffopen (const char *_Name, int _Oflag, ...);
 extern int ffopenf (const char *_Name, int _Oflag, mode_t _Mode, long _Cbits,
@@ -2019,7 +2038,10 @@ extern off_t ffseekf (int _Fd, off_t _Pos, int _Whence, struct ffsw *_Stat);
 extern ssize_t ffreadf (int _Fd, void *_Buf, size_t _Nb, struct ffsw *_stat, int _Fulp, int *_Ubc);
 
 extern ssize_t ffwritef (int _Fd, const void *_Buf, size_t _Nb, struct ffsw *_stat, int _Fulp, int *_Ubc);
-__END_DECLS
+
+#ifdef __cplusplus
+}
+#endif
 
 extern int __ffflush(struct fdinfo *, struct ffsw *);
 extern int _fdc_unpackc(void *, long *, long, int, int);

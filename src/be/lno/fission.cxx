@@ -62,6 +62,7 @@ static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/lno/SCCS/s.fissio
 #include "tlog.h"
 #include "prompf.h"
 #include "anl_driver.h"
+#include "lno_trace.h"
 
 #pragma weak New_Construct_Id
 
@@ -97,14 +98,24 @@ const mUINT16 OPT_FLAG_STMT_BEST=		FISSION_BIT_STMT_REORDERING ||
 
 
 static void fission_verbose_info(
-  BOOL          ,   // success
+  BOOL          success,   // success
   SRCPOS        srcpos,
   UINT32        fission_level,
   const char*   message)
 {
-  printf("#### Fission(%d:%d): %s\n",
-    Srcpos_To_Line(srcpos), fission_level, message);
-
+    if (LNO_Verbose || LNO_Lno_Verbose)
+    {
+        LNO_Trace( LNO_FISSION_EVENT, 
+                   Src_File_Name,
+                   Srcpos_To_Line(srcpos),
+                   ST_name(WN_entry_name(Current_Func_Node)),
+                   success ? "success" : "fail",
+                   message);
+#if 0
+        printf("#### Fission(%d:%d): %s\n",
+               Srcpos_To_Line(srcpos), fission_level, message);
+#endif
+    }
 }
 
 static void fission_analysis_info(
@@ -113,13 +124,15 @@ static void fission_analysis_info(
   UINT32        fission_level,
   const char*   message)
 {
-  if (success)
-    fprintf(LNO_Analysis,"( LNO_Fission_Success ");
-  else
-    fprintf(LNO_Analysis,"( LNO_Fission_Failure ");
+    if (LNO_Analysis){
+        if (success)
+            fprintf(LNO_Analysis,"( LNO_Fission_Success ");
+        else
+            fprintf(LNO_Analysis,"( LNO_Fission_Failure ");
 
-  fprintf(LNO_Analysis,"(%s %d) %d \"%s\" )\n",
-    Cur_PU_Name, Srcpos_To_Line(srcpos), fission_level, message);
+        fprintf(LNO_Analysis,"(%s %d) %d \"%s\" )\n",
+                Cur_PU_Name, Srcpos_To_Line(srcpos), fission_level, message);
+    }
 }
 
 static void fission_tlog_info(
@@ -128,13 +141,16 @@ static void fission_tlog_info(
   UINT32        level,
   const char*   message)
 {
-  char in_string[30];
-  char out_string[30];
-  SRCPOS srcpos=WN_Get_Linenum(loop);
-  sprintf(in_string,"%d %d", Srcpos_To_Line(srcpos), level);
-  sprintf(out_string,"%d", status);
-  Generate_Tlog("LNO","fission", Srcpos_To_Line(srcpos),
-                ST_name(WN_st(WN_index(loop))), in_string, out_string, message);
+    if ( LNO_Tlog )
+    {
+        char in_string[30];
+        char out_string[30];
+        SRCPOS srcpos=WN_Get_Linenum(loop);
+        sprintf(in_string,"%d %d", Srcpos_To_Line(srcpos), level);
+        sprintf(out_string,"%d", status);
+        Generate_Tlog("LNO","fission", Srcpos_To_Line(srcpos),
+                      ST_name(WN_st(WN_index(loop))), in_string, out_string, message);
+    }
 }
 
 
@@ -939,13 +955,10 @@ WN_MAP loop_map, FF_STMT_LIST *stl_1, FF_STMT_LIST *stl_2)
   if (!Do_Loop_Is_Good(outer_most_loop) || Do_Loop_Has_Calls(outer_most_loop)
       || Do_Loop_Has_Gotos(outer_most_loop)) {
     // Is_True(0, ("Bad loop passed to Fission_Test."));
-    if (LNO_Verbose || LNO_Lno_Verbose)
       fission_verbose_info(FALSE,srcpos,fission_level,
        "Loops containing calls, exits, bad mem, or gotos cannot be fissioned.");
-    if (LNO_Analysis)
       fission_analysis_info(FALSE,srcpos,fission_level,
        "Loops containing calls, exits, bad mem, or gotos cannot be fissioned.");
-    if ( LNO_Tlog )
       fission_tlog_info(Failed, in_loop, fission_level,
        "Loops containing calls, exits, bad mem, or gotos cannot be fissioned.");
 
@@ -994,15 +1007,11 @@ WN_MAP loop_map, FF_STMT_LIST *stl_1, FF_STMT_LIST *stl_2)
 	  if (source_v!=sink_v) {
 	    if (LNO_Verbose || LNO_Analysis || LNO_Lno_Verbose) {
               char message[200];
-              sprintf(message,
-        "Fission failed due to dependence from line %d to line %d.",
+              sprintf(message, "dependence from line %d to line %d.",
                 Srcpos_To_Line(LWN_Get_Linenum(source_wn)),
                 Srcpos_To_Line(LWN_Get_Linenum(sink_wn)));
-              if (LNO_Verbose || LNO_Lno_Verbose)
                 fission_verbose_info(FALSE,srcpos,fission_level,message);
-              if (LNO_Analysis)
                 fission_analysis_info(FALSE,srcpos,fission_level,message);
-              if ( LNO_Tlog )
                 fission_tlog_info(Failed, in_loop, fission_level, message);
             }
             loop.Free_array();
@@ -1174,13 +1183,10 @@ WN_MAP loop_map, UINT32 total_loops, FF_STMT_LIST *stl_1, FF_STMT_LIST *stl_2)
 
   if (dli->No_Fusion || Do_Loop_Is_Mp(in_loop)) {
     // pv 577829.
-    if (LNO_Verbose || LNO_Lno_Verbose)
       fission_verbose_info(FALSE,srcpos,fission_level,
         "No_Fusion or MP, Loop cannot be fissioned.");
-    if (LNO_Analysis)
       fission_analysis_info(FALSE,srcpos,fission_level,
         "No_Fusion or MP, Loop cannot be fissioned.");
-    if ( LNO_Tlog )
       fission_tlog_info(Failed, in_loop, fission_level,
         "No_Fusion or MP, Loop cannot be fissioned.");
     return Failed;
@@ -1199,26 +1205,20 @@ WN_MAP loop_map, UINT32 total_loops, FF_STMT_LIST *stl_1, FF_STMT_LIST *stl_2)
   if (!Do_Loop_Is_Good(outer_most_loop) || Do_Loop_Has_Calls(outer_most_loop)
       || Do_Loop_Has_Gotos(outer_most_loop)) {
     // Is_True(0, ("Bad loop passed to Fission."));
-    if (LNO_Verbose || LNO_Lno_Verbose)
       fission_verbose_info(FALSE,srcpos,fission_level,
         "Loops containing calls, exits, or gotos cannot be fissioned.");
-    if (LNO_Analysis)
       fission_analysis_info(FALSE,srcpos,fission_level,
         "Loops containing calls, exits, or gotos cannot be fissioned.");
-    if ( LNO_Tlog )
       fission_tlog_info(Failed, in_loop, fission_level,
         "Loops containing calls, exits, or gotos cannot be fissioned.");
     return Failed;
   }
 
   if (WN_next(WN_first(WN_do_body(in_loop)))==NULL) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
       fission_verbose_info(FALSE,srcpos,fission_level,
         "Loop has only one statement.");
-    if (LNO_Analysis)
       fission_analysis_info(FALSE,srcpos,fission_level,
         "Loop has only one statement.");
-    if ( LNO_Tlog )
       fission_tlog_info(Failed, in_loop, fission_level,
         "Loop has only one statement.");
     return Failed;
@@ -1262,14 +1262,10 @@ WN_MAP loop_map, UINT32 total_loops, FF_STMT_LIST *stl_1, FF_STMT_LIST *stl_2)
       if (v==0) { // depends on everything else
 	if (LNO_Verbose || LNO_Analysis || LNO_Lno_Verbose) {
           char message[200];
-          sprintf(message,
-        "Fission failed due to conservative dependence from line %d.",
+          sprintf(message, "conservative dependence from line %d.",
             Srcpos_To_Line(LWN_Get_Linenum(stmt)));
-          if (LNO_Verbose || LNO_Lno_Verbose)
             fission_verbose_info(FALSE,srcpos,fission_level,message);
-          if (LNO_Analysis)
             fission_analysis_info(FALSE,srcpos,fission_level,message);
-          if ( LNO_Tlog )
             fission_tlog_info(Failed, in_loop, fission_level,message);
         }
         WN_MAP_Delete(sdm);
@@ -1288,15 +1284,11 @@ WN_MAP loop_map, UINT32 total_loops, FF_STMT_LIST *stl_1, FF_STMT_LIST *stl_2)
 	  if (source_v!=sink_v) {
 	    if (LNO_Verbose || LNO_Analysis || LNO_Lno_Verbose) {
               char message[200];
-              sprintf(message,
-        "Fission failed due to dependence from line %d to line %d.",
+              sprintf(message, "dependence from line %d to line %d.",
                 Srcpos_To_Line(LWN_Get_Linenum(source_wn)),
                 Srcpos_To_Line(LWN_Get_Linenum(sink_wn)));
-              if (LNO_Verbose || LNO_Lno_Verbose)
                 fission_verbose_info(FALSE,srcpos,fission_level,message);
-              if (LNO_Analysis)
                 fission_analysis_info(FALSE,srcpos,fission_level,message);
-              if ( LNO_Tlog )
                 fission_tlog_info(Failed, in_loop, fission_level,message);
             }
             WN_MAP_Delete(sdm);
@@ -1348,23 +1340,17 @@ WN_MAP loop_map, UINT32 total_loops, FF_STMT_LIST *stl_1, FF_STMT_LIST *stl_2)
     if (((opt_flag & FISSION_BIT_PERFECT_NESTING) ||
       (opt_flag & FISSION_BIT_SINGLY_NESTING)) &&
       (Get_Only_Loop_Inside(in_loop,FALSE) || Do_Loop_Is_Inner(in_loop))) {
-      if (LNO_Verbose || LNO_Lno_Verbose)
         fission_verbose_info(FALSE,srcpos,fission_level,
           "Loop is already in the requested form.");
-      if (LNO_Analysis)
         fission_analysis_info(FALSE,srcpos,fission_level,
           "Loop is already in the requested form.");
-      if ( LNO_Tlog )
         fission_tlog_info(Failed, in_loop, fission_level,
           "Loop is already in the requested form.");
     } else {
-      if (LNO_Verbose || LNO_Lno_Verbose)
         fission_verbose_info(FALSE,srcpos,fission_level,
           "Failed because of a dependence cycle.");
-      if (LNO_Analysis)
         fission_analysis_info(FALSE,srcpos,fission_level,
           "Failed because of a dependence cycle.");
-      if ( LNO_Tlog )
         fission_tlog_info(Failed, in_loop, fission_level,
           "Failed because of a dependence cycle.");
     }
@@ -1431,13 +1417,10 @@ WN_MAP loop_map, UINT32 total_loops, FF_STMT_LIST *stl_1, FF_STMT_LIST *stl_2)
   MEM_POOL_Pop(&FISSION_default_pool);
 
   if (total_loops>1) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
       fission_verbose_info(TRUE,srcpos,fission_level,
         "Successfully fissioned !!");
-    if (LNO_Analysis)
       fission_analysis_info(TRUE,srcpos,fission_level,
         "Successfully fissioned !!");
-    if ( LNO_Tlog )
       fission_tlog_info(Succeeded, in_loop, fission_level,
         "Successfully fissioned !!");
     return Succeeded;

@@ -34,10 +34,10 @@
  * otherwise return .FALSE. The right most bit is bit 0.
  */
 
-int16
-btest_h (int16 *n, int16 *i)
+int16_t
+btest_h (int16_t *n, int16_t *i)
 {
     if (*i < 0 || *i >= NBSI)
 	return(0L);
-    return((uint16)(*n & F77zmask[*i]) >> *i);
+    return((uint16_t)(*n & F77zmask[*i]) >> *i);
 }

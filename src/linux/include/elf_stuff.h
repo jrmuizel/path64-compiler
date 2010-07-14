@@ -33,9 +33,11 @@
 #ifndef _ELF_STUFF_H
 
 #define	_ELF_STUFF_H 1
-#include <sys/cdefs.h>
 
-__BEGIN_DECLS
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 /* Standard ELF types. */
 
@@ -990,6 +992,12 @@ enum {
 #define SHT_MIPS_WHIRL	     0x70000026
 #define SHT_MIPS_XLATE_OLD   0x70000028
 
+#ifdef X86_WHIRL_OBJECTS
+#define SHT_WHIRL_SECTION SHT_PROGBITS
+#else 
+#define SHT_WHIRL_SECTION SHT_MIPS_WHIRL
+#endif
+
 /* Legal values for sh_flags field of Elf32_Shdr.  */
 
 #define SHF_MIPS_GPREL	0x10000000	/* Must be part of global data area */
@@ -1688,9 +1696,11 @@ extern Elf64_Conflict   _ConflictList64 [];
 #define R_ALPHA_JMP_SLOT	26	/* Create PLT entry */
 #define R_ALPHA_RELATIVE	27	/* Adjust by program base */
 
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__sun)
 
 #define SHF_IA_64_SHORT		0x10000000	/* section near gp */
 #define SHF_MIPS_NAMES		0x02000000

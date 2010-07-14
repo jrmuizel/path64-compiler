@@ -82,6 +82,10 @@
 #include "opt_cvtl_rule.h"
 #include "opt_fold.h"
 
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 #include "data_layout.h"	// for ST_has_formal_preg_num
 
 #ifdef KEY

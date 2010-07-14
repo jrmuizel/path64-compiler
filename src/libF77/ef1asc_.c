@@ -28,11 +28,11 @@
 #include <cmplrs/host.h>
 #include "s_copy.h"
 
-#define M	( (int32) (sizeof(int32) - 1) )
+#define M	( (int32_t) (sizeof(int32_t) - 1) )
 #define EVEN(x)	( ( (x)+ M) & (~M) )
 
 void
-ef1asc_ (char *a, int32 *la, char *b, int32 *lb)
+ef1asc_ (char *a, int32_t *la, char *b, int32_t *lb)
 {
     s_copy( a, b, EVEN(*la), *lb );
 }

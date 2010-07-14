@@ -456,7 +456,7 @@ struct ctbl consttbl[] = {
         {"VMIN",VMIN},
         {"VTIME",VTIME},
 #if ! defined(BUILD_OS_DARWIN)
-#ifdef	_LITTLE_ENDIAN
+#if	defined(_LITTLE_ENDIAN) && !defined(__sun)
         {"VSWTC",VSWTC},
 #else
         {"VSWTCH",VSWTCH},

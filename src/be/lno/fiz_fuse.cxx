@@ -61,7 +61,7 @@ static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/lno/SCCS/s.fiz_fu
 #include "whirl2src.h"
 #include "parallel.h"
 #include "prompf.h" 
-
+#include "lno_trace.h"
 
 typedef HASH_TABLE<WN*,INT> WN2INT;
 typedef enum { INFO, FAIL, SUCCEED } INFO_TYPE;
@@ -353,10 +353,21 @@ fast_fuse_check_msg(const char *msg, WN *lp1, WN *lp2, UINT level)
     sprintf(buf, "fast_fuse_check_msg %s", msg);
     srcpos1 = WN_Get_Linenum(lp1);
     srcpos2 = WN_Get_Linenum(lp2);
-  }
-  if (LNO_Verbose || LNO_Lno_Verbose) {
-    printf("#### fiz_fuse(%d+%d:%d): %s\n",
-	   Srcpos_To_Line(srcpos1), Srcpos_To_Line(srcpos2), level, buf);
+    if ( LNO_Verbose || LNO_Lno_Verbose )
+    {
+        LNO_Trace( LNO_FIZ_FUSE_EVENT, 
+                   Src_File_Name,
+                   Srcpos_To_Line(WN_Get_Linenum(lp1)),
+                   ST_name(WN_entry_name(Current_Func_Node)),
+                   Srcpos_To_Line(srcpos1), Srcpos_To_Line(srcpos2), 
+                   level, msg);
+    }
+#if 0
+    if (LNO_Verbose || LNO_Lno_Verbose) {
+        printf("#### fiz_fuse(%d+%d:%d): %s\n",
+               Srcpos_To_Line(srcpos1), Srcpos_To_Line(srcpos2), level, buf);
+    }
+#endif
   }
   if (LNO_Analysis) {
     fiz_fuse_analysis_info(FAIL, srcpos1, srcpos2, level, buf);

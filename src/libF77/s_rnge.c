@@ -37,14 +37,14 @@
  */
 #include "cmplrs/host.h"
 
-extern void s_abort(int32);
-static int32  varlen(char *);
+extern void s_abort(int32_t);
+static int32_t  varlen(char *);
 
 void
-s_rnge(char *varn, int32 offset, char *procn, int32 line)
+s_rnge(char *varn, int32_t offset, char *procn, int32_t line)
 {
-    register int32 i;
-    int32 len;
+    register int32_t i;
+    int32_t len;
     
     len=varlen(procn);
     fprintf(stderr,
@@ -67,10 +67,10 @@ s_rnge(char *varn, int32 offset, char *procn, int32 line)
     s_abort(99);
 }
 
-static int32
+static int32_t
 varlen(char *s)
 {
-    register int32 i;
+    register int32_t i;
     /* char name[34]; */
 
     for(i=0;  i<34 && *s!=' ' && *s!='\0' ; ++i, s++);

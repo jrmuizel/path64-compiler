@@ -87,6 +87,7 @@
 #include "cond.h"
 #include "fb_whirl.h"
 #include "move.h"
+#include "lno_trace.h"
 
 static INT preg_counter = 0; 
 extern BOOL Promote_Messy_Bound(WN* wn_loop, 
@@ -569,9 +570,16 @@ return_point:
 					    fb_info.freq_positive._value );
 	dli->Num_Iterations_Symbolic = FALSE;
 	dli->Num_Iterations_Profile=TRUE;
-	if (LNO_Verbose || LNO_Lno_Verbose)
-	  fprintf(stdout, "Iteration counts from profile %" SCNd64 "\n", 
-		  dli->Est_Num_Iterations);
+        if (LNO_Verbose || LNO_Lno_Verbose){
+            char buf[128];
+            sprintf( buf , "Iteration counts from profile %" SCNd64 "\n", 
+                     dli->Est_Num_Iterations);
+            LNO_Trace( LNO_ACCESS_EVENT, 
+                       Src_File_Name,
+                       Srcpos_To_Line(WN_Get_Linenum(wn)),
+                       ST_name(WN_entry_name(Current_Func_Node)),
+                       buf);
+        }
       }
 #endif
     }
@@ -618,14 +626,28 @@ extern void LNO_Build_If_Access(WN *wn, DOLOOP_STACK *stack)
       INT32 freq_true = WN_MAP32_Get(WN_MAP_FEEDBACK, WN_then(wn));
       info->Freq_True = (float) freq_true / (float) freq_header;
 
-      if (LNO_Verbose || LNO_Lno_Verbose) 
-	fprintf(stdout, "True branch frequency %f\n", info->Freq_True);
+      if (LNO_Verbose || LNO_Lno_Verbose){
+          char buf[128];
+          sprintf( buf , "True branch frequency %f\n", info->Freq_True);
+          LNO_Trace( LNO_ACCESS_EVENT, 
+                     Src_File_Name,
+                     Srcpos_To_Line(WN_Get_Linenum(wn)),
+                     ST_name(WN_entry_name(Current_Func_Node)),
+                     buf);
 
+      }
       if (!WN_else_is_empty(wn)) {
 	INT32 freq_false = WN_MAP32_Get(WN_MAP_FEEDBACK, WN_else(wn));
 	info->Freq_False = (float) freq_false / (float) freq_header;
-	if (LNO_Verbose || LNO_Lno_Verbose) 
-	  fprintf(stdout, "False branch frequency %f\n", info->Freq_False);
+        if (LNO_Verbose || LNO_Lno_Verbose){
+            char buf[128];
+            sprintf( buf , "False branch frequency %f\n", info->Freq_False);
+            LNO_Trace( LNO_ACCESS_EVENT, 
+                       Src_File_Name,
+                       Srcpos_To_Line(WN_Get_Linenum(wn)),
+                       ST_name(WN_entry_name(Current_Func_Node)),
+                       buf);
+        } 
       }
     }
   }

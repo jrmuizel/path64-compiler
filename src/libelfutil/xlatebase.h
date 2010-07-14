@@ -34,7 +34,7 @@ $Date$
 
 */
 
-#include <inttypes.h>
+#include <stdint.h>
 
 /*
 The following go with the size of the address space that

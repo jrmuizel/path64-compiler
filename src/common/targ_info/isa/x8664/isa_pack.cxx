@@ -904,6 +904,7 @@ main()
   		    TOP_psrad_mmx,      0x000000ff,
   		    TOP_pand_mmx,       0x000000ff,
   		    TOP_pandn_mmx,      0x000000ff,
+  		    TOP_pand128,        0x000000ff,
   		    TOP_por_mmx,        0x000000ff,
   		    TOP_pxor_mmx,       0x000000ff,
 		    TOP_mfence,         0x000000ff,
@@ -1149,8 +1150,12 @@ main()
 		    TOP_movmskpd, 0x000000ff,
 		    TOP_maskmovdqu, 0x000000ff,
 		    TOP_maskmovq, 0x000000ff,
-                    TOP_extrq,   0x000000ff,
-                    TOP_insertq,   0x000000ff,
+            TOP_extrq,   0x000000ff,
+            TOP_insertq,   0x000000ff,
+            TOP_pcmpistri, 0x000000ff,
+            TOP_pcmpistrm, 0x000000ff,        
+            TOP_pcmpestri, 0x000000ff,
+            TOP_pcmpestrm, 0x000000ff,
 		    TOP_UNDEFINED);
 
   ISA_Pack_End();

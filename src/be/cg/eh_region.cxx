@@ -73,6 +73,11 @@
 #include "whirl2ops.h"
 #include "label_util.h"
 
+
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 extern "C" {
 #include "pro_encode_nm.h"
 }

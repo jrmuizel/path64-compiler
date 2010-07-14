@@ -25,8 +25,8 @@
 
 #include <cmplrs/host.h>
 
-int64
-l_dim (int64 *a, int64 *b)
+int64_t
+l_dim (int64_t *a, int64_t *b)
 {
 #ifdef __sgi
     /* rewritten to get around a compiler bug - daveb - 5/26/92 */

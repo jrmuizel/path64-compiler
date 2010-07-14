@@ -47,6 +47,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <strings.h>
 #include <list>
 #include <vector>
 #include "topcode.h"

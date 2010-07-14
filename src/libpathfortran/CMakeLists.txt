@@ -840,6 +840,7 @@ SET(PATHSCALE_PATHFORTRAN_C_SRCS  "nlspath.c"
 				"../libU77/srand_.c"
 				"../libU77/stat_.c"
 				"../libU77/symlnk_.c"
+                "../libU77/sys_ctime.c"
 				"../libU77/system_.c"
 				"../libU77/time_.c"
 				"../libU77/umask_.c"
@@ -944,6 +945,7 @@ ADD_DEFINITIONS(
 	-DPLI
 	-DI90
 	-DFTN90_IO
+    -D__C99FEATURES__               # for fpclassify on osol
 # Add this for only the gfortran and gcc build, but enable the fortran stuff
 # for c source makes a lot of noise
 #	-DBUILD_COMPILER_GNU -fcray-pointer -fsecond-underscore -m96bit-long-double
@@ -982,7 +984,9 @@ add_library(pathfortran SHARED ${PATHSCALE_PATHFORTRAN_C_SRCS} ${PATHSCALE_PATHF
 set_property(TARGET pathfortran PROPERTY LINKER_LANGUAGE C)
 
 set_property(TARGET pathfortran PROPERTY SOVERSION 1)
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 set_property(TARGET pathfortran PROPERTY LINK_FLAGS -Wl,--version-script="${libpathfortran_SOURCE_DIR}/libpathfortran.vs")
+endif()
 
 IF(PATH64_ENABLE_PROFILING)
 add_library(pathfortran_p STATIC ${PATHSCALE_PATHFORTRAN_SRCS} ${PATHSCALE_PATHFORTRAN_F_SRCS} ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h)

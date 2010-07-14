@@ -86,6 +86,7 @@
 #include "split_tiles.h"
 #include "wn_mp.h"
 #include "fb_whirl.h"
+#include "lno_trace.h"
 
 #pragma weak New_Construct_Id
 
@@ -683,14 +684,25 @@ static WN* Processor_2D_Tile_Loop(WN* loop,
     LNO_FB_MP_Tile(outer_loop, NOMINAL_PROCS, loop);
   }
 
-  // Print informative messages. 
+  // Print informative messages.
+  if ( LNO_Verbose || LNO_Lno_Verbose )
+  {
+      LNO_Trace( LNO_2DTILE_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(loop)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 WB_Whirl_Symbol(loop), 
+                 WB_Whirl_Symbol(outer_loop), 
+                 WB_Whirl_Symbol(loop));
+  }
+#if 0
   if (LNO_Verbose || LNO_Lno_Verbose)
     fprintf(stdout, "  2D Tile (%s) -> (%s,%s)\n", WB_Whirl_Symbol(loop), 
       WB_Whirl_Symbol(outer_loop), WB_Whirl_Symbol(loop));
   if (LNO_Verbose) 
     fprintf(TFile, "  2D Tile (%s) -> (%s,%s)\n", WB_Whirl_Symbol(loop), 
       WB_Whirl_Symbol(outer_loop), WB_Whirl_Symbol(loop)); 
-  
+#endif
   if (LNO_Tlog) {
     INT required_length = strlen(WB_Whirl_Symbol(loop)) + 3; 
     char* tlog_instring = CXX_NEW_ARRAY(char, required_length, 
@@ -867,6 +879,18 @@ static WN* Processor_3D_Tile_Loop(WN* loop,
   }
 
   // Print informative messages
+  if ( LNO_Verbose || LNO_Lno_Verbose )
+  {
+      LNO_Trace( LNO_3DTILE_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(loop)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 WB_Whirl_Symbol(loop), 
+                 WB_Whirl_Symbol(outer_loop), 
+                 WB_Whirl_Symbol(inner_loop),
+                 WB_Whirl_Symbol(loop));
+  }
+# if 0
   if (LNO_Verbose || LNO_Lno_Verbose) 
     fprintf(stdout, "  3D Tile (%s) -> (%s,%s,%s)\n", WB_Whirl_Symbol(loop),
       WB_Whirl_Symbol(outer_loop), WB_Whirl_Symbol(inner_loop), 
@@ -875,7 +899,7 @@ static WN* Processor_3D_Tile_Loop(WN* loop,
     fprintf(TFile, "  3D Tile (%s) -> (%s,%s,%s)\n", WB_Whirl_Symbol(loop),
       WB_Whirl_Symbol(outer_loop), WB_Whirl_Symbol(inner_loop), 
       WB_Whirl_Symbol(loop));
-  
+#endif
   if (LNO_Tlog) {
     INT required_length = strlen(WB_Whirl_Symbol(loop)) + 3; 
     char* tlog_instring = CXX_NEW_ARRAY(char, required_length, 

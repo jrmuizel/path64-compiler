@@ -460,10 +460,12 @@ CGEMIT_Relocs_In_Asm (TN *t, ST *st, vstring *buf, INT64 *val)
 	  *buf = vstr_concat(*buf, ST_name(st));
 	  *buf = vstr_concat(*buf, Is_Target_32bit() ? "@NTPOFF" : "@TPOFF");
 	  return 0;
-	case TN_RELOC_X8664_GOTTPOFF:
+	case TN_RELOC_X8664_GOTTPOFF:		
 	  *buf = vstr_concat(*buf, ST_name(st));
-	  *buf = vstr_concat(*buf,
-			     Is_Target_32bit() ? "@INDNTPOFF" : "@GOTTPOFF");
+	  //*buf = vstr_concat(*buf,  Is_Target_32bit() ? "@INDNTPOFF" : "@GOTTPOFF");
+	  //zwu
+	  *buf = vstr_concat(*buf,  Is_Target_32bit() ? "@INDNTPOFF" : "@TLSGD");
+	  //end 
 	  return 0;
     	default:
 		#pragma mips_frequency_hint NEVER
@@ -1421,12 +1423,21 @@ static void Init_OP_Name()
   OP_Name[TOP_cvtpd2ps_xxx] = "cvtpd2ps";
   OP_Name[TOP_cvttps2dq_xxx] = "cvttps2dq";
   OP_Name[TOP_cvttpd2dq_xxx] = "cvttpd2dq";
+
+  /* SSE4_2 */
+  OP_Name[TOP_pcmpistri] = "pcmpistri";
+  OP_Name[TOP_pcmpistrm] = "pcmpistrm";
+  OP_Name[TOP_pcmpestri] = "pcmpestri";
+  OP_Name[TOP_pcmpestri] = "pcmpestrm";
+
 //**********************************************************
 // For barcelona (bug 13108)
 // (1) "movlpd reg, mem"  ==> "movsd reg, mem"
 // (2) "movsd reg, reg"   ==> "movapd reg, reg"
 // NOTE: there are regardless of CG_use_movlpd TRUE or FALSE
 //***********************************************************
+
+
   if (CG_use_movlpd &&
       !Is_Target_Pentium4() &&
       !Is_Target_EM64T() &&
@@ -1542,6 +1553,7 @@ static void Init_OP_Name()
   OP_Name[TOP_psrad_mmx] = "psrad";
   OP_Name[TOP_pand_mmx] = "pand";
   OP_Name[TOP_pandn_mmx] = "pandn";
+  OP_Name[TOP_pand128] = "pand";
   OP_Name[TOP_por_mmx] = "por";
   OP_Name[TOP_pxor_mmx] = "pxor";
   OP_Name[TOP_extrq] = "extrq";

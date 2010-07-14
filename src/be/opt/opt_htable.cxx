@@ -3218,7 +3218,7 @@ CODEMAP::Add_expr(WN *wn, OPT_STAB *opt_stab, STMTREP *stmt, CANON_CR *ccr,
 
     CODEREP *lbase = base_ccr.Tree() ? base_ccr.Tree() :
     				       Add_const(Pointer_type, (INT64) 0);
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
     FmtAssert(sizeof(num_byte) == sizeof(TY_IDX),
 	      ("CODEMAP::Add_expr: Cannot union MLOAD size with "
 	       "Ilod_base_ty"));
@@ -4067,7 +4067,7 @@ STMTREP::Enter_lhs(CODEMAP *htable, OPT_STAB *opt_stab, COPYPROP *copyprop)
 
       CODEREP *lbase = ( base_ccr.Tree() ? base_ccr.Tree() :
 			 htable->Add_const(Pointer_type, (INT64) 0) );
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
       FmtAssert(sizeof(num_byte) == sizeof(TY_IDX),
 		("CODEMAP::Add_expr: Cannot union MSTORE size with "
 		 "Ilod_base_ty"));

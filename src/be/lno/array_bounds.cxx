@@ -62,7 +62,8 @@
 #include "minvariant.h"
 #include "cond.h"
 #include "move.h" 
-#include "ipl_lno_util.h" 
+#include "ipl_lno_util.h"
+#include "lno_trace.h"
 
 #pragma weak New_Construct_Id
 
@@ -213,10 +214,16 @@ static void HMB_Replace_Messy_Bounds(WN* wn_exp,
 			             char name[], 
 				     WN* wn_bound) 
 {
-  if (LNO_Verbose || LNO_Lno_Verbose) 
-     fprintf(stdout, " HMB: Replacing Messy Bound for Loop 0x%p\n",
-       wn_hoist_loop);
-   if (LNO_Verbose)
+    if (LNO_Verbose || LNO_Lno_Verbose)
+    {
+        LNO_Trace( LNO_HMB_EVENT, 
+                   Src_File_Name,
+                   Srcpos_To_Line(WN_Get_Linenum(wn_hoist_loop)),
+                   ST_name(WN_entry_name(Current_Func_Node)),
+                   "replacing messy bound");
+    }
+
+     if (LNO_Verbose)
      fprintf(TFile, " HMB: Replacing Messy Bound for Loop 0x%p\n",
        wn_hoist_loop);
   
@@ -1379,9 +1386,14 @@ static void HMB_Hoist_Messy_Bounds(WN* wn_snl,
     return; 
 
   // Indicate that SNL is being transformed.
-  if (LNO_Verbose || LNO_Lno_Verbose)  
-    fprintf(stdout, "HMB: Transforming SNL %s at 0x%p\n", 
-      WB_Whirl_Symbol(wn_snl), wn_snl);
+  if (LNO_Verbose || LNO_Lno_Verbose) 
+  {
+      LNO_Trace( LNO_HMB_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(wn_snl)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 "transforming SNL");
+  }
   if (LNO_Verbose)
     fprintf(TFile, "HMB: Transforming SNL %s at 0x%p\n", 
       WB_Whirl_Symbol(wn_snl), wn_snl);

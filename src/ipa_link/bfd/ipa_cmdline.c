@@ -30,7 +30,9 @@
 #include <sys/stat.h>		/* for chmod(2) */
 #include <sys/mman.h>		/* for mmap(2) */
 #include <fcntl.h>		/* for open(2) */
+#ifndef __sun
 #include <sys/dir.h>		/* for opendir(2), readdir, closedir */
+#endif
 #include <sys/wait.h>		/* for waitpid(2) */
 #if HAVE_ALLOCA_H
 #include <alloca.h>		/* for alloca(3) */
@@ -45,6 +47,8 @@
 #include "bfd.h"
 #include "libbfd.h"
 #include "elf-bfd.h"
+
+#include "sys/elf_whirl.h"
 
 #include "ipa_ld.h"
 #include "ipa_cmdline.h"
@@ -155,6 +159,36 @@ typedef struct
   Elf64_Half	e_shstrndx;		/* Section header string table index */
 } Elf64_Ehdr;
 
+#ifdef X86_WHIRL_OBJECTS
+typedef struct
+{
+  Elf32_Word    sh_name;                /* Section name (string tbl index) */
+  Elf32_Word    sh_type;                /* Section type */
+  Elf32_Word    sh_flags;               /* Section flags */
+  Elf32_Addr    sh_addr;                /* Section virtual addr at execution */
+  Elf32_Off     sh_offset;              /* Section file offset */
+  Elf32_Word    sh_size;                /* Section size in bytes */
+  Elf32_Word    sh_link;                /* Link to another section */
+  Elf32_Word    sh_info;                /* Additional section information */
+  Elf32_Word    sh_addralign;           /* Section alignment */
+  Elf32_Word    sh_entsize;             /* Entry size if section holds table */
+} Elf32_Shdr;
+
+typedef struct
+{
+  Elf64_Word    sh_name;                /* Section name (string tbl index) */
+  Elf64_Word    sh_type;                /* Section type */
+  Elf64_Xword   sh_flags;               /* Section flags */
+  Elf64_Addr    sh_addr;                /* Section virtual addr at execution */
+  Elf64_Off     sh_offset;              /* Section file offset */
+  Elf64_Xword   sh_size;                /* Section size in bytes */
+  Elf64_Word    sh_link;                /* Link to another section */
+  Elf64_Word    sh_info;                /* Additional section information */
+  Elf64_Xword   sh_addralign;           /* Section alignment */
+  Elf64_Xword   sh_entsize;             /* Entry size if section holds table */
+} Elf64_Shdr;
+#endif //X86_WHIRL_OBJECTS
+
 	/*******************************************************
 		Function: ipa_opt
 
@@ -241,6 +275,35 @@ add_Y_opt (char **argv)
     return;
 }
 
+#ifdef X86_WHIRL_OBJECTS
+static int look_for_elf32_section (const Elf32_Ehdr* ehdr, Elf32_Word type, Elf32_Word info)
+{
+    int i;
+
+    Elf32_Shdr* shdr = (Elf32_Shdr*)((char*)ehdr + ehdr->e_shoff);
+    for (i = 1; i < ehdr->e_shnum; ++i) {
+        if (shdr[i].sh_type == type && shdr[i].sh_info == info)
+            return 1;
+    }
+
+    return 0;
+}
+
+static int look_for_elf64_section (const Elf64_Ehdr* ehdr, Elf64_Word type, Elf64_Word info)
+{
+    int i;
+
+    Elf64_Shdr* shdr = (Elf64_Shdr*)((char*)ehdr + ehdr->e_shoff);
+    for (i = 1; i < ehdr->e_shnum; ++i) {
+        if (shdr[i].sh_type == type && shdr[i].sh_info == info)
+            return 1;
+    }
+
+    return 0;
+}
+#endif
+
+
 	/*******************************************************
 		Function: check_for_whirl
 
@@ -312,7 +375,18 @@ check_for_whirl(char *name, bfd_boolean *is_elf)
 
     if(p_ehdr->e_ident[EI_CLASS] == ELFCLASS32){
     	Elf32_Ehdr *p32_ehdr = (Elf32_Ehdr *)raw_bits;
+#ifdef X86_WHIRL_OBJECTS
+        char *second_buf = NULL;
+
+        int new_size = p32_ehdr->e_shoff + sizeof(Elf32_Shdr)*p32_ehdr->e_shnum;
+        lseek(fd, 0, SEEK_SET);
+        second_buf = (char *)alloca(new_size);
+        size = read(fd, second_buf, new_size);
+        p32_ehdr = (Elf32_Ehdr *)second_buf;
+	if (p32_ehdr->e_type == ET_REL && look_for_elf32_section(p32_ehdr, SHT_PROGBITS, WT_PU_SECTION)) {
+#else
 	if (p32_ehdr->e_type == ET_SGI_IR) {
+#endif 
 	    CLOSE(fd);
 	    FREE(raw_bits);
 	    return TRUE;
@@ -320,7 +394,18 @@ check_for_whirl(char *name, bfd_boolean *is_elf)
     }
     else {
 	Elf64_Ehdr *p64_ehdr = (Elf64_Ehdr *)raw_bits;
+#ifdef X86_WHIRL_OBJECTS
+        char *second_buf = NULL;
+
+        int new_size = p64_ehdr->e_shoff + sizeof(Elf64_Shdr)*p64_ehdr->e_shnum;
+        lseek(fd, 0, SEEK_SET);
+        second_buf = (char *)alloca(new_size);
+        size = read(fd, second_buf, new_size);
+        p64_ehdr = (Elf64_Ehdr *)second_buf;
+	if (p64_ehdr->e_type == ET_REL && look_for_elf64_section(p64_ehdr, SHT_PROGBITS, WT_PU_SECTION)) {
+#else
 	if (p64_ehdr->e_type == ET_SGI_IR) {
+#endif 
 	    CLOSE(fd);
 	    FREE(raw_bits);
 	    return TRUE;

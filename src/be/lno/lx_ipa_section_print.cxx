@@ -56,7 +56,7 @@
 
 #ifndef IPA_SUMMARY
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 #include "ipc_file.h"           // IP_FILE_HDR
 #include "ipc_symtab_merge.h"   // Aux_Pu_Table
 #include "ipo_defs.h"           // IPA_NODE_CONTEXT
@@ -67,7 +67,7 @@
 static SUMMARY_SYMBOL* IPA_Symbol = NULL;
 #endif
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 void
 Init_IPA_Print_Arrays (IPA_NODE* node)
 {
@@ -460,7 +460,7 @@ void TERM::IPA_LNO_Print_File(FILE* fp,
   fprintf(fp, "\n");
 } 
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 //====================================================================
 //       Print the information written out to file
 //====================================================================
@@ -794,7 +794,7 @@ void PROJECTED_REGION::IPA_LNO_Print_File(FILE* fp,
   fprintf(fp, "\n");
 }
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 //===================================================================
 //      Print the projected region 
 //===================================================================

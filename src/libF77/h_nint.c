@@ -27,7 +27,7 @@
 #include "moremath.h"
 #include <cmplrs/host.h>
 
-int16 h_nint(float *x)
+int16_t h_nint(float *x)
 {
-  return ((*x) >= 0.0F ? (int16)(*x + .5F) : -(int16)(.5F - *x));
+  return ((*x) >= 0.0F ? (int16_t)(*x + .5F) : -(int16_t)(.5F - *x));
 }

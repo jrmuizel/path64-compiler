@@ -1,3 +1,10 @@
+
+if(PATH64_BUILD_32)
+    set(PATH64_M64_OPTION "-m32")
+else()
+    set(PATH64_M64_OPTION "-m64")
+endif()
+
 add_custom_command(
         OUTPUT ${Path64_BINARY_DIR}/lib/crtbegin.o
         COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -c ${CMAKE_CURRENT_SOURCE_DIR}/crtbegin.S -o ${Path64_BINARY_DIR}/lib/crtbegin.o

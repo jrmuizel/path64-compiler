@@ -30,7 +30,7 @@
 #include "z_div.h"
 
 
-dcomplex __powzl(double adreal, double adimag, int64 n)
+dcomplex __powzl(double adreal, double adimag, int64_t n)
 /* __powzl = a**n  */
 {
   double t;

@@ -65,6 +65,7 @@ static char *rcs_id = "$Source$ $Revision$";
 #include "lego_util.h"
 #include "lego_skew.h"
 #include "tlog.h"
+#include "lno_trace.h"
 
 //-----------------------------------------------------------------------
 // NAME: Lego_Reshaped_Array 
@@ -424,10 +425,21 @@ static void Lego_Skew_Loop(WN* wn_loop,
 			   WN* wn_lego_skew_offset,   
 			   DU_MANAGER* du)
 {
+#if 0 
   if (LNO_Verbose || LNO_Lno_Verbose) { 
-    fprintf(stdout, "Lego skewing loop %s on line %d\n", 
-      WB_Whirl_Symbol(wn_loop), (INT) WN_linenum(wn_loop));
-   if (LNO_Verbose) 
+      fprintf(stdout, "Lego skewing loop %s on line %d\n", 
+              WB_Whirl_Symbol(wn_loop), (INT) WN_linenum(wn_loop));
+#endif
+      if ( LNO_Verbose || LNO_Lno_Verbose )
+      {
+          LNO_Trace( LNO_LEGO_SKEWING_EVENT, 
+                     Src_File_Name,
+                     Srcpos_To_Line(WN_Get_Linenum(wn_loop)),
+                     ST_name(WN_entry_name(Current_Func_Node)),
+                     WB_Whirl_Symbol(wn_loop));
+      }
+
+   if (LNO_Verbose){ 
     fprintf(TFile, "Lego skewing loop %s on line %d\n", 
       WB_Whirl_Symbol(wn_loop), (INT) WN_linenum(wn_loop)); 
     if (LNO_Tlog)

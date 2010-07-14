@@ -120,7 +120,7 @@ static int common_init()
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_sigaction = __f90_segv;
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(__sun)
 	sa.sa_flags = SA_RESETHAND | SA_ONSTACK | SA_SIGINFO | SA_NODEFER;
 #else /* defined(BUILD_OS_DARWIN) */
 	sa.sa_flags = SA_ONESHOT | SA_ONSTACK | SA_SIGINFO | SA_NOMASK;
@@ -144,7 +144,7 @@ static int common_init()
 #ifdef KEY /* Bug 5089 */
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_sigaction = __f90_fpe;
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(__sun)
 	sa.sa_flags = SA_RESETHAND | SA_SIGINFO | SA_NODEFER;
 #else /* defined(BUILD_OS_DARWIN) */
 	sa.sa_flags = SA_ONESHOT | SA_SIGINFO | SA_NOMASK;

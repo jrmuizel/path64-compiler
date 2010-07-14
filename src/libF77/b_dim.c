@@ -24,7 +24,7 @@
 
 #include <cmplrs/host.h>
 
-int8 b_dim(int8 *a, int8 *b)
+int8_t b_dim(int8_t *a, int8_t *b)
 {
   return(*a > *b ? *a - *b : 0);
 }
