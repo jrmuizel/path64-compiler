@@ -172,10 +172,12 @@ static TYPE_ID
 Promoted_Mtype(TYPE_ID mtype) {
   switch (mtype) {
   case MTYPE_I1:
-  case MTYPE_I2: 
+  case MTYPE_I2:
+  case MTYPE_I4:  
     return MTYPE_I4;
   case MTYPE_U1:
   case MTYPE_U2: 
+  case MTYPE_U4:
     return MTYPE_U4;
 
     case MTYPE_I8: 

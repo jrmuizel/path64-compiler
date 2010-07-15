@@ -212,11 +212,15 @@ typedef UINT64 VARIANT;
 #define V_BR_U5GE	113	/* 4-byte unsigned integer A >= B */
 #define V_BR_U5LT	114	/* 4-byte unsigned integer A < B */
 #define V_BR_U5LE	115	/* 4-byte unsigned integer A <= B */
-#endif // TARG_ST
 #define V_BR_ALWAYS	200	/* Unconditional branch */
 #define V_BR_NEVER	201	/* Never branch */
 #define V_BR_LAST	202	/* Last one defined */
 
+#else
+#define V_BR_ALWAYS	89	/* Unconditional branch */
+#define V_BR_NEVER	90	/* Never branch */
+#define V_BR_LAST	91	/* Last one defined */
+#endif // TARG_ST
 /* V_BR_MASK *must* be 2^n - 1, and be at least as large as  */
 /* V_BR_LAST */
 #define V_BR_MASK	0x7f	/* Mask for branch condition */
