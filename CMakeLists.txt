@@ -1,6 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.1 FATAL_ERROR)
 PROJECT(Path64)
 
+ENABLE_TESTING()
+
 # Disallow in-source build
 IF("${Path64_SOURCE_DIR}" STREQUAL "${Path64_BINARY_DIR}")
   MESSAGE(FATAL_ERROR "Project must be built out-of-source.  Remove files from the source tree that were created by this attempt:
@@ -277,3 +279,6 @@ ENDIF()
 # Build GCC and pathscale.
 ADD_SUBDIRECTORY(GCC)
 ADD_SUBDIRECTORY(src)
+
+ADD_SUBDIRECTORY(bootstrap)
+
