@@ -1,4 +1,4 @@
-
+string(REPLACE " " ";" c_flags "${CMAKE_C_FLAGS}")
 if(PATH64_BUILD_32)
     set(PATH64_M64_OPTION "-m32")
 else()
@@ -7,30 +7,26 @@ endif()
 
 add_custom_command(
         OUTPUT ${Path64_BINARY_DIR}/lib/crtbegin.o
-        COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -c ${CMAKE_CURRENT_SOURCE_DIR}/crtbegin.S -o ${Path64_BINARY_DIR}/lib/crtbegin.o
+        COMMAND ${CMAKE_C_COMPILER} ${c_flags} -c ${CMAKE_CURRENT_SOURCE_DIR}/crtbegin.S -o ${Path64_BINARY_DIR}/lib/crtbegin.o
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/crtbegin.S
-	VERBATIM
 )
 
 add_custom_command(
         OUTPUT ${Path64_BINARY_DIR}/lib/crtbeginS.o
-        COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -DSHARED -c ${CMAKE_CURRENT_SOURCE_DIR}/crtbegin.S -o ${Path64_BINARY_DIR}/lib/crtbeginS.o
+        COMMAND ${CMAKE_C_COMPILER} ${c_flags} -DSHARED -c ${CMAKE_CURRENT_SOURCE_DIR}/crtbegin.S -o ${Path64_BINARY_DIR}/lib/crtbeginS.o
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/crtbegin.S
-	VERBATIM
 )
 
 add_custom_command(
         OUTPUT ${Path64_BINARY_DIR}/lib/crtend.o
-        COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -c ${CMAKE_CURRENT_SOURCE_DIR}/crtend.S -o ${Path64_BINARY_DIR}/lib/crtend.o
+        COMMAND ${CMAKE_C_COMPILER} ${c_flags} -c ${CMAKE_CURRENT_SOURCE_DIR}/crtend.S -o ${Path64_BINARY_DIR}/lib/crtend.o
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/crtend.S
-	VERBATIM
 )
 
 add_custom_command(
         OUTPUT ${Path64_BINARY_DIR}/lib/crtendS.o
-        COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -DSHARED -c ${CMAKE_CURRENT_SOURCE_DIR}/crtend.S -o ${Path64_BINARY_DIR}/lib/crtendS.o
+        COMMAND ${CMAKE_C_COMPILER} ${c_flags} -DSHARED -c ${CMAKE_CURRENT_SOURCE_DIR}/crtend.S -o ${Path64_BINARY_DIR}/lib/crtendS.o
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/crtend.S
-	VERBATIM
 )
 
 add_custom_target(crtbegin ALL
