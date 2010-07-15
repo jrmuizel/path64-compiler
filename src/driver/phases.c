@@ -1550,14 +1550,14 @@ add_file_args (string_list_t *args, phases_t index)
 		}
 		current_phase = P_any_as;
 
-#ifndef PATH64_ENABLE_PSCRUNTIME
-        // When using "gcc x.s" as an assembler, must not run linker
-        add_string(args, "-c");
-#else
+#ifdef PATH64_ENABLE_PSCRUNTIME
         add_string(args, "-f");
         add_string(args, "elf64");
         add_string(args, "-p");
         add_string(args, "gas");
+#else
+        // When using "gcc x.s" as an assembler, must not run linker
+        add_string(args, "-c");
 #endif
 
 		add_string(args, "-o");
