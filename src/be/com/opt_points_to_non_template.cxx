@@ -49,7 +49,7 @@
 #include "opt_sym.h"
 #include "opt_util.h"
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
+#ifndef USE_WEAK_REFERENCES
 #ifdef SHARED_BUILD
 extern AUX_ID (*WN_aux_p) (const WN*);
 #define WN_aux (*WN_aux_p)
@@ -58,7 +58,7 @@ extern AUX_ID WN_aux (const WN*);
 #endif
 #else
 #pragma weak WN_aux__GPC2WN
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES
 
 
 // ************************************************************************

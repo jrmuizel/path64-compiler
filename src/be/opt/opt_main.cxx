@@ -350,13 +350,13 @@ extern "C" void
 Perform_Procedure_Summary_Phase (WN* w, struct DU_MANAGER *du_mgr,
 				 struct ALIAS_MANAGER *alias_mgr,
 				 EMITTER *emitter);
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
+#ifndef USE_WEAK_REFERENCES
 extern void (*Perform_Procedure_Summary_Phase_p) (WN*, DU_MANAGER*,
 						  ALIAS_MANAGER*, void*);
 #define Perform_Procedure_Summary_Phase (*Perform_Procedure_Summary_Phase_p)
 #else
 #pragma weak Perform_Procedure_Summary_Phase
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES
 
 extern BOOL Enable_WN_Simp;
 extern void Simplify_bool_expr(COMP_UNIT *);

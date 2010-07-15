@@ -31,7 +31,7 @@
 // and used in be, be.so and lno.so
 // (additional ones may be needed for prompf_anl.so)
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
+#ifndef USE_WEAK_REFERENCES
 
 extern void (*W2C_Cleanup_p)(void);
 extern void (*W2C_Init_p)(void);
@@ -64,7 +64,7 @@ extern void (*W2C_Translate_Wn_p)(FILE *outfile, const WN *wn);
 #define W2C_Translate_Istore_Lhs (*W2C_Translate_Istore_Lhs_p)
 #define W2C_Translate_Wn (*W2C_Translate_Wn_p)
 
-#else // __linux__
+#else // USE_WEAK_REFERENCES
 
 #pragma weak W2C_Cleanup
 #pragma weak W2C_Init
@@ -81,6 +81,6 @@ extern void (*W2C_Translate_Wn_p)(FILE *outfile, const WN *wn);
 #pragma weak W2C_Translate_Wn
 #pragma weak W2C_Translate_Wn_Str
 
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES
 
 #endif // w2c_weak_INCLUDED

@@ -222,7 +222,10 @@ SET(PATH64_LIB_PATH lib/${PSC_FULL_VERSION})
 # Tell GCC where to install relative to the CMAKE_INSTALL_PREFIX.
 SET(PATH64_GCC_INSTALL_PATH ${PATH64_LIB_PATH})
 
-
+# If readding support for SGI and other platforms, where the
+# dynamic linker allows overwritting weak references in modules
+# opened via dlopen or similar means:
+# -DUSE_WEAK_REFERENCES
 ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D__GNU_BUG_WORKAROUND
                 -DTARG_X8664
