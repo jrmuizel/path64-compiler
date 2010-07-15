@@ -52,7 +52,7 @@ ENDIF()
 
 #-----------------------------------------------------------------------------
 # Target architecture table.
-include(${Path64_SOURCE_DIR}/pathscale/targets.cmake)
+include(${Path64_SOURCE_DIR}/src/targets.cmake)
 
 # Define user option whether to build the profiling libraries
 # Which targets are we going to build.  Currently supported is x8664,mips
