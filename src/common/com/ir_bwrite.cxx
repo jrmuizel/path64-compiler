@@ -111,21 +111,6 @@ extern void Depgraph_Write (void *depgraph, Output_File *fl, WN_MAP off_map);
 }
 #endif /* BACK_END */
 
-#define MMAP(addr, len, prot, flags, fd, off)				\
-    mmap((void *)(addr), (size_t)(len), (int)(prot), (int)(flags),	\
-	 (int)(fd), (off_t)(off))
-
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN)) || defined(__FreeBSD__) || defined(__sun)
-#define MUNMAP(addr, len)						\
-    munmap((void *)(addr), (size_t)(len))
-#else
-#define MUNMAP(addr, len)						\
-    munmap((char *)(addr), (size_t)(len))
-#endif
-
-#define OPEN(path, flag, mode)						\
-    open((const char *)(path), (int)(flag), (mode_t)(mode))
-
 static void (*old_sigsegv) (int);   /* the previous signal handler */
 static void (*old_sigbus) (int);   /* the previous signal handler */
 
@@ -144,7 +129,7 @@ cleanup (Output_File *fl)
     fl->num_of_section = 0;
     fl->section_list = NULL;
 
-    MUNMAP (fl->map_addr, fl->mapped_size);
+    munmap(fl->map_addr, fl->mapped_size);
     fl->map_addr = NULL;
     fl->file_size = 0;
 } /* cleanup */
@@ -424,7 +409,7 @@ WN_open_output (char *file_name)
     } else {
 	fl->file_name = file_name;
 	// set mode to rw for all; users umask will AND with that.
-	fl->output_fd = OPEN (file_name, O_RDWR|O_CREAT|O_TRUNC, 0666);
+	fl->output_fd = open(file_name, O_RDWR|O_CREAT|O_TRUNC, 0666);
     }
     if (fl->output_fd < 0)
 	return NULL;
