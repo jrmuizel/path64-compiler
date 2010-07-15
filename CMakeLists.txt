@@ -50,31 +50,41 @@ ELSE()
 	MESSAGE(STATUS "OpenMP build disabled")
 ENDIF()
 
-# Define user option whether to build both 32/64bit libraries
-OPTION(PATH64_ENABLE_MULTILIB "Multilib build" OFF)
-IF(PATH64_ENABLE_MULTILIB)
-	MESSAGE(STATUS "Multilib not supported yet, but enabled")
-#ELSE()
-#	MESSAGE(STATUS "Multilib not supported yet disabled")
-ENDIF()
+#-----------------------------------------------------------------------------
+# Target architecture table.
+include(${Path64_SOURCE_DIR}/pathscale/targets.cmake)
 
 # Define user option whether to build the profiling libraries
 # Which targets are we going to build.  Currently supported is x8664,mips
 # We may want to dodge multilib and just treat x86 as it's own target.
 # Then we could test is for the the native build environment is and make that the default
-SET(PATH64_ENABLE_TARGETS "" CACHE STRING "Target archs (x8664;mips)")
-IF(PATH64_ENABLE_TARGETS)
-
-	foreach(arg ${PATH64_ENABLE_TARGETS})
-		set(targetsX "${targetsX} ${arg}")
-	endforeach(arg ${PATH64_ENABLE_TARGETS})
-	MESSAGE(STATUS "We are going to build the following targets${targetsX}")
-ELSE()
-	MESSAGE( FATAL_ERROR "Must specify at least one target.
-Supported targets are : x8664 and mips
-Please add -DPATH64_ENABLE_TARGETS=x8664 to your cmake line
-Multiple targets can be specified like \"-DPATH64_ENABLE_TARGETS=x8664;mips\"" )
-ENDIF()
+set(PATH64_ENABLE_TARGETS "" CACHE STRING "Target archs (x8664_32;mips_64)")
+if(PATH64_ENABLE_TARGETS)
+  set(_targets "")
+  set(_sep "")
+  foreach(arch ${PATH64_ENABLE_TARGETS})
+    # Look for a target table entry for this architectures.
+    if(NOT _PATH64_TARGET_ARCH_${arch})
+      message(FATAL_ERROR "'${arch}' is not among supported architectures.
+${_PATH64_SUPPORTED_TARGETS_STRING}
+Please edit PATH64_ENABLE_TARGETS to list only valid architectures.
+")
+    endif()
+    set(_targets "${_targets}${_sep}${arch}")
+    set(_sep ", ")
+  endforeach(arch)
+  # First list element is the default.
+  list(GET PATH64_ENABLE_TARGETS 0 PATH64_DEFAULT_TARGET)
+  message(STATUS
+    "Building support for targets ${_targets}.  Default is ${PATH64_DEFAULT_TARGET}.")
+else()
+  message( FATAL_ERROR "Must specify at least one target architecture.
+${_PATH64_SUPPORTED_TARGETS_STRING}
+Please add -DPATH64_ENABLE_TARGETS=x8664_64 to your cmake ../Path64 line
+Multiple targets can be specified with
+  \"-DPATH64_ENABLE_TARGETS=x8664_32;mips_64\"
+on the command line.")
+endif()
 # Multi target support is indefinitely delayed
 set(BUILD_TARGET_DIR "x8664")
 
@@ -228,7 +238,7 @@ ADD_DEFINITIONS(-D_SGI_SOURCE
                 -DTARG_X8664
                 -DKEY
                 -DFE_GNU_4_2_0
-                -DLONGLONG
+                -D_LONGLONG
                 -D_MIPSEL
                 -DTARG_LINUX
                 -D_MIPS_SZINT=32
