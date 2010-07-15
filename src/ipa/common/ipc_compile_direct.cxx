@@ -29,6 +29,7 @@
 #include <ext/hash_map> 
 
 #include <time.h>       
+#include <limits.h>
 #include <sys/param.h>  
 
 #include "cxx_memory.h" 
