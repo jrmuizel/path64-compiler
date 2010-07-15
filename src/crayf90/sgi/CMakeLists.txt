@@ -18,6 +18,7 @@ include_directories(
 ../../clibinc/cray
 ../include
 ../../include/cmplrs
+${PATHSCALE_BINARY_DIR}/common/targ_info
 
 )
 
@@ -89,7 +90,7 @@ IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 add_executable (mfef95 ${PATHSCALE_MFEF95_SRCS})
-target_link_libraries (mfef95 comutil fe90 fe90-pathf arith cif pathfortran-static m)
+target_link_libraries (mfef95 targinfo comutil fe90 fe90-pathf arith cif pathfortran-static m)
 
 add_custom_command(
     OUTPUT ${Path64_BINARY_DIR}/lib/mfef95-stage
@@ -144,7 +145,7 @@ include_directories(
 
 add_executable (mfef95-tmp ${PATHSCALE_MFEF95_SRCS} ${PATHSCALE_MFEF95_TMP_SRCS})
 set_source_files_properties(${PATHSCALE_MFEF95_TMP_SRCS} PROPERTIES COMPILE_DEFINITIONS "_LIBU;_LITTLE_ENDIAN")
-target_link_libraries (mfef95-tmp comutil fe90 fe90-tmp arith cif ${MFEF95_TMP_FORTRAN_LINK_LIB} m)
+target_link_libraries (mfef95-tmp targinfo comutil fe90 fe90-tmp arith cif ${MFEF95_TMP_FORTRAN_LINK_LIB} m)
 
 add_custom_command(
     OUTPUT ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION} ${Path64_BINARY_DIR}/lib/mfef95 ${Path64_BINARY_DIR}/lib/be ${Path64_BINARY_DIR}/bin/pathf90
