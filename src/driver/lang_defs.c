@@ -92,8 +92,8 @@ static phase_info_t phase_info[] = {
    /* invoke gcc driver directly rather than cpp
     * because cpp can have different paths, reads spec file,
     * and may eventually be merged with cc1. */
-   {'p',  0x0000000000000020LL,	"gcc", "", FALSE}, /* gcpp */
-   {'p',  0x0000000000000040LL,	"g++", "", FALSE}, /* gcpp_plus */
+   {'p',  0x0000000000000020LL,	"cc142", PHASEPATH, FALSE}, /* gcpp */
+   {'p',  0x0000000000000040LL,	"cc1plus42", PHASEPATH, FALSE}, /* gcpp_plus */
    {'p',  0x0000000000000080LL,	"fec",	 PHASEPATH,	FALSE},	/* c_cpp */
    {'p',  0x0000000000000100LL, "cpp",   PHASEPATH,     FALSE}, /* cplus_cpp */
    {'p',  0x0000000000000200LL,	"mfef77",PHASEPATH,	FALSE},	/* f_cpp */

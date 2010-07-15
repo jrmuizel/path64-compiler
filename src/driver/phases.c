@@ -794,6 +794,8 @@ add_file_args (string_list_t *args, phases_t index)
 	case P_gcpp_plus:
 		if (show_but_not_run)
 			add_string(args, "-###");
+		if (quiet_flag) 
+			add_string(args, "-quiet");
 #ifdef TARG_MIPS
 		add_sysroot(args, index);
 #endif
@@ -820,7 +822,6 @@ add_file_args (string_list_t *args, phases_t index)
 			add_string(args, "-xassembler-with-cpp");
 			break;
 		case L_CC:
-			add_string(args, "-xc++");
 			break;
 		case L_f77:
 		case L_f90:
@@ -830,8 +831,6 @@ add_file_args (string_list_t *args, phases_t index)
 				add_string(args, "-Wno-endif-labels");
 		case L_cc:
 		default:
-			if (source_kind != S_h)
-			  add_string(args, "-xc");
 			break;
 		}
 
