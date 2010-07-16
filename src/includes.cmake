@@ -10,33 +10,9 @@ SET(LINUX_SYS_HFILES
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
-SET(WINDOWS_HFILES
-	alloca.h
-	ar.h
-	endian.h
-	elf.h
-	fcntl.h
-	regex.h
-	string.h
-	strings.h
-	stdio.h
-	stdlib.h
-	unistd.h
-	locale.h
-   )
+include_directories(BEFORE windows/include)
 
 add_definitions(-DHAVE_ALLOCA_H=1)
-
-SET(WINDOWS_SYS_HFILES
-	cdefs.h
-	mman.h
-	resource.h
-	stat.h
-	times.h
-	types.h
-	utsname.h
-	wait.h
-   )
 
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
