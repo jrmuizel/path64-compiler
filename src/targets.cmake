@@ -67,10 +67,10 @@ endfunction()
 # The logical CMake library names are mangled by the architecture, but
 # their OUTPUT_NAME on disk is not.  The build output and install
 # locations include the architecture.
-function(path64_add_library_for_target name target)
+function(path64_add_library_for_target name target type)
     # Getting list of sources from args
     set(sources ${ARGV})
-    list(REMOVE_AT sources 0 1)
+    list(REMOVE_AT sources 0 1 2)
 
     # Compiler ABI.
     set(arch ${_PATH64_TARGET_ARCH_${target}})
@@ -82,7 +82,7 @@ function(path64_add_library_for_target name target)
 
     path64_get_multitarget_cmake_target(lib_name ${name} ${target})
 
-    add_library (${lib_name} ${sources})
+    add_library (${lib_name} ${type} ${sources})
     set_property(TARGET ${lib_name} PROPERTY OUTPUT_NAME ${name})
     set_property(TARGET ${lib_name} PROPERTY COMPILE_FLAGS ${arch_flag})
     set_property(TARGET ${lib_name} PROPERTY LINK_FLAGS ${arch_flag})
@@ -99,15 +99,15 @@ endfunction()
 
 # Adds library for all enabled targets
 # Parameters: <library name> <multtarget source list name>
-function(path64_add_multitarget_library name src_list_name)
+function(path64_add_multitarget_library name type src_list_name)
     set(sources ${ARGV})
     list(REMOVE_AT sources 0)
 
     foreach(targ ${PATH64_ENABLE_TARGETS})
         if(${src_list_name}_${targ})
-            path64_add_library_for_target(${name} ${targ} ${${src_list_name}_${targ}})
+            path64_add_library_for_target(${name} ${targ} ${type} ${${src_list_name}_${targ}})
         else()
-            path64_add_library_for_target(${name} ${targ} ${${src_list_name}_COMMON})
+            path64_add_library_for_target(${name} ${targ} ${type} ${${src_list_name}_COMMON})
         endif()
     endforeach()
 endfunction()
@@ -134,6 +134,18 @@ function(path64_set_multitarget_property name prop)
 
     foreach(targ ${PATH64_ENABLE_TARGETS})
         path64_set_property_for_target(${name} ${targ} ${prop} ${prop_vals})
+    endforeach()
+endfunction()
+
+
+# Adds link libraries to multitarget
+function(path64_multitarget_link_libraries name)
+    set(libs ${ARGV})
+    list(REMOVE_AT libs 0)
+
+    foreach(targ ${PATH64_ENABLE_TARGETS})
+        path64_get_multitarget_cmake_target(tg ${name} ${targ})
+        target_link_libraries(${tg} ${libs})
     endforeach()
 endfunction()
 
