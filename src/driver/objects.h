@@ -37,9 +37,9 @@
 
 extern void init_objects (void);
 
-/* need to init crt paths if doing ipa link */
-extern void init_crt_paths (void);
-extern void init_stdc_plus_plus_path( void );
+
+extern char* get_crt_path (void);
+extern char* get_stdc_plus_plus_path( void );
 
 /*
  * Whether option is an object or not.

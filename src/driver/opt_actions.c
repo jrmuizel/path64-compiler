@@ -61,6 +61,7 @@
 #include "phases.h"
 #include "run.h"
 #include "profile_type.h" /* for enum PROFILE_TYPE */
+#include "targets.h"
 
 /* keep list of previous toggled option names, to give better messages */
 typedef struct toggle_name_struct {
@@ -1469,7 +1470,10 @@ print_file_path (char *fname, int exe)
    * so try combining into one search.
    */
 
-  if (print_relative_path("lib/" PSC_FULL_VERSION, fname))
+  char *lib_path = target_library_path();
+  int res = print_relative_path(lib_path, fname);
+  free(lib_path);
+  if(res)
     return;
 
   if (print_phase_path(P_be, fname))

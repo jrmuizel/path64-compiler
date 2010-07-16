@@ -18,6 +18,7 @@ Set(PATHSCALE_DRIVER_SRCS ${PATHSCALE_COMMON_DRIVER_SRCS}
                           "phases.c"
                           "run.c"
                           "special_options.c"
+                          "targets.c"
                           ${CMAKE_CURRENT_BINARY_DIR}/version_hg.c
                           "license.c"
    )

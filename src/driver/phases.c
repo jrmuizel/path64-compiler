@@ -65,6 +65,7 @@
 #include "opt_actions.h"
 #include "profile_type.h"    /* for PROFILE_TYPE */
 #include "get_options.h"
+#include "targets.h"
 
 #if !defined(__FreeBSD__)
 #include <alloca.h>
@@ -478,18 +479,21 @@ add_arg(string_list_t *args, const char *format, ...)
 	va_end(ap);
 }
 
+
+// Returns path to library directory
+
+
 /* Keep this in sync with print_file_path over in opt_actions.c. */
 
 static void
 set_library_paths(string_list_t *args)
 {
-	char *root_prefix = directory_path(get_executable_dir());
-	char *our_path;
-	
-	asprintf(&our_path, "%s" LIBPATH, root_prefix );
-	add_string(args, concat_strings("-L", our_path));
+    char *lib_path = target_library_path();
+	char *arg = concat_strings("-L", lib_path);
+    add_string(args, arg);
 
-	free(our_path);
+    free(lib_path);
+    free(arg);
 }
 
 /*
@@ -679,14 +683,36 @@ add_abi(string_list_t *args) {
 }
 
 
+// Adds target specific linker args
 static void
-add_linker_abi(string_list_t *args) {
+add_target_linker_args(string_list_t *args) {
+    // Adding path to dynamic linker for x86 linux platform
+#ifdef TARG_X8664
+#ifdef __linux__
+    if(abi == ABI_N32) {
+        add_arg(args, "--dynamic-linker=/lib/ld-linux.so.2");
+    } else {
+        // TODO: check that this path correct on all linux distros
+        add_arg(args, "--dynamic-linker=/lib/ld-linux-x86-64.so.2");
+    }
+#endif // __linux__
+#endif // TARG_X8664
+
+    // Adding -rpath for linux platform
+#ifdef __linux__
+#endif // __linux__
+
+    // Adding abi flag
+#ifdef TARG_X8664
 #if defined(__sun)
     add_string(args, (abi == ABI_N32) ? "-32" : "-64");
-#else
+#else // __sun
     add_string(args, (abi == ABI_N32) ? "-melf_i386" : "-melf_x86_64");
-#endif
+#endif // TARG_X8664
+#endif // __sun
 }
+
+
 #endif /* KEY Mac port */
 
 #ifdef TARG_MIPS
@@ -1606,20 +1632,14 @@ add_file_args (string_list_t *args, phases_t index)
 		break;
 	case P_ld:
 	case P_ldplus:
-		/* For C/C++:
-		 * gcc invokes collect2 which invokes ld.
-		 * Because the path to collect2 varies, 
-		 * just invoke gcc to do the link. */
-		/* add lib paths for standard libraries like libgcc.a */
 		append_libraries_to_list (args);
 		if (show_but_not_run)
 			add_string(args, "-###");
 #ifdef TARG_MIPS
 		add_sysroot(args, index);
 #endif
-#ifndef __sun
-		add_linker_abi(args);
-#endif
+		add_target_linker_args(args);
+
 		set_library_paths(args);
 		if (outfile != NULL) {
 			add_string(args, "-o");
@@ -1633,21 +1653,33 @@ add_file_args (string_list_t *args, phases_t index)
                  * See the other part in add_final_ld_args() */
                 if( ! option_was_seen(O_nostartfiles)){
                        if ((shared != DSO_SHARED) && (shared != RELOCATABLE)){
-			   add_string_if_new_basename(args, PSC_CRT_PATH"/crt1.o");
-			   add_string_if_new_basename(args, PSC_CRT_PATH"/crti.o");
-			   temp = malloc(strlen(get_phase_dir(P_library)) + 12);
-			   strcpy(temp, get_phase_dir(P_library));
-			   strcat(temp, "/crtbegin.o");
-			   add_string(args, temp);
-			   free(temp);
+
+               char *runtime_path = target_runtime_path();
+               char *crt1_path = concat_strings(runtime_path, "/crt1.o");
+               char *crti_path = concat_strings(runtime_path, "/crti.o");
+               char *lib_path = target_library_path();
+               char *crtbegin_path = concat_strings(lib_path, "/crtbegin.o");
+               free(runtime_path);
+               free(lib_path);
+
+			   add_string_if_new_basename(args, crt1_path);
+			   add_string_if_new_basename(args, crti_path);
+               free(crt1_path);
+               free(crti_path);
+
+			   add_string(args, crtbegin_path);
+               free(crtbegin_path);
+
 		       } else {
 			   add_string_if_new_basename(args, PSC_CRT_PATH"/crti.o");
-			   temp = malloc(strlen(get_phase_dir(P_library)) + 13);
-			   strcpy(temp, get_phase_dir(P_library));
-			   strcat(temp, "/crtbeginS.o");
-			   add_string(args, temp);
-			   free(temp);
+               char *lib_path = target_library_path();
+               char *crtbeginS_path = concat_strings(lib_path, "/crtbeginS.o");
+               free(lib_path);
+			   add_string(args, crtbeginS_path);
+               free(crtbeginS_path);
 		       }
+
+
                 }
 		break;
 	case P_collect:
@@ -1655,7 +1687,7 @@ add_file_args (string_list_t *args, phases_t index)
 #ifdef TARG_MIPS
 		add_sysroot(args, index);
 #endif
-		add_linker_abi(args);
+        add_target_linker_args(args);
 #ifdef TARG_X8664
 		if( abi == ABI_N32 ) {
 		  add_string(args, "-m");
@@ -1686,13 +1718,22 @@ add_file_args (string_list_t *args, phases_t index)
 		if ((shared != DSO_SHARED) && (shared != RELOCATABLE)
 		    && ! option_was_seen(O_nostartfiles)) 
 		{
-                        add_string_if_new_basename(args, PSC_CRT_PATH"/crt1.o");
-                        add_string_if_new_basename(args, PSC_CRT_PATH"/crti.o");
-			temp = malloc(strlen(get_phase_dir(P_library)) + 12);
-			strcpy(temp, get_phase_dir(P_library));
-			strcat(temp, "/crtbegin.o");
-			add_string(args, temp);
-			free(temp);
+
+            char *runtime_path = target_runtime_path();
+            char *lib_path = target_library_path();
+            char *crt1_path = concat_strings(runtime_path, "/crt1.o");
+            char *crti_path = concat_strings(runtime_path, "/crti.o");
+            char *crtbegin_path = concat_strings(lib_path, "/crtbegin.o");
+            free(runtime_path);
+            free(lib_path);
+
+            add_string_if_new_basename(args, crt1_path);
+            add_string_if_new_basename(args, crti_path);
+            free(crt1_path);
+            free(crti_path);
+
+			add_string(args, crtbegin_path);
+			free(crtbegin_path);
 
 			if (ftz_crt) {
 				add_string(args, find_crt_path("ftz.o"));
@@ -1909,6 +1950,7 @@ add_libgcc_s(string_list_t *args)
 	add_library(args, libgcc_s);
 }
 
+
 static void
 add_final_ld_args (string_list_t *args)
 {
@@ -1971,21 +2013,18 @@ add_final_ld_args (string_list_t *args)
 	
         /* Add trailing crt*.o objects if needed. See the first part in add_file_args() */
         if( ! option_was_seen(O_nostartfiles)) {
-		if ((shared != DSO_SHARED) && (shared != RELOCATABLE)) {
-		    temp = malloc(strlen(get_phase_dir(P_library)) + 10);
-		    strcpy(temp, get_phase_dir(P_library));
-		    strcat(temp, "/crtend.o");
-		    add_string(args, temp);
-		    free(temp);
-		    add_string_if_new_basename(args, PSC_CRT_PATH"/crtn.o");
-		} else {
-		    temp = malloc(strlen(get_phase_dir(P_library)) + 11);
-		    strcpy(temp, get_phase_dir(P_library));
-		    strcat(temp, "/crtendS.o");
-		    add_string(args, temp);
-		    free(temp);
-		    add_string_if_new_basename(args, PSC_CRT_PATH"/crtn.o");
-		}
+            char *lib_path = target_library_path();
+            char *runtime_path = target_runtime_path();
+            char *crtn_path = concat_strings(runtime_path, "/crtn.o");
+            const char *crtend_name = ((shared != DSO_SHARED) && (shared != RELOCATABLE)) ?
+                                      "/crtend.o" :
+                                      "/crtendS.o";
+            char *crtend_path = concat_strings(lib_path, crtend_name);
+            free(lib_path);
+            free(runtime_path);
+
+            add_string(args, crtend_path);
+            add_string_if_new_basename(args, crtn_path);
         }
 
 	if (shared != RELOCATABLE) {
@@ -2077,10 +2116,10 @@ add_final_ld_args (string_list_t *args)
 	if (ipa == TRUE) {
 #ifndef PATH64_ENABLE_PSCRUNTIME
 	    	if (invoked_lang == L_CC) {
-#  ifdef CONFIGURED_LIBSTDCXX_DIR
-                        add_arg(args, "-L%s", CONFIGURED_LIBSTDCXX_DIR);
-#  endif
-			add_library(args, "stdc++");
+                char * stdcpp_path = get_stdc_plus_plus_path();
+                add_arg(args, "-L%s", stdcpp_path);
+                free(stdcpp_path);
+                add_library(args, "stdc++");
 	    	}
 #endif
 		if (invoked_lang == L_CC &&
@@ -2124,7 +2163,6 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
 
     phase_name = "/usr/bin/ld";
 
-    //init_crt_paths ();
     //init_stdc_plus_plus_path();
 
     add_library(args, "c");
@@ -2970,11 +3008,10 @@ run_ld (void)
 	    }
 #endif
 
-	    init_crt_paths ();
-	    if (invoked_lang == L_CC ||
-		instrumentation_invoked == TRUE ) {
-	      init_stdc_plus_plus_path();
-	    }
+//	    if (invoked_lang == L_CC ||
+//		instrumentation_invoked == TRUE ) {
+//	      init_stdc_plus_plus_path();
+//	    }
 	}
     ldpath = get_full_phase_name(ldphase);
 
@@ -2988,10 +3025,10 @@ run_ld (void)
 
 	if (invoked_lang == L_CC) {
 #ifndef PATH64_ENABLE_PSCRUNTIME
-#  ifdef CONFIGURED_LIBSTDCXX_DIR
-            add_arg(args, "-L%s", CONFIGURED_LIBSTDCXX_DIR);
-#  endif
-            add_library(args, "stdc++");
+        char * stdcpp_path = get_stdc_plus_plus_path();
+        add_arg(args, "-L%s", stdcpp_path);
+        free(stdcpp_path);
+        add_library(args, "stdc++");
 #endif
 	    if (!multiple_source_files && !((shared == RELOCATABLE) && (ipa == TRUE) && (outfile == NULL)) && !keep_flag)
 		mark_saved_object_for_cleanup();

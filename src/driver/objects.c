@@ -86,8 +86,9 @@ init_objects (void)
 	library_dirs = init_string_list();
 }
 
-static void
-init_given_crt_path (char *crt_name, char *prog_name, char *tmp_name)
+
+static char *
+get_given_crt_path (char *crt_name, char *prog_name, char *tmp_name)
 {
 	int n = 3, i = 0;
 	FILE *path_file;
@@ -141,21 +142,22 @@ init_given_crt_path (char *crt_name, char *prog_name, char *tmp_name)
 	path_file = fopen(tmp_name, "r");
 	if (path_file == NULL) {
 		internal_error("couldn't open %s tmp file", crt_name);
-		return;
+		return NULL;
 	}
 	if (fgets (path, 512, path_file) == NULL) {
 		internal_error("couldn't read %s tmp file", crt_name);
+        return NULL;
 	}
 	fclose(path_file);
 	if (path[0] != '/') {
 		internal_error("%s path not found", crt_name);
+        return NULL;
 	}
 	else {
 		/* drop file name and add path to library list */
-		p = drop_path (path);
-		*p = '\0';
+		p = directory_path (path);
 		if (debug) fprintf(stderr, "%s found in %s\n", crt_name, path);
-		add_library_dir (path);
+        return p;
 	}
 }
 
@@ -163,28 +165,24 @@ init_given_crt_path (char *crt_name, char *prog_name, char *tmp_name)
 /* Find out where libstdc++.so file is stored.
    Invoke gcc -print-file-name=libstdc++.so to find the path.
 */
-void init_stdc_plus_plus_path( void )
+char* get_stdc_plus_plus_path( void )
 {
   char *tmp_name = create_temp_file_name( "gc" );
-  char *gcc_name = get_full_phase_name( P_ld );
-  init_given_crt_path( "libstdc++.so", gcc_name, tmp_name );
+  return get_given_crt_path( "libstdc++.so", "g++", tmp_name );
 }
 
 
-/* only need to init crt paths if doing ipa link */
-void
-init_crt_paths (void)
+char* get_crt_path (void)
 {
 	/*
 	 * Have to find out where crt files are stored.
-	 * Invoke gcc -print-file-name=crt* to find the path.
-	 * Assume are two paths, one for crt{1,i,n} and one for crt{begin,end}.
+	 * Invoke gcc -print-file-name=crt1.o to find the path.
+	 * Assume are one paths for crt{1,i,n}
 	 */
 	char *tmp_name = create_temp_file_name("gc");
-	char *gcc_name = get_full_phase_name(P_ld);
-	init_given_crt_path ("crtbegin.o", gcc_name, tmp_name);
-	init_given_crt_path ("crt1.o", gcc_name, tmp_name);
+	return get_given_crt_path ("crt1.o", "gcc", tmp_name);
 }
+
 
 /* whether option is an object or not */
 boolean
