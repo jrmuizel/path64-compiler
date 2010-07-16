@@ -42,7 +42,9 @@
 /* #undef HAVE_STRUCT_NLIST_DECLARATION */
 
 /* Define if Elf32_Dyn is declared in <link.h> */
-/* #undef __LIBELF_NEED_LINK_H */
+#ifdef __sun
+#define __LIBELF_NEED_LINK_H 1
+#endif //__sun
 
 /* Define to `<elf.h>' or `<sys/elf.h>' if one of them is present */
 
@@ -121,11 +123,7 @@
 #define HAVE_MEMSET 1
 
 /* Define if you have the <ar.h> header file.  */
-#if defined(_WIN32)
-#undef HAVE_AR_H
-#else
 #define HAVE_AR_H 1
-#endif
 
 /* Define if you have the <elf.h> header file.  */
 #define HAVE_ELF_H 1
