@@ -51,7 +51,7 @@ static const char rcs_id[] = "$Source: /home/bos/bk/kpro64-pending/common/targ_i
 
 #include "ti_init.h"
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32)
 const char * sanity_check_targ_so_name_p;
 #define sanity_check_targ_so_name sanity_check_targ_so_name_p
 #endif
