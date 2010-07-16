@@ -269,6 +269,16 @@ ELSE()
     SET(LD_HASH_STYLE_FLAG "")
 ENDIF()
 
+IF(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+# --export-dynamic is not supported on osol
+SET(EXPORT_DYNAMIC_SUPPORTED,"no")
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+# --export-dynamic is not supported on Windows
+SET(EXPORT_DYNAMIC_SUPPORTED,"no")
+ELSE()
+SET(EXPORT_DYNAMIC_SUPPORTED,"yes")
+ENDIF()
+
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     SET(SHELL_EXT cmd)
     SET(SYMLINK_COMMAND ${CMAKE_BINARY_DIR}/bin/symlink.exe)

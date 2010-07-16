@@ -176,8 +176,7 @@ add_library(be SHARED ${PATHSCALE_BE_BE_SRCS})
 set_property(TARGET be PROPERTY PREFIX "")
 set_target_properties(be PROPERTIES COMPILE_DEFINITIONS "SHARED_BUILD")
 
-IF(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
-# --export-dynamic is not supported on osol
+IF(${EXPORT_DYNAMIC_SUPPORTED} MATCHES "yes")
 set_target_properties(be PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
 ENDIF()
 
@@ -196,8 +195,7 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 target_link_libraries(be-exec winlib regex)
 ENDIF()
 SET_TARGET_PROPERTIES(be-exec PROPERTIES OUTPUT_NAME "be")
-IF(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
-# --export-dynamic is not supported on osol
+IF(${EXPORT_DYNAMIC_SUPPORTED} MATCHES "yes")
 set_target_properties(be-exec PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
 ENDIF()
 
