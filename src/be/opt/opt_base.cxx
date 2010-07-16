@@ -71,7 +71,6 @@ static char *rcs_id = 	opt_base_CXX"$Revision: 1.8 $";
 #include "erglob.h"
 #include "cxx_memory.h"
 
-#include "opt_sys.h"
 #include "opt_base.h"
 
 

@@ -2,10 +2,11 @@
 #
 #
 #  Copyright (C) 2000, 2001 Silicon Graphics, Inc.  All Rights Reserved.
+#  Copyright (C) 2010, PathScale Inc. All Rights Reserved
 #
 #  Path64 is free software; you can redistribute it and/or modify it
 #  under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 3, or (at your option)
+#  the Free Software Foundation; either version 2, or (at your option)
 #  any later version.
 #
 #  Path64 is distributed in the hope that it will be useful, but WITHOUT
@@ -90,7 +91,7 @@ shift
 ###
 rev='$Revision$'
 
-L_PREFIX=`echo $PREFIX | tr '[A-Z]' '[a-z]'`
+L_PREFIX=`echo $PREFIX | tr [:upper:] [:lower:]`
 
 H_RCS_ID="${L_PREFIX}_prop_rcs_id"
 ID_ACCES="${PREFIX}_id"

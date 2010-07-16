@@ -68,7 +68,6 @@
 #include "tracing.h"
 #include "config_targ.h"
 #include "opt_util.h"
-#include "opt_sys.h"
 #include "opt_bb.h"
 #include "opt_main.h"
 

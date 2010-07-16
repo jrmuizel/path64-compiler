@@ -1,7 +1,6 @@
 project(libpathfortran)
 
 SET(PATHSCALE_PATHFORTRAN_C_SRCS  "nlspath.c"
-				"non_qk.c"
 				"segv.c"
 				"stacksize.c"
 				"../libfi/array/all_gen.c"

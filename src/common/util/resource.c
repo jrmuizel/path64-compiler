@@ -155,18 +155,9 @@ Get_Resources (
     if ( ! initialized ) Resource_Init ();
 
     /* Get the elapsed time: */
-#if (1)
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32))
-    gettimeofday(&now);
-#else
     gettimeofday(&now, NULL);
-#endif
     r->etime.secs  = now.tv_sec  - start_time.tv_sec;
     r->etime.usecs = now.tv_usec - start_time.tv_usec;
-#else
-    r->etime.secs  = time (0) - start_time;
-    r->etime.usecs = 0;
-#endif
 
     /* Get the CPU time information from the system: */
 #if (1)
@@ -307,15 +298,7 @@ void
 Resource_Init ( void )
 {
     /* Initialize elapsed time base: */
-#if (1)
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32))
-    gettimeofday(&start_time);
-#else
     gettimeofday(&start_time, NULL);
-#endif
-#else
-    start_time = time (0);
-#endif
     initialized = 1;
 
     /* Initialize the process initialization structure: */

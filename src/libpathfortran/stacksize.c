@@ -29,7 +29,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(__NetBSD__)
 # include <sys/types.h>
 # include <sys/sysctl.h>
 #endif /* defined(BUILD_OS_DARWIN) */
@@ -81,6 +81,25 @@ int __set_stack_size_limit(char *new_limit)
 	mib[1] = HW_PHYSMEM;
 	npages = 0;
 	size_t size = sizeof(npages);
+	if (sysctl(mib, 2, &npages, &size, 0, 0)) {
+	  perror("sysctl");
+	  }
+	npages /= page_size;
+	mib[1] = HW_NCPU;
+	ncpus = 0;
+	size = sizeof(ncpus);
+        if (sysctl(mib, 2, &ncpus, &size, 0, 0)) {
+	  perror("sysctl");
+	  ncpus = 1;
+	  }
+	}
+#elif defined(__NetBSD__)
+	{
+	int mib[2];
+	mib[0] = CTL_HW;
+	mib[1] = HW_PHYSMEM64;
+	npages = 0;
+	uint64_t size = sizeof(npages);
 	if (sysctl(mib, 2, &npages, &size, 0, 0)) {
 	  perror("sysctl");
 	  }
