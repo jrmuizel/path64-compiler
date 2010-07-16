@@ -1,13 +1,11 @@
 project(libmpath)
 
-IF(PATH64_BUILD_32)
-
 SET(PATHSCALE_MPATH_SRCS dummy.c)
 SET(PATHSCALE_MPATH_S_SRCS )
 
-ELSE()
 
-SET(PATHSCALE_MPATH_SRCS        "amd/pow_errorl.c"
+SET(PATHSCALE_MPATH_SRCS_X64
+                "amd/pow_errorl.c"
 				"amd/remainder_piby2d2f.c"
 				"amd/s_atan2.c"
 				"amd/s_atan2f.c"
@@ -58,10 +56,10 @@ SET(PATHSCALE_MPATH_SRCS        "amd/pow_errorl.c"
 				"amd/w_sinhf.c"
 				"amd/w_tanh.c"
 				"amd/w_tanhf.c"
-				"cisf.c"
 				"cisf.c")
 
-SET(PATHSCALE_MPATH_S_SRCS      "amd/w_copysignf.s"	
+SET(PATHSCALE_MPATH_S_SRCS_X64
+                "amd/w_copysignf.s"	
 				"amd/w_copysign.s"
 				"amd/w_finitef.s"
 				"amd/w_finite.s"
@@ -81,8 +79,6 @@ SET(PATHSCALE_MPATH_S_SRCS      "amd/w_copysignf.s"
 				"amd/w_fastsincos.S"
 				"amd/w_pow.S")
 
-ENDIF()
-
 
 INCLUDE_DIRECTORIES(
     ../libmpath/amd
@@ -96,35 +92,39 @@ ADD_DEFINITIONS(
 
 IF(PATH64_ENABLE_MATHLIBS)
 
-set_source_files_properties("amd/w_log2.c" "amd/w_log2f.c" PROPERTIES COMPILE_DEFINITIONS "COMPILING_LOG2")
-set_source_files_properties("amd/w_log10.c" "amd/w_log10f.c" PROPERTIES COMPILE_DEFINITIONS "COMPILING_LOG10")
+set_source_files_properties("amd/w_log2.c" "amd/w_log2f.c" PROPERTIES
+                            COMPILE_DEFINITIONS "COMPILING_LOG2")
+set_source_files_properties("amd/w_log10.c" "amd/w_log10f.c" PROPERTIES
+                            COMPILE_DEFINITIONS "COMPILING_LOG10")
+set_source_files_properties(${PATHSCALE_MPATH_S_SRCS_X64} PROPERTIES LANGUAGE C)
 
-set_source_files_properties(${PATHSCALE_MPATH_S_SRCS} PROPERTIES LANGUAGE C)
-add_library(mpath-static STATIC ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
-SET_TARGET_PROPERTIES(mpath-static PROPERTIES OUTPUT_NAME "mpath")
 
-add_library(mpath SHARED ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
-set_property(TARGET mpath PROPERTY COMPILE_DEFINITIONS PIC)
-set_property(TARGET mpath PROPERTY SOVERSION 1)
+path64_set_multitarget_sources(mpath_sources COMMON
+                               ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
+path64_set_multitarget_sources(mpath_sources x8664_64
+                               ${PATHSCALE_MPATH_SRCS_X64} ${PATHSCALE_MPATH_S_SRCS_X64})
+
+path64_add_multitarget_library(mpath-static STATIC mpath_sources)
+path64_set_multitarget_property(mpath-static OUTPUT_NAME "mpath")
+
+path64_add_multitarget_library(mpath SHARED mpath_sources)
+path64_set_multitarget_property(mpath COMPILE_DEFINITIONS PIC)
+path64_set_multitarget_property(mpath SOVERSION 1)
+
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-set_property(TARGET mpath PROPERTY LINK_FLAGS "-Wl,-x -Wl,--version-script=${libmpath_SOURCE_DIR}/libmpath.vs")
+    path64_set_multitarget_property(mpath LINK_FLAGS
+            "-Wl,-x -Wl,--version-script=${libmpath_SOURCE_DIR}/libmpath.vs")
 endif()
 
-target_link_libraries(mpath m)
+path64_multitarget_link_libraries(mpath m)
 
-install(TARGETS mpath-static mpath
-        LIBRARY DESTINATION ${PATH64_LIB_PATH}
-        ARCHIVE DESTINATION ${PATH64_LIB_PATH})
+if(PATH64_ENABLE_PROFILING)
+    path64_add_multitarget_library(mpath_p STATIC mpath_sources)
+    if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+        path64_set_multitarget_property(mpath_p COMPILE_FLAGS -pg)
+    endif()
 
-
-IF(PATH64_ENABLE_PROFILING)
-add_library(mpath_p STATIC ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-set_property(TARGET mpath_p PROPERTY COMPILE_FLAGS -pg)
-endif()
-install(TARGETS mpath_p
-        LIBRARY DESTINATION ${PATH64_LIB_PATH}
-        ARCHIVE DESTINATION ${PATH64_LIB_PATH})
-ENDIF(PATH64_ENABLE_PROFILING)
+endif(PATH64_ENABLE_PROFILING)
 
 ENDIF(PATH64_ENABLE_MATHLIBS)
+
