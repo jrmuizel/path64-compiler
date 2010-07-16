@@ -240,7 +240,8 @@ add_string_if_new_basename (string_list_t *list, const char *s)
 {
 	string_item_t *p;
         char *dup_s = strdup(s);
-	char *base_s = basename(dup_s);
+	char *base_s = strdup(basename(dup_s));
+	free(dup_s);
         for (p = list->head; p != NULL; p = p->next) {
 		char *base_name;
                 char *dup_filename = strdup(p->name);
@@ -248,7 +249,7 @@ add_string_if_new_basename (string_list_t *list, const char *s)
 
                 if (strcmp(base_name, base_s) == 0 && strlen(base_name) > 1 ){
                         free(dup_filename);
-                        free(dup_s);
+                        free(base_s);
                         return;         /* already in list */
                 } else {
                         free(dup_filename);
@@ -256,7 +257,7 @@ add_string_if_new_basename (string_list_t *list, const char *s)
         }
         /* string not in list */
         add_string (list, s);
-        free(dup_s);
+        free(base_s);
 }
 
 
