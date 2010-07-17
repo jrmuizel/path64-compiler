@@ -72,6 +72,12 @@
 
 #include "license.h"
 
+#ifdef __NetBSD__
+#define	PSC_CRT1	"crt0.o"
+#else
+#define	PSC_CRT1	"crt1.o"
+#endif
+
 char *outfile = NULL;		/* from -o <outfile> */
 char *prof_file = NULL;	/* executable file for prof to work upon */
 char *fb_file = NULL;		/* from -fb_create <feedback-file> */
@@ -1633,7 +1639,7 @@ add_file_args (string_list_t *args, phases_t index)
                  * See the other part in add_final_ld_args() */
                 if( ! option_was_seen(O_nostartfiles)){
                        if ((shared != DSO_SHARED) && (shared != RELOCATABLE)){
-			   add_string_if_new_basename(args, PSC_CRT_PATH"/crt1.o");
+			   add_string_if_new_basename(args, PSC_CRT_PATH"/"PSC_CRT1);
 			   add_string_if_new_basename(args, PSC_CRT_PATH"/crti.o");
 			   temp = malloc(strlen(get_phase_dir(P_library)) + 12);
 			   strcpy(temp, get_phase_dir(P_library));
@@ -1686,7 +1692,7 @@ add_file_args (string_list_t *args, phases_t index)
 		if ((shared != DSO_SHARED) && (shared != RELOCATABLE)
 		    && ! option_was_seen(O_nostartfiles)) 
 		{
-                        add_string_if_new_basename(args, PSC_CRT_PATH"/crt1.o");
+                        add_string_if_new_basename(args, PSC_CRT_PATH"/"PSC_CRT1);
                         add_string_if_new_basename(args, PSC_CRT_PATH"/crti.o");
 			temp = malloc(strlen(get_phase_dir(P_library)) + 12);
 			strcpy(temp, get_phase_dir(P_library));
