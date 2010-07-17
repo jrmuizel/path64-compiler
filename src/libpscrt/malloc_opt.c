@@ -21,17 +21,15 @@
  */
 
 
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
-#include <stdlib.h>
-#else /* defined(BUILD_OS_DARWIN) */
+#ifdef USE_MALLOPT
 #include <malloc.h>
-#endif /* defined(BUILD_OS_DARWIN) */
+#endif
 
 // Use the alternate malloc algorithm indicated by ALG_NUM.
 void
 __pathscale_malloc_alg (int alg_num)
 {
-#if ! (defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)) /* Mallopt not supported */
+#ifdef USE_MALLOPT
   // Currently there are three alternate algorithms.  Bug 10736
   switch (alg_num){
    case 1:

@@ -1,5 +1,16 @@
 project(libpscrt)
 
+include(CheckFunctionExists)
+include(CheckSymbolExists)
+
+check_symbol_exists(M_MMAP_MAX "malloc.h" HAVE_M_MMAP_MAX)
+check_symbol_exists(M_TRIM_THRESHOLD  "malloc.h" HAVE_M_TRIM_THRESHOLD)
+check_function_exists(mallopt HAVE_MALLOPT)
+
+if(HAVE_M_MMAP_MAX AND HAVE_M_TRIM_THRESHOLD AND HAVE_MALLOPT)
+    set_source_files_properties(malloc_opt.c PROPERTIES COMPILE_FLAGS -DUSE_MALLOPT)
+endif()
+
 if(PATH64_BUILD_32)
 
 set(pscrt_sources
