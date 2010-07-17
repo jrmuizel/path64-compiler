@@ -106,7 +106,7 @@ extern "C"{
 extern "C" char *cplus_demangle (const char *, int);
 #endif
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

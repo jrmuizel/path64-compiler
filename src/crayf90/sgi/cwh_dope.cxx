@@ -85,7 +85,7 @@ static char *rcs_id = "$Source: crayf90/sgi/SCCS/s.cwh_dope.cxx $ $Revision: 1.8
 #include "cwh_addr.h"
 
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

@@ -66,7 +66,7 @@
 #include "profile_type.h"    /* for PROFILE_TYPE */
 #include "get_options.h"
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 
