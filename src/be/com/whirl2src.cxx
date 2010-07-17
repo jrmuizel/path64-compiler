@@ -253,4 +253,4 @@ Whirl2Src_Translate_Istore_Str(char *str_buf,
   }
 }
 
-#endif USE_WEAK_REFERENCES
+#endif // USE_WEAK_REFERENCES
