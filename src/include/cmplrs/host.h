@@ -80,16 +80,5 @@ typedef int32_t fsize_t; /* Size of a "hidden length" when passing Fortran CHARA
 
 #endif
 
-#if defined(_LANGUAGE_PASCAL)
-
-#if defined(_LONGLONG)
-type long_integer = integer64;
-type long_cardinal = cardinal64;
-#else
-type long_integer = integer;
-type long_cardinal = cardinal;
-#endif
-#endif
-
 #endif
 
