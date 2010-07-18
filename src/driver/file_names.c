@@ -103,7 +103,7 @@ get_object_file (char *src)
 	    !option_was_seen(O_c) &&
 	    keep_flag != TRUE) {
 	  char *p;
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
+#if !defined(__linux__)
 	  src = strcpy(alloca(strlen(src) + sizeof '\0'), src);
 #else /* defined(BUILD_OS_DARWIN) */
 	  src = strdupa(src);
