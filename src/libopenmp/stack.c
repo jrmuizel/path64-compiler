@@ -228,7 +228,7 @@ int __pmp_get_stack_size_limit(const char *new_limit, long long *max_stack_ptr,
                                int nthreads)
 {
   struct rlimit rl;
-  long long page_size, npages, ncpus;
+  long long ncpus;
   long long phys_mem;
   long long max_stack;
   int verbose = getenv("PSC_STACK_VERBOSE") != NULL;
@@ -248,17 +248,17 @@ int __pmp_get_stack_size_limit(const char *new_limit, long long *max_stack_ptr,
   }
  
 #if defined(BUILD_OS_DARWIN)
-  page_size = get_sysctl_int("hw.pagesize");
-  npages = get_sysctl_int("hw.memsize") / page_size;
+  physmem = get_sysctl_int("hw.memsize");
   ncpus = get_sysctl_int(SYSCTL_NPROCESSORS_ONLN);
+#elif defined(__NetBSD__)
+  phys_mem = get_sysctl_int("hw.physmem64");
+  ncpus = sysconf(_SC_NPROCESSORS_ONLN);
 #else /* defined(BUILD_OS_DARWIN) */
-  page_size = sysconf(_SC_PAGE_SIZE);
-  npages = sysconf(_SC_PHYS_PAGES);
+  phys_mem = (long long)sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGE_SIZE);
   ncpus = sysconf(_SC_NPROCESSORS_ONLN);
 #endif /* defined(BUILD_OS_DARWIN) */
   nthreads = (nthreads > 0) ? nthreads : ncpus;
  
-  phys_mem = (long long) page_size * npages;
  
   dprint("Physical memory: %lld bytes\n", phys_mem);
   dprint("Number of CPUs: %lld\n", ncpus);
