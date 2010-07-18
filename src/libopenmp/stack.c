@@ -202,11 +202,7 @@ void __pmp_catch_segv (void)
  
   memset(&sa, 0, sizeof(sa));
   sa.sa_sigaction = __pmp_segv;
-#if defined(BUILD_OS_DARWIN)
   sa.sa_flags = SA_RESETHAND | SA_ONSTACK | SA_SIGINFO | SA_NODEFER;
-#else /* defined(BUILD_OS_DARWIN) */
-  sa.sa_flags = SA_ONESHOT | SA_ONSTACK | SA_SIGINFO | SA_NOMASK;
-#endif /* defined(BUILD_OS_DARWIN) */
  
   if (sigaltstack(&ss, NULL) == -1) {
     perror("sigaltstack");
