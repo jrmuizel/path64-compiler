@@ -51,9 +51,6 @@
 #include <signal.h>
 #include <sys/param.h>
 #include <sys/resource.h>
-#if ! defined(BUILD_OS_DARWIN)
-#include <sys/procfs.h>
-#endif /* ! defined(BUILD_OS_DARWIN) */
 #include <limits.h>
 #if HAVE_ALLOCA_H
 #include <alloca.h>
