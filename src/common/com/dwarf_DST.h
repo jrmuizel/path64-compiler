@@ -697,6 +697,10 @@ typedef struct DST_var_def
 #ifdef KEY
    DST_STR_IDX    linkage_name;  /* Mangled name of variable */
 #endif
+#ifdef TARG_ST // [CL]
+   DST_accessibility accessibility; /* AT_accessibility code */
+#endif
+
 }  DST_VAR_DEF;
 
 typedef struct DST_var_const
@@ -755,6 +759,12 @@ typedef union DST_variable
 #endif
 #define DST_VARIABLE_def_abstract_origin(attr) ((attr)->def.abstract_origin)
 #define DST_VARIABLE_def_dopetype(attr) ((attr)->def.dopetype)
+#ifdef TARG_ST // [CL]
+#define DST_VARIABLE_decl_linkage_name(attr) ((attr)->decl.linkage_name)
+#define DST_VARIABLE_def_linkage_name(attr) ((attr)->def.linkage_name)
+#define DST_VARIABLE_decl_accessibility(attr) ((attr)->def.accessibility)
+#define DST_VARIABLE_def_accessibility(attr) ((attr)->def.accessibility)
+#endif
 
 #define DST_VARIABLE_constant_decl(attr) ((attr)->constant.decl)
 #define DST_VARIABLE_constant_name(attr) ((attr)->constant.name)
@@ -1115,6 +1125,11 @@ typedef struct DST_inheritance
 #ifdef KEY
    DST_accessibility 	accessibility;/* Accessibility for C++ */ 
 #endif
+#ifdef TARG_ST
+   // [CL]
+   DST_size_t     virtual_offset; /* Offset of virtual base class */
+#endif
+
 } DST_INHERITANCE;
 
 #define DST_INHERITANCE_decl(attr)      ((attr)->decl)
@@ -1123,6 +1138,10 @@ typedef struct DST_inheritance
 #define DST_INHERITANCE_memb_loc(attr)  ((attr)->memb_loc)
 #ifdef KEY
 #define DST_INHERITANCE_accessibility(attr) ((attr)->accessibility)
+#ifdef TARG_ST
+// [CL]
+#define DST_INHERITANCE_virtual_offset(attr) ((attr)->virtual_offset)
+#endif
 #endif
 
 
@@ -1322,6 +1341,12 @@ DST_preorder_visit(
    INT32        init_val, 
    INT32 (*action)(INT32, DST_DW_tag, DST_flag, DST_ATTR_IDX, DST_INFO_IDX));
 
+#ifdef TARG_ST
+// [CL] needed in wfe_dst.cxx, to handle forward declaration of
+// structures/unions
+BE_EXPORTED extern DST_INFO_IDX *
+DST_get_ptr_to_lastChildField(DST_INFO *parent);
+#endif
 
 #ifdef __cplusplus
 }

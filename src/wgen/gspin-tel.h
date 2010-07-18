@@ -324,6 +324,10 @@ extern gs_t gs_build_type(gs_code_t code);
 #define GS_TYPE_POINTER_TO		18
 #define GS_TYPE_REFERENCE_TO		19
 #define GS_TYPE_NEXT_PTR_TO		GS_TYPE_MIN_VALUE
+#ifdef TARG_ST
+#  define GS_TYPE_STUB_DECL             GS_TREE_CHAIN
+#endif
+
 // ---- C++ ----
 #define GS_TYPE_BINFO			20
 #define GS_TYPE_MAIN_VARIANT		21
@@ -342,6 +346,11 @@ extern gs_t gs_build_type(gs_code_t code);
 #  define GS_TYPE_HAS_DEFAULT_CONSTRUCTOR  9
 #  define GS_TYPE_HAS_IMPLICIT_COPY_CONSTRUCTOR  10
 #endif
+#ifdef TARG_ST
+#  define GS_TYPE_NOTHROW_P             11
+#  define GS_ANON_AGGR_TYPE_P           12
+#endif
+
 // ---- end GS_CP_TYPE_FLAGS definition ----
 #define GS_TYPE_VFIELD                  GS_TYPE_MIN_VALUE
 #define GS_TYPE_METHODS                 GS_TYPE_MAX_VALUE
@@ -535,6 +544,9 @@ extern gs_t gs_build_type(gs_code_t code);
 #define GS_BINFO_TYPE			4
 #define GS_BINFO_BASE_BINFOS		5	// gspin list
 #define GS_BINFO_VPTR_FIELD		6
+#ifdef TARG_ST
+#define GS_BINFO_OFFSET                 7
+#endif
 
 // GS_BLOCK
 #define GS_BLOCK_VARS			4
@@ -875,6 +887,10 @@ GS_LOOKUP (gs_type_next_ptr_to, GS_TYPE_NEXT_PTR_TO)
 static inline void gs_set_type_next_ptr_to(gs_t t, gs_t val) {
   gs_set_operand(t, GS_TYPE_NEXT_PTR_TO, val);
 }
+#ifdef TARG_ST
+GS_LOOKUP (gs_type_stub_decl, GS_TYPE_STUB_DECL)
+#endif
+
 static inline gs_int_t gs_tree_code_length (gs_t t) {
   return gs_n (gs_operand (t, GS_ARITY));
 }
@@ -1134,11 +1150,19 @@ GS_LOOKUP_FLAG (GS_CP_TYPE_FLAGS, gs_type_has_implicit_copy_constructor,
 		GS_TYPE_HAS_IMPLICIT_COPY_CONSTRUCTOR)
 #endif
 // C++ Type Flags- }
+#ifdef TARG_ST
+GS_LOOKUP_FLAG (GS_CP_TYPE_FLAGS, gs_type_nothrow_p, GS_TYPE_NOTHROW_P)
+GS_LOOKUP_FLAG (GS_CP_TYPE_FLAGS, gs_anon_aggr_type_p, GS_ANON_AGGR_TYPE_P)
+#endif
 
 GS_LOOKUP (gs_type_binfo, GS_TYPE_BINFO)
 GS_LOOKUP (gs_binfo_type, GS_BINFO_TYPE)
 GS_LOOKUP (gs_binfo_base_binfos, GS_BINFO_BASE_BINFOS)
 GS_LOOKUP (gs_binfo_vptr_field, GS_BINFO_VPTR_FIELD)
+#ifdef TARG_ST
+GS_LOOKUP (gs_binfo_offset, GS_BINFO_OFFSET)
+#endif
+    
 GS_LOOKUP_FLAG (GS_FLAGS, gs_binfo_virtual_p, GS_BINFO_VIRTUAL_P)
 
 GS_LOOKUP (gs_decl_template_specializations, GS_DECL_SIZE)
