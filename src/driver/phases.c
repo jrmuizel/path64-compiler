@@ -72,12 +72,6 @@
 
 #include "license.h"
 
-#ifdef __NetBSD__
-#define	PSC_CRT1	"crt0.o"
-#else
-#define	PSC_CRT1	"crt1.o"
-#endif
-
 char *outfile = NULL;		/* from -o <outfile> */
 char *prof_file = NULL;	/* executable file for prof to work upon */
 char *fb_file = NULL;		/* from -fb_create <feedback-file> */
