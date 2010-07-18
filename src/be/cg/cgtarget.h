@@ -613,8 +613,13 @@ CGTARG_Immed_To_Reg(TOP opr)
   return CGTARG_Immed_To_Reg_Table[(INT)opr];
 }
 #endif
+#ifdef TARG_ST
+extern void CGTARG_Perform_THR_Code_Generation(OP *load_op, 
+					       THR_TYPE type);
+#else
 extern void CGTARG_Perform_THR_Code_Generation(OP *load_op, OP *check_load,
 					       THR_TYPE type);
+#endif
 extern INT  CGTARG_ARC_Sched_Latency( ARC *arc );
 extern void CGTARG_Handle_Errata_Hazard (OP *op, INT erratnum, 
 					 INT ops_to_check);

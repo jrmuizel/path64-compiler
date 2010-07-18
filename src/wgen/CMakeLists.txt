@@ -10,10 +10,9 @@ include_directories(
   ../ipa/local
   ../ipa/main/analyze
   ../ipa/main/optimize
-
+  ../ipa_link/include
   ../be/com
   ${PATHSCALE_BINARY_DIR}/../GCC/gcc
-  ../../GCC/include
   ../../GCC/gcc
   ../libair
   ../common/targ_info/parser/inc/

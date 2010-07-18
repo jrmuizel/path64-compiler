@@ -114,7 +114,6 @@
 #include "config_asm.h"
 
 #if defined( KEY) && !defined(TARG_ST)
-#include "cgexp_internals.h"
 #include "cxx_template.h" // for STACK
 #endif
 #ifdef TARG_ST

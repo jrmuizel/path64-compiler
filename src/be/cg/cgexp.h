@@ -74,6 +74,7 @@
 
 #include "variants.h"
 #include "cgtarget.h"
+#include "cgexp_internals.h"
 
 extern void Init_CG_Expand (void);	/* setup trace flags */
 
@@ -365,7 +366,6 @@ extern BOOL Target_Has_Immediate_Operand (WN *parent, WN *expr);
 extern void CG_Set_Is_Stack_Used();
 #endif
 #ifdef TARG_ST
-#include "cgexp_internals.h"
 #include "exp_targ.h"
 #endif
 #endif /* cgexp_INCLUDED */

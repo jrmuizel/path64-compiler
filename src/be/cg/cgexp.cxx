@@ -68,7 +68,6 @@
 #include "op.h"
 #include "bb.h"
 #include "cgexp.h"
-#include "cgexp_internals.h"
 #include "w2op.h"
 
 BOOL Trace_Exp = FALSE;	/* General code expansion trace */

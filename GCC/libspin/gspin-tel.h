@@ -151,6 +151,9 @@ extern gs_t gs_build_type(gs_code_t code);
 #ifdef FE_GNU_4_2_0
 #  define GS_C_DECL_THREADPRIVATE_P     GS_DECL_LANG_FLAG_3
 #endif
+#ifdef TARG_ST
+#  define GS_DECL_VISIBILITY_SPECIFIED  63
+#endif
 
 // flags specific to GS_TCC_TYPE:
 #  define GS_TYPE_UNSIGNED		23
@@ -272,6 +275,26 @@ extern gs_t gs_build_type(gs_code_t code);
 #define GS_THUNK_FIXED_OFFSET		39
 #define GS_THUNK_VIRTUAL_OFFSET		40
 #define GS_DECL_NAMED_RETURN_OBJECT	41
+#ifdef TARG_ST
+#define GS_DECL_TEMPLATE_INSTANTIATIONS GS_DECL_VINDEX
+#define GS_DECL_VISIBILITY              42
+#define GS_DECL_TLS_MODEL               43
+#define GS_DECL_FLAGS                   44
+
+// flags in GS_DECL_FLAGS
+#  define GS_DECL_IS_PURE                0
+#  define GS_DECL_STATIC_CONSTRUCTOR     1
+#  define GS_DECL_STATIC_DESTRUCTOR      2
+#  define GS_DECL_IS_MALLOC              3
+#  define GS_DECL_UNINLINABLE            4
+#  define GS_DECL_DWARF_INFO_NEEDED      5
+
+#define GS_DECL_PRINTABLE_NAME          45
+#define GS_DECL_FCONTEXT                46
+#define GS_DECL_BIT_FIELD_TYPE          47
+#define GS_DECL_WFE_PRAGMA_CONTEXT      48
+#endif
+
 //   ==== end GS_TCC_DECLARATION fields
 
 
@@ -605,6 +628,9 @@ GS_LOOKUP_FLAG (GS_FLAGS, gs_tree_addressable, GS_TREE_ADDRESSABLE)
 GS_LOOKUP_FLAG (GS_FLAGS, gs_tree_this_volatile, GS_TREE_THIS_VOLATILE)
 GS_LOOKUP_FLAG (GS_FLAGS, gs_tree_asm_written, GS_TREE_ASM_WRITTEN)
 GS_LOOKUP_FLAG (GS_FLAGS, gs_tree_used, GS_TREE_USED)
+#ifdef TARG_ST
+GS_UPDATE_FLAG (GS_FLAGS, gs_set_tree_used, GS_TREE_USED)
+#endif
 GS_LOOKUP_FLAG (GS_FLAGS, gs_tree_nothrow, GS_TREE_NOTHROW)
 GS_LOOKUP_FLAG (GS_FLAGS, gs_tree_public, GS_TREE_PUBLIC)
 GS_LOOKUP_FLAG (GS_FLAGS, gs_asm_volatile_p, GS_ASM_VOLATILE_P)
@@ -662,6 +688,9 @@ GS_LOOKUP_FLAG (GS_FLAGS, gs_decl_lang_flag_5, GS_DECL_LANG_FLAG_5)
 GS_LOOKUP_FLAG (GS_FLAGS, gs_decl_lang_flag_6, GS_DECL_LANG_FLAG_6)
 GS_LOOKUP_FLAG (GS_FLAGS, gs_decl_lang_flag_7, GS_DECL_LANG_FLAG_7)
 GS_LOOKUP_FLAG (GS_FLAGS, gs_decl_user_align, GS_DECL_USER_ALIGN)
+#ifdef TARG_ST
+GS_UPDATE_FLAG (GS_FLAGS, gs_set_decl_user_align, GS_DECL_USER_ALIGN)
+#endif
 GS_LOOKUP_FLAG (GS_FLAGS, gs_decl_offset_align, GS_DECL_OFFSET_ALIGN)
 GS_LOOKUP_FLAG (GS_FLAGS, gs_decl_pointer_alias_set, GS_DECL_POINTER_ALIAS_SET)
 GS_LOOKUP_FLAG (GS_FLAGS, gs_decl_thunk_p, GS_DECL_THUNK_P)
@@ -676,6 +705,23 @@ GS_UPDATE_FLAG (GS_FLAGS, gs_set_decl_threadprivate, GS_DECL_THREADPRIVATE)
 #ifdef FE_GNU_4_2_0
 GS_LOOKUP_FLAG (GS_FLAGS, gs_c_decl_threadprivate_p, GS_C_DECL_THREADPRIVATE_P)
 GS_UPDATE_FLAG (GS_FLAGS, gs_set_c_decl_threadprivate_p, GS_C_DECL_THREADPRIVATE_P)
+#endif
+#ifdef TARG_ST
+GS_LOOKUP_FLAG (GS_FLAGS, gs_decl_visibility_specified, GS_DECL_VISIBILITY_SPECIFIED)
+GS_UPDATE_FLAG (GS_FLAGS, gs_set_decl_visibility_specified, GS_DECL_VISIBILITY_SPECIFIED)
+
+GS_LOOKUP_FLAG (GS_DECL_FLAGS, gs_decl_is_pure, GS_DECL_IS_PURE)
+GS_UPDATE_FLAG (GS_DECL_FLAGS, gs_set_decl_is_pure, GS_DECL_IS_PURE)
+GS_LOOKUP_FLAG (GS_DECL_FLAGS, gs_decl_static_constructor, GS_DECL_STATIC_CONSTRUCTOR)
+GS_UPDATE_FLAG (GS_DECL_FLAGS, gs_set_decl_static_constructor, GS_DECL_STATIC_CONSTRUCTOR)
+GS_LOOKUP_FLAG (GS_DECL_FLAGS, gs_decl_static_destructor, GS_DECL_STATIC_DESTRUCTOR)
+GS_UPDATE_FLAG (GS_DECL_FLAGS, gs_set_decl_static_destructor, GS_DECL_STATIC_DESTRUCTOR)
+GS_LOOKUP_FLAG (GS_DECL_FLAGS, gs_decl_is_malloc, GS_DECL_IS_MALLOC)
+GS_UPDATE_FLAG (GS_DECL_FLAGS, gs_set_decl_is_malloc, GS_DECL_IS_MALLOC)
+GS_LOOKUP_FLAG (GS_DECL_FLAGS, gs_decl_uninlinable, GS_DECL_UNINLINABLE)
+GS_UPDATE_FLAG (GS_DECL_FLAGS, gs_set_decl_uninlinable, GS_DECL_UNINLINABLE)
+GS_LOOKUP_FLAG (GS_DECL_FLAGS, gs_decl_dwarf_info_needed, GS_DECL_DWARF_INFO_NEEDED)
+GS_UPDATE_FLAG (GS_DECL_FLAGS, gs_set_decl_dwarf_info_needed, GS_DECL_DWARF_INFO_NEEDED)
 #endif
 
 GS_LOOKUP_FLAG (GS_FLAGS, gs_decl_needed, GS_DECL_NEEDED)
@@ -927,6 +973,12 @@ GS_LOOKUP (gs_statement_list_elts, GS_STATEMENT_LIST_ELTS)
 static inline gs_int_t gs_decl_align_unit (gs_t t) {
   return gs_n (gs_operand (t, GS_DECL_ALIGN_UNIT));
 }
+#ifdef TARG_ST
+static inline void gs_set_decl_align_unit (gs_t t, gs_int_t val) {
+  
+  gs_set_operand(t, GS_DECL_ALIGN_UNIT, gs_build_int_cst ((gs_long_long_t) val));
+}
+#endif
 GS_LOOKUP (gs_decl_assembler_name, GS_DECL_ASSEMBLER_NAME)
 GS_LOOKUP (gs_decl_alias_target, GS_DECL_ALIAS_TARGET)
 static inline void gs_set_decl_alias_target(gs_t t, gs_t val) {
@@ -1043,12 +1095,26 @@ GS_LOOKUP (gs_most_general_template, GS_MOST_GENERAL_TEMPLATE)
 GS_LOOKUP (gs_decl_namespace_alias, GS_DECL_NAMESPACE_ALIAS)
 GS_LOOKUP (gs_thunk_target, GS_THUNK_TARGET)
 GS_LOOKUP (gs_decl_ti_template, GS_DECL_TI_TEMPLATE)
+#ifdef TARG_ST
+GS_LOOKUP (gs_decl_template_instantiations, GS_DECL_TEMPLATE_INSTANTIATIONS)
+#else
 GS_LOOKUP (gs_decl_template_instantiations, GS_DECL_VINDEX)
+#endif
 static inline gs_long_t gs_thunk_fixed_offset (gs_t t) {
   return gs_n (gs_operand (t, GS_THUNK_FIXED_OFFSET));
 }
 GS_LOOKUP (gs_thunk_virtual_offset, GS_THUNK_VIRTUAL_OFFSET)
 GS_LOOKUP (gs_decl_named_return_object, GS_DECL_NAMED_RETURN_OBJECT)
+#ifdef TARG_ST
+GS_LOOKUP (gs_decl_visibility, GS_DECL_VISIBILITY)
+GS_LOOKUP (gs_decl_tls_model, GS_DECL_TLS_MODEL)
+static inline gs_string_t gs_decl_printable_name (gs_t t) {
+  return gs_s (gs_operand (t, GS_DECL_PRINTABLE_NAME));
+}
+GS_LOOKUP (gs_decl_fcontext, GS_DECL_FCONTEXT)
+GS_LOOKUP (gs_decl_bit_field_type, GS_DECL_BIT_FIELD_TYPE)
+GS_LOOKUP (gs_decl_wfe_pragma_context, GS_DECL_WFE_PRAGMA_CONTEXT)
+#endif
 
 // C++ Type Flags+ {
 GS_LOOKUP_FLAG (GS_CP_TYPE_FLAGS, gs_type_ptrmemfunc_p, GS_TYPE_PTRMEMFUNC_P)

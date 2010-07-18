@@ -843,13 +843,20 @@ void expand_start_do_loop (gs_t init_expr, gs_t logical_expr, gs_t incr_expr)
         TYPE_ID mtyp0 = TY_mtype(ty_idx0);
         TY_IDX ty_idx1 = Get_TY(gs_tree_type(gs_tree_operand(logical_expr, 1)));
         TYPE_ID mtyp1 = TY_mtype(ty_idx1);
-
+#ifdef TARG_ST
+        if (MTYPE_size_min(mtyp1) > MTYPE_size_min(mtyp0))
+#else
         if (MTYPE_size_min(mtyp1) > MTYPE_size_min(mtyp0) &&
             ! Has_Subsumed_Cvtl(WN_operator(var)))
+#endif
           var = WN_CreateCvtl(OPR_CVTL, Widen_Mtype(mtyp0), MTYPE_V,
                               MTYPE_size_min(mtyp0), var);
+#ifdef TARG_ST
+        if (MTYPE_size_min(mtyp0) > MTYPE_size_min(mtyp1))
+#else
         if (MTYPE_size_min(mtyp0) > MTYPE_size_min(mtyp1) &&
             ! Has_Subsumed_Cvtl(WN_operator(ub)))
+#endif
           ub = WN_CreateCvtl(OPR_CVTL, Widen_Mtype(mtyp1), MTYPE_V,
                               MTYPE_size_min(mtyp1), ub);
 

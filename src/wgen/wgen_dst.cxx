@@ -93,6 +93,9 @@ extern "C"{
 #include <sys/types.h>
 #include <sys/stat.h>   /* For accessing file statistics (stat()) */
 #include <sys/param.h>  /* For MAXHOSTNAMELEN */
+#ifdef __sun
+#include <netdb.h>      /* For MAXHOSTNAMELEN */
+#endif
 #include <unistd.h>     /* for gethostname() and getcwd() */
 #include <string>
 #include <vector>
@@ -101,6 +104,10 @@ extern "C"{
 #include "stamp.h"	/* For INCLUDE_STAMP */
 #include "demangle.h"
 extern "C" char *cplus_demangle (const char *, int);
+#endif
+
+#if !defined(__FreeBSD__)
+#include <alloca.h>
 #endif
 
 
@@ -1284,11 +1291,8 @@ typedef struct type_trans {
 	const char *name;
 	DST_ATE_encoding encoding;
 } type_trans;
-#ifdef TARG_ST
-static DST_INFO_IDX base_types[MTYPE_STATIC_LAST+5] =
-#else
+
 static DST_INFO_IDX base_types[MTYPE_LAST+5] =  
-#endif
 {
 DST_INVALID_INIT,DST_INVALID_INIT,DST_INVALID_INIT,DST_INVALID_INIT,	
 DST_INVALID_INIT,DST_INVALID_INIT,DST_INVALID_INIT,DST_INVALID_INIT,	
@@ -1455,11 +1459,9 @@ DST_enter_subroutine_type(gs_t type_tree)
 
     // If the front-end adds the fake first param, then convert the function to
     // return void.
-
-#ifndef TARG_ST
     if (TY_return_in_mem(ret_ty_idx))
       ret_ty_idx = Be_Type_Tbl(MTYPE_V);
-#endif
+
     DST_INFO_IDX ret_ty_dst_idx = DST_INVALID_IDX;
     if (ret_ty_idx != Be_Type_Tbl(MTYPE_V)) {
       gs_t type = gs_tree_type(type_tree);
@@ -2970,6 +2972,8 @@ DST_build(int num_copts, /* Number of options passed to fec(c) */
 	    // domain name) don't add the domain again...
 	    // Somehow.
 	 } else {
+#ifndef __sun
+           //opensolaris don't have "domainname" interface
 	   current_host_dir[host_name_length] = '.';
 	   if (getdomainname(&current_host_dir[host_name_length+1], 
 			   MAXHOSTNAMELEN-host_name_length) == 0)
@@ -2977,6 +2981,7 @@ DST_build(int num_copts, /* Number of options passed to fec(c) */
 	    /* Domain name is ok */
 	    host_name_length += strlen(&current_host_dir[host_name_length]);
 	   }
+#endif
          }
 
       }

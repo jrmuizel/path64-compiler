@@ -74,7 +74,7 @@ Please add -DPATH64_ENABLE_TARGETS=x8664 to your cmake line
 Multiple targets can be specified like \"-DPATH64_ENABLE_TARGETS=x8664;mips\"" )
 ENDIF()
 # Multi target support is indefinitely delayed
-set(BUILD_TARGET_DIR "x8664")
+set(BUILD_TARGET_DIR "arm")
 
 # Define if we are doing a supported build
 OPTION(PATH64_ENABLE_SUPPORTED "Enabling supported build" OFF)

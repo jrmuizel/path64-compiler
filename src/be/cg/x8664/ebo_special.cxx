@@ -100,7 +100,7 @@ static const char source_file[] = __FILE__;
 #include "reg_live.h"
 #include "cflow.h"
 #include "cg_spill.h"
-#include "cgexp_internals.h"
+
 #include "data_layout.h"
 #include "stblock.h"
 #include "cxx_hash.h"

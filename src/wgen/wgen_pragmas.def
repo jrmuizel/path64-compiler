@@ -1,0 +1,130 @@
+/*
+  Copyright (C) 2002, STMicroelectronics, All Rights Reserved.
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms of version 2 of the GNU General Public License as
+  published by the Free Software Foundation.
+
+  This program is distributed in the hope that it would be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+
+  Further, this software is distributed without any warranty that it is
+  free of the rightful claim of any third person regarding infringement 
+  or the like.  Any license provided herein, whether implied or 
+  otherwise, applies only to this software file.  Patent licenses, if 
+  any, provided herein do not apply to combinations of this program with 
+  other software, or any other product whatsoever.  
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write the Free Software Foundation, Inc., 59
+  Temple Place - Suite 330, Boston MA 02111-1307, USA.
+*/
+
+/* 
+   wgen_pragmas.def
+   Defines the pragmas recognixed by the WFE translator.
+   For each pragma a declaration consists of:
+   DECL_WGEN_PRAGMA(id, name, in_code, wn_id, nargs, args_spec, usage) 
+   where each argument is:
+   id : the WFE side pragma identifier,
+   name: the string for the pragma name,
+   in_code: 0 if the pragma must appear outside a function scope or
+   	    1 if the pragma must appear inside a function scope,
+            2 if the pragma must appear inside a function adjacent to a
+	      loop
+   wn_id: the WHIRL side pragma identifier,
+   nargs: the minimal number of arguments to the pragma,
+   args_spec: the specification for the argument parsing (see below),
+   usage: the pragma usage for erro reporting.
+   
+   The specification string (arg_specs) is a light weight regular expression
+   for the definition of the pragma arguments syntax. 
+   The specification is built from the following grammar (BNF form):
+   <spec>	::= { <primary> } ;
+   <primary>	::= <punct> | <argument> | <expresison> ;
+   <punct> 	::= "(" | ")" | "," ;
+   <argument> 	::= 'S' 	    // matches a quotes string
+   		  | 'A' 	    // matches an alphanumeric identifier
+		  | 'I' 	    // matches an integer (32 bits)
+		  ;
+   <expression> ::= <argument> '?'  // optional argument (0 or 1)
+                  | <argument> '*'  // optional argument closure (0 or more)
+	      	  | <argument> '+'  // positive argument closure (1 or more)
+	          ;
+
+  For optional ('*') or positive ('+') closure of arguments the parser
+  will match comma (',') separated list of the same argument kind.
+
+  The effective parsing of the pragma arguments is performed in 
+  gnu/c-pragma.c. To extend this specification, modify this file and
+  the above comment.
+
+  A first level of error reporting is performed in gnu/c-pragma.c if
+  the pragma arguments do not match the specification.
+  For more detailled error reporting the support must be implmented
+  in wgen_pragmas.cxx that effectively maps the WFE side pragmas to the
+  WHIRL side pragmas.
+*/
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_UNDEFINED, "", 0, WN_PRAGMA_UNDEFINED, 0, "", "")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_UNROLL, "unroll", 2, WN_PRAGMA_UNROLL, 1, "(I)", "pragma unroll (n) - where n >= 0")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_IVDEP, "ivdep", 2, WN_PRAGMA_IVDEP, 0, "", "pragma ivdep")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_LOOPDEP, "loopdep", 2, WN_PRAGMA_LOOPDEP, 1, "A", "pragma loopdep PARALLEL|VECTOR|LIBERAL")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_LOOPMOD, "loopmod", 2, WN_PRAGMA_LOOPMOD, 1, "(I+)", "pragma loopmod (n [,m]) - where n > 0 and n > m > 0 such that tripcount = k*n + m")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_STREAM_ALIGNMENT, "stream_alignment", 2, WN_PRAGMA_STREAM_ALIGNMENT, 1, "(I)", "pragma stream_alignment (n) - where n > 0")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_PIPELINE, "pipeline", 2, WN_PRAGMA_PIPELINE, 1, "(I+)", "pragma pipeline (n [,m]) - where n >= 0 and m >= 0") 
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_PRELOAD, "preload", 2, WN_PRAGMA_PRELOAD, 1, "(I+)", "pragma preload (n [,m]) - where n >= 0 and m >= 0") 
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_FREQUENCY_HINT, "frequency_hint", 1, WN_PRAGMA_MIPS_FREQUENCY_HINT, 1, "A", "pragma frequency_hint NEVER|FREQUENT")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_INLINE_NEXT, "inline_next", 1, WN_PRAGMA_UNDEFINED, 0, "(A*)", "pragma inline_next (ident,...)")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_NOINLINE_NEXT, "noinline_next", 1, WN_PRAGMA_UNDEFINED, 0, "(A*)", "pragma noinline_next (ident,...)")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_INLINE_FUNCTION, "inline_function", 1, WN_PRAGMA_UNDEFINED, 0, "(A*)", "pragma inline_function (ident,...)")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_NOINLINE_FUNCTION, "noinline_function", 1, WN_PRAGMA_UNDEFINED, 0, "(A*)", "pragma noinline_function (ident,...)")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_INLINE_FILE, "inline_file", 0, WN_PRAGMA_UNDEFINED, 0, "(A*)", "pragma inline_file (ident,...)")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_NOINLINE_FILE, "noinline_file", 0, WN_PRAGMA_UNDEFINED, 0, "(A*)", "pragma noinline_file (ident,...)")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_DEFAULT_INLINE, "defaultinline", 1, WN_PRAGMA_UNDEFINED, 0, "(A*)", "pragma defaultinline (ident,...)")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_LOOPTRIP, "looptrip", 2, WN_PRAGMA_LOOPTRIP, 1, "(I)", "pragma looptrip (n) - where n >= 0")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_LOOPSEQ, "loopseq", 2, WN_PRAGMA_LOOPSEQ, 1, "A", "pragma loopseq READ|WRITE")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_HWLOOP, "hwloop", 2, WN_PRAGMA_HWLOOP, 1, "AI*", "pragma hwloop none|forcehwloop [-|0|1] |forcejrgtudec")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_LOOPMINITERCOUNT, "loopminitercount", 2, WN_PRAGMA_LOOPMINITERCOUNT, 1, "(I)", "pragma loopmin[itercount] (n) - where n >=0")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_LOOPMIN, "loopmin", 2, WN_PRAGMA_LOOPMINITERCOUNT, 1, "(I)", "pragma loopmin[itercount] (n) - where n >=0")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_LOOPMAXITERCOUNT, "loopmaxitercount", 2, WN_PRAGMA_LOOPMAXITERCOUNT, 1, "(I)", "pragma loopmax[itercount] (n) - where n >=0")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_LOOPMAX, "loopmax", 2, WN_PRAGMA_LOOPMAXITERCOUNT, 1, "(I)", "pragma loopmax[itercount] (n) - where n >=0")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_LOOPPACK, "looppack", 2, WN_PRAGMA_LOOPPACK, 1, "(I)", "pragma looppack (n) - where 0 <= n <= 2, n gives the level of packing to be performed")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_FORCE_EXTGEN, "force_extgen", 0, WN_PRAGMA_FORCE_EXTGEN, 1, "(A*)", "pragma force_extgen (ident,...)")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_DISABLE_EXTGEN, "disable_extgen", 0, WN_PRAGMA_DISABLE_EXTGEN, 1, "(A*)", "pragma disable_extgen (ident,...)")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_FORCE_SPECIFIC_EXTGEN, "force_specific_extgen", 0, WN_PRAGMA_FORCE_EXTGEN, 2, "(A*)", "pragma force_specific_extgen (extname,ident,...)")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_DISABLE_SPECIFIC_EXTGEN, "disable_specific_extgen", 0, WN_PRAGMA_DISABLE_EXTGEN, 2, "(A*)", "pragma disable_specific_extgen (extname,ident,...)")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_FORCE_EXTENSION_OPTION, "force_extension_option", 0, WN_PRAGMA_FORCE_EXTENSION_OPTION, 3, "(A*)", "pragma extension_option (extname,optionname,ident,...)")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_DISABLE_EXTENSION_OPTION, "disable_extension_option", 0, WN_PRAGMA_DISABLE_EXTENSION_OPTION, 3, "(A*)", "pragma extension_option (extname,optionname,ident,...)")
+
+DECL_WGEN_PRAGMA(WGEN_PRAGMA_ASM_PARSE, "parse_next_asmstmt", 1, WN_PRAGMA_ASM_PARSE, 1, "I", "pragma parse_next_asmstmt [0|1]")

@@ -543,11 +543,6 @@ inline void
 Set_ST_one_per_pu (ST* s)	{ s->flags_ext |= ST_ONE_PER_PU; }
 inline void
 Clear_ST_one_per_pu (ST* s)	{ s->flags_ext &= ~ST_ONE_PER_PU; }
-#ifdef TARG_ST
-#define ST_is_thread_local( s)     FALSE
-#define ST_initv_in_other_st( s)   FALSE
-#define ST_copy_constructor_st(s)  FALSE
-#else
 inline BOOL
 ST_copy_constructor_st(const ST* s)	{ return s->flags_ext & ST_COPY_CONSTRUCTOR_ST; }
 inline void
@@ -568,7 +563,6 @@ inline void
 Set_ST_is_thread_local (ST* s)		{ s->flags_ext |= ST_IS_THREAD_LOCAL; }
 inline void
 Clear_ST_is_thread_local (ST* s)	{ s->flags_ext &= ~ST_IS_THREAD_LOCAL; }
-#endif
 #endif
 
 #ifdef TARG_ST
@@ -1323,7 +1317,7 @@ inline void
 Set_TY_is_non_pod (TY_IDX tyi)    { Set_TY_is_non_pod(Ty_Table[tyi]); }
 inline void
 Clear_TY_is_non_pod (TY_IDX tyi)  { Clear_TY_is_non_pod(Ty_Table[tyi]); }
-#ifndef TARG_ST
+
 #ifdef KEY
 inline BOOL
 TY_return_in_mem (const TY& ty)		{ return ty.flags & TY_RETURN_IN_MEM; }
@@ -1394,7 +1388,6 @@ Set_TY_complete_struct_relayout_candidate(TY_IDX tyi)
 inline void
 Clear_TY_complete_struct_relayout_candidate(TY_IDX tyi)
   { Clear_TY_complete_struct_relayout_candidate(Ty_Table[tyi]); }
-#endif
 #endif
 #ifdef TARG_ST
 // (cbr) type doesn't throws */
