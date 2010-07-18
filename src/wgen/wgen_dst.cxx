@@ -2193,7 +2193,6 @@ DST_construct_pointer_to_member(gs_t type_tree)
 #ifndef TARG_ST
     gs_t ttree = gs_tree_type(type_tree);
 #endif
-    gs_t ttree = gs_tree_type(type_tree);
 #ifdef TARG_ST
     FmtAssert(gs_tree_code(type_tree) == GS_OFFSET_TYPE,
                           ("DST_construct_pointer_to_member:"

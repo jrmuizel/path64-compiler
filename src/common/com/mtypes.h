@@ -265,6 +265,10 @@ extern TYPE_DESC Machine_Types[];
 #endif // KEY
 #define MTYPE_is_m(n)		((n)==MTYPE_M)
 #define MTYPE_is_void(n)	((n)==MTYPE_V)
+#ifdef TARG_ST
+  //TB: Vector type support
+#define MTYPE_is_random(n)		(MTYPE_type_class(n)==MTYPE_CLASS_RANDOM) 
+#endif
 
 #define MTYPE_is_quad(n)	((n)==MTYPE_FQ || (n)==MTYPE_CQ)
 #define MTYPE_is_pointer(n)	((n)==Pointer_type || (n)==Pointer_type2)

@@ -45,15 +45,33 @@
 #include "wintrinsic.h"
 #include "wio.h"
 #include "wutil.h"
-#ifdef TARG_ST
-#define NOT_SUPPORT_ST(expr1, expr2)
-#else
 #define NOT_SUPPORT_ST(expr1, expr2) expr1, expr2,
-#endif
 #ifdef TARG_ST
 //TB: dynamic intrinsics support
 INTRINSIC INTRINSIC_COUNT;
 #endif
+#ifdef TARG_ST
+static const struct {
+  INTRINSIC   opcode;
+  const char      * name;
+} intrinsic_name_table [] = {
+  INTRINSIC_NONE,	"NONE",
+
+/* All intrinsic names are moved to intrn_entry.def */
+#define NEED_INTRN_ID_NAME
+#  include "intrn_entry.def"
+#undef NEED_INTRN_ID_NAME
+
+  INTRINSIC_GENERAL_LAST,       "INTRINSIC_GENERAL_LAST",
+
+#ifdef TARG_ST
+#include "targ_wutil.def"
+#endif
+
+  INTRINSIC_STATIC_COUNT,		"INTRINSIC_LAST"
+
+};
+#else
 static const struct {
   INTRINSIC   opcode;
   const char  * name;
@@ -1237,8 +1255,8 @@ static const struct {
   INTRN_F16F16I4EXPEXPR,	"INTRN_F16F16I4EXPEXPR",
   INTRN_EXPECT,			"INTRN_EXPECT",
 #ifndef TARG_X8664
-  NOT_SUPPORT_ST(INTRN_FLOOR,			"INTRN_FLOOR")
-  NOT_SUPPORT_ST(INTRN_FLOORF,			"INTRN_FLOORF")
+  INTRN_FLOOR,			"INTRN_FLOOR"
+  INTRN_FLOORF,			"INTRN_FLOORF"
 #else
   INTRN_MOVNTSS,		"INTRN_MOVNTSS",
   INTRN_MOVNTSD,                "INTRN_MOVNTSD",
@@ -1260,7 +1278,7 @@ static const struct {
   INTRINSIC_LAST,		"INTRINSIC_LAST"
 
 };
-
+#endif
 struct iostatement_name_table_t {
   IOSTATEMENT   opcode;
   const char        * name;

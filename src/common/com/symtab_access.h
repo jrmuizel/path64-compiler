@@ -919,7 +919,42 @@ inline void
 Set_PU_mp_lower_generated (PU& pu) 	{ pu.flags |= PU_MP_LOWER_GENERATED; }
 inline void
 Clear_PU_mp_lower_generated (PU& pu)	{ pu.flags &= ~PU_MP_LOWER_GENERATED; }
+#ifdef TARG_ST
+inline BOOL
+PU_is_operator (const PU& pu)    { return (pu.flags & PU_IS_OPERATOR) != 0; }
+inline void
+Set_PU_is_operator (PU& pu)      { pu.flags |= PU_IS_OPERATOR; }
+inline void
+Clear_PU_is_operator (PU& pu)    { pu.flags &= ~PU_IS_OPERATOR; }
 
+inline BOOL
+PU_is_malloc (const PU& pu)			{ return (pu.flags & PU_IS_MALLOC) != 0; } 
+inline void
+Set_PU_is_malloc (PU& pu)			{ pu.flags |= PU_IS_MALLOC; }
+inline void
+Clear_PU_is_malloc (PU& pu)			{ pu.flags &= ~PU_IS_MALLOC; }
+
+inline BOOL
+PU_has_attr_malloc (const PU& pu)      { return (pu.flags & PU_HAS_ATTR_MALLOC) != 0; } 
+inline void
+Set_PU_has_attr_malloc (PU& pu)        { pu.flags |= PU_HAS_ATTR_MALLOC; }
+inline void
+Clear_PU_has_attr_malloc (PU& pu)      { pu.flags &= ~PU_HAS_ATTR_MALLOC; }
+
+inline BOOL
+PU_has_attr_pure (const PU& pu)      { return (pu.flags & PU_HAS_ATTR_PURE) != 0; } 
+inline void
+Set_PU_has_attr_pure (PU& pu)        { pu.flags |= PU_HAS_ATTR_PURE; }
+inline void
+Clear_PU_has_attr_pure (PU& pu)      { pu.flags &= ~PU_HAS_ATTR_PURE; }
+
+inline BOOL
+PU_has_attr_noreturn (PU& pu)        { return (pu.flags & PU_HAS_ATTR_NORETURN) != 0; } 
+inline void
+Set_PU_has_attr_noreturn (PU& pu)    { pu.flags |= PU_HAS_ATTR_NORETURN; }
+inline void
+Clear_PU_has_attr_noreturn (PU& pu)  { pu.flags &= ~PU_HAS_ATTR_NORETURN; }
+#endif
 inline BOOL
 PU_is_marked_inline (const PU& pu)	{ return (pu.flags & PU_IS_MARKED_INLINE) != 0; }
 inline void

@@ -1509,6 +1509,7 @@ extern void WN_set_st_addr_saved (WN *);
 extern BOOL WN_has_side_effects (const WN*);
 
 extern WN *WN_Rrotate (TYPE_ID desc, WN *src, WN *cnt);
+extern WN *WN_Lrotate (TYPE_ID desc, WN *src, WN *cnt);
 
 #endif /* wn_INCLUDED */
 

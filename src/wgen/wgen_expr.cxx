@@ -41,7 +41,7 @@ extern "C"{
 #include "defs.h"
 #include "glob.h"
 #include "config.h"
-#ifdef TARG_X8664
+#if defined TARG_X8664 || defined TARG_ST
 #include "config_opt.h"
 #endif
 #include "wn.h"
@@ -62,6 +62,11 @@ extern "C"{
 #ifdef FE_GNU_4_2_0
 #include "omp_types.h"
 #include "wgen_omp_directives.h"
+#endif
+#ifdef TARG_ST
+#include <list>
+#include "libiberty.h"
+#include "wgen_pragmas.h"
 #endif
 
 
@@ -487,6 +492,8 @@ static bool WGEN_Call_Returns_Ptr_To_Member_Func (gs_t exp);
 static WN *WGEN_Expand_Ptr_To_Member_Func_Call_Expr (gs_t exp,
 	     TY_IDX nop_ty_idx, TYPE_ID rtype, TYPE_ID desc,
 	     WN_OFFSET offset = 0, UINT field_id = 0);
+#ifndef TARG_ST
+// [SC] Unused in ST compiler.
 
 // The words in 'buf' are in target order. Convert them to host order
 // in place. 'buf' is a two word array.
@@ -500,6 +507,7 @@ WGEN_Convert_To_Host_Order (long *buf)
       buf[1] = t;
     }
 }
+#endif
 
 // Add guard variable GUARD_VAR to a conditional expression that may or may
 // not be evaluated, such as x and y in "foo ? x : y", or y in "if (x && y)".
@@ -521,6 +529,18 @@ WGEN_add_guard_var (gs_t guard_var, WN *value_wn, BOOL need_comma = TRUE)
   // condition is evaluated. This is done separately once for an entire
   // conditional expression where all allocated guard variables for
   // that expression are handled. See sct 8241 (bug 15098).
+#ifdef TARG_ST
+  WN *zero_wn = WN_Intconst(MTYPE_I4, 0);
+  stid = WN_Stid(MTYPE_I4, 0, Get_ST(guard_var), MTYPE_To_TY(MTYPE_I4),
+		 zero_wn, 0);
+#ifdef TARG_ST
+  // We need to initialize the guard at the place we started the current
+  // cleanup 'binding contour'.
+  Init_Guard (stid);
+#else
+  WGEN_Stmt_Append(stid, Get_Srcpos());
+#endif
+#endif
 
   // Set the guard variable to 1 while evaluating the value of the conditional
   // expression.
@@ -547,6 +567,10 @@ WGEN_add_guard_var (gs_t guard_var, WN *value_wn, BOOL need_comma = TRUE)
   }
   else WN_INSERT_BlockFirst(value_wn, stid);
 }
+#ifndef TARG_ST
+// [CG]: This function should not be used. Simplification on cvtl are
+// already handled in WN_Simplify...() functions
+
 
 // check whether the WHIRL operator has subsumed cvtl in its semantics
 // (intended only for integer operations)
@@ -565,23 +589,59 @@ Has_Subsumed_Cvtl(OPERATOR opr)
     return TRUE;
   return FALSE;
 }
+#endif
+#ifdef TARG_ST
+// [CG] Make standard integral ctype promotions/conversions
+//#define STANDARD_C_CONVERSION
+extern WN *WGEN_Cast(TYPE_ID mtype, TYPE_ID kid_mtype, WN *kid);
+extern TYPE_ID WGEN_Promoted_Type(TYPE_ID mtype);
+extern TYPE_ID WGEN_Promoted_Binary_Type(TYPE_ID mtype1, TYPE_ID mtype2);
+#endif
+#ifdef TARG_ST
+// [CG]: Helper for appending an  expression statement.
+// Generate EVAL(wn) or directly the wn when
+// it is a statement node.
+// Return the node effectively generated
+static WN *WGEN_Append_Expr_Stmt(WN *wn)
+{
+  if ((WN_operator (wn) != OPR_PREFETCH) && (WN_operator (wn) != OPR_AFFIRM))
+    wn = WN_CreateEval (wn);
+  WGEN_Stmt_Append (wn, Get_Srcpos ());
+  return wn;
+}
+
+#endif
 
 // Round up an object size to the size it would require in the parameter
 // area on the stack.  This is defined to be the difference between its
 // start address and the lowest possible starting address of the next parameter.
 inline UINT64 Parameter_Size(UINT64 sz)
 {
+#ifdef TARG_ST
+  if (Target_Byte_Sex == BIG_ENDIAN) {
+    return sz;
+  } else {
+    INT UNITS_PER_WORD = TARGET_64BIT ? 8 : 4;
+    return (sz + UNITS_PER_WORD - 1) & ~(UNITS_PER_WORD - 1);
+  }
+#else
 #   if WORDS_BIG_ENDIAN
 	return sz;
 #   else
         INT UNITS_PER_WORD = TARGET_64BIT ? 8 : 4;
 	return (sz + UNITS_PER_WORD - 1) & ~(UNITS_PER_WORD - 1);
 #   endif
+#endif
 }
 
 TYPE_ID
 Widen_Mtype (TYPE_ID t)
 {
+#ifdef TARG_ST
+  //TB: Vector type support
+  if (MTYPE_is_random(t))
+    return t;
+#endif
   if (MTYPE_is_m(t))
     return t;
   if (MTYPE_is_void(t) || t == MTYPE_BS) {
@@ -698,6 +758,9 @@ WGEN_Set_ST_Addr_Saved (WN *wn)
     case OPR_COMPLEX:
     case OPR_HIGHMPY:
     case OPR_RROTATE:
+#ifdef TARG_ST
+    case OPR_LROTATE:
+#endif
     case OPR_COMPOSE_BITS:
 
       WGEN_Set_ST_Addr_Saved (WN_kid0(wn));
@@ -718,6 +781,12 @@ WGEN_Set_ST_Addr_Saved (WN *wn)
 
       WGEN_Set_ST_Addr_Saved (WN_kid0(wn));
       break;
+#ifdef TARG_ST
+      // [CG]: set flag for LDA of label
+  case OPR_LDA_LABEL:
+    Set_LABEL_addr_saved (WN_label_number(wn));
+    break;
+#endif
 
     default:
 
@@ -780,16 +849,27 @@ WGEN_Save_Expr (gs_t save_exp,
       if (wgen_save_expr_stack == NULL) {
         wgen_save_expr_stack_max = 32;
         wgen_save_expr_stack     =
+#ifdef TARG_ST
+          (WGEN_SAVE_EXPR *) xmalloc (wgen_save_expr_stack_max *
+                                    sizeof (WGEN_SAVE_EXPR));
+#else
           (WGEN_SAVE_EXPR *) malloc (wgen_save_expr_stack_max *
                                     sizeof (WGEN_SAVE_EXPR));
+#endif
       }
       else {
         wgen_save_expr_stack_max = wgen_save_expr_stack_max +
                                   (wgen_save_expr_stack_max >> 1);
         wgen_save_expr_stack     =
+#ifdef TARG_ST
+          (WGEN_SAVE_EXPR *) xrealloc (wgen_save_expr_stack,
+                                     wgen_save_expr_stack_max *
+                                     sizeof (WGEN_SAVE_EXPR));
+#else
           (WGEN_SAVE_EXPR *) realloc (wgen_save_expr_stack,
                                      wgen_save_expr_stack_max *
                                      sizeof (WGEN_SAVE_EXPR));
+#endif
       }
     }
 #ifndef KEY
@@ -799,7 +879,7 @@ WGEN_Save_Expr (gs_t save_exp,
     wgen_save_expr_stack [i].level = wgen_save_expr_level;
 #endif
     wgen_save_expr_stack [i].st  = 0;
-#if defined( KEY) && !defined(TARG_ST)
+#ifdef KEY
     // If exp is a CALL_EXPR that returns a ptr-to-member-function, then call
     // WGEN_Expand_Ptr_To_Member_Func_Call_Expr to expand it.  Otherwise, call
     // WGEN_Expand_Expr to do regular expansion.  Bug 3400.
@@ -832,7 +912,7 @@ WGEN_Save_Expr (gs_t save_exp,
   return wn;
 } /* WGEN_Save_Expr */
 
-
+#ifndef TARG_ST
 static WN * 
 WGEN_Expand_Math_Errno_Sqrt(gs_t exp, TY_IDX ty_idx, TYPE_ID ret_mtype)
 {
@@ -888,7 +968,7 @@ WGEN_Expand_Math_Errno_Sqrt(gs_t exp, TY_IDX ty_idx, TYPE_ID ret_mtype)
 
   return WN_Ldid(ret_mtype, 0, res_st, ty_idx);
 }
-
+#endif
 
 /* process the tree doing array indicing and return the WN that performs
  * the address computation; ty_idx returns the high-level array type if it
@@ -944,11 +1024,25 @@ WGEN_Array_Expr(gs_t exp,
     ST *base_st = ST_base (st);
     // for VLAs the instead of using the ST use its base st
     // also for the time being do not support VLAs within structs
+#ifdef TARG_ST
+    /* (cbr) VLAs are auto */
+    if (st != base_st && ST_sclass (st) == SCLASS_AUTO) {
+#else
     if (st != base_st) {
+#endif
       FmtAssert (component_ty_idx == 0,
                  ("Variable Length Arrays within struct not currently implemented"));
       wn = WN_Ldid (Pointer_Mtype, 0, base_st, ST_type (base_st));
     }
+#if defined (TARG_ST)
+    /* (cbr) gcc 3.3 upgrade: non_pods are reference parameters.
+       Marked with TREE_ADDRESSABLE */
+    else if ((code == GS_PARM_DECL && gs_tree_addressable(gs_tree_type(exp)))
+	     || (code == GS_RESULT_DECL && st == first_formal)) {
+      wn = WN_Ldid (Pointer_Mtype, 0, st, ST_type(st));
+    }
+#endif
+
     else
       wn = WN_Lda (Pointer_Mtype, ST_ofst(st)+component_offset, st, field_id);
     if (component_ty_idx == 0)
@@ -958,6 +1052,18 @@ WGEN_Array_Expr(gs_t exp,
       if (TY_align(ST_type(st)) < TY_align(component_ty_idx))
 	Set_TY_align(*ty_idx, TY_align(ST_type(st)));//pick more stringent align
     }
+#ifdef TARG_ST
+    /* (cbr) for anon unions */
+    if (TY_kind(*ty_idx) == KIND_STRUCT) {
+      FLD_ITER fld_iter = Make_fld_iter (TY_fld (*ty_idx));
+      do {
+	TY_IDX fld_ty = FLD_type (fld_iter);
+        if (TY_kind(fld_ty) == KIND_ARRAY) {
+          *ty_idx = fld_ty;
+        }
+      } while (!FLD_last_field (fld_iter++));
+    }
+#endif
     Is_True(TY_kind(*ty_idx) == KIND_ARRAY,
 	    ("WGEN_Array_Expr: ARRAY_REF base not of type KIND_ARRAY"));
     return wn;
@@ -1016,6 +1122,117 @@ WGEN_Array_Expr(gs_t exp,
   else if (code == GS_ARRAY_REF) { // recursive call
     WN *wn0, *wn1, *wn2;
     TY_IDX ty_idx0;
+#ifdef TARG_ST
+    // Since we're now capable of making multi-dimensional arrays
+    //
+    // Get to the bottom of the sequence of array_refs.
+    // For a reference to int x[i][j], the gcc makes something 
+    // like so:
+    //
+    //       array_ref  --> integer_type
+    //        /     \                 ^
+    //       |       |                |
+    //       V       V                |
+    //  var_decl j  array_ref  --> array_type
+    //               /     \               ^
+    //              |       |              |
+    //              V       V              |
+    //         var_decl i  var_decl x --> array_type
+    //
+    // We start at the topmost of array_ref and recurse to
+    // the var_decl x. At this point the TREE_CODE(exp) is
+    // VAR_DECL, so it calls Get_ST and eventually Get_TY.
+    // Get_TY () (see tree_symtab.h) will recurse down the
+    // chain of types towards the integer_type.
+    // In present implementation, only certain types are
+    // converted into multidimensional arrays (see the
+    // switch in mk_array_dimension () in tree_symtab.cxx).
+    // The types here must correspond to that switch.
+    //
+    // TODO: eventually, perhaps everything will be converted
+    //       to multi-dimensional arrays and the following
+    //       test will be suppressed.
+    {
+      gs_t base_expr;
+      INT subscripts = 1;
+
+      base_expr = gs_tree_operand (exp, 0);
+      while (gs_tree_code(base_expr) == GS_ARRAY_REF) {
+	base_expr = gs_tree_operand (base_expr, 0);
+	subscripts++;
+      }
+
+      //
+      // Arthur: seems that we should not pass the component_ty_idx to
+      //         the next level of ARRAY, but need to pass offset and
+      //         the field_id. The field_id and the component_offset
+      //         keep track of the fields in nested structs. They are
+      //         necessary for calculating the right offset for LDA,
+      //         and ILOAD operators. The component_ty_idx should
+      //         keep the type of the first non array_ref tree node
+      //         only until next array_ref tree node (used to live
+      //         through the entire chain).
+      //
+      wn0 = WGEN_Array_Expr(base_expr, &ty_idx0, 0,
+			    component_offset, field_id);
+
+      ARB_HANDLE arb = TY_arb(ty_idx0);
+      OPCODE op_array = OPCODE_make_op(OPR_ARRAY, Pointer_type, MTYPE_V);
+      wn = WN_Create (op_array, ARB_dimension(arb)*2+1);
+      // single array elemet size
+      WN_element_size(wn) = TY_size(TY_etype(ty_idx0));
+      // array base
+      WN_array_base(wn) = wn0;
+
+      // Process dimensions:
+      UINT i;
+      for (i = 0; i < ARB_dimension(arb); i++) {
+
+	// I do not even know why ??
+	Is_True(ARB_const_lbnd(arb[i]),
+		 ("WFGEN_Array_Expr: non-const lower bound dim %d", i));
+
+	// kid (i+1) is the size of dimension i:
+	if (ARB_const_ubnd(arb[i]))
+	  wn1 = WN_Intconst(MTYPE_I4, 
+                     ARB_ubnd_val(arb[i]) - ARB_lbnd_val(arb[i]) + 1);
+	else {
+	  // [SC]: Set size for VLA
+	  ST_IDX ubnd_st_idx = ARB_ubnd_var (arb[i]);
+	  if (ubnd_st_idx != ST_IDX_ZERO) {
+	    ST *ubnd_var = ST_ptr (ARB_ubnd_var (arb[i]));
+	    TY_IDX ubnd_ty_idx = ST_type(ubnd_var);
+	    TYPE_ID ubnd_mtype = TY_mtype (ubnd_ty_idx);
+	    wn1 = WN_Add (Widen_Mtype(ubnd_mtype),
+			  WN_Ldid (ubnd_mtype, 0, ubnd_var, ubnd_ty_idx),
+			  WN_Intconst (Widen_Mtype(ubnd_mtype), 1));
+	  }
+	  else {
+	    FmtAssert (ARB_last_dimen (arb[i]),
+		      ("Upper bounds may be omitted only on last dimension"));
+	    wn1 = WN_Intconst (MTYPE_I4, 0);
+	  }
+	}
+	WN_array_dim(wn, ARB_dimension(arb)-i-1) = wn1;
+
+      }
+      // Process subscripts
+      // GNU's index tree for the current dimension
+      base_expr = exp;
+      for (i = 0; i < subscripts; i++) {
+	// kid (n+i+1) is the index expression for the dimension i
+	wn2 = WGEN_Expand_Expr (gs_tree_operand(base_expr,1));
+	WN_array_index(wn, subscripts-i-1) = wn2;
+	base_expr = gs_tree_operand (base_expr, 0);
+      }
+      // If there are missing subscripts, put them as zero.
+      for (; i < ARB_dimension(arb); i++) {
+	WN_array_index(wn, i) = WN_Intconst (MTYPE_I4, 0);
+      }
+    } 
+
+#else /* !TARG_ST */
+
 #ifdef KEY  // Bug 5831.
     wn0 = WGEN_Array_Expr(gs_tree_operand (exp, 0), &ty_idx0, 0,
 			 component_offset, field_id);
@@ -1077,6 +1294,8 @@ WGEN_Array_Expr(gs_t exp,
     }
     else Is_True(FALSE,
 		 ("WGEN_Array_Expr: only const-bounds 1-dimension arrays handled now"));
+    #endif /* TARG_ST */
+
     if (component_ty_idx == 0) {
       *ty_idx = TY_etype(ty_idx0);
       if (TY_align(ty_idx0) < TY_align(*ty_idx))
@@ -1118,8 +1337,12 @@ WGEN_Array_Expr(gs_t exp,
   else if (code == GS_COMPOUND_EXPR) { // wgen
     wn = WGEN_Expand_Expr (gs_tree_operand (exp, 0), FALSE);
     if (wn && WN_has_side_effects(wn)) {
+#ifdef TARG_ST
+      wn = WGEN_Append_Expr_Stmt (wn);
+#else
       wn = WN_CreateEval (wn);
       WGEN_Stmt_Append (wn, Get_Srcpos ());
+#endif
     }
     return WGEN_Array_Expr(gs_tree_operand(exp, 1), ty_idx, component_ty_idx, 
     			   component_offset, field_id);
@@ -1143,6 +1366,50 @@ WGEN_Array_Expr(gs_t exp,
     return WGEN_Array_Expr(gs_tree_operand(exp,0), ty_idx, component_ty_idx,
 	       		   component_offset, field_id);
   }
+#ifdef TARG_ST
+   else if (code == GS_VA_ARG_EXPR) {
+    // [SC] va_arg.
+    // Assign to temporary, then act on temporary.
+    // TREE_TYPE (exp) is the type of the va_arg;
+    // TREE_OPERAND (exp, 0) is the va_list.
+    gs_t type = gs_tree_type (exp);
+    TY_IDX va_ty_idx = Get_TY (type);
+    TYPE_ID va_mtype = TY_mtype (va_ty_idx);
+    ST *temp_st = Gen_Temp_Symbol (va_ty_idx, ".tmp");
+    Set_ST_addr_saved (temp_st);
+    wn = WGEN_Expand_Expr (exp);
+    wn = WN_Stid (va_mtype, 0, temp_st, va_ty_idx, wn);
+    WGEN_Stmt_Append (wn, Get_Srcpos ());
+    wn = WN_Lda (Pointer_Mtype, ST_ofst(temp_st)+component_offset,
+		 temp_st, field_id);
+    if (component_ty_idx == 0)
+      *ty_idx = ST_type(temp_st);
+    else {
+      *ty_idx = component_ty_idx;
+      if (TY_align(ST_type(temp_st)) < TY_align(component_ty_idx))
+	Set_TY_align(*ty_idx, TY_align(ST_type(temp_st)));//pick more stringent align
+    }
+    Is_True(TY_kind(*ty_idx) == KIND_ARRAY,
+	    ("WGEN_Array_Expr: VA_ARG_EXPR not of type KIND_ARRAY"));
+    return wn;
+  } else if (code == GS_STMT_EXPR) {
+    gs_t stmt = gs_stmt_expr_stmt (exp);
+    wn = WGEN_Array_Expr(stmt, ty_idx,
+			 component_ty_idx,
+			 component_offset,
+			 field_id);
+    
+    return wn;
+  } else if (code == GS_EXPR_STMT) {
+    if (gs_expr_stmt_expr(exp)) {
+      wn = WGEN_Array_Expr(gs_expr_stmt_expr(exp), ty_idx,
+			   component_ty_idx,
+			   component_offset,
+			   field_id);
+      return wn;
+    }
+  }
+#endif
   else {
     Is_True(FALSE,
 	    ("WGEN_Array_Expr: unsupported node for base of ARRAY_REF"));
@@ -1195,7 +1462,10 @@ WGEN_fixup_result_decl (gs_t exp)
  */
 WN *
 WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
-		       gs_t lhs, 
+		       gs_t lhs,
+#ifdef TARG_ST
+                      WN* lhs_retval,
+#endif 
 		       bool need_result,
 		       TY_IDX component_ty_idx, 
 		       INT64 component_offset,
@@ -1237,6 +1507,12 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
       else ty_idx0 = component_ty_idx;
       if (gs_decl_bit_field(arg1)) 
         is_bit_field = TRUE;
+#ifdef TARG_ST
+    /* (cbr) propagate to struct fields */
+    if (gs_tree_this_volatile(lhs))
+      Set_TY_is_volatile(ty_idx0);
+#endif
+
       if (! is_bit_field)
         ofst = (BITSPERBYTE * gs_get_integer_value(gs_decl_field_offset(arg1)) +
 			      gs_get_integer_value(gs_decl_field_bit_offset(arg1)))
@@ -1288,6 +1564,9 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
 
 #ifdef KEY
   case GS_TARGET_EXPR:	// bug 6907
+#ifdef TARG_ST
+  case GS_SAVE_EXPR:
+#endif
     {
       WN *wn = WGEN_Expand_Expr(lhs);
       Is_True(WN_operator(wn) == OPR_LDID,
@@ -1318,7 +1597,11 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
       }
 #endif
       TY_IDX hi_ty_idx = Get_TY(gs_tree_type(lhs)); // type associated with field_id
+ #ifdef TARG_ST
+      if (gs_tree_this_volatile(lhs) || TY_is_volatile(component_ty_idx)) {
+#else
       if (gs_tree_this_volatile(lhs)) {
+#endif
         Set_TY_is_volatile(hi_ty_idx);
         volt = TRUE;
       }
@@ -1337,7 +1620,11 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
       }
 
 #ifdef KEY
+#ifdef TARG_ST
+      if (code != GS_TARGET_EXPR && code != GS_SAVE_EXPR) {
+#else
       if (code != GS_TARGET_EXPR) {
+#endif
         gs_t actual_decl = NULL;
         if (code == GS_VAR_DECL && (actual_decl = gs_decl_value_expr(lhs))) {
 
@@ -1350,6 +1637,10 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
         }
 
         st = Get_ST (lhs);
+#ifdef TARG_ST
+	check_ref (lhs);
+#endif
+
       }
 #else
       st = Get_ST (lhs);
@@ -1432,6 +1723,17 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
 
         if (assign_code == GS_PREINCREMENT_EXPR ||
 	    assign_code == GS_PREDECREMENT_EXPR) {
+#ifdef TARG_ST
+	  if ((code == GS_PARM_DECL && gs_tree_addressable(gs_tree_type(lhs)))
+	      || (code == GS_RESULT_DECL && st == first_formal)) {
+	    WN *w0 = WN_Ldid (Pointer_Mtype, 0, st, ST_type(st));
+	    
+	    wn = WN_CreateIload(OPR_ILOAD, rtype, desc,
+				ST_ofst(st)+component_offset,
+				hi_ty_idx, ST_type(st), w0, field_id);
+	  }
+	  else
+#endif
           wn = WN_CreateLdid (OPR_LDID, rtype, desc, 
 			      ST_ofst(st) + component_offset,
 			      st, hi_ty_idx, field_id);
@@ -1441,6 +1743,17 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
         }
         else if (assign_code == GS_POSTINCREMENT_EXPR ||
 	         assign_code == GS_POSTDECREMENT_EXPR) {
+#ifdef TARG_ST
+	  if ((code == GS_PARM_DECL && gs_tree_addressable(gs_tree_type(lhs)))
+	      || (code == GS_RESULT_DECL && st == first_formal)) {
+	    WN *w0 = WN_Ldid (Pointer_Mtype, 0, st, ST_type(st));
+	    
+	    result_wn = WN_CreateIload(OPR_ILOAD, rtype, desc,
+				       ST_ofst(st)+component_offset,
+				       hi_ty_idx, ST_type(st), w0, field_id);
+	  }
+	  else
+#endif
           result_wn = WN_CreateLdid (OPR_LDID, rtype, desc, 
 				     ST_ofst(st) + component_offset,
 				     st, hi_ty_idx, field_id);
@@ -1452,9 +1765,21 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
 	     assign_code == GS_POSTINCREMENT_EXPR ||
 	     assign_code == GS_POSTDECREMENT_EXPR)) { // save result in a preg
           result_in_temp = TRUE;
+#ifdef TARG_ST
+	  /* [FdF] Create a Symbol instead of a PREG, so that we can propagate the
+	     restrict or volatile property. */
+	  /* [CG]: I don't understand why we need to propagate this, Ask FdF. */
+	  /* [CG]: Another mmotivation for this is that in the case of a volatile assignment, 
+	     there may be assignment of structures that can't be put into a preg. Thus we
+	     must use a temporary with the corresponding type. Ref to bug 1-5-0-B/ddts/18793. */
+	  TY_IDX tmp_type = rtype == MTYPE_M ? desc_ty_idx: MTYPE_To_TY(rtype);
+	  result_preg_st = Gen_Temp_Symbol(tmp_type, ".tmp");
+	  result_preg = 0;
+#else
           result_preg_st = MTYPE_To_PREG(rtype);
 	  preg_mtype = MTYPE_byte_size(desc) != 0 ? desc : rtype;
           result_preg = Create_Preg(preg_mtype, NULL);
+#endif
           wn = WN_Stid(preg_mtype, result_preg, result_preg_st, desc_ty_idx,
 		       result_wn, 0);
           WGEN_Stmt_Append (wn, Get_Srcpos());
@@ -1483,15 +1808,50 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
 	if (volt) 
 	  Set_TY_is_volatile(hi_ty_idx);
 #endif
+#if defined (TARG_ST)
+	/* (cbr) gcc 3.3 upgrade: non_pods are reference parameters.
+	   Marked with TREE_ADDRESSABLE */
+	/* [SC] For a write to RESULT_DECL, if we have a result pointer,
+	   then treat as an indirect write through that. */
+	if ((gs_tree_code (lhs) == GS_PARM_DECL && gs_tree_addressable(gs_tree_type(lhs)))
+	    || (gs_tree_code (lhs) == GS_RESULT_DECL && st == first_formal)) {
+        WN *w0 = WN_Ldid (Pointer_Mtype, 0, st, ST_type(st));
+        wn = WN_CreateIstore(OPR_ISTORE, MTYPE_V, desc, component_offset, 
+                             ST_type(st), rhs_wn, w0, field_id);
+	}
+	else
+#endif
         wn = WN_Stid (desc, ST_ofst(st) + component_offset + lhs_preg_num, st,
 		      hi_ty_idx, rhs_wn, field_id);
         WGEN_Stmt_Append(wn, Get_Srcpos());
       }
       if (need_result) {
         if (! result_in_temp)
+#if defined (TARG_ST)
+	  {
+	    /* (cbr) gcc 3.3 upgrade: non_pods are reference parameters.
+	       Marked with TREE_ADDRESSABLE */
+	    /* [SC] For a write to RESULT_DECL, if we have a result pointer,
+	       then treat as an indirect write through that. */
+	    if ((gs_tree_code (lhs) == GS_PARM_DECL && gs_tree_addressable(gs_tree_type(lhs)))
+		|| (gs_tree_code (lhs) == GS_RESULT_DECL && st == first_formal)) {
+	      WN *w0 = WN_Ldid (Pointer_Mtype, 0, st, ST_type(st));
+	      wn = WN_CreateIload(OPR_ILOAD, rtype, desc,
+				  component_offset,
+				  hi_ty_idx,
+				  ST_type(st),
+				  w0,
+				  field_id);
+	    } else
+	      wn = WN_CreateLdid(OPR_LDID, rtype, desc, 
+				 ST_ofst(st) + component_offset, st, hi_ty_idx,
+				 field_id);
+	  }
+#else
           wn = WN_CreateLdid(OPR_LDID, rtype, desc, 
 			     ST_ofst(st) + component_offset, st, hi_ty_idx,
 			     field_id);
+#endif
         else wn = WN_Ldid(preg_mtype, result_preg, result_preg_st, desc_ty_idx, 0);
         if (is_realpart)
 	  wn = WN_Unary (OPR_REALPART, Mtype_complex_to_real (rtype), wn);
@@ -1647,9 +2007,16 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
              assign_code == GS_POSTINCREMENT_EXPR ||
              assign_code == GS_POSTDECREMENT_EXPR)) { // save result in a preg
 	  result_in_temp = TRUE;
+#ifdef TARG_ST
+	  // [CG]: Fix 1-5-0-B/ddts/18793. See above.
+	  TY_IDX tmp_type = rtype == MTYPE_M ? desc_ty_idx: MTYPE_To_TY(rtype);
+	  result_preg_st = Gen_Temp_Symbol(tmp_type, ".tmp");
+	  result_preg = 0;
+#else
           result_preg_st = MTYPE_To_PREG(rtype);
 	  preg_mtype = MTYPE_byte_size(desc) != 0 ? desc : rtype;
           result_preg = Create_Preg(preg_mtype, NULL);
+#endif
           wn = WN_Stid(preg_mtype, result_preg, result_preg_st, desc_ty_idx,
 		       result_wn, 0);
           WGEN_Stmt_Append (wn, Get_Srcpos());;
@@ -1673,13 +2040,17 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
           TY_size (hi_ty_idx) == 0) {
         // ignore zero length structs
         if (WN_has_side_effects (addr_wn)) {
+#ifdef TARG_ST
+	  wn = WGEN_Append_Expr_Stmt (addr_wn);
+#else
 	  wn = WN_CreateEval (addr_wn);
 	  WGEN_Stmt_Append (wn, Get_Srcpos());
+#endif
         }
         wn = NULL;
       }
       else {
-#if defined( KEY) && !defined(TARG_ST)
+#ifdef KEY
 	// The store target could be an INDIRECT_REF that kg++fe added to make
 	// the store write to the area pointed to by the fake first param.  If
 	// so, check that copying the object does not involve a copy
@@ -1853,9 +2224,16 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
              assign_code == GS_POSTINCREMENT_EXPR ||
 	     assign_code == GS_POSTDECREMENT_EXPR)) { // save result in a preg
           result_in_temp = TRUE;
+#ifdef TARG_ST
+	  // [CG]: Fix 1-5-0-B/ddts/18793. See above.
+	  TY_IDX tmp_type = rtype == MTYPE_M ? desc_ty_idx: MTYPE_To_TY(rtype);
+	  result_preg_st = Gen_Temp_Symbol(tmp_type, ".tmp");
+	  result_preg = 0;
+#else
           result_preg_st = MTYPE_To_PREG(rtype);
 	  preg_mtype = MTYPE_byte_size(desc) != 0 ? desc : rtype;
           result_preg = Create_Preg(preg_mtype, NULL);
+#endif
           wn = WN_Stid(preg_mtype, result_preg, result_preg_st, desc_ty_idx,
 		       result_wn, 0);
           WGEN_Stmt_Append (wn, Get_Srcpos());;
@@ -1879,8 +2257,12 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
           TY_size (elem_ty_idx) == 0) {
         // ignore zero length structs
         if (WN_has_side_effects (addr_wn)) {
+#ifdef TARG_ST
+	  wn = WGEN_Append_Expr_Stmt (addr_wn);
+#else
           wn = WN_CreateEval (addr_wn);
           WGEN_Stmt_Append (wn, Get_Srcpos());
+#endif
         }
         wn = NULL;
       }
@@ -2282,7 +2664,64 @@ emit_builtin_compare_and_swap (gs_t exp, INT32 k)
 
   return wn;
 } /* emit_builtin_compare_and_swap */
+#ifdef TARG_ST
+/* OSP
+ * emit_builtin_sync_fetch_op
+ *   for FETCH_AND_OP (ADD, SUB, AND, OR, XOR, NAND)
+ *   for OP_AND_FETCH (ADD, SUB, AND, OR, XOR, NAND)
+ * It's necessary for GNU 4.2 FE
+ */
+static WN *
+emit_builtin_sync_fetch_op (INTRINSIC iopc, gs_t exp, INT32 k)
+{
+  WN        *wn;
+  WN        *arg_wn;
+  WN        *ikids [2];
+  TYPE_ID    obj_mtype;
+  TY_IDX     arg_ty_idx;
+  TYPE_ID    arg_mtype;
+  gs_t       list = gs_tree_operand (exp, 1);
+  OPCODE     opc;
 
+  obj_mtype  = TY_mtype (TY_pointed (Get_TY(gs_tree_type(gs_tree_value(list)))));
+  arg_ty_idx = Get_TY(gs_tree_type(gs_tree_value(list)));
+  arg_mtype  = TY_mtype (arg_ty_idx);
+  arg_wn     = WGEN_Expand_Expr (gs_tree_value (list));
+  arg_wn     = WN_CreateParm (arg_mtype, arg_wn, arg_ty_idx, WN_PARM_BY_VALUE);
+  ikids [0]  = arg_wn;
+  list       = gs_tree_chain (list);
+  arg_ty_idx = Get_TY(gs_tree_type(gs_tree_value(list)));
+  arg_mtype  = TY_mtype (arg_ty_idx);
+  arg_wn     = WGEN_Expand_Expr (gs_tree_value (list));
+  arg_wn     = WN_CreateParm (arg_mtype, arg_wn, arg_ty_idx, WN_PARM_BY_VALUE);
+  ikids [1]  = arg_wn;
+  list       = gs_tree_chain (list);
+
+  Is_True( (obj_mtype == MTYPE_I4 || obj_mtype == MTYPE_U4 ||
+            obj_mtype == MTYPE_I8 || obj_mtype == MTYPE_U8), 
+           ("Unsupported object type in emit_builtin_sync_fetch_op") );
+
+  emit_barrier (TRUE, list, k);
+  
+  opc = OPCODE_make_op(OPR_INTRINSIC_CALL, obj_mtype, MTYPE_V);
+  wn = WN_Create_Intrinsic (opc, iopc, 2, ikids);
+  WGEN_Stmt_Append (wn, Get_Srcpos());
+
+  ST       *preg_st = MTYPE_To_PREG(obj_mtype);
+  TY_IDX    preg_ty_idx = Be_Type_Tbl(obj_mtype);
+  PREG_NUM  preg = Create_Preg (obj_mtype, NULL);
+
+  wn = WN_Ldid (obj_mtype, -1, Return_Val_Preg, preg_ty_idx);
+  wn = WN_Stid (obj_mtype, preg, preg_st, preg_ty_idx, wn),
+  WGEN_Stmt_Append (wn, Get_Srcpos());
+
+  emit_barrier (FALSE, list, k);
+
+  wn = WN_Ldid (obj_mtype, preg, preg_st, preg_ty_idx);
+
+  return wn;
+} /* emit_builtin_sync_fetch_op */
+#endif
 static void
 emit_builtin_synchronize (gs_t exp, INT32 k)
 {
@@ -2293,6 +2732,82 @@ emit_builtin_synchronize (gs_t exp, INT32 k)
   WGEN_Stmt_Append (wn, Get_Srcpos());
   emit_barrier (FALSE, list, k);
 } /* emit_builtin_synchronize */
+#ifdef TARG_ST
+static WN *
+emit_builtin_classify_type (gs_t expr) 
+{
+  enum type_class
+  {
+    no_type_class = -1,
+    void_type_class, integer_type_class, char_type_class,
+    enumeral_type_class, boolean_type_class,
+    pointer_type_class, reference_type_class, offset_type_class,
+    real_type_class, complex_type_class,
+    function_type_class, method_type_class,
+    record_type_class, union_type_class,
+    array_type_class, string_type_class,
+    lang_type_class
+  };
+  WN *wn ;
+  enum type_class icode = no_type_class ;
+  /* Refer to gccfe builtins.c/expand_builtin_classify_type*/
+  if (expr) {
+    gs_t arglist = gs_tree_operand (expr, 1) ;
+    gs_t type = gs_tree_type (gs_tree_value (arglist));
+    gs_code_t code = gs_tree_code (type);
+    if (code == GS_VOID_TYPE)
+	icode = void_type_class ;
+    else if (code == GS_INTEGER_TYPE)
+	icode = integer_type_class ;
+    else if (code == GS_CHAR_TYPE)
+	icode = char_type_class ;
+    else if (code == GS_ENUMERAL_TYPE)
+	icode = enumeral_type_class ;
+    else if (code == GS_BOOLEAN_TYPE)
+	icode = boolean_type_class ;
+    else if (code == GS_POINTER_TYPE)
+	icode = pointer_type_class ;
+    else if (code == GS_REFERENCE_TYPE)
+	icode = reference_type_class ;
+    else if (code == GS_OFFSET_TYPE)
+	icode = offset_type_class ;
+    else if (code == GS_REAL_TYPE)
+	icode = real_type_class ;
+    else if (code == GS_COMPLEX_TYPE)
+	icode = complex_type_class ;
+    else if (code == GS_FUNCTION_TYPE)
+	icode = function_type_class ;
+    else if (code == GS_METHOD_TYPE)
+	icode = method_type_class ;
+    else if (code == GS_RECORD_TYPE)
+	icode = record_type_class ;
+    else if (code == GS_UNION_TYPE || code == GS_QUAL_UNION_TYPE)
+	icode = union_type_class ;
+    else if (code == GS_ARRAY_TYPE)
+    {
+      if (gs_type_string_flag (type))
+          icode = string_type_class ;
+        else
+          icode = array_type_class ;
+    }
+    else if (code == GS_LANG_TYPE)
+	icode = lang_type_class ;
+    else 
+	icode = no_type_class ;
+  }
+  wn = WN_Intconst(MTYPE_I4, (int)icode) ;
+  return wn ;
+}
+
+static WN *
+emit_builtin_trap ()
+{
+  WN *wn = WN_Create_Intrinsic (OPC_VINTRINSIC_CALL, INTRN_TRAP, 0, NULL);
+  WGEN_Stmt_Append (wn, Get_Srcpos()); 
+  return wn;
+} /* emit_builtin_trap */
+
+#endif
 
 static char *
 get_string_pointer (WN *wn)
@@ -2345,6 +2860,9 @@ WGEN_Address_Of(gs_t arg0)
   case GS_FUNCTION_DECL:
     {
       st = Get_ST (arg0);
+#ifdef TARG_ST
+      check_ref (arg0);
+#endif
       ty_idx = ST_type (st);
 #ifdef KEY
       // Arg0 is the virtual function table (vtable) for a class.  Initialize
@@ -2371,12 +2889,29 @@ WGEN_Address_Of(gs_t arg0)
       }
 #endif
       // for VLAs, use the base_st instead of st
+#ifdef TARG_ST
+      /* (cbr) VLAs are auto */
+      if (code0 == GS_VAR_DECL &&
+          ST_sclass (st) == SCLASS_AUTO &&
+          st != ST_base(st)) {
+#else
       if (code0 == GS_VAR_DECL &&
           st != ST_base(st)) {
+#endif
         FmtAssert (ST_ofst (st) == 0,
                    ("Variable Length Arrays within struct not currently implemented"));
         wn = WN_Ldid (Pointer_Mtype, 0, ST_base(st), ST_type(ST_base(st)));
       }
+#if defined (TARG_ST)
+      /* (cbr) gcc 3.3 upgrade: non_pods are reference parameters.
+         Marked with TREE_ADDRESSABLE */
+      /* [SC] For RESULT_DECL where we have result pointer in first formal,
+	 here load value of first formal */
+      else if ((code0 == GS_PARM_DECL && gs_tree_addressable(gs_tree_type(arg0)))
+	       || (code0 == GS_RESULT_DECL && st == first_formal)) {
+	wn = WN_Ldid (Pointer_Mtype, 0, ST_base(st), ST_type(ST_base(st)));
+      }
+#endif
       else
         if (!WGEN_Keep_Zero_Length_Structs &&
             code0 == GS_PARM_DECL            &&
@@ -2426,7 +2961,9 @@ WGEN_Address_Of(gs_t arg0)
 
   case GS_LABEL_DECL:
     {
+#ifndef TARG_ST
       DevWarn ("taking address of a label at line %d", lineno);
+#endif
       LABEL_IDX label_idx = WGEN_Get_LABEL (arg0, FALSE);
 #if 0
       FmtAssert (arg0->decl.symtab_idx == CURRENT_SYMTAB,
@@ -2434,6 +2971,10 @@ WGEN_Address_Of(gs_t arg0)
 #endif
       wn = WN_LdaLabel (Pointer_Mtype, label_idx);
       Set_LABEL_addr_saved (label_idx);
+#ifndef TARG_ST
+      /* <http://gcc.gnu.org/onlinedocs/gcc/Labels-as-Values.html>
+	 If &&foo is used in a static variable initializer, inlining is forbidden
+	 Treated in WFE_Add_Aggregate_Init_Label  */
 #ifdef KEY
       // Bugs 1056 &  1227 - As a quality of implementation issue, we
       // should not prevent inlining of function explicitly marked
@@ -2442,6 +2983,7 @@ WGEN_Address_Of(gs_t arg0)
       if ( ST_export (Get_Current_PU_ST()) != EXPORT_LOCAL)
 #endif
         Set_PU_no_inline (Get_Current_PU ());
+#endif
     }
     break;
 
@@ -2449,10 +2991,28 @@ WGEN_Address_Of(gs_t arg0)
     {
       WGEN_Expand_Expr (arg0);
       st = Get_ST (gs_tree_operand(arg0, 0));
+#if defined (TARG_ST)
+      /* (cbr) gcc 3.3 upgrade: non_pods are reference parameters.
+         Marked with TREE_ADDRESSABLE */
+      if (gs_tree_code(gs_tree_operand(arg0, 0)) == GS_PARM_DECL &&
+          gs_tree_addressable(gs_tree_type(gs_tree_operand(arg0, 0)))) {
+	FmtAssert (false, ("Unexpected TARGET_EXPR(PARM_DECL) in WGEN_Address_Of"));
+        wn = WN_Ldid (Pointer_Mtype, 0, st, ST_type(st));        
+      }
+      else
+#endif
       wn = WN_Lda (Pointer_Mtype, ST_ofst(st), st);
     }
     break;
-
+#ifdef TARG_ST
+    case GS_MODIFY_EXPR:
+      /* [SC] This can happen if we transform a TARGET_EXPR into a
+     * MODIFY_EXPR.  Evaluate the node, then take the address of the lhs.
+     */
+      WGEN_Expand_Expr (arg0);
+      wn = WGEN_Address_Of (gs_tree_operand(arg0, 0));
+      break;
+#endif
   case GS_COMPOUND_EXPR:
     {
 #ifdef KEY
@@ -2541,6 +3101,22 @@ WGEN_Address_Of(gs_t arg0)
 
   case GS_COMPONENT_REF:
     {
+#ifdef TARG_ST
+      wn = WGEN_Address_Of (gs_tree_operand(arg0, 0));
+      ty_idx = Get_TY(gs_tree_type(arg0));
+      gs_t field = gs_tree_operand(arg0, 1);
+      INT64 ofst = ((BITSPERBYTE * gs_get_integer_value(gs_decl_field_offset(field)) +
+		     gs_get_integer_value(gs_decl_field_bit_offset(field)))
+		    / BITSPERBYTE);
+      if (WN_operator (wn) == OPR_LDA) {
+	WN_lda_offset (wn) += ofst;
+	WN_set_ty (wn, Make_Pointer_Type(ty_idx));
+	WN_set_field_id (wn, WN_field_id (wn) + DECL_FIELD_ID(field));
+      } else if (ofst != 0) {
+	wn = WN_Binary(OPR_ADD, Pointer_Mtype, wn,
+		       WN_Intconst (Pointer_Mtype, ofst));
+      }
+#else
       wn = WGEN_Expand_Expr (arg0);
       ty_idx = Get_TY(gs_tree_type(arg0));
       WN *comma = NULL;
@@ -2567,6 +3143,7 @@ WGEN_Address_Of(gs_t arg0)
 	WN_set_rtype(comma, WN_rtype(wn));
 	wn = comma;
       }
+#endif
     }
     break;
 
@@ -2674,6 +3251,27 @@ WGEN_Address_Of(gs_t arg0)
       st = WGEN_Generate_Temp_For_Initialized_Aggregate
                                   (gs_decl_initial (arg0), "");
       wn = WN_Lda (Pointer_Mtype, ST_ofst(st), st);
+      break;
+#endif
+#ifdef TARG_ST
+    case GS_VA_ARG_EXPR:
+      wn = WGEN_Expand_Expr (arg0);
+      if (WN_operator (wn) == OPR_ILOAD) {
+	/* [SC] Remove the indirection to get the address. */
+	wn = WN_Binary (OPR_ADD, Pointer_Mtype,
+			WN_kid0 (wn),
+			WN_Intconst (Pointer_Mtype, WN_offset (wn)));
+      } else {
+	/* [SC] Save to temp, and return address of temp. */
+	gs_t type = gs_tree_type (arg0);
+	TY_IDX va_ty_idx = Get_TY (type);
+	TYPE_ID va_mtype = TY_mtype (va_ty_idx);
+	ST *temp_st = Gen_Temp_Symbol (va_ty_idx, ".tmp");
+	Set_ST_addr_saved (temp_st);
+	wn = WN_Stid (va_mtype, 0, temp_st, va_ty_idx, wn);
+	WGEN_Stmt_Append (wn, Get_Srcpos ());
+	wn = WN_Lda (Pointer_Mtype, ST_ofst(temp_st), temp_st);
+      }
       break;
 #endif
 
@@ -2976,8 +3574,12 @@ Setup_EH_Region (bool for_unwinding)
     if (!for_unwinding) pad = lookup_cleanups (iv);
     else
     {
+#ifdef TARG_ST
+      iv = 0;
+#else
 	iv = New_INITV();
         INITV_Set_ZERO (Initv_Table[iv], MTYPE_U4, 1);
+#endif
     }
 
     INITV_IDX initv_label = New_INITV();
@@ -4105,9 +4707,15 @@ get_wrapper_value (gs_t stmt)
         case GS_BIND_EXPR:
           if (expr_is_final_value (gs_bind_expr_body (p)))
           {
+#ifdef TARG_ST
+            temp = gs_build_declc (GS_VAR_DECL, type, Current_Function_Decl());
+            gs_t s = gs_build_2t (GS_TCC_EXPRESSION, GS_INIT_EXPR,
+				  type, temp, gs_bind_expr_body(p));
+#else
             temp = gs_build_decl (GS_VAR_DECL, type);
             gs_t s = gs_build_2 (GS_TCC_EXPRESSION, GS_INIT_EXPR, temp,
                             gs_bind_expr_body(p));
+#endif
             gs_set_operand(p, GS_BIND_EXPR_BODY, s);
             goto out;
           }
@@ -4120,9 +4728,15 @@ get_wrapper_value (gs_t stmt)
         case GS_TRY_CATCH_EXPR:
           if (expr_is_final_value (gs_tree_operand (p, 0)))
           {
+#ifdef TARG_ST
+            temp = gs_build_declc (GS_VAR_DECL, type, Current_Function_Decl());
+            gs_t s = gs_build_2t (GS_TCC_EXPRESSION, GS_INIT_EXPR, type,
+				  temp, gs_tree_operand(p, 0));
+#else
             temp = gs_build_decl (GS_VAR_DECL, type);
             gs_t s = gs_build_2 (GS_TCC_EXPRESSION, GS_INIT_EXPR, temp,
                             gs_tree_operand(p, 0));
+#endif
             gs_set_tree_operand(p, 0, s);
             goto out;
           }
@@ -4141,8 +4755,13 @@ get_wrapper_value (gs_t stmt)
               p = gs_operand(list, 0);
               if (expr_is_final_value (p))
               {
+#ifdef TARG_ST
+                temp = gs_build_declc (GS_VAR_DECL, type, Current_Function_Decl());
+                p = gs_build_2t (GS_TCC_EXPRESSION, GS_INIT_EXPR, type, temp, p);
+#else
                 temp = gs_build_decl (GS_VAR_DECL, type);
                 p = gs_build_2 (GS_TCC_EXPRESSION, GS_INIT_EXPR, temp, p);
+#endif
                 gs_set_operand(list, 0, p);
                 goto out;
               }
@@ -4159,8 +4778,13 @@ get_wrapper_value (gs_t stmt)
             e = p;
           if (expr_is_final_value (p))
           {
+#ifdef TARG_ST
+            temp = gs_build_declc (GS_VAR_DECL, type, Current_Function_Decl());
+            p = gs_build_2t (GS_TCC_EXPRESSION, GS_INIT_EXPR, type, temp, p);
+#else
             temp = gs_build_decl (GS_VAR_DECL, type);
             p = gs_build_2 (GS_TCC_EXPRESSION, GS_INIT_EXPR, temp, p);
+#endif
             gs_set_tree_operand(e, 1, p);
             goto out;
           }
@@ -4234,6 +4858,10 @@ WGEN_Expand_Expr (gs_t exp,
 #ifdef KEY
   static BOOL must_not_throw = FALSE;
 #endif
+#ifdef TARG_ST
+  FmtAssert(! is_aggr_init_via_ctor, ("Unexpected is_aggr_init_via_ctor"));
+  bool voided_cond = FALSE;
+#endif
   gs_code_t tmp_code;
 
   wn = NULL;
@@ -4248,6 +4876,9 @@ WGEN_Expand_Expr (gs_t exp,
     case GS_FUNCTION_DECL:
       {
 	 st = Get_ST (exp);
+#ifdef TARG_ST
+	 check_ref (exp);
+#endif
 	 ty_idx = ST_type (st);
 	 wn = WN_Lda (Pointer_Mtype, ST_ofst(st), st);
       }
@@ -4294,6 +4925,42 @@ WGEN_Expand_Expr (gs_t exp,
 	Unregister_Cleanup(); // KEY bug 11188
       }
       break;
+#ifdef TARG_ST
+    case GS_TARGET_EXPR:
+      /* We have normalized the tree to remove all "normal" TARGET_EXPR
+	 nodes, only "orphaned" TARGET_EPXR nodes remain.  Ref the gcc
+         tree documentation for definitions of normal and orphaned here.
+	 so here we do not have to worry about aliases of results.
+	 We can treat simply as an assignment to the slot,
+	 with a cleanup.
+	 The normalization also guarantees that if we may need the
+	 value of the exp, it is in operand 1; if we are sure we do not
+	 need it, then it is in operand 3.
+	 Also note that a gcc tree transformation has
+	 replaced the messy case of aggr_init_expr with AGGR_INIT_VIA_CTOR_P
+	 by a call to the constructor, so we do not have to worry about
+	 that either.
+      */
+      {
+	gs_t slot     = gs_tree_operand(exp, 0);
+	bool written_in_exp = ! gs_tree_operand(exp, 1);
+	gs_t t        = written_in_exp ? gs_tree_operand(exp, 3) : gs_tree_operand(exp, 1);
+	gs_t cleanup  = gs_tree_operand(exp, 2);
+	st            = Get_ST (slot);
+	TY_IDX ty     = ST_type(st);
+	TYPE_ID mtype = TY_mtype (ty);
+	WN *rhs = WGEN_Expand_Expr (t, ! written_in_exp);
+	if (rhs) {
+	  WGEN_Set_ST_Addr_Saved (rhs);
+	  WGEN_Stmt_Append(WN_Stid (mtype, ST_ofst(st), st, ty, rhs),
+			  Get_Srcpos());
+	}
+	if (cleanup) {
+	  Push_Temp_Cleanup(cleanup, true, gs_cleanup_eh_only(exp));
+	}
+	/* FALLTHRU to VAR_DECL */
+      }
+#else
 
     case GS_TARGET_EXPR:
       {
@@ -4385,7 +5052,7 @@ WGEN_Expand_Expr (gs_t exp,
 	}
 	else 
 	{
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	  gs_t ret_type = NULL;
 	  if (gs_tree_code(t) == GS_AGGR_INIT_EXPR)
 	  { // bug 11159: Get the return type.
@@ -4511,6 +5178,7 @@ WGEN_Expand_Expr (gs_t exp,
 	}
 #endif
       }
+#endif
 
     case GS_CONSTRUCTOR:
 #ifdef KEY
@@ -4533,10 +5201,20 @@ WGEN_Expand_Expr (gs_t exp,
         PREG_NUM preg_num = 0;
 	desc_ty_idx = component_ty_idx;
 	TY_IDX hi_ty_idx = Get_TY (gs_tree_type(exp));
+#ifdef TARG_ST
+	/* [CG]: volatile can be on expression itself or on 
+	   type of component. */
+	BOOL is_volatile = (gs_tree_this_volatile(exp)
+			    || (component_ty_idx != 0
+				&& TY_is_volatile(component_ty_idx)));
+#endif
 	if (desc_ty_idx == 0)
 	  desc_ty_idx = hi_ty_idx;
-
+#ifdef TARG_ST
+	if (! MTYPE_is_class_integer(TY_mtype(desc_ty_idx)))
+#else
 	if (! MTYPE_is_integral(TY_mtype(desc_ty_idx)))
+#endif
 	  ty_idx = desc_ty_idx;
 	else {
 	  ty_idx = nop_ty_idx;
@@ -4545,6 +5223,88 @@ WGEN_Expand_Expr (gs_t exp,
 	}
 
 	UINT cvtl_size = 0; // if non-zero, need to generate CVTL with this size
+#ifdef TARG_ST
+	//
+	// Arthur: if only 32 bit operations are allowed on target,
+	//         need a CVT
+	//
+	BOOL need_cvt = FALSE;
+	BOOL need_cvtl = FALSE;
+	TY_IDX cvt_ty_idx;
+
+	// 
+	// First, determine whether a CVT is necessary
+	//
+	if (Only_32_Bit_Ops) {
+	  if (TY_size(ty_idx) > TY_size(desc_ty_idx)) {
+	    //
+	    // widening a value in memory 
+	    //
+	    // Want to generate:
+	    //
+	    //    I4I2LDID
+	    //  I8I4CVT         if desc_ty_idx <= 4; ty_idx > 4
+	    //
+	    //  I8I5LDID        if desc_ty_idx > 4; ty_idx > 4
+	    //
+	    //  I4I2LDID        if ty_idx <= 4
+	    //
+	    if (TY_size(ty_idx) > 4 && TY_size(desc_ty_idx) <= 4) {
+	      need_cvt = TRUE;
+	      cvt_ty_idx = ty_idx;
+	      ty_idx = MTYPE_To_TY(Mtype_TransferSign(TY_mtype(desc_ty_idx), MTYPE_I4));
+	    }
+	  }
+	  else if (TY_size(ty_idx) < TY_size(desc_ty_idx)) {
+
+	    //
+	    // truncating the value in memory to a smaller value
+	    // in register. Want to generate depending on sizes:
+	    //
+	    //
+	    //   1. ty_idx:I2 desc_idx: I4
+	    //
+	    //      I4I4LDID
+	    //    I4CVTL 16 
+	    //
+	    //   2. ty_idx:I2 desc_idx: I8
+	    //
+	    //        I8I8LDID
+	    //      I4I8CVT
+	    //    I4CVTL 16
+	    //
+	    //   3. ty_idx: I5 desc_idx: I8
+	    //
+	    //      I8I8LDID
+	    //    I5I8CVT
+	    //
+
+	    if (TY_size(desc_ty_idx) > 4 && TY_size(ty_idx) >= 4) {
+	      need_cvt = TRUE;
+	      cvt_ty_idx = ty_idx;
+	    }
+	    else if (TY_size(desc_ty_idx) <= 4) {
+	      if (! is_bit_field) {
+		need_cvtl = TRUE;
+		cvt_ty_idx = MTYPE_signed(TY_mtype(ty_idx)) ? MTYPE_To_TY(MTYPE_I4) : MTYPE_To_TY(MTYPE_U4);
+		cvtl_size = TY_size(ty_idx) * 8;
+	      }
+	    }
+	    else {
+	      if (! is_bit_field) {
+		need_cvt = TRUE;
+		need_cvtl = TRUE;
+		cvt_ty_idx = MTYPE_signed(TY_mtype(ty_idx)) ? MTYPE_To_TY(MTYPE_I4) : MTYPE_To_TY(MTYPE_U4);
+		cvtl_size = TY_size(ty_idx) * 8;
+	      }
+	    }
+
+	    ty_idx = desc_ty_idx;
+
+	  } // truncation
+	}
+
+#else  /* !TARG_ST */      
 	if (! is_bit_field) {
 	  if (TY_size(desc_ty_idx) > TY_size(ty_idx)) {
 	    if (Target_Byte_Sex == BIG_ENDIAN)
@@ -4557,10 +5317,15 @@ WGEN_Expand_Expr (gs_t exp,
 	  if (TY_size(desc_ty_idx) > TY_size(ty_idx)) 
 	    ty_idx = desc_ty_idx;
 	}
+#endif
 
         TYPE_ID rtype = Widen_Mtype(TY_mtype(ty_idx));
         TYPE_ID desc = TY_mtype(desc_ty_idx);
+#ifdef TARG_ST
+        if (MTYPE_is_class_integer(desc)) {
+#else
         if (MTYPE_is_integral(desc)) {
+#endif
           if (MTYPE_signed(rtype) != MTYPE_signed(desc)) {
             if (MTYPE_size_min(rtype) > MTYPE_size_min(desc) ||
 		is_bit_field)
@@ -4568,11 +5333,13 @@ WGEN_Expand_Expr (gs_t exp,
             else desc = Mtype_TransferSign(rtype, desc);
           }
         }
+#ifndef TARG_ST
 
 	if (gs_tree_this_volatile(exp))
 	  Set_TY_is_volatile(ty_idx);
 #if 1 // wgen bug 10470
 	else Clear_TY_is_volatile(ty_idx);
+#endif
 #endif
 
 #ifdef KEY
@@ -4590,27 +5357,85 @@ WGEN_Expand_Expr (gs_t exp,
 	    code == GS_VAR_DECL || 
 	    code == GS_RESULT_DECL) {
 	  st = Get_ST (exp);
+#ifdef TARG_ST
+	  check_ref (exp);
+#endif
           if (ST_assigned_to_dedicated_preg (st))
+#ifdef TARG_ST
+	    is_volatile = TRUE;
+#else
 	    Set_TY_is_volatile(ty_idx);
+#endif
         }
 	else
 	if (code == GS_CONSTRUCTOR) {
+#ifndef TARG_ST
 	  DevWarn ("Encountered CONSTRUCTOR at line %d", lineno);
+#endif
 	  st = WGEN_Generate_Temp_For_Initialized_Aggregate (exp, "");
 	}
 
 	Is_True(! is_bit_field || field_id <= MAX_FIELD_ID,
 		("WGEN_Expand_Expr: field id for bit-field exceeds limit"));
+#ifdef TARG_ST
+        /* (cbr) gcc 3.3 upgrade: non_pods are reference parameters.
+           Marked with TREE_ADDRESSABLE */
+	/* [SC] RESULT_DECL where we have a pointer in first formal is
+	   treated as reference. */
+	TY_IDX ldid_ty_idx = field_id != 0 ? hi_ty_idx : ty_idx;
+	if (is_volatile) Set_TY_is_volatile(ldid_ty_idx);
+
+        if ((code == GS_PARM_DECL && gs_tree_addressable(gs_tree_type(exp)))
+	    || (code == GS_RESULT_DECL && st == first_formal)) {
+          WN *w0 = WN_Ldid (Pointer_Mtype, 0, st, ST_type(st));
+
+          wn = WN_CreateIload(OPR_ILOAD, rtype,
+                              is_bit_field ? MTYPE_BS : desc, 
+                              ST_ofst(st)+component_offset,
+                              ldid_ty_idx, ST_type(st), w0, field_id);
+        }
+        else {
+          wn = WN_CreateLdid (OPR_LDID, rtype,
+                              is_bit_field ? MTYPE_BS : desc,
+                              ST_ofst(st)+component_offset+preg_num, st,
+                              ldid_ty_idx, field_id);
+        }
+
+	if (is_volatile)
+	  DevAssert (WN_Is_Volatile_Mem(wn), 
+		     ("Non volatile generated for opcode %s", OPCODE_name(WN_opcode(wn))));
+#else
+
 	wn = WN_CreateLdid (OPR_LDID, rtype,
 			    is_bit_field ? MTYPE_BS : desc,
 			    ST_ofst(st)+component_offset+xtra_BE_ofst+preg_num, st,
 			    field_id != 0 ? hi_ty_idx : ty_idx, field_id);
+#endif
+#ifdef TARG_ST
+	// May need both !
+	if (need_cvt) {
+	  wn = WN_Cvt(rtype, TY_mtype(cvt_ty_idx), wn);
+	}
+	if (need_cvtl) {
+	  wn = WN_CreateCvtl(OPR_CVTL, TY_mtype(cvt_ty_idx), MTYPE_V, cvtl_size, wn);
+	}
+#else
 	if (cvtl_size != 0)
 	  wn = WN_CreateCvtl(OPR_CVTL, rtype, MTYPE_V, cvtl_size, wn);
+#endif
       }
       break;
 
     case GS_COMPOUND_LITERAL_EXPR:
+#ifdef TARG_ST
+	{
+	  gs_t decl = gs_tree_operand (gs_tree_operand (exp, 0), 0);
+	  WGEN_Initialize_Decl (decl);
+	  wn = WGEN_Expand_Expr (decl,
+				need_result, nop_ty_idx, component_ty_idx,
+				component_offset, field_id, is_bit_field);
+	}
+#else
       {
 	gs_t oper = gs_tree_operand (gs_tree_operand (exp, 0), 0);
 	if (gs_tree_code (gs_decl_initial (oper)) == GS_CONSTRUCTOR)
@@ -4672,6 +5497,7 @@ WGEN_Expand_Expr (gs_t exp,
 	if (cvtl_size != 0)
 	  wn = WN_CreateCvtl(OPR_CVTL, rtype, MTYPE_V, cvtl_size, wn);
       }
+#endif
       break;
 
     case GS_CONST_DECL:
@@ -4915,6 +5741,15 @@ WGEN_Expand_Expr (gs_t exp,
       {
 	ty_idx = Get_TY (gs_tree_type(exp));
         TYPE_ID mtyp = TY_mtype(ty_idx);
+#ifdef TARG_ST //[CG] do not pass nop_ty_idx
+	// do not pass struct type down because will cause rtype of MTYPE_M
+        wn = WGEN_Expand_Expr (gs_tree_operand (exp, 0), need_result,
+			      0,
+                              component_ty_idx, component_offset,
+                              field_id, is_bit_field,
+			      FALSE, target_wn);
+	if (! need_result) break;
+#else
 	// do not pass struct type down because will cause rtype of MTYPE_M
         wn = WGEN_Expand_Expr (gs_tree_operand (exp, 0), TRUE, 
 			      (mtyp == MTYPE_M || mtyp == MTYPE_V) ? 0 : ty_idx,
@@ -4924,6 +5759,7 @@ WGEN_Expand_Expr (gs_t exp,
 			       , FALSE, target_wn
 #endif
 			       );
+#endif
 
 #ifdef KEY // bug 12548
 	if (!wn)
@@ -4933,8 +5769,76 @@ WGEN_Expand_Expr (gs_t exp,
 	  break;
 	if (mtyp == MTYPE_M) 
 	  break;
+#ifdef TARG_ST
+#ifdef STANDARD_C_CONVERSION
+	{
+	  TY_IDX kid_ty = Get_TY(TREE_TYPE(TREE_OPERAND (exp, 0)));
+	  TYPE_ID kid_mtype = TY_mtype(kid_ty);
+	  wn = WGEN_Cast(mtyp, kid_mtype, wn);
+	  break;
+	}
+#endif
+#endif
 	if (WN_rtype(wn) == MTYPE_M) 
 	  break;
+#ifdef TARG_ST
+	//
+	// See if we need type conversions:
+	//
+
+	if (MTYPE_is_class_integer(mtyp) && 
+	    MTYPE_is_class_integer(WN_rtype(wn))) {
+	  if (MTYPE_size_min(mtyp) < MTYPE_size_min(WN_rtype(wn))) {
+	    // Arthur: we can not do CVTL U8 -> U2 on 32-bit
+	    //         machines. Must do CVT U8 -> U4; CVTL U4 -> 16
+	    if (Only_32_Bit_Ops && MTYPE_size_min(WN_rtype(wn)) > 32) {
+	      wn = WN_Cvt(WN_rtype(wn), Widen_Mtype(mtyp), wn);
+	    }
+	    // If it is still smaller, add CVTL
+	    if (MTYPE_size_min(mtyp) < 32) {
+	      wn = WN_CreateCvtl(OPR_CVTL, Widen_Mtype(mtyp), MTYPE_V,
+			         MTYPE_size_min(mtyp), wn);
+	    }
+	  }
+	  else {
+	    TY_IDX ty_idx0 = Get_TY(gs_tree_type(gs_tree_operand (exp, 0)));
+	    TYPE_ID mtyp0 = TY_mtype(ty_idx0);
+
+	    // Arthur: following does not work for 32_Bit_Ops
+	    if (MTYPE_size_min(mtyp) > MTYPE_size_min(mtyp0) /* [CG] &&
+		! Has_Subsumed_Cvtl(WN_operator(wn))*/) {
+	      // make a CVTL for subinteger types and CVT for
+	      // others
+
+              /* (cbr) don't need to sign extend when orig is call < 32 bit */
+              if (gs_tree_code (gs_tree_operand (exp, 0)) != GS_CALL_EXPR) {
+                if (MTYPE_size_min(mtyp) <= 32) {
+                  wn = WN_CreateCvtl(OPR_CVTL, Widen_Mtype(mtyp0), MTYPE_V,
+                                     MTYPE_size_min(mtyp0), wn);
+                }
+                else {
+                  // if mtyp > 32 bits, and mtyp0 is < 32 and
+                  // Only_32_bit_Ops, must travel through a I4
+                  if (Only_32_Bit_Ops && (MTYPE_size_min(mtyp0) < 32)) {
+                    wn = WN_CreateCvtl(OPR_CVTL, Widen_Mtype(mtyp0), MTYPE_V,
+                                       MTYPE_size_min(mtyp0), wn);
+                  }
+                  // finally, make a CVT
+                  wn = WN_Cvt(Widen_Mtype(mtyp0), mtyp, wn);
+                }
+              }
+              else if (MTYPE_size_min(mtyp) > 32) {
+                wn = WN_Cvt(Widen_Mtype(mtyp0), mtyp, wn);
+              }
+            }
+            /* (cbr) don't forget the conversion ! */
+	    else { // same size
+	      if (mtyp != WN_rtype(wn)) 
+	        wn = WN_Cvt(WN_rtype(wn), mtyp, wn);
+	    }            
+          }
+	}
+#else /* !TARG_ST */
 	if (MTYPE_is_integral(mtyp) && MTYPE_is_integral(WN_rtype(wn))) {
 	  // For 32-bit to 64-bit conversion, make the result have the same
 	  // sign as the source.  Fix bug 480.
@@ -4967,6 +5871,7 @@ WGEN_Expand_Expr (gs_t exp,
 	    }
 	  }
 	}
+#endif
 	else {
 	  if (mtyp != WN_rtype(wn)) 
 	    wn = WN_Cvt(WN_rtype(wn), mtyp, wn);
@@ -4979,6 +5884,11 @@ WGEN_Expand_Expr (gs_t exp,
 	INT64 ofst;
 	arg0 = gs_tree_operand (exp, 0);
 	arg1 = gs_tree_operand (exp, 1);
+#ifdef TARG_ST
+        /* (cbr) handle non_lvalue_expr used for ptrtotmem funcs */
+	if (gs_tree_code (arg0) ==  GS_NON_LVALUE_EXPR)
+	  arg0 = gs_tree_operand (arg0, 0);
+#endif
 	// If this is an indirect of a nop_expr, we may need to fix the
 	// type of the nop_expr:
 	(void) Get_TY(gs_tree_type(arg0));
@@ -5014,7 +5924,12 @@ WGEN_Expand_Expr (gs_t exp,
 			        gs_get_integer_value(gs_decl_field_bit_offset(arg1)))
 			      / BITSPERBYTE;
 	else ofst = 0;
-#if defined( KEY) && !defined(TARG_ST)
+#ifdef TARG_ST
+	// [CG]: Propagate down volatile on component ty
+	BOOL is_volatile = gs_tree_this_volatile(exp);
+	if (is_volatile) Set_TY_is_volatile(ty_idx);
+#endif
+#ifdef KEY
 	FmtAssert (DECL_FIELD_ID(arg1) != 0,
                    ("WGEN_Expand_Expr: DECL_FIELD_ID used but not set"));
 
@@ -5091,7 +6006,13 @@ WGEN_Expand_Expr (gs_t exp,
       {
 	UINT xtra_BE_ofst = 0; 	// only needed for big-endian target
         wn0 = WGEN_Expand_Expr (gs_tree_operand (exp, 0));
-
+#ifdef TARG_ST
+	/* [CG]: volatile can be on expression itself or on 
+	   type of component. */
+	BOOL is_volatile = (gs_tree_this_volatile(exp) ||
+			    component_ty_idx != 0 && 
+			    TY_is_volatile(component_ty_idx));
+#endif
 	TY_IDX hi_ty_idx;
 	if (gs_tree_code(gs_tree_type(exp)) == GS_VOID_TYPE)
 	  hi_ty_idx = MTYPE_To_TY(MTYPE_I4); // dummy; for bug 10176 Comment #4
@@ -5104,7 +6025,11 @@ WGEN_Expand_Expr (gs_t exp,
         if (! MTYPE_is_integral(TY_mtype(desc_ty_idx)))
 	  ty_idx = desc_ty_idx;
 	else {
+#ifdef TARG_ST
+	  ty_idx = 0;
+#else
 	  ty_idx = nop_ty_idx;
+#endif
 	  if (ty_idx == 0) 
 	    ty_idx = desc_ty_idx;
 	}
@@ -5120,8 +6045,17 @@ WGEN_Expand_Expr (gs_t exp,
 	  if (TY_size(desc_ty_idx) > TY_size(ty_idx)) 
 	    ty_idx = desc_ty_idx;
 	}
-
+#ifdef TARG_ST
+	// [CG]: In gnu C dereferencing a void pointer is just a warning, thus
+	// we must handle this case.
+	TYPE_ID rtype;
+	if (TY_mtype(ty_idx) == MTYPE_V) 
+	  rtype = MTYPE_V;
+	else  
+	  rtype = Widen_Mtype(TY_mtype(ty_idx));
+#else
 	TYPE_ID rtype = Widen_Mtype(TY_mtype(ty_idx));
+#endif
 	TYPE_ID desc = TY_mtype(desc_ty_idx);
 	if (MTYPE_is_integral(desc)) {
 	  if (MTYPE_signed(rtype) != MTYPE_signed(desc)) {
@@ -5131,9 +6065,10 @@ WGEN_Expand_Expr (gs_t exp,
 	    else desc = Mtype_TransferSign(rtype, desc);
 	  }
 	}
-
+#ifndef TARG_ST
 	if (gs_tree_this_volatile(exp))
 	  Set_TY_is_volatile(hi_ty_idx);
+#endif
 
 	Is_True(! is_bit_field || field_id <= MAX_FIELD_ID,
 		("WGEN_Expand_Expr: field id for bit-field exceeds limit"));
@@ -5142,13 +6077,26 @@ WGEN_Expand_Expr (gs_t exp,
 	if (!wn0)
 	  break;
 #endif
+#ifdef TARG_ST
+	// [CG] Handle void case.
+	if (TY_mtype(hi_ty_idx) == MTYPE_V) {
+	  if (WN_has_side_effects (wn0)) {
+	    wn = WGEN_Append_Expr_Stmt (wn0);
+	  }
+	  wn = NULL;
+	} else
+#endif
 
         if (!WGEN_Keep_Zero_Length_Structs &&
             rtype == MTYPE_M              &&
             TY_size (hi_ty_idx) == 0) {
 	  if (WN_has_side_effects (wn0)) {
+#ifdef TARG_ST
+	    wn = WGEN_Append_Expr_Stmt (wn0);
+#else
 	    wn = WN_CreateEval (wn0);
 	    WGEN_Stmt_Append (wn, Get_Srcpos());
+#endif
 	  }
 	  wn = NULL;
         }
@@ -5184,13 +6132,56 @@ WGEN_Expand_Expr (gs_t exp,
 	    }
 	  }
 	  // NOTE: In GNU4, this may be a REFERENCE_REF_P.
+#ifdef TARG_ST
+	  if (need_result || is_volatile)
+#else
 	  if (need_result)
+#endif
+#ifdef TARG_ST
+	    {
+	      // Arthur: if rtype happens to be a 64-bit type but
+	      //         desc is less, and 
+	      //         we are in Only_32_Bit_Ops mode, need
+	      //         a CVT
+	      //
+	      TYPE_ID cvt_ty = MTYPE_UNKNOWN;
+	      if (Only_32_Bit_Ops &&
+		  MTYPE_is_class_integer(rtype) &&
+		  MTYPE_is_class_integer(desc)) {
+		
+		if (MTYPE_byte_size(rtype) > 4 && MTYPE_byte_size(desc) <= 4) {
+		  cvt_ty = rtype;
+		  rtype = MTYPE_signed_type(rtype) ? MTYPE_I4 : MTYPE_U4;
+		}
+	      }
+	      
+	      TY_IDX iload_ty_idx = field_id != 0 ? hi_ty_idx : ty_idx;
+	      if (is_volatile) Set_TY_is_volatile(hi_ty_idx);
+	      TY_IDX iload_addr_ty_idx = Make_Pointer_Type (hi_ty_idx, FALSE);
+	      wn = WN_CreateIload(OPR_ILOAD, rtype,
+				  is_bit_field ? MTYPE_BS : desc, 
+				  component_offset+xtra_BE_ofst,
+				  iload_ty_idx, 
+				  iload_addr_ty_idx,
+				  wn0, field_id);
+	      
+	      if (is_volatile)
+		DevAssert (WN_Is_Volatile_Mem(wn), 
+			   ("Non volatile generated for opcode %s", OPCODE_name(WN_opcode(wn))));
+	      
+	      // If need a CVT
+	      if (cvt_ty != MTYPE_UNKNOWN) {
+		wn = WN_Cvt(rtype, cvt_ty, wn);
+	      }
+	    }
+#else
 	    wn = WN_CreateIload(OPR_ILOAD, rtype,
 				is_bit_field ? MTYPE_BS : desc, 
 				component_offset+xtra_BE_ofst,
 				field_id != 0 ? hi_ty_idx : ty_idx, 
 				Make_Pointer_Type (hi_ty_idx, FALSE),
 				wn0, field_id);
+#endif
 	  else
 	  if (WN_has_side_effects (wn0))
 	    wn = wn0;
@@ -5216,9 +6207,29 @@ WGEN_Expand_Expr (gs_t exp,
 	wn0 = WGEN_Expand_Expr (gs_tree_operand (exp, 0),
 	                        need_result || (mtyp != MTYPE_V));
 #endif
+#ifdef TARG_ST
+#ifdef STANDARD_C_CONVERSION
+	{
+	  wn = wn0;
+	  if (mtyp == MTYPE_M || mtyp == MTYPE_V) break;
+	  TY_IDX kid_ty = Get_TY(gs_tree_type(gs_tree_operand (exp, 0)));
+	  TYPE_ID kid_mtype = TY_mtype(kid_ty);
+	  wn = WGEN_Cast(mtyp, kid_mtype, wn0);
+	  break;
+	}
+#endif
+#endif
 	if (mtyp == MTYPE_V)
 	  wn = wn0;
+#ifdef TARG_ST
+	else if (MTYPE_byte_size(mtyp) < 4 && MTYPE_is_integral(WN_rtype(wn0))
+		 // [SC] CVTL has a constraint that the type of kid0 must be of the
+		 // same size as the result.
+		 && (MTYPE_byte_size(Widen_Mtype(mtyp)) ==
+		     MTYPE_byte_size(WN_rtype(wn0))))
+#else
 	else if (MTYPE_byte_size(mtyp) < 4 && MTYPE_is_integral(WN_rtype(wn0)))
+#endif
 	  wn = WN_CreateCvtl(OPR_CVTL, Widen_Mtype(mtyp), MTYPE_V,
 			     MTYPE_size_min(mtyp), wn0);
 	else {
@@ -5226,6 +6237,10 @@ WGEN_Expand_Expr (gs_t exp,
 	  if (mtyp == WN_rtype(wn0) || mtyp == MTYPE_V)
 	    wn = wn0;
 	  else {
+#ifndef TARG_ST
+	    // [SC] Disabled this for now, since FE_Pointer_Type_To_Mtype uses
+	    // c_int_model, and I am nervous of adding that the file due
+	    // to possible complications with reconfigurability support.
 #ifdef KEY // prevent zero extension when converting to 64-bit address type
 	    if (gs_tree_code(gs_tree_type(exp)) == GS_POINTER_TYPE &&
 		MTYPE_byte_size(FE_Pointer_Type_To_Mtype()) == 8) {
@@ -5245,6 +6260,7 @@ WGEN_Expand_Expr (gs_t exp,
 	    }
 	    else
 #endif
+#endif
 	    wn = WN_Cvt(WN_rtype(wn0), mtyp, wn0);
 	    // The following opcodes are not valid for MIPS
 	    if (WN_opcode(wn) == OPC_I4U4CVT ||
@@ -5262,6 +6278,19 @@ WGEN_Expand_Expr (gs_t exp,
       {
         wn0 = WGEN_Expand_Expr (gs_tree_operand (exp, 0));
 	ty_idx = Get_TY (gs_tree_type(exp));
+#ifdef TARG_ST
+#ifdef STANDARD_C_CONVERSION
+	{
+	  TYPE_ID mtyp = TY_mtype(ty_idx);
+	  wn = wn0;
+	  if (mtyp == MTYPE_M || mtyp == MTYPE_V) break;
+	  TY_IDX kid_ty = Get_TY(gs_tree_type(gs_tree_operand (exp, 0)));
+	  TYPE_ID kid_mtype = TY_mtype(kid_ty);
+	  wn = WGEN_Cast(mtyp, kid_mtype, wn0);
+	  break;
+	}
+#endif
+#endif
 	TYPE_ID mtyp = Widen_Mtype(TY_mtype(ty_idx));
 	wn = WN_Trunc(WN_rtype(wn0), mtyp, wn0);
       }
@@ -5316,8 +6345,14 @@ WGEN_Expand_Expr (gs_t exp,
 		  // stmt_expr's var_decl to be an indirect_ref of the fake
 		  // parm.
 		  gs_t ptr_var =
+#ifdef TARG_ST
+		    gs_build_declc(GS_VAR_DECL,
+				   gs_build_pointer_type(gs_tree_type(var_decl)),
+				   Current_Function_Decl ());
+#else
 		    gs_build_decl(GS_VAR_DECL,
 			       gs_build_pointer_type(gs_tree_type(var_decl)));
+#endif
 		  _gs_code(var_decl, GS_INDIRECT_REF);
 		  gs_set_tree_operand(var_decl, 0, ptr_var);
 		  set_DECL_ST(ptr_var, WN_st(target_wn));
@@ -5440,7 +6475,9 @@ WGEN_Expand_Expr (gs_t exp,
     case GS_TRUNC_DIV_EXPR:
     case GS_TRUNC_MOD_EXPR:
     case GS_RDIV_EXPR:
+#ifndef TARG_ST
     case GS_EXACT_DIV_EXPR:
+#endif
     case GS_TRUTH_AND_EXPR:
     case GS_TRUTH_OR_EXPR:
     case GS_TRUTH_XOR_EXPR:
@@ -5464,19 +6501,64 @@ WGEN_Expand_Expr (gs_t exp,
 
 
         //bug 2649, 5503 --- need conversion
+#ifdef TARG_ST
+	if ((MTYPE_is_class_integer(etype)) &&
+#else
         if ((MTYPE_is_integral(etype)) &&
+#endif
             (Widen_Mtype(etype) != etype) &&
 	    (TY_size (Get_TY(gs_tree_type(exp))) < 32) &&
 	     (code == GS_PLUS_EXPR || code == GS_MINUS_EXPR || 
-	     code == GS_MULT_EXPR || code == GS_LSHIFT_EXPR || 
-	     code == GS_BIT_XOR_EXPR || code == GS_BIT_IOR_EXPR))
+	     code == GS_MULT_EXPR || code == GS_LSHIFT_EXPR  
+#ifndef TARG_ST
+               // [SC] I cannot see how these two can require sign extension:
+       // they should preserve the correct sign extension of the result.
+	     || code == GS_BIT_XOR_EXPR || code == GS_BIT_IOR_EXPR
+#endif
+             ))
           wn = WN_CreateCvtl(OPR_CVTL, Widen_Mtype(etype), MTYPE_V,
                              TY_size (Get_TY(gs_tree_type(exp))) * 8, wn);
        }
        break;
+#ifdef TARG_ST
+// [HK] add special treatment for EXACT_DIV_EXPR case
+
+    case GS_EXACT_DIV_EXPR:
+    {
+    	TYPE_ID etype = TY_mtype(Get_TY(gs_tree_type(exp)));
+	INT64 val = gs_get_integer_value(gs_tree_operand (exp, 1));
+	wn0 = WGEN_Expand_Expr (gs_tree_operand (exp, 0));
+	if ((MTYPE_is_class_integer(etype)) &&
+	    (Is_Power_Of_2(val, etype)))
+	{ 
+	   TYPE_ID mtyp = Widen_Mtype(etype);
+	   wn1 = WN_Intconst (mtyp, Get_Power_Of_2(val, mtyp));
+	   wn  = WN_Binary (MTYPE_signed(mtyp) ? OPR_ASHR : OPR_LSHR,
+                         mtyp, wn0, wn1);
+	}
+	else
+	{     
+	   wn1 = WGEN_Expand_Expr (gs_tree_operand (exp, 1));
+	   wn  = WN_Binary (Operator_From_Tree [code].opr, Widen_Mtype(etype), wn0, wn1);
+
+	   if ((MTYPE_is_class_integer(etype)) &&
+	    (Widen_Mtype(etype) != etype) &&
+	    (TY_size (Get_TY(gs_tree_type(exp))) < 32) &&
+	    (code == GS_PLUS_EXPR || code == GS_MINUS_EXPR || code == GS_MULT_EXPR))
+	       wn = WN_CreateCvtl(OPR_CVTL, Widen_Mtype(etype), MTYPE_V,
+			     TY_size (Get_TY(gs_tree_type(exp))) * 8, wn);
+	}			     
+      }
+      break;
+#endif /* TARG_ST */
 
     case GS_LROTATE_EXPR:
       {
+#ifdef TARG_ST
+        wn0 = WGEN_Expand_Expr (gs_tree_operand (exp, 0));
+        wn1 = WGEN_Expand_Expr (gs_tree_operand (exp, 1));
+	wn  = WN_Lrotate (TY_mtype(Get_TY(gs_tree_type(exp))), wn0, wn1);
+#else
 	ty_idx = Get_TY(gs_tree_type(exp));
 	TYPE_ID mtype = TY_mtype (ty_idx);
         wn0 = WGEN_Expand_Expr (gs_tree_operand (exp, 0));
@@ -5486,6 +6568,7 @@ WGEN_Expand_Expr (gs_t exp,
 				      TY_size (ty_idx) * 8),
 			 wn1);
 	wn  = WN_Rrotate (TY_mtype(Get_TY(gs_tree_type(exp))), wn0, wn1);
+#endif
       }
       break;
 
@@ -5499,6 +6582,9 @@ WGEN_Expand_Expr (gs_t exp,
 
     case GS_RSHIFT_EXPR:
       {
+#ifdef TARG_ST
+	ty_idx = Get_TY(gs_tree_type(exp));
+#endif
 	TYPE_ID mtyp = Widen_Mtype(TY_mtype(Get_TY(gs_tree_type(exp))));
         wn0 = WGEN_Expand_Expr (gs_tree_operand (exp, 0));
         wn1 = WGEN_Expand_Expr (gs_tree_operand (exp, 1));
@@ -5557,18 +6643,100 @@ WGEN_Expand_Expr (gs_t exp,
        TYPE_ID mtyp0 = TY_mtype(ty_idx0);
        TY_IDX ty_idx1 = Get_TY(gs_tree_type(gs_tree_operand(exp, 1)));
        TYPE_ID mtyp1 = TY_mtype(ty_idx1);
+#ifdef TARG_ST
+       TYPE_ID op_mtype = mtyp0;
+#endif
+#ifdef STANDARD_C_CONVERSION
+	{
+	  TYPE_ID promoted_mtype = WGEN_Promoted_Type(mtyp);
+	  TYPE_ID promoted_binary_mtype = WGEN_Promoted_Binary_Type(mtyp0, mtyp1);
+	  wn0 = WGEN_Cast(promoted_binary_mtype, mtyp0, wn0);
+	  wn1 = WGEN_Cast(promoted_binary_mtype, mtyp1, wn1);
+	  
+	  wn = WN_CreateExp2(Operator_From_Tree [code].opr, 
+			     promoted_mtype,
+			     promoted_binary_mtype, wn0, wn1);
+	  break;
+	}
+#endif
+
+#ifdef TARG_ST
+	if (MTYPE_size_min(mtyp1) > MTYPE_size_min(mtyp0)) {
+	  if (Only_32_Bit_Ops) {
+	    op_mtype = mtyp1;
+	    wn0 = WN_CreateCvtl(OPR_CVTL, Widen_Mtype(mtyp0), MTYPE_V,
+				MTYPE_size_min(mtyp0), wn0);
+	    // [CG] May need a CVT
+	    if (MTYPE_size_min(mtyp1) > 32 && MTYPE_size_min(mtyp0) <= 32) {
+	      wn0 = WN_Cvt(Widen_Mtype(mtyp0), mtyp1, wn0);
+	    }
+	  } else {
+	    op_mtype = mtyp1;
+	    wn0 = WN_CreateCvtl(OPR_CVTL, Widen_Mtype(mtyp0), MTYPE_V,
+				MTYPE_size_min(mtyp0), wn0);
+	  }
+	}
+#else
 
        if (MTYPE_size_min(mtyp1) > MTYPE_size_min(mtyp0) &&
 	   ! Has_Subsumed_Cvtl(WN_operator(wn0)))
 	 wn0 = WN_CreateCvtl(OPR_CVTL, Widen_Mtype(mtyp0), MTYPE_V,
 			     MTYPE_size_min(mtyp0), wn0);
+#endif
+#ifdef TARG_ST
+	if (MTYPE_size_min(mtyp0) > MTYPE_size_min(mtyp1)) {
+	  if (Only_32_Bit_Ops) {
+	    op_mtype = mtyp0;
+	    wn1 = WN_CreateCvtl(OPR_CVTL, Widen_Mtype(mtyp1), MTYPE_V,
+				MTYPE_size_min(mtyp1), wn1);
+	    // [CG] May need a CVT
+	    if (MTYPE_size_min(mtyp0) > 32 && MTYPE_size_min(mtyp1) <= 32) {
+	      wn1 = WN_Cvt(Widen_Mtype(mtyp1), mtyp0, wn1);
+	    }
+	  } else {
+	    op_mtype = mtyp0;
+	    wn1 = WN_CreateCvtl(OPR_CVTL, Widen_Mtype(mtyp1), MTYPE_V,
+				MTYPE_size_min(mtyp1), wn0);
+	  }
+	}
+#else
        if (MTYPE_size_min(mtyp0) > MTYPE_size_min(mtyp1) &&
 	   ! Has_Subsumed_Cvtl(WN_operator(wn1)))
 	 wn1 = WN_CreateCvtl(OPR_CVTL, Widen_Mtype(mtyp1), MTYPE_V,
 			     MTYPE_size_min(mtyp1), wn1);
+#endif
+#ifdef TARG_ST
+	// Arthur: if Only_32_Bit_Ops, need a compare I4I4XXX and
+	//         check if if result mtyp > 32 bits, add a CVT.
+	//
+	// We allow I4I4EQ and I4I8EQ, but not I8I4EQ not I8I8EQ
+	if (Only_32_Bit_Ops) {
+
+	  // I assume mtyp is an inetger or boolean
+	  Is_True(MTYPE_is_class_integer(mtyp) ||
+		  MTYPE_is_class_boolean(mtyp),("mtype"));
+
+	  wn = WN_CreateExp2(Operator_From_Tree [code].opr, 
+			     MTYPE_TransferSize(4, mtyp),
+			     Widen_Mtype(op_mtype), 
+			     wn0, 
+			     wn1);
+	  // need a CVT ?
+	  if (MTYPE_size_min(mtyp) > 32) {
+	    wn = WN_Cvt(WN_rtype(wn), mtyp, wn);
+	  }
+	}
+	else {
+        wn  = WN_Relational (Operator_From_Tree [code].opr,
+			     Widen_Mtype(TY_mtype(Get_TY(gs_tree_type(gs_tree_operand(exp, 0))))),
+			     wn0, wn1);
+	}
+#else
+
 
        wn  = WN_CreateExp2(Operator_From_Tree[code].opr, Widen_Mtype(mtyp),
 			   Widen_Mtype(mtyp0), wn0, wn1);
+#endif
        }
        break;
 
@@ -5592,9 +6760,27 @@ WGEN_Expand_Expr (gs_t exp,
 	wn0 = WGEN_Expand_Expr_With_Sequence_Point (gs_tree_operand (exp, 0),
 						   Boolean_type);
 #endif
+#ifdef TARG_ST
+        /* (cbr) pro-release-1-9-0-B/26 select test is always a boolean */
+        TY_IDX test_idx = TY_mtype(Get_TY(gs_tree_type(gs_tree_operand(exp,0))));
+        if (MTYPE_is_longlong(test_idx))
+          wn0 = WN_Cvt(test_idx, Boolean_type, wn0);
+#endif
+
+
 	if (TY_mtype (ty_idx)  == MTYPE_V ||
+#ifdef TARG_ST
+	    ! need_result ||
+#endif
             TY_mtype (ty_idx1) == MTYPE_V ||
             TY_mtype (ty_idx2) == MTYPE_V) {
+#ifdef TARG_ST
+	  ST *temp_st = NULL;
+	  if (need_result) {
+	    temp_st = Gen_Temp_Symbol (ty_idx, ".tmp");
+	  }
+	  voided_cond = TRUE;
+#endif
 	  WN *then_block = WN_CreateBlock ();
 	  WN *else_block = WN_CreateBlock ();
 	  WN *if_stmt    = WN_CreateIf (wn0, then_block, else_block);
@@ -5614,12 +6800,31 @@ WGEN_Expand_Expr (gs_t exp,
 	  // "then" statement
 	  WGEN_Stmt_Push (then_block, wgen_stmk_if_then, Get_Srcpos());
 	  WGEN_Guard_Var_Push();
+#ifdef TARG_ST
+	  Push_Temp_Cleanup (gs_tree_operand (exp, 1), false);
+          /* (cbr) pro-release-1-9-0-B/6 need if throw_expr part of the conditiol assignment */
+	  wn1 = WGEN_Expand_Expr (gs_tree_operand (exp, 1), need_result);
+#else
+
+#endif
 	  wn1 = WGEN_Expand_Expr (gs_tree_operand (exp, 1), FALSE);
 	  gs_t guard_var1 = WGEN_Guard_Var_Pop();
 	  if (wn1) {
+#ifdef TARG_ST
+	    if (need_result) {
+	      wn1 = WN_Stid (TY_mtype(ty_idx), 0, temp_st, ty_idx, wn1);
+	      WGEN_Stmt_Append (wn1, Get_Srcpos ());
+	    } else {
+	      wn1 = WGEN_Append_Expr_Stmt (wn1);
+	    }
+#else
 	    wn1 = WN_CreateEval (wn1);
 	    WGEN_Stmt_Append (wn1, Get_Srcpos());
+#endif
 	  }
+#ifdef TARG_ST
+	  Do_Temp_Cleanups (gs_tree_operand (exp, 1));
+#endif
 	  WGEN_Stmt_Pop (wgen_stmk_if_then);
 	  // Add guard variables if they are needed.
 	  if (guard_var1 != NULL) {
@@ -5631,12 +6836,30 @@ WGEN_Expand_Expr (gs_t exp,
 	  if (gs_tree_operand(exp, 2) != NULL) {
 	    WGEN_Stmt_Push (else_block, wgen_stmk_if_else, Get_Srcpos());
 	    WGEN_Guard_Var_Push();
+#ifdef TARG_ST
+	    Push_Temp_Cleanup (gs_tree_operand (exp, 2), false);
+	    /* (cbr) need if throw_expr part of the conditiol assignment */
+	    wn2 = WGEN_Expand_Expr (gs_tree_operand (exp, 2), need_result);
+#else
 	    wn2 = WGEN_Expand_Expr (gs_tree_operand (exp, 2), FALSE);
+#endif
 	    gs_t guard_var2 = WGEN_Guard_Var_Pop();
 	    if (wn2) {
+#ifdef TARG_ST
+	      if (need_result) {
+		wn2 = WN_Stid (TY_mtype(ty_idx), 0, temp_st, ty_idx, wn2);
+		WGEN_Stmt_Append (wn2, Get_Srcpos ());
+	      } else {
+		wn2 = WGEN_Append_Expr_Stmt (wn2);
+	      }
+#else
 	      wn2 = WN_CreateEval (wn2);
 	      WGEN_Stmt_Append (wn2, Get_Srcpos());
+#endif
 	    }
+#ifdef TARG_ST
+	    Do_Temp_Cleanups (gs_tree_operand (exp, 2));
+#endif
 	    WGEN_Stmt_Pop (wgen_stmk_if_else);
 	    // Add guard variables if they are needed.
 	    if (guard_var2 != NULL) {
@@ -5711,6 +6934,23 @@ WGEN_Expand_Expr (gs_t exp,
 	  wn2 = WGEN_Expand_Expr_With_Sequence_Point (gs_tree_operand (exp, 2),
 						     TY_mtype (ty_idx));
 #endif
+#ifdef TARG_ST
+          /* (cbr) need to propagate field from cond result */
+          /* astpdx gi10.c */
+          if (field_id) {
+            ty_idx = component_ty_idx;
+            TYPE_ID desc = is_bit_field ? MTYPE_BS : TY_mtype(ty_idx);
+
+            WN_offset(wn1) = WN_offset(wn1)+component_offset;
+            WN_set_field_id(wn1, field_id);
+            WN_set_rtype(wn1, Widen_Mtype(TY_mtype(ty_idx)));
+            WN_set_desc (wn1, desc);
+            WN_offset(wn2) = WN_offset(wn2)+component_offset;
+            WN_set_field_id(wn2, field_id);
+            WN_set_rtype(wn2, Widen_Mtype(TY_mtype(ty_idx)));
+            WN_set_desc (wn2, desc);
+          }
+#endif
 	  wn  = WN_CreateExp3 (OPR_CSELECT, Mtype_comparison (TY_mtype (ty_idx)),
 			   MTYPE_V, wn0, wn1, wn2);
 	  Set_PU_has_very_high_whirl (Get_Current_PU ());
@@ -5736,8 +6976,14 @@ WGEN_Expand_Expr (gs_t exp,
 	  // init_expr (var_decl/result_decl/parm_decl).  This will make all
 	  // tree nodes that point to X now point to the indirect ref.
 	  gs_t opnd0 = gs_tree_operand(exp, 0);
+#ifdef TARG_ST
+	  gs_t ptr_var = gs_build_declc(GS_VAR_DECL,
+					gs_build_pointer_type(gs_tree_type(opnd0)),
+					Current_Function_Decl ());
+#else
 	  gs_t ptr_var = gs_build_decl(GS_VAR_DECL,
 				    gs_build_pointer_type(gs_tree_type(opnd0)));
+#endif
 	  _gs_code(opnd0, GS_INDIRECT_REF);
 	  gs_set_tree_operand(opnd0, 0, ptr_var);
 	  set_DECL_ST(ptr_var, WN_st(target_wn));
@@ -5748,6 +6994,13 @@ WGEN_Expand_Expr (gs_t exp,
     case GS_MODIFY_EXPR:
       if (gs_tree_has_location(exp) == gs_true) // it would otherwise be -1
         lineno = gs_expr_lineno(exp);
+#ifndef TARG_ST
+      /* [SC] No need to look for TARGET_EXPR nested inside the rhs,
+       * since earlier tree normalization (simplify_target_exprs_r) has
+       * fixed them all up.
+       */
+
+
       /*
        * When operand 1 of an init_expr or modify_expr is a target_expr,
        * then the temporary in the target_expr needs to be replaced by
@@ -5970,6 +7223,8 @@ WGEN_Expand_Expr (gs_t exp,
         }
 #endif
       }
+#endif /* ndef TARG_ST */
+
       // fall through
 
     case GS_PREDECREMENT_EXPR:
@@ -5979,7 +7234,7 @@ WGEN_Expand_Expr (gs_t exp,
       {
 	if (gs_tree_code(gs_tree_operand(exp, 1)) == GS_ERROR_MARK)
 	    break;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	// If gs_tree_operand(exp, 1) is a CALL_EXPR that returns a
 	// ptr-to-member-function, then call
 	// WGEN_Expand_Ptr_To_Member_Func_Call_Expr to expand it.  Otherwise,
@@ -5998,7 +7253,21 @@ WGEN_Expand_Expr (gs_t exp,
 	    TY_size(Get_TY(gs_tree_type(gs_tree_operand(exp, 1)))) == 0)
 	  break;
 #endif
+#ifdef TARG_ST
+        /* (cbr) it's possible that the return type is not of the type of
+           modified expression. Treat it separatly
+        */
+        if (component_ty_idx && need_result) {
+          (void) WGEN_Lhs_Of_Modify_Expr(code, gs_tree_operand (exp, 0), NULL,
+					 FALSE, 0, 0, 0, FALSE, wn1, 0, FALSE,
+					 FALSE);
 
+          wn = WGEN_Expand_Expr (gs_tree_operand (exp, 0), TRUE, 0,
+                                component_ty_idx, component_offset, field_id,
+                                is_bit_field); 
+        }
+        else 
+#endif
 	wn  = WGEN_Lhs_Of_Modify_Expr(code, gs_tree_operand (exp, 0), need_result, 
 				     0, 0, 0, FALSE, wn1, 0, FALSE, FALSE);
       }
@@ -6035,20 +7304,43 @@ WGEN_Expand_Expr (gs_t exp,
         else break;
         }
 #endif // KEY
+#ifdef TARG_ST
+	WN *load_wn;
+	if (WN_operator(wn) == OPR_COMMA) {
+	  load_wn = WN_kid1(wn);
+	  WN_set_rtype(wn, rtype);
+	} else {
+	  load_wn = wn;
+	}
+	FmtAssert(OPCODE_is_load(WN_opcode(load_wn)),
+		  ("WGEN_Expand_Expr: Expected LOAD for BIT_FIELD_REF operand"));
+      WN_set_rtype(load_wn, rtype);
+	if (WN_desc(load_wn) != MTYPE_V)
+	  WN_set_desc(load_wn, desc);
+#else
 	WN_set_rtype(wn, rtype);
 	if (WN_desc(wn) != MTYPE_V)
 	  WN_set_desc(wn, desc);
+#endif
 	INT bofst = gs_get_integer_value(gs_tree_operand(exp, 2));
 	INT bsiz =gs_get_integer_value(gs_tree_operand(exp, 1));
 	if ((bsiz & 7) == 0 &&	// field size multiple of bytes
 	    MTYPE_size_min(desc) % bsiz == 0 && // accessed loc multiple of bsiz
 	    bofst % bsiz == 0) {		// bofst multiple of bsiz
 	  // not really a bit-field extraction!
+#ifdef TARG_ST
+             if (WN_desc(load_wn) != MTYPE_V)
+	    if (MTYPE_signed(rtype))
+	      WN_set_desc(load_wn, Mtype_AlignmentClass(bsiz >> 3, MTYPE_CLASS_INTEGER));
+	    else WN_set_desc(load_wn, Mtype_AlignmentClass(bsiz >> 3, MTYPE_CLASS_UNSIGNED_INTEGER));
+	  WN_load_offset(load_wn) = WN_load_offset(load_wn) + (bofst >> 3);
+#else
 	  if (WN_desc(wn) != MTYPE_V)
 	    if (MTYPE_signed(rtype))
 	      WN_set_desc(wn, Mtype_AlignmentClass(bsiz >> 3, MTYPE_CLASS_INTEGER));
 	    else WN_set_desc(wn, Mtype_AlignmentClass(bsiz >> 3, MTYPE_CLASS_UNSIGNED_INTEGER));
 	  WN_load_offset(wn) = WN_load_offset(wn) + (bofst >> 3);
+#endif
 	} else {
 #ifdef KEY
           // bofst is ofst in bits from the base of the object.
@@ -6056,24 +7348,60 @@ WGEN_Expand_Expr (gs_t exp,
           // the load offset using the proper alignment
           // The change is needed when we come here with bofst > base_type_size
           mUINT16 base_type_size = MTYPE_bit_size (desc);
+#ifdef TARG_ST
+          WN_load_offset(load_wn) += (bofst / base_type_size) * MTYPE_byte_size (desc);
+#else
           WN_load_offset(wn) += (bofst / base_type_size) * MTYPE_byte_size (desc);
+#endif
           bofst = bofst % base_type_size;
 #endif
+#ifdef TARG_ST
+          	  if (WN_operator(load_wn) == OPR_LDID)
+	    WN_set_operator(load_wn, OPR_LDBITS);
+	  else WN_set_operator(load_wn, OPR_ILDBITS);
+	  WN_set_bit_offset_size(load_wn, bofst, bsiz);
+#else
 	  if (WN_operator(wn) == OPR_LDID)
 	    WN_set_operator(wn, OPR_LDBITS);
 	  else WN_set_operator(wn, OPR_ILDBITS);
 	  WN_set_bit_offset_size(wn, bofst, bsiz);
+#endif
 #ifdef KEY
+#ifdef TARG_ST
+          TY_IDX ty = MTYPE_To_TY (WN_desc(load_wn));
+	  WN_set_ty (load_wn, ty);
+	  if (WN_operator(load_wn) == OPR_ILDBITS)
+	    WN_set_load_addr_ty(load_wn, Make_Pointer_Type(ty));  // Bug 12394
+#else
 	  TY_IDX ty = MTYPE_To_TY (WN_desc(wn));
 	  WN_set_ty (wn, ty);
 	  if (WN_operator(wn) == OPR_ILDBITS)
 	    WN_set_load_addr_ty(wn, Make_Pointer_Type(ty));  // Bug 12394
+#endif
 	  break;
 #endif
 	}
+#ifdef TARG_ST
+        if (MTYPE_byte_size (WN_desc(load_wn)) != TY_size(WN_ty(load_wn)))
+#else
 	if (MTYPE_byte_size (WN_desc(wn)) != TY_size(WN_ty(wn)))
+#endif
 	  // the container is smaller than the entire struct
 #ifdef KEY
+#ifdef TARG_ST
+            	{
+	  TY_IDX ty = MTYPE_To_TY (WN_desc(load_wn));
+	  if ((TY_kind(Ty_Table[WN_ty(load_wn)]) == KIND_STRUCT)
+              && (TY_kind(Ty_Table[ty]) != KIND_STRUCT))
+	// if struct is being changed to a non-struct, the field-id
+	// does not hold any more.
+		WN_set_field_id (load_wn, 0);
+	  WN_set_ty (load_wn, ty);
+	  // bug 12394
+	  if (WN_operator(load_wn) == OPR_ILOAD || WN_operator(load_wn) == OPR_ILDBITS)
+	    WN_set_load_addr_ty(load_wn, Make_Pointer_Type(ty));
+	}
+#else
 	{
 	  TY_IDX ty = MTYPE_To_TY (WN_desc(wn));
 	  if ((TY_kind(Ty_Table[WN_ty(wn)]) == KIND_STRUCT)
@@ -6086,6 +7414,7 @@ WGEN_Expand_Expr (gs_t exp,
 	  if (WN_operator(wn) == OPR_ILOAD || WN_operator(wn) == OPR_ILDBITS)
 	    WN_set_load_addr_ty(wn, Make_Pointer_Type(ty));
 	}
+#endif
 #else
 	  WN_set_ty (wn, MTYPE_To_TY (WN_desc(wn)));
 #endif
@@ -6098,15 +7427,24 @@ WGEN_Expand_Expr (gs_t exp,
       {
 	UINT xtra_BE_ofst = 0; 	// only needed for big-endian target
 	TY_IDX elem_ty_idx;
+#ifdef TARG_ST
+	/* [CG]: volatile can be on expression itself or on 
+	   type of component. */
+	BOOL is_volatile = (gs_tree_this_volatile(exp) ||
+			    component_ty_idx != 0 && 
+			    TY_is_volatile(component_ty_idx));
+#endif
 	// generate the WHIRL array node
         wn0 = WGEN_Array_Expr(exp, &elem_ty_idx, 0, 0, 0);
 
 	// generate the iload node
 	TY_IDX hi_ty_idx = Get_TY (gs_tree_type(exp));
+#ifndef TARG_ST
 #if 1 // wgen bug 10448
 	if (gs_tree_this_volatile(exp))
 	  Set_TY_is_volatile(hi_ty_idx);
 	else Clear_TY_is_volatile(hi_ty_idx);
+#endif
 #endif
 	desc_ty_idx = component_ty_idx;
 	if (desc_ty_idx == 0)
@@ -6115,7 +7453,11 @@ WGEN_Expand_Expr (gs_t exp,
         if (! MTYPE_is_integral(TY_mtype(desc_ty_idx)))
 	  ty_idx = desc_ty_idx;
 	else {
+#ifdef TARG_ST
+	  ty_idx = 0;
+#else
 	  ty_idx = nop_ty_idx;
+#endif
 	  if (ty_idx == 0) 
 	    ty_idx = desc_ty_idx;
 	}
@@ -6145,16 +7487,38 @@ WGEN_Expand_Expr (gs_t exp,
 
 	Is_True(! is_bit_field || field_id <= MAX_FIELD_ID,
 		("WGEN_Expand_Expr: field id for bit-field exceeds limit"));
+  #ifdef TARG_ST
+	TY_IDX iload_ty_idx = field_id != 0 ? hi_ty_idx : ty_idx;
+	/* [CG]: Set volatile on pointed type. */
+	if (is_volatile) Set_TY_is_volatile(elem_ty_idx);
+	TY_IDX iload_addr_ty_idx = Make_Pointer_Type (elem_ty_idx, FALSE);
+
+	wn = WN_CreateIload(OPR_ILOAD, rtype,
+			    is_bit_field ? MTYPE_BS : desc, 
+			    component_offset+xtra_BE_ofst,
+			    iload_ty_idx,
+			    iload_addr_ty_idx,
+			    wn0, field_id);
+
+
+	if (is_volatile)
+	  DevAssert (WN_Is_Volatile_Mem(wn), 
+		     ("Non volatile generated for opcode %s", OPCODE_name(WN_opcode(wn))));
+#else
 	wn = WN_CreateIload(OPR_ILOAD, rtype,
 			    is_bit_field ? MTYPE_BS : desc, 
 			    component_offset+xtra_BE_ofst,
 			    field_id != 0 ? hi_ty_idx : ty_idx,
 			    Make_Pointer_Type(elem_ty_idx, FALSE),
 			    wn0, field_id);
+#endif
       }
       break;
 
+#ifndef TARG_ST
+      // [SC] All AGGR_INIT nodes should be transformed away.
     case GS_AGGR_INIT_EXPR:
+#endif
     case GS_CALL_EXPR:
       {
 #ifdef KEY // bug 15073
@@ -6171,12 +7535,19 @@ WGEN_Expand_Expr (gs_t exp,
 	INT num_handlers = 0;
         INT i;
 	gs_t list;
+#ifdef TARG_ST
+	WN *whirl_args[3];
+	TY_IDX whirl_types[3];
+	BOOL whirl_args_generated = FALSE;
+	proto_intrn_info_t  *built_info = NULL;
+#endif
 	arg0 = gs_tree_operand (exp, 0);
 	gs_code_t code0 = gs_tree_code (arg0);
 	// KEY:  true if type must be returned in mem
 	BOOL return_in_mem = FALSE;
 #ifdef KEY
 	ST *ret_st = NULL;		// return symbol
+#ifndef TARG_ST
 	if (gs_tree_code(exp) == GS_AGGR_INIT_EXPR &&
 	    gs_aggr_init_via_ctor_p(exp) &&
 	    !is_aggr_init_via_ctor)
@@ -6188,6 +7559,7 @@ WGEN_Expand_Expr (gs_t exp,
 	  // make sure we take the address of this arg.
 	  is_aggr_init_via_ctor = true;
 	}
+#endif
 	processing_function_prototype = TRUE; /* bug 8346 */
 #endif
 	for (list = gs_tree_operand (exp, 1); list; list = gs_tree_chain (list)) {
@@ -6202,12 +7574,14 @@ WGEN_Expand_Expr (gs_t exp,
         }
 #ifdef KEY
         processing_function_prototype = FALSE; /* bug 8346 */
+#ifndef TARG_ST
         if (gs_tree_code(exp) == GS_AGGR_INIT_EXPR)
         {
           // bug 11159: TREE_TYPE does not contain the return type.
           ty_idx = Get_TY(gs_tree_type(gs_tree_type(gs_tree_type(arg0))));
         }
         else
+#endif
 #endif
         ty_idx = Get_TY(gs_tree_type(exp));
 #if 1 // wgen bug 10448
@@ -6226,11 +7600,15 @@ WGEN_Expand_Expr (gs_t exp,
           }
           else
             ret_mtype = TY_mtype (ty_idx);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	  // If the type must be returned in memory, create a symbol and pass
 	  // its address as the first param.
           if (TY_return_in_mem (ty_idx)) {
 	    ret_mtype = MTYPE_V;
+#ifndef TARG_ST
+	    /* We have already inserted a return address argument
+	       (as part of simplify_target_expr), so just treat as
+	       void. */
 	    return_in_mem = TRUE;
             num_args++;		// first param is address of return symbol
             if (gs_tree_code(exp) == GS_AGGR_INIT_EXPR && !target_wn)
@@ -6243,6 +7621,7 @@ WGEN_Expand_Expr (gs_t exp,
               ST * target_st = Get_ST(slot);
               target_wn = WN_Lda (Pointer_Mtype, 0, target_st, 0);
             }
+#endif
 	  }
 #endif
 #if 0 // bug 14792
@@ -6276,8 +7655,11 @@ WGEN_Expand_Expr (gs_t exp,
 		break;
 
 	      case GSBI_BUILT_IN_STDARG_START:
+#ifndef TARG_ST
+                // [SC] Leave this for target-specific code.
 #ifdef KEY
 	      case GSBI_BUILT_IN_VA_START:
+#endif
 #endif
 	      {
 #ifdef TARG_X8664
@@ -6296,6 +7678,10 @@ WGEN_Expand_Expr (gs_t exp,
 		       || gs_tree_code(arg2) == GS_INDIRECT_REF)
 		  arg2 = gs_tree_operand (arg2, 0);
 		ST *st2 = Get_ST (arg2);
+#ifdef TARG_ST
+		check_ref(arg2);
+#endif
+
 #ifdef TARG_X8664
 		const int align = TARGET_64BIT ? 8 : 4;
 		wn = WN_Lda (Pointer_Mtype, 
@@ -6395,6 +7781,9 @@ WGEN_Expand_Expr (gs_t exp,
 		       || last_parm_code == GS_INDIRECT_REF)
 		  last_parm = gs_tree_operand (last_parm, 0);
 		ST *st = Get_ST (last_parm);
+#ifdef TARG_ST
+		check_ref (last_parm);
+#endif
 		arg_wn = WN_Lda (Pointer_Mtype, ST_ofst(st), st);
 		wn = WN_Binary (OPR_ADD, Pointer_Mtype, arg_wn,
 				WN_Intconst (Pointer_Mtype,
@@ -6428,7 +7817,33 @@ WGEN_Expand_Expr (gs_t exp,
 		break;
 
               case GSBI_BUILT_IN_STRCPY:
+#ifdef TARG_ST
+		{
+		  if (arglist == 0
+		      /* Arg could be non-pointer if user redeclared this fcn wrong.  */
+		      || gs_tree_code (gs_tree_type (gs_tree_value (arglist))) != GS_POINTER_TYPE
+		      || gs_tree_chain (arglist) == 0
+		      || gs_tree_code (gs_tree_type (gs_tree_value (gs_tree_chain (arglist)))) != GS_POINTER_TYPE)
+		    {} else {
+		      gs_long_long_t len = c_strlen (gs_tree_value (gs_tree_chain (arglist)));
+		      if (Enable_Expand_Builtin && len >= 0) {
+			whirl_args[0] = WGEN_Expand_Expr(gs_tree_value (arglist));
+			whirl_types[0] = Get_TY(gs_tree_type(gs_tree_value(arglist)));
+			whirl_args[1] = WGEN_Expand_Expr(gs_tree_value (gs_tree_chain (arglist)));
+			whirl_types[1] = Get_TY(gs_tree_type(gs_tree_value(gs_tree_chain(arglist))));
+			whirl_args[2] = WN_Intconst (MTYPE_I4, len+1);
+			whirl_types[2] = MTYPE_To_TY(MTYPE_I4);
+			whirl_args_generated = TRUE;
+			num_args = 3;
+			iopc = INTRN_MEMCPY;
+		      } else {
+			iopc = INTRN_STRCPY;
+		      }
+		    }
+		}
+#else
 		iopc = INTRN_STRCPY;
+#endif
                 break;
 #ifndef TARG_ST
 	      case GSBI_BUILT_IN_STRCHR:
@@ -6453,7 +7868,11 @@ WGEN_Expand_Expr (gs_t exp,
 		  arg1 = gs_tree_value (arglist);
 		  arg2 = gs_tree_value (gs_tree_chain (arglist));
 		  gs_t len1 = c_strlen (arg1);
+#ifdef TARG_ST
+		  if (Enable_Expand_Builtin && len1 >= 0) {
+#else
 		  if (len1) {
+#endif
 		    gs_t len2 = c_strlen (arg2);
 		    if (len2) {
 		      char *ptr1 = get_string_pointer (WGEN_Expand_Expr (arg1));
@@ -6473,7 +7892,7 @@ WGEN_Expand_Expr (gs_t exp,
                 break;
 
               case GSBI_BUILT_IN_STRLEN:
-#ifdef GPLUSPLUS_FE
+#if defined GPLUSPLUS_FE && ! defined TARG_ST
 		iopc = INTRN_STRLEN;
 #else
 		if (arglist == 0
@@ -6482,9 +7901,21 @@ WGEN_Expand_Expr (gs_t exp,
 		  break;
 		else {
 		  gs_t src = gs_tree_value (arglist);
+                  gs_long_long_t len = c_strlen (src);
+#ifdef TARG_ST
+#else
 		  gs_t len = c_strlen (src);
+#endif
+#ifdef TARG_ST
+		  if (Enable_Expand_Builtin && len >= 0) {
+#else
 		  if (len) {
+#endif
+#ifdef TARG_ST
+                      wn = WN_Intconst(TY_mtype (Get_TY (gs_tree_type (exp))), len);
+#else                                     
 		    wn = WGEN_Expand_Expr (len);
+#endif
 		    whirl_generated = TRUE;
 		  }
 		  else {
@@ -6510,7 +7941,9 @@ WGEN_Expand_Expr (gs_t exp,
 #endif
 	    {
 	      arg_wn = WGEN_Expand_Expr (gs_tree_value (gs_tree_operand (exp, 1)));
-#ifdef TARG_MIPS  // bug 12594: call library function for floor
+         #if defined TARG_MIPS  || defined TARG_ST // bug 12594: call library function for floor
+	      // [SC] ST compiler does not yet support floating rtype for FLOOR.
+ // bug 12594: call library function for floor
 	      iopc = INTRN_FLOOR;
 	      intrinsic_op = TRUE;
 #else
@@ -6526,7 +7959,7 @@ WGEN_Expand_Expr (gs_t exp,
 #endif
 	    {
 	      arg_wn = WGEN_Expand_Expr (gs_tree_value (gs_tree_operand (exp, 1)));
-#ifdef TARG_MIPS  // bug 12594: call library function for floor
+#if defined TARG_MIPS || defined TARG_ST  // bug 12594: call library function for floor
 	      iopc = INTRN_FLOORF;
 	      intrinsic_op = TRUE;
 #else
@@ -6535,7 +7968,9 @@ WGEN_Expand_Expr (gs_t exp,
 #endif
 	      break;
 	    }
-
+#ifndef TARG_ST
+	    // [SC] ST compiler does not yet support floating type for FLOOR opr,
+	    // and does not have INTRN_FLOORL, so it cannot do anything here.
 #ifndef TARG_MIPS  // Bug 9071: MIPS needs quad emulation for floor operation
             case GSBI_BUILT_IN_FLOORL:
 #ifdef FE_GNU_4_2_0
@@ -6546,6 +7981,7 @@ WGEN_Expand_Expr (gs_t exp,
               whirl_generated = TRUE;
               break;
 #endif // !TARG_MIPS
+#endif //!TARG_ST
 #endif
 
 	      case GSBI_BUILT_IN_SQRT:
@@ -6553,18 +7989,33 @@ WGEN_Expand_Expr (gs_t exp,
 #ifndef TARG_MIPS  // MIPS needs quad emulation for sqrt operation
               case GSBI_BUILT_IN_SQRTL:
 #endif
+#ifdef TARG_ST
+		// sometimes it is called sqrtf(x), no result_needed
+		// generate a normal call
+		if (ret_mtype == MTYPE_V) break;
+#endif
 		if (! gs_flag_errno_math(program)) {
 		  arg_wn = WGEN_Expand_Expr (gs_tree_value (gs_tree_operand (exp, 1)));
 		  wn = WN_CreateExp1 (OPR_SQRT, ret_mtype, MTYPE_V, arg_wn);
+  #ifdef TARG_ST
+		  whirl_generated = TRUE;
+#endif
 		}
+#ifndef TARG_ST
 		else wn = WGEN_Expand_Math_Errno_Sqrt(exp, ty_idx, ret_mtype);
 		whirl_generated = TRUE;
+#endif
 		break;
 
 #ifdef KEY
 	      case GSBI_BUILT_IN_SINF:
 #endif
               case GSBI_BUILT_IN_SIN:
+#ifdef TARG_ST
+		// sometimes it is called sinf(x), no result_needed
+		// generate a normal call
+		if (ret_mtype == MTYPE_V) break;
+#endif
 		intrinsic_op = TRUE;
 #ifdef TARG_X8664
                 if (!Force_IEEE_Comparisons)
@@ -6591,6 +8042,11 @@ WGEN_Expand_Expr (gs_t exp,
 #ifdef KEY
 	      case GSBI_BUILT_IN_COSF:
 #endif
+#ifdef TARG_ST
+		// sometimes it is called cosf(x), no result_needed
+		// generate a normal call
+		if (ret_mtype == MTYPE_V) break;
+#endif
 		intrinsic_op = TRUE;
 #ifdef TARG_X8664
                 if (!Force_IEEE_Comparisons)
@@ -6614,6 +8070,7 @@ WGEN_Expand_Expr (gs_t exp,
                 break;
 
 #ifdef KEY
+#ifndef TARG_ST
               case GSBI_BUILT_IN_ACOS:
               case GSBI_BUILT_IN_ACOSF:
 		if (ret_mtype == MTYPE_V) ret_mtype = MTYPE_F8;
@@ -6700,7 +8157,6 @@ WGEN_Expand_Expr (gs_t exp,
 		  intrinsic_op = TRUE;
 		}
 		break;
-#ifndef TARG_ST
 	      case GSBI_BUILT_IN_POWI: // bug 10963
 		if (ret_mtype == MTYPE_V) ret_mtype = MTYPE_F8;
 		FmtAssert(ret_mtype == MTYPE_F8,
@@ -6724,7 +8180,7 @@ WGEN_Expand_Expr (gs_t exp,
 		intrinsic_op = TRUE;
 		iopc = INTRN_FQFQI4EXPEXPR;
 		break;
-#endif
+#endif // TARG_ST
 #endif // KEY
 
               case GSBI_BUILT_IN_CONSTANT_P:
@@ -6738,7 +8194,7 @@ WGEN_Expand_Expr (gs_t exp,
                   wn = WN_Intconst (MTYPE_I4, 1);
 		  whirl_generated = TRUE; // KEY
 		}
-#if defined( KEY) && !defined(TARG_ST)  // bugs 1058, 14470
+#ifdef KEY// bugs 1058, 14470
 // If not yet compile-time constant, let the backend decide if it is 
 // a constant
 		else
@@ -6799,6 +8255,51 @@ WGEN_Expand_Expr (gs_t exp,
 		}
                 whirl_generated = TRUE;
 		break;
+#ifdef TARG_ST
+	      case GSBI_BUILT_IN_FROB_RETURN_ADDR:
+		// [SC] Add builtin_frob_return_address, it is also an identity op
+		// on our supported targets.
+		wn   = WGEN_Expand_Expr (gs_tree_value (arglist));
+                whirl_generated = TRUE;
+		break;
+	      /* (cbr) needed to implement eh_return */
+	      case GSBI_BUILT_IN_EH_RETURN_DATA_REGNO:
+		iopc = INTRN_BUILTIN_EH_RETURN_DATA_REGNO;
+		break;
+	      case GSBI_BUILT_IN_DWARF_SP_COLUMN:
+		iopc = INTRN_BUILTIN_DWARF_SP_COLUMN;
+		break;
+	      case GSBI_BUILT_IN_EH_RETURN:
+		iopc = INTRN_BUILTIN_EH_RETURN;
+		break;
+	      case GSBI_BUILT_IN_UNWIND_INIT:
+		iopc = INTRN_BUILTIN_UNWIND_INIT;
+		break;
+	      case GSBI_BUILT_IN_DWARF_CFA:
+		iopc = INTRN_BUILTIN_DWARF_CFA;
+		break;
+	      case GSBI_BUILT_IN_INIT_DWARF_REG_SIZES:
+		iopc = INTRN_BUILTIN_INIT_DWARF_REG_SIZES;
+		break;
+	      case GSBI_BUILT_IN_CLASSIFY_TYPE:
+		// builtin_function ("__builtin_classify_type", default_function_type, BUILT_IN_CLASSIFY_TYPE, BUILT_IN_NORMAL, NULL_PTR);
+		// default_function_type is integer
+		// This is a CALL_EXPR where tree arglist = TREE_OPERAND (exp, 1);
+		wn = emit_builtin_classify_type(exp) ;
+		whirl_generated = TRUE;
+		break;
+	    case GSBI_BUILT_IN_ASSUME:
+	      if (arglist == 0)
+		break;
+	      if (OPT_Expand_Assume)
+	      {
+		arg_wn = WGEN_Expand_Expr (gs_tree_value (arglist));
+		wn = WN_CreateAffirm(arg_wn);
+	      }
+	      whirl_generated = TRUE;
+	      break;
+
+#endif
 
 #ifdef KEY
               case GSBI_BUILT_IN_EXTRACT_RETURN_ADDR:
@@ -6808,12 +8309,15 @@ WGEN_Expand_Expr (gs_t exp,
 				WN_Intconst(Pointer_Mtype, -2));
                 whirl_generated = TRUE;
 		break;
-#ifndef TARG_ST
               case GSBI_BUILT_IN_FRAME_ADDRESS:
+#ifdef TARG_ST
+		iopc = INTRN_BUILTIN_FRAME_ADDRESS;
+#else
 		Set_PU_has_alloca(Get_Current_PU());
 		iopc = MTYPE_byte_size(Pointer_Mtype) == 4 ?
 		   	 INTRN_U4READFRAMEPOINTER : INTRN_U8READFRAMEPOINTER;
 		intrinsic_op = TRUE;
+#endif
 		break;
 	      case GSBI_BUILT_IN_APPLY_ARGS:
 		Set_PU_has_alloca(Get_Current_PU());
@@ -6950,6 +8454,38 @@ WGEN_Expand_Expr (gs_t exp,
 		Set_PU_has_alloca(Get_Current_PU());
 		iopc = INTRN_RETURN;
 		break;	
+#ifdef TARG_ST
+		// Implement built-in versions of ISO C99 Floating Point
+		// Predicates isinf and isnan
+              case GSBI_BUILT_IN_ISINF:
+	      case GSBI_BUILT_IN_ISINFF:
+	      case GSBI_BUILT_IN_ISINFL:
+		{
+		  INT sz = TY_size (Get_TY (gs_tree_type (gs_tree_value (arglist))));
+		  switch (sz) {
+		  case 4: iopc = INTRN_ISINFF; intrinsic_op = TRUE; break;
+		  case 8: iopc = INTRN_ISINFD; intrinsic_op = TRUE; break;
+		  default:
+		    Fail_FmtAssertion ("unexpected size for intrinsic 'isinf'");
+		    break;
+		  }
+		}
+		break;
+              case GSBI_BUILT_IN_ISNAN:
+	      case GSBI_BUILT_IN_ISNANF:
+	      case GSBI_BUILT_IN_ISNANL:
+		{
+		  INT sz = TY_size (Get_TY (gs_tree_type (gs_tree_value (arglist))));
+		  switch (sz) {
+		  case 4: iopc = INTRN_ISNANF; intrinsic_op = TRUE; break;
+		  case 8: iopc = INTRN_ISNAND; intrinsic_op = TRUE; break;
+		  default:
+		    Fail_FmtAssertion ("unexpected size for intrinsic 'isnan'");
+		    break;
+		  }
+		}
+		break;
+#endif
 
                 // Implement built-in versions of the ISO C99 floating point
                 // comparison macros (that avoid raising exceptions for
@@ -6988,10 +8524,37 @@ WGEN_Expand_Expr (gs_t exp,
 	        wn = WGEN_Expand_Expr (gs_tree_value (gs_tree_operand (exp, 1)));
 	        whirl_generated = TRUE;
 #endif
-	        break;
+#ifdef TARG_ST
+		{
+		  /* (cbr) need to remember for branch prediction hint. 0 = no hint */
+		  extern int if_else_hint;
+		  gs_t val = gs_tree_value (gs_tree_chain (arglist));
+		  if (gs_tree_code (val) == GS_INTEGER_CST) {
+		    if_else_hint = (gs_get_integer_value (val)
+				    ? FREQUENCY_HINT_FREQUENT : FREQUENCY_HINT_NEVER);
+		  }
+		}
 #endif
+
+	        break;
               case GSBI_BUILT_IN_FFS:
+#ifdef TARG_ST
+	      case GSBI_BUILT_IN_FFSL:
+	      case GSBI_BUILT_IN_FFSLL:
+		{
+		  INT sz = TY_size (Get_TY (gs_tree_type (gs_tree_value (arglist))));
+		  switch (sz) {
+		  case 4: iopc = INTRN_FFS32; break;
+		  case 8: iopc = INTRN_FFS64; break;
+		  default:
+		    Fail_FmtAssertion ("unexpected size for intrinsic 'ffs'");
+		    break;
+		  }
+		}
+#else	
+
                 iopc = INTRN_I4FFS;
+#endif
                 intrinsic_op = TRUE;
                 if (ret_mtype == MTYPE_V)
                   ret_mtype = MTYPE_I4;
@@ -7005,14 +8568,41 @@ WGEN_Expand_Expr (gs_t exp,
 	      case GSBI_BUILT_IN_POPCOUNT:
 	      case GSBI_BUILT_IN_POPCOUNTL:
 	      case GSBI_BUILT_IN_POPCOUNTLL:
+#ifdef TARG_ST
+		{
+		  INT sz = TY_size (Get_TY (gs_tree_type (gs_tree_value (arglist))));
+		  switch (sz) {
+		  case 4: iopc = INTRN_POPCOUNT32; break;
+		  case 8: iopc = INTRN_POPCOUNT64; break;
+		  default:
+		    Fail_FmtAssertion ("unexpected size for intrinsic 'popcount'");
+		    break;
+		  }
+		}
+#else
 	        iopc = INTRN_POPCOUNT;
+#endif
 		intrinsic_op = TRUE;
 		break;
 	
 	      case GSBI_BUILT_IN_PARITY:
 	      case GSBI_BUILT_IN_PARITYL:
 	      case GSBI_BUILT_IN_PARITYLL:
+#ifdef TARG_ST
+		{
+		  INT sz = TY_size (Get_TY (gs_tree_type (gs_tree_value (arglist))));
+		  switch (sz) {
+		  case 4: iopc = INTRN_PARITY32; break;
+		  case 8: iopc = INTRN_PARITY64; break;
+		  default:
+		    Fail_FmtAssertion ("unexpected size for intrinsic 'parity'");
+		    break;
+		  }
+		}
+#else
+
 	        iopc = INTRN_PARITY;
+#endif
 		intrinsic_op = TRUE;
 		break;
 #endif
@@ -7034,7 +8624,6 @@ WGEN_Expand_Expr (gs_t exp,
 		intrinsic_op = TRUE;
 		break;
 #else
-#ifndef TARG_ST        
 	      case GSBI_BUILT_IN_CLZ:
 		// INTRN_CLZ32 is inline-expanded
 	        iopc = INTRN_CLZ32; 
@@ -7049,6 +8638,23 @@ WGEN_Expand_Expr (gs_t exp,
 	        iopc = INTRN_CLZ;
 		intrinsic_op = TRUE;
 		break;
+#ifdef TARG_ST
+	      case GSBI_BUILT_IN_CTZ:
+	      case GSBI_BUILT_IN_CTZL:
+	      case GSBI_BUILT_IN_CTZLL:	
+		{
+		  INT sz = TY_size (Get_TY (gs_tree_type (gs_tree_value (arglist))));
+		  switch (sz) {
+		  case 4: iopc = INTRN_CTZ32; break;
+		  case 8: iopc = INTRN_CTZ64; break;
+		  default:
+		    Fail_FmtAssertion ("unexpected size for intrinsic 'ctz'");
+		    break;
+		  }
+		}
+		intrinsic_op = TRUE;
+		break;
+#else
 
 	      case GSBI_BUILT_IN_CTZ:
 	      case GSBI_BUILT_IN_CTZL:
@@ -7064,6 +8670,9 @@ WGEN_Expand_Expr (gs_t exp,
 #endif
 #endif
 	      case GSBI_BUILT_IN_TRAP:
+#ifdef TARG_ST
+		wn = emit_builtin_trap ();
+#else
 		call_wn = WN_Create (OPR_CALL, MTYPE_V, MTYPE_V, 0);
 		st = Get_ST (gs_tree_operand (arg0, 0));
 		Set_ST_name_idx (st, Save_Str ("abort"));
@@ -7071,11 +8680,22 @@ WGEN_Expand_Expr (gs_t exp,
 		WN_Set_Linenum (call_wn, Get_Srcpos());
 		WN_Set_Call_Default_Flags (call_wn);
 		WGEN_Stmt_Append (call_wn, Get_Srcpos());
+#endif
 		whirl_generated = TRUE;
 		break;
 
 	      case GSBI_BUILT_IN_PREFETCH:
 	        {
+#ifdef TARG_ST
+		  if (arglist == 0 ||
+		      /* Arg could be non-pointer if user redeclared this fcn wrong.  */
+		      gs_tree_code (gs_tree_type (gs_tree_value (arglist))) != GS_POINTER_TYPE)
+		    break;
+		  if (Ignore_Builtin_Prefetch) {
+		    whirl_generated = TRUE;
+		    break;
+		  }
+#endif
 		  // prefetch address
 		  gs_t pf_arg = gs_tree_operand (exp, 1);
 		  WN * pf_addr = WGEN_Expand_Expr (gs_tree_value (pf_arg));
@@ -7094,6 +8714,19 @@ WGEN_Expand_Expr (gs_t exp,
 		  // locality. LNO does analyze the temporal locality, but
 		  // not sure what is a good way to encode it in PREFETCH.
 		  PF_SET_MANUAL (pf_flag); // manual prefetch
+#ifdef TARG_ST
+		  // clarkes:
+		  // GNU builtin does not have an argument to specify confidence
+		  // (unless it can be derived from locality).
+		  // So set high confidence level since this is a user assertion
+		  // that a prefetch is required.
+		  PF_SET_CONFIDENCE (pf_flag, 2);
+		  // clarkes:
+		  // GNU builtin also does not have a way to specify stride.
+		  // Default it to 1 in first level cache.
+		  PF_SET_STRIDE_1L (pf_flag, 1);
+#endif
+
 		  WGEN_Stmt_Append (WN_CreatePrefetch (0, pf_flag, pf_addr),
 		                   Get_Srcpos());
 		  whirl_generated = TRUE;
@@ -7152,6 +8785,7 @@ WGEN_Expand_Expr (gs_t exp,
                 }
                 break;
 */
+#ifndef TARG_ST
 #ifdef FE_GNU_4_2_0
               // add
               case GSBI_BUILT_IN_FETCH_AND_ADD_1:
@@ -7220,7 +8854,7 @@ WGEN_Expand_Expr (gs_t exp,
                 break;
 #endif // FE_GNU_4_2_0
 #endif
-
+#endif
 	      default:
 		DevWarn ("Encountered BUILT_IN: %d at line %d\n",
 			 gs_decl_function_code (func), lineno);
@@ -7243,10 +8877,18 @@ WGEN_Expand_Expr (gs_t exp,
           }
 
 	  if (intrinsic_op) {
+#ifdef TARG_ST
+	    WN *ikids [INTRN_MAX_ARG];
+#else
 	    WN *ikids [16];
+#endif
 	    for (i = 0, list = gs_tree_operand (exp, 1);
 		 list;
 		 i++, list = gs_tree_chain (list)) {
+#ifdef TARG_ST
+	      FmtAssert(i < INTRN_MAX_ARG,
+			("Intrinsic exceeds the limit of support number of parameters (%d)", INTRN_MAX_ARG));
+#endif
               arg_wn     = WGEN_Expand_Expr (gs_tree_value (list));
 #ifdef KEY // bug 11286
 	      if (i == 1 && TARGET_64BIT &&
@@ -7274,6 +8916,28 @@ WGEN_Expand_Expr (gs_t exp,
 	    case IRETURN_M8I2: ret_mtype = MTYPE_M8I2; break;
 	    case IRETURN_M8I4: ret_mtype = MTYPE_M8I4; break;
 	    default: ;
+	    }
+#endif
+#ifdef TARG_ST
+	    //
+	    // Arthur: there is a bug here !
+	    //         We can't generate an INTRINSIC_OP of rtype
+	    //         < I4/U4. We really need to generate
+	    //           I4INTRINSIC_OP
+	    //         I4CVTL 16
+	    //         for example.
+	    //
+	    // [CG] We get the real return type of the call
+	    // because the rtype of INTRINSIC_OP must be conform
+	    // the the intrinsic prototype. The ret_mtype
+	    // may have been set to void if need_result is true.
+	    // We don't want this
+	    TYPE_ID iop_mtype = TY_mtype (ty_idx);
+	    ret_mtype = iop_mtype;
+
+	    if (MTYPE_byte_size(ret_mtype) < MTYPE_byte_size(Max_Int_Mtype) &&
+		(!MTYPE_is_dynamic(ret_mtype))) {
+	      ret_mtype = MTYPE_signed(ret_mtype) ? Max_Int_Mtype : Max_Uint_Mtype;
 	    }
 #endif
 	    wn = WN_Create_Intrinsic (OPR_INTRINSIC_OP, ret_mtype, MTYPE_V,
@@ -7310,15 +8974,22 @@ WGEN_Expand_Expr (gs_t exp,
 	    num_handlers = Current_Handler_Count();
             call_wn = WN_Create (OPR_CALL, ret_mtype, MTYPE_V,
                                  num_args + num_handlers);
+#ifndef TARG_ST
 	    ST *st2 = DECL_ST2 (gs_tree_operand (arg0, 0));
 
             if (Opt_Level > 0 && st2) {
               WN_st_idx (call_wn) = ST_st_idx (st2);
             }
             else {
+#endif
 	      st = Get_ST (gs_tree_operand (arg0, 0));
+#ifdef TARG_ST
+	      check_ref (gs_tree_operand (arg0, 0));
+#endif
 	      WN_st_idx (call_wn) = ST_st_idx (st);
+#ifndef TARG_ST
             }
+#endif
 	  }
         }
 
@@ -7339,9 +9010,92 @@ WGEN_Expand_Expr (gs_t exp,
           if (gs_decl_inline (func)) {
             wgen_invoke_inliner = TRUE;
           }
+#ifdef TARG_ST
+                   PU& pu_ent = Pu_Table[ST_pu(st)];
+          // this_volatile flag in gcc means that the function will not return
+          if (gs_tree_this_volatile(func)) {
+            Set_PU_has_attr_noreturn (pu_ent);
+#ifdef TARG_ST
+	    if (gs_tree_type (gs_tree_type (func))) {
+	      WN_Set_Call_Never_Return(call_wn);
+	    }
+#endif
+          }
+#ifdef TARG_ST
+          /* (cbr) for 'malloc' attribute */
+          if (gs_decl_is_malloc (func)) {
+            WN_Set_Call_Does_Mem_Alloc(call_wn);
+          }
+#endif
+#endif
         }
+#ifdef TARG_ST
+	// [CL] Apply inline/noinline pragma in order:
+	// check callsite pragmas, then function scope pragmas,
+	// and finally file scope pragmas
+	if (st) {
+	  WN* pragma_wn;
+	  bool has_callsite_pragma = FALSE;
+	  bool has_function_pragma = FALSE;
+	  bool has_file_pragma = FALSE;
+	  
+	  if (pragma_wn = Has_Callsite_Pragma_Inline(call_wn)) {
+	    WN_Set_Call_Inline(call_wn);
+	    has_callsite_pragma = TRUE;
+	    WN_pragma_arg1(pragma_wn) = 1;
+	  }
+	  else if (pragma_wn = Has_Callsite_Pragma_NoInline(call_wn)) {
+	    WN_Set_Call_Dont_Inline(call_wn);
+	    has_callsite_pragma = TRUE;
+	    WN_pragma_arg1(pragma_wn) = 1;
+	  }
+	  
+	  if (!has_callsite_pragma) {
+	    if (pragma_wn = Has_Function_Pragma_Inline(call_wn)) {
+	      WN_Set_Call_Inline(call_wn);
+	      has_function_pragma = TRUE;
+	      WN_pragma_arg1(pragma_wn) = 1;
+	    }
+	    else if (pragma_wn = Has_Function_Pragma_NoInline(call_wn)) {
+	      WN_Set_Call_Dont_Inline(call_wn);
+	      has_function_pragma = TRUE;
+	      WN_pragma_arg1(pragma_wn) = 1;
+	    }
+	  }
+	  
+	  if (!has_callsite_pragma && !has_function_pragma) {
+	    if (pragma_wn = Has_File_Pragma_Inline(call_wn)) {
+	      WN_Set_Call_Inline(call_wn);
+	      has_file_pragma = TRUE;
+	      WN_pragma_arg1(pragma_wn) = 1;
+	    }
+	    else if (pragma_wn = Has_File_Pragma_NoInline(call_wn)) {
+	      WN_Set_Call_Dont_Inline(call_wn);
+	      has_file_pragma = TRUE;
+	      WN_pragma_arg1(pragma_wn) = 1;
+	    }
+	  }
+	}
+	
+	if (whirl_args_generated) {
+	  for (i = 0; i < num_args; i++) {
+	    arg_wn = whirl_args[i];
+	    arg_ty_idx = whirl_types[i];
+	    arg_mtype  = TY_mtype(arg_ty_idx);
+	    // When generating args, don't allow mtype
+	    FmtAssert(arg_mtype != MTYPE_M, ("Unexpected type"));
+	      arg_mtype = WN_rtype(arg_wn);
+	    arg_wn = WN_CreateParm (Mtype_comparison (arg_mtype), arg_wn,
+			   arg_ty_idx, WN_PARM_BY_VALUE);
+	    WN_kid (call_wn, i) = arg_wn ;
+	  }
+	} else {
+#endif
 
         i = 0;
+#ifdef TARG_ST
+	int gcc_index = -1;
+#endif
 #ifdef KEY
 	// If the object must be returned through memory, create the fake first
 	// param to pass the address of the return area.  Here we decide if an
@@ -7365,6 +9119,7 @@ WGEN_Expand_Expr (gs_t exp,
 	for (list = gs_tree_operand (exp, 1);
 	     list;
 	     list = gs_tree_chain (list)) {
+#ifndef TARG_ST
 	  if (i == 0 && is_aggr_init_via_ctor) {
 #ifdef KEY
 	    // Bugs 10917, 11138: The argument may not be a _decl node,
@@ -7393,6 +9148,10 @@ WGEN_Expand_Expr (gs_t exp,
 	    else
 	    {
 #endif // KEY
+#else
+                {
+                    {
+#endif //TARG_ST
             arg_wn     = WGEN_Expand_Expr (gs_tree_value (list));
 	    arg_ty_idx = Get_TY(gs_tree_type(gs_tree_value(list)));
 #if 1 // wgen bug 10448
@@ -7413,6 +9172,17 @@ WGEN_Expand_Expr (gs_t exp,
 	  }
 
 	  arg_mtype  = TY_mtype(arg_ty_idx);
+#ifdef TARG_ST
+          if (!WGEN_Keep_Zero_Length_Structs    &&
+              arg_mtype == MTYPE_M &&
+              TY_size (arg_ty_idx) == 0) {
+            // zero length struct parameter
+	    if (arg_wn && WN_has_side_effects (arg_wn)) {
+	      arg_wn = WGEN_Append_Expr_Stmt (arg_wn);
+            }
+          }
+          else {
+#endif
 #if 1 // wgen bug 10846
 	  // gcc allows non-struct actual to correspond to a struct formal;
 	  // fix mtype of parm node so as not to confuse back-end
@@ -7423,7 +9193,13 @@ WGEN_Expand_Expr (gs_t exp,
           arg_wn = WN_CreateParm (Mtype_comparison (arg_mtype), arg_wn,
 		    		  arg_ty_idx, WN_PARM_BY_VALUE);
           WN_kid (call_wn, i++) = arg_wn;
+#ifdef TARG_ST
+	  }
+#endif
         }
+#ifdef TARG_ST
+	} // Close out else of if (whirl_args_generated)
+#endif
 
 #ifdef ADD_HANDLER_INFO
 	if (num_handlers) 
@@ -7450,7 +9226,15 @@ WGEN_Expand_Expr (gs_t exp,
 // See build_throw() for GNU's handling of this situation.
 	    !must_not_throw)
 	{
+ #ifdef TARG_ST
+	  // [SC] For C, we only need to make a region if we have set up some
+	  // cleanups.  I cannot think why this is not also true for C++, but
+	  // for now I play safe and only eliminate the region for C.
+	  if (!inside_eh_region
+	      && (lang_cplus || unwind_handler_needed ()))
+#else
 	    if (!inside_eh_region)
+#endif
 	    { // check that we are not already in a region
             	WN * region_body = WN_CreateBlock();
 		inside_eh_region = true;
@@ -7523,7 +9307,11 @@ WGEN_Expand_Expr (gs_t exp,
             if (! MTYPE_is_integral(TY_mtype(desc_ty_idx)))
               ty_idx = desc_ty_idx;
             else { 
+#ifdef TARG_ST
+              ty_idx = 0;
+#else
               ty_idx = nop_ty_idx;
+#endif
               if (ty_idx == 0)
                 ty_idx = desc_ty_idx;
             }
@@ -7595,7 +9383,20 @@ WGEN_Expand_Expr (gs_t exp,
 	 arg_mtype  = TY_mtype(arg_ty_idx);
 	 ikids[1] = WN_CreateParm(arg_mtype, arg_wn, arg_ty_idx, 
 				  WN_PARM_BY_VALUE);
-#ifndef TARG_ST 
+#ifdef TARG_ST
+	 if (! MTYPE_is_double (arg_mtype)) {
+	   switch (code) {
+	   case GS_UNGE_EXPR: iopc = INTRN_ISGREATEREQUALF; break;
+	   case GS_UNGT_EXPR: iopc = INTRN_ISGREATERF; break;
+	   case GS_UNLE_EXPR: iopc = INTRN_ISLESSEQUALF; break;
+	   case GS_UNLT_EXPR: iopc = INTRN_ISLESSF; break;
+	   case GS_LTGT_EXPR: iopc = INTRN_ISLESSGREATERF; break;
+	   case GS_ORDERED_EXPR: iopc = INTRN_ISORDEREDF; break;
+	   case GS_UNEQ_EXPR:
+	   case GS_UNORDERED_EXPR: iopc = INTRN_ISUNORDEREDF; break;
+	   }
+	 } else
+#endif
          switch (code) {
 	 case GS_UNGE_EXPR: iopc = INTRN_ISGREATEREQUAL; break;
 	 case GS_UNGT_EXPR: iopc = INTRN_ISGREATER; break;
@@ -7606,7 +9407,6 @@ WGEN_Expand_Expr (gs_t exp,
 	 case GS_UNEQ_EXPR:
 	 case GS_UNORDERED_EXPR: iopc = INTRN_ISUNORDERED; break;
 	 }
-#endif
 	 wn = WN_Create_Intrinsic(OPR_INTRINSIC_OP, Boolean_type, MTYPE_V,
 				  iopc, 2, ikids);
 	 if (code == GS_UNEQ_EXPR) {
@@ -7640,13 +9440,25 @@ WGEN_Expand_Expr (gs_t exp,
 #endif
         wn = WGEN_Expand_Expr (gs_tree_operand (exp, 0), FALSE);
         if (wn && WN_has_side_effects(wn)) {
+#ifdef TARG_ST
+	  wn = WGEN_Append_Expr_Stmt (wn);
+#else            
           wn = WN_CreateEval (wn);
           WGEN_Stmt_Append (wn, Get_Srcpos ());
+#endif
         }
 #ifdef KEY
         // bug 11238: pass on the target
+#ifdef TARG_ST
+	// [SC] Propagate component information to operand.
+        wn = WGEN_Expand_Expr (gs_tree_operand (exp, 1), need_result,
+                               nop_ty_idx, component_ty_idx, component_offset,
+			       field_id, is_bit_field, is_aggr_init_via_ctor,
+			       target_wn);
+#else
         wn = WGEN_Expand_Expr (gs_tree_operand (exp, 1), need_result,
                                0, 0, 0, 0, FALSE, FALSE, target_wn);
+#endif
 #else
         wn = WGEN_Expand_Expr (gs_tree_operand (exp, 1), need_result);
 #endif
@@ -7668,7 +9480,9 @@ WGEN_Expand_Expr (gs_t exp,
 
     case GS_SAVE_EXPR:
       {
+          #ifndef TARG_ST
 	DevWarn ("Encountered SAVE_EXPR at line %d", lineno);
+#endif
         wn = WGEN_Save_Expr (exp, need_result, nop_ty_idx,
 			    component_ty_idx, component_offset, field_id);
       }
@@ -7681,7 +9495,9 @@ WGEN_Expand_Expr (gs_t exp,
 
     case GS_LOOP_EXPR:
       {
+#ifndef TARG_ST
         DevWarn ("Encountered LOOP_EXPR at line %d\n", lineno);
+#endif
         LABEL_IDX saved_loop_expr_exit_label = loop_expr_exit_label;
         loop_expr_exit_label = 0;
         gs_t body = gs_loop_expr_body(exp);
@@ -7703,7 +9519,9 @@ WGEN_Expand_Expr (gs_t exp,
 
     case GS_EXIT_EXPR:
       {
+          #ifndef TARG_ST
         DevWarn ("Encountered EXIT_EXPR at line %d\n", lineno);
+#endif
 	WN *test = WGEN_Expand_Expr (gs_tree_operand(exp, 0));
         New_LABEL (CURRENT_SYMTAB, loop_expr_exit_label);
         WN *stmt = WN_CreateTruebr (loop_expr_exit_label, test);
@@ -7794,6 +9612,181 @@ WGEN_Expand_Expr (gs_t exp,
 	  break;
 	} // end of TARGET_64BIT
 #endif
+#ifdef TARG_ST200
+      {
+	INT64 align;
+	INT64 rounded_size;
+	INT64 adjustment;
+	gs_t type = gs_tree_type (exp);
+	TY_IDX hi_ty_idx = Get_TY (type);
+	TY_IDX ty_idx = component_ty_idx ? component_ty_idx : hi_ty_idx;
+	TYPE_ID mtype = TY_mtype (ty_idx);
+	INT64 type_size = TY_size (hi_ty_idx);
+	INT64 units_per_word = TARGET_64BIT ? 8 : 4;
+	TY_IDX va_list_ty_idx = Get_TY (gs_va_list_type_node ());
+	TYPE_ID va_list_mtype = TY_mtype (va_list_ty_idx);
+	WN *ap_addr, *ap_load, *ap_store;
+	WN *arg_addr;
+	UINT va_list_field_id = (Target_Byte_Sex == BIG_ENDIAN) ? 1 : 0;
+	gs_t operand = gs_tree_operand (exp, 0);
+	ap_addr = WGEN_Address_Of (operand);
+	if (WN_operator (ap_addr) == OPR_LDA) {
+	  ap_load = WN_Ldid (Pointer_Mtype, 0, WN_st (ap_addr),
+			     va_list_ty_idx, va_list_field_id);
+	} else {
+	  ap_load = WN_Iload (Pointer_Mtype, 0, va_list_ty_idx,
+			      ap_addr, va_list_field_id);
+	}
+	
+	// Any parameter larger than a word is double-word aligned.
+	align = ((type_size > units_per_word)
+		 ? (2 * units_per_word)
+		 : units_per_word);
+	// All parameters are passd in a multiple of word-sized slots.
+	rounded_size = (((type_size + (units_per_word - 1))
+			 / units_per_word) * units_per_word);
+
+	// Set wn = start address of arg.
+	if (align > 4) {
+	  // ap is guaranteed to be 4-byte aligned, but for larger
+	  // alignments we must adjust it.
+	  wn = WN_Binary (OPR_BAND,
+			  Pointer_Mtype,
+			  WN_Binary (OPR_ADD, Pointer_Mtype, ap_load,
+				     WN_Intconst (Pointer_Mtype, align - 1)),
+			  WN_Intconst (Pointer_Mtype, ~(align - 1)));
+	} else {
+	  wn = ap_load;
+	}
+
+	// add to wn the rounded size of the arg
+	wn = WN_Binary (OPR_ADD, Pointer_Mtype, wn,
+			WN_Intconst (Pointer_Mtype, rounded_size));
+	// store back in ap
+	if (WN_operator (ap_addr) == OPR_LDA) {
+	  ap_store = WN_Stid (Pointer_Mtype, 0, WN_st (ap_addr),
+			      va_list_ty_idx, wn, va_list_field_id);
+	} else {
+	  ap_store = WN_Istore (Pointer_Mtype, 0,
+				Make_Pointer_Type (va_list_ty_idx),
+				WN_COPY_Tree (ap_addr),
+				wn, va_list_field_id);
+	}
+        WGEN_Stmt_Append (ap_store, Get_Srcpos ());
+	
+	if (Target_Byte_Sex == BIG_ENDIAN
+	    && type_size > units_per_word
+	    && (gs_integral_type_p (type)
+		|| gs_float_type_p (type))) {
+	  // Handle multi-word scalar/complex, passed in registers.
+	  UINT64 n_words = type_size / units_per_word;
+	  // Need to exchange alternate words.
+	  // Create a temporary of the appropriate type.
+	  // The type is union { ty; struct { int; int; ... } };
+	  TY_IDX struct_ty_idx;
+	  TY &struct_ty = New_TY (struct_ty_idx);
+	  TY_Init (struct_ty, type_size, KIND_STRUCT, MTYPE_M, 0);
+	  Set_TY_align (struct_ty_idx, TY_align (MTYPE_To_TY (Def_Int_Mtype)));
+	  FLD_HANDLE struct_fld;
+	  for (UINT64 offs = 0; offs < type_size; offs += units_per_word) {
+	    struct_fld = New_FLD ();
+	    FLD_Init (struct_fld, 0 /* anonymous */,
+		      MTYPE_To_TY(Def_Int_Mtype), offs);
+	    if (offs == 0) Set_TY_fld (struct_ty, struct_fld);
+	  }
+	  Set_FLD_last_field (struct_fld);
+	  TY_IDX union_ty_idx;
+	  TY &union_ty = New_TY (union_ty_idx);
+	  TY_Init (union_ty, type_size, KIND_STRUCT, MTYPE_M, 0);
+	  Set_TY_is_union (union_ty_idx);
+	  Set_TY_align (union_ty_idx, TY_align (ty_idx));
+	  FLD_HANDLE union_fld;
+	  union_fld = New_FLD ();
+	  FLD_Init (union_fld, 0 /* anonymous */, ty_idx, 0);
+	  Set_TY_fld (union_ty, union_fld);
+	  union_fld = New_FLD ();
+	  FLD_Init (union_fld, 0 /* anonymous */, struct_ty_idx, 0);
+	  Set_FLD_last_field (union_fld);
+	  // Finally created the type, now create the temporary.
+	  ST *temp_st = Gen_Temp_Symbol (union_ty_idx, "_va_arg_temp");
+	  Set_ST_addr_saved (temp_st);
+	  // Copy words from stack to symbol, swapping
+	  // alternate words.
+	  INT64 load_offset = -type_size;
+	  INT64 store_offset = 0;
+	  // field_id 3 is the first field of the struct within the
+	  // union.
+	  UINT store_field_id = 3;
+	  for (UINT64 w = 0; w < n_words; w+= 2) {
+	    wn = WN_CreateIload(OPR_ILOAD, Def_Int_Mtype, Def_Int_Mtype,
+				load_offset,
+				MTYPE_TO_TY_array[Def_Int_Mtype],
+				Make_Pointer_Type(ty_idx),
+				WN_COPY_Tree (ap_load));
+	    wn = WN_Stid (Def_Int_Mtype, 
+			  store_offset + units_per_word,
+			  temp_st, union_ty_idx,
+			  wn, store_field_id++);
+	    WGEN_Stmt_Append (wn, Get_Srcpos ());
+	    wn = WN_CreateIload(OPR_ILOAD, Def_Int_Mtype, Def_Int_Mtype,
+				load_offset + units_per_word,
+				MTYPE_TO_TY_array[Def_Int_Mtype],
+				Make_Pointer_Type(ty_idx),
+				WN_COPY_Tree (ap_load));
+	    wn = WN_Stid (Def_Int_Mtype, store_offset,
+			  temp_st, union_ty_idx,
+			  wn, store_field_id++);
+	    WGEN_Stmt_Append (wn, Get_Srcpos ());
+	    load_offset += 2 * units_per_word;
+	    store_offset += 2 * units_per_word;
+	  }
+	  // load the ap limit value.
+	  if (WN_operator (ap_addr) == OPR_LDA) {
+	    wn = WN_Ldid (Pointer_Mtype, 4, WN_st (ap_addr),
+			  va_list_ty_idx, 2);
+	  } else {
+	    wn = WN_Iload (Pointer_Mtype, 4, va_list_ty_idx,
+			   WN_COPY_Tree (ap_addr), 2);
+	  }
+	  // compare ap with the limit.
+	  wn = WN_Relational (OPR_LT,
+			      Pointer_Mtype,
+			      WN_Binary (OPR_SUB,
+					 Pointer_Mtype,
+					 WN_COPY_Tree (ap_load),
+					 WN_Intconst (Pointer_Mtype,
+						      rounded_size)),
+			      wn);
+	  // if ap is below limit, load the temporary,
+	  // otherwise load through ap.
+	  wn = WN_Cselect (mtype,
+			   wn,
+			   WN_Ldid (mtype, 0, temp_st, union_ty_idx, 1),
+			   WN_CreateIload (OPR_ILOAD, mtype, mtype,
+					   -type_size + component_offset,
+					   field_id != 0 ? hi_ty_idx : ty_idx,
+					   Make_Pointer_Type (hi_ty_idx, FALSE),
+					   WN_COPY_Tree (ap_load), field_id));
+	  Set_PU_has_very_high_whirl (Get_Current_PU ());
+	} else {
+	  if (Target_Byte_Sex == BIG_ENDIAN
+	      && type_size < units_per_word
+	      && ! gs_aggregate_type_p (type)) {
+	    adjustment = type_size;
+	  } else {
+	    adjustment = rounded_size;
+	  }
+	  arg_addr = WN_COPY_Tree (ap_load);
+	  // Now ap points to the word just after the arg.
+	  wn = WN_CreateIload (OPR_ILOAD, Widen_Mtype (mtype), mtype,
+			       -adjustment + component_offset,
+			       field_id != 0 ? hi_ty_idx : ty_idx,
+			       Make_Pointer_Type (hi_ty_idx, FALSE),
+			       arg_addr,
+			       field_id);
+	}
+      }
+#else
         // code swiped from builtins.c (std_expand_builtin_va_arg)
 	INT64 align;
 	INT64 rounded_size;
@@ -7888,6 +9881,7 @@ WGEN_Expand_Expr (gs_t exp,
         wn = WN_CreateIload (OPR_ILOAD, Widen_Mtype (mtype), mtype, -rounded_size,
 			     ty_idx, Make_Pointer_Type(ty_idx, FALSE), 
 			     ap_load);
+#endif /* TARG_ST200 */
       }
       break;
 
@@ -8061,6 +10055,18 @@ WGEN_Expand_Expr (gs_t exp,
       WGEN_Expand_Label(gs_bind_expr_vars(exp));
       break;
 #endif
+#ifdef TARG_ST
+    case GS_SCOPE_STMT: 
+      need_result=FALSE;
+      break;
+#ifdef HANDLE_WFE_PRAGMAS
+    case GS_PRAGMA_STMT:
+      // We can see these nested inside void GS_COND_EXPR.
+      FmtAssert (! need_result, ("WGEN_Expand_Expr: GS_PRAGMA_STMT in non-void context"));
+      WGEN_Expand_Pragma(exp, false);
+      break;
+#endif
+#endif
 
     default:
        FmtAssert(FALSE,
@@ -8070,6 +10076,29 @@ WGEN_Expand_Expr (gs_t exp,
   } //end switch code
 
   if (need_result)
+#ifdef TARG_ST
+    FmtAssert (wn != 0 || code == GS_CALL_EXPR || code == GS_BIND_EXPR ||
+               code == GS_STMT_EXPR     ||
+               code == GS_EXPR_STMT     ||	// KEY
+               code == GS_COMPOUND_EXPR ||
+               code == GS_INDIRECT_REF  ||
+               code == GS_COMPONENT_REF ||
+               code == GS_LOOP_EXPR     ||
+               code == GS_NOP_EXPR      ||
+	       code == GS_THROW_EXPR    ||
+	       code == GS_AGGR_INIT_EXPR ||
+	       code == GS_STATEMENT_LIST ||
+	       code == GS_CLEANUP_POINT_EXPR ||
+               code == GS_COMPONENT_REF || // ST
+               code == GS_FOR_STMT      || // ST
+               code == GS_RETURN_EXPR   || // ST
+               code == GS_ASM_EXPR      || // ST
+	       code == GS_PRAGMA_STMT   ||
+               (code == GS_COND_EXPR && voided_cond),
+	       ("WGEN_Expand_Expr: NULL WHIRL tree for %s",
+		gs_code_name(code)));
+#else
+
     FmtAssert (wn != 0 || code == GS_CALL_EXPR || code == GS_BIND_EXPR ||
                code == GS_STMT_EXPR     ||
                code == GS_EXPR_STMT     ||	// KEY
@@ -8086,6 +10115,7 @@ WGEN_Expand_Expr (gs_t exp,
 	        (TY_mtype(ty_idx) == MTYPE_V || TY_mtype(ty_idx) == MTYPE_M)),
 	       ("WGEN_Expand_Expr: NULL WHIRL tree for %s",
 		gs_code_name(code)));
+#endif
 
   return wn;
 }
@@ -8105,8 +10135,17 @@ WGEN_One_Stmt_Cleanup (gs_t exp)
 
   // Make the saved expr's, if any, unique to this cleanup.
   wgen_save_expr_level = ++wgen_last_save_expr_level;
-  
+  #ifdef TARG_ST
+  /* (cbr) pro-fe3.3-c++/50 make sure to catch cleanup code that can throw
+     instead of unwinding it and recalling cleanup again */
+  extern bool can_cleanup;
+  can_cleanup = false;
+#endif
   WGEN_One_Stmt(exp);
+#ifdef TARG_ST
+  can_cleanup = true;
+#endif
+
   WGEN_unusable_label_idx = idx;
   wgen_save_expr_level = save_expr_level;
 }
@@ -8115,6 +10154,13 @@ WGEN_One_Stmt_Cleanup (gs_t exp)
 void WGEN_One_Stmt (gs_t exp, WN* target_wn)
 {
   WN *wn;
+#ifdef TARG_ST
+  // (cbr) returning zero length struct. will be converted to void.
+  gs_t exp_type = gs_tree_type (exp);
+  if (exp_type && gs_aggregate_type_p(exp_type) && gs_get_integer_value (gs_type_size (exp_type)) == 0)
+    wn = NULL;
+  else
+#endif
   wn = WGEN_Expand_Expr_With_Sequence_Point (exp, MTYPE_V, target_wn);
   if (wn) {
     for (;;) {
@@ -8137,13 +10183,21 @@ void WGEN_One_Stmt (gs_t exp, WN* target_wn)
       }
       else {
 	if (WN_has_side_effects (wn)) {
+#ifdef TARG_ST
+	  wn = WGEN_Append_Expr_Stmt (wn);
+#else
 	  wn = WN_CreateEval (wn);
 	  WGEN_Stmt_Append (wn, Get_Srcpos ());
+#endif
 	}
 	break;
       }
     }
   }
+#ifdef TARG_ST
+  // [CL]
+  Clear_Callsite_Pragma_List(WARN);
+#endif
 }
 
 
@@ -8156,7 +10210,130 @@ WGEN_Tree_Node_Name (gs_t exp)
 {
   return gs_code_name(gs_tree_code (exp));
 }
-#ifndef TARG_ST
+#ifdef TARG_ST
+TYPE_ID
+WGEN_Promoted_Type(TYPE_ID mtype)
+{
+  switch (mtype) {
+  case MTYPE_I1:
+  case MTYPE_I2:
+  case MTYPE_U1:
+  case MTYPE_U2:
+    return MTYPE_I4;
+  default:
+    return mtype;
+  }
+}
+
+static WN *
+WGEN_Integral_Cast (TYPE_ID mtype, TYPE_ID kid_mtype, WN *kid)
+{
+  WN *cvt;
+  WN *widen;
+  TYPE_ID widen_mtype = WGEN_Promoted_Type(mtype);
+  TYPE_ID widen_kid_mtype = WGEN_Promoted_Type(kid_mtype);
+  
+  if (kid_mtype != widen_kid_mtype) {
+    TYPE_ID cvtl_mtype = Mtype_TransferSign(kid_mtype, widen_kid_mtype);
+    WN *widen = WN_CreateCvtl(OPR_CVTL, cvtl_mtype, MTYPE_V,
+			      MTYPE_size_min(kid_mtype), kid);
+    return WGEN_Integral_Cast(mtype, widen_kid_mtype, widen);
+  }
+  if (widen_mtype != mtype) {
+    WN *cvt = WGEN_Integral_Cast(widen_mtype, kid_mtype, kid);
+    TYPE_ID cvtl_mtype = Mtype_TransferSign(mtype, widen_mtype);
+    return WN_CreateCvtl(OPR_CVTL, cvtl_mtype, MTYPE_V,
+			 MTYPE_size_min(mtype), cvt);
+  }
+  if (mtype != kid_mtype) {
+    return WN_Cvt(kid_mtype, mtype, kid);
+  } 
+  return kid;
+}
+
+static WN *
+WGEN_Float_Trunc (TYPE_ID mtype, TYPE_ID kid_mtype, WN *kid)
+{
+  WN *cvt;
+  WN *widen;
+  TYPE_ID widen_mtype = WGEN_Promoted_Type(mtype);
+
+  if (widen_mtype != mtype) {
+    WN *cvt = WGEN_Float_Trunc(widen_mtype, kid_mtype, kid);
+    TYPE_ID cvtl_mtype = Mtype_TransferSign(mtype, widen_mtype);
+    return WN_CreateCvtl(OPR_CVTL, widen_mtype, MTYPE_V,
+			 MTYPE_size_min(mtype), cvt);
+  }
+  return WN_Trunc(kid_mtype, mtype, kid);
+}
+
+static WN *
+WGEN_Integral_To_Float (TYPE_ID mtype, TYPE_ID kid_mtype, WN *kid)
+{
+  WN *cvt;
+  WN *widen;
+  TYPE_ID widen_kid_mtype = WGEN_Promoted_Type(kid_mtype);
+  
+  if (kid_mtype != widen_kid_mtype) {
+    TYPE_ID cvtl_mtype = Mtype_TransferSign(kid_mtype, widen_kid_mtype);
+    WN *widen = WN_CreateCvtl(OPR_CVTL, cvtl_mtype, MTYPE_V,
+			      MTYPE_size_min(kid_mtype), kid);
+    return WGEN_Integral_To_Float(mtype, widen_kid_mtype, widen);
+  }
+  return WN_Cvt(kid_mtype, mtype, kid);
+}
+
+static WN *
+WGEN_Float_Cast (TYPE_ID mtype, TYPE_ID kid_mtype, WN *kid)
+{
+  if (mtype != kid_mtype) {
+    return WN_Cvt(kid_mtype, mtype, kid);
+  } else {
+    return kid;
+  }
+}
+
+WN *
+WGEN_Cast(TYPE_ID mtype, TYPE_ID kid_mtype, WN *kid)
+{
+  if (MTYPE_is_integral(mtype) &&
+      MTYPE_is_integral(kid_mtype)) {
+    return WGEN_Integral_Cast(mtype, kid_mtype, kid);
+  } else if (MTYPE_is_integral(mtype) &&
+	     MTYPE_is_float(kid_mtype)) {
+    return WGEN_Float_Trunc(mtype, kid_mtype, kid);
+  } else if (MTYPE_is_float(mtype) &&
+	     MTYPE_is_integral(kid_mtype)) {
+    return WGEN_Integral_To_Float(mtype, kid_mtype, kid);
+  } else if (MTYPE_is_float(mtype) &&
+	     MTYPE_is_float(kid_mtype)) {
+    return WGEN_Float_Cast(mtype, kid_mtype, kid);
+  }
+  FmtAssert(0, ("Unexpected mtypes for cast: %s -> %s\n", MTYPE_name(kid_mtype), MTYPE_name(mtype)));
+  return 0;
+}
+
+TYPE_ID
+WGEN_Promoted_Binary_Type(TYPE_ID mtype1, TYPE_ID mtype2)
+{
+  TYPE_ID widen_mtype1 = WGEN_Promoted_Type(mtype1);
+  TYPE_ID widen_mtype2 = WGEN_Promoted_Type(mtype2);
+  if (widen_mtype1 == widen_mtype2) {
+    return widen_mtype1;
+  } else if (MTYPE_size_min(widen_mtype1) < MTYPE_size_min(widen_mtype2)) {
+    return widen_mtype2;
+  } else if (MTYPE_size_min(widen_mtype1) > MTYPE_size_min(widen_mtype2)) {
+    return widen_mtype1;
+  } else if (!MTYPE_signed(widen_mtype1)) {
+    return widen_mtype1;
+  } else if (!MTYPE_signed(widen_mtype1)) {
+    return widen_mtype2;
+  }
+  FmtAssert(0, ("binary type promotion failed for mtypes: %s %s\n", MTYPE_name(mtype1), MTYPE_name(mtype2)));
+}
+
+#endif
+
 // g++ uses a record to hold a ptr-to-member-function.  Return TRUE iff EXP is
 // a CALL_EXPR that returns a ptr-to-member-function and the ABI requires that
 // such a record be returned in memory.
@@ -8178,7 +10355,6 @@ WGEN_Call_Returns_Ptr_To_Member_Func (gs_t exp)
   }
   return FALSE;
 }
-#endif
 // See comment for WGEN_Call_Returns_Ptr_To_Member_Func.
 static WN*
 WGEN_Expand_Ptr_To_Member_Func_Call_Expr (gs_t exp, TY_IDX nop_ty_idx,

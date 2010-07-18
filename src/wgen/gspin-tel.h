@@ -38,6 +38,13 @@ extern gs_t gs_strip_nops(gs_t node);
 extern gs_t gs_build_2(gs_tree_code_class_t code_class,
                        gs_code_t code, gs_t k0, gs_t k1);
 #endif
+#ifdef TARG_ST
+extern gs_t gs_build_declc(gs_code_t code, gs_t node2, gs_t context);
+extern gs_t gs_build_1(gs_tree_code_class_t code_class,
+		       gs_code_t code, gs_t k0);
+extern gs_t gs_build_2t(gs_tree_code_class_t code_class,
+			gs_code_t code, gs_t type, gs_t k0, gs_t k1);
+#endif
 extern gs_t gs_build_identifier(const gs_char_t * name);
 extern gs_t gs_build_tree_list(gs_t value, gs_t purpose);
 extern gs_t gs_build_type(gs_code_t code);
@@ -1391,6 +1398,31 @@ gs_skip_artificial_parms_for (gs_t fn, gs_t list)
 
 #define gs_function_first_user_parmtype(fn) \
     gs_skip_artificial_parms_for (fn, gs_type_arg_types (gs_tree_type (fn)))
+#endif
+#ifdef TARG_ST
+static inline gs_bool_t gs_integral_type_p (gs_t t)
+{
+  gs_code_t code = gs_tree_code(t);
+  return (code == GS_INTEGER_TYPE || code == GS_ENUMERAL_TYPE
+	  || code == GS_BOOLEAN_TYPE || code == GS_CHAR_TYPE);
+}
+
+static inline gs_bool_t gs_float_type_p (gs_t t)
+{
+  gs_code_t code = gs_tree_code(t);
+  return (code == GS_REAL_TYPE
+	  || (code == GS_COMPLEX_TYPE
+	      && gs_tree_code (gs_tree_type (t)) == GS_REAL_TYPE));
+}
+
+static inline gs_bool_t gs_aggregate_type_p (gs_t t)
+{
+  gs_code_t code = gs_tree_code(t);
+  return (code == GS_ARRAY_TYPE || code == GS_RECORD_TYPE
+	  || code == GS_UNION_TYPE || code == GS_QUAL_UNION_TYPE);
+  // [SC] SET_TYPE not required (yet), as it does not appear in gcc
+  // output for C or C++.
+}
 #endif
 
 #endif // __GSPIN_TEL_H__

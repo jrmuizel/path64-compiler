@@ -88,11 +88,17 @@ extern TYPE_ID Widen_Mtype(TYPE_ID);
 
 /* traverse the tree and addr_saved if address of a variable is taken */
 extern void WGEN_Set_ST_Addr_Saved (WN *);
-
+#ifndef TARG_ST
+// Unused in ST compiler.
 // Convert inplace target order words in 'buf' to host order. 'buf' is a two
 // word array. 
 extern void WGEN_Convert_To_Host_Order (long *buf);
+#endif
 extern void Setup_EH_Region (bool =false);
+#ifdef TARG_ST
+// Make standard integral ctype promotions
+extern TYPE_ID WGEN_Promoted_Type(TYPE_ID mtype);
+#endif
 
 extern INT32 wgen_save_expr_stack_last;
 extern INT32 wgen_save_expr_level;

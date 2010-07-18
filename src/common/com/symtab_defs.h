@@ -783,16 +783,26 @@ public:
 #define PU_HAS_NONLOCAL_GOTO_LABEL	0x0000040000000000LL // has a label jumped to directly from a nested function
 #define PU_HAS_GOTO_OUTER_BLOCK	0x0000080000000000LL // has GOTO_OUTER_BLOCK stmt
 #endif
+
 #ifdef TARG_ST
+#define PU_IS_MALLOC            0x0000020000000000LL // __attribute__((malloc)) semantic 
+#define PU_HAS_ATTR_MALLOC      0x0000020000000000LL // __attribute__((malloc)) semantic 
+#define PU_HAS_ATTR_PURE        0x0000040000000000LL // __attribute__((pure)) semantic 
+#define PU_HAS_ATTR_NORETURN    0x0000080000000000LL // __attribute__((noreturn)) semantic
+#define PU_IS_CONSTRUCTOR       0x0000100000000000LL  // PU is a constructor of a class
+#define PU_IS_OPERATOR          0x0000200000000000LL // PU is overload of operator
+
+#define PU_IS_CDECL             0x0002000000000000LL // __attribute__((cdecl)) semantic
+
 /* (cbr) for gnu extern inline support */
-#define	PU_MUST_DELETE		0x0000000800000000LL // pu must not be emitted
+#define	PU_MUST_DELETE		0x0004000000000000LL // pu must not be emitted
 /* (cbr) for C++ const object initializers (cdtors can write into consts) */
-#define	PU_STATIC_INITIALIZER	0x0000001000000000LL // pu is main C++ static initializer
+#define	PU_STATIC_INITIALIZER	0x0008000000000000LL // pu is main C++ static initializer
 /* [CG] for no_instrument_function attribute. */
-#define	PU_NO_INSTRUMENT_FUNCTION 0x0000002000000000LL // pu must not be generated with instrumentation functions
+#define	PU_NO_INSTRUMENT_FUNCTION 0x0010000000000000LL // pu must not be generated with instrumentation functions
 /* [CR] for interrupt attribute. */
-#define	PU_IS_INTERRUPT 0x0000004000000000LL // pu is an interrupt handler
-#define	PU_IS_INTERRUPT_NOSTKALN 0x0000008000000000LL // pu is an interrupt handler
+#define	PU_IS_INTERRUPT 0x0020000000000000LL // pu is an interrupt handler
+#define	PU_IS_INTERRUPT_NOSTKALN 0x0040000000000000LL // pu is an interrupt handler
 /* [VL-HMP] for tasks in the context of the HMP */
 #define PU_IS_TASK               0x0000010000000000LL // pu is a HMP task
 #endif

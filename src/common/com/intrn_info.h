@@ -64,6 +64,8 @@ typedef enum INTRN_RETKIND {
   IRETURN_F10,               /* MTYPE_F10 */
 #ifdef TARG_ST
   IRETURN_DYNAMIC,           /* dynamically added mtype */
+  IRETURN_PPU2,         /* return type of ctype_b_loc() */
+  IRETURN_PPI4,         /* return type of ctype_toupper_loc() and ctype_tolower_loc() */
 #endif
 #ifdef TARG_X8664
   IRETURN_V16I2,	     /* MTYPE_V16I2 */
