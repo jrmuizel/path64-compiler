@@ -36,14 +36,7 @@
 #include "stack.h"
 #include "utils.h"
 
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
-/* Linux sys/types.h comment says this  belongs to "old compatibility names
- * for C types"--no indication that it varies with machine word size.
- */
-typedef unsigned long ulong;
-#endif /* defined(BUILD_OS_DARWIN) */
-
-static inline ulong __pmp_distance(ulong a, ulong b)
+static inline uintmax_t __pmp_distance(uintmax_t a, uintmax_t b)
 {
   return a > b ? a - b: b - a;
 }
@@ -51,7 +44,7 @@ static inline ulong __pmp_distance(ulong a, ulong b)
 static const char *__pmp_pos_below = "below";
 static const char *__pmp_pos_above = "above";
  
-static inline const char *__pmp_relative (ulong a, ulong b)
+static inline const char *__pmp_relative (uintmax_t a, uintmax_t b)
 {
   return a < b ? __pmp_pos_below : __pmp_pos_above;
 }
@@ -74,7 +67,7 @@ static inline void __pmp_creak (const char *fmt, ...)
  
 void __pmp_segv (int sig, siginfo_t *info, void *arg)
 {
-  ulong first = ULONG_MAX, bottom, top, nearest = ULONG_MAX, dist = 0;  
+  uintmax_t first = UINTMAX_MAX, bottom, top, nearest = UINTMAX_MAX, dist = 0;  
   int probable_cause = 0;
   int nmajor = 0;
   int nminor = 0;
@@ -82,11 +75,11 @@ void __pmp_segv (int sig, siginfo_t *info, void *arg)
   const char *pos = NULL;
   char line[1024];
   int dump_map;
-  ulong addr;
+  uintmax_t addr;
  
   dump_map = getenv("F90_DUMP_MAP") != NULL;
  
-  addr = (ulong) info->si_addr;
+  addr = (uintmax_t) (uintptr_t)info->si_addr;
  
   __pmp_creak("\n\n**** Segmentation fault!  Fault address: %p\n\n",
               info->si_addr);
@@ -104,15 +97,15 @@ void __pmp_segv (int sig, siginfo_t *info, void *arg)
     int count;
     char perms[20];
     char name;
-    ulong d;
+    uintmax_t d;
  
     if (dump_map)
       __pmp_creak("  %s", line);
  
-    count = sscanf(line, "%lx-%lx %s %*x %d:%d %*d %c",
+    count = sscanf(line, "%jx-%jx %s %*x %d:%d %*d %c",
                    &bottom, &top, perms, &major, &minor, &name);
  
-    if (first == ULONG_MAX)
+    if (first == UINTMAX_MAX)
       first = bottom;
 
     if ((d = __pmp_distance(bottom, addr)) < __pmp_distance(nearest, addr)) {
@@ -148,7 +141,7 @@ void __pmp_segv (int sig, siginfo_t *info, void *arg)
                 "pointer dereference or a general protection fault.\n");
     probable_cause = 1;
   } else {
-    __pmp_creak("Fault address is %lu bytes %s the %s valid\n"
+    __pmp_creak("Fault address is %ju bytes %s the %s valid\n"
                 "mapping boundary, which is at %p.\n",
                 dist, pos, addr < first ? "first" : "nearest",
                 (void *) nearest);
@@ -296,7 +289,7 @@ int __pmp_get_stack_size_limit(const char *new_limit, long long *max_stack_ptr,
       return -1;
     }
  
-    switch (tolower(*end)) {
+    switch (tolower((unsigned char)*end)) {
     case 'k':
       max *= 1024;
       break;
