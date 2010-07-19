@@ -41,6 +41,7 @@ add_definitions(
   -DSGI_RAG_BACKEND
   -DSGI_MONGOOSE
   -DHANDLE_PRAGMA_WEAK
+  -D__STDC_FORMAT_MACROS
   -DGPLUSPLUS_FE
   )
 
@@ -93,7 +94,8 @@ set(wgen42_sources_common
   varasm.c
   c_int_model.c
   )
-set (wgen42_sources_arm  wgen_pragmas.cxx
+set (wgen42_sources_arm  wgen_tracing.cxx 
+                         wgen_pragmas.cxx
                          ../common/com/gccfe_targinfo_interface.cxx #st
                          ../common/util/vspec_parse.c
                          ../common/util/vspec_token.c

@@ -54,7 +54,11 @@ extern bool in_cleanup;
 extern bool need_manual_unwinding;
 extern bool unwind_handler_needed (void);
 #endif
+#ifdef TARG_ST
+extern void WGEN_Expand_Pragma (gs_t, bool);
+#else
 extern void WGEN_Expand_Pragma (gs_t);
+#endif
 extern void Register_Cleanup (gs_t);
 extern void Unregister_Cleanup (void);
 extern ST_IDX Get_exception_pointer_symbol (void);

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2007, 2008, 2009 PathScale, LLC.  All Rights Reserved.
  */
@@ -34,7 +35,8 @@ extern "C"{
 #include "gspin-wgen-interface.h"
 }
 
-
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
 
 #include "defs.h"
 #include "glob.h"
@@ -50,6 +52,7 @@ extern "C"{
 #include "wgen_stmt.h"
 #include "wgen_decl.h"
 #include "wgen_spin_symbol.h"
+#include "wgen_tracing.h"
 #include "targ_sim.h"
 #include <ctype.h>
 #ifdef TARG_ST
@@ -75,6 +78,7 @@ bool begin_expand_stmt;
 static BOOL  *if_else_info_stack;
 static INT32  if_else_info_i;
 static INT32  if_else_info_max;
+
 #ifdef TARG_ST
 /* (cbr) for branch prediction builtin_expect */
 INT32 if_else_hint;
@@ -114,6 +118,9 @@ static INT32		    break_continue_info_max;
 
 typedef struct label_info_t {
   LABEL_IDX         label_idx;
+#ifdef TARG_ST
+  unsigned char     symtab_idx;
+#endif
   unsigned char     defined;
 } LABEL_INFO;
 
@@ -154,7 +161,7 @@ typedef struct temp_cleanup_info_t {
   // we should insert guard initializers.
   WN               *body;
   WN               *last;
-#endif  
+#endif
 } TEMP_CLEANUP_INFO;
 
 static TEMP_CLEANUP_INFO *temp_cleanup_stack;
@@ -555,8 +562,13 @@ Push_Scope_Cleanup (gs_t t, bool eh_only=false)
   if (++scope_cleanup_i == scope_cleanup_max) {
     scope_cleanup_max = ENLARGE (scope_cleanup_max);
     scope_cleanup_stack =
+#ifdef TARG_ST
+      (SCOPE_CLEANUP_INFO *) xrealloc (scope_cleanup_stack,
+	 	        scope_cleanup_max * sizeof (SCOPE_CLEANUP_INFO));
+#else
       (SCOPE_CLEANUP_INFO *) realloc (scope_cleanup_stack,
 	 	        scope_cleanup_max * sizeof (SCOPE_CLEANUP_INFO));
+#endif
   }
 
   scope_cleanup_stack [scope_cleanup_i].stmt = t;
@@ -577,6 +589,9 @@ Push_Scope_Cleanup (gs_t t, bool eh_only=false)
   scope_cleanup_stack [scope_cleanup_i].vla.alloca_st = NULL;
   scope_cleanup_stack [scope_cleanup_i].vla.alloca_sts_vector = 
   						new vector<ST*>();
+#ifdef TARG_ST // [CL]
+  Start_Lexical_Block(Push_Lexical_Block () );
+#endif
 }
 
 #ifdef KEY
@@ -598,8 +613,13 @@ Push_Handler_Info (gs_t handler, vector<gs_t> *v,
    if (++handler_info_i == handler_info_max) {
     handler_info_max = ENLARGE (handler_info_max);
     handler_info_stack =
+#ifdef TARG_ST
+      (HANDLER_INFO *) xrealloc (handler_info_stack,
+                        handler_info_max * sizeof (HANDLER_INFO));
+#else
       (HANDLER_INFO *) realloc (handler_info_stack,
                         handler_info_max * sizeof (HANDLER_INFO));
+#endif
   }
 
   handler_info_stack [handler_info_i].handler   = handler;
@@ -881,12 +901,18 @@ Do_Cleanups_For_EH (INT from)
     WGEN_Stmt_Append (WN_CreateLabel ((ST_IDX) 0, e.start, 0, NULL), 
     		     Get_Srcpos());
 
+#ifdef TARG_ST
+    in_cleanup = TRUE;
+#endif
     for (vector<gs_t>::iterator j=e.cleanups->begin();
 		j!=e.cleanups->end();++j)
     {
     	gs_t cleanup = *j;
 	Emit_Cleanup(cleanup);
     }
+#ifdef TARG_ST
+    in_cleanup = FALSE;
+#endif
     if (e.goto_idx)
 	WGEN_Stmt_Append (WN_CreateGoto ((ST_IDX) 0, e.goto_idx), Get_Srcpos());
     else
@@ -927,6 +953,9 @@ Pop_Scope_And_Do_Cleanups (void)
 	  ("Pop_Scope_And_Do_Cleanups: scope_cleanup-stack is empty"));
 
   while (true) {
+#ifdef TARG_ST // [CL]
+  End_Lexical_Block(Pop_Lexical_Block () );
+#endif
     gs_t t = scope_cleanup_stack [scope_cleanup_i].stmt;
     if (gs_tree_code(t) != GS_CLEANUP_STMT)
     {
@@ -939,6 +968,9 @@ Pop_Scope_And_Do_Cleanups (void)
  	--scope_cleanup_i;
       }
       else if (gs_tree_code(t) == GS_TRY_CATCH_EXPR ||
+#if defined TARG_ST && defined FE_GNU_4_2_0
+	       gs_tree_code(t) == GS_EH_SPEC_BLOCK ||
+#endif
                gs_tree_code(t) == GS_TRY_FINALLY_EXPR)
         --scope_cleanup_i;
       break;
@@ -951,7 +983,9 @@ Pop_Scope_And_Do_Cleanups (void)
 	continue;
     }
     --scope_cleanup_i;
-
+#ifdef TARG_ST
+    need_manual_unwinding=true;
+#endif
     gs_t cleanup = scope_cleanup_stack[scope_cleanup_i+1].stmt;
     if (gs_tree_code(cleanup) == GS_CLEANUP_STMT)
       WGEN_One_Stmt_Cleanup (gs_cleanup_expr(cleanup));
@@ -974,8 +1008,13 @@ Push_Scope (gs_t t)
   if (++scope_i == scope_max) {
     scope_max = ENLARGE (scope_max);
     scope_stack =
+#ifdef TARG_ST
+      (gs_t *) xrealloc (scope_stack,
+			 scope_max * sizeof (gs_t));
+#else
       (gs_t *) realloc (scope_stack,
 	 	        scope_max * sizeof (gs_t));
+#endif
   }
   scope_stack[scope_i] = t;
 }
@@ -999,9 +1038,15 @@ Push_Temp_Cleanup (gs_t t, bool is_cleanup
   if (++temp_cleanup_i == temp_cleanup_max) {
     temp_cleanup_max = ENLARGE (temp_cleanup_max);
     temp_cleanup_stack =
+#ifdef TARG_ST
+      (TEMP_CLEANUP_INFO *) xrealloc (temp_cleanup_stack,
+				      temp_cleanup_max * 
+				      sizeof (TEMP_CLEANUP_INFO));
+#else
       (TEMP_CLEANUP_INFO *) realloc (temp_cleanup_stack,
 				     temp_cleanup_max * 
                                        sizeof (TEMP_CLEANUP_INFO));
+#endif
   }
 
   temp_cleanup_stack [temp_cleanup_i].expr = t;
@@ -1009,6 +1054,14 @@ Push_Temp_Cleanup (gs_t t, bool is_cleanup
     New_LABEL (CURRENT_SYMTAB, temp_cleanup_stack [temp_cleanup_i].label_idx);
   else
     temp_cleanup_stack [temp_cleanup_i].label_idx = 0;
+#ifdef TARG_ST
+  if (!is_cleanup) {
+    WN *body = WGEN_Stmt_Top ();
+    WN *last = body ? WN_last (body) : NULL;
+    temp_cleanup_stack [temp_cleanup_i].body = body;
+    temp_cleanup_stack [temp_cleanup_i].last = last;
+  }
+#endif
 #ifdef KEY
   temp_cleanup_stack [temp_cleanup_i].cleanup_eh_only = cleanup_eh_only;
 #endif
@@ -1095,9 +1148,15 @@ WGEN_Record_Loop_Switch (gs_code_t tree_code)
   if (++break_continue_info_i == break_continue_info_max) {
     break_continue_info_max = ENLARGE (break_continue_info_max);
     break_continue_info_stack =
+#ifdef TARG_ST
+      (BREAK_CONTINUE_INFO *) xrealloc (break_continue_info_stack,
+					break_continue_info_max *
+					sizeof (BREAK_CONTINUE_INFO));
+#else
       (BREAK_CONTINUE_INFO *) realloc (break_continue_info_stack,
 				       break_continue_info_max *
 					 sizeof (BREAK_CONTINUE_INFO));
+#endif
   }
 
   break_continue_info_stack 
@@ -1174,8 +1233,13 @@ WGEN_Expand_Case (gs_t low, gs_t high
 				      : WGEN_Expand_Expr(high);
     if (++case_info_i == case_info_max) {
       case_info_max   = ENLARGE(case_info_max);
+#ifdef TARG_ST
+      case_info_stack = (CASE_INFO *) xrealloc (case_info_stack,
+						case_info_max * sizeof (CASE_INFO));
+#else
       case_info_stack = (CASE_INFO *) realloc (case_info_stack,
                                                case_info_max * sizeof (CASE_INFO));
+#endif
     }
 
     case_info_stack 
@@ -1229,11 +1293,12 @@ idname_from_regnum (int gcc_reg)
   	return NULL;
   }
   else {
-#ifdef TARG_ST
-      PREG_NUM preg = GCCTARG_Map_Reg_To_Preg()[gcc_reg];
-#else
-     	extern PREG_NUM Map_Reg_To_Preg [];
+#ifndef TARG_ST
+    // [SC] For ST, Map_Reg_To_Preg is declared in fe_loader.h.
+	extern PREG_NUM Map_Reg_To_Preg [];
 	PREG_NUM preg = Map_Reg_To_Preg [gcc_reg];
+#else
+	PREG_NUM preg = GCCTARG_Map_Reg_To_Preg()[gcc_reg];
 #endif
 	if (preg < 0) {
 		DevWarn("couldn't map asm regname to preg");
@@ -1270,7 +1335,11 @@ idname_from_regnum (int gcc_reg)
 char *
 remove_plus_modifier(char *s)
 {
+#ifdef TARG_ST
+#define MAX_NON_PLUS_CONSTRAINT_CHARS 128
+#else    
 #define MAX_NON_PLUS_CONSTRAINT_CHARS 7
+#endif
   static char out[MAX_NON_PLUS_CONSTRAINT_CHARS + 1];
   int i = 0;
   while (i <= MAX_NON_PLUS_CONSTRAINT_CHARS)
@@ -1292,6 +1361,8 @@ remove_plus_modifier(char *s)
   Fail_FmtAssertion("Constraint string too long");
   /*NOTREACHED*/
 }
+//TB: no more need. Now defined in config_target.cxx in the targinfo
+#ifndef TARG_ST
 
 BOOL
 constraint_supported (const char *s)
@@ -1311,7 +1382,7 @@ constraint_supported (const char *s)
   }
   return TRUE;
 }
-
+#endif
 ST *
 st_of_new_temp_for_expr(const WN *expr)
 {
@@ -1341,6 +1412,21 @@ static char *operand_constraint_array[MAX_RECOG_OPERANDS];
 static BOOL
 constraint_by_address (const char *s)
 {
+#ifdef TARG_ST
+  static const char modifiers[] = "=&%+";
+  /* (cbr) in case of error */
+  if (!s)
+    return FALSE;
+  while (*s != '\0' && strchr(modifiers, *s)) {
+    s++;
+  }
+  //TB: Dynamic register files: scan first because the register
+  //nickname might contain any character with a specific meaning
+  if (strlen(s) > 1) {
+    return FALSE;
+  }
+#endif
+
 #ifndef TARG_X8664
   if (strchr (s, 'm')) {
 #else
@@ -1443,6 +1529,12 @@ Wgen_Expand_Asm_Operands (gs_t  string,
   // inputs can be NULL (bug 12602).
   int ninputs = inputs ? gs_list_length (inputs) : 0;
 
+#ifdef TARG_ST
+  /* (cbr) ASM with no outputs needs to be treated as volatile */
+  if (!vol && !outputs)
+    vol = 1;
+#endif
+
   gs_t tail;
   char *constraint_string;
 
@@ -1517,6 +1609,7 @@ Wgen_Expand_Asm_Operands (gs_t  string,
 	{
 	  ++ninputs;
 	}
+#ifndef TARG_ST
       if (flag_bad_asm_constraint_kills_stmt && 
 	  !constraint_supported (constraint_string)) {
 	DevWarn ("Unrecognized constraint %s; "
@@ -1524,6 +1617,7 @@ Wgen_Expand_Asm_Operands (gs_t  string,
 		 constraint_string, lineno);
 	return;
       }
+#endif
     }
 
   WN *asm_wn = WN_CreateAsm_Stmt (ninputs + 2,
@@ -1628,6 +1722,10 @@ Wgen_Expand_Asm_Operands (gs_t  string,
 	// ASM_INPUT even though the user told us it's an output.
 	WN *lhs_rvalue = WGEN_Expand_Expr(gs_tree_value(tail));
 	WN *addr_of_lvalue = address_of(lhs_rvalue);
+#ifdef TARG_ST
+	// [CG] May be an expression that requires address saved flag.
+	WGEN_Set_ST_Addr_Saved (addr_of_lvalue);
+#endif
 	FmtAssert(addr_of_lvalue != NULL,
 		  ("WGEN_Expand_Asm_Operands: output operand must be lvalue"));
 	WN_kid (asm_wn, i) =
@@ -1644,9 +1742,16 @@ Wgen_Expand_Asm_Operands (gs_t  string,
       ++opnd_num;
     }
 
+#ifdef TARG_ST
+  UINT32 input_num = 0;
+#endif
   for (tail = inputs;
        tail;
-       tail = gs_tree_chain (tail))
+       tail = gs_tree_chain (tail)
+#ifdef TARG_ST
+         , ++input_num
+#endif
+       )
     {
       if (gs_tree_purpose (tail) == NULL)
 	{
@@ -1665,6 +1770,7 @@ Wgen_Expand_Asm_Operands (gs_t  string,
       constraint_string = gs_tree_string_pointer (gs_tree_purpose (tail));
 #endif /* KEY */
 
+#ifndef TARG_ST
       if (flag_bad_asm_constraint_kills_stmt && 
 	  !constraint_supported (constraint_string)) {
 	DevWarn ("Unrecognized constraint %s; "
@@ -1672,6 +1778,7 @@ Wgen_Expand_Asm_Operands (gs_t  string,
 		 constraint_string, lineno);
 	return;
       }
+#endif
 
       WN *input_rvalue = WGEN_Expand_Expr (gs_tree_value (tail));
 #ifdef KEY
@@ -1688,6 +1795,13 @@ Wgen_Expand_Asm_Operands (gs_t  string,
                           ST_sym_class(WN_st(input_rvalue)) == CLASS_CONST);
 #endif
 
+#ifdef TARG_ST
+      //[TB]: Add dynamic mtype checking
+      if (!Check_Asm_Constraints(constraint_string, WN_rtype(input_rvalue))) {
+	ErrMsg (EC_Asm_Constraint_Operand, constraint_string, input_num+1);
+	return;
+      }
+#endif
       if (constraint_by_address(constraint_string)) {
 	WN *addr_of_rvalue;
 	if (
@@ -1733,6 +1847,10 @@ Wgen_Expand_Asm_Operands (gs_t  string,
         input_rvalue = WN_Ldid(TY_mtype(ty_idx), 0, temp_st, ty_idx);
       }
 
+#ifdef TARG_ST
+      // [CG] May be an expression that requires address saved flag.
+      WGEN_Set_ST_Addr_Saved (input_rvalue);
+#endif
       // Get the new operand numbers from map.
       update_opnd_num(opnd_num_map, constraint_string);
 #endif
@@ -1806,7 +1924,7 @@ Wgen_Expand_Asm_Operands (gs_t  string,
 						       NULL,       // dummy rhs kid
 						       asm_neg_preg, // preg num
 						       FALSE,      // is realpart
-						       FALSE);
+						       FALSE);     // is imagpart
 #else
 	WN *output_rvalue_wn = WGEN_Lhs_Of_Modify_Expr (GS_MODIFY_EXPR,
 						       gs_tree_value (tail),
@@ -1820,9 +1938,12 @@ Wgen_Expand_Asm_Operands (gs_t  string,
 						       FALSE,      // is realpart
 						       FALSE);     // is imagpart
 #endif
-
 	if (plus_modifier)
 	  {
+#ifdef TARG_ST
+	    // [CG] May be an expression that requires address saved flag.
+	    WGEN_Set_ST_Addr_Saved (output_rvalue_wn);
+#endif
 	    WN_kid (asm_wn, i) =
 	      WN_CreateAsm_Input (input_opnd_constraint,
 				  opnd_num,
@@ -1834,6 +1955,14 @@ Wgen_Expand_Asm_Operands (gs_t  string,
 	// reference in the output operand. This duplicates work done in
 	// WGEN_Lhs_Of_Modify_Expr.
 	TYPE_ID desc = TY_mtype (Get_TY (gs_tree_type (gs_tree_value (tail))));
+#ifdef TARG_ST
+	//[TB]: Add dynamic mtype checking
+	if (!Check_Asm_Constraints(constraint_string, desc)) {
+	  ErrMsg (EC_Asm_Constraint_Result, 
+		  constraint_string,  opnd_num+1);
+	  return;
+	}
+#endif
 	ST *preg_st = MTYPE_To_PREG(desc);
 
 	ST *constraint_st = New_ST(CURRENT_SYMTAB);
@@ -1869,6 +1998,9 @@ LABEL_IDX
 WGEN_Get_LABEL (gs_t label, int def)
 {
   LABEL_IDX label_idx =  DECL_LABEL_IDX(label);
+#ifdef TARG_ST
+  SYMTAB_IDX symtab_idx = DECL_SYMTAB_IDX(label);
+#endif
 
   if (label_idx == 0
 #ifdef KEY
@@ -1878,6 +2010,9 @@ WGEN_Get_LABEL (gs_t label, int def)
      ) {
     New_LABEL (CURRENT_SYMTAB, label_idx);
     DECL_LABEL_IDX(label) = label_idx;
+#ifdef TARG_ST
+    DECL_SYMTAB_IDX(label) = CURRENT_SYMTAB;
+#endif
 #ifdef KEY
     WGEN_last_label_idx = label_idx;
     // Need a new label wn.
@@ -1887,17 +2022,29 @@ WGEN_Get_LABEL (gs_t label, int def)
       if (++undefined_labels_i == undefined_labels_max) {
         undefined_labels_max   = ENLARGE(undefined_labels_max);
         undefined_labels_stack =
+#ifdef TARG_ST
+          (LABEL_INFO *) xrealloc (undefined_labels_stack,
+				   undefined_labels_max * sizeof (LABEL_INFO));
+#else
           (LABEL_INFO *) realloc (undefined_labels_stack,
                                   undefined_labels_max * sizeof (LABEL_INFO));
+#endif
       }
       undefined_labels_stack [undefined_labels_i].label_idx  = label_idx;
+#ifdef TARG_ST
+      undefined_labels_stack [undefined_labels_i].symtab_idx = CURRENT_SYMTAB;
+#endif
       undefined_labels_stack [undefined_labels_i].defined    = FALSE;
     }
   }
   else {
     if (def) {
       for (int i = undefined_labels_i; i >= 0; --i) {
-        if (undefined_labels_stack [i].label_idx  == label_idx) {
+        if (undefined_labels_stack [i].label_idx  == label_idx
+#ifdef TARG_ST
+            && undefined_labels_stack [i].symtab_idx == CURRENT_SYMTAB
+#endif
+            ) {
           undefined_labels_stack [i].defined = TRUE;
           break;
         }
@@ -1914,6 +2061,9 @@ WGEN_Check_Undefined_Labels (void)
   INT32 i;
   for (i = undefined_labels_i; i >= 0; --i) {
     LABEL_IDX  label_idx  = undefined_labels_stack [undefined_labels_i].label_idx;
+#ifdef TARG_ST
+    SYMTAB_IDX symtab_idx = undefined_labels_stack [undefined_labels_i].symtab_idx;
+#endif
 //  fprintf (stderr, "WGEN_Check_Undefined_Labels: %d idx = %8x [%d]\n", i, label_idx, symtab_idx);
     if (LABEL_IDX_level(label_idx) < CURRENT_SYMTAB)
       break;
@@ -1930,50 +2080,89 @@ WGEN_Stmt_Init (void)
   if_else_info_max   = 32;
   if_else_info_i     = -1;
   if_else_info_stack = 
+#ifdef TARG_ST
+    (BOOL *) xmalloc (sizeof (BOOL) * if_else_info_max);
+#else
     (BOOL *) malloc (sizeof (BOOL) * if_else_info_max);
+#endif
 
   case_info_max      = 32;
   case_info_i        = -1;
   case_info_stack    = 
+#ifdef TARG_ST
+    (CASE_INFO *) xmalloc (sizeof (CASE_INFO) * case_info_max);
+#else
     (CASE_INFO *) malloc (sizeof (CASE_INFO) * case_info_max);
+#endif
 
   switch_info_max    = 32;
   switch_info_i      = -1;
   switch_info_stack  = 
+#ifdef TARG_ST
+    (SWITCH_INFO *) xmalloc (sizeof (SWITCH_INFO) * switch_info_max);
+#else
     (SWITCH_INFO *) malloc (sizeof (SWITCH_INFO) * switch_info_max);
+#endif
 
   break_continue_info_max   = 32;
   break_continue_info_i     = -1;
   break_continue_info_stack = 
+#ifdef TARG_ST
+    (BREAK_CONTINUE_INFO *) xmalloc (sizeof (BREAK_CONTINUE_INFO) *
+                                    break_continue_info_max);
+#else
     (BREAK_CONTINUE_INFO *) malloc (sizeof (BREAK_CONTINUE_INFO) *
                                     break_continue_info_max);
+#endif
 
   undefined_labels_max   = 32;
   undefined_labels_i     = -1;
   undefined_labels_stack = 
+#ifdef TARG_ST
+    (LABEL_INFO *) xmalloc (sizeof (LABEL_INFO) * undefined_labels_max);
+#else
     (LABEL_INFO *) malloc (sizeof (LABEL_INFO) * undefined_labels_max);
+#endif
 
   scope_cleanup_max      = 32;
   scope_cleanup_i  	 = -1;
   scope_cleanup_stack    =
+#ifdef TARG_ST
+    (SCOPE_CLEANUP_INFO *) xmalloc (sizeof (SCOPE_CLEANUP_INFO) * 
+				   scope_cleanup_max);
+#else
     (SCOPE_CLEANUP_INFO *) malloc (sizeof (SCOPE_CLEANUP_INFO) * 
 				   scope_cleanup_max);
+#endif
 
   scope_max    	         = 32;
   scope_i  	         = -1;
   scope_stack            =
+#ifdef TARG_ST
+    (gs_t *) xmalloc (sizeof (gs_t) * scope_max);
+#else
     (gs_t *) malloc (sizeof (gs_t) * scope_max);
+#endif
 
   temp_cleanup_max       = 32;
   temp_cleanup_i	 = -1;
   temp_cleanup_stack	 =
+#ifdef TARG_ST
+    (TEMP_CLEANUP_INFO *) xmalloc (sizeof (TEMP_CLEANUP_INFO) * 
+				  temp_cleanup_max);
+#else
     (TEMP_CLEANUP_INFO *) malloc (sizeof (TEMP_CLEANUP_INFO) * 
 				  temp_cleanup_max);
+#endif
 
   handler_info_max	 = 32;
   handler_info_i	 = -1;
   handler_info_stack     =
+#ifdef TARG_ST
+    (HANDLER_INFO *) xmalloc (sizeof(HANDLER_INFO) * handler_info_max);
+#else
     (HANDLER_INFO *) malloc (sizeof(HANDLER_INFO) * handler_info_max);
+#endif
 
   scope_number           = 0;
 } /* WGEN_Stmt_Init */
@@ -2181,7 +2370,9 @@ WGEN_Expand_Loop (gs_t stmt)
   WN * loop_test;
   WN * loop_block;
   WN * loop_body;
-
+#ifdef TARG_ST
+  TRACE_EXPAND_GS(stmt);
+#endif
   WGEN_Record_Loop_Switch (gs_tree_code(stmt));
 
   switch (gs_tree_code(stmt)) {
@@ -2296,6 +2487,12 @@ WGEN_Expand_Goto (gs_t label)	// KEY VERSION
   bool in_handler=false;
   vector<gs_t>::reverse_iterator ci, li;
   LABEL_IDX label_idx = WGEN_Get_LABEL (label, FALSE);
+#ifdef TARG_ST
+  // [CG]: no support for inter scope goto
+  FmtAssert (gs_decl_context (label) == Current_Function_Decl (),
+	     ("jump to a label not defined in current function currently not implemented"));
+  {
+#else
   if ((CURRENT_SYMTAB > GLOBAL_SYMTAB + 1) &&
       (LABEL_IDX_level(label_idx) < CURRENT_SYMTAB)) {
     wn = WN_CreateGotoOuterBlock (label_idx, LABEL_IDX_level(label_idx));
@@ -2305,6 +2502,7 @@ WGEN_Expand_Goto (gs_t label)	// KEY VERSION
     Set_PU_has_goto_outer_block (Get_Current_PU ());
   }
   else {
+#endif
     gs_t scope = LABEL_SCOPE(label);
     if (scope != NULL && scope_cleanup_i != -1) {
       vector<gs_t> Label_scope_nest;
@@ -2331,8 +2529,13 @@ WGEN_Expand_Goto (gs_t label)	// KEY VERSION
 
       li=Label_scope_nest.rbegin();
       ci=Current_scope_nest.rbegin();
+#ifdef TARG_ST
+      for (; li!=Label_scope_nest.rend() && ci!=Current_scope_nest.rend();
+	   ++li, ++ci)
+#else
       for (; li!=Label_scope_nest.rend(), ci!=Current_scope_nest.rend();
       		++li, ++ci)
+#endif
       	if (*li != *ci) break;
       if (ci!=Current_scope_nest.rend())
       {
@@ -2381,7 +2584,10 @@ WGEN_Expand_Goto (gs_t label)	// KEY VERSION
 static void
 WGEN_Expand_Computed_Goto (gs_t exp)
 {
+#ifndef TARG_ST
+  // [CG]: computed goto are implemented at function scope
   DevWarn ("encountered indirect jump");
+#endif
   Set_PU_no_inline (Get_Current_PU ());
   WN *addr = WGEN_Expand_Expr (exp);
 #ifdef KEY // bug 12839
@@ -2406,6 +2612,15 @@ WGEN_Expand_If (gs_t stmt)
   test = WGEN_Expand_Expr_With_Sequence_Point(gs_if_cond(stmt), Boolean_type);
   then_block = WN_CreateBlock ();
   else_block = WN_CreateBlock ();
+#ifdef TARG_ST
+  /* (cbr) for builtin expect */
+  if (if_else_hint) {
+    WN *pwn = WN_CreatePragma(WN_PRAGMA_MIPS_FREQUENCY_HINT, (ST_IDX) NULL,
+                              if_else_hint, 0);
+    WN_INSERT_BlockAfter (then_block, WN_last(then_block), pwn);
+    if_else_hint = 0;
+  }
+#endif
   if_stmt    = WN_CreateIf (test, then_block, else_block);
   WGEN_Stmt_Append (if_stmt, Get_Srcpos ());
   if (gs_then_clause(stmt)) {
@@ -2424,6 +2639,9 @@ void
 WGEN_Expand_Label (gs_t label)
 {
   LABEL_IDX label_idx = WGEN_Get_LABEL (label, TRUE);
+#ifdef TARG_ST
+  DECL_SYMTAB_IDX(label) = CURRENT_SYMTAB;
+#endif
 
   if (!DECL_LABEL_DEFINED(label)) {
     WN *wn;
@@ -2455,6 +2673,16 @@ comma_is_not_needed (WN * comma_block, WN * wn)
 
   if (WN_operator(last_stmt) != OPR_STID)
     return FALSE;
+
+#ifdef TARG_ST
+  // [SC] Whirl lowerer assumes that all MLDID of
+  // Return_Val_Preg is a kid of a MSTID/MISTORE, and will
+  // fail if we make it a kid of a RETURN_VAL.
+  if (WN_desc(last_stmt) == MTYPE_M
+      && WN_opcode(WN_kid0(last_stmt)) == OPC_MMLDID
+      && WN_st(WN_kid0(last_stmt)) == Return_Val_Preg)
+    return FALSE;
+#endif
 
   ST * sym = WN_st(last_stmt);
 
@@ -2502,6 +2730,22 @@ void
 WGEN_Expand_Return (gs_t stmt, gs_t retval)
 {
   WN *wn = NULL;
+  
+#ifdef TARG_ST
+  WN *target_wn = NULL;
+  bool copied_return_value = FALSE;
+  bool need_iload_via_fake_parm = FALSE;
+  if (retval &&
+      gs_aggregate_value_p (gs_tree_type(gs_tree_type(Current_Function_Decl())))) {
+    /* [SC] In this case, the result will be assigned through the
+       first formal, so no need to assign here. */
+    WGEN_Expand_Expr (retval, FALSE);
+    retval = NULL;
+    copied_return_value = TRUE;
+    need_iload_via_fake_parm = TRUE;
+  }
+#endif
+
 #ifdef KEY
   WN *block = NULL;
 #endif
@@ -2545,12 +2789,23 @@ WGEN_Expand_Return (gs_t stmt, gs_t retval)
     }
 #endif
     wn = WN_CreateReturn ();
+#ifdef TARG_ST
+    //TB: Catch cases where the named Return Value optimzation has
+    // been done by gcc. In this case specify also that the RETURN WN
+    // is like a lowered RETURN_VAL WN.
+    //TB: Set the is_return_val_lowered flag to TRUE to specify to the code
+    //generator that this return is already lowered and to not emit a
+    //warning that control reaches end of non-void function
+    WN_is_return_val_lowered(wn) = TRUE;
+#endif
   }
   else {
     WN *rhs_wn;
     TY_IDX ret_ty_idx = Get_TY(gs_tree_type(gs_tree_type(Current_Function_Decl())));
 
+#ifndef TARG_ST
 #ifdef KEY
+
     bool copied_return_value = FALSE;
     bool need_iload_via_fake_parm = FALSE;
     WN *target_wn = NULL;
@@ -2558,7 +2813,6 @@ WGEN_Expand_Return (gs_t stmt, gs_t retval)
     // If the return object must be passed through memory and the return
     // object is created by a TARGET_EXPR, have the TARGET_EXPR write directly
     // to the memory return area.
-#ifndef TARG_ST
     if (TY_return_in_mem(ret_ty_idx)) {
       FmtAssert (TY_mtype (ret_ty_idx) == MTYPE_M,
 	         ("WGEN_Expand_Return: return_in_mem type is not MTYPE_M"));
@@ -2665,7 +2919,7 @@ WGEN_Expand_Return (gs_t stmt, gs_t retval)
     WGEN_Stmt_Pop (wgen_stmk_temp_cleanup);
 
     if (WN_first (cleanup_block)) {
-
+#ifndef TARG_ST
       if ((gs_tree_code(retval) == GS_TARGET_EXPR || 
 	   gs_tree_code(retval) == GS_COMPOUND_EXPR) &&
 	  WN_operator(rhs_wn) == OPR_COMMA) {
@@ -2684,6 +2938,9 @@ WGEN_Expand_Return (gs_t stmt, gs_t retval)
 	WN_INSERT_BlockAfter (insertee, WN_last (insertee), cleanup_block);
       }
       else {
+#else
+          {
+#endif
 #ifndef KEY	// bug 3265
 	if (WN_has_side_effects (rhs_wn)) {
 	  DevWarn ("WGEN_Expand_Return: cleanup block and expressson has side effects");
@@ -2717,7 +2974,11 @@ WGEN_Expand_Return (gs_t stmt, gs_t retval)
           comma_is_not_needed(comma_block, WN_kid1(rhs_wn))) {
         WN * last = WN_last (comma_block);
         WN_EXTRACT_FromBlock (comma_block, last);
+#ifdef TARG_ST
+        WGEN_Stmt_Append (comma_block, Get_Srcpos());
+#else
         WN_INSERT_BlockLast (block, comma_block);
+#endif
         rhs_wn = WN_kid0 (last);
       }
     }
@@ -2735,16 +2996,21 @@ WGEN_Expand_Return (gs_t stmt, gs_t retval)
       // function returning zero length struct
       if (WN_has_side_effects (rhs_wn)) {
         rhs_wn = WN_CreateEval (rhs_wn);  
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
         WN_INSERT_BlockLast(block, rhs_wn);
 #else
         WGEN_Stmt_Append(rhs_wn, Get_Srcpos());
 #endif
       }
       wn = WN_CreateReturn ();
+#ifdef TARG_ST
+      //TB: Set the is_return_val_lowered flag to TRUE to specify to the code
+      //generator that this return is already lowered and to not emit a
+      //warning that control reaches end of non-void function
+      WN_is_return_val_lowered(wn) = TRUE;
+#endif
     }
 #ifdef KEY
-#ifndef TARG_ST
     else if (TY_return_in_mem(ret_ty_idx)) {
       // Copy the return value into the return area.  Based on code in
       // lower_return_val().
@@ -2767,11 +3033,20 @@ WGEN_Expand_Return (gs_t stmt, gs_t retval)
       // Create mstore.
       wn = WN_CreateIstore(OPR_ISTORE, MTYPE_V, MTYPE_M, 0, tidx, rhs_wn,
 			   dest_addr, 0);
+#ifdef TARG_ST
+      WGEN_Stmt_Append(wn, Get_Srcpos());
+#else
       WN_INSERT_BlockLast(block, wn);
+#endif
       // Create return.
       wn = WN_CreateReturn ();
+#ifdef TARG_ST
+      //TB: Set the is_return_val_lowered flag to TRUE to specify to the code
+      //generator that this return is already lowered and to not emit a
+      //warning that control reaches end of non-void function
+      WN_is_return_val_lowered(wn) = TRUE;
+#endif
     }
-#endif // !TARG_ST
 #endif
     else if (rhs_wn) {
       WGEN_Set_ST_Addr_Saved (rhs_wn);
@@ -2991,11 +3266,24 @@ WGEN_Expand_Start_Case (gs_t selector)
   index = WN_Ldid(index_mtype, 0, save_expr_st, MTYPE_TO_TY_array[index_mtype]);
 #endif
 
+#ifdef TARG_ST
+  // FdF 20080605: Another block is created around the switch, so that
+  // COMPGOTO edges do not cross a REGION. A REGION may be created if
+  // the switch value is computed by a call. Fix for codex #31926.
+  WN *scope_block = WN_CreateBlock();
+  WGEN_Stmt_Push (scope_block, wgen_stmk_scope, Get_Srcpos());
+#endif
+  
   WGEN_Stmt_Push (switch_block, wgen_stmk_switch, Get_Srcpos());
   if (++switch_info_i == switch_info_max) {
     switch_info_max   = ENLARGE(switch_info_max);
+#ifdef TARG_ST
+    switch_info_stack = (SWITCH_INFO *) xrealloc (switch_info_stack,
+						  switch_info_max * sizeof (SWITCH_INFO));
+#else
     switch_info_stack = (SWITCH_INFO *) realloc (switch_info_stack,
                                                  switch_info_max * sizeof (SWITCH_INFO));
+#endif
   }
   switch_info_stack [switch_info_i].index             = index;
   switch_info_stack [switch_info_i].start_case_index  = case_info_i + 1;
@@ -3055,7 +3343,12 @@ WGEN_Expand_End_Case (void)
 #endif
   LABEL_IDX exit_label_idx;
 
+#ifdef TARG_ST
+  // [TB]: fixed computation of num_entries
+  n = 0;
+#else
   n = case_info_i - switch_info_stack [switch_info_i].start_case_index + 1;
+#endif
   if (break_continue_info_stack [break_continue_info_i].break_label_idx)
     exit_label_idx = break_continue_info_stack [break_continue_info_i].break_label_idx;
   else
@@ -3087,6 +3380,10 @@ WGEN_Expand_End_Case (void)
     else {
       case_entry = WN_CreateCasegoto (low, case_label_idx);
       WN_INSERT_BlockLast (case_block, case_entry);
+#ifdef TARG_ST
+      // [TB]: fixed computation of num_entries
+      n++;
+#endif
     }
 #else
     for (case_value  = case_info_stack [i].case_lower_bound_value;
@@ -3094,6 +3391,10 @@ WGEN_Expand_End_Case (void)
          case_value++) {
       case_entry = WN_CreateCasegoto (case_value, case_label_idx);
       WN_INSERT_BlockLast (case_block, case_entry);
+#ifdef TARG_ST
+      // [TB]: fixed computation of num_entries
+      n++;
+#endif
 #ifdef KEY	// bug 2814.  TODO: Port the switch-related code from kgccfe.
       if (case_value == case_info_stack[i].case_upper_bound_value)
 	break;
@@ -3109,12 +3410,28 @@ WGEN_Expand_End_Case (void)
   switch_block = WGEN_Stmt_Pop (wgen_stmk_switch);
 #ifdef KEY
   // Append any IF statements for case range in switch.
+#ifdef TARG_ST
+  // [CL] use line number of switch() statement in user's source code
+  WGEN_Stmt_Append (case_range, WN_linenum(switch_block));
+#else
   WGEN_Stmt_Append (case_range, Get_Srcpos());
+#endif
   WN_INSERT_BlockFirst (switch_block, switch_wn);
   wn = WN_CreateLabel ((ST_IDX) 0, exit_label_idx, 0, NULL);
   WN_INSERT_BlockLast (switch_block, wn);
+#ifdef TARG_ST
+  WGEN_Stmt_Append (switch_block, WN_linenum(switch_block));
+  // FdF 20080605: Pop the block that was created around the
+  // switch. If a REGION is needed, it will enclose this block,
+  // instead of enclosing only switch_wn. This avoids COMPGOTO edges
+  // from switch_wn to switch block to cross a REGION. Fix for codex
+  // #31926.
+  WN *scope_block = WGEN_Stmt_Pop (wgen_stmk_scope);
+  WGEN_Stmt_Append (scope_block, 0);
+#else
   // Add switch statement.
   WGEN_Stmt_Append (switch_block, Get_Srcpos());
+#endif
 #else
   WGEN_Stmt_Append (switch_wn, Get_Srcpos ());
   WGEN_Stmt_Append (switch_block, Get_Srcpos ());
@@ -3315,8 +3632,18 @@ Get_typeinfo_var (gs_t t)
 
 // Get the handlers for the current try block. Move up in scope and append any
 // more handlers that may be present, to INITV.
+// [SC] Return a linked list of initv entries, one for each handler, containing
+// the ST_IDX for the typeinfo var for the handler, or (ST_IDX)0 for a catch-all.
+// Recurses for all enclosing handlers also.
+// Also set a flag indicating if there are any cleanups required as we
+// unwind through all these handlers.
+static INITV_IDX
+#ifdef TARG_ST
+Create_handler_list (int scope_index, bool &cleanups_seen)
+#else
 static INITV_IDX
 Create_handler_list (int scope_index)
+#endif
 {
   INITV_IDX type_st, prev_type_st=0, start=0;
 
@@ -3325,7 +3652,14 @@ Create_handler_list (int scope_index)
   for (int i=scope_index; i>=0; i--)
   {
     gs_t t = scope_cleanup_stack[i].stmt;
+#ifdef TARG_ST
+    if ((gs_tree_code(t) != GS_TRY_BLOCK) || gs_cleanup_p(t)) {
+      if (gs_tree_code(t) != GS_BIND_EXPR) cleanups_seen = true;
+      continue;
+    }
+#else
     if ((gs_tree_code(t) != GS_TRY_BLOCK) || gs_cleanup_p(t))	continue;
+#endif
 
     gs_t h = gs_try_handlers (t);
     if (key_exceptions)
@@ -3391,11 +3725,13 @@ lookup_handlers (vector<gs_t> *cleanups)
 	else start = type_st;
 	prev_type_st = type_st;
     }
+#ifndef TARG_ST
     if (!start)
     {
 	start = New_INITV();
 	INITV_Set_ZERO (Initv_Table[start], MTYPE_U4, 1);
     }
+#endif
     if (cleanups)
     {
     	vector<gs_t> * temp = hi.cleanups;
@@ -3477,15 +3813,50 @@ static bool manual_unwinding_needed (void);
 
 LABEL_IDX
 lookup_cleanups (INITV_IDX& iv)
+// [SC] Generate summary information for the action we have to take
+// if we get an exception at the current context.
+// This action will be to perform cleanups until we reach the
+// nearest enclosing try block.
+// At the nearest enclosing catch clause, compare the thrown type
+// with each of the handler types.  If there is no match, perform
+// cleanups until we reach the next outer catch clause, etc.
+// If there is no enclosing catch clause in the current function scope,
+// we need to compare the thrown type with the types allowed to
+// be thrown by the current function scope.  If there is no match,
+// then we will call "unexpected", otherwise we will call
+// Unwind_Resume to continue unwind to the calling function.
+// So the summary information is:
+//   - A list of types expected by all the enclosing catch clauses in the
+//     current function.  Will be empty if there are no enclosing
+//     catch clauses.
+//   - An exception spec vector containing a null-terminated list of
+//     exception types accepted by the current function.
+//     Note that in principle, inlining could have happened, and there
+//     can be multiple exception scopes.
+//     Element zero of the exception spec vector is always zero.
+//   - We may also need to indicate if any cleanups are required, since if
+//     the thrown type does not match any of the expected types, the
+//     unwinder will not call our handler at all, unless cleanups are
+//     required.  In general the unwinder needs to know there are cleanups, but
+//     we can optimize it away in a couple of cases:
+//     - if there is an enclosing catch-all clause, then the unwinder will
+//       always call this handler anyway,
+//     - if there are no enclosing catch clauses and no exception spec
+//       vector then the unwinder will assume cleanups.
 {
   gs_t t=0;
   iv = 0;
   vector<gs_t> *cleanups = new vector<gs_t>();
+#ifdef TARG_ST
+  bool outer_cleanups = false;
+#endif
 
   if (scope_cleanup_i == -1) 
   {
+#ifndef TARG_ST
 	iv = New_INITV();
 	INITV_Set_ZERO (Initv_Table[iv], MTYPE_U4, 1);
+#endif
 	return 0;
   }
   gs_t temp_cleanup=0;
@@ -3505,7 +3876,16 @@ lookup_cleanups (INITV_IDX& iv)
   {
 	t = scope_cleanup_stack[scope_index].stmt;
 	if (gs_tree_code(t) == GS_CLEANUP_STMT)
+#ifdef TARG_ST
+	  {
+	    /* (cbr) pro-fe3.3-c++/50 make sure to catch cleanup code that can throw
+	       instead of unwinding it and recalling cleanup again */
+	    if (can_cleanup)
+	      cleanups->push_back (t);
+	  }
+#else
 		cleanups->push_back (t);
+#endif
 	else if (gs_tree_code(t) == GS_TRY_CATCH_EXPR ||
 	         gs_tree_code(t) == GS_TRY_FINALLY_EXPR)
 		cleanups->push_back (gs_tree_operand(t,1));
@@ -3524,7 +3904,11 @@ lookup_cleanups (INITV_IDX& iv)
   if (gs_tree_code(t) == GS_TRY_BLOCK && scope_index >= 0)
   {
 	h = gs_try_handlers (t);
+#ifdef TARG_ST
+	iv = Create_handler_list (scope_index, outer_cleanups);
+#else
 	iv = Create_handler_list (scope_index);
+#endif
 	goto_idx = scope_cleanup_stack[scope_index].cmp_idx;
   }
   else // no enclosing try block
@@ -3536,14 +3920,22 @@ lookup_cleanups (INITV_IDX& iv)
 	}
 	else if (cleanups->empty() && eh_spec_vector.empty())
 	{
+#ifndef TARG_ST
 	    iv = New_INITV();
 	    INITV_Set_ZERO (Initv_Table[iv], MTYPE_U4, 1);
+#endif
 	    return 0;
 	}
   }
   if (!try_block_seen && manual_unwinding_needed())
+#ifdef TARG_ST
+      /* (cbr) don't need to expose that to backend */
+    need_manual_unwinding = true;
+#else
   	Set_PU_needs_manual_unwinding (Get_Current_PU());
+#endif
 // the following 2 calls can change 'iv'.
+#ifndef TARG_ST
 // NOTE: CG expects a zero before eh-spec filter
   bool catch_all_appended = false;
   if (PU_needs_manual_unwinding (Get_Current_PU()))
@@ -3551,28 +3943,67 @@ lookup_cleanups (INITV_IDX& iv)
 	append_catch_all (iv);
 	catch_all_appended = true;
   }
+#endif
   if (processing_handler)
   {
   	vector<ST_IDX> * eh_spec = handler_stack.top().eh_spec;
 	FmtAssert (eh_spec, ("Invalid eh_spec inside handler"));
 	if (!eh_spec->empty())
 	{
+#ifndef TARG_ST
 	    if (!catch_all_appended)
 	    	append_catch_all (iv);
+#endif
 	    append_eh_filter (iv);
   	}
   }
   else if (!eh_spec_vector.empty())
   {
+#ifndef TARG_ST
 	if (!catch_all_appended)
 	    append_catch_all (iv);
+#endif
   	append_eh_filter (iv);
   }
+#ifdef TARG_ST
+  // [SC] Our action list (iv) contains only catch clauses and exception
+  // specifications so far.  In the case that there are also
+  // cleanup actions we need to indicate that also, but only in the
+  // following conditions:
+  //    1. There really are cleanups
+  //    2. The list is not completely empty  (iv != 0)
+  //       (since a completely empty list and non-null pad
+  //       here indicates cleanups)
+  //    3. There is no catch-all typeinfo (if there were
+  //       a catch-all typeinfo the unwind will always match
+  //       it and call the pad, so the presence of cleanup
+  //       info is superfluous).  Catch-all typeinfo appears
+  //       as a zero on this list.
+  if ((! cleanups->empty () || outer_cleanups)
+      && iv != 0)
+    {
+      INITV_IDX ix;
+      for (ix = iv; ix != 0; ix = INITV_next (ix)) {
+	if (INITV_kind(ix) == INITVKIND_ZERO) {
+	  break;
+	}
+      }
+      if (ix == 0) {
+	/* No catch-all found, so prepend a clean-up action. */
+	/* Indicate a clean-up action by INT32_MIN here. */
+	ix = New_INITV();
+	INITV_Init_Integer (ix, MTYPE_I4, INT32_MIN, 1);
+	Set_INITV_next (ix, iv);
+	iv = ix;
+      }
+    }
+#else
   if (!iv)
   { // not yet assigned
 	iv = New_INITV();
 	INITV_Set_ZERO (Initv_Table[iv], MTYPE_U4, 1);
   }
+#endif
   if (cleanup_list_for_eh.empty())
   {
 	return New_eh_cleanup_entry (h, cleanups, goto_idx);
@@ -3723,7 +4154,11 @@ void check_for_loop_label (void)
    if (!break_continue_info_stack[i].break_label_idx)
       New_LABEL (CURRENT_SYMTAB, break_continue_info_stack[i].break_label_idx);
 
+#ifdef TARG_ST
+   while (i >= 0 && break_continue_info_stack [i].tree_code == GS_SWITCH_STMT) --i;
+#else
    while (break_continue_info_stack [i].tree_code == GS_SWITCH_STMT) --i;
+#endif
       if (i != -1) {
     	LABEL_IDX label_idx = break_continue_info_stack [i].continue_label_idx;
     	if (label_idx == 0) {
@@ -3834,7 +4269,12 @@ WGEN_Expand_Try (gs_t stmt)
   if (!try_block_seen)
   {
     if (manual_unwinding_needed())
+#ifdef TARG_ST
+      /* (cbr) don't need to expose that to backend */
+      need_manual_unwinding = true;
+#else
 	Set_PU_needs_manual_unwinding (Get_Current_PU());
+#endif
     try_block_seen = true;
   }
 #endif
@@ -3923,6 +4363,9 @@ WGEN_Expand_Try (gs_t stmt)
     	region_pragmas, WN_CreateBlock(), New_Region_Id(), ereg_supp), 
 	Get_Srcpos());
     Set_PU_has_region (Get_Current_PU());
+#ifdef TARG_ST
+    Set_PU_has_exc_scopes (Get_Current_PU());
+#endif
   }
   vector<gs_t> *cleanups = new vector<gs_t>();
   LABEL_IDX cmp_idxs[2];
@@ -4064,6 +4507,12 @@ Call_Named_Function (ST * st)
   WN * call_wn = WN_Create (OPR_CALL, MTYPE_V, MTYPE_V, 0);
   WN_st_idx (call_wn) = ST_st_idx (st);
   WGEN_Stmt_Append (call_wn, Get_Srcpos());
+
+#ifdef TARG_ST
+  /* (cbr) end of eh_region. never return.*/
+  // carrefull: always called for terminate
+  WN_Set_Call_Never_Return(call_wn);
+#endif
 }
 
 void
@@ -4122,6 +4571,10 @@ Generate_cxa_call_unexpected (void)
   WN * call_wn = WN_Create (OPR_CALL, Pointer_Mtype, MTYPE_V, 1);
   WN_kid0 (call_wn) = arg0;
   WN_st_idx (call_wn) = ST_st_idx (st);
+#ifdef TARG_ST
+  /* (cbr) end of eh_region. never return */
+  WN_Set_Call_Never_Return(call_wn);
+#endif
   return call_wn;
 }
 
@@ -4429,8 +4882,11 @@ WGEN_Expand_DO (gs_t stmt)
 void
 WGEN_Expand_Stmt(gs_t stmt, WN* target_wn)
 {
-	//zwu
+    	//zwu
 	begin_expand_stmt = true;
+#ifdef TARG_ST
+    TRACE_EXPAND_GS(stmt);
+#endif
     if (gs_tree_code(stmt) == GS_LABEL_DECL)
       lineno = gs_decl_source_line(stmt);
     else
@@ -4556,6 +5012,12 @@ WGEN_Expand_Stmt(gs_t stmt, WN* target_wn)
   	Is_True(gs_tree_code(gs_tree_operand(t, 0)) == GS_RESULT_DECL,
 			  ("WGEN_Expand_Stmt: expected RESULT_DECL"));
 	gs_t t1 = gs_tree_operand(t, 1);
+#ifndef TARG_ST
+	/* [SC] TARGET_EXPR normalization means that unneeded
+	   cleanups will already be removed. */
+	if (gs_tree_code(t1) == GS_TARGET_EXPR)
+  	  gs_set_tree_operand(t1, 2, 0);
+#endif
 	if (gs_tree_code(t1) == GS_TARGET_EXPR)
   	  gs_set_tree_operand(t1, 2, 0);
 	WGEN_Expand_Return (stmt, t1);
@@ -4613,6 +5075,12 @@ WGEN_Expand_Stmt(gs_t stmt, WN* target_wn)
     case GS_USING_STMT:
       break;
 
+#ifdef HANDLE_WFE_PRAGMAS
+  case GS_PRAGMA_STMT:
+    WGEN_Expand_Pragma(stmt, false);
+    break;
+#endif
+
 #ifdef FE_GNU_4_2_0
     case GS_OMP_PARALLEL:
     case GS_OMP_CRITICAL:
@@ -4669,7 +5137,26 @@ WGEN_Expand_Stmt(gs_t stmt, WN* target_wn)
 	break;
       default: ;
       }
+#ifdef TARG_ST
+    // [CL] restore current_file and lineno for 'stmt' as they can
+    // have been modified by recursive calls here, and the original
+    // values maybe need later.
+    // See GDB 6.8 gdb.base/scope.exp "print funclocal at bar" and
+    // "print funclocal_bss at bar", and some other GDB tests, too
+    if (gs_tree_code(stmt) == GS_LABEL_DECL)
+      lineno = gs_decl_source_line(stmt);
+    else
+    if (gs_tree_code(stmt) != GS_CASE_LABEL_EXPR) {
+      if (gs_tree_has_location(stmt) == gs_true) // it would otherwise be -1
+	lineno = gs_expr_lineno(stmt);
+    }
+    if(gs_tree_has_location(stmt) == gs_true)
+     WGEN_Set_Line_And_File (lineno, gs_expr_filename(stmt), TRUE);
+#endif
 } /* WGEN_Expand_Stmt */
+
+#ifndef TARG_ST
+// [SC] Not required, because of earlier TARGET_EXPR simplification.
 
 // RETVAL is a TARGET_EXPR that generates the function return value.  The
 // return value is to be returned in the memory pointed to by the fake first
@@ -4718,6 +5205,7 @@ WGEN_fixup_target_expr (gs_t retval)
   gs_set_tree_operand(decl, 0, ptr_var);
   set_DECL_ST(ptr_var, WN_st(first_formal));
 }
+#endif
 
 // Return TRUE if TYPE has copy constructor.
 bool
@@ -4772,6 +5260,7 @@ Add_Current_Scope_Alloca_St (ST * st, int idx)
   scope_cleanup_stack[idx].vla.alloca_sts_vector->push_back (st);
 }
 
+#ifndef TARG_ST
 // This function is intended to be a general function to handle different
 // pragmas (other than openmp pragmas). Currently it handles
 // #pragma options, mips_frequency_hint
@@ -4816,3 +5305,4 @@ WGEN_Expand_Pragma (gs_t exp)
   }
 #endif
 }
+#endif
