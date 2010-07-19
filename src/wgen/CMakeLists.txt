@@ -6,6 +6,7 @@ include_directories(
   ../common/util
   ${PATHSCALE_BINARY_DIR}/common/targ_info
 
+  ../ipa_link/include
   ../ipa/common
   ../ipa/local
   ../ipa/main/analyze
@@ -92,8 +93,12 @@ set(wgen42_sources_common
   varasm.c
   c_int_model.c
   )
-set (wgen42_sources_arm ../common/com/gccfe_targinfo_interface.cxx #st
-                        ../common/com/${BUILD_TARGET_DIR}/targ_register_common.cxx )
+set (wgen42_sources_arm  wgen_pragmas.cxx
+                         ../common/com/gccfe_targinfo_interface.cxx #st
+                         ../common/util/vspec_parse.c
+                         ../common/util/vspec_token.c
+                         ../common/util/vspec.c
+                         ../common/com/${BUILD_TARGET_DIR}/targ_register_common.cxx )
 
 IF (${BUILD_TARGET_DIR} MATCHES "arm")
 set(wgen42_sources ${wgen42_sources_common} ${wgen42_sources_arm})

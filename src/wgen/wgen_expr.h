@@ -74,6 +74,9 @@ extern WN* WGEN_Expand_Expr_With_Sequence_Point (gs_t exp, TYPE_ID mtype,
  */
 extern WN * WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
 				    gs_t lhs,
+#ifdef TARG_ST
+                      WN* lhs_retval,
+#endif
 				    bool need_result,
 				    TY_IDX component_ty_idx,
 				    INT64 component_offset,

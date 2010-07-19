@@ -69,7 +69,12 @@ extern gs_t gs_build_type(gs_code_t code);
 #  define GS_PRAGMA_INTERFACE       3
 // ---- end GS_PROGRAM_FLAGS definition ----
 #define GS_WEAK_DECLS		 7
+#ifdef TARG_ST
+#define GS_GXX_EMITTED_IDENTS    8
+#define GS_PROGRAM_LAST          9
+#else
 #define GS_PROGRAM_LAST          8
+#endif
 
 // ---------------------------------------------------------------------------
 //   Tree nodes
@@ -625,6 +630,9 @@ GS_LOOKUP (gs_program_declarations, GS_PROGRAM_DECLARATIONS)
 GS_LOOKUP (gs_gxx_emitted_decls, GS_GXX_EMITTED_DECLS)
 GS_LOOKUP (gs_gxx_emitted_asms, GS_GXX_EMITTED_ASMS)
 GS_LOOKUP (gs_weak_decls, GS_WEAK_DECLS)
+#ifdef TARG_ST
+GS_LOOKUP (gs_gxx_emitted_idents, GS_GXX_EMITTED_IDENTS)
+#endif
 
 GS_LOOKUP_FLAG (GS_PROGRAM_FLAGS, gs_flag_errno_math, GS_FLAG_ERRNO_MATH)
 GS_LOOKUP_FLAG (GS_PROGRAM_FLAGS, gs_pragma_implementation, GS_PRAGMA_IMPLEMENTATION)
@@ -850,6 +858,11 @@ GS_LOOKUP (gs_decl_arg_type, GS_DECL_ARG_TYPE)
 GS_LOOKUP (gs_decl_arg_type_as_written, GS_DECL_ARG_TYPE_AS_WRITTEN)
 GS_LOOKUP (gs_tree_chain, GS_TREE_CHAIN)
 GS_LOOKUP (gs_type_name, GS_TYPE_NAME)
+#ifdef TARG_ST
+static inline void gs_set_tree_chain(gs_t t, gs_t val) {
+  gs_set_operand(t, GS_TREE_CHAIN, val);
+}
+#endif    
 static inline gs_string_t gs_decl_mode (gs_t t) {
   return gs_s (gs_operand (t, GS_DECL_MODE));
 }
@@ -976,6 +989,11 @@ static inline gs_int_t gs_tree_string_length (gs_t t) {
   return gs_n (gs_operand (t, GS_TREE_STRING_LENGTH));
 }
 GS_LOOKUP (gs_tree_purpose, GS_TREE_PURPOSE)
+#ifdef TARG_ST
+static inline void gs_set_tree_purpose(gs_t t, gs_t val) {
+  gs_set_operand(t, GS_TREE_PURPOSE, val);
+}
+#endif
 GS_LOOKUP (gs_tree_value, GS_TREE_VALUE)
 static inline void gs_set_tree_value(gs_t t, gs_t val) {
   gs_set_operand(t, GS_TREE_VALUE, val);

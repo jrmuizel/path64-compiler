@@ -39,14 +39,15 @@
 #ifdef TARG_ST
 extern gs_t  lookup_attribute(const char *, gs_t);
 #endif
+
 extern TY_IDX Create_TY_For_Tree (gs_t, TY_IDX idx = TY_IDX_ZERO);
 extern "C" ST* Create_ST_For_Tree (gs_t);
 extern "C" void Create_DST_For_Tree (gs_t, ST*);
+
 #ifdef TARG_ST
 // (cbr) 
 extern void set_variable_attributes(gs_t, ST*);
 #endif
-
 TY_IDX& TYPE_TY_IDX(gs_t);
 extern "C" void add_duplicates (gs_t, gs_t);
 extern "C" void erase_duplicates (gs_t);
@@ -128,7 +129,7 @@ Get_TY (gs_t type_tree)
 		return Create_TY_For_Tree (type_tree, idx); // forward declared
 	      else return idx;
 	    }
-#if defined( KEY) /* bug 8346 */
+#ifdef KEY /* bug 8346 */
 	    else if (expanding_function_definition &&
 	             (TY_is_incomplete(idx) ||
 		      (TY_kind(idx)==KIND_POINTER &&
@@ -151,7 +152,6 @@ struct find_st_attr_section_name {
         }
 };
 #endif
-
 /*
  * either return a previously created ST associated with a
  * var-decl/parm-decl/function_decl, or create a new one.
@@ -169,11 +169,11 @@ Get_ST (gs_t decl_tree)
 		    !Has_Base_Block(st) &&
 		    !ST_emit_symbol(st) &&
 #endif
-
 		    !gs_decl_external(decl_tree)        &&
 #ifdef TARG_ST
                     gs_tree_static(decl_tree)
 #else
+                    /* (cbr) (DDTSst22530) must adjust type size */
 		    !gs_decl_initial(decl_tree)
 #if 1 // wgen, bug 10324
 		     &&
@@ -201,9 +201,22 @@ Get_ST (gs_t decl_tree)
 		    }
 		}
 #ifdef KEY // the earlier definition may not have the complete type
-		if (gs_tree_code(decl_tree) == GS_VAR_DECL
+		if (gs_tree_code(decl_tree) == GS_VAR_DECL) {
+		  TY_IDX ty_idx = Get_TY(gs_tree_type(decl_tree));
+		  if (ty_idx && TY_IDX_index(ty_idx) != TY_IDX_index(st->u2.type)) {
+		    // Preserve volatile.
+		    if (TY_is_volatile(ST_type(st)))
+		      Set_TY_is_volatile(ty_idx);
+		    st->u2.type = ty_idx;
+		  }
+		}
 #ifdef TARG_ST
-                      && ( ST_sclass(st) == SCLASS_EXTERN ||
+                  // bug fix for OSP_133
+                /* if st has declared section name, and the section name isn't
+                     * the same as current tree node's section name attribute, store
+                     * the new section name in the str table and assign it to st*/
+		if (gs_tree_code(decl_tree) == GS_VAR_DECL &&
+                               ( ST_sclass(st) == SCLASS_EXTERN ||
                                 ST_sclass(st) == SCLASS_FSTATIC ||
                                 ST_sclass(st) == SCLASS_COMMON ||
                                 ST_sclass(st) == SCLASS_UGLOBAL ||
@@ -211,12 +224,8 @@ Get_ST (gs_t decl_tree)
                                 !ST_is_weak_symbol(st) &&
                                 !gs_decl_external(decl_tree) &&
                                 gs_tree_static(decl_tree) &&
-                                gs_decl_section_name(decl_tree)
-#endif
-
-                    ) {
-#ifdef TARG_ST
-                    ST_ATTR_IDX st_attr_idx;
+                                gs_decl_section_name(decl_tree)) {
+                        ST_ATTR_IDX st_attr_idx;
                         ST_IDX idx = ST_st_idx (st);
                         // search for section name attribute in st_attr table
                         st_attr_idx = For_all_until (St_Attr_Table,
@@ -245,16 +254,8 @@ Get_ST (gs_t decl_tree)
 
 			if (!gs_decl_initial(decl_tree))
 			    Set_ST_sclass (st, SCLASS_UGLOBAL);
-#else
-		  TY_IDX ty_idx = Get_TY(gs_tree_type(decl_tree));
-		  if (ty_idx && TY_IDX_index(ty_idx) != TY_IDX_index(st->u2.type)) {
-		    // Preserve volatile.
-		    if (TY_is_volatile(ST_type(st)))
-		      Set_TY_is_volatile(ty_idx);
-		    st->u2.type = ty_idx;
-		  }
+                }
 #endif
-		}
 #endif
         }
 	else st = Create_ST_For_Tree (decl_tree);
@@ -279,6 +280,7 @@ Get_ST (gs_t decl_tree)
 #endif
 	return st;
 }
+
 #ifdef TARG_ST
 /*
  * Get_Export_Class_For_Tree (gs_t decl_node, ST_CLASS storage, ST_SCLASS sclass)
@@ -291,7 +293,6 @@ Get_ST (gs_t decl_tree)
  */
 extern ST_EXPORT Get_Export_Class_For_Tree (gs_t decl_node, ST_CLASS storage, ST_SCLASS sclass);
 #endif
-
 #ifndef TARG_ST
 bool is_empty_base_class (gs_t type_tree);
 #endif

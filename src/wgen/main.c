@@ -68,12 +68,12 @@ BOOL enable_cxx_openmp = TRUE;
 #endif
 #endif
 gs_t program;
-#ifndef TARG_ST
+//#ifndef TARG_ST
 /* [SC] ST define this in libfereconf. */
 /*       MAX_DEBUG_LEVEL        2  :: Defined in flags.h */
 # define DEF_DEBUG_LEVEL        0
 INT Debug_Level = DEF_DEBUG_LEVEL;	/* -gn: debug level */
-#endif
+//#endif
 //zwu
 int wgen_pic;
 extern void WGEN_Weak_Finish(void);

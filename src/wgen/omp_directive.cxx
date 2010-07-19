@@ -592,8 +592,13 @@ void  expand_start_atomic (gs_t stmt)
     WGEN_expand_start_atomic ();
     WN * rhs_wn = WGEN_Expand_Expr (gs_tree_operand(stmt,1));
     gs_t lhs = gs_tree_operand(stmt,0);
+#ifdef TARG_ST
+     WGEN_Lhs_Of_Modify_Expr (GS_MODIFY_EXPR, lhs, NULL,
+                             0, 0, 0, 0, 0, rhs_wn, 0, 0, 0);
+#else
     WGEN_Lhs_Of_Modify_Expr (GS_MODIFY_EXPR, lhs,
                              0, 0, 0, 0, 0, rhs_wn, 0, 0, 0);
+#endif
     expand_end_atomic ();
 }
 
@@ -766,8 +771,13 @@ void expand_start_do_loop (gs_t init_expr, gs_t logical_expr, gs_t incr_expr)
         WGEN_Stmt_Push (WN_CreateBlock (), wgen_stmk_comma, Get_Srcpos());
               
         wn1 = WGEN_Expand_Expr (gs_decl_initial(init_expr)); // r.h.s.
+#ifdef TARG_ST
+        wn_tmp = WGEN_Lhs_Of_Modify_Expr(GS_MODIFY_EXPR, init_expr, NULL, FALSE, 
+                                         0, 0, 0, FALSE, wn1, 0, FALSE, FALSE);
+#else
         wn_tmp = WGEN_Lhs_Of_Modify_Expr(GS_MODIFY_EXPR, init_expr, FALSE, 
                                          0, 0, 0, FALSE, wn1, 0, FALSE, FALSE);
+#endif
         wn_tmp = WGEN_Stmt_Pop (wgen_stmk_comma);
         start = WN_COPY_Tree( WN_first( wn_tmp ));
         WN_DELETE_Tree( wn_tmp );
@@ -802,8 +812,13 @@ void expand_start_do_loop (gs_t init_expr, gs_t logical_expr, gs_t incr_expr)
               rhs = WN_Ldid (TY_mtype(ty_idx), 0, st, ty_idx);
             }
             WGEN_Stmt_Push (WN_CreateBlock (), wgen_stmk_comma, Get_Srcpos());
+#ifdef TARG_ST
+             WGEN_Lhs_Of_Modify_Expr(code, gs_tree_operand (init_expr, 0), NULL, FALSE,
+                                    0, 0, 0, FALSE, rhs, 0, FALSE, FALSE);
+#else
             WGEN_Lhs_Of_Modify_Expr(code, gs_tree_operand (init_expr, 0), FALSE,
                                     0, 0, 0, FALSE, rhs, 0, FALSE, FALSE);
+#endif
             wn_tmp = WGEN_Stmt_Pop (wgen_stmk_comma);
             // loop init
             start = WN_COPY_Tree (WN_first (wn_tmp));

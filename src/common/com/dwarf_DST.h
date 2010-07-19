@@ -1061,6 +1061,10 @@ typedef DST_STRUCTURE_TYPE DST_UNION_TYPE;
 #define DST_UNION_TYPE_inheritance(attr) ((attr)->inheritance)
 #define DST_UNION_TYPE_first_child(attr) ((attr)->child.first)
 #define DST_UNION_TYPE_last_child(attr) ((attr)->child.last)
+#ifdef TARG_ST // [CL]
+#define DST_UNION_TYPE_containing_type(attr) ((attr)->containing_type)
+#define DST_UNION_TYPE_being_built(attr) ((attr)->being_built)
+#endif
 
 
 

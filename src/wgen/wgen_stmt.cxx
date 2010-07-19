@@ -53,6 +53,7 @@ extern "C"{
 #include "targ_sim.h"
 #include <ctype.h>
 #ifdef TARG_ST
+#include "libiberty.h"
 #include "erfe.h"
 #include "gccfe_targinfo_interface.h"
 #endif
@@ -74,6 +75,10 @@ bool begin_expand_stmt;
 static BOOL  *if_else_info_stack;
 static INT32  if_else_info_i;
 static INT32  if_else_info_max;
+#ifdef TARG_ST
+/* (cbr) for branch prediction builtin_expect */
+INT32 if_else_hint;
+#endif
 
 typedef struct case_info_t {
   INT64     case_lower_bound_value;
@@ -144,6 +149,12 @@ typedef struct temp_cleanup_info_t {
 #ifdef KEY
   bool		    cleanup_eh_only;
 #endif
+#ifdef TARG_ST
+  // When label_idx == 0 (i.e. no cleanup), this is where
+  // we should insert guard initializers.
+  WN               *body;
+  WN               *last;
+#endif  
 } TEMP_CLEANUP_INFO;
 
 static TEMP_CLEANUP_INFO *temp_cleanup_stack;
@@ -192,7 +203,12 @@ static INT32	     handler_info_max;
 #ifdef KEY
 
 bool processing_handler = false;
+#ifdef TARG_ST
+bool need_manual_unwinding = false;
+bool try_block_seen = false;
+#else
 bool try_block_seen;
+#endif
 typedef struct eh_cleanup_entry {
   gs_t		     tryhandler;	// just for comparison, at present
   vector<gs_t>	     *cleanups;	// emit
@@ -398,6 +414,136 @@ Emit_Cleanup(gs_t cleanup)
   }
   make_symbols_weak = saved_make_symbols_weak;
 }
+#ifdef TARG_ST
+// [CL] support lexical blocks
+LEXICAL_BLOCK_INFO *current_lexical_block;
+static int lexical_block_id;
+
+static BOOL
+nested_lexical_block_p (const LEXICAL_BLOCK_INFO *lexical_block)
+{
+  /*  [SC] at function scope, we will have different fndecl from
+      parent (remember nested functions).
+  */
+  return (lexical_block->parent
+	  && lexical_block->fndecl == lexical_block->parent->fndecl);
+}
+
+LEXICAL_BLOCK_INFO*
+Push_Lexical_Block ()
+{
+  extern DST_INFO_IDX DST_Create_Lexical_Block(LEXICAL_BLOCK_INFO*);
+  LEXICAL_BLOCK_INFO* lexical_block;
+
+  DST_INFO_IDX empty_dst = DST_INVALID_INIT;
+
+  // [HK] malloc is poisoned, use xmalloc instead
+  lexical_block = (LEXICAL_BLOCK_INFO*) xmalloc(sizeof(LEXICAL_BLOCK_INFO));
+  lexical_block->id = lexical_block_id++;
+  lexical_block->parent = current_lexical_block;
+  lexical_block->lexical_block_start_idx = LABEL_IDX_ZERO;
+  lexical_block->lexical_block_end_idx = LABEL_IDX_ZERO;
+  lexical_block->fndecl = Current_Function_Decl();
+  lexical_block->dst = empty_dst;
+
+  if(Debug_Level >= 2) {
+    /* [CL] Function scope does not need
+       an additional lexical block (a function is a scope itself)
+    */
+    if (nested_lexical_block_p (lexical_block)) {
+      lexical_block->dst = DST_Create_Lexical_Block(lexical_block);
+    }
+  }
+
+#if 0
+  fprintf(stderr, "Creating lexical block id:%d parent:%d fn:%s dst:(%d:%d)\n",
+	  lexical_block->id, lexical_block->parent ? lexical_block->parent->id : 0,
+	  IDENTIFIER_POINTER (DECL_NAME (Current_Function_Decl())),
+	  lexical_block->dst.block, lexical_block->dst.offset);
+#endif
+
+  current_lexical_block = lexical_block;
+
+  return lexical_block;
+}
+
+LEXICAL_BLOCK_INFO*
+Pop_Lexical_Block ()
+{
+  LEXICAL_BLOCK_INFO* lexical_block = current_lexical_block;
+  current_lexical_block = current_lexical_block->parent;
+
+  return lexical_block;
+}
+
+#if 0
+// [CL] in wgen, debug information is created at the same time
+// scopes are handled, hence we can rely on current_lexical_block
+void Set_Current_Scope_DST(gs_t x)
+{
+  // [CL] global scope variables get NULL scope here, so as to be
+  // identified as "compilation unit" in the DST generator
+  // [SC] Similarly, fn scope decls get NULL scope here,
+  // so only decls in nested lexical blocks get non-NULL.
+  if (current_lexical_block
+      && nested_lexical_block_p (current_lexical_block)) {
+    x->common.scope = current_lexical_block;
+  } else {
+    x->common.scope = NULL;
+  }
+}
+#endif
+
+void Start_Lexical_Block(LEXICAL_BLOCK_INFO* lexical_block)
+{
+  current_lexical_block = lexical_block;
+
+  // [CL] create a label only for inner scopes
+  if (nested_lexical_block_p (lexical_block)) {
+    New_LABEL (CURRENT_SYMTAB,
+	       lexical_block->lexical_block_start_idx);
+
+    New_LABEL (CURRENT_SYMTAB,
+	       lexical_block->lexical_block_end_idx);
+    WGEN_Stmt_Append(
+		    WN_CreateLabel(lexical_block->lexical_block_start_idx,
+				   0, NULL),
+		    Get_Srcpos());
+
+    if(Debug_Level >= 2) {
+      if (! nested_lexical_block_p (lexical_block->parent)) {
+	lexical_block->parent->dst = DECL_DST_IDX(lexical_block->parent->fndecl);
+#if 0
+	fprintf(stderr, "Lexical block id:%d dst:(%d:%d)\n",
+		lexical_block->parent->id, lexical_block->parent->dst.block,
+		lexical_block->parent->dst.offset);
+#endif
+      }
+#if 0
+      fprintf(stderr, "Linking block id:%d to parent id:%d\n",
+	      lexical_block->id, lexical_block->parent->id);
+#endif
+      extern void DST_Link_Lexical_Block(LEXICAL_BLOCK_INFO*, LEXICAL_BLOCK_INFO*);
+      DST_Link_Lexical_Block(lexical_block->parent, lexical_block);
+    }
+  }
+}
+
+void End_Lexical_Block(LEXICAL_BLOCK_INFO* lexical_block)
+{
+  // [CL] create a label only for inner scopes
+  if (nested_lexical_block_p (lexical_block)) {
+    WGEN_Stmt_Append(
+		    WN_CreateLabel(lexical_block->lexical_block_end_idx,
+				   0, NULL),
+		    Get_Srcpos());
+  }
+  current_lexical_block = lexical_block->parent;
+
+  // [CL] end of life for this lexical block
+  free(lexical_block);
+}
+#endif
 
 static void
 Push_Scope_Cleanup (gs_t t, bool eh_only=false)
@@ -882,6 +1028,23 @@ cleanup_matches (gs_t candidate, gs_t target)
   return FALSE;
 }
 
+#ifdef TARG_ST
+void
+Init_Guard (WN *wn)
+{
+  INT i;
+  for (i = temp_cleanup_i; i >= 0; --i) {
+    if (temp_cleanup_stack[i].label_idx == 0) {
+      WN_INSERT_BlockAfter (temp_cleanup_stack[i].body,
+			    temp_cleanup_stack[i].last,
+			    wn);
+      temp_cleanup_stack[i].last = wn;
+      return;
+    }
+  }
+  WGEN_Stmt_Append (wn, Get_Srcpos());
+}
+#endif
 
 void
 Do_Temp_Cleanups (gs_t t)
@@ -1631,7 +1794,20 @@ Wgen_Expand_Asm_Operands (gs_t  string,
 #ifdef KEY
 	nonmem_opnd_num ++;
 #endif
-
+#ifdef TARG_ST
+        WN *output_rvalue_wn = WGEN_Lhs_Of_Modify_Expr (GS_MODIFY_EXPR,
+						       gs_tree_value (tail),
+						       NULL,
+						       plus_modifier,
+						       (TY_IDX) 0, // component type
+						       (INT64) 0,  // component offset
+						       (UINT32) 0, // field ID
+						       FALSE,      // is bit field?
+						       NULL,       // dummy rhs kid
+						       asm_neg_preg, // preg num
+						       FALSE,      // is realpart
+						       FALSE);
+#else
 	WN *output_rvalue_wn = WGEN_Lhs_Of_Modify_Expr (GS_MODIFY_EXPR,
 						       gs_tree_value (tail),
 						       plus_modifier,
@@ -1643,6 +1819,7 @@ Wgen_Expand_Asm_Operands (gs_t  string,
 						       asm_neg_preg, // preg num
 						       FALSE,      // is realpart
 						       FALSE);     // is imagpart
+#endif
 
 	if (plus_modifier)
 	  {
@@ -2255,6 +2432,12 @@ WGEN_Expand_Label (gs_t label)
     WGEN_Stmt_Append (wn, Get_Srcpos ());
   }
 } /* WGEN_Expand_Label */
+
+#ifdef TARG_ST
+/* (cbr) pro-fe3.3-c++/50 make sure to catch cleanup code that can throw
+   instead of unwinding it and recalling cleanup again */
+bool can_cleanup=true;
+#endif
 
 #ifdef KEY
 // Returns whether a COMMA needs to be generated with comma_block as first
@@ -3592,6 +3775,32 @@ manual_unwinding_needed (void)
   }
   return cleanups_seen;
 }
+
+#ifdef TARG_ST
+// This function returns true if a stack unwind that passes through the current
+// scope and out of the current function will require some cleanups in the current
+// function stack.  It is used to decide whether it is really necessary to set
+// up an exception region around a function call, since we only need an
+// exception region if there is some cleanup to do.
+bool
+unwind_handler_needed (void)
+{
+  int i;
+  if (processing_handler) return false;
+  if (temp_cleanup_i >= 0) return true;
+  for (i = scope_cleanup_i; i >= 0; i--) {
+    switch (gs_tree_code (scope_cleanup_stack[i].stmt)) {
+      case GS_BIND_EXPR:
+	// This does not require handler
+	break;
+      default:
+	// Everything else does require a handler
+	return true;
+      }
+  }
+  return false;
+}
+#endif
 
 static void
 Get_eh_spec (vector<ST_IDX> *in)

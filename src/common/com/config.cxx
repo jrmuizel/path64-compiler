@@ -1160,6 +1160,11 @@ BOOL Allow_Exceptions = TRUE;
 
 /***** Compiler	debug/trace options *****/
 BOOL Tracing_Enabled = FALSE;		/* Any trace options set? */
+#ifdef TARG_ST
+#ifdef FE_GNU_4_2_0
+int trace_verbose = FALSE;
+#endif
+#endif
 
 /***** Miscellaneous optimization options *****/
 /* Should idict commute operands in seeking match? */

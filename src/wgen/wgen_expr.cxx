@@ -1534,11 +1534,19 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
       FmtAssert (DECL_FIELD_ID(arg1) != 0,
                  ("WGEN_Lhs_Of_Modify_Expr: DECL_FIELD_ID used but not set"));
 #endif
+#ifdef TARG_ST
+       wn = WGEN_Lhs_Of_Modify_Expr(assign_code, arg0, NULL, need_result, ty_idx0, 
+				  ofst+component_offset,
+			          field_id + DECL_FIELD_ID(arg1), is_bit_field, 
+				  rhs_wn, rhs_preg_num, is_realpart,
+				  is_imagpart);
+#else
       wn = WGEN_Lhs_Of_Modify_Expr(assign_code, arg0, need_result, ty_idx0, 
 				  ofst+component_offset,
 			          field_id + DECL_FIELD_ID(arg1), is_bit_field, 
 				  rhs_wn, rhs_preg_num, is_realpart,
 				  is_imagpart);
+#endif
     }
     return wn;
 
@@ -1546,9 +1554,15 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
     {
       gs_t arg0 = gs_tree_operand(lhs, 0);
       TY_IDX ty_idx0 = Get_TY(gs_tree_type(arg0));
+#ifdef TARG_ST
+       wn = WGEN_Lhs_Of_Modify_Expr(assign_code, arg0, NULL, need_result, ty_idx0,
+				  component_offset, field_id, is_bit_field,
+				  rhs_wn, rhs_preg_num, TRUE, FALSE);
+#else
       wn = WGEN_Lhs_Of_Modify_Expr(assign_code, arg0, need_result, ty_idx0,
 				  component_offset, field_id, is_bit_field,
 				  rhs_wn, rhs_preg_num, TRUE, FALSE);
+#endif
     }
     return wn;
 
@@ -1556,9 +1570,15 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
     {
       gs_t arg0 = gs_tree_operand(lhs, 0);
       TY_IDX ty_idx0 = Get_TY(gs_tree_type(arg0));
+#ifdef TARG_ST
+      wn = WGEN_Lhs_Of_Modify_Expr(assign_code, arg0, NULL, need_result, ty_idx0,
+				  component_offset, field_id, is_bit_field,
+				  rhs_wn, rhs_preg_num, FALSE, TRUE);
+#else
       wn = WGEN_Lhs_Of_Modify_Expr(assign_code, arg0, need_result, ty_idx0,
 				  component_offset, field_id, is_bit_field,
 				  rhs_wn, rhs_preg_num, FALSE, TRUE);
+#endif
     }
     return wn;
 
@@ -1629,11 +1649,19 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
         if (code == GS_VAR_DECL && (actual_decl = gs_decl_value_expr(lhs))) {
 
           TY_IDX ty_idx0 = Get_TY (gs_tree_type (actual_decl));
+#ifdef TARG_ST
+          return WGEN_Lhs_Of_Modify_Expr(assign_code, actual_decl, NULL, 
+                                         need_result, ty_idx0,
+                                         component_offset, field_id,
+                                         is_bit_field, rhs_wn, rhs_preg_num,
+                                         FALSE, FALSE);
+#else
           return WGEN_Lhs_Of_Modify_Expr(assign_code, actual_decl,
                                          need_result, ty_idx0,
                                          component_offset, field_id,
                                          is_bit_field, rhs_wn, rhs_preg_num,
                                          FALSE, FALSE);
+#endif
         }
 
         st = Get_ST (lhs);
@@ -2300,19 +2328,35 @@ WGEN_Lhs_Of_Modify_Expr(gs_code_t assign_code,
       WN *else_block = WN_CreateBlock ();
 
       WGEN_Stmt_Push (then_block, wgen_stmk_if_then, Get_Srcpos());
+#ifdef TARG_ST
+      WN * wn1 = WGEN_Lhs_Of_Modify_Expr (assign_code, arg0, NULL, TRUE,
+                                         component_ty_idx, component_offset,
+                                         field_id, is_bit_field,
+                                         rhs_wn, rhs_preg_num, is_realpart,
+                                         is_imagpart);
+#else
       WN * wn1 = WGEN_Lhs_Of_Modify_Expr (assign_code, arg0, TRUE,
                                          component_ty_idx, component_offset,
                                          field_id, is_bit_field,
                                          rhs_wn, rhs_preg_num, is_realpart,
                                          is_imagpart);
+#endif
       WGEN_Stmt_Pop (wgen_stmk_if_then);
 
       WGEN_Stmt_Push (else_block, wgen_stmk_if_else, Get_Srcpos());
+#ifdef TARG_ST
+      WN * wn2 = WGEN_Lhs_Of_Modify_Expr (assign_code, arg1, NULL, TRUE,
+                                         component_ty_idx, component_offset,
+                                         field_id, is_bit_field,
+                                         rhs_wn, rhs_preg_num, is_realpart,
+                                         is_imagpart);
+#else
       WN * wn2 = WGEN_Lhs_Of_Modify_Expr (assign_code, arg1, TRUE,
                                          component_ty_idx, component_offset,
                                          field_id, is_bit_field,
                                          rhs_wn, rhs_preg_num, is_realpart,
                                          is_imagpart);
+#endif
       WGEN_Stmt_Pop (wgen_stmk_if_else);
 
       Is_True (wn1 && wn2,
@@ -7242,6 +7286,9 @@ WGEN_Expand_Expr (gs_t exp,
       {
 	if (gs_tree_code(gs_tree_operand(exp, 1)) == GS_ERROR_MARK)
 	    break;
+#ifdef TARG_ST
+        WN* call_return_val = NULL;
+#endif
 #if defined( KEY)
 	// If gs_tree_operand(exp, 1) is a CALL_EXPR that returns a
 	// ptr-to-member-function, then call
@@ -7254,8 +7301,38 @@ WGEN_Expand_Expr (gs_t exp,
 						       Widen_Mtype(desc), desc);
         } else
 #endif
+        {
+#ifdef TARG_ST
+             gs_t lhs = gs_tree_operand (exp, 0);
+	  if (gs_tree_code(lhs) == GS_INDIRECT_REF &&
+              gs_tree_code(gs_tree_operand (lhs, 0)) == GS_CALL_EXPR ) {
+            // We have a function call in lhs, we need to promote it.
+	    // The expr is f()=...; we must promote f() at first.
+	    // GCC TREE is
+	    // MODIFY_EXPR
+	    //  +-0 INDIRECT_REF
+	    //  |        +-0 CALL_EXPR
+	    //  +-1 ...
+	    //  Without this workaround, 
+	    //    operand 1 will be expand first, then the CALL_EXPR in operand 0
+	    //    if there are several assignment, for example, f()=g()=h(), it's wrong.
+	    //  So we expand the CALL_EXPR at first, save its return value in call_return_val,
+	    //    then, pass call_return_val to WGEN_Lhs_Of_Modify_Expr
+	    //
+	    WN*      call = WGEN_Expand_Expr(gs_tree_operand(lhs, 0));
+	    ST*      preg_st;
+	    PREG_NUM preg;
+	    TY_IDX   call_ty_idx = Get_TY (gs_tree_type (gs_tree_operand (lhs, 0)));
+            preg_st  = MTYPE_To_PREG(Pointer_Mtype);
+	    preg     = Create_Preg (Pointer_Mtype, NULL);
+	    WGEN_Set_ST_Addr_Saved (call);
+	    WN* stid = WN_Stid (Pointer_Mtype, preg, preg_st, call_ty_idx, call);
+	    WGEN_Stmt_Append(stid, Get_Srcpos());
+            call_return_val = WN_Ldid(Pointer_Mtype, preg, preg_st, call_ty_idx);
+          }
+#endif
         wn1 = WGEN_Expand_Expr (gs_tree_operand (exp, 1)); // r.h.s.
-
+        }
 #ifdef KEY // wgen bugs 10849, 10893, 10908
 	if (wn1 && WN_operator(wn1) == OPR_INTCONST && 
 	    TY_size(Get_TY(gs_tree_type(gs_tree_operand(exp, 1)))) == 0)
@@ -7276,8 +7353,13 @@ WGEN_Expand_Expr (gs_t exp,
         }
         else 
 #endif
+#ifdef TARG_ST
+        wn  = WGEN_Lhs_Of_Modify_Expr(code, gs_tree_operand (exp, 0), call_return_val, need_result, 
+				     0, 0, 0, FALSE, wn1, 0, FALSE, FALSE);
+#else
 	wn  = WGEN_Lhs_Of_Modify_Expr(code, gs_tree_operand (exp, 0), need_result, 
 				     0, 0, 0, FALSE, wn1, 0, FALSE, FALSE);
+#endif
       }
       break;
 
