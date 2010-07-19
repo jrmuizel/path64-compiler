@@ -52,7 +52,9 @@ extern "C"{
 #include "wgen_stmt.h"
 #include "wgen_decl.h"
 #include "wgen_spin_symbol.h"
+#ifdef TARG_ST
 #include "wgen_tracing.h"
+#endif
 #include "targ_sim.h"
 #include <ctype.h>
 #ifdef TARG_ST
@@ -3641,7 +3643,6 @@ static INITV_IDX
 #ifdef TARG_ST
 Create_handler_list (int scope_index, bool &cleanups_seen)
 #else
-static INITV_IDX
 Create_handler_list (int scope_index)
 #endif
 {
