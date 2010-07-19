@@ -1000,6 +1000,14 @@ ERROR_DESC EDESC_Globals[] = {
     "Can't dladd %s: %s ",
     2, ET_STRING, ET_STRING, 0,0,0,0 },
 #ifdef TARG_ST 
+#ifdef KEY
+  { EC_Ipa_Infile,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
+    "Can't read IPA input file: %s",
+    1, ET_STRING, 0,0,0,0,0 },
+  { EC_Ipa_Outfile,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
+    "Can't create IPA output file: %s",
+    1, ET_STRING, 0,0,0,0,0 },
+#endif
 { EC_Lai_Exists,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
     "LAI file (%s) already exists",
     1, ET_STRING, 0,0,0,0,0 },

@@ -484,6 +484,10 @@ static char *erglob_rcs_id = "$Source: common/com/SCCS/s.erglob.h $ $Revision: 1
 
 /* IPA dladd error codes: */
 #define EC_IP_Load_Dso  EC_BASE_FILE+110    /* str, str */
+#ifdef KEY
+#define EC_Ipa_Infile   EC_BASE_FILE+111         /* str */
+#define EC_Ipa_Outfile  EC_BASE_FILE+112         /* str */
+#endif
 #else
 #define EC_Asm_Exists	EC_BASE_FILE+50		/* str */
 #define EC_Asm_Open	    EC_BASE_FILE+51		/* str, err */
