@@ -165,6 +165,8 @@
 #include "be_symtab.h"
 #endif
 
+#include "main_defs.h"
+
 #ifdef TARG_X8664
 extern void EETARG_Emit_IP_Calc_Func(void);
 #endif
@@ -208,7 +210,7 @@ extern BOOL PU_has_trampoline;  // defined in wn_lower.cxx
  * ====================================================================
  */
 
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 BOOL CG_emit_asm_dwarf    = TRUE;
 #ifdef TARG_ST // [CL] do not emit unwind info by default
 BOOL CG_emit_unwind_info  = FALSE;

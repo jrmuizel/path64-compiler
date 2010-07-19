@@ -1165,7 +1165,7 @@ main ()
 	      "fisttps",  // st0 -> short int
 	      "fisttpl",  // st0 -> int
 	      "fisttpll", // st0 -> long long
-	      
+
 	      /* instructions to support -mcmodel=medium */
 	      "movabsq",
 	      "store8_abs",

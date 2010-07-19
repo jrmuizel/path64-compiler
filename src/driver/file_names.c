@@ -1,4 +1,7 @@
 /*
+   Copyright (C) 2010 PathScale Inc. All Rights Reserved.
+*/
+/*
  *  Copyright (C) 2006, 2007. QLogic Corporation. All Rights Reserved.
  */
 
@@ -40,6 +43,9 @@
 #include <time.h>
 #include <unistd.h>
 #include <errno.h>
+#if !defined(__FreeBSD__)
+#include <alloca.h>
+#endif
 #include "phases.h"
 #include "lang_defs.h"
 #include "string_utils.h"
@@ -97,7 +103,7 @@ get_object_file (char *src)
 	    !option_was_seen(O_c) &&
 	    keep_flag != TRUE) {
 	  char *p;
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__FreeBSD__)
+#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 	  src = strcpy(alloca(strlen(src) + sizeof '\0'), src);
 #else /* defined(BUILD_OS_DARWIN) */
 	  src = strdupa(src);

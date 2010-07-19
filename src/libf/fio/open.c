@@ -507,7 +507,7 @@ _f_open(
 	if (stdfn) {
 		FILE	*stdf;
 
-#if	defined(BUILD_OS_DARWIN)
+#if	defined(BUILD_OS_DARWIN) || defined(__sun)
 		switch(stdfnum) {
 		case(STDIN_FILENO):
 			stdf	= stdin;

@@ -34,10 +34,10 @@
  * otherwise return .FALSE. The right most bit is bit 0.
  */
 
-int64
-btest_ll (int64 *n, int64 *i)
+int64_t
+btest_ll (int64_t *n, int64_t *i)
 {
     if (*i < 0 || *i >= NBLL)
 	return 0LL;
-    return ((uint64)(*n & F77llzmask[*i]) >> *i);
+    return ((uint64_t)(*n & F77llzmask[*i]) >> *i);
 }

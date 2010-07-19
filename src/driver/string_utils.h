@@ -1,4 +1,7 @@
 /*
+   Copyright (C) 2010 PathScale Inc. All Rights Reserved.
+*/
+/*
  * Copyright (C) 2008 PathScale, LLC.  All Rights Reserved.
  */
 

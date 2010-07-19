@@ -32,7 +32,6 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif /* KEY Bug 14161 */
-#include "qk.h"
 
 
 void MAIN__(void) __attribute__((weak));
@@ -121,7 +120,7 @@ static int common_init()
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_sigaction = __f90_segv;
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(__sun)
 	sa.sa_flags = SA_RESETHAND | SA_ONSTACK | SA_SIGINFO | SA_NODEFER;
 #else /* defined(BUILD_OS_DARWIN) */
 	sa.sa_flags = SA_ONESHOT | SA_ONSTACK | SA_SIGINFO | SA_NOMASK;
@@ -132,11 +131,9 @@ static int common_init()
 	 * In those environments, simply refrain from providing our own SIGSEGV
 	 * handler (because in case of stack overflow it's not going to work)
 	 * and let the user see the normal SIGSEGV behavior. */
-	if (_Qk_sigaltstack(&ss, NULL) == -1) {
-	        if (errno != ENOSYS) {
-		       perror("sigaltstack");
-		       exit(1);
-		}
+	if (sigaltstack(&ss, NULL) == -1) {
+	       perror("sigaltstack");
+	       exit(1);
 	}
 	
 	else if (sigaction(SIGSEGV, &sa, NULL) == -1) {
@@ -147,7 +144,7 @@ static int common_init()
 #ifdef KEY /* Bug 5089 */
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_sigaction = __f90_fpe;
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(__sun)
 	sa.sa_flags = SA_RESETHAND | SA_SIGINFO | SA_NODEFER;
 #else /* defined(BUILD_OS_DARWIN) */
 	sa.sa_flags = SA_ONESHOT | SA_SIGINFO | SA_NOMASK;

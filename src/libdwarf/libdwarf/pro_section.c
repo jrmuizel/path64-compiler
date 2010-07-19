@@ -32,6 +32,7 @@
 
 #include "config.h"
 #include "dwarf_stuff.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -81,5 +81,5 @@ extern void WGEN_Expand_Label (gs_t label);
 extern LABEL_IDX WGEN_unusable_label_idx;
 extern LABEL_IDX WGEN_last_label_idx;
 #endif
-
+extern bool begin_expand_stmt;
 #endif

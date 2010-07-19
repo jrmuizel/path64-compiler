@@ -661,7 +661,10 @@ Gen_Register_TN (ISA_REGISTER_CLASS rclass, INT size)
   Is_True(rclass != ISA_REGISTER_CLASS_UNDEFINED,
 	  ("Gen_Register_TN called with undefined reg class"));
 
-  if ( REGISTER_SET_EmptyP(REGISTER_CLASS_allocatable(rclass)) ) {
+  if ( REGISTER_SET_EmptyP(REGISTER_CLASS_allocatable(rclass)) ) 
+  {
+	if(REGISTER_CLASS_register_count(rclass) != 1)
+		printf("error\n");
 	// only one reg in class, so make dedicated tn
   	FmtAssert(REGISTER_CLASS_register_count(rclass) == 1,
 	      ("don't know how to make dedicated TN for class %s",

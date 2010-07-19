@@ -10,7 +10,7 @@ include_directories(
   ../ipa/local
   ../ipa/main/analyze
   ../ipa/main/optimize
-  ../ipa_link/include
+  ../../GCC/libspin
   ../be/com
   ${PATHSCALE_BINARY_DIR}/../GCC/gcc
   ../../GCC/gcc
@@ -26,7 +26,7 @@ add_definitions(
 # TODO : Try to minimize these
   -DFRONT_END
   -DUSE_DECL_SRCPOS
-  -D__STDC_FORMAT_MACROS
+   ${PATH64_STDC_FORMAT_MACROS}
   -DNEW_SYMTAB
   -DFRONT_END_C
   -DCFE

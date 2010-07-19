@@ -3695,7 +3695,7 @@ if(! Is_Target_64bit() ) {
 #ifndef TARG_ST
   // [CG] This code is not suitable for cross compilations
   {	/* check that stacksize does not exceed system max */
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
         struct rlimit rlp;
         getrlimit(RLIMIT_STACK, &rlp);
 #else

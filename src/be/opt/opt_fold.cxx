@@ -87,6 +87,10 @@ static char *rcs_id = opt_fold_CXX"$Revision: 1.9 $";
 #include "opt_fold.h"		// FOLD class, includes opt_htable.h, config.h
 #include "opt_htable.h"		// hash functions, ISOP flags
 
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 // forward definitions
 // the only routines in the simplifier that create nodes are:
 // CR_SimpCreateExp1, CR_SimpCreateExp2, CR_CreateIntconst, CR_CreateFPconst

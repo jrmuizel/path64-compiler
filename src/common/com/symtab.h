@@ -39,6 +39,7 @@
 // fields in the symbol table classes.
 
 #include <ext/slist>
+#include <strings.h>
 
 #ifndef segmented_array_INCLUDED
 #include "segmented_array.h"

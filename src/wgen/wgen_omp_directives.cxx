@@ -51,6 +51,10 @@ extern "C"{
 #include "const.h"
 #include "erglob.h"
 
+#if !defined(__FreeBSD__)
+#include <alloca.h>
+#endif
+
 #include <stack>
 // The structure of the stack is expected to be:
 //   dtor1

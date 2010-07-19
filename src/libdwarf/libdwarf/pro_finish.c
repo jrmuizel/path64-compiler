@@ -27,6 +27,7 @@
 
 
 #include "config.h"
+#include <stdint.h>
 #include "pro_incl.h"
 
 /*---------------------------------------------------------------

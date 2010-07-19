@@ -87,7 +87,6 @@
 #include "opt_bb.h"
 #include "opt_config.h"
 #include "config_opt.h"  // OPT_Cyg_Instrument
-#include "opt_sys.h"
 #include "bb_node_set.h"
 #include "idx_32_set.h"
 #include "opt_cfg.h"

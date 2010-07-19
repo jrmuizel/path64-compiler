@@ -72,7 +72,6 @@ static char *rcs_id = 	opt_dom_CXX"$Revision$";
 #include "tracing.h"
 #include "cxx_memory.h"
 
-#include "opt_sys.h"
 #include "opt_cfg.h"
 #include "opt_defs.h"
 #include "bb_node_set.h"

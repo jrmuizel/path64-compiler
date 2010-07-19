@@ -37,7 +37,7 @@
 
 #include <cmplrs/host.h>
 
-int32 F77mask[33] = {
+int32_t F77mask[33] = {
 	0x0,
 	0x1, 0x3, 0x7, 0xf,
 	0x1f, 0x3f, 0x7f, 0xff,
@@ -49,7 +49,7 @@ int32 F77mask[33] = {
 	0x1fffffff, 0x3fffffff, 0x7fffffff, 0xffffffff
 	};
 
-int64 F77llmask[65] = {
+int64_t F77llmask[65] = {
 	0x0LL,
 	0x1LL, 0x3LL, 0x7LL, 0xfLL,
 	0x1fLL, 0x3fLL, 0x7fLL, 0xffLL,
@@ -72,5 +72,5 @@ int64 F77llmask[65] = {
 
 /* zmask[k] asserts k+1 right most bits. */
 
-int32 *F77zmask = &F77mask[1];
-int64 *F77llzmask = &F77llmask[1];
+int32_t *F77zmask = &F77mask[1];
+int64_t *F77llzmask = &F77llmask[1];

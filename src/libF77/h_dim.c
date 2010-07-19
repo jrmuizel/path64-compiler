@@ -25,8 +25,8 @@
 
 #include <cmplrs/host.h>
 
-int16 
-h_dim (int16 *a, int16 *b)
+int16_t 
+h_dim (int16_t *a, int16_t *b)
 {
     return( *a > *b ? *a - *b : 0);
 }

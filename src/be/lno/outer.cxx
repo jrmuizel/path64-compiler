@@ -61,6 +61,7 @@ static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/lno/SCCS/s.outer.
 #include "glob.h"
 #include "tlog.h"
 #include "parallel.h"
+#include "lno_trace.h"
 
 typedef HASH_TABLE<WN*,UINT> WN2UINT;
 
@@ -69,15 +70,33 @@ typedef enum { NORMAL, SKIP } OUTER_FUSION_STATUS;
 typedef enum { INFO, FAIL, SUCCEED } INFO_TYPE;
 
 static void outer_fusion_verbose_info(
+  INFO_TYPE     info_type,
   SRCPOS        srcpos1,
   SRCPOS        srcpos2,
+  UINT32	snl_level1,
+  UINT32	snl_level2,
   const char*   message)
 {
-  
-  printf("#### Outer Fusion(%d+%d): %s\n",
-    Srcpos_To_Line(srcpos1),
-    Srcpos_To_Line(srcpos2),
-    message);
+
+    if ( info_type != INFO ) 
+    {
+        if (LNO_Verbose || LNO_Lno_Verbose)
+        {
+           LNO_Trace( LNO_OUTER_FUSION_EVENT, 
+                   Src_File_Name,
+                   Srcpos_To_Line(srcpos1),
+                   ST_name(WN_entry_name(Current_Func_Node)),
+                   Srcpos_To_Line( srcpos1),
+                   Srcpos_To_Line( srcpos2),
+                   snl_level1, snl_level1, message);
+#if 0
+            printf("#### Outer Fusion(%d+%d): %s\n",
+                   Srcpos_To_Line(srcpos1),
+                   Srcpos_To_Line(srcpos2),
+                   message);
+#endif
+        }
+    }
 }
 
 static void outer_fusion_analysis_info(
@@ -317,8 +336,7 @@ static FISSION_FUSION_STATUS Fuse_Outer_Loops(WN* loop1, WN* loop2,
   if (dli1->No_Fusion || dli2->No_Fusion
       || !Cannot_Concurrentize(loop1) && Cannot_Concurrentize(loop2)
       || Cannot_Concurrentize(loop1) && !Cannot_Concurrentize(loop2)) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      outer_fusion_verbose_info(srcpos1,srcpos2,
+      outer_fusion_verbose_info(FAIL,srcpos1,srcpos2,0,0,
         "Loops with no_fusion pragmas cannot be outer fused.");
     if (LNO_Analysis)
       outer_fusion_analysis_info(FAIL,srcpos1,srcpos2,0,0,
@@ -331,7 +349,7 @@ static FISSION_FUSION_STATUS Fuse_Outer_Loops(WN* loop1, WN* loop2,
   if (dli1->LB->Too_Messy || dli1->UB->Too_Messy ||
       dli2->LB->Too_Messy || dli2->UB->Too_Messy) {
     if (LNO_Verbose || LNO_Lno_Verbose)
-      outer_fusion_verbose_info(srcpos1,srcpos2,
+      outer_fusion_verbose_info(FAIL,srcpos1,srcpos2,0,0,
         "Loops with messy bounds cannot be outer fused.");
     if (LNO_Analysis)
       outer_fusion_analysis_info(FAIL,srcpos1,srcpos2,0,0,
@@ -344,8 +362,7 @@ static FISSION_FUSION_STATUS Fuse_Outer_Loops(WN* loop1, WN* loop2,
   if (!Do_Loop_Is_Good(loop1) || !Do_Loop_Is_Good(loop2) ||
       Do_Loop_Has_Calls(loop1) || Do_Loop_Has_Calls(loop2) ||
       Do_Loop_Has_Gotos(loop1) || Do_Loop_Has_Gotos(loop2)) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      outer_fusion_verbose_info(srcpos1,srcpos2,
+      outer_fusion_verbose_info(FAIL,srcpos1,srcpos2,0,0,
         "Loops with calls, exits, or gotos cannot be outer fused.");
     if (LNO_Analysis)
       outer_fusion_analysis_info(FAIL,srcpos1,srcpos2,0,0,
@@ -376,8 +393,7 @@ static FISSION_FUSION_STATUS Fuse_Outer_Loops(WN* loop1, WN* loop2,
   UINT snl_level2=ffi->Get_Depth(ffi_index);
   SNL_TYPE type2=ffi->Get_Type(ffi_index);
 
-  if (LNO_Verbose || LNO_Lno_Verbose)
-    outer_fusion_verbose_info(srcpos1,srcpos2,
+    outer_fusion_verbose_info(INFO,srcpos1,srcpos2,snl_level1,snl_level2,
       "Attempt to fuse outer loops to improve locality.");
   if (LNO_Analysis)
     outer_fusion_analysis_info(INFO,srcpos1,srcpos2,snl_level1,snl_level2,
@@ -387,8 +403,7 @@ static FISSION_FUSION_STATUS Fuse_Outer_Loops(WN* loop1, WN* loop2,
       "Attempt to fuse outer loops to improve locality.");
 
   if (snl_level1!=snl_level2 && LNO_Fusion<2) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      outer_fusion_verbose_info(srcpos1,srcpos2,
+      outer_fusion_verbose_info(FAIL,srcpos1,srcpos2,snl_level1,snl_level2,
         "Unequal SNL levels.");
     if (LNO_Analysis)
       outer_fusion_analysis_info(FAIL,srcpos1,srcpos2,snl_level1,snl_level2,
@@ -401,8 +416,7 @@ static FISSION_FUSION_STATUS Fuse_Outer_Loops(WN* loop1, WN* loop2,
   }
 
   if (type1!=type2 && LNO_Fusion<2) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      outer_fusion_verbose_info(srcpos1,srcpos2,
+      outer_fusion_verbose_info(FAIL,srcpos1,srcpos2,snl_level1,snl_level2,
         "Fusing SNL with non-SNL.");
     if (LNO_Analysis)
       outer_fusion_analysis_info(FAIL,srcpos1,srcpos2,snl_level1,snl_level2,
@@ -419,8 +433,7 @@ static FISSION_FUSION_STATUS Fuse_Outer_Loops(WN* loop1, WN* loop2,
   BOOL parallel2 = (Run_autopar && LNO_Run_AP > 0 &&
                     Any_Loop_In_SNL_Parallelizable(loop2, snl_level2));
   if (parallel1 != parallel2 && LNO_Fusion) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      outer_fusion_verbose_info(srcpos1,srcpos2,
+      outer_fusion_verbose_info(FAIL,srcpos1,srcpos2,snl_level1,snl_level2,
         "Do not fuse parallel with serial loop.");
     if (LNO_Analysis)
       outer_fusion_analysis_info(FAIL,srcpos1,srcpos2,0,0,
@@ -475,8 +488,7 @@ static FISSION_FUSION_STATUS Fuse_Outer_Loops(WN* loop1, WN* loop2,
     return Failed;
 
   if (array_ref_count1+array_ref_count2>OLF_size_upperbound && LNO_Fusion<2) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      outer_fusion_verbose_info(srcpos1,srcpos2,
+      outer_fusion_verbose_info(FAIL,srcpos1,srcpos2,snl_level1,snl_level2,
         "Number of array references after merge is too big (>100)!!.");
     if (LNO_Analysis)
       outer_fusion_analysis_info(FAIL,srcpos1,srcpos2,snl_level1,snl_level2,
@@ -494,8 +506,7 @@ static FISSION_FUSION_STATUS Fuse_Outer_Loops(WN* loop1, WN* loop2,
   if (Stride_One_Level(writes1,reads1,outer_level1,snl_level1)
       !=Stride_One_Level(writes2,reads2,outer_level2,snl_level2) 
       && LNO_Fusion<2) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      outer_fusion_verbose_info(srcpos1,srcpos2,
+      outer_fusion_verbose_info(FAIL,srcpos1,srcpos2,snl_level1,snl_level2,
         "Stride-1 level differs.");
     if (LNO_Analysis)
       outer_fusion_analysis_info(FAIL,srcpos1,srcpos2,snl_level1,snl_level2,
@@ -512,8 +523,7 @@ static FISSION_FUSION_STATUS Fuse_Outer_Loops(WN* loop1, WN* loop2,
   BIT_VECTOR* bv2=Array_Names_In_Loop(writes2,reads2);
 
   if (!bv1 || !bv2) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      outer_fusion_verbose_info(srcpos1,srcpos2,
+      outer_fusion_verbose_info(FAIL,srcpos1,srcpos2,snl_level1,snl_level2,
         "Too many (>256) array names in loops.");
     if (LNO_Analysis)
       outer_fusion_analysis_info(FAIL,srcpos1,srcpos2,snl_level1,snl_level2,
@@ -530,8 +540,7 @@ static FISSION_FUSION_STATUS Fuse_Outer_Loops(WN* loop1, WN* loop2,
   if (array_ref_count1+array_ref_count2>OLF_size_lowerbound &&
       2*((*bv1) & (*bv2)).Pop_Count() < (~(*bv1) & (*bv2)).Pop_Count() && 
       2*((*bv1) & (*bv2)).Pop_Count() < ((*bv1) & ~(*bv2)).Pop_Count()) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      outer_fusion_verbose_info(srcpos1,srcpos2,
+      outer_fusion_verbose_info(FAIL,srcpos1,srcpos2,snl_level1,snl_level2,
         "Too few common array names or too many new array names in loop2.");
     if (LNO_Analysis)
       outer_fusion_analysis_info(FAIL,srcpos1,srcpos2,snl_level1,snl_level2,
@@ -559,12 +568,8 @@ static FISSION_FUSION_STATUS Fuse_Outer_Loops(WN* loop1, WN* loop2,
   FISSION_FUSION_STATUS status=
     Fuse(loop1,loop2,fusion_level,peeling_limit,TRUE);
   if (status==Succeeded || status==Succeeded_and_Inner_Loop_Removed) {
-    if (LNO_Verbose || LNO_Lno_Verbose || Get_Trace(TP_WOPT2, PRO_TRANS_TRACE_FLAG)) {
-      outer_fusion_verbose_info(srcpos1,srcpos2,
+      outer_fusion_verbose_info(SUCCEED,srcpos1,srcpos2,snl_level1,snl_level2,
         "Successfully fused outer loops.");
-      if ((dli1->Get_Id() > 0) && (dli2->Get_Id() > 0))
-	printf("     loop num(%" PRIdPTR "+%" PRIdPTR ")\n", dli1->Get_Id(), dli2->Get_Id());
-    }
     if (LNO_Analysis)
       outer_fusion_analysis_info(SUCCEED,srcpos1,srcpos2,snl_level1,snl_level2,
         "Successfully fused outer loops.");
@@ -582,8 +587,7 @@ static FISSION_FUSION_STATUS Fuse_Outer_Loops(WN* loop1, WN* loop2,
                        LNO_Fusion==2,TRUE,ffi))==Succeeded ||
               (level_fusion_status==Partially_fused && LNO_Fusion==2) ||
               level_fusion_status==Succeeded_and_Inner_Loop_Removed)) {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      outer_fusion_verbose_info(srcpos1,srcpos2,
+      outer_fusion_verbose_info(SUCCEED,srcpos1,srcpos2,snl_level1,snl_level2,
         "Successfully fused outer loops.");
     if (LNO_Analysis)
       outer_fusion_analysis_info(SUCCEED,srcpos1,srcpos2,snl_level1,snl_level2,
@@ -601,8 +605,7 @@ static FISSION_FUSION_STATUS Fuse_Outer_Loops(WN* loop1, WN* loop2,
     *fusion_level_io=fusion_level_tmp;
     return Partially_fused;
   } else {
-    if (LNO_Verbose || LNO_Lno_Verbose)
-      outer_fusion_verbose_info(srcpos1,srcpos2,
+      outer_fusion_verbose_info(FAIL, srcpos1,srcpos2,snl_level1,snl_level2,
         "Failed to fuse outer loops.");
     if (LNO_Analysis)
       outer_fusion_analysis_info(FAIL,srcpos1,srcpos2,snl_level1,snl_level2,

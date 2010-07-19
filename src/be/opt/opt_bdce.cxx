@@ -110,7 +110,6 @@
 #include "cxx_memory.h"
 #include "config_targ.h" // needed for Pointer_type
 
-#include "opt_sys.h"            // BZERO definition
 #include "opt_defs.h"
 #include "opt_cfg.h"
 #include "opt_ssa.h"
@@ -120,6 +119,10 @@
 #include "opt_htable.h"
 #include "bb_node_set.h"
 #include "opt_bdce.h"
+
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
 
 /* CVTL-RELATED start (performance) */
 

@@ -60,7 +60,9 @@ set(libipa_sources
 	"common/ipc_main.cxx"
 	"common/ipc_bread.cxx"
 	"common/ipc_bwrite.cxx"
-	"common/ipc_compile.cxx"
+	"common/ipc_compile_direct.cxx"
+	"common/ipc_compile_run.cxx"
+	"common/ipc_compile_helper.cxx"
 	"common/ipc_option.cxx"
 	"common/ipc_pic.cxx"
 	"common/ipc_file.cxx"
@@ -159,6 +161,8 @@ set(PATHSCALE_INLINE_SRCS
 	"../be/com/cxx_template.cxx"
 	"../be/lno/lwn_util.cxx"
 )
+
+add_definitions(${PATH64_STDC_FORMAT_MACROS})
 
 ADD_LIBRARY(ipa SHARED ${libipa_sources})
 ADD_LIBRARY(ipl SHARED ${libipl_sources})

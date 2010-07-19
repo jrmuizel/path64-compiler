@@ -64,8 +64,12 @@ typedef unsigned int 	UINT8;	/* Use the natural integer FIXME: Not portable */
 typedef unsigned int	UINT16;	/* Use the natural integer */
 typedef uint32_t	UINT32;	/* The natural integer matches */
 typedef uint64_t	UINT64;
-typedef int		BOOL;	/* Natural size Boolean value... which should be bool, but was defined int a long time ago */ 
+typedef int		BOOL;	/* Natural size Boolean value... which should be bool, but was defined int a long time ago */
+#ifdef __sun
+typedef signed char	mINT8;	/* int8_t defined as unsigned on osol when -funsigned-char option is specified */
+#else
 typedef int8_t		mINT8;	/* Avoid - often very inefficient */
+#endif
 typedef int16_t		mINT16;	/* Use a 16-bit integer */
 typedef int32_t		mINT32;	/* The natural integer matches */
 typedef int64_t		mINT64;

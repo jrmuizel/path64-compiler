@@ -354,6 +354,7 @@ static const char *rcs_id = "$Source: ../../be/lno/SCCS/s.model.cxx $ $Revision:
 #ifdef TARG_ST
 #include "erbe.h"
 #endif
+#include "lno_trace.h"
 
 typedef HASH_TABLE<WN*,INT> WN2INT;
 
@@ -854,7 +855,7 @@ LOOP_MODEL::Model(WN* wn,
       fprintf(TFile,"The number of bool registers needed is %d\n", _num_bool_regs);
 #endif
   }
-  if (LNO_Verbose || LNO_Lno_Verbose) {
+  if (LNO_Verbose /*|| LNO_Lno_Verbose*/) {
     printf("Evaluated %d combinations\n",_num_evaluations);
 #if 0   // the snl code prints this out later in an easier to read format
     printf("And the results are:\n");
@@ -1143,28 +1144,41 @@ LOOP_MODEL::Try_Inner(BOOL* can_be_unrolled,
               _iloop_inner, _stripsz_inner, _striplevel_inner,
               &cycles_per_iter, &overhead_cycles);
 
-  if (LNO_Verbose || Debug_Cache_Model || LNO_Lno_Verbose)
-    printf("inner = %d -> cycle est %g (before cache) ",
-           inner, _num_cycles_inner);
-  if (debug_model)
-   fprintf(TFile,"inner = %d -> cycle est %g (before cache) ",
-         inner, _num_cycles_inner);
+ 
+  double prev_num_cycles = _num_cycles_inner;
 
   _num_cycles_inner += cycles_per_iter;
 
   double cache_cycles = _num_cycles_inner - machine_cycles - overhead_cycles;
 
   if (LNO_Verbose || Debug_Cache_Model || LNO_Lno_Verbose)
-    printf(" %g (after cache)\n", _num_cycles_inner);
-  if (debug_model)
-    fprintf(TFile," %g (after cache)\n", _num_cycles_inner);
+  {
+       LNO_Trace( LNO_MODEL_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(_wn)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 inner, prev_num_cycles, 
+                 _num_cycles_inner, cache_cycles,
+                 overhead_cycles);
+#if 0
+      printf("inner = %d -> cycle est %g (before cache) ",
+             inner, prev_num_cycles);
+      printf(" %g (after cache)\n", _num_cycles_inner);
+      printf("   %g cache cycles  %g overhead cycles\n", cache_cycles, 
+             overhead_cycles);
+#endif
 
-  if (LNO_Verbose || Debug_Cache_Model || LNO_Lno_Verbose) 
-    printf("   %g cache cycles  %g overhead cycles\n", cache_cycles, 
-      overhead_cycles); 
+  }
   if (debug_model)
-    fprintf(TFile, "   %g cache cycles  %g overhead cycles\n", cache_cycles, 
-      overhead_cycles); 
+  {
+      fprintf(TFile,"inner = %d -> cycle est %g (before cache) ",
+              inner, prev_num_cycles);
+
+      fprintf(TFile," %g (after cache)\n", _num_cycles_inner);
+
+      fprintf(TFile, "   %g cache cycles  %g overhead cycles\n", cache_cycles, 
+              overhead_cycles);
+  } 
 
   if (_num_cycles == -1.0 || 
       _num_cycles_inner < _num_cycles || 

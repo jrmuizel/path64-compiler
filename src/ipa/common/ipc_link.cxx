@@ -380,7 +380,7 @@ ipa_compose_comma_list (const char* name)
 ARGV *
 ipa_link_line_argv (const ARGV* output_files,
                     const char* dir, 
-		    const char* symtab_base)
+		    const char* symtab_name)
 {
     ARGV* argv = CXX_NEW (ARGV, Malloc_Mem_Pool);
 
@@ -397,15 +397,8 @@ ipa_link_line_argv (const ARGV* output_files,
 		  output_files->begin (), 
 		  output_files->end ());
 
-    if (symtab_base && symtab_base[0] != 0) {
-	char* symtab =
-	    static_cast<char*>(malloc(strlen(dir) + strlen(symtab_base) + 2));
-	if (!symtab)
-	    ErrMsg (EC_No_Mem, "ipa_link_line_argv");
-	strcpy(symtab, dir);
-	strcat(symtab, "/");
-	strcat(symtab, symtab_base);
-	argv->push_back(symtab);
+    if (symtab_name && symtab_name[0] != 0) {
+	argv->push_back(symtab_name);
     }
     
     argv->insert (argv->end (),

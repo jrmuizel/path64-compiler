@@ -27,7 +27,7 @@
 #include "moremath.h"
 #include <cmplrs/host.h>
 
-int16 h_dnnt(double *x)
+int16_t h_dnnt(double *x)
 {
-  return ((*x) >= 0.0 ? (int16)(*x + .5) : -(int16)(.5 - *x));
+  return ((*x) >= 0.0 ? (int16_t)(*x + .5) : -(int16_t)(.5 - *x));
 }

@@ -144,7 +144,6 @@ Opt_tlog( char *keyword, uint64_t srcpos, const char *fmt, ...)
 #include "defs.h"
 #include "config_wopt.h"
 #include "opt_defs.h"
-#include "opt_sys.h"
 #include "errors.h"
 #include "tracing.h"
 #include "srcpos.h"
@@ -228,7 +227,7 @@ INT Set_opt_phase(INT32 *phase_id, const char *subphase)
   void  *curr_mem;
 
   if (Get_Trace(TKIND_INFO, TINFO_TIME)) {
-    curr_time = CLOCK_IN_MS();
+    curr_time = clock() * 1000 / CLOCKS_PER_SEC;
     curr_mem  = sbrk(0);
     times[curr_phase] += (curr_time - prev_time);
     mem[curr_phase] += (char *) curr_mem - (char *) prev_mem;

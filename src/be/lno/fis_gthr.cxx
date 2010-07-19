@@ -98,7 +98,7 @@ static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/lno/SCCS/s.fis_gt
 #include "sxlimit.h"
 #include "prompf.h"
 #include "anl_driver.h"
-
+#include "lno_trace.h"
 #pragma weak New_Construct_Id
 
 typedef HASH_TABLE<WN*,VINDEX16> WN2VINDEX;
@@ -355,13 +355,19 @@ Gather_Scatter_Scalar_Expand(WN*                                loop,
   WN** incxs = CXX_NEW_ARRAY(WN*, total_var, &PHASE25_default_pool);
 
   if (LNO_Verbose || LNO_Lno_Verbose){
-    for (INT i=0; i<total_var; ++i){
-      fprintf(stdout, "Gather/Scatter scalar expanding variable %s\n", 
-	      symbol[i]->_scalar.Name());
-     if (LNO_Verbose)
-      fprintf(TFile, "Gather/Scatter scalar expanding variable %s\n", 
-	      symbol[i]->_scalar.Name());
-    }
+      char buf[128];
+      for (INT i=0; i<total_var; ++i){
+          sprintf( buf ,"Gather/Scatter scalar expanding variable %s",  symbol[i]->_scalar.Name());
+          LNO_Trace( LNO_FIS_GTHR_EVENT, 
+                     Src_File_Name,
+                     Srcpos_To_Line(WN_Get_Linenum(loop)),
+                     ST_name(WN_entry_name(Current_Func_Node)),
+                     buf);
+
+          if (LNO_Verbose)
+              fprintf(TFile, "%s", buf);
+          sprintf( buf, "");
+      }
   }
 
   // step 1: how much space do we need, in bytes.  Put that in bsz.
@@ -1026,8 +1032,16 @@ Perform_Gather_Scatter(
     Gather_Scalar_References(if_body,NULL,&all_use);
 
     size_est[ind_new_scc] = Get_FP_Counts(if_body);
-    if (LNO_Verbose || LNO_Lno_Verbose) 
-      fprintf(stdout, "Size estimate is %" SCNd64 "\n", size_est[ind_new_scc]);
+    if (LNO_Verbose || LNO_Lno_Verbose)
+    {
+        char buf[128];
+        sprintf( buf , "Size estimate is %" SCNd64 "\n", size_est[ind_new_scc]);
+        LNO_Trace( LNO_FIS_GTHR_EVENT, 
+                   Src_File_Name,
+                   Srcpos_To_Line(WN_Get_Linenum(loop)),
+                   ST_name(WN_entry_name(Current_Func_Node)),
+                   buf);
+    } 
 
     // Determine exposed scalar uses
     for (UINT j=0; j<all_use.Elements(); ++j){
@@ -1110,8 +1124,15 @@ Perform_Gather_Scatter(
   }
 
   if (LNO_Verbose || LNO_Lno_Verbose)
-    fprintf(stdout, "Gather/Scatter create %d new loops\n", 
-	    cond_scc1->Elements());
+  {
+      char buf[128];
+      sprintf( buf ,"Gather/Scatter create %d new loops",  cond_scc1->Elements());
+      LNO_Trace( LNO_FIS_GTHR_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(loop)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 buf);
+  }
   if (LNO_Verbose)
     fprintf(TFile, "Gather/Scatter create %d new loops\n", 
 	    cond_scc1->Elements());

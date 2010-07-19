@@ -388,7 +388,7 @@ b_and_o get_base_and_offset(WN *wn)
       r.base = WN_st(wn);
       r.offset = WN_offset(wn);
 
-# if (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+# if (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
       /* Check for based as a symbol in common */
       while (ST_base(r.base) != r.base) {
          r.offset += ST_ofst(r.base);

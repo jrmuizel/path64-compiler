@@ -30,7 +30,7 @@
 #include <cmplrs/host.h>
 #include <string.h>
 
-int64
+int64_t
 l_lentrim (string s, fsize_t len)
 {	
     register string e;

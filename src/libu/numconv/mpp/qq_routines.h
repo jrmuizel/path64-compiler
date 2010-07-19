@@ -27,7 +27,7 @@
 #if defined(_WORD32) || defined(__mips) || defined(_LITTLE_ENDIAN)
 /* Implementation's most efficient floating types */
 /* These are defined in fp.h for CRAYIEEE systems */
-#if ! defined(BUILD_OS_DARWIN) && ! defined(__linux)
+#if ! defined(BUILD_OS_DARWIN) && ! defined(__linux) && ! defined(__sun)
 /* Darwin, we get these definitions for free from math.h, though they may
  * not be what we'd like (e.g. -march=i386 uses long double). */
 typedef double          float_t;   /* >=24 bit real */

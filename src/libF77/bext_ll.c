@@ -34,11 +34,11 @@
  * and extending left for len bits. The right most bit is bit 0.
  */
 
-int64
-bext_ll (int64 *m, int64 *i, int64 *len)
+int64_t
+bext_ll (int64_t *m, int64_t *i, int64_t *len)
 {
     if ((*i + *len > NBLL) || (*i < 0) || (*len < 0) || (*i >= NBLL) ||
 	(*len > NBLL))
 	return(*m);
-    return ((uint64)(*m & F77llmask[*i + *len]) >> *i);
+    return ((uint64_t)(*m & F77llmask[*i + *len]) >> *i);
 }

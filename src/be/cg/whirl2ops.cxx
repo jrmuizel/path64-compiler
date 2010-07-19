@@ -1661,6 +1661,8 @@ Handle_Call_Site (WN *call, OPERATOR call_opr)
   else {
     /* For PIC calls, force t9 to be the result register. */
     tgt_tn = Gen_PIC_Calls ? Ep_TN : NULL;
+    //zwu
+    //tgt_tn = Gen_PIC_Call_Shared ? Ep_TN : NULL;
     tgt_tn = Expand_Expr (WN_kid(call,WN_kid_count(call)-1), call, tgt_tn);
 
     /* If call-shared and the call is to a non PREEMPTIBLE symbol,

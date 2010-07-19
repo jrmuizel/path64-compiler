@@ -37,13 +37,7 @@
 #ifndef	_LIBERRNO_H
 #define	_LIBERRNO_H
 
-#if defined(_HOST_OS_DARWIN) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 #include <errno.h>
-#elif defined(_LITTLE_ENDIAN)
-#include <asm/errno.h>
-#else
-#include <sys/errno.h>
-#endif
 
 /*
  * Symbolic library run-time error codes
@@ -115,9 +109,11 @@
  */
 
 #include <stdarg.h>
-#include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 extern	void	_lerror		(int _Hndlcode, int _Errno, ...);
 extern	void	_lmessage	(int _Errno, char *_Severity, va_list args);
 extern	int	_fwarn		(int _Errno, ...);
@@ -128,7 +124,10 @@ extern void _lcomment(int, ...);
 #ifdef KEY /* Bug 6673 */
 extern int verbose_message(char *, int);
 #endif /* KEY Bug 6673 */
-__END_DECLS
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #define	MAXMLN	800		/* Maximum length of a message in bytes	*/
 

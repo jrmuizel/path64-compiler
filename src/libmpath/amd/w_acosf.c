@@ -52,6 +52,7 @@ regulations applicable in licensee's jurisdiction.
 #undef USE_HANDLE_ERRORF
 
 #include "libm_errno_amd.h"
+#include "lib_version.h"
 
 /* Deal with errno for out-of-range argument */
 static inline float retval_errno_edom(float x)
@@ -61,15 +62,15 @@ static inline float retval_errno_edom(float x)
   exc.arg2 = (double)x;
   exc.name = (char *)"acosf";
   exc.type = DOMAIN;
-  if (_LIB_VERSION == _SVID_)
+  if (PATH64_LIB_VERSION_SVID)
     exc.retval = HUGE;
   else
     exc.retval = nanf_with_flags(AMD_F_INVALID);
-  if (_LIB_VERSION == _POSIX_)
+  if (PATH64_LIB_VERSION_POSIX)
     __set_errno(EDOM);
   else if (!matherr(&exc))
     {
-      if(_LIB_VERSION == _SVID_)
+      if(PATH64_LIB_VERSION_SVID)
         (void)fputs("acosf: DOMAIN error\n", stderr);
     __set_errno(EDOM);
     }

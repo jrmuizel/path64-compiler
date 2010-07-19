@@ -93,6 +93,9 @@ extern "C"{
 #include <sys/types.h>
 #include <sys/stat.h>   /* For accessing file statistics (stat()) */
 #include <sys/param.h>  /* For MAXHOSTNAMELEN */
+#ifdef __sun
+#include <netdb.h>      /* For MAXHOSTNAMELEN */
+#endif
 #include <unistd.h>     /* for gethostname() and getcwd() */
 #include <string>
 #include <vector>
@@ -104,6 +107,10 @@ extern "C" char *cplus_demangle (const char *, int);
 #endif
 #ifdef TARG_ST
 #include "libiberty.h"
+#endif
+
+#if !defined(__FreeBSD__)
+#include <alloca.h>
 #endif
 
 
@@ -4029,6 +4036,8 @@ DST_build(int num_copts, /* Number of options passed to fec(c) */
 	    // domain name) don't add the domain again...
 	    // Somehow.
 	 } else {
+#ifndef __sun
+           //opensolaris don't have "domainname" interface
 	   current_host_dir[host_name_length] = '.';
 	   if (getdomainname(&current_host_dir[host_name_length+1], 
 			   MAXHOSTNAMELEN-host_name_length) == 0)
@@ -4036,6 +4045,7 @@ DST_build(int num_copts, /* Number of options passed to fec(c) */
 	    /* Domain name is ok */
 	    host_name_length += strlen(&current_host_dir[host_name_length]);
 	   }
+#endif
          }
 
       }

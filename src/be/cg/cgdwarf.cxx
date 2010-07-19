@@ -105,6 +105,10 @@
 #include "whirl2ops.h" // [CL] needed for Find_PREG_For_Symbol()
 #endif
 
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 BOOL Trace_Dwarf;
 
 #ifdef TARG_ST

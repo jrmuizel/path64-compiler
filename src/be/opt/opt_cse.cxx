@@ -79,9 +79,12 @@
 #include "opt_etable.h"
 #include "opt_lftr2.h"			// LFTR class
 #include "opt_estr.h"
-#include "opt_sys.h"
 #include "opt_cvtl_rule.h"
 #include "config_wopt.h"
+
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
 
 class CSE {
 private:

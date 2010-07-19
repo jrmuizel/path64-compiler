@@ -58,6 +58,7 @@ regulations applicable in licensee's jurisdiction.
 #undef USE_HANDLE_ERRORF
 
 #include "libm_errno_amd.h"
+#include "lib_version.h"
 
 /* Deal with errno for out-of-range result */
 static inline float retval_errno_erange_overflow(float x)
@@ -67,11 +68,11 @@ static inline float retval_errno_erange_overflow(float x)
   exc.arg2 = (double)x;
   exc.type = OVERFLOW;
   exc.name = (char *)"exp10f";
-  if (_LIB_VERSION == _SVID_)
+  if (PATH64_LIB_VERSION_SVID)
     exc.retval = HUGE;
   else
     exc.retval = infinityf_with_flags(AMD_F_OVERFLOW | AMD_F_INEXACT);
-  if (_LIB_VERSION == _POSIX_)
+  if (PATH64_LIB_VERSION_POSIX)
     __set_errno(ERANGE);
   else if (!matherr(&exc))
     __set_errno(ERANGE);
@@ -86,7 +87,7 @@ static inline float retval_errno_erange_underflow(float x)
   exc.type = UNDERFLOW;
   exc.name = (char *)"exp10f";
   exc.retval = zerof_with_flags(AMD_F_UNDERFLOW | AMD_F_INEXACT);
-  if (_LIB_VERSION == _POSIX_)
+  if (PATH64_LIB_VERSION_POSIX)
     __set_errno(ERANGE);
   else if (!matherr(&exc))
     __set_errno(ERANGE);

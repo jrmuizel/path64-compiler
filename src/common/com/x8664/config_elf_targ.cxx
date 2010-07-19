@@ -86,9 +86,13 @@ Elf32_Word Config_ELF_From_Target(BOOL is_64bit, BOOL old_abi, INT isa)
 
 Elf32_Half Get_Elf_Target_Machine (void)
 {
+#ifdef X86_WHIRL_OBJECTS
+	return EM_X86_64; // from /usr/include/elf.h
+#else
 #define EM_X86_64       62              /* AMD x86-64 architecture */
 // TODO        return EM_X86_64; // from /usr/include/elf.h
 #define EM_MIPS_RS3_LE 10 /* MIPS R3000 little-endian */
 	return EM_MIPS_RS3_LE; // using MIPS .B file for now
+#endif //X86_WHIRL_OBJECTS
 }
 

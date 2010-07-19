@@ -148,7 +148,7 @@ extern void CYG_Instrument_Driver(WN *);
 extern void Initialize_Targ_Info(void);
 
 // symbols defined in cg.so
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 
 extern void CG_Process_Command_Line (INT, char **, INT, char **);
 extern void CG_Init ();
@@ -194,7 +194,7 @@ extern void EH_Generate_Range_List (WN *);
 #endif // __linux__
 
 // symbols defined in wopt.so
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 
 extern void wopt_main (INT argc, char **argv, INT, char **);
 extern void Wopt_Init ();
@@ -223,7 +223,7 @@ extern BOOL Verify_alias (ALIAS_MANAGER *, WN *);
 #endif // __linux__
 
 // symbols defined in lno.so
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 
 extern void (*lno_main_p) (INT, char**, INT, char**);
 #define lno_main (*lno_main_p)
@@ -248,7 +248,7 @@ extern WN* (*Perform_Loop_Nest_Optimization_p) (PU_Info*, WN*, WN*, BOOL);
 
 // symbols defined in ipl.so
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 
 extern void (*Ipl_Extra_Output_p) (Output_File *);
 #define Ipl_Extra_Output (*Ipl_Extra_Output_p)

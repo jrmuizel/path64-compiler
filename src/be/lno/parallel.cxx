@@ -90,6 +90,12 @@
 #include "tlog.h"
 #include "call_info.h"
 #include "cross_snl.h"
+#include "lno_trace.h"
+#include <string>
+#include <iostream>
+#include <sstream>
+using namespace std;
+
 
 #define MAX_PARALLEL_NLOOPS 5 
 
@@ -1667,27 +1673,51 @@ static WN* Parallel_Loop(PARALLEL_INFO* parallel_info,
 //  stack' on the file with descriptor 'fp'.  
 //-----------------------------------------------------------------------
 
-static void Print_Parallel_Loop(FILE* fp, 
-				PARALLEL_INFO* parallel_info,
-				DOLOOP_STACK* loop_stack)
+static void Print_Parallel_Loop( PARALLEL_INFO* parallel_info,
+				 DOLOOP_STACK* loop_stack,
+                                 INT parallel_debug_level)
 {
-  WN* wn_parallel = Parallel_Loop(parallel_info, loop_stack); 
-  if (wn_parallel == NULL) 
-    return; 
-  INT nloops = parallel_info->Nloops(); 
-  INT inner_depth = loop_stack->Elements() - 1; 
-  INT outer_depth = inner_depth - nloops + 1; 
-  fprintf(fp, "Auto Parallelizing Loop %s at %d ", 
-    WB_Whirl_Symbol(wn_parallel), (INT) WN_linenum(wn_parallel)); 
-  fprintf(fp, "using (");
-  for (INT i = 0; i < parallel_info->Nloops(); i++) {
-    fprintf(fp, "%d%s", parallel_info->Permutation(i), 
-      parallel_info->Parallel_Depth() == i + outer_depth ?
-      (parallel_info->Is_Doacross() ? "-X" : "-P") : "");;
-    if (i < parallel_info->Nloops() - 1) 
-      fprintf(fp, ",");
-  } 
-  fprintf(fp, ")\n"); 
+    ostringstream os;
+    string msg;
+
+    WN* wn_parallel = Parallel_Loop(parallel_info, loop_stack); 
+    if (wn_parallel == NULL) 
+        return; 
+    INT nloops = parallel_info->Nloops(); 
+    INT inner_depth = loop_stack->Elements() - 1; 
+    INT outer_depth = inner_depth - nloops + 1; 
+    msg = "auto parallelizing loop ";
+    msg.append( WB_Whirl_Symbol(wn_parallel));
+    os.str("");
+    os << (INT) WN_linenum(wn_parallel);
+    msg.append(os.str());
+    msg.append("using (");
+    for (INT i = 0; i < parallel_info->Nloops(); i++) {
+        os.str("");
+        os << parallel_info->Permutation(i);
+        msg.append(os.str());
+        msg.append( parallel_info->Parallel_Depth() == i + outer_depth ? 
+                    (parallel_info->Is_Doacross() ? "-X" : "-P") : "");
+        if (i < parallel_info->Nloops() - 1) 
+            msg.append(",");
+    } 
+    msg.append(")");
+    if ((LNO_Verbose || parallel_debug_level >= 1 || LNO_Lno_Verbose)) 
+    {
+        LNO_Trace( LNO_PARALLEL_EVENT, 
+                   Src_File_Name,
+                   Srcpos_To_Line(WN_Get_Linenum(wn_parallel)),
+                   ST_name(WN_entry_name(Current_Func_Node)),
+                   msg.c_str());
+
+    }
+
+    if (!LNO_Lno_Verbose) 
+    {
+        msg.append("\n");
+        fprintf( TFile, "%s", msg.c_str());
+    }
+
 }
 
 //-----------------------------------------------------------------------
@@ -2054,11 +2084,8 @@ static void SNL_Auto_Parallelization(WN* wn_outer,
       WN* wn_loop = dist_stack.Bottom_nth(i); 
       SNL_Auto_Parallelization(wn_loop, SNL_Loop_Count(wn_loop), mark_only); 
     } 
-    if (LNO_Verbose || parallel_debug_level >= 1 || LNO_Lno_Verbose)  {
-      Print_Parallel_Loop(stdout, pi_best, &loop_stack); 
-     if( !LNO_Lno_Verbose)
-      Print_Parallel_Loop(TFile, pi_best, &loop_stack); 
-    }
+    
+    Print_Parallel_Loop(pi_best, &loop_stack, parallel_debug_level); 
     if (LNO_Tlog || Get_Trace(TP_PTRACE1, TP_PTRACE1_PARALLEL)) {
       ap_tlog_info(pi_best, &loop_stack, "");
     } 
@@ -2101,13 +2128,13 @@ extern void Mark_Auto_Parallelizable_Loops(WN* func_nd)
 {
   INT parallel_debug_level = Get_Trace(TP_LNOPT2, TT_LNO_PARALLEL_DEBUG)
     ? Parallel_Debug_Level : 0;
-
+#if 0
   if ( LNO_Verbose || parallel_debug_level >= 1 || LNO_Lno_Verbose) {
     fprintf(stdout, "### Marking Auto-Parallel-Loops (Begin)\n");
    if (!LNO_Lno_Verbose)
     fprintf(TFile, "### Marking Auto-Parallel Loops (Begin)\n");
   }
-
+#endif
   ARRAY_DIRECTED_GRAPH16* dg = Array_Dependence_Graph;
   DU_MANAGER* du = Du_Mgr;
 
@@ -2124,12 +2151,13 @@ extern void Mark_Auto_Parallelizable_Loops(WN* func_nd)
     Hoist_Bounds_One_Level(wn_outer_loop);
     SNL_Auto_Parallelization(wn_outer_loop, nloops, TRUE);
   }
-
+#if 0
   if (LNO_Verbose || parallel_debug_level >= 1 || LNO_Lno_Verbose) {
     fprintf(stdout, "### Marking Auto-Parallel-Loops (End)\n");
    if (!LNO_Lno_Verbose)
     fprintf(TFile, "### Marking Auto-Parallel Loops (End)\n");
   }
+#endif
 }
 //-----------------------------------------------------------------------
 // NAME: Mark_Critical_Section_Loops_Traverse
@@ -2364,12 +2392,13 @@ extern void Auto_Parallelization(PU_Info* current_pu,
 
   Perform_ARA_and_Parallelization(current_pu, func_nd); 
   Check_Suggested_Parallel(func_nd); 
-
+#if 0
   if (LNO_Verbose || parallel_debug_level >= 1 || LNO_Lno_Verbose) {
     fprintf(stdout, "### Auto-parallelization (End)\n"); 
    if (!LNO_Lno_Verbose)
     fprintf(TFile, "### Auto-parallelization (End)\n"); 
   } 
+#endif
   MEM_POOL_Pop(&LNO_local_pool); 
 }
 

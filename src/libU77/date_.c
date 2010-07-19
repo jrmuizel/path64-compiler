@@ -5,6 +5,7 @@
 #include <time.h>
 #include <string.h>
 #include <stdio.h>
+#include "sys_ctime.h"
 
 /*
  * For g77 compatibility, take string from ctime(3), which is assumed to
@@ -23,7 +24,7 @@ pathf90_date(char *buf, int len)
 # define OUTP_LEN	9
   char inp[80], outp[OUTP_LEN + 1 /* null terminator */];
   time_t t = time(0);
-  ctime_r(&t, inp);
+  call_sys_ctime_r(&t, inp, 80);
   char *year = inp + strlen(inp) - 3 /* newline and 2 digits */;
   inp[MONTH_INDEX + 3] = 0;
   inp[DAY_INDEX + 2] = 0;

@@ -96,6 +96,7 @@ static char *rcs_id = "$Source: be/lno/SCCS/s.vintr_fis.cxx $ $Revision: 1.18 $"
 #include "prompf.h"
 #include "anl_driver.h"
 #include "intrn_info.h"
+#include "lno_trace.h"
 #ifdef KEY
 #include "wn_simp.h"            // for WN_Simp_Compare_Trees
 #include "config_opt.h"         // for CIS_Allowed
@@ -1804,12 +1805,23 @@ static INT Vintrinsic_Fission(WN* innerloop)
         adg->Delete_Vertex(v);
 
 #ifdef KEY
+      if ( LNO_Vintr_Verbose || LNO_Verbose || LNO_Lno_Verbose )
+      {
+          LNO_Trace( LNO_VINTR_FIS_EVENT, 
+                     Src_File_Name,
+                     Srcpos_To_Line(WN_Get_Linenum(new_loop)),
+                     ST_name(WN_entry_name(Current_Func_Node)),
+                     "loop was vectorized for",
+                     intr_op_name);
+      }
+#if 0
       if (LNO_Vintr_Verbose || LNO_Lno_Verbose) {
 	printf("(%s:%d) ",
 	       Src_File_Name,
 	       Srcpos_To_Line(WN_Get_Linenum(new_loop)));
 	printf("LOOP WAS VECTORIZED FOR VECTOR INTRINSIC ROUTINE(S).\n");
       }
+#endif
 #endif
       LWN_Update_Def_Use_Delete_Tree(new_loop,Du_Mgr);
       LWN_Update_Dg_Delete_Tree(new_loop,adg);
@@ -1908,11 +1920,12 @@ static void Vintrinsic_Fission_Walk(WN* wn) {
       sprintf(fail_msg, "Unknown reason");
       if(Vintrinsic_Fission(wn)==0){
         if (LNO_Vintr_Verbose || LNO_Lno_Verbose) {
-          printf("(%s:%d) %s, ",
-               Src_File_Name,
-               Srcpos_To_Line(WN_Get_Linenum(wn)),
-               fail_msg);
-          printf("loop was not intrinsic vectorized!\n");
+            LNO_Trace( LNO_VINTR_FIS_EVENT, 
+                     Src_File_Name,
+                     Srcpos_To_Line(WN_Get_Linenum(wn)),
+                     ST_name(WN_entry_name(Current_Func_Node)),
+                     "loop was not intrinsic vectorized due to",
+                     fail_msg);
         }
       }
     }

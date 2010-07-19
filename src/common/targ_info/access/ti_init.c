@@ -54,7 +54,7 @@ static const char rcs_id[] = "$Source: /home/bos/bk/kpro64-pending/common/targ_i
 #ifdef TARG_ST
 static void * targ_handler = NULL;
 #endif
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 const char * sanity_check_targ_so_name_p;
 #define sanity_check_targ_so_name sanity_check_targ_so_name_p
 #endif
@@ -890,7 +890,7 @@ TI_Initialize(ABI_PROPERTIES_ABI tabi,
     ISA_HAZARD_Initialize();
     ISA_REGISTER_Initialize();
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
     // For bug 13044, sanity check that we have loaded the proper information.
     FmtAssert (!strcmp(targ_so_name, sanity_check_targ_so_name),
      ("TI_Initialize did not load proper information from %s", targ_so_name));
@@ -903,7 +903,7 @@ TI_Initialize(ABI_PROPERTIES_ABI tabi,
   }
 }
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 
 #include "ti_si_types.h"
 

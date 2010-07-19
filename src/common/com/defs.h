@@ -198,6 +198,8 @@ extern "C" {
 #endif
 #endif
 #include "defs_exported.h"
+
+
 
 /* Define the target's basic INT type: */
 /* WARNING:  This isn't quite accurate.  A single compiler may
@@ -323,8 +325,5 @@ INT Min(INT i, INT j)
 #ifdef __cplusplus
 }
 #endif
-
-/* C++ standard doesn't cover ISO C99: 7.8 Format conversion of integer types so we're doing a hack for all the c code which was stupidly coverted to c++ */
-#include "../../common/targ_info/generate/intdefs.h"
 
 #endif /* defs_INCLUDED */

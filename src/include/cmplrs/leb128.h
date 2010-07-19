@@ -57,7 +57,7 @@
 extern "C" {
 #endif
 
-#include <inttypes.h>
+#include <stdint.h>
 
 extern int _leb128_unsigned_encode64(uint64_t /*number*/, char* /*buffer*/);
 extern int _leb128_signed_encode64(int64_t /*number*/, char* /*buffer*/);

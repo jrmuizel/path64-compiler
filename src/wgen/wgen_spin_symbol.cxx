@@ -146,11 +146,15 @@ get_duplicate_st (gs_t decl)
 	gs_decl_name(t) == gs_decl_name(decl) &&
 	gs_decl_assembler_name_set_p(t) == gs_decl_assembler_name_set_p(decl) &&
 	(!gs_decl_assembler_name_set_p(t) ||
-	 gs_decl_assembler_name(t) == gs_decl_assembler_name(decl))) {
+	 gs_decl_assembler_name(t) == gs_decl_assembler_name(decl))) 
+	 {
       // Return the ST previously allocated, if any.
+      //zwu
       ST *st = DECL_ST(t);
       if (st != NULL)
-        return st;
+      {
+     	return st;
+      }
     }
     duplicate_of.erase (iter);
   }
@@ -192,6 +196,61 @@ dump_field(gs_t field)
   printf("%s:  ", Get_Name(gs_decl_name(field)));
   printf("%d\n", DECL_FIELD_ID(field));
 }
+extern int wgen_pic;
+//zwu
+static ST* Trans_TLS(gs_t decl_node, ST* st)
+{      
+      //if(Gen_PIC_Call_Shared && begin_expand_stmt)
+      if(begin_expand_stmt && ST_is_thread_local(st) && wgen_pic)
+      {
+      	ST* call_st = New_ST();
+				ST_Init(call_st, Save_Str ("__tls_get_addr"),	CLASS_FUNC,SCLASS_EXTERN, EXPORT_PREEMPTIBLE, ST_type(call_st));
+      	Set_ST_class(call_st, CLASS_FUNC);
+      	//WN* call_wn = WN_Piccall(MTYPE_A8, MTYPE_A8, 1, call_st);
+      	
+      	TY_IDX ty_idx = ST_type(st);
+      	TY_IDX idx;
+			  TY &ptr_ty = New_TY (idx);
+  			TY_Init (ptr_ty, Pointer_Size, KIND_POINTER, Pointer_Mtype, Save_Str ("anon_ptr."));                                                                               
+  			ptr_ty.Set_pointed (ST_type(st));                                                                               
+        
+        WN* arg_wn = WN_Lda(Pointer_Mtype, ST_ofst(st), st);
+        Set_ST_addr_passed(*st);
+	      Set_ST_addr_saved(*st);
+	      TY_IDX arg_ty_idx = idx;
+	      Clear_TY_is_volatile(arg_ty_idx);
+	      TYPE_ID arg_mtype  = TY_mtype(arg_ty_idx);
+  			arg_wn = WN_CreateParm (Mtype_comparison (arg_mtype), arg_wn,  arg_ty_idx, WN_PARM_BY_VALUE);
+
+				TYPE_ID ret_mtype = MTYPE_I8;
+      	WN* call_wn = WN_Create (OPR_CALL, ret_mtype, MTYPE_V, 1);
+      	WN_st_idx (call_wn) = ST_st_idx (call_st);
+			  WN_kid(call_wn, 0) = arg_wn;
+      	WN_Set_Call_Default_Flags(call_wn);
+
+        WN* wn0 = WN_CreateBlock ();
+        WN_INSERT_BlockLast (wn0, call_wn);
+	  		WN* wn1 = WN_Ldid (ret_mtype, -1, Return_Val_Preg, ty_idx);        
+        WN* wn  = WN_CreateComma (OPR_COMMA, WN_rtype (wn1), MTYPE_V, wn0, wn1);
+        WGEN_Set_ST_Addr_Saved (wn);
+				//lhs
+				Clear_TY_is_volatile(ty_idx);
+				TYPE_ID rtype = Widen_Mtype(TY_mtype(ty_idx));
+				TYPE_ID desc = TY_mtype(ty_idx);
+
+      	ST* dup_st = New_ST();
+				ST_Init(dup_st, Save_Str2 ("_local_", ST_name(st)), CLASS_VAR,SCLASS_AUTO, EXPORT_LOCAL_INTERNAL, ST_type(st));
+      	wn = WN_Iload(MTYPE_I8, 0, MTYPE_To_TY(MTYPE_I8), wn);
+        wn = WN_Stid (desc, 0 , dup_st, ty_idx, wn, 0);
+        
+				WGEN_Stmt_Append(wn, Get_Srcpos());
+				return dup_st;
+      }
+      else
+      	return st;
+	
+}
+
 
 // =================================================================
 // KEY: If there is a vtable pointer, then number it as the first
@@ -1938,6 +1997,7 @@ Create_ST_For_Tree (gs_t decl_node)
        ) {
 #ifndef TARG_ST
       Set_ST_is_thread_local(st);
+      st = Trans_TLS(decl_node, st);
 #endif
     }
   }
@@ -2163,7 +2223,6 @@ set_DECL_ST(gs_t t, ST* st) {
 ST*&
 get_DECL_ST(gs_t t) {
   static ST *null_ST = (ST *) NULL;
-
   // Find the tree node to use as index into st_map.
   gs_t t_index;
   if (gs_tree_code(t) == GS_VAR_DECL &&
@@ -2178,11 +2237,19 @@ get_DECL_ST(gs_t t) {
   // we are being called by WFE_Add_Weak to handle a weak symbol.  Use the
   // non-PU-specific st_map.
   if (Current_scope == 0)
-    return st_map[t_index];
-
+  {
+  	ST* return_st = st_map[t_index];
+  	if(return_st)
+  			return_st = Trans_TLS(t, return_st);
+    return return_st;
+	}
   // See if the ST is in the non-PU-specific st_map.
-  if (st_map[t_index]) {
-    return st_map[t_index];
+  if (st_map[t_index]) 
+  {
+  	ST* return_st = st_map[t_index];
+  	if(return_st)
+  			return_st = Trans_TLS(t, return_st);  	
+    return return_st;
   }
 
   // The ST is not in the non-PU-specific map.  Look in the PU-specific maps.
@@ -2195,11 +2262,17 @@ get_DECL_ST(gs_t t) {
       PU *pu = &Get_Scope_PU(scope);
       hash_map<PU*, hash_map<gs_t, ST*, ptrhash>*, ptrhash>::iterator pu_map_it =
 	pu_map.find(pu);
-      if (pu_map_it != pu_map.end()) {
-	// There is a PU-specific map.  Get the ST from the map.
-	hash_map<gs_t, ST*, ptrhash> *st_map2 = pu_map[pu];
-	if ((*st_map2)[t_index])
-	  return (*st_map2)[t_index];
+      if (pu_map_it != pu_map.end()) 
+      {
+				// There is a PU-specific map.  Get the ST from the map.
+				hash_map<gs_t, ST*, ptrhash> *st_map2 = pu_map[pu];
+				if ((*st_map2)[t_index])
+				{
+					ST* return_st = (*st_map2)[t_index];
+					//assert(return_st);
+					return_st = Trans_TLS(t, return_st);
+				  return return_st;
+				}
       }
     }
     scope--;

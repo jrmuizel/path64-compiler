@@ -115,7 +115,7 @@ extern void Depgraph_Write (void *depgraph, Output_File *fl, WN_MAP off_map);
     mmap((void *)(addr), (size_t)(len), (int)(prot), (int)(flags),	\
 	 (int)(fd), (off_t)(off))
 
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN)) || defined(__FreeBSD__)
+#if ! (defined(linux) || defined(BUILD_OS_DARWIN)) || defined(__FreeBSD__) || defined(__sun)
 #define MUNMAP(addr, len)						\
     munmap((void *)(addr), (size_t)(len))
 #else
@@ -131,7 +131,7 @@ static void (*old_sigbus) (int);   /* the previous signal handler */
 
 Output_File *Current_Output = 0;
 
-#if (defined(linux) || defined(BUILD_OS_DARWIN)) || defined(__FreeBSD__)
+#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 #define MAPPED_SIZE 0x400000
 #endif
 
@@ -236,7 +236,7 @@ get_section (Elf64_Word sh_info, const char *name, Output_File *fl)
     memset (fl->cur_section, 0, sizeof(Section));
     fl->cur_section->name = name;
     fl->cur_section->shdr.sh_info = sh_info;
-    fl->cur_section->shdr.sh_type = SHT_MIPS_WHIRL;
+    fl->cur_section->shdr.sh_type = SHT_WHIRL_SECTION;
 
     return fl->cur_section;
 } /* get_section */
@@ -297,13 +297,17 @@ write_output (UINT64 e_shoff, const typename ELF::Elf_Shdr& strtab_sec,
     typename ELF::Elf_Ehdr* ehdr = (typename ELF::Elf_Ehdr *) fl->map_addr;
     strcpy ((char *) ehdr->e_ident, ELFMAG);
     ehdr->e_ident[EI_CLASS] = tag.Elf_class ();
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
     ehdr->e_ident[EI_DATA] = ELFDATA2MSB; /* assume MSB for now */
 #else
     ehdr->e_ident[EI_DATA] = ELFDATA2LSB; /* assume LSB for now */
 #endif
     ehdr->e_ident[EI_VERSION] = EV_CURRENT;
+#ifdef X86_WHIRL_OBJECTS
+    ehdr->e_type = ET_REL;
+#else
     ehdr->e_type = ET_IR;
+#endif // X86_WHIRL_OBJECTS
     ehdr->e_machine = Get_Elf_Target_Machine();
     ehdr->e_version = EV_CURRENT;
     ehdr->e_shoff = e_shoff;
@@ -425,7 +429,7 @@ WN_open_output (char *file_name)
     if (fl->output_fd < 0)
 	return NULL;
 
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
     ftruncate(fl->output_fd, MAPPED_SIZE);
 #endif
 
@@ -1436,7 +1440,7 @@ Close_Output_Info (void)
 }
 
 
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 extern "C" void
 WN_write_elf_symtab (const void* symtab, UINT64 size, UINT64 entsize,
 		     UINT align, Output_File* fl)
@@ -1450,14 +1454,24 @@ WN_write_elf_symtab (const void* symtab, UINT64 size, UINT64 entsize,
 
     UINT strtab_idx = elf_strtab - fl->section_list + 1; // shdr[0] is always zero
 
+#ifdef FAT_WHIRL_OBJECTS
+    //This function is called only from IPL_Write_Elf_Symtab, so
+    //we assume that we're creating IPA object.
+    Section* cur_section = get_section (0, ".IPA" ELF_SYMTAB, fl);
+#else
     Section* cur_section = get_section (0, ELF_SYMTAB, fl);
+#endif
 
     fl->file_size = ir_b_align (fl->file_size, align, 0);
     cur_section->shdr.sh_offset = fl->file_size;
 
     (void) ir_b_save_buf (symtab, size, align, 0, fl);
 
+#ifdef FAT_WHIRL_OBJECTS
+    cur_section->shdr.sh_type = SHT_IPA_SYMTAB;
+#else
     cur_section->shdr.sh_type = SHT_SYMTAB;
+#endif
     cur_section->shdr.sh_size = fl->file_size - cur_section->shdr.sh_offset;
     cur_section->shdr.sh_addralign = align;
     cur_section->shdr.sh_link = strtab_idx;

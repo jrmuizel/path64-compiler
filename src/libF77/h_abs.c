@@ -25,8 +25,8 @@
 
 #include <cmplrs/host.h>
 
-int16
-h_abs (int16 *x)
+int16_t
+h_abs (int16_t *x)
 {
     if(*x >= 0)
 	return(*x);

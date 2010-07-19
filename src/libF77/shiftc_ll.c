@@ -38,10 +38,10 @@
  *	[  b1   |   k2   |   d   ]       [  b1   |   d   |   k2   ]
  */
 
-int64 shftc_ll(int64 *m,int64 *k,int64 *ic)
+int64_t shftc_ll(int64_t *m,int64_t *k,int64_t *ic)
 {
-	int64 b1, b2, b3, k2, d;
-	int32 left;
+	int64_t b1, b2, b3, k2, d;
+	int32_t left;
 
 	left = (*k > 0);
 	k2 = left ? *k : -*k;

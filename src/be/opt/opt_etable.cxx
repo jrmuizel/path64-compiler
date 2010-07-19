@@ -73,7 +73,6 @@
 #include "opt_htable.h"
 #include "opt_main.h"
 #include "opt_ssa.h"
-#include "opt_sys.h"
 #include "opt_util.h"
 #include "tracing.h"
 #include "opt_lftr2.h"
@@ -83,6 +82,10 @@
 #include "opt_cvtl_rule.h"
 #include "opt_fold.h"
 #include "betarget.h"
+
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
 
 #include "data_layout.h"	// for ST_has_formal_preg_num
 

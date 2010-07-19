@@ -78,7 +78,7 @@ BOOL Whirl2c_loaded = FALSE;
 #include "w2c_weak.h"
 #include "w2f_weak.h"
 
-#if !(defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 #pragma weak Anl_Cleanup
 #endif
 
@@ -146,7 +146,7 @@ Cleanup_Files (BOOL report,         /* Report errors during cleanup? */
        W2C_Cleanup();
     if (Whirl2f_loaded)
        W2F_Cleanup();
-#if !(defined( __linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined( __linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
     if (Prompf_anl_loaded)
        Anl_Cleanup();
 #endif

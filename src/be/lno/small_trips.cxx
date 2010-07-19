@@ -60,6 +60,7 @@
 #include "fiz_fuse.h"
 #include "forward.h"
 #include "prompf.h"
+#include "lno_trace.h"
  
 #include "ir_reader.h"
 
@@ -76,9 +77,19 @@ extern void Remove_Zero_Trip_Loop(WN* wn_loop)
     return; 
   } 
 
-  if (LNO_Verbose || LNO_Lno_Verbose) 
-    fprintf(stdout, "Removing Zero Trip Loop on line %d\n", 
-      (INT) WN_linenum(wn_loop));
+  if ( LNO_Verbose || LNO_Lno_Verbose )
+  {
+      LNO_Trace( LNO_SMALL_TRIPS_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(wn_loop)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 "remove zero trip loop");
+  }
+
+
+ // if (LNO_Verbose || LNO_Lno_Verbose) 
+ //   fprintf(stdout, "Removing Zero Trip Loop on line %d\n", 
+  //    (INT) WN_linenum(wn_loop));
   if (LNO_Verbose)
     fprintf(TFile, "Removing Zero Trip Loop on line %d\n", 
       (INT) WN_linenum(wn_loop));
@@ -345,9 +356,18 @@ extern void Remove_Unity_Trip_Loop(WN* wn_loop,
     Finalize_Index_Variable_For_Remove_Unity_Trip_Loop(wn_loop, TRUE); 
   }
 
-  if (LNO_Verbose || LNO_Lno_Verbose) 
-    fprintf(stdout, "Removing Unity Trip Loop on line %d\n", 
-      (INT) WN_linenum(wn_loop));
+  if ( LNO_Verbose || LNO_Lno_Verbose )
+  {
+      LNO_Trace( LNO_SMALL_TRIPS_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(wn_loop)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 "remove unity trip loop");
+  }
+
+//  if (LNO_Verbose || LNO_Lno_Verbose) 
+  //  fprintf(stdout, "Removing Unity Trip Loop on line %d\n", 
+    //  (INT) WN_linenum(wn_loop));
   if (LNO_Verbose)
     fprintf(TFile, "Removing Unity Trip Loop on line %d\n", 
       (INT) WN_linenum(wn_loop));
@@ -769,9 +789,20 @@ static void Unify_Loop(WN* wn_inner_loop,
                        DU_MANAGER* du)
 {
   WN* wn_outer_loop = LWN_Get_Parent(LWN_Get_Parent(wn_inner_loop));
-  if (LNO_Verbose || LNO_Lno_Verbose) 
-    fprintf(stdout, "Unifying Coupled Loops on lines %d and %d\n", 
-      (INT) WN_linenum(wn_inner_loop), (INT) WN_linenum(wn_outer_loop));
+  if ( LNO_Verbose || LNO_Lno_Verbose )
+  {
+      LNO_Trace( LNO_SMALL_TRIPS_UNIFY_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(wn_inner_loop)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 "unified coupled loops", 
+                 Srcpos_To_Line(WN_Get_Linenum(wn_inner_loop)),
+                 Srcpos_To_Line(WN_Get_Linenum(wn_outer_loop)));
+  }
+
+//  if (LNO_Verbose || LNO_Lno_Verbose) 
+//    fprintf(stdout, "Unifying Coupled Loops on lines %d and %d\n", 
+//      (INT) WN_linenum(wn_inner_loop), (INT) WN_linenum(wn_outer_loop));
   if (LNO_Verbose)
     fprintf(TFile, "Unifying Coupled Loops on lines %d and %d\n", 
       (INT) WN_linenum(wn_inner_loop), (INT) WN_linenum(wn_outer_loop));
@@ -834,9 +865,18 @@ static void Trip_Reduce_Loop(WN* wn_loop,
 			     INT loop_count,
 			     DU_MANAGER* du)
 {
-  if (LNO_Verbose || LNO_Lno_Verbose) 
-    fprintf(stdout, "Trip Reducing Loop on line %d\n", 
-      (INT) WN_linenum(wn_loop));
+    if ( LNO_Verbose || LNO_Lno_Verbose )
+    {
+        LNO_Trace( LNO_SMALL_TRIPS_EVENT, 
+                   Src_File_Name,
+                   Srcpos_To_Line(WN_Get_Linenum(wn_loop)),
+                   ST_name(WN_entry_name(Current_Func_Node)),
+                   "reduce coupled loops");
+    }
+
+ // if (LNO_Verbose || LNO_Lno_Verbose) 
+   // fprintf(stdout, "Trip Reducing Loop on line %d\n", 
+    //  (INT) WN_linenum(wn_loop));
   if(LNO_Verbose)
     fprintf(TFile, "Trip Reducing Loop on line %d\n", 
       (INT) WN_linenum(wn_loop));
@@ -1219,10 +1259,20 @@ extern WN* SNL_Finalize_Loops(WN* wn_outer_loop,
   WN* wn_last = NULL; 
   WN* wn_return = wn_outer_loop; 
   for (INT i = 0; i < stack_final->Elements(); i++) {
-    WN* wn_loop = stack_final->Bottom_nth(i); 
-    if (LNO_Verbose || LNO_Lno_Verbose) 
-      fprintf(stdout, "Finalizing Loop on line %d\n", 
-        (INT) WN_linenum(wn_loop));
+    WN* wn_loop = stack_final->Bottom_nth(i);
+
+    if ( LNO_Verbose || LNO_Lno_Verbose )
+    {
+        LNO_Trace( LNO_SMALL_TRIPS_EVENT, 
+                   Src_File_Name,
+                   Srcpos_To_Line(WN_Get_Linenum(wn_loop)),
+                   ST_name(WN_entry_name(Current_Func_Node)),
+                   "finalize loop");
+    }
+
+   // if (LNO_Verbose || LNO_Lno_Verbose) 
+    //  fprintf(stdout, "Finalizing Loop on line %d\n", 
+     //   (INT) WN_linenum(wn_loop));
     if (LNO_Verbose)
       fprintf(TFile, "Finalizing Loop on line %d\n", 
         (INT) WN_linenum(wn_loop));

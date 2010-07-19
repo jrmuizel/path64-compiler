@@ -81,6 +81,8 @@ static char *rcs_id = "$Source: be/lno/SCCS/s.scalar_expand.cxx $ $Revision: 1.8
 #include "soe.h"
 #include "cond.h"
 #include "snl_utils.h"
+#include "lno_trace.h"
+
 
 static WN* BND_Min_Expr(WN* wn, WN* loops[], INT nloops); 
 static WN* BND_Max_Expr(WN* wn, WN* loops[], INT nloops);
@@ -2385,6 +2387,18 @@ extern void Scalar_Expand(WN* allocregion,
   FmtAssert(nstrips <= dimcnt, 
     ("Can't have more scalar expanded tiles than dimensions.")); 
   unique_se_id++;
+  if (LNO_Verbose || LNO_Lno_Verbose)
+  {
+      WN* wn_outer = loops[0]; 
+      LNO_Trace( LNO_SCALAR_EXPAND_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(wn_outer)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 symbol.Name(), has_lcd ? "(with lcd) " : "", 
+                 finalize ? "(with finalization) " : "", 
+                 WB_Whirl_Symbol(wn_outer));
+  }
+# if 0
   if (LNO_Verbose || LNO_Lno_Verbose) {
     WN* wn_outer = loops[0]; 
     fprintf(stdout, "Scalar expanding %s %s%sin loop %s at %d\n",
@@ -2397,6 +2411,7 @@ extern void Scalar_Expand(WN* allocregion,
       finalize ? "(with finalization) " : "", 
       WB_Whirl_Symbol(wn_outer), (INT) WN_linenum(wn_outer));
   }
+#endif
 
   // Step 1: How much space do we need, in bytes?  Put that in bsz.
   // Also, while we are at it, store in bounds the number of elements

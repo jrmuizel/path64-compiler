@@ -107,6 +107,7 @@ set(PATHSCALE_LNO_COMMON_SRCS
 				"cross_snl.cxx"
 				"cross_cache.cxx"
 				"init.cxx"
+                                "lno_trace.cxx"
 				"lx_prompf_anl.cxx")
 
 set(PATHSCALE_LNO_X8664_SRCS "simd.cxx")

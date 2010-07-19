@@ -565,10 +565,7 @@ extern WN* SNL_INV_Permute_Loops(WN* outer_loop,
   if (nloops == 0 || Identity_Permutation(permutation, nloops))
     return outer_loop; 
 
-  if (LNO_Verbose || LNO_Lno_Verbose)  
-    Print_Interchange(stdout, outer_loop, permutation, nloops);
-  if (LNO_Verbose) 
-    Print_Interchange(TFile, outer_loop, permutation, nloops); 
+  Print_Interchange(outer_loop, permutation, nloops);
   
   ARRAY_DIRECTED_GRAPH16* dg = Array_Dependence_Graph; 
   DU_MANAGER* du = Du_Mgr; 

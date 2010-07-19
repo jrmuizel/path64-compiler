@@ -38,7 +38,7 @@
 
 // From be/com/ipa_cost_util.cxx:
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 #ifdef IPA_SUMMARY
 #include "ipl_summary.h"
 #else 
@@ -46,7 +46,7 @@
 #endif
 #endif 
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 
 // Forward declaration.
 
@@ -1282,7 +1282,7 @@ extern void IPL_EX_Add_Expr_Offsets(DYN_ARRAY<SUMMARY_EXPR>* sx,
   }
 }
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
 //-----------------------------------------------------------------------
 // NAME: Print_Exprs
 // FUNCTION: Print a representation of the pair ('sv','sx') to the file 

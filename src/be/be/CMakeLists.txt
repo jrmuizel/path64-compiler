@@ -210,18 +210,24 @@ target_link_libraries(be-static targinfo m ${libdl})
 add_library(be SHARED ${PATHSCALE_BE_BE_SRCS})
 set_property(TARGET be PROPERTY PREFIX "")
 set_target_properties(be PROPERTIES COMPILE_DEFINITIONS "SHARED_BUILD")
+
+IF(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
+# --export-dynamic is not supported on osol
 set_target_properties(be PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
 target_link_libraries(be targinfo SYS m ${libdl})
 add_dependencies( be be-static) # serialize to generate preg_list.cxx only once
 #add_dependencies( be-static generate_extension)
-
+ENDIF()
 
 add_executable (be-exec driver.cxx driver_util.cxx iter.cxx  ../com/phase.cxx)
 # TODO : Must be the elf, elfutil and dwarf built from the source and not a system installed one
 # TODO : Make sure link targets are static
 target_link_libraries (be-exec -Wl,-whole-archive be-static SYS rtkutils cg wopt -Wl,-no-whole-archive iberty dwarf elfutil elf targinfo)
 SET_TARGET_PROPERTIES(be-exec PROPERTIES OUTPUT_NAME "be")
+IF(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
+# --export-dynamic is not supported on osol
 set_target_properties(be-exec PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
+ENDIF()
 
 install(TARGETS be be-exec DESTINATION ${PATH64_LIB_PATH})
 

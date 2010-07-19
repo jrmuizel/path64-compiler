@@ -87,9 +87,9 @@ static char *rcs_id = "$Source: common/com/SCCS/s.config.cxx $ $Revision: 1.63 $
 
 #define USE_STANDARD_TYPES 1
 #include "defs.h"
-#if ! defined(BUILD_OS_DARWIN)
+#if !(defined(BUILD_OS_DARWIN) || defined(__sun))
 #include "em_elf.h"
-#endif /* ! defined(BUILD_OS_DARWIN) */
+#endif /* !(defined(BUILD_OS_DARWIN)  || defined(__sun))*/
 #include "config.h"
 #include "config_platform.h"
 #include "config_targ.h"
