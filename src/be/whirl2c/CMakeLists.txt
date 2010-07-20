@@ -24,11 +24,12 @@ set_property(TARGET whirl2c PROPERTY PREFIX "")
 install(TARGETS whirl2c LIBRARY DESTINATION ${PATH64_LIB_PATH})
 
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
-ADD_EXECUTABLE(whirl2c-exec whirl2c_main.cxx)
-SET_TARGET_PROPERTIES(whirl2c-exec PROPERTIES OUTPUT_NAME "whirl2c")
-add_dependencies(whirl2c-exec be-static)
-install(TARGETS whirl2c-exec
-    RUNTIME DESTINATION ${PATH64_LIB_PATH})
-install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"be\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/whirl2c_be\")")
-
+    ADD_EXECUTABLE(whirl2c-exec whirl2c_main.cxx)
+    SET_TARGET_PROPERTIES(whirl2c-exec PROPERTIES OUTPUT_NAME "whirl2c")
+    add_dependencies(whirl2c-exec be-static)
+    install(TARGETS whirl2c-exec
+        RUNTIME DESTINATION ${PATH64_LIB_PATH})
+    foreach(arch ${PATH64_ENABLE_ARCHES})
+        install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"be\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/whirl2c_be\")")
+    endforeach()
 ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")

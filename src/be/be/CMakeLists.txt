@@ -212,7 +212,7 @@ if(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
     path64_set_multiarch_property(be-exec LINK_FLAGS "-Wl,--export-dynamic")
 endif()
 
-foreach($arch ${PATH64_ENABLE_ARCHES})
-    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"be${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${ARCH}/ipl${CMAKE_EXECUTABLE_SUFFIX}\")")
+foreach(arch ${PATH64_ENABLE_ARCHES})
+    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"be${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/ipl${CMAKE_EXECUTABLE_SUFFIX}\")")
 endforeach()
 
