@@ -221,6 +221,6 @@ if(${x8664_enabled})
 
     install(TARGETS barcelona em64t core wolfdale opteron
             RUNTIME DESTINATION bin
-            LIBRARY DESTINATION ${PATH64_LIB_PATH})
+            LIBRARY DESTINATION ${PATH64_LIB_PATH}/x8664)
 endif()
 
