@@ -75,6 +75,6 @@ INCLUDE_DIRECTORIES(
         ${PATHSCALE_BINARY_DIR}/common/targ_info
 )
 
-
 add_library(fereconf STATIC ${PATHSCALE_FERECONF_SRCS})
+add_dependencies(fereconf targinfo)
 

@@ -129,5 +129,7 @@ target_link_libraries(lno ipl)
 set_property(TARGET lno PROPERTY PREFIX "")
 ADD_DEPENDENCIES(lno generate_preg_list)
 ADD_DEPENDENCIES(lno generate_topcode)
+ADD_DEPENDENCIES(lno targinfo)
+
 
 install(TARGETS lno LIBRARY DESTINATION ${PATH64_LIB_PATH})

@@ -21,6 +21,9 @@
 * \file cg_swp_allocator.cxx                                           *
 * \brief Implementation file for the Register Allocator                *
 ***********************************************************************/
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
+
 #ifndef STANDALONE_SWP_ALLOCATOR
 #include <stdio.h>
 #include <stdarg.h>
@@ -32,10 +35,6 @@
 #else
 #include <pair.h>
 #endif // __GNUC__ >= 3
-#define __STDC_LIMIT_MACROS
-#include <stdint.h>
-
-
 #include "defs.h"
 #include "glob.h"    // for Cur_PU_Name
 #include "timing.h"

@@ -91,6 +91,9 @@
   * =========================================================================
   */
 // [HK]
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
+
 #if __GNUC__ >= 3
 #include <vector>  /* for STL vector and list */
 #include <list>
@@ -100,8 +103,6 @@
 #include <vector.h>  /* for STL vector and list */
 #include <list.h>
 #endif // __GNUC__ >= 3
-#define __STDC_LIMIT_MACROS
-#include <stdint.h>
 
 #include "tracing.h"
 

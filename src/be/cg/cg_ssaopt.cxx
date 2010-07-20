@@ -34,7 +34,8 @@
  * ====================================================================
  */
 
-
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
 // [HK]
 #if __GNUC__ >= 3
 #include <list>
@@ -42,8 +43,6 @@
 #else
 #include <list.h>
 #endif // __GNUC__ >= 3
-#define __STDC_LIMIT_MACROS
-#include <stdint.h>
 
 // Do we have to ensure compatibility with old gcc version?
 #include <set>

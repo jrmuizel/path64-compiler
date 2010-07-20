@@ -76,7 +76,6 @@ gen_info(isa isa_enums        gen_util)
 gen_info(isa isa_lits         isa_gen_topcode)
 
 gen_info(isa isa_properties   isa_gen_topcode)
-gen_info(isa isa_pack         targ_isa_properties isa_gen_topcode)
 gen_info(isa isa_bundle       targ_isa_subset targ_isa_pack targ_proc targ_isa_properties isa_gen_topcode)
 gen_info(isa isa_decode       targ_isa_subset targ_isa_bundle targ_isa_pack isa_gen_topcode)
 
@@ -87,10 +86,13 @@ target_link_libraries(targ_isa_registers targ_isa_subset)
 IF (${BUILD_TARGET_DIR} MATCHES "arm")
 gen_info(isa isa_variants      isa_gen_topcode)
 gen_info(isa isa_binutils      targ_isa_subset targ_isa_pack isa_gen_topcode)
-gen_info(isa isa_relocs       targ_isa_subset targ_isa_lits isa_gen_topcode)
-gen_info(isa isa_operands     targ_isa_relocs targ_isa_properties targ_isa_registers targ_isa_enums targ_isa_lits isa_gen_topcode)
+gen_info(isa isa_relocs        targ_isa_subset targ_isa_lits isa_gen_topcode)
+gen_info(isa isa_operands      targ_isa_relocs targ_isa_properties targ_isa_registers targ_isa_enums targ_isa_lits isa_gen_topcode)
+gen_info(isa isa_pack          targ_isa_properties targ_isa_operands isa_gen_topcode)
+
 ELSE()
 gen_info(isa isa_operands      targ_isa_properties targ_isa_registers targ_isa_enums targ_isa_lits isa_gen_topcode)
+gen_info(isa isa_pack         targ_isa_properties isa_gen_topcode)
 
 ENDIF()
 gen_info(isa isa_pseudo       targ_isa_operands targ_isa_registers targ_isa_enums isa_gen_topcode)

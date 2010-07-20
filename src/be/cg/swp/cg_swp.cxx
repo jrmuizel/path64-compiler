@@ -22,6 +22,8 @@
 */
 
 
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
 
 #define USE_STANDARD_TYPES
 // [HK]
@@ -31,9 +33,6 @@
 #else
 #include <vector.h>
 #endif // __GNUC__ >= 3
-#define __STDC_LIMIT_MACROS
-#include <stdint.h>
-
 #include "defs.h"
 #include "errors.h"
 #include "tracing.h"
