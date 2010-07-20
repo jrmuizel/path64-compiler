@@ -153,14 +153,16 @@ main (int argc, char *argv[])
 	append_default_options(&argc, &argv);
 
 #if defined(KEY) && defined(TARG_MIPS)
-	// If ABI is defined, append the contents of CFLAGS_${ABI}
-	// to the default options.
-	ABI_varname = getenv("ABI");
-	if (ABI_varname) {
-	  ABI_varname = concat_strings("CFLAGS_", ABI_varname);
-	  append_psc_env_flags(&argc, &argv, ABI_varname);
-	  free(ABI_varname);
-	}
+    if (is_target_arch_MIPS()) {
+	  // If ABI is defined, append the contents of CFLAGS_${ABI}
+	  // to the default options.
+	  ABI_varname = getenv("ABI");
+	  if (ABI_varname) {
+	    ABI_varname = concat_strings("CFLAGS_", ABI_varname);
+	    append_psc_env_flags(&argc, &argv, ABI_varname);
+	    free(ABI_varname);
+	  }
+    }
 #endif
 
 	save_command_line(argc, argv);		/* for prelinker    */	
@@ -1103,28 +1105,32 @@ print_defaults(int argc, char *argv[])
     internal_error("no default target cpu");
 
 #ifdef TARG_MIPS
-  // ABI
-  switch (abi) {
-    case ABI_N32:	fprintf(stderr, " -n32"); break;
-    case ABI_64:	fprintf(stderr, " -64");  break;
-    default:		internal_error("unknown default ABI");
+  if (is_target_arch_MIPS()) {
+    // ABI
+    switch (abi) {
+      case ABI_N32:	fprintf(stderr, " -n32"); break;
+      case ABI_64:	fprintf(stderr, " -64");  break;
+      default:		internal_error("unknown default ABI");
+    }
   }
 #endif
 
 #ifdef TARG_X8664
-  // ABI
-  switch (abi) {
-    case ABI_N32:	fprintf(stderr, " -m32"); break;
-    case ABI_64:	fprintf(stderr, " -m64"); break;
-    default:		internal_error("unknown default ABI");
-  }
+  if (is_target_arch_X8664()) {
+    // ABI
+    switch (abi) {
+      case ABI_N32:	fprintf(stderr, " -m32"); break;
+      case ABI_64:	fprintf(stderr, " -m64"); break;
+      default:		internal_error("unknown default ABI");
+    }
 
-  // SSE, SSE2, SSE3, 3DNow, SSE4a
-  fprintf(stderr, " %s", sse == TRUE ? "-msse" : "-mno-sse");
-  fprintf(stderr, " %s", sse2 == TRUE ? "-msse2" : "-mno-sse2");
-  fprintf(stderr, " %s", sse3 == TRUE ? "-msse3" : "-mno-sse3");
-  fprintf(stderr, " %s", m3dnow == TRUE ? "-m3dnow" : "-mno-3dnow");
-  fprintf(stderr, " %s", sse4a == TRUE ? "-msse4a" : "-mno-sse4a");
+    // SSE, SSE2, SSE3, 3DNow, SSE4a
+    fprintf(stderr, " %s", sse == TRUE ? "-msse" : "-mno-sse");
+    fprintf(stderr, " %s", sse2 == TRUE ? "-msse2" : "-mno-sse2");
+    fprintf(stderr, " %s", sse3 == TRUE ? "-msse3" : "-mno-sse3");
+    fprintf(stderr, " %s", m3dnow == TRUE ? "-m3dnow" : "-mno-3dnow");
+    fprintf(stderr, " %s", sse4a == TRUE ? "-msse4a" : "-mno-sse4a");
+  }
 #endif
 
   // -gnu3/-gnu4

@@ -50,7 +50,20 @@ char *target_library_path() {
 
 
 char * target_runtime_path() {
-    return get_crt_path();
+    return "/usr/lib";
 }
 
+
+#ifdef TARG_X8664
+int is_target_arch_X8664() {
+    return 0;
+}
+#endif // TARG_X8664
+
+
+#ifdef TARG_MIPS
+int is_target_arch_MIPS() {
+    return 0;
+}
+#endif // TARG_MIPS
 

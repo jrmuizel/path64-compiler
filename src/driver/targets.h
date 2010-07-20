@@ -17,5 +17,16 @@ char * target_library_path();
 char * target_runtime_path();
 
 
+#ifdef TARG_X8664
+// Returns 1 if target architecture is X8664
+int is_target_arch_X8664();
+#endif // TARG_X8664
+
+
+#ifdef TARG_MIPS
+// Returns 1 if target architecture is MIPS
+int is_target_arch_MIPS();
+#endif // TARG_MIPS
+
 #endif // __DRIVER_TARGETS_H__
 

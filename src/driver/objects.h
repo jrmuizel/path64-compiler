@@ -38,9 +38,6 @@
 extern void init_objects (void);
 
 
-extern char* get_crt_path (void);
-extern char* get_stdc_plus_plus_path( void );
-
 /*
  * Whether option is an object or not.
  * Our definition of "object" includes libraries and library path options,
@@ -86,7 +83,6 @@ void finalize_maybe_linker_options (boolean is_linker);
 #ifdef TARG_MIPS
 extern char *sysroot_path_n32;
 extern char *sysroot_path_64;
-#else
-extern char *sysroot_path;
 #endif
+extern char *sysroot_path;
 
