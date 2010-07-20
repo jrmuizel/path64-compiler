@@ -253,7 +253,6 @@ function(path64_add_executable_for_arch name arch)
     # Replacing @ARCH@ with architecture  name in source names
     set(sources ${ARGN})
     list_string_replace_arch(sources ${arch})
-    message(STATUS "path64_add_executable_for_arch: ${name} ${arch} ${sources}")
 
     add_executable(${name} ${sources})
     set_property(TARGET ${name} PROPERTY COMPILE_FLAGS ${arch_flags})
