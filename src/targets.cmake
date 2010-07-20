@@ -13,26 +13,32 @@ set(_PATH64_SUPPORTED_TARGETS_STRING "Supported architectures are:
 set(_PATH64_TARGET_ARCH_x8664_32 x8664)
 set(_PATH64_TARGET_FLAG_x8664_32 -m32)
 set(_PATH64_TARGET_BITS_x8664_32 32)
+set(_PATH64_TARGET_DRIVER_OPT_x8664_32 O_m32)
 
 set(_PATH64_TARGET_ARCH_x8664_64 x8664)
 set(_PATH64_TARGET_FLAG_x8664_64 -m64)
 set(_PATH64_TARGET_BITS_x8664_64 64)
+set(_PATH64_TARGET_DRIVER_OPT_x8664_64 O_m64)
 
 set(_PATH64_TARGET_ARCH_mips_32 mips)
 set(_PATH64_TARGET_FLAG_mips_32 -n32)
 set(_PATH64_TARGET_BITS_mips_32 32)
+set(_PATH64_TARGET_DRIVER_OPT_mips_32 O_n32)
 
 set(_PATH64_TARGET_ARCH_mips_64 mips)
 set(_PATH64_TARGET_FLAG_mips_64 -n64)
 set(_PATH64_TARGET_BITS_mips_64 64)
+set(_PATH64_TARGET_DRIVER_OPT_mips_64 O_n64)
 
 set(_PATH64_TARGET_ARCH_rsk6_32 rsk6)
 set(_PATH64_TARGET_FLAG_rsk6_32 -q32)
 set(_PATH64_TARGET_BITS_rsk6_32 32)
+set(_PATH64_TARGET_DRIVER_OPT_rsk6_32 O_q32)
 
 set(_PATH64_TARGET_ARCH_rsk6_64 rsk6)
 set(_PATH64_TARGET_FLAG_rsk6_64 -q64)
 set(_PATH64_TARGET_BITS_rsk6_64 64)
+set(_PATH64_TARGET_DRIVER_OPT_rsk6_64 O_q64)
 
 
 # Architecture flags
@@ -327,7 +333,11 @@ function(path64_set_property_for_arch name arch prop)
         set(prop_vals "${prop_vals} ${_PATH64_ARCH_FLAGS_${arch}}")
     endif()
 
-    set_property(TARGET ${name} PROPERTY ${prop} ${prop_vals})
+    if(prop_vals)
+        set_property(TARGET ${name} PROPERTY ${prop} ${prop_vals})
+    else()
+        set_property(TARGET ${name} PROPERTY ${prop} "")
+    endif()
 endfunction()
 
 
