@@ -90,6 +90,20 @@ function(list_string_replace_arch lst arch)
 endfunction()
 
 
+# Returns target for host system
+function(path64_get_host_target res_var)
+    # TODO: find way how to get target for host system
+    set(${res_var} "x8664_64" PARENT_SCOPE)
+endfunction()
+
+
+# Returns architecture for host system
+function(path64_get_host_arch res_var)
+    path64_get_host_target(targ)
+    set(${res_var} ${_PATH64_TARGET_ARCH_${targ}} PARENT_SCOPE)
+endfunction()
+
+
 # Returns multitarget cmake target name for specified target
 function(path64_get_multitarget_cmake_target res_var name target)
     set(${res_var} ${name}-${target} PARENT_SCOPE)
@@ -164,6 +178,8 @@ endfunction()
 
 # Adds library for specified target
 function(path64_add_library_for_target name target type)
+    path64_check_target_exists(${target})
+
     # Compiler ABI.
     set(arch ${_PATH64_TARGET_ARCH_${target}})
     set(bits ${_PATH64_TARGET_BITS_${target}})
@@ -172,21 +188,19 @@ function(path64_add_library_for_target name target type)
     set(install_lib_dir ${PATH64_LIB_PATH}/${arch}/${bits})
     set(install_inc_dir ${install_lib_dir}/include)
 
-    path64_get_multitarget_cmake_target(lib_name ${name} ${target})
-
     # Replacing @TARGET@ with target name in source names
     set(sources ${ARGN})
     list_string_replace(sources "@TARGET@" ${target})
 
-    add_library (${lib_name} ${type} ${sources})
-    set_property(TARGET ${lib_name} PROPERTY OUTPUT_NAME ${name})
-    set_property(TARGET ${lib_name} PROPERTY COMPILE_FLAGS ${arch_flag})
-    set_property(TARGET ${lib_name} PROPERTY LINK_FLAGS ${arch_flag})
+    add_library (${name} ${type} ${sources})
+    set_property(TARGET ${name} PROPERTY OUTPUT_NAME ${name})
+    set_property(TARGET ${name} PROPERTY COMPILE_FLAGS ${arch_flag})
+    set_property(TARGET ${name} PROPERTY LINK_FLAGS ${arch_flag})
 
-    set_property(TARGET ${lib_name} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${build_lib_dir})
-    set_property(TARGET ${lib_name} PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${build_lib_dir})
+    set_property(TARGET ${name} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${build_lib_dir})
+    set_property(TARGET ${name} PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${build_lib_dir})
 
-    install(TARGETS ${lib_name}
+    install(TARGETS ${name}
       LIBRARY DESTINATION ${install_lib_dir}
       ARCHIVE DESTINATION ${install_lib_dir})
 
@@ -195,27 +209,27 @@ endfunction()
 
 # Adds library for specified architecture
 function(path64_add_library_for_arch name arch type)
+    path64_check_arch_exists(${arch})
+
     # Compiler ABI.
     set(arch_flags ${_PATH64_ARCH_FLAGS_${arch}})
     set(build_lib_dir ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${arch})
     set(install_lib_dir ${PATH64_LIB_PATH}/${arch})
     set(install_inc_dir ${install_lib_dir}/include)
 
-    path64_get_multiarch_cmake_target(lib_name ${name} ${arch})
-
     # Replacing @ARCH@ with architecture  name in source names
     set(sources ${ARGN})
     list_string_replace_arch(sources ${arch})
 
-    add_library (${lib_name} ${type} ${sources})
-    set_property(TARGET ${lib_name} PROPERTY OUTPUT_NAME ${name})
-    set_property(TARGET ${lib_name} PROPERTY COMPILE_FLAGS ${arch_flags})
-    set_property(TARGET ${lib_name} PROPERTY LINK_FLAGS ${arch_flags})
+    add_library (${name} ${type} ${sources})
+    set_property(TARGET ${name} PROPERTY OUTPUT_NAME ${name})
+    set_property(TARGET ${name} PROPERTY COMPILE_FLAGS ${arch_flags})
+    set_property(TARGET ${name} PROPERTY LINK_FLAGS ${arch_flags})
 
-    set_property(TARGET ${lib_name} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${build_lib_dir})
-    set_property(TARGET ${lib_name} PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${build_lib_dir})
+    set_property(TARGET ${name} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${build_lib_dir})
+    set_property(TARGET ${name} PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${build_lib_dir})
 
-    install(TARGETS ${lib_name}
+    install(TARGETS ${name}
       LIBRARY DESTINATION ${install_lib_dir}
       ARCHIVE DESTINATION ${install_lib_dir})
 
@@ -224,26 +238,27 @@ endfunction()
 
 # Adds executable for specified architecture
 function(path64_add_executable_for_arch name arch)
+    path64_check_arch_exists(${arch})
+
     # Compiler ABI.
     set(arch_flags ${_PATH64_ARCH_FLAGS_${arch}})
     set(build_lib_dir ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${arch})
     set(install_lib_dir ${PATH64_LIB_PATH}/${arch})
     set(install_inc_dir ${install_lib_dir}/include)
 
-    path64_get_multiarch_cmake_target(exe_name ${name} ${arch})
-
     # Replacing @ARCH@ with architecture  name in source names
     set(sources ${ARGN})
     list_string_replace_arch(sources ${arch})
+    message(STATUS "path64_add_executable_for_arch: ${name} ${arch} ${sources}")
 
-    add_executable(${exe_name} ${sources})
-    set_property(TARGET ${exe_name} PROPERTY OUTPUT_NAME ${name})
-    set_property(TARGET ${exe_name} PROPERTY COMPILE_FLAGS ${arch_flags})
-    set_property(TARGET ${exe_name} PROPERTY LINK_FLAGS ${arch_flags})
+    add_executable(${name} ${sources})
+    set_property(TARGET ${name} PROPERTY OUTPUT_NAME ${name})
+    set_property(TARGET ${name} PROPERTY COMPILE_FLAGS ${arch_flags})
+    set_property(TARGET ${name} PROPERTY LINK_FLAGS ${arch_flags})
 
-    set_property(TARGET ${exe_name} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${build_lib_dir})
+    set_property(TARGET ${name} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${build_lib_dir})
 
-    install(TARGETS ${exe_name}
+    install(TARGETS ${name}
       RUNTIME DESTINATION ${install_lib_dir})
 
 endfunction()
@@ -252,10 +267,11 @@ endfunction()
 # Adds library for all enabled targets
 function(path64_add_multitarget_library name type src_list_name)
     foreach(targ ${PATH64_ENABLE_TARGETS})
+        path64_get_multitarget_cmake_target(tg_name ${name} ${targ})
         if(${src_list_name}_${targ})
-            path64_add_library_for_target(${name} ${targ} ${type} ${${src_list_name}_${targ}})
+            path64_add_library_for_target(${tg_name} ${targ} ${type} ${${src_list_name}_${targ}})
         else()
-            path64_add_library_for_target(${name} ${targ} ${type} ${${src_list_name}_COMMON})
+            path64_add_library_for_target(${tg_name} ${targ} ${type} ${${src_list_name}_COMMON})
         endif()
     endforeach()
 endfunction()
@@ -264,10 +280,11 @@ endfunction()
 # Adds library for all enabled architectures
 function(path64_add_multiarch_library name type src_list_name)
     foreach(arch ${PATH64_ENABLE_ARCHES})
+        path64_get_multiarch_cmake_target(tg_name ${name} ${arch})
         if(${src_list_name}_${arch})
-            path64_add_library_for_arch(${name} ${arch} ${type} ${${src_list_name}_${arch}})
+            path64_add_library_for_arch(${tg_name} ${arch} ${type} ${${src_list_name}_${arch}})
         else()
-            path64_add_library_for_arch(${name} ${arch} ${type} ${${src_list_name}_COMMON})
+            path64_add_library_for_arch(${tg_name} ${arch} ${type} ${${src_list_name}_COMMON})
         endif()
     endforeach()
 endfunction()
@@ -276,10 +293,11 @@ endfunction()
 # Adds executable for all enabled architectures
 function(path64_add_multiarch_executable name src_list_name)
     foreach(arch ${PATH64_ENABLE_ARCHES})
+        path64_get_multiarch_cmake_target(tg_name ${name} ${arch})
         if(${src_list_name}_${arch})
-            path64_add_executable_for_arch(${name} ${arch} ${${src_list_name}_${arch}})
+            path64_add_executable_for_arch(${tg_name} ${arch} ${${src_list_name}_${arch}})
         else()
-            path64_add_executable_for_arch(${name} ${arch} ${${src_list_name}_COMMON})
+            path64_add_executable_for_arch(${tg_name} ${arch} ${${src_list_name}_COMMON})
         endif()
     endforeach()
 endfunction()
@@ -309,8 +327,7 @@ function(path64_set_property_for_arch name arch prop)
         set(prop_vals "${prop_vals} ${_PATH64_ARCH_FLAGS_${arch}}")
     endif()
 
-    path64_get_multiarch_cmake_target(tg ${name} ${arch})
-    set_property(TARGET ${tg} PROPERTY ${prop} ${prop_vals})
+    set_property(TARGET ${name} PROPERTY ${prop} ${prop_vals})
 endfunction()
 
 
@@ -325,7 +342,8 @@ endfunction()
 # Sets property for multiarch target
 function(path64_set_multiarch_property name prop)
     foreach(arch ${PATH64_ENABLE_ARCHES})
-        path64_set_property_for_arch(${name} ${arch} ${prop} ${ARGN})
+        path64_get_multiarch_cmake_target(tg ${name} ${arch})
+        path64_set_property_for_arch(${tg} ${arch} ${prop} ${ARGN})
     endforeach()
 endfunction()
 

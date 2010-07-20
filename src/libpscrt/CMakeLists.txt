@@ -32,24 +32,6 @@ set_source_files_properties(
 
 
 
-# Static library
-function(add_pscrt_static_library name src_name)
-    set(srcs ${ARGV})
-    list(REMOVE_AT srcs 0)
-
-
-    foreach(targ ${PATH64_ENABLE_TARGETS})
-        if(${targ} MATCHES "x8664_64")
-            set(srcs ${${src_name}_x64})
-        else()
-            set(srcs ${${src_name}})
-        endif()
-
-        path64_add_library_for_target(${name} ${targ} STATIC ${srcs})
-    endforeach()
-endfunction()
-
-
 path64_set_multitarget_sources(pscrt_static_src_list COMMON ${pscrt_static_sources})
 path64_set_multitarget_sources(pscrt_static_src_list "x8664_64" ${pscrt_static_sources_x64})
 path64_add_multitarget_library(pscrt-static STATIC pscrt_static_src_list)
