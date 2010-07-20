@@ -114,11 +114,14 @@ ELSE()
 	MESSAGE(FATAL_ERROR "Must set PSC_FULL_VERSION")
 ENDIF()
 
-IF(NOT PSC_CRT_PATH)
-	SET(PSC_CRT_PATH "/usr/lib")
-	MESSAGE(FATAL_ERROR "Must set PSC_CRT_PATH")
-ENDIF()
-MESSAGE(STATUS "PSC_CRT_PATH is set to "${PSC_CRT_PATH})
+# Checking that CRT paths are specified for all targets
+FOREACH(targ ${PATH64_ENABLE_TARGETS})
+    IF(PSC_CRT_PATH_${targ})
+        MESSAGE(STATUS "CRT path for ${targ} target: ${PSC_CRT_PATH_${targ}}")
+    ELSE()
+        MESSAGE(FATAL_ERROR "CRT path for ${targ} target is not specified. Please specify PSC_CRT_PATH_${targ} variable")
+    ENDIF()
+ENDFOREACH()
 
 # Do we build with huge pages support
 OPTION(PATH64_ENABLE_HUGEPAGES "Enabling supported huge pages" OFF)

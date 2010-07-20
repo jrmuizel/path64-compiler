@@ -1,0 +1,8 @@
+
+
+#include "targ_info.h"
+
+targ_info_t targ_info[] = {
+${TARGET_DEFINITIONS}
+};
+

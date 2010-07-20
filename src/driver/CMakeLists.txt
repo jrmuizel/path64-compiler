@@ -19,6 +19,7 @@ Set(PATHSCALE_DRIVER_SRCS ${PATHSCALE_COMMON_DRIVER_SRCS}
                           "run.c"
                           "special_options.c"
                           "targets.c"
+                          "${CMAKE_CURRENT_BINARY_DIR}/targ_info.c"
                           ${CMAKE_CURRENT_BINARY_DIR}/version_hg.c
                           "license.c"
    )
@@ -57,6 +58,26 @@ add_custom_command(
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gen_version.sh
         )
 
+
+# Generating target definitions
+set(TARGET_DEFINITIONS "")
+set(first true)
+foreach(targ ${PATH64_ENABLE_TARGETS})
+    set(arch ${_PATH64_TARGET_ARCH_${targ}})
+    set(abi ${_PATH64_TARGET_BITS_${targ}})
+    set(opt ${_PATH64_TARGET_FLAG_${targ}})
+    set(crt_path ${PSC_CRT_PATH_${targ}})
+
+    if(NOT first)
+        set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS},\n")
+    else()
+        set(first false)
+    endif()
+
+    set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS}\t{ \"${targ}\",\t\"${arch}\",\t\"${abi}\",\t\"${opt}\",\t\"${crt_path}\"}")
+endforeach()
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/targ_info.c.cmake.in
+               ${CMAKE_CURRENT_BINARY_DIR}/targ_info.c)
 
 include_directories(.
                     ../common/com
