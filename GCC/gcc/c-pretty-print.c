@@ -1982,6 +1982,38 @@ pp_c_statement (c_pretty_printer *pp, tree stmt)
   if (pp_needs_newline (pp))
     pp_newline_and_indent (pp, 0);
 
+#ifdef TARG_ST
+  switch (TREE_CODE (stmt))
+    {
+    default:
+      break;
+    case C_WHILE_STMT:
+      pp_c_identifier (pp, "while");
+      pp_space (pp);
+      pp_c_left_paren (pp);
+      pp_c_expression (pp, C_WHILE_COND (stmt));
+      pp_c_right_paren (pp);
+      pp_newline_and_indent (pp, 3);
+      pp_c_statement (pp, C_WHILE_BODY (stmt));
+      pp_indentation (pp) -= 3;
+      pp_needs_newline (pp) = true;
+      return;
+    case C_DO_STMT:
+      pp_c_identifier (pp, "do");
+      pp_newline_and_indent (pp, 3);
+      pp_c_statement (pp, C_DO_BODY (stmt));
+      pp_newline_and_indent (pp, -3);
+      pp_c_identifier (pp, "while");
+      pp_space (pp);
+      pp_c_left_paren (pp);
+      pp_c_expression (pp, C_DO_COND (stmt));
+      pp_c_right_paren (pp);
+      pp_c_semicolon (pp);
+      pp_needs_newline (pp) = true;
+      return;
+    }
+#endif
+
   dump_generic_node (pp_base (pp), stmt, pp_indentation (pp), 0, true);
 }
 

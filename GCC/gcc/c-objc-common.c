@@ -74,7 +74,11 @@ c_cannot_inline_tree_fn (tree *fnp)
 		     && DECL_DECLARED_INLINE_P (fn)
 		     && !DECL_IN_SYSTEM_HEADER (fn));
 
+#ifdef TARG_ST
+  if (gnu_flag_really_no_inline
+#else
   if (flag_really_no_inline
+#endif
       && lookup_attribute ("always_inline", DECL_ATTRIBUTES (fn)) == NULL)
     {
       if (do_warning)

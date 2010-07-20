@@ -85,6 +85,10 @@ static tree decl_constant_value_for_broken_optimization (tree);
 static tree lookup_field (tree, tree);
 static tree convert_arguments (tree, tree, tree, tree);
 static tree pointer_diff (tree, tree);
+#ifdef TARG_ST
+static bool  is_packed_ref(tree);
+static bool  address_of_packed_field(tree);
+#endif
 static tree convert_for_assignment (tree, tree, enum impl_conv, tree, tree,
 				    int);
 static tree valid_compound_expr_initializer (tree, tree);
@@ -2787,6 +2791,60 @@ pointer_diff (tree op0, tree op1)
   return fold_build2 (EXACT_DIV_EXPR, restype, op0, convert (restype, op1));
 }
 
+#ifdef TARG_ST
+/* [VB] */
+static bool 
+is_packed_ref(tree t)
+{
+  if ((TREE_CODE (t) == VAR_DECL) && TYPE_PACKED (TREE_TYPE (t)))
+    return true;
+  if (TREE_CODE (t) == COMPONENT_REF)
+    {
+      tree ref = TREE_OPERAND (t, 0);
+      tree field = TREE_OPERAND (t, 1);
+      if ((TREE_CODE (field) == FIELD_DECL) && (DECL_PACKED (field)))
+	return true;
+      if (TYPE_PACKED (TREE_TYPE (ref)))
+	return true;
+      return (is_packed_ref(ref));
+    }
+  
+  return false;
+}
+
+static bool 
+address_of_packed_field(tree arg)
+{
+  tree ref = TREE_OPERAND (arg, 0);
+  tree field = TREE_OPERAND (arg, 1);
+
+  /* test if it concerns a field of a structure */
+  if (TREE_CODE (field) == FIELD_DECL)
+    {
+      /* if the field has a type aligned on a byte, 
+	 no problem to take its address */
+      if((TREE_CODE (TREE_TYPE (field)) == INTEGER_TYPE &&
+	  TYPE_MODE (TREE_TYPE (field)) == QImode) ||
+	 (TREE_CODE (TREE_TYPE (field)) == ARRAY_TYPE &&
+	  TYPE_MODE (TREE_TYPE (TREE_TYPE (field))) == QImode) ||
+	 ((TREE_CODE (TREE_TYPE (field)) == RECORD_TYPE ||
+	   TREE_CODE (TREE_TYPE (field)) == UNION_TYPE ||
+	   TREE_CODE (TREE_TYPE (field)) == QUAL_UNION_TYPE) &&
+	  TYPE_PACKED (TREE_TYPE (field))))
+	return false;
+      /* if the field is packed, this may lead to a misaligned access 
+	 -> return true */
+      if (DECL_PACKED (field))
+	return true;
+      /* search if the ref is packed, in case the attribute packed is 
+	 not directly attached to the field */
+      return (is_packed_ref(ref));
+    }
+  
+  return false;
+}
+#endif
+
 /* Construct and perhaps optimize a tree representation
    for a unary operation.  CODE, a tree_code, specifies the operation
    and XARG is the operand.
@@ -3082,7 +3140,33 @@ build_unary_op (enum tree_code code, tree xarg, int flag)
 	  op1 = fold_convert (argtype, TREE_OPERAND (val, 0));
 	  return fold_build2 (PLUS_EXPR, argtype, op0, op1);
 	}
-
+#ifdef TARG_ST
+      if (TREE_CODE (arg) == COMPONENT_REF)
+	{
+	  /* [VB] Tests to emit a warning or return with an error 
+	     in case the address of a field (not of type char or 
+	     array of char) in a packed structure 
+	     or a packed field (not of type char or array of char) 
+	     in a structure is built,
+	     because this may lead to a misaligned access later 
+	     (error if the option -fpack-struct is set, 
+	     warning if the attribute packed is put by the user 
+	     in the C code) */
+	  if (warn_pack_struct)
+	    {
+	      if (address_of_packed_field(arg))
+		{
+		  if (flag_pack_struct) 
+		    {
+		      error ("building address of a packed field in a (packed) structure - may lead to a misaligned access");
+		      return error_mark_node;
+		    }
+		  else
+		    warning (0, "building address of a packed field in a (packed) structure - may lead to a misaligned access");
+		}
+	    }
+	}
+#endif
       val = build1 (ADDR_EXPR, argtype, arg);
 
       return val;
@@ -4814,6 +4898,11 @@ digest_init (tree type, tree init, bool strict_string, int require_constant)
 
       return inside_init;
     }
+
+#ifdef TARG_ST
+  /* [SC] {RECONF] Work required here to handle extension types with equivalent
+     machine mode */
+#endif
 
   /* Come here only for records and arrays.  */
 
@@ -7293,6 +7382,26 @@ void
 c_finish_loop (location_t start_locus, tree cond, tree incr, tree body,
 	       tree blab, tree clab, bool cond_is_first)
 {
+#ifdef TARG_ST
+  {
+    tree full_body = push_stmt_list ();
+    tree loop;
+
+    add_stmt (body);
+    if (clab)
+      add_stmt (build1 (LABEL_EXPR, void_type_node, clab));
+    if (incr)
+      add_stmt (incr);
+    full_body = pop_stmt_list (full_body);
+    
+    loop = build_stmt ((cond_is_first ? C_WHILE_STMT : C_DO_STMT),
+		       cond, full_body);
+    SET_EXPR_LOCATION (loop, start_locus);
+    add_stmt (loop);
+    if (blab)
+      add_stmt (build1 (LABEL_EXPR, void_type_node, blab));
+  }
+#else
   tree entry = NULL, exit = NULL, t;
 
   /* If the condition is zero don't generate a loop construct.  */
@@ -7355,6 +7464,7 @@ c_finish_loop (location_t start_locus, tree cond, tree incr, tree body,
     add_stmt (exit);
   if (blab)
     add_stmt (build1 (LABEL_EXPR, void_type_node, blab));
+#endif
 }
 
 tree
@@ -8040,8 +8150,15 @@ build_binary_op (enum tree_code code, tree orig_op0, tree orig_op1,
       if ((code0 == INTEGER_TYPE || code0 == REAL_TYPE
 	   || code0 == COMPLEX_TYPE)
 	  && (code1 == INTEGER_TYPE || code1 == REAL_TYPE
-	      || code1 == COMPLEX_TYPE))
-	short_compare = 1;
+	      || code1 == COMPLEX_TYPE))	
+      {
+#ifdef TARG_ST
+	  /* [TTh] Reject comparisons involving extension type */
+	  if (!IS_DYNAMIC_MACHINE_MODE(TYPE_MODE(type0)) &&
+	      !IS_DYNAMIC_MACHINE_MODE(TYPE_MODE(type1)))
+#endif
+	    short_compare = 1;
+	}
       else if (code0 == POINTER_TYPE && code1 == POINTER_TYPE)
 	{
 	  tree tt0 = TREE_TYPE (type0);

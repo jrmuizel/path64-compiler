@@ -31,7 +31,15 @@ Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
    the DECL_INITIAL of that decl is the CONSTRUCTOR that initializes
    the compound literal.  */
 DEFTREECODE (COMPOUND_LITERAL_EXPR, "compound_literal_expr", tcc_expression, 1)
+#ifdef TARG_ST
+/* Used to represent a 'while' statement. The operands are C_WHILE_COND
+   and C_WHILE_BODY, respectively.  */
+DEFTREECODE (C_WHILE_STMT, "while_stmt", tcc_statement, 2)
 
+/* Used to represent a 'do' statement. The operands are C_DO_BODY and
+   C_DO_COND, respectively.  */
+DEFTREECODE (C_DO_STMT, "do_stmt", tcc_statement, 2)
+#endif
 /*
 Local variables:
 mode:c

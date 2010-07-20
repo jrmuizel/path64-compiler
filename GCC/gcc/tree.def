@@ -1076,6 +1076,18 @@ DEFTREECODE (WIDEN_MULT_EXPR, "widen_mult_expr", tcc_binary, 2)
 DEFTREECODE (VEC_LSHIFT_EXPR, "vec_lshift_expr", tcc_binary, 2)
 DEFTREECODE (VEC_RSHIFT_EXPR, "vec_rshift_expr", tcc_binary, 2)
 
+#ifdef TARG_ST
+/* HANDLE_WFE_PRAGMAS */
+/* A PRAGMA_STMT marks the point at which a pragma was present in the code.
+   This is used by the WFE translator to keep track of pragmas.
+   Operand 0 is the pragma identifier of type INTERGER_CST.
+   Operand 1 is the argument list, a list of expressions
+   made out of a chain of TREE_LIST nodes.  Arguments can be
+   IDENTIFIER_NODE, INTEGER_CST or STRING_CST.
+   Give this node class tcc_expression, because we want to annotate it with
+   a source position. */
+DEFTREECODE (PRAGMA_STMT, "pragma_stmt", tcc_expression, 2)
+#endif
 /*
 Local variables:
 mode:c

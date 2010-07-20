@@ -174,9 +174,11 @@ extern char regs_ever_live[FIRST_PSEUDO_REGISTER];
 extern char regs_asm_clobbered[FIRST_PSEUDO_REGISTER];
 
 /* Vector indexed by machine mode saying whether there are regs of that mode.  */
-
+#ifdef TARG_ST
+extern bool have_regs_of_mode [MAX_LIMIT_MACHINE_MODE];
+#else
 extern bool have_regs_of_mode [MAX_MACHINE_MODE];
-
+#endif
 /* For each hard register, the widest mode object that it can contain.
    This will be a MODE_INT mode if the register can hold integers.  Otherwise
    it will be a MODE_FLOAT or a MODE_CC mode, whichever is valid for the
@@ -238,6 +240,10 @@ extern int caller_save_needed;
 extern void allocate_reg_info (size_t, int, int);
 
 /* Specify number of hard registers given machine mode occupy.  */
+#ifdef TARG_ST
+extern unsigned char (*hard_regno_nregs)[MAX_LIMIT_MACHINE_MODE];
+#else
 extern unsigned char hard_regno_nregs[FIRST_PSEUDO_REGISTER][MAX_MACHINE_MODE];
+#endif
 
 #endif /* GCC_REGS_H */

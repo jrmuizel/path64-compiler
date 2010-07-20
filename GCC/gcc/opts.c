@@ -109,6 +109,9 @@ static bool flag_unroll_loops_set, flag_tracer_set;
 static bool flag_value_profile_transformations_set;
 static bool flag_peel_loops_set, flag_branch_probabilities_set;
 
+#ifdef TARG_ST
+int do_nrv;
+#endif
 /* Input file names.  */
 const char **in_fnames;
 unsigned num_in_fnames;
@@ -432,11 +435,18 @@ decode_options (unsigned int argc, const char **argv)
 	}
     }
 
+#ifdef TARG_ST
+  /* (cbr) can't have nrv if not optimizing untill dwarf is fixed */
+  do_nrv = (optimize || optimize_size);
+#endif
+  
   if (!optimize)
     {
       flag_merge_constants = 0;
     }
 
+#ifndef TARG_ST
+  /* (cbr) keep optimizations in backend */
   if (optimize >= 1)
     {
       flag_defer_pop = 1;
@@ -546,6 +556,7 @@ decode_options (unsigned int argc, const char **argv)
       /* We want to crossjump as much as possible.  */
       set_param_value ("min-crossjump-insns", 1);
     }
+#endif
 
   /* Initialize whether `char' is signed.  */
   flag_signed_char = DEFAULT_SIGNED_CHAR;
@@ -576,6 +587,17 @@ decode_options (unsigned int argc, const char **argv)
     flag_no_inline = 0;
   else
     flag_really_no_inline = flag_no_inline;
+
+#ifdef TARG_ST
+  /* Capture the gcc value of the flags before forcing them for
+     open64, and also before forcing them for optimize == 0, since
+     for open64 we also force optimize == 0. */
+  gnu_flag_no_inline = flag_no_inline;
+  gnu_flag_really_no_inline = (flag_really_no_inline == 2
+			       ? flag_no_inline : flag_really_no_inline);
+  flag_no_inline = 1;
+  flag_really_no_inline = 1;
+#endif
 
   /* Set flag_no_inline before the post_options () hook.  The C front
      ends use it to determine tree inlining defaults.  FIXME: such

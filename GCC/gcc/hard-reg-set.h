@@ -394,7 +394,11 @@ do { HARD_REG_ELT_TYPE *scan_xp_ = (X), *scan_yp_ = (Y); 	\
    These are the registers that cannot be used to allocate
    a pseudo reg whose life does not cross calls.  */
 
+#ifdef TARG_ST
+extern char *fixed_regs;
+#else
 extern char fixed_regs[FIRST_PSEUDO_REGISTER];
+#endif
 
 /* The same info as a HARD_REG_SET.  */
 
@@ -405,7 +409,11 @@ extern HARD_REG_SET fixed_reg_set;
    These are the registers that cannot be used to allocate
    a pseudo reg whose life crosses calls.  */
 
+#ifdef TARG_ST
+extern char *call_used_regs;
+#else
 extern char call_used_regs[FIRST_PSEUDO_REGISTER];
+#endif
 
 #ifdef CALL_REALLY_USED_REGISTERS
 extern char call_really_used_regs[];
@@ -424,7 +432,11 @@ extern HARD_REG_SET losing_caller_save_reg_set;
    registers that cannot hold quantities across calls even if we are
    willing to save and restore them.  */
 
+#ifdef TARG_ST
+extern char *call_fixed_regs;
+#else
 extern char call_fixed_regs[FIRST_PSEUDO_REGISTER];
+#endif
 
 /* The same info as a HARD_REG_SET.  */
 
@@ -435,7 +447,11 @@ extern HARD_REG_SET call_fixed_reg_set;
    These must be exempt from ordinary flow analysis
    and are also considered fixed.  */
 
+#ifdef TARG_ST
+extern char *global_regs ;
+#else
 extern char global_regs[FIRST_PSEUDO_REGISTER];
+#endif
 
 /* Contains 1 for registers that are set or clobbered by calls.  */
 /* ??? Ideally, this would be just call_used_regs plus global_regs, but

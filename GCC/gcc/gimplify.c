@@ -5619,6 +5619,15 @@ gimplify_expr (tree *expr_p, tree *pre_p, tree *post_p,
 	  ret = gimplify_bind_expr (expr_p, pre_p);
 	  break;
 
+#ifdef TARG_ST /* HANDLE_WFE_PRAGMAS */
+	case PRAGMA_STMT:
+	  /* This is used only to convey information to spin file.  It can
+	     be discarded now. */
+	  *expr_p = NULL;
+	  ret = GS_OK;
+	  break;
+#endif
+
 	case LOOP_EXPR:
 	  ret = gimplify_loop_expr (expr_p, pre_p);
 	  break;

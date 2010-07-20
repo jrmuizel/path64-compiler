@@ -529,6 +529,16 @@ static tree handle_tls_model_attribute (tree *, tree, tree, int,
 					bool *);
 static tree handle_no_instrument_function_attribute (tree *, tree,
 						     tree, int, bool *);
+#ifdef TARG_ST
+  //TB Handle __attribute((opt[size|perf](x)): set the size/perf
+  //optimization for the function
+static tree handle_optsize_attribute PARAMS ((tree *, tree,
+					      tree, int,
+					      bool *));
+static tree handle_optperf_attribute PARAMS ((tree *, tree,
+					      tree, int,
+					      bool *));
+#endif
 static tree handle_malloc_attribute (tree *, tree, tree, int, bool *);
 static tree handle_returns_twice_attribute (tree *, tree, tree, int, bool *);
 static tree handle_no_limit_stack_attribute (tree *, tree, tree, int,
@@ -608,6 +618,14 @@ const struct attribute_spec c_common_attribute_table[] =
 			      handle_weakref_attribute },
   { "no_instrument_function", 0, 0, true,  false, false,
 			      handle_no_instrument_function_attribute },
+#ifdef TARG_ST
+  //TB Handle __attribute((opt[size|perf](x)): set the size/perf
+  //optimization for the function
+  { "optsize", 		      1, 1, true,  false, false,
+			      handle_optsize_attribute },
+/*   { "optperf", 		      1, 1, true,  false, false, */
+/* 			      handle_optperf_attribute }, */
+#endif
   { "malloc",                 0, 0, true,  false, false,
 			      handle_malloc_attribute },
   { "returns_twice",          0, 0, true,  false, false,
@@ -3122,25 +3140,33 @@ c_common_nodes_and_builtins (void)
   /* `signed' is the same as `int'.  FIXME: the declarations of "signed",
      "unsigned long", "long long unsigned" and "unsigned short" were in C++
      but not C.  Are the conditionals here needed?  */
+#ifndef TARG_ST
   if (c_dialect_cxx ())
+#endif
     record_builtin_type (RID_SIGNED, NULL, integer_type_node);
   record_builtin_type (RID_LONG, "long int", long_integer_type_node);
   record_builtin_type (RID_UNSIGNED, "unsigned int", unsigned_type_node);
   record_builtin_type (RID_MAX, "long unsigned int",
 		       long_unsigned_type_node);
+#ifndef TARG_ST
   if (c_dialect_cxx ())
+#endif
     record_builtin_type (RID_MAX, "unsigned long", long_unsigned_type_node);
   record_builtin_type (RID_MAX, "long long int",
 		       long_long_integer_type_node);
   record_builtin_type (RID_MAX, "long long unsigned int",
 		       long_long_unsigned_type_node);
+#ifndef TARG_ST
   if (c_dialect_cxx ())
+#endif
     record_builtin_type (RID_MAX, "long long unsigned",
 			 long_long_unsigned_type_node);
   record_builtin_type (RID_SHORT, "short int", short_integer_type_node);
   record_builtin_type (RID_MAX, "short unsigned int",
 		       short_unsigned_type_node);
+#ifndef TARG_ST
   if (c_dialect_cxx ())
+#endif
     record_builtin_type (RID_MAX, "unsigned short",
 			 short_unsigned_type_node);
 
@@ -4329,6 +4355,87 @@ handle_unused_attribute (tree *node, tree name, tree ARG_UNUSED (args),
   return NULL_TREE;
 }
 
+#ifdef TARG_ST
+/* TB:Handle a "optsize" attribute; arguments as in
+   struct attribute_spec.handler.  */
+
+static tree
+handle_optsize_attribute (tree *node, tree name, tree args,
+                          int ARG_UNUSED (flags), bool *no_add_attrs)
+{
+  tree decl = *node;
+  unsigned HOST_WIDE_INT level;
+
+  if (TREE_CODE (decl) != FUNCTION_DECL)
+    {
+      error ("%J %qE optsize attribute applies only to functions", decl, name);
+      *no_add_attrs = true;
+    }
+  else {
+    if (! host_integerp (TREE_VALUE (args), 1))
+      {
+	error ("%J can't set %qE optsize attribute: not an integer", decl,
+	       name);
+	*no_add_attrs = true;
+	return NULL_TREE;
+      }
+    /* Get the opt level.  */
+    level = tree_low_cst (TREE_VALUE (args), 1);
+    if (level > 2) {
+      error ("%J can't set optsize attribute: level is out of bounds [0-2]",
+	     decl);
+      *no_add_attrs = true;
+      return NULL_TREE;
+    }
+    if (level == 2) {
+      warning (OPT_Wattributes,
+	       "level 2 of optsize attribute is not yet implemented. Set level to 1.");
+      TREE_VALUE (args) = integer_one_node;
+    }
+    /* Do nothing, just set the attribute.  We get it later with
+       lookup_attribute. */
+  }
+  return NULL_TREE;
+}
+/* TB:Handle a "optperf" attribute; arguments as in
+   struct attribute_spec.handler.  */
+
+static tree
+handle_optperf_attribute (tree *node, tree name, tree args,
+			  int ARG_UNUSED (flags), bool *no_add_attrs)
+{
+  tree decl = *node;
+  unsigned HOST_WIDE_INT level;
+
+  // For the moment this attribute is not supported
+  error ("%J %qE attribute not yet supported", decl, name);
+  *no_add_attrs = true;
+  if (TREE_CODE (decl) != FUNCTION_DECL)
+    {
+      error ("%J %qE attribute applies only to functions", decl, name);
+      *no_add_attrs = true;
+    }
+  else {
+    if (! host_integerp (TREE_VALUE (args), 1))
+      {
+	error ("%J can't set %qE attribute: not an integer", decl, name);
+	*no_add_attrs = true;
+	return NULL_TREE;
+      }
+    /* Get the opt level.  */
+    level = tree_low_cst (TREE_VALUE (args), 1);
+    if (level > 3) {
+      error ("%J can't set %qE attribute: level is out of bounds [0-3]", decl,
+	     name);
+      *no_add_attrs = true;
+      return NULL_TREE;
+    }
+    /* Do nothing, just set the attribute.  We get it later with
+       lookup_attribute. */
+  }
+  return NULL_TREE;
+}
+#endif
 /* Handle a "externally_visible" attribute; arguments as in
    struct attribute_spec.handler.  */
 

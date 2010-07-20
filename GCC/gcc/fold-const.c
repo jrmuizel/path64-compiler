@@ -131,9 +131,11 @@ static tree optimize_minmax_comparison (enum tree_code, tree, tree, tree);
 static tree extract_muldiv (tree, tree, enum tree_code, tree, bool *);
 static tree extract_muldiv_1 (tree, tree, enum tree_code, tree, bool *);
 static int multiple_of_p (tree, tree, tree);
+#ifndef TARG_ST
 static tree fold_binary_op_with_conditional_arg (enum tree_code, tree,
 						 tree, tree,
 						 tree, tree, int);
+#endif
 static bool fold_real_zero_addition_p (tree, tree, int);
 static tree fold_mathfn_compare (enum built_in_function, enum tree_code,
 				 tree, tree, tree);
@@ -5454,6 +5456,20 @@ optimize_minmax_comparison (enum tree_code code, tree type, tree op0, tree op1)
      simplifications.  */
   switch (code)
     {
+#ifdef TARG_ST
+  /* [HK] Rather handle EQ_EXPR, LT_EXPR and GT_EXPR and do the rest
+     using inverse condition. This avoids creating spurious
+     ORIF(COND1, COND2) tree, which does not get simplified in the
+     Open64 Simplifier. */
+    case NE_EXPR:  case LE_EXPR:  case GE_EXPR: 
+      {
+	tree tem = optimize_minmax_comparison (invert_tree_comparison (code, false),
+					  type, op0, op1);
+	if (tem)
+	  return invert_truthvalue (tem);
+	return NULL_TREE;
+      }
+#else 
     case NE_EXPR:  case LT_EXPR:  case LE_EXPR:
       {
 	tree tem = optimize_minmax_comparison (invert_tree_comparison (code, false),
@@ -5470,6 +5486,7 @@ optimize_minmax_comparison (enum tree_code code, tree type, tree op0, tree op1)
 		     (EQ_EXPR, type, arg0, comp_const),
 		     optimize_minmax_comparison
 		     (GT_EXPR, type, arg0, comp_const));
+#endif
 
     case EQ_EXPR:
       if (op_code == MAX_EXPR && consts_equal)
@@ -5514,6 +5531,27 @@ optimize_minmax_comparison (enum tree_code code, tree type, tree op0, tree op1)
       else
 	/* MIN (X, 0) > -1  ->  X > -1  */
 	return fold_build2 (GT_EXPR, type, inner, comp_const);
+
+#ifdef TARG_ST
+    case LT_EXPR:
+      if (op_code == MIN_EXPR && (!(consts_equal || consts_lt) || consts_equal))
+	/* MIN (X, 0) < 0   ->  X < 0
+	   MIN (X, 0) < -5  ->  X < -5  */
+	return fold_build2 (LT_EXPR, type, inner, comp_const);
+
+      else if (op_code == MIN_EXPR)
+	/* MIN (X, 0) < 5  ->  true  */
+	return omit_one_operand (type, integer_one_node, inner);
+
+      else if (op_code == MAX_EXPR && (!(consts_equal || consts_lt) || consts_equal))
+	/* MAX (X, 0) < 0   ->  false
+	   MAX (X, 0) < -5  ->  false  */
+	return omit_one_operand (type, integer_zero_node, inner);
+
+      else
+	/* MAX (X, 0) < 1  ->  X < 1  */
+	return fold_build2 (LT_EXPR, type, inner, comp_const);
+#endif
 
     default:
       return NULL_TREE;
@@ -5962,6 +6000,7 @@ extract_array_ref (tree expr, tree *base, tree *offset)
    original expression.  Return NULL_TREE if no simplification is
    possible.  */
 
+#ifndef TARG_ST
 static tree
 fold_binary_op_with_conditional_arg (enum tree_code code,
 				     tree type, tree op0, tree op1,
@@ -6021,6 +6060,7 @@ fold_binary_op_with_conditional_arg (enum tree_code code,
   test = fold_build3 (COND_EXPR, type, test, lhs, rhs);
   return fold_convert (type, test);
 }
+#endif
 
 
 /* Subroutine of fold() that checks for the addition of +/- 0.0.
@@ -8573,6 +8613,10 @@ fold_binary (enum tree_code code, tree type, tree op0, tree op1)
 		       fold_build2 (code, type,
 				    op0, TREE_OPERAND (arg1, 1)));
 
+#ifndef TARG_ST
+      /* [HK] 20060628: fix for ddts MBTst25258: do not distribute operators in if-then-else blocks */
+      /* (cbr) don't Transform `a + (b ? x : y)' into `b ? (a + x) : (a + y)'
+	 since x or y can be either predicated or speculated sinking into a select */
       if (TREE_CODE (arg0) == COND_EXPR || COMPARISON_CLASS_P (arg0))
 	{
 	  tem = fold_binary_op_with_conditional_arg (code, type, op0, op1,
@@ -8590,6 +8634,7 @@ fold_binary (enum tree_code code, tree type, tree op0, tree op1)
 	  if (tem != NULL_TREE)
 	    return tem;
 	}
+#endif
     }
 
   switch (code)
@@ -11075,7 +11120,10 @@ fold_binary (enum tree_code code, tree type, tree op0, tree op1)
 		}
 	    }
 	}
-
+     
+      // [HK] 20071001 this transformation avoids detecting min/max cases after 
+      // if-conversion
+#ifndef TARG_ST
       /* Change X >= C to X > (C - 1) and X < C to X <= (C - 1) if C > 0.
 	 This transformation affects the cases which are handled in later
 	 optimizations involving comparisons with non-negative constants.  */
@@ -11098,6 +11146,7 @@ fold_binary (enum tree_code code, tree type, tree op0, tree op1)
 				  fold_convert (TREE_TYPE (arg0), arg1));
 	    }
 	}
+#endif
 
       /* Comparisons with the highest or lowest possible integer of
 	 the specified size will have known values.  */
@@ -11521,6 +11570,30 @@ fold_ternary (enum tree_code code, tree type, tree op0, tree op1, tree op2)
 	}
       if (operand_equal_p (arg1, op2, 0))
 	return pedantic_omit_one_operand (type, arg1, arg0);
+
+#ifdef TARG_ST
+      /* [HK] 20060509 if we are in the case A op C1 ? Min/Max(A, C2): C1,
+	 see if it can be simplified to a minmax/maxmin operator
+	 (fix for ddts MBTst16474) */
+
+      if ( (TREE_CODE (arg1) == MIN_EXPR
+	    || TREE_CODE (arg1) == MAX_EXPR)
+	   && TREE_CODE (TREE_OPERAND (arg1, 1)) == INTEGER_CST
+	   && COMPARISON_CLASS_P (arg0)
+	   && TREE_CODE (TREE_OPERAND (arg0, 1)) == INTEGER_CST
+	   && TREE_CODE (op2) == INTEGER_CST)
+	{
+	  tem = optimize_minmax_comparison (TREE_CODE (arg0),
+					    TREE_TYPE (arg0),
+					    arg1,
+					    op2);
+	  if (tem
+	      && operand_equal_for_comparison_p (arg0, tem,
+						 TREE_OPERAND (arg0, 1))
+	      && !HONOR_SIGNED_ZEROS (TYPE_MODE (TREE_TYPE (arg1))))
+	    arg0 = build2 (TREE_CODE (arg0), TREE_TYPE (arg0), arg1, op2);
+	}
+#endif
 
       /* If we have A op B ? A : C, we may be able to convert this to a
 	 simpler expression, depending on the operation and the values

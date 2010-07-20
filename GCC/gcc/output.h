@@ -628,5 +628,12 @@ extern void dbxout_stab_value_internal_label_diff (const char *, int *,
 						   const char *);
 
 #endif
-
+#ifdef TARG_ST
+#include "gcc_config.h"
+extern int Additional_Register_Names_Size;
+extern gcc_register_map_t *Additional_Register_Names;
+extern char *Call_Used_Registers;
+extern char *Fixed_Registers;
+extern int Number_Of_Registers;
+#endif
 #endif /* ! GCC_OUTPUT_H */

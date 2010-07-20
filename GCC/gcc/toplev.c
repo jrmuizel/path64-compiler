@@ -305,6 +305,14 @@ int flag_complex_method = 1;
 
 int flag_really_no_inline = 2;
 
+#ifdef TARG_ST
+/* open64 forces flag_no_inline and flag_really_no_inline; these are the
+   values as set by gcc before open64 messes with them. */
+
+int gnu_flag_no_inline = 2;
+int gnu_flag_really_no_inline = 2;
+#endif
+
 /* Nonzero means we should be saving declaration info into a .X file.  */
 
 int flag_gen_aux_info = 0;
@@ -1309,6 +1317,9 @@ void remove_asm_file (void) {
     if (fclose (asm_out_file) != 0)
       fatal_error ("error closing %s: %m", asm_file_name);
     if (unlink (asm_file_name) != 0)
+#ifdef TARG_ST
+      if (strcmp(asm_file_name, HOST_BIT_BUCKET) != 0)
+#endif
       fprintf (stderr, "unable to remove assembly file.\n");
   }
 }
@@ -1323,9 +1334,13 @@ init_asm_output (const char *name)
 {
 #ifdef KEY
   if (flag_spin_file) {
+#ifdef TARG_ST
+    asm_file_name = HOST_BIT_BUCKET;
+#else
     asm_file_name = tempnam ("/tmp", "");
     if (asm_file_name == NULL)
       gcc_assert (0);
+#endif
   }
 #endif
 
@@ -1580,6 +1595,16 @@ general_init (const char *argv0)
   init_stringpool ();
   linemap_init (&line_table);
   init_ttree ();
+
+#ifdef TARG_ST
+  //TB: Init GCC internal config from targinfo data: Need to be done after the Configure phase
+  extern void Configure (void);
+  Configure ();
+  GCCTARG_Configure_Gcc_From_Targinfo ();
+  // Initialize internla gcc arrays using targinfo data
+  extern void WFE_Loader_Initialize_Register(void);
+  WFE_Loader_Initialize_Register();
+#endif
 
   /* Initialize register usage now so switches may override.  */
   init_reg_sets ();
@@ -2008,6 +2033,22 @@ lang_dependent_init (const char *name)
 }
 
 /* Clean up: close opened files, etc.  */
+
+#ifdef TARG_ST
+extern void Cleanup_Files (bool, bool);
+void
+Cleanup_Files (bool report ATTRIBUTE_UNUSED, bool delete_dotofile ATTRIBUTE_UNUSED)
+{
+  if (flag_gen_aux_info)
+    {
+      fclose (aux_info_file);
+      if (errorcount)
+	unlink (aux_info_file_name);
+    }
+  if (flag_spin_file)
+    remove_asm_file ();
+}
+#endif
 
 static void
 finalize (void)

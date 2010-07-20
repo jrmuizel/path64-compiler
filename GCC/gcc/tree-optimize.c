@@ -59,9 +59,13 @@ Boston, MA 02110-1301, USA.  */
 static bool
 gate_all_optimizations (void)
 {
+#ifdef TARG_ST
+  return 0;
+#else
   return (optimize >= 1
 	  /* Don't bother doing anything if the program has errors.  */
 	  && !(errorcount || sorrycount));
+#endif
 }
 
 struct tree_opt_pass pass_all_optimizations =
