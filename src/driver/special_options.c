@@ -150,21 +150,9 @@ set_defaults (void)
 	// Use the system's GCC version to select -gnu3/-gnu4 as the default.
 	// Bug 11426.
 	if (!is_toggled(gnu_major_version)) {
-	  toggle(&gnu_major_version, get_gcc_major_version());
-	  switch (gnu_major_version) {
-	    case 3:	// default to GCC 3.3
-	      toggle(&gnu_minor_version, 3);
-	      break;
-	    case 4:	// default to GCC 4.2
-	      toggle(&gnu_minor_version, 2);
-	      break;
-	    case 0:
-	      error("unable to find GCC installed on system");
-	      break;
-	    default:
-	      error("installed GCC version %d is not supported",
-		    gnu_major_version);
-	  }
+        // defaulting to GCC 4.2
+        gnu_major_version = 4;
+        gnu_minor_version = 2;
 	}
 #endif
 }

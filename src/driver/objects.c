@@ -391,8 +391,8 @@ add_library_options (void)
     } else {
 #endif // TARG_MIPS
         switch (abi) {
-        case ABI_N32:
-        case ABI_64:
+        case ABI_M32:
+        case ABI_M64:
         case ABI_I64:
         case ABI_IA32:
             break;

@@ -503,10 +503,10 @@ Process_Targ_Group ( char *targ_args )
       if ( is_target_arch_X8664() ) {
 	    if ( strncasecmp ( cp+4, "n32", 3 ) == 0 ) {
 	      add_option_seen ( O_m32 );
-	      toggle ( &abi, ABI_N32 );
+	      toggle ( &abi, ABI_M32 );
 	    } else if ( strncasecmp ( cp+4, "n64", 3 ) == 0 ) {
 	      add_option_seen ( O_m64 );
-	      toggle ( &abi, ABI_64 );
+	      toggle ( &abi, ABI_M64 );
 	    }
       }
 #endif
@@ -774,8 +774,8 @@ Check_Target ( void )
 #ifdef TARG_X8664
     if (is_target_arch_X8664()) {
       switch ( abi ) {
-      case ABI_N32:
-      case ABI_64:
+      case ABI_M32:
+      case ABI_M64:
 	    opt_val = ISA_X8664;
 	    toggle ( &isa, opt_val );
         break;
@@ -1578,38 +1578,38 @@ static struct
 {
   char *cpu_name;
   char *target_name;
-  int abi;			// CPUs supporting ABI_64 also support ABI_N32
+  int abi;			// CPUs supporting ABI_M64 also support ABI_M32
   boolean supports_sse2;	// TRUE if support SSE2
   boolean prefers_sse3;		// TRUE if target prefers code to use SSE3
   boolean supports_3dnow;       // TRUE if target supports 3dnow
   boolean supports_sse4a;       // TRUE if support SSE4a
 } supported_cpu_types[] = {
-  { "any_64bit_x86",	"anyx86",	ABI_64,		TRUE,	FALSE, FALSE, FALSE},
-  { "any_32bit_x86",	"anyx86",	ABI_N32,	FALSE,	FALSE, FALSE, FALSE},
-  { "i386",	"anyx86",		ABI_N32,	FALSE,	FALSE, FALSE, FALSE},
-  { "i486",	"anyx86",		ABI_N32,	FALSE,	FALSE, FALSE, FALSE},
-  { "i586",	"anyx86",		ABI_N32,	FALSE,	FALSE, FALSE, FALSE},
-  { "athlon",	"athlon",		ABI_N32,	FALSE,	FALSE, TRUE, FALSE},
-  { "athlon-mp", "athlon",		ABI_N32,	FALSE,	FALSE, TRUE, FALSE},
-  { "athlon-xp", "athlon",		ABI_N32,	FALSE,	FALSE, TRUE, FALSE},
-  { "athlon64",	"athlon64",		ABI_64,		TRUE,	FALSE, TRUE,  FALSE},
-  { "athlon64fx", "opteron",		ABI_64,		TRUE,	FALSE, TRUE,  FALSE},
-  { "turion",	"athlon64",		ABI_64,		TRUE,	FALSE, TRUE,  FALSE},
-  { "i686",	"pentium4",		ABI_N32,	FALSE,	FALSE, FALSE, FALSE},
-  { "ia32",	"pentium4",		ABI_N32,	TRUE,	FALSE, FALSE, FALSE},
-  { "k7",	"athlon",		ABI_N32,	FALSE,	FALSE, TRUE,  FALSE},
-  { "k8",	"opteron",		ABI_64,		TRUE,	FALSE, TRUE,  FALSE},
-  { "opteron",	"opteron",		ABI_64,		TRUE,	FALSE, TRUE,  FALSE},
-  { "pentium4",	"pentium4",		ABI_N32,	TRUE,	FALSE, FALSE, FALSE},
-  { "xeon",	"xeon",			ABI_N32,	TRUE,	FALSE, FALSE, FALSE},
-  { "em64t",	"em64t",		ABI_64,		TRUE,	TRUE,  FALSE, FALSE},
-  { "core",	"core",			ABI_64,		TRUE,	TRUE,  FALSE, FALSE},
-  { "wolfdale",	"wolfdale",		ABI_64,		TRUE,	TRUE,  FALSE, FALSE},
-  { "harpertown", "wolfdale",		ABI_64,		TRUE,	TRUE,  FALSE, FALSE},
-  { "barcelona","barcelona",		ABI_64,		TRUE,	TRUE,  TRUE,  TRUE},
-  { "shanghai",	"barcelona",		ABI_64,		TRUE,	TRUE,  TRUE,  TRUE},
-  { "istanbul",	"barcelona",		ABI_64,		TRUE,	TRUE,  TRUE,  TRUE},
-  { "nehalem",	"wolfdale",		ABI_64,		TRUE,	TRUE,  FALSE, FALSE},
+  { "any_64bit_x86",	"anyx86",	ABI_M64,	TRUE,	FALSE, FALSE, FALSE},
+  { "any_32bit_x86",	"anyx86",	ABI_M32,	FALSE,	FALSE, FALSE, FALSE},
+  { "i386",	"anyx86",		ABI_M32,	FALSE,	FALSE, FALSE, FALSE},
+  { "i486",	"anyx86",		ABI_M32,	FALSE,	FALSE, FALSE, FALSE},
+  { "i586",	"anyx86",		ABI_M32,	FALSE,	FALSE, FALSE, FALSE},
+  { "athlon",	"athlon",		ABI_M32,	FALSE,	FALSE, TRUE, FALSE},
+  { "athlon-mp", "athlon",		ABI_M32,	FALSE,	FALSE, TRUE, FALSE},
+  { "athlon-xp", "athlon",		ABI_M32,	FALSE,	FALSE, TRUE, FALSE},
+  { "athlon64",	"athlon64",		ABI_M64,		TRUE,	FALSE, TRUE,  FALSE},
+  { "athlon64fx", "opteron",	ABI_M64,		TRUE,	FALSE, TRUE,  FALSE},
+  { "turion",	"athlon64",		ABI_M64,		TRUE,	FALSE, TRUE,  FALSE},
+  { "i686",	"pentium4",		ABI_M32,	FALSE,	FALSE, FALSE, FALSE},
+  { "ia32",	"pentium4",		ABI_M32,	TRUE,	FALSE, FALSE, FALSE},
+  { "k7",	"athlon",		ABI_M32,	FALSE,	FALSE, TRUE,  FALSE},
+  { "k8",	"opteron",		ABI_M64,	TRUE,	FALSE, TRUE,  FALSE},
+  { "opteron",	"opteron",		ABI_M64,		TRUE,	FALSE, TRUE,  FALSE},
+  { "pentium4",	"pentium4",		ABI_M32,	TRUE,	FALSE, FALSE, FALSE},
+  { "xeon",	"xeon",			ABI_M32,	TRUE,	FALSE, FALSE, FALSE},
+  { "em64t",	"em64t",		ABI_M64,		TRUE,	TRUE,  FALSE, FALSE},
+  { "core",	"core",			ABI_M64,		TRUE,	TRUE,  FALSE, FALSE},
+  { "wolfdale",	"wolfdale",		ABI_M64,		TRUE,	TRUE,  FALSE, FALSE},
+  { "harpertown", "wolfdale",		ABI_M64,		TRUE,	TRUE,  FALSE, FALSE},
+  { "barcelona","barcelona",		ABI_M64,		TRUE,	TRUE,  TRUE,  TRUE},
+  { "shanghai",	"barcelona",		ABI_M64,		TRUE,	TRUE,  TRUE,  TRUE},
+  { "istanbul",	"barcelona",		ABI_M64,		TRUE,	TRUE,  TRUE,  TRUE},
+  { "nehalem",	"wolfdale",		ABI_M64,		TRUE,	TRUE,  FALSE, FALSE},
   { NULL,	NULL, },
 };
   
@@ -1656,14 +1656,14 @@ get_platform_abi(void)
 {
 #if defined(PATH64_DEFAULT_ABI)
 #  if PATH64_DEFAULT_ABI == 32
-  return ABI_N32;
+  return ABI_M32;
 #  elif PATH64_DEFAULT_ABI == 64
-  return ABI_64;
+  return ABI_M64;
 #  else
 #    error Unsupported value for PATH64_DEFAULT_ABI
 #  endif
 #else
-  return (sizeof(void *) == 8) ? ABI_64 : ABI_N32;
+  return (sizeof(void *) == 8) ? ABI_M64 : ABI_M32;
 #endif
 }
 
@@ -1693,7 +1693,7 @@ get_default_cpu_name (char *msg)
   char *cpu_name = NULL;
   char *abi_name = NULL;
 
-  if (get_platform_abi() == ABI_64) {
+  if (get_platform_abi() == ABI_M64) {
     cpu_name = "anyx86";
     abi_name = "64-bit";
   } else {
@@ -1784,7 +1784,7 @@ get_x86_auto_cpu_name ()
   char *brand_string = get_sysctl_str(MACHDEP_CPU_BRAND_STRING, buf,
     sizeof buf);
 
-  char *cpu_name = (get_platform_abi() == ABI_N32) ? "xeon" : "core";
+  char *cpu_name = (get_platform_abi() == ABI_M32) ? "xeon" : "core";
 #else /* defined(BUILD_OS_DARWIN) */
   FILE *f;
   char buf[256];
@@ -1916,7 +1916,7 @@ get_x86_auto_cpu_name ()
 
   // If cpuinfo doesn't say if CPU is 32 or 64-bit, ask the OS.
   if (cpu_name_64bit != NULL) {
-    if (get_platform_abi() == ABI_64) {
+    if (get_platform_abi() == ABI_M64) {
       cpu_name = cpu_name_64bit;
     }
   }
@@ -2224,17 +2224,17 @@ Get_x86_ISA ()
   if (!strcmp(target_cpu, "anyx86")) {		// anyx86
     // Need ABI to select any_32bit_x86 or any_64bit_x86 ISA.
     if (abi == UNDEFINED) {
-      if (get_platform_abi() == ABI_64) {
-	abi = ABI_64;
+      if (get_platform_abi() == ABI_M64) {
+	abi = ABI_M64;
 	add_option_seen(O_m64);
       } else {
-	abi = ABI_N32;
+	abi = ABI_M32;
 	add_option_seen(O_m32);
       }
     }
     switch (abi) {
-      case ABI_N32:	name = "any_32bit_x86"; break;
-      case ABI_64:	name = "any_64bit_x86"; break;
+      case ABI_M32:	name = "any_32bit_x86"; break;
+      case ABI_M64:	name = "any_64bit_x86"; break;
       default:		internal_error("illegal ABI");
     }
   } else

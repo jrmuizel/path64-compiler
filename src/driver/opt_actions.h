@@ -37,6 +37,9 @@
 */
 
 
+#ifndef __DRIVER_OPT_ACTIONS_H__
+#define __DRIVER_OPT_ACTIONS_H__
+
 #include "basic.h"
 
 /* values of options */
@@ -71,7 +74,9 @@ typedef enum {
   ABI_64,
   ABI_I32,
   ABI_I64,
-  ABI_IA32
+  ABI_IA32,
+  ABI_M32,
+  ABI_M64
 } ABI;
 typedef enum {
   ISA_NONE      = 0,
@@ -174,3 +179,6 @@ extern ABI get_platform_abi(void);
 extern int subverbose ;
 
 extern char *target_cpu;
+
+#endif // __DRIVER_OPT_ACTIONS_H__
+

@@ -364,6 +364,13 @@ add_language_option ( string_list_t *args )
 static void
 add_targ_options ( string_list_t *args )
 {
+  // -TARG:abi=xxx
+  if(abi == ABI_M32 || abi == ABI_N32) {
+    add_string(args, "-TARG:abi=n32");
+  } else {
+    add_string(args, "-TARG:abi=n64");
+  }
+
   // -TARG:processor=xxx
   if (target_cpu != NULL) {
     char buf[100];
@@ -594,28 +601,10 @@ add_inc_path(string_list_t *args, const char *fmt, ...)
 
 boolean platform_is_64bit(void)
 {
-
-	return get_platform_abi() == ABI_64;
+    int platform_abi = get_platform_abi();
+    return platform_abi == ABI_64 || platform_abi == ABI_M64;
 }
 
-boolean
-target_is_native(void)
-{
-	static boolean native;
-	static boolean native_set;
-
-	if (!native_set) {
-		if (platform_is_64bit()) {
-			native = abi != ABI_N32;
-		} else {
-			native = abi == ABI_N32;
-		}
-
-		native_set = TRUE;
-	}
-	
-	return native;
-}
 
 #ifdef KEY
 // Like add_file_args but add args that must precede options specified on the
@@ -671,9 +660,9 @@ add_abi(string_list_t *args) {
 #ifdef TARG_X8664
     if (is_target_arch_X8664()) {
 #if defined(BUILD_OS_DARWIN) || defined(__sun)
-		add_string(args, (abi == ABI_N32) ? "-m32" : "-m64");
+		add_string(args, (abi == ABI_M32) ? "-m32" : "-m64");
 #else /* defined(BUILD_OS_DARWIN) */
-		if( abi == ABI_N32 ){
+		if( abi == ABI_M32 ){
 		  add_string(args, "-m32");
 		}
 #endif /* defined(BUILD_OS_DARWIN) */
@@ -697,7 +686,7 @@ add_target_linker_args(string_list_t *args) {
 #ifdef TARG_X8664
     if(is_target_arch_X8664()) {
 #ifdef __linux__
-        if(abi == ABI_N32) {
+        if(abi == ABI_M32) {
             add_arg(args, "--dynamic-linker=/lib/ld-linux.so.2");
         } else {
             // TODO: check that this path correct on all linux distros
@@ -715,9 +704,9 @@ add_target_linker_args(string_list_t *args) {
 #ifdef TARG_X8664
     if(is_target_arch_X8664()) {
 #if defined(__sun)
-        add_string(args, (abi == ABI_N32) ? "-32" : "-64");
+        add_string(args, (abi == ABI_M32) ? "-32" : "-64");
 #else // __sun
-        add_string(args, (abi == ABI_N32) ? "-melf_i386" : "-melf_x86_64");
+        add_string(args, (abi == ABI_M32) ? "-melf_i386" : "-melf_x86_64");
 #endif // __sun
     }
 #endif // TARG_X8664
@@ -1247,7 +1236,7 @@ add_file_args (string_list_t *args, phases_t index)
 #ifdef KEY
 	case P_spin_cc1:
 	case P_spin_cc1plus:
-		if (platform_is_64bit()) {
+		if (abi == ABI_M64) {
 		    add_string(args, "-m64");
 		} else {
 		    add_string(args, "-m32");
@@ -1677,12 +1666,11 @@ add_file_args (string_list_t *args, phases_t index)
                 if( ! option_was_seen(O_nostartfiles)){
                        if ((shared != DSO_SHARED) && (shared != RELOCATABLE)){
 
-               char *runtime_path = target_runtime_path();
+               const char *runtime_path = target_runtime_path();
                char *crt1_path = concat_strings(runtime_path, "/crt1.o");
                char *crti_path = concat_strings(runtime_path, "/crti.o");
                char *lib_path = target_library_path();
                char *crtbegin_path = concat_strings(lib_path, "/crtbegin.o");
-               free(runtime_path);
                free(lib_path);
 
 			   add_string_if_new_basename(args, crt1_path);
@@ -1714,7 +1702,7 @@ add_file_args (string_list_t *args, phases_t index)
         add_target_linker_args(args);
 #ifdef TARG_X8664
         if (is_target_arch_X8664()) {
-          if( abi == ABI_N32 ) {
+          if( abi == ABI_M32 ) {
             add_string(args, "-m");
             add_string(args,"elf_i386");
           }
@@ -1747,12 +1735,11 @@ add_file_args (string_list_t *args, phases_t index)
 		    && ! option_was_seen(O_nostartfiles)) 
 		{
 
-            char *runtime_path = target_runtime_path();
+            const char *runtime_path = target_runtime_path();
             char *lib_path = target_library_path();
             char *crt1_path = concat_strings(runtime_path, "/crt1.o");
             char *crti_path = concat_strings(runtime_path, "/crti.o");
             char *crtbegin_path = concat_strings(lib_path, "/crtbegin.o");
-            free(runtime_path);
             free(lib_path);
 
             add_string_if_new_basename(args, crt1_path);
@@ -1893,7 +1880,7 @@ get_libgcc_s_name(char **libgcc_s_std, char **libgcc_s_dir32)
 	// cross compiler, libgcc_s may appear under a different name in a "32"
 	// dir.  Return that name in LIBGCC_S_DIR32.
 
-	if (abi == ABI_N32 && platform_is_64bit()) {
+	if ((abi == ABI_M32 || abi == ABI_N32) && platform_is_64bit()) {
 		int v = get_gcc_major_version();
 		if (v < 4) {	// bug 11407
 		  *libgcc_s_std = "gcc_s_32";
@@ -2044,14 +2031,13 @@ add_final_ld_args (string_list_t *args)
         /* Add trailing crt*.o objects if needed. See the first part in add_file_args() */
         if( ! option_was_seen(O_nostartfiles)) {
             char *lib_path = target_library_path();
-            char *runtime_path = target_runtime_path();
+            const char *runtime_path = target_runtime_path();
             char *crtn_path = concat_strings(runtime_path, "/crtn.o");
             const char *crtend_name = ((shared != DSO_SHARED) && (shared != RELOCATABLE)) ?
                                       "/crtend.o" :
                                       "/crtendS.o";
             char *crtend_path = concat_strings(lib_path, crtend_name);
             free(lib_path);
-            free(runtime_path);
 
             add_string(args, crtend_path);
             add_string_if_new_basename(args, crtn_path);

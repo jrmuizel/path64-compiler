@@ -68,6 +68,7 @@ static char *rcs_id = "$Source: driver/SCCS/s.main.c $ $Revision: 1.109 $";
 #include "run.h"
 #include "objects.h"
 #include "version.h"
+#include "targets.h"
 
 char *help_pattern;
 boolean debug;
@@ -197,14 +198,8 @@ main (int argc, char *argv[])
             do_exit(1);
         }
 
-	/* Try to find where the compiler is located and set the phase
-	   and library directories appropriately. */
-	set_executable_dir();
-
 	// "-o -" will set this to TRUE.
 	dump_outfile_to_stdout = FALSE;
-
-	init_phase_info();	/* can't add toolroot until other prefixes */
 
         /* Hack for F90 ftpp; For pre processing F90 calls ftpp;
          * Unlike cpp, ftpp does not like the -Amachine(mips) and -Asystem(unix)
@@ -357,6 +352,14 @@ main (int argc, char *argv[])
 		}
 	}
 
+    init_targets();
+
+	/* Try to find where the compiler is located and set the phase
+	   and library directories appropriately. */
+	set_executable_dir();
+
+	init_phase_info();	/* can't add toolroot until other prefixes */
+
 	// Determine if the compiler is called as a linker.
 	int num_non_h_src_files = num_files - num_h_files - num_o_files;
 	boolean called_as_linker =
@@ -378,7 +381,7 @@ main (int argc, char *argv[])
 	Check_Target ();
 #if defined(BUILD_OS_DARWIN)
 	/* Mach-O X86_64 requires PIC */
-	if (abi == ABI_64) {
+	if (abi == ABI_M64) {
 	  toggle(&pic, TRUE);
 	  add_option_seen(O_fpic);
 	}
@@ -452,7 +455,7 @@ main (int argc, char *argv[])
 #ifdef KEY
 	// bug 10620
 	if (mem_model != M_SMALL &&
-	    abi == ABI_N32) {
+	    (abi == ABI_N32 || abi == ABI_M32)) {
 	  error("code model \"%s\" not support in 32-bit mode", mem_model_name);
 	}
 	// bug 9066
@@ -775,9 +778,11 @@ static void set_executable_dir (void) {
       basedir = ".";
     }
 #endif /* KEY Mac port */
+    char *target_ppath = target_phase_path();
     substitute_phase_dirs (LIBPATH, basedir, "/lib/" PSC_FULL_VERSION);
-    substitute_phase_dirs (PHASEPATH, basedir, "/lib/" PSC_FULL_VERSION);
+    substitute_phase_dirs (PHASEPATH, "", target_phase_path());
     substitute_phase_dirs ("/usr/include", basedir, "/include");
+    free(target_ppath);
     return;
   }
 
@@ -1119,8 +1124,8 @@ print_defaults(int argc, char *argv[])
   if (is_target_arch_X8664()) {
     // ABI
     switch (abi) {
-      case ABI_N32:	fprintf(stderr, " -m32"); break;
-      case ABI_64:	fprintf(stderr, " -m64"); break;
+      case ABI_M32:	fprintf(stderr, " -m32"); break;
+      case ABI_M64:	fprintf(stderr, " -m64"); break;
       default:		internal_error("unknown default ABI");
     }
 
