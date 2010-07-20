@@ -123,5 +123,5 @@ path64_set_multiarch_property(lno PREFIX "")
 path64_multiarch_link_multiarch_libraries(lno ipl)
 path64_add_multiarch_dependencies(lno generate_preg_list generate_topcode)
 path64_set_multiarch_property(lno COMPILE_FLAGS
-                              "-DSHARED_BUILD -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@")
+                              "-DSHARED_BUILD -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 

@@ -85,8 +85,6 @@ Multiple targets can be specified with
   \"-DPATH64_ENABLE_TARGETS=x8664_32;mips_64\"
 on the command line.")
 endif()
-# Multi target support is indefinitely delayed
-set(BUILD_TARGET_DIR "x8664")
 
 # Define if we are doing a supported build
 OPTION(PATH64_ENABLE_SUPPORTED "Enabling supported build" OFF)

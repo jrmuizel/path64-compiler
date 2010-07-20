@@ -223,4 +223,4 @@ path64_add_multiarch_multiarch_dependencies(cg targinfo)
 
 path64_add_multiarch_dependencies(cg generate_preg_list generate_topcode)
 path64_set_multiarch_property(cg COMPILE_FLAGS
-                              "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@")
+                              "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/@ARCH@")

@@ -14,7 +14,6 @@ INCLUDE_DIRECTORIES(
   purple2
   .
 
-  cg/x8664
   cg/gra_mon
   cg/swp
 
@@ -26,7 +25,6 @@ INCLUDE_DIRECTORIES(
   ../ipa_link/include
 
   ../common/com
-  ../common/com/${BUILD_TARGET_DIR}
   ../common/instrument
   ../common/targ_info/access
   ../common/util

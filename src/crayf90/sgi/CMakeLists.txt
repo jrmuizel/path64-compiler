@@ -13,7 +13,6 @@ include_directories(
 ../../arith
 ../../common/util
 ../../common/com
-../../common/com/x8664
 ../../linux/mfef90_includes
 ../../clibinc/cray
 ../include

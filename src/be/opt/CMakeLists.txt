@@ -80,7 +80,7 @@ path64_set_multiarch_sources(wopt_sources COMMON ${PATHSCALE_WOPT_SRCS})
 path64_add_multiarch_library(wopt STATIC wopt_sources)
 path64_add_multiarch_dependencies(wopt generate_preg_list generate_topcode)
 path64_set_multiarch_property(wopt COMPILE_FLAGS
-                              "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@")
+                              "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 
 path64_set_multiarch_sources(wopt_shared_sources COMMON
                              init.cxx
@@ -92,7 +92,7 @@ path64_set_multiarch_property(wopt-shared OUTPUT_NAME "wopt")
 path64_set_multiarch_property(wopt-shared COMPILE_DEFINITIONS "SHARED_BUILD")
 path64_add_multiarch_dependencies(wopt-shared generate_preg_list generate_topcode)
 path64_set_multiarch_property(wopt-shared COMPILE_FLAGS
-                              "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@")
+                              "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 
 # TODO : double check this is correct. wopt.so just includes be.os at the end of the list of objects
 path64_multiarch_link_multiarch_libraries(wopt-shared be)
