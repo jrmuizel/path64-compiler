@@ -1,7 +1,7 @@
 set(PATHSCALE_LNO_SRCS
 				"../com/cxx_template.cxx"
 				"../com/dep_graph.cxx"
-				"x8664/lnotarget.cxx"
+				"@ARCH@/lnotarget.cxx"
 				"lnodriver.cxx"
 				"lnopt_main.cxx"
 				"lnoutils.cxx"
@@ -117,11 +117,11 @@ ADD_DEFINITIONS(
 	-D_NEW_SYMTAB
 	-DMONGOOSE_BE)
 
-add_library(lno SHARED ${PATHSCALE_LNO_SRCS})
-set_property(TARGET lno PROPERTY PREFIX "")
-target_link_libraries(lno ipl)
-set_property(TARGET lno PROPERTY PREFIX "")
-ADD_DEPENDENCIES(lno generate_preg_list)
-ADD_DEPENDENCIES(lno generate_topcode)
+path64_set_multiarch_sources(lno_sources COMMON ${PATHSCALE_LNO_SRCS})
+path64_add_multiarch_library(lno SHARED lno_sources)
+path64_set_multiarch_property(lno PREFIX "")
+path64_multiarch_link_multiarch_libraries(lno ipl)
+path64_add_multiarch_dependencies(lno generate_preg_list generate_topcode)
+path64_set_multiarch_property(lno COMPILE_FLAGS
+                              "-DSHARED_BUILD -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@")
 
-install(TARGETS lno LIBRARY DESTINATION ${PATH64_LIB_PATH})

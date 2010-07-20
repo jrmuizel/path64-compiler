@@ -2046,10 +2046,12 @@ I-u%s		;		Cc	ld	"-u %s"
 	""
 -mred-zone	; 	Cc	NONE	""
 	""
+#ifdef TARG_X8664
 -mregparm=%d	mregparm=optargd; 	Cc	cfe	"-mregparm=%d"
 	"Control how many registers are used to pass integer arguments"
 -msseregparm	msseregparm=TRUE; 	Cc	cfe	self
 	"Use SSE register passing conventions for float and double arguments and return values"
+#endif
 #endif
 %%% x86 extensions
 -mmmx	;		ALL	NONE	self

@@ -17,21 +17,23 @@
 
 // Returns current target architecture
 char * target_architecture() {
-#ifdef TARG_X8664
-    return "x8664";
-#else
-#error "Only X8664 multilib is supported for now"
-#endif
+    return NULL;
+//#ifdef TARG_X8664
+//    return "x8664";
+//#else
+//#error "Only X8664 multilib is supported for now"
+//#endif
 }
 
 
 // Returns current target abi
 char * target_abi() {
-#ifdef TARG_X8664
-    return abi == ABI_N32 ? "32" : "64";
-#else
-#error "Only X8664 multilib is supported for now"
-#endif
+    return NULL;
+//#ifdef TARG_X8664
+//    return abi == ABI_N32 ? "32" : "64";
+//#else
+//#error "Only X8664 multilib is supported for now"
+//#endif
 }
 
 

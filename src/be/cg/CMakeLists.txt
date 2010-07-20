@@ -1,4 +1,3 @@
-# TODO : These should not have a hard coded x8664 and should be per target
 SET(PATHSCALE_CG_SRCS
 			"${PATHSCALE_BINARY_DIR}/be/bb_list.cxx"
 			"${PATHSCALE_BINARY_DIR}/be/gra_bb_list.cxx"
@@ -29,30 +28,30 @@ SET(PATHSCALE_CG_SRCS
 			"../../be/cg/swp/cg_swp_op_vector.cxx"
 			"../../be/cg/swp/cg_swp_scheduler.cxx"
 			"../../be/cg/swp/cg_swp_slack.cxx"
-			"../../be/cg/x8664/cg_flags_arch.cxx"
-			"../../be/cg/x8664/cg_swp_target.cxx"
-			"../../be/cg/x8664/cgdwarf_targ.cxx"
-			"../../be/cg/x8664/cgemit_targ.cxx"
-			"../../be/cg/x8664/cgtarget.cxx"
-			"../../be/cg/x8664/cg_loop_recur.cxx"
-			"../../be/cg/x8664/ebo_special.cxx"
-			"../../be/cg/x8664/entry_exit_targ.cxx"
-			"../../be/cg/x8664/exp_branch.cxx"
-			"../../be/cg/x8664/exp_divrem.cxx"
-			"../../be/cg/x8664/exp_loadstore.cxx"
-			"../../be/cg/x8664/exp_predicate.cxx"
-			"../../be/cg/x8664/expand.cxx"
-			"../../be/cg/x8664/pqs_cg.cxx"
-			"../../be/cg/x8664/pqs.cxx"
-			"../../be/cg/x8664/register_targ.cxx"
-			"../../be/cg/x8664/cg_sched.cxx"
-			"../../be/cg/x8664/cg_convert_x87.cxx"
-			"../../be/cg/x8664/cg_misc.cxx"
+			"../../be/cg/@ARCH@/cg_flags_arch.cxx"
+			"../../be/cg/@ARCH@/cg_swp_target.cxx"
+			"../../be/cg/@ARCH@/cgdwarf_targ.cxx"
+			"../../be/cg/@ARCH@/cgemit_targ.cxx"
+			"../../be/cg/@ARCH@/cgtarget.cxx"
+			"../../be/cg/@ARCH@/cg_loop_recur.cxx"
+			"../../be/cg/@ARCH@/ebo_special.cxx"
+			"../../be/cg/@ARCH@/entry_exit_targ.cxx"
+			"../../be/cg/@ARCH@/exp_branch.cxx"
+			"../../be/cg/@ARCH@/exp_divrem.cxx"
+			"../../be/cg/@ARCH@/exp_loadstore.cxx"
+			"../../be/cg/@ARCH@/exp_predicate.cxx"
+			"../../be/cg/@ARCH@/expand.cxx"
+			"../../be/cg/@ARCH@/pqs_cg.cxx"
+			"../../be/cg/@ARCH@/pqs.cxx"
+			"../../be/cg/@ARCH@/register_targ.cxx"
+			"../../be/cg/@ARCH@/cg_sched.cxx"
+			"../../be/cg/@ARCH@/cg_convert_x87.cxx"
+			"../../be/cg/@ARCH@/cg_misc.cxx"
 			"../../common/com/em_dwarf.cxx"
 			"../../common/com/em_elf.cxx"
-			"../../common/com/x8664/targ_em_const.cxx"
-			"../../common/com/x8664/targ_em_elf.cxx"
-			"../../common/com/x8664/targ_em_dwarf.cxx"
+			"../../common/com/@ARCH@/targ_em_const.cxx"
+			"../../common/com/@ARCH@/targ_em_elf.cxx"
+			"../../common/com/@ARCH@/targ_em_dwarf.cxx"
 			"../../be/cg/annotations.cxx"
 			"../../be/cg/bblist.cxx"
 			"../../be/cg/bb_map.cxx"
@@ -218,8 +217,10 @@ add_custom_command(
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 
-add_library(cg STATIC ${PATHSCALE_CG_SRCS} ${PATHSCALE_BINARY_DIR}/be/opsch_set.h)
-add_dependencies(cg targinfo)
+path64_set_multiarch_sources(cg_sources COMMON ${PATHSCALE_CG_SRCS} ${PATHSCALE_BINARY_DIR}/be/opsch_set.h)
+path64_add_multiarch_library(cg STATIC cg_sources)
+path64_add_multiarch_multiarch_dependencies(cg targinfo)
 
-ADD_DEPENDENCIES(cg generate_preg_list)
-ADD_DEPENDENCIES(cg generate_topcode)
+path64_add_multiarch_dependencies(cg generate_preg_list generate_topcode)
+path64_set_multiarch_property(cg COMPILE_FLAGS
+                              "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@")

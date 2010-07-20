@@ -235,7 +235,7 @@ SET(PATH64_GCC_INSTALL_PATH ${PATH64_LIB_PATH})
 
 ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D__GNU_BUG_WORKAROUND
-                -DTARG_X8664
+#                -DTARG_X8664
                 -DKEY
                 -DFE_GNU_4_2_0
                 -D_LONGLONG

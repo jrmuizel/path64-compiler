@@ -1,7 +1,6 @@
 include_directories(
   ${PATHSCALE_SOURCE_DIR}/common/util
   ${PATHSCALE_SOURCE_DIR}/common/com
-  ${PATHSCALE_SOURCE_DIR}/common/com/${BUILD_TARGET_DIR}
   )
 
 IF(NOT PATH64_ENABLE_VALGRIND)
@@ -11,7 +10,7 @@ add_definitions(
  )
 ENDIF(NOT PATH64_ENABLE_VALGRIND)
 
-add_library(comutil STATIC
+path64_set_multiarch_sources(comutil_sources COMMON
   cxx_memory.cxx
   errors.cxx
   bitset.c
@@ -30,5 +29,9 @@ add_library(comutil STATIC
   c_a_to_q.c
   c_q_to_a.c
   c_qtenscale.c
-  ${BUILD_TARGET_DIR}/c_qwmultu.c
+  @ARCH@/c_qwmultu.c
   )
+path64_add_multiarch_library(comutil STATIC comutil_sources)
+path64_set_multiarch_property(comutil COMPILE_FLAGS
+                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@")
+

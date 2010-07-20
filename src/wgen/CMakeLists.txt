@@ -2,7 +2,6 @@ include_directories(
   .
   ../include/gnu
   ../common/com
-  ../common/com/${BUILD_TARGET_DIR}
   ../common/util
 
   ../ipa/common
@@ -34,7 +33,7 @@ add_definitions(
   -DGPLUSPLUS_FE
   )
 
-set(wgen42_sources
+path64_set_multiarch_sources(wgen42_sources COMMON
   ../common/com/config.cxx
   ../common/com/const.cxx
   ../common/com/controls.cxx
@@ -64,12 +63,12 @@ set(wgen42_sources
   ../common/com/wn_util.cxx
   ../common/com/wutil.cxx
   ../common/com/xstats.cxx
-  ../common/com/${BUILD_TARGET_DIR}/config_targ.cxx
-  ../common/com/${BUILD_TARGET_DIR}/config_elf_targ.cxx
-  ../common/com/${BUILD_TARGET_DIR}/targ_const.cxx
-  ../common/com/${BUILD_TARGET_DIR}/targ_sim.cxx
-  ../common/com/${BUILD_TARGET_DIR}/config_host.c
-  ../common/com/${BUILD_TARGET_DIR}/config_platform.c
+  ../common/com/@ARCH@/config_targ.cxx
+  ../common/com/@ARCH@/config_elf_targ.cxx
+  ../common/com/@ARCH@/targ_const.cxx
+  ../common/com/@ARCH@/targ_sim.cxx
+  ../common/com/@ARCH@/config_host.c
+  ../common/com/@ARCH@/config_platform.c
   wgen_misc.cxx
   wgen_expr.cxx
   wgen_stmt.cxx
@@ -86,20 +85,23 @@ set(wgen42_sources
 
 set_property(SOURCE ../common/com/wn_util.cxx PROPERTY COMPILE_DEFINITIONS MONGOOSE_BE)
 
-add_executable(wgen42 ${wgen42_sources})
-target_link_libraries(wgen42 comutil iberty spin cmplrs m)
+path64_add_multiarch_executable(wgen42 wgen42_sources)
+path64_multiarch_link_multiarch_libraries(wgen42 comutil)
+path64_multiarch_link_libraries(wgen42 iberty spin cmplrs m)
+path64_set_multiarch_property(wgen42 COMPILE_FLAGS
+                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@")
 
-add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/lib/wgen42
-    DEPENDS wgen42
-    COMMAND ln -s ../bin/wgen42 ${CMAKE_BINARY_DIR}/lib
-)
+#add_custom_command(
+#    OUTPUT ${CMAKE_BINARY_DIR}/lib/wgen42
+#    DEPENDS wgen42
+#    COMMAND ln -s ../bin/wgen42 ${CMAKE_BINARY_DIR}/lib
+#)
+#
+#add_custom_target(
+#    stageit-wgen42 ALL
+#    DEPENDS ${CMAKE_BINARY_DIR}/lib/wgen42
+#)
 
-add_custom_target(
-    stageit-wgen42 ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/lib/wgen42
-)
-
-install(TARGETS wgen42
-        RUNTIME DESTINATION ${PATH64_LIB_PATH})
+#install(TARGETS wgen42
+#        RUNTIME DESTINATION ${PATH64_LIB_PATH})
 #install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${CMAKE_INSTALL_PREFIX}/${PATH64_LIB_PATH}/wgen42${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/${PATH64_LIB_PATH}/wgen${CMAKE_EXECUTABLE_SUFFIX}\")")

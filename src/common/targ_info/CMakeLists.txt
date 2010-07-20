@@ -9,20 +9,27 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 set(targinfo_deps "")
 
 macro(gen_info type name)
-  add_executable(${name}_gen generate/${name}_gen.cxx ${type}/${BUILD_TARGET_DIR}/${name}.cxx)
-  target_link_libraries(${name}_gen ${ARGN})
+  path64_set_multiarch_sources(${name}_gen_sources
+                               COMMON
+                               generate/${name}_gen.cxx
+                               ${type}/@ARCH@/${name}.cxx)
+  path64_add_multiarch_executable(${name}_gen ${name}_gen_sources)
+  path64_set_multiarch_property(${name}_gen COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/@ARCH@")
+  path64_multiarch_link_multiarch_libraries(${name}_gen ${ARGN})
 
   # Generate each source as its own library so it can be linked into
   # other generator executables with high granularity.
-  add_custom_command(
-    OUTPUT targ_${name}.c targ_${name}.h
-    COMMAND ${name}_gen
-    DEPENDS ${name}_gen
+  path64_add_multiarch_custom_command(
+    OUTPUT @ARCH@/targ_${name}.c @ARCH@/targ_${name}.h
+    COMMAND @ARCH{${name}_gen}
+    DEPENDS @ARCH{${name}_gen}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/@ARCH@
     )
-  add_library(targ_${name} targ_${name}.c targ_${name}.h)
+  path64_set_multiarch_sources(targ_${name}_sources COMMON @ARCH@/targ_${name}.c @ARCH@/targ_${name}.h)
+  path64_add_multiarch_library(targ_${name} STATIC targ_${name}_sources)
 
   # The final targinfo library depends on all individual sources.
-  list(APPEND targinfo_deps targ_${name})
+  list(APPEND targinfo_deps targ_${names})
 endmacro()
 
 #-----------------------------------------------------------------------------
@@ -33,22 +40,38 @@ include_directories(
   ${CMAKE_CURRENT_BINARY_DIR}
   )
 
-add_library(gen_util STATIC generate/gen_util.cxx)
+path64_set_multiarch_sources(gen_util_sources COMMON generate/gen_util.cxx)
+path64_add_multiarch_library(gen_util STATIC gen_util_sources)
 
-add_executable(isa_gen generate/isa_gen.cxx isa/${BUILD_TARGET_DIR}/isa.cxx)
-target_link_libraries(isa_gen gen_util)
-add_custom_command(
-  OUTPUT topcode.c topcode.h
-  COMMAND isa_gen
-  DEPENDS isa_gen
+path64_set_multiarch_sources(isa_gen_sources COMMON
+                             generate/isa_gen.cxx
+                             isa/@ARCH@/isa.cxx)
+path64_add_multiarch_executable(isa_gen isa_gen_sources)
+path64_multiarch_link_multiarch_libraries(isa_gen gen_util)
+
+foreach(arch ${PATH64_ENABLE_ARCHES})
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${arch})
+endforeach()
+
+path64_add_multiarch_custom_command(
+  OUTPUT @ARCH@/topcode.c @ARCH@/topcode.h
+  COMMAND @ARCH{isa_gen}
+  DEPENDS @ARCH{isa_gen}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/@ARCH@
   )
-add_library(isa_gen_topcode STATIC topcode.c topcode.h)
-target_link_libraries(isa_gen_topcode gen_util)
 
-SET_SOURCE_FILES_PROPERTIES(${PATHSCALE_BINARY_DIR}/common/targ_info/topcode.h PROPERTIES GENERATED 1)
-SET_SOURCE_FILES_PROPERTIES(${PATHSCALE_BINARY_DIR}/common/targ_info/topcode.c PROPERTIES GENERATED 1)
+path64_set_multiarch_sources(isa_gen_topcode_sources COMMON @ARCH@/topcode.c @ARCH@/topcode.h)
+path64_add_multiarch_library(isa_gen_topcode STATIC isa_gen_topcode_sources)
+path64_multiarch_link_multiarch_libraries(isa_gen_topcode gen_util)
 
-ADD_CUSTOM_TARGET(generate_topcode DEPENDS ${PATHSCALE_BINARY_DIR}/common/targ_info/topcode.h ${PATHSCALE_BINARY_DIR}/common/targ_info/topcode.c)
+foreach(arch ${PATH64_ENABLE_ARCHES})
+    SET_SOURCE_FILES_PROPERTIES(${PATHSCALE_BINARY_DIR}/common/targ_info/${arch}/topcode.h PROPERTIES GENERATED 1)
+    SET_SOURCE_FILES_PROPERTIES(${PATHSCALE_BINARY_DIR}/common/targ_info/${arch}/topcode.c PROPERTIES GENERATED 1)
+endforeach()
+
+path64_add_multiarch_custom_target(generate_topcode DEPENDS 
+                                   ${CMAKE_CURRENT_BINARY_DIR}/@ARCH@/topcode.h
+                                   ${CMAKE_CURRENT_BINARY_DIR}/@ARCH@/topcode.c)
 
 gen_info(isa isa_enums        gen_util)
 gen_info(isa isa_lits         isa_gen_topcode)
@@ -62,7 +85,7 @@ gen_info(isa isa_decode       targ_isa_bundle targ_isa_pack isa_gen_topcode)
 gen_info(isa isa_subset       isa_gen_topcode)
 gen_info(isa isa_hazards      targ_isa_subset isa_gen_topcode)
 gen_info(isa isa_registers    targ_isa_subset isa_gen_topcode)
-target_link_libraries(targ_isa_registers targ_isa_subset)
+path64_multiarch_link_multiarch_libraries(targ_isa_registers targ_isa_subset)
 
 gen_info(isa isa_operands     targ_isa_properties targ_isa_registers targ_isa_enums targ_isa_lits isa_gen_topcode)
 gen_info(isa isa_pseudo       targ_isa_operands targ_isa_registers targ_isa_enums isa_gen_topcode)
@@ -72,33 +95,37 @@ gen_info(proc proc_properties targ_proc gen_util)
 gen_info(abi  abi_properties  targ_isa_subset targ_isa_registers gen_util)
 
 # Collect the rest of the sources in a 'targinfo' library.
-add_library(targinfo STATIC
+path64_set_multiarch_sources(targinfo_sources COMMON
 	access/ti_asm.c
 	access/ti_bundle.c
 	access/ti_latency.c
 	access/ti_errors.c
-	topcode.c
-	targ_isa_subset.c
-	targ_isa_properties.c
-	targ_isa_enums.c
-	targ_isa_hazards.c
-	targ_isa_lits.c
-	targ_isa_print.c
-	targ_isa_pack.c
-	targ_isa_operands.c
-	targ_isa_registers.c
-	targ_isa_decode.c
-	targ_isa_pseudo.c
-	targ_abi_properties.c
-	targ_isa_bundle.c
-	targ_proc.c
-	targ_proc_properties.c
+	@ARCH@/topcode.c
+	@ARCH@/targ_isa_subset.c
+	@ARCH@/targ_isa_properties.c
+	@ARCH@/targ_isa_enums.c
+	@ARCH@/targ_isa_hazards.c
+	@ARCH@/targ_isa_lits.c
+	@ARCH@/targ_isa_print.c
+	@ARCH@/targ_isa_pack.c
+	@ARCH@/targ_isa_operands.c
+	@ARCH@/targ_isa_registers.c
+	@ARCH@/targ_isa_decode.c
+	@ARCH@/targ_isa_pseudo.c
+	@ARCH@/targ_abi_properties.c
+	@ARCH@/targ_isa_bundle.c
+	@ARCH@/targ_proc.c
+	@ARCH@/targ_proc_properties.c
 )
-add_dependencies(targinfo ${targinfo_deps})
+path64_add_multiarch_library(targinfo STATIC targinfo_sources)
+path64_set_multiarch_property(targinfo COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/@ARCH@")
+path64_add_multiarch_multiarch_dependencies(targinfo ${targinfo_deps})
 
 #-----------------------------------------------------------------------------
-add_library(si_gen generate/si_gen.cxx)
-target_link_libraries(si_gen
+path64_set_multiarch_sources(si_gen_sources COMMON generate/si_gen.cxx)
+path64_add_multiarch_library(si_gen STATIC si_gen_sources)
+path64_set_multiarch_property(si_gen COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
+path64_multiarch_link_multiarch_libraries(si_gen
   targ_isa_subset
   targ_isa_properties
   targ_isa_operands
@@ -107,67 +134,93 @@ target_link_libraries(si_gen
   targ_isa_lits
   )
 
-# TODO : We should not assume things are in x8664
-# The generators be per target so it could be arm/mips/nvisa/x8664.. etc
 
-add_executable(opteron_si_gen proc/x8664/opteron_si.cxx)
-target_link_libraries(opteron_si_gen si_gen isa_gen_topcode)
+# X8664 architecture specific
+path64_is_arch_enabled(x8664_enabled x8664)
+if(${x8664_enabled})
+    path64_get_multiarch_cmake_target(si_gen_x8664_name si_gen x8664)
+    path64_get_multiarch_cmake_target(isa_gen_topcode_x8664_name isa_gen_topcode x8664)
 
-add_custom_command(
-  OUTPUT opteron.c
-  COMMAND opteron_si_gen
-  DEPENDS opteron_si_gen
-  )
-add_library(opteron SHARED opteron.c generate/init.cxx)
-set_property(TARGET opteron PROPERTY PREFIX "")
+    add_executable(opteron_si_gen proc/x8664/opteron_si.cxx)
+    target_link_libraries(opteron_si_gen ${si_gen_x8664_name} ${isa_gen_topcode_x8664_name})
+    set_property(TARGET opteron_si_gen APPEND PROPERTY
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
 
-add_executable(barcelona_si_gen proc/x8664/barcelona_si.cxx)
-target_link_libraries(barcelona_si_gen si_gen isa_gen_topcode)
+    add_custom_command(
+      OUTPUT opteron.c
+      COMMAND opteron_si_gen
+      DEPENDS opteron_si_gen
+      )
+    add_library(opteron SHARED opteron.c generate/init.cxx)
+    set_property(TARGET opteron PROPERTY PREFIX "")
+    set_property(TARGET opteron APPEND PROPERTY
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
 
-add_custom_command(
-  OUTPUT barcelona.c
-  COMMAND barcelona_si_gen
-  DEPENDS barcelona_si_gen
-  )
-add_library(barcelona SHARED barcelona.c generate/init.cxx)
-set_property(TARGET barcelona PROPERTY PREFIX "")
+    add_executable(barcelona_si_gen proc/x8664/barcelona_si.cxx)
+    target_link_libraries(barcelona_si_gen ${si_gen_x8664_name} ${isa_gen_topcode_x8664_name})
+    set_property(TARGET barcelona_si_gen APPEND PROPERTY
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
 
-
-add_executable(wolfdale_si_gen proc/x8664/wolfdale_si.cxx)
-target_link_libraries(wolfdale_si_gen si_gen isa_gen_topcode)
-
-add_custom_command(
-  OUTPUT wolfdale.c
-  COMMAND wolfdale_si_gen
-  DEPENDS wolfdale_si_gen
-  )
-add_library(wolfdale SHARED wolfdale.c generate/init.cxx)
-set_property(TARGET wolfdale PROPERTY PREFIX "")
-
-
-add_executable(core_si_gen proc/x8664/core_si.cxx)
-target_link_libraries(core_si_gen si_gen isa_gen_topcode)
-
-add_custom_command(
-  OUTPUT core.c
-  COMMAND core_si_gen
-  DEPENDS core_si_gen
-  )
-add_library(core SHARED core.c generate/init.cxx)
-set_property(TARGET core PROPERTY PREFIX "")
+    add_custom_command(
+      OUTPUT barcelona.c
+      COMMAND barcelona_si_gen
+      DEPENDS barcelona_si_gen
+      )
+    add_library(barcelona SHARED barcelona.c generate/init.cxx)
+    set_property(TARGET barcelona PROPERTY PREFIX "")
+    set_property(TARGET barcelona APPEND PROPERTY
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
 
 
-add_executable(em64t_si_gen proc/x8664/em64t_si.cxx)
-target_link_libraries(em64t_si_gen si_gen isa_gen_topcode)
+    add_executable(wolfdale_si_gen proc/x8664/wolfdale_si.cxx)
+    target_link_libraries(wolfdale_si_gen ${si_gen_x8664_name} ${isa_gen_topcode_x8664_name})
+    set_property(TARGET wolfdale_si_gen APPEND PROPERTY
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
 
-add_custom_command(
-  OUTPUT em64t.c
-  COMMAND em64t_si_gen
-  DEPENDS em64t_si_gen
-  )
-add_library(em64t SHARED em64t.c generate/init.cxx)
-set_property(TARGET em64t PROPERTY PREFIX "")
+    add_custom_command(
+      OUTPUT wolfdale.c
+      COMMAND wolfdale_si_gen
+      DEPENDS wolfdale_si_gen
+      )
+    add_library(wolfdale SHARED wolfdale.c generate/init.cxx)
+    set_property(TARGET wolfdale PROPERTY PREFIX "")
+    set_property(TARGET wolfdale APPEND PROPERTY
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
 
-install(TARGETS barcelona em64t core wolfdale opteron
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION ${PATH64_LIB_PATH})
+
+    add_executable(core_si_gen proc/x8664/core_si.cxx)
+    target_link_libraries(core_si_gen ${si_gen_x8664_name} ${isa_gen_topcode_x8664_name})
+    set_property(TARGET core_si_gen APPEND PROPERTY
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
+
+    add_custom_command(
+      OUTPUT core.c
+      COMMAND core_si_gen
+      DEPENDS core_si_gen
+      )
+    add_library(core SHARED core.c generate/init.cxx)
+    set_property(TARGET core PROPERTY PREFIX "")
+    set_property(TARGET core APPEND PROPERTY
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
+
+
+    add_executable(em64t_si_gen proc/x8664/em64t_si.cxx)
+    target_link_libraries(em64t_si_gen ${si_gen_x8664_name} ${isa_gen_topcode_x8664_name})
+    set_property(TARGET em64t_si_gen APPEND PROPERTY
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
+
+    add_custom_command(
+      OUTPUT em64t.c
+      COMMAND em64t_si_gen
+      DEPENDS em64t_si_gen
+      )
+    add_library(em64t SHARED em64t.c generate/init.cxx)
+    set_property(TARGET em64t PROPERTY PREFIX "")
+    set_property(TARGET em64t APPEND PROPERTY
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
+
+    install(TARGETS barcelona em64t core wolfdale opteron
+            RUNTIME DESTINATION bin
+            LIBRARY DESTINATION ${PATH64_LIB_PATH})
+endif()
+
