@@ -193,7 +193,6 @@ function(path64_add_library_for_target name target type)
     list_string_replace(sources "@TARGET@" ${target})
 
     add_library (${name} ${type} ${sources})
-    set_property(TARGET ${name} PROPERTY OUTPUT_NAME ${name})
     set_property(TARGET ${name} PROPERTY COMPILE_FLAGS ${arch_flag})
     set_property(TARGET ${name} PROPERTY LINK_FLAGS ${arch_flag})
 
@@ -222,7 +221,6 @@ function(path64_add_library_for_arch name arch type)
     list_string_replace_arch(sources ${arch})
 
     add_library (${name} ${type} ${sources})
-    set_property(TARGET ${name} PROPERTY OUTPUT_NAME ${name})
     set_property(TARGET ${name} PROPERTY COMPILE_FLAGS ${arch_flags})
     set_property(TARGET ${name} PROPERTY LINK_FLAGS ${arch_flags})
 
@@ -252,7 +250,6 @@ function(path64_add_executable_for_arch name arch)
     message(STATUS "path64_add_executable_for_arch: ${name} ${arch} ${sources}")
 
     add_executable(${name} ${sources})
-    set_property(TARGET ${name} PROPERTY OUTPUT_NAME ${name})
     set_property(TARGET ${name} PROPERTY COMPILE_FLAGS ${arch_flags})
     set_property(TARGET ${name} PROPERTY LINK_FLAGS ${arch_flags})
 
@@ -273,6 +270,7 @@ function(path64_add_multitarget_library name type src_list_name)
         else()
             path64_add_library_for_target(${tg_name} ${targ} ${type} ${${src_list_name}_COMMON})
         endif()
+        set_property(TARGET ${tg_name} PROPERTY OUTPUT_NAME ${name})
     endforeach()
 endfunction()
 
@@ -286,6 +284,7 @@ function(path64_add_multiarch_library name type src_list_name)
         else()
             path64_add_library_for_arch(${tg_name} ${arch} ${type} ${${src_list_name}_COMMON})
         endif()
+        set_property(TARGET ${tg_name} PROPERTY OUTPUT_NAME ${name})
     endforeach()
 endfunction()
 
@@ -299,6 +298,7 @@ function(path64_add_multiarch_executable name src_list_name)
         else()
             path64_add_executable_for_arch(${tg_name} ${arch} ${${src_list_name}_COMMON})
         endif()
+        set_property(TARGET ${tg_name} PROPERTY OUTPUT_NAME ${name})
     endforeach()
 endfunction()
 
