@@ -371,7 +371,7 @@ I-cpp_pic	;		ALL	NONE	"-D_PIC -D__DSO__"
 	""
 -GRA:%s		;		ALL	be	"-GRA:%s"
 	"option group to control global register allocation"
-#ifdef X8664
+#ifdef TARG_X8664
 -GRA:unspill=on,off ;		ALL	be	""
 	"when on enables optimal GRA/LRA boundary condition allocations"
 #endif
@@ -383,7 +383,7 @@ I-cpp_pic	;		ALL	NONE	"-D_PIC -D__DSO__"
 	"where n=0,1,2 controls unrolling, none=0, default=1, aggressive=2"
 -CG:unroll_fb_req=on,off ;		ALL	be	""
 	"when on with FDO disables cold code layout for unrolled loops"
-#ifdef X8664
+#ifdef TARG_X8664
 -CG:cmp_peep=on,off ;		ALL	be	""
 	"when on load-exec opts include compare instructions"
 -CG:compute_to=on,off ;		ALL	be	""
@@ -494,12 +494,13 @@ I-fini%s		;		CC	ld	"-fini %s"
 	""
 -profile	;	ALL	ld	self "-lm" "-TENV:call_mcount"
 	""
-#ifdef X8664
+#ifdef TARG_X8664
 -m32	toggle(&abi,ABI_N32);	ALL	be	"-TARG:abi=n32" 
         "Compile for 32-bit ABI"
 -m64	toggle(&abi,ABI_64);	ALL	be	"-TARG:abi=n64"
 	"Compile for 64-bit ABI"
-#elif defined(MIPS)
+#endif // TARG_X8664
+#ifdef TARG_MIPS
 #define MIPS1_DEFS      "-D__mips=1 -D_MIPS_ISA=1"
 #define MIPS2_DEFS      "-D__mips=2 -D_MIPS_ISA=2"
 #define MIPS3_DEFS      "-D__mips=3 -D_MIPS_ISA=3"
@@ -1884,7 +1885,7 @@ I-u%s		;		Cc	ld	"-u %s"
 	""
 % KEY: Because of limitation on derived flags, we repeat the -fexceptions
 % in the implied list.  This is to find the parent flag so action is done.
-#ifdef X8664
+#ifdef TARG_X8664
 -fexceptions	;	ALL	cfe	"-fexceptions -TENV:frame_pointer=on"
 	"Enable exception handling"
 #else
@@ -2035,7 +2036,7 @@ I-u%s		;		Cc	ld	"-u %s"
 	""
 -malign-functions=%d	warn_ignored(option_name); 	ALL	NONE	self
 	""
-#ifdef X8664
+#ifdef TARG_X8664
 -maccumulate-outgoing-args	; 	Cc	NONE	""
 	""
 -mno-accumulate-outgoing-args	; 	Cc	NONE	""
@@ -2046,12 +2047,10 @@ I-u%s		;		Cc	ld	"-u %s"
 	""
 -mred-zone	; 	Cc	NONE	""
 	""
-#ifdef TARG_X8664
 -mregparm=%d	mregparm=optargd; 	Cc	cfe	"-mregparm=%d"
 	"Control how many registers are used to pass integer arguments"
 -msseregparm	msseregparm=TRUE; 	Cc	cfe	self
 	"Use SSE register passing conventions for float and double arguments and return values"
-#endif
 #endif
 %%% x86 extensions
 -mmmx	;		ALL	NONE	self
