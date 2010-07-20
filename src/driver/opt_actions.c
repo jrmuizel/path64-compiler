@@ -771,7 +771,7 @@ Check_Target ( void )
     }
 #endif // TARG_MIPS
 
-#if TARG_X8664
+#ifdef TARG_X8664
     if (is_target_arch_X8664()) {
       switch ( abi ) {
       case ABI_N32:

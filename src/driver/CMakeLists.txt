@@ -28,6 +28,14 @@ set(PATHSCALE_TABLE_SRCS  ${PATHSCALE_COMMON_DRIVER_SRCS}
                           "table.c"
    )
 
+# Adding definitions for target architectures
+set(ARCH_DEFS)
+foreach(arch ${PATH64_ENABLE_ARCHES})
+    set(ARCH_DEFS ${ARCH_DEFS} ${_PATH64_ARCH_FLAGS_${arch}})
+endforeach()
+add_definitions(${ARCH_DEFS})
+
+
 add_executable(table ${PATHSCALE_TABLE_SRCS})
 
 
@@ -41,7 +49,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh.cmake.in
 
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P
-        COMMAND ${SORT_OPTIONS} ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
+        COMMAND ${SORT_OPTIONS} ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS ${ARCH_DEFS} -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
         DEPENDS ${SORT_OPTIONS} OPTIONS
         )
 
