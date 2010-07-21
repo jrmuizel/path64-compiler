@@ -69,6 +69,10 @@ pathf90_getcwd(char *path, pathf90_i4 *status, int len)
 	pathf90_i4 junk;
 	status = (0 == status) ? (&junk) : status;
 
+	/*
+	 * Bug 3349: ensure that getcwd is used.
+	 * Never use getwd as fallback.
+	 */
 	p = getcwd(pathname, sizeof(pathname));
 
 	b_char(pathname, path, len);
