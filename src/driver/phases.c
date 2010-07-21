@@ -65,6 +65,7 @@
 #include "opt_actions.h"
 #include "profile_type.h"    /* for PROFILE_TYPE */
 #include "get_options.h"
+#include "targets.h"
 
 #if !defined(__FreeBSD__)
 #include <alloca.h>
@@ -363,6 +364,13 @@ add_language_option ( string_list_t *args )
 static void
 add_targ_options ( string_list_t *args )
 {
+  // -TARG:abi=xxx
+  if(abi == ABI_M32 || abi == ABI_N32) {
+    add_string(args, "-TARG:abi=n32");
+  } else {
+    add_string(args, "-TARG:abi=n64");
+  }
+
   // -TARG:processor=xxx
   if (target_cpu != NULL) {
     char buf[100];
@@ -371,36 +379,38 @@ add_targ_options ( string_list_t *args )
   }
 
 #ifdef TARG_X8664
-  // SSE, SSE2, SSE3, 3DNow, SSE4a
-  if (sse == TRUE)
-    add_string(args, "-TARG:sse=on");
-  else
-    add_string(args, "-TARG:sse=off");
+  if (is_target_arch_X8664()) {
+    // SSE, SSE2, SSE3, 3DNow, SSE4a
+    if (sse == TRUE)
+      add_string(args, "-TARG:sse=on");
+    else
+      add_string(args, "-TARG:sse=off");
 
-  if (sse2 == TRUE)
-    add_string(args, "-TARG:sse2=on");
-  else
-    add_string(args, "-TARG:sse2=off");
+    if (sse2 == TRUE)
+      add_string(args, "-TARG:sse2=on");
+    else
+      add_string(args, "-TARG:sse2=off");
 
-  if (sse3 == TRUE)
-    add_string(args, "-TARG:sse3=on");
-  else
-    add_string(args, "-TARG:sse3=off");
+    if (sse3 == TRUE)
+      add_string(args, "-TARG:sse3=on");
+    else
+      add_string(args, "-TARG:sse3=off");
 
-  if (sse4_2 == TRUE)
-    add_string(args, "-TARG:sse4_2=on");
-  else
-    add_string(args, "-TARG:sse4_2=off");
+    if (sse4_2 == TRUE)
+      add_string(args, "-TARG:sse4_2=on");
+    else
+      add_string(args, "-TARG:sse4_2=off");
 
-  if (m3dnow == TRUE)
-    add_string(args, "-TARG:3dnow=on");
-  else
-    add_string(args, "-TARG:3dnow=off");
+    if (m3dnow == TRUE)
+      add_string(args, "-TARG:3dnow=on");
+    else
+      add_string(args, "-TARG:3dnow=off");
 
-  if (sse4a == TRUE)
-    add_string(args, "-TARG:sse4a=on");
-  else
-    add_string(args, "-TARG:sse4a=off");
+    if (sse4a == TRUE)
+      add_string(args, "-TARG:sse4a=on");
+    else
+      add_string(args, "-TARG:sse4a=off");
+  }
 #endif
 }
 
@@ -478,18 +488,21 @@ add_arg(string_list_t *args, const char *format, ...)
 	va_end(ap);
 }
 
+
+// Returns path to library directory
+
+
 /* Keep this in sync with print_file_path over in opt_actions.c. */
 
 static void
 set_library_paths(string_list_t *args)
 {
-	char *root_prefix = directory_path(get_executable_dir());
-	char *our_path;
-	
-	asprintf(&our_path, "%s" LIBPATH, root_prefix );
-	add_string(args, concat_strings("-L", our_path));
+    char *lib_path = target_library_path();
+	char *arg = concat_strings("-L", lib_path);
+    add_string(args, arg);
 
-	free(our_path);
+    free(lib_path);
+    free(arg);
 }
 
 /*
@@ -588,28 +601,10 @@ add_inc_path(string_list_t *args, const char *fmt, ...)
 
 boolean platform_is_64bit(void)
 {
-
-	return get_platform_abi() == ABI_64;
+    int platform_abi = get_platform_abi();
+    return platform_abi == ABI_64 || platform_abi == ABI_M64;
 }
 
-boolean
-target_is_native(void)
-{
-	static boolean native;
-	static boolean native_set;
-
-	if (!native_set) {
-		if (platform_is_64bit()) {
-			native = abi != ABI_N32;
-		} else {
-			native = abi == ABI_N32;
-		}
-
-		native_set = TRUE;
-	}
-	
-	return native;
-}
 
 #ifdef KEY
 // Like add_file_args but add args that must precede options specified on the
@@ -663,30 +658,61 @@ add_isystem_dirs(string_list_t *args)
 static void
 add_abi(string_list_t *args) {
 #ifdef TARG_X8664
+    if (is_target_arch_X8664()) {
 #if defined(BUILD_OS_DARWIN) || defined(__sun)
-		add_string(args, (abi == ABI_N32) ? "-m32" : "-m64");
+		add_string(args, (abi == ABI_M32) ? "-m32" : "-m64");
 #else /* defined(BUILD_OS_DARWIN) */
-		if( abi == ABI_N32 ){
+		if( abi == ABI_M32 ){
 		  add_string(args, "-m32");
 		}
 #endif /* defined(BUILD_OS_DARWIN) */
-#elif defined(TARG_MIPS)
+    }
+#endif
+#ifdef TARG_MIPS
+    if (is_target_arch_MIPS()) {
 		if( abi == ABI_N32 )
 		  add_string(args, "-mabi=n32");
 		else
 		  add_string(args, "-mabi=64");
+    }
 #endif
 }
 
 
+// Adds target specific linker args
 static void
-add_linker_abi(string_list_t *args) {
+add_target_linker_args(string_list_t *args) {
+    // Adding path to dynamic linker for x86 linux platform
+#ifdef TARG_X8664
+    if(is_target_arch_X8664()) {
+#ifdef __linux__
+        if(abi == ABI_M32) {
+            add_arg(args, "--dynamic-linker=/lib/ld-linux.so.2");
+        } else {
+            // TODO: check that this path correct on all linux distros
+            add_arg(args, "--dynamic-linker=/lib/ld-linux-x86-64.so.2");
+        }
+#endif // __linux__
+    }
+#endif // TARG_X8664
+
+    // Adding -rpath for linux platform
+#ifdef __linux__
+#endif // __linux__
+
+    // Adding abi flag
+#ifdef TARG_X8664
+    if(is_target_arch_X8664()) {
 #if defined(__sun)
-    add_string(args, (abi == ABI_N32) ? "-32" : "-64");
-#else
-    add_string(args, (abi == ABI_N32) ? "-melf_i386" : "-melf_x86_64");
-#endif
+        add_string(args, (abi == ABI_M32) ? "-32" : "-64");
+#else // __sun
+        add_string(args, (abi == ABI_M32) ? "-melf_i386" : "-melf_x86_64");
+#endif // __sun
+    }
+#endif // TARG_X8664
 }
+
+
 #endif /* KEY Mac port */
 
 #ifdef TARG_MIPS
@@ -792,7 +818,8 @@ add_file_args (string_list_t *args, phases_t index)
 		if (show_but_not_run)
 			add_string(args, "-###");
 #ifdef TARG_MIPS
-		add_sysroot(args, index);
+        if (is_target_arch_MIPS())
+            add_sysroot(args, index);
 #endif
 #ifdef KEY
 #ifdef CROSS_COMPILATION
@@ -884,8 +911,10 @@ add_file_args (string_list_t *args, phases_t index)
 		  add_string(args, "-E");
 
 #ifdef TARG_X8664 
-		// Add a workaround for bug 3082 and bug 6186.
-		add_string(args, "-mfpmath=387");
+        if (is_target_arch_X8664()) {
+		  // Add a workaround for bug 3082 and bug 6186.
+		  add_string(args, "-mfpmath=387");
+        }
 #endif
 		
 		add_string(args, input_source);
@@ -1065,7 +1094,8 @@ add_file_args (string_list_t *args, phases_t index)
 		  add_string(args,"-TENV:io_library=mips");
 		}
 #ifdef TARG_MIPS
-		add_sysroot(args, index);  /* 15149 */
+        if (is_target_arch_MIPS())
+		  add_sysroot(args, index);  /* 15149 */
 #endif
 #ifdef KEY
                 add_isystem_dirs(args);  /* Bug 11265 */
@@ -1166,7 +1196,8 @@ add_file_args (string_list_t *args, phases_t index)
 		do_f90_common_args(args) ;
 
 #ifdef TARG_MIPS
-		add_sysroot(args, index);  /* 15149 */
+        if (is_target_arch_MIPS())
+            add_sysroot(args, index);  /* 15149 */
 #endif
 #ifdef KEY
                 add_isystem_dirs(args);  /* Bug 11265 */
@@ -1177,9 +1208,11 @@ add_file_args (string_list_t *args, phases_t index)
 		}
 #endif
 #if defined(TARG_MIPS) && defined(ARCH_MIPS)
-		sprintf (buf, "-include=/usr/include/gentoo-multilib/%s",
-			 abi == ABI_N32 ? "n32" : "n64");
-		add_string(args, buf);
+        if(is_target_arch_MIPS()) {
+            sprintf (buf, "-include=/usr/include/gentoo-multilib/%s",
+                 abi == ABI_N32 ? "n32" : "n64");
+            add_string(args, buf);
+        }
 #endif
 
                 if (Disable_open_mp) {
@@ -1203,7 +1236,7 @@ add_file_args (string_list_t *args, phases_t index)
 #ifdef KEY
 	case P_spin_cc1:
 	case P_spin_cc1plus:
-		if (platform_is_64bit()) {
+		if (abi == ABI_M64) {
 		    add_string(args, "-m64");
 		} else {
 		    add_string(args, "-m32");
@@ -1240,11 +1273,13 @@ add_file_args (string_list_t *args, phases_t index)
 			add_string(args, "-quiet");
 		add_abi(args);
 #if defined(TARG_MIPS)
-		// endianness
-		if (endian == ENDIAN_LITTLE)
-		  add_string(args, "-mel");
-		else
-		  add_string(args, "-meb");
+        if (is_target_arch_MIPS()) {
+            // endianness
+            if (endian == ENDIAN_LITTLE)
+              add_string(args, "-mel");
+            else
+              add_string(args, "-meb");
+        }
 #endif
 
 		if (!option_was_seen(O_fpreprocessed) &&
@@ -1423,13 +1458,15 @@ add_file_args (string_list_t *args, phases_t index)
 		  }
 		}
 #ifdef TARG_X8664
-		if (msseregparm == TRUE) {
-		  add_string (args,"-TENV:msseregparm=on");
-		}
-		if (mregparm) {
-		  sprintf (buf, "-TENV:mregparm=%d", mregparm);
-		  add_string (args, buf);
-		}
+        if (is_target_arch_X8664()) {
+		  if (msseregparm == TRUE) {
+		    add_string (args,"-TENV:msseregparm=on");
+		  }
+		  if (mregparm) {
+		    sprintf (buf, "-TENV:mregparm=%d", mregparm);
+		    add_string (args, buf);
+		  }
+        }
 #endif
 
 #ifdef KEY
@@ -1606,20 +1643,15 @@ add_file_args (string_list_t *args, phases_t index)
 		break;
 	case P_ld:
 	case P_ldplus:
-		/* For C/C++:
-		 * gcc invokes collect2 which invokes ld.
-		 * Because the path to collect2 varies, 
-		 * just invoke gcc to do the link. */
-		/* add lib paths for standard libraries like libgcc.a */
 		append_libraries_to_list (args);
 		if (show_but_not_run)
 			add_string(args, "-###");
 #ifdef TARG_MIPS
-		add_sysroot(args, index);
+        if (is_target_arch_MIPS())
+            add_sysroot(args, index);
 #endif
-#ifndef __sun
-		add_linker_abi(args);
-#endif
+		add_target_linker_args(args);
+
 		set_library_paths(args);
 		if (outfile != NULL) {
 			add_string(args, "-o");
@@ -1633,48 +1665,64 @@ add_file_args (string_list_t *args, phases_t index)
                  * See the other part in add_final_ld_args() */
                 if( ! option_was_seen(O_nostartfiles)){
                        if ((shared != DSO_SHARED) && (shared != RELOCATABLE)){
-			   add_string_if_new_basename(args, PSC_CRT_PATH"/crt1.o");
-			   add_string_if_new_basename(args, PSC_CRT_PATH"/crti.o");
-			   temp = malloc(strlen(get_phase_dir(P_library)) + 12);
-			   strcpy(temp, get_phase_dir(P_library));
-			   strcat(temp, "/crtbegin.o");
-			   add_string(args, temp);
-			   free(temp);
+
+               const char *runtime_path = target_runtime_path();
+               char *crt1_path = concat_strings(runtime_path, "/crt1.o");
+               char *crti_path = concat_strings(runtime_path, "/crti.o");
+               char *lib_path = target_library_path();
+               char *crtbegin_path = concat_strings(lib_path, "/crtbegin.o");
+               free(lib_path);
+
+			   add_string_if_new_basename(args, crt1_path);
+			   add_string_if_new_basename(args, crti_path);
+               free(crt1_path);
+               free(crti_path);
+
+			   add_string(args, crtbegin_path);
+               free(crtbegin_path);
+
 		       } else {
 			   add_string_if_new_basename(args, PSC_CRT_PATH"/crti.o");
-			   temp = malloc(strlen(get_phase_dir(P_library)) + 13);
-			   strcpy(temp, get_phase_dir(P_library));
-			   strcat(temp, "/crtbeginS.o");
-			   add_string(args, temp);
-			   free(temp);
+               char *lib_path = target_library_path();
+               char *crtbeginS_path = concat_strings(lib_path, "/crtbeginS.o");
+               free(lib_path);
+			   add_string(args, crtbeginS_path);
+               free(crtbeginS_path);
 		       }
+
+
                 }
 		break;
 	case P_collect:
 	case P_ipa_link:
 #ifdef TARG_MIPS
-		add_sysroot(args, index);
+        if (is_target_arch_MIPS())
+          add_sysroot(args, index);
 #endif
-		add_linker_abi(args);
+        add_target_linker_args(args);
 #ifdef TARG_X8664
-		if( abi == ABI_N32 ) {
-		  add_string(args, "-m");
-		  add_string(args,"elf_i386");
-		}
+        if (is_target_arch_X8664()) {
+          if( abi == ABI_M32 ) {
+            add_string(args, "-m");
+            add_string(args,"elf_i386");
+          }
+        }
 #elif defined(TARG_MIPS)
-		if( abi == ABI_N32 ) {
-		  add_string(args, "-m");
-		  add_string(args, "elf32ltsmipn32");
-		}
-		else {
-		  add_string(args, "-m");
-		  add_string(args, "elf64ltsmip");
-		}
-		// Pass top level library dir to ipa so that
-		// it finds libraries like lib32/libc.so.6
+        if (is_target_arch_MIPS()) {
+		  if( abi == ABI_N32 ) {
+		    add_string(args, "-m");
+		    add_string(args, "elf32ltsmipn32");
+		  }
+		  else {
+		    add_string(args, "-m");
+		    add_string(args, "elf64ltsmip");
+		  }
+		  // Pass top level library dir to ipa so that
+		  // it finds libraries like lib32/libc.so.6
 #ifndef ARCH_MIPS
-		add_library_dir (MIPS_CROSS_LIB_TOP_DIR);
+		  add_library_dir (MIPS_CROSS_LIB_TOP_DIR);
 #endif
+        }
 #endif
 		/* TODO: Handle MIPS here */
 		/* add lib paths for standard libraries */
@@ -1686,13 +1734,21 @@ add_file_args (string_list_t *args, phases_t index)
 		if ((shared != DSO_SHARED) && (shared != RELOCATABLE)
 		    && ! option_was_seen(O_nostartfiles)) 
 		{
-                        add_string_if_new_basename(args, PSC_CRT_PATH"/crt1.o");
-                        add_string_if_new_basename(args, PSC_CRT_PATH"/crti.o");
-			temp = malloc(strlen(get_phase_dir(P_library)) + 12);
-			strcpy(temp, get_phase_dir(P_library));
-			strcat(temp, "/crtbegin.o");
-			add_string(args, temp);
-			free(temp);
+
+            const char *runtime_path = target_runtime_path();
+            char *lib_path = target_library_path();
+            char *crt1_path = concat_strings(runtime_path, "/crt1.o");
+            char *crti_path = concat_strings(runtime_path, "/crti.o");
+            char *crtbegin_path = concat_strings(lib_path, "/crtbegin.o");
+            free(lib_path);
+
+            add_string_if_new_basename(args, crt1_path);
+            add_string_if_new_basename(args, crti_path);
+            free(crt1_path);
+            free(crti_path);
+
+			add_string(args, crtbegin_path);
+			free(crtbegin_path);
 
 			if (ftz_crt) {
 				add_string(args, find_crt_path("ftz.o"));
@@ -1824,7 +1880,7 @@ get_libgcc_s_name(char **libgcc_s_std, char **libgcc_s_dir32)
 	// cross compiler, libgcc_s may appear under a different name in a "32"
 	// dir.  Return that name in LIBGCC_S_DIR32.
 
-	if (abi == ABI_N32 && platform_is_64bit()) {
+	if ((abi == ABI_M32 || abi == ABI_N32) && platform_is_64bit()) {
 		int v = get_gcc_major_version();
 		if (v < 4) {	// bug 11407
 		  *libgcc_s_std = "gcc_s_32";
@@ -1909,83 +1965,82 @@ add_libgcc_s(string_list_t *args)
 	add_library(args, libgcc_s);
 }
 
+
 static void
 add_final_ld_args (string_list_t *args)
 {
 	char *temp;
 #ifdef TARG_X8664 
-        extern boolean link_with_mathlib;
+    if (is_target_arch_X8664()) {
 #if 0 // Bug 4813 - acml_mv is not in yet.
+        extern boolean link_with_mathlib;
         if ((link_with_mathlib || source_lang == L_CC) && 
 	    option_was_seen(O_m64) && 
 	    strcmp(target_cpu, "em64t") && strcmp(target_cpu, "anyx86"))
           // Bug 4680 - Link with libacml_mv by default.
 	  add_library(args, "acml_mv");
 #endif
-	if (option_was_seen(O_nodefaultlibs) || option_was_seen(O_nostdlib)) {
-	    // If -compat-gcc, link with pscrt even if -nostdlib.  Bug 4551.
-	    if (option_was_seen(O_compat_gcc) &&
-		!option_was_seen(O_fno_fast_stdlib) &&
-		!option_was_seen(O_nolibpscrt)) {	// bug 9611
-		add_library(args, "pscrt");
-	    }
-	    return;
-	}
+        if (option_was_seen(O_nodefaultlibs) || option_was_seen(O_nostdlib)) {
+            // If -compat-gcc, link with pscrt even if -nostdlib.  Bug 4551.
+            if (option_was_seen(O_compat_gcc) &&
+            !option_was_seen(O_fno_fast_stdlib) &&
+            !option_was_seen(O_nolibpscrt)) {	// bug 9611
+            add_library(args, "pscrt");
+            }
+            return;
+        }
 #ifdef PATH64_ENABLE_PSCRUNTIME
-            add_library(args, "gcc_eh");
-            add_libgcc_s(args);  //adding gcc_s is tricky. Need to consider if gcc_eh and supc++ deserve special prcessing too.
-            add_library(args, "supc++");
-            add_library(args, "std");  //new runtime
+        add_library(args, "gcc_eh");
+        add_libgcc_s(args);  //adding gcc_s is tricky. Need to consider if gcc_eh and supc++ deserve special prcessing too.
+        add_library(args, "supc++");
+        add_library(args, "std");  //new runtime
 #else
-            if (option_was_seen(O_static) || option_was_seen(O__static)){
+        if (option_was_seen(O_static) || option_was_seen(O__static)){
 	        if(ipa != TRUE){
                     add_arg(args, "--start-group");
 	        } else {
 	            add_arg(args, "-Wl,--start-group");
 	        }
 #  ifdef CONFIGURED_LIBGCC_DIR
-                add_arg(args, "-L%s", CONFIGURED_LIBGCC_DIR);
+            add_arg(args, "-L%s", CONFIGURED_LIBGCC_DIR);
 #  endif
 #  ifdef CONFIGURED_LIBGCC_EH_DIR
-                add_arg(args, "-L%s", CONFIGURED_LIBGCC_EH_DIR);
+            add_arg(args, "-L%s", CONFIGURED_LIBGCC_EH_DIR);
 #  endif
-                add_library(args, "gcc");
-                add_library(args, "gcc_eh");
-                add_library(args, "c");  /* the above libs should be grouped together */
+            add_library(args, "gcc");
+            add_library(args, "gcc_eh");
+            add_library(args, "c");  /* the above libs should be grouped together */
 
-                if(ipa != TRUE){
-                    add_arg(args, "--end-group");
-                } else {
-                    add_arg(args, "-Wl,--end-group");
-                }
-                 
-                if(invoked_lang == L_CC){
-#  ifdef CONFIGURED_LIBSUPCXX_DIR
-                    add_arg(args, "-L%s", CONFIGURED_LIBSUPCXX_DIR);
-#  endif
-                    add_library(args, "supc++");
-                }
+            if(ipa != TRUE){
+                add_arg(args, "--end-group");
+            } else {
+                add_arg(args, "-Wl,--end-group");
             }
+             
+            if(invoked_lang == L_CC){
+#  ifdef CONFIGURED_LIBSUPCXX_DIR
+                add_arg(args, "-L%s", CONFIGURED_LIBSUPCXX_DIR);
+#  endif
+                add_library(args, "supc++");
+            }
+        }
 #endif
+    }
 #endif
 	
         /* Add trailing crt*.o objects if needed. See the first part in add_file_args() */
         if( ! option_was_seen(O_nostartfiles)) {
-		if ((shared != DSO_SHARED) && (shared != RELOCATABLE)) {
-		    temp = malloc(strlen(get_phase_dir(P_library)) + 10);
-		    strcpy(temp, get_phase_dir(P_library));
-		    strcat(temp, "/crtend.o");
-		    add_string(args, temp);
-		    free(temp);
-		    add_string_if_new_basename(args, PSC_CRT_PATH"/crtn.o");
-		} else {
-		    temp = malloc(strlen(get_phase_dir(P_library)) + 11);
-		    strcpy(temp, get_phase_dir(P_library));
-		    strcat(temp, "/crtendS.o");
-		    add_string(args, temp);
-		    free(temp);
-		    add_string_if_new_basename(args, PSC_CRT_PATH"/crtn.o");
-		}
+            char *lib_path = target_library_path();
+            const char *runtime_path = target_runtime_path();
+            char *crtn_path = concat_strings(runtime_path, "/crtn.o");
+            const char *crtend_name = ((shared != DSO_SHARED) && (shared != RELOCATABLE)) ?
+                                      "/crtend.o" :
+                                      "/crtendS.o";
+            char *crtend_path = concat_strings(lib_path, crtend_name);
+            free(lib_path);
+
+            add_string(args, crtend_path);
+            add_string_if_new_basename(args, crtn_path);
         }
 
 	if (shared != RELOCATABLE) {
@@ -2000,27 +2055,35 @@ add_final_ld_args (string_list_t *args)
 		if (! option_was_seen(O_fbootstrap_hack)) {
 		  add_string(args, "-lmv");
 #ifdef TARG_MIPS
-		  if (ffast_math_prescan == 1) {  // Bug 14245
-		    // Link with libscm and open64 libmpath before libm
-		    add_string(args, "-lscm");
+          if (is_target_arch_MIPS()) {
+		    if (ffast_math_prescan == 1) {  // Bug 14245
+		      // Link with libscm and open64 libmpath before libm
+		      add_string(args, "-lscm");
+		      add_string(args, "-lm" PSC_NAME_PREFIX);
+		    }
+          } else {
+#endif // TARG_MIPS
 		    add_string(args, "-lm" PSC_NAME_PREFIX);
-		  }
-#else
-		  add_string(args, "-lm" PSC_NAME_PREFIX);
-#endif
+#ifdef TARG_MIPS
+          }
+#endif // TARG_MIPS
 		}
 		add_string(args, "-lm");
 		if (! option_was_seen(O_fbootstrap_hack)) {
 		  add_library(args, "mv");
 #ifdef TARG_MIPS
+        if (is_target_arch_MIPS()) {
 		  if (ffast_math_prescan == 1) {  // Bug 14245
 		    // Link with libscm and open64 libmpath before libm
 		    add_library(args, "scm");
 		    add_library(args, "m" PSC_NAME_PREFIX);
 		  }
-#else
+        } else {
+#endif // TARG_MIPS
 		  add_library(args, "m" PSC_NAME_PREFIX);
-#endif
+#ifdef TARG_MIPS
+        }
+#endif // TARG_MIPS
 		}
 		add_library(args, "m");
 	    }
@@ -2049,38 +2112,42 @@ add_final_ld_args (string_list_t *args)
 	}
 
 #ifdef TARG_X8664
-	// Put pscrt after all the libraries that are built with PathScale
-	// compilers, since those libraries could use PathScale routines.
-	// Bug 3995.
-	if (!option_was_seen(O_fno_fast_stdlib) &&
-	    !option_was_seen(O_nolibpscrt)) {	// bug 9611
-	    add_library(args, "pscrt");
+    if (is_target_arch_X8664()) {
+        // Put pscrt after all the libraries that are built with PathScale
+        // compilers, since those libraries could use PathScale routines.
+        // Bug 3995.
+        if (!option_was_seen(O_fno_fast_stdlib) &&
+            !option_was_seen(O_nolibpscrt)) {	// bug 9611
+            add_library(args, "pscrt");
 #  if !defined(PATH64_ENABLE_PSCRUNTIME)
 #    if defined(CONFIGURED_LIBGCC_DIR)
-	    add_arg(args, "-L%s", CONFIGURED_LIBGCC_DIR);
+            add_arg(args, "-L%s", CONFIGURED_LIBGCC_DIR);
 #    endif
-	    add_library(args, "gcc");
+            add_library(args, "gcc");
 #  endif
-	}
+        }
+    }
 #endif
 #ifdef TARG_MIPS
-	// Put libscstr after all libraries that are built with PathScale
-	// compilers, since those libraries could use PathScale routines.
-	// Bug 3995.
-	if (!option_was_seen(O_fno_fast_stdlib) &&
-	    !option_was_seen(O_fbootstrap_hack)) {
-	  add_library(args, "scstr");
-	}
+    if (is_target_arch_MIPS()) {
+        // Put libscstr after all libraries that are built with PathScale
+        // compilers, since those libraries could use PathScale routines.
+        // Bug 3995.
+        if (!option_was_seen(O_fno_fast_stdlib) &&
+            !option_was_seen(O_fbootstrap_hack)) {
+          add_library(args, "scstr");
+        }
+    }
 #endif 
 
 
 	if (ipa == TRUE) {
 #ifndef PATH64_ENABLE_PSCRUNTIME
 	    	if (invoked_lang == L_CC) {
-#  ifdef CONFIGURED_LIBSTDCXX_DIR
-                        add_arg(args, "-L%s", CONFIGURED_LIBSTDCXX_DIR);
-#  endif
-			add_library(args, "stdc++");
+//                char * stdcpp_path = get_stdc_plus_plus_path();
+//                add_arg(args, "-L%s", stdcpp_path);
+//                free(stdcpp_path);
+                add_library(args, "stdc++");
 	    	}
 #endif
 		if (invoked_lang == L_CC &&
@@ -2097,14 +2164,18 @@ add_final_ld_args (string_list_t *args)
 	    if (invoked_lang != L_cc) {
 	      add_library(args, "mv");			// bug 5527
 #ifdef TARG_MIPS
-	      if (ffast_math_prescan == 1) {  // Bug 14245
-		// Link with libscm and open64 libmpath before libm
-		add_library(args, "scm");
-		add_library(args, "m" PSC_NAME_PREFIX);	// bug 3092
-	      }
-#else
-	      add_library(args, "m" PSC_NAME_PREFIX);	// bug 3092
-#endif
+          if (is_target_arch_MIPS()) {
+	        if (ffast_math_prescan == 1) {  // Bug 14245
+              // Link with libscm and open64 libmpath before libm
+              add_library(args, "scm");
+              add_library(args, "m" PSC_NAME_PREFIX);	// bug 3092
+	        }
+          } else {
+#endif // TARG_MIPS
+            add_library(args, "m" PSC_NAME_PREFIX);	// bug 3092
+#ifdef TARG_MIPS
+          }
+#endif // TARG_MIPS
 	    }
 	  }
 	}
@@ -2124,7 +2195,6 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
 
     phase_name = "/usr/bin/ld";
 
-    //init_crt_paths ();
     //init_stdc_plus_plus_path();
 
     add_library(args, "c");
@@ -2805,28 +2875,30 @@ init_gnu_phase_info (void)
   char *prefix = get_gnu_prefix();
 
 #ifdef TARG_MIPS
-  const char  name_short[] = "gcc";
-  const char *name_long = prefix ? concat_strings(prefix, name_short) : NULL;
-  char *directory = NULL;
-  const char *gcc_path = getenv("PSC_GCC_PATH");
-  if (name_long) directory = find_file_in_path(gcc_path, name_long);
-  if (directory == NULL) {
-    directory = find_file_in_path(gcc_path, name_short);
-    if (directory) prefix = NULL;
+  if (is_target_arch_MIPS()) {
+    const char  name_short[] = "gcc";
+    const char *name_long = prefix ? concat_strings(prefix, name_short) : NULL;
+    char *directory = NULL;
+    const char *gcc_path = getenv("PSC_GCC_PATH");
+    if (name_long) directory = find_file_in_path(gcc_path, name_long);
+    if (directory == NULL) {
+      directory = find_file_in_path(gcc_path, name_short);
+      if (directory) prefix = NULL;
 #if 1  // 14839: Check PSC_GCC_PATH, but not PATH for gcc.
-    else {
-      gcc_path = getenv("PATH");
-      if (name_long) directory = find_file_in_path(gcc_path, name_long);
-      if (directory == NULL) {
-	directory = find_file_in_path(gcc_path, name_short);
-	if (directory) prefix = NULL;
+      else {
+        gcc_path = getenv("PATH");
+        if (name_long) directory = find_file_in_path(gcc_path, name_long);
+        if (directory == NULL) {
+      directory = find_file_in_path(gcc_path, name_short);
+      if (directory) prefix = NULL;
+        }
       }
-    }
 #endif
-  }
-  // TODO: Conflict with TOOLROOT code below
+    }
+    // TODO: Conflict with TOOLROOT code below
 
-  if (directory) set_phase_dir(GCC_MASK, directory);
+    if (directory) set_phase_dir(GCC_MASK, directory);
+  }
 #endif
 
   if (prefix) prefix_all_phase_names(GCC_MASK, prefix);
@@ -2922,11 +2994,13 @@ run_ld (void)
 	}
 
 #ifdef TARG_X8664
+    if (is_target_arch_X8664()) {
         //Supply ld with additional arguments required on x8664
         // TODO: Make sure ld is called correctly for -m32
         if ( ldphase != P_ipa_link ) {
                 add_multi_strings(args, AUXILIARY_LD_FLAGS, FALSE);
         }
+    }
 #endif
 
 	if (ipa == TRUE) {
@@ -2970,11 +3044,10 @@ run_ld (void)
 	    }
 #endif
 
-	    init_crt_paths ();
-	    if (invoked_lang == L_CC ||
-		instrumentation_invoked == TRUE ) {
-	      init_stdc_plus_plus_path();
-	    }
+//	    if (invoked_lang == L_CC ||
+//		instrumentation_invoked == TRUE ) {
+//	      init_stdc_plus_plus_path();
+//	    }
 	}
     ldpath = get_full_phase_name(ldphase);
 
@@ -2988,10 +3061,10 @@ run_ld (void)
 
 	if (invoked_lang == L_CC) {
 #ifndef PATH64_ENABLE_PSCRUNTIME
-#  ifdef CONFIGURED_LIBSTDCXX_DIR
-            add_arg(args, "-L%s", CONFIGURED_LIBSTDCXX_DIR);
-#  endif
-            add_library(args, "stdc++");
+//        char * stdcpp_path = get_stdc_plus_plus_path();
+//        add_arg(args, "-L%s", stdcpp_path);
+//        free(stdcpp_path);
+        add_library(args, "stdc++");
 #endif
 	    if (!multiple_source_files && !((shared == RELOCATABLE) && (ipa == TRUE) && (outfile == NULL)) && !keep_flag)
 		mark_saved_object_for_cleanup();
@@ -3008,7 +3081,8 @@ run_ld (void)
 
 
 #if defined(KEY) && defined(TARG_MIPS)
-	add_string(args, "-mips64");	// call gcc with -mips64
+    if (is_target_arch_MIPS())
+        add_string(args, "-mips64");	// call gcc with -mips64
 #endif
 
 	add_instr_archive (args);

@@ -53,6 +53,7 @@
 #include "get_options.h"
 #include "phases.h"
 #include "run.h"
+#include "targets.h"
 
 #ifndef TARG_MIPS
 int endian = UNDEFINED; /* defined in options table */
@@ -89,16 +90,20 @@ set_defaults (void)
 	}
 	if (endian == UNDEFINED) {
 #ifdef TARG_MIPS
-		/* Default to little-endian -JMB */
-		toggle(&endian, ENDIAN_LITTLE);
-		prepend_option_seen(O_EL);
-#else
-#ifdef LITTLE_ENDIAN_HOST
-		toggle(&endian, ENDIAN_LITTLE);
-#else
-		toggle(&endian, ENDIAN_BIG);
-		prepend_option_seen(O_EB);
+        if (is_target_arch_MIPS()) {
+            /* Default to little-endian -JMB */
+            toggle(&endian, ENDIAN_LITTLE);
+            prepend_option_seen(O_EL);
+        } else {
 #endif
+#ifdef LITTLE_ENDIAN_HOST
+            toggle(&endian, ENDIAN_LITTLE);
+#else
+            toggle(&endian, ENDIAN_BIG);
+            prepend_option_seen(O_EB);
+#endif
+#ifdef TARG_MIPS
+        }
 #endif
 	}
 
@@ -124,7 +129,10 @@ set_defaults (void)
 #endif
 	}
 #ifdef TARG_MIPS
-	else if (shared == UNDEFINED && (abi == ABI_N32 || abi == ABI_64)) {
+	else if (is_target_arch_MIPS() &&
+             shared == UNDEFINED &&
+             (abi == ABI_N32 || abi == ABI_64))
+    {
 		prepend_option_seen(O_fpic);
 	}
 #endif
@@ -142,21 +150,9 @@ set_defaults (void)
 	// Use the system's GCC version to select -gnu3/-gnu4 as the default.
 	// Bug 11426.
 	if (!is_toggled(gnu_major_version)) {
-	  toggle(&gnu_major_version, get_gcc_major_version());
-	  switch (gnu_major_version) {
-	    case 3:	// default to GCC 3.3
-	      toggle(&gnu_minor_version, 3);
-	      break;
-	    case 4:	// default to GCC 4.2
-	      toggle(&gnu_minor_version, 2);
-	      break;
-	    case 0:
-	      error("unable to find GCC installed on system");
-	      break;
-	    default:
-	      error("installed GCC version %d is not supported",
-		    gnu_major_version);
-	  }
+        // defaulting to GCC 4.2
+        gnu_major_version = 4;
+        gnu_minor_version = 2;
 	}
 #endif
 }
@@ -260,8 +256,10 @@ add_special_options (void)
 	}
 
 #if defined(TARG_IA32)
-	flag = add_string_option(O_D, "__NO_MATH_INLINES");
-	prepend_option_seen (flag);
+    if(is_target_arch_MIPS()) {
+        flag = add_string_option(O_D, "__NO_MATH_INLINES");
+        prepend_option_seen (flag);
+    }
 #endif
 
 #ifdef KEY

@@ -1,7 +1,7 @@
 set(PATHSCALE_LNO_COMMON_SRCS
 				"../com/cxx_template.cxx"
 				"../com/dep_graph.cxx"
-				"${BUILD_TARGET_DIR}/lnotarget.cxx"
+				"@ARCH@/lnotarget.cxx"
 				"lnodriver.cxx"
 				"lnopt_main.cxx"
 				"lnoutils.cxx"
@@ -111,7 +111,8 @@ set(PATHSCALE_LNO_COMMON_SRCS
 				"lx_prompf_anl.cxx")
 
 set(PATHSCALE_LNO_X8664_SRCS "simd.cxx")
-IF (${BUILD_TARGET_DIR} MATCHES "arm")
+path64_is_arch_enabled(arm_enabled arm)
+IF(${arm_enabled})
 set(PATHSCALE_LNO_SRCS ${PATHSCALE_LNO_COMMON_SRCS} )
 ELSE()
 set(PATHSCALE_LNO_SRCS ${PATHSCALE_LNO_COMMON_SRCS} ${PATHSCALE_LNO_X8664_SRCS})
@@ -123,13 +124,11 @@ ADD_DEFINITIONS(
 	-D_NEW_SYMTAB
 	-DMONGOOSE_BE)
 
-add_library(lno SHARED ${PATHSCALE_LNO_SRCS})
-set_property(TARGET lno PROPERTY PREFIX "")
-target_link_libraries(lno ipl)
-set_property(TARGET lno PROPERTY PREFIX "")
-ADD_DEPENDENCIES(lno generate_preg_list)
-ADD_DEPENDENCIES(lno generate_topcode)
-ADD_DEPENDENCIES(lno targinfo)
+path64_set_multiarch_sources(lno_sources COMMON ${PATHSCALE_LNO_SRCS})
+path64_add_multiarch_library(lno SHARED lno_sources)
+path64_set_multiarch_property(lno PREFIX "")
+path64_multiarch_link_multiarch_libraries(lno ipl)
+path64_add_multiarch_dependencies(lno generate_preg_list generate_topcode)
+path64_set_multiarch_property(lno COMPILE_FLAGS
+                              "-DSHARED_BUILD -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 
-
-install(TARGETS lno LIBRARY DESTINATION ${PATH64_LIB_PATH})

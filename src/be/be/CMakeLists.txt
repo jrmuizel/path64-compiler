@@ -8,7 +8,7 @@ SET(PATHSCALE_BE_BE_COMMON_SRCS "../../common/targ_info/access/ti_init.c"
                          "../../common/util/c_q_rel.c"
                          "../../common/util/c_q_to_a.c"
                          "../../common/util/c_qtenscale.c"
-                         "../../common/util/${BUILD_TARGET_DIR}/c_qwmultu.c"
+                         "../../common/util/@ARCH@/c_qwmultu.c"
                          "../../common/util/quadsim.c"
                          "../../common/util/bitset.c"
                          "../../common/util/dso.c"
@@ -21,8 +21,8 @@ SET(PATHSCALE_BE_BE_COMMON_SRCS "../../common/targ_info/access/ti_init.c"
                          "../../common/util/tracing.c"
                          "../../common/util/util.c"
                          "../../common/util/vstring.c"
-                         "../../common/com/${BUILD_TARGET_DIR}/config_host.c"
-                         "../../common/com/${BUILD_TARGET_DIR}/config_platform.c"
+                         "../../common/com/@ARCH@/config_host.c"
+                         "../../common/com/@ARCH@/config_platform.c"
                          "cleanup.cxx"
                          "fill_align.cxx"
                          "goto_conv.cxx"
@@ -37,8 +37,8 @@ SET(PATHSCALE_BE_BE_COMMON_SRCS "../../common/targ_info/access/ti_init.c"
                          "wb_omp.cxx"
                          "wb_lwr.cxx"
                          "wb_anl.cxx"
-                         "${BUILD_TARGET_DIR}/fill_align_targ.cxx"
-                         "${BUILD_TARGET_DIR}/driver_targ.cxx"
+                         "@ARCH@/fill_align_targ.cxx"
+                         "@ARCH@/driver_targ.cxx"
                          "../com/be_util.cxx"
                          "../com/be_version.cxx"
                          "../com/cxx_base.cxx"
@@ -142,13 +142,13 @@ SET(PATHSCALE_BE_BE_COMMON_SRCS "../../common/targ_info/access/ti_init.c"
                          "../vho/f90_lower_dep.cxx"
                          "../vho/vho_lower.cxx"
                          "../vho/wb_f90_lower.cxx"
-                         "../com/${BUILD_TARGET_DIR}/betarget.cxx"
-                         "../com/${BUILD_TARGET_DIR}/sections.cxx"
-                         "../../common/com/${BUILD_TARGET_DIR}/config_cache_targ.cxx"
-                         "../../common/com/${BUILD_TARGET_DIR}/config_targ.cxx"
-                         "../../common/com/${BUILD_TARGET_DIR}/config_elf_targ.cxx"
-                         "../../common/com/${BUILD_TARGET_DIR}/targ_const.cxx"
-                         "../../common/com/${BUILD_TARGET_DIR}/targ_sim.cxx"
+                         "../com/@ARCH@/betarget.cxx"
+                         "../com/@ARCH@/sections.cxx"
+                         "../../common/com/@ARCH@/config_cache_targ.cxx"
+                         "../../common/com/@ARCH@/config_targ.cxx"
+                         "../../common/com/@ARCH@/config_elf_targ.cxx"
+                         "../../common/com/@ARCH@/targ_const.cxx"
+                         "../../common/com/@ARCH@/targ_sim.cxx"
                          "../../common/instrument/instr_reader.cxx"
                          "../../ipa/main/optimize/ipo_tlog_utils.cxx")
 
@@ -157,7 +157,7 @@ SET(PATHSCALE_BE_BE_X8664_SRCS  "../com/wn_unroll.cxx")
 SET(PATHSCALE_BE_BE_ARM_SRCS
                            "../com/wn_lower_mul.cxx"
                          "../com/rt_lower_wn.cxx"
-                         "${BUILD_TARGET_DIR}/mul_cost_model.cxx" #st
+                         "@ARCH@/mul_cost_model.cxx" #st
                          "../../common/util/zint.cxx" #st
                          "../../common/util/lbitmask.cxx" #st
                          "../../common/util/lbrange.cxx" #st
@@ -177,11 +177,12 @@ SET(PATHSCALE_BE_BE_ARM_SRCS
                          "../../common/com/dyn_dll_api_access.cxx" #st
                            )
 
-IF( ${BUILD_TARGET_DIR} MATCHES "arm" )
+path64_is_arch_enabled(arm_enabled arm)
+if(${arm_enabled})
 SET( PATHSCALE_BE_BE_SRCS ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_ARM_SRCS})
-ELSE()
+else()
 SET( PATHSCALE_BE_BE_SRCS ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_X8664_SRCS})
-ENDIF()
+endif()
 ADD_DEFINITIONS(
 # Apparently someone likes legos
 	-D_LEGO_CLONER)
@@ -203,33 +204,52 @@ add_custom_command(
 SET_SOURCE_FILES_PROPERTIES(extension_include.h PROPERTIES GENERATED 1)
 ADD_CUSTOM_TARGET(generate_extension DEPENDS extension_include.h)
 
-add_library(be-static STATIC ${PATHSCALE_BE_BE_SRCS})
-set_property(TARGET be-static PROPERTY OUTPUT_NAME be)
-target_link_libraries(be-static targinfo m ${libdl})
+#add_library(be-static STATIC ${PATHSCALE_BE_BE_SRCS})
+path64_set_multiarch_sources(be_sources COMMON ${PATHSCALE_BE_BE_SRCS})
+path64_add_multiarch_library(be-static STATIC be_sources)
+path64_set_multiarch_property(be-static OUTPUT_NAME be)
+path64_multiarch_link_multiarch_libraries(be-static targinfo)
+path64_multiarch_link_libraries(be-static m ${libdl})
+path64_set_multiarch_property(be-static COMPILE_FLAGS
+                              "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 
-add_library(be SHARED ${PATHSCALE_BE_BE_SRCS})
-set_property(TARGET be PROPERTY PREFIX "")
-set_target_properties(be PROPERTIES COMPILE_DEFINITIONS "SHARED_BUILD")
+path64_add_multiarch_library(be SHARED be_sources)
+path64_set_multiarch_property(be PREFIX "")
+path64_set_multiarch_property(be COMPILE_FLAGS
+                              "-DSHARED_BUILD -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 
 IF(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
-# --export-dynamic is not supported on osol
-set_target_properties(be PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
-target_link_libraries(be targinfo SYS m ${libdl})
-add_dependencies( be be-static) # serialize to generate preg_list.cxx only once
-#add_dependencies( be-static generate_extension)
+    # --export-dynamic is not needed on osol
+    path64_set_multiarch_property(be LINK_FLAGS "-Wl,--export-dynamic")
 ENDIF()
 
-add_executable (be-exec driver.cxx driver_util.cxx iter.cxx  ../com/phase.cxx)
+path64_multiarch_link_multiarch_libraries(be targinfo)
+path64_multiarch_link_libraries(be m ${libdl})
+# serialize to generate preg_list.cxx only once
+path64_add_multiarch_multiarch_dependencies(be be-static) 
+
+
+path64_set_multiarch_sources(be_exec_sources COMMON
+                              driver.cxx driver_util.cxx iter.cxx  ../com/phase.cxx)
+path64_add_multiarch_executable(be-exec be_exec_sources)
 # TODO : Must be the elf, elfutil and dwarf built from the source and not a system installed one
 # TODO : Make sure link targets are static
-target_link_libraries (be-exec -Wl,-whole-archive be-static SYS rtkutils cg wopt -Wl,-no-whole-archive iberty dwarf elfutil elf targinfo)
-SET_TARGET_PROPERTIES(be-exec PROPERTIES OUTPUT_NAME "be")
-IF(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
-# --export-dynamic is not supported on osol
-set_target_properties(be-exec PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
-ENDIF()
+path64_multiarch_link_libraries(be-exec -Wl,--whole-archive)
+path64_multiarch_link_multiarch_libraries(be-exec be-static cg wopt)
+path64_multiarch_link_libraries(be-exec -Wl,--no-whole-archive iberty)
+path64_multiarch_link_multiarch_libraries(be-exec dwarf)
+path64_multiarch_link_libraries(be-exec elfutil elf)
+path64_multiarch_link_multiarch_libraries(be-exec targinfo)
+path64_set_multiarch_property(be-exec OUTPUT_NAME "be")
+path64_set_multiarch_property(be-exec COMPILE_FLAGS
+                              "-DSHARED_BUILD -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 
-install(TARGETS be be-exec DESTINATION ${PATH64_LIB_PATH})
+if(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
+    # --export-dynamic is not needed on osol
+    path64_set_multiarch_property(be-exec LINK_FLAGS "-Wl,--export-dynamic")
+endif()
 
-install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"be${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/ipl${CMAKE_EXECUTABLE_SUFFIX}\")")
+foreach(arch ${PATH64_ENABLE_ARCHES})
+    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"be${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/ipl${CMAKE_EXECUTABLE_SUFFIX}\")")
+endforeach()
 

@@ -83,22 +83,25 @@ ENDIF()
 ADD_DEFINITIONS(
 	-DMONGOOSE_BE)
 
-add_library(wopt STATIC ${PATHSCALE_WOPT_SRCS})
+path64_set_multiarch_sources(wopt_sources COMMON ${PATHSCALE_WOPT_SRCS})
+path64_add_multiarch_library(wopt STATIC wopt_sources)
+path64_add_multiarch_dependencies(wopt generate_preg_list generate_topcode)
+path64_set_multiarch_property(wopt COMPILE_FLAGS
+                              "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 
-ADD_DEPENDENCIES(wopt generate_preg_list)
-ADD_DEPENDENCIES(wopt generate_topcode)
-
-add_library(wopt-shared SHARED init.cxx ../../common/util/bitset.c  ${PATHSCALE_WOPT_SRCS})
-set_property(TARGET wopt-shared PROPERTY PREFIX "")
-SET_TARGET_PROPERTIES(wopt-shared PROPERTIES OUTPUT_NAME "wopt")
-set_target_properties(wopt-shared PROPERTIES COMPILE_DEFINITIONS "SHARED_BUILD")
-ADD_DEPENDENCIES(wopt-shared generate_preg_list)
-ADD_DEPENDENCIES(wopt-shared generate_topcode)
+path64_set_multiarch_sources(wopt_shared_sources COMMON
+                             init.cxx
+                             ../../common/util/bitset.c
+                             ${PATHSCALE_WOPT_SRCS})
+path64_add_multiarch_library(wopt-shared SHARED wopt_shared_sources)
+path64_set_multiarch_property(wopt-shared PREFIX "")
+path64_set_multiarch_property(wopt-shared OUTPUT_NAME "wopt")
+path64_set_multiarch_property(wopt-shared COMPILE_DEFINITIONS "SHARED_BUILD")
+path64_add_multiarch_dependencies(wopt-shared generate_preg_list generate_topcode)
+path64_set_multiarch_property(wopt-shared COMPILE_FLAGS
+                              "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 
 # TODO : double check this is correct. wopt.so just includes be.os at the end of the list of objects
-target_link_libraries(wopt-shared be)
+path64_multiarch_link_multiarch_libraries(wopt-shared be)
 
 
-install(TARGETS wopt-shared
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION ${PATH64_LIB_PATH})

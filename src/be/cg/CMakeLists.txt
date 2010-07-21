@@ -1,4 +1,4 @@
-# TODO : These should not have a hard coded ${BUILD_TARGET_DIR} and should be per target
+# TODO : These should not have a hard coded @ARCH@ and should be per target
 SET(PATHSCALE_CG_COMMON_SRCS
 			"${PATHSCALE_BINARY_DIR}/be/bb_list.cxx"
 			"${PATHSCALE_BINARY_DIR}/be/gra_bb_list.cxx"
@@ -29,25 +29,30 @@ SET(PATHSCALE_CG_COMMON_SRCS
 			"../../be/cg/swp/cg_swp_op_vector.cxx"
 			"../../be/cg/swp/cg_swp_scheduler.cxx"
 			"../../be/cg/swp/cg_swp_slack.cxx"
-			"../../be/cg/${BUILD_TARGET_DIR}/cg_flags_arch.cxx"
-			"../../be/cg/${BUILD_TARGET_DIR}/cg_swp_target.cxx"
-			"../../be/cg/${BUILD_TARGET_DIR}/cgdwarf_targ.cxx"
-			"../../be/cg/${BUILD_TARGET_DIR}/cgemit_targ.cxx"
-			"../../be/cg/${BUILD_TARGET_DIR}/cgtarget.cxx"
-			"../../be/cg/${BUILD_TARGET_DIR}/cg_loop_recur.cxx"
-			"../../be/cg/${BUILD_TARGET_DIR}/exp_branch.cxx"
-			"../../be/cg/${BUILD_TARGET_DIR}/exp_divrem.cxx"
-			"../../be/cg/${BUILD_TARGET_DIR}/exp_loadstore.cxx"
-			"../../be/cg/${BUILD_TARGET_DIR}/expand.cxx"
-			"../../be/cg/${BUILD_TARGET_DIR}/pqs_cg.cxx"
-			"../../be/cg/${BUILD_TARGET_DIR}/pqs.cxx"
-			"../../be/cg/${BUILD_TARGET_DIR}/register_targ.cxx"
+			"../../be/cg/@ARCH@/cg_flags_arch.cxx"
+			"../../be/cg/@ARCH@/cg_swp_target.cxx"
+			"../../be/cg/@ARCH@/cgdwarf_targ.cxx"
+			"../../be/cg/@ARCH@/cgemit_targ.cxx"
+			"../../be/cg/@ARCH@/cgtarget.cxx"
+			"../../be/cg/@ARCH@/cg_loop_recur.cxx"
+			"../../be/cg/@ARCH@/ebo_special.cxx"
+			"../../be/cg/@ARCH@/entry_exit_targ.cxx"
+			"../../be/cg/@ARCH@/exp_branch.cxx"
+			"../../be/cg/@ARCH@/exp_divrem.cxx"
+			"../../be/cg/@ARCH@/exp_loadstore.cxx"
+			"../../be/cg/@ARCH@/exp_predicate.cxx"
+			"../../be/cg/@ARCH@/expand.cxx"
+			"../../be/cg/@ARCH@/pqs_cg.cxx"
+			"../../be/cg/@ARCH@/pqs.cxx"
+			"../../be/cg/@ARCH@/register_targ.cxx"
+			"../../be/cg/@ARCH@/cg_sched.cxx"
+			"../../be/cg/@ARCH@/cg_convert_x87.cxx"
+			"../../be/cg/@ARCH@/cg_misc.cxx"
 			"../../common/com/em_dwarf.cxx"
 			"../../common/com/em_elf.cxx"
-			"../../common/com/${BUILD_TARGET_DIR}/targ_em_const.cxx"
-			"../../common/com/${BUILD_TARGET_DIR}/targ_em_elf.cxx"
-			"../../common/com/${BUILD_TARGET_DIR}/targ_em_dwarf.cxx"
-                        "../../be/cg/${BUILD_TARGET_DIR}/entry_exit_targ.cxx"
+			"../../common/com/@ARCH@/targ_em_const.cxx"
+			"../../common/com/@ARCH@/targ_em_elf.cxx"
+			"../../common/com/@ARCH@/targ_em_dwarf.cxx"
 			"../../be/cg/annotations.cxx"
 			"../../be/cg/bblist.cxx"
 			"../../be/cg/bb_map.cxx"
@@ -128,10 +133,10 @@ SET(PATHSCALE_CG_COMMON_SRCS
 			"../../be/cg/gra_mon/gra_trace.cxx")
 
 SET( PATHSCALE_CG_ARM_SRCS "../../be/cg/swp/cg_swp.cxx" #st
-                        "../../be/cg/${BUILD_TARGET_DIR}/targ_op.cxx" #st
-                        "../../be/cg/${BUILD_TARGET_DIR}/targ_ebo.cxx" #st
-                        "../../be/cg/${BUILD_TARGET_DIR}/targ_select.cxx" #st
-                        "../../common/com/${BUILD_TARGET_DIR}/targ_register_common.cxx"
+                        "../../be/cg/@ARCH@/targ_op.cxx" #st
+                        "../../be/cg/@ARCH@/targ_ebo.cxx" #st
+                        "../../be/cg/@ARCH@/targ_select.cxx" #st
+                        "../../common/com/@ARCH@/targ_register_common.cxx"
                         "../../be/cg/cgdwarf_debug_frame.cxx" #st
                         "../../be/cg/loop_invar_hoist.cxx" #st
                         "../../be/cg/cg_ssa.cxx" #st
@@ -144,12 +149,12 @@ SET( PATHSCALE_CG_ARM_SRCS "../../be/cg/swp/cg_swp.cxx" #st
                         "../../be/cg/cg_coalesce.cxx" #st
                         "../../be/cg/cg_color.cxx" #st
                         "../../be/cg/swp/cg_swp_emit.cxx" #st
-                        "../../be/cg/${BUILD_TARGET_DIR}/cg_swp_bundle.cxx" #st
-                        "../../be/cg/${BUILD_TARGET_DIR}/targ_pqs.cxx" #st
-                        "../../be/cg/${BUILD_TARGET_DIR}/exp_intrinsic.cxx" #st 
-                        "../../be/cg/${BUILD_TARGET_DIR}/targ_range_prop.cxx" #st
-                        "../../be/cg/${BUILD_TARGET_DIR}/targ_range_analysis.cxx" #st
-                        "../../be/cg/${BUILD_TARGET_DIR}/targ_calls.cxx" #st
+                        "../../be/cg/@ARCH@/cg_swp_bundle.cxx" #st
+                        "../../be/cg/@ARCH@/targ_pqs.cxx" #st
+                        "../../be/cg/@ARCH@/exp_intrinsic.cxx" #st 
+                        "../../be/cg/@ARCH@/targ_range_prop.cxx" #st
+                        "../../be/cg/@ARCH@/targ_range_analysis.cxx" #st
+                        "../../be/cg/@ARCH@/targ_calls.cxx" #st
                         "../../be/cg/cg_ivs.cxx" #st
                         "../../be/cg/ipra.cxx" #st
                         "../../be/cg/cg_tailmerge.cxx" #st
@@ -161,12 +166,13 @@ SET( PATHSCALE_CG_ARM_SRCS "../../be/cg/swp/cg_swp.cxx" #st
                         "../../be/cg/swp/cg_swp_sched.cxx"#st
                         "../../dfgforise/ExportFromBackEnd.cxx")
 
-SET( PATHSCALE_CG_X8664_SRCS 		"../../be/cg/${BUILD_TARGET_DIR}/ebo_special.cxx"
-                                    	"../../be/cg/${BUILD_TARGET_DIR}/exp_predicate.cxx"
-		"../../be/cg/${BUILD_TARGET_DIR}/cg_sched.cxx"
-		"../../be/cg/${BUILD_TARGET_DIR}/cg_convert_x87.cxx"
-			"../../be/cg/${BUILD_TARGET_DIR}/cg_misc.cxx")
-IF( ${BUILD_TARGET_DIR} MATCHES "arm" )
+SET( PATHSCALE_CG_X8664_SRCS 		"../../be/cg/@ARCH@/ebo_special.cxx"
+                                    	"../../be/cg/@ARCH@/exp_predicate.cxx"
+		"../../be/cg/@ARCH@/cg_sched.cxx"
+		"../../be/cg/@ARCH@/cg_convert_x87.cxx"
+			"../../be/cg/@ARCH@/cg_misc.cxx")
+path64_is_arch_enabled(arm_enabled arm)
+IF(${arm_enabled})
 SET( PATHSCALE_CG_SRCS ${PATHSCALE_CG_COMMON_SRCS} ${PATHSCALE_CG_ARM_SRCS})
 ELSE()
 SET( PATHSCALE_CG_SRCS ${PATHSCALE_CG_COMMON_SRCS} ${PATHSCALE_CG_X8664_SRCS})
@@ -260,8 +266,10 @@ add_custom_command(
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 
-add_library(cg STATIC ${PATHSCALE_CG_SRCS} ${PATHSCALE_BINARY_DIR}/be/opsch_set.h)
-add_dependencies(cg targinfo)
+path64_set_multiarch_sources(cg_sources COMMON ${PATHSCALE_CG_SRCS} ${PATHSCALE_BINARY_DIR}/be/opsch_set.h)
+path64_add_multiarch_library(cg STATIC cg_sources)
+path64_add_multiarch_multiarch_dependencies(cg targinfo)
 
-ADD_DEPENDENCIES(cg generate_preg_list)
-ADD_DEPENDENCIES(cg generate_topcode)
+path64_add_multiarch_dependencies(cg generate_preg_list generate_topcode)
+path64_set_multiarch_property(cg COMPILE_FLAGS
+                              "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/@ARCH@")

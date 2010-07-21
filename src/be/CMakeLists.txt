@@ -30,7 +30,6 @@ INCLUDE_DIRECTORIES(
 
   ../libair
   ../common/com
-  ../common/com/${BUILD_TARGET_DIR}
   ../common/instrument
   ../common/targ_info/access
   ../common/util

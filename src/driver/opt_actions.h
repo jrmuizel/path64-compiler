@@ -37,6 +37,9 @@
 */
 
 
+#ifndef __DRIVER_OPT_ACTIONS_H__
+#define __DRIVER_OPT_ACTIONS_H__
+
 #include "basic.h"
 
 /* values of options */
@@ -158,6 +161,8 @@ typedef enum {
   ABI_STxP70_fpx,
   ABI_ARM_ver1,
   ABI_ARM_ver2,
+  ABI_M32,
+  ABI_M64
 } ABI;
 typedef enum {
   ISA_NONE      = 0,
@@ -301,3 +306,6 @@ extern int os21_profiler_options_set() ;
 extern int get_os21_profiler_options_emit_undefined() ;
 extern int get_os21_profiler_options_warn() ;
 #endif
+
+#endif // __DRIVER_OPT_ACTIONS_H__
+

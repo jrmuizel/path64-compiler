@@ -18,6 +18,8 @@ Set(PATHSCALE_DRIVER_SRCS ${PATHSCALE_COMMON_DRIVER_SRCS}
                           "phases.c"
                           "run.c"
                           "special_options.c"
+                          "targets.c"
+                          "${CMAKE_CURRENT_BINARY_DIR}/targ_info.c"
                           ${CMAKE_CURRENT_BINARY_DIR}/version_hg.c
                           "license.c"
    )
@@ -25,6 +27,14 @@ Set(PATHSCALE_DRIVER_SRCS ${PATHSCALE_COMMON_DRIVER_SRCS}
 set(PATHSCALE_TABLE_SRCS  ${PATHSCALE_COMMON_DRIVER_SRCS}
                           "table.c"
    )
+
+# Adding definitions for target architectures
+set(ARCH_DEFS)
+foreach(arch ${PATH64_ENABLE_ARCHES})
+    set(ARCH_DEFS ${ARCH_DEFS} ${_PATH64_ARCH_FLAGS_${arch}})
+endforeach()
+add_definitions(${ARCH_DEFS})
+
 
 add_executable(table ${PATHSCALE_TABLE_SRCS})
 
@@ -37,25 +47,16 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh.cmake.in
 
 
 #GET_TARGET_PROPERTY(TABLE_EXE table LOCATION)
-IF(${BUILD_TARGET_DIR} MATCHES "arm")
 add_custom_command(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS${BUILD_TARGET_DIR}.P
-        COMMAND ${SORT_OPTIONS} ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS   -DSUPPORTS_SELECT -DTARG_ST -DTARG_ARM -DARM -DMUMBLE_ARM_BSP -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST  -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS${BUILD_TARGET_DIR}.P 
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P
+        COMMAND ${SORT_OPTIONS} ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS ${ARCH_DEFS} -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
         DEPENDS ${SORT_OPTIONS} OPTIONS
         )
-ELSE()
-
-add_custom_command(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS${BUILD_TARGET_DIR}.P
-        COMMAND ${SORT_OPTIONS} ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS -DX8664 -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS${BUILD_TARGET_DIR}.P 
-        DEPENDS ${SORT_OPTIONS} OPTIONS
-        )
-ENDIF()
 
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/check_combos.c ${CMAKE_CURRENT_BINARY_DIR}/implicits.c
-        COMMAND table < ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS${BUILD_TARGET_DIR}.P
-        DEPENDS table ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS${BUILD_TARGET_DIR}.P
+        COMMAND table < ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P
+        DEPENDS table ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P
         )
 
 
@@ -65,6 +66,26 @@ add_custom_command(
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gen_version.sh
         )
 
+
+# Generating target definitions
+set(TARGET_DEFINITIONS "")
+set(first true)
+foreach(targ ${PATH64_ENABLE_TARGETS})
+    set(arch ${_PATH64_TARGET_ARCH_${targ}})
+    set(abi_name ${_PATH64_TARGET_BITS_${targ}})
+    set(abi ${_PATH64_TARGET_ABI_${targ}})
+    set(crt_path ${PSC_CRT_PATH_${targ}})
+
+    if(NOT first)
+        set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS},\n")
+    else()
+        set(first false)
+    endif()
+
+    set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS}\t{ \"${targ}\",\t\"${arch}\",\t\"${abi_name}\",\t${abi},\t\"${crt_path}\"}")
+endforeach()
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/targ_info.c.cmake.in
+               ${CMAKE_CURRENT_BINARY_DIR}/targ_info.c)
 
 include_directories(.
                     ../common/com
