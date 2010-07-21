@@ -1682,12 +1682,17 @@ add_file_args (string_list_t *args, phases_t index)
                free(crtbegin_path);
 
 		       } else {
-			   add_string_if_new_basename(args, PSC_CRT_PATH"/crti.o");
+               const char *runtime_path = target_runtime_path();
+               char *crti_path = concat_strings(runtime_path, "/crti.o");
                char *lib_path = target_library_path();
                char *crtbeginS_path = concat_strings(lib_path, "/crtbeginS.o");
                free(lib_path);
+
+			   add_string_if_new_basename(args, crti_path);
 			   add_string(args, crtbeginS_path);
+
                free(crtbeginS_path);
+               free(crti_path);
 		       }
 
 
