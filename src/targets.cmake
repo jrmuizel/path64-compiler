@@ -150,6 +150,17 @@ function(path64_check_arch_exists aname)
 endfunction()
 
 
+# Returns true if specified target is enabled
+function(path64_is_target_enabled res_var targ)
+    list(FIND PATH64_ENABLE_TARGETS ${targ} res)
+    if(res EQUAL -1)
+        set(${res_var} false PARENT_SCOPE)
+    else()
+        set(${res_var} true PARENT_SCOPE)
+    endif()
+endfunction()
+
+
 # Returns true if specified architecture is enabled
 function(path64_is_arch_enabled res_var arch)
     list(FIND PATH64_ENABLE_ARCHES ${arch} res)
