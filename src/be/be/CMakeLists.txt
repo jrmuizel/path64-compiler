@@ -212,11 +212,13 @@ path64_multiarch_link_multiarch_libraries(be-static targinfo)
 path64_multiarch_link_libraries(be-static m ${libdl})
 path64_set_multiarch_property(be-static COMPILE_FLAGS
                               "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
+path64_add_multiarch_multiarch_dependencies(be-static generate_topcode)
 
 path64_add_multiarch_library(be SHARED be_sources)
 path64_set_multiarch_property(be PREFIX "")
 path64_set_multiarch_property(be COMPILE_FLAGS
                               "-DSHARED_BUILD -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
+path64_add_multiarch_multiarch_dependencies(be generate_topcode)
 
 IF(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
     # --export-dynamic is not needed on osol
@@ -243,6 +245,7 @@ path64_multiarch_link_multiarch_libraries(be-exec targinfo)
 path64_set_multiarch_property(be-exec OUTPUT_NAME "be")
 path64_set_multiarch_property(be-exec COMPILE_FLAGS
                               "-DSHARED_BUILD -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
+path64_add_multiarch_multiarch_dependencies(be-exec generate_topcode)
 
 if(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
     # --export-dynamic is not needed on osol
