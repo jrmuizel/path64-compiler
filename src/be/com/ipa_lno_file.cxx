@@ -71,7 +71,7 @@
 // change SHT_MIPS_NUM to 42.  
 #define SHT_MIPS_IPALNO  (SHT_LOPROC + 42)
 
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
+#ifndef ORIGINAL_SGI_CODE
 #define MAPPED_SIZE 0x400000
 #endif
 
@@ -265,7 +265,7 @@ void IPA_LNO_WRITE_FILE::Open_Write_File(char *file_name)
     return;
   } 
 
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
+#ifndef ORIGINAL_SGI_CODE
     ftruncate(ofl->output_fd, MAPPED_SIZE);
 #endif
 

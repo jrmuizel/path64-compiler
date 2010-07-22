@@ -1131,7 +1131,7 @@ Create_Elf_Header (INT isa, BOOL old_abi, BOOL big_endian, BOOL pic,
     	Set_Elf_Version ((unsigned char *) &(ehdr64->e_ident));
 	ehdr64->e_machine = Get_Elf_Target_Machine();
 	ehdr64->e_type = ET_REL;
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
+#ifdef ORIGINAL_SGI_CODE
 	ehdr64->e_flags = e_flags;
 #else
 	ehdr64->e_flags = 0x23000000LL | e_flags;

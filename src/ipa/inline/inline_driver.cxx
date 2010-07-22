@@ -129,7 +129,7 @@ Process_Command_Line (INT argc, char **argv)
 		    if (argv[i][3] != 0)
 			break;
 		    /* else, fall through */
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
+#ifdef ORIGINAL_SGI_CODE
 		case 0:
 		    if (!IPA_Enable_DFE_Set)
 			IPA_Enable_DFE = FALSE;
