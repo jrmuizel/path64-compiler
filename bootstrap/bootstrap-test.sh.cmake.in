@@ -15,7 +15,7 @@ FORT=pathf90
 
 OLD_PATH=$PATH
 export PATH=${Path64_BINARY_DIR}/bin:$PATH
-export LD_LIBRARY_PATH=${Path64_BINARY_DIR}/lib/3.9.99
+export LD_LIBRARY_PATH=${Path64_BINARY_DIR}/lib/3.9.99/x8664/64
 
 cd $currdir
 
@@ -39,7 +39,7 @@ while [ $stage -lt $num_stages ]; do
     if [ $stage -eq 0 ]; then
 	# Set PATH and LD_LIBRARY_PATH for the second and later stages
 	PATH=$currdir/inst/bin:$OLD_PATH
-	export LD_LIBRARY_PATH=$currdir/build/lib/3.9.99:$currdir/inst/lib/3.9.99
+	export LD_LIBRARY_PATH=$currdir/build/lib/3.9.99/x8664/64:$currdir/inst/lib/3.9.99/x8664/64
     fi
     pstage=$stage
     stage=`expr $stage + 1`
