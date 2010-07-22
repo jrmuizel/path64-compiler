@@ -76,13 +76,58 @@ foreach(targ ${PATH64_ENABLE_TARGETS})
     set(abi ${_PATH64_TARGET_ABI_${targ}})
     set(crt_path ${PSC_CRT_PATH_${targ}})
 
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+        set(dyn_linker ${PSC_DYNAMIC_LINKER_${targ}})
+        if(NOT dyn_linker)
+            message(FATAL_ERROR "Dynamic linker for ${targ} target is not specified. Please specify PSC_DYNAMIC_LINKER_${targ} variable")
+        else()
+            message(STATUS "Dynamic linker for ${targ} target: ${dyn_linker}")
+        endif()
+    endif()
+
     if(NOT first)
         set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS},\n")
     else()
         set(first false)
     endif()
 
-    set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS}\t{ \"${targ}\",\t\"${arch}\",\t\"${abi_name}\",\t${abi},\t\"${crt_path}\"}")
+    set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS}\t{ \"${targ}\",\t\"${arch}\",\t\"${abi_name}\",\t${abi},\t\"${crt_path}\"")
+
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+        set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS},\t\"${dyn_linker}\"")
+    endif()
+
+    if(NOT PATH64_ENABLE_PSCRUNTIME)
+        set(supcpp_path ${PSC_LIBSUPCPP_PATH_${targ}})
+        set(stdcpp_path ${PSC_LIBSTDCPP_PATH_${targ}})
+        set(gcc_path ${PSC_LIBGCC_PATH_${targ}})
+        set(gcc_eh_path ${PSC_LIBGCC_EH_PATH_${targ}})
+        set(gcc_s_path ${PSC_LIBGCC_S_PATH_${targ}})
+
+        if(NOT supcpp_path)
+            message(FATAL_ERROR "Path to libsupc++ for target ${targ} is not specified. Please specify PSC_LIBSUPCPP_PATH_${targ} variable")
+        endif()
+
+        if(NOT stdcpp_path)
+            message(FATAL_ERROR "Path to libstdc++ for target ${targ} is not specified. Please specify PSC_LIBSUPCPP_PATH_${targ} variable")
+        endif()
+
+        if(NOT gcc_path)
+            message(FATAL_ERROR "Path to libgcc for target ${targ} is not specified. Please specify PSC_LIBSUPCPP_PATH_${targ} variable")
+        endif()
+
+        if(NOT gcc_eh_path)
+            message(FATAL_ERROR "Path to libgcc_eh for target ${targ} is not specified. Please specify PSC_LIBSUPCPP_PATH_${targ} variable")
+        endif()
+
+        if(NOT gcc_s_path)
+            message(FATAL_ERROR "Path to libgcc_s for target ${targ} is not specified. Please specify PSC_LIBSUPCPP_PATH_${targ} variable")
+        endif()
+
+        set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS},\t\"${supcpp_path}\",\t\"${stdcpp_path}\",\t\"${gcc_path}\",\t\"${gcc_eh_path}\",\t\"${gcc_s_path}\"")
+    endif()
+
+    set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS}}")
 endforeach()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/targ_info.c.cmake.in
                ${CMAKE_CURRENT_BINARY_DIR}/targ_info.c)

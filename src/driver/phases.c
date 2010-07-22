@@ -686,12 +686,10 @@ add_target_linker_args(string_list_t *args) {
 #ifdef TARG_X8664
     if(is_target_arch_X8664()) {
 #ifdef __linux__
-        if(abi == ABI_M32) {
-            add_arg(args, "--dynamic-linker=/lib/ld-linux.so.2");
-        } else {
-            // TODO: check that this path correct on all linux distros
-            add_arg(args, "--dynamic-linker=/lib/ld-linux-x86-64.so.2");
-        }
+        char *dyn_link_opt = concat_strings("--dynamic-linker=",
+                                            target_dynamic_linker());
+        add_arg(args, dyn_link_opt);
+        free(dyn_link_opt);
 #endif // __linux__
     }
 #endif // TARG_X8664
@@ -1334,6 +1332,7 @@ add_file_args (string_list_t *args, phases_t index)
 		break;
 #endif
 	case P_inline:
+        add_targ_options (args);
 		if (source_kind == S_B)
 		    sprintf (buf, "-fB,%s", the_file);
 		else
@@ -1872,104 +1871,6 @@ add_file_args (string_list_t *args, phases_t index)
 	}
 }
 
-/*
- * You'd think it would be easy to figure out the name of libgcc_s,
- * but noooooo.  The gcc developers, in their infinite wisdom, call it
- * libgcc_s for a native compiler, but libgcc_s_32 for a
- * 64-bit-to-32-bit cross compiler.
- */
-static void
-get_libgcc_s_name(char **libgcc_s_std, char **libgcc_s_dir32)
-{
-	// Return the standard name in LIBGCC_S_STD.  For 64-bit-to-32-bit
-	// cross compiler, libgcc_s may appear under a different name in a "32"
-	// dir.  Return that name in LIBGCC_S_DIR32.
-
-	if ((abi == ABI_M32 || abi == ABI_N32) && platform_is_64bit()) {
-		int v = get_gcc_major_version();
-		if (v < 4) {	// bug 11407
-		  *libgcc_s_std = "gcc_s_32";
-		  *libgcc_s_dir32 = "gcc_s";
-		  return;
-		}
-	}
-	*libgcc_s_std = "gcc_s";
-	*libgcc_s_dir32 = NULL;
-}
-
-/*
- * Oh, and did we mention that most of gcc's little helpers go into
- * the <blah>/32 directory, with the sole exception of libgcc_s_32.so?
- * It goes in the <blah> directory.  Ya gotta love it, folks.
- *
- * But wait - there's more!  Red Hat tuck libgcc_s.so away under
- * gcc-lib somewhere, but SuSE keep it in /usr/lib{,64}.
- */
-static void
-add_libgcc_s(string_list_t *args)
-{
-	static char *libgcc_s = NULL;
-	char *libgcc_s_std, *libgcc_s_dir32;
-	static int path_set;
-	string_item_t *p;
-	char *name = NULL;
-
-	get_libgcc_s_name(&libgcc_s_std, &libgcc_s_dir32);
-
-	// This function may be invoked multiple times, so we only set
-	// the search path once, but add the -l part whenever
-	// required.
-
-	if (!path_set) {
-		for (p = get_library_dirs()->head; p != NULL; p = p->next) {
-			free(name);
-			asprintf(&name, "%s/lib%s.so", p->name, libgcc_s_std);
-			if (file_exists(name)) {
-				add_arg(args, "-L%s", p->name);
-				libgcc_s = libgcc_s_std;
-				path_set = 1;
-				break;
-			}
-
-			free(name);
-			asprintf(&name,"%s/../lib%s.so", p->name, libgcc_s_std);
-			if (file_exists(name)) {
-				add_arg(args, "-L%s/..", p->name);
-				libgcc_s = libgcc_s_std;
-				path_set = 1;
-				break;
-			}
-
-			// For 64-bit-to-32-bit cross compiler, look under "32"
-			// dir.  Bug 8637.
-			if (libgcc_s_dir32 != NULL &&
-			    // Assumes p->name always end in '/'.
-			    strstr(p->name, "/32/") != NULL) {
-				free(name);
-				asprintf(&name,"%s/lib%s.so", p->name,
-					 libgcc_s_dir32);
-				if (file_exists(name)) {
-					add_arg(args, "-L%s", p->name);
-					libgcc_s = libgcc_s_dir32;
-					path_set = 1;
-					break;
-				}
-			}
-		}
-
-		free(name);
-
-		// It's not an error if we don't find the library,
-		// because different distros keep it in different
-		// places.
-
-		if (libgcc_s == NULL)
-			libgcc_s = libgcc_s_std;
-	}
-	
-	add_library(args, libgcc_s);
-}
-
 
 static void
 add_final_ld_args (string_list_t *args)
@@ -1995,9 +1896,15 @@ add_final_ld_args (string_list_t *args)
             return;
         }
 #ifdef PATH64_ENABLE_PSCRUNTIME
+        add_arg(args, "-L%s", current_target->libgcc_eh_path);
         add_library(args, "gcc_eh");
-        add_libgcc_s(args);  //adding gcc_s is tricky. Need to consider if gcc_eh and supc++ deserve special prcessing too.
+
+        add_arg(args, "-L%s", current_target->libgcc_s_path);
+        add_library(args, "gcc_s");
+
+        add_arg(args, "-L%s", current_target->libsupcpp_path);
         add_library(args, "supc++");
+
         add_library(args, "std");  //new runtime
 #else
         if (option_was_seen(O_static) || option_was_seen(O__static)){
@@ -2006,14 +1913,13 @@ add_final_ld_args (string_list_t *args)
 	        } else {
 	            add_arg(args, "-Wl,--start-group");
 	        }
-#  ifdef CONFIGURED_LIBGCC_DIR
-            add_arg(args, "-L%s", CONFIGURED_LIBGCC_DIR);
-#  endif
-#  ifdef CONFIGURED_LIBGCC_EH_DIR
-            add_arg(args, "-L%s", CONFIGURED_LIBGCC_EH_DIR);
-#  endif
+
+            add_arg(args, "-L%s", current_target->libgcc_path);
             add_library(args, "gcc");
+
+            add_arg(args, "-L%s", current_target->libgcc_eh_path);
             add_library(args, "gcc_eh");
+
             add_library(args, "c");  /* the above libs should be grouped together */
 
             if(ipa != TRUE){
@@ -2023,9 +1929,7 @@ add_final_ld_args (string_list_t *args)
             }
              
             if(invoked_lang == L_CC){
-#  ifdef CONFIGURED_LIBSUPCXX_DIR
-                add_arg(args, "-L%s", CONFIGURED_LIBSUPCXX_DIR);
-#  endif
+                add_arg(args, "-L%s", current_target->libsupcpp_path);
                 add_library(args, "supc++");
             }
         }
@@ -2124,12 +2028,10 @@ add_final_ld_args (string_list_t *args)
         if (!option_was_seen(O_fno_fast_stdlib) &&
             !option_was_seen(O_nolibpscrt)) {	// bug 9611
             add_library(args, "pscrt");
-#  if !defined(PATH64_ENABLE_PSCRUNTIME)
-#    if defined(CONFIGURED_LIBGCC_DIR)
-            add_arg(args, "-L%s", CONFIGURED_LIBGCC_DIR);
-#    endif
+#if !defined(PATH64_ENABLE_PSCRUNTIME)
+            add_arg(args, "-L%s", current_target->libgcc_path);
             add_library(args, "gcc");
-#  endif
+#endif
         }
     }
 #endif
@@ -2149,17 +2051,16 @@ add_final_ld_args (string_list_t *args)
 	if (ipa == TRUE) {
 #ifndef PATH64_ENABLE_PSCRUNTIME
 	    	if (invoked_lang == L_CC) {
-//                char * stdcpp_path = get_stdc_plus_plus_path();
-//                add_arg(args, "-L%s", stdcpp_path);
-//                free(stdcpp_path);
+                add_arg(args, "-L%s", current_target->libstdcpp_path);
                 add_library(args, "stdc++");
 	    	}
-#endif
 		if (invoked_lang == L_CC &&
 		    !option_was_seen(O_static) &&
 		    !option_was_seen(O__static)) {
-			add_libgcc_s (args);
+            add_arg(args, "-L%s", current_target->libgcc_s_path);
+            add_library(args, "gcc_s");
 		}
+#endif
 	}
 	if (shared != RELOCATABLE) {
 	  if ( fbuiltin != 0 && ! option_was_seen(O_fbootstrap_hack) ) {
@@ -2769,7 +2670,12 @@ add_instr_archive (string_list_t* args)
       add_library (args, "instr");
       if (!option_was_seen(O_static) &&
 	  !option_was_seen(O__static))
-	add_libgcc_s (args);
+      {
+#ifndef PATH64_ENABLE_PSCRUNTIME
+    add_arg(args, "-L%s", current_target->libgcc_s_path);
+	add_library(args, "gcc_s");
+#endif // PATH64_ENABLE_PSCRUNTIME
+      }
     } else {
       fprintf (stderr, "Unknown profile types %#lx\n", profile_type & ~f);
     }
@@ -3066,9 +2972,7 @@ run_ld (void)
 
 	if (invoked_lang == L_CC) {
 #ifndef PATH64_ENABLE_PSCRUNTIME
-//        char * stdcpp_path = get_stdc_plus_plus_path();
-//        add_arg(args, "-L%s", stdcpp_path);
-//        free(stdcpp_path);
+        add_arg(args, "-L%s", current_target->libstdcpp_path);
         add_library(args, "stdc++");
 #endif
 	    if (!multiple_source_files && !((shared == RELOCATABLE) && (ipa == TRUE) && (outfile == NULL)) && !keep_flag)

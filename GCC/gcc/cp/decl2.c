@@ -2370,17 +2370,7 @@ start_objects (int method_type, int initp)
 			    get_file_function_name_long (type),
 			    build_function_type (void_type_node,
 						 void_list_node));
-#ifdef TARG_ST
-  // [CL] this compiler-generated function has no real file/line information
-  input_filename = "<internal>";
-  input_line = 0;
-#endif
   start_preparsed_function (fndecl, /*attrs=*/NULL_TREE, SF_PRE_PARSED);
-
-#ifdef TARG_ST
-  // [CL] this function is compiler-generated
-  DECL_ARTIFICIAL (current_function_decl) = 1;
-#endif
 
   /* It can be a static function as long as collect2 does not have
      to scan the object file to find its ctor/dtor routine.  */
@@ -2497,11 +2487,6 @@ start_static_storage_duration_function (unsigned count)
   type = build_function_type (void_type_node, parm_types);
 
   /* Create the FUNCTION_DECL itself.  */
-#ifdef TARG_ST
-  // [CL] this compiler-generated function has no real file/line information
-  input_filename = "<internal>";
-  input_line = 0;
-#endif
   ssdf_decl = build_lang_decl (FUNCTION_DECL,
 			       get_identifier (id),
 			       type);

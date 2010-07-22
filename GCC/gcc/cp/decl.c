@@ -55,11 +55,6 @@ Boston, MA 02110-1301, USA.  */
 #include "timevar.h"
 #include "tree-flow.h"
 
-#ifdef TARG_ST
-  /* (cbr) can't have nrv if not optimizing untill dwarf is fixed */
-extern int do_nrv; // set in toplev.c
-#endif
-
 static tree grokparms (cp_parameter_declarator *, tree *);
 static const char *redeclaration_error_message (tree, tree);
 
@@ -3148,11 +3143,6 @@ cxx_init_decl_processing (void)
     }
   if (flag_inline_functions)
     flag_inline_trees = 2;
-
-#ifdef TARG_ST
-  /* [CL] let the whirl backend do the inlining. */
-  flag_inline_trees = 0;
-#endif
 
   /* Force minimum function alignment if using the least significant
      bit of function pointers to store the virtual bit.  */
@@ -7376,10 +7366,6 @@ grokdeclarator (const cp_declarator *declarator,
 
   if (declspecs->specs[(int)ds_complex])
     {
-#ifdef TARG_ST
-      /* (cbr) not yet */
-      error ("__complex__ type not currently supported");
-#else       
       if (TREE_CODE (type) != INTEGER_TYPE && TREE_CODE (type) != REAL_TYPE)
 	error ("complex invalid for %qs", name);
       /* If we just have "complex", it is equivalent to
@@ -7400,7 +7386,6 @@ grokdeclarator (const cp_declarator *declarator,
 	type = complex_long_double_type_node;
       else
 	type = build_complex_type (type);
-#endif
     }
 
   type_quals = TYPE_UNQUALIFIED;
@@ -10653,11 +10638,6 @@ start_preparsed_function (tree decl1, tree attrs, int flags)
 	 the definition as well, and may affect the mangled name.  */
       if (!DECL_CONTEXT (decl1))
 	maybe_apply_pragma_weak (decl1);
-
-#ifdef TARG_ST
-      DECL_WFE_PRAGMA_CONTEXT (decl1) = wfe_pragma_context ();
-#endif
-
     }
 
   /* Reset these in case the call to pushdecl changed them.  */
@@ -11247,22 +11227,12 @@ finish_function (int flags)
 
   /* Set up the named return value optimization, if we can.  Candidate
      variables are selected in check_return_value.  */
-#ifdef TARG_ST
-  /* (cbr) only if optimizing untill dwarf2 emit are able to track it*/
-  if (current_function_return_value && do_nrv)
-#else
   if (current_function_return_value)
-#endif
     {
       tree r = current_function_return_value;
       tree outer;
 
       if (r != error_mark_node
-#ifdef TARG_ST
-	  /* (cbr) can do nrv is volatile */ 
-	  && !TYPE_VOLATILE (TREE_TYPE (r))
-	  && !TYPE_VOLATILE(TREE_TYPE (TREE_TYPE (fndecl)))
-#endif
 	  /* This is only worth doing for fns that return in memory--and
 	     simpler, since we don't have to worry about promoted modes.  */
 	  && aggregate_value_p (TREE_TYPE (TREE_TYPE (fndecl)), fndecl)

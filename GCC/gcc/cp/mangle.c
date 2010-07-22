@@ -335,9 +335,6 @@ decl_is_template_id (const tree decl, tree* const template_info)
       if (flag_spin_file) {
         if (DECL_LANG_SPECIFIC (decl) != NULL
             && DECL_USE_TEMPLATE (decl)
-#ifdef TARG_ST
-	    && TREE_CODE (DECL_TI_TEMPLATE(decl)) == FUNCTION_DECL
-#endif
             && DECL_ARGUMENTS(DECL_TI_TEMPLATE(decl)) == NULL) {
           cannot_mangle_name = 1;
           return 0;

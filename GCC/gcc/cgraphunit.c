@@ -1253,9 +1253,6 @@ cgraph_expand_function (struct cgraph_node *node)
   /* Generate RTL for the body of DECL.  */
   lang_hooks.callgraph.expand_function (decl);
 
-#ifdef TARG_ST
-  if (!flag_spin_file)
-#endif
   /* Make sure that BE didn't give up on compiling.  */
   /* ??? Can happen with nested function of extern inline.  */
   gcc_assert (TREE_ASM_WRITTEN (node->decl));

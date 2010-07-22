@@ -18,7 +18,7 @@
 
 
 // Current target
-static const targ_info_t *current_target = &targ_info[0];
+const targ_info_t *current_target = &targ_info[0];
 
 static boolean target_arch_X8664 = FALSE;
 static boolean target_arch_MIPS = FALSE;
@@ -38,7 +38,7 @@ void init_targets() {
         toggle(&abi, current_target->abi);
     }
 
-    printf("CURRENT TARGET: %s\n", current_target->targ_name);
+//    printf("CURRENT TARGET: %s\n", current_target->targ_name);
 
     if(strcmp(current_target->arch_name, "x8664") == 0) {
         target_arch_X8664 = TRUE;
@@ -85,6 +85,13 @@ char *target_phase_path() {
 const char *target_runtime_path() {
     return current_target->crt_path;
 }
+
+
+#ifdef __linux__
+const char *target_dynamic_linker() {
+    return current_target->dynamic_linker;
+}
+#endif // __linux__
 
 
 #ifdef TARG_X8664

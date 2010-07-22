@@ -228,7 +228,6 @@ finish_optimization_passes (void)
   struct dump_file_info *dfi;
   char *name;
 
-#ifndef TARG_ST
   timevar_push (TV_DUMP);
   if (profile_arc_flag || flag_test_coverage || flag_branch_probabilities)
     {
@@ -260,16 +259,11 @@ finish_optimization_passes (void)
 	}
 
   timevar_pop (TV_DUMP);
-#endif
 }
 
 static bool
 gate_rest_of_compilation (void)
 {
-#ifdef TARG_ST
-  if (flag_spin_file)
-    resolve_unique_section (current_function_decl, 0, flag_function_sections);
-#endif
 #ifdef KEY
   if (flag_spin_file)
     gspin_gxx_emits_decl(current_function_decl);
@@ -518,9 +512,7 @@ init_optimization_passes (void)
   NEXT_PASS (pass_may_alias);
   NEXT_PASS (pass_return_slot);
   NEXT_PASS (pass_rename_ssa_copies);
-#ifndef TARG_ST
   NEXT_PASS (pass_early_warn_uninitialized);
-#endif
 
   /* Initial scalar cleanups.  */
   NEXT_PASS (pass_ccp);
@@ -604,9 +596,7 @@ init_optimization_passes (void)
      account for the predicates protecting the set and the use of each
      variable.  Using a representation like Gated Single Assignment
      may help.  */
-#ifndef TARG_ST
   NEXT_PASS (pass_late_warn_uninitialized);
-#endif
   NEXT_PASS (pass_dse);
   NEXT_PASS (pass_forwprop);
   NEXT_PASS (pass_phiopt);

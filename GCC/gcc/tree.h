@@ -215,11 +215,6 @@ enum built_in_class
 /* Names for the above.  */
 extern const char *const built_in_class_names[4];
 
-#ifdef TARG_ST
-//TB: isolate builtins definition in a own .h file
-#include "builtins.h"
-#else
-
 /* Codes that identify the various built in functions
    so that expand_call can identify them quickly.  */
 
@@ -246,7 +241,6 @@ enum built_in_function
   END_BUILTINS
 };
 #undef DEF_BUILTIN
-#endif /* TARG_ST */
 
 /* Names for the above.  */
 extern const char * built_in_names[(int) END_BUILTINS];
@@ -1464,18 +1458,6 @@ struct tree_constructor GTY(())
 /* In a LOOP_EXPR node.  */
 #define LOOP_EXPR_BODY(NODE) TREE_OPERAND_CHECK_CODE (NODE, LOOP_EXPR, 0)
 
-#ifdef TARG_ST
-/* WHILE_STMT accessors. These give access to the condition of the
-   while statement and the body of the while statement, respectively.  */
-#define C_WHILE_COND(NODE)	TREE_OPERAND (C_WHILE_STMT_CHECK (NODE), 0)
-#define C_WHILE_BODY(NODE)	TREE_OPERAND (C_WHILE_STMT_CHECK (NODE), 1)
-
-/* DO_STMT accessors. These give access to the condition of the do
-   statement and the body of the do statement, respectively.  */
-#define C_DO_COND(NODE)		TREE_OPERAND (C_DO_STMT_CHECK (NODE), 0)
-#define C_DO_BODY(NODE)		TREE_OPERAND (C_DO_STMT_CHECK (NODE), 1)
-#endif
-
 #ifdef USE_MAPPED_LOCATION
 /* The source location of this expression.  Non-tree_exp nodes such as
    decls and constants can be shared among multiple locations, so
@@ -2346,19 +2328,6 @@ enum symbol_visibility
 
 struct function;
 
-#ifdef TARG_ST
-//TB: Add optsize and optperf on 8 bits
-/*this is needed to pass info the the open64 back end */
-enum optlevel_t
-{
-  OPTLEVEL_0 = 0,
-  OPTLEVEL_1 = 1,
-  OPTLEVEL_2 = 2,
-  OPTLEVEL_3 = 3,
-  OPTLEVEL_UNDEF = 4
-};
-#endif
-
 
 /* This is the name of the object as written by the user.
    It is an IDENTIFIER_NODE.  */
@@ -3098,11 +3067,6 @@ struct tree_decl_non_common GTY(())
    not an alias.  */
 #define DECL_IS_MALLOC(NODE) (FUNCTION_DECL_CHECK (NODE)->function_decl.malloc_flag)
 
-#ifdef TARG_ST
-#define DECL_OPTSIZE(NODE) (FUNCTION_DECL_CHECK (NODE)->function_decl.optsize)
-#define DECL_OPTPERF(NODE) (FUNCTION_DECL_CHECK (NODE)->function_decl.optperf)
-#endif
-
 /* Nonzero in a FUNCTION_DECL means this function may return more
    than once.  */
 #define DECL_IS_RETURNS_TWICE(NODE) \
@@ -3174,17 +3138,11 @@ struct tree_decl_non_common GTY(())
 #define DECL_ARGUMENTS(NODE) (FUNCTION_DECL_CHECK (NODE)->decl_non_common.arguments)
 #define DECL_ARGUMENT_FLD(NODE) (DECL_NON_COMMON_CHECK (NODE)->decl_non_common.arguments)
 
-#ifdef TARG_ST
-/* In FUNCTION_DECL, a chain of PRAGMA_STMT nodes that list the enclosing
-   wfe pragmas in reverse order. */
-#define DECL_WFE_PRAGMA_CONTEXT(NODE) \
-(FUNCTION_DECL_CHECK (NODE)->function_decl.wfe_pragma_context)
-#endif
-
 /* FUNCTION_DECL inherits from DECL_NON_COMMON because of the use of the
    arguments/result/saved_tree fields by front ends.   It was either inherit
    FUNCTION_DECL from non_common, or inherit non_common from FUNCTION_DECL,
    which seemed a bit strange.  */
+
 struct tree_function_decl GTY(())
 {
   struct tree_decl_non_common common;
@@ -3204,10 +3162,8 @@ struct tree_function_decl GTY(())
   unsigned no_instrument_function_entry_exit : 1;
   unsigned no_limit_stack : 1;
   ENUM_BITFIELD(built_in_class) built_in_class : 2;
-  /*ENUM_BITFIELD(optlevel_t) optsize:4;*/ /* ST: level of opt for size */
-  /*ENUM_BITFIELD(optlevel_t) optperf:4;*/ /* ST: level of opt for performance */
+
   struct function *f;
-  /*tree wfe_pragma_context;  */    /* ST: context for global wfe pragmas */
 };
 
 /* For a TYPE_DECL, holds the "original" type.  (TREE_TYPE has the copy.) */
@@ -4668,10 +4624,6 @@ struct pointer_set_t;
 typedef tree (*walk_tree_fn) (tree *, int *, void *);
 extern tree walk_tree (tree*, walk_tree_fn, void*, struct pointer_set_t*);
 extern tree walk_tree_without_duplicates (tree*, walk_tree_fn, void*);
-#ifdef TARG_ST
-extern tree duplicate_tree (tree, void *);
-extern tree repair_duplicate_side_effects (tree, void *);
-#endif
 
 /* Assign the RTX to declaration.  */
 
@@ -4745,10 +4697,6 @@ extern unsigned HOST_WIDE_INT compute_builtin_object_size (tree, int);
 /* In expr.c.  */
 extern unsigned HOST_WIDE_INT highest_pow2_factor (tree);
 
-#ifdef TARG_ST
-void simplify_target_exprs (tree *);
-#endif
-
 #ifdef KEY
 /* Bug 1392 */
 #include "gspin-gcc-interface.h"
@@ -4761,9 +4709,6 @@ extern gs_t gs_x_func_decl (tree node);
 extern void gspin_gxx_emits_decl (tree t);
 extern void gspin_gxx_emits_thunk_decl (tree t);
 extern void gspin_gxx_emits_asm (char *str);
-#ifdef TARG_ST
-extern void gspin_emit_ident (const char *str, int comment);
-#endif
 extern void gspin_init_global_trees_list (void);
 extern int gspin_invoked (tree t);
 extern void gs_set_flag_value (tree t, unsigned int flag, bool value);

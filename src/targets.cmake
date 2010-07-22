@@ -207,7 +207,7 @@ function(path64_add_library_for_target name target type)
     set(arch ${_PATH64_TARGET_ARCH_${target}})
     set(bits ${_PATH64_TARGET_BITS_${target}})
     set(arch_flag "${_PATH64_TARGET_FLAG_${target}} ${_PATH64_ARCH_FLAGS_${arch}}")
-    set(build_lib_dir ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${arch}/${bits})
+    set(build_lib_dir ${Path64_BINARY_DIR}/lib/${arch}/${bits})
     set(install_lib_dir ${PATH64_LIB_PATH}/${arch}/${bits})
     set(install_inc_dir ${install_lib_dir}/include)
 
@@ -235,7 +235,7 @@ function(path64_add_library_for_arch name arch type)
 
     # Compiler ABI.
     set(arch_flags ${_PATH64_ARCH_FLAGS_${arch}})
-    set(build_lib_dir ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${arch})
+    set(build_lib_dir ${Path64_BINARY_DIR}/lib/${arch})
     set(install_lib_dir ${PATH64_LIB_PATH}/${arch})
     set(install_inc_dir ${install_lib_dir}/include)
 
@@ -263,7 +263,7 @@ function(path64_add_executable_for_arch name arch)
 
     # Compiler ABI.
     set(arch_flags ${_PATH64_ARCH_FLAGS_${arch}})
-    set(build_lib_dir ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${arch})
+    set(build_lib_dir ${Path64_BINARY_DIR}/lib/${arch})
     set(install_lib_dir ${PATH64_LIB_PATH}/${arch})
     set(install_inc_dir ${install_lib_dir}/include)
 
@@ -527,6 +527,17 @@ function(path64_add_multiarch_multiarch_dependencies name)
         foreach(dep ${ARGN})
             path64_get_multiarch_cmake_target(dep_tg ${dep} ${arch})
             add_dependencies(${tg} ${dep_tg})
+        endforeach()
+    endforeach()
+endfunction()
+
+
+# Adds dependencies from multiarch targets
+function(path64_add_dependencies_from_multiarch name)
+    foreach(dep ${ARGN})
+        foreach(arch ${PATH64_ENABLE_ARCHES})
+            path64_get_multiarch_cmake_target(dep_tg ${dep} ${arch})
+            add_dependencies(${name} ${dep_tg})
         endforeach()
     endforeach()
 endfunction()

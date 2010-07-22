@@ -8,6 +8,10 @@
 
 
 #include "basic.h"
+#include "targ_info.h"
+
+
+extern const targ_info_t *current_target;
 
 
 void init_targets();
@@ -25,6 +29,12 @@ char *target_phase_path();
 
 // Returns path to target runtime path (location of crtX.o)
 const char *target_runtime_path();
+
+
+#ifdef __linux__
+// Returns path to dynamic linker for target
+const char *target_dynamic_linker();
+#endif // __linux__
 
 
 #ifdef TARG_X8664

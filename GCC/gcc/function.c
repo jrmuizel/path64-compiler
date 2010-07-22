@@ -3577,13 +3577,6 @@ reorder_blocks (void)
   if (block == NULL_TREE)
     return;
 
-#ifdef TARG_ST
-  /* (cbr) inlined functions are lazilly emitted (see cp/semantics.c)
-     note that while emitting whirl. we could always skip this step. */
-  if (block == error_mark_node)
-    return;  
-#endif
-
   block_stack = VEC_alloc (tree, heap, 10);
 
   /* Reset the TREE_ASM_WRITTEN bit for all blocks.  */

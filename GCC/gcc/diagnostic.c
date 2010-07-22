@@ -274,15 +274,9 @@ diagnostic_action_after_output (diagnostic_context *context,
       if (context->abort_on_error)
 	real_abort ();
 
-#ifdef TARG_ST
-  /* (cbr) don't use gnu url for open64 bug reports */
-      fnotice (stderr, "Please submit a full bug report,\n"
-	       "with preprocessed source if appropriate.\n\n");
-#else
       fnotice (stderr, "Please submit a full bug report,\n"
 	       "with preprocessed source if appropriate.\n"
 	       "See %s for instructions.\n", bug_report_url);
-#endif
 #ifdef KEY
       fnotice (stderr, "GNU front-end error.\n");
       exit (RC_GCC_INTERNAL_ERROR);

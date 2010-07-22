@@ -109,8 +109,4 @@ extern int c_lex_string_translate;
    unmolested (no concatenation, no translation).  */
 extern bool c_lex_return_raw_strings;
 
-#ifdef TARG_ST
-extern tree wfe_pragma_context (void);
-#endif
-
 #endif /* GCC_C_PRAGMA_H */

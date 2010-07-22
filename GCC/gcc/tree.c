@@ -6596,12 +6596,6 @@ build_common_tree_nodes_2 (int short_double)
   layout_type (double_type_node);
 
   long_double_type_node = make_node (REAL_TYPE);
-#ifdef TARG_ST
-  /* [JV] Transform also long double in float when -fshort-double is used */
-  if (short_double)
-    TYPE_PRECISION (long_double_type_node) = FLOAT_TYPE_SIZE;
-  else
-#endif
   TYPE_PRECISION (long_double_type_node) = LONG_DOUBLE_TYPE_SIZE;
   layout_type (long_double_type_node);
 
@@ -7824,23 +7818,6 @@ enum language language = C;
 #define CPR() (language == CPP)
 #define CR()  (language == C)
 
-#if defined ENABLE_TREE_CHECKING && (GCC_VERSION >= 2007)
-/* Complain that some language-specific thing hanging off a tree
-   node has been accessed improperly.  */
-
-/* [SC] When tree checking is enabled, the spin emission code here can
-   use C++ tree access macros which can call lang_check_failed.
-   But lang_check_failed is defined in C++ files, so is missing from
-   a cc1 build.  Here introduce a weak version of the function, that
-   will satisfy the cc1 build. */
-void __attribute__ ((weak))
-lang_check_failed (const char* file, int line, const char* function)
-{
-  internal_error ("lang_* check: failed in %s, at %s:%d",
-		  function, trim_filename (file), line);
-}
-#endif /* ENABLE_TREE_CHECKING */
-
 // C++ Dummy Variables Section Begins.
 tree global_namespace; // CP_DECL_CONTEXT () references this variable in cp/name-lookup.c
 int (*p_uses_template_parms) (tree);
@@ -7910,9 +7887,6 @@ gcc2gs (int code)
    case DELETE_EXPR: return GS_DELETE_EXPR;
    case DEFAULT_ARG: return GS_DEFAULT_ARG;
    case DYNAMIC_CAST_EXPR: return GS_DYNAMIC_CAST_EXPR;
-#ifdef TARG_ST
-   case C_DO_STMT:
-#endif
    case DO_STMT: return GS_DO_STMT;
    case DOTSTAR_EXPR: return GS_DOTSTAR_EXPR;
    case EH_FILTER_EXPR: return GS_EH_FILTER_EXPR;
@@ -7999,9 +7973,6 @@ gcc2gs (int code)
    case POLYNOMIAL_CHREC: return GS_POLYNOMIAL_CHREC;
    case POSTDECREMENT_EXPR: return GS_POSTDECREMENT_EXPR;
    case POSTINCREMENT_EXPR: return GS_POSTINCREMENT_EXPR;
-#ifdef TARG_ST
-   case PRAGMA_STMT: return GS_PRAGMA_STMT;
-#endif
    case PREDECREMENT_EXPR: return GS_PREDECREMENT_EXPR;
    case PREINCREMENT_EXPR: return GS_PREINCREMENT_EXPR;
    case PTRMEM_CST: return GS_PTRMEM_CST;
@@ -8083,9 +8054,6 @@ gcc2gs (int code)
    case VEC_NEW_EXPR: return GS_VEC_NEW_EXPR;
    case VIEW_CONVERT_EXPR: return GS_VIEW_CONVERT_EXPR;
    case VOID_TYPE: return GS_VOID_TYPE;
-#ifdef TARG_ST
-   case C_WHILE_STMT:
-#endif
    case WHILE_STMT: return GS_WHILE_STMT;
    case WITH_CLEANUP_EXPR: return GS_WITH_CLEANUP_EXPR;
    case WITH_SIZE_EXPR: return GS_WITH_SIZE_EXPR;
@@ -8820,20 +8788,10 @@ gcc_built_in2gsbi (enum built_in_function code)
     case BUILT_IN_COMPLEX_MUL_MAX: return GSBI_BUILT_IN_COMPLEX_MUL_MAX;
     case BUILT_IN_COMPLEX_DIV_MIN: return GSBI_BUILT_IN_COMPLEX_DIV_MIN;
     case BUILT_IN_COMPLEX_DIV_MAX: return GSBI_BUILT_IN_COMPLEX_DIV_MAX;
-#ifdef TARG_ST
-    case BUILT_IN_ASSUME: return GSBI_BUILT_IN_ASSUME;
-#define INTRN_GCC_BUILT_IN2GSBI
-#include "gfec_2_gsbi.h"
-#undef INTRN_GCC_BUILT_IN2GSBI
-#endif
     case END_BUILTINS: return GSBI_END_BUILTINS;
   }
-#ifdef TARG_ST
-  return (gsbi_t)-1;
-#else
   gcc_assert (0);
   return (gsbi_t) 0;
-#endif
 }
 
 static inline gsbi_class_t
@@ -9285,600 +9243,6 @@ gcc_omp_clause_schedule_kind2gs_ocsk (enum omp_clause_schedule_kind k)
 
 /******************************************************************************/
 
-#ifdef TARG_ST
-static tree
-take_address (tree t)
-{
-  tree ptr_type = build_pointer_type (TREE_TYPE(t));
-  tree result;
-
-  if (TREE_CODE (t) == COMPONENT_REF)
-    {
-      tree base = take_address (TREE_OPERAND (t, 0));
-      tree field = TREE_OPERAND (t, 1);
-      tree offset = byte_position (field);
-      result = build2 (PLUS_EXPR, ptr_type, base, offset);
-    }
-  else
-    result = build1 (ADDR_EXPR, ptr_type, t);
-  return result;
-}
-
-struct Target_Expr_Item {
-  struct Target_Expr_Item *next;
-  tree target;
-  bool stabilized;
-  bool stabilize_change;
-  bool written;
-  tree target_aliases;
-};
-
-struct Target_Expr_Info {
-  struct pointer_set_t *visited_call_exprs;
-  struct Target_Expr_Item *target_item_stack;
-};
-
-static bool
-Target_Set_p (struct Target_Expr_Info *target_expr_info)
-{
-  return (target_expr_info->target_item_stack->target != NULL_TREE);
-}
-
-static void
-Add_Alias (struct Target_Expr_Info *target_expr_info, tree slot)
-{
-  struct Target_Expr_Item *target_expr_item = target_expr_info->target_item_stack;
-  target_expr_item->target_aliases =
-    tree_cons (NULL_TREE, slot, target_expr_item->target_aliases);
-}
-
-static void
-Remove_Alias (struct Target_Expr_Info *target_expr_info, tree slot)
-{
-  tree *p;
-  for (p = &target_expr_info->target_item_stack->target_aliases;
-       *p; p = &TREE_CHAIN (*p))
-    if (TREE_VALUE (*p) == slot)
-      {
-	*p = TREE_CHAIN (*p);
-	return;
-      }
-  gcc_assert (0);
-}
-
-static bool
-Is_Alias_p (struct Target_Expr_Item *target_expr_item, tree t)
-{
-  tree p;
-  for (p = target_expr_item->target_aliases; p != NULL_TREE; p = TREE_CHAIN (p))
-    if (TREE_VALUE (p) == t)
-      return true;
-  return false;
-}
-
-static tree
-Target (struct Target_Expr_Info *target_expr_info)
-{
-  gcc_assert (Target_Set_p (target_expr_info));
-  return target_expr_info->target_item_stack->target;
-}
-
-static bool
-Written_p (struct Target_Expr_Info *target_expr_info)
-{
-  return target_expr_info->target_item_stack->written;
-}
-
-static void
-Set_Written (struct Target_Expr_Info *target_expr_info, bool v)
-{
-  target_expr_info->target_item_stack->written = v;
-}
-
-static void
-Push_Target (struct Target_Expr_Info *target_expr_info,
-	     struct Target_Expr_Item *target_expr_item, tree t)
-{
-  target_expr_item->next = target_expr_info->target_item_stack;
-  target_expr_item->target = t;
-  target_expr_item->stabilized = false;
-  target_expr_item->stabilize_change = false;
-  target_expr_item->written = false;
-  target_expr_item->target_aliases = NULL_TREE;
-  target_expr_info->target_item_stack = target_expr_item;
-}
-
-static void
-Pop_Target  (struct Target_Expr_Info *target_expr_info)
-{
-  target_expr_info->target_item_stack = target_expr_info->target_item_stack->next;
-}
-
-static bool
-Stabilize_Change_p (struct Target_Expr_Info *target_expr_info)
-{
-  return target_expr_info->target_item_stack->stabilize_change;
-}
-
-static tree
-Use (struct Target_Expr_Item *target_expr_item)
-{
-  tree target = target_expr_item->target;
-  gcc_assert (target != NULL_TREE);
-  if ( ! target_expr_item->stabilized)
-    {
-      tree stabilized_target = stabilize_reference (target);
-      target_expr_item->stabilize_change = (stabilized_target != target);
-      target_expr_item->stabilized = true;
-    }
-  return target;
-}
-
-static tree
-Substitute (struct Target_Expr_Info *target_expr_info, tree t)
-{
-  struct Target_Expr_Item *e;
-  for (e = target_expr_info->target_item_stack; e != NULL; e = e->next)
-    if (Is_Alias_p (e, t))
-      return Use (e);
-  return t;
-}
-
-static void
-Write (struct Target_Expr_Info *target_expr_info, tree t)
-{
-  struct Target_Expr_Item *e;
-  for (e = target_expr_info->target_item_stack; e != NULL; e = e->next)
-    if (e->target == t  || Is_Alias_p (e, t))
-      {
-	e->written = true;
-	break;
-      }
-}
-
-static bool
-Visited_Call_Expr_p (struct Target_Expr_Info *target_expr_info, tree t)
-{
-  return pointer_set_contains (target_expr_info->visited_call_exprs, t);
-}
-
-static void
-Add_Visited_Call_Expr (struct Target_Expr_Info *target_expr_info, tree t)
-{
-  pointer_set_insert (target_expr_info->visited_call_exprs, t);
-}
-
-static void simplify_target_exprs_1 (tree *tp,
-				     struct Target_Expr_Info *target_expr_info);
-
-static tree
-simplify_target_exprs_r (tree *tp,
-			 int *walk_subtrees,
-			 void *data) {
-  struct Target_Expr_Info *target_expr_info = (struct Target_Expr_Info *)data;
-  tree t = *tp;
-  if (TYPE_P (t)) {
-    *walk_subtrees = 0;
-    return NULL_TREE;
-  }
-
-  enum tree_code code = TREE_CODE (t);
-  switch (code) {
-  case TARGET_EXPR:
-    {
-      *walk_subtrees = 0;
-      /* Here it is indeterminate whether the expression is operand 1 or
-	 operand 3 (because gcc rtl generation may have moved it),
-	 so normalize it to operand 1. */
-      if (TREE_OPERAND (t, 1) == NULL_TREE) {
-	TREE_OPERAND (t, 1) = TREE_OPERAND (t, 3);
-	TREE_OPERAND (t, 3) = NULL_TREE;
-      }
-      tree slot = TREE_OPERAND (t, 0);
-      if (Target_Set_p (target_expr_info)) {
-	/* This is a "normal" TARGET_EXPR.  We should treat SLOT as
-	   an alias of the real target.  No cleanup is required. */
-	Add_Alias (target_expr_info, slot);
-	/* Here assert that the types of target_expr_info->target and
-	   TREE_TYPE (t) are compatible. */
-	tree target = Target (target_expr_info);
-	gcc_assert (TYPE_MAIN_VARIANT (TREE_TYPE (t)) ==
-		    TYPE_MAIN_VARIANT (TREE_TYPE (target)));
-	bool old_written = Written_p (target_expr_info);
-	Set_Written (target_expr_info, false);
-	simplify_target_exprs_1 (& TREE_OPERAND (t, 1), target_expr_info);
-
-	if (Written_p (target_expr_info)
-	    || VOID_TYPE_P (TREE_TYPE (TREE_OPERAND (t, 1)))) {
-	  /* Target is written in the rhs, so we can remove this
-	     TARGET_EXPR node completely. Remember no cleanup is required
-	     for a "normal" target expr. */
-	  /* But be careful, since the expression could be void type,
-	     in which case to preserve tree type correctness, we need
-	     to put it inside a COMPOUND_EXPR. */
-	  if (VOID_TYPE_P (TREE_TYPE(TREE_OPERAND (t, 1)))
-	      && ! VOID_TYPE_P (TREE_TYPE (t)))
-	    *tp = build2 (COMPOUND_EXPR, TREE_TYPE (t),
-			  TREE_OPERAND (t, 1),
-			  Use (target_expr_info->target_item_stack));
-	  else
-	    *tp = TREE_OPERAND (t, 1);
-	} else {
-	  /* Rewrite this node to be a MODIFY_EXPR of the true target */
-	  *tp = build2 (MODIFY_EXPR, TREE_TYPE (t),
-			target,
-			TREE_OPERAND (t, 1));
-	  Set_Written (target_expr_info, old_written);
-	}
-	Remove_Alias (target_expr_info, slot);
-      } else {
-	/* This is an "orphaned" TARGET_EXPR.  SLOT is a real variable,
-	   not a temporary.  SLOT becomes the new target for the expression
-	   and the cleanup. */
-	struct Target_Expr_Item target_expr_item;
-	Push_Target (target_expr_info, &target_expr_item, slot);
-	simplify_target_exprs_1 (& TREE_OPERAND (t, 1), target_expr_info);
-	if (Written_p (target_expr_info)
-	    || VOID_TYPE_P (TREE_TYPE (TREE_OPERAND (t, 1)))) {
-	  /* Put the expression as 3rd operand, as an indicator that the
-	     target is written in the expression, so we do not have to assign
-	     it when we evaluate this TARGET_EXPR node. */
-	  TREE_OPERAND (t, 3) = TREE_OPERAND (t, 1);
-	  TREE_OPERAND (t, 1) = NULL_TREE;
-	}
-	if (TREE_OPERAND(t, 2)) {
-	  simplify_target_exprs_1 (& TREE_OPERAND (t, 2), target_expr_info);
-	}
-	Pop_Target (target_expr_info);
-      }
-    }
-    break;
-  case INIT_EXPR:
-  case MODIFY_EXPR:
-  case PREDECREMENT_EXPR:
-  case PREINCREMENT_EXPR:
-  case POSTDECREMENT_EXPR:
-  case POSTINCREMENT_EXPR:
-    {
-      struct Target_Expr_Item target_expr_item;
-      bool target_pushed = FALSE;
-
-      *walk_subtrees = 0;
-      simplify_target_exprs_1 (& TREE_OPERAND (t, 0), target_expr_info);
-
-      if (! Target_Set_p (target_expr_info)
-	  || Target (target_expr_info) != TREE_OPERAND (t, 0))
-	{
-	  /* It can happen that the preceding call to simplify_target_exprs_1
-	     will substitute our target into the lhs.  In that case, we do not
-	     want to push it again, since we will lose the Written_p information
-	     when we pop it. */
-	  Push_Target (target_expr_info, &target_expr_item, TREE_OPERAND (t, 0));
-	  target_pushed = TRUE;
-	}
-      
-      simplify_target_exprs_1 (& TREE_OPERAND (t, 1), target_expr_info);
-
-      if (Written_p (target_expr_info)
-	  || VOID_TYPE_P (TREE_TYPE (TREE_OPERAND (t, 1)))) {
-	/* If we can guarantee the target is written in the rhs, then
-	   there is no need to write to the target here, so here just evaluate
-	   for side-effects.
-	   This is used to avoid targets with copy constructors, where we do
-	   not want to assign multiple times. */
-	if (Stabilize_Change_p (target_expr_info)
-	    && TREE_SIDE_EFFECTS(Target (target_expr_info))) {
-	      *tp = build2 (COMPOUND_EXPR, TREE_TYPE (t),
-			    Target (target_expr_info),
-			    TREE_OPERAND (t, 1));
-	} else {
-	  *tp = TREE_OPERAND (t, 1);
-	}
-      } else {
-	if (Stabilize_Change_p (target_expr_info)
-	    && TREE_SIDE_EFFECTS(Target (target_expr_info))) {
-	  /* We used the target somewhere inside the rhs, so we should precompute
-	     the stabilized form. */
-	  *tp = build2 (COMPOUND_EXPR, TREE_TYPE (t),
-			Target (target_expr_info),
-			build2 (code, TREE_TYPE (t),
-				Target (target_expr_info),
-				TREE_OPERAND (t, 1)));
-	}
-      }
-      if (target_pushed)
-	Pop_Target (target_expr_info);
-    }
-    break;
-  case VAR_DECL:
-    /* This could be an alias introduced by a TARGET_EXPR.  If so, substitute
-       the true target. */
-    *tp = Substitute (target_expr_info, *tp);
-    break;
-
-  case CALL_EXPR:
-    {
-      struct Target_Expr_Item target_expr_item;
-      *walk_subtrees = 0;
-      simplify_target_exprs_1 (& TREE_OPERAND (t, 0), target_expr_info);
-
-      /* Set the written flag if this is a constructor of our target.
-	 Do this before transforming the args since taking the address
-	 of the target can make a PLUS_EXPR when the target is a
-	 COMPONENT_REF, causing the constructor_dest tree not to match
-	 the target. */
-      tree callee_fndecl = get_callee_fndecl (t);
-      tree first_arg = (TREE_OPERAND(t, 1)
-			? TREE_VALUE(TREE_OPERAND(t, 1))
-			: NULL_TREE);
-      if (callee_fndecl != NULL_TREE
-	  && DECL_CONSTRUCTOR_P(callee_fndecl)
-	  && first_arg != NULL_TREE
-	  && TREE_CODE (first_arg) == ADDR_EXPR) {
-	tree constructor_dest = TREE_OPERAND(first_arg, 0);
-	Write (target_expr_info, constructor_dest);
-      }
-
-      /* An outer INIT/MODIFY target does not propagate down into TARGET_EXPRs
-	 in the arglist.  However, the arglist may have references to
-	 a variable defined in an outer TARGET_EXPR. */
-      Push_Target (target_expr_info, &target_expr_item, NULL_TREE);
-      simplify_target_exprs_1 (& TREE_OPERAND (t, 1), target_expr_info);
-      Pop_Target (target_expr_info);
-      
-      /* Insert the return value address at the head of the args list. */
-      if (CPR () && aggregate_value_p (TREE_TYPE(t), NULL_TREE))
-	{  
-	  if (! Visited_Call_Expr_p (target_expr_info, t))
-	    {
-	      TREE_OPERAND (t, 1) = tree_cons (NULL_TREE,
-					       take_address (Use (target_expr_info->target_item_stack)),
-					       TREE_OPERAND(t, 1));
-	    }
-	  Set_Written (target_expr_info, true);
-      }
-      Add_Visited_Call_Expr (target_expr_info, t);
-    }
-    break;
-
-  case SAVE_EXPR:
-  case INDIRECT_REF:
-  case COMPONENT_REF:
-  case BIT_FIELD_REF:
-  case ARRAY_RANGE_REF:
-  case ARRAY_REF:
-  case LT_EXPR:
-  case LE_EXPR:
-  case GT_EXPR:
-  case GE_EXPR:
-  case EQ_EXPR:
-  case NE_EXPR:
-  case UNORDERED_EXPR:
-  case ORDERED_EXPR:
-  case UNLT_EXPR:
-  case UNLE_EXPR:
-  case UNGT_EXPR:
-  case UNGE_EXPR:
-  case UNEQ_EXPR:
-  case TRUTH_ANDIF_EXPR:
-  case TRUTH_ORIF_EXPR:
-  case COMPLEX_EXPR:
-  case CONJ_EXPR:
-  case REALPART_EXPR:
-  case IMAGPART_EXPR:
-  case PLUS_EXPR:
-  case MINUS_EXPR:
-  case MULT_EXPR:
-  case TRUNC_DIV_EXPR:
-  case FLOOR_DIV_EXPR:
-  case CEIL_DIV_EXPR:
-  case ROUND_DIV_EXPR:
-  case EXACT_DIV_EXPR:
-  case RDIV_EXPR:
-  case TRUNC_MOD_EXPR:
-  case FLOOR_MOD_EXPR:
-  case CEIL_MOD_EXPR:
-  case ROUND_MOD_EXPR:
-  case BIT_IOR_EXPR:
-  case BIT_XOR_EXPR:
-  case BIT_AND_EXPR:
-  case TRUTH_AND_EXPR:
-  case TRUTH_OR_EXPR:
-  case TRUTH_XOR_EXPR:
-    /* target is not propagated into args of these. */
-    if (Target_Set_p (target_expr_info))
-      {
-	struct Target_Expr_Item target_expr_item;
-	*walk_subtrees = 0;
-	Push_Target (target_expr_info, &target_expr_item, NULL_TREE);
-	simplify_target_exprs_1 (tp, target_expr_info);
-	Pop_Target (target_expr_info);
-      }
-    break;
-
-  case CONSTRUCTOR:
-    {
-      *walk_subtrees = 0;
-      unsigned int ix;
-      for (ix = 0; ix < VEC_length (constructor_elt, CONSTRUCTOR_ELTS(t)); ix++)
-	{
-	  struct Target_Expr_Item target_expr_item;
-	  tree field = VEC_index (constructor_elt, CONSTRUCTOR_ELTS(t), ix)->index;
-	  tree *valuep = & VEC_index (constructor_elt, CONSTRUCTOR_ELTS(t), ix)->value;
-	  tree component = (Target_Set_p (target_expr_info)
-			    ? build3 (COMPONENT_REF, TREE_TYPE(field),
-				      Target (target_expr_info),
-				      field, NULL_TREE)
-			    : NULL_TREE);
-	  Push_Target (target_expr_info, &target_expr_item, component);
-	  simplify_target_exprs_1 (valuep, target_expr_info);
-	  Pop_Target (target_expr_info);
-	}
-    }
-    break;
-
-  case COMPOUND_EXPR:
-    /* target is not propagated into lhs of this, but it is
-       propagated into rhs. */
-    *walk_subtrees = 0;
-    struct Target_Expr_Item target_expr_item;
-    Push_Target (target_expr_info, &target_expr_item, NULL_TREE);
-    simplify_target_exprs_1 (& TREE_OPERAND (t, 0), target_expr_info);
-    Pop_Target (target_expr_info);
-    simplify_target_exprs_1 (& TREE_OPERAND (t, 1), target_expr_info);
-    break;
-    
-  case ADDR_EXPR:
-    /* target is not propagated into arg of this. */
-    {
-      tree old_operand = TREE_OPERAND (t, 0);
-      struct Target_Expr_Item target_expr_item;
-      *walk_subtrees = 0;
-      Push_Target (target_expr_info, &target_expr_item, NULL_TREE);
-      simplify_target_exprs_1 (& TREE_OPERAND (t, 0), target_expr_info);
-      Pop_Target (target_expr_info);
-      tree new_operand = TREE_OPERAND (t, 0);
-      if (new_operand != old_operand
-	  && TREE_CODE (new_operand) == COMPONENT_REF)
-	*tp = take_address (new_operand);
-    }
-    break;
-
-  case NOP_EXPR:
-  case CONVERT_EXPR:
-  case BIND_EXPR:
-  case FLOAT_EXPR:
-  case FIX_TRUNC_EXPR:
-  case FIX_ROUND_EXPR:
-  case FIX_FLOOR_EXPR:
-  case FIX_CEIL_EXPR:
-    /* target is not propagated into arg if we change the type. */
-    if (Target_Set_p (target_expr_info))
-      {
-	tree ty = ((code == BIND_EXPR)
-		   ? TREE_TYPE (t)
-		   : TREE_TYPE (TREE_OPERAND (t, 0)));
-	
-	if (TYPE_MAIN_VARIANT (TREE_TYPE (Target (target_expr_info)))
-	    != TYPE_MAIN_VARIANT (ty))
-	  {
-	    struct Target_Expr_Item target_expr_item;
-	    *walk_subtrees = 0;
-	    Push_Target (target_expr_info, &target_expr_item, NULL_TREE);
-	    simplify_target_exprs_1 (tp, target_expr_info);
-	    Pop_Target (target_expr_info);
-	  }
-      }
-    break;
-
-  case LSHIFT_EXPR:
-  case RSHIFT_EXPR:
-    if (Target_Set_p (target_expr_info)
-	&& (TYPE_MAIN_VARIANT (TREE_TYPE (Target (target_expr_info)))
-	    != TYPE_MAIN_VARIANT (TREE_TYPE (TREE_OPERAND (t, 1)))))
-      {
-	/* Do not propagate target into shift count if it has a different
-	   type. */
-	struct Target_Expr_Item target_expr_item;
-	*walk_subtrees = 0;
-	simplify_target_exprs_1 (&TREE_OPERAND (t, 0), target_expr_info);
-	Push_Target (target_expr_info, &target_expr_item, NULL_TREE);
-	simplify_target_exprs_1 (&TREE_OPERAND (t, 1), target_expr_info);
-	Pop_Target (target_expr_info);
-      }
-    break;
-
-  case COND_EXPR:
-    {
-      *walk_subtrees = 0;
-      /* Take care with written flag here:
-	 target is definitely written only if written in condition,
-	 or BOTH conditional operands.
-      */
-      simplify_target_exprs_1 (& TREE_OPERAND (t, 0), target_expr_info);
-      bool old_written = Written_p (target_expr_info);
-      Set_Written (target_expr_info, false);
-      simplify_target_exprs_1 (& TREE_OPERAND (t, 1), target_expr_info);
-      bool lhs_written = Written_p (target_expr_info);
-      Set_Written (target_expr_info, false);
-      simplify_target_exprs_1 (& TREE_OPERAND (t, 2), target_expr_info);
-      bool rhs_written = Written_p (target_expr_info);
-      Set_Written (target_expr_info,
-		   old_written || (lhs_written && rhs_written));
-    }
-    break;
-
-  default:
-    break;
-  }
-  return NULL_TREE;
-}
-
-// simplify_target_exprs transforms the TARGET_EXPR nodes in *TP so that
-// they are easier to handle by the whirl generator.
-// Ref. the gcc documentation for definition of "normal" and "orphaned"
-// TARGET_EXPRs.
-//
-// This function removes all "normal" target exprs by substituting the
-// real target for the target variable in the target expression, and
-// transforming the TARGET_EXPR to a MODIFY_EXPR that assigns the real target.
-// The target variable is completely removed.  In the case where we
-// can determine that the real target is already assigned in the
-// target expression, then no MODIFY_EXPR is necessary, and the target
-// expression can be evaluated just for its side-effects.
-//
-// "Orphaned" target exprs are unchanged, except to indicate if the
-// target is assigned in the target expression: the target expression is
-// placed in operand 3 in that case, otherwise operand 1.  If the whirl
-// generator finds the target expression in operand 3, then the
-// target expression can be evaluated just for its side-effects, otherwise
-// the target expression value should be assigned to the target variable.
-//
-// This function also transforms calls to return-in-memory, by adding
-// a pointer to the result destination to the head of the argument list.
-// Since nodes can be visited more than once, and the argument list should
-// be transformed only once, it is necessary to remember which CALL_EXPR
-// nodes have been visited.
-static void
-simplify_target_exprs_1 (tree *tp, struct Target_Expr_Info *target_expr_info)
-{
-  walk_tree (tp, simplify_target_exprs_r, target_expr_info, NULL);
-}
-
-void
-simplify_target_exprs (tree *tp)
-{
-  struct Target_Expr_Info target_expr_info;
-  struct Target_Expr_Item target_expr_item;
-  target_expr_info.visited_call_exprs = pointer_set_create ();
-  target_expr_info.target_item_stack = NULL;
-  Push_Target (&target_expr_info, &target_expr_item, NULL_TREE);
-  simplify_target_exprs_1 (tp, &target_expr_info);
-  pointer_set_destroy (target_expr_info.visited_call_exprs);
-}
-
-// Perform tree transformations that will make things easier for
-// the wgen whirl generator.
-static tree
-transform_fn_body_for_spin (tree t)
-{
-  if (lang_hooks.simplify_aggr_init_exprs_r)
-    walk_tree_without_duplicates (&t, lang_hooks.simplify_aggr_init_exprs_r,
-				  NULL);
-  simplify_target_exprs (&t);
-  return t;
-}
-
-static int
-set_gs_node_r (splay_tree_node n, void *data ATTRIBUTE_UNUSED)
-{
-  tree orig_t = (tree) n->key;
-  tree new_t = (tree) n->value;
-  TREE_TO_TRANSLATED_GS (orig_t) = TREE_TO_TRANSLATED_GS (new_t);
-  return 0;
-}
-#endif
-
 unsigned int gspin_label_count = 0;
 
 // C++: Are we processing the final global namespace?
@@ -9906,11 +9270,7 @@ static gs_t program   = (gs_t) NULL,
 	    gxx_emitted_decls_dot = (gs_t) NULL,
 	    gxx_emitted_asms_dot = (gs_t) NULL,
 	    weak_decls_dot = (gs_t) NULL,
-	    gs_program_flags = (gs_t) NULL
-#ifdef TARG_ST
-            , gxx_emitted_idents_dot = (gs_t) NULL
-#endif
-            ;
+	    gs_program_flags = (gs_t) NULL;
 
 // dot to insert new declaration tree
 static gs_t program_decls_dot = (gs_t) NULL;
@@ -9969,9 +9329,6 @@ gspin_init(void)
   gs_t arg, decl_list;
   gs_int_t i;
   gs_t gxx_emitted_decls, gxx_emitted_asms, weak_decls;
-#ifdef TARG_ST
-  gs_t gxx_emitted_idents;
-#endif
   
   GS_ASSERT(program == NULL,
 	    ("gspin_init: dot universe already initialized"));
@@ -10046,12 +9403,6 @@ gspin_init(void)
   gs_set_operand(program, GS_WEAK_DECLS, weak_decls);
   weak_decls_dot = weak_decls;
 
-#ifdef TARG_ST
-  gxx_emitted_idents = __gs (EMPTY);
-  gs_set_operand(program, GS_GXX_EMITTED_IDENTS, gxx_emitted_idents);
-  gxx_emitted_idents_dot = gxx_emitted_idents;
-#endif
-
   if ((atexit (gspin_write)) != 0) 
     fprintf (stderr, "gspin_write registration with atexit (3) failed.\n");
 }
@@ -10064,15 +9415,6 @@ gspin_init_global_trees_list(void)
 
   global_trees_list = __gs (EMPTY);
   for (i = TI_MAX - 1; i >= TI_ERROR_MARK; i--) {
-#ifdef TARG_ST
-    /* [SC] The code below putting ifdef TARG_X8664 inside
-       GS_ASSERT is not accepted by gcc 3.2.3 (directives may not
-       be used inside a macro argument). */
-    GS_ASSERT((global_trees[i] != NULL) ||
-              ((i == TI_VA_LIST_GPR_COUNTER_FIELD ||
-                i == TI_VA_LIST_FPR_COUNTER_FIELD)),
-              ("gspin_init_global_trees_list: global_tree not initialized"));
-#else
     GS_ASSERT((global_trees[i] != NULL) ||
               (
 #ifdef TARG_X8664
@@ -10081,7 +9423,6 @@ gspin_init_global_trees_list(void)
                (i == TI_VA_LIST_GPR_COUNTER_FIELD ||
                 i == TI_VA_LIST_FPR_COUNTER_FIELD)),
               ("gspin_init_global_trees_list: global_tree not initialized"));
-#endif
     global_trees_list = gs_cons (gs_x (global_trees [i]), global_trees_list);
   }
   gs_set_operand(program, GS_GLOBAL_TREES_LIST, global_trees_list);
@@ -10132,50 +9473,10 @@ static int translate_func_decl = 0;
 // the current pass.  Prevents infinite recursion when tree nodes point to each
 // other.
 static HOST_WIDE_INT sequence_num = 0;
-
-#ifdef TARG_ST
-splay_tree dup_map = NULL;
-static gs_t gs_current_function_decl = NULL;
-
-static gs_t gs_x_2 (tree t, HOST_WIDE_INT seq_num, bool on_chain);
-
-// Walk a tree chain applying gs_x_1 to each node.
-// We iterate here to avoid using excessive amounts of stack.
-static gs_t
-gs_x_tree_chain (tree t, HOST_WIDE_INT seq_num)
-{
-  gs_t result = NULL;
-  gs_t prev = NULL;
-  tree n;
-  bool seen_before = false;
-
-  for (n = t; !seen_before && n != NULL; n = TREE_CHAIN (n)) {
-    gs_t r = (gs_t) GS_NODE (n);
-    if (r != (gs_t) NULL
-	&& GS_SEQUENCE_NUM (n) == seq_num)
-      seen_before = true;
-    else
-      r = gs_x_2 (n, seq_num, true);
-    if (prev) {
-      gs_set_tree_chain(prev, r);
-    } else {
-      result = r;
-    }
-    prev = r;
-  }
-  return result;
-}
-
-#define gs_x_1(t,s) gs_x_2(t,s, FALSE)
-#endif
 static debug_num = 0;
 // SEQ_NUM is the sequence number for this translation pass.
 static gs_t
-#ifdef TARG_ST
-gs_x_2 (tree t, HOST_WIDE_INT seq_num, bool on_chain)
-#else
 gs_x_1 (tree t, HOST_WIDE_INT seq_num)
-#endif
 {
   enum machine_mode mode;
   enum tree_code_class class;
@@ -10185,11 +9486,9 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
 
   if( seq_num == 69 )
     debug_num++;
-#ifndef TARG_ST
-  // [SC] Set translate_func_decl after checking TREE_CHAIN.
+
   // Don't translate FUNCTION_DECLs fully when recursing.
   translate_func_decl = 0;
-#endif
   
   gs_t flags, code_class;
 
@@ -10200,12 +9499,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
   if (TREE_CODE (t) == ERROR_MARK)
     return __gs (GS_ERROR_MARK);
 
-#ifdef TARG_ST
-  if (TREE_CHAIN (t) && ! on_chain && ! GS_NODE (t)) {
-    return gs_x_tree_chain (t, seq_num);
-  }
-  translate_func_decl = 0;
-#endif
   tcode = TREE_CODE(t);
 
   if ((gs_t) GS_NODE (t) != (gs_t) NULL) {
@@ -10246,26 +9539,7 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
       else if (CR()) {
         // Don't re-translate the function if it was fully translated before.
         if (FULLY_TRANSLATED_TO_GS(t))
-#ifdef TARG_ST
-	  {
-	    // [SC] This could be an inline function for which we now
-	    // see a full definition, or an inline function which is now
-	    // marked uninlineable.  In this case, we want to translate
-	    // again.
-	    gs_t translated_node = GS_NODE(t);
-	    if (gs_decl_declared_inline_p (translated_node)
-		&& ! DECL_DECLARED_INLINE_P (t)) {
-	      _gs_bv_reset (gs_operand(translated_node, GS_FLAGS),
-			    GS_DECL_DECLARED_INLINE_P);
-	      /* We want to translate again. */
-	    } else {
-	      GS_SEQUENCE_NUM(t) = seq_num;
-	      return translated_node;
-	    }
-	  }
-#else
           return GS_NODE(t);
-#endif
 
         // Node is partially-translated.
         if (translate_this_func_decl)
@@ -10280,9 +9554,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
         goto REVISIT;
       }
 
-#ifdef TARG_ST
-      GS_SEQUENCE_NUM(t) = seq_num;
-#endif
       return GS_NODE(t);
     }
 
@@ -10332,9 +9603,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
         gs_operand((gs_t) GS_NODE(t), GS_CLASSTYPE_TYPEINFO_VAR) == NULL)
       goto REVISIT;
 
-#ifdef TARG_ST
-    GS_SEQUENCE_NUM(t) = seq_num;
-#endif
     return (gs_t) GS_NODE (t);
   }
 
@@ -10356,38 +9624,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
   // appear in the source.  Bug 11123.)
   gs_set_operand((gs_t)GS_NODE(t), GS_TREE_TYPE, gs_x_1(TREE_TYPE(t), seq_num));
 
-#ifdef TARG_ST
-  // [CL] make sure attributes/flags required for debugging are present
-  if (TREE_CODE (t) == FUNCTION_DECL)
-    {
-      gs_t decl_flags = gs_operand((gs_t) GS_NODE(t), GS_DECL_FLAGS);
-      if (decl_flags == NULL) {
-	decl_flags = __gs (IB_BIT_VECTOR);
-	gs_set_operand ((gs_t) GS_NODE (t), GS_DECL_FLAGS, decl_flags);
-      }
-      _gs_bv (decl_flags, GS_DECL_DWARF_INFO_NEEDED, DWARF_INFO_NEEDED (t));
-
-      if (DWARF_INFO_NEEDED (t)) {
-	if (DECL_NAME (t)) {
-	  gs_t printable_name = __gs (IB_STRING);
-	  gs_string_t s = (gs_string_t) lang_hooks.decl_printable_name (t, 0);
-	  _gs_s (printable_name, s, 1 + strlen (s));
-	  gs_set_operand((gs_t) GS_NODE(t), GS_DECL_PRINTABLE_NAME,
-			 printable_name);
-	}
-	gs_set_operand((gs_t)GS_NODE(t), GS_DECL_NAME,
-		       gs_x_1(DECL_NAME(t), seq_num));
-	gs_set_operand((gs_t) GS_NODE(t), GS_DECL_RESULT,
-		       gs_x_1(DECL_RESULT(t), seq_num));
-	gs_set_operand((gs_t) GS_NODE(t), GS_DECL_ARGUMENTS,
-		       gs_x_1(DECL_ARGUMENTS(t), seq_num));
-	gs_set_operand((gs_t) GS_NODE(t), GS_DECL_VINDEX,
-		       gs_x_1(DECL_VINDEX(t), seq_num));
-
-      }
-    }
-#endif
-
   // For the same reason, translate the assembler name.  Create the assembler
   // name now if it doesn't exist.  Example is __comp_ctor in bug 11123.
   if (CPR() &&
@@ -10403,9 +9639,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
     }
     gs_set_operand((gs_t) GS_NODE(t), GS_DECL_ASSEMBLER_NAME,
 		   gs_x_1(DECL_ASSEMBLER_NAME(t), seq_num));
-#ifdef TARG_ST
-    if (! on_chain)
-#endif
 #ifdef FE_GNU_4_2_0
     // Bug 5737: For C++ (triggered by C++ OpenMP bug), also traverse the
     // chain node. Otherwise, if TYPE_METHODS initially has a function
@@ -10470,9 +9703,7 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
   // some flags are defined/valid only for certain conditions.
 
   gs_set_operand((gs_t) GS_NODE(t), GS_TREE_TYPE, gs_x_1(TREE_TYPE(t), seq_num));
-#ifndef TARG_ST
   gs_set_operand((gs_t) GS_NODE(t), GS_TREE_CHAIN, gs_x_1(TREE_CHAIN(t), seq_num));
-#endif
 
   flags = gs_operand((gs_t) GS_NODE(t), GS_FLAGS);
   GS_ASSERT(flags != NULL, ("gs_x_1: GS_FLAGS NULL"));
@@ -10548,19 +9779,8 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
       _gs_bv (flags, GS_DECL_UNSIGNED, DECL_UNSIGNED (t));
       _gs_bv (flags, GS_DECL_IGNORED_P, DECL_IGNORED_P (t));
       _gs_bv (flags, GS_DECL_ABSTRACT, DECL_ABSTRACT (t));
-#ifdef TARG_ST
-      if (CODE_CONTAINS_STRUCT (TREE_CODE (t), TS_DECL_WITH_VIS)) {
-#endif
       _gs_bv (flags, GS_DECL_IN_SYSTEM_HEADER, DECL_IN_SYSTEM_HEADER (t));
-#ifdef TARG_ST
-      if (! DECL_COMMON (t))
-	_gs_bv_reset (flags, GS_DECL_COMMON);
-      else
-#endif
       _gs_bv (flags, GS_DECL_COMMON, DECL_COMMON (t));
-#ifdef TARG_ST
-      }
-#endif
       if (CPR()) {
 	_gs_bv (flags, GS_DECL_EXTERNAL, DECL_EXTERNAL (t));
 	if (! DECL_EXTERNAL(t) && gs_bv(flags, GS_DECL_EXTERNAL))
@@ -10572,40 +9792,20 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
         if (! DECL_EXTERNAL(t) && gs_bv(flags, GS_DECL_EXTERNAL))
           _gs_bv_reset (flags, GS_DECL_EXTERNAL);
       }
-#ifdef TARG_ST
-      // [SC] Check code before DECL_WEAK, because DECL_WEAK is not
-      // always valid.
-      if ((TREE_CODE(t) == VAR_DECL ||
-           TREE_CODE(t) == FUNCTION_DECL)
-	  && DECL_WEAK(t)) {
-#else
       if (DECL_WEAK(t) && 
 	  (TREE_CODE(t) == VAR_DECL ||
            TREE_CODE(t) == FUNCTION_DECL)) {
-#endif
 	_gs_bv (flags, GS_DECL_WEAK, DECL_WEAK (t));
 	gspin_add_weak(t, GS_NODE(t));
       }
 
-#ifdef TARG_ST
-      if (TREE_CODE (t) == VAR_DECL || TREE_CODE (t) == PARM_DECL)
-#else
       if (TREE_CODE (t) != FIELD_DECL && 
           TREE_CODE (t) != FUNCTION_DECL && 
           TREE_CODE (t) != LABEL_DECL)
-#endif
         _gs_bv (flags, GS_DECL_REGISTER, DECL_REGISTER (t));
 
       _gs_bv (flags, GS_DECL_NONLOCAL, DECL_NONLOCAL (t));
-#ifdef TARG_ST
-      if (DECL_NAME (t)) {
-	gs_t printable_name = __gs (IB_STRING);
-	gs_string_t s = (gs_string_t) lang_hooks.decl_printable_name (t, 0);
-	_gs_s (printable_name, s, 1 + strlen (s));
-	gs_set_operand((gs_t) GS_NODE(t), GS_DECL_PRINTABLE_NAME,
-		       printable_name);
-      }
-#endif
+
       switch (TREE_CODE(t)) {
 	case TYPE_DECL:
 	  gs_set_operand((gs_t) GS_NODE(t), GS_DECL_ORIGINAL_TYPE,
@@ -10616,40 +9816,9 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
 
 	case FUNCTION_DECL:
 	  {
-#ifndef TARG_ST
 	    struct cgraph_node * node = cgraph_node (t);
-#endif
-#ifdef TARG_ST
-	    {
-	      /* [SC] Make a copy of the function body, so that we
-		 can perform our own tree simplifications on it before
-		 writing it out as spin, without disturbing the
-	         function body that is transformed to gimple. */
-	      tree fn_body = DECL_SAVED_TREE(t);
-	      gs_t saved_gs_current_function_decl = gs_current_function_decl;
-	      gs_current_function_decl = (gs_t) GS_NODE(t);
-	      splay_tree saved_dup_map = dup_map;
-	      dup_map = splay_tree_new (splay_tree_compare_pointers,
-					NULL, NULL);
-	      fn_body = duplicate_tree(fn_body, (void *)dup_map);
-	      fn_body = transform_fn_body_for_spin (fn_body);
-	      gs_set_operand((gs_t) GS_NODE(t), GS_DECL_SAVED_TREE,
-			     gs_x_1 (fn_body, seq_num));
-	      // For all the translations, set the original node to also
-	      // point to the spin node, since later this is needed when
-	      // setting some extra attributes.
-	      splay_tree_foreach (dup_map, set_gs_node_r, NULL);
-	      DECL_SAVED_TREE(t) =
-		repair_duplicate_side_effects (DECL_SAVED_TREE(t),
-					       (void *)dup_map);
-	      splay_tree_delete (dup_map);
-	      dup_map = saved_dup_map;
-	      gs_current_function_decl = saved_gs_current_function_decl;
-	    }
-#else
 	    gs_set_operand((gs_t) GS_NODE(t), GS_DECL_SAVED_TREE,
 		       gs_x_1(DECL_SAVED_TREE(t), seq_num));
-#endif
 	    gs_set_operand((gs_t) GS_NODE(t), GS_DECL_RESULT,
 		       gs_x_1(DECL_RESULT(t), seq_num));
             gs_set_operand((gs_t) GS_NODE(t), GS_DECL_ARGUMENTS,
@@ -10666,18 +9835,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
 	    if (CPR())
 	      _gs_bv (flags, GS_DECL_THUNK_P, DECL_THUNK_P (t));
 
-#ifdef TARG_ST
-	    // [SC] Note that the needed and reachable flags are required only
-	    // for defining declarations, and we do not want to call
-	    // cgraph_node for all non-defining declarations because it
-            // will enter into the call graph all externs, builtins etc.
-            // That breaks the finalize_aliases() code in c-decl.c, which
-            // looks up aliases by assembler names, and could match the
-            // wrong entry e.g. in the case where we define _exit() but
-            // we also have a builtin called _exit().
-	    if (DECL_SAVED_TREE(t)) {
-	      struct cgraph_node * node = cgraph_node (t);
-#endif
 	    /* KEY: By default for C++, each function is not "needed" and not
 	     * "reachable" in GNU call graph terminology. That means wgen
 	     * will not emit such functions. These flags are updated during
@@ -10685,25 +9842,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
 	     */
 	    _gs_bv (flags, GS_DECL_NEEDED, node->needed);
 	    _gs_bv (flags, GS_DECL_REACHABLE, node->reachable);
-#ifdef TARG_ST
-            }
-	    gs_t decl_flags = gs_operand((gs_t) GS_NODE(t), GS_DECL_FLAGS);
-	    if (decl_flags == NULL) {
-	      decl_flags = __gs (IB_BIT_VECTOR);
-	      gs_set_operand ((gs_t) GS_NODE (t), GS_DECL_FLAGS, decl_flags);
-	    }
-	    _gs_bv (decl_flags, GS_DECL_IS_PURE, DECL_IS_PURE (t));
-	    _gs_bv (decl_flags, GS_DECL_STATIC_CONSTRUCTOR,
-		    DECL_STATIC_CONSTRUCTOR (t));
-	    _gs_bv (decl_flags, GS_DECL_STATIC_DESTRUCTOR,
-		    DECL_STATIC_DESTRUCTOR (t));
-	    _gs_bv (decl_flags, GS_DECL_IS_MALLOC,
-		    DECL_IS_MALLOC (t));
-	    _gs_bv (decl_flags, GS_DECL_UNINLINABLE,
-		    DECL_UNINLINABLE (t));
-	    gs_set_operand((gs_t) GS_NODE (t), GS_DECL_WFE_PRAGMA_CONTEXT,
-			   gs_x_1(DECL_WFE_PRAGMA_CONTEXT(t), seq_num));
-#endif
 	  }
 
 	  break;
@@ -10713,12 +9851,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
 		     gs_x_1(DECL_FIELD_OFFSET(t), seq_num));
 	  gs_set_operand((gs_t) GS_NODE(t), GS_DECL_FIELD_BIT_OFFSET,
 		     gs_x_1(DECL_FIELD_BIT_OFFSET(t), seq_num));
-#ifdef TARG_ST
-	  gs_set_operand((gs_t) GS_NODE(t), GS_DECL_FCONTEXT,
-			 gs_x_1(DECL_FCONTEXT(t), seq_num));
-	  gs_set_operand((gs_t) GS_NODE(t), GS_DECL_BIT_FIELD_TYPE,
-			 gs_x_1(DECL_BIT_FIELD_TYPE(t), seq_num));
-#endif
           _gs_bv (flags, GS_DECL_OFFSET_ALIGN, DECL_OFFSET_ALIGN (t));
 	  _gs_bv (flags, GS_DECL_PACKED, DECL_PACKED (t));
 	  _gs_bv (flags, GS_DECL_BIT_FIELD, DECL_BIT_FIELD (t));
@@ -10746,11 +9878,7 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
 
 	  if (DECL_REGISTER(t) && 
 	      (DECL_HARD_REGISTER(t) || DECL_ASSEMBLER_NAME_SET_P(t))) {
-#ifdef TARG_ST
-	    const char *reg_name = IDENTIFIER_POINTER(DECL_ASSEMBLER_NAME(t));
-#else
 	    char *reg_name = IDENTIFIER_POINTER(DECL_ASSEMBLER_NAME(t));
-#endif
 	    int reg_number = decode_reg_name(reg_name+1);
 	    gs_t asmreg = __gs(IB_INT);
 	    _gs_n(asmreg, reg_number);
@@ -10771,9 +9899,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
 
       _gs_bv (flags, GS_DECL_VIRTUAL_P, DECL_VIRTUAL_P (t));
 
-#ifdef TARG_ST
-      if (CODE_CONTAINS_STRUCT (TREE_CODE (t), TS_DECL_WITH_VIS))
-#endif
       _gs_bv (flags, GS_DECL_DEFER_OUTPUT, DECL_DEFER_OUTPUT (t));
 
       _gs_bv (flags, GS_DECL_PRESERVE_P, DECL_PRESERVE_P (t));
@@ -10830,26 +9955,10 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
 
       // DECL_SIZE
       // DECL_SIZE_UNIT
-#ifdef TARG_ST
-      if (TREE_CODE (t) != TEMPLATE_DECL) {
-	/* [SC] Care: A TEMPLATE_DECL overloads DECL_SIZE with
-	   DECL_TEMPLATE_SPECIALIZATIONS, which is just an internal
-	   value to the C++ front-end, it is not needed for wgen.
-	   Furthermore, we must NOT follow it.  It contains links
-	   to types defined local to a function, and if we follow
-	   the TREE_CHAIN of those types, we arrive in the middle of
-	   the code for a function body.  This is bad since we expect
-	   all function code to be entered at the DECL_SAVED_TREE.
-	*/
-	   
-#endif      
       gs_set_operand((gs_t) GS_NODE(t), GS_DECL_SIZE,
 		 gs_x_1(DECL_SIZE(t), seq_num));
       gs_set_operand((gs_t) GS_NODE(t), GS_DECL_SIZE_UNIT,
 		 gs_x_1(DECL_SIZE_UNIT(t), seq_num));
-#ifdef TARG_ST
-      }
-#endif
 
       if (TREE_CODE (t) != FUNCTION_DECL) {
         _gs_bv (flags, GS_DECL_USER_ALIGN, DECL_USER_ALIGN (t));
@@ -10864,14 +9973,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
           case BUILT_IN_NORMAL:
             _gs_hword(decl_function_code, gcc_built_in2gsbi ((int) DECL_FUNCTION_CODE (t)));
             break;
-#ifdef TARG_ST
-	    /* [SC] ARM has some MD built-ins, but we do not support them yet. */
-#ifdef TARG_ARM
-	case BUILT_IN_MD:
-	  _gs_hword(decl_function_code, (gsbi_t)(-1));
-	  break;
-#endif
-#endif
 #ifdef TARG_X8664
           case BUILT_IN_MD:
             _gs_hword(decl_function_code, ix86_builtins2gsbi_ts ((int) DECL_FUNCTION_CODE (t)));
@@ -10924,22 +10025,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
       _gs_bv (flags, GS_DECL_ARTIFICIAL, DECL_ARTIFICIAL(t));
       _gs_bv (flags, GS_DECL_LANG_SPECIFIC, DECL_LANG_SPECIFIC (t));
 
-#ifdef TARG_ST
-      if (CODE_CONTAINS_STRUCT (TREE_CODE (t), TS_DECL_WITH_VIS)) {
-	gs_t visibility = __gs (IB_INT);
-	_gs_n (visibility, DECL_VISIBILITY(t));
-	gs_set_operand ((gs_t) GS_NODE(t), GS_DECL_VISIBILITY, visibility);
-	_gs_bv (flags, GS_DECL_VISIBILITY_SPECIFIED,
-		DECL_VISIBILITY_SPECIFIED (t));
-	if (TREE_CODE (t) == VAR_DECL)
-	  {
-	    gs_t tls_model = __gs (IB_INT);
-	    _gs_n (tls_model, DECL_TLS_MODEL(t));
-	    gs_set_operand ((gs_t) GS_NODE(t), GS_DECL_TLS_MODEL, tls_model);
-	  }
-      }
-#endif
-      
       if (TREE_CODE (t) == FUNCTION_DECL
          || (TREE_CODE (t) == VAR_DECL
             && (TREE_STATIC (t)
@@ -11000,23 +10085,7 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
 		     (*p_uses_template_parms)(t));
 	      _gs_bv(cp_decl_flags, GS_DECL_EXTERN_C_P,
 		     DECL_EXTERN_C_P(t));
-#ifdef TARG_ST
-#ifdef TARG_ST
-	      if (DECL_LANG_SPECIFIC (t)) {
-#endif
-#ifdef FE_GNU_4_2_0
-	      _gs_bv(cp_decl_flags, GS_DECL_CONSTRUCTOR_P,
-		     DECL_CONSTRUCTOR_P(t));
-	      _gs_bv(cp_decl_flags, GS_DECL_ASSIGNMENT_OPERATOR_P,
-		     DECL_ASSIGNMENT_OPERATOR_P(t));
-#endif
 
-	      gs_set_operand((gs_t) GS_NODE(t), GS_DECL_NAMED_RETURN_OBJECT,
-			   gs_x_1(DECL_NAMED_RETURN_OBJECT(t), seq_num));
-#ifdef TARG_ST
-	      }
-#endif
-#endif
 	      if (DECL_THUNK_P(t)) {
 		gs_t fixed = __gs(IB_LONG);
 		_gs_n(fixed, THUNK_FIXED_OFFSET(t));
@@ -11045,10 +10114,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
 	      if (DECL_LANG_SPECIFIC (t))
 	        gs_set_operand((gs_t) GS_NODE (t), GS_MOST_GENERAL_TEMPLATE,
 			   gs_x_1((*p_most_general_template)(t), seq_num));
-#ifdef TARG_ST
-	      gs_set_operand((gs_t) GS_NODE(t), GS_DECL_VINDEX,
-			     gs_x_1(DECL_TEMPLATE_INSTANTIATIONS(t), seq_num));
-#endif
 	      break;
 
 	    default:
@@ -11175,11 +10240,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
 	case QUAL_UNION_TYPE:
 	  gs_set_operand((gs_t) GS_NODE(t), GS_TYPE_FIELDS, gs_x_1(TYPE_FIELDS(t),
 		     seq_num));
-#ifdef TARG_ST
-	  // [SC] Care here: C frontend uses the vfield slot to contain some
-	  // temporary information (see C_TYPE_INCOMPLETE_VARS).
-	  if (CPR())
-#endif
 	  gs_set_operand((gs_t) GS_NODE(t), GS_TYPE_VFIELD, gs_x_1(TYPE_VFIELD(t),
 	  	     seq_num));
 	  gs_set_operand((gs_t) GS_NODE(t), GS_TYPE_METHODS, gs_x_1(TYPE_METHODS(t),
@@ -11200,48 +10260,8 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
 	    gs_set_operand((gs_t) GS_NODE(t), GS_TYPE_METHOD_BASETYPE,
 		       gs_x_1(TYPE_METHOD_BASETYPE(t), seq_num));
 	  }
-#ifdef TARG_ST
-	  {
-	    // [SC] The type args is a tree list, where for each element,
-	    // TREE_VALUE is the type, and TREE_PURPOSE is the default value.
-	    // Here we do not want to go into the TREE_PURPOSE, since it is not
-	    // necessary for whirl generation, and it could get us to expressions
-	    // we do not want to handle (in particular, AGGR_INIT_EXPR).
-	    // Handle this by saving a copy of the list, removing
-	    // all the TREE_PURPOSE values in the list, walking the list
-	    // as normal, then restoring the TREE_PURPOSE values.
-	    // Since default values are rare, optimize this by only copying the
-	    // list if there are some non-NULL TREE_PURPOSE values.
-	    tree saved_list = NULL_TREE;
-	    tree el;
-	    tree saved_el;
-	    int killed_defaults = 0;
-	    
-	    for (el = TYPE_ARG_TYPES (t); el; el = TREE_CHAIN (el))
-	    if (TREE_PURPOSE (el) != NULL_TREE)
-	      {
-		if (saved_list == NULL_TREE)
-		  saved_list = copy_list (TYPE_ARG_TYPES (t));
-		TREE_PURPOSE (el) = NULL_TREE;
-		killed_defaults++;
-	      }
-	    
-	    gs_set_operand((gs_t) GS_NODE(t), GS_TYPE_ARG_TYPES,
-			   gs_x_1(TYPE_ARG_TYPES(t), seq_num));
-	    
-	    for (el = TYPE_ARG_TYPES (t), saved_el = saved_list;
-		 killed_defaults > 0;
-		 el = TREE_CHAIN (el), saved_el = TREE_CHAIN (saved_el))
-	      if (TREE_PURPOSE (saved_el) != NULL_TREE)
-		{
-		  TREE_PURPOSE (el) = TREE_PURPOSE (saved_el);
-		  killed_defaults--;
-		}
-	  }
-#else
 	  gs_set_operand((gs_t) GS_NODE(t), GS_TYPE_ARG_TYPES,
 		     gs_x_1(TYPE_ARG_TYPES(t), seq_num));
-#endif
 	  break;
 
 	case OFFSET_TYPE:
@@ -11305,18 +10325,11 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
       gs_set_operand((gs_t) GS_NODE(t), GS_TYPE_USER_ALIGN, gs_x_1(NULL, seq_num));
 
       // align
-#ifdef TARG_ST
-      // [SC]: Care: an incomplete type can be given an align of 8 bits.
-      // We need to fix this when we get the complete type.
-      if (gs_operand((gs_t) GS_NODE(t), GS_TYPE_ALIGN) == NULL
-	  || ((unsigned)gs_type_align ((gs_t) GS_NODE (t)) != TYPE_ALIGN (t))) {
-#else
       if (gs_operand((gs_t) GS_NODE(t), GS_TYPE_ALIGN) == NULL ||
           /* bug 14828: previous alignment may have been updated, so check
              if the alignment in spin needs update */
           ((unsigned int)gs_n(gs_operand((gs_t) GS_NODE(t), GS_TYPE_ALIGN)))
 	   != TYPE_ALIGN(t)) {
-#endif
         gs_t align_node;
         align_node = __gs (IB_INT);
         _gs_n (align_node, TYPE_ALIGN (t));
@@ -11351,23 +10364,10 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
 	  _gs_n (type_precision, TYPE_PRECISION (t));
 	  gs_set_operand((gs_t) GS_NODE(t), GS_TYPE_PRECISION, type_precision);
 	}
-#ifdef TARG_ST
-	// [SC] Care: these fields are overlaid with other fields, so ensure
-	// they are valid for our type.
-	// In particular I am concerned that min_value is overlaid with
-	// C_TYPE_INCOMPLETE_VARS and TYPE_VFIELD, so if this is a record type,
-	// copying the min_value field could be reading C_TYPE_INCOMPLETE_VARS
-	// and writing a bogus value to TYPE_VFIELD!
-	if (TREE_CODE(t) == INTEGER_TYPE || TREE_CODE(t) == ENUMERAL_TYPE
-	    || TREE_CODE(t) == BOOLEAN_TYPE || TREE_CODE(t) == REAL_TYPE) {
-#endif
 	gs_set_operand((gs_t) GS_NODE(t), GS_TYPE_MIN_VALUE,
 		   gs_x_1(TYPE_MIN_VALUE (t), seq_num));
 	gs_set_operand((gs_t) GS_NODE(t), GS_TYPE_MAX_VALUE,
 		   gs_x_1(TYPE_MAX_VALUE(t), seq_num));
-#ifdef TARG_ST
-	}
-#endif
       }
 
       // C++
@@ -11404,11 +10404,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
 		   TYPE_HAS_DEFAULT_CONSTRUCTOR(t));
 	    _gs_bv(cp_type_flags, GS_TYPE_HAS_IMPLICIT_COPY_CONSTRUCTOR,
 	           TYPE_HAS_IMPLICIT_COPY_CONSTRUCTOR(t));
-#endif
-#ifdef TARG_ST
-	    if (TREE_CODE(t) == FUNCTION_TYPE || TREE_CODE(t) == METHOD_TYPE)
-	      _gs_bv(cp_type_flags, GS_TYPE_NOTHROW_P, TYPE_NOTHROW_P(t));
-	    _gs_bv(cp_type_flags, GS_ANON_AGGR_TYPE_P, ANON_AGGR_TYPE_P(t));
 #endif
 	  }
 
@@ -11530,20 +10525,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
             gs_set_operand((gs_t) GS_NODE(t), GS_TREE_OPERAND_ZERO + i,
 		       gs_x_1(TREE_OPERAND(t, i), seq_num));
 	  }
-
-#ifdef TARG_ST
-	// [SC] Temporary variables declared in a TARGET_EXPR slot sometimes have a
-	// null context, which we confuse with file scope.  It is my belief that
-        // such variables always have function scope, and auto storage duration.
-	// Fix up the context here.
-	if (TREE_CODE(t) == TARGET_EXPR)
-	  {
-	    gs_t gs_slot = (gs_t) GS_NODE (TARGET_EXPR_SLOT (t));
-	    if (! gs_decl_context (gs_slot))
-	      gs_set_operand(gs_slot, GS_DECL_CONTEXT, gs_current_function_decl);
-	  }
-#endif
-
 
         // C++
         {
@@ -12339,10 +11320,6 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
             gs_set_operand((gs_t) GS_NODE(t), GS_BINFO_VPTR_FIELD,
 		       gs_x_1(BINFO_VPTR_FIELD(t), seq_num));
             _gs_bv(flags, GS_BINFO_VIRTUAL_P, BINFO_VIRTUAL_P(t));
-#ifdef TARG_ST
-	    gs_set_operand((gs_t) GS_NODE(t), GS_BINFO_OFFSET,
-			   gs_x_1(BINFO_OFFSET(t), seq_num));
-#endif
 
 	    // Traverse the vector of base infos.  Put the base infos on a
 	    // gspin list.
@@ -12351,13 +11328,7 @@ gs_x_1 (tree t, HOST_WIDE_INT seq_num)
 	      unsigned int i;
 	      for (i = 0; i < BINFO_N_BASE_BINFOS(t); i++) {
 		tree base_binfo = BINFO_BASE_BINFO(t, i);
-#ifdef TARG_ST
-		// [CL] make sure the new list is created in the same
-		// order as in the input vector.
-		list = gs_append(gs_x_1(base_binfo, seq_num), list);
-#else
 		list = gs_cons(gs_x_1(base_binfo, seq_num), list);
-#endif
 	      }
 	      gs_set_operand((gs_t) GS_NODE(t), GS_BINFO_BASE_BINFOS, list);
 	    }
@@ -12632,30 +11603,6 @@ gspin_add_weak (tree decl, gs_t decl_node)
   gs_set_operand(weak_decls_dot, 1, list);
   weak_decls_dot = list;
 }
-
-#ifdef TARG_ST
-void
-gspin_emit_ident (const char *str, int comment)
-{
-  gs_t ident_string_node, ident_node, comment_node, list;
-
-  ident_string_node = __gs(IB_STRING);
-  _gs_s (ident_string_node, (gs_string_t) str, strlen(str) + 1);
-  comment_node = __gs(IB_INT);
-  _gs_n(comment_node, comment);
-  ident_node = gs_cons(ident_string_node, gs_cons (comment_node, __gs(EMPTY)));
-
-  if (gs_code(gxx_emitted_idents_dot) == EMPTY) {
-    _gs_code(gxx_emitted_idents_dot, CONS);
-    gs_set_operand(gxx_emitted_idents_dot, 0, ident_node);
-    gs_set_operand(gxx_emitted_idents_dot, 1, __gs(EMPTY));
-  } else {
-    list = gs_cons(ident_node, gs_operand(gxx_emitted_idents_dot, 1));
-    gs_set_operand(gxx_emitted_idents_dot, 1, list);
-    gxx_emitted_idents_dot = list;
-  }
-}
-#endif
 
 // Dump a STATEMENT_LIST for debugging.
 void

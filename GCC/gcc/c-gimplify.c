@@ -194,110 +194,6 @@ gimplify_compound_literal_expr (tree *expr_p, tree *pre_p)
   *expr_p = decl;
   return GS_OK;
 }
-#ifdef TARG_ST
-/* Build a generic representation of one of the C loop forms.  COND is the
-   loop condition or NULL_TREE.  BODY is the (possibly compound) statement
-   controlled by the loop.  INCR is the increment expression of a for-loop,
-   or NULL_TREE.  COND_IS_FIRST indicates whether the condition is
-   evaluated before the loop body as in while and for loops, or after the
-   loop body as in do-while loops.  */
-
-static tree
-gimplify_c_loop (tree cond, tree body, bool cond_is_first)
-{
-  tree top, entry, exit, goto_top, goto_exit, stmt_list, t;
-  location_t stmt_locus;
-
-  stmt_locus = input_location;
-  stmt_list = NULL_TREE;
-  entry = NULL_TREE;
-  exit = build1 (LABEL_EXPR, void_type_node, NULL_TREE);;
-  goto_exit = build_and_jump (&LABEL_EXPR_LABEL (exit));
-
-  /* If condition is zero don't generate a loop construct.  */
-  if (cond && integer_zerop (cond))
-    {
-      top = NULL_TREE;
-      goto_top = NULL_TREE;
-      if (cond_is_first)
-	append_to_statement_list (goto_exit, &stmt_list);
-    }
-  else
-    {
-      /* For C_WHILE_STMT we want:
-         goto entry;
-         top:
-          body;
-         entry:
-          if (cond) goto top; else goto exit;
-         exit:
-
-         For C_DO_STMT we want: 
-
-         top:
-          body;
-          if (cond) goto top; else goto exit;
-         exit:
-
-         A null cond is equivalent to a true cond.
-      */
-      
-      top = build1 (LABEL_EXPR, void_type_node, NULL_TREE);
-
-      /* If we have an exit condition, then we build an IF with gotos either
-	 out of the loop, or to the top of it.  If there's no exit condition,
-	 then we just build a jump back to the top.  */
-      goto_top = build_and_jump (&LABEL_EXPR_LABEL (top));
-      if (cond && !integer_nonzerop (cond))
-	{
-	  cond = fold_build3 (COND_EXPR, void_type_node, cond, goto_top, goto_exit);
-	  gimplify_stmt (&cond);
-
-	  if (cond_is_first)
-	    {
-	      entry = build1 (LABEL_EXPR, void_type_node, NULL_TREE);
-	      t = build_and_jump (&LABEL_EXPR_LABEL (entry));
-	      append_to_statement_list (t, &stmt_list);
-	    }
-	}
-      else
-	cond = goto_top;
-    }
-
-  gimplify_stmt (&body);
-
-  append_to_statement_list (top, &stmt_list);
-  append_to_statement_list (body, &stmt_list);
-  append_to_statement_list (entry, &stmt_list);
-  append_to_statement_list (cond, &stmt_list);
-  append_to_statement_list (exit, &stmt_list);
-
-  annotate_all_with_locus (&stmt_list, stmt_locus);
-
-  return stmt_list;
-}
-
-/* Gimplify a WHILE_STMT node.  */
-
-static enum gimplify_status
-gimplify_while_stmt (tree *stmt_p)
-{
-  tree stmt = *stmt_p;
-  *stmt_p = gimplify_c_loop (C_WHILE_COND (stmt), C_WHILE_BODY (stmt),
-			     1);
-  return GS_ALL_DONE;
-}
-
-/* Gimplify a DO_STMT node.  */
-
-static enum gimplify_status
-gimplify_do_stmt (tree *stmt_p)
-{
-  tree stmt = *stmt_p;
-  *stmt_p = gimplify_c_loop (C_DO_COND (stmt), C_DO_BODY (stmt),0);
-  return GS_ALL_DONE;
-}
-#endif
 
 /* Do C-specific gimplification.  Args are as for gimplify_expr.  */
 
@@ -323,14 +219,6 @@ c_gimplify_expr (tree *expr_p, tree *pre_p, tree *post_p ATTRIBUTE_UNUSED)
 
     case COMPOUND_LITERAL_EXPR:
       return gimplify_compound_literal_expr (expr_p, pre_p);
-
-#ifdef TARG_ST
-    case C_WHILE_STMT:
-      return gimplify_while_stmt (expr_p);
-
-    case C_DO_STMT:
-      return gimplify_do_stmt (expr_p);
-#endif
 
     default:
       return GS_UNHANDLED;

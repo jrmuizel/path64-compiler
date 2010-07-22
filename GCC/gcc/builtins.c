@@ -6475,10 +6475,6 @@ expand_builtin (tree exp, rtx target, rtx subtarget, enum machine_mode mode,
       maybe_emit_sprintf_chk_warning (exp, fcode);
       break;
 
-#ifdef TARG_ST
-#include "gfec_builtins.h"		/* Will come from targinfo/<arch>/...*/	
-#endif /* defined(TARG_ST200) */
-
     default:	/* just do library call, if unknown builtin */
       break;
     }

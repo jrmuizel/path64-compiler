@@ -38,9 +38,6 @@
 #include "target.h"
 #include "cgraph.h"
 #include "c-common.h"
-#ifdef TARG_ST
-#include "tree-iterator.h"
-#endif
 
 
 /* The lexer.  */
@@ -6803,41 +6800,12 @@ cp_parser_iteration_statement (cp_parser* parser)
 	tree condition = NULL_TREE;
 	tree expression = NULL_TREE;
 
-#ifdef TARG_ST
-	/* If the last statements on cur_stmt_list are loop pragmae, pop
-	   them off here, we will add them again after loop initializer, to keep
-	   them adjacent to the loop. */
-	tree loop_pragma_list;
-	tree_stmt_iterator it;
-	
-	/* Move the iterator IT to the statement just before the trailing
-	   loop pragmae on CUR_STMT_LIST */
-	for (it = tsi_last (cur_stmt_list); ! tsi_end_p (it); tsi_prev (&it))
-	  {
-	    tree stmt = tsi_stmt (it);
-	    if (TREE_CODE (stmt) != PRAGMA_STMT
-		|| ((tree_low_cst (TREE_OPERAND (stmt, 0), 1) >> 16) & 15) != 2)
-	      break;
-	  }
-	
-	/* Split the loop pragmas into loop_pragma_list */
-	if (! tsi_end_p (it) && ! tsi_one_before_end_p (it))
-	  loop_pragma_list = tsi_split_statement_list_after (&it);
-	else
-	  loop_pragma_list = NULL;
-#endif
-        
 	/* Begin the for-statement.  */
 	statement = begin_for_stmt ();
 	/* Look for the `('.  */
 	cp_parser_require (parser, CPP_OPEN_PAREN, "`('");
 	/* Parse the initialization.  */
 	cp_parser_for_init_statement (parser);
-#ifdef TARG_ST
-	if (loop_pragma_list)
-	  for (it = tsi_start (loop_pragma_list); ! tsi_end_p (it); tsi_next (&it))
-	    add_stmt (tsi_stmt (it));
-#endif
 	finish_for_init_stmt (statement);
 
 	/* If there's a condition, process it.  */
@@ -10683,12 +10651,6 @@ cp_parser_namespace_definition (cp_parser* parser)
   push_namespace_with_attribs (identifier, attribs);
   /* Parse the body of the namespace.  */
   cp_parser_namespace_body (parser);
-#ifdef TARG_ST
-#ifdef HANDLE_PRAGMA_VISIBILITY
-  if (has_visibility)
-    pop_visibility ();
-#endif
-#endif
   /* Finish the namespace.  */
   pop_namespace ();
   /* Look for the final `}'.  */

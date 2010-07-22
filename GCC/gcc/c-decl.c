@@ -6210,10 +6210,6 @@ start_function (struct c_declspecs *declspecs, struct c_declarator *declarator,
   if (current_scope == file_scope)
     maybe_apply_pragma_weak (decl1);
 
-#ifdef TARG_ST
-  DECL_WFE_PRAGMA_CONTEXT (decl1) = wfe_pragma_context ();
-#endif
-  
   /* Warn for unlikely, improbable, or stupid declarations of `main'.  */
   if (warn_main > 0 && MAIN_NAME_P (DECL_NAME (decl1)))
     {
@@ -7410,10 +7406,6 @@ declspecs_add_type (struct c_declspecs *specs, struct c_typespec spec)
 	      break;
 	    case RID_COMPLEX:
 	      dupe = specs->complex_p;
-#ifdef TARG_ST
-	      /* (cbr) not yet */
-	      error ("__complex__ type not currently supported");
-#else
 	      if (pedantic && !flag_isoc99 && !in_system_header)
 		pedwarn ("ISO C90 does not support complex types");
 	      if (specs->typespec_word == cts_void)
@@ -7433,7 +7425,6 @@ declspecs_add_type (struct c_declspecs *specs, struct c_typespec spec)
 		       "declaration specifiers");
 	      else
 		specs->complex_p = true;
-#endif
 	      break;
 	    default:
 	      gcc_unreachable ();

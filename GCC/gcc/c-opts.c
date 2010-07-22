@@ -618,12 +618,6 @@ c_common_handle_option (size_t scode, const char *arg, int value)
 	warn_main = 0;
       break;
 
-#ifdef TARG_ST
-    case OPT_fpragmas:
-      flag_pragmas = value;
-      break;
-#endif
-
     case OPT_fshort_double:
       flag_short_double = value;
       break;
@@ -1012,11 +1006,6 @@ c_common_post_options (const char **pfilename)
   if (flag_inline_functions)
     flag_inline_trees = 2;
 
-#ifdef TARG_ST
-  /* [CL] let the whirl backend do the inlining. */
-  flag_inline_trees = 0;
-#endif
-
   /* We recognize -fgnu89-inline in preparation for 4.3 where the
      option will be meaningful.  Here we just reject
      -fno-gnu89-inline, since we don't support it.  */
@@ -1160,13 +1149,7 @@ c_common_init (void)
     }
 
   /* Has to wait until now so that cpplib has its hash table.  */
-#ifdef TARG_ST
-  // (cbr) for internal use, don't process pragmas
-  if (flag_pragmas)
-    init_pragma ();
-#else
   init_pragma ();
-#endif
 
   return true;
 }

@@ -1623,7 +1623,7 @@ tree_expand_cfg (void)
 		 (int) PARAM_VALUE (PARAM_SSP_BUFFER_SIZE));
     }
 
-#if defined KEY && ! defined TARG_ST
+#ifdef KEY
   // Run expand_used_vars above to set DECL_SECTION_NAME.  Bug 10876.
   if (flag_spin_file)
     return 0;

@@ -1460,10 +1460,6 @@ bool
 emit_tinfo_decl (tree decl)
 {
   tree type = TREE_TYPE (DECL_NAME (decl));
-#ifdef TARG_ST
-  if (! type)
-    return false;
-#endif
   int in_library = typeinfo_in_lib_p (type);
 
   gcc_assert (DECL_TINFO_P (decl));

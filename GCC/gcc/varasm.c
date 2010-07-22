@@ -70,12 +70,6 @@ extern void gspin_gxx_emits_asm (char *);
 
 extern int flag_spin_file;
 #endif
-#ifdef TARG_ST
-#include "gcc_config.h"
-//TB: for extension, make ADDITIONAL_REGISTER_NAMES a real array
-int Additional_Register_Names_Size;
-gcc_register_map_t *Additional_Register_Names;
-#endif
 
 /* The (assembler) name of the first globally-visible object output.  */
 extern GTY(()) const char *first_global_object_name;
@@ -491,13 +485,6 @@ resolve_unique_section (tree decl, int reloc ATTRIBUTE_UNUSED,
       && (flag_function_or_data_sections
 	  || DECL_ONE_ONLY (decl)))
     targetm.asm_out.unique_section (decl, reloc);
-#ifdef TARG_ST
-  if (flag_spin_file
-      && gspin_invoked (decl)) {
-    gs_set_operand(GS_NODE(decl), GS_DECL_SECTION_NAME,
-		   gs_x(DECL_SECTION_NAME(decl)));
-  }
-#endif
 }
 
 #ifdef BSS_SECTION_ASM_OP
@@ -779,14 +766,8 @@ strip_reg_name (const char *name)
   if (!strncmp (name, REGISTER_PREFIX, strlen (REGISTER_PREFIX)))
     name += strlen (REGISTER_PREFIX);
 #endif
-#ifdef TARG_ST
-  //TB: authorized %
-  if (name[0] == '#')
-    name++;
-#else
   if (name[0] == '%' || name[0] == '#')
     name++;
-#endif
   return name;
 }
 
@@ -810,13 +791,6 @@ set_user_assembler_name (tree decl, const char *name)
    or -4 if ASMSPEC is `memory' and is not recognized.
    Accept an exact spelling or a decimal number.
    Prefixes such as % are optional.  */
-#ifdef TARG_ST
-// [TTh] Use constants to avoid hardcoded immediates, at least in ST modified code..
-#define ASMSPEC_EMPTY              (-1)
-#define ASMSPEC_NOT_RECOGNIZED     (-2)
-#define ASMSPEC_CC_NOT_RECOGNIZED  (-3)
-#define ASMSPEC_MEM_NOT_RECOGNIZED (-4)
-#endif
 
 int
 decode_reg_name (const char *asmspec)
@@ -828,8 +802,6 @@ decode_reg_name (const char *asmspec)
       /* Get rid of confusing prefixes.  */
       asmspec = strip_reg_name (asmspec);
 
-#ifndef TARG_ST
-      //TB: Do not allow PSEUDO register name
       /* Allow a decimal number as a "register name".  */
       for (i = strlen (asmspec) - 1; i >= 0; i--)
 	if (! ISDIGIT (asmspec[i]))
@@ -847,60 +819,18 @@ decode_reg_name (const char *asmspec)
 	if (reg_names[i][0]
 	    && ! strcmp (asmspec, strip_reg_name (reg_names[i])))
 	  return i;
-#endif
-      {
-#ifndef TARG_ST
+
 #ifdef ADDITIONAL_REGISTER_NAMES
-      	static const struct { const char *const name; const int number; } table[]
+      {
+	static const struct { const char *const name; const int number; } table[]
 	  = ADDITIONAL_REGISTER_NAMES;
 
 	for (i = 0; i < (int) ARRAY_SIZE (table); i++)
 	  if (table[i].name[0]
 	      && ! strcmp (asmspec, table[i].name))
 	    return table[i].number;
-      
-#endif /* ADDITIONAL_REGISTER_NAMES */
-#else
-//TB: for extension, make ADDITIONAL_REGISTER_NAMES a real array
-	for (i = 0; i < Additional_Register_Names_Size; i++)
-	  if (asmspec[0] != '%') {
-	    char *whole_name = Additional_Register_Names[i].name;
-	      while (strchr(whole_name, '%')) {
-		whole_name++;
-	      }
-	    if (! strcasecmp (asmspec, whole_name))
-	      if (!Additional_Register_Names[i].disabled) {
-		return Additional_Register_Names[i].number;
-	      } else {
-		return (ASMSPEC_NOT_RECOGNIZED);
-	      }
-#ifdef TARG_ST200
-	    // [CG]: We want to have the '$' optional in '$r12' for ST200
-	    // when parsing the register name.
-	    // TODO: handle this in targinfo parsing description.
-	    const char *ignored = "$";
-	    while(*ignored != '\0') {
-	      if (asmspec[0] == *ignored) {
-		if (!strcasecmp (&asmspec[1], whole_name))
-		  return Additional_Register_Names[i].number;
-	      }
-	      if (whole_name[0] == *ignored) {
-		if (!strcasecmp (asmspec, &whole_name[1]))
-		  return Additional_Register_Names[i].number;
-	      }
-	      ignored++;
-	    }
-#endif
-	  } else {
-	    if (! strcasecmp (asmspec, Additional_Register_Names[i].name))
-	      if (!Additional_Register_Names[i].disabled) {
-		return Additional_Register_Names[i].number;
-	      } else {
-		return (ASMSPEC_NOT_RECOGNIZED);
-	      }
-	  }
-#endif//TARG_ST
       }
+#endif /* ADDITIONAL_REGISTER_NAMES */
 
       if (!strcmp (asmspec, "memory"))
 	return -4;
@@ -913,12 +843,6 @@ decode_reg_name (const char *asmspec)
 
   return -1;
 }
-#ifdef TARG_ST
-#undef ASMSPEC_EMPTY
-#undef ASMSPEC_NOT_RECOGNIZED
-#undef ASMSPEC_CC_NOT_RECOGNIZED
-#undef ASMSPEC_MEM_NOT_RECOGNIZED
-#endif
 
 /* Return true if DECL's initializer is suitable for a BSS section.  */
 
@@ -5128,33 +5052,7 @@ finish_aliases_2 (void)
 
   for (i = 0; VEC_iterate (alias_pair, alias_pairs, i, p); i++)
     do_assemble_alias (p->decl, p->target);
-#ifdef TARG_ST
-  if (flag_spin_file)
-    {
-      for (i = 0; VEC_iterate (alias_pair, alias_pairs, i, p); i++)
-	{
-	  if (!gs_decl_alias_target(p->decl))
-	    {
-	      /* We really need to find the target decl. */
-	      tree target_decl = find_decl_and_mark_needed (p->decl,
-							    p->target);
-	      if (! target_decl)
-		{
-		  target_decl = build_decl (TREE_CODE (p->decl), p->target,
-					    TREE_TYPE (p->decl));
-		  DECL_EXTERNAL (target_decl) = 1;
-		  TREE_PUBLIC (target_decl) = 1;
-		  DECL_ARTIFICIAL (target_decl) = 1;
-		  TREE_NOTHROW (target_decl) = TREE_NOTHROW (p->decl);
-		  TREE_USED (target_decl) = 1;
-		  gs_x_func_decl (target_decl);
-		}
-	      gs_t gs_decl = gs_x(p->decl);   // Allocate a gs node if necessary.
-	      gs_set_operand(gs_decl, GS_DECL_ALIAS_TARGET, gs_x(target_decl));
-	    }
-	}
-    }
-#endif
+
   VEC_truncate (alias_pair, alias_pairs, 0);
 }
 

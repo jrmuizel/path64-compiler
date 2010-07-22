@@ -129,8 +129,8 @@ static phase_info_t phase_info[] = {
    {'f',  0x0000000000100000LL,	"gfec",PHASEPATH,	TRUE }, /* c_gfe */
    {'f',  0x0000000000200000LL,	"gfecc",PHASEPATH,	TRUE }, /* cplus_gfe */
 #ifdef KEY
-   {'f',  0x0000000000400000LL,	"cc1"	,OLDPHASEPATH,	TRUE }, /* spin_cc1  */
-   {'f',  0x0000000000800000LL,	"cc1plus",OLDPHASEPATH,	TRUE }, /* spin_cc1plus */
+   {'f',  0x0000000000400000LL,	"cc1"	,PHASEPATH,	TRUE }, /* spin_cc1  */
+   {'f',  0x0000000000800000LL,	"cc1plus",PHASEPATH,	TRUE }, /* spin_cc1plus */
    {'f',  0x0000000001000000LL,	"wgen",PHASEPATH,	TRUE }, /* wgen      */
 #endif
    /* place-holder for generic fe, whose mask unites all fe's; */

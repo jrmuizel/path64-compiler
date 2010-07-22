@@ -10,6 +10,9 @@ INCLUDE(includes.cmake)
 # This kills the libpathfortran build at src/libu/numconv/mpp/defgu2s.c
 #ADD_DEFINITIONS(-D_GNU_SOURCE)
 
+# Fake target that depends on all be components
+add_custom_target(be-all)
+
 ADD_SUBDIRECTORY(csu)
 ADD_SUBDIRECTORY(driver)
 ADD_SUBDIRECTORY(libcif)

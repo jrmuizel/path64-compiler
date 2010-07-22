@@ -24,27 +24,10 @@ Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
 
 /* Make an enum class that gives all the machine modes.  */
 #include "insn-modes.h"
-#ifdef TARG_ST
-/* [SC] Basic hack to build gcc 4 ... much more work on reconfigurability
-   needed here ... */
-typedef enum machine_mode machine_mode_t;
-extern int COUNT_MACHINE_MODE;
-#define MAX_MACHINE_MODE ((machine_mode_t) COUNT_MACHINE_MODE)
-#define MACHINE_MODE_STATIC_LAST (STATIC_COUNT_MACHINE_MODE-1)
-#define NUM_MACHINE_MODES ((machine_mode_t) COUNT_MACHINE_MODE)
-
-/* Nonzero if MODE has been dynamically defined */
-#define IS_DYNAMIC_MACHINE_MODE(MODE) (MODE > MACHINE_MODE_STATIC_LAST)
-#endif
-
 
 /* Get the name of mode MODE as a string.  */
 
-#ifdef TARG_ST
-extern const char * mode_name[MAX_LIMIT_MACHINE_MODE];
-#else
 extern const char * const mode_name[NUM_MACHINE_MODES];
-#endif
 #define GET_MODE_NAME(MODE)  mode_name[MODE]
 
 /* Mode classes.  */
@@ -57,11 +40,8 @@ enum mode_class { MODE_CLASSES, MAX_MODE_CLASS };
 
 /* Get the general kind of object that mode MODE represents
    (integer, floating, complex, etc.)  */
-#ifdef TARG_ST
-extern const unsigned char mode_class[MAX_LIMIT_MACHINE_MODE];
-#else
+
 extern const unsigned char mode_class[NUM_MACHINE_MODES];
-#endif
 #define GET_MODE_CLASS(MODE)  mode_class[MODE]
 
 /* Nonzero if MODE is an integral mode.  */
@@ -110,38 +90,25 @@ extern const unsigned char mode_class[NUM_MACHINE_MODES];
    || CLASS == MODE_COMPLEX_FLOAT)
 
 /* Get the size in bytes and bits of an object of mode MODE.  */
-#ifdef TARG_ST
-// [TTh] Support types wider than 255 bytes
-extern  CONST_MODE_SIZE unsigned short mode_size[MAX_LIMIT_MACHINE_MODE];
-#else
+
 extern CONST_MODE_SIZE unsigned char mode_size[NUM_MACHINE_MODES];
-#endif
 #define GET_MODE_SIZE(MODE)    ((unsigned short) mode_size[MODE])
 #define GET_MODE_BITSIZE(MODE) ((unsigned short) (GET_MODE_SIZE (MODE) * BITS_PER_UNIT))
 
 /* Get the number of value bits of an object of mode MODE.  */
-#ifdef TARG_AT
-extern const unsigned short mode_precision[MAX_LIMIT_MACHINE_MODE];
-#else
 extern const unsigned short mode_precision[NUM_MACHINE_MODES];
-#endif
 #define GET_MODE_PRECISION(MODE)  mode_precision[MODE]
 
 /* Get a bitmask containing 1 for all bits in a word
    that fit within mode MODE.  */
-#ifdef TARG_ST
-extern const unsigned HOST_WIDE_INT mode_mask_array[MAX_LIMIT_MACHINE_MODE];
-#else
+
 extern const unsigned HOST_WIDE_INT mode_mask_array[NUM_MACHINE_MODES];
-#endif
+
 #define GET_MODE_MASK(MODE) mode_mask_array[MODE]
 
 /* Return the mode of the inner elements in a vector.  */
-#ifdef TARG_ST
-extern const unsigned char mode_inner[MAX_LIMIT_MACHINE_MODE];
-#else
+
 extern const unsigned char mode_inner[NUM_MACHINE_MODES];
-#endif
 #define GET_MODE_INNER(MODE) mode_inner[MODE]
 
 /* Get the size in bytes of the basic parts of an object of mode MODE.  */
@@ -152,25 +119,16 @@ extern const unsigned char mode_inner[NUM_MACHINE_MODES];
    : GET_MODE_SIZE (GET_MODE_INNER (MODE)))
 
 /* Get the number of units in the object.  */
-#ifdef TARG_ST
-extern const unsigned char mode_nunits[MAX_LIMIT_MACHINE_MODE];
-#else
+
 extern const unsigned char mode_nunits[NUM_MACHINE_MODES];
-#endif
 #define GET_MODE_NUNITS(MODE)  mode_nunits[MODE]
 
 /* Get the next wider natural mode (eg, QI -> HI -> SI -> DI -> TI).  */
-#ifdef TARG_ST
-extern const unsigned char mode_wider[MAX_LIMIT_MACHINE_MODE];
-#else
+
 extern const unsigned char mode_wider[NUM_MACHINE_MODES];
-#endif
 #define GET_MODE_WIDER_MODE(MODE) mode_wider[MODE]
-#ifdef TARG_ST
-extern const unsigned char mode_2xwider[MAX_LIMIT_MACHINE_MODE];
-#else
+
 extern const unsigned char mode_2xwider[NUM_MACHINE_MODES];
-#endif
 #define GET_MODE_2XWIDER_MODE(MODE) mode_2xwider[MODE]
 
 /* Return the mode for data of a given size SIZE and mode class CLASS.
@@ -196,11 +154,9 @@ extern enum machine_mode get_best_mode (int, int, unsigned int,
 					enum machine_mode, int);
 
 /* Determine alignment, 1<=result<=BIGGEST_ALIGNMENT.  */
-#ifdef TARG_ST
-extern CONST_MODE_BASE_ALIGN unsigned char mode_base_align[MAX_LIMIT_MACHINE_MODE];
-#else
+
 extern CONST_MODE_BASE_ALIGN unsigned char mode_base_align[NUM_MACHINE_MODES];
-#endif
+
 extern unsigned get_mode_alignment (enum machine_mode);
 
 #define GET_MODE_ALIGNMENT(MODE) get_mode_alignment (MODE)

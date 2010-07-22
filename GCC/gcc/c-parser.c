@@ -57,9 +57,6 @@ Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
 #include "vec.h"
 #include "target.h"
 #include "cgraph.h"
-#ifdef TARG_ST
-#include "tree-iterator.h"
-#endif
 
 
 /* Miscellaneous data and functions needed for the parser.  */
@@ -3697,15 +3694,8 @@ c_parser_statement (c_parser *parser)
 static void
 c_parser_statement_after_labels (c_parser *parser)
 {
-
   location_t loc = c_parser_peek_token (parser)->location;
-#ifdef TARG_ST
-  tree stmt;
- restart:
-  stmt = NULL_TREE;
-#else
   tree stmt = NULL_TREE;
-#endif
   switch (c_parser_peek_token (parser)->type)
     {
     case CPP_OPEN_BRACE:
@@ -3808,12 +3798,7 @@ c_parser_statement_after_labels (c_parser *parser)
       c_parser_consume_token (parser);
       break;
     case CPP_PRAGMA:
-#ifdef TARG_ST
-      if (!c_parser_pragma (parser, pragma_stmt))
-	goto restart;
-#else
       c_parser_pragma (parser, pragma_stmt);
-#endif
       break;
     default:
     expr_stmt:
@@ -4035,30 +4020,6 @@ c_parser_for_statement (c_parser *parser)
   gcc_assert (c_parser_next_token_is_keyword (parser, RID_FOR));
   loc = c_parser_peek_token (parser)->location;
   c_parser_consume_token (parser);
-#ifdef TARG_ST
-  /* If the last statements on cur_stmt_list are loop pragmae, pop
-     them off here, we will add them again after loop initializer, to keep
-     them adjacent to the loop. */
-  tree loop_pragma_list;
-  tree_stmt_iterator it;
-
-  /* Move the iterator IT to the statement just before the trailing
-     loop pragmae on CUR_STMT_LIST */
-  for (it = tsi_last (cur_stmt_list); ! tsi_end_p (it); tsi_prev (&it))
-    {
-      tree stmt = tsi_stmt (it);
-      if (TREE_CODE (stmt) != PRAGMA_STMT
-	  || ((tree_low_cst (TREE_OPERAND (stmt, 0), 1) >> 16) & 15) != 2)
-	break;
-    }
-
-  /* Split the loop pragmas into loop_pragma_list */
-  if (! tsi_end_p (it) && ! tsi_one_before_end_p (it))
-    loop_pragma_list = tsi_split_statement_list_after (&it);
-  else
-    loop_pragma_list = NULL;
-    
-#endif
   block = c_begin_compound_stmt (flag_isoc99);
   if (c_parser_require (parser, CPP_OPEN_PAREN, "expected %<(%>"))
     {
@@ -4101,11 +4062,6 @@ c_parser_for_statement (c_parser *parser)
 	  c_finish_expr_stmt (c_parser_expression (parser).value);
 	  c_parser_skip_until_found (parser, CPP_SEMICOLON, "expected %<;%>");
 	}
-#ifdef TARG_ST
-      if (loop_pragma_list)
-	for (it = tsi_start (loop_pragma_list); ! tsi_end_p (it); tsi_next (&it))
-	  add_stmt (tsi_stmt (it));
-#endif
       /* Parse the loop condition.  */
       loc = c_parser_peek_token (parser)->location;
       if (c_parser_next_token_is (parser, CPP_SEMICOLON))

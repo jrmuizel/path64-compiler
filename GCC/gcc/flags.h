@@ -154,13 +154,6 @@ extern int flag_complex_method;
    not just because the tree inliner turned us off.  */
 
 extern int flag_really_no_inline;
-#ifdef TARG_ST
-/* open64 forces flag_no_inline and flag_really_no_inline; these are the
-   values as set by gcc before open64 messes with them. */
-
-extern int gnu_flag_no_inline;
-extern int gnu_flag_really_no_inline;
-#endif
 
 /* Nonzero if we are only using compiler to check syntax errors.  */
 
@@ -199,11 +192,6 @@ extern int flag_debug_asm;
 extern int flag_next_runtime;
 
 extern int flag_dump_rtl_in_asm;
-
-#ifdef TARG_ST
-/*enable or not emission of warnings/errors when option -fpack-struct is used */
-extern int flag_pack_struct_warnings_enabled; 
-#endif
 
 /* If one, renumber instruction UIDs to reduce the number of
    unused UIDs if there are a lot of instructions.  If greater than

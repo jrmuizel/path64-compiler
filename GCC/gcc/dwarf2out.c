@@ -456,11 +456,7 @@ expand_builtin_init_dwarf_reg_sizes (tree address)
   rtx mem = gen_rtx_MEM (BLKmode, addr);
   bool wrote_return_column = false;
 
-#ifdef TARG_ST
-  for (i = 0; i < (unsigned)FIRST_PSEUDO_REGISTER_USED; i++)
-#else
   for (i = 0; i < FIRST_PSEUDO_REGISTER; i++)
-#endif
     {
       int rnum = DWARF2_FRAME_REG_OUT (DWARF_FRAME_REGNUM (i), 1);
       
@@ -12470,13 +12466,6 @@ gen_member_die (tree type, dw_die_ref context_die)
       if (DECL_ABSTRACT_ORIGIN (member))
 	continue;
 
-#ifdef TARG_ST
-      /* [CL] By the time we emit Dwarf info in wgen, too many
-      flavours of methods are present in the type description. Here we
-      tag the ones GCC would output for sure. */
-	if (flag_spin_file)
-	  DWARF_INFO_NEEDED(member) = 1;
-#endif
       child = lookup_decl_die (member);
       if (child)
 	splice_child_die (context_die, child);

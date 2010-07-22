@@ -98,15 +98,6 @@ Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
 #define DEF_EXT_LIB_BUILTIN(ENUM, NAME, TYPE, ATTRS)	\
   DEF_BUILTIN (ENUM, "__builtin_" NAME, BUILT_IN_NORMAL, TYPE, TYPE,	\
 	       true, true, true, ATTRS, false, true)
-#ifdef TARG_ST
-/* Like DEF_EXT_LIB_BUILTIN but the version without "__builtin_"
-   prefix is effectively not considered as a builtin.
- */
-#undef DEF_EXT_LIB_BUILTIN_SINGLEDEF				
-#define DEF_EXT_LIB_BUILTIN_SINGLEDEF(ENUM, NAME, TYPE, ATTRS)	\
-  DEF_BUILTIN (ENUM, "__builtin_" NAME, BUILT_IN_NORMAL, TYPE, TYPE,	\
-   	       false, true, true, ATTRS, false, true)
-#endif
 
 /* Like DEF_LIB_BUILTIN, except that the function is only a part of
    the standard in C94 or above.  */
@@ -737,7 +728,3 @@ DEF_BUILTIN_STUB (BUILT_IN_PROFILE_FUNC_EXIT, "profile_func_exit")
 
 /* OpenMP builtins.  */
 #include "omp-builtins.def"
-
-#if defined (TARG_ST)
-#include "gfecc_builtins.def"	/* Comes from targinfo/<arch>/config/...*/
-#endif

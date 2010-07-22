@@ -3461,14 +3461,7 @@ layout_nonempty_base_or_field (record_layout_info rli,
 	break;
       /* G++ 3.2 did not check for overlaps when placing a non-empty
 	 virtual base.  */
-#ifdef TARG_ST
-      /* (cbr) check pro-release-1-5-0-B/31
-	 vho_lower scalarize field by field introducing a mismatch with
-         TREE_SIZE */ 
-      if (!abi_version_at_least (2))
-#else
       if (!abi_version_at_least (2) && binfo && BINFO_VIRTUAL_P (binfo))
-#endif
 	break;
       if (layout_conflict_p (field_p ? type : binfo, offset,
 			     offsets, field_p))

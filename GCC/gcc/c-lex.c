@@ -186,10 +186,6 @@ cb_ident (cpp_reader * ARG_UNUSED (pfile),
       if (cpp_interpret_string (pfile, str, 1, &cstr, false))
 	{
 	  ASM_OUTPUT_IDENT (asm_out_file, (const char *) cstr.text);
-#ifdef TARG_ST
-	  if (flag_spin_file)
-	    gspin_emit_ident ((const char *) cstr.text, 0);
-#endif
 	  free ((void *) cstr.text);
 	}
     }
