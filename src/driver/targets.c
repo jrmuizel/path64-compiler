@@ -18,7 +18,7 @@
 
 
 // Current target
-static const targ_info_t *current_target = &targ_info[0];
+const targ_info_t *current_target = &targ_info[0];
 
 static boolean target_arch_X8664 = FALSE;
 static boolean target_arch_MIPS = FALSE;

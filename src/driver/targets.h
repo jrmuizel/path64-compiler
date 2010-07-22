@@ -8,6 +8,10 @@
 
 
 #include "basic.h"
+#include "targ_info.h"
+
+
+extern const targ_info_t *current_target;
 
 
 void init_targets();
