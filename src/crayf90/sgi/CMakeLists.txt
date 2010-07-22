@@ -132,24 +132,45 @@ path64_add_executable_for_arch(mfef95-tmp ${host_arch}
 set_source_files_properties(${PATHSCALE_MFEF95_TMP_SRCS} PROPERTIES
                             COMPILE_DEFINITIONS "_LIBU;_LITTLE_ENDIAN")
 target_link_libraries(mfef95-tmp comutil-host fe90 fe90-tmp arith cif ${MFEF95_TMP_FORTRAN_LINK_LIB} m)
+path64_set_property_for_arch(mfef95-tmp ${host_arch} COMPILE_FLAGS
+                             "-I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
+
 
 add_custom_command(
     OUTPUT ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
-           ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
-           ${Path64_BINARY_DIR}/lib/be ${Path64_BINARY_DIR}/bin/pathf90
-    COMMAND ln -s . ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
-    COMMAND ln -s ../lib/${host_arch}/mfef95-tmp ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
-    COMMAND ln -s pathcc ${Path64_BINARY_DIR}/bin/pathf90
+    COMMAND ${CMAKE_COMMAND} -E create_symlink . ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
 )
+
+add_custom_command(
+    OUTPUT ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
+    COMMAND ${CMAKE_COMMAND} -E create_symlink mfef95-tmp ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
+    DEPENDS ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95-tmp
+    )
+
+add_custom_command(
+    OUTPUT ${Path64_BINARY_DIR}/bin/pathf90
+    COMMAND ${CMAKE_COMMAND} -E create_symlink pathcc ${Path64_BINARY_DIR}/bin/pathf90
+    DEPENDS ${Path64_BINARY_DIR}/pathcc
+)
+
+
+#add_custom_command(
+#    OUTPUT ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+#           ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
+#           ${Path64_BINARY_DIR}/lib/be ${Path64_BINARY_DIR}/bin/pathf90
+#    COMMAND ln -s . ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+#    COMMAND ln -s mfef95-tmp ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
+#    COMMAND ln -s pathcc ${Path64_BINARY_DIR}/bin/pathf90
+#)
 
 
 
 path64_set_multiarch_sources(mfef95_sources COMMON ${PATHSCALE_MFEF95_SRCS})
 path64_add_multiarch_executable(mfef95 mfef95_sources)
 path64_multiarch_link_multiarch_libraries(mfef95 comutil fe90 fe90-pathf)
-path64_multiarch_link_libraries(mfef95 arith cif)
-path64_multiarch_link_multiarch_libraries(mfef95 pathfortran-static)
-path64_multiarch_link_libraries(mfef95 m)
+path64_multiarch_link_libraries(mfef95 arith cif pathfortran-host m)
+path64_set_multiarch_property(mfef95 COMPILE_FLAGS
+                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 
 #add_custom_command(
 #    OUTPUT ${Path64_BINARY_DIR}/lib/mfef95-stage

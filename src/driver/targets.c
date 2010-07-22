@@ -38,7 +38,7 @@ void init_targets() {
         toggle(&abi, current_target->abi);
     }
 
-    printf("CURRENT TARGET: %s\n", current_target->targ_name);
+//    printf("CURRENT TARGET: %s\n", current_target->targ_name);
 
     if(strcmp(current_target->arch_name, "x8664") == 0) {
         target_arch_X8664 = TRUE;

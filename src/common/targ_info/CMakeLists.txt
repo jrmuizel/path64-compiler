@@ -152,6 +152,7 @@ if(${x8664_enabled})
       DEPENDS opteron_si_gen
       )
     add_library(opteron SHARED opteron.c generate/init.cxx)
+    set_property(TARGET opteron PROPERTY LIBRARY_OUTPUT_DIRECTORY ${PATH64_LIB_PATH}/x8664)
     set_property(TARGET opteron PROPERTY PREFIX "")
     set_property(TARGET opteron APPEND PROPERTY
                  COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
@@ -167,6 +168,7 @@ if(${x8664_enabled})
       DEPENDS barcelona_si_gen
       )
     add_library(barcelona SHARED barcelona.c generate/init.cxx)
+    set_property(TARGET barcelona PROPERTY LIBRARY_OUTPUT_DIRECTORY ${PATH64_LIB_PATH}/x8664)
     set_property(TARGET barcelona PROPERTY PREFIX "")
     set_property(TARGET barcelona APPEND PROPERTY
                  COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
@@ -183,6 +185,7 @@ if(${x8664_enabled})
       DEPENDS wolfdale_si_gen
       )
     add_library(wolfdale SHARED wolfdale.c generate/init.cxx)
+    set_property(TARGET wolfdale PROPERTY LIBRARY_OUTPUT_DIRECTORY ${PATH64_LIB_PATH}/x8664)
     set_property(TARGET wolfdale PROPERTY PREFIX "")
     set_property(TARGET wolfdale APPEND PROPERTY
                  COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
@@ -200,6 +203,7 @@ if(${x8664_enabled})
       )
     add_library(core SHARED core.c generate/init.cxx)
     set_property(TARGET core PROPERTY PREFIX "")
+    set_property(TARGET core PROPERTY LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/x8664)
     set_property(TARGET core APPEND PROPERTY
                  COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
 
@@ -215,6 +219,7 @@ if(${x8664_enabled})
       DEPENDS em64t_si_gen
       )
     add_library(em64t SHARED em64t.c generate/init.cxx)
+    set_property(TARGET em64t PROPERTY LIBRARY_OUTPUT_DIRECTORY ${PATH64_LIB_PATH}/x8664)
     set_property(TARGET em64t PROPERTY PREFIX "")
     set_property(TARGET em64t APPEND PROPERTY
                  COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")

@@ -1334,6 +1334,7 @@ add_file_args (string_list_t *args, phases_t index)
 		break;
 #endif
 	case P_inline:
+        add_targ_options (args);
 		if (source_kind == S_B)
 		    sprintf (buf, "-fB,%s", the_file);
 		else
