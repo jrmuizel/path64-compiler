@@ -87,6 +87,13 @@ const char *target_runtime_path() {
 }
 
 
+#ifdef __linux__
+const char *target_dynamic_linker() {
+    return current_target->dynamic_linker;
+}
+#endif // __linux__
+
+
 #ifdef TARG_X8664
 boolean is_target_arch_X8664() {
     return target_arch_X8664;

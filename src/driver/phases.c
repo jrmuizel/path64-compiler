@@ -686,12 +686,10 @@ add_target_linker_args(string_list_t *args) {
 #ifdef TARG_X8664
     if(is_target_arch_X8664()) {
 #ifdef __linux__
-        if(abi == ABI_M32) {
-            add_arg(args, "--dynamic-linker=/lib/ld-linux.so.2");
-        } else {
-            // TODO: check that this path correct on all linux distros
-            add_arg(args, "--dynamic-linker=/lib/ld-linux-x86-64.so.2");
-        }
+        char *dyn_link_opt = concat_strings("--dynamic-linker=",
+                                            target_dynamic_linker());
+        add_arg(args, dyn_link_opt);
+        free(dyn_link_opt);
 #endif // __linux__
     }
 #endif // TARG_X8664

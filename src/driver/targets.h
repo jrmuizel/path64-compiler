@@ -27,6 +27,12 @@ char *target_phase_path();
 const char *target_runtime_path();
 
 
+#ifdef __linux__
+// Returns path to dynamic linker for target
+const char *target_dynamic_linker();
+#endif // __linux__
+
+
 #ifdef TARG_X8664
 // Returns TRUE if target architecture is X8664
 boolean is_target_arch_X8664();
