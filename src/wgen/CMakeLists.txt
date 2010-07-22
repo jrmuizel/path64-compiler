@@ -155,10 +155,12 @@ path64_add_multiarch_executable(wgen42 wgen42_sources)
 path64_multiarch_link_multiarch_libraries(wgen42 comutil targinfo)
 path64_is_arch_enabled(arm_enabled arm)
 if(${arm_enabled})
-path64_multiarch_link_libraries(wgen42 fereconf iberty spin cmplrs m)
+path64_multiarch_link_libraries(wgen42 fereconf iberty cmplrs m)
 else()
-path64_multiarch_link_libraries(wgen42 iberty spin cmplrs m)
+path64_multiarch_link_libraries(wgen42 iberty cmplrs m)
 endif()
+path64_multiarch_link_multiarch_libraries(wgen42 spin)
+
 path64_set_multiarch_property(wgen42 COMPILE_FLAGS
                               "-I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@ -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@")
 

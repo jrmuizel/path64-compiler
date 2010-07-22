@@ -226,7 +226,7 @@ IF(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
 ENDIF()
 
 path64_multiarch_link_multiarch_libraries(be targinfo)
-path64_multiarch_link_libraries(be m ${libdl})
+path64_multiarch_link_libraries(be SYS m ${libdl})
 # serialize to generate preg_list.cxx only once
 path64_add_multiarch_multiarch_dependencies(be be-static) 
 

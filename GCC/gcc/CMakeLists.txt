@@ -471,7 +471,7 @@ SET_SOURCE_FILES_PROPERTIES(toplev.c
 # Compiler backend library.
 
 
-ADD_LIBRARY(backend
+PATH64_SET_MULTIARCH_SOURCES(backend_sources COMMON
                      alias.c              alloc-pool.c       backend-print-rtl.c             backend-rtl.c
                backend-vec.c              bb-reorder.c                  bitmap.c                 bt-load.c
                   builtins.c             caller-save.c                   calls.c                     cfg.c
@@ -546,13 +546,14 @@ ADD_LIBRARY(backend
   tree-data-ref.c
   tree-scalar-evolution.c
 )
+PATH64_ADD_MULTIARCH_LIBRARY(backend STATIC backend_sources)
 
 
 CONFIGURE_FILE(${GCC_SOURCE_DIR}/gcc/path64_prefix.h.in
                ${GCC_BINARY_DIR}/gcc/path64_prefix.h @ONLY IMMEDIATE)
 
 
-ADD_EXECUTABLE(cc142
+PATH64_SET_MULTIARCH_SOURCES(cc142_sources COMMON
                c-lang.c
                c-typeck.c
                c-decl.c
@@ -584,30 +585,12 @@ ADD_EXECUTABLE(cc142
 
                dummy-checksum.c
                )
-               
 
-TARGET_LINK_LIBRARIES(cc142 backend cpp decnumber iberty spin)
+PATH64_ADD_MULTIARCH_EXECUTABLE(cc142 cc142_sources)
 
-SET_TARGET_PROPERTIES(cc142
-                      PROPERTIES
-                      RUNTIME_OUTPUT_DIRECTORY ${GCC_EXECUTABLE_OUTPUT_PATH})
-
-add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/lib/cc142
-    DEPENDS cc142
-    COMMAND ln -s ../bin/cc142 ${CMAKE_BINARY_DIR}/lib
-)
-
-add_custom_target(
-    stageit-cc142 ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/lib/cc142
-)
-
-
-# Install cc142
-INSTALL(TARGETS cc142
-  RUNTIME DESTINATION ${PATH64_GCC_INSTALL_PATH}
-  ${PATH64_INSTALL_COMPONENT_RUNTIME_EXECUTABLE})
+PATH64_MULTIARCH_LINK_MULTIARCH_LIBRARIES(cc142 backend)
+PATH64_MULTIARCH_LINK_LIBRARIES(cc142 cpp decnumber iberty )
+path64_multiarch_link_multiarch_libraries( cc142 spin)
 
 
 ## changed pending verification
