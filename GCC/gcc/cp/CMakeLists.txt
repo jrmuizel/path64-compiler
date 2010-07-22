@@ -25,7 +25,7 @@ INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 CONFIGURE_FILE(${GCC_SOURCE_DIR}/gcc/path64_prefix.h.in
                ${GCC_BINARY_DIR}/gcc/cp/path64_prefix.h @ONLY IMMEDIATE)
 
-ADD_EXECUTABLE(cc1plus42
+PATH64_SET_MULTIARCH_SOURCES(cc1plus42_sources COMMON
      ${cxx_target_srcs}         ../attribs.c        ../c-common.c    ../c-cppbuiltin.c
             ../c-dump.c        ../c-format.c      ../c-gimplify.c       ../c-incpath.c
              ../c-lex.c           ../c-omp.c          ../c-opts.c           ../c-pch.c
@@ -46,28 +46,15 @@ ADD_EXECUTABLE(cc1plus42
   )
 
 
-TARGET_LINK_LIBRARIES(cc1plus42 backend cpp decnumber iberty spin)
+PATH64_ADD_MULTIARCH_EXECUTABLE(cc1plus42 cc1plus42_sources)
+PATH64_MULTIARCH_LINK_MULTIARCH_LIBRARIES(cc1plus42 backend)
+PATH64_MULTIARCH_LINK_LIBRARIES(cc1plus42 cpp decnumber iberty spin)
 
 
 
 # Use the "-lx" option to disable map file generation on Borland.
 # This avoids the "Fatal: Access violation.  Link terminated." error.
 IF(BORLAND)
-  SET_TARGET_PROPERTIES(cc1plus42 PROPERTIES LINK_FLAGS "-lx")
+  PATH64_SET_MULTIARCH_PROPERTY(cc1plus42 LINK_FLAGS "-lx")
 ENDIF(BORLAND)
 
-add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/lib/cc1plus42
-    DEPENDS cc1plus42
-    COMMAND ln -s ../bin/cc1plus42 ${CMAKE_BINARY_DIR}/lib
-)
-
-add_custom_target(
-    stageit-cc1plus42 ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/lib/cc1plus42
-)
-
-# Install cc1plus42 next to the gcc executable.
-INSTALL(TARGETS cc1plus42
-  RUNTIME DESTINATION ${PATH64_GCC_INSTALL_PATH}
-  ${PATH64_INSTALL_COMPONENT_RUNTIME_EXECUTABLE})
