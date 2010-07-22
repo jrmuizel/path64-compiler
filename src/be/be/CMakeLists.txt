@@ -220,3 +220,6 @@ foreach(arch ${PATH64_ENABLE_ARCHES})
     install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"be${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/ipl${CMAKE_EXECUTABLE_SUFFIX}\")")
 endforeach()
 
+
+path64_add_dependencies_from_multiarch(be-all be-exec be)
+

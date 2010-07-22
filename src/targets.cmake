@@ -525,3 +525,14 @@ function(path64_add_multiarch_multiarch_dependencies name)
     endforeach()
 endfunction()
 
+
+# Adds dependencies from multiarch targets
+function(path64_add_dependencies_from_multiarch name)
+    foreach(dep ${ARGN})
+        foreach(arch ${PATH64_ENABLE_ARCHES})
+            path64_get_multiarch_cmake_target(dep_tg ${dep} ${arch})
+            add_dependencies(${name} ${dep_tg})
+        endforeach()
+    endforeach()
+endfunction()
+

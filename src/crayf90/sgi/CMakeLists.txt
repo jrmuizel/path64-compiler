@@ -150,7 +150,7 @@ add_custom_command(
 add_custom_command(
     OUTPUT ${Path64_BINARY_DIR}/bin/pathf90
     COMMAND ${CMAKE_COMMAND} -E create_symlink pathcc ${Path64_BINARY_DIR}/bin/pathf90
-    DEPENDS ${Path64_BINARY_DIR}/pathcc
+    DEPENDS ${Path64_BINARY_DIR}/bin/pathcc
 )
 
 
@@ -192,8 +192,12 @@ path64_set_multiarch_property(mfef95 COMPILE_FLAGS
 add_custom_target(
     switch_fc
     DEPENDS ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+            ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
+            ${Path64_BINARY_DIR}/bin/pathf90
     VERBATIM
     COMMAND printf "#!/bin/sh\\n${Path64_BINARY_DIR}/bin/pathf90 -Wf,-eQ -Wf,-intrinsic_module_gen -Wf,-intrinsic_module_path=. \"$\@\"\\n" > ${Path64_BINARY_DIR}/fc-wrap.sh
 )
 
-add_dependencies(switch_fc generate_cf95_cat mfef95-tmp be-exec inline crtendS)
+add_dependencies(switch_fc generate_cf95_cat mfef95-tmp)
+path64_add_dependencies_from_multiarch(switch_fc be-all inline crtendS)
+
