@@ -69,16 +69,15 @@ set_source_files_properties(cf95.cat PROPERTIES GENERATED 1)
 
 foreach(arch ${PATH64_ENABLE_ARCHES})
     file(COPY cf95.msgs DESTINATION ${Path64_BINARY_DIR}/${arch}/lib)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cf95.cat DESTINATION ${PATH64_LIB_PATH}/${arch})
+    install(FILES cf95.msgs DESTINATION ${PATH64_LIB_PATH}/${arch})
+    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"cf95.msgs\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/pathf95.msgs\")")
 endforeach()
 
 add_custom_target(
     generate_cf95_cat
     DEPENDS cf95.cat
 )
-
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cf95.cat DESTINATION ${PATH64_LIB_PATH})
-install(FILES cf95.msgs DESTINATION ${PATH64_LIB_PATH})
-install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"cf95.msgs\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/pathf95.msgs\")")
 
 
 # Building fe90 & fe90-tmp for host architecture
