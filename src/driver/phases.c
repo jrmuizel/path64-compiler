@@ -1896,16 +1896,7 @@ add_final_ld_args (string_list_t *args)
             return;
         }
 #ifdef PATH64_ENABLE_PSCRUNTIME
-        add_arg(args, "-L%s", current_target->libgcc_eh_path);
-        add_library(args, "gcc_eh");
-
-        add_arg(args, "-L%s", current_target->libgcc_s_path);
-        add_library(args, "gcc_s");
-
-        add_arg(args, "-L%s", current_target->libsupcpp_path);
-        add_library(args, "supc++");
-
-        add_library(args, "std");  //new runtime
+        // TODO: link with psc runtime
 #else
         if (option_was_seen(O_static) || option_was_seen(O__static)){
 	        if(ipa != TRUE){
@@ -2668,11 +2659,12 @@ add_instr_archive (string_list_t* args)
       }
 
       add_library (args, "instr");
-      if (!option_was_seen(O_static) &&
-	  !option_was_seen(O__static))
+
 #ifndef PATH64_ENABLE_PSCRUNTIME
-    add_arg(args, "-L%s", current_target->libgcc_s_path);
+      if (!option_was_seen(O_static) && !option_was_seen(O__static)) {
+        add_arg(args, "-L%s", current_target->libgcc_s_path);
 	add_library(args, "gcc_s");
+      }
 #endif // PATH64_ENABLE_PSCRUNTIME
     } else {
       fprintf (stderr, "Unknown profile types %#lx\n", profile_type & ~f);
