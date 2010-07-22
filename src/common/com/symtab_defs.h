@@ -211,8 +211,10 @@ public:
 }; // ST
 
 // Now verify that ST has no gaps. IPA does memcmp on it and needs it tightly packed.
-typedef int CTAssert_ST_has_gaps[(sizeof(ST) == sizeof(ST::offset) + sizeof(ST::base_idx) +sizeof(ST::st_idx) + 
-    sizeof(ST::u1) + sizeof(ST::u2) + sizeof(ST::flags) + sizeof(ST::flags_ext) + 3) ? 1 : -1]; 
+typedef int CTAssert_ST_has_gaps[(sizeof(ST) == sizeof(((ST *)NULL)->offset) +
+    sizeof(((ST *)NULL)->base_idx) +sizeof(((ST *)NULL)->st_idx) + 
+    sizeof(((ST *)NULL)->u1) + sizeof(((ST *)NULL)->u2) + sizeof(((ST *)NULL)->flags) +
+    sizeof(((ST *)NULL)->flags_ext) + 3) ? 1 : -1]; 
 
 
 // Give information about a field in a struct.  The TY of the struct type
