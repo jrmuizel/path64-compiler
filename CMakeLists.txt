@@ -236,10 +236,7 @@ SET(PATH64_GCC_INSTALL_PATH ${PATH64_LIB_PATH})
 
 ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D__GNU_BUG_WORKAROUND
-<<<<<<< HEAD
-=======
 #                -DTARG_X8664
->>>>>>> 8ba551f58c7d9540b69625a291588d344b63af01
                 -DKEY
                 -DFE_GNU_4_2_0
                 -D_LONGLONG
@@ -249,18 +246,15 @@ ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D_MIPS_SZPTR=32
                 -D_MIPS_SZLONG=32
                )
-IF (${BUILD_TARGET_DIR} MATCHES "arm")
-ADD_DEFINITIONS( -DTARG_ST
-                -DTARG_ARM
-                -DARM
-                -DMUMBLE_ARM_BSP 
-                -DSUPPORTS_SELECT
-                -DBE_EXPORTED=
-                -DTARGINFO_EXPORTED=
-               )
-ELSE()
-ADD_DEFINITIONS( -DTARG_X8664)
-ENDIF()
+#IF (${BUILD_TARGET_DIR} MATCHES "arm")
+#ADD_DEFINITIONS( -DTARG_ST
+#                -DTARG_ARM
+#                -DARM
+#                -DMUMBLE_ARM_BSP 
+#                -DSUPPORTS_SELECT
+#                -DBE_EXPORTED=
+#                -DTARGINFO_EXPORTED=
+#               )
 # GNU-style hashing needs support of the dynamic linker, so white-list
 # potential platforms.
 IF (NOT DEFINED SUPPORT_HASH_STYLE_GNU)

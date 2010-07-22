@@ -211,13 +211,13 @@ path64_set_multiarch_property(be-static OUTPUT_NAME be)
 path64_multiarch_link_multiarch_libraries(be-static targinfo)
 path64_multiarch_link_libraries(be-static m ${libdl})
 path64_set_multiarch_property(be-static COMPILE_FLAGS
-                              "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
+                              "-I${CMAKE_CURRENT_SOURCE_DIR}/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@  -I${CMAKE_CURRENT_SOURCE_DIR}/../cg/@ARCH@  -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 path64_add_multiarch_multiarch_dependencies(be-static generate_topcode)
 
 path64_add_multiarch_library(be SHARED be_sources)
 path64_set_multiarch_property(be PREFIX "")
 path64_set_multiarch_property(be COMPILE_FLAGS
-                              "-DSHARED_BUILD -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
+                              "-DSHARED_BUILD -I${CMAKE_CURRENT_SOURCE_DIR}/@ARCH@  -I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@  -I${CMAKE_CURRENT_SOURCE_DIR}/../cg/@ARCH@ -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 path64_add_multiarch_multiarch_dependencies(be generate_topcode)
 
 IF(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
@@ -238,13 +238,13 @@ path64_add_multiarch_executable(be-exec be_exec_sources)
 # TODO : Make sure link targets are static
 path64_multiarch_link_libraries(be-exec -Wl,--whole-archive)
 path64_multiarch_link_multiarch_libraries(be-exec be-static cg wopt)
-path64_multiarch_link_libraries(be-exec -Wl,--no-whole-archive iberty)
+path64_multiarch_link_libraries(be-exec  SYS rtkutils -Wl,--no-whole-archive iberty)
 path64_multiarch_link_multiarch_libraries(be-exec dwarf)
 path64_multiarch_link_libraries(be-exec elfutil elf)
 path64_multiarch_link_multiarch_libraries(be-exec targinfo)
 path64_set_multiarch_property(be-exec OUTPUT_NAME "be")
 path64_set_multiarch_property(be-exec COMPILE_FLAGS
-                              "-DSHARED_BUILD -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
+                              "-DSHARED_BUILD  -I${CMAKE_CURRENT_SOURCE_DIR}/@ARCH@  -I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../cg/@ARCH@  -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 path64_add_multiarch_multiarch_dependencies(be-exec generate_topcode)
 
 if(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")

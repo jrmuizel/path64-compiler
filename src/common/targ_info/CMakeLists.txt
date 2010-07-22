@@ -14,7 +14,7 @@ macro(gen_info type name)
                                generate/${name}_gen.cxx
                                ${type}/@ARCH@/${name}.cxx)
   path64_add_multiarch_executable(${name}_gen ${name}_gen_sources)
-  path64_set_multiarch_property(${name}_gen COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/@ARCH@")
+  path64_set_multiarch_property(${name}_gen COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/@ARCH@  -I${PATHSCALE_SOURCE_DIR}/common/targ_info/isa/@ARCH@")
   path64_multiarch_link_multiarch_libraries(${name}_gen ${ARGN})
 
   # Generate each source as its own library so it can be linked into
@@ -38,7 +38,6 @@ include_directories(
   generate
   ${PATHSCALE_SOURCE_DIR}/common/com
   ${CMAKE_CURRENT_BINARY_DIR}
-  ${PATHSCALE_SOURCE_DIR}/common/targ_info/isa/${BUILD_TARGET_DIR}
   ${PATHSCALE_SOURCE_DIR}/libair/
   ${PATHSCALE_SOURCE_DIR}/common/targ_info/parser/inc
   )
@@ -78,17 +77,27 @@ path64_add_multiarch_custom_target(generate_topcode DEPENDS
 path64_is_arch_enabled(arm_enabled arm)
 if(${arm_enabled})
 #debater
-add_executable(isa_syntax_gen generate/isa_syntax_gen.cxx isa/arm/isa_syntax.cxx)
-  target_link_libraries(isa_syntax_gen targ_isa_relocs targ_isa_lits targ_isa_registers targ_isa_enums targ_isa_operands isa_gen_topcode)
+path64_set_multiarch_sources(isa_syntax_gen_sources COMMON generate/isa_syntax_gen.cxx isa/arm/isa_syntax.cxx)
+path64_add_multiarch_executable(isa_syntax_gen isa_syntax_gen_sources)
+
+  path64_set_multiarch_property(isa_syntax_gen COMPILE_FLAGS "-DTARG_ST -DTARG_ARM -DBE_EXPORTED= -DTARGINFO_EXPORTED -I${CMAKE_CURRENT_BINARY_DIR}/@ARCH@  -I${PATHSCALE_SOURCE_DIR}/common/targ_info/isa/@ARCH@")
+  path64_multiarch_link_multiarch_libraries(isa_syntax_gen targ_isa_relocs targ_isa_lits targ_isa_registers targ_isa_enums targ_isa_operands isa_gen_topcode)
+
 
   # Generate each source as its own library so it can be linked into
   # other generator executables with high granularity.
-  add_custom_command(
-    OUTPUT targ_isa_print.c targ_isa_print.h targ_isa_parse.c targ_isa_parse.h
-    COMMAND isa_syntax_gen
-    DEPENDS isa_syntax_gen
+ path64_add_multiarch_custom_command(
+    OUTPUT @ARCH@/targ_isa_print.c  @ARCH@/targ_isa_print.h @ARCH@/targ_isa_parse.c  @ARCH@/targ_isa_parse.h
+    COMMAND @ARCH{isa_syntax_gen}
+    DEPENDS @ARCH{isa_syntax_gen}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/@ARCH@
     )
-  add_library(targ_isa_print targ_isa_print.c targ_isa_print.h)
+
+  path64_set_multiarch_sources(targ_isa_print_sources COMMON @ARCH@/targ_isa_print.c @ARCH@/targ_isa_print.h)
+  path64_add_multiarch_library(targ_isa_print STATIC targ_isa_print_sources)
+  
+  #path64_set_multiarch_sources(targ_isa_parse_sources COMMON @ARCH@/targ_isa_parse.c @ARCH@/targ_isa_parse.h)
+  #path64_add_multiarch_library(targ_isa_parse STATIC targ_isa_parse_sources)
 
   # The final targinfo library depends on all individual sources.
   list(APPEND targinfo_deps targ_isa_print targ_isa_parse)
@@ -126,17 +135,17 @@ gen_info(abi  abi_properties  targ_isa_subset targ_isa_registers gen_util)
 if(${arm_enabled})
 add_custom_command(
   OUTPUT armv5e_subset_targ_isa_parse.c
-  COMMAND gensyn armv5e_subset_targ_isa_parse.pr -t extension -ac armv5e_subset_targ_isa_parse.c
+  COMMAND gensyn arm/armv5e_subset_targ_isa_parse.pr -t extension -ac armv5e_subset_targ_isa_parse.c
   DEPENDS gensyn
   )
 add_custom_command(
   OUTPUT armv6_subset_targ_isa_parse.c
-  COMMAND gensyn armv6_subset_targ_isa_parse.pr -t extension -ac armv6_subset_targ_isa_parse.c
+  COMMAND gensyn  arm/armv6_subset_targ_isa_parse.pr -t extension -ac armv6_subset_targ_isa_parse.c
   DEPENDS gensyn
   )
 endif()
 # Collect the rest of the sources in a 'targinfo' library.
-path64_set_multiarch_sources(targinfo_common_sources COMMON
+path64_set_multiarch_sources(targinfo_sources COMMON
 	access/ti_asm.c
 	access/ti_bundle.c
 	access/ti_latency.c
@@ -159,20 +168,36 @@ path64_set_multiarch_sources(targinfo_common_sources COMMON
 	@ARCH@/targ_proc_properties.c
 )
 
-path64_set_multiarch_sources(targinfo_arm_sources targ_isa_relocs.c
-        targ_isa_variants.c
-        targ_isa_binutils.c
-        targ_isa_parse.c
-        armv5e_subset_targ_isa_parse.c 
-        armv6_subset_targ_isa_parse.c )
+path64_set_multiarch_sources(targinfo_sources arm
+        access/ti_asm.c
+	access/ti_bundle.c
+	access/ti_latency.c
+	access/ti_errors.c
+	@ARCH@/topcode.c
+	@ARCH@/targ_isa_subset.c
+	@ARCH@/targ_isa_properties.c
+	@ARCH@/targ_isa_enums.c
+	@ARCH@/targ_isa_hazards.c
+	@ARCH@/targ_isa_lits.c
+	@ARCH@/targ_isa_print.c
+	@ARCH@/targ_isa_pack.c
+	@ARCH@/targ_isa_operands.c
+	@ARCH@/targ_isa_registers.c
+	@ARCH@/targ_isa_decode.c
+	@ARCH@/targ_isa_pseudo.c
+	@ARCH@/targ_abi_properties.c
+	@ARCH@/targ_isa_bundle.c
+	@ARCH@/targ_proc.c
+	@ARCH@/targ_proc_properties.c 
+        @ARCH@/targ_isa_relocs.c
+        @ARCH@/targ_isa_variants.c
+        @ARCH@/targ_isa_binutils.c
+        @ARCH@/targ_isa_parse.c
+        ${CMAKE_CURRENT_BINARY_DIR}/armv5e_subset_targ_isa_parse.c 
+        ${CMAKE_CURRENT_BINARY_DIR}/armv6_subset_targ_isa_parse.c )
 
-if(${arm_enabled})
-set(targinfo_sources ${targinfo_common_sources} ${targinfo_arm_sources})
-else()
-set(targinfo_sources ${targinfo_common_sources})
-endif()
 path64_add_multiarch_library(targinfo STATIC targinfo_sources)
-path64_set_multiarch_property(targinfo COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/@ARCH@")
+path64_set_multiarch_property(targinfo COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/@ARCH@ -I${PATHSCALE_SOURCE_DIR}/isa/@ARCH@")
 path64_add_multiarch_multiarch_dependencies(targinfo ${targinfo_deps})
 
 
@@ -283,10 +308,10 @@ if(${arm_enabled})
     path64_get_multiarch_cmake_target(si_gen_arm_name si_gen arm)
     path64_get_multiarch_cmake_target(isa_gen_topcode_arm_name isa_gen_topcode arm)
 
-    add_executable(oarmv5e_si_gen proc/arm/armv5e_si.cxx)
+    add_executable(armv5e_si_gen proc/arm/armv5e_si.cxx)
     target_link_libraries(armv5e_si_gen ${si_gen_arm_name} ${isa_gen_topcode_arm_name})
     set_property(TARGET armv5e_si_gen APPEND PROPERTY
-                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/arm")
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/arm -DTARG_ST -DTARG_ARM -DBE_EXPORTED= -DTARGINFO_EXPORTED=")
 
    add_custom_command(
        OUTPUT armv5e.c
@@ -297,12 +322,12 @@ if(${arm_enabled})
 
     set_property(TARGET armv5e PROPERTY PREFIX "")
     set_property(TARGET armv5e APPEND PROPERTY
-                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/arm")
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/arm  -DTARG_ST -DTARG_ARM -DBE_EXPORTED= -DTARGINFO_EXPORTED=")
 
- add_executable(oarmv6_si_gen proc/arm/armv6_si.cxx)
+ add_executable(armv6_si_gen proc/arm/armv6_si.cxx)
     target_link_libraries(armv6_si_gen ${si_gen_arm_name} ${isa_gen_topcode_arm_name})
     set_property(TARGET armv6_si_gen APPEND PROPERTY
-                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/arm")
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/arm  -DTARG_ST -DTARG_ARM -DBE_EXPORTED= -DTARGINFO_EXPORTED=")
 
    add_custom_command(
        OUTPUT armv6.c
@@ -313,11 +338,10 @@ if(${arm_enabled})
 
     set_property(TARGET armv6 PROPERTY PREFIX "")
     set_property(TARGET armv6 APPEND PROPERTY
-                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/arm")
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/arm  -DTARG_ST -DTARG_ARM -DBE_EXPORTED= -DTARGINFO_EXPORTED=")
   install(TARGETS armv5e armv6
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION ${PATH64_LIB_PATH}/arm)
 
 
 endif()
->>>>>>> 8ba551f58c7d9540b69625a291588d344b63af01

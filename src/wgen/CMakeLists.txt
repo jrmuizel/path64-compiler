@@ -44,7 +44,7 @@ add_definitions(
   -DGPLUSPLUS_FE
   )
 
-path64_set_multiarch_sources(wgen42_sources_common COMMON
+path64_set_multiarch_sources(wgen42_sources COMMON
   ../common/com/config.cxx
   ../common/com/const.cxx
   ../common/com/controls.cxx
@@ -93,7 +93,55 @@ path64_set_multiarch_sources(wgen42_sources_common COMMON
   varasm.c
   c_int_model.c
   )
-set (wgen42_sources_arm  wgen_tracing.cxx 
+path64_set_multiarch_sources(wgen42_sources arm 
+../common/com/config.cxx
+  ../common/com/const.cxx
+  ../common/com/controls.cxx
+  ../common/com/dwarf_DST.cxx
+  ../common/com/dwarf_DST_dump.cxx
+  ../common/com/dwarf_DST_mem.cxx
+  ../common/com/dwarf_DST_producer.cxx
+  ../common/com/err_host.cxx
+  ../common/com/glob.cxx
+  ../common/com/intrn_info.cxx
+  ../common/com/ir_bcom.cxx
+  ../common/com/ir_bwrite.cxx
+  ../common/com/ir_reader.cxx
+  ../common/com/irbdata.cxx
+  ../common/com/mtypes.cxx
+  ../common/com/opcode.cxx
+  ../common/com/opcode_core.cxx
+  ../common/com/pu_info.cxx
+  ../common/com/strtab.cxx
+  ../common/com/symtab.cxx
+  ../common/com/symtab_verify.cxx
+  ../common/com/ttype.cxx
+  ../common/com/wn.cxx
+  ../common/com/wn_map.cxx
+  ../common/com/wn_pragmas.cxx
+  ../common/com/wn_simp.cxx
+  ../common/com/wn_util.cxx
+  ../common/com/wutil.cxx
+  ../common/com/xstats.cxx
+  ../common/com/@ARCH@/config_targ.cxx
+  ../common/com/@ARCH@/config_elf_targ.cxx
+  ../common/com/@ARCH@/targ_const.cxx
+  ../common/com/@ARCH@/targ_sim.cxx
+  ../common/com/@ARCH@/config_host.c
+  ../common/com/@ARCH@/config_platform.c
+  wgen_misc.cxx
+  wgen_expr.cxx
+  wgen_stmt.cxx
+  wgen_decl.cxx
+  wgen_dst.cxx
+  wgen_spin_symbol.cxx
+  omp_directive.cxx
+  wgen_omp_check_stack.cxx
+  wgen_omp_directives.cxx
+  main.c
+  varasm.c
+  c_int_model.c 
+                         wgen_tracing.cxx 
                          wgen_pragmas.cxx
                          ../common/com/gccfe_targinfo_interface.cxx #st
                          ../common/util/vspec_parse.c
@@ -101,19 +149,18 @@ set (wgen42_sources_arm  wgen_tracing.cxx
                          ../common/util/vspec.c
                          ../common/com/@ARCH@/targ_register_common.cxx )
 
-path64_is_arch_enabled(arm_enabled arm)
-IF(${arm_enabled})
-set(wgen42_sources ${wgen42_sources_common} ${wgen42_sources_arm})
-ELSE()
-set(wgen42_sources ${wgen42_sources_common})
-ENDIF()
 set_property(SOURCE ../common/com/wn_util.cxx PROPERTY COMPILE_DEFINITIONS MONGOOSE_BE)
 
 path64_add_multiarch_executable(wgen42 wgen42_sources)
-path64_multiarch_link_multiarch_libraries(wgen42 comutil)
+path64_multiarch_link_multiarch_libraries(wgen42 comutil targinfo)
+path64_is_arch_enabled(arm_enabled arm)
+if(${arm_enabled})
+path64_multiarch_link_libraries(wgen42 fereconf iberty spin cmplrs m)
+else()
 path64_multiarch_link_libraries(wgen42 iberty spin cmplrs m)
+endif()
 path64_set_multiarch_property(wgen42 COMPILE_FLAGS
-                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@")
+                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@ -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@")
 
 #add_custom_command(
 #    OUTPUT ${CMAKE_BINARY_DIR}/lib/wgen42

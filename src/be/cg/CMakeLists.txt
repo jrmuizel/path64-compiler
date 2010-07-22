@@ -35,19 +35,14 @@ SET(PATHSCALE_CG_COMMON_SRCS
 			"../../be/cg/@ARCH@/cgemit_targ.cxx"
 			"../../be/cg/@ARCH@/cgtarget.cxx"
 			"../../be/cg/@ARCH@/cg_loop_recur.cxx"
-			"../../be/cg/@ARCH@/ebo_special.cxx"
 			"../../be/cg/@ARCH@/entry_exit_targ.cxx"
 			"../../be/cg/@ARCH@/exp_branch.cxx"
 			"../../be/cg/@ARCH@/exp_divrem.cxx"
 			"../../be/cg/@ARCH@/exp_loadstore.cxx"
-			"../../be/cg/@ARCH@/exp_predicate.cxx"
 			"../../be/cg/@ARCH@/expand.cxx"
 			"../../be/cg/@ARCH@/pqs_cg.cxx"
 			"../../be/cg/@ARCH@/pqs.cxx"
 			"../../be/cg/@ARCH@/register_targ.cxx"
-			"../../be/cg/@ARCH@/cg_sched.cxx"
-			"../../be/cg/@ARCH@/cg_convert_x87.cxx"
-			"../../be/cg/@ARCH@/cg_misc.cxx"
 			"../../common/com/em_dwarf.cxx"
 			"../../common/com/em_elf.cxx"
 			"../../common/com/@ARCH@/targ_em_const.cxx"
@@ -166,7 +161,8 @@ SET( PATHSCALE_CG_ARM_SRCS "../../be/cg/swp/cg_swp.cxx" #st
                         "../../be/cg/swp/cg_swp_sched.cxx"#st
                         "../../dfgforise/ExportFromBackEnd.cxx")
 
-SET( PATHSCALE_CG_X8664_SRCS 		"../../be/cg/@ARCH@/ebo_special.cxx"
+SET( PATHSCALE_CG_X8664_SRCS 		
+                         "../../be/cg/@ARCH@/ebo_special.cxx"
                                     	"../../be/cg/@ARCH@/exp_predicate.cxx"
 		"../../be/cg/@ARCH@/cg_sched.cxx"
 		"../../be/cg/@ARCH@/cg_convert_x87.cxx"
@@ -272,4 +268,4 @@ path64_add_multiarch_multiarch_dependencies(cg targinfo)
 
 path64_add_multiarch_dependencies(cg generate_preg_list generate_topcode)
 path64_set_multiarch_property(cg COMPILE_FLAGS
-                              "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/@ARCH@")
+                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@  -I${CMAKE_CURRENT_SOURCE_DIR}/../be/@ARCH@ -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/@ARCH@")

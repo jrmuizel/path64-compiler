@@ -124,8 +124,9 @@ static INT32 Ignore_Int;
 # include "instr_reader.h"
 #endif
 //TB:
+#ifdef TARG_ST
 #include "register_preg.h" // ISA_REGISTER_CLASS
-
+#endif
 /* IR builder sometimes	needs to know whether we're in front end: */
 #ifdef SINGLE_PROCESS
 INT16 In_Front_End = TRUE;	/* Start out there */
@@ -2738,6 +2739,7 @@ typedef struct {
   PREG_NUM max;
 } preg_range_t;
 static preg_range_t *Rclass_To_Preg_array;
+#ifdef TARG_ST
 //TB:Initilaize rclass to preg mapping
 static void Initialize_RegisterClass_To_Preg(void)
 {
@@ -2780,3 +2782,4 @@ PREG_NUM CGTARG_Regclass_Preg_Max(  ISA_REGISTER_CLASS rclass)
     Initialize_RegisterClass_To_Preg();    
   return Rclass_To_Preg_array[rclass].max;
 }
+#endif

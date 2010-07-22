@@ -13,12 +13,12 @@ include_directories(
 ../../arith
 ../../common/util
 ../../common/com
-../../common/com/@ARCH@
+../../common/com/x8664
 ../../linux/mfef90_includes
 ../../clibinc/cray
 ../include
 ../../include/cmplrs
-${PATHSCALE_BINARY_DIR}/common/targ_info
+${PATHSCALE_BINARY_DIR}/common/targ_info/x8664
 
 )
 

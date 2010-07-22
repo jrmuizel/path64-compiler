@@ -5,7 +5,8 @@ set(_PATH64_SUPPORTED_TARGETS_STRING "Supported architectures are:
   mips_32
   mips_64
   rsk6_32
-  rsk6_64")
+  rsk6_64
+  arm")
 
 # Target information table, keyed by entries of PATH64_ENABLE_TARGETS.
 # Reference table entries with ${_PATH64_TARGET_ARCH_${arch}}.
@@ -40,11 +41,16 @@ set(_PATH64_TARGET_FLAG_rsk6_64 -q64)
 set(_PATH64_TARGET_BITS_rsk6_64 64)
 set(_PATH64_TARGET_ABI_rsk6_64 ABI_Q64)
 
+set(_PATH64_TARGET_ARCH_arm arm)
+set(_PATH64_TARGET_FLAG_arm -n64)
+set(_PATH64_TARGET_BITS_arm 64)
+set(_PATH64_TARGET_ABI_arm ABI_ARM_ver1)
 
 # Architecture flags
 set(_PATH64_ARCH_FLAGS_x8664 "-DTARG_X8664")
 set(_PATH64_ARCH_FLAGS_mips "-DTARG_MIPS")     # TODO: fix it
 set(_PATH64_ARCH_FLAGS_rsk6 "-DTARG_RSK6")     # TODO: fix it
+set(_PATH64_ARCH_FLAGS_arm "-DTARG_ST -DTARG_ARM -DBE_EXPORTED= -DTARGINFO_EXPORTED= -DSUPPORTS_SELECT -DMUMBLE_ARM_BSP")     # TODO: fix it
 
 
 # Building list of enabled architectures

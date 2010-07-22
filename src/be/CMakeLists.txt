@@ -2,10 +2,8 @@ INCLUDE_DIRECTORIES(
   ${PATHSCALE_BINARY_DIR}/common/targ_info
   ${PATHSCALE_BINARY_DIR}/be
   be
-  be/${BUILD_TARGET_DIR}
   cg
   com
-  com/${BUILD_TARGET_DIR}
   lno
   opt
   prompf_anl
@@ -16,7 +14,6 @@ INCLUDE_DIRECTORIES(
   purple2
   .
 
-  cg/${BUILD_TARGET_DIR}
   cg/gra_mon
   cg/swp
 

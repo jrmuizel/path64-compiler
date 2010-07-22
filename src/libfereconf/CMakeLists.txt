@@ -1,6 +1,6 @@
 # build libfereconf.a and a couple custom commands
 
-SET(PATHSCALE_FERECONF_COMMON_SRCS     "gccfe_loader.cxx"
+SET(PATHSCALE_FERECONF_SRCS     "gccfe_loader.cxx"
                                 "fe_loader.cxx"
                                 "gccfe_errors.c"
   "../common/com/config.cxx"
@@ -33,21 +33,14 @@ SET(PATHSCALE_FERECONF_COMMON_SRCS     "gccfe_loader.cxx"
   "../common/com/wutil.cxx"		
   "../common/com/xstats.cxx"
   "../common/com/gccfe_targinfo_interface.cxx"
-  "../common/com/${BUILD_TARGET_DIR}/config_host.c"
-  "../common/com/${BUILD_TARGET_DIR}/config_platform.c"
-  "../common/com/${BUILD_TARGET_DIR}/config_targ.cxx"
-  "../common/com/${BUILD_TARGET_DIR}/config_elf_targ.cxx"
-  "../common/com/${BUILD_TARGET_DIR}/targ_const.cxx"
-  "../common/com/${BUILD_TARGET_DIR}/targ_sim.cxx"
+  "../common/com/arm/config_host.c"
+  "../common/com/arm/config_platform.c"
+  "../common/com/arm/config_targ.cxx"
+  "../common/com/arm/config_elf_targ.cxx"
+  "../common/com/arm/targ_const.cxx"
+  "../common/com/arm/targ_sim.cxx"
+"../common/com/arm/targ_register_common.cxx"
 )
-SET(PATHSCALE_FERECONF_ARM_SRCS "../common/com/${BUILD_TARGET_DIR}/targ_register_common.cxx")
-
-IF (${BUILD_TARGET_DIR} MATCHES "arm")
-SET(PATHSCALE_FERECONF_SRCS ${PATHSCALE_FERECONF_COMMON_SRCS} ${PATHSCALE_FERECONF_ARM_SRCS})
-ELSE()
-SET(PATHSCALE_FERECONF_SRCS ${PATHSCALE_FERECONF_COMMON_SRCS})
-ENDIF()
-
 ADD_DEFINITIONS(
  -DIN_GCC -DHAVE_CONFIG_H
  -DLONGLONG
@@ -66,13 +59,19 @@ ADD_DEFINITIONS(
 -DHANDLE_WFE_PRAGMAS #ST
 -DSGI_MONGOOSE
 -DDEBUG
+-DTARG_ST 
+-DTARG_ARM 
+-DBE_EXPORTED= 
+-DTARGINFO_EXPORTED= 
+-DSUPPORTS_SELECT
+ -DMUMBLE_ARM_BSP
 )
 INCLUDE_DIRECTORIES(
 	.
 	../common/com
         ../common/util
-        ../common/com/${BUILD_TARGET_DIR}
-        ${PATHSCALE_BINARY_DIR}/common/targ_info
+        ../common/com/arm
+        ${PATHSCALE_BINARY_DIR}/common/targ_info/arm
 )
 
 add_library(fereconf STATIC ${PATHSCALE_FERECONF_SRCS})
