@@ -506,7 +506,10 @@ public:
       union {
         INT64       pragma_arg64;
         struct {
-           INT32    pragma_arg1;
+           union {
+             INT32    pragma_arg1;
+             WN      *dummy3; /* to resolve overlap of kids[0] and pragma_arg2 for -m64 */
+           };
 	   union {
 	     INT32    pragma_arg2;
 	     struct {
