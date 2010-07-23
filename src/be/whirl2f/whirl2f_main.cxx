@@ -35,13 +35,7 @@
 #include <stdlib.h>		    /* for getenv() */
 #include <unistd.h>		    /* for execv() */
 #include <string.h>		    /* for strcpy(),etc. */
-#if defined(__FreeBSD__)
-#include <sys/syslimits.h>          
-#elif defined(__sun)
-#include <limits.h>
-#else
-#include <linux/limits.h>	    /* for PATH_MAX */
-#endif
+#include <limits.h>                 /* for PATH_MAX, etc. */
 #include <errno.h>		    /* for errno, sys_errlist[] */
 #include <cmplrs/rcodes.h>
 #include "defs.h"
