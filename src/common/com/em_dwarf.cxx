@@ -1083,7 +1083,7 @@ void
 CCIEInfo::CopyMembers(const CCIEInfo& a_cieInfo)
 {
     //FIXME compile error with gcc 4.4.3
-    m_initBytes = a_cieInfo.InitBytes();
+    //m_initBytes = a_cieInfo.InitBytes();
     m_returnAddressRegId = a_cieInfo.ReturnAddressRegId();
     m_saved = a_cieInfo.Saved();
     m_cfaOffset = a_cieInfo.CfaOffset();

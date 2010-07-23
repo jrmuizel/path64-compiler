@@ -77,7 +77,9 @@ extern void CGEMIT_Gen_Asm_Frame (INT64 frame_len);
 // Prepass before emit to fix up fp registers for IA-32.
 // Noop for every other target.
 extern void STACK_FP_Fixup_PU();
-
+// generate value in hexa decimal for particular op or operand.
+// Case of push/pop mask.
+extern BOOL CGEMIT_TN_Value_In_Hexa_Format( OP *op, TN *t );
 // Generate the entry (.proc) directive.
 extern void CGEMIT_Prn_Ent_In_Asm (ST *pu);
 
