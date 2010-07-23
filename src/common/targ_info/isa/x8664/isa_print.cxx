@@ -1595,10 +1595,21 @@ main()
 			   TOP_pshufw,
 			   TOP_pshuflw,
 			   TOP_pshufhw,
-			   TOP_pextrw,
-			   TOP_pinsrw,
+			   TOP_pextrw64,
+			   TOP_pextrw128,
 			   TOP_pshufw64v16,
 			   TOP_UNDEFINED );
+
+  ISA_PRINT_TYPE packed_ins = 
+                          ISA_Print_Type_Create("packed_ins", "%s %s,%s,%s");
+  Name();
+  Operand(2);
+  Operand(1);
+  Result(0);
+  Instruction_Print_Group( packed_ins,
+          TOP_pinsrw64,
+          TOP_pinsrw128,
+          TOP_UNDEFINED );
 
   /* shift_packed */
   ISA_PRINT_TYPE shift_packed = ISA_Print_Type_Create("shift_packed", "%s %s,%s");

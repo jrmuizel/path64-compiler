@@ -2879,19 +2879,35 @@ main()
   Result(0, int32);
   Operand(0, fp128, opnd1);
 
-  Instruction_Group("packed word modification",
-		    TOP_pextrw,
+  Instruction_Group("mmx packed word modification",
+		    TOP_pextrw64,
 		    TOP_UNDEFINED);
   Result(0, int32);
   Operand(0, mmx, opnd1);
   Operand(1, uimm8, opnd2);
 
-  Instruction_Group("packed word insertion",
-		    TOP_pinsrw,
+  Instruction_Group("xmm packed word modification",
+		    TOP_pextrw128,
+		    TOP_UNDEFINED);
+  Result(0, int32);
+  Operand(0, fp128, opnd1);
+  Operand(1, uimm8, opnd2);
+
+  Instruction_Group("mmx packed word insertion",
+		    TOP_pinsrw64,
 		    TOP_UNDEFINED);
   Result(0, mmx);
-  Operand(0, int32, opnd1);
-  Operand(1, uimm8, opnd2);
+  Operand(0, mmx, opnd1);
+  Operand(1, int32, opnd2);
+  Operand(2, uimm8, opnd3);
+
+  Instruction_Group("xmm packed word insertion",
+		    TOP_pinsrw128,
+		    TOP_UNDEFINED);
+  Result(0, fp128);
+  Operand(0, fp128, opnd1);
+  Operand(1, int32, opnd2);
+  Operand(2, uimm8, opnd3);
 
   Instruction_Group( "mmx vector arithmetic",
 		     TOP_add64v8,

@@ -6463,7 +6463,7 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
       Exp_COPY( tmp0, op0, ops );
       op0 = tmp0;
     }
-    if (id != INTRN_PSHUFW && id != INTRN_PSHUFD &&
+    if (id != INTRN_PSHUFW && id != INTRN_PSHUFD && id != INTRN_PINSRW64 &&
 	TN_register_class(op1) != ISA_REGISTER_CLASS_mmx) {
       TN *tmp1 = Build_TN_Like(result);
       Exp_COPY( tmp1, op1, ops );
@@ -6729,46 +6729,6 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
     break;
   case INTRN_PMINSW:
     Build_OP( TOP_min64v16, result, op0, op1, ops );
-    break;
-  case INTRN_PEXTRW0:
-    Is_True (op1 == NULL, ("Imm operand should be null"));
-    op1 = Gen_Literal_TN (0, 4);
-    Build_OP( TOP_pextrw, result, op0, op1, ops );
-    break;
-  case INTRN_PEXTRW1:
-    Is_True (op1 == NULL, ("Imm operand should be null"));
-    op1 = Gen_Literal_TN (1, 4);
-    Build_OP( TOP_pextrw, result, op0, op1, ops );
-    break;
-  case INTRN_PEXTRW2:
-    Is_True (op1 == NULL, ("Imm operand should be null"));
-    op1 = Gen_Literal_TN (2, 4);
-    Build_OP( TOP_pextrw, result, op0, op1, ops );
-    break;
-  case INTRN_PEXTRW3:
-    Is_True (op1 == NULL, ("Imm operand should be null"));
-    op1 = Gen_Literal_TN (3, 4);
-    Build_OP( TOP_pextrw, result, op0, op1, ops );
-    break;
-  case INTRN_PINSRW0:
-    Is_True (op2 == NULL, ("Imm operand should be null"));
-    op2 = Gen_Literal_TN (0, 4);
-    Build_OP( TOP_pinsrw, result, op1, op2, ops );
-    break;
-  case INTRN_PINSRW1:
-    Is_True (op2 == NULL, ("Imm operand should be null"));
-    op2 = Gen_Literal_TN (1, 4);
-    Build_OP( TOP_pinsrw, result, op1, op2, ops );
-    break;
-  case INTRN_PINSRW2:
-    Is_True (op2 == NULL, ("Imm operand should be null"));
-    op2 = Gen_Literal_TN (2, 4);
-    Build_OP( TOP_pinsrw, result, op1, op2, ops );
-    break;
-  case INTRN_PINSRW3:
-    Is_True (op2 == NULL, ("Imm operand should be null"));
-    op2 = Gen_Literal_TN (3, 4);
-    Build_OP( TOP_pinsrw, result, op1, op2, ops );
     break;
   case INTRN_PMOVMSKB:
     Build_OP( TOP_pmovmskb, result, op0, ops );
@@ -7321,6 +7281,18 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
     Build_OP(TOP_pcmpestrm, result, op0, op1, op2, op3, op4, ops);
   case INTRN_PAND128:
     Build_OP(TOP_pand128, result, op0, op1, ops );
+    break;
+   case INTRN_PEXTRW64:
+    Build_OP(TOP_pextrw64, result, op0, op1, ops );
+    break;
+   case INTRN_PEXTRW128:
+    Build_OP(TOP_pextrw128, result, op0, op1, ops );
+    break;
+   case INTRN_PINSRW64:
+    Build_OP(TOP_pinsrw64, result, op0, op1, op2, ops );
+    break;
+   case INTRN_PINSRW128:
+    Build_OP(TOP_pinsrw128, result, op0, op1, op2, ops );
     break;
   }
 

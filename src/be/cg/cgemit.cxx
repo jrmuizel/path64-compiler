@@ -1715,8 +1715,7 @@ static void Verify_Operand(
 #ifdef TARG_X8664
     if( tn != Rip_TN() )
 #endif
-      FmtAssert(TN_register_class(tn) == rc,
-		("incorrect register class for %s %d", res_or_opnd, opnd));
+    FmtAssert(TN_register_class(tn) == rc, ("incorrect register class for %s %d %d", res_or_opnd, opnd, op->opr));
 
     FmtAssert(reg != REGISTER_UNDEFINED,
 	      ("undefined register for %s %d", res_or_opnd, opnd));
