@@ -103,11 +103,17 @@ set_source_files_properties(${PATHSCALE_MPATH_S_SRCS} PROPERTIES LANGUAGE C)
 add_library(mpath-static STATIC ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
 SET_TARGET_PROPERTIES(mpath-static PROPERTIES OUTPUT_NAME "mpath")
 
+if(${CMAKE_C_COMPILER_ID} MATCHES "PathScale")
+    set(BOOTSTRAP_HACK -fbootstrap-hack)
+endif()
+
 add_library(mpath SHARED ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
 set_property(TARGET mpath PROPERTY COMPILE_DEFINITIONS PIC)
 set_property(TARGET mpath PROPERTY SOVERSION 1)
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-set_property(TARGET mpath PROPERTY LINK_FLAGS "-Wl,-x -Wl,--version-script=${libmpath_SOURCE_DIR}/libmpath.vs")
+set_property(TARGET mpath PROPERTY LINK_FLAGS "-Wl,-x -Wl,--version-script=${libmpath_SOURCE_DIR}/libmpath.vs ${BOOTSTRAP_HACK}")
+else()
+set_property(TARGET mv PROPERTY LINK_FLAGS "${BOOTSTRAP_HACK}")
 endif()
 
 target_link_libraries(mpath m)

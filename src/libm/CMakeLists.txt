@@ -81,11 +81,17 @@ set_source_files_properties(${PATHSCALE_MV_SRCS} PROPERTIES LANGUAGE C)
 add_library(mv-static STATIC ${PATHSCALE_MV_SRCS})
 SET_TARGET_PROPERTIES(mv-static PROPERTIES OUTPUT_NAME "mv")
 
+if(${CMAKE_C_COMPILER_ID} MATCHES "PathScale")
+    set(BOOTSTRAP_HACK -fbootstrap-hack)
+endif()
+
 add_library(mv SHARED ${PATHSCALE_MV_SRCS})
 set_property(TARGET mv PROPERTY COMPILE_DEFINITIONS PIC)
 set_property(TARGET mv PROPERTY SOVERSION 1)
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-set_property(TARGET mv PROPERTY LINK_FLAGS "-Wl,-x -Wl,--version-script=${libmv_SOURCE_DIR}/libmv.vs")
+set_property(TARGET mv PROPERTY LINK_FLAGS "-Wl,-x -Wl,--version-script=${libmv_SOURCE_DIR}/libmv.vs ${BOOTSTRAP_HACK}")
+else()
+set_property(TARGET mv PROPERTY LINK_FLAGS "${BOOTSTRAP_HACK}")
 endif()
 target_link_libraries(mv m)
 
