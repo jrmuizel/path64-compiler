@@ -1591,6 +1591,10 @@ CG_Dump_Region(FILE *fd, WN *wn)
 extern void
 CG_Change_Elf_Symbol_To_Undefined (ST *st)
 {
+#ifdef TARG_ST
+    FmtAssert(FALSE,("not implemented"));
+#else
 	EMT_Change_Symbol_To_Undefined(st);
+#endif
 }
 

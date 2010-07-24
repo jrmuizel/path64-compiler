@@ -1154,7 +1154,7 @@ Can_Be_Tail_Call(ST *pu_st, BB *exit_bb)
     return NULL;
   }
   MEM_POOL_Pop(&MEM_local_pool);
-
+#ifndef TARG_ST
 #ifndef TARG_X8664
   /* If we had preemptible symbol for the callee, then change
    * its relocation so we avoid generating a stub for it.
@@ -1168,7 +1168,7 @@ Can_Be_Tail_Call(ST *pu_st, BB *exit_bb)
     Set_ST_is_weak_symbol(call_st);
   }
 #endif
-
+#endif
   return pred;
 }
 

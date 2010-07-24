@@ -1359,7 +1359,7 @@ static OPTION_DESC Options_CG[] = {
     0, 0, 0, &EMIT_stop_bits_for_asm, NULL },
   { OVK_BOOL,	OV_INTERNAL, TRUE,"emit_explicit_bundles", "",
     0, 0, 0, &EMIT_explicit_bundles, NULL },
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   { OVK_BOOL,	OV_INTERNAL, TRUE, "enable_feedback", "",
     0, 0, 0,	&CG_enable_feedback, NULL },
   { OVK_BOOL,	OV_INTERNAL, TRUE,"non_gas_syntax", "non_gas",
@@ -2192,7 +2192,7 @@ Configure_CG_Options(void)
 #endif
 
 #endif  /* TARG_ST */
-//  Enable_CG_Peephole = (CG_opt_level > 0) ? TRUE : FALSE;
+   Enable_CG_Peephole = (CG_opt_level > 0) ? TRUE : FALSE;
 
   /* Enable_Fill_Delay_Slots controls the filling of delay slots in locs
      and gcm */

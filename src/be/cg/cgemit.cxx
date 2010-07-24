@@ -209,6 +209,18 @@ BE_EXPORTED extern const char **__Release_ID_p;
  *    Global data
  * ====================================================================
  */
+BOOL CG_emit_asm_dwarf    = FALSE;
+#ifdef TARG_ST // [CL] do not emit unwind info by default
+BOOL CG_emit_unwind_info  = FALSE;
+#else
+BOOL CG_emit_unwind_info  = TRUE;
+#endif
+BOOL CG_emit_unwind_directives = FALSE;
+
+#ifdef TARG_STxP70
+INT32 CG_itstackalign_val = 8;
+BOOL  CG_itstackalign_val_overridden = FALSE;
+#endif
 
 /* ====================================================================
  *    Local data
