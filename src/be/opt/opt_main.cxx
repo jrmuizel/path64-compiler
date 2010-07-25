@@ -296,6 +296,7 @@
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #define USE_STANDARD_TYPES
+/*#include <alloca.h>*/
 #include "pu_info.h"		/* for PU_Info_state and related things */
 
 #include "unistd.h"
@@ -345,12 +346,15 @@
 
 #include "regex.h"                      // For regcomp and regexec
 #include "xstats.h"                     // For PU_WN_BB_Cnt
+#ifdef TARG_ST
+#   include "opt_tailmerge.h"   // For tailmerge optimization
+#endif
 
 extern "C" void
 Perform_Procedure_Summary_Phase (WN* w, struct DU_MANAGER *du_mgr,
 				 struct ALIAS_MANAGER *alias_mgr,
 				 EMITTER *emitter);
-#ifndef USE_WEAK_REFERENCES
+#ifndef USE_WEAK_REFERENCES || defined(__FreeBSD__) || defined(__sun)
 extern void (*Perform_Procedure_Summary_Phase_p) (WN*, DU_MANAGER*,
 						  ALIAS_MANAGER*, void*);
 #define Perform_Procedure_Summary_Phase (*Perform_Procedure_Summary_Phase_p)
@@ -482,6 +486,9 @@ private:
   BOOL  _ivr;		/* induction-var recognition */
   BOOL  _ldx;            /* index load optimization */
   BOOL  _lego_opt;
+#ifdef TARG_ST
+  BOOL  _lftr;  /* linear function test replacement */
+#endif
   BOOL  _load_pre;
   BOOL  _local_rvi;
   BOOL  _ocopy;
@@ -493,9 +500,15 @@ private:
   BOOL  _rvi;		/* reg-var identification			*/
   BOOL  _simp_iload;
   BOOL  _slt;
+#ifdef TARG_ST
+  BOOL  _strength_reduction;
+#endif
   BOOL  _store_pre;
   BOOL  _ssa_pre;
   BOOL  _tail_recur;
+#ifdef TARG_ST
+  BOOL  _tailmerge;
+#endif
   INT32 _trip;
   BOOL  _update_vsym;
   INT32 _value_numbering;  /* 0==off, 1==single-pass, 2==iterative */
@@ -559,6 +572,9 @@ private:
       Enable_WN_Simp =			// disable WHIRL simplifier
       // WOPT_Enable_Zero_Version =
       WOPT_Enable_Tail_Recur =
+#ifdef TARG_ST
+      WOPT_Enable_Tailmerge =
+#endif
 	FALSE;
 
       WOPT_Enable_Copy_Propagate = TRUE;
@@ -571,10 +587,22 @@ private:
       WOPT_Enable_Combine_Operations = FALSE;
       WOPT_Enable_Goto = FALSE;
       WOPT_Enable_Tail_Recur = FALSE;
+#ifdef TARG_ST
+      WOPT_Enable_Tailmerge = FALSE;
+#endif
       break;
 
     case MAINOPT_PHASE:
       WOPT_Enable_While_Loop = FALSE;
+#ifdef TARG_ST
+      // disable LFTR if strength reduction is not enabled.
+      if (! WOPT_Enable_Strength_Reduction)
+          WOPT_Enable_LFTR = FALSE;
+
+      // disable LFTR if induction variable elimination is not enabled
+      if (! WOPT_Enable_IVE)
+          WOPT_Enable_LFTR = FALSE;
+#endif
 
       // disable edge placement if new pre is off
       if (! WOPT_Enable_SSA_PRE) {
@@ -632,8 +660,12 @@ private:
       // allow prop of array refs into array indexes during mainopt
       if ( ! WOPT_Enable_Copy_Prop_Ops_Into_Array_Set )
 	WOPT_Enable_Copy_Prop_Ops_Into_Array = TRUE;
-
+#ifdef TARG_ST
+      // WOPT_Enable_Feedback_EPRE is unused
+      if (WOPT_Enable_Feedback_LPRE)
+#else
       if (WOPT_Enable_Feedback_LPRE || WOPT_Enable_Feedback_EPRE)
+#endif
 	WOPT_Enable_Zero_Version = FALSE;
 
       break; // end MAINOPT_PHASE
@@ -654,7 +686,7 @@ private:
 
     case PREOPT_LNO_PHASE: 
       if (Run_autopar && Current_LNO->IPA_Enabled
-#ifdef KEY // bug 6383
+#if defined( KEY) && !defined(TARG_ST) // bug 6383
 	  && PU_WN_BB_Cnt < 2000
 #endif
 	  ) { 
@@ -784,6 +816,9 @@ private:
     WOPT_Enable_Goto = _goto;
     WOPT_Enable_Combine_Operations = _combine_operations;
     WOPT_Enable_Tail_Recur = _tail_recur;
+#ifdef TARG_ST
+    WOPT_Enable_Tailmerge = _tailmerge;
+#endif
     WOPT_Enable_Replace_Second_IV = _replace_second_iv;
     WOPT_Enable_Restricted_Map = _restricted_map;
     WOPT_Enable_Value_Numbering = _value_numbering;
@@ -837,7 +872,10 @@ public:
     _ivr = WOPT_Enable_IVR;		/* induction-var recognition */
     _ldx = Indexed_Loads_Allowed;       /* from config.h, -OPT:ldx */
     _lego_opt = WOPT_Enable_Lego_Opt;
-    //_ldx = WOPT_Enable_Ldx;
+    //_ldx = WOPT_Enable_Ldx; 
+#ifdef TARG_ST
+    _lftr = WOPT_Enable_LFTR;		/* linear function test repl */
+#endif
     _load_pre = WOPT_Enable_Load_PRE;
     _local_rvi = WOPT_Enable_Local_Rvi;
     _ocopy = WOPT_Enable_Output_Copy;
@@ -863,6 +901,9 @@ public:
     _vn_full = WOPT_Enable_VN_Full;
     _simp_iload = WOPT_Enable_Simp_Iload;
     _tail_recur = WOPT_Enable_Tail_Recur;
+#ifdef TARG_ST
+    _tailmerge = WOPT_Enable_Tailmerge;
+#endif
     _replace_second_iv = WOPT_Enable_Replace_Second_IV;
     _restricted_map = WOPT_Enable_Restricted_Map;
     _epre_before_ivr = WOPT_Enable_Epre_Before_Ivr; // For running epre early
@@ -1204,9 +1245,9 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
 	actions |= LOWER_BIT_FIELD_ID;
     else
 	actions |= LOWER_BITS_OP;
-                                                                                                                                                             
+#ifndef TARG_ST 
     actions |= LOWER_TO_MEMLIB; // add memlib transformation
- 
+#endif
     wn_tree = WN_Lower(wn_orig, actions, alias_mgr, "Pre_Opt");
 
 #ifdef TARG_X8664
@@ -1215,12 +1256,12 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
     BOOL target_64bit = TRUE;
 #endif
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (target_64bit && WOPT_Enable_Retype_Expr)
       WN_retype_expr(wn_tree);
 #endif
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     WN_unroll(wn_tree);
 #endif
 
@@ -1294,7 +1335,7 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
   // goto conversion
   if (WOPT_Enable_Goto &&
       (phase == PREOPT_LNO_PHASE || phase == PREOPT_PHASE)) {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     // goto_skip_equal, goto_skip_before, goto_skip_after PU count specified
     if ( Query_Skiplist ( Goto_Skip_List, Current_PU_Count() ) ) {
       if ( Show_Progress )
@@ -1315,7 +1356,7 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
       fprintf( TFile, "%sAfter Goto Conversion\n%s",DBar,DBar );
       fdump_tree(TFile, wn_tree);
     }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     }
 #endif
   }
@@ -1357,6 +1398,12 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
   // if we are preopt, need to see who caller is
   REGION_LEVEL rgn_level = (lower_fully) ? RL_MAINOPT :
   					   RID_preopt_level(phase);
+
+#ifdef TARG_ST
+  //TB: Add some fb checks
+  if (Cur_PU_Feedback)
+    Cur_PU_Feedback->Verify("After RETURN_VAL & MLDID/MSTID & ENTRY_PROMOTED lowering");
+#endif
 
   // create aux symbol table
   // cannot print WHIRL tree after this point, use dump_tree_no_st
@@ -1408,6 +1455,11 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
   // to optimizer CFG annotation (at comp_unit->Cfg()->Feedback())
   if (Cur_PU_Feedback) {
     SET_OPT_PHASE("Annotate CFG with feedback from Whirl");
+#ifdef TARG_ST
+    // [CG] Fake entry exits must be present for feedback propagation
+    // TODO in opt_fb. Remove dependency on this.
+    comp_unit->Cfg()->Attach_fake_entryexit_arcs();
+#endif
     OPT_FEEDBACK *feedback = CXX_NEW(OPT_FEEDBACK(comp_unit->Cfg(),
 						  &Opt_global_pool),
 				     &Opt_global_pool);
@@ -1415,9 +1467,23 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
     comp_unit->Cfg()->Feedback()->Verify( comp_unit->Cfg(),
 					  "after CFG Annotation" );
     // TODO: Perhaps clear out Cur_PU_Feedback now?
+#ifdef TARG_ST
+    // [CG] Remove fake entry exits.
+    comp_unit->Cfg()->Remove_fake_entryexit_arcs();
+#endif
   }
 
+#ifdef TARG_ST
+  if(WOPT_Enable_Tailmerge) {
+    SET_OPT_PHASE("Tailmerge");
+    OPT_Tailmerge(comp_unit, wn_tree, phase);
+  }
+#endif
   SET_OPT_PHASE("Control Flow Analysis");
+#ifdef TARG_ST
+  // [CG] Fake entry exits must be present for dom computation.
+  comp_unit->Cfg()->Attach_fake_entryexit_arcs();
+#endif
   comp_unit->Cfg()->Compute_dom_tree(TRUE); // create dominator tree
   comp_unit->Cfg()->Compute_dom_tree(FALSE); // create post-dominator tree
   comp_unit->Cfg()->Remove_fake_entryexit_arcs();
@@ -1427,7 +1493,12 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
   SET_OPT_PHASE("Proactive Loop Fusion Transformation");
   comp_unit->Pro_loop_fusion_trans();
   comp_unit->Cfg()->Analyze_loops();
-
+#ifdef TARG_ST
+  if (Get_Trace(TP_GLOBOPT, CFG_DUMP_FLAG)) {
+    fprintf(TFile,"%s\t\t After Create CFG\n%s\n", DBar, DBar);
+    comp_unit->Cfg()->Print(TFile);
+  }
+#endif
   // Setup flow free alias information  --  CHI and MU list 
   SET_OPT_PHASE("Create MU and CHI list");
   comp_unit->Opt_stab()->Compute_FFA(comp_unit->Rid());
@@ -1474,7 +1545,17 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
 
   SET_OPT_PHASE("Create CODEMAP Representation");
   comp_unit->Ssa()->Create_CODEMAP();
-
+#ifdef TARG_ST
+  if (Get_Trace(TP_WOPT2, CR_DUMP_FLAG)) {
+    fprintf(TFile,"%s\t\t After Create_CODEMAP\n%s\n", DBar, DBar);
+    comp_unit->Opt_stab()->Print(TFile);
+    comp_unit->Cfg()->Print(TFile);
+  }
+  if (Get_Trace(TP_GLOBOPT, CR_DUMP_FLAG)) {
+    fprintf(TFile,"%s\t\t After Create_CODEMAP\n%s\n", DBar, DBar);
+    comp_unit->Cfg()->Print(TFile);
+  }
+#endif
   if (Get_Trace(TKIND_INFO, TINFO_TIME)) {
     SET_OPT_PHASE("Skip verify Live-Range because timing trace is on");
   } else {
@@ -1492,19 +1573,46 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
   // effects and deal with them in the subsequent phases (e.g. CVTLs).
   //
   Do_Pre_Before_Ivr(comp_unit);
-
+#ifdef TARG_ST
+  if (Get_Trace(TP_WOPT2, CR_DUMP_FLAG)) {
+    fprintf(TFile,"%s\t\t After Do_Pre_Before_Ivr\n%s\n", DBar, DBar);
+    comp_unit->Cfg()->Print(TFile);
+  }
+#endif
   // do induction variable recognition
   if (WOPT_Enable_IVR) {
     SET_OPT_PHASE("Induction Variable Recognition");
     comp_unit->Do_iv_recognition();
+#ifdef TARG_ST
+  if (Get_Trace(TP_WOPT2, CR_DUMP_FLAG)) {
+      fprintf(TFile,"%s\t\t After Do_iv_recognition\n%s\n", DBar, DBar);
+      comp_unit->Cfg()->Print(TFile);
+    }
   }
+#endif
 
   // do flow free copy propagation
   if (WOPT_Enable_Copy_Propagate) {
     SET_OPT_PHASE("Copy Propagation");
     comp_unit->Do_copy_propagate();
   }
+#ifdef TARG_ST
+  if (Get_Trace(TP_WOPT2, CR_DUMP_FLAG)) {
+    fprintf(TFile,"%s\t\t After Do_copy_propagate\n%s\n", DBar, DBar);
+    comp_unit->Cfg()->Print(TFile);
+  }
 
+  if ( WOPT_Enable_Fold_Lda_Iload_Istore ) {
+    SET_OPT_PHASE("LDA-ILOAD/ISTORE folding in coderep");
+    comp_unit->Fold_lda_iload_istore();
+
+    // Dump with: Get_Trace(TP_GLOBOPT, FOLD_DUMP_FLAG)
+    if (Get_Trace(TP_WOPT2, CR_DUMP_FLAG)) {
+      fprintf(TFile,"%s\t\t After Fold_lda_iload_istore\n%s\n", DBar, DBar);
+      comp_unit->Cfg()->Print(TFile);
+    }
+  }
+#endif
   if (WOPT_Enable_Bool_Simp) {
     SET_OPT_PHASE("Boolean simplification");
     Simplify_bool_expr(comp_unit); 
@@ -1618,6 +1726,18 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
 
   if (WOPT_Enable_Edge_Placement && phase == MAINOPT_PHASE) {
     SET_OPT_PHASE("Remove Critical Edge");
+#ifdef TARG_ST
+    Is_Trace( Get_Trace(TP_GLOBOPT, CFG_DUMP_FLAG),
+	     ( TFile, "-------CFG before edge placement---------\n" ) );
+    Is_Trace_cmd( Get_Trace(TP_GLOBOPT, CFG_DUMP_FLAG),
+		 comp_unit->Cfg()->Print(TFile) );
+    INT count = comp_unit->Cfg()->Remove_critical_edge();
+    Is_Trace( Get_Trace(TP_GLOBOPT, CFG_DUMP_FLAG),
+	     ( TFile, "After edge Placement: BBs are placed on %d edges\n",
+	       count ) );
+    Is_Trace_cmd( (count>0 && Get_Trace(TP_GLOBOPT, CFG_DUMP_FLAG)), 
+		  comp_unit->Cfg()->Print(TFile) );
+#else
     Is_Trace( Get_Trace(TP_GLOBOPT, EPRE_DUMP_FLAG), 
 	     ( TFile, "-------CFG before edge placement---------\n" ) );
     Is_Trace_cmd( Get_Trace(TP_GLOBOPT, EPRE_DUMP_FLAG), 
@@ -1628,6 +1748,7 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
 	       count ) );
     Is_Trace_cmd( (count>0 && Get_Trace(TP_GLOBOPT, EPRE_DUMP_FLAG)), 
 		  comp_unit->Cfg()->Print(TFile) );
+#endif
 
     if ( comp_unit->Cfg()->Feedback() )
       comp_unit->Cfg()->Feedback()->Verify( comp_unit->Cfg(),
@@ -1832,7 +1953,12 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
       if (Get_Trace(TP_GLOBOPT, ENABLE_STAT)) {
       	comp_unit->Collect_statistics();
       }
-
+#ifdef TARG_ST
+      if (Get_Trace(TP_WOPT2, CR_DUMP_FLAG)) {
+	fprintf(TFile,"%s\t\t Before Emit_ML_WHIRL\n%s\n", DBar, DBar);
+	comp_unit->Cfg()->Print(TFile);
+      }
+#endif
       SET_OPT_PHASE("MainOpt emitter");
 
       if ( comp_unit->Cfg()->Feedback() )
@@ -1846,6 +1972,11 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
       if (Cur_PU_Feedback)
 	Cur_PU_Feedback->Reset_Root_WN(opt_wn);
 
+#ifdef TARG_ST
+      //TB: Add some fb checks
+      if (Cur_PU_Feedback)
+	Cur_PU_Feedback->Verify("After RETURN_VAL & MLDID/MSTID & ENTRY_PROMOTED lowering");
+#endif
       Is_True(REGION_consistency_check(opt_wn),(""));
       Is_True(Verify_alias(alias_mgr,opt_wn),(""));
 
@@ -1931,7 +2062,11 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
       // Now transfer the new alias class information into the alias
       // manager's array of POINTS_TO's, cloning where needed to
       // distinguish things that weren't distinguished before.
+#ifdef TARG_ST
+      Transfer_alias_class_to_alias_manager(ac, opt_wn, alias_mgr);
+#else
       alias_mgr->Transfer_alias_class_to_alias_manager(ac, opt_wn);
+#endif
       ac.Release_resources();
     }
 
@@ -2125,7 +2260,7 @@ identify_complete_struct_relayout_candidates(WN *wn)
   // not interested in any leaf nodes
   return;
 }
-
+#ifndef TARG_ST
 // This function is called after the last function in the file has been
 // compiled.  Among all the structures that have been marked (more precisely,
 // all the structures whose fields that were accessed in some loops have been
@@ -2174,3 +2309,4 @@ choose_from_complete_struct_for_relayout_candidates()
   }
   return;
 }
+#endif
