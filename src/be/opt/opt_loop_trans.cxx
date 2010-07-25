@@ -366,7 +366,7 @@ void generate_loop_butterfly_zones(COMP_UNIT *cu,
 				      ends, feedback, min_coverage, trace);
 	OPT_POOL_Pop(&MEM_local_pool, -1);
 	if (trace)
-#if defined( KEY) && !defined(TARG_ST) /* Mac port */
+#ifdef KEY /* Mac port */
 	  fprintf(TFile, "new_loop size=%ld, butterfly size=%ld\n",
 		  (long) new_loop.size(), (long) ends.size());
 #else /* KEY Mac port */
