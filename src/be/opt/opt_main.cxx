@@ -354,7 +354,7 @@ extern "C" void
 Perform_Procedure_Summary_Phase (WN* w, struct DU_MANAGER *du_mgr,
 				 struct ALIAS_MANAGER *alias_mgr,
 				 EMITTER *emitter);
-#ifndef USE_WEAK_REFERENCES || defined(__FreeBSD__) || defined(__sun)
+#ifndef USE_WEAK_REFERENCES
 extern void (*Perform_Procedure_Summary_Phase_p) (WN*, DU_MANAGER*,
 						  ALIAS_MANAGER*, void*);
 #define Perform_Procedure_Summary_Phase (*Perform_Procedure_Summary_Phase_p)
@@ -1588,8 +1588,8 @@ Pre_Optimizer(INT32 phase, WN *wn_tree, DU_MANAGER *du_mgr,
       fprintf(TFile,"%s\t\t After Do_iv_recognition\n%s\n", DBar, DBar);
       comp_unit->Cfg()->Print(TFile);
     }
-  }
 #endif
+  }
 
   // do flow free copy propagation
   if (WOPT_Enable_Copy_Propagate) {
