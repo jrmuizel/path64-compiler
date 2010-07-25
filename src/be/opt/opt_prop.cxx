@@ -89,6 +89,11 @@
 #include "opt_prop.h"
 #include "opt_cvtl_rule.h"
 
+#ifdef TARG_ST
+// [CG 2004/12/20]
+// File merged with open64-0.16 version.
+#define OPEN64_0_16
+#endif
 // ====================================================================
 // Contains_only_constants - see if the expr contains only constants
 // ====================================================================
@@ -185,7 +190,7 @@ COPYPROP::Is_function_of_itself(STMTREP *stmt, OPT_STAB *sym)
   if (!Propagatable(rhs, FALSE, 0, FALSE, FALSE, &height, FALSE, NULL))
     return FALSE;
 
-#ifdef KEY // bug 15009: should subject this to height limit as well
+#if defined( KEY) && !defined(TARG_ST) // bug 15009: should subject this to height limit as well
   if (height >= WOPT_Enable_Prop_Limit / 2) // exceeds prop limit
     return FALSE;
 #endif
@@ -290,7 +295,7 @@ COPYPROP::Is_function_of_cur(CODEREP *var, CODEREP *cur_var)
     return FALSE;
   STMTREP *dstmt = cur_var->Defstmt();
   if (dstmt == NULL) return FALSE;
-#ifdef KEY // bug 11440: don't reverse the effect of i=i propagation
+#if defined( KEY) && !defined(TARG_ST) // bug 11440: don't reverse the effect of i=i propagation
   if (dstmt->Is_identity_assignment_removable() && WOPT_Enable_DCE)
     return FALSE;
 #endif
@@ -346,6 +351,10 @@ COPYPROP::Propagatable(CODEREP *x, BOOL chk_inverse,
       ST *s = Opt_stab()->St(x->Aux_id());
       if ((ST_class(s) == CLASS_PREG && Preg_Is_Dedicated(x->Offset())))
         return NOT_PROPAGATABLE;
+#ifdef TARG_ST
+      if ((ST_class(s) == CLASS_PREG && (x->Offset() < 0)))
+        return NOT_PROPAGATABLE;
+#endif
     }
 
     *height = 1;
@@ -418,12 +427,26 @@ COPYPROP::Propagatable(CODEREP *x, BOOL chk_inverse,
     // intrinsic op may by lowered into a call, so propagating it past the
     // def of a return preg is wrong
     if (Past_ret_reg_def() && (x->Opr() == OPR_INTRINSIC_OP
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
         || x->Opr() == OPR_PURE_CALL_OP
 #endif
        ))
       return NOT_PROPAGATABLE;
 
+#ifdef TARG_ST
+    // On ST200, floating point operations or other operations that
+    // have a DIV, MOD, ... in their arguments will also generate
+    // a call. In this case, do not propagate when between the def of
+    // a return value and the return.
+    if (Past_ret_reg_def()) {
+      if (MTYPE_is_float(x->Dtyp()) || MTYPE_is_complex(x->Dtyp()) ||
+	  MTYPE_is_float(x->Dsctyp()) || MTYPE_is_complex(x->Dsctyp()))
+	return NOT_PROPAGATABLE;
+      if ((x->Opr() == OPR_DIV) || (x->Opr() == OPR_MOD) ||
+	  (x->Opr() == OPR_REM) || (x->Opr() == OPR_DIVREM))
+	return NOT_PROPAGATABLE;
+    }
+#endif
     if (icopy_phase) {
       if (x->Is_isop_flag_set(ISOP_ICOPY_VISITED)) {
 	*height = 1;	// don't really know the height, so return 1
@@ -543,13 +566,17 @@ CODEREP::Convert_type(CODEMAP *htable, CODEREP *expr, BOOL icopy_phase)
   MTYPE    rhs_type = expr->Dtyp();
   MTYPE    dsc_type = Dsctyp();
 
-#ifdef KEY // bug 2668: screen out obvious case where no conversion is needed
+#if defined( KEY) && !defined(TARG_ST)// bug 2668: screen out obvious case where no conversion is needed
   if (expr->Kind() == CK_VAR && Kind() == CK_VAR && expr->Aux_id() == Aux_id()
       && /* bug 10220 */ ! Is_flag_set(CF_IS_ZERO_VERSION)
       && /* bug 11616 */ MTYPE_signed(expr->Dtyp()) == MTYPE_signed(Dtyp()))
     return expr;
 #endif
+#ifdef TARG_ST
+  if (MTYPE_is_class_integer(rhs_type) && MTYPE_is_class_integer(dsc_type) ) {
+#else
   if ( MTYPE_is_integral(rhs_type) && MTYPE_is_integral(dsc_type) ) {
+#endif
     cvt_kind = NOT_AT_ALL;
     if (dsc_type == MTYPE_BS)
       ;
@@ -577,6 +604,7 @@ CODEREP::Convert_type(CODEMAP *htable, CODEREP *expr, BOOL icopy_phase)
   case NOT_AT_ALL:
     break;
   case NEED_CVT:
+#ifndef TARG_ST
     if ((opc == OPC_U4U8CVT || opc == OPC_U4I8CVT) && Dtyp() == MTYPE_U8) {
       // Generate (U8CVTL 32) high word zero extended value and return     
       opc = OPC_U8CVTL;
@@ -587,7 +615,9 @@ CODEREP::Convert_type(CODEMAP *htable, CODEREP *expr, BOOL icopy_phase)
 	expr = htable->Rehash(cr);
 	expr->Set_isop_flag(ISOP_FOLD_EXPR_VISITED);
       }
-    } else {
+    } else 
+#endif
+    {
       cr->Init_expr(opc, expr);
       expr = ftmp.Fold_Expr(cr);
       if (!expr) {
@@ -669,6 +699,65 @@ CODEREP::Convert_type(CODEMAP *htable, CODEREP *expr, BOOL icopy_phase)
   return expr;
 }
 /* CVTL-RELATED finish */
+
+#ifdef TARG_ST
+// ====================================================================
+// CODEREP::Convert_Dtyp - "this", a memory variable, is being
+// substituted by "expr"; The conversion is made according to the
+// Dtyp(), and will be later completed by a call to Convert_type which
+// works on the Dsctyp. It may generate a CVT for INTEGER types, or a
+// TAS for conversion between FLOAT and INTEGER.
+// ====================================================================
+CODEREP *
+CODEREP::Convert_Dtyp(CODEMAP *htable, CODEREP *expr)
+{
+  CODEREP *cr = Alloc_stack_cr(1);
+  FOLD     ftmp;
+  OPCODE   opc;
+  INT      cvt_kind;
+  MTYPE    rhs_type = expr->Dtyp();
+  MTYPE    this_type = Dtyp();
+
+  if (MTYPE_is_class_integer(rhs_type) && MTYPE_is_class_integer(this_type)) {
+    cvt_kind = Need_type_conversion(rhs_type, this_type, &opc);
+    if (cvt_kind == NEED_CVT) {
+      cr->Init_expr(opc, expr);
+      expr = ftmp.Fold_Expr(cr);
+      if (!expr) {
+	expr = htable->Rehash(cr);
+	expr->Set_isop_flag(ISOP_FOLD_EXPR_VISITED);
+      }
+    }
+  }
+
+  else if ((MTYPE_is_class_integer(this_type) && MTYPE_is_float(rhs_type)) ||
+	   (MTYPE_is_float(this_type) && MTYPE_is_class_integer(rhs_type))) {
+    switch (this_type) {
+    case MTYPE_I4: opc = OPC_I4TAS; break;
+    case MTYPE_U4: opc = OPC_U4TAS; break;
+    case MTYPE_I8: opc = OPC_I8TAS; break;
+    case MTYPE_U8: opc = OPC_U8TAS; break;
+    case MTYPE_F4: opc = OPC_F4TAS; break;
+    case MTYPE_F8: opc = OPC_F8TAS; break;
+    default:
+      FmtAssert(FALSE, ("CODEREP::Create_TAS: Incorrect type for conversion."));
+    }
+    cr->Init_expr(opc, expr);
+    cr->Set_ty_index(Lod_ty());
+    expr = ftmp.Fold_Expr(cr);
+    if (!expr) {
+      expr = htable->Rehash(cr);
+      expr->Set_isop_flag(ISOP_FOLD_EXPR_VISITED);
+    }
+  } else if ((MTYPE_is_dynamic(this_type) || MTYPE_is_dynamic(rhs_type)) &&
+	   this_type != rhs_type) {
+    // Sanity check for dynamic types.
+    FmtAssert(FALSE, ("CODEREP::Create_TAS: Unexpected conversion requested for dynamic type"));
+  }
+
+  return expr;
+}
+#endif
 
 // ====================================================================
 // Prop_identity_assignment - cr is a CK_VAR node being referenced; check if
@@ -1046,7 +1135,10 @@ COPYPROP::Prop_var(CODEREP *x, BB_NODE *curbb, BOOL icopy_phase,
       Htable()->Inc_mainprops();
     return retv;
   }
-
+#ifdef TARG_ST
+  if (x->Is_flag_set((CR_FLAG)(CF_DEF_BY_PHI)) )
+    return NULL;
+#else
   if (x->Is_flag_set((CR_FLAG)(CF_DEF_BY_PHI|CF_DEF_BY_CHI)) )
     return NULL;
 
@@ -1061,11 +1153,92 @@ COPYPROP::Prop_var(CODEREP *x, BB_NODE *curbb, BOOL icopy_phase,
       return NULL;
   }
 #endif
-
+#endif
   stmt = x->Defstmt();
   if (! stmt) return NULL;
 
   expr = stmt->Rhs();
+#ifdef TARG_ST
+  // We also perform copy propagation on the following pattern of code :
+  //     ...
+  //  OPR_STID sym1v1
+  //  sym2 <- chi(sym2)
+  //    LDID sym2v2
+
+  // This pattern is produced when sym1 and sym2 are two fields of a
+  // union, or on an expression such as ((short *)&i)[1]
+
+  // After copy propagation, this sequence becomes :
+  //  OPR_STID sym1v1
+  //  sym2 <- chi(sym2)
+  //       LDID sym1v1
+  //      SHR
+  //     CVT
+  //    CVTL
+
+  // Where SHR, CVT and CVTL are generated depending on the types and
+  // offsets of sym1 and sym2.
+
+  if (x->Is_flag_set((CR_FLAG)(CF_DEF_BY_CHI)) ) {
+    BOOL need_TAS;
+
+    // Be more restrictive in case of copy propagation through CHI
+    if (x->Kind() != CK_VAR)
+      return NULL;
+
+    if (!OPERATOR_is_scalar_store (stmt->Opr()) ||
+	(stmt->Lhs()->Kind() != CK_VAR))
+      return NULL;
+
+    if (stmt->Has_zver())
+      return NULL;
+
+    expr = stmt->Lhs();
+
+    // Allow transformation on integral types or float/integer conversions.
+    if (MTYPE_is_class_integer(x->Dtyp()) && MTYPE_is_class_integer(expr->Dtyp()))
+      need_TAS = FALSE;
+    else if ((MTYPE_is_class_integer(x->Dtyp()) && MTYPE_is_float(expr->Dtyp())) ||
+	     (MTYPE_is_float(x->Dtyp()) && MTYPE_is_class_integer(expr->Dtyp())))
+      need_TAS = TRUE;
+    else
+      return NULL;
+
+    ST *x_st = Opt_stab()->St(x->Aux_id());
+    ST *expr_st = Opt_stab()->St(expr->Aux_id());
+#if 1
+    // [CG]: Fix for bug 1-4-0-B/ddts/17275
+    // We must check that:
+    // - the base symbols are the same
+    // - and the offsets from the beginning of base are the same
+    ST *base_x_st, *base_expr_st;
+    INT64 offset_x_st, offset_expr_st;
+    Base_Symbol_And_Offset(x_st, &base_x_st, &offset_x_st);
+    Base_Symbol_And_Offset(expr_st, &base_expr_st, &offset_expr_st);
+    if (base_x_st != base_expr_st ||
+	offset_x_st != offset_expr_st)
+      return NULL;
+#else
+    if ((ST_base(x_st) == NULL) ||
+	(ST_base(x_st) != ST_base(expr_st)))
+      return NULL;
+#endif
+
+    if (!need_TAS) {
+      /* Check that x completely overlap with expr. */
+      if ((x->Offset() < expr->Offset()) ||
+	  ((x->Offset()+MTYPE_size_min(x->Dsctyp())) > (expr->Offset()+MTYPE_size_min(expr->Dsctyp()))))
+	return NULL;
+    }
+    else {
+      /* In case one type is float and the other is integer, size and
+	 offset must be equal. */
+      if ((x->Offset() != expr->Offset()) ||
+	  (MTYPE_size_min(x->Dsctyp()) != MTYPE_size_min(expr->Dsctyp())))
+	return NULL;
+    }
+  }
+#endif
 
 #ifdef TARG_IA64
   // disable copy prop for float-pt pregs (except for leaf nodes) in
@@ -1090,12 +1263,12 @@ COPYPROP::Prop_var(CODEREP *x, BB_NODE *curbb, BOOL icopy_phase,
        (expr->Kind() == CK_VAR && expr->Aux_id() != x->Aux_id())))
     return NULL;
 
-#ifdef KEY // bug 5131
+#if defined( KEY) && !defined(TARG_ST) // bug 5131
   if (x->Mp_shared())
     return NULL;
 #endif
 
-#ifdef KEY // bug 1596: do not propagate an ARRAY node to the base field of
+#if defined( KEY) && !defined(TARG_ST) // bug 1596: do not propagate an ARRAY node to the base field of
 	   // 		a dope vector
   if (expr->Kind() == CK_OP && expr->Opr() == OPR_ARRAY) {
     ST *st = Opt_stab()->St(x->Aux_id());
@@ -1142,7 +1315,7 @@ COPYPROP::Prop_var(CODEREP *x, BB_NODE *curbb, BOOL icopy_phase,
       x == curversion)
     return NULL;
 
-#ifdef KEY // bug 10577
+#if defined( KEY) && !defined(TARG_ST) // bug 10577
   if (no_complex_preg && expr->Kind() == CK_VAR && 
       MTYPE_is_complex(expr->Dtyp()) &&
       ST_class(Opt_stab()->Aux_stab_entry(expr->Aux_id())->St()) == CLASS_PREG)
@@ -1174,6 +1347,13 @@ COPYPROP::Prop_var(CODEREP *x, BB_NODE *curbb, BOOL icopy_phase,
       return NULL;
   }
 
+#ifdef TARG_ST
+  // We cannot handle the PROP_WITH_INVERSE propagation in case of
+  // CHI.
+  if (x->Is_flag_set((CR_FLAG)(CF_DEF_BY_CHI)) )
+    if (prop != PROPAGATABLE)
+      return NULL;
+#endif
   x->DecUsecnt();
   if (icopy_phase)
     Htable()->Inc_inputprops();
@@ -1184,6 +1364,46 @@ COPYPROP::Prop_var(CODEREP *x, BB_NODE *curbb, BOOL icopy_phase,
   else {	// curcronly must be true
     expr = Rehash_inverted_expr(expr, icopy_phase);
   }
+#ifdef TARG_ST
+  // For variables connected through CHI, more operations may be
+  // needed to perform the conversion
+  if (x->Is_flag_set((CR_FLAG)(CF_DEF_BY_CHI)) ) {
+    INT64 offset = x->Offset()-expr->Offset();
+    INT64 size = MTYPE_size_min(expr->Dsctyp());
+    INT64 sub_size = MTYPE_size_min(x->Dsctyp());
+    INT64 shift_amount = Target_Byte_Sex == BIG_ENDIAN ?
+      size - offset*8 - sub_size : offset*8;
+
+    // First, extract sub part with a SHR
+    if (shift_amount) {
+      CODEREP *cr_op = Alloc_stack_cr(2);
+      CODEREP *cr_cst = Alloc_stack_cr(1);
+      OPCODE opc;
+      FOLD ftmp;
+      if ( Get_Trace(TP_GLOBOPT, PROP_DUMP_FLAG)) {
+	fprintf( TFile, "Prop_var: Creating SHR for aliased copy propagation\n");
+      }
+      if (MTYPE_size_min(expr->Dtyp()) == 64)
+	opc = MTYPE_is_unsigned(x->Dsctyp()) ? OPC_I8LSHR : OPC_I8ASHR;
+      else
+	opc = MTYPE_is_unsigned(x->Dsctyp()) ? OPC_I4LSHR : OPC_I4ASHR;	    
+      cr_op->Init_op(opc, 2);
+      cr_op->Set_opnd(0, expr);
+      cr_cst->Init_const(MTYPE_I4,shift_amount);
+      cr_cst = Htable()->Rehash(cr_cst);
+      cr_op->Set_opnd(1, cr_cst);
+      expr = ftmp.Fold_Expr(cr_op);
+      if (!expr) {
+	expr = Htable()->Rehash(cr_op);
+	expr->Set_isop_flag(ISOP_FOLD_EXPR_VISITED);
+      }
+    }
+
+    // Then, generate a CVT or a TAS according to the Dtyp of x and
+    // expr.
+    expr = x->Convert_Dtyp(Htable(), expr);
+  }
+#endif
   expr = x->Convert_type(Htable(), expr, icopy_phase);
   BB_NODE *insertbb;
   if (expr->Non_leaf() && Htable()->Phase() == MAINOPT_PHASE &&
@@ -1194,7 +1414,12 @@ COPYPROP::Prop_var(CODEREP *x, BB_NODE *curbb, BOOL icopy_phase,
     STMTREP *eval_stmt = CXX_NEW(STMTREP(OPC_EVAL), Htable()->Mem_pool());
     expr->IncUsecnt();
     eval_stmt->Set_rhs(expr);
+#ifdef TARG_ST
+    // TDR Fix for issue #40057 related to do_while lowering
+    insertbb->Append_stmt_before_branch(eval_stmt);
+#else
     insertbb->Append_stmtrep(eval_stmt);
+#endif
   }
   return expr;
 }
@@ -1210,7 +1435,7 @@ COPYPROP::Prop_ivar(CODEREP *x, BB_NODE *curbb, BOOL icopy_phase,
 {
 
   if (! WOPT_Enable_Prop_Ivar) return NULL;
-#ifdef KEY // bug 5804
+#if defined( KEY) && !defined(TARG_ST) // bug 5804
   if (Htable()->Phase() != MAINOPT_PHASE && PU_has_mp(Get_Current_PU())) 
     return NULL;
 #endif
@@ -1222,6 +1447,14 @@ COPYPROP::Prop_ivar(CODEREP *x, BB_NODE *curbb, BOOL icopy_phase,
   CODEREP *expr = stmt->Rhs();
 //  MTYPE    expr_ty = stmt->Lhs()->Dsctyp();
 
+#ifdef TARG_ST
+  // [CG]: Skip the case MSTORE(scalar) that can not be propagated to a MLOAD.
+  // We can only propagate a MSTORE(MLOAD).
+  if (stmt->Opr() == OPR_MSTORE &&
+      !(expr->Non_leaf() && expr->Opr() == OPR_MLOAD)) {
+    return NULL;
+  }
+#endif
   // if WOPT_Enable_Small_Br_Target is true, do not propagate into a BB that
   // does not post-dominate the assignment statement
   if (WOPT_Enable_Small_Br_Target && expr->Non_leaf() && 
@@ -1233,7 +1466,7 @@ COPYPROP::Prop_ivar(CODEREP *x, BB_NODE *curbb, BOOL icopy_phase,
       Propagated_to_loop_branch(stmt->Bb(), curbb)) 
     return NULL;
 
-#ifdef KEY // bug 10577
+#if defined( KEY) && !defined(TARG_ST) // bug 10577
   if (no_complex_preg && expr->Kind() == CK_VAR && 
       MTYPE_is_complex(expr->Dtyp()) &&
       ST_class(Opt_stab()->Aux_stab_entry(expr->Aux_id())->St()) == CLASS_PREG)
@@ -1271,7 +1504,12 @@ COPYPROP::Prop_ivar(CODEREP *x, BB_NODE *curbb, BOOL icopy_phase,
     STMTREP *eval_stmt = CXX_NEW(STMTREP(OPC_EVAL), Htable()->Mem_pool());
     expr->IncUsecnt();
     eval_stmt->Set_rhs(expr);
+#ifdef TARG_ST
+    // TDR Fix for issue #40057 related to do_while lowering
+    insertbb->Append_stmt_before_branch(eval_stmt);
+#else
     insertbb->Append_stmtrep(eval_stmt);
+#endif
   }
   return expr;
 }
@@ -1452,7 +1690,7 @@ COPYPROP::Copy_propagate_cr(CODEREP *x, BB_NODE *curbb,
 	  if ( i > 0 )
 	    in_array = TRUE;
 	}
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST) 
         if (opr != OPR_ASM_INPUT ||
             (x->Opnd(i)->Kind() != CK_VAR && x->Opnd(i)->Kind() != CK_IVAR) )
 	  expr = Copy_propagate_cr(x->Opnd(i), curbb, inside_cse, in_array);
@@ -1803,7 +2041,7 @@ COPYPROP::Propagatable_thru_phis(CODEREP *lexp, CODEREP *rexp,
       return FALSE;
     if (lexp->Opr() == OPR_ARRAY && rexp->Opr() == OPR_ARRAY &&
 	lexp->Elm_siz() != rexp->Elm_siz()) return FALSE;
-#ifdef KEY // bug 1795: need to verify boffset and bsize are identical
+#if defined( KEY) && !defined(TARG_ST)  // bug 1795: need to verify boffset and bsize are identical
     if (lexp->Opr() == OPR_EXTRACT_BITS &&
 	(lexp->Op_bit_offset() != rexp->Op_bit_offset() ||
 	 lexp->Op_bit_size() != rexp->Op_bit_size()))
@@ -1818,7 +2056,7 @@ COPYPROP::Propagatable_thru_phis(CODEREP *lexp, CODEREP *rexp,
     if (lexp->Opr() == OPR_INTRINSIC_OP && rexp->Opr() == OPR_INTRINSIC_OP
         && lexp->Intrinsic() != rexp->Intrinsic())  // fix 804479
       return FALSE;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST) 
     if (lexp->Opr() == OPR_PURE_CALL_OP && rexp->Opr() == OPR_PURE_CALL_OP
         && lexp->Call_op_aux_id() != rexp->Call_op_aux_id())
       return FALSE;
@@ -2086,7 +2324,7 @@ COPYPROP::Copy_propagate(BB_NODE *bb)
 	    cr->Set_dsctyp(phi->OPND(0)->Dsctyp());
 	    cr->Set_lod_ty(phi->OPND(0)->Lod_ty());
 	    cr->Set_field_id(phi->OPND(0)->Field_id());
-#ifdef KEY // bug 7228
+#if defined( KEY) && !defined(TARG_ST)  // bug 7228
 	    cr->Set_offset(phi->OPND(0)->Offset());
 #endif
 	    if (phi->OPND(0)->Bit_field_valid())
@@ -2109,7 +2347,7 @@ COPYPROP::Copy_propagate(BB_NODE *bb)
   // copy propagated and breaks the emitter.
   INT32 saved_prop_limit = WOPT_Enable_Prop_Limit;
   if (bb->Kind() == BB_DOEND) 
-#ifdef KEY // bug 6097, bug 11784, bug 13003
+#if defined( KEY) && !defined(TARG_ST)  // bug 6097, bug 11784, bug 13003
     WOPT_Enable_Prop_Limit = WOPT_Enable_Doend_Prop_Limit;
 #else
     WOPT_Enable_Prop_Limit = 9999;
@@ -2160,12 +2398,16 @@ COPYPROP::Copy_propagate(BB_NODE *bb)
     }
 
     if (OPERATOR_is_scalar_store (stmt->Opr()) &&
+#ifdef TARG_ST
+	Opt_stab()->Aux_stab_entry(stmt->Lhs()->Aux_id())->Is_return_preg())
+#else
 	Opt_stab()->Aux_stab_entry(stmt->Lhs()->Aux_id())->Is_dedicated_preg())
+#endif
       Set_past_ret_reg_def();
     else if (stmt->Opr() == OPR_RETURN || 
 	     stmt->Opr() == OPR_RETURN_VAL ||
 	     stmt->Opr() == OPR_REGION
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST) 
   	     || stmt->Opr() == OPR_GOTO_OUTER_BLOCK
 #endif
 	    )
