@@ -151,17 +151,30 @@ struct ctbl consttbl[] = {
 	{"ERANGE",ERANGE},
 	{"ENOMSG",ENOMSG},
 	{"EIDRM",EIDRM},
-#if defined(BUILD_OS_DARWIN)
-#else /* defined(BUILD_OS_DARWIN) */
+#ifdef ECHRNG
 	{"ECHRNG",ECHRNG},
+#endif
+#ifdef EL2NSYNC
 	{"EL2NSYNC",EL2NSYNC},
+#endif
+#ifdef EL3HLT
 	{"EL3HLT",EL3HLT},
+#endif
+#ifdef EL3RST
 	{"EL3RST",EL3RST},
+#endif
+#ifdef ELNRNG
 	{"ELNRNG",ELNRNG},
+#endif
+#ifdef EUNATCH
 	{"EUNATCH",EUNATCH},
+#endif
+#ifdef ENOCSI
 	{"ENOCSI",ENOCSI},
+#endif
+#ifdef EL2HLT
 	{"EL2HLT",EL2HLT},
-#endif /* defined(BUILD_OS_DARWIN) */
+#endif
 	{"EDEADLK",EDEADLK},
 	{"ENOLCK",ENOLCK},
 #ifdef	_UNICOS
@@ -304,9 +317,9 @@ struct ctbl consttbl[] = {
         {"SIGHWE",SIGHWE},
         {"SIGERR",SIGERR},
 #endif	/* _UNICOS */
-#ifndef	_LITTLE_ENDIAN
+#ifdef SIGEMT
         {"SIGEMT",SIGEMT},
-#endif	/* not _LITTLE_ENDIAN */
+#endif
         {"SIGFPE",SIGFPE},
         {"SIGKILL",SIGKILL},
         {"SIGBUS",SIGBUS},
@@ -315,19 +328,19 @@ struct ctbl consttbl[] = {
         {"SIGORE",SIGORE},
 #endif	/* _UNICOS */
         {"SIGSEGV",SIGSEGV},
-#ifndef	_LITTLE_ENDIAN
+#ifdef SIGSYS
         {"SIGSYS",SIGSYS},
-#endif	/* not _LITTLE_ENDIAN */
+#endif
         {"SIGPIPE",SIGPIPE},
         {"SIGALRM",SIGALRM},
         {"SIGTERM",SIGTERM},
         {"SIGIO",SIGIO},
         {"SIGURG",SIGURG},
-#if ! defined(BUILD_OS_DARWIN)
+#ifdef SIGCLD
         {"SIGCLD",SIGCLD},
 #endif /* defined(BUILD_OS_DARWIN) */
         {"SIGCHLD",SIGCHLD},
-#if ! defined(BUILD_OS_DARWIN)
+#ifdef SIGPWR
         {"SIGPWR",SIGPWR},
 #endif /* defined(BUILD_OS_DARWIN) */
 #ifdef _UNICOS
@@ -356,41 +369,68 @@ struct ctbl consttbl[] = {
 #endif	/* _UNICOS */
         {"SIGUSR1",SIGUSR1},
         {"SIGUSR2",SIGUSR2},
-#if	defined(__mips) || defined(_LITTLE_ENDIAN)
-#if ! defined(BUILD_OS_DARWIN)
+#ifdef SIGPOLL
         {"SIGPOLL",SIGPOLL},
-#endif /* defined(BUILD_OS_DARWIN) */
+#endif
+#ifdef SIGVTALRM
         {"SIGVTALRM",SIGVTALRM},
+#endif
+#ifdef SIGPROF
         {"SIGPROF",SIGPROF},
+#endif
+#ifdef SIGXCPU
         {"SIGXCPU",SIGXCPU},
+#endif
+#ifdef SIGXFSZ
         {"SIGXFSZ",SIGXFSZ},
-#ifndef	_LITTLE_ENDIAN
+#endif
+#ifdef SIGCKPT
         {"SIGCKPT",SIGCKPT},
+#endif
+#ifdef SIGRTMIN
         {"SIGRTMIN",SIGRTMIN},
+#endif
+#ifdef SIGRTMAX
         {"SIGRTMAX",SIGRTMAX},
-#endif	/* not _LITTLE_ENDIAN */
-#endif	/*  __mips or _LITTLE_ENDIAN */
+#endif
+#ifdef SIG_DFL
         {"SIG_DFL",(long) SIG_DFL},
+#endif
+#ifdef SIG_IGN
         {"SIG_IGN",(long) SIG_IGN},
+#endif
 /* sa_flags values in sys/signal.h for sigaction */
         {"SA_NOCLDSTOP",SA_NOCLDSTOP},
-#ifndef	_LITTLE_ENDIAN
         {"SA_RESETHAND",SA_RESETHAND},
         {"SA_NODEFER",SA_NODEFER},
         {"SA_NOCLDWAIT",SA_NOCLDWAIT},
-#endif	/* not _LITTLE_ENDIAN */
-#ifdef _UNICOS
+#ifdef SA_CLEARPEND
         {"SA_CLEARPEND",SA_CLEARPEND},
+#endif
+#ifdef SA_CLEARMASK
         {"SA_CLEARMASK",SA_CLEARMASK},
+#endif
+#ifdef SA_WAKEUP
         {"SA_WAKEUP",SA_WAKEUP},
+#endif
+#ifdef SA_REGMTASK
         {"SA_REGMTASK",SA_REGMTASK},
+#endif
+#ifdef SA_REGLWP
         {"SA_REGLWP",SA_REGLWP},
+#endif
+#ifdef SA_SIGOFFHAND
         {"SA_SIGOFFHAND",SA_SIGOFFHAND},
-#elif	!defined(_LITTLE_ENDIAN)
+#endif
+#ifdef SA_ONSTACK
         {"SA_ONSTACK",SA_ONSTACK},
+#endif
+#ifdef SA_RESTART
         {"SA_RESTART",SA_RESTART},
+#endif
+#ifdef SA_SIGINFO
         {"SA_SIGINFO",SA_SIGINFO},
-#endif	/* _UNICOS */
+#endif
 /* c_iflag input mode values in sys/termios.h for pxfcf... */
         {"IGNBRK",IGNBRK},
         {"BRKINT",BRKINT},
@@ -401,29 +441,33 @@ struct ctbl consttbl[] = {
         {"INLCR",INLCR},
         {"IGNCR",IGNCR},
         {"ICRNL",ICRNL},
-#if ! defined(BUILD_OS_DARWIN)
+#ifdef IUCLC
         {"IUCLC",IUCLC},
-#endif /* defined(BUILD_OS_DARWIN) */
+#endif
         {"IXON",IXON},
         {"IXANY",IXANY},
         {"IXOFF",IXOFF},
-#ifdef	__mips
+#ifdef IMAXBEL
         {"IMAXBEL",IMAXBEL},
+#endif
+#ifdef IBLKMD
         {"IBLKMD",IBLKMD},
-#elif	defined(_LITTLE_ENDIAN)
-        {"IMAXBEL",IMAXBEL},
-#endif	/* __mips or _LITTLE_ENDIAN */
+#endif
 /* c_oflag output mode values in sys/termios.h for pxfcf... */
         {"OPOST",OPOST},
-#if ! defined(BUILD_OS_DARWIN)
+#ifdef OLCUC
         {"OLCUC",OLCUC},
-#endif /* defined(BUILD_OS_DARWIN) */
+#endif
         {"ONLCR",ONLCR},
         {"OCRNL",OCRNL},
         {"ONOCR",ONOCR},
         {"ONLRET",ONLRET},
+#ifdef OFILL
         {"OFILL",OFILL},
+#endif
+#ifdef OFDEL
         {"OFDEL",OFDEL},
+#endif
 /* c_cflag control mode values in sys/termios.h for pxfcf... */
         {"CSIZE",CSIZE},
         {"CS5",CS5},
@@ -455,17 +499,16 @@ struct ctbl consttbl[] = {
         {"VEOL2",VEOL2},
         {"VMIN",VMIN},
         {"VTIME",VTIME},
-#if ! defined(BUILD_OS_DARWIN)
-#if	defined(_LITTLE_ENDIAN) && !defined(__sun)
+#ifdef VSWTC
         {"VSWTC",VSWTC},
-#else
+#endif
+#ifdef VSWTCH
         {"VSWTCH",VSWTCH},
-#endif	/* _LITTLE_ENDIAN */
-#endif /* ! defined(BUILD_OS_DARWIN) */
+#endif
         {"VSUSP",VSUSP},
         {"VSTART",VSTART},
         {"VSTOP",VSTOP},
-#ifndef	_LITTLE_ENDIAN
+#ifdef VDSUSP
         {"VDSUSP",VDSUSP},
 #endif	/* not _LITTLE_ENDIAN */
         {"VREPRINT",VREPRINT},

@@ -29,7 +29,7 @@
 
 */
 
-
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,11 +38,17 @@
 #include <sys/stat.h>
 #include <sys/param.h>
 #include <errno.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "errors.h"
 #include "string_utils.h"
 #include "file_utils.h"
 extern int errno;
 static char *saved_orig_program_name;
+static char *executable_dir;
 
 #ifdef KEY /* Mac port */
 int compat_gcc;
@@ -190,9 +196,52 @@ get_cwd (void)
 	return string_copy(cwd);
 }
 
-void file_utils_set_program_name(char *name)
+void
+file_utils_set_program_name(char *name)
 {
+	char *path, *p, *tmp, *dir;
+	char filename[MAXPATHLEN];
+
         saved_orig_program_name = name;
+
+#ifdef _WIN32
+	if (GetModuleFileNameA(0, filename, sizeof(filename))) {
+		executable_dir = string_copy(dirname(filename));
+	} else {
+		executable_dir = string_copy("\\");
+	}
+#else
+	if (strchr(name, '/')) {
+		/* argv[0] was an absolute path, trust it */
+		p = strdup(name);
+		path = dirname(p);
+		executable_dir = string_copy(path);
+		free(p);
+		return;
+	}
+	/* Try to guess executable path from PATH */
+	path = getenv("PATH");
+	if (path == NULL) {
+		executable_dir = string_copy("/");
+		return;
+	}
+	path = string_copy(path);
+	p = path;
+	while ((dir = strtok_r(p, ":", &tmp)) != NULL) {
+		if (!is_directory(dir))
+			continue;
+		snprintf(filename, MAXPATHLEN, "%s/%s", dir, name);
+		if (is_executable(filename)) {
+			executable_dir = string_copy(dir);
+			free(path);
+		        return;
+		}
+		p = NULL;
+	}
+
+	executable_dir = string_copy("/");
+	free(path);
+#endif
 }
 
 #ifdef KEY
@@ -204,72 +253,10 @@ file_utils_get_program_name()
 }
 #endif
 
-// Get program path from PATH variable.
-static char *
-get_executable_dir_from_path(char *name)
-{
-  if (name[0] != '/') {
-    char *path = getenv("PATH");
-    if (path != NULL) {
-      char *p = string_copy(path);
-      char *tmp;
-      char *dir;
-      while ((dir = strtok_r(p, ":", &tmp)) != NULL) {
-	if (is_directory(dir)) {
-	  char filename[MAXPATHLEN];
-	  snprintf(filename, MAXPATHLEN, "%s/%s", dir, name);
-	  if (is_executable(filename)) {
-	    return string_copy(filename);
-	  }
-	}
-        p = NULL;
-      }
-    }
-  }
-  return name;
-}
-
 char *
 get_executable_dir (void)
 {
-	char path[MAXPATHLEN];
-	int rval;
-	int i;
-
-	/* Look in this special place for a link to the executable. This
-	   only works on Linux, but it is benign if we try it elsewhere. */
-	rval = readlink ("/proc/self/exe", path, sizeof(path));
-	if (rval <= 0) {
-		// If can't read /proc/self/exe, get program path from PATH
-		// variable.
-		char *p = get_executable_dir_from_path(saved_orig_program_name);
-		strncpy(path, p, sizeof(path));
-		rval = strlen(path);
-	} else {
-		path[rval] = '\0';	// readlink doesn't append NULL
-	}
-	if (rval > 0) {
-		for (i=rval-1; i >= 0; i--) {
-			if (path[i] == '/') break;
-		}
-		if (i > 0) {
-			/* Overwrite the trailing slash, giving the directory
-			   portion of the path. */
-			path[i] = '\0';      
-		} else if (i == 0) {
-			/* Directory is the root */
-		        strcpy (path, "/");
-		}
-		if (is_directory (path)) {
-			/* Verify that it is a directory */
-			return string_copy (path);
-		}
-	}
-
-	/* TBD: try to extract the name from argv0 */
-
-	/* Can't get anything reasonable. */
-	return NULL;
+	return string_copy(executable_dir);
 }
 
 void

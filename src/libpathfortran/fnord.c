@@ -120,11 +120,7 @@ static int common_init()
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_sigaction = __f90_segv;
-#if defined(BUILD_OS_DARWIN) || defined(__sun)
 	sa.sa_flags = SA_RESETHAND | SA_ONSTACK | SA_SIGINFO | SA_NODEFER;
-#else /* defined(BUILD_OS_DARWIN) */
-	sa.sa_flags = SA_ONESHOT | SA_ONSTACK | SA_SIGINFO | SA_NOMASK;
-#endif /* defined(BUILD_OS_DARWIN) */
 
 	/* KEY Bug 11654: call sigaltstack via a wrapper so we can avoid it
 	 * in environments where it doesn't work and causes link-time errors.
@@ -144,11 +140,7 @@ static int common_init()
 #ifdef KEY /* Bug 5089 */
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_sigaction = __f90_fpe;
-#if defined(BUILD_OS_DARWIN) || defined(__sun)
 	sa.sa_flags = SA_RESETHAND | SA_SIGINFO | SA_NODEFER;
-#else /* defined(BUILD_OS_DARWIN) */
-	sa.sa_flags = SA_ONESHOT | SA_SIGINFO | SA_NOMASK;
-#endif /* defined(BUILD_OS_DARWIN) */
 	if (sigaction(SIGFPE, &sa, NULL) == -1) {
 		perror("sigaction");
 		exit(1);

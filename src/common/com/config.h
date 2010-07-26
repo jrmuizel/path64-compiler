@@ -550,10 +550,7 @@ extern BOOL Simp_Fold_Unsigned_Relops;  /* Simplify unsigned relops */
 extern BOOL Simp_Unsafe_Relops;         /* Allow foldings which might cause error if overflow occurs */
 extern BOOL Enable_NaryExpr;		/* Allow nary expr in the lowerer */
 extern BOOL Enable_NaryExpr_Set;	/* ... option seen? */
-
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 extern BOOL Enable_WFE_DFE;		/* frontend dead function elimination? */
-#endif /* __linux __ */
 
 /***** Global Code Motion (GCM) options *****/
 extern BOOL GCM_Eager_Null_Ptr_Deref;   /* allow speculation past the NULL

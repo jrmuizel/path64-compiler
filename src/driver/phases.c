@@ -67,7 +67,7 @@
 #include "get_options.h"
 #include "targets.h"
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 
@@ -1753,7 +1753,6 @@ add_file_args (string_list_t *args, phases_t index)
 
 			add_string(args, crtbegin_path);
 			free(crtbegin_path);
-
 			if (ftz_crt) {
 				add_string(args, find_crt_path("ftz.o"));
 			}

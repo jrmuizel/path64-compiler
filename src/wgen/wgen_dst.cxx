@@ -109,7 +109,7 @@ extern "C" char *cplus_demangle (const char *, int);
 #include "libiberty.h"
 #endif
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

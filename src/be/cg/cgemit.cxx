@@ -7827,7 +7827,7 @@ extern BOOL PU_has_trampoline;  // defined in wn_lower.cxx
  * ====================================================================
  */
 
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
+#ifndef ORIGINAL_SGI_CODE
 BOOL CG_emit_asm_dwarf    = TRUE;
 BOOL CG_emit_unwind_info  = TRUE;
 #ifdef TARG_IA64

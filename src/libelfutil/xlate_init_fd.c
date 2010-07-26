@@ -53,10 +53,10 @@ xlate_init_fd(int fd, int open_debug_table,
 	return XLATE_TB_STATUS_ELF_VERSION_BAD;
    }
 
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(__sun)
-   elf = elf_begin(fd,ELF_C_READ,NULL);
-#else
+#ifdef HAVE_ELF_C_READ_MMAP
    elf = elf_begin(fd,ELF_C_READ_MMAP,NULL);
+#else
+   elf = elf_begin(fd,ELF_C_READ,NULL);
 #endif
    if(elf == NULL) {
 	return XLATE_TB_STATUS_ELF_BEGIN_BAD;

@@ -422,10 +422,13 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
 	break;
 #endif
   case OPR_RND:
-        if(MTYPE_is_signed(rtype)) {
+#ifdef TARG_ST
+        if(MTYPE_is_signed(rtype)) 
+#endif
+        {
 	  Expand_Float_To_Int_Round (result, op1, rtype, desc, ops);
 	}
-#ifdef MERGED_CODE
+#ifdef TASRG_ST
 	else {
 	  Expand_Float_To_Unsigned_Round (result, op1, rtype, desc, ops);
 	}
@@ -446,10 +449,13 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
 #endif
 	break;
   case OPR_CEIL:
-       if(MTYPE_is_signed(rtype)) {
+#ifdef TARG_ST
+       if(MTYPE_is_signed(rtype)) 
+#endif
+       {
 	  Expand_Float_To_Int_Ceil (result, op1, rtype, desc, ops);
 	}
-#ifdef MERGED_CODE
+#ifdef TARG_ST
 	else {
 	  Expand_Float_To_Unsigned_Ceil (result, op1, rtype, desc, ops);
 	}

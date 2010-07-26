@@ -3688,25 +3688,7 @@ if(! Is_Target_64bit() ) {
 #ifdef TARG_ST
   if (Current_PU_Stack_Model == SMODEL_LARGE && 
       Frame_Size < MAX_SMALL_FRAME_OFFSET)
-#else
-  if (Current_PU_Stack_Model == SMODEL_LARGE && Frame_Size < Max_Small_Frame_Offset)
-#endif
 	if (Trace_Frame) fprintf(TFile, "<lay> stack-model underflowed\n");
-#ifndef TARG_ST
-  // [CG] This code is not suitable for cross compilations
-  {	/* check that stacksize does not exceed system max */
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
-        struct rlimit rlp;
-        getrlimit(RLIMIT_STACK, &rlp);
-#else
-	struct rlimit64 rlp;
-	getrlimit64 (RLIMIT_STACK, &rlp);
-#endif
-#ifndef KEY // Redhat 8.0 will have unlimited stack size
-	if (Frame_Size > rlp.rlim_cur)
-		ErrMsg (EC_LAY_stack_limit, Frame_Size, (INT64) rlp.rlim_cur);
-#endif
-  }
 #endif
   return Frame_Size;
 }

@@ -117,11 +117,6 @@ ST_Init (ST* st, STR_IDX n, ST_CLASS sc, ST_SCLASS stc, ST_EXPORT exp,
     st->memory_space = ST_MEMORY_DEFAULT;
 #endif
 #endif
-
-#ifdef KEY
-    // bug 14141
-    st->pad = 0;
-#endif
 }
 
 inline void

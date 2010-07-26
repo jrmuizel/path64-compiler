@@ -163,12 +163,7 @@ load_so (const char *soname, char *path, BOOL verbose)
         full_path = (char *)soname;
     }
 
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
-    if (sgidladd (full_path, RTLD_LAZY) == NULL)
-#else
-    if (dlopen (full_path, RTLD_NOW | RTLD_GLOBAL) == NULL)
-#endif
-    {
+    if (dlopen (full_path, RTLD_NOW | RTLD_GLOBAL) == NULL) {
 	fprintf (stderr, "Error loading %s: %s\n", full_path, dlerror());
 	exit (RC_SYSTEM_ERROR);
     }
