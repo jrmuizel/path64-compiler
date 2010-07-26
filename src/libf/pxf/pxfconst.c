@@ -387,12 +387,6 @@ struct ctbl consttbl[] = {
 #ifdef SIGCKPT
         {"SIGCKPT",SIGCKPT},
 #endif
-#ifdef SIGRTMIN
-        {"SIGRTMIN",SIGRTMIN},
-#endif
-#ifdef SIGRTMAX
-        {"SIGRTMAX",SIGRTMAX},
-#endif
 #ifdef SIG_DFL
         {"SIG_DFL",(long) SIG_DFL},
 #endif
@@ -552,9 +546,40 @@ struct ctbl consttbl[] = {
         {"TCOON",TCOON},
         {"TCIOFF",TCIOFF},
         {"TCION",TCION},
+
+#ifdef SIGRTMIN
+        {"SIGRTMIN", 0},
+#endif
+#ifdef SIGRTMAX
+        {"SIGRTMAX", 0},
+#endif
 };
 
 #define NUMCONST sizeof(consttbl)/sizeof(struct ctbl)
+
+#ifdef SIGRTMIN
+static void __attribute__((constructor))
+get_sigrtmin(void)
+{
+	struct ctbl *iter= consttbl + NUMCONST - 1;
+
+	while (strcmp(iter, "SIGRTMIN"))
+		--iter;
+	iter->val = SIGRTMIN;
+}
+#endif
+
+#ifdef SIGRTMAX
+static void __attribute__((constructor))
+get_sigrtmax(void)
+{
+	struct ctbl *iter= consttbl + NUMCONST - 1;
+
+	while (strcmp(iter, "SIGRTMAX"))
+		--iter;
+	iter->val = SIGRTMAX;
+}
+#endif
 
 /*
  * Description:
