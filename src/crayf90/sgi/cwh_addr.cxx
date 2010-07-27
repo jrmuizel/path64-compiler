@@ -1561,7 +1561,7 @@ cwh_addr_stid(ST *st, OFFSET_64 off, TY_IDX ty , WN * rhs)
     tl = ty;
     bt = TY_mtype(ty) ;
 
-# if ! (defined (linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+# ifdef ORIGINAL_SGI_CODE
     if (IS_ALTENTRY_TEMP(st)) {
       if (MTYPE_is_integral(bt)) {
 	  tl = cwh_stab_altentry_TY(st,TRUE);
@@ -1593,7 +1593,7 @@ cwh_addr_stid(ST *st, OFFSET_64 off, TY_IDX ty , WN * rhs)
 	} 
       }
     }
-# endif
+# endif // ORIGINAL_SGI_CODE
 
      op  = Stid_Opcode [bt];
      wn  = WN_CreateStid (op,off,st,tl,rhs);
@@ -1742,7 +1742,7 @@ cwh_addr_store_ST(ST * st, OFFSET_64 off, TY_IDX dty,  WN * rhs)
    	/* if CQ function result & shared entry temp */
    	/* store via the result address too          */
    	
-# if ! (defined (linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+# ifdef ORIGINAL_SGI_CODE
    	if (IS_ALTENTRY_TEMP(st)) {
    	  if (TY_mtype(ts) == MTYPE_CQ){
    	    if(!ST_auxst_altentry_shareTY(ST_base(st))) {
@@ -1751,7 +1751,7 @@ cwh_addr_store_ST(ST * st, OFFSET_64 off, TY_IDX dty,  WN * rhs)
    	    }
    	  }
    	}
-# endif
+# endif // ORIGINAL_SGI_CODE
 
 	/* if in preamble, may be storing bound, or character length  */
         /* set the COPYIN flag. This is just for temps created by     */
