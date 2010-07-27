@@ -459,6 +459,8 @@ ZInt::highest_set_bit () const
 {
   if (value < 0) {
     return INT_MAX;
+  } else if (value == 0) {
+    return -1;
   } else {
     return bits () - 1;
   }
