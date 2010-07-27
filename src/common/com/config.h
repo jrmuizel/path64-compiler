@@ -258,16 +258,12 @@ static char *config_rcs_id = "$Source: common/com/SCCS/s.config.h $ $Revision: 1
 
 #include "config_host.h"	/* in TARGET/com */
 #include "config_targ.h"	/* in TARGET/com */
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
-#include <machine/endian.h>	/* for BIG_ENDIAN, LITTLE_ENDIAN */
-#elif !(defined(linux) || defined(__sun))
-#include <sys/endian.h>		/* for BIG_ENDIAN, LITTLE_ENDIAN */
-#elif !defined(__sun)
-#include <endian.h>		/* for BIG_ENDIAN, LITTLE_ENDIAN */
-#elif defined(__sun)
 #define LITTLE_ENDIAN 1234
 #define BIG_ENDIAN 4321
+#if HOST_IS_LITTLE_ENDIAN
 #define BYTE_ORDER LITTLE_ENDIAN
+#else
+#define BYTE_ORDER BIG_ENDIAN
 #endif
 #include "mempool.h"	/* Include the "fundamental" routines */
 #include "flags.h"
