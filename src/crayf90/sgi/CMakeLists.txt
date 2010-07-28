@@ -148,16 +148,15 @@ set_source_files_properties(${PATHSCALE_MFEF95_TMP_SRCS} PROPERTIES COMPILE_DEFI
 target_link_libraries (mfef95-tmp comutil fe90 fe90-tmp arith cif ${MFEF95_TMP_FORTRAN_LINK_LIB} m)
 
 add_custom_command(
-    OUTPUT ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION} ${Path64_BINARY_DIR}/lib/mfef95 ${Path64_BINARY_DIR}/lib/be ${Path64_BINARY_DIR}/bin/pathf90
-    COMMAND ln -s . ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+    OUTPUT ${Path64_BINARY_DIR}/lib/mfef95 ${Path64_BINARY_DIR}/bin/pathf90 ${Path64_BINARY_DIR}/bin/pathf95
     COMMAND ln -s ../bin/mfef95-tmp ${Path64_BINARY_DIR}/lib/mfef95
-    COMMAND ln -s ../bin/be ${Path64_BINARY_DIR}/lib/be
     COMMAND ln -s pathcc ${Path64_BINARY_DIR}/bin/pathf90
+    COMMAND ln -s pathcc ${Path64_BINARY_DIR}/bin/pathf95
 )
 # TODO : Fix the intrinsic_module_path since I know this isn't correct
 add_custom_target(
     switch_fc
-    DEPENDS ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+    DEPENDS ${Path64_BINARY_DIR}/lib/mfef95 ${Path64_BINARY_DIR}/bin/pathf90 ${Path64_BINARY_DIR}/bin/pathf95
     VERBATIM
     COMMAND printf "#!/bin/sh\\n${Path64_BINARY_DIR}/bin/pathf90 -Wf,-eQ -Wf,-intrinsic_module_gen -Wf,-intrinsic_module_path=. \"$\@\"\\n" > ${Path64_BINARY_DIR}/fc-wrap.sh
 )
