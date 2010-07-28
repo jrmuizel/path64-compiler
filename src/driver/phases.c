@@ -683,6 +683,8 @@ static void
 add_linker_abi(string_list_t *args) {
 #if defined(__sun)
     add_string(args, (abi == ABI_N32) ? "-32" : "-64");
+#elif defined(__FreeBSD__)
+    add_string(args, (abi == ABI_N32) ? "-melf_i386_fbsd" : "-melf_x86_64_fbsd");
 #else
     add_string(args, (abi == ABI_N32) ? "-melf_i386" : "-melf_x86_64");
 #endif
