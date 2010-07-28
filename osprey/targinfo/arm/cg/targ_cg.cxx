@@ -4322,6 +4322,32 @@ CGTARG_Is_Simple_Jump(const OP* op)
 }
 
 /** 
+ * Returns bb if bb is a HWLoop head, NULL otherwise.
+ * This api is called from CFLOW.
+ * 
+ * @param bb 
+ * 
+ * @return 
+ */
+BB *
+CGTARG_BB_HWLoop_head(BB *bb) {
+  return NULL;
+}
+
+/** 
+ * Returns the head of the loop if bb is a HWLoop tail, NULL otherwise.
+ * This api is called from CFLOW.
+ * 
+ * @param bb 
+ * 
+ * @return 
+ */
+BB *
+CGTARG_Head_BB_if_HWLoop_tail(BB *bb) {
+  return NULL;
+}
+
+/** 
  * Returns whether basic bloc contain loop init.
  * 
  * Note that this api is called from CFLOW 
@@ -4521,3 +4547,82 @@ BOOL CGTARG_Profitable_Logif_Transformation() {
 BOOL CGTARG_Allow_Operation_To_Be_Hoisted_In_Succs(OP* op) {
   return TRUE;
 }
+
+
+/** 
+ * Modify weight of edges corresponding to backward edges of hwloops
+ * This api is called from CFLOW
+ * 
+ * @param edges
+ * @param n_edges
+ */
+void
+CGTARG_Init_Edges_Modify_Weights_For_HWLoop(CFLOW_EDGE *edges, INT n_edges) 
+{
+}
+
+
+/** 
+ * Returns TRUE if bb tail has to be chained as belonging to a hwloop
+ * As this target is not concerned by hwloop programming rules,
+ * always return FALSE.
+ *
+ * This api is called from CFLOW.
+ * 
+ * @param HWloop_count
+ * @param tail
+ * @param next_bb
+ * 
+ * @return 
+ */
+BOOL
+CGTARG_HWloop_region(int HWloop_count, BB* tail, BB *next_bb)
+{
+  return FALSE;
+}
+
+
+/** 
+ * Returns the BBchain to be ordered respecting hwloop programming rules,
+ * if existing.
+ * This api is called from CFLOW.
+ * 
+ * @param chain
+ * @param ordered
+ * @param unordered
+ * @param last_ordered
+ * @param chain_map
+ * 
+ * @return 
+ */
+BBCHAIN *
+CGTARG_Order_Chains_Respect_HWloop_Rules(BBCHAIN *chain,
+					 BBCHAIN *ordered,
+					 BBCHAIN *unordered,
+					 BBCHAIN *last_ordered,
+					 BB_MAP chain_map)
+{
+  return chain;
+}
+
+
+/** 
+ * Returns TRUE if the chaining of the two parameters pchain and schain
+ * is possible according to the respect of hwloop programming rules
+ *         FALSE otherwise
+ * This api is called from CFLOW (used in order to be able to apply
+ * frequency-guided reordering of BBs in body of hwloop).
+ * 
+ * @param pchain
+ * @param schain
+ * @param chain_map
+ * 
+ * @return 
+ */
+BOOL
+CGTARG_Grow_Chains_Respect_HWloop_Rules(BBCHAIN *pchain, BBCHAIN *schain,
+					BB_MAP chain_map)
+{
+  return TRUE;
+}
+
