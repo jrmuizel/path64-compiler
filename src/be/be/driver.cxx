@@ -148,7 +148,7 @@ extern void CYG_Instrument_Driver(WN *);
 extern void Initialize_Targ_Info(void);
 
 // symbols defined in cg.so
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
+#ifndef USE_WEAK_REFERENCES
 
 extern void CG_Process_Command_Line (INT, char **, INT, char **);
 extern void CG_Init ();
@@ -168,11 +168,10 @@ extern void EH_Generate_Range_List (WN *);
 #pragma weak CG_Generate_Code
 #pragma weak EH_Generate_Range_List
 
-
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES
 
 // symbols defined in wopt.so
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32)
+#ifndef USE_WEAK_REFERENCES
 
 extern void wopt_main (INT argc, char **argv, INT, char **);
 extern void Wopt_Init ();
@@ -198,10 +197,10 @@ extern BOOL Verify_alias (ALIAS_MANAGER *, WN *);
 #pragma weak Delete_Du_Manager
 #pragma weak Verify_alias
 
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES
 
 // symbols defined in lno.so
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32)
+#ifndef USE_WEAK_REFERENCES
 
 extern void (*lno_main_p) (INT, char**, INT, char**);
 #define lno_main (*lno_main_p)
@@ -222,11 +221,11 @@ extern WN* (*Perform_Loop_Nest_Optimization_p) (PU_Info*, WN*, WN*, BOOL);
 #pragma weak Lno_Fini
 #pragma weak Perform_Loop_Nest_Optimization
 
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES
 
 // symbols defined in ipl.so
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32)
+#ifndef USE_WEAK_REFERENCES
 
 extern void (*Ipl_Extra_Output_p) (Output_File *);
 #define Ipl_Extra_Output (*Ipl_Extra_Output_p)
@@ -257,7 +256,7 @@ extern void (*Preprocess_struct_access_p)(void);
 #pragma weak Ipl_Extra_Output
 #pragma weak Perform_Procedure_Summary_Phase
 
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES
 
 #include "w2c_weak.h"
 #include "w2f_weak.h"

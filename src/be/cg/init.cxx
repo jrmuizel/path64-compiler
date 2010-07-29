@@ -40,7 +40,7 @@
 // This file define initialization of pointer variables to symbols defined
 // in cg.so but referenced in be/be.so.
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
+#ifndef USE_WEAK_REFERENCES
 
 #include "defs.h"
 #include "cgdriver.h"
@@ -91,4 +91,4 @@ struct CG_INIT
     }
 } Cg_Initializer;
 
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES

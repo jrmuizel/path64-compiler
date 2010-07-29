@@ -26,19 +26,16 @@
 */
 
 
-#if ! defined(BUILD_OS_DARWIN)
-#include <elf.h>
-#endif /* ! defined(BUILD_OS_DARWIN) */
-#if defined(__FreeBSD__)
-#include <darwin_elf.h>
-#else 
-#include "elf_stuff.h"
-#endif
 #include <errno.h>		    /* for sys_errlist */
 #include <sys/stat.h>
 #include <sys/elf_whirl.h>
 #include <libgen.h>		    /* for basename() */
 #include <algorithm>
+
+#if ! defined(BUILD_OS_DARWIN)
+#include <elf.h>
+#endif /* ! defined(BUILD_OS_DARWIN) */
+#include "elf_stuff.h"
 
 #include "defs.h"
 #include "pu_info.h"

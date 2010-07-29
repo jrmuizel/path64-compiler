@@ -112,17 +112,10 @@ SECTION Sections[_SEC_INDEX_MAX] = {
      0|SHF_WRITE|SHF_IA_64_SHORT|SHF_ALLOC,
 	SHT_NOBITS, 0, 
      INT64_MAX, MIPS_SBSS, 0},
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
-  {_SEC_LBSS,	NULL,
-     0|SHF_WRITE|SHF_ALLOC|SHF_MIPS_LOCAL,
-	SHT_NOBITS, 0, 
-     INT64_MAX, MIPS_LBSS, 0},
-#else
   {_SEC_LBSS,   NULL,				// KEY
      0|SHF_WRITE|SHF_ALLOC|SHF_TLS,
 	SHT_NOBITS, 0, 
      INT64_MAX, ELF_TBSS, 0},
-#endif
   {_SEC_GOT,	NULL,
      0|SHF_IA_64_SHORT|SHF_ALLOC,
 	SHT_PROGBITS, 0, 
@@ -131,17 +124,6 @@ SECTION Sections[_SEC_INDEX_MAX] = {
      0|SHF_WRITE|SHF_ALLOC|SHF_MIPS_NAMES,
 	SHT_PROGBITS, 0, 
      INT64_MAX, "__cplinit", 0},
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
-  {_SEC_EH_REGION,	NULL,
-     0|SHF_WRITE|SHF_ALLOC|SHF_MIPS_NAMES,
-	SHT_PROGBITS, 0, 
-     INT64_MAX, MIPS_EH_REGION, 0},
-  {_SEC_EH_REGION_SUPP,	NULL,
-     0|SHF_WRITE|SHF_ALLOC|SHF_MIPS_NAMES,
-	SHT_PROGBITS, 0, 
-     INT64_MAX, MIPS_EH_REGION_SUPP, 0},
-#else
-#ifdef KEY
   {_SEC_EH_REGION,      NULL,
      0|SHF_ALLOC|SHF_MIPS_NAMES,
         SHT_PROGBITS, 0,
@@ -150,18 +132,6 @@ SECTION Sections[_SEC_INDEX_MAX] = {
      0|SHF_ALLOC|SHF_MIPS_NAMES,
         SHT_PROGBITS, 0,
      INT64_MAX, ".except_table_supp", 0},
-#else
-  // It's not yet clear what to do about the EH_REGION sections on Linux
-  {_SEC_EH_REGION,      NULL,
-     0,
-        0, 0,
-     0, ".unknown", 0},
-  {_SEC_EH_REGION_SUPP, NULL,
-     0,
-        0, 0,
-     0, ".unknown", 0},
-#endif // KEY
-#endif
   {_SEC_DISTR_ARRAY,  NULL,
      0|SHF_WRITE|SHF_ALLOC|SHF_MIPS_NAMES,
 	SHT_PROGBITS, 0,

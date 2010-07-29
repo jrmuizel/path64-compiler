@@ -203,7 +203,7 @@ extern BOOL PU_has_trampoline;  // defined in wn_lower.cxx
  * ====================================================================
  */
 
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32)
+#ifndef ORIGINAL_SGI_CODE
 BOOL CG_emit_asm_dwarf    = TRUE;
 BOOL CG_emit_unwind_info  = TRUE;
 #ifdef TARG_IA64
@@ -1715,8 +1715,7 @@ static void Verify_Operand(
 #ifdef TARG_X8664
     if( tn != Rip_TN() )
 #endif
-      FmtAssert(TN_register_class(tn) == rc,
-		("incorrect register class for %s %d", res_or_opnd, opnd));
+    FmtAssert(TN_register_class(tn) == rc, ("incorrect register class for %s %d %d", res_or_opnd, opnd, op->opr));
 
     FmtAssert(reg != REGISTER_UNDEFINED,
 	      ("undefined register for %s %d", res_or_opnd, opnd));

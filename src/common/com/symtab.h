@@ -109,10 +109,6 @@ ST_Init (ST* st, STR_IDX n, ST_CLASS sc, ST_SCLASS stc, ST_EXPORT exp,
     st->offset = 0;
     st->flags = 0;
     st->flags_ext = 0;
-#ifdef KEY
-    // bug 14141
-    st->pad = 0;
-#endif
 }
 
 inline void

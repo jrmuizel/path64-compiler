@@ -43,7 +43,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <errno.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include "phases.h"
@@ -103,7 +103,7 @@ get_object_file (char *src)
 	    !option_was_seen(O_c) &&
 	    keep_flag != TRUE) {
 	  char *p;
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32)
+#if !defined(__linux__)
 	  src = strcpy(alloca(strlen(src) + sizeof '\0'), src);
 #else /* defined(BUILD_OS_DARWIN) */
 	  src = strdupa(src);

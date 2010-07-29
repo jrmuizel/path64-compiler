@@ -51,7 +51,6 @@ else()
 # Detecting gawk and gcc and configuring sort_options script
 set(SORT_OPTIONS ${CMAKE_CURRENT_BINARY_DIR}/sort_options.sh)
 set(PATH64_GCC ${CMAKE_C_COMPILER})
-find_program(PATH64_GAWK gawk PATHS /usr/bin /usr/gnu/bin ENV PATH)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh.cmake.in
                ${SORT_OPTIONS})
 
@@ -105,15 +104,16 @@ target_link_libraries(${exe_refix}pathcc iberty winlib ws2_32)
 endif()
 
 add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/bin/pathf95
+    OUTPUT ${CMAKE_BINARY_DIR}/bin/pathCC ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION} ${Path64_BINARY_DIR}/lib/be
     DEPENDS pathcc
     COMMAND ${SYMLINK_COMMAND} pathcc ${CMAKE_BINARY_DIR}/bin/pathCC
-    COMMAND ${SYMLINK_COMMAND} pathcc ${CMAKE_BINARY_DIR}/bin/pathf95
+    COMMAND ${SYMLINK_COMMAND} . ${CMAKE_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+    COMMAND ${SYMLINK_COMMAND} ../bin/be ${CMAKE_BINARY_DIR}/lib/be
 )
 
 add_custom_target(
     stageit-driver ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/bin/pathf95
+    DEPENDS ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/lib/be ${CMAKE_BINARY_DIR}/lib/${PSC_FULL_VERSION}
 )
 
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/bin/pathCC${CMAKE_EXECUTABLE_SUFFIX}\")")

@@ -76,7 +76,7 @@ _table_add(table_t *table,
   _f_int return_val;
   void **temp;
   
-  MEM_LOCK(&table->mutex)
+  MEM_LOCK(&table->mutex);
     
   /* check table size, and enlarge the entry table,
      if needed */
@@ -95,7 +95,7 @@ _table_add(table_t *table,
     table->entries[table->next_index++] = entry;
   }
   
-  MEM_UNLOCK(&table->mutex)
+  MEM_UNLOCK(&table->mutex);
   return(return_val);
 }
 
@@ -113,7 +113,7 @@ _table_remove(table_t *table,
   int return_val;
   int entry_num_zero = ZERO_INDEX(entry_num);
 
-  MEM_LOCK(&table->mutex)
+  MEM_LOCK(&table->mutex);
 
   if (entry_num_zero < table->next_index &&
       entry_num_zero >= 0) {
@@ -124,7 +124,7 @@ _table_remove(table_t *table,
     return_val = 0;
   }
     
-  MEM_UNLOCK(&table->mutex)
+  MEM_UNLOCK(&table->mutex);
   return(return_val);
 }
 
@@ -142,7 +142,7 @@ _table_lookup(table_t *table,
   void *return_val;
   int entry_num_zero = ZERO_INDEX(entry_num);
 
-  MEM_LOCK(&table->mutex)
+  MEM_LOCK(&table->mutex);
 
   if (entry_num_zero < table->size &&
       entry_num_zero >= 0) {
@@ -151,7 +151,7 @@ _table_lookup(table_t *table,
     return_val = NULL;
   }
 
-  MEM_UNLOCK(&table->mutex)
+  MEM_UNLOCK(&table->mutex);
   return(return_val);
 }
 
@@ -173,7 +173,7 @@ _pxfhandle_table_add(pxfhandle_table_t *table,
   _f_int return_val;
   struct pxfhandle *temp;
 
-  MEM_LOCK(&table->mutex)
+  MEM_LOCK(&table->mutex);
 
   /* check table size, and enlarge the entry table,
      if needed*/
@@ -194,7 +194,7 @@ _pxfhandle_table_add(pxfhandle_table_t *table,
     table->entries[table->next_index++].pxftype = entry_type;
   }
 
-  MEM_UNLOCK(&table->mutex)
+  MEM_UNLOCK(&table->mutex);
   return(return_val);
 }
 
@@ -212,7 +212,7 @@ _pxfhandle_table_remove(pxfhandle_table_t *table,
   int return_val;
   int entry_num_zero = ZERO_INDEX(entry_num);
 
-  MEM_LOCK(&table->mutex)
+  MEM_LOCK(&table->mutex);
 
   if (entry_num_zero < table->next_index &&
       entry_num_zero >= 0) {
@@ -225,7 +225,7 @@ _pxfhandle_table_remove(pxfhandle_table_t *table,
     return_val = 0;
   }
 
-  MEM_UNLOCK(&table->mutex)
+  MEM_UNLOCK(&table->mutex);
   return(return_val);
 }
 
@@ -245,7 +245,7 @@ _pxfhandle_table_replace(pxfhandle_table_t *table,
   int return_val;
   int entry_num_zero = ZERO_INDEX(entry_num);
 
-  MEM_LOCK(&table->mutex)
+  MEM_LOCK(&table->mutex);
   
   /* remove the entry */
   if (entry_num_zero < table->next_index &&
@@ -258,7 +258,7 @@ _pxfhandle_table_replace(pxfhandle_table_t *table,
     return_val = 0;
   }
 
-  MEM_UNLOCK(&table->mutex)
+  MEM_UNLOCK(&table->mutex);
   return(return_val);
 }
 
@@ -276,7 +276,7 @@ _pxfhandle_table_lookup(pxfhandle_table_t *table,
   struct pxfhandle return_val;
   int entry_num_zero = ZERO_INDEX(entry_num);
 
-  MEM_LOCK(&table->mutex)
+  MEM_LOCK(&table->mutex);
 
   if (entry_num_zero < table->size &&
       entry_num_zero >= 0) {
@@ -285,7 +285,7 @@ _pxfhandle_table_lookup(pxfhandle_table_t *table,
     (void)memset(&return_val, 0, sizeof(struct pxfhandle));
   }
 
-  MEM_UNLOCK(&table->mutex)
+  MEM_UNLOCK(&table->mutex);
   return(return_val);
 }
 

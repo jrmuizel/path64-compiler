@@ -36,7 +36,7 @@
 // This file define initialization of pointer variables to symbols defined
 // in ipl.so but referenced in be/be.so.
 
-#ifdef __linux__
+#ifndef USE_WEAK_REFERENCES
 
 #include "defs.h"
 #include "wn.h"
@@ -72,4 +72,4 @@ struct IPL_INIT
     }
 } Ipl_Initializer;
 
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES

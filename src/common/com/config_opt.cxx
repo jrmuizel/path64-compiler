@@ -219,9 +219,7 @@ BOOL Inline_Intrinsics_Early=FALSE;    /* Inline intrinsics just after VHO */
 BOOL Enable_extract_bits=TRUE;     /* This is also forced off for MIPS and IA32 in
 					  config_targ.cxx */
 BOOL Enable_compose_bits=FALSE;
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(_WIN32)
 BOOL Enable_WFE_DFE = FALSE;
-#endif /* __linux __ */
 
 
 /***** Instrummentation Related Options *****/
@@ -819,11 +817,9 @@ static OPTION_DESC Options_OPT[] = {
     0, 0, 0,  &LANG_Ansi_Setjmp_On,   &LANG_Ansi_Setjmp_Set,
     "C/C++: enable optimization of functions with calls to setjmp" },
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "wfe_dfe",	"wfe_dfe",
     0, 0, 0,	&Enable_WFE_DFE,	NULL,
     "Enable dead function elimination in the frontend" },
-#endif /* __linux__ */
 
   /* Obsolete options: */
 

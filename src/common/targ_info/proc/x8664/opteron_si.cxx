@@ -360,7 +360,8 @@ int main (int argc, char *argv[])
 		     TOP_lock_cmpxchg16,
 		     TOP_lock_cmpxchg32,
 		     TOP_lock_cmpxchg64,
-		     TOP_pextrw,
+		     TOP_pextrw64,
+		     TOP_pextrw128,
 		     TOP_UNDEFINED );
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(4);
@@ -369,7 +370,8 @@ int main (int argc, char *argv[])
   Resource_Requirement(res_loadstore, 0);
 
   Instruction_Group( "packed insert",
-                     TOP_pinsrw,
+                     TOP_pinsrw64,
+                     TOP_pinsrw128,
                      TOP_UNDEFINED );
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(9);

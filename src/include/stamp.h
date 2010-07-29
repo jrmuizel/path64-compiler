@@ -31,28 +31,12 @@
 #ifndef __STAMP_H__
 #define __STAMP_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#if defined(__linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
 #include "main_defs.h"
 
 #ifndef PSC_MAJOR_VERSION
 #error PSC_MAJOR_VERSION not defined - check include path for main_defs.h
 #endif
 
-#define	MS_STAMP PSC_MAJOR_VERSION_NUM
-#define	LS_STAMP PSC_MINOR_VERSION_NUM
 #define INCLUDE_STAMP PSC_FULL_VERSION
-#else
-#define	MS_STAMP 7
-#define	LS_STAMP 40
-#define INCLUDE_STAMP "7.40"
-#endif
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  /* __STAMP_H__ */

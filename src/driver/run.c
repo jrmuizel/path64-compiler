@@ -44,16 +44,14 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
 #include <sys/param.h>
-#include <sys/times.h>
-#if ! defined(BUILD_OS_DARWIN) && !defined(_WIN32)
-#include <sys/procfs.h>
-#endif /* ! defined(BUILD_OS_DARWIN) */
+#include <sys/resource.h>
 #include <limits.h>
 #if HAVE_ALLOCA_H
 #include <alloca.h>
@@ -765,38 +763,42 @@ catch_signals (void)
         signal (SIGPIPE,  handler);
 }
 
-
-/* this code is copied from csh, for printing times */
-
-clock_t time0;
-struct tms tm0;
+static struct rusage time_start;
+static struct timeval time_start_wall;
 
 static void
 init_time (void)
 {
-    time0 = times (&tm0);
+	getrusage(RUSAGE_SELF, &time_start);
+	gettimeofday(&time_start_wall, NULL);
 }
 
 
 static void
 print_time (char *phase)
 {
-    clock_t time1, wtime;
-    double utime, stime;
-    struct tms tm1;
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(_WIN32)
-    int HZ = CLK_TCK;
-#endif /* defined(BUILD_OS_DARWIN) */
+	struct timeval diff, time_current_wall;
+	struct rusage time_current;
+	long long utime, stime, wtime;
+	double perc;
 
-    time1 = times (&tm1);
-    utime = (double)(tm1.tms_utime + tm1.tms_cutime -
-		     tm0.tms_utime - tm0.tms_cutime) / (double)HZ;
-    stime = (double)(tm1.tms_stime + tm1.tms_cstime -
-		     tm0.tms_stime - tm0.tms_cstime) / (double)HZ;
-    wtime = time1 - time0;
+	getrusage(RUSAGE_SELF, &time_current);
+	gettimeofday(&time_current_wall, NULL);
 
-    fprintf (stderr, "%s phase time:  %.2fu %.2fs %lu:%04.1f %.0f%%\n",
-		phase, utime, stime, wtime / (60*HZ),
-		(double)(wtime % (60*HZ)) / (double)HZ,
-		(utime + stime) / ((double)wtime / (double)HZ) * 100.0);
+	timersub(&time_current.ru_utime, &time_start.ru_utime, &diff);
+	utime = diff.tv_sec * 100 + diff.tv_usec / 10000;
+	timersub(&time_current.ru_stime, &time_start.ru_stime, &diff);
+	stime = diff.tv_sec * 100 + diff.tv_usec / 10000;
+	timersub(&time_current_wall, &time_start_wall, &diff);
+	wtime = diff.tv_sec * 100 + diff.tv_usec / 10000;
+
+	if (wtime == 0)
+		perc = 100;
+	else
+		perc = (utime + stime) * 100.0 / wtime;
+
+	fprintf(stderr, "%s phase time:  %lld.%02lldu "
+	    "%lld.%02llds %lld:%02lld.%01lld %.0f%%\n",
+	    phase, utime / 100, utime % 100, stime / 100, stime % 100,
+	    wtime / 6000, wtime / 100 % 60, wtime % 100, perc);
 }

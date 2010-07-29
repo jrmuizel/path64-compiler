@@ -925,6 +925,27 @@ SET(PATHSCALE_PATHFORTRAN_F_SRCS
 				"../libu/ieg/mips2ia.F"
 )
 
+include(CheckFunctionExists)
+include(CheckLibraryExists)
+
+check_function_exists(sincos HAVE_SINCOS_IN_LIBC)
+check_function_exists(sincosf HAVE_SINCOSF_IN_LIBC)
+
+if(NOT HAVE_SINCOS_IN_LIBC)
+    check_library_exists(m sincos "" HAVE_SINCOS_IN_LIBM)
+endif()
+if(NOT HAVE_SINCOSF_IN_LIBC)
+    check_library_exists(m sincosf "" HAVE_SINCOSF_IN_LIBM)
+endif()
+
+if(HAVE_SINCOS_IN_LIBC OR HAVE_SINCOS_IN_LIBM)
+    set_source_files_properties(../libF77/pow_zz.c PROPERTIES COMPILE_FLAGS -DHAVE_SINCOS)
+endif()
+
+if(HAVE_SINCOSF_IN_LIBC OR HAVE_SINCOSF_IN_LIBM)
+    set_source_files_properties(../libF77/pow_cc.c PROPERTIES COMPILE_FLAGS -DHAVE_SINCOSF)
+endif()
+
 INCLUDE_DIRECTORIES(
 	"../clibinc"
 	"../clibinc/cray"

@@ -399,23 +399,6 @@ typedef long FIT, *pFIT;
 #define ifiNil	-1
 #define fiNil	((pFIT) 0)
 
-#ifdef _LANGUAGE_PASCAL
-#define ifdNil -1
-#define ilnNil -1
-#define ipdNil -1
-#define ilineNil -1
-#define isymNil -1
-#define indexNil 16#fffff
-#define issNil -1
-#define issNull 0
-#define itqMax 6
-#define iauxNil -1
-#define ioptNil -1
-#define rfdNil -1
-#define ifiNil -1
-#endif	/* _LANGUAGE_PASCAL */
-
-
 /* Dense numbers
  *
  * Rather than use file index, symbol index pairs to represent symbols

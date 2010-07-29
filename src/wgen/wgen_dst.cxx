@@ -111,7 +111,7 @@ extern "C" int getdomainname(char *name, size_t len);
 extern "C" char *cplus_demangle (const char *, int);
 #endif
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

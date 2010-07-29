@@ -2722,10 +2722,7 @@ static void Read_Pragma_Data_Affinity (WN* do_wn, WN* rwn) {
                  "affinity must be for an array reference (ignoring).");
     return;
   }
-#if defined(__linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
-  // Nothing we can do about this for now.
-  return;
-#endif
+#ifdef ORIGINAL_SGI_CODE
   // list of do-loops to which we have attached a lego-info
   // if we run into an error, then we must undo the lego-info for
   // eachof them
@@ -2887,6 +2884,7 @@ static void Read_Pragma_Data_Affinity (WN* do_wn, WN* rwn) {
       }
     }
 #endif
+#endif // ORIGINAL_SGI_CODE
 } /* Read_Pragma_Affinity */
 
 /***********************************************************************
@@ -3028,12 +3026,7 @@ static BOOL Check_Expr (WN* expr_wn, SYMBOL* index_sym,
  *
  ***********************************************************************/
 static void Read_Pragma_Thread_Affinity (WN* pwn, WN* do_wn, WN* rwn) {
-
-#if defined(__linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
-  // Nothing we can do about this for now.
-  return; 
-#endif 
-
+#ifdef ORIGINAL_SGI_CODE
   // Walk the pragmas, until we find the thread-affinity pragma
   while (rwn) {
     if ((WN_opcode(rwn) == OPC_XPRAGMA) &&
@@ -3219,6 +3212,7 @@ static void Read_Pragma_Thread_Affinity (WN* pwn, WN* do_wn, WN* rwn) {
 
   return;
 #endif
+#endif // ORIGINAL_SGI_CODE
 } /* Read_Pragma_Thread_Affinity */
 
 /***********************************************************************

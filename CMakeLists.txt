@@ -112,6 +112,12 @@ IF(NOT PSC_CRT_PATH)
 ENDIF()
 MESSAGE(STATUS "PSC_CRT_PATH is set to "${PSC_CRT_PATH})
 
+IF(${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
+	SET(PSC_CRT1 "crt0.o")
+ELSE()
+	SET(PSC_CRT1 "crt1.o")
+ENDIF()
+
 # Do we build with huge pages support
 OPTION(PATH64_ENABLE_HUGEPAGES "Enabling supported huge pages" OFF)
 IF(PATH64_ENABLE_HUGEPAGES)
@@ -222,7 +228,10 @@ SET(PATH64_LIB_PATH lib/${PSC_FULL_VERSION})
 # Tell GCC where to install relative to the CMAKE_INSTALL_PREFIX.
 SET(PATH64_GCC_INSTALL_PATH ${PATH64_LIB_PATH})
 
-
+# If readding support for SGI and other platforms, where the
+# dynamic linker allows overwritting weak references in modules
+# opened via dlopen or similar means:
+# -DUSE_WEAK_REFERENCES
 ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D__GNU_BUG_WORKAROUND
                 -DTARG_X8664
