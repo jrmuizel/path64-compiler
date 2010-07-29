@@ -58,7 +58,7 @@ SET(PATHSCALE_MPATH_SRCS        "amd/pow_errorl.c"
 				"amd/w_sinhf.c"
 				"amd/w_tanh.c"
 				"amd/w_tanhf.c"
-				"cisf.c"
+				"cis.c"
 				"cisf.c")
 
 SET(PATHSCALE_MPATH_S_SRCS      "amd/w_copysignf.s"	
