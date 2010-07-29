@@ -563,7 +563,7 @@ get_sigrtmin(void)
 {
 	struct ctbl *iter= consttbl + NUMCONST - 1;
 
-	while (strcmp(iter, "SIGRTMIN"))
+	while (strcmp(iter->str, "SIGRTMIN"))
 		--iter;
 	iter->val = SIGRTMIN;
 }
@@ -575,7 +575,7 @@ get_sigrtmax(void)
 {
 	struct ctbl *iter= consttbl + NUMCONST - 1;
 
-	while (strcmp(iter, "SIGRTMAX"))
+	while (strcmp(iter->str, "SIGRTMAX"))
 		--iter;
 	iter->val = SIGRTMAX;
 }
