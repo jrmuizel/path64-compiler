@@ -183,7 +183,7 @@ init_crt_paths (void)
 	char *tmp_name = create_temp_file_name("gc");
 	char *gcc_name = get_full_phase_name(P_ld);
 	init_given_crt_path ("crtbegin.o", gcc_name, tmp_name);
-	init_given_crt_path ("crt1.o", gcc_name, tmp_name);
+	init_given_crt_path (PSC_CRT1, gcc_name, tmp_name);
 }
 
 /* whether option is an object or not */
