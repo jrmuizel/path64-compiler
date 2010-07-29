@@ -129,7 +129,7 @@ static	QUAD	c_atoq(char *buffer, INT32 ndigit, INT32 exp);
 
 /* ascii to quad */
 
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(_WIN32)
 /* Can't use "pragma weak" to create aliases in Mach-O */
 QUAD c_a_to_q(char *s, INT *p_err );
 QUAD __c_a_to_q(char *s, INT *p_err) { return c_a_to_q(s, p_err); }
