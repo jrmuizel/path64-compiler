@@ -7599,7 +7599,7 @@ EMT_Begin_File (
 			    	!Use_32_Bit_Pointers, 
 				FALSE /* old_abi */,
 				(INT) Target_ISA,
-				(Target_Byte_Sex == BIG_ENDIAN),
+				(!Target_Is_Little_Endian),
 				Gen_PIC_Shared, 
 				Gen_PIC_Call_Shared,
                 		!Guaranteed_Small_GOT, 

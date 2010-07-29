@@ -248,7 +248,7 @@ Expand_Extract_Bits (TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_size
                   TN *tgt_tn, TN *src_tn, OPS *ops)
 {
   TN *tmp1_tn = tgt_tn;
-  UINT pos = (Target_Byte_Sex != Host_Byte_Sex)
+  UINT pos = (Target_Is_Little_Endian != Host_Is_Little_Endian)
              ? MTYPE_bit_size(desc)-bit_offset-bit_size : bit_offset;
   if (pos == 0 && bit_size <= 16 && ! MTYPE_signed(rtype)) {
     Build_OP(TOP_andi, tgt_tn, src_tn,

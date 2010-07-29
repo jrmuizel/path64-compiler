@@ -258,13 +258,6 @@ static char *config_rcs_id = "$Source: common/com/SCCS/s.config.h $ $Revision: 1
 
 #include "config_host.h"	/* in TARGET/com */
 #include "config_targ.h"	/* in TARGET/com */
-#define LITTLE_ENDIAN 1234
-#define BIG_ENDIAN 4321
-#if HOST_IS_LITTLE_ENDIAN
-#define BYTE_ORDER LITTLE_ENDIAN
-#else
-#define BYTE_ORDER BIG_ENDIAN
-#endif
 #include "mempool.h"	/* Include the "fundamental" routines */
 #include "flags.h"
 
@@ -593,9 +586,8 @@ extern INT32 Split_BB_Length;	/* split BBs that are > than this */
 #define MAX_BBLENGTH	5000	/* don't let the value get too big */
 
 /***** What is the byte sex of the host and target? *****/
-extern UINT8 Host_Byte_Sex;	/* Set in config_host.c */
-extern UINT8 Target_Byte_Sex;	/* Set in config_targ.c */
-extern BOOL  Same_Byte_Sex;	/* Set in config_targ.c */
+extern bool Host_Is_Little_Endian;	/* Set in config_host.c */
+extern bool Target_Is_Little_Endian;	/* Set in config_host.c */
 
 extern INT32 iolist_reuse_limit;
 
