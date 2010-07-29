@@ -11,6 +11,4 @@
 #define PDP_ENDIAN 3412
 #define BYTE_ORDER LITTLE_ENDIAN
 
-#define HOST_IS_LITTLE_ENDIAN 1
-
 #endif /* _ENDIAN_H */
