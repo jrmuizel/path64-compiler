@@ -4617,7 +4617,7 @@ Extract_Paired_Hi(TCON v)
     {
       /* May want to use F4 instead of I4. */
       TCON_ty(c) = MTYPE_I4;
-      if (Host_Is_Little_Endian)
+      if (Target_Is_Little_Endian)
 	TCON_word0(c) =  TCON_u1(v);
       else
 	TCON_word0(c) =  TCON_u0(v);

@@ -387,7 +387,7 @@ static WN *WGEN_Expand_Ptr_To_Member_Func_Call_Expr (gs_t exp,
 void
 WGEN_Convert_To_Host_Order (long *buf)
 {
-  if (Target_Is_Little_Endian == Host_Is_Little_Endian)
+  if (Target_Is_Little_Endian != Host_Is_Little_Endian)
     {
       int t = buf[0];
       buf[0] = buf[1];
