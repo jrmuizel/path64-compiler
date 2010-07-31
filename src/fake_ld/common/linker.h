@@ -52,7 +52,9 @@
 #include <string.h>
 #include <sys/inst.h>
 #include <elf.h>
+#if !defined(__NetBSD__)
 #include <sys/procfs.h>
+#endif
 #include <sys/elf_whirl.h>
 
 #include "ld_elf.h"

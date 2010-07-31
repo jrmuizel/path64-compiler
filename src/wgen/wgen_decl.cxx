@@ -2573,7 +2573,7 @@ public:
   INITBUF(UINT64 i): ival(i) {}
   ~INITBUF(void) {}
   mUINT8 Nth_byte(INT i) { // i must be from 0 to 7
-		      INT rshft_amt = (Target_Byte_Sex == BIG_ENDIAN) ? 7-i : i;
+		      INT rshft_amt = !Target_Is_Little_Endian ? 7-i : i;
 		      return (ival >> (rshft_amt * 8)) & 0xff;
 		    }
 };
@@ -2596,7 +2596,7 @@ AGGINIT::Add_Bitfield_Initv_For_Tree (gs_t val, FLD_HANDLE fld, INT &bytes)
   // truncate ival according to the bitfield size and leave it left-justified
   ib.ival = ib.ival << (64 - bsize);
   // shift the value back right to the precise position within INITBUF
-  if (Target_Byte_Sex == BIG_ENDIAN) 
+  if (!Target_Is_Little_Endian)
     ib.ival = ib.ival >> bofst;
   else ib.ival = ib.ival >> (64 - bofst - bsize);
 

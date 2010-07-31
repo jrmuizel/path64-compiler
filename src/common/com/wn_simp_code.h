@@ -3242,7 +3242,7 @@ static simpnode  simp_band( OPCODE opc,
 #ifdef KEY
 	 // When expanding into extract, need to take care of the endianness.
 	 // See gcc.c-torture/execute/200201271-1.c 
-	 if (Target_Byte_Sex != Host_Byte_Sex)
+	 if (Target_Is_Little_Endian != Host_Is_Little_Endian)
 	   shift_count = MTYPE_bit_size(ty) - shift_count - log2((UINT64)c1+1);
 #endif
          mask_bits = create_bitmask(MTYPE_bit_size(ty) - shift_count);
@@ -3432,7 +3432,7 @@ static simpnode  simp_bior( OPCODE opc,
      UINT64 dep_mask = create_bitmask(SIMPNODE_op_bit_size(k1))<<SIMPNODE_op_bit_offset(k1);
 #ifdef KEY
      // When expanding into deposit, need to take care of the endianness.
-     if (Target_Byte_Sex != Host_Byte_Sex)
+     if (Target_Is_Little_Endian != Host_Is_Little_Endian)
        dep_mask = create_bitmask(SIMPNODE_op_bit_size(k1)) <<
 	 (MTYPE_bit_size(ty) - SIMPNODE_op_bit_offset(k1) - SIMPNODE_op_bit_size(k1));
 #endif
@@ -3444,7 +3444,7 @@ static simpnode  simp_bior( OPCODE opc,
 				      SIMPNODE_op_bit_size(k1),SIMPNODE_kid0(k0),SIMPNODE_kid1(k1));
 #ifdef KEY
        // When expanding into deposit, need to take care of the endianness.
-       if (Target_Byte_Sex != Host_Byte_Sex)
+       if (Target_Is_Little_Endian != Host_Is_Little_Endian)
 	 r = SIMPNODE_SimpCreateDeposit(SIMPNODE_opcode(k1), 
 					MTYPE_bit_size(ty) - 
 					SIMPNODE_op_bit_offset(k1) - 
@@ -3473,7 +3473,7 @@ static simpnode  simp_bior( OPCODE opc,
 				      SIMPNODE_kid0(k1),SIMPNODE_kid0(k0));
 #ifdef KEY
        // When expanding into deposit, need to take care of the endianness.
-       if (Target_Byte_Sex != Host_Byte_Sex)
+       if (Target_Is_Little_Endian != Host_Is_Little_Endian)
 	 r = SIMPNODE_SimpCreateDeposit(OPC_FROM_OPR(OPR_COMPOSE_BITS,ty),
 					MTYPE_bit_size(ty)-log2((UINT64)c1+1), 
 					log2((UINT64)c1+1),
@@ -3489,7 +3489,7 @@ static simpnode  simp_bior( OPCODE opc,
 				      SIMPNODE_kid0(k0),SIMPNODE_kid0(k1));
 #ifdef KEY
        // When expanding into deposit, need to take care of the endianness.
-       if (Target_Byte_Sex != Host_Byte_Sex)
+       if (Target_Is_Little_Endian != Host_Is_Little_Endian)
          r = SIMPNODE_SimpCreateDeposit(OPC_FROM_OPR(OPR_COMPOSE_BITS,ty),
 					MTYPE_bit_size(ty)-log2((UINT64)c2+1), 
 					log2((UINT64)c2+1),
@@ -4041,7 +4041,7 @@ static simpnode  simp_shift( OPCODE opc,
 	   if (bsize < 1) bsize = 1;
 #ifdef KEY
 	   // When expanding into extract, need to take care of the endianness.
-	   if (Target_Byte_Sex != Host_Byte_Sex)
+	   if (Target_Is_Little_Endian != Host_Is_Little_Endian)
 	     boffset = MTYPE_bit_size(ty) - boffset - bsize;
 #endif
 	   r = SIMPNODE_SimpCreateExtract(shift_size == 32 ? OPC_U4EXTRACT_BITS : OPC_U8EXTRACT_BITS,
@@ -4068,7 +4068,7 @@ static simpnode  simp_shift( OPCODE opc,
 	   if (bsize < 1) bsize = 1;
 #ifdef KEY
 	   // When expanding into extract, need to take care of the endianness.
-	   if (Target_Byte_Sex != Host_Byte_Sex)
+	   if (Target_Is_Little_Endian != Host_Is_Little_Endian)
 	     boffset = MTYPE_bit_size(ty) - boffset - bsize;
 #endif
 	   r = SIMPNODE_SimpCreateExtract(shift_size == 32 ? OPC_I4EXTRACT_BITS : OPC_I8EXTRACT_BITS,
@@ -4083,7 +4083,7 @@ static simpnode  simp_shift( OPCODE opc,
 	 c2 = SIMP_Int_ConstVal(SIMPNODE_kid1(k0));
 #ifdef KEY
 	 // When expanding into deposit, need to take care of the endianness.
-	 if (Target_Byte_Sex != Host_Byte_Sex)
+	 if (Target_Is_Little_Endian != Host_Is_Little_Endian)
 	   c1 = MTYPE_bit_size(ty) - c1 - log2((UINT64)c2+1);
 #endif
 	 /* See if the mask is all 1's in the right places */

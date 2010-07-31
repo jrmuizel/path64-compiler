@@ -42,9 +42,9 @@ void
 Preconfigure_Host ( void )
 {
 #if HOST_IS_LITTLE_ENDIAN
-  Host_Byte_Sex = LITTLE_ENDIAN;
+  Host_Is_Little_Endian = true;
 #else
-  Host_Byte_Sex = BIG_ENDIAN;
+  Host_Is_Little_Endian = false;
 #endif
 
   return;

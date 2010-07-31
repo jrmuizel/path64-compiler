@@ -1508,7 +1508,7 @@ Handle_LDID (WN *ldid, WN *parent, TN *result, OPCODE opcode)
     {
       opcode =	OPC_U4U4LDID;
       WN_set_opcode(ldid, opcode);
-      if (Target_Byte_Sex == BIG_ENDIAN) {
+      if (!Target_Is_Little_Endian) {
       	WN_offset(ldid) += 4;	// get low-order word
       }
     }
@@ -1516,7 +1516,7 @@ Handle_LDID (WN *ldid, WN *parent, TN *result, OPCODE opcode)
     {
       opcode = OPC_I4I4LDID;
       WN_set_opcode(ldid, opcode);
-      if (Target_Byte_Sex == BIG_ENDIAN) {
+      if (!Target_Is_Little_Endian) {
       	WN_offset(ldid) += 4;	// get low-order word
       }
     }
@@ -1800,7 +1800,7 @@ Handle_ILOAD (WN *iload, TN *result, OPCODE opcode)
   {
     opcode = OPC_U4U4ILOAD;
     WN_set_opcode(iload, opcode);
-    if (Target_Byte_Sex == BIG_ENDIAN) {
+    if (!Target_Is_Little_Endian) {
 	WN_offset(iload) += 4;	// get low-order word
     }
   }
@@ -1808,7 +1808,7 @@ Handle_ILOAD (WN *iload, TN *result, OPCODE opcode)
   {
     opcode =	OPC_I4I4ILOAD;
     WN_set_opcode(iload, opcode);
-    if (Target_Byte_Sex == BIG_ENDIAN) {
+    if (!Target_Is_Little_Endian) {
 	WN_offset(iload) += 4;	// get low-order word
     }
   }

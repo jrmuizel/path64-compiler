@@ -1700,7 +1700,7 @@ extern Elf64_Conflict   _ConflictList64 [];
 }
 #endif /* __cplusplus */
 
-#if defined(__FreeBSD__) || defined(__sun)
+#if defined(__FreeBSD__) || defined(__sun) || defined(__NetBSD__)
 
 #define SHF_IA_64_SHORT		0x10000000	/* section near gp */
 #define SHF_MIPS_NAMES		0x02000000
@@ -1727,6 +1727,6 @@ typedef struct
   Elf32_Word hwp_flags2;        /* Extra flags.  */
 } Elf_Options_Hw;
 
-#endif /* __FreeBSD__ */
+#endif /* __FreeBSD__ || __sun || __NetBSD__ */
 
 #endif	/* elf.h */

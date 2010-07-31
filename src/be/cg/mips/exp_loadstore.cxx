@@ -258,12 +258,12 @@ Expand_Composed_Load ( OPCODE op, TN *result, TN *base, TN *disp, VARIANT varian
 	Expand_Copy(tmp, base, desc, ops);
 	base = tmp;
       }
-      Build_OP (Target_Byte_Sex == BIG_ENDIAN ? TOP_ldl : TOP_ldr,
+      Build_OP (!Target_Is_Little_Endian ? TOP_ldl : TOP_ldr,
   		result, base, disp, Zero_TN, ops);
       // The highest byte is at effective address + 7.
-      Adjust_Addr_TNs (Target_Byte_Sex == BIG_ENDIAN ? TOP_ldr : TOP_ldl,
+      Adjust_Addr_TNs (!Target_Is_Little_Endian ? TOP_ldr : TOP_ldl,
   		      &base, &disp, 7, ops);
-      Build_OP (Target_Byte_Sex == BIG_ENDIAN ? TOP_ldr : TOP_ldl,
+      Build_OP (!Target_Is_Little_Endian ? TOP_ldr : TOP_ldl,
   		result, base, disp, result, ops);
       Set_OP_cond_def_kind(OPS_last(ops), OP_ALWAYS_COND_DEF);
       return;
@@ -274,12 +274,12 @@ Expand_Composed_Load ( OPCODE op, TN *result, TN *base, TN *disp, VARIANT varian
       if ((rtype == MTYPE_U8) && (desc == MTYPE_U4)) {
         tmp1 = Build_TN_Of_Mtype(rtype);  // See comment above for using tmps.
 	tmp2 = Build_TN_Of_Mtype(rtype);
-	Build_OP(Target_Byte_Sex == BIG_ENDIAN ? TOP_lwl : TOP_lwr,
+	Build_OP(!Target_Is_Little_Endian ? TOP_lwl : TOP_lwr,
   		 tmp1, base, disp, Zero_TN, ops);
 	// The highest byte is at effective address + 3.
-	Adjust_Addr_TNs(Target_Byte_Sex == BIG_ENDIAN ? TOP_lwr : TOP_lwl,
+	Adjust_Addr_TNs(!Target_Is_Little_Endian ? TOP_lwr : TOP_lwl,
 			&base, &disp, 3, ops);
-	Build_OP(Target_Byte_Sex == BIG_ENDIAN ? TOP_lwr : TOP_lwl,
+	Build_OP(!Target_Is_Little_Endian ? TOP_lwr : TOP_lwl,
 		 tmp1, base, disp, tmp1, ops);
 	Set_OP_cond_def_kind(OPS_last(ops), OP_ALWAYS_COND_DEF);
 	// Clear the top 32 bits for U8U4 load. (Bug 13237)
@@ -291,19 +291,19 @@ Expand_Composed_Load ( OPCODE op, TN *result, TN *base, TN *disp, VARIANT varian
 	  Expand_Copy(tmp, base, desc, ops);
 	  base = tmp;
 	}
-	Build_OP(Target_Byte_Sex == BIG_ENDIAN ? TOP_lwl : TOP_lwr,
+	Build_OP(!Target_Is_Little_Endian ? TOP_lwl : TOP_lwr,
 		 result, base, disp, Zero_TN, ops);
 	// The highest byte is at effective address + 3.
-	Adjust_Addr_TNs(Target_Byte_Sex == BIG_ENDIAN ? TOP_lwr : TOP_lwl,
+	Adjust_Addr_TNs(!Target_Is_Little_Endian ? TOP_lwr : TOP_lwl,
 			&base, &disp, 3, ops);
-	Build_OP(Target_Byte_Sex == BIG_ENDIAN ? TOP_lwr : TOP_lwl,
+	Build_OP(!Target_Is_Little_Endian ? TOP_lwr : TOP_lwl,
 		 result, base, disp, result, ops);
 	Set_OP_cond_def_kind(OPS_last(ops), OP_ALWAYS_COND_DEF);
       }
       return;
     case MTYPE_I2:
     case MTYPE_U2:
-      if (Target_Byte_Sex == BIG_ENDIAN) {
+      if (!Target_Is_Little_Endian) {
         tmp1 = Build_TN_Of_Mtype(rtype);  // See comment above for using tmps.
         tmp2 = Build_TN_Of_Mtype(rtype);
         tmp3 = Build_TN_Of_Mtype(rtype);
@@ -367,27 +367,27 @@ Expand_Composed_Store (TYPE_ID mtype, TN *obj, TN *base, TN *disp, VARIANT varia
   switch (mtype) {
     case MTYPE_I8:
     case MTYPE_U8:
-      Build_OP (Target_Byte_Sex == BIG_ENDIAN ? TOP_sdl : TOP_sdr,
+      Build_OP (!Target_Is_Little_Endian ? TOP_sdl : TOP_sdr,
 		obj, base, disp, ops);
       // The highest byte is at effective address + 7.
-      Adjust_Addr_TNs (Target_Byte_Sex == BIG_ENDIAN ? TOP_sdr : TOP_sdl,
+      Adjust_Addr_TNs (!Target_Is_Little_Endian ? TOP_sdr : TOP_sdl,
 		      &base, &disp, 7, ops);
-      Build_OP (Target_Byte_Sex == BIG_ENDIAN ? TOP_sdr : TOP_sdl,
+      Build_OP (!Target_Is_Little_Endian ? TOP_sdr : TOP_sdl,
 		obj, base, disp, ops);
       return;
     case MTYPE_I4:
     case MTYPE_U4:
-      Build_OP (Target_Byte_Sex == BIG_ENDIAN ? TOP_swl : TOP_swr,
+      Build_OP (!Target_Is_Little_Endian ? TOP_swl : TOP_swr,
 		obj, base, disp, ops);
       // The highest byte is at effective address + 3.
-      Adjust_Addr_TNs (Target_Byte_Sex == BIG_ENDIAN ? TOP_swr : TOP_swl,
+      Adjust_Addr_TNs (!Target_Is_Little_Endian ? TOP_swr : TOP_swl,
 		      &base, &disp, 3, ops);
-      Build_OP (Target_Byte_Sex == BIG_ENDIAN ? TOP_swr : TOP_swl,
+      Build_OP (!Target_Is_Little_Endian ? TOP_swr : TOP_swl,
 		obj, base, disp, ops);
       return;
     case MTYPE_I2:
     case MTYPE_U2:
-      if (Target_Byte_Sex == BIG_ENDIAN) {
+      if (!Target_Is_Little_Endian) {
         tmp = Build_TN_Of_Mtype(mtype);
 	Build_OP (TOP_srl, tmp, obj, Gen_Literal_TN(8, 4), ops);
         Build_OP (TOP_sb, tmp, base, disp, ops);
@@ -692,7 +692,7 @@ Exp_Extract_Bits (TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_size,
 		  TN *tgt_tn, TN *src_tn, OPS *ops)
 {
   TN *tmp1_tn = Build_TN_Like (tgt_tn);
-  UINT pos = (Target_Byte_Sex == BIG_ENDIAN || CG_emit_non_gas_syntax)
+  UINT pos = (!Target_Is_Little_Endian || CG_emit_non_gas_syntax)
 	     ? MTYPE_bit_size(desc)-bit_offset-bit_size : bit_offset;
   if (pos == 0 && bit_size <= 16 && ! MTYPE_signed(rtype)) {
     Build_OP(TOP_andi, tgt_tn, src_tn, 
@@ -742,7 +742,7 @@ Exp_Deposit_Bits (TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_size,
   FmtAssert(bit_size != 0, ("size of bit field cannot be 0"));
 
   UINT targ_bit_offset = bit_offset;
-  if (Target_Byte_Sex == BIG_ENDIAN) {
+  if (!Target_Is_Little_Endian) {
     targ_bit_offset = MTYPE_bit_size(desc) - bit_offset - bit_size;
   }
   TN *tmp1_tn = Build_TN_Like (src1_tn);

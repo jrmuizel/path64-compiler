@@ -387,7 +387,7 @@ static WN *WGEN_Expand_Ptr_To_Member_Func_Call_Expr (gs_t exp,
 void
 WGEN_Convert_To_Host_Order (long *buf)
 {
-  if (!Same_Byte_Sex)
+  if (Target_Is_Little_Endian != Host_Is_Little_Endian)
     {
       int t = buf[0];
       buf[0] = buf[1];
@@ -4461,7 +4461,7 @@ WGEN_Expand_Expr (gs_t exp,
 	UINT cvtl_size = 0; // if non-zero, need to generate CVTL with this size
 	if (! is_bit_field) {
 	  if (TY_size(desc_ty_idx) > TY_size(ty_idx)) {
-	    if (Target_Byte_Sex == BIG_ENDIAN)
+	    if (!Target_Is_Little_Endian)
 	      xtra_BE_ofst = TY_size(desc_ty_idx) - TY_size(ty_idx);
 	    cvtl_size = TY_size(ty_idx) * 8;
 	    ty_idx = desc_ty_idx;
@@ -5025,7 +5025,7 @@ WGEN_Expand_Expr (gs_t exp,
 
 	if (! is_bit_field) {
 	  if (TY_size(desc_ty_idx) > TY_size(ty_idx)) {
-	    if (Target_Byte_Sex == BIG_ENDIAN)
+	    if (!Target_Is_Little_Endian)
 	      xtra_BE_ofst = TY_size(desc_ty_idx) - TY_size(ty_idx);
 	    desc_ty_idx = ty_idx;
 	  }
@@ -6036,7 +6036,7 @@ WGEN_Expand_Expr (gs_t exp,
 
 	if (! is_bit_field) {
 	  if (TY_size(desc_ty_idx) > TY_size(ty_idx)) {
-	    if (Target_Byte_Sex == BIG_ENDIAN)
+	    if (!Target_Is_Little_Endian)
 	      xtra_BE_ofst = TY_size(desc_ty_idx) - TY_size(ty_idx);
 	    desc_ty_idx = ty_idx;
 	  }
@@ -7440,7 +7440,7 @@ WGEN_Expand_Expr (gs_t exp,
 
 	    if (! is_bit_field) {
               if (TY_size(desc_ty_idx) > TY_size(ty_idx)) {
-                if (Target_Byte_Sex == BIG_ENDIAN)
+                if (!Target_Is_Little_Endian)
                   xtra_BE_ofst = TY_size(desc_ty_idx) - TY_size(ty_idx);
                 desc_ty_idx = ty_idx;
 	      }
@@ -7747,7 +7747,7 @@ WGEN_Expand_Expr (gs_t exp,
         else
           Fail_FmtAssertion ("VA_ARG_EXPR: unknown operator for ap");
 
-	if (Target_Byte_Sex == BIG_ENDIAN) {
+	if (!Target_Is_Little_Endian) {
 	  INT64 adj;
 	  adj = gs_n(gs_tree_int_cst_low(gs_type_size(type))) / BITS_PER_UNIT;
 	  if (rounded_size > align)
@@ -7786,7 +7786,7 @@ WGEN_Expand_Expr (gs_t exp,
         }
         WGEN_Stmt_Append (wn, Get_Srcpos ());
 #ifdef KEY
-	if (Target_Byte_Sex != Host_Byte_Sex)
+	if (Target_Is_Little_Endian != Host_Is_Little_Endian)
           wn = WN_CreateIload (OPR_ILOAD, Widen_Mtype (mtype), mtype, 
 			  ((MTYPE_size_min(mtype)==32)?4:0)-rounded_size, 
 			  ty_idx, Make_Pointer_Type(ty_idx, FALSE), 

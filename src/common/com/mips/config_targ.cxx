@@ -497,11 +497,9 @@ Configure_Target ( void )
 
 #if !(defined(FRONT_END_C) || defined(FRONT_END_CPLUSPLUS))
   if (Endian_Name == NULL)
-    Target_Byte_Sex = BIG_ENDIAN;
-  else Target_Byte_Sex = strncmp(Endian_Name, "lit", 3) == 0 ? LITTLE_ENDIAN 
-      							     : BIG_ENDIAN;
+    Target_Is_Little_Endian = false;
+  else Target_Is_Little_Endian = strncmp(Endian_Name, "lit", 3) == 0;
 #endif
-  Same_Byte_Sex = ( Target_Byte_Sex == Host_Byte_Sex );
 
   Gen_PIC_Calls = TRUE;	
   GP_Is_Preserved = FALSE;
@@ -621,9 +619,9 @@ IPA_Configure_Target (void)
   // Tell IPA the target byte-order (bug 13197). IPA is not passed
   // the -TARG:endian option.
 #if defined(linux)
-  Target_Byte_Sex = LITTLE_ENDIAN;
+  Target_Is_Little_Endian = true;
 #else
-  Target_Byte_Sex = BIG_ENDIAN;
+  Target_Is_Little_Endian = false;
 #endif
 #endif
 } /* IPA_Configure_Target */
