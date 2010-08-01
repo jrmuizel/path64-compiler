@@ -1373,12 +1373,12 @@ append_psc_env_flags (int *argc, char *(*argv[]), char *env_var)
 static FILE *
 read_gcc_output(char *cmdline)
 {
-	char *gcc_path = get_full_phase_name(P_gcpp);
+	const char *gcc_name = "gcc";
 	char *gcc_cmd = NULL;
 	FILE *fp = NULL;
 	int status;
 
-	if (asprintf(&gcc_cmd, "%s %s", gcc_path, cmdline) == -1) {
+	if (asprintf(&gcc_cmd, "%s %s", gcc_name, cmdline) == -1) {
 		internal_error("cannot allocate memory");
 		goto bail;
 	}
@@ -1395,8 +1395,6 @@ read_gcc_output(char *cmdline)
 	wait(&status);
 
 bail:
-	free(gcc_path);
-	free(gcc_cmd);
 	return fp;
 }
 
