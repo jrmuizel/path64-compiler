@@ -12,6 +12,7 @@ set(winlib_SRC
 				"symlink.c"
 				"tempname.c"
 				"times.c"
+				"timersub.c"
 				"uname.c"
 				"unix2winpath.c"
 				"wait.c"

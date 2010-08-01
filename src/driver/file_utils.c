@@ -40,7 +40,8 @@
 #include <errno.h>
 
 #ifdef _WIN32
-#include <windows.h>
+//#include <windows.h> // This conflicts with other stuff
+unsigned int __stdcall GetModuleFileNameA(void*, char*, unsigned int);
 #endif
 
 #include "errors.h"
@@ -50,9 +51,6 @@
 extern int errno;
 static char *saved_orig_program_name;
 static char *executable_dir;
-#ifdef _WIN32
-unsigned int __stdcall GetModuleFileNameA(void*, char*, unsigned int);
-#endif
 
 #ifdef KEY /* Mac port */
 int compat_gcc;
@@ -262,7 +260,6 @@ char *
 get_executable_dir (void)
 {
 	return string_copy(executable_dir);
-#endif
 }
 
 void

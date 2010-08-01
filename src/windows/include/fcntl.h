@@ -11,7 +11,4 @@ struct flock {
 
 #define F_WRLCK 1
 #define F_SETLKW 2
-#define PROT_READ 4
-#define PROT_WRITE 8
-#define MAP_SHARED 16
-#define MAP_PRIVATE 32
+
