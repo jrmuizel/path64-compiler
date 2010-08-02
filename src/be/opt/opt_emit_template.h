@@ -218,8 +218,8 @@ Gen_exp_wn(CODEREP *exp, EMITTER *emitter)
 		INT64 offset2 = MTYPE_size_min(actual_type) >> 3;
 		INT32 offset_old = kid->Offset();
 		INT32 offset_new = offset_old;
-		// Target_Byte_Sex is declared in config.h
-		if (Target_Byte_Sex == BIG_ENDIAN) 
+		// Target_Is_Little_Endian is declared in config.h
+		if (!Target_Is_Little_Endian) 
 		  offset_new = offset1 - offset2 + offset_old;
 		if ( offset_new <= 0x8fffffff ) {
 		  kid->Set_offset( offset_new );

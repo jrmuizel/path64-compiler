@@ -90,7 +90,7 @@
 using std::vector;
 using __gnu_cxx::hash_map;
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(__NetBSD__)
 #define _USE_GNU_MAKE_
 #endif
 

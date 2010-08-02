@@ -1210,9 +1210,8 @@ BOOL Enable_SWP = FALSE;		/* but see cgdriver.c */
 BOOL Enable_SWP_overridden = FALSE;
 
 /***** What is the byte	sex of the host	and target? *****/
-UINT8 Host_Byte_Sex = BIG_ENDIAN;	/* Set in config_host.c	*/
-UINT8 Target_Byte_Sex =	BIG_ENDIAN;	/* Set in config_targ.c	*/
-BOOL  Same_Byte_Sex = TRUE;		/* Set in config_targ.c	*/
+bool Host_Is_Little_Endian = false;	/* Set in config_host.c	*/
+bool Target_Is_Little_Endian = false;	/* Set in config_host.c	*/
 
 /***** Miscellaneous code generation options *****/
 BOOL Use_Base_Ptrs = TRUE;	/* Explicit ptrs to .DATA./.RDATA? */
@@ -2704,7 +2703,7 @@ List_Compile_Options (
 
   fprintf ( f, "%s  Target:%s, ISA:%s, Endian:%s, Pointer Size:%d\n",
 	    pfx, Targ_Name (Target), Isa_Name (Target_ISA),
-	    Target_Byte_Sex == BIG_ENDIAN ? "big" : "little", 
+	    !Target_Is_Little_Endian ? "big" : "little", 
 	    (Use_32_Bit_Pointers ? 32 : 64) );
 #ifdef TARG_ST
   if (OPTION_Space)

@@ -42,15 +42,7 @@
 #endif /* defined(BUILD_OS_DARWIN) */
 #include <sys/types.h> 
 
-#ifdef KEY
-#if defined(__FreeBSD__)
-#include <sys/syslimits.h>
-#elif defined(__sun)
 #include <limits.h>
-#else
-#include <linux/limits.h>
-#endif
-#endif
 
 #include "defs.h"
 #include "symtab.h"			// symbol table

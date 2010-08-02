@@ -551,7 +551,7 @@ struct ctbl consttbl[] = {
         {"SIGRTMIN", 0},
 #endif
 #ifdef SIGRTMAX
-       {"SIGRTMAX", 0},
+        {"SIGRTMAX", 0},
 #endif
 };
 
@@ -561,11 +561,11 @@ struct ctbl consttbl[] = {
 static void __attribute__((constructor))
 get_sigrtmin(void)
 {
-  struct ctbl *iter= consttbl + NUMCONST - 1;
+	struct ctbl *iter= consttbl + NUMCONST - 1;
 
-  while (strcmp(iter, "SIGRTMIN"))
-    --iter;
-  iter->val = SIGRTMIN;
+	while (strcmp(iter->str, "SIGRTMIN"))
+		--iter;
+	iter->val = SIGRTMIN;
 }
 #endif
 
@@ -573,11 +573,11 @@ get_sigrtmin(void)
 static void __attribute__((constructor))
 get_sigrtmax(void)
 {
-  struct ctbl *iter= consttbl + NUMCONST - 1;
+	struct ctbl *iter= consttbl + NUMCONST - 1;
 
-  while (strcmp(iter, "SIGRTMAX"))
-   --iter;
-  iter->val = SIGRTMAX;
+	while (strcmp(iter->str, "SIGRTMAX"))
+		--iter;
+	iter->val = SIGRTMAX;
 }
 #endif
 

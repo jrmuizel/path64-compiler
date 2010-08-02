@@ -1071,7 +1071,7 @@ Add_Object_To_Frame_Segment ( ST *sym, SF_SEGMENT seg, BOOL allocate )
 	* Except float parms are left-justified!
 	*/
 	if (size < MTYPE_RegisterSize(Spill_Int_Mtype)) {
-	  if (Target_Byte_Sex == LITTLE_ENDIAN ||
+	  if (Target_Is_Little_Endian ||
 	      MTYPE_is_float(TY_mtype(ST_type(sym)))) {
 		rpad = MTYPE_RegisterSize(Spill_Int_Mtype) - size;
 	  }
@@ -3215,7 +3215,7 @@ Initialize_Stack_Frame (WN *PU_tree)
 		ST_class(ra_sym), ST_sclass(ra_sym), ST_export(ra_sym), 
 		MTYPE_To_TY(Spill_Int_Mtype) );
 	Set_ST_base (ra_sym, st_base);
-	Set_ST_ofst (ra_sym, Target_Byte_Sex == BIG_ENDIAN ? 
+	Set_ST_ofst (ra_sym, !Target_Is_Little_Endian ? 
 	    MTYPE_byte_size(Spill_Int_Mtype) - MTYPE_byte_size(Pointer_Mtype) :
 	    0);
   }

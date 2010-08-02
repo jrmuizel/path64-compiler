@@ -78,6 +78,10 @@ set_source_files_properties(${PATHSCALE_MV_SRCS} PROPERTIES LANGUAGE C)
 path64_set_multitarget_sources(mv_sources COMMON ${PATHSCALE_MV_SRCS})
 path64_set_multitarget_sources(mv_sources x8664_64 ${PATHSCALE_MV_SRCS_X64})
 
+if(${CMAKE_C_COMPILER_ID} MATCHES "PathScale")
+    set(BOOTSTRAP_HACK -fbootstrap-hack)
+endif()
+
 path64_add_multitarget_library(mv-static STATIC mv_sources)
 path64_set_multitarget_property(mv-static OUTPUT_NAME "mv")
 
@@ -87,7 +91,9 @@ path64_set_multitarget_property(mv SOVERSION 1)
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
     path64_set_multitarget_property(mv LINK_FLAGS
-            "-Wl,-x -Wl,--version-script=${libmv_SOURCE_DIR}/libmv.vs")
+            "-Wl,-x -Wl,--version-script=${libmv_SOURCE_DIR}/libmv.vs  ${BOOTSTRAP_HACK}")
+else()
+    path64_set_multitarget_property(mv LINK_FLAGS ${BOOTSTRAP_HACK}")
 endif()
 
 path64_multitarget_link_libraries(mv m)

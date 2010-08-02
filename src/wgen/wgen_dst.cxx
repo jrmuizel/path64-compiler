@@ -1171,7 +1171,7 @@ UINT align = gs_type_align(ftype)/BITSPERBYTE;
           //     this is essential set the new base for bitoff
 
           // (2) adjust for little endian
-          if (Target_Byte_Sex != BIG_ENDIAN) {
+          if (Target_Is_Little_Endian) {
              into_cont_off =  tsize*BITSPERBYTE - into_cont_off;   // reset current offset
              into_cont_off -= gs_get_integer_value (gs_decl_size(field)); // start at MSB
             }

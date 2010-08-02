@@ -6085,7 +6085,7 @@ Create_Dope_From_IoItem( WN *block, WN *item )
     a_contig = 1;
 
     info_word = 0;
-    if (Target_Byte_Sex == LITTLE_ENDIAN) {
+    if (Target_Is_Little_Endian) {
       dh_ptr = (dope_header_type *)&info_word;
 
       dh_ptr->assoc = assoc;
@@ -6114,7 +6114,7 @@ Create_Dope_From_IoItem( WN *block, WN *item )
       type = 6;
       int_len = 8; /* length in bits */
 
-    if (Target_Byte_Sex == LITTLE_ENDIAN) {
+    if (Target_Is_Little_Endian) {
       f90_type_ptr = (f90_type_t *)&f90type_t_word;
       f90_type_ptr->type = type;
       f90_type_ptr->int_len = int_len;
@@ -6241,7 +6241,7 @@ Create_DopeVector_WN( WN *block, WN *arr_item, TY_IDX ity, TY_IDX  ety, BOOL imp
     
     a_contig = (impl_do) ? 0 :  1;
 
-    if (Target_Byte_Sex == LITTLE_ENDIAN) {
+    if (Target_Is_Little_Endian) {
       dh_ptr = (dope_header_type *)&info_word;
       dh_ptr->assoc = assoc;
       dh_ptr->a_contig = a_contig;
@@ -6280,7 +6280,7 @@ Create_DopeVector_WN( WN *block, WN *arr_item, TY_IDX ity, TY_IDX  ety, BOOL imp
       }
       type = (TY_is_character( ity )) ? 6 : Dv_Type_From_TY(ety);
       int_len = TY_size( ety )*8; /* length in bits */
-      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+      if (Target_Is_Little_Endian) {
         f90_type_ptr = (f90_type_t *)&f90type_t_word;
         f90_type_ptr->type = type;
         f90_type_ptr->dpflag = dpflag;
@@ -6485,7 +6485,7 @@ Create_Null_Call( WN *block, FIOOPER form, WN *cilist_wn,
   }
 
   word = 0;
-  if (Target_Byte_Sex == LITTLE_ENDIAN) {
+  if (Target_Is_Little_Endian) {
     io_header_ptr = (iolist_header_type *)&word;
     io_header_ptr->version = 1;
     io_header_ptr->iolfirst = (first_last == 2 || first_last == 3) ? 1 : 0;
@@ -6899,7 +6899,7 @@ scalar:
     Add_To_Iolist( FID_IOSCALAR_ENTRY, last_field, offset, 0 );
 
     word1 = 0;
-    if (Target_Byte_Sex == LITTLE_ENDIAN) {
+    if (Target_Is_Little_Endian) {
       ioentry_header_ptr = (ioentry_header_type *)&word1;
       ioentry_header_ptr->valtype = val_type;
       ioentry_header_ptr->ioentsize = ioentsize;
@@ -6993,7 +6993,7 @@ scalar:
       }
     }
     word1 = 0;
-    if (Target_Byte_Sex == LITTLE_ENDIAN) {
+    if (Target_Is_Little_Endian) {
       ioentry_header_ptr = (ioentry_header_type *)&word1;
       ioentry_header_ptr->valtype = val_type;
       ioentry_header_ptr->ioentsize = ioentsize;   
@@ -7114,7 +7114,7 @@ scalar:
 	  if (i > 0) {
 	    /* implied_do entry word */
             word = 0;
-	    if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	    if (Target_Is_Little_Endian) {
               ioentry_header_ptr = (ioentry_header_type *)&word;
               ioentry_header_ptr->valtype = 3;
               ioentry_header_ptr->ioentsize = ioentsize;
@@ -7137,7 +7137,7 @@ scalar:
 	}
 	/* implied_do entry word */
         word = 0;
-	if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	if (Target_Is_Little_Endian) {
           ioentry_header_ptr = (ioentry_header_type *)&word;
           ioentry_header_ptr->valtype = 3;
           ioentry_header_ptr->ioentsize = ioentsize;
@@ -7189,7 +7189,7 @@ scalar:
       /* replace the ioentry header which had the wrong ioentsize value now
          that we know the real ioentsize for the implied-do */
       word1 = 0;
-      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+      if (Target_Is_Little_Endian) {
         ioentry_header_ptr = (ioentry_header_type *)&word1;
         ioentry_header_ptr->valtype = 3;
         ioentry_header_ptr->ioentsize = ioentsize;
@@ -7226,7 +7226,7 @@ scalar:
 	  ** handled here.
 	  */
           word = 0;
-          if (Target_Byte_Sex == LITTLE_ENDIAN) {
+          if (Target_Is_Little_Endian) {
             io_header_ptr = (iolist_header_type *)&word;
             io_header_ptr->version = 1;
             io_header_ptr->iolfirst = (first_last == 2 || first_last == 3) ? 1 : 0;
@@ -7661,7 +7661,7 @@ lower_f77_record_items ( WN * block, WN *rec, WN *cilist_wn, WN *stack_wn,
 	  */
 	  if (*icount) {
             word = 0;
-	    if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	    if (Target_Is_Little_Endian) {
               iolist_header_ptr = (iolist_header_type *)&word;
               iolist_header_ptr->version = 1;
               iolist_header_ptr->iolfirst = (first_last == 2 || first_last == 3) ? 1 : 0;
@@ -7728,7 +7728,7 @@ lower_f77_record_items ( WN * block, WN *rec, WN *cilist_wn, WN *stack_wn,
   
   if (*icount) {
     word = 0;
-    if (Target_Byte_Sex == LITTLE_ENDIAN) {
+    if (Target_Is_Little_Endian) {
       iolist_header_ptr = (iolist_header_type *)&word;
       iolist_header_ptr->version = 1;
       iolist_header_ptr->iolfirst = (first_last == 2 || first_last == 3) ? 1 : 0;
@@ -7935,7 +7935,7 @@ dump_tree(tree);
         if (iend >= kid_last || itm >= kid_last)
           first_last |= 1;
         word = 0;
-	if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	if (Target_Is_Little_Endian) {
           iolist_header_ptr = (iolist_header_type *)&word;
           iolist_header_ptr->version = 1;
           iolist_header_ptr->iolfirst = (first_last == 2 || first_last == 3) ? 1 : 0;
@@ -7960,7 +7960,7 @@ dump_tree(tree);
       ** implied-do list which has to be implemented as a DO loop.
       */
       word = 0;
-      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+      if (Target_Is_Little_Endian) {
         iolist_header_ptr = (iolist_header_type *)&word;
         iolist_header_ptr->version = 1;
         iolist_header_ptr->icount = icount;
@@ -7978,7 +7978,7 @@ dump_tree(tree);
 			stack_wn, iolist_st, word);
     } else if (nested == NESTED_DOPE) {
       word = 0;
-      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+      if (Target_Is_Little_Endian) {
         iolist_header_ptr = (iolist_header_type *)&word;
         iolist_header_ptr->version = 1;
         iolist_header_ptr->icount = icount;
@@ -8117,7 +8117,7 @@ static void lower_cray_io_items ( WN * block, WN * tree, INT32 kid_first,
 		       Be_Type_Tbl(MTYPE_U8), offset);
 
              word = 0;
-	     if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	     if (Target_Is_Little_Endian) {
                ioentry_header_ptr = (ioentry_header_type *)&word;
                ioentry_header_ptr->valtype = valtype;
                ioentry_header_ptr->ioentsize = ioentsize;
@@ -8177,7 +8177,7 @@ static void lower_cray_io_items ( WN * block, WN * tree, INT32 kid_first,
 		      Be_Type_Tbl (MTYPE_U8), offset);
 
              word = 0;
-	     if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	     if (Target_Is_Little_Endian) {
                ioentry_header_ptr = (ioentry_header_type *)&word;
                ioentry_header_ptr->valtype = valtype;
                ioentry_header_ptr->ioentsize = ioentsize;
@@ -8228,7 +8228,7 @@ static void lower_cray_io_items ( WN * block, WN * tree, INT32 kid_first,
 		      Be_Type_Tbl (MTYPE_U8), offset);
 
              word = 0;
-	     if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	     if (Target_Is_Little_Endian) {
                ioentry_header_ptr = (ioentry_header_type *)&word;
                ioentry_header_ptr->valtype = valtype;
                ioentry_header_ptr->ioentsize = ioentsize;
@@ -8302,7 +8302,7 @@ static void lower_cray_io_items ( WN * block, WN * tree, INT32 kid_first,
 		      Be_Type_Tbl (MTYPE_U8), offset);
 	      
              word = 0;
-	     if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	     if (Target_Is_Little_Endian) {
                ioentry_header_ptr = (ioentry_header_type *)&word;
                ioentry_header_ptr->valtype = valtype;
                ioentry_header_ptr->ioentsize = ioentsize;
@@ -8327,7 +8327,7 @@ static void lower_cray_io_items ( WN * block, WN * tree, INT32 kid_first,
 		      Be_Type_Tbl (MTYPE_U8), offset);
 
              word = 0;
-	     if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	     if (Target_Is_Little_Endian) {
                ioarray_entry_ptr = (ioarray_entry_type *)&word;
                ioarray_entry_ptr->indflag = indflag;
                ioarray_entry_ptr->boundchk = bound_check;
@@ -8440,7 +8440,7 @@ static void lower_cray_io_items ( WN * block, WN * tree, INT32 kid_first,
              *word_count += ioentsize;
 
              word = 0;
-	     if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	     if (Target_Is_Little_Endian) {
                ioentry_header_ptr = (ioentry_header_type *)&word;
                ioentry_header_ptr->valtype = valtype;
                ioentry_header_ptr->ioentsize = ioentsize;
@@ -8461,7 +8461,7 @@ static void lower_cray_io_items ( WN * block, WN * tree, INT32 kid_first,
 
   if (needs_new_iolist_table) {
     word = 0;
-    if (Target_Byte_Sex == LITTLE_ENDIAN) {
+    if (Target_Is_Little_Endian) {
       iolist_header_ptr = (iolist_header_type *)&word;
       iolist_header_ptr->version = 1;
       iolist_header_ptr->iolfirst = (flflag == 2 || flflag == 3) ? 1 : 0;
@@ -8517,7 +8517,7 @@ static void lower_cray_io_items ( WN * block, WN * tree, INT32 kid_first,
 
   } else {
     word = 0;
-    if (Target_Byte_Sex == LITTLE_ENDIAN) {
+    if (Target_Is_Little_Endian) {
       iolist_header_ptr = (iolist_header_type *)&word;
       iolist_header_ptr->version = 1;
       iolist_header_ptr->iolfirst = 0;
@@ -9821,7 +9821,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
            cilist_st = Gen_Temp_Symbol(MTYPE_To_TY(MTYPE_U8), "inquire_arg1");
            ty = ST_type(cilist_st);
            word1 = 0;
-	   if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	   if (Target_Is_Little_Endian) {
              cilist_header_ptr = (cilist_header_type *)&word1;
              cilist_header_ptr->version = 1;
              cilist_header_ptr->stksize = stk_size;
@@ -9861,7 +9861,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
            }
 	   cilist_st = Get_IoStruct_ST ( block, FID_CRAY_CLIST, TRUE);
            word1 = 0;
-	   if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	   if (Target_Is_Little_Endian) {
               cilist_header_ptr = (cilist_header_type *)&word1;
               cilist_header_ptr->version = 1;
               cilist_header_ptr->uflag = unit_flag;
@@ -9926,7 +9926,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
            }
            cilist_st = Get_IoStruct_ST ( block, FID_CRAY_CLIST, TRUE);
            word1 = 0;
-	   if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	   if (Target_Is_Little_Endian) {
              cilist_header_ptr = (cilist_header_type *)&word1;
              cilist_header_ptr->version = 1;
              cilist_header_ptr->uflag = unit_flag;
@@ -9992,7 +9992,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
            }
            cilist_st = Get_IoStruct_ST ( block, FID_CRAY_CLIST, TRUE);
            word1 = 0;
-	   if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	   if (Target_Is_Little_Endian) {
              cilist_header_ptr = (cilist_header_type *)&word1;
              cilist_header_ptr->version = 1;
              cilist_header_ptr->uflag = unit_flag;
@@ -10057,7 +10057,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
            }
            cilist_st = Get_IoStruct_ST ( block, FID_CRAY_CLIST, TRUE);
            word1 = 0;
-	   if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	   if (Target_Is_Little_Endian) {
              cilist_header_ptr = (cilist_header_type *)&word1;
              cilist_header_ptr->version = 1;
              cilist_header_ptr->uflag = unit_flag;
@@ -10124,7 +10124,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
            }
            cilist_st = Get_IoStruct_ST ( block, FID_CRAY_CLIST, TRUE);
            word1 = 0;
-	   if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	   if (Target_Is_Little_Endian) {
              cilist_header_ptr = (cilist_header_type *)&word1;
              cilist_header_ptr->version = 1;
              cilist_header_ptr->uflag = unit_flag;
@@ -10221,7 +10221,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
            }
            cilist_st = Get_IoStruct_ST ( block, FID_CRAY_CLIST, TRUE);
            word1 = 0;
-	   if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	   if (Target_Is_Little_Endian) {
              cilist_header_ptr = (cilist_header_type *)&word1;
              cilist_header_ptr->version = 1;
              cilist_header_ptr->uflag = unit_flag;
@@ -10393,7 +10393,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 //			| ((end != (LABEL_IDX) 0) << 1)
 //			| ((iostat != NULL) << 3);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;
@@ -10505,7 +10505,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 //                      | ((end != (LABEL_IDX) 0) << 1)
 //                      | ((iostat != NULL) << 3);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;
@@ -10573,7 +10573,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 //                      | ((end != (LABEL_IDX) 0) << 1)
 //                      | ((iostat != NULL) << 3);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;
@@ -10629,7 +10629,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 			       err, end, (LABEL_IDX) 0, zero_escape_freq );
               cilist_st = Get_IoStruct_ST ( block, FID_CRAY_CLIST, TRUE);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;
@@ -10736,7 +10736,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 //			| ((end != (LABEL_IDX) 0) << 1)
 //			| ((iostat != NULL) << 3);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;
@@ -10821,7 +10821,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 //                      | ((end != (LABEL_IDX) 0) << 1)
 //                      | ((iostat != NULL) << 3);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;
@@ -10894,7 +10894,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 //                      | ((end != (LABEL_IDX) 0) << 1)
 //                      | ((iostat != NULL) << 3);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;
@@ -10962,7 +10962,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 //                      | ((end != (LABEL_IDX) 0) << 1)
 //                      | ((iostat != NULL) << 3);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;
@@ -11049,7 +11049,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 //                      | ((end != (LABEL_IDX) 0) << 1)
 //                      | ((iostat != NULL) << 3);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;
@@ -11116,7 +11116,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 //                      | ((end != (LABEL_IDX) 0) << 1)
 //                      | ((iostat != NULL) << 3);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;
@@ -11183,7 +11183,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 //                      | ((end != (LABEL_IDX) 0) << 1)
 //                      | ((iostat != NULL) << 3);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;
@@ -11240,7 +11240,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 			       err, end, (LABEL_IDX) 0, zero_escape_freq );
               cilist_st = Get_IoStruct_ST ( block, FID_CRAY_CLIST, TRUE);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;
@@ -11346,7 +11346,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 //                      | ((end != (LABEL_IDX) 0) << 1)
 //                      | ((iostat != NULL) << 3);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;
@@ -11429,7 +11429,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 //                      | ((end != (LABEL_IDX) 0) << 1)
 //                      | ((iostat != NULL) << 3);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;
@@ -11502,7 +11502,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 //                      | ((end != (LABEL_IDX) 0) << 1)
 //                      | ((iostat != NULL) << 3);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;
@@ -11570,7 +11570,7 @@ fprintf(stderr, "Processing I/O at line number %d\n", lineno);
 //                      | ((end != (LABEL_IDX) 0) << 1)
 //                      | ((iostat != NULL) << 3);
               word1 = 0;
-	      if (Target_Byte_Sex == LITTLE_ENDIAN) {
+	      if (Target_Is_Little_Endian) {
                 cilist_header_ptr = (cilist_header_type *)&word1;
                 cilist_header_ptr->version = 1;
                 cilist_header_ptr->uflag = unit_flag;

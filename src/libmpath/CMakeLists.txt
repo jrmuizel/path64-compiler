@@ -56,6 +56,7 @@ SET(PATHSCALE_MPATH_SRCS_X64
 				"amd/w_sinhf.c"
 				"amd/w_tanh.c"
 				"amd/w_tanhf.c"
+				"cis.c"
 				"cisf.c")
 
 SET(PATHSCALE_MPATH_S_SRCS_X64
@@ -113,7 +114,9 @@ path64_set_multitarget_property(mpath SOVERSION 1)
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
     path64_set_multitarget_property(mpath LINK_FLAGS
-            "-Wl,-x -Wl,--version-script=${libmpath_SOURCE_DIR}/libmpath.vs")
+            "-Wl,-x -Wl,--version-script=${libmpath_SOURCE_DIR}/libmpath.vs ${BOOTSTRAP_HACK}")
+else()
+    path64_set_multitarget_property(mpath LINK_FLAGS "${BOOTSTRAP_HACK}")
 endif()
 
 path64_multitarget_link_libraries(mpath m)

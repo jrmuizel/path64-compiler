@@ -61,10 +61,8 @@ if (options) {
 	if (firstchar == "-" || firstchar == "I")
 		printf "%s | ", $0 >> optfile;
 
-	# KEY:  Support double-quoting the option name.
-	else if (firstchar == "\"" &&
-		 lastchar == "\"" &&
-		 NF > 1) {		# number of fields
+	# Support double-quoting the option name.
+	else if (firstchar == "\"" && lastchar == "\"" && NF > 1) {
 		# Print out first record without double quotes.
 		printf "%s", substr($1, 2, length($1) - 2) >> optfile;
 

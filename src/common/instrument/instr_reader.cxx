@@ -565,7 +565,7 @@ Get_File_Header(FILE *fp, char *fname, Fb_Hdr *fb_hdr)
 {
   FSEEK(fp,0,SEEK_SET,ERR_POS,fname);
 
-  FREAD(fb_hdr, sizeof(Fb_Hdr), 1, fp,
+  CHECKED_FREAD(fb_hdr, sizeof(Fb_Hdr), 1, fp,
         "Error while writing to: %s", fname);
 }
 
@@ -578,7 +578,7 @@ Get_Pu_Hdr_Table(FILE *fp, char *fname, Fb_Hdr& fb_hdr,
 {
   FSEEK(fp,fb_hdr.fb_pu_hdr_offset,SEEK_SET, ERR_POS, fname);
 
-  FREAD(pu_hdr_table, sizeof(Pu_Hdr), fb_hdr.fb_pu_hdr_num, fp, ERR_READ,
+  CHECKED_FREAD(pu_hdr_table, sizeof(Pu_Hdr), fb_hdr.fb_pu_hdr_num, fp, ERR_READ,
 	fname);
 }
 
@@ -591,7 +591,7 @@ Get_Str_Table(FILE *fp, char *fname, Fb_Hdr& fb_hdr, char *str_table)
 {
   FSEEK(fp,fb_hdr.fb_str_table_offset, SEEK_SET, ERR_POS, fname);
 
-  FREAD(str_table, sizeof(char), fb_hdr.fb_str_table_size, fp, ERR_READ,
+  CHECKED_FREAD(str_table, sizeof(char), fb_hdr.fb_str_table_size, fp, ERR_READ,
         fname);
 }
 
@@ -611,7 +611,7 @@ read_invoke_profile(PU_PROFILE_HANDLE pu_handle, Pu_Hdr& pu_hdr_entry,
   
   FSEEK(fp, pu_ofst + pu_hdr_entry.pu_inv_offset, SEEK_SET, ERR_POS, fname);
  
-  FREAD (&(Inv_Table.front ()), sizeof(FB_Info_Invoke),
+  CHECKED_FREAD(&(Inv_Table.front ()), sizeof(FB_Info_Invoke),
 	 pu_hdr_entry.pu_num_inv_entries, fp, ERR_READ, fname);
 }
 
@@ -631,7 +631,7 @@ read_branch_profile(PU_PROFILE_HANDLE pu_handle, Pu_Hdr& pu_hdr_entry,
   
   FSEEK(fp, pu_ofst + pu_hdr_entry.pu_br_offset, SEEK_SET, ERR_POS, fname);
 
-  FREAD (&(Br_Table.front ()), sizeof(FB_Info_Branch),
+  CHECKED_FREAD(&(Br_Table.front ()), sizeof(FB_Info_Branch),
 	 pu_hdr_entry.pu_num_br_entries, fp, ERR_READ, fname);
 }
 
@@ -647,7 +647,7 @@ read_switch_profile(PU_PROFILE_HANDLE pu_handle, Pu_Hdr& pu_hdr_entry,
   FSEEK(fp, pu_ofst + pu_hdr_entry.pu_switch_target_offset, SEEK_SET,
 	ERR_POS, fname);
 
-  FREAD (&(targets_vector.front ()), sizeof(INT32),
+  CHECKED_FREAD(&(targets_vector.front ()), sizeof(INT32),
 	 pu_hdr_entry.pu_num_switch_entries, fp, ERR_READ, fname);
 
   FB_Switch_Vector& Switch_Table = pu_handle->Get_Switch_Table();
@@ -664,7 +664,7 @@ read_switch_profile(PU_PROFILE_HANDLE pu_handle, Pu_Hdr& pu_hdr_entry,
 
       first->freq_targets.resize (*target);
 
-      FREAD (&(first->freq_targets.front ()), sizeof(FB_FREQ), *target, fp,
+      CHECKED_FREAD(&(first->freq_targets.front ()), sizeof(FB_FREQ), *target, fp,
 	     ERR_READ, fname);  
 
       ++target;
@@ -683,7 +683,7 @@ read_cgoto_profile(PU_PROFILE_HANDLE pu_handle, Pu_Hdr& pu_hdr_entry,
   FSEEK(fp, pu_ofst + pu_hdr_entry.pu_cgoto_target_offset, SEEK_SET,
 	ERR_POS, fname);
   
-  FREAD (&(target_vectors.front ()), sizeof(INT32),
+  CHECKED_FREAD(&(target_vectors.front ()), sizeof(INT32),
 	 pu_hdr_entry.pu_num_cgoto_entries, fp, ERR_READ, fname);
 
   FB_Switch_Vector& Cgoto_Table = pu_handle->Get_Compgoto_Table();
@@ -700,7 +700,7 @@ read_cgoto_profile(PU_PROFILE_HANDLE pu_handle, Pu_Hdr& pu_hdr_entry,
 
       first->freq_targets.resize(*target);
 
-      FREAD (&(first->freq_targets.front ()), sizeof(FB_FREQ), *target, fp,
+      CHECKED_FREAD(&(first->freq_targets.front ()), sizeof(FB_FREQ), *target, fp,
 	     ERR_READ, fname); 
       ++target;
   }
@@ -721,7 +721,7 @@ read_loop_profile(PU_PROFILE_HANDLE pu_handle, Pu_Hdr& pu_hdr_entry,
 
   FSEEK(fp, pu_ofst + pu_hdr_entry.pu_loop_offset, SEEK_SET, ERR_POS, fname);
  
-  FREAD (&(Loop_Table.front ()), sizeof (FB_Info_Loop),
+  CHECKED_FREAD(&(Loop_Table.front ()), sizeof (FB_Info_Loop),
 	 pu_hdr_entry.pu_num_loop_entries, fp, ERR_READ, fname);
 }
 
@@ -741,7 +741,7 @@ read_scircuit_profile(PU_PROFILE_HANDLE pu_handle, Pu_Hdr& pu_hdr_entry,
   FSEEK(fp, pu_ofst + pu_hdr_entry.pu_scircuit_offset, SEEK_SET, ERR_POS,
 	fname); 
  
-  FREAD (&(Scircuit_Table.front ()), sizeof(FB_Info_Circuit),
+  CHECKED_FREAD(&(Scircuit_Table.front ()), sizeof(FB_Info_Circuit),
 	 pu_hdr_entry.pu_num_scircuit_entries, fp, ERR_READ, fname);
 }
 
@@ -760,7 +760,7 @@ read_call_profile(PU_PROFILE_HANDLE pu_handle, Pu_Hdr& pu_hdr_entry,
 
   FSEEK(fp, pu_ofst + pu_hdr_entry.pu_call_offset, SEEK_SET, ERR_POS, fname);
  
-  FREAD (&(Call_Table.front ()), sizeof(FB_Info_Call),
+  CHECKED_FREAD(&(Call_Table.front ()), sizeof(FB_Info_Call),
 	 pu_hdr_entry.pu_num_call_entries, fp, ERR_READ, fname);
 }
 
@@ -780,7 +780,7 @@ read_icall_profile(PU_PROFILE_HANDLE pu_handle, Pu_Hdr& pu_hdr_entry,
 
   FSEEK(fp, pu_ofst + pu_hdr_entry.pu_icall_offset, SEEK_SET, ERR_POS, fname);
  
-  FREAD (&(Icall_Table.front ()), sizeof(FB_Info_Icall),
+  CHECKED_FREAD(&(Icall_Table.front ()), sizeof(FB_Info_Icall),
 	 pu_hdr_entry.pu_num_icall_entries, fp, ERR_READ, fname);
 }
 
@@ -799,7 +799,7 @@ void read_value_fp_bin_profile( PU_PROFILE_HANDLE pu_handle,
   FSEEK(fp, pu_ofst + pu_hdr_entry.pu_value_fp_bin_offset, 
 	SEEK_SET, ERR_POS, fname);
  
-  FREAD (&(Value_FP_Bin_Table.front ()), sizeof(FB_Info_Value_FP_Bin),
+  CHECKED_FREAD(&(Value_FP_Bin_Table.front ()), sizeof(FB_Info_Value_FP_Bin),
 	 pu_hdr_entry.pu_num_value_fp_bin_entries, fp, ERR_READ, fname);
 }
 
@@ -814,7 +814,7 @@ void read_value_profile( PU_PROFILE_HANDLE pu_handle, Pu_Hdr& pu_hdr_entry,
 
   FSEEK(fp, pu_ofst + pu_hdr_entry.pu_value_offset, SEEK_SET, ERR_POS, fname);
  
-  FREAD (&(Value_Table.front ()), sizeof(FB_Info_Value),
+  CHECKED_FREAD(&(Value_Table.front ()), sizeof(FB_Info_Value),
 	 pu_hdr_entry.pu_num_value_entries, fp, ERR_READ, fname);
 }
 #endif // KEY
@@ -834,7 +834,7 @@ read_edge_profile(PU_PROFILE_HANDLE pu_handle, Pu_Hdr& pu_hdr_entry,
   
   FSEEK(fp, pu_ofst + pu_hdr_entry.pu_edge_offset, SEEK_SET, ERR_POS, fname);
 
-  FREAD (&(Edge_Table.front ()), sizeof(FB_Info_Edge),
+  CHECKED_FREAD(&(Edge_Table.front ()), sizeof(FB_Info_Edge),
 	 pu_hdr_entry.pu_num_edge_entries, fp, ERR_READ, fname);
 }
 
@@ -852,7 +852,7 @@ read_value_profile(PU_PROFILE_HANDLE pu_handle, Pu_Hdr& pu_hdr_entry,
   
   FSEEK(fp, pu_ofst + pu_hdr_entry.pu_value_offset, SEEK_SET, ERR_POS, fname);
 
-  FREAD (&(tnv_table.front ()), sizeof(FB_Info_Value),
+  CHECKED_FREAD(&(tnv_table.front ()), sizeof(FB_Info_Value),
 	 pu_hdr_entry.pu_instr_count, fp, ERR_READ, fname);
 }
 #endif  // !KEY
@@ -870,7 +870,7 @@ read_stride_profile(PU_PROFILE_HANDLE pu_handle, Pu_Hdr& pu_hdr_entry,
   
   FSEEK(fp, pu_hdr_entry.pu_stride_offset, SEEK_SET, ERR_POS, fname);
 
-  FREAD (&(tnv_table.front ()), sizeof(FB_Info_Stride),
+  CHECKED_FREAD(&(tnv_table.front ()), sizeof(FB_Info_Stride),
 	 pu_hdr_entry.pu_ld_count, fp, ERR_READ, fname);
   }
 

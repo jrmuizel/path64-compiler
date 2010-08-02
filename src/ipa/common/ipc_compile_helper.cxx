@@ -47,6 +47,7 @@
 
 #include <fcntl.h>
 #include <libgen.h>
+#include <sys/stat.h>
 
 #include "defs.h"
 #include "ipc_defs.h"

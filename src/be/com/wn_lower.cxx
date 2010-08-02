@@ -6429,7 +6429,7 @@ lower_load_bits (WN* block, WN* wn, LOWER_ACTIONS actions)
   WN* tree = wn;
 
   INT bit_size = WN_bit_size (wn);
-  INT bit_ofst = Target_Byte_Sex == BIG_ENDIAN ?
+  INT bit_ofst = !Target_Is_Little_Endian ?
     WN_bit_offset (wn) :
     MTYPE_bit_size(desc) - bit_size - WN_bit_offset (wn);
   BOOL bits_signed = MTYPE_signed(rtype);
@@ -6530,7 +6530,7 @@ lower_store_bits (WN* block, WN* wn, LOWER_ACTIONS actions)
   
   TYPE_ID cmp_type = WN_rtype (orig_value);
   
-  INT shift = Target_Byte_Sex == BIG_ENDIAN ?
+  INT shift = !Target_Is_Little_Endian ?
       MTYPE_bit_size (WN_desc (wn)) - bit_ofst - bit_size :
       bit_ofst;
 #ifdef TARG_ST
@@ -12853,7 +12853,7 @@ static void lower_mload_actual (WN *block,
 
 	  lower_copy_maps(mload, load, actions);
 
-	  if (Target_Byte_Sex == BIG_ENDIAN) {
+	  if (!Target_Is_Little_Endian) {
 	    shiftn = MTYPE_size_reg(type) - MTYPE_size_reg(quantum);
   
 	    load = WN_Shl(type, load, WN_Intconst(type, shiftn));
@@ -12949,7 +12949,7 @@ static void lower_mload_formal(WN *block, WN *mload, PLOC ploc,
 
           shiftn = MTYPE_size_reg(type) - MTYPE_size_reg(quantum);
 
-	  if (Target_Byte_Sex == BIG_ENDIAN) {
+	  if (!Target_Is_Little_Endian) {
 	   /*
 	    *  fix (kludge) for kernel bug pv 369702
 	    *  Since U4 and I4 are both sign extended we could use

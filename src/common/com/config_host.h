@@ -63,17 +63,6 @@ extern "C" {
 static char *config_host_rcs_id = "$Source$ $Revision$";
 #endif /* _KEEP_RCS_ID */
 
-/* What is the byte sex of the host?  Note that the variable
- * Host_Byte_Sex is set based on this definition in config_host.c.
- */
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun))
-#define HOST_IS_BIG_ENDIAN	1
-#define HOST_IS_LITTLE_ENDIAN	0
-#else
-#define HOST_IS_BIG_ENDIAN	0
-#define HOST_IS_LITTLE_ENDIAN	1
-#endif
-
 /* Does the host (compiler) support quad-precision floating point? */
 #if !defined(HOST_SUPPORTS_QUAD_FLOAT)
 #if defined(_COMPILER_VERSION) && (_COMPILER_VERSION >= 400) && _SGIAPI || (defined(__GNUC__) && defined(TARG_MIPS))

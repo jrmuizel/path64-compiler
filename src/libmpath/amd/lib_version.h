@@ -12,6 +12,11 @@
 #define PATH64_LIB_VERSION_SVID (_LIB_VERSION == _SVID_)
 #define PATH64_LIB_VERSION_POSIX (_LIB_VERSION == _POSIX_)
 
+#elif defined(__NetBSD__)
+
+#define PATH64_LIB_VERSION_SVID 0
+#define PATH64_LIB_VERSION_POSIX 1
+
 #elif defined(__sun)
 
 #define PATH64_LIB_VERSION_SVID 0

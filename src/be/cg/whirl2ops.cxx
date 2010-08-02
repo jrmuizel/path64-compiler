@@ -2098,7 +2098,7 @@ Handle_LDID (WN *ldid,
     {
       opcode =	OPC_U4U4LDID;
       WN_set_opcode(ldid, opcode);
-      if (Target_Byte_Sex == BIG_ENDIAN) {
+      if (!Target_Is_Little_Endian) {
       	WN_offset(ldid) += 4;	// get low-order word
       }
     }
@@ -2106,7 +2106,7 @@ Handle_LDID (WN *ldid,
     {
       opcode = OPC_I4I4LDID;
       WN_set_opcode(ldid, opcode);
-      if (Target_Byte_Sex == BIG_ENDIAN) {
+      if (!Target_Is_Little_Endian) {
       	WN_offset(ldid) += 4;	// get low-order word
       }
     }
@@ -2463,7 +2463,7 @@ Handle_ILOAD (WN *iload, TN *result, OPCODE opcode)
   {
     opcode = OPC_U4U4ILOAD;
     WN_set_opcode(iload, opcode);
-    if (Target_Byte_Sex == BIG_ENDIAN) {
+    if (!Target_Is_Little_Endian) {
 	WN_offset(iload) += 4;	// get low-order word
     }
   }
@@ -2471,7 +2471,7 @@ Handle_ILOAD (WN *iload, TN *result, OPCODE opcode)
   {
     opcode =	OPC_I4I4ILOAD;
     WN_set_opcode(iload, opcode);
-    if (Target_Byte_Sex == BIG_ENDIAN) {
+    if (!Target_Is_Little_Endian) {
 	WN_offset(iload) += 4;	// get low-order word
     }
   }
@@ -3882,6 +3882,14 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
 #endif
       *kidno = 1;
       return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid1 (expr))), 4);
+    case INTRN_PEXTRW64:
+    case INTRN_PEXTRW128:
+      *kidno = 1;
+      return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid1 (expr))), 1);
+    case INTRN_PINSRW64:
+    case INTRN_PINSRW128:
+      *kidno = 2;
+      return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 1);
 
     default:
       return NULL;

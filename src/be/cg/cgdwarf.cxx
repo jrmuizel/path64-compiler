@@ -4095,7 +4095,7 @@ virtual_section_position::vsp_print_bytes(
       for (j = 0; j < bytes_per_word_line; j += 4) {
         UINT32 val = 0;
 
-        if (Target_Byte_Sex == BIG_ENDIAN) {
+        if (!Target_Is_Little_Endian) {
           int k;
           for (k = 3*CHAR_BIT; k >= 0; k-=CHAR_BIT) {
             val |= vsp_get_bytes(cur_byte,1) << k;

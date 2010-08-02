@@ -590,9 +590,8 @@ void
 Configure_Target ( void )
 {
 
-  Target_Byte_Sex = LITTLE_ENDIAN;
-  Same_Byte_Sex = ( Target_Byte_Sex == Host_Byte_Sex );
-	  Gen_PIC_Calls = FALSE;
+  Target_Is_Little_Endian = true;
+  Gen_PIC_Calls = FALSE;
   GP_Is_Preserved = FALSE;
 
   /* Set up the target processor and ISA: */
@@ -714,7 +713,7 @@ IPA_Configure_Target (void)
     Boolean_type  = MTYPE_I4;
     Boolean_type2 = MTYPE_I4;
 
-    Target_Byte_Sex = LITTLE_ENDIAN;
+    Target_Is_Little_Endian = true;
 
 } /* IPA_Configure_Target */
 

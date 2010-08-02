@@ -29,7 +29,7 @@
 /* #undef HAVE_CATGETS */
 
 /* Define if you have the gettext function. */
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__NetBSD__)
 #undef HAVE_GETTEXT
 #else /* defined(BUILD_OS_DARWIN) */
 #define HAVE_GETTEXT 1

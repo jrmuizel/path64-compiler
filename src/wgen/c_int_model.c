@@ -53,7 +53,7 @@ c_int_model.c -- c data type models
 #ifdef TARG_MIPS 
 // #include "gnu_config.h"
 extern BOOL TARGET_64BIT;           /* from main.c */
-#include "config.h"	/* for Target_Byte_Sex */
+#include "config.h"	/* for Target_Is_Little_Endian */
 #endif
 
 TARGET_INT_MODEL Target_Int_Model = TARGET_INT_ILP32;
@@ -134,9 +134,9 @@ void Initialize_C_Int_Model( void ) {
   if (TARGET_64BIT)
     Target_Int_Model = TARGET_INT_LP64;
   //  if (TARGET_BIG_ENDIAN)
-  //    Target_Byte_Sex = BIG_ENDIAN;
-  //  else Target_Byte_Sex = LITTLE_ENDIAN;
-  Target_Byte_Sex = LITTLE_ENDIAN;
+  //    Target_Is_Little_Endian = false;
+  //  else Target_Is_Little_Endian = true;
+  Target_Is_Little_Endian = true;
 #endif
 }
    

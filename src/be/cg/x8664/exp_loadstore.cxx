@@ -1282,7 +1282,7 @@ void Exp_Extract_Bits (TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_si
 		       TN *tgt_tn, TN *src_tn, OPS *ops)
 {
   TN *tmp1_tn = Build_TN_Like (tgt_tn);
-  UINT pos = (Target_Byte_Sex == BIG_ENDIAN || CG_emit_non_gas_syntax)
+  UINT pos = (!Target_Is_Little_Endian || CG_emit_non_gas_syntax)
 	     ? MTYPE_bit_size(desc)-bit_offset-bit_size : bit_offset;
   if (pos == 0 && bit_size <= 16 && ! MTYPE_signed(rtype)) {
 
@@ -1327,7 +1327,7 @@ void Exp_Set_Bits(TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_size,
   if (!bit_size) return;
 
   UINT targ_bit_offset = bit_offset;
-  if (Target_Byte_Sex == BIG_ENDIAN) {
+  if (!Target_Is_Little_Endian) {
     targ_bit_offset = MTYPE_bit_size(desc) - bit_offset - bit_size;
   }
 
@@ -1360,7 +1360,7 @@ void Exp_Deposit_Bits2(TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_si
   if (!bit_size) return;
 
   UINT targ_bit_offset = bit_offset;
-  if (Target_Byte_Sex == BIG_ENDIAN) {
+  if (!Target_Is_Little_Endian) {
     targ_bit_offset = MTYPE_bit_size(desc) - bit_offset - bit_size;
   }
 
@@ -1417,7 +1417,7 @@ void Exp_Deposit_Bits (TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_si
   if (!bit_size) return;
 
   UINT targ_bit_offset = bit_offset;
-  if (Target_Byte_Sex == BIG_ENDIAN) {
+  if (!Target_Is_Little_Endian) {
     targ_bit_offset = MTYPE_bit_size(desc) - bit_offset - bit_size;
   }
   TN *tmp1_tn = Build_TN_Like(tgt_tn);

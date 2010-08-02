@@ -72,10 +72,14 @@
 #include "em_elf.h"
 #include "targ_em_elf.h"
 
-#if defined(__FreeBSD__) || defined(__sun)
-/* from mips.h */
+#ifndef SHF_MIPS_NOSTRIP
 #define SHF_MIPS_NOSTRIP	0x08000000
+#endif
+#ifndef EF_MIPS_XGOT
 #define EF_MIPS_XGOT		0x00000008
+#endif
+#ifndef SHF_MERGE
+#define SHF_MERGE	     (1 << 4)	/* Might be merged */
 #endif
 
 

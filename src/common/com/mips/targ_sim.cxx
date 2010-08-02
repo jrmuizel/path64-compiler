@@ -546,7 +546,7 @@ Get_Parameter_Location (TY_IDX ty, BOOL is_output)
     case MTYPE_I4:
     case MTYPE_U4:
     case MTYPE_A4:
-      if (Target_Byte_Sex == BIG_ENDIAN) {
+      if (!Target_Is_Little_Endian) {
 	/* want to right-justify the object */
 	ploc.start_offset += (MTYPE_RegisterSize(SIM_INFO.int_type) -
 			      ploc.size);

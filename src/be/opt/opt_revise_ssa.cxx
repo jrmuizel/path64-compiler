@@ -1083,7 +1083,7 @@ OPT_REVISE_SSA::Form_extract(CODEREP *cr)
       return Create_EXTRACT_BITS(cr->Bit_offset(), cr->Bit_size(), x, cr->Dtyp());
 #else
       INT32 adjust = 0;
-      if (Target_Byte_Sex == BIG_ENDIAN)
+      if (!Target_Is_Little_Endian)
         adjust = MTYPE_bit_size(cr->Dtyp()) - MTYPE_bit_size(x->Dsctyp());
       return Create_EXTRACT_BITS(cr->Bit_offset()+adjust, cr->Bit_size(), x, 
 	      			 cr->Dtyp());
@@ -1169,7 +1169,7 @@ OPT_REVISE_SSA::Form_extract(CODEREP *cr)
 #else
     {
       INT32 adjust = 0;
-      if (Target_Byte_Sex == BIG_ENDIAN)
+      if (!Target_Is_Little_Endian)
         adjust = MTYPE_bit_size(cr->Dtyp()) - MTYPE_bit_size(x->Dsctyp());
       return Create_EXTRACT_BITS(cr->I_bit_offset()+adjust, cr->I_bit_size(), x,
 			         cr->Dtyp());
@@ -1301,7 +1301,7 @@ OPT_REVISE_SSA::Form_extract_compose(void)
 	  v->Set_sign_extension_flag();
 #endif
 	  INT32 adjust = 0;
-	  if (Target_Byte_Sex == BIG_ENDIAN)
+	  if (!Target_Is_Little_Endian)
 	    adjust = MTYPE_bit_size(v->Dtyp()) - MTYPE_bit_size(v->Dsctyp());
 #if defined( KEY) && !defined(TARG_ST) // bug 9179
 	  if (opr == OPR_STID) {
@@ -1350,7 +1350,7 @@ OPT_REVISE_SSA::Form_extract_compose(void)
 	  stmt->Set_rhs(Create_COMPOSE_BITS(lhs->I_bit_offset(), lhs->I_bit_size(), v, rhs));
 #else
 	  INT32 adjust = 0;
-	  if (Target_Byte_Sex == BIG_ENDIAN)
+	  if (!Target_Is_Little_Endian)
 	    adjust = MTYPE_bit_size(v->Dtyp()) - MTYPE_bit_size(v->Dsctyp());
 	  stmt->Set_rhs(Create_COMPOSE_BITS(lhs->I_bit_offset()+adjust, lhs->I_bit_size(), v, rhs));
 #endif

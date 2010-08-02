@@ -138,11 +138,6 @@ path64_set_property_for_arch(mfef95-tmp ${host_arch} COMPILE_FLAGS
 
 
 add_custom_command(
-    OUTPUT ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
-    COMMAND ${CMAKE_COMMAND} -E create_symlink . ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
-)
-
-add_custom_command(
     OUTPUT ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
     COMMAND ${CMAKE_COMMAND} -E create_symlink mfef95-tmp ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
     DEPENDS ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95-tmp
@@ -192,8 +187,7 @@ path64_set_multiarch_property(mfef95 COMPILE_FLAGS
 # TODO : Fix the intrinsic_module_path since I know this isn't correct
 add_custom_target(
     switch_fc
-    DEPENDS ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
-            ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
+    DEPENDS ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
             ${Path64_BINARY_DIR}/bin/pathf90
     VERBATIM
     COMMAND printf "#!/bin/sh\\n${Path64_BINARY_DIR}/bin/pathf90 -Wf,-eQ -Wf,-intrinsic_module_gen -Wf,-intrinsic_module_path=. \"$\@\"\\n" > ${Path64_BINARY_DIR}/fc-wrap.sh

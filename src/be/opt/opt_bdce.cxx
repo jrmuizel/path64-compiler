@@ -556,7 +556,7 @@ BITWISE_DCE::Mark_tree_bits_live(CODEREP *cr, UINT64 live_bits,
 						   // significant bit live
       }
 #if defined( KEY) && !defined(TARG_ST)
-      if (Target_Byte_Sex == BIG_ENDIAN)
+      if (!Target_Is_Little_Endian)
         Mark_tree_bits_live(cr->Opnd(0), new_livebits << 
 	      (MTYPE_bit_size(dtyp) - cr->Op_bit_offset() - cr->Op_bit_size()),
 			    stmt_visit);
@@ -749,7 +749,7 @@ BITWISE_DCE::Mark_tree_bits_live(CODEREP *cr, UINT64 live_bits,
 
     case OPR_COMPOSE_BITS:
 #if defined( KEY) && !defined(TARG_ST)
-      if (Target_Byte_Sex == BIG_ENDIAN)
+      if (!Target_Is_Little_Endian)
         new_livebits = Livebits(cr) & 
 		~(Bitmask_of_size(cr->Op_bit_size()) << 
 	      (MTYPE_bit_size(dtyp) - cr->Op_bit_offset() - cr->Op_bit_size()));
@@ -759,7 +759,7 @@ BITWISE_DCE::Mark_tree_bits_live(CODEREP *cr, UINT64 live_bits,
 		~(Bitmask_of_size(cr->Op_bit_size()) << cr->Op_bit_offset());
       Mark_tree_bits_live(cr->Opnd(0), new_livebits, stmt_visit);
 #if defined( KEY) && !defined(TARG_ST)
-      if (Target_Byte_Sex == BIG_ENDIAN)
+      if (!Target_Is_Little_Endian)
         new_livebits = (Livebits(cr) >> (MTYPE_bit_size(dtyp) - cr->Op_bit_offset() - cr->Op_bit_size())) & 
 		       Bitmask_of_size(cr->Op_bit_size());
       else

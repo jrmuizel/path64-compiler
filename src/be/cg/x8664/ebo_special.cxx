@@ -469,7 +469,7 @@ Expand_Extract_Bits (TYPE_ID rtype, TYPE_ID desc, UINT bit_offset,
   BOOL is_double = MTYPE_is_size_double(rtype);
   FmtAssert(MTYPE_bit_size(rtype) == MTYPE_bit_size(desc), 
 	    ("Expand_Extract_Bits: Handle this case (1)")); 
-  UINT pos = (Target_Byte_Sex != Host_Byte_Sex)
+  UINT pos = (Target_Is_Little_Endian != Host_Is_Little_Endian)
              ? MTYPE_bit_size(desc)-bit_offset-bit_size : bit_offset;
   if (pos == 0 && bit_size <= 16 && ! MTYPE_signed(rtype)) {
     Build_OP(is_double?TOP_andi64:TOP_andi32, tgt_tn, src_tn, 
