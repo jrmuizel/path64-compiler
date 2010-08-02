@@ -428,7 +428,7 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
         {
 	  Expand_Float_To_Int_Round (result, op1, rtype, desc, ops);
 	}
-#ifdef TASRG_ST
+#ifdef TARG_ST
 	else {
 	  Expand_Float_To_Unsigned_Round (result, op1, rtype, desc, ops);
 	}
