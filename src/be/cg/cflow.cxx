@@ -55,13 +55,12 @@
  * ====================================================================
  */
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
-#define __STDC_LIMIT_MACROS
 #include <stdint.h>
 
 #include "defs.h"

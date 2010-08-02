@@ -34,7 +34,7 @@ static const char source_file[] = __FILE__;
 static const char rcs_id[] = "$Source: /home/bos/bk/kpro64-pending/common/targ_info/access/SCCS/s.ti_init.c $ $Revision: 1.5 $";
 #endif /* _KEEP_RCS_ID */
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <string.h>

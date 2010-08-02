@@ -52,7 +52,7 @@
  */
 
 #include <math.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

@@ -121,11 +121,10 @@
 static const char source_file[] = __FILE__;
 #endif /* _KEEP_RCS_ID */
 
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <stdarg.h>
-#define __STDC_LIMIT_MACROS
 #include <stdint.h>
 
 #include "defs.h"

@@ -40,10 +40,9 @@
 #endif /* USE_PCH */
 #pragma hdrstop
 #include <stdio.h>
-#if !defined(__FreeBSD__)
+#if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
-#define __STDC_LIMIT_MACROS
 #include <stdint.h>
 
 #include <ext/hash_map>			// stl hash table
