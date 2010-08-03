@@ -1331,11 +1331,8 @@ static RAISE_FUNC raise_func[] = {
 //
 // ====================================================================
 
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 #include <stdlib.h>
-#else
-#include <malloc.h>
-#endif
+
 void
 EMITTER::Gen_wn(BB_NODE *first_bb, BB_NODE *last_bb)
 {
