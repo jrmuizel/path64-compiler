@@ -682,14 +682,16 @@ add_abi(string_list_t *args) {
 // Adds target specific linker args
 static void
 add_target_linker_args(string_list_t *args) {
-    // Adding path to dynamic linker for x86 linux platform
+    // Adding path to dynamic linker for x86 linux and netbsd platforms
 #ifdef TARG_X8664
     if(is_target_arch_X8664()) {
-#ifdef __linux__
+#ifdef defined(__linux__)
         char *dyn_link_opt = concat_strings("--dynamic-linker=",
                                             target_dynamic_linker());
         add_arg(args, dyn_link_opt);
         free(dyn_link_opt);
+#elif defined(__NetBSD__)
+        add_arg(args, "-dynamic-linker /libexec/ld.elf_so");
 #endif // __linux__
     }
 #endif // TARG_X8664
