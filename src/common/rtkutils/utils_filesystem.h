@@ -8,54 +8,25 @@
 #include "utils_hostdefs.h"
 #include "utils_memory.h"
 
-	#ifdef __linux
+#include <sys/types.h>
+#include <sys/stat.h>
 
-		#include <sys/types.h>
-		#include <sys/stat.h>
+typedef struct stat utilsFileStatus;
 
-		typedef struct stat utilsFileStatus;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-	#elif defined __sun
+extern int utilsGetFileSize( char * path );
+extern int utilsGetFileDate( char * path );
 
-		#include <sys/types.h>
-		#include <sys/stat.h>
+extern int utilsGetFileStatus( utilsFileStatus * status, char * path );
+extern int utilsGetFileStatusSize( utilsFileStatus * status );
+extern int utilsGetFileStatusDate( utilsFileStatus * status );
 
-		typedef struct stat utilsFileStatus;
-
-	#elif defined WIN32
-
-		#include <sys/types.h>
-		#include <sys/stat.h>
-
-		typedef struct stat utilsFileStatus;
-
-	#elif defined __CYGWIN32__
-
-		#include <sys/types.h>
-		#include <sys/stat.h>
-
-		typedef struct stat utilsFileStatus;
-
-	#else
-
-		#error Cannot guess OS...
-
-	#endif
-
-	#ifdef __cplusplus
-	extern "C" {
-	#endif
-
-		extern int utilsGetFileSize( char * path );
-		extern int utilsGetFileDate( char * path );
-
-		extern int utilsGetFileStatus( utilsFileStatus * status, char * path );
-		extern int utilsGetFileStatusSize( utilsFileStatus * status );
-		extern int utilsGetFileStatusDate( utilsFileStatus * status );
-
-	#ifdef __cplusplus
-	}
-	#endif
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
