@@ -10,28 +10,7 @@
 #include "utils_hostdefs.h"
 #include "utils_memory.h"
 
-#if defined( __linux )
-
-#include <sys/types.h>
-#include <sys/stat.h>
-
-typedef struct stat utilsPathStat;
-
-#elif defined( __sun )
-
-#include <sys/types.h>
-#include <sys/stat.h>
-
-typedef struct stat utilsPathStat;
-
-#elif defined( WIN32 )
-
-#include <sys/types.h>
-#include <sys/stat.h>
-
-typedef struct _stat utilsPathStat;
-
-#elif defined( __CYGWIN32__ )
+#if defined(WIN32) || defined(__CYGWIN32__)
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -40,7 +19,10 @@ typedef struct _stat utilsPathStat;
 
 #else
 
-#error "Cannot guess OS..."
+#include <sys/types.h>
+#include <sys/stat.h>
+
+typedef struct stat utilsPathStat;
 
 #endif
 
