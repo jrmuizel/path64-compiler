@@ -154,9 +154,9 @@ install(TARGETS ${exe_prefix}pathcc
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/bin/pathCC ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION} ${Path64_BINARY_DIR}/lib/be
     DEPENDS pathcc
-    COMMAND ln -s pathcc ${CMAKE_BINARY_DIR}/bin/pathCC
-    COMMAND ln -s . ${CMAKE_BINARY_DIR}/lib/${PSC_FULL_VERSION}
-    COMMAND ln -s ../bin/be ${CMAKE_BINARY_DIR}/lib/be
+    COMMAND ln -fs pathcc ${CMAKE_BINARY_DIR}/bin/pathCC
+    COMMAND ln -fs ${CMAKE_BINARY_DIR}/lib ${CMAKE_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+    COMMAND ln -fs ../bin/be ${CMAKE_BINARY_DIR}/lib/be
 )
 
 add_custom_target(
