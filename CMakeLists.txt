@@ -58,7 +58,7 @@ include(${Path64_SOURCE_DIR}/src/targets.cmake)
 # Which targets are we going to build.  Currently supported is x8664,mips
 # We may want to dodge multilib and just treat x86 as it's own target.
 # Then we could test is for the the native build environment is and make that the default
-set(PATH64_ENABLE_TARGETS "" CACHE STRING "Target archs (x8664_32;mips_64)")
+set(PATH64_ENABLE_TARGETS "" CACHE STRING "Target archs (x86_32;mips_64)")
 if(PATH64_ENABLE_TARGETS)
   set(_targets "")
   set(_sep "")
@@ -80,9 +80,9 @@ Please edit PATH64_ENABLE_TARGETS to list only valid architectures.
 else()
   message( FATAL_ERROR "Must specify at least one target architecture.
 ${_PATH64_SUPPORTED_TARGETS_STRING}
-Please add -DPATH64_ENABLE_TARGETS=x8664_64 to your cmake ../Path64 line
+Please add -DPATH64_ENABLE_TARGETS=x86_64 to your cmake ../Path64 line
 Multiple targets can be specified with
-  \"-DPATH64_ENABLE_TARGETS=x8664_32;mips_64\"
+  \"-DPATH64_ENABLE_TARGETS=x86_32;mips_64\"
 on the command line.")
 endif()
 

@@ -37,9 +37,9 @@ while [ $stage -lt $num_stages ]; do
                      -D PATH64_ENABLE_PSCRUNTIME=${PATH64_ENABLE_PSCRUNTIME} \
                      -D PATH64_BUILD_32=${PATH64_BUILD_32} \
                      -D CMAKE_SKIP_RPATH=${CMAKE_SKIP_RPATH} \
-                     -D PATH64_ENABLE_TARGETS=x8664_64 \
-                     -D PSC_CRT_PATH_x8664_64=${PSC_CRT_PATH_x8664_64} \
-                     -D PSC_DYNAMIC_LINKER_x8664_64=${PSC_DYNAMIC_LINKER_x8664_64} \
+                     -D PATH64_ENABLE_TARGETS=x86_64 \
+                     -D PSC_CRT_PATH_x86_64=${PSC_CRT_PATH_x86_64} \
+                     -D PSC_DYNAMIC_LINKER_x86_64=${PSC_DYNAMIC_LINKER_x86_64} \
                      -D CMAKE_SKIP_RPATH=ON \
                      -D CMAKE_C_COMPILER=$CC \
                      -D CMAKE_CXX_COMPILER=$CXX \
@@ -47,11 +47,11 @@ while [ $stage -lt $num_stages ]; do
                      -D CMAKE_C_FLAGS="$OPT" \
                      -D CMAKE_CXX_FLAGS="$OPT" \
                      -D CMAKE_Fortran_FLAGS="$OPT" \
-                     -D PSC_LIBSUPCPP_PATH_x8664_64=${PSC_LIBSUPCPP_PATH_x8664_64} \
-                     -D PSC_LIBSTDCPP_PATH_x8664_64=${PSC_LIBSTDCPP_PATH_x8664_64} \
-                     -D PSC_LIBGCC_PATH_x8664_64=${PSC_LIBGCC_PATH_x8664_64} \
-                     -D PSC_LIBGCC_EH_PATH_x8664_64=${PSC_LIBGCC_EH_PATH_x8664_64} \
-                     -D PSC_LIBGCC_S_PATH_x8664_64=${PSC_LIBGCC_S_PATH_x8664_64} \
+                     -D PSC_LIBSUPCPP_PATH_x86_64=${PSC_LIBSUPCPP_PATH_x86_64} \
+                     -D PSC_LIBSTDCPP_PATH_x86_64=${PSC_LIBSTDCPP_PATH_x86_64} \
+                     -D PSC_LIBGCC_PATH_x86_64=${PSC_LIBGCC_PATH_x86_64} \
+                     -D PSC_LIBGCC_EH_PATH_x86_64=${PSC_LIBGCC_EH_PATH_x86_64} \
+                     -D PSC_LIBGCC_S_PATH_x86_64=${PSC_LIBGCC_S_PATH_x86_64} \
                      $srcdir > cmake.out 2>&1
     ${CMAKE_MAKE_PROGRAM} -j20 VERBOSE=1 > make.out 2>&1
     if [ $? -ne 0 ]; then

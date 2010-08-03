@@ -76,7 +76,7 @@ IF(PATH64_ENABLE_MATHLIBS)
 
 set_source_files_properties(${PATHSCALE_MV_SRCS} PROPERTIES LANGUAGE C)
 path64_set_multitarget_sources(mv_sources COMMON ${PATHSCALE_MV_SRCS})
-path64_set_multitarget_sources(mv_sources x8664_64 ${PATHSCALE_MV_SRCS_X64})
+path64_set_multitarget_sources(mv_sources x86_64 ${PATHSCALE_MV_SRCS_X64})
 
 if(${CMAKE_C_COMPILER_ID} MATCHES "PathScale")
     set(BOOTSTRAP_HACK -fbootstrap-hack)

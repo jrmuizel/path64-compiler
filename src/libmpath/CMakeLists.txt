@@ -102,7 +102,7 @@ set_source_files_properties(${PATHSCALE_MPATH_S_SRCS_X64} PROPERTIES LANGUAGE C)
 
 path64_set_multitarget_sources(mpath_sources COMMON
                                ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
-path64_set_multitarget_sources(mpath_sources x8664_64
+path64_set_multitarget_sources(mpath_sources x86_64
                                ${PATHSCALE_MPATH_SRCS_X64} ${PATHSCALE_MPATH_S_SRCS_X64})
 
 path64_add_multitarget_library(mpath-static STATIC mpath_sources)

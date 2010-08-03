@@ -10,7 +10,7 @@ Dependencies:
     % cmake -DCMAKE_INSTALL_PREFIX=$INSTDIR $SOURCEDIR
 
    Possible options (incomplete list):
-      -DPATH64_ENABLE_TARGETS=<targets>  e.g. "x8664_64"
+      -DPATH64_ENABLE_TARGETS=<targets>  e.g. "x86_64"
       -DCMAKE_BUILD_TYPE=<Debug|Release>
       -DCMAKE_Fortran_COMPILER=<compiler>
       -DPATH64_ENABLE_MATHLIBS=<ON|OFF>
@@ -25,18 +25,18 @@ Dependencies:
       -DPSC_LIBGCC_EH_PATH_<target>=<path to libgcc_eh library>
       -DPSC_LIBGCC_S_PATH_<target>=<path to libgcc_s library>
 
-   Example for x8664_64 target:
+   Example for x86_64 target:
    cmake -DCMAKE_BUILD_TYPE=Debug \
-         -DPATH64_ENABLE_TARGETS="x8664_64" \
+         -DPATH64_ENABLE_TARGETS="x86_64" \
          -DPATH64_ENABLE_MATHLIBS=ON \
          -DPATH64_ENABLE_FORTRAN=ON \
-         -DPSC_CRT_PATH_x8664_64=/usr/lib64 \
-         -DPSC_DYNAMIC_LINKER_x8664_64=/lib/ld-linux-x86-64.so.2 \
-         -DPSC_LIBSUPCPP_PATH_x8664_64=/usr/lib/gcc/x86_64-linux-gnu/4.4 \
-         -DPSC_LIBSTDCPP_PATH_x8664_64=/usr/lib/gcc/x86_64-linux-gnu/4.4 \
-         -DPSC_LIBGCC_PATH_x8664_64=/usr/lib/gcc/x86_64-linux-gnu/4.4 \
-         -DPSC_LIBGCC_EH_PATH_x8664_64=/usr/lib/gcc/x86_64-linux-gnu/4.4 \
-         -DPSC_LIBGCC_S_PATH_x8664_64=/usr/lib/gcc/x86_64-linux-gnu/4.4 \
+         -DPSC_CRT_PATH_x86_64=/usr/lib64 \
+         -DPSC_DYNAMIC_LINKER_x86_64=/lib/ld-linux-x86-64.so.2 \
+         -DPSC_LIBSUPCPP_PATH_x86_64=/usr/lib/gcc/x86_64-linux-gnu/4.4 \
+         -DPSC_LIBSTDCPP_PATH_x86_64=/usr/lib/gcc/x86_64-linux-gnu/4.4 \
+         -DPSC_LIBGCC_PATH_x86_64=/usr/lib/gcc/x86_64-linux-gnu/4.4 \
+         -DPSC_LIBGCC_EH_PATH_x86_64=/usr/lib/gcc/x86_64-linux-gnu/4.4 \
+         -DPSC_LIBGCC_S_PATH_x86_64=/usr/lib/gcc/x86_64-linux-gnu/4.4 \
          <path_to_sources>
 
 3. Run make:

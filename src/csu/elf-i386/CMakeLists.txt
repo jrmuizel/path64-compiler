@@ -30,19 +30,19 @@ add_custom_command(
 	VERBATIM
 )
 
-add_custom_target(crtbegin-x8664_32 ALL
+add_custom_target(crtbegin-x86_32 ALL
     DEPENDS ${Path64_BINARY_DIR}/lib/x8664/32/crtbegin.o
 )
 
-add_custom_target(crtbeginS-x8664_32 ALL
+add_custom_target(crtbeginS-x86_32 ALL
     DEPENDS ${Path64_BINARY_DIR}/lib/x8664/32/crtbeginS.o
 )
 
-add_custom_target(crtend-x8664_32 ALL
+add_custom_target(crtend-x86_32 ALL
     DEPENDS ${Path64_BINARY_DIR}/lib/x8664/32/crtend.o
 )
 
-add_custom_target(crtendS-x8664_32 ALL
+add_custom_target(crtendS-x86_32 ALL
     DEPENDS ${Path64_BINARY_DIR}/lib/x8664/32/crtendS.o
 )
 
