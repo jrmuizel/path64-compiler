@@ -36,66 +36,20 @@
 *
 *----------------------------------------------------------------------------*/
 
+#include <stdint.h>
+
 #if defined __sun
-
 typedef signed char        sint_8;
-typedef unsigned char      uint_8;
-
-typedef short              sint_16;
-typedef unsigned short     uint_16;
-
-typedef int                sint_32;
-typedef unsigned int       uint_32;
-
-typedef long long          sint_64;
-typedef unsigned long long uint_64;
-
-#elif (defined __linux__)
-
-typedef signed char        sint_8;
-typedef unsigned char      uint_8;
-
-typedef short              sint_16;
-typedef unsigned short     uint_16;
-
-typedef int                sint_32;
-typedef unsigned int       uint_32;
-
-typedef long long          sint_64;
-typedef unsigned long long uint_64;
-
-#elif (defined __CYGWIN__)
-
-typedef signed char        sint_8;
-typedef unsigned char      uint_8;
-
-typedef short              sint_16;
-typedef unsigned short     uint_16;
-
-typedef int                sint_32;
-typedef unsigned int       uint_32;
-
-typedef long long          sint_64;
-typedef unsigned long long uint_64;
-
-#elif (defined WIN32)
-
-typedef signed char        sint_8;
-typedef unsigned char      uint_8;
-
-typedef short              sint_16;
-typedef unsigned short     uint_16;
-
-typedef int                sint_32;
-typedef unsigned int       uint_32;
-
-typedef __int64            sint_64;
-typedef unsigned __int64   uint_64;
-
 #else
-
-#error "Cannot guess OS"
-
+typedef int8_t             sint_8;
 #endif
+
+typedef uint8_t            uint_8;
+typedef int16_t            sint_16;
+typedef uint16_t           uint_16;
+typedef int32_t            sint_32;
+typedef uint32_t           uint_32;
+typedef int64_t            sint_64;
+typedef uint64_t           uint_64;
 
 #endif /* utils_types_h */
