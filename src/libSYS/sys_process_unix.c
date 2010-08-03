@@ -6,12 +6,14 @@
  */
 
 #if !defined(__MINGW32__)
+#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+#include <sys/resource.h>
 #include "sys_process.h"
 
 /*
