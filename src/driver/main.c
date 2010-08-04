@@ -779,6 +779,12 @@ static void set_executable_dir (void) {
     }
 #endif /* KEY Mac port */
     char *target_ppath = target_phase_path();
+
+    if(!is_directory(target_ppath)) {
+      internal_error("phase directory %s for target %s does not exist",
+                     target_ppath, current_target->targ_name);
+    }
+
     substitute_phase_dirs (LIBPATH, basedir, "/lib/" PSC_FULL_VERSION);
     substitute_phase_dirs (PHASEPATH, "", target_phase_path());
     substitute_phase_dirs ("/usr/include", basedir, "/include");
@@ -786,6 +792,11 @@ static void set_executable_dir (void) {
     return;
   }
 
+  internal_error("can not recognize driver location, "
+                 "please check installation consistency");
+
+#if 0
+  // TODO: check if this code still actual
   /* If installed in x/lib/gcc-lib/ */
   ldir = strstr (dir, "/lib/gcc-lib");
   if (ldir != 0) {
@@ -806,6 +817,7 @@ static void set_executable_dir (void) {
     }
     return;
   }
+#endif
 }
 
 static void
