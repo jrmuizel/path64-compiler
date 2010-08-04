@@ -154,8 +154,9 @@ install(TARGETS ${exe_prefix}pathcc
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/bin/pathCC ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION} ${Path64_BINARY_DIR}/lib/be
     DEPENDS pathcc
-    COMMAND ln -fs pathcc ${CMAKE_BINARY_DIR}/bin/pathCC
-    COMMAND ln -fs ${CMAKE_BINARY_DIR}/lib ${CMAKE_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+# Paths in symbolic links should be relative. Otherwise bootstrap will not work
+    COMMAND ${CMAKE_COMMAND} -E create_symlink pathcc ${CMAKE_BINARY_DIR}/bin/pathCC
+    COMMAND ${CMAKE_COMMAND} -E create_symlink . ${CMAKE_BINARY_DIR}/lib/${PSC_FULL_VERSION}
 )
 
 add_custom_target(
