@@ -156,12 +156,11 @@ add_custom_command(
     DEPENDS pathcc
     COMMAND ln -fs pathcc ${CMAKE_BINARY_DIR}/bin/pathCC
     COMMAND ln -fs ${CMAKE_BINARY_DIR}/lib ${CMAKE_BINARY_DIR}/lib/${PSC_FULL_VERSION}
-    COMMAND ln -fs ../bin/be ${CMAKE_BINARY_DIR}/lib/be
 )
 
 add_custom_target(
     stageit-driver ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/lib/be ${CMAKE_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+    DEPENDS ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/lib/${PSC_FULL_VERSION}
 )
 
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/bin/pathCC${CMAKE_EXECUTABLE_SUFFIX}\")")
