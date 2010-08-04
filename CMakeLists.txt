@@ -51,40 +51,9 @@ ELSE()
 ENDIF()
 
 #-----------------------------------------------------------------------------
-# Target architecture table.
+# Target architecture stuff.
 include(${Path64_SOURCE_DIR}/src/targets.cmake)
 
-# Define user option whether to build the profiling libraries
-# Which targets are we going to build.  Currently supported is x8664,mips
-# We may want to dodge multilib and just treat x86 as it's own target.
-# Then we could test is for the the native build environment is and make that the default
-set(PATH64_ENABLE_TARGETS "" CACHE STRING "Target archs (x86_32;mips_64)")
-if(PATH64_ENABLE_TARGETS)
-  set(_targets "")
-  set(_sep "")
-  foreach(arch ${PATH64_ENABLE_TARGETS})
-    # Look for a target table entry for this architectures.
-    if(NOT _PATH64_TARGET_ARCH_${arch})
-      message(FATAL_ERROR "'${arch}' is not among supported architectures.
-${_PATH64_SUPPORTED_TARGETS_STRING}
-Please edit PATH64_ENABLE_TARGETS to list only valid architectures.
-")
-    endif()
-    set(_targets "${_targets}${_sep}${arch}")
-    set(_sep ", ")
-  endforeach(arch)
-  # First list element is the default.
-  list(GET PATH64_ENABLE_TARGETS 0 PATH64_DEFAULT_TARGET)
-  message(STATUS
-    "Building support for targets ${_targets}.  Default is ${PATH64_DEFAULT_TARGET}.")
-else()
-  message( FATAL_ERROR "Must specify at least one target architecture.
-${_PATH64_SUPPORTED_TARGETS_STRING}
-Please add -DPATH64_ENABLE_TARGETS=x86_64 to your cmake ../Path64 line
-Multiple targets can be specified with
-  \"-DPATH64_ENABLE_TARGETS=x86_32;mips_64\"
-on the command line.")
-endif()
 
 # Define if we are doing a supported build
 OPTION(PATH64_ENABLE_SUPPORTED "Enabling supported build" OFF)

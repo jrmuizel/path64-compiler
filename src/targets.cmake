@@ -53,16 +53,47 @@ set(_PATH64_ARCH_FLAGS_rsk6 "-DTARG_RSK6")     # TODO: fix it
 set(_PATH64_ARCH_FLAGS_arm "-DTARG_ST -DTARG_ARM -DBE_EXPORTED= -DTARGINFO_EXPORTED= -DSUPPORTS_SELECT -DMUMBLE_ARM_BSP")     # TODO: fix it
 
 
+# Checking that target architectures are specified
+if(NOT PATH64_ENABLE_TARGETS)
+    message( FATAL_ERROR "Must specify at least one target architecture.
+${_PATH64_SUPPORTED_TARGETS_STRING}
+Please add -DPATH64_ENABLE_TARGETS=x86_64 to your cmake ../Path64 line
+Multiple targets can be specified with
+  \"-DPATH64_ENABLE_TARGETS=x86_32;mips_64\"
+on the command line.")
+endif()
+
+
 # Building list of enabled architectures
 set(PATH64_ENABLE_ARCHES)
+set(_targets "")
+set(_sep "")
+    
 foreach(targ ${PATH64_ENABLE_TARGETS})
     set(targ_arch ${_PATH64_TARGET_ARCH_${targ}})
+
+    if(NOT targ_arch)
+        message(FATAL_ERROR "'${targ}' is not among supported architectures.
+${_PATH64_SUPPORTED_TARGETS_STRING}
+Please edit PATH64_ENABLE_TARGETS to list only valid architectures.
+")
+    endif()
+
     list(FIND PATH64_ENABLE_ARCHES ${targ_arch} res)
     if(${res} EQUAL -1)
         list(APPEND PATH64_ENABLE_ARCHES ${targ_arch})
     endif()
+
+    set(_targets "${_targets}${_sep}${targ}")
+    set(_sep ", ")
 endforeach()
 
+
+# First list element is the default.
+# TODO: test for the the native build environment and make that the default target
+list(GET PATH64_ENABLE_TARGETS 0 PATH64_DEFAULT_TARGET)
+message(STATUS
+  "Building support for targets ${_targets}.  Default is ${PATH64_DEFAULT_TARGET}.")
 message(STATUS "PATH64_ENABLE_ARCHES: ${PATH64_ENABLE_ARCHES}")
 
 
