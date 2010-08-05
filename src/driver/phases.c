@@ -823,6 +823,10 @@ add_file_args (string_list_t *args, phases_t index)
 	case P_gcpp_plus:
 		if (show_but_not_run)
 			add_string(args, "-###");
+#ifdef PATH64_ENABLE_PSCRUNTIME
+		if (quiet_flag) 
+			add_string(args, "-quiet");
+#endif // PATH64_ENABLE_PSCRUNTIME
 #ifdef TARG_MIPS
         if (is_target_arch_MIPS())
             add_sysroot(args, index);
@@ -845,6 +849,7 @@ add_file_args (string_list_t *args, phases_t index)
 		  add_string(args, "-Os");
 		}
 		
+#ifndef PATH64_ENABLE_PSCRUNTIME
 		switch (source_lang) {
 		case L_as:
 			add_string(args, "-xassembler-with-cpp");
@@ -864,6 +869,7 @@ add_file_args (string_list_t *args, phases_t index)
 			  add_string(args, "-xc");
 			break;
 		}
+#endif // !PATH64_ENABLE_PSCRUNTIME
 
 #ifdef KEY
 		if (gnu_exceptions == FALSE &&		// bug 11732
@@ -882,6 +888,12 @@ add_file_args (string_list_t *args, phases_t index)
 		}
 #endif
 
+#ifdef PATH64_ENABLE_PSCRUNTIME
+		if (source_lang == L_CC) {
+			add_string(args, "-D_GNU_SOURCE");
+		}
+#endif // PATH64_ENABLE_PSCRUNTIME
+
 		if (!option_was_seen(O_nostdinc)) {
 			char *root = directory_path(get_executable_dir());
 #ifndef PATH64_ENABLE_PSCRUNTIME
@@ -899,6 +911,8 @@ add_file_args (string_list_t *args, phases_t index)
 			}
 			add_inc_path(args, "%s/include", root);
 #else
+			add_inc_path(args, "%s/lib/" PSC_FULL_VERSION "/include",
+				     root);
                         if (source_lang == L_CC && !option_was_seen(O_nostdinc__)) {
                                 add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stdcxx/ansi",
                                          root);
