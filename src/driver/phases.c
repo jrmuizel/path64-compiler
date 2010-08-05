@@ -1593,7 +1593,10 @@ add_file_args (string_list_t *args, phases_t index)
 		if (show_but_not_run)
 			add_string(args, "-###");
 		{
+
+#ifndef PATH64_ENABLE_PSCRUNTIME
 		  add_abi(args);
+#endif // !PATH64_ENABLE_PSCRUNTIME
 
 		  // Add input source to args.  Append .s to input source if
 		  // it doesn't already end in .s.
@@ -1610,7 +1613,7 @@ add_file_args (string_list_t *args, phases_t index)
 
 #ifdef PATH64_ENABLE_PSCRUNTIME
         add_string(args, "-f");
-        add_string(args, "elf64");
+        add_string(args, (abi == ABI_M64 || abi == ABI_64) ? "elf64" : "elf32");
         add_string(args, "-p");
         add_string(args, "gas");
 #else
