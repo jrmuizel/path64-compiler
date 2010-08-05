@@ -195,7 +195,7 @@ ENDIF()
 # Tell GCC_XML that we are providing gccxml_cc1plus for it.
 SET(GCCXML_NATIVE_CC1PLUS 1)
 
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/Modules/GCCVersion.cmake)
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/GCCVersion.cmake)
 
 
 # Place all targets near the top of the build tree by default.

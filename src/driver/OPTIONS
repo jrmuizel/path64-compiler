@@ -251,6 +251,8 @@ I-include=%D  ;		FTN     ffe,PFA     "-include=%D"
 -nostdlib	;	LINK	ld	self
 	"Do not use standard system startup files or libraries when linking"
 #ifdef PATH64_ENABLE_PSCRUNTIME
+-nostdlib++	;	LINK	ld	""
+	"Do not use standard C++ libraries when linking"
 -stdcxx_not_threadsafe      stdcxx_threadsafe=FALSE;         ALL     cpp     ""
         "Use faster apache stdcxx library ignoring thread safety"
 #endif

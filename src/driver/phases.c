@@ -899,7 +899,7 @@ add_file_args (string_list_t *args, phases_t index)
 			}
 			add_inc_path(args, "%s/include", root);
 #else
-                        if (source_lang == L_CC) {
+                        if (source_lang == L_CC && !option_was_seen(O_nostdinc__)) {
                                 add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stdcxx/ansi",
                                          root);
                                 add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stdcxx",
@@ -1904,7 +1904,24 @@ add_final_ld_args (string_list_t *args)
             return;
         }
 #ifdef PATH64_ENABLE_PSCRUNTIME
-        // TODO: link with psc runtime
+        if(source_lang == L_CC &&
+           !option_was_seen(O_nodefaultlibs) &&
+               !option_was_seen(O_nostdlib) &&
+           !option_was_seen(O_nostdlib__)) {
+        
+            // Apache STD library
+        	add_library(args, "stdcxx");
+        
+            // C++ support library
+            add_library(args, "cxxabi");
+        
+            // Exception support library
+        	add_library(args, "unwind");
+        
+            // unwind dependencies
+            add_library(args, "pthread");
+            add_library(args, "dl");
+        }
 #else
         if (option_was_seen(O_static) || option_was_seen(O__static)){
 	        if(ipa != TRUE){
