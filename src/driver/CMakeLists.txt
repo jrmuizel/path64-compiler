@@ -156,12 +156,11 @@ add_custom_command(
     DEPENDS pathcc
 # Paths in symbolic links should be relative. Otherwise bootstrap will not work
     COMMAND ${CMAKE_COMMAND} -E create_symlink pathcc ${CMAKE_BINARY_DIR}/bin/pathCC
-    COMMAND ${CMAKE_COMMAND} -E create_symlink . ${CMAKE_BINARY_DIR}/lib/${PSC_FULL_VERSION}
 )
 
 add_custom_target(
     stageit-driver ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+    DEPENDS ${CMAKE_BINARY_DIR}/bin/pathCC
 )
 
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/bin/pathCC${CMAKE_EXECUTABLE_SUFFIX}\")")
