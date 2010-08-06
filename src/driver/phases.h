@@ -118,9 +118,13 @@ extern char *dirname(char *const s);
 int quote_shell_arg (char *p, char *buf);
 
 #ifdef KEY
+#ifdef PATH64_ENABLE_PSCRUNTIME
+extern void init_frontend_phase_names();
+#else // !PATH64_ENABLE_PSCRUNTIME
 // Get the system GCC's major version number.
 extern int get_gcc_major_version(void);
 extern void init_frontend_phase_names(int, int);
+#endif // !PATH64_ENABLE_PSCRUNTIME
 #endif
 
 #define PASS1 0

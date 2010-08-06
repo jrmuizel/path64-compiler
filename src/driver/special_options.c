@@ -147,6 +147,7 @@ set_defaults (void)
 		toggle(&use_ftpp, 0);
 	}
 
+#ifndef PATH64_ENABLE_PSCRUNTIME
 	// Use the system's GCC version to select -gnu3/-gnu4 as the default.
 	// Bug 11426.
 	if (!is_toggled(gnu_major_version)) {
@@ -154,6 +155,7 @@ set_defaults (void)
         gnu_major_version = 4;
         gnu_minor_version = 2;
 	}
+#endif // !PATH64_ENABLE_PSCRUNTIME
 #endif
 }
 
@@ -266,8 +268,10 @@ add_special_options (void)
 	// Pass -fopenmp instead of -mp to GNU 4.2 or later C/C++ front-end.
 	// Bug 12824.
 	if (mpkind == NORMAL_MP &&
+#ifndef PATH64_ENABLE_PSCRUNTIME
 	    gnu_major_version == 4 &&
 	    gnu_minor_version >= 2 &&
+#endif // !PATH64_ENABLE_PSCRUNTIME
 	    (invoked_lang == L_cc ||
 	     invoked_lang == L_CC)) {
 	  set_option_unseen(O_mp);

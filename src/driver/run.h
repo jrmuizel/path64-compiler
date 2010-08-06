@@ -63,6 +63,10 @@ extern void catch_signals (void);
 extern void do_exit (int code)
      __attribute__ ((noreturn));
 
+
+#ifndef PATH64_ENABLE_PSCRUNTIME
 /* get gcc version string, e.g. "2.7.2".
  * put numeric result in passed param (int), if not null. */
 extern const char *get_gcc_version (int *, int);
+#endif // !PATH64_ENABLE_PSCRUNTIME
+

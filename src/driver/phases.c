@@ -282,7 +282,11 @@ copy_phase_options (string_list_t *phase_list, phases_t phase)
 			// option in the first place?)
 			//
 			// Pass -OPT: options to wgen for bug 10262.
-			if (gnu_major_version == 4 && !strcmp("-OPT:", get_option_name(iflag))) 
+			if (
+#ifndef PATH64_ENABLE_PSCRUNTIME
+			    gnu_major_version == 4 &&
+#endif // !PATH64_ENABLE_PSCRUNTIME
+                            !strcmp("-OPT:", get_option_name(iflag))) 
 			{
 			  if (phase == P_spin_cc1 ||
 			      phase == P_spin_cc1plus)
@@ -831,6 +835,7 @@ add_file_args (string_list_t *args, phases_t index)
         if (is_target_arch_MIPS())
             add_sysroot(args, index);
 #endif
+#ifndef PATH64_ENABLE_PSCRUNTIME
 #ifdef KEY
 #ifdef CROSS_COMPILATION
 		{
@@ -843,6 +848,7 @@ add_file_args (string_list_t *args, phases_t index)
 		}
 #endif
 #endif
+#endif // !PATH64_ENABLE_PSCRUNTIME
 		add_abi(args);
 
 		if( ospace == TRUE ){	// bug 4953
@@ -879,12 +885,16 @@ add_file_args (string_list_t *args, phases_t index)
 		}
 
 		if (mpkind == NORMAL_MP) { 
+#ifndef PATH64_ENABLE_PSCRUNTIME
 		  int v[4];
 		  get_gcc_version(v, 4);
 		  if (v[0] == 4 &&	// GCC 4.2 or greater.  Bug 14856.
 		      v[1] >= 2) {
+#endif // !PATH64_ENABLE_PSCRUNTIME
 		    add_string(args, "-fopenmp");
+#ifndef PATH64_ENABLE_PSCRUNTIME
 		  }
+#endif // !PATH64_ENABLE_PSCRUNTIME
 		}
 #endif
 
@@ -2127,7 +2137,9 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
     string_item_t *p;
     boolean add_huge_lib = FALSE;
     boolean do_link = FALSE;
+#ifndef PATH64_ENABLE_PSCRUNTIME
     boolean gcc_for_ld = FALSE;		/* never assume we use GCC to link, some may just call linker directly, especially bare board target */
+#endif // !PATH64_ENABLE_PSCRUNTIME
     char *phase_name = get_full_phase_name(phase);
 
     /* TODO: FIXME: Temp hack to replace gcc as a linker */
@@ -2138,6 +2150,7 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
 
     add_library(args, "c");
 
+#ifndef PATH64_ENABLE_PSCRUNTIME
     if (strcmp(phase_name + strlen(phase_name) - 3, "gcc") == 0 ||
     		strcmp(phase_name + strlen(phase_name) - 3, "g++") == 0) {
     	gcc_for_ld = TRUE;
@@ -2148,6 +2161,7 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
     		internal_error("driver have gcc\?\?/g++\?\? as linker status, please add code to handle gcc_for_ld");
     	}
     }
+#endif // !PATH64_ENABLE_PSCRUNTIME
 
     if (option_was_seen(O_pg) && !option_was_seen(O_nostdlib)) {
 	if (prof_lib_exists("c"))
@@ -2215,7 +2229,11 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
                 && (instrumentation_invoked != TRUE)) {
                 HUGEPAGE_DESC desc;
 
+#ifdef PATH64_ENABLE_PSCRUNTIME
+                add_after_string(args, p, concat_strings("-rpath=", dir));
+#else // !PATH64_ENABLE_PSCRUNTIME
                 add_after_string(args, p, concat_strings(gcc_for_ld ? "-Wl,-rpath," : "-rpath=", dir));
+#endif // !PATH64_ENABLE_PSCRUNTIME
 
                 for (desc = hugepage_desc; desc != NULL; desc = desc->next) {
                     if (desc->alloc == ALLOC_BDT && !do_link) {
@@ -2227,7 +2245,11 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
                             else if (desc->size == SIZE_1G)
                                 dir = concat_strings(dir, "/elf_1G.xBDT");
                                 
+#ifdef PATH64_ENABLE_PSCRUNTIME
+                            add_after_string(args, p, concat_strings("-T", dir));
+#else // !PATH64_ENABLE_PSCRUNTIME
                             add_after_string(args, p, concat_strings(gcc_for_ld ? "-Wl,-T" : "-T", dir));
+#endif // !PATH64_ENABLE_PSCRUNTIME
                             do_link = TRUE;
                             add_huge_lib = TRUE;
                         }
@@ -2237,7 +2259,11 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
                 }
 
                 if (add_huge_lib && option_was_seen(O_static))
+#ifdef PATH64_ENABLE_PSCRUNTIME
+                    add_after_string(args, p, "--undefined=setup_libhugetlbfs");
+#else // !PATH64_ENABLE_PSCRUNTIME
                     add_after_string(args, p, gcc_for_ld ? "-Wl,--undefined=setup_libhugetlbfs" : "--undefined=setup_libhugetlbfs");
+#endif // !PATH64_ENABLE_PSCRUNTIME
             }
 	}
     }
@@ -2421,8 +2447,13 @@ determine_phase_order (void)
 		link_phase = P_ld;
 
 #ifdef KEY
+#ifdef PATH64_ENABLE_PSCRUNTIME
+	phases_t c_fe = P_spin_cc1;
+	phases_t cplus_fe = P_spin_cc1plus;
+#else // !PATH64_ENABLE_PSCRUNTIME
 	phases_t c_fe = (gnu_major_version == 4) ? P_spin_cc1 : P_c_gfe;
 	phases_t cplus_fe = (gnu_major_version == 4) ? P_spin_cc1plus : P_cplus_gfe;
+#endif // !PATH64_ENABLE_PSCRUNTIME
 #else
 	phases_t c_fe = P_c_gfe;
 	phases_t cplus_fe = P_cplus_gfe;
@@ -2890,22 +2921,30 @@ init_phase_info (void)
 
 // Change the front-end names to reflect the GNU version.
 void
-init_frontend_phase_names (int gnu_major_version, int gnu_minor_version)
+init_frontend_phase_names (
+#ifndef PATH64_ENABLE_PSCRUNTIME
+                           int gnu_major_version, int gnu_minor_version
+#endif // !PATH64_ENABLE_PSCRUNTIME
+                          )
 {
+#ifndef PATH64_ENABLE_PSCRUNTIME
   // Select the appropriate GNU 4 front-end.
   if (gnu_major_version == 4) {
     switch (gnu_minor_version) {
       case 0:	// Default is 4.0.
         break;
       case 2:
+#endif // !PATH64_ENABLE_PSCRUNTIME
 	set_phase_name(P_spin_cc1, "cc142");
 	set_phase_name(P_spin_cc1plus, "cc1plus42");
 	set_phase_name(P_wgen, "wgen42");
+#ifndef PATH64_ENABLE_PSCRUNTIME
 	break;
       default:
         error("no support for GNU 4.%d front-end", gnu_minor_version);
     }
   }
+#endif // !PATH64_ENABLE_PSCRUNTIME
 }
 
 void
@@ -3858,6 +3897,7 @@ set_stack_size()
 }
 
 
+#ifndef PATH64_ENABLE_PSCRUNTIME
 // Get the system GCC's major version number.
 int
 get_gcc_major_version()
@@ -3866,4 +3906,5 @@ get_gcc_major_version()
   get_gcc_version(v, 4);
   return v[0];
 }
+#endif // !PATH64_ENABLE_PSCRUNTIME
 #endif

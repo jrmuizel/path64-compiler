@@ -505,7 +505,9 @@ main (int argc, char *argv[])
 #ifdef KEY
 	// Perform GNU4-related checks after set_defaults has run, since
 	// set_defaults can change the gnu version.  Bug 10250.
+#ifndef PATH64_ENABLE_PSCRUNTIME
 	if (gnu_major_version == 4) {
+#endif // !PATH64_ENABLE_PSCRUNTIME
 	  if (option_was_seen(O_fwritable_strings) ||
 	      option_was_seen(O_fno_writable_strings)) {
 	    warning("ignored -fwritable-strings/-fno-writable-strings because"
@@ -513,6 +515,13 @@ main (int argc, char *argv[])
 	    set_option_unseen(O_fwritable_strings);
 	    set_option_unseen(O_fno_writable_strings);
 	  }
+#ifdef PATH64_ENABLE_PSCRUNTIME
+          if (option_was_seen(O_mp) &&
+                   !option_was_seen(O_fno_cxx_openmp)) {
+            add_option_seen(O_fcxx_openmp);
+            toggle(&fcxx_openmp,1);
+          }
+#else // !PATH64_ENABLE_PSCRUNTIME
 	  if ((source_lang == L_cc ||
 	       source_lang == L_CC) &&
 	      option_was_seen(O_mp) &&	// bug 11896
@@ -526,6 +535,8 @@ main (int argc, char *argv[])
 	    add_option_seen(O_fcxx_openmp);
 	    toggle(&fcxx_openmp,1);
 	  }
+#endif // !PATH64_ENABLE_PSCRUNTIME
+#ifndef PATH64_ENABLE_PSCRUNTIME
 	} else {	// not GNU 4
 	  if (option_was_seen(O_fgnu_exceptions) ||	// bug 11732
 	      option_was_seen(O_fno_gnu_exceptions)) {
@@ -536,9 +547,14 @@ main (int argc, char *argv[])
 	    gnu_exceptions = UNDEFINED;
 	  }
 	}
+#endif // !PATH64_ENABLE_PSCRUNTIME
 
 	// Select the appropriate GNU version front-end.
+#ifdef PATH64_ENABLE_PSCRUNTIME
+	init_frontend_phase_names();
+#else // !PATH64_ENABLE_PSCRUNTIME
 	init_frontend_phase_names(gnu_major_version, gnu_minor_version);
+#endif // !PATH64_ENABLE_PSCRUNTIME
 #endif
 
 	// Display version after running set_defaults, which can change
@@ -1150,6 +1166,7 @@ print_defaults(int argc, char *argv[])
   }
 #endif
 
+#ifndef PATH64_ENABLE_PSCRUNTIME
   // -gnu3/-gnu4
   if ((invoked_lang == L_cc ||
        invoked_lang == L_CC) &&
@@ -1162,6 +1179,7 @@ print_defaults(int argc, char *argv[])
       internal_error("print_defaults: unknown GCC version %d\n", gcc_version);
     }
   }
+#endif // PATH64_ENABLE_PSCRUNTIME
 
   fprintf(stderr, "\n");
 
@@ -1393,6 +1411,8 @@ append_psc_env_flags (int *argc, char *(*argv[]), char *env_var)
   unsetenv (env_var);
 }
 
+#ifndef PATH64_ENABLE_PSCRUNTIME
+
 static FILE *
 read_gcc_output(char *cmdline)
 {
@@ -1422,6 +1442,8 @@ bail:
 	return fp;
 }
 
+#endif // !PATH64_ENABLE_PSCRUNTIME
+
 /* Print the installation path and the paths searched for binaries and
  * libraries. Portions of this code are cribbed from
  * set_library_paths() in phases.c. */
@@ -1432,10 +1454,12 @@ print_search_path ()
 	string_list_t *libdirs = init_string_list();
 	
 	char *root_prefix = directory_path(get_executable_dir());
-	char *our_path;
+	char *lib_path;
 	FILE *fp;
 	string_item_t *p;
+#ifndef PATH64_ENABLE_PSCRUNTIME
 	char *gcc_lib_ptr;
+#endif // !PATH64_ENABLE_PSCRUNTIME
 	int buflen;
 	
 #ifdef KEY /* Mac port */
@@ -1445,17 +1469,11 @@ print_search_path ()
 #endif /* KEY Mac port */
 	printf ("programs: %s:%s\n", exe_dir, get_phase_dir (P_be));
 	
-	if (abi == ABI_N32) {
-		asprintf(&our_path, "%s/lib/" PSC_FULL_VERSION "/32",
-			 root_prefix);
-	} else {
-		asprintf(&our_path, "%s/lib/" PSC_FULL_VERSION, root_prefix);
-	}
-	
 	/* Add our libraries */
-	add_string(libdirs, our_path);
+        lib_path = target_library_path();
+        add_string(libdirs, lib_path);
 
-	if (abi == ABI_N32) {
+	if (abi == ABI_N32 || abi == ABI_M32) {
 		add_string(libdirs, ":/lib");
 		add_string(libdirs, ":/usr/lib");
 	} else {
@@ -1463,6 +1481,7 @@ print_search_path ()
 		add_string(libdirs, ":/usr/lib64");
 	}
 	
+#ifndef PATH64_ENABLE_PSCRUNTIME
 	if ((fp = read_gcc_output ("-print-search-dirs"))) {
 		char buf[BUFSIZ];
 		while (fgets (buf, BUFSIZ, fp) != NULL) {
@@ -1478,6 +1497,7 @@ print_search_path ()
 		}
 		pclose (fp);
 	}
+#endif // !PATH64_ENABLE_PSCRUNTIME
 
 	fputs ("libraries: ", stdout);
 	for (p = libdirs->head; p != NULL; p = p->next) {
@@ -1485,9 +1505,10 @@ print_search_path ()
 	}
 	putc('\n', stdout);
 
-	free (our_path);
+	free (lib_path);
 }
 
+#ifndef PATH64_ENABLE_PSCRUNTIME
 
 const char *
 get_gcc_version(int *v, int nv)
@@ -1529,11 +1550,16 @@ get_gcc_version(int *v, int nv)
 	return version;
 }
 
+#endif // !PATH64_ENABLE_PSCRUNTIME
+
 static void
 display_version(boolean dump_version_only)
 {
   char *psc_gcc_version;
 
+#ifdef PATH64_ENABLE_PSCRUNTIME
+  psc_gcc_version = PSC_GCC42_VERSION;
+#else // !PATH64_ENABLE_PSCRUNTIME
   if (gnu_major_version == 3)
     psc_gcc_version = PSC_GCC_VERSION;
   else if (gnu_major_version == 4) {
@@ -1547,6 +1573,7 @@ display_version(boolean dump_version_only)
   } else
     internal_error("display_version: unexpected GCC version %d\n",
 		   gnu_major_version);
+#endif // !PATH64_ENABLE_PSCRUNTIME
 
   if (dump_version_only == TRUE) {
     if (option_was_seen(O_compat_gcc))
