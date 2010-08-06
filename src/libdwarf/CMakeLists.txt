@@ -62,7 +62,7 @@ SET_SOURCE_FILES_PROPERTIES(dwarfdump/print_die.c
                             PROPERTIES OBJECT_DEPENDS "${DWARF_DEPS}")
 
 
-ADD_LIBRARY(dwarf
+path64_set_multiarch_sources(dwarf_sources COMMON
             dwarfdump/dwarfdump.c
             dwarfdump/makename.c
             dwarfdump/tag_attr.c
@@ -119,5 +119,6 @@ ADD_LIBRARY(dwarf
             dwf_section.c
             ${CMAKE_CURRENT_BINARY_DIR}/dwarf_names.c
             )
+path64_add_multiarch_library(dwarf STATIC dwarf_sources)
 
 

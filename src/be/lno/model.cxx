@@ -351,6 +351,9 @@ static const char *rcs_id = "$Source: ../../be/lno/SCCS/s.model.cxx $ $Revision:
 #include "config_lno.h"
 #include "config_opt.h"
 #include "tlog.h"
+#ifdef TARG_ST
+#include "erbe.h"
+#endif
 #include "lno_trace.h"
 
 typedef HASH_TABLE<WN*,INT> WN2INT;
@@ -368,7 +371,7 @@ typedef HASH_TABLE<WN*,INT> WN2INT;
 #define Reserved_Int_Regs	3	// $sp, $bp, fudge(1)
 #endif
 
-#define MTYPE_is_double(m)	(MTYPE_size_reg(m)==MTYPE_size_reg(MTYPE_I8))
+#define MTYPE_is_double_model(m)	(MTYPE_size_reg(m)==MTYPE_size_reg(MTYPE_I8))
 
 static MEM_POOL Model_Local_Pool;
 static MEM_POOL Model_Lat_Pool;
@@ -646,7 +649,12 @@ LOOP_MODEL::Model(WN* wn,
       TI_RES_COUNT_Add(resource_count, resource_count, _OP_resource_count);
     }
   }
-
+#ifdef TARG_ST
+  // With the hardware looping mechanism this is not really an issue
+  _LOOP_INIT_issue = 0.0; 
+  // Arthur: I define this in the target directory:
+  Initialize_Machine_Model_Parameters ();
+#else
   _LOOP_INIT_issue = 2.0; 
   _base_int_regs = Reserved_Int_Regs;
 
@@ -691,7 +699,7 @@ LOOP_MODEL::Model(WN* wn,
     _base_fp_regs = 4;
     _num_mem_units = 2.0;
   }     
-
+#endif
   _arl = CXX_NEW(ARRAY_REF(WN_do_body(wn),
                            SNL_Depth, 
                            &Model_Local_Pool,
@@ -712,6 +720,46 @@ LOOP_MODEL::Model(WN* wn,
       _OP_resource_count = NULL;
 
     // Registers
+#ifdef TARG_ST
+    _scalar_fp_regs = Unique_Unstored_Fp_Scalar_Refs(WN_do_body(wn),_arl,pi);
+    _scalar_int_regs = Unique_Unstored_Int_Scalar_Refs(WN_do_body(wn),_arl,pi);
+    _scalar_ptr_regs = Unique_Unstored_Ptr_Scalar_Refs(WN_do_body(wn),_arl,pi);
+    _scalar_bool_regs = Unique_Unstored_Bool_Scalar_Refs(WN_do_body(wn),_arl,pi);
+  }
+
+  _num_fp_array_refs = _arl->Num_Fp_Refs();
+  _num_int_array_refs = _arl->Num_Int_Refs();
+  _num_ptr_array_refs = _arl->Num_Ptr_Refs();
+  _num_bool_array_refs = _arl->Num_Bool_Refs();
+
+  // This coefficient will be used in estimating potential benefit
+  // of unrolling beyound the "ideal" schedule due to the hoisting
+  // of a larger number of invariant memory references
+  if (_num_fp_array_refs > 0.0) {
+    Invariant_Ref_Coeff = 1 / (_num_fp_array_refs * Max_Unroll_Prod);
+  }
+  else {
+    Invariant_Ref_Coeff = 0.0;
+  }
+
+  if (debug_model) {
+    fprintf(TFile, "Estimate number of scalar and array references: \n");
+    fprintf(TFile, "\t _scalar_fp_regs = %d\n", _scalar_fp_regs);
+    fprintf(TFile, "\t _scalar_int_regs = %d\n", _scalar_int_regs);
+    fprintf(TFile, "\t _scalar_ptr_regs = %d\n", _scalar_ptr_regs);
+    fprintf(TFile, "\t _scalar_bool_regs = %d\n", _scalar_bool_regs);
+
+    fprintf(TFile, "\t _num_fp_array_refs = %d\n", _num_fp_array_refs);
+    fprintf(TFile, "\t _num_int_array_refs = %d\n", _num_int_array_refs);
+    fprintf(TFile, "\t _num_ptr_array_refs = %d\n", _num_ptr_array_refs);
+    fprintf(TFile, "\t _num_bool_array_refs = %d\n", _num_bool_array_refs);
+
+    fprintf(TFile, "Invariant_Ref_Coeff = 1 / (%d * %d) = %f\n",
+            _num_fp_array_refs, Max_Unroll_Prod, Invariant_Ref_Coeff);
+  }
+
+#else
+
     _scalar_fp_regs = Unique_Unstored_Fp_Scalar_Refs(WN_do_body(wn),_arl,pi);
     _scalar_int_regs = Unique_Unstored_Int_Scalar_Refs(WN_do_body(wn),_arl,pi);
   }
@@ -728,6 +776,7 @@ LOOP_MODEL::Model(WN* wn,
   else {
     Invariant_Ref_Coeff = 0.0;
   }
+#endif
   if (debug_model) {
     fprintf(TFile, "Invariant_Ref_Coeff = 1 / (%d * %d) = %f\n",
             _num_fp_array_refs, Max_Unroll_Prod, Invariant_Ref_Coeff);
@@ -735,10 +784,30 @@ LOOP_MODEL::Model(WN* wn,
 
   // Loop through possible inner loops.
   for (i=num_good+num_bad-1; i>=0; i--) {
+    // FdF: Do not try any transformation for ST200, just do what the
+    // pragmas say.
+#ifndef TARG_ST
     if (can_be_inner[i]) {
       Try_Inner(can_be_unrolled,outermost_can_be_tiled,
 		  i,num_good+num_bad);
     }
+#else
+      if (_required_unroll[i] > 1)
+      // FdF 20050202: DDTS 20477 asks for outer unrolling on a loop
+      // that is not the immediatly enclosing loop of an inner
+      // loop. This is not supported and can_be_unrolled[i] must be
+      // checked for this.
+      if (can_be_unrolled[i])
+	_block_number[i] = _required_unroll[i];
+      else {
+	DOLOOP_STACK *do_stack = CXX_NEW(DOLOOP_STACK(&LNO_local_pool),
+					 &LNO_local_pool);
+	Build_Doloop_Stack(wn,do_stack);
+	ErrMsgSrcpos(EC_LNO_Generic, WN_Get_Linenum(do_stack->Bottom_nth(i)),
+		     "Not a proper loop for unrolling. Pragma is ignored.");
+      }
+#endif
+
   }
 
   if (_lat_graph) {
@@ -770,11 +839,21 @@ LOOP_MODEL::Model(WN* wn,
       fprintf(TFile,"Couldn't FP register allocate\n");
     else if (_num_int_regs > Target_INTRs)
       fprintf(TFile,"Couldn't INT register allocate (%d)\n", _num_int_regs);
+#ifdef TARG_ST
+    else if (_num_ptr_regs > Target_PTRs)
+      fprintf(TFile,"Couldn't PTR register allocate (%d)\n", _num_ptr_regs);
+    else if (_num_bool_regs > Target_BRs)
+      fprintf(TFile,"Couldn't BOOL register allocate (%d)\n", _num_bool_regs);
+#endif
     else {
       fprintf(TFile,"The number of cycles is %f \n", _num_cycles);
       fprintf(TFile,"The number of fp registers needed is %d\n", _num_fp_regs);
       fprintf(TFile,"The number of int registers needed is %d\n", _num_int_regs);
     }
+#ifdef TARG_ST
+      fprintf(TFile,"The number of ptr registers needed is %d\n", _num_ptr_regs);
+      fprintf(TFile,"The number of bool registers needed is %d\n", _num_bool_regs);
+#endif
   }
   if (LNO_Verbose /*|| LNO_Lno_Verbose*/) {
     printf("Evaluated %d combinations\n",_num_evaluations);
@@ -1265,6 +1344,46 @@ LOOP_MODEL::Evaluate(INT inner, INT num_loops, INT* unroll_factors,
   }
 
   MODEL_LIMIT this_limit = MODEL_LIMIT_UNSET;
+#ifdef TARG_ST
+  INT num_fp_regs, num_fp_variant_stores, num_fp_invariant_stores;
+  INT num_int_regs, num_int_variant_stores, num_int_invariant_stores;
+  INT num_ptr_regs, num_ptr_variant_stores, num_ptr_invariant_stores;
+  INT num_bool_regs, num_bool_variant_stores, num_bool_invariant_stores;
+  INT num_fp_refs, num_int_refs, num_ptr_refs, num_bool_refs;
+
+  INT num_fp_spills = 0;
+  INT num_int_spills = 0;
+  INT num_ptr_spills = 0;
+  INT num_bool_spills = 0;
+
+  INT new_base_regs = _base_fp_regs;
+
+  arl->Calc_Regs_And_Refs(&num_fp_regs, &num_fp_refs, 
+                          &num_fp_variant_stores, &num_fp_invariant_stores,
+                          &num_int_regs, &num_int_refs, 
+                          &num_int_variant_stores, &num_int_invariant_stores,
+                          &num_ptr_regs, &num_ptr_refs, 
+                          &num_ptr_variant_stores, &num_ptr_invariant_stores,
+                          &num_bool_regs, &num_bool_refs, 
+                          &num_bool_variant_stores, &num_bool_invariant_stores);
+
+  if (debug_model) {
+    fprintf(TFile, "After Calc_Regs_And_Refs: \n");
+    fprintf(TFile, "  num_fp_regs = %d, num_fp_refs = %d\n",
+	                                     num_fp_regs, num_fp_refs);
+    fprintf(TFile, "  num_int_regs = %d, num_int_refs = %d\n",
+	                                   num_int_regs, num_int_refs);
+    fprintf(TFile, "  num_ptr_regs = %d, num_ptr_refs = %d\n",
+	                                   num_ptr_regs, num_ptr_refs);
+    fprintf(TFile, "  num_bool_regs = %d, num_bool_refs = %d\n",
+	                                 num_bool_regs, num_bool_refs);
+    fprintf(TFile, "  num_fp_variant_stores = %d, num_fp_invariant_stores = %d\n", num_fp_variant_stores, num_fp_invariant_stores);
+    fprintf(TFile, "  num_int_variant_stores = %d, num_int_invariant_stores = %d\n", num_int_variant_stores, num_int_invariant_stores);
+    fprintf(TFile, "  num_ptr_variant_stores = %d, num_ptr_invariant_stores = %d\n", num_ptr_variant_stores, num_ptr_invariant_stores);
+    fprintf(TFile, "  num_bool_variant_stores = %d, num_bool_invariant_stores = %d\n", num_bool_variant_stores, num_bool_invariant_stores);
+  }
+
+#else
 
   // Count the number of registers 
   INT num_fp_regs, num_fp_refs, num_fp_variant_stores, num_fp_invariant_stores;
@@ -1276,7 +1395,7 @@ LOOP_MODEL::Evaluate(INT inner, INT num_loops, INT* unroll_factors,
                           &num_fp_variant_stores, &num_fp_invariant_stores,
                           &num_int_regs, &num_int_refs, 
                           &num_int_variant_stores, &num_int_invariant_stores);
-
+#endif
   // This coefficient is used to preference unrolling of multiple
   // loops by factors that are similar in size. I don't have a good
   // explanation for it, except for the empirical evidence that, e.g.,
@@ -1315,7 +1434,7 @@ LOOP_MODEL::Evaluate(INT inner, INT num_loops, INT* unroll_factors,
   // MINVAR_MAGIC_COEFF
   //   limit the potential benefit to 20% of the ideal cycle count
   
-#ifndef KEY 
+#if !defined( KEY) || defined(TARG_ST) 
 #define MINVAR_MAGIC_COEFF (0.20 * _loop_rcycles_unroll_by[Max_Unroll_Prod-1])
 #else
   // Match octane cc MINVAR_MAGIC_COEFF
@@ -1354,6 +1473,100 @@ LOOP_MODEL::Evaluate(INT inner, INT num_loops, INT* unroll_factors,
   }
      
   *can_reg_allocate = TRUE;
+
+#ifdef TARG_ST
+  // Calculate the number of memory references counting the estimated
+  // spill code. Set can_reg_allocate variable.
+
+  if (num_fp_regs + new_base_regs +_scalar_fp_regs > Target_FPRs) { 
+    if (!did_unroll) { // penalty
+      double fp_refs_per_reg = (_num_fp_array_refs + _num_fp_scalar_refs)
+                             / (num_fp_regs + _scalar_fp_regs);
+      num_fp_spills = 
+          (INT)((num_fp_regs+new_base_regs+_scalar_fp_regs-Target_FPRs) 
+	      * fp_refs_per_reg);
+      num_fp_refs += num_fp_spills;
+    }
+    if (debug_model) {
+      fprintf(TFile,"Can't FP register allocate \n");
+    }
+    *can_reg_allocate = FALSE;
+  }
+  if (num_int_regs + _base_int_regs + _scalar_int_regs > Target_INTRs) { 
+    if (!did_unroll) { // penalty
+      double int_refs_per_reg = (_num_int_array_refs + _num_int_scalar_refs)
+                              / (num_int_regs + _scalar_int_regs);
+      num_int_spills = 
+        (INT)((num_int_regs + _base_int_regs + _scalar_int_regs - Target_INTRs)
+	      * int_refs_per_reg);
+      num_int_refs += num_int_spills;
+    }
+    if (debug_model) {
+      fprintf(TFile, "Couldn't INT register allocate (%d)\n",
+              num_int_regs + _base_int_regs + _scalar_int_regs);
+    }
+    *can_reg_allocate = FALSE;
+  }
+  if (num_ptr_regs + _base_ptr_regs + _scalar_ptr_regs > Target_PTRs) { 
+    if (!did_unroll) { // penalty
+      double ptr_refs_per_reg = (_num_ptr_array_refs + _num_ptr_scalar_refs)
+                              / (num_ptr_regs + _scalar_ptr_regs);
+      num_ptr_spills = 
+        (INT)((num_ptr_regs + _base_ptr_regs + _scalar_ptr_regs - Target_PTRs)
+	      * ptr_refs_per_reg);
+      num_ptr_refs += num_ptr_spills;
+    }
+    if (debug_model) {
+      fprintf(TFile, "Couldn't PTR register allocate (%d)\n",
+              num_ptr_regs + _base_ptr_regs + _scalar_ptr_regs);
+    }
+    *can_reg_allocate = FALSE;
+  }
+  if (num_bool_regs + _base_bool_regs + _scalar_bool_regs > Target_BRs) { 
+    if (!did_unroll) { // penalty
+      double bool_refs_per_reg = (_num_bool_array_refs + _num_bool_scalar_refs)
+                              / (num_bool_regs + _scalar_bool_regs);
+      num_bool_spills = 
+        (INT)((num_bool_regs + _base_bool_regs + _scalar_bool_regs - Target_BRs)
+	      * bool_refs_per_reg);
+      num_bool_refs += num_bool_spills;
+    }
+    if (debug_model) {
+      fprintf(TFile, "Couldn't INT register allocate (%d)\n",
+              num_bool_regs + _base_bool_regs + _scalar_bool_regs);
+    }
+    *can_reg_allocate = FALSE;
+  }
+
+  // count memory references.
+  // since I am taking the bandwidth into account, I must take a ceil
+  // of the result to get the real number of mem references.
+  double MEM_issue = ((double)(num_fp_refs+num_int_refs+num_ptr_refs+num_bool_refs))/unroll_product;
+  double MEM_rcycles = MEM_issue/_num_mem_units;
+  double MEM_issue_minus_spills = ((double)(num_fp_refs - num_fp_spills + num_int_refs - num_int_spills + num_ptr_refs - num_ptr_spills + num_bool_refs - num_bool_spills))/unroll_product;
+  double MEM_rcycles_minus_spills = MEM_issue_minus_spills/_num_mem_units;
+
+  if (debug_model) {
+    fprintf(TFile, "MEM_issue = %.2f\n", MEM_issue);
+    fprintf(TFile, "MEM_rcycles = %.2f/%.2f: %.2f\n", MEM_issue, _num_mem_units, MEM_rcycles);
+    fprintf(TFile, "MEM_rcycles_minus_spills: %.2f/%.2f: %.2f\n", MEM_issue_minus_spills, _num_mem_units, MEM_rcycles_minus_spills);
+    fprintf(TFile, "Issue: %.2f + %.2f + %.2f = %.2f\n", 
+            _OP_issue * unroll_product, 
+            _LOOP_INIT_issue, 
+            MEM_issue * unroll_product,
+            _OP_issue * unroll_product +
+            _LOOP_INIT_issue +
+            MEM_issue * unroll_product);
+  }
+
+  double issue_limit =
+    (_OP_issue + _LOOP_INIT_issue/unroll_product + MEM_issue) / _issue_rate;
+  double issue_limit_minus_spills = 
+    (_OP_issue + _LOOP_INIT_issue/unroll_product + MEM_issue_minus_spills) 
+    / _issue_rate;
+
+#else
+
   if (num_fp_regs + new_base_regs +_scalar_fp_regs > Target_FPRs) { 
     if (!did_unroll) { // penalty
       double fp_refs_per_reg = (_num_fp_array_refs + _num_fp_scalar_refs)
@@ -1408,6 +1621,7 @@ LOOP_MODEL::Evaluate(INT inner, INT num_loops, INT* unroll_factors,
   double issue_limit_minus_spills = 
     (_OP_issue + _LOOP_INIT_issue/unroll_product + MEM_issue_minus_spills) 
     / _issue_rate;
+#endif
   double ideal_resource_cycles = _loop_rcycles_unroll_by[Max_Unroll_Prod-1];
   double resource_cycles = 
     MAX(_loop_rcycles_unroll_by[unroll_product-1],
@@ -1449,6 +1663,23 @@ LOOP_MODEL::Evaluate(INT inner, INT num_loops, INT* unroll_factors,
   double cycles = MAX(resource_cycles, _latency_cycles/unroll_product);
   double cycles_minus_spills = MAX(resource_cycles_minus_spills,
                                    _latency_cycles/unroll_product);
+#ifdef TARG_ST
+  if (!(*can_reg_allocate) && 
+      !did_unroll && 
+      cycles == cycles_minus_spills) { 
+    // spilling is free so set the number of registers to Target_FPRs
+    *can_reg_allocate = TRUE;
+    num_fp_regs = Target_FPRs - new_base_regs - _scalar_fp_regs;
+    num_int_regs = Target_INTRs - _base_int_regs - _scalar_int_regs;
+    num_ptr_regs = Target_PTRs - _base_ptr_regs - _scalar_ptr_regs;
+    num_bool_regs = Target_BRs - _base_bool_regs - _scalar_bool_regs;
+  }
+
+  INT fp_reg_usage = num_fp_regs + new_base_regs +_scalar_fp_regs;
+  INT int_reg_usage = num_int_regs + _base_int_regs +_scalar_int_regs;
+  INT ptr_reg_usage = num_ptr_regs + _base_ptr_regs +_scalar_ptr_regs;
+  INT bool_reg_usage = num_bool_regs + _base_bool_regs +_scalar_bool_regs;
+#else
 
   if (!(*can_reg_allocate) && 
       !did_unroll && 
@@ -1461,7 +1692,7 @@ LOOP_MODEL::Evaluate(INT inner, INT num_loops, INT* unroll_factors,
 
   INT fp_reg_usage = num_fp_regs + new_base_regs +_scalar_fp_regs;
   INT int_reg_usage = num_int_regs + _base_int_regs +_scalar_int_regs;
-
+#endif
   if (!*can_reg_allocate) {
     if (did_unroll) {
      if (debug_model) {
@@ -1476,6 +1707,15 @@ LOOP_MODEL::Evaluate(INT inner, INT num_loops, INT* unroll_factors,
   else if (int_reg_usage > Target_INTRs-2){
     cycles *= 1.1;  // penalty for being close to unallocatable
   }
+#ifdef TARG_ST
+  else if (ptr_reg_usage > Target_PTRs-2) {
+    cycles *= 1.1;  // penalty for being close to unallocatable
+  } 
+  else if (bool_reg_usage > Target_BRs-2){
+    cycles *= 1.1;  // penalty for being close to unallocatable
+  }
+#endif
+
 
   // Penalty for unrolling something that's not
   // a factor of the estimated number of iterations
@@ -1509,7 +1749,11 @@ LOOP_MODEL::Evaluate(INT inner, INT num_loops, INT* unroll_factors,
   if (debug_model) {
     fprintf(TFile,"Ignoring cache effects ");
     fprintf(TFile,"this loop takes %f cycles\n",cycles);
+#ifdef TARG_ST
+    fprintf(TFile,"Uses %d int, %d ptr, %d bool, and %d fp regs\n", int_reg_usage, ptr_reg_usage, bool_reg_usage, fp_reg_usage);
+#else
     fprintf(TFile,"Uses %d int and %d fp regs\n", int_reg_usage, fp_reg_usage);
+#endif
   }
   if (this_limit == MODEL_LIMIT_IDEAL) {
     if (debug_model) fprintf(TFile,"Ideal schedule \n");
@@ -1527,7 +1771,11 @@ LOOP_MODEL::Evaluate(INT inner, INT num_loops, INT* unroll_factors,
       1.01*cycles < _num_cycles_inner || 
       (cycles <= _num_cycles_inner && 
        (unroll_product < _unroll_prod_inner ||
+#ifdef TARG_ST
+        fp_reg_usage+int_reg_usage+ptr_reg_usage+bool_reg_usage<_num_fp_regs_inner+_num_int_regs_inner+_num_ptr_regs_inner+_num_bool_regs_inner))) {
+#else
         fp_reg_usage+int_reg_usage<_num_fp_regs_inner+_num_int_regs_inner))) {
+#endif
     // a new best
     _inner_loop_inner = inner;
     for (INT i=0; i<num_loops; i++) {
@@ -1538,6 +1786,12 @@ LOOP_MODEL::Evaluate(INT inner, INT num_loops, INT* unroll_factors,
     _num_fp_refs_inner = num_fp_refs;
     _num_int_regs_inner = int_reg_usage;
     _num_int_refs_inner = num_int_refs;
+    #ifdef TARG_ST
+    _num_ptr_regs_inner = ptr_reg_usage;
+    _num_ptr_refs_inner = num_ptr_refs;
+    _num_bool_regs_inner = bool_reg_usage;
+    _num_bool_refs_inner = num_bool_refs;
+#endif
     _unroll_prod_inner = unroll_product;
     _model_limit = this_limit;
 
@@ -1822,7 +2076,7 @@ LOOP_MODEL::OP_Resources_R(WN* wn,
              rtype == MTYPE_U4 || 
              rtype == MTYPE_U8) {
 
-      BOOL double_word = (MTYPE_is_double(desc) || MTYPE_is_double(rtype));
+      BOOL double_word = (MTYPE_is_double_model(desc) || MTYPE_is_double_model(rtype));
 
       switch (oper) {
         case OPR_ARRAY: 
@@ -2553,6 +2807,347 @@ ARRAY_REF_LIST::Num_Int_Refs() const
   }
   return result;
 }
+#ifdef TARG_ST
+/* ====================================================================
+ *   ARRAY_REF_LIST::Num_Ptr_Refs
+ * ====================================================================
+ */
+INT
+ARRAY_REF_LIST::Num_Ptr_Refs() const
+{
+  INT result=0;
+
+  if (_is_scalar_expanded) {
+    if (MTYPE_is_class_pointer(Base_Array->Type))
+      result += this->Len();
+  } else {
+    if (MTYPE_is_class_pointer(WN_desc(LWN_Get_Parent(Head()->Wn))) &&
+        MTYPE_is_class_pointer(WN_rtype(LWN_Get_Parent(Head()->Wn))))
+      result += this->Len();
+  }
+  return result;
+}
+
+/* ====================================================================
+ *   ARRAY_REF_LIST::Num_Bool_Refs
+ * ====================================================================
+ */
+INT
+ARRAY_REF_LIST::Num_Bool_Refs() const
+{
+  INT result=0;
+
+  if (_is_scalar_expanded) {
+    if (MTYPE_is_class_boolean(Base_Array->Type))
+      result += this->Len();
+  } else {
+    if (MTYPE_is_class_boolean(WN_desc(LWN_Get_Parent(Head()->Wn))) &&
+        MTYPE_is_class_boolean(WN_rtype(LWN_Get_Parent(Head()->Wn))))
+      result += this->Len();
+  }
+  return result;
+}
+
+/* ====================================================================
+ *   ARRAY_REF_LIST::Calc_Regs_And_Refs
+ * ====================================================================
+ */
+void 
+ARRAY_REF_LIST::Calc_Regs_And_Refs (
+  INT* num_fp_regs, 
+  INT* num_fp_refs,
+  INT* num_fp_variant_stores, 
+  INT* num_fp_invariant_stores,
+  INT* num_int_regs, 
+  INT* num_int_refs,
+  INT* num_int_variant_stores, 
+  INT* num_int_invariant_stores,
+  INT* num_ptr_regs, 
+  INT* num_ptr_refs,
+  INT* num_ptr_variant_stores, 
+  INT* num_ptr_invariant_stores,
+  INT* num_bool_regs, 
+  INT* num_bool_refs,
+  INT* num_bool_variant_stores, 
+  INT* num_bool_invariant_stores
+)
+{
+  INT fp_regs = 0;
+  double fp_refs = 0.0;
+  double fp_variant_stores = 0.0;
+  double fp_invariant_stores = 0.0;
+  INT int_regs = 0;
+  double int_refs = 0.0;
+  double int_variant_stores = 0.0;
+  double int_invariant_stores = 0.0;
+  INT ptr_regs = 0;
+  double ptr_refs = 0.0;
+  double ptr_variant_stores = 0.0;
+  double ptr_invariant_stores = 0.0;
+  INT bool_regs = 0;
+  double bool_refs = 0.0;
+  double bool_variant_stores = 0.0;
+  double bool_invariant_stores = 0.0;
+
+  ARRAY_REF_ITER iter(this);
+  for (ARRAY_REF_NODE* node=iter.First(); node; node = iter.Next()) {
+
+    INT tmp_regs = 0;
+    double tmp_refs = 0.0;
+    double tmp_variant_stores = 0.0;
+    double tmp_invariant_stores = 0.0;
+    INT tmp_base_regs = 0;      // represent array access base
+
+    if (debug_model) {
+      fprintf(TFile,"  ");
+      node->Print(TFile);
+    }
+
+    if (!node->_is_invariant) { 
+      // assuming invariant will be moved out
+      // compare this array ref against previous ones to see
+      // if a new array base register is needed
+
+      BOOL found_base = FALSE;    // should I need another base reg ?
+
+      ARRAY_REF_ITER iter1(this);
+      for (ARRAY_REF_NODE* node1=iter1.First(); 
+           node1 != node; 
+           node1 = iter1.Next()) {
+        ACCESS_ARRAY* ar  = node->Array;
+        ACCESS_ARRAY* ar1 = node1->Array;
+        if (ar->Too_Messy  || 
+            ar1->Too_Messy || 
+            ar->Num_Vec() != ar1->Num_Vec()) {
+          continue;
+        }
+
+        BOOL need_diff_base = FALSE;
+
+        for (INT i = 0; i < ar->Num_Vec(); i++) {
+          ACCESS_VECTOR* av  = ar->Dim(i);
+          ACCESS_VECTOR* av1 = ar1->Dim(i);
+
+          if (av->Too_Messy || av1->Too_Messy) {
+            need_diff_base=TRUE;
+            break;
+          }
+
+          ACCESS_VECTOR* diff=Subtract(av, av1, _pool);
+
+          if (!diff->Is_Const()) {
+            need_diff_base=TRUE;
+            break;
+          } 
+          else if (i < ar->Num_Vec()-1) {
+            if (diff->Const_Offset != 0) {
+              need_diff_base=TRUE;
+              break;
+            } 
+            else {
+              continue;
+            }
+          } 
+          else if (diff->Const_Offset < 0x10000 &&
+		   - diff->Const_Offset < 0x10000) {
+	    need_diff_base=FALSE;
+	    break;
+	  }
+	  else {
+	    need_diff_base=TRUE;
+	    break;
+	  }
+        }
+
+        if (!need_diff_base) {
+          found_base = TRUE;
+          break;
+        }
+
+      }
+
+      if (!found_base) {
+        tmp_base_regs++;
+      }
+
+    }
+
+    // Determine reference's MTYPE:
+    TYPE_ID mtype;
+    if (_is_scalar_expanded) {
+      mtype = Base_Array->Type;
+    }
+    else {
+      WN* parent = LWN_Get_Parent(node->Wn);
+
+      // Arthur: I am trying to figure out what is going on ...
+      //         but basically I believe that this can only be
+      //         a load/store/call node, so deal with it !
+
+      // Indirect LOAD/STORE -- data type:
+      if (WN_operator(parent) == OPR_ILOAD ||
+	  WN_operator(parent) == OPR_ISTORE) {
+	mtype = WN_desc(parent);
+      }
+      else {
+	// Arthur: I guess, the parent may not have both of them
+	//         equal, so I will have to do some acrobatics here ??
+	//         Temporarily put an assertion here, so I figure out
+	//         what's going on ...
+	/*
+	if (debug_model) {
+	  fprintf(TFile," PARENT: *********************** \n");
+	  extern void fdump_tree(FILE *, WN *);
+	  fdump_tree(TFile, parent);
+	}
+	*/
+	FmtAssert(WN_desc(parent) == WN_rtype(parent),
+		("ARRAY_REF_LIST::Calc_Regs_And_Refs -- Arthur does not know what's going on"));
+	mtype = WN_desc(parent);
+      }
+    }
+
+    // Arthur: The regs_per_ref is really a target dependent thing !
+    //         I will implement it as a target-dependent table 
+    //         indexed by the MTYPEs
+    INT regs_per_ref = LNOTARGET_Mtype_Registers(mtype);
+    // not the same as regs_per_ref as there may be packed accesses:
+    double accesses_per_ref;
+
+    // Determine the number of accesses for this reference:
+    if (MTYPE_float(mtype)) {
+      accesses_per_ref = (FP_packed_arithmetic) ?
+            (double)MTYPE_byte_size(mtype)/(double)LNOTARGET_Mtype_Access_Bytes(mtype) : 
+                                                  (double) regs_per_ref;
+    }
+    else if (MTYPE_is_class_integer(mtype)) {
+      accesses_per_ref = (INT_packed_arithmetic) ?
+            (double)MTYPE_byte_size(mtype)/(double)LNOTARGET_Mtype_Access_Bytes(mtype) : 
+                                                  (double) regs_per_ref;
+    }
+    else if (MTYPE_is_class_pointer(mtype)) {
+      accesses_per_ref = (PTR_packed_arithmetic) ?
+            (double)MTYPE_byte_size(mtype)/(double)LNOTARGET_Mtype_Access_Bytes(mtype) : 
+                                                  (double) regs_per_ref;
+    }
+    else if (MTYPE_is_class_boolean(mtype)) {
+      accesses_per_ref = (BOOL_packed_arithmetic) ?
+            (double)MTYPE_byte_size(mtype)/(double)LNOTARGET_Mtype_Access_Bytes(mtype) : 
+                                                  (double) regs_per_ref;
+    }
+    else {
+      FmtAssert(FALSE,
+		("ARRAY_REF_LIST::Calc_Regs_And_Refs: mtype disallowed"));
+    }
+    
+    if (node->_is_invariant) {
+      tmp_regs += regs_per_ref;
+    } 
+    else if (node->_is_cse) {  
+      if (node->_max_inner_offset > node->_min_inner_offset) {
+        tmp_regs += 
+          MIN(Max_Cse_Dist,(node->_max_inner_offset-node->_min_inner_offset))
+          * regs_per_ref;
+      } 
+      else {
+	tmp_regs += regs_per_ref;
+      }
+      tmp_refs += accesses_per_ref;
+    } 
+    else if (node->_is_dup) {  // a pure duplicate
+      if (node->_has_dup_loads) {
+        tmp_regs += regs_per_ref;
+      }
+
+      if (node->_has_store) {
+	tmp_refs += accesses_per_ref;
+      }
+      if (node->_has_load && !node->_first_ref_store) {
+	tmp_refs += accesses_per_ref;
+      }
+    } 
+    else {
+      tmp_refs += accesses_per_ref;
+    }
+
+    if (node->_has_store) {
+      if (node->_is_invariant) {
+	tmp_invariant_stores += accesses_per_ref;
+      } 
+      else {
+	tmp_variant_stores += accesses_per_ref;
+      }
+    }
+
+    if (MTYPE_float(mtype)) {
+      fp_regs += tmp_regs;
+      fp_refs += tmp_refs;
+      fp_invariant_stores += tmp_invariant_stores;
+      fp_variant_stores += tmp_variant_stores;
+    }
+    else if (MTYPE_is_class_integer(mtype)) {
+      int_regs += tmp_regs;
+      int_refs += tmp_refs;
+      int_invariant_stores += tmp_invariant_stores;
+      int_variant_stores += tmp_variant_stores;
+    }
+    else if (MTYPE_is_class_pointer(mtype)) {
+      ptr_regs += tmp_regs;
+      ptr_refs += tmp_refs;
+      ptr_invariant_stores += tmp_invariant_stores;
+      ptr_variant_stores += tmp_variant_stores;
+    }
+    else if (MTYPE_is_class_boolean(mtype)) {
+      bool_regs += tmp_regs;
+      bool_refs += tmp_refs;
+      bool_invariant_stores += tmp_invariant_stores;
+      bool_variant_stores += tmp_variant_stores;
+    }
+
+    // If addresses are represented by integers, incerement rather
+    // the integer registers count, otherwise pointers
+    if (MTYPE_is_class_integer(Pointer_Mtype))
+      int_regs += tmp_base_regs;
+    else
+      ptr_regs += tmp_base_regs;
+
+  }
+
+  // since I am taking the bandwidth into account, I must take a ceil
+  // of the result to get the real number of mem references.
+
+  *num_fp_refs = (INT)ceil(fp_refs);
+  *num_int_refs = (INT)ceil(int_refs);
+  *num_ptr_refs = (INT)ceil(ptr_refs);
+  *num_bool_refs = (INT)ceil(bool_refs);
+
+  *num_fp_variant_stores = (INT)ceil(fp_variant_stores);
+  *num_int_variant_stores = (INT)ceil(int_variant_stores);
+  *num_ptr_variant_stores = (INT)ceil(ptr_variant_stores);
+  *num_bool_variant_stores = (INT)ceil(bool_variant_stores);
+
+  *num_fp_invariant_stores = (INT)ceil(fp_invariant_stores);
+  *num_int_invariant_stores = (INT)ceil(int_invariant_stores);
+  *num_ptr_invariant_stores = (INT)ceil(ptr_invariant_stores);
+  *num_bool_invariant_stores = (INT)ceil(bool_invariant_stores);
+  /*
+  if (debug_model) {
+    fprintf(TFile,"\n");
+    fprintf(TFile,"\n\t\t fp regs %d, fp refs = %f\n", fp_regs, fp_refs);
+    fprintf(TFile,"\t\t int regs %d, int refs = %f\n", int_regs, int_refs);
+    fprintf(TFile,"\t\t ptr regs %d, ptr refs = %f\n", ptr_regs, ptr_refs);
+    fprintf(TFile,"\t\t bool regs %d, bool refs = %f\n", bool_regs, bool_refs);
+  }
+  */
+  *num_fp_regs = fp_regs;
+  *num_int_regs = int_regs;
+  *num_ptr_regs = ptr_regs;
+  *num_bool_regs = bool_regs;
+
+  return;
+}
+
+#else /* not ST */
 
 void 
 ARRAY_REF_LIST::Calc_Regs_And_Refs(INT* num_fp_regs, 
@@ -2727,7 +3322,7 @@ ARRAY_REF_LIST::Calc_Regs_And_Refs(INT* num_fp_regs,
   *num_int_variant_stores = int_variant_stores;
   *num_int_invariant_stores = int_invariant_stores;
 }
-
+#endif
 // How many references of the maximal dimensionality (but
 // at least 2) are invariant in some outer unrollable loop
 INT 
@@ -2852,6 +3447,157 @@ ARRAY_REF::Conflict_Refs(BOOL *can_be_unrolled, INT num_loops)
   }
   return result;
 }
+#ifdef TARG_ST
+/* ====================================================================
+ *   ARRAY_REF::Num_Ptr_Refs
+ *
+ *   Return the number of "good" PTR references.
+ * ====================================================================
+ */
+INT
+ARRAY_REF::Num_Ptr_Refs() const
+{
+  INT result = Num_Ptr_Bad();
+  for (INT i=0; i<Elements(); i++) {
+    result += Array_Ref_List(i)->Num_Ptr_Refs();
+  }
+  return result;
+}
+
+/* ====================================================================
+ *   ARRAY_REF::Num_Bool_Refs
+ *
+ *   Return the number of "good" BOOL references.
+ * ====================================================================
+ */
+INT
+ARRAY_REF::Num_Bool_Refs() const
+{
+  INT result = Num_Bool_Bad();
+  for (INT i=0; i<Elements(); i++) {
+    result += Array_Ref_List(i)->Num_Bool_Refs();
+  }
+  return result;
+}
+
+/* ====================================================================
+ *   ARRAY_REF::Calc_Regs_And_Refs
+ *
+ *   Estimate the number of all sorts of registers and memory
+ *   references in a loop nest.
+ * ====================================================================
+ */
+void 
+ARRAY_REF::Calc_Regs_And_Refs (
+  INT* num_fp_regs, 
+  INT* num_fp_refs,
+  INT* num_fp_variant_stores, 
+  INT* num_fp_invariant_stores,
+  INT* num_int_regs, 
+  INT* num_int_refs,
+  INT* num_int_variant_stores, 
+  INT* num_int_invariant_stores,
+  INT* num_ptr_regs, 
+  INT* num_ptr_refs,
+  INT* num_ptr_variant_stores, 
+  INT* num_ptr_invariant_stores,
+  INT* num_bool_regs, 
+  INT* num_bool_refs,
+  INT* num_bool_variant_stores, 
+  INT* num_bool_invariant_stores
+)
+{
+  *num_fp_regs = 0;
+  *num_fp_refs = Num_Fp_Bad();
+  *num_fp_variant_stores = 0;
+  *num_fp_invariant_stores = 0;
+  *num_int_regs = 0;
+  *num_int_refs = Num_Int_Bad();
+  *num_int_variant_stores = 0;
+  *num_int_invariant_stores = 0;
+  *num_ptr_regs = 0;
+  *num_ptr_refs = Num_Ptr_Bad();
+  *num_ptr_variant_stores = 0;
+  *num_ptr_invariant_stores = 0;
+  *num_bool_regs = 0;
+  *num_bool_refs = Num_Bool_Bad();
+  *num_bool_variant_stores = 0;
+  *num_bool_invariant_stores = 0;
+
+  for (INT i=0; i < Elements(); i++) {
+    INT this_fp_refs = 0;
+    INT this_fp_regs = 0;
+    INT fp_variant_stores = 0;
+    INT fp_invariant_stores = 0;
+    INT this_int_refs = 0;
+    INT this_int_regs = 0;
+    INT int_variant_stores = 0;
+    INT int_invariant_stores = 0;
+    INT this_ptr_refs = 0;
+    INT this_ptr_regs = 0;
+    INT ptr_variant_stores = 0;
+    INT ptr_invariant_stores = 0;
+    INT this_bool_refs = 0;
+    INT this_bool_regs = 0;
+    INT bool_variant_stores = 0;
+    INT bool_invariant_stores = 0;
+
+    if (debug_model) {
+      fprintf(TFile, "counting regs and refs for array ");
+      Array_Ref_List(i)->Base_Array->Print(TFile);
+      fprintf(TFile, ":\n");
+    }
+
+    Array_Ref_List(i)->Calc_Regs_And_Refs(
+	                    &this_fp_regs, &this_fp_refs, 
+                            &fp_variant_stores, &fp_invariant_stores,
+			    &this_int_regs, &this_int_refs, 
+			    &int_variant_stores, &int_invariant_stores,
+	                    &this_ptr_regs, &this_ptr_refs, 
+                            &ptr_variant_stores, &ptr_invariant_stores,
+	                    &this_bool_regs, &this_bool_refs, 
+                            &bool_variant_stores, &bool_invariant_stores
+			    );
+    *num_fp_regs += this_fp_regs;
+    *num_fp_refs += this_fp_refs;
+    *num_fp_variant_stores += fp_variant_stores;
+    *num_fp_invariant_stores += fp_invariant_stores;
+    *num_int_regs += this_int_regs;
+    *num_int_refs += this_int_refs;
+    *num_int_variant_stores += int_variant_stores;
+    *num_int_invariant_stores += int_invariant_stores;
+    *num_ptr_regs += this_ptr_regs;
+    *num_ptr_refs += this_ptr_refs;
+    *num_ptr_variant_stores += ptr_variant_stores;
+    *num_ptr_invariant_stores += ptr_invariant_stores;
+    *num_bool_regs += this_bool_regs;
+    *num_bool_refs += this_bool_refs;
+    *num_bool_variant_stores += bool_variant_stores;
+    *num_bool_invariant_stores += bool_invariant_stores;
+
+    /*
+    if (debug_model) {
+      fprintf(TFile,"\t fp regs %d, fp refs = %d\n", 
+                                             *num_fp_regs, *num_fp_refs);
+      fprintf(TFile,"\t int regs %d, int refs = %d\n", 
+                                           *num_int_regs, *num_int_refs);
+      fprintf(TFile,"\t ptr regs %d, ptr refs = %d\n", 
+                                           *num_ptr_regs, *num_ptr_refs);
+      fprintf(TFile,"\t bool regs %d, bool refs = %d\n", 
+                                         *num_bool_regs, *num_bool_refs);
+    }
+    */
+
+  }
+
+  // assuming each bad ref need one address reg
+  if (MTYPE_is_class_integer(Pointer_Mtype))
+    *num_int_regs += (_num_bad_fp+_num_bad_int+_num_bad_ptr+_num_bad_bool);
+  else
+    *num_ptr_regs += (_num_bad_fp+_num_bad_int+_num_bad_ptr+_num_bad_bool);
+}
+
+#else
 
 void 
 ARRAY_REF::Calc_Regs_And_Refs(INT* num_fp_regs, 
@@ -2897,7 +3643,7 @@ ARRAY_REF::Calc_Regs_And_Refs(INT* num_fp_regs,
   *num_int_regs += (_num_bad_fp+_num_bad_int);
 }
 
-
+#endif
 void 
 ARRAY_REF::Remove_Invariants(INT loopno)
 {
@@ -3365,8 +4111,12 @@ LAT_DIRECTED_GRAPH16::Add_Vertices_Op_Edges_Rec(VINDEX16 store,
       return -1;
     }
   } 
-  else if (oper == OPR_INTRINSIC_OP) {
+  else if (oper == OPR_INTRINSIC_OP){ 
+  #ifdef TARG_ST
+    op_latency = LNO_Latency_Intrinsic(wn);
+#else
     op_latency = FP_Latency_Intrinsic(wn);
+#endif
     if (op_latency == -1) {
       return -1;
     }
@@ -3401,8 +4151,12 @@ LAT_DIRECTED_GRAPH16::Add_Vertices_Op_Edges_Rec(VINDEX16 store,
       if (Target_ISA_Has_Madd() && 
           (oper == OPR_ADD || oper == OPR_SUB) && 
           (WN_operator(WN_kid0(wn)) == OPR_MPY || 
-           WN_operator(WN_kid1(wn)) == OPR_MPY)) { 
+           WN_operator(WN_kid1(wn)) == OPR_MPY)) {
+         #ifdef TARG_ST
+        return LNO_Latency_Madd(store, wn, latency, invar_table);
+#else
         return FP_Latency_Madd(store, wn, latency, invar_table);
+#endif
       } 
       else if (oper == OPR_MAX || oper == OPR_MIN) {
         op_latency = LNOTARGET_FP_Min_Max_Lat(rtype);
@@ -3467,7 +4221,7 @@ LAT_DIRECTED_GRAPH16::Add_Vertices_Op_Edges_Rec(VINDEX16 store,
   }
   return 1;
 }
-
+#ifndef TARG_ST
 // deal with a madd
 INT 
 LAT_DIRECTED_GRAPH16::FP_Latency_Madd(VINDEX16 store,
@@ -3519,7 +4273,9 @@ LAT_DIRECTED_GRAPH16::FP_Latency_Madd(VINDEX16 store,
 
   return 1;
 }
+#endif // !TARG_ST
 
+#ifndef TARG_ST
 // What is the latency of an intrinsic op (currently only handle 
 // exponentiation by a small number)
 // return -1 on error
@@ -3544,7 +4300,7 @@ INT LAT_DIRECTED_GRAPH16::FP_Latency_Intrinsic(WN *wn)
   }
   return LNOTARGET_FP_Exp_Lat((INTRINSIC) WN_intrinsic(wn), num_multiplies);
 }
-
+#endif // !TARG_ST
 
 
 // use the array_graph to add into the latency graph all the edges from 
@@ -4003,8 +4759,13 @@ INT LOOP_MODEL::Unique_Unstored_Fp_Scalar_Refs(WN *wn, ARRAY_REF *ar,
   INT outer=0;
   _num_fp_scalar_refs = 0;
   while (!_can_be_inner[outer]) outer++;
+  #ifdef TARG_ST
+  symbol_tree->Enter_Scalar_Refs(REF_FLOAT, wn,
+           ar, pi, _can_be_inner, _num_loops, outer, &_num_fp_scalar_refs);
+#else
   symbol_tree->Enter_Scalar_Refs(wn,ar,pi,_can_be_inner,_num_loops,outer,
 				&_num_fp_scalar_refs);
+#endif
   INT result = symbol_tree->Num_Fp_Unstored();
   CXX_DELETE(symbol_tree,&LNO_local_pool);
   MEM_POOL_Pop(&LNO_local_pool);
@@ -4021,8 +4782,13 @@ INT LOOP_MODEL::Unique_Unstored_Int_Scalar_Refs(WN *wn, ARRAY_REF *ar,
   _num_int_scalar_refs = 0;
   while (!_can_be_inner[outer]) outer++;
   symbol_tree->Initialize_Innermost_Loop_Var_Symbol(wn);
+#ifdef TARG_ST
+  symbol_tree->Enter_Scalar_Refs(REF_INTEGER,wn,ar,pi,_can_be_inner,_num_loops,outer,
+				&_num_int_scalar_refs);
+#else
   symbol_tree->Enter_Scalar_Refs(wn,ar,pi,_can_be_inner,_num_loops,outer,
 				&_num_int_scalar_refs);
+#endif
   INT result = symbol_tree->Num_Int_Unstored();
   CXX_DELETE(symbol_tree,&LNO_local_pool);
   MEM_POOL_Pop(&LNO_local_pool);
@@ -4073,6 +4839,268 @@ BOOL SYMBOL_TREE::Integer_Ref_Needs_Reg(WN* wn) {
       }
      return FALSE;
 }
+#ifdef TARG_ST
+
+/* ====================================================================
+ *   SYMBOL_TREE::Ref_Needs_Reg
+ *
+ *   This is applied to the REF_INTEGER and REF_POINTER since they
+ *   can represent addresses.
+ *   Do not count scalar ref to array bases or bound of 1st dim.
+ *   This is a copy of Integer_Ref_Needs_Reg ...
+ * ====================================================================
+ */
+BOOL 
+SYMBOL_TREE::Ref_Needs_Reg (
+  WN* wn
+) 
+{
+  SYMBOL symb(wn);
+  WN* wn1 = wn;
+  WN* parent = LWN_Get_Parent(wn1);
+  while (WN_operator(parent) != OPR_ARRAY &&
+             OPCODE_is_expression(WN_opcode(parent))) {
+    wn1 = LWN_Get_Parent(wn1);
+    parent = LWN_Get_Parent(wn1);
+  }
+
+  if (WN_operator(parent) == OPR_ARRAY) {
+    INT kid_id = 0;
+    INT num_dim = WN_num_dim(parent);
+    while (WN_kid(parent,kid_id) != wn1) kid_id++;
+
+    // ignore scalar ref to array bases or bound of 1st dim
+
+    if (1 < kid_id && kid_id <= num_dim) { // appear in dim expr
+      ACCESS_ARRAY *ar = (ACCESS_ARRAY*)WN_MAP_Get(LNO_Info_Map,parent);
+      for (INT i = kid_id+1; i <= num_dim; i++) {
+	ACCESS_VECTOR *av=ar->Dim(i-1);
+	// see if innermost loop var appear in outer dim
+	if (av->Loop_Coeff(av->Nest_Depth()-1) != 0) {
+	  return TRUE;
+	}
+      }
+    } else if (num_dim < kid_id) { // appear in index expr
+      if (symb != _innermost_loop_var_symb) {
+	return FALSE;
+      }
+    }
+  } else if (symb != _innermost_loop_var_symb) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/* ====================================================================
+ *   SYMBOL_TREE::Enter_Scalar_Refs
+ * ====================================================================
+ */
+void 
+SYMBOL_TREE::Enter_Scalar_Refs (
+  REF_TYPE kind,
+  WN *wn, 
+  INT *num_scalar_refs,
+  WN2INT *se_needed, 
+  ARRAY_REF *ar
+)
+{
+  OPCODE opcode = WN_opcode(wn);
+  BOOL is_store = FALSE;
+
+  if (opcode == OPC_BLOCK) {
+    WN *kid = WN_first (wn);
+    while (kid) {
+      Enter_Scalar_Refs(kind, kid, num_scalar_refs, se_needed, ar);
+      kid = WN_next(kid);
+    }
+    return;
+  } 
+  
+  OPERATOR oper = OPCODE_operator(opcode);
+  if ((oper == OPR_LDID)  || (oper == OPR_CONST) ||
+             (is_store=(OPCODE_operator(opcode) == OPR_STID))) {
+
+    if (se_needed && se_needed->Find(wn)==1)
+      ar->Enter_Innermost_Scalar_Expand(wn);
+    else {
+
+      TYPE_ID type;
+      if (is_store) {
+        type = OPCODE_desc(opcode);
+      } else {
+        type = OPCODE_rtype(opcode);
+      }
+
+      switch (kind) {
+      case REF_FLOAT:
+	if (MTYPE_float(type)) {
+	  if ((type == MTYPE_F4) || (type == MTYPE_F8)) {
+	    SYMBOL symb(wn);
+	    (*num_scalar_refs)++;
+	    Enter(&symb, is_store, 1);
+	  } else if ((type == MTYPE_C4) || (type==MTYPE_C8) ||
+		     (type == MTYPE_FQ)) {
+	    SYMBOL symb(wn);
+	    (*num_scalar_refs)+=2;
+	    Enter(&symb, is_store, 2);
+	  } else if (type == MTYPE_CQ) {
+	    SYMBOL symb(wn);
+	    (*num_scalar_refs)+=4;
+	    Enter(&symb, is_store, 4);
+	  }
+	}
+	break;
+
+      case REF_POINTER:
+	if(MTYPE_is_class_pointer(type)) {
+	  SYMBOL symb(wn);
+
+	  if (Ref_Needs_Reg(wn)) {
+	    (*num_scalar_refs)++;
+	    Enter(&symb, is_store, 1);
+	  }
+	}
+	break;
+
+      case REF_INTEGER:
+	if (MTYPE_is_class_integer(type)) {
+	  SYMBOL symb(wn);
+
+	  if (Ref_Needs_Reg(wn)) {
+	    (*num_scalar_refs)++;
+	    Enter(&symb, is_store, 1);
+	  }
+	}
+	break;
+
+      case REF_BOOLEAN:
+	if (MTYPE_is_class_boolean(type)) {
+	  SYMBOL symb(wn);
+	  (*num_scalar_refs)++;
+	  Enter(&symb, is_store, 1);
+	}
+	break;
+      }
+    } /* se_needed */
+
+  } else if (OPCODE_is_store(opcode)) {
+    Enter_Scalar_Refs(kind, WN_kid0(wn), num_scalar_refs, se_needed, ar);
+  } else if (!OPCODE_is_load(opcode)) {
+    for (INT kidno=0; kidno<WN_kid_count(wn); kidno++) {
+      WN *kid = WN_kid(wn,kidno);
+      Enter_Scalar_Refs(kind, kid, num_scalar_refs, se_needed, ar);
+    }
+  }
+}
+
+void 
+SYMBOL_TREE::Enter_Scalar_Refs (
+  REF_TYPE kind,
+  WN *wn, 
+  ARRAY_REF *ar, 
+  SX_INFO *pi, 
+  BOOL *can_be_inner, 
+  INT num_loops,
+  INT outer, 
+  INT *num_scalar_refs
+)
+{
+  OPCODE opcode = WN_opcode(wn);
+  BOOL is_store = FALSE;
+
+  if (opcode == OPC_BLOCK) {
+    WN *kid = WN_first (wn);
+    while (kid) {
+      Enter_Scalar_Refs(kind, kid, ar, pi,can_be_inner, num_loops, outer,
+			num_scalar_refs);
+      kid = WN_next(kid);
+    }
+    return;
+  } 
+
+  if (OPCODE_is_store(opcode)) {
+    Enter_Scalar_Refs(kind,WN_kid0(wn),ar,pi,can_be_inner,num_loops,outer,
+		      num_scalar_refs);
+  } else if (!OPCODE_is_load(opcode)) {
+    for (INT kidno=0; kidno<WN_kid_count(wn); kidno++) {
+      WN *kid = WN_kid(wn,kidno);
+      Enter_Scalar_Refs(kind, kid,ar,pi,can_be_inner,num_loops,outer,
+		      num_scalar_refs);
+    }
+  }
+  
+  OPERATOR oper = OPCODE_operator(opcode);
+  if ((oper == OPR_LDID)  || (oper == OPR_CONST) ||
+             (is_store=(OPCODE_operator(opcode) == OPR_STID))) { 
+    TYPE_ID type;
+    if (is_store) {
+      type = OPCODE_desc(opcode);
+    } else {
+      type = OPCODE_rtype(opcode);
+    }
+
+    SYMBOL symb(wn);
+    SX_PITER   ii(&pi->Plist);
+    BOOL found = FALSE;
+    SX_PNODE *n,*found_n=NULL;
+    for (n = ii.First(); n && !found; n = ii.Next()) {
+      if (n->Symbol() == symb) {
+	found = TRUE;
+	SX_PNODE::STATUS status = n->Transformable(outer);
+	if (status != SX_PNODE::SE_NOT_REQD) {
+	  found_n = n;
+	}
+      }
+    }
+    
+    if (found_n) {
+      ar->Enter_Scalar_Expand(wn,found_n, can_be_inner, num_loops);
+    } else {
+      switch (kind) {
+      case REF_FLOAT:
+	if (MTYPE_float(type)) {
+	  if ((type == MTYPE_F4) || (type == MTYPE_F8)) {
+	    Enter(&symb, is_store, 1);
+	    (*num_scalar_refs)++;
+	  } else if ((type == MTYPE_C4) || 
+		     (type==MTYPE_C8) || 
+		     (type == MTYPE_FQ)) {
+	    Enter(&symb, is_store, 2);
+	    (*num_scalar_refs)+=2;
+	  } else if (type == MTYPE_CQ) {
+	    Enter(&symb, is_store, 4);
+	    (*num_scalar_refs)+=4;
+	  }
+	}
+	break;
+      case REF_POINTER:
+	if (MTYPE_is_class_pointer(type)) {
+	  if (Ref_Needs_Reg(wn)) {
+	    (*num_scalar_refs)++;
+	    Enter(&symb, is_store, 1);
+	  }
+	}
+	break;
+      case REF_INTEGER:
+	if (MTYPE_is_class_integer(type)) {
+	  if (Ref_Needs_Reg(wn)) {
+	    (*num_scalar_refs)++;
+	    Enter(&symb, is_store, 1);
+	  }
+	}
+	break;
+      case REF_BOOLEAN:
+	if (MTYPE_is_class_boolean(type)) {
+	  (*num_scalar_refs)++;
+	  Enter(&symb, is_store, 1);
+	}
+	break;
+      }
+    }
+  }
+}
+
+#else /* not ST */
 
 void SYMBOL_TREE::Enter_Scalar_Refs(
 WN *wn, INT *num_scalar_refs,
@@ -4214,7 +5242,7 @@ void SYMBOL_TREE::Enter_Scalar_Refs(WN *wn, ARRAY_REF *ar,
     }
   }
 }
-
+#endif
 
 // Enter a symbol into the binary true if it's a new symbol
 // If is_store, set is_store in the tree
@@ -4286,18 +5314,46 @@ REGISTER_MODEL::Evaluate(WN* inner,
   INT base_fp_regs;  
   INT32 fp_regs_used;
   INT32 int_regs_used;
+   INT32 ptr_regs_used;
+  INT32 bool_regs_used;
+
   INT num_fp_scalar_refs = 0;
   INT num_int_scalar_refs = 0;
+   INT num_ptr_scalar_refs = 0;
+  INT num_bool_scalar_refs = 0;
+#ifdef TARG_ST
+  INT issue_rate;
+  INT num_mem_units;
+  INT num_fp_regs;
+  INT num_fp_variant_stores, num_fp_invariant_stores;
+  INT num_int_regs;
+  INT num_int_variant_stores, num_int_invariant_stores;
+  INT num_ptr_regs;
+  INT num_ptr_variant_stores, num_ptr_invariant_stores;
+  INT num_bool_regs;
+  INT num_bool_variant_stores, num_bool_invariant_stores;
+
+  double num_fp_array_refs, num_int_array_refs, num_ptr_array_refs, num_bool_array_refs;
+
+#else
+
   INT issue_rate;
   INT num_mem_units;
   INT num_fp_regs, num_fp_array_refs;
   INT num_fp_variant_stores, num_fp_invariant_stores;
   INT num_int_regs, num_int_array_refs;
   INT num_int_variant_stores, num_int_invariant_stores;
-
+#endif
   BOOL register_only = (se_needed == NULL && loop_cycles == NULL);
 
   MEM_POOL_Push(_pool);
+#ifdef TARG_ST
+  INT base_int_regs;
+  INT base_ptr_regs;
+  INT base_bool_regs;
+  // Arthur: I will try to define this in the target directory:
+  LNOTARGET_Set_Register_Model_Parameters (&issue_rate, &base_fp_regs, &base_int_regs, &base_ptr_regs, &base_bool_regs, &num_mem_units);
+#else
 
   INT base_int_regs = Reserved_Int_Regs;
 
@@ -4343,7 +5399,7 @@ REGISTER_MODEL::Evaluate(WN* inner,
     base_fp_regs = 4;
     num_mem_units = 2;
   }     
-
+#endif
   // registers required for array refs
   ARRAY_REF *array_ref = CXX_NEW(ARRAY_REF(_pool),_pool);
   INT i;
@@ -4358,25 +5414,89 @@ REGISTER_MODEL::Evaluate(WN* inner,
 	CXX_NEW(SYMBOL_TREE(/*is_floating_point*/TRUE,_pool),_pool);
   SYMBOL_TREE *int_symbol_tree = 
 	CXX_NEW(SYMBOL_TREE(/*is_floating_point*/FALSE,_pool),_pool);
+#ifdef TARG_ST
+  SYMBOL_TREE *ptr_symbol_tree = 
+	CXX_NEW(SYMBOL_TREE(/*is_floating_point*/FALSE,_pool),_pool);
+  SYMBOL_TREE *bool_symbol_tree = 
+	CXX_NEW(SYMBOL_TREE(/*is_floating_point*/FALSE,_pool),_pool);
+#endif
+
   for (i=0; i<_statement_stack->Elements(); i++) {
+#ifdef TARG_ST
+    fp_symbol_tree->Enter_Scalar_Refs(REF_FLOAT,
+				      _statement_stack->Bottom_nth(i),
+				      &num_fp_scalar_refs,
+				      se_needed,array_ref);
+    int_symbol_tree->Enter_Scalar_Refs(REF_INTEGER,
+				       _statement_stack->Bottom_nth(i),
+	                               &num_int_scalar_refs,
+                                       se_needed,array_ref);
+    ptr_symbol_tree->Enter_Scalar_Refs(REF_POINTER,
+				       _statement_stack->Bottom_nth(i),
+	                               &num_ptr_scalar_refs,
+                                       se_needed,array_ref);
+    bool_symbol_tree->Enter_Scalar_Refs(REF_BOOLEAN,
+				       _statement_stack->Bottom_nth(i),
+	                               &num_bool_scalar_refs,
+                                       se_needed,array_ref);
+#else
     fp_symbol_tree->Enter_Scalar_Refs(_statement_stack->Bottom_nth(i),
 	                               &num_fp_scalar_refs,
                                        se_needed,array_ref);
     int_symbol_tree->Enter_Scalar_Refs(_statement_stack->Bottom_nth(i),
 	                               &num_int_scalar_refs,
                                        se_needed,array_ref);
+#endif
   }
   INT scalar_fp_regs = fp_symbol_tree->Num_Fp_Unstored();
   INT scalar_int_regs = int_symbol_tree->Num_Int_Unstored();
+#ifdef TARG_ST
+  INT scalar_ptr_regs = ptr_symbol_tree->Num_Ptr_Unstored();
+  INT scalar_bool_regs = bool_symbol_tree->Num_Bool_Unstored();
+#endif
+
   CXX_DELETE(fp_symbol_tree,_pool);
   CXX_DELETE(int_symbol_tree,_pool);
-
+#ifdef TARG_ST
+  CXX_DELETE(ptr_symbol_tree,_pool);
+  CXX_DELETE(bool_symbol_tree,_pool);
+#endif
   INT inner_number = Do_Loop_Depth(inner);
+#ifdef TARG_ST
   num_fp_array_refs = array_ref->Num_Fp_Refs();
   num_int_array_refs = array_ref->Num_Int_Refs();
+  num_ptr_array_refs = array_ref->Num_Ptr_Refs();
+  num_bool_array_refs = array_ref->Num_Bool_Refs();
+#else
+  num_fp_array_refs = array_ref->Num_Fp_Refs();
+  num_int_array_refs = array_ref->Num_Int_Refs();
+#endif
   array_ref->Remove_Cse(inner_number, Max_Cse_Dist,
 				Find_Step(inner,inner_number));
   array_ref->Mark_Invariants(inner_number);
+#ifdef TARG_ST
+  INT num_fp_refs;
+  INT num_int_refs;
+  INT num_ptr_refs;
+  INT num_bool_refs;
+
+  INT num_fp_spills=0;
+  INT num_int_spills=0;
+  INT num_ptr_spills=0;
+  INT num_bool_spills=0;
+
+  array_ref->Calc_Regs_And_Refs(
+	&num_fp_regs,&num_fp_refs,&num_fp_variant_stores,
+	&num_fp_invariant_stores,
+	&num_int_regs,&num_int_refs,&num_int_variant_stores,
+	&num_int_invariant_stores,
+	&num_ptr_regs,&num_ptr_refs,&num_ptr_variant_stores,
+	&num_ptr_invariant_stores,
+	&num_bool_regs,&num_bool_refs,&num_bool_variant_stores,
+	&num_bool_invariant_stores
+	);
+
+#else
 
   INT num_fp_refs;
   INT num_int_refs;
@@ -4388,11 +5508,59 @@ REGISTER_MODEL::Evaluate(WN* inner,
 	&num_fp_invariant_stores,
 	&num_int_regs,&num_int_refs,&num_int_variant_stores,
 	&num_int_invariant_stores);
-
+#endif
   if (num_fp_invariant_stores > 4*num_fp_variant_stores) {
      base_fp_regs /= 3;  // don't count invariants both as invariants and
                           // as pipelines
   }
+#ifdef TARG_ST
+  fp_regs_used = base_fp_regs + scalar_fp_regs + num_fp_regs;
+  int_regs_used = base_int_regs + scalar_int_regs + num_int_regs;
+  ptr_regs_used = base_ptr_regs + scalar_ptr_regs + num_ptr_regs;
+  bool_regs_used = base_bool_regs + scalar_bool_regs + num_bool_regs;
+
+  BOOL can_reg_allocate = TRUE;
+  if (fp_regs_used > Target_FPRs) {
+    double fp_refs_per_reg = (num_fp_array_refs + num_fp_scalar_refs)/
+                            (num_fp_regs +scalar_fp_regs);
+    num_fp_spills =
+        (INT)((num_fp_regs+base_fp_regs+scalar_fp_regs - Target_FPRs) *
+                        fp_refs_per_reg);
+    num_fp_refs += num_fp_spills;
+    can_reg_allocate = FALSE;
+  }
+  if (int_regs_used > Target_INTRs) {
+  
+    double int_refs_per_reg = (num_int_array_refs + num_int_scalar_refs)/
+                            (num_int_regs +scalar_int_regs);
+    num_int_spills =
+         (INT)((num_int_regs+base_int_regs+scalar_int_regs - Target_INTRs)*
+                        int_refs_per_reg);
+    num_int_refs += num_int_spills;
+    can_reg_allocate = FALSE;
+  }
+  if (ptr_regs_used > Target_PTRs) {
+  
+    double ptr_refs_per_reg = (num_ptr_array_refs + num_ptr_scalar_refs)/
+                            (num_ptr_regs +scalar_ptr_regs);
+    num_ptr_spills =
+         (INT)((num_ptr_regs+base_ptr_regs+scalar_ptr_regs - Target_PTRs)*
+                        ptr_refs_per_reg);
+    num_ptr_refs += num_ptr_spills;
+    can_reg_allocate = FALSE;
+  }
+  if (bool_regs_used > Target_BRs) {
+  
+    double bool_refs_per_reg = (num_bool_array_refs + num_bool_scalar_refs)/
+                            (num_bool_regs +scalar_bool_regs);
+    num_bool_spills =
+         (INT)((num_bool_regs+base_bool_regs+scalar_bool_regs - Target_BRs)*
+                        bool_refs_per_reg);
+    num_bool_refs += num_bool_spills;
+    can_reg_allocate = FALSE;
+  }
+
+#else
 
   fp_regs_used = base_fp_regs + scalar_fp_regs + num_fp_regs;
   int_regs_used = base_int_regs + scalar_int_regs + num_int_regs;
@@ -4417,7 +5585,7 @@ REGISTER_MODEL::Evaluate(WN* inner,
     num_int_refs += num_int_spills;
     can_reg_allocate = FALSE;
   }
-
+#endif
   if (register_only && can_reg_allocate) {
     CXX_DELETE(array_ref,_pool);
     MEM_POOL_Pop(_pool);
@@ -4436,13 +5604,22 @@ REGISTER_MODEL::Evaluate(WN* inner,
   double LOOP_INIT_issue = 2.0;
 
   // count memory references
+#ifdef TARG_ST
+  double MEM_issue = ((double) (num_fp_refs+num_int_refs+num_ptr_refs+num_bool_refs));
+  double MEM_rcycles = MEM_issue/num_mem_units;
+  double MEM_issue_minus_spills = ((double)(num_fp_refs-num_fp_spills + num_int_refs-num_int_spills + num_ptr_refs-num_ptr_spills + num_bool_refs-num_bool_spills));
+  double MEM_rcycles_minus_spills = MEM_issue_minus_spills/num_mem_units;
+
+#else
+
   double MEM_issue = ((double) (num_fp_refs+num_int_refs));
   double MEM_rcycles = MEM_issue/num_mem_units;
 
   double MEM_issue_minus_spills = ((double) 
 	(num_fp_refs-num_fp_spills + num_int_refs-num_int_spills));
   double MEM_rcycles_minus_spills = MEM_issue_minus_spills/num_mem_units;
-
+#endif
+  
   double issue_limit =
 	(OP_issue+LOOP_INIT_issue+MEM_issue) / issue_rate;
   double issue_limit_minus_spills = 
@@ -4463,6 +5640,11 @@ REGISTER_MODEL::Evaluate(WN* inner,
     can_reg_allocate = TRUE;
     num_fp_regs = Target_FPRs - scalar_fp_regs - base_fp_regs;
     num_int_regs = Target_INTRs - scalar_int_regs - base_int_regs;
+#ifdef TARG_ST
+    num_ptr_regs = Target_PTRs - scalar_ptr_regs - base_ptr_regs;
+    num_bool_regs = Target_BRs - scalar_bool_regs - base_bool_regs;
+#endif
+
   }
 
   if (can_reg_allocate) {
@@ -4472,11 +5654,23 @@ REGISTER_MODEL::Evaluate(WN* inner,
                Target_INTRs-2){
       cycles *= 1.1;  // penalty for being close to unallocatable
     }
+#ifdef TARG_ST
+    else if (num_ptr_regs + base_ptr_regs + scalar_ptr_regs >
+               Target_PTRs-2){
+      cycles *= 1.1;  // penalty for being close to unallocatable
+    } else if (num_bool_regs + base_bool_regs + scalar_bool_regs >
+               Target_BRs-2){
+      cycles *= 1.1;  // penalty for being close to unallocatable
+    }
+#endif
   }
 
   fp_regs_used = base_fp_regs + scalar_fp_regs + num_fp_regs;
   int_regs_used = base_int_regs + scalar_int_regs + num_int_regs;
-
+#ifdef TARG_ST
+  ptr_regs_used = base_ptr_regs + scalar_ptr_regs + num_ptr_regs;
+  bool_regs_used = base_bool_regs + scalar_bool_regs + num_bool_regs;
+#endif
   CXX_DELETE(array_ref,_pool);
   MEM_POOL_Pop(_pool);
   *fp_regs_used_out=fp_regs_used;

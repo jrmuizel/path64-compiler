@@ -1,12 +1,9 @@
 project(libmv)
 
-IF(PATH64_BUILD_32)
-
 SET(PATHSCALE_MV_SRCS ../libmpath/dummy.c)
 
-ELSE()
-
-SET(PATHSCALE_MV_SRCS   	"../libmpath/amd/vrdacos.S"
+SET(PATHSCALE_MV_SRCS_X64
+                "../libmpath/amd/vrdacos.S"
 				"../libmpath/amd/vrdaexp.s"
 				"../libmpath/amd/vrdalog.s"
 				"../libmpath/amd/vrdalog10.s"
@@ -63,7 +60,6 @@ SET(PATHSCALE_MV_SRCS   	"../libmpath/amd/vrdacos.S"
 				"../libmpath/amd/vrdapow.c"
 				"../libmpath/amd/vrsapowf.c")
 
-ENDIF()
 
 INCLUDE_DIRECTORIES(
 	../libmpath/amd
@@ -77,34 +73,36 @@ ADD_DEFINITIONS(
 	-std=gnu99)
 
 IF(PATH64_ENABLE_MATHLIBS)
+
 set_source_files_properties(${PATHSCALE_MV_SRCS} PROPERTIES LANGUAGE C)
-add_library(mv-static STATIC ${PATHSCALE_MV_SRCS})
-SET_TARGET_PROPERTIES(mv-static PROPERTIES OUTPUT_NAME "mv")
+path64_set_multitarget_sources(mv_sources COMMON ${PATHSCALE_MV_SRCS})
+path64_set_multitarget_sources(mv_sources x86_64 ${PATHSCALE_MV_SRCS_X64})
 
 if(${CMAKE_C_COMPILER_ID} MATCHES "PathScale")
     set(BOOTSTRAP_HACK -fbootstrap-hack)
 endif()
 
-add_library(mv SHARED ${PATHSCALE_MV_SRCS})
-set_property(TARGET mv PROPERTY COMPILE_DEFINITIONS PIC)
-set_property(TARGET mv PROPERTY SOVERSION 1)
+path64_add_multitarget_library(mv-static STATIC mv_sources)
+path64_set_multitarget_property(mv-static OUTPUT_NAME "mv")
+
+path64_add_multitarget_library(mv SHARED mv_sources)
+path64_set_multitarget_property(mv COMPILE_DEFINITIONS PIC)
+path64_set_multitarget_property(mv SOVERSION 1)
+
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-set_property(TARGET mv PROPERTY LINK_FLAGS "-Wl,-x -Wl,--version-script=${libmv_SOURCE_DIR}/libmv.vs ${BOOTSTRAP_HACK}")
+    path64_set_multitarget_property(mv LINK_FLAGS
+            "-Wl,-x -Wl,--version-script=${libmv_SOURCE_DIR}/libmv.vs  ${BOOTSTRAP_HACK}")
 else()
-set_property(TARGET mv PROPERTY LINK_FLAGS "${BOOTSTRAP_HACK}")
+    path64_set_multitarget_property(mv LINK_FLAGS "${BOOTSTRAP_HACK}")
 endif()
-target_link_libraries(mv m)
 
-IF(PATH64_ENABLE_PROFILING)
-add_library(mv_p STATIC ${PATHSCALE_MV_SRCS})
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-set_property(TARGET mv_p PROPERTY COMPILE_FLAGS -pg)
-endif()
-install(TARGETS mv_p ARCHIVE DESTINATION ${PATH64_LIB_PATH})
-ENDIF(PATH64_ENABLE_PROFILING)
+path64_multitarget_link_libraries(mv m)
 
-install(TARGETS mv-static mv
-        LIBRARY DESTINATION ${PATH64_LIB_PATH}
-        ARCHIVE DESTINATION ${PATH64_LIB_PATH})
+if(PATH64_ENABLE_PROFILING)
+    path64_add_multitarget_library(mv_p STATIC mv_sources)
+    if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+        path64_set_multitarget_property(mv_p COMPILE_FLAGS -pg)
+    endif()
+endif(PATH64_ENABLE_PROFILING)
 
 ENDIF(PATH64_ENABLE_MATHLIBS)

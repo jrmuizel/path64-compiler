@@ -1565,6 +1565,7 @@ static void exec_smake (char* sh_cmdfile_name)
 }
 
 #ifdef KEY
+#ifndef TARG_ST
 extern "C" {
 // Allow ipa_link to call the error routines.
 
@@ -1587,4 +1588,5 @@ Ipalink_ErrMsg_EC_outfile (char *name)
 }
 
 }	// extern "C"
+#endif
 #endif

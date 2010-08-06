@@ -26,6 +26,7 @@
 #include "defs.h"
 #include "tracing.h"
 #include "cg_flags.h"
+#include "bb.h"
 #include "cgprep.h"
 #include "cg_loop.h"
 #include "cg_loop_mii.h"

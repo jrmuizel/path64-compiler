@@ -1,0 +1,11 @@
+
+
+#include "targ_info.h"
+#include "option_names.h"
+
+targ_info_t targ_info[] = {
+${TARGET_DEFINITIONS}
+};
+
+size_t targ_info_size = sizeof(targ_info) / sizeof(targ_info[0]);
+

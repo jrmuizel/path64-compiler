@@ -33,8 +33,12 @@
 #include "tracing.h"
 #include "timing.h"
 
+#include "tn.h"
+#include "bb.h"
+
 /* Code Generator (CG) related include files */
 #include "cg.h"
+#include "cgtarget.h"
 #include "cg_loop.h"
 #include "cg_loop_mii.h"
 #include "cgexp.h"
@@ -59,7 +63,7 @@
 /* Standard Template Library (STL) related include files */
 #include <algorithm>
 #include <cmath>
-
+#ifndef TARG_ST
 using namespace std;
 
 
@@ -1057,4 +1061,4 @@ SWP_DRIVER::Restore_Backpatches (void) {
   return;
 }
 
-
+#endif

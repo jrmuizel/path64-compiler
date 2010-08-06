@@ -38,7 +38,7 @@
 #include "cg_swp_op_vector.h"
 
 
-
+#ifndef TARG_ST
 class SWP_LIFENESS {
   private:
   MEM_POOL *_m;
@@ -92,6 +92,6 @@ SWP_LIFENESS::Is_Loop_Defined (const TN *tn) const {
   
   return TN_SET_MemberP (_tn_defined, tn);
 }
-
+#endif
 #endif /* cg_swp_lifeness_INCLUDED */
 

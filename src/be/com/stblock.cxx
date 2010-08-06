@@ -435,6 +435,7 @@ void St_Block_Union(ST *blk1, ST *blk2)
  *
  * ====================================================================
  */
+#ifndef TARG_ST
 INT64
 Offset_From_Base_Symbol ( ST *st )
 {
@@ -444,6 +445,7 @@ Offset_From_Base_Symbol ( ST *st )
   Base_Symbol_And_Offset ( st, &base, &ofst );
   return ofst;
 }
+#endif
 
 /* ====================================================================
  *
@@ -453,7 +455,7 @@ Offset_From_Base_Symbol ( ST *st )
  *
  * ====================================================================
  */
-
+#ifndef TARG_ST
 ST *
 Base_Symbol (ST *st) 
 {
@@ -463,7 +465,7 @@ Base_Symbol (ST *st)
   Base_Symbol_And_Offset ( st, &base, &ofst );
   return base;
 }
-
+#endif
 
 // Create slink symbol in current PU
 void

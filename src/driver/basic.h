@@ -34,6 +34,8 @@ typedef int boolean;
 #define FALSE 0
 #define TRUE 1
 typedef char buffer_t[512];
+typedef char * string;
+
 #define NIL '\0'
 
 #endif

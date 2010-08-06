@@ -49,7 +49,16 @@ extern ST_IDX exc_ptr;
 extern int make_symbols_weak;
 extern bool try_block_seen;
 extern bool in_cleanup;
+#ifdef TARG_ST
+// (cbr) 
+extern bool need_manual_unwinding;
+extern bool unwind_handler_needed (void);
+#endif
+#ifdef TARG_ST
+extern void WGEN_Expand_Pragma (gs_t, bool);
+#else
 extern void WGEN_Expand_Pragma (gs_t);
+#endif
 extern void Register_Cleanup (gs_t);
 extern void Unregister_Cleanup (void);
 extern ST_IDX Get_exception_pointer_symbol (void);
@@ -58,6 +67,9 @@ extern ST_IDX Get_exception_filter_symbol (void);
 extern void WGEN_maybe_do_eh_cleanups (void);
 #endif
 #endif // KEY
+#ifdef TARG_ST
+void Init_Guard (WN *);
+#endif
 extern INT Current_Handler_Count();
 extern void Add_Handler_Info (WN * call_wn, INT i, INT num_handlers);
 

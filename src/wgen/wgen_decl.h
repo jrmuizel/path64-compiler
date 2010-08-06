@@ -74,6 +74,14 @@ extern ST *WGEN_Generate_Temp_For_Initialized_Aggregate (gs_t init, const char *
 
 /* handle __attribute__ ((alias)) */
 extern BOOL WGEN_Assemble_Alias (gs_t decl, gs_t target);
+#ifndef TARG_ST
+// [SC] These are not actually defined anywhere.
+/* handle __attribute__ ((constructor)) */
+extern void WGEN_Assemble_Constructor (char *name);
+
+/* handle __attribute__ ((destructor)) */
+extern void WGEN_Assemble_Destructor (char *name);
+#endif
 
 /* handle __attribute__ ((constructor)) */
 extern void WGEN_Assemble_Constructor (char *name);
@@ -126,5 +134,14 @@ extern gs_t named_ret_obj_initializer;
 #endif
 /* KEY: ST to represent EXC_PTR_EXPR if C++ exceptions are disabled */
 extern ST * Dummy_Exc_Ptr_Expr;
+#ifdef TARG_ST
+extern void check_ref (gs_t);
+
+extern void WGEN_Assemble_Asm(char *);
+
+/* (cbr) C++ specific formal parameter */
+extern ST *first_formal;
+#endif
+
 #endif
 

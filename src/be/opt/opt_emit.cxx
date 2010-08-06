@@ -1092,6 +1092,29 @@ Raise_whiledo_stmt_to_doloop(EMITTER *emitter, BB_NODE *bb, BB_NODE *prev_bb, BB
 }
 
 
+#ifdef TARG_ST
+static void
+Move_wn_before(BB_NODE *from, BB_NODE *to, WN* point, WN *wn)
+{
+  if (WN_prev(wn))
+    WN_next(WN_prev(wn)) = WN_next(wn);
+  if (WN_next(wn))
+    WN_prev(WN_next(wn)) = WN_prev(wn);
+
+  if (from->Firststmt() == wn)
+    from->Set_firststmt(WN_next(wn));
+  if (from->Laststmt() == wn)
+    from->Set_laststmt(WN_prev(wn));
+
+  to->Insert_wn_before(wn, point);
+}
+
+static BOOL
+is_loop_pragma(WN *wn) {
+  return WN_operator(wn) == OPR_PRAGMA &&
+    WN_Pragma_Scope(WN_pragma(wn)) == WN_PRAGMA_SCOPE_LOOP;
+}
+#endif
 static WN*
 Raise_whiledo_stmt(EMITTER *emitter, BB_NODE *bb, BB_NODE *prev_bb, BB_NODE **next_bb)
 {
@@ -1100,8 +1123,43 @@ Raise_whiledo_stmt(EMITTER *emitter, BB_NODE *bb, BB_NODE *prev_bb, BB_NODE **ne
   if (WOPT_Enable_While_Loop && 
       Can_raise_to_doloop(bb->Loop(), FALSE, emitter->Htable()))
     rwn = Raise_whiledo_stmt_to_doloop(emitter, bb, prev_bb, next_bb);
-  else 
+  else {
     rwn = Raise_whiledo_stmt_to_whileloop(emitter, bb, next_bb);
+#ifdef TARG_ST
+    // Then, move pragmas from prev_bb just before while_do in rwn
+    // Look_for WhileDO in rwn
+    if ((prev_bb != NULL) && (prev_bb->Branch_stmtrep() == NULL) && (WN_operator(rwn) == OPR_BLOCK)) {
+      WN *point = WN_first(rwn);
+      for (point; point && (WN_operator(point) != OPR_WHILE_DO); point = WN_next(point));
+      Is_True(point, ("Raise_whiledo_stmt: WHILE_DO not found in rwn"));
+
+      WN *wn, *wn_prev, *wn_pragma = NULL;
+      for (wn = prev_bb->Laststmt(); wn; wn = wn_prev) {
+	wn_prev = WN_prev(wn);
+	if (is_loop_pragma(wn)) {
+	  // Move pragma before wn_while_do
+	  wn_pragma = wn;
+	  if ((WN_prev(wn) == NULL) && (WN_next(wn) == NULL)) {
+	    // FdF 20070330: Do not remove the unique pragma
+	    // instruction of a basic block, otherwise it raises
+	    // assertions later (see wmaprolsl_lowrate_commonstd.i
+	    // from DVD_ACC_PERF, and comment "Raymond 12/24/97" in
+	    // this file.).
+	  }
+	  else {
+	    Move_wn_before(prev_bb, bb, point, wn);
+	    if (point == WN_first(rwn))
+	      WN_first(rwn) = wn;
+	    point = wn;
+	  }
+	}
+	else if ((WN_operator(wn) != OPR_STID) || (wn_pragma != NULL))
+	  break;
+      }
+    }
+#endif
+  }
+
 
   if (Run_prompf && 
       bb->Loop()->Orig_wn() != NULL &&
@@ -1340,7 +1398,7 @@ EMITTER::Gen_wn(BB_NODE *first_bb, BB_NODE *last_bb)
 	else if ( entry_opc == OPC_ALTENTRY ||
 		  (entry_opc == OPC_LABEL && 
 		   (WN_Label_Is_Handler_Begin(bb->Entrywn())
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 		   || LABEL_target_of_goto_outer_block(WN_label_number(bb->Entrywn()))
 #endif
 		   ) ) )
@@ -1630,7 +1688,7 @@ EMITTER::Can_raise_to_scf(BB_NODE *bb)
     bb_end = bb_start->Loopend();
     bb_step = bb_start->Loopstep();
     bb_merge = bb_start->Loopmerge();
-#ifdef KEY // bug 8327: the incr stmt has been optimized to something else
+#if defined( KEY) && !defined(TARG_ST) // bug 8327: the incr stmt has been optimized to something else
     // bugs 13605, 13624: A DOSTEP originally contains the step WN followed
     // by a goto to the DOEND. DCE sometimes introduces a label at the start,
     // and sometimes is not able to delete the goto. So the actual STEP wn

@@ -52,8 +52,9 @@
 #include "tn.h"
 #include "cg_flags.h"
 #include "op.h"
+#include "op_map.h"
 #include "cgexp.h"
-#include "cgexp_internals.h"
+
 #include "whirl2ops.h"
 
 #define RESET_COND_DEF_LAST(ops) Set_OP_cond_def_kind(OPS_last(ops),OP_ALWAYS_UNC_DEF)

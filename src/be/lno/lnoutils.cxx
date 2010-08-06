@@ -394,7 +394,7 @@ extern void wn_dumpexpr(WN* wn, INT fancy, FILE* f,
      case OPR_CONST:
       switch (OPCODE_rtype(opc)) {
        case MTYPE_F4:
-	fprintf(f, "%g", STC_val(WN_st(wn)).vals.fval);
+	fprintf(f, "%g", STC_val(WN_st(wn)).vals.f.fval);
 	break;
        case MTYPE_F8:
 	fprintf(f, "%g", STC_val(WN_st(wn)).vals.dval);
@@ -2904,7 +2904,7 @@ static void LNO_Erase_Vertices_In_Loop_Rec(WN *wn, ARRAY_DIRECTED_GRAPH16 *dg)
   }
   if (OPCODE_is_load(opcode) || OPCODE_is_store(opcode) || 
       OPCODE_is_call(opcode) || (OPCODE_operator(opcode) == OPR_INTRINSIC_OP)
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       || (OPCODE_operator(opcode) == OPR_PURE_CALL_OP)
 #endif
       ) {
@@ -3075,7 +3075,7 @@ static void Du_Sanity_Check_r(
         opr==OPR_FUNC_ENTRY || opr==OPR_RETURN || OPCODE_has_barrier(opc) ||
         opr==OPR_PARM || (opr==OPR_LABEL && WN_Label_Is_Handler_Begin(wn)) ||
         opr==OPR_IO || OPCODE_is_call(opc) || opr==OPR_INTRINSIC_OP
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
         || opr==OPR_PURE_CALL_OP
         || opr==OPR_GOTO_OUTER_BLOCK
 #endif
@@ -3480,7 +3480,7 @@ BOOL Is_Loop_Invariant_Exp(WN* wn,
 	return FALSE; 
     return TRUE; 
   } else if (opr == OPR_INTRINSIC_OP
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	     || opr == OPR_PURE_CALL_OP
 #endif
             ) { 

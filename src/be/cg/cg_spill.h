@@ -197,6 +197,20 @@
  *	    Return a boolean that indicates if the specified OP is
  *	    a spill or restore operation.
  *
+ * 	TARG_ST [CG]: Note that this function returns true for any
+ *	op marked OP_spill(op). The old way was to check for the
+ *	stored/loaded TN. 
+ *	The old way dis not work because of two cases:
+ *	1. The TN may be marked as spill while the store is to another
+ *	   location (i.e. the store is not a spill to the spill location
+ *	   but a store of the spilled TN at another location).
+ *	   Thus the function returned a non spill store as spill.
+ *	2. After peephole optimizations (EBO in peep) copy propagation
+ *	   may have replace the spilled TN by another one not marked
+ *	   spilled.
+ *	   Thus the function returned a spill store as non spill.
+ *
+ *
  *	ST *CGSPILL_OP_Spill_Location (const OP *op)
  *	    If <op> is a spill or restore, return the symbol for
  *	    the associated spill location.
@@ -213,6 +227,25 @@
  *	    info (whirl) to be able to rematerialize it. The routines
  *	    are to be used when creating new OPs after the whirl2ops
  *	    phase.
+ *
+ * For TARG_ST [CG]:
+ *	ST *CGSPILL_Gen_Spill_Symbol (
+ *		TY_IDX ty, 
+ *		const char *root)
+ *
+ *	    Return a spill symbol of type <ty> and allocate it to memory. Use 
+ *	    the <root> as the prefix of the temporary name.
+ *          This should be used for generating on demand a new spill symbol
+ *	    in a context other than GRA/LRA/LCL/SWP.
+ *	    Currenlty used by the LAO->CGIR interface to generate spill
+ *	    symbols for LAO generated spill.
+ *
+ *  For TARG_ST [TTh]:
+ *	INT Spill_Type_Index ( TN *tn )
+ *	    
+ *	    Return an index into the CGTARG_Spill_Type[] array for the
+ *	    appropriate spill location type for 'tn'. This index is also
+ *	    compatible with CGTARG_Spill_MType[] array.
  *
  * =======================================================================
  * =======================================================================
@@ -259,7 +292,11 @@ extern void CGSPILL_Force_Rematerialization (void);
 extern void CGSPILL_Force_Rematerialization_For_BB (BB *bb);
 
 extern void CGSPILL_Attach_Lda_Remat(TN *tn, TYPE_ID typ, INT64 offset, ST *st);
+#ifdef TARG_ST
+extern void CGSPILL_Attach_Intconst_Remat(TN *tn, TYPE_ID rtype, INT64 val);
+#else
 extern void CGSPILL_Attach_Intconst_Remat(TN *tn, INT64 val);
+#endif
 extern void CGSPILL_Attach_Floatconst_Remat(TN *tn, TYPE_ID typ, double val);
 extern void CGSPILL_Attach_Const_Remat(TN *tn, TYPE_ID typ, ST *st);
 
@@ -299,6 +336,13 @@ typedef hash_map<ST_IDX,
 		 std::equal_to<ST_IDX> > SPILL_SYM_INFO_MAP;
 
 SPILL_SYM_INFO &CGSPILL_Get_Spill_Sym_Info (ST *spill_loc);
+#endif
+
+#ifdef TARG_ST
+ INT
+Spill_Type_Index(TN *tn);
+ ST *
+CGSPILL_Gen_Spill_Symbol (TY_IDX ty, const char *root);
 #endif
 
 #endif /* cgspill_INCLUDED */

@@ -68,6 +68,7 @@ static char *rcs_id = "$Source: driver/SCCS/s.main.c $ $Revision: 1.109 $";
 #include "run.h"
 #include "objects.h"
 #include "version.h"
+#include "targets.h"
 
 char *help_pattern;
 boolean debug;
@@ -153,14 +154,16 @@ main (int argc, char *argv[])
 	append_default_options(&argc, &argv);
 
 #if defined(KEY) && defined(TARG_MIPS)
-	// If ABI is defined, append the contents of CFLAGS_${ABI}
-	// to the default options.
-	ABI_varname = getenv("ABI");
-	if (ABI_varname) {
-	  ABI_varname = concat_strings("CFLAGS_", ABI_varname);
-	  append_psc_env_flags(&argc, &argv, ABI_varname);
-	  free(ABI_varname);
-	}
+    if (is_target_arch_MIPS()) {
+	  // If ABI is defined, append the contents of CFLAGS_${ABI}
+	  // to the default options.
+	  ABI_varname = getenv("ABI");
+	  if (ABI_varname) {
+	    ABI_varname = concat_strings("CFLAGS_", ABI_varname);
+	    append_psc_env_flags(&argc, &argv, ABI_varname);
+	    free(ABI_varname);
+	  }
+    }
 #endif
 
 	save_command_line(argc, argv);		/* for prelinker    */	
@@ -195,14 +198,8 @@ main (int argc, char *argv[])
             do_exit(1);
         }
 
-	/* Try to find where the compiler is located and set the phase
-	   and library directories appropriately. */
-	set_executable_dir();
-
 	// "-o -" will set this to TRUE.
 	dump_outfile_to_stdout = FALSE;
-
-	init_phase_info();	/* can't add toolroot until other prefixes */
 
         /* Hack for F90 ftpp; For pre processing F90 calls ftpp;
          * Unlike cpp, ftpp does not like the -Amachine(mips) and -Asystem(unix)
@@ -355,6 +352,14 @@ main (int argc, char *argv[])
 		}
 	}
 
+    init_targets();
+
+	/* Try to find where the compiler is located and set the phase
+	   and library directories appropriately. */
+	set_executable_dir();
+
+	init_phase_info();	/* can't add toolroot until other prefixes */
+
 	// Determine if the compiler is called as a linker.
 	int num_non_h_src_files = num_files - num_h_files - num_o_files;
 	boolean called_as_linker =
@@ -376,7 +381,7 @@ main (int argc, char *argv[])
 	Check_Target ();
 #if defined(BUILD_OS_DARWIN)
 	/* Mach-O X86_64 requires PIC */
-	if (abi == ABI_64) {
+	if (abi == ABI_M64) {
 	  toggle(&pic, TRUE);
 	  add_option_seen(O_fpic);
 	}
@@ -450,7 +455,7 @@ main (int argc, char *argv[])
 #ifdef KEY
 	// bug 10620
 	if (mem_model != M_SMALL &&
-	    abi == ABI_N32) {
+	    (abi == ABI_N32 || abi == ABI_M32)) {
 	  error("code model \"%s\" not support in 32-bit mode", mem_model_name);
 	}
 	// bug 9066
@@ -773,12 +778,25 @@ static void set_executable_dir (void) {
       basedir = ".";
     }
 #endif /* KEY Mac port */
+    char *target_ppath = target_phase_path();
+
+    if(!is_directory(target_ppath)) {
+      internal_error("phase directory %s for target %s does not exist",
+                     target_ppath, current_target->targ_name);
+    }
+
     substitute_phase_dirs (LIBPATH, basedir, "/lib/" PSC_FULL_VERSION);
-    substitute_phase_dirs (PHASEPATH, basedir, "/lib/" PSC_FULL_VERSION);
+    substitute_phase_dirs (PHASEPATH, "", target_phase_path());
     substitute_phase_dirs ("/usr/include", basedir, "/include");
+    free(target_ppath);
     return;
   }
 
+  internal_error("can not recognize driver location, "
+                 "please check installation consistency");
+
+#if 0
+  // TODO: check if this code still actual
   /* If installed in x/lib/gcc-lib/ */
   ldir = strstr (dir, "/lib/gcc-lib");
   if (ldir != 0) {
@@ -799,6 +817,7 @@ static void set_executable_dir (void) {
     }
     return;
   }
+#endif
 }
 
 static void
@@ -1103,28 +1122,32 @@ print_defaults(int argc, char *argv[])
     internal_error("no default target cpu");
 
 #ifdef TARG_MIPS
-  // ABI
-  switch (abi) {
-    case ABI_N32:	fprintf(stderr, " -n32"); break;
-    case ABI_64:	fprintf(stderr, " -64");  break;
-    default:		internal_error("unknown default ABI");
+  if (is_target_arch_MIPS()) {
+    // ABI
+    switch (abi) {
+      case ABI_N32:	fprintf(stderr, " -n32"); break;
+      case ABI_64:	fprintf(stderr, " -64");  break;
+      default:		internal_error("unknown default ABI");
+    }
   }
 #endif
 
 #ifdef TARG_X8664
-  // ABI
-  switch (abi) {
-    case ABI_N32:	fprintf(stderr, " -m32"); break;
-    case ABI_64:	fprintf(stderr, " -m64"); break;
-    default:		internal_error("unknown default ABI");
-  }
+  if (is_target_arch_X8664()) {
+    // ABI
+    switch (abi) {
+      case ABI_M32:	fprintf(stderr, " -m32"); break;
+      case ABI_M64:	fprintf(stderr, " -m64"); break;
+      default:		internal_error("unknown default ABI");
+    }
 
-  // SSE, SSE2, SSE3, 3DNow, SSE4a
-  fprintf(stderr, " %s", sse == TRUE ? "-msse" : "-mno-sse");
-  fprintf(stderr, " %s", sse2 == TRUE ? "-msse2" : "-mno-sse2");
-  fprintf(stderr, " %s", sse3 == TRUE ? "-msse3" : "-mno-sse3");
-  fprintf(stderr, " %s", m3dnow == TRUE ? "-m3dnow" : "-mno-3dnow");
-  fprintf(stderr, " %s", sse4a == TRUE ? "-msse4a" : "-mno-sse4a");
+    // SSE, SSE2, SSE3, 3DNow, SSE4a
+    fprintf(stderr, " %s", sse == TRUE ? "-msse" : "-mno-sse");
+    fprintf(stderr, " %s", sse2 == TRUE ? "-msse2" : "-mno-sse2");
+    fprintf(stderr, " %s", sse3 == TRUE ? "-msse3" : "-mno-sse3");
+    fprintf(stderr, " %s", m3dnow == TRUE ? "-m3dnow" : "-mno-3dnow");
+    fprintf(stderr, " %s", sse4a == TRUE ? "-msse4a" : "-mno-sse4a");
+  }
 #endif
 
   // -gnu3/-gnu4

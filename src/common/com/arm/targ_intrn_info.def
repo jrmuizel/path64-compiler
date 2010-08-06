@@ -1,0 +1,734 @@
+{ /* __absch */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__absch", NULL, "__absch"}, 
+{ /* __abscl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I8, "__abscl", NULL, "__abscl"}, 
+{ /* __abscw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__abscw", NULL, "__abscw"}, 
+{ /* __absh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__absh", NULL, "__absh"}, 
+{ /* __absl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I8, "__absl", NULL, "__absl"}, 
+{ /* __absw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__absw", NULL, "__absw"}, 
+{ /* __addch */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__addch", NULL, "__addch"}, 
+{ /* __addcl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I8, "__addcl", NULL, "__addcl"}, 
+{ /* __addcw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__addcw", NULL, "__addcw"}, 
+{ /* __addd */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F8, "__addd", NULL, "__addd"}, 
+{ /* __addl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I8, "__addl", NULL, "__addl"}, 
+{ /* __adds */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__adds", NULL, "__adds"}, 
+{ /* __addul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U8, "__addul", NULL, "__addul"}, 
+{ /* __bitclrh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__bitclrh", NULL, "__bitclrh"}, 
+{ /* __bitclrw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U4, "__bitclrw", NULL, "__bitclrw"}, 
+{ /* __bitcnth */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__bitcnth", NULL, "__bitcnth"}, 
+{ /* __bitcntw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__bitcntw", NULL, "__bitcntw"}, 
+{ /* __bitnoth */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__bitnoth", NULL, "__bitnoth"}, 
+{ /* __bitnotw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__bitnotw", NULL, "__bitnotw"}, 
+{ /* __bitrevw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__bitrevw", NULL, "__bitrevw"}, 
+{ /* __bitseth */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__bitseth", NULL, "__bitseth"}, 
+{ /* __bitsetw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__bitsetw", NULL, "__bitsetw"}, 
+{ /* __bitvalh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__bitvalh", NULL, "__bitvalh"}, 
+{ /* __bitvalw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__bitvalw", NULL, "__bitvalw"}, 
+{ /* __builtin__divuw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__builtin__divuw", NULL, "__divuw"}, 
+{ /* __builtin__divw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__builtin__divw", NULL, "__divw"}, 
+{ /* __builtin__moduw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__builtin__moduw", NULL, "__moduw"}, 
+{ /* __builtin__modw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__builtin__modw", NULL, "__modw"},
+{ /* __clamplw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__clamplw", NULL, "__clamplw"}, 
+{ /* __clampwh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__clampwh", NULL, "__clampwh"}, 
+{ /* __disth */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__disth", NULL, "__disth"}, 
+{ /* __distuh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__distuh", NULL, "__distuh"}, 
+{ /* __distuw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__distuw", NULL, "__distuw"}, 
+{ /* __distw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__distw", NULL, "__distw"}, 
+{ /* __divd */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F8, "__divd", NULL, "__divd"}, 
+{ /* __divfch */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__divfch", NULL, "__divfch"}, 
+{ /* __divfcm */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__divfcm", NULL, "__divfcm"}, 
+{ /* __divfcw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__divfcw", NULL, "__divfcw"}, 
+{ /* __divh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__divh", NULL, "__divh"}, 
+{ /* __divl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I8, "__divl", NULL, "__divl"}, 
+{ /* __divm */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__divm", NULL, "__divm"}, 
+{ /* __divs */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__divs", NULL, "__divs"}, 
+{ /* __divuh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__divuh", NULL, "__divuh"}, 
+{ /* __divul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U8, "__divul", NULL, "__divul"}, 
+{ /* __divum */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__divum", NULL, "__divum"}, 
+{ /* __divuw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__divuw", NULL, "__divuw"}, 
+{ /* __divw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__divw", NULL, "__divw"}, 
+{ /* __dtol */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I8, "__dtol", NULL, "__dtol"}, 
+{ /* __dtos */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__dtos", NULL, "__dtos"}, 
+{ /* __dtoul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U8, "__dtoul", NULL, "__dtoul"}, 
+{ /* __dtouw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__dtouw", NULL, "__dtouw"}, 
+{ /* __dtow */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__dtow", NULL, "__dtow"}, 
+{ /* __edgesh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__edgesh", NULL, "__edgesh"}, 
+{ /* __edgesw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__edgesw", NULL, "__edgesw"}, 
+{ /* __eqd */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__eqd", NULL, "__eqd"}, 
+{ /* __eql */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__eql", NULL, "__eql"}, 
+{ /* __eqs */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__eqs", NULL, "__eqs"}, 
+{ /* __equl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__equl", NULL, "__equl"}, 
+{ /* __ged */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__ged", NULL, "__ged"}, 
+{ /* __gel */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__gel", NULL, "__gel"}, 
+{ /* __ges */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__ges", NULL, "__ges"}, 
+{ /* __gethh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__gethh", NULL, "__gethh"}, 
+{ /* __gethw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__gethw", NULL, "__gethw"}, 
+{ /* __getlh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__getlh", NULL, "__getlh"}, 
+{ /* __getlw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__getlw", NULL, "__getlw"}, 
+{ /* __geul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__geul", NULL, "__geul"}, 
+{ /* __gtd */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__gtd", NULL, "__gtd"}, 
+{ /* __gtl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__gtl", NULL, "__gtl"}, 
+{ /* __gts */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__gts", NULL, "__gts"}, 
+{ /* __gtul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__gtul", NULL, "__gtul"}, 
+{ /* __insequw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__insequw", NULL, "__insequw"}, 
+{ /* __inseqw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__inseqw", NULL, "__inseqw"}, 
+{ /* __insgeuw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__insgeuw", NULL, "__insgeuw"}, 
+{ /* __insgew */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__insgew", NULL, "__insgew"}, 
+{ /* __insgtuw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__insgtuw", NULL, "__insgtuw"}, 
+{ /* __insgtw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__insgtw", NULL, "__insgtw"}, 
+{ /* __insleuw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__insleuw", NULL, "__insleuw"}, 
+{ /* __inslew */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__inslew", NULL, "__inslew"}, 
+{ /* __insltuw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__insltuw", NULL, "__insltuw"}, 
+{ /* __insltw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__insltw", NULL, "__insltw"}, 
+{ /* __insneuw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__insneuw", NULL, "__insneuw"}, 
+{ /* __insnew */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__insnew", NULL, "__insnew"}, 
+{ /* __led */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__led", NULL, "__led"}, 
+{ /* __lel */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__lel", NULL, "__lel"}, 
+{ /* __les */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__les", NULL, "__les"}, 
+{ /* __leul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__leul", NULL, "__leul"}, 
+{ /* __ltd */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__ltd", NULL, "__ltd"}, 
+{ /* __ltl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__ltl", NULL, "__ltl"}, 
+{ /* __ltod */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F8, "__ltod", NULL, "__ltod"}, 
+{ /* __ltos */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__ltos", NULL, "__ltos"}, 
+{ /* __lts */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__lts", NULL, "__lts"}, 
+{ /* __ltul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__ltul", NULL, "__ltul"}, 
+{ /* __lzcnth */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U2, "__lzcnth", NULL, "__lzcnth"}, 
+{ /* __lzcntl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U2, "__lzcntl", NULL, "__lzcntl"}, 
+{ /* __lzcntw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U2, "__lzcntw", NULL, "__lzcntw"}, 
+{ /* __madds */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__madds", NULL, "__madds"}, 
+{ /* __mafcw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__mafcw", NULL, "__mafcw"}, 
+{ /* __maxd */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F8, "__maxd", NULL, "__maxd"}, 
+{ /* __maxh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I2, "__maxh", NULL, "__maxh"}, 
+{ /* __maxl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I8, "__maxl", NULL, "__maxl"}, 
+{ /* __maxs */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__maxs", NULL, "__maxs"}, 
+{ /* __maxuh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U2, "__maxuh", NULL, "__maxuh"}, 
+{ /* __maxul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U8, "__maxul", NULL, "__maxul"}, 
+{ /* __maxuw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U4, "__maxuw", NULL, "__maxuw"}, 
+{ /* __maxw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__maxw", NULL, "__maxw"}, 
+{ /* __mind */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F8, "__mind", NULL, "__mind"}, 
+{ /* __minh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I2, "__minh", NULL, "__minh"}, 
+{ /* __minl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I8, "__minl", NULL, "__minl"}, 
+{ /* __mins */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__mins", NULL, "__mins"}, 
+{ /* __minuh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U2, "__minuh", NULL, "__minuh"}, 
+{ /* __minul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U8, "__minul", NULL, "__minul"}, 
+{ /* __minuw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U4, "__minuw", NULL, "__minuw"}, 
+{ /* __minw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__minw", NULL, "__minw"}, 
+{ /* __modfch */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__modfch", NULL, "__modfch"}, 
+{ /* __modfcm */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__modfcm", NULL, "__modfcm"}, 
+{ /* __modfcw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__modfcw", NULL, "__modfcw"}, 
+{ /* __modh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__modh", NULL, "__modh"}, 
+{ /* __modl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I8, "__modl", NULL, "__modl"}, 
+{ /* __modm */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__modm", NULL, "__modm"}, 
+{ /* __moduh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__moduh", NULL, "__moduh"}, 
+{ /* __modul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U8, "__modul", NULL, "__modul"}, 
+{ /* __modum */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__modum", NULL, "__modum"}, 
+{ /* __moduw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__moduw", NULL, "__moduw"}, 
+{ /* __modw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__modw", NULL, "__modw"}, 
+{ /* __mpfcw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__mpfcw", NULL, "__mpfcw"}, 
+{ /* __mpfcwl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I8, "__mpfcwl", NULL, "__mpfcwl"}, 
+{ /* __mpfml */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I8, "__mpfml", NULL, "__mpfml"}, 
+{ /* __mpfrch */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__mpfrch", NULL, "__mpfrch"}, 
+{ /* __mpml */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I8, "__mpml", NULL, "__mpml"}, 
+{ /* __mpuml */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U8, "__mpuml", NULL, "__mpuml"}, 
+{ /* __msubs */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__msubs", NULL, "__msubs"}, 
+{ /* __muld */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F8, "__muld", NULL, "__muld"}, 
+{ /* __mulfch */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__mulfch", NULL, "__mulfch"}, 
+{ /* __mulfcm */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__mulfcm", NULL, "__mulfcm"}, 
+{ /* __mulfcw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__mulfcw", NULL, "__mulfcw"}, 
+{ /* __mulh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__mulh", NULL, "__mulh"}, 
+{ /* __mulhh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__mulhh", NULL, "__mulhh"}, 
+{ /* __mulhuh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__mulhuh", NULL, "__mulhuh"}, 
+{ /* __mulhuw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__mulhuw", NULL, "__mulhuw"}, 
+{ /* __mulhw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__mulhw", NULL, "__mulhw"}, 
+{ /* __mull */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I8, "__mull", NULL, "__mull"}, 
+{ /* __mulm */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__mulm", NULL, "__mulm"}, 
+{ /* __muln */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I8, "__muln", NULL, "__muln"}, 
+{ /* __muls */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__muls", NULL, "__muls"}, 
+{ /* __muluh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__muluh", NULL, "__muluh"}, 
+{ /* __mulul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U8, "__mulul", NULL, "__mulul"}, 
+{ /* __mulum */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__mulum", NULL, "__mulum"}, 
+{ /* __mulun */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U8, "__mulun", NULL, "__mulun"}, 
+{ /* __muluw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__muluw", NULL, "__muluw"}, 
+{ /* __mulw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__mulw", NULL, "__mulw"}, 
+{ /* __nearclw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__nearclw", NULL, "__nearclw"}, 
+{ /* __nearcwh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__nearcwh", NULL, "__nearcwh"}, 
+{ /* __nearlw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__nearlw", NULL, "__nearlw"}, 
+{ /* __nearwh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__nearwh", NULL, "__nearwh"}, 
+{ /* __ned */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__ned", NULL, "__ned"}, 
+{ /* __negch */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__negch", NULL, "__negch"}, 
+{ /* __negcl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I8, "__negcl", NULL, "__negcl"}, 
+{ /* __negcw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__negcw", NULL, "__negcw"}, 
+{ /* __negl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I8, "__negl", NULL, "__negl"}, 
+{ /* __negul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U8, "__negul", NULL, "__negul"}, 
+{ /* __nel */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__nel", NULL, "__nel"}, 
+{ /* __nes */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__nes", NULL, "__nes"}, 
+{ /* __neul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__neul", NULL, "__neul"}, 
+{ /* __normh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__normh", NULL, "__normh"}, 
+{ /* __norml */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__norml", NULL, "__norml"}, 
+{ /* __normw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__normw", NULL, "__normw"}, 
+{ /* __priorh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__priorh", NULL, "__priorh"}, 
+{ /* __priorl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__priorl", NULL, "__priorl"}, 
+{ /* __priorw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__priorw", NULL, "__priorw"}, 
+{ /* __puthl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I8, "__puthl", NULL, "__puthl"}, 
+{ /* __puthw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__puthw", NULL, "__puthw"}, 
+{ /* __putll */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I8, "__putll", NULL, "__putll"}, 
+{ /* __putlw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__putlw", NULL, "__putlw"}, 
+{ /* __rotlh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__rotlh", NULL, "__rotlh"}, 
+{ /* __rotlw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__rotlw", NULL, "__rotlw"}, 
+{ /* __roundclw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__roundclw", NULL, "__roundclw"}, 
+{ /* __roundcwh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__roundcwh", NULL, "__roundcwh"}, 
+{ /* __roundlw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__roundlw", NULL, "__roundlw"}, 
+{ /* __roundwh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__roundwh", NULL, "__roundwh"}, 
+{ /* __shlch */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__shlch", NULL, "__shlch"}, 
+{ /* __shlcw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__shlcw", NULL, "__shlcw"}, 
+{ /* __shll */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I8, "__shll", NULL, "__shll"}, 
+{ /* __shlul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U8, "__shlul", NULL, "__shlul"}, 
+{ /* __shlw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__shlw", NULL, "__shlw"}, 
+{ /* __shrl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I8, "__shrl", NULL, "__shrl"}, 
+{ /* __shrrh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__shrrh", NULL, "__shrrh"}, 
+{ /* __shrrw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__shrrw", NULL, "__shrrw"}, 
+{ /* __shrul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U8, "__shrul", NULL, "__shrul"}, 
+{ /* __shruw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U4, "__shruw", NULL, "__shruw"}, 
+{ /* __shrw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I4, "__shrw", NULL, "__shrw"}, 
+{ /* __sqrtd */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F8, "__sqrtd", NULL, "sqrt"}, 
+{ /* __sqrts */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__sqrts", NULL, "__sqrts"}, 
+{ /* __stod */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F8, "__stod", NULL, "__stod"}, 
+{ /* __stol */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I8, "__stol", NULL, "__stol"}, 
+{ /* __stoul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U8, "__stoul", NULL, "__stoul"}, 
+{ /* __stouw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__stouw", NULL, "__stouw"}, 
+{ /* __stow */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__stow", NULL, "__stow"}, 
+{ /* __subch */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__subch", NULL, "__subch"}, 
+{ /* __subcl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I8, "__subcl", NULL, "__subcl"}, 
+{ /* __subcw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__subcw", NULL, "__subcw"}, 
+{ /* __subd */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F8, "__subd", NULL, "__subd"}, 
+{ /* __subl */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_I8, "__subl", NULL, "__subl"}, 
+{ /* __subs */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__subs", NULL, "__subs"}, 
+{ /* __subul */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, CGINTRINSIC,
+  IRETURN_U8, "__subul", NULL, "__subul"}, 
+{ /* __swapbh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__swapbh", NULL, "__swapbh"}, 
+{ /* __swapbw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__swapbw", NULL, "__swapbw"}, 
+{ /* __swaphw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__swaphw", NULL, "__swaphw"}, 
+{ /* __ultod */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F8, "__ultod", NULL, "__ultod"}, 
+{ /* __ultos */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__ultos", NULL, "__ultos"}, 
+{ /* __uwtod */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F8, "__uwtod", NULL, "__uwtod"}, 
+{ /* __uwtos */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__uwtos", NULL, "__uwtos"}, 
+{ /* __wtod */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F8, "__wtod", NULL, "__wtod"},
+{ /* __wtos */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__wtos", NULL, "__wtos"},
+{ /* __xshlh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__xshlh", NULL, "__xshlh"}, 
+{ /* __xshlw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__xshlw", NULL, "__xshlw"}, 
+{ /* __xshrh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__xshrh", NULL, "__xshrh"}, 
+{ /* __xshrw */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U4, "__xshrw", NULL, "__xshrw"}, 
+{ /* __nmadds */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__nmadds", NULL, "__nmadds"}, 
+{ /* __nmsubs */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__nmsubs", NULL, "__nmsubs"}, 
+{ /* __squares */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__squares", NULL, "__squares"}, 
+{ /* __recips */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__recips", NULL, "__recips"}, 
+{ /* __rsqrts */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_F4, "__rsqrts", NULL, "__rsqrts"}, 
+{ /* __asm_0 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_0", NULL, "__asm_0"}, 
+{ /* __asm_1 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_1", NULL, "__asm_1"}, 
+{ /* __asm_2 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_2", NULL, "__asm_2"}, 
+{ /* __asm_3 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_3", NULL, "__asm_3"}, 
+{ /* __asm_4 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_4", NULL, "__asm_4"}, 
+{ /* __asm_5 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_5", NULL, "__asm_5"}, 
+{ /* __asm_6 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_6", NULL, "__asm_6"}, 
+{ /* __asm_7 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_7", NULL, "__asm_7"}, 
+{ /* __asm_8 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_8", NULL, "__asm_8"}, 
+{ /* __asm_9 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_9", NULL, "__asm_9"}, 
+{ /* __asm_10 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_10", NULL, "__asm_10"}, 
+{ /* __asm_11 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_11", NULL, "__asm_11"}, 
+{ /* __asm_12 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_12", NULL, "__asm_12"}, 
+{ /* __asm_13 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_13", NULL, "__asm_13"}, 
+{ /* __asm_14 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_14", NULL, "__asm_14"}, 
+{ /* __asm_15 */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I4, "__asm_15", NULL, "__asm_15"},
+{ /* __builtin_trap */
+  BYVAL, NOT_PURE, SIDEEFFECTS, NEVER_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_V, "__builtin_trap", NULL, "__builtin_trap"},
+{ /* __builtin__divh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__builtin__divh", NULL, "__builtin__divh"}, 
+{ /* __builtin__divuh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__builtin__divuh", NULL, "__builtin__divuh"}, 
+{ /* __builtin__modh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_I2, "__builtin__modh", NULL, "__builtin__modh"}, 
+{ /* __builtin__moduh */
+  BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+  IRETURN_U2, "__builtin__moduh", NULL, "__builtin__moduh"}, 
+
+#define INTRN_INFO
+#include "gen_intrinsics.inc"
+#undef INTRN_INFO
+

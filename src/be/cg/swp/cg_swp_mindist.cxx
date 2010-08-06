@@ -26,7 +26,7 @@
 
 /* Standard Template Library (STL) related include files */
 #include <algorithm>
-
+#ifndef TARG_ST
 using namespace std;
 
 
@@ -153,4 +153,4 @@ SWP_MINDIST::Verify (void) const {
   
   return;
 }
-
+#endif

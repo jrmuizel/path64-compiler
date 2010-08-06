@@ -881,7 +881,7 @@ ST *Is_nested_call(const WN *wn, const SYMTAB &symtab)
       )
     nested_func = call_st;
 
-#ifdef KEY  // bug 15020
+#if defined( KEY) && !defined(TARG_ST)  // bug 15020
   if (nested_func == NULL && opr == OPR_ICALL && symtab.Pu_has_trampoline()) {
     // the ICALL may be calling a nested function
     actual_parm = WN_kid(wn, WN_kid_count(wn)-1);

@@ -19,6 +19,10 @@
 
 /* Basic compiler include files */
 #include "defs.h"
+#include "op.h"
+#include "tn.h"
+#include "bb.h"
+#include "cgtarget.h"
 
 /* Code Generator (CG) related include files */
 #include "cg_dep_graph.h"
@@ -31,7 +35,7 @@
 
 /* STL related include files */
 #include <algorithm>
-
+#ifndef TARG_ST
 using namespace std;
 
 
@@ -100,4 +104,4 @@ SWP_MINLT::Verify (void) const {
   
   return;
 }
-
+#endif

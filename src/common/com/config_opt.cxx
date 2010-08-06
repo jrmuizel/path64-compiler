@@ -85,7 +85,12 @@ BOOL Show_OPT_Warnings = TRUE;          /* Display OPT warning messages */
 OPTION_LIST *Alias_Option = NULL;
 BOOL Alias_Pointer_Parms = TRUE;        /* Parms ptr indep? */
 BOOL Alias_Pointer_Cray = FALSE;        /* Cray pointer semantics? */
+#ifdef TARG_ST
+// [CG] ANSI C alias rules set on by default
+BOOL Alias_Pointer_Types = TRUE;	/* Ptrs to distinct basic types indep? */
+#else
 BOOL Alias_Pointer_Types = FALSE;	/* Ptrs to distinct basic types indep? */
+#endif
 BOOL Alias_Not_In_Union  = FALSE;	/* Ptrs point to non-union types */
 BOOL Alias_Pointer_Strongly_Typed = FALSE; /* Ptrs to distinct types indep? */
 BOOL Alias_Pointer_Named_Data = FALSE;	/* No pointers to named data? */
@@ -111,6 +116,55 @@ BOOL Align_Padding = FALSE;	/* Pad objects to natural alignment */
 #else
 # define ALIGN_INSTS	  &Ignore_Int
 #endif
+#ifdef TARG_ST
+#ifdef BACK_END
+# define ALIGN_FUNCS	  &Align_Functions
+# define ALIGN_LOOPS	  &Align_Loops
+#ifdef TARG_STxP70
+# define ALIGN_LOOPENDS   &Align_Loopends
+# define ALIGN_CALLRETURNS &Align_Callreturns
+#endif
+# define ALIGN_LABELS	  &Align_Labels
+# define ALIGN_JUMPS	  &Align_Jumps
+#else
+# define ALIGN_FUNCS	  &Ignore_Int
+# define ALIGN_LOOPS	  &Ignore_Int
+# define ALIGN_LOOPENDS   &Ignore_Int
+# define ALIGN_CALLRETURNS &Ignore_Int
+# define ALIGN_LABELS	  &Ignore_Int
+# define ALIGN_JUMPS	  &Ignore_Int
+#endif
+#endif
+
+#ifdef TARG_ST
+/***** Floating point optimizations options *****/
+BOOL No_Math_Errno = TRUE;  /* Do not set ERRNO ? */
+BOOL No_Math_Errno_Set = FALSE;  /* ... option seen? */
+BOOL Finite_Math = FALSE;  /* Finite math optimizations ? */
+BOOL Finite_Math_Set = FALSE;  /* ... option seen? */
+BOOL Force_IEEE_Comparisons = TRUE;  /* Finite math optimizations ? */
+BOOL No_Rounding = TRUE;  /*  ? */
+BOOL No_Rounding_Set = FALSE;  /* ... option seen? */
+BOOL No_Trapping = TRUE;  /* No trapping math ? */
+BOOL No_Trapping_Set = FALSE;  /* ... option seen? */
+BOOL Unsafe_Math = FALSE;  /* Unsafe math allowed ? */
+BOOL Unsafe_Math_Set = FALSE;  /* ... option seen? */
+BOOL Fused_FP = TRUE;  /* Fused FP ops allowed ? */
+BOOL Fused_FP_Set = FALSE;  /* ... option seen? */
+BOOL Fused_Madd = TRUE;  /* Fused madd allowed ? */
+BOOL Fused_Madd_Set = FALSE;  /* ... option seen? */
+BOOL No_Denormals = TRUE;  /* No denormals support  ? */
+BOOL No_Denormals_Set = FALSE;  /* ... option seen? */
+REASSOC Reassoc_Level = REASSOC_NONE; /* reassociations level */
+BOOL Reassoc_Set = FALSE;  /* ... option seen? */
+BOOL OPT_Expand_Assume = TRUE; /* Expand __builtin_assume ? */
+BOOL OPT_Expand_Assume_Set = FALSE; /* ... option seen? */
+// FdF 20080305: Emit warning on unsupported expressions in __builtin_assume
+BOOL OPT_Enable_Warn_Assume = FALSE;
+// TB: 20081020 Check that non void function always return a value
+BOOL OPT_Enable_Warn_ReturnVoid = FALSE;
+#endif
+
 
 /***** Constant folding (simplifier) options *****/
 BOOL Enable_Cfold_Aggressive = FALSE;	/* Complex constant folding? */
@@ -129,6 +183,9 @@ BOOL Enable_CVT_Opt= FALSE;	/* Remove useless convert operators */
 BOOL Enable_CVT_Opt_Set= FALSE;	/* ... option seen? */
 BOOL Optimize_CVTL_Exp = FALSE;	/* Optimize expansion of CVTL operators */
 BOOL Div_Split_Allowed = FALSE;		/* change a/b --> a*1/b ? */
+#ifdef TARG_ST
+BOOL Float_Eq_Simp = FALSE;		/* change a==b (float cmp) --> a==b (integer cmp if a or b is cst)) ? */
+#endif
 static BOOL Div_Split_Set = FALSE;	/* ... option seen? */
 BOOL Fast_Exp_Allowed = FALSE;		/* Avoid exp() calls? */
 static BOOL Fast_Exp_Set = FALSE;	/* ... option seen? */
@@ -168,9 +225,17 @@ BOOL GCM_Speculative_Ptr_Deref= TRUE;  /* allow load speculation of a memory
 					  offset from some reference location */
 BOOL GCM_Speculative_Ptr_Deref_Set=FALSE;   /* ... option seen? */
 
+#ifdef TARG_ST
+BOOL Enable_simplify_comparisons_per_minmax = TRUE;
+#endif
 /***** Limits on optimization *****/
+#ifdef TARG_ST
+#define DEFAULT_OLIMIT		3000
+#define DEFAULT_O3_OLIMIT	4000	/* allow more time for -O3 compiles */
+#else
 #define DEFAULT_OLIMIT		6000
 #define DEFAULT_O3_OLIMIT	9000	/* allow more time for -O3 compiles */
+#endif
 #define MAX_OLIMIT		INT32_MAX
 INT32 Olimit = DEFAULT_OLIMIT;
 static BOOL Olimit_Set = FALSE;
@@ -199,6 +264,27 @@ BOOL OPT_Lower_Treeheight = FALSE;	/* reassociate commutative ops */
 static BOOL OPT_Lower_Treeheight_Set = FALSE;
 BOOL OPT_Inline_Divide = TRUE;		/* inline divide sequences */
 static BOOL OPT_Inline_Divide_Set = FALSE;
+#ifdef TARG_ST
+BOOL  OPT_Cnst_DivRem = FALSE;		/* Optimize div/rem by a constant. 
+					   Should be set in config_target.cxx
+					   if usefull for the target.*/
+BOOL  OPT_Cnst_DivRem_Set;
+BOOL  OPT_Cnst_Mul = FALSE;		/* Optimize mul by a constant.
+					   Should be set in config_target.cxx
+					   if usefull for the target. */
+BOOL  OPT_Cnst_Mul_Set;
+//TB" New options to mange opt_size
+BOOL OPT_Mul_by_cst_threshold_Set = FALSE;
+UINT32 OPT_Mul_by_cst_threshold = 0;
+
+BOOL OPT_Lower_While_Do_For_Space_Set = FALSE;
+BOOL OPT_Lower_While_Do_For_Space = FALSE;
+
+BOOL OPT_Expand_Switch_For_Space_Set = FALSE;
+BOOL OPT_Expand_Switch_For_Space = FALSE;
+
+#endif
+INT32 OPTION_Space = 0;			/* level of various text space optimizations */
 BOOL OPT_Space = FALSE;			/* various text space optimizations */
 BOOL Early_MP_Processing = FALSE; /* Do mp lowerering before lno/preopt */
 BOOL Implied_Do_Io_Opt = TRUE;	/* Do implied-do loop opt for I/O */
@@ -218,7 +304,18 @@ BOOL Section_For_Each_Function = FALSE;
 BOOL Inline_Intrinsics_Early=FALSE;    /* Inline intrinsics just after VHO */
 BOOL Enable_extract_bits=TRUE;     /* This is also forced off for MIPS and IA32 in
 					  config_targ.cxx */
+BOOL Enable_extract=FALSE;
+BOOL Enable_extract_overriden=FALSE;
+BOOL Enable_compose=FALSE;     
+BOOL Enable_compose_overriden=FALSE; /* This is also forced off for MIPS and IA32 in
+					  config_targ.cxx */
+
 BOOL Enable_compose_bits=FALSE;
+#ifdef TARG_ST
+BOOL Enable_Rotate=FALSE;
+BOOL Enable_Rotate_overriden=FALSE;
+#endif
+
 BOOL Enable_WFE_DFE = FALSE;
 
 
@@ -230,6 +327,14 @@ BOOL Instrumentation_Enabled = FALSE;
 UINT32 Instrumentation_Actions = 0;
 BOOL Instrumentation_Unique_Output = FALSE; // always create unique output
 OPTION_LIST *Feedback_Option = NULL;
+#ifdef TARG_ST //TB
+char *disable_instrument = NULL;		/* -OPT:disable_instrument=%d function name */
+char *enable_instrument = NULL;		/* -OPT:enable_instrument=%d function name */
+#endif
+#ifdef TARG_ST
+BOOL OPT_fb_div_simp = TRUE;	// Apply division simplification with feedback info 
+BOOL OPT_fb_mpy_simp = TRUE;	// Apply multiply simplification with feedback info 
+#endif
 
 #ifdef KEY
 INT32  OPT_Cyg_Instrument = 0;
@@ -240,6 +345,10 @@ UINT32 Div_Exe_Ratio = 50;      /* A cut-off percentage for value profiling. */
 UINT32 Div_Exe_Candidates = 2;  /* The top entries that will be considered. */
 UINT32 Mpy_Exe_Counter = 90000000;  
 UINT32 Mpy_Exe_Ratio = 100;      /* A cut-off percentage for value profiling. */
+UINT32 Freq_Threshold_For_Space = 100;      /* If the PU is executed less than this, OPT_Space is set to true. */
+UINT32 Size_Threshold_For_Space = 100;      /* If the PU is bigger than this, OPT_Space is set to true. */
+BOOL FB_CodeSize_Perf_Ratio = FALSE;		/* Optimize for size when freq < Freq_Threshold_For_Space or when size > Size_Threshold_For_Space */
+
 BOOL   profile_arcs = FALSE;
 BOOL   OPT_Lower_To_Memlib = TRUE;  /* transform to library calls */
 #ifdef TARG_MIPS
@@ -316,11 +425,42 @@ static OPTION_DESC Options_OPT[] = {
   { OVK_LIST,	OV_VISIBLE,	TRUE, 	"alias",		"alia",
     0, 0, 0,	&Alias_Option,	NULL,
     "Control interpretation of possible variable aliasing" },
-
+#ifdef TARG_ST
+  { OVK_INT32,	OV_SHY,		TRUE, "align_instructions",	"align_i",
+    1, 0, 1024, ALIGN_INSTS,	NULL,
+    "Align subprogram entries and loops by given byte count" },
+#else
   { OVK_INT32,	OV_SHY,		TRUE, "align_instructions",	"align_i",
     16, 0, 1024, ALIGN_INSTS,	NULL,
     "Align subprogram entries and loops by given byte count" },
+#endif
+#ifdef TARG_ST
+  { OVK_INT32,	OV_SHY,		TRUE, "align_functions",	"align_f",
+    1, 0, 1024, ALIGN_FUNCS,	NULL,
+    "Align subprogram entries by given byte count" },
 
+  { OVK_INT32,	OV_SHY,		TRUE, "align_loops",	"align_l",
+    1, 0, 1024, ALIGN_LOOPS,	NULL,
+    "Align loops by given byte count" },
+
+#ifdef TARG_STxP70
+  { OVK_INT32,  OV_SHY,         TRUE, "align_loopends",    "align_loopends",
+    1, 0, 1024, ALIGN_LOOPENDS, NULL,
+    "Align loop ends by given byte count" },
+  { OVK_INT32,  OV_SHY,         TRUE, "align_callreturns",    "align_callreturns",
+    1, 0, 1024, ALIGN_CALLRETURNS, NULL,
+    "Align call returns by given byte count" },
+#endif
+
+  { OVK_INT32,	OV_SHY,		TRUE, "align_jumps",	"align_jumps",
+    1, 0, 1024, ALIGN_JUMPS,	NULL,
+    "Align targets of jump by given byte count" },
+
+  { OVK_INT32,	OV_SHY,		TRUE, "align_labels",	"align_labels",
+    1, 0, 1024, ALIGN_LABELS,	NULL,
+    "Align all labels by given byte count" },
+#endif
+  
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "align_object",		"align_o",
     0, 0, 0,	&Align_Object,	NULL,
     "Allow realignment of objects to improve memory accesses" },
@@ -352,6 +492,14 @@ static OPTION_DESC Options_OPT[] = {
   { OVK_BOOL,	OV_VISIBLE,	TRUE, "div_split",		"div_split",
     0, 0, 0,	&Div_Split_Allowed, &Div_Split_Set ,
     "Allow splitting of a/b into a*recip(b)" },
+#ifdef TARG_ST
+  { OVK_BOOL,	OV_VISIBLE,	TRUE, "fb_div_simp",		"fb_div_simp",
+    0, 0, 0,	&OPT_fb_div_simp, NULL ,
+    "Allow division simplification with feedback info" },
+  { OVK_BOOL,	OV_VISIBLE,	TRUE, "fb_mpy_simp",		"fb_mpy_simp",
+    0, 0, 0,	&OPT_fb_mpy_simp, NULL ,
+    "Allow multiply simplification with feedback info" },
+#endif
 
 #ifdef KEY
   { OVK_UINT32,	OV_INTERNAL,	TRUE, "div_exe_counter",	"",
@@ -438,7 +586,17 @@ static OPTION_DESC Options_OPT[] = {
     0, 0, 0,  &OPT_Reassoc_For_Cse,   NULL,
     "enable reassociation to maximize CSE opportunities" },
 #endif
-
+#ifdef TARG_ST
+  { OVK_UINT32,	OV_INTERNAL,	TRUE, "freq_threshold_space",	"",
+    0, 0, 1000000000,	&Freq_Threshold_For_Space, NULL ,
+    "If the PU is executed less than this, code size optimization is set to true" },
+  { OVK_UINT32,	OV_INTERNAL,	TRUE, "size_threshold_space",	"",
+    0, 0, 1000000000,	&Size_Threshold_For_Space, NULL ,
+    "If the PU is bigger than this, code size optimization is set to true" },
+  { OVK_BOOL,	OV_INTERNAL,	TRUE, "fb_codesize_perf_ratio",	"",
+    0, 0, 0,	&FB_CodeSize_Perf_Ratio, NULL ,
+    "Decide to optimize for code size for unfrequent function or big function" },
+#endif
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "early_mp",		"early_mp",
     0, 0, 0,	&Early_MP_Processing, NULL,
     "Lower before LNO" },
@@ -509,9 +667,20 @@ static OPTION_DESC Options_OPT[] = {
     0, 0, 0,	&WOPT_Enable_Goto, NULL,
     "Enable conversion of GOTO to more structured constructs" },
 
+#ifdef TARG_ST
+  { OVK_INT32,	OV_VISIBLE,	TRUE, "IEEE_arithmetic",	"IEEE_a",
+    1, 1, 4,	&IEEE_Arithmetic, &IEEE_Arith_Set,
+    "Level of conformance to IEEE-754 arithmetic rules" },
+
+  { OVK_BOOL,	OV_INTERNAL,	TRUE, "SimplifyComparisonsMinMax",	"SimplifyComparisonsMinMax",
+    0, 0, 0,	&Enable_simplify_comparisons_per_minmax, NULL,
+    "Enable optimisation of comparisons using minmax" },
+
+#else
   { OVK_INT32,	OV_VISIBLE,	TRUE, "IEEE_arithmetic",	"IEEE_a",
     1, 1, 3,	&IEEE_Arithmetic, &IEEE_Arith_Set,
     "Level of conformance to IEEE-754 arithmetic rules" },
+#endif
 
   { OVK_BOOL,	OV_SHY,		TRUE, "IEEE_comparisons",	"IEEE_c",
     0, 0, 0,	&Force_IEEE_Comparisons, NULL,
@@ -520,6 +689,55 @@ static OPTION_DESC Options_OPT[] = {
   { OVK_BOOL,	OV_VISIBLE,	TRUE, "IEEE_NaN_Inf",		"IEEE_N",
     0, 0, 0,	&Force_IEEE_Comparisons, NULL,
     "Force conforming operations on IEEE-754 NaN and Inf values" },
+
+#ifdef TARG_ST
+  { OVK_BOOL,	OV_VISIBLE,	TRUE, "No_math_errno",		"No_math",
+    1, 0, 0,	&No_Math_Errno, &No_Math_Errno_Set,
+    "Do not set ERRNO after calling math functions" },
+
+  { OVK_BOOL,	OV_VISIBLE,	TRUE, "Finite_math_only",		"Finite_math",
+    0, 0, 0,	&Finite_Math, &Finite_Math_Set,
+    "Allows FP optimizations assuming arguments and results are not NaNs or +-Infs" },
+
+  { OVK_BOOL,	OV_VISIBLE,	TRUE, "No_rounding_math",		"No_round",
+    1, 0, 0,	&No_Rounding, &No_Rounding_Set,
+    "Enable optimizations based on default FP rounding behavior assumption" },
+
+  { OVK_BOOL,	OV_VISIBLE,	TRUE, "No_trapping_math",		"No_trap",
+    1, 0, 0,	&No_Trapping, &No_Trapping_Set,
+    "Allow non trapping FP arithmetic optimizations" },
+
+  { OVK_BOOL,	OV_VISIBLE,	TRUE, "Unsafe_math_opt",		"Unsafe_math",
+    0, 0, 0,	&Unsafe_Math, &Unsafe_Math_Set,
+    "Allow unsafe FP math optimizations" },
+
+  { OVK_BOOL,	OV_VISIBLE,	TRUE, "Fused_fp",		"Fused_fp",
+    1, 0, 0,	&Fused_FP, &Fused_FP_Set,
+    "Enable fused FP operators usage in code generation" },
+
+  { OVK_BOOL,	OV_VISIBLE,	TRUE, "Fused_madd",		"Fused_ma",
+    1, 0, 0,	&Fused_Madd, &Fused_Madd_Set,
+    "Enable fused madd usage in code generation" },
+
+  { OVK_BOOL,	OV_VISIBLE,	TRUE, "No_denormals",		"No_denorm",
+    1, 0, 0,	&No_Denormals, &No_Denormals_Set,
+    "Assume no denormals support" },
+
+  { OVK_INT32,  OV_VISIBLE,	TRUE, "Reassoc_level",		"Reassoc",
+    0, 0, 3,	&Reassoc_Level, &Reassoc_Set,
+    "Level of FP reassociations optimizations" },
+
+  { OVK_BOOL,	OV_VISIBLE,	TRUE, "Assume",		"Assume",
+    1, 0, 0,	&OPT_Expand_Assume, &OPT_Expand_Assume_Set,
+    "Enable the expansion of __builtin_assume into an AFFIRM whirl node" },
+
+  { OVK_BOOL,	OV_INTERNAL,	TRUE, "warn_assume",		"",
+    1, 0, 0,	&OPT_Enable_Warn_Assume, NULL, "" },
+
+  { OVK_BOOL,	OV_INTERNAL,	TRUE, "warn_return_void",		"",
+    0, 0, 0,	&OPT_Enable_Warn_ReturnVoid, NULL,
+    "Enable warning control reaches end of non-void function"},
+#endif
 
   { OVK_BOOL,	OV_SHY,		TRUE, "implied_do_io_opt",	NULL,
     1, 0, 0,	&Implied_Do_Io_Opt, NULL,
@@ -772,6 +990,14 @@ static OPTION_DESC Options_OPT[] = {
   { OVK_BOOL,	OV_INTERNAL,	TRUE, "recompute_addr_flags", "",
     0, 0, 0,	&OPT_recompute_addr_flags, NULL,
     "Recompute address flags in the backend (for debugging)"},
+#ifdef TARG_ST
+  { OVK_NAME,	OV_SHY,		FALSE, "disable_instrument",			"disable_instrument",
+    0, 0, 0,	&disable_instrument,		NULL,
+    "Function for which the PFO instrumention is disabled" },
+  { OVK_NAME,	OV_SHY,		FALSE, "enable_instrument",			"enable_instrument",
+    0, 0, 0,	&enable_instrument,		NULL,
+    "Function for which the PFO instrumention is enabled" },
+#endif
 
   { OVK_BOOL,  OV_VISIBLE,	TRUE, "instrumentation",	"instr",
     0, 0, 0, &Instrumentation_Enabled, NULL,
@@ -813,6 +1039,11 @@ static OPTION_DESC Options_OPT[] = {
     0, 0, 0,	&Enable_compose_bits,	NULL,
     "Enable use of compose opcode" },
 
+#ifdef TARG_ST
+  { OVK_BOOL,	OV_INTERNAL,	TRUE, "rotate",	"rot",
+    0, 0, 0,	&Enable_Rotate,	&Enable_Rotate_overriden,
+    "Enable use of rotate opcodes" },
+#endif
   { OVK_BOOL, OV_VISIBLE,     FALSE, "ansi_setjmp",           "ansi_setjmp",
     0, 0, 0,  &LANG_Ansi_Setjmp_On,   &LANG_Ansi_Setjmp_Set,
     "C/C++: enable optimization of functions with calls to setjmp" },
@@ -840,6 +1071,28 @@ static OPTION_DESC Options_OPT[] = {
 
   { OVK_OBSOLETE,	OV_INTERNAL,	FALSE, "fprop_limit",		NULL,
     0, 0, INT32_MAX,	NULL,	NULL,	"" },
+
+#ifdef TARG_ST
+  { OVK_BOOL,	OV_INTERNAL,	TRUE, "cnst_div",		"",
+    0, 0, 0,	&OPT_Cnst_DivRem, &OPT_Cnst_DivRem_Set,
+    "Optimizes division/remainder by constant if possible" },
+
+  { OVK_BOOL,	OV_INTERNAL,	TRUE, "cnst_mul",		"",
+    0, 0, 0,	&OPT_Cnst_Mul, &OPT_Cnst_Mul_Set,
+    "Optimizes multiplication by constant if possible" },
+
+  { OVK_UINT32,	OV_INTERNAL,	TRUE, "mul_by_cst_threshold",		"",
+    0, 0, 0,	&OPT_Mul_by_cst_threshold, &OPT_Mul_by_cst_threshold_Set,
+    "Should do multiplication by constant threshold: from 0 (code size heuristic) to 3 (performance heuristic)" },
+
+  { OVK_BOOL,	OV_INTERNAL,	TRUE, "lower_code_size",		"",
+    0, 0, 0,	&OPT_Lower_While_Do_For_Space, &OPT_Lower_While_Do_For_Space_Set,
+    "Tune while do lowering for code size" },
+
+  { OVK_BOOL,   OV_INTERNAL,    TRUE, "expand_switch_code_size",                "",
+    0, 0, 0,    &OPT_Expand_Switch_For_Space, &OPT_Expand_Switch_For_Space_Set,
+    "Tune switch expansion for code size" },
+#endif
 
   { OVK_COUNT }		/* List terminator -- must be last */
 };

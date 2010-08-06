@@ -171,7 +171,11 @@ typedef unsigned char mBOOL;
 
 typedef struct ti_bundle {
   ISA_BUNDLE_INFO *bundle_info; /* exported interface from targ_info */
+#ifdef TARG_ST
+  BOOL slot_filled[ISA_BUNDLE_MAX_SLOTS];
+#else
   BOOL slot_filled[ISA_MAX_SLOTS];  
+#endif
 } TI_BUNDLE;
 
 /* TI_BUNDLE accessors:
@@ -201,6 +205,11 @@ typedef struct ti_bundle {
 #define FOR_ALL_SLOT_MEMBERS(bundle, i) \
      for (i = 0; i < TI_BUNDLE_slot_count(bundle); ++i)
 
+#ifdef TARG_ST
+#define FOR_ALL_SLOT_MEMBERS_IN_REVERSE(bundle, i) \
+     for (i = TI_BUNDLE_slot_count(bundle) - 1; i >= 0; --i)
+#endif
+
 inline BOOL
 TI_BUNDLE_Stop_Bit_Present(TI_BUNDLE *bundle) {
   INT i;
@@ -210,6 +219,9 @@ TI_BUNDLE_Stop_Bit_Present(TI_BUNDLE *bundle) {
   return FALSE;
 }
 
+#ifdef TARG_ST
+TARGINFO_EXPORTED extern void TI_BUNDLE_initialize(int max_slot);
+#endif
 extern BOOL TI_BUNDLE_Has_Property(
   TI_BUNDLE *bundle,
   ISA_EXEC_UNIT_PROPERTY property,
@@ -244,6 +256,20 @@ extern BOOL TI_BUNDLE_Stop_Bit_Available(
   TI_BUNDLE  *bundle,
   INT        slot
 );
+
+#ifdef TARG_ST
+TARGINFO_EXPORTED extern ISA_EXEC_MASK TI_BUNDLE_Set_Slot_Mask_Property(
+  ISA_EXEC_MASK slot_mask,
+  INT slot,
+  ISA_EXEC_UNIT_PROPERTY property
+);
+
+TARGINFO_EXPORTED extern ISA_EXEC_UNIT_PROPERTY TI_BUNDLE_Get_Slot_Mask_Property(
+  ISA_EXEC_MASK slot_mask,
+  INT slot
+);
+#endif
+
 
 extern void TI_BUNDLE_Reserve_Slot(
   TI_BUNDLE  *bundle,

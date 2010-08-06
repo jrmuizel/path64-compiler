@@ -63,3 +63,6 @@ extern void ISA_Properties_Begin( const char* archname );
 extern ISA_PROPERTY ISA_Property_Create( const char* name );
 extern void Instruction_Group( ISA_PROPERTY property, ... );
 extern void ISA_Properties_End(void);
+
+extern void ISA_Memory_Access (int bytes, ... );
+extern void ISA_Memory_Alignment (int bytes, ... );

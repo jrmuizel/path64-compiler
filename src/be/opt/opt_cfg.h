@@ -438,7 +438,7 @@ public:
   // Only use AFTER SSA is done
   void         Delete_bb(BB_NODE *bb,
                          MOD_PHI_BB_CONTAINER *);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   void         Delete_bbs(BB_LIST *bbs,
                          MOD_PHI_BB_CONTAINER *);
 #endif
@@ -556,7 +556,7 @@ public:
   // Find a region with the given pragma, that encloses the given BB
   // Note that the region encloses "bb" and does not start with it
   BB_NODE *Find_enclosing_region_bb( BB_NODE *, WN_PRAGMA_ID );
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Find a parallel region that dominates the given BB.
   // Note that the region encloses "bb" and does not start with it
   BB_NODE *Find_enclosing_parallel_region_bb( BB_NODE *);
@@ -588,6 +588,13 @@ public:
   // process multiple entry or exit blocks.  'is_whirl' means that
   // the blocks contain whirl statements rather than stmtreps
   void         Process_multi_entryexit( BOOL is_whirl );
+
+  #ifdef TARG_ST
+  // Attach fake entry exit arcs such that they are reachable.
+  // One must call Remove_fake_entryexit_arcs() to restore
+  // cfg state.
+  void         Attach_fake_entryexit_arcs( void );
+#endif
 
   // update pred/succ arcs of fake entry/exit blocks so they are not
   // reachable from normal blocks
@@ -735,10 +742,23 @@ public:
   INT32    Cur(void)             { return _cur; }
   BOOL     Is_Empty(void)        { return _cur >= Bbs_count(); }
   BOOL     Is_Empty_Reverse(void){ return _cur < 0; }
+#ifdef TARG_ST
+    // [CM 20030926] We must be sure not to access out of bound elements
+    // Since these accessors are used through the FOR_ALL_MEM (opt_base.h) macros
+    // that create unititliazed mem read access (after array for fwd iterator,
+    // before array for reverse). This was detected by efence, and a fix 
+    // was historicllay done to avoid such cases by allocating bigger arrays (+1)
+    // This fix will be removed as a part of this change
+  BB_NODE *First_elem(void)      { First(); return (_cur < Bbs_count()) ? Dfs_Bb(_cur) : NULL ; }
+  BB_NODE *Last_elem(void)       { Last();  return (_cur >= 0) ? Dfs_Bb(_cur) : NULL ; }
+  BB_NODE *Next_elem(void)       { Next();  return (_cur >= 0 && _cur < Bbs_count()) ? Dfs_Bb(_cur) : NULL ; }
+  BB_NODE *Prev_elem(void)       { Prev();  return (_cur >= 0 && _cur < Bbs_count()) ? Dfs_Bb(_cur) : NULL ; }
+#else
   BB_NODE *First_elem(void)      { First(); return Dfs_Bb(_cur); }
   BB_NODE *Last_elem(void)       { Last();  return Dfs_Bb(_cur); }
   BB_NODE *Next_elem(void)       { Next();  return Dfs_Bb(_cur); }
   BB_NODE *Prev_elem(void)       { Prev();  return Dfs_Bb(_cur); }
+#endif
 
 };
 
@@ -775,10 +795,23 @@ public:
   INT32    Cur(void)             { return _cur; }
   BOOL     Is_Empty(void)        { return _cur >= Bbs_count(); }
   BOOL     Is_Empty_Reverse(void){ return _cur < 0; }
+#ifdef TARG_ST
+    // [CM 20030926] We must be sure not to access out of bound elements
+    // Since these accessors are used through the FOR_ALL_MEM (opt_base.h) macros
+    // that create unititliazed mem read access (after array for fwd iterator,
+    // before array for reverse). This was detected by efence, and a fix 
+    // was historicllay done to avoid such cases by allocating bigger arrays (+1)
+    // This fix will be removed as a part of this change
+  BB_NODE *First_elem(void)      { First(); return (_cur < Bbs_count()) ? Po_Bb(_cur) : NULL ; }
+  BB_NODE *Last_elem(void)       { Last();  return (_cur >= 0) ? Po_Bb(_cur) : NULL ; }
+  BB_NODE *Next_elem(void)       { Next();  return (_cur >= 0 && _cur < Bbs_count()) ? Po_Bb(_cur) : NULL ; }
+  BB_NODE *Prev_elem(void)       { Prev();  return (_cur >= 0 && _cur < Bbs_count()) ? Po_Bb(_cur) : NULL ; }
+#else
   BB_NODE *First_elem(void)      { First(); return Po_Bb(_cur); }
   BB_NODE *Last_elem(void)       { Last();  return Po_Bb(_cur); }
   BB_NODE *Next_elem(void)       { Next();  return Po_Bb(_cur); }
   BB_NODE *Prev_elem(void)       { Prev();  return Po_Bb(_cur); }
+#endif
 };
 
 // Iterator to access the postorder BB array in reverse order
@@ -847,10 +880,23 @@ public:
   INT32    Cur(void)             { return _cur; }
   BOOL     Is_Empty(void)        { return _cur >= Bbs_count(); }
   BOOL     Is_Empty_Reverse(void){ return _cur < 0; }
+#ifdef TARG_ST
+    // [CM 20030926] We must be sure not to access out of bound elements
+    // Since these accessors are used through the FOR_ALL_MEM (opt_base.h) macros
+    // that create unititliazed mem read access (after array for fwd iterator,
+    // before array for reverse). This was detected by efence, and a fix 
+    // was historicllay done to avoid such cases by allocating bigger arrays (+1)
+    // This fix will be removed as a part of this change
+  BB_NODE *First_elem(void)      { First(); return (_cur < Bbs_count()) ? Dpo_Bb(_cur) : NULL ; }
+  BB_NODE *Last_elem(void)       { Last();  return (_cur >= 0) ? Dpo_Bb(_cur) : NULL ; }
+  BB_NODE *Next_elem(void)       { Next();  return (_cur >= 0 && _cur < Bbs_count()) ? Dpo_Bb(_cur) : NULL ; }
+  BB_NODE *Prev_elem(void)       { Prev();  return (_cur >= 0 && _cur < Bbs_count()) ? Dpo_Bb(_cur) : NULL ; }
+#else
   BB_NODE *First_elem(void)      { First(); return Dpo_Bb(_cur); }
   BB_NODE *Last_elem(void)       { Last();  return Dpo_Bb(_cur); }
   BB_NODE *Next_elem(void)       { Next();  return Dpo_Bb(_cur); }
   BB_NODE *Prev_elem(void)       { Prev();  return Dpo_Bb(_cur); }
+#endif
 };
 
 // Iterator to access the exit_vec dynamic array

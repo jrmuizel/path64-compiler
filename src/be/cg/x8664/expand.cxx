@@ -77,7 +77,7 @@
 #include "data_layout.h"
 #include "stblock.h"
 #include "cgexp.h"
-#include "cgexp_internals.h"
+
 #include "w2op.h"
 #include "label_util.h"
 #include "cgtarget.h"

@@ -35,7 +35,7 @@
 #include "cg_swp_loop.h"
 #include "cg_swp_note.h"
 
-
+#ifndef TARG_ST
 
 static const char *swps_prefix = ASM_CMNT_LINE"<swps> ";
 static const char *swpf_prefix = ASM_CMNT_LINE"<swpf> ";
@@ -337,4 +337,4 @@ SWP_Epilogue_Note_Handler (NOTE_ACTION action, NOTE_INFO *info, FILE *f)
 
   return;
 }
-
+#endif

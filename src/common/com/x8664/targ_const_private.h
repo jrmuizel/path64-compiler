@@ -95,7 +95,7 @@
 #define TCON_R4(c)	TCON_R8(c)
 #define TCON_IR4(c)	TCON_IR8(c)
 #else
-#define TCON_R4(c)	((c).vals.fval)
+#define TCON_R4(c)	((c).vals.f.fval)
 #define TCON_IR4(c)	((c).cmplxval.fival)
 #endif
 /* Complex imaginary parts */

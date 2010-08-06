@@ -376,10 +376,13 @@ class ALIAS_RULE {
   ALIAS_CONTEXT _context;  // control which rules can be applied
   
 private:
-  
+    //  Obtain the basic type from TY
+#ifdef TARG_ST
+  INT64 Get_stripped_mtype(TY_IDX ty) const;
+#else
   //  Obtain the basic type from TY
   INT32 Get_stripped_mtype(TY_IDX ty) const;
-
+#endif
   //  This routine are used by alias analysis internally.
   //  Each function implements one of the alias rules.
   //  See doc/Mongoose/alias-analysis-design for more details.
@@ -440,6 +443,12 @@ public:
   //   The second set returns whether a scalar is aliased by a CALL
   //
   READ_WRITE Aliased_with_Call(ST *, INT32, const POINTS_TO *) const;
+#ifdef TARG_ST
+  //   Returns whether a scalar is aliased with an INTRINSIC_CALL
+  //
+  READ_WRITE Aliased_with_Intrinsic_Call(const WN *, const POINTS_TO *) const;
+#endif
+
   // READ_WRITE Aliased_with_Region(REGION *, const POINTS_TO *);
 
   READ_WRITE Aliased_with_Asm(const WN *, const POINTS_TO *) const;

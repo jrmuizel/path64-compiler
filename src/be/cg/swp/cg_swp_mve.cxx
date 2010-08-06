@@ -45,7 +45,7 @@
 /* Standard Template Library (STL) related include files */
 #include <algorithm>
 #include <cmath>
-
+#ifndef TARG_ST
 using namespace std;
 
 
@@ -310,4 +310,4 @@ SWP_MVE::Verify (void) const {
 
   return;
 }
-
+#endif

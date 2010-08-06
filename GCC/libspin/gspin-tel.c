@@ -851,6 +851,32 @@ gs_build_decl(gs_code_t code, gs_t node2)
   return res;
 }
 
+#ifdef TARG_ST
+gs_t
+gs_build_declc(gs_code_t code, gs_t node2, gs_t context)
+{
+  gs_t res = gs_build_decl(code, node2);
+  gs_set_operand(res, GS_DECL_CONTEXT, context);
+  return res;
+}
+
+gs_t
+gs_build_1(gs_tree_code_class_t code_class, gs_code_t code, gs_t k0)
+{
+  gs_t root = gs_build_0(code_class, code);
+  gs_set_operand(root, GS_TREE_OPERAND_ZERO, k0);
+  return root;
+}
+
+gs_t
+gs_build_2t(gs_tree_code_class_t code_class, gs_code_t code,
+	    gs_t type, gs_t k0, gs_t k1)
+{
+  gs_t root = gs_build_2 (code_class, code, k0, k1);
+  gs_set_operand(root, GS_TREE_TYPE, type);
+  return root;
+}
+#endif
 #ifndef FE_GNU_4_2_0
 static inline
 #endif

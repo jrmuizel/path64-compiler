@@ -1850,4 +1850,146 @@ extern void Add_Pragma_To_MP_Regions (WN_VECTOR *wnv,
     Is_True (FALSE, ("Add_Pragma: trying to add unsupported pragma"));
   }
 }
+#ifdef TARG_ST
+// FdF ipa-align: Get the alignment of a WN expression
+
+UINT32
+OPR_INTCONST_get_align(INT64 val) {
+
+  UINT32 align = val & (-val);
+
+  if (align == 0)
+    align = 1<<(sizeof(align)-1);
+
+  return align;
+}
+
+UINT32
+OPR_ADD_get_align(UINT32 align1, UINT32 align2) {
+
+  if (align1 <= align2)
+    return align1;
+  return align2;
+}
+
+UINT32
+OPR_MPY_get_align(UINT32 align1, UINT32 align2) {
+
+  Is_True((align1 > 0) && (align2 > 0), ("OPR_MPY_get_align: alignment must not be 0"));
+  UINT32 align = align1 * align2;
+
+  if (align == 0)
+    return OPR_INTCONST_get_align(0);
+  else
+    return align;
+}
+
+UINT32
+OPR_SHL_get_align(UINT32 align1, WN *shl_expr) {
+
+  UINT32 align;
+  
+  if (WN_operator(shl_expr) != OPR_INTCONST)
+    align = align1;
+  else
+    align = align1 << WN_const_val(shl_expr);
+
+  return align;
+}
+
+UINT32
+OPR_SHR_get_align(UINT32 align1, WN *shr_expr) {
+
+  UINT32 align;
+  
+  if (WN_operator(shr_expr) != OPR_INTCONST)
+    align = 1;
+  else {
+    align = align1 >> WN_const_val(shr_expr);
+    if (align == 0) align = 1;
+  }
+
+  return align;
+}
+
+UINT32
+WN_get_align (WN *wn)
+{
+  OPERATOR opr = WN_operator (wn);
+
+  switch (opr) {
+
+  case OPR_LDA:
+    // FdF 20090424: As a result of Whirl optimizations there may be a
+    // different type on a LDA.
+    if (TY_kind(WN_ty(wn)) == KIND_POINTER)
+      return OPR_ADD_get_align(TY_align(TY_pointed(WN_ty(wn))), OPR_INTCONST_get_align(WN_offset(wn)));
+    else
+      return 1;
+
+  case OPR_MPY:
+    return OPR_MPY_get_align(WN_get_align(WN_kid0(wn)), WN_get_align(WN_kid1(wn)));
+
+  case OPR_ADD:
+    return OPR_ADD_get_align(WN_get_align(WN_kid0(wn)), WN_get_align(WN_kid1(wn)));
+
+  case OPR_INTCONST:
+    return OPR_INTCONST_get_align(WN_const_val(wn));
+
+  case OPR_SHL:
+    return OPR_SHL_get_align(WN_get_align(WN_kid0(wn)), WN_kid1(wn));
+
+  case OPR_ASHR:
+  case OPR_LSHR:
+    return OPR_SHR_get_align(WN_get_align(WN_kid0(wn)), WN_kid1(wn));
+
+  default:
+    return 1;
+  }
+
+} // get_WN_align
+#endif
+
+#ifdef TARG_ST
+// bv11 - WN_Equiv_Tree - Corresponds to a recursive WN_Equiv
+BOOL WN_Equiv_Tree (WN *wn1, WN* wn2) {
+
+  if (!wn1 && !wn2) return TRUE;    // both are NULL
+  if (!wn1 || !wn2) return FALSE;   // one (but not both) is NULL
+  if (!WN_Equiv (wn1, wn2)) return FALSE;   // not the same
+
+  // Now examine the kids
+  OPERATOR opr = WN_operator(wn1);
+  if ((opr == OPR_ADD) || (opr == OPR_BAND) || (opr == OPR_BIOR) ||
+      (opr == OPR_BNOR) || (opr == OPR_BXOR) || (opr == OPR_EQ) ||
+      (opr == OPR_MAX) || (opr == OPR_MIN) || (opr == OPR_MPY) ||
+      (opr == OPR_NE)) {
+    // Case of commutative operators having the same kids
+    // but not in the same order
+    Is_True (WN_kid_count(wn1)==2,
+	     ("WN_Equiv_Tree: Unexpected number of children for a commutative operator"));
+    WN *kid10 = WN_kid(wn1,0);
+    WN *kid11 = WN_kid(wn1,1);
+    WN *kid20 = WN_kid(wn2,0);
+    WN *kid21 = WN_kid(wn2,1);
+    if ((WN_Equiv_Tree (kid10, kid20) && WN_Equiv_Tree (kid11, kid21)) ||
+	(WN_Equiv_Tree (kid10, kid21) && WN_Equiv_Tree (kid11, kid20))) {
+      return TRUE;
+    }
+    else {
+      return FALSE;
+    }
+  }
+  else {
+    // Since the two nodes are equiv, they have the same number of children
+    for (INT i=0; i<WN_kid_count(wn1); i++) {
+      if (!WN_Equiv_Tree (WN_kid(wn1,i), WN_kid(wn2,i))) {
+	return FALSE;
+      }
+    }
+    return TRUE;
+  }
+}
+#endif
+
 

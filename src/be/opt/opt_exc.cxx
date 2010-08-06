@@ -70,12 +70,32 @@ EXC_SCOPE::EXC_SCOPE(WN *begin_wn, EXC *exc)
   _vcall = NULL;
   _call_list = CXX_NEW(DYN_ARRAY<WN*>(exc->Mem_pool()), exc->Mem_pool());
 }
-
-
+#ifdef TARG_ST
+// Returns TRUE if this exception region is for cleanup region
+BOOL
+EXC_SCOPE::Is_cleanup_region(void) const
+{
+  Is_True(WN_operator(_begin_wn) == OPR_REGION && REGION_is_EH(_begin_wn),
+	  ("EXC_SCOPE::Is_cleanup_region, invalid input"));
+  WN *stmt, *pragmas = WN_region_pragmas(_begin_wn);
+  STMT_ITER stmt_iter;
+  FOR_ALL_ELEM(stmt, stmt_iter, Init(WN_first(pragmas),WN_last(pragmas))) {
+    if (WN_operator(stmt) == OPR_GOTO)
+      return FALSE;
+  }
+  return TRUE;
+}
+#endif
 // Returns TRUE if this exception region is for try region
 BOOL
 EXC_SCOPE::Is_try_region(void) const
 {
+    #ifdef TARG_ST
+  if (WN_operator(_begin_wn) == OPR_REGION && REGION_is_EH(_begin_wn))
+    return TRUE;
+  else
+    return FALSE;
+#else
   Is_True(WN_operator(_begin_wn) == OPR_REGION && REGION_is_EH(_begin_wn),
 	  ("EXC_SCOPE::Is_try_region, invalid input"));
   WN *stmt, *pragmas = WN_region_pragmas(_begin_wn);
@@ -85,7 +105,110 @@ EXC_SCOPE::Is_try_region(void) const
       return TRUE;
   }
   return FALSE;
+#endif
 }
+#ifdef TARG_ST
+INT
+EXC_SCOPE::Destruct_object_cnt(void)
+{
+  Is_True(WN_operator(_begin_wn) == OPR_REGION && REGION_is_EH(_begin_wn),
+	  ("EXC_SCOPE::Destruct_object_cnt, invalid input"));
+  WN *stmt, *pragmas = WN_region_pragmas(_begin_wn);
+  STMT_ITER stmt_iter;
+  INT count = 0;
+  _vcall = NULL;
+  FOR_ALL_ELEM(stmt, stmt_iter, Init(WN_first(pragmas),WN_last(pragmas))) {
+    if (WN_opcode(stmt) == OPC_VCALL) {
+      Is_True(count == 0,
+	      ("EXC_SCOPE::Destruct_object_cnt, found more than one VCALL"));
+      count = WN_kid_count(stmt);
+      _vcall = stmt;
+    }
+  }
+  return count;
+}
+
+// Returns the aux_id of the destructed object in this exc_scope region
+// the _vcall member must be set by calling Destruct_object_cnt first
+AUX_ID
+EXC_SCOPE::Destruct_object(INT kid)
+{
+  Is_True(WN_operator(_begin_wn) == OPR_REGION && REGION_is_EH(_begin_wn),
+	  ("EXC_SCOPE::Destruct_object, invalid input"));
+  if (kid >= 0 && Is_cleanup_region() && _vcall) {
+    Is_True(_vcall != NULL && WN_opcode(_vcall) == OPC_VCALL,
+	    ("EXC_SCOPE::Destruct_object, can't find VCALL"));
+    WN *lda_wn = WN_kid0(WN_kid(_vcall, kid));
+    return WN_aux(lda_wn);
+  } else
+    return 0;
+}
+#endif
+#ifdef TARG_ST
+/* (cbr) handler regions can be pointed either by gotos from the landing pad, 
+   either a list of labels see action table */
+void
+EXC_SCOPE_TRY_ITER::Update_Chis(mINT32 label) {
+    BB_NODE *handler_bb = _exc_scope->Exc()->Cfg()->Get_bb_from_label(label);
+    Is_True(handler_bb != NULL,
+            ("EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER NULL label BB"));
+    WN *stmt = handler_bb->Firststmt();
+    Is_True(WN_operator(stmt) == OPR_OPT_CHI,
+            ("EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER: cannot find chi-list"));
+    CHI_LIST *chi = _exc_scope->Exc()->Opt_stab()->Get_stmt_chi_list(stmt);
+    Is_True(chi != NULL,
+            ("EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER, NULL chi"));
+    
+    // now copy chi to conglomerate list
+    CHI_NODE *cnode;
+    if (_chi_list == NULL)
+      _chi_list = CXX_NEW(CHI_LIST, &_mem_pool);
+    FOR_ALL_NODE(cnode, _chi_iter, Init(chi))
+      _chi_list->Append(cnode->Copy_chi_node(&_mem_pool));
+
+  // set up iterator
+  _chi_iter.Init(_chi_list);
+}
+
+EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER(EXC_SCOPE *exc_scope)
+{
+  _exc_scope = exc_scope;
+  Is_True (_exc_scope->Is_try_region(),
+           ("EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER: not a try_region"));
+  Is_True(WN_operator(_exc_scope->Begin_wn()) == OPR_REGION &&
+	  REGION_is_EH(_exc_scope->Begin_wn()),
+	  ("EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER, invalid input"));
+
+  // local mem_pool for chi list copy
+  OPT_POOL_Initialize(&_mem_pool, "EXC_SCOPE_TRY_ITER mem pool", 
+		      FALSE, EXC_TRACE_FLAG);
+  OPT_POOL_Push(&_mem_pool, EXC_TRACE_FLAG);
+
+  // Creates the chi list for this call, may be a conglomerate of the
+  // CHIs from many catches so need to allocate and copy
+  _chi_list = NULL;
+  WN *stmt, *pragmas = WN_region_pragmas(_exc_scope->Begin_wn());
+  mINT32 goto_label;
+  STMT_ITER stmt_iter;
+
+  FOR_ALL_ELEM(stmt, stmt_iter, Init(WN_first(pragmas),WN_last(pragmas))) {
+    if (WN_opcode(stmt) == OPC_GOTO) {
+      goto_label = WN_label_number(stmt);
+      Update_Chis(goto_label);
+    }
+  }
+
+  INITO_IDX iidx = WN_ereg_supp(_exc_scope->Begin_wn());
+  INITV_IDX iv_idx = INITO_val(iidx);
+  if (iv_idx && INITV_kind(iv_idx) == INITVKIND_BLOCK) {
+    iv_idx = INITV_blk(iv_idx);
+    if (INITV_kind(iv_idx) == INITVKIND_LABEL) {
+      goto_label = INITV_lab(iv_idx);
+      Update_Chis(goto_label);
+    }
+  }
+}
+#else
 
 EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER(EXC_SCOPE *exc_scope)
 {
@@ -161,7 +284,7 @@ EXC_SCOPE_TRY_ITER::EXC_SCOPE_TRY_ITER(EXC_SCOPE *exc_scope)
   // set up iterator
   _chi_iter.Init(_chi_list);
 }
-
+#endif
 AUX_ID
 EXC_SCOPE_TRY_ITER::Elem(CHI_NODE *chi)
 {

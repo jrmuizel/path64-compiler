@@ -61,6 +61,7 @@
 #include "phases.h"
 #include "run.h"
 #include "profile_type.h" /* for enum PROFILE_TYPE */
+#include "targets.h"
 
 /* keep list of previous toggled option names, to give better messages */
 typedef struct toggle_name_struct {
@@ -88,9 +89,7 @@ int ffast_math_prescan;  // Bug 14302: ffast_math set in option prescan
 int instrumentation_invoked = UNDEFINED;
 int profile_type = 0;
 boolean ftz_crt = FALSE;
-#ifndef TARG_MIPS
 int isa = UNDEFINED; /* defined from options table */
-#endif
 int proc = UNDEFINED;
 #if defined (TARG_X8664) || defined (TARG_IA32)
 static int target_supported_abi = UNDEFINED;
@@ -98,6 +97,13 @@ static boolean target_supports_sse2 = FALSE;
 static boolean target_prefers_sse3 = FALSE;
 static boolean target_supports_3dnow = FALSE;
 static boolean target_supports_sse4a = FALSE;
+#endif
+#ifdef TARG_ST
+ extern int ExtensionSeen;
+int c_std;
+/* TB: to warm if olevel is not enough if uninitialized var warning is
+   aked*/
+boolean Wuninitialized_is_asked = FALSE; 
 #endif
 
 extern boolean parsing_default_options;
@@ -109,7 +115,10 @@ static void add_hugepage_desc(HUGEPAGE_ALLOC, HUGEPAGE_SIZE, int);
 #ifdef KEY
 void set_memory_model(char *model);
 #endif
-
+#ifdef TARG_ST
+char *print_name;
+int print_kind;
+#endif
 #ifdef TARG_X8664
 static void Get_x86_ISA();
 static boolean Get_x86_ISA_extensions();
@@ -129,6 +138,56 @@ static boolean Get_x86_ISA_extensions();
  * ====================================================================
  */
 
+static struct {
+  char * pname;
+  PROCESSOR pid;
+} Proc_Map[] =
+{
+  { "r4000",	PROC_R4K },
+  { "r4k",	PROC_R4K },
+  { "r5000",	PROC_R5K },
+  { "r5k",	PROC_R5K },
+  { "r8000",	PROC_R8K },
+  { "r8k",	PROC_R8K },
+  { "r10000",	PROC_R10K },
+  { "r10k",	PROC_R10K },
+  { "r12000",	PROC_R10K },
+  { "r12k",	PROC_R10K },
+  { "r14000",	PROC_R10K },
+  { "r14k",	PROC_R10K },
+  { "r16000",	PROC_R10K },
+  { "r16k",	PROC_R10K },
+  { "itanium",	PROC_ITANIUM },
+  { "st100",    PROC_ST100 },
+  { "st210",    PROC_ST210 },
+  { "st220",    PROC_ST220 },
+  { "st231",    PROC_ST231 },
+  { "st240",    PROC_ST240 },
+  { "arm9",     PROC_armv5 },
+  { "arm11",    PROC_armv6 },
+  { "stxp70_v3",PROC_stxp70_v3 },
+  { "stxp70_v4",PROC_stxp70_v4_novliw},
+  { "stxp70v3", PROC_stxp70_v3 },
+  { "stxp70v4", PROC_stxp70_v4_novliw },
+  { "stxp70v4novliw", PROC_stxp70_v4_novliw },
+  { "stxp70v4singlecoreALU",PROC_stxp70_v4_single },
+  { "stxp70v4dualcoreALU",PROC_stxp70_v4_dual},
+  { NULL,	PROC_NONE }
+};
+
+
+#ifdef MUMBLE_ARM_BSP
+static struct {
+  char * pname;
+  RUNTIME pid;
+} Runtime_Map[] =
+{
+  { NULL,	RUNTIME_NONE }
+};
+#endif
+
+
+char *Ofast_Name = NULL;/* -Ofast= name */
 int ofast = UNDEFINED;	/* -Ofast toggle -- implicit in Process_Ofast */
 
 
@@ -366,6 +425,10 @@ Process_Opt_Group ( char *opt_args )
   if ( debug ) {
     fprintf ( stderr, "Process_Opt_Group: %s\n", opt_args );
   }
+#ifdef TARG_ST
+  if (strncmp("enable_instrument", opt_args, strlen("enable_instrument")) == 0)
+     instrumentation_invoked = TRUE;
+#endif  
   
   /* Go look for -OPT:instrument */
   optval = Get_Group_Option_Value ( opt_args, "instrument", "instr");
@@ -389,7 +452,8 @@ Process_Opt_Group ( char *opt_args )
   if (optval != NULL &&
       atoi(optval) > 0) {
 #ifdef TARG_X8664	// Option available only for x86-64.  Bug 12431.
-     malloc_algorithm = atoi(optval);
+     if (is_target_arch_X8664())
+       malloc_algorithm = atoi(optval);
 #else
      warning("ignored -OPT:malloc_algorithm because option not supported on"
 	     " this architecture");
@@ -413,6 +477,17 @@ Process_Default_Group (char *default_args)
   if (s != NULL && same_string_prefix (s, "mips")) {
 	default_isa = atoi(s + strlen("mips"));
   }
+
+  /* Go look for -DEFAULT:proc=rN000: */
+  s = Get_Group_Option_Value ( default_args, "proc", "proc");
+  if (s != NULL) {
+	for (i = 0; Proc_Map[i].pname != NULL; i++) {
+		if (same_string(s, Proc_Map[i].pname)) {
+			default_proc = Proc_Map[i].pid;
+		}
+	}
+  }
+
   /* Go look for -DEFAULT:opt=[0-3]: */
   s = Get_Group_Option_Value ( default_args, "opt", "opt");
   if (s != NULL) {
@@ -470,39 +545,45 @@ Process_Targ_Group ( char *targ_args )
     switch ( *cp ) {
       case '3':
 #ifdef TARG_X8664
-	if (!strncasecmp(cp, "3dnow=on", 9)) {
-	  add_option_seen(O_m3dnow);
-	  toggle(&m3dnow, TRUE);
-	} else if (!strncasecmp(cp, "3dnow=off", 10)) {
-	  add_option_seen(O_mno_3dnow);
-	  toggle(&m3dnow, FALSE);
-	}
+    if (is_target_arch_X8664()) {
+        if (!strncasecmp(cp, "3dnow=on", 9)) {
+          add_option_seen(O_m3dnow);
+          toggle(&m3dnow, TRUE);
+        } else if (!strncasecmp(cp, "3dnow=off", 10)) {
+          add_option_seen(O_mno_3dnow);
+          toggle(&m3dnow, FALSE);
+        }
+    }
 	break;
 #endif
 
       case 'a':
 	if ( strncasecmp ( cp, "abi", 3 ) == 0 && *(cp+3) == '=' ) {
 #ifdef TARG_MIPS
-	  if ( strncasecmp ( cp+4, "n32", 3 ) == 0 ) {
-	    add_option_seen ( O_n32 );
-	    toggle ( &abi, ABI_N32 );
-	  } else if ( strncasecmp ( cp+4, "n64", 3 ) == 0 ) {
-	    add_option_seen ( O_64 );
-	    toggle ( &abi, ABI_64 );
-	  }
+      if ( is_target_arch_MIPS() ) {
+	    if ( strncasecmp ( cp+4, "n32", 3 ) == 0 ) {
+	      add_option_seen ( O_n32 );
+	      toggle ( &abi, ABI_N32 );
+	    } else if ( strncasecmp ( cp+4, "n64", 3 ) == 0 ) {
+	      add_option_seen ( O_64 );
+	      toggle ( &abi, ABI_64 );
+	    }
+      }
 #endif
 #ifdef TARG_X8664
 	  // The driver needs to handle all the -TARG options that it gives to
 	  // the back-end, even if these -TARG options are not visible to the
 	  // user.  This is because IPA invokes the driver with back-end
 	  // options.  Bug 5466.
-	  if ( strncasecmp ( cp+4, "n32", 3 ) == 0 ) {
-	    add_option_seen ( O_m32 );
-	    toggle ( &abi, ABI_N32 );
-	  } else if ( strncasecmp ( cp+4, "n64", 3 ) == 0 ) {
-	    add_option_seen ( O_m64 );
-	    toggle ( &abi, ABI_64 );
-	  }
+      if ( is_target_arch_X8664() ) {
+	    if ( strncasecmp ( cp+4, "n32", 3 ) == 0 ) {
+	      add_option_seen ( O_m32 );
+	      toggle ( &abi, ABI_M32 );
+	    } else if ( strncasecmp ( cp+4, "n64", 3 ) == 0 ) {
+	      add_option_seen ( O_m64 );
+	      toggle ( &abi, ABI_M64 );
+	    }
+      }
 #endif
 	}
 	break;
@@ -548,33 +629,35 @@ Process_Targ_Group ( char *targ_args )
 
       case 'm':
 #ifdef TARG_MIPS
-	if ( strncasecmp ( cp, "mips", 4 ) == 0 ) {
-	  char c = *(cp+4);
-	  if ( '1' <= c && c <= '6' ) {
-	    if (c < '6')
-	      toggle ( &isa, *(cp+4) - '0' );
-	    else { // c == '6'
-	      if (*(cp+5) == '\0') // option is mips6
-	        toggle ( &isa, ISA_MIPS6 );
-	      else // option is mips64
-	        toggle ( &isa, ISA_MIPS64 );
-	    }
-	    switch ( isa ) {
-	      case ISA_MIPS1:	add_option_seen ( O_mips1 );
-				break;
-	      case ISA_MIPS2:	add_option_seen ( O_mips2 );
-				break;
-	      case ISA_MIPS3:	add_option_seen ( O_mips3 );
-				break;
-	      case ISA_MIPS4:	add_option_seen ( O_mips4 );
-				break;
-	      case ISA_MIPS64:   add_option_seen ( O_mips64 );
-	      			break;
-	      default:		error ( "invalid ISA: %s", cp );
-				break;
+    if ( is_target_arch_MIPS() ) {
+	  if ( strncasecmp ( cp, "mips", 4 ) == 0 ) {
+	    char c = *(cp+4);
+	    if ( '1' <= c && c <= '6' ) {
+	      if (c < '6')
+	        toggle ( &isa, *(cp+4) - '0' );
+	      else { // c == '6'
+	        if (*(cp+5) == '\0') // option is mips6
+	          toggle ( &isa, ISA_MIPS6 );
+	        else // option is mips64
+	          toggle ( &isa, ISA_MIPS64 );
+	      }
+	      switch ( isa ) {
+	        case ISA_MIPS1:	add_option_seen ( O_mips1 );
+	  			break;
+	        case ISA_MIPS2:	add_option_seen ( O_mips2 );
+	  			break;
+	        case ISA_MIPS3:	add_option_seen ( O_mips3 );
+	  			break;
+	        case ISA_MIPS4:	add_option_seen ( O_mips4 );
+	  			break;
+	        case ISA_MIPS64:   add_option_seen ( O_mips64 );
+	        			break;
+	        default:		error ( "invalid ISA: %s", cp );
+	  			break;
+	      }
 	    }
 	  }
-	}
+    }
 #endif
 	break;
 
@@ -589,31 +672,33 @@ Process_Targ_Group ( char *targ_args )
 
       case 's':
 #ifdef TARG_X8664
-	if (!strncasecmp(cp, "sse=on", 7)) {
-	  add_option_seen(O_msse);
-	  toggle(&sse, TRUE);
-	} else if (!strncasecmp(cp, "sse=off", 8)) {
-	  add_option_seen(O_mno_sse);
-	  toggle(&sse, FALSE);
-	} else if (!strncasecmp(cp, "sse2=on", 8)) {
-	  add_option_seen(O_msse2);
-	  toggle(&sse2, TRUE);
-	} else if (!strncasecmp(cp, "sse2=off", 9)) {
-	  add_option_seen(O_mno_sse2);
-	  toggle(&sse2, FALSE);
-	} else if (!strncasecmp(cp, "sse3=on", 8)) {
-	  add_option_seen(O_msse3);
-	  toggle(&sse3, TRUE);
-	} else if (!strncasecmp(cp, "sse3=off", 9)) {
-	  add_option_seen(O_mno_sse3);
-	  toggle(&sse3, FALSE);
-	}else if (!strncasecmp(cp, "sse4a=on", 9)){
-          add_option_seen(O_mno_sse4a);
-          toggle(&sse4a, TRUE);
-        }else if (!strncasecmp(cp, "sse4a=off", 10)){
-          add_option_seen(O_mno_sse4a);
-          toggle(&sse4a, FALSE);
-        }
+    if (is_target_arch_X8664()) {
+	  if (!strncasecmp(cp, "sse=on", 7)) {
+	    add_option_seen(O_msse);
+	    toggle(&sse, TRUE);
+	  } else if (!strncasecmp(cp, "sse=off", 8)) {
+	    add_option_seen(O_mno_sse);
+	    toggle(&sse, FALSE);
+	  } else if (!strncasecmp(cp, "sse2=on", 8)) {
+	    add_option_seen(O_msse2);
+	    toggle(&sse2, TRUE);
+	  } else if (!strncasecmp(cp, "sse2=off", 9)) {
+	    add_option_seen(O_mno_sse2);
+	    toggle(&sse2, FALSE);
+	  } else if (!strncasecmp(cp, "sse3=on", 8)) {
+	    add_option_seen(O_msse3);
+	    toggle(&sse3, TRUE);
+	  } else if (!strncasecmp(cp, "sse3=off", 9)) {
+	    add_option_seen(O_mno_sse3);
+	    toggle(&sse3, FALSE);
+	  }else if (!strncasecmp(cp, "sse4a=on", 9)){
+            add_option_seen(O_mno_sse4a);
+            toggle(&sse4a, TRUE);
+          }else if (!strncasecmp(cp, "sse4a=off", 10)){
+            add_option_seen(O_mno_sse4a);
+            toggle(&sse4a, FALSE);
+          }
+    }
 #endif
 	break;
     }
@@ -624,7 +709,61 @@ Process_Targ_Group ( char *targ_args )
   }
 }
 
-
+
+#ifdef TARG_ARM
+/* ====================================================================
+ *
+ * add_arm_phase_for_option
+ *
+ *   Add flag to all needed phase for ARM target option
+ *
+ * ====================================================================
+ */
+static void
+add_arm_phase_for_option( int flag )
+{
+  add_phase_for_option(flag, P_be);
+  add_phase_for_option(flag, p_any_ipl);
+  add_phase_for_option(flag, P_any_fe);
+#if (GNU_FRONT_END==33)
+  /* (cbr) -TARG now passed to cpp */
+  add_phase_for_option(flag, P_gcpp);
+  add_phase_for_option(flag, P_gcpp_plus);
+#endif
+  if (!already_provided(flag)) {
+    /* [CL] Only prepend this option if
+       not already provided by the user */
+    prepend_option_seen (flag);
+  }
+}
+
+
+static void
+add_arm_int_option(char* option_name, int imm, phases_t phase)
+{
+  char *str = alloca(strlen(option_name)+16);
+  int flag;
+  sprintf(str, option_name, imm);
+  flag = add_new_option(str);
+  add_phase_for_option(flag, phase);
+  if (!already_provided(flag)) {
+    prepend_option_seen (flag);
+  }
+}
+
+static void
+check_range(char* m1, char* m2, int min1, int max1, int min2, int max2)
+{
+  if ((max1>0) && (max2>0) &&
+       ((min1<=min2 && min2<=max1) ||
+        (min2<=min1 && min1<=max2)))
+   warning("Conflict between size ranges %s [%d:%d] and "
+           "%s [%d:%d]\n",
+           m1, min1, max1, m2, min2, max2);
+}
+
+#endif /* TARG_ARM */
+
 /* ====================================================================
  *
  * Check_Target
@@ -639,6 +778,7 @@ Check_Target ( void )
 {
   int opt_id;
   int opt_val;
+  int flag;
 
   if ( debug ) {
     fprintf ( stderr, "Check_Target ABI=%d ISA=%d Processor=%d\n",
@@ -646,23 +786,45 @@ Check_Target ( void )
   }
 
 #ifdef TARG_X8664
-  if (target_cpu == NULL) {
-    set_cpu ("auto", M_ARCH);	// Default to auto.
-  }
+  if (is_target_arch_X8664()) {
+    if (target_cpu == NULL) {
+      set_cpu ("auto", M_ARCH);	// Default to auto.
+    }
 
-  // Uses ABI to determine ISA.  If ABI isn't set, it guesses and sets the ABI.
-  Get_x86_ISA();
+    // Uses ABI to determine ISA.  If ABI isn't set, it guesses and sets the ABI.
+    Get_x86_ISA();
+  }
 #endif
 
 #ifdef TARG_MIPS
-  if (target_cpu == NULL) {
-    set_cpu ("mips5kf", M_ARCH);	// Default to mips5kf.
-  } else if (! strcmp(target_cpu, "auto") ||
-	     ! strcmp(target_cpu, "5kf") ||  // Bug 14152
-	     ! strcmp(target_cpu, "ice9")) {
-    target_cpu = "mips5kf";
-  } else if (! strcmp(target_cpu, "twc9")) {
-    target_cpu = "twc9a";
+  if (is_target_arch_MIPS()) {
+    if (target_cpu == NULL) {
+      set_cpu ("mips5kf", M_ARCH);	// Default to mips5kf.
+    } else if (! strcmp(target_cpu, "auto") ||
+           ! strcmp(target_cpu, "5kf") ||  // Bug 14152
+           ! strcmp(target_cpu, "ice9")) {
+      target_cpu = "mips5kf";
+    } else if (! strcmp(target_cpu, "twc9")) {
+      target_cpu = "twc9a";
+    }
+  }
+#endif
+
+#ifdef TARG_ARM
+  switch (proc) {
+  case UNDEFINED:
+    toggle(&proc, PROC_armv5);
+    /* fallthru arm default (armv5). */
+  case PROC_armv5:
+    flag = add_new_option("-TARG:proc=armv5");
+    break;
+  case PROC_armv6:
+    flag = add_new_option("-TARG:proc=armv6");
+    break;
+  }
+
+  if (proc != PROC_NONE) {
+    add_arm_phase_for_option(flag);
   }
 #endif
 
@@ -671,9 +833,11 @@ Check_Target ( void )
   }
 
 #ifdef TARG_X8664
-  // ABI must be set.
-  if (!Get_x86_ISA_extensions())
-    return;	// If error, quit instead of giving confusing error messages.
+  if (is_target_arch_X8664()) {
+    // ABI must be set.
+    if (!Get_x86_ISA_extensions())
+      return;	// If error, quit instead of giving confusing error messages.
+  }
 #endif
 
   /* Check ABI against ISA: */
@@ -721,43 +885,60 @@ Check_Target ( void )
   } else {
     /* ISA is undefined, so derive it from ABI and possibly processor: */
 
-    switch ( abi ) {
 #ifdef TARG_MIPS
+    if (is_target_arch_MIPS()) {
+      switch (abi) {
       case ABI_N32:
       case ABI_64:
         if (default_isa == ISA_MIPS3) {
-	  opt_val = ISA_MIPS3;
-	  opt_id = O_mips3;
-	}
-	else if (default_isa == ISA_MIPS4) {
-	  opt_val = ISA_MIPS4;
-	  opt_id = O_mips4;
-	}
-	else {
-	  opt_val = ISA_MIPS64;
-	  opt_id = O_mips64;
-	}
-	toggle ( &isa, opt_val );
-	add_option_seen ( opt_id );
-	option_name = get_option_name ( opt_id );
-	break;
-#elif TARG_X8664
-      case ABI_N32:
-      case ABI_64:
-	  opt_val = ISA_X8664;
-	  toggle ( &isa, opt_val );
-	break;
-#endif
+          opt_val = ISA_MIPS3;
+          opt_id = O_mips3;
+        }
+        else if (default_isa == ISA_MIPS4) {
+          opt_val = ISA_MIPS4;
+          opt_id = O_mips4;
+        }
+        else {
+          opt_val = ISA_MIPS64;
+          opt_id = O_mips64;
+        }
+        toggle ( &isa, opt_val );
+        add_option_seen ( opt_id );
+        option_name = get_option_name ( opt_id );
+        break;
       case ABI_I32:
       case ABI_I64:
-	opt_val = ISA_IA641;
-	toggle ( &isa, opt_val );
-	break;
+        opt_val = ISA_IA641;
+        toggle ( &isa, opt_val );
+        break;
       case ABI_IA32:
-	opt_val = ISA_IA32;
-	toggle ( &isa, opt_val );
-	break;
+        opt_val = ISA_IA32;
+        toggle ( &isa, opt_val );
+        break;
+      }
     }
+#endif // TARG_MIPS
+
+#ifdef TARG_X8664
+    if (is_target_arch_X8664()) {
+      switch ( abi ) {
+      case ABI_M32:
+      case ABI_M64:
+	    opt_val = ISA_X8664;
+	    toggle ( &isa, opt_val );
+        break;
+      case ABI_I32:
+      case ABI_I64:
+        opt_val = ISA_IA641;
+        toggle ( &isa, opt_val );
+        break;
+      case ABI_IA32:
+        opt_val = ISA_IA32;
+        toggle ( &isa, opt_val );
+        break;
+      }
+    }
+#endif // TARG_X8664
   }
   if (isa == UNDEFINED) {
 	internal_error ("isa should have been defined by now");
@@ -1469,7 +1650,10 @@ print_file_path (char *fname, int exe)
    * so try combining into one search.
    */
 
-  if (print_relative_path("lib/" PSC_FULL_VERSION, fname))
+  char *lib_path = target_library_path();
+  int res = print_relative_path(lib_path, fname);
+  free(lib_path);
+  if(res)
     return;
 
   if (print_phase_path(P_be, fname))
@@ -1498,6 +1682,349 @@ print_file_path (char *fname, int exe)
   fprintf(stderr, "could not execute %s: %m\n", argv[0]);
   exit(1);
 }
+
+#ifdef BCO_ENABLED /* Thierry */
+
+/* ====================================================================
+ *
+ * Process_ICache_Group
+ *
+ * We've found a ---icache-opt option group.  Inspect it and toggle
+ * the state appropriately.
+ *
+ * NOTE: We ignore anything that doesn't match what's expected -- the
+ * compiler will produce reasonable error messages for junk.
+ *
+ * ====================================================================
+ */
+void
+Process_ICache_Group (string cache_args)
+{
+
+  char *cp = cache_args;
+
+  if ( debug ) {
+    fprintf ( stderr, "Process_ICache_Group: %s\n", cache_args );
+  }
+
+  icache_opt = Bool_Group_Value(cp);
+}
+
+/* ====================================================================
+ *
+ * Process_ICachestatic_Group
+ *
+ * We've found a --icache-static=%s option group.  Inspect it and toggle
+ * the state appropriately.
+ *
+ * NOTE: We ignore anything that doesn't match what's expected -- the
+ * compiler will produce reasonable error messages for junk.
+ *
+ * ====================================================================
+ */
+void
+Process_ICachestatic_Group (string cache_args)
+{
+
+  char *cp = cache_args;
+
+  if ( debug ) {
+    fprintf ( stderr, "Process_ICachestatic_Group: %s\n", cache_args );
+  }
+
+  icache_static = Bool_Group_Value(cp);
+}
+
+
+/* ====================================================================
+ *
+ * Process_ICacheprofile_Group
+ *
+ * We've found a ---icache-profile=file option.  Inspect it and toggle
+ * the state appropriately.
+ *
+ * ====================================================================
+ */
+void
+Process_ICacheprofile_Group (string cache_args)
+{
+  char *cp = cache_args;
+
+  if ( debug ) {
+    fprintf ( stderr, "Process_ICacheprofile_Group: %s\n", cache_args );
+  }
+
+  if (file_exists(cp))
+    icache_profile = cp;
+  else
+    warning ("--icache-profile=%s does not exist, option ignored ", cp);
+}
+
+/* ====================================================================
+ *
+ * Process_ICacheprofileExe_Group
+ *
+ * We've found a --icache-profile-exe=file option.  Inspect it and toggle
+ * the state appropriately.
+ *
+ * ====================================================================
+ */
+void
+Process_ICacheprofileExe_Group (string cache_args)
+{
+  char *cp = cache_args;
+
+  if ( debug ) {
+    fprintf ( stderr, "Process_ICacheprofileExe_Group: %s\n", cache_args );
+  }
+  if (file_exists(cp))
+    icache_profile_exe = cp;
+  else
+    warning ("--icache-profile-exe=%s does not exist, option ignored ", cp);
+}
+/* ====================================================================
+ *
+ * Process_ICachemapping_Group
+ *
+ * We've found a ---icache-mapping=file option. Inspect it and toggle
+ * the state appropriately.
+ *
+ * ====================================================================
+ */
+void
+Process_ICachemapping_Group (string cache_args)
+{
+  char *cp = cache_args;
+
+  if ( debug ) {
+    fprintf ( stderr, "Process_ICachemapping_Group: %s\n", cache_args );
+  }
+
+  if (file_exists(cp))
+    icache_mapping = cp;
+  else
+    warning ("--icache-mapping=%s does not exist, option ignored ", cp);
+}
+
+/* ====================================================================
+ *
+ * Process_ICachealgo_Group
+ *
+ * We've found a ---icache-algo=name option group.  Inspect it and toggle
+ * the state appropriately.
+ *
+ * NOTE: We ignore anything that doesn't match what's expected -- the
+ * compiler will produce reasonable error messages for junk.
+ *
+ * ====================================================================
+ */
+void
+Process_ICachealgo_Group (string cache_args)
+{
+  char *cp = cache_args;
+
+  if ( debug ) {
+    fprintf ( stderr, "Process_ICachealgo_Group: %s\n", cache_args );
+  }
+
+  if ( strncasecmp ( cp, "ph", 2 ) == 0) 
+    icache_algo = algo_PH;
+  else if ( strncasecmp ( cp, "col", 3 ) == 0) 
+    icache_algo = algo_COL;
+  else if ( strncasecmp ( cp, "ph_col", 6 ) == 0) 
+    icache_algo = algo_PH_COL;
+  else if ( strncasecmp ( cp, "trg", 3 ) == 0) 
+    icache_algo = algo_TRG;
+  else if ( strncasecmp ( cp, "ltrg", 4 ) == 0) 
+    icache_algo = algo_LTRG;
+  else
+    warning("Unknown --icache-algo=%s option", cp);
+}
+
+#endif /* BCO_Enabled Thierry */
+
+#ifdef TARG_ST
+void
+Process_Std(char * option_args) {
+  int flag = LAST_PREDEFINED_OPTION ;
+
+  if ( debug ) {
+    fprintf ( stderr, "Process_Std: %s\n", option_args);
+  }
+
+  /* Select the appropriate language standard.  We currently
+     recognize:
+     -std=iso9899:1990		same as -ansi
+     -std=iso9899:199409	ISO C as modified in amend. 1
+     -std=iso9899:1999		ISO C 99
+     -std=c89			same as -std=iso9899:1990
+     -std=c99			same as -std=iso9899:1999
+     -std=gnu89			default, iso9899:1990 + gnu extensions
+     -std=gnu99			iso9899:1999 + gnu extensions
+     (cbr) recognize c++ standards
+     -std=c++98                 iso14882
+     -std=gnu++98               iso14882 + gnu extensions
+  */
+  if (!strcmp (option_args, "iso9899:1990")
+      || !strcmp (option_args, "c89")) {
+      flag = add_new_option("-std=c89") ;
+      c_std = C_STD_C89;
+      toggle(&ansi,STRICT_ANSI);
+  } else if (!strcmp (option_args, "iso9899:199409")) {
+      flag = add_new_option("-std=iso9899:199409") ;    
+      c_std = C_STD_C94;
+      toggle(&ansi,STRICT_ANSI);
+  }
+  else if (!strcmp (option_args, "iso9899:199x")
+	   || !strcmp (option_args, "iso9899:1999")
+	   || !strcmp (option_args, "c9x")
+	   || !strcmp (option_args, "c99")) {
+      flag = add_new_option("-std=c99") ;    
+      c_std = C_STD_C99;
+      toggle(&ansi,STRICT_ANSI);
+  } else if (!strcmp (option_args, "gnu89")) {
+      flag = add_new_option("-std=gnu89") ;    
+      c_std = C_STD_GNU89;
+  }
+#ifdef TARG_ST
+  /* (cbr) handle C++ */
+  else if (!strcmp (option_args, "c++98")) {
+      flag = add_new_option("-std=c++98") ;    
+      c_std = C_STD_CXX98;
+      toggle(&ansi,STRICT_ANSI);
+  }
+  else if (!strcmp (option_args, "gnu++98")) {
+      flag = add_new_option("-std=gnu++98") ;    
+      c_std = C_STD_GNU98;
+      /* (cm) gnu++98 (default mode) does not trigger strict ansi toggle(&ansi,STRICT_ANSI); */
+  }
+#endif
+  else if (!strcmp (option_args, "gnu9x") || !strcmp (option_args, "gnu99")) {   
+      flag = add_new_option("-std=gnu99") ;    
+      c_std = C_STD_GNU99;
+  } else {
+      warning("unknown C standard `%s'", option_args) ;
+  }
+  if (flag != LAST_PREDEFINED_OPTION) {
+      /* Need to pass to tools recognizing this option*/
+      add_phase_for_option(flag, P_gcpp);
+      add_phase_for_option(flag, P_c_gfe);
+      add_option_seen (flag);
+  }
+
+}
+
+#endif
+
+#ifdef TARG_ST
+/* TB: add -Wuninitialized option with -Wall */
+void Add_Wuninitialized() {
+  int flag = add_new_option("-WOPT:warn_uninit=on") ;    
+  add_phase_for_option(flag, P_be);
+  if (!already_provided(flag)) {
+    prepend_option_seen (flag);
+  }
+}
+/* TB: add -Wuninitialized option with -Wall */
+void Add_Wreturn_type() {
+  int flag = add_new_option("-OPT:warn_return_void") ;    
+  add_phase_for_option(flag, P_be);
+  if (!already_provided(flag)) {
+    prepend_option_seen (flag);
+  }
+}
+#endif
+
+#ifdef TARG_ARM
+
+#ifdef MUMBLE_ARM_BSP
+char * arm_core, arm_soc, arm_board;
+char * arm_core_name, arm_soc_name, arm_board_name;
+RUNTIME arm_runtime = UNDEFINED;
+char * arm_targetdir ; /* Set iff targetdir is command-line overriden */
+char * arm_libdir;
+#endif
+
+void
+Process_ARM_Targ (char * option,  char * targ_args )
+{
+  char *targ;
+  int i;
+  int flag;
+  buffer_t buf;
+#ifdef MUMBLE_ARM_BSP
+  char * spath;
+#endif
+
+  if (debug)
+    fprintf ( stderr, "Process_ARM_Targ %s%s\n", option,targ_args);
+
+#ifdef MUMBLE_ARM_BSP
+  if (strncasecmp (option, "-mlibdir", 8) == 0) {
+    if (is_directory(targ_args)) 
+      arm_libdir = string_copy (targ_args);
+    else
+      warning("libdir %s undefined. ", targ_args);
+  }
+
+  if (strncasecmp (option, "-mtargetdir", 11) == 0) {
+      if (is_directory(targ_args)) {
+	/* Substitution should happen only if core/soc/board hiearchy exists */
+	/* So we cannot use the obvious set_phase_dir (get_phase_mask(P_alt_library), targ_args) ; */
+	arm_targetdir = string_copy (targ_args);
+      } else {
+	warning("targetdir %s undefined. setting to default", targ_args);
+      }
+  }
+
+  if (arm_targetdir) 
+    spath = arm_targetdir;
+  else
+    spath = get_phase_dir(P_alt_library);
+#endif
+
+  if (strncasecmp (option, "-mcore", 6) == 0) {
+    for (i = 0; Proc_Map[i].pname != NULL; i++) {
+      if (same_string(targ_args, Proc_Map[i].pname)) {
+	toggle (&proc, Proc_Map[i].pid);
+      }
+    }
+    if ( proc == UNDEFINED ) {
+      warning("unsupported processor %s\n", targ_args);
+      proc = PROC_NONE;
+    }
+#ifdef MUMBLE_ARM_BSP
+    arm_core = concat_path(spath, concat_path("core", targ_args));
+    arm_core_name = string_copy (targ_args);
+#endif
+  }
+
+#ifdef MUMBLE_ARM_BSP
+  else if (strncasecmp (option, "-msoc", 5) == 0) {
+    arm_soc = concat_path(spath, concat_path("soc", targ_args));
+    arm_soc_name = string_copy (targ_args);
+  }
+
+  else if (strncasecmp (option, "-mboard", 7) == 0) {
+    arm_board = concat_path(spath, concat_path("board", targ_args));
+    arm_board_name = string_copy (targ_args);
+  }
+
+  else if (strncasecmp (option, "-mruntime", 9) == 0) {
+    for (i = 0; Runtime_Map[i].pname != NULL; i++) {
+      if (same_string(targ_args, Runtime_Map[i].pname)) {
+	toggle (&arm_runtime, Runtime_Map[i].pid);
+      }
+    }
+    if (arm_runtime == UNDEFINED ) {
+      arm_runtime = RUNTIME_BARE;
+      warning("runtime %s undefined. setting to bare", targ_args);
+    }
+  }
+
+#endif
+}
+#endif /* TARG_ARM */
 
 void
 print_multi_lib ()
@@ -1542,38 +2069,38 @@ static struct
 {
   char *cpu_name;
   char *target_name;
-  int abi;			// CPUs supporting ABI_64 also support ABI_N32
+  int abi;			// CPUs supporting ABI_M64 also support ABI_M32
   boolean supports_sse2;	// TRUE if support SSE2
   boolean prefers_sse3;		// TRUE if target prefers code to use SSE3
   boolean supports_3dnow;       // TRUE if target supports 3dnow
   boolean supports_sse4a;       // TRUE if support SSE4a
 } supported_cpu_types[] = {
-  { "any_64bit_x86",	"anyx86",	ABI_64,		TRUE,	FALSE, FALSE, FALSE},
-  { "any_32bit_x86",	"anyx86",	ABI_N32,	FALSE,	FALSE, FALSE, FALSE},
-  { "i386",	"anyx86",		ABI_N32,	FALSE,	FALSE, FALSE, FALSE},
-  { "i486",	"anyx86",		ABI_N32,	FALSE,	FALSE, FALSE, FALSE},
-  { "i586",	"anyx86",		ABI_N32,	FALSE,	FALSE, FALSE, FALSE},
-  { "athlon",	"athlon",		ABI_N32,	FALSE,	FALSE, TRUE, FALSE},
-  { "athlon-mp", "athlon",		ABI_N32,	FALSE,	FALSE, TRUE, FALSE},
-  { "athlon-xp", "athlon",		ABI_N32,	FALSE,	FALSE, TRUE, FALSE},
-  { "athlon64",	"athlon64",		ABI_64,		TRUE,	FALSE, TRUE,  FALSE},
-  { "athlon64fx", "opteron",		ABI_64,		TRUE,	FALSE, TRUE,  FALSE},
-  { "turion",	"athlon64",		ABI_64,		TRUE,	FALSE, TRUE,  FALSE},
-  { "i686",	"pentium4",		ABI_N32,	FALSE,	FALSE, FALSE, FALSE},
-  { "ia32",	"pentium4",		ABI_N32,	TRUE,	FALSE, FALSE, FALSE},
-  { "k7",	"athlon",		ABI_N32,	FALSE,	FALSE, TRUE,  FALSE},
-  { "k8",	"opteron",		ABI_64,		TRUE,	FALSE, TRUE,  FALSE},
-  { "opteron",	"opteron",		ABI_64,		TRUE,	FALSE, TRUE,  FALSE},
-  { "pentium4",	"pentium4",		ABI_N32,	TRUE,	FALSE, FALSE, FALSE},
-  { "xeon",	"xeon",			ABI_N32,	TRUE,	FALSE, FALSE, FALSE},
-  { "em64t",	"em64t",		ABI_64,		TRUE,	TRUE,  FALSE, FALSE},
-  { "core",	"core",			ABI_64,		TRUE,	TRUE,  FALSE, FALSE},
-  { "wolfdale",	"wolfdale",		ABI_64,		TRUE,	TRUE,  FALSE, FALSE},
-  { "harpertown", "wolfdale",		ABI_64,		TRUE,	TRUE,  FALSE, FALSE},
-  { "barcelona","barcelona",		ABI_64,		TRUE,	TRUE,  TRUE,  TRUE},
-  { "shanghai",	"barcelona",		ABI_64,		TRUE,	TRUE,  TRUE,  TRUE},
-  { "istanbul",	"barcelona",		ABI_64,		TRUE,	TRUE,  TRUE,  TRUE},
-  { "nehalem",	"wolfdale",		ABI_64,		TRUE,	TRUE,  FALSE, FALSE},
+  { "any_64bit_x86",	"anyx86",	ABI_M64,	TRUE,	FALSE, FALSE, FALSE},
+  { "any_32bit_x86",	"anyx86",	ABI_M32,	FALSE,	FALSE, FALSE, FALSE},
+  { "i386",	"anyx86",		ABI_M32,	FALSE,	FALSE, FALSE, FALSE},
+  { "i486",	"anyx86",		ABI_M32,	FALSE,	FALSE, FALSE, FALSE},
+  { "i586",	"anyx86",		ABI_M32,	FALSE,	FALSE, FALSE, FALSE},
+  { "athlon",	"athlon",		ABI_M32,	FALSE,	FALSE, TRUE, FALSE},
+  { "athlon-mp", "athlon",		ABI_M32,	FALSE,	FALSE, TRUE, FALSE},
+  { "athlon-xp", "athlon",		ABI_M32,	FALSE,	FALSE, TRUE, FALSE},
+  { "athlon64",	"athlon64",		ABI_M64,		TRUE,	FALSE, TRUE,  FALSE},
+  { "athlon64fx", "opteron",	ABI_M64,		TRUE,	FALSE, TRUE,  FALSE},
+  { "turion",	"athlon64",		ABI_M64,		TRUE,	FALSE, TRUE,  FALSE},
+  { "i686",	"pentium4",		ABI_M32,	FALSE,	FALSE, FALSE, FALSE},
+  { "ia32",	"pentium4",		ABI_M32,	TRUE,	FALSE, FALSE, FALSE},
+  { "k7",	"athlon",		ABI_M32,	FALSE,	FALSE, TRUE,  FALSE},
+  { "k8",	"opteron",		ABI_M64,	TRUE,	FALSE, TRUE,  FALSE},
+  { "opteron",	"opteron",		ABI_M64,		TRUE,	FALSE, TRUE,  FALSE},
+  { "pentium4",	"pentium4",		ABI_M32,	TRUE,	FALSE, FALSE, FALSE},
+  { "xeon",	"xeon",			ABI_M32,	TRUE,	FALSE, FALSE, FALSE},
+  { "em64t",	"em64t",		ABI_M64,		TRUE,	TRUE,  FALSE, FALSE},
+  { "core",	"core",			ABI_M64,		TRUE,	TRUE,  FALSE, FALSE},
+  { "wolfdale",	"wolfdale",		ABI_M64,		TRUE,	TRUE,  FALSE, FALSE},
+  { "harpertown", "wolfdale",		ABI_M64,		TRUE,	TRUE,  FALSE, FALSE},
+  { "barcelona","barcelona",		ABI_M64,		TRUE,	TRUE,  TRUE,  TRUE},
+  { "shanghai",	"barcelona",		ABI_M64,		TRUE,	TRUE,  TRUE,  TRUE},
+  { "istanbul",	"barcelona",		ABI_M64,		TRUE,	TRUE,  TRUE,  TRUE},
+  { "nehalem",	"wolfdale",		ABI_M64,		TRUE,	TRUE,  FALSE, FALSE},
   { NULL,	NULL, },
 };
   
@@ -1620,14 +2147,14 @@ get_platform_abi(void)
 {
 #if defined(PATH64_DEFAULT_ABI)
 #  if PATH64_DEFAULT_ABI == 32
-  return ABI_N32;
+  return ABI_M32;
 #  elif PATH64_DEFAULT_ABI == 64
-  return ABI_64;
+  return ABI_M64;
 #  else
 #    error Unsupported value for PATH64_DEFAULT_ABI
 #  endif
 #else
-  return (sizeof(void *) == 8) ? ABI_64 : ABI_N32;
+  return (sizeof(void *) == 8) ? ABI_M64 : ABI_M32;
 #endif
 }
 
@@ -1657,7 +2184,7 @@ get_default_cpu_name (char *msg)
   char *cpu_name = NULL;
   char *abi_name = NULL;
 
-  if (get_platform_abi() == ABI_64) {
+  if (get_platform_abi() == ABI_M64) {
     cpu_name = "anyx86";
     abi_name = "64-bit";
   } else {
@@ -1748,7 +2275,7 @@ get_x86_auto_cpu_name ()
   char *brand_string = get_sysctl_str(MACHDEP_CPU_BRAND_STRING, buf,
     sizeof buf);
 
-  char *cpu_name = (get_platform_abi() == ABI_N32) ? "xeon" : "core";
+  char *cpu_name = (get_platform_abi() == ABI_M32) ? "xeon" : "core";
 #else /* defined(BUILD_OS_DARWIN) */
   FILE *f;
   char buf[256];
@@ -1880,7 +2407,7 @@ get_x86_auto_cpu_name ()
 
   // If cpuinfo doesn't say if CPU is 32 or 64-bit, ask the OS.
   if (cpu_name_64bit != NULL) {
-    if (get_platform_abi() == ABI_64) {
+    if (get_platform_abi() == ABI_M64) {
       cpu_name = cpu_name_64bit;
     }
   }
@@ -2188,17 +2715,17 @@ Get_x86_ISA ()
   if (!strcmp(target_cpu, "anyx86")) {		// anyx86
     // Need ABI to select any_32bit_x86 or any_64bit_x86 ISA.
     if (abi == UNDEFINED) {
-      if (get_platform_abi() == ABI_64) {
-	abi = ABI_64;
+      if (get_platform_abi() == ABI_M64) {
+	abi = ABI_M64;
 	add_option_seen(O_m64);
       } else {
-	abi = ABI_N32;
+	abi = ABI_M32;
 	add_option_seen(O_m32);
       }
     }
     switch (abi) {
-      case ABI_N32:	name = "any_32bit_x86"; break;
-      case ABI_64:	name = "any_64bit_x86"; break;
+      case ABI_M32:	name = "any_32bit_x86"; break;
+      case ABI_M64:	name = "any_64bit_x86"; break;
       default:		internal_error("illegal ABI");
     }
   } else
@@ -2304,38 +2831,42 @@ accumulate_isystem(char *optargs)
 static void
 set_sysroot(char *name, int sysroot_abi)
 {
-#ifndef TARG_MIPS
-  if (parsing_default_options && sysroot_path) {
-    drop_option = TRUE;
+#ifdef TARG_MIPS
+  if (is_target_arch_MIPS()) {
+    if (parsing_default_options &&
+        (sysroot_path_n32 || sysroot_abi > 0) &&
+        (sysroot_path_64  || sysroot_abi < 0)) {
+      drop_option = TRUE;
+      return;
+    }
+    // TODO: Add warnings
+    if (sysroot_abi <= 0) {
+      if (! parsing_default_options || sysroot_path_n32 == NULL) {
+        if (sysroot_path_n32) free(sysroot_path_n32);
+        sysroot_path_n32 = string_copy(name);
+      }
+    }
+    if (sysroot_abi >= 0) {
+      if (! parsing_default_options || sysroot_path_64 == NULL) {
+        if (sysroot_path_64) free(sysroot_path_64);
+        sysroot_path_64 = string_copy(name);
+      }
+    }
   } else {
-    if (sysroot_path) {
-      warning("sysroot %s conflicts with %s; using latter (%s)",
-	      sysroot_path, name, name);
-      free(sysroot_path);
+#endif // TARG_MIPS
+    if (parsing_default_options && sysroot_path) {
+      drop_option = TRUE;
+    } else {
+      if (sysroot_path) {
+        warning("sysroot %s conflicts with %s; using latter (%s)",
+            sysroot_path, name, name);
+        free(sysroot_path);
+      }
+      sysroot_path = string_copy(name);
     }
-    sysroot_path = string_copy(name);
+#ifdef TARG_MIPS
   }
-#else
-  if (parsing_default_options &&
-      (sysroot_path_n32 || sysroot_abi > 0) &&
-      (sysroot_path_64  || sysroot_abi < 0)) {
-    drop_option = TRUE;
-    return;
-  }
-  // TODO: Add warnings
-  if (sysroot_abi <= 0) {
-    if (! parsing_default_options || sysroot_path_n32 == NULL) {
-      if (sysroot_path_n32) free(sysroot_path_n32);
-      sysroot_path_n32 = string_copy(name);
-    }
-  }
-  if (sysroot_abi >= 0) {
-    if (! parsing_default_options || sysroot_path_64 == NULL) {
-      if (sysroot_path_64) free(sysroot_path_64);
-      sysroot_path_64 = string_copy(name);
-    }
-  }
-#endif
+#endif // TARG_MIPS
 }
 
 static void add_hugepage_desc
@@ -2499,5 +3030,6 @@ Process_Hugepage_Group(char * hugepage_args)
     if (!has_err) 
         add_option_seen(O_HP);
 }
+
 
 #include "opt_action.i"

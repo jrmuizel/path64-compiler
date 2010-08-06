@@ -103,11 +103,18 @@ static DEBUG_FLAGS Default_DEBUG = {
   ALIGN_NORMAL,			/* control ldl/ldr generation */
   TRUE,				/* ipalno version check */
   FALSE,        FALSE,          /* conformance_check */
+  #ifdef TARG_ST
+  // TB Add -zerouv option from PathScale 2.1
+  FALSE,	FALSE,		/* zero_uv */
+  DEFAULT_TRAP_UV_INT, FALSE,	/* trapuv_int_value      */
+  DEFAULT_TRAP_UV_FLOAT, FALSE,	/* trapuv_float_value      */
+  DEFAULT_TRAP_UV_POINTER, FALSE,	/* trapuv_pointer_value      */
+#else
 #ifdef KEY
   TRUE,                         /* emit .eh_frame for backtrace */
   FALSE,	FALSE,		/* zero_uv */
 #endif
-
+#endif
   { 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0 }	/* buffer[16] */
 };
 
@@ -145,11 +152,18 @@ DEBUG_FLAGS Initial_DEBUG = {
   ALIGN_NORMAL,			/* control ldl/ldr generation */
   TRUE,				/* ipalno version check */
   FALSE,        FALSE,          /* conformance_check */
+  #ifdef TARG_ST
+	  // TB Add -zerouv option from PathScale 2.1
+  FALSE,	FALSE,		/* zero_uv */
+  DEFAULT_TRAP_UV_INT, FALSE,	/* trapuv_int_value      */
+  DEFAULT_TRAP_UV_FLOAT, FALSE,	/* trapuv_float_value      */
+  DEFAULT_TRAP_UV_POINTER, FALSE,	/* trapuv_pointer_value      */
+#else
 #ifdef KEY
   TRUE,                         /* emit .eh_frame for backtrace */
   FALSE,	FALSE,		/* zero_uv */
 #endif
-
+#endif
   { 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0 }	/* buffer[16] */
 };
 
@@ -245,10 +259,27 @@ static OPTION_DESC Options_DEBUG[] = {
     { OVK_BOOL, OV_INTERNAL,	TRUE, "trapuv_right_justify",	"",
       0, 0, 0, &ID.trap_uv_rjustify,	&ID.trap_uv_rjustify_set,
 	"" },
-
+    // TB Add -zerouv option from PathScale 2.1
     { OVK_BOOL, OV_VISIBLE,	TRUE, "zero_uninitialized",	"",
       0, 0, 0, &ID.zero_uv,		&ID.zero_uv_set,
 	"Set uninitialized variables to zero" },
+#ifdef TARG_ST
+    //TB Add -trapuv_int_value option   
+    { OVK_INT32, OV_VISIBLE,	TRUE, "trapuv_int_value",	"",
+      DEFAULT_TRAP_UV_INT, 0, UINT_MAX, &ID.trapuv_int_value, NULL // &ID.trapuv_int_value_set
+      ,
+      "Integer value to give to uninitialized variables" },
+    //TB Add -trapuv_float_value option   
+    { OVK_INT32, OV_VISIBLE,	TRUE, "trapuv_float_value",	"",
+      DEFAULT_TRAP_UV_FLOAT, 0, UINT_MAX, &ID.trapuv_float_value, NULL // &ID.trapuv_float_value_set
+      ,
+      "Float value to give to uninitialized variables" },
+    //TB Add -trapuv_pointer_value option   
+    { OVK_INT32, OV_VISIBLE,	TRUE, "trapuv_pointer_value",	"",
+      DEFAULT_TRAP_UV_POINTER, 0, UINT_MAX, &ID.trapuv_pointer_value, NULL // &ID.trapuv_pointer_value_set
+      ,
+      "Value to give to uninitialized pointer" },
+#endif
 
     { OVK_BOOL, OV_INTERNAL,	TRUE, "trunc_check",		"",
       0, 0, 0, &ID.trunc_check,	&ID.trunc_check_set,
@@ -304,11 +335,17 @@ static OPTION_DESC Options_DEBUG[] = {
       0, 0, 0,	const_cast<char*>("-DEBUG:trap_uninitialized"),	NULL,
       "Trap references to uninitialized variables" },
 
+    #ifdef TARG_ST
+    // TB Add -zerouv option from PathScale 2.1
+    { OVK_REPLACED, OV_INTERNAL,	TRUE, "zerouv",		NULL,
+      0, 0, 0,	const_cast<char*>("-DEBUG:zero_uninitialized"),	NULL,
+      "Set uninitialized variables to zero" },
+#endif
     { OVK_REPLACED, OV_INTERNAL,	TRUE, "zerouv",		NULL,
       0, 0, 0,	const_cast<char*>("-DEBUG:zero_uninitialized"),	NULL,
       "Set uninitialized variables to zero" },
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     { OVK_BOOL, OV_VISIBLE,	FALSE, "eh_frame",	"",
       0, 0, 0, &ID.emit_ehframe,	NULL,
 	"Emit .eh_frame section even for non-C++ programs if this flag is set" },

@@ -269,14 +269,35 @@ ML_WHIRL_EMITTER::Build_loop_info( BB_NODE *label_bb )
   // this label_bb should be the first body_bb in the loop.  So, it's
   // prev block should be the dohead.
   BB_NODE *dohead_bb = label_bb->Prev();
+#ifdef TARG_ST
+  // FdF 14/06/2004: Check that the preheader is the static
+  // predecessor of loop head
+  if (dohead_bb == NULL || label_bb->Loop() == NULL || dohead_bb != label_bb->Loop()->Preheader() ) {
+    // this must not be a valid do-loop any more
+    return NULL;
+  }
+#else
   if ( dohead_bb == NULL || dohead_bb->Kind() != BB_DOHEAD ) {
     // this must not be a valid do-loop any more
     return NULL;
   }
+#endif
+
+#ifdef TARG_ST
+  // FdF 10/05/2004: Check that these nodes are connected through
+  // control-flow
+  if (dohead_bb != label_bb->Idom()) {
+    return NULL;
+  }
+#endif
 
   // make sure the cfg's loop information is still valid, and this
   // block is indeed the first body block.
   BB_LOOP *bb_loop = dohead_bb->Loop();
+#ifdef TARG_ST
+  // FdF 14/06/2004
+  bb_loop = label_bb->Loop();
+#endif
   if ( bb_loop == NULL || bb_loop->Body() != label_bb ) {
     return NULL;
   }
@@ -300,7 +321,13 @@ ML_WHIRL_EMITTER::Build_loop_info( BB_NODE *label_bb )
       freq_trips = Cfg()->Feedback()->Get_node_freq_out( doend_bb->Id() );
     freq_trips /= Cfg()->Feedback()->Get_node_freq_out( dohead_bb->Id() );
     if ( freq_trips.Known() ) {
+#ifdef TARG_ST
+      //[TB] to avoid trip_estimated to be NULL when loop is never
+      //executed in the profiling info
+      INT32 trips = MAX(INT32( freq_trips.Value() + 0.5 ), 1);
+#else
       INT32 trips = INT32( freq_trips.Value() + 0.5 );
+#endif
       // est_trip is UINT16: check for overflow.
       est_trips = (trips <= USHRT_MAX) ? trips : USHRT_MAX;
     }
@@ -327,6 +354,16 @@ ML_WHIRL_EMITTER::Build_loop_info( BB_NODE *label_bb )
 	(Do_rvi() && iv->Bitpos() != ILLEGAL_BP ||
          !Do_rvi()))
     {
+#ifdef TARG_ST
+      // [CG] bug 1-6-0-B/19
+      // Use object_ty instead of Lod_ty to handle structure fields.
+      // and create a LDID with correct type and field id.
+      MTYPE ivtype = TY_mtype(iv->object_ty());
+      induction = WN_CreateLdid(Ldid_from_mtype(ivtype),
+				iv->Offset(),
+				Opt_stab()->St(iv->Aux_id()),
+				iv->Lod_ty(), iv->Field_id());
+#else
       MTYPE ivtype = TY_mtype(iv->Lod_ty());
 #ifdef KEY // bug 5645
       if (ivtype == MTYPE_M)
@@ -338,6 +375,7 @@ ML_WHIRL_EMITTER::Build_loop_info( BB_NODE *label_bb )
 				Opt_stab()->St(iv->Aux_id()),
 				iv->Lod_ty(),
 				iv->Field_id());
+#endif
       if (Do_rvi() && ST_class(WN_st(induction)) != CLASS_PREG) {
 	Warn_todo("ML_WHIRL_EMITTER::Build_loop_info: do not adjust bitpos by 1" );
 	Rvi()->Map_bitpos(induction, iv->Bitpos() + 1);
@@ -414,7 +452,7 @@ ML_WHIRL_EMITTER::Emit(void)
 	   (WN_opcode(bb->Entrywn()) == OPC_ALTENTRY ||
 	    (WN_opcode(bb->Entrywn()) == OPC_LABEL &&
 	     (WN_Label_Is_Handler_Begin(bb->Entrywn())
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	      || LABEL_target_of_goto_outer_block(WN_label_number(bb->Entrywn()))
 #endif
 	     ))) )

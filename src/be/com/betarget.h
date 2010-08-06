@@ -64,12 +64,32 @@ extern "C" {
 
 extern TOP TAS_To_TOP(WN *tas_wn);
 extern INT Copy_Quantum_Ratio(void);
-
+#ifdef TARG_ST
+  // [JV]: Add wn_is_emulated_opr that used to know if a whirl operator
+  // must be lowered as runtime call or inlined by code expansion.
+BE_EXPORTED extern BOOL BETARG_is_emulated_operator( OPERATOR opr, TYPE_ID rtype, TYPE_ID desc );
+BE_EXPORTED extern BOOL BETARG_is_emulated_type( TYPE_ID rtype );
+  // [CG]: Add query for activation of WHIRL operators.
+BE_EXPORTED extern BOOL BETARG_is_enabled_operator( OPERATOR opr, TYPE_ID rtype, TYPE_ID desc );
+#endif
 // largest offset possible in small-frame stack model
 extern INT Max_Small_Frame_Offset;
 
 extern BOOL Targ_Lower_Float_To_Unsigned;
 extern BOOL Targ_Lower_Unsigned_To_Float;
+#ifdef TARG_ST
+// Arthur: moved here from cg/cgexp.h
+
+/* check if target can handle immediate operand;
+ * True if target can, false if should use target-independent logic.
+ */
+BE_EXPORTED extern BOOL Target_Has_Immediate_Operand (WN *parent, WN *expr);
+
+/* FdF 20081126: Check if a temporary register can be created to hold
+   a value of type mtype.
+ */
+BE_EXPORTED extern BOOL CGTARG_Can_Allocate_Reg_For_Mtype(TYPE_ID mtype);
+#endif
 
 #ifdef __cplusplus
 }

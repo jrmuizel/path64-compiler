@@ -189,7 +189,10 @@
 #include "topcode.h"
 #include "targ_isa_pack.h"
 #include "targ_isa_bundle.h"
-
+#include "targ_isa_decode.h"
+#ifdef TARG_ST
+ #include "targ_isa_print.h"
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -237,13 +240,38 @@ extern INT TI_ASM_Pack_Inst(
   ISA_PACK_INST *pinst
 );
 
+#ifdef TARG_ST
+extern INT TI_ASM_Print_Inst(
+  TOP topcode,
+  ISA_PRINT_OPND_INFO *result,
+  ISA_PRINT_OPND_INFO *opnd,
+  FILE *f
+);
+#else
 extern INT TI_ASM_Print_Inst(
   TOP topcode,
   const char **result,
   const char **opnd,
   FILE *f
 );
+#endif
 
+#ifdef TARG_ST
+extern void TI_ASM_Set_Bundle_Comp(
+				   INT bundle_id,
+				   ISA_BUNDLE           *bundle,
+				   ISA_BUNDLE_PACK_COMP  comp,
+				   UINT64                val
+				   );
+
+#else
+extern void TI_ASM_Set_Bundle_Comp(
+  ISA_BUNDLE           *bundle,
+  ISA_BUNDLE_PACK_COMP  comp,
+  UINT64                val
+);
+#endif
+#ifndef TARG_ST
 extern INT TI_ASM_DisAsm_Inst(
   TOP topcode,
   INT64 *result,
@@ -251,12 +279,6 @@ extern INT TI_ASM_DisAsm_Inst(
   INT64 pc,
   INT flags,
   char *bufptr
-);
-
-extern void TI_ASM_Set_Bundle_Comp(
-  ISA_BUNDLE           *bundle,
-  ISA_BUNDLE_PACK_COMP  comp,
-  UINT64                val
 );
 
 extern UINT64 TI_ASM_Get_Bundle_Comp(
@@ -274,7 +296,17 @@ extern UINT64 TI_ASM_Get_Bundle_Reloc_Value(
   const ISA_BUNDLE *bundle,
   INT               slot
 );
-
+#endif /* ifndef TARG_ST */
+#ifdef TARG_ST
+extern TOP TI_ASM_Unpack_Inst(
+  const ISA_PACK_INST *inst,
+  ISA_EXEC_UNIT        ex_unit,
+  ISA_DECODE_INST      decodeinst,
+  INT64               *result, 
+  INT64               *opnd,
+  BOOL                 xlate_pseudo
+);
+#else
 extern TOP TI_ASM_Unpack_Inst(
   const ISA_PACK_INST *inst,
   ISA_EXEC_UNIT        ex_unit,
@@ -282,7 +314,7 @@ extern TOP TI_ASM_Unpack_Inst(
   INT64               *opnd,
   BOOL                 xlate_pseudo
 );
-
+#endif
 #ifdef __cplusplus
 }
 #endif

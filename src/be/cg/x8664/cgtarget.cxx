@@ -72,7 +72,6 @@
 #include "cgir.h"
 #include "cg.h"
 #include "void_list.h"
-#include "cg_dep_graph.h"
 #include "cg_spill.h"
 #include "cg_vector.h"
 #include "whirl2ops.h"
@@ -91,6 +90,8 @@
 #include "cg_grouping.h"
 #include "calls.h"
 #include "cgtarget.h"
+#include "cg_dep_graph.h"
+
 #include "calls.h"
 #include "cg_loop.h"
 #include "config_lno.h"  // for LNO_Prefetch_Ahead

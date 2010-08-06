@@ -1886,7 +1886,7 @@ Atomic_Using_Swap(WN *atomic, WN *store, WN *operation, WN *parent,
 
   // copy 'x' into 'x2'
   WN *var_copy = WN_COPY_Tree(var_kid);
-#ifdef KEY // bug 5264
+#if defined( KEY) && !defined(TARG_ST) // bug 5264
   if (MTYPE_is_float(type) != MTYPE_is_float(swap_type)) {
 #else
   if (type != swap_type) {
@@ -1930,14 +1930,14 @@ Atomic_Using_Swap(WN *atomic, WN *store, WN *operation, WN *parent,
   }
   if (!unpatterned) {
     new_op = WN_CopyNode(operation);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     WN *new_var_kid = WN_Ldid(swap_type, 0, var_st, Be_Type_Tbl(type));
     if (MTYPE_is_float(type) != MTYPE_is_float(swap_type))
       new_var_kid = WN_Tas(type, Be_Type_Tbl(type), new_var_kid);  // bug 5552
 #endif
 
     if (expr_kid == WN_kid1(operation)) {
-#ifdef KEY	// bug 5512
+#if defined( KEY) && !defined(TARG_ST) 	// bug 5512
       WN_kid0(new_op) = new_var_kid;
 #else
       WN_kid0(new_op) = WN_COPY_Tree(var_kid);
@@ -1946,7 +1946,7 @@ Atomic_Using_Swap(WN *atomic, WN *store, WN *operation, WN *parent,
 		  Be_Type_Tbl(type));
     } else {
       Is_True(expr_kid == WN_kid0(operation),("Bad kid in Atomic_Using_Swap"));
-#ifdef KEY	// bug 5512
+#if defined( KEY) && !defined(TARG_ST) 	// bug 5512
       WN_kid1(new_op) = new_var_kid;
 #else
       WN_kid1(new_op) = WN_COPY_Tree(var_kid);
@@ -1960,7 +1960,7 @@ Atomic_Using_Swap(WN *atomic, WN *store, WN *operation, WN *parent,
   } else {
     new_op = WN_COPY_Tree(operation);
   }
-#ifdef KEY // bug 5264
+#if defined( KEY) && !defined(TARG_ST)  // bug 5264
   if (MTYPE_is_float(type) != MTYPE_is_float(swap_type)) {
 #else
   if (type != swap_type) {
@@ -2047,7 +2047,7 @@ WN *Atomic_Direct(WN *atomic, WN *store, WN *operation)
   // Find which kid is which
   WN *expr_kid;
   WN *var_kid;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST) 
   for (INT i=0; i<2; i++)
   {
     if (Same_Location(store,WN_kid0(operation))) {

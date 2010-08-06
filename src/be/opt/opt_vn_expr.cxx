@@ -129,7 +129,7 @@ Create_Folded_Literal(OPCODE             opc,
 {
    // Returns NULL if we cannot fold the given TCONs.
    //
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
    if (MTYPE_is_vector(OPCODE_rtype(opc)))
      return NULL;
 #endif
@@ -176,7 +176,12 @@ Unify_Rty(OPERATOR opr, MTYPE rty)
    // 
    MTYPE new_rty = rty;
 
+#ifdef TARG_ST
+   // Arthur: do not touch pointer/boolean types
+   if (MTYPE_is_class_integer(rty))
+#else
    if (MTYPE_is_integral(rty))
+#endif
    {
       UINT32 bitsize = MTYPE_bit_size(rty);
    
@@ -305,7 +310,9 @@ Create_Scalar_Literal_From_Int(MTYPE mty, INT64 i)
    case MTYPE_F4:
    case MTYPE_F8:
    case MTYPE_FQ:
+#ifndef TARG_ST
    case MTYPE_F16:
+#endif
       p = VN_EXPR::Create_Literal(Host_To_Targ_Float(mty, i));
       break;
       
@@ -336,7 +343,7 @@ FREE_STACK *VN_PHI_EXPR::_Free = NULL;
 FREE_STACK *VN_LDA_ADDR_EXPR::_Free = NULL;
 FREE_STACK *VN_ARRAY_ADDR_EXPR::_Free = NULL;
 FREE_STACK *VN_MEMLOC_EXPR::_Free = NULL;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 FREE_STACK *VN_CALL_OP_EXPR::_Free = NULL;
 #endif
 
@@ -354,7 +361,7 @@ VN_EXPR::Init_Free_Lists(MEM_POOL *mpool)
    VN_LDA_ADDR_EXPR::Init_Free_List();
    VN_ARRAY_ADDR_EXPR::Init_Free_List();
    VN_MEMLOC_EXPR::Init_Free_List();
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
    VN_CALL_OP_EXPR::Init_Free_List();
 #endif
 } // VN_EXPR::Init_Free_Lists
@@ -374,7 +381,7 @@ VN_EXPR::Reclaim_Free_Lists()
       VN_LDA_ADDR_EXPR::Reclaim_Free_List();
       VN_ARRAY_ADDR_EXPR::Reclaim_Free_List();
       VN_MEMLOC_EXPR::Reclaim_Free_List();
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       VN_CALL_OP_EXPR::Reclaim_Free_List();
 #endif
    }
@@ -457,7 +464,7 @@ VN_EXPR::Create_Memloc(MTYPE            dsctype,
 }
 
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 VN_EXPR::PTR 
 VN_EXPR::Create_Call_Op(ST_IDX aux_id, UINT32 num_opnds)
 {
@@ -575,7 +582,7 @@ VN_EXPR::get_vsym(UINT) const
    return VN_VALNUM::Bottom();
 }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 ST_IDX
 VN_EXPR::get_aux_id() const
 {
@@ -627,7 +634,7 @@ VN_LITERAL_EXPR::is_equal_to(CONST_PTR expr) const
 		strncmp(Targ_String_Address(_tcon),
 			Targ_String_Address(other_tcon),
 			Targ_String_Length(_tcon))); 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	 // fix bug 2691: when both are floating-point zero, use integer
 	 // comparison so +0 and -0 will be regarded as different for value
 	 // numbering purpose
@@ -1222,11 +1229,20 @@ VN_BINARY_EXPR::Create(OPCODE           opc,
 		       const VN_VALNUM &vn1, 
 		       const VN_VALNUM &vn2) 
 {
+#ifdef TARG_ST
+   Is_True((OPCODE_nkids(opc) == 2 || OPCODE_operator(opc) == OPR_CVTL ||
+	    OPCODE_operator(opc) == OPR_SUBPART ||
+	    OPCODE_operator(opc) == OPR_EXTRACT_BITS ) && 
+	   OPCODE_operator(opc) != OPR_COMMA                            &&
+	   OPCODE_operator(opc) != OPR_RCOMMA,
+	   ("Unexpected opcode in call to VN_BINARY_EXPR::Create()"));
+#else
    Is_True((OPCODE_nkids(opc) == 2 || OPCODE_operator(opc) == OPR_CVTL ||
 	    OPCODE_operator(opc) == OPR_EXTRACT_BITS ) && 
 	   OPCODE_operator(opc) != OPR_COMMA                            &&
 	   OPCODE_operator(opc) != OPR_RCOMMA,
 	   ("Unexpected opcode in call to VN_BINARY_EXPR::Create()"));
+#endif
 
    VN_BINARY_EXPR *expr = (VN_BINARY_EXPR *)_Free->pop();
    if (expr == NULL)
@@ -1919,7 +1935,7 @@ VN_MEMLOC_EXPR::simplify(VN *v)
 } // VN_MEMLOC_EXPR::simplify
 
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 //------------- Implementation of VN_CALL_OP_EXPR  -------------
 //--------------------------------------------------------------
 

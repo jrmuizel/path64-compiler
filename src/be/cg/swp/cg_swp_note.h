@@ -42,7 +42,7 @@ typedef struct {
   SRCPOS srcpos;
   INT prolog_num;
 } NOTE_INFO_SWP_PROLOGUE;
-
+#ifndef TARG_ST
 typedef struct {
   SRCPOS srcpos;
   INT ii;
@@ -88,8 +88,8 @@ typedef struct {
 #define NOTE_INFO_register_count(info) (info->register_count)
 #define NOTE_INFO_size_original(info)  (info->size_original)
 #define NOTE_INFO_size(info)           (info->size)
-
-
+#endif
+#ifndef TARG_ST
 void 
 SWP_Add_Prologue_Note (BB *bb, const SWP_LOOP& swp_loop, INT version);
 void 
@@ -98,7 +98,7 @@ void
 SWP_Add_Kernel_Note (BB *bb, const SWP_LOOP& swp_loop, INT version);
 void 
 SWP_Add_Epilogue_Note (BB *bb, const SWP_LOOP& swp_loop, INT version);
-
+#endif
 
 void 
 SWP_Prologue_Note_Handler (NOTE_ACTION action, 

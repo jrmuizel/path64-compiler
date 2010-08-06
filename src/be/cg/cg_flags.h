@@ -469,6 +469,17 @@ extern BOOL CG_localize_x87_tns_Set;
 extern BOOL CG_x87_store;
 #endif
 extern BOOL LOCALIZE_using_stacked_regs;
+
+extern BOOL CG_gen_callee_saved_regs_mask; /* generate register mask */
+
+
+#ifdef TARG_ST
+// [CL] force spill of return address (RA) so that unwinding/backtracing is still possible
+extern BOOL CG_save_return_address;
+extern BOOL CG_safe_memmove;
+#endif
+extern BOOL CG_enable_ssa;	/* Enable SSA in cg */
+extern BOOL CG_enable_select;
 extern BOOL CG_tail_call;
 extern BOOL CG_unique_exit;
 extern BOOL CG_cond_defs_allowed;
@@ -486,6 +497,48 @@ extern BOOL CG_enable_spec_fdiv_overridden;
 extern BOOL CG_enable_spec_fsqrt_overridden;
 extern BOOL CG_create_madds;
 extern BOOL CG_enable_load_index;
+#ifdef TARG_ST
+extern BOOL CG_ifc_logif;
+extern BOOL CG_ifc_subpart;
+extern INT32 CG_force_select;
+extern BOOL CG_enable_range_propagation;
+// In range analysis, ee will lower values at most this number of times.
+// After this, they decay to Bottom.
+extern INT32 CG_range_recompute_limit;
+extern BOOL CG_enable_rename_after_GRA;
+extern BOOL CG_enable_min_max_abs;
+#endif
+
+#ifdef TARG_ST
+ extern INT32 CG_LAO_activation;	/* LAO activation */
+ extern INT32 CG_LAO_regiontype;	/* LAO scheduling region type */
+ extern INT32 CG_LAO_conversion;	/* LAO SSA construction flags */
+ extern INT32 CG_LAO_coalescing;	/* LAO SSA coalescing flags */
+ extern INT32 CG_LAO_predication;	/* LAO predication algorithm */
+ extern INT32 CG_LAO_scheduling;	/* LAO scheduling algorithm */
+ extern INT32 CG_LAO_allocation;	/* LAO allocation algorithm */
+ extern INT32 CG_LAO_rcmssolving;	/* LAO RCMS solving flags */
+ extern INT32 CG_LAO_preloading;	/* LAO memory preloading level */
+ extern INT32 CG_LAO_l1missextra;	/* LAO extra latency for preloading */
+ extern INT32 CG_LAO_compensation;	/* LAO compensation level */
+ extern INT32 CG_LAO_speculation;	/* LAO speculation level */
+ extern INT32 CG_LAO_relaxation;	/* LAO relaxation level */
+ extern INT32 CG_LAO_pipelining;	/* LAO software pipelining level */
+ extern INT32 CG_LAO_logtimeout;	/* LAO integer linear programming timeout */
+ extern INT32 CG_LAO_renaming;	/* LAO register renaming level */
+ extern INT32 CG_LAO_boosting;	/* LAO operation boosting level */
+ extern INT32 CG_LAO_aliasing;	/* LAO memory aliasing level */
+ extern INT32 CG_LAO_prepadding;	/* LAO data pre-padding in bytes */
+ extern INT32 CG_LAO_postpadding;	/* LAO data post-padding in bytes */
+ extern INT32 CG_LAO_overrun;	/* LAO pipeline overrun */
+ extern INT32 CG_LAO_opslimit;	/* LAO maximum number of OPs to compute memory dependences */
+#endif
+extern BOOL CG_enable_BB_splitting;
+#define CG_bblength_default 300      /* default value for CG_split_BB_length */
+#define CG_bblength_min	 100	     /* don't let the value get too small */
+#define CG_bblength_max	5000	     /* don't let the value get too big */
+extern INT32 CG_split_BB_length;     /* split BBs that are > than this */
+
 
 #define CG_maxinss_default 100
 extern INT32 CG_maxinss;
@@ -513,6 +566,15 @@ extern const char *CFLOW_cold_threshold;
 #ifdef KEY
 extern BOOL CFLOW_Enable_Freq_Order_On_Heuristics;
 #endif
+#ifdef TARG_ST
+extern BOOL CFLOW_Enable_Favor_Branches_Condition;
+// TB
+extern BOOL CFLOW_Space;
+extern BOOL CFLOW_depgraph_use;
+extern BOOL CFLOW_enable_last_pass;
+extern BOOL CFLOW_Enable_Hoist_rts;
+#endif
+
 /* FREQ:
  */
 extern BOOL FREQ_enable;
@@ -540,6 +602,28 @@ extern BOOL CG_enable_pf_L1_st;
 extern BOOL CG_enable_pf_L2_ld;
 extern BOOL CG_enable_pf_L2_st;
 extern BOOL CG_exclusive_prefetch;
+#ifdef TARG_ST
+// FdF 20070206: Raise a warning when prefetch distance of user
+// prefetch cannot be checked against the Prefetch_Padding value.
+extern BOOL  CG_warn_prefetch_padding;
+
+// [TTh] Control the usage of preferred register sets
+// when choosing color for GRA/LRA.
+#define PREF_REGS_PRIORITY_LOW    0
+#define PREF_REGS_PRIORITY_MEDIUM 1
+#define PREF_REGS_PRIORITY_HIGH   2
+extern BOOL  CG_COLOR_use_pref_regs;
+extern INT32 CG_COLOR_pref_regs_priority;
+
+/* GTN Coalescer: */
+#define COALESCE_BEFORE_SCHED 0x1
+#define COALESCE_AFTER_SCHED  0x2
+extern INT32 CG_coalesce;
+extern BOOL  CG_coalesce_overridden;
+extern BOOL  CG_coalesce_pair_only;
+extern INT32 CG_coalesce_max_transfo;
+#endif
+
 
 extern INT32 CG_L1_ld_latency;
 extern INT32 CG_L2_ld_latency;
@@ -575,6 +659,16 @@ extern BOOL GCM_Enable_Cflow;
 extern const char *CGTARG_Branch_Taken_Prob;
 extern double CGTARG_Branch_Taken_Probability;
 extern BOOL CGTARG_Branch_Taken_Prob_overridden;
+#ifdef TARG_ST
+#define Backward_Post_Sched 1
+#define Forward_Post_Sched 2
+#define Double_Post_Sched 3
+#define Optimized_Post_Sched 4
+#define Optimized_Double_Post_Sched 5
+#define Optimized_Load_Sched 6
+#define Optimized_Double_Load_Sched 7
+extern INT32 LOCS_POST_Scheduling;
+#endif
 extern BOOL IGLS_Enable_PRE_HB_Scheduling;
 extern BOOL IGLS_Enable_POST_HB_Scheduling;
 extern BOOL IGLS_Enable_HB_Scheduling;
@@ -588,8 +682,13 @@ extern INT32 EMIT_Long_Branch_Limit;	/* max distance (in bytes) for branches */
 extern BOOL EMIT_stop_bits_for_asm;
 extern BOOL EMIT_stop_bits_for_volatile_asm;
 extern BOOL EMIT_explicit_bundles;
+#ifdef TARG_ST
+extern BOOL EMIT_space;
+#endif
 
 extern INT32 CGEXP_expandconstant;	/* maximum # instructions to expand constants */
+extern BOOL CGEXP_expandconstant_set;	/* user set? */
+
 #define DEFAULT_CGEXP_CONSTANT	3
 
 extern BOOL CGEXP_use_copyfcc;
@@ -626,6 +725,14 @@ extern BOOL LRA_inflate_gtn_request;
 extern BOOL LRA_inflate_gtn_request_Set;
 #endif
 
+#ifdef TARG_ST
+extern BOOL LRA_minregs;
+extern BOOL LRA_merge_extract;
+extern BOOL LRA_resched_check;
+extern BOOL LRA_overlap_coalescing;
+extern BOOL LRA_no_uninit_strict_check;
+#endif
+
 extern BOOL GRA_use_old_conflict;
 extern BOOL GRA_shrink_wrap;
 extern BOOL GRA_loop_splitting;
@@ -640,6 +747,22 @@ extern BOOL GRA_choose_best_split;
 extern BOOL GRA_use_stacked_regs;
 extern BOOL GRA_redo_liveness;
 extern BOOL GRA_recalc_liveness;
+#ifdef TARG_ST
+extern BOOL GRA_use_runeson_nystrom_spill_metric;
+extern BOOL GRA_use_interprocedural_info;
+extern BOOL GRA_spill_to_caller_save;
+extern BOOL GRA_preference_subclass;
+extern BOOL GRA_use_subclass_register_request;
+extern const char* GRA_local_spill_multiplier_string;
+extern BOOL GRA_spill_count_factor_for_size;
+extern BOOL GRA_spill_count_factor_for_size_set;
+extern BOOL GRA_split_for_size;
+extern BOOL GRA_split_for_size_set;
+extern BOOL GRA_spill_count_min;
+extern BOOL GRA_spill_count_min_set;
+extern BOOL GRA_overlay_spills;
+#endif
+
 extern INT32 GRA_non_home_hi;
 extern INT32 GRA_non_home_lo;
 extern const char* GRA_call_split_freq_string;
@@ -676,11 +799,30 @@ extern BOOL  HB_exclude_calls;
 extern BOOL  HB_exclude_pgtns;
 extern BOOL  HB_skip_hammocks;
 extern BOOL  GRA_LIVE_Predicate_Aware;
+extern BOOL  HB_superblocks;
 
 extern BOOL Use_Page_Zero;  /* set bit in object to allow use of page 0 */
 
 extern INT32 CG_branch_mispredict_penalty;
 extern INT32 CG_branch_mispredict_factor;
+#ifdef TARG_ST
+/* CBPO */
+extern BOOL CG_enable_cbpo;
+extern BOOL CG_cbpo_optimize_load_imm;
+extern INT32 CG_cbpo_ratio;
+extern INT CG_cbpo_block_method;
+enum CBPO_BLOCK_METHOD
+    {
+        CBPO_BLOCK_NONE = 0,
+        CBPO_BLOCK_LOCAL = 1,
+        CBPO_BLOCK_GLOBAL = 2,
+        CBPO_BLOCK_GLOBAL_THEN_LOCAL = 3
+    };
+
+extern BOOL CG_cbpo_facto_cst;
+extern BOOL CG_cbpo_optimize_load_imm_cst;
+#endif
+
 
 //
 //  Architecturally dependent flags.
@@ -786,5 +928,28 @@ extern BOOL CG_LOOP_convert_prefetch_to_load;
 // temporary flags for controlling algorithm selection for fdiv, sqrt, etc
 extern const char *CGEXP_fdiv_algorithm;
 extern const char *CGEXP_sqrt_algorithm;
+/* ====================================================================
+ *   TAILMERGE and other ST specific flags:
+ * ====================================================================
+ */
+#ifdef TARG_ST
+extern INT CG_tailmerge;
+extern INT CG_simp_flow_in_tailmerge;
+
+/*Other options controled by mask value*/
+extern INT32 CG_sched_mask;
+extern INT32 CG_LRA_mask;
+
+enum {
+  SCHED_EXTRACT_EARLIEST_OFF = 0,
+  SCHED_EXTRACT_EARLIEST_ON,
+  SCHED_EXTRACT_EARLIEST_AGGRESSIVE_ON
+};
+extern INT32 CG_sched_extract_earliest;
+
+/*Options for the exportation to DFGs and ISE identification. */
+extern INT32 CG_dfg_ise_mask;
+extern INT32 CG_dfg_debug_mask;
+#endif
 
 #endif /* cg_flags_INCLUDED */

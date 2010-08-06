@@ -109,8 +109,16 @@ _dwarf_pro_reloc_length_symbolic(Dwarf_P_Debug dbg, int base_sec_index, Dwarf_Un
     slotp1->drd_length = reltarget_length;
     slotp1->drd_offset = offset;
     slotp1->drd_symbol_index = start_symidx;
+#ifdef TARG_ST
+	if (type == dwarf_drt_first_of_length_pair_inst_word) {
+	    slotp2->drd_type     = dwarf_drt_second_of_length_pair_inst_word;
+	} else {
+	    slotp2->drd_type     = dwarf_drt_second_of_length_pair;
+	}
+#else
 
     slotp2->drd_type = dwarf_drt_second_of_length_pair;
+#endif
     slotp2->drd_length = reltarget_length;
     slotp2->drd_offset = offset;
     slotp2->drd_symbol_index = end_symidx;

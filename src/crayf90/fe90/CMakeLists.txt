@@ -52,36 +52,52 @@ INCLUDE_DIRECTORIES(
 	"../../crayf90/fe90"
 	"../../arith"
 	"../../common/com"
-	"../../common/com/x8664"
+	"../../common/com/@ARCH@"
 	"../../linux/mfef90_includes"
 	"../../clibinc/cray"
 )
 
+path64_get_host_arch(host_arch)
+
 add_custom_command(
     OUTPUT cf95.cat
     COMMAND ${PATHSCALE_SOURCE_DIR}/linux/tools/caterr -c cf95.cat ${CMAKE_CURRENT_SOURCE_DIR}/cf95.msgs
-    COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/cf95.cat ${Path64_BINARY_DIR}/lib
+    COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/cf95.cat ${Path64_BINARY_DIR}/lib/${host_arch}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/cf95.msgs
 )
 set_source_files_properties(cf95.cat PROPERTIES GENERATED 1)
-file(COPY cf95.msgs DESTINATION ${Path64_BINARY_DIR}/lib)
+
+foreach(arch ${PATH64_ENABLE_ARCHES})
+    file(COPY cf95.msgs DESTINATION ${Path64_BINARY_DIR}/${arch}/lib)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cf95.cat DESTINATION ${PATH64_LIB_PATH}/${arch})
+    install(FILES cf95.msgs DESTINATION ${PATH64_LIB_PATH}/${arch})
+    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"cf95.msgs\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/pathf95.msgs\")")
+endforeach()
 
 add_custom_target(
     generate_cf95_cat
     DEPENDS cf95.cat
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cf95.cat DESTINATION ${PATH64_LIB_PATH})
-install(FILES cf95.msgs DESTINATION ${PATH64_LIB_PATH})
-install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"cf95.msgs\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/pathf95.msgs\")")
 
-add_library(fe90-pathf STATIC ${PATHSCALE_FE90_F_SRCS})
-add_dependencies(fe90-pathf switch_fc)
+# Building fe90 & fe90-tmp for host architecture
 
-add_library(fe90-tmp STATIC ${PATHSCALE_FE90_F_SRCS})
+path64_add_library_for_arch(fe90-tmp ${host_arch} STATIC ${PATHSCALE_FE90_F_SRCS})
+path64_add_library_for_arch(fe90 ${host_arch} STATIC ${PATHSCALE_FE90_C_SRCS})
+path64_set_property_for_arch(fe90 ${host_arch} COMPILE_FLAGS
+                             "-std=gnu99 -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 
-add_library(fe90 STATIC ${PATHSCALE_FE90_C_SRCS})
-set_target_properties(fe90 PROPERTIES COMPILE_FLAGS "-std=gnu99")
+
+path64_set_multiarch_sources(fe90_sources COMMON ${PATHSCALE_FE90_C_SRCS})
+path64_add_multiarch_library(fe90 STATIC fe90_sources)
+path64_set_multiarch_property(fe90 COMPILE_FLAGS
+                              "-std=gnu99 -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
+
+# Building fe90-pathf for multiple architectures
+
+path64_set_multiarch_sources(fe90_pathf_sources COMMON ${PATHSCALE_FE90_F_SRCS})
+path64_add_multiarch_library(fe90-pathf STATIC fe90_pathf_sources)
+path64_add_multiarch_dependencies(fe90-pathf switch_fc)
 
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	ADD_DEFINITIONS(-D_DEBUG)

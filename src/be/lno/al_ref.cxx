@@ -1138,7 +1138,7 @@ WN *Get_Call_Parent(WN *curr_nd)
   while (parent) {
     if (OPCODE_is_call(WN_opcode(parent)) ||
         WN_operator(parent) == OPR_INTRINSIC_OP
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	|| WN_operator(parent) == OPR_PURE_CALL_OP
 #endif
 	) {
@@ -1159,7 +1159,7 @@ TY_IDX Get_Callee_TY(WN *call_nd,
                   ST *array_st)
 {
   if (WN_operator(call_nd) == OPR_CALL
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       || WN_operator(call_nd) == OPR_PURE_CALL_OP
 #endif
      ) {

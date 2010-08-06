@@ -40,6 +40,7 @@
 #include "file_utils.h"
 #include "errors.h"
 #include "opt_actions.h"
+#include "targets.h"
 
 #define VERSION "1.1"
 
@@ -59,12 +60,14 @@ void obtain_license (char *exedir, int argc, char *argv[]) {
     const char *errortext = "Unable to obtain subscription.  The PathScale compiler cannot run without a subscription.\nPlease see http://www.pathscale.com/subscription/1.1/msgs.html for details.\n" ;
    
 #ifdef TARG_MIPS
-    if (!strcmp(target_cpu, "mips5kf") ||
-	!strcmp(target_cpu, "twc9a")) {
-      return;
-    } else {
-      warning("Unexpected target_cpu \"%s\" requires subscription.",
-	      target_cpu ? target_cpu : "(NULL)");
+    if (is_target_arch_MIPS) {
+        if (!strcmp(target_cpu, "mips5kf") ||
+        !strcmp(target_cpu, "twc9a")) {
+          return;
+        } else {
+          warning("Unexpected target_cpu \"%s\" requires subscription.",
+              target_cpu ? target_cpu : "(NULL)");
+        }
     }
 #endif
 #ifdef NO_LICENSE_CHECK 

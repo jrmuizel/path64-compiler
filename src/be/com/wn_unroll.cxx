@@ -195,6 +195,7 @@ WN_UNROLL::Analyze_body_expr(WN *tree)
   case OPR_PARM:
   case OPR_TAS:
   case OPR_RND: case OPR_TRUNC: case OPR_CEIL: case OPR_FLOOR:
+#ifndef TARG_ST
 #ifdef KEY
   case OPR_REPLICATE:
   case OPR_REDUCE_ADD: case OPR_REDUCE_MPY: 
@@ -202,6 +203,7 @@ WN_UNROLL::Analyze_body_expr(WN *tree)
   case OPR_SHUFFLE:
   case OPR_ATOMIC_RSQRT:
 #endif // KEY
+#endif
   case OPR_NEG:
   case OPR_ABS:
   case OPR_MINPART: case OPR_MAXPART:
@@ -361,6 +363,7 @@ WN_UNROLL::Replicate_expr(WN *expr, INT rep_cnt)
   case OPR_PARM:
   case OPR_TAS:
   case OPR_RND: case OPR_TRUNC: case OPR_CEIL: case OPR_FLOOR:
+#ifndef TARG_ST
 #ifdef KEY
   case OPR_REPLICATE:
   case OPR_REDUCE_ADD: case OPR_REDUCE_MPY: 
@@ -368,6 +371,7 @@ WN_UNROLL::Replicate_expr(WN *expr, INT rep_cnt)
   case OPR_SHUFFLE:
   case OPR_ATOMIC_RSQRT:
 #endif // KEY
+#endif
   case OPR_NEG:
   case OPR_ABS:
   case OPR_MINPART: case OPR_MAXPART:

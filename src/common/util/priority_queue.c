@@ -2,22 +2,33 @@
 
   Copyright (C) 2000, 2001 Silicon Graphics, Inc.  All Rights Reserved.
 
-   Path64 is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
+  This program is free software; you can redistribute it and/or modify it
+  under the terms of version 2 of the GNU General Public License as
+  published by the Free Software Foundation.
 
-   Path64 is distributed in the hope that it will be useful, but WITHOUT
-   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-   License for more details.
+  This program is distributed in the hope that it would be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
 
-   You should have received a copy of the GNU General Public License
-   along with Path64; see the file COPYING.  If not, write to the Free
-   Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+  Further, this software is distributed without any warranty that it is
+  free of the rightful claim of any third person regarding infringement 
+  or the like.  Any license provided herein, whether implied or 
+  otherwise, applies only to this software file.  Patent licenses, if 
+  any, provided herein do not apply to combinations of this program with 
+  other software, or any other product whatsoever.  
 
-   Special thanks goes to SGI for their continued support to open source
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write the Free Software Foundation, Inc., 59
+  Temple Place - Suite 330, Boston MA 02111-1307, USA.
+
+  Contact information:  Silicon Graphics, Inc., 1600 Amphitheatre Pky,
+  Mountain View, CA 94043, or:
+
+  http://www.sgi.com
+
+  For further information regarding this notice, see:
+
+  http://oss.sgi.com/projects/GenInfo/NoticeExplan
 
 */
 
@@ -34,6 +45,13 @@
  * ====================================================================
  * ====================================================================
  */
+
+#ifdef TARG_ST
+/* [SC] Added PRQ_Update.  Due to the way macros are written in this
+ * file, it is not possible to follow normal convention and put
+ * ifdef TARG_ST around this addition.
+ */
+#endif
 
 #include "defs.h"
 #include "errors.h"
@@ -447,6 +465,53 @@ PRQ_Remove(
   }
 }
 
+/* =======================================================================
+ *
+ *  PRQ_Update
+ *
+ *  See interface description.
+ *
+ * =======================================================================
+ */
+void
+PRQ_Update (
+	    PRQ *prq,
+	    void *element
+	    )
+{
+  INT32 index = UNDEFINED;
+
+  FmtAssert(PRQ_size(prq) > 0,("PRQ_Update -- empty queue"));
+
+  /* Find the index of 'element' in the heap.If we have an index function,
+   * we can get the index of the element directly.  Otherwise we search
+   * for it.
+   */
+
+  if ( PRQ_get_index_fn(prq) ) {
+    index =  PRQ_get_index_fn(prq)(element);
+    FmtAssert(element == PRQ_Ith(prq,index),
+              ("Invalid priority queue index %d",index));
+  }
+  else {
+    INT32 i;
+
+    for ( i = 1; i <= PRQ_size(prq); ++i ) {
+      if ( PRQ_Ith(prq,i) == element ) {
+        index = i;
+        break;
+      }
+    }
+  }
+
+  FmtAssert(index != UNDEFINED,("Update a PRQ element not in queue"));
+
+    /* Try to move it up.  If it moves we know it has found its
+     * appropriate position.  Otherwise, try to move it down.
+     */
+  if (index == PRQ_Upheap (prq, index))
+    (void) PRQ_Downheap (prq, index);
+}
 
 /* =======================================================================
  *

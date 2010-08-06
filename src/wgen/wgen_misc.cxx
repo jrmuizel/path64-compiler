@@ -81,8 +81,17 @@ extern "C" {
 #include "wgen_stmt.h"
 #include "c_int_model.h"
 #include "wgen_spin_symbol.h"
+#ifdef TARG_ST
+#include "libiberty.h"
+#include "fe_loader.h"
+#include "gccfe_targinfo_interface.h"
+#endif
 
+#ifdef TARG_ST
+int  WGEN_Keep_Zero_Length_Structs = FALSE;
+#else
 int  WGEN_Keep_Zero_Length_Structs = TRUE;
+#endif
 PU_Info *PU_Tree_Root = NULL;
 #ifdef TARG_X8664
 int Reg_Parm_Count = 0;
@@ -153,8 +162,11 @@ mUINT32 Cif_Level = 0;       	/* CIF level */
 #define	LST_FILE_EXTENSION ".l"	/* Listing file */
 #define	TRC_FILE_EXTENSION ".t"	/* Trace file */
 #define DSTDUMP_FILE_EXTENSION ".fe.dst" /* DST dump-file extension */
+#ifndef TARG_ST
+/* [SC]: ST define this in libfereconf. */
 
 int trace_verbose = FALSE;
+#endif
 // an_error_severity error_threshold = es_warning;
 
 /* Static data:	command	line information: */
@@ -348,7 +360,11 @@ Prepare_Source ( void )
 void
 WGEN_Init (INT argc, char **argv, char **envp )
 {
+#ifndef TARG_ST
+  // [SC] At present ST do not use c_int_model, and I am nervous to add it
+  // in case of possible issues with reconfigurability support.
   Initialize_C_Int_Model();
+#endif
 
   MEM_Initialize(); /// init memory
 
@@ -384,6 +400,11 @@ WGEN_Init (INT argc, char **argv, char **envp )
   Argc = argc;
   Argv = argv;
   Configure ();
+#ifdef TARG_ST
+  WFE_Init_Loader();
+  GCCTARG_Configure_Gcc_From_Targinfo();
+#endif
+
   IR_reader_init();
   Initialize_Symbol_Tables (TRUE);
   WGEN_Stmt_Stack_Init (); 
@@ -451,11 +472,14 @@ WGEN_Check_Errors (int *error_count, int *warning_count, BOOL *need_inliner)
 
 #define ENLARGE(x) (x + (x >> 1))
 #define WN_STMT_STACK_SIZE 32
+#ifndef TARG_ST
+/* (cbr) exported in wfe_misc.h */
 
 typedef struct wn_stmt {
   WN            *wn;
   WGEN_STMT_KIND  kind;
 } WN_STMT;
+#endif
 
 static WN_STMT *wn_stmt_stack;
 static WN_STMT *wn_stmt_sp;
@@ -494,13 +518,25 @@ const char * WGEN_Stmt_Kind_Name [wgen_stmk_last+1] = {
 #endif // KEY
   "'last'"
 };
+#ifdef TARG_ST
+WN_STMT *
+WGEN_Get_Stmt()
+{
+return wn_stmt_sp;
+}
+#endif
 
 static void
 WGEN_Stmt_Stack_Init (void)
 {
   wn_stmt_stack_size = WN_STMT_STACK_SIZE;
+#ifdef TARG_ST
+  wn_stmt_stack      = (WN_STMT *) xmalloc (sizeof (WN_STMT) *
+                                           wn_stmt_stack_size );
+#else
   wn_stmt_stack      = (WN_STMT *) malloc (sizeof (WN_STMT) *
                                            wn_stmt_stack_size );
+#endif
   wn_stmt_sp         = wn_stmt_stack - 1;
   wn_stmt_stack_last = wn_stmt_stack + wn_stmt_stack_size - 1;
 } /* WGEN_Stmt_Stack_Init */
@@ -528,7 +564,11 @@ WGEN_Stmt_Push (WN* wn, WGEN_STMT_KIND kind, SRCPOS srcpos)
   if (wn_stmt_sp == wn_stmt_stack_last) {
     new_stack_size = ENLARGE(wn_stmt_stack_size);
     wn_stmt_stack =
+        #ifdef TARG_ST
+      (WN_STMT *) xrealloc (wn_stmt_stack, new_stack_size * sizeof (WN_STMT));
+#else
       (WN_STMT *) realloc (wn_stmt_stack, new_stack_size * sizeof (WN_STMT));
+#endif
     wn_stmt_sp = wn_stmt_stack + wn_stmt_stack_size - 1;
     wn_stmt_stack_size = new_stack_size;
     wn_stmt_stack_last = wn_stmt_stack + wn_stmt_stack_size - 1;
@@ -646,6 +686,38 @@ WGEN_Stmt_Delete ()
 
   return last;
 } /* WGEN_Stmt_Delete */
+#ifdef TARG_ST
+void
+WGEN_Stmt_Move_To_End (WN *first_wn, WN *last_wn)
+{
+  WN * body;
+  WN * last;
+  WN * prev;
+  WN * next;
+
+  body = WGEN_Stmt_Top ();
+  last = WN_last(body);
+
+  if (last == last_wn) return;
+
+  prev = WN_prev(first_wn);
+  next = WN_next(last_wn);
+
+  if (prev)
+    WN_next(prev)  = next;
+  else
+    WN_first(body) = next;
+
+  WN_prev(next) = prev;
+
+  WN_next(last) = first_wn;
+  WN_prev(first_wn) = last;
+  WN_next(last_wn) = NULL;
+  WN_last(body) = last_wn;
+
+} /* WFE_Stmt_Move_To_End */
+
+#endif
 
 
 WN*
@@ -789,7 +861,18 @@ WGEN_Get_Guard_Var()
   // variable.
   guard_vars.pop_back();	// Pop off the NULL_TREE.
   t = gs_build_decl(GS_VAR_DECL, gs_integer_type_node());
+#ifdef TARG_ST
+  static int i;
+  /* The call to build_decl does not set DECL_CONTEXT, so if we use Get_ST
+     we will get a guard of FSTATIC storage class.  Here create explicitly
+     the ST we want. */
+  ST *guard_st = New_ST (CURRENT_SYMTAB);
+  ST_Init (guard_st, Save_Str2i (".guard_dtor", "", i++), CLASS_VAR, SCLASS_AUTO,
+           EXPORT_LOCAL, MTYPE_To_TY(Integer_type));
+  set_DECL_ST(t, guard_st);
+#else
   Get_ST(t);
+#endif
   guard_vars.push_back(t);	// Push new guard variable onto stack.
   return t;
 }

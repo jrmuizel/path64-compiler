@@ -997,30 +997,36 @@ set_source_files_properties(../libfi/mathlb/ieee_arithmetic.F90 PROPERTIES OBJEC
 #SET(CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES "m;c")
 
 
-add_library(pathfortran-static STATIC ${PATHSCALE_PATHFORTRAN_C_SRCS} ${PATHSCALE_PATHFORTRAN_F_SRCS} ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h)
+path64_set_multiarch_sources(pathfortran_sources COMMON
+                             ${PATHSCALE_PATHFORTRAN_C_SRCS}
+                             ${PATHSCALE_PATHFORTRAN_F_SRCS}
+                             ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h)
 
-SET_TARGET_PROPERTIES(pathfortran-static PROPERTIES OUTPUT_NAME "pathfortran")
+path64_add_multitarget_library(pathfortran-static STATIC pathfortran_sources)
+path64_set_multitarget_property(pathfortran-static OUTPUT_NAME "pathfortran")
 
-add_library(pathfortran SHARED ${PATHSCALE_PATHFORTRAN_C_SRCS} ${PATHSCALE_PATHFORTRAN_F_SRCS} ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h)
-set_property(TARGET pathfortran PROPERTY LINKER_LANGUAGE C)
-
-set_property(TARGET pathfortran PROPERTY SOVERSION 1)
+path64_add_multitarget_library(pathfortran SHARED pathfortran_sources)
+path64_set_multitarget_property(pathfortran LINKER_LANGUAGE C)
+path64_set_multitarget_property(pathfortran PROPERTY SOVERSION 1)
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-set_property(TARGET pathfortran PROPERTY LINK_FLAGS -Wl,--version-script="${libpathfortran_SOURCE_DIR}/libpathfortran.vs")
+    path64_set_multitarget_property(pathfortran LINK_FLAGS -Wl,--version-script="${libpathfortran_SOURCE_DIR}/libpathfortran.vs")
 endif()
 
 IF(PATH64_ENABLE_PROFILING)
-add_library(pathfortran_p STATIC ${PATHSCALE_PATHFORTRAN_SRCS} ${PATHSCALE_PATHFORTRAN_F_SRCS} ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h)
-set_property(TARGET pathfortran_p PROPERTY COMPILE_FLAGS -pg)
-install(TARGETS pathfortran_p  ARCHIVE DESTINATION ${PATH64_LIB_PATH})
+    path64_add_multitarget_library(pathfortran_p STATIC pathfortran_sources)
+    path64_set_multitarget_property(pathfortran_p COMPILE_FLAGS -pg)
 ENDIF(PATH64_ENABLE_PROFILING)
 
-add_library(pathfstart STATIC fnord.c ../libf/fio/main.c)
+path64_set_multitarget_sources(pathfstart_sources COMMON fnord.c ../libf/fio/main.c)
+path64_add_multitarget_library(pathfstart STATIC pathfstart_sources)
 
 
-install(TARGETS pathfortran pathfortran-static pathfstart
-        LIBRARY DESTINATION ${PATH64_LIB_PATH}
-        ARCHIVE DESTINATION ${PATH64_LIB_PATH})
+# Building libpathfortran for host architecture
+path64_get_host_arch(host_arch)
+path64_add_library_for_arch(pathfortran-host ${host_arch} STATIC
+                            ${PATHSCALE_PATHFORTRAN_C_SRCS}
+                            ${PATHSCALE_PATHFORTRAN_F_SRCS}
+                            ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h)
 
 add_custom_command(
     OUTPUT massage.c

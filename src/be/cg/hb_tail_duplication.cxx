@@ -149,7 +149,11 @@ Fixup_Arcs(HB* hb, BB* old_bb, BB* new_bb, BB_MAP duplicate, BB** fall_thru,
       //
       if (BB_Fall_Thru_Successor(pred) == old_bb) {
 	Link_Pred_Succ_with_Prob(dup, new_bb, BBLIST_prob(blsucc));
+#ifdef TARG_ST
+      } else if (BB_kind(pred) == BBKIND_LOGIF) {
+#else
       } else if (BB_kind(dup) == BBKIND_LOGIF) {
+#endif
 	Target_Cond_Branch(dup, new_bb, BBLIST_prob(blsucc));
       } else {
 	BB_Remove_Branch(dup);
@@ -324,6 +328,10 @@ Tail_Duplicate(HB* hb, BB* side_entrance, BB_MAP unduplicated,
     fprintf(HB_TFile, "<HB> Tail duplicating BB:%d.  Duplicate BB%d\n",
 	    BB_id(side_entrance), BB_id(dup));
   }
+
+#ifdef TARG_ST
+  GRA_LIVE_Compute_Liveness_For_BB(dup);  
+#endif
 
   //
   // Flag bb as having been duplicated.

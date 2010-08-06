@@ -483,8 +483,11 @@ static const FNAME_PARTIALMAP Fname_Map[] =
  * that either the conversion is redundant and can be ignored or there
  * is no way we can do it.
  */
+#ifdef TARG_ST
+static const char *Conv_Op[MTYPE_STATIC_LAST+1][MTYPE_STATIC_LAST+1];
+#else
 static const char *Conv_Op[MTYPE_LAST+1][MTYPE_LAST+1];
-
+#endif
 typedef struct Conv_Op
 {
    MTYPE       from, to;
@@ -1071,27 +1074,35 @@ WN2F_intrinsic_op(TOKEN_BUFFER tokens, WN *wn, WN2F_CONTEXT context)
    case INTRN_F4EXPEXPR:
    case INTRN_F8EXPEXPR:
    case INTRN_FQEXPEXPR:
+#ifndef TARG_ST
    case INTRN_F16EXPEXPR:
+#endif
    case INTRN_C4EXPEXPR:
    case INTRN_C8EXPEXPR:
    case INTRN_CQEXPEXPR:
+#ifndef TARG_ST
    case INTRN_C16EXPEXPR:
+#endif
    case INTRN_F4I4EXPEXPR:
    case INTRN_F4I8EXPEXPR:
    case INTRN_F8I4EXPEXPR:
    case INTRN_F8I8EXPEXPR:
    case INTRN_FQI4EXPEXPR:
    case INTRN_FQI8EXPEXPR:
+     #ifndef TARG_ST
    case INTRN_F16I4EXPEXPR:
    case INTRN_F16I8EXPEXPR:
+#endif
    case INTRN_C4I4EXPEXPR:
    case INTRN_C4I8EXPEXPR:
    case INTRN_C8I4EXPEXPR:
    case INTRN_C8I8EXPEXPR:
    case INTRN_CQI4EXPEXPR:
    case INTRN_CQI8EXPEXPR:
+#ifndef TARG_ST
    case INTRN_C16I4EXPEXPR:
    case INTRN_C16I8EXPEXPR:
+#endif
       WN2F_Intr_Infix(tokens, 
 		      "**", WN_kid0(wn), WN_kid1(wn), by_value, context);
       break;
@@ -1122,11 +1133,15 @@ WN2F_intrinsic_op(TOKEN_BUFFER tokens, WN *wn, WN2F_CONTEXT context)
    case INTRN_U4F4ADRTMP: 
    case INTRN_U4F8ADRTMP: 
    case INTRN_U4FQADRTMP:
+#ifndef TARG_ST
    case INTRN_U4F16ADRTMP:
+#endif
    case INTRN_U4C4ADRTMP: 
    case INTRN_U4C8ADRTMP:
    case INTRN_U4CQADRTMP:
+#ifndef TARG_ST
    case INTRN_U4C16ADRTMP:
+#endif
    case INTRN_U4VADRTMP :
    case INTRN_U8I1ADRTMP:
    case INTRN_U8I2ADRTMP:
@@ -1135,11 +1150,15 @@ WN2F_intrinsic_op(TOKEN_BUFFER tokens, WN *wn, WN2F_CONTEXT context)
    case INTRN_U8F4ADRTMP: 
    case INTRN_U8F8ADRTMP: 
    case INTRN_U8FQADRTMP:
+#ifndef TARG_ST
    case INTRN_U8F16ADRTMP:
+#endif
    case INTRN_U8C4ADRTMP: 
    case INTRN_U8C8ADRTMP: 
    case INTRN_U8CQADRTMP:
+      #ifndef TARG_ST
    case INTRN_U8C16ADRTMP:
+#endif
    case INTRN_U8VADRTMP:
       /* Implicit call by reference.  Emit the dereferenced parameter.
        */
@@ -1154,8 +1173,10 @@ WN2F_intrinsic_op(TOKEN_BUFFER tokens, WN *wn, WN2F_CONTEXT context)
    case INTRN_C4VALTMP: 
    case INTRN_C8VALTMP:
    case INTRN_CQVALTMP:
+#ifndef TARG_ST
    case INTRN_F16VALTMP:
    case INTRN_C16VALTMP:
+#endif
       /* Call-by-value.  Assume the context determines when it is
        * necessary to put a %val qualifier around the argument.
        */

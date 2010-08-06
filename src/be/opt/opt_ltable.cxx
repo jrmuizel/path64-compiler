@@ -234,7 +234,7 @@ ETABLE::LPRE_bottom_up_cr(STMTREP *stmt, INT stmt_kid_num, CODEREP *cr,
 	cr->Set_max_depth( ( depth <= 255 ) ? depth : 255 );
 	
       for (INT32 i=0; i<cr->Kid_count(); i++)	{ 
-#ifdef KEY // bug 12471: __builtin_expect's first kid must be constant
+#if defined( KEY) && !defined(TARG_ST) // bug 12471: __builtin_expect's first kid must be constant
 	if (cr->Opr() == OPR_INTRINSIC_OP && cr->Intrinsic() == INTRN_EXPECT &&
 	    i == 1)
 	  continue;
@@ -389,7 +389,10 @@ ETABLE::Perform_LPRE_optimization(void)
       cur_worklst->Rename_expression(this); // Step 3
 
       if (use_feedback) {
-	
+	#ifdef TARG_ST
+	if (Tracing())
+	  fprintf(TFile, "Feedback optimization:feedback for OPT LPRE (-WOPT:fb_lpre=1) is on\n");
+#endif
 	cur_worklst->Save_flags();
 
 	SET_OPT_REPEAT_PHASE(Downsafe_prop_phase, "LPRE: Var anticipation");

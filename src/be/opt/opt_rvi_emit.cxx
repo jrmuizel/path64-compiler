@@ -203,7 +203,7 @@ RVI_EMIT::Emit_wn_annotations( BB_NODE *bb, WN *wn, WN **new_wn ) const
     // handle kids if necessary, deal with case of constant child
     for ( INT ikid = 0; ikid < WN_kid_count(wn); ikid++ ) {
       WN *new_kid;
-#ifdef KEY // bug 12471: __builtin_expect's first kid must be constant
+#if defined( KEY) && !defined(TARG_ST) // bug 12471: __builtin_expect's first kid must be constant
       if (WN_operator(wn) == OPR_INTRINSIC_OP &&
 	  ((INTRINSIC) WN_intrinsic(wn)) == INTRN_EXPECT &&
 	  ikid == 1)
@@ -336,7 +336,17 @@ RVI_EMIT::Emit_lda_wn_annotations( BB_NODE *bb, WN *wn, WN **new_wn ) const
     bitpos = Rvi()->Get_bitpos(wn);
     if ( bitpos != ILLEGAL_BP ) {
       if ( (annotation = bb->Rvi_anns()->Find( bitpos )) != NULL ) {
+#ifdef TARG_ST
+	TY_IDX ty = ST_type(WN_st(wn));
+	if (!((TY_kind(ty) == KIND_ARRAY) &&
+	      (TY_kind(TY_etype(ty)) == KIND_STRUCT) &&
+	      (TY_is_packed(Ty_Table[TY_etype(ty)])) ) || 
+	     ((TY_kind(ty) == KIND_STRUCT) && TY_is_packed(Ty_Table[ty]))) {
+#endif
 	*new_wn = annotation->New_ldid( Alias_Mgr() );
+#ifdef TARG_ST
+	}
+#endif
       }
     }
   }

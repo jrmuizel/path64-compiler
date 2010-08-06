@@ -8,7 +8,7 @@ include_directories(
    ../common/com 
    ../be/region 
    ../be/opt 
-   ../common/com/x8664 
+   ../common/com/@ARCH@
    ../common/util 
    ../fake_ld/common 
    ../fake_ld 
@@ -20,7 +20,7 @@ include_directories(
    ${PATHSCALE_BINARY_DIR}/be
   )
 
-set(libipl_sources 
+path64_set_multiarch_sources(libipl_sources COMMON
 	"local/loop_info.cxx"
 	"local/ipl_main.cxx" 
 	"local/ipl_bread_write.cxx"
@@ -47,7 +47,7 @@ set(libipl_sources
 	"../be/com/ipa_cost_util.cxx" 
 )
 
-set(libipa_sources 
+path64_set_multiarch_sources(libipa_sources COMMON
 	"common/ipc_partition.c"
 	"common/ipc_partition.c"
 	"../common/com/dwarf_DST.cxx"
@@ -130,7 +130,7 @@ set(libipa_sources
 	"../be/lno/lwn_util.cxx"
 )
 
-set(PATHSCALE_INLINE_SRCS
+path64_set_multiarch_sources(PATHSCALE_INLINE_SRCS COMMON
 	"main/optimize/ipo_parent.cxx"
 	"main/optimize/ipo_tlog_utils.cxx"
 	"main/optimize/ipo_inline_util.cxx"
@@ -164,35 +164,39 @@ set(PATHSCALE_INLINE_SRCS
 
 add_definitions(${PATH64_STDC_FORMAT_MACROS})
 
-ADD_LIBRARY(ipa SHARED ${libipa_sources})
-ADD_LIBRARY(ipl SHARED ${libipl_sources})
-set_property(TARGET ipa PROPERTY PREFIX "")
-set_property(TARGET ipl PROPERTY PREFIX "")
-set_property(TARGET ipa PROPERTY COMPILE_DEFINITIONS MONGOOSE_BE;_SUPPORT_IPA;__STDC_FORMAT_MACROS;__MIPS_AND_IA64_ELF_H;BACK_END)
-set_property(TARGET ipl PROPERTY COMPILE_DEFINITIONS MONGOOSE_BE;IPA_SUMMARY;__STDC_FORMAT_MACROS;__MIPS_AND_IA64_ELF_H)
+path64_add_multiarch_library(ipa SHARED libipa_sources)
+path64_set_multiarch_property(ipa PREFIX "")
+path64_set_multiarch_property(ipa COMPILE_DEFINITIONS MONGOOSE_BE;_SUPPORT_IPA;__STDC_FORMAT_MACROS;__MIPS_AND_IA64_ELF_H;BACK_END)
+path64_set_multiarch_property(ipa COMPILE_FLAGS
+                              "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@")
+path64_multiarch_link_multiarch_libraries(ipa be ipl)
+path64_add_multiarch_multiarch_dependencies(ipa generate_topcode)
 
-target_link_libraries(ipa be ipl)
+path64_add_multiarch_library(ipl SHARED libipl_sources)
+path64_set_multiarch_property(ipl PREFIX "")
+path64_set_multiarch_property(ipl COMPILE_DEFINITIONS MONGOOSE_BE;IPA_SUMMARY;__STDC_FORMAT_MACROS;__MIPS_AND_IA64_ELF_H)
+path64_set_multiarch_property(ipl COMPILE_FLAGS
+                              "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@")
+path64_add_multiarch_dependencies(ipl generate_preg_list generate_topcode)
 
-ADD_DEPENDENCIES(ipl generate_preg_list)
+path64_add_multiarch_executable(inline PATHSCALE_INLINE_SRCS)
+path64_set_multiarch_property(inline COMPILE_DEFINITIONS MONGOOSE_BE;_LIGHTWEIGHT_INLINER;_STDC_FORMAT_MACROS)
+path64_multiarch_link_multiarch_libraries(inline be)
+path64_multiarch_link_libraries(inline iberty)
+path64_multiarch_link_multiarch_libraries(inline dwarf)
+path64_multiarch_link_libraries(inline elfutil elf)
+path64_set_multiarch_property(inline COMPILE_FLAGS "-I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@")
 
-add_executable (inline ${PATHSCALE_INLINE_SRCS})
-set_property(TARGET inline PROPERTY COMPILE_DEFINITIONS MONGOOSE_BE;_LIGHTWEIGHT_INLINER;_STDC_FORMAT_MACROS)
-target_link_libraries(inline be iberty dwarf elfutil elf)
-ADD_DEPENDENCIES(inline inline_hack)
-
-add_custom_command(
-    OUTPUT   ${Path64_BINARY_DIR}/lib/inline
-    COMMAND ln -sf  ../bin/inline ${Path64_BINARY_DIR}/lib/inline
-)
-
-add_custom_target(
-    inline_hack
-    DEPENDS ${Path64_BINARY_DIR}/lib/inline
-)
+#path64_add_multiarch_dependencies(inline inline_hack)
+#
+#add_custom_command(
+#    OUTPUT   ${Path64_BINARY_DIR}/lib/inline
+#    COMMAND ln -sf  ../bin/inline ${Path64_BINARY_DIR}/lib/inline
+#)
+#
+#add_custom_target(
+#    inline_hack
+#    DEPENDS ${Path64_BINARY_DIR}/lib/inline
+#)
 
 
-install(TARGETS ipa ipl
-        LIBRARY DESTINATION ${PATH64_LIB_PATH}
-        ARCHIVE DESTINATION ${PATH64_LIB_PATH})
-
-install(TARGETS inline DESTINATION ${PATH64_LIB_PATH})

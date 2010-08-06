@@ -235,7 +235,7 @@ enum AUXF_FLAGS {
   AUXF_MP_REDUCTION  = 0x200,      // marked reduction in MP pragma
   AUXF_DONT_REPLACE_IV = 0x400,    // do not replace this IV by another IV
   AUXF_NO_SPRE       = 0x800,      // disable SPRE for this var
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   AUXF_MP_NO_DSE     = 0x800,	   // disable dead store elim due to MP regions
   				   // (not when phase is MAINOPT_PHASE)
 #endif
@@ -243,7 +243,7 @@ enum AUXF_FLAGS {
   AUXF_SPRE_TEMP     = 0x2000,     // PREG introduced by SPRE
   AUXF_SIGN_EXTD     = 0x4000,     // Is sign extended set by LPRE
   AUXF_DISABLE_LOCAL_RVI  = 0x8000, // Is live out of current REGION
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   AUXF_INDIRECT_ACCESS = 0x10000,  // indirect access of variable?
 #endif
 };
@@ -338,6 +338,21 @@ private:
   WN		*_wn;		       // to help create identity assignment
   				       // for BS vars
 #endif
+#ifdef TARG_ST
+  // TB: add support for automatic variables defined in try block and
+  // used in catck block: The following code would raise a warning
+  // with -Wuninitialized for toto:
+//   if (i)
+//     try {
+//       toto = 1;
+//       f();
+//     }
+//     catch (...) {
+//       return toto;
+//     }
+// To fix that, we add an attribute for such variable
+  BOOL _belongs_to_eh;
+#endif
 
   //  Take a union of the following field to conserve space
   //	synonym is used during canonicalization for regular variables
@@ -380,6 +395,12 @@ private:
 		  _zero_cr = NULL;
 #ifdef KEY
 		  _wn = NULL;
+#endif
+                  
+#ifdef TARG_ST
+  // TB: add support for automatic variables defined in try block and
+  // used in catck block
+		  _belongs_to_eh = FALSE;
 #endif
 		};
   ~AUX_STAB_ENTRY(void);
@@ -425,6 +446,13 @@ public:
 					  ? ST_name(Base()) : "null"; }
   AUX_ID   Home_sym(void) const       { return _home_symbol; }
   void     Set_home_sym(AUX_ID i)     { _home_symbol = i; }
+#ifdef TARG_ST
+  // TB: add support for automatic variables defined in try block and
+  // used in catck block
+  BOOL   Belongs_to_eh(void) const       { return _belongs_to_eh; }
+  void     Set_belongs_to_eh(BOOL i)     { _belongs_to_eh = i; }
+#endif
+
   UINT     Value_size(void) const     { return _value_size; }
   void     Set_value_size(UINT vsize) { _value_size = vsize; }
   CODEREP *Zero_cr(void) const        { return _zero_cr; }
@@ -476,7 +504,7 @@ public:
   void     Set_dont_replace_iv(void)  { _flags |= AUXF_DONT_REPLACE_IV; }
   BOOL     No_spre(void) const        { return _flags & AUXF_NO_SPRE; }
   void     Set_no_spre(void)          { _flags |= AUXF_NO_SPRE; }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   BOOL     Mp_no_dse(void) const        { return _flags & AUXF_MP_NO_DSE; }
   void     Set_mp_no_dse(void)          { _flags |= AUXF_MP_NO_DSE; }
 #endif
@@ -488,7 +516,7 @@ public:
   void     Set_LPRE_sign_extd(void)   { _flags |= AUXF_SIGN_EXTD; }
   BOOL     Disable_local_rvi(void) const{ return _flags & AUXF_DISABLE_LOCAL_RVI;}
   void     Set_disable_local_rvi(void)  { _flags |= AUXF_DISABLE_LOCAL_RVI; }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   BOOL     Indirect_access(void) const{ return _flags & AUXF_INDIRECT_ACCESS;}
   void     Set_indirect_access(void)  { _flags |= AUXF_INDIRECT_ACCESS; }
 #endif
@@ -564,6 +592,15 @@ public:
 	      _st_ofst <= Last_Dedicated_Preg_Offset);
     }
   
+#ifdef TARG_ST
+  // Return TRUE if then aux_stab_entry represents a dedicated 
+  // return register.
+  BOOL     Is_return_preg(void) const
+    {
+      return (Is_preg() && Is_Return_Preg (_st_ofst));
+    }
+#endif
+
   void     Change_to_new_preg(OPT_STAB *opt_stab, CODEMAP *htable);
 
   VER_STAB_LIST_NODE *Nonzerophis(void) const { return v._nonzerophis; }
@@ -828,9 +865,13 @@ private:
   BOOL                      _flow_free_analysis;
   BOOL                      _allow_sim_type;
   BOOL                      _has_exc_handler;
+#ifdef TARG_ST
+  // TB
+  BOOL                      _in_eh;
+#endif
   POINTS_TO		   *_points_to_globals;
   BOOL                      _is_varargs_func;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   BOOL                      _is_prototyped_func;
   BOOL                      _has_nonlocal_goto_target;
   BOOL			    _pu_has_trampoline;
@@ -980,7 +1021,7 @@ public:
   AUX_ID   Create_vsym(EXPR_KIND k);
   AUX_ID   Create_preg(MTYPE preg_ty, const char *name = NULL, WN *home_wn = NULL);
   AUX_ID   Find_vsym_with_base(ST *);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   AUX_ID   Find_vsym_with_st(ST *, BOOL, POINTS_TO * = NULL);
 #else
   AUX_ID   Find_vsym_with_st(ST *);
@@ -1003,7 +1044,7 @@ public:
   CFG      *Cfg(void) const              { return _cfg; }
   const ALIAS_RULE *Rule(void) const     { return _rule; }
   BOOL     Is_varargs_func(void) const   { return _is_varargs_func; }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   BOOL     Is_prototyped_func(void) const{ return _is_prototyped_func; }
   BOOL     Has_nonlocal_goto_target(void) const   { return _has_nonlocal_goto_target; }
   BOOL	   Pu_has_trampoline(void) const { return _pu_has_trampoline; }
@@ -1098,7 +1139,11 @@ public:
   //  Enter into AUX_STAB
   AUX_ID   Enter_symbol(OPERATOR opr, ST *st, INT64 ofst, TY_IDX wn_object_ty, 
 			BOOL is_volatile, WN* wn = NULL);
+#ifdef TARG_ST
+  AUX_ID   Enter_ded_preg(ST *, INT64, TY_IDX, INT32, TYPE_ID);
+#else
   AUX_ID   Enter_ded_preg(ST *, INT64, TY_IDX, INT32);
+#endif
   AUX_ID   Identify_vsym(WN *);
 #ifdef KEY
   AUX_ID   Allocate_vsym(WN *, POINTS_TO *);
@@ -1271,6 +1316,11 @@ public:
 
   //  Determine the base symbol using the use-def chain.
   void     Analyze_Base_Flow_Sensitive(POINTS_TO *, WN *);
+#ifdef TARG_ST
+  //  Determine the base symbol using the use-def chain fix point analysis.
+  void     Analyze_Base_Flow_Sensitive_Fix_Point(POINTS_TO *, WN *);
+#endif
+
 
   //  Update the default vsym after flow sensitive analysis.
   void     Update_iload_vsym(OCC_TAB_ENTRY *);
@@ -1331,7 +1381,7 @@ public:
   // manage the OCC_TAB
   // ------------------------------------------------------------------
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   OCC_TAB_ENTRY *Enter_occ_tab(WN *, AUX_ID, POINTS_TO * = NULL);
 #else
   OCC_TAB_ENTRY *Enter_occ_tab(WN *, AUX_ID);

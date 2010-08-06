@@ -100,13 +100,19 @@ extern void ISA_Decode_Begin(const char* archname);
 extern void ISA_Decode_End(void);
 
 typedef struct state *STATE;
+#ifdef TARG_ST
+enum { END_TRANSITIONS = -1, END_ENTRIES = -1 };
+#else
 enum { END_TRANSITIONS = -1 };
+#endif
 extern STATE Create_Unit_State(const char *tag, int pos, int width);
 extern STATE Create_Inst_State(const char *tag, int idx, int pos, int width);
 extern void Transitions(STATE state, ...);
 extern void Initial_State(STATE state);
 extern STATE Final(TOP topcode);
-
+#ifdef TARG_ST
+extern void DecodeEntry(ISA_SUBSET subset, ...);
+#endif
 #ifdef __cplusplus
 }
 #endif
