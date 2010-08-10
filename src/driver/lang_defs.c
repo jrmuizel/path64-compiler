@@ -158,7 +158,7 @@ static phase_info_t phase_info[] = {
    /* We use 'B' for options to be passed to be via ipacom. */
 
    {'a',  0x0000001000000000LL,	"asm",	PHASEPATH,	FALSE},	/* as */
-#ifdef PATH64_ENABLE_PSCRUNTIME
+#ifdef PATH64_ENABLE_PATHAS
    {'a',  0x0000002000000000LL, "pathas", PHASEPATH, FALSE}, /* pathas */
 #else
    {'a',  0x0000002000000000LL, "gcc", "", FALSE}, /* gas */

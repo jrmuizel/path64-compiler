@@ -28,6 +28,13 @@ set(PATHSCALE_TABLE_SRCS  ${PATHSCALE_COMMON_DRIVER_SRCS}
                           "table.c"
    )
 
+
+option(PATH64_ENABLE_PATHAS "Enables using pathas assembler" OFF)
+if(PATH64_ENABLE_PATHAS)
+    add_definitions(-DPATH64_ENABLE_PATHAS)
+endif()
+
+
 # Adding definitions for target architectures
 set(ARCH_DEFS)
 foreach(arch ${PATH64_ENABLE_ARCHES})
@@ -51,6 +58,7 @@ if(PATH64_ENABLE_PSCRUNTIME)
 else()
     set(PSCRUNTIME_OPTION "-DPATH64_NO_PSCRUNTIME")
 endif()
+
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P
         COMMAND ${SORT_OPTIONS} ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS ${ARCH_DEFS} ${PSCRUNTIME_OPTION} -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
