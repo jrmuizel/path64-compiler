@@ -83,7 +83,7 @@ __do_global_dtors_aux:
 #ifdef SHARED
 	cmpq	$0, __cxa_finalize@GOTPCREL(%rip)
 	je	2f
-	movq	__dso_handle(%rip), %rax
+	movq	__dso_handle(%rip), %rdi
 	call	__cxa_finalize@PLT
 2:
 #endif
