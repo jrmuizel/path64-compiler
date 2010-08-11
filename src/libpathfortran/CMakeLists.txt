@@ -997,28 +997,36 @@ set_source_files_properties(../libfi/mathlb/ieee_arithmetic.F90 PROPERTIES OBJEC
 #SET(CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES "m;c")
 
 
-path64_set_multiarch_sources(pathfortran_sources COMMON
-                             ${PATHSCALE_PATHFORTRAN_C_SRCS}
-                             ${PATHSCALE_PATHFORTRAN_F_SRCS}
-                             ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h)
+path64_set_multitarget_sources(pathfortran-static COMMON
+                               ${PATHSCALE_PATHFORTRAN_C_SRCS}
+                               ${PATHSCALE_PATHFORTRAN_F_SRCS}
+                               ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h)
+path64_set_multitarget_property_(pathfortran-static OUTPUT_NAME "pathfortran")
+path64_add_multitarget_library(pathfortran-static STATIC)
 
-path64_add_multitarget_library(pathfortran-static STATIC pathfortran_sources)
-path64_set_multitarget_property(pathfortran-static OUTPUT_NAME "pathfortran")
-
-path64_add_multitarget_library(pathfortran SHARED pathfortran_sources)
-path64_set_multitarget_property(pathfortran LINKER_LANGUAGE C)
-path64_set_multitarget_property(pathfortran PROPERTY SOVERSION 1)
+path64_set_multitarget_sources(pathfortran COMMON
+                               ${PATHSCALE_PATHFORTRAN_C_SRCS}
+                               ${PATHSCALE_PATHFORTRAN_F_SRCS}
+                               ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h)
+path64_set_multitarget_property_(pathfortran COMPILE_FLAGS -fPIC -DPIC)
+path64_set_multitarget_property_(pathfortran LINKER_LANGUAGE C)
+path64_set_multitarget_property_(pathfortran PROPERTY SOVERSION 1)
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-    path64_set_multitarget_property(pathfortran LINK_FLAGS -Wl,--version-script="${libpathfortran_SOURCE_DIR}/libpathfortran.vs")
+    path64_set_multitarget_property_(pathfortran LINK_FLAGS -Wl,--version-script="${libpathfortran_SOURCE_DIR}/libpathfortran.vs")
 endif()
+path64_add_multitarget_library(pathfortran SHARED)
 
 IF(PATH64_ENABLE_PROFILING)
-    path64_add_multitarget_library(pathfortran_p STATIC pathfortran_sources)
-    path64_set_multitarget_property(pathfortran_p COMPILE_FLAGS -pg)
+    path64_set_multitarget_sources(pathfortran_p COMMON
+                                   ${PATHSCALE_PATHFORTRAN_C_SRCS}
+                                   ${PATHSCALE_PATHFORTRAN_F_SRCS}
+                                   ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h)
+    path64_set_multitarget_property_(pathfortran_p COMPILE_FLAGS -pg)
+    path64_add_multitarget_library(pathfortran_p STATIC)
 ENDIF(PATH64_ENABLE_PROFILING)
 
-path64_set_multitarget_sources(pathfstart_sources COMMON fnord.c ../libf/fio/main.c)
-path64_add_multitarget_library(pathfstart STATIC pathfstart_sources)
+path64_set_multitarget_sources(pathfstart COMMON fnord.c ../libf/fio/main.c)
+path64_add_multitarget_library(pathfstart STATIC)
 
 
 # Building libpathfortran for host architecture
