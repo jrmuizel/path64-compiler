@@ -12,6 +12,7 @@ INCLUDE(includes.cmake)
 
 # Fake target that depends on all be components
 add_custom_target(be-all)
+add_dependencies(compiler-stage be-all)
 
 ADD_SUBDIRECTORY(csu)
 ADD_SUBDIRECTORY(driver)

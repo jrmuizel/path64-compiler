@@ -285,6 +285,9 @@ else ()
     ADD_DEFINITIONS(-DHOST_IS_BIG_ENDIAN=0 -DHOST_IS_LITTLE_ENDIAN=1)
 endif()
 
+# Fake target for compiler stage
+ADD_CUSTOM_TARGET(compiler-stage)
+
 # Build GCC and pathscale.
 ADD_SUBDIRECTORY(GCC)
 ADD_SUBDIRECTORY(src)

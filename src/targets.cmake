@@ -231,11 +231,10 @@ endfunction()
 
 
 # path64 compilers for languages
-#set(path64_compiler_C "${Path64_BINARY_DIR}/bin/pathcc")
-#set(path64_compiler_CXX "${Path64_BINARY_DIR}/bin/pathCC")
-#set(path64_compiler_Fortra "${Path64_BINARY_DIR}/bin/pathf90")
-set(path64_compiler_C "${CMAKE_C_COMPILER}")
-set(path64_compiler_CXX "${CMAKE_CXX_COMPILER}")
+set(path64_compiler_C "${Path64_BINARY_DIR}/bin/pathcc")
+set(path64_compiler_CXX "${Path64_BINARY_DIR}/bin/pathCC")
+#set(path64_compiler_Fortran "${Path64_BINARY_DIR}/bin/pathf90")
+# TODO: enable pathf90
 set(path64_compiler_Fortran "${CMAKE_Fortran_COMPILER}")
 
 # Adds library for specified target
@@ -404,6 +403,7 @@ function(path64_add_library_for_target name target type)
 
     add_custom_target(${name}-${targ}-${type} ALL
                       DEPENDS ${library_file})
+    add_dependencies(${name}-${targ}-${type} compiler-stage)
 
     install(FILES ${library_file}
             DESTINATION ${install_lib_dir})
