@@ -401,9 +401,9 @@ function(path64_add_library_for_target name target type)
         message(FATAL_ERROR "Unknown library type: ${type}")
     endif()
 
-    add_custom_target(${name}-${targ}-${type} ALL
+    add_custom_target(${name}-${targ} ALL
                       DEPENDS ${library_file})
-    add_dependencies(${name}-${targ}-${type} compiler-stage)
+    add_dependencies(${name}-${targ} compiler-stage)
 
     install(FILES ${library_file}
             DESTINATION ${install_lib_dir})
@@ -725,6 +725,16 @@ function(path64_add_dependencies_from_multiarch name)
         foreach(arch ${PATH64_ENABLE_ARCHES})
             path64_get_multiarch_cmake_target(dep_tg ${dep} ${arch})
             add_dependencies(${name} ${dep_tg})
+        endforeach()
+    endforeach()
+endfunction()
+
+
+# Adds dependencies for multitarget from multitarget
+function(path64_add_multitarget_dependencies name)
+    foreach(targ ${PATH64_ENABLE_TARGETS})
+        foreach(dep ${ARGN})
+            add_dependencies(${name}-${targ} ${dep}-${targ})
         endforeach()
     endforeach()
 endfunction()

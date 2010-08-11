@@ -85,6 +85,7 @@ path64_set_multitarget_sources(mv-static x86_64 ${PATHSCALE_MV_SRCS_X64})
 path64_set_multitarget_property_(mv-static OUTPUT_NAME "mv")
 path64_set_multitarget_property_(mv-static COMPILE_FLAGS ${compile_flags})
 path64_add_multitarget_library(mv-static STATIC)
+path64_add_multitarget_dependencies(mv-static pscrt-static)
 
 path64_set_multitarget_sources(mv COMMON ${PATHSCALE_MV_SRCS})
 path64_set_multitarget_sources(mv x86_64 ${PATHSCALE_MV_SRCS_X64})
@@ -100,6 +101,7 @@ endif()
 
 path64_multitarget_link_libraries(mv m)
 path64_add_multitarget_library(mv SHARED)
+path64_add_multitarget_dependencies(mv-static pscrt-static)
 
 
 if(PATH64_ENABLE_PROFILING)
