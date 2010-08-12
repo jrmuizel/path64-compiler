@@ -875,6 +875,14 @@ add_file_args (string_list_t *args, phases_t index)
 			  add_string(args, "-xc");
 			break;
 		}
+#else // !PATH64_ENABLE_PSCRUNTIME
+                switch (source_lang) {
+                case L_as:
+                    add_string(args, "-lang-asm");
+                    break;
+                default:
+                    break;
+                }
 #endif // !PATH64_ENABLE_PSCRUNTIME
 
 #ifdef KEY
