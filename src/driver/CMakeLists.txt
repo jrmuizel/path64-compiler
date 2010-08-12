@@ -165,15 +165,15 @@ install(TARGETS ${exe_prefix}pathcc
         RUNTIME DESTINATION bin)
 
 add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/bin/pathCC ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+    OUTPUT ${Path64_BINARY_DIR}/bin/pathCC ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
     DEPENDS pathcc
 # Paths in symbolic links should be relative. Otherwise bootstrap will not work
-    COMMAND ${CMAKE_COMMAND} -E create_symlink pathcc ${CMAKE_BINARY_DIR}/bin/pathCC
+    COMMAND ${CMAKE_COMMAND} -E create_symlink pathcc ${Path64_BINARY_DIR}/bin/pathCC
 )
 
 add_custom_target(
     stageit-driver ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/bin/pathCC
+    DEPENDS ${Path64_BINARY_DIR}/bin/pathCC
 )
 
 add_dependencies(compiler-stage stageit-driver)

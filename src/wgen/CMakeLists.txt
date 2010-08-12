@@ -166,14 +166,14 @@ path64_set_multiarch_property(wgen42 COMPILE_FLAGS
 path64_install_multiarch(wgen42)
 
 #add_custom_command(
-#    OUTPUT ${CMAKE_BINARY_DIR}/lib/wgen42
+#    OUTPUT ${Path64_BINARY_DIR}/lib/wgen42
 #    DEPENDS wgen42
-#    COMMAND ln -s ../bin/wgen42 ${CMAKE_BINARY_DIR}/lib
+#    COMMAND ln -s ../bin/wgen42 ${Path64_BINARY_DIR}/lib
 #)
 #
 #add_custom_target(
 #    stageit-wgen42 ALL
-#    DEPENDS ${CMAKE_BINARY_DIR}/lib/wgen42
+#    DEPENDS ${Path64_BINARY_DIR}/lib/wgen42
 #)
 
 #install(TARGETS wgen42
