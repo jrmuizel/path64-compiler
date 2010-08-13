@@ -29,6 +29,7 @@ INCLUDE_DIRECTORIES(
 
 # -DEDITION used to come from src/arith/edition
 ADD_DEFINITIONS(
+	-D_LITTLE_ENDIAN
 	-DEDITION=\"23\")
 
 add_library(arith STATIC ${PATHSCALE_ARITH_SRCS})
