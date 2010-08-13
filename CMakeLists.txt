@@ -119,7 +119,7 @@ ELSE()
 ENDIF()
 
 # Use X86 elf file format for whirl objects
-OPTION(X86_WHIRL_OBJECTS "Use x86 elf file format for whirl object files" OFF)
+OPTION(X86_WHIRL_OBJECTS "Use x86 elf file format for whirl object files" ON)
 IF(X86_WHIRL_OBJECTS)
         MESSAGE(STATUS "Using x86 elf file format for whirl object files")
         ADD_DEFINITIONS(-DX86_WHIRL_OBJECTS)
