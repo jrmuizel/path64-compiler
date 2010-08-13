@@ -338,12 +338,23 @@ function(path64_add_library_for_target name target type)
             foreach(dir ${incl_dirs})
                 list(APPEND incl_dirs_flags "-I${dir}")
             endforeach()
+
+            # Getting full path to source
+            if(NOT EXISTS ${src})
+                # Trying path relative to current source dir
+                if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+                    set(src "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+                else()
+                    message(FATAL_ERROR "Can not find ${src} source")
+                endif()
+            endif()
     
+            # Getting object output name and making path to it
             string(REPLACE "." "_" src_mangled ${src})
-    
             set(object_name "${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ}/${src_mangled}.o")
             get_filename_component(object_path ${object_name} PATH)
             file(MAKE_DIRECTORY ${object_path})
+
             add_custom_command(OUTPUT ${object_name}
                                COMMAND ${path64_compiler_${src_lang}} -c -o ${object_name}
                                        ${arch_flag}
@@ -354,8 +365,8 @@ function(path64_add_library_for_target name target type)
                                        ${src_compile_defs_flags}
                                        ${target_compile_defs}
                                        ${lang_flags}
-                                       ${CMAKE_CURRENT_SOURCE_DIR}/${src}
-                               DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${src} ${header_deps})
+                                       ${src}
+                               DEPENDS ${src} ${header_deps})
             list(APPEND objects ${object_name})
         endif()
     endforeach()
