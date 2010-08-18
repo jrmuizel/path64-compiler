@@ -355,6 +355,14 @@ function(path64_add_library_for_target name target type)
             get_filename_component(object_path ${object_name} PATH)
             file(MAKE_DIRECTORY ${object_path})
 
+            # Getting build type flags
+            if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+                set(build_type_flags_str "${CMAKE_${src_lang}_FLAGS_DEBUG}")
+            else()
+                set(build_type_flags_str "${CMAKE_${src_lang}_FLAGS_RELEASE}")
+            endif()
+            string(REPLACE " " ";" build_type_flags "${build_type_flags_str}")
+
             add_custom_command(OUTPUT ${object_name}
                                COMMAND ${path64_compiler_${src_lang}} -c -o ${object_name}
                                        ${arch_flag}
@@ -366,6 +374,7 @@ function(path64_add_library_for_target name target type)
                                        ${target_compile_defs}
                                        ${lang_flags}
                                        ${src}
+                                       ${build_type_flags}
                                DEPENDS ${src} ${header_deps})
             list(APPEND objects ${object_name})
         endif()
