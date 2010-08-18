@@ -275,6 +275,8 @@ function(path64_add_library_for_target name target type)
         endif()
     endforeach()
 
+    set(compiler-deps)
+
     # Adding rules for compiling sources
     set(objects)
     foreach(src ${sources})
@@ -377,6 +379,10 @@ function(path64_add_library_for_target name target type)
                                        ${build_type_flags}
                                DEPENDS ${src} ${header_deps})
             list(APPEND objects ${object_name})
+            list(FIND compiler-deps "compiler-stage-${src_lang}" res)
+            if(res EQUAL -1)
+                list(APPEND compiler-deps "compiler-stage-${src_lang}")
+            endif()
         endif()
     endforeach()
 
@@ -409,6 +415,11 @@ function(path64_add_library_for_target name target type)
             set(link_lang ${last_src_lang})
         endif()
 
+        list(FIND compiler-deps "compiler-stage-${link_lang}" res)
+        if(res EQUAL -1)
+            list(APPEND compiler-deps "compiler-stage-${link_lang}")
+        endif()
+
         add_custom_command(OUTPUT ${library_file}
                            COMMAND ${path64_compiler_${link_lang}} -shared -o ${library_file}
                                    ${arch_flag}
@@ -423,7 +434,7 @@ function(path64_add_library_for_target name target type)
 
     add_custom_target(${name}-${targ} ALL
                       DEPENDS ${library_file})
-    add_dependencies(${name}-${targ} compiler-stage)
+    add_dependencies(${name}-${targ} ${compiler-deps})
 
     install(FILES ${library_file}
             DESTINATION ${install_lib_dir})

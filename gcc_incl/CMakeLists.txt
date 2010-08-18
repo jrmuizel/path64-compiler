@@ -30,6 +30,7 @@ foreach(header ${HEADERS})
 endforeach()
 
 add_custom_target(headers-stage ALL true DEPENDS ${header_outputs})
+add_dependencies(compiler-stage-C headers-stage)
 
 install(FILES ${HEADERS}
 	DESTINATION lib/${PSC_FULL_VERSION}/include)

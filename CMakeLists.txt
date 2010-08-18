@@ -285,8 +285,14 @@ else ()
     ADD_DEFINITIONS(-DHOST_IS_BIG_ENDIAN=0 -DHOST_IS_LITTLE_ENDIAN=1)
 endif()
 
-# Fake target for compiler stage
+# Fake targets for compiler stage
 ADD_CUSTOM_TARGET(compiler-stage)
+ADD_CUSTOM_TARGET(compiler-stage-C)
+ADD_CUSTOM_TARGET(compiler-stage-CXX)
+ADD_CUSTOM_TARGET(compiler-stage-Fortran)
+ADD_DEPENDENCIES(compiler-stage-C compiler-stage)
+ADD_DEPENDENCIES(compiler-stage-CXX compiler-stage-C)
+ADD_DEPENDENCIES(compiler-stage-Fortran compiler-stage)
 
 # Build GCC and pathscale.
 ADD_SUBDIRECTORY(GCC)
