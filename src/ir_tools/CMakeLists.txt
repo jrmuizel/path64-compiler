@@ -33,18 +33,19 @@ set (IR_COMMON_SRCS
 "../common/com/wn_util.cxx"
 "../common/com/wutil.cxx"
 "../common/com/xstats.cxx"
-"../common/com/x8664/config_elf_targ.cxx"
-"../common/com/x8664/config_targ.cxx"
-"../common/com/x8664/targ_const.cxx"
-"../common/com/x8664/targ_sim.cxx"
-"../common/com/x8664/config_host.c"
-"../common/com/x8664/config_platform.c"
+"../common/com/@ARCH@/config_elf_targ.cxx"
+"../common/com/@ARCH@/config_targ.cxx"
+"../common/com/@ARCH@/targ_const.cxx"
+"../common/com/@ARCH@/targ_sim.cxx"
+"../common/com/@ARCH@/config_host.c"
+"../common/com/@ARCH@/config_platform.c"
 )
 
 INCLUDE_DIRECTORIES(
                     .
-					../common/com
-					../common/com/x8664
+                                       ${PATHSCALE_BINARY_DIR}/common/targ_info				
+                                 	../common/com
+					../common/com/@ARCH@
 					../common/util
 					../ipa/common
 					../ipa/local
@@ -60,18 +61,28 @@ ADD_DEFINITIONS(-DIR_TOOLS
 set_property(SOURCE ${IR_COMMON_SRCS} PROPERTY COMPILE_DEFINITIONS __MIPS_AND_IA64_ELF_H;MONGOOSE_BE)
 
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
-ADD_EXECUTABLE(ir_b2a ${IR_B2A_SRCS} ${IR_COMMON_SRCS})
-ADD_EXECUTABLE(ir_size ${IR_SIZE_SRCS} ${IR_COMMON_SRCS})
 
-target_link_libraries(ir_b2a comutil m )
-target_link_libraries(ir_size comutil m )
+path64_set_multiarch_sources(ir_b2a_sources COMMON ${IR_B2A_SRCS} ${IR_COMMON_SRCS})
+path64_add_multiarch_executable(ir_b2a ir_b2a_sources)
+path64_multiarch_link_multiarch_libraries(ir_b2a comutil targinfo)
+path64_multiarch_link_libraries(ir_b2a m)
+path64_set_multiarch_property(ir_b2a COMPILE_FLAGS
+                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@ -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@")
 
-install(TARGETS ir_b2a ir_size
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION ${PATH64_LIB_PATH})
+path64_set_multiarch_sources(ir_size_sources COMMON ${IR_SIZE_SRCS} ${IR_COMMON_SRCS})
+path64_add_multiarch_executable(ir_size ir_size_sources)
+path64_multiarch_link_multiarch_libraries(ir_size comutil targinfo)
+path64_multiarch_link_libraries(ir_size m)
+path64_set_multiarch_property(ir_size COMPILE_FLAGS
+                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@ -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@")
 
 
+foreach(arch ${PATH64_ENABLE_ARCHES})
+    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${CMAKE_INSTALL_PREFIX}/lib/${arch}/ir_b2a\" \"${CMAKE_INSTALL_PREFIX}/bin/ir_b2a-${arch}\")")
+    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${CMAKE_INSTALL_PREFIX}/lib/${arch}/ir_size\" \"${CMAKE_INSTALL_PREFIX}/bin/ir_size-${arch}\")")
+    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${CMAKE_INSTALL_PREFIX}/bin/ir_b2a-${arch}\" \"${CMAKE_INSTALL_PREFIX}/bin/ir_sel-${arch}\")")
+    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${CMAKE_INSTALL_PREFIX}/bin/ir_b2a-${arch}\" \"${CMAKE_INSTALL_PREFIX}/bin/ir_all-${arch}\")")
+endforeach()
 
-install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${CMAKE_INSTALL_PREFIX}/bin/ir_b2a\" \"${CMAKE_INSTALL_PREFIX}/bin/ir_sel\")")
-install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${CMAKE_INSTALL_PREFIX}/bin/ir_b2a\" \"${CMAKE_INSTALL_PREFIX}/bin/ir_all\")")
+
 ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")

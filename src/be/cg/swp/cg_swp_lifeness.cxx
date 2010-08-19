@@ -29,7 +29,9 @@
 /* Code Generator (CG) related include files */
 #include "op.h"
 #include "tn.h"
+#include "bb.h"
 #include "tn_set.h"
+#include "cgtarget.h"
 
 /* Software Pipelining (SWP) related include files */
 #include "cg_swp_op_vector.h"
@@ -37,7 +39,7 @@
 
 /* Standard Template Library (STL) related include files */
 #include <functional>
-
+#ifndef TARG_ST
 using namespace std;
 
 
@@ -134,4 +136,4 @@ SWP_LIFENESS::Verify (void) const {
 
   return;
 }
-
+#endif

@@ -290,6 +290,9 @@ typedef enum gs_code {
  GS_VEC_DELETE_EXPR,
  GS_VEC_NEW_EXPR,
  GS_TEMPLATE_TEMPLATE_PARM, // this is 233; should not be higher than 255
+#ifdef TARG_ST
+ GS_PRAGMA_STMT, // this is 234; should not be higher than 255
+#endif
 
 } gs_code_t;
 
@@ -1341,6 +1344,9 @@ typedef enum gsbi {
   GSBI_BUILT_IN_COMPLEX_MUL_MAX,
   GSBI_BUILT_IN_COMPLEX_DIV_MIN,
   GSBI_BUILT_IN_COMPLEX_DIV_MAX,
+#ifdef TARG_ST
+  GSBI_BUILT_IN_ASSUME,
+#endif
   GSBI_END_BUILTINS,
 
 } gsbi_t;

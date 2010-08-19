@@ -343,11 +343,13 @@ Add_Symbols(char *args, DATA data, ACTION perform_action
 )
 {
 #ifdef KEY
+#ifndef TARG_ST
   if (! args)
   {
     ErrMsg (EC_No_Opt_Val, opt, "INLINE");
     return;
   }
+#endif
 #endif // KEY
   BOOL more_symbols = TRUE;
 

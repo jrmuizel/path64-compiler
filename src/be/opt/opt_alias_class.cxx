@@ -402,11 +402,24 @@ ALIAS_CLASSIFICATION::New_base_id(const ST *st, TY_IDX ty)
 
   // If this base_id is a local variable or parameter, it gets its
   // own class.
+#ifdef TARG_ST
+  // [SC] If the symbol has a nested ref, then it goes to the global class.
+  // Furthermore, I do not understand why the original code does not check
+  // ST_IDX_level == CURRENT_SYMTAB on FORMAL and FORMAL_REF also, since there
+  // could, I suppose, be up-level references to formals.
+  if (((storage_class == SCLASS_AUTO &&
+	ST_IDX_level(ST_st_idx(st)) == CURRENT_SYMTAB) ||
+       storage_class == SCLASS_FORMAL                  ||
+       storage_class == SCLASS_FORMAL_REF              ||
+       storage_class == SCLASS_REG)
+      && ! ST_has_nested_ref (st)) {
+#else
   if ((storage_class == SCLASS_AUTO &&
        ST_IDX_level(ST_st_idx(st)) == CURRENT_SYMTAB) ||
       storage_class == SCLASS_FORMAL                  ||
       storage_class == SCLASS_FORMAL_REF              ||
       storage_class == SCLASS_REG) {
+#endif
     // Set up the LDA and LDID classes for this variable...
     ALIAS_CLASS_MEMBER *ldid_item = New_alias_class_member(id);
     ALIAS_CLASS_REP    *ldid_class = New_alias_class(ldid_item);
@@ -479,6 +492,14 @@ ALIAS_CLASSIFICATION::New_base_id(const ST *st, TY_IDX ty)
 	   storage_class == SCLASS_COMMON  ||
 	   storage_class == SCLASS_UGLOBAL ||
 	   storage_class == SCLASS_DGLOBAL ||
+#ifdef TARG_ST
+	   // [SC] storage class FORMAL, FORMAL_REF or AUTO could be
+	   // because the base_id has a nested ref (i.e. an uplevel ref
+	   // in another PU).  In that case we treat
+	   // it as a global.
+	   storage_class == SCLASS_FORMAL     ||
+	   storage_class == SCLASS_FORMAL_REF ||
+#endif
 	   // storage class AUTO here signifies that the item is an
 	   // uplevel reference and therefore must be treated as
 	   // global because its address can be stored into a global,
@@ -704,7 +725,7 @@ ALIAS_CLASS_REP::Process_pending(ALIAS_CLASSIFICATION &ac)
   }
 }
 
-#ifdef KEY
+#if defined(KEY) && !defined(TARG_ST)
 BOOL
 ALIAS_CLASS_REP::Pending_rep_match(ALIAS_CLASS_REP *rep)
 {
@@ -838,6 +859,14 @@ ALIAS_CLASSIFICATION::Merge_conditional(AC_PTR_OBJ_PAIR lhs,
 {
   if (Tracing()) {
     fprintf(TFile, "Conditional merge of ");
+#ifdef TARG_ST
+    if (lhs.Ref_class() == NULL) {
+      fprintf(TFile, "<NULL>");
+    }
+    else {
+      lhs.Ref_class()->Print(TFile);
+    }
+#endif
     if (lhs.Obj_class() == NULL) {
       fprintf(TFile, "<NULL> ");
     }
@@ -889,6 +918,11 @@ Opcode_cannot_be_pointer_value(const OPERATOR opr,
 			       const OPCODE   opc)
 {
   switch (opr) {
+#ifdef TARG_ST
+    // The operators below are valid for a pointer value expression.
+    // C allows boolean->pointer conversion, for instance:
+    // a = *(b&&c) or a = *(b != 0)
+#else
   case OPR_LAND:
   case OPR_LIOR:
   case OPR_CAND:
@@ -900,6 +934,7 @@ Opcode_cannot_be_pointer_value(const OPERATOR opr,
   case OPR_EQ:
   case OPR_NE:
     return TRUE;
+#endif
   case OPR_MPY:
   case OPR_DIV:
   case OPR_MOD:
@@ -1370,11 +1405,39 @@ BOOL
 ALIAS_CLASSIFICATION::Stmt_stores_return_value(const WN *const stmt)
 {
   WN *rhs = WN_kid0(stmt);
+#ifdef TARG_ST
+  BOOL is_store_return_value =false;    // Default value.
+  WN  *rhsrhs;
 
+  if(OPCODE_is_store(WN_opcode(stmt))) {
+    switch(WN_operator(rhs))
+     { 
+       case OPR_LDID:
+          if(ST_sclass(ST_of_wn(rhs)) == SCLASS_REG &&
+	     Preg_Is_Dedicated(WN_offset(rhs)))
+                is_store_return_value = true;
+           break;
+
+       case OPR_SUBPART:
+           rhsrhs = WN_kid0(rhs);
+           if( WN_operator(rhsrhs) == OPR_LDID &&
+	       ST_sclass(ST_of_wn(rhsrhs)) == SCLASS_REG &&
+	       Preg_Is_Dedicated(WN_offset(rhsrhs)))
+                 is_store_return_value = true;
+       default:
+          break;
+
+     }  // End switch
+  }     // End if
+
+  return is_store_return_value;
+
+#else
   return (OPCODE_is_store(WN_opcode(stmt)) &&
 	  (WN_operator(rhs) == OPR_LDID) &&
 	  (ST_sclass(ST_of_wn(rhs)) == SCLASS_REG) &&
 	  Preg_Is_Dedicated(WN_offset(rhs)));
+#endif
 }
 
 
@@ -1437,7 +1500,7 @@ ALIAS_CLASSIFICATION::WN_is_alloca_intrinsic(const WN *const call_wn)
     return TRUE;
   }
   else {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     return Callee_returns_new_memory(call_wn);
 #else
     return FALSE;
@@ -1449,7 +1512,7 @@ ALIAS_CLASSIFICATION::WN_is_alloca_intrinsic(const WN *const call_wn)
 BOOL
 ALIAS_CLASSIFICATION::Callee_returns_new_memory(const WN *const call_wn)
 {
-#ifndef KEY
+#if !defined(KEY) || defined(TARG_ST)
   return WN_Call_Does_Mem_Alloc(call_wn);
 #else
   if (WN_Call_Does_Mem_Alloc(call_wn))
@@ -1880,6 +1943,99 @@ ALIAS_CLASSIFICATION::Handle_call(WN *call_wn)
   return stmt;
 }
 
+#ifdef TARG_ST
+// [CG 2004/11/16] This code must match ipa/main/optimize/ipo_alias_class.cxx
+// We must handle conservatively asm statements that return values.
+// An asm statement that return values look like:
+// ASM_STMT
+//  LDID neg_preg1
+// STID
+// ...
+//  LDID neg_pregn
+// STID
+//
+// For the alias analysis to work correctly we must conservativelly
+// assume that the neg_preg symbols locations reference the global class.
+// Otherwise for instance the following code is wrongly handled:
+// {
+//    int *p, *q;
+//    asm(" %0 <- address": "=r" (p));
+//    asm(" %0 <- address": "=r" (q));
+//    *q = 1;
+//    return *p;
+// }
+// Both p and q point to the same address, but their class stay different.
+// The problem is that without specific treatment the neg_pregs symbols used
+// for the output values are never defined and thus never considered
+// as pointer locations. This has the effect that the alias classes of
+// p and q are never joined.
+//
+
+BOOL
+ALIAS_CLASSIFICATION::Stmt_stores_asm_output(const WN *const stmt)
+{
+  if (!OPCODE_is_store(WN_opcode(stmt))) return FALSE;
+
+  // This code is extracted from whirl2ops.cxx
+  WN* load = WN_kid0(stmt);
+  OPERATOR opr = WN_operator(load);
+  if (opr == OPR_CVT || opr == OPR_CVTL) {
+    load = WN_kid0(load);
+    opr = WN_operator(load);
+  }
+  if (opr == OPR_LDID || opr == OPR_LDA) {
+    if ((ST_sclass(ST_of_wn(load)) == SCLASS_REG) &&
+	WN_offset(load) < 0) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+BOOL
+ALIAS_CLASSIFICATION::Stmt_Uses_asm_output(const WN *const stmt)
+{
+  return FALSE;
+}
+
+WN *
+ALIAS_CLASSIFICATION::Handle_asm(WN *asm_wn)
+{
+  OPCODE opc = WN_opcode(asm_wn);
+
+  Is_True(opc == OPC_ASM_STMT,
+	  ("AC::Handle_asm: Can handle only asm statements"));
+
+  for (INT i = 0; i < WN_kid_count(asm_wn); i++) {
+    WN *kid_i = WN_kid(asm_wn, i);
+    Classify_wn_and_kids(kid_i);
+  }
+
+  WN *stmt;
+
+  stmt = WN_next(asm_wn);
+  while (stmt != NULL && Stmt_stores_asm_output(stmt)) {
+    if (Tracing()) {
+      fprintf(TFile, "Store of asm output:\n");
+      Dump_wn_tree(TFile, stmt);
+    }
+    AC_PTR_OBJ_PAIR lhs_class = Classify_lhs_of_store(stmt);
+    Merge_conditional(lhs_class,
+		      AC_PTR_OBJ_PAIR(Global_class(),
+				      Global_class()));
+    stmt = WN_next(stmt);
+  }
+  Is_True(!Stmt_Uses_asm_output(stmt),
+	  ("ALIAS_CLASSIFICATION: General use of asm output is illegal"));
+  
+  if (WOPT_Enable_Verbose && Tracing()) {
+    fprintf(TFile, "  after handling asm:\n");
+    Print(TFile);
+  }
+  return stmt;
+}
+
+#endif
 
 // ======================================================================
 //
@@ -2082,6 +2238,7 @@ ALIAS_CLASSIFICATION::Finalize_ac_map(WN *const wn)
     }
   }
   else if (!OPCODE_is_black_box(opc)) {
+#ifndef TARG_ST
     INT rhs_idx;
     if (OPCODE_is_store(opc)) {
       rhs_idx = 0;
@@ -2089,7 +2246,17 @@ ALIAS_CLASSIFICATION::Finalize_ac_map(WN *const wn)
     else {
       rhs_idx = -1;
     }
+#endif
     for (INT i = 0; i < WN_kid_count(wn); i++) {
+#ifdef TARG_ST
+      // [CG] Skips also RHS of store for asm outputs
+      // Finalize all kids except the RHS of a store of a return value
+      // from a callee.
+      if (!(OPCODE_is_store(opc) && i == 0 &&
+	    (Stmt_stores_return_value(wn) || Stmt_stores_asm_output(wn)))) {
+	Finalize_ac_map(WN_kid(wn, i));
+      }
+#else
       // Finalize all kids except the RHS of a store of a return value
       // from a callee.
       if (!OPCODE_is_store(opc) ||
@@ -2097,6 +2264,7 @@ ALIAS_CLASSIFICATION::Finalize_ac_map(WN *const wn)
 	  i != rhs_idx) {
 	Finalize_ac_map(WN_kid(wn, i));
       }
+#endif
     }
     Finalize_ac_map_wn(wn);
   }
@@ -2275,7 +2443,7 @@ ALIAS_CLASSIFICATION::Alias_class(const WN *const wn) const
     return PESSIMISTIC_AC_ID;
   }
 }
-
+#ifndef TARG_ST
 // make targwn have the same alias class as srcwn
 void
 ALIAS_CLASSIFICATION::Copy_alias_class(const WN *const srcwn, WN *const targwn)
@@ -2294,7 +2462,7 @@ ALIAS_CLASSIFICATION::Copy_alias_class(const WN *const srcwn, WN *const targwn)
     WN_MAP32_Set(Memop_classification_map(), targwn, class_id);
   }
 }
-
+#endif
 BOOL
 ALIAS_CLASSIFICATION::Non_alloca_memop(const IDTYPE class_id) const
 {
@@ -2385,6 +2553,52 @@ ALIAS_CLASSIFICATION::Print(FILE *fp) const
 // ==============================================================
 // ALIAS_MANAGER member functions to support alias classification
 // ==============================================================
+#ifdef TARG_ST
+// This function is now defined locally in wopt as
+// it is referenced only there.
+void
+Transfer_alias_class_to_alias_manager(ALIAS_CLASSIFICATION &ac,
+				      WN                   *wn,
+				      ALIAS_MANAGER *alias_mgr)
+{
+  IDTYPE alias_id = alias_mgr->Id(wn);
+  OPERATOR opr = WN_operator(wn);
+  if (alias_id != 0 &&
+      alias_id != alias_mgr->Preg_id() &&
+      opr != OPR_FORWARD_BARRIER &&
+      opr != OPR_BACKWARD_BARRIER &&
+      opr != OPR_DEALLOCA) {
+    // Copy the new alias class information into the POINTS_TO for
+    // this WN, or create a new POINTS_TO if there's already different
+    // alias class info there.
+    IDTYPE     wn_alias_class = ac.Alias_class(wn);
+    POINTS_TO *pt = alias_mgr->Pt(alias_id);
+    if (pt->Alias_class() == OPTIMISTIC_AC_ID) {
+      pt->Set_alias_class(wn_alias_class);
+    }
+    else if (pt->Alias_class() != wn_alias_class) {
+      // Clone a new alias ID and POINTS_TO for this WN.
+      DevWarn("New alias ID on second pass");
+      alias_id = alias_mgr->Cross_dso_new_alias_id();
+      alias_mgr->Cross_dso_set_id(wn, alias_id);
+      POINTS_TO *npt = alias_mgr->Pt(alias_id);
+      npt->Copy_fully(pt);
+      npt->Set_alias_class(wn_alias_class);
+    }
+  }
+  if (WN_opcode(wn) == OPC_BLOCK) {
+    for (WN *wn2 = WN_first(wn); wn2 != NULL; wn2 = WN_next(wn2)) {
+      Transfer_alias_class_to_alias_manager(ac, wn2, alias_mgr);
+    }
+  }
+  else {
+    for (INT i = 0; i < WN_kid_count(wn); i++) {
+      Transfer_alias_class_to_alias_manager(ac, WN_kid(wn, i), alias_mgr);
+    }
+  }
+}
+#else
+
 
 
 void
@@ -2428,7 +2642,7 @@ ALIAS_MANAGER::Transfer_alias_class_to_alias_manager(const
     }
   }
 }
-
+#endif
 
 void
 ALIAS_MANAGER::Forget_alias_class_info(void)
@@ -2439,6 +2653,5 @@ ALIAS_MANAGER::Forget_alias_class_info(void)
     }
   }
 }
-
 
 // ======================================================================

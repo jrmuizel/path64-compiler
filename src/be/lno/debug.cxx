@@ -256,7 +256,7 @@ static const char *operator_table[OPERATOR_LAST + 1] =
   "ALLOCA",
   "DEALLOCA",
   "LDMA",
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   "ASM_STMT",
   "ASM_EXPR",
   "ASM_INPUT",
@@ -1019,7 +1019,7 @@ static INT dump_whirl_node(WN* wn,
    case OPR_CONST:
     switch (OPCODE_rtype(opc)) {
      case MTYPE_F4:
-      cc += sprintf(buffer + cc, "%g", STC_val(WN_st(wn)).vals.fval);
+      cc += sprintf(buffer + cc, "%g", STC_val(WN_st(wn)).vals.f.fval);
       break;
      case MTYPE_F8:
       cc += sprintf(buffer + cc, "%g", STC_val(WN_st(wn)).vals.dval);

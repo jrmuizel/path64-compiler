@@ -1104,7 +1104,6 @@ Create_INITO_For_Range_Table(ST * st, ST * pu)
   int running_ofst=1;
   int bytes_for_filter;
   INITO_IDX tmp = PU_misc_info (Get_Current_PU());
-
   INITO* eh_spec = (tmp) ? Create_Type_Filter_Map () : NULL ;
 
   vector<INITV_IDX> action_chains;
@@ -1146,9 +1145,22 @@ Create_INITO_For_Range_Table(ST * st, ST * pu)
 
     // first action index
     // build chain of actions
+#ifndef TARG_ST
+      /* (cbr) don't mess up with "no action" */
+    FmtAssert (INITV_next (first_initv) != 0, ("No handler information available"));
+#endif
     FmtAssert (INITV_next (first_initv) != 0, ("No handler information available"));
     INITV_IDX action_ofst = 0;
     INITV_IDX first_action = New_INITV();
+
+#ifdef TARG_ST
+    /* (cbr) don't mess up with "no action" */
+    if (!INITV_next (first_initv)) {
+      INITV_Set_ZERO (Initv_Table[first_action], MTYPE_I4, 1);
+      Set_INITV_next (pad, first_action);
+    }
+    else
+#endif
     for (INITV_IDX next_initv=INITV_next (first_initv);
     		next_initv; next_initv=INITV_next (next_initv))
     {
@@ -1174,7 +1186,12 @@ Create_INITO_For_Range_Table(ST * st, ST * pu)
 	    INITV_IDX tmp_idx = INITV_next (next_initv);
 	    if (INITV_kind (tmp_idx) != INITVKIND_ZERO)
 	    	next_sym = TCON_ival (INITV_tc_val (tmp_idx));
+#ifdef TARG_ST
+            /* (cbr) first null action is a cleanup */
+	    if (next_sym)
+#else
 	    if (next_sym < 0)
+#endif
 	    	catch_all = false;
 	}
 

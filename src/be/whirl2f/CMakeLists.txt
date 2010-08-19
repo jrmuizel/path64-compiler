@@ -1,4 +1,5 @@
-set(WHIRL2F_SRC         init2f.cxx
+set(WHIRL2F_SRC 
+            init2f.cxx
 			../whirl2c/diagnostics.cxx
 			../whirl2c/PUinfo.cxx
 			../whirl2c/stab_attr.cxx
@@ -23,17 +24,20 @@ ADD_DEFINITIONS(
 	-DBUILD_WHIRL2F
 	-DMONGOOSE_BE)
 
-add_library(whirl2f SHARED ${WHIRL2F_SRC})
-add_dependencies(whirl2f generate_preg_list)
-set_property(TARGET whirl2f PROPERTY PREFIX "")
-install(TARGETS whirl2f LIBRARY DESTINATION ${PATH64_LIB_PATH})
+path64_set_multiarch_sources(whirl2f_sources COMMON ${WHIRL2F_SRC})
+path64_add_multiarch_library(whirl2f SHARED whirl2f_sources)
+path64_add_multiarch_dependencies(whirl2f generate_preg_list)
+path64_set_multiarch_property(whirl2f PREFIX "")
+path64_set_multiarch_property(whirl2f COMPILE_FLAGS
+                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 
-IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
-ADD_EXECUTABLE(whirl2f-exec whirl2f_main.cxx)
-SET_TARGET_PROPERTIES(whirl2f-exec PROPERTIES OUTPUT_NAME "whirl2f")
-add_dependencies(whirl2f-exec be-static)
-install(TARGETS whirl2f-exec
-    RUNTIME DESTINATION ${PATH64_LIB_PATH})
-install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"be\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/whirl2f_be\")")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    path64_set_multiarch_sources(whirl2f-exec_sources COMMON whirl2f_main.cxx)
+    path64_add_multiarch_executable(whirl2f-exec whirl2f-exec_sources)
+    path64_set_multiarch_property(whirl2f-exec OUTPUT_NAME "whirl2f")
+    path64_add_multiarch_multiarch_dependencies(whirl2f-exec be-static)
+    foreach(arch ${PATH64_ENABLE_ARCHES})
+        install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"be\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/whirl2f_be\")")
+    endforeach()
+endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")

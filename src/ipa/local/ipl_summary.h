@@ -1642,9 +1642,16 @@ private:
 	} _s2[2];
     } _u;
 
+#ifdef TARG_ST
+  // [TTh] Reconfigurability: extended mtype encoding from 5 to 8 bits
+    OPCODE _opcode : 24;
+
+    mINT32 _pad    : 30;
+#else
     OPCODE _opcode : 20;
 
     mINT32 _pad    : 2;
+#endif
 
     mBOOL _is_trip_count : 1;	        // is a trip count (can be simplified) 
     mBOOL _has_const_operand : 1;	// specify which struct in _u is used

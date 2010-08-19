@@ -63,7 +63,11 @@
 #include "fb_whirl.h"
 #include "be_symtab.h"
 #include "intrn_info.h"
-
+#ifdef TARG_ST
+#define NOT_SUPPORT_ST(expr)
+#else
+#define NOT_SUPPORT_ST(expr) expr
+#endif
 
 #if (__GNUC__ == 2)
 //
@@ -336,32 +340,46 @@ INTRINSIC_RUNTIME_FORMALS intrinsic_runtime_formals[]=
   INTRN_C8I8EXPEXPR,	COERCE_split_complex,	COERCE_none,
   INTRN_CQI4EXPEXPR,	COERCE_split_complex,	COERCE_none,
   INTRN_CQI8EXPEXPR,	COERCE_split_complex,	COERCE_none,
+#ifndef TARG_ST
   INTRN_C16I4EXPEXPR,	COERCE_split_complex,	COERCE_none,
   INTRN_C16I8EXPEXPR,	COERCE_split_complex,	COERCE_none,
+#endif
   INTRN_C4EXPEXPR,	COERCE_split_complex,	COERCE_split_complex,
   INTRN_C8EXPEXPR,	COERCE_split_complex,	COERCE_split_complex,
   INTRN_CQEXPEXPR,	COERCE_split_complex,	COERCE_split_complex,
+#ifndef TARG_ST
   INTRN_C16EXPEXPR,	COERCE_split_complex,	COERCE_split_complex,
+#endif
   INTRN_F4C4ABS,	COERCE_split_complex,	COERCE_none,
   INTRN_F8C8ABS,	COERCE_split_complex,	COERCE_none,
   INTRN_FQCQABS,	COERCE_split_complex,	COERCE_none,
+#ifndef TARG_ST
   INTRN_F16C16ABS,	COERCE_split_complex,	COERCE_none,
+#endif
   INTRN_C4EXP,		COERCE_split_complex,	COERCE_none,
   INTRN_C8EXP,		COERCE_split_complex,	COERCE_none,
   INTRN_CQEXP,		COERCE_split_complex,	COERCE_none,
+#ifndef TARG_ST
   INTRN_C16EXP,		COERCE_split_complex,	COERCE_none,
+#endif
   INTRN_C4LOG,		COERCE_split_complex,	COERCE_none,
   INTRN_C8LOG,		COERCE_split_complex,	COERCE_none,
   INTRN_CQLOG,		COERCE_split_complex,	COERCE_none,
+#ifndef TARG_ST
   INTRN_C16LOG,		COERCE_split_complex,	COERCE_none,
+#endif
   INTRN_C4COS,		COERCE_split_complex,	COERCE_none,
   INTRN_C8COS,		COERCE_split_complex,	COERCE_none,
   INTRN_CQCOS,		COERCE_split_complex,	COERCE_none,
+#ifndef TARG_ST
   INTRN_C16COS,		COERCE_split_complex,	COERCE_none,
+#endif
   INTRN_C4SIN,		COERCE_split_complex,	COERCE_none,
   INTRN_C8SIN,		COERCE_split_complex,	COERCE_none,
-  INTRN_CQSIN,		COERCE_split_complex,	COERCE_none,
-  INTRN_C16SIN,		COERCE_split_complex,	COERCE_none
+  INTRN_CQSIN,		COERCE_split_complex,	COERCE_none
+#ifndef TARG_ST
+  , INTRN_C16SIN,		COERCE_split_complex,	COERCE_none
+#endif
 };
 
 INT32 intrinsic_runtime_formals_size = sizeof(intrinsic_runtime_formals) /
@@ -389,17 +407,20 @@ INTRINSIC_PARAMETER_TYPE intrinsic_parameter_type[]=
   INTRN_F4DIM,		MTYPE_F4,	MTYPE_F4,	MTYPE_V,
   INTRN_F8DIM,		MTYPE_F8,	MTYPE_F8,	MTYPE_V,
   INTRN_FQDIM,		MTYPE_FQ,	MTYPE_FQ,	MTYPE_V,
+#ifndef TARG_ST
   INTRN_F16DIM,		MTYPE_F16,	MTYPE_F16,	MTYPE_V,
-
+#endif
   INTRN_F4MOD,		MTYPE_F4,	MTYPE_F4,	MTYPE_V,
   INTRN_F8MOD,		MTYPE_F8,	MTYPE_F8,	MTYPE_V,
   INTRN_FQMOD,		MTYPE_FQ,	MTYPE_FQ,	MTYPE_V,
+ #ifndef TARG_ST
   INTRN_F16MOD,		MTYPE_F16,	MTYPE_F16,	MTYPE_V,
-
+#endif
   INTRN_F8F4PROD,	MTYPE_F4,	MTYPE_F4,	MTYPE_V,
   INTRN_FQF8PROD,	MTYPE_F8,	MTYPE_F8,	MTYPE_V,
+#ifndef TARG_ST
   INTRN_F16F8PROD,	MTYPE_F8,	MTYPE_F8,	MTYPE_V,
-
+#endif
   INTRN_I1SIGN,		MTYPE_I1,	MTYPE_I1,	MTYPE_V,
   INTRN_I2SIGN,		MTYPE_I2,	MTYPE_I2,	MTYPE_V,
   INTRN_I4SIGN,		MTYPE_I4,	MTYPE_I4,	MTYPE_V,
@@ -407,13 +428,15 @@ INTRINSIC_PARAMETER_TYPE intrinsic_parameter_type[]=
   INTRN_F4SIGN,		MTYPE_F4,	MTYPE_F4,	MTYPE_V,
   INTRN_F8SIGN,		MTYPE_F8,	MTYPE_F8,	MTYPE_V,
   INTRN_FQSIGN,		MTYPE_FQ,	MTYPE_FQ,	MTYPE_V,
+#ifndef TARG_ST
   INTRN_F16SIGN,	MTYPE_F16,	MTYPE_F16,	MTYPE_V,
-
+#endif
   INTRN_F4AINT,		MTYPE_F4,	MTYPE_V,	MTYPE_V,
   INTRN_F8AINT,		MTYPE_F8,	MTYPE_V,	MTYPE_V,
   INTRN_FQAINT,		MTYPE_FQ,	MTYPE_V,	MTYPE_V,
+ #ifndef TARG_ST
   INTRN_F16AINT,	MTYPE_F16,	MTYPE_V,	MTYPE_V,
-
+#endif
   INTRN_I2F4NINT,	MTYPE_F4,	MTYPE_V,	MTYPE_V,
   INTRN_I4F4NINT,	MTYPE_F4,	MTYPE_V,	MTYPE_V,
   INTRN_I8F4NINT,	MTYPE_F4,	MTYPE_V,	MTYPE_V,
@@ -423,20 +446,23 @@ INTRINSIC_PARAMETER_TYPE intrinsic_parameter_type[]=
   INTRN_I2FQIQNINT,	MTYPE_FQ,	MTYPE_V,	MTYPE_V,
   INTRN_I4FQIQNINT,	MTYPE_FQ,	MTYPE_V,	MTYPE_V,
   INTRN_I8FQIQNINT,	MTYPE_FQ,	MTYPE_V,	MTYPE_V,
+#ifndef TARG_ST
   INTRN_I2F16IQNINT,	MTYPE_F16,	MTYPE_V,	MTYPE_V,
   INTRN_I4F16IQNINT,	MTYPE_F16,	MTYPE_V,	MTYPE_V,
   INTRN_I8F16IQNINT,	MTYPE_F16,	MTYPE_V,	MTYPE_V,
-
+#endif
   INTRN_F4ANINT,	MTYPE_F4,	MTYPE_V,	MTYPE_V,
   INTRN_F8ANINT,	MTYPE_F8,	MTYPE_V,	MTYPE_V,
   INTRN_FQANINT,	MTYPE_FQ,	MTYPE_V,	MTYPE_V,
+#ifndef TARG_ST
   INTRN_F16ANINT,	MTYPE_F16,	MTYPE_V,	MTYPE_V,
-
+#endif
   INTRN_F4LOG10,	MTYPE_F4,	MTYPE_V,	MTYPE_V,
   INTRN_F8LOG10,	MTYPE_F8,	MTYPE_V,	MTYPE_V,
   INTRN_FQLOG10,	MTYPE_FQ,	MTYPE_V,	MTYPE_V,
+#ifndef TARG_ST
   INTRN_F16LOG10,	MTYPE_F16,	MTYPE_V,	MTYPE_V,
-
+#endif
   INTRN_I1BTEST,	MTYPE_I1,	MTYPE_I1,	MTYPE_V,
   INTRN_I2BTEST,	MTYPE_I2,	MTYPE_I2,	MTYPE_V,
   INTRN_I4BTEST,	MTYPE_I4,	MTYPE_I4,	MTYPE_V,
@@ -1406,7 +1432,7 @@ static WN *em_exp_float(WN *block, WN *x, WN *pow, TYPE_ID type)
 		       fractional);
       }
     }
-#ifdef KEY // bug 6932 
+#if defined (KEY) && !defined (TARG_ST)// bug 6932 
     // evaluate (x**0.25) as sqrt(sqrt(x))
     if (sqrt_25 || rsqrt_25) 
     {
@@ -2125,7 +2151,9 @@ static WN *em_complex_exp(WN *block, WN *x)
    case MTYPE_F4: expID = INTRN_F4EXP; cosID = INTRN_F4COS; sinID = INTRN_F4SIN; break;
    case MTYPE_F8: expID = INTRN_F8EXP; cosID = INTRN_F8COS; sinID = INTRN_F8SIN; break;
    case MTYPE_FQ: expID = INTRN_FQEXP; cosID = INTRN_FQCOS; sinID = INTRN_FQSIN; break;
+#ifndef TARG_ST
    case MTYPE_F16: expID = INTRN_F16EXP; cosID = INTRN_F16COS; sinID = INTRN_F16SIN; break;
+#endif
   }
   
   zN = AssignExpr(block, x, type);
@@ -2197,10 +2225,12 @@ static WN *em_complex_cos(WN *block, WN *x)
     case MTYPE_FQ:	
       cosID = INTRN_FQCOS;
       coshID = INTRN_FQCOSH;
+#ifndef TARG_ST
     case MTYPE_F16:
       cosID = INTRN_F16COS;
       coshID = INTRN_F16COSH;
       break;
+#endif
     }
     cos= Intrinsic(rtype,
 		   cosID,
@@ -2234,10 +2264,12 @@ static WN *em_complex_cos(WN *block, WN *x)
       sinID = INTRN_FQSIN;
       sinhID = INTRN_FQSINH;
       break;
+#ifndef TARG_ST
     case MTYPE_F16:
       sinID = INTRN_F16SIN;
       sinhID = INTRN_F16SINH;
       break;
+#endif
     }
 
     sin= Intrinsic(rtype,
@@ -2291,10 +2323,12 @@ static WN *em_complex_sin(WN *block, WN *x)
       sinID = INTRN_FQSIN;
       coshID = INTRN_FQCOSH;
       break;
+#ifndef TARG_ST
     case MTYPE_F16:
       sinID = INTRN_F16SIN;
       coshID = INTRN_F16COSH;
       break;
+#endif
     }
     sin= Intrinsic(rtype,
 		   sinID,
@@ -2329,10 +2363,12 @@ static WN *em_complex_sin(WN *block, WN *x)
       cosID = INTRN_FQCOS;
       sinhID = INTRN_FQSINH;
       break;
+#ifndef TARG_ST
     case MTYPE_F16:
       cosID = INTRN_F16COS;
       sinhID = INTRN_F16SINH;
       break;
+#endif
     }
 
     cos= Intrinsic(rtype,
@@ -2519,7 +2555,7 @@ static WN *em_complex_log(WN *block, WN *x)
     case MTYPE_F4:	logID = INTRN_F4LOG; break;
     case MTYPE_F8:	logID = INTRN_F8LOG; break;
     case MTYPE_FQ:	logID = INTRN_FQLOG; break;
-    case MTYPE_F16:	logID = INTRN_F16LOG; break;
+    NOT_SUPPORT_ST(case MTYPE_F16:	logID = INTRN_F16LOG; break;)
     }
 
     realpart= Intrinsic(rtype, logID, 1, hypot, NULL);
@@ -2532,7 +2568,7 @@ static WN *em_complex_log(WN *block, WN *x)
     case MTYPE_F4:	atan2ID = INTRN_F4ATAN2; break;
     case MTYPE_F8:	atan2ID = INTRN_F8ATAN2; break;
     case MTYPE_FQ:	atan2ID = INTRN_FQATAN2; break;
-    case MTYPE_F16:	atan2ID = INTRN_F16ATAN2; break;
+     NOT_SUPPORT_ST(case MTYPE_F16:	atan2ID = INTRN_F16ATAN2; break;)
     }
     imagpart= Intrinsic(rtype, atan2ID, 2,
 			WN_Imagpart(rtype,WN_LdidPreg(type, zN)),
@@ -2776,7 +2812,7 @@ static WN *em_alog10(WN *block, WN *x)
   case MTYPE_F4:	logID = INTRN_F4LOG; break;
   case MTYPE_F8:	logID = INTRN_F8LOG; break;
   case MTYPE_FQ:	logID = INTRN_FQLOG; break;
-  case MTYPE_F16:	logID = INTRN_F16LOG; break;
+  NOT_SUPPORT_ST(case MTYPE_F16:	logID = INTRN_F16LOG; break;)
   }
 
   log = Intrinsic(type, logID, 1, x, NULL);
@@ -4773,16 +4809,16 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_F8I8EXPEXPR:
   case INTRN_FQI4EXPEXPR:
   case INTRN_FQI8EXPEXPR:
-  case INTRN_F16I4EXPEXPR:
-  case INTRN_F16I8EXPEXPR:
+  NOT_SUPPORT_ST(case INTRN_F16I4EXPEXPR:)
+  NOT_SUPPORT_ST(case INTRN_F16I8EXPEXPR:)
   case INTRN_C4I4EXPEXPR:
   case INTRN_C4I8EXPEXPR:
   case INTRN_C8I4EXPEXPR:
   case INTRN_C8I8EXPEXPR:
   case INTRN_CQI4EXPEXPR:
   case INTRN_CQI8EXPEXPR:
-  case INTRN_C16I4EXPEXPR:
-  case INTRN_C16I8EXPEXPR:
+  NOT_SUPPORT_ST(case INTRN_C16I4EXPEXPR:)
+  NOT_SUPPORT_ST(case INTRN_C16I8EXPEXPR:)
    /*
     *   The consensus is we allow constants (-1, 0, 1, 2) as
     *   always safe , regardless of the Fast_Exp_Allowed 
@@ -4792,11 +4828,11 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_F4EXPEXPR:
   case INTRN_F8EXPEXPR:
   case INTRN_FQEXPEXPR:
-  case INTRN_F16EXPEXPR:
+  NOT_SUPPORT_ST(case INTRN_F16EXPEXPR:)
   case INTRN_C4EXPEXPR:
   case INTRN_C8EXPEXPR:
   case INTRN_CQEXPEXPR:
-  case INTRN_C16EXPEXPR:
+  NOT_SUPPORT_ST(case INTRN_C16EXPEXPR:)
     if (Fast_Exp_Allowed)
       return em_exp_float(block, by_value(tree, 0), by_value(tree, 1), rtype);
     break;
@@ -4804,7 +4840,7 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_F4MOD:
   case INTRN_F8MOD:
   case INTRN_FQMOD:
-  case INTRN_F16MOD:
+  NOT_SUPPORT_ST(case INTRN_F16MOD:)
     return em_mod_float(block, by_value(tree, 0), by_value(tree, 1));
 
   case INTRN_I1DIM:
@@ -4817,12 +4853,12 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_F4DIM:
   case INTRN_F8DIM:
   case INTRN_FQDIM:
-  case INTRN_F16DIM:
+  NOT_SUPPORT_ST(case INTRN_F16DIM:)
     return em_dim(block, by_value(tree, 0), by_value(tree, 1));
 
   case INTRN_F8F4PROD:
   case INTRN_FQF8PROD:
-  case INTRN_F16F8PROD:
+  NOT_SUPPORT_ST(case INTRN_F16F8PROD:)
     return em_prod(block, rtype, by_value(tree, 0), by_value(tree, 1));
 
   case INTRN_I1SIGN:
@@ -4835,13 +4871,13 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_F4SIGN:
   case INTRN_F8SIGN:
   case INTRN_FQSIGN:
-  case INTRN_F16SIGN:
+  NOT_SUPPORT_ST(case INTRN_F16SIGN:)
     return em_sign(block, by_value(tree, 0), by_value(tree, 1));
 
   case INTRN_F4AINT:
   case INTRN_F8AINT:
   case INTRN_FQAINT:
-  case INTRN_F16AINT:
+  NOT_SUPPORT_ST(case INTRN_F16AINT:)
     return em_aint(block, rtype, by_value(tree, 0));
 
   case INTRN_I2F4NINT:
@@ -4853,15 +4889,15 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_I2FQIQNINT:
   case INTRN_I4FQIQNINT:
   case INTRN_I8FQIQNINT:
-  case INTRN_I2F16IQNINT:
-  case INTRN_I4F16IQNINT:
-  case INTRN_I8F16IQNINT:
+  NOT_SUPPORT_ST(case INTRN_I2F16IQNINT:)
+  NOT_SUPPORT_ST(case INTRN_I4F16IQNINT:)
+  NOT_SUPPORT_ST(case INTRN_I8F16IQNINT:)
     return em_nearest_int(block, rtype, by_value(tree, 0));
 
   case INTRN_F4ANINT:
   case INTRN_F8ANINT:
   case INTRN_FQANINT:
-  case INTRN_F16ANINT:
+  NOT_SUPPORT_ST(case INTRN_F16ANINT:)
     return em_nearest_aint(block, rtype, by_value(tree, 0));
 
   case INTRN_I4CLEN:
@@ -4875,7 +4911,7 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_U8READSTACKPOINTER:
     return em_readstackpointer(Pointer_type);
 
-#ifdef KEY
+#if defined( KEY) && !defined (TARG_ST)
   case INTRN_U4READFRAMEPOINTER:
   case INTRN_U8READFRAMEPOINTER:
     return em_readframepointer(Pointer_type);
@@ -4888,7 +4924,7 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_C4CONJG:
   case INTRN_C8CONJG:
   case INTRN_CQCONJG:
-  case INTRN_C16CONJG:
+  NOT_SUPPORT_ST(case INTRN_C16CONJG:)
     return em_conjg(block, by_value(tree, 0));
 
 
@@ -4987,7 +5023,7 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
 
   case INTRN_I4POPPAR:
   case INTRN_I8POPPAR:
-  case INTRN_PARITY:
+  NOT_SUPPORT_ST(case INTRN_PARITY:)
     function=	em_parity(block, by_value(tree, 0));
     return return_conversion(id, rtype, function);
 
@@ -4995,7 +5031,7 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_I2POPCNT:
   case INTRN_I4POPCNT:
   case INTRN_I8POPCNT:
-  case INTRN_POPCOUNT:
+  NOT_SUPPORT_ST(case INTRN_POPCOUNT:)
     {
       INT bitsize = MTYPE_size_reg(WN_rtype(by_value(tree, 0)));
       switch (id) {
@@ -5031,13 +5067,13 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_F4EXP:
   case INTRN_F8EXP:
   case INTRN_FQEXP:
-  case INTRN_F16EXP:
+  NOT_SUPPORT_ST(case INTRN_F16EXP:)
     break;
 
   case INTRN_C4EXP:
   case INTRN_C8EXP:
   case INTRN_CQEXP:
-  case INTRN_C16EXP:
+  NOT_SUPPORT_ST(case INTRN_C16EXP:)
     /*
      *	real =  e**(rz) * cos(iz);
      *	imag =  e**(rz) * sin(iz);
@@ -5047,13 +5083,13 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_F4LOG:
   case INTRN_F8LOG:
   case INTRN_FQLOG:
-  case INTRN_F16LOG:
+  NOT_SUPPORT_ST(case INTRN_F16LOG:)
     break;
 
   case INTRN_C4LOG:
   case INTRN_C8LOG:
   case INTRN_CQLOG:
-  case INTRN_C16LOG:
+  NOT_SUPPORT_ST(case INTRN_C16LOG:)
     /*
      *	real =	log ( sqrt(rz**2 + iz**2) )
      *	imag =	fatan2(iz, rz)
@@ -5063,7 +5099,7 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_F4LOG10:
   case INTRN_F8LOG10:
   case INTRN_FQLOG10:
-  case INTRN_F16LOG10:
+  NOT_SUPPORT_ST(case INTRN_F16LOG10:)
     /*
      *	log(x) * (M_LOG10E = 0.43429448190325182765)
      */
@@ -5072,77 +5108,77 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_F4COS:
   case INTRN_F8COS:
   case INTRN_FQCOS:
-  case INTRN_F16COS:
+  NOT_SUPPORT_ST(case INTRN_F16COS:)
   case INTRN_F4SIN:
   case INTRN_F8SIN:
   case INTRN_FQSIN:
-  case INTRN_F16SIN:
+  NOT_SUPPORT_ST(case INTRN_F16SIN:)
   case INTRN_F4TAN:
   case INTRN_F8TAN:
   case INTRN_FQTAN:
-  case INTRN_F16TAN:
+  NOT_SUPPORT_ST(case INTRN_F16TAN:)
   case INTRN_F4COSD:
   case INTRN_F8COSD:
   case INTRN_FQCOSD:
-  case INTRN_F16COSD:
+  NOT_SUPPORT_ST(case INTRN_F16COSD:)
   case INTRN_F4SIND:
   case INTRN_F8SIND:
   case INTRN_FQSIND:
-  case INTRN_F16SIND:
+  NOT_SUPPORT_ST(case INTRN_F16SIND:)
   case INTRN_F4TAND:
   case INTRN_F8TAND:
   case INTRN_FQTAND:
-  case INTRN_F16TAND:
+  NOT_SUPPORT_ST(case INTRN_F16TAND:)
   case INTRN_F4COSH:
   case INTRN_F8COSH:
   case INTRN_FQCOSH:
-  case INTRN_F16COSH:
+  NOT_SUPPORT_ST(case INTRN_F16COSH:)
   case INTRN_F4SINH:
   case INTRN_F8SINH:
   case INTRN_FQSINH:
-  case INTRN_F16SINH:
+  NOT_SUPPORT_ST(case INTRN_F16SINH:)
   case INTRN_F4TANH:
   case INTRN_F8TANH:
   case INTRN_FQTANH:
-  case INTRN_F16TANH:
+  NOT_SUPPORT_ST(case INTRN_F16TANH:)
   case INTRN_F4ACOS:
   case INTRN_F8ACOS:
   case INTRN_FQACOS:
-  case INTRN_F16ACOS:
+  NOT_SUPPORT_ST(case INTRN_F16ACOS:)
   case INTRN_F4ASIN:
   case INTRN_F8ASIN:
   case INTRN_FQASIN:
-  case INTRN_F16ASIN:
+  NOT_SUPPORT_ST(case INTRN_F16ASIN:)
   case INTRN_F4ATAN:
   case INTRN_F8ATAN:
   case INTRN_FQATAN:
-  case INTRN_F16ATAN:
+  NOT_SUPPORT_ST(case INTRN_F16ATAN:)
   case INTRN_F4ACOSD:
   case INTRN_F8ACOSD:
   case INTRN_FQACOSD:
-  case INTRN_F16ACOSD:
+  NOT_SUPPORT_ST(case INTRN_F16ACOSD:)
   case INTRN_F4ASIND:
   case INTRN_F8ASIND:
   case INTRN_FQASIND:
-  case INTRN_F16ASIND:
+  NOT_SUPPORT_ST(case INTRN_F16ASIND:)
   case INTRN_F4ATAND:
   case INTRN_F8ATAND:
   case INTRN_FQATAND:
-  case INTRN_F16ATAND:
+  NOT_SUPPORT_ST(case INTRN_F16ATAND:)
   case INTRN_F4ATAN2:
   case INTRN_F8ATAN2:
   case INTRN_FQATAN2:
-  case INTRN_F16ATAN2:
+  NOT_SUPPORT_ST(case INTRN_F16ATAN2:)
   case INTRN_F4ATAN2D:
   case INTRN_F8ATAN2D:
   case INTRN_FQATAN2D:
-  case INTRN_F16ATAN2D:
+  NOT_SUPPORT_ST(case INTRN_F16ATAN2D:)
     break;
 
   case INTRN_C4COS:
   case INTRN_C8COS:
   case INTRN_CQCOS:
-  case INTRN_C16COS:
+  NOT_SUPPORT_ST(case INTRN_C16COS:)
     /*
      *	real =  cos(rz) * cosh(iz);
      *	imag = -sin(rz) * sinh(iz);
@@ -5152,13 +5188,13 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_F4C4ABS:
   case INTRN_F8C8ABS:
   case INTRN_FQCQABS:
-  case INTRN_F16C16ABS:
+  NOT_SUPPORT_ST(case INTRN_F16C16ABS:)
     return em_complex_abs(block, by_value(tree, 0));
 
   case INTRN_C4SIN:
   case INTRN_C8SIN:
   case INTRN_CQSIN:
-  case INTRN_C16SIN:
+  NOT_SUPPORT_ST(case INTRN_C16SIN:)
     /*
      *	real = sin(rz) * cosh(iz);
      *	imag = cos(rz) * sinh(iz);
@@ -5168,7 +5204,7 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_F4CIS:
   case INTRN_F8CIS:
   case INTRN_FQCIS:
-  case INTRN_F16CIS:
+  NOT_SUPPORT_ST(case INTRN_F16CIS:)
     /*
      *	cos(x) + i*sin(x)
      *  do not expand this as the library function is much more
@@ -5208,8 +5244,8 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_F8I8RAN:
   case INTRN_FQI4RAN:
   case INTRN_FQI8RAN:
-  case INTRN_F16I4RAN:
-  case INTRN_F16I8RAN:
+  NOT_SUPPORT_ST(case INTRN_F16I4RAN:)
+  NOT_SUPPORT_ST(case INTRN_F16I8RAN:)
     break;
 
   case INTRN_I8DIVFLOOR:
@@ -5303,8 +5339,8 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
 #endif
 
 #ifdef KEY
-  case INTRN_F4CBRT:
-  case INTRN_F8CBRT:
+  NOT_SUPPORT_ST(case INTRN_F4CBRT:)
+  NOT_SUPPORT_ST(case INTRN_F8CBRT:)
     break;
 #endif
 
@@ -5329,7 +5365,11 @@ extern WN *emulate(WN *block, WN *tree)
 
   if (OPCODE_is_intrinsic(WN_opcode(tree)))
   {
-    if (Inline_Intrinsics_Allowed)
+    if (Inline_Intrinsics_Allowed
+#ifdef TARG_ST
+        || !INTRN_runtime_exists(WN_intrinsic(tree))
+#endif
+       )
     {
       wn = emulate_intrinsic_op(block, tree);
     }
@@ -5462,16 +5502,16 @@ extern WN *emulate_fast_exp(WN *block, WN *tree)
   case INTRN_F8I8EXPEXPR:
   case INTRN_FQI4EXPEXPR:
   case INTRN_FQI8EXPEXPR:
-  case INTRN_F16I4EXPEXPR:
-  case INTRN_F16I8EXPEXPR:
+  NOT_SUPPORT_ST(case INTRN_F16I4EXPEXPR:)
+  NOT_SUPPORT_ST(case INTRN_F16I8EXPEXPR:)
   case INTRN_C4I4EXPEXPR:
   case INTRN_C4I8EXPEXPR:
   case INTRN_C8I4EXPEXPR:
   case INTRN_C8I8EXPEXPR:
   case INTRN_CQI4EXPEXPR:
   case INTRN_CQI8EXPEXPR:
-  case INTRN_C16I4EXPEXPR:
-  case INTRN_C16I8EXPEXPR:
+  NOT_SUPPORT_ST(case INTRN_C16I4EXPEXPR:)
+  NOT_SUPPORT_ST(case INTRN_C16I8EXPEXPR:)
    /*
     *   The consensus is we allow constants (-1, 0, 1, 2) as
     *   always safe , regardless of the Fast_Exp_Allowed 
@@ -5481,11 +5521,11 @@ extern WN *emulate_fast_exp(WN *block, WN *tree)
   case INTRN_F4EXPEXPR:
   case INTRN_F8EXPEXPR:
   case INTRN_FQEXPEXPR:
-  case INTRN_F16EXPEXPR:
+  NOT_SUPPORT_ST(case INTRN_F16EXPEXPR:)
   case INTRN_C4EXPEXPR:
   case INTRN_C8EXPEXPR:
   case INTRN_CQEXPEXPR:
-  case INTRN_C16EXPEXPR:
+  NOT_SUPPORT_ST(case INTRN_C16EXPEXPR:)
     if (Fast_Exp_Allowed)
       return em_exp_float(block, by_value(tree, 0), by_value(tree, 1), rtype);
     break;

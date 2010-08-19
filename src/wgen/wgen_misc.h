@@ -63,6 +63,10 @@ extern void WGEN_Check_Errors (int *error_count, int *warning_count, BOOL *need_
 
 #include "wn.h"
 #include "srcpos.h"
+#ifdef TARG_ST // [CL]
+#include "wgen_dst.h"
+#endif
+
 
 typedef enum {
   wgen_stmk_unknown,
@@ -92,6 +96,14 @@ typedef enum {
   wgen_stmk_dummy,	// does not generate code
   wgen_stmk_last
 } WGEN_STMT_KIND;
+#ifdef TARG_ST
+typedef struct wn_stmt {
+  WN            *wn;
+  WGEN_STMT_KIND  kind;
+} WN_STMT;
+
+extern WN_STMT *WGEN_Get_Stmt(void);
+#endif
 
 extern void WGEN_Stmt_Push (WN* wn, WGEN_STMT_KIND kind, SRCPOS srcpos);
 extern WN*  WGEN_Stmt_Top (void);
@@ -103,6 +115,11 @@ extern void WGEN_Stmt_Append (WN* wn, SRCPOS srcpos);
 #endif /* KEY */
 extern WN*  WGEN_Stmt_Last (void);
 extern WN*  WGEN_Stmt_Pop (WGEN_STMT_KIND kind);
+#ifdef TARG_ST
+// FdF 20070302
+extern void WGEN_Stmt_Move_To_End(WN *first_wn, WN *last_wn);
+#endif
+
 extern void WGEN_Guard_Var_Push (void);
 extern gs_t WGEN_Guard_Var_Pop (void);
 extern gs_t WGEN_Get_Guard_Var (void);
@@ -134,6 +151,17 @@ extern FILE *Spin_File;
 extern UINT current_file;		/* from wgen_dst.cxx */
 
 // get the srcpos info from the global variable lineno
+#ifdef TARG_ST
+inline SRCPOS
+Get_Srcpos (void)
+{
+  USRCPOS s;
+  USRCPOS_clear(s);
+  USRCPOS_filenum(s) = current_file;
+  USRCPOS_linenum(s) = lineno; 
+  return s.srcpos;
+}
+#else
 inline SRCPOS
 Get_Srcpos (void)
 {
@@ -143,6 +171,48 @@ Get_Srcpos (void)
   SRCPOS_linenum(s) = lineno; 
   return s;
 }
+#endif
+#ifdef TARG_ST
+// [CL] get the srcpos info from the tree
+inline SRCPOS
+Get_Srcpos_From_Tree (gs_t node)
+{
+  // [SC] When manipulating fields of SRCPOS, be sure to use
+  // USRCPOS, because SRCPOS field access breaks C aliasing rules.
+  USRCPOS s;
+  USRCPOS_clear(s);
+
+  // [CL] We should not modify current_file here, but it is a side
+  // effect of WGEN_Set_Line_And_File(), which we use to build the
+  // dir/file table. Keep a copy to restore it afterwards.
+  UINT current_file_cache = current_file;
+
+  FmtAssert (node != NULL, 
+	     ("Get_Srcpos_From_Tree called with NULL node"));
+
+  /* Fabricated temporaries have no source coordinates, so take care here. */
+  if (gs_operand (node, GS_DECL_SOURCE_FILE)
+      &&gs_operand (node, GS_DECL_SOURCE_LINE)) {
+
+    WGEN_Set_Line_And_File (gs_decl_source_line(node), gs_decl_source_file(node));
+    USRCPOS_linenum(s) = gs_decl_source_line(node);
+
+    // [CL] do not record artificial filenames (eg compiler-generated functions)
+    if (gs_decl_source_file(node)
+	&& (strcmp(gs_decl_source_file(node), "<built-in>")== 0
+	    || strcmp(gs_decl_source_file(node), "<internal>") == 0) ) {
+      current_file = 0;
+      USRCPOS_linenum(s) = 0;
+    }
+  } else {
+    current_file = 0;
+    USRCPOS_linenum(s) = 0;
+  }
+  USRCPOS_filenum(s) = current_file;
+  current_file = current_file_cache;
+  return s.srcpos;
+}
+#endif
 
 #endif // __cplusplus
 

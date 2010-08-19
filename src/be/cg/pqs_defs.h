@@ -34,6 +34,8 @@
 #include <set>
 #include <algorithm>
 #include <memory>
+#define PQS_ENTRY     1
+#define PQS_HASH      2
 
 // Forward references
 class PQS_MANAGER;

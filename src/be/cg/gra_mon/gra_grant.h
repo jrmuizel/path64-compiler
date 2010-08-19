@@ -49,6 +49,14 @@
 //                                                  REGISTER           reg )
 //          Call to grant the given <reg> and <rc> in <bb>.
 //
+#ifdef TARG_ST
+//      void GRA_GRANT_Local_Registers( GRA_BB* gbb, ISA_REGISTER_CLASS rc,
+//                                                   REGISTER           reg.
+//                                                   INT nregs )
+//          Call to grant the given [<reg>..<reg>+<nregs>-1] and <rc> in <bb>.
+//
+#endif
+
 //      REGISTER_SET GRA_GRANT_Get_Local_Registers( BB*                bb,
 //                                                  ISA_REGISTER_CLASS rc )
 //          Return the registers granted for locals in the given <bb> and <rc>.
@@ -92,6 +100,11 @@ extern void
 GRA_GRANT_Finalize(void);
 extern void 
 GRA_GRANT_Local_Register( GRA_BB* gbb, ISA_REGISTER_CLASS rc, REGISTER reg );
+#ifdef TARG_ST
+extern void 
+GRA_GRANT_Local_Registers( GRA_BB* gbb, ISA_REGISTER_CLASS rc, REGISTER reg,
+			   INT nregs );
+#endif
 extern REGISTER_SET 
 GRA_GRANT_Get_Local_Registers( BB* bb, ISA_REGISTER_CLASS rc );
 extern void

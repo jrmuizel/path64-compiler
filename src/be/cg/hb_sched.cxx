@@ -100,6 +100,9 @@
 #include "opsch_set.h"
 #include "cgexp.h"
 #endif
+#ifdef TARG_ST
+#include "data_layout.h"
+#endif
 
 // ======================================================================
 // Declarations (macros, variables)
@@ -135,6 +138,13 @@ static INT BBs_Processed = 0;
 // The current cycle in which we are trying to schedule OPs.
 static INT Clock;
 static INT MAX_Clock;
+#ifdef TARG_ST
+static INT32 computed_max_sched = INT32_MAX;
+// FdF 15/12/2003: We need to know if we are in pre-pass or post-pass
+// scheduling, because optimizations with SP_Sym in Ldst_Addiu_Pair
+// are only valid in post-pass.
+static BOOL Before_LRA;
+#endif
 
 static void
 Print_OPSCH (OP *op, BB_MAP value_map)
@@ -201,7 +211,10 @@ Print_BB_For_HB (std::list<BB*> bblist, BB_MAP value_map)
 BOOL
 Reschedule_BB(BB *bb)
 {
-
+  // always reschedule on stxp70 [vcdv]
+#ifdef TARG_STxP70
+  return TRUE;
+#else
   // At the moment, target single_BB loops ONLY.
   if (BB_loop_head_bb(bb) == bb) {
     BBLIST *succ_list;
@@ -212,6 +225,7 @@ Reschedule_BB(BB *bb)
   }
 
   return FALSE;
+#endif
 }
 
 // ======================================================================
@@ -229,6 +243,51 @@ Can_Schedule_HB(std::list<BB*> hb_blocks)
 
   return TRUE;
 }
+#ifdef TARG_ST
+//
+// Return true if op is a ne/eq compare with a constant
+//
+static BOOL
+OP_Is_Cmp_Eq_Ne(OP *op)
+{
+  VARIANT variant;
+  TOP opcode = OP_code(op);
+  INT opnd1_idx, opnd2_idx;
+  
+  if (OP_icmp(op)) {
+    opnd1_idx = OP_find_opnd_use(op, OU_opnd1);
+    opnd2_idx = OP_find_opnd_use(op, OU_opnd2);
+#ifdef TARG_ST
+    variant = OP_cmp_variant(op);
+#else
+    variant = TOP_cmp_variant(opcode);
+#endif
+    if (variant == V_CMP_EQ ||
+	variant == V_CMP_NE) {
+      if (TN_has_value(OP_opnd(op, opnd2_idx)))
+	return TRUE;
+    }
+  }
+  return FALSE;
+}
+#endif
+//
+// Returns true if op is a self add with a constant: rx = rx + cst
+//
+static BOOL
+OP_Is_Addr_Incr(OP *op)
+{
+  TOP opcode = OP_code(op);
+  INT opnd1_idx, opnd2_idx;
+  if (OP_iadd(op)) {
+    opnd1_idx = OP_find_opnd_use(op, OU_opnd1);
+    opnd2_idx = OP_find_opnd_use(op, OU_opnd2);
+    if (TN_has_value(OP_opnd(op, opnd2_idx)) &&
+	OP_result(op, 0) == OP_opnd(op, opnd1_idx))
+      return TRUE;
+  }
+  return FALSE;
+}
 
 INT
 Memory_OP_Base_Opndnum (OP *op)
@@ -237,6 +296,9 @@ Memory_OP_Base_Opndnum (OP *op)
   return TOP_Find_Operand_Use( OP_code(op), OU_base );
 #else
   INT opnd_num;
+#ifdef TARG_ST
+  opnd_num = TOP_Find_Operand_Use(OP_code(op), OU_base);
+#else
   if (OP_store(op) || OP_prefetch(op)) {
     opnd_num = 1;
   }
@@ -244,6 +306,7 @@ Memory_OP_Base_Opndnum (OP *op)
     Is_True (OP_load(op), ("OP not a memory OP."));
     opnd_num = 0;
   }
+#endif
   return opnd_num;
 #endif
 }
@@ -256,7 +319,9 @@ Memory_OP_Offset_Opndnum (OP *op)
   return TOP_Find_Operand_Use( OP_code(op), OU_offset );
 #else
   INT opnd_num;
-
+#ifdef TARG_ST
+  opnd_num = TOP_Find_Operand_Use(OP_code(op), OU_offset);
+#else
   if (OP_store(op) || OP_prefetch(op)) {
     opnd_num = 2;
   }
@@ -264,6 +329,7 @@ Memory_OP_Offset_Opndnum (OP *op)
     Is_True (OP_load(op), ("OP not a memory OP."));
     opnd_num = 1;
   }
+#endif
   return opnd_num;
 #endif
 }
@@ -395,6 +461,11 @@ HB_Schedule::Update_Regs_For_OP (OP *op)
     if (!REG_ENTRY_reg_assigned(reginfo)) {
       ISA_REGISTER_CLASS cl = TN_register_class(opnd_tn);
       _Cur_Regs_Avail[cl]--;
+#ifdef TARG_ST
+      if (_Cur_Regs_Avail[cl] < _Min_Cur_Regs_Avail[cl]) {
+	_Min_Cur_Regs_Avail[cl] = _Cur_Regs_Avail[cl];
+      }
+#endif
       REG_ENTRY_reg_assigned(reginfo) = TRUE;
       hTN_MAP_Set (_regs_map, opnd_tn, REG_ENTRY_ptr(reginfo));
     }
@@ -406,22 +477,46 @@ HB_Schedule::Update_Regs_For_OP (OP *op)
 // such that the addiu and the load/store can be interchanged.
 // ======================================================================
 static BOOL
-Is_Ldst_Addiu_Pair (OPSCH *opsch1, OPSCH *opsch2, OP *op1, OP *op2, ARC *arc)
+Is_Ldst_Addiu_Pair (OPSCH *opsch1, OPSCH *opsch2, OP *op1, OP *op2
+#ifndef TARG_ST
+                    , ARC *arc
+#endif
+                    )
 {
   OP *addiu_op;
   OP *ldst_op;
   INT64 multiplier;
-
+#ifndef TARG_ST
   // Respect the CG_DEP_MISC arcs added by HBS_No_Reorder to prevent
   // reordering.  Bug 14742.
   if (ARC_kind(arc) == CG_DEP_MISC)
     return FALSE;
-
+#endif
   if (((OPSCH_flags(opsch1) | OPSCH_flags(opsch2)) & OPSCH_ADDIU_LDST_PAIR) !=
       OPSCH_ADDIU_LDST_PAIR) 
   {
     return FALSE;
   }
+
+#ifdef TARG_ST
+  // FdF 15/12/2003: Because in case of LDW .. 0(Rx); ADD Rx=Rx+..;
+  // there is a MISC dependence between the two uses of Rx in LDW and
+  // ADD. We are only interested in the REGANTI arc between the use in
+  // LDW and the def in ADD.
+  BOOL isRegInAnti = FALSE;
+  ARC_LIST *arcs;
+  for (arcs = OP_succs(op1); arcs != NULL; arcs = ARC_LIST_rest(arcs)) {
+    ARC *arc = ARC_LIST_first(arcs);
+    if (ARC_succ(arc) == op2 &&
+	(ARC_kind(arc) == CG_DEP_REGIN || ARC_kind(arc) == CG_DEP_REGANTI)) {
+      isRegInAnti = TRUE;
+      // FdF 20080902: No need to continue
+      break;
+    }
+  }
+  if (!isRegInAnti)
+    return FALSE;
+#endif
 
   if (OPSCH_addiu(opsch1)) {
     addiu_op = op1;
@@ -434,6 +529,24 @@ Is_Ldst_Addiu_Pair (OPSCH *opsch1, OPSCH *opsch2, OP *op1, OP *op2, ARC *arc)
     multiplier = -1;
   }
 
+#ifdef TARG_ST
+  Is_True(OP_iadd(addiu_op), ("OPSCH_addiu but not OP_iadd"));
+  INT add_opnd2_idx = OP_find_opnd_use(addiu_op, OU_opnd2);
+  Is_True(TN_has_value(OP_opnd(addiu_op, add_opnd2_idx)), ("OPSCH_addiu but second operand is not literal"));
+  INT64 addiu_const = TN_value (OP_opnd(addiu_op, add_opnd2_idx));
+  
+  // FdF 20/10/2003 : Support for sequences (cmpeq,cmpne; add)
+  if (OP_Is_Cmp_Eq_Ne(ldst_op)) {
+    INT cmp_opnd1_idx = OP_find_opnd_use(ldst_op, OU_opnd1);
+    INT cmp_opnd2_idx = OP_find_opnd_use(ldst_op, OU_opnd2);
+    Is_True(TN_has_value(OP_opnd(ldst_op, cmp_opnd2_idx)), ("OP_Is_Cmp_Eq_Ne returned true but opnd2 is not literal"));
+    if (OP_result(addiu_op,0) != OP_opnd(ldst_op, cmp_opnd1_idx))
+      return FALSE;
+    INT64 ldst_const = TN_value (OP_opnd(ldst_op, cmp_opnd2_idx));
+    return OP_code(ldst_op) == TOP_opnd_immediate_variant(OP_code(ldst_op), cmp_opnd2_idx, ldst_const - addiu_const*multiplier);
+  }
+#endif
+
   // Check that the result of the addiu is the same as the base of the ldst.
   // Also check that if the memory OP is a store, the source is not the same
   // as the result of the addiu.
@@ -443,18 +556,85 @@ Is_Ldst_Addiu_Pair (OPSCH *opsch1, OPSCH *opsch2, OP *op1, OP *op2, ARC *arc)
     return FALSE;
   }
 #endif
+#ifdef TARG_ST
+  if (OP_result(addiu_op, 0 /*???*/) != OP_opnd(ldst_op, base_opndnum))
+    return FALSE;
+
+  // FdF 20080903: Use TN_Are_Equivalent instead of direct pointer
+  // equality to catch cases where different TNs are allocated to the
+  // same register (bug codex-50978)
+  // Check for case:
+  //   STW off(base), base
+  //   base = base + inc
+  if (OP_store(ldst_op)) {
+    for (INT res_idx = 0; res_idx < OP_results(addiu_op); res_idx++)
+      if (TNs_Are_Equivalent(OP_result(addiu_op, res_idx), OP_Storeval(ldst_op)))
+	return FALSE;
+  }
+
+  // Check for the case
+  // base = LDW off(base)
+  // base = base + inc
+  for (INT res_idx = 0; res_idx < OP_results(ldst_op); res_idx++) {
+    if (TNs_Are_Equivalent(OP_result(ldst_op, res_idx), OP_result(addiu_op, 0)))
+      return FALSE;
+  }
+
+#else
   if (OP_result(addiu_op,0 /*???*/) != OP_opnd(ldst_op,base_opndnum) ||
       (OP_store(ldst_op) &&
        OP_result(addiu_op,0 /*???*/) == OP_opnd(ldst_op,0)))
   {
     return FALSE;
   }
-
+#endif
+#ifndef TARG_ST
   INT64 addiu_const = TN_value (OP_opnd(addiu_op, 1));
+#endif
   INT offset_opndnum = Memory_OP_Offset_Opndnum(ldst_op);
-  INT64 ldst_const = TN_value (OP_opnd(ldst_op, offset_opndnum));
+  INT64 ldst_const;
 
+#ifdef TARG_ST
+  // FdF 20060518: Support for automod addressing mode
+  if (OP_automod(ldst_op))
+    return FALSE;
+
+  // FdF 15/12/2003: Added support for symbolic offsets in the stack.
+  if (TN_is_symbol(OP_opnd(ldst_op, offset_opndnum))) {
+    TN *old_ofst_tn = OP_opnd(ldst_op, offset_opndnum);
+    ST *st = TN_var(old_ofst_tn);
+    ST *base_st;
+    INT64 base_ofst;
+
+    base_st = Base_Symbol (st);
+    if (base_st != SP_Sym) return FALSE;
+    FmtAssert (Base_Offset_Is_Known (st), ("unknown offset in Is_Ldst_Addiu_Pair"));
+    base_ofst = Base_Offset (st);
+    ldst_const = CGTARG_TN_Value (old_ofst_tn, base_ofst);
+    if (ldst_const + addiu_const*multiplier < 0)
+      return FALSE;
+  } else if (OP_opnd(ldst_op, base_opndnum) == SP_TN) {
+    // [CG]: We may have SP based accesses with no symbol associated
+    // in the case of accesses to the parameter passing area.
+    // Thus we must also ensure that any SP_TN based access will
+    // not be negative
+    ldst_const = TN_value (OP_opnd(ldst_op, offset_opndnum));
+    if (ldst_const + addiu_const*multiplier < 0) return FALSE;
+  }
+  else
+#endif
+  ldst_const = TN_value (OP_opnd(ldst_op, offset_opndnum));
+
+#ifdef TARG_ST
+  // [CG] Don't allow opcode size change
+  if (OP_code(ldst_op) == TOP_opnd_immediate_variant(OP_code(ldst_op), offset_opndnum, ldst_const + addiu_const*multiplier)) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+#else
   return TOP_Can_Have_Immediate (ldst_const + addiu_const*multiplier, OP_code(ldst_op));
+#endif
 }
 
 // ======================================================================
@@ -469,7 +649,16 @@ Fixup_Ldst_Offset (OP *ldst_op, INT64 addiu_const, INT64 multiplier,
   TN *old_ofst_tn, *ofst_tn;
   INT index;
 
+#ifdef TARG_ST
+  if (OP_Is_Cmp_Eq_Ne(ldst_op)) {
+    index = OP_find_opnd_use(ldst_op, OU_opnd2);
+    multiplier = -multiplier;
+  } else {
+    index = Memory_OP_Offset_Opndnum (ldst_op);
+  }
+#else
   index = Memory_OP_Offset_Opndnum (ldst_op);
+#endif
   old_ofst_tn = OP_opnd(ldst_op, index);
 
   if (Trace_HB) {
@@ -480,6 +669,14 @@ Fixup_Ldst_Offset (OP *ldst_op, INT64 addiu_const, INT64 multiplier,
     Print_OP_No_SrcLine (ldst_op);
   }
 
+#ifdef TARG_ST
+// FdF 15/12/2003: Added support for symbolic offsets in the stack.
+  if (TN_is_symbol(old_ofst_tn))
+    ofst_tn = Gen_Symbol_TN(TN_var(old_ofst_tn),
+                            TN_offset(old_ofst_tn) + addiu_const * multiplier,
+                            TN_relocs(old_ofst_tn));
+  else
+#endif
   ofst_tn = Gen_Literal_TN (TN_value(old_ofst_tn) + addiu_const * multiplier,
 			    TN_size(old_ofst_tn));
   Set_OP_opnd (ldst_op, index, ofst_tn);
@@ -491,70 +688,8 @@ Fixup_Ldst_Offset (OP *ldst_op, INT64 addiu_const, INT64 multiplier,
 // or store OPs that have been moved across corresponding addiu OPs. For
 // all such load/store OPs, adjust their offset field.
 // ======================================================================
-void
-HB_Schedule::Adjust_Ldst_Offsets (void)
-{
-  for (INT i = VECTOR_count(_sched_vector)-1; i >= 0; i--) {
-    OP *op = OP_VECTOR_element(_sched_vector, i);
-    OPSCH *opsch = OP_opsch(op, _hb_map);
-    Set_OPSCH_visited (opsch);
-    if (!OPSCH_addiu (opsch)) continue;
-    INT64 addiu_const = TN_value (OP_opnd(op,1));
-    ARC_LIST *arcs;
-    for (arcs = OP_succs(op); arcs != NULL; arcs = ARC_LIST_rest(arcs)) {
-      ARC *arc = ARC_LIST_first(arcs);
-#ifdef KEY
-      if( ARC_kind(arc) != CG_DEP_REGIN ){
-	continue;
-      }
-#endif
-      OP *succ_op = ARC_succ(arc);
-      OPSCH *succ_opsch = OP_opsch (succ_op, _hb_map);
-      if (OPSCH_ldst (succ_opsch) && OPSCH_visited (succ_opsch)
-#ifdef KEY
-	  // Don't Fixup_Ldst_Offset if the ldst/addiu were swapped due to copy
-	  // insertion.
-	  && (!HBS_Relax_Reganti() ||
-	      Is_Ldst_Addiu_Pair(opsch, succ_opsch, op, succ_op, arc))
-#endif
-	 ) {
-	Fixup_Ldst_Offset (succ_op, addiu_const, +1, type());
-#ifdef KEY
-	Set_hbs_must_emit_sched();
-#endif
-      }
-    }
-    for (arcs = OP_preds(op); arcs != NULL; arcs = ARC_LIST_rest(arcs)) {
-      ARC *arc = ARC_LIST_first(arcs);
-      OP *pred_op = ARC_pred(arc);
-#ifdef KEY
-      if (ARC_kind(arc) != CG_DEP_REGANTI){
-	// We only care about any REGANTI really.
-	// And there may be multiple arcs between two nodes.
-	// In that case, the following will update the offset many times.
-	// To avoid such cases, we will skip arcs of kind CG_DEP_MISC.
-	continue;
-      }
-#endif /* KEY */
-      OPSCH *pred_opsch = OP_opsch (pred_op, _hb_map);
-      if (OPSCH_ldst (pred_opsch) && !OPSCH_visited (pred_opsch)
-#ifdef KEY
-	  // Don't Fixup_Ldst_Offset if the ldst/addiu were swapped due to copy
-	  // insertion.
-	  && (!HBS_Relax_Reganti() ||
-	      Is_Ldst_Addiu_Pair(pred_opsch, opsch, pred_op, op, arc))
-#endif
-	 ) {
-	Fixup_Ldst_Offset (pred_op, addiu_const, -1, type());
-#ifdef KEY
-	Set_hbs_must_emit_sched();
-#endif
-      }
-    }
-  }
-}
 
-#ifdef KEY
+#if defined( KEY) 
 void HB_Schedule::Adjust_Ldst_Offsets( BOOL is_fwd )
 {
   for( INT i = is_fwd ? 0 : VECTOR_count(_sched_vector) - 1; 
@@ -578,11 +713,19 @@ void HB_Schedule::Adjust_Ldst_Offsets( BOOL is_fwd )
       OPSCH *succ_opsch = OP_opsch (succ_op, _hb_map);
       if (OPSCH_ldst (succ_opsch) && OPSCH_visited (succ_opsch)
 	  // Don't Fixup_Ldst_Offset if the ldst/addiu were swapped due to copy
+#ifndef TARG_ST
 	  // insertion.
 	  && (!HBS_Relax_Reganti() ||
-	      Is_Ldst_Addiu_Pair(opsch, succ_opsch, op, succ_op, arc))) {
+	      Is_Ldst_Addiu_Pair(opsch, succ_opsch, op, succ_op, arc))
+#endif
+          ) {
+#ifdef TARG_ST
+	// FdF 15/12/2003: Do not call twice when there are a REGANTI
+	// and a MISC dependence for example (see Is_Ldst_addiu_Pair).
+	if (ARC_kind(arc) == CG_DEP_REGIN || ARC_kind(arc) == CG_DEP_REGANTI)
+#endif
 	Fixup_Ldst_Offset (succ_op, addiu_const, +1, type());
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	Set_hbs_must_emit_sched();
 #endif
       }
@@ -603,11 +746,19 @@ void HB_Schedule::Adjust_Ldst_Offsets( BOOL is_fwd )
       OPSCH *pred_opsch = OP_opsch (pred_op, _hb_map);
       if (OPSCH_ldst (pred_opsch) && !OPSCH_visited (pred_opsch)
 	  // Don't Fixup_Ldst_Offset if the ldst/addiu were swapped due to copy
+#ifndef TARG_ST
 	  // insertion.
 	  && (!HBS_Relax_Reganti() ||
-	      Is_Ldst_Addiu_Pair(pred_opsch, opsch, pred_op, op, arc))) {
+	      Is_Ldst_Addiu_Pair(pred_opsch, opsch, pred_op, op, arc))
+#endif
+          ) {
+#ifdef TARG_ST
+	// FdF 15/12/2003: Do not call more than once
+	if (ARC_kind(arc) == CG_DEP_REGIN || ARC_kind(arc) == CG_DEP_REGANTI)
+#endif
+
 	Fixup_Ldst_Offset (pred_op, addiu_const, -1, type());
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	Set_hbs_must_emit_sched();
 #endif
       }
@@ -642,7 +793,12 @@ HB_Schedule::Fixup_Reganti (OP *op, BOOL is_fwd)
 
     if (ARC_kind(arc) == CG_DEP_REGANTI &&
 	// Scheduler can swap ldst/addiu pairs.
-	!Is_Ldst_Addiu_Pair(pred_opsch, opsch, pred_op, op, arc)) {
+#ifdef TARG_ST
+        !Is_Ldst_Addiu_Pair(pred_opsch, opsch, pred_op, op)
+#else 
+	!Is_Ldst_Addiu_Pair(pred_opsch, opsch, pred_op, op, arc)
+#endif
+        ) {
       if (OPSCH_scheduled(pred_opsch)) {
 	// REGANTI dependence is violated.  Create new TN for renaming.
 	old_tn = OP_opnd(pred_op, ARC_opnd(arc));
@@ -717,7 +873,11 @@ HB_Schedule::Ignore_Arcs (OPSCH *pred_opsch, OPSCH *succ_opsch, ARC_LIST *arcs)
 	  return FALSE;
 	// The scheduler already knows how to swap the OPs of a ldst-addiu
 	// pair.
+#ifdef TARG_ST
+        if (Is_Ldst_Addiu_Pair(pred_opsch, succ_opsch, pred_op, succ_op))
+#else
 	if (Is_Ldst_Addiu_Pair(pred_opsch, succ_opsch, pred_op, succ_op, arc))
+#endif
 	  return FALSE;
 	// Only GTNs should have REGANTI.
 	if (!TN_is_global_reg(tn))	// todo: revisit this restriction
@@ -867,8 +1027,15 @@ Init_OPSCH_For_BB (BB *bb, BB_MAP value_map, BOOL compute_bitsets,
   FOR_ALL_BB_OPs_FWD (bb, op) {
     opsch = OP_opsch(op, value_map);
     // Identify LDST/ADDIU instructions with non-relocatable offsets.
+#ifdef TARG_ST
+    // FdF 15/12/2003: Support for symbolic offset in the stack, in
+    // postpass scheduling only.
+    if (OP_Is_Addr_Incr(op) && 
+	(!TN_is_sp_reg(OP_result(op,0 /*???*/)) || !Before_LRA)) {
+#else
     if (CGTARG_Is_OP_Addr_Incr(op) && 
 	!TN_is_sp_reg(OP_result(op,0 /*???*/))) {
+#endif
 	
       BOOL addiu_ok = TRUE;
       for (arcs = OP_succs(op); arcs != NULL; arcs = ARC_LIST_rest(arcs)) {
@@ -894,7 +1061,20 @@ Init_OPSCH_For_BB (BB *bb, BB_MAP value_map, BOOL compute_bitsets,
       if (TN_has_value(OP_opnd(op,offset_opndnum))) {
 	Set_OPSCH_ldst (opsch);
       }
+#ifdef TARG_ST
+      // FdF 15/12/2003: Added support for symbolic offset in the stack
+      else if (TN_is_symbol(OP_opnd(op,offset_opndnum))) {
+	Set_OPSCH_ldst (opsch);
+      }
+#endif
     }
+#ifdef TARG_ST
+    // Check if this is a cmpeq or cmpne with a constant value.
+    else if (OP_Is_Cmp_Eq_Ne(op)) {
+      Set_OPSCH_ldst (opsch);
+    }
+#endif
+
 #ifdef TARG_MIPS
     if (Is_Target_T5() && OP_xfer(op) && Get_Trace (TP_SCHED, 0x1000)) {
       for (arcs = OP_preds(op); arcs != NULL; arcs = ARC_LIST_rest(arcs)) {
@@ -913,11 +1093,23 @@ Init_OPSCH_For_BB (BB *bb, BB_MAP value_map, BOOL compute_bitsets,
 // ======================================================================
 // return TRUE if opsch1 has a larger 'estart' value than opsch2.
 // ======================================================================
+#ifdef TARG_ST
+static INT
+sort_by_estart (const void *opsch1, const void *opsch2)
+{
+  return (OPSCH_estart((OPSCH*) opsch1) < OPSCH_estart((OPSCH*) opsch2))
+    ? -1
+    : (OPSCH_estart((OPSCH*) opsch1) == OPSCH_estart((OPSCH*) opsch2))
+    ? 0
+    : 1;
+}
+#else
 static BOOL
 sort_by_estart (const void *opsch1, const void *opsch2)
 {
   return (OPSCH_estart((OPSCH*) opsch1) > OPSCH_estart((OPSCH*) opsch2));
 }
+#endif
  
 // ======================================================================
 // return TRUE if opsch1 has a smaller 'slack' value than opsch2.
@@ -1086,7 +1278,7 @@ DFS_Search (OP *op, BB_MAP value_map, BOOL is_fwd)
     }
   } else {
     // visit all the predecessors.
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     // Heuristic for DFS ordering.  When picking a child to continue the
     // depth-first traversal (in the reverse direction), choose a child with
     // the lowest depth in the dependence graph.  The hope is that this child's
@@ -1118,7 +1310,7 @@ DFS_Search (OP *op, BB_MAP value_map, BOOL is_fwd)
 	OP *pred_op = OPSCH_op(pred_opsch);
 	if (!OPSCH_visited(pred_opsch))
 	  DFS_Search(pred_op, value_map, FALSE);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	Update_Blocker_Info(opsch, pred_opsch);
 #endif
       }
@@ -1128,10 +1320,15 @@ DFS_Search (OP *op, BB_MAP value_map, BOOL is_fwd)
       ARC *arc = ARC_LIST_first(arcs);
       OP *pred_op = ARC_pred(arc);
       OPSCH *pred_opsch = OP_opsch (pred_op, value_map);
-      if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op, arc)) {
+#ifdef TARG_ST
+      if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op))
+#else
+      if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op, arc)) 
+#endif
+      {
 	if (!OPSCH_visited(pred_opsch))
 	  DFS_Search(pred_op, value_map, FALSE);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	Update_Blocker_Info(opsch, pred_opsch);
 #endif
       }
@@ -1177,7 +1374,16 @@ Priority_Selector::Add_Element_Sorted (VECTOR vector, void *element, VECTOR_ELEM
     void *cur_element = VECTOR_element(vector, i - 1);
     void *cur_opsch = OP_opsch((OP*) cur_element, _cur_sched->hb_map());
     void *opsch = OP_opsch((OP*) element, _cur_sched->hb_map());
+#ifdef TARG_ST
+    // FdF 20051212: Keep the initial order of memory operations as
+    // much as possible for the pre-pass scheduling.
+    int cmp = comp_func(cur_opsch, opsch);
+    if (cmp > 0) break;
+    if (cmp == 0 && (OP_memory((OP *)cur_element) && OP_memory((OP *)element)) &&
+	OP_map_idx((OP *)cur_element) > OP_map_idx((OP *)element)) break;
+#else
     if (comp_func(cur_opsch, opsch)) break;
+#endif
     VECTOR_element(vector, i) = cur_element;
   }
   VECTOR_element(vector, i) = element;
@@ -1210,7 +1416,7 @@ Priority_Selector::Build_Ready_Vector (BB* bb, BOOL is_fwd)
     FOR_ALL_BB_OPs_REV (bb, op) {
       OPSCH *opsch = OP_opsch(op, _cur_sched->hb_map());
       // Add it to the ready vector if there are no successors.
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       if (OPSCH_num_succs(opsch) == 0 ||
 	  _cur_sched->Ignore_Unsched_Succs(opsch)) {
 	Add_Element_Sorted (_cur_sched->ready_vector(), op, sort_by_estart);
@@ -1302,7 +1508,12 @@ Compute_Fwd_OPSCH (BB *bb, BB_MAP value_map, INT *max_lstart,
       ARC *arc = ARC_LIST_first(arcs);
       OP *succ_op = ARC_succ(arc);
       OPSCH *succ_opsch = OP_opsch(succ_op, value_map);
-      if (!Is_Ldst_Addiu_Pair (opsch, succ_opsch, op, succ_op, arc)) {
+#ifdef TARG_ST
+      if (!Is_Ldst_Addiu_Pair (opsch, succ_opsch, op, succ_op))
+#else
+      if (!Is_Ldst_Addiu_Pair (opsch, succ_opsch, op, succ_op, arc)) 
+#endif
+      {
         INT cur_estart = Calculate_Adjust_Latency(arc) + op_estart;
         if (OPSCH_estart(succ_opsch) < cur_estart) {
           OPSCH_estart(succ_opsch) = cur_estart;
@@ -1347,7 +1558,12 @@ Compute_Bkwd_OPSCH (BB *bb, BB_MAP value_map, INT max_lstart,
       ARC *arc = ARC_LIST_first(arcs);
       OP *pred_op = ARC_pred(arc);
       OPSCH *pred_opsch = OP_opsch(pred_op, value_map);
-      if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op, arc)) {
+#ifdef TARG_ST
+      if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op))
+#else
+      if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op, arc)) 
+#endif
+      {
         INT cur_lstart = OPSCH_lstart(opsch) - Calculate_Adjust_Latency(arc);
         if (OPSCH_lstart(pred_opsch) > cur_lstart) {
           OPSCH_lstart(pred_opsch) = cur_lstart;
@@ -1455,7 +1671,11 @@ HB_Schedule::Compute_BBSCH (BB *bb, BBSCH *bbsch)
 	(OPSCH_lstart(opsch) - OPSCH_estart(opsch)) == 0) { 
       critical_length = OPSCH_scycle(opsch) - Clock;
     }
+#ifdef TARG_ST
+    if (OP_Is_Barrier(op)) {
+#else
     if (CGTARG_Is_OP_Barrier(op)) {
+#endif
       Set_BB_MEM_BARRIER(bbsch);
       if (critical_length) break;
     }
@@ -1664,7 +1884,7 @@ HB_Schedule::Add_OP_To_Sched_Vector (OP *op, BOOL is_fwd)
   // Remove <op> from Ready_Vector.
   VECTOR_Delete_Element (_ready_vector, op);
 
-#ifdef KEY
+#if defined( KEY) //&& !defined(TARG_ST)
   Reset_OPSCH_ready(opsch);
 
   // Insert copy to fix REGANTI dependence.
@@ -1708,20 +1928,36 @@ HB_Schedule::Add_OP_To_Sched_Vector (OP *op, BOOL is_fwd)
 	  VECTOR_Add_Element (_ready_vector, succ_op);
 	}
 #else // !KEY
-	
-	if( !Is_Ldst_Addiu_Pair( opsch, succ_opsch, op, succ_op, arc ) ){
+#ifdef TARG_ST
+        if( !Is_Ldst_Addiu_Pair( opsch, succ_opsch, op, succ_op) )
+#else        
+	if( !Is_Ldst_Addiu_Pair( opsch, succ_opsch, op, succ_op, arc ) )
+#endif
+        {
 	  FmtAssert( OPSCH_num_preds(succ_opsch) > 0, 
 		     ("HBS: invalid count of succs"));
 	  
 	  OPSCH_num_preds(succ_opsch)--;
 #ifdef KEY
-	  if (!OPSCH_ready(succ_opsch)) {
+	  if (!OPSCH_ready(succ_opsch)
+#ifdef TARG_ST
+	      // [vcdv] do not add xfer op top ready list, they are
+	      // treated in Schedule_Block()            
+	      && !OP_xfer(succ_op)
+#endif
+              ) {
 	    if (OPSCH_num_preds(succ_opsch) == 0) {
 	      Add_OP_To_Ready_Vector(succ_opsch);
 	    }
 	  }
 #else
-	  if( OPSCH_num_preds(succ_opsch) == 0 ){
+	  if( OPSCH_num_preds(succ_opsch) == 0 
+#ifdef TARG_ST
+	      // [vcdv] do not add xfer op top ready list, they are
+	      // treated in Schedule_Block()            
+	      && !OP_xfer(succ_op)
+#endif
+              ){
 	    VECTOR_Add_Element (_ready_vector, succ_op);
 	  }
 #endif
@@ -1763,12 +1999,17 @@ HB_Schedule::Add_OP_To_Sched_Vector (OP *op, BOOL is_fwd)
 	INT scycle = Clock - ARC_latency(arc);
 	// update the OPSCH_scycle field for the predecessor OP.
 	OPSCH_scycle(pred_opsch) = MIN (scycle, OPSCH_scycle(pred_opsch));
-	if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op, arc)) {
+#ifdef TARG_ST
+        if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op))
+#else
+	if (!Is_Ldst_Addiu_Pair (pred_opsch, opsch, pred_op, op, arc)) 
+#endif
+        {
 	  FmtAssert (OPSCH_num_succs(pred_opsch) != 0, 
 		     ("HBS: invalid count of succs"));
 	  
 	  OPSCH_num_succs(pred_opsch)--;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	  if (!OPSCH_ready(pred_opsch)) {
 	    if (OPSCH_num_succs(pred_opsch) == 0 ||
 		Ignore_Unsched_Succs(pred_opsch)) {
@@ -1793,7 +2034,16 @@ HB_Schedule::Add_OP_To_Sched_Vector (OP *op, BOOL is_fwd)
 	OP *succ_op = ARC_succ(arc);
 	OPSCH *succ_opsch = OP_opsch (succ_op, _hb_map);
 	if (!OPSCH_scheduled(succ_opsch)) {
+#ifdef TARG_ST
+	  // FdF 18/06/2004: OPSCH_ldst is set also on cmpne/cmpeq
+	  // operations, for which Memory_OP_Base_Opndnum is not
+	  // defined (returns -1).
+	  INT opndnum = OP_Is_Cmp_Eq_Ne(op)
+	                  ? TOP_Find_Operand_Use(OP_code(op), OU_opnd1)
+	                  : Memory_OP_Base_Opndnum (op);
+#else
 	  INT opndnum = Memory_OP_Base_Opndnum (op);
+#endif
 #ifdef TARG_X8664
 	  if( opndnum < 0 ){
 	    continue;
@@ -1935,6 +2185,93 @@ Is_OP_Better_For_Balance_Unsched_Types(OPSCH *cur_opsch, OPSCH *best_opsch,
 }
 #endif
 
+#ifdef TARG_ST
+// ======================================================================
+// This function takes 2 input operations, one of them being an extract.
+// It returns a pointer to this operation if scheduling it earlier than
+// the other operation might lower the register pressure.
+// It returns NULL otherwise (no preference).
+// 
+// Note that this function is expected to be called during the backward 
+// walk, and is relying on already scheduled operations.
+//
+// It is relevant to have a special handling of EXTRACT op for the 
+// following reasons:
+// - Those simulated operations are likely to be replaced by nothing,
+//   if the source and target TNs are coalesced,
+// - Scheduling them as early as possible can lower register pressure,
+//   if it is the last use of the source and if some of the results
+//   are unused.
+//
+// Note:
+//   If CG_sched_extract_earliest == SCHED_EXTRACT_EARLIEST_AGGRESSIVE_ON
+//   the transformation is enabled even with liveout GTN.
+// ======================================================================
+static OP*
+Schedule_Extract_Op_Earlier(OP *op1, OP *op2, BB *cur_bb, HB_Schedule *cur_sched) {
+  OP *extract_op, *other_op;
+  ARC_LIST *input_arcs;
+  ARC_LIST *output_arcs;
+  
+  if (OP_extract(op1)) {
+    extract_op = op1;
+    other_op   = op2;
+  } else {
+    extract_op = op2;
+    other_op   = op1;
+  }
+  
+  BOOL pref_extract = TRUE;
+  
+  INT extract_opnd_idx = OP_is_predicated(extract_op)?1:0;
+  
+  if ((CG_sched_extract_earliest == SCHED_EXTRACT_EARLIEST_AGGRESSIVE_ON) ||
+      (!TN_is_global_reg(OP_opnd(extract_op, extract_opnd_idx)) ||
+       (BB_live_out(cur_bb) && (!GTN_SET_MemberP(BB_live_out(cur_bb), OP_opnd(extract_op, extract_opnd_idx)))))) {
+    // Search if the operand of extract operation is used afterwards.
+    // If not, it is interesting to schedule it as early as possible,
+    // especially if some of the results are unused.
+    //
+    // To detect use points of operands, looks into the dependency graph
+    // at all successor nodes of predecessor nodes of the extract op.
+    // 1.Walk along input arcs of extract op
+    for (input_arcs = OP_preds(extract_op);
+	 input_arcs != NULL && pref_extract;
+	 input_arcs = ARC_LIST_rest(input_arcs)) {
+      ARC *inarc = ARC_LIST_first(input_arcs);
+      OP *pred_op = ARC_pred(inarc);
+      if (ARC_kind(inarc) == CG_DEP_REGIN) {
+      
+	// 2.Walk along output arcs of predecessors of extract op
+	for (output_arcs = OP_succs(pred_op);
+	     output_arcs != NULL;
+	     output_arcs = ARC_LIST_rest(output_arcs)) {
+	  ARC *outarc;
+	  outarc = ARC_LIST_first(output_arcs);
+	  if (ARC_kind(outarc) == CG_DEP_REGIN &&
+	      inarc != outarc) {
+	    OP *succ_op = ARC_succ(outarc);
+	    INT out_opnd_idx = ARC_opnd(outarc);
+	    if (OP_opnd(succ_op, out_opnd_idx) == OP_opnd(extract_op, extract_opnd_idx)) {
+	      OPSCH *succ_opsch = OP_opsch(succ_op, cur_sched->hb_map());
+	      if (OPSCH_scheduled(succ_opsch) ||
+		  succ_op == other_op) {
+		pref_extract = FALSE;
+		break;
+	      }
+	    }
+	  }
+	}
+      }
+    }
+    if (pref_extract) {
+      return (extract_op);
+    }
+  }
+  return NULL;
+}
+#endif
+
 // ======================================================================
 // Compare two OPs to see which one is better for scheduling.
 // ======================================================================
@@ -2005,6 +2342,19 @@ Priority_Selector::Is_OP_Better (OP *cur_op, OP *best_op)
     WN *pref_wn = Get_WN_From_Memory_OP(cur_op);
     if (pref_wn && WN_pf_manual(pref_wn)) manual_pref = TRUE;
   }
+
+#ifdef TARG_ST
+  // [TTh] Special handling for EXTRACT ops: scheduling them earlier
+  // in current BB might lower the register pressure and remove some
+  // live-range conflicts.
+  if ((CG_sched_extract_earliest != SCHED_EXTRACT_EARLIEST_OFF) &&
+      (OP_extract(cur_op) || OP_extract(best_op))) {
+    OP *elected = Schedule_Extract_Op_Earlier(cur_op, best_op, _curbb, _cur_sched);
+    if (elected) {
+      return ((elected==cur_op)?FALSE:TRUE);
+    }
+  }
+#endif
 
   if (cur_scycle > best_scycle)  {
 
@@ -2080,7 +2430,21 @@ Priority_Selector::Is_OP_Better (OP *cur_op, OP *best_op)
     return (OPSCH_dfsnum(cur_opsch) < OPSCH_dfsnum(best_opsch));
   }
 
-  if (_hbs_type & HBS_CRITICAL_PATH) {
+  if (_hbs_type & HBS_CRITICAL_PATH) {    
+    // FdF 20051212: Keep memory operations in lexical order as much
+    // as possible
+#ifdef TARG_ST
+    if (OP_memory(cur_op) && OP_memory(best_op) &&
+	(OPSCH_lstart(cur_opsch) == OPSCH_lstart(best_opsch))) {
+      // If only one has estart==lstart, return this one, otherwise
+      // use map_idx.
+      if ((OPSCH_estart(cur_opsch) != OPSCH_estart(best_opsch)) &&
+	  ((OPSCH_estart(cur_opsch) == OPSCH_lstart(cur_opsch)) ||
+	   (OPSCH_estart(best_opsch) == OPSCH_lstart(best_opsch))))
+	return (OPSCH_estart(cur_opsch) == OPSCH_lstart(cur_opsch));
+      return (OP_map_idx(cur_op) > OP_map_idx(best_op));
+    }
+#endif
     INT cur_slack, best_slack;
     cur_slack = OPSCH_lstart(cur_opsch) - OPSCH_estart(cur_opsch);
     best_slack = OPSCH_lstart(best_opsch) - OPSCH_estart(best_opsch);
@@ -2089,6 +2453,24 @@ Priority_Selector::Is_OP_Better (OP *cur_op, OP *best_op)
 
     if (OPSCH_estart(cur_opsch) > OPSCH_estart(best_opsch)) return TRUE;
     if (OPSCH_estart(cur_opsch) < OPSCH_estart(best_opsch)) return FALSE;
+#ifdef TARG_ST
+    if (Is_Ldst_Addiu_Pair(cur_opsch, best_opsch, cur_op, best_op) && 
+	!OP_Is_Cmp_Eq_Ne(cur_op) && !OP_Is_Cmp_Eq_Ne(best_op)) {
+      // FdF 15/12/2003: return the one which is the source of a REGIN
+      // dependence or the destination of a REGANTI dependence.
+      ARC_LIST *arcs;
+      for (arcs = OP_succs(cur_op); arcs != NULL; arcs = ARC_LIST_rest(arcs)) {
+	ARC *arc = ARC_LIST_first(arcs);
+	if ((ARC_succ(arc) == best_op))
+	  return (ARC_kind(arc) == CG_DEP_REGIN);
+      }
+      for (arcs = OP_preds(cur_op); arcs != NULL; arcs = ARC_LIST_rest(arcs)) {
+	ARC *arc = ARC_LIST_first(arcs);
+	if ((ARC_pred(arc) == best_op))
+	  return (ARC_kind(arc) == CG_DEP_REGANTI);
+      }
+    }
+#endif
   }
 
 #ifdef KEY
@@ -2311,6 +2693,51 @@ HB_Schedule::Put_Sched_Vector_Into_BB (BB *bb, BBSCH *bbsch, BOOL is_fwd)
     }
   }
 #endif
+#ifdef TARG_ST
+  {
+    OP *op = BB_last_op(bb);
+    OPSCH *opsch = OP_opsch(op, _hb_map);
+    cur_cycle = ((is_fwd) ? OPSCH_scycle(opsch) : OPSCH_scycle(opsch) - Clock) + 1;
+  }
+
+  if (Trace_HB)
+    fprintf(TFile, "BB:%d, hbs_type:0x%04x: cycles=%d fwd: %d, max_sched: %d\n", BB_id(bb), type(), cur_cycle, is_fwd, _max_sched);
+
+  // [SC] When HBS_Minimize_Regs, the schedule is better if it reduces
+  // the register pressure for a nominated class.
+  // Otherwise, the schedule is better if it reduces the cycle count.
+  BOOL sched_is_better;
+
+  if (HBS_Minimize_Regs ()) {
+    if (minimize_regs_class != ISA_REGISTER_CLASS_UNDEFINED) {
+      // Threshold is set to be the number of excess registers we had
+      // before rescheduling.  Usually, this value will be negative,
+      // since we are lacking registers.
+      // min_cur_regs_avail gives the number of registers available at
+      // the point of highest register pressure in the BB, after
+      // rescheduling.  If this value is greater than the threshold, then
+      // we have reduced register pressure.
+      sched_is_better = (_Min_Cur_Regs_Avail[minimize_regs_class]
+			 > minimize_regs_threshold);
+      if (Trace_HB) {
+	fprintf (TFile, "Scheduled to minimize regs: new regs avail = %d, threshold = %d,  max length = %d cycles, new length = %d cycles\n",
+		 _Min_Cur_Regs_Avail[minimize_regs_class],
+		 minimize_regs_threshold,
+		 _max_sched, cur_cycle);
+      }
+    } else {
+      sched_is_better = TRUE;
+    }
+  } else {
+    sched_is_better = (cur_cycle <= _max_sched);
+  }
+  if (Trace_HB) {
+    fprintf (TFile, "sched_is_better = %d\n", (int)sched_is_better);
+  }
+
+  // FdF: update OP_scycle only if the new scheduled is better
+  if (sched_is_better) {
+#endif
 
   // Set the OP_scycle field for all the OPs. Also, reset the OPSCH_visited
   // flag. It is used in the Adjust_Ldst_Offsets routine.
@@ -2334,10 +2761,17 @@ HB_Schedule::Put_Sched_Vector_Into_BB (BB *bb, BBSCH *bbsch, BOOL is_fwd)
       cur_cycle = OP_scycle(op);
 #endif
   }
+#ifdef TARG_ST
+  }
+  FmtAssert (HBS_Minimize_Regs() || (cur_cycle >= _max_sched) || (cur_cycle == (OP_scycle(BB_last_op(bb)) + 1)),
+	     ("HB_SCHED: Inconsistent scycle."));
+#else
+
 
 #ifndef KEY	// This is wrong because BB_last_op(bb) may no longer be the
 		// last OP in BB under the new schedule.
   cur_cycle = OP_scycle(BB_last_op(bb)) + 1;
+#endif
 #endif
 
 #ifdef KEY	// Put back above line even though it is wrong, for bug 14299.
@@ -2348,13 +2782,16 @@ HB_Schedule::Put_Sched_Vector_Into_BB (BB *bb, BBSCH *bbsch, BOOL is_fwd)
 
   // If current cycle estimate is better than <max_sched>, then ONLY dump
   // the Sched_Vector buffer. Otherwise, preserve the previous one.
-
-  if (cur_cycle < _max_sched) {
-#ifdef KEY
-    Adjust_Ldst_Offsets( is_fwd );
+#ifdef TARG_ST
+  if (sched_is_better)
 #else
-    Adjust_Ldst_Offsets ();
+  if (cur_cycle < _max_sched) 
 #endif
+  {
+#ifdef TARG_ST
+	computed_max_sched=cur_cycle;
+#endif
+    Adjust_Ldst_Offsets (is_fwd);
 
     if (bbsch != NULL) {
       Compute_BBSCH (bb, bbsch);
@@ -2370,7 +2807,7 @@ HB_Schedule::Put_Sched_Vector_Into_BB (BB *bb, BBSCH *bbsch, BOOL is_fwd)
 	 (is_fwd) ? i++ : i--) {
       OP *op = OP_VECTOR_element(_sched_vector, i);
       BB_Append_Op(bb, op);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       // Mark the prefetches deleted by the current schedule.
       if (OP_prefetch(op)) {
 	if (prefetches_to_delete > 0) {
@@ -2383,7 +2820,7 @@ HB_Schedule::Put_Sched_Vector_Into_BB (BB *bb, BBSCH *bbsch, BOOL is_fwd)
 #endif
     }
   }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Reusing the old schedule.  Restore the old scycle numbers for more
   // accurate asm annotation.
   else {
@@ -2397,6 +2834,14 @@ HB_Schedule::Put_Sched_Vector_Into_BB (BB *bb, BBSCH *bbsch, BOOL is_fwd)
     }
   }
 #endif
+#ifdef TARG_ST
+  //[TDR] - Fix for bug #49903, When entering a new BB, computed_max_sched must be updated
+  // to the stored value of _max_sched otherwise computed_max_sched may end up with value
+  // of previous block
+  else 
+      computed_max_sched=_max_sched;
+#endif
+
 }
 
 // ======================================================================
@@ -2698,10 +3143,146 @@ List_Based_Fwd::Is_OP_Better (OP *cur_op, OP *best_op)
     return (OPSCH_dfsnum(cur_opsch) < OPSCH_dfsnum(best_opsch));
   }
 
+#ifdef TARG_ST
+  // [TDR] - To limit micro-arch effect, we have better schedule 
+  // loads early in the block 
+  if(_hbs_type & HBS_PREF_LOAD) {
+      // [TDR] - Fix for bug #49718 : The micro-arch limitation
+      // only apply on core load/store. Also, fpx instruction
+      // induce long latency so should be treated in the standard flow  
+      if ((!OP_is_ext_op(cur_op) && OP_load(cur_op)) || (!OP_is_ext_op(best_op) && OP_load(best_op))) {
+          // Both are loads without freedom 
+          if (OP_load(cur_op) && OP_load(best_op)) {
+            if (OPSCH_estart(cur_opsch) > OPSCH_estart(best_opsch)) return FALSE;
+            if (OPSCH_estart(cur_opsch) < OPSCH_estart(best_opsch)) return TRUE;
+          }
+          //Only one instruction is a load
+          if (OP_load(best_op) && !OP_load(cur_op)) return FALSE;
+          if (OP_load(cur_op) && !OP_load(best_op)) return TRUE;
+      }
+  }
+#endif
   if (_hbs_type & HBS_CRITICAL_PATH) {
     INT cur_slack, best_slack;
     cur_slack = OPSCH_lstart(cur_opsch) - OPSCH_estart(cur_opsch);
     best_slack = OPSCH_lstart(best_opsch) - OPSCH_estart(best_opsch);
+
+#ifdef TARG_ST
+  // [VB] Best operation between two:
+  // - If only one is on the critical path (that is lstart-estart=0),
+  //   the one on the critical path except if it has no successor
+  //   (because it can be scheduled everywhere until the end of the bb)
+  //   and if it is not an instruction with a latency (such as a load,
+  //   a compare or a setle (for stxp70)) (because if an instruction has a
+  //   latency, it is better that it does not appear at the end of a bb
+  //   else it can introduce a latency with an instruction at the beginning
+  //   of the following bb).
+  // - If both are on critical path, the one with the biggest estart if any.
+  // - Else the one with the smallest lstart, that is the one which has the
+  //   longest path after it so that is the most urgent to schedule,
+  //   except if the other one is an instruction with a latency
+  //   (such as a load, a compare or a setle (for stxp70)), in order to
+  //   avoid such instructions to be scheduled lately in a bb.
+  // - Else the one with the smallest difference between its lstart and
+  //   its estart (smallest freedom degree).
+  // - Else the one with the biggest estart.
+  // - Else the first one in the list.
+    
+    
+    if(_hbs_type & HBS_HEURISTIC_CRITICAL_PATH) {
+      //[dt] try to improve even more :
+      // If one branch is not on the critical path but both have successors, we consider :
+      // - Being on critical path
+      // - The nuber of successors
+      // - The freedom in schedul time (i.e. slack)
+      // - The maximum latency between instruction and next one in worst case
+      if (((best_slack!=0) ||(cur_slack !=0)) 
+          &&  OPSCH_num_succs(cur_opsch) 
+          &&  OPSCH_num_succs(best_opsch)
+          &&  ((OPSCH_lstart(best_opsch)==OPSCH_lstart(cur_opsch)) || (_hbs_type & HBS_CRITICAL_PATH_PREF_LOAD))) {   	  
+
+    	INT cur_val = 0;
+        INT best_val = 0;
+  
+        if (cur_slack == 0) cur_val = 2;
+        else if (cur_slack <= 2) cur_val = 1;
+        if (best_slack == 0) best_val = 2;
+        else if (best_slack <= 2) best_val = 1;
+        
+        // Here we know that both operation have at least on successor
+        if (OPSCH_num_succs(cur_opsch) <=2 ) cur_val ++ ;
+        else cur_val += 2;
+        if (OPSCH_num_succs(best_opsch) <=2 ) best_val ++ ;
+        else best_val += 2;
+        
+        if (_hbs_type & HBS_CRITICAL_PATH_PREF_LOAD) {
+			/*[dt] Address more specific cases: If we are already after a latest start date, 
+			 * increase choose coef and increase the one that have the sooner last start date
+			 * Also we add a extra value if the operand is a load*/
+	        
+	        if (OPSCH_lstart(best_opsch) < OPSCH_lstart(cur_opsch)) best_val ++;
+	        if (OPSCH_lstart(cur_opsch) < OPSCH_lstart(best_opsch)) cur_val ++;
+
+	        if (OPSCH_lstart(best_opsch) < cur_scycle) best_val += 2;
+	        if (OPSCH_lstart(cur_opsch) < cur_scycle) cur_val += 2;
+
+	        if(OP_load(cur_op)) cur_val += 3;
+	        if(OP_load(best_op)) best_val += 3;
+        }
+        
+        if (OPSCH_num_succs(cur_opsch) > OPSCH_num_succs(best_opsch)) cur_val ++ ;
+        if (OPSCH_num_succs(cur_opsch) < OPSCH_num_succs(best_opsch)) best_val ++ ;
+  
+  
+        if (CGTARG_Max_OP_Latency(cur_op) < CGTARG_Max_OP_Latency(best_op))  best_val ++;
+        if (CGTARG_Max_OP_Latency(cur_op) > CGTARG_Max_OP_Latency(best_op))  cur_val ++;
+       
+ 	  	if (cur_val > best_val) return TRUE;
+        else if (cur_val < best_val)  return FALSE;
+        else if (CGTARG_Max_OP_Latency(cur_op) > CGTARG_Max_OP_Latency(best_op)) return TRUE;
+        else if (CGTARG_Max_OP_Latency(cur_op) < CGTARG_Max_OP_Latency(best_op)) return FALSE;
+      }
+    }
+
+    if ((best_slack == 0) && (cur_slack !=0)) {
+      if (OPSCH_num_succs(best_opsch) != 0) {
+	return FALSE;
+      }
+      else {
+	if (OP_Has_Latency(best_op)) {
+	  return FALSE;
+	}
+	else {
+	  return TRUE;
+	}
+      }
+    }
+    if ((best_slack != 0) && (cur_slack ==0)) {
+      if (OPSCH_num_succs(cur_opsch) != 0) {
+	return TRUE;
+      }
+      else {
+	if (OP_Has_Latency(cur_op)) {
+	  return TRUE;
+	}
+	else {
+	  return FALSE;
+	}
+      }
+    }
+    if ((best_slack == 0) && (cur_slack ==0)) {
+      if (OPSCH_estart(cur_opsch) > OPSCH_estart(best_opsch)) return TRUE;
+      if (OPSCH_estart(cur_opsch) < OPSCH_estart(best_opsch)) return FALSE;
+    }
+
+    if ((OPSCH_lstart(cur_opsch) < OPSCH_lstart(best_opsch)) &&
+	!(OP_Has_Latency(best_op)))
+      return TRUE;
+    if (OPSCH_lstart(cur_opsch) > OPSCH_lstart(best_opsch) &&
+	!(OP_Has_Latency(cur_op)))
+      return FALSE;
+#endif
+
     if (cur_slack < best_slack) return TRUE;
     if (cur_slack > best_slack) return FALSE;
 
@@ -3404,6 +3985,10 @@ HB_Schedule::HB_Schedule()
 {
   _prolog_bb = NULL;
   _epilog_bb = NULL;
+#ifdef TARG_ST
+  minimize_regs_class = ISA_REGISTER_CLASS_UNDEFINED;
+#endif
+
 
   // Initialize memory pool for use in the scheduling this bb.
   MEM_POOL_Initialize (&_hb_pool, "HB_pool", FALSE);
@@ -3415,6 +4000,40 @@ HB_Schedule::HB_Schedule()
   Trace_HB = Get_Trace (TP_SCHED, 1);
 }
 
+#ifdef TARG_ST
+void
+HB_Schedule::Init(BB *bb, HBS_TYPE hbs_type, INT32 max_sched,
+		  BBSCH *bbsch, mINT8 *regs_avail,
+		  ISA_REGISTER_CLASS cl, INT32 cl_limit)
+{
+  Init (bb, hbs_type, max_sched, bbsch, regs_avail);
+  minimize_regs_class = cl;
+  // cl_limit is the number of registers LRA wants to allocate the BB.
+  // regs_avail[cl] is the number of registers GRA has granted to LRA.
+  // We set the threshold to be the number of excess registers we have,
+  // i.e. regs_avail - cl_limit.  Usually, this value will be negative,
+  // since we are lacking registers.
+  // During scheduling, we track cur_regs_avail(i), the number of
+  // registers available at instruction i, and also its minimum,
+  // min_cur_regs_avail.
+  // When min_cur_regs_avail is negative, e.g. -5, it means we are lacking
+  // 5 registers at the point of highest register pressure in the BB.
+  // If min_cur_regs_avail > threshold, it means
+  // we are lacking fewer registers than before, so the rescheduling
+  // has reduced register pressure, which is what we want.
+  if (cl != ISA_REGISTER_CLASS_UNDEFINED)
+    minimize_regs_threshold = regs_avail[cl] - cl_limit;
+}
+#endif
+
+#ifdef TARG_ST
+void
+HB_Schedule::Init(BB *bb, HBS_TYPE hbs_type)
+{
+	Init(bb, hbs_type, computed_max_sched, NULL,NULL);
+}
+#endif
+
 void
 HB_Schedule::Init(BB *bb, HBS_TYPE hbs_type, INT32 max_sched,
 		  BBSCH *bbsch, mINT8 *regs_avail)
@@ -3422,8 +4041,15 @@ HB_Schedule::Init(BB *bb, HBS_TYPE hbs_type, INT32 max_sched,
   _hbs_type = hbs_type;
   _max_sched = max_sched;
   if (regs_avail) {
-    for (INT i = ISA_REGISTER_CLASS_MIN;i <= ISA_REGISTER_CLASS_MAX; i++)   
+    for (INT i = ISA_REGISTER_CLASS_MIN;i <= ISA_REGISTER_CLASS_MAX; i++)
+#ifdef TARG_ST
+      {
+	_Cur_Regs_Avail[i] = regs_avail[i];
+	_Min_Cur_Regs_Avail[i] = regs_avail[i];
+      }
+#else
       _Cur_Regs_Avail[i] = regs_avail[i];
+#endif
   }
 
   BB_OP_MAP omap = BB_OP_MAP_Create(bb, &_hb_map_pool);
@@ -3441,8 +4067,15 @@ HB_Schedule::Init(std::list<BB*> bblist, HBS_TYPE hbs_type, mINT8 *regs_avail)
 {
   _hbs_type = hbs_type;
   if (regs_avail) {
-    for (INT i = ISA_REGISTER_CLASS_MIN;i <= ISA_REGISTER_CLASS_MAX; i++)   
+    for (INT i = ISA_REGISTER_CLASS_MIN;i <= ISA_REGISTER_CLASS_MAX; i++)
+#ifdef TARG_ST
+      {
+	_Cur_Regs_Avail[i] = regs_avail[i];
+	_Min_Cur_Regs_Avail[i] = regs_avail[i];
+      }
+#else
       _Cur_Regs_Avail[i] = regs_avail[i];
+#endif
   }
 
   UINT32 length = 0;
@@ -3680,6 +4313,13 @@ HB_Schedule::Schedule_BB (BB *bb, BBSCH *bbsch, int scheduling_algorithm)
       }
 #endif
     }
+#ifdef TARG_ST
+    // FdF 20081209: For BBs with one operation, must set a valid
+    // scheduling date
+    else
+      OP_scycle(BB_last_op(bb)) = 0;
+#endif
+
     Set_BB_scheduled (bb);
     Set_BB_scheduled_hbs (bb);  // scheduled from hbs
     if (Assembly) Add_Scheduling_Note (bb, (void*) bbsch);
@@ -3694,11 +4334,19 @@ HB_Schedule::Schedule_BB (BB *bb, BBSCH *bbsch, int scheduling_algorithm)
 
   if (HBS_Before_GRA() && !HBS_From_CGPREP()) {
 
+#ifdef TARG_ST
+	  if(!(CG_sched_mask & 0x2000)) {
+#else
     if (!Get_Trace (TP_SCHED, 0x2000)) {
+#endif
 
       // Assumes that <bbsch> is computed fopass      
       mINT8 *fatpoint = (_hbs_type & HBS_FROM_PRE_GCM_SCHED_AGAIN) ?
+#ifdef TARG_ST
+      BBSCH_local_regcost(bbsch) : LRA_Compute_Register_Request(bb, &_hb_pool)->summary;
+#else
       BBSCH_local_regcost(bbsch) : LRA_Compute_Register_Request(bb, &_hb_pool);
+#endif
       if (HBS_From_Pre_GCM_Sched()) {
         Set_BB_local_regcost(bbsch, fatpoint);
       }

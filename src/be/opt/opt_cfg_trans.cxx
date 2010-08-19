@@ -218,9 +218,20 @@ reconstruct_CFG(successor_graph& g, CFG *cfg, bool trace)
     vector<bool> was_fall_thru_target(g.size(), false);
     vector<pair<edge,edge> > out_buffer;
     successor_graph::cluster_id next_cluster_id = g.size();
+#ifdef TARG_ST
+    // FdF 04/10/2004: When LNO is run, Last_bb_id may be larger than
+    // g.size, which is the actual number of basic blocks. 
+    if (next_cluster_id != (cfg->Last_bb_id()+1))
+      next_cluster_id = cfg->Last_bb_id()+1;
+#endif
     for (successor_graph::iterator ep = g.begin(); 
 	 ep != g.end(); 
 	 ++ep) {
+#ifdef TARG_ST
+      // FdF 14/06/2004: Prehead must fall-thru to loop head
+      if (cfg->Get_bb(first(*ep))->Kind() == BB_DOHEAD)
+	(*ep).must_fall_thru = true;
+#endif
       if ((*ep).must_fall_thru) {
 	if (was_fall_thru_target[second(*ep)]) {
 	  successor_graph::cluster_id v = next_cluster_id++;
@@ -235,6 +246,22 @@ reconstruct_CFG(successor_graph& g, CFG *cfg, bool trace)
 	  bb->Set_labnam(0);
 	  bb->Set_kind(BB_GOTO);
 	  bb->Set_phi_list(NULL);
+#ifdef TARG_ST
+	  // FdF 14/06/2004: Prehead must fall-thru to loop head
+	} else if (cfg->Get_bb(second(*ep))->Kind() == BB_DOHEAD) {
+	  successor_graph::cluster_id v = next_cluster_id++;
+	  out_buffer.push_back(std::pair<edge,edge>(*ep,edge(v, second(*ep))));
+	  (*ep).second = v; 
+	  if (trace)
+	    fprintf(TFile, "CFG trans: added fall-thru basic block %d for DOHEAD\n", v);
+	  BB_NODE *bb = cfg->Create_and_allocate_bb(BB_GOTO);
+	  Is_True(bb->Id() == v, ("vertex id not match"));
+	  bb->Clear();
+	  bb->Set_id(v);
+	  bb->Set_labnam(0);
+	  bb->Set_kind(BB_GOTO);
+	  bb->Set_phi_list(NULL);
+#endif
 	} else
 	  was_fall_thru_target[second(*ep)] = true;
       }
@@ -430,7 +457,7 @@ reconstruct_CFG(successor_graph& g, CFG *cfg, bool trace)
 	      branch_sr->Init_Goto( NULL, goto_bb->Labnam(), 0);
 	      bb->Append_stmtrep( branch_sr);
 	    } else {
-#ifdef KEY // bug 12839
+#if defined( KEY) && !defined(TARG_ST) // bug 12839
 	      if (branch_sr->Op() == OPC_AGOTO) {
 		branch_sr->Set_op(OPC_GOTO);
 		branch_sr->Rhs()->DecUsecnt();
@@ -562,7 +589,7 @@ void print_zone(FILE *fp, zone& zone)
 struct comp_zones {
   zone_container *zones;
   bool operator()(int x, int y) {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     /* If this function is compiled with x87 stack register,
        the result is undeterministic depending on the value
        of (*zones)[x/y].priority(). One simply solution is
@@ -591,12 +618,26 @@ struct comp_zones {
     double vx = (*zones)[x].priority();
     double vy = (*zones)[y].priority();
 
+#ifdef TARG_ST
+    // [TTh] Insure more determism to avoid difference between
+    // compiler build in debug and release mode:
+    // In case of (nearly) equal priorities, sort using zone ids
+    bool nearly_eq = KnuthCompareEQ((float)vx, (float)vy);
+    bool t = (!nearly_eq && (vx > vy)) || (nearly_eq && (x < y));
+
+    if (t) {
+      Is_True( nearly_eq || !(vy > vx),
+	       ("vx > vy && vy > vx."));
+    }
+#else
     bool t = vx > vy;
 
     if (t) {
       Is_True( !(vy > vx),
 	       ("vx > vy && vy > vx."));
     }
+#endif
+
 #endif
     return t;
   }
@@ -816,7 +857,14 @@ void sort_merge_and_delete_zones(zone_container& zones, CFG *cfg, bool trace)
       sorted.push_back(i);
       zones[i].canonicalize();
     }
+#if defined(TARG_ST)
+    // [CM] The sort stl library seems buggy notably under some win32 run-time
+    // environments under heavy loads. 
+    // Replacing sort by stable_sort should not be problematic.
+    stable_sort(sorted.begin(), sorted.end(), comp_zones(zones));
+#else
     sort(sorted.begin(), sorted.end(), comp_zones(zones));
+#endif
 
     interference_cache zones_will_be_cloned;
     

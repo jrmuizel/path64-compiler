@@ -736,7 +736,7 @@ IPO_Process_edge (IPA_NODE* caller, IPA_NODE* callee, IPA_EDGE* edge,
       }
 #endif
     }
-    
+#ifndef TARG_ST 
 #if defined(KEY) && !defined(_STANDALONE_INLINER) && !defined(_LIGHTWEIGHT_INLINER)
     static INT pure_call_opt_count = 0;
     if (!action_taken &&
@@ -802,7 +802,7 @@ IPO_Process_edge (IPA_NODE* caller, IPA_NODE* callee, IPA_EDGE* edge,
       }
     }
 #endif
-
+#endif
     if (!action_taken) {
 	/* when the type checking for dce and inlining is
 	   moved to the analysis phase, we can optimize the

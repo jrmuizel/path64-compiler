@@ -77,7 +77,9 @@ extern void CGEMIT_Gen_Asm_Frame (INT64 frame_len);
 // Prepass before emit to fix up fp registers for IA-32.
 // Noop for every other target.
 extern void STACK_FP_Fixup_PU();
-
+// generate value in hexa decimal for particular op or operand.
+// Case of push/pop mask.
+extern BOOL CGEMIT_TN_Value_In_Hexa_Format( OP *op, TN *t );
 // Generate the entry (.proc) directive.
 extern void CGEMIT_Prn_Ent_In_Asm (ST *pu);
 
@@ -87,6 +89,51 @@ extern void CGEMIT_Weak_Alias (ST *sym, ST *strongsym);
 // generate alias directive.
 extern void CGEMIT_Alias (ST *sym, ST *strongsym);
 
+#ifdef TARG_ST
+#ifdef TARG_STxP70
+// Special registers fixup just before verify_instruction 
+extern void CGEMIT_Special_Register_Function_Fixup( OP *op );
+
+// Emit asm macro for prolog and epilog of STxP70 tasks
+extern void CGEMIT_Task_Asm_Macro();
+
+// Directive for HW Loop cross-end
+extern void CGEMIT_Loop_CrossEnd_Directive(BB* bb);
+// Directive for HW Loop end alignement
+extern void CGEMIT_Loop_End_Directive(BB* bb);
+// Directive for call returns addresses alignement
+extern void CGEMIT_CallReturns_Directive(BB* bb);
+
+#endif
+
+#ifdef TARG_ARM
+// Emit register list from constant value.
+extern BOOL CGEMIT_Register_List(OP *op, INT opnd_idx, vstring *buf);
+#endif /*TARG_ARM*/
+
+// generate procedure end directive
+extern void CGEMIT_Exit_In_Asm (ST *pu);
+
+// generate asm directives just before asm
+extern void CGEMIT_Asm_String_Prefix (OP *op, INT32 *PC);
+
+// generate asm directives just after asm
+extern void CGEMIT_Asm_String_Suffix (OP *op, INT32 *PC);
+
+// Called at begining of file.
+extern void CGEMIT_Begin_File_In_Asm (void);
+// Called at end of file.
+extern void CGEMIT_End_File_In_Asm (void);
+
+// Returns into buf the qualified name for a symbol to be used in
+// the asm output. Moved from r_qualified_name in cgemit.cxx.
+// The returned string 
+extern void CGEMIT_Qualified_Name(ST *st, vstring *buf);
+
+/* returns whether END_GROUP (;;) must be preceeded by a \n */
+extern bool CGEMIT_NewLine_Before_ISA_PRINT_END_GROUP (void);
+
+#endif /*TARG_ST*/
 #ifdef KEY
 extern INT CGEMIT_Print_Inst( OP* op, const char* result[], const char* opnd[], FILE* f );
 extern void CGEMIT_Setup_Ctrl_Register( FILE* f );

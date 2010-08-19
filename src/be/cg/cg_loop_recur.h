@@ -75,7 +75,62 @@
 static const char cg_loop_recur_rcs_id[] = "$Source$ $Revision$";
 #endif /* _KEEP_RCS_ID */
 
+#ifdef TARG_ST
+// Arthur: moved declaration of this class here from 
+// ia64/cg_loop_recur.cxx.
+
+enum RECUR_ACTION {
+  RECUR_NONE,
+  RECUR_BACK_SUB_INVARIANT,
+  RECUR_INTERLEAVE,
+  RECUR_BACK_SUB_VARIANT
+};
+
+
+//  Recurrence Breaking OP descriptor:
+//    Determine the properties of an OP needed to perform
+//    recurrence breaking, such as which operand is the invariant ...
+//
+class RECUR_OP_DESC {
+  RECUR_ACTION action;
+  INT invar_opnd_num;
+  INT second_invar_opnd_num;  // only valid for fma 
+  INT reg_opnd_num;
+  INT res_num;
+  INT new_omega;
+  OP *op;
+  TYPE_ID mtype;
+  bool is_add;
+  bool has_one_invar_opnd;
+  bool allow_back_sub_variant;
+  bool need_copy_variant;
+  TN *identity;
+  
+  // Initialize information depending on a particular opcode
+  void Init_OP();
+
+public:
+  OP *Op() { return op; }
+  RECUR_ACTION Action() { return action; }
+  INT  Invar_opnd_num() { return invar_opnd_num; }
+  INT  Second_invar_opnd_num() { return second_invar_opnd_num; }
+  INT  Reg_opnd_num() { return reg_opnd_num; }
+  INT  Res_num() { return res_num; }
+  TYPE_ID Mtype() { return mtype; }
+  bool Is_add() { return is_add; }
+  INT  New_omega() { return new_omega; }
+  TN  *Identity() { return identity; }
+  bool Need_copy_variant() { return need_copy_variant; }
+
+  RECUR_OP_DESC(const RECUR_OP_DESC &r) { *this = r; }
+
+  RECUR_OP_DESC(BB *body, BB *epilog, OP *operation, CG_LOOP_DEF& tn_def, 
+		TN_SET *multi_def, double estimate_ResMII, bool trace);
+};
+
+#else
 class CG_LOOP;
+#endif
 
 BOOL CG_LOOP_Fix_Recurrences(BB *loop_body);
 
@@ -84,5 +139,22 @@ UINT32 CG_LOOP_Max_Recurrence_Cycles(BB *loop_body);
 extern void Fix_Recurrences_Before_Unrolling(CG_LOOP& cl);
 
 extern void Fix_Recurrences_After_Unrolling(CG_LOOP& cl);
+
+#ifdef TARG_ST
+// Target-specific recurrence routines
+extern TYPE_ID
+RECUR_OP_DESC_Init_OP (
+  OP *op,
+  INT *has_one_invar_opnd, 
+  BOOL *is_add,
+  INT *invar_opnd_num,
+  INT *second_invar_opnd_num,
+  INT *reg_opnd_num,
+  INT *res_num
+  );
+
+extern void OP_Apply_Back_Sub_Invariant (OP *op);
+extern BOOL OP_Apply_Back_Sub_Variant (OP *op);
+#endif
 
 #endif

@@ -32,11 +32,11 @@
 /* Code Generator (CG) related include files */
 #include "tn.h"
 #include "bb.h"
+#include "cgtarget.h"
 #include "cg_loop.h"
 #include "cgexp.h"
 #include "freq.h"
 #include "gra_live.h"
-
 /* Software Pipelinig (SWP) related include files */
 #include "cg_swp_op_vector.h"
 #include "cg_swp_options.h"
@@ -48,7 +48,7 @@
 #include <algorithm>
 
 using namespace std;
-
+#ifndef TARG_ST
 
 
 SWP_CODE_GEN::SWP_CODE_GEN (SWP_LOOP& swp_loop,
@@ -1511,4 +1511,4 @@ SWP_CODE_GEN::Rename_Prologue_TN_to_Kernel_TN (TN *kernel_tn) {
     
   return FALSE;
 }
-
+#endif

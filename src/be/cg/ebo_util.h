@@ -87,6 +87,15 @@
  * =======================================================================
  */
 
+#ifdef TARG_ST
+extern void EBO_Set_OP_omega (OP *op, ...);
+extern void EBO_OPS_omega (OPS *ops, TN *opnd, EBO_TN_INFO *opnd_tninfo);
+extern void EBO_OP_merge_omega ( OP *old_op, EBO_TN_INFO **old_opnd_tninfo, OP *new_op );
+extern BOOL TN_live_out_of(TN *tn, BB *bb);
+extern BOOL EBO_OP_predicate_dominates(OP *op1, EBO_TN_INFO **op1_opnd_tninfo,
+                                       OP *op2, EBO_TN_INFO **op2_opnd_tninfo);
+#endif
+
 #ifdef KEY
 #define EBO_REG(regs, cl, op_num)	\
   (regs[((op_num) * (ISA_REGISTER_CLASS_MAX+1)) + (cl)])
@@ -108,7 +117,27 @@ EBO_tn_available(BB *bb,
  /* Constants are always available. */
   if (TN_Is_Constant(tn)) return TRUE;
  /* Does a TN look-up get us back to where we start? */
+  #ifdef TARG_ST
+  // [SC] We can ignore dummy entries on the tninfo same list,
+  // when trying to find a match.
+  {
+    EBO_TN_INFO *avail_tninfo;
+    for (avail_tninfo = get_tn_info (tn);
+	 avail_tninfo != NULL;
+	 avail_tninfo = avail_tninfo->same) {
+      if (avail_tninfo == tninfo) {
+	break; // found a match.
+      }
+      if (avail_tninfo->in_op != NULL) {
+	break; // found a real definition, cannot ignore
+      }
+      // Must be a dummy tninfo, so keep looking.
+    }
+    if (avail_tninfo != tninfo) return FALSE;
+  }
+#else
   if (get_tn_info(tn) != tninfo) return FALSE;
+#endif
  /* Global TN's aren't supported at low levels of optimization. */
   if ((Opt_Level < 2) && (bb != tn_bb)) return FALSE;
  /* Some forms of data movement aren't supported.
@@ -135,7 +164,16 @@ EBO_tn_available(BB *bb,
   return TRUE;
 }
 
-
+#ifdef TARG_ST
+inline
+BOOL
+OP_effectively_copy(OP *op)
+{
+  if (OP_copy(op)) return TRUE;
+  if (OP_Is_Copy(op)) return TRUE;
+  return FALSE;
+}
+#else
 inline
 BOOL
 OP_effectively_copy(OP *op)
@@ -145,7 +183,7 @@ OP_effectively_copy(OP *op)
   if (EBO_Copy_Operand(op) >= 0) return TRUE;
   return FALSE;
 }
-
+#endif
 
 
 inline
@@ -165,6 +203,12 @@ EBO_hash_op (OP *op,
     TN * spill_tn = NULL;
     hash_value = EBO_DEFAULT_MEM_HASH;
     if (OP_no_alias(op)) hash_value = EBO_NO_ALIAS_MEM_HASH;
+#ifdef TARG_ST
+    // [CG] Spill op are marked by OP_spill
+    // Getting the spill_tn is unsafe for stores
+    if (OP_spill(op)) hash_value = EBO_SPILL_MEM_HASH;
+#else
+
     if (OP_load(op)) {
       spill_tn = OP_result(op,0);
     } else if (OP_store(op)) {
@@ -212,7 +256,8 @@ EBO_hash_op (OP *op,
     }
 #else
     if (spill_tn && TN_has_spill(spill_tn)) hash_value = EBO_SPILL_MEM_HASH;
-#endif
+#endif /*KEY*/
+#endif /*TARG_ST*/
   } else if (OP_effectively_copy(op)) {
     hash_value = EBO_COPY_OP_HASH;
   } else {
@@ -226,9 +271,17 @@ EBO_hash_op (OP *op,
                     (TN_register_class(OP_result(op,0)) == ISA_REGISTER_CLASS_predicate)))) ? 0 :
 #endif
                  (INT)OP_code(op);
+    #ifdef TARG_ST
+    // (cbr) fix pred #
+    for (opndnum = 0; opndnum < opcount; opndnum++) {
+      if (opndnum != OP_find_opnd_use(op, OU_predicate))
+	hash_value+=(INT)(INTPS)based_on_tninfo[opndnum];
+    }
+#else
     for (opndnum = OP_has_predicate(op)?1:0; opndnum < opcount; opndnum++) {
       hash_value+=(INT)(INTPS)based_on_tninfo[opndnum];
     }
+#endif
     hash_value = EBO_RESERVED_OP_HASH + EBO_EXP_OP_HASH(hash_value);
   }
   return hash_value;
@@ -240,6 +293,10 @@ inline
 void
 add_to_hash_table ( BOOL in_delay_slot,
                     OP *op,
+#ifdef TARG_ST
+		    // FdF 20070402
+		    TN **opnd_tn,
+#endif
                     EBO_TN_INFO **actual_tninfo,
                     EBO_TN_INFO **optimal_tninfo)
 {
@@ -299,6 +356,14 @@ add_to_hash_table ( BOOL in_delay_slot,
   for (idx = 0; idx < OP_opnds(op); idx++) {
     opinfo->actual_opnd[idx] = actual_tninfo[idx];
     opinfo->optimal_opnd[idx] = optimal_tninfo[idx];
+    #ifdef TARG_ST
+    // FdF 20070402
+    if (idx < OP_MAX_FIXED_OPNDS)
+      if (opnd_tn != NULL)
+	opinfo->optimal_tn[idx] = opnd_tn[idx];
+      else
+	opinfo->optimal_tn[idx] = OP_opnd(op, idx);
+#endif
   }
 
   EBO_opinfo_table[hash_value] = opinfo;
@@ -363,32 +428,124 @@ locate_opinfo_entry (EBO_TN_INFO *tninfo)
 
 inline
 void
+#ifdef TARG_ST
+// (cbr) handle inversed predicates
+EBO_OPS_predicate(TN *predicate_tn, bool on_false, bool cond_def, OPS *ops)
+#else
 EBO_OPS_predicate(TN *predicate_tn, OPS *ops)
+#endif
 {
   OP *next_op = OPS_first(ops);
+
+#ifdef TARG_ST
+  // FdF 20081015: On the first OP, set the UNC_DEF property if
+  // needed.
+  if (!TN_is_true (predicate_tn) && !cond_def && next_op)
+    Set_OP_cond_def_kind (next_op, OP_ALWAYS_UNC_DEF);
+#endif
   while (next_op != NULL) {
     if (OP_has_predicate(next_op)) {
       Set_OP_opnd(next_op, OP_PREDICATE_OPND, predicate_tn);
+#ifdef TARG_ST
+      // (cbr) Support for guards on false
+      if (on_false)
+	Set_OP_Pred_False(next_op, TOP_Find_Operand_Use(OP_code(next_op), OU_predicate));
+
+      if (!TN_is_true (predicate_tn))
+	Set_OP_cond_def_kind (next_op, OP_PREDICATED_DEF);
+
+#endif
+
     }
     next_op = OP_next(next_op);
   }
 }
 
 
-
+#ifdef TARG_ST
+// FdF 20081017: Check whether a predicated copy is available or not,
+// before generating a predicated copy with an UNC_DEF property or an
+// unconditional copy.
+inline BOOL
+EBO_Has_Predicated_Copy (TN *predicate_tn, TN *tgt_tn, TN *src_tn) {
+  OPS dummy_ops = OPS_EMPTY;
+  Expand_Copy(tgt_tn, predicate_tn, src_tn, &dummy_ops);
+  return (OPS_length (&dummy_ops) == 1
+	  && OP_copy (OPS_first(&dummy_ops))
+	  && OP_is_predicated (OPS_first(&dummy_ops)));
+}
+#endif
 
 inline
 void
+#ifdef TARG_ST
+// (cbr) Support for guards on false
+// FdF 20081015: Support for ALWAYS_UNC_DEF
+EBO_Exp_COPY(TN *predicate_tn, bool on_false, bool cond_def, TN *tgt_tn, TN *src_tn, OPS *ops)
+#else
 EBO_Exp_COPY(TN *predicate_tn, TN *tgt_tn, TN *src_tn, OPS *ops)
+#endif
 {
+#ifdef TARG_ST
+  // If registers are identical we can generate a noop instead of a copy,
+  // unless we are before register allocation and one of the registers 
+  // is dedicated. In the later case we must keep the explicit dedicated
+  // use or def as it expresses parameter passing information.
+  if (tn_registers_identical (tgt_tn, src_tn) &&
+      !Is_Predicate_REGISTER_CLASS(TN_register_class(tgt_tn)) &&
+      (EBO_in_peep ||
+       (!TN_is_dedicated(tgt_tn) && !TN_is_dedicated(src_tn)) ||
+       REGISTER_SET_EmptyP(REGISTER_CLASS_allocatable(TN_register_class(src_tn))))) {
+    Build_OP(TOP_noop,ops);
+    return;
+  }
+  // FdF 20081017: On ST200, since there is no predicated copy, it is
+  // better to generate an unconditional move if cond_def is false.
+  if (!cond_def && (predicate_tn != NULL) &&
+      !EBO_Has_Predicated_Copy(predicate_tn, tgt_tn, src_tn)) {
+    predicate_tn = NULL;
+  }
+  if (predicate_tn != NULL) {
+    Expand_Copy(tgt_tn, predicate_tn, src_tn, ops);
+    if (on_false) {
+      OP *next_op = OPS_first(ops);
+      while (next_op != NULL) {
+	if (OP_has_predicate(next_op)) {
+	  // (cbr) Support for guards on false
+	  Set_OP_Pred_False(next_op, TOP_Find_Operand_Use(OP_code(next_op), OU_predicate));
+	}
+	next_op = OP_next(next_op);
+      }
+    }
+    if (!cond_def)
+      Set_OP_cond_def_kind(OPS_first(ops), OP_ALWAYS_UNC_DEF);
+    return;
+  }
+#endif
   Exp_COPY(tgt_tn, src_tn, ops);
+#ifndef TARG_ST
   if (predicate_tn != NULL) {
     EBO_OPS_predicate (predicate_tn, ops);
   }
+#endif
 }
 
+#ifdef TARG_ST
+inline
+void
+EBO_Exp_SELECT(TN *tgt_tn, TN *predicate_tn, TN *true_tn, TN *false_tn, OPS *ops)
+{
+  TYPE_ID mtype;
+  if (TN_is_float (true_tn)) {
+    mtype = (TN_size (true_tn) == 8) ? MTYPE_F8 : MTYPE_F4;
+  } else {
+    mtype = (TN_size (true_tn) == 8) ? MTYPE_I8 : MTYPE_I4;
+  }
 
-
+  Expand_Select (tgt_tn, predicate_tn, true_tn, false_tn, mtype,
+		 TN_is_float (predicate_tn), ops);
+}
+#endif
 
 inline
 void

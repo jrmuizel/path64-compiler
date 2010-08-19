@@ -61,6 +61,9 @@
 #include "gra_lrange.h"
 #include "gra_region.h"
 #include "gra_interfere.h"
+#ifdef TARG_ST
+#include "gra_live.h"
+#endif
 
 static INT  trace_detail;
 static BOOL trace_color;
@@ -88,10 +91,21 @@ GRA_Trace_Color_LRANGE( const char* str, LRANGE* lrange )
 /////////////////////////////////////
 {
   char buff[100];
+#ifdef TARG_ST
+  if (trace_color && 1 <= trace_detail) {
+    fprintf(TFile,"<gra> %s p %g (%g/%g) %s\n",str,
+	    lrange->Priority() / lrange->Colorability_Benefit(),
+	    lrange->Priority(),
+	    lrange->Colorability_Benefit(),
+	    lrange->Format(buff));
+    return;
+  }
+#else
 
   if (trace_color && 1 <= trace_detail)
     fprintf(TFile,"<gra> %s p %g %s\n",str,lrange->Priority(),
                                            lrange->Format(buff));
+#endif
 }
 
 /////////////////////////////////////
@@ -208,7 +222,7 @@ GRA_Trace_Split_Sub_Priority(GRA_BB* gbb, BOOL is_store)
   }
 }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 /////////////////////////////////////
 void
 GRA_Trace_Split_Reclaim_Add_Priority(GRA_BB* gbb, BOOL is_store, float priority)
@@ -310,6 +324,41 @@ GRA_Trace_Place_LRANGE_GBB( const char* str, LRANGE* lrange,
                                       str);
   }
 }
+#ifdef TARG_ST
+/////////////////////////////////////
+void
+GRA_Trace_New_Spill_Location (TN *tn, BB_SET *bbs, ST *sym)
+/////////////////////////////////////
+//  See interface description.
+/////////////////////////////////////
+{
+  if (trace_place) {
+    fprintf (TFile, "Creating new spill location ");
+    sym->Print (TFile, FALSE);
+    fprintf (TFile, " for TN%d in BBs ", TN_number (tn));
+    BB_SET_Print (bbs, TFile);
+    fprintf (TFile, "\n");
+  }
+}
+
+/////////////////////////////////////
+void
+GRA_Trace_Reuse_Spill_Location (TN *tn, BB_SET *bbs, ST *sym, BB_SET *prev_bbs)
+/////////////////////////////////////
+//  See interface description.
+/////////////////////////////////////
+{
+  if (trace_place) {
+    fprintf (TFile, "Reuse spill location ");
+    sym->Print (TFile, FALSE);
+    fprintf (TFile, " for TN%d in BBs ", TN_number (tn));
+    BB_SET_Print (bbs, TFile);
+    fprintf (TFile, "(prev bbs = ");
+    BB_SET_Print (prev_bbs, TFile);
+    fprintf (TFile, ")\n");
+  }
+}
+#endif
     
 
 /////////////////////////////////////
@@ -330,6 +379,97 @@ print_lr( LRANGE *lr)
     fprintf(TFile,"C%d(TN%d)",lr->Id(), TN_number(lr->Tn()));
   }
 }
+#ifdef TARG_ST
+void
+GRA_Trace_Split_BB_Sets (LRANGE *alloc_lrange, LRANGE *deferred_lrange)
+{
+  if (trace_split) {
+    fprintf (TFile, "<gra> After split, ");
+    print_lr (alloc_lrange);
+    fprintf (TFile, ": ");
+    BB_SET_Print (alloc_lrange->Live_BB_Set (), TFile);
+    fprintf (TFile, "\n");
+    print_lr (deferred_lrange);
+    fprintf (TFile, ": ");
+    BB_SET_Print (deferred_lrange->Live_BB_Set (), TFile);
+    fprintf (TFile, "\n");
+  }
+}
+
+/////////////////////////////////////
+void
+GRA_Trace_Local_Colorability (LRANGE *lrange)
+{
+  if (trace_color) {
+    fprintf (TFile, "Local Colorability: ");
+    print_lr (lrange);
+    fprintf (TFile, " ");
+    lrange->Print_Local_Colorability (TFile);
+    fprintf (TFile, "\n");
+  }
+}
+
+/////////////////////////////////////
+void
+GRA_Trace_Local_Colorability_Benefit (LRANGE *lr, LRANGE *neighbor, float b)
+{
+  if (trace_color) {
+    fprintf (TFile, "Local Colorability Benefit to ");
+    print_lr (neighbor);
+    fprintf (TFile, " of spilling ");
+    print_lr (lr);
+    fprintf (TFile, "= %g\n", (double)b);
+  }
+}
+
+/////////////////////////////////////
+void
+GRA_Trace_Allowed_Registers (LRANGE *lr, REGISTER_SET subclass_allowed,
+			     REGISTER_SET allowed)
+{
+  if (trace_color) {
+    fprintf (TFile, "<gra> Subclass allowed: ");
+    print_lr (lr);
+    fprintf (TFile, " ");
+    REGISTER_SET_Print (subclass_allowed, TFile);
+    fprintf (TFile, "\n<gra> Allowed: ");
+    print_lr (lr);
+    fprintf (TFile, " ");
+    REGISTER_SET_Print (allowed, TFile);
+    fprintf (TFile, "\n");
+  }
+}
+
+void
+GRA_Trace_Subclass_Preference (LRANGE *lr, GRA_BB* gbb)
+{
+  char buff0[80];
+
+  if ( trace_preference ) {
+    GRA_Trace(0, "Set preferred subclass for %s: %s offset %d (BB %d)\n",
+	      lr->Format(buff0),
+	      REGISTER_SUBCLASS_name (lr->Pref_Subclass()),
+	      lr->Pref_Subclass_Offset (),
+	      BB_id(gbb->Bb()));
+  }
+}
+
+void GRA_Trace_Preference_Subclass_Attempt (LRANGE *lrange,
+					    ISA_REGISTER_SUBCLASS sc,
+					    INT sc_offset,
+					    GRA_REGION *region, BOOL outcome)
+{
+  char buff0[80];
+
+  if ( trace_preference ) {
+    GRA_Trace (0, "Preference %s to subclass %s offset %d [%s]\n",
+	       lrange->Format(buff0),
+	       REGISTER_SUBCLASS_name (sc),
+	       sc_offset,
+	       outcome ? "yes" : "no");
+  }
+}
+#endif
 
 /////////////////////////////////////
 void
@@ -494,6 +634,10 @@ GRA_Trace_Global_Preference_Success(LRANGE* lrange0, LRANGE* lrange1)
 /////////////////////////////////////
 void GRA_Trace_Spill_Stats(float freq_restore_count, INT restore_count,
 			   float freq_spill_count, INT spill_count,
+#ifdef TARG_ST
+			   float freq_local_restore_count,
+			   float freq_local_spill_count,
+#endif
 			   float priority_count)
 /////////////////////////////////////
 //  See interface description.
@@ -502,6 +646,10 @@ void GRA_Trace_Spill_Stats(float freq_restore_count, INT restore_count,
   if ( trace_stats ) {
     GRA_Trace(0,"freq weighted restores %g spills %g allocated priority %g",
                 freq_restore_count,freq_spill_count, priority_count);
+#ifdef TARG_ST
+    GRA_Trace(0,"freq weighted local restores %g spills %g",
+	      freq_local_restore_count, freq_local_spill_count);
+#endif
     GRA_Trace(0,"absolute restores %d spills %d",restore_count,spill_count);
   } else if ( trace_perf_comp ) {
     GRA_Trace(0,"%s %g %g %d %d %g\n", ST_name(Get_Current_PU_ST()),
@@ -710,6 +858,57 @@ GRA_Trace_LRANGE_Allocate(LRANGE* lrange )
     GRA_Trace(0,"Allocated: %s", lrange->Format(buff0));
   }
 }
+#ifdef TARG_ST
+void
+GRA_Trace_Create_Lrange(LRANGE *lr)
+{
+  if (trace_color) {
+    char buff[80];
+    if (lr->Type() == LRANGE_TYPE_LOCAL) {
+      GRA_Trace(0, "Create local lrange for BB%d %s\n",
+		BB_id(lr->Gbb()->Bb()), lr->Format(buff));
+    }
+  }
+}
+
+void
+GRA_Trace_Interference_Graph (GRA_REGION *region)
+{
+  if (trace_color) {
+    GRA_Trace(0, "Interference graph for complement:");
+    ISA_REGISTER_CLASS           rc;
+    GRA_REGION_RC_NL_LRANGE_ITER iter;
+    FOR_ALL_ISA_REGISTER_CLASS( rc ) {
+      GRA_Trace(0, "Register class %d:", rc);
+      for (iter.Init(region,rc); ! iter.Done(); iter.Step()) {
+	GRA_Trace_Complement_LRANGE_Neighbors (iter.Current(), region);
+      }
+    }
+  }
+}
+
+void
+GRA_Trace_Local_LRange_Request (const char *str,
+				GRA_BB *gbb, ISA_REGISTER_CLASS cl,
+				ISA_REGISTER_SUBCLASS sc, INT count,
+				INT nregs, BOOL demand)
+{
+  if (trace_color) {
+    GRA_Trace(0, "%s Local LRange %s (BB%d): cl=%d sc=%d nregs=%d count=%d",
+	      str, (demand ? "demand" : "request"),
+	      BB_id(gbb->Bb()), cl, sc, nregs, count);
+  }
+}
+
+void
+GRA_Trace_BB_Liveness (BB *bb)
+{
+  if (trace_color && trace_detail == 1) {
+    fprintf(TFile, "<gra> Liveness for BB%d:\n", BB_id(bb));
+    GRA_LIVE_Print_Liveness(bb);
+  }
+}
+#endif
 
 #ifdef KEY
 /////////////////////////////////////

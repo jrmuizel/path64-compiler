@@ -147,7 +147,7 @@ struct OPT_FB_NODE {
   EDGES incoming_edges;
   EDGES outgoing_edges;
 
-#ifdef KEY
+#if defined( KEY) 
   WN* orig_wn;
 #endif
 
@@ -211,7 +211,7 @@ private:
   IDTYPE  Find_edge_by_type( IDTYPE nx, FB_EDGE_TYPE edge_type ) const;
   FB_FREQ Get_edge_freq_by_type( IDTYPE nx, FB_EDGE_TYPE edge_type ) const;
   IDTYPE  Get_node_successor( IDTYPE nx ) const;
-
+ 
   void Remove_edge( IDTYPE ex );
   void Change_edge_freq( IDTYPE ex, FB_FREQ new_freq );
   void Set_edge_dest( IDTYPE ex, IDTYPE nx_dst_new );

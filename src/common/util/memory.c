@@ -31,11 +31,7 @@
 
 
 #include <sys/types.h>
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 #include <stdlib.h>
-#else /* defined(BUILD_OS_DARWIN) */
-#include <malloc.h>
-#endif /* defined(BUILD_OS_DARWIN) */
 #include <string.h>
 #include "defs.h"
 #include "mempool.h"

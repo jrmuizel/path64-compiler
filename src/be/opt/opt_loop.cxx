@@ -883,7 +883,7 @@ Found_aliasing_store_in_loop(POINTS_TO *pt, TY_IDX ty, BB_LOOP *loop,
     case OPR_EVAL:
     case OPR_PRAGMA:
     case OPR_XPRAGMA:
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     case OPR_GOTO_OUTER_BLOCK:
 #endif
       break;
@@ -931,7 +931,7 @@ CODEMAP::Convert_iload_to_loop_invariant(BB_LOOP *loop, CODEREP *cr)
 
       BB_NODE *startbb = loop->Header();
 	
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       if (! WOPT_Enable_Invariant_Loop_Bounds)
 #endif
       // Use alias analysis to see if the vsym is an invariant
@@ -1038,7 +1038,7 @@ BOOL ref_iter(STMTREP *stmt, BOOL_FUNC f)
     if (expr_iter(stmt->Rhs(), f))
       return TRUE;
   if (OPERATOR_is_scalar_istore (stmt->Opr())
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       || stmt->Opr() == OPR_MSTORE
 #endif
 	  ) {
@@ -1222,6 +1222,76 @@ inline BOOL RAISE(BOOL r, const char *msg)
 inline BOOL RAISE(BOOL r, const char *msg) { return r; }
 #endif
 
+#ifdef TARG_ST
+/* FdF 20041007
+   Can ignore CVTL if:
+   one of cmp->Opnd(0) or cmp->Opnd(1) is a constant.
+   init is a constant.
+   cmp is not eq or ne (already)
+   incr is constant.
+   (last - init) is same sign as incr
+*/
+
+static BOOL
+Linear_IV_with_CVTL(STMTREP *init_stmt, STMTREP *incr_stmt, CODEREP *cmp) {
+
+  FmtAssert(incr_stmt->Opr() == OPR_STID, ("Invalid incr statement"));
+  CODEREP *iv2 = incr_stmt->Rhs();
+
+  if ((MTYPE_size_reg(incr_stmt->Desc()) != iv2->Offset() /* cvtl_bits */))
+    return FALSE;
+
+  INT64 init_val, incr_val, last_val;
+
+  /* one of cmp->Opnd(0) or cmp->Opnd(1) is a constant.
+     init is a constant.
+     incr is constant.
+     (last - init) is same sign as incr
+  */
+
+  FmtAssert(init_stmt->Opr() == OPR_STID, ("Invalid loop init statement"));
+  if (init_stmt->Rhs()->Kind() == CK_CONST)
+    init_val = init_stmt->Rhs()->Const_val();
+  else
+    return FALSE;
+
+  FmtAssert(iv2->Kind() == CK_OP && iv2->Opr() == OPR_CVTL, ("Invalid incr statement"));
+  CODEREP *incr = iv2->Opnd(0);
+
+  if (incr->Kind() == CK_OP && incr->Opr() == OPR_ADD) {
+    if (incr->Opnd(0)->Kind() == CK_CONST)
+      incr_val = incr->Opnd(0)->Const_val();
+    else if (incr->Opnd(1)->Kind() == CK_CONST)
+      incr_val = incr->Opnd(1)->Const_val();
+    else
+      return FALSE;
+  }
+  else if (incr->Kind() == CK_OP && incr->Opr() == OPR_SUB) {
+    if (incr->Opnd(1)->Kind() == CK_CONST)
+      incr_val = incr->Opnd(1)->Const_val();
+    else
+      return FALSE;
+  }
+  else
+    return FALSE;
+
+  FmtAssert(cmp->Kind() == CK_OP && OPCODE_is_compare(cmp->Op()), ("Invalid cmp statement"));
+  if (cmp->Opnd(0)->Kind() == CK_CONST)
+    last_val = cmp->Opnd(0)->Const_val();
+  else if (cmp->Opnd(1)->Kind() == CK_CONST)
+    last_val = cmp->Opnd(1)->Const_val();
+  else
+    return FALSE;
+
+  if ((last_val >= init_val && incr_val > 0 && incr_val <= (last_val - init_val))  ||
+      (last_val <= init_val && incr_val < 0) && (-incr_val) <= (init_val - last_val)) {
+  }
+  else
+    return FALSE;
+
+  return TRUE;
+}
+#endif
 
 BOOL
 Can_raise_to_doloop(BB_LOOP *loop, BOOL repair, CODEMAP *htable)
@@ -1280,6 +1350,10 @@ Can_raise_to_doloop(BB_LOOP *loop, BOOL repair, CODEMAP *htable)
   CODEREP *variant0 = Find_variant(loop, cmp->Opnd(0));
   CODEREP *variant1 = Find_variant(loop, cmp->Opnd(1));
 
+#ifdef TARG_ST
+  if (repair && variant0 != NULL && variant1 != NULL)
+    DevWarn("loop line %d is not a DO-loop because exit test has no invariant.", Srcpos_To_Line(header->Linenum()));
+#endif
   // one side of the comparison must be invariant
   if ((variant0 == NULL && variant1 == NULL) ||
       (variant0 != NULL && variant1 != NULL))
@@ -1314,6 +1388,17 @@ Can_raise_to_doloop(BB_LOOP *loop, BOOL repair, CODEMAP *htable)
   // find init and incr statement of the iv
   STMTREP *init_stmt = phi->OPND(preheader_opnd_num)->Defstmt();
   STMTREP *incr_stmt = phi->OPND(loopback_opnd_num)->Defstmt();
+#ifdef TARG_ST
+  extern void Fix_do_loop(BB_LOOP *loop, CODEMAP *htable);
+  if (repair && (init_stmt == NULL || incr_stmt == NULL)) {
+    // Try to fix the loop. This is useful when PHI operands are
+    // defined by PHI operations. In this case, a new variable is
+    // introduced that is defined with a STID statement.
+    Fix_do_loop(loop, htable);
+    init_stmt = phi->OPND(preheader_opnd_num)->Defstmt();
+    incr_stmt = phi->OPND(loopback_opnd_num)->Defstmt();
+  }
+#endif
 
   if (init_stmt == NULL)
     return RAISE(FALSE, "cannot find init stmt");
@@ -1351,6 +1436,26 @@ Can_raise_to_doloop(BB_LOOP *loop, BOOL repair, CODEMAP *htable)
 
   CODEREP *iv2 = incr_stmt->Rhs();
   CODEREP *iv1 = phi->RESULT();
+
+#ifdef TARG_ST
+  // FdF: Ignore CVTL at this point, it has already been checked that
+  // it is a linear function. Then remove it if the loop statisfies
+  // the condition for a do loop, it will be recreated later by WOPT.
+  /* Can ignore cvtl if:
+     one of cmp->Opnd(0) or cmp->Opnd(1) is a constant.
+     init is a constant.
+     cmp is not eq or ne (already)
+     incr is constant.
+     (last - init) is same sign as incr
+  */     
+  BOOL simplify_incr_stmt = FALSE;
+  if (iv2->Kind() == CK_OP && iv2->Opr() == OPR_CVTL) {
+    if (Linear_IV_with_CVTL(init_stmt, incr_stmt, cmp)) {
+      simplify_incr_stmt = TRUE;
+      iv2 = iv2->Opnd(0);
+    }
+  }
+#endif
   if (iv2->Kind() == CK_OP && iv2->Opr() == OPR_ADD) {
     if (iv1 == iv2->Opnd(0)) {
       if (!loop->Invariant_cr(iv2->Opnd(1)))
@@ -1388,7 +1493,11 @@ Can_raise_to_doloop(BB_LOOP *loop, BOOL repair, CODEMAP *htable)
     incr_stmt->Bb()->Remove_stmtrep(incr_stmt);
     loopback->Append_stmt_before_branch(incr_stmt);
   }
-
+#ifdef TARG_ST
+  if (simplify_incr_stmt) {
+    incr_stmt->Set_rhs(iv2);
+  }
+#endif
 #ifdef Is_True_On
   {
     STMTREP *last_stmt_in_loopback = loopback->Last_stmtrep();
@@ -1505,6 +1614,63 @@ void Fix_do_loop(BB_LOOP *loop, CODEMAP *htable)
     init_stmt->Set_bb(loop->Preheader());
     phi->Set_opnd(loop->Preheader_pred_num(), init_cr);
   }
+#ifdef TARG_ST
+
+  // FdF 20041007: Add also an assignment to avoid the incr statement
+  // to be used in a PHI instruction outside of the loop.
+
+  CODEREP *incr_value = phi->OPND(loop->Loopback_pred_num());
+  if (incr_value->Is_flag_set(CF_IS_ZERO_VERSION)) {
+    htable->Fix_zero_version(phi, loop->Loopback_pred_num()); 
+    incr_value = phi->OPND(loop->Loopback_pred_num());
+  }
+  create_identity_asgn = FALSE;
+  BOOL sink_incr_stmt = FALSE;
+  BB_NODE *loopback = loop->Loopback();
+  STMTREP *incr_stmt = incr_value->Defstmt();
+
+  if (incr_stmt != NULL) {
+    if (incr_stmt->Bb() != loopback)
+      create_identity_asgn = TRUE;
+    else {
+      if (incr_stmt != loopback->Last_stmtrep()) {
+	if (Compute_dependence(incr_stmt, loopback, NULL) == NO_DEPENDENCE)
+	  sink_incr_stmt = TRUE;
+	else
+	  create_identity_asgn = TRUE;
+      }
+    }
+  } else
+    create_identity_asgn = TRUE;
+
+  Is_True( create_identity_asgn ||
+	   (sink_incr_stmt && incr_stmt->Bb() == loopback) ||
+	   (incr_stmt->Bb() == loopback && incr_stmt == loopback->Last_stmtrep()),
+	   ("Fix_do_loop:  unable to fix incr stmt."));
+
+  if (sink_incr_stmt) {
+    if (trace)
+      fprintf(TFile, "Fix_do_loop:  sinking the incr stmt\n");
+    incr_stmt->Bb()->Remove_stmtrep(incr_stmt);
+    loopback->Append_stmt_before_branch(incr_stmt);
+  }
+
+  if (create_identity_asgn) {
+    if (trace)
+      fprintf(TFile, "Fix_do_loop:  creating identity asgn for incr\n");
+    MTYPE dtype = incr_value->Dtyp();
+    MTYPE dsctype = incr_value->Dsctyp();
+    CODEREP *incr_cr = htable->Add_def(aux, -1, NULL, dtype, dsctype,
+				       htable->Opt_stab()->Aux_stab_entry(aux)->St_ofst(),
+				       MTYPE_To_TY(dtype),
+				       0, TRUE);
+    STMTREP *incr_stmt = incr_value->Create_cpstmt(incr_cr, htable->Mem_pool());
+    loop->Loopback()->Append_stmt_before_branch(incr_stmt);
+    incr_stmt->Set_bb(loop->Loopback());
+    phi->Set_opnd(loop->Loopback_pred_num(), incr_cr);
+  }
+#endif
+
 }
 
 

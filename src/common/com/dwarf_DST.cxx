@@ -156,7 +156,12 @@ DST_get_ptr_to_firstChildField(DST_INFO *parent)
  * child attribute to the DST specification) a corresponding change 
  * should be made to this function.
 */
+#ifdef TARG_ST
+// [CL] needed in wfe_dst.cxx
+DST_INFO_IDX *
+#else
 static DST_INFO_IDX *
+#endif
 DST_get_ptr_to_lastChildField(DST_INFO *parent) 
 {
    const DST_ATTR_IDX attr = DST_INFO_attributes(parent);

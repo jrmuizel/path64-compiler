@@ -551,7 +551,7 @@ UPDATE<TRANSFORM, CACHE, VERSION>::Process_CR_no_repeat(CODEREP *cr, bool is_mu,
 	// Fix 620842:  copy prop expects all C_P_PROCESSED must be cleared
 	ret->Reset_flag(CF_C_P_PROCESSED);
 // Fix bug 1614
-#ifdef KEY
+#if defined (KEY) && !defined(TARG_ST)
         if (ret->Kind() == CK_OP)
 #endif
 	  ret->Reset_flag(CF_C_P_REHASHED);

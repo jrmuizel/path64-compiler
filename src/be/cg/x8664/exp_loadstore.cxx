@@ -57,8 +57,9 @@
 #include "strtab.h"
 #include "symtab.h"
 #include "cg.h"
+#include "op_map.h"
 #include "cgexp.h"
-#include "cgexp_internals.h"
+
 #include "cgemit.h"	// for CG_emit_non_gas_syntax
 #include "cg_flags.h"	// for CG_valgrind_friendly
 

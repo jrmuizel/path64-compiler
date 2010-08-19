@@ -50,33 +50,10 @@ ELSE()
 	MESSAGE(STATUS "OpenMP build disabled")
 ENDIF()
 
-# Define user option whether to build both 32/64bit libraries
-OPTION(PATH64_ENABLE_MULTILIB "Multilib build" OFF)
-IF(PATH64_ENABLE_MULTILIB)
-	MESSAGE(STATUS "Multilib not supported yet, but enabled")
-#ELSE()
-#	MESSAGE(STATUS "Multilib not supported yet disabled")
-ENDIF()
+#-----------------------------------------------------------------------------
+# Target architecture stuff.
+include(${Path64_SOURCE_DIR}/src/targets.cmake)
 
-# Define user option whether to build the profiling libraries
-# Which targets are we going to build.  Currently supported is x8664,mips
-# We may want to dodge multilib and just treat x86 as it's own target.
-# Then we could test is for the the native build environment is and make that the default
-SET(PATH64_ENABLE_TARGETS "" CACHE STRING "Target archs (x8664;mips)")
-IF(PATH64_ENABLE_TARGETS)
-
-	foreach(arg ${PATH64_ENABLE_TARGETS})
-		set(targetsX "${targetsX} ${arg}")
-	endforeach(arg ${PATH64_ENABLE_TARGETS})
-	MESSAGE(STATUS "We are going to build the following targets${targetsX}")
-ELSE()
-	MESSAGE( FATAL_ERROR "Must specify at least one target.
-Supported targets are : x8664 and mips
-Please add -DPATH64_ENABLE_TARGETS=x8664 to your cmake line
-Multiple targets can be specified like \"-DPATH64_ENABLE_TARGETS=x8664;mips\"" )
-ENDIF()
-# Multi target support is indefinitely delayed
-set(BUILD_TARGET_DIR "x8664")
 
 # Define if we are doing a supported build
 OPTION(PATH64_ENABLE_SUPPORTED "Enabling supported build" OFF)
@@ -106,11 +83,14 @@ ELSE()
 	MESSAGE(FATAL_ERROR "Must set PSC_FULL_VERSION")
 ENDIF()
 
-IF(NOT PSC_CRT_PATH)
-	SET(PSC_CRT_PATH "/usr/lib")
-	MESSAGE(FATAL_ERROR "Must set PSC_CRT_PATH")
-ENDIF()
-MESSAGE(STATUS "PSC_CRT_PATH is set to "${PSC_CRT_PATH})
+# Checking that CRT paths are specified for all targets
+FOREACH(targ ${PATH64_ENABLE_TARGETS})
+    IF(PSC_CRT_PATH_${targ})
+        MESSAGE(STATUS "CRT path for ${targ} target: ${PSC_CRT_PATH_${targ}}")
+    ELSE()
+        MESSAGE(FATAL_ERROR "CRT path for ${targ} target is not specified. Please specify PSC_CRT_PATH_${targ} variable")
+    ENDIF()
+ENDFOREACH()
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
 	SET(PSC_CRT1 "crt0.o")
@@ -139,7 +119,7 @@ ELSE()
 ENDIF()
 
 # Use X86 elf file format for whirl objects
-OPTION(X86_WHIRL_OBJECTS "Use x86 elf file format for whirl object files" OFF)
+OPTION(X86_WHIRL_OBJECTS "Use x86 elf file format for whirl object files" ON)
 IF(X86_WHIRL_OBJECTS)
         MESSAGE(STATUS "Using x86 elf file format for whirl object files")
         ADD_DEFINITIONS(-DX86_WHIRL_OBJECTS)
@@ -234,17 +214,25 @@ SET(PATH64_GCC_INSTALL_PATH ${PATH64_LIB_PATH})
 # -DUSE_WEAK_REFERENCES
 ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D__GNU_BUG_WORKAROUND
-                -DTARG_X8664
+#                -DTARG_X8664
                 -DKEY
                 -DFE_GNU_4_2_0
-                -DLONGLONG
+                -D_LONGLONG
                 -D_MIPSEL
                 -DTARG_LINUX
                 -D_MIPS_SZINT=32
                 -D_MIPS_SZPTR=32
                 -D_MIPS_SZLONG=32
                )
-
+#IF (${BUILD_TARGET_DIR} MATCHES "arm")
+#ADD_DEFINITIONS( -DTARG_ST
+#                -DTARG_ARM
+#                -DARM
+#                -DMUMBLE_ARM_BSP 
+#                -DSUPPORTS_SELECT
+#                -DBE_EXPORTED=
+#                -DTARGINFO_EXPORTED=
+#               )
 # GNU-style hashing needs support of the dynamic linker, so white-list
 # potential platforms.
 IF (NOT DEFINED SUPPORT_HASH_STYLE_GNU)

@@ -337,6 +337,10 @@ BBlist_Fall_Thru_Succ (BB *bb)
 	TN *dest = OP_opnd(br_op, tfirst);
 	DevAssert(tcount == 1, ("%d branch targets, expected 1", tcount));
 	DevAssert(TN_is_label(dest), ("expected label"));
+#ifdef TARG_ST
+	// [CG]: don't remove branch
+	if (!OP_cond(br_op)) node = NULL;
+#else
 	if (Is_Label_For_BB(TN_label(dest), next)) {
 	  /* Remove useless explicit branch to <next> */
 	  BB_Remove_Op(bb, br_op);
@@ -344,6 +348,7 @@ BBlist_Fall_Thru_Succ (BB *bb)
 	  DevAssert(OP_cond(br_op), ("BB_succs(BB:%d) wrongly contains BB:%d",
 				     BB_id(bb), BB_id(next)));
 	}
+#endif
       }
     }
   }
@@ -375,6 +380,11 @@ BBlist_Fall_Thru_Pred (BB *bb)
 	TN *dest = OP_opnd(br_op, tfirst);
 	DevAssert(tcount == 1, ("%d branch targets, expected 1", tcount));
 	DevAssert(TN_is_label(dest), ("expected label"));
+#ifdef TARG_ST
+	// [CG]: don't remove branch
+	if (!OP_cond(br_op)) node = NULL;
+#else
+
 	if (Is_Label_For_BB(TN_label(dest), bb)) {
 	  /* Remove useless explicit branch to <bb> */
 	  BB_Remove_Op(prev, br_op);
@@ -382,6 +392,7 @@ BBlist_Fall_Thru_Pred (BB *bb)
 	  DevAssert(OP_cond(br_op), ("BB_preds(BB:%d) wrongly contains BB:%d",
 				     BB_id(bb), BB_id(prev)));
 	}
+#endif
       }
     }
   }

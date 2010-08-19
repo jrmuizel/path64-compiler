@@ -211,8 +211,13 @@ Compute_Parameter_Regs (TY_IDX call_ty, WN *call_wn, REGSET parms)
     while (PLOC_is_nonempty(ploc)) {
     	if (PLOC_on_stack(ploc)) break;	// no more register parameters.
 	Add_PREG_To_REGSET (PLOC_reg(ploc), parms);
+#ifdef TARG_ST
+        ploc = func_entry ? Next_Input_PLOC_Reg () :
+	Next_Output_PLOC_Reg ();
+#else
         ploc = func_entry ? Next_Input_PLOC_Reg (ploc)
                           : Next_Output_PLOC_Reg (ploc);
+#endif
     }
   }
 
@@ -249,11 +254,15 @@ Compute_Return_Regs (ST *call_st, TY_IDX call_ty, REGSET return_regs)
   }
 
   else {
+#ifdef TARG_ST
+    FmtAssert(FALSE,("WHIRL_Return_Info must be on"));
+#else
     Get_Return_Mtypes (TY_ret_type(call_ty),
 		       No_Simulated, &retmtype[0], &retmtype[1]);
     Get_Return_Pregs (retmtype[0], retmtype[1], &retpreg[0], &retpreg[1]);
     Add_PREG_To_REGSET (retpreg[0], return_regs);
     Add_PREG_To_REGSET (retpreg[1], return_regs);
+#endif
   }
 }
 
@@ -271,12 +280,32 @@ static void Compute_PU_Regs (REGSET livein, REGSET liveout)
     // add sp, gp, ep, ra to the livein set.
     livein[REGISTER_CLASS_sp] = 
 	REGISTER_SET_Union1 (livein[REGISTER_CLASS_sp], REGISTER_sp);
+#ifdef TARG_ST
+    //
+    // Arthur: some of these may not be defined on a given target.
+    //         In this case the class/reg pairs are not defined.
+    //         check for validity
+    //
+    if (GP_TN != NULL) {
+      livein[REGISTER_CLASS_gp] = 
+	REGISTER_SET_Union1 (livein[REGISTER_CLASS_gp], REGISTER_gp);
+    }
+    if (Ep_TN != NULL) {
+      livein[REGISTER_CLASS_ep] = 
+	REGISTER_SET_Union1 (livein[REGISTER_CLASS_ep], REGISTER_ep);
+    }
+    if (RA_TN != NULL) {
+      livein[REGISTER_CLASS_ra] = 
+	REGISTER_SET_Union1 (livein[REGISTER_CLASS_ra], REGISTER_ra);
+    }
+#else
     livein[REGISTER_CLASS_gp] = 
 	REGISTER_SET_Union1 (livein[REGISTER_CLASS_gp], REGISTER_gp);
     livein[REGISTER_CLASS_ep] = 
 	REGISTER_SET_Union1 (livein[REGISTER_CLASS_ep], REGISTER_ep);
     livein[REGISTER_CLASS_ra] = 
 	REGISTER_SET_Union1 (livein[REGISTER_CLASS_ra], REGISTER_ra);
+#endif
     // add all the callee-save registers to the livein set.
     FOR_ALL_ISA_REGISTER_CLASS(rc) {
       livein[rc] = REGISTER_SET_Union (livein[rc], 
@@ -312,6 +341,12 @@ static void Compute_PU_Regs (REGSET livein, REGSET liveout)
     FOR_ALL_ISA_REGISTER_CLASS(rc) {
       liveout[rc] = REGISTER_SET_Union (liveout[rc], 
 					REGISTER_CLASS_callee_saves(rc));
+#ifdef TARG_ST
+      if (PU_Has_EH_Return) {
+	liveout[rc] = REGISTER_SET_Union (liveout[rc],
+					  REGISTER_CLASS_eh_return(rc));
+      }
+#endif 
     }
 
     // add sp to list of liveout registers.
@@ -357,31 +392,71 @@ Compute_Call_Regs (BB *bb, REGSET livein, REGSET liveout, REGSET kill)
     }
 
     // add sp, gp to the livein set.
+#ifdef TARG_ST
+    // Arthur: GP may not be defined. Check it here.
+    if (GP_TN != NULL) {
+      livein[REGISTER_CLASS_gp] = 
+		REGISTER_SET_Union1 (livein[REGISTER_CLASS_gp], REGISTER_gp);
+    }
+#else
     if( REGISTER_gp != REGISTER_UNDEFINED ){
       livein[REGISTER_CLASS_gp] = 
 	REGISTER_SET_Union1 (livein[REGISTER_CLASS_gp], REGISTER_gp);
     }
+#endif
     livein[REGISTER_CLASS_sp] = 
 		REGISTER_SET_Union1 (livein[REGISTER_CLASS_sp], REGISTER_sp);
 
     // add t9 if PIC call.
+#ifdef TARG_ST
+    if (opr != OPR_CALL && Gen_PIC_Calls && Ep_TN != NULL) {
+#else
     if (opr != OPR_CALL && Gen_PIC_Calls) {
+#endif
       livein[REGISTER_CLASS_ep] = 
 		  REGISTER_SET_Union1 (livein[REGISTER_CLASS_ep], REGISTER_ep);
     }
 
     // add ra and callee saves if tail call.
     if (BB_tail_call(bb)) {
+#ifdef TARG_ST
+      // Arthur: RA_TN is not necessarily defined on this target
+      if (RA_TN != NULL) {
+	livein[REGISTER_CLASS_ra] = 
+		  REGISTER_SET_Union1 (livein[REGISTER_CLASS_ra], REGISTER_ra);
+      }
+#else
       if( REGISTER_ra != REGISTER_UNDEFINED ){
 	livein[REGISTER_CLASS_ra] = 
 	  REGISTER_SET_Union1 (livein[REGISTER_CLASS_ra], REGISTER_ra);
       }
-
+#endif
       FOR_ALL_ISA_REGISTER_CLASS(cl) {
 	REGISTER_SET callee_saves = REGISTER_CLASS_callee_saves(cl);
 	livein[cl] = REGISTER_SET_Union(livein[cl], callee_saves);
       }
     }
+#ifdef TARG_ST
+    if (RS_TN != NULL) {
+      // Arthur: use prototype to determine a call returning struct 
+      //       coerced to void
+      TY_IDX prototype;
+      if (WN_operator(call_wn) == OPR_ICALL) 
+	prototype = WN_ty(call_wn);
+      else {
+	ST_IDX func_stidx = WN_st_idx(call_wn);
+	PU_IDX puidx = ST_pu(St_Table[func_stidx]);
+	prototype = PU_prototype(Pu_Table[puidx]);
+      }
+      RETURN_INFO return_info = Get_Return_Info(TY_ret_type(prototype),
+						No_Simulated);
+      // If returning a structure by value through a dedicated register
+      if (RETURN_INFO_return_via_first_arg(return_info)) {
+	livein[REGISTER_CLASS_rs] = 
+	  REGISTER_SET_Union1 (livein[REGISTER_CLASS_rs], REGISTER_rs);
+      }
+    }
+#endif
   }
 
   if (liveout != NULL) {
@@ -392,7 +467,13 @@ Compute_Call_Regs (BB *bb, REGSET livein, REGSET liveout, REGSET kill)
     // make the kill set the same as the set of caller-save registers.
     ISA_REGISTER_CLASS rc;
     FOR_ALL_ISA_REGISTER_CLASS(rc) {
-      kill[rc] = REGISTER_SET_Union (kill[rc], REGISTER_CLASS_caller_saves(rc));
+#ifdef TARG_ST
+      kill[rc] = REGISTER_SET_Union (kill[rc],
+				     BB_call_clobbered(bb, rc));
+#else
+      kill[rc] = REGISTER_SET_Union (kill[rc], 
+                                     REGISTER_CLASS_caller_saves(rc));
+#endif
     }
   }
 }
@@ -489,6 +570,60 @@ Update_REGSETs_For_Rotating_Kernel (BB *bb, REGSET livein, REGSET kill)
   REGSET_OR (kill, kernel_kill);
 }
 
+#ifdef TARG_ST
+/* 
+ * REG_LIVE_Compute_Local_Livein_Kill(BB *bb, REGSET livein, REGSET kill)
+ *
+ * [CG]: This function computes local livein and kill set for the
+ * given bb.
+ * The input livein and kill sets must be cleared first.
+ * It is used by the global live analysis in REG_LIVE_Analyze_Region()
+ * to initialize livein and kill sets before the iteration.
+ * It is also used by the function REG_LIVE_Update_Livein_From_Liveout()
+ * to locally update livein information for a BB.
+ */
+static void
+REG_LIVE_Compute_Local_Livein_Kill(BB *bb, REGSET livein, REGSET kill)
+{
+  if (BB_rotating_kernel(bb)) {
+    Update_REGSETs_For_Rotating_Kernel (bb, livein, kill);
+  } else {
+    OP *op;
+    FOR_ALL_BB_OPs_FWD (bb, op) {
+      INT i;
+      for (i = 0; i < OP_opnds(op); i++) {
+	TN *opnd_tn = OP_opnd(op,i);
+	if (TN_is_register(opnd_tn)) {
+	  ISA_REGISTER_CLASS cl = TN_register_class(opnd_tn);
+	  REGISTER_SET gen = REGISTER_SET_Difference (TN_registers (opnd_tn), kill[cl]);
+	  livein[cl] = REGISTER_SET_Union (livein[cl], gen);
+	}
+      }
+      // Assume that conditional ops don't kill their definitions.
+      if (!OP_cond_def(op)) {
+	for (i = 0; i < OP_results(op); i++) {
+	  TN *result_tn = OP_result(op,i);
+	  ISA_REGISTER_CLASS cl = TN_register_class(result_tn);
+	  kill[cl] = REGISTER_SET_Union (kill[cl], TN_registers (result_tn));
+	}
+      }
+    }
+  }
+  
+  if (BB_tail_call(bb)) {
+    Update_REGSETs_For_Tail_Call (bb, livein, kill);
+  }
+  else if (BB_call(bb)) {
+    Update_REGSETs_For_Call (bb, livein, kill);
+  }
+  else if (BB_asm(bb)) {
+    Update_REGSETs_For_Asm (bb, livein, kill);
+  }
+  else if (BB_exit(bb)) {
+    Update_REGSETs_For_Exit (livein, kill);
+  }
+}
+#endif
 void REG_LIVE_Analyze_Region(void)
 {
   BB *bb;
@@ -522,6 +657,10 @@ void REG_LIVE_Analyze_Region(void)
     livein = BB_Register_Livein(bb);
     kill = BB_Register_Kill(bb);
 
+#ifdef TARG_ST
+    // [CG] Moved into function REG_LIVE_Compute_Local_Livein_Kill()
+    REG_LIVE_Compute_Local_Livein_Kill(bb, livein, kill);
+#else
     if (BB_rotating_kernel(bb)) {
       Update_REGSETs_For_Rotating_Kernel (bb, livein, kill);
     } else {
@@ -563,6 +702,7 @@ void REG_LIVE_Analyze_Region(void)
     else if (BB_exit(bb)) {
       Update_REGSETs_For_Exit (livein, kill);
     }
+#endif
     last_bb = bb;
   }
 
@@ -640,7 +780,12 @@ REG_LIVE_Prolog_Temps(
       FmtAssert(TN_is_global_reg(tn),("TN%d is not global",TN_number(tn)));
       if (TN_register(tn) != REGISTER_UNDEFINED) {
 	cl = TN_register_class(tn);
+#ifdef TARG_ST
+	/* [TTh] Support for multi-register TNs */
+	live[cl] = REGISTER_SET_Union(live[cl], TN_registers(tn));
+#else
 	live[cl] = REGISTER_SET_Union1(live[cl], TN_register(tn));
+#endif
       }
     }
   }
@@ -656,7 +801,12 @@ REG_LIVE_Prolog_Temps(
       tn = OP_result(op,k);
       if (TN_register(tn) != REGISTER_UNDEFINED) {
 	cl = TN_register_class(tn);
+#ifdef TARG_ST
+	/* [TTh] Support for multi-register TNs */
+	live[cl] = REGISTER_SET_Difference(live[cl], TN_registers(tn));
+#else
 	live[cl] = REGISTER_SET_Difference1(live[cl], TN_register(tn));
+#endif
       }
     }
 
@@ -664,7 +814,12 @@ REG_LIVE_Prolog_Temps(
       tn = OP_opnd(op,k);
       if ((TN_is_register(tn)) && (TN_register(tn) != REGISTER_UNDEFINED)) {
 	cl = TN_register_class(tn);
+#ifdef TARG_ST
+	/* [TTh] Support for multi-register TNs */
+	live[cl] = REGISTER_SET_Union(live[cl], TN_registers(tn));
+#else
 	live[cl] = REGISTER_SET_Union1(live[cl], TN_register(tn));
+#endif
       }
     }
 
@@ -686,6 +841,12 @@ REG_LIVE_Prolog_Temps(
   FOR_ALL_ISA_REGISTER_CLASS(cl) {
     temps[cl] = REGISTER_SET_Difference(REGISTER_CLASS_caller_saves(cl),
 					live[cl]);
+#ifdef TARG_ST
+    // [TTh] Depending on the target, some extra caller save registers
+    // might be removed.
+    temps[cl] = REGISTER_SET_Difference(temps[cl],
+					CGTARG_Forbidden_Prolog_Epilog_Registers(cl));
+#endif
   }
 
   /* The last step is to reject any temp which is used or killed by
@@ -698,7 +859,12 @@ REG_LIVE_Prolog_Temps(
       tn = OP_result(op,k);
       if (TN_register(tn) != REGISTER_UNDEFINED) {
 	cl = TN_register_class(tn);
+#ifdef TARG_ST
+	/* [TTh] Support for multi-register TNs */
+	temps[cl] = REGISTER_SET_Difference(temps[cl], TN_registers(tn));
+#else
 	temps[cl] = REGISTER_SET_Difference1(temps[cl], TN_register(tn));
+#endif
       }
     }
 
@@ -706,7 +872,12 @@ REG_LIVE_Prolog_Temps(
       tn = OP_opnd(op,k);
       if ((TN_is_register(tn)) && (TN_register(tn) != REGISTER_UNDEFINED)) {
 	cl = TN_register_class(tn);
+#ifdef TARG_ST
+	/* [TTh] Support for multi-register TNs */
+	temps[cl] = REGISTER_SET_Difference(temps[cl], TN_registers(tn));
+#else
 	temps[cl] = REGISTER_SET_Difference1(temps[cl], TN_register(tn));
+#endif
       }
     }
   }
@@ -734,14 +905,35 @@ REG_LIVE_Epilog_Temps(
 
   /* Get the return registers for the exit block.  */
   REGSET_CLEAR(temps);
+
+#ifdef TARG_ST
+  if (BB_tail_call(bb)) {
+    Compute_Call_Regs (bb,temps,NULL,NULL);
+  }
+  else
+#endif
+  {
   Compute_Return_Regs (pu_st, ST_pu_type(pu_st), temps);
+  }
 
   /* The set of available temps at the end of the exit block is
    * the caller saved regs with the return regs removed.
    */
   FOR_ALL_ISA_REGISTER_CLASS(cl) {
+#ifdef TARG_ST
+    // [SC] Avoid EH return registers if there is an EH_return in this function.
+    if (PU_Has_EH_Return) {
+      temps[cl] = REGISTER_SET_Union (temps[cl], REGISTER_CLASS_eh_return(cl));
+    }
+#endif
     temps[cl] = REGISTER_SET_Difference(REGISTER_CLASS_caller_saves(cl),
 					temps[cl]);
+#ifdef TARG_ST
+    // [TTh] Depending on the target, some extra caller save registers
+    // might be removed.
+    temps[cl] = REGISTER_SET_Difference(temps[cl],
+					CGTARG_Forbidden_Prolog_Epilog_Registers(cl));
+#endif
   }
 
   /* Scan the OPs in the exit block backwards and update the available
@@ -755,7 +947,12 @@ REG_LIVE_Epilog_Temps(
       tn = OP_result(op,k);
       if (TN_register(tn) != REGISTER_UNDEFINED) {
 	cl = TN_register_class(tn);
+#ifdef TARG_ST
+	/* [TTh] Support for multi-register TNs */
+	temps[cl] = REGISTER_SET_Union(temps[cl], TN_registers(tn));
+#else
 	temps[cl] = REGISTER_SET_Union1(temps[cl], TN_register(tn));
+#endif
       }
     }
 
@@ -763,7 +960,12 @@ REG_LIVE_Epilog_Temps(
       tn = OP_opnd(op,k);
       if ((TN_is_register(tn)) && (TN_register(tn) != REGISTER_UNDEFINED)) {
 	cl = TN_register_class(tn);
+#ifdef TARG_ST
+	/* [TTh] Support for multi-register TNs */
+	temps[cl] = REGISTER_SET_Difference(temps[cl], TN_registers(tn));
+#else
 	temps[cl] = REGISTER_SET_Difference1(temps[cl], TN_register(tn));
+#endif
       }
     }
   }
@@ -857,6 +1059,70 @@ BOOL REG_LIVE_Outof_BB (ISA_REGISTER_CLASS cl, REGISTER reg, BB *bb)
   return REG_LIVE_Implicit_Use_Outof_BB (cl, reg, bb);
 }
 
+#ifdef TARG_ST
+// Return the number of registers in the range
+//     [<cl,reg> : <cl,reg+nregs-1>]
+// that are live on entry to basic block <bb>.
+INT
+NREGS_Live_Into_BB(ISA_REGISTER_CLASS cl, REGISTER reg, INT nregs, BB *bb)
+{
+  INT count = 0;
+  REGISTER r;
+  FOR_ALL_NREGS(reg, nregs, r) {
+    if (REG_LIVE_Into_BB(cl, r, bb)) {
+      count++;
+    }
+  }
+  return count;
+}
+
+// Return the number of registers in the range
+//     [<cl,reg> : <cl,reg+nregs-1>]
+// that are live on exit from basic block <bb>.
+INT
+NREGS_Live_Outof_BB(ISA_REGISTER_CLASS cl, REGISTER reg, INT nregs, BB *bb)
+{
+  INT count = 0;
+  REGISTER r;
+  FOR_ALL_NREGS(reg, nregs, r) {
+    if (REG_LIVE_Outof_BB(cl, r, bb)) {
+      count++;
+    }
+  }
+  return count;
+}
+
+// Return the number of registers from the set REGS
+// that are live on entry to basic block BB.
+INT
+NREGS_Live_Into_BB(ISA_REGISTER_CLASS cl, REGISTER_SET regs, BB *bb)
+{
+  INT count = 0;
+  REGISTER r;
+  FOR_ALL_REGISTER_SET_members (regs, r) {
+    if (REG_LIVE_Into_BB (cl, r, bb)) {
+      count++;
+    }
+  }
+  return count;
+}
+
+// Return the number of registers from the set REGS
+// that are live on exit from basic block BB.
+INT
+NREGS_Live_Outof_BB(ISA_REGISTER_CLASS cl, REGISTER_SET regs, BB *bb)
+{
+  INT count = 0;
+  REGISTER r;
+  FOR_ALL_REGISTER_SET_members (regs, r) {
+    if (REG_LIVE_Outof_BB (cl, r, bb)) {
+      count++;
+    }
+  }
+  return count;
+}
+#endif
+
 
 // Adds (<cl>,<reg>) into live-in sets for <bb>.
 void REG_LIVE_Update(ISA_REGISTER_CLASS cl, REGISTER reg, BB *bb)
@@ -876,6 +1142,52 @@ void REG_LIVE_Update(ISA_REGISTER_CLASS cl, REGISTER reg, BB *bb)
   if (reg != REGISTER_UNDEFINED)
     livein[cl] = REGISTER_SET_Union1 (livein[cl], reg);
 }
+
+#ifdef TARG_ST
+/*
+ * REG_LIVE_Update_Livein_From_Liveout(BB *bb)
+ * Recompute live in information for the bb from the current
+ * bb liveout set.
+ * The livein sets of the successors BB must be up
+ * to date. 
+ * The updated live in set is conservative (a super set)
+ * if the bb is in a cycle as no global iteration
+ * is performed.
+ * To update the live in set we compute:
+ * 1. the current live out (union of live in of successors),
+ * 2. local kill and local live in sets,
+ * 3. then we update live in from these.
+ */
+void 
+REG_LIVE_Update_Livein_From_Liveout(BB *bb)
+{
+  REGISTER_SET liveout[ISA_REGISTER_CLASS_MAX+1];
+  REGSET livein;
+  REGSET kill;
+
+  // FdF 20100309: Extend the representation to include bb
+  REG_LIVE_Update(ISA_REGISTER_CLASS_UNDEFINED, REGISTER_UNDEFINED, bb);
+
+  // 1. Compute current live out set
+  REGSET_CLEAR (liveout);
+  BBLIST *bl;
+  FOR_ALL_BB_SUCCS (bb, bl) {
+    BB *succ_bb = BBLIST_item(bl);
+    REGSET succ_livein = BB_Register_Livein(succ_bb);
+    REGSET_OR (liveout, succ_livein);
+  }
+  
+  // 2. Recompute local kill/livein
+  livein = BB_Register_Livein(bb);
+  kill = BB_Register_Kill(bb);
+  REGSET_CLEAR (livein);
+  REGSET_CLEAR (kill);
+  REG_LIVE_Compute_Local_Livein_Kill(bb, livein, kill);
+  
+  // 3. Update live in set from liveout, and local livein and kill
+  REGSET_UPDATE_LIVEIN (livein, liveout, kill);
+}
+#endif
 
 // The client is finished using the facility -- clean up.
 void REG_LIVE_Finish(void)

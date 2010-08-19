@@ -415,8 +415,12 @@ static void F90_Lower_Init(void) {
    f90_lower_map = WN_MAP_Create(f90_lower_pool);
    
    /* Get the return PREG for allocations of pointer types */
+#ifdef TARG_ST
+   FmtAssert(FALSE,("Get_Return_Mtypes/Pregs shouldn't be called"));
+#else
    Get_Return_Mtypes(Be_Type_Tbl(Pointer_type), Use_Simulated, &mtype1, &mtype2);
    Get_Return_Pregs(mtype1, mtype2, &pointer_return_reg, &rreg2);
+#endif
 
    num_alloca = 0;
    max_num_alloca = 0;
@@ -1081,7 +1085,11 @@ static WN * lower_random_number(WN *rcall, WN *block, WN *insert_point)
       rt = MTYPE_F4;
    }
 
+#ifdef TARG_ST
+   FmtAssert(FALSE,("Get_Return_Mtypes/Pregs shouldn't be called"));
+#else
    Get_Return_Pregs(rt,MTYPE_V, &rreg1, &rreg2);
+#endif
    /* Change into an INTRINSIC_CALL, then return the load of the PREG */
    WN_DELETE_Tree(rcall);
    rcall = WN_Create_Intrinsic(OPCODE_make_op(OPR_INTRINSIC_CALL,rt,MTYPE_V),intr,0,NULL);

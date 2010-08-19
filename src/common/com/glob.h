@@ -126,11 +126,15 @@ extern char *IR_File_Name;	/* SGIR intermediate file */
 extern char *Ipa_File_Name;	/* IPA file */
 extern char *Asm_File_Name;	/* Assembly file */
 extern char *Obj_File_Name;	/* Relocatable object file */
+extern char * Lai_File_Name;     /* LAI file */
 extern char *call_graph_file_name; /* Function call graph file */
 extern char *cord_output_file_name; /* Output file name after function layout */
 extern char *cord_obj_file_name;  /* Object file name which will be reorder function layout */
 extern char *Instrumentation_File_Name; /* instrumentation file */
 extern char *Feedback_File_Name;/* feedback file produced from prof */
+#ifdef TARG_ST
+BE_EXPORTED extern char * Object_Dir;/* Object dir */
+#endif
 #ifndef MONGOOSE_BE
 extern char *Lib_File_Name;	/* Program library file */
 #endif
@@ -152,6 +156,7 @@ extern FILE *Irb_File;		/* ACIR intermediate file */
 extern FILE *IR_File;		/* SGIR intermediate file */
 extern FILE *Ipa_File;		/* IPA file */
 extern FILE *Asm_File;		/* Assembly file */
+extern FILE * Lai_File;          /* LAI file */
 extern FILE *Obj_File;		/* Relocatable object file */
 extern FILE *Lib_File;		/* Program library file */
 extern FILE *Tim_File;		/* Timing info file (usually trace) */
@@ -176,6 +181,7 @@ extern INT32 Num_Source_Files;
 /* Output requested: */
 extern BOOL Assembly;		/* Assembly code */
 extern BOOL Object_Code;	/* Object code */
+extern BOOL Lai_Code;           /* Lai code */
 extern BOOL Symbol_Table_Out;	/* Symbol table output (list or trace) */
 extern BOOL Create_Cycle_Output; /* added by cbq */
 extern BOOL Show_Progress;	/* Report progress to stdout */

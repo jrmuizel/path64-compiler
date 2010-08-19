@@ -64,6 +64,8 @@
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include "defs.h"
+#include "bb.h"
+#include "op.h"
 #include "cg_flags.h"
 #include "cgtarget.h"
 
@@ -91,8 +93,35 @@ BOOL CG_x87_store = FALSE;
 #endif
 BOOL LOCALIZE_using_stacked_regs = TRUE;
 BOOL CG_unique_exit = TRUE;
+BOOL  CG_enable_BB_splitting = TRUE;
+INT32 CG_split_BB_length = CG_bblength_default;
+BOOL CG_gen_callee_saved_regs_mask = FALSE; /* generate register mask */
 
+INT32 CG_L1_ld_latency = 0;
+INT32 CG_L2_ld_latency = 0;
+INT32 CG_z_conf_L1_ld_latency = 0;
+INT32 CG_z_conf_L2_ld_latency = 0;
+INT32 CG_ld_latency = 0;
+INT32 CG_L1_pf_latency = 12;
+INT32 CG_L2_pf_latency = 12;
+
+INT32 CG_branch_mispredict_penalty= -1;		/* means not set */
+INT32 CG_branch_mispredict_factor= -1;		/* means not set */
+
+#ifdef BCO_ENABLED /* Thierry */
+BOOL CG_emit_bb_freqs = FALSE;
+BOOL CG_emit_bb_freqs_arcs = FALSE;
+#endif /* BCO_Enabled Thierry */
+#ifdef TARG_ST
+// [CL] force spill of return address (RA) so that
+// unwinding/backtracing is still possible
+BOOL CG_save_return_address = FALSE;
+#endif
+#ifdef TARG_ST
+BOOL CG_enable_feedback = FALSE;
+#else
 BOOL CG_enable_feedback	     = TRUE;
+#endif
 BOOL CG_enable_reverse_if_conversion = TRUE;
 BOOL CG_enable_reverse_if_conversion_overridden = FALSE;
 BOOL CG_enable_spec_imul = TRUE;
@@ -131,12 +160,21 @@ const char *CFLOW_cold_threshold;
 BOOL FREQ_enable = TRUE;
 BOOL FREQ_view_cfg = FALSE;
 const char *FREQ_frequent_never_ratio = "1000.0";
+#ifdef TARG_ST
+// (cbr) this is enough
+const char *FREQ_eh_freq = "0.01";
+#else
 const char *FREQ_eh_freq = "0.1";
+#endif
 #ifdef KEY
 const char *FREQ_non_local_targ_freq = "0.1";
 #endif
 
 BOOL CG_enable_rename = TRUE;
+#ifdef TARG_ST
+BOOL CG_enable_rename_after_GRA = TRUE;
+BOOL CG_enable_min_max_abs = TRUE;
+#endif
 BOOL CG_enable_prefetch = FALSE;
 BOOL CG_enable_z_conf_prefetch  = FALSE;
 BOOL CG_enable_nz_conf_prefetch = FALSE;
@@ -145,24 +183,60 @@ BOOL CG_enable_pf_L1_st = FALSE;
 BOOL CG_enable_pf_L2_ld = FALSE;
 BOOL CG_enable_pf_L2_st = FALSE;
 BOOL CG_exclusive_prefetch = FALSE;
+BOOL CG_enable_ssa = FALSE;	/* Enable SSA in cg */
+#ifdef TARG_ST
+// FdF 20070206
+BOOL  CG_warn_prefetch_padding = 0;
+// [TTh] Control of preferred register sets
+BOOL  CG_COLOR_use_pref_regs = TRUE;
+INT32 CG_COLOR_pref_regs_priority = PREF_REGS_PRIORITY_MEDIUM;
+#endif
+BOOL CG_enable_range_propagation = FALSE;
+BOOL CG_enable_select = FALSE;
+INT32 CG_range_recompute_limit = 2;
+BOOL CG_enable_cbpo;
+
 #ifdef KEY
 BOOL CG_split_bb = TRUE;
 BOOL CG_split_bb_Set = FALSE;
 #endif
+#ifdef TARG_ST
 
-INT32 CG_L1_ld_latency = 0;
-INT32 CG_L2_ld_latency = 0;
-INT32 CG_z_conf_L1_ld_latency = 0;
-INT32 CG_z_conf_L2_ld_latency = 0;
-INT32 CG_ld_latency = 0;
-INT32 CG_L1_pf_latency = 12;
-INT32 CG_L2_pf_latency = 12;
+INT32 CG_LAO_activation = 0;
+INT32 CG_LAO_regiontype = 0;
+INT32 CG_LAO_conversion = 0;
+INT32 CG_LAO_coalescing = 0;
+INT32 CG_LAO_predication = 0;
+INT32 CG_LAO_scheduling = 0;
+INT32 CG_LAO_allocation = 0;
+INT32 CG_LAO_rcmssolving = 0;
+INT32 CG_LAO_preloading = 0;
+INT32 CG_LAO_l1missextra = 0;
+INT32 CG_LAO_compensation = 0;
+INT32 CG_LAO_speculation = 0;
+INT32 CG_LAO_relaxation = 0;
+INT32 CG_LAO_pipelining = 0;
+INT32 CG_LAO_logtimeout = 0;
+INT32 CG_LAO_renaming = 0;
+INT32 CG_LAO_boosting = 0;
+INT32 CG_LAO_aliasing = 0;
+INT32 CG_LAO_prepadding = 0;
+INT32 CG_LAO_postpadding = 0;
+INT32 CG_LAO_overrun = 0;
+INT32 CG_LAO_opslimit = 0;
+#endif
+#ifdef CGG_ENABLED
+BOOL CG_enable_cgg;
+INT32 CG_cgg_level;
+#endif
 
-INT32 CG_branch_mispredict_penalty= -1;		/* means not set */
-INT32 CG_branch_mispredict_factor= -1;		/* means not set */
 
 BOOL CGSPILL_Rematerialize_Constants = TRUE;
 BOOL CGSPILL_Enable_Force_Rematerialization = FALSE;
+#ifdef BCO_ENABLED /* Thierry */
+BOOL CG_emit_bb_freqs = FALSE;
+BOOL CG_emit_bb_freqs_arcs = FALSE;
+#endif
 
 #ifdef TARG_IA64
 BOOL CG_enable_thr = TRUE;
@@ -179,6 +253,16 @@ BOOL CG_tail_call = TRUE;
 BOOL GCM_Speculative_Loads = FALSE;
 BOOL GCM_Predicated_Loads = FALSE;
 #endif
+#ifdef TARG_ST
+// [CL]
+BOOL CFLOW_Enable_Favor_Branches_Condition = FALSE;
+// [TB]
+BOOL CFLOW_Space = FALSE;
+BOOL CFLOW_depgraph_use = TRUE;
+BOOL CFLOW_enable_last_pass = FALSE;
+BOOL CFLOW_Enable_Hoist_rts = TRUE;
+#endif
+
 BOOL LOCS_PRE_Enable_Scheduling = TRUE;
 BOOL LOCS_POST_Enable_Scheduling = TRUE;
 BOOL LOCS_Enable_Scheduling = TRUE;
@@ -186,7 +270,11 @@ BOOL IGLS_Enable_HB_Scheduling = TRUE;
 BOOL IGLS_Enable_PRE_HB_Scheduling = FALSE;
 BOOL IGLS_Enable_POST_HB_Scheduling = TRUE;
 BOOL IGLS_Enable_All_Scheduling = TRUE;
+#ifdef TARG_ST
+BOOL CG_enable_loop_optimizations = FALSE;
+#else
 BOOL CG_enable_loop_optimizations = TRUE;
+#endif
 BOOL GCM_Motion_Across_Calls = TRUE;
 BOOL GCM_Min_Reg_Usage = TRUE;
 BOOL GCM_Pointer_Spec= TRUE;
@@ -230,6 +318,9 @@ BOOL CG_LOOP_convert_prefetch_to_load = FALSE;
 const char *CGTARG_Branch_Taken_Prob = NULL;
 double CGTARG_Branch_Taken_Probability;
 BOOL CGTARG_Branch_Taken_Prob_overridden;
+#ifdef TARG_ST
+INT32 LOCS_POST_Scheduling =  Forward_Post_Sched;
+#endif
 
 BOOL EMIT_pjump_all = TRUE;
 BOOL EMIT_use_cold_section = TRUE;
@@ -261,6 +352,14 @@ const char *CGEXP_sthint_L1;
 const char *CGEXP_sthint_L2;
 
 BOOL LRA_do_reorder = FALSE;
+#ifdef TARG_ST
+BOOL LRA_minregs    = FALSE;
+BOOL LRA_merge_extract = TRUE;
+BOOL LRA_resched_check = FALSE;
+BOOL LRA_overlap_coalescing = TRUE;
+BOOL LRA_no_uninit_strict_check = FALSE;
+#endif
+
 #ifdef TARG_X8664
 BOOL LRA_prefer_legacy_regs = FALSE;
 #endif
@@ -291,6 +390,23 @@ BOOL GRA_choose_best_split = TRUE;
 BOOL GRA_use_stacked_regs = TRUE;
 BOOL GRA_redo_liveness = FALSE;
 BOOL GRA_recalc_liveness = FALSE;
+#ifdef TARG_ST
+BOOL GRA_use_runeson_nystrom_spill_metric = FALSE;
+BOOL GRA_use_interprocedural_info = TRUE;
+BOOL GRA_spill_to_caller_save = TRUE;
+BOOL GRA_preference_subclass = TRUE;
+BOOL GRA_use_subclass_register_request = TRUE;
+const char *GRA_local_spill_multiplier_string = "1.0";
+//TB: export variables
+BOOL GRA_spill_count_factor_for_size = FALSE;
+BOOL GRA_spill_count_factor_for_size_set = FALSE;
+BOOL GRA_split_for_size = FALSE;
+BOOL GRA_split_for_size_set = FALSE;
+BOOL GRA_spill_count_min = FALSE;
+BOOL GRA_spill_count_min_set = FALSE;
+BOOL GRA_overlay_spills = TRUE;
+#endif
+
 INT32 GRA_non_home_hi = -1;
 INT32 GRA_non_home_lo = INT32_MAX;
 const char* GRA_call_split_freq_string = "0.1";
@@ -330,14 +446,25 @@ BOOL  HB_skip_hammocks = FALSE;
 #endif
 BOOL  HB_simple_ifc = TRUE;
 BOOL  HB_simple_ifc_set = FALSE;
+BOOL  HB_superblocks = FALSE;
 INT   HB_min_blocks = 2;
 BOOL  GRA_LIVE_Predicate_Aware = FALSE;
+#ifdef TARG_ST
+BOOL EMIT_space = FALSE;
+#endif
+#ifdef TARG_ST
+BOOL CGEXP_expandconstant_set = FALSE;
+#endif
+#ifndef TARG_ST
+// FdF 20090318: Moved into config.cxx
+/* Recurrence Breaking flags */
 
 /* Recurrence Breaking flags */
 #if defined(TARG_IA64) || defined(TARG_MIPS)
 BOOL CG_LOOP_fix_recurrences = TRUE;
 #else
 BOOL CG_LOOP_fix_recurrences = FALSE;
+#endif
 #endif
 
 BOOL CG_LOOP_fix_recurrences_specified = FALSE;
@@ -425,3 +552,19 @@ BOOL CG_hw_stall_overridden = FALSE;
 // temporary flags for controlling algorithm selection for fdiv, sqrt, etc
 const char *CGEXP_fdiv_algorithm = "sgi";
 const char *CGEXP_sqrt_algorithm = "sgi";
+
+#ifdef TARG_ST
+// ====================================================================
+//   TAILMERGE:
+// ====================================================================
+INT CG_tailmerge = 0;
+INT CG_simp_flow_in_tailmerge = 0;
+
+// ====================================================================
+//   GTN COALESCER:
+// ====================================================================
+INT32 CG_coalesce = (COALESCE_BEFORE_SCHED | COALESCE_AFTER_SCHED);
+BOOL CG_coalesce_overridden = FALSE;
+BOOL CG_coalesce_pair_only = FALSE;
+INT32 CG_coalesce_max_transfo = INT32_MAX;
+#endif

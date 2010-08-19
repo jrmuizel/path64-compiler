@@ -52,7 +52,11 @@ extern void Cg_Dwarf_Begin (BOOL is_64bit);
 
 extern void Cg_Dwarf_Finish (pSCNINFO text_scninfo);
 
+#ifdef TARG_ST // [CL] added force_emission parameter
+extern void Cg_Dwarf_Add_Line_Entry (INT code_address, SRCPOS srcpos, BOOL force_emission=FALSE);
+#else
 extern void Cg_Dwarf_Add_Line_Entry (INT code_address, SRCPOS srcpos);
+#endif
 
 #ifdef TARG_X8664
 extern void Cg_Dwarf_Process_PU (Elf64_Word  scn_index,
@@ -149,4 +153,26 @@ extern void Cg_Dwarf_Translate_To_Elf(Dwarf_Unsigned,
 				      Dwarf_Unsigned *,
 				      Dwarf_Unsigned *);
 
+//TB: export these type for accessing file_table and incl_table for
+//gcov support
+typedef struct {
+  const char *path_name;
+  BOOL already_processed;
+} include_info;
+  
+typedef struct {
+  const char *filename;
+  INT incl_index;
+  FILE *fileptr;
+  INT max_line_printed;
+  BOOL already_processed;
+  Dwarf_Unsigned mod_time;
+  Dwarf_Unsigned file_size;
+} file_info;
+#ifdef TARG_ST
+
+extern file_info Cg_Dwarf_File_Table(INT /* idx */);
+extern include_info Cg_Dwarf_Include_Table(INT /* idx */);
+
+#endif /* TARG_ST */
 #endif /* cgdwarf_INCLUDED */

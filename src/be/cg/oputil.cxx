@@ -68,6 +68,8 @@
 #pragma hdrstop
 
 #include <stdarg.h>
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
 
 #include "defs.h"
 #include "config.h"
@@ -82,10 +84,10 @@
 #include "cgir.h"
 #include "cg.h"
 #include "register.h"
+#include "cgtarget.h"
 #include "cg_dep_graph.h"
 #include "cgprep.h"
 #include "cg_loop.h"
-#include "cgtarget.h"
 #include "cg_spill.h"
 
 #include "wn.h"
@@ -93,6 +95,11 @@
 #include "cgexp.h"
 #include "xstats.h"
 #include "tag.h"
+#ifdef TARG_ST
+#include "cg_ssa.h"
+#include "op_map.h"			/* For using OP_Asm_Map */
+#include "cg_affirm.h"
+#endif
 
 /* Allocate OPs for the duration of the PU. */
 #define OP_Alloc(size)  ((OP *)Pu_Alloc(size))
@@ -101,19 +108,39 @@
 #define Set_OP_code(o,opc)	((o)->opr = (mTOP)(opc))
 #define Set_OP_opnds(o,n)	((o)->opnds = (n))
 #define Set_OP_results(o,n)	((o)->results = (n))
-
+#ifdef TARG_ST
+BOOL 
+Set_OP_opnd_Immediate_Variant(OP *op, INT idx, TN *tn) {
+	TOP top = TOP_UNDEFINED;
+	DevAssert(TN_has_value(tn),("Set_OP_opnd_Immediate_Variant must be called with a Litteral TN\n"));
+	top=TOP_opnd_immediate_variant(OP_code(op),idx,TN_value(tn));
+	if (top!=TOP_UNDEFINED) {
+		Set_OP_opnd(op, idx, tn);
+		OP_Change_Opcode(op,top);
+		return TRUE;
+	}
+	return FALSE;
+}
+#endif
 
 // ----------------------------------------
 // Copy ASM_OP_ANNOT when duplicating an OP
 // ----------------------------------------
-static inline void
-Copy_Asm_OP_Annot(OP* new_op, const OP* op) 
+inline void
+Copy_Asm_OP_Annot(OP* new_op, const  OP* op) 
 {
   if (OP_code(op) == TOP_asm) {
     OP_MAP_Set(OP_Asm_Map, new_op, OP_MAP_Get(OP_Asm_Map, op));
   }
 }
-
+// ----------------------------------------
+// Copy ASM_OP_ANNOT when duplicating an OP
+// ----------------------------------------
+static void
+Copy_OP_Annot(OP* new_op, OP* op) 
+{
+  Copy_Asm_OP_Annot (new_op, op);
+}
 
 /* ====================================================================
  *
@@ -131,9 +158,46 @@ New_OP ( INT results, INT opnds )
   PU_OP_Cnt++;
   Set_OP_opnds(op, opnds);
   Set_OP_results(op, results);
+#ifdef TARG_ST
+  // (cbr) make sure effects are reset
+  for (int i = 0; i < opnds; i++)
+    Reset_OP_effects(op, i, -1);
+#endif
+
+#ifdef TARG_ST
+  op->g_map_idx=PU_OP_Cnt;
+  op->scycle = -1;
+#endif
+
   return op;
 }
 
+#ifdef TARG_ST
+/* ====================================================================
+ *
+ * OPS_Copy_Predicate()
+ *
+ * See interface description
+ * ====================================================================
+ */
+ void
+ OPS_Copy_Predicate (OPS *ops, OP *src_op) 
+ {
+   int pred_idx = OP_find_opnd_use(src_op, OU_predicate);
+
+   if (OP_has_predicate(src_op) && OP_opnd(src_op, pred_idx) != True_TN)  {
+     FmtAssert(pred_idx >= 0, ("invalide predicate operand"));
+     TN *pred = OP_opnd (src_op, pred_idx);
+     bool on_false = OP_Pred_False(src_op, pred_idx);
+     OP *op;
+     
+     FOR_ALL_OPS_OPs(ops, op) {
+       FmtAssert(OP_has_predicate(op), ("try to predicate a non predicated op."));
+       CGTARG_Predicate_OP (NULL, op, pred, on_false);
+     }
+   }
+ }
+#endif
 
 /* ====================================================================
  *
@@ -156,7 +220,13 @@ Dup_OP (const OP *op )
   new_op->bb = NULL;
 
   Copy_Asm_OP_Annot ( new_op, op );
+#ifdef TARG_ST
+  LABEL_IDX tag = Get_OP_Tag(op);
+  new_op->g_map_idx=PU_OP_Cnt;
+  if (tag) {
+#else
   if (OP_has_tag(op)) {
+#endif
 	Set_OP_Tag (new_op, Gen_Tag());
   }
   
@@ -176,7 +246,81 @@ Dup_OP (const OP *op )
 
   return new_op;
 }
-
+#ifdef TARG_ST
+
+/* ====================================================================
+ *
+ * Resize_OP
+ *
+ * Create a new OP structure as a duplicate of another, with extended number of results and opnds.
+ *
+ * ====================================================================
+ */
+
+OP *
+  Resize_OP ( OP *op, INT results, INT opnds )
+{
+  OP *new_op = New_OP ( results, opnds );
+
+  memcpy(new_op, op, OP_sizeof(0,0));
+  new_op->results = results;
+  new_op->opnds = opnds;
+  INT min_results = MIN(OP_results(op), results);
+  INT min_opnds = MIN(OP_opnds(op), opnds);
+  memcpy(new_op->res_opnd+OP_result_offset(new_op), op->res_opnd+OP_result_offset(op), sizeof(TN *)*min_results);
+  memcpy(new_op->res_opnd+OP_opnd_offset(new_op), op->res_opnd+OP_opnd_offset(op), sizeof(TN *)*min_opnds);
+  new_op->next = new_op->prev = NULL;
+  new_op->bb = NULL;
+
+  Copy_OP_Annot ( new_op, op );
+  WN *wn;
+  if (wn = Get_WN_From_Memory_OP(op))
+    OP_MAP_Set(OP_to_WN_map, new_op, wn);
+  LABEL_IDX tag = Get_OP_Tag(op);
+  new_op->g_map_idx=PU_OP_Cnt;
+  if (tag) {
+    Set_OP_Tag (new_op, Gen_Tag());
+  }
+  
+  return new_op;
+}
+
+/* ====================================================================
+ *
+ * OP_Copy_Properties()
+ *
+ * See interface description
+ * ====================================================================
+ */
+void
+OP_Copy_Properties(OP *op, OP *src_op)
+{
+  /* Copy srcpos. */
+  op->srcpos = src_op->srcpos;
+
+  /* Copy unrolling related fields. */
+  op->unroll_bb = src_op->unroll_bb;
+  op->orig_idx = src_op->orig_idx;
+  op->unrolling = src_op->unrolling;
+
+  /* Copy all flags. */
+  op->flags = src_op->flags;
+  op->flags2 = src_op->flags2;
+
+  if (OP_spill(src_op)) {
+    FmtAssert (OP_spilled_tn(src_op) != NULL, ("Missing spilled tn"));
+    Set_OP_spilled_tn(op, OP_spilled_tn(src_op));
+  }
+
+  /* Copy scheduling info. */
+  op->scycle = src_op->scycle;
+
+  /* Copy annotations. */
+  Copy_OP_Annot(op, src_op);
+}
+
+#endif
+
 /* =====================================================================
  *			      OPS stuff
  *		(see "op.h" for interface description)
@@ -314,7 +458,40 @@ void BB_Sink_Op_Before(BB *bb, OP *op, OP *point)
 #define MIN_INITIAL_SPACING \
   ((mORDER_TYPE)1 << (ORDER_BITS-(sizeof(mMAP_IDX_TYPE)*8)))
 #define INITIAL_SPACING ((ORDER_TYPE)(MIN_INITIAL_SPACING * 8))
+#ifdef TARG_ST
+// [SC] We only guarantee 16 bits for ORDER_TYPE, but note
+// that the type UINT16 is * at least * 16 bits, therefore
+// it is not safe to assume that ((ORDER_TYPE)-1) fits in 16 bits.
+#define MAX_ORDER UINT16_MAX
+#else
 #define MAX_ORDER ((ORDER_TYPE)-1)
+#endif
+
+#ifdef TARG_ST
+static void
+verify_same_res(OP *op)
+{
+  if (!tn_ssa_map) {
+    INT i;
+    for (i = 0; i < OP_results(op); i++) {
+      INT same_res = OP_same_res(op, i);
+      if (same_res >= 0) {
+	TN *tn1 = OP_result(op, i);
+	TN *tn2 = OP_opnd(op, same_res); 
+
+	if (!(tn1 == tn2 ||
+	      ((TN_is_register(tn1) && TN_is_register(tn2) &&
+		(TN_is_dedicated(tn1) || (TN_register(tn1) != REGISTER_UNDEFINED)) &&
+		(TN_is_dedicated(tn2) || (TN_register(tn2) != REGISTER_UNDEFINED)) &&
+		(TN_register_and_class(tn1) == TN_register_and_class(tn2)))))) {
+          
+	  FmtAssert(0, ("same result operand mismatch when inserting op (%s)",TOP_Name(OP_code(op))));
+	}
+      }
+    }
+  }
+}
+#endif
 
 
 static void setup_ops(BB *bb, OP *first, OP *last, UINT32 len)
@@ -355,6 +532,10 @@ static void setup_ops(BB *bb, OP *first, OP *last, UINT32 len)
     order += incr;
     op->order = order;
     REGISTER_CLASS_OP_Update_Mapping (op);
+#ifdef TARG_ST
+    SSA_setup(op);
+    verify_same_res(op);
+#endif
     op = OP_next(op);
   } while (op != OP_next(last));
 
@@ -679,6 +860,19 @@ void BB_Move_Op_To_End(BB *to_bb, BB *from_bb, OP *op)
   setup_ops(to_bb, op, op, 1);
 }
 
+#ifdef TARG_ST
+void BB_Replace_Op(OP *old_op, OP *new_op) {
+
+  Is_True(OP_bb(old_op) != NULL, ("old_op not in a BB"));
+  Is_True(OP_bb(new_op) == NULL, ("new_op already in a BB"));
+  OP *point = OP_prev(old_op);
+  BOOL before = (point == NULL);
+  BB *bb = OP_bb(old_op);
+
+  BB_Remove_Op(bb, old_op);
+  BB_Insert_Op(bb, point, new_op, before);
+}
+#endif
 
 void BB_Append_All(BB *to_bb, BB *from_bb)
 {
@@ -734,12 +928,19 @@ void BB_Remove_Ops(BB *bb, OPS *ops)
 
   OPS_Remove_Ops(&bb->ops, ops);
 
+#ifndef TARG_ST
   FOR_ALL_OPS_OPs(ops, op) op->bb = NULL;
+#endif
 }
 
 
 void BB_Remove_All(BB *bb)
 {
+#ifdef TARG_ST
+  /* FDF: Because ops is emptied by BB_Remove_Ops ! */
+  OP *op;
+  FOR_ALL_OPS_OPs(&bb->ops, op) op->bb = NULL;
+#endif
   BB_Remove_Ops(bb, &bb->ops);
   BB_next_op_map_idx(bb) = 0;
 }
@@ -763,6 +964,10 @@ Mk_OP(TOP opr, ...)
 
   FmtAssert(!TOP_is_var_opnds(opr), ("Mk_OP not allowed with variable operands"));
 
+#ifdef TARG_ST
+  FmtAssert(ISA_SUBSET_LIST_Member (ISA_SUBSET_List, opr),
+	    ("Mk_OP: op not supported on target (%s)", TOP_Name(opr)));
+#endif
   Set_OP_code(op, opr);
 
   va_start(ap, opr);
@@ -771,8 +976,9 @@ Mk_OP(TOP opr, ...)
     TN *result = va_arg(ap, TN *);
     Set_OP_result(op, i, result);
   }
+#ifndef TARG_ST
   if (TOP_is_defs_fpu_int(opr)) Set_TN_is_fpu_int(OP_result(op, 0));
-
+#endif
   for (i = 0; i < opnds; ++i) {
     TN *opnd = va_arg(ap, TN *);
     Set_OP_opnd(op, i, opnd);
@@ -839,6 +1045,10 @@ Mk_VarOP(TOP opr, INT results, INT opnds, TN **res_tn, TN **opnd_tn)
     FmtAssert(TOP_is_var_opnds(opr) && opnds > TOP_fixed_opnds(opr),
 	      ("%d is not enough operands for %s", opnds, TOP_Name(opr)));
   }
+#ifdef TARG_ST
+  FmtAssert(ISA_SUBSET_LIST_Member (ISA_SUBSET_List, opr),
+	    ("Mk_OP: op not supported on target (%s)", TOP_Name(opr)));
+#endif
 
   INT i;
   OP *op = New_OP(results, opnds);
@@ -846,8 +1056,9 @@ Mk_VarOP(TOP opr, INT results, INT opnds, TN **res_tn, TN **opnd_tn)
   Set_OP_code(op, opr);
 
   for (i = 0; i < results; ++i) Set_OP_result(op, i, res_tn[i]);
+#ifndef TARG_ST
   if (TOP_is_defs_fpu_int(opr)) Set_TN_is_fpu_int(res_tn[0]);
-
+#endif
   for (i = 0; i < opnds; ++i) Set_OP_opnd(op, i, opnd_tn[i]);
 
   CGTARG_Init_OP_cond_def_kind(op);
@@ -874,20 +1085,71 @@ void Print_OP_No_SrcLine (const OP *op, FILE *f) {
 #else
   fprintf (f, "[%4d] ", Srcpos_To_Line (OP_srcpos (op)));
 #endif
+#ifdef TARG_ST
+  LABEL_IDX tag = Get_OP_Tag(op);
+  if (tag) {
+#else
   if (OP_has_tag (op)) {
     LABEL_IDX tag = Get_OP_Tag (op);
+#endif
     fprintf (f, "<tag %s>: ", LABEL_name (tag));
   }
 
   for (INT i = 0; i < OP_results (op); ++i) {
     Print_TN (OP_result (op, i), FALSE, f);
+#ifdef TARG_ST
+    TN *pinned;
+    if (op_ssa_pinning_map && ((pinned = OP_Get_result_pinning(op, i)) != NULL)) {
+      fprintf(TFile, "^");
+      Print_TN(pinned, FALSE);
+    }
+#endif
     fprintf (f, " ");
   }
   fprintf(f, ":- ");
-  fprintf(f, "%s ", TOP_Name (OP_code (op)));
+  fprintf(f, "%s ", TOP_Name (OP_code (op)));  
+  if ( OP_variant(op) != 0 ) {
+    fprintf ( TFile, "(%x) ", OP_variant(op));
+  }
+#ifdef TARG_ST
+  if (OP_code(op) == TOP_psi) {
+    for (INT i=0; i<PSI_opnds(op); i++) {
+      TN *guard = PSI_guard(op, i);
+      if (guard) {
+        // (cbr) Support for guards on false
+        if (PSI_Pred_False(op, i))
+          fprintf(TFile, "!");
+	Print_TN(guard, FALSE);
+      }
+      fprintf(TFile, "?");
+      TN *tn = PSI_opnd(op,i);
+      Print_TN(tn,FALSE);
+      if (OP_Defs_TN(op, tn)) fprintf(TFile, "<defopnd>");
+      fprintf(TFile, " ");
+    }
+  }
+else
+#endif
   for (INT i=0; i<OP_opnds (op); ++i) {
     TN *tn = OP_opnd (op, i);
+#ifdef TARG_ST
+    if (OP_code(op) == TOP_phi) {
+      BB *pred_bb = Get_PHI_Predecessor(op, i);
+      if (pred_bb)
+	fprintf(TFile, "BB%d?", BB_id(pred_bb));
+    }
+    // (cbr) Support for guards on false
+    if (OP_Pred_False(op, i))
+      fprintf(TFile, "!");
+#endif
     Print_TN (tn, FALSE, f);
+#ifdef TARG_ST
+    TN *pinned;
+    if (op_ssa_pinning_map && ((pinned = OP_Get_opnd_pinning(op, i)) != NULL)) {
+      fprintf(TFile, "^");
+      Print_TN(pinned, FALSE);
+    }
+#endif
     if (cg_loop_op) {
       INT omega = TN_is_symbol (tn) ? OP_restore_omega (op) : OP_omega (op, i);
       if (omega) fprintf (f, "[%d]", omega);
@@ -912,6 +1174,15 @@ void Print_OP_No_SrcLine (const OP *op, FILE *f) {
   if (OP_no_move_before_gra (op)) fprintf (f, " no_move");
   if (OP_spadjust_plus (op))      fprintf (f, " spadjust_plus");
   if (OP_spadjust_minus (op))     fprintf (f, " spadjust_minus");
+#ifdef TARG_ST
+  if (OP_spill(op)) fprintf (f, " spill");
+  if (OP_ssa_move(op)) fprintf (f, " ssa_move");
+  if (OP_black_hole(op)) fprintf (f, " black_hole");
+  if (OP_Get_Flag_Effects(op) & OP_FE_WRITE) fprintf (f, " flag_write");
+  if (OP_Get_Flag_Effects(op) & OP_FE_READ) fprintf (f, " flag_read");
+  if (OP_prologue(op)) fprintf (f, " prologue");
+  if (OP_epilogue(op)) fprintf (f, " epilogue");
+#endif
 
   if (wn = Get_WN_From_Memory_OP (op)) {
     char buf[500];
@@ -923,6 +1194,11 @@ void Print_OP_No_SrcLine (const OP *op, FILE *f) {
     fprintf (f, " WN=0x%p %s", wn, buf);
 #endif
   }
+#ifdef TARG_ST
+  if (OP_Get_Affirm(op)) {
+    fprintf(TFile, " affirm");
+  }
+#endif
   if (OP_unrolling (op)) {
     UINT16 unr = OP_unrolling (op);
     fprintf (f, " %d%s unrolling", unr,
@@ -989,6 +1265,80 @@ OP_Defs_Reg(const OP *op, ISA_REGISTER_CLASS cl, REGISTER reg)
   /* if we made it here, we must not have found it */
   return FALSE;
 }
+
+#ifdef TARG_ST
+/* ====================================================================
+ *
+ * OP_Defs_Regs
+ *
+ * See interface description.
+ *
+ * ====================================================================
+ */
+
+INT
+OP_Defs_Regs(const OP *op, ISA_REGISTER_CLASS cl, REGISTER reg, INT nregs)
+{
+  INT low_reg = -1, high_reg = -1;
+  register INT num;
+
+  for ( num = 0; num < OP_results(op); num++ ) {
+    TN *res_tn = OP_result(op,num);
+    if (TN_is_register(res_tn)) {
+      if (TN_register_class(res_tn) == cl) {
+        REGISTER r = TN_register(res_tn);
+        if (r != REGISTER_UNDEFINED) {
+          INT nr = TN_nhardregs(res_tn);
+          if ((r <= reg && (r + nr) > reg) ||
+              (reg <= r && (reg + nregs) > r)) {
+            // We have an overlap
+            INT lo = (reg > r) ? reg : r;
+            INT hi = (reg + nregs - 1) < (r + nr - 1)
+              ? (reg + nregs - 1)
+	      : (r + nr -1);
+            if (lo < low_reg) low_reg = lo;
+            if (hi > high_reg) high_reg = hi;
+	  }
+	}
+      }
+    }
+  }
+
+  return (low_reg == -1) ? 0 : high_reg - low_reg;
+}
+
+
+/* ====================================================================
+ *
+ * OP_Refs_Regs
+ *
+ * See interface description.
+ *
+ * ====================================================================
+ */
+
+INT
+OP_Refs_Regs(const OP *op, ISA_REGISTER_CLASS cl, REGISTER reg, INT nregs)
+{
+  REGISTER_SET regs = REGISTER_SET_Range (reg, reg + nregs - 1);
+  REGISTER_SET referenced_regs = REGISTER_SET_EMPTY_SET;
+  INT low_reg = -1, high_reg = -1;
+  register INT num;
+
+  for ( num = 0; num < OP_opnds(op); num++ ) {
+    TN *opnd_tn = OP_opnd(op,num);
+    if (TN_is_register(opnd_tn)) {
+      if (TN_register_class(opnd_tn) == cl) {
+	referenced_regs = REGISTER_SET_Union
+	  (referenced_regs,
+	   REGISTER_SET_Intersection (TN_registers (opnd_tn), regs));
+      }
+    }
+  }
+
+  return REGISTER_SET_Size (referenced_regs);
+}
+#endif
 
 /* ====================================================================
  *
@@ -1110,6 +1460,68 @@ OP_Real_Ops( const OP *op )
   return 1;
 }
 
+#ifdef TARG_ST
+/* ====================================================================
+ *
+ * OP_Find_TN_Def_In_BB - see interface.
+ *
+ * ====================================================================
+ */
+OP *
+OP_Find_TN_Def_In_BB(const OP *op, TN *tn) {
+  if (!TN_is_register(tn)) {
+    return NULL;
+  }
+  
+  if (TN_register(tn) != REGISTER_UNDEFINED) {
+    // Search register definer
+    ISA_REGISTER_CLASS rc = TN_register_class(tn);
+    REGISTER r = TN_register(tn);
+    for (OP *tmp = OP_prev(op); tmp != NULL; tmp = OP_prev(tmp)) {
+      if (OP_Defs_Reg (tmp, rc, r)) return tmp;
+    }
+  }
+  else {
+    // Search TN definer
+    for (OP *tmp = OP_prev(op); tmp != NULL; tmp = OP_prev(tmp)) {
+      if (OP_Defs_TN (tmp, tn)) return tmp;
+    }
+  }
+  return NULL;
+}
+
+/* ====================================================================
+ *
+ * OP_opnd_is_multi - see interface.
+ *
+ * ====================================================================
+ */
+
+BOOL
+OP_opnd_is_multi(const OP *op, INT opnd)
+{
+  const ISA_OPERAND_INFO *info = ISA_OPERAND_Info (OP_code(op));
+  INT nb_opnd = ISA_OPERAND_INFO_Operands (info);
+  return (   ( opnd    < nb_opnd && ISA_OPERAND_INFO_Use (info, opnd  ) & OU_multi)
+          || ((opnd+1) < nb_opnd && ISA_OPERAND_INFO_Use (info, opnd+1) & OU_multi));
+}
+
+/* ====================================================================
+ *
+ * OP_result_is_multi - see interface.
+ *
+ * ====================================================================
+ */
+
+BOOL
+OP_result_is_multi(const OP *op, INT result)
+{
+  const ISA_OPERAND_INFO *info = ISA_OPERAND_Info (OP_code(op));
+  INT nb_res = ISA_OPERAND_INFO_Results (info);
+  return (   ( result    < nb_res && ISA_OPERAND_INFO_Def (info, result  ) & OU_multi)
+	  || ((result+1) < nb_res && ISA_OPERAND_INFO_Def (info, result+1) & OU_multi));
+}
+#endif
 
 /* ====================================================================
  *
@@ -1131,7 +1543,26 @@ OP_Real_Inst_Words( const OP *op )
   return OP_inst_words(op);
 }
 
-
+/* ====================================================================
+ *
+ * OP_Real_Unit_Slots - How many Unit slots does this op really 
+ * represent, i.e. will be emitted.
+ *
+ * ====================================================================
+ */
+#ifdef TARG_ST
+INT
+OP_Real_Unit_Slots( const OP *op )
+{
+  if ( op == NULL || OP_dummy(op) ) {
+    return 0;
+  }
+  else if ( OP_simulated(op) ) {
+    return Simulated_Op_Real_Inst_Words (op);
+  }
+  return OP_unit_slots(op);
+}
+#endif
 /* ====================================================================
  *
  * OP_Is_Float_Mem - Is OP a floating point memory operation?
@@ -1213,7 +1644,12 @@ BOOL OP_cond_def(const OP *op)
 {
   return OP_cond_def_kind(op) == OP_ALWAYS_COND_DEF ||
     ((OP_cond_def_kind(op) == OP_PREDICATED_DEF) &&
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+     !TN_is_true_pred(OP_opnd(op, OP_find_opnd_use(op, OU_predicate))));
+#else
      !TN_is_true_pred(OP_opnd(op, OP_PREDICATE_OPND)));
+#endif
 }
 
 /* ====================================================================
@@ -1228,7 +1664,12 @@ BOOL OP_cond_def(const OP *op)
 
 BOOL OP_has_implicit_interactions(OP *op) 
 {
-  if (OP_volatile(op) || OP_side_effects(op))
+  if (OP_volatile(op) || OP_side_effects(op)
+#ifdef TARG_ST
+      || OP_Has_Flag_Effect(op)
+      || OP_Is_Barrier(op)
+#endif
+      )
     return TRUE;
 
   INT i;
@@ -1278,9 +1719,282 @@ void OP_Base_Offset_TNs(OP *memop, TN **base_tn, TN **offset_tn)
       }
     }
   } else {
+#ifdef TARG_ST
+    // FdF 20060517: Support for automod addressing mode
+    if (OP_find_opnd_use(memop, OU_postincr) >= 0)
+      *offset_tn = Gen_Literal_TN(0, 4);
+    else
+#endif
     *offset_tn = OP_opnd(memop, offset_num);
   }
 }
+#ifdef TARG_ST
+/* ====================================================================
+ * Imm_Value_In_Range
+ *
+ * Returns whether an immediate value can be encoded at a given
+ * operand in an operation.
+ * ====================================================================
+ */
+BOOL
+TOP_opnd_value_in_range (TOP top, int opnd, INT64 imm) {
+
+  if (opnd < TOP_fixed_opnds(top)) {
+    const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info(top);
+    const ISA_OPERAND_VALTYP *vtype = ISA_OPERAND_INFO_Operand(oinfo, opnd);
+    ISA_LIT_CLASS lc = ISA_OPERAND_VALTYP_Literal_Class(vtype);
+    return ISA_LC_Value_In_Class(imm, lc);
+  }
+  else {
+    return TRUE;
+  }
+} 
+
+/* ====================================================================
+ * OP_same_res()
+ *
+ * Handle the architecture constraint same_res.
+ * Handles the result/opnd constraint on ASM statements.
+ * ====================================================================
+ */
+extern OP_MAP OP_Asm_Map;
+INT
+OP_same_res(OP *op, INT i) {
+  INT opnd_idx = -1;
+  TOP top = OP_code(op);
+  const ISA_OPERAND_INFO *oinfo;
+  if (top != TOP_asm) {
+    /* Check architectural description for same res. */
+    oinfo = OP_operand_info(op);
+    if (i < ISA_OPERAND_INFO_Results(oinfo)) {
+      opnd_idx = ISA_OPERAND_INFO_Same_Res(oinfo, i); 
+    }
+  }
+  else {
+    /* check for ASM statements with same res on operand constraint. */
+    ASM_OP_ANNOT* asm_info = (ASM_OP_ANNOT *)OP_MAP_Get(OP_Asm_Map, op);
+    opnd_idx = ASM_OP_result_same_opnd(asm_info)[i];
+  }
+  return opnd_idx;
+} 
+
+#ifdef TARG_ST
+BOOL
+Opnds_Are_Equivalent(OP *op1, OP *op2, int idx1, int idx2)
+{
+  TN *tn1 = (idx1 == -1 ? True_TN : OP_opnd(op1, idx1));
+  TN *tn2 = (idx2 == -1 ? True_TN : OP_opnd(op2, idx2));
+
+  if (TNs_Are_Equivalent (tn1, tn2) &&
+      OP_Pred_False (op1, idx1) == OP_Pred_False (op2, idx2))
+    return TRUE;
+
+  return FALSE;
+}
+#endif
+
+/* ====================================================================
+ *
+ * OPs_Are_Equivalent()
+ *
+ * See interface description
+ * ====================================================================
+ */
+BOOL
+OPs_Are_Equivalent(OP *op1, OP *op2)
+{
+  if (OP_code(op1) != OP_code(op2)) return FALSE;
+  for (int i = 0; i < OP_opnds(op1); i++) {
+    if (TN_is_register(OP_opnd(op1, i)) &&
+	TN_is_register(OP_opnd(op2, i)) &&
+#ifdef TARG_ST
+	!Opnds_Are_Equivalent(op1, op2, i, i))
+#else
+      !TNs_Are_Equivalent(OP_opnd(op1, i), OP_opnd(op2, i)))
+#endif
+      return FALSE;
+    else if (OP_opnd(op1, i) != OP_opnd(op2, i)) return FALSE;
+  }
+  return TRUE;
+}
+
+/* ====================================================================
+ *
+ * OP_plain_load()
+ *
+ * See interface description
+ * ====================================================================
+ */
+BOOL
+OP_plain_load(OP *op)
+{
+
+  int offset_opnd, base_opnd;
+
+  if (!OP_load(op)) return FALSE;
+  offset_opnd = OP_find_opnd_use(op, OU_offset);
+  base_opnd = OP_find_opnd_use(op, OU_base);
+  if (offset_opnd < 0 || base_opnd < 0) return FALSE;
+  if (OP_results(op) != 1) return FALSE;
+  if (OP_opnds(op) != 2) return FALSE;
+  if (OP_has_implicit_interactions(op)) return FALSE;
+  if (OP_cond_def(op)) return FALSE;
+  return TRUE;
+}
+
+/* ====================================================================
+ *
+ * OP_plain_store()
+ *
+ * See interface description
+ * ====================================================================
+ */
+BOOL
+OP_plain_store(OP *op)
+{
+  int offset_opnd, base_opnd, storeval_opnd;
+  if (!OP_store(op)) return FALSE;
+  offset_opnd = OP_find_opnd_use(op, OU_offset);
+  base_opnd = OP_find_opnd_use(op, OU_base);
+  storeval_opnd = OP_find_opnd_use(op, OU_storeval);
+  if (offset_opnd < 0 || base_opnd < 0) return FALSE;
+  if (OP_results(op) != 0) return FALSE;
+  if (OP_opnds(op) != 3) return FALSE;
+  if (OP_has_implicit_interactions(op)) return FALSE;
+  if (OP_cond_def(op)) return FALSE;
+  return TRUE;
+}
+
+/* ====================================================================
+ *
+ * OP_storeval_byte_offset
+ *
+ * See interface description
+ * ====================================================================
+ */
+INT
+OP_storeval_byte_offset (OP *op, INT opndno)
+{
+  TOP opcode = OP_code(op);
+  Is_True (TOP_is_store (opcode), ("OP_storeval_byte_offset (%s)",
+				   TOP_Name(opcode)));
+  INT byte_offset = 0;
+  INT storeval = OP_find_opnd_use (op, OU_storeval);
+  Is_True (opndno >= storeval && opndno < OP_opnds (op), ("OP_storeval_byte_offset invalid opndno (%d)", opndno));
+  for (INT i = storeval; i < opndno; i++) {
+    byte_offset += OP_opnd_size(op, i)/8;
+  }
+  BOOL reversed = ((TOP_is_mem_highest_reg_first(opcode) != 0)
+		   ^ (Target_Byte_Sex == BIG_ENDIAN
+		      && TOP_is_mem_endian_reg_reversed(opcode)));
+  if (reversed) {
+    unsigned short mem_bytes = TOP_Mem_Bytes (opcode);
+    byte_offset = mem_bytes - byte_offset - OP_opnd_size(op, opndno)/8;
+  }
+  return byte_offset;
+}
+
+
+/* ====================================================================
+ *
+ * OP_loadval_byte_offset
+ *
+ * See interface description
+ * ====================================================================
+ */
+INT
+OP_loadval_byte_offset (OP *op, INT resno)
+{
+  TOP opcode = OP_code(op);
+  Is_True (TOP_is_load (opcode), ("OP_loadval_byte_offset (%s)", TOP_Name(opcode)));
+  Is_True (resno < OP_results(op), ("OP_loadval_byte_offset invalid resno (%d)", resno));
+  INT byte_offset = 0;
+  INT postincr_result = TOP_Find_Result_With_Usage (opcode, OU_postincr);
+  INT preincr_result = TOP_Find_Result_With_Usage (opcode, OU_preincr);
+  for (INT i = 0; i < resno; i++) {
+    if (i != postincr_result && i != preincr_result) {
+      byte_offset += OP_result_size (op, i) / 8;
+    }
+  }
+  BOOL reversed = ((TOP_is_mem_highest_reg_first(opcode) != 0)
+		   ^ (Target_Byte_Sex == BIG_ENDIAN
+		      && TOP_is_mem_endian_reg_reversed(opcode)));
+  if (reversed) {
+    unsigned short mem_bytes = TOP_Mem_Bytes (opcode);
+    byte_offset = mem_bytes - byte_offset - OP_result_size (op, resno)/8;
+  }
+  return byte_offset;
+}
+
+// FdF: Returns 0 if op is not an auto-mod operation, of if tn is not
+// the auto-modified register, or is redefined also by the operation.
+// Otherwise, return -1 for a pre-automod, and 1 for a post-automod.
+INT
+TN_isAutoMod(OP *op, TN *tn) {
+
+  INT isAutoMod;
+  INT opndAutoMod_idx;
+
+  // Check this op is an auto-mod operation
+  if ((opndAutoMod_idx = OP_find_opnd_use(op, OU_preincr)) != -1)
+    isAutoMod = -1;
+  else if ((opndAutoMod_idx = OP_find_opnd_use(op, OU_postincr)) != -1)
+    isAutoMod = 1;
+  else
+    return 0;
+
+  // tn is not the auto-mod operand
+  if (OP_opnd(op, opndAutoMod_idx) != tn)
+    return 0;
+
+  // Check that tn is only defined as the auto-mode result.
+  for (INT res_idx = 0; res_idx < OP_results(op); res_idx++) {
+    if ((OP_result(op, res_idx) == tn) &&
+	(OP_same_res(op, res_idx) != opndAutoMod_idx))
+      return 0;
+  }
+
+  return isAutoMod;
+}
+
+/* ====================================================================
+ *
+ * OP_load_result
+ *
+ * See interface description
+ * ====================================================================
+ */
+INT
+OP_load_result (OP *op)
+{
+  TOP opcode = OP_code(op);
+  Is_True (TOP_is_load (opcode), ("OP_loadval (%s)", TOP_Name(opcode)));
+  if (OP_results(op) == 1) {
+    // Common case
+    return 0;
+  }
+  const ISA_OPERAND_INFO *info = ISA_OPERAND_Info (opcode);
+  if (OP_results (op) > ISA_OPERAND_INFO_Results (info)) {
+    // No way to disambiguate
+    return -1;
+  }
+
+  INT candidate = -1;
+  INT i;
+  for (i=0; i<OP_results(op); i++) {
+    if ( ! ( ( ISA_OPERAND_INFO_Def (info, i) & ( OU_multi | OU_postincr | OU_preincr ) )
+             || ( ISA_OPERAND_INFO_Same_Res (info, i) != -1 ) ) ) {
+      if (candidate != -1) {
+        // Found more than one result candidate
+        // Unable to disambiguate results
+        return -1;
+      }
+      candidate = i;
+    }
+  }
+  return candidate;
+}
+#endif
 
 #ifdef KEY
 /* ====================================================================

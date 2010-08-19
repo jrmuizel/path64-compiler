@@ -96,7 +96,11 @@ ST_is_const_initialized (const ST* st)
 
     // uninitialized constant is the same as initialized with zero, so we
     // don't check the ST_is_initialized bit
-
+#ifdef TARG_ST
+    /* (cbr) if it extern, it is not the same as initialized with zero */
+    if (ST_sclass(st) == SCLASS_EXTERN && !ST_is_initialized(st))
+      return FALSE;
+#endif
     /* get the type */
     TY_IDX ty = ST_type(st);
     
@@ -215,10 +219,30 @@ ST_is_const_initialized_scalar(const ST *st, TCON &tcon_copy)
     return FALSE;
 }
 
+#ifdef TARG_ST
+extern INITO_IDX
+ST_has_inito(const ST *st)
+{
+  if (!ST_is_initialized (st))
+    return (INITO_IDX) 0;
+
+  TY_IDX ty = ST_type (st);
+
+  // try to find the object that inits us; it must be at the same
+  // scope level.
+  INITO_IDX inito_idx = (INITO_IDX) 0;
+  inito_idx = For_all_until(Inito_Table, ST_IDX_level(ST_st_idx(st)),
+			    match_inito_by_st(st));
+  return inito_idx;
+}
+#endif
 
 extern INITV_IDX
 ST_has_initv(const ST *st)
 {
+#ifdef TARG_ST
+  INITO_IDX inito_idx = ST_has_inito (st);
+#else
   if (!ST_is_initialized (st))
     return (INITV_IDX) 0;
 
@@ -229,6 +253,7 @@ ST_has_initv(const ST *st)
   INITO_IDX inito_idx;
   inito_idx = For_all_until(Inito_Table, ST_IDX_level(ST_st_idx(st)),
 			    match_inito_by_st(st));
+#endif
 
   if (inito_idx == (INITO_IDX) 0) {
     return (INITV_IDX) 0;

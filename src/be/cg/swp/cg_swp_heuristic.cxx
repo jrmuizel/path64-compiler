@@ -20,10 +20,12 @@
 /* Basic compiler include files */
 #include "defs.h"
 #include "tracing.h"
-
+#include "tn.h"
+#include "bb.h"
 /* Software Pipelinig (SWP) related include files */
 #include "cg_swp_options.h"
 #include "cg_swp_tracing.h"
+#include "cgtarget.h"
 #include "cg_swp_op_vector.h"
 #include "cg_swp_mrt.h"
 #include "cg_swp_mindist.h"
@@ -34,7 +36,7 @@
 
 /* Standard Template Library (STL) related include files */
 #include <cmath>
-
+#ifndef TARG_ST
 using namespace std;
 
 
@@ -617,4 +619,4 @@ SWP_HEURISTIC::Search_Direction (INT u) const {
     return SWP_Backward;
   }
 } /* SWP_HEURISTIC::Search_Direction */
-
+#endif

@@ -45,10 +45,16 @@
 //  $Source$
 
 #define UNDEFINED -1
-
+typedef enum {
+  ISA_ENUM_Emit_Name,
+  ISA_ENUM_Emit_Value
+} ISA_ENUM_EMIT;
 extern void ISA_Enums_Begin (void);
 
+#ifdef TARG_ST
+extern void ISA_Create_Enum_Class (const char *ec_name, ISA_ENUM_EMIT emit, ...);
+#else
 extern void ISA_Create_Enum_Class (const char *ec_name, ...);
-
+#endif
 extern void ISA_Enums_End (void);
 

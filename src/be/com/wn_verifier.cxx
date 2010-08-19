@@ -354,8 +354,10 @@ WN_Verifier::WN_traverse_tree(WN *wn, WN *parent_wn)
       case OPR_INTRINSIC_CALL:
       case OPR_IO:
       case OPR_INTRINSIC_OP:
+#ifndef TARG_ST
 #ifdef KEY
       case OPR_PURE_CALL_OP:
+#endif
 #endif
  	   // Check if children of the CALL node are
 	   // are PARMS
@@ -687,8 +689,10 @@ BOOL WN_Verifier::Param_parent_is_Call(WN *wn,WN *parent_wn)
     if (opr == OPR_CALL || opr == OPR_ICALL ||
         opr == OPR_INTRINSIC_CALL ||
         opr == OPR_PICCALL || opr == OPR_IO ||
+#ifndef TARG_ST
 #ifdef KEY
 	opr == OPR_PURE_CALL_OP ||
+#endif
 #endif
         opr == OPR_INTRINSIC_OP)
     {
@@ -722,8 +726,10 @@ BOOL WN_Verifier::Call_children_are_PARM(WN *wn)
   if (opr == OPR_CALL || 
       opr == OPR_INTRINSIC_CALL || 
       opr == OPR_INTRINSIC_OP   ||
+#ifndef TARG_ST
 #ifdef KEY
       opr == OPR_PURE_CALL_OP   ||
+#endif
 #endif
       opr == OPR_IO) 
   {

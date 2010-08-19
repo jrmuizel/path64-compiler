@@ -43,13 +43,17 @@ Sets of TNs.
 
 //================================================================
 */
-
+#ifdef TARG_ST
+struct lt_tn {
+  bool operator()(TN *t1, const TN *t2) const;
+};
+#else
 struct lt_tn {
    inline bool operator()(const PQS_TN t1, const PQS_TN t2) const {
     return TN_number(t1) < TN_number(t2);
    }
 };
-
+#endif
 typedef PQS_SET<PQS_TN,lt_tn> PQS_TN_SET;
 typedef PQS_SET<PQS_TN,lt_tn>::set_type PQS_TN_SET_TYPE;
 

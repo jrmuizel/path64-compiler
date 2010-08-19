@@ -100,7 +100,7 @@ static const char source_file[] = __FILE__;
 #include "reg_live.h"
 #include "cflow.h"
 #include "cg_spill.h"
-#include "cgexp_internals.h"
+
 #include "data_layout.h"
 #include "stblock.h"
 #include "cxx_hash.h"
@@ -3489,12 +3489,20 @@ static BOOL Compose_Addr( OP* mem_op, EBO_TN_INFO* pt_tninfo,
 
   switch( top ){
   case TOP_lea32:
+    /* Disable merge of LEA32 without sign extending its argument.
+       See COMPILER-8837 */
+    if( Is_Target_64bit() )
+      return FALSE;
+    // fall thru
   case TOP_lea64:
     a.base   = OP_opnd_use( addr_op, OU_base );
     a.offset = OP_opnd_use( addr_op, OU_offset );
     break;
 
   case TOP_leaxx32:
+    if( Is_Target_64bit() )
+      return FALSE;
+    // fall thru
   case TOP_leaxx64:
     a.index  = OP_opnd_use( addr_op, OU_index );
     a.offset = OP_opnd_use( addr_op, OU_offset );
@@ -3508,6 +3516,9 @@ static BOOL Compose_Addr( OP* mem_op, EBO_TN_INFO* pt_tninfo,
     break;
 
   case TOP_leax32:
+    if( Is_Target_64bit() )
+      return FALSE;
+    // fall thru
   case TOP_leax64:
     a.index  = OP_opnd_use( addr_op, OU_index );
     a.offset = OP_opnd_use( addr_op, OU_offset );

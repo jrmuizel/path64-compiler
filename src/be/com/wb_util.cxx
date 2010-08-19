@@ -150,10 +150,10 @@ extern INT Dump_Whirl_Node(WN* wn,
    case OPR_CONST:
     switch (OPCODE_rtype(opc)) {
      case MTYPE_F4:
-      cc += sprintf(buffer + cc, "%g", STC_val(WN_st(wn)).vals.fval);
+      cc += sprintf(buffer + cc, "%g", TCON_fval(STC_val(WN_st(wn))));
       break;
      case MTYPE_F8:
-      cc += sprintf(buffer + cc, "%g", STC_val(WN_st(wn)).vals.dval);
+      cc += sprintf(buffer + cc, "%g", TCON_dval(STC_val(WN_st(wn))));
       break;
      default:
       printed = FALSE;

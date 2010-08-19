@@ -17,6 +17,10 @@
 #define PATH64_LIB_VERSION_SVID 0
 #define PATH64_LIB_VERSION_POSIX 1
 
+/* TODO: FIXME
+ * This should really be autodetected and only defined if it doesn't
+ * already exist.
+ */
 struct exception {
     int type;
     char *name;

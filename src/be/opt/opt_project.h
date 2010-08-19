@@ -179,8 +179,10 @@ Sin_cos_intrinsic(const INTRINSIC intrinsic)
 	  intrinsic == INTRN_F4CISe ||
 	  intrinsic == INTRN_F8CIS  ||
 	  intrinsic == INTRN_F8CISe ||
+#ifndef TARG_ST
 	  intrinsic == INTRN_F16CIS  ||
 	  intrinsic == INTRN_F16CISe ||
+#endif
 	  intrinsic == INTRN_FQCIS  ||
 	  intrinsic == INTRN_FQCISe);
 }

@@ -41,7 +41,7 @@ ENDIF(CMAKE_C_COMPILER MATCHES "cl")
 ADD_DEFINITIONS(-DALMOST_STDC
                 -DIs_True_On
                 -DHAVE_CONFIG_H
-		-DTARG_X8664
+#		-DTARG_X8664
 		-DFE_GNU_4_2_0
 		-DKEY
                 -W

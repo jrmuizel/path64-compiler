@@ -86,7 +86,9 @@
 #include "reg_live.h"
 #include "cg_loop.h"
 #include "pqs_cg.h"
-
+#ifdef TARG_ST
+#include "cg_ssa.h"
+#endif
 static BB_LIST *region_entry_list;
 static BB_SET  *region_exit_set;
 static MEM_POOL gra_live_pool;
@@ -713,6 +715,32 @@ GRA_LIVE_Init_BB_Start(BB *bb)
 
   tmp_live_use     = TN_SET_Create(Last_TN + 1,&gra_live_local_pool);
   tmp_live_def     = TN_SET_Create(Last_TN + 1,&gra_live_local_pool);
+
+#ifdef TARG_ST
+  //
+  // Initialize tmp_live_use with TN operands of PHI-nodes in
+  // successor BBs. PHI-node operand use happens at the end of
+  // BB where it comes from.
+  //
+  BBLIST *succs;
+  FOR_ALL_BB_SUCCS (bb, succs) {
+    BB *succ = BBLIST_item(succs);
+    OP *op;
+    FOR_ALL_BB_PHI_OPs(succ, op) {
+      // Look for corresponding PHI-node operands
+      for (INT i = 0; i < OP_opnds(op); i++) {
+	TN *tn = OP_opnd(op, i);
+	if (Get_PHI_Predecessor(op, i) == bb) {
+	  tmp_live_use = TN_SET_Union1D(tmp_live_use,
+					tn,
+					&gra_live_local_pool);
+	  break;
+	}
+      }
+    }
+  }
+#endif
+
 }
 
 
@@ -736,7 +764,11 @@ GRA_LIVE_Init_BB_End(BB *bb)
   ANNOTATION *annot = ANNOT_Get(BB_annotations(bb), ANNOT_LOOPINFO);
   if (annot) {
     LOOPINFO *info = ANNOT_loopinfo(annot);
+#ifdef TARG_ST
+    TN *tn = LOOPINFO_primary_trip_count_tn(info);
+#else
     TN *tn = LOOPINFO_trip_count_tn(info);
+#endif
     if (tn != NULL && TN_is_register(tn)) {
       GTN_UNIVERSE_Add_TN(tn);
       TN_BB_LIST_MAP_Add(tn_live_use_bbs_map,tn,bb);
@@ -804,7 +836,11 @@ Detect_GTNs (void)
     ANNOTATION *annot = ANNOT_Get(BB_annotations(bb), ANNOT_LOOPINFO);
     if (annot) {
       LOOPINFO *info = ANNOT_loopinfo(annot);
+#ifdef TARG_ST
+      TN *tn = LOOPINFO_primary_trip_count_tn(info);
+#else
       TN *tn = LOOPINFO_trip_count_tn(info);
+#endif
       if (tn != NULL && TN_is_register(tn)) 
 	GTN_UNIVERSE_Add_TN(tn);
     }
@@ -856,9 +892,36 @@ Detect_Multiply_Defined_GTNs (GTN_SET *multiple_defined_set, MEM_POOL *pool)
   TN_MAP op_for_tn = TN_MAP_Create ();  // used for detecting GTNs.
   BB *bb;
 
+#ifdef TARG_ST
+  OP virtual_defop;
+#endif
+
   for (bb= REGION_First_BB; bb != NULL; bb = BB_next(bb)) {
     OP *op;
     INT i;
+#ifdef TARG_ST
+    // FdF 20071126: Fix to prevent Rename_TNs_For_BB from removing
+    // the global property on a TN that is used before any definition,
+    // and later defined only once and used locally.
+    if (BB_entry(bb)) {
+      // Look for live-in TNs, set multiple_defined_set for
+      // these. This adds a virtual definition for virtual TNs that
+      // are used before being defined.
+      for (TN *tn = GTN_SET_Choose(BB_live_in(bb));
+       tn != GTN_SET_CHOOSE_FAILURE;
+       tn = GTN_SET_Choose_Next(BB_live_in(bb), tn)) {
+    if (!TN_is_dedicated(tn)) {
+      OP *op_tn = (OP *) TN_MAP_Get (op_for_tn, tn);
+      if (op_tn && op_tn != &virtual_defop) {
+        multiple_defined_set = GTN_SET_Union1D (multiple_defined_set, tn, pool);
+      } else {
+        TN_MAP_Set (op_for_tn, tn, &virtual_defop);
+      }
+    }
+      }
+    }
+#endif
+
     FOR_ALL_BB_OPs_FWD (bb, op) {
       for (i = 0; i < OP_results(op); i++) {
         TN *tn = OP_result(op, i);
@@ -1190,7 +1253,15 @@ Live_Init(
    * them live out, GRA will give the exit block greater priority than
    * it should have.
    */
+#ifdef TARG_ST
+  // [CL] ensure RA_TN is live out of BB with a noreturn call
+  if ( (!BB_exit(bb))
+       ||
+       (CG_save_return_address && (BB_call(bb) && BB_exit(bb)))
+       ) {
+#else
   if (!BB_exit(bb)) {
+#endif
     BB_live_out(bb)     = GTN_SET_CopyD(BB_live_out(bb), force_live_gtns,
 					&liveness_pool);
   } else {
@@ -1200,7 +1271,11 @@ Live_Init(
   /* account for the implicit uses at a call site. Add $sp, $gp to the 
    * set of liveout TNs for the block.
    */
+#ifdef TARG_ST
+  if (BB_call(bb) && !SSA_Active()) {
+#else
   if (BB_call(bb)) {
+#endif
     GTN_UNIVERSE_Add_TN(SP_TN);
     GTN_SET_Union1D (BB_live_out(bb), SP_TN, &liveness_pool);
     if( GP_TN != NULL ){
@@ -1521,6 +1596,36 @@ GRA_LIVE_Region_Compute_Global_Live_Info(void)
                                              Live_Propagate);
   }
   while (change);
+#ifdef TARG_ST
+  //
+  // Arthur: We need to fixup the live_in/live_out sets in 
+  //         order to account for the special treatment of
+  //         the PHI-nodes. The result of each PHI-node
+  //         must be added to the live_in set of BB in where
+  //         the PHI-node resides. Operands of each PHI-node
+  //         must be added to the live_out set of respective
+  //         predecessor BB. Results and operands must
+  //         be global TNs.
+  INT i;
+  OP *op;
+  BB *bb;
+  for (bb = REGION_First_BB; bb; bb = BB_next(bb)) {
+    FOR_ALL_BB_PHI_OPs(bb, op) {
+      // add operands to predecessor live out
+      for (i = 0; i < OP_opnds(op); i++) {
+	GTN_UNIVERSE_Add_TN(OP_opnd(op,i));
+	GRA_LIVE_Add_Live_Out_GTN(Get_PHI_Predecessor(op,i), 
+				  OP_opnd(op,i));
+      }
+
+      // add results to live_in/globalize (if not yet)
+      for (i = 0; i < OP_results(op); i++) {
+	GTN_UNIVERSE_Add_TN(OP_result(op,i));
+	GRA_LIVE_Add_Live_In_GTN(bb, OP_result(op,i));
+      }
+    }
+  }
+#endif
 
   if (Get_Trace(TP_FIND_GLOB, 0x1)) {
 	GRA_LIVE_fdump_liveness(TFile);
@@ -2070,7 +2175,12 @@ GRA_LIVE_Compute_Local_Info(
     for ( op = BB_last_op(bb); op != NULL; op = OP_prev(op) ) {
       // If there is no predicate TN, pretend it's the TRUE predicate
       if (OP_has_predicate(op)) {
+#ifdef TARG_ST
+      /* (cbr) predicate operand # is not necessary constant */
+	pred_tn = OP_opnd(op, OP_find_opnd_use(op, OU_predicate));
+#else
 	pred_tn = OP_opnd(op, OP_PREDICATE_OPND);
+#endif
 	// Predicates behave as if they are used under the TRUE predicate
 	use_set = get_usedef_set(use_map,pred_tn);
 	use_set->Insert(True_TN);
@@ -2092,7 +2202,20 @@ GRA_LIVE_Compute_Local_Info(
 	  // set if the qualifying predicate is TRUE.
 	  //
 	  if (PQSCG_sets_results_if_qual_true(op)) {
+#ifdef TARG_ST
+	    if (! OP_cond_def (op) || (SSA_Active () && TN_ssa_def(result_tn) == op)) {
+	      // [SC] OP_cond_def may be false for a predicated op when the TN is
+	      // known uninitialized above the op.
+	      // Similarly, under SSA, the TN is defined only once, so we know it
+	      // is uninitialized above the op.
+	      // In these cases, we can treat the definition as a kill.
+	      def_set->Insert(True_TN);
+	    } else {
+	      def_set->Insert(pred_tn);
+	    }
+#else
 	    def_set->Insert(pred_tn);
+#endif
 	  } else {
 	    // Treat this as both a use and an unconditional def
 	    // clear both predicate sets
@@ -2125,7 +2248,12 @@ GRA_LIVE_Compute_Local_Info(
 	}
       }
 	  
-      
+ #ifdef TARG_ST
+      // [SC] As for non-predicate-aware form, ignore operands of PHI-nodes
+      // because they are not considered live-in.
+      if (OP_code(op) == TOP_phi) continue;
+#endif
+     
       for ( i = OP_opnds(op) - 1; i >= 0; --i ) {
 	TN *opnd_tn = OP_opnd(op, i);
 	if (TN_is_register(opnd_tn) && !TN_is_const_reg(opnd_tn)) {
@@ -2147,7 +2275,65 @@ GRA_LIVE_Compute_Local_Info(
   } else {
     // Non-predicate aware form
     for ( op = BB_last_op(bb); op != NULL; op = OP_prev(op) ) {
-      
+
+#ifdef TARG_ST
+      //
+      // Arthur: Ignore operands of PHI-nodes because
+      //         they are not live-in (although live_out of
+      //         their respective predecessor BBs.
+      //
+      if (OP_code(op) == TOP_phi) {
+	for ( i = OP_results(op) - 1; i >= 0; --i ) {
+	  TN *result_tn = OP_result(op, i);
+	  if (TN_is_register(result_tn) && !TN_is_const_reg(result_tn)) {
+	    tmp_live_def = 
+	      TN_SET_Union1D(tmp_live_def,result_tn,&gra_live_local_pool);
+	    tmp_live_use = 
+	      TN_SET_Difference1D(tmp_live_use,result_tn);
+	  }
+	}
+      }
+      else {
+	// not a PHI-node
+
+	// [TTh] Call ops must be seen as definer of ABI return registers.
+	// Without this pass, liveness computation will be pessimistic for
+	// such registers, as no definer will be found during the backward
+	// analysis for uses of these return registers.
+	// Note: more generally, all caller-saved registers should be
+	//       considered as defined (or killed) by the call, but as
+	//       only return registers are likely to be used after the call,
+	//       we can skip other caller-saved registers.
+	if (OP_call(op)) {
+	  ISA_REGISTER_CLASS rc;
+	  REGISTER r;
+	  
+	  FOR_ALL_ISA_REGISTER_CLASS( rc ) {
+	    REGISTER_SET rset = REGISTER_CLASS_function_value(rc);
+	    if (!REGISTER_SET_EmptyP(rset)) {
+	      rset = REGISTER_SET_Intersection(rset,
+					       BB_call_clobbered(bb, rc));
+	      FOR_ALL_REGISTER_SET_members(rset, r) {
+		TN *result_tn = Build_Dedicated_TN(rc, r, 0);
+		tmp_live_def = 
+		  TN_SET_Union1D(tmp_live_def,result_tn,&gra_live_local_pool);
+		
+		// For conditional def ops, add the result TNs to live_use sets.
+		// [CG] If we are under SSA for the TN, it is defined only
+		// once and thus the conditional definition is a kill.
+		if (OP_cond_def(op) && (!SSA_Active() || TN_ssa_def(result_tn) != op)) {
+		  tmp_live_use = 
+		    TN_SET_Union1D(tmp_live_use,result_tn,&gra_live_local_pool);
+		} else {
+		  tmp_live_use = 
+		    TN_SET_Difference1D(tmp_live_use,result_tn);
+		}
+	      }
+	    }
+	  }
+	}
+#endif
+    
       for ( i = OP_results(op) - 1; i >= 0; --i ) {
 	TN *result_tn = OP_result(op, i);
 	if (TN_is_register(result_tn) && !TN_is_const_reg(result_tn)) {
@@ -2155,7 +2341,18 @@ GRA_LIVE_Compute_Local_Info(
 	    TN_SET_Union1D(tmp_live_def,result_tn,&gra_live_local_pool);
 	  
 	  // For conditional def ops (until not fully predicate aware),
-	  // add the result TNs to live_use sets.
+	  // add the result TNs to live_use sets
+#ifdef TARG_ST
+	  // [CG] If we are under SSA for the TN, it is defined only
+	  // once and thus the conditional definition is a kill.
+	  if (OP_cond_def(op) && (!SSA_Active() || TN_ssa_def(result_tn) != op)) {
+	    tmp_live_use = 
+	      TN_SET_Union1D(tmp_live_use,result_tn,&gra_live_local_pool);
+	  } else {
+	    tmp_live_use = 
+	      TN_SET_Difference1D(tmp_live_use,result_tn);
+	  }
+#else	 
 	  if (OP_cond_def(op))  {
 	    tmp_live_use = 
 	      TN_SET_Union1D(tmp_live_use,result_tn,&gra_live_local_pool);
@@ -2163,6 +2360,7 @@ GRA_LIVE_Compute_Local_Info(
 	    tmp_live_use = 
 	      TN_SET_Difference1D(tmp_live_use,result_tn);
 	  }
+#endif
 	}
       }
       
@@ -2173,6 +2371,9 @@ GRA_LIVE_Compute_Local_Info(
 	  tmp_live_def = TN_SET_Difference1D(tmp_live_def,opnd_tn);
 	}
       }
+#ifdef TARG_ST
+      } // closes else TOP_phi
+#endif
     }
   }
 
@@ -2247,8 +2448,13 @@ BOOL GRA_LIVE_TN_Live_Outof_BB (TN *tn, BB *bb)
   {
     return TRUE;
   }
-
+ 
+#ifdef TARG_ST
+  // (cbr) pro-release-1-9-0-B/50 don't check for TRUE_tn that can appear in psi instructions
+  if (TN_is_dedicated (tn) && TN_register(tn) != REGISTER_UNDEFINED) {
+#else
   if (TN_is_dedicated (tn)) {
+#endif
     return REG_LIVE_Implicit_Use_Outof_BB (TN_register_class(tn), 
 					   TN_register(tn), 
 					   bb);
@@ -2292,6 +2498,10 @@ Rename_TN_In_Range (TN *tn, OP *op1, OP *op2)
     for (i = 0; i < OP_results(op); i++) {
       if (OP_result(op, i) == tn) {
         Set_OP_result (op, i, new_tn);
+#ifdef TARG_ST
+	Set_TN_ssa_def (new_tn, op);
+#endif
+
       }
     }
     op = OP_next(op);
@@ -2327,7 +2537,17 @@ Clear_Defreach(
 }
 
 
-
+#ifdef TARG_ST
+/* 
+ * Rename_TNs_For_BB ()
+ *
+ * [CG]: Local function. Detects and rename TNs that should be 
+ * renamed in the <bb>. 
+ * Use GRA_LIVE_Rename_TNs_For_BB() from outside of gra_live.cxx.
+ */
+static void 
+Rename_TNs_For_BB (BB *bb, GTN_SET *multiple_defined_set)
+#else
 // Detect TNs that should be renamed in the <bb>. 
 void 
 Rename_TNs_For_BB (BB *bb, GTN_SET *multiple_defined_set
@@ -2335,6 +2555,7 @@ Rename_TNs_For_BB (BB *bb, GTN_SET *multiple_defined_set
 		   , OP *rename_local_TN_op
 #endif
 		   )
+#endif
 {
   TN_MAP op_for_tn = TN_MAP_Create ();
   OP *op;
@@ -2343,7 +2564,7 @@ Rename_TNs_For_BB (BB *bb, GTN_SET *multiple_defined_set
 #endif
 
   FOR_ALL_BB_OPs_FWD (bb, op) {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     // Rename local TNs starting at rename_local_TN_op, if it exists,
     // Bug 4327.
     rename_local_TNs |= (rename_local_TN_op == op);
@@ -2351,8 +2572,16 @@ Rename_TNs_For_BB (BB *bb, GTN_SET *multiple_defined_set
     for (INT i = 0; i < OP_results(op); i++) {
       TN *tn = OP_result(op, i);
       // Don't rename under the following conditions.
+#ifdef TARG_ST
+      // Arthur: we're switching to a more generic TDT interface
+      // [CG] Handle case of single SSA def
+      if (TN_is_dedicated(tn) || (OP_cond_def(op) && (!SSA_Active() || TN_ssa_def(tn) != op)) || 
+	  (OP_same_res(op,i) >= 0) ||
+	  TN_register(tn) != REGISTER_UNDEFINED) 
+	continue;
+#else
       if (TN_is_dedicated(tn) || OP_cond_def(op) || OP_same_res(op)) continue;
-
+#endif
       OP *last_def = (OP *) TN_MAP_Get (op_for_tn, tn);
       if (last_def != NULL) {
         // rename tn to new_tn between last_def and op.
@@ -2366,8 +2595,19 @@ Rename_TNs_For_BB (BB *bb, GTN_SET *multiple_defined_set
 	// should remain global.
       }
 #endif
+#ifdef TARG_ST
+      // [CG] Skip renaming of a PHI result to be consistent with above.
+      // A PHI result MUST be a global TN which is in the live-in set of the BB
+      else if (OP_code(op) == TOP_phi) {
+	// Do not rename result of a PHI operand
+      }
+#endif
+
       else if (TN_is_global_reg(tn) &&
 	       !TN_is_const_reg(tn) &&
+#ifdef TARG_ST
+	       TN_register(tn) == REGISTER_UNDEFINED &&
+#endif
 	       !GTN_SET_MemberP(BB_live_out(bb), tn)) {
 
         // rename GTN to new local TN between op and end of bb.
@@ -2387,6 +2627,10 @@ Rename_TNs_For_BB (BB *bb, GTN_SET *multiple_defined_set
 
 	  // ONLY need to check for defreach_in and defreach_out sets. 
           defreach_tn = tn;
+#ifdef TARG_ST
+	  // [CM 20030925] Must push pool to use and match MEM_POOL_Pop
+	  MEM_POOL_Push(&gra_live_pool);
+#endif
 #ifndef KEY
 	  // Purify_pools (trace) on exposes the MEM_POOL bug. The bug is that
 	  // the following code should be using MEM_local_pool - look at caller
@@ -2444,3 +2688,30 @@ void GRA_LIVE_Rename_TNs (void)
 
   MEM_POOL_Pop (&MEM_local_pool);
 }
+
+#ifdef TARG_ST
+/* ======================================================================
+ * 
+ * GRA_LIVE_Rename_TNs_For_BB
+ *
+ * [CG]: New external interface for renaming local TNs into a BB.
+ * Replace old Rename_TNs_For_BB() interface.
+ * This function can be called before or after register allocation.
+ * If the BB is allocated, no renaming is performed.
+ * ======================================================================
+ */
+void
+GRA_LIVE_Rename_TNs_For_BB(BB *bb)
+{
+  /* Check is we can rename  local TNs in BB.
+     Test extracted from GRA_LIVE_Rename_TNs(). */
+  if (!BB_reg_alloc(bb) &&
+      ((BB_rid( bb ) == NULL) ||
+       (RID_level(BB_rid(bb)) < RL_CGSCHED))) 
+    {
+      Rename_TNs_For_BB(bb, NULL);
+    }
+}
+
+#endif
+

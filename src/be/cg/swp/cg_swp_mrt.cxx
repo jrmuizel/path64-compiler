@@ -30,7 +30,7 @@
 /* Software Pipelinig (SWP) related include files */
 #include "cg_swp_op_vector.h"
 #include "cg_swp_mrt.h"
-
+#ifndef TARG_ST
 
 
 SWP_MRT::SWP_MRT (const SWP_OP_VECTOR& ops, INT ii, MEM_POOL *m) :
@@ -98,4 +98,4 @@ SWP_MRT::Find_Free_Resources (const SWP_OP& op,
 
   return cycle;
 }
-
+#endif

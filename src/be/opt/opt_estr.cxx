@@ -174,6 +174,16 @@ static char *rcs_id = opt_estr_CXX"$Revision: 1.12 $";
 BOOL
 STR_RED::Is_cvt_linear( const CODEREP *cr ) const
 {
+#ifdef TARG_ST
+  // FdF 20070921: Allow conversion between signed types into IV
+  // cycles, so as to better handle signed char and short induction
+  // variables. (Enhancement #18858)
+  if (Allow_wrap_around_opt &&
+      ((cr->Dsctyp() == MTYPE_I1) || (cr->Dsctyp() == MTYPE_I2)) &&
+      (cr->Dtyp() == MTYPE_I4))
+    return TRUE;
+#endif
+
   // screen out non-register size types
   if (MTYPE_size_min(cr->Dsctyp()) < MTYPE_size_min(MTYPE_I4))
     return FALSE;
@@ -205,7 +215,7 @@ STR_RED::Is_cvt_linear( const CODEREP *cr ) const
   // allow U8U4CVT strength reduction if the CVT is a 1st order expr
   if ((cr->Dtyp() == MTYPE_U8 || cr->Dtyp() == MTYPE_I8)
       && cr->Dsctyp() == MTYPE_U4) {
-#ifdef TARG_MIPS
+#if defined( TARG_MIPS) || defined(TARG_ST)
     Is_True(cr->Opnd(0)->Kind() == CK_VAR, 
 	    ("STR_RED::Is_cvt_linear:  invalid str red expr."));
     if (!Htable()->Opt_stab()->Aux_stab_entry(cr->Opnd(0)->Aux_id())->EPRE_temp())
@@ -441,13 +451,13 @@ STR_RED::Find_iv_and_incr( STMTREP *stmt, CODEREP **updated_iv,
 
   Is_True( lhs->Kind() == CK_VAR,
     ("STR_RED::Find_iv_and_incr: Lhs not a var") );
-
+#ifndef TARG_ST
   if (aggstr_cand)
     // check if the number of induction expression injured by this stmt
     // exceeds the threshold 
     if (stmt->Str_red_num() >= Local_autoaggstr_reduction_threshold(stmt->Bb()))
       return FALSE;
-
+#endif
   // it's possible we've CSE'd the rhs of the iv update, so we need
   // to find the true update.  Only true if we already know the stmt
   // is an iv update.
@@ -679,13 +689,13 @@ STR_RED::Updated_by_iv_update(const CODEREP *first,
   }
 
   STMTREP *last_def = last->Defstmt();
-
+#ifndef TARG_ST
   if (aggstr_cand)
     // check if the number of induction expression injured by this stmt
     // exceeds the threshold 
     if (last_def->Str_red_num() >= Local_autoaggstr_reduction_threshold(last_def->Bb()))
       return FALSE;
-
+#endif
   // Continue following the chain of IV updates only if the innermost
   // loop containing last_def also contains the point of eventual use
   // of the putative injury repair result.
@@ -1310,6 +1320,13 @@ STR_RED::Find_iv_and_mult_phi_res( const EXP_OCCURS *def, CODEREP **iv_def,
       }
     }
     else {
+#ifdef TARG_ST
+      // FdF 20060622: Temporary fix for bug 190B/55: Do not perform
+      // strength reduction in this case. See also
+      // opt_cse.cxx:Repair_injury_phi_real
+      *iv_use = NULL;
+      return;
+#endif
       FmtAssert( FALSE,
 	("STR_RED::Find_iv_and_mult_phi_res: not a candidate") );
     }

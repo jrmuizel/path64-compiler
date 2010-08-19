@@ -165,10 +165,12 @@ Combine_intrinsic_operator( WN *old_wn, WN **new_wn, OPCODE old_wn_opc )
       new_intr_opc = OPC_C8INTRINSIC_OP;
       new_intr = INTRN_F8CIS; new_complex = OPC_F8IMAGPART;
       goto handle_sin;
+#ifndef TARG_ST
     case INTRN_F16SIN:
       new_intr_opc = OPC_C16INTRINSIC_OP;
       new_intr = INTRN_F16CIS; new_complex = OPC_F16IMAGPART;
       goto handle_sin;
+#endif
     case INTRN_FQSIN:
       new_intr_opc = OPC_CQINTRINSIC_OP;
       new_intr = INTRN_FQCIS; new_complex = OPC_FQIMAGPART;
@@ -195,10 +197,12 @@ Combine_intrinsic_operator( WN *old_wn, WN **new_wn, OPCODE old_wn_opc )
       new_intr_opc = OPC_C8INTRINSIC_OP;
       new_intr = INTRN_F8CIS; new_complex = OPC_F8REALPART;
       goto handle_cos;
+#ifndef TARG_ST
     case INTRN_F16COS:
       new_intr_opc = OPC_C16INTRINSIC_OP;
       new_intr = INTRN_F16CIS; new_complex = OPC_F16REALPART;
       goto handle_cos;
+#endif
     case INTRN_FQCOS:
       new_intr_opc = OPC_CQINTRINSIC_OP;
       new_intr = INTRN_FQCIS; new_complex = OPC_FQREALPART;
@@ -239,7 +243,11 @@ Combine_minmax_operator( WN *old_wn, WN **new_wn, OPCODE old_wn_opc )
   const MTYPE desc  = OPCODE_desc(old_wn_opc);
 
   // we do not currently support this with the QUAD type
-  if ( rtype == MTYPE_FQ || rtype == MTYPE_F16 )
+  if ( rtype == MTYPE_FQ 
+#ifndef TARG_ST
+       || rtype == MTYPE_F16 
+#endif
+       )
     return FALSE;
 
   switch ( OPCODE_operator(old_wn_opc) ) {
@@ -338,7 +346,7 @@ Uncombine_mpy_operator( WN *old_wn, WN **new_wn, OPCODE old_wn_opc )
   const OPCODE   kid1_opc = WN_opcode(kid1);
   const OPERATOR kid1_opr = OPCODE_operator(kid1_opc);
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   if (Recip_Allowed)
     return FALSE;
 #endif
@@ -436,12 +444,12 @@ Uncombine_imagrealpart_operator(WN *old_wn,WN **new_wn,OPCODE old_wn_opc)
 	new_intr = old_wn_opr == OPR_IMAGPART ? INTRN_F8SIN : INTRN_F8COS;
 	new_intr_opc = OPC_F8INTRINSIC_OP;
 	goto handle_sincos;
-
+#ifndef TARG_ST
       case INTRN_F16CIS:
         new_intr = old_wn_opr == OPR_IMAGPART ? INTRN_F16SIN : INTRN_F16COS;
         new_intr_opc = OPC_F16INTRINSIC_OP;
         goto handle_sincos;
-
+#endif
       case INTRN_FQCIS:
 	new_intr = old_wn_opr == OPR_IMAGPART ? INTRN_FQSIN : INTRN_FQCOS;
 	new_intr_opc = OPC_FQINTRINSIC_OP;

@@ -105,6 +105,9 @@ extern "C"{
 #include "demangle.h"
 extern "C" char *cplus_demangle (const char *, int);
 #endif
+#ifdef TARG_ST
+#include "libiberty.h"
+#endif
 
 #if HAVE_ALLOCA_H
 #include <alloca.h>
@@ -157,7 +160,11 @@ static DST_Type_Map basetypes;
 
 #ifdef KEY
 static DST_accessibility
+#ifdef TARG_ST
+get_dwarf_access (gs_t t, DST_accessibility def = DW_ACCESS_public)
+#else
 get_dwarf_access (gs_t t)
+#endif
 {
   unsigned int flag0, flag1, code;
   flag0 = gs_dwarf_access_flag_0(t);
@@ -168,7 +175,11 @@ get_dwarf_access (gs_t t)
     case 2: return DW_ACCESS_protected;
     case 3: return DW_ACCESS_private;
   }
+#ifdef TARG_ST
+  return def ;
+#else
   return 0;
+#endif
 }
 
 // Returns true if type_tree has a DECL_ORIGINAL_TYPE, which implies this
@@ -178,6 +189,31 @@ static inline BOOL is_typedef (gs_t type_tree)
   gs_t tname = gs_type_name (type_tree);
   return (tname && gs_tree_code (tname) == GS_TYPE_DECL &&
           gs_decl_original_type (tname));
+}
+#endif
+#ifdef TARG_ST
+// [CL] support lexical blocks
+DST_INFO_IDX DST_Create_Lexical_Block(LEXICAL_BLOCK_INFO* lexical_block)
+{
+  DST_INFO_IDX dst;
+
+  dst = DST_mk_lexical_block(NULL,
+                             &lexical_block->lexical_block_start_idx,
+                             &lexical_block->lexical_block_end_idx,
+			     DST_INVALID_IDX);
+  return dst;
+}
+
+void DST_Link_Lexical_Block(LEXICAL_BLOCK_INFO* parent, LEXICAL_BLOCK_INFO* child)
+{
+  DST_INFO_IDX dst, prev_dst;
+  dst = child->dst;
+  prev_dst = parent->dst;
+  // [SC] Label information is now correct in the child, so
+  // transfer it to the DST structure.
+  DST_lexical_block_add_low_pc (dst, (void *)child->lexical_block_start_idx);
+  DST_lexical_block_add_high_pc (dst, (void *)child->lexical_block_end_idx);
+  DST_append_child(prev_dst, dst);
 }
 #endif
 
@@ -208,8 +244,18 @@ DST_get_context(gs_t intree)
 {
     gs_t ltree = intree;
     DST_INFO_IDX l_dst_idx = DST_INVALID_INIT;
+#ifdef TARG_ST
+    bool continue_looping = true;
+#endif
 
-    while (ltree) {
+    while (ltree
+#ifdef TARG_ST
+           && continue_looping
+#endif
+           ) {
+#ifdef TARG_ST
+        continue_looping = false;
+#endif
 	switch (gs_tree_code(ltree)) {
 	case GS_BLOCK:
 	    // TODO: unclear when this will happen, as yet
@@ -227,8 +273,17 @@ DST_get_context(gs_t intree)
 	case GS_RECORD_TYPE:
 	case GS_UNION_TYPE:
 	case GS_QUAL_UNION_TYPE:
+#ifdef TARG_ST // [CL]
+	    l_dst_idx = TYPE_DST_IDX(ltree);
+	    if (DST_IS_NULL(l_dst_idx)) {
+		DevWarn("NO TYPE CONTEXT\n");
+		return comp_unit_idx;
+	    }
+	    return l_dst_idx;
+#else
 	    ltree = gs_type_context(ltree);
 	    continue;
+#endif
 	case GS_FUNCTION_TYPE:
 	    DevWarn("Unhandled FUNCTION_TYPE scope of decl/var/type");
 	    return comp_unit_idx;
@@ -241,13 +296,21 @@ DST_get_context(gs_t intree)
 	    ltree = gs_decl_context(ltree);
 	    continue;
 	default:
+#ifndef TARG_ST
 	    DevWarn("Unhandled scope of tree code %d", gs_tree_code(ltree));
+#endif
 	    // Best guess for general types and decls
 	    if (gs_tree_code_class(ltree) == GS_TCC_DECLARATION) {
 		ltree = gs_decl_context(ltree);
+#ifdef TARG_ST
+                continue_looping = true;
+#endif
 		continue;
 	    } else if (gs_tree_code_class(ltree) == GS_TCC_TYPE) {
 		ltree = gs_type_context(ltree);
+#ifdef TARG_ST
+                continue_looping = true;
+#endif
 		continue;
 	    }
 	    // else: cannot find our context from here
@@ -264,6 +327,11 @@ DST_get_context(gs_t intree)
 static UINT
 Get_Dir_Dst_Info (char *name)
 {
+    // [CL] merged from Open64-4.2.1, for bug #55000
+#ifdef TARG_SL
+	// NOTE! Wenbo/2007-04-26: Refer to kgccfe/wfe_dst.cxx.
+        if (name == NULL) return 0;
+#endif
         std::vector< std::pair < char*, UINT > >::iterator found;
 	// assume linear search is okay cause list will be small?
         for (found = dir_dst_list.begin(); 
@@ -276,19 +344,27 @@ Get_Dir_Dst_Info (char *name)
 	}
 	// not found, so append path to dst list
 #ifdef KEY
+#ifdef TARG_ST
+	// //[CM] (MBTst16964, MBTst16965) Extend name livetime
+	name = xstrdup(name);
+#else
 	// We have to create a new home for name because memory
 	// will be freed once the caller exits. 
 	char *new_name = (char *)malloc((strlen(name)+1)*sizeof(char));
 	strcpy(new_name, name);
 	name = new_name;
 #endif
+#endif
 	dir_dst_list.push_back (std::make_pair (name, ++last_dir_num));
 	DST_mk_include_dir (name);
 	return last_dir_num;
 }
-
+#ifdef TARG_ST
+// [CL] bug #64842
+static std::vector< std::pair< char *, std::pair <UINT, UINT> > > file_dst_list;
+#else
 static std::vector< std::pair< char *, UINT > > file_dst_list;
-
+#endif
 // get the file dst info.
 // if already exists, return existing info, else append to list.
 static UINT
@@ -298,25 +374,47 @@ Get_File_Dst_Info (char *name, UINT dir)
         if (name[0] == '\0') // empty file name from g++ 3.4
           return last_file_num;
 #endif
+#ifdef TARG_ST
+// [CL] bug #64842
+        std::vector< std::pair < char*, std::pair <UINT, UINT> > >::iterator found;
+#else
         std::vector< std::pair < char*, UINT > >::iterator found;
+#endif
 	// assume linear search is okay cause list will be small?
         for (found = file_dst_list.begin(); 
 		found != file_dst_list.end(); 
 		++found)
         {
+#ifdef TARG_ST
+// [CL] bug #64842: don't compare the filename only, check the directory too
+	  if ( (strcmp ((*found).first, name) == 0)
+	       && ((*found).second.second == dir)) {
+	    return (*found).second.first;
+	  }
+#else
 		if (strcmp ((*found).first, name) == 0) {
 			return (*found).second;
 		}
+#endif
 	}
 	// not found, so append file to dst list
 #ifdef KEY
 	// We have to create a new home for name because memory
-	// will be freed once the caller exits. 
+	// will be freed once the caller exits.
+#ifdef TARG_ST
+	name = xstrdup(name);
+#else
 	char *new_name = (char *)malloc((strlen(name)+1)*sizeof(char));
 	strcpy(new_name, name);
 	name = new_name;
 #endif
+#endif
+#ifdef TARG_ST
+	// [CL] bug #64842
+	file_dst_list.push_back (std::make_pair (name, std::make_pair (++last_file_num, dir)));
+#else
 	file_dst_list.push_back (std::make_pair (name, ++last_file_num));
+#endif
 	DST_enter_file (name, dir);
 	return last_file_num;
 }
@@ -372,9 +470,13 @@ DST_get_command_line_options(INT32 num_copts,
   char     *rtrn, *cp;
   char      ch;
   INT32     record_option;
-
+#ifdef TARG_ST
+  selected_opt = (char **)xmalloc(sizeof(char*) * num_copts);
+  opt_size = (INT32 *)xmalloc(sizeof(INT32) * num_copts);
+#else
   selected_opt = (char **)malloc(sizeof(char*) * num_copts);
   opt_size = (INT32 *)malloc(sizeof(INT32) * num_copts);
+#endif
   
   for (i = 1; i <= num_copts; i++)
   {
@@ -404,11 +506,19 @@ DST_get_command_line_options(INT32 num_copts,
   
   if (strlength == 0)
   {
+#ifdef TARG_ST
+     rtrn = (char *)xcalloc(1, 1); /* An empty string */
+#else
      rtrn = (char *)calloc(1, 1); /* An empty string */
+#endif
   }
   else
   {
+#ifdef TARG_ST
+     rtrn = (char *)xmalloc(strlength);
+#else
      rtrn = (char *)malloc(strlength);
+#endif
      cp = rtrn;
 
      /* Append the selected options to the string (rtrn) */
@@ -458,10 +568,16 @@ Get_Name (gs_t node)
         {
           if (gs_tree_code (gs_type_name (node)) == GS_IDENTIFIER_NODE)
             name =  gs_identifier_pointer (gs_type_name (node));
+#ifdef TARG_ST // [CL] Handle anonymous unions
+          else if (gs_tree_code (gs_type_name (node)) == GS_TYPE_DECL
+		   && ! gs_decl_ignored_p( gs_type_name(node))
+                   && gs_decl_name (gs_type_name (node)))
+            name = gs_identifier_pointer (gs_decl_name (gs_type_name (node)));
+#else
           else if (gs_tree_code (gs_type_name (node)) == GS_TYPE_DECL
                    && gs_decl_name (gs_type_name (node)))
             name = gs_identifier_pointer (gs_decl_name (gs_type_name (node)));
-	  
+#endif
         } 
       else if (gs_tree_code(node) == GS_INTEGER_TYPE) { // bug 11848
 	if (gs_type_unsigned(node))
@@ -536,11 +652,18 @@ DST_enter_static_data_mem(gs_t  parent_tree,
     // file, so lets leave it out. Temporarily.
     //USRCPOS_srcpos(src) = Get_Srcpos();
 #ifdef KEY
+#ifdef TARG_ST
+    // [CL] get source location from GCC
+    USRCPOS_srcpos(src) = Get_Srcpos_From_Tree(field);
+#else
     USRCPOS_srcpos(src) = Get_Srcpos();
+#endif
 #else
     USRCPOS_clear(src);
 #endif // KEY
-
+#ifdef TARG_ST
+    DST_accessibility access = get_dwarf_access(field);
+#endif
 
     field_idx = DST_mk_variable(
         src,         // srcpos
@@ -551,8 +674,15 @@ DST_enter_static_data_mem(gs_t  parent_tree,
         DST_INVALID_IDX,  // abstract origin
         TRUE,          // is_declaration=  decl only
         FALSE,         // is_automatic ?
+#ifdef TARG_ST
+	// [CL]
+	gs_tree_public(field) ? TRUE : FALSE, // is_external ?
+        gs_decl_artificial(field),      // is_artificial ?
+	access);
+#else
         FALSE,         // is_external ?
         FALSE  );      // is_artificial ?
+#endif
 
     DECL_DST_FIELD_IDX(field) = field_idx;
 #ifdef KEY
@@ -565,7 +695,13 @@ DST_enter_static_data_mem(gs_t  parent_tree,
     DECL_DST_SPECIFICATION_IDX(field) = field_idx;
 
 #ifdef KEY
+#ifdef TARG_ST
+// [CL] dont output invisible names
+    if(mem_name && linkage_name && strcmp(mem_name, linkage_name) &&
+       gs_tree_public(field) && !gs_decl_abstract(field) ) {
+#else
     if(mem_name && linkage_name && strcmp(mem_name, linkage_name)) {
+#endif
        DST_add_linkage_name_to_variable(field_idx, linkage_name);
     }
 #else
@@ -600,14 +736,35 @@ DST_enter_member_function( gs_t parent_tree,
 		gs_t fndecl)
 {
     USRCPOS src;
+#ifdef TARG_ST // [CL] get source location from GCC
+    USRCPOS_srcpos(src) = Get_Srcpos_From_Tree(fndecl);
+#else
     USRCPOS_srcpos(src) = Get_Srcpos();
+#endif
     DST_INFO_IDX dst = DST_INVALID_INIT;
     DST_INFO_IDX ret_dst = DST_INVALID_IDX;
                                      
     DST_INFO_IDX current_scope_idx = parent_idx;
 
     
+#ifdef TARG_ST
+    // [CL] if DST for this function has already been generated, exit now
+    if (DECL_DST_SPECIFICATION_IDX(fndecl) != DST_INVALID_IDX) {
+      return;
+    }
 
+    // [CL] if this is an instance whose abstract_origin has already
+    // been emitted, don't emit it again. If no instance has already
+    // been emitted, do it now, even though the current one has an
+    // abstract_origin (this is because in some case, the
+    // abstract_origin itself would not be emitted.
+    if (gs_decl_abstract_origin(fndecl)
+	&& (DECL_DST_SPECIFICATION_IDX(gs_decl_abstract_origin(fndecl))
+	    != DST_INVALID_IDX)
+	) {
+      return;
+    }
+#endif
 #ifndef KEY
     gs_t resdecl = gs_decl_result(fndecl);
     gs_t restype = 0;
@@ -624,10 +781,22 @@ DST_enter_member_function( gs_t parent_tree,
     if(restype) {
 	 TY_IDX itx = Get_TY(restype);
 	 ret_dst = TYPE_DST_IDX(restype);
+#ifdef TARG_ST
+	 if (DST_IS_NULL(ret_dst)) {
+	   ret_dst = Create_DST_type_For_Tree(restype, itx, 0);
+	 }
+#endif
     }
 
     BOOL is_prototyped = TRUE;
-
+#ifdef TARG_ST
+    // [CL] Use decl_printable_name to get the right name, eg with
+    // destructors (otherwise we wouldn't get the '~')
+    char *basename = NULL;
+    if (gs_operand (fndecl, GS_DECL_PRINTABLE_NAME)) {
+      basename = gs_decl_printable_name(fndecl);
+    }
+#else
 #ifdef KEY
     // bug 1736.  Why is the name of the operator omitted?  Let's not do that
     char *basename = gs_identifier_pointer (gs_decl_name (fndecl));
@@ -636,8 +805,10 @@ DST_enter_member_function( gs_t parent_tree,
 	gs_identifier_opname_p(gs_decl_name(fndecl))? 0 :
 	gs_identifier_pointer (gs_decl_name (fndecl));
 #endif
+#endif
     char * linkage_name = 
 	gs_identifier_pointer(gs_decl_assembler_name (fndecl));
+#ifndef TARG_ST
 #ifdef KEY
     // Bug 3846
     if (gs_identifier_opname_p (gs_decl_name(fndecl)) && 
@@ -662,6 +833,7 @@ DST_enter_member_function( gs_t parent_tree,
       }
     }
 #endif
+#endif
 
 
     gs_t ftype = gs_tree_type(fndecl);
@@ -685,9 +857,18 @@ DST_enter_member_function( gs_t parent_tree,
 		//DECL_PENDING_INLINE_P(fndecl)?
 		//	DW_INL_inlined: DW_INL_not_inlined;
 
-    
+    #ifdef TARG_ST
+    DST_vtable_elem_location vtable_elem_location;
+    /* (cbr) elem loc must be an integer */
+    if (gs_decl_vindex(fndecl) && gs_tree_code (gs_decl_vindex(fndecl)) == GS_INTEGER_CST) {
+      vtable_elem_location = gs_get_integer_value(gs_decl_vindex(fndecl));
+    } else {
+      vtable_elem_location = 0;
+    }
+#else
     //FIX vtable elem loc
     DST_vtable_elem_location vtable_elem_location =  0;
+#endif
 
     dst = DST_mk_subprogram(
         src,			// srcpos
@@ -702,10 +883,15 @@ DST_enter_member_function( gs_t parent_tree,
 				// by gcc for ia64 )
         TRUE,         // is_declaration
         is_prototyped,           // always true for C++
+#ifdef TARG_ST // [CL] we added the same field at the last position...
+        is_external,  // is_external? (has external linkage)
+        gs_decl_artificial (fndecl) );
+#else
 #ifdef KEY
         gs_decl_artificial (fndecl),
 #endif
         is_external );  // is_external? (has external linkage)
+#endif
 
     // producer routines thinks we will set pc to fe ptr initially
     DST_RESET_assoc_fe (DST_INFO_flag(DST_INFO_IDX_TO_PTR(dst)));
@@ -733,13 +919,28 @@ DST_enter_member_function( gs_t parent_tree,
        }
 
     }
+#ifdef TARG_ST
+// [CL] dont output invisible names
+    if(basename && linkage_name && strcmp(basename, linkage_name) &&
+       gs_tree_public(fndecl) && !gs_decl_abstract(fndecl) ) {
+#else
     if(basename && linkage_name && strcmp(basename, linkage_name)) {
+#endif
        DST_add_linkage_name_to_subprogram(dst, linkage_name);
     }
     DECL_DST_SPECIFICATION_IDX(fndecl) = dst;
 }
 
-        
+#ifdef TARG_ST
+/* Given a value, round it up to the lowest multiple of `boundary'
+   which is not less than the value itself.  */
+
+static inline INT
+ceiling (INT value, unsigned int boundary)
+{
+  return (((value + boundary - 1) / boundary) * boundary);
+}
+#endif        
 static void
 DST_enter_normal_field(gs_t  parent_tree,
 		DST_INFO_IDX parent_idx,
@@ -747,6 +948,17 @@ DST_enter_normal_field(gs_t  parent_tree,
 		gs_t field)
 {
     char isbit = 0; 
+#ifdef TARG_ST
+    // [CL] Ignore the nameless fields that are used to skip bits but
+    // handle C++ anonymous unions.
+    if (gs_decl_name(field) == NULL &&
+	gs_tree_code(gs_tree_type(field)) != GS_UNION_TYPE) {
+      return;
+    }
+#endif
+#ifdef TARG_ST
+    isbit = (gs_decl_bit_field_type(field) != NULL);
+#else
     if ( ! gs_decl_bit_field(field)
 #ifdef KEY // bug 10478, 11590: from kgccfe
            && gs_decl_size(field)
@@ -772,6 +984,7 @@ DST_enter_normal_field(gs_t  parent_tree,
     if (gs_decl_bit_field(field)) {
 	   isbit = 1;
     }
+#endif //TARG_ST
     DST_INFO_IDX field_idx = DST_INVALID_INIT;
     char *field_name = Get_Name((field));
 
@@ -783,8 +996,14 @@ DST_enter_normal_field(gs_t  parent_tree,
         return ;
     }
 #endif
-
+#ifdef TARG_ST
+    // [SC] Mimic member_declared_type in gcc/dwarf2out.c.
+    gs_t ftype = (gs_decl_bit_field_type(field)
+		  ? gs_decl_bit_field_type(field)
+		  : gs_tree_type(field));
+#else
     gs_t ftype = gs_tree_type(field);
+#endif
 
 
     TY_IDX base = Get_TY(ftype);
@@ -796,12 +1015,73 @@ DST_enter_normal_field(gs_t  parent_tree,
     // (or at least odd) for files other than the base
     // file, so lets leave it out. Temporarily.
     //USRCPOS_srcpos(src) = Get_Srcpos();
+#ifdef TARG_ST  // [CL] get source location from GCC
+    USRCPOS_srcpos(src) = Get_Srcpos_From_Tree(field);
+#else
 #ifdef KEY
     USRCPOS_srcpos(src) = Get_Srcpos();
 #else
     USRCPOS_clear(src);
 #endif // KEY
+#endif //TARG_ST
 
+#ifdef TARG_ST
+	if (gs_tree_this_volatile(field)) {
+	  fidx = DST_mk_volatile_type(fidx);
+	  DST_append_child(comp_unit_idx,fidx);
+	}
+	if (gs_tree_readonly(field)) {
+	  fidx = DST_mk_const_type(fidx);
+	  DST_append_child(comp_unit_idx,fidx);
+	}
+
+	/* The following code is inspired from dwarf2out.c:
+	   field_byte_offset, add_bit_offset_attribute */
+	const unsigned int BITS_PER_UNIT = 8;
+	INT bitoff = (gs_get_integer_value(gs_decl_field_bit_offset(field))
+		      + (BITS_PER_UNIT
+			 * gs_get_integer_value(gs_decl_field_offset(field))));
+
+	unsigned int type_align_in_bytes;
+	unsigned int type_align_in_bits;
+	UINT type_size_in_bits;
+
+ 	gs_t type_size = gs_type_size(ftype);
+
+	type_size_in_bits = type_size ? gs_get_integer_value(type_size) : 0;
+	type_align_in_bits = gs_type_align(ftype);
+	UINT align = gs_type_align(ftype)/BITSPERBYTE;
+	type_align_in_bytes = type_align_in_bits / BITS_PER_UNIT;
+
+	INT object_offset_in_align_units;
+	INT object_offset_in_bits;
+	INT object_offset_in_bytes;
+	INT deepest_bitpos;
+	UINT field_size_in_bits;
+
+        /* (cbr) */
+        if (!gs_decl_size(field))
+          field_size_in_bits = type_size_in_bits;
+        else
+          field_size_in_bits = gs_get_integer_value(gs_decl_size(field));
+
+	/* Figure out the bit-distance from the start of the structure to the
+	   "deepest" bit of the bit-field.  */
+	deepest_bitpos = bitoff + field_size_in_bits;
+
+	/* This is the tricky part.  Use some fancy footwork to deduce where the
+	   lowest addressed bit of the containing object must be.  */
+	object_offset_in_bits
+	  = ceiling (deepest_bitpos, type_align_in_bits) - type_size_in_bits;
+
+	/* Compute the offset of the containing object in "alignment units".  */
+	object_offset_in_align_units = object_offset_in_bits / type_align_in_bits;
+
+	/* Compute the offset of the containing object in bytes.  */
+	object_offset_in_bytes = object_offset_in_align_units * type_align_in_bytes;
+
+	INT fld_offset_bytes = object_offset_in_bytes;
+#else
     INT bitoff = gs_get_integer_value(gs_decl_field_bit_offset(field));
 #ifndef KEY
 INT fld_offset_bytes = bitoff / BITSPERBYTE;
@@ -812,6 +1092,7 @@ INT fld_offset_bytes = gs_get_integer_value(gs_decl_field_offset(field)) +
 #endif 
  gs_t type_size = gs_type_size(ftype);
 UINT align = gs_type_align(ftype)/BITSPERBYTE;
+#endif //TARG_ST
     INT tsize;
     if (type_size == NULL) {
 #ifndef KEY //bug 10478, 11590: from kgccfe
@@ -861,7 +1142,12 @@ UINT align = gs_type_align(ftype)/BITSPERBYTE;
 	       FALSE, // is_bitfield= not a bitfield
 	       FALSE, // is_static= not a static member
 	       FALSE, // is_declaration= 
+#ifdef TARG_ST
+  // [CL]
+	       gs_decl_artificial(field), // is_artificial = no
+#else
 	       FALSE, // is_artificial = no
+#endif // TARG_ST
 	       accessibility); // accessibility = public/private/protected
 #endif
 			
@@ -921,7 +1207,13 @@ UINT align = gs_type_align(ftype)/BITSPERBYTE;
                         TRUE, // a bitfield
                         FALSE, // not a static member
                         FALSE, // Only TRUE for C++?
+#ifdef TARG_ST
+  // [CL]
+			gs_decl_artificial(field), // is_artificial = no
+#else
+
                         FALSE, // artificial (no)
+#endif
 			accessibility); // accessibility = public/private/protected
 #endif
     }
@@ -968,6 +1260,10 @@ DST_enter_struct_union_members(gs_t parent_tree,
         }
     }
 
+#ifndef TARG_ST
+    // [CL] I don't understand what this patch is supposed to do.
+    // Removing it does improve our score on the GDB 6.8 testsuite.
+
 #ifdef KEY
     // Bug 3533 - Expand all member functions of classes inside ::std namespace
     // here (I don't know how to get the member functions of the classes
@@ -982,6 +1278,7 @@ DST_enter_struct_union_members(gs_t parent_tree,
 	!gs_decl_name(gs_decl_context(context)))
       return;
 #endif
+#endif
     // member functions
     gs_t methods = gs_type_methods(parent_tree);
     for  ( ; methods != NULL; methods = gs_tree_chain(methods)) {
@@ -989,6 +1286,17 @@ DST_enter_struct_union_members(gs_t parent_tree,
         // g++ seems to put the artificial ones in the output too for some reason
         // in particular, operator= is there.  We do want to omit the __base_ctor stuff
         // though
+#ifdef TARG_ST
+	  // [CL] this filter is different from GCC's because we
+	  // handle trees with more/different attributes set. We have
+	  // tagged trees in GCC's dwarf2out.c
+	  if (!gs_decl_dwarf_info_needed(methods)) {
+	    continue;
+	  }
+#endif
+#ifndef TARG_ST
+// [CL] although GCC4 uses decl_abstract_origin, the above test
+// actually gives better results in the GDB 6.8 testsuite.
 #ifndef KEY
 	   if ( gs_decl_artificial(methods)) {
 #else
@@ -998,11 +1306,14 @@ DST_enter_struct_union_members(gs_t parent_tree,
 	     // We want only ones user coded.
 	     continue;	   
 	   } else {
+#endif
 
 	     DST_enter_member_function( parent_tree,parent_idx,
 		parent_ty_idx,methods);
+#ifndef TARG_ST
 	   }
-	}
+#endif
+	   }
     }
 
     return;
@@ -1049,6 +1360,51 @@ DST_enter_struct_union(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,
 #endif
     current_scope_idx =
          DST_get_context(gs_type_context(type_tree));
+#ifdef TARG_ST
+    // [CL] in case of forward declaration, we may already have built
+    // DST for the incomplete type. Check if the type definition has
+    // now been completed, and if so, complete DST too.
+
+    // In all cases, return early to avoid infinite recursion in case
+    // of self-referencing struct/union.
+
+    if (!DST_IS_NULL(dst_idx) && (idx != 0)) {
+      FLD_HANDLE elt_fld = TY_fld(idx);
+      if (elt_fld.Is_Null())  {
+	// No field.
+	return dst_idx;
+      } else {
+
+	// Look for DST info for members
+	DST_INFO *parent_info = DST_INFO_IDX_TO_PTR(dst_idx);
+	DST_INFO_IDX *last_child_field = DST_get_ptr_to_lastChildField(parent_info);
+	if (DST_IS_NULL(*last_child_field)) {
+
+	  // Now we have new fields, but no DST. Create it now.
+	  if(gs_tree_code(type_tree) == GS_RECORD_TYPE) {
+	    if (!DST_is_structure_being_built(dst_idx)) {
+	      DST_set_structure_being_built(dst_idx);
+	      DST_enter_struct_union_members(type_tree,dst_idx);
+	      DST_clear_structure_being_built(dst_idx);
+	      DST_clear_structure_declaration(dst_idx);
+	    }
+	  } else if (gs_tree_code(type_tree) == GS_UNION_TYPE) {
+	    if (!DST_is_union_being_built(dst_idx)) {
+	      DST_set_union_being_built(dst_idx);
+	      DST_enter_struct_union_members(type_tree,dst_idx);
+	      DST_clear_union_being_built(dst_idx);
+	      DST_clear_union_declaration(dst_idx);
+	    }
+	  }
+	  return dst_idx;
+
+	} else {
+	  // Fields are already in DST.
+	  return dst_idx;
+	}
+      }
+    }
+#endif
 
     if(DST_IS_NULL(dst_idx)) {
 
@@ -1064,12 +1420,22 @@ DST_enter_struct_union(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,
         // file, so lets leave it out. Temporarily.
         //USRCPOS_srcpos(src) = Get_Srcpos();
 #ifdef KEY
+#ifdef TARG_ST
+        USRCPOS_clear(src);
+	if (gs_type_stub_decl(type_tree)) {
+	  USRCPOS_srcpos(src) = Get_Srcpos_From_Tree(gs_type_stub_decl(type_tree));
+	}
+#else
     USRCPOS_srcpos(src) = Get_Srcpos();
+#endif
 #else
         USRCPOS_clear(src);
 #endif // KEY
 
 	char *name = Get_Name(type_tree);
+#ifndef TARG_ST
+	// [CL] we should emit struct/union type definitions, even if
+	// they have no name
 
 #ifdef KEY
         // bug 1718
@@ -1079,33 +1445,98 @@ DST_enter_struct_union(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,
             return dst_idx ;
         }
 #endif
+#endif
+#ifdef TARG_ST
+	// [CL] don't compute completeness as in GCC:
+	// complete = (TYPE_SIZE (type)
+	//             && (! TYPE_STUB_DECL (type)
+	//		      || ! TYPE_DECL_SUPPRESS_DEBUG (TYPE_STUB_DECL (type))));
+	// See GDB's gdb.base/opaque.exp (6.8).
+	// Removing the tests on type_stub_decl and
+	// type_decl_suppress_debug enables passing GDB's
+	// gdb.cp/bs15503 test.
+	int complete = gs_type_size (type_tree) != NULL;
+#endif
 
 	if(gs_tree_code(type_tree) == GS_RECORD_TYPE) {
 	   dst_idx = DST_mk_structure_type(src,
 		  name , // struct tag name
 		  tsize,
 		  DST_INVALID_IDX, // not inlined
+#ifdef TARG_ST // [CL]
+		   !complete   // 1 if incomplete
+#else
 		   gs_type_fields(type_tree)== 0   // 1 if incomplete
+#endif
 		   );
+#ifdef TARG_ST
+	   DST_set_structure_being_built(dst_idx);
+#endif
 	} else if (gs_tree_code(type_tree) == GS_UNION_TYPE) {
 	   dst_idx = DST_mk_union_type(src,
 		  name  , // union tag name
 		  tsize,
 		  DST_INVALID_IDX, // not inlined
+#ifdef TARG_ST // [CL]
+		   !complete   // 1 if incomplete
+#else
 		   gs_type_fields(type_tree)== 0   // arg 1 if incomplete
+#endif
 		   );
+#ifdef TARG_ST
+	   DST_set_union_being_built(dst_idx);
+#endif
 	} else {
 	  // no DST_enter_struct_union_members(type_tree,dst_idx);
           // leave as DST_IS_NULL
           return dst_idx;
 	}
+#ifdef TARG_ST
+	// [CL] handle const and volatile qualifiers now, so that
+	// possible self references point to the right type
+
+	// We need an intermediate variable because we can only add
+	// members to struct/union, not to const/volatile type.
+
+	DST_INFO_IDX struct_union_dst_idx = dst_idx;
+
+	if (gs_type_volatile(type_tree)) {
+	  DST_append_child(current_scope_idx,dst_idx);
+	  dst_idx = DST_mk_volatile_type(dst_idx);
+	}
+	if (gs_type_readonly(type_tree)) {
+	  DST_append_child(current_scope_idx,dst_idx);
+	  dst_idx = DST_mk_const_type(dst_idx);
+	}
+#endif
 	DST_append_child(current_scope_idx,dst_idx);
 
 	// set this now so we will not infinite loop
 	// if this has ptr to itself inside.
         TYPE_DST_IDX(type_tree) = dst_idx;
 
+#ifdef TARG_ST
+	// [CL] record what type our vtable lives in
+	DST_INFO_IDX vtidx = DST_INVALID_IDX;
 
+	if (gs_type_vfield (type_tree)) {
+	  gs_t vtype = gs_decl_fcontext (gs_type_vfield (type_tree));
+
+	  if (vtype != type_tree) {
+	    // Generate type if it is not the one we are currently
+	    // generating
+	    TY_IDX itx =  TYPE_TY_IDX(vtype);
+	    vtidx = Create_DST_type_For_Tree (vtype,itx, idx);
+	  } else {
+	    vtidx = struct_union_dst_idx;
+	  }
+	}
+	if(gs_tree_code(type_tree) == GS_RECORD_TYPE) {
+	  DST_add_structure_containing_type(struct_union_dst_idx, vtidx);
+	} else if (gs_tree_code(type_tree) == GS_UNION_TYPE) {
+	  DST_add_union_containing_type(struct_union_dst_idx, vtidx);
+	}
+#endif
   	// Do the base classes
         INT32 offset = 0;
         INT32 anonymous_fields = 0;
@@ -1115,6 +1546,9 @@ DST_enter_struct_union(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,
 	  gs_t list;
 	  for (list = basetypes; gs_code(list) != EMPTY; 
 	       list = gs_operand(list, 1)) {
+#ifdef TARG_ST // [CL] update for 3.x frontend version
+    	            INT32 virtual_offset;
+#endif
                     gs_t binfo = gs_operand(list, 0);
 
                     gs_t basetype = gs_binfo_type(binfo);
@@ -1124,8 +1558,22 @@ DST_enter_struct_union(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,
 			// Don't know how to tell if
 			// it is pure_virtual.  FIX
 			virtuality = DW_VIRTUALITY_virtual;
+#ifdef TARG_ST // [CL]
+			virtual_offset = -gs_get_integer_value(gs_binfo_vptr_field(binfo));
+#endif
 		    }
+#ifdef TARG_ST // [CL]
+		    else {
+		      virtual_offset = 0;
+		    }
+#endif
+
 #ifdef KEY
+#ifdef TARG_ST
+		    // For inheritance, accessibility is private unless
+		    // otherwise mentioned - bug 3041.
+		    int accessibility = get_dwarf_access(binfo, DW_ACCESS_private);
+#else
 		    // For inheritance, accessibility is private unless
 		    // otherwise mentioned - bug 3041.
 		    int accessibility = get_dwarf_access(binfo);
@@ -1134,8 +1582,14 @@ DST_enter_struct_union(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,
 		      DW_ACCESS_private;
 		    }
 #endif
+#endif
+#ifdef TARG_ST // [CL]
+		    offset = gs_get_integer_value(gs_binfo_offset(binfo));
+#else
+
                     offset = Roundup (offset,
                                     gs_type_align(basetype) / BITSPERBYTE);
+#endif
 
 		    TY_IDX itx =  TYPE_TY_IDX(basetype);
 		    DST_INFO_IDX bcidx =
@@ -1150,6 +1604,16 @@ DST_enter_struct_union(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,
 			        virtuality,
 				offset);
 #else
+#ifdef TARG_ST
+		    DST_INFO_IDX inhx = 
+		      DST_mk_inheritance(src,
+					 bcidx,
+					 virtuality,
+					 offset,
+					 accessibility,
+					 virtual_offset);
+
+#else
 		    DST_INFO_IDX inhx = 
 		      DST_mk_inheritance(src,
 				bcidx,
@@ -1160,13 +1624,18 @@ DST_enter_struct_union(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,
 				    offset, 
 				accessibility);
 #endif
+#endif
 
 		    DST_append_child(dst_idx,inhx);
 //---------------------------------------------------------------
 //bug 12948: advance "offset" only when non-empty and non-virtual
 //---------------------------------------------------------------
 #ifdef KEY
+#ifdef TARG_ST
+		    if (! gs_is_empty_class(basetype) &&
+#else
                     if (!is_empty_base_class(basetype) &&
+#endif
 #else
                     if (!is_empty_base_class(basetype) ||
 #endif
@@ -1182,7 +1651,25 @@ DST_enter_struct_union(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,
 
 
 	// now can do the members of our type.
+#ifdef TARG_ST
+	DST_enter_struct_union_members(type_tree,struct_union_dst_idx);
+
+	if(gs_tree_code(type_tree) == GS_RECORD_TYPE) {
+	  DST_clear_structure_being_built(struct_union_dst_idx);
+	   // [CL] if it has fields, then it's not a declaration (at
+	   // least it seems it's what GDB expects)
+	  if (complete){
+	     DST_clear_structure_declaration(struct_union_dst_idx);
+	  }
+	} else if (gs_tree_code(type_tree) == GS_UNION_TYPE) {
+	  DST_clear_union_being_built(struct_union_dst_idx);
+	  if (complete){
+	     DST_clear_union_declaration(struct_union_dst_idx);
+	   }
+	}
+#else
 	DST_enter_struct_union_members(type_tree,dst_idx);
+#endif
 
     }
 
@@ -1215,7 +1702,14 @@ DST_enter_enum(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,
       // file, so lets leave it out. Temporarily.
       //USRCPOS_srcpos(src) = Get_Srcpos();
 #ifdef KEY
+#ifdef TARG_ST // [CL] get source location from GCC
+      USRCPOS_clear(src);
+      if (gs_type_stub_decl(type_tree)) {
+	USRCPOS_srcpos(src) = Get_Srcpos_From_Tree(gs_type_stub_decl(type_tree));
+      }
+#else
     USRCPOS_srcpos(src) = Get_Srcpos();
+#endif
 #else
       USRCPOS_clear(src);
 #endif // KEY
@@ -1232,12 +1726,22 @@ DST_enter_enum(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,
 
       TYPE_DST_IDX(type_tree) = t_dst_idx;
 
+#ifdef TARG_ST
+      // [CL] do not forget to update the return value
+      dst_idx = t_dst_idx;
+#endif
 
       DST_CONST_VALUE enumerator;
       if(tsize == 8) {
 	   DST_CONST_VALUE_form(enumerator) =  DST_FORM_DATA8;
       } else if (tsize == 4) {
 	   DST_CONST_VALUE_form(enumerator) =  DST_FORM_DATA4;
+#ifdef TARG_ST
+      } else if (tsize == 2) {
+	   DST_CONST_VALUE_form(enumerator) =  DST_FORM_DATA2;
+      } else if (tsize == 1) {
+	   DST_CONST_VALUE_form(enumerator) =  DST_FORM_DATA1;
+#endif
       } else {
 	   // ???
 	   DST_CONST_VALUE_form(enumerator) =  DST_FORM_DATA4;
@@ -1284,14 +1788,13 @@ DST_enter_enum(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,
     return dst_idx;
 }
 
-
+#ifndef TARG_ST
 #ifdef KEY
 typedef struct type_trans {
 	DST_size_t size;
 	const char *name;
 	DST_ATE_encoding encoding;
 } type_trans;
-
 static DST_INFO_IDX base_types[MTYPE_LAST+5] =  
 {
 DST_INVALID_INIT,DST_INVALID_INIT,DST_INVALID_INIT,DST_INVALID_INIT,	
@@ -1459,9 +1962,11 @@ DST_enter_subroutine_type(gs_t type_tree)
 
     // If the front-end adds the fake first param, then convert the function to
     // return void.
+
+#ifndef TARG_ST
     if (TY_return_in_mem(ret_ty_idx))
       ret_ty_idx = Be_Type_Tbl(MTYPE_V);
-
+#endif
     DST_INFO_IDX ret_ty_dst_idx = DST_INVALID_IDX;
     if (ret_ty_idx != Be_Type_Tbl(MTYPE_V)) {
       gs_t type = gs_tree_type(type_tree);
@@ -1495,6 +2000,60 @@ DST_enter_subroutine_type(gs_t type_tree)
 }
 
 #endif /* KEY */
+#endif //TARG_ST
+#ifdef TARG_ST
+// [CL] Try to mimic gcc's behavior with the hope of supporting
+// VLA [but so far, I don't know what info to pass to be]
+static void Create_bound_info(gs_t bound, DST_cval_ref *dbound, BOOL *is_cval)
+{
+  switch (gs_tree_code(bound)) {
+  case GS_INTEGER_CST:
+    dbound->cval = gs_get_integer_value(bound);
+    *is_cval=TRUE;
+    break;
+  case GS_CONVERT_EXPR:
+  case GS_NOP_EXPR:
+  case GS_NON_LVALUE_EXPR:
+    Create_bound_info(gs_tree_operand(bound, 0), dbound, is_cval);
+    break;
+  default:
+    dbound->cval = 0;
+    DevWarn ("Encountered VLA at line %d: debug info for bound ignored", lineno);
+    {
+      USRCPOS src;
+      USRCPOS_clear(src);
+      DST_INFO_IDX bound_var = DST_INVALID_IDX; /* Artificial variable containing the bound */
+
+#if 0
+      // [CL] I don't know how to generate valid info in such a case,
+      // particularly the 'var' field of DST_mk_variable causes assertion
+      // failure in be
+      std::string names("int");
+      DST_INFO_IDX bound_type = basetypes[names];
+      bound_var = DST_mk_variable(
+				  src,               // srcpos
+				  NULL,              // no name
+				  bound_type,
+				  0,                 // offset
+				  (void*) ST_st_idx(DECL_ST(bound)), // var
+				  DST_INVALID_IDX,   // abstract origin
+				  FALSE,             // is_declaration
+				  FALSE,             // is_automatic
+				  FALSE,             // is_external
+				  TRUE  );           // is_artificial
+
+      //		DST_INFO_IDX current_scope_idx =
+      //		  DST_get_context(DECL_CONTEXT(type_tree));
+      //		DST_append_child (current_scope_idx, bound_var);
+      DST_append_child (comp_unit_idx, bound_var);
+#endif
+
+      dbound->ref = bound_var;
+    }
+  }
+}
+#endif
+
 // We have an array
 // enter it.
 static DST_INFO_IDX
@@ -1528,8 +2087,7 @@ DST_enter_array_type(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,INT tsize)
       // not created yet, so create
       DST_INFO_IDX inner_dst  =
                     Create_DST_type_For_Tree (elt_tree,itx, idx);
-
-#ifndef KEY
+#if !defined KEY || defined TARG_ST
       dst_idx = DST_mk_array_type( src,
                             0, // name ?. Nope array types not named: no tag
 				// in  C/C++
@@ -1571,6 +2129,56 @@ DST_enter_array_type(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,INT tsize)
       DST_append_child(comp_unit_idx,dst_idx);
 
       TYPE_DST_IDX(type_tree) = dst_idx;
+#ifdef TARG_ST
+      /* CL: Add subrange info */
+      {
+	gs_t index_type, min, max;
+	
+	index_type = gs_type_domain (type_tree);
+	if (index_type) {
+	  min = gs_type_min_value (index_type);
+	  max = gs_type_max_value (index_type);
+	  
+	  if (gs_tree_type(index_type)) {
+	    BOOL is_lb_cval=FALSE;
+	    BOOL is_ub_cval=FALSE;
+	    
+	    DST_cval_ref dmin, dmax;
+	    
+	    DST_INFO_IDX range_idx;
+	    DST_INFO_IDX index_type_idx = DST_INVALID_IDX;
+	    
+	    if(!(gs_tree_code (index_type) == GS_INTEGER_TYPE
+		 && gs_type_name (index_type) == NULL
+		 && gs_tree_code (gs_tree_type (index_type)) == GS_INTEGER_TYPE
+		 && gs_type_name (gs_tree_type (index_type)) == NULL))
+	      {
+                index_type_idx = TYPE_DST_IDX(gs_tree_type(index_type));
+		if (DST_IS_NULL(index_type_idx))
+		  {
+		    gs_t index_ty_tree = gs_tree_type(index_type);
+		    TY_IDX type_idx = TYPE_TY_IDX(index_ty_tree);
+		    // not created yet, so create
+		    index_type_idx =
+		      Create_DST_type_For_Tree (index_ty_tree, type_idx,
+						Get_TY(index_ty_tree));
+		  }
+	      }
+	    Create_bound_info(min, &dmin, &is_lb_cval);
+	    if (max){
+	      Create_bound_info(max, &dmax, &is_ub_cval);
+	      
+	      range_idx = DST_mk_subrange_type(is_lb_cval, dmin, is_ub_cval, dmax, FALSE, 0LL, index_type_idx);
+	    } else {
+	      range_idx = DST_mk_subrange_type(is_lb_cval, dmin, is_ub_cval, dmax, TRUE, 0LL, index_type_idx);
+	    }
+	    
+	    DST_append_child(dst_idx, range_idx);
+	  }
+	}
+      }
+#endif
+
     }
     return dst_idx;
 }
@@ -1589,11 +2197,19 @@ DST_enter_array_type(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,INT tsize)
 static  DST_INFO_IDX
 DST_construct_pointer_to_member(gs_t type_tree)
 {
+#ifndef TARG_ST
     gs_t ttree = gs_tree_type(type_tree);
+#endif
+#ifdef TARG_ST
+    FmtAssert(gs_tree_code(type_tree) == GS_OFFSET_TYPE,
+                          ("DST_construct_pointer_to_member:"
+			   "invalid incoming arguments "));
+#else
     FmtAssert(gs_tree_code(type_tree) == GS_POINTER_TYPE
                         && gs_tree_code(ttree) == GS_OFFSET_TYPE,
                           ("DST_construct_pointer_to_member:"
 			   "invalid incoming arguments "));
+#endif
     USRCPOS src;
     // For now, the source location appears bogus
     // (or at least odd) for files other than the base
@@ -1603,7 +2219,14 @@ DST_construct_pointer_to_member(gs_t type_tree)
 
 
 #ifdef KEY
+#ifdef TARG_ST // [CL] get source location from GCC
+    USRCPOS_clear(src);
+    if (gs_type_stub_decl(type_tree)) {
+      USRCPOS_srcpos(src) = Get_Srcpos_From_Tree(gs_type_stub_decl(type_tree));
+    }
+#else
     USRCPOS_srcpos(src) = Get_Srcpos();
+#endif
 #else
     USRCPOS_clear(src);
 #endif // KEY
@@ -1617,8 +2240,12 @@ DST_construct_pointer_to_member(gs_t type_tree)
       name1 =  Get_Name(gs_tree_type(type_tree));
     } else {
       // is a typedef type
+#ifdef TARG_ST
+      name1 = Get_Name (type_tree);
+#else
       gs_t tname = gs_type_name (type_tree);
       name1 = Get_Name(gs_decl_original_type(tname));
+#endif
     }
 #else
     if(gs_decl_original_type(type_tree)== 0) {
@@ -1629,15 +2256,25 @@ DST_construct_pointer_to_member(gs_t type_tree)
       name1 = Get_Name(gs_decl_original_type(type_tree));
     }
 #endif
-
+#ifdef TARG_ST
+    gs_t member_type = gs_tree_type(type_tree);
+#else
     gs_t member_type = gs_tree_type(ttree);
+#endif
     if( gs_tree_code(member_type) == GS_ERROR_MARK) {
 	return error_idx;
     }
+#ifdef TARG_ST
+    if(gs_tree_code_class(type_tree) != GS_TCC_TYPE) {
+	DevWarn("Unexpected tree shape1: pointer_to_member %c\n",
+		gs_tree_code_class(type_tree));
+    }
+#else
     if(gs_tree_code_class(ttree) != GS_TCC_TYPE) {
 	DevWarn("Unexpected tree shape1: pointer_to_member %c\n",
 		gs_tree_code_class(ttree));
     }
+#endif
     TY_IDX midx = Get_TY(member_type);
     TYPE_TY_IDX(member_type) = midx;
     TY_IDX orig_idx = 0;
@@ -1646,10 +2283,17 @@ DST_construct_pointer_to_member(gs_t type_tree)
                     Create_DST_type_For_Tree(member_type,
                         midx,
 			orig_idx);
+#ifdef TARG_ST
+    TYPE_DST_IDX(member_type) = mdst;
+#else
     TYPE_DST_IDX(type_tree) = mdst;
+#endif
 
-
+#ifdef TARG_ST
+    gs_t base_type = gs_type_offset_basetype(type_tree);
+#else
     gs_t base_type = gs_type_offset_basetype(ttree);
+#endif
     if( gs_tree_code(base_type) == GS_ERROR_MARK) {
 	return error_idx;
     }
@@ -1664,8 +2308,11 @@ DST_construct_pointer_to_member(gs_t type_tree)
 			base_type,
                         container_idx,
 			orig_idx);
+#ifdef TARG_ST
+    TYPE_DST_IDX(base_type) = container_dst;
+#else
     TYPE_DST_IDX(type_tree) = container_dst;
-			
+#endif
 
     DST_INFO_IDX lidx =
 	DST_mk_ptr_to_member_type(src,
@@ -1783,9 +2430,19 @@ Create_DST_type_For_Tree (gs_t type_tree, TY_IDX ttidx, TY_IDX idx,
        if(DST_IS_NULL(dst_idx)) {
          TY_IDX itx = TYPE_TY_IDX(type_tree);
          DST_INFO_IDX unqual_dst = Create_DST_type_For_Tree (type_tree,itx, idx, true, false);
+         #ifdef TARG_ST
+	 // [CL] for struct/union, const is handled in DST_enter_struct_union()
+	 if ( (gs_tree_code(type_tree) != GS_RECORD_TYPE)
+	      && (gs_tree_code(type_tree) != GS_UNION_TYPE) ) {
+#endif
          dst_idx = DST_mk_const_type (unqual_dst) ;
          DST_append_child(current_scope_idx,dst_idx);
          TYPE_DST_IDX(type_tree) = dst_idx;
+#ifdef TARG_ST
+	 } else {
+	   dst_idx = unqual_dst;
+	 }
+#endif
        }
        return dst_idx ;
    }
@@ -1795,9 +2452,19 @@ Create_DST_type_For_Tree (gs_t type_tree, TY_IDX ttidx, TY_IDX idx,
        if(DST_IS_NULL(dst_idx)) {
          TY_IDX itx = TYPE_TY_IDX(type_tree);
          DST_INFO_IDX unqual_dst = Create_DST_type_For_Tree (type_tree,itx, idx, true, true);
+         #ifdef TARG_ST
+	 // [CL] for struct/union, volatile is handled in DST_enter_struct_union()
+	 if ( (gs_tree_code(type_tree) != GS_RECORD_TYPE)
+	      && (gs_tree_code(type_tree) != GS_UNION_TYPE) ) {
+#endif
          dst_idx = DST_mk_volatile_type (unqual_dst) ;
          DST_append_child(current_scope_idx,dst_idx);
          TYPE_DST_IDX(type_tree) = dst_idx;
+#ifdef TARG_ST
+	 } else {
+	   dst_idx = unqual_dst;
+	 }
+#endif
        }
        return dst_idx ;
    }
@@ -1914,7 +2581,17 @@ Create_DST_type_For_Tree (gs_t type_tree, TY_IDX ttidx, TY_IDX idx,
 	          DST_INFO_IDX inner_dst =
 		    Create_DST_type_For_Tree (ttree,itx, idx);
 
-
+#ifdef TARG_ST
+		  // [CL]
+		  if (gs_type_readonly(ttree)) {
+		    inner_dst = DST_mk_const_type(inner_dst);
+		    DST_append_child(current_scope_idx,inner_dst);
+		  }
+		  if (gs_type_volatile(ttree)) {
+		    inner_dst = DST_mk_volatile_type(inner_dst);
+		    DST_append_child(current_scope_idx,inner_dst);
+		  }
+#endif
 		  // not created yet, so create
 		  dst_idx = DST_mk_reference_type(
 		       	inner_dst,    // type ptd to
@@ -1940,7 +2617,12 @@ Create_DST_type_For_Tree (gs_t type_tree, TY_IDX ttidx, TY_IDX idx,
 
 		  gs_t ttree = gs_tree_type(type_tree);
 		  if(gs_tree_code(ttree) == GS_OFFSET_TYPE) {
+#ifdef TARG_ST
+		    // [CL] bug #85076: use the type pointed to
+		     dst_idx = DST_construct_pointer_to_member(ttree);
+#else
 		     dst_idx = DST_construct_pointer_to_member(type_tree);
+#endif
 		  } else {
 
 	              TY_IDX itx = TYPE_TY_IDX(ttree);
@@ -1949,7 +2631,17 @@ Create_DST_type_For_Tree (gs_t type_tree, TY_IDX ttidx, TY_IDX idx,
 
                       // not created yet, so create
 
-
+#ifdef TARG_ST
+		      // [CL]
+		      if (gs_type_readonly(ttree)) {
+			inner_dst = DST_mk_const_type(inner_dst);
+			DST_append_child(current_scope_idx,inner_dst);
+		      }
+		      if (gs_type_volatile(ttree)) {
+			inner_dst = DST_mk_volatile_type(inner_dst);
+			DST_append_child(current_scope_idx,inner_dst);
+		      }
+#endif
 		      dst_idx = DST_mk_pointer_type(
 		       	inner_dst,    // type ptd to
 			DW_ADDR_none, // no address class
@@ -1963,12 +2655,27 @@ Create_DST_type_For_Tree (gs_t type_tree, TY_IDX ttidx, TY_IDX idx,
                }
 	       break;
     case GS_OFFSET_TYPE:
+#ifdef TARG_ST
+      // [CL] support pointer to member
+      dst_idx = DST_construct_pointer_to_member(type_tree);
+      DST_append_child(current_scope_idx,dst_idx);
+      TYPE_DST_IDX(type_tree) = dst_idx;
+#endif
 
 		//  Do nothing. We should not get here.
 		break;
 
     case GS_ARRAY_TYPE:
-		
+#ifdef TARG_ST
+      //TB: generate dst for vector type
+   case GS_VECTOR_TYPE:
+#endif
+#ifdef TARG_ST
+                // [CL] Handle typedefs for array/vector
+                if (is_typedef (type_tree))
+                  dst_idx = DST_Create_type ((ST*)NULL, gs_type_name (type_tree));
+                else
+#endif		
 	       {
                 dst_idx = DST_enter_array_type(type_tree, 
 			ttidx, idx, tsize);
@@ -1988,13 +2695,93 @@ Create_DST_type_For_Tree (gs_t type_tree, TY_IDX ttidx, TY_IDX idx,
 		}
 		break;
     case GS_METHOD_TYPE:
+#ifndef TARG_ST
+		// [CL] fallthrough: behave like GCC, where
+		// METHOD_TYPE and FUNCTION_TYPE are handled by the
+		// same code (duplicated). See gen_type_die() in
+		// dwarf2out.c
 		{
 		//DevWarn ("Encountered METHOD_TYPE at line %d", lineno);
 		}
 		break;
+#endif
 
     case GS_FUNCTION_TYPE:
+#ifndef TARG_ST
 		dst_idx = DST_enter_subroutine_type(type_tree);
+#else
+  // [CL] generate type info for function prototype
+		// useful for record/union fields that are pointers
+		// to function. Generate corresponding param types
+		{
+		  gs_t ttree = gs_tree_type(type_tree);
+	          TY_IDX itx = TYPE_TY_IDX(ttree);
+		  DST_INFO_IDX ret_idx = Create_DST_type_For_Tree(ttree, idx, idx);
+
+		  USRCPOS src;
+		  // For now, the source location appears bogus
+		  USRCPOS_clear(src);
+
+		  BOOL isprototyped = FALSE;
+
+		  if (gs_tree_type(type_tree) &&
+		      gs_type_arg_types(type_tree)) {
+		    isprototyped = TRUE;
+		  }
+	    
+		  dst_idx = DST_mk_subroutine_type(src,
+						   NULL,
+						   ret_idx,
+						   DST_INVALID_IDX,
+						   isprototyped);
+
+		  DST_append_child(current_scope_idx,dst_idx);
+
+		  if (isprototyped) {
+		    gs_t arg;
+		    DST_INFO_IDX param_idx;
+
+		    for (arg = gs_type_arg_types(type_tree);
+			 arg;
+			 arg = gs_tree_chain(arg)) {
+
+		      // [CL] parameter list finished by a 'void' node
+		      // means this is not a vararg function.
+		      // should not generate a parameter
+		      if ( (gs_tree_chain(arg) == NULL) &&
+			   (gs_tree_value(arg) == gs_void_type_node()) ) {
+			break;
+		      }
+
+		      DST_INFO_IDX arg_idx = TYPE_DST_IDX(gs_tree_value(arg));
+
+		      param_idx = DST_mk_formal_parameter(src,
+							  NULL,
+							  arg_idx,
+							  NULL,
+							  DST_INVALID_IDX,
+							  DST_INVALID_IDX,
+							  FALSE,
+							  FALSE,
+							  FALSE,
+							  TRUE);
+
+		      DST_append_child(dst_idx,param_idx);
+		    }
+
+		    // Generate info for elipsis
+		    if (!arg) {
+		      param_idx = DST_mk_unspecified_parameters(src,
+								DST_INVALID_IDX);
+		      DST_append_child(dst_idx,param_idx);
+
+		    }
+		  }
+		}
+
+		TYPE_DST_IDX(type_tree) = dst_idx;
+#endif
+
 		break;
 
 #ifdef TARG_X8664
@@ -2062,6 +2849,12 @@ Create_DST_decl_For_Tree(
 		 gs_decl_external(decl) && !gs_decl_common(decl)) {
       return cur_idx;
   }
+#ifdef TARG_ST
+  // [CL] preliminary support for anonymous unions
+  if (gs_tree_code(decl) == GS_VAR_DECL && gs_decl_external(decl)) {
+	return cur_idx ;
+  }
+#endif
 
 #ifndef KEY
   // For now ignore plain declarations?
@@ -2085,6 +2878,24 @@ Create_DST_decl_For_Tree(
   case GS_VAR_DECL: {
       //Get_ST(decl);
       dst_idx = DST_Create_var(var_st,decl);
+#ifdef TARG_ST // [CL] handle anonymous union
+    if (gs_anon_aggr_type_p (gs_tree_type(decl))) {
+      for (gs_t mydecl = gs_decl_anon_union_elems(decl); mydecl != NULL; mydecl = gs_tree_chain(mydecl)) {
+	gs_t field_decl = gs_tree_value(mydecl);
+	(void)Create_ST_For_Tree (field_decl);
+	// After creation of each field, make the location point to
+	// the main ST by fixing what is setup in
+	// dwarf_DST_producer.cxx:mk_variable()
+	DST_INFO *info = DST_INFO_IDX_TO_PTR(DECL_DST_IDX(field_decl));
+	DST_ASSOC_INFO_fe_ptr(
+		DST_VARIABLE_def_st(
+		    DST_ATTR_IDX_TO_PTR(
+		        DST_INFO_attributes(info), DST_VARIABLE)))
+	                    = (void*) ST_st_idx(var_st);
+	DST_SET_assoc_fe(DST_INFO_flag(info));
+      }
+    }
+#endif
       }
       break;
   case GS_TYPE_DECL: {
@@ -2119,12 +2930,15 @@ DST_Create_type(ST *typ_decl, gs_t decl)
     // file, so lets leave it out. Temporarily.
     //USRCPOS_srcpos(src) = Get_Srcpos();
 
-
+#ifdef TARG_ST // [CL] get source location from GCC
+    USRCPOS_srcpos(src) = Get_Srcpos_From_Tree(decl);
+#else
 #ifdef KEY
     USRCPOS_srcpos(src) = Get_Srcpos();
 #else
     USRCPOS_clear(src);
 #endif // KEY
+#endif //TARG_ST
     DST_INFO_IDX dst_idx = DST_INVALID_INIT;
     
 
@@ -2144,6 +2958,8 @@ DST_Create_type(ST *typ_decl, gs_t decl)
       name1 = Get_Name(gs_decl_original_type(decl));
 #endif
     }
+#ifndef TARG_ST // [CL] we may need to complete a forward declaration,
+                // so handle the underlying type in any case.
   
     // FIX look in various contexts to find known types ?
     // It is not true base types that are the problem, it
@@ -2157,6 +2973,7 @@ DST_Create_type(ST *typ_decl, gs_t decl)
         // hack so rest of gnu need know nothing of DST
         return t;
     } 
+#endif
 
     DST_INFO_IDX current_scope_idx =
          DST_get_context(gs_decl_context(decl));
@@ -2181,7 +2998,21 @@ DST_Create_type(ST *typ_decl, gs_t decl)
     DST_INFO_IDX dst = 
 	Create_DST_type_For_Tree(undt,base,
 		/* struct/union fwd decl TY_IDX=*/ 0);
+#ifdef TARG_ST // [CL] don't redefine to top-level type
 
+    // FIX look in various contexts to find known types ?
+    // It is not true base types that are the problem, it
+    // is typedefs creating 'new types'.
+    std::string names(name1);
+    DST_Type_Map::iterator p =
+                        basetypes.find(names);
+    if(p != basetypes.end()) {
+                        //Yep, already known.
+        DST_INFO_IDX t = (*p).second;
+        // hack so rest of gnu need know nothing of DST
+        return t;
+    }
+#endif
     dst_idx = DST_mk_typedef( src,
                           name1, // new type name we are defining
                           dst, // type of typedef
@@ -2206,12 +3037,15 @@ DST_Create_Parmvar(ST *var_st, gs_t param)
     // (or at least odd) for files other than the base
     // file, so lets leave it out. Temporarily.
     //USRCPOS_srcpos(src) = Get_Srcpos();
-
+#ifdef TARG_ST
+    USRCPOS_srcpos(src) = Get_Srcpos_From_Tree(param);
+#else
 #ifdef KEY
     USRCPOS_srcpos(src) = Get_Srcpos();
 #else
     USRCPOS_clear(src);
 #endif // KEY
+#endif //TARG_ST
 
 
     DST_INFO_IDX type_idx = DST_INVALID_INIT;
@@ -2271,19 +3105,24 @@ DST_find_class_member(const char * linkage_name_in, gs_t myrecord)
 	   // never needed.
 	   if (gs_operand(methods, GS_FLAGS) == NULL)
 	     continue;
+#ifndef TARG_ST
+	  // [CL]
 
            if ( gs_decl_artificial(methods)) {
              // compiler generated methods are not interesting.
              // We want only ones user coded.
              continue;
            } else {
+#endif
 	     char * linkage_name = 
 		   gs_identifier_pointer(gs_decl_assembler_name (methods));
 	     if(linkage_name &&
 			(strcmp(linkage_name,  linkage_name_in) == 0)) {
 		return_member_dst =  DECL_DST_FIELD_IDX(methods);
                 return return_member_dst;
+#ifndef TARG_ST
 	     }
+#endif
            }
         }
     }
@@ -2323,7 +3162,19 @@ DST_Create_var(ST *var_st, gs_t decl)
 
     int class_var_found_member = 0;
     DST_INFO_IDX class_var_idx = DST_INVALID_INIT;
+#ifdef TARG_ST
+    char *linkage_name = NULL;
+#endif
     if (lang_cplus) { // wgen
+#ifdef TARG_ST
+    // [CL] preliminary support for anonymous unions
+    if (strlen(field_name) > 0
+        && gs_decl_assembler_name_set_p(decl) 
+	&& gs_decl_assembler_name(decl) != NULL // bug 12666
+	) {
+      linkage_name = gs_identifier_pointer(gs_decl_assembler_name (decl));
+    }
+#else
 #ifdef KEY
     const char *linkage_name = "";	
     if (!gs_decl_artificial (decl) && gs_decl_name(decl) 
@@ -2337,6 +3188,7 @@ DST_Create_var(ST *var_st, gs_t decl)
     char *linkage_name = 	
 		gs_identifier_pointer(gs_decl_assembler_name (decl));
 #endif // KEY
+#endif //TARG_ST
 
     if(context && gs_tree_code(context) == GS_RECORD_TYPE) {
 	/*look for  static data member decl*/
@@ -2354,8 +3206,14 @@ DST_Create_var(ST *var_st, gs_t decl)
 	char *classname = Get_Name(context);
 	if(classname && !class_var_found_member) {
 	   int len = strlen(classname);
+#ifdef TARG_ST
+           /* (cbr) dummy_new_mempool not yet set */
+	   char newname [len+5 
+			/* 5 makes room for :: and null char */];
+#else
 	   char* newname = new char[len+5 
 			/* 5 makes room for :: and null char */];
+#endif
 
 	   // no 0 check: let it crash to get signal handler msg.
 
@@ -2367,22 +3225,40 @@ DST_Create_var(ST *var_st, gs_t decl)
 	    // concatenate strings and avoid a memory leak.
 	    field_name = Index_To_Str(Save_Str2(newname,field_name));
 	   }
-
+#ifndef TARG_ST
+           /* (cbr) dummy_new_mempool not yet set */
 	   delete [] newname;
+#endif
 	}
 
     }
     }
-
+#ifdef TARG_ST // [CL] get source location from GCC
+    USRCPOS_srcpos(src) = Get_Srcpos_From_Tree(decl);
+#else
 #ifdef KEY
     USRCPOS_srcpos(src) = Get_Srcpos();
 #else
     USRCPOS_clear(src);
 #endif // KEY
+#endif //TARG_ST
     DST_INFO_IDX dst = DST_INVALID_INIT;
 
     DST_INFO_IDX type = TYPE_DST_IDX(gs_tree_type(decl));
-
+#ifdef TARG_ST
+    // [CL] Handle const qualifier, which is attached to the
+    // decl tree, not always to the type tree
+    // If the type is already qualified, don't re-qualify it
+    if (gs_tree_readonly(decl) && (!gs_type_readonly(gs_tree_type(decl))) ) {
+      type = DST_mk_const_type(type);
+      DST_append_child(comp_unit_idx,type);
+    }
+    // [CL] Handle volatile qualifier
+    if (gs_tree_this_volatile(decl) && (!gs_type_volatile(gs_tree_type(decl))) ) {
+      type = DST_mk_volatile_type(type);
+      DST_append_child(comp_unit_idx,type);
+    }
+#endif
 
 #ifdef KEY
     // Bug 1717 - for anonymous unions like
@@ -2442,10 +3318,36 @@ DST_Create_var(ST *var_st, gs_t decl)
         external_decl,          // is_declaration
         FALSE,                  // is_automatic
         is_external,  // is_external
+#ifdef TARG_ST
+	// [CL]
+	gs_decl_artificial(decl)  ); // is_artificial
+#else
 	FALSE  ); // is_artificial
+#endif
+#ifdef TARG_ST
+    // [CL] support lexical blocks
+    DST_INFO_IDX current_scope_idx;
+    extern LEXICAL_BLOCK_INFO *current_lexical_block;
 
+    // [CL] in wgen, debug information is created at the same time
+    // scopes are handled, hence we can rely on current_lexical_block
+    // But be careful, debug information for global variables is
+    // emitted when they are used, not when they are declared. So,
+    // check the current lexical block level only for variables with
+    // context != NULL
+    if (context && (current_lexical_block != 0)
+	&& (current_lexical_block->dst != DST_INVALID_IDX)) {
+      // [SC] var is in nested scope
+      current_scope_idx = current_lexical_block->dst;
+    } else {
+      // [SC] var is global, or fn scope.  In both these cases,
+      // DECL_CONTEXT suffices.
+      current_scope_idx = DST_get_context(context);
+    }
+#else
     DST_INFO_IDX current_scope_idx =
          DST_get_context(gs_decl_context(decl));
+#endif
 
 
 #ifdef KEY
@@ -2464,7 +3366,13 @@ DST_Create_var(ST *var_st, gs_t decl)
     //}
 #endif
 
-
+#ifdef TARG_ST
+// [CL] dont output invisible names
+    if(field_name && linkage_name && strcmp(field_name, linkage_name) &&
+       gs_tree_public(decl) && !gs_decl_abstract(decl) ) {
+      DST_add_linkage_name_to_variable(dst, linkage_name);
+    }
+#endif
 
     // If this is a def of a static var member, want DW_AT_specification
     // added to point to class mem
@@ -2497,9 +3405,12 @@ DST_enter_param_vars(gs_t fndecl,
   int is_declaration_only)
 {
     USRCPOS src;
+#ifdef TARG_ST // [CL] add support for elipsis
+    gs_t first_ptype = gs_type_arg_types(gs_tree_type(fndecl));
+    gs_t ptype = first_ptype;
+#endif
     USRCPOS_srcpos(src) = Get_Srcpos();
 
-   
     gs_t list = parameter_list;
 
 #ifdef KEY /* Bug 14716, 14824 */
@@ -2531,7 +3442,13 @@ DST_enter_param_vars(gs_t fndecl,
         BOOL is_artificial = gs_decl_artificial(pdecl);
 	int decl_to_be_restored = 0;
 	int type_to_be_restored = 0;
+#ifdef TARG_ST // [CL] fix bug #54665
+	// [SC] Beware: on gcc 4.2.0, non-prototyped fns have no
+	// type_arg_types set.
+	gs_t type = ptype ? gs_tree_value(ptype) : gs_tree_type(pdecl);
+#else
 	gs_t type = gs_tree_type(pdecl);
+#endif
 
 	
 	DST_INFO_IDX save_type_idx = TYPE_DST_IDX(type);
@@ -2551,7 +3468,18 @@ DST_enter_param_vars(gs_t fndecl,
 	
 
 	type_idx = TYPE_DST_IDX(type);
-	
+
+#ifdef TARG_ST
+	// [CL] the param type from the TYPE_ARG_TYPES list may differ
+	// from the pdecl type, and may not have been emitted yet. In
+	// this case, do it now.
+	if (DST_IS_NULL(type_idx)) {
+	  TY_IDX orig_idx = 0;
+
+	  type_idx = Create_DST_type_For_Tree(type, ty_idx, orig_idx);
+	  TYPE_DST_IDX(type) = type_idx;
+	}
+#endif
 	char *name = Get_Name(pdecl);
 	
 	DST_INFO_IDX initinfo = DST_INVALID_IDX;
@@ -2569,7 +3497,9 @@ DST_enter_param_vars(gs_t fndecl,
 	  //. get the abstract root idx if it exists
 	  aroot = DECL_DST_ABSTRACT_ROOT_IDX(pdecl);
 	}
-
+#ifdef TARG_ST // [CL] get source location from GCC
+	USRCPOS_srcpos(src) = Get_Srcpos_From_Tree(pdecl);
+#endif
 
 	param_idx = DST_mk_formal_parameter(
 		src,
@@ -2626,8 +3556,13 @@ DST_enter_param_vars(gs_t fndecl,
         BOOL is_artificial = gs_decl_artificial(pdecl);
 	int decl_to_be_restored = 0;
 	int type_to_be_restored = 0;
-
+#ifdef TARG_ST // [CL] fix bug #54665
+	// [SC] Beware: on gcc 4.2.0, non-prototyped fns have no
+	// type_arg_types set.
+	gs_t type = ptype ? gs_tree_value(ptype) : gs_tree_type(pdecl);
+#else
 	gs_t type = gs_tree_type(pdecl);
+#endif
 #ifdef KEY
 	if (is_type_arg_types)
 	  type = pdecl;
@@ -2651,7 +3586,17 @@ DST_enter_param_vars(gs_t fndecl,
 
 
 	type_idx = TYPE_DST_IDX(type);
+#ifdef TARG_ST
+	// [CL] the param type from the TYPE_ARG_TYPES list may differ
+	// from the pdecl type, and may not have been emitted yet. In
+	// this case, do it now.
+	if (DST_IS_NULL(type_idx)) {
+	  TY_IDX orig_idx = 0;
 
+	  type_idx = Create_DST_type_For_Tree(type, ty_idx, orig_idx);
+	  TYPE_DST_IDX(type) = type_idx;
+	}
+#endif
 	char *name = Get_Name(pdecl);
 
 	DST_INFO_IDX initinfo = DST_INVALID_IDX;
@@ -2669,7 +3614,9 @@ DST_enter_param_vars(gs_t fndecl,
 	  //. get the abstract root idx if it exists
 	  aroot = DECL_DST_ABSTRACT_ROOT_IDX(pdecl);
 	}
-
+#ifdef TARG_ST // [CL] get source location from GCC
+    USRCPOS_srcpos(src) = Get_Srcpos_From_Tree(pdecl);
+#endif
 
 	param_idx = DST_mk_formal_parameter(
 		src,
@@ -2708,6 +3655,10 @@ DST_enter_param_vars(gs_t fndecl,
 
 	DST_append_child(parent_idx,param_idx);
       }
+#ifdef TARG_ST
+      // [CL] add support for elipsis
+      if (ptype) ptype = gs_tree_chain(ptype);
+#endif
     }
 #ifdef KEY /* Bug 14716 */
     if (!is_declaration_only) {
@@ -2725,28 +3676,59 @@ DST_enter_param_vars(gs_t fndecl,
 	DST_append_child(parent_idx, param_idx);	
     }
 #endif /* KEY Bug 14716 */
+
+#ifdef TARG_ST
+    // Generate info for elipsis
+    if (first_ptype && !ptype) {
+      DST_INFO_IDX param_idx;
+      param_idx = DST_mk_unspecified_parameters(src,
+						DST_INVALID_IDX);
+      DST_append_child(parent_idx,param_idx);
+      
+    }
+#endif
+
 }
 
+#ifdef TARG_ST
+// [CL] fndecl can no longer be 0: there is no need to call
+// DST_Create_Subprogram() for asm stmt.
+#else
 //
 // fndecl can be 0 if this is an asm stmt treated as a function, 
 // rather than being a true function.
+#endif
 DST_INFO_IDX
 DST_Create_Subprogram (ST *func_st, gs_t fndecl)
 {
     USRCPOS src;
+#ifdef TARG_ST
+    // [CL] get source location from GCC
+    FmtAssert (fndecl != NULL, 
+	     ("DST_Create_Subprogram called with NULL fndecl"));
+    USRCPOS_srcpos(src) = Get_Srcpos_From_Tree(fndecl);
+#else
     USRCPOS_srcpos(src) = Get_Srcpos();
+#endif
     DST_INFO_IDX dst = DST_INVALID_INIT;
     DST_INFO_IDX ret_dst = DST_INVALID_IDX;
+#ifndef TARG_ST // [CL]
 
     DST_INFO_IDX current_scope_idx = fndecl ? 
 	(DST_get_context(gs_decl_context(fndecl))): 
 	comp_unit_idx;
+#else
+      DST_INFO_IDX current_scope_idx = DST_get_context(gs_decl_context(fndecl));
+#endif
 
      
     BOOL is_prototyped = FALSE;
 
-    
+    #ifdef TARG_ST
+    if(Debug_Level >= 2) {
+#else
     if(Debug_Level >= 2 && fndecl) {
+#endif
 
 	// Bug 1510 - get the result type from the function type declaration
 	// rather than the result declaration type.
@@ -2757,24 +3739,40 @@ DST_Create_Subprogram (ST *func_st, gs_t fndecl)
        if(restype) {
 	 TY_IDX itx = Get_TY(restype);
 	 ret_dst = TYPE_DST_IDX(restype); //bug 12820: return type should be set
+         #ifdef TARG_ST
+	  if (DST_IS_NULL(ret_dst)) {
+	    ret_dst = Create_DST_type_For_Tree(restype, itx, 0);
+	  }
+#endif
 	}
 
         gs_t type = gs_tree_type(fndecl);
 	if(type) {
 	//  tree arg_types = TYPE_ARG_TYPES(type);
 	//  if(arg_types) {
+#ifdef TARG_ST
+	  // [CL] do not pretend the function is prototyped if it
+	  // isn't. Checked by GDB's gdb.base/callfuncs.exp test.
+	  gs_t arg_types = gs_type_arg_types(type);
+	  if (arg_types) 
+#endif
 		is_prototyped = TRUE;
 	 // }
 	}
     }
 
-
+#ifdef TARG_ST
+    // [CL] get the 'true' function name
+    char * basename = xstrdup((char*)gs_decl_printable_name(fndecl));
+#else
     char * basename;
     if (fndecl)
 	basename = gs_identifier_pointer (gs_decl_name (fndecl));
     else
         basename = ST_name(func_st);
+#endif
     char * linkage_name = ST_name(func_st);
+#ifndef TARG_ST
 #ifdef KEY
     // Bug 3846
     if (Debug_Level > 0 && fndecl &&
@@ -2800,6 +3798,7 @@ DST_Create_Subprogram (ST *func_st, gs_t fndecl)
       }
     }
 #endif
+#endif
 
     char * funcname = basename;
     int is_abstract_root = 0;
@@ -2815,6 +3814,11 @@ DST_Create_Subprogram (ST *func_st, gs_t fndecl)
         /*look for  static data member decl*/
         class_func_idx =
                 DST_find_class_member(linkage_name, context);
+#ifndef TARG_ST
+	// [CL] keep the function name, otherwise GDB complains.
+	// Actually, it seems that such info should be linked to the
+	// proper scope, but this is not done in cgdwarf.cxx
+
         if(!DST_IS_NULL(class_func_idx)) {
                 class_func_found_member = 1;
                 funcname = 0; // we will use DW_AT_specification
@@ -2823,14 +3827,35 @@ DST_Create_Subprogram (ST *func_st, gs_t fndecl)
  		   // and no src position: leave that to member
 		 USRCPOS_clear(src);
         }
+#else	
+        // [CL] make sure one instance of the member function is
+	// emitted.
+        if(!DST_IS_NULL(class_func_idx)) {
+	  class_func_found_member = 1;
+	}
+	else {
+	    DST_enter_member_function(context,
+				      Create_DST_type_For_Tree(context,
+							       Get_TY(context),
+							       0, false, false),
+				      Get_TY(context), fndecl);
+	}
+#endif
+
         // Field name should now have the class name and ::
         // prepended, per dwarf2
         // Save_Str2 can glob 2 pieces together.
         char *classname = Get_Name(context);
         if(classname && !class_func_found_member) {
            int len = strlen(classname);
+#ifdef TARG_ST
+           /* (cbr) dummy_new_mempool not yet set */
+           char newname [len+5
+                        /* 5 makes room for :: and null char */];
+#else
            char* newname = new char[len+5
                         /* 5 makes room for :: and null char */];
+#endif
 
            // no 0 check: let it crash to get signal handler msg.
 
@@ -2842,13 +3867,31 @@ DST_Create_Subprogram (ST *func_st, gs_t fndecl)
             // concatenate strings and avoid a memory leak.
             funcname = Index_To_Str(Save_Str2(newname,funcname));
            }
-
+#ifndef TARG_ST
+           /* (cbr) dummy_new_mempool not yet set */
            delete [] newname;
+#endif
         }
     }
 
     linkage_name = ST_name(func_st);
     ST_IDX fstidx = ST_st_idx(func_st);
+#ifdef TARG_ST
+    // [CL]
+    DST_virtuality  virtuality = 
+		 gs_decl_pure_virtual_p(fndecl)?
+			 DW_VIRTUALITY_pure_virtual
+		 : gs_decl_virtual_p(fndecl)?
+			DW_VIRTUALITY_virtual : DW_VIRTUALITY_none;
+
+    DST_vtable_elem_location vtable_elem_location;
+    /* (cbr) elem loc must be an integer */
+    if (gs_decl_vindex(fndecl) && gs_tree_code (gs_decl_vindex(fndecl)) == GS_INTEGER_CST) {
+        vtable_elem_location = gs_get_integer_value(gs_decl_vindex(fndecl));
+    } else {
+        vtable_elem_location = 0;
+    }
+#endif
 
     dst = DST_mk_subprogram(
         src,			// srcpos
@@ -2857,14 +3900,27 @@ DST_Create_Subprogram (ST *func_st, gs_t fndecl)
         DST_INVALID_IDX,        // Index to alias for weak is set later
         (void*) fstidx,         // index to fe routine for st_idx
         DW_INL_not_inlined,     // applies to C++
+#ifdef TARG_ST
+	// [CL]
+	virtuality,
+	vtable_elem_location,
+#else
         DW_VIRTUALITY_none,     // applies to C++
         0,                      // vtable_elem_location
+#endif
         FALSE,                  // is_declaration
+#ifndef TARG_ST // [CL]
 #ifdef KEY
         FALSE,                  // is_artificial
 #endif
+#endif
         is_prototyped,           // 
+#ifdef TARG_ST
+        ! ST_is_export_local(func_st), // is_external
+        gs_decl_artificial (fndecl) );
+#else
         ! ST_is_export_local(func_st) );  // is_external
+#endif
     // producer routines think we will set pc to fe ptr initially
     DST_RESET_assoc_fe (DST_INFO_flag(DST_INFO_IDX_TO_PTR(dst)));
     DST_append_child (current_scope_idx, dst);
@@ -2884,9 +3940,13 @@ DST_Create_Subprogram (ST *func_st, gs_t fndecl)
     }
 
 
+#ifndef TARG_ST
     if(fndecl) {
+#endif
 	DECL_DST_IDX(fndecl) =  dst;
+#ifndef TARG_ST
     }
+#endif
 
     // Now we create the argument info itself, relying
     // on the is_prototyped flag above to let us know if
@@ -2939,7 +3999,11 @@ DST_build(int num_copts, /* Number of options passed to fec(c) */
    char         *cur_dir = Get_Current_Working_Directory();
 
    current_working_dir = current_host_dir = cwd_buffer =
+#ifdef TARG_ST
+                      (char *) xmalloc (strlen(cur_dir) + MAXHOSTNAMELEN + 10);
+#else
                       (char *) malloc (strlen(cur_dir) + MAXHOSTNAMELEN + 10);
+#endif
 #endif
 
    dst_initialized = TRUE;
@@ -3007,7 +4071,12 @@ DST_build(int num_copts, /* Number of options passed to fec(c) */
 #ifndef KEY
    comp_info = DST_get_command_line_options(num_copts, copts);
 #else
-   comp_info = (char *)malloc(sizeof(char)*100);   
+#ifdef TARG_ST
+   comp_info = (char *)xmalloc(sizeof(char)*100);
+   *comp_info = '\0'; // This string may be used directly for strcat
+#else
+   comp_info = (char *)malloc(sizeof(char)*100);
+#endif
    strcpy(comp_info, "pathCC ");
    if (INCLUDE_STAMP)
      strcat(comp_info, INCLUDE_STAMP);
@@ -3017,7 +4086,12 @@ DST_build(int num_copts, /* Number of options passed to fec(c) */
       // bug 12576: If available, use the original source file name.
       char * dump_base_name = Orig_Src_File_Name ? Orig_Src_File_Name :
                                                    Src_File_Name;
+#ifdef TARG_ST
+	    // [CL] the full source path is needed for the debug info
+      comp_unit_idx = DST_mk_compile_unit(dump_base_name,
+#else
       comp_unit_idx = DST_mk_compile_unit(Last_Pathname_Component(dump_base_name),
+#endif
 					  current_host_dir,
 					  comp_info, 
 				lang_cplus ? DW_LANG_C_plus_plus : DW_LANG_C89,
@@ -3035,6 +4109,10 @@ static const char *current_file_name = NULL;
 void
 WGEN_Set_Line_And_File (UINT line, const char* f, bool check)
 {
+#ifdef TARG_ST
+        Set_Error_Source (f);
+        Set_Error_Line (line);
+#endif
 	if (!dst_initialized) return;
 
         //bug 8895, 10632: check whether necessary to update
@@ -3058,13 +4136,21 @@ WGEN_Set_Line_And_File (UINT line, const char* f, bool check)
 	char buf[256];
 #endif
 	if (file_name == file) {
-		// no path
+		// no path// 
+ //[CL] merged from Open64-4.2.1, for bug #55000
+#ifdef TARG_SL
+		// NOTE! Wenbo/2007-04-26: Refer to kgccfe/wfe_dst.cxx. 
+		dir = NULL;
+	}
+#else
+
 		dir = current_working_dir;
 	}
 	else if (strncmp(file, "./", 2) == 0) {
 		// current dir
 		dir = current_working_dir;
 	}
+#endif
 	else {
 		// copy specified path
 		strcpy (buf, file);

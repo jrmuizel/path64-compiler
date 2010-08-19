@@ -70,8 +70,10 @@ U64_LOWER_expr(NODE *tree, INT &maxsize,
   if (desc == MTYPE_V || desc == MTYPE_UNKNOWN) desc = res; 
 
   if (opr == OPR_INTRINSIC_OP
+#ifndef TARG_ST
 #ifdef KEY
       || opr == OPR_PURE_CALL_OP
+#endif
 #endif
      ) {
     for (i = 0; i < U64_LOWER_kid_count(tree); i++) { // kids must be PARMs

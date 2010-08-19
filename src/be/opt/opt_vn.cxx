@@ -153,7 +153,7 @@ inline BOOL Vn_Tracing(VN::EXPRID id)
 inline INT Need_Integral_Conversion(MTYPE from_ty, MTYPE to_ty, OPCODE *opc)
 {
    if (MTYPE_is_integral(from_ty) && MTYPE_is_integral(to_ty)
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
        && !MTYPE_is_vector(from_ty)
 #endif
 	)
@@ -591,7 +591,7 @@ VN::_valnum_op(CODEREP *cr)
 			       _exprid_to_vn, *_status.locked_to_vn);
 
    }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
    else if (OPCODE_operator(opc) == OPR_PURE_CALL_OP)
    {
       vn_expr_ptr = VN_EXPR::Create_Call_Op(cr->Call_op_aux_id(),
@@ -642,6 +642,15 @@ VN::_valnum_op(CODEREP *cr)
 	    vn1 = _valnum_integer(OFFSET_AND_SIZE_TOGETHER(cr->Op_bit_size(),cr->Op_bit_offset()), FALSE);
 	    vn_expr_ptr = VN_EXPR::Create_Binary(opc, vn0, vn1);
 	 }
+#ifdef TARG_ST
+	 // [CG] Include subpart_index in value number
+	 else if (cr->Opr() == OPR_SUBPART) {
+	   // also treat EXTRACT_BITS as binary
+	   vn0 = _valnum_expr(cr->Opnd(0));
+	   vn1 = _valnum_integer(cr->Subpart_index(), FALSE);
+	   vn_expr_ptr = VN_EXPR::Create_Binary(opc, vn0, vn1);
+	 }
+#endif
 	 else
 	 {
 	    vn0 = _valnum_expr(cr->Opnd(0));
@@ -720,7 +729,11 @@ VN::_valnum_expr(CODEREP *cr)
 
       case CK_CONST:
 	 valnum = _valnum_integer(cr->Const_val(), 
+#ifdef TARG_ST
+				  MTYPE_signed_type(cr->Dtyp()));
+#else
 				  MTYPE_is_signed(cr->Dtyp()));
+#endif
 	 _set_valnum(exprid, valnum, _exprid_to_vn, *_status.locked_to_vn);
 	 break;
 
@@ -854,7 +867,7 @@ VN::_valnum_lhs(EXPRID      lhs_exprid,
 					rhs_dty != MTYPE_M);
    BOOL do_cvt1 = 
       Need_Integral_Conversion(rhs_dty, lhs_dscty, NULL) != NOT_AT_ALL;
-#ifdef KEY // bug 11738: honor truncation effect of store
+#if defined( KEY) && !defined(TARG_ST) // bug 11738: honor truncation effect of store
    if (! do_cvt1 && 
        MTYPE_is_integral(lhs_dscty) &&
        MTYPE_byte_size(lhs_dscty) <= 4) {

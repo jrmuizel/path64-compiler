@@ -81,6 +81,7 @@
 #include "opt_verify.h"		// Def_before_use
 #include "opt_cvtl_rule.h"
 #include "opt_fold.h"
+#include "betarget.h"
 
 #if HAVE_ALLOCA_H
 #include <alloca.h>
@@ -406,6 +407,10 @@ EXP_OCCURS::Init(void)
   _temp._temp_cr = NULL;  // also clear def_occur as a side effect
   Set_rehash_cost(0);
   Set_Next(NULL);
+  #ifdef TARG_ST
+  // FdF 20080528: PRE on Iload/Istore for zero offset
+  Set_offset(0);
+#endif
 }
 
 STMTREP*
@@ -655,7 +660,7 @@ EXP_OCCURS::Get_temp_cr(EXP_WORKLST *wk, CODEMAP *htable)
   // At this point, we require a new Temp_cr().
   Set_temp_cr(htable->Add_def(wk->Preg(), wk->Cur_e_version(), NULL, 
 			      dtyp, dtyp, htable->Sym()->St_ofst(wk->Preg()), 
-#ifdef KEY
+#if defined(KEY) && !defined(TARG_ST)
 		      Occurrence()->Kind() == CK_VAR ? Occurrence()->Lod_ty() :
 #endif
 			      ST_type(MTYPE_To_PREG(dtyp)), 
@@ -1529,6 +1534,15 @@ EXP_WORKLST::Is_the_same_as(const CODEREP *cr)
       return FALSE;	// type class not the same
     if (MTYPE_size_min(cr->Dsctyp()) != MTYPE_size_min(Exp()->Dsctyp()))
       return FALSE;	// size not the same
+#ifdef TARG_ST
+    // [TTh] Reconfigurability: Never allow dynamic mtypes  to be equivalent
+    //       to any other mtypes, to avoid factorization that will introduce
+    //       unsupported conversion
+    if ((MTYPE_is_dynamic(cr->Dsctyp()) || MTYPE_is_dynamic(Exp()->Dsctyp())) &&
+	(cr->Dsctyp() != Exp()->Dsctyp())) {
+      return FALSE;     // mtype not the same, and at least one dynamic one
+    }
+#endif
 
 #if 0
     if (cr->Ivar_occ()->Aux_id() != Exp()->Ivar_occ()->Aux_id()) // different vsym
@@ -1602,13 +1616,17 @@ EXP_WORKLST::Is_the_same_as(const CODEREP *cr)
     if (cr->Opr() == OPR_INTRINSIC_OP &&
 	cr->Intrinsic() != Exp()->Intrinsic())
       return FALSE;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     else if (cr->Opr() == OPR_PURE_CALL_OP &&
              cr->Call_op_aux_id() != Exp()->Call_op_aux_id())
       return FALSE;
 #endif
     else if (cr->Opr() == OPR_CVTL && cr->Offset() != Exp()->Offset())
       return FALSE;
+#ifdef TARG_ST
+    else if (cr->Opr() == OPR_SUBPART && cr->Subpart_index() != Exp()->Subpart_index())
+      return FALSE;
+#endif
     else if ((cr->Opr() == OPR_EXTRACT_BITS || cr->Opr() == OPR_COMPOSE_BITS)
 	     && (cr->Op_bit_offset() != Exp()->Op_bit_offset() ||
 		 cr->Op_bit_size() != Exp()->Op_bit_size()))
@@ -2090,7 +2108,7 @@ ETABLE::Generate_cur_expr(const BB_NODE *bb, INT opnd_num, CODEREP *newcr, BOOL 
 		 "node bb:%d Aux:%d.", bb->Id(), newcr->Aux_id()));
 	if (fix_zero_ver && var_phi->OPND(opnd_num)->Is_flag_set(CF_IS_ZERO_VERSION))
 	  Htable()->Fix_zero_version(var_phi, opnd_num);
-#ifdef KEY // bug 7916
+#if defined( KEY) && !defined(TARG_ST) // bug 7916
 	if (var_phi->OPND(opnd_num)->Dsctyp() == MTYPE_UNKNOWN ||
 	    var_phi->OPND(opnd_num)->Is_flag_set(CF_MADEUP_TYPE)) {
 	  Is_True(newcr->Dsctyp() != MTYPE_UNKNOWN,
@@ -2195,7 +2213,7 @@ ETABLE::Generate_cur_expr(const BB_NODE *bb, INT opnd_num, CODEREP *newcr, BOOL 
 		       "node bb:%d Aux:%d.", bb->Id(), kid->Aux_id()));
 	      if (fix_zero_ver && var_phi->OPND(opnd_num)->Is_flag_set(CF_IS_ZERO_VERSION))
 		Htable()->Fix_zero_version(var_phi, opnd_num);
-#ifdef KEY // bug 3070
+#if defined( KEY) && !defined(TARG_ST) // bug 3070
 	      if (var_phi->OPND(opnd_num)->Dsctyp() == MTYPE_UNKNOWN ||
 		  var_phi->OPND(opnd_num)->Is_flag_set(CF_MADEUP_TYPE)) {
 		var_phi->OPND(opnd_num)->Set_dtyp(kid->Dtyp());
@@ -2317,7 +2335,7 @@ ETABLE::Alloc_and_generate_cur_expr(const CODEREP *result_expr,
       newcr->Set_ivar_mu_node(CXX_NEW(MU_NODE(*result_expr->Ivar_mu_node()), mpool));
 					      
     } else if (newcr->Kind() == CK_OP && (newcr->Opr() == OPR_INTRINSIC_OP
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	       || newcr->Opr() == OPR_PURE_CALL_OP
 #endif
       )) {
@@ -2429,6 +2447,45 @@ ETABLE::Perform_deferred_ocopy_and_get_new_exprs(EXP_WORKLST *const worklist)
 	    worklist->Pre_kind() == PK_LPRE,
 	    ("ETABLE::Perform_deferred_ocopy_and_get_new_exprs: "
 	     "Found store, but store isn't inserted"));
+#ifdef TARG_ST
+    // FdF 20080528: PRE on Iload/Istore for zero offset
+    CODEREP *rhs = stmt->Rhs();
+    // It may be the case that worklist->Exp() was already an ADD with an constant offset:
+    //     LDID I4 I4 sym2v65535 0 ty=802  <u=0 cr53> flags:0xa b=-1
+    //   LDC I4 2097152 <u=0 cr19> flags:0x0 b=-1
+    // I4ADD <u=1 cr59> isop_flags:0x40 flags:0x1 b=E2
+    //ILOAD 128 
+    if ((occ->Get_offset() != 0) &&
+	(occ->Occurrence()->Opr() == OPR_ADD) &&
+	(occ->Occurrence()->Opnd(1)->Kind() == CK_CONST))
+      Is_True((rhs->Opr() == OPR_ADD) &&
+	      (rhs->Opnd(1)->Kind() == CK_CONST) &&
+	      (rhs->Opnd(1)->Const_val() == occ->Get_offset()+occ->Occurrence()->Opnd(1)->Const_val()),
+	      ("ETABLE::Perform_deferred_ocopy_and_get_new_exprs: "
+	       "Expression does not match updated expression for PRE on Iload/Istore"));
+    else {
+      if (occ->Get_offset() != 0) {
+	Is_True((rhs->Opr() == OPR_ADD) &&
+		(rhs->Opnd(1)->Kind() == CK_CONST) &&
+		(rhs->Opnd(1)->Const_val() == occ->Get_offset()),
+		("ETABLE::Perform_deferred_ocopy_and_get_new_exprs: "
+		 "Expression does not match updated expression for PRE on Iload/Istore"));
+	rhs = rhs->Opnd(0);
+      }
+      Is_True(worklist->Is_the_same_as(rhs) ||
+	      ((rhs->Opr() == OPR_CVT ||
+		rhs->Opr() == OPR_CVTL) &&
+	       worklist->Is_the_same_as(rhs->Opnd(0))),
+	      ("ETABLE::Perform_deferred_ocopy_and_get_new_exprs: "
+	       "Store to temp must save current expression"));
+      Is_True(occ->Occurrence() == rhs ||
+	      ((rhs->Opr() == OPR_CVT ||
+		rhs->Opr() == OPR_CVTL) &&
+	       occ->Occurrence() == rhs->Opnd(0)),
+	      ("ETABLE::Perform_deferred_ocopy_and_get_new_exprs: "
+	       "Occurrence coderep must match RHS of statement"));
+    }
+#else
     Is_True(worklist->Is_the_same_as(stmt->Rhs()) ||
 	    ((stmt->Rhs()->Opr() == OPR_CVT ||
 	      stmt->Rhs()->Opr() == OPR_CVTL) &&
@@ -2441,7 +2498,7 @@ ETABLE::Perform_deferred_ocopy_and_get_new_exprs(EXP_WORKLST *const worklist)
 	     occ->Occurrence() == stmt->Rhs()->Opnd(0)),
 	    ("ETABLE::Perform_deferred_ocopy_and_get_new_exprs: "
 	     "Occurrence coderep must match RHS of statement"));
-
+#endif
     // Now stmt is the inserted store to temp. We need to rehash its
     // RHS and Bottom_up_cr() the result if it got folded.
     BOOL     tree_changed = occ->Rehash_changed_expr();
@@ -2479,7 +2536,7 @@ ETABLE::Perform_deferred_ocopy_and_get_new_exprs(EXP_WORKLST *const worklist)
       Bottom_up_cr(stmt, 0, new_rhs, FALSE, URGENT_INSERT,
 		   0, OPCODE_UNKNOWN, worklist->Exclude_sr_cand());
     }
-#ifdef KEY // bug 4674: restore original expression in occurrence node so later
+#if defined( KEY) && !defined(TARG_ST) // bug 4674: restore original expression in occurrence node so later
     	   // reapplication of SSAPRE due to second order effect will be OK
     if (occ->Occurrence()->Kind() != worklist->Exp()->Kind()) {
       Is_True(occ->Occurrence()->Opr() == OPR_CVT ||
@@ -2729,6 +2786,12 @@ ETABLE::Bottom_up_stmt(STMTREP *stmt)
   stmt->Set_stmt_id(Cfg()->Get_stmt_id());
 #endif
 
+#ifdef TARG_ST
+  // FdF 20080307: Do not perform PRE on AFFIRM node, otherwise the
+  // original expression is no longer within this single node.
+  if (stmt_opr == OPR_AFFIRM)
+    return;
+#endif
   // for each statement see if they have a rhs and lhs and traverse
   // any expressions there
   CODEREP *rhs = stmt->Rhs();
@@ -2826,7 +2889,7 @@ ETABLE::Bottom_up_cr(STMTREP *stmt, INT stmt_kid_num, CODEREP *cr,
 	      ! cr->Is_ivar_volatile()) {
 	    Check_lftr_non_candidate(stmt, cr->Ilod_base(), cr->Op());
 	    if (same_base && WOPT_Enable_Ivar_PRE && cr->Ivar_has_e_num()) {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	      if (WOPT_Enable_Preserve_Mem_Opnds && opc != OPCODE_UNKNOWN &&
 		  (OPCODE_operator(opc) == OPR_ADD ||
 		   OPCODE_operator(opc) == OPR_SUB ||
@@ -3053,6 +3116,16 @@ EXP_OCCURS::Load_use_cr(ETABLE *etable, CODEREP * old_cr, CODEREP *cr)
     break;
   }
 
+  #ifdef ST100
+  // Arthur: I need to handle the I5 in the same way
+  if (Split_64_Bit_Int_Ops && 
+      MTYPE_size_min(cr->Dtyp()) == MTYPE_size_min(MTYPE_I4) &&
+      MTYPE_size_min(old_cr->Dtyp()) > MTYPE_size_min(MTYPE_I4) ) {
+    opc = OPCODE_make_op (OPR_CVT, cr->Dtyp(), old_cr->Dtyp());
+    new_cr->Init_expr(opc, cr);
+    return etable->Rehash_exp(new_cr, etable->Gvn(cr));
+  }
+#else
 #ifndef TARG_X8664 // bug 12918: MIPS cannot use Fixup_type here
   if (Split_64_Bit_Int_Ops && MTYPE_size_min(cr->Dtyp()) == 32 &&
       MTYPE_size_min(old_cr->Dtyp()) == 64) {
@@ -3062,6 +3135,7 @@ EXP_OCCURS::Load_use_cr(ETABLE *etable, CODEREP * old_cr, CODEREP *cr)
   }
 #else
   cr = cr->Fixup_type(old_cr->Dtyp(), etable->Htable());
+#endif
 #endif
 
   return cr; // to satisfy the compiler
@@ -3097,7 +3171,7 @@ EXP_WORKLST::Save_use_cr(const ETABLE *etable, CODEREP * old_cr)
 	old_cr->Set_dtyp(MTYPE_U8);
 	old_cr->Set_dsctyp(MTYPE_U4);
 	old_cr->Set_sign_extension_flag();
-#ifndef KEY
+#if !defined( KEY) || defined(TARG_ST)
       } else if (opc == OPC_U4U8CVT) {
 	old_cr->Set_dtyp(MTYPE_U4);
 	old_cr->Set_sign_extension_flag();
@@ -3355,6 +3429,14 @@ ETABLE::Recursive_rehash_and_replace(CODEREP           *x,
       expr = Recursive_rehash_and_replace(x->Istr_base(), occur, repl, 
 					  FALSE, depth+1, x->Op());
       if (expr) {
+#ifdef TARG_ST
+	// FdF 20080528: PRE on Iload/Istore for zero offset
+	if (x->Istr_base() == occur->Occurrence() && (occur->Get_offset() != 0)) {
+	  if (Tracing())
+	    fprintf(TFile ,"Set_offset for Istr_base from %d to %d\n", x->Offset(), x->Offset()-occur->Get_offset());
+	  cr->Set_offset(x->Offset()-occur->Get_offset());
+	}
+#endif
 	need_rehash = TRUE;
 	cr->Set_istr_base(expr);
 	cr->Set_ilod_base(NULL);
@@ -3366,6 +3448,14 @@ ETABLE::Recursive_rehash_and_replace(CODEREP           *x,
       expr = Recursive_rehash_and_replace(x->Ilod_base(), occur, repl,
 					  FALSE, depth+1, x->Op());
       if (expr) {
+#ifdef TARG_ST
+	// FdF 20080528: PRE on Iload/Istore for zero offset
+	if (x->Ilod_base() == occur->Occurrence() && (occur->Get_offset() != 0)) {
+	  if (Tracing())
+	    fprintf(TFile ,"Set_offset for Ilod_base from %d to %d\n", x->Offset(), x->Offset()-occur->Get_offset());
+	  cr->Set_offset(x->Offset()-occur->Get_offset());
+	}
+#endif
 	need_rehash = TRUE;
 	cr->Set_ilod_base(expr);
 	cr->Set_istr_base(NULL); 
@@ -3383,6 +3473,7 @@ ETABLE::Recursive_rehash_and_replace(CODEREP           *x,
       }
       else cr->Set_mload_size(x->Mload_size());
     }
+#ifndef TARG_ST
     else if (x->Opr() == OPR_ILOADX) {
       // process the index expression
       expr = Recursive_rehash_and_replace(x->Index(), occur, repl,
@@ -3395,6 +3486,7 @@ ETABLE::Recursive_rehash_and_replace(CODEREP           *x,
       if (! cr->Index()->Is_non_volatile_terminal(Opt_stab()))
 	all_kids_are_terminal = FALSE;  // 14527
     }
+#endif
     if (!need_rehash)
       return NULL;
     x->DecUsecnt();
@@ -3403,7 +3495,7 @@ ETABLE::Recursive_rehash_and_replace(CODEREP           *x,
     if (Pre_kind() == PK_VNFRE)
        VNFRE::replace_occurs(original_cr, x, occur->Stmt());
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (WOPT_Enable_Preserve_Mem_Opnds && opc != OPCODE_UNKNOWN &&
 	MTYPE_is_float(OPCODE_rtype(opc)) &&
 	(OPCODE_operator(opc) == OPR_ADD ||
@@ -3467,7 +3559,7 @@ ETABLE::Recursive_rehash_and_replace(CODEREP           *x,
       cr->Copy(*x);	
       cr->Set_usecnt(0);
       for  (INT32 i = 0; i < x->Kid_count(); i++) {
-#ifdef KEY // bug 12471: __builtin_expect's first kid must be constant
+#if defined( KEY) && !defined(TARG_ST) // bug 12471: __builtin_expect's first kid must be constant
 	if (cr->Opr() == OPR_INTRINSIC_OP && cr->Intrinsic() == INTRN_EXPECT &&
 	    i == 1)
 	  continue;
@@ -3638,6 +3730,11 @@ ETABLE::Replace_occurs(EXP_OCCURS *occur, OCCUR_REPLACEMENT *repl)
       { 
 	CODEREP *new_rhs = Rehash_and_replace(stmt->Rhs(), occur, repl, FALSE,
 					      stmt->Op());
+#ifdef TARG_ST
+	// FdF 20080528: PRE on Iload/Istore for zero offset
+	if (new_rhs != NULL)
+	  stmt->Set_rhs(new_rhs);
+#else
 
 #ifdef KEY // bug 5980: there can be duplicate real occur nodes inserted due
 	   // to LFTR
@@ -3662,7 +3759,7 @@ ETABLE::Replace_occurs(EXP_OCCURS *occur, OCCUR_REPLACEMENT *repl)
 		("ETABLE::Replace_occurs: RHS must need rehash"));
 #endif
 	stmt->Set_rhs(new_rhs);
-
+#endif
 	// Let the IV update status of the statement be reanalyzed.
 	//
 	stmt->Reset_iv_update();
@@ -3949,10 +4046,12 @@ ETABLE::Find_1st_order_exprs_with_temp(STMTREP *stmt, INT stmt_kid_num,
 	    Find_1st_order_exprs_with_temp(stmt, stmt_kid_num, cr->Mstore_size(),
 					 tempcr, FALSE, depth+1);
 	}
+#ifndef TARG_ST
 	else if ( ivar_opr == OPR_ILOADX) {
 	  Find_1st_order_exprs_with_temp(stmt, stmt_kid_num, cr->Index(),
 				       tempcr, FALSE, depth+1);
 	}
+#endif
       }
       break;
     case CK_OP:		// non-terminal
@@ -4087,6 +4186,14 @@ void
 ETABLE::Append_real_occurrence(CODEREP *cr, STMTREP *stmt, INT stmt_kid_num,
                                UINT depth, BOOL is_istore)
 {
+#ifdef TARG_ST
+  // FdF 20081126: Do not create an occurence if a temporary cannot be
+  // allocated
+  if (!CGTARG_Can_Allocate_Reg_For_Mtype(cr->Dtyp())) {
+    // printf("Cannot perform PRE on dtyp %d(Append)\n", cr->Dtyp());
+    return;
+  }
+#endif
   // Use the hash function to find the WORKLST
   EXP_WORKLST *worklist = Get_worklst(cr);
 
@@ -4136,6 +4243,14 @@ void
 ETABLE::Insert_real_occurrence(CODEREP *cr, STMTREP *stmt, INT stmt_kid_num,
 			       UINT depth, BOOL is_istore, BOOL urgent)
 {
+#ifdef TARG_ST
+  // FdF 20081126: Do not create an occurence if a temporary cannot be
+  // allocated
+  if (!CGTARG_Can_Allocate_Reg_For_Mtype(cr->Dtyp())) {
+    // printf("Cannot perform PRE on dtyp %d(Insert)\n", cr->Dtyp());
+    return;
+  }
+#endif
   // Use the hash function to find the WORKLST
   EXP_WORKLST *worklist = Get_worklst(cr, urgent);
 
@@ -4401,7 +4516,34 @@ ETABLE::Perform_PRE_optimization(void)
 	      cur_worklst->Exp()->Print_bit()));
     Is_Trace_cmd(Tracing(),cur_worklst->Exp()->Print(0,TFile));
     Is_Trace_cmd(Tracing(),cur_worklst->Print(TFile, Lftr()->Exp_hash(cur_worklst)));
+#ifdef TARG_ST
+    if(WOPT_Enable_Compare_Hoisting == FALSE){
 
+	  //remove compare with only one occurence from list
+	  EXP_OCCURS_PAIR *exp_occurs_pair = Lftr()->Exp_hash(cur_worklst);
+	  EXP_OCCURS *exp_occurs;
+
+	  EXP_ALL_OCCURS_ITER exp_occ_iter(cur_worklst->Real_occurs().Head(), exp_occurs_pair, cur_worklst->Phi_occurs().Head(), cur_worklst->Phi_pred_occurs().Head(), NULL /*no exit list*/);
+
+	  int nb_occurence = 0;
+	  FOR_ALL_NODE(exp_occurs, exp_occ_iter, Init()){
+
+		switch (exp_occurs->Occ_kind()) {
+		case EXP_OCCURS::OCC_REAL_OCCUR:
+		  nb_occurence++;
+		  break;
+		default:
+		  ;
+		}
+	  }
+
+	  OPERATOR exp_opr = cur_worklst->Exp()->Opr();
+	  if ( (exp_opr == OPR_LE || exp_opr == OPR_NE || exp_opr == OPR_LT ||
+			exp_opr == OPR_EQ || exp_opr == OPR_GT || exp_opr == OPR_GE ) && nb_occurence < 2) {
+		continue;
+	  }
+	}
+#endif
 
     // do stuff for each expression
     Per_worklst_cleanup(cur_worklst);
@@ -4991,6 +5133,16 @@ XTABLE::Lexically_identical(CODEREP *cr1, CODEREP *cr2) const
       return FALSE;
     if (MTYPE_size_min(cr1->Dsctyp()) != MTYPE_size_min(cr2->Dsctyp()))
       return FALSE;
+#ifdef TARG_ST
+    // [TTh] Reconfigurability: Never allow dynamic mtypes  to be equivalent
+    //       to any other mtypes, to avoid factorization that will introduce
+    //       unsupported conversion
+    if ((MTYPE_is_dynamic(cr1->Dsctyp()) || MTYPE_is_dynamic(cr2->Dsctyp())) &&
+	(cr1->Dsctyp() != cr2->Dsctyp())) {
+      return FALSE;     // mtype not the same, and at least one dynamic one
+    }
+#endif
+
     CODEREP *base1 = cr1->Ilod_base() ? cr1->Ilod_base() : cr1->Istr_base();
     CODEREP *base2 = cr2->Ilod_base() ? cr2->Ilod_base() : cr2->Istr_base();
     if (! Opnd_lex_identical(base1, base2)) 
@@ -4999,10 +5151,12 @@ XTABLE::Lexically_identical(CODEREP *cr1, CODEREP *cr2) const
       if (! Opnd_lex_identical(cr1->Mload_size(), cr2->Mload_size())) 
 	return FALSE;
     }
+#ifndef TARG_ST
     else if (cr1->Opr() == OPR_ILOADX) {
       if (! Opnd_lex_identical(cr1->Index(), cr2->Index())) 
 	return FALSE;
     }
+#endif
   }
   else { // CK_OP
     if (cr1->Kid_count() != cr2->Kid_count()) return FALSE;
@@ -5021,12 +5175,16 @@ XTABLE::Lexically_identical(CODEREP *cr1, CODEREP *cr2) const
     // check additional fields for specific opcodes
     if (cr1->Opr() == OPR_INTRINSIC_OP)
       if (cr1->Intrinsic() != cr2->Intrinsic()) return FALSE;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (cr1->Opr() == OPR_PURE_CALL_OP)
       if (cr1->Call_op_aux_id() != cr2->Call_op_aux_id()) return FALSE;
 #endif
     if (cr1->Opr() == OPR_CVTL)
       if (cr1->Offset() != cr2->Offset()) return FALSE;
+#ifdef TARG_ST
+    if (cr1->Opr() == OPR_SUBPART)
+      if (cr1->Subpart_index() != cr2->Subpart_index()) return FALSE;
+#endif
   }
   return TRUE;
 }
@@ -5052,7 +5210,7 @@ XTABLE::Hash(CODEREP *cr) const
   // CK_OP
   IDX_32 hvalue = 0;
   if (cr->Opr() != OPR_INTRINSIC_OP
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       && cr->Opr() != OPR_PURE_CALL_OP
 #endif
      ) {
@@ -5072,9 +5230,11 @@ XTABLE::Is_compound(CODEREP *cr) const
   if (cr->Kind() == CK_IVAR) {  // cannot be PARM node
     if (cr->Opr() == OPR_MLOAD)
       return TRUE;
+#ifndef TARG_ST
     if (cr->Opr() == OPR_ILOADX)
       if (! cr->Index()->Is_non_volatile_terminal(_opt_stab))
 	return TRUE;
+#endif
     CODEREP *base = cr->Ilod_base() ? cr->Ilod_base() : cr->Istr_base();
     if (! base->Is_non_volatile_terminal(_opt_stab))
       return TRUE;
@@ -5084,7 +5244,7 @@ XTABLE::Is_compound(CODEREP *cr) const
   if (cr->Is_isop_flag_set(ISOP_SSAPRE_OMITTED))
     return TRUE;
   if (cr->Opr() != OPR_INTRINSIC_OP
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       && cr->Opr() != OPR_PURE_CALL_OP
 #endif
      ) {
@@ -5162,7 +5322,7 @@ XTABLE::Bottom_up_cr(CODEREP *cr)
     }
   case CK_OP: {
     if (cr->Opr() != OPR_INTRINSIC_OP
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
         && cr->Opr() != OPR_PURE_CALL_OP
 #endif
        ) {

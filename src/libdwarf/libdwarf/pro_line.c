@@ -113,6 +113,33 @@ dwarf_lne_end_sequence(Dwarf_P_Debug dbg,
     return retval;
 }
 
+#ifdef TARG_ST
+/*------------------------------------------------------------------------
+	Ask to emit end_seqence opcode. Used normally at the end of a 
+	compilation unit. Can also be used in the middle if there
+	are gaps in the region described by the code address. 
+	This version uses symbols to specify the begin and end location of
+	the sequence. The end_address is also provided but will be only used
+	to know whether or not the offset != 0.
+-------------------------------------------------------------------------*/
+Dwarf_Unsigned 
+dwarf_lne_end_sequence_symbolic(
+	Dwarf_P_Debug dbg, 
+	Dwarf_Addr end_address,
+	Dwarf_Unsigned beginsymidx,
+	Dwarf_Unsigned endsymidx,
+	Dwarf_Error *error)
+{
+	Dwarf_Ubyte opc;
+	Dwarf_Unsigned retval;
+
+	opc = DW_LNE_end_sequence;
+	retval = 
+	    _dwarf_pro_add_line_entry(dbg,0,end_address,endsymidx,0,0,0,0,opc,error);
+	return retval;
+}
+#endif
+
 /*----------------------------------------------------------------------------
 	Add an entry in the internal list of lines mantained by producer. 
 	Opc indicates if an opcode needs to be generated, rather than just

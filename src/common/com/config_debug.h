@@ -190,10 +190,23 @@ typedef struct debug_flags {
 				   version */ 
   BOOL conform_check;		/* F90 Conformance check */
   BOOL conform_check_set;	/* ... option explicitly set ... */
+#ifdef TARG_ST
+  // TB Add -zerouv option from PathScale 2.1
+  BOOL zero_uv;			/* Enable setting local vars to 0 */
+  BOOL zero_uv_set;		/* ... option explicitly set ... */
+  INT32 trapuv_int_value; /* trapuv_int_value */
+  BOOL trapuv_int_value_set; /* option explicitly set.*/
+  INT64 trapuv_float_value; /* trapuv_float_value */
+  BOOL trapuv_float_value_set; /* option explicitly set.*/
+  INT32 trapuv_pointer_value; /* trapuv_pointer_value */
+  BOOL trapuv_pointer_value_set; /* option explicitly set.*/
+#else
+
 #ifdef KEY
   BOOL emit_ehframe;            /* Emit .eh_frame section for backtrace. */
   BOOL zero_uv;			/* Enable setting local vars to 0 */
   BOOL zero_uv_set;		/* ... option explicitly set ... */
+#endif
 #endif
 
   /* This buffer area allows references to new fields to be added in
@@ -231,6 +244,11 @@ extern DEBUG_FLAGS Initial_DEBUG;
 #define	ALIGN_COMPOSE	2	/* compile generated instructions for non-aligned data */
 #define	DEFAULT_ALIGN	ALIGN_NORMAL
 
+#ifdef TARG_ST
+#define DEFAULT_TRAP_UV_INT 0xdeaddead
+#define DEFAULT_TRAP_UV_FLOAT 0xfffa5a5a
+#define DEFAULT_TRAP_UV_POINTER 0
+#endif
 /* Access to the current TOS struct is via pseudo-global variables: */
 /* bounds_check same as subscript_check */
 #define DEBUG_Const_Mod_Warning		(Current_DEBUG->cmod_warn)
@@ -291,12 +309,26 @@ extern DEBUG_FLAGS Initial_DEBUG;
 #define DEBUG_Alignment_Compose		(Current_DEBUG->alignment==ALIGN_COMPOSE)
 #define DEBUG_Conform_Check		(Current_DEBUG->conform_check)
 #define DEBUG_Conform_Check_Set	        (Current_DEBUG->conform_check_set)
+#ifdef TARG_ST
+  // TB Add -zerouv option from PathScale 2.1
+#define DEBUG_Zero_Uv			(Current_DEBUG->zero_uv)
+#define DEBUG_Zero_Uv_Set		(Current_DEBUG->zero_uv_set)
+ // TB: For trapuv_int_value option
+#define DEBUG_Trapuv_Int_Value		(Current_DEBUG->trapuv_int_value)
+#define DEBUG_Trapuv_Int_Value_Set		(Current_DEBUG->trapuv_int_value_set)
+ // TB: For trapuv_float_value option
+#define DEBUG_Trapuv_Float_Value		(Current_DEBUG->trapuv_float_value)
+#define DEBUG_Trapuv_Float_Value_Set		(Current_DEBUG->trapuv_float_value_set)
+ // TB: For trapuv_pointer_value option
+#define DEBUG_Trapuv_Pointer_Value		(Current_DEBUG->trapuv_pointer_value)
+#define DEBUG_Trapuv_Pointer_Value_Set		(Current_DEBUG->trapuv_pointer_value_set)
+#else
 #ifdef KEY
 #define DEBUG_Emit_Ehframe              (Current_DEBUG->emit_ehframe)
 #define DEBUG_Zero_Uv			(Current_DEBUG->zero_uv)
 #define DEBUG_Zero_Uv_Set		(Current_DEBUG->zero_uv_set)
 #endif
-
+#endif
 
 /* Initialize the current top of stack to defaults: */
 extern void DEBUG_Init_Config ( void );

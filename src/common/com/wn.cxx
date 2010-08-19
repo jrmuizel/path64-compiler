@@ -59,7 +59,12 @@
 #include "stab.h"
 #include "irbdata.h"
 #include "wn.h"
+#ifdef TARG_ST 
 #include "config_targ.h"
+#include "config_debug.h" // TB: for -DEBUG:trapuv_int_value option
+#else
+#include "config_targ.h"
+#endif
 #include "wn_simp.h"
 #include "wio.h"
 #include "targ_const.h"
@@ -93,14 +98,19 @@ MEM_POOL *WN_mem_pool_ptr = &WN_mem_pool;
 BOOL WN_mem_pool_initialized = FALSE;
 
 typedef enum {
-  UNKNOWN_TYPE, INT_TYPE, UINT_TYPE, FLOAT_TYPE, COMPLEX_TYPE
+  UNKNOWN_TYPE, INT_TYPE, UINT_TYPE, PTR_TYPE,FLOAT_TYPE, COMPLEX_TYPE
 } BTYPE;
 
 static struct winfo {
   BTYPE base_type:8;
   BTYPE comp_type:8;
   INT   size:16;
+#ifdef TARG_ST
+  //TB: extension support
+} WINFO [MTYPE_STATIC_LAST + 1] = {
+#else
 } WINFO [MTYPE_LAST + 1] = {
+#endif
   UNKNOWN_TYPE,  UNKNOWN_TYPE,  0,  /* UNKNOWN  */
   UNKNOWN_TYPE,  UNKNOWN_TYPE,  0,  /* MTYPE_B  */
   INT_TYPE,      UINT_TYPE,     1,  /* MTYPE_I1 */
@@ -111,10 +121,20 @@ static struct winfo {
   UINT_TYPE,     INT_TYPE,      2,  /* MTYPE_U2 */
   UINT_TYPE,     INT_TYPE,      4,  /* MTYPE_U4 */
   UINT_TYPE,     INT_TYPE,      8,  /* MTYPE_U8 */
+#ifdef TARG_ST
+  INT_TYPE,      UINT_TYPE,     8,  /* MTYPE_I5 */
+  UINT_TYPE,     INT_TYPE,      8,  /* MTYPE_U5 */
+  PTR_TYPE,      PTR_TYPE,      4,  /* MTYPE_A4 */
+  PTR_TYPE,      PTR_TYPE,      8,  /* MTYPE_A8 */
+#endif
   FLOAT_TYPE,    FLOAT_TYPE,    4,  /* MTYPE_F4 */
   FLOAT_TYPE,    FLOAT_TYPE,    8,  /* MTYPE_F8 */
   UNKNOWN_TYPE,  UNKNOWN_TYPE,  0,  /* MTYPE_F10*/
+#ifdef TARG_ST
+  UNKNOWN_TYPE,  UNKNOWN_TYPE,  0,  /* MTYPE_F16*/
+#else
   FLOAT_TYPE,    FLOAT_TYPE,   16,  /* MTYPE_F16*/
+#endif
   UNKNOWN_TYPE,  UNKNOWN_TYPE,  0,  /* MTYPE_STR*/
   FLOAT_TYPE,    FLOAT_TYPE,   16,  /* MTYPE_FQ  */
   UNKNOWN_TYPE,  UNKNOWN_TYPE,  0,  /* MTYPE_M  */
@@ -123,24 +143,48 @@ static struct winfo {
   COMPLEX_TYPE,  COMPLEX_TYPE, 32,  /* MTYPE_CQ */
   UNKNOWN_TYPE,  UNKNOWN_TYPE,  0,  /* MTYPE_V  */
   INT_TYPE,  	 UINT_TYPE,  	0,  /* MTYPE_BS */
+#ifndef TARG_ST
   UINT_TYPE,     INT_TYPE,      4,  /* MTYPE_A4 */
   UINT_TYPE,     INT_TYPE,      8,  /* MTYPE_A8 */
+#endif
+#ifndef TARG_ST
   UNKNOWN_TYPE,  UNKNOWN_TYPE,  0,  /* MTYPE_C10*/
   COMPLEX_TYPE,  COMPLEX_TYPE, 32,  /* MTYPE_C16*/
   UNKNOWN_TYPE,  UNKNOWN_TYPE,  0,  /* MTYPE_I16*/
   UNKNOWN_TYPE,  UNKNOWN_TYPE,  0   /* MTYPE_U16*/
+#endif
 };
+#ifdef TARG_ST
+#define WTYPE_base_type(t) \
+     ((t > MTYPE_STATIC_LAST) ? \
+       FmtAssert (FALSE, ("WTYPE_base_type: no access for dynamic MTYPE %d", (t))), UNKNOWN_TYPE \
+     : \
+       WINFO[t].base_type)
+#define WTYPE_comp_type(t) \
+     ((t > MTYPE_STATIC_LAST) ? \
+       FmtAssert (FALSE, ("WTYPE_comp_type: no access for dynamic MTYPE %d", (t))), UNKNOWN_TYPE \
+     : \
+       WINFO[t].comp_type)
+#define WTYPE_size(t) \
+     ((t > MTYPE_STATIC_LAST) ? \
+       FmtAssert (FALSE, ("WTYPE_size: no access for dynamic MTYPE %d", (t))), UNKNOWN_TYPE \
+     : \
+       WINFO[t].size)
 
+#else
 #define WTYPE_base_type(w) WINFO[w].base_type
 #define WTYPE_comp_type(w) WINFO[w].comp_type
 #define WTYPE_size(w)      WINFO[w].size
-
+#endif
 #if (defined(FRONT_END_C) || defined(FRONT_END_CPLUSPLUS)) && !defined(FRONT_END_MFEF77)
 
 BOOL FE_Address_Opt = TRUE;
 BOOL FE_Store_Opt = TRUE;
+#ifdef TARG_ST
+// Arthur: moved to config.cxx,h
+#else
 BOOL FE_Cvtl_Opt = TRUE;
-
+#endif
 extern "C" { WN * WN_COPY_Tree ( WN * ); }
 
 static UINT64 masks [] = { 0, 0xff, 0xffff, 0, 0xffffffffULL,
@@ -193,6 +237,11 @@ BOOL
 Types_Are_Compatible ( TYPE_ID ltype, WN * wn )
 {
   TYPE_ID  rtype = WN_rtype(wn);
+#ifdef TARG_ST
+  //  TB: dynamic MTYPE 
+  if (rtype > MTYPE_STATIC_LAST ||  ltype > MTYPE_STATIC_LAST)
+    return (rtype == ltype);
+#endif
   return (    ( WTYPE_base_type(ltype) == WTYPE_base_type(rtype) )
 	   || ( WTYPE_base_type(ltype) == WTYPE_comp_type(rtype) ) );
 } /* Types_Are_Compatible */
@@ -220,6 +269,13 @@ IPO_Types_Are_Compatible ( TYPE_ID ltype, TYPE_ID rtype )
     /* if the base types are the same or the base type of the stid  */
     /* is of comparable type and size of lhs is  */
     /* greater than size of rhs then return true */
+
+#ifdef TARG_ST
+  //  TB: dynamic MTYPE 
+  if (rtype > MTYPE_STATIC_LAST ||  ltype > MTYPE_STATIC_LAST)
+    return (rtype == ltype);
+#endif
+
 #ifdef KEY
     BOOL type_compatible = ((WTYPE_base_type(ltype) == WTYPE_base_type(rtype))
 		   || (WTYPE_base_type(ltype) == WTYPE_comp_type(rtype)));
@@ -547,13 +603,13 @@ WN_Create (OPERATOR opr, TYPE_ID rtype, TYPE_ID desc, mINT16 kid_count)
 	    ("Illegal number of kids for WN_Create"));
 
     /* Find the memory.  First try a free list, then go to the MEM_POOL.
-     * Note: For safety, we use a zero'd MEM_POOL and zero new nodes
+     * Note: For safety, we use a zero'd MEM_POOL and bzero new nodes
      *       popped from a free list, but clients should not be relying
      *	   on uninitialized fields being zeroed.
      */
     if (free_list && !WN_FREE_LIST_Empty(free_list)) {
 	wn = WN_FREE_LIST_Pop(free_list);
-	memset(wn, 0, size);
+	memset(wn, 0,size);
     } else {
 	if (WN_mem_pool_ptr == &WN_mem_pool && !WN_mem_pool_initialized) {
 	    MEM_POOL_Initialize(WN_mem_pool_ptr, "WHIRL Nodes", TRUE);
@@ -982,6 +1038,10 @@ WN *WN_CreateReturn(void)
   WN *wn;
 
   wn = WN_Create(OPC_RETURN,0);
+#ifdef TARG_ST
+  //TB: Set the is_return_val_lowered flag to FALSE by default
+  WN_is_return_val_lowered(wn) = FALSE;
+#endif
 
   return(wn);
 }
@@ -1182,6 +1242,13 @@ WN_CreateIstore (OPERATOR opr, TYPE_ID rtype, TYPE_ID desc,
      WN_store_offset(wn) = offset;
      WN_set_ty(wn,ty);
      WN_set_field_id(wn, field_id);
+#ifdef TARG_ST
+#ifdef FRONT_END
+    // [FdF]: We may have to lower OPC_MISTORE in vho_lower
+    if (opc == OPC_MISTORE) Set_PU_has_very_high_whirl (Get_Current_PU ());
+#endif /* FRONT_END */
+#endif
+
   }
   else {
     /* Parent pointer (if it exists) for returned node must be NULL */
@@ -1275,6 +1342,16 @@ WN *
 WN_CreateStid (OPERATOR opr, TYPE_ID rtype, TYPE_ID desc,
 	       WN_OFFSET offset, ST* st, TY_IDX ty, WN *value, UINT field_id)
 {
+#ifdef TARG_ST
+    // There is one case when we need to accept it
+    if (!Types_Are_Compatible(desc,value)) {
+      if (desc != MTYPE_B && WN_rtype(value) == MTYPE_B) {
+	DevWarn("Forcing a %s %s STID", MTYPE_name(WN_rtype(value)), MTYPE_name(desc));
+	value = WN_Cvt(MTYPE_B, desc, value);
+      }
+    }
+#endif
+
     OPCODE opc = OPCODE_make_op (opr, rtype, desc);
     WN *wn;
     ST_IDX st_idx = ST_st_idx (st);
@@ -1359,6 +1436,12 @@ WN_CreateStid (OPERATOR opr, TYPE_ID rtype, TYPE_ID desc,
     WN_st_idx(wn) = st_idx;
     WN_set_ty(wn,ty);
     WN_set_field_id(wn, field_id);
+#ifdef TARG_ST
+#ifdef FRONT_END
+    // [CG]: We may have to lower OPC_MSTID in vho_lower
+    if (opc == OPC_MSTID) Set_PU_has_very_high_whirl (Get_Current_PU ());
+#endif /* FRONT_END */
+#endif
 
     return(wn);
 }
@@ -2241,6 +2324,15 @@ WN *WN_CreateParm(TYPE_ID rtype, WN *parm_node, TY_IDX ty, UINT32 flag)
     WN_set_flag(wn, flag);
     return wn;
 }
+#ifdef TARG_ST
+WN *WN_CreateSubPart(WN *kid0, TYPE_ID rtype, TYPE_ID desc, WN_OFFSET subpart_idx)
+{
+    OPCODE opc = OPCODE_make_op(OPR_SUBPART, rtype, desc);
+    WN* wn = WN_CreateExp1(opc, kid0);
+    WN_subpart_index(wn) = subpart_idx;
+    return wn;
+}
+#endif
 
 WN *WN_Intconst(TYPE_ID rtype, INT64 value) 
 {
@@ -2434,29 +2526,65 @@ WN *WN_Floatconst( TYPE_ID type, double value)
   return NULL;
 }
 
+#ifdef TARG_ST
+// Unitialized pointer constant
+WN *WN_UVConstPointer( TYPE_ID type)
+{
+  return WN_Intconst( MTYPE_I4, DEBUG_Trapuv_Pointer_Value);
+}
+#endif
+
 WN *WN_UVConst( TYPE_ID type)
 {
   switch(type)
   {
   case MTYPE_I1:
   case MTYPE_U1:
+    #ifdef TARG_ST
+    //TB Add -trapuv_longlong_value option   
+    return WN_Intconst( Mtype_TransferSign(type, MTYPE_I4), DEBUG_Trapuv_Int_Value & 0x000000FF);
+#else
     return WN_Intconst( Mtype_TransferSign(type, MTYPE_I4), 0x5a);
+#endif
   case MTYPE_I2:
   case MTYPE_U2:
+#ifdef TARG_ST
+    //TB Add -trapuv_int_value option   
+    return WN_Intconst( Mtype_TransferSign(type, MTYPE_I4), DEBUG_Trapuv_Int_Value & 0x0000FFFF);
+#else
     return WN_Intconst( Mtype_TransferSign(type, MTYPE_I4), 0x5a5a);
+#endif
   case MTYPE_I4:
   case MTYPE_U4:
+#ifdef TARG_ST
+    //TB Add -trapuv_int_value option   
+    return WN_Intconst( Mtype_TransferSign(type, MTYPE_I4), DEBUG_Trapuv_Int_Value);
+#else
 #ifdef KEY
     return WN_Intconst(type, 0xffa5a5a5);		// Signalling NaN
 #else
     return WN_Intconst(type, 0xfffa5a5a);
 #endif
+#endif
   case MTYPE_I8:
   case MTYPE_U8:
+#ifdef TARG_ST
+    //TB Add -trapuv_Int_value option   
+    {
+      union convert {
+	int i2[2];
+	long long ll;
+      } cvt;
+      cvt.i2[0] = DEBUG_Trapuv_Int_Value;
+      cvt.i2[1] = DEBUG_Trapuv_Int_Value;
+      return WN_Intconst( Mtype_TransferSign(type, MTYPE_I8), cvt.ll);
+    }
+#else
 #ifdef KEY
     return WN_Intconst(type, 0xfff5a5a5fff5a5a5ll);	// Signalling NaN
 #else
     return WN_Intconst(type, 0xfffa5a5afffa5a5all);
+#endif
 #endif
   case MTYPE_F4:
   case MTYPE_F8:
@@ -2482,6 +2610,10 @@ WN *WN_UVConst( TYPE_ID type)
   case MTYPE_M:
   case MTYPE_V:
   case MTYPE_B:
+#ifdef TARG_ST
+    // [TB] Return null instead of raising an error
+    return NULL;
+#endif
     break;
   }
 
@@ -2648,10 +2780,16 @@ WN_Int_Type_Conversion( WN *wn, TYPE_ID to_type )
   Is_True( from_type == MTYPE_I1 ||
 	   from_type == MTYPE_I2 ||
 	   from_type == MTYPE_I4 ||
+#ifdef TARG_ST
+           from_type == MTYPE_I5 ||
+#endif
 	   from_type == MTYPE_I8 ||
 	   from_type == MTYPE_U1 ||
 	   from_type == MTYPE_U2 ||
 	   from_type == MTYPE_U4 ||
+#ifdef TARG_ST
+           from_type == MTYPE_U5 ||
+#endif
 	   from_type == MTYPE_U8,
       ("WN_Int_Type_Conversion: bad from_type: %d\n", from_type) );
 
@@ -2672,7 +2810,12 @@ WN_Int_Type_Conversion( WN *wn, TYPE_ID to_type )
     case MTYPE_U1:
     case MTYPE_U2:
     case MTYPE_U4:
-      return WN_CreateCvtl( OPC_I4CVTL, 8, wn );
+      return WN_CreateCvtl( OPC_I4CVTL, 8, wn ); 
+#ifdef TARG_ST
+    case MTYPE_I5:
+    case MTYPE_U5:
+      return WN_CreateCvtl(OPC_I5CVTL, 8, wn);
+#endif
     case MTYPE_I8:
     case MTYPE_U8:
       return WN_CreateCvtl( OPC_I8CVTL, 8, wn );
@@ -2687,6 +2830,11 @@ WN_Int_Type_Conversion( WN *wn, TYPE_ID to_type )
     case MTYPE_U2:
     case MTYPE_U4:
       return WN_CreateCvtl( OPC_I4CVTL, 16, wn );
+#ifdef TARG_ST
+      case MTYPE_I5:
+    case MTYPE_U5:
+      return WN_CreateCvtl(OPC_I5CVTL, 16, wn);
+#endif
     case MTYPE_I8:
     case MTYPE_U8:
       return WN_CreateCvtl( OPC_I8CVTL, 16, wn );
@@ -2700,21 +2848,51 @@ WN_Int_Type_Conversion( WN *wn, TYPE_ID to_type )
     case MTYPE_U2:
     case MTYPE_U4:
       return wn;
+#ifdef TARG_ST
+      case MTYPE_I5:
+    case MTYPE_U5:
+#endif
     case MTYPE_I8:
     case MTYPE_U8:
       return WN_Cvt( from_type, to_type, wn );
     } /* end to_type = I4 */
+
+#ifdef TARG_ST
+  case MTYPE_I5:
+    switch ( from_type ) {
+    case MTYPE_I1:
+    case MTYPE_I2:
+    case MTYPE_I4:
+    case MTYPE_I5:
+    case MTYPE_U1:
+    case MTYPE_U2:
+    case MTYPE_U4:
+    case MTYPE_U5:
+      return wn;
+
+    case MTYPE_I8:
+    case MTYPE_U8:
+      return WN_Cvt( from_type, to_type, wn );
+    } /* end to_type = I5 */
+#endif
   case MTYPE_I8:
     switch ( from_type ) {
     case MTYPE_I1:
     case MTYPE_I2:
     case MTYPE_I4:
+#ifdef TARG_ST
+      case MTYPE_I5:
+#endif
     case MTYPE_U1:
     case MTYPE_U2:
     case MTYPE_U4:
+#ifdef TARG_ST
+    case MTYPE_U5:
+#endif
       return WN_Cvt( from_type, to_type, wn );
     case MTYPE_I8:
     case MTYPE_U8:
+
       return wn;
     } /* end to_type = I8 */
   case MTYPE_U1:
@@ -2727,6 +2905,11 @@ WN_Int_Type_Conversion( WN *wn, TYPE_ID to_type )
     case MTYPE_U2:
     case MTYPE_U4:
       return WN_CreateCvtl( OPC_U4CVTL, 8, wn );
+#ifdef TARG_ST
+       case MTYPE_I5:
+    case MTYPE_U5:
+      return WN_CreateCvtl(OPC_U5CVTL, 8, wn);
+#endif
     case MTYPE_I8:
     case MTYPE_U8:
       return WN_CreateCvtl( OPC_U8CVTL, 8, wn );
@@ -2741,6 +2924,12 @@ WN_Int_Type_Conversion( WN *wn, TYPE_ID to_type )
     case MTYPE_U1:
     case MTYPE_U2:
       return wn;
+#ifdef TARG_ST
+       case MTYPE_I5:
+    case MTYPE_U5:
+      return WN_CreateCvtl(OPC_U5CVTL, 16, wn);
+#endif
+
     case MTYPE_I8:
     case MTYPE_U8:
       return WN_CreateCvtl( OPC_U8CVTL, 16, wn );
@@ -2754,18 +2943,47 @@ WN_Int_Type_Conversion( WN *wn, TYPE_ID to_type )
     case MTYPE_U2:
     case MTYPE_U4:
       return wn;
+
+#ifdef TARG_ST
+       case MTYPE_I5:
+    case MTYPE_U5:
+#endif
     case MTYPE_I8:
     case MTYPE_U8:
       return WN_Cvt( from_type, to_type, wn );
     } /* end to_type = U4 */
+#ifdef TARG_ST
+  case MTYPE_U5:
+    switch ( from_type ) {
+    case MTYPE_I1:
+    case MTYPE_I2:
+    case MTYPE_I4:
+    case MTYPE_I5:
+    case MTYPE_U1:
+    case MTYPE_U2:
+    case MTYPE_U4:
+    case MTYPE_U5:
+      return wn;
+
+    case MTYPE_I8:
+    case MTYPE_U8:
+      return WN_Cvt( from_type, to_type, wn );
+    } /* end to_type = U5 */
+#endif
   case MTYPE_U8:
     switch ( from_type ) {
     case MTYPE_I1:
     case MTYPE_I2:
     case MTYPE_I4:
+#ifdef TARG_ST
+    case MTYPE_I5:
+#endif
     case MTYPE_U1:
     case MTYPE_U2:
     case MTYPE_U4:
+#ifdef TARG_ST
+    case MTYPE_U5:
+#endif
       return WN_Cvt( from_type, to_type, wn );
     case MTYPE_I8:
     case MTYPE_U8:
@@ -2835,11 +3053,17 @@ WN_Type_Conversion( WN *wn, TYPE_ID to_type )
   Is_True( from_type == MTYPE_I1 ||
 	   from_type == MTYPE_I2 ||
 	   from_type == MTYPE_I4 ||
+#ifdef TARG_ST
+           from_type == MTYPE_I5 ||
+#endif
 	   from_type == MTYPE_I8 ||
 	   from_type == MTYPE_U1 ||
 	   from_type == MTYPE_U2 ||
 	   from_type == MTYPE_U4 ||
 	   from_type == MTYPE_U8 ||
+#ifdef TARG_ST
+           from_type == MTYPE_U5 ||
+#endif
 	   from_type == MTYPE_F4 ||
 	   from_type == MTYPE_F8 ||
 	   from_type == MTYPE_FQ ||
@@ -2848,10 +3072,16 @@ WN_Type_Conversion( WN *wn, TYPE_ID to_type )
   Is_True( to_type == MTYPE_I1 ||
 	   to_type == MTYPE_I2 ||
 	   to_type == MTYPE_I4 ||
+#ifdef TARG_ST
+           to_type == MTYPE_I5 ||
+#endif
 	   to_type == MTYPE_I8 ||
 	   to_type == MTYPE_U1 ||
 	   to_type == MTYPE_U2 ||
 	   to_type == MTYPE_U4 ||
+#ifdef TARG_ST
+           to_type == MTYPE_U5 ||
+#endif
 	   to_type == MTYPE_U8 ||
 	   to_type == MTYPE_F4 ||
 	   to_type == MTYPE_F8 ||
@@ -3003,10 +3233,11 @@ WN_set_st_addr_saved (WN* wn)
     case OPR_CAND:
     case OPR_CIOR:
     case OPR_ALLOCA:
+#ifndef TARG_ST
 #ifdef KEY
     case OPR_PURE_CALL_OP:
 #endif
-
+#endif
       break;
 
     case OPR_ARRAY:
@@ -3034,8 +3265,11 @@ WN_set_st_addr_saved (WN* wn)
     case OPR_RSQRT:
     case OPR_PARM:
     case OPR_OPTPARM:
+#ifdef TARG_ST
+    case OPR_SUBPART:
+#endif
     case OPR_RCOMMA:
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     case OPR_EXTRACT_BITS:
     case OPR_REPLICATE:
     case OPR_SHUFFLE:
@@ -3130,7 +3364,10 @@ WN_has_side_effects (const WN* wn)
     case OPR_TAS:
     case OPR_TRUNC:
     case OPR_EXTRACT_BITS:
-#ifdef KEY
+#ifdef TARG_ST
+    case OPR_SUBPART:
+#endif
+#if defined( KEY) && !defined(TARG_ST)
     case OPR_REDUCE_ADD:
     case OPR_REDUCE_MAX:
     case OPR_REDUCE_MIN:
@@ -3168,6 +3405,9 @@ WN_has_side_effects (const WN* wn)
     case OPR_NE:
     case OPR_PAIR:
     case OPR_REM:
+#ifdef TARG_ST
+    case OPR_LROTATE:
+#endif
     case OPR_SHL:
     case OPR_SUB:
     case OPR_XMPY:
@@ -3215,9 +3455,10 @@ WN_has_side_effects (const WN* wn)
 
         return FALSE;
       }
-
+#ifndef TARG_ST
 #ifdef KEY
     case OPR_PURE_CALL_OP:
+#endif
 #endif
     case OPR_INTRINSIC_OP: {
 
@@ -3233,6 +3474,15 @@ WN_has_side_effects (const WN* wn)
     }
 
     case OPR_LDID:
+#ifdef TARG_ST
+      // [CG] Use standard query
+      if (WN_Is_Volatile_Mem(wn)) return TRUE;
+#else
+      if (TY_is_volatile (WN_ty(wn)))
+        return (TRUE);
+#endif 
+      return FALSE;
+
     case OPR_LDBITS:
 
       if (TY_is_volatile (WN_ty(wn)))
@@ -3243,17 +3493,23 @@ WN_has_side_effects (const WN* wn)
     case OPR_ILOAD:
     case OPR_ILOADX:
     case OPR_ILDBITS:
-
+#ifdef TARG_ST
+      // [CG] Use standard query
+      if (WN_Is_Volatile_Mem(wn)) return TRUE;
+#else
       if (TY_is_volatile (WN_ty(wn)) || TY_is_volatile(WN_load_addr_ty(wn)))
         return (TRUE);
-
+#endif
       return WN_has_side_effects (WN_kid0(wn));
 
     case OPR_MLOAD:
-
+#ifdef TARG_ST
+      // [CG] Use standard query
+      if (WN_Is_Volatile_Mem(wn)) return TRUE;
+#else
       if (TY_is_volatile (WN_ty(wn)))
         return (TRUE);
-
+#endif
       if (WN_has_side_effects (WN_kid0(wn)))
         return TRUE;
 
@@ -3291,6 +3547,13 @@ WN_has_side_effects (const WN* wn)
   case OPR_MSTORE:
 #endif // KEY
     return TRUE;
+#ifdef TARG_ST
+      /* (cbr) recognize. compiler can't optimize out those */
+  case OPR_PREFETCH:
+    /* FdF 20080310: Do not optimize this out. */
+  case OPR_AFFIRM:
+    return TRUE;
+#endif
 
     default:
       Fail_FmtAssertion ("WN_has_side_effects not implemented for %s",
@@ -3307,3 +3570,11 @@ WN_Rrotate (TYPE_ID desc, WN *src, WN *cnt)
   Set_PU_has_very_high_whirl (Get_Current_PU ());
   return WN_CreateExp2 (OPR_RROTATE, Mtype_comparison (desc), desc, src, cnt);
 } /* WN_Rotate */
+#ifdef TARG_ST
+WN *
+WN_Lrotate (TYPE_ID desc, WN *src, WN *cnt)
+{
+  Set_PU_has_very_high_whirl (Get_Current_PU ());
+  return WN_CreateExp2 (OPR_LROTATE, Mtype_comparison (desc), desc, src, cnt);
+} /* WN_Rotate */
+#endif

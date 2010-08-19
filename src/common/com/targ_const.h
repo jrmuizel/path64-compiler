@@ -166,10 +166,21 @@ struct TCON {
 	    mINT64 ll1;
 	} llval;
 #endif
+#ifndef TARG_ST  /* do not use this - too endian dependant ! */
+
 	mINT32 word0;			/* for getting the first integer word */
+#endif
 	mINT64 i0;			/* Signed integer */
 	mUINT64 k0;			/* Unsigned integer */
-	float fval;			/* 32-bit floating point */
+        struct {
+#if HOST_IS_LITTLE_ENDIAN
+            float fval;			
+#else
+            mINT32 pad; /* align with lo order u0/v0 */ 
+            float  fval;
+#endif
+        } f;      
+//	float fval;			/* 32-bit floating point */
 	double dval;			/* 64-bit floating point */
 	QUAD_TYPE qval;			/* 128-bit floating point */
 	F16_TYPE f16val;		/* True 128-bit floating point */
@@ -202,22 +213,30 @@ inline TYPE_ID
 TCON_ty (const TCON& tcon)		{ return tcon.ty; }
 inline void
 Set_TCON_ty (TCON& tcon, TYPE_ID mtype)	{ tcon.ty = mtype; }    
-inline INT32
-TCON_ival (const TCON& tcon)		{ return tcon.vals.word0; }    
 #ifdef KEY
 inline INT32
 TCON_cival (const TCON& tcon)		{ return tcon.cmplxval.word0; }
 inline INT64
 TCON_ci0 (const TCON& tcon)		{ return tcon.cmplxval.i0; }
 #endif // KEY
+#ifdef TARG_ST
+inline INT32
+TCON_ival (const TCON& tcon)		{ return tcon.vals.ival.v0; }    
 inline UINT32
-TCON_uval (const TCON& tcon)		{ return (UINT32) tcon.vals.word0; }    
+TCON_uval (const TCON& tcon)		{ return tcon.vals.uval.u0; }
+#else
+inline INT32
+TCON_ival (const TCON& tcon)            { return tcon.vals.word0; }    
+inline UINT32
+TCON_uval (const TCON& tcon)            { return (UINT32) tcon.vals.word0; }   
+#endif
+
 inline INT64
 TCON_i0 (const TCON& tcon)		{ return tcon.vals.i0; }    
 inline UINT64
 TCON_k0 (const TCON& tcon)		{ return tcon.vals.k0; }
 inline float
-TCON_fval (const TCON& tcon)		{ return tcon.vals.fval; }
+TCON_fval (const TCON& tcon)		{ return tcon.vals.f.fval; }
 inline double
 TCON_dval (const TCON& tcon)		{ return tcon.vals.dval; }    
 inline QUAD_TYPE

@@ -758,7 +758,6 @@ private:
   WN           *_orig_wn;        // keep the original WN node to maintain the maps
   BOOL          _promoted_do;    // is a promoted do-loop
   INT32		_size_estimate;  // rough estimate of size of the loop body
-
   BB_LOOP(const BB_LOOP&);
   BB_LOOP& operator = (const BB_LOOP&);
 
@@ -1692,7 +1691,6 @@ public:
 			const BVECTOR *cr_vol_map = NULL);
 
   INT32	       Code_size_est(void) const;
-
   // Does this BB dominate every BB in the given  SC_NODE?
   BOOL Is_dom(SC_NODE *);
   // Does this BB post-dominate every BB in the given SC_NODE?
