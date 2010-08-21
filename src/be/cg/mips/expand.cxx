@@ -2490,9 +2490,11 @@ Expand_TOP_intrncall ( const OP *op, OPS *ops,
 // then ops is for first bb and ops2 is for bb after the label.
 // Otherwise only ops is filled in.
 TN *
-Exp_Intrinsic_Call (INTRINSIC id, TN *op0, TN *op1, TN *op2, OPS *ops, 
+Exp_Intrinsic_Call (WN *intrncall, TN *op0, TN *op1, TN *op2, OPS *ops, 
 		    LABEL_IDX *label, OPS *loop_ops)
 {
+  INTRINSIC id = WN_intrinsic(intrncall);
+  
   switch (id) {
   case INTRN_APPLY_ARGS: 
     {

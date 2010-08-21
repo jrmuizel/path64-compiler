@@ -6888,16 +6888,6 @@ Handle_INTRINSIC_CALL (WN *intrncall)
     }
     break;
 
-  case INTRN_FETCH_AND_AND_I4:
-  case INTRN_FETCH_AND_AND_I8:
-    {
-      Exp_Fetch_and_And( Expand_Expr(WN_kid0(intrncall), intrncall, NULL),
-                         Expand_Expr(WN_kid1(intrncall), intrncall, NULL),
-			 WN_rtype(intrncall),
-			 &New_OPs );
-      return next_stmt;
-    }
-    break;
   case INTRN_FETCH_AND_OR_I4:
   case INTRN_FETCH_AND_OR_I8:
     {
@@ -6985,7 +6975,7 @@ Handle_INTRINSIC_CALL (WN *intrncall)
   // [CG]:We keep the last generated op
   OP *last_intr_op =  OPS_last(&New_OPs);
 #else
-  result = Exp_Intrinsic_Call (id, 
+  result = Exp_Intrinsic_Call (intrncall,
 	opnd_tn[0], opnd_tn[1], opnd_tn[2], &New_OPs, &label, &loop_ops);
 #endif
 
