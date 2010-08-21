@@ -6888,26 +6888,6 @@ Handle_INTRINSIC_CALL (WN *intrncall)
     }
     break;
 
-  case INTRN_FETCH_AND_OR_I4:
-  case INTRN_FETCH_AND_OR_I8:
-    {
-      Exp_Fetch_and_Or( Expand_Expr(WN_kid0(intrncall), intrncall, NULL),
-                        Expand_Expr(WN_kid1(intrncall), intrncall, NULL),
-			WN_rtype(intrncall),
-			&New_OPs );
-      return next_stmt;
-    }
-    break;
-  case INTRN_FETCH_AND_XOR_I4:
-  case INTRN_FETCH_AND_XOR_I8:
-    {
-      Exp_Fetch_and_Xor( Expand_Expr(WN_kid0(intrncall), intrncall, NULL),
-                         Expand_Expr(WN_kid1(intrncall), intrncall, NULL),
-			 WN_rtype(intrncall),
-			 &New_OPs );
-      return next_stmt;
-    }
-    break;
   case INTRN_COMPARE_AND_SWAP_I4:
   case INTRN_COMPARE_AND_SWAP_I8:
     {

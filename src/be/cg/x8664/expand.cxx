@@ -7392,6 +7392,10 @@ Intrinsic_Returns_New_Value (INTRINSIC id)
 
 TN* Exp_Fetch_and_And(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
                       LABEL_IDX *label, OPS *loop_ops);
+TN* Exp_Fetch_and_Or(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                     LABEL_IDX *label, OPS *loop_ops);
+TN* Exp_Fetch_and_Xor(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                      LABEL_IDX *label, OPS *loop_ops);
 
 // initial expansion of intrinsic call (may not be complete lowering).
 // return result TN (if set).
@@ -7518,11 +7522,18 @@ Exp_Intrinsic_Call (WN *intrncall, TN *op0, TN *op1, TN *op2,
 
   case INTRN_FETCH_AND_AND_I4:
   case INTRN_FETCH_AND_AND_I8:
-    {
-      return Exp_Fetch_and_And(op0, op1, WN_rtype(intrncall),
-                               ops, label, loop_ops);
-    }
-    break;
+    return Exp_Fetch_and_And(op0, op1, WN_rtype(intrncall),
+                             ops, label, loop_ops);
+
+  case INTRN_FETCH_AND_OR_I4:
+  case INTRN_FETCH_AND_OR_I8:
+    return Exp_Fetch_and_Or(op0, op1, WN_rtype(intrncall),
+                            ops, label, loop_ops);
+
+  case INTRN_FETCH_AND_XOR_I4:
+  case INTRN_FETCH_AND_XOR_I8:
+    return Exp_Fetch_and_Xor(op0, op1, WN_rtype(intrncall),
+                             ops, label, loop_ops);
 
   default:  
     FmtAssert(FALSE, ("Exp_Intrinsic_Call: unimplemented"));
@@ -7934,44 +7945,39 @@ TN* Exp_Compare_and_Swap( TN* addr, TN* opnd1, TN* opnd2, TYPE_ID mtype, OPS* op
   return result;
 }
 
-// Expand FETCH_AND_AND intrinsic into the following format
-//        lock (addr) = (addr) & opnd1
-TN* Exp_Fetch_and_And(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
-                      LABEL_IDX *label, OPS *loop_ops)
+
+// Expand FETCH_AND_XXX intrinsic using lock cmpxchg instruction
+TN* Exp_Fetch_and_XXX(TOP intrn_top, TN* addr, TN* opnd1, TYPE_ID mtype,
+                      OPS* ops, LABEL_IDX *label, OPS *loop_ops)
 {
   TN* result_tn = Build_TN_Like(opnd1);
   TN* rflags = Rflags_TN();
   TOP top_cmpxchg = TOP_UNDEFINED;
   TOP top_ld = TOP_UNDEFINED;
-  TOP top = TOP_UNDEFINED;
 
   switch( mtype ){
   case MTYPE_I1:
   case MTYPE_U1:
     top_cmpxchg = TOP_lock_cmpxchg8;
     top_ld = TOP_ldu8_32;
-    top = TOP_and8;
     break;
 
   case MTYPE_I2:
   case MTYPE_U2:
     top_cmpxchg = TOP_lock_cmpxchg16;
     top_ld = TOP_ldu16_32;
-    top = TOP_and16;
     break;
 
   case MTYPE_I4:
   case MTYPE_U4:
     top_cmpxchg = TOP_lock_cmpxchg32;
     top_ld = TOP_ld32;
-    top = TOP_and32;
     break;
 
   case MTYPE_I8:
   case MTYPE_U8:
     top_cmpxchg = TOP_lock_cmpxchg64;
     top_ld = TOP_ld64;
-    top = TOP_and64;
     break;
 
   default:
@@ -7979,12 +7985,10 @@ TN* Exp_Fetch_and_And(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
 	       ("Exp_Compare_and_Swap: support me now") );
   }
 
-  const BOOL is_64bit = (top == TOP_lock_cmpxchg64);
-
   Build_OP(top_ld, result_tn, addr, Gen_Literal_TN(0, 4), loop_ops);
 
   TN* new_val = Build_TN_Of_Mtype(mtype);
-  Build_OP(top, new_val, result_tn, opnd1, loop_ops);
+  Build_OP(intrn_top, new_val, result_tn, opnd1, loop_ops);
 
   TN* tmp = Build_TN_Like(result_tn);
   Build_OP(top_cmpxchg, rflags, tmp, result_tn, new_val, addr, Gen_Literal_TN(0, 4), loop_ops);
@@ -7994,73 +7998,114 @@ TN* Exp_Fetch_and_And(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
   return result_tn;
 }
 
-// Expand FETCH_AND_OR intrinsic into the following format
-//        lock (addr) = (addr) | opnd1
-void Exp_Fetch_and_Or( TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops )
+
+TN* Exp_Fetch_and_And(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                      LABEL_IDX *label, OPS *loop_ops)
 {
   TOP top = TOP_UNDEFINED;
 
   switch( mtype ){
   case MTYPE_I1:
   case MTYPE_U1:
-    top = TOP_lock_or8;
+    top = TOP_and8;
     break;
 
   case MTYPE_I2:
   case MTYPE_U2:
-    top = TOP_lock_or16;
+    top = TOP_and16;
     break;
 
   case MTYPE_I4:
   case MTYPE_U4:
-    top = TOP_lock_or32;
+    top = TOP_and32;
     break;
 
   case MTYPE_I8:
   case MTYPE_U8:
-    top = TOP_lock_or64;
+    top = TOP_and64;
     break;
 
   default:
     FmtAssert( FALSE,
-               ("Exp_Fetch_and_Or: support me now") );
+	       ("Exp_Fetch_and_And: support me now") );
   }
-  Build_OP( top, opnd1, addr, Gen_Literal_TN(0,4), ops );
+
+  return Exp_Fetch_and_XXX(top, addr, opnd1, mtype, ops,
+                           label, loop_ops);
 }
 
-// Expand FETCH_AND_XOR intrinsic into the following format
-//        lock (addr) = (addr) ^ opnd1
-void Exp_Fetch_and_Xor( TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops )
+
+TN* Exp_Fetch_and_Or(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                     LABEL_IDX *label, OPS *loop_ops)
 {
   TOP top = TOP_UNDEFINED;
 
   switch( mtype ){
   case MTYPE_I1:
   case MTYPE_U1:
-    top = TOP_lock_xor8;
+    top = TOP_or8;
     break;
 
   case MTYPE_I2:
   case MTYPE_U2:
-    top = TOP_lock_xor16;
+    top = TOP_or16;
     break;
 
   case MTYPE_I4:
   case MTYPE_U4:
-    top = TOP_lock_xor32;
+    top = TOP_or32;
     break;
 
   case MTYPE_I8:
   case MTYPE_U8:
-    top = TOP_lock_xor64;
+    top = TOP_or64;
     break;
 
   default:
     FmtAssert( FALSE,
-               ("Exp_Fetch_and_Xor: support me now") );
+	       ("Exp_Fetch_and_Or: support me now") );
   }
-  Build_OP( top, opnd1, addr, Gen_Literal_TN(0,4), ops );
+
+  return Exp_Fetch_and_XXX(top, addr, opnd1, mtype, ops,
+                           label, loop_ops);
 }
+
+
+TN* Exp_Fetch_and_Xor(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                      LABEL_IDX *label, OPS *loop_ops)
+{
+  TOP top = TOP_UNDEFINED;
+
+  switch( mtype ){
+  case MTYPE_I1:
+  case MTYPE_U1:
+    top = TOP_xor8;
+    break;
+
+  case MTYPE_I2:
+  case MTYPE_U2:
+    top = TOP_xor16;
+    break;
+
+  case MTYPE_I4:
+  case MTYPE_U4:
+    top = TOP_xor32;
+    break;
+
+  case MTYPE_I8:
+  case MTYPE_U8:
+    top = TOP_xor64;
+    break;
+
+  default:
+    FmtAssert( FALSE,
+	       ("Exp_Fetch_and_Or: support me now") );
+  }
+
+  return Exp_Fetch_and_XXX(top, addr, opnd1, mtype, ops,
+                           label, loop_ops);
+}
+
 
 // Expand FETCH_AND_SUB intrinsic into the following format
 //        lock (addr) = (addr) - opnd1
