@@ -7908,10 +7908,10 @@ TN* Exp_Compare_and_Swap( TN* addr, TN* opnd1, TN* opnd2, TYPE_ID mtype, OPS* op
 	       ("Exp_Compare_and_Swap: support me now") );
   }
 
-  TN* result;
   const BOOL is_64bit = (top == TOP_lock_cmpxchg64);
-  result = Build_TN_Of_Mtype ( is_64bit ? MTYPE_I8: MTYPE_I4);
-  Build_OP( top, rflags, opnd1, opnd2, addr, Gen_Literal_TN(0,4), ops );
+  TN* result = Build_TN_Of_Mtype ( is_64bit ? MTYPE_I8: MTYPE_I4);
+  TN* tmp = Build_TN_Like(result);
+  Build_OP( top, rflags, tmp, opnd1, opnd2, addr, Gen_Literal_TN(0,4), ops );
   if (is_64bit)
     Build_OP(TOP_ldc64, result, Gen_Literal_TN(0,8), ops);
   else

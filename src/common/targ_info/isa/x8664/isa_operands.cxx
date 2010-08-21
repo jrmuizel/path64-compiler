@@ -2760,6 +2760,7 @@ main()
 		    TOP_lock_cmpxchg8,
 		    TOP_UNDEFINED);
   Result(0,  eflags);
+  Result(1,  eax);
   Operand(0, eax, opnd1);
   Operand(1, int8, opnd2);
   Operand(2, int64, base);
@@ -2769,6 +2770,7 @@ main()
 		    TOP_lock_cmpxchg16,
 		    TOP_UNDEFINED);
   Result(0,  eflags);
+  Result(1,  eax);
   Operand(0, eax, opnd1);
   Operand(1, int16, opnd2);
   Operand(2, int64, base);
@@ -2778,6 +2780,7 @@ main()
 		    TOP_lock_cmpxchg32,
 		    TOP_UNDEFINED);
   Result(0,  eflags);
+  Result(1,  eax);
   Operand(0, eax, opnd1);
   Operand(1, int32, opnd2);
   Operand(2, int64, base);
@@ -2787,6 +2790,7 @@ main()
 		    TOP_lock_cmpxchg64,
 		    TOP_UNDEFINED);
   Result(0,  rflags);
+  Result(1,  eax);
   Operand(0, rax, opnd1);
   Operand(1, int64, opnd2);
   Operand(2, int64, base);
