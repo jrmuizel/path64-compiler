@@ -929,6 +929,7 @@ add_file_args (string_list_t *args, phases_t index)
 			}
 			add_inc_path(args, "%s/include", root);
 #else
+            add_string(args, "-D__STDCXX_CONFIG=\<__stdcxx_config.h\>");
 			add_inc_path(args, "%s/lib/" PSC_FULL_VERSION "/include",
 				     root);
                         if (source_lang == L_CC && !option_was_seen(O_nostdinc__)) {
