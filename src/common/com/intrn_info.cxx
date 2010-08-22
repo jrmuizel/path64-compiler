@@ -2811,6 +2811,9 @@ const intrn_info_t intrn_info[INTRINSIC_LAST+1] = {
     { /* F8CBRT */
         BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
 	IRETURN_F8, NULL, NULL, "cbrt"},
+    { /* INTRN_BUILTIN_EH_RETURN_DATA_REGNO */
+        BYVAL, PURE, NO_SIDEEFFECTS, DOES_RETURN, NOT_ACTUAL, NOT_CGINTRINSIC,
+        IRETURN_I4, "__builtin_eh_return_data_regno", "BUILTIN_EH_RETURN_DATA_REGNO", "xxx"},
 
 #ifdef TARG_X8664
     { /* V16F4SIN */

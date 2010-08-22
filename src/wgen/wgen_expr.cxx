@@ -8360,6 +8360,9 @@ WGEN_Expand_Expr (gs_t exp,
 		}
                 whirl_generated = TRUE;
 		break;
+          case GSBI_BUILT_IN_EH_RETURN_DATA_REGNO:
+            iopc = INTRN_BUILTIN_EH_RETURN_DATA_REGNO;
+            break;
 #ifdef TARG_ST
 	      case GSBI_BUILT_IN_FROB_RETURN_ADDR:
 		// [SC] Add builtin_frob_return_address, it is also an identity op

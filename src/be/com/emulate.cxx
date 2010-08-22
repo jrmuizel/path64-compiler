@@ -570,6 +570,7 @@ static WN *em_mod_float(WN *block, WN *x, WN *y);
 
 static WN *em_complex_exp(WN *block, WN *x);
 static WN *em_complex_cos(WN *block, WN *x);
+static WN *em_eh_return_data_regno(WN *block, WN *tree);
 
 static COERCE INTR_coerce_runtime(WN *tree, INT32 arg);
 static TYPE_ID INTR_parameter_type(WN *tree, INT32 arg);
@@ -5344,6 +5345,10 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
     break;
 #endif
 
+  case INTRN_BUILTIN_EH_RETURN_DATA_REGNO:
+    return em_eh_return_data_regno(block, tree);
+    break;
+
   default:
     break;
   }
@@ -5536,3 +5541,20 @@ extern WN *emulate_fast_exp(WN *block, WN *tree)
   return NULL;
 }
 #endif
+
+static WN *em_eh_return_data_regno(WN *block, WN *tree) {
+  INT64 index = WN_const_val(WN_arg(tree, 0));
+  INT64 regno = -1;
+
+#if defined(TARG_X8664)
+  if(index == 0)
+    regno = 0;
+  else if(index == 1)
+    regno = Is_Target_64bit() ? 1 : 2;
+#else
+#error "Define em_eh_return_data_regno intrinsic for your platform"
+#endif
+
+  return WN_Intconst(MTYPE_I4, regno);
+}
+
