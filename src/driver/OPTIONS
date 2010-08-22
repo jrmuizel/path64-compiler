@@ -1318,7 +1318,11 @@ I-u%s		;		Cc	ld	"-u %s"
 	""
 -fnotraditional	;		Cc	f	self
 	""
+#ifdef PATH64_ENABLE_PSCRUNTIME
+-traditional	;		Cc,cpp	cpp	"-traditional-cpp"
+#else
 -traditional	;		Cc,cpp	cpp	self
+#endif
 	"Attempt to support traditional K&R style C"
 -no-traditional	;		Cc	f	self
 	""
@@ -1327,7 +1331,11 @@ I-u%s		;		Cc	ld	"-u %s"
 -no-pathcc		;		Cc	cpp	""
 	"Don't define __PATHCC__ and other macros"
 % cpp is also a define, so trick cpp
+#ifdef PATH64_ENABLE_PSCRUNTIME
+-traditional-c/**/pp	;		Cc,cpp cpp self
+#else
 -traditional-c/**/pp	;		Cc,cpp	NONE	"-traditional"
+#endif
 	""
 -trigraphs	;		Cc,cpp	cpp	self
 	""
