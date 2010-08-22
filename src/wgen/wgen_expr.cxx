@@ -2675,16 +2675,16 @@ emit_builtin_compare_and_swap (gs_t exp, INT32 k)
 
   opc = OPC_I4INTRINSIC_CALL;
   if (obj_mtype == MTYPE_I4)
-    iopc = INTRN_COMPARE_AND_SWAP_I4;
+    iopc = INTRN_VAL_COMPARE_AND_SWAP_I4;
   else
   if (obj_mtype == MTYPE_U4)
-    iopc = INTRN_COMPARE_AND_SWAP_I4;
+    iopc = INTRN_VAL_COMPARE_AND_SWAP_I4;
   else
   if (obj_mtype == MTYPE_I8)
-    iopc = INTRN_COMPARE_AND_SWAP_I8;
+    iopc = INTRN_VAL_COMPARE_AND_SWAP_I8;
   else
   if (obj_mtype == MTYPE_U8)
-    iopc = INTRN_COMPARE_AND_SWAP_I8;
+    iopc = INTRN_VAL_COMPARE_AND_SWAP_I8;
   else {
     Fail_FmtAssertion ("unknown object type in __builtin_lock_test_and_set");
     opc  = OPCODE_UNKNOWN;
@@ -8951,11 +8951,11 @@ WGEN_Expand_Expr (gs_t exp,
               case GSBI_BUILT_IN_VAL_COMPARE_AND_SWAP_1:
               case GSBI_BUILT_IN_VAL_COMPARE_AND_SWAP_2:
               case GSBI_BUILT_IN_VAL_COMPARE_AND_SWAP_4:
-                iopc = INTRN_COMPARE_AND_SWAP_I4;
+                iopc = INTRN_VAL_COMPARE_AND_SWAP_I4;
                 break;
 
               case GSBI_BUILT_IN_VAL_COMPARE_AND_SWAP_8:
-                iopc = INTRN_COMPARE_AND_SWAP_I8;
+                iopc = INTRN_VAL_COMPARE_AND_SWAP_I8;
                 break;
 #endif // FE_GNU_4_2_0
 #endif

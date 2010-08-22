@@ -6888,8 +6888,8 @@ Handle_INTRINSIC_CALL (WN *intrncall)
     }
     break;
 
-  case INTRN_COMPARE_AND_SWAP_I4:
-  case INTRN_COMPARE_AND_SWAP_I8:
+  case INTRN_VAL_COMPARE_AND_SWAP_I4:
+  case INTRN_VAL_COMPARE_AND_SWAP_I8:
     {
       result = Exp_Compare_and_Swap( Expand_Expr(WN_kid0(intrncall), intrncall, NULL),
 			 Expand_Expr(WN_kid1(intrncall), intrncall, NULL),

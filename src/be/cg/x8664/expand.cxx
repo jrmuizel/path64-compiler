@@ -7328,7 +7328,7 @@ static TYPE_ID
 Get_Intrinsic_Size_Mtype (INTRINSIC id)
 {
   switch (id) {
-  case INTRN_COMPARE_AND_SWAP_I4:
+  case INTRN_VAL_COMPARE_AND_SWAP_I4:
   case INTRN_LOCK_TEST_AND_SET_I4:
   case INTRN_LOCK_RELEASE_I4:
   case INTRN_FETCH_AND_ADD_I4:
@@ -7344,7 +7344,7 @@ Get_Intrinsic_Size_Mtype (INTRINSIC id)
   case INTRN_FETCH_AND_AND_I4:
   case INTRN_FETCH_AND_NAND_I4:
 	return MTYPE_I4;
-  case INTRN_COMPARE_AND_SWAP_I8:
+  case INTRN_VAL_COMPARE_AND_SWAP_I8:
   case INTRN_LOCK_TEST_AND_SET_I8:
   case INTRN_LOCK_RELEASE_I8:
   case INTRN_FETCH_AND_ADD_I8:
@@ -7934,14 +7934,7 @@ TN* Exp_Compare_and_Swap( TN* addr, TN* opnd1, TN* opnd2, TYPE_ID mtype, OPS* op
 
   const BOOL is_64bit = (top == TOP_lock_cmpxchg64);
   TN* result = Build_TN_Of_Mtype ( is_64bit ? MTYPE_I8: MTYPE_I4);
-  TN* tmp = Build_TN_Like(result);
-  Build_OP( top, rflags, tmp, opnd1, opnd2, addr, Gen_Literal_TN(0,4), ops );
-  if (is_64bit)
-    Build_OP(TOP_ldc64, result, Gen_Literal_TN(0,8), ops);
-  else
-    Build_OP(TOP_ldc32, result, Gen_Literal_TN(0,4), ops);
-  Build_OP( TOP_sete, result, rflags, ops );
-  Set_OP_cond_def_kind(OPS_last(ops), OP_ALWAYS_COND_DEF);
+  Build_OP( top, rflags, result, opnd1, opnd2, addr, Gen_Literal_TN(0,4), ops );
   return result;
 }
 
