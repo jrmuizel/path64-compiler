@@ -1939,6 +1939,8 @@ add_final_ld_args (string_list_t *args)
             return;
         }
 #ifdef PATH64_ENABLE_PSCRUNTIME
+        add_library(args, "compiler-rt");
+
         if(source_lang == L_CC &&
            !option_was_seen(O_nodefaultlibs) &&
                !option_was_seen(O_nostdlib) &&
