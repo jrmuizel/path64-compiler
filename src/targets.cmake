@@ -770,3 +770,13 @@ function(path64_add_multitarget_dependencies name)
     endforeach()
 endfunction()
 
+
+# Adds dependencies from multitarget
+function(path64_add_dependencies_from_multitarget name)
+    foreach(targ ${PATH64_ENABLE_TARGETS})
+        foreach(dep ${ARGN})
+       add_dependencies(${name} ${dep}-${targ})
+        endforeach()
+    endforeach()
+endfunction()
+
