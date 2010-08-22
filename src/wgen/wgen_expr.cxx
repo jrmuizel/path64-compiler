@@ -8948,6 +8948,7 @@ WGEN_Expand_Expr (gs_t exp,
                 break;
 
               // compare_and_swap
+
               case GSBI_BUILT_IN_VAL_COMPARE_AND_SWAP_1:
               case GSBI_BUILT_IN_VAL_COMPARE_AND_SWAP_2:
               case GSBI_BUILT_IN_VAL_COMPARE_AND_SWAP_4:
@@ -8956,6 +8957,16 @@ WGEN_Expand_Expr (gs_t exp,
 
               case GSBI_BUILT_IN_VAL_COMPARE_AND_SWAP_8:
                 iopc = INTRN_VAL_COMPARE_AND_SWAP_I8;
+                break;
+
+              case GSBI_BUILT_IN_BOOL_COMPARE_AND_SWAP_1:
+              case GSBI_BUILT_IN_BOOL_COMPARE_AND_SWAP_2:
+              case GSBI_BUILT_IN_BOOL_COMPARE_AND_SWAP_4:
+                iopc = INTRN_BOOL_COMPARE_AND_SWAP_I4;
+                break;
+
+              case GSBI_BUILT_IN_BOOL_COMPARE_AND_SWAP_8:
+                iopc = INTRN_BOOL_COMPARE_AND_SWAP_I8;
                 break;
 #endif // FE_GNU_4_2_0
 #endif

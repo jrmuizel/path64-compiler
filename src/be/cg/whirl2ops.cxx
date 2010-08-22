@@ -6888,19 +6888,6 @@ Handle_INTRINSIC_CALL (WN *intrncall)
     }
     break;
 
-  case INTRN_VAL_COMPARE_AND_SWAP_I4:
-  case INTRN_VAL_COMPARE_AND_SWAP_I8:
-    {
-      result = Exp_Compare_and_Swap( Expand_Expr(WN_kid0(intrncall), intrncall, NULL),
-			 Expand_Expr(WN_kid1(intrncall), intrncall, NULL),
-			 Expand_Expr(WN_kid2(intrncall), intrncall, NULL),
-			 WN_rtype(WN_kid1(intrncall)),
-			 &New_OPs );
-
-//      return next_stmt;
-      goto cont;
-    }
-    break;
   case INTRN_STMXCSR: {
       WN *lda = WN_kid0(WN_kid0(intrncall)); 
       TN *ofst_tn = Gen_Symbol_TN(WN_st(lda), WN_lda_offset(lda), 0);
