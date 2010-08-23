@@ -130,9 +130,15 @@ typedef long mpplock_t;
 #pragma weak pthread_mutex_init
 #pragma weak pthread_mutex_lock
 #pragma weak pthread_mutex_unlock
-#define MEM_LOCK_INIT		PTHREAD_MUTEX_INITIALIZER
+#define MEM_LOCK_INIT           PTHREAD_MUTEX_INITIALIZER
+/* glibc on linux is garbage */
+#if defined(__linux__)
+#define MEM_LOCK(lock)          { if (pthread_mutex_lock) pthread_mutex_lock(lock); }
+#define MEM_UNLOCK(lock)        { if (pthread_mutex_unlock) pthread_mutex_unlock(lock); }
+#else
 #define MEM_LOCK(lock)          pthread_mutex_lock(lock)
 #define MEM_UNLOCK(lock)        pthread_mutex_unlock(lock)
+#endif
 
 #elif   defined(_LITTLE_ENDIAN) && !defined(__sv2)
 /* do not use the following yet */
