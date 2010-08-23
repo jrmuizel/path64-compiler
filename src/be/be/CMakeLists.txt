@@ -213,6 +213,7 @@ path64_multiarch_link_libraries(be-static m ${libdl})
 path64_set_multiarch_property(be-static COMPILE_FLAGS
                               "-I${CMAKE_CURRENT_SOURCE_DIR}/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@  -I${CMAKE_CURRENT_SOURCE_DIR}/../cg/@ARCH@  -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 path64_add_multiarch_multiarch_dependencies(be-static generate_topcode)
+path64_install_multiarch(be-static)
 
 path64_add_multiarch_library(be SHARED be_sources)
 path64_set_multiarch_property(be PREFIX "")
@@ -229,6 +230,7 @@ path64_multiarch_link_multiarch_libraries(be targinfo)
 path64_multiarch_link_libraries(be SYS m ${libdl})
 # serialize to generate preg_list.cxx only once
 path64_add_multiarch_multiarch_dependencies(be be-static) 
+path64_install_multiarch(be)
 
 
 path64_set_multiarch_sources(be_exec_sources COMMON
@@ -251,6 +253,7 @@ if(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
     # --export-dynamic is not needed on osol
     path64_set_multiarch_property(be-exec LINK_FLAGS "-Wl,--export-dynamic")
 endif()
+path64_install_multiarch(be-exec)
 
 foreach(arch ${PATH64_ENABLE_ARCHES})
     install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"be${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/ipl${CMAKE_EXECUTABLE_SUFFIX}\")")

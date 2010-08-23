@@ -50,6 +50,7 @@ PATH64_ADD_MULTIARCH_EXECUTABLE(cc1plus42 cc1plus42_sources)
 PATH64_MULTIARCH_LINK_MULTIARCH_LIBRARIES(cc1plus42 backend)
 PATH64_MULTIARCH_LINK_LIBRARIES(cc1plus42 cpp decnumber iberty )
 path64_multiarch_link_multiarch_libraries( cc1plus42 spin)
+path64_install_multiarch(cc1plus42)
 
 
 

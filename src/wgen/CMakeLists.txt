@@ -163,6 +163,7 @@ path64_multiarch_link_multiarch_libraries(wgen42 spin)
 
 path64_set_multiarch_property(wgen42 COMPILE_FLAGS
                               "-I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@ -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@")
+path64_install_multiarch(wgen42)
 
 #add_custom_command(
 #    OUTPUT ${CMAKE_BINARY_DIR}/lib/wgen42
