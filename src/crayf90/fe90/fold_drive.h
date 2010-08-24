@@ -79,7 +79,7 @@ int	num_host_wds[Num_Linear_Types] = {
         	/* Real_8           	*/		1,
         	/* Real_16          	*/		2,
 # ifdef _WHIRL_HOST64_TARGET64
-        	/* Complex_4        	*/		1,
+        	/* Complex_4        	*/		2,
 # else
         	/* Complex_4        	*/		2,
 # endif /* _WHIRL_HOST64_TARGET64 */
