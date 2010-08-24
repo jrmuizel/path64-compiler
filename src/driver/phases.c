@@ -2666,7 +2666,7 @@ add_instr_archive (string_list_t* args)
 	add_library (args,"cginstr");
       }
 
-      add_library (args, "instr");
+      add_library (args, "instr2");
 #ifndef PATH64_ENABLE_PSCRUNTIME
       if (!option_was_seen(O_static) && !option_was_seen(O__static)) {
         add_arg(args, "-L%s", current_target->libgcc_s_path);
