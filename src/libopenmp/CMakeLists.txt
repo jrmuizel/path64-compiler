@@ -35,7 +35,7 @@ macro(libopenmp_add target)
     VERBATIM
     )
 
-  add_definitions(-std=gnu99)
+  add_definitions(-std=gnu99 -D_GNU_SOURCE )
 
   add_library (openmp-${target}-static STATIC ${PATHSCALE_OPENMP_SRCS})
   add_library (openmp-${target} SHARED ${PATHSCALE_OPENMP_SRCS})

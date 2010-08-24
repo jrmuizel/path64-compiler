@@ -42,7 +42,7 @@
 /* For distributions that do not provide these in <sched.h>
  * Modern distributions do provide them, and the definitions are
  * quite different to those below. */
-typedef unsigned long cpu_set_t;
+//typedef unsigned long cpu_set_t;
 #define CPU_SET_SIZE (sizeof(cpu_set_t))
 #define CPU_ZERO(c) ((*c) = 0)
 #define CPU_SET(i,c) ((*c) |= (1L << (i)))
