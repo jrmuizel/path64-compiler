@@ -2006,7 +2006,7 @@ static	void  set_mod_link_tbl_for_cn(int	cn_idx)
          length	= CN_EXTRA_ZERO_WORD(cn_idx) ? length + 1: length;
          break;
 
-# if defined(_TARGET_OS_MAX)
+# if defined(_TARGET_OS_MAX) || defined(_WHIRL_HOST64_TARGET64)
       case Complex:
          if (TYP_LINEAR(type_idx) == Complex_4) {
 
