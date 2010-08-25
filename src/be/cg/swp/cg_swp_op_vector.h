@@ -61,7 +61,7 @@ class SWP_OP;
 typedef mempool_allocator <SWP_OP>                SWP_STL_OP_ALLOC;
 typedef std::vector <SWP_OP, SWP_STL_OP_ALLOC>    SWP_STL_OP_VECTOR;
 
-typedef mempool_allocator <std::pair <const OP *, 
+typedef mempool_allocator <std::pair <const OP * const, 
                                       INT> >      SWP_OP2INT_ALLOC;
 typedef std::map <const OP *, 
                   INT, 

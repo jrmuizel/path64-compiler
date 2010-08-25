@@ -40,7 +40,7 @@
 
 
 
-typedef mempool_allocator < std::pair <const TN *, 
+typedef mempool_allocator < std::pair <const TN * const, 
                                        TN **> >    SWP_TN2TN_ARRAY_ALLOC;
                                     
 typedef std::map <const TN *,

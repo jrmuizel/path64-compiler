@@ -2729,11 +2729,11 @@ Process_Initos_And_Literals (
   }
 
   // Print_ST_List(st_list, "UNSORTED");
-  stable_sort (st_list.begin(), st_list.end(), size_lt);
+  std::stable_sort (st_list.begin(), st_list.end(), size_lt);
   // Print_ST_List(st_list, "SORTED BY SIZE");
-  stable_sort (st_list.begin(), st_list.end(), offset_lt);
+  std::stable_sort (st_list.begin(), st_list.end(), offset_lt);
   // Print_ST_List(st_list, "SORTED BY OFFSET");
-  stable_sort (st_list.begin(), st_list.end(), section_lt);
+  std::stable_sort (st_list.begin(), st_list.end(), section_lt);
   // Print_ST_List(st_list, "SORTED BY SECTION");
 
 // #ifdef TARG_ST
@@ -3033,9 +3033,9 @@ Process_Bss_Data (
   // It's a bit counter-intuitive, but to get the list sorted
   // by section and then by offset within section,
   // should stable_sort in reverse order (offset then section).
-  stable_sort (bss_list.begin(), bss_list.end(), size_lt);
-  stable_sort (bss_list.begin(), bss_list.end(), offset_lt);
-  stable_sort (bss_list.begin(), bss_list.end(), section_lt);
+  std::stable_sort (bss_list.begin(), bss_list.end(), size_lt);
+  std::stable_sort (bss_list.begin(), bss_list.end(), offset_lt);
+  std::stable_sort (bss_list.begin(), bss_list.end(), section_lt);
 
   ST*   sym;
   ST*   next_sym;
@@ -14009,11 +14009,11 @@ Process_Initos_And_Literals (SYMTAB_IDX stab)
 #endif
 
   // Print_ST_List(st_list, "UNSORTED");
-  stable_sort (st_list.begin(), st_list.end(), size_lt);
+  std::stable_sort (st_list.begin(), st_list.end(), size_lt);
   // Print_ST_List(st_list, "SORTED BY SIZE");
-  stable_sort (st_list.begin(), st_list.end(), offset_lt);
+  std::stable_sort (st_list.begin(), st_list.end(), offset_lt);
   // Print_ST_List(st_list, "SORTED BY OFFSET");
-  stable_sort (st_list.begin(), st_list.end(), section_lt);
+  std::stable_sort (st_list.begin(), st_list.end(), section_lt);
   // Print_ST_List(st_list, "SORTED BY SECTION");
 
   for (st_iter = st_list.begin(); st_iter != st_list.end(); ++st_iter) {
@@ -14191,9 +14191,9 @@ Process_Bss_Data (SYMTAB_IDX stab)
   // It's a bit counter-intuitive, but to get the list sorted
   // by section and then by offset within section,
   // should stable_sort in reverse order (offset then section).
-  stable_sort (bss_list.begin(), bss_list.end(), size_lt);
-  stable_sort (bss_list.begin(), bss_list.end(), offset_lt);
-  stable_sort (bss_list.begin(), bss_list.end(), section_lt);
+  std::stable_sort (bss_list.begin(), bss_list.end(), size_lt);
+  std::stable_sort (bss_list.begin(), bss_list.end(), offset_lt);
+  std::stable_sort (bss_list.begin(), bss_list.end(), section_lt);
 
   ST*   sym;
   ST*   next_sym;
