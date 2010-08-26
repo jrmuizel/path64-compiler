@@ -299,7 +299,9 @@ copy_phase_options (string_list_t *phase_list, phases_t phase)
 			else
 			//zwu
 			if(strcmp("-fpic", get_option_name(iflag)) == 0 && phase == P_wgen)
-			  matches_phase = TRUE;
+			    matches_phase = TRUE;
+            else if(strcmp("-fPIC", get_option_name(iflag)) == 0 && phase == P_wgen)
+                matches_phase = TRUE;
 			else
 #endif
 			matches_phase = option_matches_phase(iflag, phase);

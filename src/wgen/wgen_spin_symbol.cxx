@@ -2723,6 +2723,7 @@ Create_ST_For_Tree (gs_t decl_node)
 #endif
        ) {
       Set_ST_is_thread_local(st);
+      st = Trans_TLS(decl_node, st);
     }
   }
 
@@ -3378,12 +3379,19 @@ get_DECL_ST(gs_t t) {
   // If Current_scope is 0, then the symbol table has not been initialized, and
   // we are being called by WFE_Add_Weak to handle a weak symbol.  Use the
   // non-PU-specific st_map.
-  if (Current_scope == 0)
-    return st_map[t_index];
+  if (Current_scope == 0) {
+    ST* return_st = st_map[t_index];
+    if(return_st)
+      return_st = Trans_TLS(t, return_st);
+    return return_st;
+  }
 
   // See if the ST is in the non-PU-specific st_map.
   if (st_map[t_index]) {
-    return st_map[t_index];
+    ST* return_st = st_map[t_index];
+    if(return_st)
+      return_st = Trans_TLS(t, return_st);    
+    return return_st;
   }
 
   // The ST is not in the non-PU-specific map.  Look in the PU-specific maps.
@@ -3397,10 +3405,14 @@ get_DECL_ST(gs_t t) {
       hash_map<PU*, hash_map<gs_t, ST*, ptrhash>*, ptrhash>::iterator pu_map_it =
 	pu_map.find(pu);
       if (pu_map_it != pu_map.end()) {
-	// There is a PU-specific map.  Get the ST from the map.
-	hash_map<gs_t, ST*, ptrhash> *st_map2 = pu_map[pu];
-	if ((*st_map2)[t_index])
-	  return (*st_map2)[t_index];
+        // There is a PU-specific map.  Get the ST from the map.
+        hash_map<gs_t, ST*, ptrhash> *st_map2 = pu_map[pu];
+        if ((*st_map2)[t_index]) {
+          ST* return_st = (*st_map2)[t_index];
+          //assert(return_st);
+          return_st = Trans_TLS(t, return_st);
+          return return_st;
+        }
       }
     }
     scope--;
