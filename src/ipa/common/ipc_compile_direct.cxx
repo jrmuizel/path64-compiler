@@ -30,7 +30,8 @@
 
 #include <time.h>       
 #include <limits.h>
-#include <sys/param.h>  
+#include <sys/param.h>
+#include <unistd.h>
 
 #include "cxx_memory.h" 
 #include "erglob.h"     

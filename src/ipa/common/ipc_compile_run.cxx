@@ -46,6 +46,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "linker.h"                     // for ld_ipa_opt options   
 #include "cmplrs/rcodes.h"              // for RC_* codes
