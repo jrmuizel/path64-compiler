@@ -882,6 +882,12 @@ add_file_args (string_list_t *args, phases_t index)
                 case L_as:
                     add_string(args, "-lang-asm");
                     break;
+                  
+		case L_f77:
+		case L_f90:
+                    add_string(args, "-traditional-cpp");
+                    break;
+
                 default:
                     break;
                 }
