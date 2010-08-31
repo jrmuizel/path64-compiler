@@ -3795,16 +3795,16 @@ optimize_cleanups (vector<gs_t> * current, vector<gs_t> * prev)
 {
   if (prev->size() >= current->size())
   	return false;
-  reverse (current->begin(), current->end());
-  reverse (prev->begin(), prev->end());
+  std::reverse (current->begin(), current->end());
+  std::reverse (prev->begin(), prev->end());
   vector<gs_t>::iterator c = current->begin();
   for (vector<gs_t>::iterator p = prev->begin(); p != prev->end(); ++p, ++c)
   	if (*p != *c)
 	    return false;
   // all cleanups in prev are in current, so remove them from current
   // first reverse it back
-  reverse (current->begin(), current->end());
-  reverse (prev->begin(), prev->end());
+  std::reverse (current->begin(), current->end());
+  std::reverse (prev->begin(), prev->end());
   for (int i=0; i<prev->size(); ++i)
   	current->pop_back();
   return true;
