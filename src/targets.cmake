@@ -342,6 +342,7 @@ function(path64_add_library_for_target name target type)
             endforeach()
 
             # Getting full path to source
+            set(oname ${src})
             if(NOT EXISTS ${src})
                 # Trying path relative to current source dir
                 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
@@ -352,8 +353,8 @@ function(path64_add_library_for_target name target type)
             endif()
     
             # Getting object output name and making path to it
-            string(REPLACE "." "_" src_mangled ${src})
-            set(object_name "${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ}/${src_mangled}.o")
+            string(REPLACE "." "_" oname_mangled ${oname})
+            set(object_name "${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ}/${oname_mangled}.o")
             get_filename_component(object_path ${object_name} PATH)
             file(MAKE_DIRECTORY ${object_path})
 
