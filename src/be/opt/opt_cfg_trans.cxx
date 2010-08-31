@@ -651,7 +651,7 @@ void print_zone(FILE *fp, zone_container& zones)
   int i;
   for (i = 0; i < zones.size(); ++i)
     sorted.push_back(i);
-  sort(sorted.begin(), sorted.end(), comp_zones(zones));
+  std::sort(sorted.begin(), sorted.end(), comp_zones(zones));
   
   for (i = 0; i < sorted.size(); ++i) 
     zones[ sorted[i] ].print(fp);
@@ -863,7 +863,7 @@ void sort_merge_and_delete_zones(zone_container& zones, CFG *cfg, bool trace)
     // Replacing sort by stable_sort should not be problematic.
     stable_sort(sorted.begin(), sorted.end(), comp_zones(zones));
 #else
-    sort(sorted.begin(), sorted.end(), comp_zones(zones));
+    std::sort(sorted.begin(), sorted.end(), comp_zones(zones));
 #endif
 
     interference_cache zones_will_be_cloned;
