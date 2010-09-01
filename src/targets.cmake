@@ -248,7 +248,7 @@ function(path64_add_library_for_target name target type)
     set(bits ${_PATH64_TARGET_BITS_${target}})
     set(arch_flag ${_PATH64_TARGET_FLAG_${target}} ${_PATH64_ARCH_FLAGS_${arch}})
     set(build_lib_dir ${Path64_BINARY_DIR}/lib/${arch}/${bits})
-    set(install_lib_dir ${PATH64_LIB_PATH}/${arch}/${bits})
+    set(install_lib_dir lib/${PSC_FULL_VERSION}/${arch}/${bits})
 
     # Replacing @TARGET@ with target name in source names
     set(sources ${ARGN})
