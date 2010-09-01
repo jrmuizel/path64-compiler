@@ -39,6 +39,8 @@ macro(libopenmp_add target)
 
   add_library (openmp-${target}-static STATIC ${PATHSCALE_OPENMP_SRCS})
   add_library (openmp-${target} SHARED ${PATHSCALE_OPENMP_SRCS})
+  add_dependencies(openmp-${target}-static compiler-stage)
+  add_dependencies(openmp-${target} compiler-stage)
   set_property(TARGET openmp-${target} PROPERTY SOVERSION 1)
   set_property(TARGET openmp-${target} PROPERTY LINK_FLAGS "-Wl,--version-script=\"${libopenmp_SOURCE_DIR}/libopenmp.vs\" ${arch_flag}")
   set_property(TARGET openmp-${target} openmp-${target}-static PROPERTY OUTPUT_NAME "openmp")
@@ -63,7 +65,7 @@ macro(libopenmp_add target)
     add_custom_target(OMP_LIB-${target} ALL
       DEPENDS ${build_lib_dir}/omp_lib.f.o
       )
-    add_dependencies(OMP_LIB-${target} switch_fc mfef95-tmp)
+    add_dependencies(OMP_LIB-${target} switch_fc mfef95-tmp compiler-stage)
   endif()
 
   install(FILES omp.h DESTINATION ${install_inc_dir})

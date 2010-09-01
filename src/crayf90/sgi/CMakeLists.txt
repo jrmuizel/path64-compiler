@@ -195,6 +195,6 @@ add_custom_target(
     COMMAND printf "#!/bin/sh\\n${Path64_BINARY_DIR}/bin/pathf90 -Wf,-eQ -Wf,-intrinsic_module_gen -Wf,-intrinsic_module_path=. \"$\@\"\\n" > ${Path64_BINARY_DIR}/fc-wrap.sh
 )
 
-add_dependencies(switch_fc generate_cf95_cat mfef95-tmp)
+add_dependencies(switch_fc generate_cf95_cat mfef95-tmp compiler-stage)
 path64_add_dependencies_from_multiarch(switch_fc be-all inline crtendS)
 
