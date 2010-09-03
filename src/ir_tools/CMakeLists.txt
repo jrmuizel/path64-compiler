@@ -68,6 +68,7 @@ path64_multiarch_link_multiarch_libraries(ir_b2a comutil targinfo)
 path64_multiarch_link_libraries(ir_b2a m)
 path64_set_multiarch_property(ir_b2a COMPILE_FLAGS
                               "-I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@ -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@")
+path64_install_multiarch(ir_b2a)
 
 path64_set_multiarch_sources(ir_size_sources COMMON ${IR_SIZE_SRCS} ${IR_COMMON_SRCS})
 path64_add_multiarch_executable(ir_size ir_size_sources)
@@ -75,6 +76,7 @@ path64_multiarch_link_multiarch_libraries(ir_size comutil targinfo)
 path64_multiarch_link_libraries(ir_size m)
 path64_set_multiarch_property(ir_size COMPILE_FLAGS
                               "-I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@ -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@")
+path64_install_multiarch(ir_size)
 
 
 foreach(arch ${PATH64_ENABLE_ARCHES})

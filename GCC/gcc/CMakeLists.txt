@@ -591,6 +591,7 @@ PATH64_ADD_MULTIARCH_EXECUTABLE(cc142 cc142_sources)
 PATH64_MULTIARCH_LINK_MULTIARCH_LIBRARIES(cc142 backend)
 PATH64_MULTIARCH_LINK_LIBRARIES(cc142 cpp decnumber iberty )
 path64_multiarch_link_multiarch_libraries( cc142 spin)
+path64_install_multiarch(cc142)
 
 
 ## changed pending verification

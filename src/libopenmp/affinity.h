@@ -37,13 +37,12 @@
 #include <sys/cpuset.h>
 #define cpu_set_t cpuset_t
 #endif
-/* Reverse this so we don't have to add yet another -D on the command line */
-/*#ifndef CPU_ZERO */
-#if 0
+
+#ifndef CPU_ZERO 
 /* For distributions that do not provide these in <sched.h>
  * Modern distributions do provide them, and the definitions are
  * quite different to those below. */
-typedef unsigned long cpu_set_t;
+//typedef unsigned long cpu_set_t;
 #define CPU_SET_SIZE (sizeof(cpu_set_t))
 #define CPU_ZERO(c) ((*c) = 0)
 #define CPU_SET(i,c) ((*c) |= (1L << (i)))

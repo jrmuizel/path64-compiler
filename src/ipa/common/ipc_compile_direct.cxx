@@ -626,14 +626,14 @@ void ipacom_doit (const char* ipaa_filename)
 	  ((p = strstr(*i, "/crtn.o")) && p[7] == '\0')) {
 	continue;
       }
-      // Since we're using pathcc to link, we must mangle linker
-      // directives that we know about so they are acceptable to it,
-      // and passed properly to its linker.
-      if (strcmp(*i, "-rpath") == 0) {
-        arguments.push_back(std::string("-Wl,-rpath,") + *i);
-      } else {
-        arguments.push_back(*i);
-      }
+      // don't pass --dynamic-linker to pathcc - it knows it already
+      if(!strncmp(*i,"--dynamic-linker",16))
+        continue;
+      // pathcc better knows the correct arch
+      if(!strncmp(*i,"-melf",5))
+        continue;
+      
+      arguments.push_back(*i);
     }
 
     // If we're compiling with -show, make sure we see the link line.

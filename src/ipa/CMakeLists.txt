@@ -171,6 +171,7 @@ path64_set_multiarch_property(ipa COMPILE_FLAGS
                               "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@")
 path64_multiarch_link_multiarch_libraries(ipa be ipl)
 path64_add_multiarch_multiarch_dependencies(ipa generate_topcode)
+path64_install_multiarch(ipa)
 
 path64_add_multiarch_library(ipl SHARED libipl_sources)
 path64_set_multiarch_property(ipl PREFIX "")
@@ -178,6 +179,7 @@ path64_set_multiarch_property(ipl COMPILE_DEFINITIONS MONGOOSE_BE;IPA_SUMMARY;__
 path64_set_multiarch_property(ipl COMPILE_FLAGS
                               "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@")
 path64_add_multiarch_dependencies(ipl generate_preg_list generate_topcode)
+path64_install_multiarch(ipl)
 
 path64_add_multiarch_executable(inline PATHSCALE_INLINE_SRCS)
 path64_set_multiarch_property(inline COMPILE_DEFINITIONS MONGOOSE_BE;_LIGHTWEIGHT_INLINER;_STDC_FORMAT_MACROS)
@@ -186,6 +188,7 @@ path64_multiarch_link_libraries(inline iberty)
 path64_multiarch_link_multiarch_libraries(inline dwarf)
 path64_multiarch_link_libraries(inline elfutil elf)
 path64_set_multiarch_property(inline COMPILE_FLAGS "-I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@")
+path64_install_multiarch(inline)
 
 #path64_add_multiarch_dependencies(inline inline_hack)
 #
