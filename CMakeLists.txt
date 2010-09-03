@@ -286,13 +286,20 @@ else ()
 endif()
 
 # Fake targets for compiler stage
-ADD_CUSTOM_TARGET(compiler-stage)
-ADD_CUSTOM_TARGET(compiler-stage-C)
-ADD_CUSTOM_TARGET(compiler-stage-CXX)
-ADD_CUSTOM_TARGET(compiler-stage-Fortran)
+ADD_CUSTOM_TARGET(compiler-stage)               # compiler core
+ADD_CUSTOM_TARGET(compiler-stage-C)             # C compiler
+ADD_CUSTOM_TARGET(compiler-stage-CXX)           # CXX compiler
+ADD_CUSTOM_TARGET(compiler-stage-Fortran)       # Fortran compiler
+ADD_CUSTOM_TARGET(compiler-stage-libs-C)        # C compiler with libs
+ADD_CUSTOM_TARGET(compiler-stage-libs-CXX)      # CXX compiler with libs
+ADD_CUSTOM_TARGET(compiler-stage-libs-Fortran)  # Fortran compiler with libs
 ADD_DEPENDENCIES(compiler-stage-C compiler-stage)
 ADD_DEPENDENCIES(compiler-stage-CXX compiler-stage-C)
 ADD_DEPENDENCIES(compiler-stage-Fortran compiler-stage)
+ADD_DEPENDENCIES(compiler-stage-libs-C compiler-stage-C)
+ADD_DEPENDENCIES(compiler-stage-libs-CXX compiler-stage-CXX)
+ADD_DEPENDENCIES(compiler-stage-libs-Fortran compiler-stage-Fortran)
+
 
 # Build GCC and pathscale.
 ADD_SUBDIRECTORY(GCC)

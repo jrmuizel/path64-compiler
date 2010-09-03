@@ -1004,6 +1004,7 @@ path64_set_multitarget_sources(pathfortran-static COMMON
 path64_set_multitarget_property_(pathfortran-static OUTPUT_NAME "pathfortran")
 path64_add_multitarget_library(pathfortran-static STATIC)
 path64_add_multitarget_dependencies(pathfortran-static mv-static pscrt-static)
+path64_add_dependencies_from_multitarget(compiler-stage-libs-Fortran pathfortran-static)
 
 path64_set_multitarget_sources(pathfortran COMMON
                                ${PATHSCALE_PATHFORTRAN_C_SRCS}
@@ -1017,6 +1018,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 endif()
 path64_add_multitarget_library(pathfortran SHARED)
 path64_add_multitarget_dependencies(pathfortran mv pscrt-static)
+path64_add_dependencies_from_multitarget(compiler-stage-libs-Fortran pathfortran)
 
 IF(PATH64_ENABLE_PROFILING)
     path64_set_multitarget_sources(pathfortran_p COMMON
