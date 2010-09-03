@@ -536,7 +536,7 @@ boolean create_constructor_constant(opnd_type	   *top_opnd,
 
       if (exp_desc->rank) {
 #ifdef _WHIRL_HOST64_TARGET64
-         if (storage_bit_size_tbl[exp_desc->linear_type] > 32)
+         if (exp_desc->linear_type == Complex_4)
             double_stride = 1;
 #endif /* _WHIRL_HOST64_TARGET64 */
          ATD_ARRAY_IDX(tmp_idx) = save_target_array_idx ? 
@@ -1124,10 +1124,17 @@ boolean fold_aggragate_expression(opnd_type	*top_opnd,
          ATD_TYPE_IDX(tmp_idx)		= exp_desc->type_idx;
 
          if (exp_desc->rank) {
+#ifdef _WHIRL_HOST64_TARGET64
+	 if (exp_desc->linear_type == Complex_4)
+	    double_stride = 1;
+#endif
             ATD_ARRAY_IDX(tmp_idx) = save_target_array_idx ?
                   save_target_array_idx : create_bd_ntry_for_const(exp_desc,
                                                                    line,
                                                                    col);
+#ifdef _WHIRL_HOST64_TARGET64
+	    double_stride = 0;
+#endif
          }
 
          ATD_SAVED(tmp_idx)        = TRUE;

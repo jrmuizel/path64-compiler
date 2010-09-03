@@ -116,7 +116,7 @@ static size_t GET_STRIDE_FROM_DESC(DopeVectorType * array, int32_t dim)
 	return (rval << 1);
 
       default:
-	return ( rval <<2 );
+	return (rval << (rval <= array->type_lens.int_len/64 ? 3 : 2));
       }
    }
 }
