@@ -169,6 +169,7 @@ path64_multiarch_link_libraries(mfef95 arith cif pathfortran-host m)
 path64_set_multiarch_property(mfef95 COMPILE_FLAGS
                               "-I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 path64_install_multiarch(mfef95)
+path64_add_dependencies_from_multiarch(compiler-stage-Fortran mfef95)
 
 #add_custom_command(
 #    OUTPUT ${Path64_BINARY_DIR}/lib/mfef95-stage
