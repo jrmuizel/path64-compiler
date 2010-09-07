@@ -133,6 +133,12 @@ function(list_string_replace_arch lst arch)
 endfunction()
 
 
+# Returns target bits
+function(path64_get_target_bits res_var targ)
+   set(${res_var} ${_PATH64_TARGET_BITS_${targ}} PARENT_SCOPE)
+endfunction()
+
+
 # Returns target for host system
 function(path64_get_host_target res_var)
     # TODO: find way how to get target for host system
