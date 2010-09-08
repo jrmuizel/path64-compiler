@@ -802,6 +802,10 @@ static void Init_OP_Name()
   OP_Name[TOP_fandx128v64] = "andpd";
   OP_Name[TOP_fandxx128v64] = "andpd";
   OP_Name[TOP_fandxxx128v64] = "andpd";
+  OP_Name[TOP_fandn128v64] = "andnpd";
+  OP_Name[TOP_fandnx128v64] = "andnpd";
+  OP_Name[TOP_fandnxx128v64] = "andnpd";
+  OP_Name[TOP_fandnxxx128v64] = "andnpd";
   OP_Name[TOP_or128v8] = "por";
   OP_Name[TOP_orx128v8] = "por";
   OP_Name[TOP_orxx128v8] = "por";
