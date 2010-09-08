@@ -3963,6 +3963,7 @@ static Addr_Mode_Group Addr_Mode_Group_Table[] = {
   {TOP_and128v64,	TOP_andx128v64,	TOP_andxx128v64,	TOP_andxxx128v64,	TOP_UNDEFINED},
   {TOP_fand128v32,	TOP_fandx128v32,	TOP_fandxx128v32,	TOP_fandxxx128v32,	TOP_UNDEFINED},
   {TOP_fand128v64,	TOP_fandx128v64,	TOP_fandxx128v64,	TOP_fandxxx128v64,	TOP_UNDEFINED},
+  {TOP_fandn128v64,	TOP_fandnx128v64,	TOP_fandnxx128v64,	TOP_fandnxxx128v64,	TOP_UNDEFINED},
   // andps/andpd share the same load-execute OPs as fand128v32/fand128v64.
   // Must put andps/andpd after fand128v32/fand128v64 so that the load-execute
   // OPs will have fand128v32/fand128v64 as the base mode.

@@ -7024,6 +7024,9 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TYPE_ID m
   case INTRN_ANDPD:
     Build_OP( TOP_fand128v64, result, op0, op1, ops );
     break;
+  case INTRN_ANDNPD:
+    Build_OP( TOP_fandn128v64, result, op0, op1, ops );
+    break;
   case INTRN_ORPD:
     Build_OP( TOP_for128v64, result, op0, op1, ops );
     break;
