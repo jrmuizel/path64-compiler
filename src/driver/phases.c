@@ -1614,7 +1614,7 @@ add_file_args (string_list_t *args, phases_t index)
 		    glevel >= 2) {
 		  add_string(args, "-g");	// bug 5990
 #ifdef PATH64_ENABLE_PATHAS
-		  add_string(args, "dwarf2");	// bug 5990
+		  add_string(args, "dwarf2pass");	// bug 5990
 #endif // !PATH64_ENABLE_PATHAS
 		}
 #endif
