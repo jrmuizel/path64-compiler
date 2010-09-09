@@ -253,8 +253,8 @@ I-include=%D  ;		FTN     ffe,PFA     "-include=%D"
 #ifdef PATH64_ENABLE_PSCRUNTIME
 -nostdlib++	;	LINK	ld	""
 	"Do not use standard C++ libraries when linking"
--stdcxx_not_threadsafe      stdcxx_threadsafe=FALSE;         ALL     cpp     ""
-        "Use faster apache stdcxx library ignoring thread safety"
+-stl_not_threadsafe      stl_threadsafe=FALSE;         ALL     cpp     ""
+        "Use faster STL library ignoring thread safety"
 #endif
 -useacml_mv    ;       LINK    ld      ""
        "Include libacml_mv when linking with libm"

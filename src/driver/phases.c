@@ -937,13 +937,13 @@ add_file_args (string_list_t *args, phases_t index)
 			}
 			add_inc_path(args, "%s/include", root);
 #else
-            add_string(args, "-D__STDCXX_CONFIG=\<__stdcxx_config.h\>");
+            add_string(args, "-D__STDCXX_CONFIG=\<__stl_config.h\>");
                         if (source_lang == L_CC && !option_was_seen(O_nostdinc__)) {
-                                add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stdcxx",
+                                add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stl",
                                          root);
-                                add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stdcxx/ansi",
+                                add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stl/ansi",
                                          root);
-                                if(stdcxx_threadsafe){
+                                if(stl_threadsafe){
                                     add_string(args,"-D_RWSTD_POSIX_THREADS");
                                 }
                                 add_string(args,"-nostdinc++");
@@ -1952,23 +1952,23 @@ add_final_ld_args (string_list_t *args)
             return;
         }
 #ifdef PATH64_ENABLE_PSCRUNTIME
-        add_library(args, "compiler-rt");
+        add_library(args, "gcc");
 
         if(source_lang == L_CC &&
            !option_was_seen(O_nodefaultlibs) &&
                !option_was_seen(O_nostdlib) &&
            !option_was_seen(O_nostdlib__)) {
         
-            // Apache STD library
-        	add_library(args, "stdcxx");
+            // STL library
+        	add_library(args, "stl");
         
             // C++ support library
-            add_library(args, "cxxabi");
+            add_library(args, "cxxrt");
         
             // Exception support library
-        	add_library(args, "unwind");
+        	add_library(args, "eh");
         
-            // unwind dependencies
+            // other dependencies
             add_library(args, "pthread");
             add_library(args, "dl");
         }

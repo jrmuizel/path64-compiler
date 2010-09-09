@@ -74,7 +74,7 @@ char *help_pattern;
 boolean debug;
 boolean nostdinc = TRUE;
 #ifdef PATH64_ENABLE_PSCRUNTIME
-boolean stdcxx_threadsafe = TRUE;
+boolean stl_threadsafe = TRUE;
 #endif 
 int show_version;
 boolean show_copyright;

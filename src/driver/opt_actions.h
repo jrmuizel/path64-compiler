@@ -204,7 +204,7 @@ extern boolean nostdincc;	/* no C++ include directory */
 #endif
 
 #ifdef PATH64_ENABLE_PSCRUNTIME
-extern boolean stdcxx_threadsafe; /* use thread-safe apache stdcxx library */
+extern boolean stl_threadsafe;  /* use thread-safe STL library */
 #endif
 
 extern char *help_pattern;	/* pattern string for help file */
