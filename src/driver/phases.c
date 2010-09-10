@@ -1642,6 +1642,7 @@ add_file_args (string_list_t *args, phases_t index)
 		current_phase = P_any_as;
 
 #ifdef PATH64_ENABLE_PATHAS
+        add_string(args, "-Wno-uninit-contents");
         add_string(args, "-f");
         add_string(args, (abi == ABI_M64 || abi == ABI_64) ? "elf64" : "elf32");
         add_string(args, "-p");
