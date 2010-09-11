@@ -13376,7 +13376,7 @@ void    lbound_intrinsic(opnd_type     *result_opnd,
                                  Shared, TRUE);
 
       AT_SEMANTICS_DONE(tmp_idx) = TRUE;
-      ATD_TYPE_IDX(tmp_idx) = CG_INTEGER_DEFAULT_TYPE;
+      ATD_TYPE_IDX(tmp_idx) = INTEGER_DEFAULT_TYPE;
 
       loc_exp_desc = *res_exp_desc;
       loc_exp_desc.type_idx = CG_INTEGER_DEFAULT_TYPE;
@@ -14199,7 +14199,7 @@ void    ubound_intrinsic(opnd_type     *result_opnd,
                                  Shared, TRUE);
 
       AT_SEMANTICS_DONE(tmp_idx)= TRUE;
-      ATD_TYPE_IDX(tmp_idx) = CG_INTEGER_DEFAULT_TYPE;
+      ATD_TYPE_IDX(tmp_idx) = INTEGER_DEFAULT_TYPE;
 
       loc_exp_desc = *res_exp_desc;
       loc_exp_desc.type_idx = CG_INTEGER_DEFAULT_TYPE;
@@ -14841,7 +14841,7 @@ void    shape_intrinsic(opnd_type     *result_opnd,
                                  IR_COL_NUM(ir_idx),
                                  Shared, TRUE);
 
-      ATD_TYPE_IDX(tmp_idx) = CG_INTEGER_DEFAULT_TYPE;
+      ATD_TYPE_IDX(tmp_idx) = INTEGER_DEFAULT_TYPE;
       AT_SEMANTICS_DONE(tmp_idx)= TRUE;
 
       loc_exp_desc = *res_exp_desc;
