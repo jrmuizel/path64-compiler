@@ -1667,6 +1667,7 @@ add_file_args (string_list_t *args, phases_t index)
 		  add_string(args,"--");
 		add_string(args, the_file);
 		break;
+#ifdef PATH64_ENABLE_PATHAS
 	case P_pathas:
 		add_string(args, "-g");
 		add_string(args, "dwarf2pass");
@@ -1683,6 +1684,7 @@ add_file_args (string_list_t *args, phases_t index)
 		current_phase = P_any_as;
 
 		break;
+#endif // PATH64_ENABLE_PATHAS
 	case P_gas:
 #ifdef KEY
 		if (source_lang == L_as &&
@@ -2475,7 +2477,11 @@ determine_phase_order (void)
 	}
 
 	/* determine which asm to run */
+#ifdef PATH64_ENABLE_PATHAS
 	asm_phase = option_was_seen(O_fpathas) ? P_pathas : P_gas;
+#else
+	asm_phase = P_gas;
+#endif // !PATH64_ENABLE_PATHAS
 
 	/* determine which linker to run */
 	if (ipa == TRUE)
@@ -2659,7 +2665,9 @@ determine_phase_order (void)
 			}
 			else next_phase = asm_phase;
 			break;
+#ifdef PATH64_ENABLE_PATHAS
 		case P_pathas:
+#endif // PATH64_ENABLE_PATHAS
 		case P_gas:
 			add_phase(next_phase);
 #ifdef FAT_WHIRL_OBJECTS
