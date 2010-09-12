@@ -103,7 +103,7 @@ path64_multitarget_link_libraries(mv m)
 path64_add_multitarget_library(mv SHARED)
 path64_add_multitarget_dependencies(mv pscrt-static)
 if(PATH64_ENABLE_PSCRUNTIME)
-    path64_add_multitarget_dependencies(mv compiler-rt)
+    path64_add_multitarget_dependencies(mv compiler-rt unwind)
 endif()
 
 

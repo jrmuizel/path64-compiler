@@ -767,7 +767,7 @@ I-cvs_nosrc,%D	;		FTN	F	"-cvs_nosrc,%D"
 
 -static-data		;		FTN	ffe	self
 	"treat local data as static"
--static		;		LINK	ld	self	
+-static		toggle(&shared,NON_SHARED);		LINK	ld	self	
 	""
 -static_threadprivate		;		FTN	ffe	self
 	""
@@ -2001,7 +2001,7 @@ I-u%s		;		Cc	ld	"-u %s"
 %%% Linker Options
 -nostartfiles	;		LINK	ld	self
 	"Do not use standard system startup files when linking"
--nodefaultlibs	;		LINK	ld	self
+-nodefaultlibs	;		LINK	NONE	""
 	"Do not use standard system libraries when linking"
 --sysroot=%D	set_sysroot(optargs,0);		Cc,FTN,as,cpp	NONE	""
 	""

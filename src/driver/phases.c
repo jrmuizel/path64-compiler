@@ -1935,6 +1935,22 @@ add_file_args (string_list_t *args, phases_t index)
 }
 
 
+// Adds trailing crt*.o objects if needed. See the first part in add_file_args() */
+void add_crtend(string_list_t *args) {
+    char *lib_path = target_library_path();
+    const char *runtime_path = target_runtime_path();
+    char *crtn_path = concat_strings(runtime_path, "/crtn.o");
+    const char *crtend_name = ((shared != DSO_SHARED) && (shared != RELOCATABLE)) ?
+                              "/crtend.o" :
+                              "/crtendS.o";
+    char *crtend_path = concat_strings(lib_path, crtend_name);
+    free(lib_path);
+
+    add_string(args, crtend_path);
+    add_string_if_new_basename(args, crtn_path);
+}
+
+
 static void
 add_final_ld_args (string_list_t *args)
 {
@@ -1956,11 +1972,11 @@ add_final_ld_args (string_list_t *args)
             !option_was_seen(O_nolibpscrt)) {	// bug 9611
             add_library(args, "pscrt");
             }
+
+            add_crtend(args);
             return;
         }
 #ifdef PATH64_ENABLE_PSCRUNTIME
-        add_library(args, "gcc");
-
         if(source_lang == L_CC &&
            !option_was_seen(O_nodefaultlibs) &&
                !option_was_seen(O_nostdlib) &&
@@ -1972,13 +1988,15 @@ add_final_ld_args (string_list_t *args)
             // C++ support library
             add_library(args, "cxxrt");
         
-            // Exception support library
-        	add_library(args, "eh");
-        
             // other dependencies
             add_library(args, "pthread");
             add_library(args, "dl");
         }
+
+        add_library(args, "gcc");
+
+        // Exception support library (used by stl and gcc)
+        add_library(args, "eh");
 #else
         if (option_was_seen(O_static) || option_was_seen(O__static)){
 	        if(ipa != TRUE){
@@ -2010,20 +2028,7 @@ add_final_ld_args (string_list_t *args)
     }
 #endif
 	
-        /* Add trailing crt*.o objects if needed. See the first part in add_file_args() */
-        if( ! option_was_seen(O_nostartfiles)) {
-            char *lib_path = target_library_path();
-            const char *runtime_path = target_runtime_path();
-            char *crtn_path = concat_strings(runtime_path, "/crtn.o");
-            const char *crtend_name = ((shared != DSO_SHARED) && (shared != RELOCATABLE)) ?
-                                      "/crtend.o" :
-                                      "/crtendS.o";
-            char *crtend_path = concat_strings(lib_path, crtend_name);
-            free(lib_path);
-
-            add_string(args, crtend_path);
-            add_string_if_new_basename(args, crtn_path);
-        }
+    add_crtend(args);
 
 	if (shared != RELOCATABLE) {
 	    if (invoked_lang == L_f90) {
@@ -2178,6 +2183,8 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
 
     //init_stdc_plus_plus_path();
 
+//    if(shared != NON_SHARED)
+//        add_arg(args, "-Bdynamic");
     add_library(args, "c");
 
 #ifndef PATH64_ENABLE_PSCRUNTIME

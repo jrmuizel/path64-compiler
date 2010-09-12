@@ -126,7 +126,7 @@ endif()
 path64_multitarget_link_libraries(mpath m)
 path64_add_multitarget_library(mpath SHARED)
 if(PATH64_ENABLE_PSCRUNTIME)
-    path64_add_multitarget_dependencies(mpath compiler-rt)
+    path64_add_multitarget_dependencies(mpath compiler-rt unwind)
 endif()
 path64_add_multitarget_dependencies(mpath pscrt-static)
 
