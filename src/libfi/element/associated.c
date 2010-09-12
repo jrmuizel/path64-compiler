@@ -92,6 +92,9 @@ _ASSOCIATED (DopeVectorType * pointer,
 	/* compare pointer and target fields */
 	if ((pointer->base_addr.a.ptr == target->base_addr.a.ptr) &&
 	    (ptrlen == tarlen) &&
+	    /* Bug 7735,  Ake S addition 20100912, insufficient fix of 7735 */
+	    /* Element size must not be zero */
+	    (tarlen != 0) &&
 	    (pointer->n_dim == target->n_dim) &&
 	    (pointer->type_lens.type == target->type_lens.type)) {
 
@@ -102,8 +105,11 @@ _ASSOCIATED (DopeVectorType * pointer,
 #ifdef KEY /* Bug 11834 */
                             (target->dimension[loopj].extent <= 0) ||
 #endif /* KEY Bug 11834 */
-			   (pointer->dimension[loopj].stride_mult !=
-			    target->dimension[loopj].stride_mult))
+	    /* Bug 7735,  Ake S addition 20100912, insufficient fix of 7735 */
+			   /* Stride mult doesn't matter if only one element */
+			   (pointer->dimension[loopj].extent > 1 &&
+			    (pointer->dimension[loopj].stride_mult !=
+			     target->dimension[loopj].stride_mult)))
 				return(_btol(iresult));
 		}
 		iresult = TRUE;
@@ -258,6 +264,9 @@ _ASSOCIATED_8 (DopeVectorType * pointer,
 	/* compare pointer and target fields */
 	if ((pointer->base_addr.a.ptr == target->base_addr.a.ptr) &&
 	    (ptrlen == tarlen) &&
+	    /* Bug 7735,  Ake S addition 20100912, insufficient fix of 7735 */
+	    /* Element size must not be zero */
+	    (tarlen != 0) &&
 	    (pointer->n_dim == target->n_dim) &&
 	    (pointer->type_lens.type == target->type_lens.type)) {
 
@@ -268,8 +277,11 @@ _ASSOCIATED_8 (DopeVectorType * pointer,
 #ifdef KEY /* Bug 11834 */
                             (target->dimension[loopj].extent <= 0) ||
 #endif /* KEY Bug 11834 */
-			   (pointer->dimension[loopj].stride_mult !=
-			    target->dimension[loopj].stride_mult))
+	    /* Bug 7735,  Ake S addition 20100912, insufficient fix of 7735 */
+			   /* Stride mult doesn't matter if only one element */
+			   (pointer->dimension[loopj].extent > 1 &&
+			    (pointer->dimension[loopj].stride_mult !=
+			     target->dimension[loopj].stride_mult)))
 				return(_btol(iresult));
 		}
 		iresult = TRUE;
