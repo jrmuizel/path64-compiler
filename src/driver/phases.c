@@ -785,7 +785,7 @@ void add_asm_output(string_list_t *args, const char *the_file) {
     /* cc -c -o <file> puts output from as in <file>,
      * unless there are multiple source files. */
     if (outfile != NULL
-        && last_phase == current_phase
+        && last_phase == P_any_as
         && !multiple_source_files
 #ifndef KEY	// -dsm no longer supported.  Bug 4406.
         && !(remember_last_phase == P_any_ld && option_was_seen(O_dsm))
@@ -1681,6 +1681,7 @@ add_file_args (string_list_t *args, phases_t index)
 		add_asm_output(args, the_file);
 
 		current_phase = P_any_as;
+
 		break;
 	case P_gas:
 #ifdef KEY
@@ -1702,6 +1703,7 @@ add_file_args (string_list_t *args, phases_t index)
 		add_asm_output(args, the_file);
 
 		current_phase = P_any_as;
+
 		break;
 	case P_ld:
 	case P_ldplus:
