@@ -2930,6 +2930,15 @@ static void init_const_tbl(void)
    }
 # endif
 
+   idx = C_INT_TO_CN(CG_INTEGER_DEFAULT_TYPE, 32);
+
+# ifdef _DEBUG
+   if (idx != CN_INTEGER_OFFSET_BASE_IDX) {
+      PRINTMSG(1, 626, Internal, 0,
+               "CN_INTEGER_OFFSET_BASE_IDX = 8", "init_const_tbl");
+   }
+# endif
+
    /* This is only used by ntr_abnormal_ieee_const but it needs to be      */
    /* initialized for each program unit.	                           */
 

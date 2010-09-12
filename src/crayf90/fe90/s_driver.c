@@ -3319,7 +3319,7 @@ FOUND:
                      /* word boundary and the other is not, adjust new offset.*/
 
                      result.fld	= CN_Tbl_Idx;
-                     result.idx	= CN_INTEGER_BITS_PER_WORD_IDX;
+                     result.idx	= CN_INTEGER_OFFSET_BASE_IDX;
 
                      if (!size_offset_binary_calc(&adjust_by,
                                                   &result,
@@ -3351,7 +3351,7 @@ FOUND:
                      }
 
                      result.fld	= CN_Tbl_Idx;
-                     result.idx	= CN_INTEGER_BITS_PER_WORD_IDX;
+                     result.idx	= CN_INTEGER_OFFSET_BASE_IDX;
                      left.fld	= SB_LEN_FLD(sb_idx);
                      left.idx	= SB_LEN_IDX(sb_idx);
 
@@ -3879,7 +3879,7 @@ static void	storage_blk_resolution()
 
                   /* This is not on a double word boundary */
 
-                  result.idx	= CN_INTEGER_BITS_PER_WORD_IDX;
+                  result.idx	= CN_INTEGER_OFFSET_BASE_IDX;
                   result.fld	= CN_Tbl_Idx;
 
                   /* Rather than padding, remove the 32-bit pad */
@@ -4876,7 +4876,7 @@ static void     final_equivalence_semantics(void)
          if (TYP_TYPE(type_idx) != Character) {
 
             result.fld	= CN_Tbl_Idx;
-            result.idx	= CN_INTEGER_BITS_PER_WORD_IDX;
+            result.idx	= CN_INTEGER_OFFSET_BASE_IDX;
             left.fld	= EQ_OFFSET_FLD(item);
             left.idx	= EQ_OFFSET_IDX(item);
             zero.fld	= CN_Tbl_Idx;
@@ -5180,7 +5180,7 @@ static void     final_equivalence_semantics(void)
             while (item != NULL_IDX) {
                EQ_DALIGN_ME(item)	= TRUE;
                result.fld		= CN_Tbl_Idx;
-               result.idx		= CN_INTEGER_BITS_PER_WORD_IDX;
+               result.idx		= CN_INTEGER_OFFSET_BASE_IDX;
                left.fld			= EQ_OFFSET_FLD(item);
                left.idx			= EQ_OFFSET_IDX(item);
 
@@ -5203,7 +5203,7 @@ static void     final_equivalence_semantics(void)
             }
 
             result.fld		= CN_Tbl_Idx;
-            result.idx		= CN_INTEGER_BITS_PER_WORD_IDX;
+            result.idx		= CN_INTEGER_OFFSET_BASE_IDX;
             left.fld		= SB_LEN_FLD(sb_idx);
             left.idx		= SB_LEN_IDX(sb_idx);
 

@@ -60,6 +60,7 @@
 # define CN_INTEGER_NEG_ONE_IDX		5
 # define CN_INTEGER_BITS_PER_WORD_IDX	6
 # define CN_INTEGER_CHAR_BIT_IDX	7  /* CHAR_BIT from limits.h          */
+# define CN_INTEGER_OFFSET_BASE_IDX	8
 
 
 # define INTRINSIC_SCP_IDX	NULL_IDX   /* Intrinsic scope.                */
