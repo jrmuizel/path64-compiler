@@ -4319,7 +4319,7 @@ static void gen_dv_stride_mult(opnd_type	*stride_opnd,
    int		cn_idx;
    int		dv_idx;
    int		ir_idx;
-   long64	res_sm_unit_in_bits;
+   long64	res_sm_unit_in_bits, orig_res_sm_unit_in_bits;
    long64	src_sm_unit_in_bits;
 
 
@@ -4333,6 +4333,7 @@ static void gen_dv_stride_mult(opnd_type	*stride_opnd,
    }
    else {
       res_sm_unit_in_bits = sm_unit_in_bits(exp_desc->type_idx);
+      orig_res_sm_unit_in_bits = res_sm_unit_in_bits;
 # ifdef _WHIRL_HOST64_TARGET64
       if (res_sm_unit_in_bits > 32)
         res_sm_unit_in_bits = 32;
@@ -4369,6 +4370,8 @@ static void gen_dv_stride_mult(opnd_type	*stride_opnd,
 
       OPND_FLD((*stride_opnd)) = IR_Tbl_Idx;
       OPND_IDX((*stride_opnd)) = dv_idx;
+      /* Dope vectors already have the correct stride multiplier */
+      res_sm_unit_in_bits = orig_res_sm_unit_in_bits;
 
    }
    else {

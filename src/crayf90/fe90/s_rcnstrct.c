@@ -757,8 +757,9 @@ boolean	create_runtime_array_constructor(opnd_type	*top_opnd,
          case CRI_Ch_Ptr:
          case Real:
          case Complex:
-            the_constant	= TARGET_BITS_TO_WORDS(storage_bit_size_tbl[
-                                                       TYP_LINEAR(type_idx)]);
+	    /* This stride multiplier is used for target data and not the const_tbl so it should be 32bit based */
+            the_constant	= (storage_bit_size_tbl[
+                                                       TYP_LINEAR(type_idx)])/32;
             IR_FLD_R(dv_idx)	= CN_Tbl_Idx;
             IR_IDX_R(dv_idx)	= C_INT_TO_CN(CG_INTEGER_DEFAULT_TYPE,
                                               the_constant);
