@@ -8971,6 +8971,28 @@ WGEN_Expand_Expr (gs_t exp,
               case GSBI_BUILT_IN_BOOL_COMPARE_AND_SWAP_8:
                 iopc = INTRN_BOOL_COMPARE_AND_SWAP_I8;
                 break;
+
+              // add_and_fetch
+              case GSBI_BUILT_IN_ADD_AND_FETCH_1:
+              case GSBI_BUILT_IN_ADD_AND_FETCH_2:
+              case GSBI_BUILT_IN_ADD_AND_FETCH_4:
+                iopc = INTRN_ADD_AND_FETCH_I4;
+                break;
+
+              case GSBI_BUILT_IN_ADD_AND_FETCH_8:
+                iopc = INTRN_ADD_AND_FETCH_I8;
+                break;
+
+              // sub_and_fetch
+              case GSBI_BUILT_IN_SUB_AND_FETCH_1:
+              case GSBI_BUILT_IN_SUB_AND_FETCH_2:
+              case GSBI_BUILT_IN_SUB_AND_FETCH_4:
+                iopc = INTRN_SUB_AND_FETCH_I4;
+                break;
+
+              case GSBI_BUILT_IN_SUB_AND_FETCH_8:
+                iopc = INTRN_SUB_AND_FETCH_I8;
+                break;
 #endif // FE_GNU_4_2_0
 #endif
 #endif

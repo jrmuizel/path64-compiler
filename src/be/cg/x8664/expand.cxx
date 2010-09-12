@@ -107,6 +107,7 @@ BOOL Trace_Exp2 = FALSE;      /* extra cgexp trace*/
 static TN_MAP _TN_Pair_table = NULL;
 
 static TN *Exp_Fetch_and_Add (TN *addr, TN *opnd1, TYPE_ID mtype, OPS *ops);
+static TN *Exp_Add_and_Fetch (TN *addr, TN *opnd1, TYPE_ID mtype, OPS *ops);
 
 void
 Expand_Cmov (TOP top, TN *result, TN *src, TN *rflags, OPS *ops, TN *result2,
@@ -7549,6 +7550,28 @@ Exp_Intrinsic_Call (WN *intrncall, TN *op0, TN *op1, TN *op2,
     return Exp_Bool_Compare_and_Swap(op0, op1, op2,
                                      WN_rtype(WN_kid1(intrncall)), ops);
 
+  // ADD/SUB_AND_FETCH...
+
+  case INTRN_ADD_AND_FETCH_I4:
+  case INTRN_ADD_AND_FETCH_I8:
+    mtype = (id == INTRN_ADD_AND_FETCH_I4) ?  MTYPE_I4 : MTYPE_I8;
+    result = Exp_Add_and_Fetch(op0, op1, mtype, ops);
+    break;
+
+  case INTRN_SUB_AND_FETCH_I4:
+  case INTRN_SUB_AND_FETCH_I8:
+    {
+      TN *neg_tn = Build_TN_Like(op1);
+      if (id == INTRN_SUB_AND_FETCH_I4) {
+        mtype = MTYPE_I4;
+        Build_OP(TOP_neg32, neg_tn, op1, ops);
+      } else {
+        mtype = MTYPE_I8;
+        Build_OP(TOP_neg64, neg_tn, op1, ops);
+      }
+      result = Exp_Add_and_Fetch(op0, neg_tn, mtype, ops);
+    }
+    break;
   default:  
     FmtAssert(FALSE, ("Exp_Intrinsic_Call: unimplemented"));
   }
@@ -7910,6 +7933,67 @@ TN *Exp_Fetch_and_Add (TN *addr, TN *opnd1, TYPE_ID mtype, OPS *ops )
     FmtAssert(FALSE, ("Exp_Fetch_and_Add: 64-bit fetch-and-add NYI under m32"));
   else
     Build_OP(top, result_tn, opnd1, addr, Gen_Literal_TN(0,4), ops );
+
+  return result_tn;
+}
+
+
+static
+TN *Exp_Add_and_Fetch (TN *addr, TN *opnd1, TYPE_ID mtype, OPS *ops )
+{
+  TOP xadd = TOP_UNDEFINED;
+  TOP move = TOP_UNDEFINED;
+  TOP add = TOP_UNDEFINED;
+  TN *result_tn = Build_TN_Like(opnd1);
+
+  switch (mtype) {
+    case MTYPE_I1:
+      xadd = TOP_lock_xadd8;
+      move = TOP_mov32;
+      add  = TOP_add32;
+      break;
+    case MTYPE_U1:
+      xadd = TOP_lock_xadd8;
+      move = TOP_mov32;
+      add  = TOP_add32;
+      break;
+
+    case MTYPE_I2:
+      xadd = TOP_lock_xadd16;
+      move = TOP_mov32;
+      add  = TOP_add32;
+      break;
+    case MTYPE_U2:
+      xadd = TOP_lock_xadd16;
+      move = TOP_mov32;
+      add  = TOP_add32;
+      break;
+
+    case MTYPE_I4:
+    case MTYPE_U4:
+      xadd = TOP_lock_xadd32;
+      move = TOP_mov32;
+      add  = TOP_add32;
+      break;
+
+    case MTYPE_I8:
+    case MTYPE_U8:
+      xadd = TOP_lock_xadd64;
+      move = TOP_mov64;
+      add  = TOP_add64;
+      break;
+
+    default:
+      FmtAssert(FALSE, ("Exp_Add_and_Fetch: unsupported mtype"));
+  }
+
+  if (Is_Target_32bit() && xadd == TOP_lock_xadd64)
+    FmtAssert(FALSE, ("Exp_Add_and_Fetch: 64-bit add-and-fetch NYI under m32"));
+  else {
+    Build_OP(move, result_tn, opnd1, ops );
+    Build_OP(xadd, result_tn, opnd1, addr, Gen_Literal_TN(0,4), ops );
+    Build_OP(add, result_tn, result_tn, opnd1, ops);
+  }
 
   return result_tn;
 }
