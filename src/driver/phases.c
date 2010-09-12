@@ -282,11 +282,7 @@ copy_phase_options (string_list_t *phase_list, phases_t phase)
 			// option in the first place?)
 			//
 			// Pass -OPT: options to wgen for bug 10262.
-			if (
-#ifndef PATH64_ENABLE_PSCRUNTIME
-			    gnu_major_version == 4 &&
-#endif // !PATH64_ENABLE_PSCRUNTIME
-                            !strcmp("-OPT:", get_option_name(iflag))) 
+			if (!strcmp("-OPT:", get_option_name(iflag))) 
 			{
 			  if (phase == P_spin_cc1 ||
 			      phase == P_spin_cc1plus)
@@ -2474,13 +2470,8 @@ determine_phase_order (void)
 		link_phase = P_ld;
 
 #ifdef KEY
-#ifdef PATH64_ENABLE_PSCRUNTIME
 	phases_t c_fe = P_spin_cc1;
 	phases_t cplus_fe = P_spin_cc1plus;
-#else // !PATH64_ENABLE_PSCRUNTIME
-	phases_t c_fe = (gnu_major_version == 4) ? P_spin_cc1 : P_c_gfe;
-	phases_t cplus_fe = (gnu_major_version == 4) ? P_spin_cc1plus : P_cplus_gfe;
-#endif // !PATH64_ENABLE_PSCRUNTIME
 #else
 	phases_t c_fe = P_c_gfe;
 	phases_t cplus_fe = P_cplus_gfe;
@@ -2947,31 +2938,11 @@ init_phase_info (void)
 
 
 // Change the front-end names to reflect the GNU version.
-void
-init_frontend_phase_names (
-#ifndef PATH64_ENABLE_PSCRUNTIME
-                           int gnu_major_version, int gnu_minor_version
-#endif // !PATH64_ENABLE_PSCRUNTIME
-                          )
+void init_frontend_phase_names ()
 {
-#ifndef PATH64_ENABLE_PSCRUNTIME
-  // Select the appropriate GNU 4 front-end.
-  if (gnu_major_version == 4) {
-    switch (gnu_minor_version) {
-      case 0:	// Default is 4.0.
-        break;
-      case 2:
-#endif // !PATH64_ENABLE_PSCRUNTIME
-	set_phase_name(P_spin_cc1, "cc142");
-	set_phase_name(P_spin_cc1plus, "cc1plus42");
-	set_phase_name(P_wgen, "wgen42");
-#ifndef PATH64_ENABLE_PSCRUNTIME
-	break;
-      default:
-        error("no support for GNU 4.%d front-end", gnu_minor_version);
-    }
-  }
-#endif // !PATH64_ENABLE_PSCRUNTIME
+    set_phase_name(P_spin_cc1, "cc142");
+    set_phase_name(P_spin_cc1plus, "cc1plus42");
+    set_phase_name(P_wgen, "wgen42");
 }
 
 void
@@ -3923,15 +3894,4 @@ set_stack_size()
   }
 }
 
-
-#ifndef PATH64_ENABLE_PSCRUNTIME
-// Get the system GCC's major version number.
-int
-get_gcc_major_version()
-{
-  int v[4];
-  get_gcc_version(v, 4);
-  return v[0];
-}
-#endif // !PATH64_ENABLE_PSCRUNTIME
 #endif

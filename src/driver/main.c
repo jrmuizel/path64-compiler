@@ -505,56 +505,21 @@ main (int argc, char *argv[])
 #ifdef KEY
 	// Perform GNU4-related checks after set_defaults has run, since
 	// set_defaults can change the gnu version.  Bug 10250.
-#ifndef PATH64_ENABLE_PSCRUNTIME
-	if (gnu_major_version == 4) {
-#endif // !PATH64_ENABLE_PSCRUNTIME
-	  if (option_was_seen(O_fwritable_strings) ||
-	      option_was_seen(O_fno_writable_strings)) {
-	    warning("ignored -fwritable-strings/-fno-writable-strings because"
-		    " option not supported under GNU GCC 4");
-	    set_option_unseen(O_fwritable_strings);
-	    set_option_unseen(O_fno_writable_strings);
-	  }
-#ifdef PATH64_ENABLE_PSCRUNTIME
-          if (option_was_seen(O_mp) &&
-                   !option_was_seen(O_fno_cxx_openmp)) {
-            add_option_seen(O_fcxx_openmp);
-            toggle(&fcxx_openmp,1);
-          }
-#else // !PATH64_ENABLE_PSCRUNTIME
-	  if ((source_lang == L_cc ||
-	       source_lang == L_CC) &&
-	      option_was_seen(O_mp) &&	// bug 11896
-	      gnu_minor_version < 2) {
-	    warning("ignored -mp because option not supported under"
-		    " GNU GCC 4.0");
-	    set_option_unseen(O_mp);
-	  }
-	  else if (gnu_minor_version >= 2 &&
-	           !option_was_seen(O_fno_cxx_openmp)) {
-	    add_option_seen(O_fcxx_openmp);
-	    toggle(&fcxx_openmp,1);
-	  }
-#endif // !PATH64_ENABLE_PSCRUNTIME
-#ifndef PATH64_ENABLE_PSCRUNTIME
-	} else {	// not GNU 4
-	  if (option_was_seen(O_fgnu_exceptions) ||	// bug 11732
-	      option_was_seen(O_fno_gnu_exceptions)) {
-	    warning("ignored -fgnu-exceptions/-fno-gnu-exceptions because"
-		    " option is for GNU GCC 4 only");
-	    set_option_unseen(O_fgnu_exceptions);
-	    set_option_unseen(O_fno_gnu_exceptions);
-	    gnu_exceptions = UNDEFINED;
-	  }
+	if (option_was_seen(O_fwritable_strings) ||
+	    option_was_seen(O_fno_writable_strings)) {
+	  warning("ignored -fwritable-strings/-fno-writable-strings because"
+	          " option not supported under GNU GCC 4");
+	  set_option_unseen(O_fwritable_strings);
+	  set_option_unseen(O_fno_writable_strings);
 	}
-#endif // !PATH64_ENABLE_PSCRUNTIME
+        if (option_was_seen(O_mp) &&
+                 !option_was_seen(O_fno_cxx_openmp)) {
+          add_option_seen(O_fcxx_openmp);
+          toggle(&fcxx_openmp,1);
+        }
 
 	// Select the appropriate GNU version front-end.
-#ifdef PATH64_ENABLE_PSCRUNTIME
 	init_frontend_phase_names();
-#else // !PATH64_ENABLE_PSCRUNTIME
-	init_frontend_phase_names(gnu_major_version, gnu_minor_version);
-#endif // !PATH64_ENABLE_PSCRUNTIME
 #endif
 
 	// Display version after running set_defaults, which can change
@@ -1166,21 +1131,6 @@ print_defaults(int argc, char *argv[])
   }
 #endif
 
-#ifndef PATH64_ENABLE_PSCRUNTIME
-  // -gnu3/-gnu4
-  if ((invoked_lang == L_cc ||
-       invoked_lang == L_CC) &&
-      !is_toggled(gnu_major_version)) {
-    int gcc_version = get_gcc_major_version();
-    if (gcc_version == 3 ||
-	gcc_version == 4) {
-      fprintf(stderr, " -gnu%d", gcc_version);
-    } else {
-      internal_error("print_defaults: unknown GCC version %d\n", gcc_version);
-    }
-  }
-#endif // PATH64_ENABLE_PSCRUNTIME
-
   fprintf(stderr, "\n");
 
   // Print options from compiler.defaults file.
@@ -1557,23 +1507,7 @@ display_version(boolean dump_version_only)
 {
   char *psc_gcc_version;
 
-#ifdef PATH64_ENABLE_PSCRUNTIME
   psc_gcc_version = PSC_GCC42_VERSION;
-#else // !PATH64_ENABLE_PSCRUNTIME
-  if (gnu_major_version == 3)
-    psc_gcc_version = PSC_GCC_VERSION;
-  else if (gnu_major_version == 4) {
-    if (gnu_minor_version == 0)
-      psc_gcc_version = PSC_GCC40_VERSION;
-    else if (gnu_minor_version == 2)
-      psc_gcc_version = PSC_GCC42_VERSION;
-    else
-      internal_error("display_version: unexpected GCC version 4.%d\n",
-		     gnu_minor_version);
-  } else
-    internal_error("display_version: unexpected GCC version %d\n",
-		   gnu_major_version);
-#endif // !PATH64_ENABLE_PSCRUNTIME
 
   if (dump_version_only == TRUE) {
     if (option_was_seen(O_compat_gcc))
