@@ -762,6 +762,70 @@ add_sysroot(string_list_t *args, phases_t phase)  // 15149
 }
 #endif
 
+
+// Adds input asm source to args.  Append .s to input source if
+// it doesn't already end in .s.
+void add_asm_source(string_list_t *args, const char *isrc) {
+    buffer_t buf;
+    int len = strlen(isrc);
+    if (isrc[len - 1] != 's' ||
+        isrc[len - 2] != '.') {
+
+        sprintf(buf, "%s.s", isrc);
+        add_string(args, buf);
+    } else {
+        add_string(args, isrc);
+    }
+}
+
+
+// Adds output for asm phase
+void add_asm_output(string_list_t *args, const char *the_file) {
+    add_string(args, "-o");
+    /* cc -c -o <file> puts output from as in <file>,
+     * unless there are multiple source files. */
+    if (outfile != NULL
+        && last_phase == current_phase
+        && !multiple_source_files
+#ifndef KEY	// -dsm no longer supported.  Bug 4406.
+        && !(remember_last_phase == P_any_ld && option_was_seen(O_dsm))
+#endif
+       ) {
+#ifdef FAT_WHIRL_OBJECTS
+        if(ipa == TRUE){
+            strcpy(buf, ".native-");
+            strcat(buf, outfile);
+            add_string(args, buf);
+        } else
+#endif
+            add_string(args, outfile);
+    } else {
+        // bug 2025
+        // Create .o files in /tmp in case the src dir is not
+        // writable.
+        if (!(keep_flag ||
+             (ipa == TRUE) ||
+             remember_last_phase == P_any_as)) {
+
+            char *temp_obj_file = get_object_file (the_file);
+            add_string(args, temp_obj_file);
+        } else {
+            char * o_name;
+            o_name = construct_given_name(the_file,"o",
+              (keep_flag || multiple_source_files || ((shared == RELOCATABLE) && (ipa == TRUE))) ? TRUE : FALSE);
+#ifdef FAT_WHIRL_OBJECTS
+            if(ipa == TRUE) {
+                strcpy(buf, ".native-");
+                strcat(buf, o_name);
+                add_string(args, buf);
+            } else 
+#endif //FAT_WHIRL_OBJECTS
+                add_string(args, o_name);
+        }
+    }
+}
+
+
 static void
 add_file_args (string_list_t *args, phases_t index)
 {
@@ -1603,98 +1667,41 @@ add_file_args (string_list_t *args, phases_t index)
 		  add_string(args,"--");
 		add_string(args, the_file);
 		break;
-	case P_as:
+	case P_pathas:
+		add_string(args, "-g");
+		add_string(args, "dwarf2pass");
+
+		add_string(args, "-Wno-uninit-contents");
+		add_string(args, "-f");
+		add_string(args, (abi == ABI_M64 || abi == ABI_64) ? "elf64" : "elf32");
+		add_string(args, "-p");
+		add_string(args, "gas");
+
+		add_asm_source(args, input_source);
+		add_asm_output(args, the_file);
+
+		current_phase = P_any_as;
+		break;
 	case P_gas:
 #ifdef KEY
-#ifdef PATH64_ENABLE_PATHAS
-		if (glevel >= 2) {
-		  add_string(args, "-g");
-		  add_string(args, "dwarf2pass");
-		}
-#else // !PATH64_ENABLE_PATHAS
 		if (source_lang == L_as &&
 		    glevel >= 2) {
 		  add_string(args, "-g");	// bug 5990
 		}
-#endif // !PATH64_ENABLE_PATHAS
 #endif
 		if (dashdash_flag)
 		  add_string(args,"--");
 		if (show_but_not_run)
-			add_string(args, "-###");
-		{
+		  add_string(args, "-###");
 
-#ifndef PATH64_ENABLE_PATHAS
-		  add_abi(args);
-#endif // !PATH64_ENABLE_PSCRUNTIME
+		add_abi(args);
+		add_asm_source(args, input_source);
 
-		  // Add input source to args.  Append .s to input source if
-		  // it doesn't already end in .s.
-		  int len = strlen(input_source);
-		  if (input_source[len - 1] != 's' ||
-		      input_source[len - 2] != '.') {
-		    sprintf(buf, "%s.s", input_source);
-		    add_string(args, buf);
-		  } else {
-		    add_string(args, input_source);
-		  }
-		}
+		// When using "gcc x.s" as an assembler, must not run linker
+		add_string(args, "-c");
+		add_asm_output(args, the_file);
+
 		current_phase = P_any_as;
-
-#ifdef PATH64_ENABLE_PATHAS
-        add_string(args, "-Wno-uninit-contents");
-        add_string(args, "-f");
-        add_string(args, (abi == ABI_M64 || abi == ABI_64) ? "elf64" : "elf32");
-        add_string(args, "-p");
-        add_string(args, "gas");
-#else
-        // When using "gcc x.s" as an assembler, must not run linker
-        add_string(args, "-c");
-#endif
-
-		add_string(args, "-o");
-		/* cc -c -o <file> puts output from as in <file>,
-		 * unless there are multiple source files. */
-		if (outfile != NULL
-			&& last_phase == current_phase
-	 		&& !multiple_source_files
-#ifndef KEY	// -dsm no longer supported.  Bug 4406.
-			&& !(remember_last_phase == P_any_ld &&
-			         option_was_seen(O_dsm) )
-#endif
-			 )
-		{
-#ifdef FAT_WHIRL_OBJECTS
-                    if(ipa == TRUE){
-		 	strcpy(buf, ".native-");
-			strcat(buf, outfile);
-			add_string(args, buf);
-                    } else
-#endif
-			add_string(args, outfile);
-		} else {
-			// bug 2025
-			// Create .o files in /tmp in case the src dir is not
-			// writable.
-			if (!(keep_flag ||
-			     (ipa == TRUE) ||
-			     remember_last_phase == P_any_as)) {
-			  char *temp_obj_file = get_object_file (the_file);
-			  add_string(args, temp_obj_file);
-			} else {
-                            char * o_name;
-                            o_name = construct_given_name(the_file,"o",
-                              (keep_flag || multiple_source_files || ((shared == RELOCATABLE) && (ipa == TRUE))) ? TRUE : FALSE);
-#ifdef FAT_WHIRL_OBJECTS
-                            if(ipa == TRUE){
-                                strcpy(buf, ".native-");
-                                strcat(buf, o_name);
-                                add_string(args, buf);
-                            } else 
-#endif //FAT_WHIRL_OBJECTS
-			    add_string(args, o_name);
-                        }
-		}
 		break;
 	case P_ld:
 	case P_ldplus:
@@ -2459,7 +2466,7 @@ determine_phase_order (void)
 	}
 
 	/* determine which asm to run */
-	asm_phase = P_gas;
+	asm_phase = option_was_seen(O_fpathas) ? P_pathas : P_gas;
 
 	/* determine which linker to run */
 	if (ipa == TRUE)
@@ -2643,7 +2650,7 @@ determine_phase_order (void)
 			}
 			else next_phase = asm_phase;
 			break;
-		case P_as:
+		case P_pathas:
 		case P_gas:
 			add_phase(next_phase);
 #ifdef FAT_WHIRL_OBJECTS

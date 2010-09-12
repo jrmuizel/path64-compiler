@@ -869,6 +869,10 @@ I-xall	;		FTN	ffe	self
 	""
 -fbootstrap-hack	;	ALL	be	"-LNO:vintr=0 -OPT:fast_stdlib=0"
 	"Don't link to libmv, libmpath, libscstr during bootstrap."
+#ifdef PATH64_ENABLE_PATHAS
+-fpathas	;	ALL	NONE	""
+	"Use Pathscale assembler"
+#endif
 -varargs	;		f77	ffe	self
 	"MATRA varargs"
 %-nocode last_phase=earliest_phase(P_any_fe,last_phase);  FTN ffe   self
