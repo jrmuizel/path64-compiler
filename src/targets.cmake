@@ -89,6 +89,13 @@ Please edit PATH64_ENABLE_TARGETS to list only valid architectures.
 endforeach()
 
 
+foreach(targ ${PATH64_ENABLE_TARGETS})
+    set(targ_arch ${_PATH64_TARGET_ARCH_${targ}})
+    set(targ_bits ${_PATH64_TARGET_BITS_${targ}})
+    file(MAKE_DIRECTORY ${Path64_BINARY_DIR}/lib/${targ_arch}/${targ_bits})
+endforeach()
+
+
 # First list element is the default.
 # TODO: test for the the native build environment and make that the default target
 list(GET PATH64_ENABLE_TARGETS 0 PATH64_DEFAULT_TARGET)
