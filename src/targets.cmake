@@ -329,7 +329,8 @@ function(path64_add_library_for_target name target type)
             string(REPLACE " " ";" src_flags "${src_flags_list}")
     
             # Getting target compile flags
-            string(REPLACE " " ";" target_flags "${path64_multitarget_property_${name}_COMPILE_FLAGS}")
+            string(REPLACE " " ";" target_flags
+                    "${path64_multitarget_property_${name}_COMPILE_FLAGS} ${path64_multitarget_property_${name}_${target}_COMPILE_FLAGS}")
 
             # Gettings language flags
             string(REPLACE " " ";" lang_flags "${CMAKE_${src_lang}_FLAGS}")
@@ -588,6 +589,12 @@ function(path64_set_multitarget_property_ name prop)
     foreach(targ ${PATH64_ENABLE_TARGETS})
         set(path64_multitarget_property_${name}_${prop} ${ARGN} PARENT_SCOPE)
     endforeach()
+endfunction()
+
+
+# Sets target specific property for multitarget
+function(path64_set_multitarget_property_for_target name targ prop)
+    set(path64_multitarget_property_${name}_${targ}_${prop} ${ARGN} PARENT_SCOPE)
 endfunction()
 
 
