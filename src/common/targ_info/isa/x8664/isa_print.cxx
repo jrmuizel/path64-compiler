@@ -1536,6 +1536,10 @@ main()
 			   TOP_lock_xadd16,
 			   TOP_lock_xadd32,
 			   TOP_lock_xadd64,
+               TOP_xchgx8,
+               TOP_xchgx16,
+               TOP_xchgx32,
+               TOP_xchgx64,
 			   TOP_UNDEFINED );
 
   ISA_PRINT_TYPE cmpxchg =  ISA_Print_Type_Create("cmpxchg", "%s %s,%s%s(%s)");

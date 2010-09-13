@@ -3099,6 +3099,37 @@ main()
   Operand(0, fp128, opnd1);
   Operand(1, fp128, opnd2);
 
+  Instruction_Group("int8 exchange with mem",
+                    TOP_xchgx8,
+		            TOP_UNDEFINED);
+  Result(0, int8);
+  Operand(0, int8, opnd1);
+  Operand(1, int64, base);
+  Operand(2, simm32, offset);
+
+  Instruction_Group("int16 exchange with mem",
+                    TOP_xchgx16,
+		            TOP_UNDEFINED);
+  Result(0, int16);
+  Operand(0, int16, opnd1);
+  Operand(1, int64, base);
+  Operand(2, simm32, offset);
+
+  Instruction_Group("int32 exchange with mem",
+                    TOP_xchgx32,
+		            TOP_UNDEFINED);
+  Result(0, int32);
+  Operand(0, int32, opnd1);
+  Operand(1, int64, base);
+  Operand(2, simm32, offset);
+
+  Instruction_Group("int64 exchange with mem",
+                    TOP_xchgx64,
+		            TOP_UNDEFINED);
+  Result(0, int64);
+  Operand(0, int64, opnd1);
+  Operand(1, int64, base);
+  Operand(2, simm32, offset);
   
   ISA_Operands_End();
   return 0;

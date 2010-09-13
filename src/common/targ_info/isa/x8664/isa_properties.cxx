@@ -1136,6 +1136,10 @@ main()
 		     TOP_lock_xadd16,
 		     TOP_lock_xadd32,
 		     TOP_lock_xadd64,
+             TOP_xchgx8,
+             TOP_xchgx16,
+             TOP_xchgx32,
+             TOP_xchgx64,
                      TOP_UNDEFINED);
 
   /* ===== arith. operations with memory src and dest operand ====== */
@@ -1166,6 +1170,10 @@ main()
 		     TOP_lock_xadd16,
 		     TOP_lock_xadd32,
 		     TOP_lock_xadd64,
+             TOP_xchgx8,
+             TOP_xchgx16,
+             TOP_xchgx32,
+             TOP_xchgx64,
                      TOP_UNDEFINED);
 
   /* ===== Non-temporal memory store operator ====== */
@@ -3764,6 +3772,10 @@ main()
 		     TOP_pavgw,
 		     TOP_psadbw,
 		     TOP_pshufw,
+             TOP_xchgx8,
+             TOP_xchgx16,
+             TOP_xchgx32,
+             TOP_xchgx64,
                      TOP_UNDEFINED );
 
   /* ===== Predicated instructions ====== */
@@ -3866,6 +3878,10 @@ main()
 		     TOP_lock_xadd16,
 		     TOP_lock_xadd32,
 		     TOP_lock_xadd64,
+             TOP_xchgx8,
+             TOP_xchgx16,
+             TOP_xchgx32,
+             TOP_xchgx64,
 		     TOP_UNDEFINED);
 
   /* ===== Instructions with branch predictions ====== */

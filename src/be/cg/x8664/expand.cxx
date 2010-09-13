@@ -7399,6 +7399,7 @@ TN* Exp_Fetch_and_Xor(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
                       LABEL_IDX *label, OPS *loop_ops);
 TN* Exp_Val_Compare_and_Swap(TN* addr, TN* opnd1, TN* opnd2, TYPE_ID mtype, OPS* ops);
 TN* Exp_Bool_Compare_and_Swap(TN* addr, TN* opnd1, TN* opnd2, TYPE_ID mtype, OPS* ops);
+TN* Exp_Lock_Test_and_Set(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops);
 
 // initial expansion of intrinsic call (may not be complete lowering).
 // return result TN (if set).
@@ -7572,6 +7573,11 @@ Exp_Intrinsic_Call (WN *intrncall, TN *op0, TN *op1, TN *op2,
       result = Exp_Add_and_Fetch(op0, neg_tn, mtype, ops);
     }
     break;
+
+  case INTRN_LOCK_TEST_AND_SET_I4:
+  case INTRN_LOCK_TEST_AND_SET_I8:
+    return Exp_Lock_Test_and_Set(op0, op1, WN_rtype(intrncall), ops);
+
   default:  
     FmtAssert(FALSE, ("Exp_Intrinsic_Call: unimplemented"));
   }
@@ -8249,6 +8255,45 @@ void Exp_Fetch_and_Sub( TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops )
   }
   Build_OP( top, opnd1, addr, Gen_Literal_TN(0,4), ops );
 }
+
+
+TN* Exp_Lock_Test_and_Set(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops) {
+  TOP top = TOP_UNDEFINED;
+  TN *result_tn = Build_TN_Like(opnd1);
+
+  switch (mtype) {
+    case MTYPE_I1:
+    case MTYPE_U1:
+      top = TOP_xchgx8;
+      break;
+
+    case MTYPE_I2:
+    case MTYPE_U2:
+      top = TOP_xchgx16;
+      break;
+
+    case MTYPE_I4:
+    case MTYPE_U4:
+      top = TOP_xchgx32;
+      break;
+
+    case MTYPE_I8:
+    case MTYPE_U8:
+      top = TOP_xchgx64;
+      break;
+
+    default:
+      FmtAssert(FALSE, ("Exp_Fetch_and_Add: unsupported mtype"));
+  }
+
+  if (Is_Target_32bit() && top == TOP_xchgx64)
+    FmtAssert(FALSE, ("Exp_Test_Lock_and_Set: 64-bit test-lock-and-set NYI under m32"));
+  else
+    Build_OP(top, result_tn, opnd1, addr, Gen_Literal_TN(0,4), ops );
+
+  return result_tn;
+}
+
 
 // Allocate a temp stack location for SRC and store SRC into it.  Return the
 // base TN and the offset TN of the memory location.

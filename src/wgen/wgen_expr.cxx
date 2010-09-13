@@ -8993,6 +8993,17 @@ WGEN_Expand_Expr (gs_t exp,
               case GSBI_BUILT_IN_SUB_AND_FETCH_8:
                 iopc = INTRN_SUB_AND_FETCH_I8;
                 break;
+
+              case  GSBI_BUILT_IN_LOCK_TEST_AND_SET_1:
+              case  GSBI_BUILT_IN_LOCK_TEST_AND_SET_2:
+              case  GSBI_BUILT_IN_LOCK_TEST_AND_SET_4:
+                iopc = INTRN_LOCK_TEST_AND_SET_I4;
+                break;
+
+              case  GSBI_BUILT_IN_LOCK_TEST_AND_SET_8:
+                iopc = INTRN_LOCK_TEST_AND_SET_I8;
+                break;
+
 #endif // FE_GNU_4_2_0
 #endif
 #endif

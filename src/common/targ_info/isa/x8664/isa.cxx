@@ -283,6 +283,10 @@ main ()
 	      "mov32",
 	      "mov64",
 	      "mov64_m",
+          "xchgx8",
+          "xchgx16",
+          "xchgx32",
+          "xchgx64",
 
 	      /* Load without base or index register (offset only) for 64-bit
 	         ABI. */
