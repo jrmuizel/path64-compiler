@@ -3938,6 +3938,8 @@ Expand_Int_To_Float (TN *dest, TN *src, TYPE_ID imtype, TYPE_ID fmtype, OPS *ops
       top = TOP_cvtdq2ps;    
     else if (imtype == MTYPE_U8 || imtype == MTYPE_I8)
       top = TOP_cvtsi2sdq; // bug 3082 workaround, others should not reach here
+	else if(imtype == MTYPE_V16I8) 
+      top = TOP_cvtdq2ps;
   }
 
   FmtAssert( top != TOP_UNDEFINED, ("Expand_Int_To_Float: Undefined opcode") );
