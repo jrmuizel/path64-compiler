@@ -531,9 +531,15 @@ main (int argc, char *argv[])
 		fputc('\n', stderr);
 	    char *exe_dir = get_executable_dir();
 
-	    fprintf(stderr, "Copyright 2000, 2001 Silicon Graphics, Inc. All Rights Reserved.\n");
-	    fprintf(stderr, "Copyright 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010 PathScale Inc.  All Rights Reserved.\n");
-	    fprintf(stderr, "You can find complete copyright, patent and legal notices in the corresponding documentation\n");
+#ifdef PATH64_ENABLE_PSCRUNTIME
+            fprintf(stderr, "Copyright PathScale Inc and others.  All Rights Reserved.\n");
+            fprintf(stderr, "You can find complete copyright, patent and legal notices in the corresponding documentation.\n");
+#else
+            fprintf(stderr, "Copyright PathScale Inc.  All Rights Reserved.\n");
+            fprintf(stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n");
+            fprintf(stderr, "This is free software: you are free to change and redistribute it.\n");
+            fprintf(stderr, "There is NO WARRANTY, to the extent permitted by law.\n");
+#endif //PSCRUNTIME
 	}
 	if ((show_version || dump_version) &&
 	    (!execute_flag || source_kind == S_NONE)) {
@@ -1517,8 +1523,13 @@ display_version(boolean dump_version_only)
     return;
   }
   // TODO : Move this string to a configure option
+#ifdef PATH64_ENABLE_PSCRUNTIME
   fprintf(stderr, "PathScale (tm) Compiler Suite: Version %s\n",
 	  compiler_version);
+#else 
+  fprintf(stderr, "Path64 Community Compiler: Version %s\n",
+	  compiler_version);
+#endif //PSCRUNTIME
   if (show_version > 1) {
     fprintf(stderr, "Changeset: %s\n", cset_id);
     fprintf(stderr, "Built by: %s@%s in %s\n", build_user, build_host,
