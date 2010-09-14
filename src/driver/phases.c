@@ -1022,17 +1022,22 @@ add_file_args (string_list_t *args, phases_t index)
 			}
 			add_inc_path(args, "%s/include", root);
 #else
-                        if (source_lang == L_CC && !option_was_seen(O_nostdinc__)) {
-				add_string(args, "-D__STDCXX_CONFIG=\<__stl_config.h\>");
-                                add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stl",
-                                         root);
-                                add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stl/ansi",
-                                         root);
-                                if(stl_threadsafe){
-                                    add_string(args,"-D_RWSTD_POSIX_THREADS");
-                                }
-                                add_string(args,"-nostdinc++");
-                        }
+            if (source_lang == L_CC) {
+
+                add_arg(args, "-D__STDCXX_CONFIG=<__stl_config-%s.h>",
+                        current_target->targ_name);
+
+                if(!option_was_seen(O_nostdinc__)) {
+                    add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stl",
+                             root);
+                    add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stl/ansi",
+                             root);
+                    if(stl_threadsafe){
+                        add_string(args,"-D_RWSTD_POSIX_THREADS");
+                    }
+                    add_string(args,"-nostdinc++");
+                }
+            }
 			add_inc_path(args, "%s/lib/" PSC_FULL_VERSION "/include",
 				     root);
 #endif //PATH64_ENABLE_PSCRUNTIME
