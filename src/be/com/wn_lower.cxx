@@ -7434,6 +7434,12 @@ static BOOL Is_Fast_Divide(WN *wn)
   case OPR_REM:
   case OPR_MOD:
     {
+      TYPE_ID rtype = WN_rtype(wn);
+      if(Is_Target_32bit() && (rtype == MTYPE_I8 || rtype == MTYPE_U8)) {
+          // 64bit contants are not rematerialized in 32bit mode
+          return FALSE;
+      }
+
       if (WN_operator_is(WN_kid1(wn), OPR_INTCONST)) {
 	TYPE_ID rtype = OPCODE_rtype(WN_opcode(wn));
 	INT64 constval = WN_const_val(WN_kid1(wn));
