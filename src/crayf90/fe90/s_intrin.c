@@ -7719,11 +7719,20 @@ void    exponent_intrinsic(opnd_type     *result_opnd,
                  spec_idx,
                  FALSE);
 
-   IR_TYPE_IDX(ir_idx) = ATD_TYPE_IDX(ATP_RSLT_IDX(*spec_idx));
+   /* _EXPONENT_4 and friends in libfi/mathlb/exponent.c only returns
+    * _f_int. Therefor we make type of Exponent_Opr
+    * CG_INTEGER_DEFAULT_TYPE and add a cast opnd to get it right.
+    */
+   IR_TYPE_IDX(ir_idx) = CG_INTEGER_DEFAULT_TYPE;
    IR_RANK(ir_idx) = res_exp_desc->rank;
    IR_OPR(ir_idx) = Exponent_Opr;
    COPY_OPND(IR_OPND_L(ir_idx), IR_OPND_R(ir_idx));
    IR_OPND_R(ir_idx) = null_opnd;
+
+   cast_opnd_to_type_idx(result_opnd, INTEGER_DEFAULT_TYPE);
+   res_exp_desc->type_idx = ATD_TYPE_IDX(ATP_RSLT_IDX(*spec_idx));
+   res_exp_desc->linear_type =
+       TYP_LINEAR(ATD_TYPE_IDX(ATP_RSLT_IDX(*spec_idx)));
 
    /* must reset foldable and will_fold_later because there is no */
    /* folder for this intrinsic in constructors.                  */
