@@ -183,6 +183,30 @@ add_implied_string (string_list_t *list, int iflag, int flag, phases_t phase)
 		remove_previous_mf (list);
 	}
 
+#ifdef PATH64_ENABLE_PSCRUNTIME
+	//we intercept -Wp,<option> and pass <option>
+        //this should be done if we call cc142 explicitly
+        //common case is like -Wp,-MD,scripts/basic/.fixdep.d
+	if (!strncmp(iname, "-Wp,", 4)) {
+	    // cut away -Wp, prefix and split the rest in pieces at each ","
+	    int i, prev;
+	    char *s;
+	    iname[3] = '\0';
+	    iname+=3;
+	    prev = 1;
+	    s = iname;
+	    for (i = 1; s[i]; i++) {
+		if (s[i] == ',') {
+		    s[i] = '\0';
+		    add_string(list, s + prev);
+		    prev = i+1;
+                    break;
+		}
+	    }
+	    add_string(list, s + prev);
+	}
+#endif //PSCRUNTIME
+
 #ifdef KEY
 	// Coco Fortran preprocessor.
 	if (phase == P_f_coco) {
@@ -261,6 +285,7 @@ add_implied_string (string_list_t *list, int iflag, int flag, phases_t phase)
 		else
 			add_string(list, iname);
 	}
+
 }
 
 static void
