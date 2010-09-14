@@ -686,7 +686,7 @@ static vector<std::string> get_extra_args(const char* ipaa_filename)
     args.push_back("-pic1");
     break;
   case F_NON_SHARED:
-    args.push_back("-non_shared");
+    args.push_back("-static");
     break;
   case F_RELOCATABLE:
     if (IPA_Enable_Relocatable_Opt == TRUE)
