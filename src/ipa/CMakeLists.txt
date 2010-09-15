@@ -166,7 +166,7 @@ add_definitions(${PATH64_STDC_FORMAT_MACROS})
 
 path64_add_multiarch_library(ipa SHARED libipa_sources)
 path64_set_multiarch_property(ipa PREFIX "")
-path64_set_multiarch_property(ipa COMPILE_DEFINITIONS MONGOOSE_BE;_SUPPORT_IPA;__STDC_FORMAT_MACROS;__MIPS_AND_IA64_ELF_H;BACK_END)
+path64_set_multiarch_property(ipa COMPILE_DEFINITIONS MONGOOSE_BE;_SUPPORT_IPA;__MIPS_AND_IA64_ELF_H;BACK_END)
 path64_set_multiarch_property(ipa COMPILE_FLAGS
                               "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@")
 path64_multiarch_link_multiarch_libraries(ipa be ipl)
@@ -176,7 +176,7 @@ path64_add_dependencies_from_multiarch(compiler-stage ipa)
 
 path64_add_multiarch_library(ipl SHARED libipl_sources)
 path64_set_multiarch_property(ipl PREFIX "")
-path64_set_multiarch_property(ipl COMPILE_DEFINITIONS MONGOOSE_BE;IPA_SUMMARY;__STDC_FORMAT_MACROS;__MIPS_AND_IA64_ELF_H)
+path64_set_multiarch_property(ipl COMPILE_DEFINITIONS MONGOOSE_BE;IPA_SUMMARY;__MIPS_AND_IA64_ELF_H)
 path64_set_multiarch_property(ipl COMPILE_FLAGS
                               "-I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@")
 path64_add_multiarch_dependencies(ipl generate_preg_list generate_topcode)
