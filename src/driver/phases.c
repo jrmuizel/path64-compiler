@@ -828,15 +828,15 @@ void add_asm_output(string_list_t *args, const char *the_file) {
         // bug 2025
         // Create .o files in /tmp in case the src dir is not
         // writable.
+	char *the_file_copy = strdup(the_file);
         if (!(keep_flag ||
              (ipa == TRUE) ||
              remember_last_phase == P_any_as)) {
-
-            char *temp_obj_file = get_object_file (the_file);
+            char *temp_obj_file = get_object_file (the_file_copy);
             add_string(args, temp_obj_file);
         } else {
             char * o_name;
-            o_name = construct_given_name(the_file,"o",
+            o_name = construct_given_name(the_file_copy,"o",
               (keep_flag || multiple_source_files || ((shared == RELOCATABLE) && (ipa == TRUE))) ? TRUE : FALSE);
 #ifdef FAT_WHIRL_OBJECTS
             if(ipa == TRUE) {
@@ -847,6 +847,7 @@ void add_asm_output(string_list_t *args, const char *the_file) {
 #endif //FAT_WHIRL_OBJECTS
                 add_string(args, o_name);
         }
+	free(the_file_copy);
     }
 }
 
