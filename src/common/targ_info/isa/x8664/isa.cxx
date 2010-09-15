@@ -1022,6 +1022,7 @@ main ()
 	      "pand_mmx",
 	      "pandn_mmx",
           "pand128",
+          "pandn128",
 	      "por_mmx",
 	      "pxor_mmx",
 	      "unpckhpd",

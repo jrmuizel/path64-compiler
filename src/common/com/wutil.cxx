@@ -1234,6 +1234,7 @@ static const struct {
   INTRN_PADDD128,               "INTRN_PADDD128",
   INTRN_PADDW128,               "INTRN_PADDW128",
   INTRN_PAND128,                "INTRN_PAND128",
+  INTRN_PANDN128,               "INTRN_PANDN128",
   INTRN_PEXTRW64,               "INTRN_PEXTRW64",
   INTRN_PEXTRW128,               "INTRN_PEXTRW128",
   INTRN_PINSRW64,               "INTRN_PINSRW64",

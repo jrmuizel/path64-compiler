@@ -909,6 +909,7 @@ main()
   		    TOP_pand_mmx,       0x000000ff,
   		    TOP_pandn_mmx,      0x000000ff,
             TOP_pand128,        0x000000ff,
+            TOP_pandn128,       0x000000ff,
   		    TOP_por_mmx,        0x000000ff,
   		    TOP_pxor_mmx,       0x000000ff,
 		    TOP_mfence,         0x000000ff,
