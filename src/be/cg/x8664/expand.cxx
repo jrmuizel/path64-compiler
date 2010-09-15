@@ -2275,7 +2275,7 @@ void Expand_Binary_And (TN *dest, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops)
       return;
     }
 
-    if (!is_64bit || ISA_LC_Value_In_Class ( val, LC_simm32)) 
+    if (!is_64bit && ISA_LC_Value_In_Class ( val, LC_simm32)) 
       new_opcode = is_64bit ? TOP_andi64 : TOP_andi32;
     else {
       src1 = Expand_Immediate_Into_Register(src1, is_64bit, ops);
@@ -2325,7 +2325,7 @@ void Expand_Binary_Or (TN *dest, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops)
       return;
     }
 
-    if (!is_64bit || ISA_LC_Value_In_Class ( val, LC_simm32)) 
+    if (!is_64bit && ISA_LC_Value_In_Class ( val, LC_simm32)) 
       new_opcode = is_64bit ? TOP_ori64 : TOP_ori32;
     else {
       src1 = Expand_Immediate_Into_Register(src1, is_64bit, ops);
@@ -2374,7 +2374,7 @@ void Expand_Binary_Xor (TN *dest, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops)
       return;
     }
 
-    if (!is_64bit || ISA_LC_Value_In_Class ( val, LC_simm32)) 
+    if (!is_64bit && ISA_LC_Value_In_Class ( val, LC_simm32)) 
       new_opcode = is_64bit ? TOP_xori64 : TOP_xori32;
     else {
       src1 = Expand_Immediate_Into_Register(src1, is_64bit, ops);
