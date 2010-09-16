@@ -7288,6 +7288,9 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
   case INTRN_PAND128:
     Build_OP(TOP_pand128, result, op0, op1, ops );
     break;
+   case INTRN_PANDN128:
+    Build_OP(TOP_pandn128, result, op0, op1, ops );
+    break;
    case INTRN_PEXTRW64:
     Build_OP(TOP_pextrw64, result, op0, op1, ops );
     break;

@@ -2175,6 +2175,7 @@ main()
   		     TOP_pand_mmx,
   		     TOP_pandn_mmx,
              TOP_pand128,
+             TOP_pandn128,
   		     TOP_por_mmx,
   		     TOP_pxor_mmx,
 		     TOP_xzero32,
@@ -3205,6 +3206,7 @@ main()
   		     TOP_pand_mmx,
   		     TOP_pandn_mmx,
              TOP_pand128,
+             TOP_pandn128,
   		     TOP_por_mmx,
   		     TOP_pxor_mmx,
 		     TOP_subus128v16,
@@ -3234,7 +3236,8 @@ main()
                      TOP_pcmpistrm,
                      TOP_pcmpestri,
                      TOP_pcmpestrm,
-		     TOP_pand128,
+             TOP_pand128,
+             TOP_pandn128,
 		     TOP_UNDEFINED );
 
   /* ==== x86 style instructions ==== */

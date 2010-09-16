@@ -1563,6 +1563,7 @@ static void Init_OP_Name()
   OP_Name[TOP_pand_mmx] = "pand";
   OP_Name[TOP_pandn_mmx] = "pandn";
   OP_Name[TOP_pand128] = "pand";
+  OP_Name[TOP_pandn128] = "pandn";
   OP_Name[TOP_pextrw64] = "pextrw";
   OP_Name[TOP_pextrw128] = "pextrw";
   OP_Name[TOP_pinsrw64] = "pinsrw";

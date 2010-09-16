@@ -364,7 +364,8 @@ main()
 		     TOP_max128v16,
 		     TOP_min128v8,
 		     TOP_min128v16,
-		     TOP_pand128,
+             TOP_pand128,
+             TOP_pandn128,
 		     TOP_UNDEFINED);
   Result(0, fp128);
   Operand(0, fp128, opnd1);
