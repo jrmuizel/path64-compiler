@@ -132,7 +132,7 @@ path64_add_executable_for_arch(mfef95-tmp ${host_arch}
                                ${PATHSCALE_MFEF95_SRCS} ${PATHSCALE_MFEF95_TMP_SRCS})
 set_source_files_properties(${PATHSCALE_MFEF95_TMP_SRCS} PROPERTIES
                             COMPILE_DEFINITIONS "_LIBU;_LITTLE_ENDIAN")
-target_link_libraries(mfef95-tmp comutil-host fe90 fe90-tmp arith cif ${MFEF95_TMP_FORTRAN_LINK_LIB} m)
+target_link_libraries(mfef95-tmp comutil-host fe90-host fe90-tmp-host arith cif ${MFEF95_TMP_FORTRAN_LINK_LIB} m)
 path64_set_property_for_arch(mfef95-tmp ${host_arch} COMPILE_FLAGS
                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 
