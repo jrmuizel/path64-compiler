@@ -79,6 +79,7 @@
 #include "targ_isa_registers.h"
 
 typedef struct abi_property *ABI_PROPERTY;
+typedef struct ext_description *EXT_DESCRIPTION;
 
 extern void ABI_Properties_Begin(const char *name);
 extern ABI_PROPERTY Create_Reg_Property(const char *name);

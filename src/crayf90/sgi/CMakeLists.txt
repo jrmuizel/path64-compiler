@@ -18,6 +18,7 @@ include_directories(
 ../../clibinc/cray
 ../include
 ../../include/cmplrs
+${PATHSCALE_BINARY_DIR}/common/targ_info/x8664
 
 )
 
@@ -50,10 +51,10 @@ set(PATHSCALE_MFEF95_SRCS       "../../common/com/config.cxx"
 				"../../common/com/wn_simp.cxx"
 				"../../common/com/wn_util.cxx"
 				"../../common/com/wutil.cxx"
-				"../../common/com/x8664/config_targ.cxx"
-				"../../common/com/x8664/config_elf_targ.cxx"
-				"../../common/com/x8664/targ_const.cxx"
-				"../../common/com/x8664/targ_sim.cxx"
+				"../../common/com/@ARCH@/config_targ.cxx"
+				"../../common/com/@ARCH@/config_elf_targ.cxx"
+				"../../common/com/@ARCH@/targ_const.cxx"
+				"../../common/com/@ARCH@/targ_sim.cxx"
 				"../../crayf90/sgi/cwh_unimp.cxx"
 				"../../crayf90/sgi/cwh_addr.cxx"
 				"../../crayf90/sgi/cwh_auxst.cxx"
@@ -77,36 +78,19 @@ set(PATHSCALE_MFEF95_SRCS       "../../common/com/config.cxx"
 				"../../crayf90/sgi/sgi_cmd_line.cxx"
 				"../../crayf90/sgi/path_intrinsic_list.cxx"
 				"../../crayf90/sgi/make_depend.cxx"
-				"../../common/com/x8664/config_host.c"
-				"../../common/com/x8664/config_platform.c")
+				"../../common/com/@ARCH@/config_host.c"
+				"../../common/com/@ARCH@/config_platform.c")
 
 ADD_DEFINITIONS(
 -DFRONT_END
 -DFRONT_F90
--D_TARGET_MONGOOSE)
+-D_TARGET_MONGOOSE
+${PATH64_STDC_FORMAT_MACROS})
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	ADD_DEFINITIONS(-D_DEBUG)
 ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-add_executable (mfef95 ${PATHSCALE_MFEF95_SRCS})
-target_link_libraries (mfef95 comutil fe90 fe90-pathf arith cif pathfortran-static m)
-
-add_custom_command(
-    OUTPUT ${Path64_BINARY_DIR}/lib/mfef95-stage
-    COMMAND rm -f ${Path64_BINARY_DIR}/lib/mfef95
-    COMMAND ln -fs ../bin/mfef95 ${Path64_BINARY_DIR}/lib/mfef95
-    COMMAND touch ${Path64_BINARY_DIR}/lib/mfef95-stage
-)
-
-add_custom_target(
-    mfef95-stage ALL
-    DEPENDS ${Path64_BINARY_DIR}/bin/mfef95
-    DEPENDS ${Path64_BINARY_DIR}/lib/mfef95-stage
-)
-
-install(TARGETS mfef95
-        RUNTIME DESTINATION ${PATH64_LIB_PATH})
-
+# Building mfef95_tmp for host architecture
 
 
 set(PATHSCALE_MFEF95_TMP_SRCS       "../../libcsup/msgnew/catgetmsg.c"
@@ -142,23 +126,76 @@ include_directories(
     "../../libf/include"
 )
 
-add_executable (mfef95-tmp ${PATHSCALE_MFEF95_SRCS} ${PATHSCALE_MFEF95_TMP_SRCS})
-set_source_files_properties(${PATHSCALE_MFEF95_TMP_SRCS} PROPERTIES COMPILE_DEFINITIONS "_LIBU;_LITTLE_ENDIAN")
-target_link_libraries (mfef95-tmp comutil fe90 fe90-tmp arith cif ${MFEF95_TMP_FORTRAN_LINK_LIB} m)
+path64_get_host_arch(host_arch)
+
+path64_add_executable_for_arch(mfef95-tmp ${host_arch}
+                               ${PATHSCALE_MFEF95_SRCS} ${PATHSCALE_MFEF95_TMP_SRCS})
+set_source_files_properties(${PATHSCALE_MFEF95_TMP_SRCS} PROPERTIES
+                            COMPILE_DEFINITIONS "_LIBU;_LITTLE_ENDIAN")
+target_link_libraries(mfef95-tmp comutil-host fe90-host fe90-tmp-host arith cif ${MFEF95_TMP_FORTRAN_LINK_LIB} m)
+path64_set_property_for_arch(mfef95-tmp ${host_arch} COMPILE_FLAGS
+                             "-I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
+
 
 add_custom_command(
-    OUTPUT ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION} ${Path64_BINARY_DIR}/lib/mfef95 ${Path64_BINARY_DIR}/lib/be ${Path64_BINARY_DIR}/bin/pathf90
-    COMMAND ln -s . ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
-    COMMAND ln -s ../bin/mfef95-tmp ${Path64_BINARY_DIR}/lib/mfef95
-    COMMAND ln -s ../bin/be ${Path64_BINARY_DIR}/lib/be
-    COMMAND ln -s pathcc ${Path64_BINARY_DIR}/bin/pathf90
+    OUTPUT ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
+    COMMAND ${CMAKE_COMMAND} -E create_symlink mfef95-tmp ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
+    DEPENDS ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95-tmp
+    )
+
+add_custom_command(
+    OUTPUT ${Path64_BINARY_DIR}/bin/pathf90
+    COMMAND ${CMAKE_COMMAND} -E create_symlink pathcc ${Path64_BINARY_DIR}/bin/pathf90
+    COMMAND ${CMAKE_COMMAND} -E create_symlink pathcc ${Path64_BINARY_DIR}/bin/pathf95
+    DEPENDS ${Path64_BINARY_DIR}/bin/pathcc
 )
+
+
+#add_custom_command(
+#    OUTPUT ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+#           ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
+#           ${Path64_BINARY_DIR}/lib/be ${Path64_BINARY_DIR}/bin/pathf90
+#    COMMAND ln -s . ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+#    COMMAND ln -s mfef95-tmp ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
+#    COMMAND ln -s pathcc ${Path64_BINARY_DIR}/bin/pathf90
+#)
+
+
+
+path64_set_multiarch_sources(mfef95_sources COMMON ${PATHSCALE_MFEF95_SRCS})
+path64_add_multiarch_executable(mfef95 mfef95_sources)
+path64_multiarch_link_multiarch_libraries(mfef95 comutil fe90 fe90-pathf)
+path64_multiarch_link_libraries(mfef95 arith cif pathfortran-host m)
+path64_set_multiarch_property(mfef95 COMPILE_FLAGS
+                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
+path64_install_multiarch(mfef95)
+path64_add_dependencies_from_multiarch(compiler-stage-Fortran mfef95)
+
+#add_custom_command(
+#    OUTPUT ${Path64_BINARY_DIR}/lib/mfef95-stage
+#    COMMAND rm -f ${Path64_BINARY_DIR}/lib/mfef95
+#    COMMAND ln -fs ../bin/mfef95 ${Path64_BINARY_DIR}/lib/mfef95
+#    COMMAND touch ${Path64_BINARY_DIR}/lib/mfef95-stage
+#)
+
+#add_custom_target(
+#    mfef95-stage ALL
+#    DEPENDS ${Path64_BINARY_DIR}/bin/mfef95
+#    DEPENDS ${Path64_BINARY_DIR}/lib/mfef95-stage
+#)
+
+#install(TARGETS mfef95
+#        RUNTIME DESTINATION ${PATH64_LIB_PATH})
+
 # TODO : Fix the intrinsic_module_path since I know this isn't correct
 add_custom_target(
     switch_fc
-    DEPENDS ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+    DEPENDS ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
+            ${Path64_BINARY_DIR}/bin/pathf90
     VERBATIM
     COMMAND printf "#!/bin/sh\\n${Path64_BINARY_DIR}/bin/pathf90 -Wf,-eQ -Wf,-intrinsic_module_gen -Wf,-intrinsic_module_path=. \"$\@\"\\n" > ${Path64_BINARY_DIR}/fc-wrap.sh
 )
 
-add_dependencies(switch_fc generate_cf95_cat mfef95-tmp be-exec inline crtendS)
+add_dependencies(switch_fc generate_cf95_cat mfef95-tmp compiler-stage)
+path64_add_dependencies_from_multiarch(switch_fc be-all inline crtendS)
+

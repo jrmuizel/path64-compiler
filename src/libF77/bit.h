@@ -36,6 +36,6 @@
 #define		NBI		32	/* # bits in int	*/
 #define		NBLL		64	/* # bits in long long	*/
 
-extern int32 F77mask[], *F77zmask;
-extern int64 F77llmask[], *F77llzmask;
+extern int32_t F77mask[], *F77zmask;
+extern int64_t F77llmask[], *F77llzmask;
 #endif /* !__BIT_H__ */

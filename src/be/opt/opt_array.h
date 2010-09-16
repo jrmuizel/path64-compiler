@@ -55,7 +55,8 @@ typedef struct mem_pool MEM_POOL;
 
 #include "defs.h"
 #include "opt_defs.h"
-#include "opt_sys.h"
+// [HK] added missing header for EC_No_Mem declaration
+#include "erglob.h"
 
 
 //----------------------------------------------------------------------------

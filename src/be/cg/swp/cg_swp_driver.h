@@ -43,7 +43,7 @@
 #include "cg_swp_lifetime.h"
 
 
-
+#ifndef TARG_ST
 /*******************************************************************//**
 * @brief The Software Pieplining (SWP) Driver
 *
@@ -112,6 +112,6 @@ class SWP_DRIVER : public CXX_MEM_POOL {
   static void
   Print_Status_Message (LOOP_DESCR *loop, SWP_STATUS_CODE status); 
 };
-
+#endif
 #endif /* cg_swp_driver_INCLUDED */
 

@@ -30,15 +30,13 @@
 #include "defalias.h"
 #include "moremath.h"
 
-#if defined(BUILD_OS_DARWIN)
+#ifndef HAVE_SINCOSF
 static void
 sincosf(float f, float *s, float *c) {
   *s = sinf(f);
   *c = cosf(f);
   }
-#else /* defined(BUILD_OS_DARWIN) */
-extern  void    sincosf(float, float *, float *);
-#endif /* defined(BUILD_OS_DARWIN) */
+#endif
 
 complex __powcc(float areal, float aimag, float breal, float bimag)
 {

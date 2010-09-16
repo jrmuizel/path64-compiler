@@ -57,10 +57,10 @@ pathf90_getpid(void)
 
 #else
 
-extern __int32_t
+extern int32_t
 getpid_(void)
 
 #endif /* KEY Bug 1683 */
 {
-	return((__int32_t)getpid());
+	return((int32_t)getpid());
 }

@@ -60,6 +60,7 @@
 #include <sys/time.h>
 #endif
 #include <string.h>
+#include "sys_ctime.h"
 
 #ifdef KEY /* Bug 4135, 5019 */
 
@@ -89,7 +90,9 @@ pathf90_subr_time(char *buf, int len)
   char result[CTIME_BUFLEN];
   time_t t = time(0);
   memset(buf, ' ', len);
-  memcpy(buf, ctime_r(&t, result) + 11, (len < 8) ? len : 8);
+  memcpy(buf,
+         call_sys_ctime_r(&t, result, CTIME_BUFLEN) + 11,
+         (len < 8) ? len : 8);
 }
 
 #else

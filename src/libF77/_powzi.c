@@ -29,7 +29,7 @@
 #include "cmplx.h"
 #include "z_div.h"
 
-dcomplex __powzi(double adreal, double adimag, int32 n)
+dcomplex __powzi(double adreal, double adimag, int32_t n)
 /* __powzi = a**n  */
 {
   double t;

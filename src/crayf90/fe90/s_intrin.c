@@ -205,6 +205,48 @@ typeless_to_type(int list_idx1, Uint result_type_idx) {
 }
 #endif /* KEY Bug 12482 */
 
+/* write_const_array has been written to do the same conversion write_constant in s_cnstrct.c does. */
+static void
+write_const_array(long_type *const_array, long64 *host_array)
+{
+    int bits;
+    int ca_word_offset;
+    int ca_bit_offset;
+    int words;
+    int i;
+    long64 mask;
+
+    bits = storage_bit_size_tbl[INTEGER_DEFAULT_TYPE];
+    words = TARGET_BITS_TO_WORDS(bits);
+    mask = ((long64)1<<bits) -1;
+    ca_bit_offset = 0;
+    memset((void *)const_array, 0, sizeof(*const_array) * MAX_NUM_DIMS);
+    for (i = 0; i < MAX_NUM_DIMS; i++) {
+	if (bits % TARGET_BITS_PER_WORD != 0) {
+	    if (bits < TARGET_BITS_PER_WORD) {
+		ca_word_offset = ca_bit_offset/TARGET_BITS_PER_WORD;
+/* What about both being BIG_ENDIAN? Same goes for write_constant in s_cnstrct.c */
+# if defined(_HOST_LITTLE_ENDIAN) && defined(_TARGET_LITTLE_ENDIAN)
+		const_array[ca_word_offset] |= (host_array[i] & mask) << (ca_bit_offset % TARGET_BITS_PER_WORD);
+# else
+		const_array[ca_word_offset] |= (host_array[i] & mask) << ((TARGET_BITS_PER_WORD - ca_bit_offset % TARGET_BITS_PER_WORD) - bits);
+# endif
+	    } else {
+		printf("error in write_const_array: bits >= TARGET_BITS_PER_WORD\n");
+	    }
+	} else {
+	    if (words > 1) {
+		printf("error in write_const_array: words > 1\n");
+	    }
+	    ca_word_offset = TARGET_BITS_TO_WORDS(ca_bit_offset);
+	    const_array[ca_word_offset] = host_array[i];
+	}
+	ca_bit_offset += bits;
+    }
+
+    return;
+}
+
 
 /******************************************************************************\
 |*                                                                            *|
@@ -13311,33 +13353,18 @@ void    lbound_intrinsic(opnd_type     *result_opnd,
 
    if (make_const_tmp) {
       ATP_EXTERNAL_INTRIN(*spec_idx) = FALSE;
-      bit_length = TARGET_BITS_PER_WORD * arg_info_list[info_idx1].ed.rank;
+      bit_length = storage_bit_size_tbl[INTEGER_DEFAULT_TYPE]* (long)arg_info_list[info_idx1].ed.rank;
 # ifdef _WHIRL_HOST64_TARGET64
-      bit_length >>= 1;
+      /* bit_length >>= 1; */
 # endif /* _WHIRL_HOST64_TARGET64 */
 
       CLEAR_TBL_NTRY(type_tbl, TYP_WORK_IDX);
       TYP_TYPE(TYP_WORK_IDX) = Typeless;
+      TYP_LINEAR(TYP_WORK_IDX) = Long_Typeless;
       TYP_BIT_LEN(TYP_WORK_IDX)	= bit_length;
       constant_type_idx	= ntr_type_tbl();
 
-      for (i = 0; i < MAX_NUM_DIMS; i++) {
-
-# if defined(_TARGET32)
-
-         /* Make sure that if Integer_8 is default that */
-         /* the values still fit in the long container. */
-
-         if (INTEGER_DEFAULT_TYPE == Integer_8) {
-            /* JEFFL - Need overflow check here for each array entry */
-
-         }
-# endif
-         /* JEFFL - This needs to be converted from host to */
-         /*         target if we decide that is necessary.  */
-
-         const_array[i] = (long_type) host_array[i];
-      }
+      write_const_array(const_array, host_array);
 
       the_cn_idx = ntr_const_tbl(constant_type_idx,
                                  FALSE,
@@ -14150,33 +14177,18 @@ void    ubound_intrinsic(opnd_type     *result_opnd,
 
    if (make_const_tmp) {
       ATP_EXTERNAL_INTRIN(*spec_idx) = FALSE;
-      bit_length = TARGET_BITS_PER_WORD* (long)arg_info_list[info_idx1].ed.rank;
+      bit_length = storage_bit_size_tbl[INTEGER_DEFAULT_TYPE]* (long)arg_info_list[info_idx1].ed.rank;
 # ifdef _WHIRL_HOST64_TARGET64
-      bit_length >>= 1;
+      /* bit_length >>= 1; */
 # endif /* _WHIRL_HOST64_TARGET64 */
 
       CLEAR_TBL_NTRY(type_tbl, TYP_WORK_IDX);
       TYP_TYPE(TYP_WORK_IDX) = Typeless;
+      TYP_LINEAR(TYP_WORK_IDX) = Long_Typeless;
       TYP_BIT_LEN(TYP_WORK_IDX)	= bit_length;
       constant_type_idx	 = ntr_type_tbl();
 
-      for (i = 0; i < MAX_NUM_DIMS; i++) {
-
-# if defined(_TARGET32)
-
-         /* Make sure that if Integer_8 is default that */
-         /* the values still fit in the long container. */
-
-         if (INTEGER_DEFAULT_TYPE == Integer_8) {
-            /* JEFFL - Need overflow check here for each array entry */
-
-         }
-# endif
-         /* JEFFL - This needs to be converted from host to */
-         /*         target if we decide that is necessary.  */
-
-         const_array[i] = (long_type) host_array[i];
-      }
+      write_const_array(const_array, host_array);
 
       the_cn_idx = ntr_const_tbl(constant_type_idx,
                                  FALSE,
@@ -14808,33 +14820,18 @@ void    shape_intrinsic(opnd_type     *result_opnd,
    ATP_EXTERNAL_INTRIN(*spec_idx) = FALSE;
 
    if (res_exp_desc->foldable) {
-      bit_length = TARGET_BITS_PER_WORD* (long)arg_info_list[info_idx1].ed.rank;
+      bit_length = storage_bit_size_tbl[INTEGER_DEFAULT_TYPE]* (long)arg_info_list[info_idx1].ed.rank;
 # ifdef _WHIRL_HOST64_TARGET64
-      bit_length >>= 1;
+      /* bit_length >>= 1; */
 # endif /* _WHIRL_HOST64_TARGET64 */
 
       CLEAR_TBL_NTRY(type_tbl, TYP_WORK_IDX);
       TYP_TYPE(TYP_WORK_IDX)	= Typeless;
+      TYP_LINEAR(TYP_WORK_IDX) = Long_Typeless;
       TYP_BIT_LEN(TYP_WORK_IDX)	= bit_length;
       constant_type_idx		= ntr_type_tbl();
 
-      for (i = 0; i < MAX_NUM_DIMS; i++) {
-
-# if defined(_TARGET32)
-
-         /* Make sure that if Integer_8 is default that */
-         /* the values still fit in the long container. */
-
-         if (INTEGER_DEFAULT_TYPE == Integer_8) {
-            /* JEFFL - Need overflow check here for each array entry */
-
-         }
-# endif
-         /* JEFFL - This needs to be converted from host to */
-         /*         target if we decide that is necessary.  */
-
-         const_array[i] = (long_type) host_array[i];
-      }
+      write_const_array(const_array, host_array);
 
       the_cn_idx = ntr_const_tbl(constant_type_idx,
                                  FALSE,

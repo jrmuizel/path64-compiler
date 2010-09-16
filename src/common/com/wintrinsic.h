@@ -78,8 +78,39 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#ifdef TARG_ST
+/* typedef */ enum {
 
-typedef enum {
+  INTRINSIC_INVALID = -1,
+  INTRINSIC_NONE = 0,
+/* All intrinsic definations are moved to intrn_entry.def */
+#define NEED_INTRN_ID
+# include "intrn_entry.def"
+#undef  NEED_INTRN_ID
+  INTRINSIC_GENERAL_LAST,
+#ifdef TARG_ST
+#include "targ_wintrinsic.h"  /* should at least define INTRINSIC_TARG_LAST */
+#else /* not an ST target */
+  INTRINSIC_TARG_LAST  = INTRINSIC_GENERAL_LAST,
+  INTRINSIC_LAST  = INTRINSIC_TARG_LAST,
+#endif /* TARG_ST */
+
+#if defined(TARG_SL)
+  INTRN_SL_INTRN_BGN = INTRN_VBUF_OFFSET,
+  INTRN_SL2_BEGIN = INTRN_C2_MVGR_R2G,
+  INTRN_SL_INTRN_END = INTRN_VBUF_ABSOLUTE,
+  INTRN_SL2_END = INTRN_VBUF_ABSOLUTE,
+  INTRN_C3_INTRINSIC_BEGIN = INTRN_MUL_SHIFT_HI,
+  INTRN_C3_INTRINSIC_END = INTRN_COPY_HI,
+#endif
+
+  INTRINSIC_FIRST = 1,
+
+} /* INTRINSIC */;
+
+#else
+typedef enum 
+{
 
   /* WARNING: The file common/com/intrn_info.cxx contains an array
    * intrn_info[INTRINSIC_LAST+1] whose elements are indexed using
@@ -858,8 +889,10 @@ typedef enum {
   INTRN_LOCK_RELEASE_I4,
   INTRN_LOCK_RELEASE_I8,
 
-  INTRN_COMPARE_AND_SWAP_I4,
-  INTRN_COMPARE_AND_SWAP_I8,
+  INTRN_VAL_COMPARE_AND_SWAP_I4,
+  INTRN_VAL_COMPARE_AND_SWAP_I8,
+  INTRN_BOOL_COMPARE_AND_SWAP_I4,
+  INTRN_BOOL_COMPARE_AND_SWAP_I8,
 
   INTRN_SYNCHRONIZE,
 
@@ -1328,7 +1361,9 @@ typedef enum {
   INTRN_F4CBRT,
   INTRN_F8CBRT,
 
-  LAST_COMMON_ID = INTRN_F8CBRT,
+  INTRN_BUILTIN_EH_RETURN_DATA_REGNO,
+
+  LAST_COMMON_ID = INTRN_BUILTIN_EH_RETURN_DATA_REGNO,
 
 #ifdef TARG_X8664
 
@@ -1475,6 +1510,7 @@ typedef enum {
   INTRN_SHUFPD,
   INTRN_XORPD,
   INTRN_ANDPD,
+  INTRN_ANDNPD,
   INTRN_ORPD,
   INTRN_STORELPD,
   INTRN_STOREHPD,
@@ -1589,6 +1625,12 @@ typedef enum {
   INTRN_INSERTQ,
   INTRN_PADDD128,
   INTRN_PADDW128,
+  INTRN_PADDQ128,
+  INTRN_ADDSUBPS,
+  INTRN_PCMPISTRI128,
+  INTRN_PCMPISTRM128,
+  INTRN_PCMPESTRI128,
+  INTRN_PCMPESTRM128,
   INTRN_PAND128,
   INTRN_PEXTRW64,
   INTRN_PEXTRW128,
@@ -1616,6 +1658,18 @@ typedef enum {
 #endif // KEY
 
 } INTRINSIC;
+#endif
+
+#ifdef TARG_ST
+typedef int INTRINSIC;
+#define INTRINSIC_LAST	 INTRINSIC_COUNT
+
+  /* [TB] extension support */
+#define INTRINSIC_STATIC_COUNT INTRINSIC_TARG_LAST
+#define INTRINSIC_STATIC_LAST INTRINSIC_TARG_LAST
+BE_EXPORTED extern INTRINSIC INTRINSIC_COUNT;
+#endif
+
 
 #ifdef __cplusplus
 }

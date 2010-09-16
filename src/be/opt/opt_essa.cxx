@@ -275,6 +275,15 @@ ESSA::Ilod_modified_phi_result(const BB_NODE *phi_bb, const CODEREP *cr) const
     // happens we will set the phi's result occurrence to be cr. cr
     // has a mu for the version of the vsym that is the LHS of sr's
     // chi, and sr cannot dominate the phi!
+#ifdef TARG_ST
+    // [CG] Use object_ty()
+    if (Rule()->Aliased_Memop(sr->Lhs()->Points_to(Opt_stab()),
+			      cr->Points_to(Opt_stab()),
+			      sr->Lhs()->object_ty(),
+			      cr->object_ty()) &&
+	!Same_base_diff_offset(sr->Lhs(), cr))
+      return TRUE;
+#else
     if (Rule()->Aliased_Memop(sr->Lhs()->Points_to(Opt_stab()),
 			      cr->Points_to(Opt_stab()),
 			      (sr->Lhs()->Kind() == CK_VAR) ?
@@ -282,6 +291,7 @@ ESSA::Ilod_modified_phi_result(const BB_NODE *phi_bb, const CODEREP *cr) const
 			      cr->Ilod_ty()) &&
 	!Same_base_diff_offset(sr->Lhs(), cr))
       return TRUE;
+#endif
 
     // Fix 459756.  Also see comments above.  Update the mu-node of the
     // CK_IVAR to point the chi of the aliased defstmt.  This fixed the
@@ -342,17 +352,26 @@ ESSA::Ilod_modified_real_occ_phi_opnd(const BB_NODE *def_bb, const CODEREP *cr,
     STMTREP *sr = vsym->Defstmt();
     if (sr == NULL || !OPCODE_is_store(sr->Op())) return TRUE;
 
-#ifdef KEY // bug 7814
+#if defined(KEY) && !defined(TARG_ST) // bug 7814
     if (vsym->Aux_id() == Opt_stab()->Default_vsym())
       return TRUE;
 #endif
-
+#ifdef TARG_ST
+    // [CG]: use object_ty()
+    if (Rule()->Aliased_Memop(sr->Lhs()->Points_to(Opt_stab()),
+			      cr->Points_to(Opt_stab()),
+			      sr->Lhs()->object_ty(),
+			      cr->object_ty()) &&
+	!Same_base_diff_offset(sr->Lhs(), cr))
+      return TRUE;
+#else
     if (Rule()->Aliased_Memop(sr->Lhs()->Points_to(Opt_stab()),
 			      cr->Points_to(Opt_stab()),
 			      sr->Lhs()->Kind() == CK_VAR ? sr->Lhs()->Lod_ty() : sr->Lhs()->Ilod_ty(),
 			      cr->Ilod_ty()) &&
 	!Same_base_diff_offset(sr->Lhs(), cr))
       return TRUE;
+#endif
   }
 
   // if unable to follow the use-def chain, return TRUE.
@@ -393,17 +412,26 @@ ESSA::Ilod_modified_real_occ_real_occ(const BB_NODE *def_bb,
     STMTREP *sr = vsym->Defstmt();
     if (sr == NULL || !OPCODE_is_store(sr->Op())) return TRUE;
 
-#ifdef KEY // bug 7814
+#if defined(KEY) && !defined(TARG_ST)// bug 7814
     if (vsym->Aux_id() == Opt_stab()->Default_vsym())
       return TRUE;
 #endif
-
+#ifdef TARG_ST
+    // [CG]: use object_ty()
+    if (Rule()->Aliased_Memop(sr->Lhs()->Points_to(Opt_stab()),
+			      use_cr->Points_to(Opt_stab()),
+			      sr->Lhs()->object_ty(),
+			      use_cr->object_ty()) &&
+	!Same_base_diff_offset(sr->Lhs(), use_cr))
+      return TRUE;
+#else
     if (Rule()->Aliased_Memop(sr->Lhs()->Points_to(Opt_stab()),
 			      use_cr->Points_to(Opt_stab()), 
 			      sr->Lhs()->Kind() == CK_VAR ? sr->Lhs()->Lod_ty() : sr->Lhs()->Ilod_ty(),
 			      use_cr->Ilod_ty()) &&
 	!Same_base_diff_offset(sr->Lhs(), use_cr))
       return TRUE;
+#endif
   }
 
   // if unable to follow the use-def chain, return TRUE.
@@ -500,7 +528,7 @@ ESSA::Same_e_version_real_occ_real_occ(const EXP_OCCURS *def,
       } 
   } else if (use->Occurrence()->Kind() == CK_OP && 
 	     (OPCODE_operator(use->Occurrence()->Op()) == OPR_INTRINSIC_OP
-#ifdef KEY
+#if defined(KEY) && !defined(TARG_ST)
 	      || OPCODE_operator(use->Occurrence()->Op()) == OPR_PURE_CALL_OP
 #endif
 	     )) {

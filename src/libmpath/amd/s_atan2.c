@@ -60,6 +60,7 @@ regulations applicable in licensee's jurisdiction.
 #undef USE_HANDLE_ERROR
 
 #include "libm_errno_amd.h"
+#include "lib_version.h"
 
 /* Deal with errno for out-of-range arguments
    (only used when _LIB_VERSION is _SVID_) */
@@ -618,7 +619,7 @@ double FN_PROTOTYPE(atan2)(double y, double x)
   else if (yzero)
     { /* Zero y gives +-0 for positive x 
          and +-pi for negative x */
-      if ((_LIB_VERSION == _SVID_) && xzero)
+      if (PATH64_LIB_VERSION_SVID && xzero)
         /* Sigh - _SVID_ defines atan2(0,0) as a domain error */
         return retval_errno_edom(x, y);
       else

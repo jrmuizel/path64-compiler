@@ -61,9 +61,9 @@ pathf90_getgid(void) {
  *	gid will be the real group id
  */
 
-extern __int32_t
+extern int32_t
 getgid_(void)
 {
-	return((__int32_t)getgid());
+	return((int32_t)getgid());
 }
 #endif /* KEY Bug 1683 */

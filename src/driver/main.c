@@ -68,12 +68,13 @@ static char *rcs_id = "$Source: driver/SCCS/s.main.c $ $Revision: 1.109 $";
 #include "run.h"
 #include "objects.h"
 #include "version.h"
+#include "targets.h"
 
 char *help_pattern;
 boolean debug;
 boolean nostdinc = TRUE;
 #ifdef PATH64_ENABLE_PSCRUNTIME
-boolean stdcxx_threadsafe = TRUE;
+boolean stl_threadsafe = TRUE;
 #endif 
 int show_version;
 boolean show_copyright;
@@ -153,14 +154,16 @@ main (int argc, char *argv[])
 	append_default_options(&argc, &argv);
 
 #if defined(KEY) && defined(TARG_MIPS)
-	// If ABI is defined, append the contents of CFLAGS_${ABI}
-	// to the default options.
-	ABI_varname = getenv("ABI");
-	if (ABI_varname) {
-	  ABI_varname = concat_strings("CFLAGS_", ABI_varname);
-	  append_psc_env_flags(&argc, &argv, ABI_varname);
-	  free(ABI_varname);
-	}
+    if (is_target_arch_MIPS()) {
+	  // If ABI is defined, append the contents of CFLAGS_${ABI}
+	  // to the default options.
+	  ABI_varname = getenv("ABI");
+	  if (ABI_varname) {
+	    ABI_varname = concat_strings("CFLAGS_", ABI_varname);
+	    append_psc_env_flags(&argc, &argv, ABI_varname);
+	    free(ABI_varname);
+	  }
+    }
 #endif
 
 	save_command_line(argc, argv);		/* for prelinker    */	
@@ -195,14 +198,8 @@ main (int argc, char *argv[])
             do_exit(1);
         }
 
-	/* Try to find where the compiler is located and set the phase
-	   and library directories appropriately. */
-	set_executable_dir();
-
 	// "-o -" will set this to TRUE.
 	dump_outfile_to_stdout = FALSE;
-
-	init_phase_info();	/* can't add toolroot until other prefixes */
 
         /* Hack for F90 ftpp; For pre processing F90 calls ftpp;
          * Unlike cpp, ftpp does not like the -Amachine(mips) and -Asystem(unix)
@@ -355,6 +352,14 @@ main (int argc, char *argv[])
 		}
 	}
 
+    init_targets();
+
+	/* Try to find where the compiler is located and set the phase
+	   and library directories appropriately. */
+	set_executable_dir();
+
+	init_phase_info();	/* can't add toolroot until other prefixes */
+
 	// Determine if the compiler is called as a linker.
 	int num_non_h_src_files = num_files - num_h_files - num_o_files;
 	boolean called_as_linker =
@@ -376,7 +381,7 @@ main (int argc, char *argv[])
 	Check_Target ();
 #if defined(BUILD_OS_DARWIN)
 	/* Mach-O X86_64 requires PIC */
-	if (abi == ABI_64) {
+	if (abi == ABI_M64) {
 	  toggle(&pic, TRUE);
 	  add_option_seen(O_fpic);
 	}
@@ -450,7 +455,7 @@ main (int argc, char *argv[])
 #ifdef KEY
 	// bug 10620
 	if (mem_model != M_SMALL &&
-	    abi == ABI_N32) {
+	    (abi == ABI_N32 || abi == ABI_M32)) {
 	  error("code model \"%s\" not support in 32-bit mode", mem_model_name);
 	}
 	// bug 9066
@@ -500,40 +505,21 @@ main (int argc, char *argv[])
 #ifdef KEY
 	// Perform GNU4-related checks after set_defaults has run, since
 	// set_defaults can change the gnu version.  Bug 10250.
-	if (gnu_major_version == 4) {
-	  if (option_was_seen(O_fwritable_strings) ||
-	      option_was_seen(O_fno_writable_strings)) {
-	    warning("ignored -fwritable-strings/-fno-writable-strings because"
-		    " option not supported under GNU GCC 4");
-	    set_option_unseen(O_fwritable_strings);
-	    set_option_unseen(O_fno_writable_strings);
-	  }
-	  if ((source_lang == L_cc ||
-	       source_lang == L_CC) &&
-	      option_was_seen(O_mp) &&	// bug 11896
-	      gnu_minor_version < 2) {
-	    warning("ignored -mp because option not supported under"
-		    " GNU GCC 4.0");
-	    set_option_unseen(O_mp);
-	  }
-	  else if (gnu_minor_version >= 2 &&
-	           !option_was_seen(O_fno_cxx_openmp)) {
-	    add_option_seen(O_fcxx_openmp);
-	    toggle(&fcxx_openmp,1);
-	  }
-	} else {	// not GNU 4
-	  if (option_was_seen(O_fgnu_exceptions) ||	// bug 11732
-	      option_was_seen(O_fno_gnu_exceptions)) {
-	    warning("ignored -fgnu-exceptions/-fno-gnu-exceptions because"
-		    " option is for GNU GCC 4 only");
-	    set_option_unseen(O_fgnu_exceptions);
-	    set_option_unseen(O_fno_gnu_exceptions);
-	    gnu_exceptions = UNDEFINED;
-	  }
+	if (option_was_seen(O_fwritable_strings) ||
+	    option_was_seen(O_fno_writable_strings)) {
+	  warning("ignored -fwritable-strings/-fno-writable-strings because"
+	          " option not supported under GNU GCC 4");
+	  set_option_unseen(O_fwritable_strings);
+	  set_option_unseen(O_fno_writable_strings);
 	}
+        if (option_was_seen(O_mp) &&
+                 !option_was_seen(O_fno_cxx_openmp)) {
+          add_option_seen(O_fcxx_openmp);
+          toggle(&fcxx_openmp,1);
+        }
 
 	// Select the appropriate GNU version front-end.
-	init_frontend_phase_names(gnu_major_version, gnu_minor_version);
+	init_frontend_phase_names();
 #endif
 
 	// Display version after running set_defaults, which can change
@@ -545,9 +531,15 @@ main (int argc, char *argv[])
 		fputc('\n', stderr);
 	    char *exe_dir = get_executable_dir();
 
-	    fprintf(stderr, "Copyright 2000, 2001 Silicon Graphics, Inc. All Rights Reserved.\n");
-	    fprintf(stderr, "Copyright 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010 PathScale Inc.  All Rights Reserved.\n");
-	    fprintf(stderr, "You can find complete copyright, patent and legal notices in the corresponding documentation\n");
+#ifdef PATH64_ENABLE_PSCRUNTIME
+            fprintf(stderr, "Copyright PathScale Inc and others.  All Rights Reserved.\n");
+            fprintf(stderr, "You can find complete copyright, patent and legal notices in the corresponding documentation.\n");
+#else
+            fprintf(stderr, "Copyright PathScale Inc.  All Rights Reserved.\n");
+            fprintf(stderr, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n");
+            fprintf(stderr, "This is free software: you are free to change and redistribute it.\n");
+            fprintf(stderr, "There is NO WARRANTY, to the extent permitted by law.\n");
+#endif //PSCRUNTIME
 	}
 	if ((show_version || dump_version) &&
 	    (!execute_flag || source_kind == S_NONE)) {
@@ -773,12 +765,25 @@ static void set_executable_dir (void) {
       basedir = ".";
     }
 #endif /* KEY Mac port */
+    char *target_ppath = target_phase_path();
+
+    if(!is_directory(target_ppath)) {
+      internal_error("phase directory %s for target %s does not exist",
+                     target_ppath, current_target->targ_name);
+    }
+
     substitute_phase_dirs (LIBPATH, basedir, "/lib/" PSC_FULL_VERSION);
-    substitute_phase_dirs (PHASEPATH, basedir, "/lib/" PSC_FULL_VERSION);
+    substitute_phase_dirs (PHASEPATH, "", target_phase_path());
     substitute_phase_dirs ("/usr/include", basedir, "/include");
+    free(target_ppath);
     return;
   }
 
+  internal_error("can not recognize driver location, "
+                 "please check installation consistency");
+
+#if 0
+  // TODO: check if this code still actual
   /* If installed in x/lib/gcc-lib/ */
   ldir = strstr (dir, "/lib/gcc-lib");
   if (ldir != 0) {
@@ -799,6 +804,7 @@ static void set_executable_dir (void) {
     }
     return;
   }
+#endif
 }
 
 static void
@@ -1103,42 +1109,33 @@ print_defaults(int argc, char *argv[])
     internal_error("no default target cpu");
 
 #ifdef TARG_MIPS
-  // ABI
-  switch (abi) {
-    case ABI_N32:	fprintf(stderr, " -n32"); break;
-    case ABI_64:	fprintf(stderr, " -64");  break;
-    default:		internal_error("unknown default ABI");
+  if (is_target_arch_MIPS()) {
+    // ABI
+    switch (abi) {
+      case ABI_N32:	fprintf(stderr, " -n32"); break;
+      case ABI_64:	fprintf(stderr, " -64");  break;
+      default:		internal_error("unknown default ABI");
+    }
   }
 #endif
 
 #ifdef TARG_X8664
-  // ABI
-  switch (abi) {
-    case ABI_N32:	fprintf(stderr, " -m32"); break;
-    case ABI_64:	fprintf(stderr, " -m64"); break;
-    default:		internal_error("unknown default ABI");
-  }
-
-  // SSE, SSE2, SSE3, 3DNow, SSE4a
-  fprintf(stderr, " %s", sse == TRUE ? "-msse" : "-mno-sse");
-  fprintf(stderr, " %s", sse2 == TRUE ? "-msse2" : "-mno-sse2");
-  fprintf(stderr, " %s", sse3 == TRUE ? "-msse3" : "-mno-sse3");
-  fprintf(stderr, " %s", m3dnow == TRUE ? "-m3dnow" : "-mno-3dnow");
-  fprintf(stderr, " %s", sse4a == TRUE ? "-msse4a" : "-mno-sse4a");
-#endif
-
-  // -gnu3/-gnu4
-  if ((invoked_lang == L_cc ||
-       invoked_lang == L_CC) &&
-      !is_toggled(gnu_major_version)) {
-    int gcc_version = get_gcc_major_version();
-    if (gcc_version == 3 ||
-	gcc_version == 4) {
-      fprintf(stderr, " -gnu%d", gcc_version);
-    } else {
-      internal_error("print_defaults: unknown GCC version %d\n", gcc_version);
+  if (is_target_arch_X8664()) {
+    // ABI
+    switch (abi) {
+      case ABI_M32:	fprintf(stderr, " -m32"); break;
+      case ABI_M64:	fprintf(stderr, " -m64"); break;
+      default:		internal_error("unknown default ABI");
     }
+
+    // SSE, SSE2, SSE3, 3DNow, SSE4a
+    fprintf(stderr, " %s", sse == TRUE ? "-msse" : "-mno-sse");
+    fprintf(stderr, " %s", sse2 == TRUE ? "-msse2" : "-mno-sse2");
+    fprintf(stderr, " %s", sse3 == TRUE ? "-msse3" : "-mno-sse3");
+    fprintf(stderr, " %s", m3dnow == TRUE ? "-m3dnow" : "-mno-3dnow");
+    fprintf(stderr, " %s", sse4a == TRUE ? "-msse4a" : "-mno-sse4a");
   }
+#endif
 
   fprintf(stderr, "\n");
 
@@ -1370,15 +1367,17 @@ append_psc_env_flags (int *argc, char *(*argv[]), char *env_var)
   unsetenv (env_var);
 }
 
+#ifndef PATH64_ENABLE_PSCRUNTIME
+
 static FILE *
 read_gcc_output(char *cmdline)
 {
-	char *gcc_path = get_full_phase_name(P_gcpp);
+	const char *gcc_name = "gcc";
 	char *gcc_cmd = NULL;
 	FILE *fp = NULL;
 	int status;
 
-	if (asprintf(&gcc_cmd, "%s %s", gcc_path, cmdline) == -1) {
+	if (asprintf(&gcc_cmd, "%s %s", gcc_name, cmdline) == -1) {
 		internal_error("cannot allocate memory");
 		goto bail;
 	}
@@ -1395,10 +1394,11 @@ read_gcc_output(char *cmdline)
 	wait(&status);
 
 bail:
-	free(gcc_path);
 	free(gcc_cmd);
 	return fp;
 }
+
+#endif // !PATH64_ENABLE_PSCRUNTIME
 
 /* Print the installation path and the paths searched for binaries and
  * libraries. Portions of this code are cribbed from
@@ -1410,10 +1410,12 @@ print_search_path ()
 	string_list_t *libdirs = init_string_list();
 	
 	char *root_prefix = directory_path(get_executable_dir());
-	char *our_path;
+	char *lib_path;
 	FILE *fp;
 	string_item_t *p;
+#ifndef PATH64_ENABLE_PSCRUNTIME
 	char *gcc_lib_ptr;
+#endif // !PATH64_ENABLE_PSCRUNTIME
 	int buflen;
 	
 #ifdef KEY /* Mac port */
@@ -1423,17 +1425,11 @@ print_search_path ()
 #endif /* KEY Mac port */
 	printf ("programs: %s:%s\n", exe_dir, get_phase_dir (P_be));
 	
-	if (abi == ABI_N32) {
-		asprintf(&our_path, "%s/lib/" PSC_FULL_VERSION "/32",
-			 root_prefix);
-	} else {
-		asprintf(&our_path, "%s/lib/" PSC_FULL_VERSION, root_prefix);
-	}
-	
 	/* Add our libraries */
-	add_string(libdirs, our_path);
+        lib_path = target_library_path();
+        add_string(libdirs, lib_path);
 
-	if (abi == ABI_N32) {
+	if (abi == ABI_N32 || abi == ABI_M32) {
 		add_string(libdirs, ":/lib");
 		add_string(libdirs, ":/usr/lib");
 	} else {
@@ -1441,6 +1437,7 @@ print_search_path ()
 		add_string(libdirs, ":/usr/lib64");
 	}
 	
+#ifndef PATH64_ENABLE_PSCRUNTIME
 	if ((fp = read_gcc_output ("-print-search-dirs"))) {
 		char buf[BUFSIZ];
 		while (fgets (buf, BUFSIZ, fp) != NULL) {
@@ -1456,6 +1453,7 @@ print_search_path ()
 		}
 		pclose (fp);
 	}
+#endif // !PATH64_ENABLE_PSCRUNTIME
 
 	fputs ("libraries: ", stdout);
 	for (p = libdirs->head; p != NULL; p = p->next) {
@@ -1463,9 +1461,10 @@ print_search_path ()
 	}
 	putc('\n', stdout);
 
-	free (our_path);
+	free (lib_path);
 }
 
+#ifndef PATH64_ENABLE_PSCRUNTIME
 
 const char *
 get_gcc_version(int *v, int nv)
@@ -1507,24 +1506,14 @@ get_gcc_version(int *v, int nv)
 	return version;
 }
 
+#endif // !PATH64_ENABLE_PSCRUNTIME
+
 static void
 display_version(boolean dump_version_only)
 {
   char *psc_gcc_version;
 
-  if (gnu_major_version == 3)
-    psc_gcc_version = PSC_GCC_VERSION;
-  else if (gnu_major_version == 4) {
-    if (gnu_minor_version == 0)
-      psc_gcc_version = PSC_GCC40_VERSION;
-    else if (gnu_minor_version == 2)
-      psc_gcc_version = PSC_GCC42_VERSION;
-    else
-      internal_error("display_version: unexpected GCC version 4.%d\n",
-		     gnu_minor_version);
-  } else
-    internal_error("display_version: unexpected GCC version %d\n",
-		   gnu_major_version);
+  psc_gcc_version = PSC_GCC42_VERSION;
 
   if (dump_version_only == TRUE) {
     if (option_was_seen(O_compat_gcc))
@@ -1534,8 +1523,13 @@ display_version(boolean dump_version_only)
     return;
   }
   // TODO : Move this string to a configure option
+#ifdef PATH64_ENABLE_PSCRUNTIME
   fprintf(stderr, "PathScale (tm) Compiler Suite: Version %s\n",
 	  compiler_version);
+#else 
+  fprintf(stderr, "Path64 Community Compiler: Version %s\n",
+	  compiler_version);
+#endif //PSCRUNTIME
   if (show_version > 1) {
     fprintf(stderr, "Changeset: %s\n", cset_id);
     fprintf(stderr, "Built by: %s@%s in %s\n", build_user, build_host,

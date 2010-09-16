@@ -335,6 +335,7 @@ main()
 			   TOP_andn128v64,
 			   TOP_fand128v32,
 			   TOP_fand128v64,
+			   TOP_fandn128v64,
 			   TOP_or128v8,
 			   TOP_or128v16,
 			   TOP_or128v32,
@@ -537,6 +538,7 @@ main()
 			   TOP_andnx128v64,
 			   TOP_fandx128v32,
 			   TOP_fandx128v64,
+			   TOP_fandnx128v64,
 			   TOP_orx128v8,
 			   TOP_orx128v16,
 			   TOP_orx128v32,
@@ -633,6 +635,7 @@ main()
 			   TOP_andnxx128v64,
 			   TOP_fandxx128v32,
 			   TOP_fandxx128v64,
+			   TOP_fandnxx128v64,
 			   TOP_orxx128v8,
 			   TOP_orxx128v16,
 			   TOP_orxx128v32,
@@ -728,6 +731,7 @@ main()
 			   TOP_andnxxx128v64,
 			   TOP_fandxxx128v32,
 			   TOP_fandxxx128v64,
+			   TOP_fandnxxx128v64,
 			   TOP_orxxx128v8,
 			   TOP_orxxx128v16,
 			   TOP_orxxx128v32,
@@ -1117,8 +1121,29 @@ main()
   Operand(1);
   Operand(2);
   Instruction_Print_Group( opopop,
-			   TOP_UNDEFINED );
+                           TOP_UNDEFINED );
 #endif
+
+  ISA_PRINT_TYPE opopop =  ISA_Print_Type_Create("opopop", "%s %s,%s,%s");
+  Name();   
+  Operand(2);
+  Operand(1);
+  Operand(0);
+  Instruction_Print_Group( opopop,
+  TOP_pcmpistri,
+  TOP_pcmpistrm,
+  TOP_UNDEFINED );
+
+  /* No result / three operands */
+  ISA_PRINT_TYPE opopop1 =  ISA_Print_Type_Create("opopop", "%s %s,%s,%s");
+  Name();
+  Operand(4);
+  Operand(2);
+  Operand(0);
+  Instruction_Print_Group( opopop1,
+               TOP_pcmpestri,
+               TOP_pcmpestrm,
+			   TOP_UNDEFINED );
 
   /* regular load */
   ISA_PRINT_TYPE load =  ISA_Print_Type_Create("load", "%s %s%s(%s),%s");
@@ -1511,6 +1536,10 @@ main()
 			   TOP_lock_xadd16,
 			   TOP_lock_xadd32,
 			   TOP_lock_xadd64,
+               TOP_xchgx8,
+               TOP_xchgx16,
+               TOP_xchgx32,
+               TOP_xchgx64,
 			   TOP_UNDEFINED );
 
   ISA_PRINT_TYPE cmpxchg =  ISA_Print_Type_Create("cmpxchg", "%s %s,%s%s(%s)");
@@ -1617,7 +1646,7 @@ main()
 			   TOP_psrad_mmx,
 			   TOP_pand_mmx,
 			   TOP_pandn_mmx,
-               TOP_pand128,
+			   TOP_pand128,
 			   TOP_por_mmx,
 			   TOP_pxor_mmx,
 			   TOP_UNDEFINED );

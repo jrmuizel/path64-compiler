@@ -946,7 +946,6 @@ SUMMARIZE<program>::Process_eh_globals (void)
     if (!(PU_src_lang (Get_Current_PU()) & PU_CXX_LANG) || 
     	!PU_misc_info (Get_Current_PU()))
     	return;
-
     INITV_IDX i = INITV_next (INITV_next (INITO_val (PU_misc_info (Get_Current_PU()))));
     INITO_IDX idx = TCON_uval (INITV_tc_val(i));
     if (idx)	// typeinfo
@@ -3111,7 +3110,7 @@ SUMMARIZE<program>:: Record_struct_access(WN *wn, mUINT64 loop_count)
     return;
 }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 template <PROGRAM program>
 void
 SUMMARIZE<program>::Record_ty_info_for_type (TY_IDX ty, TY_FLAGS flags)

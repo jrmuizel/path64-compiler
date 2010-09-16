@@ -283,6 +283,10 @@ main ()
 	      "mov32",
 	      "mov64",
 	      "mov64_m",
+          "xchgx8",
+          "xchgx16",
+          "xchgx32",
+          "xchgx64",
 
 	      /* Load without base or index register (offset only) for 64-bit
 	         ABI. */
@@ -646,6 +650,10 @@ main ()
 	      "fandx128v64",
 	      "fandxx128v64",
 	      "fandxxx128v64",
+	      "fandn128v64",
+	      "fandnx128v64",
+	      "fandnxx128v64",
+	      "fandnxxx128v64",
 	      "andps",
 	      "andpd",
 	      "andnps",
@@ -1017,7 +1025,7 @@ main ()
 	      "psrad_mmx",
 	      "pand_mmx",
 	      "pandn_mmx",
-          "pand128",
+	      "pand128",
 	      "por_mmx",
 	      "pxor_mmx",
 	      "unpckhpd",
@@ -1034,8 +1042,8 @@ main ()
 	      "pavgb",
 	      "pavgw",
 	      "psadbw",
-          "pextrw64",
-          "pextrw128",
+	      "pextrw64",
+	      "pextrw128",
 	      "pinsrw64",
 	      "pinsrw128",
 	      "pmovmskb",
@@ -1167,7 +1175,7 @@ main ()
 	      "fisttps",  // st0 -> short int
 	      "fisttpl",  // st0 -> int
 	      "fisttpll", // st0 -> long long
-	      
+
 	      /* instructions to support -mcmodel=medium */
 	      "movabsq",
 	      "store8_abs",
@@ -1178,6 +1186,12 @@ main ()
 	      "ld16_abs",
 	      "ld32_abs",
 	      "ld64_abs",
+
+          /* sse4_2 instructions */
+          "pcmpistri",  
+          "pcmpistrm",
+          "pcmpestri",
+          "pcmpestrm",
 
 	      /* instructions to support Open MP. */
 	      "lock_add32",

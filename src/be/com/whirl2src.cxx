@@ -176,7 +176,7 @@ Whirl2Src_Emit (FILE* fp, WN* wn)
   }
 }
 
-#if ! (defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifdef USE_WEAK_REFERENCES
 
 // These functions are needed only for prompf_anl.so
 
@@ -253,4 +253,4 @@ Whirl2Src_Translate_Istore_Str(char *str_buf,
   }
 }
 
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES

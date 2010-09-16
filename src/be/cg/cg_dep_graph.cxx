@@ -230,7 +230,9 @@ INT32 CG_DEP_Mem_Arc_Pruning = PRUNE_NONE;	/* exported */
 BOOL CG_DEP_Ignore_Loop_Loadstore_Dep = FALSE;		// SiCortex 5453
 BOOL CG_DEP_Ignore_Loop_Loadstore_Dep_Set = FALSE;
 #endif
-
+#ifdef TARG_ST
+BOOL CG_DEP_ignore_pragmas = FALSE;
+#endif
 BB * _cg_dep_bb; // exported to cg_dep_graph_update.h so it can 
 		 // be used in an inline function there.
 
@@ -245,38 +247,27 @@ static BOOL include_control_arcs;
 static BOOL tracing;
 
 
+#ifdef TARG_ST
 //
-// =====================================================================
-//		      Barrier/Intrinsic Support
-// =====================================================================
+// Loopdep informations
 //
+static LOOPDEP CG_Get_BB_Loopdep_Kind(BB *bb);
+static BOOL get_cg_loopdep(OP *pred_op, OP *succ_op, UINT8 *omega, int lex_neg);
+static BB *ops_same_loop(OP *op1, OP *op2);
 
-// All that's necessary is to treat the barrier and intrinsic OPs
-// like stores when constructing the graph.  WOPT alias analysis
-// (or our conservative assumptions when no Alias_Manager given)
-// will do the right thing.
+/* [CG] Define this to handle pragma loopseq */
+#define ENABLE_LOOPSEQ
 
-inline BOOL OP_like_barrier(OP *op)
-{
-  return (CGTARG_Is_OP_Barrier(op) || OP_Alloca_Barrier(op));
-}
-
-inline BOOL OP_like_store(OP *op)
-{
-  BOOL like_store = (OP_store(op) || CGTARG_Is_OP_Intrinsic(op) || 
-		     CGTARG_Is_OP_Barrier(op) || OP_code(op) == TOP_asm);
-
-#ifdef TARG_X8664
-  like_store |= OP_load_exe_store(op);
-#endif
-#ifdef KEY
-  like_store |= (OP_code(op) == TOP_intrncall);  // 14955
 #endif
 
-  like_store |= OP_like_barrier(op);
-
-  return like_store;
-}
+#ifdef ENABLE_LOOPSEQ
+static UINT32 get_op_kind(OP *op);
+static void Add_LOOPSEQ_Arc(OP *prev_op, OP *next_op, UINT8 *omega, int lex_neg);
+static void Add_LOOPSEQ_Arcs(BB* bb);
+/* Exported into igls.cxx */
+UINT32 CG_Get_BB_Loopseq_Mask(BB *bb);
+static BOOL get_cg_loopseq(OP *pred_op, OP *succ_op, UINT8 *omega, int lex_neg);
+#endif
 
 //
 // -----------------------------------------------------------------------
@@ -302,7 +293,11 @@ is_xfer_depndnce_reqd(const void *op, const void *xfer_op)
   // if <xfer_op> is a branch op, check if <op> is not live-out.
   if (OP_cond((OP *) xfer_op)) {
     // Check if the <op> is not safe to speculate.
+#ifdef TARG_ST
+    if (!OP_Can_Be_Speculative((OP *) op)) return TRUE;
+#else
     if (!CGTARG_Can_Be_Speculative((OP *) op)) return TRUE;
+#endif
 
     BBLIST *succ_list;
     BOOL live_out = FALSE;
@@ -319,8 +314,14 @@ is_xfer_depndnce_reqd(const void *op, const void *xfer_op)
 	// is live-into <succ_bb>.
 	if (TN_is_register(result_tn)) {
 	  ISA_REGISTER_CLASS result_cl = TN_register_class (result_tn);
+#ifdef TARG_ST
+	  live_out |= (NREGS_Live_Into_BB (result_cl,
+					   TN_registers (result_tn),
+					   succ_bb) > 0);
+#else
 	  REGISTER result_reg = TN_register (result_tn);
 	  live_out |= REG_LIVE_Into_BB (result_cl, result_reg, succ_bb);
+#endif
 	}
       }
     }
@@ -546,14 +547,25 @@ OP_has_subset_predicate(const void *value1, const void *value2)
   TN *p1, *p2;
   if (OP_has_predicate((OP *) value1) && OP_has_predicate((OP *) value2)) {
 
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+    p1 = OP_opnd((OP*) value1, OP_find_opnd_use((OP*)value1, OU_predicate));
+    p2 = OP_opnd((OP*) value2, OP_find_opnd_use((OP*)value2, OU_predicate));
+#else
     p1 = OP_opnd((OP*) value1, OP_PREDICATE_OPND);
     p2 = OP_opnd((OP*) value2, OP_PREDICATE_OPND);
+#endif
     v1P = v2P = TRUE;
 
   } else if (OP_has_predicate((OP *) value1) && 
 	     !OP_has_predicate((OP *) value2)) {
 
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+    p1 = OP_opnd((OP*) value1, OP_find_opnd_use((OP*)value1, OU_predicate));
+#else
     p1 = OP_opnd((OP*) value1, OP_PREDICATE_OPND);
+#endif
     p2 = True_TN;          // default case
     v1P = TRUE;
     v2P = FALSE;
@@ -562,7 +574,12 @@ OP_has_subset_predicate(const void *value1, const void *value2)
 	     OP_has_predicate((OP *) value2)) {
 
     p1 = True_TN;          // default case
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+    p2 = OP_opnd((OP*) value2, OP_find_opnd_use((OP*)value2, OU_predicate));
+#else
     p2 = OP_opnd((OP*) value2, OP_PREDICATE_OPND);
+#endif
     v1P = FALSE;
     v2P = TRUE;
 
@@ -571,7 +588,15 @@ OP_has_subset_predicate(const void *value1, const void *value2)
   if (v1P || v2P) {
     
     // First, check the trivial case
-    if (p1 == p2) return TRUE;
+#ifdef TARG_ST
+              // (cbr) Support for guards on false
+                if (TNs_Are_Equivalent (p1, p2) &&
+                    OP_Pred_False ((OP*) value1, OP_find_opnd_use((OP*)value1, OU_predicate)) ==
+                    OP_Pred_False ((OP*) value2, OP_find_opnd_use((OP*)value2, OU_predicate)))
+#else
+    if (p1 == p2)
+#endif
+      return TRUE;
 
     // Second, return conservative if no PQS information is available.
     if (!PQSCG_pqs_valid()) return FALSE;
@@ -594,8 +619,14 @@ OP_has_disjoint_predicate(const OP *value1, const OP *value2)
       OP_has_predicate(value1) && 
       OP_has_predicate(value2)) {
 
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+    TN *p1 = OP_opnd(value1, OP_find_opnd_use(value1, OU_predicate));
+    TN *p2 = OP_opnd(value2, OP_find_opnd_use(value2, OU_predicate));
+#else
     TN *p1 = OP_opnd(value1, OP_PREDICATE_OPND);
     TN *p2 = OP_opnd(value2, OP_PREDICATE_OPND);
+#endif
 
     // Invoke PQS interface to determine if p1 and p2 are exclusive.
     if (PQSCG_is_disjoint(p1, p2)) return TRUE;
@@ -610,8 +641,14 @@ OP_has_subset_predicate_cyclic(OP *op1, OP *op2)
 {
   if (!OP_cond_def(op1)) return TRUE;
 
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+  TN *p1 = OP_has_predicate(op1) ? OP_opnd(op1, OP_find_opnd_use(op1, OU_predicate)) : True_TN;
+  TN *p2 = OP_has_predicate(op2) ? OP_opnd(op2, OP_find_opnd_use(op2, OU_predicate)) : True_TN;
+#else
   TN *p1 = OP_has_predicate(op1) ? OP_opnd(op1, OP_PREDICATE_OPND) : True_TN;
   TN *p2 = OP_has_predicate(op2) ? OP_opnd(op2, OP_PREDICATE_OPND) : True_TN;
+#endif
 
   if (!PQSCG_pqs_valid()) return FALSE;
   // Invoke PQS interface to determine if p2 is not a subset of p1.
@@ -626,8 +663,14 @@ OP_has_disjoint_predicate_cyclic(OP *op1, OP *op2)
       OP_has_predicate(op1) && 
       OP_has_predicate(op2)) {
 
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+    TN *p1 = OP_opnd(op1, OP_find_opnd_use(op1, OU_predicate));
+    TN *p2 = OP_opnd(op2, OP_find_opnd_use(op2, OU_predicate));
+#else
     TN *p1 = OP_opnd(op1, OP_PREDICATE_OPND);
     TN *p2 = OP_opnd(op2, OP_PREDICATE_OPND);
+#endif
     
     // Invoke PQS interface to determine if p1 and p2 are exclusive.
     if (PQSCG_is_disjoint(p1, p2)) return TRUE;
@@ -668,7 +711,11 @@ inline BOOL has_assigned_reg(TN *tn)
 				    !TN_is_true_pred(tn)));
 }
 
+#ifdef TARG_ST
+static TN_LIST *same_reg[REGISTER_MAX+1][ISA_REGISTER_CLASS_MAX_LIMIT+1];
+#else
 static TN_LIST *same_reg[REGISTER_MAX+1][ISA_REGISTER_CLASS_MAX+1];
+#endif
 
 #define init_reg_assignments() memset(same_reg, 0, sizeof(same_reg))
 
@@ -679,11 +726,25 @@ inline void add_reg_assignment(TN *tn)
   ISA_REGISTER_CLASS rclass = TN_register_class(tn);
   TN_LIST *tns;
   Is_True(has_assigned_reg(tn), ("no register (or ignored)"));
+#ifdef TARG_ST
+  REGISTER r;
+  FOR_ALL_REGISTER_SET_members (TN_registers(tn), r) {
+    for (tns = same_reg[r][rclass]; tns; tns = TN_LIST_rest(tns)) {
+      if (TN_LIST_first(tns) == tn)
+	break;
+    }
+    if (!tns) {
+      same_reg[r][rclass] = TN_LIST_Push(tn, same_reg[r][rclass],
+					 &dep_nz_pool);
+    }
+  }
+#else
   for (tns = same_reg[rnum][rclass]; tns; tns = TN_LIST_rest(tns))
     if (TN_LIST_first(tns) == tn)
       return;
   same_reg[rnum][rclass] = TN_LIST_Push(tn, same_reg[rnum][rclass],
 					&dep_nz_pool);
+#endif
 }
 
 
@@ -1103,6 +1164,10 @@ static void delete_gtn_use_arc(OP *op, UINT8 opnd)
 //
 inline INT16 get_cycle(TOP opcode, INT16 ckind, UINT8 opnd)
 {
+#ifdef TARG_ST
+  // [CG]: For variable length operands, force opnd to 0
+  if (opcode == TOP_asm) opnd = 0;
+#endif
   switch ( ckind ) {
   case CYC_LOAD:
     return TI_LATENCY_Load_Cycle(opcode);
@@ -1117,6 +1182,10 @@ inline INT16 get_cycle(TOP opcode, INT16 ckind, UINT8 opnd)
   case CYC_READ:
     return TI_LATENCY_Operand_Access_Cycle(opcode, opnd);
   case CYC_WRITE:
+#ifdef TARG_ST
+    //[dt]: For multiple output instruction (i.e. post_inc inst ...) , we should select the correct target
+    return TI_LATENCY_Result_Available_Cycle(opcode, opnd);
+#endif
     return TI_LATENCY_Result_Available_Cycle(opcode, 0 /*???*/);
   }
 
@@ -1131,7 +1200,10 @@ inline INT16 get_cycle(TOP opcode, INT16 ckind, UINT8 opnd)
 INT16 
 CG_DEP_Oper_Latency(TOP pred_oper, TOP succ_oper, CG_DEP_KIND kind, UINT8 opnd)
 {
- 
+#ifdef TARG_ST
+  // [dt] Use CG_DEP_Op_Latency instead
+  DevAssert(FALSE, ("We should not get here %s %d", __FILE__,__LINE__));
+#endif
   // Initialize the dep_info table.
   INT i;
   for (i = 0; i < sizeof(dep_info_data) / sizeof(dep_info_data[0]); i++) {
@@ -1173,6 +1245,87 @@ CG_DEP_Oper_Latency(TOP pred_oper, TOP succ_oper, CG_DEP_KIND kind, UINT8 opnd)
 
   return latency;
 }
+#ifdef TARG_ST
+// [dt] This is an equivalent function to CG_DEP_Oper_Latency but it takes into account
+// the fact that a def of an operand is not always the result operand 0 (i.e. post inc of a pointer)
+// This issue is exposed by bug #36327
+// In this version we check (for the WRITE case) which result operand in pred is linked to opnd (in succ)  
+static INT16 
+CG_DEP_Op_Latency(OP *pred_op ,OP* succ_op, CG_DEP_KIND kind, UINT8 opnd) {
+  // Initialize the dep_info table.
+  INT i;
+  TOP pred_oper = OP_code(pred_op);
+  TOP succ_oper = OP_code(succ_op);
+  for (i = 0; i < sizeof(dep_info_data) / sizeof(dep_info_data[0]); i++) {
+    CG_DEP_KIND kind = dep_info_data[i].kind;
+    dep_info[kind] = dep_info_data + i;
+  }
+  
+  UINT8 succ_opnd = opnd;
+  INT16 cyc_pred, cyc_succ, latency, found;
+  if (DEP_INFO_tail(kind)==CYC_WRITE) {
+    // [dt] When dep is REGIN: operand index given refers to source operand in succ_op
+    // When dep is REGOUT: operand index given refers to result in succ_op
+    found=-1;
+    TN *my_cmp_operand = NULL;
+    if (kind == CG_DEP_REGIN) my_cmp_operand = OP_opnd(succ_op,opnd);
+    else if (kind == CG_DEP_REGOUT)  my_cmp_operand = OP_result(succ_op,opnd);
+    DevAssert((my_cmp_operand!=NULL), ("Unexpected latency kind here %s %d", __FILE__,__LINE__));
+    for (i = 0; i < OP_results(pred_op); i++) {
+      if(TN_is_register(OP_result(pred_op,i)) && TN_is_register(my_cmp_operand) 
+         && TNs_Are_Equivalent(OP_result(pred_op,i),my_cmp_operand)) {      
+	found=i; 
+	break;
+      }
+    }
+    if (found != -1) succ_opnd = found;
+    else return 0;
+  }
+
+  /* Get the referenced pred cycle: */
+  cyc_pred = get_cycle(pred_oper, DEP_INFO_tail(kind), succ_opnd);
+
+  UINT8 pred_opnd = opnd;
+  if (DEP_INFO_head(kind)==CYC_WRITE) {
+    found=-1;
+    TN *my_cmp_operand = NULL;
+    //[dt] When dep is REGOUT: operand index given refers to result in succ_op
+    // Otherwise (mostly REGANTI dep): operand index given refers to operand in pred_op    
+    if (kind == CG_DEP_REGOUT)  {
+      my_cmp_operand = OP_result(succ_op,opnd);
+      DevAssert((my_cmp_operand!=NULL), ("Unexpected NULL Operand here %s %d", __FILE__,__LINE__));
+      found = opnd;
+    } else {
+      my_cmp_operand = OP_opnd(pred_op,opnd);
+      DevAssert((my_cmp_operand!=NULL), ("Unexpected latency kind here %s %d", __FILE__,__LINE__));
+      for (i = 0; i < OP_results(succ_op); i++) {
+	if(TN_is_register(OP_result(succ_op,i)) && TN_is_register(my_cmp_operand) 
+           && TNs_Are_Equivalent(OP_result(succ_op,i),my_cmp_operand)) {      
+	  found=i; 
+	  break;
+	}
+      }
+    }
+    if (found != -1) pred_opnd = found;
+    else return 0;
+  }
+
+  /* Get the referenced succ cycle: */
+  cyc_succ = get_cycle(succ_oper, DEP_INFO_head(kind), pred_opnd);
+
+  latency = (cyc_pred - cyc_succ) + DEP_INFO_adjust(kind);
+  /* register latencies must be non-negative */
+  if (latency < 0 &&
+      (kind == CG_DEP_REGIN || kind == CG_DEP_REGOUT ||
+       kind == CG_DEP_REGANTI || kind == CG_DEP_MEMIN ||
+       kind == CG_DEP_SPILLIN || kind == CG_DEP_MEMOUT ||
+       kind == CG_DEP_MEMANTI || kind == CG_DEP_MEMVOL))
+    latency = 0;
+
+  return latency;
+}
+
+#endif
 
 //
 // -----------------------------------------------------------------------
@@ -1182,9 +1335,14 @@ CG_DEP_Oper_Latency(TOP pred_oper, TOP succ_oper, CG_DEP_KIND kind, UINT8 opnd)
 INT16 
 CG_DEP_Latency(OP *pred, OP *succ, CG_DEP_KIND kind, UINT8 opnd)
 {
+#ifdef TARG_ST
+//[dt] compute the latency taking into account operand match
+  INT16 latency = CG_DEP_Op_Latency(pred, succ, kind, opnd);
+#else
   TOP popcode = OP_code(pred);
   TOP sopcode = OP_code(succ);
   INT16 latency = CG_DEP_Oper_Latency(popcode, sopcode, kind, opnd);
+#endif
 
   if (OP_load(pred) && kind == CG_DEP_REGIN) {
     INT32 ld_latency_adjust = 0;
@@ -1412,13 +1570,27 @@ CG_DEP_Trace_HB_Graph(std::list<BB*> bblist)
  */
 
 static TN_MAP defop_by_tn;
+#ifdef TARG_ST
+OP_LIST *defop_by_reg[ISA_REGISTER_CLASS_MAX_LIMIT+1][REGISTER_MAX+1];
+#else
 OP_LIST *defop_by_reg[ISA_REGISTER_CLASS_MAX+1][REGISTER_MAX+1];
+#endif
+#ifdef TARG_ST
+static MEM_POOL DefOp_Pool;
+static OP_MAP DefOp_Map;
+static INT32 DefOp_Map_Idx;
+#endif
 
 // See above for specification.
 inline void defop_init(void)
 {
   defop_by_tn = TN_MAP_Create();
   memset(defop_by_reg, 0, sizeof(defop_by_reg));
+#ifdef TARG_ST
+  MEM_POOL_Initialize(&DefOp_Pool, "CG_Dep_Graph_DefOp_Pool", FALSE);
+  DefOp_Map = OP_MAP32_Create ();
+  DefOp_Map_Idx = 0;
+#endif
 }
 
 //
@@ -1436,13 +1608,26 @@ inline REGISTER defop_get_reg_for_tn(TN *tn)
 inline void defop_set(OP *op)
 {
   INT i;
+#ifdef TARG_ST
+  OP_MAP32_Set (DefOp_Map, op, DefOp_Map_Idx++);
+#endif
   for (i = 0; i < OP_results(op); ++i) {
     TN *result_tn = OP_result(op,i);
     REGISTER reg = defop_get_reg_for_tn(result_tn);
     if (reg != REGISTER_UNDEFINED) {
+#ifdef TARG_ST
+      ISA_REGISTER_CLASS cl = TN_register_class(result_tn);
+      REGISTER r;
+      FOR_ALL_REGISTER_SET_members (TN_registers(result_tn), r) {
+	defop_by_reg[TN_register_class(result_tn)][r] =
+	  OP_LIST_Push(op, defop_by_reg[TN_register_class(result_tn)][r],
+		       &MEM_pu_pool);
+      }
+#else
       defop_by_reg[TN_register_class(result_tn)][reg] = 
 	OP_LIST_Push(op, defop_by_reg[TN_register_class(result_tn)][reg],
 		     &MEM_pu_pool);
+#endif
     }
     CG_DEP_Add_Def(op, i, defop_by_tn, &MEM_pu_pool);
   }
@@ -1455,6 +1640,58 @@ inline OP_LIST* defop_for_tn(TN *tn)
   return TN_is_register(tn) ? (OP_LIST *)CG_DEP_Get_Defs(tn, defop_by_tn) : NULL;
 }
 #endif
+#ifdef TARG_ST
+static OP_LIST *Op_List_Merge (OP_LIST *list1, OP_LIST *list2)
+  // Create a merged list from the elements of list1 and list2.
+  // The merged list must be ordered by largest idx first,
+  // and duplicates should be discarded.
+{
+  if (!list1) {
+    return list2;
+  } else if (!list2) {
+    return list1;
+  } else {
+    OP_LIST *l = NULL;
+    
+    while (list1 && list2) {
+      OP *op1 = OP_LIST_first (list1);
+      OP *op2 = OP_LIST_first (list2);
+      if (op1 == op2) {
+	l = OP_LIST_Push (op1, l, &DefOp_Pool);
+	list1 = OP_LIST_rest (list1);
+	list2 = OP_LIST_rest (list2);
+      } else {
+	INT32 idx1 = OP_MAP32_Get (DefOp_Map, op1);
+	INT32 idx2 = OP_MAP32_Get (DefOp_Map, op2);
+	if (idx1 == idx2) {
+	} else if (idx1 > idx2) {
+	  l = OP_LIST_Push (op1, l, &DefOp_Pool);
+	  list1 = OP_LIST_rest (list1);
+	} else {
+	  l = OP_LIST_Push (op2, l, &DefOp_Pool);
+	  list2 = OP_LIST_rest (list2);
+	}
+      }
+    }
+    if (!list1) {
+      list1 = list2;
+    }
+    while (list1) {
+      l = OP_LIST_Push (OP_LIST_first (list1), l, &DefOp_Pool);
+      list1 = OP_LIST_rest (list1);
+    }
+    // [SC] Now we have the merged list l, but it is in the
+    // reverse order that we want!
+    // So create a reversed version of it.
+    OP_LIST *result = NULL;
+    while (l) {
+      result = OP_LIST_Push (OP_LIST_first (l), result, &DefOp_Pool);
+      l = OP_LIST_rest (l);
+    }
+    return result;
+  }
+}
+#endif
 
 // See above for specification. 
 inline OP_LIST* defop_for_op(OP *op, UINT8 res, BOOL is_result)
@@ -1465,9 +1702,25 @@ inline OP_LIST* defop_for_op(OP *op, UINT8 res, BOOL is_result)
       return NULL;
     } else {
       REGISTER reg = defop_get_reg_for_tn (tn);
+#ifdef TARG_ST
+      if (reg == REGISTER_UNDEFINED) {
+	return (OP_LIST *)CG_DEP_Get_Defs(tn, defop_by_tn);
+      } else {
+        // [SC] Return * ordered * list of ops that define one or more
+	// registers in TN_registers.
+	OP_LIST *op_list = NULL;
+	REGISTER r;
+	FOR_ALL_REGISTER_SET_members (TN_registers(tn), r) {
+	  OP_LIST *this_list = defop_by_reg[TN_register_class(tn)][r];
+	  op_list = Op_List_Merge (op_list, this_list);
+	}
+	return op_list;
+      }
+#else
       return (reg != REGISTER_UNDEFINED) ?
 	defop_by_reg[TN_register_class(tn)][reg] :
 	(OP_LIST *)CG_DEP_Get_Defs(tn, defop_by_tn);
+#endif
     }
   } else {
     return NULL;
@@ -1479,6 +1732,10 @@ inline void defop_finish(void)
 {
   TN_MAP_Delete(defop_by_tn);
   defop_by_tn = NULL;
+#ifdef TARG_ST
+  OP_MAP_Delete (DefOp_Map);
+  MEM_POOL_Delete (&DefOp_Pool);
+#endif
 }
 
 
@@ -1501,6 +1758,107 @@ static INT32 **mem_op_lat_0;		/* latencies to 0-omega descendents  */
 					/*  not a descendent; note that      */
 					/*  NO_DEP must be less than all     */
 					/*  possible latencies (INT16)	     */
+
+#ifdef ENABLE_LOOPSEQ
+/* pragma loopseq kind. */
+#define LOOPSEQ_UNDEF	0
+#define LOOPSEQ_READ	1
+#define LOOPSEQ_WRITE	2
+#define LOOPSEQ_LAST	31	// Must remain the last one
+
+/* Utilitary function to memory op kind. */
+#define OP_KIND_UNKNOWN	0
+#define OP_KIND_LOAD	1
+#define OP_KIND_PREFIN	2
+#define OP_KIND_STORE	3
+#define OP_KIND_PREFOUT	4
+#define OP_KIND_LAST	31	// Must remain the last one
+
+static UINT32 
+get_op_kind(OP *op)
+{
+  if (OP_load(op)) return OP_KIND_LOAD;
+  if (OP_store(op)) return OP_KIND_STORE;
+  /* Always IN for ST200. Todo, get prefetch kind for store prefetch architectures. */
+  if (OP_prefetch(op)) return OP_KIND_PREFIN;
+  return OP_KIND_UNKNOWN;
+}
+
+static void 
+Add_LOOPSEQ_Arc(OP *prev_op, OP *next_op, UINT8 *omega, int lex_neg)
+{
+  if (!OP_spill(prev_op) && !OP_spill(next_op))
+    if (get_cg_loopseq(prev_op, next_op, omega, lex_neg))
+      new_arc_with_latency(CG_DEP_MISC, prev_op, next_op, 0 /*the latency*/, 0, 0, FALSE);
+}
+
+static void 
+Add_LOOPSEQ_Arcs(BB* bb)
+{
+  OP *op;
+  OP *next_op;
+  FOR_ALL_BB_OPs(bb, op) {
+    UINT32 kind = get_op_kind(op);
+    for (next_op = OP_next(op); next_op; next_op = OP_next(next_op)) {
+      Add_LOOPSEQ_Arc(op, next_op, NULL, 0);
+    }
+  }
+}
+
+#endif
+
+#ifdef TARG_ST
+static void make_prefetch_arcs(OP *op, BB *bb)
+/* --------------------------------------------------
+ * Generate prefetch arcs for a give load store <op>.
+ * --------------------------------------------------
+ */
+{
+  if ( !CG_enable_prefetch ) return;
+  if ( !cyclic && !BB_reg_alloc(bb)) return;
+  // FdF 20050128: No dependcy arcs between prefetch and store
+  // operations
+  if (!OP_load(op)) return;
+
+  BOOL pft_is_before = TRUE;
+  WN *memwn = Get_WN_From_Memory_OP(op);
+  PF_POINTER *pf_ptr = memwn ? (PF_POINTER *) WN_MAP_Get(WN_MAP_PREFETCH,memwn) : NULL;
+  if (!pf_ptr || !PF_PTR_wn_pref_1L(pf_ptr)) return;
+  
+  OP *pref_op;
+  FOR_ALL_BB_OPs(bb, pref_op) {
+    if (OP_prefetch(pref_op) && OP_pft_scheduled(pref_op)) {
+      WN *prefwn = Get_WN_From_Memory_OP(pref_op);
+      PF_POINTER *pf_ptr2 = prefwn ? (PF_POINTER *) WN_MAP_Get(WN_MAP_PREFETCH,prefwn) : NULL;
+      int stride = 1; /* WN_pf_stride_1L(PF_PTR_wn_pref_1L(pf_ptr)); */
+      if (pf_ptr2 && (PF_PTR_wn_pref_1L(pf_ptr) == PF_PTR_wn_pref_1L(pf_ptr2)) &&
+	  (OP_unrolling(pref_op)/stride == OP_unrolling(op)/stride)) {
+	ARC *pref_arc;
+	if (pft_is_before)
+	  pref_arc = new_arc(CG_DEP_PREFIN, pref_op, op, 0, 0, TRUE);
+	else
+	  pref_arc = new_arc(CG_DEP_PREFIN, op, pref_op, 0, 0, TRUE);
+
+	// Only if pref_op is before op and pref_op had no memop of
+	// the group before it, latency is set to the prefetch
+	// latency.
+	//	Is_True (pft_is_before || !OP_pft_before(pref_op),
+	//		 ("Prefetch marked OP_pft_before must be before associated memops\n"));
+	INT pf_lat = (pft_is_before && OP_pft_before(pref_op)) ? CG_L1_pf_latency : 1;
+	if (Get_Trace(TP_SCHED, 4))
+	  if (pft_is_before)
+	    fprintf(TFile, "Add prefetch_arc prefetch->op(%d) in bb %d\n", pf_lat, BB_id(bb));
+	  else
+	    fprintf(TFile, "Add prefetch_arc op->prefetch(%d) in bb %d\n", pf_lat, BB_id(bb));
+	Set_ARC_latency(pref_arc, pf_lat);
+      }
+    }
+    else if (pref_op == op)
+      pft_is_before = FALSE;
+  }
+}
+
+#else
 
 static void make_prefetch_arcs(OP *op, BB *bb)
 /* --------------------------------------------------
@@ -1534,6 +1892,7 @@ static void make_prefetch_arcs(OP *op, BB *bb)
     }
   }
 }
+#endif
 
 inline UINT8 addr_omega(OP *memop, UINT8 n)
 /* -----------------------------------------------------------------------
@@ -1590,6 +1949,14 @@ static OP *addr_base_offset(OP *op, ST **initial_sym, ST **sym, TN **base_tn, IN
 
   Is_True(OP_Load(op) || OP_store(op), ("not a load or store"));
 
+#ifdef TARG_ST
+  // Don't use ARCs if not available.
+  if (!CG_DEP_Addr_Analysis) return NULL;
+
+  // FdF 20060517: No support for automod addressing mode
+  if (OP_automod(op)) return NULL;
+#endif
+
   INT offset_num = OP_find_opnd_use (op, OU_offset);
   INT base_num   = OP_find_opnd_use (op, OU_base);
   INT result_num = -1;
@@ -1598,7 +1965,29 @@ static OP *addr_base_offset(OP *op, ST **initial_sym, ST **sym, TN **base_tn, IN
   *sym = NULL;
 
   *base_tn = OP_opnd(op, base_num);
+#ifdef TARG_ST
+  // [VCdV] bug #34093. the offset is only meaningfull when it is an
+  // immediate value.
+  TN* offset_operand = OP_opnd(op, offset_num);
+  if (TN_is_register(offset_operand)) {
+    if (TN_is_rematerializable(offset_operand)) {
+      WN *wn_remat = TN_remat(offset_operand);
+      if (WN_operator(wn_remat) == OPR_INTCONST) {
+        *offset = WN_const_val(wn_remat);
+      } else {
+        return NULL;
+      }
+    } else {
+      return NULL;
+    }
+  } else if (TN_has_value(offset_operand)) {
+    *offset = (offset_num < 0) ? 0 : TN_value(offset_operand);
+  } else {
+    return NULL;
+  }
+#else
   *offset = (offset_num < 0) ? 0 : TN_value(OP_opnd(op, offset_num));
+#endif
   defop_base_tn = *base_tn;
   defop = op;
 
@@ -1630,6 +2019,11 @@ static OP *addr_base_offset(OP *op, ST **initial_sym, ST **sym, TN **base_tn, IN
     if (new_defop == defop) {
       defop = NULL;
     } else defop = new_defop;
+#ifdef TARG_ST
+    // FdF 20060517: No support for automod addressing mode
+    if (defop && OP_automod(defop))
+      defop = NULL;
+#endif
     if (defop &&
         (OP_bb(defop) == bb)) {
 
@@ -1671,8 +2065,13 @@ static OP *addr_base_offset(OP *op, ST **initial_sym, ST **sym, TN **base_tn, IN
         }
 #endif
       } else if (OP_copy(defop)) {
+#ifdef TARG_ST
+        result_num = OP_Copy_Result(defop);
+        defop_base_tn = OP_opnd(defop, OP_Copy_Operand(defop));
+#else
         result_num = 0;
         defop_base_tn = OP_opnd(defop, OP_COPY_OPND);
+#endif
         *base_tn = defop_base_tn;
 #ifdef TARG_X8664
       } else if( OP_code(defop) == TOP_ldc64 ){
@@ -1721,12 +2120,20 @@ static OP *addr_base_offset(OP *op, ST **initial_sym, ST **sym, TN **base_tn, IN
         defop_base_tn = NULL;
 #endif
         ST *root_sym;
+#ifdef TARG_ST
+	root_sym = Base_Symbol (*sym);
+	if (*sym != root_sym && Base_Offset_Is_Known (*sym)) {
+	  *sym = root_sym;
+	  *offset += Base_Offset (*sym);
+	}
+#else
         INT64 root_offset;
         Base_Symbol_And_Offset( *sym, &root_sym, &root_offset);
         if (*sym != root_sym) {
           *sym = root_sym;
           *offset += root_offset;
         }
+#endif
       } else if (TN_has_value(defop_offset_tn)) {
         *offset += TN_value(defop_offset_tn);
       }
@@ -1811,8 +2218,13 @@ symbolic_addr_subtract (OP *pred_op, OP *succ_op, SAME_ADDR_RESULT *res)
     }
 
     /* Use offsets and sizes to determine conflicts. */
+#ifdef TARG_ST
+      INT32 size1 = OP_Mem_Ref_Bytes(pred_op);
+      INT32 size2 = OP_Mem_Ref_Bytes(succ_op);
+#else
     INT32 size1 = CGTARG_Mem_Ref_Bytes (pred_op);
     INT32 size2 = CGTARG_Mem_Ref_Bytes (succ_op);
+#endif
     if (pred_offset == succ_offset) {
       *res = (size1 == size2) ? IDENTICAL : OVERLAPPING;
     } 
@@ -1968,8 +2380,13 @@ inline SAME_ADDR_RESULT analyze_overlap (OP *memop1, OP *memop2, INT64 diff)
  * -----------------------------------------------------------------------
  */
 {
-  INT32 size1 = CGTARG_Mem_Ref_Bytes (memop1);
-  INT32 size2 = CGTARG_Mem_Ref_Bytes (memop2);
+#ifdef TARG_ST
+  INT32 size1 = OP_Mem_Ref_Bytes(memop1);
+  INT32 size2 = OP_Mem_Ref_Bytes(memop2);
+#else
+  INT32 size1 = CGTARG_Mem_Ref_Bytes(memop1);
+  INT32 size2 = CGTARG_Mem_Ref_Bytes(memop2);
+#endif
   if (diff == 0) {
     return size1 == size2 ? IDENTICAL : OVERLAPPING;
   } 
@@ -2155,6 +2572,10 @@ inline BOOL under_same_cond_tn(OP *pred_op, OP *succ_op, UINT8 omega)
   UINT8 pred_guard_omega, succ_guard_omega;
   BOOL pred_invguard, succ_invguard;
 
+#ifdef TARG_ST
+  // [CG]: Treat black hole stores in this function
+  if (OP_black_hole(pred_op) || OP_black_hole(succ_op)) return FALSE;
+#endif
   Get_Memory_OP_Predicate_Info(pred_op, &pred_guard, &pred_guard_omega,
 			       &pred_invguard);
   Get_Memory_OP_Predicate_Info(succ_op, &succ_guard, &succ_guard_omega,
@@ -2342,7 +2763,103 @@ static BOOL verify_mem(BOOL              result,
   return result;
 }
 
+#ifdef Is_True_On
+#   include "W_unistd.h" // For getpid
+#endif
+
+#ifdef TARG_ST
+static BOOL get_mem_dep_unit(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega, BOOL lex_neg);
+
+static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega, BOOL lex_neg) {
+
+  if (!OP_packed(pred_op) && !OP_packed(succ_op))
+    return get_mem_dep_unit(pred_op, succ_op, definite, omega, lex_neg);
+
+  OP *pred_op_unit = NULL , *succ_op_unit = NULL;
+  int pred_offset, succ_offset;
+
+  *definite = TRUE;
+  BOOL return_value = FALSE;
+  UINT8 omega_var, *omega_unit = (omega != NULL) ? &omega_var : NULL;
+
+  // TBD: Synchronize the unit operations for pred_op and succ_op
+  // before the loop, so that get_mem_dep can be called on the unit
+  // op. The synchronization can be skipped if the first element in
+  // the list is already synchronized.
+
+  pred_offset = 0;
+  for (pred_op_unit = OP_packed(pred_op) ? Get_First_Packed_Op(pred_op, &pred_offset) : pred_op;
+       pred_op_unit != NULL;
+       pred_op_unit = Get_Next_Packed_Op(pred_op, pred_op_unit, &pred_offset)) {
+
+    if (OP_packed(pred_op))
+      OP_MAP_Set(OP_to_WN_map, pred_op, Get_WN_From_Memory_OP(pred_op_unit));
+
+    succ_offset = 0;
+    for (succ_op_unit = OP_packed(succ_op) ? Get_First_Packed_Op(succ_op, &succ_offset) : succ_op;
+	 succ_op_unit != NULL;
+	 succ_op_unit = Get_Next_Packed_Op(succ_op, succ_op_unit, &succ_offset)) {
+
+      // Only look for dependences between same units of packed
+      // ops when definite is true
+      if (*definite)
+	if (succ_offset != pred_offset)
+	  continue;
+
+      BOOL definite_unit;
+      BOOL result_unit;
+
+      if (OP_packed(succ_op))
+      	OP_MAP_Set(OP_to_WN_map, succ_op, Get_WN_From_Memory_OP(succ_op_unit));
+
+      if (omega != NULL)
+	*omega_unit = *omega;
+
+      // TBD: Use pred_op_unit and succ_op_unit here
+      result_unit = get_mem_dep_unit(pred_op, succ_op, &definite_unit, omega_unit, lex_neg);
+
+      if ((omega != NULL) && (pred_offset == 0) && (succ_offset == 0))
+	*omega = *omega_unit;
+
+      if (*definite)
+	*definite = definite_unit;
+      if (!return_value)
+	return_value = result_unit;
+      if (return_value && *definite && omega && (*omega != *omega_unit))
+	*definite = FALSE;
+
+      if (return_value && !*definite)
+	// There is a non definite dependence, return now
+	goto return_point;
+
+      if (*definite)
+	// Only look for dependences between same units of packed ops
+	break;
+
+    } // end for succ_op_unit
+  } // end for pred_op_unit
+
+  if (*definite) {
+    if ((succ_op_unit == NULL) || (Get_Next_Packed_Op(succ_op, succ_op_unit, &succ_offset) != NULL))
+      // Not same number of packed operations in pred_op and succ_op
+      *definite = FALSE;
+  }
+
+ return_point:
+
+  // Reset the WN on pred_op and succ_op if packed
+  if (OP_packed(pred_op))
+    OP_MAP_Set(OP_to_WN_map, pred_op, NULL);
+  if (OP_packed(succ_op))
+    OP_MAP_Set(OP_to_WN_map, succ_op, NULL);
+
+  return return_value;
+}
+
+static BOOL get_mem_dep_unit(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega, BOOL lex_neg)
+#else
 static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
+#endif
 /* -----------------------------------------------------------------------
  * Check whether <succ_op> can access the same location as <pred_op>
  * after <pred_op> is issued.  If <omega> is NULL, ignore loop-carried
@@ -2357,44 +2874,74 @@ static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
 {
   WN *pred_wn, *succ_wn;
   UINT8 pred_unrollings = 0, succ_unrollings = 0;
-  BOOL lex_neg = !OP_Precedes (pred_op, succ_op);
+#ifndef TARG_ST
+  BOOL lex_neg = !OP_Precedes(pred_op, succ_op);
+#endif
   SAME_ADDR_RESULT cg_result = DONT_KNOW;
   const char *info_src = "";
   UINT8 min_omega = 0;
   BOOL memread = OP_Load (pred_op) && OP_Load (succ_op);
+  int return_value;
 
   *definite = FALSE;
+
+#ifdef Is_True_On
+  // CG: Debugging functions.
+  int bb_id, pred_id, succ_id;
+  const char *pu_name = NULL;
+  int dbg_found = 0;
+  if (getenv("CGD_PU")) pu_name = getenv("CGD_PU");
+  if (getenv("CGD_BB_ID")) bb_id = atoi(getenv("CGD_BB_ID"));
+  if (getenv("CGD_PREV_ID")) pred_id = atoi(getenv("CGD_PREV_ID"));
+  if (getenv("CGD_SUCC_ID")) succ_id = atoi(getenv("CGD_SUCC_ID"));
+  if (pu_name != NULL &&
+      strcmp(pu_name, Cur_PU_Name) == 0 &&
+      bb_id == BB_id(OP_bb(pred_op)) &&
+      bb_id == BB_id(OP_bb(succ_op)) &&
+      pred_id == OP_map_idx(pred_op) &&
+      succ_id == OP_map_idx(succ_op)) {
+    dbg_found = 1;
+#ifndef WIN32
+    if (getenv("CGD_DBG")) {
+      fprintf(stderr, "PID: %d\n", getpid());
+      scanf("\n");
+    }
+#endif
+  }
+#endif
 
   /* Don't bother checking for lexicographically negative deps
    * when we're not looking for loop-carried deps.
    */
   if (omega == 0 && lex_neg) {
-    return FALSE;
+    return_value =  FALSE; goto return_point;
   }
-
+/* Handle same op in the non cyclic case. */
+  if (omega == NULL && pred_op == succ_op) {
+    *definite = TRUE;
+    return_value =  TRUE; goto return_point;
+  }
   /* Prefetches don't alias anything (but see make_prefetch_arcs) */
   if (OP_prefetch (pred_op) || OP_prefetch (succ_op)) {
-    return FALSE;
+      return_value =  FALSE; goto return_point;
   }
 
   /* no_alias ops don't alias anything by definition */
   if (OP_no_alias (pred_op) || OP_no_alias (succ_op)) {
-    return FALSE;
+      return_value =  FALSE; goto return_point;
   }
 
   /* Advanced loads don't alias with anything. */
-  if (   (OP_load (pred_op) && CGTARG_Is_OP_Advanced_Load (pred_op)) 
-      || (OP_load (succ_op) && CGTARG_Is_OP_Advanced_Load (succ_op))
-     )
-  {
-    return FALSE;
-  }
+  if ((OP_load(pred_op) && CGTARG_Is_OP_Advanced_Load(pred_op)) ||
+      (OP_load(succ_op) && CGTARG_Is_OP_Advanced_Load(succ_op)))
+      { return_value =  FALSE; goto return_point; }
+
 
   /* Volatile ops are dependent on all other volatile OPs (but dependence
    * is marked as not definite to prevent removal by r/w elimination).
    */
   if (   (OP_volatile (pred_op) && OP_volatile (succ_op))
-      #ifdef KEY // bug 4850
+#if defined( KEY) && !defined(TARG_ST) // bug 4850
       || CGTARG_Is_OP_Barrier (pred_op)
       || CGTARG_Is_OP_Barrier (succ_op)
       #endif
@@ -2402,8 +2949,7 @@ static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
   {
     *definite = FALSE;
     if (omega) *omega = lex_neg;
-    
-    return TRUE;
+    { return_value =  TRUE; goto return_point; }
   }
 
   /* Don't check for MEMREAD (load-load) dependence when:
@@ -2417,16 +2963,35 @@ static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
          )
      )
   {
-    return FALSE;
+    return_value =  FALSE; goto return_point;
   }
-      
+
+#ifdef TARG_ST
+  if (cyclic) {
+    if (OP_has_disjoint_predicate_cyclic(pred_op, succ_op)) {
+      { return_value = FALSE; goto return_point; }
+    }
+  } else {
+    if (OP_has_disjoint_predicate(pred_op, succ_op)) {
+      { return_value = FALSE; goto return_point; }
+    }
+  }
+#endif
+
+
+#ifndef TARG_ST
+  // [CG]: Don't ignore spills even in cyclic world
+  // We may be called for cyclic dependence out of SWP.
+  // SWP should handle this or we should ensure that we are here for SWP.
+
+  
   /* Spills are renamed in the cyclic world (by SWP), so don't check
    * for MEMANTI or MEMOUT dependences involving them.
    */
   if (cyclic && OP_store (succ_op) && CGSPILL_Is_Spill_Op (succ_op)) {
-    return FALSE;
+    return_value =  FALSE; goto return_point;
   }
-
+#endif
   /* If a memop has no cross-iteration dependence, then its
    * unrolled instance do not alias 
    */
@@ -2435,16 +3000,23 @@ static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
         && OP_unrolling (pred_op) != OP_unrolling (succ_op)
        )
     {
-      return FALSE;
+      return_value =  FALSE; goto return_point;
     }
   }
 
   /* Try to analyze the address TNs ourselves unless disabled.
    */
+#ifdef TARG_ST
+  // CG_DEP_Addr_Analysis is tested now in the CG_DEP_Address_Analyze()
+  // function
+  if (!lex_neg &&
+      (OP_load(pred_op) || OP_store(pred_op)) &&
+      (OP_load(succ_op) || OP_store(succ_op)))
+#else
   if (   CG_DEP_Addr_Analysis 
       && (OP_Load (pred_op) || OP_store (pred_op)) 
-      && (OP_Load (succ_op) || OP_store (succ_op))
-     ) 
+      && (OP_Load (succ_op) || OP_store (succ_op)))
+#endif
   {
     cg_result = CG_DEP_Address_Analyze (pred_op, succ_op);
     switch (cg_result) {
@@ -2452,24 +3024,45 @@ static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
         if (omega) *omega = lex_neg;
         *definite = under_same_cond_tn (pred_op, succ_op, omega ? *omega : 0);
         /* Don't include non-definite MEMREAD arcs */
-        if (!*definite && memread) return FALSE;
-        if (!CG_DEP_Verify_Mem_Deps) return TRUE;
+      if (!*definite && memread) { return_value =  FALSE; goto return_point; }
+      if (!CG_DEP_Verify_Mem_Deps) { return_value =  TRUE; goto return_point; }
       break;
-
       case OVERLAPPING:
         *definite = FALSE;
         /* Don't include non-definite MEMREAD arcs */
         if (memread) return FALSE;
         if (omega) *omega = lex_neg;
-        if (!CG_DEP_Verify_Mem_Deps) return TRUE;
+        if (!CG_DEP_Verify_Mem_Deps) { return_value =  TRUE; goto return_point;}
       break;
-
       case DISTINCT:
-        if (!CG_DEP_Verify_Mem_Deps) return FALSE;
+       if (omega == NULL) {
+	if (!CG_DEP_Verify_Mem_Deps) { return_value =  FALSE; goto return_point; }
+      } else {
+	/*
+	 * same_addr doesn't detect loop-carried dependences, so
+	 * all we know is there's no dependence within this iteration,
+	 * so the dependence distance is at least one.
+	 */
+	cg_result = DONT_KNOW;
+	min_omega = 1;
+      }
       break;
     }
   }
 
+#ifdef TARG_ST
+  // [CG]: Try do determine no dependency information based on loop
+  // pragmas in the case where the ops are not spill ops
+  if (!OP_spill(pred_op) && !OP_spill(succ_op)) {
+    if (!get_cg_loopdep(pred_op, succ_op, omega, lex_neg)) {
+      info_src = "CG (loop dep info)";
+      return_value = verify_mem(FALSE, definite, omega, pred_op, succ_op, 
+				cg_result, info_src);
+      goto return_point;
+    }
+  }
+#endif 
+  
   /* Our address analysis was disabled, didn't produce a definitive answer,
    * or we're verifying memory dependence info, so now resort to auxiliary
    * information to determine dependence relation.
@@ -2486,7 +3079,32 @@ static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
     ST *pred_spill_st = CGSPILL_OP_Spill_Location(pred_op);
     ST *succ_spill_st = CGSPILL_OP_Spill_Location(succ_op);
     info_src = "CG (spill info)";
-    if (pred_spill_st && succ_spill_st) {
+#ifdef TARG_ST
+    //
+    // Arthur: IA64 logic detects properly the spilling loads: if
+    //         a TN with an associated spill location is loaded,
+    //         it must be a spill (we do not reuse TNs). On the
+    //         other hand, a store of a spilling location TN is
+    //         not necessarily a spill (the TN may have been loaded
+    //         as a spill and stored anywhere). We decided to mark
+    //         OPs as OP_spill(op). 
+    if (CGSPILL_Is_Spill_Op(pred_op) && CGSPILL_Is_Spill_Op(succ_op))
+#else
+    if (pred_spill_st && succ_spill_st)
+#endif
+    {
+#ifdef TARG_ST
+      // CG: For spill operations, the spill location may be undefined.
+      // in this case treat conservativelly.
+      if (pred_spill_st == NULL || succ_spill_st == NULL) {
+	/*
+	 * Spill sets can't be determined, so there's a dependence.
+	 */
+	return_value = verify_mem(TRUE, definite, omega, 
+				  pred_op, succ_op, cg_result, info_src);
+	goto return_point;
+      } else 
+#endif
       if (succ_spill_st == pred_spill_st) {
 	/*
 	 * They're in the same spill set, so there's a definite dependence.
@@ -2499,23 +3117,30 @@ static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
          /* A value is loaded from one location and stored to a spill location.
             This is not a memory dependency, but should show up as a REGIN dependency
             later on. */
-          return verify_mem(FALSE, definite, omega, pred_op, succ_op, cg_result,
-                            info_src);
+          return_value = verify_mem(FALSE, definite, omega, 
+				    pred_op, succ_op, cg_result, info_src);
+	  goto return_point;
+
         }
 	*definite = TRUE;
       } else {
 	/*
 	 * They're in different spill sets, so there's no dependence.
 	 */
-	return verify_mem(FALSE, definite, omega, pred_op, succ_op, cg_result,
-			  info_src);
+        return_value = verify_mem(FALSE, definite, omega, 
+				  pred_op, succ_op, cg_result, info_src);
+	goto return_point;
       }
+#ifdef TARG_ST
+    } else if (CGSPILL_Is_Spill_Op(pred_op) || CGSPILL_Is_Spill_Op(succ_op)) {
+#else
     } else if (pred_spill_st || succ_spill_st) {
+#endif
 
       /* One's a spill, and the other's not, so they're independent.  */
-      return verify_mem(FALSE, definite, omega, pred_op, succ_op, cg_result,
-			info_src);
-
+      return_value = verify_mem(FALSE, definite, omega, 
+				pred_op, succ_op, cg_result, info_src);
+      goto return_point;
     } else {
 
 #if 0
@@ -2547,10 +3172,78 @@ static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
        */
       *definite = FALSE;
       if (omega) *omega = MAX(lex_neg, min_omega);
-      return verify_mem(TRUE, definite, omega, pred_op, succ_op, cg_result,
-			info_src);
+      return_value = verify_mem(TRUE, definite, omega, 
+				pred_op, succ_op, cg_result, info_src);
+      goto return_point;
+
     }
 
+#ifdef TARG_ST
+    // [CG] This enables better dependence checking when cross iteration
+    // dependency is not requested
+    if (omega == NULL && !lex_neg) {
+    /* First try the LNO dependence graph */
+    if (!CG_DEP_Ignore_LNO && Current_Dep_Graph != NULL &&
+	OP_unroll_bb(pred_op) == OP_unroll_bb(succ_op)) {
+      VINDEX16 v1 = Current_Dep_Graph->Get_Vertex(pred_wn);
+      VINDEX16 v2 = Current_Dep_Graph->Get_Vertex(succ_wn);
+      info_src = "LNO";
+      if (v1 != 0 && v2 != 0) {
+	EINDEX16 edge = Current_Dep_Graph->Get_Edge(v1, v2);
+	BOOL is_must, is_distance;
+	DIRECTION dir;
+	INT32 dist;
+	EINDEX16  inv_edge = 0;
+	INT32 pred_unroll = 0, succ_unroll = 0;
+	if (pred_unrollings > 1) {
+	  pred_unroll = OP_unrolling(pred_op);
+	  succ_unroll = OP_unrolling(succ_op);
+	}
+
+	if (edge) {
+	  DEP dep = Current_Dep_Graph->Dep(edge);
+	  is_distance = DEP_IsDistance(dep);
+	  dir = DEP_Direction(dep);
+	  is_must = (Current_Dep_Graph->Is_Must(edge) &&
+		     !Memory_OP_Is_Partial_WN_Access(pred_op) &&
+		     !Memory_OP_Is_Partial_WN_Access(succ_op));
+	  dist = is_distance ? DEP_Distance(dep) : DEP_DistanceBound(dep);
+	}
+	if (edge == 0) {
+	  /* Independent */
+	  return_value = verify_mem(FALSE, definite, omega,
+				    pred_op, succ_op, cg_result, info_src);
+	  goto return_point;
+	} else {
+	  FmtAssert(dist >= 0, 
+		    ("LNO edge %d as negative dist %d", edge, dist));
+	  FmtAssert(!(dir == DIR_POS && dist == 0), 
+		    ("LNO POS(+) edge %d has dist of 0", edge));
+	  
+	  if (// check: negative unroll distance
+	      succ_unroll < pred_unroll || 
+	      // check: unroll_dist != dist 
+	      (is_distance && 
+	       succ_unroll - pred_unroll != dist) ||
+	      // check: unroll_dist < min_dist
+	      (!is_distance &&
+	       succ_unroll - pred_unroll < dist)) {
+	    return_value = verify_mem(FALSE, definite, omega,
+				      pred_op, succ_op, cg_result, info_src);
+	    goto return_point;
+	  }
+	  *definite = (cg_result == IDENTICAL && *definite ||
+		       is_must);
+	  if (*definite)
+	    *definite = under_same_cond_tn(pred_op, succ_op, 0);
+	  return_value = verify_mem(TRUE, definite, omega,
+				    pred_op, succ_op, cg_result, info_src);
+	  goto return_point;
+	}
+      }
+    }
+    } else
+#endif
     /* First try the LNO dependence graph */
     if (!CG_DEP_Ignore_LNO && Current_Dep_Graph != NULL &&
 #ifdef TARG_X8664
@@ -2621,13 +3314,15 @@ static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
 	}
 	if (edge == 0) {
 	  /* Independent */
-	  return verify_mem(FALSE, definite, omega, pred_op, succ_op, cg_result,
-			    info_src);
+          return_value = verify_mem(FALSE, definite, omega,
+				    pred_op, succ_op, cg_result, info_src);
+	  goto return_point;
 	} else {
 	  if (dist < 0) {
 	    DevWarn("LNO edge %d has dist of %d; ignoring", edge, dist);
-	    return verify_mem(FALSE, definite, omega, pred_op, succ_op,
-			      cg_result, info_src);
+            return_value = verify_mem(FALSE, definite, omega,
+				      pred_op, succ_op, cg_result, info_src);
+	    goto return_point;
 	  }
 	  if (dir == DIR_POS && dist == 0) {
 	    DevWarn("LNO POS(+) edge %d has dist of 0; assuming 1", edge);
@@ -2637,8 +3332,9 @@ static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
 	    INT32 adjust = dist + OP_unrolling(pred_op)-OP_unrolling(succ_op);
 	    info_src = "LNO (+ CG unrolling info)";
 	    if (is_distance && adjust % (INT32)pred_unrollings != 0) {
-	      return verify_mem(FALSE, definite, omega, pred_op, succ_op,
-				cg_result, info_src);
+              return_value = verify_mem(FALSE, definite, omega, pred_op,
+					succ_op, cg_result, info_src);
+	      goto return_point;
 	    } else {
 	      dist = adjust / (INT32)pred_unrollings;
 	    }
@@ -2647,21 +3343,26 @@ static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
 	    is_must && dist < MAX_OMEGA;
 	  if (lex_neg && dist == 0) {
 	    /* LNO can't exclude the zero-omega arcs, so we do. */
-	    if (is_distance)
-	      return verify_mem(FALSE, definite, omega, pred_op, succ_op,
-				cg_result, info_src);
+	    if (is_distance){
+              return_value = verify_mem(FALSE, definite, omega,
+					pred_op, succ_op, cg_result, info_src);
+	      goto return_point;
+            }
 	    dist = 1;
 	  }
-	  if (omega == NULL && dist > 0)
-	    return verify_mem(FALSE, definite, omega, pred_op, succ_op,
-			      cg_result, info_src);
+	  if (omega == NULL && dist > 0) {
+	    return_value = verify_mem(FALSE, definite, omega,
+				      pred_op, succ_op, cg_result, info_src);
+	    goto return_point;
+	  }
 	  if (omega)
 	    *omega = MIN(MAX(dist, min_omega), MAX_OMEGA);
 	  if (*definite)
 	    *definite = under_same_cond_tn(pred_op, succ_op,
 					   omega ? *omega : 0);
-	  return verify_mem(TRUE, definite, omega, pred_op, succ_op, cg_result,
-			    info_src);
+          return_value = verify_mem(TRUE, definite, omega,
+				    pred_op, succ_op, cg_result, info_src);
+	  goto return_point;
 	}
       }
     }
@@ -2711,8 +3412,9 @@ static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
 	    *definite = cg_result == IDENTICAL;
 	    break;
 	  case NOT_ALIASED:
-	    return verify_mem(FALSE, definite, omega, pred_op, succ_op, 
-			      cg_result, info_src);
+            return_value = verify_mem(FALSE, definite, omega,
+				      pred_op, succ_op, cg_result, info_src);
+	    goto return_point;
 	  default:
 	    Is_True(FALSE, ("bad return value from Aliased"));
 	  }
@@ -2757,9 +3459,21 @@ static BOOL get_mem_dep(OP *pred_op, OP *succ_op, BOOL *definite, UINT8 *omega)
    */
   if (*definite)
     *definite = under_same_cond_tn(pred_op, succ_op, omega ? *omega : 0);
+  
+  return_value = verify_mem(TRUE, definite, omega,
+                            pred_op, succ_op, cg_result, info_src);
+  goto return_point;
 
-  return verify_mem(TRUE, definite, omega, pred_op, succ_op, cg_result,
-		    info_src);
+return_point:
+#ifdef Is_True_On
+  if (dbg_found) {
+    Print_OP_No_SrcLine (pred_op);
+    Print_OP_No_SrcLine (succ_op);
+    fprintf(TFile, "Dep BB:%d, pred:%d, succ:%d : dep:%d, def:%d, om:%d\n",
+	    bb_id, pred_id, succ_id, return_value, *definite, omega ? *omega: 0);
+  }
+#endif
+  return return_value;
 }
 
 BOOL 
@@ -2817,6 +3531,29 @@ CG_DEP_Call_Aliases(OP *call_op, OP *op, BOOL read, BOOL write)
   return TRUE;
 }
 
+#ifdef TARG_ST
+// -----------------------------------------------------------------------
+// This fuctions returns memory dependence information for 2 operations.
+// The 2 operations can be in different BB, however, prev_op must
+// precede op in a topological traversal of the acyclic graph.
+// It does not require building the dependence graph.
+// It should be used for simple query on 2 operations when the
+// dependence graph is not available.
+// It should not be used for cyclic dependencies
+// -----------------------------------------------------------------------
+BOOL 
+CG_DEP_Mem_Ops_Alias(OP *memop1, OP *memop2, BOOL *definite)
+{
+  BOOL old = CG_DEP_Addr_Analysis;
+  BOOL aliased;
+  // disable address analysis which requires the dependence graph
+  CG_DEP_Addr_Analysis = FALSE;
+  aliased = get_mem_dep(memop1, memop2, definite, NULL, 0);
+  CG_DEP_Addr_Analysis = old;
+  return aliased;
+}
+
+#else
 BOOL 
 CG_DEP_Mem_Ops_Alias(OP *memop1, OP *memop2, BOOL *identical)
 /* -----------------------------------------------------------------------
@@ -2937,6 +3674,7 @@ CG_DEP_Mem_Ops_Alias(OP *memop1, OP *memop2, BOOL *identical)
   if (identical) *identical = FALSE;
   return TRUE;
 }
+#endif
 
 // ======================================================================
 // Can_OP_Move_Across_Call
@@ -2977,11 +3715,22 @@ CG_DEP_Can_OP_Move_Across_Call(OP *cur_op, OP *call_op, BOOL forw,
 	ISA_REGISTER_CLASS rclass = TN_register_class (result);
 	 
 	// prune out regs which have implicit meaning.
+#ifdef TARG_ST
+	REGISTER_SET regs = TN_registers (result);
+	if (REGISTER_SET_IntersectsP (regs,
+				      REGISTER_CLASS_function_value (rclass))
+	    || REGISTER_SET_IntersectsP (regs,
+					 REGISTER_CLASS_function_argument (rclass))
+	    || REGISTER_SET_IntersectsP (regs,
+					 BB_call_clobbered (OP_bb(call_op), rclass)))
+	  return FALSE;
+#else
 	if(REGISTER_SET_MemberP(REGISTER_CLASS_function_value(rclass), reg) ||
 	   REGISTER_SET_MemberP(REGISTER_CLASS_function_argument(rclass),
 				reg) ||
 	   REGISTER_SET_MemberP(REGISTER_CLASS_caller_saves(rclass), reg))
 	  return FALSE;
+#endif
 
 	// #802534: The output register portion of the allocated frame
 	// doesn't get preserved across calls. Check for this condition.
@@ -3006,12 +3755,22 @@ CG_DEP_Can_OP_Move_Across_Call(OP *cur_op, OP *call_op, BOOL forw,
 	ISA_REGISTER_CLASS opnd_cl = TN_register_class (opnd_tn);
 
 	// prune out regs which have implicit meaning.
+#ifdef TARG_ST
+	REGISTER_SET regs = TN_registers (opnd_tn);
+	if (REGISTER_SET_IntersectsP (regs,
+				      REGISTER_CLASS_function_value(opnd_cl))
+	    || REGISTER_SET_IntersectsP (regs,
+					 REGISTER_CLASS_function_argument(opnd_cl))
+	    || REGISTER_SET_IntersectsP (regs,
+					 BB_call_clobbered (OP_bb(call_op), opnd_cl)))
+#else
 	if(REGISTER_SET_MemberP(REGISTER_CLASS_function_value(opnd_cl), 
 				opnd_reg) ||
 	   REGISTER_SET_MemberP(REGISTER_CLASS_function_argument(opnd_cl),
 				opnd_reg) ||
 	   REGISTER_SET_MemberP(REGISTER_CLASS_caller_saves(opnd_cl),
 				opnd_reg))
+#endif
 	  return FALSE;
       } else {
 	// TODO: start with disallowing dedicated TN's and refine it
@@ -3110,6 +3869,14 @@ Add_BRANCH_Arcs(BB* bb, std::list<BB*> bb_list, BOOL include_latency)
 	}
 
 	// Build any cross-bb MISC dependences here. 
+#ifdef TARG_ST
+	// Arthur: this routine will also get the dependence for us
+	INT16 latency;
+	if (CGTARG_Dependence_Required(op, cur_xfer_op, &latency)) {
+	  new_arc_with_latency(CG_DEP_MISC, op, cur_xfer_op, latency, 0, 0, FALSE);
+	  break;
+	} 
+#else
 	if (CGTARG_Dependence_Required(op, cur_xfer_op)) {
 	  if (include_latency) {
 	    new_arc_with_latency(CG_DEP_MISC, op, cur_xfer_op, 0, 0, 0, FALSE);
@@ -3118,6 +3885,7 @@ Add_BRANCH_Arcs(BB* bb, std::list<BB*> bb_list, BOOL include_latency)
 	  }
 	  break;
 	}
+#endif
       }
     } // PREBR dependences
 
@@ -3136,6 +3904,13 @@ Add_BRANCH_Arcs(BB* bb, std::list<BB*> bb_list, BOOL include_latency)
 	}
 
 	// Build any cross-bb MISC dependences here.
+#ifdef TARG_ST
+	INT16 latency;
+	if (CGTARG_Dependence_Required(cur_xfer_op, op, &latency)) {
+	  new_arc_with_latency(CG_DEP_MISC, cur_xfer_op, op, latency, 0, 0,FALSE);
+	  break;
+	}
+#else
 	if (CGTARG_Dependence_Required(cur_xfer_op, op)) {
 	  if (include_latency) {
 	    new_arc_with_latency(CG_DEP_MISC, cur_xfer_op, op, 0, 0, 0,FALSE);
@@ -3144,6 +3919,7 @@ Add_BRANCH_Arcs(BB* bb, std::list<BB*> bb_list, BOOL include_latency)
 	  }
 	  break;
 	}
+#endif
       }
     } // POSTBR dependences
 
@@ -3174,18 +3950,34 @@ Add_MISC_Arcs(BB* bb)
 	// not real register dependences, set the omega value conservative
 	// to 1.
 
+#ifdef TARG_ST
+	INT16 latency;
+	if (CGTARG_Dependence_Required(prev_op, op,&latency)) {
+	  new_arc_with_latency(CG_DEP_MISC, prev_op, op, latency, 1, 0, FALSE);
+	}
+#else
+
 	if (CGTARG_Dependence_Required(prev_op, op)) {
 	  new_arc_with_latency(CG_DEP_MISC, prev_op, op, 0, 1, 0, FALSE);
 	}
+#endif
       }
     }
 
     // Build the acyclic dependence edge here.
 
     for (next_op = OP_next(op); next_op; next_op = OP_next(next_op)) {
+#ifdef TARG_ST
+      // Arthur: latency not necessarily 0 !
+      INT latency;
+      if (CGTARG_Dependence_Required(op, next_op, &latency)) {
+	new_arc_with_latency(CG_DEP_MISC, op, next_op, latency, 0, 0, FALSE);
+      }
+#else
       if (CGTARG_Dependence_Required(op, next_op)) {
 	new_arc_with_latency(CG_DEP_MISC, op, next_op, 0, 0, 0, FALSE);
       }
+#endif
     }
   } // FOR_ALL_BB_OPs loop
 }
@@ -3332,7 +4124,11 @@ static void adjust_arc_for_rw_elim(ARC *arc, BOOL is_succ, ARC *shortest,
 	( OP_results(succ) > 0 ) &&
 #endif	
 	(TN_is_float(OP_opnd(pred, 0)) ^ TN_is_float(OP_result(succ,0 /*???*/)))) ||
+#ifdef TARG_ST
+       OP_Mem_Ref_Bytes(pred) != OP_Mem_Ref_Bytes(succ))) {
+#else
        CGTARG_Mem_Ref_Bytes(pred) != CGTARG_Mem_Ref_Bytes(succ))) {
+#endif
     /* invalidate for r/w elimination */
     Set_ARC_is_definite(arc, FALSE);
   } else if (kind == CG_DEP_MEMREAD &&
@@ -3342,12 +4138,20 @@ static void adjust_arc_for_rw_elim(ARC *arc, BOOL is_succ, ARC *shortest,
 	     OP_results(pred) > 0 &&
 #endif
 	     ((TN_is_float(OP_result(pred,0 /*???*/)) ^ TN_is_float(OP_result(succ,0 /*???*/))) ||
+#ifdef TARG_ST
+	      OP_Mem_Ref_Bytes(pred) != OP_Mem_Ref_Bytes(succ))) {
+#else
 	      CGTARG_Mem_Ref_Bytes(pred) != CGTARG_Mem_Ref_Bytes(succ))) {
+#endif
     /* non-definite MEMREAD arcs aren't useful */
     detach_arc(arc);
     delete_arc(arc);
   } else if (kind == CG_DEP_MEMOUT &&
+#ifdef TARG_ST
+	     OP_Mem_Ref_Bytes(pred) > OP_Mem_Ref_Bytes(succ)) {
+#else
 	     CGTARG_Mem_Ref_Bytes(pred) > CGTARG_Mem_Ref_Bytes(succ)) {
+#endif
     /* invalidate for w/w elimination */
     Set_ARC_is_definite(arc, FALSE);
   } else
@@ -3435,6 +4239,12 @@ void add_mem_arcs_from(UINT16 op_idx)
   UINT16 num_poss_0_succs = num_mem_ops - op_idx - 1;
   BOOL found_definite_memread_succ = FALSE;
 
+#ifdef TARG_ST
+    if (tracing) {
+      fprintf(TFile, "<Add_MEM_Arcs> for: ");
+      Print_OP_No_SrcLine(op);
+    }
+#endif
   /* Note: <mem_op_lat_0> is NULL when not pruning. */
   if (mem_op_lat_0) {
     if (mem_op_lat_0[op_idx]) {
@@ -3459,6 +4269,14 @@ void add_mem_arcs_from(UINT16 op_idx)
     OP *succ = mem_ops[succ_idx];
     ARC *arc;
     INT16 latency;
+
+#ifdef TARG_ST
+    if (tracing) {
+      fprintf(TFile, "\t ");
+      Print_OP_No_SrcLine(succ);
+    }
+#endif
+
     CG_DEP_KIND kind = OP_Load(op) ?
       (OP_Load(succ) ? CG_DEP_MEMREAD : CG_DEP_MEMANTI) :
       (OP_Load(succ) ? CG_DEP_MEMIN : CG_DEP_MEMOUT);
@@ -3483,8 +4301,12 @@ void add_mem_arcs_from(UINT16 op_idx)
       if (latency <= mem_op_lat_0[op_idx][succ_idx-op_idx-1]) continue;
     }
 
-    if (get_mem_dep(op, succ, &definite, cyclic ? &omega : NULL)) {
-
+#ifdef TARG_ST
+    if (get_mem_dep(op, succ, &definite, cyclic ? &omega : NULL, op_idx >= succ_idx))
+#else
+    if (get_mem_dep(op, succ, &definite, cyclic ? &omega : NULL))
+#endif
+    {
       // For OOO machine (eg. T5), non-definite memory dependences can be 
       // relaxed to edges with zero latency. The belief is that this can 
       // help avoid creating false dependences with biased critical info. 
@@ -3500,7 +4322,11 @@ void add_mem_arcs_from(UINT16 op_idx)
 	 !include_memin_arcs is SET, not already a check-load, then
 	 set the ARC as a dotted edge. */
 
+#ifdef TARG_ST
+      if (!OP_Is_Check_Load(succ) && 
+#else
       if (!CGTARG_Is_OP_Check_Load(succ) && 
+#endif
 	  kind == CG_DEP_MEMIN && !definite && !include_memin_arcs)
 	Set_ARC_is_dotted(arc, TRUE);
 
@@ -3624,6 +4450,13 @@ inline BOOL op_defines_sp(OP *op)
   return FALSE;
 }
 
+#ifdef TARG_ST
+inline BOOL op_is_alloca(OP *op)
+{
+  return op_defines_sp(op) && !OP_memory(op);
+}
+#endif
+
 typedef enum {
   STACKREF_NO,
   STACKREF_YES,
@@ -3681,6 +4514,9 @@ static STACKREF_KIND Memory_OP_References_Stack(OP *op)
      * load/store and an indirect load/store with an LDA for an address.
      * For the above cases, get the symbol for the variable being accessed.
      */
+#ifdef TARG_ST
+    /* SC: Also allow prefetch. */
+#endif
     ST *st = NULL;
     if (WN_has_sym(wn)) {
       st = WN_st(wn);
@@ -3697,6 +4533,9 @@ static STACKREF_KIND Memory_OP_References_Stack(OP *op)
       case OPR_ILOAD:
       case OPR_ILDBITS:
       case OPR_ILOADX:
+#ifdef TARG_ST
+      case OPR_PREFETCH:
+#endif
 	lda = WN_kid0(wn);
 	break;
       case OPR_ISTORE:
@@ -3711,7 +4550,11 @@ static STACKREF_KIND Memory_OP_References_Stack(OP *op)
 	return STACKREF_MAYBE;
 #endif
       }
+#ifdef TARG_ST
+      if (lda && WN_operator_is(lda, OPR_LDA)) st = WN_st(lda);
+#else
       if (WN_operator_is(lda, OPR_LDA)) st = WN_st(lda);
+#endif
     }
 
     /* If we found a symbol, then give a definitive answer based on
@@ -3767,9 +4610,15 @@ static void Add_MEM_Arcs(BB *bb)
   FOR_ALL_BB_OPs(bb, op) {
     if (OP_Load(op) || OP_like_store(op))
       num_mem_ops++;
-
+#ifdef TARG_ST
+    if (CG_DEP_Add_Alloca_Arcs && op_is_alloca(op)) {
+      Is_True (!OP_memory(op), ("Alloca operation must not be a memory operation"));
+      ++sp_defs;
+    }
+#else
     if (CG_DEP_Add_Alloca_Arcs && op_defines_sp(op))
       ++sp_defs;
+#endif
   }
 
   /* Return if there's nothing to do */
@@ -3844,7 +4693,11 @@ static void Add_MEM_Arcs(BB *bb)
    */
   if (CG_DEP_Add_Alloca_Arcs) {
     for (op = BB_first_op(bb); op && sp_defs > 0; op = OP_next(op)) {
+#ifdef TARG_ST
+      if (op_is_alloca(op)) {
+#else 
       if (op_defines_sp(op)) {
+#endif
 	--sp_defs;
 	for (i = 0; i < num_mem_ops; i++) {
 #ifdef KEY
@@ -4108,7 +4961,21 @@ Add_Bkwd_REG_Arcs(BB *bb, TN_SET *need_anti_out_dep)
 //
 struct TN_2_DEFS_VECTOR_MAP {
   typedef vector<int> DEFS_VECTOR_TYPE;
+#ifdef TARG_ST
+  // TDR - Add determinist selection mode to avoid diffs when Open64 is built 
+  // in debug or Release mode
+  class Tp_Map_Cmp {
+  public:
+      bool operator()(const TN* x,const TN* y)const {
+          // Here it can only be registers
+         return (TN_number(x) < TN_number(y));         
+      }
+  };
+
+  typedef std::map<TN*, DEFS_VECTOR_TYPE, Tp_Map_Cmp> TN_2_DEFS_VECTOR_MAP_TYPE;
+#else  
   typedef std::map<TN*, DEFS_VECTOR_TYPE> TN_2_DEFS_VECTOR_MAP_TYPE;
+#endif
   typedef TN_2_DEFS_VECTOR_MAP_TYPE::iterator iterator;
 
 private:
@@ -4180,7 +5047,11 @@ void Build_Cyclic_Arcs(BB *bb)
       for (i = 0; i < tn_defs.size(); i++) {
 	INT def_num = tn_defs[i];
 	OP *op = op_vec[def_num];
+#ifdef TARG_ST
+	if (OP_base_update_tn(op) == tn)
+#else
 	if (Base_update_tn(op) == tn)
+#endif
 	  definite_dep = false;
       }
 
@@ -4297,7 +5168,11 @@ void Build_Cyclic_Arcs(BB *bb)
     for (i = 0; i < tn_defs.size(); i++) {
       INT def_num = tn_defs[i];
       OP *op = op_vec[def_num];
+#ifdef TARG_ST
+      if (OP_base_update_tn(op) == tn)
+#else
       if (Base_update_tn(op) == tn)
+#endif
 	definite_dep = false;
     }
 
@@ -4416,6 +5291,10 @@ Compute_BB_Graph(BB *bb, TN_SET *need_anti_out_dep)
 
   // Build target-dependent (if any) MISC arcs .
   Add_MISC_Arcs(bb);
+#ifdef ENABLE_LOOPSEQ
+  // [CG] Add user specified LOOPSEQ arcs
+  Add_LOOPSEQ_Arcs(bb);
+#endif
 }
 
 
@@ -4496,6 +5375,11 @@ Compute_Region_Graph(std::list<BB*> bb_list)
 
     // Build target-dependent (if any) MISC arcs .
     Add_MISC_Arcs(*bb_iter);
+
+#ifdef ENABLE_LOOPSEQ
+    // [CG] Add user specified LOOPSEQ arcs
+    Add_LOOPSEQ_Arcs(*bb_iter);
+#endif
   }
 
   // If <include_control_arcs>, generate all PREBR and POSTBR dependence arcs.
@@ -4585,7 +5469,14 @@ CG_DEP_Add_Op_Same_Res_Arcs(OP *op)
  */
 {
   BB *bb = OP_bb(op);
+#ifdef TARG_ST
+  // Arthur: All of this seems to imply a single result OP.
+  //         I keep it this way for now but eventually I'll have
+  //         to support multi-res OPs
+  INT16 which = OP_same_res(op,0);
+#else
   INT16 which = CGPREP_Same_Res_Opnd(op);
+#endif
   TN *opnd = OP_opnd(op, which);
   ARC_LIST *arcs = ARC_LIST_Find(OP_preds(op), CG_DEP_REGIN, which);
   
@@ -4643,7 +5534,12 @@ CG_DEP_Add_Same_Res_Arcs()
   OP *op;
   BOOL any = FALSE;
   FOR_ALL_BB_OPs(_cg_dep_bb, op) {
+#ifdef TARG_ST
+    // Arthur: guess what ... same_res !
+    if (OP_same_res(op,0) >= 0) {
+#else
     if (OP_same_res(op)) {
+#endif
       any = TRUE;
       CG_DEP_Add_Op_Same_Res_Arcs(op);
     }
@@ -4670,8 +5566,14 @@ void remove_unnecessary_anti_or_output_arcs(ARC_LIST *arcs)
 	OP_result(pred,0 /*???*/) : OP_opnd(pred, ARC_opnd(arc));
       if (succ_tn != pred_tn &&
 	  (!has_assigned_reg(succ_tn) || !has_assigned_reg(pred_tn) ||
+#ifdef TARG_ST
+	   TN_register_class(succ_tn) != TN_register_class(pred_tn) ||
+	   ! REGISTER_SET_IntersectsP (TN_registers (succ_tn),
+				       TN_registers (pred_tn)))) {
+#else
 	   TN_register(succ_tn) != TN_register(pred_tn) ||
 	   TN_register_class(succ_tn) != TN_register_class(pred_tn))) {
+#endif
 	detach_arc(arc);
 	delete_arc(arc);
       }
@@ -4686,7 +5588,10 @@ CG_DEP_Remove_Op_Same_Res_Arcs(OP *op)
  * -----------------------------------------------------------------------
  */
 {
+#ifdef TARG_ST
+#else
   Is_True(OP_same_res(op), ("<op> not a same-res OP"));
+#endif
   remove_unnecessary_anti_or_output_arcs(OP_preds(op));
   remove_unnecessary_anti_or_output_arcs(OP_succs(op));
   if (tracing) {
@@ -4710,7 +5615,13 @@ CG_DEP_Remove_Same_Res_Arcs()
 
   OP *op;
   FOR_ALL_BB_OPs(_cg_dep_bb, op) {
-    if (OP_same_res(op)) CG_DEP_Remove_Op_Same_Res_Arcs(op);
+#ifdef TARG_ST
+    // Arthur: ...
+    if (OP_same_res(op,0) >= 0)
+#else
+    if (OP_same_res(op)) 
+#endif
+        CG_DEP_Remove_Op_Same_Res_Arcs(op);
   }
 }
 
@@ -4848,8 +5759,12 @@ static void
 Update_Entry_For_TN(
     TN              *vtn, 
     OP              *cur_op, 
-    TN_MAP          vmap, 
+    TN_MAP          vmap,
+#ifdef TARG_ST
+    void            *register_ops[ISA_REGISTER_CLASS_MAX_LIMIT+1][REGISTER_MAX+1], 
+#else
     void            *register_ops[ISA_REGISTER_CLASS_MAX+1][REGISTER_MAX+1], 
+#endif
     OP_MAP          omap, 
     BOOL            is_result)
 {
@@ -4876,6 +5791,12 @@ Update_Entry_For_TN(
   if (TN_register(vtn) != REGISTER_UNDEFINED) {
     REGISTER reg = TN_register(vtn);
     ISA_REGISTER_CLASS rc = TN_register_class(vtn);
+#ifdef TARG_ST
+    REGISTER_SET regs = TN_registers(vtn);
+    for (reg = REGISTER_SET_Choose (regs);
+	 reg != REGISTER_UNDEFINED;
+	 reg = REGISTER_SET_Choose_Next (regs, reg)) {
+#endif
     OP *get_op = (OP*) register_ops[rc][reg];
 
     if (get_op == NULL) {
@@ -4892,6 +5813,9 @@ Update_Entry_For_TN(
 	OP_MAP_Set(omap, cur_op, multiple_inst);
       }
     }
+#ifdef TARG_ST
+    }
+#endif
   }
 }
 
@@ -4906,7 +5830,11 @@ CG_DEP_Prune_Dependence_Arcs(std::list<BB*>    bblist,
 {
   std::list<BB*>::iterator bbi;
   TN_MAP tn_usage_map = TN_MAP_Create();
+#ifdef TARG_ST
+  void *reg_ops[ISA_REGISTER_CLASS_MAX_LIMIT+1][REGISTER_MAX+1];
+#else
   void *reg_ops[ISA_REGISTER_CLASS_MAX+1][REGISTER_MAX+1];
+#endif
   OP_MAP omap = OP_MAP_Create();
   memset(reg_ops, 0, sizeof(reg_ops));
 
@@ -4944,8 +5872,17 @@ CG_DEP_Prune_Dependence_Arcs(std::list<BB*>    bblist,
 
 	BOOL cond_use = TRUE;
 	if (OP_has_predicate(cur_op)) {
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+	  if (!TN_is_true_pred(OP_opnd(cur_op, OP_find_opnd_use(cur_op, OU_predicate))) &&
+#else
 	  if (!TN_is_true_pred(OP_opnd(cur_op, OP_PREDICATE_OPND)) &&
+#endif
+#ifdef TARG_ST
+	      OP_Can_Be_Speculative(cur_op)) {
+#else
 	      CGTARG_Can_Be_Speculative(cur_op)) {
+#endif
 
 	    INT i;
 	    cond_use = FALSE;
@@ -4981,10 +5918,20 @@ CG_DEP_Prune_Dependence_Arcs(std::list<BB*>    bblist,
 	      if (TN_register(result_tn) != REGISTER_UNDEFINED) {
 		ISA_REGISTER_CLASS result_cl = TN_register_class (result_tn);
 		REGISTER result_reg = TN_register (result_tn);
+#ifdef TARG_ST
+		REGISTER_SET regs = TN_registers (result_tn);
+		REGISTER r;
+		live_out |= (NREGS_Live_Outof_BB (result_cl, regs, *bbi) > 0);
+		FOR_ALL_REGISTER_SET_members (regs, r) {
+		  if (reg_ops[result_cl][r] == multiple_inst)
+		    { cond_use = TRUE; break; }
+		}
+#else
 		live_out |= REG_LIVE_Outof_BB (result_cl, result_reg, *bbi);
 
 		if (reg_ops[result_cl][result_reg] == multiple_inst)
 		  { cond_use = TRUE; break; }
+#endif
 								  
 	      }
 	      
@@ -5010,7 +5957,12 @@ CG_DEP_Prune_Dependence_Arcs(std::list<BB*>    bblist,
 	      // quering for its operands.
 	      if (defop && ((void *) defop != (void *) multiple_inst) &&
 		  OP_has_predicate(defop)) {
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+		if (!TN_is_true_pred(OP_opnd(defop, OP_find_opnd_use(defop, OU_predicate))))
+#else
 		if (!TN_is_true_pred(OP_opnd(defop, OP_PREDICATE_OPND)))
+#endif
 		  { cond_use = TRUE; break; }
 	      }
 	    }
@@ -5024,7 +5976,12 @@ CG_DEP_Prune_Dependence_Arcs(std::list<BB*>    bblist,
 #ifdef Is_True_On
 	    // detect the case if the predicate TN is modified
 	    {
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+	      TN *pred = OP_opnd(cur_op, OP_find_opnd_use(cur_op, OU_predicate));
+#else
 	      TN *pred = OP_opnd(cur_op, OP_PREDICATE_OPND);
+#endif
 	      BOOL pred_modified = FALSE;
 	      for (OP *op = OP_next(cur_op); op != NULL; op = OP_next(op)) {
 		if (pred_modified) {
@@ -5040,7 +5997,13 @@ CG_DEP_Prune_Dependence_Arcs(std::list<BB*>    bblist,
 	      }
 	    }
 #endif
+#ifdef TARG_ST
+  /* (cbr) predicate operand # is not necessary constant */
+	    Set_OP_opnd(cur_op, OP_find_opnd_use(cur_op, OU_predicate), True_TN);
+            Set_OP_Pred_True(cur_op, OP_find_opnd_use(cur_op, OU_predicate));
+#else
 	    Set_OP_opnd(cur_op, OP_PREDICATE_OPND, True_TN);
+#endif
 	    Set_OP_cond_def_kind(cur_op, OP_ALWAYS_UNC_DEF);
 	    if (trace) {
 	      fprintf(TFile, "<pred promotion> ");
@@ -5132,3 +6095,469 @@ CG_DEP_Compute_Region_Graph(std::list<BB*>    bb_region,
     CG_DEP_Trace_HB_Graph(_cg_dep_bbs);
   }
 }
+
+#ifdef TARG_ST
+// -----------------------------------------------------------------------
+// This fuctions computes the memory dependences on a multi-BB region,
+// including cross-BB dependences and loop-carried dependences. (BD3.)
+// -----------------------------------------------------------------------
+void 
+CG_DEP_Compute_Region_MEM_Arcs(std::list<BB*>    bb_list, 
+			    BOOL         compute_cyclic, 
+			    BOOL         memread_arcs)
+{
+
+  // Disable use of dep graph for address analysis
+  // as we don't create register arcs.
+  BOOL old_addr_analysis = CG_DEP_Addr_Analysis;
+  CG_DEP_Addr_Analysis = FALSE;
+
+  Is_True( _cg_dep_bb == NULL && _cg_dep_bbs.empty(),
+	   ( "CG_DEP_Compute_Region_MEM_Arcs:"
+	     " another dep graph currently exists" ) );
+  _cg_dep_bbs = bb_list;
+
+  cyclic = compute_cyclic;
+  include_memread_arcs = memread_arcs;
+
+  Invoke_Init_Routines();
+
+  std::list<BB*>::iterator bb_iter;
+  FOR_ALL_BB_STLLIST_ITEMS_FWD(bb_list, bb_iter) {
+    BB_OP_MAP omap = BB_OP_MAP_Create(*bb_iter, &dep_map_nz_pool);
+    BB_MAP_Set(_cg_dep_op_info, *bb_iter, omap);
+
+    OP *op;
+    FOR_ALL_BB_OPs(*bb_iter, op) {
+      BB_OP_MAP_Set(omap, op, new_op_info());
+    }
+  }
+
+  // Code patterned from Add_MEM_Arcs().
+  {
+    OP *op;
+    UINT16 op_idx;
+    std::list<BB*>::iterator bb_iter;
+
+    /* Count the memory OPs */
+    num_mem_ops = 0;
+    FOR_ALL_BB_STLLIST_ITEMS_FWD(bb_list, bb_iter) {
+      BB *bb = *bb_iter;
+      FOR_ALL_BB_OPs(bb, op) {
+	if (OP_load(op) || OP_like_store(op) || OP_prefetch(op)) {
+	  num_mem_ops++;
+	}
+      }
+    }
+
+    /* Return if there's nothing to do */
+    if (num_mem_ops < 1) goto return_point;
+    if (!cyclic && num_mem_ops == 1) goto return_point;
+
+    /* Initialize data structures used by add_mem_arcs_from */
+    MEM_POOL_Push(&MEM_local_pool);
+    mem_ops = TYPE_L_ALLOC_N(OP *, num_mem_ops);
+
+    op_idx = 0;
+    FOR_ALL_BB_STLLIST_ITEMS_FWD(bb_list, bb_iter) {
+      BB *bb = *bb_iter;
+      FOR_ALL_BB_OPs(bb, op) {
+	if (OP_load(op) || OP_like_store(op) || OP_prefetch(op))
+	  mem_ops[op_idx++] = op;
+      }
+    }
+
+    for (op_idx = 0; op_idx < num_mem_ops; op_idx++) {
+      // Code patterned from add_mem_arcs_from().
+      OP *op = mem_ops[op_idx];
+      UINT16 succ_idx, s, num_definite_arcs = 0;
+      ARC *shortest = NULL, *shortest_to_store = NULL;
+      /* Index of first possible memory successor of <op>. */
+      UINT16 first_poss_succ_idx = cyclic ? 0 : op_idx+1;
+      /* Max number of 0-omega successors of <op>. */
+      UINT16 num_poss_0_succs = num_mem_ops - op_idx - 1;
+      BOOL found_definite_memread_succ = FALSE;
+
+      /* Search through possible memory successors. */
+      for (succ_idx = first_poss_succ_idx; succ_idx < num_mem_ops; succ_idx++) {
+	BOOL definite, have_latency = FALSE;
+	UINT8 omega = 0;
+	OP *succ = mem_ops[succ_idx];
+	ARC *arc;
+	INT16 latency;
+	CG_DEP_KIND kind = OP_load(op) ?
+	  (OP_load(succ) ? CG_DEP_MEMREAD : CG_DEP_MEMANTI) :
+	  (OP_load(succ) ? CG_DEP_MEMIN : CG_DEP_MEMOUT);
+
+	if (OP_volatile(succ) && OP_volatile(op)) kind = CG_DEP_MEMVOL;
+
+#ifdef ENABLE_LOOPSEQ
+	// [CG] Treat user specified sequencial arcs.
+	Add_LOOPSEQ_Arc(op, succ, cyclic ? &omega : NULL, op_idx >= succ_idx);
+#endif
+
+	// FdF 20050117: Code copied from make_prefetch_arcs
+	if (((OP_load(op) && OP_prefetch(succ)) ||
+	     (OP_prefetch(op) && OP_load(succ))) &&
+	    (OP_bb(op) == OP_bb(succ)) &&
+	    BB_reg_alloc(OP_bb(op))) {
+
+	  OP *pref_op = OP_prefetch(op) ? op : succ;
+	  OP *load_op = OP_load(op) ? op : succ;
+
+	  WN *memwn = Get_WN_From_Memory_OP(load_op);
+	  PF_POINTER *pf_ptr = memwn ? (PF_POINTER *) WN_MAP_Get(WN_MAP_PREFETCH,memwn) : NULL;
+
+	  if (pf_ptr && PF_PTR_wn_pref_1L(pf_ptr) && OP_pft_scheduled(pref_op)) {
+	    WN *prefwn = Get_WN_From_Memory_OP(pref_op);
+	    PF_POINTER *pf_ptr2 = prefwn ? (PF_POINTER *) WN_MAP_Get(WN_MAP_PREFETCH,prefwn) : NULL;
+	    if (pf_ptr2 && (PF_PTR_wn_pref_1L(pf_ptr) == PF_PTR_wn_pref_1L(pf_ptr2)) &&
+		OP_unrolling(pref_op) == OP_unrolling(load_op)) {
+	      ARC *pref_arc;
+	      CG_DEP_KIND kind = CG_DEP_PREFIN;
+	      BOOL pft_is_before = (op_idx < succ_idx) == (OP_prefetch(op) != 0);
+
+	      if (!pft_is_before)
+		pref_arc = new_arc(kind, load_op, pref_op, 0, 0, TRUE);
+	      else
+		pref_arc = new_arc(kind, pref_op, load_op, 0, 0, TRUE);
+	      
+	      INT pf_lat = (WN_pf_stride_2L(prefwn) != 0) ?  CG_L2_pf_latency : CG_L1_pf_latency;
+	      Is_True (pft_is_before || !OP_pft_before(pref_op), ("Prefetch marked OP_pft_before must be before associated memops\n"));
+	      // Only if pref_op is before load_op and pref_op had no
+	      // memop of the group before it, latency is set to the
+	      // prefetch latency.
+	      if (!(pft_is_before && OP_pft_before(pref_op)))
+		pf_lat = 1;
+	      Set_ARC_latency(pref_arc, pf_lat);
+	      if (Get_Trace(TP_SCHED, 4))
+		if (pft_is_before)
+		  fprintf(TFile, "Add prefetch_arc prefetch->op(%d) in bb %d\n", pf_lat, BB_id(OP_bb(load_op)));
+		else
+		  fprintf(TFile, "Add prefetch_arc op->prefetch(%d) in bb %d\n", pf_lat, BB_id(OP_bb(load_op)));
+	    }
+	    continue;
+	  }
+	}
+	
+	if (kind == CG_DEP_MEMREAD && !include_memread_arcs) continue;
+
+#ifdef TARG_ST
+	if (get_mem_dep(op, succ, &definite, cyclic ? &omega : NULL, op_idx >= succ_idx))
+#else
+	if (get_mem_dep(op, succ, &definite, cyclic ? &omega : NULL))
+#endif
+	  {
+
+	  // For OOO machine (eg. T5), non-definite memory dependences can be 
+	  // relaxed to edges with zero latency. The belief is that this can 
+	  // help avoid creating false dependences with biased critical info. 
+	
+	  if (!have_latency) latency =
+	    (CG_DEP_Adjust_OOO_Latency && PROC_is_out_of_order() && !definite) ? 
+	    0 : CG_DEP_Latency(op, succ, kind, 0);
+
+	  /* Build a mem dep arc from <op> to <succ> */
+	  if (omega > 0 || succ_idx > op_idx) {
+	    // Rename variables as in new_arc_with_latency.
+	    OP *pred = op;
+	    UINT8 opnd = 0;
+	    BOOL is_definite = definite;
+
+	    // Special-case the cyclic spill dependence arcs because they rely
+	    // on OP_restore_omega, that only works with single BB loops.
+	    if (cyclic && kind == CG_DEP_MEMIN && CGSPILL_Is_Spill_Op(pred) &&
+		CGSPILL_Is_Spill_Op(succ) && OP_store(pred) && OP_load(succ)) {
+	      // Code specialized from new_arc_with_latency().
+
+	      arc = create_arc();
+
+	      kind = CG_DEP_SPILLIN;
+	      latency = CG_DEP_Latency(pred, succ, kind, opnd);
+	      omega = succ_idx <= op_idx;
+
+	      Set_ARC_kind(arc, kind);
+	      Set_ARC_opnd(arc, opnd);
+	      Set_ARC_is_definite(arc, is_definite);
+	      Set_ARC_pred(arc, pred);
+	      Set_ARC_succ(arc, succ);
+	      Set_ARC_omega(arc, omega);
+	      Set_ARC_latency(arc, latency);
+	      Set_ARC_is_dotted(arc, FALSE);
+
+	      attach_arc(arc);
+
+	    } else {
+
+	      arc = new_arc_with_latency(kind, op, succ, latency, omega, 0, definite);
+
+	    }
+	  }
+
+	  found_definite_memread_succ |= (kind == CG_DEP_MEMREAD && definite);
+	}
+      }
+
+    }
+
+    MEM_POOL_Pop(&MEM_local_pool);
+
+    /* This acts as a flag, so be sure to reset it. */
+    mem_op_lat_0 = NULL;
+
+    /* Make add_mem_arcs_from/to crash immediately when <mem_ops> not right */
+    mem_ops = NULL;
+  }
+ return_point:
+  CG_DEP_Addr_Analysis = old_addr_analysis;
+}
+
+/*
+ * CG_Get_BB_Loopdep_Kind
+ *
+ * Returns loopdep information attached to the BB.
+ * Note that the bb should be a loop header
+ * to get loop dependencies.
+ */
+static 
+LOOPDEP CG_Get_BB_Loopdep_Kind(BB *bb)
+{
+  BB *head;
+  LOOPDEP kind = (LOOPDEP)0;
+#ifdef Is_True_On
+  static ST *last_pu_warning;
+  static BB *last_bb_warning;
+#endif
+  // Get a tentative header of the loop containing bb
+  head = bb;
+
+  ANNOTATION *annot;
+  WN *pragma = NULL;
+  for (annot = ANNOT_Get(BB_annotations(head), ANNOT_PRAGMA);
+       annot != NULL;
+       annot = ANNOT_Get(ANNOT_next(annot), ANNOT_PRAGMA)) {
+    if (WN_pragma(ANNOT_pragma(annot)) == WN_PRAGMA_IVDEP ||
+	WN_pragma(ANNOT_pragma(annot)) == WN_PRAGMA_LOOPDEP) {
+#ifdef Is_True_On
+      if (pragma != NULL) {
+	/* FdF: Because of unrolling, pragma may be duplicated. */
+	if (pragma != ANNOT_pragma(annot)) {
+	  ST *pu = Get_Current_PU_ST();
+	  if (last_pu_warning != pu || last_bb_warning != bb) {
+	    DevWarn("Multiple LOOPDEP/IVDEP pragma at BB:%d, PU:%s", BB_id(bb), ST_name(pu));
+	    last_pu_warning = pu;
+	    last_bb_warning = bb;
+	  }
+	}
+      }
+#endif
+      pragma = ANNOT_pragma(annot);
+    }
+  }
+  if (pragma) {
+    if (WN_pragma(pragma) == WN_PRAGMA_LOOPDEP) {
+      kind = (LOOPDEP)WN_pragma_arg1(pragma);
+    } else if (WN_pragma(pragma) == WN_PRAGMA_IVDEP) {
+      if (Liberal_Ivdep) kind = LOOPDEP_LIBERAL;
+      else if (Cray_Ivdep) kind = LOOPDEP_VECTOR;
+      else kind = LOOPDEP_PARALLEL;
+    }
+  }
+  return kind;
+}
+
+/*
+ * ops_same_loop
+ *
+ * Returns the loop head if ops are in the same loop nest.
+ * Detects also ops in the same loop residu, in this case
+ * the loop head of the effective loop is returned.
+ */
+static
+BB *ops_same_loop(OP *op1, OP *op2)
+{
+  BB *bb1, *bb2;
+  bb1 = OP_unroll_bb(op1) ? OP_unroll_bb(op1): OP_bb(op1);
+  bb2 = OP_unroll_bb(op2) ? OP_unroll_bb(op2): OP_bb(op2);
+  
+  BB *head = NULL;
+  // Check that loop head is the same.
+  // 1. First check that OP_unroll_bb is consistent (both null or
+  // both non null)
+  // 2. Then check if part of same remainder loop
+  // 3. Check if part of same loopdescr and not unrolled fully nor
+  //    remainder
+  if ((OP_unroll_bb(op1) == NULL && OP_unroll_bb(op2) == NULL) ||
+      (OP_unroll_bb(op1) != NULL && OP_unroll_bb(op2) != NULL)) {
+    ANNOTATION *ant1 = ANNOT_Get(BB_annotations(bb1), ANNOT_REMAINDERINFO);
+    ANNOTATION *ant2 = ANNOT_Get(BB_annotations(bb2), ANNOT_REMAINDERINFO);
+    if (ant1 != NULL && ant2 != NULL &&
+	ant1->info == ant2->info) {
+      /* In same remainder loop. */
+      head =  REMAINDERINFO_head_bb(ANNOT_remainderinfo(ant1));
+    } else if (BB_loop_head_bb(bb1) &&
+	       (bb1 == bb2 ||
+		(BB_loop_head_bb(bb1) == BB_loop_head_bb(bb2) &&
+		 !BB_unrolled_fully(bb1) && !BB_unrolled_fully(bb2) &&
+	       ant1 == NULL && ant2 == NULL))) {
+      head =  BB_loop_head_bb(bb1); /* same loop body. */
+    } 
+  }
+#ifdef Is_True_On
+  // Check that unrolling factor attached to OP_unroll_bb matches
+  if (head != NULL) {
+    INT32 unroll1 = OP_unroll_bb(op1) ? BB_unrollings(OP_unroll_bb(op1)):0; 
+    INT32 unroll2 = OP_unroll_bb(op2) ? BB_unrollings(OP_unroll_bb(op2)):0; 
+    if (unroll1 != unroll2)
+      DevWarn("Unrolling mismatch (%d != %d) for ops (BB:%d,idx:%d) in BB:%dand (BB:%d,idx:%d) in BB:%d with same loop head BB:%d \n", 
+	      unroll1, unroll2,
+	      unroll1, OP_map_idx(op1), BB_id(OP_bb(op1)),
+	      unroll2, OP_map_idx(op2), BB_id(OP_bb(op2)),
+	      BB_id(head));
+  }
+#endif
+  return head;
+    
+}
+
+/*
+ * get_cg_loopdep ()
+ *
+ * Compute dependencies between operations in the same loop
+ * based on loopdep pragmas.
+ * Conservative if no dependency information is found on the loop
+ * header.
+ */
+static 
+BOOL get_cg_loopdep(OP *pred_op, OP *succ_op, UINT8 *omega, int lex_neg)
+{
+  BB *bb = OP_bb(pred_op);
+  INT32 dist = 0;
+  LOOPDEP kind = (LOOPDEP)0;
+  BB *head;
+  INT32 idx1 = 0;
+  INT32 idx2 = 0;
+  
+  if (CG_DEP_ignore_pragmas) goto dependent;
+
+  // Get common loop head
+  if (!(head = ops_same_loop(pred_op, succ_op))) goto dependent;
+
+  kind = CG_Get_BB_Loopdep_Kind(head);
+  switch (kind) {
+  case LOOPDEP_VECTOR: 
+    // Vector: distance |OPi, OPj| is [0...[ for idx(i)<idx(j)
+    idx1 = OP_unroll_bb(pred_op) ? OP_orig_idx(pred_op): OP_map_idx(pred_op);
+    idx2 = OP_unroll_bb(succ_op) ? OP_orig_idx(succ_op): OP_map_idx(succ_op);
+    if (!((OP_unrolling(pred_op) <= OP_unrolling(succ_op) || lex_neg) &&
+	  idx1 < idx2)) dist = -1;
+    break;
+  case LOOPDEP_PARALLEL: 
+    // Parallel: distance |OPi, OPj| is 0
+    if (OP_unrolling(pred_op) != OP_unrolling(succ_op) || lex_neg) dist = -1;
+    break;
+  case LOOPDEP_LIBERAL: 
+    // Liberal: distance is [-]
+    dist = -1;
+    break;
+  default:
+    break;
+  }
+ dependent:
+  if (lex_neg && dist == 0) dist = 1;
+  if (dist < 0) return FALSE;
+  if (omega == NULL && dist > 0) return FALSE;
+  if (omega != NULL) *omega = dist;
+  return TRUE;
+}
+
+#endif
+
+#ifdef ENABLE_LOOPSEQ
+/*
+ * CG_Get_BB_Loopseq_Mask
+ *
+ * Returns loopseq information attached to the BB.
+ * The return value is a mask, result of oring the
+ * different loopseq pragmas.
+ * Note that the bb should be a loop header
+ * to get loop dependencies.
+ * The loopseq pragma may appear multiple times
+ * for a loop, for instance in :
+ * #pragma loopseq READ	// request order for memory reads
+ * #pragma loopseq WRITE // request order for memory writes
+ * In this case this function returns
+ * the mask (1<<LOOPSEQ_READ)|(1<<LOOPSEQ_WRITE)
+ */
+
+UINT32 CG_Get_BB_Loopseq_Mask(BB *bb)
+{
+  BB *head;
+  UINT32 mask = 0;
+  
+  // Get a tentative header of the loop containing bb
+  head = bb;
+
+  ANNOTATION *annot;
+  for (annot = ANNOT_Get(BB_annotations(head), ANNOT_PRAGMA);
+       annot != NULL;
+       annot = ANNOT_Get(ANNOT_next(annot), ANNOT_PRAGMA)) {
+    if (WN_pragma(ANNOT_pragma(annot)) == WN_PRAGMA_LOOPSEQ) {
+      WN *pragma = ANNOT_pragma(annot);
+      UINT32 kind = (UINT32)WN_pragma_arg1(pragma);
+      mask |= (1<<kind);
+    } 
+  }
+  return mask;
+}
+
+/*
+ * get_cg_loopseq ()
+ *
+ * Compute dependencies between operations in the same loop
+ * based on loopseq pragmas.
+ * No dependency is generated if no loopseq pragma is found on the loop
+ * header.
+ */
+static BOOL
+get_cg_loopseq(OP *pred_op, OP *succ_op, UINT8 *omega, int lex_neg)
+{
+  INT32 dist = -1;
+  BB *head;
+  UINT32 kind1, kind2;
+  UINT32 mask;
+  
+  /* If off, ignore this pragmas. */
+  if (CG_DEP_ignore_pragmas) goto noseq;
+
+  /* Only apply to operations in lexical order. */
+  if (lex_neg || pred_op == succ_op) goto noseq;
+
+  /* Get common loop head. */
+  if (!(head = ops_same_loop(pred_op, succ_op))) goto noseq;
+
+  kind1 = get_op_kind(pred_op);
+  kind2 = get_op_kind(succ_op);
+
+  mask = CG_Get_BB_Loopseq_Mask(head);
+  if ((mask & (1<<LOOPSEQ_READ)) &&
+      (kind1 == OP_KIND_LOAD || kind1 == OP_KIND_PREFIN) &&
+      (kind2 == OP_KIND_LOAD || kind2 == OP_KIND_PREFIN))
+    // Sequentialize READ and PREFETCH IN
+    dist = 0;
+  else if ((mask & (1<<LOOPSEQ_WRITE)) &&
+	   (kind1 == OP_KIND_STORE || kind1 == OP_KIND_PREFOUT) &&
+	   (kind2 == OP_KIND_STORE || kind2 == OP_KIND_PREFOUT))
+    // Sequentialize WRITE and PREFETCH OUT
+    dist = 0;
+
+  if (dist == 0) {
+    if (omega != NULL) *omega = 0;
+    return TRUE;
+  }
+ noseq:
+  return FALSE;
+}
+
+#endif
+

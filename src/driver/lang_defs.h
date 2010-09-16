@@ -1,4 +1,7 @@
 /*
+   Copyright (C) 2010 PathScale Inc. All Rights Reserved.
+*/
+/*
  *  Copyright (C) 2008 PathScale, LLC.  All Rights Reserved.
  */
 
@@ -126,10 +129,15 @@ typedef enum {
 	P_inline,	/* single-file inliner */
 	P_ipl,		/* pre-ipa */
 	p_any_ipl,	/* either ipl or inline */
+#ifdef FAT_WHIRL_OBJECTS
+        P_merge,        /* partial link command */
+#endif
 
 	P_be,		/* composite optimizing back-end */
 
-	P_as,		/* gnu assembler */
+#ifdef PATH64_ENABLE_PATHAS
+	P_pathas,	/* pathscale assembler */
+#endif // PATH64_ENABLE_PATHAS
 	P_gas,		/* gnu assembler */
 	P_any_as,	/* generic union of all asm's */
 

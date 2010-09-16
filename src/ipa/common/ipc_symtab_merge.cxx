@@ -945,7 +945,7 @@ copy_tcon (TCON& dest, const TCON& src, const TCONSTR_IDX_MAP& tconstr_map)
 	dest.vals.i0 = TCON_i0 (src);
 	break;
     case MTYPE_F4:
-	dest.vals.fval = TCON_fval (src);
+	dest.vals.f.fval = TCON_fval (src);
 	break;
     case MTYPE_F8:
 	dest.vals.dval = TCON_dval (src);
@@ -1150,8 +1150,9 @@ Synch_Pu_With_Pu (PU& merged_pu, const PU& original_pu)
 #ifdef KEY
     if (!merged_pu.misc)
     	merged_pu.misc = original_pu.misc; // EH/C nested function information
-
+#if !defined(TARG_ST) || !defined(PU_HAS_NO_UNUSED)
     merged_pu.unused = original_pu.unused;
+#endif
 #endif
 } // Synch_Pu_With_Pu
 

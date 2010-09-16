@@ -46,7 +46,7 @@
 // without finding and fixing those references.
 #endif /* KEY Mac port */
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#ifndef USE_WEAK_REFERENCES
 
 // Work around the "undefined weak symbol" bug in Linux.
 //
@@ -151,7 +151,10 @@ BB_NODE* (CODEREP::*Defbb_p) () const;
 void (*CG_Init_p) ();
 void (*CG_Fini_p) ();
 void (*CG_Process_Command_Line_p) (INT, char **, INT, char **);
-
+ void (*CG_Reset_Default_Options_p) (void);
+ void (*CG_Save_Default_Options_p) (void);
+ void (*CG_Apply_Opt_Size_p) (void);
+ void (*CG_Apply_Opt_Level_p) (UINT32);
 // from be/cg/cg.h
 void (*CG_PU_Initialize_p) (WN*);
 void (*CG_PU_Finalize_p) ();
@@ -246,4 +249,4 @@ void (*W2F_Translate_Stid_Lhs_p)(char *strbuf, UINT bufsize,
 void (*W2F_Translate_Wn_p)(FILE *outfile, WN *wn);
 void (*W2F_Translate_Wn_Str_p)(char *strbuf, UINT bufsize, WN *wn);
 
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES

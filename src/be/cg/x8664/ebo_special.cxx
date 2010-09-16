@@ -100,7 +100,7 @@ static const char source_file[] = __FILE__;
 #include "reg_live.h"
 #include "cflow.h"
 #include "cg_spill.h"
-#include "cgexp_internals.h"
+
 #include "data_layout.h"
 #include "stblock.h"
 #include "cxx_hash.h"
@@ -469,7 +469,7 @@ Expand_Extract_Bits (TYPE_ID rtype, TYPE_ID desc, UINT bit_offset,
   BOOL is_double = MTYPE_is_size_double(rtype);
   FmtAssert(MTYPE_bit_size(rtype) == MTYPE_bit_size(desc), 
 	    ("Expand_Extract_Bits: Handle this case (1)")); 
-  UINT pos = (Target_Byte_Sex != Host_Byte_Sex)
+  UINT pos = (Target_Is_Little_Endian != Host_Is_Little_Endian)
              ? MTYPE_bit_size(desc)-bit_offset-bit_size : bit_offset;
   if (pos == 0 && bit_size <= 16 && ! MTYPE_signed(rtype)) {
     Build_OP(is_double?TOP_andi64:TOP_andi32, tgt_tn, src_tn, 
@@ -3489,12 +3489,20 @@ static BOOL Compose_Addr( OP* mem_op, EBO_TN_INFO* pt_tninfo,
 
   switch( top ){
   case TOP_lea32:
+    /* Disable merge of LEA32 without sign extending its argument.
+       See COMPILER-8837 */
+    if( Is_Target_64bit() )
+      return FALSE;
+    // fall thru
   case TOP_lea64:
     a.base   = OP_opnd_use( addr_op, OU_base );
     a.offset = OP_opnd_use( addr_op, OU_offset );
     break;
 
   case TOP_leaxx32:
+    if( Is_Target_64bit() )
+      return FALSE;
+    // fall thru
   case TOP_leaxx64:
     a.index  = OP_opnd_use( addr_op, OU_index );
     a.offset = OP_opnd_use( addr_op, OU_offset );
@@ -3508,6 +3516,9 @@ static BOOL Compose_Addr( OP* mem_op, EBO_TN_INFO* pt_tninfo,
     break;
 
   case TOP_leax32:
+    if( Is_Target_64bit() )
+      return FALSE;
+    // fall thru
   case TOP_leax64:
     a.index  = OP_opnd_use( addr_op, OU_index );
     a.offset = OP_opnd_use( addr_op, OU_offset );
@@ -3963,6 +3974,7 @@ static Addr_Mode_Group Addr_Mode_Group_Table[] = {
   {TOP_and128v64,	TOP_andx128v64,	TOP_andxx128v64,	TOP_andxxx128v64,	TOP_UNDEFINED},
   {TOP_fand128v32,	TOP_fandx128v32,	TOP_fandxx128v32,	TOP_fandxxx128v32,	TOP_UNDEFINED},
   {TOP_fand128v64,	TOP_fandx128v64,	TOP_fandxx128v64,	TOP_fandxxx128v64,	TOP_UNDEFINED},
+  {TOP_fandn128v64,	TOP_fandnx128v64,	TOP_fandnxx128v64,	TOP_fandnxxx128v64,	TOP_UNDEFINED},
   // andps/andpd share the same load-execute OPs as fand128v32/fand128v64.
   // Must put andps/andpd after fand128v32/fand128v64 so that the load-execute
   // OPs will have fand128v32/fand128v64 as the base mode.

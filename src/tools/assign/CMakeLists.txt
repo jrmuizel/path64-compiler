@@ -11,7 +11,7 @@ ADD_DEFINITIONS(
 
 if(PATH64_ENABLE_FORTRAN)
 add_executable (assign ${PATHSCALE_ASSIGN_SRCS})
-target_link_libraries(assign pathfortran-static)
+target_link_libraries(assign pathfortran-host)
 
 install(TARGETS assign
     RUNTIME DESTINATION bin

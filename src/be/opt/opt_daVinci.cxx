@@ -46,13 +46,9 @@
 #include <stdio.h>
 #include <signal.h>
 #include <sys/types.h>              // for pid_t
+#include <sys/wait.h>                   // for waitpid()
 #include <unistd.h>                 // for fork(), pipe(), etc.
 #include <signal.h>                 // for SIGINT
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
-#include <sys/wait.h>                   // for waitpid()
-#else /* defined(BUILD_OS_DARWIN) */
-#include <wait.h>                   // for waitpid()
-#endif /* defined(BUILD_OS_DARWIN) */
 
 #define USE_STANDARD_TYPES
 #include "defs.h"

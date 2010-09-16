@@ -39,6 +39,8 @@
 **  Include this file before all others.
 */
 
+#include <stdint.h>
+
 #if (defined(_LANGUAGE_C) || defined(_LANGUAGE_C_PLUS_PLUS))
 
 typedef int boolean;
@@ -68,42 +70,14 @@ typedef unsigned long ulong_t;
 #include <sys/types.h>
 #endif
 
-#if defined(_LONGLONG)
-typedef signed long long longlong_t;
-typedef unsigned long long ulonglong_t;
-#else
-typedef signed long longlong_t;
-typedef unsigned long ulonglong_t;
-#endif
-
-typedef signed char int8;
-typedef unsigned char uint8;
-typedef signed short int16;
-typedef unsigned short uint16;
-typedef signed int int32;
-typedef unsigned int uint32;
-typedef longlong_t int64;
-typedef ulonglong_t uint64;
-
 typedef void *pointer;          /* a generic pointer type */
 
-typedef int32 fsize_t; /* Size of a "hidden length" when passing Fortran CHARACTER arguments */
+typedef int32_t fsize_t; /* Size of a "hidden length" when passing Fortran CHARACTER arguments */
 /* Another reasonable choice:  (requires <string.h>)
 **    typedef size_t fsize_t;
 */
 
 
-#endif
-
-#if defined(_LANGUAGE_PASCAL)
-
-#if defined(_LONGLONG)
-type long_integer = integer64;
-type long_cardinal = cardinal64;
-#else
-type long_integer = integer;
-type long_cardinal = cardinal;
-#endif
 #endif
 
 #endif

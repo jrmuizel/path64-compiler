@@ -39,6 +39,7 @@
 // fields in the symbol table classes.
 
 #include <ext/slist>
+#include <strings.h>
 
 #ifndef segmented_array_INCLUDED
 #include "segmented_array.h"
@@ -108,9 +109,13 @@ ST_Init (ST* st, STR_IDX n, ST_CLASS sc, ST_SCLASS stc, ST_EXPORT exp,
     st->offset = 0;
     st->flags = 0;
     st->flags_ext = 0;
-#ifdef KEY
-    // bug 14141
-    st->pad = 0;
+#ifdef TARG_ST
+    // [CL]
+    st->tls_model = ST_TLS_MODEL_GLOBAL_DYNAMIC;
+#ifdef TARG_STxP70
+    // (cbr)
+    st->memory_space = ST_MEMORY_DEFAULT;
+#endif
 #endif
 }
 
@@ -174,8 +179,16 @@ ST_tcon_val (const ST* s)		{ return Tcon_Table[ST_tcon (s)]; }
 // optional symbols are also preemptible
 inline BOOL
 ST_is_preemptible (const ST* s) {
+#ifdef TARG_ST
+  // [SC] Some targets can preempt protected symbols (e.g. for dynbss hack)
+    return (ST_export (s) == EXPORT_PREEMPTIBLE ||
+	    ST_export (s) == EXPORT_OPTIONAL ||
+	    (ST_export (s) == EXPORT_PROTECTED
+	     && Target_ABI_Preempts_Protected_Symbols()));
+#else
     return (ST_export (s) == EXPORT_PREEMPTIBLE ||
 	    ST_export (s) == EXPORT_OPTIONAL);
+#endif
 }
 
 inline BOOL
@@ -244,7 +257,14 @@ PU_Init (PU& pu, TY_IDX prototype, SYMTAB_IDX level)
     pu.gp_group = 0;
     pu.src_lang = PU_UNKNOWN_LANG;
     pu.misc = 0;
+#ifdef TARG_ST
+    pu.stkaln = Target_Stack_Alignment;
+  //TB" Add size optimization level for this PU
+    pu.size_opt = PU_OPTLEVEL_UNDEF;
+#endif
+#if ! defined(TARG_ST) || defined(PU_HAS_UNUSED)
     pu.unused = 0;
+#endif
     pu.flags = 0;
 }
 
@@ -547,7 +567,11 @@ ST_ATTR_Init (ST_ATTR& st_attr, ST_IDX st_idx, ST_ATTR_KIND akind, UINT64 val)
 {
     st_attr.st_idx = st_idx;
     st_attr.kind = akind;
+#ifdef TARG_ST
+    st_attr.u.value = val;
+#else
     st_attr.Set_u (val);
+#endif
 }
 
 inline UINT32

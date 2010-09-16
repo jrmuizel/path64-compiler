@@ -33,7 +33,7 @@ $Date$
 */
 #include "xlateincl.h"
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__sun) || defined(__NetBSD__)
 /* from elf_stuff.h */
 #define SHT_MIPS_XLATE		0x70000024
 #define SHT_MIPS_XLATE_DEBUG	0x70000025

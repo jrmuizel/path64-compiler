@@ -40,15 +40,24 @@
 // This file define initialization of pointer variables to symbols defined
 // in cg.so but referenced in be/be.so.
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#ifndef USE_WEAK_REFERENCES
 
 #include "defs.h"
 #include "cgdriver.h"
 #include "cg.h"
 #include "eh_region.h"
+#include "op.h"
+#include "op_map.h"
+#include "bb.h"
 #ifdef TARG_X8664
 #include "cgexp.h"
 #include "calls.h"
+#endif
+#ifdef TARG_ST
+BE_EXPORTED extern void (*CG_Reset_Default_Options_p) (void); /*TB: Reset the default options */
+BE_EXPORTED extern void (*CG_Save_Default_Options_p) (void); /*TB: Save values for the options */
+BE_EXPORTED extern void (*CG_Apply_Opt_Size_p) (UINT32); /* TB:Set CG internal options for code size */
+BE_EXPORTED extern void (*CG_Apply_Opt_Level_p) (UINT32); /* TB:Set CG internal options for a given optim level */
 #endif
 
 // from be/cg/cgdriver.h
@@ -90,5 +99,29 @@ struct CG_INIT
 #endif
     }
 } Cg_Initializer;
-
-#endif // __linux__
+/*
+ * This function is recognized by the Linux linker and placed in the
+ * .init section of the .so. Thus, executed upon mapping the .so
+ */
+struct LAI_INIT {
+  LAI_INIT () {
+    CG_Init_p = CG_Init;
+    CG_Fini_p = CG_Fini;
+    CG_Process_Command_Line_p = CG_Process_Command_Line;
+#ifdef TARG_ST
+    //TB
+    CG_Reset_Default_Options_p = CG_Reset_Default_Options;
+    CG_Save_Default_Options_p = CG_Save_Default_Options;
+    CG_Apply_Opt_Size_p = CG_Apply_Opt_Size;
+    CG_Apply_Opt_Level_p = CG_Apply_Opt_Level;
+#endif
+    CG_PU_Initialize_p = CG_PU_Initialize;
+    CG_PU_Finalize_p = CG_PU_Finalize;
+    CG_Change_Elf_Symbol_To_Undefined_p = CG_Change_Elf_Symbol_To_Undefined;
+    //    LAI_Emit_Code_p = LAI_Emit_Code;
+    CG_Generate_Code_p = CG_Generate_Code;
+    CG_Dump_Region_p = CG_Dump_Region;
+    EH_Generate_Range_List_p = EH_Generate_Range_List;
+  }
+} Lai_Initializer;
+#endif // USE_WEAK_REFERENCES

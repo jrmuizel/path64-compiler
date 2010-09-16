@@ -231,7 +231,7 @@ static BOOL Is_Zero(WN *wn)
 #ifdef TCON_R4_IS_DOUBLE
 	return t.vals.dval == 0;
 #else
-	return t.vals.fval == 0;
+	return t.vals.f.fval == 0;
 #endif
       case MTYPE_F8:
 	return t.vals.dval == 0;

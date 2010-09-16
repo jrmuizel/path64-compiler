@@ -43,6 +43,10 @@
 
 #include "defs.h"
 #include "symtab.h"
+#ifdef TARG_ST
+#include "targ_sections.h"
+#include <elf.h> // [TB] for SHF_MIPS_MERGE
+#endif
 
 /*
  * data layout keeps a table of predefined sections,
@@ -71,6 +75,11 @@ enum _sec_kind {
   _SEC_CPLINIT,
   _SEC_EH_REGION,
   _SEC_EH_REGION_SUPP,
+#ifdef TARG_ST /* [SC] TLS support */
+  _SEC_TDATA,
+  _SEC_TBSS,
+#endif
+
   _SEC_DISTR_ARRAY,
 #ifdef KEY
   _SEC_DATA_REL_RO,
@@ -114,10 +123,37 @@ inline INT Get_Section_Elf_Entsize (SECTION_IDX s)
         return SEC_entsize(s);
 }
 
+#ifndef TARG_ST
 extern SECTION_IDX Corresponding_Short_Section (SECTION_IDX sec);
 extern BOOL SEC_is_gprel (SECTION_IDX sec);
 extern BOOL SEC_is_merge (SECTION_IDX sec);
 extern BOOL SEC_is_exec (SECTION_IDX sec);
 extern BOOL SEC_is_nobits (SECTION_IDX sec);
+#else
+extern BOOL SEC_is_gprel (SECTION_IDX sec);
+
+inline BOOL SEC_is_merge (SECTION_IDX sec)
+{
+  return (SEC_flags(sec) & SHF_MIPS_MERGE);
+}
+
+inline BOOL SEC_is_exec (SECTION_IDX sec)
+{
+  return (SEC_flags(sec) & SHF_EXECINSTR);
+}
+
+inline BOOL SEC_is_nobits (SECTION_IDX sec)
+{
+  return (SEC_type(sec) & SHT_NOBITS);
+}
+
+extern SECTION_IDX Assign_Static_Variable (ST *st);
+extern SECTION_IDX Assign_Global_Variable (ST *st, ST *base_st);
+#endif
+#ifdef TARG_ST
+BE_EXPORTED extern BOOL Section_Is_Special_Bss_Like_Section(STR_IDX sec_name);
+#endif
+
+extern BOOL Is_String_Literal (ST *st);
 
 #endif

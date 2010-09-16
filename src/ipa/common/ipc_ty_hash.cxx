@@ -33,7 +33,6 @@
 #include <stdint.h>
 #include <ext/hash_set>
 #include <ext/functional>
-using __gnu_cxx::identity;
 using __gnu_cxx::hashtable;
 using __gnu_cxx::hash_multiset;
 using std::equal_to;
@@ -43,6 +42,13 @@ using std::equal_to;
 
 #include "ipc_symtab_merge.h"		// for TY_IDX_MAP, etc.
 #include "ipc_ty_hash.h"
+
+
+template <class T>
+struct identity : public std::unary_function<T, T> {
+    const T& operator()(const T& x) const { return x; }
+};
+
 
 // maps that convert raw indices (to the tables in file) to merged symtab
 // indices 

@@ -56,7 +56,7 @@
 
 #ifndef IPA_SUMMARY
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifdef ORIGINAL_SGI_CODE
 #include "ipc_file.h"           // IP_FILE_HDR
 #include "ipc_symtab_merge.h"   // Aux_Pu_Table
 #include "ipo_defs.h"           // IPA_NODE_CONTEXT
@@ -67,7 +67,7 @@
 static SUMMARY_SYMBOL* IPA_Symbol = NULL;
 #endif
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifdef ORIGINAL_SGI_CODE
 void
 Init_IPA_Print_Arrays (IPA_NODE* node)
 {
@@ -91,14 +91,14 @@ Symbol_Name(SUMMARY_SYMBOL* ss)
   }
 }
 
-#else
+#else // ORIGINAL_SGI_CODE
 
 #include "ipl_summarize.h"
 
 extern SUMMARY *Summary;
 extern IVAR_ARRAY *Ivar;
 
-#endif
+#endif // ORIGINAL_SGI_CODE
 
 //===================================================================
 //      Print the loop info
@@ -460,7 +460,7 @@ void TERM::IPA_LNO_Print_File(FILE* fp,
   fprintf(fp, "\n");
 } 
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifdef ORIGINAL_SGI_CODE
 //====================================================================
 //       Print the information written out to file
 //====================================================================
@@ -495,7 +495,7 @@ SCALAR_INFO::Print_file(FILE *fp)
     fprintf(fp, "may passed ref: ");
   fprintf(fp, "\n");
 }
-#endif
+#endif // ORIGINAL_SGI_CODE
 
 //===================================================================
 //      Print the projected kernel
@@ -794,7 +794,7 @@ void PROJECTED_REGION::IPA_LNO_Print_File(FILE* fp,
   fprintf(fp, "\n");
 }
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifdef ORIGINAL_SGI_CODE
 //===================================================================
 //      Print the projected region 
 //===================================================================
@@ -889,4 +889,4 @@ CFG_NODE_INFO::Print(FILE *fp)
   fprintf(fp," +++++++++SCALAR_INFO_FINISHED+++++++++\n");
 }
 
-#endif
+#endif // ORIGINAL_SGI_CODE

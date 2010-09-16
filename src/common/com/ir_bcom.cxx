@@ -201,7 +201,7 @@ ir_b_grow_map (Elf64_Word min_size, Output_File *fl)
 	else
 	    fl->mapped_size += MAPPED_SIZE;
     }
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifdef ORIGINAL_SGI_CODE
     fl->map_addr = (char *) mmap (0, fl->mapped_size, PROT_READ|PROT_WRITE,
 				  MAP_SHARED|MAP_AUTOGROW, fl->output_fd, 0); 
 #else
@@ -224,7 +224,7 @@ ir_b_create_map (Output_File *fl)
 {
     int fd = fl->output_fd;
     fl->mapped_size = INIT_TMP_MAPPED_SIZE;
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifdef ORIGINAL_SGI_CODE
     fl->map_addr = (char *) mmap (0, fl->mapped_size, PROT_READ|PROT_WRITE,
 				  MAP_SHARED|MAP_AUTOGROW, fd, 0); 
 #else
@@ -246,7 +246,6 @@ ir_b_create_map (Output_File *fl)
 extern IP_FILE_HDR_TABLE IP_File_header;
 IP_FILE_HDR_TABLE *IP_File_header_p;
 #define IP_File_header (*IP_File_header_p)
-
 #include <ipo_tlog_utils.h>
 #include <ipa_cg.h>
 // ******************** IPA weak symbols$
@@ -268,7 +267,7 @@ ir_b_write_tree (WN *node, off_t base_offset, Output_File *fl, WN_MAP off_map)
 				 (char *)(node) - real_addr, fl); 
 
     opcode = (OPCODE) WN_opcode (node);
-
+    
 #ifdef BACK_END
     if (off_map != WN_MAP_UNDEFINED &&
 	(Write_BE_Maps ||

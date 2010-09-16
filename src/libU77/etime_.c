@@ -48,19 +48,15 @@
  *	This routine can be called as function, and returns the sum of
  *	user and system times. The time array argument must always be given.
  *
- *	The resolution for all timing is 1/60 second.
+ *	The resolution for all timing is system dependent.
  */
 
-struct tb { float usrtime; float systime; };
-
-#if defined(sgi) || defined (__linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#ifdef KEY /* Bug 3018 */
-
 #include "pathf90_libU_intrin.h"
 
+/* Bug 3018 */
 float
 pathf90_etime (float tarray[2])
 {	struct rusage ru;
@@ -79,40 +75,3 @@ pathf90_subr_etime (float tarray[2], float *result)
 {
   *result = pathf90_etime(tarray);
 }
-
-#else
-
-float
-etime_ (struct tb *et)
-{	struct rusage ru;
-
-	getrusage (RUSAGE_SELF, &ru);
-	et->usrtime = (float)ru.ru_utime.tv_sec
-		    + (float)ru.ru_utime.tv_usec * 1e-6;
-	et->systime = (float)ru.ru_stime.tv_sec
-		    + (float)ru.ru_stime.tv_usec * 1e-6;
-	return(et->usrtime + et->systime);
-}
-
-#endif /* KEY Bug 3018 */
-
-#else  /* sgi || __linux */
-
-#if defined(_SYSV) || defined(_SYSTYPE_SVR4)
-
-#include <sys/param.h>
-#include <sys/types.h>
-#include <sys/times.h>
-
-extern float
-etime_ (struct tb *et)
-{	struct tms clock;
-
-	(void)times(&clock);
-	et->usrtime = (float) clock.tms_utime / (double)HZ;
-	et->systime = (float) clock.tms_stime / (double)HZ;
-	return(et->usrtime + et->systime);
-}
-
-#endif  /* _SYSV || _SYSTYPE_SVR4 */
-#endif  /* sgi */

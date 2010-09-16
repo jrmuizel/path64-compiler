@@ -76,11 +76,11 @@
 #include "em_elf.h"
 #include "symtab.h"
 #include "tn.h"
+#include "bb.h"
 #include "cgemit.h"
 #include "cgemit_targ.h"
 #include "cgtarget.h"
 #include "data_layout.h"
-#include "bb.h"
 #include "op.h"
 #include "iface_scn.h"
 #include "cg_flags.h"
@@ -460,10 +460,12 @@ CGEMIT_Relocs_In_Asm (TN *t, ST *st, vstring *buf, INT64 *val)
 	  *buf = vstr_concat(*buf, ST_name(st));
 	  *buf = vstr_concat(*buf, Is_Target_32bit() ? "@NTPOFF" : "@TPOFF");
 	  return 0;
-	case TN_RELOC_X8664_GOTTPOFF:
+	case TN_RELOC_X8664_GOTTPOFF:		
 	  *buf = vstr_concat(*buf, ST_name(st));
-	  *buf = vstr_concat(*buf,
-			     Is_Target_32bit() ? "@INDNTPOFF" : "@GOTTPOFF");
+	  //*buf = vstr_concat(*buf,  Is_Target_32bit() ? "@INDNTPOFF" : "@GOTTPOFF");
+	  //zwu
+	  *buf = vstr_concat(*buf,  Is_Target_32bit() ? "@INDNTPOFF" : "@TLSGD");
+	  //end 
 	  return 0;
     	default:
 		#pragma mips_frequency_hint NEVER
@@ -800,6 +802,10 @@ static void Init_OP_Name()
   OP_Name[TOP_fandx128v64] = "andpd";
   OP_Name[TOP_fandxx128v64] = "andpd";
   OP_Name[TOP_fandxxx128v64] = "andpd";
+  OP_Name[TOP_fandn128v64] = "andnpd";
+  OP_Name[TOP_fandnx128v64] = "andnpd";
+  OP_Name[TOP_fandnxx128v64] = "andnpd";
+  OP_Name[TOP_fandnxxx128v64] = "andnpd";
   OP_Name[TOP_or128v8] = "por";
   OP_Name[TOP_orx128v8] = "por";
   OP_Name[TOP_orxx128v8] = "por";
@@ -1421,12 +1427,21 @@ static void Init_OP_Name()
   OP_Name[TOP_cvtpd2ps_xxx] = "cvtpd2ps";
   OP_Name[TOP_cvttps2dq_xxx] = "cvttps2dq";
   OP_Name[TOP_cvttpd2dq_xxx] = "cvttpd2dq";
+
+  /* SSE4_2 */
+  OP_Name[TOP_pcmpistri] = "pcmpistri";
+  OP_Name[TOP_pcmpistrm] = "pcmpistrm";
+  OP_Name[TOP_pcmpestri] = "pcmpestri";
+  OP_Name[TOP_pcmpestri] = "pcmpestrm";
+
 //**********************************************************
 // For barcelona (bug 13108)
 // (1) "movlpd reg, mem"  ==> "movsd reg, mem"
 // (2) "movsd reg, reg"   ==> "movapd reg, reg"
 // NOTE: there are regardless of CG_use_movlpd TRUE or FALSE
 //***********************************************************
+
+
   if (CG_use_movlpd &&
       !Is_Target_Pentium4() &&
       !Is_Target_EM64T() &&
@@ -1498,6 +1513,11 @@ static void Init_OP_Name()
   OP_Name[TOP_lock_xadd16] = "xaddw";
   OP_Name[TOP_lock_xadd32] = "xaddl";
   OP_Name[TOP_lock_xadd64] = "xaddq";
+
+  OP_Name[TOP_xchgx8] = "xchgb";
+  OP_Name[TOP_xchgx16] = "xchgw";
+  OP_Name[TOP_xchgx32] = "xchgl";
+  OP_Name[TOP_xchgx64] = "xchgq";
 
   OP_Name[TOP_bsf32] = "bsfl";
   OP_Name[TOP_bsf64] = "bsfq";

@@ -164,7 +164,7 @@
 #include "opt_vn_expr.h"
 
 #ifdef __STL_USE_NAMESPACES
-using std::hash_map;
+using __gnu_cxx::hash_map;
 #endif
 
 // Function object for determining equality between hash table keys.

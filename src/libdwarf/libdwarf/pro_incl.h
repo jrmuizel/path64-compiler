@@ -34,9 +34,7 @@
 #endif
 #if defined(BUILD_OS_DARWIN)
 #include "darwin_elf.h"
-#if !defined(__FreeBSD__)
 #include <mach-o/reloc.h>
-#endif
 #endif /* defined(BUILD_OS_DARWIN) */
 
 /* The target address is given: the place in the source integer

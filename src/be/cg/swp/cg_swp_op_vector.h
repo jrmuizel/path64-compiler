@@ -55,13 +55,13 @@
 #define FOR_ALL_SWP_OP_VECTOR_IDXs FOR_ALL_SWP_OP_VECTOR_IDXs_FWD
 
 
-
+#ifndef TARG_ST
 class SWP_OP;
 
 typedef mempool_allocator <SWP_OP>                SWP_STL_OP_ALLOC;
 typedef std::vector <SWP_OP, SWP_STL_OP_ALLOC>    SWP_STL_OP_VECTOR;
 
-typedef mempool_allocator <std::pair <const OP *, 
+typedef mempool_allocator <std::pair <const OP * const, 
                                       INT> >      SWP_OP2INT_ALLOC;
 typedef std::map <const OP *, 
                   INT, 
@@ -305,6 +305,6 @@ SWP_OP_VECTOR::push_back (const SWP_OP& x) {
 
   SWP_STL_OP_VECTOR::push_back (x);
 }
-
+#endif /*!TARG_ST  */
 #endif /* cg_swp_op_vector_INCLUDED */
 

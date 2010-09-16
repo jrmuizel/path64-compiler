@@ -912,7 +912,12 @@ typedef long xfer_func_c(unit *cup, void *uda, type_packet *tip, int mode,
 #ifdef	_UNICOS
 #define	INITIALIZE_LOCK(x)	{ (x) = 0; }
 #elif   defined(KEY) /* Bug 6003 */
+/* Linux glibc is crap */
+#if defined(__linux__)
 #define	INITIALIZE_LOCK(x)	{ if (pthread_mutex_init) pthread_mutex_init(&(x), NULL); }
+#else
+#define	INITIALIZE_LOCK(x)	pthread_mutex_init(&(x), NULL)
+#endif
 #elif	defined(__mips) || (defined(_LITTLE_ENDIAN) && defined(__sv2))
 #define INITIALIZE_LOCK(x)	{ (x) = 0; }
 #elif	defined(_SOLARIS)

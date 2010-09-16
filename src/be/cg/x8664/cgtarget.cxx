@@ -72,7 +72,6 @@
 #include "cgir.h"
 #include "cg.h"
 #include "void_list.h"
-#include "cg_dep_graph.h"
 #include "cg_spill.h"
 #include "cg_vector.h"
 #include "whirl2ops.h"
@@ -91,6 +90,8 @@
 #include "cg_grouping.h"
 #include "calls.h"
 #include "cgtarget.h"
+#include "cg_dep_graph.h"
+
 #include "calls.h"
 #include "cg_loop.h"
 #include "config_lno.h"  // for LNO_Prefetch_Ahead
@@ -345,6 +346,7 @@ UINT32 CGTARG_Mem_Ref_Bytes(const OP *memop)
   case TOP_ldxxu8_64:
   case TOP_ld8_abs:
   case TOP_lock_xadd8:
+  case TOP_xchgx8:
     return 1;
       
   case TOP_xor16:
@@ -387,6 +389,7 @@ UINT32 CGTARG_Mem_Ref_Bytes(const OP *memop)
   case TOP_filds:
   case TOP_ld16_abs:
   case TOP_lock_xadd16:
+  case TOP_xchgx16:
     return 2;
 
   case TOP_xorx32:
@@ -459,6 +462,7 @@ UINT32 CGTARG_Mem_Ref_Bytes(const OP *memop)
   case TOP_lock_xor32:
   case TOP_lock_sub32:
   case TOP_lock_xadd32:
+  case TOP_xchgx32:
     return 4;
 
   case TOP_xorx64:
@@ -547,6 +551,7 @@ UINT32 CGTARG_Mem_Ref_Bytes(const OP *memop)
   case TOP_fmovsldupxxx:
   case TOP_fmovshdupxxx:
   case TOP_fmovddupxxx:
+  case TOP_xchgx64:
     return 8;
 
   case TOP_fldt:

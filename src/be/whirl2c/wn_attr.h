@@ -173,7 +173,32 @@ extern UINT WN_num_var_refs(WN *wn, const ST *st, STAB_OFFSET st_ofst);
 
 #define WN_is_constant_expr(wn) \
    (WN_opc_operator(wn) == OPR_INTCONST || WN_opc_operator(wn) == OPR_CONST)
+#ifdef TARG_ST
+#define INTR_is_adrtmp(intrn) \
+   ((intrn) == INTRN_U4I1ADRTMP || \
+    (intrn) == INTRN_U4I2ADRTMP || \
+    (intrn) == INTRN_U4I4ADRTMP || \
+    (intrn) == INTRN_U4I8ADRTMP || \
+    (intrn) == INTRN_U4F4ADRTMP || \
+    (intrn) == INTRN_U4F8ADRTMP || \
+    (intrn) == INTRN_U4FQADRTMP || \
+    (intrn) == INTRN_U4C4ADRTMP || \
+    (intrn) == INTRN_U4C8ADRTMP || \
+    (intrn) == INTRN_U4CQADRTMP || \
+    (intrn) == INTRN_U4VADRTMP  || \
+    (intrn) == INTRN_U8I1ADRTMP || \
+    (intrn) == INTRN_U8I2ADRTMP || \
+    (intrn) == INTRN_U8I4ADRTMP || \
+    (intrn) == INTRN_U8I8ADRTMP || \
+    (intrn) == INTRN_U8F4ADRTMP || \
+    (intrn) == INTRN_U8F8ADRTMP || \
+    (intrn) == INTRN_U8FQADRTMP || \
+    (intrn) == INTRN_U8C4ADRTMP || \
+    (intrn) == INTRN_U8C8ADRTMP || \
+    (intrn) == INTRN_U8CQADRTMP || \
+    (intrn) == INTRN_U8VADRTMP)
 
+#else
 #define INTR_is_adrtmp(intrn) \
    ((intrn) == INTRN_U4I1ADRTMP || \
     (intrn) == INTRN_U4I2ADRTMP || \
@@ -201,7 +226,19 @@ extern UINT WN_num_var_refs(WN *wn, const ST *st, STAB_OFFSET st_ofst);
     (intrn) == INTRN_U8CQADRTMP || \
     (intrn) == INTRN_U8C16ADRTMP || \
     (intrn) == INTRN_U8VADRTMP)
+#endif
 
+#ifdef TARG_ST
+#define INTR_is_valtmp(intrn) \
+   ((intrn) == INTRN_I4VALTMP || \
+    (intrn) == INTRN_I8VALTMP || \
+    (intrn) == INTRN_F4VALTMP || \
+    (intrn) == INTRN_F8VALTMP || \
+    (intrn) == INTRN_FQVALTMP || \
+    (intrn) == INTRN_C4VALTMP || \
+    (intrn) == INTRN_C8VALTMP || \
+    (intrn) == INTRN_CQVALTMP)
+#else
 #define INTR_is_valtmp(intrn) \
    ((intrn) == INTRN_I4VALTMP || \
     (intrn) == INTRN_I8VALTMP || \
@@ -213,7 +250,7 @@ extern UINT WN_num_var_refs(WN *wn, const ST *st, STAB_OFFSET st_ofst);
     (intrn) == INTRN_C8VALTMP || \
     (intrn) == INTRN_CQVALTMP || \
     (intrn) == INTRN_C16VALTMP)
-
+#endif
 #define WN_Skip_Parm(arg) \
    ((arg)!=NULL && WN_opc_operator(arg) == OPR_PARM? WN_kid0(arg) : arg)
 

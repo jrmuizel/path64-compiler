@@ -416,6 +416,13 @@ public:
 	    WN_OFFSET	    lda_offset; 
 	    WN_OFFSET	    store_offset;
 	    WN_OFFSET	    idname_offset;
+#ifdef TARG_ST
+	   //TB for OPR_SUBPART node
+	   WN_OFFSET	    subpart_index;
+	   //TB for OPR_RETURN node:true if the RETURN WN is created
+	   // by the lowering of a OPR_RETURN_VAL WN
+	   BOOL	    is_return_val_lowered;
+#endif
 	    INT32   	    num_entries; /* used by computed goto statements; may be used by regions */
 	    TY_IDX	    loadx_addr_ty; /* for OPR_ILOADX */
 	    INT16	    cvtl_bits;
@@ -462,10 +469,18 @@ public:
    // this permits loading of wn_operator, rtype and desc as bytes
    struct {
       OPERATOR          wn_operator : 8;  /* 8 bits of operator       */
+#ifndef TARG_ST
       TYPE_ID           rtype       : 6;  /* result */
       mUINT32           kid_count   :14; /* gives kid_count for free */
       mINT64            map_id      :30;
       TYPE_ID           desc        : 6;  /* descriptor type */
+#else
+     //TB: for dynamic MTYPE, handle rtype on 6 bits
+      TYPE_ID           rtype      :8 ;  /* result */
+      mINT16            kid_count   ; /* gives kid_count for free */
+      TYPE_ID           desc       :8 ;  /* descriptor type */
+      INT32             map_id;
+#endif
    } common;
 
    union {
@@ -473,7 +488,7 @@ public:
        WN          *dummy1;
        TY_IDX       ty;		/* ty used for lda,ldid,stid,iload */
      } ty_fields;
-     WN	           *kids[4];
+     WN	           *kids[2];
      INT64	    const_val;
      struct {
        UINT32	    num_inputs;
@@ -491,7 +506,10 @@ public:
       union {
         INT64       pragma_arg64;
         struct {
-           INT32    pragma_arg1;
+           union {
+             INT32    pragma_arg1;
+             WN      *dummy3; /* to resolve overlap of kids[0] and pragma_arg2 for -m64 */
+           };
 	   union {
 	     INT32    pragma_arg2;
 	     struct {
@@ -541,6 +559,12 @@ public:
   friend inline INT16&      WN_cvtl_bits (WN *);
   friend inline INT32&      WN_label_number (WN *);
   friend inline INT32       WN_label_number (const WN *);
+#ifdef TARG_ST
+  friend inline INT32&      WN_subpart_index (WN *);
+  friend inline INT32       WN_subpart_index (const WN *);
+  friend inline BOOL&      WN_is_return_val_lowered (WN *);
+  friend inline BOOL       WN_is_return_val_lowered (const WN *);
+#endif
   friend inline UINT32&     WN_call_flag (WN *);
   friend inline UINT32      WN_call_flag (const WN *);
   friend inline UINT32&     WN_if_flag (WN *);
@@ -618,7 +642,9 @@ public:
   friend inline TYPE_ID     WN_desc (const WN *);
   friend inline void        WN_set_desc (WN *, TYPE_ID);
   friend inline INT32       WN_map_id (const WN *);
-
+#ifdef TARG_ST
+  friend inline INT32&      WN_map_id (WN *);
+#endif
   friend inline TY_IDX      WN_ty (const WN *, const int);
   friend inline TY_IDX&     WN_ty (WN *, const int);
   friend inline WN*         WN_kid (const WN *, const int);
@@ -689,6 +715,12 @@ inline INT16 WN_cvtl_bits (const WN* wn) { return wn->u1u2.uu.ua.cvtl_bits; }
 inline INT16& WN_cvtl_bits (WN* wn) { return wn->u1u2.uu.ua.cvtl_bits; }
 inline INT32 WN_label_number (const WN* wn) { return wn->u1u2.uu.ua.label_number; }
 inline INT32& WN_label_number (WN* wn) { return wn->u1u2.uu.ua.label_number; }
+#ifdef TARG_ST
+inline INT32 WN_subpart_index (const WN* wn) { return wn->u1u2.uu.ua.subpart_index; }
+inline INT32& WN_subpart_index (WN* wn) { return wn->u1u2.uu.ua.subpart_index; }
+inline BOOL WN_is_return_val_lowered (const WN* wn) { return wn->u1u2.uu.ua.is_return_val_lowered; }
+inline BOOL& WN_is_return_val_lowered (WN* wn) { return wn->u1u2.uu.ua.is_return_val_lowered; }
+#endif
 inline UINT32 WN_call_flag (const WN* wn) { return wn->u1u2.uu.ua.call_flag; }
 inline UINT32& WN_call_flag (WN* wn) { return wn->u1u2.uu.ua.call_flag; }
 inline UINT32 WN_if_flag (const WN* wn) { return wn->u1u2.uu.ua.if_flag; }
@@ -752,6 +784,9 @@ inline void	  WN_set_bit_offset_size (WN* wn, UINT ofst, UINT siz) { wn->common.
 inline TYPE_ID    WN_desc (const WN* wn) { return wn->common.desc; }
 inline void       WN_set_desc (WN* wn, TYPE_ID ty) { wn->common.desc = ty; }
 inline INT32      WN_map_id (const WN* wn) { return wn->common.map_id; }
+#ifdef TARG_ST
+inline INT32&     WN_map_id (WN* wn) { return wn->common.map_id; }
+#endif
 inline void       WN_set_map_id (WN* wn, INT32 m) { wn->common.map_id = m; }
 
 inline WN* WN_kid (const WN* wn, int i) { return wn->u3.kids [i]; }
@@ -808,6 +843,10 @@ inline void WN_Copy_u3 (WN* dst, const WN* src) { dst->u3 = src->u3; }
 #define WN_num_entries(x)       ((x)->u1u2.uu.ua.num_entries)
 #define WN_cvtl_bits(x)         ((x)->u1u2.uu.ua.cvtl_bits)
 #define WN_label_number(x)      ((x)->u1u2.uu.ua.label_number)
+#ifdef TARG_ST
+#define WN_subpart_index(x)      ((x)->u1u2.uu.ua.subpart_index)
+#define WN_is_return_val_lowered(x)      ((x)->u1u2.uu.ua.is_return_val_lowered)
+#endif
 #define WN_call_flag(x)         ((x)->u1u2.uu.ua.call_flag)
 #define WN_if_flag(x)           ((x)->u1u2.uu.ua.if_flag)
 #define WN_io_flag(x)           ((x)->u1u2.uu.ua.io_flag)
@@ -1171,8 +1210,10 @@ inline UINT32 WN_flag(const WN *wn)
   case OPR_INTRINSIC_OP:
   case OPR_REGION:
   case OPR_PARM:
+#ifndef TARG_ST
 #ifdef KEY
   case OPR_PURE_CALL_OP:
+#endif
 #endif
     return(WN_call_flag(wn));
   case OPR_PREFETCH:
@@ -1204,8 +1245,10 @@ inline void WN_set_flag(WN *wn, UINT32 flag)
   case OPR_INTRINSIC_OP:
   case OPR_REGION:
   case OPR_PARM:
+#ifndef TARG_ST
 #ifdef KEY
   case OPR_PURE_CALL_OP:
+#endif
 #endif
     WN_call_flag(wn) = flag;
     break;
@@ -1267,12 +1310,45 @@ inline INT64 WN_Get_Linenum(const WN *wn)
     return 0;
   }
 }
+#ifdef TARG_ST
+// TB: propagate linenum info
+inline void WN_copy_linenum (WN* src, WN* dest)
+{
+  if (src && dest &&
+      WN_operator(src) != OPERATOR_UNKNOWN &&
+      WN_operator(dest) != OPERATOR_UNKNOWN &&
+      OPCODE_is_stmt(WN_opcode(src)) && OPCODE_is_stmt(WN_opcode(dest)) &&
+      WN_linenum(src))
+    WN_linenum(dest) = WN_linenum(src);
 
+  return;
+}
+#endif
 
 /*REFERENCED*/
 inline BOOL WN_Is_Volatile_Mem(const WN *wn)
 {
   OPCODE opc = WN_opcode(wn);
+#ifdef TARG_ST
+  if (OPCODE_has_1ty(opc)) {
+    // [CG]: we must check also ISTBITS and MLOAD
+    if (OPCODE_operator(opc) == OPR_ISTORE ||
+	OPCODE_operator(opc) == OPR_MSTORE ||
+	OPCODE_operator(opc) == OPR_MLOAD ||
+	OPCODE_operator(opc) == OPR_ISTBITS) {
+      TY_IDX pointed = TY_pointed (WN_ty (wn));
+      DevAssert(pointed, ("TY_pointed of %s type is NULL", OPCODE_name(opc)));
+      return TY_is_volatile(pointed);
+    } else {
+      return TY_is_volatile(WN_ty(wn));
+    }
+  } else if (OPCODE_has_2ty(opc)) {
+    // [CG]: We must dereference the second type.
+    TY_IDX pointed = TY_pointed (WN_load_addr_ty(wn));
+    DevAssert(pointed, ("TY_pointed of type 2 of opcode %s is NULL", OPCODE_name(opc)));
+    return TY_is_volatile(pointed);
+  }
+#else
   if (OPCODE_has_1ty(opc) || OPCODE_has_2ty(opc)) {
     if (OPCODE_operator(opc) == OPR_ISTORE ||
 	OPCODE_operator(opc) == OPR_MSTORE) {
@@ -1288,6 +1364,7 @@ inline BOOL WN_Is_Volatile_Mem(const WN *wn)
 #endif
     }
   }
+#endif
   return FALSE;
 }
 
@@ -1612,6 +1689,15 @@ inline mINT16 WN_num_actuals(const WN *wn)
 #define WN_pf_set_manual(wn)        WN_prefetch_flag(wn) |= 0x02000000
 #define WN_pf_unset_manual(wn)      WN_prefetch_flag(wn) &= 0xfdffffff
 
+#ifdef TARG_ST
+// FdF: Is the stride value known or unknown
+#define PF_GET_STRIDE	        (((flag) >> 26) & 0x1)
+#define PF_SET_STRIDE(flag)     flag |= 0x04000000
+#define PF_UNSET_STRIDE(flag)   flag &= 0xfbffffff
+#define WN_pf_stride(wn)        (((WN_prefetch_flag(wn)) >> 26) & 0x1)
+#define WN_pf_set_stride(wn)    WN_prefetch_flag(wn) |= 0x04000000
+#define WN_pf_unset_stride(wn)  WN_prefetch_flag(wn) &= 0xfbffffff
+#endif
 /* end prefetch macros */
 
 

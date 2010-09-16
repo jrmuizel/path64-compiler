@@ -79,13 +79,18 @@
 #include "ipc_defs.h"                   // for IPA_Target_Type
 #endif
 
+
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 #pragma weak tos_string
 #pragma weak outfilename
 
 using std::vector;
 using __gnu_cxx::hash_map;
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__) || defined(__sun) || defined(__NetBSD__)
 #define _USE_GNU_MAKE_
 #endif
 
@@ -1560,6 +1565,7 @@ static void exec_smake (char* sh_cmdfile_name)
 }
 
 #ifdef KEY
+#ifndef TARG_ST
 extern "C" {
 // Allow ipa_link to call the error routines.
 
@@ -1582,4 +1588,5 @@ Ipalink_ErrMsg_EC_outfile (char *name)
 }
 
 }	// extern "C"
+#endif
 #endif

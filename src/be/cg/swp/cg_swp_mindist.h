@@ -35,7 +35,7 @@
 
 /* Standard Template Library (STL) related include files */
 
-
+#ifndef TARG_ST
 
 class SWP_MINDIST {
   private:
@@ -87,6 +87,6 @@ SWP_MINDIST::operator () (SWP_OP_VECTOR::size_type x,
   
   return _mindist[idx];
 }
-
+#endif
 #endif /* cg_swp_mindist_INCLUDED */
 

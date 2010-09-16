@@ -38,15 +38,12 @@
 
 // From be/com/ipa_cost_util.cxx:
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifdef ORIGINAL_SGI_CODE
 #ifdef IPA_SUMMARY
 #include "ipl_summary.h"
 #else 
 #include "ipa_trace.h"
 #endif
-#endif 
-
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
 
 // Forward declaration.
 
@@ -1228,7 +1225,7 @@ extern void IPL_EX_Simplify(DYN_ARRAY<SUMMARY_VALUE>* sv,
   Check_Exprs(sv, sx, stdout);
 #endif
 }
-#endif 
+#endif /* ORIGINAL_SGI_CODE */
 
 //-----------------------------------------------------------------------
 // NAME: IPL_EX_Add_Value_Offsets
@@ -1282,7 +1279,7 @@ extern void IPL_EX_Add_Expr_Offsets(DYN_ARRAY<SUMMARY_EXPR>* sx,
   }
 }
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifdef ORIGINAL_SGI_CODE
 //-----------------------------------------------------------------------
 // NAME: Print_Exprs
 // FUNCTION: Print a representation of the pair ('sv','sx') to the file 
@@ -1434,4 +1431,4 @@ extern INT Check_Exprs(DYN_ARRAY<SUMMARY_VALUE>* sv,
   error_count += Check_Trip_Counts(sv, sx, fp);
   return error_count; 
 } 
-#endif
+#endif /* ORIGINAL_SGI_CODE */

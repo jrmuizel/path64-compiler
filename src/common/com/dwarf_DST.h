@@ -235,6 +235,9 @@ typedef UINT8  DST_bitsize;       /* Used for bit_offset and bit_size */
 typedef UINT64 DST_size_t;        /* Used for byte_size of types */
 typedef INT64  DST_bounds_t;	  /* Used to hold array bounds */
 typedef void  *DST_die_ptr;	  /* Used in backend for die ptr. */
+#ifdef TARG_ST
+typedef UINT64  DST_count_t;	  /* Used to hold array size */
+#endif
 
 
 /* Different types of indices to DST entries.  Note that when accessing
@@ -694,6 +697,10 @@ typedef struct DST_var_def
 #ifdef KEY
    DST_STR_IDX    linkage_name;  /* Mangled name of variable */
 #endif
+#ifdef TARG_ST // [CL]
+   DST_accessibility accessibility; /* AT_accessibility code */
+#endif
+
 }  DST_VAR_DEF;
 
 typedef struct DST_var_const
@@ -752,6 +759,12 @@ typedef union DST_variable
 #endif
 #define DST_VARIABLE_def_abstract_origin(attr) ((attr)->def.abstract_origin)
 #define DST_VARIABLE_def_dopetype(attr) ((attr)->def.dopetype)
+#ifdef TARG_ST // [CL]
+#define DST_VARIABLE_decl_linkage_name(attr) ((attr)->decl.linkage_name)
+#define DST_VARIABLE_def_linkage_name(attr) ((attr)->def.linkage_name)
+#define DST_VARIABLE_decl_accessibility(attr) ((attr)->def.accessibility)
+#define DST_VARIABLE_def_accessibility(attr) ((attr)->def.accessibility)
+#endif
 
 #define DST_VARIABLE_constant_decl(attr) ((attr)->constant.decl)
 #define DST_VARIABLE_constant_name(attr) ((attr)->constant.name)
@@ -969,6 +982,11 @@ typedef struct DST_subrange_type
    DST_cval_ref lower;		/* lower bound */
    DST_cval_ref upper;		/* upper bound */
    DST_cval_ref stride;		/* stride - for non-contiguous sections (F90) */
+#ifdef TARG_ST
+   DST_count_t count_val;	/* size */
+   DST_INFO_IDX type; /* Defining type, NULL for incomplete declaration */
+#endif
+
 } DST_SUBRANGE_TYPE;
 
 #define DST_SUBRANGE_TYPE_count(attr) ((attr)->upper.cval - (attr)->lower.cval + 1)
@@ -977,6 +995,10 @@ typedef struct DST_subrange_type
 #define DST_SUBRANGE_TYPE_lower_ref(attr) ((attr)->lower.ref)
 #define DST_SUBRANGE_TYPE_upper_ref(attr) ((attr)->upper.ref)
 #define DST_SUBRANGE_TYPE_stride_ref(attr) ((attr)->stride.ref)
+#ifdef TARG_ST
+#define DST_SUBRANGE_TYPE_count_val(attr) ((attr)->count_val)
+#define DST_SUBRANGE_TYPE_type(attr) ((attr)->type)
+#endif
 
 
 /* [tag==DW_TAG_string_type]: Represents FORTRAN or pascal string 
@@ -1006,6 +1028,11 @@ typedef struct DST_structure_type
    DST_INFO_IDX abstract_origin; /* Inside inlined instance of proc. */
    DST_INFO_IDX inheritance; /* Inheritance entries (DW_TAG_inheritance) */
    DST_CHILDREN child;     /* Struct members (DW_TAG_member) */
+#ifdef TARG_ST // [CL]
+   DST_INFO_IDX containing_type; /* containing type */
+   int being_built; /* struct in the process of being built. Avoid recursion */
+#endif
+
 } DST_STRUCTURE_TYPE;
 
 #define DST_STRUCTURE_TYPE_decl(attr) ((attr)->decl)
@@ -1015,6 +1042,10 @@ typedef struct DST_structure_type
 #define DST_STRUCTURE_TYPE_inheritance(attr) ((attr)->inheritance)
 #define DST_STRUCTURE_TYPE_first_child(attr) ((attr)->child.first)
 #define DST_STRUCTURE_TYPE_last_child(attr) ((attr)->child.last)
+#ifdef TARG_ST // [CL]
+#define DST_STRUCTURE_TYPE_containing_type(attr) ((attr)->containing_type)
+#define DST_STRUCTURE_TYPE_being_built(attr) ((attr)->being_built)
+#endif
 
 
 
@@ -1030,6 +1061,10 @@ typedef DST_STRUCTURE_TYPE DST_UNION_TYPE;
 #define DST_UNION_TYPE_inheritance(attr) ((attr)->inheritance)
 #define DST_UNION_TYPE_first_child(attr) ((attr)->child.first)
 #define DST_UNION_TYPE_last_child(attr) ((attr)->child.last)
+#ifdef TARG_ST // [CL]
+#define DST_UNION_TYPE_containing_type(attr) ((attr)->containing_type)
+#define DST_UNION_TYPE_being_built(attr) ((attr)->being_built)
+#endif
 
 
 
@@ -1094,6 +1129,11 @@ typedef struct DST_inheritance
 #ifdef KEY
    DST_accessibility 	accessibility;/* Accessibility for C++ */ 
 #endif
+#ifdef TARG_ST
+   // [CL]
+   DST_size_t     virtual_offset; /* Offset of virtual base class */
+#endif
+
 } DST_INHERITANCE;
 
 #define DST_INHERITANCE_decl(attr)      ((attr)->decl)
@@ -1102,6 +1142,10 @@ typedef struct DST_inheritance
 #define DST_INHERITANCE_memb_loc(attr)  ((attr)->memb_loc)
 #ifdef KEY
 #define DST_INHERITANCE_accessibility(attr) ((attr)->accessibility)
+#ifdef TARG_ST
+// [CL]
+#define DST_INHERITANCE_virtual_offset(attr) ((attr)->virtual_offset)
+#endif
 #endif
 
 
@@ -1301,6 +1345,12 @@ DST_preorder_visit(
    INT32        init_val, 
    INT32 (*action)(INT32, DST_DW_tag, DST_flag, DST_ATTR_IDX, DST_INFO_IDX));
 
+#ifdef TARG_ST
+// [CL] needed in wfe_dst.cxx, to handle forward declaration of
+// structures/unions
+BE_EXPORTED extern DST_INFO_IDX *
+DST_get_ptr_to_lastChildField(DST_INFO *parent);
+#endif
 
 #ifdef __cplusplus
 }

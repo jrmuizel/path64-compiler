@@ -1,16 +1,16 @@
 include_directories(
   ${PATHSCALE_SOURCE_DIR}/common/util
   ${PATHSCALE_SOURCE_DIR}/common/com
-  ${PATHSCALE_SOURCE_DIR}/common/com/${BUILD_TARGET_DIR}
   )
 
 IF(NOT PATH64_ENABLE_VALGRIND)
 add_definitions(
   -DNO_VALGRIND
+  ${PATH64_STDC_FORMAT_MACROS}
  )
 ENDIF(NOT PATH64_ENABLE_VALGRIND)
 
-add_library(comutil STATIC
+set(COMUTIL_SRCS
   cxx_memory.cxx
   errors.cxx
   bitset.c
@@ -29,5 +29,17 @@ add_library(comutil STATIC
   c_a_to_q.c
   c_q_to_a.c
   c_qtenscale.c
-  ${BUILD_TARGET_DIR}/c_qwmultu.c
+  @ARCH@/c_qwmultu.c
   )
+
+path64_set_multiarch_sources(comutil_sources COMMON ${COMUTIL_SRCS})
+path64_add_multiarch_library(comutil STATIC comutil_sources)
+path64_set_multiarch_property(comutil COMPILE_FLAGS
+                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@")
+
+# Building comutil for host architecture (used when building fortran)
+path64_get_host_arch(host_arch)
+path64_add_library_for_arch(comutil-host ${host_arch} STATIC ${COMUTIL_SRCS})
+path64_set_property_for_arch(comutil-host ${host_arch} COMPILE_FLAGS
+                             "-I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@")
+

@@ -148,7 +148,7 @@ extern void CYG_Instrument_Driver(WN *);
 extern void Initialize_Targ_Info(void);
 
 // symbols defined in cg.so
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#ifndef USE_WEAK_REFERENCES
 
 extern void CG_Process_Command_Line (INT, char **, INT, char **);
 extern void CG_Init ();
@@ -157,10 +157,32 @@ extern void CG_PU_Initialize (WN*);
 extern void CG_PU_Finalize ();
 extern WN* CG_Generate_Code (WN*, ALIAS_MANAGER*, DST_IDX, BOOL);
 extern void EH_Generate_Range_List (WN *);
+#ifdef TARG_ST
+//TB: Add reset option at source level
+ extern void (*CG_Reset_Default_Options_p) (void);
+#define CG_Reset_Default_Options (*CG_Reset_Default_Options_p)
+//TB: Add save option at source level
+ extern void (*CG_Save_Default_Options_p) (void);
+#define CG_Save_Default_Options (*CG_Save_Default_Options_p)
+//TB: set size option for CG
+ extern void (*CG_Apply_Opt_Size_p) (UINT32);
+#define CG_Apply_Opt_Size (*CG_Apply_Opt_Size_p)
+//TB: set optim options for CG
+ extern void (*CG_Apply_Opt_Level_p) (UINT32);
+#define CG_Apply_Opt_Level (*CG_Apply_Opt_Level_p)
+#endif
 
 #else
 
 #pragma weak CG_Process_Command_Line
+#ifdef TARG_ST
+//TB
+#pragma weak CG_Reset_Default_Options
+#pragma weak CG_Save_Default_Options
+#pragma weak CG_Apply_Opt_Size
+#pragma weak CG_Apply_Opt_Level
+#endif
+
 #pragma weak CG_Init
 #pragma weak CG_Fini
 #pragma weak CG_PU_Finalize
@@ -168,11 +190,10 @@ extern void EH_Generate_Range_List (WN *);
 #pragma weak CG_Generate_Code
 #pragma weak EH_Generate_Range_List
 
-
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES
 
 // symbols defined in wopt.so
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#ifndef USE_WEAK_REFERENCES
 
 extern void wopt_main (INT argc, char **argv, INT, char **);
 extern void Wopt_Init ();
@@ -198,10 +219,10 @@ extern BOOL Verify_alias (ALIAS_MANAGER *, WN *);
 #pragma weak Delete_Du_Manager
 #pragma weak Verify_alias
 
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES
 
 // symbols defined in lno.so
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#ifndef USE_WEAK_REFERENCES
 
 extern void (*lno_main_p) (INT, char**, INT, char**);
 #define lno_main (*lno_main_p)
@@ -222,11 +243,11 @@ extern WN* (*Perform_Loop_Nest_Optimization_p) (PU_Info*, WN*, WN*, BOOL);
 #pragma weak Lno_Fini
 #pragma weak Perform_Loop_Nest_Optimization
 
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES
 
 // symbols defined in ipl.so
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#ifndef USE_WEAK_REFERENCES
 
 extern void (*Ipl_Extra_Output_p) (Output_File *);
 #define Ipl_Extra_Output (*Ipl_Extra_Output_p)
@@ -257,7 +278,7 @@ extern void (*Preprocess_struct_access_p)(void);
 #pragma weak Ipl_Extra_Output
 #pragma weak Perform_Procedure_Summary_Phase
 
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES
 
 #include "w2c_weak.h"
 #include "w2f_weak.h"
@@ -309,7 +330,7 @@ static BOOL Saved_run_prompf = FALSE; /* TODO: Remove when uses are removed */
 static BOOL Saved_run_w2c = FALSE;        /* TODO: Remove */
 static BOOL Saved_run_w2f = FALSE;        /* TODO: Remove */
 static BOOL Saved_run_w2fc_early = FALSE; /* TODO: Remove */
-
+static BOOL saved_Instrumentatin_Enabled = FALSE; /* Saved Instrumentation to restore it for next function */
 extern WN_MAP Prompf_Id_Map; /* Maps WN constructs to unique identifiers */
 
 /* Keep track of which optional components are loaded, where we need
@@ -704,7 +725,7 @@ Adjust_Opt_Level (PU_Info* current_pu, WN *pu, char *pu_name)
         if (Run_prompf) 
 	  Prompf_Emit_Whirl_to_Source(current_pu, pu);
     }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 #define OLIMIT_WARN_THRESHOLD 50000
     else if (Opt_Level > 1 && !Olimit_opt && 
 	     (PU_Olimit > OLIMIT_WARN_THRESHOLD) && Show_OPT_Warnings) {
@@ -1309,7 +1330,7 @@ Backend_Processing (PU_Info *current_pu, WN *pu)
 		       "RETURN_VAL & MLDID/MSTID lowering");
     }
 
-#ifdef KEY // bug 9171
+#if defined( KEY) && !defined(TARG_ST) // bug 9171
     if (Run_autopar && Early_MP_Processing) {
       Early_MP_Processing = FALSE;
       ErrMsg (EC_No_Apo_Early_Mp);
@@ -1456,6 +1477,9 @@ Preprocess_PU (PU_Info *current_pu)
   Cur_PU_Feedback    = NULL;
 
   BOOL is_mp_nested_pu = FALSE;
+#ifdef TARG_ST
+  saved_Instrumentatin_Enabled = Instrumentation_Enabled;
+#endif
 
   /* read from mmap area */
   Start_Timer ( T_ReadIR_CU );
@@ -1672,12 +1696,12 @@ Postprocess_PU (PU_Info *current_pu)
   if (Tlog_File) {
     fprintf (Tlog_File, "END %s\n", ST_name(PU_Info_proc_sym(current_pu)));
   }
-
+#ifndef TARG_ST
   if (Run_ipl != 0 && (Run_wopt || Run_preopt))
     choose_from_complete_struct_for_relayout_candidates(); // among all the
     // structures marked by ipl while compiling all the functions in this file,
     // choose the most profitable one
-
+#endif
   Current_Map_Tab = PU_Info_maptab(current_pu);
  
   REGION_Finalize();
@@ -1720,6 +1744,10 @@ Postprocess_PU (PU_Info *current_pu)
     Saved_run_w2f = FALSE;
     Saved_run_w2fc_early = FALSE;
   }
+#ifdef TARG_ST
+  /* [TB] Restore Instrumentation_Enabled */
+  Instrumentation_Enabled = saved_Instrumentatin_Enabled;
+#endif
 } /* Postprocess_PU */
 
 /* compile each PU through all phases before going to the next PU */
@@ -1873,7 +1901,7 @@ Process_Feedback_Options (OPTION_LIST* olist)
 
     INT prefix_len = strlen(prefix);
     DIR* dirp = opendir(path);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (dirp == NULL)
       ErrMsg(EC_FB_No_File, Feedback_File_Name);
 #endif
@@ -1892,7 +1920,7 @@ Process_Feedback_Options (OPTION_LIST* olist)
     }
     closedir(dirp);
 
-#ifdef KEY	// bug 4837
+#if defined( KEY) && !defined(TARG_ST)	// bug 4837
     if (fb_file_count == 0) {
       ErrMsg(EC_FB_No_File, prefix);
     }

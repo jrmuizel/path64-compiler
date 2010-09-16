@@ -73,6 +73,11 @@
 #include "whirl2ops.h"
 #include "label_util.h"
 
+
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 extern "C" {
 #include "pro_encode_nm.h"
 }
@@ -442,12 +447,7 @@ struct SET_PARENT {
   void operator()(EH_RANGE& r) {
     RID_PARENT_ITER first(r.rid);
     RID_PARENT_ITER last(NULL);
-/* KEY Mac port: 4.0.x behaves like 3.x */
-#if (__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ <= 0)
-    first = find_if(++first, last, IS_EH_RID(), std::__iterator_category(first));
-#else
-    first = std::__find_if(++first, last, IS_EH_RID(), std::__iterator_category(first));
-#endif
+    first = std::find_if(++first, last, IS_EH_RID());
     if (first == last)
       r.parent = NULL;
     else
@@ -489,7 +489,7 @@ EH_Generate_Range_List(WN * pu)
     RID_eh_range_ptr(p->rid) = p;
 #endif
 
-  for_each(list_first, list_last, SET_PARENT());
+  std::for_each(list_first, list_last, SET_PARENT());
 }
 
 
@@ -702,16 +702,16 @@ EH_Prune_Range_List(void)
   }
 
 #ifdef KEY
-  for_each  (first, last, FIX_PARENT());
+  std::for_each  (first, last, FIX_PARENT());
 #endif // KEY
-  for_each  (first, last, SET_ADJUSTMENT());
-  for_each  (first, last, CLEAR_USED());
-  for_each  (first, last, SET_ADJUSTMENT_TO_PARENT_ADJUSTMENT());
+  std::for_each  (first, last, SET_ADJUSTMENT());
+  std::for_each  (first, last, CLEAR_USED());
+  std::for_each  (first, last, SET_ADJUSTMENT_TO_PARENT_ADJUSTMENT());
   range_list.erase(
-    remove_if (first, last, 
+    std::remove_if (first, last, 
                HAS_NO_CALL_OR_HAS_NULL_OR_UNREACHABLE_LABEL()), 
     last);
-  for_each  (range_list.begin(), range_list.end(), ADJUST_PARENT());
+  std::for_each  (range_list.begin(), range_list.end(), ADJUST_PARENT());
 
 #if defined(KEY) && defined(Is_True_On)
   for (INT i=0; i<range_list.size(); i++)
@@ -768,7 +768,7 @@ reorder_range_list()
   EH_RANGE_LIST::iterator first(range_list.begin());
   EH_RANGE_LIST::iterator last (range_list.end());
 
-  stable_sort(first, last, COMPARE_RANGES());
+  std::stable_sort(first, last, COMPARE_RANGES());
 
   // reset parent pointers using inverse vector
 
@@ -796,12 +796,7 @@ struct FIX_MASK_PARENT {
       EH_RANGE_LIST_PARENT_ITER first(r.parent);
       EH_RANGE_LIST_PARENT_ITER last (NULL);
 #endif
-/* KEY Mac port: 4.0.x behaves like 3.x */
-#if (__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ <= 0)
-      first = find_if(first, last, IS_CLEANUP_RANGE(), std::__iterator_category(first));
-#else
-      first = std::__find_if(first, last, IS_CLEANUP_RANGE(), std::__iterator_category(first));
-#endif
+      first = std::find_if(first, last, IS_CLEANUP_RANGE());
       Is_True(first != last, ("mask region must have cleanup ancestor"));
       r.parent = (*first).parent;
     }
@@ -830,8 +825,8 @@ fix_mask_ranges(void)
   EH_RANGE_LIST::reverse_iterator rfirst(range_list.rbegin());
   EH_RANGE_LIST::reverse_iterator rlast (range_list.rend());
 
-  for_each(rfirst, rlast, FIX_MASK_PARENT());
-  for_each(range_list.begin(), range_list.end(),
+  std::for_each(rfirst, rlast, FIX_MASK_PARENT());
+  std::for_each(range_list.begin(), range_list.end(),
 	   CHANGE_MASK_OR_GUARD_TO_CLEANUP());
 }
 
@@ -1099,7 +1094,6 @@ Create_INITO_For_Range_Table(ST * st, ST * pu)
   int running_ofst=1;
   int bytes_for_filter;
   INITO_IDX tmp = PU_misc_info (Get_Current_PU());
-
   INITO* eh_spec = (tmp) ? Create_Type_Filter_Map () : NULL ;
 
   vector<INITV_IDX> action_chains;
@@ -1141,9 +1135,22 @@ Create_INITO_For_Range_Table(ST * st, ST * pu)
 
     // first action index
     // build chain of actions
+#ifndef TARG_ST
+      /* (cbr) don't mess up with "no action" */
+    FmtAssert (INITV_next (first_initv) != 0, ("No handler information available"));
+#endif
     FmtAssert (INITV_next (first_initv) != 0, ("No handler information available"));
     INITV_IDX action_ofst = 0;
     INITV_IDX first_action = New_INITV();
+
+#ifdef TARG_ST
+    /* (cbr) don't mess up with "no action" */
+    if (!INITV_next (first_initv)) {
+      INITV_Set_ZERO (Initv_Table[first_action], MTYPE_I4, 1);
+      Set_INITV_next (pad, first_action);
+    }
+    else
+#endif
     for (INITV_IDX next_initv=INITV_next (first_initv);
     		next_initv; next_initv=INITV_next (next_initv))
     {
@@ -1169,7 +1176,12 @@ Create_INITO_For_Range_Table(ST * st, ST * pu)
 	    INITV_IDX tmp_idx = INITV_next (next_initv);
 	    if (INITV_kind (tmp_idx) != INITVKIND_ZERO)
 	    	next_sym = TCON_ival (INITV_tc_val (tmp_idx));
+#ifdef TARG_ST
+            /* (cbr) first null action is a cleanup */
+	    if (next_sym)
+#else
 	    if (next_sym < 0)
+#endif
 	    	catch_all = false;
 	}
 

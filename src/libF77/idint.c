@@ -27,17 +27,17 @@
 #include "moremath.h"
 #include <cmplrs/host.h>
 
-int16 __iidint (double *x)
+int16_t __iidint (double *x)
 {
-  return((int16)*x);
+  return((int16_t)*x);
 }
 
-int32 __jidint (double *x)
+int32_t __jidint (double *x)
 {
-  return((int32)*x);
+  return((int32_t)*x);
 }
 
-int64 __kidint (double *x)
+int64_t __kidint (double *x)
 {
-  return((int64)*x);
+  return((int64_t)*x);
 }

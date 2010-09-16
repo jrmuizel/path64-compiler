@@ -1,6 +1,9 @@
 project(libmv)
 
-SET(PATHSCALE_MV_SRCS   	"../libmpath/amd/vrdacos.S"
+SET(PATHSCALE_MV_SRCS ../libmpath/dummy.c)
+
+SET(PATHSCALE_MV_SRCS_X64
+                "../libmpath/amd/vrdacos.S"
 				"../libmpath/amd/vrdaexp.s"
 				"../libmpath/amd/vrdalog.s"
 				"../libmpath/amd/vrdalog10.s"
@@ -57,36 +60,62 @@ SET(PATHSCALE_MV_SRCS   	"../libmpath/amd/vrdacos.S"
 				"../libmpath/amd/vrdapow.c"
 				"../libmpath/amd/vrsapowf.c")
 
+
 INCLUDE_DIRECTORIES(
 	../libmpath/amd
 	../libm
 )
 
-ADD_DEFINITIONS(
+set(compile_flags
 # Should always build with a higher level of optimization
 	-O3
 	-LNO:vintr=0
 	-std=gnu99)
 
 IF(PATH64_ENABLE_MATHLIBS)
+
 set_source_files_properties(${PATHSCALE_MV_SRCS} PROPERTIES LANGUAGE C)
-add_library(mv-static STATIC ${PATHSCALE_MV_SRCS})
-SET_TARGET_PROPERTIES(mv-static PROPERTIES OUTPUT_NAME "mv")
 
-add_library(mv SHARED ${PATHSCALE_MV_SRCS})
-set_property(TARGET mv PROPERTY COMPILE_DEFINITIONS PIC)
-set_property(TARGET mv PROPERTY SOVERSION 1)
-set_property(TARGET mv PROPERTY LINK_FLAGS "-Wl,-x -Wl,--version-script=${libmv_SOURCE_DIR}/libmv.vs")
-target_link_libraries(mv m)
+#if(${CMAKE_C_COMPILER_ID} MATCHES "PathScale")
+set(BOOTSTRAP_HACK -fbootstrap-hack)
+#endif()
 
-IF(PATH64_ENABLE_PROFILING)
-add_library(mv_p STATIC ${PATHSCALE_MV_SRCS})
-set_property(TARGET mv_p PROPERTY COMPILE_FLAGS -pg)
-install(TARGETS mv_p ARCHIVE DESTINATION ${PATH64_LIB_PATH})
-ENDIF(PATH64_ENABLE_PROFILING)
+path64_set_multitarget_sources(mv-static COMMON ${PATHSCALE_MV_SRCS})
+path64_set_multitarget_sources(mv-static x86_64 ${PATHSCALE_MV_SRCS_X64})
+path64_set_multitarget_property_(mv-static OUTPUT_NAME "mv")
+path64_set_multitarget_property_(mv-static COMPILE_FLAGS ${compile_flags})
+path64_add_multitarget_library(mv-static STATIC)
+path64_add_multitarget_dependencies(mv-static pscrt-static)
 
-install(TARGETS mv-static mv
-        LIBRARY DESTINATION ${PATH64_LIB_PATH}
-        ARCHIVE DESTINATION ${PATH64_LIB_PATH})
+path64_set_multitarget_sources(mv COMMON ${PATHSCALE_MV_SRCS})
+path64_set_multitarget_sources(mv x86_64 ${PATHSCALE_MV_SRCS_X64})
+path64_set_multitarget_property_(mv COMPILE_FLAGS ${compile_flags} -fPIC -DPIC)
+path64_set_multitarget_property_(mv SOVERSION 1)
+
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+    path64_set_multitarget_property_(mv LINK_FLAGS
+            "-Wl,-x -Wl,--version-script=${libmv_SOURCE_DIR}/libmv.vs  ${BOOTSTRAP_HACK}")
+else()
+    path64_set_multitarget_property_(mv LINK_FLAGS "${BOOTSTRAP_HACK}")
+endif()
+
+path64_multitarget_link_libraries(mv m)
+path64_add_multitarget_library(mv SHARED)
+path64_add_multitarget_dependencies(mv pscrt-static)
+if(PATH64_ENABLE_PSCRUNTIME)
+    path64_add_multitarget_dependencies(mv compiler-rt unwind)
+endif()
+
+
+if(PATH64_ENABLE_PROFILING)
+    path64_set_multitarget_sources(mv_p COMMON ${PATHSCALE_MV_SRCS})
+    path64_set_multitarget_sources(mv_p x86_64 ${PATHSCALE_MV_SRCS_X64})
+    if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+        path64_set_multitarget_property_(mv_p COMPILE_FLAGS -pg ${compile_flags})
+    else()
+        path64_set_multitarget_property_(mv_p COMPILE_FLAGS ${compile_flags})
+    endif()
+    path64_add_multitarget_library(mv_p STATIC)
+endif(PATH64_ENABLE_PROFILING)
 
 ENDIF(PATH64_ENABLE_MATHLIBS)

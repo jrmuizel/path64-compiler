@@ -1,6 +1,11 @@
 project(libmpath)
 
-SET(PATHSCALE_MPATH_SRCS        "amd/pow_errorl.c"
+SET(PATHSCALE_MPATH_SRCS dummy.c)
+SET(PATHSCALE_MPATH_S_SRCS )
+
+
+SET(PATHSCALE_MPATH_SRCS_X64
+                "amd/pow_errorl.c"
 				"amd/remainder_piby2d2f.c"
 				"amd/s_atan2.c"
 				"amd/s_atan2f.c"
@@ -51,10 +56,11 @@ SET(PATHSCALE_MPATH_SRCS        "amd/pow_errorl.c"
 				"amd/w_sinhf.c"
 				"amd/w_tanh.c"
 				"amd/w_tanhf.c"
-				"cisf.c"
+				"cis.c"
 				"cisf.c")
 
-SET(PATHSCALE_MPATH_S_SRCS      "amd/w_copysignf.s"	
+SET(PATHSCALE_MPATH_S_SRCS_X64
+                "amd/w_copysignf.s"	
 				"amd/w_copysign.s"
 				"amd/w_finitef.s"
 				"amd/w_finite.s"
@@ -87,31 +93,55 @@ ADD_DEFINITIONS(
 
 IF(PATH64_ENABLE_MATHLIBS)
 
-set_source_files_properties("amd/w_log2.c" "amd/w_log2f.c" PROPERTIES COMPILE_DEFINITIONS "COMPILING_LOG2")
-set_source_files_properties("amd/w_log10.c" "amd/w_log10f.c" PROPERTIES COMPILE_DEFINITIONS "COMPILING_LOG10")
-
-set_source_files_properties(${PATHSCALE_MPATH_S_SRCS} PROPERTIES LANGUAGE C)
-add_library(mpath-static STATIC ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
-SET_TARGET_PROPERTIES(mpath-static PROPERTIES OUTPUT_NAME "mpath")
-
-add_library(mpath SHARED ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
-set_property(TARGET mpath PROPERTY COMPILE_DEFINITIONS PIC)
-set_property(TARGET mpath PROPERTY SOVERSION 1)
-set_property(TARGET mpath PROPERTY LINK_FLAGS "-Wl,-x -Wl,--version-script=${libmpath_SOURCE_DIR}/libmpath.vs")
-
-target_link_libraries(mpath m)
-
-install(TARGETS mpath-static mpath
-        LIBRARY DESTINATION ${PATH64_LIB_PATH}
-        ARCHIVE DESTINATION ${PATH64_LIB_PATH})
+set_source_files_properties("amd/w_log2.c" "amd/w_log2f.c" PROPERTIES
+                            COMPILE_DEFINITIONS "COMPILING_LOG2")
+set_source_files_properties("amd/w_log10.c" "amd/w_log10f.c" PROPERTIES
+                            COMPILE_DEFINITIONS "COMPILING_LOG10")
+set_source_files_properties(${PATHSCALE_MPATH_S_SRCS_X64} PROPERTIES LANGUAGE C)
 
 
-IF(PATH64_ENABLE_PROFILING)
-add_library(mpath_p STATIC ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
-set_property(TARGET mpath_p PROPERTY COMPILE_FLAGS -pg)
-install(TARGETS mpath_p
-        LIBRARY DESTINATION ${PATH64_LIB_PATH}
-        ARCHIVE DESTINATION ${PATH64_LIB_PATH})
-ENDIF(PATH64_ENABLE_PROFILING)
+path64_set_multitarget_sources(mpath-static COMMON
+                               ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
+path64_set_multitarget_sources(mpath-static x86_64
+                               ${PATHSCALE_MPATH_SRCS_X64} ${PATHSCALE_MPATH_S_SRCS_X64})
+path64_set_multitarget_property_(mpath-static OUTPUT_NAME "mpath")
+path64_add_multitarget_library(mpath-static STATIC)
+path64_add_multitarget_dependencies(mpath-static pscrt-static)
+
+path64_set_multitarget_sources(mpath COMMON
+                               ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
+path64_set_multitarget_sources(mpath x86_64
+                               ${PATHSCALE_MPATH_SRCS_X64} ${PATHSCALE_MPATH_S_SRCS_X64})
+path64_set_multitarget_property_(mpath COMPILE_DEFINITIONS PIC)
+path64_set_multitarget_property_(mpath COMPILE_FLAGS -fPIC -fbootstrap-hack)
+path64_set_multitarget_property_(mpath SOVERSION 1)
+
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+    path64_set_multitarget_property_(mpath LINK_FLAGS
+            "-Wl,-x -Wl,--version-script=${libmpath_SOURCE_DIR}/libmpath.vs ${BOOTSTRAP_HACK}")
+else()
+    path64_set_multitarget_property_(mpath LINK_FLAGS "${BOOTSTRAP_HACK}")
+endif()
+
+path64_multitarget_link_libraries(mpath m)
+path64_add_multitarget_library(mpath SHARED)
+if(PATH64_ENABLE_PSCRUNTIME)
+    path64_add_multitarget_dependencies(mpath compiler-rt unwind)
+endif()
+path64_add_multitarget_dependencies(mpath pscrt-static)
+
+
+if(PATH64_ENABLE_PROFILING)
+    path64_set_multitarget_sources(mpath_p COMMON
+                                   ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
+    path64_set_multitarget_sources(mpath_p x86_64
+                                   ${PATHSCALE_MPATH_SRCS_X64} ${PATHSCALE_MPATH_S_SRCS_X64})
+    if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+        path64_set_multitarget_property_(mpath_p COMPILE_FLAGS -pg)
+    endif()
+    path64_add_multitarget_library(mpath_p STATIC)
+
+endif(PATH64_ENABLE_PROFILING)
 
 ENDIF(PATH64_ENABLE_MATHLIBS)
+

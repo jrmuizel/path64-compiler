@@ -79,22 +79,25 @@ ENDFOREACH(f)
 #ADD_LIBRARY(iberty ${iberty_SRCS})
 add_executable(ld ${LD_SRCS})
 SET_TARGET_PROPERTIES(ld PROPERTIES OUTPUT_NAME "ipa_link")
-SET_TARGET_PROPERTIES(ld PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
+IF(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
+    # --export-dynamic is by default on osol
+    SET_TARGET_PROPERTIES(ld PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
+ENDIF()
 target_link_libraries(ld bfd iberty ${libdl})
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
 add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/lib/ipa_link
+    OUTPUT ${Path64_BINARY_DIR}/lib/ipa_link
     DEPENDS ld
-    COMMAND ln -s ../bin/ipa_link ${CMAKE_BINARY_DIR}/lib
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ../bin/ipa_link ${Path64_BINARY_DIR}/lib
 )
 
 add_custom_target(
     stageit-ipa_link ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/lib/ipa_link
+    DEPENDS ${Path64_BINARY_DIR}/lib/ipa_link
 )
 
 install(TARGETS ld
-    RUNTIME DESTINATION ${PATH64_LIB_PATH}
-    LIBRARY DESTINATION ${PATH64_LIB_PATH})
+    RUNTIME DESTINATION ${PATH64_LIB_PATH}/x8664
+    LIBRARY DESTINATION ${PATH64_LIB_PATH}/x8664)
 

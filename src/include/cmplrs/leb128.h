@@ -57,37 +57,19 @@
 extern "C" {
 #endif
 
-#ifndef __GNUC__
+#include <stdint.h>
 
-extern int _leb128_unsigned_encode64(__uint64_t /*number*/, char* /*buffer*/);
-extern int _leb128_signed_encode64(__int64_t /*number*/, char* /*buffer*/);
-
-extern int _leb128_unsigned_encode32(__uint32_t /*number*/, char* /*buffer*/);
-extern int _leb128_signed_encode32(__int32_t /*number*/, char* /*buffer*/);
-
-extern int _leb128_unsigned_decode64(char* /*data*/, __uint64_t* /*value*/);
-extern int _leb128_signed_decode64(char* /*data*/, __int64_t* /*value*/);
-
-extern int _leb128_unsigned_decode32(char* /*data*/, __uint32_t* /*value*/);
-extern int _leb128_signed_decode32(char* /*data*/, __int32_t* /*value*/);
-
-#else
-
-#include <sys/types.h>
-
-extern int _leb128_unsigned_encode64(u_int64_t /*number*/, char* /*buffer*/);
+extern int _leb128_unsigned_encode64(uint64_t /*number*/, char* /*buffer*/);
 extern int _leb128_signed_encode64(int64_t /*number*/, char* /*buffer*/);
 
-extern int _leb128_unsigned_encode32(u_int32_t /*number*/, char* /*buffer*/);
+extern int _leb128_unsigned_encode32(uint32_t /*number*/, char* /*buffer*/);
 extern int _leb128_signed_encode32(int32_t /*number*/, char* /*buffer*/);
 
-extern int _leb128_unsigned_decode64(char* /*data*/, u_int64_t* /*value*/);
+extern int _leb128_unsigned_decode64(char* /*data*/, uint64_t* /*value*/);
 extern int _leb128_signed_decode64(char* /*data*/, int64_t* /*value*/);
 
-extern int _leb128_unsigned_decode32(char* /*data*/, u_int32_t* /*value*/);
+extern int _leb128_unsigned_decode32(char* /*data*/, uint32_t* /*value*/);
 extern int _leb128_signed_decode32(char* /*data*/, int32_t* /*value*/);
-
-#endif
 
 #ifdef __cplusplus
 }

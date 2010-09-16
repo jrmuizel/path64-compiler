@@ -781,7 +781,6 @@ BB_NODE::Branch_wn(void) const
 
   return ( NULL );
 }
-
 // Query whether this BB_NODE ends with a branch WN targetting at the given bb.
 
 BOOL
@@ -795,7 +794,6 @@ BB_NODE::Is_branch_to(BB_NODE * bb)
 
   return FALSE;
 }
-
 // ====================================================================
 // Label_wn - determine if this block has a LABEL statement
 // that will get emitted (and is required if the block gets jumped
@@ -1299,7 +1297,6 @@ INT32 BB_NODE::Code_size_est(void) const
   }
   return size;
 }
-
 // query whether this BB_NODE dominates every node in the SC tree rooted at sc.
 BOOL 
 BB_NODE::Is_dom(SC_NODE * sc)
@@ -1333,7 +1330,6 @@ BB_NODE::Is_dom(SC_NODE * sc)
   }
   return TRUE;
 }
-
 // query whether this BB_NODE post-dominates every node in the SC tree rooted at sc.
 
 BOOL
@@ -1369,7 +1365,6 @@ BB_NODE::Is_postdom(SC_NODE * sc)
   return TRUE;
 
 }
-
 // Query whether every WN statement in this BB_NODE and given BB_NODE
 // are identical.
 
@@ -1401,7 +1396,6 @@ BB_NODE::Compare_Trees(BB_NODE * bb)
 
   return TRUE;
 }
-
 // For every pair of WHILR nodes in the WHIRL tree rooted
 // at wn1 and wn2, check whether operators are identical.
 // If the node is a constant, check whether constant value
@@ -1434,7 +1428,6 @@ Has_same_shape(WN * wn1, WN * wn2)
 
   return TRUE;
 }
-
 // Count number of real statements in this BB_NODE.
 int
 BB_NODE::Real_stmt_count()
@@ -1453,7 +1446,6 @@ BB_NODE::Real_stmt_count()
 
   return count;
 }
-
 // Reset/clear fields.
 void 
 SC_NODE::Clear()

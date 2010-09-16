@@ -66,7 +66,6 @@ UINT32 comma_list_byte_count = 0;
 
 #if defined(TARG_IA64) || defined(TARG_X8664) || defined(TARG_MIPS)
 
-#ifdef KEY
 #if defined(TARG_X8664) || defined(ARCH_MIPS)
 #define LINKER_NAME "gcc"
 #define LINKER_NAME_WITH_SLASH "/gcc"
@@ -80,12 +79,6 @@ UINT32 comma_list_byte_count = 0;
 #else
 #error /* unknown cross compiler target */
 #endif
-
-#else
-#define LINKER_NAME "ld"
-#define LINKER_NAME_WITH_SLASH "/ld"
-#define DYNAMIC_LINKER "-dynamic-linker /lib/ld-linux-ia64.so.2"
-#endif /* KEY */
 
 static char* concat_names(const char* a , const char* b)
 {
@@ -380,7 +373,7 @@ ipa_compose_comma_list (const char* name)
 ARGV *
 ipa_link_line_argv (const ARGV* output_files,
                     const char* dir, 
-		    const char* symtab_base)
+		    const char* symtab_name)
 {
     ARGV* argv = CXX_NEW (ARGV, Malloc_Mem_Pool);
 
@@ -397,15 +390,8 @@ ipa_link_line_argv (const ARGV* output_files,
 		  output_files->begin (), 
 		  output_files->end ());
 
-    if (symtab_base && symtab_base[0] != 0) {
-	char* symtab =
-	    static_cast<char*>(malloc(strlen(dir) + strlen(symtab_base) + 2));
-	if (!symtab)
-	    ErrMsg (EC_No_Mem, "ipa_link_line_argv");
-	strcpy(symtab, dir);
-	strcat(symtab, "/");
-	strcat(symtab, symtab_base);
-	argv->push_back(symtab);
+    if (symtab_name && symtab_name[0] != 0) {
+	argv->push_back(symtab_name);
     }
     
     argv->insert (argv->end (),

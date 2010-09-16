@@ -87,6 +87,10 @@ static char *rcs_id = opt_fold_CXX"$Revision: 1.9 $";
 #include "opt_fold.h"		// FOLD class, includes opt_htable.h, config.h
 #include "opt_htable.h"		// hash functions, ISOP flags
 
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 // forward definitions
 // the only routines in the simplifier that create nodes are:
 // CR_SimpCreateExp1, CR_SimpCreateExp2, CR_CreateIntconst, CR_CreateFPconst
@@ -155,7 +159,7 @@ FOLD::Fold_Expr(CODEREP *cr)
   if (!WOPT_Enable_Fold2const)	// do nothing if OFF
     return NOHASH;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   if (cr->Kind() == CK_IVAR)
     return CR_Simplify_Iload(cr);
 #endif
@@ -292,7 +296,7 @@ FOLD::CR_Simplify_Tree(CODEREP *cr)
     return NOHASH;
 
   if (opr == OPR_INTRINSIC_OP
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       || opr == OPR_PURE_CALL_OP
 #endif
      ) {
@@ -304,7 +308,7 @@ FOLD::CR_Simplify_Tree(CODEREP *cr)
 	found = TRUE;
       cr->Set_opnd(i,k0);
     }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (opr == OPR_PURE_CALL_OP)
       result = NULL;
     else
@@ -455,7 +459,7 @@ FOLD::CR_Simplify_Expr(CODEREP *cr)
       } else
 	result = NOHASH;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
    } else if (opr == OPR_PURE_CALL_OP) {
       result = NOHASH;
 #endif
@@ -505,7 +509,7 @@ FOLD::CR_Simplify_Expr(CODEREP *cr)
 	  tmp->Set_opnd(1,k1);
 	  result = fold_htable->Rehash(tmp);
 	} else
-#ifndef KEY
+#if !defined( KEY) || defined(TARG_ST)
 	  result = NOHASH;
 #else // bug 8581
 	  result = Combine_bits_any_nzero_test(cr);
@@ -542,7 +546,7 @@ FOLD::CR_Simplify_Expr(CODEREP *cr)
    return result;
 }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 static CODEREP *CR_CreateIntconst(OPCODE opc, INT64 val);
 
 // return value:
@@ -953,7 +957,7 @@ CR_st(CODEREP *cr)
     case CK_RCONST:
       return cr->Const_id();
     case CK_OP:
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       if (cr->Opr() == OPR_PURE_CALL_OP)
         return &St_Table[cr->Call_op_aux_id()];
 #endif

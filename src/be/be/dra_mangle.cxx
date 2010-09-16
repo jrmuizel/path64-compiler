@@ -64,12 +64,12 @@
 
 #include "dra_internal.h"       // Internal DRA interface
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#ifndef USE_WEAK_REFERENCES
 extern void (*CG_Change_Elf_Symbol_To_Undefined_p) (ST*);
 #define CG_Change_Elf_Symbol_To_Undefined (*CG_Change_Elf_Symbol_To_Undefined_p)
 #else
 #pragma weak CG_Change_Elf_Symbol_To_Undefined
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES
 
 // =====================================================================
 //

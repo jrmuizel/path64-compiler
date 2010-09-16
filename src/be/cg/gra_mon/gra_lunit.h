@@ -149,6 +149,12 @@ private:
   INT		last_def; // data on TN definitions within a block needed for 
 			// global preferencing.
   LRANGE*	global_pref; // global lr that is a preference candidate in lunit
+#ifdef TARG_ST
+  // The set of registers that cannot be used because of subclass
+  // requirements.
+  REGISTER_SET subclass_disallowed_registers;
+#endif
+  
 public:
   LUNIT(void) {}
   ~LUNIT(void) {}
@@ -165,6 +171,9 @@ public:
   void Last_Def_Set(INT ld)	{ last_def = ld; }
   LRANGE *Global_Pref(void) 	{ return global_pref; }
   void Global_Pref_Set(LRANGE *lr){ global_pref = lr; }
+#ifdef TARG_ST
+  REGISTER_SET SubClass_Disallowed(void) { return subclass_disallowed_registers; }
+#endif
 
   // access functions for the flags
   BOOL Has_Exposed_Use(void)	{ return flags & LUNIT_FLAGS_has_exposed_use; }
@@ -204,6 +213,12 @@ public:
 					    return new_elt; }
   LUNIT* Spill_List_Push(LUNIT *new_elt) { new_elt->spill_list_next = this;
 					   return new_elt; }
+#ifdef TARG_ST
+  void SubClass_Disallowed_Add (REGISTER_SET regs) {
+    subclass_disallowed_registers =
+      REGISTER_SET_Union (subclass_disallowed_registers, regs);
+  }
+#endif
 
   // non-inlined member functions
   void Preference_Copy(LRANGE *);

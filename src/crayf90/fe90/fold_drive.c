@@ -597,6 +597,59 @@ boolean folder_driver(char		*l_value_ptr,
       }
    }
 
+# if defined(_HOST64) && defined(_TARGET64) && defined(_WHIRL_HOST64_TARGET64)
+    switch (opr) {
+	 case Sqrt_Opr :
+	 case Plus_Opr :
+	 case Uminus_Opr :
+	 case Minus_Opr :
+	 case Mult_Opr :
+	 case Div_Opr :
+	 case Power_Opr :
+	 case Eq_Opr :
+	 case Ne_Opr :
+	 case Abs_Opr :
+	 case Cvrt_Opr :
+	    /* we need to pack them up into one word */
+	    if (l_linear_type == Complex_4) {
+#if defined(_HOST_LITTLE_ENDIAN)
+		l_value.v[0] = l_value.v[0] & 0xFFFFFFFF;
+		l_value.v[0] |= l_value.v[1] << 32;
+#else
+		l_value.v[0] = l_value.v[0] << 32;
+		l_value.v[0] = l_value.v[0] | (l_value.v[1] & 0xFFFFFFFF);
+#endif
+	    }
+	    if (r_linear_type == Complex_4) {
+#if defined(_HOST_LITTLE_ENDIAN)
+		r_value.v[0] = r_value.v[0] & 0xFFFFFFFF;
+		r_value.v[0] |= r_value.v[1] << 32;
+#else
+		r_value.v[0] = r_value.v[0] << 32;
+		r_value.v[0] = r_value.v[0] | (r_value.v[1] & 0xFFFFFFFF);
+#endif
+	    }
+	    if (a3_linear_type == Complex_4) {
+#if defined(_HOST_LITTLE_ENDIAN)
+		a3_value.v[0] = a3_value.v[0] & 0xFFFFFFFF;
+		a3_value.v[0] |= a3_value.v[1] << 32;
+#else
+		a3_value.v[0] = a3_value.v[0] << 32;
+		a3_value.v[0] = a3_value.v[0] | (a3_value.v[1] & 0xFFFFFFFF);
+#endif
+	    }
+	    if (a4_linear_type == Complex_4) {
+#if defined(_HOST_LITTLE_ENDIAN)
+		a4_value.v[0] = a4_value.v[0] & 0xFFFFFFFF;
+		a4_value.v[0] |= a4_value.v[1] << 32;
+#else
+		a4_value.v[0] = a4_value.v[0] << 32;
+		a4_value.v[0] = a4_value.v[0] | (a4_value.v[1] & 0xFFFFFFFF);
+#endif
+	    }
+	break;
+    }
+#endif
 
 CONTINUE:
 
@@ -2917,6 +2970,31 @@ CONTINUE:
 #ifdef KEY /* Bug 12014 */
    }
 #endif /* KEY Bug 12014 */
+# if defined(_HOST64) && defined(_TARGET64) && defined(_WHIRL_HOST64_TARGET64)
+   switch(opr) {
+      case Sqrt_Opr :
+      case Plus_Opr :
+      case Uminus_Opr :
+      case Minus_Opr :
+      case Mult_Opr :
+      case Div_Opr :
+      case Power_Opr :
+      case Eq_Opr :
+      case Ne_Opr :
+      case Abs_Opr :
+      case Cvrt_Opr :
+         if (res_linear_type == Complex_4) {
+	 /* we need to unpack it into two words */
+#if defined(_HOST_LITTLE_ENDIAN)
+	    result[1] = result[0] >> 32;
+	    result[0] = result[0] & 0xFFFFFFFF;
+#else
+	    result[1] = result[0] & 0xFFFFFFFF;
+	    result[0] = result[0] >> 32;
+#endif
+        }
+   }
+# endif
 
 # ifdef _TARGET_OS_MAX
    if (res_linear_type == Complex_4) {  /* KAYKAY */

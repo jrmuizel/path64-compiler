@@ -16,9 +16,10 @@ SET(cpp_SRCS
   )
 
 # Use the compatibility dirent interface if necessary.
-IF(NOT HAVE_DIRENT_H_COMPILED)
-  LIST(APPEND cpp_SRCS dirent.c)
-ENDIF(NOT HAVE_DIRENT_H_COMPILED)
+# disabled for self-bootstrap
+# IF(NOT HAVE_DIRENT_H_COMPILED)
+#   LIST(APPEND cpp_SRCS dirent.c)
+# ENDIF(NOT HAVE_DIRENT_H_COMPILED)
 
 ADD_LIBRARY(cpp ${cpp_SRCS})
 TARGET_LINK_LIBRARIES(cpp iberty)

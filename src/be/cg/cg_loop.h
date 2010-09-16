@@ -307,7 +307,10 @@
 
 #ifndef CG_LOOP_INCLUDED
 #define CG_LOOP_INCLUDED
-
+#include "op.h"
+#include "tn.h"
+#include "bb.h"
+#include "cgtarget.h"
 
 #include "cg_dep_graph.h"
 #include "cg_loop_scc.h"
@@ -483,6 +486,14 @@ extern BOOL CG_LOOP_optimize_non_innermost;
 extern BOOL CG_LOOP_optimize_multi_targ;
 extern BOOL CG_LOOP_optimize_non_trip_countable;
 
+#ifdef TARG_ST
+extern BOOL CG_LOOP_unroll_do_unwind;
+extern BOOL CG_LOOP_unroll_remainder_after;
+extern BOOL CG_LOOP_unroll_multi_bb;
+extern INT32 CG_LOOP_unroll_heuristics;
+
+#endif
+
 #ifdef KEY
 extern INT32 CG_Enable_Loop_Opt_Limit;
 #endif
@@ -495,7 +506,11 @@ extern void CG_LOOP_Finish();
 inline TN *CG_LOOP_Trip_Count(LOOP_DESCR *loop)
 {
   LOOPINFO *info = LOOP_DESCR_loopinfo(loop);
+  #ifdef TARG_ST
+  return info ? LOOPINFO_exact_trip_count_tn(info) : NULL;
+#else
   return info ? LOOPINFO_trip_count_tn(info) : NULL;
+#endif
 }
 
 CG_LOOP_BACKPATCH *CG_LOOP_Backpatch_Add(BB *bb, TN *non_body_tn,
@@ -579,16 +594,36 @@ enum CG_LOOP_FLAGS {
   CG_LOOP_HAS_PROLOG = 0x1,
   CG_LOOP_HAS_EPILOG = 0x2,
   CG_LOOP_EPILOG_REACHABLE = 0x4,  // epilog reachable from loop
+  #ifdef TARG_ST
+  CG_LOOP_IS_WHILE_LOOP = 0x8, // this is a while loop
+#else
 #ifdef KEY
   CG_LOOP_HAS_POST_REMAINDER_LOOP = 0x8,	// want post-remainder loop
 #endif
+#endif
 };
+
+#define MAX_SPECIAL_STREAM 4
 
 class CG_LOOP {
 
 private:
   LOOP_DESCR *loop;
   BOOL        unroll_fully;
+  #ifdef TARG_ST
+  UINT8	      packing_factor; // For packing, unroll factor must be a multiple of packing_factor.
+  INT8        remainder_after:1;  // Put remainder loop after the unrolled loop, for packing
+  INT8        do_peeling:1;
+  INT8        do_specialize:1;
+  UINT8       load_streams;
+  UINT8       store_streams;
+  TN *	      stream_tn[MAX_SPECIAL_STREAM];    // TN that must be checked and modified for alignment
+  INT16	      stream_base[MAX_SPECIAL_STREAM]; // (IV+stream_offset)%stream_base must be 0 at loop entry
+  INT16	      stream_offset[MAX_SPECIAL_STREAM];
+  BB *        check_bb; // Pointer to the BB that controls peeling or specialization,
+                        // so as to be able to undo loop peeling/specialization
+  INT32	      unroll_sched_est;
+#endif
   INT32       unroll_factor;
   OP_MAP      op_map;
   BB         *unroll_remainder_bb;
@@ -611,13 +646,18 @@ public:
   BOOL Has_prolog() const { return flags & CG_LOOP_HAS_PROLOG; }
   BOOL Has_epilog() const { return flags & CG_LOOP_HAS_EPILOG; }
   BOOL Has_prolog_epilog() const { return Has_prolog() && Has_epilog(); }
-#ifdef KEY
+#if defined (KEY) && !defined(TARG_ST)
   BOOL Has_post_remainder_loop() const
 	{ return flags & CG_LOOP_HAS_POST_REMAINDER_LOOP; }
 #endif
   void Set_has_prolog()   { flags |= CG_LOOP_HAS_PROLOG; }
   void Set_has_epilog()   { flags |= CG_LOOP_HAS_EPILOG; }
-#ifdef KEY
+  #ifdef TARG_ST
+  BOOL Is_while_loop() const { return flags & CG_LOOP_IS_WHILE_LOOP; }
+  void Set_is_while_loop()   { flags |= CG_LOOP_IS_WHILE_LOOP; }
+#endif
+ 
+#if defined (KEY) && !defined(TARG_ST)
   void Set_has_post_remainder_loop()
 	{ flags |= CG_LOOP_HAS_POST_REMAINDER_LOOP; }
 #endif
@@ -644,6 +684,51 @@ public:
   void Set_unroll_fully()         { unroll_fully = TRUE; }
   INT32 Unroll_factor() const     { return unroll_factor; }
   void Set_unroll_factor(INT32 n) { unroll_factor = n; }
+  #ifdef TARG_ST
+  UINT8 Packing_factor()	  { return packing_factor; }
+  void Set_packing_factor(UINT8 factor)	  { packing_factor = factor; }
+  BOOL Remainder_after()	  { return remainder_after; }
+  void Set_remainder_after()	  { remainder_after = TRUE; }
+  void Reset_remainder_after()	  { remainder_after = FALSE; }
+  INT32 Unroll_sched_est() const  { return unroll_sched_est; }
+  void Set_unroll_sched_est(INT32 n) { unroll_sched_est = n; }
+
+  void Set_peel_loop()            { do_peeling = TRUE; }
+  void Reset_peel_loop()	  { do_peeling = FALSE; stream_tn[0] = NULL; }
+  BOOL Peel_loop()                { return do_peeling; }
+  BOOL Cond_peel_loop()		  { return (stream_tn[0] != NULL); }
+  TN *Peel_tn() const	  	  { return stream_tn[0]; }
+  INT32 Peel_base() const	  { return stream_base[0]; }
+  INT32 Peel_offset() const	  { return stream_offset[0]; }
+
+  void Set_specialize_loop()      { do_specialize = TRUE; }
+  void Reset_specialize_loop()    { do_specialize = FALSE; stream_tn[0] = NULL; }
+  BOOL Specialize_loop()          { return do_specialize; }
+  TN * Specialize_tn(INT32 i)     { return stream_tn[i]; }
+  INT32 Specialize_base(INT32 i)  { return stream_base[i]; }
+  INT32 Specialize_offset(INT32 i){ return stream_offset[i]; }
+
+  void Set_streams(int load, int store) { load_streams = load; store_streams = store; };
+  INT Load_streams()              { return load_streams; };
+  INT Store_streams()             { return store_streams; };
+  
+  void Push_stream(TN* tn, INT32 align_base, INT32 align_offset) {
+    INT stream_idx;
+    for (stream_idx = 0; stream_tn[stream_idx] != NULL; stream_idx++);
+    Is_True(stream_idx < MAX_SPECIAL_STREAM, ("Cannot push more than %d streams for loop specialization", MAX_SPECIAL_STREAM));
+    stream_tn[stream_idx] = tn;
+    stream_base[stream_idx] = align_base;
+    stream_offset[stream_idx] = align_offset;
+    // Initialize the next location to NULL so that a next push can
+    // use it.
+    stream_idx ++;
+    if (stream_idx < MAX_SPECIAL_STREAM) stream_tn[stream_idx] = NULL;
+  }
+
+  void Set_check_bb(BB *bb) { check_bb = bb; }
+  BB * Check_bb() { return check_bb; }
+#endif
+
 #ifdef KEY
   void Set_post_remainder_loophead(BB *bb)	{ post_remainder_loophead = bb;}
   void Set_post_ntimes(UINT32 n)		{ post_ntimes = n; }
@@ -651,6 +736,14 @@ public:
 
   void Recompute_Liveness();
   bool Determine_Unroll_Fully(BOOL count_multi_bb);
+  INT32 Get_Unroll_Times(ANNOTATION *&);
+#ifdef TARG_ST
+  void Determine_Sched_Est_Unroll_Factor();
+  void Unroll_Specialize_Loop();
+  void Undo_Specialize_Loop(BB *loop_prolog, BB *loop_epilog);
+  void Unroll_Peel_Loop();
+  void Undo_Peel_Loop(BB *loop_prolog);
+#endif
   void Determine_Unroll_Factor();
   void Determine_SWP_Unroll_Factor();
   void Build_CG_LOOP_Info(BOOL single_bb);

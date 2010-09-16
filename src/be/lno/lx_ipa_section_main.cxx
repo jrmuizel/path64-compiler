@@ -57,7 +57,7 @@
 #ifndef IPA_SUMMARY
 INT IPA_Ivar_Global_Count;
 INT IPA_Ivar_Count;
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#  ifdef ORIGINAL_SGI_CODE
 mINT32
 SYSTEM_OF_EQUATIONS::_work_cols;
 mINT32
@@ -66,7 +66,7 @@ mINT32
 SYSTEM_OF_EQUATIONS::_work_rows;
 MEM_POOL*
 MAT<int>::_default_pool;
-#endif
+#  endif // ORIGINAL_SGI_CODE
 #endif
 
 //=========================================================================
@@ -184,7 +184,7 @@ void PROJECTED_NODE::Fill_Out()
     lx_upper->Set_term(lx_lower->Get_term(i));
 }
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifdef ORIGINAL_SGI_CODE
 //=====================================
 // Set the linexs in the projected node
 //=====================================
@@ -209,7 +209,7 @@ PROJECTED_NODE::Set_linexs(LINEX* low_new,
   if (segment_stride_new)
     segment_stride_new->Copy(Get_segment_stride_linex());
 }
-#endif
+#endif // ORIGINAL_SGI_CODE
 
 //================================================
 // copy the terms from one linex to another

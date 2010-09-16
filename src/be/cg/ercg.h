@@ -73,6 +73,22 @@
                                            int (bad operand number), 
                                            string (what was expected) */
 
+/* Generic errors: */
+#define EC_CG_Generic_Warning	EC_BASE_CG+4	/* string, string */
+#define EC_CG_Generic_Error	EC_BASE_CG+5	/* string, string */
+#define EC_CG_Generic_Fatal	EC_BASE_CG+6	/* string, string */
+
+/* Scheduling Prefetch warning */
+#define EC_Warn_Prefetch EC_BASE_CG+7 /* string, string, string, int */
+
+
+#ifdef TARG_ST
+/* Register allocation: (additional) */
+#define EC_Warn_Misaligned_Spill EC_BASE_CG+8   /* string, string, int */
+/* Stack alignment in IT */
+#define EC_Warn_ITStackAlignOpt  EC_BASE_CG+9   /* int, int */
+#endif
+
 /* Start all target-specific codes here: */
 #define EC_TARGET	EC_BASE_CG+200
 

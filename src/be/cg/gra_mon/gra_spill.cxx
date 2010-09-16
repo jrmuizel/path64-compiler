@@ -98,9 +98,83 @@ static LRANGE*      split_lranges_head;
 static BB_LIST*     region_entry_glue_bbs;
 static BB_LIST*     region_exit_glue_bbs;
 static float        freq_spill_count, freq_restore_count;
+#ifdef TARG_ST
+static float        freq_local_spill_count, freq_local_restore_count;
+#endif
 static INT32        spill_count, restore_count;
 float               priority_count;
 
+#ifdef TARG_ST
+// Data structures to maintain a list of spill locations
+// so that we can reuse a location for multiple TNs.
+class Spill_TN_Info {
+public:
+  BB_SET *live_bb_set;
+  BB_SET *Live_BB_Set () { return live_bb_set; }
+  void Add_Live_BBs (BB_SET *bbs) { live_bb_set = BB_SET_UnionD (live_bb_set, bbs,
+								 GRA_pool); }
+  Spill_TN_Info () {
+    live_bb_set = BB_SET_Create_Empty (PU_BB_Count, GRA_pool); 
+  }
+};
+
+static TN_MAP spill_tn_map;
+
+class GRA_Spill_Location {
+public:
+  ST *sym;
+  BB_SET *live_bb_set;
+  GRA_Spill_Location (ST *s, BB_SET *bbs) : sym (s) {
+    live_bb_set = BB_SET_Copy (bbs, GRA_pool);
+  }
+};
+
+typedef std::list<GRA_Spill_Location *,
+		  mempool_allocator<GRA_Spill_Location *> > GRA_SPILL_LIST;
+typedef GRA_SPILL_LIST::iterator GRA_SPILL_ITER;
+static  GRA_SPILL_LIST gra_spills[MTYPE_MAX_LIMIT+1];
+
+static ST *
+Get_GRA_TN_Spill_Symbol (TN *tn)
+{
+  if (TN_spill (tn)) return TN_spill (tn);
+
+  // Try to reuse an existing spill location.
+  Spill_TN_Info *info = (Spill_TN_Info *)TN_MAP_Get (spill_tn_map, tn);
+  BB_SET *live_bb_set = info->Live_BB_Set ();
+  INT spill_type_idx = Spill_Type_Index(tn);
+  GRA_SPILL_ITER it;
+  GRA_SPILL_ITER end = gra_spills[spill_type_idx].end ();
+  for (it = gra_spills[spill_type_idx].begin (); it != end; it++) {
+    GRA_Spill_Location *loc = *it;
+    if (! BB_SET_IntersectsP (loc->live_bb_set, live_bb_set)) {
+      GRA_Trace_Reuse_Spill_Location (tn, live_bb_set, loc->sym, loc->live_bb_set);
+      loc->live_bb_set = BB_SET_Union (loc->live_bb_set, live_bb_set, GRA_pool);
+      return loc->sym; // found an existing spill location to use.
+    }
+  }
+
+  // Create a new spill location.
+  ST *spill_sym = CGSPILL_Get_TN_Spill_Location (tn, CGSPILL_GRA);
+  GRA_Spill_Location *new_spill_location = CXX_NEW (GRA_Spill_Location (spill_sym,
+									live_bb_set),
+						    GRA_pool);
+  gra_spills[spill_type_idx].push_back (new_spill_location);
+  GRA_Trace_New_Spill_Location (tn, live_bb_set, spill_sym);
+  return spill_sym;
+}
+
+static void
+Add_Spill_Tn_Bbs (TN *tn, BB_SET *bbs)
+{
+  Spill_TN_Info *info = (Spill_TN_Info *)TN_MAP_Get (spill_tn_map, tn);
+  if (! info) {
+    info = CXX_NEW(Spill_TN_Info, GRA_pool);
+    TN_MAP_Set (spill_tn_map, tn, info);
+  }
+  info->Add_Live_BBs (bbs);
+}
+#endif
 
 // Data structures and functions to manipulate a list
 // of spill locations for Optimize_Placement.  It keeps
@@ -365,7 +439,7 @@ LRANGE_Spill_Below( LRANGE* lrange, GRA_BB* gbb )
   //
   (void) lrange->Find_LUNIT_For_GBB(gbb, &lunit);
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   if (GRA_optimize_boundary ||
       gbb->Clobbers_Reg_Class(lrange->Rc())) {
     // Always spill after the last define.  If no such define, spill at the top
@@ -396,7 +470,7 @@ LRANGE_Restore_Above( LRANGE* lrange, GRA_BB* gbb )
   //
   (void) lrange->Find_LUNIT_For_GBB(gbb, &lunit);
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   if (GRA_optimize_boundary ||
       gbb->Clobbers_Reg_Class(lrange->Rc())) {
     // Always restore before the first use.  If no such use, restore at the
@@ -449,7 +523,12 @@ Spill_Homeable_TN(
       WN *wn = Get_WN_From_Memory_OP(op);
       if (wn != NULL) {
 	alias = Aliased(Alias_Manager, TN_home(orig_tn), wn);
+#ifdef TARG_ST
+	// [CG]: Handle black hole
+	if (!OP_black_hole(op) && alias == SAME_LOCATION) {
+#else
 	if (alias == SAME_LOCATION) {
+#endif
 
 	  //
 	  // we need the store if we've defined the TN previosly in
@@ -464,9 +543,14 @@ Spill_Homeable_TN(
 	  INT st_op_num = TOP_Find_Operand_Use(OP_code(op), OU_storeval);
 	  if ((OP_store(op) && !need_store &&
 	       orig_tn == OP_opnd(op, st_op_num)) ||
+#ifdef TARG_ST
+              // (cbr) don't remove partially defining loads.
+	      (OP_load(op) && !need_load && !aliased_store_seen &&
+#else
 	      (OP_load(op) && !aliased_store_seen &&
+#endif
 	       OP_result(op, 0) == orig_tn)) {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	    // Both OPs in a stlpd/sthpd pair have the same WN, yet the sthpd
 	    // should not be deleted.  The second of such pair is always marked
 	    // cond_def, so check for it.  Bug 10550.
@@ -479,6 +563,20 @@ Spill_Homeable_TN(
 		continue;
 	      }
 	  } else if (OP_store(op)) {
+#ifdef TARG_ST
+	    // [TTh] Fix for codex bug #35518:
+	    // need_store must be cleared only when dealing with a store of the
+	    // original TN. Moreover, when the source TN is not the original TN,
+	    // the store must be seen as an aliased one.
+            if (OP_opnd(op, st_op_num) == orig_tn) {
+	      need_store = FALSE;
+	      op_is_homing_store = TRUE;
+	      // Previous aliased store (if defined) no more meaningful
+	      aliased_store_seen = FALSE;
+	    } else {
+	      aliased_store_seen = TRUE;
+	    }
+#else
 	    //
 	    // won't need to store at bottom of the block unless another
 	    // def of the tn is found
@@ -494,8 +592,13 @@ Spill_Homeable_TN(
             if (OP_opnd(op, st_op_num) == orig_tn)
 	      op_is_homing_store = TRUE;
 #endif
+#endif
           } else if (OP_load(op) && OP_result(op, 0) == orig_tn) {
 	    op_is_homing_load = TRUE;
+#ifdef TARG_ST
+	    // [TTh] Previous aliased store (if defined) no more meaningful
+	    aliased_store_seen = FALSE;
+#endif
 	  }
 	} else if (alias == POSSIBLY_ALIASED && OP_store(op)) {
 	  aliased_store_seen = TRUE;
@@ -529,6 +632,14 @@ Spill_Homeable_TN(
 	//
 	if (!op_is_homing_load) {
 	  need_store = TRUE;
+#ifdef TARG_ST
+          // (cbr) predicated definitions not dominated by other
+	  // definitions in the same congruence class are not cond_defs
+          // (see cg_ssa.cxx:map_phi_resources_to_new_names())
+          if ((OP_has_predicate (op) && OP_Predicate(op) != True_TN) && !def_seen)
+            need_load = TRUE;
+          else
+#endif
 #ifdef KEY
 	  if (OP_cond_def(op) && !def_seen)
 	    need_load = TRUE;
@@ -615,7 +726,11 @@ Spill_Prolog_Epilog_Save_LUNIT(LRANGE* lrange, LUNIT* lunit, GRA_BB* gbb,
     // Find the copy to the dedicated TN.
     //
     for (op = BB_first_op(bb); op != NULL; op = OP_next(op)) {
+#ifdef TARG_ST
+      if (OP_copy(op) && tn == OP_Copy_Operand_TN(op)) {
+#else
       if (OP_copy(op) && tn == CGTARG_Copy_Operand_TN(op)) {
+#endif
 	break;
       }
     }
@@ -640,11 +755,19 @@ Spill_Prolog_Epilog_Save_LUNIT(LRANGE* lrange, LUNIT* lunit, GRA_BB* gbb,
     // Find the copy from the dedicated TN.
     //
     for (op = BB_first_op(bb); op != NULL; op = OP_next(op)) {
+#ifdef TARG_ST
+      if (OP_copy(op) && tn == OP_Copy_Result_TN(op)) {
+#else
       if (OP_copy(op) && tn == OP_result(op, 0)) {
+#endif
 	break;
       }
     }
+#ifdef TARG_ST
+    TN* new_tn = Make_Dedicated_Save_TN(tn, OP_Copy_Operand_TN(op), st); 
+#else
     TN* new_tn = Make_Dedicated_Save_TN(tn, CGTARG_Copy_Operand_TN(op), st); 
+#endif
     Set_TN_save_creg(new_tn, TN_save_creg(tn));
     CGSPILL_Store_To_Memory(new_tn, st, OPS_Init(&ops), CGSPILL_GRA, bb);
     freq_spill_count += gbb->Freq();
@@ -657,7 +780,11 @@ Spill_Prolog_Epilog_Save_LUNIT(LRANGE* lrange, LUNIT* lunit, GRA_BB* gbb,
     // use of the save tn (this happened with the return address in
     // an epilog block).
     //
+# ifdef TARG_ST
+    gbb->Rename_TN_References(tn, OP_Copy_Operand_TN(op));
+#else
     gbb->Rename_TN_References(tn, CGTARG_Copy_Operand_TN(op));
+#endif
     gbb->Remove_Live_Out_LRANGE(lrange);
   }
 }
@@ -680,7 +807,7 @@ LUNIT_Spill(LUNIT* lunit)
     TN*     orig_tn = lrange->Original_TN();
     ST*     st      = CGSPILL_Get_TN_Spill_Location(orig_tn,CGSPILL_GRA);
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (BB_handler(bb) && BB_entry(bb) && TN_is_save_reg(orig_tn) &&
 	lunit->Has_Def() && 
 	(lunit->Spill_Below() || gbb->Is_Live_Out_LRANGE(lrange))) {
@@ -1595,7 +1722,7 @@ Has_Successor_Not_In_LRANGE( GRA_BB* gbb, LRANGE* lrange,
     if ( ! lrange->Contains_BB(succ) )
       return TRUE;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     // If <lrange> is not live-in to <succ> and <succ> has OPs that can
     // clobber <lrange>'s register class, then the register can be unavailable
     // at the top of <succ>.
@@ -1755,6 +1882,17 @@ Move_Restore_Out_Of_LRANGE( LUNIT* lunit , SPILL_LIST** spill_list)
 //
 //      1. There is a predecessor block in the LRANGE, and
 //      2. All the predecessor blocks out of the LRANGE have one successor.
+#ifdef TARG_ST
+// [SC] 3. No predecessor block ends in a branch instruction with an
+//         operand with a singleton subclass, where the register in the
+//         subclass is the register needed in the restore instruction.
+// [VB] 4. No predecessor block ends in a branch instruction
+//         that has the "same_res" property on the register operand
+//         that needs to be restored.
+// [VB] 5. No predecessor block ends in a branch instruction
+//         that has one of its results already allocated to the
+//         register needed in the restore instruction.
+#endif
 //
 //  Condition 2 could be relaxed if we are willing to insert a new block as
 //  the target of the predecessor.  Fred's feeling is that this will rarely be
@@ -1793,7 +1931,7 @@ Move_Restore_Out_Of_LRANGE( LUNIT* lunit , SPILL_LIST** spill_list)
       if (BB_call(bb) && ! gbb->Is_Live_Out_LRANGE(lrange) && ! callee_saves ) {
         return FALSE;
       }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       // If <lrange> is not live-out from pred and pred has OPs that can
       // clobber <lrange>'s register class, then the register can be
       // unavailable at the bottom of pred.
@@ -1816,7 +1954,7 @@ Move_Restore_Out_Of_LRANGE( LUNIT* lunit , SPILL_LIST** spill_list)
     } else {
       // Small possible optimization -- check for callee saves.
       GRA_BB *exclude_succ = NULL;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       if (GRA_optimize_boundary ||
 	  lunit->Gbb()->Clobbers_Reg_Class(rc)) {
 	// When checking for succ not in lrange, don't check if the succ is the
@@ -1832,17 +1970,74 @@ Move_Restore_Out_Of_LRANGE( LUNIT* lunit , SPILL_LIST** spill_list)
 
       load_count++;
     }
+#ifdef TARG_ST
+    {
+      // [SC] Check if predecessor block ends in a branch instruction with an
+      //      operand with a singleton subclass, where the register in the
+      //      subclass is the register needed in the restore instruction.
+      //      In that case, suppress the transformation.
+      for (OP *op = BB_xfer_op (bb); op != NULL; op = OP_next(op)) {
+	for (INT i = 0; i < OP_opnds(op); ++i) {
+	  ISA_REGISTER_SUBCLASS sc = OP_opnd_reg_subclass (op, i);
+	  if (sc != ISA_REGISTER_SUBCLASS_UNDEFINED) {
+	    REGISTER_SET sc_regs = REGISTER_SUBCLASS_members (sc);
+	    if (REGISTER_SET_Size (sc_regs) == 1
+		&& REGISTER_SET_MemberP (sc_regs, reg)) {
+	      return FALSE;
+	    }
+	  }
+	}
+      }
+      // [VB] Check if predecessor block ends in a branch instruction
+      //      that has the "same_res" property on the register operand
+      //      that needs to be restored.
+      for (OP *op = BB_xfer_op (bb); op != NULL; op = OP_next(op)) {
+	for (INT i = 0; i < OP_results(op); i++) {
+	  INT same_res = OP_same_res(op, i);
+	  if (same_res >= 0) {
+	    TN *tn = OP_opnd(op, same_res);
+	    if (TN_is_register(tn) &&
+		(TN_is_dedicated(tn) ||
+		 (TN_register(tn) != REGISTER_UNDEFINED)) &&
+		(TN_register(tn) == reg)) {
+	      return FALSE;
+	    }
+	  }
+	}
+      // [VB] Check if predecessor block ends in a branch instruction
+      //      that has one of its results already allocated to the
+      //      register needed in the restore instruction.
+      for (OP *op = BB_xfer_op (bb); op != NULL; op = OP_next(op)) {
+	for (INT i = 0; i < OP_results(op); i++) {
+	    TN *tn = OP_result(op, i);
+	    if (TN_is_register(tn) &&
+		(TN_is_dedicated(tn) ||
+		 (TN_register(tn) != REGISTER_UNDEFINED)) &&
+		(TN_register(tn) == reg)) {
+	      return FALSE;
+	    }
+	  }
+	}
+      }
+    }
+#endif
+
   }
 
   if ( do_move == FALSE )
     return FALSE;
-
+#ifdef TARG_ST
+    if (load_count > 0 && GRA_spill_count_min) {
+    // Don't increase spill count under opt space
+    return FALSE;
+  }
+#else
   if (load_count > 0 && OPT_Space) {
     // Don't increase spill count under opt space
     return FALSE;
   }
-
-#ifdef KEY
+#endif
+#if defined( KEY) && !defined(TARG_ST)
   if (GRA_optimize_boundary ||
       lunit->Gbb()->Clobbers_Reg_Class(rc)) {
     // "Restore above" means to restore just before the first use of the TN in
@@ -1973,7 +2168,7 @@ Has_Predecessor_Not_In_LRANGE( GRA_BB *gbb, LRANGE* lrange,
       return TRUE;
     if ( BB_call(pred->Bb()) && not_call_saved )
       return TRUE;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     // If <lrange> is not live-out from <pred> and <pred> has OPs that can
     // clobber <lrange>'s register class, then the register can be unavailable
     // at the bottom of <pred>.
@@ -2057,7 +2252,7 @@ Move_Spill_Out_Of_LRANGE( LUNIT* lunit , SPILL_LIST** spill_list)
     GRA_BB* gbb = iter.Current();
 
     GRA_BB *exclude_pred = NULL;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (GRA_optimize_boundary ||
         lunit->Gbb()->Clobbers_Reg_Class(lrange->Rc())) {
       // When checking for pred not in lrange, don't check if the pred is the
@@ -2069,7 +2264,11 @@ Move_Spill_Out_Of_LRANGE( LUNIT* lunit , SPILL_LIST** spill_list)
 
     if ( ! Needs_Spill(lrange,gbb) )
       has_successor_not_needing_spill = TRUE;
+#ifdef TARG_ST
+    else if ( Has_Predecessor_Not_In_LRANGE(gbb,lrange) )
+#else
     else if ( Has_Predecessor_Not_In_LRANGE(gbb,lrange,exclude_pred) )
+#endif
       return FALSE;
     else if ( BB_rid(gbb->Bb()) != BB_rid(lunit->Gbb()->Bb()))
       return FALSE;
@@ -2079,15 +2278,22 @@ Move_Spill_Out_Of_LRANGE( LUNIT* lunit , SPILL_LIST** spill_list)
 
   if ( ! has_successor_not_needing_spill )
     return FALSE;
-
+#ifdef TARG_ST
+   if (spill_count > 1 && GRA_spill_count_min) {
+    //
+    // Don't increase spill count under OPT_Space.
+    //
+    return FALSE;
+  }
+#else
   if (spill_count > 1 && OPT_Space) {
     //
     // Don't increase spill count under OPT_Space.
     //
     return FALSE;
   }
-
-#ifdef KEY
+#endif
+#if defined( KEY) && !defined(TARG_ST)
   if (GRA_optimize_boundary ||
       lunit->Gbb()->Clobbers_Reg_Class(lrange->Rc())) {
     // "Spill below" means to spill just after the last define of the TN in the
@@ -2426,7 +2632,7 @@ Optimize_Placement(void)
           }
 
 	} else if ( moved_reload && GRA_remove_spills &&
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 		   // No_Successor_Has_Restore assumes gbb is inside lrange.
 		   // It tests if all of gbb's succs are also inside lrange and
 		   // without restores.  If so, the spill in gbb is not needed.
@@ -2608,6 +2814,35 @@ GRA_Spill(void)
   freq_spill_count = freq_restore_count = 0.0F;
 
   Identify_Initialize_Glue_Blocks();
+#ifdef TARG_ST
+  if (GRA_overlay_spills) {
+    // Calculate the full live range extent of spilled/split live ranges.
+    // We make a map from original TN to the set of BBs in the live range.
+    spill_tn_map = TN_MAP_Create ();
+    for (l = spilled_lranges; l != NULL; l = LRANGE_LIST_rest(l)) {
+      LRANGE *lr = LRANGE_LIST_first(l);
+      Add_Spill_Tn_Bbs (lr->Original_TN (), lr->Live_BB_Set ());
+    }
+    for (lu_iter.Init(lunits_with_spills_head); ! lu_iter.Done(); lu_iter.Step()){
+      LUNIT* lunit = lu_iter.Current();
+      LRANGE *lr = lunit->Lrange();
+      Add_Spill_Tn_Bbs (lr->Original_TN (), lr->Live_BB_Set ());
+    }
+    // Now allocate a spill location to each original TN.
+    TN_NUM i;
+    for (i = First_Regular_TN; i <= Last_TN; i++) {
+      TN *tn = TNvec(i);
+      Spill_TN_Info *info = (Spill_TN_Info *)TN_MAP_Get (spill_tn_map, tn);
+      if (info) {
+	Set_TN_spill (tn, Get_GRA_TN_Spill_Symbol (tn));
+      }
+    }
+    TN_MAP_Delete (spill_tn_map);
+    for (INT i = 0; i < (sizeof(gra_spills)/sizeof(gra_spills[0])); i++) {
+      gra_spills[i].clear ();
+    }
+  }
+#endif
 
   // Spill all the LUNITs with actual references in every live range with a
   // spill
@@ -2642,12 +2877,18 @@ GRA_Spill(void)
       Set_TN_spill(lrange->Tn(), TN_spill(lrange->Original_TN()));
     }
   }
-
+#ifdef TARG_ST
+  GRA_Trace_Spill_Stats(freq_restore_count,restore_count,freq_spill_count,
+			spill_count,
+			freq_local_restore_count, freq_local_spill_count,
+			priority_count);
+#else
   GRA_Trace_Spill_Stats(freq_restore_count,restore_count,freq_spill_count,
 			spill_count, priority_count);
+#endif
   GRA_Trace_Memory("GRA_Spill()");
 }
-
+#ifndef TARG_ST
 /////////////////////////////////////
 // Try to remove some spills.
 void
@@ -2677,13 +2918,12 @@ GRU_Fuse(void)
       }
     }
   }
-
   GRA_Trace_Spill_Stats(freq_restore_count,restore_count,freq_spill_count,
 			spill_count, priority_count);
   GRA_Trace_Memory("GRU_Fuse()");
   MEM_POOL_Pop ( &MEM_local_pool );
 }
-
+#endif
 /////////////////////////////////////
 // A restore of the given <lunit> is required at the top of its block.
 void
@@ -2719,6 +2959,10 @@ GRA_Note_Spill( LRANGE* lrange )
     DevAssert(lrange->Type() == LRANGE_TYPE_LOCAL &&
 	      !lrange->Has_Wired_Register(),
               ("Spilling a LRANGE of unexpected type"));
+#ifdef TARG_ST
+    freq_local_spill_count += lrange->Gbb()->Freq();
+    freq_local_restore_count += lrange->Gbb()->Freq();
+#endif 
   }
 }
 
@@ -2730,6 +2974,9 @@ GRA_Spill_Initialize(void)
   spilled_lranges = NULL;
   split_lranges_head = NULL;
   lunits_with_spills_head = NULL;
+#ifdef TARG_ST
+  freq_local_spill_count = freq_local_restore_count = 0.0F;
+#endif
 }
 
 /////////////////////////////////////

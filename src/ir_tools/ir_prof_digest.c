@@ -96,10 +96,10 @@ static int        num_proc;
 Elf64_Ehdr *p_elf_header;
 Elf64_Shdr *p_sect_header;
 
-__uint64_t    g_text_start;
-__uint64_t    g_text_end;
-__uint64_t    g_text_size;
-__uint64_t    g_textlo_index;
+uint64_t    g_text_start;
+uint64_t    g_text_end;
+uint64_t    g_text_size;
+uint64_t    g_textlo_index;
 
 #define ELF_TARG_32() (p_elf_header->e_ident[EI_CLASS] == ELFCLASS32)
 

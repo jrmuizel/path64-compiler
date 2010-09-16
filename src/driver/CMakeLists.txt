@@ -1,6 +1,4 @@
 
-ADD_SUBDIRECTORY(crt)
-
 Set(PATHSCALE_COMMON_DRIVER_SRCS "errors.c"
                                  "file_utils.c"
                                  "lang_defs.c"
@@ -20,6 +18,8 @@ Set(PATHSCALE_DRIVER_SRCS ${PATHSCALE_COMMON_DRIVER_SRCS}
                           "phases.c"
                           "run.c"
                           "special_options.c"
+                          "targets.c"
+                          "${CMAKE_CURRENT_BINARY_DIR}/targ_info.c"
                           ${CMAKE_CURRENT_BINARY_DIR}/version_hg.c
                           "license.c"
    )
@@ -28,14 +28,47 @@ set(PATHSCALE_TABLE_SRCS  ${PATHSCALE_COMMON_DRIVER_SRCS}
                           "table.c"
    )
 
+
+option(PATH64_ENABLE_PATHAS "Enables using pathas assembler" OFF)
+if(PATH64_ENABLE_PATHAS)
+    add_definitions(-DPATH64_ENABLE_PATHAS)
+endif()
+
+
+# Adding definitions for target architectures
+set(ARCH_DEFS)
+foreach(arch ${PATH64_ENABLE_ARCHES})
+    set(ARCH_DEFS ${ARCH_DEFS} ${_PATH64_ARCH_FLAGS_${arch}})
+endforeach()
+add_definitions(${ARCH_DEFS})
+
+
 add_executable(table ${PATHSCALE_TABLE_SRCS})
 
-#GET_TARGET_PROPERTY(TABLE_EXE table LOCATION)
+
+# Detecting gcc and configuring sort_options script
+set(SORT_OPTIONS ${CMAKE_CURRENT_BINARY_DIR}/sort_options.sh)
+
+set(PATH64_GCC ${CMAKE_C_COMPILER})
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh.cmake.in
+               ${SORT_OPTIONS})
+
+set(SORT_FLAGS)
+
+if(PATH64_ENABLE_PSCRUNTIME)
+    list(APPEND SORT_FLAGS "-DPATH64_ENABLE_PSCRUNTIME")
+else()
+    list(APPEND SORT_FLAGS "-DPATH64_NO_PSCRUNTIME")
+endif()
+
+if(PATH64_ENABLE_PATHAS)
+    list(APPEND SORT_FLAGS "-DPATH64_ENABLE_PATHAS")
+endif()
 
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS -DX8664 -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
-        DEPENDS sort_options.sh OPTIONS
+        COMMAND ${SORT_OPTIONS} ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS ${ARCH_DEFS} ${SORT_FLAGS} -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
+        DEPENDS ${SORT_OPTIONS} OPTIONS
         )
 
 add_custom_command(
@@ -51,6 +84,71 @@ add_custom_command(
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gen_version.sh
         )
 
+
+# Generating target definitions
+set(TARGET_DEFINITIONS "")
+set(first true)
+foreach(targ ${PATH64_ENABLE_TARGETS})
+    set(arch ${_PATH64_TARGET_ARCH_${targ}})
+    set(abi_name ${_PATH64_TARGET_BITS_${targ}})
+    set(abi ${_PATH64_TARGET_ABI_${targ}})
+    set(crt_path ${PSC_CRT_PATH_${targ}})
+
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+        set(dyn_linker ${PSC_DYNAMIC_LINKER_${targ}})
+        if(NOT dyn_linker)
+            message(FATAL_ERROR "Dynamic linker for ${targ} target is not specified. Please specify PSC_DYNAMIC_LINKER_${targ} variable")
+        else()
+            message(STATUS "Dynamic linker for ${targ} target: ${dyn_linker}")
+        endif()
+    endif()
+
+    if(NOT first)
+        set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS},\n")
+    else()
+        set(first false)
+    endif()
+
+    set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS}\t{ \"${targ}\",\t\"${arch}\",\t\"${abi_name}\",\t${abi},\t\"${crt_path}\"")
+
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+        set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS},\t\"${dyn_linker}\"")
+    endif()
+
+    if(NOT PATH64_ENABLE_PSCRUNTIME)
+        set(supcpp_path ${PSC_LIBSUPCPP_PATH_${targ}})
+        set(stdcpp_path ${PSC_LIBSTDCPP_PATH_${targ}})
+        set(gcc_path ${PSC_LIBGCC_PATH_${targ}})
+        set(gcc_eh_path ${PSC_LIBGCC_EH_PATH_${targ}})
+        set(gcc_s_path ${PSC_LIBGCC_S_PATH_${targ}})
+
+        if(NOT supcpp_path)
+            message(FATAL_ERROR "Path to libsupc++ for target ${targ} is not specified. Please specify PSC_LIBSUPCPP_PATH_${targ} variable")
+        endif()
+
+        if(NOT stdcpp_path)
+            message(FATAL_ERROR "Path to libstdc++ for target ${targ} is not specified. Please specify PSC_LIBSTDCPP_PATH_${targ} variable")
+        endif()
+
+        if(NOT gcc_path)
+            message(FATAL_ERROR "Path to libgcc for target ${targ} is not specified. Please specify PSC_LIBGCC_PATH_${targ} variable")
+        endif()
+
+        if(NOT gcc_eh_path)
+            message(FATAL_ERROR "Path to libgcc_eh for target ${targ} is not specified. Please specify PSC_LIBGCC_EH_PATH_${targ} variable")
+        endif()
+
+        if(NOT gcc_s_path)
+            message(FATAL_ERROR "Path to libgcc_s for target ${targ} is not specified. Please specify PSC_LIBGCC_S_PATH_${targ} variable")
+        endif()
+
+        set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS},\t\"${supcpp_path}\",\t\"${stdcpp_path}\",\t\"${gcc_path}\",\t\"${gcc_eh_path}\",\t\"${gcc_s_path}\"")
+    endif()
+
+    set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS}}")
+endforeach()
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/targ_info.c.cmake.in
+               ${CMAKE_CURRENT_BINARY_DIR}/targ_info.c)
 
 include_directories(.
                     ../common/com
@@ -73,16 +171,18 @@ install(TARGETS ${exe_prefix}pathcc
         RUNTIME DESTINATION bin)
 
 add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/bin/pathf95
+    OUTPUT ${Path64_BINARY_DIR}/bin/pathCC ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
     DEPENDS pathcc
-    COMMAND ln -s pathcc ${CMAKE_BINARY_DIR}/bin/pathCC
-    COMMAND ln -s pathcc ${CMAKE_BINARY_DIR}/bin/pathf95
+# Paths in symbolic links should be relative. Otherwise bootstrap will not work
+    COMMAND ${CMAKE_COMMAND} -E create_symlink pathcc ${Path64_BINARY_DIR}/bin/pathCC
 )
 
 add_custom_target(
     stageit-driver ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/bin/pathf95
+    DEPENDS ${Path64_BINARY_DIR}/bin/pathCC
 )
+
+add_dependencies(compiler-stage stageit-driver)
 
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/bin/pathCC${CMAKE_EXECUTABLE_SUFFIX}\")")
 if(PATH64_ENABLE_FORTRAN)

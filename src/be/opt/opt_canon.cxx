@@ -118,6 +118,14 @@ CANON_CR::Trim_to_16bits(WN *wn, CODEMAP *htable)
   MTYPE typ;
   INT64 multiple32K;
 
+#ifdef TARG_ST
+  // [VL] Although its possible impact can be repaired by 
+  // EBO in *** most *** cases, the interest of the split 
+  // depends on the target encoding. It should not be 
+  // performed blindly in this generic part of the code. 
+  // We just skip this function for ST targets (#61658).
+  return;
+#endif
   if (Scale() >= (- 0x8000) && Scale() <= 0x7fff)
     return;
 
@@ -616,7 +624,7 @@ CODEMAP::Separate_iv_invar(CODEREP *cr, BB_NODE *curbb)
 	  {
 	    OPCODE subop = OPCODE_make_op(OPR_SUB, OPCODE_rtype(iv->Op()), MTYPE_V);
 	    if (curbb->Innermost()->Invariant_cr(iv->Opnd(0))) {
-#ifdef KEY // bug 4959 wraparound will cause problem
+#if defined( KEY) && !defined(TARG_ST) // bug 4959 wraparound will cause problem
 	      if (OPCODE_rtype(subop) == MTYPE_U4 &&
 		  invar->Kind() == CK_CONST && iv->Opnd(0)->Kind() ==CK_CONST &&
 		  invar->Const_val() < iv->Opnd(0)->Const_val()) {
@@ -627,7 +635,7 @@ CODEMAP::Separate_iv_invar(CODEREP *cr, BB_NODE *curbb)
 	      invar = Add_bin_node_and_fold(subop, invar, iv->Opnd(0));
 	      iv = iv->Opnd(1);
 	    } else {
-#ifdef KEY // bug 4959 wraparound will cause problem
+#if defined( KEY) && !defined(TARG_ST) // bug 4959 wraparound will cause problem
 	      if (OPCODE_rtype(subop) == MTYPE_U4 &&
 		  invar->Kind() == CK_CONST && iv->Opnd(1)->Kind() ==CK_CONST &&
 		  invar->Const_val() < iv->Opnd(1)->Const_val()) {

@@ -34,10 +34,10 @@
  * otherwise return .FALSE. The right most bit is bit 0.
  */
 
-int32
-btest_l (int32 *n, int32 *i)
+int32_t
+btest_l (int32_t *n, int32_t *i)
 {
     if (*i < 0 || *i >= NBI)
 	return(0L);
-    return((uint32) (*n & F77zmask[*i]) >> (uint32) *i);
+    return((uint32_t) (*n & F77zmask[*i]) >> (uint32_t) *i);
 }

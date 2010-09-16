@@ -218,12 +218,12 @@ extern void fdump_dep_tree(FILE *, const WN *, struct ALIAS_MANAGER *);
 
 /*  Suppress warning if not resolved at link-time. */
 /* CG_Dump_Region is defined in cg.so, only call if cg.so is loaded */
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#ifndef USE_WEAK_REFERENCES
 extern void (*CG_Dump_Region_p) (FILE*, WN*);
 #define CG_Dump_Region (*CG_Dump_Region_p)
 #else
 #pragma weak CG_Dump_Region
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES
 
 #endif /* BACK_END */
 
@@ -915,8 +915,10 @@ static void ir_put_wn(WN * wn, INT indent)
 
     case OPR_INTRINSIC_OP:
     case OPR_ARRAYEXP:
+#ifndef TARG_ST
 #ifdef KEY
     case OPR_PURE_CALL_OP:
+#endif
 #endif
       fprintf(ir_ofile, " %d", WN_kid_count(wn));
       break;

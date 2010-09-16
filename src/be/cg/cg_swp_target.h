@@ -90,6 +90,7 @@
 #endif
 
 class CG_LOOP;
+class CG_LOOP_DEF;
 
 // Define BASE_UPDATE kind
 enum BASE_UPDATE {
@@ -108,6 +109,8 @@ SWP_Loop_Init_Fini (BOOL is_doloop,
                     OPS *prolog_ops,
 		    OPS *body_ops,
 		    OPS *epilog_ops);
+
+extern INT32 SWP_Max_Slots_Per_Cycle();
 
 extern BOOL 
 Prepare_Loop_For_SWP_1 (CG_LOOP& cl, bool trace);
@@ -150,7 +153,7 @@ Gen_Implicit_Prefetches (CG_LOOP &cl, bool trace);
 
 extern TN* 
 Base_update_tn (OP *op);
-
+#ifndef TARG_ST
 #ifndef TARG_IA64
 extern void
 SWP_TARGET_Calculate_Critical_Resources (const SWP_OP_VECTOR& ops, 
@@ -171,6 +174,6 @@ SWP_TARGET_Scheduling_Constrain_For_OP (const SWP_OP_VECTOR& ops,
 extern void
 SWP_TARGET_Adjust_LoadStore_Offset (SWP_OP_VECTOR& ops, BOOL trace);
 #endif
-
+#endif
 #endif /* cg_swp_target_INCLUDED */
 

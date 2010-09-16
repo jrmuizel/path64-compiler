@@ -89,7 +89,11 @@
 #define HBS_RELAX_REGANTI		0x80000
 #define HBS_MUST_EMIT_SCHED		0x100000
 #endif
-
+#ifdef TARG_ST
+#define HBS_HEURISTIC_CRITICAL_PATH     0x4000
+#define HBS_CRITICAL_PATH_PREF_LOAD     0x8000
+#define HBS_PREF_LOAD     			0x10000
+#endif
 #ifdef KEY
 typedef UINT32 HBS_TYPE;
 #else
@@ -495,7 +499,14 @@ private:
   BB*               _epilog_bb;
   VECTOR            _ready_vector;
   VECTOR            _sched_vector;
+  #ifdef TARG_ST
+  INT32 	    _Cur_Regs_Avail[ISA_REGISTER_CLASS_MAX_LIMIT+1];
+  INT32             _Min_Cur_Regs_Avail[ISA_REGISTER_CLASS_MAX_LIMIT+1];
+  ISA_REGISTER_CLASS minimize_regs_class;
+  INT32              minimize_regs_threshold;
+#else
   INT32 	    _Cur_Regs_Avail[ISA_REGISTER_CLASS_MAX+1];
+#endif
   BB*               _prolog_mbb;
   BB*               _epilog_mbb;
   hTN_MAP           _regs_map;
@@ -547,10 +558,16 @@ private:
   void Put_Sched_Vector_Into_BB (BB*, BBSCH*, BOOL);
   void Put_Sched_Vector_Into_HB (std::list<BB*>&);
   void Add_OP_To_Sched_Vector (OP*, BOOL);
+  #ifdef TARG_ST
+  void Adjust_Ldst_Offsets (BOOL);
+#else
   void Adjust_Ldst_Offsets (void);
+#endif
 #ifdef KEY
   void Add_OP_To_Ready_Vector (OPSCH *);
+#ifndef TARG_ST
   void Adjust_Ldst_Offsets (BOOL is_fwd);
+#endif
   OP *Fixup_Reganti (OP *op, BOOL is_fwd);
   void Update_Least_Constrained (OPSCH *, BOOL);
   void DFS_Update_Least_Constrained (OPSCH *, BOOL);
@@ -647,6 +664,13 @@ public:
   // Exported functions:
   void Init (BB*, HBS_TYPE, INT32, BBSCH*, mINT8*);
   void Init (std::list<BB*>, HBS_TYPE, mINT8*);
+  #ifdef TARG_ST
+  // [SC] Variant that accepts a threshold for reg usage minimization.
+  void Init (BB*, HBS_TYPE, INT32, BBSCH*, mINT8*,
+	     ISA_REGISTER_CLASS, INT32);
+  //TDR Variant for schedule in sequence
+  void Init (BB*, HBS_TYPE);
+#endif
   INT Find_Schedule_Cycle(OP*, BOOL);
   void Estimate_Reg_Cost_For_OP (OP*);
 #ifdef KEY

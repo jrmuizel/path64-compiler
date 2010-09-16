@@ -1,6 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.1 FATAL_ERROR)
 PROJECT(Path64)
 
+ENABLE_TESTING()
+
 # Disallow in-source build
 IF("${Path64_SOURCE_DIR}" STREQUAL "${Path64_BINARY_DIR}")
   MESSAGE(FATAL_ERROR "Project must be built out-of-source.  Remove files from the source tree that were created by this attempt:
@@ -48,33 +50,10 @@ ELSE()
 	MESSAGE(STATUS "OpenMP build disabled")
 ENDIF()
 
-# Define user option whether to build both 32/64bit libraries
-OPTION(PATH64_ENABLE_MULTILIB "Multilib build" OFF)
-IF(PATH64_ENABLE_MULTILIB)
-	MESSAGE(STATUS "Multilib not supported yet, but enabled")
-#ELSE()
-#	MESSAGE(STATUS "Multilib not supported yet disabled")
-ENDIF()
+#-----------------------------------------------------------------------------
+# Target architecture stuff.
+include(${Path64_SOURCE_DIR}/src/targets.cmake)
 
-# Define user option whether to build the profiling libraries
-# Which targets are we going to build.  Currently supported is x8664,mips
-# We may want to dodge multilib and just treat x86 as it's own target.
-# Then we could test is for the the native build environment is and make that the default
-SET(PATH64_ENABLE_TARGETS "" CACHE STRING "Target archs (x8664;mips)")
-IF(PATH64_ENABLE_TARGETS)
-
-	foreach(arg ${PATH64_ENABLE_TARGETS})
-		set(targetsX "${targetsX} ${arg}")
-	endforeach(arg ${PATH64_ENABLE_TARGETS})
-	MESSAGE(STATUS "We are going to build the following targets${targetsX}")
-ELSE()
-	MESSAGE( FATAL_ERROR "Must specify at least one target.
-Supported targets are : x8664 and mips
-Please add -DPATH64_ENABLE_TARGETS=x8664 to your cmake line
-Multiple targets can be specified like \"-DPATH64_ENABLE_TARGETS=x8664;mips\"" )
-ENDIF()
-# Multi target support is indefinitely delayed
-set(BUILD_TARGET_DIR "x8664")
 
 # Define if we are doing a supported build
 OPTION(PATH64_ENABLE_SUPPORTED "Enabling supported build" OFF)
@@ -104,12 +83,19 @@ ELSE()
 	MESSAGE(FATAL_ERROR "Must set PSC_FULL_VERSION")
 ENDIF()
 
-# TODO : This should use FIND_FILE and be more logical when it comes to cross compiles and multilib
-SET(PSC_CRT_PATH "/usr/lib" CACHE STRING "Location of crt1.o crti.o and crtn.o")
-IF(PSC_CRT_PATH)
-	MESSAGE(STATUS "PSC_CRT_PATH is set to "${PSC_CRT_PATH})
+# Checking that CRT paths are specified for all targets
+FOREACH(targ ${PATH64_ENABLE_TARGETS})
+    IF(PSC_CRT_PATH_${targ})
+        MESSAGE(STATUS "CRT path for ${targ} target: ${PSC_CRT_PATH_${targ}}")
+    ELSE()
+        MESSAGE(FATAL_ERROR "CRT path for ${targ} target is not specified. Please specify PSC_CRT_PATH_${targ} variable")
+    ENDIF()
+ENDFOREACH()
+
+IF(${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
+	SET(PSC_CRT1 "crt0.o")
 ELSE()
-	MESSAGE(FATAL_ERROR "Must set PSC_CRT_PATH")
+	SET(PSC_CRT1 "crt1.o")
 ENDIF()
 
 # Do we build with huge pages support
@@ -132,9 +118,29 @@ ELSE()
 	MESSAGE(STATUS "Optimized math libraries disabled")
 ENDIF()
 
+# Use X86 elf file format for whirl objects
+OPTION(X86_WHIRL_OBJECTS "Use x86 elf file format for whirl object files" ON)
+IF(X86_WHIRL_OBJECTS)
+        MESSAGE(STATUS "Using x86 elf file format for whirl object files")
+        ADD_DEFINITIONS(-DX86_WHIRL_OBJECTS)
+ELSE()
+        MESSAGE(STATUS "Using MIPS elf file format for whirl object files")
+ENDIF()
+
+# Fuse WHIRL and native code in IPA objects
+OPTION(FAT_WHIRL_OBJECTS " Fuse WHIRL and native code in IPA objects" OFF)
+IF(FAT_WHIRL_OBJECTS)
+        MESSAGE(STATUS "Configuring for fat IPA objects")
+        ADD_DEFINITIONS(-DFAT_WHIRL_OBJECTS)
+ELSE()
+        MESSAGE(STATUS "Configuring for simple WHIRL IPA objects")
+ENDIF()
+
+
 # Are we using the PathScale runtime
 OPTION(PATH64_ENABLE_PSCRUNTIME "Using the PathScale c and c++ runtime" OFF)
 IF(PATH64_ENABLE_PSCRUNTIME)
+	ADD_DEFINITIONS(-DPATH64_ENABLE_PSCRUNTIME)
 	MESSAGE(STATUS "PathScale runtime enabled")
 ELSE()
 	MESSAGE(STATUS "GNU runtime enabled")
@@ -162,10 +168,34 @@ ELSE()
     set(libdl "")
 ENDIF()
 
+
+# Selecting macro for enabling int types formats for C++
+SET(PATH64_STDC_FORMAT_MACROS -D__STDC_FORMAT_MACROS)
+
+OPTION(PATH64_BUILD_32 "Build 32-bit version" OFF)
+
+IF(PATH64_BUILD_32)
+    SET(CMAKE_CXX_FLAGS "-m32")
+    SET(CMAKE_C_FLAGS "-m32")
+    SET(CMAKE_Fortran_FLAGS "-m32")
+    SET(CMAKE_EXE_LINKER_FLAGS "-m32")
+    SET(CMAKE_MODULE_LINKER_FLAGS "-m32")
+    SET(CMAKE_SHARED_LINKER_FLAGS "-m32")
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+# Forching build for 64-bit on osol
+    SET(CMAKE_CXX_FLAGS "-m64")
+    SET(CMAKE_C_FLAGS "-m64")
+    SET(CMAKE_Fortran_FLAGS "-m64")
+    SET(CMAKE_EXE_LINKER_FLAGS "-m64")
+    SET(CMAKE_MODULE_LINKER_FLAGS "-m64")
+    SET(CMAKE_SHARED_LINKER_FLAGS "-m64")
+ENDIF()
+
+
 # Tell GCC_XML that we are providing gccxml_cc1plus for it.
 SET(GCCXML_NATIVE_CC1PLUS 1)
 
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/Modules/GCCVersion.cmake)
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/GCCVersion.cmake)
 
 
 # Place all targets near the top of the build tree by default.
@@ -173,25 +203,40 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Path64_BINARY_DIR}/bin)
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Path64_BINARY_DIR}/lib)
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${Path64_BINARY_DIR}/lib)
 
+FILE(MAKE_DIRECTORY ${Path64_BINARY_DIR}/lib)
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E create_symlink .
+                        ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION})
+
 SET(PATH64_LIB_PATH lib/${PSC_FULL_VERSION})
 
 # Tell GCC where to install relative to the CMAKE_INSTALL_PREFIX.
 SET(PATH64_GCC_INSTALL_PATH ${PATH64_LIB_PATH})
 
-
+# If readding support for SGI and other platforms, where the
+# dynamic linker allows overwritting weak references in modules
+# opened via dlopen or similar means:
+# -DUSE_WEAK_REFERENCES
 ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D__GNU_BUG_WORKAROUND
-                -DTARG_X8664
+#                -DTARG_X8664
                 -DKEY
                 -DFE_GNU_4_2_0
-                -DLONGLONG
+                -D_LONGLONG
                 -D_MIPSEL
                 -DTARG_LINUX
                 -D_MIPS_SZINT=32
                 -D_MIPS_SZPTR=32
                 -D_MIPS_SZLONG=32
                )
-
+#IF (${BUILD_TARGET_DIR} MATCHES "arm")
+#ADD_DEFINITIONS( -DTARG_ST
+#                -DTARG_ARM
+#                -DARM
+#                -DMUMBLE_ARM_BSP 
+#                -DSUPPORTS_SELECT
+#                -DBE_EXPORTED=
+#                -DTARGINFO_EXPORTED=
+#               )
 # GNU-style hashing needs support of the dynamic linker, so white-list
 # potential platforms.
 IF (NOT DEFINED SUPPORT_HASH_STYLE_GNU)
@@ -228,7 +273,84 @@ ENDIF()
 # build runtime search paths
 include(${Path64_SOURCE_DIR}/cmake/Modules/GCCRuntimeDirs.cmake)
 
+IF (PATH64_DEFAULT_ABI)
+    ADD_DEFINITIONS(-DPATH64_DEFAULT_ABI=${PATH64_DEFAULT_ABI})
+ENDIF()
+
+INCLUDE(${CMAKE_ROOT}/Modules/TestBigEndian.cmake)
+TEST_BIG_ENDIAN(HAVE_BIG_ENDIAN)
+if (HAVE_BIG_ENDIAN)
+    ADD_DEFINITIONS(-DHOST_IS_BIG_ENDIAN=1 -DHOST_IS_LITTLE_ENDIAN=0)
+else ()
+    ADD_DEFINITIONS(-DHOST_IS_BIG_ENDIAN=0 -DHOST_IS_LITTLE_ENDIAN=1)
+endif()
+
+# Fake targets for compiler stage
+ADD_CUSTOM_TARGET(compiler-stage)               # compiler core
+ADD_CUSTOM_TARGET(compiler-stage-C)             # C compiler
+ADD_CUSTOM_TARGET(compiler-stage-CXX)           # CXX compiler
+ADD_CUSTOM_TARGET(compiler-stage-Fortran)       # Fortran compiler
+ADD_CUSTOM_TARGET(compiler-stage-libs-C)        # C compiler with libs
+ADD_CUSTOM_TARGET(compiler-stage-libs-CXX)      # CXX compiler with libs
+ADD_CUSTOM_TARGET(compiler-stage-libs-Fortran)  # Fortran compiler with libs
+ADD_DEPENDENCIES(compiler-stage-C compiler-stage)
+ADD_DEPENDENCIES(compiler-stage-CXX compiler-stage-C)
+ADD_DEPENDENCIES(compiler-stage-Fortran compiler-stage)
+ADD_DEPENDENCIES(compiler-stage-libs-C compiler-stage-C)
+ADD_DEPENDENCIES(compiler-stage-libs-CXX compiler-stage-CXX)
+ADD_DEPENDENCIES(compiler-stage-libs-Fortran compiler-stage-Fortran)
+
+# Copying libmv and libmpath to <stage_dir>/lib/${arch} if we are building with pathcc
+if("X${CMAKE_C_COMPILER_ID}" STREQUAL "XPathScale")
+    find_program(pathcc_full_path ${CMAKE_C_COMPILER})
+    get_filename_component(pathscale_path "${pathcc_full_path}" PATH)
+    get_filename_component(pathscale_path "${pathscale_path}/.." ABSOLUTE)
+    message(STATUS "Path to pathcc using to build: ${pathscale_path}")
+    path64_get_host_target(host_targ)
+    path64_get_host_arch(host_arch)
+    path64_get_target_bits(host_bits ${host_targ})
+    set(pathscale_libs_path "${pathscale_path}/lib/${PSC_FULL_VERSION}/${host_arch}/${host_bits}")
+
+    set(pathscale_libs_stage_deps)
+    set(pathscale_libs libmv.so libmpath.so)
+    if(PATH64_ENABLE_FORTRAN)
+        list(APPEND pathscale_libs libpathfortran.so)
+    endif()
+    if(PATH64_ENABLE_PSCRUNTIME)
+        # TODO: add libcompiler-rt.so, libunwind.so, libcxxabi.so, libstdcxx.so
+    endif()
+
+    foreach(arch ${PATH64_ENABLE_ARCHES})
+        foreach(lib ${pathscale_libs})
+            add_custom_command(OUTPUT ${Path64_BINARY_DIR}/lib/${arch}/${lib}
+                               COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                                       "${pathscale_libs_path}/${lib}"
+                                       "${Path64_BINARY_DIR}/lib/${arch}/${lib}"
+                               DEPENDS "${pathscale_libs_path}/${lib}")
+            list(APPEND pathscale_libs_stage_deps "${Path64_BINARY_DIR}/lib/${arch}/${lib}")
+
+            list(FIND PATH64_ENABLE_TARGETS ${host_targ} res)
+            if(NOT ${res} EQUAL -1)
+                # Making link <install_dir>/lib/${arch}/${lib} ->
+                #             <install_dir>/lib/${arch}/${host_bits}/${lib}
+                install(CODE "file(MAKE_DIRECTORY \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}\") \n execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"./../${host_arch}/${host_bits}/${lib}\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/${lib}\")")
+            else()
+                # Copying pathscale lib to <instalL_dir>/lib/${arch}/${lib}
+                install(FILES "${pathscale_libs_path}/${lib}" DESTINATION "lib/${PSC_FULL_VERSION}/${arch}")
+            endif()
+          
+        endforeach()
+    endforeach()
+
+    add_custom_target(pathscale-libs-stage DEPENDS ${pathscale_libs_stage_deps})
+    add_dependencies(compiler-stage pathscale-libs-stage)
+endif()
+
 
 # Build GCC and pathscale.
 ADD_SUBDIRECTORY(GCC)
 ADD_SUBDIRECTORY(src)
+
+ADD_SUBDIRECTORY(bootstrap)
+ADD_SUBDIRECTORY(gcc_incl)
+

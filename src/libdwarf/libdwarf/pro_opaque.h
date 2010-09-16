@@ -26,12 +26,7 @@
 
 
 #include <stddef.h>
-
-/* 
-    Sgidefs included to define __uint32_t, 
-    a guaranteed 4-byte quantity.            
-*/
-#include "libdwarfdefs.h"
+#include <stdint.h>
 
 #define true                    1
 #define false                   0
@@ -67,8 +62,8 @@ typedef signed short Dwarf_Shalf;
 /* these 2 are fixed sizes which must not vary with the
 ** ILP32/LP64 model. These two stay at 32 bit.
 */
-typedef __uint32_t Dwarf_ufixed;
-typedef __int32_t Dwarf_sfixed;
+typedef uint32_t Dwarf_ufixed;
+typedef int32_t Dwarf_sfixed;
 
 /* 
 	producer:
@@ -339,6 +334,10 @@ struct Dwarf_P_Debug_s {
     Dwarf_P_Inc_Dir de_inc_dirs;
     Dwarf_P_Inc_Dir de_last_inc_dir;
     Dwarf_Unsigned de_n_inc_dirs;
+#ifdef TARG_ST
+        /* Has the minimal instruction length (in bytes) */
+    Dwarf_Unsigned		de_min_inst_length;
+#endif
 
     /* Has all the line number info for the stmt program */
     Dwarf_P_Line de_lines;

@@ -2,33 +2,22 @@
 
   Copyright (C) 2000, 2001 Silicon Graphics, Inc.  All Rights Reserved.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
+   Copyright (C) STMicroelectronics All Rights Reserved.
 
-  This program is distributed in the hope that it would be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+   Path64 is free software; you can redistribute it and/or modify it
+   under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2, or (at your option)
+   any later version.
 
-  Further, this software is distributed without any warranty that it is
-  free of the rightful claim of any third person regarding infringement 
-  or the like.  Any license provided herein, whether implied or 
-  otherwise, applies only to this software file.  Patent licenses, if 
-  any, provided herein do not apply to combinations of this program with 
-  other software, or any other product whatsoever.  
+   Path64 is distributed in the hope that it will be useful, but WITHOUT
+   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+   License for more details.
 
-  You should have received a copy of the GNU General Public License along
-  with this program; if not, write the Free Software Foundation, Inc., 59
-  Temple Place - Suite 330, Boston MA 02111-1307, USA.
-
-  Contact information:  Silicon Graphics, Inc., 1600 Amphitheatre Pky,
-  Mountain View, CA 94043, or:
-
-  http://www.sgi.com
-
-  For further information regarding this notice, see:
-
-  http://oss.sgi.com/projects/GenInfo/NoticeExplan
+   You should have received a copy of the GNU General Public License
+   along with Path64; see the file COPYING.  If not, write to the Free
+   Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
 
 */
 
@@ -50,7 +39,7 @@ struct an_object_file {
         char	gp_status; 	    /* does this object contains a unique
 				       partition group for all its symbols? */
 	char	flags;		    /* tells us something more about the partitioning characteristics */
-        int16	partition_grp; 	    /* All symbols defined in this object belongs
+        int16_t	partition_grp; 	    /* All symbols defined in this object belongs
 				       to this partition group */
     } ipa_info;
 };
@@ -288,13 +277,13 @@ typedef enum {
 #ifdef _64BIT_OBJECTS
 
 #if defined(__GNUC__)
-typedef u_int64_t ADDR;	    /* 64-bit virtual address */
+typedef uint64_t ADDR;	    /* 64-bit virtual address */
 typedef int64_t OFFSET;	    /* 64-bit file offset */
 typedef int64_t FILE_SZ;    /* 64-bit file size/length */
 #else
-typedef uint64 ADDR;	    /* 64-bit virtual address */
-typedef int64 OFFSET;	    /* 64-bit file offset */
-typedef int64 FILE_SZ;	    /* 64-bit file size/length */
+typedef uint64_t ADDR;	    /* 64-bit virtual address */
+typedef int64_t OFFSET;	    /* 64-bit file offset */
+typedef int64_t FILE_SZ;	/* 64-bit file size/length */
 #endif
 
 #define ELF_ADDR	Elf64_Addr
@@ -322,9 +311,9 @@ typedef int64 FILE_SZ;	    /* 64-bit file size/length */
 
 #else
 
-typedef uint32 ADDR;		    /* 32-bit virtual address */
-typedef int32 OFFSET;		    /* 32-bit file offset */
-typedef int32 FILE_SZ;		    /* 32-bit file size/length */
+typedef uint32_t ADDR;		    /* 32-bit virtual address */
+typedef int32_t OFFSET;		    /* 32-bit file offset */
+typedef int32_t FILE_SZ;		/* 32-bit file size/length */
 
 #define ELF_ADDR	Elf32_Addr
 #define ELF_HALF	Elf32_Half
@@ -334,7 +323,7 @@ typedef int32 FILE_SZ;		    /* 32-bit file size/length */
 #define ELF_SIZE        Elf32_Word  /* 32-bit ELF size/length */
 #define ELF_INT		Elf32_Sword  /* the natural host unit size */
 
-typedef longlong_t	ELF_SXWORD; /* These three should never be used in */
+typedef int64_t         ELF_SXWORD; /* These three should never be used in */
 typedef unsigned char	ELF_BYTE;   /* 32-bit mode? */
 typedef unsigned short	ELF_SECTION;	
 #define ELF_FLAGS	Elf32_Word

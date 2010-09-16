@@ -34,7 +34,7 @@
 // This file define initialization of pointer variables to symbols defined
 // in ipa.so but referenced in be/be.so.
 
-#ifdef __linux__
+#ifndef USE_WEAK_REFERENCES
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
@@ -62,4 +62,4 @@ struct IPA_INIT
     }
 } Ipa_Initializer;
 
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES

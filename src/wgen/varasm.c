@@ -33,10 +33,23 @@ Software Foundation, 59 Temple Place - Suite 330, Boston, MA
 #ifdef TARG_MIPS
 #include "mips.h"
 #endif
-
+#ifdef TARG_ST
+#include "gccfe_targinfo_interface.h"
+#define FIRST_PSEUDO_REGISTER GCCTARG_Initial_Number_Of_Registers()
+#define Additional_Register_Names_Size GCCTARG_Additional_Register_Names_Size()
+#define Additional_Register_Names GCCTARG_Additional_Register_Names()
+#endif
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
+#ifndef TARG_ST
 static const char *reg_names[] = REGISTER_NAMES;
+#endif
+#ifdef TARG_ST
+// [TTh] Use constants to avoid hardcoded immediates, at least in ST modified code..
+#define ASMSPEC_EMPTY              (-1)
+#define ASMSPEC_NOT_RECOGNIZED     (-2)
+#define ASMSPEC_CC_RECOGNIZED      (-3)
+#define ASMSPEC_MEM_RECOGNIZED     (-4)
+#endif
 
 /* Given NAME, a putative register name, discard any customary prefixes.  */
 
@@ -59,13 +72,14 @@ strip_reg_name (const char *name)
 int
 gs_decode_reg_name (const char *asmspec)
 {
-  if (asmspec != 0)
+    if (asmspec != 0)
     {
       int i;
 
       /* Get rid of confusing prefixes.  */
       asmspec = strip_reg_name (asmspec);
-
+#ifndef TARG_ST
+      //TB: Do not allow PSEUDO register name
       /* Allow a decimal number as a "register name".  */
       for (i = strlen (asmspec) - 1; i >= 0; i--)
 	if (! isdigit (asmspec[i]))
@@ -83,18 +97,61 @@ gs_decode_reg_name (const char *asmspec)
 	if (reg_names[i][0]
 	    && ! strcmp (asmspec, strip_reg_name (reg_names[i])))
 	  return i;
-
-#ifdef ADDITIONAL_REGISTER_NAMES
+#endif
       {
+#ifndef TARG_ST
+#ifdef ADDITIONAL_REGISTER_NAMES
+      
 	static const struct { const char *const name; const int number; } table[]
 	  = ADDITIONAL_REGISTER_NAMES;
 
 	for (i = 0; i < (int) ARRAY_SIZE (table); i++)
 	  if (! strcmp (asmspec, table[i].name))
 	    return table[i].number;
-      }
+      
 #endif /* ADDITIONAL_REGISTER_NAMES */
+#else
+        //TB: for extension, make ADDITIONAL_REGISTER_NAMES a real array
+        for (i = 0; i < Additional_Register_Names_Size; i++)
+            if (asmspec[0] != '%') {
+                char *whole_name = Additional_Register_Names[i].name;
+                while (strchr(whole_name, '%')) {
+                    whole_name++;
+                }
+                if (! strcasecmp (asmspec, whole_name))
+                    if (!Additional_Register_Names[i].disabled) {
+                        return Additional_Register_Names[i].number;
+                    } else {
+                        return (ASMSPEC_NOT_RECOGNIZED);
+                    }
+#ifdef TARG_ST200
+                // [CG]: We want to have the '$' optional in '$r12' for ST200
+                // when parsing the register name.
+                // TODO: handle this in targinfo parsing description.
+                const char *ignored = "$";
+                while(*ignored != '\0') {
+                    if (asmspec[0] == *ignored) {
+                        if (!strcasecmp (&asmspec[1], whole_name))
+                            return Additional_Register_Names[i].number;
+                    }
+                    if (whole_name[0] == *ignored) {
+                        if (!strcasecmp (asmspec, &whole_name[1]))
+                            return Additional_Register_Names[i].number;
+                    }
+                    ignored++;
+                }
+#endif
+            } else {
+                if (! strcasecmp (asmspec, Additional_Register_Names[i].name))
+                    if (!Additional_Register_Names[i].disabled) {
+                        return Additional_Register_Names[i].number;
+                    } else {
+                        return (ASMSPEC_NOT_RECOGNIZED);
+                    }
+            }
+#endif//TARG_ST
 
+      }
       if (!strcmp (asmspec, "memory"))
 	return -4;
 

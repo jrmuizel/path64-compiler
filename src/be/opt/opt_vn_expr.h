@@ -277,7 +277,7 @@ public:
               LDA_ADDR,    // A symbol's address
               ARRAY_ADDR,  // An array element's address
               MEMLOC     // The value of a memory location
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
               ,CALL_OP     // Pure function call op	
 #endif
 	      };
@@ -337,7 +337,7 @@ public:
 			    const VN_VALNUM &offset,
 			    const VN_VALNUM &base_addr,
 			    const VN_VALNUM &vsym_valnum);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
    static PTR Create_Call_Op(ST_IDX, UINT32);
 #endif
    
@@ -369,7 +369,7 @@ public:
    virtual VN_VALNUM   get_offset() const;        // MEMLOC
    virtual VN_VALNUM   get_base_addr() const;     // MEMLOC
    virtual VN_VALNUM   get_vsym(UINT i=0) const; // MEMLOC/INTR_OP (ivar mu)
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
    virtual ST_IDX      get_aux_id() const;        // PURE_CALL_OP
 #endif
    

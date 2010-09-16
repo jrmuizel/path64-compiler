@@ -83,13 +83,38 @@ typedef INT64 LOWER_ACTIONS;
 #define LOWER_RETURN_VAL	  0x002000000000ll
 #define LOWER_MLDID_MSTID	  0x004000000000ll
 #define LOWER_BIT_FIELD_ID	  0x008000000000ll
-#define LOWER_BITS_OP		  0x010000000000ll 
+#define LOWER_BITS_OP		  0x010000000000ll
+#ifdef TARG_ST
+#define LOWER_DOUBLE              0x020000000000ll
+#define LOWER_LONGLONG            0x040000000000ll
+#define LOWER_ENTRY_PROMOTED      0x080000000000ll
+#define LOWER_NESTED_FN_PTRS      0x100000000000ll
+#define LOWER_INSTRUMENT          0x200000000000ll
+#define LOWER_CNST_DIV		  0x400000000000ll
+#define LOWER_TO_CG 		  0x800000000000ll
+#define LOWER_FORMAL_HIDDEN_REF  0x1000000000000ll
+#define LOWER_SELECT		 0x2000000000000ll
+#define LOWER_FAST_DIV		 0x4000000000000ll
+#define LOWER_FAST_MUL		 0x8000000000000ll
+#define LOWER_CNST_MUL		0x10000000000000ll
+#ifdef TARG_STxP70
+#define LOWER_FARCALL		0x20000000000000ll
+#endif
+
+#define LOWER_RUNTIME		0x40000000000000ll
+#define LOWER_HILO (LOWER_DOUBLE|LOWER_LONGLONG)
+#else
+
 #if defined(TARG_IA32) || defined(TARG_X8664)
 #define LOWER_SLINK_SAVE	  0x020000000000ll
 #endif
 #define LOWER_TO_MEMLIB           0x040000000000ll
 #define LOWER_FAST_EXP            0x080000000000ll
+
 #define LOWER_TO_CG		  0x800000000000ll
+
+#endif
+
 
 
 /* 
@@ -120,6 +145,20 @@ typedef INT64 LOWER_ACTIONS;
  * disambiguate using these qualities.
  *
  */
+#ifdef TARG_ST
+typedef enum
+{
+  PARITY_UNKNOWN=       ~0x0,
+  PARITY_COMPLEX_REAL=  0x01,
+  PARITY_COMPLEX_IMAG=  0x02,
+  PARITY_QUAD_HI=       0x04,
+  PARITY_QUAD_LO=       0x08,
+  PARITY_DOUBLE_HI=     0x10,
+  PARITY_DOUBLE_LO=     0x20,
+  PARITY_LONGLONG_HI=   0x40,
+  PARITY_LONGLONG_LO=   0x80
+} PARITY;
+#else
 typedef enum
 {
   PARITY_UNKNOWN=       ~0x0,
@@ -128,7 +167,7 @@ typedef enum
   PARITY_QUAD_HI=       0x04,
   PARITY_QUAD_LO=       0x08
 } PARITY;
-
+#endif
 
 /* return the parity associated with a WN */
 extern PARITY WN_parity(WN *tree);
@@ -188,9 +227,93 @@ extern void WN_Lower_Checkdump(const char *msg, WN *tree, LOWER_ACTIONS actions)
  */
 extern void U64_lower_wn(WN *, BOOL);
 
+#ifdef TARG_ST
+/*
+ * Lower L WHIRL to handle operators not directly supported in the
+ * target ISA
+ */
+BE_EXPORTED extern WN *EXT_lower_wn(WN *tree, BOOL last_pass);
+BE_EXPORTED extern void RT_lower_wn(WN *tree);
+BE_EXPORTED extern void HILO_lower_wn(WN *wn, WN **lopart, WN **hipart);
+
+/* ====================================================================
+ * Some support functions available locally to be/com for
+ * lowering or instrument phases.
+ * ====================================================================
+ */
+extern BOOL stmt_is_store_of_return_value(WN *stmt);
+
+extern BOOL expr_loads_dedicated_preg(WN *expr);
+
+extern BOOL stmt_is_store_of_callee_return_value(WN *stmt);
+
+#endif
+
 #ifdef KEY
 extern void WN_retype_expr(WN *);
 extern WN* Transform_To_Memcpy(WN *dst, WN *src, INT32 offset, TY_IDX dstTY, TY_IDX srcTY, WN *size);
 #endif
 
+/* ====================================================================
+ * Assignment Support
+ * ====================================================================
+ */
+extern void AssignPregName(const char *part1, const char *part2 = NULL);
+extern char *CurrentPregName();
+extern void ResetPregName(void);
+extern PREG_NUM AssignPregExprPos(WN *block, WN *tree, TY_IDX ty,
+				  SRCPOS srcpos, LOWER_ACTIONS actions);
+
+extern PREG_NUM AssignExprTY(WN *block, WN *tree, TY_IDX type);
+extern PREG_NUM AssignExpr(WN *block, WN *tree, TYPE_ID type);
+
+extern void AssignToPregExprPos(PREG_NUM pregNo, 
+				WN *block, WN *tree, TY_IDX ty,
+				SRCPOS srcpos, LOWER_ACTIONS actions);
+extern void
+AssignToPregExprTY(PREG_NUM pregNo, WN *block, WN *tree, TY_IDX type);
+extern void
+AssignToPregExpr(PREG_NUM pregNo, WN *block, WN *tree, TYPE_ID type);
+     
+
+/* ==================================================================== */
+
+
+/* ====================================================================
+ * LEAF WHIRL Tree Support
+ * ====================================================================
+ */
+typedef enum { LEAF_IS_CONST, LEAF_IS_INTCONST, LEAF_IS_PREG} LEAF_KIND;
+typedef struct {
+  LEAF_KIND kind;
+  TYPE_ID type;
+  union {
+    PREG_NUM n;
+    INT64 intval;
+    TCON tc;
+  } u;
+} LEAF;
+
+extern LEAF Make_Leaf(WN *block, WN *tree, TYPE_ID type);
+extern WN *Load_Leaf(const LEAF &leaf);
+
+/* ==================================================================== */
+
+/* ====================================================================
+ * WHIRL Tree Queries
+ * ====================================================================
+ */
+
+extern BOOL Is_Intconst_Val(WN *tree);
+extern INT64 Get_Intconst_Val(WN *tree);
+
+extern BOOL WN_Is_Emulated(WN *tree);
+extern BOOL WN_Is_Emulated_Type (TYPE_ID type);
+extern BOOL WN_Is_Emulated_Operator (OPERATOR opr, TYPE_ID rtype, TYPE_ID desc);
+extern BOOL WN_Madd_Allowed (TYPE_ID type);
+extern BOOL WN_LDBITS_Allowed (TYPE_ID type);
+extern BOOL WN_STBITS_Allowed (TYPE_ID type);
+
+
+/* ==================================================================== */
 #endif /* wn_lower_INCLUDED */

@@ -267,7 +267,7 @@ OPT_REVISE_SSA::Find_scalars_from_lowering_bitfld_cr(CODEREP *cr)
       aux->Points_to()->Set_expr_kind(EXPR_IS_ADDR);
       aux->Points_to()->Set_ofst_kind(OFST_IS_FIXED);
       aux->Points_to()->Set_named();
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       // 15133: Allocate live WHIRL node on heap, not stack
       if (aux->Wn() == &wn) aux->Set_wn(WN_CopyNode(&wn));
 #endif
@@ -277,7 +277,7 @@ OPT_REVISE_SSA::Find_scalars_from_lowering_bitfld_cr(CODEREP *cr)
       if (_tracing && idx >= _first_new_aux_id)
         _opt_stab->Print_aux_entry(idx, TFile);
     }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     else if (cr->Dtyp() != MTYPE_M && MTYPE_byte_size(cr->Dsctyp()) < 4 &&
 	     (idx = _opt_stab->Part_of_reg_size_symbol(cr->Aux_id())) != 0) {
       cr->Set_promote_to_reg_size(); // flag this cr for processing in step 2
@@ -301,7 +301,7 @@ OPT_REVISE_SSA::Find_scalars_from_lowering_bitfld_cr(CODEREP *cr)
     }
     return;
   case CK_OP:
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (cr->Is_isop_flag_set(ISOP_XLOWER_VISITED))
       return;
     cr->Set_isop_flag(ISOP_XLOWER_VISITED);
@@ -349,7 +349,7 @@ OPT_REVISE_SSA::Find_scalars_from_lowering_bitfld(void)
       if (OPERATOR_is_store(opr)) {
 	CODEREP *lhs = stmt->Lhs();
         switch (opr) {
-#ifdef KEY // bug 9179
+#if defined( KEY) && !defined(TARG_ST) // bug 9179
 	case OPR_STID: {
 
 	  AUX_ID idx;
@@ -391,7 +391,7 @@ OPT_REVISE_SSA::Find_scalars_from_lowering_bitfld(void)
 	  aux->Points_to()->Set_expr_kind(EXPR_IS_ADDR);
 	  aux->Points_to()->Set_ofst_kind(OFST_IS_FIXED);
 	  aux->Points_to()->Set_named();
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	  // 15133: Allocate live WHIRL node on heap, not stack
 	  if (aux->Wn() == &wn) aux->Set_wn(WN_CopyNode(&wn));
 #endif
@@ -450,7 +450,7 @@ OPT_REVISE_SSA::Find_scalars_from_lda_iloads(CODEREP *cr)
 	cr->Is_ivar_volatile() ||
 	cr->Opr() == OPR_PARM)
       return;
-#ifdef KEY // to limit compilation time explosion (bug 2081)
+#if defined( KEY) && !defined(TARG_ST) // to limit compilation time explosion (bug 2081)
     if (_opt_stab->Lastidx() > WOPT_Enable_Folded_Scalar_Limit) {
       cr->Set_scalar_aux_id(0);
       return;
@@ -462,6 +462,7 @@ OPT_REVISE_SSA::Find_scalars_from_lda_iloads(CODEREP *cr)
     WN_set_desc(&wn, cr->Dsctyp());
     WN_set_rtype(&wn, cr->Dtyp());
     WN_store_offset(&wn) = cr->Offset() + lda->Offset();
+#ifndef TARG_ST
 #if 1 // bug fix aug-14-02
     ST *lda_st;
     INT64 ofst;
@@ -476,6 +477,7 @@ OPT_REVISE_SSA::Find_scalars_from_lda_iloads(CODEREP *cr)
 	WN_st_idx(&wn) = ST_st_idx(_opt_stab->St(lda->Lda_aux_id()));
       }
     } else
+#endif
 #endif
     WN_st_idx(&wn) = ST_st_idx(_opt_stab->St(lda->Lda_aux_id()));
     WN_set_ty(&wn, cr->Ilod_ty());
@@ -492,7 +494,7 @@ OPT_REVISE_SSA::Find_scalars_from_lda_iloads(CODEREP *cr)
     aux->Points_to()->Set_expr_kind(EXPR_IS_ADDR);
     aux->Points_to()->Set_ofst_kind(OFST_IS_FIXED);
     aux->Points_to()->Set_named();
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     // 15133: Allocate live WHIRL node on heap, not stack
     if (aux->Wn() == &wn) aux->Set_wn(WN_CopyNode(&wn));
 #endif
@@ -504,7 +506,7 @@ OPT_REVISE_SSA::Find_scalars_from_lda_iloads(CODEREP *cr)
     return;
     }
   case CK_OP:
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (cr->Is_isop_flag_set(ISOP_LDAFOLD_VISITED))
       return;
     cr->Set_isop_flag(ISOP_LDAFOLD_VISITED);
@@ -565,7 +567,7 @@ OPT_REVISE_SSA::Find_scalars_from_lda_indirects(void)
 	  }
 	  if (lhs->Is_ivar_volatile())
 	    break;
-#ifdef KEY // to limit compilation time explosion (bug 2081)
+#if defined( KEY) && !defined(TARG_ST) // to limit compilation time explosion (bug 2081)
 	  if (_opt_stab->Lastidx() > WOPT_Enable_Folded_Scalar_Limit) {
 	    lhs->Set_scalar_aux_id(0);
 	    break;
@@ -608,7 +610,7 @@ OPT_REVISE_SSA::Find_scalars_from_lda_indirects(void)
 	  aux->Points_to()->Set_expr_kind(EXPR_IS_ADDR);
 	  aux->Points_to()->Set_ofst_kind(OFST_IS_FIXED);
 	  aux->Points_to()->Set_named();
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	  // 15133: Allocate live WHIRL node on heap, not stack
 	  if (aux->Wn() == &wn) aux->Set_wn(WN_CopyNode(&wn));
 #endif
@@ -653,9 +655,14 @@ OPT_REVISE_SSA::Update_phis(BB_NODE *bb)
       phi->Set_live();
       phi->Reset_dse_dead();
       phi->Reset_dce_dead();
-      AUX_STAB_ENTRY *sym = _opt_stab->Aux_stab_entry(i);
-      MTYPE rtype;
       TY_IDX ty = TY_IDX_ZERO;
+      AUX_STAB_ENTRY *sym = _opt_stab->Aux_stab_entry(i);
+#ifdef TARG_ST
+      // Reconfigurability: Removed direct access to mclass, that is
+      //                    not supported for dynamic mtypes
+      MTYPE rtype = Mtype_from_AUX_STAB_ENTRY(sym);
+#else
+      MTYPE rtype;
       ST *st = _opt_stab->St(i);
       if (st != NULL) ty = ST_type(st);
       if (sym->Mtype()==MTYPE_M || MTYPE_is_vector(sym->Mtype()))
@@ -663,13 +670,14 @@ OPT_REVISE_SSA::Update_phis(BB_NODE *bb)
       else {
         rtype = Mtype_from_mtype_class_and_size(sym->Mclass(), 
 						    sym->Byte_size());
-#ifdef KEY // bug 8186
+#if defined( KEY) // bug 8186
 	if (MTYPE_is_unsigned(sym->Mtype()))
 	  rtype = Mtype_TransferSign(MTYPE_U4, rtype);
 #endif
       }
+#endif
       MTYPE desc = rtype;
-#ifdef KEY // promote to register type size
+#if defined( KEY) && !defined(TARG_ST) // promote to register type size
       if (i != _opt_stab->Default_vsym() && 
 	  desc != MTYPE_UNKNOWN && desc != MTYPE_M)
         rtype = OPCODE_rtype(Ldid_from_mtype(desc));
@@ -713,8 +721,13 @@ OPT_REVISE_SSA::Update_chi_list_for_old_var(STMTREP *stmt, AUX_ID i)
 	BOOL originally_dead = ! cnode->Live();
 	cnode->Set_live(TRUE);
 	cnode->Set_dse_dead(FALSE);
-	sym = _opt_stab->Aux_stab_entry(i); 
-	TY_IDX ty = TY_IDX_ZERO;
+	sym = _opt_stab->Aux_stab_entry(i);
+        TY_IDX ty = TY_IDX_ZERO;
+#ifdef TARG_ST
+	// Reconfigurability: Removed direct access to mclass, that is
+	//                    not supported for dynamic mtypes
+	rtype = Mtype_from_AUX_STAB_ENTRY(sym);
+#else
 	ST *st = _opt_stab->St(i);
 	if (st != NULL) ty = ST_type(st);
 	if (sym->Mtype()==MTYPE_M || MTYPE_is_vector(sym->Mtype()))
@@ -727,8 +740,9 @@ OPT_REVISE_SSA::Update_chi_list_for_old_var(STMTREP *stmt, AUX_ID i)
 	      rtype = Mtype_TransferSign(MTYPE_U4, rtype);
 #endif
         }
+#endif
 	MTYPE desc = rtype;
-#ifdef KEY // promote to register type size
+#if defined( KEY) && !defined(TARG_ST) // promote to register type size
 	if (i != _opt_stab->Default_vsym() && 
 	    desc != MTYPE_UNKNOWN && desc != MTYPE_M)
 	  rtype = OPCODE_rtype(Ldid_from_mtype(desc));
@@ -749,9 +763,13 @@ OPT_REVISE_SSA::Update_chi_list_for_old_var(STMTREP *stmt, AUX_ID i)
       }
       else if (cnode->RESULT()->Dtyp() == MTYPE_UNKNOWN) { // fix the types
 	chi_res = cnode->RESULT();
-
 	sym = _opt_stab->Aux_stab_entry(i);
-	TY_IDX ty = TY_IDX_ZERO;
+        TY_IDX ty = TY_IDX_ZERO;
+#ifdef TARG_ST
+	// Reconfigurability: Removed direct access to mclass, that is
+	//                    not supported for dynamic mtypes
+	rtype = Mtype_from_AUX_STAB_ENTRY(sym);
+#else
 	ST *st = _opt_stab->St(i);
 	if (st != NULL) ty = ST_type(st);
 	if (sym->Mtype()==MTYPE_M || MTYPE_is_vector(sym->Mtype()))
@@ -759,13 +777,14 @@ OPT_REVISE_SSA::Update_chi_list_for_old_var(STMTREP *stmt, AUX_ID i)
 	else {
 	    rtype = Mtype_from_mtype_class_and_size(sym->Mclass(), 
 							sym->Byte_size()); 
-#ifdef KEY // bug 8186
+#if defined( KEY) && !defined(TARG_ST) // bug 8186
 	    if (MTYPE_is_unsigned(sym->Mtype()))
 	      rtype = Mtype_TransferSign(MTYPE_U4, rtype);
 #endif
         }
+#endif
 	MTYPE desc = rtype;
-#ifdef KEY // promote to register type size
+#if defined( KEY) && !defined(TARG_ST) // promote to register type size
 	if (i != _opt_stab->Default_vsym() && 
 	    desc != MTYPE_UNKNOWN && desc != MTYPE_M)
 	  rtype = OPCODE_rtype(Ldid_from_mtype(desc));
@@ -776,8 +795,13 @@ OPT_REVISE_SSA::Update_chi_list_for_old_var(STMTREP *stmt, AUX_ID i)
 	}
 	
 	chi_res->Set_dtyp(rtype);
+#ifdef TARG_ST
+        chi_res->Set_dsctyp(rtype);
+	chi_res->Set_lod_ty(MTYPE_To_TY(rtype));
+#else
 	chi_res->Set_dsctyp(desc);
 	chi_res->Set_lod_ty(ty);
+#endif
       }
       return;
     }
@@ -821,7 +845,7 @@ OPT_REVISE_SSA::Insert_mu_and_chi_list_for_new_var(STMTREP *stmt, AUX_ID i)
     }
   }
   else if (opr == OPR_RETURN
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST) 
     	   || opr == OPR_GOTO_OUTER_BLOCK
 #endif
     	  ) {
@@ -873,8 +897,12 @@ OPT_REVISE_SSA::Insert_mu_and_chi_list_for_new_var(STMTREP *stmt, AUX_ID i)
     newchi->Set_live(TRUE);
     newchi->Set_dse_dead(FALSE);
     AUX_STAB_ENTRY *sym = _opt_stab->Aux_stab_entry(i);
-
     TY_IDX ty = TY_IDX_ZERO;
+#ifdef TARG_ST
+    // Reconfigurability: Removed direct access to mclass, that is
+    //                    not supported for dynamic mtypes
+    MTYPE rtype = Mtype_from_AUX_STAB_ENTRY(sym);
+#else
     ST *st = _opt_stab->St(i);
     if (st != NULL) ty = ST_type(st);
     
@@ -889,8 +917,9 @@ OPT_REVISE_SSA::Insert_mu_and_chi_list_for_new_var(STMTREP *stmt, AUX_ID i)
 	  rtype = Mtype_TransferSign(MTYPE_U4, rtype);
 #endif
     }
+#endif
     MTYPE desc = rtype;
-#ifdef KEY // promote to register type size
+#if defined( KEY) && !defined(TARG_ST) // promote to register type size
     if (i != _opt_stab->Default_vsym() && 
 	desc != MTYPE_UNKNOWN && desc != MTYPE_M)
       rtype = OPCODE_rtype(Ldid_from_mtype(desc));
@@ -902,7 +931,7 @@ OPT_REVISE_SSA::Insert_mu_and_chi_list_for_new_var(STMTREP *stmt, AUX_ID i)
 
     UINT field_id = sym->Field_id();
     INT64 offset = _opt_stab->St_ofst(i);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (field_id != 0) {  // Note: Checking desc == MTYPE_BS won't work.
       // 15133: Obtain field_id, offset, and ty from a good WN using
       // the same mechanism as 3092.  (The offset field in opt_stab
@@ -1035,26 +1064,32 @@ OPT_REVISE_SSA::Form_extract(CODEREP *cr)
       // generate a zero version of the new scalar variable
       x = _htable->Ssa()->Get_zero_version_CR(cr->Scalar_aux_id(), _opt_stab,0);
       AUX_STAB_ENTRY *sym = _opt_stab->Aux_stab_entry(cr->Scalar_aux_id());
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       if (sym->Is_volatile())
 	x->Set_var_volatile();
 #endif
       x->Set_dtyp(cr->Dtyp());
+#ifdef TARG_ST
+      // Reconfigurability: Sanity check
+      FmtAssert((!MTYPE_is_dynamic(cr->Dtyp())),
+		("Extension Mtype not supported here: no corresponding mclass"));
+#endif
       x->Set_dsctyp(Mtype_from_mtype_class_and_size(MTYPE_type_class(cr->Dtyp()), sym->Byte_size()));
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       x->Set_sign_extension_flag();
 #endif
-#ifndef KEY
+
+#if !defined( KEY) || defined(TARG_ST)
       return Create_EXTRACT_BITS(cr->Bit_offset(), cr->Bit_size(), x, cr->Dtyp());
 #else
       INT32 adjust = 0;
-      if (Target_Byte_Sex == BIG_ENDIAN)
+      if (!Target_Is_Little_Endian)
         adjust = MTYPE_bit_size(cr->Dtyp()) - MTYPE_bit_size(x->Dsctyp());
       return Create_EXTRACT_BITS(cr->Bit_offset()+adjust, cr->Bit_size(), x, 
 	      			 cr->Dtyp());
 #endif
     }
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     else if (cr->Promote_to_reg_size()) {
       // generate a zero version of the new scalar variable
       x = _htable->Ssa()->Get_zero_version_CR(cr->Scalar_aux_id(), _opt_stab,0);
@@ -1128,13 +1163,13 @@ OPT_REVISE_SSA::Form_extract(CODEREP *cr)
     new_cr->Ivar_mu_node()->Set_OPND(_htable->Ssa()->Get_zero_version_CR(new_cr->Ivar_occ()->Aux_id(), _opt_stab, 0));
     cr->DecUsecnt();
     x = _htable->Rehash(new_cr);
-#ifndef KEY
+#if !defined( KEY) || defined(TARG_ST)
     return Create_EXTRACT_BITS(cr->I_bit_offset(), cr->I_bit_size(), x, 
 			       cr->Dtyp());
 #else
     {
       INT32 adjust = 0;
-      if (Target_Byte_Sex == BIG_ENDIAN)
+      if (!Target_Is_Little_Endian)
         adjust = MTYPE_bit_size(cr->Dtyp()) - MTYPE_bit_size(x->Dsctyp());
       return Create_EXTRACT_BITS(cr->I_bit_offset()+adjust, cr->I_bit_size(), x,
 			         cr->Dtyp());
@@ -1228,7 +1263,7 @@ OPT_REVISE_SSA::Form_extract_compose(void)
 	
 	// lower STBITS and ISTBITS
 	if (opr == OPR_STBITS
-#ifdef KEY // bug 9179
+#if defined( KEY) && !defined(TARG_ST) // bug 9179
 	    || (opr == OPR_STID && lhs->Promote_to_reg_size()) 
 #endif
 	   ) {
@@ -1251,9 +1286,14 @@ OPT_REVISE_SSA::Form_extract_compose(void)
 	  v = _htable->Ssa()->Get_zero_version_CR(lhs->Scalar_aux_id(),
 						  _opt_stab, 0);
 	  AUX_STAB_ENTRY *sym = _opt_stab->Aux_stab_entry(lhs->Scalar_aux_id());
-#ifdef KEY
+#if defined( KEY)
 	  if (sym->Is_volatile())
 	    v->Set_var_volatile();
+#endif
+#ifdef TARG_ST
+	  // Reconfigurability: Sanity check
+	  FmtAssert((!MTYPE_is_dynamic(lhs->Dtyp())),
+		    ("Extension Mtype not supported here: no corresponding mclass"));
 #endif
 	  v->Set_dsctyp(Mtype_from_mtype_class_and_size(MTYPE_type_class(lhs->Dtyp()), sym->Byte_size()));
 	  v->Set_dtyp(OPCODE_rtype(Ldid_from_mtype(v->Dsctyp())));
@@ -1261,9 +1301,9 @@ OPT_REVISE_SSA::Form_extract_compose(void)
 	  v->Set_sign_extension_flag();
 #endif
 	  INT32 adjust = 0;
-	  if (Target_Byte_Sex == BIG_ENDIAN)
+	  if (!Target_Is_Little_Endian)
 	    adjust = MTYPE_bit_size(v->Dtyp()) - MTYPE_bit_size(v->Dsctyp());
-#ifdef KEY // bug 9179
+#if defined( KEY) && !defined(TARG_ST) // bug 9179
 	  if (opr == OPR_STID) {
 	    AUX_STAB_ENTRY *osym = _opt_stab->Aux_stab_entry(lhs->Aux_id());
 	    INT32 bofst = (osym->Base_byte_ofst() - sym->Base_byte_ofst()) * 8;
@@ -1275,7 +1315,7 @@ OPT_REVISE_SSA::Form_extract_compose(void)
 #endif
 	  stmt->Set_rhs(Create_COMPOSE_BITS(lhs->Bit_offset()+adjust, lhs->Bit_size(), v, rhs));
 	  // generate a new version of the new scalar variable
-#ifdef KEY // bug 9179
+#if defined( KEY) && !defined(TARG_ST) // bug 9179
 	  if (opr == OPR_STID)
 	    stmt->Set_lhs(_htable->Add_def(v->Aux_id(), -1, stmt, 
 	      v->Dtyp(), v->Dsctyp(), v->Offset(), Void_Type, 0, TRUE));
@@ -1306,11 +1346,11 @@ OPT_REVISE_SSA::Form_extract_compose(void)
 	  mu->Set_OPND(_htable->Ssa()->Get_zero_version_CR(new_cr->Ivar_occ()->Aux_id(), _opt_stab, 0));
 	  new_cr->Set_ivar_mu_node(mu);
 	  v = _htable->Rehash(new_cr);
-#ifndef KEY
+#if !defined( KEY) || defined(TARG_ST)
 	  stmt->Set_rhs(Create_COMPOSE_BITS(lhs->I_bit_offset(), lhs->I_bit_size(), v, rhs));
 #else
 	  INT32 adjust = 0;
-	  if (Target_Byte_Sex == BIG_ENDIAN)
+	  if (!Target_Is_Little_Endian)
 	    adjust = MTYPE_bit_size(v->Dtyp()) - MTYPE_bit_size(v->Dsctyp());
 	  stmt->Set_rhs(Create_COMPOSE_BITS(lhs->I_bit_offset()+adjust, lhs->I_bit_size(), v, rhs));
 #endif
@@ -1388,7 +1428,7 @@ OPT_REVISE_SSA::Fold_lda_iloads(CODEREP *cr)
 	cr->Opr() == OPR_ILOADX || 
 	cr->Opr() == OPR_MLOAD)
       return NULL;
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     if (cr->Scalar_aux_id() == 0) // not folding because folded_scalar_limit reached 
       return NULL;
 #endif
@@ -1443,7 +1483,7 @@ OPT_REVISE_SSA::Fold_lda_iloads(CODEREP *cr)
     return x;
 
   case CK_OP:
-#ifdef KEY // bug 3064
+#if defined( KEY) && !defined(TARG_ST) // bug 3064
     if (cr->Is_isop_flag_set(ISOP_LDAFOLD2_VISITED))
       return NULL;
 #endif
@@ -1464,7 +1504,7 @@ OPT_REVISE_SSA::Fold_lda_iloads(CODEREP *cr)
       cr->DecUsecnt();
       return _htable->Rehash(new_cr);
     }
-#ifdef KEY // bug 3064
+#if defined( KEY) && !defined(TARG_ST) // bug 3064
     cr->Set_isop_flag(ISOP_LDAFOLD2_VISITED);
 #endif
     return NULL;
@@ -1541,7 +1581,7 @@ OPT_REVISE_SSA::Fold_lda_indirects(void)
 	  if (lhs->Is_ivar_volatile())
 	    break;
 	  vaux = lhs->Scalar_aux_id();
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	  if (vaux == 0) // not folding because folded_scalar_limit reached 
 	    break;
 #endif

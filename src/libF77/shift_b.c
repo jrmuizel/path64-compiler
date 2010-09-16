@@ -42,9 +42,9 @@
  * k = 0 => no shift.
  */
 
-int8 shft_b(int8 *m,int8 *k)
+int8_t shft_b(int8_t *m,int8_t *k)
 {
-	int8 l, left;
+	int8_t l, left;
 
 	left = (*k > 0);
 	l = left ? *k : -*k;

@@ -1,4 +1,7 @@
 /*
+  Copyright (C) 2010 PathScale Inc. All Rights Reserved.
+*/
+/*
  * Copyright (C) 2008, 2009 Pathscale, LLC.  All Rights Reserved.
  */
 
@@ -34,9 +37,6 @@
 
 extern void init_objects (void);
 
-/* need to init crt paths if doing ipa link */
-extern void init_crt_paths (void);
-extern void init_stdc_plus_plus_path( void );
 
 /*
  * Whether option is an object or not.
@@ -51,7 +51,7 @@ extern void add_object (int flag, char *arg);
 extern void add_ar_objects (char *arg);
 
 /* add library to list */
-extern void add_library_dir (char *path);
+extern void add_library_dir (const char *path);
 
 /* get list of library dirs */
 extern string_list_t *get_library_dirs (void);
@@ -83,7 +83,6 @@ void finalize_maybe_linker_options (boolean is_linker);
 #ifdef TARG_MIPS
 extern char *sysroot_path_n32;
 extern char *sysroot_path_64;
-#else
-extern char *sysroot_path;
 #endif
+extern char *sysroot_path;
 

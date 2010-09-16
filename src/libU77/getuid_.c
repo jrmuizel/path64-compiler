@@ -57,10 +57,10 @@ pathf90_getuid(void)
 
 #else
 
-extern __int32_t
+extern int32_t
 getuid_(void)
 
 #endif /* KEY Bug 1683 */
 {
-	return((__int32_t)getuid());
+	return((int32_t)getuid());
 }

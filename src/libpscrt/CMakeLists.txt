@@ -1,15 +1,19 @@
 project(libpscrt)
 
+
 set(pscrt_sources
+  malloc_opt.c
+      )
+
+
+set(pscrt_sources_x64
   memset_em64t.s
   memset_opteron.s
+  memcpy_em64t.c
+  memcpy_opteron.c
   malloc_opt.c
   )
 
-set(pscrt_static_sources
-  memcpy_em64t.c
-  memcpy_opteron.c
-  )
 
 # TODO: Enable ASM language.  For now we just tell CMake to run the C
 # compiler (gcc) and add some flags.
@@ -21,26 +25,27 @@ set_source_files_properties(
   COMPILE_FLAGS "-x assembler-with-cpp"
   )
 
-add_library(pscrt-static STATIC ${pscrt_sources} ${pscrt_static_sources})
-set_property(TARGET pscrt-static PROPERTY COMPILE_FLAGS -fpic)
-set_property(TARGET pscrt-static PROPERTY OUTPUT_NAME pscrt)
 
-IF(PATH64_ENABLE_PROFILING)
-add_library(pscrt_p STATIC ${pscrt_sources} ${pscrt_static_sources})
-set_property(TARGET pscrt_p PROPERTY COMPILE_FLAGS -pg)
-ENDIF()
+
+path64_set_multitarget_sources(pscrt-static COMMON ${pscrt_sources})
+path64_set_multitarget_sources(pscrt-static "x86_64" ${pscrt_sources_x64})
+path64_set_multitarget_property_(pscrt-static COMPILE_FLAGS -fpic)
+path64_set_multitarget_property_(pscrt-static OUTPUT_NAME pscrt)
+path64_add_multitarget_library(pscrt-static STATIC)
+
+
+# Profiling library
+if(PATH64_ENABLE_PROFILING)
+    path64_set_multitarget_sources(pscrt_p COMMON ${pscrt_sources})
+    path64_set_multitarget_sources(pscrt_p "x86_64" ${pscrt_sources_x64})
+    if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")   # temporary workaround for bug in gcc on osol
+        path64_set_multitarget_property_(pscrt_p COMPILE_FLAGS -pg)
+    endif()
+    path64_add_multitarget_library(pscrt_p STATIC pscrt_p_static_src_list)
+endif()
 
 #add_library(pscrt SHARED ${pscrt_sources})
 #set_property(TARGET pscrt PROPERTY SOVERSION 1)
 #set_property(TARGET pscrt PROPERTY LINK_FLAGS -Wl,--version-script="${libpscrt_SOURCE_DIR}/libpscrt.vs")
 
-
-install(TARGETS pscrt-static
-        ARCHIVE DESTINATION ${PATH64_LIB_PATH})
-
-IF(PATH64_ENABLE_PROFILING)
-install(TARGETS pscrt_p
-        LIBRARY DESTINATION ${PATH64_LIB_PATH}
-        ARCHIVE DESTINATION ${PATH64_LIB_PATH})
-ENDIF()
 

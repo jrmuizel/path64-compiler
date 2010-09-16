@@ -72,10 +72,14 @@
 #include "em_elf.h"
 #include "targ_em_elf.h"
 
-#if defined(__FreeBSD__)
-/* from mips.h */
+#ifndef SHF_MIPS_NOSTRIP
 #define SHF_MIPS_NOSTRIP	0x08000000
+#endif
+#ifndef EF_MIPS_XGOT
 #define EF_MIPS_XGOT		0x00000008
+#endif
+#ifndef SHF_MERGE
+#define SHF_MERGE	     (1 << 4)	/* Might be merged */
 #endif
 
 
@@ -836,6 +840,28 @@ Em_Get_Symbol_Name (Elf64_Word symindex)
 	return Index_To_String(&Strtab_Info, symtable[symindex].st_name);
     }
 }
+#ifdef TARG_ST
+unsigned char
+Em_Get_Symbol_Type (Elf64_Word symindex)
+{
+    if (Sixtyfour_Bit) {
+	Elf64_Sym *symtable;
+
+	symtable = (Elf64_Sym *)SCNINFO_buffer(Symtab_Info);
+	if (symindex >= (SCNINFO_size(Symtab_Info) / sizeof(Elf64_Sym)))
+	    ErrMsg (EC_Elf_Idx, symindex, "Em_Get_Symbol_Type");
+	return ELF64_ST_TYPE(symtable[symindex].st_info);
+    }
+    else {
+	Elf32_Sym *symtable;
+
+	symtable = (Elf32_Sym *)SCNINFO_buffer(Symtab_Info);
+	if (symindex >= (SCNINFO_size(Symtab_Info) / sizeof(Elf32_Sym)))
+	    ErrMsg (EC_Elf_Idx, symindex, "Em_Get_Symbol_Type");
+	return ELF32_ST_TYPE(symtable[symindex].st_info);
+    }
+}
+#endif
 
 /* Add an entry to the .symtab section. Returns the index for the entry */
 Elf64_Word
@@ -1131,7 +1157,7 @@ Create_Elf_Header (INT isa, BOOL old_abi, BOOL big_endian, BOOL pic,
     	Set_Elf_Version ((unsigned char *) &(ehdr64->e_ident));
 	ehdr64->e_machine = Get_Elf_Target_Machine();
 	ehdr64->e_type = ET_REL;
-#if ! (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifdef ORIGINAL_SGI_CODE
 	ehdr64->e_flags = e_flags;
 #else
 	ehdr64->e_flags = 0x23000000LL | e_flags;

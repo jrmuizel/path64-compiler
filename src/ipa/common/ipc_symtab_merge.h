@@ -309,10 +309,10 @@ struct block_element_compare
     }
 };
 
-typedef std::map<const BLOCK_ELEMENT_DESC, ST_IDX, block_element_compare,
-    mempool_allocator<ST_IDX> > BLOCK_ELEMENTS;
+typedef std::map<BLOCK_ELEMENT_DESC, ST_IDX, block_element_compare,
+    mempool_allocator< std::pair<const BLOCK_ELEMENT_DESC, ST_IDX> > > BLOCK_ELEMENTS;
 typedef hash_map<ST_IDX, BLOCK_ELEMENTS*, __gnu_cxx::hash<ST_IDX>, std::equal_to<ST_IDX>,
-    mempool_allocator<BLOCK_ELEMENTS*> > COMMON_BLOCK_ELEMENTS_MAP;
+    mempool_allocator< std::pair<const ST_IDX, BLOCK_ELEMENTS*> > > COMMON_BLOCK_ELEMENTS_MAP;
 
 extern COMMON_BLOCK_ELEMENTS_MAP *Common_Block_Elements_Map;
 

@@ -85,6 +85,11 @@ static char *rcs_id = "$Source: crayf90/sgi/SCCS/s.cwh_dope.cxx $ $Revision: 1.8
 #include "cwh_addr.h"
 
 
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
+
 #define opc_dim OPC_I8INTCONST
 
 static void  cwh_dope_store_bound(INT32 offset, INT32 dim) ;
@@ -1001,7 +1006,7 @@ cwh_dope_initialize(ST *st, WN *wa, TY_IDX dope_ty, WN *dp[DOPE_USED],WN **bd, I
   sz = MTYPE_size_best(TY_mtype(FLD_type(fl)));
   ft = fl ;
   
-# if (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+# ifndef ORIGINAL_SGI_CODE
   {
     dope_header1_type	dh1;
  
@@ -1046,7 +1051,7 @@ cwh_dope_initialize(ST *st, WN *wa, TY_IDX dope_ty, WN *dp[DOPE_USED],WN **bd, I
     wr = WN_Intconst(MTYPE_U4,*(UINT32*)&dh1);
 
   }
-# else
+# else // ORIGINAL_SGI_CODE
   for (i = 0 ; i < 4 ; i ++ ) {
      if (dp[i+2] != NULL ) {
 	shift = sz - FLD_bofst(ft) - FLD_bsize(ft);
@@ -1064,7 +1069,7 @@ cwh_dope_initialize(ST *st, WN *wa, TY_IDX dope_ty, WN *dp[DOPE_USED],WN **bd, I
      }
      ft = FLD_next(ft);
   }
-# endif
+# endif // ORIGINAL_SGI_CODE
   
   if (wr != NULL) 
      cwh_dope_store(st,wa,invar_off + FLD_ofst(fl),FLD_type(fl),wr);    
@@ -1073,7 +1078,7 @@ cwh_dope_initialize(ST *st, WN *wa, TY_IDX dope_ty, WN *dp[DOPE_USED],WN **bd, I
   fl = FLD_next(ft);
   
   if (dp[6] != NULL ) {
-# if (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+# ifndef ORIGINAL_SGI_CODE
      dope_header2_type dh2;
 
      dh2.unused = 0;

@@ -57,9 +57,20 @@
 #include "config_targ.h"  // for Is_Target_32bit()
 #endif
 
-
-TYPE_DESC Machine_Types[] =
-{ { MTYPE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, 0, 0, "",0,0, MTYPE_UNKNOWN },
+#ifdef TARG_ST
+#include "config_targ.h" 		 /* for ALIGN */
+#include "errors.h" // for FmtAssert()
+// [TB] Extension Support
+BE_EXPORTED TYPE_ID MTYPE_COUNT; 
+BE_EXPORTED TYPE_ID FIRST_COMPOSED_MTYPE; 
+#endif
+#ifndef TARG_ST
+// [TB] Extension Support
+TYPE_DESC Machine_Types[] = { 
+#else
+TYPE_DESC Machine_Types[MTYPE_MAX_LIMIT+1] = { 
+#endif
+  { MTYPE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, 0, 0, "",0,0, MTYPE_UNKNOWN },
   { MTYPE_B,	 1,  0,	 0, 0,	0, 0,	0, 0, 0, "B",MTYPE_CLASS_INTEGER,0, MTYPE_B },
   { MTYPE_I1,	 8,  8,	 8, 1,	1, 1,	1, 0, 0, "I1",MTYPE_CLASS_INTEGER,1, MTYPE_U1 },
   { MTYPE_I2,	16, 16,	16, 2,	2, 2,	1, 0, 0, "I2",MTYPE_CLASS_INTEGER,3, MTYPE_U2 },
@@ -69,6 +80,12 @@ TYPE_DESC Machine_Types[] =
   { MTYPE_U2,	16, 16,	16, 2,	2, 2,	0, 0, 0, "U2",MTYPE_CLASS_UNSIGNED_INTEGER,4, MTYPE_I2 },
   { MTYPE_U4,	32, 32,	32, 4,	4, 4,	0, 0, 0, "U4",MTYPE_CLASS_UNSIGNED_INTEGER,6, MTYPE_I4 },
   { MTYPE_U8,	64, 64,	64, 8,	8, 8,	0, 0, 0, "U8",MTYPE_CLASS_UNSIGNED_INTEGER,8, MTYPE_I8 },
+#ifdef TARG_ST
+  { MTYPE_I5, 40, 8, 8, 8, 8, 8, 1, 0, 0, "I5", MTYPE_CLASS_INTEGER, 7, MTYPE_U5 }, 
+  { MTYPE_U5, 40, 8, 8, 8, 8, 8, 0, 0, 0, "U5", MTYPE_CLASS_UNSIGNED_INTEGER, 8, MTYPE_I5 }, 
+  { MTYPE_A4, 32, 4, 4, 4, 4, 4, 0, 0, 0, "A4", MTYPE_CLASS_UNSIGNED_INTEGER_POINTER, 6, MTYPE_A4 }, 
+  { MTYPE_A8, 64, 8, 8, 8, 8, 8, 0, 0, 0, "A8", MTYPE_CLASS_UNSIGNED_INTEGER_POINTER, 8, MTYPE_A8 },
+#endif
   { MTYPE_F4,	32, 32,	32, 4,	4, 4,	1, 1, 0, "F4",MTYPE_CLASS_FLOAT,9, MTYPE_F4 },
   { MTYPE_F8,	64, 64,	64, 8,	8, 8,	1, 1, 0, "F8",MTYPE_CLASS_FLOAT,11, MTYPE_F8 },
   { MTYPE_F10, 128,128,128,16, 16,16,	1, 1, 0, "F10",MTYPE_CLASS_FLOAT,13, MTYPE_F10 },
@@ -81,12 +98,16 @@ TYPE_DESC Machine_Types[] =
   { MTYPE_CQ,	 256,256,256,16, 16,16,	0, 1, 0, "CQ",MTYPE_CLASS_COMPLEX_FLOAT,16, MTYPE_CQ },
   { MTYPE_V,	 0,  0,	 0, 0,	0, 0,	0, 0, 0, "V",0,0, MTYPE_V },
   { MTYPE_BS,	 1,  0,	 0, 0,	0, 0,	0, 0, 0, "BS",MTYPE_CLASS_INTEGER,0, MTYPE_BS },
+#ifndef TARG_ST
   { MTYPE_A4,	32, 32,	32, 4,	4, 4,	0, 0, 0, "A4",MTYPE_CLASS_UNSIGNED_INTEGER,6, MTYPE_A4 },
   { MTYPE_A8,	64, 64,	64, 8,	8, 8,	0, 0, 0, "A8",MTYPE_CLASS_UNSIGNED_INTEGER,8, MTYPE_A8 },
+#endif /*!TARG_ST*/
   { MTYPE_C10,	 256,256,256,16, 16,16,	0, 1, 0, "C10",MTYPE_CLASS_COMPLEX_FLOAT,16, MTYPE_C10 },
   { MTYPE_C16,	 256,256,256,16, 16,16,	0, 1, 0, "C16",MTYPE_CLASS_COMPLEX_FLOAT,16, MTYPE_C16 },
   { MTYPE_I16,	 256,256,256,16, 16,16,	0, 1, 0, "I16",MTYPE_CLASS_INTEGER,16, MTYPE_I16 },
-#ifdef TARG_MIPS
+#ifdef TARG_ST
+  { MTYPE_U16, 256, 16, 16, 16, 16, 16, 0, 0, 0, "U16", MTYPE_CLASS_UNSIGNED_INTEGER, 16, MTYPE_I16 }
+#elif defined TARG_MIPS
   { MTYPE_U16,	 256,256,256,16, 16,16,	0, 1, 0, "U16",MTYPE_CLASS_UNSIGNED_INTEGER,16, MTYPE_U16 },
   { MTYPE_V8I4, 64,64,64,8, 8,8,	0, 1, 0, "V8I4",MTYPE_CLASS_INTEGER|MTYPE_CLASS_SVECTOR,8, MTYPE_V8I4 },
   { MTYPE_V8F4, 64,64,64,8, 8,8,	0, 1, 0, "V8F4",MTYPE_CLASS_FLOAT|MTYPE_CLASS_SVECTOR,8, MTYPE_V8F4 }
@@ -113,71 +134,100 @@ TYPE_DESC Machine_Types[] =
 #endif // TARG_X8664
 };
 
-static TYPE_ID Machine_Next_Alignment[] =
-{
- /* MTYPE_UNKNOWN */	MTYPE_UNKNOWN,
- /* MTYPE_B	  */	MTYPE_UNKNOWN,
- /* MTYPE_I1	  */	MTYPE_I2,
- /* MTYPE_I2	  */	MTYPE_I4,
- /* MTYPE_I4	  */	MTYPE_I8,
- /* MTYPE_I8	  */	MTYPE_UNKNOWN,
- /* MTYPE_U1	  */	MTYPE_U2,
- /* MTYPE_U2	  */	MTYPE_U4,
- /* MTYPE_U4	  */	MTYPE_U8,
- /* MTYPE_U8	  */	MTYPE_UNKNOWN,
- /* MTYPE_F4	  */	MTYPE_F8,
- /* MTYPE_F8	  */	MTYPE_FQ,
- /* MTYPE_F10	  */	MTYPE_UNKNOWN,
- /* MTYPE_F16	  */	MTYPE_UNKNOWN,
- /* MTYPE_STR	  */	MTYPE_UNKNOWN,
- /* MTYPE_FQ	  */	MTYPE_UNKNOWN,	
- /* MTYPE_M	  */	MTYPE_UNKNOWN,	
- /* MTYPE_C4	  */	MTYPE_C8,	
- /* MTYPE_C8	  */	MTYPE_CQ,	
- /* MTYPE_CQ	  */	MTYPE_UNKNOWN,	
- /* MTYPE_V	  */	MTYPE_UNKNOWN,
- /* MTYPE_BS	  */	MTYPE_UNKNOWN,
- /* MTYPE_A4	  */	MTYPE_UNKNOWN,
+static TYPE_ID Machine_Next_Alignment[] = { 
+  /* MTYPE_UNKNOWN */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_B */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_I1 */ 	 MTYPE_I2,
+  /* MTYPE_I2 */ 	 MTYPE_I4,
+  /* MTYPE_I4 */ 	 MTYPE_I8,
+  /* MTYPE_I8 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_U1 */ 	 MTYPE_U2,
+  /* MTYPE_U2 */ 	 MTYPE_U4,
+  /* MTYPE_U4 */ 	 MTYPE_U8,
+  /* MTYPE_U8 */ 	 MTYPE_UNKNOWN,
+#ifdef TARG_ST
+  /* MTYPE_I5 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_U5 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_A4 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_A8 */ 	 MTYPE_UNKNOWN,
+#endif
+  /* MTYPE_F4 */ 	 MTYPE_F8,
+  /* MTYPE_F8 */ 	 MTYPE_FQ,
+  /* MTYPE_F10 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_F16 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_STR */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_FQ */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_M */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_C4 */ 	 MTYPE_C8,
+  /* MTYPE_C8 */ 	 MTYPE_CQ,
+  /* MTYPE_CQ */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_V */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_BS */ 	 MTYPE_UNKNOWN,
+#ifndef TARG_ST
+  /* MTYPE_A4	  */	MTYPE_UNKNOWN,
  /* MTYPE_A8	  */	MTYPE_UNKNOWN,
- /* MTYPE_C10	  */	MTYPE_UNKNOWN,
- /* MTYPE_C16	  */	MTYPE_UNKNOWN,
- /* MTYPE_I16	  */	MTYPE_UNKNOWN,
- /* MTYPE_U16	  */	MTYPE_UNKNOWN
+#endif
+  /* MTYPE_C10 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_C16 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_I16 */ 	 MTYPE_UNKNOWN
 };
 
-static TYPE_ID Machine_Prev_Alignment[] =
-{
- /* MTYPE_UNKNOWN */	MTYPE_UNKNOWN,
- /* MTYPE_B	  */	MTYPE_UNKNOWN,
- /* MTYPE_I1	  */	MTYPE_UNKNOWN,
- /* MTYPE_I2	  */	MTYPE_I1,
- /* MTYPE_I4	  */	MTYPE_I2,
- /* MTYPE_I8	  */	MTYPE_I4,
- /* MTYPE_U1	  */	MTYPE_UNKNOWN,
- /* MTYPE_U2	  */	MTYPE_U1,
- /* MTYPE_U4	  */	MTYPE_U2,
- /* MTYPE_U8	  */	MTYPE_U4,
- /* MTYPE_F4	  */	MTYPE_UNKNOWN,
- /* MTYPE_F8	  */	MTYPE_F4,
- /* MTYPE_F10	  */	MTYPE_UNKNOWN,
- /* MTYPE_F16	  */	MTYPE_F8,
- /* MTYPE_STR	  */	MTYPE_UNKNOWN,
- /* MTYPE_FQ	  */	MTYPE_F8,
- /* MTYPE_M	  */	MTYPE_UNKNOWN,
- /* MTYPE_C4	  */	MTYPE_UNKNOWN,
- /* MTYPE_C8	  */	MTYPE_C4,
- /* MTYPE_CQ	  */	MTYPE_C8,
- /* MTYPE_V	  */	MTYPE_UNKNOWN,
- /* MTYPE_BS	  */	MTYPE_UNKNOWN,
- /* MTYPE_A4	  */	MTYPE_UNKNOWN,
+#ifdef TARG_ST
+//TB: extension reconfiguration: check that array accesses do not
+//overlap static counter
+#define Machine_Next_Alignment_Access(n) \
+     (n > MTYPE_STATIC_LAST) ? \
+       FmtAssert (FALSE, ("Machine_Next_Alignment_Access: no access for dynamic MTYPE %d", (n))), MTYPE_UNKNOWN \
+     : \
+       Machine_Next_Alignment[n]
+#endif
+static TYPE_ID Machine_Prev_Alignment[] = { 
+  /* MTYPE_UNKNOWN */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_B */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_I1 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_I2 */ 	 MTYPE_I1,
+  /* MTYPE_I4 */ 	 MTYPE_I2,
+  /* MTYPE_I8 */ 	 MTYPE_I4,
+  /* MTYPE_U1 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_U2 */ 	 MTYPE_U1,
+  /* MTYPE_U4 */ 	 MTYPE_U2,
+  /* MTYPE_U8 */ 	 MTYPE_U4,
+#ifdef TARG_ST
+  /* MTYPE_I5 */ 	 MTYPE_I4,
+  /* MTYPE_U5 */ 	 MTYPE_U4,
+  /* MTYPE_A4 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_A8 */ 	 MTYPE_UNKNOWN,
+#endif
+  /* MTYPE_F4 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_F8 */ 	 MTYPE_F4,
+  /* MTYPE_F10 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_F16 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_STR */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_FQ */ 	 MTYPE_F8,
+  /* MTYPE_M */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_C4 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_C8 */ 	 MTYPE_C4,
+  /* MTYPE_CQ */ 	 MTYPE_C8,
+  /* MTYPE_V */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_BS */ 	 MTYPE_UNKNOWN,
+#ifndef TARG_ST
+  /* MTYPE_A4	  */	MTYPE_UNKNOWN,
  /* MTYPE_A8	  */	MTYPE_UNKNOWN,
- /* MTYPE_C10	  */	MTYPE_UNKNOWN,
- /* MTYPE_C16	  */	MTYPE_C8,
- /* MTYPE_I16	  */	MTYPE_UNKNOWN,
- /* MTYPE_U16	  */	MTYPE_UNKNOWN
+#endif
+  /* MTYPE_C10 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_C16 */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_I16 */ 	 MTYPE_UNKNOWN
 };
 
-
+#ifdef TARG_ST
+//TB: extension reconfiguration: check that array accesses do not
+//overlap static counter
+#define Machine_Prev_Alignment_Access(n) \
+     (n > MTYPE_STATIC_LAST) ? \
+       FmtAssert (FALSE, ("Machine_Prev_Alignment_Access: no access for dynamic MTYPE %d", (n))), MTYPE_UNKNOWN \
+     : \
+       Machine_Prev_Alignment[n]
+#endif
 MTYPE_MASK Machine_Types_Available = 0x1fdffe;
 
 
@@ -310,7 +360,159 @@ TYPE_ID Mtype_TransferSize(TYPE_ID x, TYPE_ID y)
   }
   return MTYPE_UNKNOWN;
 }
+#ifdef TARG_ST
+/* ==================================================================== 
+ * 
+ * MTYPE_TransferSize 
+ * 
+ * Return the mtype version of y taking on the size x. 
+ * If y is A4 or A8 and x's size is smaller than 4 bytes, return U1 or U2. 
+ * 
+ * ==================================================================== 
+ */ 
+TYPE_ID MTYPE_TransferSize(INT32 x, TYPE_ID y) 
+{ 
+  if (MTYPE_is_class_pointer(y)) {
+    //if (y == MTYPE_A4 || y == MTYPE_A8) { 
+    switch (x) { 
+    case 1: return MTYPE_U1; 
+    case 2: return MTYPE_U2; 
+    case 4: return MTYPE_A4; 
+    case 8: return MTYPE_A8; 
+    } 
+  } 
 
+  if (MTYPE_is_class_integer(y)) {
+    switch (x) { 
+      case 1: return MTYPE_signed(y) ? MTYPE_I1 : MTYPE_U1; 
+      case 2: return MTYPE_signed(y) ? MTYPE_I2 : MTYPE_U2; 
+      case 4: return MTYPE_signed(y) ? MTYPE_I4 : MTYPE_U4; 
+      case 8: return MTYPE_signed(y) ? MTYPE_I8 : MTYPE_U8; 
+    } 
+  }
+
+  if (MTYPE_is_float(y)) {
+    switch (x) { 
+      case 4: return MTYPE_F4; 
+      case 8: return MTYPE_F8; 
+    } 
+  }
+
+  return MTYPE_UNKNOWN; 
+}
+#endif
+#ifdef TARG_ST
+
+static TYPE_ID Table_complex_to_real[] = { 
+  /* MTYPE_UNKNOWN */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_B */ 	 MTYPE_B,
+  /* MTYPE_I1 */ 	 MTYPE_I1,
+  /* MTYPE_I2 */ 	 MTYPE_I2,
+  /* MTYPE_I4 */ 	 MTYPE_I4,
+  /* MTYPE_I8 */ 	 MTYPE_I8,
+  /* MTYPE_U1 */ 	 MTYPE_U1,
+  /* MTYPE_U2 */ 	 MTYPE_U2,
+  /* MTYPE_U4 */ 	 MTYPE_U4,
+  /* MTYPE_U8 */ 	 MTYPE_U8,
+  /* MTYPE_I5 */ 	 MTYPE_I5,
+  /* MTYPE_U5 */ 	 MTYPE_U5,
+  /* MTYPE_A4 */ 	 MTYPE_A4,
+  /* MTYPE_A8 */ 	 MTYPE_A8,
+  /* MTYPE_F4 */ 	 MTYPE_F4,
+  /* MTYPE_F8 */ 	 MTYPE_F8,
+  /* MTYPE_F10 */ 	 MTYPE_F10,
+  /* MTYPE_F16 */ 	 MTYPE_F16,
+  /* MTYPE_STR */ 	 MTYPE_STR,
+  /* MTYPE_FQ */ 	 MTYPE_FQ,
+  /* MTYPE_M */ 	 MTYPE_M,
+  /* MTYPE_C4 */ 	 MTYPE_F4,
+  /* MTYPE_C8 */ 	 MTYPE_F8,
+  /* MTYPE_CQ */ 	 MTYPE_FQ,
+  /* MTYPE_V */ 	 MTYPE_V,
+  /* MTYPE_BS */ 	 MTYPE_BS,
+  /* MTYPE_C10 */ 	 MTYPE_C10,
+  /* MTYPE_C16 */ 	 MTYPE_C16,
+  /* MTYPE_I16 */ 	 MTYPE_I16
+}; 
+//TB: extension reconfiguration: check that array accesses do not
+//overlap static counter
+#define Table_complex_to_real_Access(n) \
+     (n > MTYPE_STATIC_LAST) ? \
+       FmtAssert (FALSE, ("Table_complex_to_real_Access: no access for dynamic MTYPE %d", (n))), MTYPE_UNKNOWN \
+     : \
+       Table_complex_to_real[n]
+#endif
+
+/* ==================================================================== 
+ * 
+ * Mtype_complex_to_real 
+ * 
+ * Return real type corresponding to complex 
+ * 
+ * ==================================================================== 
+ */ 
+TYPE_ID Mtype_complex_to_real(TYPE_ID type) 
+{
+#ifdef TARG_ST
+  return Table_complex_to_real_Access(type); 
+#else
+  if (MTYPE_is_complex(type))
+  {
+    switch(type) {
+    case MTYPE_C4:
+	return MTYPE_F4;
+    case MTYPE_C8:
+	return MTYPE_F8;
+    case MTYPE_CQ:
+	return MTYPE_FQ;
+    case MTYPE_C16:
+	return MTYPE_F16;
+    }
+  }
+  return type;
+#endif
+}
+#ifdef TARG_ST
+static TYPE_ID Table_comparison[] = { 
+  /* MTYPE_UNKNOWN */ 	 MTYPE_UNKNOWN,
+  /* MTYPE_B */ 	 MTYPE_B,
+  /* MTYPE_I1 */ 	 MTYPE_I4,
+  /* MTYPE_I2 */ 	 MTYPE_I4,
+  /* MTYPE_I4 */ 	 MTYPE_I4,
+  /* MTYPE_I8 */ 	 MTYPE_I8,
+  /* MTYPE_U1 */ 	 MTYPE_U4,
+  /* MTYPE_U2 */ 	 MTYPE_U4,
+  /* MTYPE_U4 */ 	 MTYPE_U4,
+  /* MTYPE_U8 */ 	 MTYPE_U8,
+  /* MTYPE_I5 */ 	 MTYPE_I5,
+  /* MTYPE_U5 */ 	 MTYPE_U5,
+  /* MTYPE_A4 */ 	 MTYPE_A4,
+  /* MTYPE_A8 */ 	 MTYPE_A8,
+  /* MTYPE_F4 */ 	 MTYPE_F4,
+  /* MTYPE_F8 */ 	 MTYPE_F8,
+  /* MTYPE_F10 */ 	 MTYPE_F10,
+  /* MTYPE_F16 */ 	 MTYPE_F16,
+  /* MTYPE_STR */ 	 MTYPE_STR,
+  /* MTYPE_FQ */ 	 MTYPE_FQ,
+  /* MTYPE_M */ 	 MTYPE_M,
+  /* MTYPE_C4 */ 	 MTYPE_C4,
+  /* MTYPE_C8 */ 	 MTYPE_C8,
+  /* MTYPE_CQ */ 	 MTYPE_CQ,
+  /* MTYPE_V */ 	 MTYPE_V,
+  /* MTYPE_BS */ 	 MTYPE_BS,
+  /* MTYPE_C10 */ 	 MTYPE_C10,
+  /* MTYPE_C16 */ 	 MTYPE_C16,
+  /* MTYPE_I16 */ 	 MTYPE_I16
+}; 
+
+//TB: extension reconfiguration: check that array accesses do not
+//overlap static counter
+#define Table_comparison_Access(n) \
+     (n > MTYPE_STATIC_LAST) ? \
+       FmtAssert (FALSE, ("Table_comparison_Access: no access for dynamic MTYPE %d", (n))), MTYPE_UNKNOWN \
+     : \
+       Table_comparison[n]
+#endif
 /* ====================================================================
  *
  * Mtype_TransferVector
@@ -371,34 +573,6 @@ TYPE_ID Mtype_TransferVector(TYPE_ID x, TYPE_ID y)
   return MTYPE_UNKNOWN;
 }
 
-/* ====================================================================
- *
- * Mtype_complex_to_real
- *
- * Return real type corresponding to complex
- *
- * ====================================================================
- */
-TYPE_ID Mtype_complex_to_real(TYPE_ID type)
-{
-  if (MTYPE_is_complex(type))
-  {
-    switch(type) {
-    case MTYPE_C4:
-	return MTYPE_F4;
-    case MTYPE_C8:
-	return MTYPE_F8;
-    case MTYPE_CQ:
-	return MTYPE_FQ;
-    case MTYPE_C16:
-	return MTYPE_F16;
-    }
-  }
-  return type;
-}
-
-
-
 
 /* ====================================================================
  *
@@ -410,6 +584,13 @@ TYPE_ID Mtype_complex_to_real(TYPE_ID type)
  */
 TYPE_ID  Mtype_comparison(TYPE_ID type)
 {
+#ifdef TARG_ST
+  // [TB] extension support
+  if (type <= MTYPE_STATIC_LAST)
+    return Table_comparison_Access(type); 
+  else
+      return type;
+#else
   switch(type)
   {
   case MTYPE_I1:
@@ -421,6 +602,7 @@ TYPE_ID  Mtype_comparison(TYPE_ID type)
   default:
     return type;
   }
+#endif
 }
 
 
@@ -437,7 +619,11 @@ TYPE_ID  Mtype_comparison(TYPE_ID type)
  */
 TYPE_ID Mtype_next_alignment(TYPE_ID type)
 {
+#ifdef TARG_ST
+  return Machine_Next_Alignment_Access(type);
+#else
   return Machine_Next_Alignment[type];
+#endif
 }
 
 
@@ -453,5 +639,58 @@ TYPE_ID Mtype_next_alignment(TYPE_ID type)
  */
 TYPE_ID Mtype_prev_alignment(TYPE_ID type)
 {
+#ifdef TARG_ST
+  return Machine_Prev_Alignment_Access(type);
+#else
   return Machine_Prev_Alignment[type];
+#endif
 }
+
+#ifdef TARG_ST
+/* ==================================================================== 
+ * 
+ * Mtype_Int_Value_In_Range() 
+ * 
+ * Return TRUE if the specified integer value fits in the value range
+ * of the specified MTYPE, return FALSE otherwise.
+ * If the mtype is not integral, FALSE is always returned.
+ * 
+ * ==================================================================== 
+ */
+BOOL Mtype_Int_Value_In_Range(TYPE_ID type, INT64 val)
+{
+  INT64 tmp;
+  if (!MTYPE_is_integral(type)) {
+    return FALSE;
+  }
+  else if (MTYPE_signed(type)) {
+    tmp = val >> (MTYPE_bit_size(type)-1);
+    return (tmp == 0LL || tmp == -1LL);
+  }
+  else {
+    tmp = val >> MTYPE_bit_size(type);
+    return (tmp == 0LL);
+  }
+}
+
+/* ==================================================================== 
+ * 
+ * Mtype_From_Name() 
+ * 
+ * Return the MTYPE id associated with name <name>.
+ * Return MTYPE_UNKNOWN if not found.
+ * 
+ * ==================================================================== 
+ */
+TYPE_ID Mtype_From_Name(const char *name)
+{
+  int i;
+  for (i=MTYPE_FIRST; i<MTYPE_LAST; i++) {
+    if (strcmp(name, MTYPE_name(i)) == 0) {
+      return (TYPE_ID)i;
+    }
+  }
+  return MTYPE_UNKNOWN;
+}
+#endif
+

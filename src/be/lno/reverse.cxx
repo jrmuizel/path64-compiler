@@ -61,6 +61,7 @@ static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/lno/SCCS/s.revers
 #include "cxx_memory.h"
 #include "snl_utils.h"
 #include "reverse.h"
+#include "lno_trace.h"
 
 static ARRAY_DIRECTED_GRAPH16* dg;
 static DU_MANAGER* du;
@@ -474,11 +475,12 @@ static void RV_Simplify_Indicies(WN* wn_tree)
 
 extern void RV_Reverse_Loop(WN* wn_loop)
 {
+#if 0
   if (LNO_Verbose || LNO_Lno_Verbose) 
     fprintf(stdout,"  Reversing Loop %s\n", WB_Whirl_Symbol(WN_index(wn_loop)));
+#endif
   if (LNO_Verbose) 
     fprintf(TFile, "  Reversing Loop %s\n", WB_Whirl_Symbol(WN_index(wn_loop))); 
-  
   dg = Array_Dependence_Graph; 
   du = Du_Mgr;  
   RV_Reverse_Indices(WN_do_body(wn_loop), wn_loop);
@@ -490,7 +492,16 @@ extern void RV_Reverse_Loop(WN* wn_loop)
   Build_Doloop_Stack(LWN_Get_Parent(wn_loop), &loop_stack); 
   LNO_Build_Access(wn_loop, &loop_stack, &LNO_default_pool); 
   DO_LOOP_INFO *dli = Get_Do_Loop_Info(wn_loop); 
-  dli->Is_Backward = Do_Loop_Is_Backward(wn_loop); 
+  dli->Is_Backward = Do_Loop_Is_Backward(wn_loop);
+  if ( LNO_Verbose || LNO_Lno_Verbose )
+  {
+      LNO_Trace( LNO_REVERSE_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(wn_loop)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 dli->Is_Backward ? "backward" : "forward");
+  }
+
 }
 
 //-----------------------------------------------------------------------
@@ -505,6 +516,7 @@ static void RV_Traverse(WN* wn_tree)
   if (WN_opcode(wn_tree) == OPC_DO_LOOP) {
     if (RV_Is_Legal(wn_tree))
       RV_Reverse_Loop(wn_tree);
+#if 0
     if (LNO_Verbose || LNO_Lno_Verbose) {
       DO_LOOP_INFO* dli = Get_Do_Loop_Info(wn_tree);
       if (!dli->Is_Backward) {
@@ -517,6 +529,17 @@ static void RV_Traverse(WN* wn_tree)
 	fprintf(TFile, "  Loop 0x%p is indexed backward\n", wn_tree); 
       }
     }
+#endif
+
+    if (LNO_Verbose) {
+        DO_LOOP_INFO* dli = Get_Do_Loop_Info(wn_tree);
+        if (!dli->Is_Backward) {
+            fprintf(TFile, "  Loop 0x%p is indexed forward\n", wn_tree); 
+        } else {
+            fprintf(TFile, "  Loop 0x%p is indexed backward\n", wn_tree); 
+        }
+    }
+
   }
   if (WN_opcode(wn_tree) == OPC_BLOCK) {
     for (WN* wn = WN_first(wn_tree); wn != NULL; wn = WN_next(wn))
@@ -539,17 +562,19 @@ extern void Reverse_Loops(WN* func_nd)
 {
   if (!LNO_Blind_Loop_Reversal)
     return;
+# if 0
   if (LNO_Verbose || LNO_Lno_Verbose)
     fprintf(stdout, " Applying Loop Reversal\n");
+#endif
   if (LNO_Verbose)
     fprintf(TFile, " Applying Loop Reversal\n");
-  
   (void) RV_Traverse(func_nd);
+#if 0
   if (LNO_Verbose || LNO_Lno_Verbose) 
     fprintf(stdout, " Loop Reversal Complete\n");
+#endif
   if (LNO_Verbose)
     fprintf(TFile, " Loop Reversal Complete\n");
-  
 }
 
 //-----------------------------------------------------------------------
@@ -682,7 +707,7 @@ static INT RV_Index_Sign(WN* wn_index)
     case OPR_ARRAY: 
     case OPR_PARM:
     case OPR_INTRINSIC_OP:
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     case OPR_PURE_CALL_OP:
 #endif
       break_loop = TRUE; 

@@ -57,8 +57,9 @@
 #include "strtab.h"
 #include "symtab.h"
 #include "cg.h"
+#include "op_map.h"
 #include "cgexp.h"
-#include "cgexp_internals.h"
+
 #include "cgemit.h"	// for CG_emit_non_gas_syntax
 #include "cg_flags.h"	// for CG_valgrind_friendly
 
@@ -819,95 +820,119 @@ Exp_Ldst (
     }
   }
   
-  if( is_lda ){
-    if( ofst_tn != NULL && TN_is_symbol( ofst_tn ) ){
-      Build_OP( Is_Target_64bit() ? TOP_lea64 : TOP_lea32,
-		tn, base_tn, ofst_tn, &newops );
+  if( is_lda )
+  {
+    if( ofst_tn != NULL && TN_is_symbol( ofst_tn ) )
+    {
+      Build_OP( Is_Target_64bit() ? TOP_lea64 : TOP_lea32, tn, base_tn, ofst_tn, &newops );
 
-    } else {
-      if (on_stack) {
-	if ( ofst_tn != NULL )
-	  Build_OP( Is_Target_64bit() ? TOP_addi64 : TOP_addi32, tn,
-		    base_sym == SP_Sym ? SP_TN : FP_TN, ofst_tn,
-		    &newops );
-	else {
+    } 
+    else 
+    {
+      if (on_stack) 
+      {
+				if ( ofst_tn != NULL )
+	  				Build_OP( Is_Target_64bit() ? TOP_addi64 : TOP_addi32, tn,		    base_sym == SP_Sym ? SP_TN : FP_TN, ofst_tn,		    &newops );
+				else 
+				{
 	  FmtAssert( Is_Target_64bit(), ("NYI: 64-bit offset under -m32"));
 	  TN *tmp_tn = Build_TN_Of_Mtype(MTYPE_I8);
 	  Build_OP( TOP_ldc64, tmp_tn, Gen_Literal_TN(base_ofst, 8), &newops );
 	  Build_OP( TOP_add64, tn, tmp_tn, base_sym == SP_Sym ? SP_TN : FP_TN, 
 		    &newops );
-	}
+				}
       }
-      else if( Is_Target_64bit() ){
-	if (Gen_PIC_Shared) {
-	  FmtAssert(!ST_is_thread_local(base_sym),
-		    ("Exp_Ldst: thread-local storage NYI under PIC"));
-	  // bug 14967: a "hidden" sym need not be accessed through GOT in m64
-	  if (! ST_is_export_local(base_sym) &&
-	      ST_export(base_sym) != EXPORT_HIDDEN ) {
-	    TN *tmp = base_ofst == 0 ? tn : Build_TN_Like(tn);
-	    Build_OP( TOP_ld64, tmp, Rip_TN(), 
-		      Gen_Symbol_TN( base_sym, 0, TN_RELOC_X8664_GOTPCREL ),
-		      &newops );
-	    // got address should not alias
-	    Set_OP_no_alias(OPS_last(&newops));
-	    if (base_ofst != 0)
-	      Build_OP( TOP_addi64, tn, tmp, Gen_Literal_TN(base_ofst, 8),
-		        &newops );
-	  }
-	  else Build_OP( TOP_lea64, tn, Rip_TN(), 
-			 Gen_Symbol_TN( base_sym, base_ofst, TN_RELOC_NONE ),
-			 &newops );	      
-	} else if (ST_is_thread_local(base_sym)) {
-	  // Thread-local storage.  The address is:
-	  //   (symbol's offset from thread base ptr) + (thread base ptr)
-	  // The thread base pointer is at %fs:0.  %fs is the thread segment
-	  // register.
-	  TN *segment_base = Build_TN_Like(tn);
-	  Build_OP(TOP_ld64_fs_seg_off, segment_base, Gen_Literal_TN(0, 4),
-		   &newops);
-	  if (ST_sclass(base_sym) == SCLASS_EXTERN) {
-	    TN *segment_offset = Build_TN_Like(tn);
-	    Build_OP(TOP_ld64, segment_offset, Rip_TN(),
-		     Gen_Symbol_TN(base_sym, 0, TN_RELOC_X8664_GOTTPOFF),
-		     &newops);
-	    Build_OP(TOP_add64, tn, segment_base, segment_offset, &newops);
-	  } else {
-	    TN *segment_offset = Gen_Symbol_TN(base_sym, base_ofst,
-					       TN_RELOC_X8664_TPOFF32);
-	    Build_OP(TOP_addi64, tn, segment_base, segment_offset, &newops);
-	  }
-	} else if (ISA_LC_Value_In_Class(base_ofst, LC_simm32) &&
-		 mcmodel < MEDIUM ){
-	  Build_OP(TOP_ldc64, tn,
-		   Gen_Symbol_TN( base_sym, base_ofst, TN_RELOC_X8664_PC32 ),
-		   &newops );
-	} else {
-#if 0 // bug 4622
-	  FmtAssert( mcmodel >= MEDIUM, ("code model is not medium or higher") );
-#endif
-	  TN* sym_tn = NULL;
+      else if( Is_Target_64bit() )
+      {
+					if (Gen_PIC_Shared) 
+					{
+						//zwu
+					  if(ST_is_thread_local(base_sym))
+					  {
+							    TN *tmp = base_ofst == 0 ? tn : Build_TN_Like(tn);
+							    Build_OP( TOP_lea64, tmp, Rip_TN(), Gen_Symbol_TN( base_sym, 0, TN_RELOC_X8664_GOTTPOFF ), &newops );
+							    // got address should not alias
+							    Set_OP_no_alias(OPS_last(&newops));
+							    //if (base_ofst != 0)
+							    //  Build_OP( TOP_addi64, tn, tmp, Gen_Literal_TN(base_ofst, 8),  &newops );
+					  }//end of zwu
+					  //FmtAssert(!ST_is_thread_local(base_sym),	    ("Exp_Ldst: thread-local storage NYI under PIC"));
+					  // bug 14967: a "hidden" sym need not be accessed through GOT in m64
+					  else
+					  {
+					  	if (! ST_is_export_local(base_sym) &&
+					      ST_export(base_sym) != EXPORT_HIDDEN ) 
+					    {
+							    TN *tmp = base_ofst == 0 ? tn : Build_TN_Like(tn);
+							    Build_OP( TOP_ld64, tmp, Rip_TN(), 
+								      Gen_Symbol_TN( base_sym, 0, TN_RELOC_X8664_GOTPCREL ),
+								      &newops );
+							    // got address should not alias
+							    Set_OP_no_alias(OPS_last(&newops));
+							    if (base_ofst != 0)
+							      Build_OP( TOP_addi64, tn, tmp, Gen_Literal_TN(base_ofst, 8),
+								        &newops );
+					  	}
+					  	else Build_OP( TOP_lea64, tn, Rip_TN(), Gen_Symbol_TN( base_sym, base_ofst, TN_RELOC_NONE ), &newops );	      
+					  }
+					} 
+					else if (ST_is_thread_local(base_sym)) 
+					{
+					  // Thread-local storage.  The address is:
+					  //   (symbol's offset from thread base ptr) + (thread base ptr)
+					  // The thread base pointer is at %fs:0.  %fs is the thread segment
+					  // register.
+					  TN *segment_base = Build_TN_Like(tn);
+					  Build_OP(TOP_ld64_fs_seg_off, segment_base, Gen_Literal_TN(0, 4),
+						   &newops);
+					  if (ST_sclass(base_sym) == SCLASS_EXTERN) {
+					    TN *segment_offset = Build_TN_Like(tn);
+					    Build_OP(TOP_ld64, segment_offset, Rip_TN(),
+						     Gen_Symbol_TN(base_sym, 0, TN_RELOC_X8664_GOTTPOFF),
+						     &newops);
+					    Build_OP(TOP_add64, tn, segment_base, segment_offset, &newops);
+					  } else {
+					    TN *segment_offset = Gen_Symbol_TN(base_sym, base_ofst,
+									       TN_RELOC_X8664_TPOFF32);
+					    Build_OP(TOP_addi64, tn, segment_base, segment_offset, &newops);
+					  }
+					} 
+					else if (ISA_LC_Value_In_Class(base_ofst, LC_simm32) &&	 mcmodel < MEDIUM )
+					{
+					  Build_OP(TOP_ldc64, tn,  Gen_Symbol_TN( base_sym, base_ofst, TN_RELOC_X8664_PC32 ),	   &newops );
+					} 
+					else 
+					{
+				#if 0 // bug 4622
+					  FmtAssert( mcmodel >= MEDIUM, ("code model is not medium or higher") );
+				#endif
+					  TN* sym_tn = NULL;
+				
+					  if( ISA_LC_Value_In_Class(base_ofst, LC_simm32) )
+					  {
+					    Build_OP( TOP_movabsq,
+						      tn, Gen_Symbol_TN( base_sym, base_ofst, TN_RELOC_X8664_64 ),
+						      &newops );
+				
+					  } 
+					  else 
+					  {
+					    TN* tmp_tn = Build_TN_Of_Mtype(Pointer_Mtype);
+					    TN* const_tn = Build_TN_Of_Mtype(Pointer_Mtype);
+				
+					    Build_OP( TOP_movabsq,
+						      tmp_tn, Gen_Symbol_TN( base_sym, 0, TN_RELOC_X8664_64 ),
+						      &newops );
+				
+					    Build_OP( TOP_movabsq, const_tn, Gen_Literal_TN(base_ofst,8), &newops );
+					    Build_OP( TOP_add64, tn, tmp_tn, const_tn, &newops );
+					    base_ofst = 0;
+					  }
+					}
 
-	  if( ISA_LC_Value_In_Class(base_ofst, LC_simm32) ){
-	    Build_OP( TOP_movabsq,
-		      tn, Gen_Symbol_TN( base_sym, base_ofst, TN_RELOC_X8664_64 ),
-		      &newops );
-
-	  } else {
-	    TN* tmp_tn = Build_TN_Of_Mtype(Pointer_Mtype);
-	    TN* const_tn = Build_TN_Of_Mtype(Pointer_Mtype);
-
-	    Build_OP( TOP_movabsq,
-		      tmp_tn, Gen_Symbol_TN( base_sym, 0, TN_RELOC_X8664_64 ),
-		      &newops );
-
-	    Build_OP( TOP_movabsq, const_tn, Gen_Literal_TN(base_ofst,8), &newops );
-	    Build_OP( TOP_add64, tn, tmp_tn, const_tn, &newops );
-	    base_ofst = 0;
-	  }
-	}
-
-      } else {
+      } 
+      else 
+      {
 	// The Is_Target_32bit() cases.
 
 	if (!ISA_LC_Value_In_Class(base_ofst, LC_simm32))
@@ -916,7 +941,8 @@ Exp_Ldst (
 
 	// bugs 10097, 14967, sicortex 9249: under -m32, most syms need to be
 	// accessed through GOT.
-	if( Gen_PIC_Shared ){
+	if( Gen_PIC_Shared )
+	{
 	  FmtAssert(!ST_is_thread_local(base_sym),
 		    ("Exp_Ldst: thread-local storage NYI under PIC"));
 	  TN* tmp = base_ofst == 0 ? tn : Build_TN_Like(tn);
@@ -930,7 +956,9 @@ Exp_Ldst (
 	  if( base_ofst != 0 ){
 	    Build_OP( TOP_addi32, tn, tmp, Gen_Literal_TN(base_ofst, 4), &newops );
 	  }
-	} else if (ST_is_thread_local(base_sym)) {
+	} 
+	else if (ST_is_thread_local(base_sym)) 
+	{
 	  // Thread-local storage.  The address is:
 	  //   (symbol's offset from thread base ptr) + (thread base ptr)
 	  // The thread base pointer is at %gs:0.  %gs is the thread segment
@@ -944,7 +972,9 @@ Exp_Ldst (
 	  TN *segment_offset = Gen_Symbol_TN(base_sym, base_ofst, relocs);
 
 	  Build_OP(TOP_addi32, tn, segment_base, segment_offset, &newops);
-	} else {
+	} 
+	else 
+	{
 	  Build_OP( TOP_ldc32, tn,
 		    Gen_Symbol_TN( base_sym, base_ofst, TN_RELOC_NONE ),
 		    &newops );
@@ -952,16 +982,21 @@ Exp_Ldst (
       }
     }
 
-  } else {
-    if( base_tn == NULL ){
+  } 
+  else 
+  {
+    if( base_tn == NULL )
+    {
       Is_True(! on_stack, ("Exp_Ldst: unexpected stack reference"));
 
-      if( Is_Target_64bit() ){
+      if( Is_Target_64bit() )
+      {
 
-	if (ST_is_thread_local(sym)) {
-	  FmtAssert(ISA_LC_Value_In_Class(base_ofst, LC_simm32),
-		    ("Exp_Ldst: thread-local storage base offset too large"));
-	  if (ST_sclass(sym) == SCLASS_EXTERN) {
+				if (ST_is_thread_local(sym)) 
+				{
+	  FmtAssert(ISA_LC_Value_In_Class(base_ofst, LC_simm32),	    ("Exp_Ldst: thread-local storage base offset too large"));
+	  if (ST_sclass(sym) == SCLASS_EXTERN) 
+	  {
 	    base_tn = Build_TN_Of_Mtype(Pointer_Mtype);
 	    Build_OP(TOP_ld64, base_tn, Rip_TN(),
 		     Gen_Symbol_TN(base_sym, 0,
@@ -970,13 +1005,16 @@ Exp_Ldst (
 	    ofst_tn = Gen_Literal_TN(base_ofst, 4);
 	    base_ofst = 0;
 	    Set_TN_is_thread_seg_ptr(base_tn);
-	  } else {
+	  } 
+	  else 
+	  {
 	    ofst_tn = Gen_Symbol_TN(base_sym, base_ofst,
 				    TN_RELOC_X8664_TPOFF32_seg_reg);
 	    base_ofst = 0;
 	  }
-	} else if (mcmodel < MEDIUM &&
-		   ISA_LC_Value_In_Class(base_ofst, LC_simm32)) {
+	} 
+	else if (mcmodel < MEDIUM && ISA_LC_Value_In_Class(base_ofst, LC_simm32)) 
+	{
 	    base_tn = Rip_TN();
 	} else {
 
@@ -1039,36 +1077,45 @@ Exp_Ldst (
       }
 
       // bug 14967: a "hidden" sym need not be accessed through GOT in m64
-      if( Gen_PIC_Shared && (Is_Target_32bit() ||
-                             (!ST_is_export_local(base_sym) &&
-                              ST_export(base_sym) != EXPORT_HIDDEN) ||
+      if( Gen_PIC_Shared && (Is_Target_32bit() || (!ST_is_export_local(base_sym) && ST_export(base_sym) != EXPORT_HIDDEN) ||
                               // section?
                              (ST_class(base_sym) == CLASS_BLOCK &&
-                              STB_section(base_sym) /* bug 10097 */)) ){
-	FmtAssert(!ST_is_thread_local(base_sym),
-		  ("Exp_Ldst: thread-local storage NYI under PIC"));
-	if( Is_Target_64bit() ){
-	  TN *new_base = Build_TN_Of_Mtype(Pointer_Mtype);
-	  Build_OP (TOP_ld64, new_base, base_tn, 
-		    Gen_Symbol_TN(base_sym, 0, TN_RELOC_X8664_GOTPCREL),
-		    &newops);
-	  // got address should not alias
-	  Set_OP_no_alias(OPS_last(&newops));
-	  base_tn = new_base;
-	  ofst_tn = Gen_Literal_TN( base_ofst, 4 );
+                              STB_section(base_sym) /* bug 10097 */)) )
+      {
+					//FmtAssert(!ST_is_thread_local(base_sym),  ("Exp_Ldst: thread-local storage NYI under PIC"));
+							//zwu
+				  if(ST_is_thread_local(base_sym) && Is_Target_64bit())
+				  {
+						    TN *tmp = base_ofst == 0 ? tn : Build_TN_Like(tn);
+						    Build_OP( TOP_lea64, tmp, Rip_TN(), Gen_Symbol_TN( base_sym, 0, TN_RELOC_X8664_GOTTPOFF ), &newops );
+						    // got address should not alias
+						    Set_OP_no_alias(OPS_last(&newops));
+						   // if (base_ofst != 0)
+						   //   Build_OP( TOP_addi64, tn, tmp, Gen_Literal_TN(base_ofst, 8),       &newops );
+				  }//end of zwu
+					else if( Is_Target_64bit() )
+					{
+					  TN *new_base = Build_TN_Of_Mtype(Pointer_Mtype);
+					  Build_OP (TOP_ld64, new_base, base_tn, 
+						    Gen_Symbol_TN(base_sym, 0, TN_RELOC_X8664_GOTPCREL),
+						    &newops);
+					  // got address should not alias
+					  Set_OP_no_alias(OPS_last(&newops));
+					  base_tn = new_base;
+					  ofst_tn = Gen_Literal_TN( base_ofst, 4 );
 
-	} else {
-	  // for -m32 here
-	  TN *new_base = Build_TN_Of_Mtype(Pointer_Mtype);
-	  Build_OP (TOP_ld32, new_base, Ebx_TN(), 
-		    Gen_Symbol_TN(base_sym, 0, TN_RELOC_IA32_GOT),
-		    &newops);
-	  // got address should not alias
-	  Set_OP_no_alias(OPS_last(&newops));
-	  PU_References_GOT = TRUE;
-	  base_tn = new_base;
-	  ofst_tn = Gen_Literal_TN( base_ofst, 4 );
-	}
+					} 
+					else 
+					{
+					  // for -m32 here
+					  TN *new_base = Build_TN_Of_Mtype(Pointer_Mtype);
+					  Build_OP (TOP_ld32, new_base, Ebx_TN(), Gen_Symbol_TN(base_sym, 0, TN_RELOC_IA32_GOT),   &newops);
+					  // got address should not alias
+					  Set_OP_no_alias(OPS_last(&newops));
+					  PU_References_GOT = TRUE;
+					  base_tn = new_base;
+					  ofst_tn = Gen_Literal_TN( base_ofst, 4 );
+					}
       }
       else if( ofst_tn == NULL ){
 	if (ST_is_thread_local(base_sym) &&
@@ -1092,21 +1139,20 @@ Exp_Ldst (
       }
     }
 
-    if( is_store ){
-      if ( opcode == OPC_V16C8STID || 
-	   V_align_all(variant) != 0 ) // Bug 3623 - check if misaligned STID
-	Expand_Misaligned_Store (OPCODE_desc(opcode), tn, base_tn, ofst_tn, 
-	                         variant, &newops);
+    if( is_store )
+    {
+      if ( opcode == OPC_V16C8STID || V_align_all(variant) != 0 ) // Bug 3623 - check if misaligned STID
+					Expand_Misaligned_Store (OPCODE_desc(opcode), tn, base_tn, ofst_tn, variant, &newops);
       else
-	Expand_Store (OPCODE_desc(opcode), tn, base_tn, ofst_tn, &newops);
+					Expand_Store (OPCODE_desc(opcode), tn, base_tn, ofst_tn, &newops);
 
-    } else if( is_load ){
-      if ( opcode == OPC_V16C8V16C8LDID ||
-	   V_align_all(variant) != 0 ) // Bug 3623 - check if misaligned LDID
-	Expand_Misaligned_Load ( opcode, tn, base_tn, ofst_tn,
-			         variant, &newops );
+    } 
+    else if( is_load )
+    {
+      if ( opcode == OPC_V16C8V16C8LDID ||  V_align_all(variant) != 0 ) // Bug 3623 - check if misaligned LDID
+				Expand_Misaligned_Load ( opcode, tn, base_tn, ofst_tn, variant, &newops );
       else
-	Expand_Load ( opcode, tn, base_tn, ofst_tn, &newops );
+				Expand_Load ( opcode, tn, base_tn, ofst_tn, &newops );
     }
   }
 
@@ -1236,7 +1282,7 @@ void Exp_Extract_Bits (TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_si
 		       TN *tgt_tn, TN *src_tn, OPS *ops)
 {
   TN *tmp1_tn = Build_TN_Like (tgt_tn);
-  UINT pos = (Target_Byte_Sex == BIG_ENDIAN || CG_emit_non_gas_syntax)
+  UINT pos = (!Target_Is_Little_Endian || CG_emit_non_gas_syntax)
 	     ? MTYPE_bit_size(desc)-bit_offset-bit_size : bit_offset;
   if (pos == 0 && bit_size <= 16 && ! MTYPE_signed(rtype)) {
 
@@ -1281,7 +1327,7 @@ void Exp_Set_Bits(TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_size,
   if (!bit_size) return;
 
   UINT targ_bit_offset = bit_offset;
-  if (Target_Byte_Sex == BIG_ENDIAN) {
+  if (!Target_Is_Little_Endian) {
     targ_bit_offset = MTYPE_bit_size(desc) - bit_offset - bit_size;
   }
 
@@ -1314,7 +1360,7 @@ void Exp_Deposit_Bits2(TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_si
   if (!bit_size) return;
 
   UINT targ_bit_offset = bit_offset;
-  if (Target_Byte_Sex == BIG_ENDIAN) {
+  if (!Target_Is_Little_Endian) {
     targ_bit_offset = MTYPE_bit_size(desc) - bit_offset - bit_size;
   }
 
@@ -1371,7 +1417,7 @@ void Exp_Deposit_Bits (TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_si
   if (!bit_size) return;
 
   UINT targ_bit_offset = bit_offset;
-  if (Target_Byte_Sex == BIG_ENDIAN) {
+  if (!Target_Is_Little_Endian) {
     targ_bit_offset = MTYPE_bit_size(desc) - bit_offset - bit_size;
   }
   TN *tmp1_tn = Build_TN_Like(tgt_tn);

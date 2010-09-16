@@ -1,4 +1,7 @@
 /*
+   Copyright (C) 2010 PathScale Inc. All Rights Reserved.
+*/
+/*
  * Copyright (C) 2007, 2008 PathScale, LLC.  All Rights Reserved.
  */
 
@@ -86,11 +89,17 @@ static phase_info_t phase_info[] = {
    {'r',  0x0000000000000001LL,	"ratfor",BINPATH,	FALSE},	/* ratfor */
 
    {'p',  0x0000000000000010LL,	"cpp",	PHASEPATH,	FALSE},	/* cpp */
+#ifdef PATH64_ENABLE_PSCRUNTIME
+   // Invoke cc142/cc1plus42 for preprocessing
+   {'p',  0x0000000000000020LL,	"cc142", PHASEPATH, FALSE}, /* gcpp */
+   {'p',  0x0000000000000040LL,	"cc1plus42", PHASEPATH, FALSE}, /* gcpp_plus */
+#else // PATH64_ENABLE_PSCRUNTIME
    /* invoke gcc driver directly rather than cpp
     * because cpp can have different paths, reads spec file,
     * and may eventually be merged with cc1. */
    {'p',  0x0000000000000020LL,	"gcc", "", FALSE}, /* gcpp */
    {'p',  0x0000000000000040LL,	"g++", "", FALSE}, /* gcpp_plus */
+#endif // PATH64_ENABLE_PSCRUNTIME
    {'p',  0x0000000000000080LL,	"fec",	 PHASEPATH,	FALSE},	/* c_cpp */
    {'p',  0x0000000000000100LL, "cpp",   PHASEPATH,     FALSE}, /* cplus_cpp */
    {'p',  0x0000000000000200LL,	"mfef77",PHASEPATH,	FALSE},	/* f_cpp */
@@ -140,12 +149,18 @@ static phase_info_t phase_info[] = {
    {'i',  0x0000000010000000LL,	"inline",PHASEPATH,	TRUE},	/* inline */
    {'i',  0x0000000020000000LL,	"ipl",	PHASEPATH,	TRUE},	/* ipl */
    {'i',  0x00000000f0000000LL,	"",	"",		TRUE},	/* ipl, inline*/
+#ifdef FAT_WHIRL_OBJECTS
+   /* Use generic settings for now */
+   {'l',  0x1000000000000000LL,	"ld",	"",		FALSE},	/* P_merge*/
+#endif
 
    {'b',  0x0000000100000000LL,	"be",	PHASEPATH,	TRUE},	/* be */
    /* We use 'B' for options to be passed to be via ipacom. */
 
-   {'a',  0x0000001000000000LL,	"asm",	PHASEPATH,	FALSE},	/* as */
-   {'a',  0x0000002000000000LL,	"gcc", "", FALSE}, /* gcc */
+#ifdef PATH64_ENABLE_PATHAS
+   {'a',  0x0000001000000000LL, "pathas", PHASEPATH, FALSE}, /* pathas */
+#endif // PATH64_ENABLE_PSCRUNTIME
+   {'a',  0x0000002000000000LL, "gcc", "", FALSE}, /* gas */
    {'a',  0x0000003000000000LL,	"",	"",		FALSE},	/* any_as */
 
    {'d',  0x0000008000000000LL, "dsm_prelink", PHASEPATH,FALSE},/* dsm_prelink*/

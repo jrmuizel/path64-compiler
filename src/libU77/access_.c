@@ -56,7 +56,6 @@
 #ifndef	MAXPATHLEN
 #define MAXPATHLEN	128
 #endif
-#include "externals.h"
 char *bufarg;
 long bufarglen;
 

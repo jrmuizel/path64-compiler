@@ -81,6 +81,8 @@ static char *rcs_id = "$Source: be/lno/SCCS/s.scalar_expand.cxx $ $Revision: 1.8
 #include "soe.h"
 #include "cond.h"
 #include "snl_utils.h"
+#include "lno_trace.h"
+
 
 static WN* BND_Min_Expr(WN* wn, WN* loops[], INT nloops); 
 static WN* BND_Max_Expr(WN* wn, WN* loops[], INT nloops);
@@ -1860,8 +1862,20 @@ static void Mark_Calls(WN* wn)
 }
 
 static INT unique_se_id = 0;
-
+#ifdef TARG_ST
+//TB: extension reconfiguration: check that array accesses do not
+//overlap static counter
+#define se_type_array(t) \
+     ((t > MTYPE_STATIC_LAST) ? \
+       FmtAssert (FALSE, ("se_type_array: no access for dynamic MTYPE %d", (t))), 0 \
+     : \
+       se_type_array[t])
+#define se_type_array_set(t) \
+       FmtAssert (t <= MTYPE_STATIC_LAST, ("MTYPE_TO_PREG: no access for dynamic MTYPE %d", (t))), se_type_array[t]
+static TY_IDX se_type_array[MTYPE_STATIC_LAST + 1]; 
+#else
 static TY_IDX se_type_array[MTYPE_LAST + 1]; 
+#endif
 
 extern void SE_Symbols_For_SE(SYMBOL* ptr_array, const char* pref, INT unique_id, 
   TYPE_ID mtype)
@@ -2373,6 +2387,18 @@ extern void Scalar_Expand(WN* allocregion,
   FmtAssert(nstrips <= dimcnt, 
     ("Can't have more scalar expanded tiles than dimensions.")); 
   unique_se_id++;
+  if (LNO_Verbose || LNO_Lno_Verbose)
+  {
+      WN* wn_outer = loops[0]; 
+      LNO_Trace( LNO_SCALAR_EXPAND_EVENT, 
+                 Src_File_Name,
+                 Srcpos_To_Line(WN_Get_Linenum(wn_outer)),
+                 ST_name(WN_entry_name(Current_Func_Node)),
+                 symbol.Name(), has_lcd ? "(with lcd) " : "", 
+                 finalize ? "(with finalization) " : "", 
+                 WB_Whirl_Symbol(wn_outer));
+  }
+# if 0
   if (LNO_Verbose || LNO_Lno_Verbose) {
     WN* wn_outer = loops[0]; 
     fprintf(stdout, "Scalar expanding %s %s%sin loop %s at %d\n",
@@ -2385,6 +2411,7 @@ extern void Scalar_Expand(WN* allocregion,
       finalize ? "(with finalization) " : "", 
       WB_Whirl_Symbol(wn_outer), (INT) WN_linenum(wn_outer));
   }
+#endif
 
   // Step 1: How much space do we need, in bytes?  Put that in bsz.
   // Also, while we are at it, store in bounds the number of elements

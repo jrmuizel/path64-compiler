@@ -43,6 +43,7 @@
 #if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
+#include <stdint.h>
 
 #include <ext/hash_map>			// stl hash table
 #include <ext/algorithm>
@@ -51,7 +52,7 @@
 #include "config.h"
 #include "tracing.h"			// for DBar
 #include "cxx_memory.h"			// for CXX_NEW
-
+#include "config_targ.h"
 #include "symtab.h"
 #include "irbdata.h"                    // for INITO_st_idx
 #include "const.h"                      // for MAX_SYMBOLIC_CONST_NAME_LEN
@@ -1256,6 +1257,17 @@ Create_Preg_explicit(TYPE_ID mtype, const char *name,
 	// pregs of simulated types have to allocate space for
 	// all the parts of the lowered types.
 	switch (mtype) {
+#ifdef TARG_ST
+	case MTYPE_I8:
+	case MTYPE_U8:
+	case MTYPE_F8:
+	  if (Only_32_Bit_Ops) {
+	    // reserve space for another preg
+	    (void) New_PREG_explicit (scope_tab, level, preg_idx2);
+	    Set_PREG_name_idx ((*scope_tab[level].preg_tab)[preg_idx2], Save_Str(name));
+	  }
+	  break;
+#endif
 	case MTYPE_C4:
 	case MTYPE_C8:
 	case MTYPE_FQ:
@@ -1279,6 +1291,14 @@ Create_Preg_explicit(TYPE_ID mtype, const char *name,
 		(void) New_PREG_explicit (scope_tab, level, preg_idx2);
                 Set_PREG_name_idx ((*scope_tab[level].preg_tab)[preg_idx2], 0);
 		break;
+#ifdef TARG_ST
+	default:
+	  ;
+	  // Reconfigurability: currently consider that extension types need a single pseudo-reg
+// 	  if (mtype > MTYPE_STATIC_LAST) {
+// 	    ;
+// 	  }
+#endif
 	}
 	// return preg-num of first preg
 	return (PREG_NUM) preg_idx + Last_Dedicated_Preg_Offset;
@@ -1297,6 +1317,25 @@ Preg_Increment (TYPE_ID mtype)
 {
     switch (mtype) {
 
+#ifdef TARG_ST
+    case MTYPE_C8:
+    case MTYPE_FQ:
+      if (Only_32_Bit_Ops) return 4;
+      /* FALLTHROUGH */
+
+    case MTYPE_C4:
+	return 2;
+
+    case MTYPE_CQ:
+      if (Only_32_Bit_Ops) return 8;
+      return 4;
+
+    case MTYPE_I8:
+    case MTYPE_U8:
+    case MTYPE_F8:
+      if (Only_32_Bit_Ops) return 2;
+      return 1;
+#else
     case MTYPE_C4:
     case MTYPE_C8:
 #ifndef TARG_X8664
@@ -1313,10 +1352,18 @@ Preg_Increment (TYPE_ID mtype)
     case MTYPE_U8:
 	if (MTYPE_size_reg(MTYPE_I8) > MTYPE_size_reg(Spill_Int_Mtype))
 	    return 2;
+#endif
     case MTYPE_B:
 	// bool mtype not usually used, but if used, saves space for
 	// complement preg.
 	return 2;
+#ifdef TARG_ST
+    default:
+      if (mtype > MTYPE_STATIC_LAST) {
+	FmtAssert(FALSE, ("Unhandled dynamic mtype\n"));
+      }
+#endif
+
     }
     return 1;
 }
@@ -1360,6 +1407,112 @@ Base_Symbol_And_Offset (ST     *st,
   *base_symbol      = base;
   *offset_from_base = ofst;
 }
+#ifdef TARG_ST
+/* ====================================================================
+ *
+ * Base_Symbol
+ *      Input:  ST *st                   Symbol to analyze
+ *      Result:                          primary base of st
+ *
+ *
+ * ====================================================================
+ */
+ST *
+Base_Symbol (ST     *st)
+{
+  ST *base;
+  Base_Symbol_And_Offset (st, &base, NULL);
+  return base;
+}
+
+/* ====================================================================
+ *
+ * Base_Offset
+ *      Input:  ST *st                   Symbol to analyze
+ *      Result:                          offset from primary base
+ *
+ *
+ * ====================================================================
+ */
+INT64
+Base_Offset (ST     *st)
+{
+  INT64 ofst;
+  Base_Symbol_And_Offset (st, NULL, &ofst);
+  return ofst;
+}
+
+/* ====================================================================
+ *
+ * Base_Offset_Is_Known
+ *      Input:  ST *st                   Symbol to analyze
+ *      Result:                          TRUE if the offset from
+ *                                       Base_Symbol(st) is known.
+ *
+ *
+ * ====================================================================
+ */
+BOOL
+Base_Offset_Is_Known (ST     *st)
+{
+  ST *base = st;
+  while (ST_base (base) != base) {
+    if (ST_sclass (base) == SCLASS_TEXT)
+      return FALSE;
+    base = ST_base (base);
+  }
+  return TRUE;
+}
+
+/** 
+  * Exported function that returns the smallest used alignement in type
+  * 
+  * @param ty_id 
+  * 
+  * @return alignment value in bytes
+  */
+UINT32
+TY_smallest_align(TY_IDX ty_id) {
+  UINT32 res;
+  TY_KIND kind = TY_kind(ty_id);
+  /* kind is scalar */
+  if (kind == KIND_SCALAR || kind == KIND_POINTER) {
+    res = TY_align(ty_id);
+  }
+  /* kind is a struct. we need to parse all its fields */
+  else if (kind == KIND_STRUCT) {
+    res = UINT32_MAX;
+    /* check that we do not have an empty struct */
+    if (TY_size(ty_id) > 0) {
+      FLD_ITER fld_iter = Make_fld_iter (TY_fld(ty_id));
+      do {
+        UINT32 tmp = TY_smallest_align(FLD_type(fld_iter));
+        if (tmp < res) {
+          res= tmp;
+          /* if byte alignment is achieved, stop parsing the structure
+             fields */
+          if (res==1) {
+            break;
+	  }
+        }
+      } while (!FLD_last_field (fld_iter++));
+    }
+  }
+  /* kind is an array. use array element type instead. */
+  else if (kind == KIND_ARRAY) {
+    res = TY_smallest_align(TY_etype(ty_id));
+  }
+  /* unknown kind */
+  else {
+    DevWarn ("Unexpected TY_kind() %d\n", TY_kind(ty_id));
+    /* using smallest alignment conservatively. */
+    res = 1;
+  }
+  return res;
+}
+
+
+#endif
 
 
 //----------------------------------------------------------------------
@@ -1633,7 +1786,7 @@ ST::Print (FILE *f, BOOL verbose) const
 
     if (!verbose) {
 	/* quick address */
-	fprintf (f, " @ 0x%" PRIx64 "", offset);
+	fprintf (f, " @ 0x%" SCNd64 "", offset);
 	if (base_idx != 0)
 	    fprintf (f, "(%s)", ST_name (base_idx));
     }
@@ -1694,6 +1847,11 @@ ST::Print (FILE *f, BOOL verbose) const
 	    if (flags & PU_HAS_USER_ALLOCA)	fprintf (f, " user_alloca");
 	    if (flags & PU_HAS_UNKNOWN_CONTROL_FLOW)	fprintf (f, " unknown_control_flow");
 	    if (flags & PU_IS_THUNK)		fprintf (f, " thunk");
+#ifdef TARG_ST
+            /* (cbr) */
+            if (flags & PU_STATIC_INITIALIZER)  fprintf (f, " static initializer");
+#endif
+
 #ifdef KEY
 	    if (flags & PU_NEEDS_MANUAL_UNWINDING) fprintf (f, " needs_manual_unwinding");
 	    if (flags & PU_IS_EXTERN_INLINE) fprintf (f, " extern_inline");
@@ -1764,7 +1922,20 @@ ST::Print (FILE *f, BOOL verbose) const
 	    if (flags & ST_IS_CONST_VAR)	fprintf (f, " const");
 	    if (flags & ST_ADDR_SAVED)		fprintf (f, " addr_saved");
 	    if (flags & ST_ADDR_PASSED)		fprintf (f, " addr_passed");
+#ifdef TARG_ST
+	    // [SC] TLS support
+	    if (flags & ST_IS_THREAD_PRIVATE) {
+	      fprintf (f, " thread_private:");
+	      switch (tls_model) {
+	      case ST_TLS_MODEL_GLOBAL_DYNAMIC: fprintf (f, "global-dynamic"); break;
+	      case ST_TLS_MODEL_LOCAL_DYNAMIC:  fprintf (f, "local-dynamic");  break;
+	      case ST_TLS_MODEL_INITIAL_EXEC:   fprintf (f, "initial-exec");   break;
+	      case ST_TLS_MODEL_LOCAL_EXEC:     fprintf (f, "local-exec");     break;
+	      }
+	    }
+#else
 	    if (flags & ST_IS_THREAD_PRIVATE)	fprintf (f, " thread_private");
+#endif
 	    if (flags & ST_ASSIGNED_TO_DEDICATED_PREG)
 		fprintf (f, " assigned_to_dedicated_preg");
 	}
@@ -1774,12 +1945,18 @@ ST::Print (FILE *f, BOOL verbose) const
 	    fprintf (f, "\t\tFlags_ext:\t0x%08x", flags_ext);
 	    if (flags_ext & ST_ONE_PER_PU)
 		fprintf (f, " one_per_pu");
+            #ifdef TARG_ST
+            /* (cbr) */
+	    if (flags_ext & ST_IS_COMDAT)	fprintf (f, " comdat");
+#endif
+#ifndef TARG_ST
 	    if (flags_ext & ST_COPY_CONSTRUCTOR_ST)
 		fprintf (f, " copy_constructor_st");
             if (flags_ext & ST_INITV_IN_OTHER_ST)
                 fprintf (f, " st_used_as_initialization");
             if (flags_ext & ST_IS_THREAD_LOCAL)
                 fprintf (f, " thread_local");
+#endif
 	}
 #endif
 
@@ -1886,11 +2063,17 @@ TY::Print (FILE *f) const
 	if (flags & TY_NOT_IN_UNION)	fprintf (f, " not_in_union");
 	if (flags & TY_NO_ANSI_ALIAS)	fprintf (f, " no_ansi_alias");
 	if (flags & TY_IS_NON_POD)	fprintf (f, " non_pod");
+#ifdef TARG_ST
+        // (cbr) object doesn't throws */
+	if (flags & TY_IS_NOTHROW)	fprintf (f, " nothrow");
+#endif
+#ifndef TARG_ST
 #ifdef KEY
 	if (flags & TY_RETURN_IN_MEM)	fprintf (f, " return_in_mem");
 	if (flags & TY_CONTENT_SEEN)	fprintf (f, " content_seen");
 	if (flags & TY_IS_INCOMPLETE)	fprintf (f, " incomplete");
 	if (flags & TY_NO_SPLIT)        fprintf (f, " no_split");
+#endif
 #endif
     }
     fprintf (f, ")");
@@ -1979,13 +2162,13 @@ void
 PU::Print (FILE *f) const
 {
     Print_TY_IDX_verbose (f, prototype);
-#ifdef KEY
-    fprintf (f, ", flags 0x%016" SCNx64 ",\n"
+#if defined( KEY) && !defined(TARG_ST)
+    fprintf (f, ", flags 0x%016" SCNd64 ",\n"
 	     "\tlexical level %d, LANG 0x%02x, TARGET_INFO %d,\n"
 	     "\tMisc. Info (misc) %d\n",
 	     flags, lexical_level, src_lang, target_idx, misc); 
 #else
-    fprintf (f, ", flags 0x%016llx,\n"
+    fprintf (f, ", flags 0x%016"SCNx64",\n"
 	     "\tlexical level %d, LANG 0x%02x, TARGET_INFO %d\n",
 	     flags, lexical_level, src_lang, target_idx); 
 #endif
@@ -2025,7 +2208,7 @@ PREG::Print (FILE *f) const
 void
 ST_ATTR::Print (FILE* f) const
 {
-    fprintf (f, "0x%" PRIxPTR " (%s) --> ", st_idx, ST_name (st_idx));
+    fprintf (f, "0x%" PRIuPTR " (%s) --> ", st_idx, ST_name (st_idx));
     switch (kind) {
     case ST_ATTR_UNKNOWN:
 	fprintf (f, "(NOT USED)\n");
@@ -2310,17 +2493,31 @@ Promoted_Parm_Type(const ST *formal_parm)
 //----------------------------------------------------------------------
 
 // for fast conversion of predefined types and preg.
+#ifdef  TARG_ST
+ST *MTYPE_TO_PREG_array[MTYPE_MAX_LIMIT+1];
+#else
 ST *MTYPE_TO_PREG_array[MTYPE_LAST+1];
-
-ST *Int_Preg, *Float_Preg, *Return_Val_Preg;
+#endif
+ST *Int_Preg, *Float_Preg, *Ptr_Preg, *Return_Val_Preg;
 #ifdef TARG_X8664
 ST* X87_Preg = NULL;
 #endif
+#ifdef TARG_ST
+//TB: Return specific symbol to handle things like non general register in
+//clobber asm list
+static ST *Untyped_Preg_Var = NULL;
+#endif
 
+#ifdef TARG_ST
+TY_IDX MTYPE_TO_TY_array[MTYPE_MAX_LIMIT+1];
+#else
 TY_IDX MTYPE_TO_TY_array[MTYPE_LAST+1];
-
-TY_IDX Quad_Type, Void_Type, FE_int_Type, FE_double_Type;
-TY_IDX Spill_Int_Type, Spill_Float_Type;
+#endif
+TY_IDX Quad_Type, Void_Type;
+#ifndef TARG_ST
+TY_IDX XFE_int_Type, FE_int_Type, FE_double_Type;
+#endif
+TY_IDX Spill_Int_Type, Spill_Ptr_Type, Spill_Float_Type;
 #ifdef KEY
 TY_IDX Spill_Int32_Type;
 TY_IDX Spill_Float32_Type;
@@ -2414,6 +2611,16 @@ Setup_Preg_Pointers ()
 #ifdef TARG_X8664
     X87_Preg = MTYPE_To_PREG( MTYPE_FQ );
 #endif
+#ifdef TARG_ST 
+    /*
+   * For some reason only one ST is valid at any time, so I
+   * need to hack:
+   */
+  if (MTYPE_To_TY(MTYPE_A8) != 0)
+    Ptr_Preg = Ptr64_Preg;
+  else
+    Ptr_Preg = Ptr32_Preg;
+#endif
 } // Setup_Preg_Pointers
 
 
@@ -2425,7 +2632,13 @@ Create_All_Preg_Symbols ()
 	    continue;
 	if (MTYPE_To_PREG (i) != NULL)
 	    continue;
+#ifdef TARG_ST
+	//TB: fix codex-22500 (dynamic mtype with size < 4)
+	// Remain valid for composed MTYPE
+	if (!MTYPE_is_dynamic(i) && MTYPE_byte_size(i) < 4) {
+#else
 	if (MTYPE_byte_size(i) < 4) {
+#endif
 #ifdef TARG_X8664 
             // Bugs 482, 505, 626
 	    // we will allow all forms of preg_ for the integer type.
@@ -2451,6 +2664,17 @@ Create_All_Preg_Symbols ()
 	Return_Val_Preg = st;
     }
 
+#ifdef TARG_ST
+//TB: Return specific symbol to handle things like non general register in
+//clobber asm list
+    if (Untyped_Preg_Var == NULL) {
+
+	ST *st = New_ST (GLOBAL_SYMTAB);
+	ST_Init (st, Save_Str (".preg_untyped"),
+		 CLASS_PREG, SCLASS_REG, EXPORT_LOCAL, 0);
+	Untyped_Preg_Var = st;
+    }
+#endif
     Setup_Preg_Pointers ();
 } // Create_All_Preg_Symbols
 
@@ -2478,7 +2702,16 @@ Set_up_all_preg_symbols ()
 		continue;
 	    }
 	}
-
+#ifdef TARG_ST
+//TB: Return specific symbol to handle things like non general register in
+//clobber asm list
+	if (Untyped_Preg_Var == NULL) {
+	    if (strcmp (ST_name (&st), ".preg_untyped") == 0) {
+		Untyped_Preg_Var = &st;
+		continue;
+	    }
+	}
+#endif
 	TY_IDX ty_idx = ST_type (st);
 	const TY& ty = Ty_Table[ty_idx];
 	TYPE_ID mtype = TY_mtype (ty);
@@ -2491,7 +2724,14 @@ Set_up_all_preg_symbols ()
     Create_All_Preg_Symbols ();
 
 } // Set_up_all_preg_symbols
-    
+
+#ifdef TARG_ST
+//[TB]Return specific symnbol to handle things like non general register in
+//clobber asm list
+extern ST* Untyped_Preg() {
+  return Untyped_Preg_Var;
+}
+#endif    
 /* ====================================================================
  *
  * Gen_Predef_Type_Name
@@ -2543,10 +2783,16 @@ Create_Special_Global_Symbols ()
 	    Spill_Int_Type = ty_idx;
 	} else if ( i == Spill_Float_Mtype ) {
 	    Spill_Float_Type = ty_idx;
+#ifdef TARG_ST
+	} else if (i == Spill_Ptr_Mtype) {
+	    Spill_Ptr_Type = ty_idx;
+#endif
 	}
 	if ( i == MTYPE_FQ || i == MTYPE_F16 )
 	    Quad_Type = ty_idx;
 
+#ifndef TARG_ST
+	/* [CG] Obsolete. */
 #if defined(FRONT_END_C) || defined(FRONT_END_CPLUSPLUS)
 #ifndef FRONT_END_MFEF77
 	if ( i == FE_int_To_Mtype() )
@@ -2555,6 +2801,7 @@ Create_Special_Global_Symbols ()
 	if ( i == MTYPE_F8 )
 	    FE_double_Type = ty_idx;
 #endif /* FRONT_END_C || FRONT_END_CPLUSPLUS */
+#endif /*!TARG_ST */
 	if ( i == MTYPE_V ) {
 	    Void_Type = ty_idx;
 	    ty_kind = KIND_VOID;
@@ -2643,6 +2890,9 @@ Initialize_Special_Global_Symbols ()
     Create_Special_Global_Symbols ();
 	    
     Spill_Int_Type = MTYPE_To_TY (Spill_Int_Mtype);
+#ifdef TAR_ST
+    Spill_Ptr_Type = MTYPE_To_TY (Spill_Ptr_Mtype);
+#endif
     Spill_Float_Type = MTYPE_To_TY (Spill_Float_Mtype);
 #ifdef KEY
     /* Bug#246
@@ -2677,8 +2927,8 @@ Initialize_Symbol_Tables (BOOL reserve_index_zero)
 					  Max_scope * sizeof(SCOPE));
     memset(Scope_tab, 0, Max_scope * sizeof(SCOPE));
 
-    memset (MTYPE_TO_PREG_array, 0, sizeof(ST*) * (MTYPE_LAST + 1));
-    memset (MTYPE_TO_TY_array, 0, sizeof(TY_IDX) * (MTYPE_LAST + 1));
+    memset (MTYPE_TO_PREG_array, 0,sizeof(ST*) * (MTYPE_LAST + 1));
+    memset (MTYPE_TO_TY_array, 0,sizeof(TY_IDX) * (MTYPE_LAST + 1));
 
     if (reserve_index_zero) {
 	// For producer, we reserve first entry for all global tables
@@ -2686,8 +2936,8 @@ Initialize_Symbol_Tables (BOOL reserve_index_zero)
 	Initialize_Strtab (0x1000);	// start with 4Kbytes for strtab.
 
 	UINT64 dummy_idx=0;
-	memset (&New_PU ((PU_IDX&) dummy_idx), 0, sizeof(PU));
-	memset (&New_TY ((TY_IDX&) dummy_idx), 0, sizeof(TY));
+	memset (&New_PU ((PU_IDX&) dummy_idx), 0,sizeof(PU));
+	memset (&New_TY ((TY_IDX&) dummy_idx), 0,sizeof(TY));
 	memset (New_FLD ().Entry(), 0, sizeof(FLD));
 	memset (&New_TYLIST ((TYLIST_IDX&) dummy_idx), 0, sizeof(TYLIST));
 	memset (New_ARB ().Entry(), 0, sizeof(ARB));

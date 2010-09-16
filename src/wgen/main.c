@@ -41,7 +41,7 @@ extern BOOL List_Enabled;
 extern INT Opt_Level;
 extern BOOL Enable_WFE_DFE;
 
-#ifndef TARG_MIPS
+#if !defined TARG_MIPS && !defined TARG_ST
 BOOL TARGET_64BIT = TRUE;
 #else
 BOOL TARGET_64BIT = FALSE;  // 11953: On MIPS, n32 is default abi
@@ -52,19 +52,30 @@ int lineno = 0;
 char *Spin_File_Name = NULL;
 FILE *Spin_File = NULL;
 BOOL flag_no_common = FALSE;
+#ifdef TARG_ST
+BOOL flag_short_double = FALSE;
+#endif
 int pstatic_as_global = 0;
 int key_exceptions = 0;
 BOOL opt_regions = 0;
 BOOL lang_cplus = FALSE;
 BOOL c_omit_external = TRUE;
 #ifdef FE_GNU_4_2_0
+#ifdef TARG_ST
+BOOL enable_cxx_openmp = FALSE;
+#else
 BOOL enable_cxx_openmp = TRUE;
 #endif
+#endif
 gs_t program;
+//#ifndef TARG_ST
+/* [SC] ST define this in libfereconf. */
 /*       MAX_DEBUG_LEVEL        2  :: Defined in flags.h */
 # define DEF_DEBUG_LEVEL        0
 INT Debug_Level = DEF_DEBUG_LEVEL;	/* -gn: debug level */
-
+//#endif
+//zwu
+int wgen_pic;
 extern void WGEN_Weak_Finish(void);
 extern void WGEN_Expand_Top_Level_Decl(gs_t);
 extern void WGEN_Expand_Defers(void);
@@ -72,6 +83,12 @@ extern void WGEN_Expand_Decl(gs_t, BOOL);
 #ifdef KEY
 extern void WGEN_Alias_Finish(void);
 #endif
+#ifdef TARG_ST
+extern void WGEN_Assemble_Asms(gs_t);
+extern void WGEN_Weakref_Init(gs_t);
+extern void WGEN_Idents(gs_t);
+#endif
+
 
 //*******************************************************
 // Process the command line arguments.
@@ -82,6 +99,9 @@ Process_Command_Line(INT argc, char **argv)
   INT i;
   char *cp;
 
+	//zwu
+	wgen_pic = 0;
+
   for (i = 1; i < argc; i++) {
       if ( argv[i] != NULL && *(argv[i]) == '-' ) {
 	  cp = argv[i]+1;	    /* Pointer to next flag character */
@@ -91,9 +111,10 @@ Process_Command_Line(INT argc, char **argv)
 	  case 'f':		    /* file options */
 	      if (*cp == 0)
 		  ;
-	      else if (*(cp+1) != ',' && *(cp+1) != ':')
-		  ;
-	      else {
+	      else if (*(cp+1) != ',' && *(cp+1) != ':') {
+            if (*(cp+1) == 'i' || *(cp+1) == 'I')
+              wgen_pic = 1;           
+          } else {
 		  switch (*cp) {
 		  case 'f':
 		      Feedback_File_Name = cp + 2;
@@ -114,7 +135,8 @@ Process_Command_Line(INT argc, char **argv)
 		  case 'S':	   /* Spin file */
 		      Spin_File_Name = cp + 2;
 		      break;
-
+		  case 'i':
+			wgen_pic = 1;
 		  default:
 		      break;
 		  }
@@ -125,12 +147,18 @@ Process_Command_Line(INT argc, char **argv)
 	      if (strncmp(cp, "PT:", 3) == 0) 
 		Process_Command_Line_Group (cp-1, Common_Option_Groups);
 	      break;
-	    
+#ifdef TARG_ST
+	  case 'T':
+	      if (strncmp(cp, "ARG:", 4) == 0
+		  || strncmp(cp, "ENV:", 4) == 0)
+	        Process_Command_Line_Group (cp-1, Common_Option_Groups);
+	      break;
+#endif
+   
 	  case 'v':
 	      Show_Progress = TRUE;
 	      break;
 
-	    
 	  default:		    /* What's this? */
 	      break;
 	  }
@@ -155,10 +183,14 @@ Process_Cc1_Command_Line(gs_t arg_list)
   argv = gs_s(gs_index(arg_list, 0));
   char *command = Last_Pathname_Component(argv);
 //printf("%s\n", command);
+#ifdef TARG_ST
+  lang_cplus = !strncmp(command, "cc1plus", 7);
+#else
 #ifdef FE_GNU_4_2_0
   lang_cplus = !strcmp(command, "cc1plus42");
 #else
   lang_cplus = !strcmp(command, "cc1plus");
+#endif
 #endif
 
   if (lang_cplus)
@@ -167,7 +199,12 @@ Process_Cc1_Command_Line(gs_t arg_list)
   for (i = 1; i < argc; i++) {
       argv = gs_s(gs_index(arg_list, i));
 //    printf("%s\n", argv);
+#ifdef TARG_ST
+      // [SC] "-" alone specifies sourcefile is stdin.
+      if ( *argv == '-' && argv[1] != 0) {
+#else
       if ( *argv == '-' ) {
+#endif
 	  cp = argv+1;	    /* Pointer to next flag character */
 
 	  switch ( *cp++ ) {
@@ -186,7 +223,12 @@ Process_Cc1_Command_Line(gs_t arg_list)
 	      break;
 
 	  case 'e':
+#ifdef TARG_ST
+	    // [SC] Support -exceptions for C also.
+	      if (!strcmp( cp, "xceptions" ))
+#else
 	      if (lang_cplus && !strcmp( cp, "xceptions" ))
+#endif
 		key_exceptions = TRUE;
 	      break;
 
@@ -194,7 +236,12 @@ Process_Cc1_Command_Line(gs_t arg_list)
 	      if (!strcmp( cp, "no-exceptions" )) {
 		key_exceptions = FALSE;
 	      }
+#ifdef TARG_ST
+	      // [SC] Support -exceptions for C also.
+	      else if (!strcmp( cp, "exceptions" )) {
+#else
 	      else if (lang_cplus && !strcmp( cp, "exceptions" )) {
+#endif
 		key_exceptions = TRUE;
 	      }
 	      else if (!strcmp( cp, "no-gnu-exceptions")) {
@@ -215,6 +262,13 @@ Process_Cc1_Command_Line(gs_t arg_list)
 	        enable_cxx_openmp = TRUE;
 	      }
 #endif
+#ifdef TARG_ST
+	      else if (!strcmp (cp, "no-common")) {
+		flag_no_common = TRUE;
+	      } else if (!strcmp (cp, "short-double")) {
+		flag_short_double = TRUE;
+	      }
+#endif
 	      break;
 
 	  case 'g':		    /* Debug level: */
@@ -227,7 +281,25 @@ Process_Cc1_Command_Line(gs_t arg_list)
 	  case 'i':
 	      if (!strcmp( cp, "prefix" )) 
 		i++;
+#ifdef TARG_ST
+	      if (!strcmp( cp, "system" ))
+		i++;
+	      if (!strcmp( cp, "dirafter" ))
+		i++;
+	      if (!strcmp( cp, "nclude" ))
+		i++;
+#endif
 	      break;
+#ifdef TARG_ST
+	  case 'M':
+	    if (!strcmp( cp, "D")
+		|| !strcmp( cp, "F")
+		|| !strcmp( cp, "MD")
+		|| !strcmp( cp, "Q")
+		|| !strcmp( cp, "T"))
+	      i++;
+	      break;
+#endif
 
 	  case 'm':
 #ifndef TARG_MIPS
@@ -237,6 +309,7 @@ Process_Cc1_Command_Line(gs_t arg_list)
 	      else if (!strcmp( cp, "64" )) {
 		TARGET_64BIT = TRUE;
 	      }
+#ifndef TARG_ST
 	      else if (!strncmp( cp, "regparm=", 8 )) {
 	        cp += 8;
 	        Reg_Parm_Count = Get_Numeric_Flag (&cp, 0, 3, 0, argv ); 
@@ -244,6 +317,7 @@ Process_Cc1_Command_Line(gs_t arg_list)
 	      else if (!strcmp( cp, "sseregparm" )) {
 	        SSE_Reg_Parm = TRUE;
 	      }
+#endif
 #else
 	      // 11953: MIPS expects -mabi=n32 or -mabi=64
 	      if (!strcmp( cp, "abi=n32" )) {
@@ -322,12 +396,21 @@ main ( INT argc, char **argv, char **envp)
 
 	WGEN_File_Init(argc, argv);
 
+#ifdef TARG_ST
+	WGEN_Weakref_Init (gs_weak_decls(program));
+	WGEN_Assemble_Asms (gs_gxx_emitted_asms(program));
+	WGEN_Idents (gs_gxx_emitted_idents(program));
+#endif
+
 	gs_t list = gs_operand(program, GS_PROGRAM_DECLARATIONS);
 	// in bug 10185, first list node is  NULL, so skip first node
 	if (gs_code(list) != EMPTY)
 	  list = gs_operand(list, 1);
 	for (; gs_code(list) != EMPTY; list = gs_operand(list, 1)) {
 	  gs_t decl = gs_operand(list, 0);
+#ifdef TARG_ST
+          if (lang_cplus)
+#endif
 	  WGEN_Expand_Top_Level_Decl(decl);
 #ifdef KEY
 	  WGEN_Expand_Defers();

@@ -3,7 +3,6 @@
 SET(LINUX_HFILES
 	elf_stuff.h
 	sgidefs.h
-	standards.h
    )
 
 SET(LINUX_SYS_HFILES
@@ -79,6 +78,12 @@ SET(LIBELF_HFILES
    )
 
 SET(LDIRT dwarf.h)
+
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	SET(PATH64_AUXILARY_LD_FLAGS "\"${LD_HASH_STYLE_FLAG} --eh-frame-hdr\"")
+ELSE()
+	SET(PATH64_AUXILARY_LD_FLAGS "\"\"")
+ENDIF()
 
 
 ## To prevent repetitious submakes to this subdirectory, Makefile.gsetup

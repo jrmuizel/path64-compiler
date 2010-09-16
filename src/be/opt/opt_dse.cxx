@@ -122,11 +122,16 @@ class DSE {
     void Set_Required_MU( MU_NODE *mu, BOOL real_use ) const;
     void Set_Required_CHI( CHI_NODE *chi ) const;
     void Set_Required_WN( WN *wn ) const;
+#ifdef TARG_ST
+    void Add_EH_exposed_use(WN *call, BOOL *dse_live_changed) const;
+    void Update_MU_list_for_call(BB_NODE *bb, BOOL *dse_live_changed) const;
+#else
     void Add_EH_exposed_use(WN *call) const;
 #ifdef KEY
     void Add_entry_exposed_uses(WN *call) const;
 #endif
     void Update_MU_list_for_call(BB_NODE *bb) const;
+#endif
     // some inlined functions
     BOOL Live_wn( WN *wn ) const
 		{ return WN_MAP32_Get( _live_wns, wn ); }
@@ -149,7 +154,11 @@ class DSE {
       }
 
     void Dead_store_elim( void ) const;
+#ifdef TARG_ST
+  void Add_MU_list_for_calls( BOOL *dse_live_changed ) const;
+#else
     void Add_MU_list_for_calls( void ) const;
+#endif
 
 }; // end of class DSE
 
@@ -186,7 +195,7 @@ DSE::Required_istore(const WN *wn) const
       occ->Points_to()->Restricted())
     return TRUE;
 
-#ifdef KEY // deleting fetch of MTYPE_M return value can cause lowerer to omit
+#if defined( KEY) && !defined(TARG_ST) // deleting fetch of MTYPE_M return value can cause lowerer to omit
   	   // inserting the fake parm
   if (Opt_stab()->Phase() == PREOPT_IPA0_PHASE && WN_desc(wn) == MTYPE_M &&
       WN_opcode(WN_kid0(wn)) == OPC_MMLDID) {
@@ -227,12 +236,12 @@ DSE::Required_stid( const WN *wn ) const
   if (ST_sclass(s) == SCLASS_FORMAL)  // leave the details to DCE
     return TRUE;   
 
-#ifdef KEY // bugs 5401 and 5267
+#if defined( KEY) && !defined(TARG_ST) // bugs 5401 and 5267
   if (Opt_stab()->Aux_stab_entry(Opt_stab()->Du_aux_id(du))->Mp_no_dse())
     return TRUE;   
 #endif
 
-#ifdef KEY // deleting fetch of MTYPE_M return value can cause lowerer to omit
+#if defined( KEY) && !defined(TARG_ST) // deleting fetch of MTYPE_M return value can cause lowerer to omit
   	   // inserting the fake parm
   if (Opt_stab()->Phase() == PREOPT_IPA0_PHASE && WN_desc(wn) == MTYPE_M &&
       WN_opcode(WN_kid0(wn)) == OPC_MMLDID) {
@@ -783,11 +792,22 @@ DSE::Dead_store_elim( void ) const
   }
 
   if (Opt_stab()->Has_exc_handler()
-#ifdef KEY
+#if defined(KEY) && !defined(TARG_ST)
       || Opt_stab()->Has_nonlocal_goto_target()
 #endif
      ) {
+#ifdef TARG_ST
+    // FdF 20091002: Need to iterate until a fixed point is reached,
+    // since we may propagate live-variables from catch handlers to
+    // try sections. (See codex #67467)
+    while (1) {
+      BOOL need_dse_live_update = FALSE;
+      Add_MU_list_for_calls(&need_dse_live_update);
+      if (!need_dse_live_update)
+	break;
+#else
     Add_MU_list_for_calls();
+#endif
 
     // update liveness because Add_MU_list_for_calls
     // changed the real_use and any_use
@@ -809,6 +829,9 @@ DSE::Dead_store_elim( void ) const
         vse->Chi()->Set_dse_dead(! vse->Any_use());
       }
     }
+#ifdef TARG_ST
+    }
+#endif
   }
 
   FOR_ALL_NODE( ssa_id, ver_stab_iter, Init() ) {
@@ -914,7 +937,45 @@ MU_LIST::New_mu_node_w_cur_vse(AUX_ID    var,
 // Visiting all the enclosing exception scope to add the additional
 // aliasing to the mu-list
 // ====================================================================
+#ifdef TARG_ST
+void
+DSE::Add_EH_exposed_use(WN *call, BOOL *dse_live_changed) const
+{
+  if (_exc == NULL || _exc->Get_es_link(call) == NULL)
+    return;
 
+  // we append additional variables in the mu list for C++ EH here
+  // The mu-list has already been process all address taken variables.
+  Is_True(_exc != NULL, ("DSE::Add_EH_exposed_use, NULL exception scope (1)"));
+  EXC_SCOPE *es = _exc->Get_es_link(call);
+  Is_True(es != NULL, ("DSE::Add_EH_exposed_use, NULL exception scope (2)"));
+  EXC_SCOPE_ITER exc_scope_iter(es);
+  EXC_SCOPE *exc_scope;
+  MU_LIST   *mu_list = _opt_stab->Get_stmt_mu_list(call);
+  MU_NODE   *mu;
+
+  FOR_ALL_NODE(exc_scope, exc_scope_iter, Init()) {
+    AUX_ID     var;
+    VER_ID     vse;
+      if (exc_scope->Is_try_region()) { // try region
+      EXC_SCOPE_TRY_ITER try_iter(exc_scope);
+      FOR_ALL_ELEM(var, try_iter, Init()) {
+        if (var != 0) {
+          vse = _opt_stab->Stack(var)->Top();
+          mu = mu_list->New_mu_node_w_cur_vse(var, vse,
+                                              _cfg->Mem_pool());
+          if (mu) {
+	    *dse_live_changed = TRUE;
+            Set_Required_MU( mu, FALSE );
+            if ( Tracing() )
+              fprintf( TFile, "<dse> Required EH_MU: var:%d\n", var );
+          }
+        }
+      }
+    }
+  }
+}
+#else
 void
 DSE::Add_EH_exposed_use(WN *call) const
 {
@@ -948,8 +1009,8 @@ DSE::Add_EH_exposed_use(WN *call) const
     }
   }
 }
-
-#ifdef KEY
+#endif
+#if defined( KEY) && !defined(TARG_ST)
 void
 DSE::Add_entry_exposed_uses(WN *call) const
 {
@@ -990,8 +1051,11 @@ DSE::Add_entry_exposed_uses(WN *call) const
 // Visit the dominator tree to add mu to all calls nested inside any
 // exception scope
 // ====================================================================
-
+#ifdef TARG_ST
+void DSE::Update_MU_list_for_call(BB_NODE *bb, BOOL *dse_live_changed) const
+#else
 void DSE::Update_MU_list_for_call(BB_NODE *bb) const
+#endif
 {
   PHI_LIST_ITER phi_iter;
   PHI_NODE *phi;
@@ -1016,11 +1080,15 @@ void DSE::Update_MU_list_for_call(BB_NODE *bb) const
 
     // Process Calls
     if ( opr == OPR_CALL || opr == OPR_ICALL ) {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       if (_opt_stab->Has_exc_handler())
 #endif
+#ifdef TARG_ST
+      Add_EH_exposed_use(wn, dse_live_changed);
+#else
       Add_EH_exposed_use(wn);
-#ifdef KEY
+#endif
+#if defined( KEY) && !defined(TARG_ST)
       else if (_opt_stab->Has_nonlocal_goto_target())
 	Add_entry_exposed_uses(wn);
 #endif
@@ -1047,7 +1115,11 @@ void DSE::Update_MU_list_for_call(BB_NODE *bb) const
   }
 
   FOR_ALL_ELEM (dom_bb, dom_bb_iter, Init(bb->Dom_bbs())) {
+#ifdef TARG_ST
+    Update_MU_list_for_call(dom_bb, dse_live_changed);  /* child */
+#else
     Update_MU_list_for_call(dom_bb);  /* child */
+#endif
   }
 
   //  The statements are processed in reverse order when poping vse
@@ -1086,9 +1158,13 @@ void DSE::Update_MU_list_for_call(BB_NODE *bb) const
 // ====================================================================
 // Driver for the Add MU list for calls
 // ====================================================================
-
+#ifdef TARG_ST
+void
+DSE::Add_MU_list_for_calls( BOOL *dse_live_changed ) const
+#else
 void
 DSE::Add_MU_list_for_calls( void ) const
+#endif
 {
   AUX_ID var;
   MEM_POOL stack_pool;
@@ -1104,8 +1180,11 @@ DSE::Add_MU_list_for_calls( void ) const
       psym->Set_stack(CXX_NEW(STACK<AUX_ID>(&stack_pool), &stack_pool));
     }
   } 
-
+#ifdef TARG_ST
+  Update_MU_list_for_call(_cfg->Entry_bb(), dse_live_changed);
+#else
   Update_MU_list_for_call(_cfg->Entry_bb());
+#endif
 
   OPT_POOL_Pop(&stack_pool, DSE_DUMP_FLAG);
   OPT_POOL_Delete(&stack_pool, DSE_DUMP_FLAG);

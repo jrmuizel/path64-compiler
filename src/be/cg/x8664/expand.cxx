@@ -77,7 +77,7 @@
 #include "data_layout.h"
 #include "stblock.h"
 #include "cgexp.h"
-#include "cgexp_internals.h"
+
 #include "w2op.h"
 #include "label_util.h"
 #include "cgtarget.h"
@@ -107,6 +107,7 @@ BOOL Trace_Exp2 = FALSE;      /* extra cgexp trace*/
 static TN_MAP _TN_Pair_table = NULL;
 
 static TN *Exp_Fetch_and_Add (TN *addr, TN *opnd1, TYPE_ID mtype, OPS *ops);
+static TN *Exp_Add_and_Fetch (TN *addr, TN *opnd1, TYPE_ID mtype, OPS *ops);
 
 void
 Expand_Cmov (TOP top, TN *result, TN *src, TN *rflags, OPS *ops, TN *result2,
@@ -2274,7 +2275,7 @@ void Expand_Binary_And (TN *dest, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops)
       return;
     }
 
-    if (!is_64bit || ISA_LC_Value_In_Class ( val, LC_simm32)) 
+    if (!is_64bit && ISA_LC_Value_In_Class ( val, LC_simm32)) 
       new_opcode = is_64bit ? TOP_andi64 : TOP_andi32;
     else {
       src1 = Expand_Immediate_Into_Register(src1, is_64bit, ops);
@@ -2324,7 +2325,7 @@ void Expand_Binary_Or (TN *dest, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops)
       return;
     }
 
-    if (!is_64bit || ISA_LC_Value_In_Class ( val, LC_simm32)) 
+    if (!is_64bit && ISA_LC_Value_In_Class ( val, LC_simm32)) 
       new_opcode = is_64bit ? TOP_ori64 : TOP_ori32;
     else {
       src1 = Expand_Immediate_Into_Register(src1, is_64bit, ops);
@@ -2373,7 +2374,7 @@ void Expand_Binary_Xor (TN *dest, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops)
       return;
     }
 
-    if (!is_64bit || ISA_LC_Value_In_Class ( val, LC_simm32)) 
+    if (!is_64bit && ISA_LC_Value_In_Class ( val, LC_simm32)) 
       new_opcode = is_64bit ? TOP_xori64 : TOP_xori32;
     else {
       src1 = Expand_Immediate_Into_Register(src1, is_64bit, ops);
@@ -3937,6 +3938,8 @@ Expand_Int_To_Float (TN *dest, TN *src, TYPE_ID imtype, TYPE_ID fmtype, OPS *ops
       top = TOP_cvtdq2ps;    
     else if (imtype == MTYPE_U8 || imtype == MTYPE_I8)
       top = TOP_cvtsi2sdq; // bug 3082 workaround, others should not reach here
+	else if(imtype == MTYPE_V16I8) 
+      top = TOP_cvtdq2ps;
   }
 
   FmtAssert( top != TOP_UNDEFINED, ("Expand_Int_To_Float: Undefined opcode") );
@@ -6447,7 +6450,7 @@ Expand_Count_Leading_Zeros (TN *result, TN *op, TYPE_ID mtype,
 }
 
 void
-Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TYPE_ID mtype, OPS *ops)
+Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, TN *op4, TYPE_ID mtype, OPS *ops)
 {
   TN* rflags = Rflags_TN();
   TN *result_tmp = Build_TN_Of_Mtype( MTYPE_U1 );
@@ -6642,6 +6645,9 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TYPE_ID m
     break;
   case INTRN_PADDW128:
     Build_OP( TOP_add128v16, result, op0, op1, ops );
+    break;
+  case INTRN_PADDQ128:
+    Build_OP( TOP_add128v64, result, op0, op1, ops );
     break;
   case INTRN_PADDUSW:
     Build_OP( TOP_paddusw, result, op0, op1, ops );
@@ -7024,6 +7030,9 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TYPE_ID m
   case INTRN_ANDPD:
     Build_OP( TOP_fand128v64, result, op0, op1, ops );
     break;
+  case INTRN_ANDNPD:
+    Build_OP( TOP_fandn128v64, result, op0, op1, ops );
+    break;
   case INTRN_ORPD:
     Build_OP( TOP_for128v64, result, op0, op1, ops );
     break;
@@ -7262,7 +7271,21 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TYPE_ID m
    case INTRN_INSERTQ:
     Build_OP(TOP_insertq, result, op0, op1, ops );
     break;
-   case INTRN_PAND128:
+   case INTRN_ADDSUBPS:
+    Build_OP(TOP_faddsub128v32, result, op0, op1, ops );
+    break;
+   case INTRN_PCMPISTRI128:
+    Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
+    break;
+  case INTRN_PCMPISTRM128:
+    Build_OP(TOP_pcmpistrm, result, op0, op1, op2, ops );
+    break;
+  case INTRN_PCMPESTRI128:
+    Build_OP(TOP_pcmpestri, result, op0, op1, op2, op3, op4, ops);
+    break;
+  case INTRN_PCMPESTRM128:
+    Build_OP(TOP_pcmpestrm, result, op0, op1, op2, op3, op4, ops);
+  case INTRN_PAND128:
     Build_OP(TOP_pand128, result, op0, op1, ops );
     break;
    case INTRN_PEXTRW64:
@@ -7308,7 +7331,7 @@ static TYPE_ID
 Get_Intrinsic_Size_Mtype (INTRINSIC id)
 {
   switch (id) {
-  case INTRN_COMPARE_AND_SWAP_I4:
+  case INTRN_VAL_COMPARE_AND_SWAP_I4:
   case INTRN_LOCK_TEST_AND_SET_I4:
   case INTRN_LOCK_RELEASE_I4:
   case INTRN_FETCH_AND_ADD_I4:
@@ -7324,7 +7347,7 @@ Get_Intrinsic_Size_Mtype (INTRINSIC id)
   case INTRN_FETCH_AND_AND_I4:
   case INTRN_FETCH_AND_NAND_I4:
 	return MTYPE_I4;
-  case INTRN_COMPARE_AND_SWAP_I8:
+  case INTRN_VAL_COMPARE_AND_SWAP_I8:
   case INTRN_LOCK_TEST_AND_SET_I8:
   case INTRN_LOCK_RELEASE_I8:
   case INTRN_FETCH_AND_ADD_I8:
@@ -7369,17 +7392,29 @@ Intrinsic_Returns_New_Value (INTRINSIC id)
   }
 }
 
+
+TN* Exp_Fetch_and_And(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                      LABEL_IDX *label, OPS *loop_ops);
+TN* Exp_Fetch_and_Or(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                     LABEL_IDX *label, OPS *loop_ops);
+TN* Exp_Fetch_and_Xor(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                      LABEL_IDX *label, OPS *loop_ops);
+TN* Exp_Val_Compare_and_Swap(TN* addr, TN* opnd1, TN* opnd2, TYPE_ID mtype, OPS* ops);
+TN* Exp_Bool_Compare_and_Swap(TN* addr, TN* opnd1, TN* opnd2, TYPE_ID mtype, OPS* ops);
+TN* Exp_Lock_Test_and_Set(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops);
+
 // initial expansion of intrinsic call (may not be complete lowering).
 // return result TN (if set).
 // If the intrinsic requires a label and loop (2 bb's)
 // then ops is for first bb and ops2 is for bb after the label.
 // Otherwise only ops is filled in.
 TN *
-Exp_Intrinsic_Call (INTRINSIC id, TN *op0, TN *op1, TN *op2,
+Exp_Intrinsic_Call (WN *intrncall, TN *op0, TN *op1, TN *op2,
                     OPS *ops, LABEL_IDX *label, OPS *loop_ops)
 {
   TN *result = NULL;
   TYPE_ID mtype;
+  INTRINSIC id = WN_intrinsic(intrncall);
 
   switch (id) {
   case INTRN_SYNCHRONIZE:
@@ -7490,6 +7525,60 @@ Exp_Intrinsic_Call (INTRINSIC id, TN *op0, TN *op1, TN *op2,
       result = Exp_Fetch_and_Add(op0, neg_tn, mtype, ops);
     }
     break;
+
+  case INTRN_FETCH_AND_AND_I4:
+  case INTRN_FETCH_AND_AND_I8:
+    return Exp_Fetch_and_And(op0, op1, WN_rtype(intrncall),
+                             ops, label, loop_ops);
+
+  case INTRN_FETCH_AND_OR_I4:
+  case INTRN_FETCH_AND_OR_I8:
+    return Exp_Fetch_and_Or(op0, op1, WN_rtype(intrncall),
+                            ops, label, loop_ops);
+
+  case INTRN_FETCH_AND_XOR_I4:
+  case INTRN_FETCH_AND_XOR_I8:
+    return Exp_Fetch_and_Xor(op0, op1, WN_rtype(intrncall),
+                             ops, label, loop_ops);
+
+  // COMPARE_AND_SWAP
+
+  case INTRN_VAL_COMPARE_AND_SWAP_I4:
+  case INTRN_VAL_COMPARE_AND_SWAP_I8:
+    return Exp_Val_Compare_and_Swap(op0, op1, op2,
+                                    WN_rtype(WN_kid1(intrncall)), ops);
+
+  case INTRN_BOOL_COMPARE_AND_SWAP_I4:
+  case INTRN_BOOL_COMPARE_AND_SWAP_I8:
+    return Exp_Bool_Compare_and_Swap(op0, op1, op2,
+                                     WN_rtype(WN_kid1(intrncall)), ops);
+
+  // ADD/SUB_AND_FETCH...
+
+  case INTRN_ADD_AND_FETCH_I4:
+  case INTRN_ADD_AND_FETCH_I8:
+    mtype = (id == INTRN_ADD_AND_FETCH_I4) ?  MTYPE_I4 : MTYPE_I8;
+    result = Exp_Add_and_Fetch(op0, op1, mtype, ops);
+    break;
+
+  case INTRN_SUB_AND_FETCH_I4:
+  case INTRN_SUB_AND_FETCH_I8:
+    {
+      TN *neg_tn = Build_TN_Like(op1);
+      if (id == INTRN_SUB_AND_FETCH_I4) {
+        mtype = MTYPE_I4;
+        Build_OP(TOP_neg32, neg_tn, op1, ops);
+      } else {
+        mtype = MTYPE_I8;
+        Build_OP(TOP_neg64, neg_tn, op1, ops);
+      }
+      result = Exp_Add_and_Fetch(op0, neg_tn, mtype, ops);
+    }
+    break;
+
+  case INTRN_LOCK_TEST_AND_SET_I4:
+  case INTRN_LOCK_TEST_AND_SET_I8:
+    return Exp_Lock_Test_and_Set(op0, op1, WN_rtype(intrncall), ops);
 
   default:  
     FmtAssert(FALSE, ("Exp_Intrinsic_Call: unimplemented"));
@@ -7856,31 +7945,156 @@ TN *Exp_Fetch_and_Add (TN *addr, TN *opnd1, TYPE_ID mtype, OPS *ops )
   return result_tn;
 }
 
-TN* Exp_Compare_and_Swap( TN* addr, TN* opnd1, TN* opnd2, TYPE_ID mtype, OPS* ops )
+
+static
+TN *Exp_Add_and_Fetch (TN *addr, TN *opnd1, TYPE_ID mtype, OPS *ops )
+{
+  TOP xadd = TOP_UNDEFINED;
+  TOP move = TOP_UNDEFINED;
+  TOP add = TOP_UNDEFINED;
+  TN *result_tn = Build_TN_Like(opnd1);
+
+  switch (mtype) {
+    case MTYPE_I1:
+      xadd = TOP_lock_xadd8;
+      move = TOP_mov32;
+      add  = TOP_add32;
+      break;
+    case MTYPE_U1:
+      xadd = TOP_lock_xadd8;
+      move = TOP_mov32;
+      add  = TOP_add32;
+      break;
+
+    case MTYPE_I2:
+      xadd = TOP_lock_xadd16;
+      move = TOP_mov32;
+      add  = TOP_add32;
+      break;
+    case MTYPE_U2:
+      xadd = TOP_lock_xadd16;
+      move = TOP_mov32;
+      add  = TOP_add32;
+      break;
+
+    case MTYPE_I4:
+    case MTYPE_U4:
+      xadd = TOP_lock_xadd32;
+      move = TOP_mov32;
+      add  = TOP_add32;
+      break;
+
+    case MTYPE_I8:
+    case MTYPE_U8:
+      xadd = TOP_lock_xadd64;
+      move = TOP_mov64;
+      add  = TOP_add64;
+      break;
+
+    default:
+      FmtAssert(FALSE, ("Exp_Add_and_Fetch: unsupported mtype"));
+  }
+
+  if (Is_Target_32bit() && xadd == TOP_lock_xadd64)
+    FmtAssert(FALSE, ("Exp_Add_and_Fetch: 64-bit add-and-fetch NYI under m32"));
+  else {
+    Build_OP(move, result_tn, opnd1, ops );
+    Build_OP(xadd, result_tn, opnd1, addr, Gen_Literal_TN(0,4), ops );
+    Build_OP(add, result_tn, result_tn, opnd1, ops);
+  }
+
+  return result_tn;
+}
+
+
+TOP Compare_and_Swap_Top(TYPE_ID mtype) {
+  switch( mtype ){
+  case MTYPE_I1:
+  case MTYPE_U1:
+    return TOP_lock_cmpxchg8;
+
+  case MTYPE_I2:
+  case MTYPE_U2:
+    return TOP_lock_cmpxchg16;
+
+  case MTYPE_I4:
+  case MTYPE_U4:
+    return TOP_lock_cmpxchg32;
+
+  case MTYPE_I8:
+  case MTYPE_U8:
+    return TOP_lock_cmpxchg64;
+
+  default:
+    FmtAssert( FALSE,
+	       ("Compare_and_Swap_Top: support me now") );
+  }
+}
+
+
+TN* Exp_Val_Compare_and_Swap(TN* addr, TN* opnd1, TN* opnd2, TYPE_ID mtype, OPS* ops)
 {
   TN* rflags = Rflags_TN();
+  TOP top = Compare_and_Swap_Top(mtype);
 
-  TOP top = TOP_UNDEFINED;
+  const BOOL is_64bit = (top == TOP_lock_cmpxchg64);
+  TN* result = Build_TN_Of_Mtype ( is_64bit ? MTYPE_I8: MTYPE_I4);
+  Build_OP( top, rflags, result, opnd1, opnd2, addr, Gen_Literal_TN(0,4), ops );
+  return result;
+}
+
+
+TN* Exp_Bool_Compare_and_Swap(TN* addr, TN* opnd1, TN* opnd2, TYPE_ID mtype, OPS* ops)
+{
+  TN* rflags = Rflags_TN();
+  TOP top = Compare_and_Swap_Top(mtype);
+  const BOOL is_64bit = (top == TOP_lock_cmpxchg64);
+
+  TN* result = Build_TN_Of_Mtype (Is_Target_64bit() ? MTYPE_I8: MTYPE_I4);
+  TN* tmp = Build_TN_Like(opnd1);
+  Build_OP( top, rflags, tmp, opnd1, opnd2, addr, Gen_Literal_TN(0,4), ops );
+  if (is_64bit)
+    Build_OP(TOP_ldc64, result, Gen_Literal_TN(0,8), ops);
+  else
+    Build_OP(TOP_ldc32, result, Gen_Literal_TN(0,4), ops);
+  Build_OP(TOP_sete, result, rflags, ops);
+  Set_OP_cond_def_kind(OPS_last(ops), OP_ALWAYS_COND_DEF);
+  return result;
+}
+
+
+// Expand FETCH_AND_XXX intrinsic using lock cmpxchg instruction
+TN* Exp_Fetch_and_XXX(TOP intrn_top, TN* addr, TN* opnd1, TYPE_ID mtype,
+                      OPS* ops, LABEL_IDX *label, OPS *loop_ops)
+{
+  TN* result_tn = Build_TN_Like(opnd1);
+  TN* rflags = Rflags_TN();
+  TOP top_cmpxchg = TOP_UNDEFINED;
+  TOP top_ld = TOP_UNDEFINED;
 
   switch( mtype ){
   case MTYPE_I1:
   case MTYPE_U1:
-    top = TOP_lock_cmpxchg8;
+    top_cmpxchg = TOP_lock_cmpxchg8;
+    top_ld = TOP_ldu8_32;
     break;
 
   case MTYPE_I2:
   case MTYPE_U2:
-    top = TOP_lock_cmpxchg16;
+    top_cmpxchg = TOP_lock_cmpxchg16;
+    top_ld = TOP_ldu16_32;
     break;
 
   case MTYPE_I4:
   case MTYPE_U4:
-    top = TOP_lock_cmpxchg32;
+    top_cmpxchg = TOP_lock_cmpxchg32;
+    top_ld = TOP_ld32;
     break;
 
   case MTYPE_I8:
   case MTYPE_U8:
-    top = TOP_lock_cmpxchg64;
+    top_cmpxchg = TOP_lock_cmpxchg64;
+    top_ld = TOP_ld64;
     break;
 
   default:
@@ -7888,120 +8102,127 @@ TN* Exp_Compare_and_Swap( TN* addr, TN* opnd1, TN* opnd2, TYPE_ID mtype, OPS* op
 	       ("Exp_Compare_and_Swap: support me now") );
   }
 
-  TN* result;
-  const BOOL is_64bit = (top == TOP_lock_cmpxchg64);
-  result = Build_TN_Of_Mtype ( is_64bit ? MTYPE_I8: MTYPE_I4);
-  Build_OP( top, rflags, opnd1, opnd2, addr, Gen_Literal_TN(0,4), ops );
-  if (is_64bit)
-    Build_OP(TOP_ldc64, result, Gen_Literal_TN(0,8), ops);
-  else
-    Build_OP(TOP_ldc32, result, Gen_Literal_TN(0,4), ops);
-  Build_OP( TOP_sete, result, rflags, ops );
-  Set_OP_cond_def_kind(OPS_last(ops), OP_ALWAYS_COND_DEF);
-  return result;
+  Build_OP(top_ld, result_tn, addr, Gen_Literal_TN(0, 4), loop_ops);
+
+  TN* new_val = Build_TN_Of_Mtype(mtype);
+  Build_OP(intrn_top, new_val, result_tn, opnd1, loop_ops);
+
+  TN* tmp = Build_TN_Like(result_tn);
+  Build_OP(top_cmpxchg, rflags, tmp, result_tn, new_val, addr, Gen_Literal_TN(0, 4), loop_ops);
+
+  *label = Gen_Temp_Label();
+  Build_OP(TOP_jne, rflags, Gen_Label_TN(*label, 0), loop_ops);
+  return result_tn;
 }
 
-// Expand FETCH_AND_AND intrinsic into the following format
-//        lock (addr) = (addr) & opnd1
-void Exp_Fetch_and_And( TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops )
+
+TN* Exp_Fetch_and_And(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                      LABEL_IDX *label, OPS *loop_ops)
 {
   TOP top = TOP_UNDEFINED;
 
   switch( mtype ){
   case MTYPE_I1:
   case MTYPE_U1:
-    top = TOP_lock_and8;
+    top = TOP_and8;
     break;
 
   case MTYPE_I2:
   case MTYPE_U2:
-    top = TOP_lock_and16;
+    top = TOP_and16;
     break;
 
   case MTYPE_I4:
   case MTYPE_U4:
-    top = TOP_lock_and32;
+    top = TOP_and32;
     break;
 
   case MTYPE_I8:
   case MTYPE_U8:
-    top = TOP_lock_and64;
+    top = TOP_and64;
     break;
 
   default:
     FmtAssert( FALSE,
 	       ("Exp_Fetch_and_And: support me now") );
   }
-  Build_OP( top, opnd1, addr, Gen_Literal_TN(0,4), ops );
+
+  return Exp_Fetch_and_XXX(top, addr, opnd1, mtype, ops,
+                           label, loop_ops);
 }
 
-// Expand FETCH_AND_OR intrinsic into the following format
-//        lock (addr) = (addr) | opnd1
-void Exp_Fetch_and_Or( TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops )
+
+TN* Exp_Fetch_and_Or(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                     LABEL_IDX *label, OPS *loop_ops)
 {
   TOP top = TOP_UNDEFINED;
 
   switch( mtype ){
   case MTYPE_I1:
   case MTYPE_U1:
-    top = TOP_lock_or8;
+    top = TOP_or8;
     break;
 
   case MTYPE_I2:
   case MTYPE_U2:
-    top = TOP_lock_or16;
+    top = TOP_or16;
     break;
 
   case MTYPE_I4:
   case MTYPE_U4:
-    top = TOP_lock_or32;
+    top = TOP_or32;
     break;
 
   case MTYPE_I8:
   case MTYPE_U8:
-    top = TOP_lock_or64;
+    top = TOP_or64;
     break;
 
   default:
     FmtAssert( FALSE,
-               ("Exp_Fetch_and_Or: support me now") );
+	       ("Exp_Fetch_and_Or: support me now") );
   }
-  Build_OP( top, opnd1, addr, Gen_Literal_TN(0,4), ops );
+
+  return Exp_Fetch_and_XXX(top, addr, opnd1, mtype, ops,
+                           label, loop_ops);
 }
 
-// Expand FETCH_AND_XOR intrinsic into the following format
-//        lock (addr) = (addr) ^ opnd1
-void Exp_Fetch_and_Xor( TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops )
+
+TN* Exp_Fetch_and_Xor(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                      LABEL_IDX *label, OPS *loop_ops)
 {
   TOP top = TOP_UNDEFINED;
 
   switch( mtype ){
   case MTYPE_I1:
   case MTYPE_U1:
-    top = TOP_lock_xor8;
+    top = TOP_xor8;
     break;
 
   case MTYPE_I2:
   case MTYPE_U2:
-    top = TOP_lock_xor16;
+    top = TOP_xor16;
     break;
 
   case MTYPE_I4:
   case MTYPE_U4:
-    top = TOP_lock_xor32;
+    top = TOP_xor32;
     break;
 
   case MTYPE_I8:
   case MTYPE_U8:
-    top = TOP_lock_xor64;
+    top = TOP_xor64;
     break;
 
   default:
     FmtAssert( FALSE,
-               ("Exp_Fetch_and_Xor: support me now") );
+	       ("Exp_Fetch_and_Or: support me now") );
   }
-  Build_OP( top, opnd1, addr, Gen_Literal_TN(0,4), ops );
+
+  return Exp_Fetch_and_XXX(top, addr, opnd1, mtype, ops,
+                           label, loop_ops);
 }
+
 
 // Expand FETCH_AND_SUB intrinsic into the following format
 //        lock (addr) = (addr) - opnd1
@@ -8036,6 +8257,45 @@ void Exp_Fetch_and_Sub( TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops )
   }
   Build_OP( top, opnd1, addr, Gen_Literal_TN(0,4), ops );
 }
+
+
+TN* Exp_Lock_Test_and_Set(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops) {
+  TOP top = TOP_UNDEFINED;
+  TN *result_tn = Build_TN_Like(opnd1);
+
+  switch (mtype) {
+    case MTYPE_I1:
+    case MTYPE_U1:
+      top = TOP_xchgx8;
+      break;
+
+    case MTYPE_I2:
+    case MTYPE_U2:
+      top = TOP_xchgx16;
+      break;
+
+    case MTYPE_I4:
+    case MTYPE_U4:
+      top = TOP_xchgx32;
+      break;
+
+    case MTYPE_I8:
+    case MTYPE_U8:
+      top = TOP_xchgx64;
+      break;
+
+    default:
+      FmtAssert(FALSE, ("Exp_Fetch_and_Add: unsupported mtype"));
+  }
+
+  if (Is_Target_32bit() && top == TOP_xchgx64)
+    FmtAssert(FALSE, ("Exp_Test_Lock_and_Set: 64-bit test-lock-and-set NYI under m32"));
+  else
+    Build_OP(top, result_tn, opnd1, addr, Gen_Literal_TN(0,4), ops );
+
+  return result_tn;
+}
+
 
 // Allocate a temp stack location for SRC and store SRC into it.  Return the
 // base TN and the offset TN of the memory location.

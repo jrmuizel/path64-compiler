@@ -1,5 +1,7 @@
 % -*- fundamental -*-
 %
+%  Copyright (C) 2010 PathScale Inc. All Rights Reserved.
+%
 %  Copyright (C) 2007, 2008, 2009 PathScale, LLC.  All Rights Reserved.
 %
 %  Copyright (C) 2008-2009 Advanced Micro Devices, Inc.  All Rights Reserved.
@@ -249,8 +251,10 @@ I-include=%D  ;		FTN     ffe,PFA     "-include=%D"
 -nostdlib	;	LINK	ld	self
 	"Do not use standard system startup files or libraries when linking"
 #ifdef PATH64_ENABLE_PSCRUNTIME
--stdcxx_not_threadsafe      stdcxx_threadsafe=FALSE;         ALL     cpp     ""
-        "Use faster apache stdcxx library ignoring thread safety"
+-nostdlib++	;	LINK	ld	""
+	"Do not use standard C++ libraries when linking"
+-stl_not_threadsafe      stl_threadsafe=FALSE;         ALL     cpp     ""
+        "Use faster STL library ignoring thread safety"
 #endif
 -useacml_mv    ;       LINK    ld      ""
        "Include libacml_mv when linking with libm"
@@ -369,7 +373,7 @@ I-cpp_pic	;		ALL	NONE	"-D_PIC -D__DSO__"
 	""
 -GRA:%s		;		ALL	be	"-GRA:%s"
 	"option group to control global register allocation"
-#ifdef X8664
+#ifdef TARG_X8664
 -GRA:unspill=on,off ;		ALL	be	""
 	"when on enables optimal GRA/LRA boundary condition allocations"
 #endif
@@ -381,7 +385,7 @@ I-cpp_pic	;		ALL	NONE	"-D_PIC -D__DSO__"
 	"where n=0,1,2 controls unrolling, none=0, default=1, aggressive=2"
 -CG:unroll_fb_req=on,off ;		ALL	be	""
 	"when on with FDO disables cold code layout for unrolled loops"
-#ifdef X8664
+#ifdef TARG_X8664
 -CG:cmp_peep=on,off ;		ALL	be	""
 	"when on load-exec opts include compare instructions"
 -CG:compute_to=on,off ;		ALL	be	""
@@ -492,12 +496,13 @@ I-fini%s		;		CC	ld	"-fini %s"
 	""
 -profile	;	ALL	ld	self "-lm" "-TENV:call_mcount"
 	""
-#ifdef X8664
--m32	toggle(&abi,ABI_N32);	ALL	be	"-TARG:abi=n32" 
+#ifdef TARG_X8664
+-m32	toggle(&abi,ABI_M32);	ALL	NONE	"" 
         "Compile for 32-bit ABI"
--m64	toggle(&abi,ABI_64);	ALL	be	"-TARG:abi=n64"
+-m64	toggle(&abi,ABI_M64);	ALL NONE	""
 	"Compile for 64-bit ABI"
-#elif defined(MIPS)
+#endif // TARG_X8664
+#ifdef TARG_MIPS
 #define MIPS1_DEFS      "-D__mips=1 -D_MIPS_ISA=1"
 #define MIPS2_DEFS      "-D__mips=2 -D_MIPS_ISA=2"
 #define MIPS3_DEFS      "-D__mips=3 -D_MIPS_ISA=3"
@@ -512,9 +517,9 @@ I-fini%s		;		CC	ld	"-fini %s"
         "compile for mips4 instruction set"
 -mips64	toggle(&isa,ISA_MIPS64);	ALL	as,ld	"-mips64" MIPS4_DEFS "-TARG:isa=mips64"
         "compile for mips64 instruction set"
--n32	toggle(&abi,ABI_N32);	ALL	be	"-TARG:abi=n32"
+-n32	toggle(&abi,ABI_N32);	ALL	NONE	""
         "Compile for 32-bit ABI"
--64	toggle(&abi,ABI_64);	ALL	be	"-TARG:abi=n64"
+-64	toggle(&abi,ABI_64);	ALL	NONE	""
         "Compile for 64-bit ABI"
 -r4000	;			NONE	NONE	""
         ""
@@ -687,16 +692,6 @@ I-D_LANGUAGE_FORTRAN	;		FTN	cpp	self
 	"Produce debugging information for use by GDB"
 -ggdb3	toggle(&glevel,3);		ALL	CMP	"-g3"
 	"Produce debugging information for use by GDB"
-#ifdef KEY
--gnu3	toggle(&gnu_major_version,3);toggle(&gnu_minor_version,3);	Cc	NONE	""
-	"Use GCC 3.3 C/C++ front-end."
--gnu4	toggle(&gnu_major_version,4);toggle(&gnu_minor_version,2);	Cc	NONE	""
-	"Use GCC 4.2 C/C++ front-end."
--gnu40	toggle(&gnu_major_version,4);toggle(&gnu_minor_version,0);	Cc	NONE	""
-	"Use GCC 4.0 C/C++ front-end."
--gnu42	toggle(&gnu_major_version,4);toggle(&gnu_minor_version,2);	Cc	NONE	""
-	"Use GCC 4.2 C/C++ front-end."
-#endif
 -gstabs		warn_ignored(option_name);	ALL	NONE	""
 	""
 -gstabs+	warn_ignored(option_name);	ALL	NONE	""
@@ -772,7 +767,7 @@ I-cvs_nosrc,%D	;		FTN	F	"-cvs_nosrc,%D"
 
 -static-data		;		FTN	ffe	self
 	"treat local data as static"
--static		;		LINK	ld	self	
+-static		toggle(&shared,NON_SHARED);		LINK	ld	self	
 	""
 -static_threadprivate		;		FTN	ffe	self
 	""
@@ -874,6 +869,10 @@ I-xall	;		FTN	ffe	self
 	""
 -fbootstrap-hack	;	ALL	be	"-LNO:vintr=0 -OPT:fast_stdlib=0"
 	"Don't link to libmv, libmpath, libscstr during bootstrap."
+#ifdef PATH64_ENABLE_PATHAS
+-fpathas	;	ALL	NONE	""
+	"Use Pathscale assembler"
+#endif
 -varargs	;		f77	ffe	self
 	"MATRA varargs"
 %-nocode last_phase=earliest_phase(P_any_fe,last_phase);  FTN ffe   self
@@ -1155,8 +1154,10 @@ I-u%s		;		Cc	ld	"-u %s"
 	""
 
 % CC options:
+#ifndef __sun
 -demangle	;		CC	ld	self
 	""
+#endif
 -prelink	;		CC	NONE	""
 	"use prelinker (default)"
 -no_prelink	prelink_flag=FALSE;		CC	cfe	self
@@ -1175,7 +1176,7 @@ I-u%s		;		Cc	ld	"-u %s"
 	"pass flags to RATFOR"
 % KEY	Pass "-m elf_i386" and "-m elf_x86_64" to linker.  They are the only
 %	two valid linker emulation modes.  Bug 8441.
--m*elf_i386	toggle(&abi,ABI_N32);		LINK	ld	""
+-m*elf_i386	toggle(&abi,ABI_M32);		LINK	ld	""
 	"Pass -m args to linker"
 -m*elf_x86_64	toggle(&abi,ABI_64);		LINK	ld	""
 	"Pass -m args to linker"
@@ -1309,7 +1310,11 @@ I-u%s		;		Cc	ld	"-u %s"
 	""
 -fnotraditional	;		Cc	f	self
 	""
+#ifdef PATH64_ENABLE_PSCRUNTIME
+-traditional	;		Cc,cpp	cpp	"-traditional-cpp"
+#else
 -traditional	;		Cc,cpp	cpp	self
+#endif
 	"Attempt to support traditional K&R style C"
 -no-traditional	;		Cc	f	self
 	""
@@ -1318,7 +1323,11 @@ I-u%s		;		Cc	ld	"-u %s"
 -no-pathcc		;		Cc	cpp	""
 	"Don't define __PATHCC__ and other macros"
 % cpp is also a define, so trick cpp
+#ifdef PATH64_ENABLE_PSCRUNTIME
+-traditional-c/**/pp	;		Cc,cpp cpp self
+#else
 -traditional-c/**/pp	;		Cc,cpp	NONE	"-traditional"
+#endif
 	""
 -trigraphs	;		Cc,cpp	cpp	self
 	""
@@ -1880,7 +1889,7 @@ I-u%s		;		Cc	ld	"-u %s"
 	""
 % KEY: Because of limitation on derived flags, we repeat the -fexceptions
 % in the implied list.  This is to find the parent flag so action is done.
-#ifdef X8664
+#ifdef TARG_X8664
 -fexceptions	;	ALL	cfe	"-fexceptions -TENV:frame_pointer=on"
 	"Enable exception handling"
 #else
@@ -1992,7 +2001,7 @@ I-u%s		;		Cc	ld	"-u %s"
 %%% Linker Options
 -nostartfiles	;		LINK	ld	self
 	"Do not use standard system startup files when linking"
--nodefaultlibs	;		LINK	ld	self
+-nodefaultlibs	;		LINK	NONE	""
 	"Do not use standard system libraries when linking"
 --sysroot=%D	set_sysroot(optargs,0);		Cc,FTN,as,cpp	NONE	""
 	""
@@ -2031,7 +2040,7 @@ I-u%s		;		Cc	ld	"-u %s"
 	""
 -malign-functions=%d	warn_ignored(option_name); 	ALL	NONE	self
 	""
-#ifdef X8664
+#ifdef TARG_X8664
 -maccumulate-outgoing-args	; 	Cc	NONE	""
 	""
 -mno-accumulate-outgoing-args	; 	Cc	NONE	""
@@ -2072,6 +2081,15 @@ I-u%s		;		Cc	ld	"-u %s"
         "Enable SSE4a extensions"
 -mno-sse4a       toggle(&sse4a,FALSE);    ALL     be      ""
         "Disable SSE4a extensions"
+-msse4_2  toggle(&sse,TRUE);toggle(&sse2,TRUE);toggle(&sse4a,TRUE);toggle(&sse4_2,TRUE); ALL     be      ""
+        "Enable SSE4_2 extensions"
+-mno-sse4_2       toggle(&sse4_2,FALSE);    ALL     be      ""
+        "Disable SSE4_2 extensions"
+
+-msse4_2  toggle(&sse,TRUE);toggle(&sse2,TRUE);toggle(&sse4a,TRUE);toggle(&sse4_2,TRUE); ALL     be      ""
+        "Enable SSE4_2 extensions"
+-mno-sse4_2       toggle(&sse4_2,FALSE);    ALL     be      ""
+        "Disable SSE4_2 extensions"
 
 %%% x87
 -mx87-precision=%d	;	ALL	be	"-TARG:x87-precision=%d"

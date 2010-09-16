@@ -40,7 +40,7 @@
 
 
 
-typedef mempool_allocator < std::pair <const TN *, 
+typedef mempool_allocator < std::pair <const TN * const, 
                                        TN **> >    SWP_TN2TN_ARRAY_ALLOC;
                                     
 typedef std::map <const TN *,
@@ -48,7 +48,7 @@ typedef std::map <const TN *,
                   std::less <const TN *>,
                   SWP_TN2TN_ARRAY_ALLOC>           SWP_TN2TN_ARRAY_MAP;
 
-
+#ifndef TARG_ST
 class SWP_MVE {
   private:
   MEM_POOL             *_m;
@@ -131,6 +131,6 @@ SWP_MVE::Get_Original_TN (TN *tn) const {
   
   return itr->second;
 }
-
+#endif
 #endif /* cg_swp_mve_INCLUDED */
 

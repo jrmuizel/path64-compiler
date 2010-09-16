@@ -1,4 +1,7 @@
 /*
+   Copyright (C) 2010 PathScale Inc. All Rights Reserved.
+*/
+/*
  * Copyright (C) 2007, 2008, 2009 Pathscale, LLC.  All Rights Reserved.
  */
 
@@ -56,6 +59,8 @@
 #include "main_defs.h"
 #include "run.h"
 
+#include "sys/elf_whirl.h"
+
 string_list_t *objects;
 string_list_t *lib_objects;
 static string_list_t *cxx_prelinker_objects;
@@ -65,9 +70,8 @@ static string_list_t *library_dirs;
 #ifdef TARG_MIPS
 char * sysroot_path_n32 = NULL;
 char * sysroot_path_64 = NULL;
-#else
-char * sysroot_path = NULL;
 #endif
+char * sysroot_path = NULL;
 
 static int check_for_whirl(char *name);
 
@@ -81,105 +85,6 @@ init_objects (void)
 	library_dirs = init_string_list();
 }
 
-static void
-init_given_crt_path (char *crt_name, char *prog_name, char *tmp_name)
-{
-	int n = 3, i = 0;
-	FILE *path_file;
-	char path[512];
-	char *p;
-	char **argv;
-	buffer_t buf;
-	buffer_t sysroot_buf;
-#ifdef TARG_MIPS
-	char *sysrootpath = (abi == ABI_N32 ?
-			     sysroot_path_n32 : sysroot_path_64);
-#else
-	char *sysrootpath = sysroot_path;
-#endif
-#ifndef TARG_MIPS
-	if (abi == ABI_N32) {
-	  n++;
-	}
-#else
-	// For MIPS, always pass the appropriate abi flag
-	n++;
-#endif
-
-	if (sysrootpath) {
-	  // Pass --sysroot=<path> while quering for crt object.
-	  n++;
-	}
-
-	argv = (char **) alloca(n*sizeof(char*));
-	argv[i++] = prog_name;
-#ifndef TARG_MIPS
-	if (abi == ABI_N32) {
-	  argv[i++] = "-m32";
-	}
-#else
-	if (abi == ABI_N32)
-	  argv[i++] = "-mabi=n32";
-	else
-	  argv[i++] = "-mabi=64";
-#endif
-	sprintf(buf, "-print-file-name=%s", crt_name);
-	argv[i++] = buf;
-	if (sysrootpath) {
-	  sprintf(sysroot_buf, "--sysroot=%s", sysrootpath);
-	  argv[i++] = sysroot_buf;
-	}
-	argv[i++] = NULL;
-	run_simple_program (argv[0], argv, tmp_name);
-
-	/* now read the path */
-	path_file = fopen(tmp_name, "r");
-	if (path_file == NULL) {
-		internal_error("couldn't open %s tmp file", crt_name);
-		return;
-	}
-	if (fgets (path, 512, path_file) == NULL) {
-		internal_error("couldn't read %s tmp file", crt_name);
-	}
-	fclose(path_file);
-	if (path[0] != '/') {
-		internal_error("%s path not found", crt_name);
-	}
-	else {
-		/* drop file name and add path to library list */
-		p = drop_path (path);
-		*p = '\0';
-		if (debug) fprintf(stderr, "%s found in %s\n", crt_name, path);
-		add_library_dir (path);
-	}
-}
-
-
-/* Find out where libstdc++.so file is stored.
-   Invoke gcc -print-file-name=libstdc++.so to find the path.
-*/
-void init_stdc_plus_plus_path( void )
-{
-  char *tmp_name = create_temp_file_name( "gc" );
-  char *gcc_name = get_full_phase_name( P_ld );
-  init_given_crt_path( "libstdc++.so", gcc_name, tmp_name );
-}
-
-
-/* only need to init crt paths if doing ipa link */
-void
-init_crt_paths (void)
-{
-	/*
-	 * Have to find out where crt files are stored.
-	 * Invoke gcc -print-file-name=crt* to find the path.
-	 * Assume are two paths, one for crt{1,i,n} and one for crt{begin,end}.
-	 */
-	char *tmp_name = create_temp_file_name("gc");
-	char *gcc_name = get_full_phase_name(P_ld);
-	init_given_crt_path ("crtbegin.o", gcc_name, tmp_name);
-	init_given_crt_path ("crt1.o", gcc_name, tmp_name);
-}
 
 /* whether option is an object or not */
 boolean
@@ -269,39 +174,51 @@ add_object (int flag, char *arg)
 			if (xpg_flag && invoked_lang == L_f77) {
 			  add_library(lib_objects, "mv");
 #ifdef TARG_MIPS
-			  if (ffast_math_prescan == 1) {  // Bug 14245
-			    // Link with libscm and open64 libmpath before libm
-			    add_library(lib_objects, "scm");
+              if (is_target_arch_MIPS()) {
+			    if (ffast_math_prescan == 1) {  // Bug 14245
+			      // Link with libscm and open64 libmpath before libm
+			      add_library(lib_objects, "scm");
+			      add_library(lib_objects, "m" PSC_NAME_PREFIX);
+			    }
+              } else {
+#endif // TARG_MIPS
 			    add_library(lib_objects, "m" PSC_NAME_PREFIX);
-			  }
-#else
-			  add_library(lib_objects, "m" PSC_NAME_PREFIX);
-#endif
+#ifdef TARG_MIPS
+              }
+#endif // TARG_MIPS
 			} else {
 			  add_library(objects, "mv");
 #ifdef TARG_MIPS
-			  if (ffast_math_prescan == 1) {  // Bug 14245
-			    // Link with libscm and open64 libmpath before libm
-			    add_library(objects, "scm");
+              if (is_target_arch_MIPS()) {
+			    if (ffast_math_prescan == 1) {  // Bug 14245
+			      // Link with libscm and open64 libmpath before libm
+			      add_library(objects, "scm");
+			      add_library(objects, "m" PSC_NAME_PREFIX);
+			    }
+              } else {
+#endif // TARG_MIPS
 			    add_library(objects, "m" PSC_NAME_PREFIX);
-			  }
-#else
-			  add_library(objects, "m" PSC_NAME_PREFIX);
-#endif
+#ifdef TARG_MIPS
+              }
+#endif // TARG_MIPS
 			}
 			if (invoked_lang == L_CC) {
 			  add_library(cxx_prelinker_objects, "mv");
 #ifdef TARG_MIPS
-			  if (ffast_math_prescan == 1) {  // Bug 14245
-			    // Link with libscm and open64 libmpath before libm
-			    add_library(cxx_prelinker_objects, "scm");
+              if (is_target_arch_MIPS()) {
+			    if (ffast_math_prescan == 1) {  // Bug 14245
+			      // Link with libscm and open64 libmpath before libm
+			      add_library(cxx_prelinker_objects, "scm");
+			      add_library(cxx_prelinker_objects,
+			      	"m" PSC_NAME_PREFIX);
+			    }
+              } else {
+#endif // TARG_MIPS
 			    add_library(cxx_prelinker_objects,
-					"m" PSC_NAME_PREFIX);
-			  }
-#else
-			  add_library(cxx_prelinker_objects,
-				      "m" PSC_NAME_PREFIX);
-#endif
+				        "m" PSC_NAME_PREFIX);
+#ifdef TARG_MIPS
+              }
+#endif // TARG_MIPS
 			}
 			extern boolean link_with_mathlib;
 			// Bug 4680 - It is too early to check target_cpu so we
@@ -425,7 +342,7 @@ dump_objects (void)
 }
 
 void
-add_library_dir (char *path)
+add_library_dir (const char *path)
 {
 	add_string_if_new(library_dirs, path);
 }
@@ -452,29 +369,39 @@ add_library_options (void)
 	 * isa-specific libraries append /mips{2,3,4}.
 	 * non_shared libraries append /nonshared.
 	 */
-	switch (abi) {
+
 #ifdef TARG_MIPS
-	case ABI_N32:
-	case ABI_I32:
-		append_phase_dir(P_library, "32");
-		append_phase_dir(P_startup, "32");
-		break;
-	case ABI_64:
-		append_phase_dir(P_library, "64");
-		append_phase_dir(P_startup, "64");
-		break;
-#else
+    if (is_target_arch_MIPS()) {
+        switch (abi) {
         case ABI_N32:
-	case ABI_64:
-		break;
-#endif
-	case ABI_I64:
-		break;
-	case ABI_IA32:
- 		break;
-	default:
-		internal_error("no abi set? (%d)", abi);
-	}
+        case ABI_I32:
+            append_phase_dir(P_library, "32");
+            append_phase_dir(P_startup, "32");
+            break;
+        case ABI_64:
+            append_phase_dir(P_library, "64");
+            append_phase_dir(P_startup, "64");
+            break;
+        case ABI_I64:
+        case ABI_IA32:
+            break;
+        default:
+            internal_error("no abi set? (%d)", abi);
+        }
+    } else {
+#endif // TARG_MIPS
+        switch (abi) {
+        case ABI_M32:
+        case ABI_M64:
+        case ABI_I64:
+        case ABI_IA32:
+            break;
+        default:
+            internal_error("no abi set? (%d)", abi);
+        }
+#ifdef TARG_MIPS
+    }
+#endif // TARG_MIPS
 }
 
 /* search library_dirs for the crt file */
@@ -602,6 +529,34 @@ static int check_for_whirl(char *name) { return 0; }
 #include <sys/stat.h>
 #include <stdint.h>
 
+#ifdef X86_WHIRL_OBJECTS
+static int look_for_elf32_section (const Elf32_Ehdr* ehdr, Elf32_Word type, Elf32_Word info)
+{
+    int i;
+
+    Elf32_Shdr* shdr = (Elf32_Shdr*)((char*)ehdr + ehdr->e_shoff);
+    for (i = 1; i < ehdr->e_shnum; ++i) {
+        if (shdr[i].sh_type == type && shdr[i].sh_info == info)
+            return 1;
+    }
+
+    return 0;
+}
+
+static int look_for_elf64_section (const Elf64_Ehdr* ehdr, Elf64_Word type, Elf64_Word info)
+{
+    int i;
+
+    Elf64_Shdr* shdr = (Elf64_Shdr*)((char*)ehdr + ehdr->e_shoff);
+    for (i = 1; i < ehdr->e_shnum; ++i) {
+        if (shdr[i].sh_type == type && shdr[i].sh_info == info)
+            return 1;
+    }
+
+    return 0;
+}
+#endif
+
 // Check to see if this is an ELF file and then if it is a WHIRL object.
 #define ET_SGI_IR   (ET_LOPROC + 0)
 static int
@@ -648,14 +603,36 @@ check_for_whirl(char *name)
 
     if(p_ehdr->e_ident[EI_CLASS] == ELFCLASS32){
     	Elf32_Ehdr *p32_ehdr = (Elf32_Ehdr *)raw_bits;
-	if (p32_ehdr->e_type == ET_SGI_IR) {
+#ifdef X86_WHIRL_OBJECTS
+        char *second_buf = NULL; 
+
+        int new_size = p32_ehdr->e_shoff + sizeof(Elf32_Shdr)*p32_ehdr->e_shnum;
+        lseek(fd, 0, SEEK_SET);
+        second_buf = (char *)alloca(new_size);
+        size = read(fd, second_buf, new_size);
+        p32_ehdr = (Elf32_Ehdr *)second_buf;
+        if (p32_ehdr->e_type == ET_REL && look_for_elf32_section(p32_ehdr, SHT_PROGBITS, WT_PU_SECTION)) {
+#else
+        if (p32_ehdr->e_type == ET_SGI_IR) {
+#endif
 	    close(fd);
 	    return TRUE;
 	}
     }
     else {
 	Elf64_Ehdr *p64_ehdr = (Elf64_Ehdr *)raw_bits;
-	if (p64_ehdr->e_type == ET_SGI_IR) {
+#ifdef X86_WHIRL_OBJECTS
+        char *second_buf = NULL; 
+
+        int new_size = p64_ehdr->e_shoff + sizeof(Elf64_Shdr)*p64_ehdr->e_shnum;
+        lseek(fd, 0, SEEK_SET);
+        second_buf = (char *)alloca(new_size);
+        size = read(fd, second_buf, new_size);
+        p64_ehdr = (Elf64_Ehdr *)second_buf;
+        if (p64_ehdr->e_type == ET_REL && look_for_elf64_section(p64_ehdr, SHT_PROGBITS, WT_PU_SECTION)) {
+#else
+        if (p64_ehdr->e_type == ET_SGI_IR) {
+#endif
 	    close(fd);
 	    return TRUE;
 	}

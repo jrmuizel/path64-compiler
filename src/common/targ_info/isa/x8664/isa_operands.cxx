@@ -108,6 +108,14 @@ main()
     ISA_Reg_Opnd_Type_Create("eax", ISA_REGISTER_CLASS_integer,
 			     ISA_REGISTER_SUBCLASS_rax,
 			     32, SIGNED, INVALID);
+  const OPERAND_VALUE_TYPE ecx =
+    ISA_Reg_Opnd_Type_Create("ecx", ISA_REGISTER_CLASS_integer,
+                 ISA_REGISTER_SUBCLASS_rcx,
+                 32, SIGNED, INVALID);
+  const OPERAND_VALUE_TYPE xmm0 =
+    ISA_Reg_Opnd_Type_Create("xmm0", ISA_REGISTER_CLASS_float,
+			     ISA_REGISTER_SUBCLASS_xmm0,
+			     128, SIGNED, INVALID);
   const OPERAND_VALUE_TYPE ax =
     ISA_Reg_Opnd_Type_Create("ax", ISA_REGISTER_CLASS_integer,
 			     ISA_REGISTER_SUBCLASS_rax,
@@ -200,6 +208,10 @@ main()
   const OPERAND_USE_TYPE opnd2 = Create_Operand_Use("opnd2");
   // third operand of an alu operator
   const OPERAND_USE_TYPE opnd3 = Create_Operand_Use("opnd3");
+  // fourth operand of an alu operator
+  const OPERAND_USE_TYPE opnd4 = Create_Operand_Use("opnd4");
+  // fifth operand of an alu operator
+  const OPERAND_USE_TYPE opnd5 = Create_Operand_Use("opnd5");
   // addend/subtrahend operand of a madd
   const OPERAND_USE_TYPE maddend = Create_Operand_Use("maddend");
   // operand has same register as result
@@ -314,6 +326,7 @@ main()
 		     TOP_andn128v64,
 		     TOP_fand128v32,
 		     TOP_fand128v64,
+		     TOP_fandn128v64,
 		     TOP_or128v8,
 		     TOP_or128v16,
 		     TOP_or128v32,
@@ -351,7 +364,7 @@ main()
 		     TOP_max128v16,
 		     TOP_min128v8,
 		     TOP_min128v16,
-             TOP_pand128,
+		     TOP_pand128,
 		     TOP_UNDEFINED);
   Result(0, fp128);
   Operand(0, fp128, opnd1);
@@ -378,6 +391,7 @@ main()
 			   TOP_andnx128v64,
 			   TOP_fandx128v32,
 			   TOP_fandx128v64,
+			   TOP_fandnx128v64,
 			   TOP_orx128v8,
 			   TOP_orx128v16,
 			   TOP_orx128v32,
@@ -443,6 +457,7 @@ main()
 			   TOP_andnxx128v64,
 			   TOP_fandxx128v32,
 			   TOP_fandxx128v64,
+			   TOP_fandnxx128v64,
 			   TOP_orxx128v8,
 			   TOP_orxx128v16,
 			   TOP_orxx128v32,
@@ -510,6 +525,7 @@ main()
 			   TOP_andnxxx128v64,
 			   TOP_fandxxx128v32,
 			   TOP_fandxxx128v64,
+			   TOP_fandnxxx128v64,
 			   TOP_orxxx128v8,
 			   TOP_orxxx128v16,
 			   TOP_orxxx128v32,
@@ -2254,6 +2270,42 @@ main()
   Operand(0, int64, base);
   Operand(1, simm32, offset);
 
+  Instruction_Group("qi vector compare implicit length returns index",
+          TOP_pcmpistri,      
+          TOP_UNDEFINED);
+  Result(0, ecx);
+  Operand(0, fp128,  opnd3);
+  Operand(1, fp128,  opnd2);
+  Operand(2, simm8, opnd1);
+
+  Instruction_Group("qi vector compare implicit length returns mask",
+            TOP_pcmpistrm,
+		    TOP_UNDEFINED);
+  Result(0, xmm0);
+  Operand(0, fp128,  opnd3);
+  Operand(1, fp128,  opnd2);
+  Operand(2, simm8, opnd1);
+
+  Instruction_Group("qi vector compare explicit length retruns index",
+		    TOP_pcmpestri,
+		    TOP_UNDEFINED);
+  Result(0, ecx);
+  Operand(0, fp128, opnd3);
+  Operand(1, eax,   opnd5);
+  Operand(2, fp128, opnd2);
+  Operand(3, edx,   opnd4);
+  Operand(4, simm8, opnd1);
+
+  Instruction_Group("qi vector compare explicit length retruns mask",
+		    TOP_pcmpestrm,
+		    TOP_UNDEFINED);
+  Result(0, xmm0);
+  Operand(0, fp128, opnd3);
+  Operand(1, eax,   opnd5);
+  Operand(2, fp128, opnd2);
+  Operand(3, edx,   opnd4);
+  Operand(4, simm8, opnd1);
+
   Instruction_Group("load64 effective addr",
 		    TOP_lea64,
 		    TOP_UNDEFINED);
@@ -2708,6 +2760,7 @@ main()
 		    TOP_lock_cmpxchg8,
 		    TOP_UNDEFINED);
   Result(0,  eflags);
+  Result(1,  eax);
   Operand(0, eax, opnd1);
   Operand(1, int8, opnd2);
   Operand(2, int64, base);
@@ -2717,6 +2770,7 @@ main()
 		    TOP_lock_cmpxchg16,
 		    TOP_UNDEFINED);
   Result(0,  eflags);
+  Result(1,  eax);
   Operand(0, eax, opnd1);
   Operand(1, int16, opnd2);
   Operand(2, int64, base);
@@ -2726,6 +2780,7 @@ main()
 		    TOP_lock_cmpxchg32,
 		    TOP_UNDEFINED);
   Result(0,  eflags);
+  Result(1,  eax);
   Operand(0, eax, opnd1);
   Operand(1, int32, opnd2);
   Operand(2, int64, base);
@@ -2735,6 +2790,7 @@ main()
 		    TOP_lock_cmpxchg64,
 		    TOP_UNDEFINED);
   Result(0,  rflags);
+  Result(1,  eax);
   Operand(0, rax, opnd1);
   Operand(1, int64, opnd2);
   Operand(2, int64, base);
@@ -3043,6 +3099,37 @@ main()
   Operand(0, fp128, opnd1);
   Operand(1, fp128, opnd2);
 
+  Instruction_Group("int8 exchange with mem",
+                    TOP_xchgx8,
+		            TOP_UNDEFINED);
+  Result(0, int8);
+  Operand(0, int8, opnd1);
+  Operand(1, int64, base);
+  Operand(2, simm32, offset);
+
+  Instruction_Group("int16 exchange with mem",
+                    TOP_xchgx16,
+		            TOP_UNDEFINED);
+  Result(0, int16);
+  Operand(0, int16, opnd1);
+  Operand(1, int64, base);
+  Operand(2, simm32, offset);
+
+  Instruction_Group("int32 exchange with mem",
+                    TOP_xchgx32,
+		            TOP_UNDEFINED);
+  Result(0, int32);
+  Operand(0, int32, opnd1);
+  Operand(1, int64, base);
+  Operand(2, simm32, offset);
+
+  Instruction_Group("int64 exchange with mem",
+                    TOP_xchgx64,
+		            TOP_UNDEFINED);
+  Result(0, int64);
+  Operand(0, int64, opnd1);
+  Operand(1, int64, base);
+  Operand(2, simm32, offset);
   
   ISA_Operands_End();
   return 0;

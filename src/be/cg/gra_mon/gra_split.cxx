@@ -110,6 +110,9 @@ static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/cg/gra_mon/SCCS/s
 #include "cgir.h"
 #include "cg_region.h"
 #include "cg_spill.h"
+#ifdef TARG_ST
+#include "cgtarget.h"         /* for DEFAULT_STORE_COST */
+#endif
 #include "gtn_universe.h"
 #include "gtn_set.h"
 #include "cg_flags.h"
@@ -122,6 +125,10 @@ static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/cg/gra_mon/SCCS/s
 #include "gra_region.h"
 #include "gra_trace.h"
 #include "gra_interfere.h"
+#ifdef TARG_ST
+#include "gra_color.h"
+#endif
+
 
 // Generate a priority queue type for GRA_BBs
 TYPE_PRQ(GRA_BB,GBBPRQ)
@@ -206,7 +213,10 @@ Print_Globals_N(INT n, ISA_REGISTER_CLASS rc)
 }
 
 #endif
-
+#ifdef TARG_ST
+// [CG] Use Compare_Float_Nearly_Equal() moved to gra.cxx.
+extern BOOL Compare_Float_Nearly_Equal(float p1, float p2);
+#endif
 /////////////////////////////////////
 static BOOL
 Compare_Frequencies( GRA_BB* gbb0, GRA_BB* gbb1 )
@@ -254,11 +264,31 @@ Finalize_Priority_Queue(void)
 {
   MEM_POOL_Pop(&prq_pool);
 }
+#ifdef TARG_ST
+static REGISTER_SET
+Subclass_Regs_Disallowed (GRA_BB *gbb)
+{
+  LUNIT *lunit = gbb_mgr.Split_LUNIT(gbb);
 
+  // There are subclass restrictions only if there are
+  // references to the tn in the block.  If there are
+  // references, then there is an lunit.
+
+  if (lunit != NULL) {
+    return lunit->SubClass_Disallowed();
+  }
+  return REGISTER_SET_EMPTY_SET;
+}
+
+#endif
 /////////////////////////////////////
 static REGISTER_SET
-Regs_Used( TN* tn, GRA_BB* gbb, ISA_REGISTER_CLASS rc, LRANGE* lrange,
-	   BOOL reclaim)
+Regs_Used( TN* tn, GRA_BB* gbb, ISA_REGISTER_CLASS rc
+#ifndef TARG_ST
+           , LRANGE* lrange,
+	   BOOL reclaim
+#endif
+           )
 /////////////////////////////////////
 //
 //  Return the set of registers in <rc> used by <gbb>.  If <gbb> is not in the
@@ -297,7 +327,7 @@ Regs_Used( TN* tn, GRA_BB* gbb, ISA_REGISTER_CLASS rc, LRANGE* lrange,
     return REGISTER_CLASS_allocatable(ISA_REGISTER_CLASS_mmx);
 #endif
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // In the context of this function, USED means not available.  For register
   // reclaiming, a register is not available if it is not reclaimable.
   if (reclaim) {
@@ -328,8 +358,11 @@ Regs_Used( TN* tn, GRA_BB* gbb, ISA_REGISTER_CLASS rc, LRANGE* lrange,
 
   LUNIT*       lunit = gbb_mgr.Split_LUNIT(gbb);
 
-  if ( lunit != NULL &&
-       !reclaim) {
+  if ( lunit != NULL
+#if !defined(TARG_ST)
+       &&!reclaim
+#endif
+       ) {
     REGISTER_SET allowed_prefs = lunit->Allowed_Preferences();
 
     used = REGISTER_SET_Difference(used,allowed_prefs);
@@ -343,9 +376,13 @@ Regs_Used( TN* tn, GRA_BB* gbb, ISA_REGISTER_CLASS rc, LRANGE* lrange,
   if (BB_call(gbb->Bb())) {
     if (split_lrange->Spans_Infreq_Call() ||
 	GTN_SET_MemberP(BB_live_out(gbb->Bb()),tn)) {
+#ifdef TARG_ST
+      used = REGISTER_SET_Union(used, BB_call_clobbered(gbb->Bb(), rc));
+#else
       used = REGISTER_SET_Union(used, REGISTER_CLASS_caller_saves(rc));
+#endif
 #ifdef HAS_STACKED_REGISTERS
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
       // Figure out how register reclaiming interacts with stack regs.
       FmtAssert(!reclaim,
 		("Regs_Used: reclaiming not yet supported for stack regs"));
@@ -358,7 +395,7 @@ Regs_Used( TN* tn, GRA_BB* gbb, ISA_REGISTER_CLASS rc, LRANGE* lrange,
     }
   }
   if (BB_mod_rotating_registers(gbb->Bb())) {
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
     // Figure out how register reclaiming interacts with rotating regs.
     FmtAssert(!reclaim,
 	      ("Regs_Used: reclaiming not yet supported for rotating regs"));
@@ -370,10 +407,19 @@ Regs_Used( TN* tn, GRA_BB* gbb, ISA_REGISTER_CLASS rc, LRANGE* lrange,
 
   return used;
 }
+#ifndef TARG_ST
+/////////////////////////////////////
+static BOOL
+Compare_Priorities(float p1, float p2);
+#endif
 
 /////////////////////////////////////
 static BOOL
-Max_Colorable_LUNIT( LUNIT** result, BOOL reclaim )
+Max_Colorable_LUNIT( LUNIT** result
+#ifndef TARG_ST
+                     , BOOL reclaim 
+#endif
+                     )
 /////////////////////////////////////
 //
 //  Search for the most urgent of split_lrange's LUNITs for which there is an
@@ -391,6 +437,14 @@ Max_Colorable_LUNIT( LUNIT** result, BOOL reclaim )
 
   if ( split_lrange->Avoid_RA() )
     all_regs = REGISTER_SET_Difference1(all_regs,TN_register(RA_TN));
+#ifdef TARG_ST
+  // Forbid some registers from GRA.
+  if (!TN_is_save_reg(split_lrange->Tn())) {
+    FmtAssert(!split_lrange->Has_Wired_Register(), ("encountered wired reg"));
+    REGISTER_SET forbidden = CGTARG_Forbidden_GRA_Registers(rc);
+    all_regs = REGISTER_SET_Difference(all_regs, forbidden);
+  }
+#endif
 
 #ifdef TARG_MIPS
   // The user wants GRA to avoid certain registers.  Bug 12625.
@@ -404,8 +458,19 @@ Max_Colorable_LUNIT( LUNIT** result, BOOL reclaim )
 
     // Establish map from blocks with LUNITs to their LUNITs:
     gbb_mgr.Split_LUNIT_Set(lunit->Gbb(), lunit);
-
+#ifdef TARG_ST
+    regs_used = Regs_Used(tn,lunit->Gbb(),rc);
+#else
     regs_used = Regs_Used(tn,lunit->Gbb(),rc,split_lrange, reclaim);
+#endif
+ #ifdef TARG_ST
+    // [TTh] Prepare accurate allocation check
+    REGISTER_SET allowed = REGISTER_SET_Difference(all_regs, regs_used);
+    REGISTER_SET subclass_allowed =  REGISTER_SET_Difference (allowed,
+							      lunit->SubClass_Disallowed());
+    INT nregs = split_lrange->NHardRegs();
+#endif
+
 
     // LUNITs can be present to represent spills/restores at live range
     // split borders.  We want to skip these as seeds of splitting because:
@@ -414,8 +479,18 @@ Max_Colorable_LUNIT( LUNIT** result, BOOL reclaim )
     //   2. We don't want to keep splitting it for no good reason.  This can
     //      be a compile time disaster.
     if ( lunit->Has_Exposed_Use() || lunit->Has_Def() ) {
-      if ( !REGISTER_SET_EmptyP(REGISTER_SET_Difference(all_regs,regs_used)) ) {
-        if ( ! found || lunit->Priority() > maxlunit->Priority() ) {
+#ifdef TARG_ST
+      // [TTh] Accurate allocation check for Multi-register TNs
+      if ( Can_Allocate_From (nregs, subclass_allowed, allowed) )
+#else
+      if ( !REGISTER_SET_EmptyP(REGISTER_SET_Difference(all_regs,regs_used)) ) 
+#endif
+      {
+        if ( ! found || lunit->Priority() > maxlunit->Priority()
+#ifdef TARG_ST // [CL] Fix floating point difference between SunOS and Linux/Cygwin
+	     && !Compare_Float_Nearly_Equal(lunit->Priority(), maxlunit->Priority())
+#endif
+           ) {
           found = TRUE;
           maxlunit = lunit;
         }
@@ -536,7 +611,7 @@ Check_Interior_Predecessor_Spill_Cost(GRA_BB* gbb, float priority)
   return priority;
 }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 /////////////////////////////////////
 static void
 Calculate_Interim_Reclaim_Cost(GRA_BB *gbb, BOOL find_spills, float *priority)
@@ -663,8 +738,12 @@ Calculate_Interim_Reclaim_Saving(GRA_BB *gbb, BOOL find_spills, float *priority)
 /////////////////////////////////////
 static void
 Calculate_Interim_Split_Priority(GRA_BB* gbb, INT spills_needed,
-				 INT restores_needed, BOOL reclaim)
-/////////////////////////////////////
+				 INT restores_needed
+#ifndef TARG_ST
+                                 , BOOL reclaim
+#endif
+                                 )
+//////`///////////////////////////////
 //
 //  determine the priority of the split based on the addition
 //  of this block.  we first determine what the contribution
@@ -806,7 +885,7 @@ Calculate_Interim_Split_Priority(GRA_BB* gbb, INT spills_needed,
     }
   }
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   // Determine the cost of the reclaim due to the addition of GBB to the
   // reclaimed region.  Similar to the cost of the split, there are four
   // components to the cost of the reclaim:
@@ -837,14 +916,23 @@ Calculate_Interim_Split_Priority(GRA_BB* gbb, INT spills_needed,
 
   gbb->Split_Priority_Set(split_alloc_priority);
   gbb->Split_Spill_Cost_Set(tot_spill_cost);
+#ifdef TARG_ST
+  GRA_Trace_Split(1,"Split priority after adding BB:%d is %f\n",
+		  BB_id(gbb->Bb()), split_alloc_priority);
+#else
   GRA_Trace_Split(1,"Split%spriority after adding BB:%d is %f\n",
 		  reclaim ? " (with reclaim) " : " ",
 		  BB_id(gbb->Bb()), split_alloc_priority);
+#endif
 }
 
 /////////////////////////////////////
 static void
-Add_To_Colorable_Neighborhood( GRA_BB* gbb, BOOL reclaim )
+Add_To_Colorable_Neighborhood( GRA_BB* gbb
+#ifndef TARG_ST
+                               , BOOL reclaim 
+#endif
+                               )
 /////////////////////////////////////
 //
 //  Add <gbb> to alloc_first_gbb, the list of GRA_BB's in the colorable
@@ -867,15 +955,28 @@ Add_To_Colorable_Neighborhood( GRA_BB* gbb, BOOL reclaim )
   flow_iter.Preds_Init(gbb);
   restores_needed = Traverse_Neighbors(&flow_iter,Live_Out);
 
-  Calculate_Interim_Split_Priority(gbb, spills_needed, restores_needed,
-				   reclaim);
+  Calculate_Interim_Split_Priority(gbb, spills_needed, restores_needed
+                                   #ifndef TARG_ST
+                                   , reclaim
+#endif
+                                   );
 }
 
 /////////////////////////////////////
 static BOOL
+#ifdef TARG_ST
+Avoid_Unit_Spill(GRA_BB* gbb,
+		 REGISTER_SET subclass_allowed_regs,
+		 REGISTER_SET allowed_regs,
+		 REGISTER_SET regs_used,
+		 REGISTER_SET *loop_subclass_allowed,
+		 REGISTER_SET *loop_allowed,
+		 ISA_REGISTER_CLASS rc, INT nregs, GRA_LOOP *maxloop)
+#else
 Avoid_Unit_Spill(GRA_BB* gbb, REGISTER_SET allowed_regs,
 		 REGISTER_SET regs_used, REGISTER_SET *loop_allowed,
 		 ISA_REGISTER_CLASS rc, GRA_LOOP *maxloop, BOOL reclaim)
+#endif
 /////////////////////////////////////
 //
 // if this block is a loop prolog or epilog block, or it is at the
@@ -933,13 +1034,22 @@ Avoid_Unit_Spill(GRA_BB* gbb, REGISTER_SET allowed_regs,
     if ( Live_In(gbb)) {
       is_prolog = TRUE;
       *loop_allowed = REGISTER_SET_Difference(allowed_regs, regs_used);
+#ifdef TARG_ST
+      *loop_subclass_allowed = REGISTER_SET_Difference(subclass_allowed_regs,
+						       regs_used);
+#endif
+
       if (region_entry) {
 	GRA_REGION *region = gbb->Region();
 	*loop_allowed = REGISTER_SET_Difference(*loop_allowed,
 						region->Registers_Used(rc));
+#ifdef TARG_ST
+	*loop_subclass_allowed = REGISTER_SET_Difference(*loop_subclass_allowed,
+							 region->Registers_Used(rc));
+#endif
       } else {
 	REGISTER_SET unavailable = gloop->Registers_Used(rc);
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 	// Make the loop-reclaimable registers available.  A register is
 	// loop-reclaimable if it is used in the loop but is not referenced
 	// (used or defined) in the loop.
@@ -950,8 +1060,16 @@ Avoid_Unit_Spill(GRA_BB* gbb, REGISTER_SET allowed_regs,
 	}
 #endif
 	*loop_allowed = REGISTER_SET_Difference(*loop_allowed, unavailable);
+        #ifdef TARG_ST
+	*loop_subclass_allowed = REGISTER_SET_Difference(*loop_subclass_allowed,
+							 gloop->Registers_Used(rc));
+#endif
       }
+#ifdef TARG_ST
+      if (!Can_Allocate_From(nregs, *loop_subclass_allowed, *loop_allowed)) {
+#else
       if (REGISTER_SET_EmptyP(*loop_allowed)) {
+#endif
 	return(TRUE);
       }
     }
@@ -965,6 +1083,10 @@ Avoid_Unit_Spill(GRA_BB* gbb, REGISTER_SET allowed_regs,
       gbb->Region_Epilog()) {
     if (!is_prolog) {
       *loop_allowed = REGISTER_SET_Difference(allowed_regs, regs_used);
+#ifdef TARG_ST
+      *loop_subclass_allowed = REGISTER_SET_Difference(subclass_allowed_regs,
+						       regs_used);
+#endif
     }
     for (iter.Preds_Init(gbb); ! iter.Done(); iter.Step()) {
       GRA_BB* pred = iter.Current();
@@ -974,7 +1096,14 @@ Avoid_Unit_Spill(GRA_BB* gbb, REGISTER_SET allowed_regs,
 	GRA_REGION *region = pred->Region();
 	*loop_allowed =
 	  REGISTER_SET_Difference(*loop_allowed, region->Registers_Used(rc));
+   #ifdef TARG_ST
+	*loop_subclass_allowed =
+	  REGISTER_SET_Difference(*loop_subclass_allowed,
+				  region->Registers_Used(rc));
+	if (!Can_Allocate_From(nregs, *loop_subclass_allowed, *loop_allowed)) {
+#else
 	if (REGISTER_SET_EmptyP(*loop_allowed)) {
+#endif
 	  return(TRUE);
 	}
       } else {
@@ -983,7 +1112,14 @@ Avoid_Unit_Spill(GRA_BB* gbb, REGISTER_SET allowed_regs,
 	if (gloop != NULL &&  Live_Out(pred)) {
 	  *loop_allowed = REGISTER_SET_Difference(*loop_allowed,
 						  gloop->Registers_Used(rc));
+   #ifdef TARG_ST
+	  *loop_subclass_allowed = REGISTER_SET_Difference
+	    (*loop_subclass_allowed, gloop->Registers_Used(rc));
+							   
+	  if (!Can_Allocate_From(nregs, *loop_subclass_allowed, *loop_allowed)) {
+#else
 	  if (REGISTER_SET_EmptyP(*loop_allowed)) {
+#endif
 	    return(TRUE);
 	  }
 	}
@@ -995,7 +1131,11 @@ Avoid_Unit_Spill(GRA_BB* gbb, REGISTER_SET allowed_regs,
 
 /////////////////////////////////////
 static INT32
-Identify_Max_Colorable_Neighborhood( LUNIT* lunit, BOOL reclaim )
+Identify_Max_Colorable_Neighborhood( LUNIT* lunit
+#ifndef TARG_ST
+                                     , BOOL reclaim 
+#endif
+                                     )
 /////////////////////////////////////
 //
 //  Starting with <lunit> find a maximal set of colorable connected blocks,
@@ -1007,6 +1147,11 @@ Identify_Max_Colorable_Neighborhood( LUNIT* lunit, BOOL reclaim )
   INT32               count           = 1;
   ISA_REGISTER_CLASS  rc              = split_lrange->Rc();
   REGISTER_SET        allowed_regs    = REGISTER_CLASS_allocatable(rc);
+#ifdef TARG_ST
+  REGISTER_SET        subclass_allowed_regs =
+    REGISTER_CLASS_allocatable(rc);
+  INT                 nregs           = split_lrange->NHardRegs();
+#endif
   TN*                 tn              = split_lrange->Tn();
   LRANGE_LIVE_GBB_ITER iter;
 
@@ -1033,10 +1178,18 @@ Identify_Max_Colorable_Neighborhood( LUNIT* lunit, BOOL reclaim )
     REGISTER sv_reg = TN_save_reg(split_lrange->Tn());
     REGISTER_SET singleton = REGISTER_SET_Union1(REGISTER_SET_EMPTY_SET,sv_reg);
     allowed_regs = REGISTER_SET_Intersection(allowed_regs,singleton);
+#ifdef TARG_ST
+    subclass_allowed_regs = REGISTER_SET_Intersection(subclass_allowed_regs,
+						      singleton);
+#endif
   }
   else {
     if ( split_lrange->Avoid_RA() ) {
       allowed_regs = REGISTER_SET_Difference1(allowed_regs,TN_register(RA_TN));
+    #ifdef TARG_ST
+    subclass_allowed_regs = REGISTER_SET_Difference1(allowed_regs,
+						     TN_register(RA_TN));
+#endif
     }
 #ifdef TARG_MIPS
     // The user wants GRA to avoid certain registers.  Bug 12625.
@@ -1045,26 +1198,75 @@ Identify_Max_Colorable_Neighborhood( LUNIT* lunit, BOOL reclaim )
     }
 #endif
   }
-
+#ifdef TARG_ST
+  // Forbid some registers from GRA.
+  FmtAssert(!split_lrange->Has_Wired_Register(), ("encountered wired reg"));
+  REGISTER_SET forbidden = CGTARG_Forbidden_GRA_Registers(rc);
+  allowed_regs = REGISTER_SET_Difference(allowed_regs, forbidden);
+  subclass_allowed_regs = REGISTER_SET_Difference(subclass_allowed_regs,
+						  forbidden);
+#endif
   Initialize_Priority_Queue();
   border_gbb_list_head = NULL;
   alloc_gbb_list_head = NULL;
   split_alloc_priority = 0.0;
   tot_spill_cost = 0.0;
   gbb_mgr.Split_Queued_Set(lunit->Gbb());
+#ifdef TARG_ST
+   Add_To_Colorable_Neighborhood(lunit->Gbb());
+  allowed_regs =
+    REGISTER_SET_Difference(allowed_regs,Regs_Used(tn,lunit->Gbb(),rc));
+#else
   Add_To_Colorable_Neighborhood(lunit->Gbb(), reclaim);
   allowed_regs =
     REGISTER_SET_Difference(allowed_regs,Regs_Used(tn,lunit->Gbb(),rc,
 						   split_lrange, reclaim));
+#endif
+  #ifdef TARG_ST
+  subclass_allowed_regs = REGISTER_SET_Difference(subclass_allowed_regs,
+						  lunit->SubClass_Disallowed());
+  subclass_allowed_regs =
+    REGISTER_SET_Difference(subclass_allowed_regs,
+			    Regs_Used(tn,lunit->Gbb(), rc));
+#endif
 
   while ( GBBPRQ_Size(&gbbprq) > 0 ) {
+#ifdef TARG_ST
+    GRA_BB*         gbb       = NULL;
+    for (int i = 1; i <= GBBPRQ_Size(&gbbprq); ++i ) {
+      GRA_BB* ith = GBBPRQ_Ith(&gbbprq,i);
+      if ((gbb == NULL) || (BB_id(ith->Bb()) < BB_id(gbb->Bb())))
+	gbb = ith;
+    }
+    GBBPRQ_Remove(&gbbprq, gbb);
+#else
     GRA_BB*         gbb       = GBBPRQ_Delete_Top(&gbbprq);
+#endif
+#ifdef TARG_ST
+    REGISTER_SET    regs_used = Regs_Used(tn,gbb,rc);
+#else
     REGISTER_SET    regs_used = Regs_Used(tn,gbb,rc, split_lrange, reclaim);
+#endif
     REGISTER_SET    loop_allowed = REGISTER_SET_EMPTY_SET;
-
+#ifdef TARG_ST
+    REGISTER_SET    subclass_disallowed = Subclass_Regs_Disallowed (gbb);
+    REGISTER_SET    loop_subclass_allowed = REGISTER_SET_EMPTY_SET;
+#endif
+#ifdef TARG_ST
+    if (!Can_Allocate_From (nregs,
+			    REGISTER_SET_Difference (
+                              REGISTER_SET_Difference(subclass_allowed_regs,
+						    regs_used),
+			      subclass_disallowed),
+			    REGISTER_SET_Difference (allowed_regs, regs_used))
+	|| Avoid_Unit_Spill (gbb, subclass_allowed_regs, allowed_regs,
+			    regs_used, &loop_subclass_allowed, &loop_allowed, 
+			    rc, nregs, lunit->Gbb()->Loop())) {
+#else
     if (REGISTER_SET_EmptyP(REGISTER_SET_Difference(allowed_regs,regs_used)) ||
 	Avoid_Unit_Spill(gbb, allowed_regs, regs_used, &loop_allowed, rc,
 			 lunit->Gbb()->Loop(), reclaim)) {
+#endif
       border_gbb_list_head = border_gbb_list_head->Split_List_Push(gbb);
       GRA_Trace_Split(1,"BB:%d in deferred border",BB_id(gbb->Bb()));
     }
@@ -1075,10 +1277,23 @@ Identify_Max_Colorable_Neighborhood( LUNIT* lunit, BOOL reclaim )
       //
       if (!REGISTER_SET_EmptyP(loop_allowed)) {
 	allowed_regs = loop_allowed;
+#ifdef TARG_ST
+	subclass_allowed_regs = loop_subclass_allowed;
+#endif
       } else {
 	allowed_regs = REGISTER_SET_Difference(allowed_regs,regs_used);
+#ifdef TARG_ST
+	subclass_allowed_regs = REGISTER_SET_Difference
+	  (REGISTER_SET_Difference(subclass_allowed_regs,
+				   regs_used),
+	   subclass_disallowed);
+#endif
       }
+#ifdef TARG_ST
+     Add_To_Colorable_Neighborhood(gbb);
+#else
       Add_To_Colorable_Neighborhood(gbb, reclaim);
+#endif
       ++count;
     }
   }
@@ -1099,6 +1314,9 @@ Divide_LRANGE(void)
   LRANGE_LUNIT_ITER iter;
 
   deferred_lrange = split_lrange;
+#ifdef TARG_ST
+  deferred_lrange->Split_Deferred_Set();
+#endif
   alloc_lrange = lrange_mgr.Create_Duplicate(split_lrange);
 
   GRA_Trace_Split(0,"Divide_LRANGE TN%d split from TN%d",
@@ -1446,6 +1664,10 @@ Calculate_Live_BB_Sets(void)
     alloc_lrange->Add_Live_BB(gbb);
     deferred_lrange->Remove_Live_BB(gbb);
   }
+#ifdef TARG_ST
+  GRA_Trace_Split_BB_Sets (alloc_lrange, deferred_lrange);
+#endif
+
 }
 
 /////////////////////////////////////
@@ -1618,7 +1840,11 @@ Fix_Interference(void)
       neighbor->Neighbors_Left_Increment();
 
       if (neighbor->Neighbors_Left() + 1 >= neighbor->Candidate_Reg_Count()
-           && neighbor->Priority() > deferred_lrange->Priority()
+           && (neighbor->Priority() > deferred_lrange->Priority()
+#ifdef TARG_ST // [CL] Fix floating point difference between SunOS and Linux/Cygwin
+	       &&  !Compare_Float_Nearly_Equal(neighbor->Priority(), deferred_lrange->Priority())
+#endif
+              )
       ) {
         lrange_mgr.One_Set_Union1(neighbor);
         ++lranges_to_pass_count;
@@ -1653,7 +1879,7 @@ Add_Deferred_To_Coloring_List( LRANGE_CLIST_ITER* client_iter )
 {
   LRANGE_CLIST_ITER dup_iter;
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   for (dup_iter.Init_Following(client_iter);
        !dup_iter.Done();
        dup_iter.Step()) {
@@ -1741,6 +1967,9 @@ Fix_Call_Info( LRANGE* lrange )
 
   lrange->Spans_A_Call_Reset();
   lrange->Spans_Infreq_Call_Reset();
+#ifdef TARG_ST
+  lrange->Set_Call_Clobbered(REGISTER_SET_EMPTY_SET);
+#endif
 
   for (iter.Init(lrange); ! iter.Done(); iter.Step()) {
     GRA_BB* gbb = iter.Current();
@@ -1753,11 +1982,18 @@ Fix_Call_Info( LRANGE* lrange )
 
       if (gbb->Setjmp())
         lrange->Spans_A_Setjmp_Set();
+#ifdef TARG_ST
+      lrange->Set_Call_Clobbered (REGISTER_SET_Union (lrange->Call_Clobbered(),
+						      BB_call_clobbered(gbb->Bb(),
+									lrange->Rc())));
+#else
+
 #ifdef TARG_X8664
       if (gbb->Savexmms())
         lrange->Spans_Savexmms_Set();
 #endif
       return;
+#endif
     }
   }
 }
@@ -1835,7 +2071,7 @@ Fix_x86_Info( LRANGE* lrange )
 }
 #endif
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
 /////////////////////////////////////
 static void
 Make_Boundary_BBs_At_Border(GRA_BB* border_gbb, GRA_BB* alloc_gbb)
@@ -1980,9 +2216,16 @@ Choose_Best_Split(INT count)
 	 split_iter.Step(), --count) {
       GRA_BB* gbb = split_iter.Current();
       float priority = gbb->Split_Priority();
+#ifdef TARG_ST
+      if ((priority > max_priority || Compare_Float_Nearly_Equal(priority, max_priority)) &&
+	  count > 1 &&
+	  BB_rid(gbb->Bb()) == max_rid)
+#else
 
       if (priority >= max_priority && count > 1 &&
-	  BB_rid(gbb->Bb()) == max_rid) {
+	  BB_rid(gbb->Bb()) == max_rid)
+#endif
+      {
 	//
 	// don't remove lunit from live range if previous maximum is
 	// the same as the current one, i.e. don't remove references
@@ -1995,9 +2238,16 @@ Choose_Best_Split(INT count)
 	// live range, the better the chance that Optimize_Placement()
 	// can do something with it.
 	//
+#ifdef TARG_ST
+	if (Compare_Float_Nearly_Equal(priority, max_priority) &&
+	    ((max_lunit_count > gbb->Split_Lunit_Count()) ||
+	     TN_is_save_reg(split_lrange->Tn())))
+#else
 	if (priority == max_priority &&
 	    ((max_lunit_count > gbb->Split_Lunit_Count()) ||
-	     TN_is_save_reg(split_lrange->Tn()))) {
+	     TN_is_save_reg(split_lrange->Tn()))) 
+#endif
+        {
 	  continue;
 	}
 
@@ -2016,8 +2266,14 @@ Choose_Best_Split(INT count)
     // we can't really tell what the ultimate spill cost will be at this
     // point (we play it conservatively with OPT_Space on, though).
     //
+#ifdef TARG_ST
+    if ((max_priority < 0.0 && !Compare_Float_Nearly_Equal(0.0, max_priority)) &&
+	(!TN_is_save_reg(split_lrange->Tn()) ||	GRA_split_for_size))
+#else
     if (max_priority < 0.0 && (!TN_is_save_reg(split_lrange->Tn()) ||
-	OPT_Space)) {
+	OPT_Space)) 
+#endif
+    {
       return -1;
     }
 
@@ -2095,8 +2351,6 @@ Split_Consistency_Check()
   Check_Local_Interferences(alloc_lrange);
   Check_Local_Interferences(deferred_lrange);
 }
-
-/////////////////////////////////////
 static BOOL
 Compare_Priorities(float p1, float p2)
 /////////////////////////////////////
@@ -2113,14 +2367,18 @@ Compare_Priorities(float p1, float p2)
   if (max == 0.0 || p2 > max) {
     max = p2;
   }
+
   return ((fabs(p1-p2)/max) < .01);
 }
 
 /////////////////////////////////////
 static BOOL
 LRANGE_Do_Split( LRANGE* lrange, LRANGE_CLIST_ITER* iter,
-		LRANGE**           alloc_lrange_p,
-		BOOL reclaim)
+		LRANGE**           alloc_lrange_p
+#ifndef TARG_ST
+                ,BOOL reclaim
+#endif
+                )
 /////////////////////////////////////
 //  See interface description for LRANGE_Split.
 /////////////////////////////////////
@@ -2135,6 +2393,20 @@ LRANGE_Do_Split( LRANGE* lrange, LRANGE_CLIST_ITER* iter,
        ( TN_number(split_lrange->Tn()) == GRA_non_split_tn_id ) ) {
     return FALSE;
   }
+#ifdef TARG_ST
+  // Forbid registers from GRA. For example RA_TN on the st220 is also used in goto, 
+  // It cannot be spilled localy (no restore at the end of the basic block), so
+  // we should force a gra spill instead of splitting live range and having a lra spill.
+  DevAssert (! (lrange->Has_Wired_Register() && lrange->Reg() == TN_register(RA_TN)), ("split_lrange for wired ra_tn"));
+
+  REGISTER_SET forbidden = CGTARG_Forbidden_GRA_Registers(lrange->Rc());
+  // [SC] Special treatment for all save-regs and callee-save registers in a function that
+  // has an eh_return: they should always be spilled.
+  if (lrange->Tn_Is_Save_Reg()
+      && (REGISTER_SET_MemberP(forbidden,TN_save_reg(lrange->Tn()))
+	  || PU_Has_EH_Return))
+    return FALSE;
+#endif
 
   if (lrange->Cannot_Split())
     return FALSE;
@@ -2142,20 +2414,26 @@ LRANGE_Do_Split( LRANGE* lrange, LRANGE_CLIST_ITER* iter,
   if (lrange->Spans_A_Setjmp()) // TODO: do not give up splitting
     return FALSE;
 
-#ifdef KEY // don't split the saved-TNs if PU has any handler entry point
+#if defined( KEY) && !defined(TARG_ST) // don't split the saved-TNs if PU has any handler entry point
   if (lrange->Tn_Is_Save_Reg() && GRA_pu_has_handler)
     return FALSE;
 
   if (PU_Has_Nonlocal_Goto_Target)
     return FALSE;
 #endif
-
+#ifdef TARG_ST
+  GRA_Trace_Color_LRANGE("Splitting",lrange);
+#else
   GRA_Trace_Color_LRANGE(reclaim ? "Splitting (with reclaim)" : "Splitting",
 			 lrange);
-
+#endif
   gbb_mgr.Begin_Split();
-
-  if ( ! Max_Colorable_LUNIT(&maxlunit, reclaim) ) {
+#ifdef TARG_ST
+  if ( ! Max_Colorable_LUNIT(&maxlunit) )
+#else
+  if ( ! Max_Colorable_LUNIT(&maxlunit, reclaim) ) 
+#endif
+  {
     return FALSE;
   }
 
@@ -2168,7 +2446,11 @@ LRANGE_Do_Split( LRANGE* lrange, LRANGE_CLIST_ITER* iter,
 			&split_restore_cost, CGSPILL_GRA);
 
   GRA_Trace_Split_Priority_On("Interim method");
+#ifdef TARG_ST
+  count = Identify_Max_Colorable_Neighborhood(maxlunit);
+#else
   count = Identify_Max_Colorable_Neighborhood(maxlunit, reclaim);
+#endif
   GRA_Trace_Split_Priority_Off();
   if ( count <= 1 ) {
     return FALSE;
@@ -2194,7 +2476,7 @@ LRANGE_Do_Split( LRANGE* lrange, LRANGE_CLIST_ITER* iter,
   Fix_TN_Live_Info();
   Rename_TN_References();
 
-#ifdef KEY
+#if defined( KEY) && !defined(TARG_ST)
   if (GRA_optimize_boundary)
     Fix_Boundary_BBs();
 #endif
@@ -2206,8 +2488,14 @@ LRANGE_Do_Split( LRANGE* lrange, LRANGE_CLIST_ITER* iter,
     GRA_Trace_Split_Priority_On("LRANGE_Calculate_Priority");
     alloc_lrange->Calculate_Priority();
     GRA_Trace_Split_Priority_Off();
+#ifdef TARG_ST
+    if (!Compare_Float_Nearly_Equal(alloc_lrange->Priority(),
+				    alloc_gbb_list_head->Split_Priority()))
+#else
     if (!Compare_Priorities(alloc_lrange->Priority(),
-			    alloc_gbb_list_head->Split_Priority())) {
+			    alloc_gbb_list_head->Split_Priority()))
+#endif
+    {
       DevWarn("Mismatch in interim(%f) and final(%f) split priorities for TN%d.  Orig block count=%d, new =%d\n",
 	      alloc_gbb_list_head->Split_Priority(),
 	      alloc_lrange->Priority(),
@@ -2237,16 +2525,22 @@ LRANGE_Do_Split( LRANGE* lrange, LRANGE_CLIST_ITER* iter,
 /////////////////////////////////////
 BOOL
 LRANGE_Split(LRANGE* lrange, LRANGE_CLIST_ITER* iter,
-	     LRANGE**           alloc_lrange_p,
-	     BOOL reclaim)
+	     LRANGE**           alloc_lrange_p
+#ifndef TARG_ST
+             ,  BOOL reclaim
+#endif
+             )
 /////////////////////////////////////
 //  Wrapper for LRANGE_Do_Split to clean up after
 //  failure.
 /////////////////////////////////////
 {
   MEM_POOL_Push(&MEM_local_nz_pool);
-
+#ifdef TARG_ST
+  BOOL ret_val = LRANGE_Do_Split(lrange, iter, alloc_lrange_p);
+#else
   BOOL ret_val = LRANGE_Do_Split(lrange, iter, alloc_lrange_p, reclaim);
+#endif
   if (!ret_val) {
     *alloc_lrange_p = lrange;
     if (split_lrange->Spans_Infreq_Call()) {

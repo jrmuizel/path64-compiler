@@ -492,6 +492,10 @@ main()
 		    TOP_fandx128v64,
 		    TOP_fandxx128v64,
 		    TOP_fandxxx128v64,
+		    TOP_fandn128v64,
+		    TOP_fandnx128v64,
+		    TOP_fandnxx128v64,
+		    TOP_fandnxxx128v64,
 		    TOP_or128v8, 
 		    TOP_orx128v8, 
 		    TOP_orxx128v8, 
@@ -897,6 +901,7 @@ main()
   		    TOP_psraw_mmx,
   		    TOP_psrad_mmx,
   		    TOP_pand_mmx,
+  		    TOP_pand128,
   		    TOP_pandn_mmx,
             TOP_pand128,
   		    TOP_por_mmx,
@@ -1169,6 +1174,14 @@ main()
 		    TOP_maskmovq,
                     TOP_extrq,
                     TOP_insertq,
+            TOP_pcmpistri,
+            TOP_pcmpistrm,
+            TOP_pcmpestri,
+            TOP_pcmpestrm,
+            TOP_xchgx8,
+            TOP_xchgx16,
+            TOP_xchgx32,
+            TOP_xchgx64,
 		    TOP_UNDEFINED);
 
   ISA_Subset_End();

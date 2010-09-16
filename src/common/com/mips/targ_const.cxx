@@ -4617,7 +4617,7 @@ Extract_Paired_Hi(TCON v)
     {
       /* May want to use F4 instead of I4. */
       TCON_ty(c) = MTYPE_I4;
-      if (Target_Byte_Sex == LITTLE_ENDIAN)
+      if (Target_Is_Little_Endian)
 	TCON_word0(c) =  TCON_u1(v);
       else
 	TCON_word0(c) =  TCON_u0(v);
@@ -4644,7 +4644,7 @@ Extract_Paired_Lo(TCON v)
     {
       /* May want to use F4 instead of I4. */
       TCON_ty(c) = MTYPE_I4;
-      if (Target_Byte_Sex == LITTLE_ENDIAN)
+      if (Target_Is_Little_Endian)
 	TCON_word0(c) =  TCON_u0(v);
       else
 	TCON_word0(c) =  TCON_u1(v);
@@ -5448,10 +5448,10 @@ Tcon_To_Str(buf, v)
  *--------------------------------------------------------------------*/
 
 /*
- * Throughout this routine, if Same_Byte_Sex, then perform no
- * transformation on data string, otherwise perform byte-sex-change on
- * data.  We always have to copy to a local buffer in case the argument
- * buffer is not aligned properly.
+ * Throughout this routine, if Target_Is_Little_Endian == Host_Is_Little_Endian,
+ * then perform no transformation on data string, otherwise perform
+ * byte-sex-change on data.  We always have to copy to a local buffer
+ * in case the argument buffer is not aligned properly.
  */
 TCON
 Str_To_Tcon(TYPE_ID ty, char *buf)
@@ -5473,7 +5473,7 @@ Str_To_Tcon(TYPE_ID ty, char *buf)
       break;
     case MTYPE_I2:
     case MTYPE_U2: /* We want to sign-extend here; we'll truncate later */
-      if (Same_Byte_Sex) {
+      if (Target_Is_Little_Endian == Host_Is_Little_Endian) {
 	tbuf[0] = buf[0];
 	tbuf[1] = buf[1];
       } else {
@@ -5487,7 +5487,7 @@ Str_To_Tcon(TYPE_ID ty, char *buf)
     case MTYPE_U4:
       /* if host and target byte order are different, we might want to do 
 	 something here */
-      if (Same_Byte_Sex) {
+      if (Target_Is_Little_Endian == Host_Is_Little_Endian) {
 	tbuf[0] = buf[0];
 	tbuf[1] = buf[1];
 	tbuf[2] = buf[2];
@@ -5505,7 +5505,7 @@ Str_To_Tcon(TYPE_ID ty, char *buf)
     case MTYPE_U8:
       /* if host and target byte order are different, we might want to do 
 	 something here */
-      if (Same_Byte_Sex) {
+      if (Target_Is_Little_Endian == Host_Is_Little_Endian) {
 	tbuf[0] = buf[0];
 	tbuf[1] = buf[1];
 	tbuf[2] = buf[2];
@@ -5549,7 +5549,7 @@ Str_To_Tcon(TYPE_ID ty, char *buf)
 	 source must give same object on whatever machine the compiler 
 	 is hosted.
        */
-      if (Same_Byte_Sex) {
+      if (Target_Is_Little_Endian == Host_Is_Little_Endian) {
 	tbuf[0] = buf[0];
 	tbuf[1] = buf[1];
 	tbuf[2] = buf[2];
@@ -5565,7 +5565,7 @@ Str_To_Tcon(TYPE_ID ty, char *buf)
       break;
 
     case MTYPE_F8:
-      if (Same_Byte_Sex) {
+      if (Target_Is_Little_Endian == Host_Is_Little_Endian) {
 	tbuf[0] = buf[0];
 	tbuf[1] = buf[1];
 	tbuf[2] = buf[2];

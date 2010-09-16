@@ -1143,6 +1143,8 @@ int		catcherr)
 		    fileno(cup->ufp.std) != STDERR_FILENO &&
 		    ! isatty(fileno(cup->ufp.std)))
 			(void) setvbuf(cup->ufp.std, NULL, _IOFBF, bs);
+#elif     defined(__sun)
+        // FIXME
 #elif     defined(_LITTLE_ENDIAN) && !defined(__sv2)
 		if (cup->ufp.std->_IO_buf_base == NULL &&
 		    fileno(cup->ufp.std) != STDERR_FILENO &&

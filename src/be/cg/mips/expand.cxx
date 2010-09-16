@@ -2352,7 +2352,7 @@ static TYPE_ID
 Get_Intrinsic_Size_Mtype (INTRINSIC id)
 {
   switch (id) {
-  case INTRN_COMPARE_AND_SWAP_I4:
+  case INTRN_VAL_COMPARE_AND_SWAP_I4:
   case INTRN_LOCK_TEST_AND_SET_I4:
   case INTRN_LOCK_RELEASE_I4:
   case INTRN_FETCH_AND_ADD_I4:
@@ -2368,7 +2368,7 @@ Get_Intrinsic_Size_Mtype (INTRINSIC id)
   case INTRN_FETCH_AND_AND_I4:
   case INTRN_FETCH_AND_NAND_I4:
 	return MTYPE_I4;
-  case INTRN_COMPARE_AND_SWAP_I8:
+  case INTRN_VAL_COMPARE_AND_SWAP_I8:
   case INTRN_LOCK_TEST_AND_SET_I8:
   case INTRN_LOCK_RELEASE_I8:
   case INTRN_FETCH_AND_ADD_I8:
@@ -2400,8 +2400,8 @@ Expand_TOP_intrncall ( const OP *op, OPS *ops,
   INTRINSIC id = (INTRINSIC) TN_value(OP_opnd(op, 0));
 
   INT num_ops = 5;
-  if ( id == INTRN_COMPARE_AND_SWAP_I4 ||
-       id == INTRN_COMPARE_AND_SWAP_I8 ) num_ops = 7;
+  if ( id == INTRN_VAL_COMPARE_AND_SWAP_I4 ||
+       id == INTRN_VAL_COMPARE_AND_SWAP_I8 ) num_ops = 7;
   else if ( Intrinsic_Returns_New_Value(id) ) num_ops = 6;
 
   if (get_sequence_length) return num_ops;
@@ -2453,8 +2453,8 @@ Expand_TOP_intrncall ( const OP *op, OPS *ops,
     Expand_Sub( tn_new, tn_res, tn_val, mtype, ops );
     break;
 
-  case INTRN_COMPARE_AND_SWAP_I4:
-  case INTRN_COMPARE_AND_SWAP_I8:
+  case INTRN_VAL_COMPARE_AND_SWAP_I4:
+  case INTRN_VAL_COMPARE_AND_SWAP_I8:
     {
       Build_OP( TOP_bne, tn_res, tn_val,
 		Gen_Label_TN( lab, pc_offset + 4 * num_ops ), ops );
@@ -2490,9 +2490,11 @@ Expand_TOP_intrncall ( const OP *op, OPS *ops,
 // then ops is for first bb and ops2 is for bb after the label.
 // Otherwise only ops is filled in.
 TN *
-Exp_Intrinsic_Call (INTRINSIC id, TN *op0, TN *op1, TN *op2, OPS *ops, 
+Exp_Intrinsic_Call (WN *intrncall, TN *op0, TN *op1, TN *op2, OPS *ops, 
 		    LABEL_IDX *label, OPS *loop_ops)
 {
+  INTRINSIC id = WN_intrinsic(intrncall);
+  
   switch (id) {
   case INTRN_APPLY_ARGS: 
     {
@@ -2628,8 +2630,8 @@ Exp_Intrinsic_Call (INTRINSIC id, TN *op0, TN *op1, TN *op2, OPS *ops,
       Build_OP(TOP_ifixup, op2, ops);
       // Fall through to COMPARE_AND_SWAP case
     }
-  case INTRN_COMPARE_AND_SWAP_I4:
-  case INTRN_COMPARE_AND_SWAP_I8:
+  case INTRN_VAL_COMPARE_AND_SWAP_I4:
+  case INTRN_VAL_COMPARE_AND_SWAP_I8:
     {
       const TYPE_ID mtype = Get_Intrinsic_Size_Mtype(id);
       TN *tn_result = Build_TN_Of_Mtype(mtype);

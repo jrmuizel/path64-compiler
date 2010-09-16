@@ -86,6 +86,22 @@ Set_ST_export (ST* s, ST_EXPORT export_class)
     s->export_class = export_class; 
 }
 
+#ifdef TARG_ST // [SC] TLS support
+inline ST_TLS_MODEL
+ST_tls_model (const ST* s)              { return s->tls_model; }
+inline void
+Set_ST_tls_model (ST* s, ST_TLS_MODEL tls) { s->tls_model = tls; }
+
+#ifdef TARG_STxP70
+// (cbr)
+inline ST_MEMORY_SPACE
+ST_memory_space (const ST* s)              { return s->memory_space; }
+inline void
+Set_ST_memory_space (ST* s, ST_MEMORY_SPACE space) { s->memory_space = space; }
+#endif
+
+#endif
+
 inline TY_IDX
 ST_type (const ST* s) {
 #ifdef Is_True_On
@@ -111,6 +127,13 @@ ST_type (const ST* s) {
                      ("Should use ST_pu_type instead"));
 	return PU_prototype (Pu_Table[s->u2.pu]);
     } else {
+#ifdef TARG_ST
+      if (s->sym_class == CLASS_BLOCK) { // for UpFormal_Arg_StkSeg used in va_start
+	return 0;
+      }
+      else
+#endif
+
        return s->u2.type;
     }
 #endif // Is_True_On
@@ -462,6 +485,40 @@ ST_strong (const ST* s) {
     FmtAssert (ST_is_weak_symbol (s), ("Expecting a weak symbol"));
     return &St_Table[s->base_idx];
 }
+
+#ifdef TARG_ST
+/* (cbr) vague linkage */
+inline BOOL
+ST_is_comdat (const ST& s)	{ return s.flags_ext & ST_IS_COMDAT; }
+inline void
+Set_ST_is_comdat (ST& s)	{ s.flags_ext |= ST_IS_COMDAT; }
+inline void
+Clear_ST_is_comdat (ST& s)	{ s.flags_ext &= ~ST_IS_COMDAT; }
+
+// [CL] is symbol base of aliases?
+inline BOOL
+ST_is_alias_base (const ST& s)	{ return s.flags_ext & ST_HAS_ALIAS; }
+inline void
+Set_ST_is_alias_base (ST& s)	{ s.flags_ext |= ST_HAS_ALIAS; }
+inline void
+Clear_ST_is_alias_base (ST& s)	{ s.flags_ext &= ~ST_HAS_ALIAS; }
+
+// [CL] is alias referenced?
+inline BOOL
+ST_is_alias_used (const ST& s)	{ return s.flags_ext & ST_ALIAS_USED; }
+inline void
+Set_ST_is_alias_used (ST& s)	{ s.flags_ext |= ST_ALIAS_USED; }
+inline void
+Clear_ST_is_alias_used (ST& s)	{ s.flags_ext &= ~ST_ALIAS_USED; }
+
+// [CL] has used attribute?
+inline BOOL
+ST_is_used (const ST& s)	{ return s.flags_ext & ST_IS_USED; }
+inline void
+Set_ST_is_used (ST& s)	        { s.flags_ext |= ST_IS_USED; }
+inline void
+Clear_ST_is_used (ST& s)	{ s.flags_ext &= ~ST_IS_USED; }
+#endif
 
 inline TCON&
 STC_val (const ST* s)			{ return Tcon_Table[ST_tcon (s)]; }
@@ -891,6 +948,26 @@ Clear_LABEL_addr_passed (const LABEL_IDX lbi)
 {
 	Clear_LABEL_addr_passed(Label_Table[lbi]);
 }
+
+#ifdef TARG_ST
+// [CL] this information is only valid after code emission, used for
+// debug info generation
+inline BOOL
+LABEL_emitted (const LABEL_IDX lbi)
+{
+	return (LABEL_emitted(Label_Table[lbi]));
+}
+inline void
+Set_LABEL_emitted (const LABEL_IDX lbi)
+{
+	Set_LABEL_emitted(Label_Table[lbi]);
+}
+inline void
+Clear_LABEL_emitted (const LABEL_IDX lbi)
+{
+	Clear_LABEL_emitted(Label_Table[lbi]);
+}
+#endif
 
 // PREG
 /*

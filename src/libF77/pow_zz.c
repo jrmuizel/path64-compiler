@@ -31,14 +31,12 @@
 #include "defalias.h"
 #include "moremath.h"
 
-#if defined(BUILD_OS_DARWIN)
+#ifndef HAVE_SINCOS
 static void
 sincos(double d, double *s, double *c) {
   *s = sin(d);
   *c = cos(d);
   }
-#else /* defined(BUILD_OS_DARWIN) */
-extern	void	sincos(double, double *, double *);
 #endif /* defined(BUILD_OS_DARWIN) */
 
 #ifdef KEY

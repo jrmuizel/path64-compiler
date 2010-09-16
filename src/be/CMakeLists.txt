@@ -14,10 +14,10 @@ INCLUDE_DIRECTORIES(
   purple2
   .
 
-  cg/x8664
   cg/gra_mon
   cg/swp
 
+  ../dfgforise
   ../ipa/common
   ../ipa/local
   ../ipa/main/analyze
@@ -25,19 +25,24 @@ INCLUDE_DIRECTORIES(
 
   ../ipa_link/include
 
+  ../libair
   ../common/com
-  ../common/com/${BUILD_TARGET_DIR}
   ../common/instrument
   ../common/targ_info/access
   ../common/util
-  ../common/stl
+  ../common/stl  
+  ../common/targ_info/parser/inc/
 
+
+  ${PATHSCALE_BINARY_DIR}/../GCC/gcc
+  ../include
   ../libdwarf/libdwarf
   )
 
 
 ADD_DEFINITIONS(
   -funsigned-char
+   ${PATH64_STDC_FORMAT_MACROS}
 )
 
 IF(PATH64_ENABLE_VALGRIND)

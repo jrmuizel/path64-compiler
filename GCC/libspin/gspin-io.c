@@ -107,12 +107,14 @@ gs_void_t gs_write (const gs_string_t filename)
     p_in_memseg = (gs_t) (mem_seg + i);
     size = gspin_node_size(gs_code(t));
     memcpy(p_in_memseg, t, size);
+#if 0
 #ifdef Is_True_On
     _gs_em(p_in_memseg, false);
     if (gs_em(t) == false) {
       printf("leaked node: ");
       gs_dump(t);
     }
+#endif
 #endif
 
     if (gs_code_arity(gs_code(t)) > 0) { // convert kid pointers to indices
@@ -178,6 +180,8 @@ gs_unsigned_char_t *gs_read (const gs_string_t filename)
       GS_ASSERT(gs_u(q) < statbuf.st_size, "left offset out of bounds!.\n");
       _gs_s_no_alloc (q, (gs_unsigned_char_t *) (mem_seg + gs_u(q)));
     }
+
+    _gs_em(p, false);
 
     p += gspin_node_size(gs_code(q));
     while (p - mem_seg < statbuf.st_size && p < string_section && 

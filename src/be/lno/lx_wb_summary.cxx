@@ -30,7 +30,7 @@
 #include "wn_util.h"
 #include <stdio.h>
 #include "dwarf_DST.h"
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifdef ORIGINAL_SGI_CODE
 #include "ipc_file.h"
 #include "ipc_symtab_merge.h"
 #endif
@@ -40,7 +40,7 @@
 
 // From be/com/wb_summary.cxx: 
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifdef ORIGINAL_SGI_CODE
 //-----------------------------------------------------------------------
 // NAME: SUMMARY_SYMBOL::WB_Print
 // FUNCTION: Print SUMMARY_SYMBOL in whirl browser format
@@ -420,7 +420,7 @@ void SUMMARY_ACTUAL::WB_Print(FILE* fp,
       fprintf(fp, "SCALAR[%d] ", Get_index());
   fprintf(fp, "\n");
 }
-#endif 
+#endif // ORIGINAL_SGI_CODE
 
 //-----------------------------------------------------------------------
 // NAME: SUMMARY_VALUE::WB_Print
@@ -464,7 +464,7 @@ void SUMMARY_VALUE::WB_Print(FILE* fp,
   fprintf(fp, "\n");
 } 
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifdef ORIGINAL_SGI_CODE
 //-----------------------------------------------------------------------
 // NAME: CFG_NODE_INFO::WB_Print
 // FUNCTION: Print CFG_NODE_INFO in whirl browser format 
@@ -774,7 +774,7 @@ void SUMMARY_CHI::WB_Print(FILE* fp,
     fprintf(fp, "CHI[%d] ", Get_node_index());
   fprintf(fp, "\n");
 } 
-#endif 
+#endif // ORIGINAL_SGI_CODE
 
 //-----------------------------------------------------------------------
 // NAME: SUMMARY_EXPR::Node
@@ -829,7 +829,7 @@ void SUMMARY_EXPR::WB_Print(FILE* fp,
   fprintf(fp, "\n");
 }
 
-#if !(defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifdef ORIGINAL_SGI_CODE
 //-----------------------------------------------------------------------
 // NAME: SUMMARY_STID::WB_Print
 // FUNCTION: Print SUMMARY_STID in whirl browser format 
@@ -903,4 +903,4 @@ void SUMMARY_FEEDBACK::WB_Print(FILE* fp,
     Get_effective_bb_count(), Get_effective_stmt_count());
   fprintf(fp, "\n");
 }
-#endif  
+#endif // ORIGINAL_SGI_CODE

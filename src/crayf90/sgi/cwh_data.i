@@ -117,7 +117,7 @@ struct data_info_s {
   
   void sort_data(ST *st) {
     BOOL message_issued = FALSE;
-    sort(data_elements.begin(),data_elements.end(),data_element_s::comp);
+    std::sort(data_elements.begin(),data_elements.end(),data_element_s::comp);
 
     // Now pack together the data for multiple initv's, and flag errors
     INT32 vsize,i,last_index;

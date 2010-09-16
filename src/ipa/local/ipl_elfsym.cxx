@@ -180,7 +180,7 @@ Write_Elf_Symtab (Output_File* fl, const ELF& tag)
 			 sizeof(typename ELF::Elf_Sym), align, fl);
 }
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#ifdef USE_ELF_SYMBOL_TABLE
 void
 IPL_Write_Elf_Symtab (Output_File *fl)
 {
@@ -194,4 +194,4 @@ IPL_Write_Elf_Symtab (Output_File *fl)
 #endif
 	Write_Elf_Symtab (fl, ELF64());
 }
-#endif // __linux__
+#endif // USE_ELF_SYMBOL_TABLE

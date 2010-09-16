@@ -388,13 +388,13 @@ b_and_o get_base_and_offset(WN *wn)
       r.base = WN_st(wn);
       r.offset = WN_offset(wn);
 
-# if (defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__))
+#ifndef ORIGINAL_SGI_CODE
       /* Check for based as a symbol in common */
       while (ST_base(r.base) != r.base) {
          r.offset += ST_ofst(r.base);
          r.base = ST_base(r.base);
       }
-# endif
+#endif
       break;
 
     case OPR_ARRAYEXP:

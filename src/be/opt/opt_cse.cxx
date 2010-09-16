@@ -63,7 +63,7 @@
 
 
 #define opt_cse_CXX	"opt_cse.cxx"
-
+#include <limits.h>
 #include "defs.h"
 #include "errors.h"
 #include "erglob.h"
@@ -79,9 +79,12 @@
 #include "opt_etable.h"
 #include "opt_lftr2.h"			// LFTR class
 #include "opt_estr.h"
-#include "opt_sys.h"
 #include "opt_cvtl_rule.h"
 #include "config_wopt.h"
+
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
 
 class CSE {
 private:
@@ -144,7 +147,7 @@ ETABLE::Generate_stid_to_preg( CODEREP *lhs, CODEREP *rhs, MTYPE rhs_type,
 			    BB_NODE *bb, SRCPOS linenum ) const
 {
   CODEREP *new_cr = Alloc_stack_cr(0);
-#ifndef KEY // bug 3022
+#if !defined( KEY) || defined(TARG_ST) // bug 3022
   if (Split_64_Bit_Int_Ops) { // make sure the types correspond in size
     if (MTYPE_size_min(rhs->Dtyp()) == 64 &&
         MTYPE_size_min(lhs->Dsctyp()) == 32) { // generate a truncation
@@ -317,7 +320,11 @@ ETABLE::Save_replace_rhs_by_preg(STMTREP *stmt,
       case NOT_AT_ALL:
 	break;
       case NEED_CVT: 
-	if (opc != OPC_U4U8CVT) {
+#ifndef TARG_ST
+	// [CG]: unsafe
+	if (opc != OPC_U4U8CVT)
+#endif
+        {
 	  cr->Init_expr(opc, rhs);
 	  // Fix 629602:  defer constant folding because the RHS might exists in
 	  // some worklist.
@@ -399,6 +406,15 @@ CSE::Save_real_occurrence(EXP_OCCURS *occur)
 {
   CODEREP *tempcr = occur->Temp_cr();
   CODEREP *rhs    = occur->Occurrence();
+#ifdef TARG_ST
+  // FdF 20080528: PRE on Iload/Istore for zero offset
+  if (occur->Get_offset() != 0) {
+    if (Tracing())
+      fprintf(TFile, "Save_real_occurrence: Generating expression with offset %d\n", occur->Get_offset());
+    OPCODE addop = OPCODE_make_op(OPR_ADD, rhs->Dtyp(), MTYPE_V);
+    rhs = Htable()->Add_bin_node_and_fold(addop, rhs, Htable()->Add_const(rhs->Dtyp(), occur->Get_offset()));
+  }
+#endif
   
   /* CVTL-RELATED start (correctness) */
   // Add necessary CVT/CVTL
@@ -432,6 +448,18 @@ CSE::Save_real_occurrence(EXP_OCCURS *occur)
     savestmt->Set_stmt_id(occur->Stmt()->Stmt_id());
     savestmt->Bb()->Stmtlist()->Insert_Before(savestmt, occur->Stmt());
 
+#ifdef TARG_ST
+    // FdF 20080930: Also keep the original type when this is a simple
+    // copy from one symbol to another
+    if ((rhs == occur->Stmt()->Rhs()) && (rhs->Kind() == CK_VAR)
+	&& (tempcr->Kind() == CK_VAR) &&
+	(occur->Stmt()->Lhs() != NULL) && (occur->Stmt()->Lhs()->Kind() == CK_VAR)) {
+      savestmt->Lhs()->Set_lod_ty(occur->Stmt()->Lhs()->Lod_ty());
+      // fprintf(stdout, "Save_real_occurrence: Restored TY_IDX from sym%dv%d to sym%dv%d\n",
+      //      occur->Stmt()->Lhs()->Aux_id(), occur->Stmt()->Lhs()->Version(),
+      //      tempcr->Aux_id(), tempcr->Version());
+    }
+#endif
     // if this statement saves a boolean comparison, find the
     // corresponding comp occur and update stmt ptr
     if (lftr->Lftr_on() && lftr->Is_comparison(occur->Occurrence())) {
@@ -552,7 +580,11 @@ CSE::Save_shrunk_lr_def(EXP_OCCURS *occur)
     case NOT_AT_ALL:
       break;
     case NEED_CVT: 
-      if (opc != OPC_U4U8CVT) {
+#ifndef TARG_ST
+      // [CG]: unsafe
+      if (opc != OPC_U4U8CVT)
+#endif
+      {
         cr->Init_expr(opc, rhs);
         if (rhs->Kind() == CK_CONST)  {
 	  rhs = ftmp.Fold_Expr(cr);
@@ -736,7 +768,7 @@ CSE::Generate_injury_repair( STMTREP *injury, CODEREP *new_temp,
       // Iv  : i=i+incr_amt
       // do we need to keep the conversion?
       OPCODE cvt_opc;
-#ifndef KEY
+#if !defined(KEY) || defined(TARG_ST)
       INT type_conversion = Need_type_conversion(incr_amt->Dtyp(), 
 					old_temp->Dtyp(), &cvt_opc);
 #else // bug 7858: it is safer to keep the increment amount as signed
@@ -837,7 +869,7 @@ CSE::Generate_injury_repair( STMTREP *injury, CODEREP *new_temp,
   // result type is a floating point type. This can happen when we
   // strength-reduce an int-to-float convert.
   if (MTYPE_IS_INTEGER(OPCODE_desc(new_stid->Op()))
-#ifdef KEY // bug 5029
+#if defined( KEY) && !defined(TARG_ST) // bug 5029
       && new_rhs->Kind() == CK_OP
 #endif
       ) {
@@ -921,12 +953,15 @@ CSE::Repair_injury_rec(CODEREP *iv_def, CODEREP *iv_use,
 	new_temp = temp_owner_cr;
       }
       Generate_injury_repair( injury, new_temp, old_temp, multiplier );
+#ifndef TARG_ST
       if (_worklist->Exp()->Kind() == CK_OP &&
 	  (_worklist->Exp()->Opr() == OPR_ADD || 
 	   _worklist->Exp()->Opr() == OPR_SUB))
 	injury->Inc_str_red_num();
+#endif 
     }
-    else {
+    else
+    {
       // injury was fixed already, so find the temp that the repair
       // generates.
       new_temp = Find_injury_update( injury->Lhs(), temp );
@@ -1049,6 +1084,11 @@ CSE::Repair_injury_phi_real( EXP_OCCURS *def, EXP_OCCURS *use, CODEREP *temp,
   // this function can handle real or phi-result defs
   Str_red()->Find_iv_and_mult( def, &iv_def, use, &iv_use, &multiplier);
 
+#ifdef TARG_ST
+  // FdF 20060622: Temporary fix for bug 190B/55
+  if (iv_use == NULL)
+    return use->Occurrence();
+#endif
   if ( Tracing() ) {
     fprintf( TFile, "Repair_injury_phi_real: iv_def: " );
     iv_def->Print(0,TFile);
@@ -1215,6 +1255,69 @@ CSE::Do_cse_pass_1(void)
       }
     }
 }
+#ifdef TARG_ST
+// FdF 20080528: PRE on Iload/Istore for zero offset
+#define ABS(a) (((a) >= 0) ? a : -a)
+#define NEAREST_ZERO(a, b) ((ABS(a) <= ABS(b)) ? a : b)
+
+// Check that all uses of cse_cr are on a IVAR, and compute the
+// nearest to zero value of the offset used on these accesses.
+static BOOL
+CR_in_ivar_only(CODEREP *cr, CODEREP *occ_cr, int *nearest_zero_offset)
+{
+  // Used elsewhere than an Iload/Istore
+  if (cr == occ_cr)
+    return FALSE;
+
+  switch(cr->Kind()) {
+  case CK_CONST:
+  case CK_RCONST:
+  case CK_LDA:
+  case CK_VAR:
+    // Not used
+    return TRUE;
+
+  case CK_IVAR: {
+    BOOL ivar_only = TRUE;
+    const OPERATOR ivar_opr = cr->Opr();
+    if (ivar_opr == OPR_PARM)
+      ivar_only = CR_in_ivar_only(cr->Ilod_base(), occ_cr, nearest_zero_offset);
+    else if (cr->Ilod_base()) {
+      if (cr->Ilod_base() == occ_cr)
+	// Used on Iload, adjust nearest zero offset
+	*nearest_zero_offset = NEAREST_ZERO(*nearest_zero_offset, cr->Offset());
+      else
+	// Check usage in child
+	ivar_only = CR_in_ivar_only(cr->Ilod_base(), occ_cr, nearest_zero_offset);
+    }
+    else
+      FmtAssert(0, ("CR_in_ivar_only: Cannot have Istr_base"));
+    if (ivar_only && (ivar_opr == OPR_MLOAD)) {
+      // Check usage on child
+      if (cr->Mload_size())
+	ivar_only = CR_in_ivar_only(cr->Mload_size(), occ_cr, nearest_zero_offset);
+      else
+	FmtAssert(0, ("CR_in_ivar_only: Cannot have Mstore_size"));
+    }
+    if (ivar_only && (ivar_opr == OPR_ILOADX))
+      ivar_only = CR_in_ivar_only(cr->Index(), occ_cr, nearest_zero_offset);
+    return ivar_only;
+  }
+
+  case CK_OP: {
+    // Check usage on children
+    for (INT32 i=0; i < cr->Kid_count(); i++) 
+      if (!CR_in_ivar_only(cr->Opnd(i), occ_cr, nearest_zero_offset))
+	return FALSE;
+    return TRUE;
+  }
+
+  default:
+    Is_True(0, ("CR_is_only_used_in_ivar: unexpected coderep kind"));
+    return FALSE;
+  }
+}
+#endif
 
 // ======================================================================
 // Do_cse_pass_2 - second pass of main routine for this file that generates
@@ -1234,12 +1337,86 @@ CSE::Do_cse_pass_2(void)
   EXP_OCCURS *occur, *tos;
   CODEREP *tempcr;
   STMTREP *savestmt;
+#ifdef TARG_ST
+  // FdF 20080528: PRE on Iload/Istore for zero offset
+  // Add a pass to check if all real occurences are used in an
+  // Iload/Istore. If true, and none has a zero offset, modifies the
+  // new expression so that one operation has a zero offset
+
+  BOOL ivar_only = FALSE;
+  INT32 nearest_zero_offset = 0;
+
+  if ((WOPT_Pre_LoadStore_offset > 0) &&
+      (_worklist->Exp()->Kind() == CK_OP) &&
+      ((_worklist->Exp()->Opr() == OPR_ADD) ||
+       (_worklist->Exp()->Opr() == OPR_SUB))) {
+    // FdF 20080527: More work is needed to handle expressions other
+    // than ADD/SUB
+    ivar_only = TRUE;
+    nearest_zero_offset = INT_MAX;
+
+    EXP_ALL_OCCURS_ITER exp_occ_ivar_iter(_worklist->Real_occurs().Head(),
+					  NULL, /* no LFTR */
+					  NULL, /* no PHI */
+					  NULL, /* no PHI Pred */
+					  NULL /* no exit occur*/ );
+
+    FOR_ALL_NODE(occur, exp_occ_ivar_iter, Init()) {
+      switch (occur->Occ_kind()) {
+      case EXP_OCCURS::OCC_REAL_OCCUR:
+	// Recursive traversal of LHS and RHS of enclose_stmt
+	if (occur->Occurs_as_hoisted())
+	  ivar_only = FALSE;
+	else {
+	  STMTREP *stmt = occur->Enclosed_in_stmt();
+	  BB_NODE *bb = stmt->Bb();
+	  if (ivar_only &&
+	      (stmt->Rhs() != NULL) &&
+	      !CR_in_ivar_only(stmt->Rhs(), occur->Occurrence(), &nearest_zero_offset)) {
+	    ivar_only = FALSE;
+	  }
+	  if (ivar_only && (stmt->Lhs() != NULL)) {
+	    if (OPERATOR_is_scalar_istore (stmt->Opr()) || stmt->Opr() == OPR_ISTOREX ||
+		stmt->Opr() == OPR_MSTORE)
+	      if (!CR_in_ivar_only(stmt->Lhs()->Istr_base(), occur->Occurrence(), &nearest_zero_offset))
+		ivar_only = FALSE;
+	  }
+	  if (ivar_only && (stmt->Opr() == OPR_MSTORE))
+	    if (!CR_in_ivar_only(stmt->Lhs()->Mstore_size(), occur->Occurrence(), &nearest_zero_offset))
+	      ivar_only = FALSE;
+	  if (ivar_only && (stmt->Opr() == OPR_ISTOREX))
+	    if (!CR_in_ivar_only(stmt->Lhs()->Index(), occur->Occurrence(), &nearest_zero_offset))
+	      ivar_only = FALSE;
+	}
+	break;
+      default:
+	break;
+      }
+      if (!ivar_only)
+	break;
+    }
+
+    if (!ivar_only ||
+	(nearest_zero_offset < -(INT32)WOPT_Pre_LoadStore_offset) ||
+	(nearest_zero_offset > WOPT_Pre_LoadStore_offset))
+      nearest_zero_offset = 0;
+
+    if (nearest_zero_offset != 0) {
+      if (Tracing())
+	fprintf(TFile, "ivar_only is %s, nearest_zero_offset = %d\n", ivar_only ? "TRUE" : "FALSE", nearest_zero_offset);
+    }
+  }
+#endif
 
   FOR_ALL_NODE(occur, exp_occ_iter, Init()) {
 
     switch (occur->Occ_kind()) {
 
       case EXP_OCCURS::OCC_REAL_OCCUR:
+#ifdef TARG_ST
+	// FdF 20080528: PRE on Iload/Istore for zero offset
+	occur->Set_offset(nearest_zero_offset);
+#endif
 	if (occur->Sunk_lvalue()) {
 	  if (occur->Occurs_as_lvalue()) {
 	    // sunk def (LPRE only), do nothing (SPRE will delete it later
@@ -1369,6 +1546,10 @@ CSE::Do_cse_pass_2(void)
 
       case EXP_OCCURS::OCC_PHI_PRED_OCCUR:
 	{
+#ifdef TARG_ST
+	  // FdF 20080528: PRE on Iload/Istore for zero offset
+	  occur->Set_offset(nearest_zero_offset);
+#endif
 	  if (occur->Save_to_temp()) {
 	    Is_True(occur->Def_occur() == NULL, 
 		("CSE::Do_cse_pass_2: at a save location, version's OCCUR not NULL"));

@@ -327,6 +327,13 @@ bool operator== (const forward_to_next_iterator<Container,Next> &it1,
 	   it1.current_idx() == it2.current_idx());
 }
 
+template <class Container, class Next>
+bool operator!= (const forward_to_next_iterator<Container,Next> &it1,
+                 const forward_to_next_iterator<Container,Next> &it2)
+{
+    return !(it1 == it2);
+}
+
 // ----------------- The exported interface -------------
 // ------------------------------------------------------
 

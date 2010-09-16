@@ -236,6 +236,10 @@ main()
 		    TOP_fandx128v64,	0x000000ff,
 		    TOP_fandxx128v64,	0x000000ff,
 		    TOP_fandxxx128v64,	0x000000ff,
+		    TOP_fandn128v64,	0x000000ff,
+		    TOP_fandnx128v64,	0x000000ff,
+		    TOP_fandnxx128v64,	0x000000ff,
+		    TOP_fandnxxx128v64,	0x000000ff,
 		    TOP_or128v8,	0x000000ff,
 		    TOP_orx128v8,	0x000000ff,
 		    TOP_orxx128v8,	0x000000ff,
@@ -904,7 +908,7 @@ main()
   		    TOP_psrad_mmx,      0x000000ff,
   		    TOP_pand_mmx,       0x000000ff,
   		    TOP_pandn_mmx,      0x000000ff,
-            TOP_pand128,        0x000000ff,
+  		    TOP_pand128,        0x000000ff,
   		    TOP_por_mmx,        0x000000ff,
   		    TOP_pxor_mmx,       0x000000ff,
 		    TOP_mfence,         0x000000ff,
@@ -1111,8 +1115,13 @@ main()
 		    TOP_max64v16, 0x000000ff,
 		    TOP_min64v8, 0x000000ff,
 		    TOP_min64v16, 0x000000ff,
+<<<<<<< HEAD:src/common/targ_info/isa/x8664/isa_pack.cxx
             TOP_pextrw64, 0x000000ff,
             TOP_pextrw128, 0x000000ff,
+=======
+		    TOP_pextrw64, 0x000000ff,
+		    TOP_pextrw128, 0x000000ff,
+>>>>>>> 1fbceaa6ef10767de9dda76e5a5afdf586a787b6:src/common/targ_info/isa/x8664/isa_pack.cxx
 		    TOP_pinsrw64, 0x000000ff,
 		    TOP_pinsrw128, 0x000000ff,
 		    TOP_pmovmskb, 0x000000ff,
@@ -1152,8 +1161,16 @@ main()
 		    TOP_movmskpd, 0x000000ff,
 		    TOP_maskmovdqu, 0x000000ff,
 		    TOP_maskmovq, 0x000000ff,
-                    TOP_extrq,   0x000000ff,
-                    TOP_insertq,   0x000000ff,
+            TOP_extrq,   0x000000ff,
+            TOP_insertq,   0x000000ff,
+            TOP_pcmpistri, 0x000000ff,
+            TOP_pcmpistrm, 0x000000ff,        
+            TOP_pcmpestri, 0x000000ff,
+            TOP_pcmpestrm, 0x000000ff,
+            TOP_xchgx8, 0x000000ff,
+            TOP_xchgx16, 0x000000ff,
+            TOP_xchgx32, 0x000000ff,
+            TOP_xchgx64, 0x000000ff,
 		    TOP_UNDEFINED);
 
   ISA_Pack_End();

@@ -236,10 +236,10 @@ unsigned int setPrecisionDouble(void)
 #if defined(USE_RESTOREPRECISION)
 void restorePrecision(unsigned int cwold)
 {
-#if defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
-  /* There is no precision control on Hammer */
-#else
+#if defined(WINDOWS)
 #error Unknown machine
+#else
+  /* There is no precision control on Hammer */
 #endif
   return;
 }
@@ -258,14 +258,12 @@ static inline void clear_fpsw_flags(int flags)
   unsigned int cw = _mm_getcsr();
   cw &= (~flags);
   _mm_setcsr(cw);
-#elif defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#else
   unsigned int cw;
   /* Get the current floating-point control/status word */
   asm volatile ("STMXCSR %0" : "=m" (cw));
   cw &= (~flags);
   asm volatile ("LDMXCSR %0" : : "m" (cw));
-#else
-#error Unknown machine
 #endif
 }
 #endif /* USE_CLEAR_FPSW_FLAGS */
@@ -281,14 +279,12 @@ static inline void raise_fpsw_flags(int flags)
 {
 #if defined(WINDOWS)
   _mm_setcsr(_mm_getcsr() | flags);
-#elif defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#else
   unsigned int cw;
   /* Get the current floating-point control/status word */
   asm volatile ("STMXCSR %0" : "=m" (cw));
   cw |= flags;
   asm volatile ("LDMXCSR %0" : : "m" (cw));
-#else
-#error Unknown machine
 #endif
 }
 #endif /* USE_RAISE_FPSW_FLAGS */
@@ -300,12 +296,10 @@ static inline unsigned int get_fpsw_inline(void)
 {
 #if defined(WINDOWS)
   return _mm_getcsr();
-#elif defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#else
   unsigned int sw;
   asm volatile ("STMXCSR %0" : "=m" (sw));
   return sw;
-#else
-#error Unknown machine
 #endif
 }
 #endif /* USE_GET_FPSW_INLINE */
@@ -316,11 +310,9 @@ static inline void set_fpsw_inline(unsigned int sw)
 {
 #if defined(WINDOWS)
   _mm_setcsr(sw);
-#elif defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#else
   /* Set the current floating-point control/status word */
   asm volatile ("LDMXCSR %0" : : "m" (sw));
-#else
-#error Unknown machine
 #endif
 }
 #endif /* USE_SET_FPSW_INLINE */
@@ -335,15 +327,13 @@ static inline void clear_fpsw_inline(void)
   cw &= ~(AMD_F_INEXACT | AMD_F_UNDERFLOW | AMD_F_OVERFLOW |
           AMD_F_DIVBYZERO | AMD_F_INVALID);
   _mm_setcsr(cw);
-#elif defined(linux) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#else
   unsigned int cw;
   /* Get the current floating-point control/status word */
   asm volatile ("STMXCSR %0" : "=m" (cw));
   cw &= ~(AMD_F_INEXACT | AMD_F_UNDERFLOW | AMD_F_OVERFLOW |
           AMD_F_DIVBYZERO | AMD_F_INVALID);
   asm volatile ("LDMXCSR %0" : : "m" (cw));
-#else
-#error Unknown machine
 #endif
 }
 #endif /* USE_CLEAR_FPSW_INLINE */

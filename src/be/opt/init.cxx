@@ -57,7 +57,7 @@
 // ====================================================================
 
 
-#if defined(__linux__) || defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
+#ifndef USE_WEAK_REFERENCES
 
 #include "defs.h"
 #include "optimizer.h"
@@ -131,4 +131,4 @@ struct WOPT_INIT
     }
 } Wopt_Initializer;
 
-#endif // __linux__
+#endif // USE_WEAK_REFERENCES

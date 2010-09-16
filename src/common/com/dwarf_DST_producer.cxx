@@ -1284,6 +1284,51 @@ DST_mk_lexical_block(char         *name,         /* NULL if unnamed */
    return DST_init_info(info_idx, DW_TAG_lexical_block, flag, attr_idx);
 }
 
+#ifdef TARG_ST
+void
+DST_lexical_block_add_low_pc (DST_INFO_IDX idx, void *low_pc)
+{
+  DST_INFO *info = DST_INFO_IDX_TO_PTR(idx);
+  DST_ATTR_IDX attr_idx = DST_INFO_attributes(info);
+  DST_LEXICAL_BLOCK *attr = DST_ATTR_IDX_TO_PTR(attr_idx, DST_LEXICAL_BLOCK);
+  /* pc fields points to front-end labels, and are later converted
+   * to point to the corresponding back-end LABELs.
+   */
+#if defined(_SUPPORT_IPA) || defined(_STANDALONE_INLINER) || defined(_LEGO_CLONER)
+  /* for IPA, low_pc and high_pc are pointers
+   * to struct st_idx
+   *   Get_ST_id ((ST *)low_pc, &id, &index);
+   * has already been called before calling this routine
+   */
+  DST_ASSOC_INFO_st_idx(DST_LEXICAL_BLOCK_low_pc (attr)) 
+    = pDST_ASSOC_INFO_st_idx((DST_ASSOC_INFO *)low_pc);
+#else
+  DST_ASSOC_INFO_fe_ptr(DST_LEXICAL_BLOCK_low_pc(attr)) = low_pc;
+#endif
+}
+
+void
+DST_lexical_block_add_high_pc (DST_INFO_IDX idx, void *high_pc)
+{
+  DST_INFO *info = DST_INFO_IDX_TO_PTR(idx);
+  DST_ATTR_IDX attr_idx = DST_INFO_attributes(info);
+  DST_LEXICAL_BLOCK *attr = DST_ATTR_IDX_TO_PTR(attr_idx, DST_LEXICAL_BLOCK);
+  /* pc fields points to front-end labels, and are later converted
+   * to point to the corresponding back-end LABELs.
+   */
+#if defined(_SUPPORT_IPA) || defined(_STANDALONE_INLINER) || defined(_LEGO_CLONER)
+  /* for IPA, low_pc and high_pc are pointers
+   * to struct st_idx
+   *   Get_ST_id ((ST *)low_pc, &id, &index);
+   * has already been called before calling this routine
+   */
+  DST_ASSOC_INFO_st_idx(DST_LEXICAL_BLOCK_high_pc (attr)) 
+    = pDST_ASSOC_INFO_st_idx((DST_ASSOC_INFO *)high_pc);
+#else
+  DST_ASSOC_INFO_fe_ptr(DST_LEXICAL_BLOCK_high_pc(attr)) = high_pc;
+#endif
+}
+#endif
 
 
 /* Creates a DW_TAG_label entry and returns its idx.
@@ -1442,7 +1487,14 @@ DST_mk_variable(USRCPOS      decl,     /* Source location */
 		BOOL         is_declaration,
 		BOOL         is_automatic,
 		BOOL         is_external,    /* Type of variable */
+#ifdef TARG_ST
+	      // [CL] add accessibility field
+	      BOOL	   is_artificial,
+	      DST_accessibility accessibility
+	      )
+#else
 		BOOL	     is_artificial)
+#endif
 {
    DST_INFO_IDX  info_idx;
    DST_ATTR_IDX  attr_idx;
@@ -1459,6 +1511,9 @@ DST_mk_variable(USRCPOS      decl,     /* Source location */
    attr = DST_ATTR_IDX_TO_PTR(attr_idx, DST_VARIABLE);
    if (is_declaration)
    {
+       #ifdef TARG_ST // [CL] generate srcpos only for non-artificial
+if (!is_artificial)
+#endif
       DST_VARIABLE_decl_decl(attr) = decl;
       DST_VARIABLE_decl_name(attr) = DST_mk_name(name);
       DST_VARIABLE_decl_type(attr) = type;
@@ -1466,9 +1521,16 @@ DST_mk_variable(USRCPOS      decl,     /* Source location */
       DST_VARIABLE_decl_linkage_name(attr) = DST_INVALID_IDX;
 #endif
       DST_SET_declaration(flag);
+#ifdef TARG_ST // [CL] add linkage_name support
+      DST_VARIABLE_decl_linkage_name(attr) = DST_INVALID_IDX; /* set later by DST_add_linkage_name_to_variable() */
+      DST_VARIABLE_decl_accessibility(attr) = accessibility;
+#endif
    }   
    else
    {
+#ifdef TARG_ST // [CL] generate srcpos only for non-artificial
+if (!is_artificial)
+#endif
       DST_VARIABLE_def_decl(attr) = decl;
       DST_VARIABLE_def_name(attr) = DST_mk_name(name);
       DST_VARIABLE_def_type(attr) = type;
@@ -1477,6 +1539,10 @@ DST_mk_variable(USRCPOS      decl,     /* Source location */
       DST_VARIABLE_def_specification(attr) = DST_INVALID_IDX;
 #ifdef KEY
       DST_VARIABLE_def_linkage_name(attr) = DST_INVALID_IDX;
+#endif
+      #ifdef TARG_ST // [CL] add linkage_name support
+      DST_VARIABLE_def_linkage_name(attr) = DST_INVALID_IDX; /* set later by DST_add_linkage_name_to_variable() */
+      DST_VARIABLE_def_accessibility(attr) = accessibility;
 #endif
 
 #if defined(_SUPPORT_IPA) || defined(_STANDALONE_INLINER)
@@ -1905,7 +1971,16 @@ DST_INFO_IDX
 DST_mk_subrange_type(DST_flag is_lb_cval,
 		     DST_cval_ref low, 		/* lower bound */
 		     DST_flag is_ub_cval,
+#ifndef TARG_ST
 		     DST_cval_ref high) 	/* upper bound */
+#else
+
+		     DST_cval_ref high,	/* upper bound */
+            DST_flag is_count,
+		     DST_count_t count, /* size */
+    		 DST_INFO_IDX type)
+#endif
+
 {
    DST_INFO_IDX       info_idx;
    DST_ATTR_IDX       attr_idx;
@@ -1933,7 +2008,13 @@ DST_mk_subrange_type(DST_flag is_lb_cval,
    }
 
    DST_SUBRANGE_TYPE_stride_ref(attr) = DST_INVALID_IDX ; /* F90 dope, only */
-  
+  #ifdef TARG_ST
+   if (is_count) {
+   	DST_SUBRANGE_TYPE_count_val(attr) = count;
+   	DST_SET_count(flag);
+   }
+   DST_SUBRANGE_TYPE_type(attr) = type;
+#endif
    return DST_init_info(info_idx, DW_TAG_subrange_type, flag, attr_idx);
 }
 
@@ -1997,11 +2078,70 @@ DST_mk_structure_type(USRCPOS      decl,      /* Source location */
    DST_STRUCTURE_TYPE_abstract_origin(attr) = abstract_origin;
    DST_STRUCTURE_TYPE_first_child(attr) = DST_INVALID_IDX;
    DST_STRUCTURE_TYPE_last_child(attr) = DST_INVALID_IDX;
+
+#ifdef TARG_ST
+   // [CL] don't forget to initialize
+   DST_STRUCTURE_TYPE_containing_type(attr) = DST_INVALID_IDX;
+#endif
+
    if (is_incomplete)
       DST_SET_declaration(flag);
    return DST_init_info(info_idx, DW_TAG_structure_type, flag, attr_idx);
 }
 
+#ifdef TARG_ST
+// [CL] enable adding containing_type attribute after creation of
+// structure_type
+void DST_add_structure_containing_type(DST_INFO_IDX struct_idx,
+				       DST_ATTR_IDX containing_type_idx)
+{
+   DST_INFO *struct_ptr = DST_INFO_IDX_TO_PTR(struct_idx);
+   DST_ATTR_IDX attr_idx = DST_INFO_attributes(struct_ptr);
+   DST_STRUCTURE_TYPE *attr;
+
+   attr = DST_ATTR_IDX_TO_PTR(attr_idx, DST_STRUCTURE_TYPE);
+   DST_STRUCTURE_TYPE_containing_type(attr) = containing_type_idx;
+}
+
+// [CL] avoid infinite recursion in case of self referencing struct
+void DST_set_structure_being_built(DST_INFO_IDX struct_idx)
+{
+  DST_INFO *struct_ptr = DST_INFO_IDX_TO_PTR(struct_idx);
+  DST_ATTR_IDX attr_idx = DST_INFO_attributes(struct_ptr);
+  DST_STRUCTURE_TYPE *attr;
+
+  attr = DST_ATTR_IDX_TO_PTR(attr_idx, DST_STRUCTURE_TYPE);
+  DST_STRUCTURE_TYPE_being_built(attr) = 1;
+}
+
+void DST_clear_structure_being_built(DST_INFO_IDX struct_idx)
+{
+  DST_INFO *struct_ptr = DST_INFO_IDX_TO_PTR(struct_idx);
+  DST_ATTR_IDX attr_idx = DST_INFO_attributes(struct_ptr);
+  DST_STRUCTURE_TYPE *attr;
+
+  attr = DST_ATTR_IDX_TO_PTR(attr_idx, DST_STRUCTURE_TYPE);
+  DST_STRUCTURE_TYPE_being_built(attr) = 0;
+}
+
+int DST_is_structure_being_built(DST_INFO_IDX struct_idx)
+{
+  DST_INFO *struct_ptr = DST_INFO_IDX_TO_PTR(struct_idx);
+  DST_ATTR_IDX attr_idx = DST_INFO_attributes(struct_ptr);
+  DST_STRUCTURE_TYPE *attr;
+
+  attr = DST_ATTR_IDX_TO_PTR(attr_idx, DST_STRUCTURE_TYPE);
+  return DST_STRUCTURE_TYPE_being_built(attr);
+}
+
+void DST_clear_structure_declaration(DST_INFO_IDX struct_idx)
+{
+  DST_INFO *info_ptr = DST_INFO_IDX_TO_PTR(struct_idx);
+  DST_flag      flag = DST_INFO_flag(info_ptr);
+  DST_RESET_declaration(flag);
+  DST_INFO_flag(info_ptr) = flag;
+}
+#endif
 
 /* Creates a DW_TAG_union_type entry.
 */
@@ -2030,10 +2170,68 @@ DST_mk_union_type(USRCPOS      decl,      /* Source location */
    DST_UNION_TYPE_abstract_origin(attr) = abstract_origin;
    DST_UNION_TYPE_first_child(attr) = DST_INVALID_IDX;
    DST_UNION_TYPE_last_child(attr) = DST_INVALID_IDX;
+#ifdef TARG_ST
+   // [CL] don't forget to initialize
+   DST_UNION_TYPE_containing_type(attr) = DST_INVALID_IDX;
+#endif
+
    if (is_incomplete)
       DST_SET_declaration(flag);
    return DST_init_info(info_idx, DW_TAG_union_type, flag, attr_idx);
 }
+#ifdef TARG_ST
+// [CL] enable adding containing_type attribute after creation of
+// union_type
+void DST_add_union_containing_type(DST_INFO_IDX union_idx,
+				   DST_ATTR_IDX containing_type_idx)
+{
+   DST_INFO *union_ptr = DST_INFO_IDX_TO_PTR(union_idx);
+   DST_ATTR_IDX attr_idx = DST_INFO_attributes(union_ptr);
+   DST_UNION_TYPE *attr;
+
+   attr = DST_ATTR_IDX_TO_PTR(attr_idx, DST_UNION_TYPE);
+   DST_UNION_TYPE_containing_type(attr) = containing_type_idx;
+}
+
+// [CL] avoid infinite recursion in case of self referencing union
+void DST_set_union_being_built(DST_INFO_IDX union_idx)
+{
+  DST_INFO *union_ptr = DST_INFO_IDX_TO_PTR(union_idx);
+  DST_ATTR_IDX attr_idx = DST_INFO_attributes(union_ptr);
+  DST_UNION_TYPE *attr;
+
+  attr = DST_ATTR_IDX_TO_PTR(attr_idx, DST_UNION_TYPE);
+  DST_UNION_TYPE_being_built(attr) = 1;
+}
+
+void DST_clear_union_being_built(DST_INFO_IDX union_idx)
+{
+  DST_INFO *union_ptr = DST_INFO_IDX_TO_PTR(union_idx);
+  DST_ATTR_IDX attr_idx = DST_INFO_attributes(union_ptr);
+  DST_UNION_TYPE *attr;
+
+  attr = DST_ATTR_IDX_TO_PTR(attr_idx, DST_UNION_TYPE);
+  DST_UNION_TYPE_being_built(attr) = 0;
+}
+
+int DST_is_union_being_built(DST_INFO_IDX union_idx)
+{
+  DST_INFO *union_ptr = DST_INFO_IDX_TO_PTR(union_idx);
+  DST_ATTR_IDX attr_idx = DST_INFO_attributes(union_ptr);
+  DST_UNION_TYPE *attr;
+
+  attr = DST_ATTR_IDX_TO_PTR(attr_idx, DST_UNION_TYPE);
+  return DST_UNION_TYPE_being_built(attr);
+}
+
+void DST_clear_union_declaration(DST_INFO_IDX union_idx)
+{
+  DST_INFO *info_ptr = DST_INFO_IDX_TO_PTR(union_idx);
+  DST_flag      flag = DST_INFO_flag(info_ptr);
+  DST_RESET_declaration(flag);
+  DST_INFO_flag(info_ptr) = flag;
+}
+#endif
 
 
 /* Creates a DW_TAG_class_type entry.
@@ -2141,12 +2339,21 @@ DST_mk_member(USRCPOS      decl,       /* Source location */
 
 /* Creates a DW_TAG_inheritance entry.
 */
-#ifndef KEY
+#if !defined KEY || defined( TARG_ST)
 DST_INFO_IDX
 DST_mk_inheritance(USRCPOS      decl,     /* Source location */
 		   DST_INFO_IDX type,     /* Type of member */
 		   DST_virtuality virtuality, /* AT_virtuality code */
+#ifdef TARG_ST
+                   // [CL]
+                   DST_size_t   memb_loc, /* Byte-offset of member container */
+                   DST_accessibility accessibility,
+                   DST_size_t   virtual_offset /* offset of virtual base */
+	           )
+#else
+
 		   DST_size_t   memb_loc) /* Byte-offset of member container */
+#endif
 #else
 DST_INFO_IDX
 DST_mk_inheritance(USRCPOS      decl,     /* Source location */
@@ -2175,6 +2382,13 @@ DST_mk_inheritance(USRCPOS      decl,     /* Source location */
 #ifdef KEY
    DST_INHERITANCE_accessibility(attr) = accessibility;
 #endif
+#ifdef TARG_ST
+   // [CL]
+   if (virtual_offset) {
+       DST_INHERITANCE_virtual_offset(attr) = virtual_offset;
+   }
+#endif
+
    return DST_init_info(info_idx, DW_TAG_inheritance, flag, attr_idx);
 }
 

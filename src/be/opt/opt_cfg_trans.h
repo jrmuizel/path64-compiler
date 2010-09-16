@@ -190,6 +190,9 @@ public:
       return y.fi == (*y.ci).end() && adjacent(y.ci,x.ci);
     return false;
   }
+  bool operator!=(const self& x) const {
+      return !(*this == x);
+  }
 
   Cluster_iterator cluster_iterator() const { return ci; }
   Fast_iterator fast_iterator() const { return fi; }
@@ -252,10 +255,10 @@ public:
   cluster_vector()   { cluster.push_back( cluster_type()); }
 };
 
-#ifdef KEY // fix g++ 3.2 problems
-template <class C>
-  bool operator!=(C x, C y) { return !(x == y); }
-#endif
+//#if defined( KEY) // fix g++ 3.2 problems
+//template <class C>
+//  bool operator!=(C x, C y) { return !(x == y); }
+//#endif
 
 
 struct one_dimensional_container_tag {};
@@ -399,7 +402,7 @@ void generate_post_order(Graph& g, Vertex_id root, Container& c)
 
     // maintain that 'root' is the last element in the sequence
     if (c.size() > middle)
-      rotate(c.begin(), c.begin()+middle, c.end());
+      std::rotate(c.begin(), c.begin()+middle, c.end());
   }
 }
 
@@ -447,9 +450,25 @@ template <class Graph, class Vertex_id, class Container>
 inline void generate_reverse_post_order(Graph& g, Vertex_id root, Container& c)
 {
   generate_post_order(g, root, c);
-  reverse(c.begin(), c.end());
+  std::reverse(c.begin(), c.end());
   Is_True(c[0] == root, ("generate_reverse_post_order: root is not first element"));
 }
+
+
+template <typename pair>
+struct select_first: public std::unary_function<pair, typename pair::first_type> {
+    const typename pair::first_type& operator()(const pair& x) const {
+        return x.first;
+    }
+};
+
+
+template <typename pair>
+struct select_second: public std::unary_function<pair, typename pair::second_type> {
+    const typename pair::second_type& operator()(const pair& x) const {
+        return x.second;
+    }
+};
 
 
 // Topological sort for DAG == reverse post order
@@ -458,7 +477,7 @@ template <class Graph, class Vertex_id, class Container>
 inline void topological_sort(Graph& in, Vertex_id root, Container& out)
 {
   typedef typename Graph::value_type edge;
-  typedef cluster_vector<edge, std::_Select1st<edge> > succ_graph;
+  typedef cluster_vector<edge, select_first<edge> > succ_graph;
   succ_graph g;
   copy(in, g);
   if (root < g.size())
@@ -552,8 +571,8 @@ inline edge& add_edge(vector<edge>& g, const edge& e)
 inline vertex_id first(edge e)  { return e.first; }
 inline vertex_id second(edge e) { return e.second; }
 
-typedef cluster_vector<edge, std::_Select1st<edge> > successor_graph;
-typedef cluster_vector<edge, std::_Select2nd<edge> > predecessor_graph;
+typedef cluster_vector<edge, select_first<edge> > successor_graph;
+typedef cluster_vector<edge, select_second<edge> > predecessor_graph;
 
 
 template <class T>
@@ -649,10 +668,10 @@ struct zone {
     return ((double)profit)/code_expansion(); 
   }
   void canonicalize() {
-    sort(entry.begin(), entry.end());
-    sort(clone.begin(), clone.end());
-    sort(exit.begin(), exit.end());
-    sort(side_entry.begin(), side_entry.end());
+    std::sort(entry.begin(), entry.end());
+    std::sort(clone.begin(), clone.end());
+    std::sort(exit.begin(), exit.end());
+    std::sort(side_entry.begin(), side_entry.end());
   }
   void print(FILE *);
   zone(int i):

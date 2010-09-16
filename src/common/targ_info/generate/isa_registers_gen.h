@@ -116,10 +116,18 @@ static const char isa_registers_gen_rcs_id[] = "$Source: /home/bos/bk/kpro64-pen
 typedef struct isa_register_class *ISA_REGISTER_CLASS;
 
 void ISA_Registers_Begin( const char* archname );
+#ifdef TARG_ST
+ISA_REGISTER_CLASS ISA_Register_Class_Create( const char *name,
+					      int bit_size,
+					      bool is_ptr,
+					      bool can_store,
+					      bool multiple_save );
+#else
 ISA_REGISTER_CLASS ISA_Register_Class_Create( const char *name,
 					      int bit_size,
 					      bool can_store,
 					      bool multiple_save );
+#endif
 void ISA_Register_Set( ISA_REGISTER_CLASS rclass,
 		       int min_regnum,
 		       int max_regnum,

@@ -53,6 +53,9 @@ extern boolean want_directory (char *path);
 /* check whether directory is writable */
 extern boolean directory_is_writable (char *path);
 
+/* Make a path from two path fragments. */
+extern char * concat_path (char * path, char * path2);
+
 /* get current working directory */
 extern char *get_cwd (void);
 
