@@ -537,7 +537,7 @@ boolean create_constructor_constant(opnd_type	   *top_opnd,
       if (exp_desc->rank) {
 #ifdef _WHIRL_HOST64_TARGET64
          if (exp_desc->linear_type == Complex_4)
-            double_stride = 1;
+            double_stride = 0;
 #endif /* _WHIRL_HOST64_TARGET64 */
          ATD_ARRAY_IDX(tmp_idx) = save_target_array_idx ? 
            save_target_array_idx : create_bd_ntry_for_const(exp_desc,
@@ -1126,7 +1126,7 @@ boolean fold_aggragate_expression(opnd_type	*top_opnd,
          if (exp_desc->rank) {
 #ifdef _WHIRL_HOST64_TARGET64
 	 if (exp_desc->linear_type == Complex_4)
-	    double_stride = 1;
+	    double_stride = 0;
 #endif
             ATD_ARRAY_IDX(tmp_idx) = save_target_array_idx ?
                   save_target_array_idx : create_bd_ntry_for_const(exp_desc,
@@ -4271,6 +4271,14 @@ ZERO_ARRAY:
             else {
                word_offset = bit_offset/TARGET_BITS_PER_WORD;
 
+#if defined(_HOST_LITTLE_ENDIAN) && defined(_TARGET_LITTLE_ENDIAN)
+	       result_value[1] = (CP_CONSTANT(CN_POOL_IDX(base_cn_idx) +
+                                             word_offset) >> 32) & 0xffffffff;
+   
+               result_value[0] = CP_CONSTANT(CN_POOL_IDX(base_cn_idx) +
+                                             word_offset) & 0xffffffff;
+
+#else
 /* BRIANJ */   result_value[0] = CP_CONSTANT(CN_POOL_IDX(base_cn_idx) +
                                              word_offset) >> 32;
    
@@ -4282,6 +4290,7 @@ ZERO_ARRAY:
    
                /* and shift down the good */
                result_value[1] = result_value[1] >> 32;
+#endif
             }
          }
          else 
@@ -4457,6 +4466,13 @@ ZERO_ARRAY:
 
                word_offset = bit_offset/TARGET_BITS_PER_WORD;
 
+#if defined(_HOST_LITTLE_ENDIAN) && defined(_TARGET_LITTLE_ENDIAN)
+               result_value[1] = (CP_CONSTANT(CN_POOL_IDX(base_cn_idx) +
+                                             word_offset) >> 32) & 0xffffffff;
+
+               result_value[0] = CP_CONSTANT(CN_POOL_IDX(base_cn_idx) +
+                                             word_offset) & 0xffffffff;
+#else
                result_value[0] = CP_CONSTANT(CN_POOL_IDX(base_cn_idx) +
                                              word_offset) >> 32;
 
@@ -4468,6 +4484,7 @@ ZERO_ARRAY:
 
                /* and shift down the good */
                result_value[1] = result_value[1] >> 32;
+#endif
             }
          }
          else 
@@ -4762,6 +4779,12 @@ ZERO_ARRAY:
 
                      word_offset = bit_offset/TARGET_BITS_PER_WORD;
 
+#if defined(_HOST_LITTLE_ENDIAN) && defined(_TARGET_LITTLE_ENDIAN)
+                     result_value[1] = (CP_CONSTANT(CN_POOL_IDX(base_cn_idx) +
+                                                   word_offset) >> 32) & 0xffffffff;
+                     result_value[0] = CP_CONSTANT(CN_POOL_IDX(base_cn_idx) +
+                                                   word_offset) & 0xffffffff;
+#else
                      result_value[0] = CP_CONSTANT(CN_POOL_IDX(base_cn_idx) +
                                                    word_offset) >> 32;
 
@@ -4773,6 +4796,7 @@ ZERO_ARRAY:
       
                      /* and shift down the good */
                      result_value[1] = result_value[1] >> 32;
+#endif
                   }
                }
                else
