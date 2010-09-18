@@ -373,12 +373,22 @@ function(path64_add_library_for_target name target type)
             file(MAKE_DIRECTORY ${object_path})
 
             # Getting build type flags
-            if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+            if("X${CMAKE_BUILD_TYPE}" STREQUAL "XDebug")
                 set(build_type_flags_str "${CMAKE_${src_lang}_FLAGS_DEBUG}")
-            else()
+            elseif("X${CMAKE_BUILD_TYPE}" STREQUAL "XRelease")
                 set(build_type_flags_str "${CMAKE_${src_lang}_FLAGS_RELEASE}")
             endif()
             string(REPLACE " " ";" build_type_flags "${build_type_flags_str}")
+
+            # Removing conflicting options frm build_type_flags
+            set(oflags -O0 -O1 -O2 -O3)
+            foreach(oflag ${oflags})
+                list(FIND target_flags ${oflag} res)
+                if(NOT ${res} EQUAL -1)
+                    list(REMOVE_ITEM build_type_flags ${oflags})
+                    break()
+                endif()
+            endforeach()          
 
             add_custom_command(OUTPUT ${object_name}
                                COMMAND ${path64_compiler_${src_lang}} -c -o ${object_name}
