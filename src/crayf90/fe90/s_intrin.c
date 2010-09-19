@@ -10202,6 +10202,7 @@ void    random_seed_intrinsic(opnd_type     *result_opnd,
    opnd_type	  base_opnd;
    int            line;
    int            column;
+   int            int_sz;
 
 
    TRACE (Func_Entry, "random_seed_intrinsic", NULL);
@@ -10336,7 +10337,11 @@ void    random_seed_intrinsic(opnd_type     *result_opnd,
 
 
 # if (defined(KEY))
-         cn_idx = C_INT_TO_CN(CG_INTEGER_DEFAULT_TYPE, 32);
+	 int_sz = storage_bit_kind_tbl[TYP_LINEAR(INTEGER_DEFAULT_TYPE)];
+	 /* The random_seed is 128 bytes (32 Integer_4 elements) */
+	 /* SIZE should return the number of default integer elements needes */
+	 /* to store the seed */
+         cn_idx = C_INT_TO_CN(CG_INTEGER_DEFAULT_TYPE, (8/int_sz)*16);
 # elif (defined(_TARGET_OS_IRIX) || defined(_TARGET_OS_LINUX) || defined(_TARGET_OS_DARWIN))
          cn_idx = C_INT_TO_CN(CG_INTEGER_DEFAULT_TYPE, 64);
 # else
