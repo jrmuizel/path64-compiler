@@ -837,7 +837,8 @@ void add_asm_output(string_list_t *args, const char *the_file) {
         } else {
             char * o_name;
             o_name = construct_given_name(the_file_copy,"o",
-              (keep_flag || multiple_source_files || ((shared == RELOCATABLE) && (ipa == TRUE))) ? TRUE : FALSE);
+              (keep_flag || multiple_source_files || last_phase == P_any_as || 
+                            ((shared == RELOCATABLE) && (ipa == TRUE))) ? TRUE : FALSE);
 #ifdef FAT_WHIRL_OBJECTS
             if(ipa == TRUE) {
                 strcpy(buf, ".native-");
