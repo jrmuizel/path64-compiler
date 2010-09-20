@@ -297,7 +297,7 @@ ADD_DEPENDENCIES(compiler-stage-C compiler-stage)
 ADD_DEPENDENCIES(compiler-stage-CXX compiler-stage-C)
 ADD_DEPENDENCIES(compiler-stage-Fortran compiler-stage)
 ADD_DEPENDENCIES(compiler-stage-libs-C compiler-stage-C)
-ADD_DEPENDENCIES(compiler-stage-libs-CXX compiler-stage-CXX)
+ADD_DEPENDENCIES(compiler-stage-libs-CXX compiler-stage-CXX compiler-stage-libs-C)
 ADD_DEPENDENCIES(compiler-stage-libs-Fortran compiler-stage-Fortran)
 
 # Copying libmv and libmpath to <stage_dir>/lib/${arch} if we are building with pathcc

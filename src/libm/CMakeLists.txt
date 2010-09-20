@@ -86,6 +86,8 @@ path64_set_multitarget_property_(mv-static OUTPUT_NAME "mv")
 path64_set_multitarget_property_(mv-static COMPILE_FLAGS ${compile_flags})
 path64_add_multitarget_library(mv-static STATIC)
 path64_add_multitarget_dependencies(mv-static pscrt-static)
+path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mv-static)
+
 
 path64_set_multitarget_sources(mv COMMON ${PATHSCALE_MV_SRCS})
 path64_set_multitarget_sources(mv x86_64 ${PATHSCALE_MV_SRCS_X64})
@@ -106,6 +108,8 @@ if(PATH64_ENABLE_PSCRUNTIME)
     path64_add_multitarget_dependencies(mv compiler-rt unwind)
 endif()
 
+path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mv)
+
 
 if(PATH64_ENABLE_PROFILING)
     path64_set_multitarget_sources(mv_p COMMON ${PATHSCALE_MV_SRCS})
@@ -116,6 +120,7 @@ if(PATH64_ENABLE_PROFILING)
         path64_set_multitarget_property_(mv_p COMPILE_FLAGS ${compile_flags})
     endif()
     path64_add_multitarget_library(mv_p STATIC)
+    path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mv_p)
 endif(PATH64_ENABLE_PROFILING)
 
 ENDIF(PATH64_ENABLE_MATHLIBS)
