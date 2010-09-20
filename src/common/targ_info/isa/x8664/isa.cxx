@@ -1146,6 +1146,7 @@ main ()
 
 	      /* sse instructions */
 	      "cmpeqps",
+	      "cmpeqpd",
 	      "cmpltps",
 	      "cmpleps",
 	      "cmpunordps",

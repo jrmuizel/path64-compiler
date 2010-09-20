@@ -2252,6 +2252,7 @@ main()
 
   Instruction_Group("fp vector compare I",
 		    TOP_cmpeqps,
+		    TOP_cmpeqpd,
 		    TOP_cmpltps,
 		    TOP_cmpleps,
 		    TOP_cmpunordps,

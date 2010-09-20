@@ -1136,6 +1136,7 @@ main()
 		    TOP_pmovmskb,
 		    TOP_pmovmskb128,
 		    TOP_cmpeqps,
+		    TOP_cmpeqpd,
 		    TOP_cmpltps,
 		    TOP_cmpleps,
 		    TOP_cmpunordps,

@@ -1484,6 +1484,7 @@ int main (int argc, char *argv[])
 
   Instruction_Group("sse parallel compares",
 		    TOP_cmpeqps,
+		    TOP_cmpeqpd,
 		    TOP_cmpltps,
 		    TOP_cmpleps,
 		    TOP_cmpunordps,

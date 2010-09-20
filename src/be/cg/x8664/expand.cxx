@@ -6826,6 +6826,9 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
   case INTRN_CMPEQPS:
     Build_OP( TOP_cmpeqps, result, op0, op1, ops );
     break;
+  case INTRN_CMPEQPD:
+    Build_OP( TOP_cmpeqpd, result, op0, op1, ops );
+    break;
   case INTRN_CMPLTPS:
     Build_OP( TOP_cmpltps, result, op0, op1, ops );
     break;

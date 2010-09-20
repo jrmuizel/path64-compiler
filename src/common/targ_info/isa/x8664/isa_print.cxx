@@ -478,6 +478,7 @@ main()
 			   TOP_fsubrp,
 			   TOP_subus128v16,
 			   TOP_cmpeqps,
+			   TOP_cmpeqpd,
 			   TOP_cmpltps,
 			   TOP_cmpleps,
 			   TOP_cmpunordps,
