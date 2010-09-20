@@ -397,6 +397,11 @@ size_t ipacom_process_file (char* input_file,
   cmdline.reserve(argv.size());
     
   for (i = argv.begin(); i != argv.end(); ++i) {
+    // ipl accepts -non_shared while second step pathcc needs -static
+    if(!strcmp(*i,"-non_shared")){
+      cmdline.push_back("-static");
+      continue;
+    }
     cmdline.push_back(*i);
   }
 
