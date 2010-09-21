@@ -248,10 +248,10 @@ I-include=%D  ;		FTN     ffe,PFA     "-include=%D"
 	"predefined include search path list"
 -nostdinc++	nostdinc=TRUE;		CC,cpp	cpp	self
 	"Do not search for header files in the standard directories specific to C++"
--nostdlib	;	LINK	ld	self
+-nostdlib	;	NONE	ld	self
 	"Do not use standard system startup files or libraries when linking"
 #ifdef PATH64_ENABLE_PSCRUNTIME
--nostdlib++	;	LINK	ld	""
+-nostdlib++	;	NONE	ld	""
 	"Do not use standard C++ libraries when linking"
 -stl_not_threadsafe      stl_threadsafe=FALSE;         ALL     cpp     ""
         "Use faster STL library ignoring thread safety"
@@ -1999,7 +1999,7 @@ I-u%s		;		Cc	ld	"-u %s"
 -fleading-underscore	;		Cc	NONE	""
 	""
 %%% Linker Options
--nostartfiles	;		LINK	ld	self
+-nostartfiles	;		NONE	ld	self
 	"Do not use standard system startup files when linking"
 -nodefaultlibs	;		LINK	NONE	""
 	"Do not use standard system libraries when linking"
