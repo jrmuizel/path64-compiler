@@ -3762,17 +3762,35 @@ New_eh_cleanup_entry (gs_t t, vector<gs_t> *v, LABEL_IDX goto_idx)
 // This is trivial now, since we have ONE specification per function,
 // the offset will always be -1. Will need to calculate the offset when we
 // consider more than one spec in a function
+// We adding offset before catch-all action (zero)
 static void
 append_eh_filter (INITV_IDX& iv)
 {
-  INITV_IDX tmp = iv;
-  while (tmp && INITV_next (tmp))
-	tmp = INITV_next (tmp);
+  INITV_IDX last = iv;
+  INITV_IDX next = 0;
+  if(last) {
+    while (true) {
+      next = INITV_next (last);
+      if (!next)
+        break;
+  
+      int next_val = TCON_ival (INITV_tc_val (next));
+      if (next_val == 0)
+        break;
+  
+      last = next;
+    }
+  }
 
   INITV_IDX eh_filter = New_INITV();
   INITV_Set_VAL (Initv_Table[eh_filter], Enter_tcon (Host_To_Targ (MTYPE_I4, -current_eh_spec_ofst)), 1);
-  if (tmp) Set_INITV_next (tmp, eh_filter);
-  else iv = eh_filter;
+  if (last) {
+    Set_INITV_next (last, eh_filter);
+    if(next) {
+      Set_INITV_next (eh_filter, next);
+    }
+  } else
+    iv = eh_filter;
 }
 
 static void
@@ -3936,37 +3954,20 @@ lookup_cleanups (INITV_IDX& iv)
   	Set_PU_needs_manual_unwinding (Get_Current_PU());
 #endif
 // the following 2 calls can change 'iv'.
-#ifndef TARG_ST
-// NOTE: CG expects a zero before eh-spec filter
-  bool catch_all_appended = false;
-  if (PU_needs_manual_unwinding (Get_Current_PU()))
-  {
-	append_catch_all (iv);
-	catch_all_appended = true;
-  }
-#endif
   if (processing_handler)
   {
   	vector<ST_IDX> * eh_spec = handler_stack.top().eh_spec;
 	FmtAssert (eh_spec, ("Invalid eh_spec inside handler"));
 	if (!eh_spec->empty())
 	{
-#ifndef TARG_ST
-	    if (!catch_all_appended)
-	    	append_catch_all (iv);
-#endif
 	    append_eh_filter (iv);
   	}
   }
   else if (!eh_spec_vector.empty())
   {
-#ifndef TARG_ST
-	if (!catch_all_appended)
-	    append_catch_all (iv);
-#endif
   	append_eh_filter (iv);
   }
-#ifdef TARG_ST
+
   // [SC] Our action list (iv) contains only catch clauses and exception
   // specifications so far.  In the case that there are also
   // cleanup actions we need to indicate that also, but only in the
@@ -3980,37 +3981,57 @@ lookup_cleanups (INITV_IDX& iv)
   //       it and call the pad, so the presence of cleanup
   //       info is superfluous).  Catch-all typeinfo appears
   //       as a zero on this list.
-  if ((! cleanups->empty () || outer_cleanups)
+  if ((! cleanups->empty ()
+#ifdef TARG_ST
+              || outer_cleanups
+#endif // TARG_ST
+      )
       && iv != 0)
     {
       INITV_IDX ix;
       for (ix = iv; ix != 0; ix = INITV_next (ix)) {
-	if (INITV_kind(ix) == INITVKIND_ZERO) {
-	  break;
-	}
+#ifdef TARG_ST
+        if (INITV_kind(ix) == INITVKIND_ZERO) {
+          break;
+        }
+#else // !TARG_ST
+        int val = TCON_ival (INITV_tc_val (ix));
+        if (val == 0) {
+          break;
+        }
+#endif // !TARG_ST
       }
       if (ix == 0) {
-	/* No catch-all found, so prepend a clean-up action. */
-	/* Indicate a clean-up action by INT32_MIN here. */
-	ix = New_INITV();
-	INITV_Init_Integer (ix, MTYPE_I4, INT32_MIN, 1);
-	Set_INITV_next (ix, iv);
-	iv = ix;
+#ifdef TARG_ST
+        /* No catch-all found, so prepend a clean-up action. */
+        /* Indicate a clean-up action by INT32_MIN here. */
+        ix = New_INITV();
+        INITV_Init_Integer (ix, MTYPE_I4, INT32_MIN, 1);
+        Set_INITV_next (ix, iv);
+        iv = ix;
+#else // !TARG_ST
+        // No catch-all, appending catch-all action
+        // Indicate a clean-up action by zero
+        ix = New_INITV();
+        INITV_Init_Integer (ix, MTYPE_I4, 0, 1);
+        Set_INITV_next(iv, ix);
+#endif // !TARG_ST
       }
     }
-#else
-  if (!iv)
-  { // not yet assigned
-	iv = New_INITV();
-	INITV_Set_ZERO (Initv_Table[iv], MTYPE_U4, 1);
+
+  if(!iv) {
+    // creating default cleanup action
+    iv = New_INITV();
+    INITV_Init_Integer(iv, MTYPE_I4, 0, 1);
   }
-#endif
+
   if (cleanup_list_for_eh.empty())
   {
 	return New_eh_cleanup_entry (h, cleanups, goto_idx);
   }
   else
   {
+
 	EH_CLEANUP_ENTRY e = cleanup_list_for_eh.back();
 
 	// check if we are not in any try-block
