@@ -2915,9 +2915,6 @@ run_ld (void)
         // TODO: Make sure ld is called correctly for -m32
         if ( ldphase != P_ipa_link ) {
                 add_multi_strings(args, AUXILIARY_LD_FLAGS, FALSE);
-                if (!option_was_seen(O_static) && !option_was_seen(O__static)){
-                    add_multi_strings(args, AUXILIARY_NON_STATIC_LD_FLAGS, FALSE);
-                }
         }
     }
 #endif
