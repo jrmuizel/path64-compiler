@@ -1011,7 +1011,6 @@ add_file_args (string_list_t *args, phases_t index)
                 add_arg(args, "-D__GNUC_MINOR__=2");
                 add_arg(args, "-D__GNUC_PATCHLEVEL__=1");
                 add_arg(args, "-D__GXX_ABI_VERSION=1002");
-                add_arg(args, "-D__VERSION__=\"4.2.1 Compatible Pathscale Compiler\"");
 
                 if(!option_was_seen(O_nostdinc__)) {
                     add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stl",
