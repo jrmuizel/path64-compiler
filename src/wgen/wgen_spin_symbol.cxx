@@ -2335,19 +2335,11 @@ Create_ST_For_Tree (gs_t decl_node)
 	      }
 	      else
               	sclass = SCLASS_EXTERN;
-#ifdef TARG_ST
 	      eclass = Get_Export_Class_For_Tree(decl_node, CLASS_VAR, sclass);
-#else
-              eclass = EXPORT_PREEMPTIBLE;
-#endif
             }
             else {
               	sclass = SCLASS_FSTATIC;
-#ifdef TARG_ST
 		eclass = Get_Export_Class_For_Tree(decl_node, CLASS_VAR, sclass);
-#else
-		eclass = EXPORT_LOCAL;
-#endif
             }
             level = GLOBAL_SYMTAB;
           }
@@ -2365,11 +2357,7 @@ Create_ST_For_Tree (gs_t decl_node)
 	                      ".gnu.linkonce.sb.", 17)) {
 		sclass = SCLASS_UGLOBAL;
 		level  = GLOBAL_SYMTAB;
-#ifdef TARG_ST
 		eclass = Get_Export_Class_For_Tree(decl_node, CLASS_VAR, sclass);
-#else
-		eclass = EXPORT_PREEMPTIBLE;
-#endif
 #ifdef TARG_ST
 	      } else if (!strncmp(gs_tree_string_pointer(section_name),
 				  ".gnu.linkonce.d.", 16)
@@ -2401,11 +2389,7 @@ Create_ST_For_Tree (gs_t decl_node)
 			       ".bss.", 5))) {
 	      sclass = SCLASS_UGLOBAL;
 	      level  = GLOBAL_SYMTAB;
-#ifdef TARG_ST
 	      eclass = Get_Export_Class_For_Tree(decl_node, CLASS_VAR, sclass);
-#else
-	      eclass = EXPORT_PREEMPTIBLE;
-#endif
 	    }
 	    else
 #endif
@@ -2430,11 +2414,7 @@ Create_ST_For_Tree (gs_t decl_node)
             if (gs_decl_external(decl_node) || gs_decl_weak (decl_node)) {
 	      sclass = SCLASS_EXTERN;
 	      level  = GLOBAL_SYMTAB;
-#ifdef TARG_ST
 	      eclass = Get_Export_Class_For_Tree(decl_node, CLASS_VAR, sclass);
-#else
-              eclass = EXPORT_PREEMPTIBLE;
-#endif
             }
 #ifdef KEY
 	    // Bug 8652: If GNU marks it as COMMON, we should the same.
@@ -2442,11 +2422,7 @@ Create_ST_For_Tree (gs_t decl_node)
 	             gs_decl_common (decl_node)) {
 	      sclass = SCLASS_COMMON;
 	      level = GLOBAL_SYMTAB;
-#ifdef TARG_ST
 	      eclass = Get_Export_Class_For_Tree(decl_node, CLASS_VAR, sclass);
-#else
-	      eclass = EXPORT_PREEMPTIBLE;
-#endif
 	    }
 #endif
             else {
@@ -3020,7 +2996,6 @@ print_volatility(TY_IDX &ty_idx)
   }
 }
 #endif
-#ifdef TARG_ST
 /*
  * The following functions are for symbols' visibility management.
  * The visibility is an attribute of a symbol declaration/definition.
@@ -3231,7 +3206,6 @@ Get_Export_Class_For_Tree (gs_t decl_node, ST_CLASS st_class, ST_SCLASS sclass)
   eclass = Adjust_Export_Class_Visibility(eclass, sv);
   return eclass;
 }
-#endif
 
 #include <ext/hash_map>
 

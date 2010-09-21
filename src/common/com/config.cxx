@@ -559,14 +559,12 @@ static OPTION_DESC Options_TENV[] = {
     0, 0, 0, &No_Shared_Warning, NULL,
     "Disable warning when mixinig modules compiled for different code generation models" },
 #endif
-#ifdef TARG_ST
   { OVK_NAME,	OV_VISIBLE,	FALSE, "visibility",	NULL,
     0, 0, 0, &ENV_Symbol_Visibility_String, NULL,
     "Specify default symbol visibility (default is STV_DEFAULT)" },
   { OVK_NAME,	OV_VISIBLE,	FALSE, "visibility-decl",	NULL,
     0, 0, 0, &ENV_Symbol_Visibility_Spec_Filename, NULL,
     "Use the specified visibility declaration file" },
-#endif
 
   { OVK_BOOL,	OV_VISIBLE,	FALSE, "fixed_addresses",	"fi",
     0, 0, 0,	&PIC_Fixed_Addresses, NULL },
@@ -1222,14 +1220,12 @@ BOOL Gen_PIC_Call_Shared_Set = FALSE; /* CPIC */
 BOOL Gen_PIC_Shared_Set = FALSE;	/* PIC */
 BOOL No_Shared_Warning = FALSE;
 #endif
-#ifdef TARG_ST
 /* [CG]: Options for symbol visibility. */
 INT32 ENV_Symbol_Visibility = 0; /* Default visibility value.
 				    (see STV_... in elf.h).
 				    Default value is STV_DEFAULT (0).  */
 char *ENV_Symbol_Visibility_String;	/* Visibility string. */
 char *ENV_Symbol_Visibility_Spec_Filename; /* Visibility spec. file. */
-#endif
 #ifdef TARG_ST
 // FdF 20090318: Deactivate loop recurrences until it is retargeted.
 BOOL CG_LOOP_fix_recurrences = FALSE;

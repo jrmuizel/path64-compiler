@@ -8455,7 +8455,45 @@ inline INT32 PC_Incr_N(INT32 pc, UINT32 incr)
   pc = PC_Bundle(pc) + (bundles * INST_BYTES) + (slots % ISA_MAX_SLOTS);
   return pc;
 }
-
+
+void EMT_Visibility (
+  FILE *f,			
+  ST_EXPORT eclass,
+  ST *st
+  )
+{
+  const char *dir;
+
+  switch (eclass)
+    {
+#ifdef AS_INTERNAL
+    case EXPORT_INTERNAL:
+      dir = AS_INTERNAL;
+      break;
+#endif
+#ifdef AS_HIDDEN
+    case EXPORT_HIDDEN:
+      dir = AS_HIDDEN;
+      break;
+#endif
+#ifdef AS_PROTECTED
+    case EXPORT_PROTECTED:
+      dir = AS_PROTECTED;
+      break;
+#endif
+    default:
+      dir = 0;
+      break;
+    }
+
+  if (dir) {
+    fprintf (f, "\t%s\t", dir);
+    EMT_Write_Qualified_Name (f, st);
+    fprintf (f, "\n");
+  }
+    
+}
+
 void
 EMT_Write_Qualified_Name (FILE *f, ST *st)
 {
@@ -8556,6 +8594,7 @@ static void Print_Label (FILE *pfile, ST *st, INT64 size)
 	EMT_Write_Qualified_Name(pfile, st);
 	fputc ('\n', pfile);
     }
+    EMT_Visibility (pfile, ST_export(st), st);
 #if 1 /* defined(BUILD_OS_DARWIN) */
 	// Bug 1275 and 4351
 	// Always emit the function type
@@ -8613,6 +8652,7 @@ Print_Common (FILE *pfile, ST *st)
 	EMT_Write_Qualified_Name(pfile, st);
 	fputc ('\n', pfile);
     }
+    EMT_Visibility (pfile, ST_export(st), st);
     fprintf ( pfile, "\t%s\t", AS_COM);
     EMT_Write_Qualified_Name(pfile, st);
 #ifdef TARG_X8664
