@@ -1922,8 +1922,10 @@ add_final_ld_args (string_list_t *args)
 	  add_library(args, "acml_mv");
 #endif
         if (option_was_seen(O_nodefaultlibs) || option_was_seen(O_nostdlib)) {
+#ifndef PATH64_ENABLE_PSCRUNTIME
             //add default search paths even with -nostdlib
             add_arg(args, "-L%s", current_target->libgcc_path);
+#endif
 
             // If -compat-gcc, link with pscrt even if -nostdlib.  Bug 4551.
             if (option_was_seen(O_compat_gcc) &&
