@@ -459,12 +459,10 @@ ST_is_const_initialized_scalar(const ST *, TCON &tcon_copy);
 // initialized scalar and we can find the INITV.
 extern INITV_IDX
 ST_is_const_and_has_initv(const ST *);
-#ifdef TARG_ST
 // Return the INITO_IDX of the value of the ST if we can
 // find it.
-BE_EXPORTED extern INITO_IDX
+extern INITO_IDX
 ST_has_inito(const ST *);
-#endif
 
 // Return the INITV_IDX of the value of the ST if st is a
 // initialized scalar and we can find the INITV.
