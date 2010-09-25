@@ -20,5 +20,7 @@ if(host_targ_enabled)
     add_test(hello_cpp ${CMAKE_CURRENT_BINARY_DIR}/run_test.sh hello_cpp pathCC hello_cpp.cpp)
 endif()
 
-add_test(path64_bootstrap_test "${CMAKE_CURRENT_BINARY_DIR}/bootstrap-test.sh")
+if(NOT PATH64_ENABLE_PSCRUNTIME)
+    add_test(path64_bootstrap_test "${CMAKE_CURRENT_BINARY_DIR}/bootstrap-test.sh")
+endif()
 

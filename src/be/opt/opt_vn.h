@@ -258,7 +258,7 @@
 #include "opt_vn_hashtab.h" // For VN_HASHTAB
 
 #ifdef __STL_USE_NAMESPACES
-using std::slist;
+using __gnu_cxx::slist;
 using std::vector;
 #endif
 

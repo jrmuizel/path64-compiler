@@ -66,7 +66,7 @@ INCLUDE_DIRECTORIES(
 	../libm
 )
 
-ADD_DEFINITIONS(
+set(compile_flags
 # Should always build with a higher level of optimization
 	-O3
 	-LNO:vintr=0
@@ -75,34 +75,52 @@ ADD_DEFINITIONS(
 IF(PATH64_ENABLE_MATHLIBS)
 
 set_source_files_properties(${PATHSCALE_MV_SRCS} PROPERTIES LANGUAGE C)
-path64_set_multitarget_sources(mv_sources COMMON ${PATHSCALE_MV_SRCS})
-path64_set_multitarget_sources(mv_sources x86_64 ${PATHSCALE_MV_SRCS_X64})
 
-if(${CMAKE_C_COMPILER_ID} MATCHES "PathScale")
-    set(BOOTSTRAP_HACK -fbootstrap-hack)
-endif()
+#if(${CMAKE_C_COMPILER_ID} MATCHES "PathScale")
+set(BOOTSTRAP_HACK -fbootstrap-hack)
+#endif()
 
-path64_add_multitarget_library(mv-static STATIC mv_sources)
-path64_set_multitarget_property(mv-static OUTPUT_NAME "mv")
+path64_set_multitarget_sources(mv-static COMMON ${PATHSCALE_MV_SRCS})
+path64_set_multitarget_sources(mv-static x86_64 ${PATHSCALE_MV_SRCS_X64})
+path64_set_multitarget_property_(mv-static OUTPUT_NAME "mv")
+path64_set_multitarget_property_(mv-static COMPILE_FLAGS ${compile_flags})
+path64_add_multitarget_library(mv-static STATIC)
+path64_add_multitarget_dependencies(mv-static pscrt-static)
+path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mv-static)
 
-path64_add_multitarget_library(mv SHARED mv_sources)
-path64_set_multitarget_property(mv COMPILE_DEFINITIONS PIC)
-path64_set_multitarget_property(mv SOVERSION 1)
+
+path64_set_multitarget_sources(mv COMMON ${PATHSCALE_MV_SRCS})
+path64_set_multitarget_sources(mv x86_64 ${PATHSCALE_MV_SRCS_X64})
+path64_set_multitarget_property_(mv COMPILE_FLAGS ${compile_flags} -fPIC -DPIC)
+path64_set_multitarget_property_(mv SOVERSION 1)
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-    path64_set_multitarget_property(mv LINK_FLAGS
+    path64_set_multitarget_property_(mv LINK_FLAGS
             "-Wl,-x -Wl,--version-script=${libmv_SOURCE_DIR}/libmv.vs  ${BOOTSTRAP_HACK}")
 else()
-    path64_set_multitarget_property(mv LINK_FLAGS "${BOOTSTRAP_HACK}")
+    path64_set_multitarget_property_(mv LINK_FLAGS "${BOOTSTRAP_HACK}")
 endif()
 
 path64_multitarget_link_libraries(mv m)
+path64_add_multitarget_library(mv SHARED)
+path64_add_multitarget_dependencies(mv pscrt-static)
+if(PATH64_ENABLE_PSCRUNTIME)
+    path64_add_multitarget_dependencies(mv compiler-rt unwind)
+endif()
+
+path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mv)
+
 
 if(PATH64_ENABLE_PROFILING)
-    path64_add_multitarget_library(mv_p STATIC mv_sources)
+    path64_set_multitarget_sources(mv_p COMMON ${PATHSCALE_MV_SRCS})
+    path64_set_multitarget_sources(mv_p x86_64 ${PATHSCALE_MV_SRCS_X64})
     if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-        path64_set_multitarget_property(mv_p COMPILE_FLAGS -pg)
+        path64_set_multitarget_property_(mv_p COMPILE_FLAGS -pg ${compile_flags})
+    else()
+        path64_set_multitarget_property_(mv_p COMPILE_FLAGS ${compile_flags})
     endif()
+    path64_add_multitarget_library(mv_p STATIC)
+    path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mv_p)
 endif(PATH64_ENABLE_PROFILING)
 
 ENDIF(PATH64_ENABLE_MATHLIBS)

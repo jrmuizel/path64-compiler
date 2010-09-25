@@ -28,6 +28,7 @@
 #include <ext/hash_map>
 #include <stdlib.h>
 #include <strings.h>
+#include <wctype.h>
 
 #include "mempool.h"
 #include "cxx_memory.h"

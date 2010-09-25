@@ -1,11 +1,11 @@
 project(libinstr2)
 
-SET(PATHSCALE_INSTR2_SRCS       "dump.cxx"
+set(PATHSCALE_INSTR2_SRCS       "dump.cxx"
 				"profile.cxx"
 				"../../common/instrument/profile_errors.cxx"
 				"profile_interface.cxx")
 
-INCLUDE_DIRECTORIES(
+include_directories(
 	.
 	../../common/instrument
 	../../common/com
@@ -13,24 +13,26 @@ INCLUDE_DIRECTORIES(
 
 add_definitions(${PATH64_STDC_FORMAT_MACROS})
 
-add_library(instr-static STATIC ${PATHSCALE_INSTR2_SRCS})
 
-add_library(instr-shared SHARED ${PATHSCALE_INSTR2_SRCS})
+path64_set_multiarch_sources(instr_sources COMMON ${PATHSCALE_INSTR2_SRCS})
+path64_add_multiarch_library(instr-static STATIC instr_sources)
+path64_set_multiarch_property(instr-static OUTPUT_NAME "instr2")
+path64_install_multiarch(instr-static)
 
-set_property(TARGET instr-shared PROPERTY SOVERSION 1)
-IF(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
-set_property(TARGET instr-shared PROPERTY LINK_FLAGS -Wl,--version-script="${libinstr2_SOURCE_DIR}/libinstr.vs")
-ENDIF()
-SET_TARGET_PROPERTIES(instr-shared PROPERTIES OUTPUT_NAME "instr2")
-SET_TARGET_PROPERTIES(instr-static PROPERTIES OUTPUT_NAME "instr2")
-
-IF(PATH64_ENABLE_PROFILING)
-add_library(instr_p STATIC ${PATHSCALE_INSTR2_SRCS})
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")   # temporary workaround for bug in gcc on osol
-set_property(TARGET instr_p PROPERTY COMPILE_FLAGS -pg)
+path64_add_multiarch_library(instr-shared SHARED instr_sources)
+path64_set_multiarch_property(instr-shared SOVERSION 1)
+if(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
+    path64_set_multiarch_property(instr-shared LINK_FLAGS -Wl,--version-script="${libinstr2_SOURCE_DIR}/libinstr.vs")
 endif()
-SET_TARGET_PROPERTIES(instr_p PROPERTIES OUTPUT_NAME "instr2_p")
-install(TARGETS instr_p DESTINATION ${PATH64_LIB_PATH})
-ENDIF()
+path64_set_multiarch_property(instr-shared OUTPUT_NAME "instr2")
+path64_install_multiarch(instr-shared)
 
-install(TARGETS instr-shared instr-static DESTINATION ${PATH64_LIB_PATH})
+if(PATH64_ENABLE_PROFILING)
+    path64_add_multiarch_library(instr_p STATIC instr_sources)
+    if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")   # temporary workaround for bug in gcc on osol
+        path64_set_multiarch_property(instr_p COMPILE_FLAGS -pg)
+    endif()
+    path64_set_multiarch_property(instr_p OUTPUT_NAME "instr2_p")
+    path64_install_multiarch(instr_p)
+endif()
+

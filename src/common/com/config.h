@@ -642,11 +642,9 @@ extern BOOL Gen_PIC_Shared;	/* PIC */
  extern BOOL  Gen_PIC_Shared_Set;	/* PIC */
  extern BOOL  No_Shared_Warning;
 #endif
-#ifdef TARG_ST
  extern INT32 ENV_Symbol_Visibility;
  extern char *ENV_Symbol_Visibility_String;
  extern char *ENV_Symbol_Visibility_Spec_Filename;
-#endif
 
 extern BOOL Gen_PIC_Calls;	/* do calls as PIC code */
 extern BOOL Guaranteed_Small_GOT; /* GOT < 64kB? */

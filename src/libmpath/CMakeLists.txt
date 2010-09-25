@@ -100,33 +100,50 @@ set_source_files_properties("amd/w_log10.c" "amd/w_log10f.c" PROPERTIES
 set_source_files_properties(${PATHSCALE_MPATH_S_SRCS_X64} PROPERTIES LANGUAGE C)
 
 
-path64_set_multitarget_sources(mpath_sources COMMON
+path64_set_multitarget_sources(mpath-static COMMON
                                ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
-path64_set_multitarget_sources(mpath_sources x86_64
+path64_set_multitarget_sources(mpath-static x86_64
                                ${PATHSCALE_MPATH_SRCS_X64} ${PATHSCALE_MPATH_S_SRCS_X64})
+path64_set_multitarget_property_(mpath-static OUTPUT_NAME "mpath")
+path64_add_multitarget_library(mpath-static STATIC)
+path64_add_multitarget_dependencies(mpath-static pscrt-static)
+path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mpath-static)
 
-path64_add_multitarget_library(mpath-static STATIC mpath_sources)
-path64_set_multitarget_property(mpath-static OUTPUT_NAME "mpath")
 
-path64_add_multitarget_library(mpath SHARED mpath_sources)
-path64_set_multitarget_property(mpath COMPILE_DEFINITIONS PIC)
-path64_set_multitarget_property(mpath SOVERSION 1)
+path64_set_multitarget_sources(mpath COMMON
+                               ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
+path64_set_multitarget_sources(mpath x86_64
+                               ${PATHSCALE_MPATH_SRCS_X64} ${PATHSCALE_MPATH_S_SRCS_X64})
+path64_set_multitarget_property_(mpath COMPILE_DEFINITIONS PIC)
+path64_set_multitarget_property_(mpath COMPILE_FLAGS -fPIC -fbootstrap-hack)
+path64_set_multitarget_property_(mpath SOVERSION 1)
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-    path64_set_multitarget_property(mpath LINK_FLAGS
+    path64_set_multitarget_property_(mpath LINK_FLAGS
             "-Wl,-x -Wl,--version-script=${libmpath_SOURCE_DIR}/libmpath.vs ${BOOTSTRAP_HACK}")
 else()
-    path64_set_multitarget_property(mpath LINK_FLAGS "${BOOTSTRAP_HACK}")
+    path64_set_multitarget_property_(mpath LINK_FLAGS "${BOOTSTRAP_HACK}")
 endif()
 
 path64_multitarget_link_libraries(mpath m)
+path64_add_multitarget_library(mpath SHARED)
+if(PATH64_ENABLE_PSCRUNTIME)
+    path64_add_multitarget_dependencies(mpath compiler-rt unwind)
+endif()
+path64_add_multitarget_dependencies(mpath pscrt-static)
+path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mpath)
+
 
 if(PATH64_ENABLE_PROFILING)
-    path64_add_multitarget_library(mpath_p STATIC mpath_sources)
+    path64_set_multitarget_sources(mpath_p COMMON
+                                   ${PATHSCALE_MPATH_SRCS} ${PATHSCALE_MPATH_S_SRCS})
+    path64_set_multitarget_sources(mpath_p x86_64
+                                   ${PATHSCALE_MPATH_SRCS_X64} ${PATHSCALE_MPATH_S_SRCS_X64})
     if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-        path64_set_multitarget_property(mpath_p COMPILE_FLAGS -pg)
+        path64_set_multitarget_property_(mpath_p COMPILE_FLAGS -pg)
     endif()
-
+    path64_add_multitarget_library(mpath_p STATIC)
+    path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mpath_p)
 endif(PATH64_ENABLE_PROFILING)
 
 ENDIF(PATH64_ENABLE_MATHLIBS)

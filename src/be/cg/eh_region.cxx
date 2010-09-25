@@ -447,12 +447,7 @@ struct SET_PARENT {
   void operator()(EH_RANGE& r) {
     RID_PARENT_ITER first(r.rid);
     RID_PARENT_ITER last(NULL);
-/* KEY Mac port: 4.0.x behaves like 3.x */
-#if (__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ <= 0)
-    first = find_if(++first, last, IS_EH_RID(), std::__iterator_category(first));
-#else
-    first = std::__find_if(++first, last, IS_EH_RID(), std::__iterator_category(first));
-#endif
+    first = std::find_if(++first, last, IS_EH_RID());
     if (first == last)
       r.parent = NULL;
     else
@@ -494,7 +489,7 @@ EH_Generate_Range_List(WN * pu)
     RID_eh_range_ptr(p->rid) = p;
 #endif
 
-  for_each(list_first, list_last, SET_PARENT());
+  std::for_each(list_first, list_last, SET_PARENT());
 }
 
 
@@ -707,16 +702,16 @@ EH_Prune_Range_List(void)
   }
 
 #ifdef KEY
-  for_each  (first, last, FIX_PARENT());
+  std::for_each  (first, last, FIX_PARENT());
 #endif // KEY
-  for_each  (first, last, SET_ADJUSTMENT());
-  for_each  (first, last, CLEAR_USED());
-  for_each  (first, last, SET_ADJUSTMENT_TO_PARENT_ADJUSTMENT());
+  std::for_each  (first, last, SET_ADJUSTMENT());
+  std::for_each  (first, last, CLEAR_USED());
+  std::for_each  (first, last, SET_ADJUSTMENT_TO_PARENT_ADJUSTMENT());
   range_list.erase(
-    remove_if (first, last, 
+    std::remove_if (first, last, 
                HAS_NO_CALL_OR_HAS_NULL_OR_UNREACHABLE_LABEL()), 
     last);
-  for_each  (range_list.begin(), range_list.end(), ADJUST_PARENT());
+  std::for_each  (range_list.begin(), range_list.end(), ADJUST_PARENT());
 
 #if defined(KEY) && defined(Is_True_On)
   for (INT i=0; i<range_list.size(); i++)
@@ -773,7 +768,7 @@ reorder_range_list()
   EH_RANGE_LIST::iterator first(range_list.begin());
   EH_RANGE_LIST::iterator last (range_list.end());
 
-  stable_sort(first, last, COMPARE_RANGES());
+  std::stable_sort(first, last, COMPARE_RANGES());
 
   // reset parent pointers using inverse vector
 
@@ -801,12 +796,7 @@ struct FIX_MASK_PARENT {
       EH_RANGE_LIST_PARENT_ITER first(r.parent);
       EH_RANGE_LIST_PARENT_ITER last (NULL);
 #endif
-/* KEY Mac port: 4.0.x behaves like 3.x */
-#if (__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ <= 0)
-      first = find_if(first, last, IS_CLEANUP_RANGE(), std::__iterator_category(first));
-#else
-      first = std::__find_if(first, last, IS_CLEANUP_RANGE(), std::__iterator_category(first));
-#endif
+      first = std::find_if(first, last, IS_CLEANUP_RANGE());
       Is_True(first != last, ("mask region must have cleanup ancestor"));
       r.parent = (*first).parent;
     }
@@ -835,8 +825,8 @@ fix_mask_ranges(void)
   EH_RANGE_LIST::reverse_iterator rfirst(range_list.rbegin());
   EH_RANGE_LIST::reverse_iterator rlast (range_list.rend());
 
-  for_each(rfirst, rlast, FIX_MASK_PARENT());
-  for_each(range_list.begin(), range_list.end(),
+  std::for_each(rfirst, rlast, FIX_MASK_PARENT());
+  std::for_each(range_list.begin(), range_list.end(),
 	   CHANGE_MASK_OR_GUARD_TO_CLEANUP());
 }
 

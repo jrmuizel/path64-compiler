@@ -1312,7 +1312,7 @@ void WN_INSTRUMENT_WALKER::Annotate_Value( WN *wn, INT32 id )
     sorted_value.push_back( i->first );
   }
 
-  sort( sorted_value.begin(), sorted_value.end(), Sort_Value_by_Freq( v2f_map ) );
+  std::sort( sorted_value.begin(), sorted_value.end(), Sort_Value_by_Freq( v2f_map ) );
 
   // Insert the first TNV elements of v2f_map to dest_info.
   FB_Info_Value dest_info;

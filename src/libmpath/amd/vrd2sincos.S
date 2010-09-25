@@ -170,7 +170,7 @@
 
 .equ	p_temp,		0x00		# temporary for get/put bits operation
 .equ	p_temp1,	0x10		# temporary for get/put bits operation
-.equ	p_temp2,	0x20		# temporary for get/put bits operation
+#.equ	p_temp2,	0x20		# temporary for get/put bits operation
 
 .equ	save_xmm6,	0x30		# temporary for get/put bits operation
 .equ	save_xmm7,	0x40		# temporary for get/put bits operation

@@ -12,6 +12,7 @@ INCLUDE(includes.cmake)
 
 # Fake target that depends on all be components
 add_custom_target(be-all)
+add_dependencies(compiler-stage be-all)
 
 ADD_SUBDIRECTORY(csu)
 ADD_SUBDIRECTORY(driver)
@@ -36,7 +37,9 @@ ADD_SUBDIRECTORY(ipa)
 ADD_SUBDIRECTORY(ipa_link)
 # TODO : Threading and other things need to be ported
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-ADD_SUBDIRECTORY(libopenmp)
+    IF(PATH64_ENABLE_OPENMP)
+        ADD_SUBDIRECTORY(libopenmp)
+    ENDIF()
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 ADD_SUBDIRECTORY(libfi)
 

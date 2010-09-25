@@ -74,6 +74,8 @@
 #include "register.h"
 #include "cgtarget.h"
 
+#include <cctype>
+
 /* ====================================================================
  * Define a few things that differ among code generators
  * ====================================================================
@@ -274,7 +276,7 @@ Set_Register_Range_Not_Allocatable (
   INT count = 0;
   strcpy(regname,regname1);
   // find where digits start
-  for (p = regname; *p && !isdigit(*p); ++p) ;
+  for (p = regname; *p && !std::isdigit(*p); ++p) ;
   FmtAssert( strncmp(regname1, regname2, p - regname) == 0,
 	("register range %s-%s doesn't have matching prefixes", 
 	regname1, regname2));

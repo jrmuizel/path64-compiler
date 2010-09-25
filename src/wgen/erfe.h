@@ -103,7 +103,9 @@ static char *erfe_rcs_id = "$Source: kgccfe/SCCS/s.erfe.h $ $Revision: 1.6 $";
 #define EC_BitField_Init  EC_BASE_FE+31         /* str */
 #define EC_Common_Alias  EC_BASE_FE+32          /* str */
 #define EC_Asm_Constraint_Operand  EC_BASE_FE+33 /* str, int */
+#endif
 #define EC_VisSpec_File  EC_BASE_FE+34          /* str */
+#ifdef TARG_ST
 #define EC_Asm_Constraint_Result EC_BASE_FE+35  /* str, int */
 #endif
 

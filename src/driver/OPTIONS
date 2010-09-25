@@ -248,11 +248,13 @@ I-include=%D  ;		FTN     ffe,PFA     "-include=%D"
 	"predefined include search path list"
 -nostdinc++	nostdinc=TRUE;		CC,cpp	cpp	self
 	"Do not search for header files in the standard directories specific to C++"
--nostdlib	;	LINK	ld	self
+-nostdlib	;	NONE	ld	self
 	"Do not use standard system startup files or libraries when linking"
 #ifdef PATH64_ENABLE_PSCRUNTIME
--stdcxx_not_threadsafe      stdcxx_threadsafe=FALSE;         ALL     cpp     ""
-        "Use faster apache stdcxx library ignoring thread safety"
+-nostdlib++	;	NONE	ld	""
+	"Do not use standard C++ libraries when linking"
+-stl_not_threadsafe      stl_threadsafe=FALSE;         ALL     cpp     ""
+        "Use faster STL library ignoring thread safety"
 #endif
 -useacml_mv    ;       LINK    ld      ""
        "Include libacml_mv when linking with libm"
@@ -690,16 +692,6 @@ I-D_LANGUAGE_FORTRAN	;		FTN	cpp	self
 	"Produce debugging information for use by GDB"
 -ggdb3	toggle(&glevel,3);		ALL	CMP	"-g3"
 	"Produce debugging information for use by GDB"
-#ifdef KEY
--gnu3	toggle(&gnu_major_version,3);toggle(&gnu_minor_version,3);	Cc	NONE	""
-	"Use GCC 3.3 C/C++ front-end."
--gnu4	toggle(&gnu_major_version,4);toggle(&gnu_minor_version,2);	Cc	NONE	""
-	"Use GCC 4.2 C/C++ front-end."
--gnu40	toggle(&gnu_major_version,4);toggle(&gnu_minor_version,0);	Cc	NONE	""
-	"Use GCC 4.0 C/C++ front-end."
--gnu42	toggle(&gnu_major_version,4);toggle(&gnu_minor_version,2);	Cc	NONE	""
-	"Use GCC 4.2 C/C++ front-end."
-#endif
 -gstabs		warn_ignored(option_name);	ALL	NONE	""
 	""
 -gstabs+	warn_ignored(option_name);	ALL	NONE	""
@@ -775,7 +767,7 @@ I-cvs_nosrc,%D	;		FTN	F	"-cvs_nosrc,%D"
 
 -static-data		;		FTN	ffe	self
 	"treat local data as static"
--static		;		LINK	ld	self	
+-static		toggle(&shared,NON_SHARED);		LINK	ld	self	
 	""
 -static_threadprivate		;		FTN	ffe	self
 	""
@@ -877,6 +869,10 @@ I-xall	;		FTN	ffe	self
 	""
 -fbootstrap-hack	;	ALL	be	"-LNO:vintr=0 -OPT:fast_stdlib=0"
 	"Don't link to libmv, libmpath, libscstr during bootstrap."
+#ifdef PATH64_ENABLE_PATHAS
+-fpathas	;	ALL	NONE	""
+	"Use Pathscale assembler"
+#endif
 -varargs	;		f77	ffe	self
 	"MATRA varargs"
 %-nocode last_phase=earliest_phase(P_any_fe,last_phase);  FTN ffe   self
@@ -1314,7 +1310,11 @@ I-u%s		;		Cc	ld	"-u %s"
 	""
 -fnotraditional	;		Cc	f	self
 	""
+#ifdef PATH64_ENABLE_PSCRUNTIME
+-traditional	;		Cc,cpp	cpp	"-traditional-cpp"
+#else
 -traditional	;		Cc,cpp	cpp	self
+#endif
 	"Attempt to support traditional K&R style C"
 -no-traditional	;		Cc	f	self
 	""
@@ -1323,7 +1323,11 @@ I-u%s		;		Cc	ld	"-u %s"
 -no-pathcc		;		Cc	cpp	""
 	"Don't define __PATHCC__ and other macros"
 % cpp is also a define, so trick cpp
+#ifdef PATH64_ENABLE_PSCRUNTIME
+-traditional-c/**/pp	;		Cc,cpp cpp self
+#else
 -traditional-c/**/pp	;		Cc,cpp	NONE	"-traditional"
+#endif
 	""
 -trigraphs	;		Cc,cpp	cpp	self
 	""
@@ -1995,9 +1999,9 @@ I-u%s		;		Cc	ld	"-u %s"
 -fleading-underscore	;		Cc	NONE	""
 	""
 %%% Linker Options
--nostartfiles	;		LINK	ld	self
+-nostartfiles	;		NONE	ld	self
 	"Do not use standard system startup files when linking"
--nodefaultlibs	;		LINK	ld	self
+-nodefaultlibs	;		LINK	NONE	""
 	"Do not use standard system libraries when linking"
 --sysroot=%D	set_sysroot(optargs,0);		Cc,FTN,as,cpp	NONE	""
 	""

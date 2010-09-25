@@ -281,7 +281,6 @@ Get_ST (gs_t decl_tree)
 	return st;
 }
 
-#ifdef TARG_ST
 /*
  * Get_Export_Class_For_Tree (gs_t decl_node, ST_CLASS storage, ST_SCLASS sclass)
  * 
@@ -292,7 +291,6 @@ Get_ST (gs_t decl_tree)
  * created for setting its export class.
  */
 extern ST_EXPORT Get_Export_Class_For_Tree (gs_t decl_node, ST_CLASS storage, ST_SCLASS sclass);
-#endif
 #ifndef TARG_ST
 bool is_empty_base_class (gs_t type_tree);
 #endif

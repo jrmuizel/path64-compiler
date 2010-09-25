@@ -135,7 +135,9 @@ typedef enum {
 
 	P_be,		/* composite optimizing back-end */
 
-	P_as,		/* gnu assembler */
+#ifdef PATH64_ENABLE_PATHAS
+	P_pathas,	/* pathscale assembler */
+#endif // PATH64_ENABLE_PATHAS
 	P_gas,		/* gnu assembler */
 	P_any_as,	/* generic union of all asm's */
 

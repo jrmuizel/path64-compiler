@@ -122,14 +122,14 @@ Targ_Emit_String (
 	++n_on_line;
 	if ( n_on_line == MAX_LEN ) {
 	    *dptr = '\0';
-	    fprintf(fl, "\t%s %s", ASM_CMNT, dbuf);
+	    fprintf(fl, "\t%s \"%s\"", ASM_CMNT, dbuf);
 	    dptr = dbuf;
 	    fprintf ( fl, "\n" );
 	    n_on_line = 0;
 	}
     }
     *dptr = '\0';
-    fprintf(fl, "\t%s %s", ASM_CMNT, dbuf);
+    fprintf(fl, "\t%s \"%s\"", ASM_CMNT, dbuf);
     dptr = dbuf;
     fprintf(fl, "\n");
 

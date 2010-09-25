@@ -181,6 +181,8 @@ gs_unsigned_char_t *gs_read (const gs_string_t filename)
       _gs_s_no_alloc (q, (gs_unsigned_char_t *) (mem_seg + gs_u(q)));
     }
 
+    _gs_em(p, false);
+
     p += gspin_node_size(gs_code(q));
     while (p - mem_seg < statbuf.st_size && p < string_section && 
            gs_code((gs_t) p) == DOT)

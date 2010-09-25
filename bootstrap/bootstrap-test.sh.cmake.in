@@ -15,7 +15,6 @@ FORT=pathf90
 
 OLD_PATH=$PATH
 export PATH=${Path64_BINARY_DIR}/bin:$PATH
-export LD_LIBRARY_PATH=${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}/x8664/64
 
 cd $currdir
 
@@ -65,9 +64,8 @@ while [ $stage -lt $num_stages ]; do
     fi
     mv build inst
     if [ $stage -eq 0 ]; then
-	# Set PATH and LD_LIBRARY_PATH for the second and later stages
+	# Set PATH for the second and later stages
 	PATH=$currdir/inst/bin:$OLD_PATH
-	export LD_LIBRARY_PATH=$currdir/build/lib/${PSC_FULL_VERSION}:$currdir/inst/lib/${PSC_FULL_VERSION}/x8664/64
     fi
     pstage=$stage
     stage=`expr $stage + 1`

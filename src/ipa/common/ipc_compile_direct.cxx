@@ -30,7 +30,8 @@
 
 #include <time.h>       
 #include <limits.h>
-#include <sys/param.h>  
+#include <sys/param.h>
+#include <unistd.h>
 
 #include "cxx_memory.h" 
 #include "erglob.h"     
@@ -396,6 +397,11 @@ size_t ipacom_process_file (char* input_file,
   cmdline.reserve(argv.size());
     
   for (i = argv.begin(); i != argv.end(); ++i) {
+    // ipl accepts -non_shared while second step pathcc needs -static
+    if(!strcmp(*i,"-non_shared")){
+      cmdline.push_back("-static");
+      continue;
+    }
     cmdline.push_back(*i);
   }
 
@@ -685,7 +691,7 @@ static vector<std::string> get_extra_args(const char* ipaa_filename)
     args.push_back("-pic1");
     break;
   case F_NON_SHARED:
-    args.push_back("-non_shared");
+    args.push_back("-static");
     break;
   case F_RELOCATABLE:
     if (IPA_Enable_Relocatable_Opt == TRUE)

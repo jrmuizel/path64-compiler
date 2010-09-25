@@ -89,6 +89,13 @@ Please edit PATH64_ENABLE_TARGETS to list only valid architectures.
 endforeach()
 
 
+foreach(targ ${PATH64_ENABLE_TARGETS})
+    set(targ_arch ${_PATH64_TARGET_ARCH_${targ}})
+    set(targ_bits ${_PATH64_TARGET_BITS_${targ}})
+    file(MAKE_DIRECTORY ${Path64_BINARY_DIR}/lib/${targ_arch}/${targ_bits})
+endforeach()
+
+
 # First list element is the default.
 # TODO: test for the the native build environment and make that the default target
 list(GET PATH64_ENABLE_TARGETS 0 PATH64_DEFAULT_TARGET)
@@ -130,6 +137,12 @@ function(list_string_replace_arch lst arch)
     set(blist ${${lst}})
     list_string_replace_patterns(blist "ARCH" ${arch})
     set(${lst} ${blist} PARENT_SCOPE)
+endfunction()
+
+
+# Returns target bits
+function(path64_get_target_bits res_var targ)
+   set(${res_var} ${_PATH64_TARGET_BITS_${targ}} PARENT_SCOPE)
 endfunction()
 
 
@@ -210,13 +223,13 @@ endfunction()
 
 
 # Sets sources for specified target in multitarget source list
-function(path64_set_multitarget_sources src_list_name target)
+function(path64_set_multitarget_sources name target)
     string(COMPARE EQUAL "${target}" "COMMON" res)
     if(NOT res)
         path64_check_target_exists("${target}")
     endif()
 
-    set(${src_list_name}_${target} ${ARGN} PARENT_SCOPE)
+    set(path64_multitarget_sources_${name}_${target} ${ARGN} PARENT_SCOPE)
 endfunction()
 
 
@@ -230,31 +243,230 @@ function(path64_set_multiarch_sources src_list_name arch)
 endfunction()
 
 
+# path64 compilers for languages
+set(path64_compiler_C "${Path64_BINARY_DIR}/bin/pathcc")
+set(path64_compiler_CXX "${Path64_BINARY_DIR}/bin/pathCC")
+#set(path64_compiler_Fortran "${Path64_BINARY_DIR}/bin/pathf90")
+# TODO: enable pathf90
+set(path64_compiler_Fortran "${CMAKE_Fortran_COMPILER}")
+
 # Adds library for specified target
 function(path64_add_library_for_target name target type)
     path64_check_target_exists(${target})
 
+    get_property(compile_defs DIRECTORY PROPERTY COMPILE_DEFINITIONS)
+
     # Compiler ABI.
     set(arch ${_PATH64_TARGET_ARCH_${target}})
     set(bits ${_PATH64_TARGET_BITS_${target}})
-    set(arch_flag "${_PATH64_TARGET_FLAG_${target}} ${_PATH64_ARCH_FLAGS_${arch}}")
+    set(arch_flag ${_PATH64_TARGET_FLAG_${target}} ${_PATH64_ARCH_FLAGS_${arch}})
     set(build_lib_dir ${Path64_BINARY_DIR}/lib/${arch}/${bits})
-    set(install_lib_dir ${PATH64_LIB_PATH}/${arch}/${bits})
+    set(install_lib_dir lib/${PSC_FULL_VERSION}/${arch}/${bits})
 
     # Replacing @TARGET@ with target name in source names
     set(sources ${ARGN})
     list_string_replace(sources "@TARGET@" ${target})
 
-    add_library (${name} ${type} ${sources})
-    set_property(TARGET ${name} PROPERTY COMPILE_FLAGS ${arch_flag})
-    set_property(TARGET ${name} PROPERTY LINK_FLAGS ${arch_flag})
+#    add_library (${name} ${type} ${sources})
+#    set_property(TARGET ${name} PROPERTY COMPILE_FLAGS ${arch_flag})
+#    set_property(TARGET ${name} PROPERTY LINK_FLAGS ${arch_flag})
+#
+#    set_property(TARGET ${name} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${build_lib_dir})
+#    set_property(TARGET ${name} PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${build_lib_dir})
+     
+    set(compile_defs_flags)
+    foreach(def ${compile_defs})
+        list(APPEND compile_defs_flags "-D${def}")
+    endforeach()
 
-    set_property(TARGET ${name} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${build_lib_dir})
-    set_property(TARGET ${name} PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${build_lib_dir})
+    # Searching header dependencies
+    set(header_deps)
+    foreach(src ${sources})
+        get_filename_component(src_ext ${src} EXT)
+        if("${src_ext}" STREQUAL ".h")
+            list(APPEND header_deps ${src})
+        endif()
+    endforeach()
 
-    install(TARGETS ${name}
-      LIBRARY DESTINATION ${install_lib_dir}
-      ARCHIVE DESTINATION ${install_lib_dir})
+    set(compiler-deps)
+
+    # Adding rules for compiling sources
+    set(objects)
+    foreach(src ${sources})
+        # Getting source language
+        get_property(src_lang SOURCE ${src} PROPERTY LANGUAGE)
+        if(NOT src_lang)
+            # Trying get language from extension
+            get_filename_component(src_ext ${src} EXT)
+            foreach(lang C CXX Fortran)
+                foreach(lang_ext ${CMAKE_${lang}_SOURCE_FILE_EXTENSIONS})
+                    if(".${lang_ext}" STREQUAL "${src_ext}")
+                        set(src_lang ${lang})
+                        break()
+                    endif()
+                endforeach()
+                if(src_lang)
+                    break()
+                endif()
+            endforeach()
+
+            # Special case for assembler
+            if("${src_ext}" STREQUAL ".S" OR "${src_ext}" STREQUAL ".s")
+                set(src_lang C)
+            endif()
+        endif()
+
+        # special case for headers
+        if(NOT "${src_ext}" STREQUAL ".h")
+            set(last_src_lang ${src_lang})
+
+            if(NOT src_lang)
+                message(FATAL_ERROR "Can not determine language for ${src}")
+            endif()
+    
+            # Getting source compile definitions
+            get_property(src_compile_defs_list SOURCE ${src} PROPERTY COMPILE_DEFINITIONS)
+            set(src_compile_defs_flags)
+            foreach(def ${src_compile_defs_list})
+                list(APPEND src_compile_defs_flags "-D${def}")
+            endforeach()
+    
+            # Getting source compile flags
+            get_property(src_flags_list SOURCE ${src} PROPERTY COMPILE_FLAGS)
+            string(REPLACE " " ";" src_flags "${src_flags_list}")
+    
+            # Getting target compile flags
+            string(REPLACE " " ";" target_flags
+                    "${path64_multitarget_property_${name}_COMPILE_FLAGS} ${path64_multitarget_property_${name}_${target}_COMPILE_FLAGS}")
+
+            # Gettings language flags
+            string(REPLACE " " ";" lang_flags "${CMAKE_${src_lang}_FLAGS}")
+    
+            # Getting target compile definitions
+            set(target_compile_defs)
+            foreach(def ${path64_multitarget_property_${name}_COMPILE_DEFINITIONS})
+                list(APPEND target_compile_defs "-D${def}")
+            endforeach()
+    
+            # Getting include directories
+            get_property(incl_dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
+            set(incl_dirs_flags)
+            foreach(dir ${incl_dirs})
+                list(APPEND incl_dirs_flags "-I${dir}")
+            endforeach()
+
+            # Getting full path to source
+            set(oname ${src})
+            if(NOT EXISTS ${src})
+                # Trying path relative to current source dir
+                if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+                    set(src "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+                else()
+                    message(FATAL_ERROR "Can not find ${src} source")
+                endif()
+            endif()
+    
+            # Getting object output name and making path to it
+            string(REPLACE "." "_" oname_mangled ${oname})
+            set(object_name "${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ}/${oname_mangled}.o")
+            get_filename_component(object_path ${object_name} PATH)
+            file(MAKE_DIRECTORY ${object_path})
+
+            # Getting build type flags
+            if("X${CMAKE_BUILD_TYPE}" STREQUAL "XDebug")
+                set(build_type_flags_str "${CMAKE_${src_lang}_FLAGS_DEBUG}")
+            elseif("X${CMAKE_BUILD_TYPE}" STREQUAL "XRelease")
+                set(build_type_flags_str "${CMAKE_${src_lang}_FLAGS_RELEASE}")
+            endif()
+            string(REPLACE " " ";" build_type_flags "${build_type_flags_str}")
+
+            # Removing conflicting options frm build_type_flags
+            set(oflags -O0 -O1 -O2 -O3)
+            foreach(oflag ${oflags})
+                list(FIND target_flags ${oflag} res)
+                if(NOT ${res} EQUAL -1)
+                    list(REMOVE_ITEM build_type_flags ${oflags})
+                    break()
+                endif()
+            endforeach()          
+
+            add_custom_command(OUTPUT ${object_name}
+                               COMMAND ${path64_compiler_${src_lang}} -c -o ${object_name}
+                                       ${arch_flag}
+                                       ${src_flags}
+                                       ${incl_dirs_flags}
+                                       ${target_flags}
+                                       ${compile_defs_flags}
+                                       ${src_compile_defs_flags}
+                                       ${target_compile_defs}
+                                       ${lang_flags}
+                                       ${src}
+                                       ${build_type_flags}
+                               DEPENDS ${src} ${header_deps})
+            list(APPEND objects ${object_name})
+            list(FIND compiler-deps "compiler-stage-${src_lang}" res)
+            if(res EQUAL -1)
+                list(APPEND compiler-deps "compiler-stage-${src_lang}")
+            endif()
+        endif()
+    endforeach()
+
+    if(path64_multitarget_property_${name}_OUTPUT_NAME)
+        set(oname ${path64_multitarget_property_${name}_OUTPUT_NAME})
+    else()
+        set(oname ${name})
+    endif()
+
+    # Adding rule for linking
+    if("X${type}" STREQUAL "XSTATIC")
+        set(library_file
+            "${build_lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}${oname}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+        add_custom_command(OUTPUT ${library_file}
+                           COMMAND ${CMAKE_AR} -cr ${library_file} ${objects}
+                           DEPENDS ${objects})
+    elseif("X${type}" STREQUAL "XSHARED")
+        string(REPLACE " " ";" target_link_flags "${path64_multitarget_property_${name}_LINK_FLAGS}")
+        set(library_file
+            "${build_lib_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}${oname}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+
+        set(link_libs_flags)
+        foreach(lib ${path64_multitarget_link_libraries_${name}})
+            list(APPEND link_libs_flags "-l${lib}")
+        endforeach()
+
+        if(path64_multitarget_property_${name}_LINKER_LANGUAGE)
+            set(link_lang ${path64_multitarget_property_${name}_LINKER_LANGUAGE})
+        else()
+            set(link_lang ${last_src_lang})
+        endif()
+
+        list(FIND compiler-deps "compiler-stage-${link_lang}" res)
+        if(res EQUAL -1)
+            list(APPEND compiler-deps "compiler-stage-${link_lang}")
+        endif()
+
+        add_custom_command(OUTPUT ${library_file}
+                           COMMAND ${path64_compiler_${link_lang}} -shared -o ${library_file}
+                                   ${arch_flag}
+                                   ${target_flags}
+                                   ${target_link_flags}
+                                   ${objects}
+                                   ${link_libs_flags}
+                           DEPENDS ${objects})
+    else()
+        message(FATAL_ERROR "Unknown library type: ${type}")
+    endif()
+
+    add_custom_target(${name}-${targ} ALL
+                      DEPENDS ${library_file})
+    add_dependencies(${name}-${targ} ${compiler-deps})
+
+    install(FILES ${library_file}
+            DESTINATION ${install_lib_dir})
+
+#    install(TARGETS ${name}
+#      LIBRARY DESTINATION ${install_lib_dir}
+#      ARCHIVE DESTINATION ${install_lib_dir})
 
 endfunction()
 
@@ -303,15 +515,15 @@ endfunction()
 
 
 # Adds library for all enabled targets
-function(path64_add_multitarget_library name type src_list_name)
+function(path64_add_multitarget_library name type)
+    set(src_list_name path64_multitarget_sources_${name})
     foreach(targ ${PATH64_ENABLE_TARGETS})
-        path64_get_multitarget_cmake_target(tg_name ${name} ${targ})
         if(${src_list_name}_${targ})
-            path64_add_library_for_target(${tg_name} ${targ} ${type} ${${src_list_name}_${targ}})
+            path64_add_library_for_target(${name} ${targ} ${type} ${${src_list_name}_${targ}})
         else()
-            path64_add_library_for_target(${tg_name} ${targ} ${type} ${${src_list_name}_COMMON})
+            path64_add_library_for_target(${name} ${targ} ${type} ${${src_list_name}_COMMON})
         endif()
-        set_property(TARGET ${tg_name} PROPERTY OUTPUT_NAME ${name})
+        #set_property(TARGET ${tg_name} PROPERTY OUTPUT_NAME ${name})
     endforeach()
 endfunction()
 
@@ -390,10 +602,16 @@ endfunction()
 
 
 # Sets property for multitarget
-function(path64_set_multitarget_property name prop)
+function(path64_set_multitarget_property_ name prop)
     foreach(targ ${PATH64_ENABLE_TARGETS})
-        path64_set_property_for_target(${name} ${targ} ${prop} ${ARGN})
+        set(path64_multitarget_property_${name}_${prop} ${ARGN} PARENT_SCOPE)
     endforeach()
+endfunction()
+
+
+# Sets target specific property for multitarget
+function(path64_set_multitarget_property_for_target name targ prop)
+    set(path64_multitarget_property_${name}_${targ}_${prop} ${ARGN} PARENT_SCOPE)
 endfunction()
 
 
@@ -409,8 +627,7 @@ endfunction()
 # Adds link libraries to multitarget
 function(path64_multitarget_link_libraries name)
     foreach(targ ${PATH64_ENABLE_TARGETS})
-        path64_get_multitarget_cmake_target(tg ${name} ${targ})
-        target_link_libraries(${tg} ${ARGN})
+        set(path64_multitarget_link_libraries_${name} ${ARGN} PARENT_SCOPE)
     endforeach()
 endfunction()
 
@@ -570,6 +787,26 @@ function(path64_add_dependencies_from_multiarch name)
         foreach(arch ${PATH64_ENABLE_ARCHES})
             path64_get_multiarch_cmake_target(dep_tg ${dep} ${arch})
             add_dependencies(${name} ${dep_tg})
+        endforeach()
+    endforeach()
+endfunction()
+
+
+# Adds dependencies for multitarget from multitarget
+function(path64_add_multitarget_dependencies name)
+    foreach(targ ${PATH64_ENABLE_TARGETS})
+        foreach(dep ${ARGN})
+            add_dependencies(${name}-${targ} ${dep}-${targ})
+        endforeach()
+    endforeach()
+endfunction()
+
+
+# Adds dependencies from multitarget
+function(path64_add_dependencies_from_multitarget name)
+    foreach(targ ${PATH64_ENABLE_TARGETS})
+        foreach(dep ${ARGN})
+       add_dependencies(${name} ${dep}-${targ})
         endforeach()
     endforeach()
 endfunction()

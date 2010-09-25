@@ -1136,6 +1136,10 @@ main()
 		     TOP_lock_xadd16,
 		     TOP_lock_xadd32,
 		     TOP_lock_xadd64,
+             TOP_xchgx8,
+             TOP_xchgx16,
+             TOP_xchgx32,
+             TOP_xchgx64,
                      TOP_UNDEFINED);
 
   /* ===== arith. operations with memory src and dest operand ====== */
@@ -1166,6 +1170,10 @@ main()
 		     TOP_lock_xadd16,
 		     TOP_lock_xadd32,
 		     TOP_lock_xadd64,
+             TOP_xchgx8,
+             TOP_xchgx16,
+             TOP_xchgx32,
+             TOP_xchgx64,
                      TOP_UNDEFINED);
 
   /* ===== Non-temporal memory store operator ====== */
@@ -2100,6 +2108,7 @@ main()
 		     TOP_cmpps,
 		     TOP_cmppd,
 		     TOP_cmpeqps,
+		     TOP_cmpeqpd,
 		     TOP_cmpltps,
 		     TOP_cmpleps,
 		     TOP_cmpunordps,
@@ -2166,7 +2175,8 @@ main()
   		     TOP_psrad_mmx,
   		     TOP_pand_mmx,
   		     TOP_pandn_mmx,
-  		     TOP_pand128,
+             TOP_pand128,
+             TOP_pandn128,
   		     TOP_por_mmx,
   		     TOP_pxor_mmx,
 		     TOP_xzero32,
@@ -3196,7 +3206,8 @@ main()
   		     TOP_psrad_mmx,
   		     TOP_pand_mmx,
   		     TOP_pandn_mmx,
-  		     TOP_pand128,
+             TOP_pand128,
+             TOP_pandn128,
   		     TOP_por_mmx,
   		     TOP_pxor_mmx,
 		     TOP_subus128v16,
@@ -3226,7 +3237,8 @@ main()
                      TOP_pcmpistrm,
                      TOP_pcmpestri,
                      TOP_pcmpestrm,
-		     TOP_pand128,
+             TOP_pand128,
+             TOP_pandn128,
 		     TOP_UNDEFINED );
 
   /* ==== x86 style instructions ==== */
@@ -3620,6 +3632,7 @@ main()
 		     TOP_cmpps,
 		     TOP_cmppd,
 		     TOP_cmpeqps,
+		     TOP_cmpeqpd,
 		     TOP_cmpltps,
 		     TOP_cmpleps,
 		     TOP_cmpunordps,
@@ -3764,6 +3777,10 @@ main()
 		     TOP_pavgw,
 		     TOP_psadbw,
 		     TOP_pshufw,
+             TOP_xchgx8,
+             TOP_xchgx16,
+             TOP_xchgx32,
+             TOP_xchgx64,
                      TOP_UNDEFINED );
 
   /* ===== Predicated instructions ====== */
@@ -3866,6 +3883,10 @@ main()
 		     TOP_lock_xadd16,
 		     TOP_lock_xadd32,
 		     TOP_lock_xadd64,
+             TOP_xchgx8,
+             TOP_xchgx16,
+             TOP_xchgx32,
+             TOP_xchgx64,
 		     TOP_UNDEFINED);
 
   /* ===== Instructions with branch predictions ====== */

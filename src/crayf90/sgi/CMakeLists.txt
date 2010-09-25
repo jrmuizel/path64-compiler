@@ -132,7 +132,7 @@ path64_add_executable_for_arch(mfef95-tmp ${host_arch}
                                ${PATHSCALE_MFEF95_SRCS} ${PATHSCALE_MFEF95_TMP_SRCS})
 set_source_files_properties(${PATHSCALE_MFEF95_TMP_SRCS} PROPERTIES
                             COMPILE_DEFINITIONS "_LIBU;_LITTLE_ENDIAN")
-target_link_libraries(mfef95-tmp comutil-host fe90 fe90-tmp arith cif ${MFEF95_TMP_FORTRAN_LINK_LIB} m)
+target_link_libraries(mfef95-tmp comutil-host fe90-host fe90-tmp-host arith cif ${MFEF95_TMP_FORTRAN_LINK_LIB} m)
 path64_set_property_for_arch(mfef95-tmp ${host_arch} COMPILE_FLAGS
                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 
@@ -169,6 +169,7 @@ path64_multiarch_link_libraries(mfef95 arith cif pathfortran-host m)
 path64_set_multiarch_property(mfef95 COMPILE_FLAGS
                               "-I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 path64_install_multiarch(mfef95)
+path64_add_dependencies_from_multiarch(compiler-stage-Fortran mfef95)
 
 #add_custom_command(
 #    OUTPUT ${Path64_BINARY_DIR}/lib/mfef95-stage
@@ -195,6 +196,6 @@ add_custom_target(
     COMMAND printf "#!/bin/sh\\n${Path64_BINARY_DIR}/bin/pathf90 -Wf,-eQ -Wf,-intrinsic_module_gen -Wf,-intrinsic_module_path=. \"$\@\"\\n" > ${Path64_BINARY_DIR}/fc-wrap.sh
 )
 
-add_dependencies(switch_fc generate_cf95_cat mfef95-tmp)
+add_dependencies(switch_fc generate_cf95_cat mfef95-tmp compiler-stage)
 path64_add_dependencies_from_multiarch(switch_fc be-all inline crtendS)
 

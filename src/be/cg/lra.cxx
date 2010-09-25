@@ -2375,6 +2375,7 @@ Setup_Live_Ranges (BB *bb, BOOL in_lra, MEM_POOL *pool)
 #endif
           }
         }
+      }
 #ifdef TARG_ST
 	else if (OP_compose(op)) {
 	  // [SC} Preference compose result to an operand
@@ -2438,7 +2439,6 @@ Setup_Live_Ranges (BB *bb, BOOL in_lra, MEM_POOL *pool)
 #endif
     }
   }
- }
 #ifdef TARG_ST
   if (LRA_overlap_coalescing) {
     // Initialize array of widest local TN found in current BB

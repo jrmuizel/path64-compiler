@@ -111,9 +111,10 @@ Process_Command_Line(INT argc, char **argv)
 	  case 'f':		    /* file options */
 	      if (*cp == 0)
 		  ;
-	      else if (*(cp+1) != ',' && *(cp+1) != ':')
-		  ;
-	      else {
+	      else if (*(cp+1) != ',' && *(cp+1) != ':') {
+            if (*(cp+1) == 'i' || *(cp+1) == 'I')
+              wgen_pic = 1;           
+          } else {
 		  switch (*cp) {
 		  case 'f':
 		      Feedback_File_Name = cp + 2;

@@ -153,14 +153,14 @@ Targ_Emit_String ( FILE *fl, char *str, INT32 len, INTSC loc )
 	++n_on_line;
 	if ( n_on_line == MAX_LEN ) {
 	    *dptr = '\0';
-	    fprintf(fl, "\t%s %s", ASM_CMNT, dbuf);
+	    fprintf(fl, "\t%s \"%s\"", ASM_CMNT, dbuf);
 	    dptr = dbuf;
 	    fprintf ( fl, "\n" );
 	    n_on_line = 0;
 	}
     }
     *dptr = '\0';
-    fprintf(fl, "\t%s %s", ASM_CMNT, dbuf);
+    fprintf(fl, "\t%s \"%s\"", ASM_CMNT, dbuf);
     dptr = dbuf;
     fprintf(fl, "\n");
 
@@ -362,7 +362,7 @@ Targ_Emit_Const (FILE *fl,	    /* File to which to write */
 
       case MTYPE_FQ: {
         char *p = (char *) & TCON_R16(tc);
-	emit_bytes( fl, p, Is_Target_64bit() ? 16 : sizeof(TCON_R16(tc)) );
+	emit_bytes( fl, p, Is_Target_64bit() ? 16 : 12 );
 	fprintf(fl, "\t%s quad %#Lg\n", ASM_CMNT, TCON_R16(tc) );
 	--rc;
 	break;

@@ -2312,7 +2312,7 @@ SYNC_INTRIN(fei_nand_and_fetch,NAND_AND_FETCH,2)
 SYNC_INTRIN(fei_or_and_fetch,OR_AND_FETCH,2)
 SYNC_INTRIN(fei_sub_and_fetch,SUB_AND_FETCH,2)
 SYNC_INTRIN(fei_xor_and_fetch,XOR_AND_FETCH,2)
-SYNC_INTRIN(fei_compare_and_swap,COMPARE_AND_SWAP,3)
+SYNC_INTRIN(fei_compare_and_swap,VAL_COMPARE_AND_SWAP,3)
 SYNC_INTRIN(fei_lock_test_and_set,LOCK_TEST_AND_SET,2)
 
 void

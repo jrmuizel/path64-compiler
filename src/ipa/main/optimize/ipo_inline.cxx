@@ -3674,7 +3674,7 @@ IPO_INLINE::Merge_EH_Typeinfo_Tables (void)
         last_blk = blk;
         blk = INITV_next (blk);
     }
-    sort (caller_typeinfos.begin(), caller_typeinfos.end());
+    std::sort (caller_typeinfos.begin(), caller_typeinfos.end());
     int last_caller_filter = caller_typeinfos.size();
     if (!last_caller_filter)
     { // special case, there is no typeinfo table in caller
@@ -3721,8 +3721,8 @@ IPO_INLINE::Merge_EH_Typeinfo_Tables (void)
         vector<ST_IDX>::iterator i = callee_typeinfos.begin();
         for (; i!=callee_typeinfos.end(); ++i)
         {
-            if (!binary_search (caller_typeinfos.begin(),
-                                caller_typeinfos.end(), (*i)))
+            if (!std::binary_search (caller_typeinfos.begin(),
+                                     caller_typeinfos.end(), (*i)))
             { // insert the entry
 		INITV_IDX st = New_INITV();
 		if (*i == 0)

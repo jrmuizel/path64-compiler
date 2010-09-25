@@ -1514,6 +1514,11 @@ static void Init_OP_Name()
   OP_Name[TOP_lock_xadd32] = "xaddl";
   OP_Name[TOP_lock_xadd64] = "xaddq";
 
+  OP_Name[TOP_xchgx8] = "xchgb";
+  OP_Name[TOP_xchgx16] = "xchgw";
+  OP_Name[TOP_xchgx32] = "xchgl";
+  OP_Name[TOP_xchgx64] = "xchgq";
+
   OP_Name[TOP_bsf32] = "bsfl";
   OP_Name[TOP_bsf64] = "bsfq";
   OP_Name[TOP_bsr32] = "bsrl";
@@ -1558,6 +1563,7 @@ static void Init_OP_Name()
   OP_Name[TOP_pand_mmx] = "pand";
   OP_Name[TOP_pandn_mmx] = "pandn";
   OP_Name[TOP_pand128] = "pand";
+  OP_Name[TOP_pandn128] = "pandn";
   OP_Name[TOP_pextrw64] = "pextrw";
   OP_Name[TOP_pextrw128] = "pextrw";
   OP_Name[TOP_pinsrw64] = "pinsrw";

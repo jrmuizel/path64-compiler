@@ -6888,49 +6888,6 @@ Handle_INTRINSIC_CALL (WN *intrncall)
     }
     break;
 
-  case INTRN_FETCH_AND_AND_I4:
-  case INTRN_FETCH_AND_AND_I8:
-    {
-      Exp_Fetch_and_And( Expand_Expr(WN_kid0(intrncall), intrncall, NULL),
-                         Expand_Expr(WN_kid1(intrncall), intrncall, NULL),
-			 WN_rtype(intrncall),
-			 &New_OPs );
-      return next_stmt;
-    }
-    break;
-  case INTRN_FETCH_AND_OR_I4:
-  case INTRN_FETCH_AND_OR_I8:
-    {
-      Exp_Fetch_and_Or( Expand_Expr(WN_kid0(intrncall), intrncall, NULL),
-                        Expand_Expr(WN_kid1(intrncall), intrncall, NULL),
-			WN_rtype(intrncall),
-			&New_OPs );
-      return next_stmt;
-    }
-    break;
-  case INTRN_FETCH_AND_XOR_I4:
-  case INTRN_FETCH_AND_XOR_I8:
-    {
-      Exp_Fetch_and_Xor( Expand_Expr(WN_kid0(intrncall), intrncall, NULL),
-                         Expand_Expr(WN_kid1(intrncall), intrncall, NULL),
-			 WN_rtype(intrncall),
-			 &New_OPs );
-      return next_stmt;
-    }
-    break;
-  case INTRN_COMPARE_AND_SWAP_I4:
-  case INTRN_COMPARE_AND_SWAP_I8:
-    {
-      result = Exp_Compare_and_Swap( Expand_Expr(WN_kid0(intrncall), intrncall, NULL),
-			 Expand_Expr(WN_kid1(intrncall), intrncall, NULL),
-			 Expand_Expr(WN_kid2(intrncall), intrncall, NULL),
-			 WN_rtype(WN_kid1(intrncall)),
-			 &New_OPs );
-
-//      return next_stmt;
-      goto cont;
-    }
-    break;
   case INTRN_STMXCSR: {
       WN *lda = WN_kid0(WN_kid0(intrncall)); 
       TN *ofst_tn = Gen_Symbol_TN(WN_st(lda), WN_lda_offset(lda), 0);
@@ -6985,7 +6942,7 @@ Handle_INTRINSIC_CALL (WN *intrncall)
   // [CG]:We keep the last generated op
   OP *last_intr_op =  OPS_last(&New_OPs);
 #else
-  result = Exp_Intrinsic_Call (id, 
+  result = Exp_Intrinsic_Call (intrncall,
 	opnd_tn[0], opnd_tn[1], opnd_tn[2], &New_OPs, &label, &loop_ops);
 #endif
 
@@ -7003,9 +6960,6 @@ Handle_INTRINSIC_CALL (WN *intrncall)
 	Start_New_Basic_Block ();
   }
 
-#ifdef KEY
-  cont:
-#endif
   /* Expand the next statement and check if it has a use of $2. If any
    * use of $2 is found, replace it by the 'result' TN of the intrncall.
    */

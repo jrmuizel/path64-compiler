@@ -433,11 +433,11 @@ typedef mempool_allocator <float>                 SWP_FLOAT_ALLOC;
 typedef mempool_allocator <BOOL>                  SWP_BOOL_ALLOC;
 typedef mempool_allocator <TN *>                  SWP_TN_ALLOC;
 typedef mempool_allocator <SWP_BP *>              SWP_BP_ALLOC;
-typedef mempool_allocator <std::pair <TN *, 
+typedef mempool_allocator <std::pair <TN * const, 
                                       TN *> >     SWP_TN2TN_ALLOC;
-typedef mempool_allocator <std::pair <const TN *, 
+typedef mempool_allocator <std::pair <const TN * const, 
                                       INT> >      SWP_TN2INT_ALLOC;
-typedef mempool_allocator <std::pair <SWP_BP *,
+typedef mempool_allocator <std::pair <SWP_BP * const,
                                       BOOL> >     SWP_BP2BOOL_ALLOC;
 
 typedef std::vector <INT, SWP_INT_ALLOC>          SWP_INT_VECTOR;

@@ -478,6 +478,7 @@ main()
 			   TOP_fsubrp,
 			   TOP_subus128v16,
 			   TOP_cmpeqps,
+			   TOP_cmpeqpd,
 			   TOP_cmpltps,
 			   TOP_cmpleps,
 			   TOP_cmpunordps,
@@ -1536,6 +1537,10 @@ main()
 			   TOP_lock_xadd16,
 			   TOP_lock_xadd32,
 			   TOP_lock_xadd64,
+               TOP_xchgx8,
+               TOP_xchgx16,
+               TOP_xchgx32,
+               TOP_xchgx64,
 			   TOP_UNDEFINED );
 
   ISA_PRINT_TYPE cmpxchg =  ISA_Print_Type_Create("cmpxchg", "%s %s,%s%s(%s)");
@@ -1642,7 +1647,8 @@ main()
 			   TOP_psrad_mmx,
 			   TOP_pand_mmx,
 			   TOP_pandn_mmx,
-			   TOP_pand128,
+               TOP_pand128,
+               TOP_pandn128,
 			   TOP_por_mmx,
 			   TOP_pxor_mmx,
 			   TOP_UNDEFINED );

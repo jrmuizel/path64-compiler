@@ -3981,6 +3981,10 @@ static Addr_Mode_Group Addr_Mode_Group_Table[] = {
   {TOP_andps,	TOP_fandx128v32,	TOP_fandxx128v32,	TOP_fandxxx128v32,	TOP_UNDEFINED},
   {TOP_andpd,	TOP_fandx128v64,	TOP_fandxx128v64,	TOP_fandxxx128v64,	TOP_UNDEFINED},
 
+  {TOP_pand128, TOP_andx128v8,	TOP_andxx128v8,	TOP_andxxx128v8,	TOP_UNDEFINED},
+  {TOP_pandn128, TOP_andnx128v8,	TOP_andnxx128v8,	TOP_andnxxx128v8,	TOP_UNDEFINED},
+
+
   {TOP_or8,	TOP_orx8,	TOP_orxx8,	TOP_orxxx8,	TOP_UNDEFINED},
   {TOP_or16,	TOP_orx16,	TOP_orxx16,	TOP_orxxx16,	TOP_UNDEFINED},
   {TOP_or32,	TOP_orx32,	TOP_orxx32,	TOP_orxxx32,	TOP_UNDEFINED},

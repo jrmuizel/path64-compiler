@@ -362,6 +362,10 @@ int main (int argc, char *argv[])
 		     TOP_lock_cmpxchg64,
 		     TOP_pextrw64,
 		     TOP_pextrw128,
+             TOP_xchgx8,
+             TOP_xchgx16,
+             TOP_xchgx32,
+             TOP_xchgx64,
 		     TOP_UNDEFINED );
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(4);
@@ -1422,9 +1426,9 @@ int main (int argc, char *argv[])
 		    TOP_psraw_mmx,
 		    TOP_psrad_mmx,
 		    TOP_pand_mmx,
-		    TOP_pand128,
 		    TOP_pandn_mmx,
             TOP_pand128,
+            TOP_pandn128,
 		    TOP_por_mmx,
 		    TOP_pxor_mmx,
 		    TOP_UNDEFINED);
@@ -1479,6 +1483,7 @@ int main (int argc, char *argv[])
 
   Instruction_Group("sse parallel compares",
 		    TOP_cmpeqps,
+		    TOP_cmpeqpd,
 		    TOP_cmpltps,
 		    TOP_cmpleps,
 		    TOP_cmpunordps,

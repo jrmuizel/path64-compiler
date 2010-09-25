@@ -26,6 +26,9 @@ set(COMUTIL_SRCS
   tracing.c
   util.c
   vstring.c
+  vspec.c
+  vspec_parse.c
+  vspec_token.c
   c_a_to_q.c
   c_q_to_a.c
   c_qtenscale.c

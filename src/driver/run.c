@@ -553,13 +553,11 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 				}
 
 				// bug 10215
-				if (gnu_major_version == 4) {
-				  if (is_matching_phase(get_phase_mask(phase),
-							P_wgen)) {
-				    run_inline = FALSE;
-				  }
-				  break;
+				if (is_matching_phase(get_phase_mask(phase),
+				      		P_wgen)) {
+				  run_inline = FALSE;
 				}
+				break;
 #endif
 				if (inline_t == UNDEFINED
 				    && is_matching_phase(
@@ -582,13 +580,11 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 				}
 
 				// bug 10215
-				if (gnu_major_version == 4) {
-				  if (is_matching_phase(get_phase_mask(phase),
-							P_wgen)) {
-				    run_inline = TRUE;
-				  }
-				  break;
+				if (is_matching_phase(get_phase_mask(phase),
+				      		P_wgen)) {
+				  run_inline = TRUE;
 				}
+				break;
 #endif
 				if (inline_t == UNDEFINED
 				    && is_matching_phase(

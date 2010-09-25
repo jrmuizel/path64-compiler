@@ -1898,7 +1898,7 @@ Get_Sorted_Callsite_List (IPA_NODE *n, IPA_CALL_GRAPH *cg,
 	}
     }   
 
-    sort (callsite_list.begin (), callsite_list.end (),
+    std::sort (callsite_list.begin (), callsite_list.end (),
 	  INVOCATION_COST_COMP (cost_vector));
 } // Get_Sorted_Callsite_List
 
@@ -2057,7 +2057,7 @@ void Perform_Inline_Analysis2( IPA_CALL_GRAPH* cg, MEM_POOL* pool )
     }   
   }    
 
-  sort( callsite_list.begin(),
+  std::sort( callsite_list.begin(),
 	callsite_list.end(),
 	INVOCATION_FREQ_COMP( freq_vector ) );
 

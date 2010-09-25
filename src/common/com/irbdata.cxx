@@ -637,19 +637,11 @@ Get_INITV_Size (INITV_IDX inv)
 		break;
 	case INITVKIND_BLOCK:
 		size = 0;
-#ifdef TARG_ST
 		for (INITV_IDX blkinv = INITV_blk(inv);
 		     blkinv != 0;
 		     blkinv = INITV_next(blkinv)) {
 		  size += Get_INITV_Size (blkinv);
 		}
-#else
-		inv = INITV_blk(inv);
-		while (inv != 0) {
-			size += Get_INITV_Size (inv);
-			inv = INITV_next(inv);
-		}
-#endif
 		break;
 	default:
 		FmtAssert(FALSE, ("Get_INITV_Size unexpected kind"));

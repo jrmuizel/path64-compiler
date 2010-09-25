@@ -1608,7 +1608,7 @@ OPT_FEEDBACK::Clone_zone( zone&                      z,
   // topo-sort the edges
   compare_edge_topological_order cmp( topo_order );
   vector<edge> edge_in_topo_order = z.clone;
-  sort( edge_in_topo_order.begin(), edge_in_topo_order.end(), cmp );
+  std::sort( edge_in_topo_order.begin(), edge_in_topo_order.end(), cmp );
 
   // Find all edges to be cloned, sorted in topological order
   vector<IDTYPE> edges_clone;

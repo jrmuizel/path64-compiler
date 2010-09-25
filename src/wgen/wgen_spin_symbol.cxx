@@ -2335,19 +2335,11 @@ Create_ST_For_Tree (gs_t decl_node)
 	      }
 	      else
               	sclass = SCLASS_EXTERN;
-#ifdef TARG_ST
 	      eclass = Get_Export_Class_For_Tree(decl_node, CLASS_VAR, sclass);
-#else
-              eclass = EXPORT_PREEMPTIBLE;
-#endif
             }
             else {
               	sclass = SCLASS_FSTATIC;
-#ifdef TARG_ST
 		eclass = Get_Export_Class_For_Tree(decl_node, CLASS_VAR, sclass);
-#else
-		eclass = EXPORT_LOCAL;
-#endif
             }
             level = GLOBAL_SYMTAB;
           }
@@ -2365,11 +2357,7 @@ Create_ST_For_Tree (gs_t decl_node)
 	                      ".gnu.linkonce.sb.", 17)) {
 		sclass = SCLASS_UGLOBAL;
 		level  = GLOBAL_SYMTAB;
-#ifdef TARG_ST
 		eclass = Get_Export_Class_For_Tree(decl_node, CLASS_VAR, sclass);
-#else
-		eclass = EXPORT_PREEMPTIBLE;
-#endif
 #ifdef TARG_ST
 	      } else if (!strncmp(gs_tree_string_pointer(section_name),
 				  ".gnu.linkonce.d.", 16)
@@ -2401,11 +2389,7 @@ Create_ST_For_Tree (gs_t decl_node)
 			       ".bss.", 5))) {
 	      sclass = SCLASS_UGLOBAL;
 	      level  = GLOBAL_SYMTAB;
-#ifdef TARG_ST
 	      eclass = Get_Export_Class_For_Tree(decl_node, CLASS_VAR, sclass);
-#else
-	      eclass = EXPORT_PREEMPTIBLE;
-#endif
 	    }
 	    else
 #endif
@@ -2430,11 +2414,7 @@ Create_ST_For_Tree (gs_t decl_node)
             if (gs_decl_external(decl_node) || gs_decl_weak (decl_node)) {
 	      sclass = SCLASS_EXTERN;
 	      level  = GLOBAL_SYMTAB;
-#ifdef TARG_ST
 	      eclass = Get_Export_Class_For_Tree(decl_node, CLASS_VAR, sclass);
-#else
-              eclass = EXPORT_PREEMPTIBLE;
-#endif
             }
 #ifdef KEY
 	    // Bug 8652: If GNU marks it as COMMON, we should the same.
@@ -2442,11 +2422,7 @@ Create_ST_For_Tree (gs_t decl_node)
 	             gs_decl_common (decl_node)) {
 	      sclass = SCLASS_COMMON;
 	      level = GLOBAL_SYMTAB;
-#ifdef TARG_ST
 	      eclass = Get_Export_Class_For_Tree(decl_node, CLASS_VAR, sclass);
-#else
-	      eclass = EXPORT_PREEMPTIBLE;
-#endif
 	    }
 #endif
             else {
@@ -2723,6 +2699,7 @@ Create_ST_For_Tree (gs_t decl_node)
 #endif
        ) {
       Set_ST_is_thread_local(st);
+      st = Trans_TLS(decl_node, st);
     }
   }
 
@@ -3019,7 +2996,6 @@ print_volatility(TY_IDX &ty_idx)
   }
 }
 #endif
-#ifdef TARG_ST
 /*
  * The following functions are for symbols' visibility management.
  * The visibility is an attribute of a symbol declaration/definition.
@@ -3230,7 +3206,6 @@ Get_Export_Class_For_Tree (gs_t decl_node, ST_CLASS st_class, ST_SCLASS sclass)
   eclass = Adjust_Export_Class_Visibility(eclass, sv);
   return eclass;
 }
-#endif
 
 #include <ext/hash_map>
 
@@ -3378,12 +3353,19 @@ get_DECL_ST(gs_t t) {
   // If Current_scope is 0, then the symbol table has not been initialized, and
   // we are being called by WFE_Add_Weak to handle a weak symbol.  Use the
   // non-PU-specific st_map.
-  if (Current_scope == 0)
-    return st_map[t_index];
+  if (Current_scope == 0) {
+    ST* return_st = st_map[t_index];
+    if(return_st)
+      return_st = Trans_TLS(t, return_st);
+    return return_st;
+  }
 
   // See if the ST is in the non-PU-specific st_map.
   if (st_map[t_index]) {
-    return st_map[t_index];
+    ST* return_st = st_map[t_index];
+    if(return_st)
+      return_st = Trans_TLS(t, return_st);    
+    return return_st;
   }
 
   // The ST is not in the non-PU-specific map.  Look in the PU-specific maps.
@@ -3397,10 +3379,14 @@ get_DECL_ST(gs_t t) {
       hash_map<PU*, hash_map<gs_t, ST*, ptrhash>*, ptrhash>::iterator pu_map_it =
 	pu_map.find(pu);
       if (pu_map_it != pu_map.end()) {
-	// There is a PU-specific map.  Get the ST from the map.
-	hash_map<gs_t, ST*, ptrhash> *st_map2 = pu_map[pu];
-	if ((*st_map2)[t_index])
-	  return (*st_map2)[t_index];
+        // There is a PU-specific map.  Get the ST from the map.
+        hash_map<gs_t, ST*, ptrhash> *st_map2 = pu_map[pu];
+        if ((*st_map2)[t_index]) {
+          ST* return_st = (*st_map2)[t_index];
+          //assert(return_st);
+          return_st = Trans_TLS(t, return_st);
+          return return_st;
+        }
       }
     }
     scope--;

@@ -28,6 +28,13 @@ set(PATHSCALE_TABLE_SRCS  ${PATHSCALE_COMMON_DRIVER_SRCS}
                           "table.c"
    )
 
+
+option(PATH64_ENABLE_PATHAS "Enables using pathas assembler" OFF)
+if(PATH64_ENABLE_PATHAS)
+    add_definitions(-DPATH64_ENABLE_PATHAS)
+endif()
+
+
 # Adding definitions for target architectures
 set(ARCH_DEFS)
 foreach(arch ${PATH64_ENABLE_ARCHES})
@@ -41,14 +48,26 @@ add_executable(table ${PATHSCALE_TABLE_SRCS})
 
 # Detecting gcc and configuring sort_options script
 set(SORT_OPTIONS ${CMAKE_CURRENT_BINARY_DIR}/sort_options.sh)
+
 set(PATH64_GCC ${CMAKE_C_COMPILER})
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh.cmake.in
                ${SORT_OPTIONS})
 
+set(SORT_FLAGS)
+
+if(PATH64_ENABLE_PSCRUNTIME)
+    list(APPEND SORT_FLAGS "-DPATH64_ENABLE_PSCRUNTIME")
+else()
+    list(APPEND SORT_FLAGS "-DPATH64_NO_PSCRUNTIME")
+endif()
+
+if(PATH64_ENABLE_PATHAS)
+    list(APPEND SORT_FLAGS "-DPATH64_ENABLE_PATHAS")
+endif()
 
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P
-        COMMAND ${SORT_OPTIONS} ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS ${ARCH_DEFS} -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
+        COMMAND ${SORT_OPTIONS} ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS ${ARCH_DEFS} ${SORT_FLAGS} -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
         DEPENDS ${SORT_OPTIONS} OPTIONS
         )
 
@@ -152,17 +171,18 @@ install(TARGETS ${exe_prefix}pathcc
         RUNTIME DESTINATION bin)
 
 add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/bin/pathCC ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+    OUTPUT ${Path64_BINARY_DIR}/bin/pathCC ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
     DEPENDS pathcc
 # Paths in symbolic links should be relative. Otherwise bootstrap will not work
-    COMMAND ${CMAKE_COMMAND} -E create_symlink pathcc ${CMAKE_BINARY_DIR}/bin/pathCC
-    COMMAND ${CMAKE_COMMAND} -E create_symlink . ${CMAKE_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+    COMMAND ${CMAKE_COMMAND} -E create_symlink pathcc ${Path64_BINARY_DIR}/bin/pathCC
 )
 
 add_custom_target(
     stageit-driver ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/bin/pathCC ${CMAKE_BINARY_DIR}/lib/${PSC_FULL_VERSION}
+    DEPENDS ${Path64_BINARY_DIR}/bin/pathCC
 )
+
+add_dependencies(compiler-stage stageit-driver)
 
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/bin/pathCC${CMAKE_EXECUTABLE_SUFFIX}\")")
 if(PATH64_ENABLE_FORTRAN)

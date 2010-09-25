@@ -2675,16 +2675,16 @@ emit_builtin_compare_and_swap (gs_t exp, INT32 k)
 
   opc = OPC_I4INTRINSIC_CALL;
   if (obj_mtype == MTYPE_I4)
-    iopc = INTRN_COMPARE_AND_SWAP_I4;
+    iopc = INTRN_VAL_COMPARE_AND_SWAP_I4;
   else
   if (obj_mtype == MTYPE_U4)
-    iopc = INTRN_COMPARE_AND_SWAP_I4;
+    iopc = INTRN_VAL_COMPARE_AND_SWAP_I4;
   else
   if (obj_mtype == MTYPE_I8)
-    iopc = INTRN_COMPARE_AND_SWAP_I8;
+    iopc = INTRN_VAL_COMPARE_AND_SWAP_I8;
   else
   if (obj_mtype == MTYPE_U8)
-    iopc = INTRN_COMPARE_AND_SWAP_I8;
+    iopc = INTRN_VAL_COMPARE_AND_SWAP_I8;
   else {
     Fail_FmtAssertion ("unknown object type in __builtin_lock_test_and_set");
     opc  = OPCODE_UNKNOWN;
@@ -3977,6 +3977,9 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
     case GSBI_IX86_BUILTIN_CMPEQPS:
       *iopc = INTRN_CMPEQPS;
       break;
+    case GSBI_IX86_BUILTIN_CMPEQPD:
+      *iopc = INTRN_CMPEQPD;
+      break;
     case GSBI_IX86_BUILTIN_CMPLTPS:
       *iopc = INTRN_CMPLTPS;
       break;
@@ -4642,8 +4645,12 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
       break;
     case GSBI_IX86_BUILTIN_PCMPESTRM128:
       *iopc = INTRN_PCMPESTRM128;
+      break;
     case GSBI_IX86_BUILTIN_PAND128:
       *iopc = INTRN_PAND128;
+      break;
+    case GSBI_IX86_BUILTIN_PANDN128:
+      *iopc = INTRN_PANDN128;
       break;
     case GSBI_IX86_BUILTIN_VEC_EXT_V4HI:
       *iopc = INTRN_PEXTRW64;
@@ -8360,6 +8367,9 @@ WGEN_Expand_Expr (gs_t exp,
 		}
                 whirl_generated = TRUE;
 		break;
+          case GSBI_BUILT_IN_EH_RETURN_DATA_REGNO:
+            iopc = INTRN_BUILTIN_EH_RETURN_DATA_REGNO;
+            break;
 #ifdef TARG_ST
 	      case GSBI_BUILT_IN_FROB_RETURN_ADDR:
 		// [SC] Add builtin_frob_return_address, it is also an identity op
@@ -8948,15 +8958,59 @@ WGEN_Expand_Expr (gs_t exp,
                 break;
 
               // compare_and_swap
+
               case GSBI_BUILT_IN_VAL_COMPARE_AND_SWAP_1:
               case GSBI_BUILT_IN_VAL_COMPARE_AND_SWAP_2:
               case GSBI_BUILT_IN_VAL_COMPARE_AND_SWAP_4:
-                iopc = INTRN_COMPARE_AND_SWAP_I4;
+                iopc = INTRN_VAL_COMPARE_AND_SWAP_I4;
                 break;
 
               case GSBI_BUILT_IN_VAL_COMPARE_AND_SWAP_8:
-                iopc = INTRN_COMPARE_AND_SWAP_I8;
+                iopc = INTRN_VAL_COMPARE_AND_SWAP_I8;
                 break;
+
+              case GSBI_BUILT_IN_BOOL_COMPARE_AND_SWAP_1:
+              case GSBI_BUILT_IN_BOOL_COMPARE_AND_SWAP_2:
+              case GSBI_BUILT_IN_BOOL_COMPARE_AND_SWAP_4:
+                iopc = INTRN_BOOL_COMPARE_AND_SWAP_I4;
+                break;
+
+              case GSBI_BUILT_IN_BOOL_COMPARE_AND_SWAP_8:
+                iopc = INTRN_BOOL_COMPARE_AND_SWAP_I8;
+                break;
+
+              // add_and_fetch
+              case GSBI_BUILT_IN_ADD_AND_FETCH_1:
+              case GSBI_BUILT_IN_ADD_AND_FETCH_2:
+              case GSBI_BUILT_IN_ADD_AND_FETCH_4:
+                iopc = INTRN_ADD_AND_FETCH_I4;
+                break;
+
+              case GSBI_BUILT_IN_ADD_AND_FETCH_8:
+                iopc = INTRN_ADD_AND_FETCH_I8;
+                break;
+
+              // sub_and_fetch
+              case GSBI_BUILT_IN_SUB_AND_FETCH_1:
+              case GSBI_BUILT_IN_SUB_AND_FETCH_2:
+              case GSBI_BUILT_IN_SUB_AND_FETCH_4:
+                iopc = INTRN_SUB_AND_FETCH_I4;
+                break;
+
+              case GSBI_BUILT_IN_SUB_AND_FETCH_8:
+                iopc = INTRN_SUB_AND_FETCH_I8;
+                break;
+
+              case  GSBI_BUILT_IN_LOCK_TEST_AND_SET_1:
+              case  GSBI_BUILT_IN_LOCK_TEST_AND_SET_2:
+              case  GSBI_BUILT_IN_LOCK_TEST_AND_SET_4:
+                iopc = INTRN_LOCK_TEST_AND_SET_I4;
+                break;
+
+              case  GSBI_BUILT_IN_LOCK_TEST_AND_SET_8:
+                iopc = INTRN_LOCK_TEST_AND_SET_I8;
+                break;
+
 #endif // FE_GNU_4_2_0
 #endif
 #endif

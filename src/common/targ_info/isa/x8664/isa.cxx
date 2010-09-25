@@ -283,6 +283,10 @@ main ()
 	      "mov32",
 	      "mov64",
 	      "mov64_m",
+          "xchgx8",
+          "xchgx16",
+          "xchgx32",
+          "xchgx64",
 
 	      /* Load without base or index register (offset only) for 64-bit
 	         ABI. */
@@ -1021,7 +1025,8 @@ main ()
 	      "psrad_mmx",
 	      "pand_mmx",
 	      "pandn_mmx",
-	      "pand128",
+          "pand128",
+          "pandn128",
 	      "por_mmx",
 	      "pxor_mmx",
 	      "unpckhpd",
@@ -1141,6 +1146,7 @@ main ()
 
 	      /* sse instructions */
 	      "cmpeqps",
+	      "cmpeqpd",
 	      "cmpltps",
 	      "cmpleps",
 	      "cmpunordps",

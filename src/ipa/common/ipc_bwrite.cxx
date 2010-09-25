@@ -399,7 +399,7 @@ void free_pu_resources(PU_Info* pu_tree, MEM_POOL* pool) {
   Is_True(file_hdr_list.size() >= 1, ("free_pu_resources: no file headers"));
 
   // Remove duplicates from the list.
-  sort(file_hdr_list.begin(), file_hdr_list.end(), file_hdr_ptr_cmp());
+  std::sort(file_hdr_list.begin(), file_hdr_list.end(), file_hdr_ptr_cmp());
   FILE_HDR_LIST_TYPE::iterator new_end =
     std::unique(file_hdr_list.begin(), file_hdr_list.end());
   file_hdr_list.erase(new_end, file_hdr_list.end());

@@ -27,21 +27,21 @@ set_source_files_properties(
 
 
 
-path64_set_multitarget_sources(pscrt_static_src_list COMMON ${pscrt_sources})
-path64_set_multitarget_sources(pscrt_static_src_list "x86_64" ${pscrt_sources_x64})
-path64_add_multitarget_library(pscrt-static STATIC pscrt_static_src_list)
-path64_set_multitarget_property(pscrt-static COMPILE_FLAGS -fpic)
-path64_set_multitarget_property(pscrt-static OUTPUT_NAME pscrt)
+path64_set_multitarget_sources(pscrt-static COMMON ${pscrt_sources})
+path64_set_multitarget_sources(pscrt-static "x86_64" ${pscrt_sources_x64})
+path64_set_multitarget_property_(pscrt-static COMPILE_FLAGS -fpic)
+path64_set_multitarget_property_(pscrt-static OUTPUT_NAME pscrt)
+path64_add_multitarget_library(pscrt-static STATIC)
 
 
 # Profiling library
 if(PATH64_ENABLE_PROFILING)
-    path64_set_multitarget_sources(pscrt_p_static_src_list COMMON ${pscrt_sources})
-    path64_set_multitarget_sources(pscrt_p_static_src_list "x86_64" ${pscrt_sources_x64})
-    path64_add_multitarget_library(pscrt_p STATIC pscrt_p_static_src_list)
+    path64_set_multitarget_sources(pscrt_p COMMON ${pscrt_sources})
+    path64_set_multitarget_sources(pscrt_p "x86_64" ${pscrt_sources_x64})
     if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")   # temporary workaround for bug in gcc on osol
-        path64_set_multitarget_property(pscrt_p COMPILE_FLAGS -pg)
+        path64_set_multitarget_property_(pscrt_p COMPILE_FLAGS -pg)
     endif()
+    path64_add_multitarget_library(pscrt_p STATIC pscrt_p_static_src_list)
 endif()
 
 #add_library(pscrt SHARED ${pscrt_sources})

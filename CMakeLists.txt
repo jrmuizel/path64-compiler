@@ -195,13 +195,17 @@ ENDIF()
 # Tell GCC_XML that we are providing gccxml_cc1plus for it.
 SET(GCCXML_NATIVE_CC1PLUS 1)
 
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/Modules/GCCVersion.cmake)
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/GCCVersion.cmake)
 
 
 # Place all targets near the top of the build tree by default.
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Path64_BINARY_DIR}/bin)
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Path64_BINARY_DIR}/lib)
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${Path64_BINARY_DIR}/lib)
+
+FILE(MAKE_DIRECTORY ${Path64_BINARY_DIR}/lib)
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E create_symlink .
+                        ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION})
 
 SET(PATH64_LIB_PATH lib/${PSC_FULL_VERSION})
 
@@ -281,9 +285,72 @@ else ()
     ADD_DEFINITIONS(-DHOST_IS_BIG_ENDIAN=0 -DHOST_IS_LITTLE_ENDIAN=1)
 endif()
 
+# Fake targets for compiler stage
+ADD_CUSTOM_TARGET(compiler-stage)               # compiler core
+ADD_CUSTOM_TARGET(compiler-stage-C)             # C compiler
+ADD_CUSTOM_TARGET(compiler-stage-CXX)           # CXX compiler
+ADD_CUSTOM_TARGET(compiler-stage-Fortran)       # Fortran compiler
+ADD_CUSTOM_TARGET(compiler-stage-libs-C)        # C compiler with libs
+ADD_CUSTOM_TARGET(compiler-stage-libs-CXX)      # CXX compiler with libs
+ADD_CUSTOM_TARGET(compiler-stage-libs-Fortran)  # Fortran compiler with libs
+ADD_DEPENDENCIES(compiler-stage-C compiler-stage)
+ADD_DEPENDENCIES(compiler-stage-CXX compiler-stage-C)
+ADD_DEPENDENCIES(compiler-stage-Fortran compiler-stage)
+ADD_DEPENDENCIES(compiler-stage-libs-C compiler-stage-C)
+ADD_DEPENDENCIES(compiler-stage-libs-CXX compiler-stage-CXX compiler-stage-libs-C)
+ADD_DEPENDENCIES(compiler-stage-libs-Fortran compiler-stage-Fortran)
+
+# Copying libmv and libmpath to <stage_dir>/lib/${arch} if we are building with pathcc
+if("X${CMAKE_C_COMPILER_ID}" STREQUAL "XPathScale")
+    find_program(pathcc_full_path ${CMAKE_C_COMPILER})
+    get_filename_component(pathscale_path "${pathcc_full_path}" PATH)
+    get_filename_component(pathscale_path "${pathscale_path}/.." ABSOLUTE)
+    message(STATUS "Path to pathcc using to build: ${pathscale_path}")
+    path64_get_host_target(host_targ)
+    path64_get_host_arch(host_arch)
+    path64_get_target_bits(host_bits ${host_targ})
+    set(pathscale_libs_path "${pathscale_path}/lib/${PSC_FULL_VERSION}/${host_arch}/${host_bits}")
+
+    set(pathscale_libs_stage_deps)
+    set(pathscale_libs libmv.so libmpath.so)
+    if(PATH64_ENABLE_FORTRAN)
+        list(APPEND pathscale_libs libpathfortran.so)
+    endif()
+    if(PATH64_ENABLE_PSCRUNTIME)
+        # TODO: add libcompiler-rt.so, libunwind.so, libcxxabi.so, libstdcxx.so
+    endif()
+
+    foreach(arch ${PATH64_ENABLE_ARCHES})
+        foreach(lib ${pathscale_libs})
+            add_custom_command(OUTPUT ${Path64_BINARY_DIR}/lib/${arch}/${lib}
+                               COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                                       "${pathscale_libs_path}/${lib}"
+                                       "${Path64_BINARY_DIR}/lib/${arch}/${lib}"
+                               DEPENDS "${pathscale_libs_path}/${lib}")
+            list(APPEND pathscale_libs_stage_deps "${Path64_BINARY_DIR}/lib/${arch}/${lib}")
+
+            list(FIND PATH64_ENABLE_TARGETS ${host_targ} res)
+            if(NOT ${res} EQUAL -1)
+                # Making link <install_dir>/lib/${arch}/${lib} ->
+                #             <install_dir>/lib/${arch}/${host_bits}/${lib}
+                install(CODE "file(MAKE_DIRECTORY \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}\") \n execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"./../${host_arch}/${host_bits}/${lib}\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/${lib}\")")
+            else()
+                # Copying pathscale lib to <instalL_dir>/lib/${arch}/${lib}
+                install(FILES "${pathscale_libs_path}/${lib}" DESTINATION "lib/${PSC_FULL_VERSION}/${arch}")
+            endif()
+          
+        endforeach()
+    endforeach()
+
+    add_custom_target(pathscale-libs-stage DEPENDS ${pathscale_libs_stage_deps})
+    add_dependencies(compiler-stage pathscale-libs-stage)
+endif()
+
+
 # Build GCC and pathscale.
 ADD_SUBDIRECTORY(GCC)
 ADD_SUBDIRECTORY(src)
 
 ADD_SUBDIRECTORY(bootstrap)
+ADD_SUBDIRECTORY(gcc_incl)
 

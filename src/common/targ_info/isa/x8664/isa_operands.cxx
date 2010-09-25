@@ -364,7 +364,8 @@ main()
 		     TOP_max128v16,
 		     TOP_min128v8,
 		     TOP_min128v16,
-		     TOP_pand128,
+             TOP_pand128,
+             TOP_pandn128,
 		     TOP_UNDEFINED);
   Result(0, fp128);
   Operand(0, fp128, opnd1);
@@ -2251,6 +2252,7 @@ main()
 
   Instruction_Group("fp vector compare I",
 		    TOP_cmpeqps,
+		    TOP_cmpeqpd,
 		    TOP_cmpltps,
 		    TOP_cmpleps,
 		    TOP_cmpunordps,
@@ -2760,6 +2762,7 @@ main()
 		    TOP_lock_cmpxchg8,
 		    TOP_UNDEFINED);
   Result(0,  eflags);
+  Result(1,  eax);
   Operand(0, eax, opnd1);
   Operand(1, int8, opnd2);
   Operand(2, int64, base);
@@ -2769,6 +2772,7 @@ main()
 		    TOP_lock_cmpxchg16,
 		    TOP_UNDEFINED);
   Result(0,  eflags);
+  Result(1,  eax);
   Operand(0, eax, opnd1);
   Operand(1, int16, opnd2);
   Operand(2, int64, base);
@@ -2778,6 +2782,7 @@ main()
 		    TOP_lock_cmpxchg32,
 		    TOP_UNDEFINED);
   Result(0,  eflags);
+  Result(1,  eax);
   Operand(0, eax, opnd1);
   Operand(1, int32, opnd2);
   Operand(2, int64, base);
@@ -2787,6 +2792,7 @@ main()
 		    TOP_lock_cmpxchg64,
 		    TOP_UNDEFINED);
   Result(0,  rflags);
+  Result(1,  eax);
   Operand(0, rax, opnd1);
   Operand(1, int64, opnd2);
   Operand(2, int64, base);
@@ -3095,6 +3101,37 @@ main()
   Operand(0, fp128, opnd1);
   Operand(1, fp128, opnd2);
 
+  Instruction_Group("int8 exchange with mem",
+                    TOP_xchgx8,
+		            TOP_UNDEFINED);
+  Result(0, int8);
+  Operand(0, int8, opnd1);
+  Operand(1, int64, base);
+  Operand(2, simm32, offset);
+
+  Instruction_Group("int16 exchange with mem",
+                    TOP_xchgx16,
+		            TOP_UNDEFINED);
+  Result(0, int16);
+  Operand(0, int16, opnd1);
+  Operand(1, int64, base);
+  Operand(2, simm32, offset);
+
+  Instruction_Group("int32 exchange with mem",
+                    TOP_xchgx32,
+		            TOP_UNDEFINED);
+  Result(0, int32);
+  Operand(0, int32, opnd1);
+  Operand(1, int64, base);
+  Operand(2, simm32, offset);
+
+  Instruction_Group("int64 exchange with mem",
+                    TOP_xchgx64,
+		            TOP_UNDEFINED);
+  Result(0, int64);
+  Operand(0, int64, opnd1);
+  Operand(1, int64, base);
+  Operand(2, simm32, offset);
   
   ISA_Operands_End();
   return 0;

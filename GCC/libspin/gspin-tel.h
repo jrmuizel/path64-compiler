@@ -163,9 +163,7 @@ extern gs_t gs_build_type(gs_code_t code);
 #ifdef FE_GNU_4_2_0
 #  define GS_C_DECL_THREADPRIVATE_P     GS_DECL_LANG_FLAG_3
 #endif
-#ifdef TARG_ST
 #  define GS_DECL_VISIBILITY_SPECIFIED  63
-#endif
 
 // flags specific to GS_TCC_TYPE:
 #  define GS_TYPE_UNSIGNED		23
@@ -287,9 +285,9 @@ extern gs_t gs_build_type(gs_code_t code);
 #define GS_THUNK_FIXED_OFFSET		39
 #define GS_THUNK_VIRTUAL_OFFSET		40
 #define GS_DECL_NAMED_RETURN_OBJECT	41
-#ifdef TARG_ST
 #define GS_DECL_TEMPLATE_INSTANTIATIONS GS_DECL_VINDEX
 #define GS_DECL_VISIBILITY              42
+#ifdef TARG_ST
 #define GS_DECL_TLS_MODEL               43
 #define GS_DECL_FLAGS                   44
 
@@ -733,10 +731,9 @@ GS_UPDATE_FLAG (GS_FLAGS, gs_set_decl_threadprivate, GS_DECL_THREADPRIVATE)
 GS_LOOKUP_FLAG (GS_FLAGS, gs_c_decl_threadprivate_p, GS_C_DECL_THREADPRIVATE_P)
 GS_UPDATE_FLAG (GS_FLAGS, gs_set_c_decl_threadprivate_p, GS_C_DECL_THREADPRIVATE_P)
 #endif
-#ifdef TARG_ST
 GS_LOOKUP_FLAG (GS_FLAGS, gs_decl_visibility_specified, GS_DECL_VISIBILITY_SPECIFIED)
 GS_UPDATE_FLAG (GS_FLAGS, gs_set_decl_visibility_specified, GS_DECL_VISIBILITY_SPECIFIED)
-
+#ifdef TARG_ST
 GS_LOOKUP_FLAG (GS_DECL_FLAGS, gs_decl_is_pure, GS_DECL_IS_PURE)
 GS_UPDATE_FLAG (GS_DECL_FLAGS, gs_set_decl_is_pure, GS_DECL_IS_PURE)
 GS_LOOKUP_FLAG (GS_DECL_FLAGS, gs_decl_static_constructor, GS_DECL_STATIC_CONSTRUCTOR)
@@ -1146,8 +1143,8 @@ static inline gs_long_t gs_thunk_fixed_offset (gs_t t) {
 }
 GS_LOOKUP (gs_thunk_virtual_offset, GS_THUNK_VIRTUAL_OFFSET)
 GS_LOOKUP (gs_decl_named_return_object, GS_DECL_NAMED_RETURN_OBJECT)
-#ifdef TARG_ST
 GS_LOOKUP (gs_decl_visibility, GS_DECL_VISIBILITY)
+#ifdef TARG_ST
 GS_LOOKUP (gs_decl_tls_model, GS_DECL_TLS_MODEL)
 static inline gs_string_t gs_decl_printable_name (gs_t t) {
   return gs_s (gs_operand (t, GS_DECL_PRINTABLE_NAME));

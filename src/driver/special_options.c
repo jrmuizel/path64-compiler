@@ -147,13 +147,6 @@ set_defaults (void)
 		toggle(&use_ftpp, 0);
 	}
 
-	// Use the system's GCC version to select -gnu3/-gnu4 as the default.
-	// Bug 11426.
-	if (!is_toggled(gnu_major_version)) {
-        // defaulting to GCC 4.2
-        gnu_major_version = 4;
-        gnu_minor_version = 2;
-	}
 #endif
 }
 
@@ -266,8 +259,6 @@ add_special_options (void)
 	// Pass -fopenmp instead of -mp to GNU 4.2 or later C/C++ front-end.
 	// Bug 12824.
 	if (mpkind == NORMAL_MP &&
-	    gnu_major_version == 4 &&
-	    gnu_minor_version >= 2 &&
 	    (invoked_lang == L_cc ||
 	     invoked_lang == L_CC)) {
 	  set_option_unseen(O_mp);

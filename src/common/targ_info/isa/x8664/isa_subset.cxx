@@ -901,8 +901,9 @@ main()
   		    TOP_psraw_mmx,
   		    TOP_psrad_mmx,
   		    TOP_pand_mmx,
-  		    TOP_pand128,
   		    TOP_pandn_mmx,
+            TOP_pand128,
+            TOP_pandn128,
   		    TOP_por_mmx,
   		    TOP_pxor_mmx,
 		    TOP_mfence,
@@ -1135,6 +1136,7 @@ main()
 		    TOP_pmovmskb,
 		    TOP_pmovmskb128,
 		    TOP_cmpeqps,
+		    TOP_cmpeqpd,
 		    TOP_cmpltps,
 		    TOP_cmpleps,
 		    TOP_cmpunordps,
@@ -1177,6 +1179,10 @@ main()
             TOP_pcmpistrm,
             TOP_pcmpestri,
             TOP_pcmpestrm,
+            TOP_xchgx8,
+            TOP_xchgx16,
+            TOP_xchgx32,
+            TOP_xchgx64,
 		    TOP_UNDEFINED);
 
   ISA_Subset_End();

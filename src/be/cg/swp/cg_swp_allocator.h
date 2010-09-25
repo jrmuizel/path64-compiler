@@ -70,7 +70,7 @@ enum SWP_ALLOC_ALGO {
 };
 
 
-typedef mempool_allocator <std::pair <TN *, 
+typedef mempool_allocator <std::pair <TN * const, 
                                       REGISTER> > SWP_TN2REG_ALLOC;
 typedef std::map <TN *,
                   REGISTER,

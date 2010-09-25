@@ -2729,11 +2729,11 @@ Process_Initos_And_Literals (
   }
 
   // Print_ST_List(st_list, "UNSORTED");
-  stable_sort (st_list.begin(), st_list.end(), size_lt);
+  std::stable_sort (st_list.begin(), st_list.end(), size_lt);
   // Print_ST_List(st_list, "SORTED BY SIZE");
-  stable_sort (st_list.begin(), st_list.end(), offset_lt);
+  std::stable_sort (st_list.begin(), st_list.end(), offset_lt);
   // Print_ST_List(st_list, "SORTED BY OFFSET");
-  stable_sort (st_list.begin(), st_list.end(), section_lt);
+  std::stable_sort (st_list.begin(), st_list.end(), section_lt);
   // Print_ST_List(st_list, "SORTED BY SECTION");
 
 // #ifdef TARG_ST
@@ -3033,9 +3033,9 @@ Process_Bss_Data (
   // It's a bit counter-intuitive, but to get the list sorted
   // by section and then by offset within section,
   // should stable_sort in reverse order (offset then section).
-  stable_sort (bss_list.begin(), bss_list.end(), size_lt);
-  stable_sort (bss_list.begin(), bss_list.end(), offset_lt);
-  stable_sort (bss_list.begin(), bss_list.end(), section_lt);
+  std::stable_sort (bss_list.begin(), bss_list.end(), size_lt);
+  std::stable_sort (bss_list.begin(), bss_list.end(), offset_lt);
+  std::stable_sort (bss_list.begin(), bss_list.end(), section_lt);
 
   ST*   sym;
   ST*   next_sym;
@@ -8455,7 +8455,45 @@ inline INT32 PC_Incr_N(INT32 pc, UINT32 incr)
   pc = PC_Bundle(pc) + (bundles * INST_BYTES) + (slots % ISA_MAX_SLOTS);
   return pc;
 }
-
+
+void EMT_Visibility (
+  FILE *f,			
+  ST_EXPORT eclass,
+  ST *st
+  )
+{
+  const char *dir;
+
+  switch (eclass)
+    {
+#ifdef AS_INTERNAL
+    case EXPORT_INTERNAL:
+      dir = AS_INTERNAL;
+      break;
+#endif
+#ifdef AS_HIDDEN
+    case EXPORT_HIDDEN:
+      dir = AS_HIDDEN;
+      break;
+#endif
+#ifdef AS_PROTECTED
+    case EXPORT_PROTECTED:
+      dir = AS_PROTECTED;
+      break;
+#endif
+    default:
+      dir = 0;
+      break;
+    }
+
+  if (dir) {
+    fprintf (f, "\t%s\t", dir);
+    EMT_Write_Qualified_Name (f, st);
+    fprintf (f, "\n");
+  }
+    
+}
+
 void
 EMT_Write_Qualified_Name (FILE *f, ST *st)
 {
@@ -8556,6 +8594,7 @@ static void Print_Label (FILE *pfile, ST *st, INT64 size)
 	EMT_Write_Qualified_Name(pfile, st);
 	fputc ('\n', pfile);
     }
+    EMT_Visibility (pfile, ST_export(st), st);
 #if 1 /* defined(BUILD_OS_DARWIN) */
 	// Bug 1275 and 4351
 	// Always emit the function type
@@ -8613,6 +8652,7 @@ Print_Common (FILE *pfile, ST *st)
 	EMT_Write_Qualified_Name(pfile, st);
 	fputc ('\n', pfile);
     }
+    EMT_Visibility (pfile, ST_export(st), st);
     fprintf ( pfile, "\t%s\t", AS_COM);
     EMT_Write_Qualified_Name(pfile, st);
 #ifdef TARG_X8664
@@ -14009,11 +14049,11 @@ Process_Initos_And_Literals (SYMTAB_IDX stab)
 #endif
 
   // Print_ST_List(st_list, "UNSORTED");
-  stable_sort (st_list.begin(), st_list.end(), size_lt);
+  std::stable_sort (st_list.begin(), st_list.end(), size_lt);
   // Print_ST_List(st_list, "SORTED BY SIZE");
-  stable_sort (st_list.begin(), st_list.end(), offset_lt);
+  std::stable_sort (st_list.begin(), st_list.end(), offset_lt);
   // Print_ST_List(st_list, "SORTED BY OFFSET");
-  stable_sort (st_list.begin(), st_list.end(), section_lt);
+  std::stable_sort (st_list.begin(), st_list.end(), section_lt);
   // Print_ST_List(st_list, "SORTED BY SECTION");
 
   for (st_iter = st_list.begin(); st_iter != st_list.end(); ++st_iter) {
@@ -14191,9 +14231,9 @@ Process_Bss_Data (SYMTAB_IDX stab)
   // It's a bit counter-intuitive, but to get the list sorted
   // by section and then by offset within section,
   // should stable_sort in reverse order (offset then section).
-  stable_sort (bss_list.begin(), bss_list.end(), size_lt);
-  stable_sort (bss_list.begin(), bss_list.end(), offset_lt);
-  stable_sort (bss_list.begin(), bss_list.end(), section_lt);
+  std::stable_sort (bss_list.begin(), bss_list.end(), size_lt);
+  std::stable_sort (bss_list.begin(), bss_list.end(), offset_lt);
+  std::stable_sort (bss_list.begin(), bss_list.end(), section_lt);
 
   ST*   sym;
   ST*   next_sym;

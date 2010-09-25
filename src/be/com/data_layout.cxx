@@ -90,8 +90,8 @@
 extern void (*CG_Set_Is_Stack_Used_p)();
 extern INT (*Push_Pop_Int_Saved_Regs_p)(void);
 #endif
-#ifdef TARG_ST
 #include "be_symtab.h"
+#ifdef TARG_ST
 #include "cg_flags.h"
 #endif
 
@@ -862,7 +862,6 @@ Allocate_Space(ST *base, ST *blk, INT32 lpad, INT32 rpad, INT64 maxsize)
   UINT align = Adjusted_Alignment(blk);
   INT64 old_offset;
   INT64 size = ST_size(blk);
-#ifdef TARG_ST
   // [SC]: For an initialized symbol, make sure there is enough
   // space for all of the initializer.
   if (ST_is_initialized (blk)) {
@@ -871,7 +870,6 @@ Allocate_Space(ST *base, ST *blk, INT32 lpad, INT32 rpad, INT64 maxsize)
       size = MAX (size, Get_INITO_Size (inito_idx));
     }
   }
-#endif
 #ifdef KEY
   // C++ requires distinct addresses for empty classes
   if (ST_class(blk) == CLASS_VAR && (!Current_pu ||

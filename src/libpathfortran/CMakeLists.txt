@@ -980,8 +980,8 @@ IF(PATH64_ENABLE_FORTRAN)
 add_executable( gen_ieee_cpp_macros  ../libfi/mathlb/gen_ieee_cpp_macros.c)
 
 add_custom_command(
-		OUTPUT ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h
-		COMMAND  gen_ieee_cpp_macros > ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h
+		OUTPUT ${Path64_BINARY_DIR}/src/include/ieee_cpp_macros.h
+		COMMAND  gen_ieee_cpp_macros > ${Path64_BINARY_DIR}/src/include/ieee_cpp_macros.h
 		DEPENDS gen_ieee_cpp_macros)
 
 add_dependencies(gen_ieee_cpp_macros switch_fc)
@@ -997,28 +997,40 @@ set_source_files_properties(../libfi/mathlb/ieee_arithmetic.F90 PROPERTIES OBJEC
 #SET(CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES "m;c")
 
 
-path64_set_multiarch_sources(pathfortran_sources COMMON
-                             ${PATHSCALE_PATHFORTRAN_C_SRCS}
-                             ${PATHSCALE_PATHFORTRAN_F_SRCS}
-                             ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h)
+path64_set_multitarget_sources(pathfortran-static COMMON
+                               ${PATHSCALE_PATHFORTRAN_C_SRCS}
+                               ${PATHSCALE_PATHFORTRAN_F_SRCS}
+                               ${Path64_BINARY_DIR}/src/include/ieee_cpp_macros.h)
+path64_set_multitarget_property_(pathfortran-static OUTPUT_NAME "pathfortran")
+path64_add_multitarget_library(pathfortran-static STATIC)
+path64_add_multitarget_dependencies(pathfortran-static mv-static pscrt-static)
+path64_add_dependencies_from_multitarget(compiler-stage-libs-Fortran pathfortran-static)
 
-path64_add_multitarget_library(pathfortran-static STATIC pathfortran_sources)
-path64_set_multitarget_property(pathfortran-static OUTPUT_NAME "pathfortran")
-
-path64_add_multitarget_library(pathfortran SHARED pathfortran_sources)
-path64_set_multitarget_property(pathfortran LINKER_LANGUAGE C)
-path64_set_multitarget_property(pathfortran PROPERTY SOVERSION 1)
+path64_set_multitarget_sources(pathfortran COMMON
+                               ${PATHSCALE_PATHFORTRAN_C_SRCS}
+                               ${PATHSCALE_PATHFORTRAN_F_SRCS}
+                               ${Path64_BINARY_DIR}/src/include/ieee_cpp_macros.h)
+path64_set_multitarget_property_(pathfortran COMPILE_FLAGS -fPIC -DPIC)
+path64_set_multitarget_property_(pathfortran LINKER_LANGUAGE C)
+path64_set_multitarget_property_(pathfortran PROPERTY SOVERSION 1)
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-    path64_set_multitarget_property(pathfortran LINK_FLAGS -Wl,--version-script="${libpathfortran_SOURCE_DIR}/libpathfortran.vs")
+    path64_set_multitarget_property_(pathfortran LINK_FLAGS -Wl,--version-script="${libpathfortran_SOURCE_DIR}/libpathfortran.vs")
 endif()
+path64_add_multitarget_library(pathfortran SHARED)
+path64_add_multitarget_dependencies(pathfortran mv pscrt-static)
+path64_add_dependencies_from_multitarget(compiler-stage-libs-Fortran pathfortran)
 
 IF(PATH64_ENABLE_PROFILING)
-    path64_add_multitarget_library(pathfortran_p STATIC pathfortran_sources)
-    path64_set_multitarget_property(pathfortran_p COMPILE_FLAGS -pg)
+    path64_set_multitarget_sources(pathfortran_p COMMON
+                                   ${PATHSCALE_PATHFORTRAN_C_SRCS}
+                                   ${PATHSCALE_PATHFORTRAN_F_SRCS}
+                                   ${Path64_BINARY_DIR}/src/include/ieee_cpp_macros.h)
+    path64_set_multitarget_property_(pathfortran_p COMPILE_FLAGS -pg)
+    path64_add_multitarget_library(pathfortran_p STATIC)
 ENDIF(PATH64_ENABLE_PROFILING)
 
-path64_set_multitarget_sources(pathfstart_sources COMMON fnord.c ../libf/fio/main.c)
-path64_add_multitarget_library(pathfstart STATIC pathfstart_sources)
+path64_set_multitarget_sources(pathfstart COMMON fnord.c ../libf/fio/main.c)
+path64_add_multitarget_library(pathfstart STATIC)
 
 
 # Building libpathfortran for host architecture
@@ -1026,7 +1038,7 @@ path64_get_host_arch(host_arch)
 path64_add_library_for_arch(pathfortran-host ${host_arch} STATIC
                             ${PATHSCALE_PATHFORTRAN_C_SRCS}
                             ${PATHSCALE_PATHFORTRAN_F_SRCS}
-                            ${CMAKE_BINARY_DIR}/src/include/ieee_cpp_macros.h)
+                            ${Path64_BINARY_DIR}/src/include/ieee_cpp_macros.h)
 
 add_custom_command(
     OUTPUT massage.c
