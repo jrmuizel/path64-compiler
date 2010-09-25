@@ -702,7 +702,7 @@ add_target_linker_args(string_list_t *args) {
         add_arg(args, dyn_link_opt);
         free(dyn_link_opt);
 #elif defined(__NetBSD__)
-        add_arg(args, "-dynamic-linker /libexec/ld.elf_so");
+        add_arg(args, "--dynamic-linker=/libexec/ld.elf_so");
 #endif /* LINUX */
     }
 #endif // TARG_X8664
