@@ -10422,6 +10422,7 @@ static void gen_ptr_chk_call(char 	*var,
                                                    PTR_CHK_NAME_LEN,
                                                    line,
                                                    col);
+	ATP_PURE(glb_tbl_idx[Ptr_Chk_Attr_Idx]) = TRUE;
    }
 
    ADD_ATTR_TO_LOCAL_LIST(glb_tbl_idx[Ptr_Chk_Attr_Idx]);
