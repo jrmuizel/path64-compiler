@@ -1468,7 +1468,7 @@ WGEN_Start_Function(gs_t fndecl)
 	   (gs_decl_lang_specific (fndecl) &&
 	    gs_decl_implicit_instantiation (fndecl) &&
 	    gs_decl_namespace_scope_p (fndecl))))
-	eclass = EXPORT_INTERNAL; // bug 7550
+	eclass = EXPORT_LOCAL; // bug 7550
       else if (gs_tree_public(fndecl) || gs_decl_weak(fndecl)) {
 	if (gs_decl_inline(fndecl) || !gs_decl_weak(fndecl))
 	  eclass = EXPORT_PROTECTED;

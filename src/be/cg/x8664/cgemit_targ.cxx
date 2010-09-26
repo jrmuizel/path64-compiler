@@ -1698,7 +1698,8 @@ static void Adjust_Opnd_Name( OP* op, int opnd, char* name )
 	   // tail-call optimization 
 	   ( topcode == TOP_jmp && !TN_is_label( OP_opnd( op, 0))))) {
       ST* function = TN_var(OP_opnd(op, 0));
-      if ( function && !ST_is_export_local(function) )
+      if ( function && !ST_is_export_local(function) ||
+            ST_is_weak_symbol(function))
         strcat( name, "@PLT" );
     }
 #endif /* defined(BUILD_OS_DARWIN) */

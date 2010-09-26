@@ -861,7 +861,8 @@ Exp_Ldst (
 					  else
 					  {
 					  	if (! ST_is_export_local(base_sym) &&
-					      ST_export(base_sym) != EXPORT_HIDDEN ) 
+					      ST_export(base_sym) != EXPORT_HIDDEN ||
+                          ST_is_weak_symbol(base_sym)) 
 					    {
 							    TN *tmp = base_ofst == 0 ? tn : Build_TN_Like(tn);
 							    Build_OP( TOP_ld64, tmp, Rip_TN(), 
