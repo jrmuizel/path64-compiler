@@ -227,6 +227,8 @@ Process_Command_Line (INT argc, char **argv)
 	    case 'f':		    /* file options */
 		if (*cp == 0)
 		    ErrMsg (EC_File_Name, '?', argv[i]);
+		else if (!strcmp( cp, "omp_trace" ))
+		    Enable_Omp_Trace = TRUE;
 		else if (*(cp+1) != ',' && *(cp+1) != ':')
 		    ErrMsg (EC_File_Name, *cp, argv[i]);
 		else {
@@ -312,15 +314,6 @@ Process_Command_Line (INT argc, char **argv)
 	    case 'n':
 		if (!strcmp( cp, "o_exceptions" )) {
 		  CXX_Exceptions_On = FALSE;
-		}
-		else {
-		  ErrMsg ( EC_Unknown_Flag, *(cp-1), argv[i] );
-		}
-		break;
-
-	    case 'o':
-		if (!strcmp( cp, "mp_trace" )) {
-		  Enable_Omp_Trace = TRUE;
 		}
 		else {
 		  ErrMsg ( EC_Unknown_Flag, *(cp-1), argv[i] );
