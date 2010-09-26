@@ -92,6 +92,8 @@ extern BOOL Run_autopar;
 extern BOOL Run_MemCtr;
 static BOOL Dsm_Recompile = FALSE;
 
+extern BOOL Enable_Omp_Trace;
+
 
 /*
  * Handle_Phase_Specific_Options
@@ -310,6 +312,15 @@ Process_Command_Line (INT argc, char **argv)
 	    case 'n':
 		if (!strcmp( cp, "o_exceptions" )) {
 		  CXX_Exceptions_On = FALSE;
+		}
+		else {
+		  ErrMsg ( EC_Unknown_Flag, *(cp-1), argv[i] );
+		}
+		break;
+
+	    case 'o':
+		if (!strcmp( cp, "mp_trace" )) {
+		  Enable_Omp_Trace = TRUE;
 		}
 		else {
 		  ErrMsg ( EC_Unknown_Flag, *(cp-1), argv[i] );

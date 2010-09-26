@@ -917,6 +917,8 @@ I-xall	;		FTN	ffe	self
         "enable the multiprocessing directives"
 -openmp			;		FTN,Cc	ffe	-mp
         "enable the multiprocessing directives (same as -mp)"
+-omp_trace		;		FTN,Cc    be   self
+        "enable OpenMP trace points"
 #ifdef KEY
 -fopenmp		;		Cc	cfe	self
         ""
