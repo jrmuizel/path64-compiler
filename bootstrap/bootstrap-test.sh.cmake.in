@@ -3,8 +3,6 @@
 
 num_stages=${PATH64_BOOTSTRAP_STAGES}
 
-OPT="-O2"
-
 currdir=${CMAKE_CURRENT_BINARY_DIR}
 srcdir=${Path64_SOURCE_DIR}
 final_inst_dir=$currdir/final_inst
@@ -23,7 +21,8 @@ rm -rf build inst stage?
 while [ $stage -lt $num_stages ]; do
     mkdir build
     cd build
-    ${CMAKE_COMMAND} -D CMAKE_INSTALL_PREFIX=$final_inst_dir \
+    ${CMAKE_COMMAND} -D CMAKE_BUILD_TYPE=Release \
+                     -D CMAKE_INSTALL_PREFIX=$final_inst_dir \
                      -D PATH64_ENABLE_FORTRAN=${PATH64_ENABLE_FORTRAN} \
                      -D PATH64_ENABLE_PROFILING=${PATH64_ENABLE_PROFILING} \
                      -D PATH64_ENABLE_OPENMP=${PATH64_ENABLE_OPENMP} \
@@ -43,9 +42,6 @@ while [ $stage -lt $num_stages ]; do
                      -D CMAKE_C_COMPILER=$CC \
                      -D CMAKE_CXX_COMPILER=$CXX \
                      -D CMAKE_Fortran_COMPILER=$FORT \
-                     -D CMAKE_C_FLAGS="$OPT" \
-                     -D CMAKE_CXX_FLAGS="$OPT" \
-                     -D CMAKE_Fortran_FLAGS="$OPT" \
                      -D PSC_LIBSUPCPP_PATH_x86_64=${PSC_LIBSUPCPP_PATH_x86_64} \
                      -D PSC_LIBSTDCPP_PATH_x86_64=${PSC_LIBSTDCPP_PATH_x86_64} \
                      -D PSC_LIBGCC_PATH_x86_64=${PSC_LIBGCC_PATH_x86_64} \
