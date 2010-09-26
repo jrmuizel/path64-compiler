@@ -228,6 +228,9 @@ file_utils_set_program_name(char *name)
 	path = string_copy(path);
 	p = path;
 	while ((dir = strtok_r(p, ":", &tmp)) != NULL) {
+        /* strip trailing forward slash */
+        char *last = dir + strlen(dir) - sizeof(char);
+        if (*last == '/') *last = '\0';
 		if (!is_directory(dir))
 			continue;
 		snprintf(filename, MAXPATHLEN, "%s/%s", dir, name);
