@@ -322,7 +322,7 @@ if("X${CMAKE_C_COMPILER_ID}" STREQUAL "XPathScale")
         list(APPEND pathscale_libs libpathfortran.so)
     endif()
     if(PATH64_ENABLE_PSCRUNTIME)
-        # TODO: add libcompiler-rt.so, libunwind.so, libcxxabi.so, libstdcxx.so
+        list(APPEND pathscale_libs libgcc.so libeh.so libcxxrt.so libstl.so)
     endif()
 
     foreach(arch ${PATH64_ENABLE_ARCHES})
