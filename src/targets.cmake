@@ -116,6 +116,40 @@ function(list_string_replace lst pattern replace)
 endfunction()
 
 
+# Returns file name extension
+function(path64_get_file_ext res fname)
+    set(ext ${fname})
+
+    while(1)
+        get_filename_component(ex ${ext} EXT)
+
+        string(LENGTH "${ex}" exlength)
+        if(${exlength} EQUAL 0)
+            set(${res} ${ext} PARENT_SCOPE)
+            return()
+        endif()
+
+        math(EXPR exlength "${exlength} - 1")
+        string(SUBSTRING ${ex} 1 ${exlength} ext)
+    endwhile()
+
+    set(${res} ${ext} PARENT_SCOPE)
+endfunction()
+
+
+# Returns file name base
+function(path64_get_file_base res fn)
+    get_filename_component(fname ${fn} NAME)
+    path64_get_file_ext(ext ${fname})
+
+    string(LENGTH ${fname} fname_length)
+    string(LENGTH ${ext} ext_length)
+    math(EXPR base_length "${fname_length} - ${ext_length} - 1")
+    string(SUBSTRING "${fname}" 0 ${base_length} base)
+    set(${res} ${base} PARENT_SCOPE)
+endfunction()
+
+
 # Replaces in list of strings:
 # 1) All @PATTERN@ patterns with ${pattern_val}
 # 2) All @PATTERN{name} patterns with name-${pattern_val}
@@ -282,8 +316,8 @@ function(path64_add_library_for_target name target type)
     # Searching header dependencies
     set(header_deps)
     foreach(src ${sources})
-        get_filename_component(src_ext ${src} EXT)
-        if("${src_ext}" STREQUAL ".h")
+        path64_get_file_ext(src_ext ${src})
+        if("${src_ext}" STREQUAL "h")
             list(APPEND header_deps ${src})
         endif()
     endforeach()
@@ -297,10 +331,10 @@ function(path64_add_library_for_target name target type)
         get_property(src_lang SOURCE ${src} PROPERTY LANGUAGE)
         if(NOT src_lang)
             # Trying get language from extension
-            get_filename_component(src_ext ${src} EXT)
+            path64_get_file_ext(src_ext ${src})
             foreach(lang C CXX Fortran)
                 foreach(lang_ext ${CMAKE_${lang}_SOURCE_FILE_EXTENSIONS})
-                    if(".${lang_ext}" STREQUAL "${src_ext}")
+                    if("${lang_ext}" STREQUAL "${src_ext}")
                         set(src_lang ${lang})
                         break()
                     endif()
@@ -311,13 +345,13 @@ function(path64_add_library_for_target name target type)
             endforeach()
 
             # Special case for assembler
-            if("${src_ext}" STREQUAL ".S" OR "${src_ext}" STREQUAL ".s")
+            if("${src_ext}" STREQUAL "S" OR "${src_ext}" STREQUAL "s")
                 set(src_lang C)
             endif()
         endif()
 
         # special case for headers
-        if(NOT "${src_ext}" STREQUAL ".h")
+        if(NOT "${src_ext}" STREQUAL "h")
             set(last_src_lang ${src_lang})
 
             if(NOT src_lang)
