@@ -4912,6 +4912,278 @@ Initialize_guard_vars (void)
 }
 #endif // KEY
 
+
+// Expands conditional expression
+WN *WGEN_Expand_Cond_Expr(gs_t exp,
+                          bool need_result,
+                          TY_IDX component_ty_idx,
+                          INT64 component_offset,
+                          UINT32 field_id ,
+                          bool is_bit_field,
+                          WN *target_wn) {
+#ifdef TARG_ST
+  bool voided_cond = FALSE;
+#endif
+
+  WN *wn = NULL;
+  WN *wn0 = NULL;
+  WN *wn1 = NULL;
+  WN *wn2 = NULL;
+  TY_IDX ty_idx, ty_idx1, ty_idx2;
+
+  if (gs_tree_operand(exp, 1) != NULL &&
+      gs_tree_type(gs_tree_operand(exp, 1)) != NULL)
+    ty_idx1 = Get_TY (gs_tree_type(gs_tree_operand (exp, 1)));
+  else
+    ty_idx1 = MTYPE_To_TY(MTYPE_V);
+
+  if (gs_tree_operand(exp, 2) != NULL &&
+      gs_tree_type(gs_tree_operand(exp, 2)) != NULL)
+    ty_idx2 = Get_TY (gs_tree_type(gs_tree_operand (exp, 2)));
+  else
+    ty_idx2 = MTYPE_To_TY(MTYPE_V);
+
+  if (gs_tree_type(exp) != NULL)
+    ty_idx = Get_TY (gs_tree_type(exp));
+  else
+    ty_idx = MTYPE_To_TY(MTYPE_V);
+
+#ifdef KEY // bug 2645
+  wn0 = WGEN_Expand_Expr (gs_tree_operand (exp, 0));
+#else // !KEY
+  wn0 = WGEN_Expand_Expr_With_Sequence_Point (gs_tree_operand (exp, 0),
+						   Boolean_type);
+#endif // !KEY
+
+#ifdef TARG_ST
+  /* (cbr) pro-release-1-9-0-B/26 select test is always a boolean */
+  TY_IDX test_idx = TY_mtype(Get_TY(gs_tree_type(gs_tree_operand(exp,0))));
+  if (MTYPE_is_longlong(test_idx))
+    wn0 = WN_Cvt(test_idx, Boolean_type, wn0);
+#endif // TARG_ST
+
+  if (TY_mtype (ty_idx)  == MTYPE_V ||
+#ifdef TARG_ST
+      !need_result ||
+#endif // TARG_ST
+      TY_mtype (ty_idx1) == MTYPE_V ||
+      TY_mtype (ty_idx2) == MTYPE_V) {
+
+#ifdef TARG_ST
+    ST *temp_st = NULL;
+	if (need_result) {
+      temp_st = Gen_Temp_Symbol (ty_idx, ".tmp");
+    }
+    voided_cond = TRUE;
+#endif // TARG_ST
+
+    WN *then_block = WN_CreateBlock ();
+    WN *else_block = WN_CreateBlock ();
+    WN *if_stmt    = WN_CreateIf (wn0, then_block, else_block);
+
+#ifdef KEY
+    SRCPOS if_stmt_srcpos = Get_Srcpos();
+    BOOL initialize = FALSE;
+    if (guard_vars_to_be_initialized.empty()) {
+      guard_vars_to_be_initialized.push_back (NULL);
+      initialize = TRUE;
+    }
+    // Bug 11937: Generate guard variables where necessary. (See
+    // explanation below).
+    //
+    // We may need to generate initializations for guard variables,
+    // so write out the IF statement at the end.
+    
+    // "then" statement
+    WGEN_Stmt_Push (then_block, wgen_stmk_if_then, Get_Srcpos());
+    WGEN_Guard_Var_Push();
+
+#ifdef TARG_ST
+    Push_Temp_Cleanup (gs_tree_operand (exp, 1), false);
+    /* (cbr) pro-release-1-9-0-B/6 need if throw_expr part of the conditiol assignment */
+    wn1 = WGEN_Expand_Expr (gs_tree_operand (exp, 1), need_result);
+#endif // TARG_ST
+
+    wn1 = WGEN_Expand_Expr (gs_tree_operand (exp, 1), FALSE);
+    gs_t guard_var1 = WGEN_Guard_Var_Pop();
+
+    if (wn1) {
+#ifdef TARG_ST
+      if (need_result) {
+        wn1 = WN_Stid (TY_mtype(ty_idx), 0, temp_st, ty_idx, wn1);
+        WGEN_Stmt_Append (wn1, Get_Srcpos ());
+      } else {
+        wn1 = WGEN_Append_Expr_Stmt (wn1);
+      }
+#else // !TARG_ST
+      wn1 = WN_CreateEval (wn1);
+      WGEN_Stmt_Append (wn1, Get_Srcpos());
+#endif // !TARG_ST
+    }
+
+#ifdef TARG_ST
+    Do_Temp_Cleanups (gs_tree_operand (exp, 1));
+#endif // TARG_ST
+   
+    WGEN_Stmt_Pop (wgen_stmk_if_then);
+    // Add guard variables if they are needed.
+    if (guard_var1 != NULL) {
+      WGEN_add_guard_var(guard_var1, then_block, FALSE);
+      guard_vars_to_be_initialized.push_back (guard_var1);
+    }
+    
+    // "else" statement
+    if (gs_tree_operand(exp, 2) != NULL) {
+      WGEN_Stmt_Push (else_block, wgen_stmk_if_else, Get_Srcpos());
+      WGEN_Guard_Var_Push();
+
+#ifdef TARG_ST
+      Push_Temp_Cleanup (gs_tree_operand (exp, 2), false);
+      /* (cbr) need if throw_expr part of the conditiol assignment */
+      wn2 = WGEN_Expand_Expr (gs_tree_operand (exp, 2), need_result);
+#else // !TARG_ST
+      wn2 = WGEN_Expand_Expr (gs_tree_operand (exp, 2), FALSE);
+#endif // !TARG_ST
+
+      gs_t guard_var2 = WGEN_Guard_Var_Pop();
+      if (wn2) {
+#ifdef TARG_ST
+        if (need_result) {
+          wn2 = WN_Stid (TY_mtype(ty_idx), 0, temp_st, ty_idx, wn2);
+          WGEN_Stmt_Append (wn2, Get_Srcpos ());
+        } else {
+          wn2 = WGEN_Append_Expr_Stmt (wn2);
+        }
+#else // !TARG_ST
+        wn2 = WN_CreateEval (wn2);
+        WGEN_Stmt_Append (wn2, Get_Srcpos());
+#endif // !TARG_ST
+      }
+
+#ifdef TARG_ST
+      Do_Temp_Cleanups (gs_tree_operand (exp, 2));
+#endif // TARG_ST
+
+      WGEN_Stmt_Pop (wgen_stmk_if_else);
+      // Add guard variables if they are needed.
+      if (guard_var2 != NULL) {
+        WGEN_add_guard_var(guard_var2, else_block, FALSE);
+        guard_vars_to_be_initialized.push_back (guard_var2);
+      }
+    }
+
+    if (initialize) {
+      Initialize_guard_vars ();
+    }
+
+    // Generate IF statement.
+    WGEN_Stmt_Append (if_stmt, if_stmt_srcpos);
+
+#else // !KEY
+
+    WGEN_Stmt_Append (if_stmt, Get_Srcpos());
+    WGEN_Stmt_Push (then_block, wgen_stmk_if_then, Get_Srcpos());
+    wn1 = WGEN_Expand_Expr (gs_tree_operand (exp, 1), FALSE);
+    if (wn1) {
+      wn1 = WN_CreateEval (wn1);
+      WGEN_Stmt_Append (wn1, Get_Srcpos());
+    }
+    WGEN_Stmt_Pop (wgen_stmk_if_then);
+    if (gs_tree_operand(exp, 2) != NULL) { 
+      WGEN_Stmt_Push (else_block, wgen_stmk_if_else, Get_Srcpos());
+      wn2 = WGEN_Expand_Expr (gs_tree_operand (exp, 2), FALSE);
+      if (wn2) {
+        wn2 = WN_CreateEval (wn2);
+        WGEN_Stmt_Append (wn2, Get_Srcpos());
+      }
+      WGEN_Stmt_Pop (wgen_stmk_if_else);
+    }
+#endif // !KEY
+
+  }	else {
+
+#ifdef KEY
+    BOOL initialize = FALSE;
+    if (guard_vars_to_be_initialized.empty()) {
+      guard_vars_to_be_initialized.push_back (NULL);
+      initialize = TRUE;
+    }
+
+    // Prepare a guard variable for each part of the conditional, in case
+    // the conditional has a cleanup that is executed after the whole
+    // conditional expression is evaluated.  The guard variable ensures
+    // that a cleanup is executed only if its part of the conditional is
+    // executed.
+    WGEN_Guard_Var_Push();
+    wn1 = WGEN_Expand_Expr_With_Sequence_Point (gs_tree_operand (exp, 1),
+      				     TY_mtype (ty_idx),
+      				     target_wn);
+    gs_t guard_var1 = WGEN_Guard_Var_Pop();
+    
+    WGEN_Guard_Var_Push();
+    wn2 = WGEN_Expand_Expr_With_Sequence_Point (gs_tree_operand (exp, 2),
+      				     TY_mtype (ty_idx),
+      				     target_wn);
+    gs_t guard_var2 = WGEN_Guard_Var_Pop();
+    
+    // Add guard variables if they are needed.
+    if (guard_var1 != NULL) {
+      WGEN_add_guard_var(guard_var1, wn1);
+      guard_vars_to_be_initialized.push_back (guard_var1);
+    }
+    if (guard_var2 != NULL) {
+      WGEN_add_guard_var(guard_var2, wn2);
+      guard_vars_to_be_initialized.push_back (guard_var2);
+    }
+    if (initialize) {
+      Initialize_guard_vars ();
+    }
+
+#else // !KEY
+
+    wn1 = WGEN_Expand_Expr_With_Sequence_Point (gs_tree_operand (exp, 1),
+      				     TY_mtype (ty_idx));
+    wn2 = WGEN_Expand_Expr_With_Sequence_Point (gs_tree_operand (exp, 2),
+					     TY_mtype (ty_idx));
+#endif // !KEY
+
+#ifdef TARG_ST
+    /* (cbr) need to propagate field from cond result */
+    /* astpdx gi10.c */
+    if (field_id) {
+      ty_idx = component_ty_idx;
+      TYPE_ID desc = is_bit_field ? MTYPE_BS : TY_mtype(ty_idx);
+    
+      WN_offset(wn1) = WN_offset(wn1)+component_offset;
+      WN_set_field_id(wn1, field_id);
+      WN_set_rtype(wn1, Widen_Mtype(TY_mtype(ty_idx)));
+      WN_set_desc (wn1, desc);
+      WN_offset(wn2) = WN_offset(wn2)+component_offset;
+      WN_set_field_id(wn2, field_id);
+      WN_set_rtype(wn2, Widen_Mtype(TY_mtype(ty_idx)));
+      WN_set_desc (wn2, desc);
+    }
+#endif // TARG_ST
+
+    wn  = WN_CreateExp3 (OPR_CSELECT, Mtype_comparison (TY_mtype (ty_idx)),
+      	   MTYPE_V, wn0, wn1, wn2);
+    Set_PU_has_very_high_whirl (Get_Current_PU ());
+
+  }
+
+#ifdef TARG_ST
+  FmtAssert(wn != NULL || voided_cond, ("NULL WN for GS_COND_EXPR"));
+#else // !TARG_ST
+  FmtAssert(wn != NULL ||
+            TY_mtype(ty_idx) == MTYPE_V ||
+            TY_mtype(ty_idx) == MTYPE_M,
+            ("NULL WN for GS_COND_EXPR"));
+#endif // !TARG_ST
+
+  return wn;
+}
+
+
 WN * 
 WGEN_Expand_Expr (gs_t exp,
 		  bool need_result,
@@ -4934,7 +5206,6 @@ WGEN_Expand_Expr (gs_t exp,
 #endif
 #ifdef TARG_ST
   FmtAssert(! is_aggr_init_via_ctor, ("Unexpected is_aggr_init_via_ctor"));
-  bool voided_cond = FALSE;
 #endif
   gs_code_t tmp_code;
 
@@ -6815,221 +7086,13 @@ WGEN_Expand_Expr (gs_t exp,
        break;
 
     case GS_COND_EXPR:
-      {
-        TY_IDX ty_idx1, ty_idx2;
-	if (gs_tree_operand(exp, 1) != NULL &&
-	    gs_tree_type(gs_tree_operand(exp, 1)) != NULL)
-	  ty_idx1 = Get_TY (gs_tree_type(gs_tree_operand (exp, 1)));
-	else ty_idx1 = MTYPE_To_TY(MTYPE_V);
-	if (gs_tree_operand(exp, 2) != NULL &&
-	    gs_tree_type(gs_tree_operand(exp, 2)) != NULL)
-	  ty_idx2 = Get_TY (gs_tree_type(gs_tree_operand (exp, 2)));
-	else ty_idx2 = MTYPE_To_TY(MTYPE_V);
-	if (gs_tree_type(exp) != NULL)
-	  ty_idx = Get_TY (gs_tree_type(exp));
-	else ty_idx = MTYPE_To_TY(MTYPE_V);
-#ifdef KEY // bug 2645
-	wn0 = WGEN_Expand_Expr (gs_tree_operand (exp, 0));
-#else
-	wn0 = WGEN_Expand_Expr_With_Sequence_Point (gs_tree_operand (exp, 0),
-						   Boolean_type);
-#endif
-#ifdef TARG_ST
-        /* (cbr) pro-release-1-9-0-B/26 select test is always a boolean */
-        TY_IDX test_idx = TY_mtype(Get_TY(gs_tree_type(gs_tree_operand(exp,0))));
-        if (MTYPE_is_longlong(test_idx))
-          wn0 = WN_Cvt(test_idx, Boolean_type, wn0);
-#endif
-
-
-	if (TY_mtype (ty_idx)  == MTYPE_V ||
-#ifdef TARG_ST
-	    ! need_result ||
-#endif
-            TY_mtype (ty_idx1) == MTYPE_V ||
-            TY_mtype (ty_idx2) == MTYPE_V) {
-#ifdef TARG_ST
-	  ST *temp_st = NULL;
-	  if (need_result) {
-	    temp_st = Gen_Temp_Symbol (ty_idx, ".tmp");
-	  }
-	  voided_cond = TRUE;
-#endif
-	  WN *then_block = WN_CreateBlock ();
-	  WN *else_block = WN_CreateBlock ();
-	  WN *if_stmt    = WN_CreateIf (wn0, then_block, else_block);
-#ifdef KEY
-	  SRCPOS if_stmt_srcpos = Get_Srcpos();
-	  BOOL initialize = FALSE;
-	  if (guard_vars_to_be_initialized.empty()) {
-	    guard_vars_to_be_initialized.push_back (NULL);
-	    initialize = TRUE;
-	  }
-	  // Bug 11937: Generate guard variables where necessary. (See
-	  // explanation below).
-	  //
-	  // We may need to generate initializations for guard variables,
-	  // so write out the IF statement at the end.
-
-	  // "then" statement
-	  WGEN_Stmt_Push (then_block, wgen_stmk_if_then, Get_Srcpos());
-	  WGEN_Guard_Var_Push();
-#ifdef TARG_ST
-	  Push_Temp_Cleanup (gs_tree_operand (exp, 1), false);
-          /* (cbr) pro-release-1-9-0-B/6 need if throw_expr part of the conditiol assignment */
-	  wn1 = WGEN_Expand_Expr (gs_tree_operand (exp, 1), need_result);
-#else
-
-#endif
-	  wn1 = WGEN_Expand_Expr (gs_tree_operand (exp, 1), FALSE);
-	  gs_t guard_var1 = WGEN_Guard_Var_Pop();
-	  if (wn1) {
-#ifdef TARG_ST
-	    if (need_result) {
-	      wn1 = WN_Stid (TY_mtype(ty_idx), 0, temp_st, ty_idx, wn1);
-	      WGEN_Stmt_Append (wn1, Get_Srcpos ());
-	    } else {
-	      wn1 = WGEN_Append_Expr_Stmt (wn1);
-	    }
-#else
-	    wn1 = WN_CreateEval (wn1);
-	    WGEN_Stmt_Append (wn1, Get_Srcpos());
-#endif
-	  }
-#ifdef TARG_ST
-	  Do_Temp_Cleanups (gs_tree_operand (exp, 1));
-#endif
-	  WGEN_Stmt_Pop (wgen_stmk_if_then);
-	  // Add guard variables if they are needed.
-	  if (guard_var1 != NULL) {
-	    WGEN_add_guard_var(guard_var1, then_block, FALSE);
-	    guard_vars_to_be_initialized.push_back (guard_var1);
-	  }
-
-	  // "else" statement
-	  if (gs_tree_operand(exp, 2) != NULL) {
-	    WGEN_Stmt_Push (else_block, wgen_stmk_if_else, Get_Srcpos());
-	    WGEN_Guard_Var_Push();
-#ifdef TARG_ST
-	    Push_Temp_Cleanup (gs_tree_operand (exp, 2), false);
-	    /* (cbr) need if throw_expr part of the conditiol assignment */
-	    wn2 = WGEN_Expand_Expr (gs_tree_operand (exp, 2), need_result);
-#else
-	    wn2 = WGEN_Expand_Expr (gs_tree_operand (exp, 2), FALSE);
-#endif
-	    gs_t guard_var2 = WGEN_Guard_Var_Pop();
-	    if (wn2) {
-#ifdef TARG_ST
-	      if (need_result) {
-		wn2 = WN_Stid (TY_mtype(ty_idx), 0, temp_st, ty_idx, wn2);
-		WGEN_Stmt_Append (wn2, Get_Srcpos ());
-	      } else {
-		wn2 = WGEN_Append_Expr_Stmt (wn2);
-	      }
-#else
-	      wn2 = WN_CreateEval (wn2);
-	      WGEN_Stmt_Append (wn2, Get_Srcpos());
-#endif
-	    }
-#ifdef TARG_ST
-	    Do_Temp_Cleanups (gs_tree_operand (exp, 2));
-#endif
-	    WGEN_Stmt_Pop (wgen_stmk_if_else);
-	    // Add guard variables if they are needed.
-	    if (guard_var2 != NULL) {
-	      WGEN_add_guard_var(guard_var2, else_block, FALSE);
-	      guard_vars_to_be_initialized.push_back (guard_var2);
-	    }
-	  }
-	  if (initialize) {
-	    Initialize_guard_vars ();
-	  }
-	  // Generate IF statement.
-	  WGEN_Stmt_Append (if_stmt, if_stmt_srcpos);
-#else
-	  WGEN_Stmt_Append (if_stmt, Get_Srcpos());
-	  WGEN_Stmt_Push (then_block, wgen_stmk_if_then, Get_Srcpos());
-	  wn1 = WGEN_Expand_Expr (gs_tree_operand (exp, 1), FALSE);
-	  if (wn1) {
-	    wn1 = WN_CreateEval (wn1);
-	    WGEN_Stmt_Append (wn1, Get_Srcpos());
-	  }
-	  WGEN_Stmt_Pop (wgen_stmk_if_then);
-	  if (gs_tree_operand(exp, 2) != NULL) { 
-	    WGEN_Stmt_Push (else_block, wgen_stmk_if_else, Get_Srcpos());
-	    wn2 = WGEN_Expand_Expr (gs_tree_operand (exp, 2), FALSE);
-	    if (wn2) {
-	      wn2 = WN_CreateEval (wn2);
-	      WGEN_Stmt_Append (wn2, Get_Srcpos());
-	    }
-	    WGEN_Stmt_Pop (wgen_stmk_if_else);
-	  }
-#endif
-        }
-	else {
-#ifdef KEY
-	  BOOL initialize = FALSE;
-	  if (guard_vars_to_be_initialized.empty()) {
-	    guard_vars_to_be_initialized.push_back (NULL);
-	    initialize = TRUE;
-	  }
-	  // Prepare a guard variable for each part of the conditional, in case
-	  // the conditional has a cleanup that is executed after the whole
-	  // conditional expression is evaluated.  The guard variable ensures
-	  // that a cleanup is executed only if its part of the conditional is
-	  // executed.
-	  WGEN_Guard_Var_Push();
-	  wn1 = WGEN_Expand_Expr_With_Sequence_Point (gs_tree_operand (exp, 1),
-						     TY_mtype (ty_idx),
-						     target_wn);
-	  gs_t guard_var1 = WGEN_Guard_Var_Pop();
-
-	  WGEN_Guard_Var_Push();
-	  wn2 = WGEN_Expand_Expr_With_Sequence_Point (gs_tree_operand (exp, 2),
-						     TY_mtype (ty_idx),
-						     target_wn);
-	  gs_t guard_var2 = WGEN_Guard_Var_Pop();
-
-	  // Add guard variables if they are needed.
-	  if (guard_var1 != NULL) {
-	    WGEN_add_guard_var(guard_var1, wn1);
-	    guard_vars_to_be_initialized.push_back (guard_var1);
-	  }
-	  if (guard_var2 != NULL) {
-	    WGEN_add_guard_var(guard_var2, wn2);
-	    guard_vars_to_be_initialized.push_back (guard_var2);
-	  }
-	  if (initialize) {
-	    Initialize_guard_vars ();
-	  }
-#else
-	  wn1 = WGEN_Expand_Expr_With_Sequence_Point (gs_tree_operand (exp, 1),
-						     TY_mtype (ty_idx));
-	  wn2 = WGEN_Expand_Expr_With_Sequence_Point (gs_tree_operand (exp, 2),
-						     TY_mtype (ty_idx));
-#endif
-#ifdef TARG_ST
-          /* (cbr) need to propagate field from cond result */
-          /* astpdx gi10.c */
-          if (field_id) {
-            ty_idx = component_ty_idx;
-            TYPE_ID desc = is_bit_field ? MTYPE_BS : TY_mtype(ty_idx);
-
-            WN_offset(wn1) = WN_offset(wn1)+component_offset;
-            WN_set_field_id(wn1, field_id);
-            WN_set_rtype(wn1, Widen_Mtype(TY_mtype(ty_idx)));
-            WN_set_desc (wn1, desc);
-            WN_offset(wn2) = WN_offset(wn2)+component_offset;
-            WN_set_field_id(wn2, field_id);
-            WN_set_rtype(wn2, Widen_Mtype(TY_mtype(ty_idx)));
-            WN_set_desc (wn2, desc);
-          }
-#endif
-	  wn  = WN_CreateExp3 (OPR_CSELECT, Mtype_comparison (TY_mtype (ty_idx)),
-			   MTYPE_V, wn0, wn1, wn2);
-	  Set_PU_has_very_high_whirl (Get_Current_PU ());
-        }
-      }
+       wn = WGEN_Expand_Cond_Expr(exp,
+                                  need_result,
+                                  component_ty_idx,
+                                  component_offset,
+                                  field_id ,
+                                  is_bit_field,
+                                  target_wn);
       break;
 
     case GS_INIT_EXPR:
@@ -10252,8 +10315,8 @@ WGEN_Expand_Expr (gs_t exp,
                code == GS_FOR_STMT      || // ST
                code == GS_RETURN_EXPR   || // ST
                code == GS_ASM_EXPR      || // ST
-	       code == GS_PRAGMA_STMT   ||
-               (code == GS_COND_EXPR && voided_cond),
+	       code == GS_PRAGMA_STMT ||
+           code == GS_COND_EXPR,
 	       ("WGEN_Expand_Expr: NULL WHIRL tree for %s",
 		gs_code_name(code)));
 #else
@@ -10270,8 +10333,7 @@ WGEN_Expand_Expr (gs_t exp,
 	       code == GS_AGGR_INIT_EXPR ||
 	       code == GS_STATEMENT_LIST ||
 	       code == GS_CLEANUP_POINT_EXPR ||
-               ((code == GS_COND_EXPR) && 
-	        (TY_mtype(ty_idx) == MTYPE_V || TY_mtype(ty_idx) == MTYPE_M)),
+           code == GS_COND_EXPR,
 	       ("WGEN_Expand_Expr: NULL WHIRL tree for %s",
 		gs_code_name(code)));
 #endif
