@@ -597,7 +597,6 @@ extern WN *WGEN_Cast(TYPE_ID mtype, TYPE_ID kid_mtype, WN *kid);
 extern TYPE_ID WGEN_Promoted_Type(TYPE_ID mtype);
 extern TYPE_ID WGEN_Promoted_Binary_Type(TYPE_ID mtype1, TYPE_ID mtype2);
 #endif
-#ifdef TARG_ST
 // [CG]: Helper for appending an  expression statement.
 // Generate EVAL(wn) or directly the wn when
 // it is a statement node.
@@ -610,7 +609,6 @@ static WN *WGEN_Append_Expr_Stmt(WN *wn)
   return wn;
 }
 
-#endif
 
 // Round up an object size to the size it would require in the parameter
 // area on the stack.  This is defined to be the difference between its
@@ -4921,10 +4919,7 @@ WN *WGEN_Expand_Cond_Expr(gs_t exp,
                           UINT32 field_id ,
                           bool is_bit_field,
                           WN *target_wn) {
-#ifdef TARG_ST
   bool voided_cond = FALSE;
-#endif
-
   WN *wn = NULL;
   WN *wn0 = NULL;
   WN *wn1 = NULL;
@@ -4963,19 +4958,19 @@ WN *WGEN_Expand_Cond_Expr(gs_t exp,
 #endif // TARG_ST
 
   if (TY_mtype (ty_idx)  == MTYPE_V ||
-#ifdef TARG_ST
       !need_result ||
-#endif // TARG_ST
       TY_mtype (ty_idx1) == MTYPE_V ||
       TY_mtype (ty_idx2) == MTYPE_V) {
 
-#ifdef TARG_ST
+    if (TY_mtype (ty_idx) == MTYPE_V) {
+        need_result = FALSE;
+    }
+
     ST *temp_st = NULL;
 	if (need_result) {
       temp_st = Gen_Temp_Symbol (ty_idx, ".tmp");
     }
     voided_cond = TRUE;
-#endif // TARG_ST
 
     WN *then_block = WN_CreateBlock ();
     WN *else_block = WN_CreateBlock ();
@@ -5000,25 +4995,19 @@ WN *WGEN_Expand_Cond_Expr(gs_t exp,
 
 #ifdef TARG_ST
     Push_Temp_Cleanup (gs_tree_operand (exp, 1), false);
+#endif // TARG_ST
     /* (cbr) pro-release-1-9-0-B/6 need if throw_expr part of the conditiol assignment */
     wn1 = WGEN_Expand_Expr (gs_tree_operand (exp, 1), need_result);
-#endif // TARG_ST
 
-    wn1 = WGEN_Expand_Expr (gs_tree_operand (exp, 1), FALSE);
     gs_t guard_var1 = WGEN_Guard_Var_Pop();
 
     if (wn1) {
-#ifdef TARG_ST
-      if (need_result) {
+      if (need_result && TY_mtype (ty_idx1) != MTYPE_V) {
         wn1 = WN_Stid (TY_mtype(ty_idx), 0, temp_st, ty_idx, wn1);
         WGEN_Stmt_Append (wn1, Get_Srcpos ());
       } else {
         wn1 = WGEN_Append_Expr_Stmt (wn1);
       }
-#else // !TARG_ST
-      wn1 = WN_CreateEval (wn1);
-      WGEN_Stmt_Append (wn1, Get_Srcpos());
-#endif // !TARG_ST
     }
 
 #ifdef TARG_ST
@@ -5039,25 +5028,18 @@ WN *WGEN_Expand_Cond_Expr(gs_t exp,
 
 #ifdef TARG_ST
       Push_Temp_Cleanup (gs_tree_operand (exp, 2), false);
+#endif // TARG_ST
       /* (cbr) need if throw_expr part of the conditiol assignment */
       wn2 = WGEN_Expand_Expr (gs_tree_operand (exp, 2), need_result);
-#else // !TARG_ST
-      wn2 = WGEN_Expand_Expr (gs_tree_operand (exp, 2), FALSE);
-#endif // !TARG_ST
 
       gs_t guard_var2 = WGEN_Guard_Var_Pop();
       if (wn2) {
-#ifdef TARG_ST
-        if (need_result) {
+        if (need_result && TY_mtype (ty_idx2) != MTYPE_V) {
           wn2 = WN_Stid (TY_mtype(ty_idx), 0, temp_st, ty_idx, wn2);
           WGEN_Stmt_Append (wn2, Get_Srcpos ());
         } else {
           wn2 = WGEN_Append_Expr_Stmt (wn2);
         }
-#else // !TARG_ST
-        wn2 = WN_CreateEval (wn2);
-        WGEN_Stmt_Append (wn2, Get_Srcpos());
-#endif // !TARG_ST
       }
 
 #ifdef TARG_ST
@@ -5078,6 +5060,11 @@ WN *WGEN_Expand_Cond_Expr(gs_t exp,
 
     // Generate IF statement.
     WGEN_Stmt_Append (if_stmt, if_stmt_srcpos);
+
+    // Generate loading result if needed
+    if (need_result) {
+      wn = WN_Ldid (TY_mtype(ty_idx), 0, temp_st, ty_idx);
+    }
 
 #else // !KEY
 
@@ -5171,14 +5158,7 @@ WN *WGEN_Expand_Cond_Expr(gs_t exp,
 
   }
 
-#ifdef TARG_ST
   FmtAssert(wn != NULL || voided_cond, ("NULL WN for GS_COND_EXPR"));
-#else // !TARG_ST
-  FmtAssert(wn != NULL ||
-            TY_mtype(ty_idx) == MTYPE_V ||
-            TY_mtype(ty_idx) == MTYPE_M,
-            ("NULL WN for GS_COND_EXPR"));
-#endif // !TARG_ST
 
   return wn;
 }
