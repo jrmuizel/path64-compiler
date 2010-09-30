@@ -11232,7 +11232,7 @@ static boolean subscript_opr_handler(opnd_type		*result_opnd,
             exp_desc->array_elt = TRUE;
          }
 
-         if (ok) {
+         if (ok && !in_implied_do && !within_forall_construct) {
             ok = check_array_bounds(ir_idx);
          }
 
@@ -11645,7 +11645,9 @@ static boolean substring_opr_handler(opnd_type		*result_opnd,
 
       COPY_OPND(exp_desc->char_len, IL_OPND(list_idx));
 
-      ok &= check_substring_bounds(ir_idx);
+      if (!in_implied_do && !within_forall_construct) {
+	  ok &= check_substring_bounds(ir_idx);
+      }
 
       if (ok           &&
           IR_FLD_L(ir_idx) == CN_Tbl_Idx &&
