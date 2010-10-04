@@ -4,7 +4,7 @@ OUTPUT_FORMAT("elf32-i386", "elf32-i386",
 OUTPUT_ARCH(i386)
 ENTRY(_start)
 SEARCH_DIR("/usr/i486-linux-gnu/lib"); SEARCH_DIR("/usr/local/lib"); SEARCH_DIR("/lib"); SEARCH_DIR("/usr/lib");
-INPUT(-lhugetlbfs_open64);
+INPUT(-lhugetlbfs-psc);
 /* Do we need any of these for elf?
    __DYNAMIC = 0;    */
 PHDRS
@@ -30,7 +30,7 @@ SECTIONS
   .interp         : { *(.interp) } :htext :interp
   .note.SuSE      : { *(.note.SuSE) } :htext :note
   .note.ABI-tag	  : { *(.note.ABI-tag) } :htext :note
-  .note.gnu.build-id : { *(.note.gnu.build-id) } :htext :note
+  .note.gnu.build-id : { *(.note.gnu.build-id) } :text :note
   .hash           : { *(.hash) } :htext
   .dynsym         : { *(.dynsym) } :htext
   .dynstr         : { *(.dynstr) } :htext
@@ -94,7 +94,7 @@ SECTIONS
   /* Exception handling  */
   .eh_frame       : /* ONLY_IF_RW */ { KEEP (*(.eh_frame)) } :hdata
   .gcc_except_table   : /* ONLY_IF_RW */ { KEEP (*(.gcc_except_table)) *(.gcc_except_table.*) } :hdata
-  . = ALIGN (0x1000000); /* Align to 16MB (4MB hugepage size, plus some slack in case of larger hugepages in future */
+  . = ALIGN (0x40000000); /* Align to 1G */
 
   /* Thread Local Storage sections  */
   .tdata	  : { *(.tdata .tdata.* .gnu.linkonce.td.*) } :hdata

@@ -2260,7 +2260,7 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
     }
 
     if (add_huge_lib) {
-        add_library(args, "hugetlbfs_open64");
+        add_library(args, "hugetlbfs-psc");
     }
 #endif /* defined(BUILD_OS_DARWIN) */
 }

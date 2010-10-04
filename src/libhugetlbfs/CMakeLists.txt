@@ -12,29 +12,59 @@ ADD_DEFINITIONS(
 	-DM_PAGE
 	-fPIC
 )
+
+
 IF(PATH64_ENABLE_HUGEPAGES)
-ADD_LIBRARY(hugetlbfs-psc SHARED ${PATHSCALE_LIBHUGETLBFS_SRC})
-ADD_LIBRARY(hugetlbfs-psc-static STATIC ${PATHSCALE_LIBHUGETLBFS_SRC})
-SET_TARGET_PROPERTIES(hugetlbfs-psc-static PROPERTIES OUTPUT_NAME "hugetlbfs-psc")
-set_property(TARGET hugetlbfs-psc PROPERTY SOVERSION 1)
-install(TARGETS hugetlbfs-psc hugetlbfs-psc-static
-        LIBRARY DESTINATION ${PATH64_LIB_PATH}
-        ARCHIVE DESTINATION ${PATH64_LIB_PATH})
+    path64_set_multitarget_sources(hugetlbfs-psc COMMON ${PATHSCALE_LIBHUGETLBFS_SRC})
+    path64_set_multitarget_property_(hugetlbfs-psc COMPILE_FLAGS -fPIC)
+    path64_add_multitarget_library(hugetlbfs-psc SHARED)
 
+    path64_set_multitarget_sources(hugetlbfs-psc-static COMMON ${PATHSCALE_LIBHUGETLBFS_SRC})
+    path64_set_multitarget_property_(hugetlbfs-ps-static OUTPUT_NAME "hugetlbfs-psc")
+    path64_add_multitarget_library(hugetlbfs-psc-static STATIC)
 
-IF(PATH64_ENABLE_PROFILING)
-add_library(hugetlbfs-psc_p STATIC ${PATHSCALE_LIBHUGETLBFS_SRC})
-set_property(TARGET hugetlbfs-psc_p PROPERTY COMPILE_FLAGS -pg)
-install(TARGETS hugetlbfs-psc_p
-        LIBRARY DESTINATION ${PATH64_LIB_PATH}
-        ARCHIVE DESTINATION ${PATH64_LIB_PATH})
+    IF(PATH64_ENABLE_PROFILING)
+        path64_set_multitarget_sources(hugetlbfs-psc_p COMMON ${PATHSCALE_LIBHUGETLBFS_SRC})
+        path64_set_multitarget_property_(hugetlbfs-psc_p COMPILE_FLAGS -pg)
+        path64_add_multitarget_library(hugetlbfs-psc_p STATIC)
+    ENDIF(PATH64_ENABLE_PROFILING)
 
-ENDIF(PATH64_ENABLE_PROFILING)
+    # linker scripts
+    set(linker_scripts)
+    foreach(targ ${PATH64_ENABLE_TARGETS})
+        set(arch ${_PATH64_TARGET_ARCH_${targ}})
+        set(bits ${_PATH64_TARGET_BITS_${targ}})
 
+        add_custom_command(OUTPUT ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf.xB
+                           COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                                   ${CMAKE_CURRENT_SOURCE_DIR}/ldscripts/elf_${targ}.xB
+                                   ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf.xB
+                           DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/ldscripts/elf_${targ}.xB)
 
-# TODO : Install these linker scripts
-# ldscripts/elf_i386.xBDT
-# ldscripts/elf_i386.xB
-# ldscripts/elf_i386_1G.xBDT
-install(FILES ldscripts/elf_x86_64.xB ldscripts/elf_x86_64_1G.xBDT ldscripts/elf_x86_64.xBDT DESTINATION ${PATH64_LIB_PATH}/lib)
+        add_custom_command(OUTPUT ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf_1G.xBDT
+                           COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                                   ${CMAKE_CURRENT_SOURCE_DIR}/ldscripts/elf_${targ}_1G.xBDT
+                                   ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf_1G.xBDT
+                           DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/ldscripts/elf_${targ}_1G.xBDT)
+
+        add_custom_command(OUTPUT ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf.xBDT
+                           COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                                   ${CMAKE_CURRENT_SOURCE_DIR}/ldscripts/elf_${targ}.xBDT
+                                   ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf.xBDT
+                           DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/ldscripts/elf_${targ}.xBDT)
+
+        set(l_scripts
+                    ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf.xB
+                    ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf_1G.xBDT
+                    ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf.xBDT)
+
+        install(FILES ${l_scripts}
+                DESTINATION ${PATH64_LIB_PATH}/${arch}/${bits})
+
+        list(APPEND linker_scripts ${l_scripts})
+    endforeach()
+
+    add_custom_target(hugetlbfs-scipts ALL DEPENDS ${linker_scripts})
+    add_dependencies(compiler-stage-libs-C hugetlbfs-scripts)
+
 ENDIF(PATH64_ENABLE_HUGEPAGES)
