@@ -424,7 +424,13 @@ function(path64_add_library_for_target name target type)
                 endif()
             endforeach()          
 
-            add_custom_command(OUTPUT ${object_name}
+            # Getting additional object dependencies
+            get_property(obj_depends SOURCE ${src} PROPERTY OBJECT_DEPENDS)
+
+            # Getting additional object outputs
+            get_property(obj_outputs SOURCE ${src} PROPERTY OBJECT_OUTPUTS)
+
+            add_custom_command(OUTPUT ${object_name} ${obj_outputs}
                                COMMAND ${path64_compiler_${src_lang}} -c -o ${object_name}
                                        ${arch_flag}
                                        ${src_flags}
@@ -436,7 +442,7 @@ function(path64_add_library_for_target name target type)
                                        ${lang_flags}
                                        ${src}
                                        ${build_type_flags}
-                               DEPENDS ${src} ${header_deps})
+                               DEPENDS ${src} ${header_deps} ${obj_depends})
             list(APPEND objects ${object_name})
             list(FIND compiler-deps "compiler-stage-${src_lang}" res)
             if(res EQUAL -1)

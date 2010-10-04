@@ -925,6 +925,12 @@ SET(PATHSCALE_PATHFORTRAN_F_SRCS
 				"../libu/ieg/mips2ia.F"
 )
 
+set_property(SOURCE "../libfi/mathlb/ieee_exceptions.F90"
+             PROPERTY OBJECT_OUTPUTS "${CMAKE_CURRENT_BINARY_DIR}/IEEE_EXCEPTIONS.mod")
+
+set_property(SOURCE "../libfi/mathlb/ieee_arithmetic.F90"
+             PROPERTY OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/IEEE_EXCEPTIONS.mod")
+
 include(CheckFunctionExists)
 include(CheckLibraryExists)
 
