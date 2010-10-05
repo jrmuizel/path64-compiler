@@ -20,7 +20,7 @@ IF(PATH64_ENABLE_HUGEPAGES)
     path64_add_multitarget_library(hugetlbfs-psc SHARED)
 
     path64_set_multitarget_sources(hugetlbfs-psc-static COMMON ${PATHSCALE_LIBHUGETLBFS_SRC})
-    path64_set_multitarget_property_(hugetlbfs-ps-static OUTPUT_NAME "hugetlbfs-psc")
+    path64_set_multitarget_property_(hugetlbfs-psc-static OUTPUT_NAME "hugetlbfs-psc")
     path64_add_multitarget_library(hugetlbfs-psc-static STATIC)
 
     IF(PATH64_ENABLE_PROFILING)
@@ -35,28 +35,28 @@ IF(PATH64_ENABLE_HUGEPAGES)
         set(arch ${_PATH64_TARGET_ARCH_${targ}})
         set(bits ${_PATH64_TARGET_BITS_${targ}})
 
-        add_custom_command(OUTPUT ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf.xB
+        add_custom_command(OUTPUT ${Path64_BINARY_DIR}/lib/${arch}/${bits}/elf.xB
                            COMMAND ${CMAKE_COMMAND} -E copy_if_different
                                    ${CMAKE_CURRENT_SOURCE_DIR}/ldscripts/elf_${targ}.xB
-                                   ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf.xB
+                                   ${Path64_BINARY_DIR}/lib/${arch}/${bits}/elf.xB
                            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/ldscripts/elf_${targ}.xB)
 
-        add_custom_command(OUTPUT ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf_1G.xBDT
+        add_custom_command(OUTPUT ${Path64_BINARY_DIR}/lib/${arch}/${bits}/elf_1G.xBDT
                            COMMAND ${CMAKE_COMMAND} -E copy_if_different
                                    ${CMAKE_CURRENT_SOURCE_DIR}/ldscripts/elf_${targ}_1G.xBDT
-                                   ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf_1G.xBDT
+                                   ${Path64_BINARY_DIR}/lib/${arch}/${bits}/elf_1G.xBDT
                            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/ldscripts/elf_${targ}_1G.xBDT)
 
-        add_custom_command(OUTPUT ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf.xBDT
+        add_custom_command(OUTPUT ${Path64_BINARY_DIR}/lib/${arch}/${bits}/elf.xBDT
                            COMMAND ${CMAKE_COMMAND} -E copy_if_different
                                    ${CMAKE_CURRENT_SOURCE_DIR}/ldscripts/elf_${targ}.xBDT
-                                   ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf.xBDT
+                                   ${Path64_BINARY_DIR}/lib/${arch}/${bits}/elf.xBDT
                            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/ldscripts/elf_${targ}.xBDT)
 
         set(l_scripts
-                    ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf.xB
-                    ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf_1G.xBDT
-                    ${PATH64_STAGE_DIR}/lib/${arch}/${bits}/elf.xBDT)
+                    ${Path64_BINARY_DIR}/lib/${arch}/${bits}/elf.xB
+                    ${Path64_BINARY_DIR}/lib/${arch}/${bits}/elf_1G.xBDT
+                    ${Path64_BINARY_DIR}/lib/${arch}/${bits}/elf.xBDT)
 
         install(FILES ${l_scripts}
                 DESTINATION ${PATH64_LIB_PATH}/${arch}/${bits})
