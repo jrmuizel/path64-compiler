@@ -18,6 +18,7 @@ IF(PATH64_ENABLE_HUGEPAGES)
     path64_set_multitarget_sources(hugetlbfs-psc COMMON ${PATHSCALE_LIBHUGETLBFS_SRC})
     path64_set_multitarget_property_(hugetlbfs-psc COMPILE_FLAGS -fPIC)
     path64_add_multitarget_library(hugetlbfs-psc SHARED)
+    path64_add_multitarget_dependencies(hugetlbfs-psc pscrt-static)
 
     path64_set_multitarget_sources(hugetlbfs-psc-static COMMON ${PATHSCALE_LIBHUGETLBFS_SRC})
     path64_set_multitarget_property_(hugetlbfs-psc-static OUTPUT_NAME "hugetlbfs-psc")
@@ -64,7 +65,7 @@ IF(PATH64_ENABLE_HUGEPAGES)
         list(APPEND linker_scripts ${l_scripts})
     endforeach()
 
-    add_custom_target(hugetlbfs-scipts ALL DEPENDS ${linker_scripts})
+    add_custom_target(hugetlbfs-scripts ALL DEPENDS ${linker_scripts})
     add_dependencies(compiler-stage-libs-C hugetlbfs-scripts)
 
 ENDIF(PATH64_ENABLE_HUGEPAGES)
