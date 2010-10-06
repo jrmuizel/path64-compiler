@@ -10016,8 +10016,16 @@ static void gen_bounds_check_call(char *var,
 #ifdef KEY /* Bug 8502 */
    int if_sh_idx =
 #endif /* KEY Bug 8502 */
+   /* Instead of using the start_sh_idx from above, one can just use
+    * curr_stmt_sh_idx and take SH_PREV_IDX of it. The end result will
+    * be the same since we only have "Before" insertions in here.
+    * The advantage of using curr_stmt_sh_idx instead is that when
+    * called during decl_semantics the stmt to check might be standalone
+    * without a stmt chain leading up to it and start_sh_idx would then
+    * be 0, causing a segfault in gen_if_stmt.
+    */
    gen_if_stmt(&cond_opnd,
-               SH_NEXT_IDX(start_sh_idx),
+               SH_PREV_IDX(curr_stmt_sh_idx),
                SH_PREV_IDX(end_sh_idx),
                NULL_IDX,
                NULL_IDX,
