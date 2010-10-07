@@ -130,8 +130,8 @@ static phase_info_t phase_info[] = {
    /* ffe is chosen by same letter as cfe */
    {'f',  0x0000000000010000LL,	"mfef77",PHASEPATH,	FALSE},	/* f_fe */
    {'f',  0x0000000000020000LL, "mfef77",PHASEPATH,     FALSE}, /* cppf_fe */
-   {'f',  0x0000000000040000LL,	"mfef95",PHASEPATH,	FALSE},	/* f90_fe */
-   {'f',  0x0000000000080000LL,	"mfef95",PHASEPATH,	FALSE},	/* cppf90_fe */
+   {'f',  0x0000000000040000LL,	"mfef95",PHASEPATH,	TRUE},	/* f90_fe */
+   {'f',  0x0000000000080000LL,	"mfef95",PHASEPATH,	TRUE},	/* cppf90_fe */
    {'f',  0x0000000000100000LL,	"gfec",PHASEPATH,	TRUE }, /* c_gfe */
    {'f',  0x0000000000200000LL,	"gfecc",PHASEPATH,	TRUE }, /* cplus_gfe */
 #ifdef KEY

@@ -68,6 +68,7 @@
 #include "file_utils.h"
 #include "main_defs.h"
 #include "option_names.h"
+#include "targets.h"
 
 #ifndef WCOREFLAG  
 #define WCOREFLAG WCOREFLG //osol compatibility
@@ -242,7 +243,7 @@ static void my_putenv(const char *name, const char *fmt, ...)
 char *
 get_binutils_lib_path(void)
 {
-	static const char *binutils_library_path = "../i686-pc-linux-gnu/" PSC_TARGET "/lib";
+	static const char *binutils_library_path = "../lib/";
 	char *my_path;
 	
 	asprintf(&my_path, "%s/%s", get_executable_dir(),
@@ -371,8 +372,9 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 		my_path = get_binutils_lib_path();
 		rld_path = get_phase_ld_library_path (phase);
 		
-		if (rld_path != 0)
-			asprintf(&my_path, "%s:%s", my_path, rld_path);
+		if (rld_path != 0) {
+			asprintf(&my_path, "%s:%s:%s/%s", my_path, rld_path, rld_path, current_target->abi_name);
+		}
 		
 		l_path = l32_path = my_path;
 		
