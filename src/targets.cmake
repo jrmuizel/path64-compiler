@@ -389,6 +389,20 @@ function(path64_add_library_for_target name target type)
                 list(APPEND incl_dirs_flags "-I${dir}")
             endforeach()
 
+            # Getting additional object dependencies
+            get_property(obj_depends_rel SOURCE ${src} PROPERTY OBJECT_DEPENDS)
+            set(obj_depends)
+            foreach(dep ${obj_depends_rel})
+                list(APPEND obj_depends ${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ}/${dep})
+            endforeach()
+
+            # Getting additional object outputs
+            get_property(obj_outputs_rel SOURCE ${src} PROPERTY OBJECT_OUTPUTS)
+            set(obj_outputs)
+            foreach(out ${obj_outputs_rel})
+                list(APPEND obj_outputs ${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ}/${out})
+            endforeach()
+
             # Getting full path to source
             set(oname ${src})
             if(NOT EXISTS ${src})
@@ -423,20 +437,6 @@ function(path64_add_library_for_target name target type)
                     break()
                 endif()
             endforeach()          
-
-            # Getting additional object dependencies
-            get_property(obj_depends_rel SOURCE ${src} PROPERTY OBJECT_DEPENDS)
-            set(obj_depends)
-            foreach(dep ${obj_depends_rel})
-                list(APPEND obj_depends ${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ}/${dep})
-            endforeach()
-
-            # Getting additional object outputs
-            get_property(obj_outputs_rel SOURCE ${src} PROPERTY OBJECT_OUTPUTS)
-            set(obj_outputs)
-            foreach(out ${obj_outputs_rel})
-                list(APPEND obj_outputs ${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ}/${out})
-            endforeach()
 
             add_custom_command(OUTPUT ${object_name} ${obj_outputs}
                                COMMAND ${path64_compiler_${src_lang}} -c -o ${object_name}
