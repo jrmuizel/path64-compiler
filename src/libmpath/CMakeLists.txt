@@ -106,7 +106,7 @@ path64_set_multitarget_sources(mpath-static x86_64
                                ${PATHSCALE_MPATH_SRCS_X64} ${PATHSCALE_MPATH_S_SRCS_X64})
 path64_set_multitarget_property_(mpath-static OUTPUT_NAME "mpath")
 path64_add_multitarget_library(mpath-static STATIC)
-path64_add_multitarget_dependencies(mpath-static pscrt-static)
+path64_add_multitarget_multitarget_dependencies(mpath-static pscrt-static)
 path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mpath-static)
 
 
@@ -128,9 +128,9 @@ endif()
 path64_multitarget_link_libraries(mpath m)
 path64_add_multitarget_library(mpath SHARED)
 if(PATH64_ENABLE_PSCRUNTIME)
-    path64_add_multitarget_dependencies(mpath compiler-rt unwind)
+    path64_add_multitarget_multitarget_dependencies(mpath compiler-rt unwind)
 endif()
-path64_add_multitarget_dependencies(mpath pscrt-static)
+path64_add_multitarget_multitarget_dependencies(mpath pscrt-static)
 path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mpath)
 
 

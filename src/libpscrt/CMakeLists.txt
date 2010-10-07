@@ -32,6 +32,7 @@ path64_set_multitarget_sources(pscrt-static "x86_64" ${pscrt_sources_x64})
 path64_set_multitarget_property_(pscrt-static COMPILE_FLAGS -fpic)
 path64_set_multitarget_property_(pscrt-static OUTPUT_NAME pscrt)
 path64_add_multitarget_library(pscrt-static STATIC)
+path64_add_dependencies_from_multitarget(compiler-stage-libs-C pscrt-static)
 
 
 # Profiling library
