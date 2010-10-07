@@ -340,7 +340,7 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 	}
 
 	if (forkpid == 0) {
-		char *my_path, *l_path, *l32_path, *nls_path, *env_path;
+		char *my_path, *l_path, *l32_path, *nls_path, *root_prefix;
 		
 		/* child */
 		/* if we want memory stats, we have to wait for
@@ -395,12 +395,12 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 		// Set up NLSPATH, for the Fortran front end.
 
 		nls_path = getenv("NLSPATH");
-		env_path = get_phase_dir(P_f90_fe);
+                root_prefix = directory_path(get_executable_dir());
 
 		if (nls_path) {
-		    my_putenv("NLSPATH", "%s:%s/%%N.cat", nls_path, env_path);
+		    my_putenv("NLSPATH", "%s:%s%s/%%N.cat", nls_path, root_prefix, LIBPATH);
 		} else {
-		    my_putenv("NLSPATH", "%s/%%N.cat", env_path);
+		    my_putenv("NLSPATH", "%s%s/%%N.cat", root_prefix, LIBPATH);
 		}
 
 		if (uses_message_system && getenv("ORIG_CMD_NAME") == NULL)

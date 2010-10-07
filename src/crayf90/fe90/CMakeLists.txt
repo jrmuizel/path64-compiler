@@ -62,17 +62,15 @@ path64_get_host_arch(host_arch)
 add_custom_command(
     OUTPUT cf95.cat
     COMMAND ${PATHSCALE_SOURCE_DIR}/linux/tools/caterr -c cf95.cat ${CMAKE_CURRENT_SOURCE_DIR}/cf95.msgs
-    COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/cf95.cat ${Path64_BINARY_DIR}/lib/${host_arch}
+    COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/cf95.cat ${Path64_BINARY_DIR}/lib
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/cf95.msgs
 )
 set_source_files_properties(cf95.cat PROPERTIES GENERATED 1)
 
-foreach(arch ${PATH64_ENABLE_ARCHES})
-    file(COPY cf95.msgs DESTINATION ${Path64_BINARY_DIR}/lib/${arch})
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cf95.cat DESTINATION ${PATH64_LIB_PATH}/${arch})
-    install(FILES cf95.msgs DESTINATION ${PATH64_LIB_PATH}/${arch})
-    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"cf95.msgs\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/pathf95.msgs\")")
-endforeach()
+file(COPY cf95.msgs DESTINATION ${Path64_BINARY_DIR}/lib)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cf95.cat DESTINATION ${PATH64_LIB_PATH})
+install(FILES cf95.msgs DESTINATION ${PATH64_LIB_PATH})
+install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"cf95.msgs\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/pathf95.msgs\")")
 
 add_custom_target(
     generate_cf95_cat
