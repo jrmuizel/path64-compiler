@@ -8,7 +8,6 @@ set(HEADERS
 	mm3dnow.h
 	mmintrin.h
 	mm_malloc.h
-	omp.h
 	pmmintrin.h
 	stdarg.h
 	stdbool.h
