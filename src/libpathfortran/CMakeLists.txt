@@ -926,10 +926,10 @@ SET(PATHSCALE_PATHFORTRAN_F_SRCS
 )
 
 set_property(SOURCE "../libfi/mathlb/ieee_exceptions.F90"
-             PROPERTY OBJECT_OUTPUTS "${CMAKE_CURRENT_BINARY_DIR}/IEEE_EXCEPTIONS.mod")
+             PROPERTY OBJECT_OUTPUTS "IEEE_EXCEPTIONS.mod")
 
 set_property(SOURCE "../libfi/mathlb/ieee_arithmetic.F90"
-             PROPERTY OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/IEEE_EXCEPTIONS.mod")
+             PROPERTY OBJECT_DEPENDS "IEEE_EXCEPTIONS.mod")
 
 include(CheckFunctionExists)
 include(CheckLibraryExists)
@@ -997,8 +997,8 @@ set(PATHF90_FLAGS "-Wf,-eQ -Wf,-intrinsic_module_gen -Wf,-intrinsic_module_path=
 set_source_files_properties("../libu/util/rtc.c" PROPERTIES COMPILE_DEFINITIONS "_XOPEN_SOURCE;_XOPEN_SOURCE_EXTENDED")
 
 set_source_files_properties(${PATHSCALE_PATHFORTRAN_F_SRCS} PROPERTIES COMPILE_FLAGS ${PATHF90_FLAGS})
-set_source_files_properties(../libfi/mathlb/ieee_exceptions.F90 PROPERTIES OBJECT_OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/IEEE_EXCEPTIONS.mod)
-set_source_files_properties(../libfi/mathlb/ieee_arithmetic.F90 PROPERTIES OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/IEEE_EXCEPTIONS.mod)
+set_source_files_properties(../libfi/mathlb/ieee_exceptions.F90 PROPERTIES OBJECT_OUTPUTS IEEE_EXCEPTIONS.mod)
+set_source_files_properties(../libfi/mathlb/ieee_arithmetic.F90 PROPERTIES OBJECT_DEPENDS IEEE_EXCEPTIONS.mod)
 
 #SET(CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES "m;c")
 
@@ -1078,7 +1078,17 @@ add_custom_target(
 #${CMAKE_CURRENT_BINARY_DIR}/ISO_FORTRAN_ENV.mod
 #${CMAKE_CURRENT_BINARY_DIR}/IEEE_ARITHMETIC.mod
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ISO_C_BINDING.mod ${CMAKE_CURRENT_BINARY_DIR}/IEEE_EXCEPTIONS.mod ${CMAKE_CURRENT_BINARY_DIR}/IEEE_FEATURES.mod ${CMAKE_CURRENT_BINARY_DIR}/ISO_FORTRAN_ENV.mod ${CMAKE_CURRENT_BINARY_DIR}/IEEE_ARITHMETIC.mod DESTINATION ${PATH64_LIB_PATH})
+foreach(targ ${PATH64_ENABLE_TARGETS})
+    set(arch ${_PATH64_TARGET_ARCH_${targ}})
+    set(bits ${_PATH64_TARGET_BITS_${targ}})
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pathfortran-${targ}/ISO_C_BINDING.mod
+                  ${CMAKE_CURRENT_BINARY_DIR}/pathfortran-${targ}/IEEE_EXCEPTIONS.mod
+                  ${CMAKE_CURRENT_BINARY_DIR}/pathfortran-${targ}/IEEE_FEATURES.mod
+                  ${CMAKE_CURRENT_BINARY_DIR}/pathfortran-${targ}/ISO_FORTRAN_ENV.mod
+                  ${CMAKE_CURRENT_BINARY_DIR}/pathfortran-${targ}/IEEE_ARITHMETIC.mod
+            DESTINATION ${PATH64_LIB_PATH}/${arch}/${bits})
+endforeach()
+
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib.cat DESTINATION ${PATH64_LIB_PATH})
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib.msgs DESTINATION ${PATH64_LIB_PATH})
 ENDIF(PATH64_ENABLE_FORTRAN)

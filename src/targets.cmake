@@ -425,10 +425,18 @@ function(path64_add_library_for_target name target type)
             endforeach()          
 
             # Getting additional object dependencies
-            get_property(obj_depends SOURCE ${src} PROPERTY OBJECT_DEPENDS)
+            get_property(obj_depends_rel SOURCE ${src} PROPERTY OBJECT_DEPENDS)
+            set(obj_depends)
+            foreach(dep ${obj_depends_rel})
+                list(APPEND obj_depends ${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ}/${dep})
+            endforeach()
 
             # Getting additional object outputs
-            get_property(obj_outputs SOURCE ${src} PROPERTY OBJECT_OUTPUTS)
+            get_property(obj_outputs_rel SOURCE ${src} PROPERTY OBJECT_OUTPUTS)
+            set(obj_outputs)
+            foreach(out ${obj_outputs_rel})
+                list(APPEND obj_outputs ${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ}/${out})
+            endforeach()
 
             add_custom_command(OUTPUT ${object_name} ${obj_outputs}
                                COMMAND ${path64_compiler_${src_lang}} -c -o ${object_name}
@@ -442,7 +450,8 @@ function(path64_add_library_for_target name target type)
                                        ${lang_flags}
                                        ${src}
                                        ${build_type_flags}
-                               DEPENDS ${src} ${header_deps} ${obj_depends})
+                               DEPENDS ${src} ${header_deps} ${obj_depends}
+                               WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ})
             list(APPEND objects ${object_name})
             list(FIND compiler-deps "compiler-stage-${src_lang}" res)
             if(res EQUAL -1)
@@ -463,7 +472,8 @@ function(path64_add_library_for_target name target type)
             "${build_lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}${oname}${CMAKE_STATIC_LIBRARY_SUFFIX}")
         add_custom_command(OUTPUT ${library_file}
                            COMMAND ${CMAKE_AR} -cr ${library_file} ${objects}
-                           DEPENDS ${objects})
+                           DEPENDS ${objects}
+                           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ})
     elseif("X${type}" STREQUAL "XSHARED")
         string(REPLACE " " ";" target_link_flags "${path64_multitarget_property_${name}_LINK_FLAGS}")
         set(library_file
@@ -492,7 +502,8 @@ function(path64_add_library_for_target name target type)
                                    ${target_link_flags}
                                    ${objects}
                                    ${link_libs_flags}
-                           DEPENDS ${objects})
+                           DEPENDS ${objects}
+                           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ})
     else()
         message(FATAL_ERROR "Unknown library type: ${type}")
     endif()
