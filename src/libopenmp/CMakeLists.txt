@@ -38,32 +38,45 @@ if(PATH64_ENABLE_PROFILING)
     path64_add_multitarget_dependencies(openmp_p compiler-stage-libs-C)
 endif()
 
+install(FILES omp.h DESTINATION include/${PSC_FULL_VERSION})
+
+if(PATH64_ENABLE_FORTRAN)
+    install(FILES ../include/omp/omp_lib.f DESTINATION include/${PSC_FULL_VERSION})
+endif()
+
 foreach(targ ${PATH64_ENABLE_TARGETS})
     set(targ_flag ${_PATH64_TARGET_FLAG_${targ}})
     set(targ_arch ${_PATH64_TARGET_ARCH_${targ}})
     set(targ_bits ${_PATH64_TARGET_BITS_${targ}})
 
-    install(FILES omp.h DESTINATION ${PATH64_LIB_PATH}/${targ_arch}/${targ_bits})
 
     if(PATH64_ENABLE_FORTRAN)
+        add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${targ}
+                           COMMAND ${CMAKE_COMMAND} -E make_directory
+                                   ${CMAKE_CURRENT_BINARY_DIR}/${targ})
+
         add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/omp_lib-${targ}.f.o
+                                  ${CMAKE_CURRENT_BINARY_DIR}/${targ}/OMP_LIB.mod
+                                  ${CMAKE_CURRENT_BINARY_DIR}/${targ}/OMP_LIB_KINDS.mod
                            COMMAND ${CMAKE_Fortran_COMPILER} ${CMAKE_Fortran_FLAGS} ${targ_flag}
                                    -c ${CMAKE_CURRENT_SOURCE_DIR}/../include/omp/omp_lib.f
                                    -o ${CMAKE_CURRENT_BINARY_DIR}/omp_lib-${targ}.f.o
                            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../include/omp/omp_lib.f
+                                   ${CMAKE_CURRENT_BINARY_DIR}/${targ}
+                           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${targ}
                            VERBATIM
                           )
     
         add_custom_target(OMP_LIB-${targ} ALL
-                          DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/omp_lib-${targ}.f.o
+                          DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${targ}/OMP_LIB.mod
+                                  ${CMAKE_CURRENT_BINARY_DIR}/${targ}/OMP_LIB_KINDS.mod
                          )
         add_dependencies(OMP_LIB-${targ} switch_fc mfef95-tmp compiler-stage-Fortran)
 
 
-        set(install_inc_dir ${PATH64_LIB_PATH}/${targ_arch}/${targ_bits}/include)
-        install(FILES ../include/omp/omp_lib.f DESTINATION ${install_inc_dir})
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OMP_LIB.mod DESTINATION ${install_inc_dir})
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OMP_LIB_KINDS.mod DESTINATION ${install_inc_dir})
+        set(install_mod_dir ${PATH64_LIB_PATH}/${targ_arch}/${targ_bits})
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${targ}/OMP_LIB.mod DESTINATION ${install_mod_dir})
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${targ}/OMP_LIB_KINDS.mod DESTINATION ${install_mod_dir})
     endif()
 
 endforeach()
