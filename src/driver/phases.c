@@ -709,10 +709,13 @@ add_target_linker_args(string_list_t *args) {
 
     // Adding -rpath argument
     {
-        char * lib_path = target_library_path();
-        add_arg(args, "-rpath");
-        add_arg(args, lib_path);
-        free(lib_path);
+        if(!option_was_seen(O_nodefaultlibs) &&
+           !option_was_seen(O_nostdlib)) {
+            char * lib_path = target_library_path();
+            add_arg(args, "-rpath");
+            add_arg(args, lib_path);
+            free(lib_path);
+        }
     }
 
     // Adding abi flag
