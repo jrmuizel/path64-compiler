@@ -47,3 +47,7 @@ __vrd2_pow:
 	movdqa		%xmm1, %xmm0		# here is the unified result
 	add		$40,%rsp
 	ret
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

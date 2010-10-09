@@ -140,3 +140,7 @@ infornan: // arg is INF or NaN
 mzero:	data4	0x80000000
 qnan:	data4	0x7fc00000
 
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

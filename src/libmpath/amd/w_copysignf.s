@@ -74,3 +74,7 @@ __copysignf:
 mask:
 	.long 0x7fffffff,0,0,0  # use the inverse of the mask
 
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

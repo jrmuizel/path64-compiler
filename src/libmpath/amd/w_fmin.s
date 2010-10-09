@@ -88,3 +88,7 @@ __fmin:
 .L2:
 	movapd	%xmm1, %xmm0
 	ret
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

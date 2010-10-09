@@ -45,3 +45,7 @@ __CTOR_LIST_END__:
 	.section	.jcr, "aw", @progbits
 	.align 4
 	.long 0
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

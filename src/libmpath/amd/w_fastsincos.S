@@ -675,3 +675,7 @@ __fastsincos:
 	movd	%rcx,%xmm1
 	jmp	.Lsincos_cleanup
 
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

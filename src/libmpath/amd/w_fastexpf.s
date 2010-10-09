@@ -264,3 +264,7 @@ __fastexpf:
         .quad   0x03FFF50765B6E4540             # 1.9571441241754002
 	.quad 0					# for alignment
 
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

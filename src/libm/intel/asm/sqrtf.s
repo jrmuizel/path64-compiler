@@ -116,3 +116,7 @@ half:	data4	0x3f000000
 ah:	data4	0x3f000001
 qnan:	data4	0x7fc00000
 
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

@@ -680,3 +680,7 @@ __vrs4_log10f:
     .long 0x3805FDF4  # 0.000031946183 64
     .long 0					# for alignment
 
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

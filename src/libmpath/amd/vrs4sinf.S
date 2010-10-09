@@ -2205,3 +2205,7 @@ movapd	%xmm1,%xmm7				#x1
 	addpd	%xmm1,%xmm5					# +x
 
 	jmp 	.L__vrs4_sinf_cleanup
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

@@ -978,3 +978,7 @@ movapd	%xmm0,%xmm6				#x
 	add	$0x1C8,%rsp
 	ret
 	
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

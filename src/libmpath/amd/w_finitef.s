@@ -68,3 +68,7 @@ __finitef:
 	comiss	%xmm2, %xmm0		# compare with all ones
 	setnz	%al			# set return value to 1 if not inf or NaN
 	ret
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

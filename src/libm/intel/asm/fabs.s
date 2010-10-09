@@ -85,3 +85,7 @@ nan:	// arg is a NaN
 mzero:	data8	0x8000000000000000
 qnan:	data8	0x7ff8000000000000
 
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

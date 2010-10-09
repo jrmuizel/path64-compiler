@@ -64,3 +64,7 @@ __finite:
  (p6)	mov	r8=1
 	br.ret.sptk	rp
 
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

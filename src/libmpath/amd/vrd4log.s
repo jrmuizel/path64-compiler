@@ -865,3 +865,7 @@ __vrd4_log:
 	.quad	0x03e6efa39ef35793c		# 5.76999904754328540596e-08
 	.quad 0					# for alignment
 
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

@@ -81,3 +81,7 @@ __vrs8_powf:
 	movdqa		80(%rsp), %xmm1		# load result 4, 5, 6, 7
 	add		$104,%rsp
 	ret
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

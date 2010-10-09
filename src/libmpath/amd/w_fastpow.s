@@ -1149,3 +1149,7 @@ __fastpow:
 #.L__fake_w:			.quad 0x0BFD0425004045B95
 							
 
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

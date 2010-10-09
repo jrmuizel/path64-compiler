@@ -504,3 +504,7 @@ __vrs8_expf:
         .long   0x03FFA83B3             # 1.9571441241754002
         .long 0                                 # for alignment
 
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

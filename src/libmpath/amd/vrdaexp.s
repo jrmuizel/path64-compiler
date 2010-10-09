@@ -619,3 +619,7 @@ __vrda_exp:
 	.quad	0x03e66dc8a80ce9f09		# 4.25828e-008
 	.quad 0					# for alignment
 
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif

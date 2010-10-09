@@ -812,3 +812,7 @@ __two_to_jby32_table:
 						.quad 0x04f0000004f000000
 
 
+
+#if defined(__linux__) && defined(__ELF__)
+    .section .note.GNU-stack,"",%progbits
+#endif
