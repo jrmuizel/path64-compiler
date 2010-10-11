@@ -308,16 +308,30 @@ ADD_DEPENDENCIES(compiler-stage-libs-C compiler-stage-C)
 ADD_DEPENDENCIES(compiler-stage-libs-CXX compiler-stage-CXX compiler-stage-libs-C)
 ADD_DEPENDENCIES(compiler-stage-libs-Fortran compiler-stage-Fortran)
 
+function(get_compiler_version res)
+    exec_program(${CMAKE_C_COMPILER}
+                 ARGS --version
+                 OUTPUT_VARIABLE compiler_version
+                )
+
+    string(REGEX REPLACE ".* ([0-9]+)(\\.)([0-9]+)(\\.)([0-9]+).*" "\\1\\2\\3\\4\\5"
+           compiler_version ${compiler_version})
+
+    set(${res} ${compiler_version} PARENT_SCOPE)
+endfunction()
+
 # Copying libmv and libmpath to <stage_dir>/lib/${arch} if we are building with pathcc
 if("X${CMAKE_C_COMPILER_ID}" STREQUAL "XPathScale")
     find_program(pathcc_full_path ${CMAKE_C_COMPILER})
     get_filename_component(pathscale_path "${pathcc_full_path}" PATH)
     get_filename_component(pathscale_path "${pathscale_path}/.." ABSOLUTE)
     message(STATUS "Path to pathcc using to build: ${pathscale_path}")
+
+    get_compiler_version(pathscale_version)
     path64_get_host_target(host_targ)
     path64_get_host_arch(host_arch)
     path64_get_target_bits(host_bits ${host_targ})
-    set(pathscale_libs_path "${pathscale_path}/lib/${PSC_FULL_VERSION}/${host_arch}/${host_bits}")
+    set(pathscale_libs_path "${pathscale_path}/lib/${pathscale_version}/${host_arch}/${host_bits}")
 
     set(pathscale_libs_stage_deps)
     set(pathscale_libs libmv.so libmpath.so)
