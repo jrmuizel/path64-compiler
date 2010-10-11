@@ -81,16 +81,15 @@ ELSE()
 ENDIF()
 
 # Whatever arbitrary number you'd like in 3 string format eg 3.9.99
-SET(PSC_FULL_VERSION "3.9.99" CACHE STRING "Defaulting to version 3.9.99")
-IF(PSC_FULL_VERSION)
-	MESSAGE(STATUS "Version is set to "${PSC_FULL_VERSION})
-	string(REGEX REPLACE "^([0-9.]+).*$" "\\1" TMPVERSION ${PSC_FULL_VERSION})
-	# If it's not in three string format it sucks to be you
-	string(REGEX REPLACE "^([0-9]+).+$" "\\1" PSC_MAJOR_VERSION ${TMPVERSION})
-	string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*$" "\\1" PSC_MINOR_VERSION ${TMPVERSION})
-ELSE()
-	MESSAGE(FATAL_ERROR "Must set PSC_FULL_VERSION")
+IF(NOT PSC_FULL_VERSION)
+    SET(PSC_FULL_VERSION "4.0.0" CACHE STRING "Defaulting to version 4.0.0")
 ENDIF()
+
+MESSAGE(STATUS "Version is set to "${PSC_FULL_VERSION})
+string(REGEX REPLACE "^([0-9.]+).*$" "\\1" TMPVERSION ${PSC_FULL_VERSION})
+# If it's not in three string format it sucks to be you
+string(REGEX REPLACE "^([0-9]+).+$" "\\1" PSC_MAJOR_VERSION ${TMPVERSION})
+string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*$" "\\1" PSC_MINOR_VERSION ${TMPVERSION})
 
 # Checking that CRT paths are specified for all targets
 FOREACH(targ ${PATH64_ENABLE_TARGETS})
