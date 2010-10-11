@@ -70,7 +70,7 @@ set_source_files_properties(cf95.cat PROPERTIES GENERATED 1)
 file(COPY cf95.msgs DESTINATION ${Path64_BINARY_DIR}/lib)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cf95.cat DESTINATION ${PATH64_LIB_PATH})
 install(FILES cf95.msgs DESTINATION ${PATH64_LIB_PATH})
-install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"cf95.msgs\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/pathf95.msgs\")")
+install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"cf95.msgs\" \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/pathf95.msgs\")")
 
 add_custom_target(
     generate_cf95_cat

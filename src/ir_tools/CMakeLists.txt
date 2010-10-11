@@ -80,10 +80,10 @@ path64_install_multiarch(ir_size)
 
 
 foreach(arch ${PATH64_ENABLE_ARCHES})
-    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${CMAKE_INSTALL_PREFIX}/lib/${arch}/ir_b2a\" \"${CMAKE_INSTALL_PREFIX}/bin/ir_b2a-${arch}\")")
-    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${CMAKE_INSTALL_PREFIX}/lib/${arch}/ir_size\" \"${CMAKE_INSTALL_PREFIX}/bin/ir_size-${arch}\")")
-    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${CMAKE_INSTALL_PREFIX}/bin/ir_b2a-${arch}\" \"${CMAKE_INSTALL_PREFIX}/bin/ir_sel-${arch}\")")
-    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${CMAKE_INSTALL_PREFIX}/bin/ir_b2a-${arch}\" \"${CMAKE_INSTALL_PREFIX}/bin/ir_all-${arch}\")")
+    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/${arch}/ir_b2a\" \"${CMAKE_INSTALL_PREFIX}/bin/ir_b2a-${arch}\")")
+    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/${arch}/ir_size\" \"${CMAKE_INSTALL_PREFIX}/bin/ir_size-${arch}\")")
+    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/ir_b2a-${arch}\" \"${CMAKE_INSTALL_PREFIX}/bin/ir_sel-${arch}\")")
+    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/ir_b2a-${arch}\" \"${CMAKE_INSTALL_PREFIX}/bin/ir_all-${arch}\")")
 endforeach()
 
 

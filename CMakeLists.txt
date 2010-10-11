@@ -355,7 +355,7 @@ if("X${CMAKE_C_COMPILER_ID}" STREQUAL "XPathScale")
             if(NOT ${res} EQUAL -1)
                 # Making link <install_dir>/lib/${arch}/${lib} ->
                 #             <install_dir>/lib/${arch}/${host_bits}/${lib}
-                install(CODE "file(MAKE_DIRECTORY \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}\") \n execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"./../${host_arch}/${host_bits}/${lib}\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/${lib}\")")
+                install(CODE "file(MAKE_DIRECTORY \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}\") \n execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"./../${host_arch}/${host_bits}/${lib}\" \"${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/${lib}\")")
             else()
                 # Copying pathscale lib to <instalL_dir>/lib/${arch}/${lib}
                 install(FILES "${pathscale_libs_path}/${lib}" DESTINATION "lib/${PSC_FULL_VERSION}/${arch}")
