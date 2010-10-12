@@ -1649,7 +1649,7 @@ Handle_Call_Site (WN *call, OPERATOR call_opr)
   if( Is_Target_32bit() &&
       Gen_PIC_Shared    &&
       call_st != NULL   &&
-      !ST_is_export_local(call_st) ){
+      (!ST_is_export_local(call_st) || ST_is_weak_symbol(call_st))) {
     PU_References_GOT = TRUE;
   }
 #endif
