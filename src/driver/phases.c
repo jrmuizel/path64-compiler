@@ -1957,10 +1957,30 @@ add_final_ld_args (string_list_t *args)
             add_library(args, "dl");
         }
 
+        // static libc should be grouped with libgcc and libeh
+        // because there is loop in dependencies between these libs
+        if (option_was_seen(O_static) || option_was_seen(O__static)) {
+            if(ipa != TRUE){
+                add_arg(args, "--start-group");
+            } else {
+                add_arg(args, "-Wl,--start-group");
+            }
+        }
+
         add_library(args, "gcc");
 
         // Exception support library (used by stl and gcc)
         add_library(args, "eh");
+
+        add_library(args, "c");
+
+        if (option_was_seen(O_static) || option_was_seen(O__static)) {
+            if(ipa != TRUE){
+                add_arg(args, "--end-group");
+            } else {
+                add_arg(args, "-Wl,--end-group");
+            }
+        }
 #else
         if (option_was_seen(O_static) || option_was_seen(O__static)){
 	        if(ipa != TRUE){
