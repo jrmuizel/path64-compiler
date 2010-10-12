@@ -167,6 +167,7 @@ add_definitions(-std=gnu99
 set(exe_prefix )
 
 add_executable(${exe_refix}pathcc ${PATHSCALE_DRIVER_SRCS})
+set_property(TARGET ${exe_prefix}pathcc PROPERTY LINK_FLAGS "-static")
 install(TARGETS ${exe_prefix}pathcc
         RUNTIME DESTINATION bin)
 
