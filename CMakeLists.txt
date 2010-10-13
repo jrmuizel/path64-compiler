@@ -26,7 +26,7 @@ SET(CMAKE_Fortran_FLAGS_DEBUG  "-O0 -g3 -D_DEBUG" CACHE STRING "Flags used by th
 SET(CMAKE_C_FLAGS_RELEASE  "-O2 -DNDEBUG" CACHE STRING "Flags used by the compiler during release builds." FORCE)
 SET(CMAKE_CXX_FLAGS_RELEASE  "-O2 -DNDEBUG" CACHE STRING "Flags used by the compiler during release builds." FORCE)
 SET(CMAKE_Fortran_FLAGS_RELEASE  "-O2 -DNDEBUG" CACHE STRING "Flags used by the compiler during release builds." FORCE)
-SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "-s")
+SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "-S")
 SET(CMAKE_SHARED_LINKER_FLAGS_RELEASE "-s")
 SET(CMAKE_MODULE_LINKER_FLAGS_RELEASE "-s")
 
