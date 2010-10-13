@@ -248,7 +248,7 @@ I-include=%D  ;		FTN     ffe,PFA     "-include=%D"
 	"predefined include search path list"
 -nostdinc++	nostdinc=TRUE;		CC,cpp	cpp	self
 	"Do not search for header files in the standard directories specific to C++"
--nostdlib	;	NONE	ld	self
+-nostdlib	;	NONE	ld	"-nostartfiles"
 	"Do not use standard system startup files or libraries when linking"
 #ifdef PATH64_ENABLE_PSCRUNTIME
 -nostdlib++	;	NONE	ld	""
