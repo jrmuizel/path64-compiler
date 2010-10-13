@@ -91,8 +91,8 @@ static phase_info_t phase_info[] = {
    {'p',  0x0000000000000010LL,	"cpp",	PHASEPATH,	FALSE},	/* cpp */
 #ifdef PATH64_ENABLE_PSCRUNTIME
    // Invoke cc142/cc1plus42 for preprocessing
-   {'p',  0x0000000000000020LL,	"cc142", PHASEPATH, FALSE}, /* gcpp */
-   {'p',  0x0000000000000040LL,	"cc1plus42", PHASEPATH, FALSE}, /* gcpp_plus */
+   {'p',  0x0000000000000020LL,	"cc142", PHASEPATH, TRUE}, /* gcpp */
+   {'p',  0x0000000000000040LL,	"cc1plus42", PHASEPATH, TRUE}, /* gcpp_plus */
 #else // PATH64_ENABLE_PSCRUNTIME
    /* invoke gcc driver directly rather than cpp
     * because cpp can have different paths, reads spec file,
