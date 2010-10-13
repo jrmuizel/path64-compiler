@@ -2160,9 +2160,9 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
 
     //init_stdc_plus_plus_path();
 
-//    if(shared != NON_SHARED)
-//        add_arg(args, "-Bdynamic");
-    add_library(args, "c");
+    // adding libc to resolve references in crt* files
+    if(!option_was_seen(O_nostartfiles))
+        add_library(args, "c");
 
 #ifndef PATH64_ENABLE_PSCRUNTIME
     if (strcmp(phase_name + strlen(phase_name) - 3, "gcc") == 0 ||
