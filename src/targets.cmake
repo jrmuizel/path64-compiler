@@ -484,6 +484,10 @@ function(path64_add_library_for_target name target type)
             list(APPEND link_libs_flags "-l${lib}")
         endforeach()
 
+        if("X${CMAKE_BUILD_TYPE}" STREQUAL "XRelease")
+            list(APPEND link_libs_flags "-s")
+        endif()
+
         if(path64_multitarget_property_${name}_LINKER_LANGUAGE)
             set(link_lang ${path64_multitarget_property_${name}_LINKER_LANGUAGE})
         else()
