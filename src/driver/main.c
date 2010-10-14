@@ -522,6 +522,22 @@ main (int argc, char *argv[])
 	init_frontend_phase_names();
 #endif
 
+#ifndef PATH64_ENABLE_PSCRUNTIME
+    {
+        // setting c/c++ preprocessor phase names
+        char * prep = getenv("PATHGCC");
+        if(prep) {
+            set_phase_name(P_gcpp, prep);
+        }
+
+        prep = getenv("PATHGPP");
+        if(prep) {
+            set_phase_name(P_gcpp_plus, prep);
+        }
+    }
+
+#endif // PATH64_ENABLE_PSCRUNTIME
+
 	// Display version after running set_defaults, which can change
 	// the gnu version.
         if (show_version || dump_version)
