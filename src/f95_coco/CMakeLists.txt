@@ -12,7 +12,7 @@ if(PATH64_ENABLE_FORTRAN)
         set(host_arch ${_PATH64_TARGET_ARCH_${host_targ}})
         set(host_bits ${_PATH64_TARGET_BITS_${host_targ}})
         path64_set_multiarch_property(coco LINK_FLAGS
-            "-nodefaultlibs -lpathfortran -lpathfstart -rpath ${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${host_arch}/${host_bits}")
+            "-nodefaultlibs -lpathfortran -lpathfstart -lm -rpath ${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${host_arch}/${host_bits}")
         path64_add_multiarch_dependencies(coco switch_fc compiler-stage-libs-Fortran)
         path64_install_multiarch(coco)
     endif()
