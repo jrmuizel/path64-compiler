@@ -524,13 +524,8 @@ main (int argc, char *argv[])
 
 #ifndef PATH64_ENABLE_PSCRUNTIME
     {
-        // setting c/c++ preprocessor phase names
-        char * prep = getenv("PATHGCC");
-        if(prep) {
-            set_phase_name(P_gcpp, prep);
-        }
-
-        prep = getenv("PATHGPP");
+        // setting c++ preprocessor phase names
+        char *prep = getenv("PATHGPP");
         if(prep) {
             set_phase_name(P_gcpp_plus, prep);
         }
