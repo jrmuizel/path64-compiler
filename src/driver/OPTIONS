@@ -973,7 +973,7 @@ I-xall	;		FTN	ffe	self
 
 % invoke apo  - which discovers parallelism (synonym for -pfa, -pca)
 -apo		auto_parallelize=TRUE;		Cc,FTN	be	"-pfa"
-	""
+	"Automatically convert sequential code into parallel code when it is safe and beneficial to do so."
 -apo*list	auto_parallelize=TRUE;keep_list=TRUE;		Cc,FTN	be	"-pfa -LNO:prompl"
 	""
 -apo*keep	auto_parallelize=TRUE;keep_list=keep_mp=TRUE;Process_Promp();		Cc,FTN	be	"-pfa -LNO:prompl"
