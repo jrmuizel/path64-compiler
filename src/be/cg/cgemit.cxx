@@ -10961,6 +10961,11 @@ Modify_Asm_String (char* asm_string, UINT32 position, bool memory,
   asm_string =  Replace_Substring(asm_string, pattern, name);
 #ifdef TARG_X8664
   if (TN_is_register(tn)) {
+    char patternp[5];
+    sprintf(patternp, "%%P%d", position);
+    if (strstr(asm_string, patternp)) {
+      asm_string =  Replace_Substring(asm_string, patternp, name);
+    }
     // Bug 3141: Support the 'y' modifier in operand references within
     //           the asm template.
     // Note that we only modify %st0 into %st(0) [and %st1 into %st(1)];
