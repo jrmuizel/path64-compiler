@@ -2985,7 +2985,8 @@ CGTARG_TN_For_Asm_Operand (const char* constraint,
     }
     FmtAssert(load && (WN_operator(load) == OPR_INTCONST ||
                        (WN_operator(load) == OPR_LDA &&
-                        ST_sym_class(WN_st(load)) == CLASS_CONST)),
+                        (ST_sym_class(WN_st(load)) == CLASS_CONST ||
+                         ST_sym_class(WN_st(load)) == CLASS_VAR))),
               ("Cannot find immediate operand for ASM"));
     if (WN_operator(load) == OPR_INTCONST)
     {
@@ -2994,6 +2995,12 @@ CGTARG_TN_For_Asm_Operand (const char* constraint,
       // Bugs 3177, 3043 - safety check from gnu/config/i386/i386.h.
       FmtAssert(CONST_OK_FOR_LETTER(WN_const_val(load), *constraint), 
        ("The value of immediate operand supplied is not within expected range."));
+    }
+    else if (ST_sym_class(WN_st(load)) == CLASS_VAR) {
+      ST * base;
+      INT64 ofst; 
+      Base_Symbol_And_Offset (WN_st(load), &base, &ofst);
+      ret_tn = Gen_Symbol_TN (base, ofst, 0);
     }
     else
     {

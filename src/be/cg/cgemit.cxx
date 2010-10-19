@@ -11014,7 +11014,7 @@ Modify_Asm_String (char* asm_string, UINT32 position, bool memory,
 #ifdef TARG_X8664
   // Replace any %c<num> constraint with the immediate value
   // Replace any %n<num> constraint with the negated immediate value
-  if (!TN_is_register(tn) && !TN_is_symbol(tn)) {
+  if (!TN_is_register(tn) /*&& !TN_is_symbol(tn)*/) {
     if (strstr(asm_string, "%c")) {
       char replace[5];
       sprintf(replace, "%%c%d", position);
