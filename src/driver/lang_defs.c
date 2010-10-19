@@ -160,7 +160,7 @@ static phase_info_t phase_info[] = {
 #ifdef PATH64_ENABLE_PATHAS
    {'a',  0x0000001000000000LL, "pathas", PSC_INSTALL_PREFIX "/bin", FALSE}, /* pathas */
 #endif // PATH64_ENABLE_PSCRUNTIME
-   {'a',  0x0000002000000000LL, "gcc", "", FALSE}, /* gas */
+   {'a',  0x0000002000000000LL, "as", "", FALSE}, /* gas */
    {'a',  0x0000003000000000LL,	"",	"",		FALSE},	/* any_as */
 
    {'d',  0x0000008000000000LL, "dsm_prelink", PHASEPATH,FALSE},/* dsm_prelink*/

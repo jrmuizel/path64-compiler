@@ -1652,11 +1652,18 @@ add_file_args (string_list_t *args, phases_t index)
 		if (show_but_not_run)
 		  add_string(args, "-###");
 
-		add_abi(args);
+#ifdef TARG_X8664
+		if (is_target_arch_X8664()) {
+		  if( abi == ABI_M32 ){
+		    add_string(args, "--32");
+		  } else {
+		    add_string(args, "--64");
+		  }
+		}
+#endif //TARG_X8664
+
 		add_asm_source(args, input_source);
 
-		// When using "gcc x.s" as an assembler, must not run linker
-		add_string(args, "-c");
 		add_asm_output(args, the_file);
 
 		current_phase = P_any_as;
