@@ -81,6 +81,7 @@ boolean show_copyright;
 boolean dump_version;
 boolean show_search_path;
 boolean show_defaults;
+boolean has_Wl_linker_option = FALSE;
 
 HUGEPAGE_DESC hugepage_desc;
 boolean add_heap_limit;
@@ -363,7 +364,7 @@ main (int argc, char *argv[])
 	// Determine if the compiler is called as a linker.
 	int num_non_h_src_files = num_files - num_h_files - num_o_files;
 	boolean called_as_linker =
-		  (num_non_h_src_files == 0 && num_o_files > 0);
+		  (num_non_h_src_files == 0 && num_o_files > 0) || has_Wl_linker_option;
 
 	// By now we know if pathcc is called as a linker.  If so, turned all
 	// the potential linker options into real linker options; otherwise
@@ -1060,6 +1061,8 @@ prescan_options (int argc, char *argv[])
       ipa_conflict_option = argv[i];
     } else if (!strcmp(argv[i], "-fbgen")) {
       ipa_conflict_option = argv[i];
+    } else if (!strncmp(argv[i], "-Wl,",4)) {
+      has_Wl_linker_option = TRUE;
     }
 #if 0
     // Disable for SiCortex 5069: allow -g -ipa
