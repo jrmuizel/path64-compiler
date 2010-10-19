@@ -4203,7 +4203,8 @@ Allocate_Object ( ST *st )
 
   if (ST_has_named_section(st)) {
     // bug fix for OSP_138
-    if (ST_has_Predefined_Named_Section(st, sec))
+    if (ST_has_Predefined_Named_Section(st, sec)
+        && !(ST_is_weak_symbol (st) && ST_sclass(st) == SCLASS_EXTERN))
       // Assign st to appropriate section
       Allocate_Object_To_Predefined_Named_Section(st, sec);
     else {
