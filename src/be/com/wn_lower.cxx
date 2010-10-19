@@ -8526,6 +8526,9 @@ static WN *lower_expr(WN *block, WN *tree, LOWER_ACTIONS actions)
   // TB: division specialization with feedback info
 #ifdef KEY
  {
+   // If tree includes ARRAY, first lower it
+   for (INT j = 0; j < WN_kid_count(tree); j++)
+    WN_kid(tree,j) = lower_expr(block, WN_kid(tree,j), actions);
    WN* simp = simp_remdiv( block, tree, actions );
    if( simp != NULL ){
      return simp;
