@@ -3046,6 +3046,9 @@ CGTARG_TN_For_Asm_Operand (const char* constraint,
     if (load != NULL) {
       // Bugs 482, 505, 626, 1045
       rtype = (WN_desc(load) == MTYPE_V) ? WN_rtype(load) : WN_desc(load);
+      if ((*constraint == 'e' && *(constraint+1) == 'r')) {
+        rtype = MTYPE_U8;
+      }	
       if (WN_operator(load) == OPR_CVTL) { // Bug 3223
 	switch (WN_cvtl_bits(load)) { 
 	// Don't care signed/unsigned but the width should be set right.
