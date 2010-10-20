@@ -1,5 +1,6 @@
 
 set(HEADERS
+    cpuid.h
 	decfloat.h
 	emmintrin.h
 	float.h
