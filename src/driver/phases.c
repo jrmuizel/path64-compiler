@@ -3150,7 +3150,7 @@ run_compiler (int argc, char *argv[])
 	input_source = source_file;
 
 #ifdef PSCSUB
-        obtain_license (get_phase_dir (P_be), argc, argv) ;
+        obtain_license (get_executable_dir(), argc, argv) ;
 #endif
 
 	// Set stack size to the hard limit.  Bug 3212.

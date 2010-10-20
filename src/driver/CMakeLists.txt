@@ -35,6 +35,12 @@ if(PATH64_ENABLE_PATHAS)
 endif()
 
 
+option(PATH64_NO_LICENSE_CHECK "Disables license check in driver" ON)
+if(PATH64_NO_LICENSE_CHECK)
+    add_definitions(-DNO_LICENSE_CHECK)
+endif()
+
+
 # Adding definitions for target architectures
 set(ARCH_DEFS)
 foreach(arch ${PATH64_ENABLE_ARCHES})
@@ -160,7 +166,7 @@ add_definitions(-std=gnu99
                 -DLITTLE_ENDIAN_HOST
                 -DHOST_IA32
                 -DNOOPT
-		-DNO_LICENSE_CHECK
+                -DPSCSUB
                 )
 
 # TODO : This isn't correct.. The prefix only has to affect the install since driver changes depending on what it's named
