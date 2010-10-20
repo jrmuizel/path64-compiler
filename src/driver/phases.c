@@ -1977,7 +1977,12 @@ add_final_ld_args (string_list_t *args)
         add_library(args, "gcc");
 
         // Exception support library (used by stl and gcc)
-        add_library(args, "eh");
+        // staic libc also depends on libeh
+        if(option_was_seen(O_static) ||
+           source_lang == L_CC ||
+           option_was_seen(O_fexceptions)) {
+            add_library(args, "eh");
+        }
 
         add_library(args, "c");
 
