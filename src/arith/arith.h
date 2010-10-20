@@ -778,6 +778,25 @@ int AR_verify  (AR_DATA *result,
 				const AR_TYPE *backwardtype);
 
 
+void ar_from_host_i8(void *, void *);
+void ar_from_host_i16(void *, void *);
+void ar_from_host_i32(void *, void *);
+void ar_from_host_i64(void *, void *);
+void ar_from_host_r32(void *, void *);
+void ar_from_host_c32(void *, void *);
+void ar_from_host_r64(void *, void *);
+void ar_from_host_c64(void *, void *);
+
+void ar_to_host_i8(void *, void *);
+void ar_to_host_i16(void *, void *);
+void ar_to_host_i32(void *, void *);
+void ar_to_host_i64(void *, void *);
+void ar_to_host_r32(void *, void *);
+void ar_to_host_c32(void *, void *);
+void ar_to_host_r64(void *, void *);
+void ar_to_host_c64(void *, void *);
+
+
 /* Special global constants */
 
 extern AR_DATA AR_const_zero;

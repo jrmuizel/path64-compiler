@@ -116,7 +116,23 @@ ar_convert_to_integral
 	}
 
 	else if (AR_CLASS (*opndtype) == AR_CLASS_INT) {
-		result->ar_i64 = opnd->ar_i64;
+	        if (*opndtype != AR_Int_8_S && *resulttype == AR_Int_8_S) {
+		    result->ar_i8.part1 = opnd->ar_i64.part1;
+		    result->ar_i8.part2 = opnd->ar_i64.part2;
+		    result->ar_i8.part3 = opnd->ar_i64.part3;
+		    result->ar_i8.part4 = opnd->ar_i64.part4 >> 8;
+		    result->ar_i8.part5 = opnd->ar_i64.part4;
+
+	        } else if (*opndtype == AR_Int_8_S && *resulttype != AR_Int_8_S) {
+		    result->ar_i64.part1 = opnd->ar_i8.part1;
+		    result->ar_i64.part2 = opnd->ar_i8.part2;
+		    result->ar_i64.part3 = opnd->ar_i8.part3;
+		    result->ar_i64.part4 = (opnd->ar_i8.part4 << 8) |
+                                            opnd->ar_i8.part5;
+
+		} else
+		    result->ar_i64 = opnd->ar_i64;
+
 		opndsz = AR_INT_SIZE(*opndtype);
 		if(opndsz == AR_INT_SIZE_46) opndsz = AR_INT_SIZE_64;
 		rsltsz = AR_INT_SIZE(*resulttype);

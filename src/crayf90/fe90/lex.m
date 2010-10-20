@@ -101,7 +101,7 @@
                     RESULT = FALSE;
 # endif
 
-# ifdef _USE_FOLD_DOT_f
+# if 1 /* def _USE_FOLD_DOT_f */
 
 #ifdef KEY /* Bug 5554 */
 # define CONVERT_INT_CONST(TYPE, LEN, RESULT)                                  \

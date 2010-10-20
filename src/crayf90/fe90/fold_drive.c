@@ -298,10 +298,229 @@ copy_and_pad_boz(long_type *dst, Uint dst_words, long_type *src, Uint src_words)
 # endif
 }
 #endif /* KEY Bug 12482 */
+
+
+
+
+typedef struct {
+    long_type v[MAX_WORDS_FOR_NUMERIC];
+} value_type;
+
+
+typedef struct {
+    long_type v[2000];
+} big_value_type;
+
+
+
+
 /******************************************************************************\
 |*									      *|
 |* Description:								      *|
-|*	<description>							      *|
+|*	Pack arguments from host format to libarith format		      *|
+|*									      *|
+|* Input parameters:							      *|
+|*	type_idx, value_ptr						      *|
+|*									      *|
+|* Output parameters:							      *|
+|*	value								      *|
+|*									      *|
+|* Returns:								      *|
+|*	NOTHING								      *|
+|*									      *|
+\******************************************************************************/
+
+static void pack_argument(int type_idx, value_type *value, char *value_ptr) {
+int i, n, linear_type;
+char *char_ptr;
+
+    linear_type = TYP_LINEAR(type_idx);
+    n = num_host_wds[TYP_LINEAR(type_idx)];
+
+    if (TYP_TYPE(type_idx) == Typeless && TYP_BIT_LEN(type_idx) > TARGET_BITS_PER_WORD) {
+	for(i = 0; 
+	    i < ((TYP_BIT_LEN(type_idx) + TARGET_BITS_PER_WORD - 1)/
+		 TARGET_BITS_PER_WORD); i++)
+
+            value->v[i] = ((long_type *) value_ptr)[i];
+    }
+    else if (TYP_TYPE(type_idx) == Character) {
+	char_ptr = (char *) value->v;
+	value->v[0] = 0;
+
+	for(i=0; i < CN_INT_TO_C(TYP_IDX(type_idx)); i++)
+            char_ptr[i] = value_ptr[i];
+
+	for(; i<TARGET_BYTES_PER_WORD; i++)
+            char_ptr[i] = ' ';
+    }
+
+#if defined(_USE_FOLD_DOT_f)
+    else {
+	for(i=0; i<n; i++)
+            value->v[i] = ((long_type *) value_ptr)[i];
+
+	if (linear_type == Complex_4) {
+            /* we need to pack it up into one word */
+#if defined(_HOST_LITTLE_ENDIAN)
+	    value->v[0] = value->v[0] & 0xFFFFFFFF;
+	    value->v[0] |= value->v[1] << 32;
+#else
+	    value->v[0] = value->v[0] << 32;
+	    value->v[0] = value->v[0] | (value->v[1] & 0xFFFFFFFF);
+#endif
+	}
+
+    }
+
+
+#else
+    else
+	switch(linear_type) {
+	case Typeless_1:
+	case Integer_1:
+	    ar_from_host_i8(value_ptr, (void *)value);
+	    break;
+
+	case Typeless_2:
+	case Integer_2:
+	    ar_from_host_i16(value_ptr, (void *)value);
+	    break;
+
+	case Typeless_4:
+	case Integer_4:
+	    ar_from_host_i32(value_ptr, (void *)value);
+	    break;
+
+	case Typeless_8:
+	case Integer_8:
+	    ar_from_host_i64(value_ptr, (void *)value);
+	    break;
+
+	case Logical_1:
+	case Logical_2:
+	case Logical_4:
+	    value->v[0] = ((long *) value_ptr)[0];
+	    break;
+
+	case Logical_8:
+	    value->v[0] = ((long *) value_ptr)[0];
+	    value->v[1] = ((long *) value_ptr)[1];
+	    break;
+
+	case Real_4:
+	    ar_from_host_r32(value_ptr, (void *)value);
+	    break;
+
+	case Real_8:
+	    ar_from_host_r64(value_ptr, (void *)value);
+	    break;
+
+	case Complex_4:
+	    ar_from_host_c32(value_ptr, (void *)value);
+	    break;
+
+	case Complex_8:
+	    ar_from_host_c64(value_ptr, (void *)value);
+	    break;
+
+	default:
+	    break;
+	}
+#endif
+
+}
+
+
+
+
+/******************************************************************************\
+|*									      *|
+|* Description:								      *|
+|*	Unpack arguments from libarith format to host format		      *|
+|*									      *|
+|* Input parameters:							      *|
+|*	type_idx, value_ptr						      *|
+|*									      *|
+|* Output parameters:							      *|
+|*	value								      *|
+|*									      *|
+|* Returns:								      *|
+|*	NOTHING								      *|
+|*									      *|
+\******************************************************************************/
+
+static void unpack_result(int linear_type, void *value) {
+value_type result;
+
+#if defined(_USE_FOLD_DOT_f)
+long_type *ltv = value;
+
+    if (linear_type == Complex_4) {
+#if defined(_HOST_LITTLE_ENDIAN)
+	ltv[1] = ltv[0] >> 32;
+	ltv[0] = ltv[0] & 0xFFFFFFFF;
+#else
+	ltv[1] = ltv[0] & 0xFFFFFFFF;
+	ltv[0] = ltv[0] >> 32;
+#endif
+    }
+    return;
+#endif
+
+    memcpy(&result, value, sizeof(result));
+
+    memset(value, 0, sizeof(value_type));
+    switch(linear_type) {
+    case Typeless_1:
+    case Integer_1:
+	ar_to_host_i8(&result, value);
+	break;
+
+    case Typeless_2:
+    case Integer_2:
+	ar_to_host_i16(&result, value);
+	break;
+
+    case Typeless_4:
+    case Integer_4:
+	ar_to_host_i32(&result, value);
+    	break;
+
+    case Typeless_8:
+    case Integer_8:
+	ar_to_host_i64(&result, value);
+	break;
+
+    case Real_4:
+	ar_to_host_r32(&result, value);
+	break;
+
+    case Real_8:
+	ar_to_host_r64(&result, value);
+	break;
+
+    case Complex_4:
+	ar_to_host_c32(&result, value);
+	break;
+
+    case Complex_8:
+	ar_to_host_c64(&result, value);
+	break;
+
+    default:
+	break;
+    }
+}
+
+
+
+
+
+/******************************************************************************\
+|*									      *|
+|* Description:								      *|
+|*	Entry pointer for constant folding 				      *|
 |*									      *|
 |* Input parameters:							      *|
 |*	NONE								      *|
@@ -338,14 +557,6 @@ boolean folder_driver(char		*l_value_ptr,
                       ...)
 
 {
-   struct value_entry     { long_type	  v[MAX_WORDS_FOR_NUMERIC]; };
-
-   typedef struct         value_entry     value_type;
-
-   struct big_value_entry { long_type     v[2000]; };
-
-   typedef struct         big_value_entry big_value_type;
-
    boolean			ok 			= TRUE;
    long64			count;
    big_value_type		l_value;
@@ -362,9 +573,9 @@ boolean folder_driver(char		*l_value_ptr,
    long64			length;
    long64			length_o;
    long64			length_d;
-   linear_type_type		l_linear_type;
-   linear_type_type		r_linear_type;
-   linear_type_type		a3_linear_type;
+   linear_type_type		l_linear_type = 0;
+   linear_type_type		r_linear_type = 0;
+   linear_type_type		a3_linear_type = 0;
 #ifdef KEY /* Bug 10177 */
    linear_type_type		a4_linear_type = Err_Res;
 #else /* KEY Bug 10177 */
@@ -395,19 +606,18 @@ boolean folder_driver(char		*l_value_ptr,
    long				arith_type_l;
    AR_COMPARE_TYPE		comp_res;
    long64			char_len;
+   int				result_len;
 
 
    TRACE (Func_Entry, "folder_driver", NULL);
 
-   if (l_type_idx != NULL_IDX) {
-      l_linear_type = TYP_LINEAR(l_type_idx);
-   }
+   l_linear_type = TYP_LINEAR(l_type_idx);
 
    res_linear_type = TYP_LINEAR(*res_type_idx);
+   result_len = num_host_wds[res_linear_type] * sizeof(long);
 
-   if (num_args > 1 && r_type_idx != NULL_IDX) {
+   if (num_args > 1)
       r_linear_type = TYP_LINEAR(r_type_idx);
-   }
 
    if (num_args > 2) {
       va_start (arg_ptr, opr);
@@ -417,241 +627,30 @@ boolean folder_driver(char		*l_value_ptr,
       a4_type_idx  = va_arg(arg_ptr, long);
       va_end(arg_ptr);
 
-      if (a3_type_idx != NULL_IDX) {
-         a3_linear_type = TYP_LINEAR(a3_type_idx);
-      }
+      a3_linear_type = TYP_LINEAR(a3_type_idx);
 
-      if (num_args == 4 &&
-          a4_type_idx != NULL_IDX) {
-
-         a4_linear_type = TYP_LINEAR(a4_type_idx);
-      }
+      if (num_args > 3 && a4_type_idx != NULL_IDX)
+	  a4_linear_type = TYP_LINEAR(a4_type_idx);
    }
 
-   if ((opr == SRK_Opr) || 
-       (opr == Transfer_Opr) || 
-       (opr == Reshape_Opr)) {
-      goto CONTINUE;
+   if (opr != Transfer_Opr && opr != Reshape_Opr && opr != Mask_Opr &&
+       opr != Csmg_Opr) {
+       /* copy arguments to local variables so that addresses of */
+       /* constant tbl entries can be sent.                      */
+
+       if (l_value_ptr != NULL)
+	   pack_argument(l_type_idx, (value_type *) &l_value, l_value_ptr);
+
+       if (num_args > 1 && r_value_ptr != NULL)
+	   pack_argument(r_type_idx, &r_value, r_value_ptr);
+
+       if (num_args > 2 && a3_value_ptr != NULL)
+	   pack_argument(a3_type_idx, &a3_value, a3_value_ptr);
+
+       if (num_args > 3 && a4_value_ptr != NULL)
+	   pack_argument(a4_type_idx, &a4_value, a4_value_ptr);
    }
 
-   /* copy arguments to local variables so that addresses of */
-   /* constant tbl entries can be sent.                      */
-
-   if (TYP_TYPE(l_type_idx) == Typeless) {
-      for (i = 0; 
-           i < ((TYP_BIT_LEN(l_type_idx) + TARGET_BITS_PER_WORD - 1)/
-                TARGET_BITS_PER_WORD); 
-           i++) {
-         l_value.v[i] = ((long_type *)l_value_ptr)[i];
-      }
-   }
-   else if (TYP_TYPE(l_type_idx) != Character) {
-      for (i = 0; i < num_host_wds[TYP_LINEAR(l_type_idx)]; i++) {
-         l_value.v[i] = ((long_type *)l_value_ptr)[i];
-      }
-
-# ifdef _TARGET_OS_MAX
-      if (l_linear_type == Complex_4) {
-         /* we need to pack it up into one word */
-         l_value.v[0] = l_value.v[0] << 32;
-         l_value.v[0] = l_value.v[0] | (l_value.v[1] & 0xFFFFFFFF);
-      }
-# endif
-   }
-   else {  /* processing character data */
-      char_ptr = (char *)l_value.v;
-      l_value.v[0] = 0;
-
-      for (i = 0; i < CN_INT_TO_C(TYP_IDX(l_type_idx)); i++) {
-         char_ptr[i] = l_value_ptr[i];
-      }
-
-      for ( ; i < TARGET_BYTES_PER_WORD; i++) {
-         char_ptr[i] = ' ';
-      }
-   }
-
-   if (num_args > 1) {
-
-      if (TYP_TYPE(r_type_idx) == Typeless) {
-
-         for (i = 0; 
-              i < ((TYP_BIT_LEN(r_type_idx) + TARGET_BITS_PER_WORD - 1)/
-                   TARGET_BITS_PER_WORD); 
-              i++) {
-
-            r_value.v[i] = ((long_type *)r_value_ptr)[i];
-         }
-      }
-      else if (TYP_TYPE(r_type_idx) != Character) {
-
-         for (i = 0; i < num_host_wds[TYP_LINEAR(r_type_idx)]; i++) {
-            r_value.v[i] = ((long_type *)r_value_ptr)[i];
-         }
-
-# ifdef _TARGET_OS_MAX
-         if (r_linear_type == Complex_4) {
-            /* we need to pack it up into one word */
-            r_value.v[0] = r_value.v[0] << 32;
-            r_value.v[0] = r_value.v[0] | (r_value.v[1] & 0xFFFFFFFF);
-         }
-# endif
-      }
-      else {
-         char_ptr = (char *)r_value.v;
-         r_value.v[0] = 0;
-
-         for (i = 0; i < CN_INT_TO_C(TYP_IDX(r_type_idx)) &&
-                     i < TARGET_BYTES_PER_WORD;
-              i++) {
-            char_ptr[i] = r_value_ptr[i];
-         }
-
-         for ( ; i < TARGET_BYTES_PER_WORD; i++) {
-            char_ptr[i] = ' ';
-         }
-      }
-   }
-
-   if (num_args > 2) {
-
-      if (TYP_TYPE(a3_type_idx) == Typeless) {
-
-         for (i = 0; 
-              i < ((TYP_BIT_LEN(a3_type_idx) + TARGET_BITS_PER_WORD - 1)/
-                   TARGET_BITS_PER_WORD); 
-              i++) {
-
-            a3_value.v[i] = ((long_type *)a3_value_ptr)[i];
-         }
-      }
-      else if (TYP_TYPE(a3_type_idx) != Character) {
-
-         for (i = 0; i < num_host_wds[a3_linear_type]; i++) {
-            a3_value.v[i] = ((long_type *)a3_value_ptr)[i];
-         }
-
-# ifdef _TARGET_OS_MAX
-         if (a3_linear_type == Complex_4) {
-            /* we need to pack it up into one word */
-            a3_value.v[0] = a3_value.v[0] << 32;
-            a3_value.v[0] = a3_value.v[0] | (a3_value.v[1] & 0xFFFFFFFF);
-         }
-# endif
-      }
-      else {
-         char_ptr = (char *)a3_value.v;
-         a3_value.v[0] = 0;
-
-         for (i = 0; i < CN_INT_TO_C(TYP_IDX(a3_type_idx)) &&
-                     i < TARGET_BYTES_PER_WORD;
-              i++) {
-            char_ptr[i] = a3_value_ptr[i];
-         }
-
-         for ( ; i < TARGET_BYTES_PER_WORD; i++) {
-            char_ptr[i] = ' ';
-         }
-      }
-   }
-
-   if (num_args > 3) {
-
-      if (TYP_TYPE(a4_type_idx) == Typeless) {
-
-         for (i = 0;
-              i < ((TYP_BIT_LEN(a4_type_idx) + TARGET_BITS_PER_WORD - 1)/
-                   TARGET_BITS_PER_WORD);
-              i++) {
-
-            a4_value.v[i] = ((long_type *)a4_value_ptr)[i];
-         }
-      }
-      else if (TYP_TYPE(a4_type_idx) != Character) {
-
-         for (i = 0; i < num_host_wds[a4_linear_type]; i++) {
-            a4_value.v[i] = ((long_type *)a4_value_ptr)[i];
-         }
-
-# ifdef _TARGET_OS_MAX
-         if (a4_linear_type == Complex_4) {
-            /* we need to pack it up into one word */
-            a4_value.v[0] = a4_value.v[0] << 32;
-            a4_value.v[0] = a4_value.v[0] | (a4_value.v[1] & 0xFFFFFFFF);
-         }
-# endif
-      }
-      else {
-         char_ptr = (char *)a4_value.v;
-         a4_value.v[0] = 0;
-
-         for (i = 0; i < CN_INT_TO_C(TYP_IDX(a4_type_idx)) &&
-                     i < TARGET_BYTES_PER_WORD;
-              i++) {
-            char_ptr[i] = a4_value_ptr[i];
-         }
-
-         for ( ; i < TARGET_BYTES_PER_WORD; i++) {
-            char_ptr[i] = ' ';
-         }
-      }
-   }
-
-# if defined(_HOST64) && defined(_TARGET64) && defined(_WHIRL_HOST64_TARGET64)
-    switch (opr) {
-	 case Sqrt_Opr :
-	 case Plus_Opr :
-	 case Uminus_Opr :
-	 case Minus_Opr :
-	 case Mult_Opr :
-	 case Div_Opr :
-	 case Power_Opr :
-	 case Eq_Opr :
-	 case Ne_Opr :
-	 case Abs_Opr :
-	 case Cvrt_Opr :
-	    /* we need to pack them up into one word */
-	    if (l_linear_type == Complex_4) {
-#if defined(_HOST_LITTLE_ENDIAN)
-		l_value.v[0] = l_value.v[0] & 0xFFFFFFFF;
-		l_value.v[0] |= l_value.v[1] << 32;
-#else
-		l_value.v[0] = l_value.v[0] << 32;
-		l_value.v[0] = l_value.v[0] | (l_value.v[1] & 0xFFFFFFFF);
-#endif
-	    }
-	    if (r_linear_type == Complex_4) {
-#if defined(_HOST_LITTLE_ENDIAN)
-		r_value.v[0] = r_value.v[0] & 0xFFFFFFFF;
-		r_value.v[0] |= r_value.v[1] << 32;
-#else
-		r_value.v[0] = r_value.v[0] << 32;
-		r_value.v[0] = r_value.v[0] | (r_value.v[1] & 0xFFFFFFFF);
-#endif
-	    }
-	    if (a3_linear_type == Complex_4) {
-#if defined(_HOST_LITTLE_ENDIAN)
-		a3_value.v[0] = a3_value.v[0] & 0xFFFFFFFF;
-		a3_value.v[0] |= a3_value.v[1] << 32;
-#else
-		a3_value.v[0] = a3_value.v[0] << 32;
-		a3_value.v[0] = a3_value.v[0] | (a3_value.v[1] & 0xFFFFFFFF);
-#endif
-	    }
-	    if (a4_linear_type == Complex_4) {
-#if defined(_HOST_LITTLE_ENDIAN)
-		a4_value.v[0] = a4_value.v[0] & 0xFFFFFFFF;
-		a4_value.v[0] |= a4_value.v[1] << 32;
-#else
-		a4_value.v[0] = a4_value.v[0] << 32;
-		a4_value.v[0] = a4_value.v[0] | (a4_value.v[1] & 0xFFFFFFFF);
-#endif
-	    }
-	break;
-    }
-#endif
-
-CONTINUE:
 
 #ifdef KEY /* Bug 12014 */
    /*
@@ -683,23 +682,22 @@ CONTINUE:
 
       case Transfer_Opr :
          if (a3_value_ptr != NULL) {
-            for (i = 0; i < num_host_wds[a3_linear_type]; i++) {
-               a3_value.v[i] = ((long_type *)a3_value_ptr)[i];
-            }
-            SHIFT_ARITH_ARG(a3_value.v, a3_linear_type);
+	     memcpy(a3_value.v, a3_value_ptr, sizeof(value_type));
 
-            mask = AR_transfer((void *)result,
-                           (const void *)l_value_ptr,
-                           (const void *)r_value_ptr,
-                           (const AR_DATA *)a3_value.v,
-                           (const AR_TYPE *)&linear_to_arith[a3_linear_type]);
+	     SHIFT_ARITH_ARG(a3_value.v, a3_linear_type);
+
+	     mask = AR_transfer((void *)result,
+				(const void *)l_value_ptr,
+				(const void *)r_value_ptr,
+				(const AR_DATA *)a3_value.v,
+				(const AR_TYPE *)&linear_to_arith[a3_linear_type]);
          }
          else {
-            mask = AR_transfer((void *)result,
-                           (const void *)l_value_ptr,
-                           (const void *)r_value_ptr,
-                           (const AR_DATA *)a3_value_ptr,
-                      (const AR_TYPE *)&linear_to_arith[INTEGER_DEFAULT_TYPE]);
+	     mask = AR_transfer((void *)result,
+				(const void *)l_value_ptr,
+				(const void *)r_value_ptr,
+				(const AR_DATA *)a3_value_ptr,
+				(const AR_TYPE *)&linear_to_arith[INTEGER_DEFAULT_TYPE]);
          }
 
          ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
@@ -733,12 +731,8 @@ CONTINUE:
 #endif /* KEY Bug 12014 */
          char_ptr = (char *) &CN_CONST(result[0]);
 
-         for (i = 0; i < char_len; i++) {
-            char_ptr[i] = l_value_ptr[i];
-         }
-
+	 memcpy(char_ptr, l_value_ptr, char_len);
          break;
-
 
       case Repeat_Opr :
 
@@ -749,6 +743,7 @@ CONTINUE:
          length = CP_CONSTANT(CN_POOL_IDX(TYP_IDX(l_type_idx)) +
                num_host_wds[TYP_LINEAR(CN_TYPE_IDX(TYP_IDX(l_type_idx)))] - 1);
 
+	 unpack_result(r_linear_type, r_value.v);
 # if defined(_HOST_LITTLE_ENDIAN) && defined(_TARGET_LITTLE_ENDIAN)
          if (r_linear_type == Integer_8)
            count = *(long long *)(&r_value.v[0]);
@@ -789,16 +784,12 @@ CONTINUE:
       case SRK_Opr :
          if (r_value_ptr == NULL) {
 
-            for (i = 0; i < num_host_wds[l_linear_type]; i++) {
-               l_value.v[i] = ((long_type *)l_value_ptr)[i];
-            }
-
-            if (l_linear_type != res_linear_type) {
-               SHIFT_ARITH_ARG(l_value.v, l_linear_type);
+	     if (l_linear_type != res_linear_type) {
 
 # if defined(_USE_FOLD_DOT_f)
-               tmp_opr = Cvrt_Opr;
-               FOLD_OP(
+		 SHIFT_ARITH_ARG(l_value.v, l_linear_type);
+		 tmp_opr = Cvrt_Opr;
+		 FOLD_OP(
                               &tmp_opr, 
                               &loc_result.v,
                               &res_linear_type,
@@ -808,26 +799,22 @@ CONTINUE:
                               &r_linear_type, 
                               &a3_value.v,
                               &a3_linear_type);
+               SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
                mask = AR_convert((AR_DATA *)loc_result.v,
                             (const AR_TYPE *)&linear_to_arith[res_linear_type],
                             (const AR_DATA *)l_value.v,
                             (const AR_TYPE *)&linear_to_arith[l_linear_type]);
-# endif
-
                ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-               SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
+# endif
+	       memcpy(l_value.v, loc_result.v, sizeof(value_type));
+	     }
 
-               for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-                  l_value.v[i] = loc_result.v[i];
-               }
-            }
+	     r_linear_type = Err_Res;
 
-            r_linear_type = Err_Res;
-
-            SHIFT_ARITH_ARG(l_value.v, res_linear_type);
 
 # if defined(_USE_FOLD_DOT_f)
+            SHIFT_ARITH_ARG(l_value.v, res_linear_type);
             FOLD_OP(
                               &opr, 
                               &loc_result.v,
@@ -845,20 +832,19 @@ CONTINUE:
                         (const AR_TYPE *)&linear_to_arith[res_linear_type],
                         (const AR_DATA *)NULL,
                         (const AR_TYPE *)&linear_to_arith[res_linear_type]);
+	    ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
+	    unpack_result(res_linear_type, loc_result.v);
 # endif
    
          }
          else if (l_value_ptr == NULL) {
-            for (i = 0; i < num_host_wds[r_linear_type]; i++) {
-               r_value.v[i] = ((long_type *)r_value_ptr)[i];
-            }
 
-            if (r_linear_type != res_linear_type) { 
-               SHIFT_ARITH_ARG(r_value.v, r_linear_type);
+	     if (r_linear_type != res_linear_type) { 
 
 # if defined(_USE_FOLD_DOT_f)
-               tmp_opr = Cvrt_Opr;
-               FOLD_OP(
+		 SHIFT_ARITH_ARG(r_value.v, r_linear_type);
+		 tmp_opr = Cvrt_Opr;
+		 FOLD_OP(
                               &tmp_opr, 
                               &loc_result.v,
                               &res_linear_type,
@@ -868,26 +854,22 @@ CONTINUE:
                               &r_linear_type, 
                               &a3_value.v,
                               &a3_linear_type);
+               SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
+
 # else
                mask = AR_convert((AR_DATA *)loc_result.v,
                             (const AR_TYPE *)&linear_to_arith[res_linear_type],
                             (const AR_DATA *)r_value.v,
                             (const AR_TYPE *)&linear_to_arith[r_linear_type]);
-# endif
-
                ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-               SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-               for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-                  r_value.v[i] = loc_result.v[i];
-               }
-            }
+# endif
+	       memcpy(r_value.v, loc_result.v, sizeof(value_type));
+	     }
 
             l_linear_type = Err_Res;
 
-            SHIFT_ARITH_ARG(r_value.v, res_linear_type);
-
 # if defined(_USE_FOLD_DOT_f)
+            SHIFT_ARITH_ARG(r_value.v, res_linear_type);
             FOLD_OP(
                               &opr, 
                               &loc_result.v,
@@ -905,18 +887,15 @@ CONTINUE:
                         (const AR_TYPE *)&linear_to_arith[res_linear_type],
                         (const AR_DATA *)r_value.v,
                         (const AR_TYPE *)&linear_to_arith[res_linear_type]);
+	    ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
+	    unpack_result(res_linear_type, loc_result.v);
 # endif
          }
          else {
-
-            for (i = 0; i < num_host_wds[l_linear_type]; i++) {
-               l_value.v[i] = ((long_type *)l_value_ptr)[i];
-            }
-
             if (l_linear_type != res_linear_type) { 
-               SHIFT_ARITH_ARG(l_value.v, l_linear_type);
 
 # if defined(_USE_FOLD_DOT_f)
+               SHIFT_ARITH_ARG(l_value.v, l_linear_type);
                tmp_opr = Cvrt_Opr;
                FOLD_OP(
                               &tmp_opr,  
@@ -928,31 +907,25 @@ CONTINUE:
                               &r_linear_type, 
                               &a3_value.v,
                               &a3_linear_type);
+               SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
                mask = AR_convert((AR_DATA *)loc_result.v,
                             (const AR_TYPE *)&linear_to_arith[res_linear_type],
                             (const AR_DATA *)l_value.v,
                             (const AR_TYPE *)&linear_to_arith[l_linear_type]);
-# endif
-
                ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-               SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-               for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-                  l_value.v[i] = loc_result.v[i];
-               }
+# endif
+	       memcpy(l_value.v, loc_result.v, sizeof(value_type));
             }
 
+#if defined(_USE_FOLD_DOT_f)
             SHIFT_ARITH_ARG(l_value.v, res_linear_type);
-
-            for (i = 0; i < num_host_wds[r_linear_type]; i++) {
-               r_value.v[i] = ((long_type *)r_value_ptr)[i];
-            }
+#endif
 
             if (r_linear_type != res_linear_type) { 
-               SHIFT_ARITH_ARG(r_value.v, r_linear_type);
 
 # if defined(_USE_FOLD_DOT_f)
+               SHIFT_ARITH_ARG(r_value.v, r_linear_type);
                tmp_opr = Cvrt_Opr;
                FOLD_OP(
                               &tmp_opr, 
@@ -964,26 +937,22 @@ CONTINUE:
                               &r_linear_type, 
                               &a3_value.v,
                               &a3_linear_type);
+               SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
                mask = AR_convert((AR_DATA *)loc_result.v,
                             (const AR_TYPE *)&linear_to_arith[res_linear_type],
                             (const AR_DATA *)r_value.v,
                             (const AR_TYPE *)&linear_to_arith[r_linear_type]);
+               ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
 # endif
 
-               ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-               SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-               for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-                  r_value.v[i] = loc_result.v[i];
-               }
+	       memcpy(r_value.v, loc_result.v, sizeof(value_type));
             }
 
+# if defined(_USE_FOLD_DOT_f)
             SHIFT_ARITH_ARG(r_value.v, res_linear_type);
 
-# if defined(_USE_FOLD_DOT_f)
-            FOLD_OP(
-                              &opr, 
+            FOLD_OP(          &opr, 
                               &loc_result.v,
                               &res_linear_type,
                               &l_value.v,
@@ -992,6 +961,8 @@ CONTINUE:
                               &r_linear_type, 
                               &a3_value.v,
                               &a3_linear_type);
+	    SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
+
 # else
             mask = AR_selected_real_kind((AR_DATA *)loc_result.v,
                         (const AR_TYPE *)&linear_to_arith[res_linear_type],
@@ -999,20 +970,17 @@ CONTINUE:
                         (const AR_TYPE *)&linear_to_arith[res_linear_type],
                         (const AR_DATA *)r_value.v,
                         (const AR_TYPE *)&linear_to_arith[res_linear_type]);
+	    ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
+	    unpack_result(res_linear_type, loc_result.v);
 # endif
          }
 
-         ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
-
+	 memcpy(result, loc_result.v, result_len);
          break;
 
 
       case SIK_Opr :
+	 unpack_result(l_linear_type, l_value.v);
          cn_idx = ntr_const_tbl(l_type_idx, FALSE, &l_value.v[0]);
 #ifdef KEY /* Bug 12014 */
          l_value_ptr = CORRECT_THE_POINTER(l_value_offset);
@@ -1041,12 +1009,11 @@ CONTINUE:
 
 
       case Uminus_Opr :
-         if (l_linear_type != res_linear_type &&
+	 if (l_linear_type != res_linear_type &&
              TYP_TYPE(l_type_idx) != Typeless) {
 
-            SHIFT_ARITH_ARG(l_value.v, l_linear_type);
-
 # if defined(_USE_FOLD_DOT_f)            
+            SHIFT_ARITH_ARG(l_value.v, l_linear_type);
             tmp_opr = Cvrt_Opr;
             FOLD_OP(
                            &tmp_opr,  
@@ -1058,24 +1025,22 @@ CONTINUE:
                            &r_linear_type, 
                            &a3_value.v,
                            &a3_linear_type);
+
+            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
+
 # else
             mask = AR_convert((AR_DATA *)loc_result.v,
                          (const AR_TYPE *)&linear_to_arith[res_linear_type],
                          (const AR_DATA *)l_value.v,
                          (const AR_TYPE *)&linear_to_arith[l_linear_type]);
+            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
 # endif
 
-            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               l_value.v[i] = loc_result.v[i];
-            }
+	    memcpy(l_value.v, loc_result.v, sizeof(value_type));
          }
 
-         SHIFT_ARITH_ARG(l_value.v, res_linear_type);
-
 # if defined(_USE_FOLD_DOT_f)
+         SHIFT_ARITH_ARG(l_value.v, res_linear_type);
          FOLD_OP(
                         &opr,   
                         &loc_result.v,
@@ -1086,19 +1051,18 @@ CONTINUE:
                         &res_linear_type, 
                         &a3_value.v,
                         &a3_linear_type);
+         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
          mask = AR_negate((AR_DATA *)loc_result.v,
                       (const AR_TYPE *)&linear_to_arith[res_linear_type],
                       (const AR_DATA *)l_value.v,
                       (const AR_TYPE *)&linear_to_arith[res_linear_type]);
+
+         ARITH_ERROR_RESULT_TEST(mask, *res_type_idx, ok, line, col);
 # endif
 
-         ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
+	 unpack_result(res_linear_type, loc_result.v);
+	 memcpy(result, loc_result.v, result_len);
          break;
 
 
@@ -1174,10 +1138,9 @@ CONTINUE:
          }
 
          if (l_linear_type == res_linear_type) {
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               result[i] = l_value.v[i];
-            }
-            break;
+	     unpack_result(res_linear_type, l_value.v);
+	     memcpy(result, l_value.v, result_len);
+	     break;
          }
 
 # if defined(_USE_FOLD_DOT_f)
@@ -1192,6 +1155,7 @@ CONTINUE:
                         &r_linear_type, 
                         &a3_value.v,
                         &a3_linear_type);
+         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else 
          arith_type = linear_to_arith[l_linear_type];
 
@@ -1229,25 +1193,22 @@ CONTINUE:
             }
          }
 
-         SHIFT_ARITH_ARG(l_value.v, l_linear_type);
-
          mask = AR_convert((AR_DATA *)loc_result.v,
                       (const AR_TYPE *)&linear_to_arith[res_linear_type],
                       (const AR_DATA *)l_value.v,
                       (const AR_TYPE *)&arith_type);
+         ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
 # endif
 
-         ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
+	 unpack_result(res_linear_type, loc_result.v);
+	 memcpy(result, loc_result.v, result_len);
          break;
 
 
       case Cvrt_Unsigned_Opr :
+#if defined(_USE_FOLD_DOT_f)
          SHIFT_ARITH_ARG(l_value.v, l_linear_type);
+#endif
 
          arith_type = linear_to_arith[res_linear_type];
          arith_type_l = linear_to_arith[l_linear_type];
@@ -1279,29 +1240,26 @@ CONTINUE:
                         &r_linear_type, 
                         &a3_value.v,
                         &a3_linear_type);
+         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
          mask = AR_convert((AR_DATA *)loc_result.v,
                       (const AR_TYPE *)&arith_type,
                       (const AR_DATA *)l_value.v,
                       (const AR_TYPE *)&arith_type_l);
+         ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
+
 # endif
 
-         ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
+	 unpack_result(res_linear_type, loc_result.v);
+	 memcpy(result, loc_result.v, result_len);
          break;
-
 
       case Power_Opr :
          if (l_linear_type != res_linear_type &&
              TYP_TYPE(l_type_idx) != Typeless) {
 
-            SHIFT_ARITH_ARG(l_value.v, l_linear_type);
-
 # if defined(_USE_FOLD_DOT_f)
+            SHIFT_ARITH_ARG(l_value.v, l_linear_type);
             tmp_opr = Cvrt_Opr;
             FOLD_OP(
                            &tmp_opr, 
@@ -1313,27 +1271,25 @@ CONTINUE:
                            &r_linear_type, 
                            &a3_value.v,
                            &a3_linear_type);
+            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
             mask = AR_convert((AR_DATA *)loc_result.v,
                          (const AR_TYPE *)&linear_to_arith[res_linear_type],
                          (const AR_DATA *)l_value.v,
                          (const AR_TYPE *)&linear_to_arith[l_linear_type]);
-# endif
             ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
+# endif
 
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               l_value.v[i] = loc_result.v[i];
-            }
+	    memcpy(l_value.v, loc_result.v, sizeof(value_type));
          }
 
          if (r_linear_type != res_linear_type &&
              TYP_TYPE(r_type_idx) == Integer &&
              TYP_TYPE((*res_type_idx)) == Integer) {
 
+# if defined(_USE_FOLD_DOT_f)
             SHIFT_ARITH_ARG(r_value.v, r_linear_type);
 
-# if defined(_USE_FOLD_DOT_f)
             tmp_opr = Cvrt_Opr;
             FOLD_OP(
                            &tmp_opr,   
@@ -1345,29 +1301,24 @@ CONTINUE:
                            &r_linear_type, 
                            &a3_value.v,
                            &a3_linear_type);
+            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
             mask = AR_convert((AR_DATA *)loc_result.v,
                             (const AR_TYPE *)&linear_to_arith[res_linear_type],
                             (const AR_DATA *)r_value.v,
                             (const AR_TYPE *)&linear_to_arith[r_linear_type]);
+            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
 # endif
 
-            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               r_value.v[i] = loc_result.v[i];
-            }
-
+	    memcpy(r_value.v, loc_result.v, sizeof(value_type));
             r_linear_type = res_linear_type;
          }
          else if (r_linear_type != res_linear_type &&
                   TYP_TYPE(r_type_idx) != Integer &&
                   TYP_TYPE(r_type_idx) != Typeless) {
 
-            SHIFT_ARITH_ARG(r_value.v, r_linear_type);
-
 # if defined(_USE_FOLD_DOT_f)
+            SHIFT_ARITH_ARG(r_value.v, r_linear_type);
             tmp_opr = Cvrt_Opr;
             FOLD_OP(
                            &tmp_opr,  
@@ -1379,27 +1330,24 @@ CONTINUE:
                            &r_linear_type, 
                            &a3_value.v,
                            &a3_linear_type);
+            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
             mask = AR_convert((AR_DATA *)loc_result.v,
                             (const AR_TYPE *)&linear_to_arith[res_linear_type],
                             (const AR_DATA *)r_value.v,
                             (const AR_TYPE *)&linear_to_arith[r_linear_type]);
+            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
 # endif
 
-            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               r_value.v[i] = loc_result.v[i];
-            }
-
+	    memcpy(r_value.v, loc_result.v, sizeof(value_type));
             r_linear_type = res_linear_type;
          }
 
+
+# if defined(_USE_FOLD_DOT_f)
          SHIFT_ARITH_ARG(l_value.v, res_linear_type);
          SHIFT_ARITH_ARG(r_value.v, r_linear_type);
 
-# if defined(_USE_FOLD_DOT_f)
          FOLD_OP(
                         &opr,   
                         &loc_result.v,
@@ -1410,6 +1358,8 @@ CONTINUE:
                         &r_linear_type, 
                         &a3_value.v,
                         &a3_linear_type);
+
+         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
          mask = AR_power((AR_DATA *)loc_result.v,
                      (const AR_TYPE *)&linear_to_arith[res_linear_type],
@@ -1417,16 +1367,12 @@ CONTINUE:
                      (const AR_TYPE *)&linear_to_arith[res_linear_type],
                      (const AR_DATA *)r_value.v,
                      (const AR_TYPE *)&linear_to_arith[r_linear_type]);
+         ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
 # endif
 
-         ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
+	 unpack_result(res_linear_type, loc_result.v);
+	 memcpy(result, loc_result.v, result_len);
          break;
-
 
       case Mult_Opr :
       case Div_Opr  :
@@ -1438,9 +1384,8 @@ CONTINUE:
          if (l_linear_type != res_linear_type &&
              TYP_TYPE(l_type_idx) != Typeless) {
 
-            SHIFT_ARITH_ARG(l_value.v, l_linear_type);
-
 # if defined(_USE_FOLD_DOT_f)            
+            SHIFT_ARITH_ARG(l_value.v, l_linear_type);
             tmp_opr = Cvrt_Opr;
             FOLD_OP(
                    	   &tmp_opr,  
@@ -1452,27 +1397,22 @@ CONTINUE:
                    	   &r_linear_type, 
                            &a3_value.v,
                            &a3_linear_type);
+            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else 
             mask = AR_convert((AR_DATA *)loc_result.v,
                          (const AR_TYPE *)&linear_to_arith[res_linear_type],
                          (const AR_DATA *)l_value.v,
                          (const AR_TYPE *)&linear_to_arith[l_linear_type]);
-# endif
-
             ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               l_value.v[i] = loc_result.v[i];
-            }
+# endif
+	    memcpy(l_value.v, loc_result.v, sizeof(value_type));
          }
 
          if (r_linear_type != res_linear_type &&
              TYP_TYPE(r_type_idx) != Typeless) {
 
-            SHIFT_ARITH_ARG(r_value.v, r_linear_type);
-
 # if defined(_USE_FOLD_DOT_f)            
+            SHIFT_ARITH_ARG(r_value.v, r_linear_type);
             tmp_opr = Cvrt_Opr;
             FOLD_OP(
                    	   &tmp_opr,  
@@ -1484,25 +1424,22 @@ CONTINUE:
                    	   &r_linear_type, 
                            &a3_value.v,
                            &a3_linear_type);
+            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else 
-             mask = AR_convert((AR_DATA *)loc_result.v,
-                            (const AR_TYPE *)&linear_to_arith[res_linear_type],
-                            (const AR_DATA *)r_value.v,
-                            (const AR_TYPE *)&linear_to_arith[r_linear_type]);
+	    mask = AR_convert((AR_DATA *)loc_result.v,
+			      (const AR_TYPE *)&linear_to_arith[res_linear_type],
+			      (const AR_DATA *)r_value.v,
+			      (const AR_TYPE *)&linear_to_arith[r_linear_type]);
+            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
 # endif
 
-            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               r_value.v[i] = loc_result.v[i];
-            }
+	    memcpy(r_value.v, loc_result.v, sizeof(value_type));
          }
 
+# if defined(_USE_FOLD_DOT_f)            
          SHIFT_ARITH_ARG(l_value.v, res_linear_type);
          SHIFT_ARITH_ARG(r_value.v, res_linear_type);
 
-# if defined(_USE_FOLD_DOT_f)            
          FOLD_OP(
                    	&opr,  
                         &loc_result.v,
@@ -1513,6 +1450,7 @@ CONTINUE:
                    	&res_linear_type, 
                         &a3_value.v,
                         &a3_linear_type);
+         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else 
          switch (opr) {
          case Mult_Opr:
@@ -1543,9 +1481,7 @@ CONTINUE:
 
             ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
 
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               r_value.v[i] = loc_result.v[i];
-            }
+	    memcpy(r_value.v, loc_result.v, sizeof(value_type));
 
             mask = AR_round_int_div((AR_DATA *)loc_result.v,
                         (const AR_TYPE *)&linear_to_arith[res_linear_type],
@@ -1590,16 +1526,13 @@ CONTINUE:
             break;
 
          }
-# endif
 
          ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
+# endif
 
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
+	 unpack_result(res_linear_type, loc_result.v);
+	 memcpy(result, loc_result.v, result_len);
          break;
-
 
       case Eq_Opr :
       case Ne_Opr :
@@ -1624,9 +1557,8 @@ CONTINUE:
             if (l_linear_type != res_linear_type &&
                 TYP_TYPE(l_type_idx) != Typeless) {
 
-               SHIFT_ARITH_ARG(l_value.v, l_linear_type);
-
 # if defined(_USE_FOLD_DOT_f)
+               SHIFT_ARITH_ARG(l_value.v, l_linear_type);
                tmp_opr = Cvrt_Opr;
                FOLD_OP(
                               &tmp_opr,  
@@ -1638,27 +1570,23 @@ CONTINUE:
                               &r_linear_type, 
                               &a3_value.v,
                               &a3_linear_type);
+               SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
-                mask = AR_convert((AR_DATA *)loc_result.v,
+	       mask = AR_convert((AR_DATA *)loc_result.v,
                             (const AR_TYPE *)&linear_to_arith[res_linear_type],
                             (const AR_DATA *)l_value.v,
                             (const AR_TYPE *)&linear_to_arith[l_linear_type]);
+               ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
 # endif
 
-               ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-               SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-               for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-                  l_value.v[i] = loc_result.v[i];
-               }
+	       memcpy(l_value.v, loc_result.v, sizeof(value_type));
             }
 
             if (r_linear_type != res_linear_type &&
                 TYP_TYPE(r_type_idx) != Typeless) {
-
-               SHIFT_ARITH_ARG(r_value.v, r_linear_type);
    
 # if defined(_USE_FOLD_DOT_f)
+               SHIFT_ARITH_ARG(r_value.v, r_linear_type);
                tmp_opr = Cvrt_Opr;
                FOLD_OP(
                               &tmp_opr,  
@@ -1670,19 +1598,16 @@ CONTINUE:
                               &r_linear_type, 
                               &a3_value.v,
                               &a3_linear_type);
+               SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
                mask = AR_convert((AR_DATA *)loc_result.v,
                            (const AR_TYPE *)&linear_to_arith[res_linear_type],
                            (const AR_DATA *)r_value.v,
                            (const AR_TYPE *)&linear_to_arith[r_linear_type]);
+               ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
 # endif
 
-               ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-               SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-               for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-                  r_value.v[i] = loc_result.v[i];
-               }
+	       memcpy(r_value.v, loc_result.v, sizeof(value_type));
             }
 
 # if defined(_USE_FOLD_DOT_f)
@@ -1710,9 +1635,6 @@ CONTINUE:
                                        FALSE);
             }
 # else
-            SHIFT_ARITH_ARG(l_value.v, res_linear_type);
-            SHIFT_ARITH_ARG(r_value.v, res_linear_type);
-
             comp_res = AR_compare((const AR_DATA *)l_value.v,
                           (const AR_TYPE *)&linear_to_arith[res_linear_type],
                           (const AR_DATA *)r_value.v,
@@ -1799,6 +1721,7 @@ CONTINUE:
          else {
             set_up_logical_constant(result, (*res_type_idx), TRUE_VALUE, FALSE);
          }
+
          break;
 
 
@@ -1847,37 +1770,52 @@ CONTINUE:
 
 
       case Bnot_Opr :
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
+         for (i = 0; i < num_host_wds[res_linear_type]; i++)
             result[i] = ~l_value.v[i];
-         }
+
+#if !defined(_USE_FOLD_DOT_f)
+	 unpack_result(res_linear_type, result);
+#endif
          break;
 
 
       case Band_Opr  :
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = l_value.v[i] & r_value.v[i];
-         }
+         for (i = 0; i < num_host_wds[res_linear_type]; i++)
+	     result[i] = l_value.v[i] & r_value.v[i];
+
+#if !defined(_USE_FOLD_DOT_f)
+	 unpack_result(res_linear_type, result);
+#endif
          break;
 
 
       case Bor_Opr   :
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
+         for (i = 0; i < num_host_wds[res_linear_type]; i++)
             result[i] = l_value.v[i] | r_value.v[i];
-         }
+
+#if !defined(_USE_FOLD_DOT_f)
+	 unpack_result(res_linear_type, result);
+#endif
          break;
 
 
       case Bneqv_Opr :
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
+         for (i = 0; i < num_host_wds[res_linear_type]; i++)
             result[i] = l_value.v[i] ^ r_value.v[i];
-         }
+
+#if !defined(_USE_FOLD_DOT_f)
+	 unpack_result(res_linear_type, result);
+#endif
          break;
 
 
       case Beqv_Opr :
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
+         for (i = 0; i < num_host_wds[res_linear_type]; i++)
             result[i] = ~(l_value.v[i] ^ r_value.v[i]);
-         }
+
+#if !defined(_USE_FOLD_DOT_f)
+	 unpack_result(res_linear_type, result);
+#endif
          break;
 
 
@@ -1899,9 +1837,8 @@ CONTINUE:
          ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
          SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
+	 unpack_result(res_linear_type, loc_result.v);
+	 memcpy(result, loc_result.v, result_len);
          break;
 # endif
 
@@ -1920,19 +1857,18 @@ CONTINUE:
                         &res_linear_type, 
                         &a3_value.v,
                         &a3_linear_type);
+         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
          mask = AR_abs((AR_DATA *)loc_result.v,
                       (const AR_TYPE *)&linear_to_arith[res_linear_type],
                       (const AR_DATA *)l_value.v,
                       (const AR_TYPE *)&linear_to_arith[res_linear_type]);
-# endif
 
          ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
+# endif
 
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
+	 unpack_result(res_linear_type, loc_result.v);
+	 memcpy(result, loc_result.v, result_len);
          break;
 
 
@@ -1949,16 +1885,17 @@ CONTINUE:
                         &a3_value.v,
                         &a3_linear_type);
 
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
-# else 
-         strcpy(char_buf, "0.5");
-         mask = AR_convert_str_to_float((AR_DATA *)a3_value.v,
-                          (const AR_TYPE *)&input_arith_type[l_linear_type],
-                          (const char *)char_buf);
-         ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
          SHIFT_ARITH_RESULT(a3_value.v, l_linear_type);
+	 memcpy(result, loc_result.v, result_len);
+
+# else 
+	 unpack_result(l_linear_type, l_value.v);
+
+	 if (l_linear_type == Real_4)
+	     *((float *) a3_value.v) = 0.5;
+
+	 else
+	     *((double *) a3_value.v) = 0.5;
 
          type_idx = CG_LOGICAL_DEFAULT_TYPE;
 
@@ -2010,14 +1947,15 @@ CONTINUE:
                              col,
                              1,
                              Int_Opr);
+
 # endif
          break;
 
 
       case Sign_Opr :
-         SHIFT_ARITH_ARG(l_value.v, res_linear_type);
 
 # if defined(_USE_FOLD_DOT_f)
+         SHIFT_ARITH_ARG(l_value.v, res_linear_type);
          tmp_opr = Abs_Opr;
          FOLD_OP(
                         &tmp_opr,   
@@ -2029,18 +1967,18 @@ CONTINUE:
                         &r_linear_type, 
                         &a3_value.v,
                         &a3_linear_type);
+         SHIFT_ARITH_RESULT(a3_value.v, res_linear_type);
 # else
          mask = AR_abs((AR_DATA *)a3_value.v,
                       (const AR_TYPE *)&linear_to_arith[res_linear_type],
                       (const AR_DATA *)l_value.v,
                       (const AR_TYPE *)&linear_to_arith[res_linear_type]);
-# endif
-
          ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-         SHIFT_ARITH_RESULT(a3_value.v, res_linear_type);
+# endif
 
          type_idx = CG_LOGICAL_DEFAULT_TYPE;
 
+	 unpack_result(r_linear_type, r_value.v);
          ok &= folder_driver((char *)r_value.v,
                            r_type_idx,
                            (char *)&CN_CONST(CN_INTEGER_ZERO_IDX),
@@ -2054,9 +1992,9 @@ CONTINUE:
 
          if (THIS_IS_TRUE(a4_value.v, type_idx)) {
             /* negate the result */
-            SHIFT_ARITH_ARG(a3_value.v, res_linear_type);
 
 # if defined(_USE_FOLD_DOT_f)
+            SHIFT_ARITH_ARG(a3_value.v, res_linear_type);
             tmp_opr = Uminus_Opr;
             FOLD_OP(
                            &tmp_opr,  
@@ -2068,25 +2006,24 @@ CONTINUE:
                            &r_linear_type, 
                            &a3_value.v,
                            &a3_linear_type);
+            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
             mask = AR_negate((AR_DATA *)loc_result.v,
                          (const AR_TYPE *)&linear_to_arith[res_linear_type],
                          (const AR_DATA *)a3_value.v,
                          (const AR_TYPE *)&linear_to_arith[res_linear_type]);
-# endif
-   
             ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
+# endif
 
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               result[i] = loc_result.v[i];
-            }
+	    unpack_result(res_linear_type, loc_result.v);
+	    memcpy(result, loc_result.v, result_len);
          }
+
          else {
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               result[i] = a3_value.v[i];
-            }
-         }
+	     unpack_result(res_linear_type, a3_value.v);
+	     memcpy(result, a3_value.v, result_len);
+	 }
+
          break;
 
 
@@ -2108,10 +2045,7 @@ CONTINUE:
                         &a3_value.v,
                         &a3_linear_type);
 
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
-
+	 memcpy(result, loc_result.v, result_len);
          break;
 # endif
 
@@ -2124,7 +2058,6 @@ CONTINUE:
             a4_value.v[0] = 0;
          }
 # endif
-
 
          SHIFT_ARITH_ARG(r_value.v, res_linear_type);
          SHIFT_ARITH_ARG(a4_value.v, res_linear_type);
@@ -2152,9 +2085,7 @@ CONTINUE:
                       (const AR_DATA *)a3_value.v,
                       (const AR_TYPE *)&linear_to_arith[res_linear_type]);
 
-            for (i = 0; i < 4; i++) {
-               a3_value.v[i] = loc_result.v[i];
-            }
+	    memcpy(a3_value.v, loc_result.v, sizeof(value_type));
 
             mask = AR_dshiftr((AR_DATA *)r_value.v,
                           (const AR_TYPE *)&linear_to_arith[res_linear_type],
@@ -2200,13 +2131,12 @@ CONTINUE:
 
          SHIFT_ARITH_RESULT(r_value.v, res_linear_type);
          SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            loc_result.v[i] |= r_value.v[i];
-         }
 
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
+         for (i = 0; i < num_host_wds[res_linear_type]; i++)
+            loc_result.v[i] |= r_value.v[i];
+
+	 unpack_result(res_linear_type, loc_result.v);
+	 memcpy(result, loc_result.v, result_len);
          break;
 
 
@@ -2216,9 +2146,8 @@ CONTINUE:
          if (l_linear_type != res_linear_type &&
              TYP_TYPE(l_type_idx) != Typeless) {
 
-            SHIFT_ARITH_ARG(l_value.v, l_linear_type);
-
 # if defined(_USE_FOLD_DOT_f)
+            SHIFT_ARITH_ARG(l_value.v, l_linear_type);
             tmp_opr = Cvrt_Opr;
             FOLD_OP(
                            &tmp_opr,  
@@ -2230,27 +2159,22 @@ CONTINUE:
                            &r_linear_type, 
                            &a3_value.v,
                            &a3_linear_type);
+            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
             mask = AR_convert((AR_DATA *)loc_result.v,
                          (const AR_TYPE *)&linear_to_arith[res_linear_type],
                          (const AR_DATA *)l_value.v,
                          (const AR_TYPE *)&linear_to_arith[l_linear_type]);
-# endif
-
             ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               l_value.v[i] = loc_result.v[i];
-            }
+# endif
+	    memcpy(l_value.v, loc_result.v, sizeof(value_type));
          }
 
          if (r_linear_type != res_linear_type &&
              TYP_TYPE(r_type_idx) != Typeless) {
 
-            SHIFT_ARITH_ARG(r_value.v, r_linear_type);
-
 # if defined(_USE_FOLD_DOT_f)
+            SHIFT_ARITH_ARG(r_value.v, r_linear_type);
             tmp_opr = Cvrt_Opr;
             FOLD_OP(
                            &tmp_opr,  
@@ -2262,27 +2186,23 @@ CONTINUE:
                            &r_linear_type, 
                            &a3_value.v,
                            &a3_linear_type);
+            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
-             mask = AR_convert((AR_DATA *)loc_result.v,
-                            (const AR_TYPE *)&linear_to_arith[res_linear_type],
-                            (const AR_DATA *)r_value.v,
-                            (const AR_TYPE *)&linear_to_arith[r_linear_type]);
+	    mask = AR_convert((AR_DATA *)loc_result.v,
+			      (const AR_TYPE *)&linear_to_arith[res_linear_type],
+			      (const AR_DATA *)r_value.v,
+			      (const AR_TYPE *)&linear_to_arith[r_linear_type]);
+            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
 # endif
 
-            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               r_value.v[i] = loc_result.v[i];
-            }
+	    memcpy(r_value.v, loc_result.v, sizeof(value_type));
          }
 
          if (a3_linear_type != res_linear_type &&
              TYP_TYPE(a3_type_idx) != Typeless) {
 
-            SHIFT_ARITH_ARG(a3_value.v, a3_linear_type);
-
 # if defined(_USE_FOLD_DOT_f)
+            SHIFT_ARITH_ARG(a3_value.v, a3_linear_type);
             tmp_opr = Cvrt_Opr;
             FOLD_OP(
                            &tmp_opr,  
@@ -2294,26 +2214,22 @@ CONTINUE:
                            &r_linear_type, 
                            &a3_value.v,
                            &a3_linear_type);
+            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
-             mask = AR_convert((AR_DATA *)loc_result.v,
+	    mask = AR_convert((AR_DATA *)loc_result.v,
                             (const AR_TYPE *)&linear_to_arith[res_linear_type],
                             (const AR_DATA *)a3_value.v,
                             (const AR_TYPE *)&linear_to_arith[a3_linear_type]);
+            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
 # endif
 
-            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               a3_value.v[i] = loc_result.v[i];
-            }
+	    memcpy(a3_value.v, loc_result.v, sizeof(value_type));
          }
 
+# if defined(_USE_FOLD_DOT_f)
          SHIFT_ARITH_ARG(l_value.v, res_linear_type);
          SHIFT_ARITH_ARG(r_value.v, res_linear_type);
          SHIFT_ARITH_ARG(a3_value.v, res_linear_type);
-
-# if defined(_USE_FOLD_DOT_f)
          FOLD_OP(
                           &opr,  
                           &loc_result.v,
@@ -2324,6 +2240,7 @@ CONTINUE:
                           &res_linear_type, 
                           &a3_value.v,
                           &res_linear_type);
+         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
          if (opr == Ibits_Opr) {
             mask = AR_ibits((AR_DATA *)loc_result.v,
@@ -2346,6 +2263,8 @@ CONTINUE:
                           (const AR_TYPE *)&linear_to_arith[res_linear_type]);
          }
 
+	 unpack_result(res_linear_type, loc_result.v);
+
          /* don't check for anything but invalid type here */
 
          if ((mask & AR_STAT_INVALID_TYPE) != 0) {
@@ -2353,13 +2272,8 @@ CONTINUE:
          }
 # endif
 
-         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
+	 memcpy(result, loc_result.v, result_len);
          break;
-
 
       case Shiftl_Opr :
       case Shiftr_Opr :
@@ -2367,9 +2281,8 @@ CONTINUE:
          if (l_linear_type != res_linear_type &&
              TYP_TYPE(l_type_idx) != Typeless) {
 
-            SHIFT_ARITH_ARG(l_value.v, l_linear_type);
-
 # if defined(_USE_FOLD_DOT_f)
+            SHIFT_ARITH_ARG(l_value.v, l_linear_type);
             tmp_opr = Cvrt_Opr;
             FOLD_OP(
                            &tmp_opr,  
@@ -2381,27 +2294,23 @@ CONTINUE:
                            &r_linear_type, 
                            &a3_value.v,
                            &a3_linear_type);
+            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
             mask = AR_convert((AR_DATA *)loc_result.v,
                          (const AR_TYPE *)&linear_to_arith[res_linear_type],
                          (const AR_DATA *)l_value.v,
                          (const AR_TYPE *)&linear_to_arith[l_linear_type]);
+            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
 # endif
 
-            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               l_value.v[i] = loc_result.v[i];
-            }
+	    memcpy(l_value.v, loc_result.v, sizeof(value_type));
          }
 
          if (r_linear_type != res_linear_type &&
              TYP_TYPE(r_type_idx) != Typeless) {
 
-            SHIFT_ARITH_ARG(r_value.v, r_linear_type);
-
 # if defined(_USE_FOLD_DOT_f)
+            SHIFT_ARITH_ARG(r_value.v, r_linear_type);
             tmp_opr = Cvrt_Opr;
             FOLD_OP(
                            &tmp_opr,  
@@ -2413,36 +2322,32 @@ CONTINUE:
                            &r_linear_type, 
                            &a3_value.v,
                            &a3_linear_type);
+            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
              mask = AR_convert((AR_DATA *)loc_result.v,
                             (const AR_TYPE *)&linear_to_arith[res_linear_type],
                             (const AR_DATA *)r_value.v,
                             (const AR_TYPE *)&linear_to_arith[r_linear_type]);
+            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
 # endif
 
-            ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
-            SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               r_value.v[i] = loc_result.v[i];
-            }
+	    memcpy(r_value.v, loc_result.v, sizeof(value_type));
          }
-
-         SHIFT_ARITH_ARG(l_value.v, res_linear_type);
-         SHIFT_ARITH_ARG(r_value.v, res_linear_type);
 
          arith_type = linear_to_arith[res_linear_type];
 
          if (opr != Shifta_Opr) {
-            if (arith_type == AR_Int_32_S) {
+            if (arith_type == AR_Int_32_S)
                arith_type = AR_Int_32_U;
-            }
-            else if (arith_type == AR_Int_64_S) {
+
+            else if (arith_type == AR_Int_64_S)
                arith_type = AR_Int_64_U;
-            }
          }
 
 # if defined(_USE_FOLD_DOT_f)
+         SHIFT_ARITH_ARG(l_value.v, res_linear_type);
+         SHIFT_ARITH_ARG(r_value.v, res_linear_type);
+
          FOLD_OP(
                         &opr,  
                         &loc_result.v,
@@ -2453,6 +2358,7 @@ CONTINUE:
                         &res_linear_type, 
                         &a3_value.v,
                         &a3_linear_type);
+         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 # else
          switch (opr) {
          case Shiftl_Opr :
@@ -2477,21 +2383,21 @@ CONTINUE:
 
          /* don't check for anything but invalid type here */
 
-         if ((mask & AR_STAT_INVALID_TYPE) != 0) {
+         if ((mask & AR_STAT_INVALID_TYPE) != 0)
              PRINTMSG(line, 1079, Internal, col);
-         }
+
+	 unpack_result(res_linear_type, loc_result.v);
 # endif
 
-         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
+	 memcpy(result, loc_result.v, result_len);
          break;
 
 
       case Dim_Opr :
          type_idx = CG_LOGICAL_DEFAULT_TYPE;
+
+	 unpack_result(l_linear_type, l_value.v);
+	 unpack_result(r_linear_type, r_value.v);
 
          ok = folder_driver((char *)l_value.v,
                            l_type_idx,
@@ -2528,15 +2434,14 @@ CONTINUE:
                            2,
                            Minus_Opr);
 
-            for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-               result[i] = a3_value.v[i];
-            }
+	    memcpy(result, a3_value.v, result_len);
          }
          break;
 
 
 
       case Ichar_Opr :
+	unpack_result(l_linear_type, l_value.v);
          result[0] = l_value_ptr[0];
 
 # ifdef _TARGET32
@@ -2554,6 +2459,7 @@ CONTINUE:
 
 
       case Char_Opr :
+	unpack_result(l_linear_type, l_value.v);
 # if defined(_TARGET_LITTLE_ENDIAN)
         /*
          * NOTE: 1) range checking is pre-performed by caller
@@ -2574,7 +2480,9 @@ CONTINUE:
 
 
       case Index_Opr :
+#if defined(_USE_FOLD_DOT_f)
          SHIFT_ARITH_ARG(a3_value.v, a3_linear_type);
+#endif
 
          str1_linear_type = TYP_LINEAR(CN_TYPE_IDX(TYP_IDX(l_type_idx)));
          str2_linear_type = TYP_LINEAR(CN_TYPE_IDX(TYP_IDX(r_type_idx)));
@@ -2619,9 +2527,11 @@ CONTINUE:
          }
 # endif
 
-         
+
+#if defined(_USE_FOLD_DOT_f)         
          SHIFT_ARITH_ARG(str_len1.v, res_linear_type);
          SHIFT_ARITH_ARG(str_len2.v, res_linear_type);
+#endif
 
          mask = AR_index((AR_DATA *)loc_result.v,
                          (const AR_TYPE *)&linear_to_arith[res_linear_type],
@@ -2634,18 +2544,21 @@ CONTINUE:
                          (const AR_DATA *)a3_value.v,
                          (const AR_TYPE *)&linear_to_arith[a3_linear_type]);
 
-         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
+	 unpack_result(res_linear_type, loc_result.v);
 
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
+#if defined(_USE_FOLD_DOT_f)
+         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
+#endif
 
          ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
+	 memcpy(result, loc_result.v, result_len);
          break;
 
 
       case Scan_Opr :
+#if defined(_USE_FOLD_DOT_f)
          SHIFT_ARITH_ARG(a3_value.v, a3_linear_type);
+#endif
 
          str1_linear_type = TYP_LINEAR(CN_TYPE_IDX(TYP_IDX(l_type_idx)));
          str2_linear_type = TYP_LINEAR(CN_TYPE_IDX(TYP_IDX(r_type_idx)));
@@ -2689,7 +2602,6 @@ CONTINUE:
             }
          }
 # endif
-
 
          SHIFT_ARITH_ARG(str_len1.v, res_linear_type);
          SHIFT_ARITH_ARG(str_len2.v, res_linear_type);
@@ -2705,13 +2617,10 @@ CONTINUE:
                          (const AR_DATA *)a3_value.v,
                          (const AR_TYPE *)&linear_to_arith[a3_linear_type]);
 
-         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
+	 unpack_result(res_linear_type, loc_result.v);
 
          ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
+	 memcpy(result, loc_result.v, result_len);
          break;
 
 
@@ -2761,10 +2670,10 @@ CONTINUE:
          }
 # endif
 
-
+#if defined(_USE_FOLD_DOT_f)
          SHIFT_ARITH_ARG(str_len1.v, res_linear_type);
          SHIFT_ARITH_ARG(str_len2.v, res_linear_type);
-
+#endif
 
          mask = AR_verify((AR_DATA *)loc_result.v,
                          (const AR_TYPE *)&linear_to_arith[res_linear_type],
@@ -2777,13 +2686,14 @@ CONTINUE:
                          (const AR_DATA *)a3_value.v,
                          (const AR_TYPE *)&linear_to_arith[a3_linear_type]);
 
+#if defined(_USE_FOLD_DOT_f)
          SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
-
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
+#endif
 
          ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
+
+	 unpack_result(res_linear_type, loc_result.v);
+	 memcpy(result, loc_result.v, result_len);
          break;
 
 
@@ -2809,13 +2719,12 @@ CONTINUE:
 
          char_ptr = (char *)&(CN_CONST(result[0]));
 
-         for (k = 0; k < (char_len - i); k++) {
+         for(k = 0; k < (char_len - i); k++)
             char_ptr[k] = l_value_ptr[i + k];
-         }
  
-         for (; k < char_len; k++) {
+         for(; k < char_len; k++)
             char_ptr[k] = ' ';
-         }
+
          break;
 
 
@@ -2836,30 +2745,26 @@ CONTINUE:
          char_len = CN_INT_TO_C(TYP_IDX(l_type_idx));
 
          i = 0;
-         while (i < char_len &&
-                l_value_ptr[(char_len - i) - 1] == ' ') {
+         while (i < char_len && l_value_ptr[(char_len - i) - 1] == ' ')
             i++;
-         }
 
          /* i is the number of blanks */
 
          char_ptr = (char *)&(CN_CONST(result[0]));
 
-         for (k = char_len; k > i; k--) {
+         for (k = char_len; k > i; k--)
             char_ptr[k - 1] = l_value_ptr[(k - i) - 1];
-         }
  
-         for (; k > 0; k--) {
+         for (; k > 0; k--)
             char_ptr[k - 1] = ' ';
-         }
+
          break;
 
 
       case Len_Trim_Opr :
          char_len = CN_INT_TO_C(TYP_IDX(l_type_idx));
-         while (char_len > 0 && l_value_ptr[char_len-1] == ' ') {
+         while (char_len > 0 && l_value_ptr[char_len-1] == ' ')
             char_len--;
-         }
 
          /* char_len is a C value, result is a target value */
 
@@ -2868,8 +2773,6 @@ CONTINUE:
 
 
       case Mask_Opr :
-         SHIFT_ARITH_ARG(l_value.v, l_linear_type);
-
          mask = AR_mask((AR_DATA *)loc_result.v,
                       (const AR_TYPE *)&linear_to_arith[res_linear_type],
                       (const AR_DATA *)l_value.v,
@@ -2880,13 +2783,10 @@ CONTINUE:
          if ((mask & AR_STAT_INVALID_TYPE) != 0) {
              PRINTMSG(line, 1079, Internal, col);
          }
-         SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            result[i] = loc_result.v[i];
-         }
+	 unpack_result(res_linear_type, loc_result.v);
+	 memcpy(result, loc_result.v, result_len);
          break;
-
 
 
       case Csmg_Opr :
@@ -2907,9 +2807,8 @@ CONTINUE:
                             2,
                             Band_Opr) && ok;
 
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            l_value.v[i] = a4_value.v[i];
-         }
+	 memcpy(l_value.v, a4_value.v, sizeof(value_type));
+
          /* x now holds (x .and. z) */
 
          /* (.not. z) */
@@ -2924,10 +2823,9 @@ CONTINUE:
                             col,
                             1,
                             Bnot_Opr) && ok;
-   
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            a3_value.v[i] = a4_value.v[i];
-         }
+
+	 memcpy(a3_value.v, a4_value.v, sizeof(value_type));
+
          /* z now holds (.not. z) */
    
          /* (y .and. (.not. z)) */
@@ -2941,10 +2839,9 @@ CONTINUE:
                             col,
                             2,
                             Band_Opr) && ok;
-   
-         for (i = 0; i < num_host_wds[res_linear_type]; i++) {
-            r_value.v[i] = a4_value.v[i];
-         }
+
+	 memcpy(r_value.v, a4_value.v, sizeof(value_type));
+
          /* y now holds (y .and. (.not. z)) */
    
    
@@ -2970,39 +2867,6 @@ CONTINUE:
 #ifdef KEY /* Bug 12014 */
    }
 #endif /* KEY Bug 12014 */
-# if defined(_HOST64) && defined(_TARGET64) && defined(_WHIRL_HOST64_TARGET64)
-   switch(opr) {
-      case Sqrt_Opr :
-      case Plus_Opr :
-      case Uminus_Opr :
-      case Minus_Opr :
-      case Mult_Opr :
-      case Div_Opr :
-      case Power_Opr :
-      case Eq_Opr :
-      case Ne_Opr :
-      case Abs_Opr :
-      case Cvrt_Opr :
-         if (res_linear_type == Complex_4) {
-	 /* we need to unpack it into two words */
-#if defined(_HOST_LITTLE_ENDIAN)
-	    result[1] = result[0] >> 32;
-	    result[0] = result[0] & 0xFFFFFFFF;
-#else
-	    result[1] = result[0] & 0xFFFFFFFF;
-	    result[0] = result[0] >> 32;
-#endif
-        }
-   }
-# endif
-
-# ifdef _TARGET_OS_MAX
-   if (res_linear_type == Complex_4) {  /* KAYKAY */
-      /* we need to unpack it into two words */
-      result[1] = result[0] & 0xFFFFFFFF;
-      result[0] = result[0] >> 32;
-   }
-# endif
 
 EXIT:
 
@@ -3984,7 +3848,7 @@ boolean	compare_target_consts(long_type	*const1,
 }  /* compare_target_consts */
 
 
-# ifdef _USE_FOLD_DOT_f
+# if 1 /* def _USE_FOLD_DOT_f*/
 
 #ifdef KEY /* Bug 5554 */
 /******************************************************************************\

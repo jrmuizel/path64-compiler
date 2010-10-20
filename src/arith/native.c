@@ -39,7 +39,10 @@
 int ar_rounding_modes = 0xf;	/* All rounding modes allowed */
 int ar_underflow_modes = 1<<AR_UNDERFLOW_TO_DENORM;
 
-#if 1
+
+/* If true, the below #if does host arithmetic via fortran. */
+
+#if 0
 
 /* Call native, F90-compiled routines to evaluate all functions */
 /* This seems wrong
@@ -1056,11 +1059,6 @@ static void fptrap (int sig) {
 	signal (SIGFPE, fptrap);
 }
 
-/* Catch math library detected errors */
-int _lerror() {
-	errno = ERANGE;
-	return 0;
-}
 
 /* These macros are used to protect ourselves when calling math libraries. */
 
@@ -1112,15 +1110,21 @@ ar_native2(void (function)(), ar_data *result, const AR_TYPE *resulttype, const 
 
 }
 
+
+
+/* Host math library for intrinsic function evaluation (libm) */
+
 #else	/* !(_Solaris || defined(_CRAYMPP) || defined(__mips)) */
 
-/* Use native math library for intrinsic function evaluation */
 
 #include <math.h>
 #include <signal.h>
 #include <errno.h>
 #include <setjmp.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <complex.h>
+
 
 #undef double_t
 #undef complex_t
@@ -1128,6 +1132,7 @@ ar_native2(void (function)(), ar_data *result, const AR_TYPE *resulttype, const 
 #undef NAT_COMPLEX
 
 #define double_t	double
+#define complex_t	double complex
 
 #if defined(__sparc__) || defined(__mips)
 
@@ -1139,11 +1144,6 @@ ar_native2(void (function)(), ar_data *result, const AR_TYPE *resulttype, const 
 #define NAT_ROUND	AR_Float_IEEE_NR_64
 #define NAT_COMPLEX	AR_Complex_IEEE_NR_64
 
-#if __svr4__
-   #include <complex.h>
-   #define complex_t	double complex
-#endif
-
 #endif
 
 static AR_TYPE native_round_single = NAT_ROUND;
@@ -1153,67 +1153,9 @@ static AR_TYPE native_long_double  = AR_Float_IEEE_NR_64;
 static AR_TYPE native_dbl_complex  = AR_Complex_IEEE_NR_64;
 
 
-/* Fortran character index */
-int
-ar_index (ar_data *result, const AR_TYPE *resulttype,
-	 const char *str1, const char *str2, const ar_data *backward)
-{
-	return AR_STAT_INVALID_TYPE;	/* Not available */
-}
+/* TODO: Some of these subroutines are dead, get rid of them
+ * someday. */
 
-
-/* Fortran character scan */
-int
-ar_scan (ar_data *result, const AR_TYPE *resulttype,
-	 const char *str1, const char *str2, const ar_data *backward)
-{
-	return AR_STAT_INVALID_TYPE;	/* Not available */
-}
-
-
-/* Fortran character verify */
-int
-ar_verify (ar_data *result, const AR_TYPE *resulttype,
-	 const char *str1, const char *str2, const ar_data *backward)
-{
-	return AR_STAT_INVALID_TYPE;	/* Not available */
-}
-
-
-/* Fortran-90 reshape */
-int
-ar_reshape (void *result, const void *source, const void *shape,
-	    const void *pad, const void *order)
-{
-	return AR_STAT_INVALID_TYPE;	/* Not available */
-}
-
-
-/* Fortran-90 transfer */
-int
-ar_transfer (void *result, const void *source, const void *mold, long *length)
-{
-	return AR_STAT_INVALID_TYPE;	/* Not available */
-}
-
-
-/* Fortran-90 modulo */
-int
-ar_modulo (ar_data *result, const AR_TYPE *resulttype,
-	   const ar_data *opnd1, const AR_TYPE *opnd1type,
-	   const ar_data *opnd2, const AR_TYPE *opnd2type)
-{
-	return AR_STAT_INVALID_TYPE;	/* Not available */
-}
-
-/* Fortran-90 selected_real_kind */
-int
-ar_selected_real_kind (ar_data *result, const AR_TYPE *resulttype,
-	 const ar_data *opnd1, const AR_TYPE *opnd1type,
-	 const ar_data *opnd2, const AR_TYPE *opnd2type)
-{
-	return AR_STAT_INVALID_TYPE;	/* Not available */
-}
 
 /* Square root */
 int
@@ -1265,6 +1207,7 @@ ar_sqrt (ar_data *result, const AR_TYPE *resulttype,
 
 	return status;
 }
+
 
 
 /* Natural (base "e") logarithm */
@@ -1429,6 +1372,10 @@ ar_power(ar_data *result, const AR_TYPE *resulttype,
 	int status2;
 	ar_data tbase, tpow, tpow2, temp, one;
 	AR_TYPE inttype = AR_Int_64_S;
+    
+	double r_base, r_exp, r_result;
+	double complex c_base, c_exp, c_result;
+
 	static int loopchk = 0;
 
 #ifdef complex_t
@@ -1449,8 +1396,13 @@ ar_power(ar_data *result, const AR_TYPE *resulttype,
                                 return AR_STAT_INVALID_TYPE;
                 } else
                         tpow = *power;
-                *(complex_t *) result = (cpow) (*(complex_t *) &tbase,
-                                                *(complex_t *) &tpow);
+
+		ar_to_host_c64(&tbase, &c_base);
+		ar_to_host_c64(&tpow, &c_exp);
+
+		c_result = cpow(c_base, c_exp);
+		ar_from_host_c64(&c_result, result);
+
                 return AR_status((AR_DATA*)result, resulttype);
         }
 #endif
@@ -1473,8 +1425,13 @@ ar_power(ar_data *result, const AR_TYPE *resulttype,
                                 return AR_STAT_INVALID_TYPE;
                 } else
                         tpow = *power;
-                *(double_t *) result = (pow) (*(double_t *) &tbase,
-                                              *(double_t *) &tpow);
+
+		ar_to_host_r64(&tbase, &r_base);
+		ar_to_host_r64(&tpow, &r_exp);
+
+		r_result = pow(r_base, r_exp);
+		ar_from_host_r64(&r_result, result);
+
                 return AR_status((AR_DATA*)result, resulttype);
         }
 
@@ -1559,20 +1516,20 @@ ar_power(ar_data *result, const AR_TYPE *resulttype,
 		status = AR_convert ((AR_DATA*)result, resulttype, (AR_DATA*)&one, basetype);	
 		status2 = AR_STAT_OK;
 
-		switch (AR_INT_SIZE (*opnd1type)) {
+		switch (AR_INT_SIZE (*powertype)) {
 		case AR_INT_SIZE_8:
 			AR_convert ((AR_DATA*) &tpow2, &inttype,
-				    (AR_DATA*) &tpow,  opnd1type);
+				    (AR_DATA*) &tpow,  powertype);
 			break;
 
 		case AR_INT_SIZE_16:
 			AR_convert ((AR_DATA*) &tpow2, &inttype,
-				    (AR_DATA*) &tpow,  opnd1type);
+				    (AR_DATA*) &tpow,  powertype);
 			break;
 
 		case AR_INT_SIZE_32:
 			AR_convert ((AR_DATA*) &tpow2, &inttype,
-				    (AR_DATA*) &tpow,  opnd1type);
+				    (AR_DATA*) &tpow,  powertype);
 			break;
 
 		case AR_INT_SIZE_46:
@@ -1752,3 +1709,679 @@ ar_convert_str_to_float (ar_data *result, const AR_TYPE *resulttype,
 
 static char USMID [] = "\n%Z%%M%	%I%	%G% %U%\n";
 static char rcsid [] = "$Id$";
+
+
+
+/* Fortran character index */
+int
+ar_index (ar_data *result, const AR_TYPE *resulttype,
+	 const char *str1, long len1, const char *str2, long len2, long backward)
+{
+	long	index;
+	long	back = backward;
+        int	status;
+
+	extern long _F90_INDEX(const char *st1, const char *st2, long *back,
+			       int len1, int len2);
+
+        index = _F90_INDEX(str1, str2, &back, len1, len2);
+        result->ar_i64.part1 = 0;
+        result->ar_i64.part2 = 0;
+        result->ar_i64.part3 = index>>16;
+        result->ar_i64.part4 = index & 0xffff;
+
+        status = AR_STAT_OK;
+	switch (*resulttype) {
+	case AR_Int_8_S:
+		if (( INT8_SIGN(result) && !IS_INT8_UPPER_ONES(result)) ||
+		    (!INT8_SIGN(result) && !IS_INT8_UPPER_ZERO(result))) {
+                        return AR_STAT_OVERFLOW;
+                }
+                break;
+
+	case AR_Int_16_S:
+		if (( INT16_SIGN(result) && !IS_INT16_UPPER_ONES(result)) ||
+		    (!INT16_SIGN(result) && !IS_INT16_UPPER_ZERO(result))) {
+                        return AR_STAT_OVERFLOW;
+                }
+                break;
+
+	case AR_Int_32_S:
+		if (( INT32_SIGN(result) && !IS_INT32_UPPER_ONES(result)) ||
+		    (!INT32_SIGN(result) && !IS_INT32_UPPER_ZERO(result))) {
+                        return AR_STAT_OVERFLOW;
+                }
+                break;
+
+	case AR_Int_64_S:
+                break;
+
+	default:
+		return AR_STAT_INVALID_TYPE;
+	}
+	WORD_SWAP(result->ar_i64);
+	return AR_status((AR_DATA*)result, resulttype);
+}
+
+
+/* Fortran character scan */
+int
+ar_scan (ar_data *result, const AR_TYPE *resulttype,
+	 const char *str1, long len1, const char *str2, long len2, long backward)
+{
+	long	index;
+	long	back = backward;
+        int	status;
+
+	extern long _F90_SCAN(const char *st1, const char *st2, long *back,
+			       int len1, int len2);
+
+
+        index = _F90_SCAN(str1, str2, &back, len1, len2);
+        result->ar_i64.part1 = 0;
+        result->ar_i64.part2 = 0;
+        result->ar_i64.part3 = index>>16;
+        result->ar_i64.part4 = index & 0xffff;
+
+        status = AR_STAT_OK;
+	switch (*resulttype) {
+	case AR_Int_8_S:
+		if (( INT8_SIGN(result) && !IS_INT8_UPPER_ONES(result)) ||
+		    (!INT8_SIGN(result) && !IS_INT8_UPPER_ZERO(result))) {
+                        return AR_STAT_OVERFLOW;
+                }
+                break;
+
+	case AR_Int_16_S:
+		if (( INT16_SIGN(result) && !IS_INT16_UPPER_ONES(result)) ||
+		    (!INT16_SIGN(result) && !IS_INT16_UPPER_ZERO(result))) {
+                        return AR_STAT_OVERFLOW;
+                }
+                break;
+
+	case AR_Int_32_S:
+		if (( INT32_SIGN(result) && !IS_INT32_UPPER_ONES(result)) ||
+		    (!INT32_SIGN(result) && !IS_INT32_UPPER_ZERO(result))) {
+                        return AR_STAT_OVERFLOW;
+                }
+                break;
+
+	case AR_Int_64_S:
+                break;
+
+	default:
+		return AR_STAT_INVALID_TYPE;
+	}
+
+	WORD_SWAP(result->ar_i64);
+        return AR_status((AR_DATA*)result, resulttype);
+}
+
+
+/* Fortran character verify */
+int
+ar_verify (ar_data *result, const AR_TYPE *resulttype,
+	 const char *str1, long len1, const char *str2, long len2, long backward)
+{
+	long	index;
+	long	back = backward;
+	int	status;
+
+	extern long _F90_VERIFY(const char *st1, const char *st2, long *back,
+			       int len1, int len2);
+
+        index = _F90_VERIFY(str1, str2, &back, len1, len2);
+        result->ar_i64.part1 = 0;
+        result->ar_i64.part2 = 0;
+        result->ar_i64.part3 = index>>16;
+        result->ar_i64.part4 = index & 0xffff;
+
+        status = AR_STAT_OK;
+	switch (*resulttype) {
+	case AR_Int_8_S:
+		if (( INT8_SIGN(result) && !IS_INT8_UPPER_ONES(result)) ||
+		    (!INT8_SIGN(result) && !IS_INT8_UPPER_ZERO(result))) {
+                        return AR_STAT_OVERFLOW;
+                }
+                break;
+
+	case AR_Int_16_S:
+		if (( INT16_SIGN(result) && !IS_INT16_UPPER_ONES(result)) ||
+		    (!INT16_SIGN(result) && !IS_INT16_UPPER_ZERO(result))) {
+                        return AR_STAT_OVERFLOW;
+                }
+                break;
+
+	case AR_Int_32_S:
+		if (( INT32_SIGN(result) && !IS_INT32_UPPER_ONES(result)) ||
+		    (!INT32_SIGN(result) && !IS_INT32_UPPER_ZERO(result))) {
+                        return AR_STAT_OVERFLOW;
+                }
+                break;
+
+	case AR_Int_64_S:
+                break;
+
+	default:
+		return AR_STAT_INVALID_TYPE;
+	}
+
+	WORD_SWAP(result->ar_i64);
+        return AR_status((AR_DATA*)result, resulttype);
+}
+
+
+/* Fortran-90 reshape */
+int
+ar_reshape (void *result, const void *source, const void *shape,
+	    const void *pad, const void *order)
+{
+	extern void _RESHAPE();
+
+	if(*(char**)source == NULL || *(char**)shape == NULL)
+		return AR_STAT_UNDEFINED;
+
+	_RESHAPE(result, source, shape, pad, order);
+
+	return AR_STAT_OK;
+}
+
+
+/* Fortran-90 transfer */
+int
+ar_transfer (void *result, const void *source, const void *mold, long *length)
+{
+	long	size;
+
+	extern void _TRANSFER();
+
+	if(*(char**)source == NULL || *(char**)mold == NULL)
+		return AR_STAT_UNDEFINED;
+
+	if(length != NULL) {
+		size = *length;
+		_TRANSFER(result, source, mold, &size);
+	}
+	else
+		_TRANSFER(result, source, mold, (int*)NULL);
+
+	return AR_STAT_OK;
+}
+
+/* Catch math library detected errors */
+int _lerror() {
+	errno = ERANGE;
+	return 0;
+}
+
+
+
+int
+ar_modulo (ar_data *result, const AR_TYPE *resulttype,
+	   const ar_data *opnd1, const AR_TYPE *opnd1type,
+	   const ar_data *opnd2, const AR_TYPE *opnd2type)
+{
+    int status, s;
+    ar_data a, b;
+    AR_TYPE type;
+
+    if (*resulttype != *opnd1type ||
+	*resulttype != *opnd2type ||
+	AR_CLASS (*resulttype) != AR_CLASS_INT ||
+	AR_INT_SIZE (*resulttype) != AR_INT_SIZE_8 &&
+	AR_INT_SIZE (*resulttype) != AR_INT_SIZE_16 &&
+	AR_INT_SIZE (*resulttype) != AR_INT_SIZE_32 &&
+	AR_INT_SIZE (*resulttype) != AR_INT_SIZE_46 &&
+	AR_INT_SIZE (*resulttype) != AR_INT_SIZE_64)
+	return AR_STAT_INVALID_TYPE;
+
+    
+    type = *resulttype;
+    status = ar_divide_integer (&a, &type,
+				&b, &type,
+				opnd1, opnd1type,
+				opnd2, opnd2type);
+
+    status |= AR_convert((AR_DATA *) &a, resulttype,
+			 (AR_DATA *) &a, &type);
+
+    status |= AR_convert((AR_DATA *) &b, resulttype,
+			 (AR_DATA *) &b, &type);
+
+    /* If a < 0 and b <> 0, decrement to get floor(a/p). */
+
+    if ((AR_status((AR_DATA *) &a, resulttype) & AR_NEGATIVE) &&
+	((AR_status((AR_DATA *) &b, resulttype) & AR_ZERO) == 0)) {
+
+	AR_one((AR_DATA *) &b, resulttype);
+
+	AR_subtract((AR_DATA *) &a, resulttype,
+		    (AR_DATA *) &a, resulttype,
+		    (AR_DATA *) &b, resulttype);
+    }
+
+    status |= AR_multiply((AR_DATA *) &a, resulttype,
+			  (AR_DATA *) &a, resulttype,
+			  (AR_DATA *) opnd2, opnd2type);
+
+    status |= AR_subtract((AR_DATA *) result, resulttype,
+			  (AR_DATA *) opnd1, opnd1type,
+			  (AR_DATA *) &a, resulttype);
+
+    return status;
+}
+
+
+
+/* Fortran-90 selected_real_kind */
+int
+ar_selected_real_kind (ar_data *result, const AR_TYPE *resulttype,
+		       const ar_data *opnd1, const AR_TYPE *opnd1type,
+		       const ar_data *opnd2, const AR_TYPE *opnd2type)
+{
+    ar_data temp;
+    int k, p, r;
+
+    if (opnd1 == NULL)
+	p = 0;
+
+    else {
+	AR_convert((AR_DATA *) &temp, resulttype,
+		   (AR_DATA *) opnd1, opnd1type);
+
+	p = temp.ar_i64.part3;
+	p = (p << 16) | temp.ar_i64.part4;
+
+	if (p < 0)
+	    p = 0;
+    }
+
+    if (opnd2 == NULL)
+	r = 0;
+
+    else {
+	AR_convert((AR_DATA *) &temp, resulttype,
+		   (AR_DATA *) opnd2, opnd2type);
+
+	r = temp.ar_i64.part3;
+	r = (r << 16) | temp.ar_i64.part4;
+
+	if (r < 0)
+	    r = 0;
+    }
+
+    /* For IEEE-754 reals, we have
+     *  kind  precision  range
+     *     4          6     37
+     *     8         15    307
+     *
+     *  So the return values are given by:
+     *
+     *           |    -2    | -3
+     *       307 +----+-----+---
+     *           | 8  |  8  |
+     * range  37 +----+-----+ -1
+     *           | 4  |  8  |
+     *         0 +----+-----+---
+     *           0    6    15
+     *             precision
+     *
+     * There aren't any weirdo kinds that would require us to return -4. */
+
+    if (p <= 6 && r <= 37)
+	k = 4;
+
+    else if (p <= 15 && r <= 307)
+	k = 8;
+
+    else if (p <= 15)
+	k = -2;
+
+    else if (r <= 307)
+	k = -1;
+
+    else
+	k = -3;
+
+    result->ar_i64.part1 = 0;
+    result->ar_i64.part2 = 0;
+    result->ar_i64.part3 = (k >> 16);
+    result->ar_i64.part4 = (k >>  0);
+
+    return 0;
+}
+
+
+
+
+
+#if defined(TARG_X8664)     /* Little endian */
+
+void ar_from_host_r32(void *ptr, void *ar0) {
+ar_data *ar;
+
+    ar = ar0;
+
+    ar->ar_ieee32.zero = 0;
+    ar->ar_ieee32.coeff1 = ((uint16_t *) ptr)[0];
+    ar->ar_ieee32.coeff0 = ((uint8_t *) ptr)[2] & 0x7F;
+    ar->ar_ieee32.expo = (((uint8_t *) ptr)[3] << 1) |
+                          (((uint8_t *) ptr)[2] >> 7);
+    ar->ar_ieee32.sign = ((uint8_t *) ptr)[3] >> 7;
+}
+
+
+void ar_from_host_c32(void *ptr, void *ar0) {
+ar_data *ar;
+int m;
+
+    ar = ar0;
+
+    ar->ar_cplx_ieee32.rcoeff1 = ((uint16_t *) ptr)[0];
+    ar->ar_cplx_ieee32.rcoeff0 = ((uint8_t *) ptr)[2] & 0x7F;
+    ar->ar_cplx_ieee32.rexpo   = (((uint8_t *) ptr)[3] << 1) |
+                                 (((uint8_t *) ptr)[2] >> 7);
+    ar->ar_cplx_ieee32.rsign = ((uint8_t *) ptr)[3] >> 7;
+
+    ptr += sizeof(long);
+
+    ar->ar_cplx_ieee32.icoeff1 = ((uint16_t *) ptr)[0];
+    ar->ar_cplx_ieee32.icoeff0 = ((uint8_t *) ptr)[2] & 0x7F;
+    ar->ar_cplx_ieee32.iexpo   = (((uint8_t *) ptr)[3] << 1) |
+                                  (((uint8_t *) ptr)[2] >> 7);
+    ar->ar_cplx_ieee32.isign = ((uint8_t *) ptr)[3] >> 7;
+}
+
+
+void ar_from_host_r64(void *ptr, void *ar0) {
+ar_data *ar;
+
+    ar = ar0;
+
+    ar->ar_ieee64.coeff3 = ((uint16_t *) ptr)[0];
+    ar->ar_ieee64.coeff2 = ((uint16_t *) ptr)[1];
+    ar->ar_ieee64.coeff1 = ((uint16_t *) ptr)[2];
+    ar->ar_ieee64.coeff0 = ((uint8_t *) ptr)[6] & 0x0F;
+    ar->ar_ieee64.expo   = (((uint16_t *) ptr)[3] >> 4) & 0x7FF;
+    ar->ar_ieee64.sign   = ((uint8_t *) ptr)[7] >> 7;
+}
+
+
+
+void ar_to_host_r32(void *ar0, void *value) {
+ar_data *ar;
+
+    ar = ar0;
+
+    ((uint16_t *) value)[0] = ar->ar_ieee32.coeff1;
+    ((uint8_t *) value)[2]  = ar->ar_ieee32.coeff0 |
+                             (ar->ar_ieee32.expo << 7);
+    ((uint8_t *) value)[3]  = (ar->ar_ieee32.expo >> 1) |
+                              (ar->ar_ieee32.sign << 7);
+}
+
+
+void ar_to_host_c32(void *ar0, void *value) {
+ar_data *ar;
+
+    ar = ar0;
+
+    ((uint16_t *) value)[0] = ar->ar_cplx_ieee32.rcoeff1;
+    ((uint8_t *) value)[2]  = ar->ar_cplx_ieee32.rcoeff0 |
+                             (ar->ar_cplx_ieee32.rexpo << 7);
+    ((uint8_t *) value)[3]  = (ar->ar_cplx_ieee32.rexpo >> 1) |
+                              (ar->ar_cplx_ieee32.rsign << 7);
+
+    value += sizeof(long);
+
+    ((uint16_t *) value)[0] = ar->ar_cplx_ieee32.icoeff1;
+    ((uint8_t *) value)[2]  = ar->ar_cplx_ieee32.icoeff0 |
+                             (ar->ar_cplx_ieee32.iexpo << 7);
+    ((uint8_t *) value)[3]  = (ar->ar_cplx_ieee32.iexpo >> 1) |
+                              (ar->ar_cplx_ieee32.isign << 7);
+}
+
+
+void ar_to_host_r64(void *ar0, void *value) {
+ar_data *ar;
+
+    ar = ar0;
+
+    ((uint16_t *) value)[0] = ar->ar_ieee64.coeff3;
+    ((uint16_t *) value)[1] = ar->ar_ieee64.coeff2;
+    ((uint16_t *) value)[2] = ar->ar_ieee64.coeff1;
+    ((uint8_t *) value)[6]  = ar->ar_ieee64.coeff0 |
+                             (ar->ar_ieee64.expo << 4);
+    ((uint8_t *) value)[7]  = (ar->ar_ieee64.expo >> 4) |
+                              (ar->ar_ieee64.sign << 7);
+}
+
+
+#elif defined(TARG_MIPS)    /* Big endian */
+
+
+void ar_from_host_r32(void *ptr, void *ar0) {
+ar_data *ar;
+
+    ar = ar0;
+
+    ar->ar_ieee32.zero = 0;
+    ar->ar_ieee32.coeff1 = ((uint16_t *) ptr)[1];
+    ar->ar_ieee32.coeff0 = ((uint8_t *) ptr)[1] & 0x7F;
+    ar->ar_ieee32.expo = (((uint8_t *) ptr)[0] << 1) |
+                          (((uint8_t *) ptr)[1] >> 7);
+    ar->ar_ieee32.sign = ((uint8_t *) ptr)[0] >> 7;
+}
+
+
+void ar_from_host_c32(void *ptr, void *ar0) {
+ar_data *ar;
+
+    ar = ar0;
+
+    ar->ar_cplx_ieee32.rcoeff1 = ((uint16_t *) ptr)[1];
+    ar->ar_cplx_ieee32.rcoeff0 = ((uint8_t *) ptr)[1] & 0x7F;
+    ar->ar_cplx_ieee32.rexpo   = (((uint8_t *) ptr)[0] << 1) |
+                                 (((uint8_t *) ptr)[1] >> 7);
+    ar->ar_cplx_ieee32.rsign = ((uint8_t *) ptr)[0] >> 7;
+
+    ptr += sizeof(long);
+
+    ar->ar_cplx_ieee32.icoeff1 = ((uint16_t *) ptr)[1];
+    ar->ar_cplx_ieee32.icoeff0 = ((uint8_t *) ptr)[1] & 0x7F;
+    ar->ar_cplx_ieee32.iexpo   = (((uint8_t *) ptr)[0] << 1) |
+                                 (((uint8_t *) ptr)[1] >> 7);
+    ar->ar_cplx_ieee32.isign = ((uint8_t *) ptr)[0] >> 7;
+}
+
+
+void ar_from_host_r64(void *ptr, void *ar0) {
+ar_data *ar;
+
+    ar = ar0;
+
+    ar->ar_ieee64.coeff3 = ((uint16_t *) ptr)[3];
+    ar->ar_ieee64.coeff2 = ((uint16_t *) ptr)[2];
+    ar->ar_ieee64.coeff1 = ((uint16_t *) ptr)[1];
+    ar->ar_ieee64.coeff0 = ((uint8_t *) ptr)[1] & 0x0F;
+    ar->ar_ieee64.expo   = (((uint16_t *) ptr)[0] >> 4) & 0x7FF;
+    ar->ar_ieee64.sign   = ((uint8_t *) ptr)[0] >> 7;
+}
+
+
+
+void ar_to_host_r32(void *ar0, void *value) {
+ar_data *ar;
+
+    ar = ar0;
+
+    ((uint16_t *) value)[1] = ar->ar_ieee32.coeff1;
+    ((uint8_t *) value)[1]  = ar->ar_ieee32.coeff0 |
+                             (ar->ar_ieee32.expo << 7);
+    ((uint8_t *) value)[0]  = (ar->ar_ieee32.expo >> 1) |
+                              (ar->ar_ieee32.sign << 7);
+}
+
+
+void ar_to_host_c32(void *ar0, void *value) {
+ar_data *ar;
+
+    ar = ar0;
+
+    ((uint16_t *) value)[1] = ar->ar_cplx_ieee32.rcoeff1;
+    ((uint8_t *) value)[1]  = ar->ar_cplx_ieee32.rcoeff0 |
+                             (ar->ar_cplx_ieee32.rexpo << 7);
+    ((uint8_t *) value)[0]  = (ar->ar_cplx_ieee32.rexpo >> 1) |
+                              (ar->ar_cplx_ieee32.rsign << 7);
+
+    value += sizeof(long);
+
+    ((uint16_t *) value)[1] = ar->ar_cplx_ieee32.icoeff1;
+    ((uint8_t *) value)[1]  = ar->ar_cplx_ieee32.icoeff0 |
+                             (ar->ar_cplx_ieee32.iexpo << 7);
+    ((uint8_t *) value)[0]  = (ar->ar_cplx_ieee32.iexpo >> 1) |
+                              (ar->ar_cplx_ieee32.isign << 7);
+}
+
+
+void ar_to_host_r64(void *ar0, void *value) {
+ar_data *ar;
+
+    ar = ar0;
+
+    ((uint16_t *) value)[3] = ar->ar_ieee64.coeff3;
+    ((uint16_t *) value)[2] = ar->ar_ieee64.coeff2;
+    ((uint16_t *) value)[1] = ar->ar_ieee64.coeff1;
+    ((uint8_t *) value)[1]  = ar->ar_ieee64.coeff0 |
+                             (ar->ar_ieee64.expo << 4);
+    ((uint8_t *) value)[0]  = (ar->ar_ieee64.expo >> 4) |
+                              (ar->ar_ieee64.sign << 7);
+}
+
+
+#else
+#error Unknown endianness
+#endif
+
+
+
+/* These subroutines are endian-independent. */
+
+void ar_from_host_i8(void *ptr, void *ar0) {
+ar_data *ar;
+int8_t i8;
+
+    ar = ar0;
+    i8 = ((int8_t *) ptr)[0];
+
+    ar->ar_i8.part1 = 0;
+    ar->ar_i8.part2 = 0;
+    ar->ar_i8.part3 = 0;
+    ar->ar_i8.part4 = 0;
+    ar->ar_i8.part5 = i8;
+}
+
+void ar_from_host_i16(void *ptr, void *ar0) {
+ar_data *ar;
+int16_t i16;
+
+    ar = ar0;
+    i16 = ((int16_t *) ptr)[0];
+
+    ar->ar_i64.part1 = 0;
+    ar->ar_i64.part2 = 0;
+    ar->ar_i64.part3 = 0;
+    ar->ar_i64.part4 = i16;
+}
+
+void ar_from_host_i32(void *ptr, void *ar0) {
+ar_data *ar;
+int32_t i32;
+
+    ar = ar0;
+    i32 = ((int32_t *) ptr)[0];
+
+    ar->ar_i64.part1 = 0;
+    ar->ar_i64.part2 = 0;
+    ar->ar_i64.part3 = (i32 >> 16);
+    ar->ar_i64.part4 = (i32 >>  0);
+}
+
+void ar_from_host_i64(void *ptr, void *ar0) {
+ar_data *ar;
+int64_t i64;
+
+    ar = ar0;
+    i64 = ((int64_t *) ptr)[0];
+
+    ar->ar_i64.part1 = (i64 >> 48);
+    ar->ar_i64.part2 = (i64 >> 32);
+    ar->ar_i64.part3 = (i64 >> 16);
+    ar->ar_i64.part4 = (i64 >>  0);
+}
+
+void ar_from_host_c64(void *ptr, void *ar0) {
+ar_data *ar;
+
+    ar = ar0;
+
+    ar_from_host_r64(ptr,   &ar->ar_cplx_ieee64.real);
+    ar_from_host_r64(ptr+8, &ar->ar_cplx_ieee64.imag);
+}
+
+void ar_to_host_i8(void *ar0, void *value) {
+ar_data *ar;
+int8_t i8;
+
+    ar = ar0;
+
+    i8 = ar->ar_i8.part5;
+    ((int8_t *) value)[0] = i8;
+}
+
+void ar_to_host_i16(void *ar0, void *value) {
+ar_data *ar;
+int16_t i16;
+
+    ar = ar0;
+
+    i16 = ar->ar_i64.part4;
+    ((int16_t *) value)[0] = i16;
+}
+
+void ar_to_host_i32(void *ar0, void *value) {
+ar_data *ar;
+int32_t i32;
+
+    ar = ar0;
+
+    i32 = ar->ar_i64.part3;
+    i32 = (i32 << 16) | ar->ar_i64.part4;
+    ((int32_t *) value)[0] = i32;
+}
+
+void ar_to_host_i64(void *ar0, void *value) {
+ar_data *ar;
+int64_t i64;
+
+    ar = ar0;
+
+    i64 = ar->ar_i64.part1;
+    i64 = (i64 << 16) | ar->ar_i64.part2;
+    i64 = (i64 << 16) | ar->ar_i64.part3;
+    i64 = (i64 << 16) | ar->ar_i64.part4;
+    ((int64_t *) value)[0] = i64;
+}
+
+
+void ar_to_host_c64(void *ar0, void *value) {
+ar_data *ar;
+
+    ar = ar0;
+
+    ar_to_host_r64(&ar->ar_cplx_ieee64.real, value);
+    ar_to_host_r64(&ar->ar_cplx_ieee64.imag, value+8);
+}
+
+
+

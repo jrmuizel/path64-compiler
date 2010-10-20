@@ -214,7 +214,7 @@
 #endif
 
 
-#ifdef _LITTLE_ENDIAN
+#if defined(_LITTLE_ENDIAN) && defined(_USE_FOLD_DOT_f)
 #define WORD_SWAP(x)    \
   { unsigned long t  ;  \
     t = (x).part1 ;   (x).part1 = (x).part4; (x).part4=t;             \

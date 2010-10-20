@@ -19,9 +19,7 @@ SET(PATHSCALE_ARITH_SRCS        "bits.c"
 				"strcvt.c"
 				"native.c"
 				"test_ar_intrin.c"
-				"cray1_sim.c"
-				"fintrin_dc_irix_tmp.f"
-				"fintrin_irix_tmp.f")
+				"cray1_sim.c")
 
 INCLUDE_DIRECTORIES(
 	.
@@ -32,7 +30,12 @@ ADD_DEFINITIONS(
 	-D_LITTLE_ENDIAN
 	-DEDITION=\"23\")
 
-add_library(arith STATIC ${PATHSCALE_ARITH_SRCS})
+IF(PATH64_USE_FOLD_F)
+    ADD_DEFINITIONS(-D_USE_FOLD_DOT_f)
+ENDIF()
+
+path64_get_host_arch(host_arch)
+path64_add_library_for_arch(arith ${host_arch} STATIC ${PATHSCALE_ARITH_SRCS})
 
 add_custom_command(
     OUTPUT arith.msgs

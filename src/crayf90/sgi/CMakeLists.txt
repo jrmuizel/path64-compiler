@@ -132,7 +132,13 @@ path64_add_executable_for_arch(mfef95-tmp ${host_arch}
                                ${PATHSCALE_MFEF95_SRCS} ${PATHSCALE_MFEF95_TMP_SRCS})
 set_source_files_properties(${PATHSCALE_MFEF95_TMP_SRCS} PROPERTIES
                             COMPILE_DEFINITIONS "_LIBU;_LITTLE_ENDIAN")
-target_link_libraries(mfef95-tmp comutil-host fe90-host fe90-tmp-host arith cif ${MFEF95_TMP_FORTRAN_LINK_LIB} m)
+
+IF(PATH64_USE_FOLD_F)
+    target_link_libraries(mfef95-tmp comutil-host fe90-host fe90-tmp-host arith cif ${MFEF95_TMP_FORTRAN_LINK_LIB} m)
+ELSE()
+    target_link_libraries(mfef95-tmp comutil-host fe90-host arith cif m)
+ENDIF()
+
 path64_set_property_for_arch(mfef95-tmp ${host_arch} COMPILE_FLAGS
                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 
@@ -164,7 +170,11 @@ add_custom_command(
 
 path64_set_multiarch_sources(mfef95_sources COMMON ${PATHSCALE_MFEF95_SRCS})
 path64_add_multiarch_executable(mfef95 mfef95_sources)
-path64_multiarch_link_multiarch_libraries(mfef95 comutil fe90 fe90-pathf)
+IF(PATH64_USE_FOLD_F)
+    path64_multiarch_link_multiarch_libraries(mfef95 comutil fe90 fe90-pathf)
+ELSE()
+    path64_multiarch_link_multiarch_libraries(mfef95 comutil fe90)
+ENDIF()
 path64_multiarch_link_libraries(mfef95 arith cif pathfortran-host m)
 path64_set_multiarch_property(mfef95 COMPILE_FLAGS
                               "-I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")

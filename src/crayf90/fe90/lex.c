@@ -4453,7 +4453,7 @@ static boolean convert_const(void)
 
 #ifdef KEY /* Bug 5554 */
       int new_type_idx;
-      CONVERT_INT_CONST_AND_PROMOTE(type_idx, TOKEN_LEN(token), result_ok);
+      CONVERT_INT_CONST(type_idx, TOKEN_LEN(token), result_ok);
 #else /* KEY Bug 5554 */
       CONVERT_INT_CONST(type_idx, TOKEN_LEN(token), result_ok);
 #endif /* KEY Bug 5554 */
