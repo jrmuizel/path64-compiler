@@ -209,6 +209,7 @@ extern BOOL Implied_Do_Io_Opt;	/* Do implied-do loop opt for I/O */
 extern BOOL Cray_Ivdep;		/* Use Cray meaning for Ivdep */
 extern BOOL Liberal_Ivdep;	/* Use liberal meaning for ivdep */
 extern BOOL Inhibit_EH_opt;     /* Don't remove calless EH regions */
+extern BOOL Allow_Overflow_Opt;   /* Allow strength reduction of unsigned types possibly losing overflow */
 extern BOOL OPT_recompute_addr_flags; /* recompute addr saved */
 extern BOOL OPT_IPA_addr_analysis; /* enable the use of IPA addr analysis result */ 
 extern BOOL Delay_U64_Lowering;/* Delay unsigned 64-bit lowering to after wopt*/

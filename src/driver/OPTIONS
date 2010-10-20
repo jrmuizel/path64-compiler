@@ -1761,6 +1761,10 @@ I-u%s		;		Cc	ld	"-u %s"
 	"Do not assume strict aliasing rules"
 -Wno-strict-aliasing	;		Cc	f	self
 	"Do not warn about code that breaks strict aliasing rules"
+-fstrict-overflow	;		Cc	f	self "-OPT:overflow_opt=off"
+	"Compiler follows strict overflow semantics"
+-fno-strict-overflow	;		Cc	NONE	self 
+	"Compiler does not follows strict overflow semantics which allows more performance optimizations (enabled by default)"
 -dA	warn_ignored(option_name);	Cc	NONE	self
 	""
 -db	warn_ignored(option_name);	Cc	NONE	self

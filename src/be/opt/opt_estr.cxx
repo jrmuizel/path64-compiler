@@ -62,6 +62,7 @@ static char *rcs_id = opt_estr_CXX"$Revision: 1.12 $";
 
 #include "defs.h"
 #include "config.h"
+#include "config_opt.h"
 #include "cxx_memory.h"
 
 #include "opt_base.h"
@@ -244,6 +245,14 @@ STR_RED::Is_implicit_cvt_linear(MTYPE opc_type, MTYPE opnd_type) const
   if (! Allow_wrap_around_opt && 
       MTYPE_size_min(opc_type) != MTYPE_size_min(opnd_type))
     return FALSE;
+  if(! Allow_Overflow_Opt){
+    // Don't allow promotions of U4 because we lose overflow side-effect
+    // for code patterns like "uint32 index = -1; (loop starts) index++; access[index]; (loop ends)"
+    // See bug COMPILER-8838 
+    if (MTYPE_size_min(opc_type) > MTYPE_size_min(opnd_type) &&
+        !MTYPE_signed(opnd_type))
+      return FALSE;
+  }
   return TRUE;
 }
 /* CVTL-RELATED finish */

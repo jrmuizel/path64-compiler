@@ -291,6 +291,7 @@ BOOL Implied_Do_Io_Opt = TRUE;	/* Do implied-do loop opt for I/O */
 BOOL Cray_Ivdep=FALSE;		/* Use Cray meaning for Ivdep */
 BOOL Liberal_Ivdep=FALSE;	/* Use liberal meaning for Ivdep */
 BOOL Inhibit_EH_opt=FALSE;	/* Don't remove EH regions without calls */
+BOOL Allow_Overflow_Opt=TRUE;	/* Allow strength reduction of unsigned types possibly losing overflow */
 BOOL Allow_wrap_around_opt = TRUE;
 static BOOL Allow_wrap_around_opt_Set = FALSE;	/* ... option seen? */
 BOOL Enable_GOT_Call_Conversion = FALSE;	/* %call16 -> %got_disp */
@@ -774,6 +775,10 @@ static OPTION_DESC Options_OPT[] = {
   { OVK_BOOL,	OV_INTERNAL,	FALSE, "Olimit_opt",		"Olimit_o",
     0, 0, 0,	&Olimit_opt,	&Olimit_opt_Set,
     "Use regions if Olimit exceeded" },
+
+  { OVK_BOOL,	OV_VISIBLE,	TRUE, "overflow_opt",	"overflow_opt",
+    0, 0, 0,    &Allow_Overflow_Opt, NULL,
+    "Allow strength reduction of unsigned types possibly losing overflows" },
 
   { OVK_BOOL,	OV_VISIBLE,	TRUE, "pad_common",		"pad",
     0, 0, 0,	&OPT_Pad_Common, NULL,
