@@ -11,7 +11,9 @@ ADD_DEFINITIONS(
 
 if(PATH64_ENABLE_FORTRAN)
 add_executable (assign ${PATHSCALE_ASSIGN_SRCS})
-set_property(TARGET assign PROPERTY LINK_FLAGS "-static")
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+    set_property(TARGET assign PROPERTY LINK_FLAGS "-static")
+endif()
 target_link_libraries(assign pathfortran-host)
 
 install(TARGETS assign
