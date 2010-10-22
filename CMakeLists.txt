@@ -372,6 +372,13 @@ if("X${CMAKE_C_COMPILER_ID}" STREQUAL "XPathScale")
             endif()
           
         endforeach()
+
+        # Making link for libpathfortran
+        if(PATH64_ENABLE_FORTRAN)
+            if(NOT PATH64_USE_FOLD_F)
+                install(CODE "file(MAKE_DIRECTORY \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}\") \n execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"./../${host_arch}/${host_bits}/libpathfortran.so\" \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/libpathfortran.so\")")
+            endif()
+        endif()
     endforeach()
 
     add_custom_target(pathscale-libs-stage DEPENDS ${pathscale_libs_stage_deps})
