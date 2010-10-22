@@ -470,8 +470,14 @@ function(path64_add_library_for_target name target type)
     if("X${type}" STREQUAL "XSTATIC")
         set(library_file
             "${build_lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}${oname}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+
+        set(cmd ${CMAKE_AR} -cr ${library_file} ${objects})
+        if("X${CMAKE_BUILD_TYPE}" STREQUAL "XRelease")
+            list(APPEND cmd "\;" strip -S ${library_file})
+        endif()
+
         add_custom_command(OUTPUT ${library_file}
-                           COMMAND ${CMAKE_AR} -cr ${library_file} ${objects}
+                           COMMAND ${cmd}
                            DEPENDS ${objects}
                            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ})
     elseif("X${type}" STREQUAL "XSHARED")
@@ -485,7 +491,7 @@ function(path64_add_library_for_target name target type)
         endforeach()
 
         if("X${CMAKE_BUILD_TYPE}" STREQUAL "XRelease")
-            list(APPEND link_libs_flags "-S")
+            list(APPEND link_libs_flags "-s")
         endif()
 
         if(path64_multitarget_property_${name}_LINKER_LANGUAGE)
