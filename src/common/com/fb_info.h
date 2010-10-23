@@ -61,7 +61,8 @@
 
 using Instr::vector;
 #else
-#include <vector>             // STL vector.
+// XXX: double/conflicting inclusion from dump.cxx
+// #include <vector>             // STL vector.
 #endif
 
 #ifdef MONGOOSE_BE
