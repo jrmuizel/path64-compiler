@@ -3216,16 +3216,16 @@ run_compiler (int argc, char *argv[])
 				string_item_t * p;
 				for (p = args->head; p != NULL; p = p->next) {
 					if (strcmp (p->name, "-MF") == 0) {
-						replace_string (args, p->name, "");
-						replace_string (args, p->next->name, "");
+						p->name = string_copy("");
+						p->next->name = string_copy("");
 					}
 					if (strcmp (p->name, "-MT") == 0) {
-						replace_string (args, p->name, "");
-						replace_string (args, p->next->name, "");
+						p->name = string_copy("");
+						p->next->name = string_copy("");
 					}
 					if (strcmp (p->name, "-MQ") == 0) {
-						replace_string (args, p->name, "");
-						replace_string (args, p->next->name, "");
+						p->name = string_copy("");
+						p->next->name = string_copy("");
 					}
 				}
 				replace_string (args, "-M", "");
