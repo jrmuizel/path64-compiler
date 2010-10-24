@@ -3800,6 +3800,9 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
     case GSBI_IX86_BUILTIN_PCMPEQD:
       *iopc = INTRN_PCMPEQD;
       break;
+    case GSBI_IX86_BUILTIN_PCMPEQD128:
+      *iopc = INTRN_PCMPEQD128;
+      break;
     case GSBI_IX86_BUILTIN_PCMPGTB:
       *iopc = INTRN_PCMPGTB;
       break;

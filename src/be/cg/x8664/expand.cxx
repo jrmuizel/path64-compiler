@@ -1249,8 +1249,14 @@ void Expand_Convert_Length ( TN *dest, TN *src, TN *length_tn, TYPE_ID mtype,
 
   } else if( val == 32 ){
     if( is_64bit ) {
-      if (signed_extension)
+      if (signed_extension) {
+        if (TN_register_class(src) != ISA_REGISTER_CLASS_integer ) {
+          TN *tmp = Build_RCLASS_TN(ISA_REGISTER_CLASS_integer);
+          Exp_COPY( tmp, src, ops );
+          src = tmp;
+        }
         new_opcode = TOP_movslq;
+      }
       else {
 	if( OP_NEED_PAIR(mtype) ){
 	  Expand_Split_Cvtl( mtype, TOP_mov32, dest, src, ops );
@@ -6288,6 +6294,9 @@ Exp_COPY (TN *tgt_tn, TN *src_tn, OPS *ops, BOOL copy_pair)
 	       tgt_rc == ISA_REGISTER_CLASS_float) {
       // mov mmx to sse
       Build_OP (TOP_movq2dq, tgt_tn, src_tn, ops);
+    } else if( src_rc == ISA_REGISTER_CLASS_mmx &&
+               tgt_rc == ISA_REGISTER_CLASS_integer) {
+      Build_OP (TOP_movm_2i64, tgt_tn, src_tn, ops);
     } else {
       /* dedicated TNs always have size 8, so need to check both TNs */
       FmtAssert( FALSE, ("UNIMPLEMENTED") );
@@ -6672,6 +6681,9 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
     break;
   case INTRN_PCMPEQD:
     Build_OP( TOP_pcmpeqd, result, op0, op1, ops );
+    break;
+  case INTRN_PCMPEQD128:
+    Build_OP( TOP_cmpeq128v32, result, op0, op1, ops );
     break;
   case INTRN_PCMPGTB:
     Build_OP( TOP_pcmpgtb, result, op0, op1, ops );
@@ -7078,7 +7090,21 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
     }
   case INTRN_VEC_EXT_V2SI:
     if (Is_Target_64bit())
+    {
+      if ( TN_register_class(result) != ISA_REGISTER_CLASS_integer ) {
+        TN *tmp = Build_RCLASS_TN(ISA_REGISTER_CLASS_integer);
+        Exp_COPY( tmp, result, ops );
+        result = tmp;
+      }
+
+      if ( TN_register_class(op0) != ISA_REGISTER_CLASS_float ) {
+        TN *tmp = Build_RCLASS_TN(ISA_REGISTER_CLASS_float);
+        Exp_COPY( tmp, op0, ops );
+        op0 = tmp;
+      }
+
       Build_OP( TOP_movx2g64, result, op0, ops );
+    }
     else Expand_Float_To_Int_Tas(result, op0, MTYPE_I8, ops);
     break;
   case INTRN_PMADDWD:
