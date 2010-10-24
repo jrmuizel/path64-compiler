@@ -4308,6 +4308,13 @@ int gen_compiler_tmp (int		tmp_line,
                                                       length,
                                                       tmp_line,
                                                       tmp_column);
+      if (ATP_PGM_UNIT(SCP_ATTR_IDX(curr_scp_idx)) == Module) {
+	AT_NAME_IDX(attr_idx) = make_in_parent_string(AT_NAME_IDX(attr_idx),
+						      AT_NAME_LEN(attr_idx),
+						      curr_scp_idx,
+						      &length);
+	AT_NAME_LEN(attr_idx) = length;
+      }
    }
    else {
       NTR_NAME_POOL(&(name.words[0]), length, np_idx);
