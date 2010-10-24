@@ -203,8 +203,12 @@ boolean create_constructor_constant(opnd_type	   *top_opnd,
       OPND_LINE_NUM(char_len_opnd) = line;
       OPND_COL_NUM(char_len_opnd)  = col;
 
+      expr_sem(&char_len_opnd,exp_desc);
       if (OPND_FLD(char_len_opnd) != CN_Tbl_Idx) {
          process_char_len(&char_len_opnd);
+         if (fold_aggragate_expression(&char_len_opnd, exp_desc, TRUE)) {
+               COPY_OPND(exp_desc->char_len, char_len_opnd);
+         }
       }
 
 # ifdef _DEBUG
