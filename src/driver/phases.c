@@ -1944,7 +1944,7 @@ add_final_ld_args (string_list_t *args)
             add_library(args, "pscrt");
             }
 
-            if( ! option_was_seen(O_nostartfiles)) add_crtend(args);
+            if( ! option_was_seen(O_nostartfiles) && ipa != TRUE) add_crtend(args);
             return;
         }
 #ifdef PATH64_ENABLE_PSCRUNTIME
@@ -2024,7 +2024,7 @@ add_final_ld_args (string_list_t *args)
     }
 #endif
 	
-    if( ! option_was_seen(O_nostartfiles)) add_crtend(args);
+    if( ! option_was_seen(O_nostartfiles) && ipa != TRUE) add_crtend(args);
 
 	if (shared != RELOCATABLE) {
 	    if (invoked_lang == L_f90) {
