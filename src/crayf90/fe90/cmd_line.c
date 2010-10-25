@@ -394,7 +394,7 @@ void	process_cmd_line(int   argc, char *argv[])
    /* If -intrinsic_module_path was not set but the NLSPATH environment
     * variable is set, use the directories in NLSPATH (the driver
     * appends to any user-set NLSPATH the directory containing the file
-    * cf95.cat, which also contains IEEE*.mod.)
+    * cf95.cat, subdirectory $arch/$bits of which contains IEEE*.mod.)
     */
    if (NULL_IDX == intrinsic_module_path_idx && nlspath && *nlspath) {
      int nlspath_len = strlen(nlspath) + 1;
@@ -404,12 +404,32 @@ void	process_cmd_line(int   argc, char *argv[])
        if (!token) {
          break;
          }
-       const char *DIR_M32 = "/32";
-       char *copy = malloc(strlen(token) + sizeof DIR_M32);
-       add_to_fp_table(
-	 strcat(dirname(strcpy(copy, token)), (Is_Target_32bit() ? "/32" : "")),
-	 &intrinsic_module_path_idx, 'p');
-       free(copy);
+       const char *DIR_M32 = "32";
+       const char *DIR_M64 = "64";
+
+       // TODO: architecture name is hard coded for now. We should
+       // find way how not use hard coded values here.
+       const char *arch_name =
+#if defined(TARG_X8664)
+         "x8664"
+#elif defined(TARG_MIPS)
+         "mips"
+#else
+         "unknown"
+#endif
+       ;
+       #define MAX_ARCH_NAME_LEN 10
+
+       char *nls_dir = malloc(strlen(token));
+       char *mod_path = malloc(strlen(token) + MAX_ARCH_NAME_LEN +
+                               sizeof DIR_M32 + 2);
+       const char * bits = Is_Target_32bit() ? DIR_M32 : DIR_M64;
+
+       nls_dir = dirname(strcpy(nls_dir, token));
+       sprintf(mod_path, "%s/%s/%s", nls_dir, arch_name, bits);
+       add_to_fp_table(mod_path, &intrinsic_module_path_idx, 'p');
+       free(mod_path);
+       free(nls_dir);
      }
    }
 #endif /* KEY Bug 5089 */
