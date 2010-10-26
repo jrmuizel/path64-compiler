@@ -35,6 +35,12 @@ if(PATH64_ENABLE_PATHAS)
 endif()
 
 
+option(PATH64_ENABLE_DEFAULT_PATHAS "Enables using pathas as default assembler" OFF)
+if(PATH64_ENABLE_DEFAULT_PATHAS)
+    add_definitions(-DPATH64_ENABLE_DEFAULT_PATHAS)
+endif()
+
+
 option(PATH64_NO_LICENSE_CHECK "Disables license check in driver" ON)
 if(PATH64_NO_LICENSE_CHECK)
     add_definitions(-DNO_LICENSE_CHECK)

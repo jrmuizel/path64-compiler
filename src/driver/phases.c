@@ -2440,7 +2440,11 @@ determine_phase_order (void)
 
 	/* determine which asm to run */
 #ifdef PATH64_ENABLE_PATHAS
+#ifdef PATH64_ENABLE_DEFAULT_PATHAS
+	asm_phase = option_was_seen(O_fno_pathas) ? P_gas : P_pathas;
+#else // !PATH64_ENABLE_DEFAULT_PATHAS
 	asm_phase = option_was_seen(O_fpathas) ? P_pathas : P_gas;
+#endif // !PATH64_ENABLE_DEFAULT_PATHAS
 #else
 	asm_phase = P_gas;
 #endif // !PATH64_ENABLE_PATHAS

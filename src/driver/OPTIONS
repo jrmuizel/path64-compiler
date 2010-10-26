@@ -870,6 +870,8 @@ I-xall	;		FTN	ffe	self
 -fbootstrap-hack	;	ALL	be	"-LNO:vintr=0 -OPT:fast_stdlib=0"
 	"Don't link to libmv, libmpath, libscstr during bootstrap."
 #ifdef PATH64_ENABLE_PATHAS
+-fno-pathas	;	ALL	NONE	""
+	"Don't use Pathscale assembler"
 -fpathas	;	ALL	NONE	""
 	"Use Pathscale assembler"
 #endif
