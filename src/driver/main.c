@@ -787,6 +787,7 @@ static void set_executable_dir (void) {
     substitute_phase_dirs (LIBPATH, basedir, "/lib/" PSC_FULL_VERSION);
     substitute_phase_dirs (PHASEPATH, "", target_phase_path());
     substitute_phase_dirs ("/usr/include", basedir, "/include");
+    substitute_phase_dirs (PSC_INSTALL_PREFIX "/bin", basedir, "/bin");
     free(target_ppath);
     return;
   }
