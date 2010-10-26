@@ -74,6 +74,7 @@
 #include <cmplrs/rcodes.h>
 #include <stamp.h>
 #include <vector>
+#include <sstream>
 #if defined(BUILD_OS_DARWIN)
 #include <set>
 #include <string>
@@ -8494,19 +8495,22 @@ void EMT_Visibility (
     
 }
 
-void
-EMT_Write_Qualified_Name (FILE *f, ST *st)
+
+std::string
+EMT_Get_Qualified_Name (ST *st)
 {
+  std::ostringstream name;
+
   if (ST_name(st) && *(ST_name(st)) != '\0') {
 #if defined(BUILD_OS_DARWIN)
-	fputs(underscorify(ST_name(st)), f);
+    name << underscorify(ST_name(st));
 #else /* defined(BUILD_OS_DARWIN) */
-	fputs(ST_name(st), f);
+    name << ST_name(st);
 #endif /* defined(BUILD_OS_DARWIN) */
 #ifdef KEY
 // This name is already unique, don't change it.
 	if (!strncmp (ST_name(st), ".range_table.", strlen(".range_table.")))
-		return;
+		return name.str();
 #endif // KEY
 	// KEY bug 14894: if the symbol name has a . then it has already
 	// been made unique, no need to qualify it again 
@@ -8522,7 +8526,7 @@ EMT_Write_Qualified_Name (FILE *f, ST *st)
 		  if (Emit_Global_Data || (ST_sclass(st) == SCLASS_PSTATIC &&
 		                           !strchr (ST_name(st), '.')))
 #endif
-		    fprintf (f, "%s%d", Label_Name_Separator, ST_index(st));
+            name << Label_Name_Separator << ST_index(st);
 		}
 		else
 #ifdef KEY
@@ -8532,16 +8536,23 @@ EMT_Write_Qualified_Name (FILE *f, ST *st)
 		    (ST_sclass(st) == SCLASS_PSTATIC &&
 		     !strchr (ST_name(st), '.')))
 #endif
-		    fprintf (f, "%s%d%s%d", Label_Name_Separator, 
-			ST_pu(Get_Current_PU_ST()),
-			Label_Name_Separator, ST_index(st) );
+            name << Label_Name_Separator << ST_pu(Get_Current_PU_ST())
+                 << Label_Name_Separator << ST_index(st);
 	}
 	else if (*Symbol_Name_Suffix != '\0') {
-		fputs(Symbol_Name_Suffix, f);
+        name << Symbol_Name_Suffix;
 	}
   } else {
-	fprintf (f, "%s %+" SCNd64 , ST_name(ST_base(st)), ST_ofst(st));
+    name << ST_name(ST_base(st)) << " " << ST_ofst(st) << SCNd64;
   }
+  return name.str();
+}
+
+
+void
+EMT_Write_Qualified_Name (FILE *f, ST *st)
+{
+  fputs(EMT_Get_Qualified_Name(st).c_str(), f);
 }
 
 /* print the internal, hidden or protected attributes if present */
@@ -9069,7 +9080,7 @@ r_apply_l_const (
 	}
       }
       (void) EMT_Put_Elf_Symbol (st, indirect);
-      gen_indirect(ST_name(st), indirect);
+      gen_indirect(EMT_Get_Qualified_Name(st).c_str(), indirect);
 #else /* defined(BUILD_OS_DARWIN) */
       (void) EMT_Put_Elf_Symbol (st);
 #endif /* defined(BUILD_OS_DARWIN) */
@@ -9095,7 +9106,8 @@ r_apply_l_const (
     } 
     else {
 #if defined(BUILD_OS_DARWIN)
-	*buf = vstr_concat(*buf, underscorify(ST_name(st), indirect));
+	*buf = vstr_concat(*buf, underscorify(
+                                 EMT_Get_Qualified_Name(st).c_str(), indirect));
 #else /* defined(BUILD_OS_DARWIN) */
 #ifdef TARG_X8664
 	if (ST_sym_class(st) == CLASS_CONST) {
@@ -9105,7 +9117,7 @@ r_apply_l_const (
 	}
 	else
 #endif
-	*buf = vstr_concat(*buf, ST_name(st));
+	*buf = vstr_concat(*buf, EMT_Get_Qualified_Name(st).c_str());
 #endif /* defined(BUILD_OS_DARWIN) */
 	if (*Symbol_Name_Suffix != '\0')
 		*buf = vstr_concat(*buf, Symbol_Name_Suffix);

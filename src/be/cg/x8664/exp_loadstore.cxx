@@ -797,15 +797,11 @@ Exp_Ldst (
   else {
     ST_SCLASS sclass = ST_sclass(sym);
     switch (sclass) {
-      case SCLASS_PSTATIC: // bug 14894
-        if (!ST_name(sym) ||
-            !strchr(ST_name(sym), '.'))
-          break;
-        // fall through
-      case SCLASS_FSTATIC: // bugs 14894, 14969
+      case SCLASS_PSTATIC:
+      case SCLASS_FSTATIC:
         if (Read_Global_Data) // disable pstatic/fstatic for ipa
           break;
-        if (!PU_c_lang(Get_Current_PU()))
+        if (!PU_c_lang(Get_Current_PU()) && !PU_cxx_lang(Get_Current_PU()))
           break;
         // fall through
       case SCLASS_UGLOBAL:

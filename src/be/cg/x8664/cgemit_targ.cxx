@@ -435,11 +435,11 @@ CGEMIT_Relocs_In_Asm (TN *t, ST *st, vstring *buf, INT64 *val)
 	    *buf = vstr_concat (*buf, name);
 	  }
 	  else
-	    *buf = vstr_concat (*buf, ST_name(st));
+	    *buf = vstr_concat (*buf, EMT_Get_Qualified_Name(st).c_str());
 	  *buf = vstr_concat (*buf, "@GOT");
 	  return 0;
 	case TN_RELOC_X8664_GOTPCREL:
-	  *buf = vstr_concat (*buf, ST_name(st));
+	  *buf = vstr_concat (*buf, EMT_Get_Qualified_Name(st).c_str());
 	  *buf = vstr_concat (*buf, "@GOTPCREL");
 	  return 0;
 	case TN_RELOC_IA32_GLOBAL_OFFSET_TABLE:
@@ -448,7 +448,8 @@ CGEMIT_Relocs_In_Asm (TN *t, ST *st, vstring *buf, INT64 *val)
 	    if (Is_Target_EM64T()    ||
                 Is_Target_Wolfdale() ||
 		Is_Target_Core())
-	      asprintf( &str, "$_GLOBAL_OFFSET_TABLE_+[.-%s]", ST_name(st) );
+	      asprintf( &str, "$_GLOBAL_OFFSET_TABLE_+[.-%s]",
+                    EMT_Get_Qualified_Name(st).c_str() );
 	    else
 	      asprintf( &str, "$_GLOBAL_OFFSET_TABLE_" );
 	    *buf = vstr_concat( *buf, str );
@@ -459,11 +460,11 @@ CGEMIT_Relocs_In_Asm (TN *t, ST *st, vstring *buf, INT64 *val)
 	  *buf = vstr_concat(*buf, Is_Target_32bit() ? "%gs:" : "%fs:");
 	  // fall through
 	case TN_RELOC_X8664_TPOFF32:
-	  *buf = vstr_concat(*buf, ST_name(st));
+	  *buf = vstr_concat(*buf, EMT_Get_Qualified_Name(st).c_str());
 	  *buf = vstr_concat(*buf, Is_Target_32bit() ? "@NTPOFF" : "@TPOFF");
 	  return 0;
 	case TN_RELOC_X8664_GOTTPOFF:		
-	  *buf = vstr_concat(*buf, ST_name(st));
+	  *buf = vstr_concat(*buf, EMT_Get_Qualified_Name(st).c_str());
 	  //*buf = vstr_concat(*buf,  Is_Target_32bit() ? "@INDNTPOFF" : "@GOTTPOFF");
 	  //zwu
 	  *buf = vstr_concat(*buf,  Is_Target_32bit() ? "@INDNTPOFF" : "@TLSGD");
@@ -481,7 +482,7 @@ CGEMIT_Relocs_In_Asm (TN *t, ST *st, vstring *buf, INT64 *val)
 	  *buf = vstr_concat (*buf, name);
 	}
 	else
-	*buf = vstr_concat (*buf, ST_name(st));
+	*buf = vstr_concat (*buf, EMT_Get_Qualified_Name(st).c_str());
 	*buf = vstr_concat (*buf, Symbol_Name_Suffix);
 	return paren;
 }

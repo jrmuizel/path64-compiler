@@ -39,6 +39,7 @@ static char *cgemit_rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/cg/SCCS/s.
 
 #include "dwarf_DST_mem.h"
 #include "symtab.h"
+#include <string>
 
 /* Initialize for emitting of a source file: */
 extern void EMT_Begin_File (
@@ -91,6 +92,9 @@ extern BOOL CG_emit_unwind_info_Set;
 extern BOOL CG_emit_non_gas_syntax;
 extern BOOL CG_inhibit_size_directive;
 #endif
+
+// Return a qualified name for symbol
+extern std::string EMT_Get_Qualified_Name (ST *st);
 
 /* Write a qualified name to a file. */
 extern void EMT_Write_Qualified_Name (FILE *f, ST *st);
