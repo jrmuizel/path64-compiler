@@ -722,7 +722,9 @@ add_target_linker_args(string_list_t *args) {
 #ifdef TARG_X8664
     if(is_target_arch_X8664()) {
 #if defined(__sun)
-        add_string(args, (abi == ABI_M32) ? "-32" : "-64");
+        if(abi == ABI_M64 || abi == ABI_64) {
+            add_string(args, "-64");
+        }
 #elif defined(__FreeBSD__)
     add_string(args, (abi == ABI_N32) ? "-melf_i386_fbsd" : "-melf_x86_64_fbsd");
 #else
