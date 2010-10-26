@@ -648,7 +648,7 @@ ipa_search_command_line(int argc,
 
     for (i=1;i<argc;i++) {
 #ifdef KEY
-	bfd_boolean is_elf;
+	bfd_boolean is_elf = FALSE;
 #endif
     	char *string = argv[i];
     	if (*string == '-' && string[1] == '-') {
