@@ -40,7 +40,7 @@
 
 #ifdef KEY
 #ifndef NO_VALGRIND
-#include <memcheck.h>
+#include <valgrind/memcheck.h>
 
 /*
  * Check to see if we have an old version of Valgrind without mempool
@@ -1003,7 +1003,7 @@ Allocate_Block (MEM_POOL *pool)
 #ifdef KEY
 #ifndef NO_VALGRIND
   /* Tell Valgrind that this memory is not (yet) valid. */
-  VALGRIND_MAKE_NOACCESS(MEM_BLOCK_first_ptr(block), BLOCK_SIZE);
+  VALGRIND_MAKE_MEM_NOACCESS(MEM_BLOCK_first_ptr(block), BLOCK_SIZE);
 #endif /* NO_VALGRIND */
 #endif /* KEY */
 
@@ -1443,8 +1443,8 @@ MEM_POOL_Push_P
     free_mem_pool_blocks_list = MEM_POOL_BLOCKS_rest(pb);
 #ifdef KEY
 #ifndef NO_VALGRIND
-    VALGRIND_MAKE_READABLE(pb, sizeof(MEM_POOL_BLOCKS));
-    VALGRIND_MAKE_WRITABLE(pb, sizeof(MEM_POOL_BLOCKS));
+    VALGRIND_MAKE_MEM_DEFINED(pb, sizeof(MEM_POOL_BLOCKS));
+    VALGRIND_MAKE_MEM_UNDEFINED(pb, sizeof(MEM_POOL_BLOCKS));
 #endif /* NO_VALGRIND */
 #endif /* KEY */
   } else {
@@ -1602,13 +1602,13 @@ MEM_POOL_Pop_P
       if (MEM_POOL_bz(pool)) {
 #ifdef KEY
 #ifndef NO_VALGRIND
-	VALGRIND_MAKE_WRITABLE(MEM_BLOCK_ptr(bp), MEM_BLOCK_avail(bp));
+	VALGRIND_MAKE_MEM_UNDEFINED(MEM_BLOCK_ptr(bp), MEM_BLOCK_avail(bp));
 #endif /* NO_VALGRIND */
 #endif /* KEY */
 	memset (MEM_BLOCK_ptr(bp), 0, MEM_BLOCK_avail(bp));
 #ifdef KEY
 #ifndef NO_VALGRIND
-	VALGRIND_MAKE_NOACCESS(MEM_BLOCK_ptr(bp), MEM_BLOCK_avail(bp));
+	VALGRIND_MAKE_MEM_NOACCESS(MEM_BLOCK_ptr(bp), MEM_BLOCK_avail(bp));
 #endif /* NO_VALGRIND */
 #endif /* KEY */
       }
@@ -1642,13 +1642,13 @@ MEM_POOL_Pop_P
   } else {
 #ifdef KEY
 #ifndef NO_VALGRIND
-    VALGRIND_MAKE_WRITABLE(bsp, sizeof(MEM_POOL_BLOCKS));
+    VALGRIND_MAKE_MEM_UNDEFINED(bsp, sizeof(MEM_POOL_BLOCKS));
 #endif /* NO_VALGRIND */
 #endif /* KEY */
     memset (bsp, 0, sizeof(MEM_POOL_BLOCKS));
 #ifdef KEY
 #ifndef NO_VALGRIND
-    VALGRIND_MAKE_NOACCESS(bsp, sizeof(MEM_POOL_BLOCKS));
+    VALGRIND_MAKE_MEM_NOACCESS(bsp, sizeof(MEM_POOL_BLOCKS));
     /* Tell Valgrind everything in here has been freed, but then put it
      * back as empty.  */
     VALGRIND_DESTROY_MEMPOOL(bsp);
