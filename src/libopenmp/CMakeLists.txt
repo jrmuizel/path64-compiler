@@ -55,10 +55,11 @@ foreach(targ ${PATH64_ENABLE_TARGETS})
                            COMMAND ${CMAKE_COMMAND} -E make_directory
                                    ${CMAKE_CURRENT_BINARY_DIR}/${targ})
 
+        string(REPLACE " " ";" fflags "${CMAKE_Fortran_FLAGS}")
         add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/omp_lib-${targ}.f.o
                                   ${CMAKE_CURRENT_BINARY_DIR}/${targ}/OMP_LIB.mod
                                   ${CMAKE_CURRENT_BINARY_DIR}/${targ}/OMP_LIB_KINDS.mod
-                           COMMAND ${CMAKE_Fortran_COMPILER} ${CMAKE_Fortran_FLAGS} ${targ_flag}
+                           COMMAND ${CMAKE_Fortran_COMPILER} ${fflags} ${targ_flag}
                                    -c ${CMAKE_CURRENT_SOURCE_DIR}/../include/omp/omp_lib.f
                                    -o ${CMAKE_CURRENT_BINARY_DIR}/omp_lib-${targ}.f.o
                            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../include/omp/omp_lib.f
