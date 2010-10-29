@@ -440,10 +440,18 @@ parse_W_option (char **argv, int *argi)
 {
 	int flag;
 	phases_t phase;
-	char *start = next_string(argv,argi);
-	if ( strchr(start, ',') == NULL || *start == '-') {
-		get_next_char(argv,argi);
+	char *start;
+
+	if ( is_last_char(argv, argi) ) {
+		// -W option
+		get_next_arg(argi);
 		return O_W;
+	}
+
+	start = next_string(argv,argi);
+	if ( strchr(start, ',') == NULL || *start == '-') {
+		get_next_arg(argi);
+		return O_Unrecognized;
 	}
 	flag = parse_multi_option (argv, argi);
 	/* set phases for whatever user said */
