@@ -708,7 +708,7 @@ check_duplicate_external_name(fld_type fld, int idx, const char *ext_name) {
   int bind_attr = (AT_Tbl_Idx == fld) ? AT_BIND_ATTR(idx) : SB_BIND_ATTR(idx);
   external_name_t *prev = get_external_label(ext_name);
   if (!prev) {
-    prev = malloc(sizeof prev);
+    prev = malloc(sizeof (external_name_t));
     prev->id = strdup(id);
     prev->line = line;
     prev->bind_attr = bind_attr;

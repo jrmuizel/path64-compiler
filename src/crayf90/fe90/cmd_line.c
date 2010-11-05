@@ -399,7 +399,9 @@ void	process_cmd_line(int   argc, char *argv[])
    if (NULL_IDX == intrinsic_module_path_idx && nlspath && *nlspath) {
      int nlspath_len = strlen(nlspath) + 1;
      char *saveptr = 0;
-     for (char *path = strcpy(alloca(nlspath_len), nlspath);; path = 0) {
+     char *path;
+     path = malloc(nlspath_len);
+     for (strcpy(path, nlspath);; path = 0) {
        char *token = strtok_r(path, ":", &saveptr);
        if (!token) {
          break;
@@ -420,7 +422,7 @@ void	process_cmd_line(int   argc, char *argv[])
        ;
        #define MAX_ARCH_NAME_LEN 10
 
-       char *nls_dir = malloc(strlen(token));
+       char *nls_dir = malloc(strlen(token) + 1);
        char *mod_path = malloc(strlen(token) + MAX_ARCH_NAME_LEN +
                                sizeof DIR_M32 + 2);
        const char * bits = Is_Target_32bit() ? DIR_M32 : DIR_M64;
@@ -431,6 +433,7 @@ void	process_cmd_line(int   argc, char *argv[])
        free(mod_path);
        free(nls_dir);
      }
+     free(path);
    }
 #endif /* KEY Bug 5089 */
 
