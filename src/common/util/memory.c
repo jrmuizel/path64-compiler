@@ -1440,10 +1440,13 @@ MEM_POOL_Push_P
     /* Can take from free list.
      */
     pb = free_mem_pool_blocks_list;
+#ifndef NO_VALGRIND
+    /* the data in free_mem_pool_block_list is set to NOACCESS in MEM_POOL_Delete */
+    VALGRIND_MAKE_MEM_DEFINED(pb, sizeof(MEM_POOL_BLOCKS));
+#endif /* NO_VALGRIND */
     free_mem_pool_blocks_list = MEM_POOL_BLOCKS_rest(pb);
 #ifdef KEY
 #ifndef NO_VALGRIND
-    VALGRIND_MAKE_MEM_DEFINED(pb, sizeof(MEM_POOL_BLOCKS));
     VALGRIND_MAKE_MEM_UNDEFINED(pb, sizeof(MEM_POOL_BLOCKS));
 #endif /* NO_VALGRIND */
 #endif /* KEY */
@@ -1652,7 +1655,11 @@ MEM_POOL_Pop_P
     /* Tell Valgrind everything in here has been freed, but then put it
      * back as empty.  */
     VALGRIND_DESTROY_MEMPOOL(bsp);
-    VALGRIND_CREATE_MEMPOOL(bsp, REDZONE_SIZE, MEM_POOL_bz(pool));
+    /* Don't put it back here. This is done in MEM_POOL_Push_P
+     * and if done here too then we get multiple create_mempool on the
+     * same area and valgrind complains.
+     */
+    /* VALGRIND_CREATE_MEMPOOL(bsp, REDZONE_SIZE, MEM_POOL_bz(pool)); */
 #endif /* NO_VALGRIND */
 #endif /* KEY */
   }
@@ -1697,6 +1704,11 @@ void MEM_POOL_Set_Default(MEM_POOL *pool)
 void MEM_POOL_FREE(MEM_POOL *pool, void *data)
 {
   MEM_LARGE_BLOCK *large_block;
+#ifndef NO_VALGRIND
+    char vbits[sizeof(MEM_PTR)];
+    void *lbp;
+    int r;
+#endif
 
   if (data == NULL)
     return;
@@ -1751,6 +1763,15 @@ void MEM_POOL_FREE(MEM_POOL *pool, void *data)
 
   large_block = (MEM_LARGE_BLOCK *)
     (((char *) data) - MEM_LARGE_BLOCK_OVERHEAD);
+#ifndef NO_VALGRIND
+  /* large_block may or may not be inside DEFINED memory. We need to ask
+   * valgrind what the exact status of that memory area is before
+   * changing it so we can return it to its correct state after.
+   */
+  lbp = &MEM_LARGE_BLOCK_ptr(large_block);
+  r = VALGRIND_GET_VBITS(lbp, vbits, sizeof(MEM_PTR));
+  VALGRIND_MAKE_MEM_DEFINED(lbp, sizeof(MEM_PTR));
+#endif
   if (MEM_LARGE_BLOCK_ptr(large_block) == (MEM_PTR) data) {
     MEM_LARGE_BLOCK *prev;
     MEM_LARGE_BLOCK *next;
@@ -1769,6 +1790,16 @@ void MEM_POOL_FREE(MEM_POOL *pool, void *data)
 
     MEM_LARGE_BLOCK_free(large_block);
   }
+#ifndef NO_VALGRIND
+  /* VALGRIND_GET_VBITS returns 3 when address is in NOACCESS so return
+   * it to that state. Otherwise just set the bits we got from GET_VBITS.
+   */
+  if (r == 3) {
+    VALGRIND_MAKE_MEM_NOACCESS(lbp, sizeof(MEM_PTR));
+  } else {
+    r = VALGRIND_SET_VBITS(lbp, vbits, sizeof(MEM_PTR));
+  }
+#endif
     
 }
 
@@ -1862,7 +1893,16 @@ void MEM_POOL_Delete(MEM_POOL *pool)
     MEM_POOL_Pop(pool);
   MEM_POOL_Pop(pool);
   bsp = MEM_POOL_blocks(pool);
+#ifndef NO_VALGRIND
+  /* The last call to MEM_POOL_Pop above sets bsp to NOACCESS. Need to
+   * have it UNDEFINED to write to it.
+   */
+  VALGRIND_MAKE_MEM_UNDEFINED(bsp, sizeof(MEM_POOL_BLOCKS));
+#endif
   MEM_POOL_BLOCKS_rest(bsp) = free_mem_pool_blocks_list;
+#ifndef NO_VALGRIND
+  VALGRIND_MAKE_MEM_NOACCESS(bsp, sizeof(MEM_POOL_BLOCKS));
+#endif
   free_mem_pool_blocks_list = bsp;
 
   memset (pool, 0, sizeof(MEM_POOL));
