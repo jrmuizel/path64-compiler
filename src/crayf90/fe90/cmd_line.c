@@ -422,16 +422,18 @@ void	process_cmd_line(int   argc, char *argv[])
        ;
        #define MAX_ARCH_NAME_LEN 10
 
-       char *nls_dir = malloc(strlen(token) + 1);
+       char *token_copy = malloc(strlen(token) + 1);
        char *mod_path = malloc(strlen(token) + MAX_ARCH_NAME_LEN +
-                               sizeof DIR_M32 + 2);
+                               strlen(DIR_M32) + 2 + 1);
        const char * bits = Is_Target_32bit() ? DIR_M32 : DIR_M64;
+       char *nls_dir;
 
-       nls_dir = dirname(strcpy(nls_dir, token));
+       strcpy(token_copy, token);
+       nls_dir = dirname(token_copy);
        sprintf(mod_path, "%s/%s/%s", nls_dir, arch_name, bits);
        add_to_fp_table(mod_path, &intrinsic_module_path_idx, 'p');
        free(mod_path);
-       free(nls_dir);
+       free(token_copy);
      }
      free(path);
    }
