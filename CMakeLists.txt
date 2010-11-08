@@ -28,26 +28,6 @@ SET(CMAKE_CXX_FLAGS_RELEASE  "-O2 -DNDEBUG" CACHE STRING "Flags used by the comp
 SET(CMAKE_Fortran_FLAGS_RELEASE  "-O2 -DNDEBUG" CACHE STRING "Flags used by the compiler during release builds." FORCE)
 
 
-# Checking that -Wl,-s flag works
-
-include(CheckCSourceRuns)
-
-set(src "int main\(\) { return 0\; }")
-set(CMAKE_REQUIRED_FLAGS "-Wl,-s -static")
-check_c_source_runs(${src} s_flag_res)
-set(CMAKE_REQUIRED_FLAGS)
-if(s_flag_res)
-    set(STRIP_FLAG "-Wl,-s")
-else()
-    set(STRIP_FLAG "-Wl,-S")
-endif()
-
-
-SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "${STRIP_FLAG}")
-SET(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${STRIP_FLAG}")
-SET(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${STRIP_FLAG}")
-
-
 # Define user option whether to build the Fortran compiler.
 OPTION(PATH64_ENABLE_FORTRAN "Build Fortran compiler" ON)
 IF(PATH64_ENABLE_FORTRAN)
