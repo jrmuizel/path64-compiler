@@ -664,7 +664,7 @@ void ipacom_doit (const char* ipaa_filename)
       unlink(elf_symtab_name);
     }
   
-    rmdir(tmpdir);
+    cleanup_all_files();
   }
 
   //ipacom_doit never returns

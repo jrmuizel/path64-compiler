@@ -223,6 +223,7 @@ extern char * __Release_ID;
 extern void *(*p_ipa_open_input)(char *, off_t *);
 extern void (*p_ipa_init_link_line)(int, char **);
 extern void (*p_ipa_add_link_flag)(const char*);
+extern void (*p_ipa_modify_link_flag)(char *, char*);
 extern void (*p_ipa_driver)(int, char **);
 extern void (*p_process_whirl64)(void *, off_t, void *, int, const char *);
 extern void (*p_process_whirl32)(void *, off_t, void *, int, const char *);
@@ -274,6 +275,9 @@ get_command_line(bfd *, string , string , int *);
 
 extern int
 make_link (const string dest, const string src);
+
+extern int
+extract_archive_member (bfd *abfd, string path);
 
 extern string
 ld_compile (bfd *abfd);

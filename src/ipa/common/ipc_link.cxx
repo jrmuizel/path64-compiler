@@ -278,6 +278,25 @@ ipa_add_link_flag (const char* str)
     current_ld_flags->push_back (str);
 } // ipa_add_link_flag
 
+void
+ipa_modify_link_flag (char* lname, char* fname)
+{
+    ARGV::iterator i;
+    for(i = ld_flags_part1->begin(); i != ld_flags_part1->end(); i++) {
+        if(!strcmp(lname, *i)) {
+            ld_flags_part1->erase(i);
+            ld_flags_part1->insert(i, fname);
+        }
+    }
+    for(i = ld_flags_part2->begin(); i != ld_flags_part2->end();i++) {
+        if(!strcmp(lname, *i)) {
+            ld_flags_part2->erase(i);
+            ld_flags_part2->insert(i, fname);
+        }
+    }
+} // ipa_modify_link_flag
+
+
 
 #ifdef KEY
 extern "C" void

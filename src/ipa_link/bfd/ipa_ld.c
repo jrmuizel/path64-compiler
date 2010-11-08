@@ -94,6 +94,7 @@ extern void *ipa_open_input(char *, off_t *) __attribute__((weak));
 void *(*p_ipa_open_input)(char *, off_t *) = NULL;
 void (*p_ipa_init_link_line)(int, char **) = NULL;
 void (*p_ipa_add_link_flag)(const char*) = NULL;
+void (*p_ipa_modify_link_flag)(char*, char*) = NULL;
 void (*p_ipa_driver)(int, char **) = NULL;
 void (*p_process_whirl64)(void *, off_t, void *, int, const char *) = NULL;
 void (*p_process_whirl32)(void *, off_t, void *, int, const char *) = NULL;
@@ -431,6 +432,10 @@ create_tmpdir ( int tracing )
 {
     int fixedname = is_ipa && ( ld_ipa_opt[LD_IPA_KEEP_TEMPS].flag );
 
+    if (tmpdir) {
+	return 0;
+    }
+
     if ( is_ipa ) {
 	if ( fixedname ) {
 	    tmpdir = concat_names ( outfilename, ".ipakeep" );
@@ -627,33 +632,59 @@ get_command_line(bfd *abfd,
 		specified and put it into a separate file.
 
 	 *******************************************************/
-static int
+int
 extract_archive_member (bfd *abfd, string path)
 {
     int fd = -1;
-    int mode = 0666;
+    int mode = 0644;
     pointer addr = (pointer)-1;
     struct areltdata *p_areltdata = (struct areltdata *)abfd->arelt_data;
     struct ar_hdr *p_hdr = arch_hdr(abfd);
+    size_t parsed_size;
+    char *buf;
+    int ret;
 
-    if ((fd = OPEN (path, O_RDWR|O_CREAT|O_TRUNC, mode)) != -1)
+    parsed_size = strtol (p_hdr->ar_size, NULL, 10);
+    if ((fd = OPEN (path, O_WRONLY|O_CREAT|O_TRUNC, mode)) != -1) {
+	/*
 	addr = (pointer) MMAP ( 0, 
-	    	    	    	p_hdr->ar_size,  
+	    	    	    	parsed_size,
 				PROT_READ|PROT_WRITE,
     	    	    	    	MAP_SHARED, 
 				fd, 
 				0);
+				*/
+    }
 	
-    if (fd == -1 || addr == (pointer)-1 || FCHMOD (fd, mode) != 0 ) {
+    if (fd == -1 || FCHMOD (fd, mode) != 0 ) {
     	perror("cannot create intermediate file");
     	return -1;
     }
 
+    if ((buf = malloc(parsed_size)) == NULL) {
+	fprintf(stderr, "malloc failed for member %s\n", abfd->filename);
+	return -1;
+    }
+
+    if (bfd_seek(abfd, 0, SEEK_SET) != 0) {
+	fprintf(stderr, "bfd_seek failed for member %s\n", abfd->filename);
+	return -1;
+    }
+    if (bfd_bread(buf, parsed_size, abfd) != parsed_size) {
+	fprintf(stderr, "bfd_read failed for member %s\n", abfd->filename);
+	return -1;
+    }
+
+    /* MEMCPY (addr, buf, parsed_size); */
+
+    /* MUNMAP (addr, parsed_size); */
+    if (write(fd, buf, parsed_size) < 0) {
+	perror("cant write extracted archive object");
+	return -1;
+    }
+
     CLOSE (fd);
-
-    MEMCPY (addr, bfd_tell(abfd), p_hdr->ar_size);
-
-    MUNMAP (addr, p_hdr->ar_size);
+    free(buf);
 
     return 0;
 
@@ -750,11 +781,10 @@ ld_compile (bfd *abfd)
 	}
     }
 
-    if ((output_path = create_unique_file (file_name, 'o')) == 0)
-	if (create_tmpdir (FALSE) != 0) {
-	    fprintf(stderr,"create_unique_file() failed for %s\n",abfd->filename);
-    	    exit(1);
-    	}
+    if ((output_path = create_unique_file (file_name, 'o')) == 0) {
+	fprintf(stderr,"create_unique_file() failed for %s\n",abfd->filename);
+	exit(1);
+    }
 
     add_to_tmp_file_list (output_path);
     add_to_tmp_file_list (input_path);
@@ -1222,6 +1252,12 @@ ipa_set_syms(void)
     }
 
     p_ipa_add_link_flag = dlsym(p_handle,"ipa_add_link_flag");
+    if ((p_error = dlerror()) != NULL)  {
+    	fputs(p_error, stderr);
+    	exit(1);
+    }
+
+    p_ipa_modify_link_flag = dlsym(p_handle,"ipa_modify_link_flag");
     if ((p_error = dlerror()) != NULL)  {
     	fputs(p_error, stderr);
     	exit(1);

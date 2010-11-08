@@ -48,6 +48,7 @@
 #include "fnmatch.h"
 #include "demangle.h"
 #include "hashtab.h"
+#include <limits.h>
 
 #ifdef KEY
 #include "ipa_ld.h"
@@ -2466,6 +2467,52 @@ handle_ipa_archive_mismatch (lang_input_statement_type *entry)
 }
 #endif
 
+static bfd_boolean
+process_archive_whirl(lang_input_statement_type *entry, bfd *member)
+{
+    char *buf;
+    struct ar_hdr *p_hdr;
+    size_t parsed_size;
+
+    // Process the WHIRL object.
+    if (! bfd_link_add_symbols (member, &link_info)) {
+	einfo (_("%F%B: could not read symbols from member %B in archive: %E\n"),
+	    entry->the_bfd, member);
+	entry->loaded = FALSE;
+	return FALSE;
+    }
+
+    ld_set_cur_obj(member);
+    p_hdr = arch_hdr(member);
+    parsed_size = strtol (p_hdr->ar_size, NULL, 10);
+    if ((buf = bfd_alloc(member, parsed_size)) == NULL) {
+	einfo(_("%F%B: bfd_alloc failed for member %B\n"),
+	    entry->the_bfd, member);
+    }
+    if (bfd_seek(member, 0, SEEK_SET) != 0) {
+	einfo(_("%F%B: bfd_seek failed for member %B\n"),
+	    entry->the_bfd, member);
+    }
+    if (bfd_bread(buf, parsed_size, member) != parsed_size) {
+	einfo(_("%F%B: bfd_read failed for member %B\n"),
+	    entry->the_bfd, member);
+    }
+    member->ipa_usrdata = buf;
+    if ((elf_elfheader(member)->e_flags & EF_IRIX_ABI64) == 0)
+	(*p_process_whirl32) ((void *)member,
+	    elf_elfheader (member)->e_shnum,
+	    member->ipa_usrdata+elf_elfheader(member)->e_shoff,
+	    0, /* check_whirl_revision */
+	    member->filename);
+    else
+	(*p_process_whirl64) ((void *)member,
+	    elf_elfheader (member)->e_shnum,
+	    member->ipa_usrdata+elf_elfheader(member)->e_shoff,
+	    0, /* check_whirl_revision */
+	    member->filename);
+    return TRUE;
+}
+
 /* Get the symbols for an input file.  */
 
 static bfd_boolean
@@ -2473,6 +2520,14 @@ load_symbols (lang_input_statement_type *entry,
 	      lang_statement_list_type *place)
 {
   char **matching;
+
+  char *tmp_arname = NULL;
+  char *tmp_objname = NULL;
+  bfd_boolean seen_whirl_obj = FALSE;
+  bfd *member = NULL;
+  bfd_boolean loaded = TRUE;
+
+  extern char *tmpdir;
 
   if (entry->loaded)
     return TRUE;
@@ -2561,131 +2616,108 @@ load_symbols (lang_input_statement_type *entry,
 
     case bfd_archive:
 #ifdef KEY
-      // Go through archive to make sure it does not contain both regular and
-      // WHIRL objects.
+      // Go through archive to check if it contains WHIRL objects
       if (is_ipa) {
-	bfd_boolean seen_nonwhirl_obj = FALSE;
-	bfd_boolean seen_whirl_obj = FALSE;
-	bfd_boolean mixed = FALSE;	// TRUE if archive has mixed objects
-	bfd *member = NULL;
-
 	member = bfd_openr_next_archived_file (entry->the_bfd, member);
 	while (member != NULL) {
-	  if (!bfd_check_format (member, bfd_object)) {
-	    einfo (_("%F%B: member %B in archive is not an object\n"),
-		   entry->the_bfd, member);
-	    break;
-	  }
-
-	  // it's an object
-	  if (ipa_is_whirl (member)) {	// WHIRL object
-	    seen_whirl_obj = TRUE;
-	    if (seen_nonwhirl_obj) {
-	      mixed = TRUE;
-	    } else {
-	      char *buf;
-	      struct ar_hdr *p_hdr;
-	      size_t parsed_size;
-	      // Process the WHIRL object.
-	      if (! bfd_link_add_symbols (member, &link_info)) {
-	        einfo (_("%F%B: could not read symbols from member %B in archive: %E\n"),
-		       entry->the_bfd, member);
-	        entry->loaded = FALSE;
-		return FALSE;
+	  /* Only check real objects. Handling of non objects is done below. */
+	  if (bfd_check_format (member, bfd_object)) {
+	      // it's an object
+	      if (ipa_is_whirl (member)) {	// WHIRL object
+		seen_whirl_obj = TRUE;
 	      }
-	      ld_set_cur_obj(member);
-	      p_hdr = arch_hdr(member);
-	      parsed_size = strtol (p_hdr->ar_size, NULL, 10);
-	      if ((buf = bfd_alloc(member, parsed_size)) == NULL) {
-		einfo(_("%F%B: bfd_alloc failed for member %B\n"),
-		      entry->the_bfd, member);
-	      }
-	      if (bfd_seek(member, 0, SEEK_SET) != 0) {
-		einfo(_("%F%B: bfd_seek failed for member %B\n"),
-		      entry->the_bfd, member);
-	      }
-	      if (bfd_bread(buf, parsed_size, member) != parsed_size) {
-		einfo(_("%F%B: bfd_read failed for member %B\n"),
-		      entry->the_bfd, member);
-	      }
-	      member->ipa_usrdata = buf;
-	      if ((elf_elfheader(member)->e_flags & EF_IRIX_ABI64) == 0)
-	        (*p_process_whirl32) ((void *)member,
-				elf_elfheader (member)->e_shnum,
-				member->ipa_usrdata+elf_elfheader(member)->e_shoff,
-				0, /* check_whirl_revision */
-				member->filename);
-	      else
-	        (*p_process_whirl64) ((void *)member,
-				elf_elfheader (member)->e_shnum,
-				member->ipa_usrdata+elf_elfheader(member)->e_shoff,
-				0, /* check_whirl_revision */
-				member->filename);
-
-	      // Since it is not a regular object archive, don't pass it to the
-	      // linker.
-	      (*p_ipa_erase_link_flag) (entry->local_sym_name);
-	    }
-	  } else {			// non-WHIRL object
-	    seen_nonwhirl_obj = TRUE;
-	    if (seen_whirl_obj) {
-	      mixed = TRUE;
-	    }
-	  }
-
-	  // Give error if the archive contains both regular and WHIRL objects.
-	  if (mixed) {
-	    handle_ipa_archive_mismatch(entry);
-	    entry->loaded = FALSE;
-	    return FALSE;
 	  }
 
 	  member = bfd_openr_next_archived_file (entry->the_bfd, member);
-	}
-
-	// Done processing WHIRL-object archive.
-	if (seen_whirl_obj) {
-	  entry->loaded = TRUE;
-	  return TRUE;
 	}
       }
 #endif
 
       check_excluded_libs (entry->the_bfd);
 
-      if (entry->whole_archive)
-	{
-	  bfd *member = NULL;
-	  bfd_boolean loaded = TRUE;
-
-	  for (;;)
-	    {
-	      member = bfd_openr_next_archived_file (entry->the_bfd, member);
-
-	      if (member == NULL)
-		break;
-
+      if (entry->whole_archive || seen_whirl_obj) {
+	  /* If ipa this will restart the search since member is NULL again */
+	  member = bfd_openr_next_archived_file (entry->the_bfd, member);
+	  while (member != NULL) {
 	      if (! bfd_check_format (member, bfd_object))
 		{
 		  einfo (_("%F%B: member %B in archive is not an object\n"),
 			 entry->the_bfd, member);
 		  loaded = FALSE;
+		  break;
 		}
 
-	      if (! ((*link_info.callbacks->add_archive_element)
-		     (&link_info, member, "--whole-archive")))
-		abort ();
+	      if (is_ipa && seen_whirl_obj) {
+		if (ipa_is_whirl (member))  {
+		    loaded = process_archive_whirl(entry, member);
+		    if (! loaded) {
+			break;
+		    }
+		} else {
+		    if (entry->whole_archive) {
+			char *cmd;
+			if (create_tmpdir (FALSE) != 0) {
+			    fprintf(stderr,"create_tmpdir() failed for %s\n",entry->filename);
+			    exit(1);
+			}
+			if (tmp_arname == NULL) {
+			    if ((tmp_arname = create_unique_file (entry->filename, 'a')) == 0) {
+				fprintf(stderr,"create_unique_file() failed for %s\n",entry->filename);
+				exit(1);
+			    }
+			    /* create_unique_file makes a 0 byte file. ar doesn't like that so remove it first. */
+			    UNLINK(tmp_arname);
+			    add_to_tmp_file_list (tmp_arname);
+			    /* replace the current argument (-llib or libxx.a)
+			     * with the temporary archive we're creating.
+			     */
+			    (*p_ipa_modify_link_flag)(entry->local_sym_name, tmp_arname);
+			}
+			/*
+			 * NOTE
+			 * The use of system("ar ...") here is a placeholder.
+			 * It shows what needs to be done (and works in
+			 * most cases) but it should be replaced with
+			 * something better.
+			 * At the very least a fork/execv to eliminate
+			 * passing through users shell expansion.
+			 */
+			tmp_objname = create_unique_file (member->filename, 'o');
+			if (extract_archive_member (member, tmp_objname) < 0) {
+			  einfo (_("%F%B: could not write temporary object: %E\n"), member);
+			  loaded = FALSE;
+			  break;
+			}
+			cmd = malloc(strlen(tmp_arname)+strlen(tmpdir)+strlen(member->filename)+9);
+			sprintf(cmd, "ar cr %s %s", tmp_arname, tmp_objname);
+			system(cmd);
+			unlink(tmp_objname);
+			free(cmd);
+		    }
+		}
+	      } else {
+		if (entry->whole_archive) {
+		  if (! ((*link_info.callbacks->add_archive_element)
+			 (&link_info, member, "--whole-archive")))
+		    abort ();
+		}
+	      }
 
 	      if (! bfd_link_add_symbols (member, &link_info))
 		{
 		  einfo (_("%F%B: could not read symbols: %E\n"), member);
 		  loaded = FALSE;
+		  break;
 		}
-	    }
+	      member = bfd_openr_next_archived_file (entry->the_bfd, member);
+	  }
+	  if (is_ipa && entry->whole_archive && tmp_arname == NULL && loaded) {
+	      (*p_ipa_erase_link_flag) (entry->local_sym_name);
+	  }
 
 	  entry->loaded = loaded;
 	  return loaded;
-	}
+      }
       break;
     }
 
