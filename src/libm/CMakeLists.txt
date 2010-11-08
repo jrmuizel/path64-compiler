@@ -66,11 +66,8 @@ INCLUDE_DIRECTORIES(
 	../libm
 )
 
-set(compile_flags
 # Should always build with a higher level of optimization
-	-O3
-	-LNO:vintr=0
-	-std=gnu99)
+set(compile_flags "-O3 -LNO:vintr=0 -std=gnu99")
 
 IF(PATH64_ENABLE_MATHLIBS)
 
@@ -83,7 +80,7 @@ set(BOOTSTRAP_HACK -fbootstrap-hack)
 path64_set_multitarget_sources(mv-static COMMON ${PATHSCALE_MV_SRCS})
 path64_set_multitarget_sources(mv-static x86_64 ${PATHSCALE_MV_SRCS_X64})
 path64_set_multitarget_property_(mv-static OUTPUT_NAME "mv")
-path64_set_multitarget_property_(mv-static COMPILE_FLAGS ${compile_flags})
+path64_set_multitarget_property_(mv-static COMPILE_FLAGS "${compile_flags} -fPIC -DPIC")
 path64_add_multitarget_library(mv-static STATIC)
 path64_add_multitarget_multitarget_dependencies(mv-static pscrt-static)
 path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mv-static)
@@ -91,7 +88,7 @@ path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mv-static)
 
 path64_set_multitarget_sources(mv COMMON ${PATHSCALE_MV_SRCS})
 path64_set_multitarget_sources(mv x86_64 ${PATHSCALE_MV_SRCS_X64})
-path64_set_multitarget_property_(mv COMPILE_FLAGS ${compile_flags} -fPIC -DPIC)
+path64_set_multitarget_property_(mv COMPILE_FLAGS "${compile_flags} -fPIC -DPIC")
 path64_set_multitarget_property_(mv SOVERSION 1)
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
@@ -115,9 +112,9 @@ if(PATH64_ENABLE_PROFILING)
     path64_set_multitarget_sources(mv_p COMMON ${PATHSCALE_MV_SRCS})
     path64_set_multitarget_sources(mv_p x86_64 ${PATHSCALE_MV_SRCS_X64})
     if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-        path64_set_multitarget_property_(mv_p COMPILE_FLAGS -pg ${compile_flags})
+        path64_set_multitarget_property_(mv_p COMPILE_FLAGS "-pg ${compile_flags}")
     else()
-        path64_set_multitarget_property_(mv_p COMPILE_FLAGS ${compile_flags})
+        path64_set_multitarget_property_(mv_p COMPILE_FLAGS "${compile_flags}")
     endif()
     path64_add_multitarget_library(mv_p STATIC)
     path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mv_p)

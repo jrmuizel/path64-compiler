@@ -105,6 +105,8 @@ path64_set_multitarget_sources(mpath-static COMMON
 path64_set_multitarget_sources(mpath-static x86_64
                                ${PATHSCALE_MPATH_SRCS_X64} ${PATHSCALE_MPATH_S_SRCS_X64})
 path64_set_multitarget_property_(mpath-static OUTPUT_NAME "mpath")
+path64_set_multitarget_property_(mpath-static COMPILE_DEFINITIONS PIC)
+path64_set_multitarget_property_(mpath-static COMPILE_FLAGS "-fPIC")
 path64_add_multitarget_library(mpath-static STATIC)
 path64_add_multitarget_multitarget_dependencies(mpath-static pscrt-static)
 path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mpath-static)
@@ -115,7 +117,7 @@ path64_set_multitarget_sources(mpath COMMON
 path64_set_multitarget_sources(mpath x86_64
                                ${PATHSCALE_MPATH_SRCS_X64} ${PATHSCALE_MPATH_S_SRCS_X64})
 path64_set_multitarget_property_(mpath COMPILE_DEFINITIONS PIC)
-path64_set_multitarget_property_(mpath COMPILE_FLAGS -fPIC -fbootstrap-hack)
+path64_set_multitarget_property_(mpath COMPILE_FLAGS "-fPIC -fbootstrap-hack")
 path64_set_multitarget_property_(mpath SOVERSION 1)
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
