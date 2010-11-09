@@ -11,14 +11,9 @@ if(PATH64_ENABLE_FORTRAN)
         path64_get_host_target(host_targ)
         set(host_arch ${_PATH64_TARGET_ARCH_${host_targ}})
         set(host_bits ${_PATH64_TARGET_BITS_${host_targ}})
-        if("X${CMAKE_C_COMPILER_ID}" STREQUAL "XPathScale")
-            path64_set_multiarch_property(coco LINK_FLAGS
-                "-fbootstrap-hack -nodefaultlibs")
-            path64_multiarch_link_libraries(coco -lm -Wl,-Bstatic -lmv -lmpath -lpathfstart -lpathfortran -leh -lgcc -lpscrt -Wl,-Bdynamic)
-        else()
-            path64_set_multiarch_property(coco LINK_FLAGS
-                "-nodefaultlibs -lpathfortran -lpathfstart -lm -rpath ${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${host_arch}/${host_bits}")
-        endif()
+        path64_set_multiarch_property(coco LINK_FLAGS
+            "-fbootstrap-hack -nodefaultlibs")
+        path64_multiarch_link_libraries(coco -lm -Wl,-Bstatic -lmv -lmpath -lpathfstart -lpathfortran -leh -lgcc -lpscrt -Wl,-Bdynamic)
         path64_add_multiarch_dependencies(coco switch_fc compiler-stage-libs-Fortran)
         path64_install_multiarch(coco)
     endif()
