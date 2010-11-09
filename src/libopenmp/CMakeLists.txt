@@ -21,7 +21,11 @@ SET(PATHSCALE_OPENMP_HEADER_SRCS "../include/omp/omp_lib.f" )
 path64_set_multitarget_sources(openmp COMMON ${PATHSCALE_OPENMP_SRCS})
 path64_set_multitarget_property_(openmp COMPILE_FLAGS "-std=gnu99 -D_GNU_SOURCE -fPIC")
 path64_set_multitarget_property_(openmp LINK_FLAGS
-                                "-Wl,--version-script=\"${libopenmp_SOURCE_DIR}/libopenmp.vs\"")
+                                "-Wl,--version-script=\"${libopenmp_SOURCE_DIR}/libopenmp.vs\" -nodefaultlibs")
+if(PATH64_ENABLE_PSCRUNTIME)
+    path64_multitarget_link_libraries(openmp gcc)
+endif()
+path64_multitarget_link_libraries(openmp m c)
 path64_add_multitarget_library(openmp SHARED)
 path64_add_multitarget_dependencies(openmp compiler-stage-libs-C)
 

@@ -73,10 +73,6 @@ IF(PATH64_ENABLE_MATHLIBS)
 
 set_source_files_properties(${PATHSCALE_MV_SRCS} PROPERTIES LANGUAGE C)
 
-#if(${CMAKE_C_COMPILER_ID} MATCHES "PathScale")
-set(BOOTSTRAP_HACK -fbootstrap-hack)
-#endif()
-
 path64_set_multitarget_sources(mv-static COMMON ${PATHSCALE_MV_SRCS})
 path64_set_multitarget_sources(mv-static x86_64 ${PATHSCALE_MV_SRCS_X64})
 path64_set_multitarget_property_(mv-static OUTPUT_NAME "mv")
@@ -93,16 +89,20 @@ path64_set_multitarget_property_(mv SOVERSION 1)
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
     path64_set_multitarget_property_(mv LINK_FLAGS
-            "-Wl,-x -Wl,--version-script=${libmv_SOURCE_DIR}/libmv.vs  ${BOOTSTRAP_HACK}")
+            "-Wl,-x -Wl,--version-script=${libmv_SOURCE_DIR}/libmv.vs -fbootstrap-hack -nodefaultlibs")
 else()
-    path64_set_multitarget_property_(mv LINK_FLAGS "${BOOTSTRAP_HACK}")
+    path64_set_multitarget_property_(mv LINK_FLAGS "-fbootstrap-hack -nodefaultlibs")
 endif()
 
-path64_multitarget_link_libraries(mv m)
+path64_multitarget_link_libraries(mv m c)
+if(PATH64_ENABLE_PSCRUNTIME)
+    path64_multitarget_link_libraries(mv gcc)
+endif()
+
 path64_add_multitarget_library(mv SHARED)
 path64_add_multitarget_multitarget_dependencies(mv pscrt-static)
 if(PATH64_ENABLE_PSCRUNTIME)
-    path64_add_multitarget_multitarget_dependencies(mv compiler-rt unwind)
+    path64_add_multitarget_multitarget_dependencies(mv compiler-rt)
 endif()
 
 path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mv)
