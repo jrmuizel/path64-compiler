@@ -3937,6 +3937,18 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
     case GSBI_IX86_BUILTIN_PMINSW:
       *iopc = INTRN_PMINSW;
       break;
+    case GSBI_IX86_BUILTIN_PMAXSW128:
+      *iopc = INTRN_PMAXSW128;
+      break;
+    case GSBI_IX86_BUILTIN_PMAXUB128:
+      *iopc = INTRN_PMAXUB128;
+      break;
+    case GSBI_IX86_BUILTIN_PMINSW128:
+      *iopc = INTRN_PMINSW128;
+      break;
+    case GSBI_IX86_BUILTIN_PMINUB128:
+      *iopc = INTRN_PMINUB128;
+      break;
 #if 0 // wgen TODO
     case GSBI_IX86_BUILTIN_PEXTRW:
       {

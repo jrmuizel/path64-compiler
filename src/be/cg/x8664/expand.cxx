@@ -6819,6 +6819,18 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
   case INTRN_PMINSW:
     Build_OP( TOP_min64v16, result, op0, op1, ops );
     break;
+  case INTRN_PMAXUB128:
+    Build_OP( TOP_max128v8, result, op0, op1, ops );
+    break;
+  case INTRN_PMAXSW128:
+    Build_OP( TOP_max128v16, result, op0, op1, ops );
+    break;
+  case INTRN_PMINUB128:
+    Build_OP( TOP_min128v8, result, op0, op1, ops );
+    break;
+  case INTRN_PMINSW128:
+    Build_OP( TOP_min128v16, result, op0, op1, ops );
+    break;
   case INTRN_PMOVMSKB:
     Build_OP( TOP_pmovmskb, result, op0, ops );
     break;
