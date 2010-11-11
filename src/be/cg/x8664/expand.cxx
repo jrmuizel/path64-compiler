@@ -6874,6 +6874,39 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
   case INTRN_CMPEQPD:
     Build_OP( TOP_cmpeqpd, result, op0, op1, ops );
     break;
+  case INTRN_CMPLTPD:
+    Build_OP( TOP_cmpltpd, result, op0, op1, ops );
+    break;
+  case INTRN_CMPLEPD:
+    Build_OP( TOP_cmplepd, result, op0, op1, ops );
+    break;
+  case INTRN_CMPGTPD:
+    Build_OP( TOP_cmpltpd, result, op1, op0, ops );//swap
+    break;
+  case INTRN_CMPGEPD:
+    Build_OP( TOP_cmplepd, result, op1, op0, ops );
+    break;
+  case INTRN_CMPNEQPD:
+    Build_OP( TOP_cmpneqpd, result, op0, op1, ops );
+    break;
+  case INTRN_CMPNLTPD:
+    Build_OP( TOP_cmpnltpd, result, op0, op1, ops );
+    break;
+  case INTRN_CMPNLEPD:
+    Build_OP( TOP_cmpnlepd, result, op0, op1, ops );
+    break;
+  case INTRN_CMPNGTPD:
+    Build_OP( TOP_cmpnltpd, result, op1, op0, ops );
+    break;
+  case INTRN_CMPNGEPD:
+    Build_OP( TOP_cmpnlepd, result, op1, op0, ops );
+    break;
+  case INTRN_CMPORDPD:
+    Build_OP( TOP_cmpordpd, result, op0, op1, ops );
+    break;
+  case INTRN_CMPUNORDPD:
+    Build_OP( TOP_cmpunordpd, result, op0, op1, ops );
+    break;
   case INTRN_CMPLTPS:
     Build_OP( TOP_cmpltps, result, op0, op1, ops );
     break;

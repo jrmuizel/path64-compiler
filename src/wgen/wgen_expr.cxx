@@ -4013,6 +4013,39 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
     case GSBI_IX86_BUILTIN_CMPEQPD:
       *iopc = INTRN_CMPEQPD;
       break;
+    case GSBI_IX86_BUILTIN_CMPLTPD:
+      *iopc = INTRN_CMPLTPD;
+      break;
+    case GSBI_IX86_BUILTIN_CMPLEPD:
+      *iopc = INTRN_CMPLEPD;
+      break;
+    case GSBI_IX86_BUILTIN_CMPGTPD:
+      *iopc = INTRN_CMPGTPD;
+      break;
+    case GSBI_IX86_BUILTIN_CMPGEPD:
+      *iopc = INTRN_CMPGEPD;
+      break;
+    case GSBI_IX86_BUILTIN_CMPNEQPD:
+      *iopc = INTRN_CMPNEQPD;
+      break;
+    case GSBI_IX86_BUILTIN_CMPNLTPD:
+      *iopc = INTRN_CMPNLTPD;
+      break;
+    case GSBI_IX86_BUILTIN_CMPNLEPD:
+      *iopc = INTRN_CMPNLEPD;
+      break;
+    case GSBI_IX86_BUILTIN_CMPNGTPD:
+      *iopc = INTRN_CMPNGTPD;
+      break;
+    case GSBI_IX86_BUILTIN_CMPNGEPD:
+      *iopc = INTRN_CMPNGEPD;
+      break;
+    case GSBI_IX86_BUILTIN_CMPORDPD:
+      *iopc = INTRN_CMPORDPD;
+      break;
+    case GSBI_IX86_BUILTIN_CMPUNORDPD:
+      *iopc = INTRN_CMPUNORDPD;
+      break;
     case GSBI_IX86_BUILTIN_CMPLTPS:
       *iopc = INTRN_CMPLTPS;
       break;
