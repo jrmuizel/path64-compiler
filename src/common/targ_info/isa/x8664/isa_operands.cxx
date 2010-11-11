@@ -313,6 +313,7 @@ main()
 				 TOP_paddusb128,
 				 TOP_paddusw128,
              TOP_paddsb128,
+             TOP_paddsw128,
 		     TOP_fadd128v32,
 		     TOP_fadd128v64,
 		     TOP_fhadd128v32,

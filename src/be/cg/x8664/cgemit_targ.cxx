@@ -707,6 +707,7 @@ static void Init_OP_Name()
 	OP_Name[TOP_paddusb128] = "paddusb";
 	OP_Name[TOP_paddusw128] = "paddusw";
   OP_Name[TOP_paddsb128] = "paddsb";
+  OP_Name[TOP_paddsw128] = "paddsw";
   OP_Name[TOP_addx128v64] = "paddq";
   OP_Name[TOP_addxx128v64] = "paddq";
   OP_Name[TOP_addxxx128v64] = "paddq";

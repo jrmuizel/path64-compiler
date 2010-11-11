@@ -1654,6 +1654,7 @@ int main (int argc, char *argv[])
 										TOP_paddusb128,
 										TOP_paddusw128,
                     TOP_paddsb128,
+                    TOP_paddsw128,
                     TOP_paddq,
                     TOP_sub128v64,
                     TOP_UNDEFINED);
