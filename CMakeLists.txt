@@ -326,6 +326,65 @@ function(get_compiler_version res)
 endfunction()
 
 
+# Copying pathscale runtime to <stage_dir>/lib/${arch}
+# if we are building debug version with pathcc (static linking is used in release build)
+if("X${CMAKE_C_COMPILER_ID}" STREQUAL "XPathScale" AND NOT "X${CMAKE_BUILD_TYPE}" STREQUAL "XRelease")
+    find_program(pathcc_full_path ${CMAKE_C_COMPILER})
+    get_filename_component(pathscale_path "${pathcc_full_path}" PATH)
+    get_filename_component(pathscale_path "${pathscale_path}/.." ABSOLUTE)
+    message(STATUS "Path to pathcc using to build: ${pathscale_path}")
+
+    get_compiler_version(pathscale_version)
+    path64_get_host_target(host_targ)
+    path64_get_host_arch(host_arch)
+    path64_get_target_bits(host_bits ${host_targ})
+    set(pathscale_libs_path "${pathscale_path}/lib/${pathscale_version}/${host_arch}/${host_bits}")
+
+    set(pathscale_libs_stage_deps)
+    set(pathscale_libs libmv.so libmpath.so)
+    if(PATH64_ENABLE_FORTRAN)
+        if(PATH64_USE_FOLD_F)
+            list(APPEND pathscale_libs libpathfortran.so)
+        endif()
+    endif()
+    if(PATH64_ENABLE_PSCRUNTIME)
+        list(APPEND pathscale_libs libgcc.so libeh.so libcxxrt.so libstl.so)
+    endif()
+
+    foreach(arch ${PATH64_ENABLE_ARCHES})
+        foreach(lib ${pathscale_libs})
+            add_custom_command(OUTPUT ${Path64_BINARY_DIR}/lib/${arch}/${lib}
+                               COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                                       "${pathscale_libs_path}/${lib}"
+                                       "${Path64_BINARY_DIR}/lib/${arch}/${lib}"
+                               DEPENDS "${pathscale_libs_path}/${lib}")
+            list(APPEND pathscale_libs_stage_deps "${Path64_BINARY_DIR}/lib/${arch}/${lib}")
+
+            list(FIND PATH64_ENABLE_TARGETS ${host_targ} res)
+            if(NOT ${res} EQUAL -1)
+                # Making link <install_dir>/lib/${arch}/${lib} ->
+                #             <install_dir>/lib/${arch}/${host_bits}/${lib}
+                install(CODE "file(MAKE_DIRECTORY \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}\") \n execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"./../${host_arch}/${host_bits}/${lib}\" \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/${lib}\")")
+            else()
+                # Copying pathscale lib to <instalL_dir>/lib/${arch}/${lib}
+                install(FILES "${pathscale_libs_path}/${lib}" DESTINATION "lib/${PSC_FULL_VERSION}/${arch}")
+            endif()
+          
+        endforeach()
+
+        # Making link for libpathfortran
+        if(PATH64_ENABLE_FORTRAN)
+            if(NOT PATH64_USE_FOLD_F)
+                install(CODE "file(MAKE_DIRECTORY \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}\") \n execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"./../${host_arch}/${host_bits}/libpathfortran.so\" \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/libpathfortran.so\")")
+            endif()
+        endif()
+    endforeach()
+
+    add_custom_target(pathscale-libs-stage DEPENDS ${pathscale_libs_stage_deps})
+    add_dependencies(compiler-stage pathscale-libs-stage)
+endif()
+
+
 # Build GCC and pathscale.
 ADD_SUBDIRECTORY(GCC)
 ADD_SUBDIRECTORY(src)
