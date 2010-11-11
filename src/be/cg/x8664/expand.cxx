@@ -6721,6 +6721,39 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
   case INTRN_PACKUSWB:
     Build_OP( TOP_packuswb, result, op0, op1, ops );
     break;
+  case INTRN_PACKSSWB128:
+    Build_OP( TOP_packsswb128, result, op0, op1, ops );
+    break;
+  case INTRN_PACKSSDW128:
+    Build_OP( TOP_packsswb128, result, op0, op1, ops );
+    break;
+  case INTRN_PACKUSWB128:
+    Build_OP( TOP_packsswb128, result, op0, op1, ops );
+    break;
+  case INTRN_PUNPCKHBW128:
+    Build_OP( TOP_punpckhbw128, result, op0, op1, ops );
+    break;
+  case INTRN_PUNPCKHWD128:
+    Build_OP( TOP_punpckhwd128, result, op0, op1, ops );
+    break;
+  case INTRN_PUNPCKHDQ128:
+    Build_OP( TOP_punpckhdq128, result, op0, op1, ops );
+    break;
+  case INTRN_PUNPCKHQDQ:
+    Build_OP( TOP_punpckhqdq, result, op0, op1, ops );
+    break;
+  case INTRN_PUNPCKLBW128:
+    Build_OP( TOP_punpcklbw128, result, op0, op1, ops );
+    break;
+  case INTRN_PUNPCKLWD128:
+    Build_OP( TOP_punpcklwd128, result, op0, op1, ops );
+    break;
+  case INTRN_PUNPCKLDQ128:
+    Build_OP( TOP_punpckldq128, result, op0, op1, ops );
+    break;
+  case INTRN_PUNPCKLQDQ:
+    Build_OP( TOP_punpcklqdq, result, op0, op1, ops );
+    break;
   case INTRN_PMULHUW:
     Build_OP( TOP_pmulhuw, result, op0, op1, ops );
     break;

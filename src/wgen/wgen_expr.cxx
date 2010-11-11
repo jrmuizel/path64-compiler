@@ -3822,7 +3822,6 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
       *iopc = INTRN_PUNPCKHDQ;
       break;
     case GSBI_IX86_BUILTIN_PUNPCKLBW:
-    case GSBI_IX86_BUILTIN_PUNPCKLBW128:
       *iopc = INTRN_PUNPCKLBW;
       break;
     case GSBI_IX86_BUILTIN_PUNPCKLWD:
@@ -3839,6 +3838,39 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
       break;
     case GSBI_IX86_BUILTIN_PACKUSWB:
       *iopc = INTRN_PACKUSWB;
+      break;
+    case GSBI_IX86_BUILTIN_PACKSSWB128:
+      *iopc = INTRN_PACKSSWB128;
+      break;
+    case GSBI_IX86_BUILTIN_PACKSSDW128:
+      *iopc = INTRN_PACKSSDW128;
+      break;
+    case GSBI_IX86_BUILTIN_PACKUSWB128:
+      *iopc = INTRN_PACKUSWB128;
+      break;
+    case GSBI_IX86_BUILTIN_PUNPCKHBW128:
+      *iopc = INTRN_PUNPCKHBW128;
+      break;
+    case GSBI_IX86_BUILTIN_PUNPCKHWD128:
+      *iopc = INTRN_PUNPCKHWD128;
+      break;
+    case GSBI_IX86_BUILTIN_PUNPCKHDQ128:
+      *iopc = INTRN_PUNPCKHDQ128;
+      break;
+    case GSBI_IX86_BUILTIN_PUNPCKHQDQ128:
+      *iopc = INTRN_PUNPCKHQDQ;
+      break;
+    case GSBI_IX86_BUILTIN_PUNPCKLBW128:
+      *iopc = INTRN_PUNPCKLBW128;
+      break;
+    case GSBI_IX86_BUILTIN_PUNPCKLWD128:
+      *iopc = INTRN_PUNPCKLWD128;
+      break;
+    case GSBI_IX86_BUILTIN_PUNPCKLDQ128:
+      *iopc = INTRN_PUNPCKLDQ128;
+      break;
+    case GSBI_IX86_BUILTIN_PUNPCKLQDQ128:
+      *iopc = INTRN_PUNPCKLQDQ;
       break;
     case GSBI_IX86_BUILTIN_PMULHUW:
       *iopc = INTRN_PMULHUW;

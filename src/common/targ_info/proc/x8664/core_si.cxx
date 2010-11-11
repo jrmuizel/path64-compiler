@@ -1646,7 +1646,18 @@ int main (int argc, char *argv[])
   Instruction_Group("float-alu for int vector II",
                     TOP_packsswb,
                     TOP_packssdw,
-                    TOP_packuswb,                   
+                    TOP_packuswb,
+										TOP_packsswb128,
+										TOP_packssdw128,
+										TOP_packuswb128,
+										TOP_punpckhbw128,
+										TOP_punpckhwd128,
+										TOP_punpckhdq128,
+										TOP_punpckhqdq,
+										TOP_punpcklbw128,
+										TOP_punpcklwd128,
+										TOP_punpckldq128,
+										TOP_punpcklqdq,
                     TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(4);

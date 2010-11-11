@@ -734,7 +734,6 @@ static void Init_OP_Name()
   OP_Name[TOP_fsubx128v32] = "hsubps";
   OP_Name[TOP_fsubxx128v32] = "hsubps";
   OP_Name[TOP_fsubxxx128v32] = "hsubps";
-  OP_Name[TOP_fsub128v64] = "hsubpd";
   OP_Name[TOP_fsubx128v64] = "hsubpd";
   OP_Name[TOP_fsubxx128v64] = "hsubpd";
   OP_Name[TOP_fsubxxx128v64] = "hsubpd";
@@ -750,6 +749,17 @@ static void Init_OP_Name()
   OP_Name[TOP_fmovsldupxxx] = "movsldup";
   OP_Name[TOP_fmovshdupxxx] = "movshdup";
   OP_Name[TOP_fmovddupxxx] = "movddup";
+	OP_Name[TOP_packsswb128] = "packsswb";
+	OP_Name[TOP_packssdw128] = "packssdw";
+	OP_Name[TOP_packuswb128] = "packuswb";
+	OP_Name[TOP_punpckhbw128] = "punpckhbw";
+	OP_Name[TOP_punpckhwd128] = "punpckhwd";
+	OP_Name[TOP_punpckhdq128] = "punpckhdq";
+	OP_Name[TOP_punpckhqdq] = "punpckhqdq";
+	OP_Name[TOP_punpcklbw128] = "punpcklbw";
+	OP_Name[TOP_punpcklwd128] = "punpcklwd";
+	OP_Name[TOP_punpckldq128] = "punpckldq";
+	OP_Name[TOP_punpcklqdq] = "punpcklqdq";
   OP_Name[TOP_addi32] = "addl";
   OP_Name[TOP_adci32] = "adcl";
   OP_Name[TOP_addi64] = "addq";
