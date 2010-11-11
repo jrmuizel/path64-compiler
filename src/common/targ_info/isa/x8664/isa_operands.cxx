@@ -310,6 +310,7 @@ main()
 		     TOP_fhadd128v64,
 		     TOP_faddsub128v32,
 		     TOP_faddsub128v64,
+				 TOP_pmulhuw128,
 		     TOP_sub128v8,
 		     TOP_sub128v16,
 		     TOP_sub128v32,

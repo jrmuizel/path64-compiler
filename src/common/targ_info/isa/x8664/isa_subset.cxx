@@ -1134,6 +1134,7 @@ main()
 				TOP_punpckldq128,
 				TOP_punpcklqdq,
 		    TOP_pmulhuw,
+		    TOP_pmulhuw128,
 		    TOP_pmaddwd,
 		    TOP_pavgb,
 		    TOP_pavgw,

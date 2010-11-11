@@ -1689,6 +1689,7 @@ int main (int argc, char *argv[])
 		    TOP_pmullw,
 		    TOP_pmulhw,
 		    TOP_pmulhuw,
+		    TOP_pmulhuw128,
 		    TOP_pmaddwd,
 		    TOP_UNDEFINED);
   Any_Operand_Access_Time(0);

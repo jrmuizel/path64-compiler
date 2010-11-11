@@ -6763,6 +6763,9 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
   case INTRN_PMULHUW:
     Build_OP( TOP_pmulhuw, result, op0, op1, ops );
     break;
+  case INTRN_PMULHUW128:
+    Build_OP( TOP_pmulhuw128, result, op0, op1, ops );
+    break;
   case INTRN_PAVGB:
     Build_OP( TOP_pavgb, result, op0, op1, ops );
     break;

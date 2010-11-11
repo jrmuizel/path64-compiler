@@ -110,6 +110,7 @@ main ()
 	      "pmullw",
 	      "pmulhw",
 	      "pmulhuw",
+	      "pmulhuw128",
 	      "pmaddwd",
 	      "and8",
 	      "and16",

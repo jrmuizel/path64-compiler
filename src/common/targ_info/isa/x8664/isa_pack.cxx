@@ -1121,6 +1121,7 @@ main()
 				TOP_punpckldq128, 0x000000ff,
 				TOP_punpcklqdq, 0x000000ff,
 		    TOP_pmulhuw, 0x000000ff,
+				TOP_pmulhuw128, 0x000000ff,
 		    TOP_pmaddwd, 0x000000ff,
 		    TOP_pavgb, 0x000000ff,
 		    TOP_pavgw, 0x000000ff,

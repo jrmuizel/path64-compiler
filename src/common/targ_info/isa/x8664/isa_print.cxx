@@ -320,6 +320,7 @@ main()
 			   TOP_pmullw,
 			   TOP_pmulhw,
 			   TOP_pmulhuw,
+			   TOP_pmulhuw128,
 			   TOP_pmaddwd,
 			   TOP_fadd128v32,
 			   TOP_fadd128v64,

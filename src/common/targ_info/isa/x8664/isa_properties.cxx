@@ -739,6 +739,7 @@ main()
 		     TOP_packssdw,
 		     TOP_packuswb,
 		     TOP_pmulhuw,
+		     TOP_pmulhuw128,
 		     TOP_pmaddwd,
   		     TOP_psllw_mmx,
   		     TOP_pslld_mmx,
@@ -1601,6 +1602,7 @@ main()
 		     TOP_pmullw,
 		     TOP_pmulhw,
 		     TOP_pmulhuw,
+		     TOP_pmulhuw128,
 		     TOP_pmaddwd,
                      TOP_UNDEFINED);
 
@@ -2730,6 +2732,7 @@ main()
 		     TOP_pmullw,
 		     TOP_pmulhw,
 		     TOP_pmulhuw,
+		     TOP_pmulhuw128,
 		     TOP_pmaddwd,
 		     TOP_add128v8,
 		     TOP_add128v16,
@@ -3107,6 +3110,7 @@ main()
 		     TOP_pmullw,
 		     TOP_pmulhw,
 		     TOP_pmulhuw,
+		     TOP_pmulhuw128,
 		     TOP_pmaddwd,
 		     TOP_add128v8,
 		     TOP_add128v16,
