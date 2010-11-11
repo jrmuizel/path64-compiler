@@ -1648,6 +1648,8 @@ int main (int argc, char *argv[])
 
   Instruction_Group("float-alu for int vector I",
                     TOP_add128v64,
+										TOP_paddusb128,
+										TOP_paddusw128,
                     TOP_paddq,
                     TOP_sub128v64,
                     TOP_UNDEFINED);

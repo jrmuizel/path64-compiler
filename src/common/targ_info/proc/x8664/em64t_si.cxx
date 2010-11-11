@@ -1544,6 +1544,8 @@ int main (int argc, char *argv[])
 		    TOP_add128v16,
 		    TOP_add128v32,
 		    TOP_add128v64,
+				TOP_paddusb128,
+				TOP_paddusw128,
 		    TOP_add64v8,
 		    TOP_add64v16,
 		    TOP_add64v32,

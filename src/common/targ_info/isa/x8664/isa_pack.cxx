@@ -169,6 +169,8 @@ main()
 		    TOP_addxx128v32,	0x000000ff,
 		    TOP_addxxx128v32,	0x000000ff,
 		    TOP_add128v64,	0x000000ff,
+				TOP_paddusb128, 0x000000ff,
+				TOP_paddusw128, 0x000000ff,
 		    TOP_addx128v64,	0x000000ff,
 		    TOP_addxx128v64,	0x000000ff,
 		    TOP_addxxx128v64,	0x000000ff,

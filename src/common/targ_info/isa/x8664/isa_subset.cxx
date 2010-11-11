@@ -441,6 +441,8 @@ main()
 		    TOP_addxx128v32,
 		    TOP_addxxx128v32,
 		    TOP_add128v64,
+				TOP_paddusb128,
+				TOP_paddusw128,
 		    TOP_addx128v64,
 		    TOP_addxx128v64,
 		    TOP_addxxx128v64,

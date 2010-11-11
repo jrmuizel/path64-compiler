@@ -90,6 +90,8 @@ main ()
 	      "addxx128v32",
 	      "addxxx128v32",
 	      "add128v64",
+				"paddusb128",
+				"paddusw128",
 	      "addx128v64",
 	      "addxx128v64",
 	      "addxxx128v64",
