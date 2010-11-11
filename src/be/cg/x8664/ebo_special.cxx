@@ -4000,6 +4000,7 @@ static Addr_Mode_Group Addr_Mode_Group_Table[] = {
   // have for128v32/for128v64 as the base mode.
   {TOP_orps,	TOP_forx128v32,	TOP_forxx128v32,	TOP_forxxx128v32,	TOP_UNDEFINED},
   {TOP_orpd,	TOP_forx128v64,	TOP_forxx128v64,	TOP_forxxx128v64,	TOP_UNDEFINED},
+  {TOP_por128, TOP_orx128v8,	TOP_orxx128v8,	TOP_orxxx128v8,	TOP_UNDEFINED},
 
   {TOP_xor8,	TOP_xorx8,	TOP_xorxx8,	TOP_xorxxx8,	TOP_UNDEFINED},
   {TOP_xor16,	TOP_xorx16,	TOP_xorxx16,	TOP_xorxxx16,	TOP_UNDEFINED},
