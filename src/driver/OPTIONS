@@ -2217,7 +2217,7 @@ I-u%s		;		Cc	ld	"-u %s"
 	""
 --specs=%s	;	ALL	NONE	"-specs=%s"
 	""
---static	;	LINK	ld	self
+--static	;	LINK	ld	"-static"
 	""
 --symbolic	;	ALL	NONE	"-symbolic"
 	""
