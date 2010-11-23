@@ -1006,6 +1006,10 @@ add_file_args (string_list_t *args, phases_t index)
 			}
 			add_inc_path(args, "%s/include", root);
 #else
+            if (!option_was_seen(O_nostdinc__)) {
+                add_inc_path(args, "%s/include/" PSC_FULL_VERSION, root);
+            }
+
             if (source_lang == L_CC) {
 
                 add_arg(args, "-D__STDCXX_CONFIG=<__stl_config-%s.h>",
