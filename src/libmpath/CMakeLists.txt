@@ -109,7 +109,7 @@ path64_set_multitarget_property_(mpath-static COMPILE_DEFINITIONS PIC)
 path64_set_multitarget_property_(mpath-static COMPILE_FLAGS "-fPIC")
 path64_add_multitarget_library(mpath-static STATIC)
 path64_add_multitarget_multitarget_dependencies(mpath-static pscrt-static)
-path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mpath-static)
+path64_add_dependencies_from_multitarget(compiler-stage-libs-C mpath-static)
 
 
 path64_set_multitarget_sources(mpath COMMON
@@ -136,7 +136,7 @@ if(PATH64_ENABLE_PSCRUNTIME)
     path64_add_multitarget_multitarget_dependencies(mpath compiler-rt)
 endif()
 path64_add_multitarget_multitarget_dependencies(mpath pscrt-static)
-path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mpath)
+path64_add_dependencies_from_multitarget(compiler-stage-libs-C mpath)
 
 
 if(PATH64_ENABLE_PROFILING)
@@ -148,7 +148,7 @@ if(PATH64_ENABLE_PROFILING)
         path64_set_multitarget_property_(mpath_p COMPILE_FLAGS -pg)
     endif()
     path64_add_multitarget_library(mpath_p STATIC)
-    path64_add_dependencies_from_multitarget(compiler-stage-libs-CXX mpath_p)
+    path64_add_dependencies_from_multitarget(compiler-stage-libs-C mpath_p)
 endif(PATH64_ENABLE_PROFILING)
 
 ENDIF(PATH64_ENABLE_MATHLIBS)
