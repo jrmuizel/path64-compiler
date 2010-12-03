@@ -280,7 +280,7 @@ CGEMIT_Prn_Scn_In_Asm (FILE       *asm_file,
 #endif
       *p = '\0'; // null terminate the string.
       fprintf (asm_file, ", \"%s\"", scn_flags_string);
-      if (strcmp (scn_name, ".eh_frame") == 0)
+      if (Is_Target_64bit() && strcmp (scn_name, ".eh_frame") == 0)
         fprintf (asm_file, ",@unwind");
       else if (scn_type == SHT_PROGBITS)
         fprintf (asm_file, ",@progbits");
