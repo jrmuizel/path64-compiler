@@ -2000,6 +2000,11 @@ add_final_ld_args (string_list_t *args)
             }
         }
 #else
+        if(source_lang == L_CC) {
+            add_arg(args, "-L%s", current_target->libstdcpp_path);
+            add_library(args, "stdc++");
+        }
+
         if (option_was_seen(O_static) || option_was_seen(O__static)){
 	        if(ipa != TRUE){
                     add_arg(args, "--start-group");
@@ -3024,10 +3029,6 @@ run_ld (void)
 	copy_phase_options (args, ldphase);
 
 	if (invoked_lang == L_CC) {
-#ifndef PATH64_ENABLE_PSCRUNTIME
-        add_arg(args, "-L%s", current_target->libstdcpp_path);
-        add_library(args, "stdc++");
-#endif
 	    if (!multiple_source_files && !((shared == RELOCATABLE) && (ipa == TRUE) && (outfile == NULL)) && !keep_flag)
 		mark_saved_object_for_cleanup();
 	}
