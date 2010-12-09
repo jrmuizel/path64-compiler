@@ -77,6 +77,7 @@ __do_global_dtors_aux:
 	je	1f
 	ret
 1:
+	pushq	%rbx
 	movb	$1, __finished(%rip)
 
 
@@ -88,7 +89,6 @@ __do_global_dtors_aux:
 2:
 #endif
 
-	pushq	%rbx
 	leaq	8+__DTOR_LIST__(%rip), %rbx
 3:
 	movq	(%rbx), %rax
@@ -98,14 +98,13 @@ __do_global_dtors_aux:
 	addq	$8, %rbx
 	jmp	3b	
 4:
-	popq	%rbx
 
 	cmpq	$0, __deregister_frame_info@GOTPCREL(%rip)
 	je	5f
 	leaq	__EH_FRAME_LIST__(%rip), %rdi
 	call	__deregister_frame_info@PLT
 5:
-
+	popq	%rbx
 	ret
 
 
@@ -114,6 +113,7 @@ __do_global_ctors_aux:
 	je	1f
 	ret
 1:
+	pushq	%rbx
 	movb	$1, __initialized(%rip)
 
 	cmpq	$0, __register_frame_info@GOTPCREL(%rip)
@@ -131,7 +131,6 @@ __do_global_ctors_aux:
 	call	_Jv_RegisterClasses@PLT
 3:
 
-	pushq	%rbx
 	leaq	-8+__CTOR_LIST_END__(%rip), %rbx
 4:
 	movq	(%rbx), %rax
