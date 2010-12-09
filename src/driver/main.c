@@ -503,6 +503,14 @@ main (int argc, char *argv[])
 	/* add defaults if not already set */
 	set_defaults();
 
+    // print warning for deprecated -gnu* options
+    if(option_was_seen(O_gnu3) ||
+       option_was_seen(O_gnu4) ||
+       option_was_seen(O_gnu40) ||
+       option_was_seen(O_gnu42)) {
+        warning("-gnu* options are deprecated and should not be used");
+    }
+
 #ifdef KEY
 	// Perform GNU4-related checks after set_defaults has run, since
 	// set_defaults can change the gnu version.  Bug 10250.
