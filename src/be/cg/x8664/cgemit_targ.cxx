@@ -763,6 +763,9 @@ static void Init_OP_Name()
 	OP_Name[TOP_punpcklwd128] = "punpcklwd";
 	OP_Name[TOP_punpckldq128] = "punpckldq";
 	OP_Name[TOP_punpcklqdq] = "punpcklqdq";
+  OP_Name[TOP_pavgb128] = "pavgb";
+  OP_Name[TOP_pavgw128] = "pavgw";
+  OP_Name[TOP_psadbw128] = "psadbw";
   OP_Name[TOP_addi32] = "addl";
   OP_Name[TOP_adci32] = "adcl";
   OP_Name[TOP_addi64] = "addq";

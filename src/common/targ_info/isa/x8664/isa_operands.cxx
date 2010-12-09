@@ -234,6 +234,11 @@ main()
                     TOP_swp_start,
                     TOP_swp_stop,
 		    TOP_UNDEFINED);
+	Instruction_Group("sse2 clflush",
+	                  TOP_clflush,
+		                TOP_UNDEFINED);
+  Operand(0, int64, base);
+  Operand(1, simm32, offset);
 
   Instruction_Group("ret imm16",
 		    TOP_reti,
@@ -298,6 +303,9 @@ main()
 
   Instruction_Group( "vector arithmetic",
   		     TOP_mul128v16,
+				 TOP_pavgb128,
+				 TOP_pavgw128,
+				 TOP_psadbw128,
 		     TOP_add128v8,
 		     TOP_add128v16,
 		     TOP_add128v32,

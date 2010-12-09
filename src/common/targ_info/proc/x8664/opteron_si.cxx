@@ -1306,6 +1306,7 @@ int main (int argc, char *argv[])
 		    TOP_fmin128v32,
 		    TOP_fmin128v64,
 		    TOP_psadbw,
+		    TOP_psadbw128,
 		    TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(3);
@@ -1636,6 +1637,8 @@ int main (int argc, char *argv[])
 				TOP_punpcklqdq,
 		    TOP_pavgb,
 		    TOP_pavgw,
+		    TOP_pavgb128,
+		    TOP_pavgw128,
 		    TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(2);
@@ -1890,6 +1893,12 @@ int main (int argc, char *argv[])
   Resource_Requirement(res_fadd, 0);
   Resource_Requirement(res_fmul, 0);
   Resource_Requirement(res_fstore, 0);
+
+	Instruction_Group("clflush",
+	        TOP_clflush,
+					        TOP_UNDEFINED);
+	  Resource_Requirement(res_issue, 0);
+		  Resource_Requirement(res_alu, 0);
 
   Instruction_Group("mov-int-2-mmx",
                     TOP_movi32_2m,

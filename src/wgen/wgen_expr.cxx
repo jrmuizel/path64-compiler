@@ -3881,6 +3881,12 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
     case GSBI_IX86_BUILTIN_PUNPCKLQDQ128:
       *iopc = INTRN_PUNPCKLQDQ;
       break;
+    case GSBI_IX86_BUILTIN_PAVGB128:
+      *iopc = INTRN_PAVGB128;
+      break;
+    case GSBI_IX86_BUILTIN_PAVGW128:
+      *iopc = INTRN_PAVGW128;
+      break;
     case GSBI_IX86_BUILTIN_PMULHUW:
       *iopc = INTRN_PMULHUW;
       break;
@@ -3892,6 +3898,9 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
       break;
     case GSBI_IX86_BUILTIN_PSADBW:
       *iopc = INTRN_PSADBW;
+      break;
+    case GSBI_IX86_BUILTIN_PSADBW128:
+      *iopc = INTRN_PSADBW128;
       break;
     case GSBI_IX86_BUILTIN_PMAXUB:
       *iopc = INTRN_PMAXUB;
@@ -4210,6 +4219,10 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
       break;
     case GSBI_IX86_BUILTIN_EMMS:
       *iopc = INTRN_EMMS;
+      *intrinsic_op = FALSE;
+      break;
+    case GSBI_IX86_BUILTIN_CLFLUSH:
+      *iopc = INTRN_CLFLUSH;
       *intrinsic_op = FALSE;
       break;
 #if 0 // wgen TODO

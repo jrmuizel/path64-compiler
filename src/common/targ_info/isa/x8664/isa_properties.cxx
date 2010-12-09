@@ -1624,6 +1624,9 @@ main()
   flop = ISA_Property_Create ("flop");
   Instruction_Group (flop,
 		     TOP_faddsub128v32,
+				 TOP_pavgb128,
+				 TOP_pavgw128,
+				 TOP_psadbw128,
 		     TOP_fhadd128v32,
 		     TOP_fhsub128v32,
 		     TOP_faddsub128v64,
@@ -2706,6 +2709,7 @@ main()
   Instruction_Group( commutative,
 		     TOP_test32,
 		     TOP_test64,
+				 TOP_psadbw128,
 		     TOP_add32,
 		     TOP_adc32,
 		     TOP_add64,
@@ -2798,6 +2802,8 @@ main()
 		     TOP_fmulp,
 		     TOP_pavgb,
 		     TOP_pavgw,
+				 TOP_pavgb128,
+				 TOP_pavgw128,
 		     TOP_psadbw,
                      TOP_UNDEFINED);
 
@@ -2805,6 +2811,7 @@ main()
   vector_op = ISA_Property_Create ("vector_op");
   Instruction_Group( vector_op,
 		     TOP_faddsub128v32,
+				 TOP_psadbw128,
 		     TOP_fhadd128v32,
 		     TOP_fhsub128v32,
 		     TOP_faddsub128v64,
@@ -3258,6 +3265,8 @@ main()
 		     TOP_xzero128v64,
 		     TOP_pavgb,
 		     TOP_pavgw,
+				 TOP_pavgb128,
+				 TOP_pavgw128,
 		     TOP_psadbw,
 		     TOP_pmovmskb,
 		     TOP_movi32_2m,
@@ -3288,6 +3297,7 @@ main()
   x86_style = ISA_Property_Create ("x86_style");
   Instruction_Group( x86_style,
 		     TOP_faddsub128v32,
+				 TOP_psadbw128,
 		     TOP_fhadd128v32,
 		     TOP_fhsub128v32,
 		     TOP_faddsub128v64,
@@ -3842,6 +3852,8 @@ main()
 		     TOP_subus128v16,
 		     TOP_pavgb,
 		     TOP_pavgw,
+		     TOP_pavgb128,
+		     TOP_pavgw128,
 		     TOP_psadbw,
 		     TOP_pshufw,
              TOP_xchgx8,

@@ -6769,11 +6769,20 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
   case INTRN_PAVGB:
     Build_OP( TOP_pavgb, result, op0, op1, ops );
     break;
+  case INTRN_PAVGB128:
+    Build_OP( TOP_pavgb128, result, op0, op1, ops );
+    break;
   case INTRN_PAVGW:
     Build_OP( TOP_pavgw, result, op0, op1, ops );
     break;
+  case INTRN_PAVGW128:
+    Build_OP( TOP_pavgw128, result, op0, op1, ops );
+    break;
   case INTRN_PSADBW:
     Build_OP( TOP_psadbw, result, op0, op1, ops );
+    break;
+  case INTRN_PSADBW128:
+    Build_OP( TOP_psadbw128, result, op0, op1, ops );
     break;
   case INTRN_PMAXUB:
     Build_OP( TOP_max64v8, result, op0, op1, ops );
@@ -7531,6 +7540,9 @@ Exp_Intrinsic_Call (WN *intrncall, TN *op0, TN *op1, TN *op2,
     break;
   case INTRN_EMMS:
     Build_OP (TOP_emms, ops);
+    break;
+  case INTRN_CLFLUSH:
+    Build_OP (TOP_clflush, op0, Gen_Literal_TN (0, 4), ops);
     break;
   case INTRN_STOREAPS:
     Build_OP (TOP_staps, op1, op0, Gen_Literal_TN (0, 4), ops);

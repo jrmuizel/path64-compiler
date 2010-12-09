@@ -296,6 +296,9 @@ main()
   Operand(0);
   Instruction_Print_Group( ropop,
 			   TOP_mul128v16,
+				 TOP_pavgb128,
+				 TOP_pavgw128,
+				 TOP_psadbw128,
 			   TOP_add32,
 			   TOP_adc32,
 			   TOP_add64,
@@ -875,6 +878,7 @@ main()
 			   TOP_filds,
 			   TOP_fildl,
 			   TOP_fildll,
+				 TOP_clflush,
 			   TOP_UNDEFINED );
 
   ISA_PRINT_TYPE ijmpxx = ISA_Print_Type_Create("opopopop", "%s %s(%s,%s,%s)");
