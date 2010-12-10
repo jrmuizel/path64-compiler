@@ -2309,6 +2309,27 @@ main()
   Operand(0, int64, base);
   Operand(1, simm32, offset);
 
+	Instruction_Group("Blending condition",
+				TOP_pblendw,
+				TOP_blendpd,
+				TOP_blendps,
+				TOP_UNDEFINED);
+	Result(0, fp128);
+	Operand(0, fp128, opnd1);
+	Operand(1, fp128, opnd2);
+	Operand(2, simm8, opnd3);
+
+
+	Instruction_Group("Blending condition no imm",
+				TOP_pblendvb,
+				TOP_blendvpd,
+				TOP_blendvps,
+				TOP_UNDEFINED);
+	Result(0, fp128);
+	Operand(0, fp128,opnd1);
+	Operand(1, fp128, opnd2);
+	Operand(2, xmm0);
+
   Instruction_Group("qi vector compare implicit length returns index",
           TOP_pcmpistri,      
           TOP_UNDEFINED);

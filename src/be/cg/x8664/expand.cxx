@@ -7443,6 +7443,99 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
    case INTRN_ADDSUBPD:
     Build_OP(TOP_faddsub128v64, result, op0, op1, ops );
     break;
+	 case INTRN_PBLENDW128:
+	 {
+		if(TN_is_constant(op2))
+	 		Build_OP(TOP_pblendw, result, op0, op1, op2, ops);
+		else
+		{
+			OP *op = NULL;
+			TN *tn;
+			int tick_count = 0;
+			FOR_ALL_OPS_OPs_REV(ops, op)
+			{
+				tick_count++;
+				if(tick_count == 5)
+					break;
+			}
+			if(tick_count == 5)
+			{
+				tn = Gen_Literal_TN( TN_value(OP_opnd(op, 0)), 1);
+				Build_OP(TOP_pblendw, result, op0, op1, tn, ops);
+			}
+			else
+			{
+				tn = Gen_Literal_TN(0, 1);
+				Build_OP(TOP_pblendw, result, op0, op1, tn, ops);
+			}
+		}
+		break;
+	 }
+	 case INTRN_BLENDPD:
+	 {
+		if(TN_is_constant(op2))
+	 		Build_OP(TOP_blendpd, result, op0, op1, op2, ops);
+		else
+		{
+			OP *op = NULL;
+			TN *tn;
+			int tick_count = 0;
+			FOR_ALL_OPS_OPs_REV(ops, op)
+			{
+				tick_count++;
+				if(tick_count == 5)
+					break;
+			}
+			if(tick_count == 5)
+			{
+				tn = Gen_Literal_TN( TN_value(OP_opnd(op, 0)), 1);
+				Build_OP(TOP_blendpd, result, op0, op1, tn, ops);
+			}
+			else
+			{
+				tn = Gen_Literal_TN(0, 1);
+				Build_OP(TOP_blendpd, result, op0, op1, tn, ops);
+			}
+		}
+		break;
+	 }
+	 case INTRN_BLENDPS:
+	 {
+		if(TN_is_constant(op2))
+	 		Build_OP(TOP_blendps, result, op0, op1, op2, ops);
+		else
+		{
+			OP *op = NULL;
+			TN *tn;
+			int tick_count = 0;
+			FOR_ALL_OPS_OPs_REV(ops, op)
+			{
+				tick_count++;
+				if(tick_count == 5)
+					break;
+			}
+			if(tick_count == 5)
+			{
+				tn = Gen_Literal_TN( TN_value(OP_opnd(op, 0)), 1);
+				Build_OP(TOP_blendps, result, op0, op1, tn, ops);
+			}
+			else
+			{
+				tn = Gen_Literal_TN(0, 1);
+				Build_OP(TOP_blendps, result, op0, op1, tn, ops);
+			}
+		}
+		break;
+	 }
+	 case INTRN_PBLENDVB128:
+	 	Build_OP(TOP_pblendvb, result, op0, op1, op2, ops);
+		break;
+	 case INTRN_BLENDVPD:
+	 	Build_OP(TOP_blendvpd, result, op0, op1, op2, ops);
+		break;
+	 case INTRN_BLENDVPS:
+	 	Build_OP(TOP_blendvps, result, op0, op1, op2, ops);
+	 	break;
    case INTRN_PCMPISTRI128:
     Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
     break;

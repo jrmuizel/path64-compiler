@@ -1507,6 +1507,18 @@ int main (int argc, char *argv[])
   Resource_Requirement(res_issue, 0);
   Resource_Requirement(res_fadd, 0);
 
+	Instruction_Group("sse4.1 blend",
+	        TOP_pblendw,
+	        TOP_blendpd,
+	        TOP_blendps,
+	        TOP_pblendvb,
+	        TOP_blendvpd,
+	        TOP_blendvps,
+					        TOP_UNDEFINED);
+	  Any_Operand_Access_Time(0);
+		  Any_Result_Available_Time(2);
+			  Resource_Requirement(res_issue, 0);
+
   Instruction_Group("sse parallel compares",
 		    TOP_cmpeqps,
 		    TOP_cmpeqpd,

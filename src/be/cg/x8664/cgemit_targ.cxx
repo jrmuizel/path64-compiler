@@ -1458,6 +1458,14 @@ static void Init_OP_Name()
   OP_Name[TOP_cvttps2dq_xxx] = "cvttps2dq";
   OP_Name[TOP_cvttpd2dq_xxx] = "cvttpd2dq";
 
+	/* SSE4_1*/
+	OP_Name[TOP_pblendw] = "pblendw";
+	OP_Name[TOP_blendpd] = "blendpd";
+	OP_Name[TOP_blendps] = "blendps";
+	OP_Name[TOP_pblendvb] = "pblendvb";
+	OP_Name[TOP_blendvpd] = "blendvpd";
+	OP_Name[TOP_blendvps] = "blendvps";
+
   /* SSE4_2 */
   OP_Name[TOP_pcmpistri] = "pcmpistri";
   OP_Name[TOP_pcmpistrm] = "pcmpistrm";

@@ -3855,6 +3855,25 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
       *kidno = 2;
       return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 4);
 
+		case INTRN_PBLENDW128:
+		case INTRN_BLENDPD:
+		case INTRN_BLENDPS:
+		{
+      //return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 1);
+			WN *wn_para2 = WN_kid0 (WN_kid2 (expr));
+			if(WN_operator(wn_para2) == OPR_INTCONST)
+			{
+				*kidno = 2;
+				return Gen_Literal_TN(WN_const_val(wn_para2), 1);
+			}
+			else if(WN_operator(wn_para2) == OPR_LDID)
+			{
+				*kidno = 2;
+				//return Gen_Literal_TN(0xffff, 2);
+				return NULL;
+			}
+		}
+
     case INTRN_PCMPISTRI128:
     case INTRN_PCMPISTRM128:
       *kidno = 2;

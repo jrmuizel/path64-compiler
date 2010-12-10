@@ -1221,6 +1221,14 @@ main ()
 	      "ld32_abs",
 	      "ld64_abs",
 
+				/* sse4_1 instructions*/
+				"pblendw",
+				"blendpd",
+				"blendps",
+				"pblendvb",
+				"blendvpd",
+				"blendvps",
+
           /* sse4_2 instructions */
           "pcmpistri",  
           "pcmpistrm",

@@ -1567,19 +1567,20 @@ override_options (void)
       const enum processor_type processor;
       const enum pta_flags
 	{
-	  PTA_SSE = 1,
-	  PTA_SSE2 = 2,
-	  PTA_SSE3 = 4,
-	  PTA_MMX = 8,
-	  PTA_PREFETCH_SSE = 16,
-	  PTA_3DNOW = 32,
-	  PTA_3DNOW_A = 64,
-	  PTA_64BIT = 128,
-          PTA_CX16 = 256,
-          PTA_POPCNT = 512,
-          PTA_ABM = 1024,
-          PTA_SSE4A = 2048,
-          PTA_SSE4_2 = 4096
+	  PTA_SSE = 0x1,
+	  PTA_SSE2 = 0x2,
+	  PTA_SSE3 = 0x4,
+	  PTA_MMX = 0x8,
+	  PTA_PREFETCH_SSE = 0x10,
+	  PTA_3DNOW = 0x20,
+	  PTA_3DNOW_A = 0x40,
+	  PTA_64BIT = 0x80,
+    PTA_CX16 = 0x100,
+    PTA_POPCNT = 0x200,
+    PTA_ABM = 0x400,
+    PTA_SSE4A = 0x800,
+    PTA_SSE4_1 = 0x1000,
+    PTA_SSE4_2 = 0x2000
 	} flags;
     }
   const processor_alias_table[] =
@@ -1621,7 +1622,7 @@ override_options (void)
       {"athlon-mp", PROCESSOR_ATHLON, PTA_MMX | PTA_PREFETCH_SSE | PTA_3DNOW
 				      | PTA_3DNOW_A | PTA_SSE},
       {"x86-64", PROCESSOR_K8, PTA_MMX | PTA_PREFETCH_SSE | PTA_64BIT
-			       | PTA_SSE | PTA_SSE2 },
+			       | PTA_SSE | PTA_SSE2| PTA_SSE4_1 },
       {"k8", PROCESSOR_K8, PTA_MMX | PTA_PREFETCH_SSE | PTA_3DNOW | PTA_64BIT
 				      | PTA_3DNOW_A | PTA_SSE | PTA_SSE2},
       {"opteron", PROCESSOR_K8, PTA_MMX | PTA_PREFETCH_SSE | PTA_3DNOW | PTA_64BIT
@@ -1799,6 +1800,11 @@ override_options (void)
     if (processor_alias_table[i].flags & PTA_SSE4A
         && !(target_flags_explicit & MASK_SSE4A))
       target_flags |= MASK_SSE4A;
+	if (processor_alias_table[i].flags & PTA_SSE4_1
+		&& !(target_flags_explicit & MASK_SSE4_1))
+	{
+		  target_flags |= MASK_SSE4_1;
+	}
 	if (processor_alias_table[i].flags & PTA_SSE4_2
 	    && !(target_flags_explicit & MASK_SSE4_2))
 	  target_flags |= MASK_SSE4_2;
@@ -15080,6 +15086,7 @@ static const struct builtin_description bdesc_1arg[] =
   /* SSE3 */
   { MASK_SSE3, CODE_FOR_sse3_movshdup, 0, IX86_BUILTIN_MOVSHDUP, 0, 0 },
   { MASK_SSE3, CODE_FOR_sse3_movsldup, 0, IX86_BUILTIN_MOVSLDUP, 0, 0 },
+
 };
 
 static void
@@ -15660,6 +15667,22 @@ ix86_init_mmx_sse_builtins (void)
 	       IX86_BUILTIN_MOVSLDUP);
   def_builtin (MASK_SSE3, "__builtin_ia32_lddqu",
 	       v16qi_ftype_pcchar, IX86_BUILTIN_LDDQU);
+	
+	/* sse4_1*/
+	/* blend family*/
+  ftype = build_function_type_list (V8HI_type_node, V8HI_type_node, V8HI_type_node, integer_type_node, NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_pblendw128",ftype, IX86_BUILTIN_PBLENDW128);
+  ftype = build_function_type_list (V2DF_type_node, V2DF_type_node, V2DF_type_node, integer_type_node, NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_blendpd",ftype, IX86_BUILTIN_BLENDPD);
+  ftype = build_function_type_list (V4SF_type_node, V4SF_type_node, V4SF_type_node, integer_type_node, NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_blendps",ftype, IX86_BUILTIN_BLENDPS);
+  ftype = build_function_type_list (V16QI_type_node, V16QI_type_node, V16QI_type_node, V16QI_type_node, NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_pblendvb128",ftype, IX86_BUILTIN_PBLENDVB128);
+  ftype = build_function_type_list (V2DF_type_node, V2DF_type_node, V2DF_type_node, V2DF_type_node, NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_blendvpd",ftype, IX86_BUILTIN_BLENDVPD);
+  ftype = build_function_type_list (V4SF_type_node, V4SF_type_node, V4SF_type_node, V4SF_type_node, NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_blendvps",ftype, IX86_BUILTIN_BLENDVPS);
+	
 
   /* cfang */
   /* sse4a intrinsics */
@@ -15669,6 +15692,8 @@ ix86_init_mmx_sse_builtins (void)
   def_builtin (MASK_SSE4A, "__builtin_ia32_extrq", v2di_ftype_v2di_v16qi,  IX86_BUILTIN_EXTRQ);
   def_builtin (MASK_SSE4A, "__builtin_ia32_insertqi",v2di_ftype_v2di_v2di_unsigned_unsigned, IX86_BUILTIN_INSERTQI);
   def_builtin (MASK_SSE4A, "__builtin_ia32_insertq",v2di_ftype_v2di_v2di, IX86_BUILTIN_INSERTQ);
+
+
 
   /* sse4_2 */
   /* ftype for IX86_BUILTIN_PCMPISTRI128 = INT_FTYPE_V16QI_V16QI_INT */

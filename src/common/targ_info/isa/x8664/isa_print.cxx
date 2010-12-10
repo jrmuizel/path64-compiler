@@ -1162,6 +1162,12 @@ main()
   Operand(1);
   Operand(0);
   Instruction_Print_Group( opopop,
+	TOP_pblendw,
+	TOP_blendpd,
+	TOP_blendps,
+	TOP_pblendvb,
+	TOP_blendvpd,
+	TOP_blendvps,
   TOP_pcmpistri,
   TOP_pcmpistrm,
   TOP_UNDEFINED );

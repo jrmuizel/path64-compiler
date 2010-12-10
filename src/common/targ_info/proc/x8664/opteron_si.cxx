@@ -1482,8 +1482,9 @@ int main (int argc, char *argv[])
   Any_Result_Available_Time(3);
   Resource_Requirement(res_issue, 0);
   Resource_Requirement(res_fadd, 0);
-
-  Instruction_Group("sse parallel compares",
+  
+	
+	Instruction_Group("sse parallel compares",
 		    TOP_cmpeqps,
 		    TOP_cmpeqpd,
 		    TOP_cmpltpd,
