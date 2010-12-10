@@ -7431,6 +7431,18 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
    case INTRN_MOVSLDUP:
     Build_OP(TOP_fmovsldup, result, op0, op1, ops );
     break;
+   case INTRN_HADDPD:
+    Build_OP(TOP_fhadd128v64, result, op0, op1, ops );
+    break;
+   case INTRN_HADDPS:
+    Build_OP(TOP_fhadd128v32, result, op0, op1, ops );
+    break;
+   case INTRN_HSUBPD:
+    Build_OP(TOP_fhsub128v64, result, op0, op1, ops );
+    break;
+   case INTRN_HSUBPS:
+    Build_OP(TOP_fhsub128v32, result, op0, op1, ops );
+    break;
    case INTRN_PCMPISTRI128:
     Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
     break;

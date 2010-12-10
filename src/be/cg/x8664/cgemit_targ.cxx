@@ -735,6 +735,14 @@ static void Init_OP_Name()
   OP_Name[TOP_fhaddx128v64] = "haddpd";
   OP_Name[TOP_fhaddxx128v64] = "haddpd";
   OP_Name[TOP_fhaddxxx128v64] = "haddpd";
+  OP_Name[TOP_fhsub128v32] = "hsubps";
+  OP_Name[TOP_fhsubx128v32] = "hsubps";
+  OP_Name[TOP_fhsubxx128v32] = "hsubps";
+  OP_Name[TOP_fhsubxxx128v32] = "hsubps";
+  OP_Name[TOP_fhsub128v64] = "hsubpd";
+  OP_Name[TOP_fhsubx128v64] = "hsubpd";
+  OP_Name[TOP_fhsubxx128v64] = "hsubpd";
+  OP_Name[TOP_fhsubxxx128v64] = "hsubpd";
   OP_Name[TOP_fsub128v32] = "hsubps";
   OP_Name[TOP_fsubx128v32] = "hsubps";
   OP_Name[TOP_fsubxx128v32] = "hsubps";
