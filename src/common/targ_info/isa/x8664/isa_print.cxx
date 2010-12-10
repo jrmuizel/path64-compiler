@@ -552,6 +552,7 @@ main()
 				 TOP_pminud,
 				 TOP_phminposuw,
 				TOP_ptest,
+				 TOP_pcmpgtq,
 			   TOP_UNDEFINED );
 
   /* One result / two operands in x86 style w/ mem operand */
@@ -1216,8 +1217,8 @@ main()
   /* No result / three operands */
   ISA_PRINT_TYPE opopop1 =  ISA_Print_Type_Create("opopop", "%s %s,%s,%s");
   Name();
-  Operand(4);
   Operand(2);
+  Operand(1);
   Operand(0);
   Instruction_Print_Group( opopop1,
                TOP_pcmpestri,

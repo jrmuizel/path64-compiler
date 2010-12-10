@@ -3855,6 +3855,7 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
       *kidno = 2;
       return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 4);
 
+<<<<<<< HEAD
 		case INTRN_PBLENDW128:
 		case INTRN_BLENDPD:
 		case INTRN_BLENDPS:
@@ -3904,14 +3905,44 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
 
 		}
 
-    case INTRN_PCMPISTRI128:
-    case INTRN_PCMPISTRM128:
-      *kidno = 2;
-      return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 1);
+    case INTRN_PCMPESTRIA128:
+    case INTRN_PCMPESTRIC128:
     case INTRN_PCMPESTRI128:
     case INTRN_PCMPESTRM128:
-      *kidno = 4;
-      return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid (expr, 4))), 1);
+    case INTRN_PCMPESTRIO128:
+    case INTRN_PCMPESTRIS128:
+    case INTRN_PCMPESTRIZ128:
+		{
+			WN *wn_para4 = WN_kid0(WN_kid(expr, 4));
+			if(WN_operator(wn_para4) == OPR_INTCONST)
+			{
+				*kidno = 4;
+				return Gen_Literal_TN(WN_const_val(wn_para4),1);
+			}
+			else
+			{
+				*kidno = 4;
+				return NULL;
+			}
+		}
+    case INTRN_PCMPISTRI128:
+    case INTRN_PCMPISTRM128:
+    		{
+      //return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 1);
+			WN *wn_para2 = WN_kid0 (WN_kid2 (expr));
+			if(WN_operator(wn_para2) == OPR_INTCONST)
+			{
+				*kidno = 2;
+				return Gen_Literal_TN(WN_const_val(wn_para2), 1);
+			}
+			else if(WN_operator(wn_para2) == OPR_LDID)
+			{
+				*kidno = 2;
+				//return Gen_Literal_TN(0xffff, 2);
+				return NULL;
+			}
+		}
+
 
     case INTRN_PSLLDQ:
     case INTRN_PSRLDQ:
@@ -4387,9 +4418,15 @@ Handle_INTRINSIC_OP (WN *expr, TN *result)
   {
     kid1 = (numkids >= 2) ? Expand_Expr(WN_kid1(expr), expr, NULL) : NULL;
 
-    if (numkids == 3) {
+    if (numkids >= 3) {
       kid2 = Expand_Expr(WN_kid2(expr), expr, NULL);
+	  if(numkids == 5)
+	  {
+	  	kid3 = Expand_Expr(WN_kid3(expr), expr, NULL);
+		kid4 = Expand_Expr(WN_kid(expr,3), expr, NULL);
+	  }
     }
+	
   }
 
   FmtAssert(numkids <= 5, ("unexpected number of kids in intrinsic_op"));

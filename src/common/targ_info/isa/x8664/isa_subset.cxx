@@ -1259,6 +1259,7 @@ main()
             TOP_pcmpistrm,
             TOP_pcmpestri,
             TOP_pcmpestrm,
+            TOP_pcmpgtq,
             TOP_xchgx8,
             TOP_xchgx16,
             TOP_xchgx32,

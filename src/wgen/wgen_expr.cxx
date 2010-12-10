@@ -4928,17 +4928,50 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
 		case GSBI_IX86_BUILTIN_PTESTZ128:
       *iopc = INTRN_PTESTZ128;
       break;
-    case GSBI_IX86_BUILTIN_PCMPISTRI128:
-      *iopc = INTRN_PCMPISTRI128;
+    case GSBI_IX86_BUILTIN_PCMPESTRIA128:
+      *iopc = INTRN_PCMPESTRIA128;
       break;
-    case GSBI_IX86_BUILTIN_PCMPISTRM128:
-      *iopc = INTRN_PCMPISTRM128;
+    case GSBI_IX86_BUILTIN_PCMPESTRIC128:
+      *iopc = INTRN_PCMPESTRIC128;
       break;
     case GSBI_IX86_BUILTIN_PCMPESTRI128:
       *iopc = INTRN_PCMPESTRI128;
       break;
     case GSBI_IX86_BUILTIN_PCMPESTRM128:
       *iopc = INTRN_PCMPESTRM128;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPESTRIO128:
+      *iopc = INTRN_PCMPESTRIO128;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPESTRIS128:
+      *iopc = INTRN_PCMPESTRIS128;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPESTRIZ128:
+      *iopc = INTRN_PCMPESTRIZ128;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPGTQ128:
+      *iopc = INTRN_PCMPGTQ128;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPISTRIA128:
+      *iopc = INTRN_PCMPISTRIA128;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPISTRIC128:
+      *iopc = INTRN_PCMPISTRIC128;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPISTRI128:
+      *iopc = INTRN_PCMPISTRI128;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPISTRM128:
+      *iopc = INTRN_PCMPISTRM128;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPISTRIO128:
+      *iopc = INTRN_PCMPISTRIO128;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPISTRIS128:
+      *iopc = INTRN_PCMPISTRIS128;
+      break;
+    case GSBI_IX86_BUILTIN_PCMPISTRIZ128:
+      *iopc = INTRN_PCMPISTRIZ128;
       break;
     case GSBI_IX86_BUILTIN_PAND128:
       *iopc = INTRN_PAND128;

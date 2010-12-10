@@ -1274,6 +1274,7 @@ main ()
           /* sse4_2 instructions */
           "pcmpistri",  
           "pcmpistrm",
+					"pcmpgtq",
           "pcmpestri",
           "pcmpestrm",
 

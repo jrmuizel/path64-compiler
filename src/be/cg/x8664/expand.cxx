@@ -6458,6 +6458,43 @@ Expand_Count_Leading_Zeros (TN *result, TN *op, TYPE_ID mtype,
 		     MTYPE_I4, ops );
 }
 
+void Expand_Intrinsic_Imm_Param5(TOP opc, struct tn* result, struct tn *op0,
+										struct tn *op1, struct tn *op2, struct tn *op3, struct tn *op4,  OPS *ops, int op_count)
+{
+
+	   if(TN_is_constant(op2))
+		   Build_OP(opc, result, op0, op1, op2, op3,op4, ops);
+	   else
+	   {
+		   OP *op = NULL;
+		   TN *tn;
+		   int tick_count = 0;
+		   FOR_ALL_OPS_OPs_REV(ops, op)
+		   {
+			   tick_count++;
+			   if(tick_count == op_count)
+				   break;
+		   }
+		   if(tick_count == op_count)
+		   {
+		   	   if(TN_is_constant(OP_opnd(op,0)))
+		   	   {
+			     tn = Gen_Literal_TN( TN_value(OP_opnd(op, 0)), 1);
+			     Build_OP(opc, result, op0, op1, tn, op3, op4, ops);
+		   	   }
+			   else
+			   	Build_OP(opc, result, op0, op1, Gen_Literal_TN(0,1), op3,op4,ops);
+			   	
+		   }
+		   else
+		   {
+			   tn = Gen_Literal_TN(0, 1);
+			   Build_OP(opc, result, op0, op1, tn, op3, op4, ops);
+		   }
+		 }
+}
+
+
 void Expand_Intrinsic_Imm_Param(TOP opc, struct tn* result, struct tn *op0,
 										struct tn *op1, struct tn *op2, OPS *ops, int op_count)
 {
@@ -6477,8 +6514,13 @@ void Expand_Intrinsic_Imm_Param(TOP opc, struct tn* result, struct tn *op0,
 		   }
 		   if(tick_count == op_count)
 		   {
-			   tn = Gen_Literal_TN( TN_value(OP_opnd(op, 0)), 1);
-			   Build_OP(opc, result, op0, op1, tn, ops);
+		   	   if(TN_is_constant(OP_opnd(op,0)))
+		   	   {
+			     tn = Gen_Literal_TN( TN_value(OP_opnd(op, 0)), 1);
+			     Build_OP(opc, result, op0, op1, tn, ops);
+		   	   }
+			   else
+			   	Build_OP(opc, result, op0, op1, Gen_Literal_TN(0,1), ops);
 		   }
 		   else
 		   {
@@ -7662,17 +7704,80 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
 		Build_OP(TOP_mov32, result, tneax, tn0, ops);
     break;
 	 }
+   case INTRN_PCMPESTRIA128:
+   case INTRN_PCMPESTRIC128:
+   case INTRN_PCMPESTRI128:
+   case INTRN_PCMPESTRIO128:
+   case INTRN_PCMPESTRIS128:
+   case INTRN_PCMPESTRIZ128:
+	 {
+		 TN *tneax = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 4);
+		 TN *tnedx = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RDX, 4);
+		 Build_OP(TOP_mov32, tneax, op1, ops);
+		 Build_OP(TOP_mov32, tnedx, op3, ops);
+		 TN *rflags = Rflags_TN();
+		 Expand_Intrinsic_Imm_Param5(TOP_pcmpestri, tneax, op0, op2, op4, tnedx,tneax, ops, 9);
+		 Expand_Intrinsic_Imm_Param5(TOP_pcmpestrm, op0, op0, op2, op4, tneax,tnedx, ops, 10);
+		 Set_OP_volatile(OPS_last(ops));
+		 Build_OP(TOP_ldc32, tneax, Gen_Literal_TN(0,4), ops);
+		 Set_OP_volatile(OPS_last(ops));
+		 TN *tnal = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 2);
+		 Build_OP(TOP_seta,tnal, rflags, ops);
+		 Build_OP(TOP_mov32, result, tneax, Gen_Literal_TN(0,4), ops);
+	 	break;
+	 }
+   case INTRN_PCMPESTRM128:
+	 {
+		 TN *tneax = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 4);
+		 TN *tnedx = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RDX, 4);
+		 Build_OP(TOP_mov32, tneax, op1, ops);
+		 Build_OP(TOP_mov32, tnedx, op3, ops);
+		 TN *rflags = Rflags_TN();
+		 Expand_Intrinsic_Imm_Param5(TOP_pcmpestri, tneax, op0, op2, op4, tnedx,tneax, ops, 9);
+		 Expand_Intrinsic_Imm_Param5(TOP_pcmpestrm, op0, op0, op2, op4, tneax,tnedx, ops, 10);
+		 Build_OP(TOP_movdq,result, op0, ops);
+	 	 break;
+	 }
+	 break;
+   case INTRN_PCMPGTQ128:
+    Build_OP(TOP_pcmpgtq, result, op0, op1, ops );
+    break;
+   case INTRN_PCMPISTRIA128:
+   case INTRN_PCMPISTRIC128:
    case INTRN_PCMPISTRI128:
-    Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
+   case INTRN_PCMPISTRIO128:
+   case INTRN_PCMPISTRIS128:
+   case INTRN_PCMPISTRIZ128:
+	 {
+		 TN *tneax = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 4);
+		 TN *rflags = Rflags_TN();
+		 Expand_Intrinsic_Imm_Param(TOP_pcmpistri, result, op0, op1, op2, ops, 5);
+		 Set_OP_volatile(OPS_last(ops));
+		 Expand_Intrinsic_Imm_Param(TOP_pcmpistrm, result, op0, op1, op2, ops, 6);
+		 Set_OP_volatile(OPS_last(ops));
+		 Build_OP(TOP_ldc32, tneax, Gen_Literal_TN(0,1), ops);
+		 Set_OP_volatile(OPS_last(ops));
+		 Build_OP(TOP_seta, Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 2), rflags , ops);
+		 Set_OP_volatile(OPS_last(ops));
+		 Build_OP(TOP_mov32, result, tneax, ops);
     break;
-  case INTRN_PCMPISTRM128:
-    Build_OP(TOP_pcmpistrm, result, op0, op1, op2, ops );
-    break;
-  case INTRN_PCMPESTRI128:
-    Build_OP(TOP_pcmpestri, result, op0, op1, op2, op3, op4, ops);
-    break;
-  case INTRN_PCMPESTRM128:
-    Build_OP(TOP_pcmpestrm, result, op0, op1, op2, op3, op4, ops);
+	 }
+   case INTRN_PCMPISTRM128:
+	 {
+		 TN *tneax = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 4);
+		 TN *rflags = Rflags_TN();
+		 Expand_Intrinsic_Imm_Param(TOP_pcmpistri, tneax, op0, op1, op2, ops, 5);
+		 Set_OP_volatile(OPS_last(ops));
+		 Expand_Intrinsic_Imm_Param(TOP_pcmpistrm, tneax, op0, op1, op2, ops, 6);
+		 Set_OP_volatile(OPS_last(ops));
+		 Build_OP(TOP_ldc32, tneax, Gen_Literal_TN(0,1), ops);
+		 Set_OP_volatile(OPS_last(ops));
+		 Build_OP(TOP_seta, Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 2), rflags , ops);
+		 Set_OP_volatile(OPS_last(ops));
+		 Build_OP(TOP_movdq, result, op0, ops);
+		break;
+	 }
+
   case INTRN_PAND128:
     Build_OP(TOP_pand128, result, op0, op1, ops );
     break;

@@ -9512,7 +9512,16 @@ static void Verify_Instruction(OP *op)
   if( OP_reads_rflags( op ) ){
     OP* prev = OP_prev( op );
     while( prev != NULL ){
-      if( TOP_is_change_rflags( OP_code(prev) ) || OP_code(prev) ==TOP_ptest )
+#ifdef TARG_X8664
+      if( TOP_is_change_rflags( OP_code(prev)) 
+                ||OP_code(prev) == TOP_ptest
+				||OP_code(prev) == TOP_pcmpestri 
+				||OP_code(prev) == TOP_pcmpestrm
+				||OP_code(prev) == TOP_pcmpistri 
+				||OP_code(prev) == TOP_pcmpistrm)
+#else
+      if( TOP_is_change_rflags( OP_code(prev) ) )
+#endif
 	break;
       prev = OP_prev( prev );
     }

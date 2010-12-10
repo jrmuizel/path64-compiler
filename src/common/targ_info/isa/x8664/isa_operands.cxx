@@ -2435,38 +2435,45 @@ main()
   Instruction_Group("qi vector compare implicit length returns index",
           TOP_pcmpistri,      
           TOP_UNDEFINED);
-  Result(0, ecx);
-  Operand(0, fp128,  opnd3);
+  Result(0, int32);
+  Operand(0, fp128,  opnd1);
   Operand(1, fp128,  opnd2);
-  Operand(2, simm8, opnd1);
+  Operand(2, simm8, opnd3);
 
   Instruction_Group("qi vector compare implicit length returns mask",
             TOP_pcmpistrm,
 		    TOP_UNDEFINED);
-  Result(0, xmm0);
-  Operand(0, fp128,  opnd3);
+  Result(0, int32);
+  Operand(0, fp128,  opnd1);
   Operand(1, fp128,  opnd2);
-  Operand(2, simm8, opnd1);
+  Operand(2, simm8, opnd3);
 
   Instruction_Group("qi vector compare explicit length retruns index",
 		    TOP_pcmpestri,
 		    TOP_UNDEFINED);
-  Result(0, ecx);
-  Operand(0, fp128, opnd3);
-  Operand(1, eax,   opnd5);
-  Operand(2, fp128, opnd2);
-  Operand(3, edx,   opnd4);
-  Operand(4, simm8, opnd1);
+  Result(0, int32);
+  Operand(0, fp128, opnd1);
+  Operand(1, fp128, opnd2);
+  Operand(2, simm8, opnd3);
+  Operand(3, int32, opnd4);
+  Operand(4, int32, opnd5);
+
+	Instruction_Group("qi vector compare pcmpgtq",
+				TOP_pcmpgtq,
+				TOP_UNDEFINED);
+	Result(0, fp128);
+	Operand(0, fp128, opnd1);
+	Operand(1, fp128, opnd2);
 
   Instruction_Group("qi vector compare explicit length retruns mask",
 		    TOP_pcmpestrm,
 		    TOP_UNDEFINED);
-  Result(0, xmm0);
-  Operand(0, fp128, opnd3);
-  Operand(1, eax,   opnd5);
-  Operand(2, fp128, opnd2);
-  Operand(3, edx,   opnd4);
-  Operand(4, simm8, opnd1);
+  Result(0, fp128);
+  Operand(0, fp128, opnd1);
+  Operand(1, fp128, opnd2);
+  Operand(2, simm8, opnd3);
+  Operand(3, int32, opnd4);
+  Operand(4, int32, opnd5);
 
   Instruction_Group("load64 effective addr",
 		    TOP_lea64,

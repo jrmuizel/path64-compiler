@@ -1622,7 +1622,7 @@ override_options (void)
       {"athlon-mp", PROCESSOR_ATHLON, PTA_MMX | PTA_PREFETCH_SSE | PTA_3DNOW
 				      | PTA_3DNOW_A | PTA_SSE},
       {"x86-64", PROCESSOR_K8, PTA_MMX | PTA_PREFETCH_SSE | PTA_64BIT
-			       | PTA_SSE | PTA_SSE2| PTA_SSE4_1 },
+			       | PTA_SSE | PTA_SSE2| PTA_SSE4_1 | PTA_SSE4_2 },
       {"k8", PROCESSOR_K8, PTA_MMX | PTA_PREFETCH_SSE | PTA_3DNOW | PTA_64BIT
 				      | PTA_3DNOW_A | PTA_SSE | PTA_SSE2},
       {"opteron", PROCESSOR_K8, PTA_MMX | PTA_PREFETCH_SSE | PTA_3DNOW | PTA_64BIT
@@ -15794,29 +15794,82 @@ ix86_init_mmx_sse_builtins (void)
 
 
   /* sse4_2 */
-  /* ftype for IX86_BUILTIN_PCMPISTRI128 = INT_FTYPE_V16QI_V16QI_INT */
-  ftype = build_function_type_list (integer_type_node, V16QI_type_node, V16QI_type_node, integer_type_node, NULL_TREE);
-  
-  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpistri128", ftype, IX86_BUILTIN_PCMPISTRI128);
+	/* ftype for IX86_BUILTIN_PCMPESTRIA128 = INT_FTYPE_V16QI_INT_V16QI_INT*/
+  ftype = build_function_type_list (integer_type_node, V16QI_type_node,integer_type_node, V16QI_type_node, integer_type_node, integer_type_node, NULL_TREE);
 
-  /* ftype for IX86_BUILTIN_PCMPISTRM128 = V16QI_FTYPE_V16QI_V16QI_INT */
-  ftype = build_function_type_list (V16QI_type_node, V16QI_type_node, V16QI_type_node, integer_type_node, NULL_TREE);
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpestria128", ftype, IX86_BUILTIN_PCMPESTRIA128);
 
-  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpistrm128", ftype, IX86_BUILTIN_PCMPISTRM128);
+	/* ftype for IX86_BUILTIN_PCMPESTRIC128 = INT_FTYPE_V16QI_INT_V16QI_INT*/
+  ftype = build_function_type_list (integer_type_node, V16QI_type_node,integer_type_node, V16QI_type_node, integer_type_node, integer_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpestric128", ftype, IX86_BUILTIN_PCMPESTRIC128);
 
   /* ftype for IX86_BUILTIN_PCMPESTRI128 = INT_FTYPE_V16QI_INT_V16QI_INT_INT */
-  ftype = build_function_type_list (integer_type_node, V16QI_type_node, integer_type_node,
-                                                       V16QI_type_node, integer_type_node,
-                                                       integer_type_node, NULL_TREE);
+  ftype = build_function_type_list (integer_type_node, V16QI_type_node, integer_type_node, V16QI_type_node, integer_type_node, integer_type_node, NULL_TREE);
 
   def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpestri128", ftype, IX86_BUILTIN_PCMPESTRI128);
 
   /* ftype for IX86_BUILTIN_PCMPESTRM128 = V16QI_FTYPE_V16QI_INT_V16QI_INT_INT */
-  ftype = build_function_type_list (V16QI_type_node, V16QI_type_node, integer_type_node,
-                                                       V16QI_type_node, integer_type_node,
-                                                       integer_type_node, NULL_TREE);
+  ftype = build_function_type_list (V16QI_type_node, V16QI_type_node, integer_type_node, V16QI_type_node, integer_type_node, integer_type_node, NULL_TREE);
 
   def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpestrm128", ftype, IX86_BUILTIN_PCMPESTRM128);
+
+  /* ftype for IX86_BUILTIN_PCMPESTRIO128 = INT_FTYPE_V16QI_INT_V16QI_INT_INT */
+  ftype = build_function_type_list (integer_type_node, V16QI_type_node, integer_type_node, V16QI_type_node, integer_type_node, integer_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpestrio128", ftype, IX86_BUILTIN_PCMPESTRIO128);
+
+  /* ftype for IX86_BUILTIN_PCMPESTRIS128 = INT_FTYPE_V16QI_INT_V16QI_INT_INT */
+  ftype = build_function_type_list (integer_type_node, V16QI_type_node, integer_type_node, V16QI_type_node, integer_type_node, integer_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpestris128", ftype, IX86_BUILTIN_PCMPESTRIS128);
+
+  /* ftype for IX86_BUILTIN_PCMPESTRIZ128 = INT_FTYPE_V16QI_INT_V16QI_INT_INT */
+  ftype = build_function_type_list (integer_type_node, V16QI_type_node, integer_type_node, V16QI_type_node, integer_type_node, integer_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpestriz128", ftype, IX86_BUILTIN_PCMPESTRIZ128);
+
+
+  /* ftype for IX86_BUILTIN_PCMPISTRM128 = V2DI_FTYPE_V2DI_V2DI */
+  ftype = build_function_type_list (V2DI_type_node, V2DI_type_node, V2DI_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpgtq", ftype, IX86_BUILTIN_PCMPGTQ128);
+
+	/* ftype for IX86_BUILTIN_PCMPISTRIA128 = INT_FTYPE_V16QI_INT_V16QI_INT*/
+  ftype = build_function_type_list (integer_type_node, V16QI_type_node, V16QI_type_node, integer_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpistria128", ftype, IX86_BUILTIN_PCMPISTRIA128);
+
+	/* ftype for IX86_BUILTIN_PCMPISTRIC128 = INT_FTYPE_V16QI_INT_V16QI_INT*/
+  ftype = build_function_type_list (integer_type_node, V16QI_type_node, V16QI_type_node, integer_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpistric128", ftype, IX86_BUILTIN_PCMPISTRIC128);
+
+  /* ftype for IX86_BUILTIN_PCMPISTRI128 = INT_FTYPE_V16QI_INT_V16QI_INT_INT */
+  ftype = build_function_type_list (integer_type_node, V16QI_type_node, V16QI_type_node, integer_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpistri128", ftype, IX86_BUILTIN_PCMPISTRI128);
+
+  /* ftype for IX86_BUILTIN_PCMPISTRM128 = V16QI_FTYPE_V16QI_INT_V16QI_INT_INT */
+  ftype = build_function_type_list (V16QI_type_node, V16QI_type_node, V16QI_type_node, integer_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpistrm128", ftype, IX86_BUILTIN_PCMPISTRM128);
+
+  /* ftype for IX86_BUILTIN_PCMPISTRIO128 = INT_FTYPE_V16QI_INT_V16QI_INT_INT */
+  ftype = build_function_type_list (integer_type_node, V16QI_type_node, V16QI_type_node, integer_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpistrio128", ftype, IX86_BUILTIN_PCMPISTRIO128);
+
+  /* ftype for IX86_BUILTIN_PCMPISTRIS128 = INT_FTYPE_V16QI_INT_V16QI_INT_INT */
+  ftype = build_function_type_list (integer_type_node, V16QI_type_node, V16QI_type_node, integer_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpistris128", ftype, IX86_BUILTIN_PCMPISTRIS128);
+
+  /* ftype for IX86_BUILTIN_PCMPISTRIZ128 = INT_FTYPE_V16QI_INT_V16QI_INT_INT */
+  ftype = build_function_type_list (integer_type_node, V16QI_type_node, V16QI_type_node, integer_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpistriz128", ftype, IX86_BUILTIN_PCMPISTRIZ128);
+
 
   /* Access to the vec_init patterns.  */
   ftype = build_function_type_list (V2SI_type_node, integer_type_node,
