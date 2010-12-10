@@ -468,12 +468,5 @@ add_special_options (void)
 		flag = add_string_option(O_LIST_, "source=off:notes=off");
 		prepend_option_seen (flag);
 	}
-
-	if (option_was_seen(O_static) && invoked_lang == L_f90) {
-		/* IRIX f90 -static was fe option,
-		 * but gnu makes it a link option.
-		 * Warn about possible misuse. */
-		warning("Under Linux, -static is a linker option for using static libraries; if you wanted to put local data in static area, use -static-data instead");
-	}
 }
 
