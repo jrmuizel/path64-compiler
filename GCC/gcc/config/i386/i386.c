@@ -15750,6 +15750,25 @@ ix86_init_mmx_sse_builtins (void)
   def_builtin (MASK_SSE4_1, "__builtin_ia32_vec_set_v2di",ftype, IX86_BUILTIN_PINSRQ);
   ftype = build_function_type_list (V4SF_type_node ,V4SF_type_node, V4SF_type_node,integer_type_node,  NULL_TREE);
   def_builtin (MASK_SSE4_1, "__builtin_ia32_insertps128",ftype, IX86_BUILTIN_INSERTPS);
+	/*sse4.1 maxmin*/
+  ftype = build_function_type_list (V16QI_type_node ,V16QI_type_node, V16QI_type_node,  NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_pmaxsb128",ftype, IX86_BUILTIN_PMAXSB128);
+  ftype = build_function_type_list (V4SI_type_node ,V4SI_type_node, V4SI_type_node,  NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_pmaxsd128",ftype, IX86_BUILTIN_PMAXSD128);
+  ftype = build_function_type_list (V8HI_type_node ,V8HI_type_node, V8HI_type_node,  NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_pmaxuw128",ftype, IX86_BUILTIN_PMAXUW128);
+  ftype = build_function_type_list (V4SI_type_node ,V4SI_type_node, V4SI_type_node,  NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_pmaxud128",ftype, IX86_BUILTIN_PMAXUD128);
+  ftype = build_function_type_list (V16QI_type_node ,V16QI_type_node, V16QI_type_node,  NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_pminsb128",ftype, IX86_BUILTIN_PMINSB128);
+  ftype = build_function_type_list (V4SI_type_node ,V4SI_type_node, V4SI_type_node,  NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_pminsd128",ftype, IX86_BUILTIN_PMINSD128);
+  ftype = build_function_type_list (V8HI_type_node ,V8HI_type_node, V8HI_type_node,  NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_pminuw128",ftype, IX86_BUILTIN_PMINUW128);
+  ftype = build_function_type_list (V4SI_type_node ,V4SI_type_node, V4SI_type_node,  NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_pminud128",ftype, IX86_BUILTIN_PMINUD128);
+  ftype = build_function_type_list (V8HI_type_node ,V8HI_type_node,   NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_phminposuw128",ftype, IX86_BUILTIN_PHMINPOSUW128);
 
 
   /* cfang */

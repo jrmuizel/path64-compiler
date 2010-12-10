@@ -1350,6 +1350,15 @@ int main (int argc, char *argv[])
 		    TOP_fmaxxxx128v64,
 		    TOP_fminxxx128v32,
 		    TOP_fminxxx128v64,
+				TOP_pmaxsb,
+				TOP_pmaxsd,
+				TOP_pmaxuw,
+				TOP_pmaxud,
+				TOP_pminsb,
+				TOP_pminsd,
+				TOP_pminuw,
+				TOP_pminud,
+				TOP_phminposuw,
 		    TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(5);

@@ -3248,6 +3248,21 @@ main()
   Operand(0, fp128, opnd1);
   Operand(1, fp128, opnd2);
 
+  Instruction_Group("pmax pmin xmm",
+                    TOP_pmaxsb,
+                    TOP_pmaxsd,
+                    TOP_pmaxuw,
+                    TOP_pmaxud,
+                    TOP_pminsb,
+                    TOP_pminsd,
+                    TOP_pminuw,
+                    TOP_pminud,
+										TOP_phminposuw,
+                    TOP_UNDEFINED);
+  Result(0, fp128);
+  Operand(0, fp128, opnd1);
+  Operand(1, fp128, opnd2);
+
   Instruction_Group("insert field xmm",
                     TOP_insertq,
                     TOP_UNDEFINED);

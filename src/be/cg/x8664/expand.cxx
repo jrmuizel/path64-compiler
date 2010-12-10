@@ -7596,6 +7596,33 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
 	 case INTRN_INSERTPS:
    	Expand_Intrinsic_Imm_Param(TOP_insertps, result, op0, op1, op2, ops, 5);
 	 break;
+   case INTRN_PMAXSB128:
+    Build_OP(TOP_pmaxsb, result, op0, op1, ops );
+    break;
+   case INTRN_PMAXSD128:
+    Build_OP(TOP_pmaxsd, result, op0, op1, ops );
+    break;
+   case INTRN_PMAXUW128:
+    Build_OP(TOP_pmaxuw, result, op0, op1, ops );
+    break;
+   case INTRN_PMAXUD128:
+    Build_OP(TOP_pmaxud, result, op0, op1, ops );
+    break;
+   case INTRN_PMINSB128:
+    Build_OP(TOP_pminsb, result, op0, op1, ops );
+    break;
+   case INTRN_PMINSD128:
+    Build_OP(TOP_pminsd, result, op0, op1, ops );
+    break;
+   case INTRN_PMINUW128:
+    Build_OP(TOP_pminuw, result, op0, op1, ops );
+    break;
+   case INTRN_PMINUD128:
+    Build_OP(TOP_pminud, result, op0, op1, ops );
+    break;
+   case INTRN_PHMINPOSUW128:
+    Build_OP(TOP_phminposuw, result, op0, op0, ops );
+    break;
    case INTRN_PCMPISTRI128:
     Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
     break;

@@ -1259,6 +1259,15 @@ main ()
 				"pinsrd",
 				"pinsrq",
 				"insertps",
+				"pmaxsb",
+				"pmaxsd",
+				"pmaxuw",
+				"pmaxud",
+				"pminsb",
+				"pminsd",
+				"pminuw",
+				"pminud",
+				"phminposuw",
 
           /* sse4_2 instructions */
           "pcmpistri",  

@@ -542,6 +542,15 @@ main()
 			   TOP_pavgw,
 			   TOP_psadbw,
 				 TOP_packusdw,
+				 TOP_pmaxsb,
+				 TOP_pmaxsd,
+				 TOP_pmaxuw,
+				 TOP_pmaxud,
+				 TOP_pminsb,
+				 TOP_pminsd,
+				 TOP_pminuw,
+				 TOP_pminud,
+				 TOP_phminposuw,
 			   TOP_UNDEFINED );
 
   /* One result / two operands in x86 style w/ mem operand */

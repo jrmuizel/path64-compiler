@@ -1496,6 +1496,15 @@ static void Init_OP_Name()
 	OP_Name[TOP_pinsrd] = "pinsrd";
 	OP_Name[TOP_pinsrq] = "pinsrq";
 	OP_Name[TOP_insertps] = "insertps";
+	OP_Name[TOP_pmaxsb] = "pmaxsb";
+	OP_Name[TOP_pmaxsd] = "pmaxsd";
+	OP_Name[TOP_pmaxuw] = "pmaxuw";
+	OP_Name[TOP_pmaxud] = "pmaxud";
+	OP_Name[TOP_pminsb] = "pminsb";
+	OP_Name[TOP_pminsd] = "pminsd";
+	OP_Name[TOP_pminuw] = "pminuw";
+	OP_Name[TOP_pminud] = "pminud";
+	OP_Name[TOP_phminposuw] = "phminposuw";
 
 
   /* SSE4_2 */
