@@ -1488,6 +1488,10 @@ static void Init_OP_Name()
 	OP_Name[TOP_mpsadbw] = "mpsadbw";
 	OP_Name[TOP_pmuldq] = "pmuldq";
 	OP_Name[TOP_pmulld] = "pmulld";
+	OP_Name[TOP_pextrb] = "pextrb";
+	OP_Name[TOP_pextrd] = "pextrd";
+	OP_Name[TOP_pextrq] = "pextrq";
+	OP_Name[TOP_extractps] = "extractps";
 
 
   /* SSE4_2 */

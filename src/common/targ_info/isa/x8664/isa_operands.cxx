@@ -2372,6 +2372,31 @@ main()
 	Operand(0, fp128,opnd1);
 	Operand(1, fp128, opnd2);
 
+	Instruction_Group("pextr in32",
+				TOP_pextrb,
+				TOP_pextrd,
+				TOP_UNDEFINED);
+	Result(0,int32);
+	Operand(0,int32,opnd1);
+	Operand(1,fp128,opnd2);
+	Operand(2,uimm8,opnd3);
+
+	Instruction_Group("pextr in64",
+				TOP_pextrq,
+				TOP_UNDEFINED);
+	Result(0,int64);
+	Operand(0,int64,opnd1);
+	Operand(1,fp128,opnd2);
+	Operand(2,uimm8,opnd3);
+	
+	Instruction_Group("extractps fp32",
+				TOP_extractps,
+				TOP_UNDEFINED);
+	Result(0,fp64);
+	Operand(0,int32,opnd1);
+	Operand(1,fp128,opnd2);
+	Operand(2,uimm8,opnd3);
+
   Instruction_Group("qi vector compare implicit length returns index",
           TOP_pcmpistri,      
           TOP_UNDEFINED);

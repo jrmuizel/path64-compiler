@@ -1191,6 +1191,10 @@ main()
 	TOP_dppd,
 	TOP_dpps,
 	TOP_mpsadbw,
+	TOP_pextrb,
+	TOP_pextrd,
+	TOP_pextrq,
+	TOP_extractps,
   TOP_pcmpistri,
   TOP_pcmpistrm,
   TOP_UNDEFINED );

@@ -7560,6 +7560,30 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
    case INTRN_PMULLD128:
     Build_OP(TOP_pmulld, result, op0, op1, ops );
     break;
+   case INTRN_PEXTRB:
+	 {
+		TN *tn = Gen_Register_TN(ISA_REGISTER_CLASS_integer, 4);
+   	Expand_Intrinsic_Imm_Param(TOP_pextrb, result, tn, op0, op1, ops, 4);
+    break;
+	 }
+   case INTRN_PEXTRD:
+	 {
+		TN *tn = Gen_Register_TN(ISA_REGISTER_CLASS_integer, 4);
+   	Expand_Intrinsic_Imm_Param(TOP_pextrd, result, tn, op0, op1, ops, 4);
+    break;
+	 }
+   case INTRN_PEXTRQ:
+	 {
+		TN *tn = Gen_Register_TN(ISA_REGISTER_CLASS_integer, 8);
+   	Expand_Intrinsic_Imm_Param(TOP_pextrq, result, tn, op0, op1, ops, 4);
+    break;
+	 }
+   case INTRN_EXTRACTPS:
+	 {
+		TN *tn = Gen_Register_TN(ISA_REGISTER_CLASS_integer, 4);
+   	Expand_Intrinsic_Imm_Param(TOP_extractps, result, tn, op0, op1, ops, 4);
+    break;
+	 }
    case INTRN_PCMPISTRI128:
     Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
     break;

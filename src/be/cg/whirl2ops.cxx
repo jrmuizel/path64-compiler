@@ -3880,6 +3880,10 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
 		}
 		case INTRN_ROUNDPD:
 		case INTRN_ROUNDPS:
+		case INTRN_PEXTRB:
+		case INTRN_PEXTRD:
+		case INTRN_PEXTRQ:
+		case INTRN_EXTRACTPS:
 		{
 			WN *wn_para1 = WN_kid0 (WN_kid1 (expr));
 			if(WN_operator(wn_para1) == OPR_INTCONST)

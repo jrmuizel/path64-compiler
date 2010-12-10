@@ -1251,6 +1251,10 @@ main ()
 				"mpsadbw",
 				"pmuldq",
 				"pmulld",
+				"pextrb",
+				"pextrd",
+				"pextrq",
+				"extractps",
 
           /* sse4_2 instructions */
           "pcmpistri",  
