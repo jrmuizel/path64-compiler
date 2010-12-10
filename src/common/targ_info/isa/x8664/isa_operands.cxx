@@ -2381,6 +2381,17 @@ main()
 	Operand(1,fp128,opnd2);
 	Operand(2,uimm8,opnd3);
 
+	Instruction_Group("pinsr in32",
+				TOP_pinsrb,
+				TOP_pinsrd,
+				TOP_UNDEFINED);
+	Result(0,fp128);
+	Operand(0, fp128, opnd1);
+	Operand(1, int32, opnd2);
+	Operand(2, simm8, opnd3);
+
+
+
 	Instruction_Group("pextr in64",
 				TOP_pextrq,
 				TOP_UNDEFINED);
@@ -2389,6 +2400,15 @@ main()
 	Operand(1,fp128,opnd2);
 	Operand(2,uimm8,opnd3);
 	
+	Instruction_Group("pinsr in64",
+				TOP_pinsrq,
+				TOP_UNDEFINED);
+	Result(0,fp128);
+	Operand(0, fp128, opnd1);
+	Operand(1, int64, opnd2);
+	Operand(2, simm8, opnd3);
+
+
 	Instruction_Group("extractps fp32",
 				TOP_extractps,
 				TOP_UNDEFINED);
@@ -2396,6 +2416,15 @@ main()
 	Operand(0,int32,opnd1);
 	Operand(1,fp128,opnd2);
 	Operand(2,uimm8,opnd3);
+
+	Instruction_Group("insertps fp32",
+				TOP_insertps,
+				TOP_UNDEFINED);
+	Result(0,fp128);
+	Operand(0,fp128,opnd1);
+	Operand(1,fp128,opnd2);
+	Operand(2,simm32,opnd3);
+
 
   Instruction_Group("qi vector compare implicit length returns index",
           TOP_pcmpistri,      

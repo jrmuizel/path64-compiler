@@ -1948,6 +1948,17 @@ Instruction_Group("sse4.1 blend",
   Any_Result_Available_Time(3);
   Resource_Requirement(res_issue, 0);
 
+
+  Instruction_Group("SSE4.1 insert",
+										TOP_insertps,
+										TOP_pinsrb,
+										TOP_pinsrd,
+										TOP_pinsrq,
+                    TOP_UNDEFINED);
+  Any_Operand_Access_Time(0);
+  Any_Result_Available_Time(5);
+  Resource_Requirement(res_issue, 0);
+
   Instruction_Group("SSE4A extract",
                     TOP_extrq,
                     TOP_UNDEFINED);

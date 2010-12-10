@@ -1255,6 +1255,10 @@ main ()
 				"pextrd",
 				"pextrq",
 				"extractps",
+				"pinsrb",
+				"pinsrd",
+				"pinsrq",
+				"insertps",
 
           /* sse4_2 instructions */
           "pcmpistri",  

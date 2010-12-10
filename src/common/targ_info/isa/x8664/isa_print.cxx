@@ -1195,6 +1195,10 @@ main()
 	TOP_pextrd,
 	TOP_pextrq,
 	TOP_extractps,
+	TOP_pinsrb,
+	TOP_pinsrd,
+	TOP_pinsrq,
+	TOP_insertps,
   TOP_pcmpistri,
   TOP_pcmpistrm,
   TOP_UNDEFINED );

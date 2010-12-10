@@ -7584,6 +7584,18 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
    	Expand_Intrinsic_Imm_Param(TOP_extractps, result, tn, op0, op1, ops, 4);
     break;
 	 }
+	 case INTRN_PINSRB:
+   	Expand_Intrinsic_Imm_Param(TOP_pinsrb, result, op0, op1, op2, ops, 5);
+	 break;
+	 case INTRN_PINSRD:
+   	Expand_Intrinsic_Imm_Param(TOP_pinsrd, result, op0, op1, op2, ops, 5);
+	 break;
+	 case INTRN_PINSRQ:
+   	Expand_Intrinsic_Imm_Param(TOP_pinsrq, result, op0, op1, op2, ops, 5);
+	 break;
+	 case INTRN_INSERTPS:
+   	Expand_Intrinsic_Imm_Param(TOP_insertps, result, op0, op1, op2, ops, 5);
+	 break;
    case INTRN_PCMPISTRI128:
     Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
     break;

@@ -1492,6 +1492,10 @@ static void Init_OP_Name()
 	OP_Name[TOP_pextrd] = "pextrd";
 	OP_Name[TOP_pextrq] = "pextrq";
 	OP_Name[TOP_extractps] = "extractps";
+	OP_Name[TOP_pinsrb] = "pinsrb";
+	OP_Name[TOP_pinsrd] = "pinsrd";
+	OP_Name[TOP_pinsrq] = "pinsrq";
+	OP_Name[TOP_insertps] = "insertps";
 
 
   /* SSE4_2 */
