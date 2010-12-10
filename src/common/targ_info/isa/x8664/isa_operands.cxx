@@ -373,6 +373,7 @@ main()
 		     TOP_cmpeq128v8,
 		     TOP_cmpeq128v16,
 		     TOP_cmpeq128v32,
+				 TOP_pcmpeqq,
 		     TOP_max128v8,
 		     TOP_max128v16,
 		     TOP_min128v8,
@@ -1281,6 +1282,24 @@ main()
   Result(0, int64);
   Operand(0, fp64, opnd1);
 
+	Instruction_Group("mov fp 2 128",
+				TOP_pmovsxbw,
+				TOP_pmovsxbd,
+				TOP_pmovsxbq,
+				TOP_pmovsxwd,
+				TOP_pmovsxwq,
+				TOP_pmovsxdq,
+				TOP_pmovzxbw,
+				TOP_pmovzxbd,
+				TOP_pmovzxbq,
+				TOP_pmovzxwd,
+				TOP_pmovzxwq,
+				TOP_pmovzxdq,
+				TOP_UNDEFINED);
+  Result(0, fp128);
+  Operand(0, fp128, opnd1);
+
+
   Instruction_Group("shifts8",
 		    TOP_rori8,
 		    TOP_roli8,
@@ -1587,6 +1606,7 @@ main()
 				TOP_punpcklqdq,
 		    TOP_punpcklwd,
 		    TOP_punpckldq,
+				TOP_packusdw,
 		    TOP_UNDEFINED);
   Result(0, fp128);
   Operand(0, fp128, opnd1);

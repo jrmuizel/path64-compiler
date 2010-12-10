@@ -384,6 +384,7 @@ main()
 			   TOP_cmpgt128v8,
 			   TOP_cmpgt128v16,
 			   TOP_cmpgt128v32,
+				 TOP_pcmpeqq,
 			   TOP_pcmpeqb,
 			   TOP_pcmpeqw,
 			   TOP_pcmpeqd,
@@ -538,6 +539,7 @@ main()
 			   TOP_pavgb,
 			   TOP_pavgw,
 			   TOP_psadbw,
+				 TOP_packusdw,
 			   TOP_UNDEFINED );
 
   /* One result / two operands in x86 style w/ mem operand */
@@ -1113,6 +1115,18 @@ main()
 			   TOP_ld64_2sse_n32,
 			   TOP_movmskps,
 			   TOP_movmskpd,
+				 TOP_pmovsxbw,
+				 TOP_pmovsxbd,
+				 TOP_pmovsxbq,
+				 TOP_pmovsxwd,
+				 TOP_pmovsxwq,
+				 TOP_pmovsxdq,
+				 TOP_pmovzxbw,
+				 TOP_pmovzxbd,
+				 TOP_pmovzxbq,
+				 TOP_pmovzxwd,
+				 TOP_pmovzxwq,
+				 TOP_pmovzxdq,
 			   TOP_UNDEFINED );
 
   /* Two operands / no result */

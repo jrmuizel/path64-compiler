@@ -4808,6 +4808,48 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
     case GSBI_IX86_BUILTIN_ROUNDSS:
       *iopc = INTRN_ROUNDSS;
       break;
+    case GSBI_IX86_BUILTIN_PCMPEQQ:
+      *iopc = INTRN_PCMPEQQ;
+      break;
+    case GSBI_IX86_BUILTIN_PMOVSXBW128:
+      *iopc = INTRN_PMOVSXBW128;
+      break;
+    case GSBI_IX86_BUILTIN_PMOVSXBD128:
+      *iopc = INTRN_PMOVSXBD128;
+      break;
+    case GSBI_IX86_BUILTIN_PMOVSXBQ128:
+      *iopc = INTRN_PMOVSXBQ128;
+      break;
+    case GSBI_IX86_BUILTIN_PMOVSXWD128:
+      *iopc = INTRN_PMOVSXWD128;
+      break;
+    case GSBI_IX86_BUILTIN_PMOVSXWQ128:
+      *iopc = INTRN_PMOVSXWQ128;
+      break;
+    case GSBI_IX86_BUILTIN_PMOVSXDQ128:
+      *iopc = INTRN_PMOVSXDQ128;
+      break;
+    case GSBI_IX86_BUILTIN_PMOVZXBW128:
+      *iopc = INTRN_PMOVZXBW128;
+      break;
+    case GSBI_IX86_BUILTIN_PMOVZXBD128:
+      *iopc = INTRN_PMOVZXBD128;
+      break;
+    case GSBI_IX86_BUILTIN_PMOVZXBQ128:
+      *iopc = INTRN_PMOVZXBQ128;
+      break;
+    case GSBI_IX86_BUILTIN_PMOVZXWD128:
+      *iopc = INTRN_PMOVZXWD128;
+      break;
+    case GSBI_IX86_BUILTIN_PMOVZXWQ128:
+      *iopc = INTRN_PMOVZXWQ128;
+      break;
+    case GSBI_IX86_BUILTIN_PMOVZXDQ128:
+      *iopc = INTRN_PMOVZXDQ128;
+      break;
+    case GSBI_IX86_BUILTIN_PACKUSDW128:
+      *iopc = INTRN_PACKUSDW128;
+      break;
     case GSBI_IX86_BUILTIN_PCMPISTRI128:
       *iopc = INTRN_PCMPISTRI128;
       break;

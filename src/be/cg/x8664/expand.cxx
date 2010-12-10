@@ -7503,6 +7503,48 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
   case INTRN_ROUNDSS:
    	Expand_Intrinsic_Imm_Param(TOP_roundss, result, op0, op1, op2, ops, 5);
 	break;
+   case INTRN_PCMPEQQ:
+    Build_OP(TOP_pcmpeqq, result, op0, op1, ops );
+    break;
+   case INTRN_PMOVSXBW128:
+    Build_OP(TOP_pmovsxbw, result, op0, ops );
+    break;
+   case INTRN_PMOVSXBD128:
+    Build_OP(TOP_pmovsxbd, result, op0, ops );
+    break;
+   case INTRN_PMOVSXBQ128:
+    Build_OP(TOP_pmovsxbq, result, op0, ops );
+    break;
+   case INTRN_PMOVSXWD128:
+    Build_OP(TOP_pmovsxwd, result, op0, ops );
+    break;
+   case INTRN_PMOVSXWQ128:
+    Build_OP(TOP_pmovsxwq, result, op0, ops );
+    break;
+   case INTRN_PMOVSXDQ128:
+    Build_OP(TOP_pmovsxdq, result, op0, ops );
+    break;
+   case INTRN_PMOVZXBW128:
+    Build_OP(TOP_pmovzxbw, result, op0, ops );
+    break;
+   case INTRN_PMOVZXBD128:
+    Build_OP(TOP_pmovzxbd, result, op0, ops );
+    break;
+   case INTRN_PMOVZXBQ128:
+    Build_OP(TOP_pmovzxbq, result, op0, ops );
+    break;
+   case INTRN_PMOVZXWD128:
+    Build_OP(TOP_pmovzxwd, result, op0, ops );
+    break;
+   case INTRN_PMOVZXWQ128:
+    Build_OP(TOP_pmovzxwq, result, op0, ops );
+    break;
+   case INTRN_PMOVZXDQ128:
+    Build_OP(TOP_pmovzxdq, result, op0, ops );
+    break;
+   case INTRN_PACKUSDW128:
+    Build_OP(TOP_packusdw, result, op0, op1, ops );
+    break;
    case INTRN_PCMPISTRI128:
     Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
     break;

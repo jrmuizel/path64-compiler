@@ -1469,6 +1469,8 @@ static void Init_OP_Name()
 	OP_Name[TOP_roundsd] = "roundsd";
 	OP_Name[TOP_roundps] = "roundps";
 	OP_Name[TOP_roundss] = "roundss";
+	OP_Name[TOP_pcmpeqq] = "pcmpeqq";
+	OP_Name[TOP_pmovsxbw] = "pmovsxbw";
 
   /* SSE4_2 */
   OP_Name[TOP_pcmpistri] = "pcmpistri";
