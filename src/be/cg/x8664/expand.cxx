@@ -7545,6 +7545,21 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
    case INTRN_PACKUSDW128:
     Build_OP(TOP_packusdw, result, op0, op1, ops );
     break;
+   case INTRN_DPPD:
+   	Expand_Intrinsic_Imm_Param(TOP_dppd, result, op0, op1, op2, ops, 5);
+    break;
+   case INTRN_DPPS:
+   	Expand_Intrinsic_Imm_Param(TOP_dpps, result, op0, op1, op2, ops, 5);
+    break;
+   case INTRN_MPSADBW128:
+   	Expand_Intrinsic_Imm_Param(TOP_mpsadbw, result, op0, op1, op2, ops, 5);
+    break;
+   case INTRN_PMULDQ128:
+    Build_OP(TOP_pmuldq, result, op0, op1, ops );
+    break;
+   case INTRN_PMULLD128:
+    Build_OP(TOP_pmulld, result, op0, op1, ops );
+    break;
    case INTRN_PCMPISTRI128:
     Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
     break;

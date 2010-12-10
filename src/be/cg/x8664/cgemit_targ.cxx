@@ -1471,6 +1471,24 @@ static void Init_OP_Name()
 	OP_Name[TOP_roundss] = "roundss";
 	OP_Name[TOP_pcmpeqq] = "pcmpeqq";
 	OP_Name[TOP_pmovsxbw] = "pmovsxbw";
+	OP_Name[TOP_pmovsxbd] = "pmovsxbd";
+	OP_Name[TOP_pmovsxbq] = "pmovsxbq";
+	OP_Name[TOP_pmovsxwd] = "pmovsxwd";
+	OP_Name[TOP_pmovsxwq] = "pmovsxwq";
+	OP_Name[TOP_pmovsxdq] = "pmovsxdq";
+	OP_Name[TOP_pmovzxbw] = "pmovzxbw";
+	OP_Name[TOP_pmovzxbd] = "pmovzxbd";
+	OP_Name[TOP_pmovzxbq] = "pmovzxbq";
+	OP_Name[TOP_pmovzxwd] = "pmovzxwd";
+	OP_Name[TOP_pmovzxwq] = "pmovzxwq";
+	OP_Name[TOP_pmovzxdq] = "pmovzxdq";
+	OP_Name[TOP_packusdw] = "packusdw";
+	OP_Name[TOP_dppd] = "dppd";
+	OP_Name[TOP_dpps] = "dpps";
+	OP_Name[TOP_mpsadbw] = "mpsadbw";
+	OP_Name[TOP_pmuldq] = "pmuldq";
+	OP_Name[TOP_pmulld] = "pmulld";
+
 
   /* SSE4_2 */
   OP_Name[TOP_pcmpistri] = "pcmpistri";

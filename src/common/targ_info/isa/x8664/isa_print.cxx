@@ -299,6 +299,8 @@ main()
 				 TOP_pavgb128,
 				 TOP_pavgw128,
 				 TOP_psadbw128,
+				 TOP_pmuldq,
+				 TOP_pmulld,
 			   TOP_add32,
 			   TOP_adc32,
 			   TOP_add64,
@@ -1186,6 +1188,9 @@ main()
 	TOP_roundsd,
 	TOP_roundps,
 	TOP_roundss,
+	TOP_dppd,
+	TOP_dpps,
+	TOP_mpsadbw,
   TOP_pcmpistri,
   TOP_pcmpistrm,
   TOP_UNDEFINED );

@@ -2355,11 +2355,22 @@ main()
 				TOP_roundsd,
 				TOP_roundps,
 				TOP_roundss,
+				TOP_dppd,
+				TOP_dpps,
+				TOP_mpsadbw,
 				TOP_UNDEFINED);
 	Result(0, fp128);
 	Operand(0, fp128,opnd1);
 	Operand(1, fp128, opnd2);
 	Operand(2, simm8, opnd3);
+
+	Instruction_Group("pmul128",
+				TOP_pmuldq,
+				TOP_pmulld,
+				TOP_UNDEFINED);
+	Result(0, fp128);
+	Operand(0, fp128,opnd1);
+	Operand(1, fp128, opnd2);
 
   Instruction_Group("qi vector compare implicit length returns index",
           TOP_pcmpistri,      

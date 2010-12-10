@@ -15721,6 +15721,16 @@ ix86_init_mmx_sse_builtins (void)
   def_builtin (MASK_SSE4_1, "__builtin_ia32_pmovzxdq128",ftype, IX86_BUILTIN_PMOVZXDQ128);
   ftype = build_function_type_list (V8HI_type_node, V4SI_type_node,V4SI_type_node,  NULL_TREE);
   def_builtin (MASK_SSE4_1, "__builtin_ia32_packusdw128",ftype, IX86_BUILTIN_PACKUSDW128);
+  ftype = build_function_type_list (V2DF_type_node, V2DF_type_node,V2DF_type_node,integer_type_node,  NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_dppd",ftype, IX86_BUILTIN_DPPD);
+  ftype = build_function_type_list (V4SF_type_node, V4SF_type_node,V4SF_type_node,integer_type_node,  NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_dpps",ftype, IX86_BUILTIN_DPPS);
+  ftype = build_function_type_list (V16QI_type_node, V16QI_type_node,V16QI_type_node,integer_type_node,  NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_mpsadbw128",ftype, IX86_BUILTIN_MPSADBW128);
+  ftype = build_function_type_list (V2DI_type_node, V4SI_type_node,V4SI_type_node,  NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_pmuldq128",ftype, IX86_BUILTIN_PMULDQ128);
+  ftype = build_function_type_list (V4SI_type_node, V4SI_type_node,V4SI_type_node,  NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_pmulld128",ftype, IX86_BUILTIN_PMULLD128);
 
 
   /* cfang */

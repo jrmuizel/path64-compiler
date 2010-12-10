@@ -3860,6 +3860,9 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
 		case INTRN_BLENDPS:
 		case INTRN_ROUNDSD:
 		case INTRN_ROUNDSS:
+	  case INTRN_DPPD:
+	  case INTRN_DPPS:
+	  case INTRN_MPSADBW128:
 		{
       //return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 1);
 			WN *wn_para2 = WN_kid0 (WN_kid2 (expr));

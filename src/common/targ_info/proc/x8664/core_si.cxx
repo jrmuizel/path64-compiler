@@ -1324,6 +1324,7 @@ int main (int argc, char *argv[])
 		    TOP_fmin128v64,
 		    TOP_psadbw,
 		    TOP_psadbw128,
+				TOP_mpsadbw,
 		    TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(3);
@@ -1554,6 +1555,8 @@ int main (int argc, char *argv[])
 		    TOP_cmpnltps,
 		    TOP_cmpnleps,
 		    TOP_cmpordps,
+				TOP_dppd,
+				TOP_dpps,
 				 		TOP_pcmpeqq,
 				 		TOP_pcmpeqq,
             TOP_pcmpistri,
@@ -1728,6 +1731,8 @@ int main (int argc, char *argv[])
 		    TOP_pmulhw,
 		    TOP_pmulhuw,
 		    TOP_pmulhuw128,
+				TOP_pmuldq,
+				TOP_pmulld,
 		    TOP_pmaddwd,
 		    TOP_UNDEFINED);
   Any_Operand_Access_Time(0);

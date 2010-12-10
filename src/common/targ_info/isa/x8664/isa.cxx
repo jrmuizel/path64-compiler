@@ -1246,6 +1246,11 @@ main ()
 				"pmovzxwq",
 				"pmovzxdq",
 				"packusdw",
+				"dppd",
+				"dpps",
+				"mpsadbw",
+				"pmuldq",
+				"pmulld",
 
           /* sse4_2 instructions */
           "pcmpistri",  

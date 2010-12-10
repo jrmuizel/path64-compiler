@@ -3136,6 +3136,8 @@ main()
 		     TOP_pmulhw,
 		     TOP_pmulhuw,
 		     TOP_pmulhuw128,
+				 TOP_pmuldq,
+				 TOP_pmulld,
 		     TOP_pmaddwd,
 		     TOP_add128v8,
 		     TOP_add128v16,
