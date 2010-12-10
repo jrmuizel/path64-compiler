@@ -1277,6 +1277,12 @@ main ()
 					"pcmpgtq",
           "pcmpestri",
           "pcmpestrm",
+          "crc32b",
+          "crc32w",
+          "crc32l",
+          "crc32q",
+					"popcntl",
+					"popcntq",
 
 	      /* instructions to support Open MP. */
 	      "lock_add32",

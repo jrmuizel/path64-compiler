@@ -4973,6 +4973,24 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
     case GSBI_IX86_BUILTIN_PCMPISTRIZ128:
       *iopc = INTRN_PCMPISTRIZ128;
       break;
+    case GSBI_IX86_BUILTIN_CRC32B:
+      *iopc = INTRN_CRC32B;
+      break;
+    case GSBI_IX86_BUILTIN_CRC32W:
+      *iopc = INTRN_CRC32W;
+      break;
+    case GSBI_IX86_BUILTIN_CRC32L:
+      *iopc = INTRN_CRC32L;
+      break;
+    case GSBI_IX86_BUILTIN_CRC32Q:
+      *iopc = INTRN_CRC32Q;
+      break;
+   	case GSBI_IX86_BUILTIN_POPCNTL:
+	  *iopc = INTRN_POPCNTL;  
+	  break;
+   	case GSBI_IX86_BUILTIN_POPCNTQ:
+	  *iopc = INTRN_POPCNTQ;  
+	  break;
     case GSBI_IX86_BUILTIN_PAND128:
       *iopc = INTRN_PAND128;
       break;
@@ -9064,6 +9082,20 @@ WGEN_Expand_Expr (gs_t exp,
 		  switch (sz) {
 		  case 4: iopc = INTRN_POPCOUNT32; break;
 		  case 8: iopc = INTRN_POPCOUNT64; break;
+		  default:
+		    Fail_FmtAssertion ("unexpected size for intrinsic 'popcount'");
+		    break;
+		  }
+		}
+#else
+	        iopc = INTRN_POPCOUNT;
+#endif
+#ifdef TARG_X8664
+		{
+		  INT sz = TY_size (Get_TY (gs_tree_type (gs_tree_value (arglist))));
+		  switch (sz) {
+		  case 4: iopc = INTRN_POPCNTL; break;
+		  case 8: iopc = INTRN_POPCNTQ; break;
 		  default:
 		    Fail_FmtAssertion ("unexpected size for intrinsic 'popcount'");
 		    break;

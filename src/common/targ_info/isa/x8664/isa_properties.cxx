@@ -466,6 +466,8 @@ main()
 		     TOP_movzwq,
 		     TOP_movslq,
 		     TOP_movzlq,
+			 TOP_popcntl,
+			 TOP_popcntq,
                      TOP_UNDEFINED );
 
   /* ===== Memory load operator ====== */
@@ -3914,6 +3916,10 @@ main()
              TOP_xchgx16,
              TOP_xchgx32,
              TOP_xchgx64,
+			 TOP_crc32b,
+			 TOP_crc32w,
+			 TOP_crc32l,
+			 TOP_crc32q,
                      TOP_UNDEFINED );
 
   /* ===== Predicated instructions ====== */

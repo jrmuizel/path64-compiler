@@ -2475,12 +2475,52 @@ main()
   Operand(3, int32, opnd4);
   Operand(4, int32, opnd5);
 
+  Instruction_Group("crc sse4.2 crc32b",
+		  	TOP_crc32b,
+			TOP_UNDEFINED);
+  Result(0, int32);
+  Operand(0, int32);
+  Operand(1, int8);
+
+  Instruction_Group("crc sse4.2 crc32w",
+		  	TOP_crc32w,
+			TOP_UNDEFINED);
+  Result(0, int32);
+  Operand(0, int32);
+  Operand(1, int16);
+
+  Instruction_Group("crc sse4.2 crc32l",
+		  	TOP_crc32l,
+			TOP_UNDEFINED);
+  Result(0, int32);
+  Operand(0, int32);
+  Operand(1, int32);
+
+  Instruction_Group("crc sse4.2 crc32q",
+		  	TOP_crc32q,
+			TOP_UNDEFINED);
+  Result(0, int64);
+  Operand(0, int64);
+  Operand(1, int64);
+
   Instruction_Group("load64 effective addr",
 		    TOP_lea64,
 		    TOP_UNDEFINED);
   Result(0, int64);
   Operand(0, int64, base);
   Operand(1, simm32, offset);
+  
+	Instruction_Group(" sse4.2 popcntl",
+		  	TOP_popcntl,
+			TOP_UNDEFINED);
+  Result(0, edx);
+  Operand(0, int32 );
+	
+	Instruction_Group(" sse4.2 popcntq",
+		  	TOP_popcntq,
+			TOP_UNDEFINED);
+  Result(0, rdx);
+  Operand(0, int64);
 
   Instruction_Group("load32 effective addr w/ indx",
 		    TOP_leax32,

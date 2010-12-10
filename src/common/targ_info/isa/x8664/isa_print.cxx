@@ -553,6 +553,10 @@ main()
 				 TOP_phminposuw,
 				TOP_ptest,
 				 TOP_pcmpgtq,
+				 TOP_crc32b,
+			   TOP_crc32w,
+			   TOP_crc32l,
+			   TOP_crc32q,
 			   TOP_UNDEFINED );
 
   /* One result / two operands in x86 style w/ mem operand */
@@ -1666,6 +1670,15 @@ main()
 			   TOP_punpckl64v16,
 			   TOP_punpckl64v32,
 			   TOP_UNDEFINED );
+
+	ISA_PRINT_TYPE popcnt = ISA_Print_Type_Create("popcnt", "%s %s,%s");
+	Name();
+	Operand(0);
+	Result(0);
+	Instruction_Print_Group( popcnt, 
+				 TOP_popcntl,
+			   TOP_popcntq,
+				 TOP_UNDEFINED );
 
   /* shuffle */
   ISA_PRINT_TYPE shuffle = ISA_Print_Type_Create("shuffle", "%s %s,%s,%s");

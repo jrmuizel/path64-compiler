@@ -15870,6 +15870,29 @@ ix86_init_mmx_sse_builtins (void)
 
   def_builtin (MASK_SSE4_2, "__builtin_ia32_pcmpistriz128", ftype, IX86_BUILTIN_PCMPISTRIZ128);
 
+  ftype = build_function_type_list(unsigned_type_node, unsigned_type_node, unsigned_char_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_crc32qi", ftype, IX86_BUILTIN_CRC32B);
+
+  ftype = build_function_type_list(unsigned_type_node, unsigned_type_node, short_unsigned_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_crc32hi", ftype, IX86_BUILTIN_CRC32W);
+
+  ftype = build_function_type_list(unsigned_type_node, unsigned_type_node, unsigned_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_crc32si", ftype, IX86_BUILTIN_CRC32L);
+
+  ftype = build_function_type_list(long_long_unsigned_type_node, long_long_unsigned_type_node, long_long_unsigned_type_node, NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_ia32_crc32di", ftype, IX86_BUILTIN_CRC32Q);
+
+  ftype = build_function_type_list(integer_type_node, unsigned_type_node , NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_popcntl", ftype, IX86_BUILTIN_POPCNTL);
+
+  ftype = build_function_type_list(long_long_integer_type_node, long_long_integer_type_node , NULL_TREE);
+
+  def_builtin (MASK_SSE4_2, "__builtin_popcntq", ftype, IX86_BUILTIN_POPCNTQ);
 
   /* Access to the vec_init patterns.  */
   ftype = build_function_type_list (V2SI_type_node, integer_type_node,

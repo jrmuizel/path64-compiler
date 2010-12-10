@@ -1579,6 +1579,12 @@ int main (int argc, char *argv[])
             TOP_pcmpestri,
             TOP_pcmpestrm,
 						TOP_pcmpgtq,
+						TOP_crc32b,
+						TOP_crc32w,
+						TOP_crc32l,
+						TOP_crc32q,
+			 TOP_popcntl,
+			 TOP_popcntq,
                     TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(1);

@@ -1514,6 +1514,13 @@ static void Init_OP_Name()
   OP_Name[TOP_pcmpistrm] = "pcmpistrm";
   OP_Name[TOP_pcmpestri] = "pcmpestri";
   OP_Name[TOP_pcmpestrm] = "pcmpestrm";
+  OP_Name[TOP_crc32b] = "crc32b";
+  OP_Name[TOP_crc32w] = "crc32w";
+  OP_Name[TOP_crc32l] = "crc32l";
+  OP_Name[TOP_crc32q] = "crc32q";
+  OP_Name[TOP_popcntl] = "popcntl";
+  OP_Name[TOP_popcntq] = "popcntq";
+
 
 //**********************************************************
 // For barcelona (bug 13108)

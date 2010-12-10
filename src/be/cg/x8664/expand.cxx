@@ -7777,7 +7777,34 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
 		 Build_OP(TOP_movdq, result, op0, ops);
 		break;
 	 }
-
+  case INTRN_CRC32B:
+	 Build_OP(TOP_crc32b,result, op0, op1, ops);
+	 break;
+  case INTRN_CRC32W:
+	 Build_OP(TOP_crc32w,result, op0, op1, ops);
+	 break;
+  case INTRN_CRC32L:
+	 Build_OP(TOP_crc32l,result, op0, op1, ops);
+	 break;
+  case INTRN_CRC32Q:
+	 Build_OP(TOP_crc32q,result, op0, op1, ops);
+	 break;
+  case INTRN_POPCNTL:
+	{
+	 //TN *tneax = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 4);
+	 //Build_OP(TOP_mov32, tneax, result, ops);
+	 Build_OP(TOP_popcntl,result, op0, ops);
+	 //Build_OP(TOP_mov32, result, tneax, ops);
+	 break;
+	}
+  case INTRN_POPCNTQ:
+	{
+	 //TN *tnrax = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 8);
+	 //Build_OP(TOP_mov64, tnrax, result, ops);
+	 Build_OP(TOP_popcntq,result, op0, ops);
+	 //Build_OP(TOP_mov64, result, tnrax, ops);
+	 break;
+	}
   case INTRN_PAND128:
     Build_OP(TOP_pand128, result, op0, op1, ops );
     break;
