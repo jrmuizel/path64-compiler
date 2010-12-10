@@ -1308,6 +1308,7 @@ static void Init_OP_Name()
   }
   else
     OP_Name[TOP_lddqu_n32] = "lddqu";
+	OP_Name[TOP_lddqu] = "lddqu";
   OP_Name[TOP_stdqu] = "movdqu";
   OP_Name[TOP_stdqu_n32] = "movdqu";
   OP_Name[TOP_ldlps] = "movlps";

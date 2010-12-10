@@ -7422,6 +7422,9 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
    case INTRN_ADDSUBPS:
     Build_OP(TOP_faddsub128v32, result, op0, op1, ops );
     break;
+   case INTRN_LDDQU:
+    Build_OP(TOP_lddqu, result, op0, Gen_Literal_TN(0,4), ops );
+    break;
    case INTRN_PCMPISTRI128:
     Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
     break;
