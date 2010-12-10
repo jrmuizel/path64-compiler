@@ -7626,6 +7626,42 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
    case INTRN_MOVNTDQA:
     Build_OP(TOP_movntdqa, result, op0, ops );
     break;
+   case INTRN_PTESTC128:
+	 {
+		TN *tneax = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 4);
+		TN *tn0 = Gen_Literal_TN(0,4);
+		Build_OP(TOP_ldc32, tneax, tn0, ops);
+    Build_OP(TOP_ptest, op0, op1, ops );
+		TN *tnal = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 2);
+		TN *rflags = Rflags_TN();
+		Build_OP(TOP_setb, tnal, rflags , ops);
+		Build_OP(TOP_mov32, result, tneax, tn0, ops);
+    break;
+	 }
+   case INTRN_PTESTNZC128:
+	 {
+		TN *tneax = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 4);
+		TN *tn0 = Gen_Literal_TN(0,4);
+		Build_OP(TOP_ldc32, tneax, tn0, ops);
+    Build_OP(TOP_ptest, op0, op1, ops );
+		TN *tnal = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 2);
+		TN *rflags = Rflags_TN();
+		Build_OP(TOP_seta, tnal, rflags , ops);
+		Build_OP(TOP_mov32, result, tneax, tn0, ops);
+    break;
+	 }
+   case INTRN_PTESTZ128:
+	 {
+		TN *tneax = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 4);
+		TN *tn0 = Gen_Literal_TN(0,4);
+		Build_OP(TOP_ldc32, tneax, tn0, ops);
+    Build_OP(TOP_ptest, op0, op1, ops );
+		TN *tnal = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 2);
+		TN *rflags = Rflags_TN();
+		Build_OP(TOP_sete, tnal, rflags , ops);
+		Build_OP(TOP_mov32, result, tneax, tn0, ops);
+    break;
+	 }
    case INTRN_PCMPISTRI128:
     Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
     break;

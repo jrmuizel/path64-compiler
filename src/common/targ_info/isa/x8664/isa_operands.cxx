@@ -3241,6 +3241,12 @@ main()
   Result(0, int32);
   Operand(0, fp128, opnd1);
 
+  Instruction_Group("fp128 ptest int32",
+				TOP_ptest,
+		    TOP_UNDEFINED);
+  Operand(0, fp128, opnd1);
+  Operand(1, fp128, opnd2);
+
   Instruction_Group("maskmov mmx",
 		    TOP_maskmovq,
 		    TOP_UNDEFINED);

@@ -1243,6 +1243,7 @@ main()
 						TOP_pminud, 0x000000ff,
 						TOP_phminposuw, 0x000000ff,
 						TOP_movntdqa, 0x000000ff,
+						TOP_ptest, 0x000000ff,
             TOP_xchgx8, 0x000000ff,
             TOP_xchgx16, 0x000000ff,
             TOP_xchgx32, 0x000000ff,

@@ -15737,7 +15737,7 @@ ix86_init_mmx_sse_builtins (void)
   def_builtin (MASK_SSE4_1, "__builtin_ia32_vec_ext_v16qi",ftype, IX86_BUILTIN_PEXTRB);
   ftype = build_function_type_list (integer_type_node, V4SI_type_node,integer_type_node,  NULL_TREE);
   def_builtin (MASK_SSE4_1, "__builtin_ia32_vec_ext_v4si",ftype, IX86_BUILTIN_PEXTRD);
-  ftype = build_function_type_list (integer_type_node, V2DI_type_node,integer_type_node,  NULL_TREE);
+  ftype = build_function_type_list (long_long_integer_type_node, V2DI_type_node,integer_type_node,  NULL_TREE);
   def_builtin (MASK_SSE4_1, "__builtin_ia32_vec_ext_v2di",ftype, IX86_BUILTIN_PEXTRQ);
   ftype = build_function_type_list (float_type_node, V4SF_type_node,integer_type_node,  NULL_TREE);
   def_builtin (MASK_SSE4_1, "__builtin_ia32_vec_ext_v4sf",ftype, IX86_BUILTIN_EXTRACTPS);
@@ -15773,6 +15773,14 @@ ix86_init_mmx_sse_builtins (void)
 	tree pv4si_type_node = build_pointer_type(V4SI_type_node);
   ftype = build_function_type_list (V4SI_type_node ,pv4si_type_node, NULL_TREE);
   def_builtin (MASK_SSE4_1, "__builtin_ia32_movntdqa",ftype, IX86_BUILTIN_MOVNTDQA);
+	
+  ftype = build_function_type_list (integer_type_node, V16QI_type_node ,V16QI_type_node,   NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_ptestc128",ftype, IX86_BUILTIN_PTESTC128);
+  ftype = build_function_type_list (integer_type_node, V2DI_type_node ,V2DI_type_node,   NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_ptestnzc128",ftype, IX86_BUILTIN_PTESTNZC128);
+  ftype = build_function_type_list (integer_type_node, V2DI_type_node ,V2DI_type_node,   NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_ptestz128",ftype, IX86_BUILTIN_PTESTZ128);
+
 
   /* cfang */
   /* sse4a intrinsics */

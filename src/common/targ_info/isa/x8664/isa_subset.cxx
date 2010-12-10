@@ -1254,6 +1254,7 @@ main()
 						TOP_pminud,
 						TOP_phminposuw,
 						TOP_movntdqa,
+						TOP_ptest,
             TOP_pcmpistri,
             TOP_pcmpistrm,
             TOP_pcmpestri,

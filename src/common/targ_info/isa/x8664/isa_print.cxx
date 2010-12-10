@@ -551,6 +551,7 @@ main()
 				 TOP_pminuw,
 				 TOP_pminud,
 				 TOP_phminposuw,
+				TOP_ptest,
 			   TOP_UNDEFINED );
 
   /* One result / two operands in x86 style w/ mem operand */

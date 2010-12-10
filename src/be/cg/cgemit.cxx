@@ -9512,7 +9512,7 @@ static void Verify_Instruction(OP *op)
   if( OP_reads_rflags( op ) ){
     OP* prev = OP_prev( op );
     while( prev != NULL ){
-      if( TOP_is_change_rflags( OP_code(prev) ) )
+      if( TOP_is_change_rflags( OP_code(prev) ) || OP_code(prev) ==TOP_ptest )
 	break;
       prev = OP_prev( prev );
     }

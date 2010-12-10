@@ -3229,6 +3229,7 @@ main()
 		     TOP_xorpd,
 		     TOP_orps,
 		     TOP_orpd,
+				TOP_ptest,
 		     TOP_unpckhpd,
 		     TOP_unpckhps,
 		     TOP_unpcklpd,

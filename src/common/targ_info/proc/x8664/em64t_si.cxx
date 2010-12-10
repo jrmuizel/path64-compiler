@@ -1484,6 +1484,7 @@ Instruction_Group("sse4.1 blend",
 						TOP_roundsd,
 						TOP_roundps,
 						TOP_roundss,
+						TOP_ptest,
 				        TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
 	  Any_Result_Available_Time(2);
