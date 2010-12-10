@@ -1268,6 +1268,7 @@ main ()
 				"pminuw",
 				"pminud",
 				"phminposuw",
+				"movntdqa",
 
           /* sse4_2 instructions */
           "pcmpistri",  

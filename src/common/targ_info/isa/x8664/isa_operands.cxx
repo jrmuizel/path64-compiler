@@ -1496,6 +1496,12 @@ main()
   Operand(0, int64, base);
   Operand(1, simm32, offset);
 
+	Instruction_Group("sse4.1 load MOVNTDQA",
+				TOP_UNDEFINED);
+	Result(0,fp128);
+	Operand(0, rax, base);
+	Operand(1, simm32, offset);
+
   Instruction_Group("float store w/o base or index",
 		    TOP_stsd_n32,
 		    TOP_stss_n32,
@@ -3042,6 +3048,12 @@ main()
                     TOP_UNDEFINED);
   Result(0, int32);
   Operand(0, fp128, opnd1);
+  
+	Instruction_Group("sse4.1 movngdqa move",
+										TOP_movntdqa,
+                    TOP_UNDEFINED);
+  Result(0, fp128);
+  Operand(0, int64, opnd1);
 
   Instruction_Group("mmx packed word modification",
 		    TOP_pextrw64,

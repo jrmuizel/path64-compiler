@@ -15769,7 +15769,10 @@ ix86_init_mmx_sse_builtins (void)
   def_builtin (MASK_SSE4_1, "__builtin_ia32_pminud128",ftype, IX86_BUILTIN_PMINUD128);
   ftype = build_function_type_list (V8HI_type_node ,V8HI_type_node,   NULL_TREE);
   def_builtin (MASK_SSE4_1, "__builtin_ia32_phminposuw128",ftype, IX86_BUILTIN_PHMINPOSUW128);
-
+	/*_mm_stream_load_si128*/
+	tree pv4si_type_node = build_pointer_type(V4SI_type_node);
+  ftype = build_function_type_list (V4SI_type_node ,pv4si_type_node, NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_movntdqa",ftype, IX86_BUILTIN_MOVNTDQA);
 
   /* cfang */
   /* sse4a intrinsics */

@@ -427,6 +427,7 @@ main()
 		     TOP_movss,
 		     TOP_movsd,
 		     TOP_movdq,
+				 TOP_movntdqa,
 		     TOP_movapd,
 		     TOP_movaps,
 		     TOP_fmov,

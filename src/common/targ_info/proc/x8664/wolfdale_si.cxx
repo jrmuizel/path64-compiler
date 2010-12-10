@@ -667,6 +667,7 @@ int main (int argc, char *argv[])
 		     TOP_movss,
 		     TOP_movdq,
 		     TOP_movapd,
+				 TOP_movntdqa,
 		     TOP_movaps,
 		     TOP_movhlps,
 		     TOP_movlhps, 

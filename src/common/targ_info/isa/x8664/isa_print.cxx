@@ -1223,6 +1223,17 @@ main()
                TOP_pcmpestrm,
 			   TOP_UNDEFINED );
 
+	/*movntdqa*/
+	
+	ISA_PRINT_TYPE movntdqaload = ISA_Print_Type_Create("movntdqaload", "%s %s(%s),%s");
+	Name();
+	Segment();
+	Operand(0);
+  Result(0);
+	Instruction_Print_Group(movntdqaload,
+					TOP_movntdqa,
+					TOP_UNDEFINED);
+
   /* regular load */
   ISA_PRINT_TYPE load =  ISA_Print_Type_Create("load", "%s %s%s(%s),%s");
   Name();

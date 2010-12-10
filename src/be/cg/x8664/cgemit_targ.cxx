@@ -1505,6 +1505,7 @@ static void Init_OP_Name()
 	OP_Name[TOP_pminuw] = "pminuw";
 	OP_Name[TOP_pminud] = "pminud";
 	OP_Name[TOP_phminposuw] = "phminposuw";
+	OP_Name[TOP_movntdqa] = "movntdqa";
 
 
   /* SSE4_2 */
