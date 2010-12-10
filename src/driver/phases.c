@@ -1980,6 +1980,10 @@ add_final_ld_args (string_list_t *args)
             }
         }
 
+        if(option_was_seen(O_static_libgcc)) {
+            add_arg(args, "-Bstatic");
+        }
+
         add_library(args, "gcc");
 
         // Exception support library (used by stl and gcc)
@@ -1988,6 +1992,10 @@ add_final_ld_args (string_list_t *args)
            source_lang == L_CC ||
            option_was_seen(O_fexceptions)) {
             add_library(args, "eh");
+        }
+
+        if(option_was_seen(O_static_libgcc)) {
+            add_arg(args, "-Bdynamic");
         }
 
         add_library(args, "c");

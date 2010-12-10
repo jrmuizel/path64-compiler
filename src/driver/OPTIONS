@@ -2037,7 +2037,7 @@ I-u%s		;		Cc	ld	"-u %s"
 	""
 -shared-libgcc	;	LINK	ld	self
 	"Force the use of the shared libgcc library"
--static-libgcc	;	LINK	ld	self
+-static-libgcc	;	LINK	ld	""
 	"Force the use of the static libgcc library"
 %%% Directory Options
 -I-		;		ALL	cpp	self
