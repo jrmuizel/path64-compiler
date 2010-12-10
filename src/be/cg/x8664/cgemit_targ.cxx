@@ -1465,6 +1465,10 @@ static void Init_OP_Name()
 	OP_Name[TOP_pblendvb] = "pblendvb";
 	OP_Name[TOP_blendvpd] = "blendvpd";
 	OP_Name[TOP_blendvps] = "blendvps";
+	OP_Name[TOP_roundpd] = "roundpd";
+	OP_Name[TOP_roundsd] = "roundsd";
+	OP_Name[TOP_roundps] = "roundps";
+	OP_Name[TOP_roundss] = "roundss";
 
   /* SSE4_2 */
   OP_Name[TOP_pcmpistri] = "pcmpistri";

@@ -2329,6 +2329,17 @@ main()
 	Operand(0, fp128,opnd1);
 	Operand(1, fp128, opnd2);
 	Operand(2, xmm0);
+	
+	Instruction_Group("round",
+				TOP_roundpd,
+				TOP_roundsd,
+				TOP_roundps,
+				TOP_roundss,
+				TOP_UNDEFINED);
+	Result(0, fp128);
+	Operand(0, fp128,opnd1);
+	Operand(1, fp128, opnd2);
+	Operand(2, simm8, opnd3);
 
   Instruction_Group("qi vector compare implicit length returns index",
           TOP_pcmpistri,      

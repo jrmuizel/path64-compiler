@@ -3858,6 +3858,8 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
 		case INTRN_PBLENDW128:
 		case INTRN_BLENDPD:
 		case INTRN_BLENDPS:
+		case INTRN_ROUNDSD:
+		case INTRN_ROUNDSS:
 		{
       //return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 1);
 			WN *wn_para2 = WN_kid0 (WN_kid2 (expr));
@@ -3872,6 +3874,23 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
 				//return Gen_Literal_TN(0xffff, 2);
 				return NULL;
 			}
+		}
+		case INTRN_ROUNDPD:
+		case INTRN_ROUNDPS:
+		{
+			WN *wn_para1 = WN_kid0 (WN_kid1 (expr));
+			if(WN_operator(wn_para1) == OPR_INTCONST)
+			{
+				*kidno = 1;
+				return Gen_Literal_TN(WN_const_val(wn_para1), 1);
+			}
+			else
+			{
+				*kidno = 1;
+				return NULL;
+			}
+
+
 		}
 
     case INTRN_PCMPISTRI128:

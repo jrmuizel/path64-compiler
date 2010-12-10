@@ -1228,6 +1228,10 @@ main ()
 				"pblendvb",
 				"blendvpd",
 				"blendvps",
+				"roundpd",
+				"roundsd",
+				"roundps",
+				"roundss",
 
           /* sse4_2 instructions */
           "pcmpistri",  

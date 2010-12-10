@@ -6458,6 +6458,36 @@ Expand_Count_Leading_Zeros (TN *result, TN *op, TYPE_ID mtype,
 		     MTYPE_I4, ops );
 }
 
+void Expand_Intrinsic_Imm_Param(TOP opc, struct tn* result, struct tn *op0,
+										struct tn *op1, struct tn *op2, OPS *ops, int op_count)
+{
+
+	   if(TN_is_constant(op2))
+		   Build_OP(opc, result, op0, op1, op2, ops);
+	   else
+	   {
+		   OP *op = NULL;
+		   TN *tn;
+		   int tick_count = 0;
+		   FOR_ALL_OPS_OPs_REV(ops, op)
+		   {
+			   tick_count++;
+			   if(tick_count == op_count)
+				   break;
+		   }
+		   if(tick_count == op_count)
+		   {
+			   tn = Gen_Literal_TN( TN_value(OP_opnd(op, 0)), 1);
+			   Build_OP(opc, result, op0, op1, tn, ops);
+		   }
+		   else
+		   {
+			   tn = Gen_Literal_TN(0, 1);
+			   Build_OP(opc, result, op0, op1, tn, ops);
+		   }
+	   }
+}
+
 void
 Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, TN *op4, TYPE_ID mtype, OPS *ops)
 {
@@ -7443,99 +7473,36 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
    case INTRN_ADDSUBPD:
     Build_OP(TOP_faddsub128v64, result, op0, op1, ops );
     break;
-	 case INTRN_PBLENDW128:
-	 {
-		if(TN_is_constant(op2))
-	 		Build_OP(TOP_pblendw, result, op0, op1, op2, ops);
-		else
-		{
-			OP *op = NULL;
-			TN *tn;
-			int tick_count = 0;
-			FOR_ALL_OPS_OPs_REV(ops, op)
-			{
-				tick_count++;
-				if(tick_count == 5)
-					break;
-			}
-			if(tick_count == 5)
-			{
-				tn = Gen_Literal_TN( TN_value(OP_opnd(op, 0)), 1);
-				Build_OP(TOP_pblendw, result, op0, op1, tn, ops);
-			}
-			else
-			{
-				tn = Gen_Literal_TN(0, 1);
-				Build_OP(TOP_pblendw, result, op0, op1, tn, ops);
-			}
-		}
-		break;
-	 }
-	 case INTRN_BLENDPD:
-	 {
-		if(TN_is_constant(op2))
-	 		Build_OP(TOP_blendpd, result, op0, op1, op2, ops);
-		else
-		{
-			OP *op = NULL;
-			TN *tn;
-			int tick_count = 0;
-			FOR_ALL_OPS_OPs_REV(ops, op)
-			{
-				tick_count++;
-				if(tick_count == 5)
-					break;
-			}
-			if(tick_count == 5)
-			{
-				tn = Gen_Literal_TN( TN_value(OP_opnd(op, 0)), 1);
-				Build_OP(TOP_blendpd, result, op0, op1, tn, ops);
-			}
-			else
-			{
-				tn = Gen_Literal_TN(0, 1);
-				Build_OP(TOP_blendpd, result, op0, op1, tn, ops);
-			}
-		}
-		break;
-	 }
-	 case INTRN_BLENDPS:
-	 {
-		if(TN_is_constant(op2))
-	 		Build_OP(TOP_blendps, result, op0, op1, op2, ops);
-		else
-		{
-			OP *op = NULL;
-			TN *tn;
-			int tick_count = 0;
-			FOR_ALL_OPS_OPs_REV(ops, op)
-			{
-				tick_count++;
-				if(tick_count == 5)
-					break;
-			}
-			if(tick_count == 5)
-			{
-				tn = Gen_Literal_TN( TN_value(OP_opnd(op, 0)), 1);
-				Build_OP(TOP_blendps, result, op0, op1, tn, ops);
-			}
-			else
-			{
-				tn = Gen_Literal_TN(0, 1);
-				Build_OP(TOP_blendps, result, op0, op1, tn, ops);
-			}
-		}
-		break;
-	 }
-	 case INTRN_PBLENDVB128:
-	 	Build_OP(TOP_pblendvb, result, op0, op1, op2, ops);
-		break;
-	 case INTRN_BLENDVPD:
-	 	Build_OP(TOP_blendvpd, result, op0, op1, op2, ops);
-		break;
-	 case INTRN_BLENDVPS:
-	 	Build_OP(TOP_blendvps, result, op0, op1, op2, ops);
-	 	break;
+   case INTRN_PBLENDW128:
+   	Expand_Intrinsic_Imm_Param(TOP_pblendw, result, op0, op1, op2, ops, 5);
+	break;
+   case INTRN_BLENDPD:
+   	Expand_Intrinsic_Imm_Param(TOP_blendpd, result, op0, op1, op2, ops, 5);
+	break;
+   case INTRN_BLENDPS:
+   	Expand_Intrinsic_Imm_Param(TOP_blendps, result, op0, op1, op2, ops, 5);
+	break;
+   case INTRN_PBLENDVB128:
+	Build_OP(TOP_pblendvb, result, op0, op1, op2, ops);
+	break;
+   case INTRN_BLENDVPD:
+	Build_OP(TOP_blendvpd, result, op0, op1, op2, ops);
+	break;
+   case INTRN_BLENDVPS:
+	Build_OP(TOP_blendvps, result, op0, op1, op2, ops);
+	break;
+  case INTRN_ROUNDPD:
+   	Expand_Intrinsic_Imm_Param(TOP_roundpd, result, op0, op0, op1, ops, 4);
+	break;
+  case INTRN_ROUNDSD:
+   	Expand_Intrinsic_Imm_Param(TOP_roundsd, result, op0, op1, op2, ops, 5);
+	break;
+  case INTRN_ROUNDPS:
+   	Expand_Intrinsic_Imm_Param(TOP_roundps, result, op0, op0, op1, ops, 4);
+	break;
+  case INTRN_ROUNDSS:
+   	Expand_Intrinsic_Imm_Param(TOP_roundss, result, op0, op1, op2, ops, 5);
+	break;
    case INTRN_PCMPISTRI128:
     Build_OP(TOP_pcmpistri, result, op0, op1, op2, ops );
     break;
@@ -8647,3 +8614,5 @@ void Expand_Conv_From_Vector(TN * dest, TN * src, TYPE_ID desc, TYPE_ID rtype,
     else Build_OP (TOP_movx2g, dest, src, ops);
   }
 }
+
+

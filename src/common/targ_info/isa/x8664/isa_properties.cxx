@@ -3303,6 +3303,7 @@ main()
                      TOP_pcmpistrm,
                      TOP_pcmpestri,
                      TOP_pcmpestrm,
+						 TOP_roundpd,
              TOP_pand128,
              TOP_pandn128,
 						 TOP_por128,

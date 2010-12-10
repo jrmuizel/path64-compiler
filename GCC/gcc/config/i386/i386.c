@@ -15682,7 +15682,17 @@ ix86_init_mmx_sse_builtins (void)
   def_builtin (MASK_SSE4_1, "__builtin_ia32_blendvpd",ftype, IX86_BUILTIN_BLENDVPD);
   ftype = build_function_type_list (V4SF_type_node, V4SF_type_node, V4SF_type_node, V4SF_type_node, NULL_TREE);
   def_builtin (MASK_SSE4_1, "__builtin_ia32_blendvps",ftype, IX86_BUILTIN_BLENDVPS);
-	
+/*ceil fammily*/	
+  ftype = build_function_type_list (V2DF_type_node, V2DF_type_node, integer_type_node, NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_roundpd",ftype, IX86_BUILTIN_ROUNDPD);
+  ftype = build_function_type_list (V2DF_type_node,V2DF_type_node,  V2DF_type_node, integer_type_node, NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_roundsd",ftype, IX86_BUILTIN_ROUNDSD);
+  ftype = build_function_type_list (V4SF_type_node, V4SF_type_node, integer_type_node, NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_roundps",ftype, IX86_BUILTIN_ROUNDPS);
+  ftype = build_function_type_list (V4SF_type_node, V4SF_type_node, V4SF_type_node, integer_type_node, NULL_TREE);
+  def_builtin (MASK_SSE4_1, "__builtin_ia32_roundss",ftype, IX86_BUILTIN_ROUNDSS);
+
+
 
   /* cfang */
   /* sse4a intrinsics */

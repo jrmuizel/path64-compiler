@@ -1168,6 +1168,10 @@ main()
 	TOP_pblendvb,
 	TOP_blendvpd,
 	TOP_blendvps,
+	TOP_roundpd,
+	TOP_roundsd,
+	TOP_roundps,
+	TOP_roundss,
   TOP_pcmpistri,
   TOP_pcmpistrm,
   TOP_UNDEFINED );
