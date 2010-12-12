@@ -3192,6 +3192,7 @@ run_compiler (int argc, char *argv[])
 			add_file_args_first (args, phase_order[i]);  // bug 6874
 			if (phase_order[i] == P_inline &&
 			    run_inline == TRUE &&
+			    olevel == 0 &&
 			    !(option_was_seen(O_INLINE_) || 
 			    option_was_seen(O_INLINE) || 
 			    option_was_seen(O_inline) || 
