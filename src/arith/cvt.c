@@ -144,10 +144,10 @@ ar_convert_to_integral
 				/* 8-bit operand is negative; extend the sign */
 				maxnegint = IS_INT8_UPPER_ZERO(opnd) &&
 							(opnd->ar_i8.part5 == 0x80);
-				result->ar_i8.part1  = 0xFFFF;
-				result->ar_i8.part2  = 0xFFFF;
-				result->ar_i8.part3  = 0xFFFF;
-				result->ar_i8.part4  =   0xFF;
+				result->ar_i64.part1  = 0xFFFF;
+				result->ar_i64.part2  = 0xFFFF;
+				result->ar_i64.part3  = 0xFFFF;
+				result->ar_i64.part4 |= 0xFF00;
 			}
 			else if (opndsz == AR_INT_SIZE_16 && INT16_SIGN(opnd)) {
 				maxnegint = IS_INT16_UPPER_ZERO(opnd) &&
