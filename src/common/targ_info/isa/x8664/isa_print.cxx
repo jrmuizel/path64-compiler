@@ -1156,6 +1156,12 @@ main()
 				 TOP_pmovzxwd,
 				 TOP_pmovzxwq,
 				 TOP_pmovzxdq,
+				 TOP_pabsb128,
+				 TOP_pabsw128,
+				 TOP_pabsd128,
+				 TOP_pabsb,
+				 TOP_pabsw,
+				 TOP_pabsd,
 			   TOP_UNDEFINED );
 
   /* Two operands / no result */

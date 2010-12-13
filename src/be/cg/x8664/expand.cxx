@@ -6548,12 +6548,15 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
       Exp_COPY( tmp0, op0, ops );
       op0 = tmp0;
     }
-    if (id != INTRN_PSHUFW && id != INTRN_PSHUFD && id != INTRN_PINSRW64 &&
-	TN_register_class(op1) != ISA_REGISTER_CLASS_mmx) {
-      TN *tmp1 = Build_TN_Like(result);
-      Exp_COPY( tmp1, op1, ops );
-      op1 = tmp1;
-    }
+	if(op1 != NULL){
+		//We also got some intrinsic that have one operand and M8I* return type
+    	if (id != INTRN_PSHUFW && id != INTRN_PSHUFD && id != INTRN_PINSRW64 &&
+		TN_register_class(op1) != ISA_REGISTER_CLASS_mmx) {
+    	  TN *tmp1 = Build_TN_Like(result);
+    	  Exp_COPY( tmp1, op1, ops );
+     	 op1 = tmp1;
+    	}
+	}
   }
   switch ( id ) {
   default: FmtAssert( FALSE,
@@ -7841,6 +7844,24 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
     break;
   case INTRN_PHSUBSW:
     Build_OP(TOP_phsubsw, result, op0, op1, ops );
+    break;
+  case INTRN_PABSB128:
+    Build_OP(TOP_pabsb128, result, op0, ops );
+    break;
+  case INTRN_PABSW128:
+    Build_OP(TOP_pabsw128, result, op0, ops );
+    break;
+  case INTRN_PABSD128:
+    Build_OP(TOP_pabsd128, result, op0, ops );
+    break;
+  case INTRN_PABSB:
+    Build_OP(TOP_pabsb, result, op0, ops );
+    break;
+  case INTRN_PABSW:
+    Build_OP(TOP_pabsw, result, op0, ops );
+    break;
+  case INTRN_PABSD:
+    Build_OP(TOP_pabsd, result, op0, ops );
     break;
   case INTRN_PAND128:
     Build_OP(TOP_pand128, result, op0, op1, ops );

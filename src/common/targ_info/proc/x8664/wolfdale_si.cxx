@@ -1598,6 +1598,12 @@ int main (int argc, char *argv[])
 						TOP_phsubw,
 						TOP_phsubd,
 						TOP_phsubsw,
+				TOP_pabsb128,
+				TOP_pabsw128,
+				TOP_pabsd128,
+				TOP_pabsb,
+				TOP_pabsw,
+				TOP_pabsd,
                     TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(1);

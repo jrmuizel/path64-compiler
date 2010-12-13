@@ -1297,6 +1297,12 @@ main ()
 					"phsubw",
 					"phsubd",
 					"phsubsw",
+					"pabsb128",
+					"pabsw128",
+					"pabsd128",
+					"pabsb",
+					"pabsw",
+					"pabsd",
 
 	      /* instructions to support Open MP. */
 	      "lock_add32",

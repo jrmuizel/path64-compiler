@@ -3336,6 +3336,12 @@ main()
              TOP_pand128,
              TOP_pandn128,
 						 TOP_por128,
+				TOP_pabsb128,
+				TOP_pabsw128,
+				TOP_pabsd128,
+				TOP_pabsb,
+				TOP_pabsw,
+				TOP_pabsd,
 		     TOP_UNDEFINED );
 
   /* ==== x86 style instructions ==== */

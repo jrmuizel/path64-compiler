@@ -2471,6 +2471,22 @@ main()
 	Result(0,mmx);
 	Operand(0, mmx, opnd1);
 	Operand(1, mmx, opnd2);
+	
+	Instruction_Group("ssse3 instructions 128 one operand",
+						TOP_pabsb128,
+						TOP_pabsw128,
+						TOP_pabsd128,
+						TOP_UNDEFINED);
+	Result(0,fp128);
+	Operand(0, fp128, opnd1);
+	
+	Instruction_Group("ssse3 instructions 64 one operand",
+						TOP_pabsb,
+						TOP_pabsw,
+						TOP_pabsd,
+						TOP_UNDEFINED);
+	Result(0,mmx);
+	Operand(0, mmx, opnd1);
 
   Instruction_Group("qi vector compare explicit length retruns index",
 		    TOP_pcmpestri,
