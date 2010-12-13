@@ -1573,7 +1573,6 @@ int main (int argc, char *argv[])
 				TOP_dppd,
 				TOP_dpps,
 				 		TOP_pcmpeqq,
-				 		TOP_pcmpeqq,
             TOP_pcmpistri,
             TOP_pcmpistrm,
             TOP_pcmpestri,
@@ -1732,7 +1731,6 @@ int main (int argc, char *argv[])
 										TOP_punpcklwd128,
 										TOP_punpckldq128,
 										TOP_punpcklqdq,
-                 
                     TOP_packusdw,                   
                     TOP_UNDEFINED);
   Any_Operand_Access_Time(0);

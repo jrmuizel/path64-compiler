@@ -3855,7 +3855,6 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
       *kidno = 2;
       return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 4);
 
-<<<<<<< HEAD
 		case INTRN_PBLENDW128:
 		case INTRN_BLENDPD:
 		case INTRN_BLENDPS:
