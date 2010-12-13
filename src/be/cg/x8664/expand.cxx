@@ -7793,20 +7793,11 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
   case INTRN_CRC32Q:
 	 Build_OP(TOP_crc32q,result, op0, op1, ops);
 	 break;
-  case INTRN_POPCNTL:
+  case INTRN_POPCOUNT:
 	{
-	 //TN *tneax = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 4);
-	 //Build_OP(TOP_mov32, tneax, result, ops);
-	 Build_OP(TOP_popcntl,result, op0, ops);
-	 //Build_OP(TOP_mov32, result, tneax, ops);
-	 break;
-	}
-  case INTRN_POPCNTQ:
-	{
-	 //TN *tnrax = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 8);
-	 //Build_OP(TOP_mov64, tnrax, result, ops);
-	 Build_OP(TOP_popcntq,result, op0, ops);
-	 //Build_OP(TOP_mov64, result, tnrax, ops);
+     TOP popcnt_top = (mtype == MTYPE_I8 || mtype == MTYPE_U8) ?
+                      TOP_popcntq : TOP_popcntl;
+	 Build_OP(popcnt_top,result, op0, ops);
 	 break;
 	}
   case INTRN_PHADDW128:
