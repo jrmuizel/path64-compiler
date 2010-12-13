@@ -557,6 +557,18 @@ main()
 			   TOP_crc32w,
 			   TOP_crc32l,
 			   TOP_crc32q,
+				 TOP_phaddw128,
+				 TOP_phaddd128,
+				 TOP_phaddsw128,
+				 TOP_phaddw,
+				 TOP_phaddd,
+				 TOP_phaddsw,
+				 TOP_phsubw128,
+				 TOP_phsubd128,
+				 TOP_phsubsw128,
+				 TOP_phsubw,
+				 TOP_phsubd,
+				 TOP_phsubsw,
 			   TOP_UNDEFINED );
 
   /* One result / two operands in x86 style w/ mem operand */

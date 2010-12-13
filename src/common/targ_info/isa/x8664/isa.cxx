@@ -1284,6 +1284,20 @@ main ()
 					"popcntl",
 					"popcntq",
 
+					/* sss3 instructions*/
+					"phaddw128",
+					"phaddd128",
+					"phaddsw128",
+					"phaddw",
+					"phaddd",
+					"phaddsw",
+					"phsubw128",
+					"phsubd128",
+					"phsubsw128",
+					"phsubw",
+					"phsubd",
+					"phsubsw",
+
 	      /* instructions to support Open MP. */
 	      "lock_add32",
 	      "lock_adc32",

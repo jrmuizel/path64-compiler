@@ -1521,6 +1521,19 @@ static void Init_OP_Name()
   OP_Name[TOP_popcntl] = "popcntl";
   OP_Name[TOP_popcntq] = "popcntq";
 
+	/* SSSE3*/
+	OP_Name[TOP_phaddw128] = "phaddw";
+	OP_Name[TOP_phaddd128] = "phaddd";
+	OP_Name[TOP_phaddsw128] = "phaddsw";
+	OP_Name[TOP_phaddw] = "phaddw";
+	OP_Name[TOP_phaddd] = "phaddd";
+	OP_Name[TOP_phaddsw] = "phaddsw";
+	OP_Name[TOP_phsubw128] = "phsubw";
+	OP_Name[TOP_phsubd128] = "phsubd";
+	OP_Name[TOP_phsubsw128] = "phsubsw";
+	OP_Name[TOP_phsubw] = "phsubw";
+	OP_Name[TOP_phsubd] = "phsubd";
+	OP_Name[TOP_phsubsw] = "phsubsw";
 
 //**********************************************************
 // For barcelona (bug 13108)

@@ -1270,6 +1270,18 @@ main()
             TOP_xchgx16,
             TOP_xchgx32,
             TOP_xchgx64,
+						TOP_phaddw128,
+						TOP_phaddd128,
+						TOP_phaddsw128,
+						TOP_phaddw,
+						TOP_phaddd,
+						TOP_phaddsw,
+						TOP_phsubw128,
+						TOP_phsubd128,
+						TOP_phsubsw128,
+						TOP_phsubw,
+						TOP_phsubd,
+						TOP_phsubsw,
 		    TOP_UNDEFINED);
 
   ISA_Subset_End();

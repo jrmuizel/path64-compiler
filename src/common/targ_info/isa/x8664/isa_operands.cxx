@@ -2448,6 +2448,30 @@ main()
   Operand(1, fp128,  opnd2);
   Operand(2, simm8, opnd3);
 
+	Instruction_Group("ssse3 instructions 128",
+						TOP_phaddw128,
+						TOP_phaddd128,
+						TOP_phaddsw128,
+						TOP_phsubw128,
+						TOP_phsubd128,
+						TOP_phsubsw128,
+						TOP_UNDEFINED);
+	Result(0,fp128);
+	Operand(0, fp128, opnd1);
+	Operand(1, fp128, opnd2);
+	
+	Instruction_Group("ssse3 instructions 64",
+						TOP_phaddw,
+						TOP_phaddd,
+						TOP_phaddsw,
+						TOP_phsubw,
+						TOP_phsubd,
+						TOP_phsubsw,
+						TOP_UNDEFINED);
+	Result(0,mmx);
+	Operand(0, mmx, opnd1);
+	Operand(1, mmx, opnd2);
+
   Instruction_Group("qi vector compare explicit length retruns index",
 		    TOP_pcmpestri,
 		    TOP_UNDEFINED);

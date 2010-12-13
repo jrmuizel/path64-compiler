@@ -3019,7 +3019,8 @@ Expand_Float_To_Int (ROUND_MODE rm, TN *dest, TN *src, TYPE_ID imtype, TYPE_ID f
   } else if (fmtype == MTYPE_F8) {
     if( MTYPE_bit_size(imtype) == 64 ){
       if( MTYPE_is_signed(imtype) )
-	top = TOP_cvttsd2siq;
+	//top = TOP_cvttsd2siq;
+		top=TOP_movx2g64;//might lose some bit from "xmm" to "int64"
       else {
 	/* For "double" to "unsigned long long" conversion, operation
 	   cvttsd2siq will lose some accuracy.  (bug#2867)
@@ -7805,6 +7806,42 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
 	 //Build_OP(TOP_mov64, result, tnrax, ops);
 	 break;
 	}
+  case INTRN_PHADDW128:
+    Build_OP(TOP_phaddw128, result, op0, op1, ops );
+    break;
+  case INTRN_PHADDD128:
+    Build_OP(TOP_phaddd128, result, op0, op1, ops );
+    break;
+  case INTRN_PHADDSW128:
+    Build_OP(TOP_phaddsw128, result, op0, op1, ops );
+    break;
+  case INTRN_PHADDW:
+    Build_OP(TOP_phaddw, result, op0, op1, ops );
+    break;
+  case INTRN_PHADDD:
+    Build_OP(TOP_phaddd, result, op0, op1, ops );
+    break;
+  case INTRN_PHADDSW:
+    Build_OP(TOP_phaddsw, result, op0, op1, ops );
+    break;
+  case INTRN_PHSUBW128:
+    Build_OP(TOP_phsubw128, result, op0, op1, ops );
+    break;
+  case INTRN_PHSUBD128:
+    Build_OP(TOP_phsubd128, result, op0, op1, ops );
+    break;
+  case INTRN_PHSUBSW128:
+    Build_OP(TOP_phsubsw128, result, op0, op1, ops );
+    break;
+  case INTRN_PHSUBW:
+    Build_OP(TOP_phsubw, result, op0, op1, ops );
+    break;
+  case INTRN_PHSUBD:
+    Build_OP(TOP_phsubd, result, op0, op1, ops );
+    break;
+  case INTRN_PHSUBSW:
+    Build_OP(TOP_phsubsw, result, op0, op1, ops );
+    break;
   case INTRN_PAND128:
     Build_OP(TOP_pand128, result, op0, op1, ops );
     break;

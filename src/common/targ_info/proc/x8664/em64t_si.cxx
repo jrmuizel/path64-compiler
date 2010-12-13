@@ -1526,6 +1526,18 @@ Instruction_Group("sse4.1 blend",
 						TOP_crc32q,
 			 TOP_popcntl,
 			 TOP_popcntq,
+						TOP_phaddw128,
+						TOP_phaddd128,
+						TOP_phaddsw128,
+						TOP_phaddw,
+						TOP_phaddd,
+						TOP_phaddsw,
+						TOP_phsubw128,
+						TOP_phsubd128,
+						TOP_phsubsw128,
+						TOP_phsubw,
+						TOP_phsubd,
+						TOP_phsubsw,
                     TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(2);

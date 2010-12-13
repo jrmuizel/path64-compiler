@@ -1580,7 +1580,8 @@ override_options (void)
     PTA_ABM = 0x400,
     PTA_SSE4A = 0x800,
     PTA_SSE4_1 = 0x1000,
-    PTA_SSE4_2 = 0x2000
+    PTA_SSE4_2 = 0x2000,
+    PTA_SSSE3 = 0x4000
 	} flags;
     }
   const processor_alias_table[] =
@@ -1622,7 +1623,7 @@ override_options (void)
       {"athlon-mp", PROCESSOR_ATHLON, PTA_MMX | PTA_PREFETCH_SSE | PTA_3DNOW
 				      | PTA_3DNOW_A | PTA_SSE},
       {"x86-64", PROCESSOR_K8, PTA_MMX | PTA_PREFETCH_SSE | PTA_64BIT
-			       | PTA_SSE | PTA_SSE2| PTA_SSE4_1 | PTA_SSE4_2 },
+			       | PTA_SSE | PTA_SSE2 | PTA_SSE4_1 | PTA_SSE4_2 | PTA_SSSE3},
       {"k8", PROCESSOR_K8, PTA_MMX | PTA_PREFETCH_SSE | PTA_3DNOW | PTA_64BIT
 				      | PTA_3DNOW_A | PTA_SSE | PTA_SSE2},
       {"opteron", PROCESSOR_K8, PTA_MMX | PTA_PREFETCH_SSE | PTA_3DNOW | PTA_64BIT
@@ -1808,6 +1809,9 @@ override_options (void)
 	if (processor_alias_table[i].flags & PTA_SSE4_2
 	    && !(target_flags_explicit & MASK_SSE4_2))
 	  target_flags |= MASK_SSE4_2;
+	if (processor_alias_table[i].flags & PTA_SSSE3
+	    && !(target_flags_explicit & MASK_SSSE3))
+	  target_flags |= MASK_SSSE3;
 
 	if (TARGET_64BIT && !(processor_alias_table[i].flags & PTA_64BIT))
 	  error ("CPU you selected does not support x86-64 "
@@ -15885,6 +15889,55 @@ ix86_init_mmx_sse_builtins (void)
   ftype = build_function_type_list(long_long_unsigned_type_node, long_long_unsigned_type_node, long_long_unsigned_type_node, NULL_TREE);
 
   def_builtin (MASK_SSE4_2, "__builtin_ia32_crc32di", ftype, IX86_BUILTIN_CRC32Q);
+
+	/*ssse3*/
+	ftype = build_function_type_list(V8HI_type_node, V8HI_type_node, V8HI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_phaddw128", ftype, IX86_BUILTIN_PHADDW128);
+
+	ftype = build_function_type_list(V4SI_type_node, V4SI_type_node, V4SI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_phaddd128", ftype, IX86_BUILTIN_PHADDD128);
+
+	ftype = build_function_type_list(V8HI_type_node, V8HI_type_node, V8HI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_phaddsw128", ftype, IX86_BUILTIN_PHADDSW128);
+
+	ftype = build_function_type_list(V4HI_type_node, V4HI_type_node, V4HI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_phaddw", ftype, IX86_BUILTIN_PHADDW);
+
+	ftype = build_function_type_list(V2SI_type_node, V2SI_type_node, V2SI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_phaddd", ftype, IX86_BUILTIN_PHADDD);
+
+	ftype = build_function_type_list(V4HI_type_node, V4HI_type_node, V4HI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_phaddsw", ftype, IX86_BUILTIN_PHADDSW);
+	
+	ftype = build_function_type_list(V8HI_type_node, V8HI_type_node, V8HI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_phsubw128", ftype, IX86_BUILTIN_PHSUBW128);
+
+	ftype = build_function_type_list(V4SI_type_node, V4SI_type_node, V4SI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_phsubd128", ftype, IX86_BUILTIN_PHSUBD128);
+
+	ftype = build_function_type_list(V8HI_type_node, V8HI_type_node, V8HI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_phsubsw128", ftype, IX86_BUILTIN_PHSUBSW128);
+
+	ftype = build_function_type_list(V4HI_type_node, V4HI_type_node, V4HI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_phsubw", ftype, IX86_BUILTIN_PHSUBW);
+
+	ftype = build_function_type_list(V2SI_type_node, V2SI_type_node, V2SI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_phsubd", ftype, IX86_BUILTIN_PHSUBD);
+
+	ftype = build_function_type_list(V4HI_type_node, V4HI_type_node, V4HI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_phsubsw", ftype, IX86_BUILTIN_PHSUBSW);
 
   /* Access to the vec_init patterns.  */
   ftype = build_function_type_list (V2SI_type_node, integer_type_node,

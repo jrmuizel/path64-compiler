@@ -4991,8 +4991,44 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
    	case GSBI_IX86_BUILTIN_POPCNTQ:
 	  *iopc = INTRN_POPCNTQ;  
 	  break;
+    case GSBI_IX86_BUILTIN_PHADDW128:
+      *iopc = INTRN_PHADDW128;
+      break;
+    case GSBI_IX86_BUILTIN_PHADDD128:
+      *iopc = INTRN_PHADDD128;
+      break;
+    case GSBI_IX86_BUILTIN_PHADDSW128:
+      *iopc = INTRN_PHADDSW128;
+      break;
+    case GSBI_IX86_BUILTIN_PHADDW:
+      *iopc = INTRN_PHADDW;
+      break;
+    case GSBI_IX86_BUILTIN_PHADDD:
+      *iopc = INTRN_PHADDD;
+      break;
+    case GSBI_IX86_BUILTIN_PHADDSW:
+      *iopc = INTRN_PHADDSW;
+      break;
     case GSBI_IX86_BUILTIN_PAND128:
       *iopc = INTRN_PAND128;
+      break;
+    case GSBI_IX86_BUILTIN_PHSUBW128:
+      *iopc = INTRN_PHSUBW128;
+      break;
+    case GSBI_IX86_BUILTIN_PHSUBD128:
+      *iopc = INTRN_PHSUBD128;
+      break;
+    case GSBI_IX86_BUILTIN_PHSUBSW128:
+      *iopc = INTRN_PHSUBSW128;
+      break;
+    case GSBI_IX86_BUILTIN_PHSUBW:
+      *iopc = INTRN_PHSUBW;
+      break;
+    case GSBI_IX86_BUILTIN_PHSUBD:
+      *iopc = INTRN_PHSUBD;
+      break;
+    case GSBI_IX86_BUILTIN_PHSUBSW:
+      *iopc = INTRN_PHSUBSW;
       break;
     case GSBI_IX86_BUILTIN_PANDN128:
       *iopc = INTRN_PANDN128;
