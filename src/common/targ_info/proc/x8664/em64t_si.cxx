@@ -1548,6 +1548,10 @@ Instruction_Group("sse4.1 blend",
 				 TOP_pmaddubsw,
 				 TOP_pmulhrsw128,
 				 TOP_pmulhrsw,
+				 TOP_palignr128,
+				 TOP_palignr,
+				 TOP_pshufb128,
+				 TOP_pshufb,
                     TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(2);

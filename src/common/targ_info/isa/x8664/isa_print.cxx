@@ -573,6 +573,8 @@ main()
 				 TOP_pmaddubsw,
 				 TOP_pmulhrsw128,
 				 TOP_pmulhrsw,
+				 TOP_pshufb128,
+				 TOP_pshufb,
 			   TOP_UNDEFINED );
 
   /* One result / two operands in x86 style w/ mem operand */
@@ -1238,6 +1240,8 @@ main()
 	TOP_insertps,
   TOP_pcmpistri,
   TOP_pcmpistrm,
+	TOP_palignr128,
+  TOP_palignr,
   TOP_UNDEFINED );
 
   /* No result / three operands */

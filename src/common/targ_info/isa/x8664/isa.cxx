@@ -1307,6 +1307,10 @@ main ()
 					"pmaddubsw",
 					"pmulhrsw128",
 					"pmulhrsw",
+					"palignr128",
+					"palignr",
+					"pshufb128",
+					"pshufb",
 
 	      /* instructions to support Open MP. */
 	      "lock_add32",

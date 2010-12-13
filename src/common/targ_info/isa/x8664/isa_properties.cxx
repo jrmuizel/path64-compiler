@@ -3342,6 +3342,8 @@ main()
 				TOP_pabsb,
 				TOP_pabsw,
 				TOP_pabsd,
+				 TOP_palignr128,
+				 TOP_palignr,
 		     TOP_UNDEFINED );
 
   /* ==== x86 style instructions ==== */
@@ -3942,6 +3944,8 @@ main()
 				 TOP_pmaddubsw,
 				 TOP_pmulhrsw128,
 				 TOP_pmulhrsw,
+				 TOP_pshufb128,
+				 TOP_pshufb,
                      TOP_UNDEFINED );
 
   /* ===== Predicated instructions ====== */

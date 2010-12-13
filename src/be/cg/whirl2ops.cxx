@@ -3867,6 +3867,8 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
 		case INTRN_PINSRD:
 		case INTRN_PINSRQ:
 		case INTRN_INSERTPS:
+    case INTRN_PALIGNR128:
+    case INTRN_PALIGNR:
 		{
       //return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 1);
 			WN *wn_para2 = WN_kid0 (WN_kid2 (expr));

@@ -5060,6 +5060,18 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
 		case GSBI_IX86_BUILTIN_PMULHRSW:
 			*iopc = INTRN_PMULHRSW;
 			break;
+		case GSBI_IX86_BUILTIN_PALIGNR128:
+			*iopc = INTRN_PALIGNR128;
+			break;
+		case GSBI_IX86_BUILTIN_PALIGNR:
+			*iopc = INTRN_PALIGNR;
+			break;
+		case GSBI_IX86_BUILTIN_PSHUFB128:
+			*iopc = INTRN_PSHUFB128;
+			break;
+		case GSBI_IX86_BUILTIN_PSHUFB:
+			*iopc = INTRN_PSHUFB;
+			break;
     case GSBI_IX86_BUILTIN_PANDN128:
       *iopc = INTRN_PANDN128;
       break;

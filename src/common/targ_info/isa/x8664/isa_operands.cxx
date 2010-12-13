@@ -2457,6 +2457,7 @@ main()
 						TOP_phsubsw128,
 						TOP_pmaddubsw128,
 						TOP_pmulhrsw128,
+						TOP_pshufb128,
 						TOP_UNDEFINED);
 	Result(0,fp128);
 	Operand(0, fp128, opnd1);
@@ -2471,6 +2472,7 @@ main()
 						TOP_phsubsw,
 						TOP_pmaddubsw,
 						TOP_pmulhrsw,
+						TOP_pshufb,
 						TOP_UNDEFINED);
 	Result(0,mmx);
 	Operand(0, mmx, opnd1);
@@ -2491,6 +2493,22 @@ main()
 						TOP_UNDEFINED);
 	Result(0,mmx);
 	Operand(0, mmx, opnd1);
+
+	Instruction_Group("ssse3 two fp128 and a const",
+						TOP_palignr128,
+						TOP_UNDEFINED);
+	Result(0, fp128);
+	Operand(0, fp128, opnd1);
+	Operand(1, fp128, opnd2);
+	Operand(2, simm8, opnd3);
+	
+	Instruction_Group("ssse3 two mmx and a const",
+						TOP_palignr,
+						TOP_UNDEFINED);
+	Result(0, mmx);
+	Operand(0, mmx, opnd1);
+	Operand(1, mmx, opnd2);
+	Operand(2, simm8, opnd3);
 
   Instruction_Group("qi vector compare explicit length retruns index",
 		    TOP_pcmpestri,
