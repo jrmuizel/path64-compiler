@@ -2455,6 +2455,8 @@ main()
 						TOP_phsubw128,
 						TOP_phsubd128,
 						TOP_phsubsw128,
+						TOP_pmaddubsw128,
+						TOP_pmulhrsw128,
 						TOP_UNDEFINED);
 	Result(0,fp128);
 	Operand(0, fp128, opnd1);
@@ -2467,6 +2469,8 @@ main()
 						TOP_phsubw,
 						TOP_phsubd,
 						TOP_phsubsw,
+						TOP_pmaddubsw,
+						TOP_pmulhrsw,
 						TOP_UNDEFINED);
 	Result(0,mmx);
 	Operand(0, mmx, opnd1);

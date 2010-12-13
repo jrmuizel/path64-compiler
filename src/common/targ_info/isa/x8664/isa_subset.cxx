@@ -1288,6 +1288,10 @@ main()
 						TOP_pabsb,
 						TOP_pabsw,
 						TOP_pabsd,
+				 TOP_pmaddubsw128,
+				 TOP_pmaddubsw,
+				 TOP_pmulhrsw128,
+				 TOP_pmulhrsw,
 		    TOP_UNDEFINED);
 
   ISA_Subset_End();

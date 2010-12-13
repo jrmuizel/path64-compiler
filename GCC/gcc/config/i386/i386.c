@@ -15963,6 +15963,23 @@ ix86_init_mmx_sse_builtins (void)
 
 	def_builtin (MASK_SSSE3, "__builtin_ia32_pabsd", ftype, IX86_BUILTIN_PABSD);
 
+
+	ftype = build_function_type_list(V8HI_type_node, V16QI_type_node, V16QI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_pmaddubsw128", ftype, IX86_BUILTIN_PMADDUBSW128);
+
+	ftype = build_function_type_list(V4HI_type_node, V8QI_type_node, V8QI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_pmaddubsw", ftype, IX86_BUILTIN_PMADDUBSW);
+
+	ftype = build_function_type_list(V8HI_type_node, V8HI_type_node, V8HI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_pmulhrsw128", ftype, IX86_BUILTIN_PMULHRSW128);
+
+	ftype = build_function_type_list(V4HI_type_node, V4HI_type_node, V4HI_type_node, NULL_TREE);
+
+	def_builtin (MASK_SSSE3, "__builtin_ia32_pmulhrsw", ftype, IX86_BUILTIN_PMULHRSW);
+
   /* Access to the vec_init patterns.  */
   ftype = build_function_type_list (V2SI_type_node, integer_type_node,
 				    integer_type_node, NULL_TREE);

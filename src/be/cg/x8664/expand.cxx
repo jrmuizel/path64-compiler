@@ -7863,6 +7863,18 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
   case INTRN_PABSD:
     Build_OP(TOP_pabsd, result, op0, ops );
     break;
+  case INTRN_PMADDUBSW128:
+    Build_OP(TOP_pmaddubsw128, result, op0, op1, ops );
+    break;
+  case INTRN_PMADDUBSW:
+    Build_OP(TOP_pmaddubsw, result, op0, op1, ops );
+    break;
+  case INTRN_PMULHRSW128:
+    Build_OP(TOP_pmulhrsw128, result, op0, op1, ops );
+    break;
+  case INTRN_PMULHRSW:
+    Build_OP(TOP_pmulhrsw, result, op0, op1, ops );
+    break;
   case INTRN_PAND128:
     Build_OP(TOP_pand128, result, op0, op1, ops );
     break;

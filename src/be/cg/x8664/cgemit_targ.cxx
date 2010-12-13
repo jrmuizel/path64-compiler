@@ -1540,6 +1540,10 @@ static void Init_OP_Name()
 	OP_Name[TOP_pabsb] = "pabsb";
 	OP_Name[TOP_pabsw] = "pabsw";
 	OP_Name[TOP_pabsd] = "pabsd";
+	OP_Name[TOP_pmaddubsw128] = "pmaddubsw";
+	OP_Name[TOP_pmaddubsw] = "pmaddubsw";
+	OP_Name[TOP_pmulhrsw128] = "pmulhrsw";
+	OP_Name[TOP_pmulhrsw] = "pmulhrsw";
 
 //**********************************************************
 // For barcelona (bug 13108)

@@ -569,6 +569,10 @@ main()
 				 TOP_phsubw,
 				 TOP_phsubd,
 				 TOP_phsubsw,
+				 TOP_pmaddubsw128,
+				 TOP_pmaddubsw,
+				 TOP_pmulhrsw128,
+				 TOP_pmulhrsw,
 			   TOP_UNDEFINED );
 
   /* One result / two operands in x86 style w/ mem operand */

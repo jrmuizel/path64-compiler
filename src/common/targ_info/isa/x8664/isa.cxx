@@ -1303,6 +1303,10 @@ main ()
 					"pabsb",
 					"pabsw",
 					"pabsd",
+					"pmaddubsw128",
+					"pmaddubsw",
+					"pmulhrsw128",
+					"pmulhrsw",
 
 	      /* instructions to support Open MP. */
 	      "lock_add32",
