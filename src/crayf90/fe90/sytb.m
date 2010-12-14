@@ -4713,7 +4713,7 @@
 # define CN_INT_TO_C(IDX)       mpp_cn_int_to_c(IDX)
 # else
 # define CN_INT_TO_C(IDX) 						       \
-	 F_INT_TO_C(&CN_CONST(IDX), TYP_LINEAR(CN_TYPE_IDX(IDX)))
+	 f_int_to_cval(&CN_CONST(IDX), TYP_LINEAR(CN_TYPE_IDX(IDX)))
 # endif
 
 # define C_INT_TO_CN(TYPE_IDX, CONST)					       \

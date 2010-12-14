@@ -3531,22 +3531,26 @@ long64	f_int_to_cval(long_type		*the_constant,
 		      int	 	 lin_type)
 
 {
-   int		i;
-   long_type    input[MAX_WORDS_FOR_INTEGER];
+   int		i, ok;
+   value_type	loc_value;
+   value_type	loc_result;
    long64	result;
+   int		result_len;
 
 
    TRACE (Func_Entry, "f_int_to_cval", NULL);
 
-   for (i = 0; i < num_host_wds[TYP_LINEAR(lin_type)]; i++) {
-       input[i] = the_constant[i];
-   }
+   result_len = num_host_wds[Integer_8] * sizeof(long);
+   pack_argument(lin_type, &loc_value, (char *)the_constant);
 
-   SHIFT_ARITH_ARG(input, lin_type);
-
-   i = AR_convert_int_to_host_sint64((AR_HOST_SINT64 *) &result,
-                                 (const AR_DATA *) &input,
+   i = AR_convert_int_to_host_sint64((AR_HOST_SINT64 *) &loc_result,
+                                 (const AR_DATA *) &loc_value,
                                  (const AR_TYPE *) &linear_to_arith[lin_type]);
+   /* This should perhaps generate an internal error instead? */
+   ARITH_ERROR_RESULT_TEST(i, Integer_8, ok, stmt_start_line, stmt_start_col);
+
+   unpack_result(Integer_8, loc_result.v);
+   memcpy(&result, loc_result.v, result_len);
 
    TRACE (Func_Exit, "f_int_to_cval", NULL);
 
