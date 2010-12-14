@@ -261,8 +261,10 @@ ar_convert_to_integral
 	/* At this point, regardless of the original operand type, we've converted
 	   it to a 64-bit int.  Now, check for overflow, negative. */
 
-	/* If resulttype is AR_INT_SIZE_8 then make sure result has data in the correct places. */
-	if (AR_CLASS (*opndtype) != AR_CLASS_INT && AR_INT_SIZE(*resulttype) == AR_INT_SIZE_8) {
+	/* If resulttype is AR_INT_SIZE_8 then make sure result has data
+	 * in the correct places when being converted from type FLOAT.
+	 * */
+	if (AR_CLASS (*opndtype) == AR_CLASS_FLOAT && AR_INT_SIZE(*resulttype) == AR_INT_SIZE_8) {
 	    ar_data tmp_res;
 	    tmp_res.ar_i64 = result->ar_i64;
 	    result->ar_i8.part4 = tmp_res.ar_i64.part4 >> 8;
