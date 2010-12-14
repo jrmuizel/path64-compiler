@@ -16889,7 +16889,7 @@ void    trim_intrinsic(opnd_type     *result_opnd,
       /* folder_driver returns a CN_Tbl_Idx in result for Trim */
 
       OPND_FLD((*result_opnd)) = CN_Tbl_Idx;
-      OPND_IDX((*result_opnd)) = (int) F_INT_TO_C(folded_const, type_idx);
+      OPND_IDX((*result_opnd)) = (int) folded_const[0];
       OPND_LINE_NUM((*result_opnd)) = IR_LINE_NUM(ir_idx);
       OPND_COL_NUM((*result_opnd)) = IR_COL_NUM(ir_idx);
 
@@ -17743,7 +17743,7 @@ void    repeat_intrinsic(opnd_type     *result_opnd,
                      Repeat_Opr)) {
 
       OPND_FLD((*result_opnd)) = CN_Tbl_Idx;
-      OPND_IDX((*result_opnd)) = (int) F_INT_TO_C(folded_const, type_idx);
+      OPND_IDX((*result_opnd)) = (int) folded_const[0];
       OPND_LINE_NUM((*result_opnd)) = IR_LINE_NUM(ir_idx);
       OPND_COL_NUM((*result_opnd)) = IR_COL_NUM(ir_idx);
 
