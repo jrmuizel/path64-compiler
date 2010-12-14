@@ -261,6 +261,13 @@ ar_convert_to_integral
 	/* At this point, regardless of the original operand type, we've converted
 	   it to a 64-bit int.  Now, check for overflow, negative. */
 
+	/* If resulttype is AR_INT_SIZE_8 then make sure result has data in the correct places. */
+	if (AR_CLASS (*opndtype) != AR_CLASS_INT && AR_INT_SIZE(*resulttype) == AR_INT_SIZE_8) {
+	    ar_data tmp_res;
+	    tmp_res.ar_i64 = result->ar_i64;
+	    result->ar_i8.part4 = tmp_res.ar_i64.part4 >> 8;
+	    result->ar_i8.part5 = tmp_res.ar_i64.part4 & 0xFF;
+	}
 	if(!(status & AR_STAT_SEMIVALID))
 		switch (*resulttype) {
                 case AR_Int_8_S:
