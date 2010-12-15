@@ -468,5 +468,10 @@ add_special_options (void)
 		flag = add_string_option(O_LIST_, "source=off:notes=off");
 		prepend_option_seen (flag);
 	}
+        /*make the -VHO:rotate default */
+	if(olevel >= 2) {
+	    flag = add_string_option(O_VHO_, "rotate");
+            prepend_option_seen (flag);   
+	}
 }
 
