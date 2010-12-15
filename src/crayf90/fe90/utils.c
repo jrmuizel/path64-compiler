@@ -504,6 +504,35 @@ boolean get_temp_file(char       *open_status,
    return(result);
 
 }  /* get_temp_file */
+
+int is_skip_improper_match_omp(char * name_str){
+  if(strcmp(name_str,"OMP_SET_NUM_THREADS") == 0 ||
+  	  strcmp(name_str,"OMP_GET_NUM_THREADS") == 0 ||
+  	  strcmp(name_str,"OMP_GET_MAX_THREADS") == 0 ||
+      strcmp(name_str,"OMP_GET_THREAD_NUM") == 0 ||
+  	  strcmp(name_str,"OMP_GET_NUM_PROCS") == 0 ||
+  	  strcmp(name_str,"OMP_SET_DYNAMIC") == 0 ||
+  	  strcmp(name_str,"OMP_GET_DYNAMIC") == 0 ||
+  	  strcmp(name_str,"OMP_IN_PARALLEL") == 0 ||
+  	  strcmp(name_str,"OMP_SET_NESTED") == 0 ||
+  	  strcmp(name_str,"OMP_GET_NESTED") == 0 ||
+  	  strcmp(name_str,"OMP_INIT_LOCK") == 0 ||
+  	  strcmp(name_str,"OMP_INIT_NEST_LOCK") == 0 ||
+  	  strcmp(name_str,"OMP_SET_LOCK") == 0 ||
+  	  strcmp(name_str,"OMP_SET_NEST_LOCK") == 0 ||
+  	  strcmp(name_str,"OMP_UNSET_LOCK") == 0 ||
+  	  strcmp(name_str,"OMP_UNSET_NEST_LOCK") == 0 ||
+  	  strcmp(name_str,"OMP_TEST_LOCK") == 0 ||
+  	  strcmp(name_str,"OMP_TEST_NEST_LOCK") == 0 ||
+  	  strcmp(name_str,"OMP_GET_WTIME") == 0 ||
+  	  strcmp(name_str,"OMP_GET_WTICK") == 0 )
+		return 1;
+
+	return 0;
+	
+	
+		
+}
 
 /******************************************************************************\
 |*                                                                            *|
@@ -3842,7 +3871,10 @@ int srch_name_tbl(char		       *name_str,
    }  /* switch (id_len) */
 
 EXIT:
-
+   if(tst_val == 0){
+	 if(is_skip_improper_match_omp(name_str))
+		tst_val = -1;
+	}
    *name_idx = idx;
 
    TRACE (Func_Exit, "srch_name_tbl", NULL);
