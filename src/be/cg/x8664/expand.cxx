@@ -2241,6 +2241,26 @@ void Expand_Logical_Or (TN *dest, TN *src1, TN *src2, VARIANT variant, OPS *ops)
 
 void Expand_Binary_Complement (TN *dest, TN *src, TYPE_ID mtype, OPS *ops)
 {
+   BOOL is_vector_type;
+   is_vector_type = (mtype == MTYPE_V16I1 || 
+		    mtype == MTYPE_V16I2 ||
+		    mtype == MTYPE_V16I4 ||
+		    mtype == MTYPE_V16I8 ||
+		    mtype == MTYPE_M8I1 ||
+		    mtype == MTYPE_M8I2 ||
+		    mtype == MTYPE_M8I4);
+
+  if(is_vector_type) {
+    TCON then = Host_To_Targ (MTYPE_U8, 0xffffffffffffffff);
+    TCON now  = Create_Simd_Const (MTYPE_V16I8, then);
+    ST *sym = New_Const_Sym (Enter_tcon (now), Be_Type_Tbl(TCON_ty(now)));
+    Allocate_Object(sym);
+    TN *sym_tn = Gen_Symbol_TN(sym, 0, 0);
+    TN *tmp = Build_TN_Like(dest);
+    Exp_Load(MTYPE_V16I8, MTYPE_V16I8, tmp, TN_var(sym_tn), TN_offset(sym_tn),ops, 0);
+    Build_OP (TOP_xor128v64, dest, tmp, src, ops);
+    return ;
+  }
   if( OP_NEED_PAIR(mtype) )
     Expand_Split_UOP( OPR_BNOT, mtype, dest, src, ops );
   else

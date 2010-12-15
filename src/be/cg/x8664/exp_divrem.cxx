@@ -54,8 +54,10 @@
 #include "op.h"
 #include "op_map.h"
 #include "cgexp.h"
-
+#include "symtab.h"
+#include "data_layout.h"
 #include "whirl2ops.h"
+#include "stblock.h"
 
 #define RESET_COND_DEF_LAST(ops) Set_OP_cond_def_kind(OPS_last(ops),OP_ALWAYS_UNC_DEF)
 
@@ -817,6 +819,107 @@ Extend_Dividend (TN **dividend_lo, TN **dividend_hi, TYPE_ID mtype,
     Build_OP(TOP_ldc32, *dividend_hi, Gen_Literal_TN(0, 4), ops);
   }
 }
+      
+TN* Expand_V16i2_Divide(TN *result, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops)
+{
+	
+  FmtAssert(mtype == MTYPE_V16I2, ("NYI"));
+  if (mtype == MTYPE_V16I2) {
+   
+	TN *tmp1 = Build_TN_Like(result);
+    TN *tmp2 = Build_TN_Like(result);
+	TN *tmp3 = Build_TN_Like(result);
+    TN *tmp4 = Build_TN_Like(result);
+	TN *tmp5 = Build_TN_Like(result);
+    TN *tmp6 = Build_TN_Like(result);
+    TN *tmp7 = Build_TN_Like(result);
+    
+
+	TN *base_tn = NULL;
+    TN *base_tn_new = NULL;
+    TN *ofst_tn = NULL;
+    TN *ofst_tn_new = NULL;
+    TN *xmm_cw_tn;
+	
+	const TY_IDX ty = MTYPE_To_TY( MTYPE_U4);
+    ST *st = Gen_Temp_Symbol( ty, "xmm_cw" );
+    Allocate_Temp_To_Memory( st );
+
+	ST *base_sym = NULL;
+    INT64 base_ofst = 0;
+	
+    Base_Symbol_And_Offset_For_Addressing( st, 0, &base_sym, &base_ofst );
+    FmtAssert( base_sym == SP_Sym || base_sym == FP_Sym,
+	       ("Expand_V16i2_Divide: base symbol is at stack") );
+
+    base_tn = base_sym == SP_Sym ? SP_TN : FP_TN;
+    ofst_tn = Gen_Literal_TN( base_ofst, 4 );
+
+    // store the xmm control-word.
+    Build_OP( TOP_stmxcsr, base_tn, ofst_tn, ops );
+    Set_OP_volatile( OPS_last(ops) );
+
+    // load the value into a 32-bit int register.
+    TN *xmm_cw = Gen_Register_TN( ISA_REGISTER_CLASS_integer, 4 );
+    Exp_Load( MTYPE_U4, TY_mtype(ty), xmm_cw, st, 0, ops, 0 );
+
+    // perform an or to mask out that bit.
+    TN *new_xmm_cw = Build_TN_Like( xmm_cw );
+    Expand_Binary_Or(new_xmm_cw, xmm_cw, Gen_Literal_TN(8192,4), MTYPE_U4, ops);
+
+    // store new_x87_cw back to a new memory location.
+    ST *st_new = Gen_Temp_Symbol( ty, "xmm_cw_new" );
+    Allocate_Temp_To_Memory( st_new );
+    ST *base_sym_new = NULL;
+    INT64 base_ofst_new = 0;
+
+    Base_Symbol_And_Offset_For_Addressing(st_new, 0, &base_sym_new,
+					  &base_ofst_new);
+
+    base_tn_new = base_sym_new == SP_Sym ? SP_TN : FP_TN;
+    ofst_tn_new = Gen_Literal_TN( base_ofst_new, 4 );
+
+    Exp_Store( TY_mtype(ty), new_xmm_cw, st_new, 0, ops, 0 );
+
+    // load the new xmm_cw
+    Build_OP( TOP_ldmxcsr, base_tn_new, ofst_tn_new, ops );
+    Set_OP_volatile( OPS_last(ops) );
+
+    TN *xmm_value16 = Build_TN_Like(result);
+	TN *mmx_value16 = Gen_Register_TN(ISA_REGISTER_CLASS_mmx,8);
+    TN *simm16 = Gen_Literal_TN(16, 1);
+
+    TN *reg = Expand_Immediate_Into_Register(simm16, true,ops);
+
+	Build_OP(TOP_movi64_2m, mmx_value16, reg, ops);
+	Build_OP(TOP_movq2dq, xmm_value16, mmx_value16, ops);	
+
+    Exp_COPY( tmp1, src1, ops, 0);
+    Exp_COPY( tmp2, src2, ops, 0);
+	
+    Build_OP(TOP_psrld, src1, src1, xmm_value16, ops);
+    Build_OP(TOP_psrld, src2, src2, xmm_value16, ops);
+		
+    Build_OP(TOP_pslld, tmp1, tmp1, xmm_value16, ops);
+    Build_OP(TOP_pslld, tmp2, tmp2, xmm_value16, ops);
+    Build_OP(TOP_psrld, tmp1, tmp1, xmm_value16, ops);
+    Build_OP(TOP_psrld, tmp2, tmp2, xmm_value16, ops);
+
+    Build_OP(TOP_cvtdq2ps, tmp3, src1, ops);
+    Build_OP(TOP_cvtdq2ps, tmp4, src2, ops);
+    Build_OP(TOP_cvtdq2ps, tmp5, tmp1, ops);
+    Build_OP(TOP_cvtdq2ps, tmp6, tmp2, ops);
+
+    Build_OP(TOP_fdiv128v32, tmp3, tmp3, tmp4, ops);
+    Build_OP(TOP_fdiv128v32, tmp5, tmp5, tmp6, ops);
+
+    Build_OP(TOP_cvtps2dq, tmp7, tmp3, ops);
+    Build_OP(TOP_cvtps2dq, result, tmp5, ops);
+    Build_OP(TOP_pslld, tmp7, tmp7, xmm_value16, ops);
+    Build_OP(TOP_or128v16, result, result, tmp7, ops);
+  }
+  return result;
+}
 
 TN *
 Expand_Divide (TN *result, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops)
@@ -852,6 +955,12 @@ Expand_Divide (TN *result, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops)
   case MTYPE_I8: top = TOP_idiv64; break;
   case MTYPE_U4: top = TOP_div32; break;
   case MTYPE_U8: top = TOP_div64; break;
+  case MTYPE_V16I1:
+  case MTYPE_V16I8:
+  case MTYPE_V16I4:
+	   FmtAssert (FALSE, ("Handle this ")); break; 	
+  case MTYPE_V16I2:
+     return Expand_V16i2_Divide(result, src1, src2, mtype, ops);
   default: FmtAssert (FALSE, ("Handle this")); break;
   }
   TN *result1 = Build_TN_Like(result);
