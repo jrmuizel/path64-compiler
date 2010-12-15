@@ -5520,6 +5520,49 @@ static void Expand_Complex_Divide( OPCODE opcode, TN *result,
 
   return;
 }
+static void Expand_M8i1_Multiply( OPCODE opcode, TN *result, 
+				     TN *src1, TN *src2, OPS *ops )
+{
+  FmtAssert(opcode == OPC_M8I1MPY, ("NYI"));
+  if (opcode == OPC_M8I1MPY) {
+	  
+	TN *tmp1 = Build_TN_Like(result);
+	TN *tmp2 = Build_TN_Like(result);
+	TN *tmp3 = Build_TN_Like(result);
+	TN *tmp4 = Build_TN_Like(result);
+	TN *tmp5 = Build_TN_Like(result);
+	TN *tmp6 = Build_TN_Like(result);
+	TN *tmp7 = Build_TN_Like(result);
+	
+    TN *mmx_value8 = Build_TN_Like(result);
+    TN *simm8 = Gen_Literal_TN(8, 1);
+
+    TN *reg = Expand_Immediate_Into_Register(simm8, true,ops);
+	
+	Build_OP(TOP_movi64_2m, mmx_value8, reg, ops);	
+	
+    Exp_COPY( tmp1, src1, ops, 0);
+    Exp_COPY( result, src2, ops, 0);
+	
+    Build_OP(TOP_psrlw_mmx, src1, src1, mmx_value8, ops);
+    Build_OP(TOP_psrlw_mmx, src2, src2, mmx_value8, ops);
+	
+    Build_OP(TOP_psllw_mmx, tmp1, tmp1, mmx_value8, ops);
+    Build_OP(TOP_psllw_mmx, result, result, mmx_value8, ops);
+    Build_OP(TOP_psrlw_mmx, tmp1, tmp1, mmx_value8, ops);
+    Build_OP(TOP_psrlw_mmx, result, result, mmx_value8, ops);
+
+    Build_OP(TOP_pmullw, src1, src1, src2, ops);
+    Build_OP(TOP_pmullw, result, result, tmp1, ops);
+    
+	Build_OP(TOP_psllw_mmx, src1, src1, mmx_value8, ops);
+	Build_OP(TOP_por_mmx, result, result, src1, ops);	
+  }
+  return;
+}
+	
+  
+  
 
 void Expand_Flop( OPCODE opcode, TN *result, TN *src1, TN *src2, TN *src3, OPS *ops )
 {
@@ -5650,7 +5693,9 @@ void Expand_Flop( OPCODE opcode, TN *result, TN *src1, TN *src2, TN *src3, OPS *
   case OPC_V16C4DIV:
     Expand_Complex_Divide(opcode, result, src1, src2, ops);
     return;
-
+  case OPC_M8I1MPY:
+	Expand_M8i1_Multiply(opcode,result,src1,src2,ops);
+	return;
   default:
     #pragma mips_frequency_hint NEVER
     FmtAssert(FALSE, ("Unimplemented flop: %s", OPCODE_name(opcode)));
