@@ -761,6 +761,19 @@ static void set_executable_dir (void) {
      filesystem, and relocate the phase and library
      directories based on where the executable is found. */
   dir = get_executable_dir ();
+  if(strcmp(dir, ".") == 0) {
+    // driver is placed in current directory
+
+    char *phase_path = target_phase_path ();
+
+    substitute_phase_dirs (LIBPATH, "../", "/lib/" PSC_FULL_VERSION);
+    substitute_phase_dirs (PHASEPATH, "", phase_path);
+    substitute_phase_dirs ("/usr/include", "../", "/include");
+
+    free(phase_path);
+    return;
+  }
+
   if (dir == NULL) return;	
 
   /* If installed in a bin directory; get phases and stuff from

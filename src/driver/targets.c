@@ -62,11 +62,18 @@ const char *target_abi() {
 
 char *target_library_path() {
     char *lib_path = NULL;
-	char *root_prefix = directory_path(get_executable_dir());
+    int free_flag = 1;
+    char *root_prefix = directory_path(get_executable_dir());
+    if(root_prefix == NULL) {
+        root_prefix = "../";
+        free_flag = 0;
+    }
 
     asprintf(&lib_path, "%s%s/%s/%s",
              root_prefix, LIBPATH, target_architecture(), target_abi());
-    free(root_prefix);
+    
+    if(free_flag)
+        free(root_prefix);
 
     return lib_path;
 }
@@ -74,9 +81,18 @@ char *target_library_path() {
 
 char *target_phase_path() {
     char *lib_path = NULL;
+    int free_flag = 1;
     char *root_prefix = directory_path(get_executable_dir());
+
+    if(root_prefix == NULL) {
+        root_prefix = "../";
+        free_flag = 0;
+    }
+
     asprintf(&lib_path, "%s%s/%s", root_prefix, LIBPATH, target_architecture());
-    free(root_prefix);
+    
+    if(free_flag)
+        free(root_prefix);
 
     return lib_path;
 }
