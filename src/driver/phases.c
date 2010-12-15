@@ -1927,6 +1927,18 @@ static void
 add_final_ld_args (string_list_t *args)
 {
 	char *temp;
+
+    if(ipa == TRUE) {
+        if(option_was_seen(O_static_libgcc)) {
+            add_arg(args, "-static-libgcc");
+        }
+
+        // don't add standard libraries and paths to standard libraries if
+        // ipa is enabled because all standard libraries will be added by
+        // driver
+        return;
+    }
+
 #ifdef TARG_X8664 
     if (is_target_arch_X8664()) {
 #if 0 // Bug 4813 - acml_mv is not in yet.
@@ -1950,13 +1962,13 @@ add_final_ld_args (string_list_t *args)
             add_library(args, "pscrt");
             }
 
-            if( ! option_was_seen(O_nostartfiles) && ipa != TRUE) add_crtend(args);
+            if( ! option_was_seen(O_nostartfiles)) add_crtend(args);
             return;
         }
 #ifdef PATH64_ENABLE_PSCRUNTIME
         if(source_lang == L_CC &&
            !option_was_seen(O_nodefaultlibs) &&
-               !option_was_seen(O_nostdlib) &&
+           !option_was_seen(O_nostdlib) &&
            !option_was_seen(O_nostdlib__)) {
         
             // STL library
@@ -1973,11 +1985,7 @@ add_final_ld_args (string_list_t *args)
         // static libc should be grouped with libgcc and libeh
         // because there is loop in dependencies between these libs
         if (option_was_seen(O_static) || option_was_seen(O__static)) {
-            if(ipa != TRUE){
-                add_arg(args, "--start-group");
-            } else {
-                add_arg(args, "-Wl,--start-group");
-            }
+            add_arg(args, "--start-group");
         }
 
         if(option_was_seen(O_static_libgcc)) {
@@ -2001,11 +2009,7 @@ add_final_ld_args (string_list_t *args)
         add_library(args, "c");
 
         if (option_was_seen(O_static) || option_was_seen(O__static)) {
-            if(ipa != TRUE){
-                add_arg(args, "--end-group");
-            } else {
-                add_arg(args, "-Wl,--end-group");
-            }
+            add_arg(args, "--end-group");
         }
 #else
         if(source_lang == L_CC) {
@@ -2014,11 +2018,7 @@ add_final_ld_args (string_list_t *args)
         }
 
         if (option_was_seen(O_static) || option_was_seen(O__static)){
-	        if(ipa != TRUE){
-                    add_arg(args, "--start-group");
-	        } else {
-	            add_arg(args, "-Wl,--start-group");
-	        }
+            add_arg(args, "--start-group");
 
             add_arg(args, "-L%s", current_target->libgcc_path);
             add_library(args, "gcc");
@@ -2028,11 +2028,7 @@ add_final_ld_args (string_list_t *args)
 
             add_library(args, "c");  /* the above libs should be grouped together */
 
-            if(ipa != TRUE){
-                add_arg(args, "--end-group");
-            } else {
-                add_arg(args, "-Wl,--end-group");
-            }
+            add_arg(args, "--end-group");
              
             if(invoked_lang == L_CC){
                 add_arg(args, "-L%s", current_target->libsupcpp_path);
@@ -2043,7 +2039,7 @@ add_final_ld_args (string_list_t *args)
     }
 #endif
 	
-    if( ! option_was_seen(O_nostartfiles) && ipa != TRUE) add_crtend(args);
+    if( ! option_was_seen(O_nostartfiles)) add_crtend(args);
 
 	if (shared != RELOCATABLE) {
 	    if (invoked_lang == L_f90) {
@@ -2134,20 +2130,6 @@ add_final_ld_args (string_list_t *args)
 #endif 
 
 
-	if (ipa == TRUE) {
-#ifndef PATH64_ENABLE_PSCRUNTIME
-	    	if (invoked_lang == L_CC) {
-                add_arg(args, "-L%s", current_target->libstdcpp_path);
-                add_library(args, "stdc++");
-	    	}
-		if (invoked_lang == L_CC &&
-		    !option_was_seen(O_static) &&
-		    !option_was_seen(O__static)) {
-            add_arg(args, "-L%s", current_target->libgcc_s_path);
-            add_library(args, "gcc_s");
-		}
-#endif
-	}
 	if (shared != RELOCATABLE) {
 	  if ( fbuiltin != 0 && ! option_was_seen(O_fbootstrap_hack) ) {
 	    /* Once -fbuiltin is used, some functions, i.e., __sincos, are only
