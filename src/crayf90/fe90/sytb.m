@@ -4699,9 +4699,9 @@
 \******************************************************************************/
 
 
-# if defined(_TARGET64) && defined(_HOST64)
+# if 0 && defined(_TARGET64) && defined(_HOST64)
 # define F_INT_TO_C(ARRAY,LIN_TYPE)	*(ARRAY)
-# elif (defined(_TARGET_OS_IRIX) || defined(_TARGET_OS_LINUX) || defined(_TARGET_OS_DARWIN))
+# elif 0 && (defined(_TARGET_OS_IRIX) || defined(_TARGET_OS_LINUX) || defined(_TARGET_OS_DARWIN))
 # define F_INT_TO_C(ARRAY,LIN_TYPE)					       \
                         ((LIN_TYPE == Integer_8 || LIN_TYPE == Typeless_8)     \
                                    ? *((long64 *) (ARRAY)):(long64) *(ARRAY))
