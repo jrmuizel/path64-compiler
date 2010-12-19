@@ -2477,7 +2477,7 @@ Create_ST_For_Tree (gs_t decl_node)
 	  if (gs_tree_code(value) == GS_STRING_CST) {
 	    const char *visibility = gs_tree_string_pointer(value);
 	    if (!strcmp (visibility, "internal"))
-	      eclass = EXPORT_LOCAL_INTERNAL;
+	      eclass = EXPORT_INTERNAL;
 	    else if (!strcmp (visibility, "hidden"))
 	      eclass = EXPORT_HIDDEN;
 	    else if (!strcmp (visibility, "protected"))
