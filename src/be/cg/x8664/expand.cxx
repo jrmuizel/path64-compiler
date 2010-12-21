@@ -3019,8 +3019,7 @@ Expand_Float_To_Int (ROUND_MODE rm, TN *dest, TN *src, TYPE_ID imtype, TYPE_ID f
   } else if (fmtype == MTYPE_F8) {
     if( MTYPE_bit_size(imtype) == 64 ){
       if( MTYPE_is_signed(imtype) )
-	//top = TOP_cvttsd2siq;
-		top=TOP_movx2g64;//might lose some bit from "xmm" to "int64"
+	top = TOP_cvttsd2siq;
       else {
 	/* For "double" to "unsigned long long" conversion, operation
 	   cvttsd2siq will lose some accuracy.  (bug#2867)
