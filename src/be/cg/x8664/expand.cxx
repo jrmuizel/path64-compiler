@@ -6276,12 +6276,7 @@ Exp_COPY (TN *tgt_tn, TN *src_tn, OPS *ops, BOOL copy_pair)
 
     } else if( tgt_rc == ISA_REGISTER_CLASS_integer &&
 	       src_rc == ISA_REGISTER_CLASS_float ){
-      // Exposed by Bug 955
-      Expand_Float_To_Int_Trunc( tgt_tn, src_tn, 
-				 TN_size(tgt_tn) == 8 ? MTYPE_I8 : MTYPE_I4,
-				 TN_size(src_tn) == 8 ? MTYPE_F8 : MTYPE_F4,
-				 ops );
-
+      Build_OP (TOP_movx2g64, tgt_tn, src_tn, ops);
     } else if( src_rc == ISA_REGISTER_CLASS_integer &&
 	       tgt_rc == ISA_REGISTER_CLASS_mmx) {
       // mov int64 to mmx
