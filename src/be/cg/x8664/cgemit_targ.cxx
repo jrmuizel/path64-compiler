@@ -1272,6 +1272,8 @@ static void Init_OP_Name()
   OP_Name[TOP_subx128v64] = "psubq";
   OP_Name[TOP_subxx128v64] = "psubq";
   OP_Name[TOP_subxxx128v64] = "psubq";
+  OP_Name[TOP_psubsb128] = "psubsb";
+  OP_Name[TOP_psubsw128] = "psubsw";
   OP_Name[TOP_fsub128v32] = "subps";
   OP_Name[TOP_fsubx128v32] = "subps";
   OP_Name[TOP_fsubxx128v32] = "subps";

@@ -840,6 +840,8 @@ main()
 		    TOP_subx128v64,
 		    TOP_subxx128v64,
 		    TOP_subxxx128v64,
+		    TOP_psubsb128,
+		    TOP_psubsw128,
 		    TOP_fsub128v32,
 		    TOP_fsubx128v32,
 		    TOP_fsubxx128v32,

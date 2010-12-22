@@ -1307,6 +1307,8 @@ static const struct {
   INTRN_PADDSB128,              "INTRN_PADDSB128",
   INTRN_PADDSW128,              "INTRN_PADDSW128",
   INTRN_ADDSUBPS,               "INTRN_ADDSUBPS",
+  INTRN_PSUBSB128,              "INTRN_PSUBSB128",
+  INTRN_PSUBSW128,              "INTRN_PSUBSW128",
   INTRN_LDDQU,                  "INTRN_LDDQU",
   INTRN_MOVSHDUP,               "INTRN_MOVSHDUP",
   INTRN_MOVSLDUP,               "INTRN_MOVSLDUP",

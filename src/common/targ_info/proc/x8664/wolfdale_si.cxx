@@ -1738,6 +1738,8 @@ int main (int argc, char *argv[])
                     TOP_paddsw128,
                     TOP_paddq,
                     TOP_sub128v64,
+		    TOP_psubsb128,
+		    TOP_psubsw128,
                     TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(2);

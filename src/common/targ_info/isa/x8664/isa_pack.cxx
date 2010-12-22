@@ -649,6 +649,8 @@ main()
 		    TOP_subx128v64,	0x000000ff,
 		    TOP_subxx128v64,	0x000000ff,
 		    TOP_subxxx128v64,	0x000000ff,
+		    TOP_psubsb128,	0x000000ff,
+		    TOP_psubsw128,	0x000000ff,
 		    TOP_fsub128v32,	0x000000ff,
 		    TOP_fsubx128v32,	0x000000ff,
 		    TOP_fsubxx128v32,	0x000000ff,

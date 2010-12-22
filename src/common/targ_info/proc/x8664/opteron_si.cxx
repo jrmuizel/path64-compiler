@@ -1668,6 +1668,8 @@ int main (int argc, char *argv[])
 		    TOP_sub128v16,
 		    TOP_sub128v32,
 		    TOP_sub128v64,		    
+		    TOP_psubsb128,
+		    TOP_psubsw128,
 		    TOP_sub64v8,
 		    TOP_sub64v16,
 		    TOP_sub64v32,

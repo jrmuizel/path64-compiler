@@ -325,6 +325,8 @@ main()
 		     TOP_sub128v16,
 		     TOP_sub128v32,
 		     TOP_sub128v64,
+		     TOP_psubsb128,
+		     TOP_psubsw128,
 		     TOP_fsub128v32,
 		     TOP_fsub128v64,
 		     TOP_fhsub128v32,

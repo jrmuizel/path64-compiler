@@ -6713,8 +6713,14 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
   case INTRN_PSUBSB:
     Build_OP( TOP_psubsb, result, op0, op1, ops );
     break;
+  case INTRN_PSUBSB128:
+    Build_OP( TOP_psubsb128, result, op0, op1, ops );
+    break;
   case INTRN_PSUBSW:
     Build_OP( TOP_psubsw, result, op0, op1, ops );
+    break;
+  case INTRN_PSUBSW128:
+    Build_OP( TOP_psubsw128, result, op0, op1, ops );
     break;
   case INTRN_PADDUSB:
     Build_OP( TOP_paddusb, result, op0, op1, ops );

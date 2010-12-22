@@ -556,6 +556,8 @@ main ()
 	      "subx128v64",
 	      "subxx128v64",
 	      "subxxx128v64",
+	      "psubsb128",
+	      "psubsw128",
 	      "sub64v8",
 	      "sub64v16",
 	      "sub64v32",
