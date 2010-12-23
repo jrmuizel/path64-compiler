@@ -18471,7 +18471,8 @@ void    sizeof_intrinsic(opnd_type     *result_opnd,
    res_exp_desc->will_fold_later = FALSE;
 
    if (arg_info_list[info_idx1].ed.rank == 0 &&
-       arg_info_list[info_idx1].ed.type != Character) {
+       arg_info_list[info_idx1].ed.type != Character &&
+       arg_info_list[info_idx1].ed.type != Structure) {
 
       num = storage_bit_size_tbl[arg_info_list[info_idx1].ed.linear_type] / 
             CHAR_BIT;

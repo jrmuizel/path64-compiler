@@ -25,6 +25,7 @@
 #include <liberrno.h>
 #include <stddef.h>
 #include <cray/dopevec.h>
+#include "arraydefs.h"
 
 /*
  *      SIZE    Returns the extent of an array along a specified dimension
@@ -156,6 +157,94 @@ _SIZE_8   (DopeVectorType * source,
 		/* Return extent */
 		iresult = source->dimension[dim].extent;
 	}
+
+        return(iresult);
+}
+
+/*
+ *       SIZEOF_4  Returns the size of an array in bytes,
+ *                 If source pointer/allocatable array is not 
+ *                 associated/allocated, return an error.
+ */
+
+_f_int4
+_SIZEOF_4   (DopeVectorType * source)
+{
+        _f_int4 iresult;
+        int rank;
+        int loopj;
+        int type_len;
+
+        /* If source is a pointer/allocatable array, it must be
+         * associated/allocated. */
+
+        if (source->p_or_a  &&  !source->assoc)
+                _lerror (_LELVL_ABORT, FENMPTAR, "SIZEOF");
+
+        rank = source->n_dim;
+        iresult = 1;
+
+        /* Retrieve product of extents */
+
+        for (loopj = 0; loopj < rank; loopj++)
+            iresult = iresult * source->dimension[loopj].extent;
+
+        /* if type is Derived type */
+        if (source->type_lens.type == DVTYPE_DERIVEDWORD || source->type_lens.type == DVTYPE_DERIVEDBYTE) {
+           type_len = source->base_addr.a.el_len;
+        }
+        /* if type is character */
+        else if (source->type_lens.type == DVTYPE_ASCII) {
+            type_len = source->type_lens.int_len * source->base_addr.a.el_len;
+        } else {
+            type_len = source->type_lens.int_len;
+        }
+
+
+        /* convert iresult to bytes */
+
+        iresult = (iresult * type_len)/BITS_PER_BYTE;
+        return(iresult);
+}
+
+/*
+ *       SIZEOF_8  Returns the size of an array in bytes,
+ *                 If source pointer/allocatable array is not 
+ *                 associated/allocated, return an error.
+ */
+
+_f_int8
+_SIZEOF_8   (DopeVectorType * source)
+{
+        _f_int8 iresult;
+        int rank;
+        int loopj;
+        int type_len;
+
+        /* If source is a pointer/allocatable array, it must be
+         * associated/allocated. */
+        if (source->p_or_a  &&  !source->assoc)
+                _lerror (_LELVL_ABORT, FENMPTAR, "SIZEOF");
+
+        rank = source->n_dim;
+        iresult = 1;
+        /* Retrieve product of extents */
+        for (loopj = 0; loopj < rank; loopj++)
+            iresult = iresult * source->dimension[loopj].extent;
+
+        /* if type is Derived type */
+        if (source->type_lens.type == DVTYPE_DERIVEDWORD || source->type_lens.type == DVTYPE_DERIVEDBYTE) {
+           type_len = source->base_addr.a.el_len;
+        }
+        /* if type is character */
+        else if (source->type_lens.type == DVTYPE_ASCII) {
+            type_len = source->type_lens.int_len * source->base_addr.a.el_len;
+        } else {
+            type_len = source->type_lens.int_len;
+        }
+
+        /* convert iresult to bytes */
+        iresult = (iresult * type_len)/BITS_PER_BYTE;
 
         return(iresult);
 }
