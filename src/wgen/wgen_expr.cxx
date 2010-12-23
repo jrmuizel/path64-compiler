@@ -4929,6 +4929,9 @@ WN *WGEN_Expand_Cond_Expr(gs_t exp,
   WN *wn2 = NULL;
   TY_IDX ty_idx, ty_idx1, ty_idx2;
 
+  if (gs_tree_has_location(exp) == gs_true)
+    lineno = gs_expr_lineno(exp);
+
   if (gs_tree_operand(exp, 1) != NULL &&
       gs_tree_type(gs_tree_operand(exp, 1)) != NULL)
     ty_idx1 = Get_TY (gs_tree_type(gs_tree_operand (exp, 1)));
