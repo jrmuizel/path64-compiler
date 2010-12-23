@@ -4891,38 +4891,9 @@ static void     final_equivalence_semantics(void)
             if (TYP_TYPE(type_idx) == Structure) {
 
                if (ATT_NUMERIC_CPNT(TYP_IDX(type_idx)) && new_offset_ne_zero) {
+		  int offset_ok = 0;
 
-# if defined(_TARGET_PACK_HALF_WORD_TYPES)
-
-                  t_idx = ATD_TYPE_IDX(SN_ATTR_IDX(
-                                       ATT_FIRST_CPNT_IDX(attr_idx)));
-
-                  if (PACK_HALF_WORD_TEST_CONDITION(t_idx)) {
-                     C_TO_F_INT(result.constant,
-                                TARGET_BITS_PER_WORD/2,
-                                CG_INTEGER_DEFAULT_TYPE);
-                     result.fld		= NO_Tbl_Idx;
-                     result.type_idx	= CG_INTEGER_DEFAULT_TYPE;
-                     left.fld		= EQ_OFFSET_FLD(item);
-                     left.idx		= EQ_OFFSET_IDX(item);
-
-                     size_offset_binary_calc(&left, &result, Mod_Opr, &result);
-   
-                     size_offset_logical_calc(&zero, &result, Ne_Opr, &result);
-
-                     if (THIS_IS_TRUE(result.constant, result.type_idx)) {
-                        PRINTMSG(EQ_LINE_NUM(item), 527, Error,
-                                EQ_COLUMN_NUM(item),
-                                AT_OBJ_NAME_PTR(attr_idx));
-                     }
-                  }
-                  else {
-                     PRINTMSG(EQ_LINE_NUM(item), 527, Error,
-                              EQ_COLUMN_NUM(item),
-                              AT_OBJ_NAME_PTR(attr_idx));
-                  }
-
-# elif defined(_INTEGER_1_AND_2)
+#if defined(_INTEGER_1_AND_2)
 
                   if (on_off_flags.integer_1_and_2) {
 
@@ -4944,7 +4915,7 @@ static void     final_equivalence_semantics(void)
                            PRINTMSG(EQ_LINE_NUM(item), 527, Error,
                                    EQ_COLUMN_NUM(item),
                                    AT_OBJ_NAME_PTR(attr_idx));
-                        }
+                        } else offset_ok = 1;
                      }
                      else if (PACK_16_BIT_TEST_CONDITION(t_idx)) {
                         C_TO_F_INT(result.constant, 16,CG_INTEGER_DEFAULT_TYPE);
@@ -4960,53 +4931,47 @@ static void     final_equivalence_semantics(void)
                            PRINTMSG(EQ_LINE_NUM(item), 527, Error,
                                    EQ_COLUMN_NUM(item),
                                    AT_OBJ_NAME_PTR(attr_idx));
-                        }
-                     }
-                     else {
-                        PRINTMSG(EQ_LINE_NUM(item), 527, Error,
-                                 EQ_COLUMN_NUM(item),
-                                 AT_OBJ_NAME_PTR(attr_idx));
+                        } else offset_ok = 1;
                      }
                   }
-# else
-                  PRINTMSG(EQ_LINE_NUM(item), 527, Error,
+#endif
+# if defined(_TARGET_PACK_HALF_WORD_TYPES)
+
+                  t_idx = ATD_TYPE_IDX(SN_ATTR_IDX(
+                                       ATT_FIRST_CPNT_IDX(attr_idx)));
+
+                  if (!offset_ok && PACK_HALF_WORD_TEST_CONDITION(t_idx)) {
+                     C_TO_F_INT(result.constant,
+                                CN_INT_TO_C(CN_INTEGER_OFFSET_BASE_IDX)/2,
+                                CG_INTEGER_DEFAULT_TYPE);
+                     result.fld		= NO_Tbl_Idx;
+                     result.type_idx	= CG_INTEGER_DEFAULT_TYPE;
+                     left.fld		= EQ_OFFSET_FLD(item);
+                     left.idx		= EQ_OFFSET_IDX(item);
+
+                     size_offset_binary_calc(&left, &result, Mod_Opr, &result);
+   
+                     size_offset_logical_calc(&zero, &result, Ne_Opr, &result);
+
+                     if (THIS_IS_TRUE(result.constant, result.type_idx)) {
+                        PRINTMSG(EQ_LINE_NUM(item), 527, Error,
+                                EQ_COLUMN_NUM(item),
+                                AT_OBJ_NAME_PTR(attr_idx));
+                     } else offset_ok = 1;
+                  }
+#endif
+
+		  if (!offset_ok) {
+		      PRINTMSG(EQ_LINE_NUM(item), 527, Error,
                           EQ_COLUMN_NUM(item),
                           AT_OBJ_NAME_PTR(attr_idx));
-# endif
+		  }
                }
             }
             else if (new_offset_ne_zero) {
+		int offset_ok = 0;
 
-# if defined(_TARGET_PACK_HALF_WORD_TYPES)
-
-               if (PACK_HALF_WORD_TEST_CONDITION(type_idx)) {
-
-                  C_TO_F_INT(result.constant,
-                             TARGET_BITS_PER_WORD/2,
-                             CG_INTEGER_DEFAULT_TYPE);
-                  result.fld		= NO_Tbl_Idx;
-                  result.type_idx	= CG_INTEGER_DEFAULT_TYPE;
-                  left.fld		= EQ_OFFSET_FLD(item);
-                  left.idx		= EQ_OFFSET_IDX(item);
-                  zero.fld		= CN_Tbl_Idx;
-                  zero.idx		= CN_INTEGER_ZERO_IDX;
-
-                  size_offset_binary_calc(&left, &result, Mod_Opr, &result);
-   
-                  size_offset_logical_calc(&zero, &result, Ne_Opr, &result);
-
-                  if (THIS_IS_TRUE(result.constant, result.type_idx)) {
-                     PRINTMSG(EQ_LINE_NUM(item), 527, Error,
-                             EQ_COLUMN_NUM(item),
-                             AT_OBJ_NAME_PTR(attr_idx));
-                  }
-               }
-               else {
-                  PRINTMSG(EQ_LINE_NUM(item), 527, Error,
-                           EQ_COLUMN_NUM(item),
-                           AT_OBJ_NAME_PTR(attr_idx));
-               }
-# elif defined(_INTEGER_1_AND_2)
+# if defined(_INTEGER_1_AND_2)
 
                if (on_off_flags.integer_1_and_2) {
 
@@ -5027,7 +4992,7 @@ static void     final_equivalence_semantics(void)
                         PRINTMSG(EQ_LINE_NUM(item), 527, Error,
                                 EQ_COLUMN_NUM(item),
                                 AT_OBJ_NAME_PTR(attr_idx));
-                     }
+                     } else offset_ok = 1;
                   }
                   else if (PACK_16_BIT_TEST_CONDITION(type_idx)) {
                      C_TO_F_INT(result.constant, 16, CG_INTEGER_DEFAULT_TYPE);
@@ -5046,20 +5011,41 @@ static void     final_equivalence_semantics(void)
                         PRINTMSG(EQ_LINE_NUM(item), 527, Error,
                                 EQ_COLUMN_NUM(item),
                                 AT_OBJ_NAME_PTR(attr_idx));
-                     }
-                  }
-                  else {
-                     PRINTMSG(EQ_LINE_NUM(item), 527, Error,
-                              EQ_COLUMN_NUM(item),
-                              AT_OBJ_NAME_PTR(attr_idx));
+                     } else offset_ok = 1;
                   }
                }
-# else
-               PRINTMSG(EQ_LINE_NUM(item), 527, Error,
+#endif
+# if defined(_TARGET_PACK_HALF_WORD_TYPES)
+
+               if (!offset_ok && PACK_HALF_WORD_TEST_CONDITION(type_idx)) {
+
+                  C_TO_F_INT(result.constant,
+                             CN_INT_TO_C(CN_INTEGER_OFFSET_BASE_IDX)/2,
+                             CG_INTEGER_DEFAULT_TYPE);
+                  result.fld		= NO_Tbl_Idx;
+                  result.type_idx	= CG_INTEGER_DEFAULT_TYPE;
+                  left.fld		= EQ_OFFSET_FLD(item);
+                  left.idx		= EQ_OFFSET_IDX(item);
+                  zero.fld		= CN_Tbl_Idx;
+                  zero.idx		= CN_INTEGER_ZERO_IDX;
+
+                  size_offset_binary_calc(&left, &result, Mod_Opr, &result);
+   
+                  size_offset_logical_calc(&zero, &result, Ne_Opr, &result);
+
+                  if (THIS_IS_TRUE(result.constant, result.type_idx)) {
+                     PRINTMSG(EQ_LINE_NUM(item), 527, Error,
+                             EQ_COLUMN_NUM(item),
+                             AT_OBJ_NAME_PTR(attr_idx));
+                  } else offset_ok = 1;
+               }
+#endif
+	       if (!offset_ok) {
+		   PRINTMSG(EQ_LINE_NUM(item), 527, Error,
                         EQ_COLUMN_NUM(item),
                         AT_OBJ_NAME_PTR(attr_idx));
-# endif
-            }
+	       }
+	    }
          }
 
 # if defined(_TARGET_DOUBLE_ALIGN)
@@ -5070,7 +5056,7 @@ static void     final_equivalence_semantics(void)
          }
          else if (DALIGN_TEST_CONDITION(type_idx)) {
             C_TO_F_INT(result.constant,
-                       TARGET_BITS_PER_WORD * 2,
+                       CN_INT_TO_C(CN_INTEGER_OFFSET_BASE_IDX) * 2,
                        CG_INTEGER_DEFAULT_TYPE);
             result.fld		= NO_Tbl_Idx;
             result.type_idx	= CG_INTEGER_DEFAULT_TYPE;
