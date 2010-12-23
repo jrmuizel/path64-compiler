@@ -362,6 +362,10 @@ int main (int argc, char *argv[])
 		     TOP_lock_cmpxchg64,
 		     TOP_pextrw64,
 		     TOP_pextrw128,
+				 TOP_pextrb,
+				 TOP_pextrd,
+				 TOP_pextrq,
+				 TOP_extractps,
              TOP_xchgx8,
              TOP_xchgx16,
              TOP_xchgx32,
@@ -666,6 +670,7 @@ int main (int argc, char *argv[])
 		     TOP_movsd,
 		     TOP_movss,
 		     TOP_movdq,
+				 TOP_movntdqa,
 		     TOP_movapd,
 		     TOP_movaps,
 		     TOP_movhlps,
@@ -1075,6 +1080,18 @@ int main (int argc, char *argv[])
 		     TOP_cvttss2siq,
 		     TOP_cvttsd2siq,
 		     TOP_pmovmskb128,
+				 TOP_pmovsxbw,
+				 TOP_pmovsxbd,
+				 TOP_pmovsxbq,
+				 TOP_pmovsxwd,
+				 TOP_pmovsxwq,
+				 TOP_pmovsxdq,
+				 TOP_pmovzxbw,
+				 TOP_pmovzxbd,
+				 TOP_pmovzxbq,
+				 TOP_pmovzxwd,
+				 TOP_pmovzxwq,
+				 TOP_pmovzxdq,
 		     TOP_UNDEFINED );
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(2);
@@ -1306,6 +1323,8 @@ int main (int argc, char *argv[])
 		    TOP_fmin128v32,
 		    TOP_fmin128v64,
 		    TOP_psadbw,
+		    TOP_psadbw128,
+				TOP_mpsadbw,
 		    TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(3);
@@ -1325,6 +1344,15 @@ int main (int argc, char *argv[])
 		    TOP_fmaxxxx128v64,
 		    TOP_fminxxx128v32,
 		    TOP_fminxxx128v64,
+				TOP_pmaxsb,
+				TOP_pmaxsd,
+				TOP_pmaxuw,
+				TOP_pmaxud,
+				TOP_pminsb,
+				TOP_pminsd,
+				TOP_pminuw,
+				TOP_pminud,
+				TOP_phminposuw,
 		    TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(5);
@@ -1429,6 +1457,7 @@ int main (int argc, char *argv[])
 		    TOP_pandn_mmx,
             TOP_pand128,
             TOP_pandn128,
+						TOP_por128,
 		    TOP_por_mmx,
 		    TOP_pxor_mmx,
 		    TOP_UNDEFINED);
@@ -1480,10 +1509,22 @@ int main (int argc, char *argv[])
   Any_Result_Available_Time(3);
   Resource_Requirement(res_issue, 0);
   Resource_Requirement(res_fadd, 0);
-
-  Instruction_Group("sse parallel compares",
+  
+	
+	Instruction_Group("sse parallel compares",
 		    TOP_cmpeqps,
 		    TOP_cmpeqpd,
+		    TOP_cmpltpd,
+				TOP_cmplepd,
+				TOP_cmpgtpd,
+				TOP_cmpgepd,
+				TOP_cmpneqpd,
+				TOP_cmpnltpd,
+				TOP_cmpnlepd,
+				TOP_cmpngtpd,
+				TOP_cmpngepd,
+				TOP_cmpordpd,
+				TOP_cmpunordpd,
 		    TOP_cmpltps,
 		    TOP_cmpleps,
 		    TOP_cmpunordps,
@@ -1491,10 +1532,46 @@ int main (int argc, char *argv[])
 		    TOP_cmpnltps,
 		    TOP_cmpnleps,
 		    TOP_cmpordps,
+				TOP_dppd,
+				TOP_dpps,
+				 		TOP_pcmpeqq,
             TOP_pcmpistri,
             TOP_pcmpistrm,
             TOP_pcmpestri,
             TOP_pcmpestrm,
+						TOP_pcmpgtq,
+						TOP_crc32b,
+						TOP_crc32w,
+						TOP_crc32l,
+						TOP_crc32q,
+			 TOP_popcntl,
+			 TOP_popcntq,
+						TOP_phaddw128,
+						TOP_phaddd128,
+						TOP_phaddsw128,
+						TOP_phaddw,
+						TOP_phaddd,
+						TOP_phaddsw,
+						TOP_phsubw128,
+						TOP_phsubd128,
+						TOP_phsubsw128,
+						TOP_phsubw,
+						TOP_phsubd,
+						TOP_phsubsw,
+				TOP_pabsb128,
+				TOP_pabsw128,
+				TOP_pabsd128,
+				TOP_pabsb,
+				TOP_pabsw,
+				TOP_pabsd,
+				 TOP_pmaddubsw128,
+				 TOP_pmaddubsw,
+				 TOP_pmulhrsw128,
+				 TOP_pmulhrsw,
+				 TOP_palignr128,
+				 TOP_palignr,
+				 TOP_pshufb128,
+				 TOP_pshufb,
                     TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(2);
@@ -1571,6 +1648,10 @@ int main (int argc, char *argv[])
 		    TOP_add128v16,
 		    TOP_add128v32,
 		    TOP_add128v64,
+				TOP_paddusb128,
+				TOP_paddusw128,
+            TOP_paddsb128,
+            TOP_paddsw128,
 		    TOP_add64v8,
 		    TOP_add64v16,
 		    TOP_add64v32,
@@ -1587,6 +1668,8 @@ int main (int argc, char *argv[])
 		    TOP_sub128v16,
 		    TOP_sub128v32,
 		    TOP_sub128v64,		    
+		    TOP_psubsb128,
+		    TOP_psubsw128,
 		    TOP_sub64v8,
 		    TOP_sub64v16,
 		    TOP_sub64v32,
@@ -1610,8 +1693,22 @@ int main (int argc, char *argv[])
 		    TOP_packsswb,
 		    TOP_packssdw,
 		    TOP_packuswb,
+				TOP_packsswb128,
+				TOP_packssdw128,
+				TOP_packuswb128,
+				TOP_punpckhbw128,
+				TOP_punpckhwd128,
+				TOP_punpckhdq128,
+				TOP_punpckhqdq,
+				TOP_punpcklbw128,
+				TOP_punpcklwd128,
+				TOP_punpckldq128,
+				TOP_punpcklqdq,
+         TOP_packusdw,                   
 		    TOP_pavgb,
 		    TOP_pavgw,
+		    TOP_pavgb128,
+		    TOP_pavgw128,
 		    TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(2);
@@ -1630,6 +1727,9 @@ int main (int argc, char *argv[])
 		    TOP_pmullw,
 		    TOP_pmulhw,
 		    TOP_pmulhuw,
+		    TOP_pmulhuw128,
+				TOP_pmuldq,
+				TOP_pmulld,
 		    TOP_pmaddwd,
 		    TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
@@ -1866,6 +1966,12 @@ int main (int argc, char *argv[])
   Resource_Requirement(res_fmul, 0);
   Resource_Requirement(res_fstore, 0);
 
+	Instruction_Group("clflush",
+	        TOP_clflush,
+					        TOP_UNDEFINED);
+	  Resource_Requirement(res_issue, 0);
+		  Resource_Requirement(res_alu, 0);
+
   Instruction_Group("mov-int-2-mmx",
                     TOP_movi32_2m,
                     TOP_movi64_2m,
@@ -1928,6 +2034,32 @@ int main (int argc, char *argv[])
   Any_Result_Available_Time(5);
   Resource_Requirement(res_issue, 0);
 
+	Instruction_Group("sse4.1 blend",
+	        TOP_pblendw,
+	        TOP_blendpd,
+	        TOP_blendps,
+	        TOP_pblendvb,
+	        TOP_blendvpd,
+	        TOP_blendvps,
+						TOP_roundpd,
+						TOP_roundsd,
+						TOP_roundps,
+						TOP_roundss,
+						TOP_ptest,
+					        TOP_UNDEFINED);
+	  Any_Operand_Access_Time(0);
+		  Any_Result_Available_Time(2);
+			  Resource_Requirement(res_issue, 0);
+  
+	Instruction_Group("SSE4.1 insert",
+										TOP_insertps,
+										TOP_pinsrb,
+										TOP_pinsrd,
+										TOP_pinsrq,
+                    TOP_UNDEFINED);
+  Any_Operand_Access_Time(0);
+  Any_Result_Available_Time(5);
+  Resource_Requirement(res_issue, 0);
 
   Instruction_Group("dummy",
 		    TOP_asm,

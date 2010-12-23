@@ -492,17 +492,39 @@ Expand_Store (TYPE_ID mtype, TN *src, TN *base, TN *ofst, OPS *ops)
     return;
   }
 
-  if (!TN_has_value(ofst) || ISA_LC_Value_In_Class(TN_value(ofst), LC_simm32)){
-    if( base != NULL )
-      Build_OP (top, src, base, ofst, ops);
-    else
-      Build_OP (top, src, ofst, ops);
+  if(top == TOP_store64_fsse && 
+  	TN_register_class(src) == ISA_REGISTER_CLASS_integer){
 
-  } else {
-    if( base != NULL )
-      Build_OP(top, src, base, Gen_Literal_TN(TN_value(ofst), 4), ops);
-    else
-      Build_OP(top, src, Gen_Literal_TN(TN_value(ofst), 4), ops);
+	TN *mtn = Gen_Register_TN(ISA_REGISTER_CLASS_float,8);
+	Build_OP(TOP_movg2x64, mtn, src, ops);
+
+  	if (!TN_has_value(ofst) || ISA_LC_Value_In_Class(TN_value(ofst), LC_simm32)){
+  	  if( base != NULL )
+  	    Build_OP (top, mtn, base, ofst, ops);
+  	  else
+  	    Build_OP (top, mtn, ofst, ops);
+
+  	} else {
+   	 if( base != NULL )
+   	   Build_OP(top, mtn, base, Gen_Literal_TN(TN_value(ofst), 4), ops);
+   	 else
+    	  Build_OP(top, mtn, Gen_Literal_TN(TN_value(ofst), 4), ops);
+  	}
+  }
+  else
+  {
+  	if (!TN_has_value(ofst) || ISA_LC_Value_In_Class(TN_value(ofst), LC_simm32)){
+  	  if( base != NULL )
+  	    Build_OP (top, src, base, ofst, ops);
+  	  else
+  	    Build_OP (top, src, ofst, ops);
+
+  	} else {
+   	 if( base != NULL )
+   	   Build_OP(top, src, base, Gen_Literal_TN(TN_value(ofst), 4), ops);
+   	 else
+    	  Build_OP(top, src, Gen_Literal_TN(TN_value(ofst), 4), ops);
+  	}
   }
 }
 

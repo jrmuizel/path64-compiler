@@ -694,6 +694,7 @@ static void Init_OP_Name()
   OP_Name[TOP_addxx128v8] = "paddb";
   OP_Name[TOP_addxxx128v8] = "paddb";
   OP_Name[TOP_mul128v16] = "pmullw";
+	OP_Name[TOP_pmulhuw128] = "pmulhuw";
   OP_Name[TOP_add128v16] = "paddw";
   OP_Name[TOP_addx128v16] = "paddw";
   OP_Name[TOP_addxx128v16] = "paddw";
@@ -703,6 +704,10 @@ static void Init_OP_Name()
   OP_Name[TOP_addxx128v32] = "paddd";
   OP_Name[TOP_addxxx128v32] = "paddd";
   OP_Name[TOP_add128v64] = "paddq";
+	OP_Name[TOP_paddusb128] = "paddusb";
+	OP_Name[TOP_paddusw128] = "paddusw";
+  OP_Name[TOP_paddsb128] = "paddsb";
+  OP_Name[TOP_paddsw128] = "paddsw";
   OP_Name[TOP_addx128v64] = "paddq";
   OP_Name[TOP_addxx128v64] = "paddq";
   OP_Name[TOP_addxxx128v64] = "paddq";
@@ -730,11 +735,18 @@ static void Init_OP_Name()
   OP_Name[TOP_fhaddx128v64] = "haddpd";
   OP_Name[TOP_fhaddxx128v64] = "haddpd";
   OP_Name[TOP_fhaddxxx128v64] = "haddpd";
+  OP_Name[TOP_fhsub128v32] = "hsubps";
+  OP_Name[TOP_fhsubx128v32] = "hsubps";
+  OP_Name[TOP_fhsubxx128v32] = "hsubps";
+  OP_Name[TOP_fhsubxxx128v32] = "hsubps";
+  OP_Name[TOP_fhsub128v64] = "hsubpd";
+  OP_Name[TOP_fhsubx128v64] = "hsubpd";
+  OP_Name[TOP_fhsubxx128v64] = "hsubpd";
+  OP_Name[TOP_fhsubxxx128v64] = "hsubpd";
   OP_Name[TOP_fsub128v32] = "hsubps";
   OP_Name[TOP_fsubx128v32] = "hsubps";
   OP_Name[TOP_fsubxx128v32] = "hsubps";
   OP_Name[TOP_fsubxxx128v32] = "hsubps";
-  OP_Name[TOP_fsub128v64] = "hsubpd";
   OP_Name[TOP_fsubx128v64] = "hsubpd";
   OP_Name[TOP_fsubxx128v64] = "hsubpd";
   OP_Name[TOP_fsubxxx128v64] = "hsubpd";
@@ -750,6 +762,20 @@ static void Init_OP_Name()
   OP_Name[TOP_fmovsldupxxx] = "movsldup";
   OP_Name[TOP_fmovshdupxxx] = "movshdup";
   OP_Name[TOP_fmovddupxxx] = "movddup";
+	OP_Name[TOP_packsswb128] = "packsswb";
+	OP_Name[TOP_packssdw128] = "packssdw";
+	OP_Name[TOP_packuswb128] = "packuswb";
+	OP_Name[TOP_punpckhbw128] = "punpckhbw";
+	OP_Name[TOP_punpckhwd128] = "punpckhwd";
+	OP_Name[TOP_punpckhdq128] = "punpckhdq";
+	OP_Name[TOP_punpckhqdq] = "punpckhqdq";
+	OP_Name[TOP_punpcklbw128] = "punpcklbw";
+	OP_Name[TOP_punpcklwd128] = "punpcklwd";
+	OP_Name[TOP_punpckldq128] = "punpckldq";
+	OP_Name[TOP_punpcklqdq] = "punpcklqdq";
+  OP_Name[TOP_pavgb128] = "pavgb";
+  OP_Name[TOP_pavgw128] = "pavgw";
+  OP_Name[TOP_psadbw128] = "psadbw";
   OP_Name[TOP_addi32] = "addl";
   OP_Name[TOP_adci32] = "adcl";
   OP_Name[TOP_addi64] = "addq";
@@ -926,14 +952,14 @@ static void Init_OP_Name()
   OP_Name[TOP_maxxx128v16] = "pmaxsw";
   OP_Name[TOP_maxxxx128v8] = "pmaxub";
   OP_Name[TOP_maxxxx128v16] = "pmaxsw";
-  OP_Name[TOP_min128v8] = "pmaxub";
-  OP_Name[TOP_min128v16] = "pmaxsw";
-  OP_Name[TOP_minx128v8] = "pmaxub";
-  OP_Name[TOP_minx128v16] = "pmaxsw";
-  OP_Name[TOP_minxx128v8] = "pmaxub";
-  OP_Name[TOP_minxx128v16] = "pmaxsw";
-  OP_Name[TOP_minxxx128v8] = "pmaxub";
-  OP_Name[TOP_minxxx128v16] = "pmaxsw";
+  OP_Name[TOP_min128v8] = "pminub";
+  OP_Name[TOP_min128v16] = "pminsw";
+  OP_Name[TOP_minx128v8] = "pminub";
+  OP_Name[TOP_minx128v16] = "pminsw";
+  OP_Name[TOP_minxx128v8] = "pminub";
+  OP_Name[TOP_minxx128v16] = "pminsw";
+  OP_Name[TOP_minxxx128v8] = "pminub";
+  OP_Name[TOP_minxxx128v16] = "pminsw";
   OP_Name[TOP_icall]    = "call";
   OP_Name[TOP_icallx]   = "call";
   OP_Name[TOP_icallxx]  = "call";
@@ -1246,6 +1272,8 @@ static void Init_OP_Name()
   OP_Name[TOP_subx128v64] = "psubq";
   OP_Name[TOP_subxx128v64] = "psubq";
   OP_Name[TOP_subxxx128v64] = "psubq";
+  OP_Name[TOP_psubsb128] = "psubsb";
+  OP_Name[TOP_psubsw128] = "psubsw";
   OP_Name[TOP_fsub128v32] = "subps";
   OP_Name[TOP_fsubx128v32] = "subps";
   OP_Name[TOP_fsubxx128v32] = "subps";
@@ -1290,6 +1318,7 @@ static void Init_OP_Name()
   }
   else
     OP_Name[TOP_lddqu_n32] = "lddqu";
+	OP_Name[TOP_lddqu] = "lddqu";
   OP_Name[TOP_stdqu] = "movdqu";
   OP_Name[TOP_stdqu_n32] = "movdqu";
   OP_Name[TOP_ldlps] = "movlps";
@@ -1431,11 +1460,96 @@ static void Init_OP_Name()
   OP_Name[TOP_cvttps2dq_xxx] = "cvttps2dq";
   OP_Name[TOP_cvttpd2dq_xxx] = "cvttpd2dq";
 
+	/* SSE4_1*/
+	OP_Name[TOP_pblendw] = "pblendw";
+	OP_Name[TOP_blendpd] = "blendpd";
+	OP_Name[TOP_blendps] = "blendps";
+	OP_Name[TOP_pblendvb] = "pblendvb";
+	OP_Name[TOP_blendvpd] = "blendvpd";
+	OP_Name[TOP_blendvps] = "blendvps";
+	OP_Name[TOP_roundpd] = "roundpd";
+	OP_Name[TOP_roundsd] = "roundsd";
+	OP_Name[TOP_roundps] = "roundps";
+	OP_Name[TOP_roundss] = "roundss";
+	OP_Name[TOP_pcmpeqq] = "pcmpeqq";
+	OP_Name[TOP_pmovsxbw] = "pmovsxbw";
+	OP_Name[TOP_pmovsxbd] = "pmovsxbd";
+	OP_Name[TOP_pmovsxbq] = "pmovsxbq";
+	OP_Name[TOP_pmovsxwd] = "pmovsxwd";
+	OP_Name[TOP_pmovsxwq] = "pmovsxwq";
+	OP_Name[TOP_pmovsxdq] = "pmovsxdq";
+	OP_Name[TOP_pmovzxbw] = "pmovzxbw";
+	OP_Name[TOP_pmovzxbd] = "pmovzxbd";
+	OP_Name[TOP_pmovzxbq] = "pmovzxbq";
+	OP_Name[TOP_pmovzxwd] = "pmovzxwd";
+	OP_Name[TOP_pmovzxwq] = "pmovzxwq";
+	OP_Name[TOP_pmovzxdq] = "pmovzxdq";
+	OP_Name[TOP_packusdw] = "packusdw";
+	OP_Name[TOP_dppd] = "dppd";
+	OP_Name[TOP_dpps] = "dpps";
+	OP_Name[TOP_mpsadbw] = "mpsadbw";
+	OP_Name[TOP_pmuldq] = "pmuldq";
+	OP_Name[TOP_pmulld] = "pmulld";
+	OP_Name[TOP_pextrb] = "pextrb";
+	OP_Name[TOP_pextrd] = "pextrd";
+	OP_Name[TOP_pextrq] = "pextrq";
+	OP_Name[TOP_extractps] = "extractps";
+	OP_Name[TOP_pinsrb] = "pinsrb";
+	OP_Name[TOP_pinsrd] = "pinsrd";
+	OP_Name[TOP_pinsrq] = "pinsrq";
+	OP_Name[TOP_insertps] = "insertps";
+	OP_Name[TOP_pmaxsb] = "pmaxsb";
+	OP_Name[TOP_pmaxsd] = "pmaxsd";
+	OP_Name[TOP_pmaxuw] = "pmaxuw";
+	OP_Name[TOP_pmaxud] = "pmaxud";
+	OP_Name[TOP_pminsb] = "pminsb";
+	OP_Name[TOP_pminsd] = "pminsd";
+	OP_Name[TOP_pminuw] = "pminuw";
+	OP_Name[TOP_pminud] = "pminud";
+	OP_Name[TOP_phminposuw] = "phminposuw";
+	OP_Name[TOP_movntdqa] = "movntdqa";
+	OP_Name[TOP_ptest] = "ptest";
+
+
   /* SSE4_2 */
   OP_Name[TOP_pcmpistri] = "pcmpistri";
   OP_Name[TOP_pcmpistrm] = "pcmpistrm";
   OP_Name[TOP_pcmpestri] = "pcmpestri";
-  OP_Name[TOP_pcmpestri] = "pcmpestrm";
+  OP_Name[TOP_pcmpestrm] = "pcmpestrm";
+  OP_Name[TOP_crc32b] = "crc32b";
+  OP_Name[TOP_crc32w] = "crc32w";
+  OP_Name[TOP_crc32l] = "crc32l";
+  OP_Name[TOP_crc32q] = "crc32q";
+  OP_Name[TOP_popcntl] = "popcntl";
+  OP_Name[TOP_popcntq] = "popcntq";
+
+	/* SSSE3*/
+	OP_Name[TOP_phaddw128] = "phaddw";
+	OP_Name[TOP_phaddd128] = "phaddd";
+	OP_Name[TOP_phaddsw128] = "phaddsw";
+	OP_Name[TOP_phaddw] = "phaddw";
+	OP_Name[TOP_phaddd] = "phaddd";
+	OP_Name[TOP_phaddsw] = "phaddsw";
+	OP_Name[TOP_phsubw128] = "phsubw";
+	OP_Name[TOP_phsubd128] = "phsubd";
+	OP_Name[TOP_phsubsw128] = "phsubsw";
+	OP_Name[TOP_phsubw] = "phsubw";
+	OP_Name[TOP_phsubd] = "phsubd";
+	OP_Name[TOP_phsubsw] = "phsubsw";
+	OP_Name[TOP_pabsb128] = "pabsb";
+	OP_Name[TOP_pabsw128] = "pabsw";
+	OP_Name[TOP_pabsd128] = "pabsd";
+	OP_Name[TOP_pabsb] = "pabsb";
+	OP_Name[TOP_pabsw] = "pabsw";
+	OP_Name[TOP_pabsd] = "pabsd";
+	OP_Name[TOP_pmaddubsw128] = "pmaddubsw";
+	OP_Name[TOP_pmaddubsw] = "pmaddubsw";
+	OP_Name[TOP_pmulhrsw128] = "pmulhrsw";
+	OP_Name[TOP_pmulhrsw] = "pmulhrsw";
+	OP_Name[TOP_palignr128] = "palignr";
+	OP_Name[TOP_palignr] = "palignr";
+	OP_Name[TOP_pshufb128] = "pshufb";
+	OP_Name[TOP_pshufb] = "pshufb";
 
 //**********************************************************
 // For barcelona (bug 13108)
@@ -1567,6 +1681,7 @@ static void Init_OP_Name()
   OP_Name[TOP_pandn_mmx] = "pandn";
   OP_Name[TOP_pand128] = "pand";
   OP_Name[TOP_pandn128] = "pandn";
+  OP_Name[TOP_por128] = "por";
   OP_Name[TOP_pextrw64] = "pextrw";
   OP_Name[TOP_pextrw128] = "pextrw";
   OP_Name[TOP_pinsrw64] = "pinsrw";

@@ -7672,6 +7672,12 @@ static WN *lower_expr(WN *block, WN *tree, LOWER_ACTIONS actions)
       if( Fast_ANINT_Allowed )
         break;
     }
+
+    if((INTRINSIC)WN_intrinsic(tree) == INTRN_POPCOUNT && Is_Target_SSE4_2()) {
+      // popcount intrinsic can be expanded into popcnt instruction
+      // if sse4.2 is enabled
+      break;
+    }
 #endif
 
 #if defined( KEY) && !defined(TARG_ST)
