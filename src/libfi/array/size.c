@@ -25,7 +25,7 @@
 #include <liberrno.h>
 #include <stddef.h>
 #include <cray/dopevec.h>
-#include "arraydefs.h"
+#include <limits.h>
 
 /*
  *      SIZE    Returns the extent of an array along a specified dimension
@@ -203,7 +203,7 @@ _SIZEOF_4   (DopeVectorType * source)
 
         /* convert iresult to bytes */
 
-        iresult = (iresult * type_len)/BITS_PER_BYTE;
+        iresult = (iresult * type_len)/CHAR_BIT;
         return(iresult);
 }
 
@@ -244,7 +244,7 @@ _SIZEOF_8   (DopeVectorType * source)
         }
 
         /* convert iresult to bytes */
-        iresult = (iresult * type_len)/BITS_PER_BYTE;
+        iresult = (iresult * type_len)/CHAR_BIT;
 
         return(iresult);
 }
