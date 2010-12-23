@@ -1324,6 +1324,11 @@ BITWISE_DCE::Redundant_cvtl(BOOL sign_xtd, INT32 to_bit, INT32 from_bit,
       //      U4U4LDID 72 <1,4,.preg_U4>
       //    U4EXTRACT_BITS <bofst:27 bsize:4>
       //  U4CVTL 8                         
+#ifdef TARG_X8664
+      // special case due to zero-extension to high 32 bits of signed 32-bit int
+      if (dtyp = MTYPE_I4 && to_bit >= 32)
+	return FALSE;
+#endif
       if (opnd->Op_bit_size() <= from_bit) {
 	if (MTYPE_signed(dtyp) == sign_xtd)
 	  return TRUE;
