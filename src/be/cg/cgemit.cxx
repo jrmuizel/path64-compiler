@@ -15599,18 +15599,21 @@ EMT_End_File( void )
 				Em_Get_Section_Index (em_scn[STB_scninfo_idx(sym)].scninfo));
 		}
 		if (Assembly) {
- 			Change_Section_Origin (sym, 0);
-#ifdef KEY
-			// TODO: Handle CG_file_scope_asm_seen
-			fprintf ( Asm_File, "\t%s\t0\n", AS_ALIGN );
-#endif
-			fprintf (Asm_File, "\t%s\t%s\n", AS_GLOBAL,
+            char * sym_print_name = 
 #if defined(BUILD_OS_DARWIN)
 			  underscorify(newname)
 #else /* defined(BUILD_OS_DARWIN) */
 			  newname
 #endif /* defined(BUILD_OS_DARWIN) */
-			  );
+              ;
+
+ 			Change_Section_Origin (sym, 0);
+#ifdef KEY
+			// TODO: Handle CG_file_scope_asm_seen
+			fprintf ( Asm_File, "\t%s\t0\n", AS_ALIGN );
+#endif
+			fprintf (Asm_File, "\t%s\t%s\n", AS_GLOBAL, sym_print_name);
+			fprintf (Asm_File, "\t%s\t%s\n", AS_INTERNAL, sym_print_name);
 			ASM_DIR_STOINTERNAL(newname);
 			fprintf (Asm_File, "%s:\n", newname);
 		}
