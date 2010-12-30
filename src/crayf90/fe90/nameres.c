@@ -307,8 +307,12 @@ boolean	fnd_semantic_err(obj_type	new_obj,
             msg_str = dir_str[Dir_Symmetric];
             goto ISSUE_ERR;
          }
-         else if ((AT_REFERENCED(attr_idx) >= Dcl_Bound_Ref ||
-                  AT_DEFINED(attr_idx)) &&
+	 else if (AT_OBJ_CLASS(attr_idx) == Data_Obj &&
+		  TYP_LINEAR(ATD_TYPE_IDX(attr_idx)) == Proc_Ptr) {
+	     ;
+
+         } else if ((AT_REFERENCED(attr_idx) >= Dcl_Bound_Ref ||
+		  AT_DEFINED(attr_idx)) &&
                   (other_obj_ntry & (1 << Other_Use_Variable))) {
             msg_num = other_msg_num[new_obj][Other_Use_Variable];
             goto ISSUE_ERR;

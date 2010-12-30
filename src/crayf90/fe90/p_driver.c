@@ -1454,7 +1454,7 @@ void parse_prog_unit (void)
                /* A statement must begin with a label, construct name,   */
                /* keyword or identifier.			         */
 
-	       PRINTMSG (LA_CH_LINE, 100, Error, LA_CH_COLUMN);
+		PRINTMSG (LA_CH_LINE, 100, Error, LA_CH_COLUMN);
             }
          }
          else {

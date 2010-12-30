@@ -204,6 +204,7 @@ static	int			 blk_err_msgs[]		= {
 static stmt_type_type		token_to_stmt_type [] = {
 				Assignment_Stmt,      /* Tok_Label	      */
 				Assignment_Stmt,      /* Tok_Id		      */
+				Abstract_Stmt,        /* Tok_Kwd_Abstract     */
 				Allocatable_Stmt,     /* Tok_Kwd_Allocatable  */
 				Allocate_Stmt,	      /* Tok_Kwd_Allocate     */
 				Assign_Stmt,	      /* Tok_Kwd_Assign	      */
@@ -273,6 +274,7 @@ static stmt_type_type		token_to_stmt_type [] = {
 #ifdef KEY /* Bug 5089 */
 				Assignment_Stmt,      /* Tok_Kwd_Nonintrinsic */
 #endif /* KEY Bug 5089 */
+				Assignment_Stmt,      /* Tok_Kwd_Nopass	      */
 				Nullify_Stmt,	      /* Tok_Kwd_Nullify      */
 				Assignment_Stmt,      /* Tok_Kwd_Only	      */
 				Open_Stmt,	      /* Tok_Kwd_Open	      */
@@ -285,7 +287,7 @@ static stmt_type_type		token_to_stmt_type [] = {
 				Assignment_Stmt,      /* Tok_Kwd_Precision    */
 				Print_Stmt,	      /* Tok_Kwd_Print	      */
 				Private_Stmt,	      /* Tok_Kwd_Private      */
-				Assignment_Stmt,      /* Tok_Kwd_Procedure    */
+				Type_Decl_Stmt,       /* Tok_Kwd_Procedure    */
 				Program_Stmt,	      /* Tok_Kwd_Program      */
 #ifdef KEY /* Bug F2003 */
 				Protected_Stmt,       /* Tok_Kwd_Protected    */
@@ -335,6 +337,7 @@ static stmt_type_type		token_to_stmt_type [] = {
 void		(*stmt_parsers[]) () = {
 				parse_bad_stmt,		/* Illegal stmt type  */
 
+				parse_abstract_stmt,    /* Abstract_Stmt      */
 				parse_allocatable_stmt, /* Allocatable_Stmt   */
 				parse_automatic_stmt,   /* Automatic_Stmt     */
 				parse_common_stmt,	/* Common_Stmt	      */
@@ -497,7 +500,7 @@ void		(*stmt_parsers[]) () = {
 				parse_value_stmt,	/* Value_Stmt */
 #endif /* KEY Bug 14150 */
 #ifdef KEY /* Bug F2003 */
-				parse_protected_stmt	/* Protected_Stmt */
+				parse_protected_stmt,	/* Protected_Stmt */
 #endif /* KEY Bug F2003 */
 				};
 
@@ -566,6 +569,53 @@ long long     stmt_in_blk [] = {
                                 (ONE << Open_Mp_Ordered_Blk) |
                                 (ONE << Open_Mp_Workshare_Blk) | /* by jhs, 02/7/18 */
                                 (ONE << Open_Mp_Parallel_Workshare_Blk) | /* by jhs, 02/7/18 */
+				(ONE << Contains_Blk) |
+				(ONE << Interface_Blk) |
+				(ONE << Derived_Type_Blk) | 
+				(ONE << Enum_Blk)),
+
+		/*****  Abstract_Stmt (same as Interface_Stmt)  *****/
+
+			       ((ONE << Unknown_Blk) |
+				(ONE << Blockdata_Blk) |
+				(0 << Interface_Body_Blk) |
+				(ONE << Forall_Blk) |
+				(ONE << If_Blk) |
+				(ONE << If_Then_Blk) |
+				(ONE << If_Else_If_Blk) |
+				(ONE << If_Else_Blk) |
+				(ONE << Do_Blk) |
+				(ONE << Select_Blk) |
+				(ONE << Case_Blk) |
+				(ONE << Where_Then_Blk) |
+				(ONE << Where_Else_Blk) |
+				(ONE << Where_Else_Mask_Blk) |
+                                (ONE << Parallel_Blk) |
+				(ONE << SGI_Parallel_Blk) |
+                                (ONE << Doall_Blk) |
+				(ONE << Wait_Blk) |
+				(ONE << SGI_Doacross_Blk) |
+				(ONE << SGI_Parallel_Do_Blk) |
+                                (ONE << Do_Parallel_Blk) |
+				(ONE << SGI_Pdo_Blk) |
+                                (ONE << Guard_Blk) |
+				(ONE << SGI_Critical_Section_Blk) |
+                                (ONE << Parallel_Case_Blk) |
+				(ONE << SGI_Psection_Blk) |
+				(ONE << SGI_Section_Blk) |
+				(ONE << SGI_Single_Process_Blk) |
+                                (ONE << Open_Mp_Parallel_Blk) |
+                                (ONE << Open_Mp_Do_Blk) |
+                                (ONE << Open_Mp_Parallel_Sections_Blk) |
+                                (ONE << Open_Mp_Sections_Blk) |
+                                (ONE << Open_Mp_Section_Blk) |
+                                (ONE << Open_Mp_Single_Blk) |
+                                (ONE << Open_Mp_Parallel_Do_Blk) |
+                                (ONE << Open_Mp_Master_Blk) |
+                                (ONE << Open_Mp_Critical_Blk) |
+                                (ONE << Open_Mp_Ordered_Blk) |
+                                (ONE << Open_Mp_Workshare_Blk) |
+                                (ONE << Open_Mp_Parallel_Workshare_Blk) |
 				(ONE << Contains_Blk) |
 				(ONE << Interface_Blk) |
 				(ONE << Derived_Type_Blk) | 
@@ -5643,7 +5693,6 @@ long long     stmt_in_blk [] = {
 				(ONE << Enum_Blk)),
 
 #endif /* KEY Bug F2003 */
-
 				};
 # undef ONE
 
@@ -5657,6 +5706,7 @@ long long     stmt_in_blk [] = {
 stmt_category_type	stmt_top_cat [] = {
 				Init_Stmt_Cat,		/* Null_Stmt	      */
 
+				Declaration_Stmt_Cat,   /* Abstract_Stmt      */
 				Declaration_Stmt_Cat,	/* Allocatable_Stmt   */
 				Declaration_Stmt_Cat,	/* Automatic_Stmt     */
 				Declaration_Stmt_Cat,	/* Common_Stmt	      */
@@ -5820,7 +5870,7 @@ stmt_category_type	stmt_top_cat [] = {
 				Declaration_Stmt_Cat,	/* Value_Stmt	      */
 #endif /* KEY Bug 14150 */
 #ifdef KEY /* Bug F2003 */
-				Declaration_Stmt_Cat	/* Protected_Stmt     */
+				Declaration_Stmt_Cat,	/* Protected_Stmt     */
 #endif /* KEY Bug F2003 */
 				};
 

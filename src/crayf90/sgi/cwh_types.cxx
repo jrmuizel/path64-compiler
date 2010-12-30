@@ -142,7 +142,8 @@ fei_descriptor (INT32        flag_matrix,
   switch(table_type) {
   case Basic:
     al = bit_to_byte(size);      
-    ty_idx = cwh_types_mk_basic_TY((BASIC_TYPE)basic_type,size,al) ; 
+    ty_idx = cwh_types_mk_basic_TY((BASIC_TYPE) basic_type,
+				   (BASIC_TYPE) aux_info, size, al); 
     break;
 
   case Array:
@@ -640,6 +641,7 @@ fei_dope_vector(INT32  num_dims,TYPE base_type, INT32 flag,
 
 static TY_IDX
 cwh_types_mk_basic_TY (BASIC_TYPE    basic_type,
+		       BASIC_TYPE    ret_type,
 		       INTPTR        size,
 		       mUINT16       alignment)
 {
@@ -735,6 +737,14 @@ cwh_types_mk_basic_TY (BASIC_TYPE    basic_type,
       ty_idx = cwh_types_unique_TY(ty_idx);
     }
     break ;
+
+
+  case Procedure_Pointer:
+    ty_idx = cwh_types_mk_basic_TY(ret_type, V_oid, 0, 0);
+    ty_idx = cwh_types_mk_procedure_TY(ty_idx, 0, TRUE, FALSE);
+    ty_idx = cwh_types_make_pointer_type(ty_idx, FALSE);
+    break;
+
 
   default:
     bt = Mtypes[align_index(size)][basic_index(basic_type)]; 	 

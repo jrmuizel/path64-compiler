@@ -2058,7 +2058,9 @@ cwh_stab_formal_ref(ST * st, BOOL host)
 
     ty = ST_type(st);
 
-    if (TY_kind(ty) == KIND_SCALAR || TY_kind(ty) == KIND_STRUCT)
+    if (TY_kind(ty) == KIND_SCALAR || TY_kind(ty) == KIND_STRUCT ||
+	(TY_kind(ty) == KIND_POINTER &&
+	 TY_kind(TY_pointed(ty)) == KIND_FUNCTION))
        Set_ST_sclass(st, SCLASS_FORMAL_REF);
     else
        Set_ST_type(st, cwh_types_mk_pointer_TY(ty, host));

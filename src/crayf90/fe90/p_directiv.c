@@ -928,7 +928,7 @@ static void parse_cache_bypass_dir(opnd_type	*opnd)
    do {
       if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
 
-         if (!parse_deref(&opnd2, NULL_IDX)) {
+	 if (!parse_deref(&opnd2, NULL_IDX, 0)) {
             parse_err_flush(Find_Comma, NULL);
          }
          else {
@@ -1536,7 +1536,7 @@ static void parse_dir_var_list(void)
 
       if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
 
-         if (! parse_deref(&opnd, NULL_IDX)) {
+	 if (! parse_deref(&opnd, NULL_IDX, 0)) {
             parse_err_flush(Find_Comma, NULL);
          }
          else {
@@ -2111,7 +2111,7 @@ static boolean parse_var_name_list(opnd_type   *list_opnd)
    while (TRUE) {
 
       if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
-         parse_deref(&opnd, NULL_IDX);
+	 parse_deref(&opnd, NULL_IDX, 0);
 
          if (OPND_FLD(opnd) != AT_Tbl_Idx) {
             result = FALSE;
@@ -2898,7 +2898,7 @@ static void parse_cache_align_name_list(opnd_type *list_opnd)
          }
       }
       else if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
-         parse_deref(&opnd, NULL_IDX);
+	 parse_deref(&opnd, NULL_IDX, 0);
 
          if (OPND_FLD(opnd) != AT_Tbl_Idx) {
             find_opnd_line_and_column(&opnd, &line, &col);
@@ -5725,7 +5725,7 @@ static void parse_par_directives(void)
 
          if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
 
-            if (! parse_deref(&opnd, NULL_IDX)) {
+	    if (! parse_deref(&opnd, NULL_IDX, 0)) {
                parse_err_flush(Find_Rparen, NULL);
             }
             else {
@@ -6092,7 +6092,7 @@ static void parse_dollar_directives(void)
             NEXT_LA_CH;
 
             if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
-               parse_deref(&opnd, NULL_IDX);
+	       parse_deref(&opnd, NULL_IDX, 0);
                COPY_OPND(IL_OPND(list_idx), opnd);
             }
             else {
@@ -6823,7 +6823,7 @@ static void parse_star_directives(void)
          NEXT_LA_CH;
 
          if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
-            parse_deref(&opnd, NULL_IDX);
+	    parse_deref(&opnd, NULL_IDX, 0);
 
             if (OPND_FLD(opnd) != AT_Tbl_Idx) {
                find_opnd_line_and_column(&opnd, &line, &column);
@@ -6997,7 +6997,7 @@ static void parse_prefetch_ref(void)
       NEXT_LA_CH;
 
       if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
-         parse_deref(&opnd, NULL_IDX);
+	 parse_deref(&opnd, NULL_IDX, 0);
          COPY_OPND(IL_OPND(list_array[0]), opnd);
       }
       else {
@@ -7924,7 +7924,7 @@ static void parse_mp_directive(mp_directive_type directive)
 
                   if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
    
-                     if (! parse_deref(&opnd, NULL_IDX)) {
+		     if (! parse_deref(&opnd, NULL_IDX, 0)) {
                         parse_err_flush(Find_Rparen, NULL);
                      }
                      else if (OPND_FLD(opnd) != AT_Tbl_Idx) {
@@ -8300,7 +8300,7 @@ static void parse_reference_list(opnd_type *list_opnd)
    while(TRUE) {
 
       if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
-         parse_deref(&opnd, NULL_IDX);
+	 parse_deref(&opnd, NULL_IDX, 0);
 
          if (list_idx == NULL_IDX) {
             NTR_IR_LIST_TBL(list_idx);
@@ -8539,7 +8539,7 @@ static void	parse_var_common_list(opnd_type	 *list_opnd,
             }
          }
          else {
-            parse_deref(&opnd, NULL_IDX);
+	    parse_deref(&opnd, NULL_IDX, 0);
             find_opnd_line_and_column(&opnd, &line, &column);
 
             if (!subobjects_allowed && OPND_FLD(opnd) != AT_Tbl_Idx) {
@@ -9803,7 +9803,7 @@ static boolean parse_assert_directive(void)
                NEXT_LA_CH;
 
                if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
-                  ok = parse_deref(&opnd, NULL_IDX);
+		  ok = parse_deref(&opnd, NULL_IDX, 0);
 
                   if (OPND_FLD(opnd) != AT_Tbl_Idx) {
                      ok = FALSE;
@@ -11153,7 +11153,7 @@ static void parse_open_mp_directives(void)
                NEXT_LA_CH;
 
                if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
-                  parse_deref(&opnd, NULL_IDX);
+		  parse_deref(&opnd, NULL_IDX, 0);
                   COPY_OPND(IL_OPND(list_idx), opnd);
                }
                else {

@@ -653,6 +653,46 @@ boolean parse_actual_arg_spec (opnd_type *result_opnd,
 
 } /* parse_actual_arg_spec */
 
+
+
+/******************************************************************************\
+|*                                                                            *|
+|* Description:                                                               *|
+|*      Convert a procedure pointer reference to a function reference	      *|
+|*                                                                            *|
+|* Input parameters:                                                          *|
+|*      Index of procedure pointer data object				      *|
+|*                                                                            *|
+|* Returns:                                                                   *|
+|*      Index of new function index					      *|
+|*                                                                            *|
+\******************************************************************************/
+
+static int function_proc_ptr(int attr_idx, int line, int col) {
+int idx;
+
+    idx = ATD_PP_ATP(attr_idx);
+
+    switch(ATP_PGM_UNIT(idx)) {
+    case Function:
+	break;
+
+    case Subroutine:
+	PRINTMSG(line, 1705, Error, col, AT_OBJ_NAME_PTR(attr_idx));
+	break;
+
+    case Pgm_Unknown:
+	ATP_PGM_UNIT(idx) = Function;
+	break;
+
+    default:
+	break;
+    }
+
+    return idx;
+}
+
+
 
 /******************************************************************************\
 |*                                                                            *|
@@ -662,6 +702,10 @@ boolean parse_actual_arg_spec (opnd_type *result_opnd,
 |* Input parameters:                                                          *|
 |*      struct_type_idx - idx for derived type of previous id, NULL_IDX       *|
 |*                        if no previous id.                                  *|
+|*      pp_flag   -  0 = Procedure pointers not OK			      *|
+|*                   1 = Function pointers OK				      *|
+|*                   2 = Subroutine pointers OK				      *|
+|*                   3 = PP ref ok, but no arglist			      *|
 |*                                                                            *|
 |* Output parameters:                                                         *|
 |*      result_opnd - opnd_type, points to root of tree returned.             *|
@@ -672,8 +716,8 @@ boolean parse_actual_arg_spec (opnd_type *result_opnd,
 \******************************************************************************/
 
 boolean parse_deref (opnd_type *result_opnd, 
-                     int        struct_type_idx)
-
+                     int        struct_type_idx,
+		     int        pp_flag)
 {
 
    boolean       ambiguous_ref = FALSE;
@@ -1529,7 +1573,37 @@ boolean parse_deref (opnd_type *result_opnd,
 
          goto EXIT;
    }
-            
+
+   if (pp_flag == 2 && LA_CH_VALUE == EOS &&
+       ATD_CLASS(attr_idx) == Struct_Component &&
+       AT_TYPED(attr_idx) && TYP_LINEAR(ATD_TYPE_IDX(attr_idx)) == Proc_Ptr) {
+       /* Procedure pointer subroutine call without an argument list */
+
+       NTR_IR_TBL(ir_idx);
+
+       IR_OPR(ir_idx)   = Call_Opr;
+       IR_FLD_L(ir_idx) = result_opnd->fld;
+       IR_IDX_L(ir_idx) = result_opnd->idx;
+
+       IR_FLD_R(ir_idx) = IR_Tbl_Idx;
+       IR_IDX_R(ir_idx) = NULL_IDX;
+
+       IR_LINE_NUM(ir_idx)   = TOKEN_LINE(token);
+       IR_COL_NUM(ir_idx)    = TOKEN_COLUMN(token);
+
+       IR_LINE_NUM_L(ir_idx) = TOKEN_LINE(token);
+       IR_COL_NUM_L(ir_idx)  = TOKEN_COLUMN(token);
+
+       IR_LINE_NUM_R(ir_idx) = TOKEN_LINE(token);
+       IR_COL_NUM_R(ir_idx)  = TOKEN_COLUMN(token);
+
+       OPND_FLD((*result_opnd)) = IR_Tbl_Idx;
+       OPND_IDX((*result_opnd)) = ir_idx;
+
+       goto EXIT;
+   }
+
+
 # ifdef _F_MINUS_MINUS
    if (LA_CH_VALUE != PERCENT && LA_CH_VALUE != LPAREN && 
        ((!cmd_line_flags.co_array_fortran) || LA_CH_VALUE != LBRKT))
@@ -1547,6 +1621,43 @@ boolean parse_deref (opnd_type *result_opnd,
 
 
    if (LA_CH_VALUE == LPAREN) {
+
+       if (AT_OBJ_CLASS(attr_idx) == Data_Obj &&
+	   ATD_CLASS(attr_idx) == Struct_Component && AT_TYPED(attr_idx) &&
+	   TYP_LINEAR(ATD_TYPE_IDX(attr_idx)) == Proc_Ptr) {
+
+	   /* Reference a function pointer call.  The Struct_Opr has
+	    * already been built.  Build a new nodea that will call it
+	    * and replace the result with the new node. */
+
+	   NTR_IR_TBL(ir_idx);
+
+	   IR_OPR(ir_idx)   = Call_Opr;
+	   IR_FLD_L(ir_idx) = result_opnd->fld;
+	   IR_IDX_L(ir_idx) = result_opnd->idx;
+
+	   IR_LINE_NUM(ir_idx)   = TOKEN_LINE(token);
+	   IR_COL_NUM(ir_idx)    = TOKEN_COLUMN(token);
+
+	   IR_LINE_NUM_L(ir_idx) = TOKEN_LINE(token);
+	   IR_COL_NUM_L(ir_idx)  = TOKEN_COLUMN(token);
+
+	   IR_LINE_NUM_R(ir_idx) = TOKEN_LINE(token);
+	   IR_COL_NUM_R(ir_idx)  = TOKEN_COLUMN(token);
+
+	   if (pp_flag == 1 || (pp_flag == 2 && LA_CH_VALUE == '(')) {
+	       parsed_ok = parse_actual_arg_spec(&opnd,
+						 pp_flag == 1 ? TRUE : FALSE,
+						 NULL_IDX);
+	       COPY_OPND(IR_OPND_R(ir_idx), opnd);
+	   }
+
+	   OPND_FLD((*result_opnd)) = IR_Tbl_Idx;
+	   OPND_IDX((*result_opnd)) = ir_idx;
+
+	   goto EXIT;
+       }
+
       /* do that array stuff */
       array_idx = ATD_ARRAY_IDX(amb_attr_idx);
 
@@ -1738,7 +1849,31 @@ boolean parse_deref (opnd_type *result_opnd,
                NEXT_LA_CH;
             }
             goto EXIT;
+
          }
+
+	 /* Check for a function procedure pointer reference */
+	 else if (AT_OBJ_CLASS(attr_idx) == Data_Obj &&
+		  TYP_LINEAR(ATD_TYPE_IDX(attr_idx)) == Proc_Ptr) {
+
+	     attr_idx = function_proc_ptr(attr_idx, LA_CH_LINE, LA_CH_COLUMN);
+
+	     NTR_IR_TBL(ir_idx);
+	     IR_OPR(ir_idx)                 = Call_Opr;
+	     IR_FLD_L(ir_idx)               = AT_Tbl_Idx;
+	     IR_IDX_L(ir_idx)               = attr_idx;
+	     IR_LINE_NUM(ir_idx)            = TOKEN_LINE(token);
+	     IR_COL_NUM(ir_idx)             = TOKEN_COLUMN(token);
+	     IR_LINE_NUM_L(ir_idx)          = TOKEN_LINE(token);
+	     IR_COL_NUM_L(ir_idx)           = TOKEN_COLUMN(token);
+	     OPND_FLD((*result_opnd))       = IR_Tbl_Idx;
+	     OPND_IDX((*result_opnd))       = ir_idx;
+
+	     parsed_ok = parse_actual_arg_spec(&opnd, TRUE, attr_idx);
+	     COPY_OPND(IR_OPND_R(ir_idx), opnd);
+
+	     goto EXIT;
+	 }
       }
 
       if (LA_CH_VALUE != PERCENT) {
@@ -1823,7 +1958,7 @@ boolean parse_deref (opnd_type *result_opnd,
                   /* If this is a dummy arg, the Proc will be switched to */
                   /* Dummy_Proc by this routine.                          */
 
-                  chg_data_obj_to_pgm_unit(attr_idx, Function, Extern_Proc);
+		  chg_data_obj_to_pgm_unit(attr_idx, Function, Extern_Proc);
 
                   NTR_IR_TBL(ir_idx);
                   IR_OPR(ir_idx)                 = Call_Opr;
@@ -2076,7 +2211,8 @@ boolean parse_deref (opnd_type *result_opnd,
          OPND_IDX((*result_opnd)) = ir_idx;
 
          parsed_ok = parse_deref(result_opnd, 
-                                 TYP_IDX(ATD_TYPE_IDX(amb_attr_idx)));
+                                 TYP_IDX(ATD_TYPE_IDX(amb_attr_idx)),
+				 pp_flag);
       }
       else {
 

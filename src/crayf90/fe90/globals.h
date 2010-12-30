@@ -69,8 +69,8 @@ enum	basic_type_values	 {Integer,
                                   Typeless,
                                   Character,
 				  Structure,
-				  Num_Basic_Types,
-                                  Last_Linear_Type	= CRI_Ch_Ptr
+				  Procedure_Ptr,
+				  Last_Basic_Type,
 				 };
 
 enum	debug_lvl_values         {Debug_Lvl_0,		
@@ -789,6 +789,7 @@ enum	linear_type_values     {Err_Res,
                                 CRI_Ch_Ptr_8,
                                 Structure_Type,
 				CRI_Parcel_Ptr_8,
+				Proc_Ptr,
                                 Num_Linear_Types
 				};
 
@@ -1540,7 +1541,7 @@ enum    operator_values      {  Null_Opr,
 #ifdef KEY /* Bug 10410 */
 				Cselect_Opr,
 #endif /* KEY Bug 10410 */
-
+				ProcPtr_Asg_Opr,
                                 /* PLACE NEW OPERATORS ABOVE THIS LINE. */
                                 /* DO NOT PUT ANY OPRS AFTER THIS ONE */
 				The_Last_Opr
@@ -1577,6 +1578,7 @@ enum	src_form_values	       {Fixed_Form,		Free_Form };
 
 enum stmt_type_values           {Null_Stmt,
 
+				 Abstract_Stmt,
 				 Allocatable_Stmt,
                                  Automatic_Stmt,
                                  Common_Stmt,
@@ -1606,7 +1608,7 @@ enum stmt_type_values           {Null_Stmt,
                                  Stmt_Func_Stmt,
                                  Target_Stmt,
                                  Task_Common_Stmt,
-                                 Type_Decl_Stmt,        /* C L I R D CX TYPE( */
+                                 Type_Decl_Stmt, /* C L I R D CX TYPE( PROC */
                                  Use_Stmt,
 
                                  Blockdata_Stmt,
@@ -1729,9 +1731,8 @@ enum stmt_type_values           {Null_Stmt,
 #ifdef KEY /* Bug 14150, 5091 */
 				 Bind_Stmt,
 				 Value_Stmt,
-				 Protected_Stmt
+				 Protected_Stmt,
 #endif /* KEY Bug 14150, 5091 */
-
                                  /* When you add a stmt, make sure you change */
                                  /* stmt_type_str in main.h.                  */
                                  /* Also change mapped_stmt_type in fecif.h   */
@@ -2642,7 +2643,9 @@ enum    cif_stmt_values
 		CIF_Forall_Stmt,	/* CIF_F90_TP_FORALL	   */
 		CIF_Forall_Construct,	/* CIF_F90_TP_FORALL_CONSTRUCT */
 		CIF_Max,		/* CIF_F90_TP_MAX */
-		CIF_End_Forall_Stmt 	/* CIF_F90_TP_END_FORALL   */
+		CIF_End_Forall_Stmt, 	/* CIF_F90_TP_END_FORALL   */
+		CIF_Proc_Pointer,
+		CIF_Abstract_Stmt,
                };
 
 typedef enum	cif_directive_code_values	cif_directive_code_type;
@@ -3041,6 +3044,8 @@ extern	void		terminate_PDGCS(void);
 extern  void		final_src_input(void);
 extern  FILE 	       *init_debug_file(void);
 extern	boolean		omp_extension_prefix(int);
+extern  int		pp_operand(opnd_type *);
+extern  int		pp_type_index(void);
 extern  void		print_al(int);
 extern  void		print_al_list(FILE *,int);
 extern  void		print_at(int);
@@ -3111,6 +3116,7 @@ extern  void		dump_mem_trace_info(trace_type, char *, void *,
 |* globally accessible objects in ALPHABETICAL ORDER *|
 \*****************************************************/
 
+extern  int			abstract_flag;
 extern	ac_cmd_line_flags_type	ac_cmd_line_flags;
 extern	char			assembly_file[];
 extern	char			assembly_listing_file[];

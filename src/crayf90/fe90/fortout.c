@@ -476,7 +476,7 @@ char  *print_type_f(int	 type_idx)
    if (type_idx == NULL_IDX) {
       sprintf(str, "NULL");
    }
-   else if (TYP_TYPE(type_idx) <= Last_Linear_Type) {
+   else if (TYP_TYPE(type_idx) < Last_Basic_Type) {
 
       if (TYP_DESC(type_idx) == Star_Typed) {
          sprintf(str, "%s * %d", 

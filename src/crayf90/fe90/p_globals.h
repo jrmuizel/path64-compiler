@@ -410,6 +410,7 @@ extern void revisit_volatile();
 |* statement parsers *|
 \*********************/
 
+extern  void parse_abstract_stmt (void);
 extern	void parse_allocatable_stmt (void);
 extern	void parse_allocate_stmt (void);
 extern	void parse_access_stmt (void);
@@ -502,7 +503,7 @@ extern  boolean         paren_grp_is_cplx_const(void);
 extern  boolean         parse_actual_arg_spec (opnd_type *, boolean, int);
 extern	int		parse_array_spec (int);
 extern	int		parse_pe_array_spec (int);
-extern  boolean         parse_deref (opnd_type *, int);
+extern  boolean         parse_deref (opnd_type *, int, int);
 extern	boolean 	parse_expr (opnd_type *);
 extern	boolean		parse_generic_spec (void);
 extern  boolean         parse_imp_do (opnd_type *);
@@ -511,7 +512,7 @@ extern  void	    	parse_length_selector (int, boolean, boolean);
 #ifdef KEY /* Bug 8422 */
 extern  int		parse_non_char_kind_selector(boolean);
 #endif /* KEY Bug 8422 */
-extern	boolean		parse_type_spec (boolean);
+extern	boolean		parse_type_spec (boolean, boolean);
 extern	void		parse_typed_function_stmt (void);
 #ifdef KEY /* Bug 14150 */
 extern int		parse_language_binding_spec(token_type *result);
@@ -566,6 +567,8 @@ extern  int			 if_stmt_lbl_idx;       /* defed in           */
 							/*   p_ctl_flow.h     */
 
 extern	long    directive_state;
+
+extern  int pp_type_idx, pp_interface_idx;
 
 /******************************************************************************\
 |*                                                                            *|

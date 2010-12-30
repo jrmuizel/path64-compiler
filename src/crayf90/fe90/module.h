@@ -140,6 +140,7 @@ enum    md_3_linear_type_values {MD_3_Err_Res,
                                  MD_3_CRI_Ch_Ptr_8,
                                  MD_3_Structure_Type,
                                  MD_3_CRI_Parcel_Ptr_8,
+				 MD_3_Proc_Ptr,
                                  MD_3_Num_Linear_Types
                                 };
 

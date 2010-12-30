@@ -41,6 +41,7 @@
 |* Semantic routines for individual statements |
 \**********************************************/
 
+extern  void abstract_stmt_semantics (void);
 extern  void allocate_stmt_semantics (void);
 extern  void arith_if_stmt_semantics (void);
 extern  void assign_stmt_semantics (void);

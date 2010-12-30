@@ -84,6 +84,7 @@ boolean		 skip_struct_base;
 cif_stmt_type	mapped_stmt_type[] =
 		       {CIF_Stmt_Type_Error,
 
+			CIF_Abstract_Stmt,              /* Abstract_Stmt      */
                         CIF_Allocatable_Stmt,		/* Allocatable_Stmt   */
                        	CIF_Automatic_Stmt,		/* Automatic_Stmt     */
                        	CIF_Common_Stmt,		/* Common_Stmt        */

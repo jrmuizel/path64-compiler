@@ -162,7 +162,8 @@ int     bit_size_tbl[Num_Linear_Types] = {
         /* Character_4       */          0,
         /* CRI_Ch_Ptr_8      */         64,
         /* Structure_Type    */          0,
-        /* CRI_Parcel_Ptr_8  */         64
+        /* CRI_Parcel_Ptr_8  */         64,
+	/* Proc_Ptr          */         64,
                                                  };
 
 
@@ -197,7 +198,8 @@ int	storage_bit_kind_tbl[Num_Linear_Types] = {
         /* Character_4       */ 	4,
         /* CRI_Ch_Ptr_8      */ 	8,
         /* Structure_Type    */ 	0,
-	/* CRI_Parcel_Ptr_8  */		8
+	/* CRI_Parcel_Ptr_8  */		8,
+	/* Proc_Ptr          */         8,
 	                                         };
 
 /****************************************************\
@@ -235,7 +237,8 @@ int	storage_bit_size_tbl[Num_Linear_Types] = {
         /* Character_4       */ 	0,
         /* CRI_Ch_Ptr_8      */ 	64,
         /* Structure_Type    */ 	0,
-	/* CRI_Parcel_Ptr_8  */		64
+	/* CRI_Parcel_Ptr_8  */		64,
+	/* Proc_Ptr          */         64,
 	                                         };
 
 int     storage_bit_prec_tbl[Num_Linear_Types] = {
@@ -267,7 +270,8 @@ int     storage_bit_prec_tbl[Num_Linear_Types] = {
         /* Character_4       */         8,
         /* CRI_Ch_Ptr_8      */         8,
         /* Structure_Type    */         0,
-        /* CRI_Parcel_Ptr_8  */         16
+        /* CRI_Parcel_Ptr_8  */         16,
+	/* Proc_Ptr          */         8,
                                                  };
 
 int     register_bit_size_tbl[Num_Linear_Types] = {
@@ -299,7 +303,8 @@ int     register_bit_size_tbl[Num_Linear_Types] = {
         /* Character_4       */         0,
         /* CRI_Ch_Ptr_8      */         64,
         /* Structure_Type    */         0,
-        /* CRI_Parcel_Ptr_8  */         64
+        /* CRI_Parcel_Ptr_8  */         64,
+	/* Proc_Ptr          */         64,
                                                  };
 
 int     stride_mult_unit_in_bits[Num_Linear_Types] = {
@@ -331,7 +336,8 @@ int     stride_mult_unit_in_bits[Num_Linear_Types] = {
         /* Character_4       */         32,
         /* CRI_Ch_Ptr_8      */         64,
         /* Structure_Type    */         64,
-        /* CRI_Parcel_Ptr_8  */         64
+        /* CRI_Parcel_Ptr_8  */         64,
+	/* Proc_Ptr          */         64,
         };
 
 int     type_alignment_tbl[Num_Linear_Types] = {
@@ -363,7 +369,8 @@ int     type_alignment_tbl[Num_Linear_Types] = {
         /* Character_4       */         No_Align,
         /* CRI_Ch_Ptr_8      */         No_Align,
         /* Structure_Type    */         No_Align,
-        /* CRI_Parcel_Ptr_8  */         No_Align
+        /* CRI_Parcel_Ptr_8  */         No_Align,
+	/* Proc_Ptr          */         No_Align,
         };
 
 
@@ -398,7 +405,8 @@ int	storage_bit_kind_tbl[Num_Linear_Types] = {
         /* Character_4       */ 	4,
         /* CRI_Ch_Ptr_8      */ 	8,
         /* Structure_Type    */ 	0,
-	/* CRI_Parcel_Ptr_8  */		8
+	/* CRI_Parcel_Ptr_8  */		8,
+	/* Proc_Ptr          */         8,
 	                                         };
 
 /****************************************************\
@@ -436,7 +444,8 @@ int	storage_bit_size_tbl[Num_Linear_Types] = {
         /* Character_4       */ 	0,
         /* CRI_Ch_Ptr_8      */ 	64,
         /* Structure_Type    */ 	0,
-	/* CRI_Parcel_Ptr_8  */		64
+	/* CRI_Parcel_Ptr_8  */		64,
+	/* Proc_Ptr          */         64,
 	                                         };
 
 int     storage_bit_prec_tbl[Num_Linear_Types] = {
@@ -468,7 +477,8 @@ int     storage_bit_prec_tbl[Num_Linear_Types] = {
         /* Character_4       */         8,
         /* CRI_Ch_Ptr_8      */         8,
         /* Structure_Type    */         0,
-        /* CRI_Parcel_Ptr_8  */         8
+        /* CRI_Parcel_Ptr_8  */         8,
+	/* Proc_Ptr          */         8,
                                                  };
 
 int     register_bit_size_tbl[Num_Linear_Types] = {
@@ -500,7 +510,8 @@ int     register_bit_size_tbl[Num_Linear_Types] = {
         /* Character_4       */         0,
         /* CRI_Ch_Ptr_8      */         64,
         /* Structure_Type    */         0,
-        /* CRI_Parcel_Ptr_8  */         64
+        /* CRI_Parcel_Ptr_8  */         64,
+	/* Proc_Ptr          */         64,
                                                  };
 
 int     stride_mult_unit_in_bits[Num_Linear_Types] = {
@@ -532,7 +543,8 @@ int     stride_mult_unit_in_bits[Num_Linear_Types] = {
         /* Character_4       */         32,
         /* CRI_Ch_Ptr_8      */         64,
         /* Structure_Type    */         64,
-        /* CRI_Parcel_Ptr_8  */         64
+        /* CRI_Parcel_Ptr_8  */         64,
+	/* Proc_Ptr          */         64,
         };
 
 int     type_alignment_tbl[Num_Linear_Types] = {
@@ -564,7 +576,8 @@ int     type_alignment_tbl[Num_Linear_Types] = {
         /* Character_4       */         No_Align,
         /* CRI_Ch_Ptr_8      */         No_Align,
         /* Structure_Type    */         No_Align,
-        /* CRI_Parcel_Ptr_8  */         No_Align
+        /* CRI_Parcel_Ptr_8  */         No_Align,
+	/* Proc_Ptr          */         No_Align,
         };
 
 
@@ -599,7 +612,8 @@ int	storage_bit_kind_tbl[Num_Linear_Types] = {
         /* Character_4       */ 	4,
         /* CRI_Ch_Ptr_8      */ 	8,
         /* Structure_Type    */ 	0,
-	/* CRI_Parcel_Ptr_8  */		8
+	/* CRI_Parcel_Ptr_8  */		8,
+	/* Proc_Ptr          */         8,
 	                                         };
 
 int     storage_bit_size_tbl[Num_Linear_Types] = {
@@ -631,7 +645,8 @@ int     storage_bit_size_tbl[Num_Linear_Types] = {
         /* Character_4       */         0,
         /* CRI_Ch_Ptr_8      */         64,
         /* Structure_Type    */         0,
-	/* CRI_Parcel_Ptr_8  */		32
+	/* CRI_Parcel_Ptr_8  */		32,
+	/* Proc_Ptr          */         64,
                                                  };
 
 int     storage_bit_prec_tbl[Num_Linear_Types] = {
@@ -663,7 +678,8 @@ int     storage_bit_prec_tbl[Num_Linear_Types] = {
         /* Character_4       */         8,
         /* CRI_Ch_Ptr_8      */         8,
         /* Structure_Type    */         0,
-        /* CRI_Parcel_Ptr_8    */       8
+        /* CRI_Parcel_Ptr_8  */         8,
+	/* Proc_Ptr          */         8,
                                                   };
 
 int     register_bit_size_tbl[Num_Linear_Types] = {
@@ -695,7 +711,8 @@ int     register_bit_size_tbl[Num_Linear_Types] = {
         /* Character_4       */         0,
         /* CRI_Ch_Ptr_8      */         64,
         /* Structure_Type    */         0,
-        /* CRI_Parcel_Ptr_8  */         64
+        /* CRI_Parcel_Ptr_8  */         64,
+	/* Proc_Ptr          */         64,
                                                  };
 
 int     stride_mult_unit_in_bits[Num_Linear_Types] = {
@@ -752,7 +769,8 @@ int     stride_mult_unit_in_bits[Num_Linear_Types] = {
         /* CRI_Ch_Ptr_8      */         32,
 # endif /* _WHIRL_HOST64_TARGET64 */
         /* Structure_Type    */         32,
-        /* CRI_Parcel_Ptr_8    */       32
+        /* CRI_Parcel_Ptr_8  */         32,
+	/* Proc_Ptr          */         32,
                                                 };
 
 int     type_alignment_tbl[Num_Linear_Types] = {
@@ -784,10 +802,9 @@ int     type_alignment_tbl[Num_Linear_Types] = {
         /* Character_4       */         Align_Bit,
         /* CRI_Ch_Ptr_8      */         Align_64,
         /* Structure_Type    */         No_Align,
-        /* CRI_Parcel_Ptr_8  */         Align_64
+        /* CRI_Parcel_Ptr_8  */         Align_64,
+	/* Proc_Ptr          */         Align_64,
         };
-
-
 
 # endif
 
@@ -1004,6 +1021,15 @@ type_tbl_type		type_init_tbl[Num_Linear_Types + 2] = {
 		 0,			Default_Typed,		NO_Tbl_Idx, 0,
 		 CRI_Parcel_Ptr_8,	0},
 
+                {Procedure_Ptr,		0,                      NO_Tbl_Idx,
+                 Unknown_Char,          FALSE,			FALSE,
+		 FALSE,			FALSE,			FALSE,
+		 FALSE,
+		 0,			Default_Typed,		NO_Tbl_Idx, 0,
+                 Proc_Ptr,	        0},
+
+/* New types must be inserted here */
+
 /* this is the DOUBLE_DEFAULT_TYPE entry. keywords "DOUBLE PRECISION" only */
 
                 {Real,			0,                      NO_Tbl_Idx,
@@ -1021,5 +1047,4 @@ type_tbl_type		type_init_tbl[Num_Linear_Types + 2] = {
 		 TRUE,
 		 0,			Default_Typed,		NO_Tbl_Idx, 0,
                  Complex_8,	        0},
-
 };

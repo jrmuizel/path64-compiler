@@ -64,7 +64,8 @@
      
            void    (*stmt_semantics[]) () = {
                           illegal_stmt_type,            /* Illegal stmt type  */
-           
+
+			  abstract_stmt_semantics,	/* Abstract_Stmt      */
                           no_semantics_routine,		/* Allocatable_Stmt   */
                           no_semantics_routine,		/* Automatic_Stmt     */
                           no_semantics_routine,         /* Common_Stmt        */
@@ -229,7 +230,7 @@
 #ifdef KEY /* Bug 14150, 5091 */
                           no_semantics_routine,         /* Bind_Stmt          */
                           no_semantics_routine,         /* Value_Stmt         */
-                          no_semantics_routine          /* Protected_Stmt     */
+                          no_semantics_routine,         /* Protected_Stmt     */
 #endif /* KEY Bug 14150, 5091 */
 			};
 

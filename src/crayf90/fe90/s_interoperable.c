@@ -63,7 +63,8 @@ static unsigned char interoperable_types[] = {
   0,	/* Character_4 */
   0,	/* CRI_Ch_Ptr_8 */
   0,	/* Structure_Type */
-  0	/* CRI_Parcel_Ptr_8 */
+  0,	/* CRI_Parcel_Ptr_8 */
+  0,    /* Proc_Ptr */
   };
 #else
 # error "Define interoperable_types for target architecture"

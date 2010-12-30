@@ -1400,6 +1400,7 @@ char		*operator_str[]		= {
 #ifdef KEY /* Bug 10410 */
 		 	"Cselect_Opr",
 #endif /* KEY Bug 10410 */
+			"ProcPtr_Asg_Opr",
                         "The_Last_Opr"
 		};
 
@@ -1461,6 +1462,7 @@ char		*src_form_str[]		= {
 char		*token_value_str[Tok_LAST+1]	= {
 			"Tok_Label",		/* Tok_Label		*/
 			"Tok_Id",		/* Tok_Id		*/
+			"Tok_Kwd_Abstract",     /* Tok_Kwd_Abstract     */
 			"Tok_Kwd_Allocatable",	/* Tok_Kwd_Allocatable	*/
 			"Tok_Kwd_Allocate",	/* Tok_Kwd_Allocate	*/
 			"Tok_Kwd_Assign",	/* Tok_Kwd_Assign	*/
@@ -1530,6 +1532,7 @@ char		*token_value_str[Tok_LAST+1]	= {
 #ifdef KEY /* Bug 5089 */
 			"Tok_Kwd_Nonintrinsic",	/* Tok_Kwd_Nonintrinsic */
 #endif /* KEY Bug 5089 */
+			"Tok_Kwd_Nopass",	/* Tok_Kwd_Nopass	*/
 			"Tok_Kwd_Nullify",	/* Tok_Kwd_Nullify	*/
 			"Tok_Kwd_Only",		/* Tok_Kwd_Only		*/
 			"Tok_Kwd_Open",		/* Tok_Kwd_Open		*/

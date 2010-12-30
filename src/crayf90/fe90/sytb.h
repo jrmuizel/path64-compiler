@@ -467,6 +467,9 @@ union	attr_tbl_entry	{
 				 boolean	 	flag48		:  1;
 				 Uint			field16		: 20;
 
+			         Uint			field18         : 32;
+			         Uint			field19         : 32;
+
 				} fld;
 
                          /* This is used to specify a 32 bit alternative for */
@@ -486,6 +489,8 @@ union	attr_tbl_entry	{
 			         Uint			field32_12	: 32;
 			         Uint			field32_13	: 32;
 			         Uint			field32_14	: 32;
+			         Uint			field32_15	: 32;
+			         Uint			field32_16	: 32;
                                 } fldd;
 
                          /* This is used to specify fld_type, so that we can */
@@ -510,101 +515,9 @@ union	attr_tbl_entry	{
 			         Uint			alignment	:  4;
 			         Uint			field32_13_2	:  8;
 			         Uint			field32_14	: 32;
+			         Uint			field32_15	: 32;
+			         Uint			field32_16	: 32;
                                 } fld2;
-
-
-                        /* This is what the attr table looked like in release */
-                        /* 3.0.  It can be removed in release 5.0.            */
-
-			struct	{
-				 Uint					: 32;
-				 boolean		not_visible	:  1;
-				 boolean		use_associated	:  1;
-				 boolean		host_associated	:  1;
-				 boolean		cif_use_in_bnd	:  1;
-				 boolean		cif_done	:  1;
-				 boolean		module_object	:  1;
-				 boolean		arg_to_kind	:  1;
-				 Uint			unused		:  2;
-				 Uint			module_idx	: 20;
-				 Uint			object_class	:  3;
-
-				 Uint			unused1		: 32;
-				 Uint		 	unused2		: 32;
-
-				 Uint			orig_name_idx	: 24;
-				 Uint			orig_name_len	:  8;
-				 Uint			length		:  8;
-				 Uint			name_idx	: 24;
-
-				 Uint			secondary_info	:  3;
-				 Uint		 	field2		:  3;
-				 Uint			field3		:  2;
-				 Uint			field4		: 24;
-
-				 boolean	 	flag1		:  1;
-				 boolean		flag2		:  1;
-				 boolean		flag3		:  1;
-				 boolean		flag4		:  1;
-				 boolean		flag5		:  1;
-				 boolean		flag6		:  1;
-				 boolean		flag7		:  1;
-				 boolean		flag8		:  1;
-				 boolean		flag9		:  1;
-				 boolean		flag10		:  1;
-				 boolean		flag11		:  1;
-				 boolean		flag12		:  1;
-				 boolean		flag13		:  1;
-				 boolean	 	flag14 		:  1;
-				 boolean	 	flag15	 	:  1;
-				 boolean	 	flag16	 	:  1;
-				 Uint			field1		: 16;
-
-				 Uint		 	field5		: 16;
-				 Uint		 	field6		: 16;
-
-				 boolean	 	flag17 		:  1;
-				 boolean	 	flag18	 	:  1;
-				 boolean	 	flag19	 	:  1;
-				 boolean	 	flag20	 	:  1;
-				 boolean	 	flag21 		:  1;
-				 boolean	 	flag22	 	:  1;
-				 boolean		flag23		:  1;
-				 boolean		flag24		:  1;
-				 boolean	 	flag25 		:  1;
-				 boolean	 	flag26	 	:  1;
-				 boolean		flag27		:  1;
-				 boolean	 	flag28		:  1;
-				 Uint		 	field8		: 20;
-
-				 boolean	 	flag29		:  1;
-				 boolean	 	flag30		:  1;
-				 boolean	 	flag31		:  1;
-				 boolean	 	flag32		:  1;
-				 boolean	 	flag33		:  1;
-				 boolean	 	flag34		:  1;
-				 boolean	 	flag35		:  1;
-				 boolean	 	flag36		:  1;
-				 Uint			field10		: 24;
-				 Uint		 	field12		:  8;
-				 Uint			field13		: 24;
-
-				 Uint		 	field14		: 16;
-				 Uint		 	field15		: 16;
-				 boolean	 	flag37		:  1;
-				 boolean	 	flag38		:  1;
-				 boolean	 	flag39		:  1;
-				 boolean	 	flag40		:  1;
-				 boolean	 	flag41		:  1;
-				 boolean	 	flag42		:  1;
-				 boolean	 	flag43		:  1;
-				 boolean	 	flag44		:  1;
-				 boolean	 	flag45		:  1;
-				 boolean	 	flag46		:  1;
-				 boolean	 	flag47		:  1;
-				 boolean	 	flag48		:  1;
-				 Uint			field16		: 20;
-				} old;
 
 			 long			wd[NUM_AT_WDS];
 			};

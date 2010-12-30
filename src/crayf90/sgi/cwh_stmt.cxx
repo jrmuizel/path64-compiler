@@ -775,15 +775,18 @@ cwh_stmt_call_helper(INT32 num_args, TY_IDX ty, INT32 inline_state, INT64 flags)
   WN     * wa  ;  
   WN     * wt  ;
   WN    ** args;
+  WN     * rhs ;
   ST     * st  ;
   ST     * rt  ;
   TY_IDX  ta  ;
   TY_IDX  ts  ;
   TY_IDX  tr  ;
+  TY_IDX   ret_ty;
   INT32    nargs;  
   INT32    clen ;  
   INT32    i,k  ;
-  WN *     block;      
+  WN *     block;
+  FLD_det  det ;
 
   TYPE_ID   rbtype1;
   TYPE_ID   rbtype2;
@@ -852,27 +855,39 @@ cwh_stmt_call_helper(INT32 num_args, TY_IDX ty, INT32 inline_state, INT64 flags)
       DevAssert((0),("Odd call actual")) ; 
     }
   }
-  
+
+  if (cwh_stk_get_class() == FLD_item) {
+    det = cwh_addr_offset();
+
+    st = cwh_stk_pop_ST();
+    ret_ty = det.type;
+
+    tr = ts = TY_ret_type(TY_pointed(det.type));
+
+  } else {
+    st = cwh_stk_pop_ST(); 
+    ts = ty;
+    tr = ty;
+    det.off = 0;
+    ret_ty = ST_type(st);
+
+    if (ST_class(st) != CLASS_FUNC) {  /* Must be indirect call, so ptr to */
+                                       /* function. Get function type      */
+
+      DevAssert((TY_kind(ST_type(st)) == KIND_POINTER && 
+		 TY_kind(TY_pointed(ST_type(st))) == KIND_FUNCTION),
+                ("Odd ST"));
+
+      tr = TY_ret_type(TY_pointed(ST_type(st)));
+    }
+  }
+
   /* Function returning character? Reorder to get   */
   /* length of function result as 2nd argument.     */
   /* Function returning struct by value? Delete     */
   /* first arg.                                     */
   /* Will not have function's TY, if via proc_imp   */
   /* so look at first arg.                          */  
-
-  st = cwh_stk_pop_ST(); 
-  ts = ty ;
-  tr = ty ;
-
-  if (ST_class(st) != CLASS_FUNC) {  /* Must be indirect call, so ptr to */
-                                     /* function. Get function type      */
-
-     DevAssert((TY_kind(ST_type(st)) == KIND_POINTER && 
-		TY_kind(TY_pointed(ST_type(st))) == KIND_FUNCTION),
-                ("Odd ST"));
-
-     tr = TY_ret_type(TY_pointed(ST_type(st)));
-  }
 
   if (ST_auxst_has_rslt_tmp(st) || cwh_types_is_character(tr)) {
 
@@ -926,7 +941,6 @@ cwh_stmt_call_helper(INT32 num_args, TY_IDX ty, INT32 inline_state, INT64 flags)
     }
 #endif /* KEY Bug 10282 */
   }
-  
 
   /* create call (or indirect call if dummy procedure)  */
 
@@ -948,8 +962,9 @@ cwh_stmt_call_helper(INT32 num_args, TY_IDX ty, INT32 inline_state, INT64 flags)
   else
     Get_Return_Mtypes(ts, Use_Simulated, &rbtype1,&rbtype2);
 
-
-  if (ST_sclass(st) != SCLASS_FORMAL) {
+  i = ST_sclass(st);
+  if (i != SCLASS_FORMAL && i != SCLASS_FORMAL_REF && i != SCLASS_AUTO &&
+      i != SCLASS_PSTATIC && i != SCLASS_FSTATIC && i != SCLASS_COMMON) {
 
      opc = OPCODE_make_op(OPR_CALL,TY_mtype(ts),MTYPE_V);
      wn  = WN_Create(opc,nargs);
@@ -976,8 +991,8 @@ cwh_stmt_call_helper(INT32 num_args, TY_IDX ty, INT32 inline_state, INT64 flags)
 
      opc = OPCODE_make_op (OPR_ICALL,TY_mtype(ts),MTYPE_V);
      wn  = WN_Create(opc,nargs+1);
-     WN_set_ty(wn,TY_pointed(ST_type(st)));
-     WN_kid(wn,nargs) = cwh_addr_load_ST(st,0,ST_type(st));
+     WN_set_ty(wn,TY_pointed(ret_ty));
+     WN_kid(wn,nargs) = cwh_addr_load_ST(st, det.off, ret_ty);
   }
 
   if (forward_barrier) {

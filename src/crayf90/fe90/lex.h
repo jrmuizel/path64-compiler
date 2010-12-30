@@ -138,6 +138,7 @@ static	kwd_type		kwd[] = {
 				"ASSIGNMENT",	     Tok_Kwd_Assignment,
 				"AUTOMATIC",	     Tok_Kwd_Automatic,
 				"ALLOCATE",	     Tok_Kwd_Allocate,
+				"ABSTRACT",	     Tok_Kwd_Abstract,
 				"ASSIGN",	     Tok_Kwd_Assign,
 
 				"BACKSPACE",	     Tok_Kwd_Backspace,
@@ -212,6 +213,7 @@ static	kwd_type		kwd[] = {
 #endif /* KEY Bug 5089 */
 				"NAMELIST",	     Tok_Kwd_Namelist,
 				"NULLIFY",	     Tok_Kwd_Nullify,
+				"NOPASS",	     Tok_Kwd_Nopass,
 #ifdef KEY /* Bug 10572 */
 				"NAME",		     Tok_Kwd_Name,
 #endif /* KEY Bug 10572 */

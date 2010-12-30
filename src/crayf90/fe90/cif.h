@@ -1193,7 +1193,8 @@ extern int Cif_Open __((char *, char *, int *, int));
 #define CIF_F90_TP_PURE         132
 #define CIF_F90_TP_FORALL	133
 #define CIF_F90_TP_FORALL_CONSTRUCT	134
-#define CIF_F90_TP_MAX		135
+#define CIF_F90_TP_PROCEDURE    135
+#define CIF_F90_TP_MAX		136
 
 
 

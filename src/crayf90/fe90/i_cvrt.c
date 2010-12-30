@@ -124,7 +124,7 @@ static  int     pdg_type_tbl_num_wds    = HOST_BYTES_TO_WORDS(
 static  int     pdg_type_tbl_size;
 static  int     pdg_type_tbl_largest_idx;
 
-static  int             pdg_basic_type[Num_Basic_Types] = {
+static  int             pdg_basic_type[Last_Basic_Type] = {
                         Integral,
                         L_ogical,
                         Floating_Pt,
@@ -1940,6 +1940,9 @@ static void	cvrt_exp_to_pdg(int         ir_idx,
          PDG_DBG_PRINT_LD("(1) PDG_AT_IDX", PDG_AT_IDX(ir_idx));
          PDG_DBG_PRINT_END    
 
+	 if (ATP_PP_FUNC(ir_idx) != NULL_IDX)
+	     ir_idx = ATP_PP_ATD(ir_idx);
+
 # ifdef _ENABLE_FEI
          fei_function_ref(PDG_AT_IDX(ir_idx)); 
 # endif
@@ -2123,6 +2126,15 @@ static void	cvrt_exp_to_pdg(int         ir_idx,
          break;
 
 
+      case ProcPtr_Asg_Opr:
+         cvrt_exp_to_pdg(IR_IDX_L(ir_idx), 
+                         IR_FLD_L(ir_idx));
+
+         cvrt_exp_to_pdg(IR_IDX_R(ir_idx), 
+                         IR_FLD_R(ir_idx));
+
+	 fei_store(pdg_type_void);
+	 break;
 
 
       case Ptr_Asg_Opr :
@@ -2140,10 +2152,6 @@ static void	cvrt_exp_to_pdg(int         ir_idx,
          fei_dv_ptr_asg();
 # endif
          break;
-
-
-
-
 
 
       case Length_Opr :
@@ -6140,8 +6148,7 @@ static void	cvrt_exp_to_pdg(int         ir_idx,
                            IR_FLD_L(ir_idx));
 
            static_initialization = FALSE;
-        }
-        else {
+        } else {
            data_attr = NULL_IDX;
            stack_data_object = TRUE;
            cvrt_exp_to_pdg(IR_IDX_L(ir_idx),    /* stack the object */
@@ -6934,11 +6941,15 @@ CONTINUE:
            number_actual_args = IR_LIST_CNT_R(ir_idx);
         }
 
-        if (ATP_PGM_UNIT(IR_IDX_L(ir_idx)) == Subroutine ||
+	if (IR_FLD_L(ir_idx) == IR_Tbl_Idx)
+	    type_desc = get_type_desc(ATD_PP_ATP(IR_IDX_R(IR_IDX_L(ir_idx))));
+
+	else if (AT_OBJ_CLASS(IR_IDX_L(ir_idx)) == Pgm_Unit &&
+	    (ATP_PGM_UNIT(IR_IDX_L(ir_idx)) == Subroutine ||
 #ifdef KEY /* Bug 5089 */
-            special_case_fcn_to_sub(IR_IDX_L(ir_idx)) ||
+	     special_case_fcn_to_sub(IR_IDX_L(ir_idx)) ||
 #endif /* KEY Bug 5089 */
-            ATP_EXTRA_DARG(IR_IDX_L(ir_idx))) {
+	     ATP_EXTRA_DARG(IR_IDX_L(ir_idx)))) {
            type_desc = pdg_type_void;
 
            if (ATP_HAS_ALT_RETURN(IR_IDX_L(ir_idx))) {
@@ -6951,9 +6962,10 @@ CONTINUE:
            type_desc = get_type_desc(IR_IDX_L(ir_idx));
         }
 
-        flags = 0;
-        flags |= ATP_DOES_NOT_RETURN(IR_IDX_L(ir_idx)) 
-                                           << FEI_CALL_DOES_NOT_RETURN;
+        flags = AT_OBJ_CLASS(IR_IDX_L(ir_idx)) == Pgm_Unit
+	    ? (ATP_DOES_NOT_RETURN(IR_IDX_L(ir_idx)) <<
+	       FEI_CALL_DOES_NOT_RETURN)
+	    : 0;
 
         /* Always pass FALSE for the alternate return argument.  PDGCS does */
         /* not use this for Fortran 90.                                     */
@@ -10548,7 +10560,7 @@ static void	cvrt_ir_to_pdg(int	scp_idx)
 |* Description:								      *|
 |*									      *|
 |* Input parameters:							      *|
-|*	NONE								      *|
+|*									      *|
 |*									      *|
 |* Output parameters:							      *|
 |*	NONE								      *|
@@ -10568,6 +10580,7 @@ static TYPE get_basic_type(int	type_idx,
    INTPTR	cdx;
    int      	flags		= 0;
    TYPE		idx;
+   int		m, bt, size;
 
 # if !defined(_ALTERNATIVE_INTERFACE_FOR_POINTEES)
    int		attr_idx;
@@ -10917,6 +10930,30 @@ static TYPE get_basic_type(int	type_idx,
       }
       break;
 
+
+   case Procedure_Ptr:
+       m = ATD_PP_ATP(input_attr_idx);
+
+       if (ATP_PGM_UNIT(m) == Pgm_Unknown || ATP_PGM_UNIT(m) == Subroutine ||
+	   ATP_PP_PROTO(m)) {
+
+	   bt = V_oid;
+	   size = 0;
+
+       } else {
+	   m = ATD_TYPE_IDX(ATP_RSLT_IDX(m));
+
+	   bt = pdg_basic_type[TYP_TYPE(m)];
+	   size = bit_size_tbl[m];
+       }
+
+       idx = fei_descriptor(flags,
+			    Basic,
+			    size,
+			    Procedure_Pointer,
+			    bt,
+			    DWord_Align);
+       break;
    }
 
    TRACE (Func_Exit, "get_basic_type", NULL);
@@ -13927,7 +13964,7 @@ static void  send_darg_list(int		pgm_attr_idx,
 
       if (PDG_AT_IDX(attr_idx) == NULL_IDX) {
          if (AT_OBJ_CLASS(attr_idx) == Data_Obj) {
-            send_attr_ntry(attr_idx);
+	    send_attr_ntry(attr_idx);
          }
          else {
             send_dummy_procedure(attr_idx);

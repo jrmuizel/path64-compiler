@@ -76,6 +76,18 @@ static	boolean	parse_initializer(int);
 static	void	parse_only_spec(int);
 static	void	retype_attr(int);
 
+
+typedef struct {
+    int last_idx, optional, pointer, save, public, private, nopass, bind_c;
+    intent_type intent;
+    token_type bind_label;
+} proc_attr_spec_t;
+
+int pp_type_idx, pp_interface_idx;
+
+int abstract_flag;
+
+
 
 /******************************************************************************\
 |*									      *|
@@ -558,6 +570,85 @@ void parse_contains_stmt (void)
    return;
 
 }  /* parse_contains_stmt */
+
+
+
+/******************************************************************************\
+|*									      *|
+|* Description:								      *|
+|*   Create an attribute node that looks like the dereferenced procedure      *|
+|*   pointer.  It's handy to represent the procedure pointer as a	      *|
+|*   Data_Object variable, yet when we get around to invoking it, we	      *|
+|*   want it to look like a Pgm_Unit, with an interface, return value	      *|
+|*   and all the rest.							      *|
+|*									      *|
+|*   Normally, attribute nodes are linked through the name table,	      *|
+|*   which means that our attribute cannot be access through there.	      *|
+|*   On the other hand, it ends up pointing to the same name as ident_idx.    *|
+|*									      *|
+|* Input parameters:							      *|
+|*	index of the variable or derived type component			      *|
+|*									      *|
+|* Output parameters:							      *|
+|*	NONE								      *|
+|*									      *|
+|* Returns:								      *|
+|*	NONE                                                                  *|
+|*									      *|
+\******************************************************************************/
+
+static void proc_pointer_attrs(int ident_idx) {
+int proc_idx, result_idx;
+
+    NTR_ATTR_TBL(proc_idx);
+    AT_OBJ_CLASS(proc_idx) = Pgm_Unit;
+
+    AT_NAME_IDX(proc_idx) = AT_NAME_IDX(ident_idx);
+    AT_NAME_LEN(proc_idx) = AT_NAME_LEN(ident_idx);
+
+    ATP_EXT_NAME_IDX(proc_idx) = AT_NAME_IDX(ident_idx);
+    ATP_EXT_NAME_LEN(proc_idx) = AT_NAME_LEN(ident_idx);
+
+    ATP_DCL_EXTERNAL(proc_idx) = TRUE;
+    ATP_PP_FUNC(proc_idx) = TRUE;
+
+    ATD_PP_ATP(ident_idx) = proc_idx;
+    ATP_PP_ATD(proc_idx)  = ident_idx;
+
+    if (pp_interface_idx != NULL_IDX) {
+	/* Store the index of the interface.  We don't check that
+	 * pp_interface_idx is an interface until the procedure call
+	 * is semantically checked. */
+
+	ATP_PGM_UNIT(proc_idx) = Pgm_Unknown;
+	ATP_RSLT_IDX(proc_idx) = pp_interface_idx;
+	ATP_PP_PROTO(proc_idx) = TRUE;
+
+    } else {
+	/* There was either an explicit function result type or
+	 * nothing.  The difference is that the ATD_TYPE_IDX of
+	 * result_idx is NULL_IDX or a type.  If the procedure
+	 * pointer turns out to be a pointer to a subroutine, the
+	 * result_idx is abandoned later. */
+
+	ATP_PGM_UNIT(proc_idx) = Pgm_Unknown;   /* Even for functions */
+
+	NTR_ATTR_TBL(result_idx);
+
+	AT_NAME_IDX(result_idx) = AT_NAME_IDX(ident_idx);
+	AT_NAME_LEN(result_idx) = AT_NAME_LEN(ident_idx);
+
+	AT_OBJ_CLASS(result_idx) = Data_Obj;
+	ATD_CLASS(result_idx)    = Function_Result;
+	ATD_TYPE_IDX(result_idx) = pp_type_idx;
+	AT_TYPED(result_idx)     = (pp_type_idx != NULL_IDX);
+
+	ATP_RSLT_IDX(proc_idx)   = result_idx;
+	ATP_PP_PROTO(proc_idx)   = FALSE;
+    }
+}
+
+
 
 /******************************************************************************\
 |*									      *|
@@ -617,7 +708,7 @@ static void parse_cpnt_dcl_stmt()
 
    found_colon			= FALSE;
    colon_recovery		= TRUE;		   /* Can recover at ::  */
-   type_err			= !parse_type_spec(TRUE);  /* Get KIND   */
+   type_err			= !parse_type_spec(TRUE, TRUE);  /* Get KIND   */
    type_idx			= ATD_TYPE_IDX(AT_WORK_IDX);
    AT_DCL_ERR(AT_WORK_IDX)	= type_err;
    stmt_number			= statement_number;
@@ -675,6 +766,10 @@ static void parse_cpnt_dcl_stmt()
 		    "ALLOCATABLE");
                }
 
+	       if (TYP_LINEAR(type_idx) == Proc_Ptr)
+		   PRINTMSG(TOKEN_LINE(token), 197, Error, TOKEN_COLUMN(token),
+			    "POINTER", TOKEN_STR(token));
+
                have_attr_list			= TRUE;
 	       ATD_ALLOCATABLE(AT_WORK_IDX)	= TRUE;
 	       ATD_IM_A_DOPE(AT_WORK_IDX)       = TRUE;
@@ -692,10 +787,11 @@ static void parse_cpnt_dcl_stmt()
                             TOKEN_COLUMN(token), "POINTER");
                }
 
+               ATD_POINTER(AT_WORK_IDX)	  = TYP_LINEAR(type_idx) != Proc_Ptr;
+               ATD_IM_A_DOPE(AT_WORK_IDX) = TYP_LINEAR(type_idx) != Proc_Ptr;
+               ATT_POINTER_CPNT(CURR_BLK_NAME)	|= TYP_LINEAR(type_idx) != Proc_Ptr;
+
                have_attr_list			= TRUE;
-               ATD_POINTER(AT_WORK_IDX)		= TRUE;
-               ATD_IM_A_DOPE(AT_WORK_IDX)	= TRUE;
-               ATT_POINTER_CPNT(CURR_BLK_NAME)	= TRUE;
                ATT_NUMERIC_CPNT(CURR_BLK_NAME)	= TRUE;
                break;
 
@@ -705,6 +801,10 @@ static void parse_cpnt_dcl_stmt()
                   PRINTMSG (TOKEN_LINE(token), 273, Error, 
                             TOKEN_COLUMN(token), "DIMENSION");
                }
+
+	       if (TYP_LINEAR(type_idx) == Proc_Ptr)
+		   PRINTMSG(TOKEN_LINE(token), 197, Error, TOKEN_COLUMN(token),
+			    "POINTER", TOKEN_STR(token));
 
                have_attr_list	= TRUE;
 
@@ -734,7 +834,11 @@ static void parse_cpnt_dcl_stmt()
 # endif
 
                break;
-                          
+
+	    case Tok_Kwd_Nopass:
+	       break;    /* More here later */
+
+
             default: /* POINTER and/or DIMENSION must follow the first comma */
                PRINTMSG(TOKEN_LINE(token), 197, Error, TOKEN_COLUMN(token),
                         "POINTER or DIMENSION", TOKEN_STR(token));
@@ -924,8 +1028,8 @@ static void parse_cpnt_dcl_stmt()
       AT_TYPED(attr_idx)		= AT_TYPED(AT_WORK_IDX);
       AT_DCL_ERR(attr_idx)		= AT_DCL_ERR(AT_WORK_IDX);
 
-      if (type_err) {
-         SET_IMPL_TYPE(attr_idx);
+      if (TYP_LINEAR(type_idx) != Proc_Ptr && type_err) {
+	 SET_IMPL_TYPE(attr_idx);
       }
       else {
          ATD_TYPE_IDX(attr_idx)	= type_idx;
@@ -939,7 +1043,10 @@ static void parse_cpnt_dcl_stmt()
                        CIF_Symbol_Declaration);
       }
 
-      if (LA_CH_VALUE == LPAREN) {
+      if (TYP_LINEAR(type_idx) == Proc_Ptr) {
+	  proc_pointer_attrs(attr_idx);
+      }
+      else if (LA_CH_VALUE == LPAREN) {
          save_line			= TOKEN_LINE(token);
          save_column			= TOKEN_COLUMN(token);
          idx				= parse_array_spec(attr_idx);
@@ -1320,7 +1427,7 @@ DATA_STMT_SET:
 
          if (LA_CH_VALUE == LPAREN  ||  LA_CH_VALUE == PERCENT) {
 
-            if (parse_deref(&opnd, NULL_IDX)) {
+	    if (parse_deref(&opnd, NULL_IDX, 0)) {
 
                if (OPND_FLD(opnd) == IR_Tbl_Idx  &&
                    IR_OPR(OPND_IDX(opnd)) == Call_Opr) {
@@ -2267,7 +2374,7 @@ void parse_implicit_stmt (void)
                       TOKEN_VALUE(token) != Tok_Kwd_Type &&
                       ch_after_paren_grp() == LPAREN);
 
-         type_err	= !parse_type_spec(have_kind);
+         type_err	= !parse_type_spec(have_kind, FALSE);
          type_idx	= ATD_TYPE_IDX(AT_WORK_IDX);
 
          if (type_err) { /* No valid type keyword */
@@ -2539,6 +2646,111 @@ static void retype_attr(int	attr_idx)
    return;
 
 }  /* retype_attr */
+
+
+
+/******************************************************************************\
+|*									      *|
+|* Description:								      *|
+|*	BNF is    ABSTRACT INTERFACE		          	       	      *|
+|*									      *|
+|* Input parameters:							      *|
+|*	NONE								      *|
+|*									      *|
+|* Output parameters:							      *|
+|*	NONE								      *|
+|*									      *|
+|* Returns:								      *|
+|*	NONE								      *|
+|*									      *|
+|*      Abstract interfaces are the same thing as a regular nameless	      *|
+|*      interface, except that we set the abstract flag for the procedures.   *|
+|*      Abstract interfaces do not generate any external references.  Much    *|
+|*      is copied from parse_interface().  It's not clear why the semantics   *|
+|*      subroutine is called where it is not called for parse_interface().    *|
+|*									      *|
+\******************************************************************************/
+
+void parse_abstract_stmt (void)
+{
+int attr_idx = NULL_IDX;
+id_str_type name;
+int m, stmt_number;
+
+    if (!matched_specific_token(Tok_Kwd_Interface, Tok_Class_Keyword)) {
+	parse_err_flush(Find_EOS, "INTERFACE");
+	NEXT_LA_CH;
+	return;
+    }
+
+    if (LA_CH_VALUE != EOS) {
+	parse_err_flush(Find_EOS, "EOS");
+	NEXT_LA_CH;
+	return;
+    }
+
+    stmt_number = statement_number;
+
+    /* Generate an unnamed attr entry for this interface.  It is used */
+    /* for collapsing the individual interface bodies at one time.    */
+
+    CREATE_ID(name, "unnamed interface", 17);
+    attr_idx = ntr_local_attr_list(name.string,
+				   17,
+				   TOKEN_LINE(token),
+				   TOKEN_COLUMN(token));
+    AT_OBJ_CLASS(attr_idx)		= Interface;
+    ATI_UNNAMED_INTERFACE(attr_idx)	= TRUE;
+
+    if (cif_flags & MISC_RECS) {
+	cif_stmt_type_rec(TRUE, CIF_Interface_Explicit_Stmt, stmt_number);
+    }
+
+    if ((STMT_OUT_OF_ORDER(curr_stmt_category, Interface_Stmt) ||
+	 STMT_CANT_BE_IN_BLK(Interface_Stmt, CURR_BLK)) &&
+        iss_blk_stk_err()) {
+	PUSH_BLK_STK(Interface_Blk);
+	CURR_BLK_ERR 		= TRUE;
+    }
+    else {
+	PUSH_BLK_STK(Interface_Blk);
+	curr_stmt_category	= Sub_Func_Stmt_Cat;
+    }
+
+    CURR_BLK_NO_EXEC		= TRUE;
+
+    /* Save the unnamed interface attr in the blk stack, but not in   */
+    /* CURR_BLK_NAME.  If it is in CURR_BLK_NAME, there are too many  */
+    /* ways the block stack can get messed up.                        */
+ 
+    if (attr_idx != NULL_IDX && ATI_UNNAMED_INTERFACE(attr_idx)) {
+	BLK_UNNAMED_INTERFACE(blk_stk_idx) = attr_idx;
+	attr_idx = NULL_IDX;
+    }
+   
+    CURR_BLK_NAME = attr_idx;
+    NEXT_LA_CH;				/* Pick up EOS */
+         
+    if (cif_flags & BASIC_RECS) {
+	cif_begin_scope_rec();
+
+	if (attr_idx != NULL_IDX) {
+	    ATI_CIF_SCOPE_ID(attr_idx) = BLK_CIF_SCOPE_ID(blk_stk_idx);
+	}
+	else if (BLK_UNNAMED_INTERFACE(blk_stk_idx) != NULL_IDX) {
+	    ATI_CIF_SCOPE_ID(BLK_UNNAMED_INTERFACE(blk_stk_idx)) =
+		BLK_CIF_SCOPE_ID(blk_stk_idx);
+	}
+    }
+
+    abstract_flag = 1;
+}
+
+
+void abstract_stmt_semantics(void) { }
+
+
+
 
 /******************************************************************************\
 |*									      *|
@@ -2680,6 +2892,7 @@ void parse_interface_stmt (void)
       }
    }
 
+   abstract_flag = 0;
    TRACE (Func_Exit, "parse_interface_stmt", NULL);
 
    return;
@@ -3240,6 +3453,425 @@ EXIT:
    return;
 
 }  /* parse_parameter_stmt */
+
+
+
+/******************************************************************************\
+|*                                                                            *|
+|* Description:	Return a type index for procedure pointers                    *|
+|*                                                                            *|
+|* Input parameters:							      *|
+|*      NONE                                                                  *|
+|*									      *|
+|* Output parameters:							      *|
+|*	NONE								      *|
+|*									      *|
+|* Returns:								      *|
+|*	Type index							      *|
+|*									      *|
+\******************************************************************************/
+
+int pp_type_index(void) {
+
+    CLEAR_TBL_NTRY(type_tbl, TYP_WORK_IDX);
+
+    TYP_LINEAR(TYP_WORK_IDX) = Proc_Ptr;
+    TYP_TYPE(TYP_WORK_IDX)   = Procedure_Ptr;
+
+    return ntr_type_tbl();
+}
+
+
+
+/******************************************************************************\
+|*                                                                            *|
+|* Description:	Read the input for '=> NULL()'.                               *|
+|*              The '=' has already been seen.                                *|
+|*              This is quicker and easier than parsing a full expression     *|
+|*                                                                            *|
+|* Input parameters:							      *|
+|*      NONE                                                                  *|
+|*									      *|
+|* Output parameters:							      *|
+|*	NONE								      *|
+|*									      *|
+|* Returns:								      *|
+|*	Nonzero on error.  Prints message, caller flushes tokens to next stmt *|
+|*									      *|
+\******************************************************************************/
+
+static int gobble_null(int ident_idx)
+{
+char *p = "NULL";
+int init_ir_idx;
+opnd_type init_opnd;
+
+    NEXT_LA_CH;
+
+    if (LA_CH_VALUE != '>')
+	goto syntax;
+
+    do
+	NEXT_LA_CH;
+    while(LA_CH_VALUE == ' ');
+
+    while(*p != '\0') {
+	if (LA_CH_VALUE != *p++)
+	    goto syntax;
+
+	NEXT_LA_CH;
+    }
+
+    while(LA_CH_VALUE == ' ')
+	NEXT_LA_CH;
+
+    if (LA_CH_VALUE != '(')
+	goto syntax;
+
+    NEXT_LA_CH;
+    while(LA_CH_VALUE == ' ')
+	NEXT_LA_CH;
+
+    if (LA_CH_VALUE != ')')
+	goto syntax;
+
+    NEXT_LA_CH;
+
+    /* Force the variable into the bss, where it starts out with zero. */
+
+    ATD_DATA_INIT(ident_idx) = TRUE;
+    return 0;
+
+syntax:
+    PRINTMSG(LA_CH_LINE, 197, Error, LA_CH_COLUMN,
+	     "NULL() initialization", TOKEN_STR(token));
+    return 1;
+}
+
+
+/******************************************************************************\
+|*                                                                            *|
+|* Description:	Create a procedure/pointer procedure variable		      *|
+|*                                                                            *|
+|* Input parameters:							      *|
+|*	Pointer to proc_attr_spec_t structure that gives the attributes of    *|
+|*	the procedure or procedure pointer variable.			      *|
+|*									      *|
+|* Output parameters:							      *|
+|*	NONE								      *|
+|*									      *|
+|* Returns:								      *|
+|*	Nonzero on error.  Prints message, caller flushes tokens to next stmt *|
+|*									      *|
+\******************************************************************************/
+
+static int procedure_var(proc_attr_spec_t *spec) {
+int ident_idx, name_idx, proc_idx, result_idx;
+int m, err, line, col;
+int rr;
+
+    ident_idx = srch_sym_tbl(TOKEN_STR(token), TOKEN_LEN(token), &name_idx);
+
+    line = TOKEN_LINE(token);
+    col  = TOKEN_COLUMN(token);
+
+    if (ident_idx == NULL_IDX) {
+	ident_idx = ntr_sym_tbl(&token, name_idx);
+	LN_DEF_LOC(name_idx) = TRUE;
+
+    } else if (AT_TYPED(ident_idx)) {
+	PRINTMSG(line, 550, Error, col, AT_OBJ_NAME_PTR(ident_idx),
+		 get_basic_type_str(ATD_TYPE_IDX(ident_idx)),
+		 "Procedure pointer", AT_DEF_LINE(ident_idx));
+
+	return 1;
+    }
+
+    spec->last_idx = ident_idx;
+
+    if (spec->pointer) {
+	if (ATD_CLASS(ident_idx) == Atd_Unknown)
+	    ATD_CLASS(ident_idx) = Variable;
+
+	ATD_TYPE_IDX(ident_idx) = pp_type_index();	    
+	AT_TYPED(ident_idx)     = TRUE;
+
+    } else if (!merge_external(TRUE, line, col, ident_idx))
+	return 1;
+
+    if (spec->public && !merge_access(ident_idx, line, col, Public))
+	return 1;
+
+    if (spec->private && !merge_access(ident_idx, line, col, Private))
+	return 1;
+
+    if (spec->save && !merge_save(TRUE, line, col, ident_idx))
+	return 1;
+
+    if (spec->optional && !merge_optional(TRUE, line, col, ident_idx))
+	return 1;
+
+    if (spec->intent != Intent_Unseen) {
+	new_intent = spec->intent;
+	if (!merge_intent(TRUE, line, col, ident_idx))
+	    return 1;
+    }
+
+    if (spec->bind_c) {
+	/* TODO:  This doesn't quite work yet */
+	set_binding_label(AT_Tbl_Idx, ident_idx, &spec->bind_label);
+    }
+
+    if (spec->pointer)
+	proc_pointer_attrs(ident_idx);
+
+    return 0;
+}
+
+
+
+/******************************************************************************\
+|*                                                                            *|
+|* Description:	Parse proc-attr-specs					      *|
+|*                                                                            *|
+|* Input parameters:							      *|
+|*	NONE								      *|
+|*									      *|
+|* Output parameters:							      *|
+|*	Initializes a long in attr_list format		 		      *|
+|*									      *|
+|* Returns:								      *|
+|*	Nonzero on parse error.  Prints error message, caller must flush      *|
+|*	tokens to the next statement.					      *|
+|*									      *|
+\******************************************************************************/
+
+static int parse_proc_attr_specs(proc_attr_spec_t *spec) {
+char *existing;
+
+    while(LA_CH_VALUE == COMMA) {
+	NEXT_LA_CH;
+
+	if (!MATCHED_TOKEN_CLASS(Tok_Class_Keyword)) {
+	    LA_CH_TO_ERR_STR(existing, la_ch);
+	    PRINTMSG(LA_CH_LINE, 197, Error, LA_CH_COLUMN,
+		     "Procedure-attribute", existing);
+	    return 1;
+	}
+
+	switch(TOKEN_VALUE(token)) {
+	case Tok_Kwd_Pointer:
+	    if (spec->pointer) {
+		PRINTMSG(TOKEN_LINE(token), 424, Error,
+			 TOKEN_COLUMN(token), "POINTER");
+		return 1;
+	    }
+
+	    spec->pointer = 1;
+	    break;
+
+	case Tok_Kwd_Nopass:
+	    if (spec->nopass) {
+		PRINTMSG(TOKEN_LINE(token), 424, Error,
+			 TOKEN_COLUMN(token), "NOPASS");
+		return 1;
+	    }
+
+	    spec->nopass = 1;
+	    break;
+
+	case Tok_Kwd_Optional:
+	    if (spec->optional) {
+		PRINTMSG(TOKEN_LINE(token), 424, Error,
+			 TOKEN_COLUMN(token), "OPTIONAL");
+		return 1;
+	    }
+
+	    spec->optional = 1;
+	    break;
+
+	case Tok_Kwd_Save:
+	    if (spec->save) {
+		PRINTMSG(TOKEN_LINE(token), 424, Error,
+			 TOKEN_COLUMN(token), "SAVE");
+		return 1;
+	    }
+
+	    spec->save = 1;
+	    break;
+
+	case Tok_Kwd_Public:
+	    if (spec->public) {
+		PRINTMSG(TOKEN_LINE(token), 424, Error,
+			 TOKEN_COLUMN(token), "PUBLIC");
+		return 1;
+	    }
+
+	    if (spec->private) {
+		PRINTMSG(TOKEN_LINE(token), 425, Error,
+			 TOKEN_COLUMN(token), "PUBLIC", "PRIVATE");
+		return 1;
+	    }
+
+	    spec->public = 1;
+	    break;
+
+	case Tok_Kwd_Private:
+	    if (spec->private) {
+		PRINTMSG(TOKEN_LINE(token), 424, Error,
+			 TOKEN_COLUMN(token), "PRIVATE");
+		return 1;
+	    }
+
+	    if (spec->public) {
+		PRINTMSG(TOKEN_LINE(token), 425, Error,
+			 TOKEN_COLUMN(token), "PRIVATE", "PUBLIC");
+		return 1;
+	    }
+
+	    spec->private = 1;
+	    break;
+
+	case Tok_Kwd_Intent:
+	    if (new_intent != Intent_Unseen) {
+		PRINTMSG(TOKEN_LINE(token), 424, Error,
+			 TOKEN_COLUMN(token), "INTENT");
+		return 1;
+	    }
+
+	    new_intent = parse_intent_spec();
+	    if (new_intent == Intent_Unseen)
+		return 1;
+
+	    break;
+
+	case Tok_Kwd_Bind:
+	    if (spec->bind_c) {
+		PRINTMSG(TOKEN_LINE(token), 424, Error,
+			 TOKEN_COLUMN(token), "BIND");
+		return 1;
+	    }
+
+	    if (!parse_language_binding_spec(&new_binding_label))
+		return 1;
+
+	    spec->bind_c = 1;
+	    break;
+
+	default:
+	    PRINTMSG(LA_CH_LINE, 197, Error, LA_CH_COLUMN,
+		     "Procedure-attribute", TOKEN_STR(token));
+	    return 1;
+	}
+    }
+
+    if (spec->save && !spec->pointer) {
+	PRINTMSG(LA_CH_LINE, 1703, Error, LA_CH_COLUMN, "SAVE", "POINTER");
+	return 1;
+    }
+
+    if (spec->intent != Intent_Unseen && !spec->pointer) {
+	PRINTMSG(LA_CH_LINE, 1703, Error, LA_CH_COLUMN, "INTENT", "POINTER");
+	return 1;
+    }
+
+    return 0;
+}
+
+
+
+/******************************************************************************\
+|*                                                                            *|
+|* Description:	Parse the PROCEDURE statement 				      *|
+|*      BNF       - PROCEDURE ( [proc-interface] )                            *|
+|*                        [[, proc-attr-spec ] ... :: ] proc-decl-list        *|
+|*                                                                            *|
+|* Input parameters:							      *|
+|*	NONE								      *|
+|*									      *|
+|* Output parameters:							      *|
+|*	NONE								      *|
+|*									      *|
+|* Returns:								      *|
+|*	NONE								      *|
+|*									      *|
+\******************************************************************************/
+
+static void parse_procedure_stmt(void)
+{
+proc_attr_spec_t spec;
+boolean error_flag;
+int name_idx;
+
+    spec.intent   = Intent_Unseen;
+    spec.optional = 0;
+    spec.pointer  = 0;
+    spec.save     = 0;
+    spec.public   = 0;
+    spec.private  = 0;
+    spec.public   = 0;
+    spec.bind_c   = 0;
+    spec.nopass   = 0;
+
+    if ((!STMT_OUT_OF_ORDER(curr_stmt_category, Type_Decl_Stmt) &&
+	 !STMT_CANT_BE_IN_BLK(Type_Decl_Stmt, CURR_BLK)) ||
+	!iss_blk_stk_err()) {
+
+	curr_stmt_category = Declaration_Stmt_Cat;
+    }
+
+    if (parse_proc_attr_specs(&spec)) {
+	flush_LA_to_EOS();
+	NEXT_LA_CH;
+	return;
+    }
+
+    /* Consume optional :: */
+
+    if (matched_specific_token(Tok_Punct_Colon_Colon, Tok_Class_Punct) &&
+	LA_CH_VALUE == EOS) {
+
+	parse_err_flush(Find_EOS, "identifier list");
+	NEXT_LA_CH;
+	return;
+    }
+
+    /* Parse the identifier list */
+
+    error_flag = FALSE;
+
+    for(;;) {
+	if (!MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
+	    parse_err_flush(Find_EOS, "Identifier");
+	    error_flag = TRUE;
+	    break;
+	}
+
+	if (procedure_var(&spec)) {
+	    error_flag = TRUE;
+	    flush_LA_to_EOS();
+	    break;
+	}
+
+	if (LA_CH_VALUE == '=' && gobble_null(spec.last_idx)) {
+	    error_flag = TRUE;
+	    break;
+	}
+
+	if (LA_CH_VALUE != COMMA)
+	    break;
+
+	NEXT_LA_CH;
+    }
+
+    if (!error_flag && LA_CH_VALUE != EOS)
+	parse_err_flush(Find_EOS, ", or " EOS_STR);
+
+    NEXT_LA_CH;
+}
+
+
+
 
 /******************************************************************************\
 |*									      *|
@@ -3554,6 +4186,8 @@ EXIT:
 
 }  /* parse_stmt_func_stmt */
 
+
+
 
 /******************************************************************************\
 |*									      *|
@@ -3569,6 +4203,7 @@ EXIT:
 |*                            LOGICAL [kind-selector]                         *|
 |*                            TYPE (type-name)                                *|
 |*                            BYTE                                            *|
+|*                            PROCEDURE                                       *|
 |*            entity_dcl_list is                                              *|
 |*              object-name[(array-spec)][*char-length][=initialization-expr] *|
 |*            attr_spec is    done in parse_attr_spec                         *|
@@ -3661,11 +4296,15 @@ void parse_type_dcl_stmt (void)
                                    LA_CH_VALUE == STAR);
    found_colon			= FALSE;
    found_end			= FALSE;
-   type_err			= !parse_type_spec(TRUE);
+   type_err			= !parse_type_spec(TRUE, TRUE);
    AT_DCL_ERR(AT_WORK_IDX)	= type_err;
    type_idx			= ATD_TYPE_IDX(AT_WORK_IDX);
    array_idx			= NULL_IDX;
 
+   if (TYP_LINEAR(type_idx) == Proc_Ptr) {
+       parse_procedure_stmt();
+       goto EXIT;
+   }
 
    if (LA_CH_VALUE == COMMA && (!check_char_comma || stmt_has_double_colon())) {
 
@@ -3694,7 +4333,7 @@ void parse_type_dcl_stmt (void)
       /* is legal.  Dimension cannot be merged until B is processed.    */
 
       new_intent	= Intent_Unseen;
-      attr_list		= parse_attr_spec(&array_idx, &has_parameter);
+      attr_list = parse_attr_spec(&array_idx, &has_parameter);
 
 # ifdef _F_MINUS_MINUS
       if (AT_OBJ_CLASS(AT_WORK_IDX) == Data_Obj) {
@@ -6153,7 +6792,7 @@ static	boolean  parse_data_imp_do(opnd_type	*result_opnd)
          if (LA_CH_VALUE == EQUAL) {
             had_equal = TRUE;
 
-            parsed_ok = parse_deref(&opnd, NULL_IDX) && parsed_ok;
+            parsed_ok = parse_deref(&opnd, NULL_IDX, 0) && parsed_ok;
 
             if (parsed_ok) {
                mark_attr_defined(&opnd);
@@ -6289,7 +6928,7 @@ static	boolean  parse_data_imp_do(opnd_type	*result_opnd)
 
             if (LA_CH_VALUE == LPAREN  ||  LA_CH_VALUE == PERCENT) {
 
-               if (parse_deref(&opnd, NULL_IDX)) {
+	       if (parse_deref(&opnd, NULL_IDX, 0)) {
 
                   if (OPND_FLD(opnd) == IR_Tbl_Idx  &&
                       IR_OPR(OPND_IDX(opnd)) == Call_Opr) {

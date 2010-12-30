@@ -1106,6 +1106,77 @@ parse_non_char_kind_selector(boolean double_precision) {
    return NULL_IDX;
 }
 #endif /* KEY Bug 8422 */
+
+
+
+
+/******************************************************************************\
+|*									      *|
+|* Description:								      *|
+|*      Parse the procedure interface specification inside the parens.        *|
+|*      Set pp_type_idx to an intrincic type index if found                   *|
+|*      Set pp_interface_idx to the symbol index of the non-type symbol       *|
+|*      Both are set to NULL_IDX if not found.                                *|
+|*									      *|
+|* Input parameters:							      *|
+|*	NONE								      *|
+|*									      *|
+|* Output parameters:							      *|
+|*	NONE								      *|
+|*									      *|
+|* Returns:								      *|
+|*	TRUE if parsed OK						      *|
+|*									      *|
+\******************************************************************************/
+
+static int parse_procedure_interface_spec(void) {
+int name_idx;
+
+    pp_type_idx      = NULL_IDX;
+    pp_interface_idx = NULL_IDX;
+
+    if (!matched_specific_token(Tok_Punct_Lparen, Tok_Class_Punct)) {
+	parse_err_flush(Find_EOS, "Left Paren");
+
+	NEXT_LA_CH;
+	return FALSE;
+    }
+
+    if (LA_CH_VALUE == ')')
+	NEXT_LA_CH;
+
+    else {
+       	if (matched_specific_token(Tok_Id, Tok_Class_Keyword)) {
+	    pp_interface_idx =
+		srch_sym_tbl(TOKEN_STR(token), TOKEN_LEN(token), &name_idx);
+
+	    if (pp_interface_idx == NULL_IDX)
+		pp_interface_idx = ntr_sym_tbl(&token, name_idx);
+
+	} else {
+	    get_token(Tok_Class_Keyword);
+	    if (parse_type_spec(TRUE, FALSE))
+		pp_type_idx = ATD_TYPE_IDX(AT_WORK_IDX);
+
+	    else {
+		NEXT_LA_CH;    /* Error already issued */
+		return FALSE;
+	    }
+	}
+
+	if (!matched_specific_token(Tok_Punct_Rparen, Tok_Class_Punct)) {
+	    parse_err_flush(Find_EOS, "Right Paren");
+	    NEXT_LA_CH;
+	    return FALSE;
+	}
+    }
+
+    AT_TYPED(AT_WORK_IDX) = TRUE;
+    return TRUE;
+}
+
+
+
 
 /******************************************************************************\
 |*                                                                            *|
@@ -1130,6 +1201,7 @@ parse_non_char_kind_selector(boolean double_precision) {
 |* Input parameters:							      *|
 |*	chk_kind - TRUE if check for kind (or kind/len for character) on type *|
 |*			spec				                      *|
+|*      proc_ok  - TRUE if it is OK for a PROCEDURE decl to be here           *|
 |*                                                                            *|
 |* Output parameters:							      *|
 |*	NONE								      *|
@@ -1144,7 +1216,7 @@ parse_non_char_kind_selector(boolean double_precision) {
 |*                                                                            *|
 \******************************************************************************/
 
-boolean parse_type_spec(boolean		chk_kind)
+boolean parse_type_spec(boolean chk_kind, boolean proc_ok)
 
 {
    int			 al_idx;
@@ -1197,6 +1269,19 @@ boolean parse_type_spec(boolean		chk_kind)
    case Tok_Kwd_Logical:
       ATD_TYPE_IDX(AT_WORK_IDX) = LOGICAL_DEFAULT_TYPE;
       break;
+
+   case Tok_Kwd_Procedure:
+      if (proc_ok) {
+	  ATD_TYPE_IDX(AT_WORK_IDX) = pp_type_index();
+	  AT_TYPED(AT_WORK_IDX) = TRUE;
+	  return parse_procedure_interface_spec();
+      }
+
+      PRINTMSG(TOKEN_LINE(token), 197, Error, TOKEN_COLUMN(token),
+               "INTEGER, REAL, DOUBLE, COMPLEX, LOGICAL, CHARACTER or TYPE",
+               TOKEN_STR(token));
+
+      return FALSE;
 
    case Tok_Kwd_Character:
       line			= TOKEN_LINE(token);

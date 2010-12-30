@@ -6565,6 +6565,7 @@ static int cif_data_type(int	data_type)
       case Typeless_4:
       case Typeless_8:
       case Long_Typeless:
+      case Proc_Ptr:
 
          /* Need a new libcif define constant for this case.                  */
 

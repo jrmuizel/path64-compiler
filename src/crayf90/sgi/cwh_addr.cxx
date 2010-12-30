@@ -1442,6 +1442,11 @@ cwh_addr_load_ST(ST * st, OFFSET_64 off, TY_IDX dty)
     }
     break ;
 
+  case SCLASS_EXTERN:
+  case SCLASS_TEXT:
+    wn = cwh_addr_address_ST(st);
+    break;
+
   case SCLASS_AUTO:
   case SCLASS_FSTATIC:
   case SCLASS_PSTATIC:

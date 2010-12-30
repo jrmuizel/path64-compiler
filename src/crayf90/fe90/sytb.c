@@ -4489,7 +4489,8 @@ char *get_basic_type_str(int			type_idx)
      /* Character_4 */		"CHARACTER",
      /* CRI_Ch_Ptr_8 */		"Cray character pointer",
      /* Structure_Type */	"[Internal Error1]",
-     /* CRI_Parcel_Ptr_8 */	"Cray parcel pointer"
+     /* CRI_Parcel_Ptr_8 */	"Cray parcel pointer",
+     /* Proc_Ptr */             "Procedure pointer"
      };
 # ifdef _DEBUG
    /* Make sure the initializer isn't missing any elements */

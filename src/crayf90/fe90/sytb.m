@@ -84,7 +84,7 @@
 # ifdef _HOST64
 #	define NUM_AA_WDS		3
 #	define NUM_AL_WDS		1
-#	define NUM_AT_WDS		7
+#	define NUM_AT_WDS		8
 #	define NUM_BD_WDS		2
 #       define NUM_BLK_STK_WDS  	8
 #	define NUM_CN_WDS		2
@@ -117,7 +117,7 @@
 # else
 #	define NUM_AA_WDS		6
 #	define NUM_AL_WDS		2
-#	define NUM_AT_WDS		14
+#	define NUM_AT_WDS		16
 #	define NUM_BD_WDS		4
 #       define NUM_BLK_STK_WDS  	16
 #	define NUM_CN_WDS		4
@@ -1434,6 +1434,20 @@
 # define ATD_VOLATILE(IDX)		attr_tbl[IDX].fld.flag42
 # endif
 
+# ifdef _DEBUG
+# define ATD_PP_ATP(IDX)				 	 	       \
+         ((AT_OBJ_CLASS(IDX) == Data_Obj &&				       \
+	   (attr_tbl[IDX].fld.secondary_info == Variable ||		       \
+	    attr_tbl[IDX].fld.secondary_info == Dummy_Argument ||	       \
+	    attr_tbl[IDX].fld.secondary_info == Struct_Component) &&	       \
+	   TYP_LINEAR(ATD_TYPE_IDX(IDX)) == Proc_Ptr) ?			       \
+	      attr_tbl : sytb_var_error("ATD_PP_ATP", IDX))		       \
+	      [IDX].fld.field18
+# else
+# define ATD_PP_ATP(IDX)	attr_tbl[IDX].fld.field18
+# endif
+
+
 
 /* Definitions for interface class */
 
@@ -1608,6 +1622,7 @@
 # else
 # define ATI_USER_SPECIFIED(IDX)	attr_tbl[IDX].fld.flag4
 # endif
+
 
 
 /* Definitions for label class */
@@ -2724,6 +2739,43 @@
 # else
 # define ATP_VFUNCTION(IDX)		attr_tbl[IDX].fld.flag4
 # endif
+
+# ifdef _DEBUG
+# define ATP_PP_FUNC(IDX)						       \
+	((AT_OBJ_CLASS(IDX) == Pgm_Unit) ?				       \
+		attr_tbl : sytb_var_error("ATP_PP_FUNC", IDX))		       \
+		[IDX].fld.flag17
+# else
+# define ATP_PP_FUNC(IDX)		attr_tbl[IDX].fld.flag17
+# endif
+
+# ifdef _DEBUG
+# define ATP_PP_ATD(IDX)						       \
+	((AT_OBJ_CLASS(IDX) == Pgm_Unit) ?				       \
+		attr_tbl : sytb_var_error("ATP_PP_ATD", IDX))		       \
+		[IDX].fld.field7
+# else
+# define ATP_PP_ATD(IDX)		attr_tbl[IDX].fld.field7
+# endif
+
+# ifdef _DEBUG
+# define ATP_PP_PROTO(IDX)						       \
+	((AT_OBJ_CLASS(IDX) == Pgm_Unit) ?				       \
+		attr_tbl : sytb_var_error("ATP_PP_PROTO", IDX))		       \
+		[IDX].fld.flag11
+# else
+# define ATP_PP_PROTO(IDX)		attr_tbl[IDX].fld.flag11
+# endif
+
+# ifdef _DEBUG
+# define ATP_ABSTRACT(IDX)						       \
+	((AT_OBJ_CLASS(IDX) == Pgm_Unit) ?				       \
+		attr_tbl : sytb_var_error("ATP_ABSTRACT", IDX))		       \
+		[IDX].fld.flag33
+# else
+# define ATP_PP_ABSTRACT(IDX)		attr_tbl[IDX].fld.flag33
+# endif
+
 
 
 /* Symbol table definitions for statement functions. */

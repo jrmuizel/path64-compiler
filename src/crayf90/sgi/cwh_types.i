@@ -425,7 +425,7 @@ static TY_IDX    cwh_types_mk_unique_pointer_TY(TY_IDX  ty, BOOL host) ;
 static TY_IDX    cwh_types_mk_misaligned_TY(TY_IDX ty, mUINT16 alignment) ;
 
 static TY_IDX cwh_types_mk_array_TY(ARB_HANDLE bounds,INT16 n,TY_IDX base, INT64 size);
-static TY_IDX cwh_types_mk_basic_TY (BASIC_TYPE, INTPTR size, mUINT16 alignment) ;
+static TY_IDX cwh_types_mk_basic_TY(BASIC_TYPE, BASIC_TYPE, INTPTR size, mUINT16 alignment) ;
 static TY_IDX cwh_types_mk_struct(INT64 size, INT32 align, FLD_HANDLE list, const char *name) ;
 static TY_IDX cwh_types_shared_dope(FLD_HANDLE  list,int ndims, BOOL is_ptr,
 #ifdef KEY /* Bug 6845 */

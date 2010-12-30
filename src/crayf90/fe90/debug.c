@@ -2358,6 +2358,10 @@ static void chain_thru_sn_ntries (FILE		*out_file,
                      "ATD_TYPE_IDX", ATD_TYPE_IDX(SN_ATTR_IDX(i)),
                       print_type_f(ATD_TYPE_IDX(SN_ATTR_IDX(i))));
 
+	 if (TYP_LINEAR(ATD_TYPE_IDX(SN_ATTR_IDX(i))) == Proc_Ptr)
+	     fprintf(out_file, "  %-16s= %-6d\n",
+		     "ATD_PP_ATP", ATD_PP_ATP(SN_ATTR_IDX(i)));
+
          if (ATD_CPNT_INIT_IDX(SN_ATTR_IDX(i)) != NULL_IDX) {
             print_fld_idx(out_file, "ATD_CPNT_INIT_ID",
                           (fld_type) ATD_FLD(SN_ATTR_IDX(i)),
@@ -3502,7 +3506,7 @@ static	char  *print_global_type_f(int	 gt_idx)
    if (gt_idx == NULL_IDX) {
       sprintf(str, "NULL");
    }
-   else if (GT_TYPE(gt_idx) <= Last_Linear_Type) {
+   else if (GT_TYPE(gt_idx) < Last_Basic_Type) {
 
       if (GT_DESC(gt_idx) == Star_Typed) {
          sprintf(str, "%s * %d", 
@@ -4055,7 +4059,7 @@ static void  print_attr_name(FILE	*out_file,
 
       fprintf(out_file,"  %s * ", basic_type_str[TYP_TYPE(type_idx)]);
 
-      if (TYP_TYPE(type_idx) <= Last_Linear_Type) {
+      if (TYP_TYPE(type_idx) < Last_Basic_Type) {
          fprintf(out_file, "%s  ", lin_type_str[TYP_LINEAR(type_idx)]);
       }
       else if (TYP_TYPE(type_idx) == Typeless) {
@@ -4295,7 +4299,7 @@ static void  print_const_entry(FILE	*out_file,
                                              Integer_8,
                                              str));
    }
-   else if (TYP_TYPE(type_idx) <= Last_Linear_Type) {
+   else if (TYP_TYPE(type_idx) < Last_Basic_Type) {
       fprintf(out_file, "  %s * %s\n",
                         basic_type_str[TYP_TYPE(type_idx)],
                         lin_type_str[TYP_LINEAR(type_idx)]);
@@ -4699,6 +4703,7 @@ static	void	print_expanded_ir(int	ir_idx)
       case Nullify_Opr:
       case Pause_Opr:
       case Ptr_Asg_Opr:
+      case ProcPtr_Asg_Opr:
       case Flat_Array_Asg_Opr:
       case Return_Opr:
       case Select_Opr:
@@ -5298,6 +5303,12 @@ static void dump_at_ntry (FILE		*out_file,
                    print_at_name(ATD_PTR_IDX(at_idx)));
          }
 
+	 if (TYP_LINEAR(ATD_TYPE_IDX(at_idx)) == Proc_Ptr &&
+	     (ATD_CLASS(at_idx) == Variable ||
+	      ATD_CLASS(at_idx) == Struct_Component))
+	     fprintf(out_file, "  %-16s= %-7d\n", "ATD_PP_ATP",
+		     ATD_PP_ATP(at_idx));
+
          fprintf(out_file, "  %-16s= %-7s %-16s= %-7d %-16s= %-8s\n",
                  "ATD_PARENT_OBJEC",boolean_str[ATD_PARENT_OBJECT(at_idx)],
                  "ATD_PE_ARRAY_IDX", ATD_PE_ARRAY_IDX(at_idx),
@@ -5433,6 +5444,15 @@ static void dump_at_ntry (FILE		*out_file,
             dump_bd_ntry(out_file, ATD_ARRAY_IDX(at_idx));
          }
 
+	 if (0 && dump_all && AT_OBJ_CLASS(at_idx) == Data_Obj &&
+	     TYP_LINEAR(ATD_TYPE_IDX(at_idx)) == Proc_Ptr &&
+	     (ATD_CLASS(at_idx) == Variable ||
+	      ATD_CLASS(at_idx) == Struct_Component) &&
+	     ATD_PP_ATP(at_idx) != NULL_IDX) {
+	     fprintf(out_file, "\n");
+	     dump_at_ntry(out_file, ATD_PP_ATP(at_idx), dump_all);
+	 }
+
          if (dump_all && ATD_DISTRIBUTION_IDX(at_idx) != NULL_IDX) {
             fprintf(out_file, "\n");
             fprintf(out_file, "ATD_DISTRIBUTION_IDX bounds table dump\n");
@@ -5471,8 +5491,10 @@ static void dump_at_ntry (FILE		*out_file,
 	    if (ATP_PGM_UNIT(at_idx) == Function ||
 	      ATP_PGM_UNIT(at_idx) == Pgm_Unknown ||
 	      ATP_PGM_UNIT(at_idx) == Subroutine) {
-	      fprintf(out_file, "  %-16s= %-7s\n",
-                   "AT_BIND_ATTR", boolean_str[AT_BIND_ATTR(at_idx)]);
+	       fprintf(out_file, "  %-16s= %-7s %-16s= %-7s %-16s= %-7s\n",
+                   "AT_BIND_ATTR", boolean_str[AT_BIND_ATTR(at_idx)],
+		   "ATP_ABSTRACT", boolean_str[ATP_ABSTRACT(at_idx)],
+		   "ATP_PP_PROTO", boolean_str[ATP_PP_PROTO(at_idx)]);
 	    }
 #endif /* KEY Bug 14150 */
 
@@ -5969,7 +5991,7 @@ static void dump_at_ntry (FILE		*out_file,
 
          fprintf(out_file, "  %-16s= %-7s %-16s= %-7d\n",
                 "ATI_GENERIC_INT", boolean_str[ATI_GENERIC_INTRINSIC(at_idx)],
-                "ATI_PROC_IDX", ATI_PROC_IDX(at_idx));
+		"ATI_PROC_IDX", ATI_PROC_IDX(at_idx));
 
          fprintf(out_file, "  %-16s= %-7s %-16s= %-7s %-16s= %-8s\n",
              "ATI_UNNAMED_INTE", boolean_str[ATI_UNNAMED_INTERFACE(at_idx)],

@@ -4746,11 +4746,55 @@ void if_stmt_semantics (void)
 
 }  /* if_stmt_semantics */
 
-
+
+
 /******************************************************************************\
 |*									      *|
 |* Description:								      *|
-|*	BRIEF DESCRIPTION OF THIS FUNCTION'S PURPOSE			      *|
+|*	Generate IR to nullify a procedure pointer			      *|
+|*									      *|
+|* Input parameters:							      *|
+|*	Pointer to the operand struct					      *|
+|*									      *|
+|* Output parameters:							      *|
+|*	NONE								      *|
+|*									      *|
+|* Returns:								      *|
+|*	NONE								      *|
+|*									      *|
+\******************************************************************************/
+
+static void pp_nullify(opnd_type *opnd) {
+int idx, line, column;
+
+    find_opnd_line_and_column(opnd, &line, &column);
+    NTR_IR_TBL(idx);
+
+    IR_OPR(idx)	     = Asg_Opr;
+    IR_TYPE_IDX(idx) = pp_type_index();
+    IR_LINE_NUM(idx) = line;
+    IR_COL_NUM(idx)  = column;
+
+    COPY_OPND(IR_OPND_L(idx), *opnd);
+
+    IR_FLD_R(idx)      = CN_Tbl_Idx;
+    IR_IDX_R(idx)      = CN_INTEGER_ZERO_IDX;
+    IR_LINE_NUM_R(idx) = line;
+    IR_COL_NUM_R(idx)  = column;
+ 
+    gen_sh(Before, Assignment_Stmt, line,
+	   column, FALSE, FALSE, TRUE);
+
+    SH_IR_IDX(SH_PREV_IDX(curr_stmt_sh_idx))	 = idx;
+    SH_P2_SKIP_ME(SH_PREV_IDX(curr_stmt_sh_idx)) = TRUE;
+}
+
+
+
+/******************************************************************************\
+|*									      *|
+|* Description:								      *|
+|*	Semantic check for the NULLIFY statement			      *|
 |*									      *|
 |* Input parameters:							      *|
 |*	NONE								      *|
@@ -4802,7 +4846,10 @@ void nullify_stmt_semantics (void)
          semantically_correct = expr_semantics(&opnd, &exp_desc);
          COPY_OPND(IL_OPND(list_idx), opnd);
 
-         if (!exp_desc.pointer) {
+	 if (pp_operand(&opnd))
+	     pp_nullify(&opnd);
+
+	 else if (!exp_desc.pointer) {
             find_opnd_line_and_column(&opnd, &line, &column);
             PRINTMSG(line, 426, Error, column);
             semantically_correct = FALSE;

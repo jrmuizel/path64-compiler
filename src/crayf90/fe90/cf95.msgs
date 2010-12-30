@@ -21833,5 +21833,35 @@ outside the module which declares the entity. If the entity has the POINTER or
 ALLOCATABLE attribute, it cannot be allocated, deallocated, or nullified outside
 the module either.
 .ME
-$ LAST NUMBER USED : 1702
-	
+$
+$ Error : 1703
+$msg  1703 Use of the "%s" attribute also requires using the "%s" attribute
+$nexp 1703
+Error : Use of the "%s" attribute also requires using the "%s" attribute
+.PP
+The use of one attribute requires that another be present in this context.
+.ME
+$
+$ Error : 1704
+$msg  1704 Cannot CALL the function procedure pointer "%s".
+$nexp 1704
+Error : Cannot CALL the function procedure pointer "%s".
+.PP
+Only subroutine procedure pointers can be used in a CALL statement
+.ME
+$
+$ Error : 1705
+$msg  1705 Cannot call a subroutine pointer "%s" as a function.
+$nexp 1705
+Error : Cannot call a subroutine pointer "%s" as a function.
+.PP
+Only function procedure pointers can be used in expressions
+.ME
+$ Error : 1706
+$msg  1706 Interface of "%s" is not a %s interface
+$nexp 1706
+Error :  Interface of "%s" is not a %s interface
+.PP
+The interface describing this procedure pointer is not a subroutine or function
+.ME
+$ LAST NUMBER USED : 1706

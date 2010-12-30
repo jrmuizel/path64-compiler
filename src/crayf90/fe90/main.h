@@ -78,7 +78,8 @@ enum    language        {Pdgcs_Ansi_C = 1,      Pdgcs_Fortran_77,
 						       "Cray character pointer",
 						       "typeless",
 						       "CHARACTER",
-						       "derived-type"
+						       "derived-type",
+						       "Procedure pointer",
 						       };
 
 	char			assembly_file[MAX_FILE_NAME_SIZE];
@@ -376,6 +377,7 @@ enum    language        {Pdgcs_Ansi_C = 1,      Pdgcs_Fortran_77,
         stmt_type_type          stmt_type;
 
 	char		       *stmt_type_str[]	= {"?????",
+						   "ABSTRACT",
 						   "ALLOCATABLE",
 						   "AUTOMATIC",
 						   "COMMON",
@@ -520,8 +522,9 @@ enum    language        {Pdgcs_Ansi_C = 1,      Pdgcs_Fortran_77,
 #ifdef KEY /* Bug 14150, 5091 */
 						   "BIND",
 						   "VALUE",
-						   "PROTECTED"
+						   "PROTECTED",
 #endif /* KEY Bug 14150, 5091 */
+						   "PROCEDURE",
 						  };
 
 	target_machine_type	target_machine;
@@ -971,7 +974,8 @@ long linear_to_arith[Num_Linear_Types] = {
         /* Character_4      */          0,
         /* CRI_Ch_Ptr_8     */          0,
         /* Structure_Type   */          0,
-        /* CRI_Parcel_Ptr_8   */                0
+        /* CRI_Parcel_Ptr_8 */          0,
+	/* Proc_Ptr         */          0,
                 };
 
 # else
@@ -1012,7 +1016,8 @@ long linear_to_arith[Num_Linear_Types] = {
         /* Character_4      */          0,
         /* CRI_Ch_Ptr_8     */          0,
         /* Structure_Type   */          0,
-        /* CRI_Parcel_Ptr_8   */                0
+        /* CRI_Parcel_Ptr_8 */          0,
+	/* Proc_Ptr         */          0,
                 };
 # endif
 
@@ -1047,7 +1052,8 @@ long input_arith_type[Num_Linear_Types] = {
         /* Character_4      */          0,
         /* CRI_Ch_Ptr_8     */          0,
         /* Structure_Type   */          0,
-        /* CRI_Parcel_Ptr_8   */                0
+        /* CRI_Parcel_Ptr_8 */          0,
+	/* Proc_Ptr         */          0,
                 };
 
 char arith_type_string[Num_Linear_Types][25] = {
@@ -1079,7 +1085,8 @@ char arith_type_string[Num_Linear_Types][25] = {
         /* Character_4      */          "",
         /* CRI_Ch_Ptr_8     */          "",
         /* Structure_Type   */          "",
-        /* CRI_Parcel_Ptr_8   */        ""
+        /* CRI_Parcel_Ptr_8 */          "",
+	/* Proc_Ptr         */          "",
                 };
 
 # else
@@ -1120,7 +1127,8 @@ long input_arith_type[Num_Linear_Types] = {
         /* Character_4      */          0,
         /* CRI_Ch_Ptr_8     */          0,
         /* Structure_Type   */          0,
-        /* CRI_Parcel_Ptr_8   */                0
+        /* CRI_Parcel_Ptr_8 */          0,
+	/* Proc_Ptr         */          0,
                 };
 
 char arith_type_string[Num_Linear_Types][25] = {
@@ -1158,7 +1166,8 @@ char arith_type_string[Num_Linear_Types][25] = {
         /* Character_4      */          "",
         /* CRI_Ch_Ptr_8     */          "",
         /* Structure_Type   */          "",
-        /* CRI_Parcel_Ptr_8   */        ""
+        /* CRI_Parcel_Ptr_8 */          "",
+	/* Proc_Ptr         */          "",
                 };
 
 # endif

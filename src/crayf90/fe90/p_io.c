@@ -323,7 +323,7 @@ void parse_buffer_stmt (void)
       NEXT_LA_CH;
 
       if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
-         parsed_ok = parse_deref(&opnd, NULL_IDX) && parsed_ok;
+	 parsed_ok = parse_deref(&opnd, NULL_IDX, 0) && parsed_ok;
          COPY_OPND(IL_OPND(list3_idx), opnd);
 
          if (buffer_in) {
@@ -345,7 +345,7 @@ void parse_buffer_stmt (void)
       NEXT_LA_CH;
 
       if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
-         parsed_ok = parse_deref(&opnd, NULL_IDX) && parsed_ok;
+	 parsed_ok = parse_deref(&opnd, NULL_IDX, 0) && parsed_ok;
          COPY_OPND(IL_OPND(list4_idx), opnd);
 
          if (buffer_in) {
@@ -663,7 +663,7 @@ void parse_decode_stmt (void)
             NEXT_LA_CH;
 
             if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
-               parsed_ok = parse_deref(&opnd, NULL_IDX) && parsed_ok;
+	       parsed_ok = parse_deref(&opnd, NULL_IDX, 0) && parsed_ok;
                COPY_OPND(IL_OPND(list3_idx), opnd);
             }
             else {
@@ -893,7 +893,7 @@ void parse_encode_stmt (void)
             NEXT_LA_CH;
 
             if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
-               parsed_ok = parse_deref(&opnd, NULL_IDX) && parsed_ok;
+	       parsed_ok = parse_deref(&opnd, NULL_IDX, 0) && parsed_ok;
                COPY_OPND(IL_OPND(list3_idx), opnd);
 
                mark_attr_defined(&opnd);
@@ -1358,7 +1358,7 @@ void parse_inquire_stmt (void)
          IR_LIST_CNT_L(call_idx) = 1;
         
          if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
-            parsed_ok = parse_deref(&opnd, NULL_IDX);
+	    parsed_ok = parse_deref(&opnd, NULL_IDX, 0);
             COPY_OPND(IL_OPND(list_idx), opnd);
 
             mark_attr_defined(&opnd);
@@ -2767,7 +2767,7 @@ static boolean  parse_io_control_list (opnd_type   *result_opnd,
             case Namelist_Form :
 
                if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
-                  parsed_ok = parse_deref(&opnd, NULL_IDX) && parsed_ok;
+		  parsed_ok = parse_deref(&opnd, NULL_IDX, 0) && parsed_ok;
                   COPY_OPND(IL_OPND(arg_array[arg_idx]), opnd);
                }
                else {

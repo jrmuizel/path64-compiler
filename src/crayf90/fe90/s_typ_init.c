@@ -643,10 +643,16 @@ static boolean const_init_semantics(opnd_type		*init_opnd,
       ok = FALSE;
       goto EXIT;
    }
-   else if (!check_asg_semantics(a_type_idx,
-                                 c_type_idx,
-                                 opnd_line,
-                                 opnd_column)) {
+
+   if (TYP_LINEAR(a_type_idx) == Proc_Ptr) {
+       ok = TRUE;
+       goto EXIT;
+   }
+
+   if (!check_asg_semantics(a_type_idx,
+			    c_type_idx,
+			    opnd_line,
+			    opnd_column)) {
       type_str[0] = '\0';
       strcat(type_str, get_basic_type_str(a_type_idx));
 

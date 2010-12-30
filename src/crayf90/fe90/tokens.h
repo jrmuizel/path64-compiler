@@ -96,6 +96,7 @@ enum	token_values {
 		Tok_Id,			/*	     identifier,	      */
 					/*	     construct-name,	      */
 					/*	     kind-param-name	      */
+		Tok_Kwd_Abstract,       /* ABSTRACT  ABSTRACT INTERFACE       */
 		Tok_Kwd_Allocatable,	/* ALLOCATABLE			      */
 		Tok_Kwd_Allocate,	/* ALLOCATE			      */
 		Tok_Kwd_Assign,		/* ASSIGN			      */
@@ -173,6 +174,7 @@ enum	token_values {
 #ifdef KEY /* Bug 5089 */
 		Tok_Kwd_Nonintrinsic,	/* NON_INTRINSIC                      */
 #endif /* KEY Bug 5089 */
+		Tok_Kwd_Nopass,		/* NOPASS			      */
 		Tok_Kwd_Nullify,	/* NULLIFY			      */
 		Tok_Kwd_Only,		/* ONLY				      */
 		Tok_Kwd_Open,		/* OPEN				      */

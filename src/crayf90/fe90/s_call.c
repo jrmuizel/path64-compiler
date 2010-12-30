@@ -192,6 +192,72 @@ dont_bounds_check_base_subtree(opnd_type *base_opnd) {
 # if (defined(_TARGET_OS_IRIX) || defined(_TARGET_OS_LINUX) || defined(_TARGET_OS_DARWIN))
 static	void		set_inline_state(int, int);
 # endif
+
+
+
+
+/******************************************************************************\
+|*                                                                            *|
+|* Description:                                                               *|
+|*      Set the type of a procedure pointer function call.  Because of	      *|
+|*      module procedures, we have to wait until semantic time to do this.    *|
+|*									      *|
+|*                                                                            *|
+|* Input parameters:                                                          *|
+|*      Index of the procedure pointer attribyte			      *|
+|*                                                                            *|
+|* Output parameters:                                                         *|
+|*      NONE								      *|
+|*                                                                            *|
+|* Returns:                                                                   *|
+|*      Type index return value.  Type_Void on error.			      *|
+|*                                                                            *|
+\******************************************************************************/
+
+static int func_ptr_return_type(int idx) {
+int result_idx, type, line, col, attr_idx;
+
+    attr_idx = ATP_PP_ATD(idx);
+    result_idx = ATP_RSLT_IDX(idx);
+    type = Type_Void;
+
+    line = AT_DEF_LINE(idx);
+    col  = AT_DEF_COLUMN(idx);
+
+    if (!ATP_PP_PROTO(idx)) {
+	if (!AT_TYPED(result_idx)) {
+	    if (SCP_IMPL_NONE(curr_scp_idx)) {
+		AT_DCL_ERR(attr_idx) = TRUE;
+		PRINTMSG(AT_DEF_LINE(attr_idx), 113, Error,
+			 AT_DEF_COLUMN(attr_idx),
+			 AT_OBJ_NAME_PTR(attr_idx));
+
+	    } else {
+		SET_IMPL_TYPE(result_idx);
+		AT_TYPED(result_idx) = TRUE;
+		type = ATD_TYPE_IDX(result_idx);
+	    }
+	}
+
+    } else if (AT_OBJ_CLASS(result_idx) != Pgm_Unit ||
+	       ATP_PGM_UNIT(result_idx) != Function)
+	PRINTMSG(line, 1706, Error, col, AT_OBJ_NAME_PTR(attr_idx),
+		 "function");
+
+    else {
+	ATP_FIRST_IDX(idx)  = ATP_FIRST_IDX(result_idx);
+	ATP_NUM_DARGS(idx)  = ATP_NUM_DARGS(result_idx);
+	ATP_EXTRA_DARG(idx) = ATP_EXTRA_DARG(result_idx);
+
+	ATP_EXPL_ITRFC(idx) = TRUE;
+	type = ATD_TYPE_IDX(result_idx);
+    }
+
+    return type;
+}
+
+
+
 
 /******************************************************************************\
 |*                                                                            *|
@@ -327,7 +393,13 @@ boolean call_list_semantics(opnd_type     *result_opnd,
    
    loc_info_idx = arg_info_list_base;
 
-   attr_idx               = IR_IDX_L(ir_idx);
+   /* Grab the procedure name, or the rightmost component attribute
+    * which should have information about the procedure pointer. */
+
+   attr_idx = (IR_FLD_L(ir_idx) != IR_Tbl_Idx)
+       ? IR_IDX_L(ir_idx)
+       : ATD_PP_ATP(IR_IDX_R(IR_IDX_L(ir_idx)));
+
    locked_in              = AT_LOCKED_IN(attr_idx);
    AT_LOCKED_IN(attr_idx) = TRUE;
 
@@ -365,11 +437,14 @@ boolean call_list_semantics(opnd_type     *result_opnd,
 
    }
 
-   IR_IDX_L(ir_idx) = attr_idx;
+   if (IR_FLD_L(ir_idx) == AT_Tbl_Idx)
+       IR_IDX_L(ir_idx) = attr_idx;
+
    spec_idx         = attr_idx;
    gen_idx          = attr_idx;
    line             = IR_LINE_NUM_L(ir_idx);
    col              = IR_COL_NUM_L(ir_idx);
+   spec_count       = 0;
 
    if ((cif_flags & XREF_RECS) != 0  &&  xref_state != CIF_No_Usage_Rec) {
       cif_usage_rec(gen_idx, AT_Tbl_Idx, line, col, CIF_Symbol_Reference);
@@ -469,7 +544,6 @@ boolean call_list_semantics(opnd_type     *result_opnd,
          }
       }
 
-      spec_count = 0;
       found      = TRUE;
 
       if (is_function) {
@@ -514,6 +588,13 @@ boolean call_list_semantics(opnd_type     *result_opnd,
                SET_IMPL_TYPE_IN_SCP(new_attr_idx, ATP_SCP_IDX(gen_idx));
             }
          }
+
+	 if (ATP_PP_ATD(attr_idx) != NULL_IDX) {
+	     IR_TYPE_IDX(ir_idx) = func_ptr_return_type(attr_idx);
+
+	     if (IR_FLD_L(ir_idx) == IR_Tbl_Idx)
+		 IR_TYPE_IDX(IR_IDX_L(ir_idx)) = pp_type_index();
+	 }
       }
       else {
          if (ATP_PGM_UNIT(gen_idx) != Subroutine &&
@@ -573,10 +654,19 @@ boolean call_list_semantics(opnd_type     *result_opnd,
          }
       }
    }
-   else {
 
-      spec_count = 0;
-      found      = TRUE;
+   else if (AT_OBJ_CLASS(attr_idx) == Data_Obj &&
+	    TYP_LINEAR(ATD_TYPE_IDX(attr_idx)) == Proc_Ptr) {
+
+       /* More here later.  Figure out which checkers we need to use,
+	* split them out into subroutines. */
+
+       gen_idx = attr_idx;
+       found = TRUE;
+       ;;
+
+   } else {
+      found = TRUE;
 
       AT_REFERENCED(gen_idx) = Not_Referenced;
 
@@ -927,7 +1017,8 @@ boolean call_list_semantics(opnd_type     *result_opnd,
    }
 
 
-   if (spec_count > 0 || ATP_EXPL_ITRFC(gen_idx)) {
+   if (spec_count > 0 ||
+       (AT_OBJ_CLASS(attr_idx) != Data_Obj && ATP_EXPL_ITRFC(gen_idx))) {
 
       do {
 
@@ -1190,6 +1281,12 @@ boolean call_list_semantics(opnd_type     *result_opnd,
 
          /* if I'm here, then I've found the right one */
 
+
+	 if (IR_FLD_L(ir_idx) == IR_Tbl_Idx) {
+	     /* Procedure pointer reference */
+	     found = TRUE;
+	     goto EXIT;
+	 }
    
          for (arg_idx = 1; arg_idx <= num_args; arg_idx++) {
    
@@ -1279,7 +1376,7 @@ EXIT:
             goto DONE;
          }
 
-         if (ok && found &&
+         if (ok && found && AT_OBJ_CLASS(spec_idx) == Pgm_Unit &&
 #ifdef KEY /* Bug 7726 */
 	     /* Fortran 95 says every elemental procedure is pure */
 	     (ATP_PURE(spec_idx) || ATP_ELEMENTAL(spec_idx)) &&
@@ -1327,7 +1424,8 @@ EXIT:
          }
 
 
-         if (ATP_PROC(spec_idx) == Intrin_Proc) {
+         if (AT_OBJ_CLASS(spec_idx) == Pgm_Unit &&
+	     ATP_PROC(spec_idx) == Intrin_Proc) {
 
             if (ATP_INTRIN_ENUM(spec_idx) != Unknown_Intrinsic) {
                ATP_INTERFACE_IDX(spec_idx) = gen_idx;
@@ -1668,7 +1766,9 @@ CONTINUE:
                COPY_SHAPE((res_exp_desc->shape), save_shape, save_rank);
             }
          }
-         else if (label_cnt != 0 || ATP_HAS_ALT_RETURN(spec_idx)) { 
+         else if (label_cnt != 0 ||
+		  (AT_OBJ_CLASS(spec_idx) == Pgm_Unit &&
+		   ATP_HAS_ALT_RETURN(spec_idx))) { 
             /* do the alternate return thing */
             NTR_IR_TBL(br_idx_idx);
             IR_OPR(br_idx_idx) = Br_Index_Opr;
@@ -1738,8 +1838,9 @@ CONTINUE:
                COPY_OPND(IR_OPND_R(ir_idx), opnd);
             }
 
-            if (ATP_PROC(spec_idx) != Dummy_Proc &&
-                ATP_PROC(spec_idx) != Intrin_Proc &&
+            if (AT_OBJ_CLASS(spec_idx) == Pgm_Unit &&
+		ATP_PROC(spec_idx) != Dummy_Proc &&
+		ATP_PROC(spec_idx) != Intrin_Proc &&
                 ! ATP_VFUNCTION(spec_idx) &&
                 (cmd_line_flags.runtime_argument ||
                  cmd_line_flags.runtime_arg_call)) {
@@ -1901,7 +2002,8 @@ DONE:
       }
    }
 
-   if (ok && found && ATP_VFUNCTION(spec_idx)) {
+   if (ok && found && AT_OBJ_CLASS(spec_idx) == Pgm_Unit &&
+       ATP_VFUNCTION(spec_idx)) {
       num_registers	= 0;
       list_idx		= IR_IDX_R(ir_idx);
 
@@ -1938,7 +2040,8 @@ DONE:
       }
    }
 
-   if (ok && found && (ATP_PROC(spec_idx) == Intrin_Proc)) {
+   if (ok && found && AT_OBJ_CLASS(spec_idx) == Pgm_Unit &&
+       (ATP_PROC(spec_idx) == Intrin_Proc)) {
 
       if (expr_mode == Specification_Expr) {
 
@@ -2038,7 +2141,7 @@ DONE:
       }
    }
 
-   if (ok &&
+   if (ok && AT_OBJ_CLASS(spec_idx) == Pgm_Unit &&
        ATP_PROC(spec_idx) != Intrin_Proc) {
 
 #ifdef KEY /* Bug 7726 */
@@ -3025,7 +3128,7 @@ lower_bounds_match(int actual_il_idx, int dummy_idx) {
  */
 static int
 pass_by_value(int spec_idx, int info_idx, int dummy_idx) {
-  return ATP_VFUNCTION(spec_idx) ||
+  return (AT_OBJ_CLASS(spec_idx) == Pgm_Unit && ATP_VFUNCTION(spec_idx)) ||
     arg_info_list[info_idx].ed.percent_val_arg ||
     (dummy_idx != NULL_IDX && ATD_VALUE_ATTR(dummy_idx));
 }
@@ -3139,14 +3242,16 @@ boolean final_arg_work(opnd_type	*list_opnd,
 
    expr_mode = Regular_Expr;
 
-   explicit = ATP_EXPL_ITRFC(spec_idx);
+   /* TODO: More here later for procedure pointers with interfaces */
+   explicit = (AT_OBJ_CLASS(spec_idx) == Pgm_Unit) && ATP_EXPL_ITRFC(spec_idx);
+
    dummy = NULL_IDX;
 
    zero_constant_idx = (SA_INTEGER_DEFAULT_TYPE == CG_INTEGER_DEFAULT_TYPE) ?
                                    CN_INTEGER_ZERO_IDX : 
                                    C_INT_TO_CN(SA_INTEGER_DEFAULT_TYPE, 0);
 
-   if (ATP_ELEMENTAL(spec_idx)) {
+   if (AT_OBJ_CLASS(spec_idx) == Pgm_Unit && ATP_ELEMENTAL(spec_idx)) {
       list_idx = OPND_IDX((*list_opnd));
 
       if (ATP_EXTRA_DARG(spec_idx)) {
@@ -3201,9 +3306,8 @@ boolean final_arg_work(opnd_type	*list_opnd,
 
    list_idx = OPND_IDX((*list_opnd));
 
-   if (!ATP_EXPL_ITRFC(spec_idx) &&         /* Global semantics */
-       !io_call && 
-       !AT_COMPILER_GEND(spec_idx)) {
+   if (AT_OBJ_CLASS(spec_idx) == Pgm_Unit && !ATP_EXPL_ITRFC(spec_idx) &&
+       !io_call && !AT_COMPILER_GEND(spec_idx)) {         /* Global semantics */
 
       /* Make sure this is not defined in this program unit and that */
       /* it is not an intrinsic.  Also get rid of stuff like _END    */
@@ -3215,7 +3319,7 @@ boolean final_arg_work(opnd_type	*list_opnd,
         );
    }
 
-   if (ATP_EXTRA_DARG(spec_idx)) {
+   if (AT_OBJ_CLASS(spec_idx) == Pgm_Unit && ATP_EXTRA_DARG(spec_idx)) {
       list_idx = IL_NEXT_LIST_IDX(list_idx);
    }
 
@@ -7746,9 +7850,12 @@ void flatten_function_call(opnd_type     *result)
       goto EXIT;
    }
 
-   ir_idx   = OPND_IDX((*result));
+   ir_idx = OPND_IDX((*result));
 
-   spec_idx = IR_IDX_L(ir_idx);
+   spec_idx = (IR_FLD_L(ir_idx) == AT_Tbl_Idx)
+       ? IR_IDX_L(ir_idx)
+       : ATD_PP_ATP(IR_IDX_R(IR_IDX_L(ir_idx)));
+
    attr_idx = ATP_RSLT_IDX(spec_idx);
    type_idx = ATD_TYPE_IDX(attr_idx);
 
@@ -7810,7 +7917,7 @@ void flatten_function_call(opnd_type     *result)
    elemental_exp_desc.linear_type = TYP_LINEAR(type_idx);
 
    COPY_OPND(opnd, IR_OPND_R(ir_idx));
-   ok = final_arg_work(&opnd, IR_IDX_L(ir_idx), num_args, &elemental_exp_desc,
+   ok = final_arg_work(&opnd, spec_idx, num_args, &elemental_exp_desc,
 #ifdef KEY /* Bug 8090 (Sicortex) */
      ir_idx
 #endif /* Bug 8090 (Sicortex) */
@@ -7830,14 +7937,14 @@ void flatten_function_call(opnd_type     *result)
 
       if (TYP_TYPE(type_idx) == Character &&
           TYP_CHAR_CLASS(type_idx) == Assumed_Size_Char &&
-          ATP_PROC(IR_IDX_L(ir_idx)) != Dummy_Proc &&
+          ATP_PROC(spec_idx) != Dummy_Proc &&
           attr_idx != SCP_ATTR_IDX(curr_scp_idx) &&
           !AT_IS_INTRIN(attr_idx)) {
 
          PRINTMSG(line, 939, Error, col, AT_OBJ_NAME_PTR(attr_idx));
       }
 
-      if (ATP_PROC(IR_IDX_L(ir_idx)) != Intrin_Proc &&
+      if (ATP_PROC(spec_idx) != Intrin_Proc &&
           (TYP_TYPE(type_idx) == Character &&
            TYP_CHAR_CLASS(type_idx) == Var_Len_Char ||
            bd_idx != NULL_IDX && 
@@ -7848,12 +7955,12 @@ void flatten_function_call(opnd_type     *result)
 
          process_variable_size_func(attr_idx,          /* The result  */
                              IL_NEXT_LIST_IDX(IR_IDX_R(ir_idx)),
-			     (ATP_EXTRA_DARG(IR_IDX_L(ir_idx)) ?
-                              ATP_FIRST_IDX(IR_IDX_L(ir_idx)) + 1 :
-                              ATP_FIRST_IDX(IR_IDX_L(ir_idx))),
-			     (ATP_EXTRA_DARG(IR_IDX_L(ir_idx)) ?
-                              ATP_NUM_DARGS(IR_IDX_L(ir_idx)) - 1 :
-                              ATP_NUM_DARGS(IR_IDX_L(ir_idx))),
+			     (ATP_EXTRA_DARG(spec_idx) ?
+                              ATP_FIRST_IDX(spec_idx) + 1 :
+                              ATP_FIRST_IDX(spec_idx)),
+			     (ATP_EXTRA_DARG(spec_idx) ?
+                              ATP_NUM_DARGS(spec_idx) - 1 :
+                              ATP_NUM_DARGS(spec_idx)),
                              &type_idx,         /* Gets new type idx - if one */
                              &bd_idx);          /* Gets new bd idx - if one   */
 
@@ -7870,7 +7977,7 @@ void flatten_function_call(opnd_type     *result)
          keep_orig_sh = save_keep_orig_sh;
       }
 
-      if (ATP_PROC(IR_IDX_L(ir_idx)) != Intrin_Proc &&
+      if (ATP_PROC(spec_idx) != Intrin_Proc &&
           TYP_TYPE(type_idx) == Character &&
           TYP_CHAR_CLASS(type_idx) == Assumed_Size_Char &&
           ! ATD_IM_A_DOPE(attr_idx)) {
@@ -7989,7 +8096,7 @@ void flatten_function_call(opnd_type     *result)
       }
       else if (ATD_IM_A_DOPE(tmp_idx)) {
 
-         if (AT_IS_INTRIN(IR_IDX_L(ir_idx))) {
+         if (AT_IS_INTRIN(spec_idx)) {
 
             /* need to dealloc the dope vector pointee */
 
@@ -8307,8 +8414,8 @@ void flatten_function_call(opnd_type     *result)
 
          if (ATD_IM_A_DOPE(tmp_idx)                        &&
              ATD_ARRAY_IDX(tmp_idx)                        &&
-             AT_IS_INTRIN(IR_IDX_L(ir_idx))                &&
-             ATP_INTRIN_ENUM(IR_IDX_L(ir_idx)) != Spread_Intrinsic &&
+             AT_IS_INTRIN(spec_idx)                        &&
+             ATP_INTRIN_ENUM(spec_idx) != Spread_Intrinsic &&
              TYP_TYPE(ATD_TYPE_IDX(tmp_idx)) != Character  &&
              (TYP_TYPE(ATD_TYPE_IDX(tmp_idx)) != Structure ||
               ! ATT_CHAR_SEQ(TYP_IDX(ATD_TYPE_IDX(tmp_idx))))) {

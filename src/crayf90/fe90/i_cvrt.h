@@ -565,7 +565,8 @@ typedef enum {
 	CRI_Pointer,
 	CRI_Pointer_Char,
 	BT_func_ptr,
-	Vector_Mask } BASIC_TYPE;
+	Vector_Mask,
+        Procedure_Pointer } BASIC_TYPE;
 
 typedef enum {
 	Seq_Unknown,

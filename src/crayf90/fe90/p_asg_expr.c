@@ -64,6 +64,49 @@ boolean parse_equiv_opnd (opnd_type *);
 boolean parse_level_5 (opnd_type *);
 boolean parse_lhs (opnd_type *, int);
 
+
+
+/******************************************************************************\
+|*									      *|
+|* Description:								      *|
+|*	Figure out if an operand is a procedure pointer reference, either a   *|
+|*      variable or a component reference.				      *|
+|*									      *|
+|* Input parameters:							      *|
+|*	Pointer to operand structure					      *|
+|*									      *|
+|* Output parameters:							      *|
+|*	NONE								      *|
+|*									      *|
+|* Returns:								      *|
+|*	Nonzero if a procedure pointer reference, zero otherwise	      *|
+|*									      *|
+\******************************************************************************/
+
+int pp_operand(opnd_type *opnd) {
+int idx;
+
+    if (opnd->fld == AT_Tbl_Idx)
+	return AT_OBJ_CLASS(opnd->idx) == Data_Obj &&
+	       TYP_LINEAR(ATD_TYPE_IDX(opnd->idx)) == Proc_Ptr;
+
+    if (opnd->fld != IR_Tbl_Idx)
+	return 0;
+
+    idx = opnd->idx;
+
+    if (IR_OPR(idx) != Struct_Opr || IR_FLD_R(idx) != AT_Tbl_Idx)
+	return 0;
+
+    idx = IR_IDX_R(idx);
+
+    return AT_OBJ_CLASS(idx) == Data_Obj &&
+	   ATD_CLASS(idx) == Struct_Component &&
+	   AT_TYPED(idx) && TYP_LINEAR(ATD_TYPE_IDX(idx)) == Proc_Ptr;
+}
+
+
+
 
 /******************************************************************************\
 |*									      *|
@@ -197,8 +240,16 @@ void parse_assignment_stmt (void)
    else if (MATCHED_TOKEN_CLASS(Tok_Class_Punct) &&
             (TOKEN_VALUE(token) == Tok_Punct_Eq ||
              TOKEN_VALUE(token) == Tok_Punct_Rename)) {
-      IR_OPR(ir_idx) = (TOKEN_VALUE(token) == Tok_Punct_Eq) ? Asg_Opr :
-                                                              Ptr_Asg_Opr;
+
+      if (TOKEN_VALUE(token) == Tok_Punct_Eq)
+	  IR_OPR(ir_idx) = Asg_Opr;
+
+      else if (pp_operand(&opnd))
+	  IR_OPR(ir_idx) = ProcPtr_Asg_Opr;
+
+      else
+	  IR_OPR(ir_idx) = Ptr_Asg_Opr;
+
       parse_expr(&opnd);
       COPY_OPND(IR_OPND_R(ir_idx), opnd);
    }
@@ -1325,7 +1376,7 @@ boolean parse_operand (opnd_type *the_opnd)
 
             case Tok_Id :
 
-            if (! parse_deref(the_opnd, NULL_IDX)) {
+	    if (! parse_deref(the_opnd, NULL_IDX, 1)) {
                parsed_ok = FALSE;
             }
             break;
@@ -1980,7 +2031,7 @@ boolean parse_lhs (opnd_type *result_opnd,
          OPND_IDX((*result_opnd)) = ir_idx;
 
          parsed_ok = parse_deref(result_opnd, 
-                                 TYP_IDX(ATD_TYPE_IDX(amb_attr_idx)));
+                                 TYP_IDX(ATD_TYPE_IDX(amb_attr_idx)), 3);
 
       }
       else {

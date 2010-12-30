@@ -105,10 +105,10 @@ static char USMID[] = "\n@(#)5.0_pl/sources/module.c	5.17	09/30/99 15:47:54\n";
 |*      fields.  These routines do the actual compression and reset the       *|
 |*      fields.  compress_tbls calls update_idxs_in_attr_entry.               *|
 |*                                                                            *|
-|*   3) Add it to update_new_idxs_after_input.  This routine sets the indexes *|
+|*   3) Add it to assign_new_idxs_after_input.  This routine sets the indexes *|
 |*      after a module is read in.  When a module is in a file, all the table *|
 |*      indexes are 1 based.  When it is read in, each new table is           *|
-|*      concatenated to the existing table, so all the indexs need the table  *|
+|*      concatenated to the existing table, so all the indexes need the table *|
 |*      size before reading added to the index.  This is generally the        *|
 |*      location to correct for symbol table changes.                         *|
 |*                                                                            *|
@@ -230,7 +230,7 @@ static	void	set_mod_link_tbl_for_bd (int);
 static	void	set_mod_link_tbl_for_cn (int);
 static	void	set_mod_link_tbl_for_ir (int);
 static	void	set_mod_link_tbl_for_il (int);
-static	void	set_mod_link_tbl_for_typ (int);
+static	void	set_mod_link_tbl_for_typ(int);
 static	boolean	srch_ar_file_for_module_tbl (int, int *, int, FILE *);
 static	boolean	srch_for_module_tbl (int, int *, int, int, FILE *);
 static	void	update_idxs_in_attr_entry (int, int);
@@ -1281,6 +1281,13 @@ static	void  set_mod_link_tbl_for_attr(int	attr_idx)
          }
       }
 
+      if ((ATD_CLASS(attr_idx) == Variable ||
+	   ATD_CLASS(attr_idx) == Struct_Component) &&
+	  TYP_LINEAR(ATD_TYPE_IDX(attr_idx)) == Proc_Ptr) {
+
+	  KEEP_ATTR(ATD_PP_ATP(attr_idx));
+      }
+
       switch (ATD_CLASS(attr_idx)) {
       case CRI__Pointee:
          set_mod_link_tbl_for_typ(ATD_TYPE_IDX(attr_idx));
@@ -1506,6 +1513,9 @@ static	void  set_mod_link_tbl_for_attr(int	attr_idx)
       ML_NP_KEEP_ME(ATP_EXT_NAME_IDX(attr_idx))	= TRUE;
       ML_NP_IDX(ATP_EXT_NAME_IDX(attr_idx))	= ATP_EXT_NAME_IDX(attr_idx);
       ML_NP_LEN(ATP_EXT_NAME_IDX(attr_idx))	= ATP_EXT_NAME_LEN(attr_idx);
+
+      if (ATP_PP_ATD(attr_idx) != NULL_IDX)
+	  KEEP_ATTR(ATP_PP_ATD(attr_idx));
 
       if (ATP_PGM_UNIT(attr_idx) == Module) {
 
@@ -3233,6 +3243,14 @@ static	void  update_idxs_in_attr_entry(int	start_idx,
       ATD_PE_ARRAY_IDX(at_idx)	   = ML_BD_IDX(ATD_PE_ARRAY_IDX(at_idx));
 # endif
 
+      if ((ATD_CLASS(at_idx) == Variable ||
+	   ATD_CLASS(at_idx) == Struct_Component) &&
+	  TYP_LINEAR(ATD_TYPE_IDX(at_idx)) == Proc_Ptr &&
+	  ATD_PP_ATP(at_idx) != NULL_IDX) {
+
+	  ATD_PP_ATP(at_idx) = ML_AT_IDX(ATD_PP_ATP(at_idx));
+      }
+
       switch (ATD_CLASS(at_idx)) {
       case Function_Result:
 
@@ -3447,6 +3465,9 @@ static	void  update_idxs_in_attr_entry(int	start_idx,
             ATP_FIRST_SH_IDX(at_idx)= ML_SH_IDX(ATP_FIRST_SH_IDX(at_idx));
             ATP_PARENT_IDX(at_idx)  = ML_AT_IDX(ATP_PARENT_IDX(at_idx));
          }
+
+	 if (ATP_PP_ATD(at_idx) != NULL_IDX)
+	     ATP_PP_ATD(at_idx) = ML_AT_IDX(ATP_PP_ATD(at_idx));
       }
 
       ATP_EXT_NAME_IDX(at_idx)	= ML_NP_IDX(ATP_EXT_NAME_IDX(at_idx));
@@ -7758,6 +7779,14 @@ static void  assign_new_idxs_after_input(int	module_attr_idx)
             ATD_RESHAPE_ARRAY_IDX(attr_idx)	+= bd_idx;
          }
 
+	 if ((ATD_CLASS(attr_idx) == Variable ||
+	      ATD_CLASS(attr_idx) == Struct_Component) &&
+	     TYP_LINEAR(ATD_TYPE_IDX(attr_idx)) == Proc_Ptr &&
+	     ATD_PP_ATP(attr_idx) != NULL_IDX) {
+
+	    ATD_PP_ATP(attr_idx) += at_idx;
+	 }
+
          switch (ATD_CLASS(attr_idx)) {
 
          case Function_Result:
@@ -8081,6 +8110,8 @@ static void  assign_new_idxs_after_input(int	module_attr_idx)
             }
          }
          else {
+	    if (ATP_PP_ATD(attr_idx) != NULL_IDX)
+	       ATP_PP_ATD(attr_idx) += at_idx;
 
             if (ATP_SCP_ALIVE(attr_idx)) { /* The pgm unit being searched for */
                AT_ATTR_LINK(module_attr_idx)		= attr_idx;

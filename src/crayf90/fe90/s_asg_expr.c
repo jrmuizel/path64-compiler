@@ -397,8 +397,97 @@ help_assign_cpnts(int line, int col, Uint type_idx,
     }
   }
 }
+
 
 #endif /* KEY Bug 6845 */
+
+
+/******************************************************************************\
+|*									      *|
+|* Description:								      *|
+|*	Semantics routine for procedure pointer assignment.                   *|
+|*									      *|
+|* Input parameters:							      *|
+|*	Index of assignment statement in IR table			      *|
+|*									      *|
+|* Output parameters:							      *|
+|*	NONE								      *|
+|*									      *|
+|* Returns:								      *|
+|*	NONE								      *|
+|*									      *|
+\******************************************************************************/
+
+static void procedure_pointer_semantics(int ir_idx)
+{
+    expr_arg_type exp_desc_l, exp_desc_r;
+    opnd_type l_opnd, r_opnd;
+    int ok, rhs_idx;
+
+    COPY_OPND(l_opnd, IR_OPND_L(ir_idx));
+    exp_desc_l.rank = 0;
+
+    if (l_opnd.fld == IR_Tbl_Idx && IR_TYPE_IDX(l_opnd.idx) == NULL_IDX)
+	IR_TYPE_IDX(l_opnd.idx) = pp_type_index();
+
+    COPY_OPND(IR_OPND_L(ir_idx), l_opnd);
+    exp_desc_l.rank = 0;
+
+
+    IR_TYPE_IDX(ir_idx) = TYPELESS_DEFAULT_TYPE;
+    COPY_OPND(r_opnd, IR_OPND_R(ir_idx));
+    rhs_idx = r_opnd.idx;
+
+    if (r_opnd.fld == IR_Tbl_Idx && IR_TYPE_IDX(r_opnd.idx) == NULL_IDX)
+	IR_TYPE_IDX(r_opnd.idx) = pp_type_index();
+
+    /* Verify that the thing on the rhs is a procedure or pp variable.
+     * The statement becomes a procedure pointer assignment because
+     * the LHS was known to be a procedure pointer. */
+
+    if (r_opnd.fld == IR_Tbl_Idx)
+	ok = pp_operand(&r_opnd);
+
+    else if (r_opnd.fld != AT_Tbl_Idx)
+	ok = 0;
+
+    else
+	switch(AT_OBJ_CLASS(rhs_idx)) {
+	case Interface:
+	    ok = 1;
+	    break;
+
+	case Data_Obj:
+	    ok = TYP_LINEAR(ATD_TYPE_IDX(rhs_idx)) == Proc_Ptr;
+	    break;
+
+	case Pgm_Unit:
+	    switch(ATP_PGM_UNIT(rhs_idx)) {
+	    case Pgm_Unknown:
+	    case Function:
+	    case Subroutine:
+		ok = 1;
+		break;
+
+	    default:
+		ok = 0;
+		break;
+	    }
+
+	    break;
+
+	default:
+	    ok = 0;
+	}
+
+    if (!ok)
+	PRINTMSG(IR_LINE_NUM(ir_idx), 1562, Error, IR_COL_NUM(ir_idx));
+
+    COPY_OPND(IR_OPND_R(ir_idx), r_opnd);
+}
+
+
+
 /******************************************************************************\
 |*									      *|
 |* Description:								      *|
@@ -456,6 +545,7 @@ void assignment_stmt_semantics (void)
 
    line = IR_LINE_NUM(ir_idx);
    col  = IR_COL_NUM(ir_idx);
+
 
    if (IR_OPR(ir_idx) == Asg_Opr) {
 
@@ -899,7 +989,7 @@ CK_WHERE:
          goto EXIT;
       }
 
-      if (! exp_desc_l.pointer) {
+      if (!exp_desc_l.pointer) {
          attr_idx = find_base_attr(&l_opnd, &line, &col);
          PRINTMSG(line, 417, Error, col);
          ok = FALSE;
@@ -1197,7 +1287,9 @@ CK_WHERE:
             lower_ptr_asg(&exp_desc_r);
          }
       }
-   }
+
+   } else if (IR_OPR(ir_idx) == ProcPtr_Asg_Opr)
+      procedure_pointer_semantics(ir_idx);
 
 EXIT: 
 

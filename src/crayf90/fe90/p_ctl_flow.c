@@ -160,7 +160,7 @@ void parse_allocate_stmt (void)
                   /* have stat var */
                   /* do that stat stuff */
 
-                  parsed_ok = parse_deref(&opnd, NULL_IDX) && parsed_ok; 
+		  parsed_ok = parse_deref(&opnd, NULL_IDX, 0) && parsed_ok; 
                   COPY_OPND(IR_OPND_R(ir_idx), opnd);
 
                   mark_attr_defined(&opnd);
@@ -198,7 +198,7 @@ void parse_allocate_stmt (void)
          }
 
          star_expected = TRUE;
-         if (parse_deref(&opnd, NULL_IDX)) {
+         if (parse_deref(&opnd, NULL_IDX, 0)) {
             parsed_ok = change_subscript(&opnd) && parsed_ok;
          }
          else {
@@ -354,7 +354,7 @@ void    parse_assign_stmt(void)
          if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
             asg_var_token = token;
         
-            if (parse_deref(&asg_var_opnd, NULL_IDX)) {
+            if (parse_deref(&asg_var_opnd, NULL_IDX, 0)) {
    
                if (OPND_FLD(asg_var_opnd) == AT_Tbl_Idx) {
                   COPY_OPND(IR_OPND_R(ir_idx), asg_var_opnd);
@@ -450,11 +450,80 @@ int switch_to_subroutine(int *host_name_idx, int *name_idx)
   return host_attr_idx;
 }
 #endif /* KEY Bug 3018 */
+
+
+
+/******************************************************************************\
+|*									      *|
+|* Description:								      *|
+|*	Convert a procedure pointer reference to a subroutine reference	      *|
+|*									      *|
+|* Input parameters:							      *|
+|*	Index of procedure pointer data object				      *|
+|*									      *|
+|* Output parameters:							      *|
+|*	Index of procedure						      *|
+|*									      *|
+|* Returns:								      *|
+|*	NONE								      *|
+|*									      *|
+\******************************************************************************/
+
+static int subroutine_proc_ptr(int attr_idx, int line, int col) {
+int idx, result_idx;
+
+    idx = ATD_PP_ATP(attr_idx);
+
+    switch(ATP_PGM_UNIT(idx)) {
+    case Function:
+	PRINTMSG(line, 1704, Error, col, AT_OBJ_NAME_PTR(attr_idx));
+	break;
+
+    case Subroutine:
+	break;
+
+    case Pgm_Unknown:
+	result_idx = ATP_RSLT_IDX(idx);
+	ATP_RSLT_IDX(idx) = NULL_IDX;
+
+	if (!ATP_PP_PROTO(idx)) {
+	    if (AT_TYPED(result_idx))
+		PRINTMSG(line, 1704, Error, col, AT_OBJ_NAME_PTR(attr_idx));
+
+	    else {
+		ATP_RSLT_IDX(idx) = NULL_IDX;
+		ATP_PGM_UNIT(idx) = Subroutine;
+	    }
+
+	} else if (AT_OBJ_CLASS(result_idx) != Pgm_Unit ||
+		   ATP_PGM_UNIT(result_idx) != Subroutine)
+	    PRINTMSG(line, 1706, Error, col, AT_OBJ_NAME_PTR(attr_idx),
+		     "subroutine");
+
+	else {
+	    ATP_FIRST_IDX(idx)  = ATP_FIRST_IDX(result_idx);
+	    ATP_NUM_DARGS(idx)  = ATP_NUM_DARGS(result_idx);
+	    ATP_EXTRA_DARG(idx) = ATP_EXTRA_DARG(result_idx);
+
+	    ATP_EXPL_ITRFC(idx) = TRUE;
+	    ATP_PGM_UNIT(idx) = Subroutine;
+	}
+
+	break;
+    }
+
+    return idx;
+}
+
+
+
+
+
 
 /******************************************************************************\
 |*									      *|
 |* Description:								      *|
-|*	BRIEF DESCRIPTION OF THIS FUNCTION'S PURPOSE			      *|
+|*	Parse a CALL statement						      *|
 |*									      *|
 |* Input parameters:							      *|
 |*	NONE								      *|
@@ -480,7 +549,7 @@ void parse_call_stmt (void)
    int       name_idx;
    opnd_type opnd;
    boolean   parsed_ok = TRUE;
-
+   ir_tbl_type temp;
 
    TRACE (Func_Entry, "parse_call_stmt", NULL);
 
@@ -518,6 +587,55 @@ void parse_call_stmt (void)
            attr_idx = NULL_IDX;
       }
 #endif
+
+      if (AT_OBJ_CLASS(attr_idx) == Data_Obj && ATD_CLASS(attr_idx) == Variable &&
+	  TYP_TYPE(ATD_TYPE_IDX(attr_idx)) == Structure && LA_CH_VALUE == '%') {
+
+	  IR_FLD_L(call_idx)      = AT_Tbl_Idx;
+	  IR_IDX_L(call_idx)      = attr_idx;
+	  IR_OPR(call_idx)        = Struct_Opr;
+	  IR_COL_NUM_L(call_idx)  = col;
+	  IR_LINE_NUM_L(call_idx) = line;
+
+	  opnd.fld = IR_Tbl_Idx;
+	  opnd.idx = call_idx;
+
+	  NEXT_LA_CH;
+	  if (!MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
+	      PRINTMSG(line, 568, Error, col, TOKEN_STR(token));
+	      parsed_ok = FALSE;
+	      goto EXIT;	
+	  }
+
+	  parsed_ok = parse_deref(&opnd, TYP_IDX(ATD_TYPE_IDX(attr_idx)), 2);
+	  if (parsed_ok && LA_CH_VALUE == EOS) {
+	      if (IR_FLD_R(call_idx) != AT_Tbl_Idx ||
+		  TYP_LINEAR(ATD_TYPE_IDX(IR_IDX_R(call_idx))) != Proc_Ptr) {
+
+		  PRINTMSG(TOKEN_LINE(token), 568, Error, TOKEN_COLUMN(token),
+			   TOKEN_STR(token));
+		  parsed_ok = FALSE;
+		  goto EXIT;
+	      }
+
+	      /* parse_deref works by redefining the top node, so we
+	       * need to swap ir nodes. */
+
+	      temp = ir_tbl[call_idx];
+	      ir_tbl[call_idx] = ir_tbl[opnd.idx];
+	      ir_tbl[opnd.idx] = temp;
+
+	      IR_IDX_L(call_idx) = opnd.idx;
+
+	      IR_TYPE_IDX(call_idx) = TYPELESS_DEFAULT_TYPE;
+	      IR_COL_NUM(call_idx)  = col;
+	      IR_LINE_NUM(call_idx) = line;
+
+	      subroutine_proc_ptr(IR_IDX_R(opnd.idx), line, col);
+	  }
+
+	  goto EXIT;
+      }
 
 #ifdef KEY /* Bug 3018 */
       /* If we picked up an intrinsic function due to an "intrinsic"
@@ -677,6 +795,10 @@ void parse_call_stmt (void)
               ATP_PGM_UNIT(attr_idx) == Pgm_Unknown)) {
              ATP_PGM_UNIT(attr_idx) = Subroutine;
          }
+	 else if (AT_OBJ_CLASS(attr_idx) == Data_Obj &&
+		  TYP_LINEAR(ATD_TYPE_IDX(attr_idx)) == Proc_Ptr)
+	     subroutine_proc_ptr(attr_idx, line, col);
+
          else if (fnd_semantic_err(Obj_Use_Extern_Subr, 
                                    line,
                                    col,
@@ -685,9 +807,10 @@ void parse_call_stmt (void)
             parse_err_flush(Find_EOS, NULL);
             parsed_ok = FALSE;
             goto EXIT;
+
          }
-         else if (AT_OBJ_CLASS(attr_idx) == Data_Obj) {
-            chg_data_obj_to_pgm_unit(attr_idx, Subroutine, Extern_Proc);
+	 else if (AT_OBJ_CLASS(attr_idx) == Data_Obj) {
+	    chg_data_obj_to_pgm_unit(attr_idx, Subroutine, Extern_Proc);
          }
       }
       else {
@@ -1319,7 +1442,7 @@ void parse_deallocate_stmt (void)
                   /* have stat var */
                   /* do that stat stuff */
 
-                  parsed_ok = parse_deref(&opnd, NULL_IDX) && parsed_ok;
+		  parsed_ok = parse_deref(&opnd, NULL_IDX, 0) && parsed_ok;
                   COPY_OPND(IR_OPND_R(ir_idx), opnd);
 
                   mark_attr_defined(&opnd);
@@ -1353,7 +1476,7 @@ void parse_deallocate_stmt (void)
                      TOKEN_COLUMN(stat_token), NULL);
          }
 
-         if (parse_deref(&opnd, NULL_IDX)) {
+         if (parse_deref(&opnd, NULL_IDX, 0)) {
             parsed_ok = change_subscript(&opnd) && parsed_ok;
          }
          else {
@@ -1991,7 +2114,7 @@ CHECK_FOR_VARIABLE:
       expr_start_line = TOKEN_LINE(token);
       expr_start_col  = TOKEN_COLUMN(token);
 
-      if (parse_deref(&do_variable, NULL_IDX)) {
+      if (parse_deref(&do_variable, NULL_IDX, 0)) {
 
          if (mp_nest_list_idx != NULL_IDX) {
             COPY_OPND(IL_OPND(mp_nest_list_idx), do_variable);
@@ -3108,7 +3231,7 @@ void parse_forall (void)
          expr_start_line = TOKEN_LINE(token);
          expr_start_col  = TOKEN_COLUMN(token);
 
-         if (parse_deref(&an_opnd, NULL_IDX)) {
+         if (parse_deref(&an_opnd, NULL_IDX, 0)) {
             NTR_IR_LIST_TBL(triplet_spec_il_idx);
             IR_LIST_CNT_R(forall_ir_idx) = 1;
             IR_FLD_R(forall_ir_idx)      = IL_Tbl_Idx;
@@ -4576,7 +4699,7 @@ void parse_nullify_stmt (void)
       list2_idx = list1_idx;
 
       if (MATCHED_TOKEN_CLASS(Tok_Class_Id)) {
-         parsed_ok = parse_deref(&opnd, NULL_IDX) && parsed_ok;
+	 parsed_ok = parse_deref(&opnd, NULL_IDX, 3) && parsed_ok;
          COPY_OPND(IL_OPND(list1_idx), opnd);
 
          mark_attr_defined(&opnd);
