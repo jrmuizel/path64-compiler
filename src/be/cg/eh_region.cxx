@@ -1151,96 +1151,87 @@ Create_INITO_For_Range_Table(ST * st, ST * pu)
     }
     else
 #endif
-    for (INITV_IDX next_initv=INITV_next (first_initv);
-    		next_initv; next_initv=INITV_next (next_initv))
+    for (INITV_IDX next_initv = INITV_next (first_initv);
+         next_initv; next_initv=INITV_next (next_initv))
     {
-    	INITV_IDX action = New_INITV();
-	int sym=0;
-	if (INITV_kind(next_initv) != INITVKIND_ZERO)
-	    sym = TCON_uval(INITV_tc_val (next_initv));
+      INITV_IDX action = New_INITV();
 
-	bool catch_all = false;	// catch-all clause
-	if (!sym)
-	    catch_all = (type_filter_map.find(sym) != type_filter_map.end());
-	// if a region has eh specifications, we at least need:
-	// 0 /* zero means zero */
-	// 1 /* offset */
-	// -filter /* eh spec typeinfo offset */
-	// 0
-	// But catch-all typeinfo is also zero. How to distinguish between
-	// the first zero and a catch-all zero? The following hack is used:
-	// if the next typeinfo is negative, then "zero means zero".
-	if (catch_all && INITV_next (next_initv))
-	{
-	    int next_sym = 0;
-	    INITV_IDX tmp_idx = INITV_next (next_initv);
-	    if (INITV_kind (tmp_idx) != INITVKIND_ZERO)
-	    	next_sym = TCON_ival (INITV_tc_val (tmp_idx));
-#ifdef TARG_ST
-            /* (cbr) first null action is a cleanup */
-	    if (next_sym)
-#else
-	    if (next_sym < 0)
-#endif
-	    	catch_all = false;
-	}
+      // INITV_kind == ZERO - cleanup action
+      // zero - catch all action
+      // offset - single action
+      // -filter - excetion filter
 
-	// If there is no landing pad for this region, there should not be
-	// a catch-all clause for it.
-	if (catch_all && !pad_label) catch_all = false;
-	// action field
-	// Check if we have any action for this eh-region, if not, emit 0
-	// for action start marker.
-	bool zero_action = false;
-	if (sym < 0) // eh spec offset
-	{
-    	    INITV_Set_VAL (Initv_Table[action],
-		Enter_tcon (Host_To_Targ (MTYPE_I4,sym)), 1);
-	    bytes_for_filter = sizeof_signed_leb128 (sym);
-	}
-	else if (sym || catch_all)
-	{
-    	    INITV_Set_VAL (Initv_Table[action],
-		Enter_tcon (Host_To_Targ (MTYPE_I4,type_filter_map[sym])), 1);
-	    bytes_for_filter = sizeof_signed_leb128 (type_filter_map[sym]);
-	}
-	else 
-	{
-	    INITV_Set_ZERO (Initv_Table[action], MTYPE_I4, 1);
-	    zero_action = true;
-	    bytes_for_filter = 1;
-	}
+      int sym = 0;
+      bool catch_all = false;
 
-    	if (!action_ofst)
-	{
-	    // store the head of each action chain
-	    action_chains.push_back (action);
+      if (INITV_kind(next_initv) == INITVKIND_ZERO) {
+        // cleanup
+      } else {
+        sym = TCON_uval(INITV_tc_val(next_initv));
+        catch_all = !sym;  // catch-all clause
+      }
 
-	    // action start marker for call-site record
-	    if (zero_action && !INITV_next (next_initv))
-	    {
-	      // There is no action-record for this eh-region, so mark the
-	      // action-record ofst as zero.
-	      INITV_Set_ZERO (Initv_Table[first_action], MTYPE_I4, 1);
-	    }
-	    else
-	      INITV_Set_VAL (Initv_Table[first_action],
-		Enter_tcon (Host_To_Targ (MTYPE_I4, running_ofst)), 1);
-	    // store offset into first action **Note: not the filter, but offset to it
-	    Set_INITV_next (pad, first_action);
-	}
 
-	if (action_ofst)    Set_INITV_next (action_ofst, action);
+      // If there is no landing pad for this region, there should not be
+      // a catch-all clause for it.
+      if (catch_all && !pad_label)
+        catch_all = false;
 
-// offset to next action. currently it is either 1 or 0, 0 indicates this
-// is the last action.
-    	action_ofst = New_INITV();
-	if (INITV_next (next_initv))
-	    INITV_Set_ONE (Initv_Table[action_ofst], MTYPE_I4, 1);
-	else
-	    INITV_Set_ZERO (Initv_Table[action_ofst], MTYPE_I4, 1);
-	Set_INITV_next (action, action_ofst);
-	running_ofst += (1 + bytes_for_filter);
+      // action field
+      // Check if we have any action for this eh-region, if not, emit 0
+      // for action start marker.
+      bool zero_action = false;
+      if (sym < 0) // eh spec offset
+      {
+        INITV_Set_VAL (Initv_Table[action],
+        Enter_tcon (Host_To_Targ (MTYPE_I4,sym)), 1);
+        bytes_for_filter = sizeof_signed_leb128 (sym);
+      }
+      else if (sym || catch_all)
+      {
+        INITV_Set_VAL (Initv_Table[action],
+        Enter_tcon (Host_To_Targ (MTYPE_I4,type_filter_map[sym])), 1);
+        bytes_for_filter = sizeof_signed_leb128 (type_filter_map[sym]);
+      }
+      else 
+      {
+        // cleanup
+        INITV_Set_ZERO (Initv_Table[action], MTYPE_I4, 1);
+        zero_action = true;
+        bytes_for_filter = 1;
+      }
+
+      if (!action_ofst)
+      {
+        // store the head of each action chain
+        action_chains.push_back (action);
+        
+        // action start marker for call-site record
+        if (zero_action && !INITV_next (next_initv))
+        {
+          // There is no action-record for this eh-region, so mark the
+          // action-record ofst as zero.
+          INITV_Set_ZERO (Initv_Table[first_action], MTYPE_I4, 1);
+        }
+        else
+          INITV_Set_VAL (Initv_Table[first_action],
+        Enter_tcon (Host_To_Targ (MTYPE_I4, running_ofst)), 1);
+        // store offset into first action **Note: not the filter, but offset to it
+        Set_INITV_next (pad, first_action);
+      }
+
+      if (action_ofst)
+        Set_INITV_next (action_ofst, action);
+
+      // offset to next action. currently it is either 1 or 0, 0 indicates this
+      // is the last action.
+      action_ofst = New_INITV();
+      if (INITV_next (next_initv))
+        INITV_Set_ONE (Initv_Table[action_ofst], MTYPE_I4, 1);
+      else
+        INITV_Set_ZERO (Initv_Table[action_ofst], MTYPE_I4, 1);
+        Set_INITV_next (action, action_ofst);
+        running_ofst += (1 + bytes_for_filter);
     }
 
     if (i == 0)
