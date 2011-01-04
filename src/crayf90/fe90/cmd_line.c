@@ -1032,7 +1032,7 @@ static void init_cmd_line (void)
    on_off_flags.shared_to_private_coer	= FALSE;		/* -dC        */
    on_off_flags.all_debug		= FALSE;		/* -dD        */
    on_off_flags.top_test_shortloops	= FALSE;		/* -dL        */
-   on_off_flags.second_underscore	= TRUE;			/* -eN        */
+   on_off_flags.second_underscore	= FALSE;		/* -dN        */
    on_off_flags.underscoring    	= TRUE;			/* -eU        */
    on_off_flags.allow_leading_uscore    = FALSE;                /* -dQ        */
    on_off_flags.output_pound_lines      = TRUE;                 /* -dP        */
