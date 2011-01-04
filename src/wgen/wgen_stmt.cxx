@@ -3640,11 +3640,7 @@ Get_typeinfo_var (gs_t t)
 // Also set a flag indicating if there are any cleanups required as we
 // unwind through all these handlers.
 static INITV_IDX
-#ifdef TARG_ST
 Create_handler_list (int scope_index, bool &cleanups_seen)
-#else
-Create_handler_list (int scope_index)
-#endif
 {
   INITV_IDX type_st, prev_type_st=0, start=0;
 
@@ -3653,14 +3649,10 @@ Create_handler_list (int scope_index)
   for (int i=scope_index; i>=0; i--)
   {
     gs_t t = scope_cleanup_stack[i].stmt;
-#ifdef TARG_ST
     if ((gs_tree_code(t) != GS_TRY_BLOCK) || gs_cleanup_p(t)) {
       if (gs_tree_code(t) != GS_BIND_EXPR) cleanups_seen = true;
       continue;
     }
-#else
-    if ((gs_tree_code(t) != GS_TRY_BLOCK) || gs_cleanup_p(t))	continue;
-#endif
 
     gs_t h = gs_try_handlers (t);
     if (key_exceptions)
@@ -3866,9 +3858,7 @@ lookup_cleanups (INITV_IDX& iv)
   gs_t t=0;
   iv = 0;
   vector<gs_t> *cleanups = new vector<gs_t>();
-#ifdef TARG_ST
   bool outer_cleanups = false;
-#endif
 
   if (scope_cleanup_i == -1) 
   {
@@ -3923,11 +3913,7 @@ lookup_cleanups (INITV_IDX& iv)
   if (gs_tree_code(t) == GS_TRY_BLOCK && scope_index >= 0)
   {
 	h = gs_try_handlers (t);
-#ifdef TARG_ST
 	iv = Create_handler_list (scope_index, outer_cleanups);
-#else
-	iv = Create_handler_list (scope_index);
-#endif
 	goto_idx = scope_cleanup_stack[scope_index].cmp_idx;
   }
   else // no enclosing try block
@@ -3981,12 +3967,7 @@ lookup_cleanups (INITV_IDX& iv)
   //       it and call the pad, so the presence of cleanup
   //       info is superfluous).  Catch-all typeinfo appears
   //       as a zero on this list.
-  if ((! cleanups->empty ()
-#ifdef TARG_ST
-              || outer_cleanups
-#endif // TARG_ST
-      )
-      && iv != 0)
+  if ((! cleanups->empty () || outer_cleanups ) && iv != 0)
     {
       INITV_IDX ix;
       for (ix = iv; ix != 0; ix = INITV_next (ix)) {
@@ -4010,10 +3991,10 @@ lookup_cleanups (INITV_IDX& iv)
         Set_INITV_next (ix, iv);
         iv = ix;
 #else // !TARG_ST
-        // No catch-all, appending catch-all action
+        // No catch-all, appending cleanup action
         // Indicate a clean-up action by zero
         ix = New_INITV();
-        INITV_Init_Integer (ix, MTYPE_I4, 0, 1);
+        INITV_Set_ZERO (Initv_Table[ix], MTYPE_I4, 1);
         Set_INITV_next(iv, ix);
 #endif // !TARG_ST
       }
@@ -4022,7 +4003,7 @@ lookup_cleanups (INITV_IDX& iv)
   if(!iv) {
     // creating default cleanup action
     iv = New_INITV();
-    INITV_Init_Integer(iv, MTYPE_I4, 0, 1);
+    INITV_Set_ZERO(Initv_Table[iv], MTYPE_I4, 1);
   }
 
   if (cleanup_list_for_eh.empty())
