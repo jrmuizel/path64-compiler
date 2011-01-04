@@ -5493,7 +5493,7 @@ static void dump_at_ntry (FILE		*out_file,
 	      ATP_PGM_UNIT(at_idx) == Subroutine) {
 	       fprintf(out_file, "  %-16s= %-7s %-16s= %-7s %-16s= %-7s\n",
                    "AT_BIND_ATTR", boolean_str[AT_BIND_ATTR(at_idx)],
-		   "ATP_ABSTRACT", boolean_str[ATP_ABSTRACT(at_idx)],
+		   "ATP_PP_ABSTRACT", boolean_str[ATP_PP_ABSTRACT(at_idx)],
 		   "ATP_PP_PROTO", boolean_str[ATP_PP_PROTO(at_idx)]);
 	    }
 #endif /* KEY Bug 14150 */

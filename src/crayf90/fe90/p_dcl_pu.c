@@ -2467,7 +2467,7 @@ static int start_new_subpgm(pgm_unit_type	pgm_type,
    curr_stmt_category		= Dir_Integer_Stmt_Cat;
    CURR_BLK_NAME		= attr_idx;
    ATP_EXPL_ITRFC(attr_idx)	= TRUE;
-   ATP_ABSTRACT(attr_idx)	= abstract_flag;
+   ATP_PP_ABSTRACT(attr_idx)	= abstract_flag;
 
    if ((cif_flags & XREF_RECS) != 0) {
       cif_usage_rec(attr_idx,
@@ -2951,7 +2951,7 @@ int start_new_prog_unit_by_token(pgm_unit_type pgm_type,
 
    ATP_SCP_ALIVE(attr_idx)	= TRUE;
    ATP_EXPL_ITRFC(attr_idx)     = TRUE;
-   ATP_ABSTRACT(attr_idx)	= abstract_flag;
+   ATP_PP_ABSTRACT(attr_idx)	= abstract_flag;
    ATP_SCP_IDX(attr_idx)	= curr_scp_idx;
 
    if (cif_flags  &&  pgm_type == Program) {

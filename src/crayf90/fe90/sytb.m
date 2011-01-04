@@ -2768,9 +2768,9 @@
 # endif
 
 # ifdef _DEBUG
-# define ATP_ABSTRACT(IDX)						       \
+# define ATP_PP_ABSTRACT(IDX)						       \
 	((AT_OBJ_CLASS(IDX) == Pgm_Unit) ?				       \
-		attr_tbl : sytb_var_error("ATP_ABSTRACT", IDX))		       \
+		attr_tbl : sytb_var_error("ATP_PP_ABSTRACT", IDX))		       \
 		[IDX].fld.flag33
 # else
 # define ATP_PP_ABSTRACT(IDX)		attr_tbl[IDX].fld.flag33
