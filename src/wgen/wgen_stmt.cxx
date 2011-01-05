@@ -3982,7 +3982,7 @@ lookup_cleanups (INITV_IDX& iv)
         }
 #endif // !TARG_ST
       }
-      if (ix == 0) {
+      if (ix == 0 && iv != 0) {
 #ifdef TARG_ST
         /* No catch-all found, so prepend a clean-up action. */
         /* Indicate a clean-up action by INT32_MIN here. */
@@ -3993,9 +3993,12 @@ lookup_cleanups (INITV_IDX& iv)
 #else // !TARG_ST
         // No catch-all, appending cleanup action
         // Indicate a clean-up action by zero
+        INITV_IDX ilast = iv;
+        while (ilast && INITV_next(ilast))
+          ilast = INITV_next(ilast);
         ix = New_INITV();
         INITV_Set_ZERO (Initv_Table[ix], MTYPE_I4, 1);
-        Set_INITV_next(iv, ix);
+        Set_INITV_next(ilast, ix);
 #endif // !TARG_ST
       }
     }
