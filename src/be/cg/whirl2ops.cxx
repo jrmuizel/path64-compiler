@@ -6984,8 +6984,16 @@ Handle_INTRINSIC_CALL (WN *intrncall)
 
   case INTRN_STMXCSR: {
       WN *lda = WN_kid0(WN_kid0(intrncall)); 
-      TN *ofst_tn = Gen_Symbol_TN(WN_st(lda), WN_lda_offset(lda), 0);
-      Build_OP(TOP_stmxcsr, SP_TN, ofst_tn, &New_OPs);
+      TN *ofst_tn = Gen_Symbol_TN(WN_st(lda), 0, 0);
+	    
+      Allocate_Temp_To_Memory(WN_st(lda));
+      ST *mem_base_sym = NULL;
+      INT64 mem_base_ofst = 0;
+      Base_Symbol_And_Offset_For_Addressing(WN_st(lda), 0, &mem_base_sym,
+                    &mem_base_ofst);
+
+      TN *mem_base_tn = mem_base_sym == SP_Sym ? SP_TN : FP_TN;
+      Build_OP(TOP_stmxcsr, mem_base_tn, ofst_tn, &New_OPs);
       return next_stmt;
     }
   case INTRN_LDMXCSR: {
@@ -6993,9 +7001,17 @@ Handle_INTRINSIC_CALL (WN *intrncall)
       			   NULL);
       ST *tmp_st = Gen_Temp_Symbol(MTYPE_To_TY(MTYPE_I4), "__ldmxcsr");
       Allocate_Temp_To_Memory(tmp_st);
-      TN *ofst_tn = Gen_Symbol_TN(tmp_st, ST_ofst(tmp_st), 0);
-      Build_OP(TOP_store32, val_tn, SP_TN, ofst_tn, &New_OPs); 
-      Build_OP(TOP_ldmxcsr, SP_TN, ofst_tn, &New_OPs);
+
+      ST *mem_base_sym = NULL;
+      INT64 mem_base_ofst = 0;
+
+      Base_Symbol_And_Offset_For_Addressing(tmp_st, 0, &mem_base_sym,
+					&mem_base_ofst);
+      TN *mem_base_tn = mem_base_sym == SP_Sym ? SP_TN : FP_TN;
+
+      TN *ofst_tn = Gen_Symbol_TN(tmp_st, 0, 0);
+      Build_OP(TOP_store32, val_tn,mem_base_tn, ofst_tn, &New_OPs); 
+      Build_OP(TOP_ldmxcsr, mem_base_tn, ofst_tn, &New_OPs);
       return next_stmt;
     }
   }
