@@ -903,18 +903,14 @@ Do_Cleanups_For_EH (INT from)
     WGEN_Stmt_Append (WN_CreateLabel ((ST_IDX) 0, e.start, 0, NULL), 
     		     Get_Srcpos());
 
-#ifdef TARG_ST
     in_cleanup = TRUE;
-#endif
     for (vector<gs_t>::iterator j=e.cleanups->begin();
 		j!=e.cleanups->end();++j)
     {
     	gs_t cleanup = *j;
 	Emit_Cleanup(cleanup);
     }
-#ifdef TARG_ST
     in_cleanup = FALSE;
-#endif
     if (e.goto_idx)
 	WGEN_Stmt_Append (WN_CreateGoto ((ST_IDX) 0, e.goto_idx), Get_Srcpos());
     else
