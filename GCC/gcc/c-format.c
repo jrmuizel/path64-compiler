@@ -39,7 +39,7 @@ set_Wformat (int setting)
 {
   warn_format = setting;
   warn_format_extra_args = setting;
-  warn_format_zero_length = setting;
+  warn_format_zero_length = 0;/*setting*/
   if (setting != 1)
     {
       warn_format_nonliteral = setting;
