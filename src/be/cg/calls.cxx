@@ -916,6 +916,11 @@ Can_Be_Tail_Call(ST *pu_st, BB *exit_bb)
    */
   ant = ANNOT_Get(BB_annotations(pred), ANNOT_CALLINFO);
   call_info = ANNOT_callinfo(ant);
+	
+  if( Is_Target_32bit()){
+    if(WN_kid_count(call_info->call_wn) -1 > 2 ) return NULL;
+   }
+  
   call_st = CALLINFO_call_st(call_info);
   call_wn = CALLINFO_call_wn(call_info);
 #ifdef TARG_ST
