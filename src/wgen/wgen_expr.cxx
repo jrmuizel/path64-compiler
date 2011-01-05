@@ -9873,13 +9873,6 @@ WGEN_Expand_Expr (gs_t exp,
 		inside_eh_region = true;
             	WGEN_Stmt_Push (region_body, wgen_stmk_call_region_body, Get_Srcpos());
 	    }
-	} else if (key_exceptions && inside_eh_region && opt_regions)
-	{
-	    // The above conditions dictate that this call MUST not be inside
-	    // a region. So close the region.
-	    // TODO: Is this only for opt_regions or in general?
-	    if (Check_For_Call_Region ())
-	    	Did_Not_Terminate_Region = FALSE;
 	}
 #endif // KEY
 

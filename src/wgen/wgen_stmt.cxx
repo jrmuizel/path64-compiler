@@ -4943,8 +4943,6 @@ WGEN_Expand_Stmt(gs_t stmt, WN* target_wn)
       break;
 
     case GS_CLEANUP_STMT:
-      if (opt_regions && Check_For_Call_Region ())
-          Did_Not_Terminate_Region = FALSE;
       if (!gs_cleanup_eh_only(stmt))
     	  Push_Scope_Cleanup (stmt);
       else Push_Scope_Cleanup (stmt, true /* cleanup_eh_only */);
@@ -5011,8 +5009,6 @@ WGEN_Expand_Stmt(gs_t stmt, WN* target_wn)
       break;
 
     case GS_RETURN_EXPR: {
-      if (opt_regions && Check_For_Call_Region ())
-          Did_Not_Terminate_Region = FALSE;
       gs_t t = gs_bind_expr_vars(stmt);
       if (t && gs_tree_code(t) == GS_INIT_EXPR) {
   	Is_True(gs_tree_code(gs_tree_operand(t, 0)) == GS_RESULT_DECL,
@@ -5038,8 +5034,6 @@ WGEN_Expand_Stmt(gs_t stmt, WN* target_wn)
       // all the code executed for SCOPE_STMT.
       Fail_FmtAssertion ("WGEN_Expand_Stmt: Unexpected SCOPE_STMT");
 #if 0 // wgen TODO
-      if (opt_regions && Check_For_Call_Region ())
-          Did_Not_Terminate_Region = FALSE;
       if (gs_scope_begin_p(stmt))
 	Push_Scope_Cleanup (stmt);
       else

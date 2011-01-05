@@ -553,14 +553,6 @@ WGEN_Stmt_Push (WN* wn, WGEN_STMT_KIND kind, SRCPOS srcpos)
 {
   INT new_stack_size;
   
-#ifdef KEY
-  // Close any existing EH region before we push a new stmt, since we don't
-  // know what the new stmt offers, and may have difficulty closing the region
-  // then.
-  if (opt_regions && wn_stmt_sp)
-    Check_For_Call_Region ();
-#endif
-
   if (wn_stmt_sp == wn_stmt_stack_last) {
     new_stack_size = ENLARGE(wn_stmt_stack_size);
     wn_stmt_stack =
@@ -648,10 +640,7 @@ WGEN_Stmt_Append (WN* wn, SRCPOS srcpos
 #ifdef KEY
   if (call_stmt) {
     // This should not ideally be mixed with this function code, but ...
-    if (!opt_regions)
-      Check_For_Call_Region();
-    else if (wn_stmt_sp->kind == wgen_stmk_call_region_body)
-      Did_Not_Terminate_Region = TRUE;
+    Check_For_Call_Region();
   }
 #endif // KEY
 } /* WGEN_Stmt_Append */
@@ -732,21 +721,12 @@ WGEN_Stmt_Pop (WGEN_STMT_KIND kind)
   WN * to_be_pushed = 0;
   if (key_exceptions && wn_stmt_sp->kind != kind)
   {
-    if (!opt_regions || !Did_Not_Terminate_Region)
-    {
   	FmtAssert (wn_stmt_sp->kind == wgen_stmk_call_region_body,
              ("mismatch in statements: expected %s, got %s\n",
               WGEN_Stmt_Kind_Name [kind],
               WGEN_Stmt_Kind_Name [wn_stmt_sp->kind]));
 
 	to_be_pushed = WGEN_Stmt_Pop (wgen_stmk_call_region_body);
-    }
-    else
-    { // If we got an opportunity but did not close the region earlier in
-      // WGEN_Stmt_Append, then close it now.
-    	Check_For_Call_Region ();
-	Did_Not_Terminate_Region = FALSE;
-    }
   }
 #endif // KEY
 

@@ -57,7 +57,6 @@ BOOL flag_short_double = FALSE;
 #endif
 int pstatic_as_global = 0;
 int key_exceptions = 0;
-BOOL opt_regions = 0;
 BOOL lang_cplus = FALSE;
 BOOL c_omit_external = TRUE;
 #ifdef FE_GNU_4_2_0

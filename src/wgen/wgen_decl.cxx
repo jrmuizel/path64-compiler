@@ -2061,13 +2061,6 @@ WGEN_Finish_Function (gs_t fndecl)
 #endif
 #endif
     }
-    if (opt_regions)
-    {
-    	Check_For_Call_Region ();
-	// Since we are finishing a function, we must have terminated all
-	// regions. So reset the flag.
-	Did_Not_Terminate_Region = FALSE;
-    }
 
     // Insert a RETURN if it does not exist
     WN * wn = WN_last (WGEN_Stmt_Top ());
