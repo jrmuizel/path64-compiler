@@ -2944,7 +2944,7 @@ CGTARG_TN_For_Asm_Operand (const char* constraint,
   
   // prefer register/memory over immediates; this isn't optimal, 
   // but we may not always be able to generate an immediate
-  static const char* immediates = "inIJKLMNO";
+  static const char* immediates = "inpIJKLMNO";
   // Bug 950
   // The '#' in a constraint is inconsequential or it is just a typo
   static const char* hash = "#";
@@ -3024,7 +3024,7 @@ CGTARG_TN_For_Asm_Operand (const char* constraint,
     }
     ret_tn = asm_constraint_tn[prev_index];
   }
-  else if (strchr("gmp", *constraint)) // SiCortex 8768
+  else if (strchr("gm", *constraint)) // SiCortex 8768
   {
     TYPE_ID rtype = (load != NULL ? WN_rtype(load) : MTYPE_I4);
     FmtAssert(MTYPE_is_integral(rtype),

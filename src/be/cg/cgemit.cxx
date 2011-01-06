@@ -10831,6 +10831,36 @@ Modify_Asm_String (char* asm_string, UINT32 position, bool memory,
 #endif
 		   TN* tn, BB *bb)
 {
+   if( tn->size == 8 ){
+    char pattern[5]; 
+     strcpy(pattern, "movb");
+    asm_string =  Replace_Substring(asm_string, pattern, "movq");
+
+     strcpy(pattern, "movl");
+    asm_string =  Replace_Substring(asm_string, pattern, "movq");
+
+    strcpy(pattern, "movw");
+    asm_string =  Replace_Substring(asm_string, pattern, "movq");
+ 
+     strcpy(pattern, "addb");
+    asm_string =  Replace_Substring(asm_string, pattern, "addq");
+
+     strcpy(pattern, "addl");
+    asm_string =  Replace_Substring(asm_string, pattern, "addq");
+
+    strcpy(pattern, "addw");
+    asm_string =  Replace_Substring(asm_string, pattern, "addq");
+ 
+     strcpy(pattern, "subb");
+    asm_string =  Replace_Substring(asm_string, pattern, "subq");
+
+     strcpy(pattern, "subl");
+    asm_string =  Replace_Substring(asm_string, pattern, "subq");
+
+    strcpy(pattern, "subw");
+    asm_string =  Replace_Substring(asm_string, pattern, "subq");  
+   }
+
   char* name = NULL;
 #ifdef TARG_X8664
   char st_reg_name_template[7] = {'%', 's', 't', '(', '\0', ')', '\0'};
@@ -10945,13 +10975,18 @@ Modify_Asm_String (char* asm_string, UINT32 position, bool memory,
         if( base_ofst == 0 ){
 	  if( Is_Target_32bit() )
 	    sprintf( buf, "%s", name );
+      else if(strstr(asm_string, "%%gs"))  
+       sprintf( buf, "%s", name );
 	  else
 	    sprintf( buf, "%s(%%rip)", name );
-        } else
+        } else {
 	  if( Is_Target_32bit() )
 	    sprintf( buf, "%s+%d", name, (int)base_ofst );
+      else if(strstr(asm_string, "%%gs"))  
+        sprintf( buf, "%s", name );
 	  else
 	    sprintf( buf, "%s+%d(%%rip)", name, (int)base_ofst );
+       }
        }
     }
 
@@ -10981,7 +11016,7 @@ Modify_Asm_String (char* asm_string, UINT32 position, bool memory,
   
   asm_string =  Replace_Substring(asm_string, pattern, name);
 #ifdef TARG_X8664
-  if (TN_is_register(tn)) {
+  if (TN_is_register(tn) || TN_is_symbol(tn)) {
     char patternp[5];
     sprintf(patternp, "%%P%d", position);
     if (strstr(asm_string, patternp)) {
