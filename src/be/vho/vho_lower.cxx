@@ -5721,6 +5721,13 @@ vho_lower_falsebr ( WN * wn, WN * block )
 
 
 static WN *
+vho_lower_agoto ( WN * wn, WN * block )
+{
+  WN_kid0(wn) = vho_lower_expr ( WN_kid0(wn), block, NULL );
+  return wn;
+} 
+
+static WN *
 vho_lower_trap ( WN * wn, WN * block )
 {
   return wn;
@@ -5774,10 +5781,12 @@ vho_lower_stmt ( WN * wn, WN * block )
 
     case OPR_XGOTO:
     case OPR_GOTO:
-    case OPR_AGOTO:
     case OPR_ALTENTRY:
 
       break;
+    case OPR_AGOTO:
+      wn = vho_lower_agoto ( wn, block );
+      break;     
 
     case OPR_TRUEBR:
 
@@ -6357,8 +6366,8 @@ vho_lower_check_labels ( WN * wn )
 
     case OPR_AGOTO:
 
-      FmtAssert(FALSE, ("op %s unexpected in vho_lower_check_labels",
-      		      OPERATOR_name(WN_operator(wn))));
+     // FmtAssert(FALSE, ("op %s unexpected in vho_lower_check_labels",
+     // 		      OPERATOR_name(WN_operator(wn))));
       break;
 
     case OPR_ALTENTRY:
@@ -6752,8 +6761,8 @@ vho_lower_rename_labels_defined ( WN * wn )
 
     case OPR_AGOTO:
 
-      FmtAssert(FALSE, ("op %s unexpected in vho_lower_rename_labels_defined",
-      		      OPERATOR_name(WN_operator(wn))));
+     // FmtAssert(FALSE, ("op %s unexpected in vho_lower_rename_labels_defined",
+     //		      OPERATOR_name(WN_operator(wn))));
       break;
 
     case OPR_ALTENTRY:
