@@ -515,6 +515,8 @@ RELATED_SEGMENTED_ARRAY<T,block_size>::Allocate ()
     }
 
     block = (T *) MEM_POOL_Alloc (pool, new_size * sizeof(T));
+	char *p = (char *) block;
+	memset (p, 0, new_size * sizeof(T));
     max_size += new_size;
     block_base = size;
 

@@ -404,7 +404,9 @@ SEGMENTED_ARRAY<T,block_size>::Allocate ()
 	next_block_size = 0;
     }
 
-    block = (T *) MEM_POOL_Alloc (pool, new_size * sizeof(T));
+    block = (T *) MEM_POOL_Alloc (pool, new_size * sizeof(T));	
+	char *p = (char *) block;
+    memset (p, 0, new_size * sizeof(T));
     max_size_ += new_size;
     block_base = size_;
 
