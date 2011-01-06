@@ -7004,6 +7004,7 @@ boolean	gen_internal_dope_vector(int_dope_type		*dope_vec,
        storage_bit_size_tbl[TYP_LINEAR(CN_TYPE_IDX(cn_idx))] <
                      TARGET_BITS_PER_WORD) {
 
+#if !defined(_HOST_LITTLE_ENDIAN)
       /* must shift the constant so that it is left justified */
       /* word size integer (CG_INTEGER_DEFAULT_TYPE)          */
 
@@ -7013,6 +7014,7 @@ boolean	gen_internal_dope_vector(int_dope_type		*dope_vec,
       cn_idx = ntr_const_tbl(CG_INTEGER_DEFAULT_TYPE,
                              FALSE,
                             constant);
+#endif
    }
 
    /*************\

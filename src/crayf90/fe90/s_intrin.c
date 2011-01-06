@@ -18156,6 +18156,7 @@ void    transfer_intrinsic(opnd_type     *result_opnd,
          }
          else
 # endif
+#if !defined(_HOST_LITTLE_ENDIAN)
          if (res_exp_desc->type != Character &&
              storage_bit_size_tbl[res_exp_desc->linear_type] <
                                       TARGET_BITS_PER_WORD) {
@@ -18170,7 +18171,9 @@ void    transfer_intrinsic(opnd_type     *result_opnd,
                                                      FALSE,
                                                      the_constant);
          }
-         else {
+         else
+#endif
+	 {
             OPND_FLD((*result_opnd)) = CN_Tbl_Idx;
             OPND_IDX((*result_opnd)) = ntr_const_tbl(res_exp_desc->type_idx,
                                                      FALSE,
