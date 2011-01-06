@@ -5670,6 +5670,8 @@ EBO_Lea_Insertion( OP* op, TN** opnd_tn, EBO_TN_INFO** actual_tninfo )
         break;
       // Try to fold the second operand	
       OP* alu_op = actual_tninfo[1]->in_op;
+      if(alu_op && TN_value(OP_opnd(alu_op, 0)) >0 && TN_value(OP_opnd(alu_op, 0)) >=0x80000000)
+        break;
       if (alu_op && alu_op->bb == op->bb &&
 	  (OP_code(alu_op) == TOP_ldc32 || 
 	   OP_code(alu_op) == TOP_ldc64) &&
