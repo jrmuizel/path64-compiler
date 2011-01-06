@@ -1935,7 +1935,7 @@ I-u%s		;		Cc	ld	"-u %s"
 	""
 -mfixed-range=%s	;	Cc	NONE	"-TENV:registers_not_allocatable=%s"
 	""
-#ifdef X8664
+#ifdef TARG_X8664
 -funwind-tables	;		ALL	NONE	"-CG:emit_unwind_info=on -TENV:frame_pointer=on"
 	""
 #else
