@@ -564,6 +564,7 @@ check_for_whirl(char *name)
 {
     int fd = -1;
     char *raw_bits = NULL;
+    char *second_buf = NULL; 
     int size,bufsize;
     Elf32_Ehdr *p_ehdr = NULL;
     struct stat statb;
@@ -604,17 +605,18 @@ check_for_whirl(char *name)
     if(p_ehdr->e_ident[EI_CLASS] == ELFCLASS32){
     	Elf32_Ehdr *p32_ehdr = (Elf32_Ehdr *)raw_bits;
 #ifdef X86_WHIRL_OBJECTS
-        char *second_buf = NULL; 
 
         int new_size = p32_ehdr->e_shoff + sizeof(Elf32_Shdr)*p32_ehdr->e_shnum;
         lseek(fd, 0, SEEK_SET);
-        second_buf = (char *)alloca(new_size);
+        second_buf = (char *)malloc(new_size);
         size = read(fd, second_buf, new_size);
         p32_ehdr = (Elf32_Ehdr *)second_buf;
-        if (p32_ehdr->e_type == ET_REL && look_for_elf32_section(p32_ehdr, SHT_PROGBITS, WT_PU_SECTION)) {
+        if (p32_ehdr->e_type == ET_REL && look_for_elf32_section(p32_ehdr, SHT_PROGBITS, WT_PU_SECTION))
 #else
-        if (p32_ehdr->e_type == ET_SGI_IR) {
+        if (p32_ehdr->e_type == ET_SGI_IR)
 #endif
+	{
+	    if (second_buf != NULL) free(second_buf);
 	    close(fd);
 	    return TRUE;
 	}
@@ -622,22 +624,24 @@ check_for_whirl(char *name)
     else {
 	Elf64_Ehdr *p64_ehdr = (Elf64_Ehdr *)raw_bits;
 #ifdef X86_WHIRL_OBJECTS
-        char *second_buf = NULL; 
 
         int new_size = p64_ehdr->e_shoff + sizeof(Elf64_Shdr)*p64_ehdr->e_shnum;
         lseek(fd, 0, SEEK_SET);
-        second_buf = (char *)alloca(new_size);
+        second_buf = (char *)malloc(new_size);
         size = read(fd, second_buf, new_size);
         p64_ehdr = (Elf64_Ehdr *)second_buf;
-        if (p64_ehdr->e_type == ET_REL && look_for_elf64_section(p64_ehdr, SHT_PROGBITS, WT_PU_SECTION)) {
+        if (p64_ehdr->e_type == ET_REL && look_for_elf64_section(p64_ehdr, SHT_PROGBITS, WT_PU_SECTION))
 #else
-        if (p64_ehdr->e_type == ET_SGI_IR) {
+        if (p64_ehdr->e_type == ET_SGI_IR)
 #endif
+	{
+	    if (second_buf != NULL) free(second_buf);
 	    close(fd);
 	    return TRUE;
 	}
      }
 
+    if (second_buf != NULL) free(second_buf);
     close(fd);
     return FALSE;
     
