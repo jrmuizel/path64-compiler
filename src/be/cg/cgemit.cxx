@@ -14016,7 +14016,38 @@ Print_ST_List(vector<ST*>& st_list, const char* header)
   }
 }
 #endif
+int INITV_Removable(INITV & inv) {
+  INT32 i;
+  INITV_IDX ninv;
+  if(INITV_kind(inv) == INITVKIND_BLOCK) {
+    for (i = 0; i < INITV_repeat1(inv); i++) 
+	  for (ninv = INITV_blk(inv); ninv; ninv = INITV_next(ninv)) 
+        if(!INITV_Removable(Initv_Table[ninv]))
+          return FALSE;    
+  }
+  else if(INITV_kind(inv) == INITVKIND_LABEL)  {
+    LABEL_IDX lab = INITV_lab(inv); 
+    if(!Get_Label_BB(lab)) 
+      return TRUE;
+    else
+      return FALSE;
+  }   
+  else 
+    return FALSE; 
 
+  return TRUE;
+}
+//This routine can judge whether Inito print into asm file or not.  
+int Inito_Removable(INITO* inop) {
+  INITO ino = *inop;
+  INITV_IDX inv;
+  FOREACH_INITV (INITO_val(ino), inv) {
+    INITV invp = Initv_Table[inv];
+    if(!INITV_Removable(invp)) 
+      return FALSE;
+  }
+  return TRUE;
+}
 // This routine can be called multiple times for the global symtab;
 // we do this so that objects are emitted in order.
 // For each section, some objects are in local symtab, and some in global.
@@ -14067,6 +14098,8 @@ Process_Initos_And_Literals (SYMTAB_IDX stab)
           ST_sclass(st) == SCLASS_EXTERN) {
         continue;
       }
+	  if(Inito_Removable(ino))
+ 	    continue;
       st_list.push_back(st);
       st_inito_map[ST_st_idx(st)] = ino;
     }
