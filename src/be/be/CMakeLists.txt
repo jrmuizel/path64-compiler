@@ -254,10 +254,26 @@ if(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
 endif()
 path64_install_multiarch(be-exec)
 
+
+# ipl -> be symlinks
+
+set(ipl_symlink_deps)
+
 foreach(arch ${PATH64_ENABLE_ARCHES})
+    set(stage_link ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}/${arch}/ipl${CMAKE_EXECUTABLE_SUFFIX})
+    add_custom_command(
+        OUTPUT ${stage_link}
+        COMMAND ${CMAKE_COMMAND} -E create_symlink be${CMAKE_EXECUTABLE_SUFFIX} ${stage_link}
+    )
+    list(APPEND ipl_symlink_deps ${stage_link})
+
     install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"be${CMAKE_EXECUTABLE_SUFFIX}\" \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/ipl${CMAKE_EXECUTABLE_SUFFIX}\")")
+
 endforeach()
 
+add_custom_target(ipl-symlinks DEPENDS ${ipl_symlink_deps})
+add_dependencies(ipl-symlinks be-exec)
 
 path64_add_dependencies_from_multiarch(be-all be-exec be)
+add_dependencies(be-all ipl-symlinks)
 

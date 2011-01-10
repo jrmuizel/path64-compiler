@@ -86,16 +86,21 @@ ENDIF()
 target_link_libraries(ld bfd iberty ${libdl})
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
-add_custom_command(
-    OUTPUT ${Path64_BINARY_DIR}/lib/ipa_link
-    DEPENDS ld
-    COMMAND ${CMAKE_COMMAND} -E create_symlink ../bin/ipa_link ${Path64_BINARY_DIR}/lib
-)
 
-add_custom_target(
-    stageit-ipa_link ALL
-    DEPENDS ${Path64_BINARY_DIR}/lib/ipa_link
-)
+set(ipa_symlinks_deps)
+
+foreach(arch ${PATH64_ENABLE_ARCHES})
+    set(output ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}/${arch}/ipa_link${CMAKE_EXECUTABLE_SUFFIX})
+    add_custom_command(
+        OUTPUT ${output}
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ../../bin/ipa_link ${output}
+    )
+
+    list(APPEND ipa_symlinks_deps ${output})
+endforeach()
+
+add_custom_target(stageit-ipa_link DEPENDS ${ipa_symlinks_deps})
+add_dependencies(compiler-stage stageit-ipa_link)
 
 install(TARGETS ld
     RUNTIME DESTINATION ${PATH64_LIB_PATH}/x8664
