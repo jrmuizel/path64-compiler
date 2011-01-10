@@ -43,9 +43,9 @@
 #elif defined(UNIX_NAMING_CONVENTION)
 #define SUBNAME _LGEMMX
 #elif defined(BUILD_COMPILER_GNU) && defined(BUILD_OS_DARWIN)
-#define SUBNAME underscore_lgemmx__
+#define SUBNAME underscore_lgemmx_
 #else
-#define SUBNAME _lgemmx__
+#define SUBNAME _lgemmx_
 #endif
 /*
  * Type of constants alpha and beta

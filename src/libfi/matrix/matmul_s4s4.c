@@ -41,11 +41,11 @@
 #define SUBNAME1 _S4GEMMX
 #define SUBNAME2 _S4GEMVX
 #elif defined(BUILD_COMPILER_GNU) && defined(BUILD_OS_DARWIN)
-#define SUBNAME1 underscore_s4gemmx__
-#define SUBNAME2 underscore_s4gemvx__
+#define SUBNAME1 underscore_s4gemmx_
+#define SUBNAME2 underscore_s4gemvx_
 #else
-#define SUBNAME1 _s4gemmx__
-#define SUBNAME2 _s4gemvx__
+#define SUBNAME1 _s4gemmx_
+#define SUBNAME2 _s4gemvx_
 #endif
 /*
  * Type of constants alpha and beta

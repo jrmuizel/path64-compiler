@@ -39,9 +39,9 @@
  * Name of routine called do computation (if any)
  */
 #if defined(BUILD_COMPILER_GNU) && defined(BUILD_OS_DARWIN)
-#define SUBNAME underscore_i1jgemmx__
+#define SUBNAME underscore_i1jgemmx_
 #else /* defined(BUILD_COMPILER_GNU) && defined(BUILD_OS_DARWIN) */
-#define SUBNAME _i1jgemmx__
+#define SUBNAME _i1jgemmx_
 #endif /* defined(BUILD_COMPILER_GNU) && defined(BUILD_OS_DARWIN) */
 /*
  * Type of constants alpha and beta

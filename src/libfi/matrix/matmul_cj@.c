@@ -42,9 +42,9 @@
 #elif defined(UNIX_NAMING_CONVENTION)
 #define SUBNAME _JSGEMMX
 #elif defined(BUILD_COMPILER_GNU) && defined(BUILD_OS_DARWIN)
-#define SUBNAME underscore_jsgemmx__
+#define SUBNAME underscore_jsgemmx_
 #else
-#define SUBNAME _jsgemmx__
+#define SUBNAME _jsgemmx_
 #endif
 
 /*

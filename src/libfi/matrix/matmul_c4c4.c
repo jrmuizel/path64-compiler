@@ -45,11 +45,11 @@
 #define SUBNAME1 _C4GEMMX
 #define SUBNAME2 _C4GEMVX
 #elif defined(BUILD_COMPILER_GNU) && defined(BUILD_OS_DARWIN)
-#define SUBNAME1 underscore_c4gemmx__
-#define SUBNAME2 underscore_c4gemvx__
+#define SUBNAME1 underscore_c4gemmx_
+#define SUBNAME2 underscore_c4gemvx_
 #else
-#define SUBNAME1 _c4gemmx__
-#define SUBNAME2 _c4gemvx__
+#define SUBNAME1 _c4gemmx_
+#define SUBNAME2 _c4gemvx_
 #endif
 
 /*

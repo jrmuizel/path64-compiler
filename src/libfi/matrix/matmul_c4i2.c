@@ -39,9 +39,9 @@
  * Name of routine called do computation (if any)
  */
 #if defined(BUILD_COMPILER_GNU) && defined(BUILD_OS_DARWIN)
-#define SUBNAME underscore_i2s4gemmx__
+#define SUBNAME underscore_i2s4gemmx_
 #else /* defined(BUILD_COMPILER_GNU) && defined(BUILD_OS_DARWIN) */
-#define SUBNAME _i2s4gemmx__
+#define SUBNAME _i2s4gemmx_
 #endif /* defined(BUILD_COMPILER_GNU) && defined(BUILD_OS_DARWIN) */
 
 /*
