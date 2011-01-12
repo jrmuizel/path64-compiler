@@ -1933,6 +1933,15 @@ add_final_ld_args (string_list_t *args)
             add_arg(args, "-static-libgcc");
         }
 
+	// Must add fstart or the Fortran main will get dropped by ipa
+	// processing.
+	if (shared != RELOCATABLE) {
+	    if (invoked_lang == L_f90) {
+		if (!option_was_seen(O_shared)) {
+			add_library(args, PSC_NAME_PREFIX "fstart");
+		}
+	    }
+	}
         // don't add standard libraries and paths to standard libraries if
         // ipa is enabled because all standard libraries will be added by
         // driver
