@@ -1760,9 +1760,6 @@ Preorder_Process_PUs (PU_Info *current_pu)
   BOOL orig_run_wopt = Run_wopt;
   BOOL orig_olimit_opt = Olimit_opt;
 
-  Run_lno = 0;
-  Run_wopt = 0; 
-
   WN *pu;
 #ifdef TARG_X8664
   if (!Force_Frame_Pointer_Set)
