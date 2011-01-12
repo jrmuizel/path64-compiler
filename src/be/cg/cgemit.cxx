@@ -10829,9 +10829,9 @@ Modify_Asm_String (char* asm_string, UINT32 position, bool memory,
 #ifdef KEY
 		   TN* offset_tn,  /* for memory opnd */
 #endif
-		   TN* tn, BB *bb)
+		   TN* tn, BB *bb, int opvolatile)
 {
-   if( tn->size == 8 ){
+   if( tn->size == 8 && !opvolatile){
     char pattern[5]; 
      strcpy(pattern, "movb");
     asm_string =  Replace_Substring(asm_string, pattern, "movq");
@@ -11327,7 +11327,7 @@ Generate_Asm_String (OP* asm_op, BB *bb)
 #ifdef KEY
 				   NULL,
 #endif
-                                   OP_result(asm_op, i), bb);
+                                   OP_result(asm_op, i), bb, OP_volatile(asm_op));
   }
 
   for (i = 0; i < OP_opnds(asm_op); i++) {
@@ -11337,7 +11337,7 @@ Generate_Asm_String (OP* asm_op, BB *bb)
 #ifdef KEY
 				   (TN*)ASM_OP_opnd_offset(asm_info)[i],
 #endif
-                                   OP_opnd(asm_op, i), bb);
+                                   OP_opnd(asm_op, i), bb, OP_volatile(asm_op));
   }
 
 #ifndef TARG_X8664
