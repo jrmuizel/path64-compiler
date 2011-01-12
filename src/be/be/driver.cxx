@@ -320,7 +320,7 @@ static Output_File *ir_output = 0;
 // options stack for PU and region level pragmas
 static OPTIONS_STACK *Options_Stack;
 
-static BOOL reset_opt_level = TRUE;
+static BOOL reset_opt_level = FALSE;
 static struct ALIAS_MANAGER *alias_mgr = NULL;
 
 static BOOL Run_Distr_Array = FALSE;
