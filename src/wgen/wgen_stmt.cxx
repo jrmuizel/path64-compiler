@@ -3864,17 +3864,17 @@ lookup_cleanups (INITV_IDX& iv)
 #endif
 	return 0;
   }
-  gs_t temp_cleanup=0;
+
   for (int i=temp_cleanup_i; i>=0; --i)
   {
 	TEMP_CLEANUP_INFO t = temp_cleanup_stack[i];
-  	if (t.label_idx && t.cleanup_eh_only)
+  	if (t.label_idx)
 	{
 		// need to call the delete operator
-		temp_cleanup = temp_cleanup_stack[i].expr;
-		break;
+		cleanups->push_back(temp_cleanup_stack[i].expr);
   	}
   }
+
   int scope_index;
   LABEL_IDX goto_idx=0;
   for (scope_index=scope_cleanup_i; scope_index>=0; scope_index--)
@@ -3897,14 +3897,8 @@ lookup_cleanups (INITV_IDX& iv)
 	else if (gs_tree_code(t) == GS_TRY_BLOCK)
 	    if (gs_cleanup_p(t)) cleanups->push_back (gs_try_handlers(t));
 	    else break;
-  	if (temp_cleanup && (cleanups->size() == 1))
-	{
-		cleanups->push_back (temp_cleanup);
-		temp_cleanup = 0;
-	}
   }
-  if (temp_cleanup)
-  	cleanups->push_back (temp_cleanup);
+
   gs_t h = 0;
   if (gs_tree_code(t) == GS_TRY_BLOCK && scope_index >= 0)
   {
