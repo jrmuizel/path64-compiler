@@ -42,8 +42,7 @@
 //	Allow the user to set command line options via pragmas in the source.
 //
 //============================================================================
-#include <stdlib.h>
-#include <string.h>
+
 #include "defs.h"		// INT32
 #include "region_util.h"	// debug flags
 #include "tracing.h"		// Get_Trace
@@ -147,15 +146,7 @@ OPTIONS_STACK::str2argv(char *str, char ***argv, MEM_POOL *pool)
 
   return argc;
 }
-/* concatenate two strings */
-char * concat_strings (const char *a, const char *b) 
-{
-    /* allocate new space, make sure it fits */
-    char * new_string = (char *) malloc(strlen(a) + strlen(b) + 1); 
-    strcpy(new_string, a); 
-    strcat(new_string, b); 
-    return new_string;
-}
+
 // ====================================================================
 // Process_Pragma_Options
 // process any region or PU level options pragmas
@@ -177,18 +168,6 @@ OPTIONS_STACK::Process_Pragma_Options(char *options_string)
   MEM_POOL Options_pool;
   MEM_POOL_Initialize(&Options_pool, "Options_pool", FALSE);
   MEM_POOL_Push(&Options_pool);
-  extern INT32 Opt_Level;
-  char * p;
-  if(p = strchr(options_string,'O')) {
-     Opt_Level  = *(p+1);
-     if(Opt_Level == 3)
-       options_string = concat_strings(options_string, " -PHASE:l:w:c"); 
-     else if(Opt_Level == 2)
-       options_string = concat_strings(options_string, " -PHASE:w:c");
-      else
-       options_string = concat_strings(options_string, " -PHASE:c");
-  }
-
   char **argv;
   // create an argv from the options string
   INT32 argc = str2argv(options_string, &argv, &Options_pool);
