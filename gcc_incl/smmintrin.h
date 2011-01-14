@@ -174,13 +174,13 @@ _mm_blend_epi16 (__m128i __X, __m128i __Y, const int __M)
 					(__v8hi)(__m128i)(Y), (int)(M)))
 #endif
 
-extern __inline __m128i __attribute__((__gnu_inline__, __always_inline__, __artificial__))
-_mm_blendv_epi8 (__m128i __X, __m128i __Y, __m128i __M)
-{
-  return (__m128i) __builtin_ia32_pblendvb128 ((__v16qi)__X,
-					       (__v16qi)__Y,
-					       (__v16qi)__M);
-}
+//extern __inline __m128i __attribute__((__gnu_inline__, __always_inline__, __artificial__))
+//_mm_blendv_epi8 (__m128i __X, __m128i __Y, __m128i __M)
+//{
+//  return (__m128i) __builtin_ia32_pblendvb128 ((__v16qi)__X,
+//					       (__v16qi)__Y,
+//					       (__v16qi)__M);
+//}
 
 /* Single precision floating point blend instructions - select data
    from 2 sources using constant/variable mask.  */
@@ -199,13 +199,13 @@ _mm_blend_ps (__m128 __X, __m128 __Y, const int __M)
 				    (__v4sf)(__m128)(Y), (int)(M)))
 #endif
 
-extern __inline __m128 __attribute__((__gnu_inline__, __always_inline__, __artificial__))
-_mm_blendv_ps (__m128 __X, __m128 __Y, __m128 __M)
-{
-  return (__m128) __builtin_ia32_blendvps ((__v4sf)__X,
-					   (__v4sf)__Y,
-					   (__v4sf)__M);
-}
+//extern __inline __m128 __attribute__((__gnu_inline__, __always_inline__, __artificial__))
+//_mm_blendv_ps (__m128 __X, __m128 __Y, __m128 __M)
+//{
+//  return (__m128) __builtin_ia32_blendvps ((__v4sf)__X,
+//					   (__v4sf)__Y,
+//					   (__v4sf)__M);
+//}
 
 /* Double precision floating point blend instructions - select data
    from 2 sources using constant/variable mask.  */
@@ -224,13 +224,13 @@ _mm_blend_pd (__m128d __X, __m128d __Y, const int __M)
 				     (__v2df)(__m128d)(Y), (int)(M)))
 #endif
 
-extern __inline __m128d __attribute__((__gnu_inline__, __always_inline__, __artificial__))
-_mm_blendv_pd (__m128d __X, __m128d __Y, __m128d __M)
-{
-  return (__m128d) __builtin_ia32_blendvpd ((__v2df)__X,
-					    (__v2df)__Y,
-					    (__v2df)__M);
-}
+//extern __inline __m128d __attribute__((__gnu_inline__, __always_inline__, __artificial__))
+//_mm_blendv_pd (__m128d __X, __m128d __Y, __m128d __M)
+//{
+//  return (__m128d) __builtin_ia32_blendvpd ((__v2df)__X,
+//					    (__v2df)__Y,
+//					    (__v2df)__M);
+//}
 
 /* Dot product instructions with mask-defined summing and zeroing parts
    of result.  */
