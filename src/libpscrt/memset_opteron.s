@@ -123,5 +123,5 @@ bb_12.memset_opteron:
 #endif /* defined(BUILD_OS_DARWIN) */
 
 #if defined(__linux__) && defined(__ELF__)
-    .section .note.GNU-stack,"",%progbits
+    .section .note.GNU-stack,"",@progbits
 #endif

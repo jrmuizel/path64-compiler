@@ -682,5 +682,5 @@ __vrs4_log10f:
 
 
 #if defined(__linux__) && defined(__ELF__)
-    .section .note.GNU-stack,"",%progbits
+    .section .note.GNU-stack,"",@progbits
 #endif

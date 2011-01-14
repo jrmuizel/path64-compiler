@@ -151,5 +151,5 @@ __do_global_ctors_aux:
 	call	__do_global_dtors_aux
 
 #if defined(__linux__) && defined(__ELF__)
-    .section .note.GNU-stack,"",%progbits
+    .section .note.GNU-stack,"",@progbits
 #endif
