@@ -30,7 +30,10 @@
 #ifndef _PMMINTRIN_H_INCLUDED
 #define _PMMINTRIN_H_INCLUDED
 
-#ifdef __SSE3__
+#ifndef __SSE3__
+# error "SSE3 instruction set not enabled"
+#else
+
 #include <xmmintrin.h>
 #include <emmintrin.h>
 

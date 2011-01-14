@@ -113,11 +113,12 @@ extern TARGET_ABI Target_ABI;
 extern BOOL Target_SSE;
 extern BOOL Target_SSE2;
 extern BOOL Target_SSE3;
+extern BOOL Target_SSSE3;
 extern BOOL Target_3DNow;
 extern BOOL Target_SSE4a;
+extern BOOL Target_SSE4_1;
 extern BOOL Target_SSE4_2;
 extern int Target_x86_Precision;
-extern BOOL Target_SSE4_2;
 
 /* ================ */
 /* Target processor */

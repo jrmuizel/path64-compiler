@@ -116,11 +116,20 @@ extern BOOL Target_SSE2_Set;
 extern BOOL Target_SSE3;        /* Generate sse3 instructions? */
 extern BOOL Target_SSE3_Set;
 
+extern BOOL Target_SSSE3;       /* Generate ssse3 instructions? */
+extern BOOL Target_SSSE3_Set;
+
 extern BOOL Target_3DNow;       // Generate 3DNow instructions?
 extern BOOL Target_3DNow_Set;
 
-extern BOOL Target_SSE4a;       // Generate 3DNow instructions?
+extern BOOL Target_SSE4a;       // Generate SSE4a instructions?
 extern BOOL Target_SSE4a_Set;
+
+extern BOOL Target_SSE4_1;      // Generate SSE4_1 instructions?
+extern BOOL Target_SSE4_1_Set;
+
+extern BOOL Target_SSE4_2;      // Generate SSE4_2 instructions?
+extern BOOL Target_SSE4_2_Set;
 
 
 extern int Target_x87_Precision;	// precision of x87 calculations

@@ -408,6 +408,21 @@ add_targ_options ( string_list_t *args )
     else
       add_string(args, "-TARG:sse3=off");
 
+    if (ssse3 == TRUE)
+      add_string(args, "-TARG:ssse3=on");
+    else
+      add_string(args, "-TARG:ssse3=off");
+
+    if (sse4a == TRUE)
+      add_string(args, "-TARG:sse4a=on");
+    else
+      add_string(args, "-TARG:sse4a=off");
+
+    if (sse4_2 == TRUE)
+      add_string(args, "-TARG:sse4_1=on");
+    else
+      add_string(args, "-TARG:sse4_1=off");
+
     if (sse4_2 == TRUE)
       add_string(args, "-TARG:sse4_2=on");
     else
@@ -417,11 +432,6 @@ add_targ_options ( string_list_t *args )
       add_string(args, "-TARG:3dnow=on");
     else
       add_string(args, "-TARG:3dnow=off");
-
-    if (sse4a == TRUE)
-      add_string(args, "-TARG:sse4a=on");
-    else
-      add_string(args, "-TARG:sse4a=off");
   }
 #endif
 }
@@ -840,6 +850,46 @@ void add_asm_output(string_list_t *args, const char *the_file) {
 
 
 static void
+add_sse_cc1_options(string_list_t *args)
+{
+	if (sse == TRUE)
+		add_string(args, "-msse");
+	else
+		add_string(args, "-mno-sse");
+		
+	if (sse2 == TRUE)
+		add_string(args, "-msse2");
+	else
+		add_string(args, "-mno-sse2");
+
+	if (sse3 == TRUE)
+		add_string(args, "-msse3");
+	else
+		add_string(args, "-mno-sse3");
+
+	if (ssse3 == TRUE)
+		add_string(args, "-mssse3");
+	else
+		add_string(args, "-mno-ssse3");
+
+	if (sse4a == TRUE)
+		add_string(args, "-msse4a");
+	else
+		add_string(args, "-mno-sse4a");
+
+	if (sse4_1 == TRUE)
+		add_string(args, "-msse4_1");
+	else
+		add_string(args, "-mno-sse4_1");
+
+	if (sse4_2 == TRUE)
+		add_string(args, "-msse4_2");
+	else
+		add_string(args, "-mno-sse4_2");
+}
+
+
+static void
 add_file_args (string_list_t *args, phases_t index)
 {
 	buffer_t buf;
@@ -900,6 +950,8 @@ add_file_args (string_list_t *args, phases_t index)
 		break;
 	case P_gcpp:
 	case P_gcpp_plus:
+        add_sse_cc1_options(args);
+
 		if (show_but_not_run)
 			add_string(args, "-###");
 #ifdef PATH64_ENABLE_PSCRUNTIME
@@ -1345,14 +1397,7 @@ add_file_args (string_list_t *args, phases_t index)
 	        // fall through
 	case P_c_gfe:
 	case P_cplus_gfe:
-		if (sse2 == TRUE)
-			add_string(args, "-msse2");
-
-        if (sse3 == TRUE)
-            add_string(args, "-msse3");
-
-        if (sse4_2 == TRUE)
-            add_string(args, "-msse4_2");
+		add_sse_cc1_options(args);
 
 		if (show_but_not_run)
 			add_string(args, "-###");

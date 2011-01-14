@@ -1481,33 +1481,58 @@ ix86_handle_option (size_t code, const char *arg ATTRIBUTE_UNUSED, int value)
     case OPT_msse:
       if (!value)
 	{
-          target_flags &= ~(MASK_SSE2 | MASK_SSE3 | MASK_SSE4A);
-          target_flags_explicit |= MASK_SSE2 | MASK_SSE3 | MASK_SSE4A;
+          target_flags &= ~(MASK_SSE2 | MASK_SSE3 | MASK_SSSE3 | MASK_SSE4A |
+                            MASK_SSE4_1 | MASK_SSE4_2);
+          target_flags_explicit |= MASK_SSE2 | MASK_SSE3 | MASK_SSSE3 |
+                                   MASK_SSE4A | MASK_SSE4_1 | MASK_SSE4_2;
 	}
       return true;
 
     case OPT_msse2:
       if (!value)
 	{
-          target_flags &= ~(MASK_SSE3 | MASK_SSE4A);
-          target_flags_explicit |= MASK_SSE3 | MASK_SSE4A;
+          target_flags &= ~(MASK_SSE3 | MASK_SSSE3 | MASK_SSE4A | MASK_SSE4_1 |
+                            MASK_SSE4_2);
+          target_flags_explicit |= MASK_SSE3 | MASK_SSSE3 | MASK_SSE4A |
+                                   MASK_SSE4_1 | MASK_SSE4_2;
 	}
       return true;
 
     case OPT_msse3:
       if (!value)
        {
-         target_flags &= ~MASK_SSE4A;
-         target_flags_explicit |= MASK_SSE4A;
+         target_flags &= ~(MASK_SSSE3 | MASK_SSE4A | MASK_SSE4_1 | MASK_SSE4_2);
+         target_flags_explicit |= MASK_SSSE3 | MASK_SSE4A | MASK_SSE4_1 | MASK_SSE4_2;
         }
        return true;
 
-    case OPT_msse4_2:
+    case OPT_mssse3:
+      if (!value)
+       {
+         target_flags &= ~(MASK_SSE4A | MASK_SSE4_1 | MASK_SSE4_2);
+         target_flags_explicit |= MASK_SSE4A | MASK_SSE4_1 | MASK_SSE4_2;
+        }
+       return true;
+
+    case OPT_msse4a:
+      if (!value)
+       {
+         target_flags &= ~(MASK_SSE4_1 | MASK_SSE4_2);
+         target_flags_explicit |= MASK_SSE4_1 | MASK_SSE4_2;
+        }
+       return true;
+
+    case OPT_msse4_1:
       if (!value)
        {
          target_flags &= ~MASK_SSE4_2;
          target_flags_explicit |= MASK_SSE4_2;
         }
+       return true;
+
+    case OPT_msse4_2:
+         target_flags &= ~0;
+         target_flags_explicit |= 0;
        return true;
 
     default:
@@ -1986,8 +2011,20 @@ override_options (void)
   if (!TARGET_80387)
     target_flags |= MASK_NO_FANCY_MATH_387;
 
-  /* Turn on SSE3 builtins for -msse4a.  */
+  /* Turn on SSE4_1 builtins for -msse4_2.  */
+  if (TARGET_SSE4_2)
+    target_flags |= MASK_SSE4_1;
+
+  /* Turn on SSSE3 builtins for -msse4_1.  */
+  if (TARGET_SSE4_1)
+    target_flags |= MASK_SSSE3;
+
+  /* Turn on SSSE3 builtins for -msse4a.  */
   if (TARGET_SSE4A)
+    target_flags |= MASK_SSSE3;
+
+  /* Turn on SSE3 builtins for -mssse3.  */
+  if (TARGET_SSSE3)
     target_flags |= MASK_SSE3;
 
   /* Turn on SSE2 builtins for -msse3.  */

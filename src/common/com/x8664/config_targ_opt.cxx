@@ -83,6 +83,9 @@ BOOL Target_SSE2_Set = FALSE;
 BOOL Target_SSE3 = FALSE;       /* -TARG:sse3=on/off */
 BOOL Target_SSE3_Set = FALSE;
 
+BOOL Target_SSSE3 = FALSE;      /* -TARG:ssse3=on/off */
+BOOL Target_SSSE3_Set = FALSE;
+
 // bug 4405
 BOOL Target_3DNow = FALSE;       // -TARG:3dnow=on/off
 BOOL Target_3DNow_Set = FALSE;
@@ -90,7 +93,10 @@ BOOL Target_3DNow_Set = FALSE;
 BOOL Target_SSE4a = FALSE;       // -TARG:sse4a=on/off
 BOOL Target_SSE4a_Set = FALSE;
 
-BOOL Target_SSE4_2 = FALSE;       // -TARG:sse4_2=on/off
+BOOL Target_SSE4_1 = FALSE;      // -TARG:sse4_1=on/off
+BOOL Target_SSE4_1_Set = FALSE;
+
+BOOL Target_SSE4_2 = FALSE;      // -TARG:sse4_2=on/off
 BOOL Target_SSE4_2_Set = FALSE;
 
 // bug 4327
@@ -134,12 +140,18 @@ static OPTION_DESC Options_TARG[] = {
   { OVK_BOOL,	OV_VISIBLE,	FALSE, "sse3",		"sse3",
     0, 0, 0,	&Target_SSE3,	&Target_SSE3_Set,
     "Enable SSE3 extensions" },
+  { OVK_BOOL,	OV_VISIBLE,	FALSE, "ssse3",		"ssse3",
+    0, 0, 0,	&Target_SSSE3,	&Target_SSSE3_Set,
+    "Enable SSSE3 extensions" },
   { OVK_BOOL,	OV_VISIBLE,	FALSE, "3dnow",		"3dnow",
     0, 0, 0,	&Target_3DNow,	&Target_3DNow_Set,
     "Enable 3DNow extensions" },
   { OVK_BOOL,   OV_VISIBLE,     FALSE, "sse4a",         "sse4a",
     0, 0, 0,    &Target_SSE4a,  &Target_SSE4a_Set,
     "Enable SSE4a extensions" },
+  { OVK_BOOL,   OV_VISIBLE,     FALSE, "sse4_1",         "sse4_1",
+    0, 0, 0,    &Target_SSE4_1,  &Target_SSE4_1_Set,
+    "Enable SSE4_1 extensions" },
   { OVK_BOOL,   OV_VISIBLE,     FALSE, "sse4_2",         "sse4_2",
     0, 0, 0,    &Target_SSE4_2,  &Target_SSE4_2_Set,
     "Enable SSE4_2 extensions" },

@@ -124,6 +124,7 @@ static void Get_x86_ISA();
 static boolean Get_x86_ISA_extensions();
 #endif
 
+
 /* ====================================================================
  *
  * -Ofast targets

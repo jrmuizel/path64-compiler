@@ -1,5 +1,6 @@
 
 set(HEADERS
+    ammintrin.h
     cpuid.h
 	decfloat.h
 	emmintrin.h
@@ -9,11 +10,14 @@ set(HEADERS
 	mm3dnow.h
 	mmintrin.h
 	mm_malloc.h
+    nmmintrin.h
 	pmmintrin.h
+    smmintrin.h
 	stdarg.h
 	stdbool.h
 	stddef.h
 	syslimits.h
+    tmmintrin.h
 	unwind.h
 	varargs.h
 	xmmintrin.h

@@ -130,9 +130,6 @@ extern const struct processor_costs *ix86_cost;
 #define HAS_LONG_COND_BRANCH 1
 #define HAS_LONG_UNCOND_BRANCH 1
 
-#define MASK_SSE4_1 0x400000
-#define MASK_SSSE3 0X800000
-
 #define TARGET_386 (ix86_tune == PROCESSOR_I386)
 #define TARGET_486 (ix86_tune == PROCESSOR_I486)
 #define TARGET_PENTIUM (ix86_tune == PROCESSOR_PENTIUM)
@@ -420,8 +417,14 @@ extern const char *host_detect_local_cpu (int argc, const char **argv);
 	builtin_define ("__SSE2__");				\
       if (TARGET_SSE3)						\
 	builtin_define ("__SSE3__");				\
+      if (TARGET_SSSE3)						\
+	builtin_define ("__SSSE3__");				\
       if (TARGET_SSE4A)                                         \
        builtin_define ("__SSE4A__");                            \
+      if (TARGET_SSE4_1)                                         \
+       builtin_define ("__SSE4_1__");                            \
+      if (TARGET_SSE4_2)                                         \
+       builtin_define ("__SSE4_2__");                            \
       if (TARGET_SSE_MATH && TARGET_SSE)			\
 	builtin_define ("__SSE_MATH__");			\
       if (TARGET_SSE_MATH && TARGET_SSE2)			\
