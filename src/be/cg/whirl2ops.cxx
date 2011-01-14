@@ -997,7 +997,7 @@ Preg_Is_Rematerializable(PREG_NUM preg, BOOL *gra_homeable)
      TODO: do we need to spend effort on gra? Not much work that gra can
            do with poor supply of available registers under -m32.
   */
-  if( OP_NEED_PAIR( OPCODE_rtype(opc) ) ){
+  if( Is_Target_32bit() ){//OP_NEED_PAIR( OPCODE_rtype(opc) ) ){
     return NULL;
   }
 

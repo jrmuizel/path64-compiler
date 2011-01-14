@@ -3650,6 +3650,8 @@ CODEMAP::Add_expr(WN *wn, OPT_STAB *opt_stab, STMTREP *stmt, CANON_CR *ccr,
 #ifdef TARG_X8664 // bug 7733
 	    && ! MTYPE_is_vector(OPCODE_rtype(op)) 
 	    && ! MTYPE_is_vector(OPCODE_desc(op)) 
+	    && !(Is_Target_64bit() && OPCODE_rtype(op) == MTYPE_U4 &&
+	    OPCODE_desc(op) == MTYPE_I4) // amb007 (fate)
 #endif
 	   )
 	  return Canon_cvt(wn, opt_stab, stmt, ccr, cr, copyprop);

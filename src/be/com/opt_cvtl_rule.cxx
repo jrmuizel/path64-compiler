@@ -146,6 +146,11 @@ INT Need_type_conversion(TYPE_ID from_ty, TYPE_ID to_ty, OPCODE *opc)
       *opc = OPCODE_make_op(OPR_CVT, to_ty, from_ty);
     return NEED_CVT;
   }
+  if (Is_Target_64bit() && from_ty == MTYPE_I4 && to_ty == MTYPE_U4) {
+    if (opc != NULL)
+      *opc = OPC_U4I4CVT;
+    return NEED_CVT; // CVTL? amb007 (fate)
+  }
 #endif
 #ifdef KEY // bug 3742
   if (from_ty > MTYPE_U8 || to_ty > MTYPE_U8)
