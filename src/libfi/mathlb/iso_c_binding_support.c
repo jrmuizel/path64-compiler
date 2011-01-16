@@ -30,7 +30,7 @@
  * shape	Fortran rank-1 integer array by reference
  */
 void
-_C_f_pointera_(void **cptr, DopeVectorType *fptr, int32_t *shape) {
+_C_f_pointera(void **cptr, DopeVectorType *fptr, int32_t *shape) {
 
   fptr->base_addr.a.ptr = *cptr;
   fptr->orig_base = *cptr;
@@ -100,7 +100,7 @@ _C_f_pointera_(void **cptr, DopeVectorType *fptr, int32_t *shape) {
  * Like _C_f_pointera_, but for scalar pointers
  */
 void
-_C_f_pointers_(void **cptr, DopeVectorType *fptr) {
+_C_f_pointers(void **cptr, DopeVectorType *fptr) {
   fptr->base_addr.a.ptr = *cptr;
   fptr->orig_base = *cptr;
   fptr->orig_size = 0; /* Alas, we don't know */
@@ -113,24 +113,24 @@ _C_f_pointers_(void **cptr, DopeVectorType *fptr) {
 /* Keep around for backwards compatibility after pathf90 learns to emit "loc"
   operator for this */
 void *
-_C_loc_(void *p) {
+_C_loc(void *p) {
   return p;
   }
 
 /* Keep around for backwards compatibility after pathf90 learns to emit "loc"
   operator for this */
 void *
-_C_funloc_(void *p) {
+_C_funloc(void *p) {
   return p;
   }
 
 int
-_C_associated_ptr_(void *p, void **q) {
+_C_associated_ptr(void *p, void **q) {
   return q ? (p && (p == *q)) : !!p;
   }
 
 int
-_C_associated_funptr_(void *p, void **q) {
+_C_associated_funptr(void *p, void **q) {
   return q ? (p && (p == *q)) : !!p;
   }
 
