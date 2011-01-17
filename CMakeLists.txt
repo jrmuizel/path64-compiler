@@ -22,10 +22,15 @@ SET(CMAKE_C_FLAGS_DEBUG  "-O0 -g -D_DEBUG" CACHE STRING "Flags used by the compi
 SET(CMAKE_CXX_FLAGS_DEBUG  "-O0 -g -D_DEBUG" CACHE STRING "Flags used by the compiler during debug builds." FORCE)
 SET(CMAKE_Fortran_FLAGS_DEBUG  "-O0 -g3 -D_DEBUG" CACHE STRING "Flags used by the compiler during debug builds." FORCE)
 
+# Using -mno-sse3 flag for release build if PATH64_ENABLE_PSCRUNTIME=ON
+if(PATH64_ENABLE_PSCRUNTIME)
+    set(SSE_FLAGS "-mno-sse3")
+endif()
+
 # Force the build_type=release flags to -O2 -DNDEBUG values overriding default cmake -O3
-SET(CMAKE_C_FLAGS_RELEASE  "-O2 -DNDEBUG -mno-sse3" CACHE STRING "Flags used by the compiler during release builds." FORCE)
-SET(CMAKE_CXX_FLAGS_RELEASE  "-O2 -DNDEBUG -mno-sse3" CACHE STRING "Flags used by the compiler during release builds." FORCE)
-SET(CMAKE_Fortran_FLAGS_RELEASE  "-O2 -DNDEBUG -mno-sse3" CACHE STRING "Flags used by the compiler during release builds." FORCE)
+SET(CMAKE_C_FLAGS_RELEASE  "-O2 -DNDEBUG ${SSE_FLAGS}" CACHE STRING "Flags used by the compiler during release builds." FORCE)
+SET(CMAKE_CXX_FLAGS_RELEASE  "-O2 -DNDEBUG ${SSE_FLAGS}" CACHE STRING "Flags used by the compiler during release builds." FORCE)
+SET(CMAKE_Fortran_FLAGS_RELEASE  "-O2 -DNDEBUG ${SSE_FLAGS}" CACHE STRING "Flags used by the compiler during release builds." FORCE)
 
 
 # Define user option whether to build the Fortran compiler.
