@@ -1794,12 +1794,15 @@ Create_LR_For_TN (TN *tn, BB *bb, BOOL in_lra, MEM_POOL *pool)
 
 
 static void
-Print_BB_For_LRA (BB *bb) 
+Print_BB_For_LRA (BB *bb, const char *name) 
 {
+  if (!Always_Trace(Trace_LRA))
+    return;
+
   OP *op;
   INT i;
   fprintf (TFile, "--------------------------------------------\n");
-  fprintf (TFile, "LRA for BB:%d  trip_count:%d\n", BB_id(bb), Trip_Count);
+  fprintf (TFile, "%s for BB:%d  trip_count:%d\n", name, BB_id(bb), Trip_Count);
   fprintf (TFile, "--------------------------------------------\n");
   i = 0;
   FOR_ALL_BB_OPs_FWD (bb, op) {
@@ -7664,7 +7667,7 @@ void Alloc_Regs_For_BB (BB *bb, HB_Schedule *Sched)
 	  }
 	}
       }
-      Print_BB_For_LRA (bb);
+      Print_BB_For_LRA (bb, "LRA");
       if (Do_LRA_Trace(Trace_LRA_Detail)) {
         Print_Live_Ranges (bb);
       }
@@ -8361,6 +8364,8 @@ Adjust_X86_Style_For_BB (BB* bb, BOOL* redundant_code, MEM_POOL* pool)
 
     Set_OP_opnd( op, 0, tmp_opnd0 );
   }  
+
+  Print_BB_For_LRA(bb, "Adjust for X86");
 }
 
 
@@ -8866,6 +8871,8 @@ Preallocate_Single_Register_Subclasses (BB* bb)
       }
     }
   }
+
+  Print_BB_For_LRA(bb, "Preallocate single registers");
 }
 
 /* ======================================================================
