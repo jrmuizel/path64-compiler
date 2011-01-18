@@ -6345,7 +6345,6 @@ Handle_ASM (const WN* asm_wn)
 
   }
 
-  int flag_match  = 0;
   // process asm input parameters, which are kids 2-n
   for (INT kid = 2; kid < WN_kid_count(asm_wn); ++kid) {
     FmtAssert(num_opnds < MAX_OPNDS,
@@ -6381,13 +6380,7 @@ Handle_ASM (const WN* asm_wn)
 
     ASM_OP_opnd_constraint(asm_info)[num_opnds] = constraint;
     ASM_OP_opnd_subclass(asm_info)[num_opnds] = subclass;
-    //ASM_OP_opnd_position(asm_info)[num_opnds] = WN_asm_opnd_num(asm_input);
-	if (isdigit(*constraint)) {
-		ASM_OP_opnd_position(asm_info)[num_opnds] = *constraint-'0'; 
-		flag_match ++;
-	} else {
-		ASM_OP_opnd_position(asm_info)[num_opnds] = WN_asm_opnd_num(asm_input) - flag_match ;
-	}
+    ASM_OP_opnd_position(asm_info)[num_opnds] = WN_asm_opnd_num(asm_input);
     ASM_OP_opnd_memory(asm_info)[num_opnds] = 
 #ifdef TARG_X8664
       (strchr(constraint, 'm') != NULL || strchr(constraint, 'g') != NULL);
@@ -6447,13 +6440,13 @@ Handle_ASM (const WN* asm_wn)
 	tn = new_opnd_tn;
     }
 #endif // TARG_X8664
- #ifdef TARG_ST
+#ifdef TARG_ST
     // Update result_same_opnd if the operand matches a result
     if (isdigit(*constraint)) {
       INT res_idx = *constraint-'0';
       ASM_OP_result_same_opnd(asm_info)[res_idx] = num_opnds;
     }
-  #endif
+#endif
     opnd[num_opnds] = tn;    
     num_opnds++;
   }
