@@ -30,11 +30,7 @@
 */
 
 
-#if 1 /* defined(BUILD_OS_DARWIN) */
 #include <stdlib.h>
-#else /* defined(BUILD_OS_DARWIN) */
-#include <malloc.h>
-#endif /* defined(BUILD_OS_DARWIN) */
 #include <stdio.h>
 #include <string.h>
 #include "option_seen.h"
