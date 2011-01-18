@@ -6,12 +6,12 @@
 #else
 # define PRIVATE_MEMBER
 #endif /* PRIVATE_IMPLEMENTED */
-#if defined(TARG_IA32) || (_MIPS_SZPTR==32)
+#if defined(TARG_IA32) /* || (_MIPS_SZPTR==32) */
 # define LONG_KIND 4
 # define PTR_KIND 4 /* Integer capable of holding address */
 # define LONG_DOUBLE_KIND -1 /* Fortran has no 12-byte real */
 # define LONG_DOUBLE_COMPLEX_KIND -1 /* Fortran has no 12-byte real */
-#elif defined(TARG_X8664) || (_MIPS_SZPTR==64)
+#elif defined(TARG_X8664) /* || (_MIPS_SZPTR==64) */
 # define LONG_KIND 8
 # define PTR_KIND 8 /* Integer capable of holding address */
 # define LONG_DOUBLE_KIND -1 /* Fortran has no 16-byte real */
