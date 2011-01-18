@@ -867,6 +867,9 @@ add_sse_cc1_options(string_list_t *args)
 	else
 		add_string(args, "-mno-sse3");
 
+    // ssse3/sse4 options are not supported in gcc-4.2
+#ifdef PATH64_ENABLE_PSCRUNTIME
+
 	if (ssse3 == TRUE)
 		add_string(args, "-mssse3");
 	else
@@ -886,6 +889,8 @@ add_sse_cc1_options(string_list_t *args)
 		add_string(args, "-msse4_2");
 	else
 		add_string(args, "-mno-sse4_2");
+
+#endif // PATH64_ENABLE_PSCRUNTIME
 }
 
 
