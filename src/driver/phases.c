@@ -41,6 +41,10 @@
 
 */
 
+#ifdef __linux
+#define _GNU_SOURCE /* For *asprintf */
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
@@ -709,7 +713,7 @@ add_target_linker_args(string_list_t *args) {
 #if defined(__linux__) /* LINUX */
         char *dyn_link_opt = concat_strings("--dynamic-linker=",
                                             target_dynamic_linker());
-        add_arg(args, dyn_link_opt);
+        add_arg(args, "%s", dyn_link_opt);
         free(dyn_link_opt);
 #elif defined(__NetBSD__)
         add_arg(args, "--dynamic-linker=/libexec/ld.elf_so");
@@ -723,7 +727,7 @@ add_target_linker_args(string_list_t *args) {
            !option_was_seen(O_nostdlib)) {
             char * lib_path = target_library_path();
             add_arg(args, "-rpath");
-            add_arg(args, lib_path);
+            add_arg(args, "%s", lib_path);
             free(lib_path);
         }
     }

@@ -40,6 +40,9 @@
 
 */
 
+#ifdef __linux
+#define _GNU_SOURCE /* For *asprintf */
+#endif
 
 #include <string.h>
 #include <stdlib.h>

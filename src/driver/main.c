@@ -37,6 +37,9 @@
 
 */
 
+#ifdef __linux
+#define _GNU_SOURCE
+#endif
 
 static char *rcs_id = "$Source: driver/SCCS/s.main.c $ $Revision: 1.109 $";
 

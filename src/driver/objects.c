@@ -36,6 +36,9 @@
 
 */
 
+#ifdef __linux
+#define _GNU_SOURCE /* For *asprintf */
+#endif
 
 #if HAVE_ALLOCA_H
 #include <alloca.h>

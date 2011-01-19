@@ -2,6 +2,9 @@
   Copyright (C) 2010 PathScale Inc. All Rights Reserved.
 */
 
+#ifdef __linux
+#define _GNU_SOURCE /* For *asprintf */
+#endif
 
 #include "targets.h"
 #include "main_defs.h"

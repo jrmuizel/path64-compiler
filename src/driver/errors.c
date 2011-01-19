@@ -25,6 +25,9 @@
 
 */
 
+#ifdef __linux
+#define _GNU_SOURCE /* For *asprintf */
+#endif
 
 #include <stdio.h>
 #include <cmplrs/rcodes.h>
