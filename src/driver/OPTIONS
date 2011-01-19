@@ -503,7 +503,7 @@ I-fini%s		;		CC	ld	"-fini %s"
         "Compile for 32-bit ABI"
 -m64	toggle(&abi,ABI_M64);	ALL NONE	""
 	"Compile for 64-bit ABI"
-#endif // TARG_X8664
+#endif /* TARG_X8664 */
 #ifdef TARG_MIPS
 #define MIPS1_DEFS      "-D__mips=1 -D_MIPS_ISA=1"
 #define MIPS2_DEFS      "-D__mips=2 -D_MIPS_ISA=2"
