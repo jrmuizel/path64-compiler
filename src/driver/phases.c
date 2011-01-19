@@ -1075,6 +1075,10 @@ add_file_args (string_list_t *args, phases_t index)
                 add_arg(args, "-D__STDCXX_CONFIG=<__stl_config-%s.h>",
                         current_target->targ_name);
 
+                if(option_was_seen(O_fstrict_stl)) {
+                    add_arg(args, "-D_RWSTD_STRICT_HEADERS");
+                }
+
                 // Claim to be compatible with GCC 4.2.1
                 add_arg(args, "-D__GNUC__=4");
                 add_arg(args, "-D__GNUC_MINOR__=2");

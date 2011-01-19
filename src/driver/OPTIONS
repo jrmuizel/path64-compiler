@@ -258,6 +258,8 @@ I-include=%D  ;		FTN     ffe,PFA     "-include=%D"
 #endif
 -useacml_mv    ;       LINK    ld      ""
        "Include libacml_mv when linking with libm"
+-fstrict-stl    ;   CC  NONE    ""
+    "Use strict STL headers"
 -ffast-stdlib	;	A	FE,ld	"-OPT:fast_stdlib=on"
 	"Use faster versions of some standard library functions, when available"
 -fno-fast-stdlib	;	A	FE,ld	"-OPT:fast_stdlib=off"
