@@ -177,8 +177,6 @@ static phase_info_t phase_info[] = {
    {'x',  0x0000200000000000LL, "pixie", BINPATH,   FALSE}, /* pixie */
    {'x',  0x0000400000000000LL, "prof",  BINPATH,   FALSE}, /* prof */
 
-   {'R',  0x0001000000000000LL, "ar",  BINPATH,      FALSE}, /* ar */
-
    {'S',  0x0010000000000000LL,	"crt",	LIBPATH,	FALSE},	/* startup */
    {'I',  0x0020000000000000LL,	"inc",	"/usr/include",	FALSE},	/* include */
    {'L',  0x0040000000000000LL,	"lib",	LIBPATH,	FALSE},	/* library */

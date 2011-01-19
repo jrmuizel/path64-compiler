@@ -315,9 +315,6 @@ main (int argc, char *argv[])
 				num_o_files++;
 				/* object file or library */
 				add_object (O_object, argv[i]);
-				/* Save away objects should it be necessary
-				   to invoke the archive phase (-ar option). */
-				    add_ar_objects(argv[i]);
 			} else {
 				if (source_kind == S_h) {
 				  num_h_files++;
@@ -331,7 +328,6 @@ main (int argc, char *argv[])
 				   */
 				  char *obj_name = get_object_file(argv[i]);
 				  add_object (O_object, obj_name);
-				  add_ar_objects(obj_name);
 				}
 				add_string(files, argv[i]);
 				/* Because of -x <lang> option,
@@ -594,8 +590,7 @@ main (int argc, char *argv[])
  * run prelinker and ld later
  * ??? why not just have ar and dsm prelink be set in determine_phase_order?
  */
-	if ((multiple_source_files || 
-	     option_was_seen(O_ar)
+	if ((multiple_source_files
 #ifndef KEY	// -dsm no longer supported.  Bug 4406.
              || option_was_seen(O_dsm)
 #endif
@@ -732,12 +727,7 @@ main (int argc, char *argv[])
                     }
                 }
 #endif
-		if (option_was_seen(O_ar)) {
-		   run_ar();
-		}
-		else {
-		    run_ld ();
-		}
+		run_ld ();
 		if (Gen_feedback)
 		  run_pixie();
 	}

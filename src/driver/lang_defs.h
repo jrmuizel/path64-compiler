@@ -150,7 +150,6 @@ typedef enum {
 	P_cord,		/* cord */
 	P_pixie,	/* pixie */
 	P_prof,		/* Prof */
-	P_ar,		/* Archive */
 
 	/* because -Y can also modify libraries, we include library places */
 	P_startup,
