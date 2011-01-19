@@ -1794,12 +1794,15 @@ Create_LR_For_TN (TN *tn, BB *bb, BOOL in_lra, MEM_POOL *pool)
 
 
 static void
-Print_BB_For_LRA (BB *bb) 
+Print_BB_For_LRA (BB *bb, const char *name) 
 {
+  if (!Always_Trace(Trace_LRA))
+    return;
+
   OP *op;
   INT i;
   fprintf (TFile, "--------------------------------------------\n");
-  fprintf (TFile, "LRA for BB:%d  trip_count:%d\n", BB_id(bb), Trip_Count);
+  fprintf (TFile, "%s for BB:%d  trip_count:%d\n", name, BB_id(bb), Trip_Count);
   fprintf (TFile, "--------------------------------------------\n");
   i = 0;
   FOR_ALL_BB_OPs_FWD (bb, op) {
@@ -7664,7 +7667,7 @@ void Alloc_Regs_For_BB (BB *bb, HB_Schedule *Sched)
 	  }
 	}
       }
-      Print_BB_For_LRA (bb);
+      Print_BB_For_LRA (bb, "LRA");
       if (Do_LRA_Trace(Trace_LRA_Detail)) {
         Print_Live_Ranges (bb);
       }
@@ -8361,6 +8364,8 @@ Adjust_X86_Style_For_BB (BB* bb, BOOL* redundant_code, MEM_POOL* pool)
 
     Set_OP_opnd( op, 0, tmp_opnd0 );
   }  
+
+  Print_BB_For_LRA(bb, "Adjust for X86");
 }
 
 
@@ -8689,6 +8694,50 @@ Make_Dedicated_TNs_Available (BB *bb)
 }
 #endif	// TARG_X8664
 
+
+// Moves operand to another register and adds required operations
+// to preserve x86-style property
+void Move_Operand(BB* bb, OP* op, INT opnum, TN* dest_tn)
+{
+  TN* src_tn = OP_opnd(op, opnum);
+
+  FmtAssert(TN_is_register(src_tn),
+            ("src TN should be register for Move_Operand"));
+
+  OPS pre_ops = OPS_EMPTY;
+  OPS post_ops = OPS_EMPTY;
+
+#ifdef TARG_X8664
+  if (OP_x86_style(op) && opnum == 0) {
+    // preserving x86-style property
+
+    TN* res_tn = OP_result(op, 0);
+    FmtAssert(TN_is_register(res_tn) &&
+              LRA_TN_register(res_tn) == LRA_TN_register(src_tn),
+              ("Result tn should be same as operand 0 for x86 operations"));
+
+    Set_OP_result(op, 0, dest_tn);
+
+    // copying from new result tn to old result tn
+    Exp_COPY(src_tn, dest_tn, &post_ops);
+    OP_srcpos(OPS_last(&post_ops)) = OP_srcpos(op);
+  } else
+#endif // TARG_X8664
+  {
+    // trying use same register
+  }
+
+  // copying operand
+  Exp_COPY(dest_tn, src_tn, &pre_ops);
+  OP_srcpos(OPS_last(&pre_ops)) = OP_srcpos(op);
+
+  Set_OP_opnd(op, opnum, dest_tn);
+
+  BB_Insert_Ops_Before(bb, op, &pre_ops);
+  BB_Insert_Ops_After(bb, op, &post_ops);
+}
+
+
 static void
 Preallocate_Single_Register_Subclasses (BB* bb)
 {
@@ -8741,55 +8790,20 @@ Preallocate_Single_Register_Subclasses (BB* bb)
       LRA_TN_Allocate_Register(new_tn, reg);
 #ifdef TARG_X8664
       Set_TN_is_preallocated (new_tn);
-      Set_OP_opnd( op, i, new_tn );
 #endif /* TARG_X8664 */
       OPS pre_ops = OPS_EMPTY;
 
-      for( int j = i+1; j < OP_opnds(op); j++ ){
-	TN* opnd = OP_opnd( op, j );
-	if( TN_is_register(opnd) &&
-	    LRA_TN_register(opnd) == reg ){
-	  /* Copy the opnd before its value is over-written. */
-	  TN* tmp_tn = Build_TN_Like( opnd );
-	  Exp_COPY( tmp_tn, opnd, &pre_ops );
-	  OP_srcpos(OPS_last(&pre_ops)) = OP_srcpos(op);
-          Set_OP_opnd( op, j, tmp_tn );
-	}
-      }
-
-      BOOL has_def = FALSE;
-      TN* new_result_tn = NULL;
-      for( int j = 0; j < OP_results(op); j++ ){
-        if (OP_result(op, j) == old_tn) {
-	  new_result_tn = Build_TN_Like( OP_result(op,j) );
-          Set_OP_result(op, j, new_result_tn);
-          has_def = TRUE;
+      for( int j = 0; j < OP_opnds(op); j++ ){
+        if (i == j)
+          continue;
+        TN* opnd = OP_opnd(op, j);
+        if (TN_is_register(opnd) && LRA_TN_register(opnd) == reg) {
+          TN* tmp_tn = Build_TN_Like(opnd);
+          Move_Operand(bb, op, j, tmp_tn);
         }
       }
 
-      Exp_COPY(new_tn, old_tn, &pre_ops);
-      OP_srcpos(OPS_last(&pre_ops)) = OP_srcpos(op);
-
-#ifdef TARG_X8664
-      /* Bug_151:
-	 Maintain the "result==OP_opnd(op,0)" property for x86-style operations
-	 after register preallocation.
-      */
-      if( OP_x86_style( op ) &&
-	  new_result_tn != NULL ){
-	Exp_COPY( new_result_tn, old_tn, &pre_ops );
-	OP_srcpos(OPS_last(&pre_ops)) = OP_srcpos(op);
-	Set_OP_opnd( op, 0, new_result_tn );
-      }
-#endif
-
-      BB_Insert_Ops_Before(bb, op, &pre_ops);
-      if (has_def) {
-        OPS post_ops = OPS_EMPTY;
-        Exp_COPY(old_tn, new_result_tn, &post_ops);
-	OP_srcpos(OPS_last(&post_ops)) = OP_srcpos(op);
-        BB_Insert_Ops_After(bb, op, &post_ops);
-      }
+      Move_Operand(bb, op, i, new_tn);
     }
 
     /* latest_new_op records the last appended op to <op>. */
@@ -8866,6 +8880,8 @@ Preallocate_Single_Register_Subclasses (BB* bb)
       }
     }
   }
+
+  Print_BB_For_LRA(bb, "Preallocate single registers");
 }
 
 /* ======================================================================

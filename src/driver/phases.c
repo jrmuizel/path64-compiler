@@ -854,8 +854,11 @@ add_sse_cc1_options(string_list_t *args)
 {
 	if (sse == TRUE)
 		add_string(args, "-msse");
-	else
-		add_string(args, "-mno-sse");
+	else {
+		// -mno-sse is broken in cc142/cc1plus42 front-end
+		// (see COMPILER-8935)
+		// add_string(args, "-mno-sse");
+	}
 		
 	if (sse2 == TRUE)
 		add_string(args, "-msse2");

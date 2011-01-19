@@ -3953,6 +3953,12 @@ main()
 				 TOP_pmulhrsw,
 				 TOP_pshufb128,
 				 TOP_pshufb,
+		     TOP_pblendw,
+		     TOP_pblendvb,
+		     TOP_blendpd,
+		     TOP_blendps,
+		     TOP_blendvpd,
+		     TOP_blendvps,
                      TOP_UNDEFINED );
 
   /* ===== Predicated instructions ====== */

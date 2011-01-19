@@ -3038,7 +3038,6 @@ CGTARG_TN_For_Asm_Operand (const char* constraint,
 	   (*constraint == 'S') || (*constraint == 'D') || 
 	   (*constraint == 'A') || (*constraint == 'q') || 
 	   (*constraint == 'Q') || 
-	   (*constraint == 'R') || 
 	   (*constraint == 'Z') ||  // bug 14413: handle 'Z' similar to 'e'.
 	   (*constraint == 'e' && *(constraint+1) == 'r'))
   {
