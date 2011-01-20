@@ -131,6 +131,7 @@ extern PTR realloc (void *ptr, size_t size);
 #endif
 
 #if !HAVE_DECL_STPCPY
+#undef stpcpy
 extern char *stpcpy (char *, const char *);
 #endif
 
