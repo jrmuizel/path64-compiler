@@ -3337,10 +3337,10 @@ boolean	compare_derived_types(int	dt_idx1,
       bit_idx1		= ((id2-1) % HOST_BITS_PER_WORD);
       bit_idx2		= ((id1-1) % HOST_BITS_PER_WORD);
 
-      check		= (1 << bit_idx1) & dt_cmp_tbl[entry_idx1];
+      check		= (1UL << bit_idx1) & dt_cmp_tbl[entry_idx1];
 
       if (check) {
-         same = (1 << bit_idx2) & dt_cmp_tbl[entry_idx2]; 
+         same = (1UL << bit_idx2) & dt_cmp_tbl[entry_idx2]; 
          goto DONE;
       }
    
@@ -3348,8 +3348,8 @@ boolean	compare_derived_types(int	dt_idx1,
       /* to same in case a recursive call happens.  Same  will get */
       /* set correctly at the end of this routine.                 */
 
-      dt_cmp_tbl[entry_idx1]	|= (1 << bit_idx1);	/* Check */
-      dt_cmp_tbl[entry_idx2]	|= (1 << bit_idx2);	/* Same  */
+      dt_cmp_tbl[entry_idx1]	|= (1UL << bit_idx1);	/* Check */
+      dt_cmp_tbl[entry_idx2]	|= (1UL << bit_idx2);	/* Same  */
 
    }
 
@@ -3467,10 +3467,10 @@ DONE:
    if (keep_compare) {
 
       if (same) {
-         dt_cmp_tbl[entry_idx2]	|= (1 << bit_idx2);	/* Same bit */
+         dt_cmp_tbl[entry_idx2]	|= (1UL << bit_idx2);	/* Same bit */
       }
       else {
-         dt_cmp_tbl[entry_idx2]	&= ~(1 << bit_idx2);	/* Same bit */
+         dt_cmp_tbl[entry_idx2]	&= ~(1UL << bit_idx2);	/* Same bit */
       }
    }
 
