@@ -1223,6 +1223,9 @@ I-u%s		;		Cc	ld	"-u %s"
 -cif    keep_cif=TRUE;       F90	FE      self
         ""
 
+-ar	;		ALL	NONE	""
+	"create an archive (instead of a shared object or executable) using ar"
+
 -promp	;	 	FTN,Cc	 be	"-PHASE:prompf -PROMP:=on"
 	""
 

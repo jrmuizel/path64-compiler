@@ -2665,19 +2665,35 @@ determine_phase_order (void)
 			next_phase = P_be;
 			break;
 #endif
-			next_phase = link_phase;
+			if (option_was_seen(O_ar)) {
+			    next_phase = P_ar;
+			}
+			else {
+			    next_phase = link_phase;
+			}
 			break;
 #ifdef FAT_WHIRL_OBJECTS
 		case P_merge:
 			add_phase(next_phase);
-            next_phase = link_phase;
+
+			if (option_was_seen(O_ar)) {
+			    next_phase = P_ar;
+			}
+			else {
+			    next_phase = link_phase;
+			}
 			break;
 #endif
 		case P_be:
 			add_phase(next_phase);
 			/* may or may not generate objects directly */
 			if (skip_as == TRUE) {
-			    next_phase = link_phase;
+			   if (option_was_seen(O_ar)) {
+			       next_phase = P_ar;
+			   }
+			   else {
+			       next_phase = link_phase;
+			   }
 			}
 			else next_phase = asm_phase;
 			break;
@@ -2694,7 +2710,12 @@ determine_phase_order (void)
 			   break;
 			}
 #endif
-			next_phase = link_phase;
+			if (option_was_seen(O_ar)) {
+			    next_phase = P_ar;
+			}
+			else {
+			    next_phase = link_phase;
+			}
 			break;
 		case P_ld:
 		case P_ldplus:
@@ -3098,6 +3119,21 @@ run_ld (void)
 
 	run_phase (ldphase, ldpath, args);
 }
+
+void
+run_ar(void)
+{
+     string_list_t *args = init_string_list();
+     char *arpath;
+     arpath = get_full_phase_name(P_ar);
+
+     add_string (args, "-rc");
+     copy_phase_options (args, P_ar);
+     add_string (args, outfile);
+     append_ar_objects_to_list(args);
+     run_phase (P_ar, arpath, args);
+}
+
 
 
 void

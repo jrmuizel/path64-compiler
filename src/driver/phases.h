@@ -94,6 +94,7 @@ extern void run_dsm_prelink(void);
 
 /* run ld only */
 extern void run_ld (void);
+extern void run_ar (void);
 extern void run_pixie (void);
 extern void run_prof (void);
 

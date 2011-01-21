@@ -47,6 +47,8 @@ extern boolean is_object_option (int flag);
 
 /* add object to list of objects */
 extern void add_object (int flag, char *arg);
+/* add object to list of objects to pass to archive phase. */
+extern void add_ar_objects (char *arg);
 
 /* add library to list */
 extern void add_library_dir (const char *path);
@@ -58,6 +60,7 @@ extern string_list_t *get_library_dirs (void);
 extern void append_objects_to_list (string_list_t *list);
 extern void append_libraries_to_list (string_list_t *list);
 extern void append_cxx_prelinker_objects_to_list (string_list_t *list);
+extern void append_ar_objects_to_list (string_list_t *list);
 
 extern void dump_objects (void);	/* for debugging */
 

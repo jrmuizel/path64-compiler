@@ -67,6 +67,7 @@
 string_list_t *objects;
 string_list_t *lib_objects;
 static string_list_t *cxx_prelinker_objects;
+static string_list_t *ar_objects; 
 static string_list_t *library_dirs;
 
 #ifdef TARG_MIPS
@@ -83,6 +84,7 @@ init_objects (void)
  	objects = init_string_list();
  	lib_objects = init_string_list();
  	cxx_prelinker_objects = init_string_list();
+ 	ar_objects = init_string_list();
 	library_dirs = init_string_list();
 }
 
@@ -266,6 +268,13 @@ add_object (int flag, char *arg)
 	}
 }
 
+/* append object files to the ar_objects list. */
+void
+add_ar_objects (char *arg)
+{
+    add_string(ar_objects, arg);
+}
+
 /* append objects to end of list */
 void
 append_objects_to_list (string_list_t *list)
@@ -311,6 +320,12 @@ void
 append_cxx_prelinker_objects_to_list (string_list_t *list)
 {
 	append_string_lists (list, cxx_prelinker_objects);
+}
+
+void
+append_ar_objects_to_list(string_list_t *list)
+{
+    append_string_lists (list, ar_objects);
 }
 
 void

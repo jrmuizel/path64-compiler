@@ -455,6 +455,10 @@ add_special_options (void)
 #endif
 	}
 
+	if (option_was_seen(O_ar) && outfile == NULL) {
+	   error("-ar option requires archive name to be specified with -o option");
+	}
+	
 	if (skip_as == UNDEFINED) {
 		skip_as = FALSE;
 	}
