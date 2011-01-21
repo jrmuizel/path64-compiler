@@ -53,6 +53,7 @@ ADD_SUBDIRECTORY(arith)
 # TODO : Can't determine linking method
 
 IF(${PATH64_ENABLE_FORTRAN})
+INCLUDE(libF77/config.cmake)
 ADD_SUBDIRECTORY(libpathfortran)
 ADD_SUBDIRECTORY(crayf90)
 IF(${PATH64_ENABLE_MATHLIBS})

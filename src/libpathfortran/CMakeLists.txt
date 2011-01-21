@@ -913,26 +913,6 @@ set_property(SOURCE "../libfi/mathlb/ieee_exceptions.F90"
 set_property(SOURCE "../libfi/mathlb/ieee_arithmetic.F90"
              PROPERTY OBJECT_DEPENDS "IEEE_EXCEPTIONS.mod")
 
-include(CheckFunctionExists)
-include(CheckLibraryExists)
-
-check_function_exists(sincos HAVE_SINCOS_IN_LIBC)
-check_function_exists(sincosf HAVE_SINCOSF_IN_LIBC)
-
-if(NOT HAVE_SINCOS_IN_LIBC)
-    check_library_exists(m sincos "" HAVE_SINCOS_IN_LIBM)
-endif()
-if(NOT HAVE_SINCOSF_IN_LIBC)
-    check_library_exists(m sincosf "" HAVE_SINCOSF_IN_LIBM)
-endif()
-
-if(HAVE_SINCOS_IN_LIBC OR HAVE_SINCOS_IN_LIBM)
-    set_source_files_properties(../libF77/pow_zz.c PROPERTIES COMPILE_FLAGS -DHAVE_SINCOS)
-endif()
-
-if(HAVE_SINCOSF_IN_LIBC OR HAVE_SINCOSF_IN_LIBM)
-    set_source_files_properties(../libF77/pow_cc.c PROPERTIES COMPILE_FLAGS -DHAVE_SINCOSF)
-endif()
 
 INCLUDE_DIRECTORIES(
 	"../clibinc"

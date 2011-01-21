@@ -30,6 +30,7 @@
 #include "cmplx.h"
 #include "defalias.h"
 #include "moremath.h"
+#include "f77_config.h"
 
 #ifndef HAVE_SINCOS
 static void
