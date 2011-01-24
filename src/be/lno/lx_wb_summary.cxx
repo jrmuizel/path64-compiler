@@ -23,7 +23,7 @@
 
 
 #include <sys/types.h>
-#include <elf.h>
+#include "elf_defines.h"
 #include <ctype.h>
 #include "wn.h"
 #include "wn_map.h"

@@ -46,9 +46,7 @@
 static char *rcs_id = iter_C"$Revision$";
 #endif /* _KEEP_RCS_ID */
 
-#if ! defined(BUILD_OS_DARWIN)
-#include <elf.h>	/* for Elf64_Word */
-#endif /* ! defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #include "defs.h"
 #include "stab.h"
 #include "pu_info.h"	/* PU_Info */

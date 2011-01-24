@@ -134,7 +134,7 @@ extern "C" {
 
 #if (defined(_LANGUAGE_C) || defined(_LANGUAGE_C_PLUS_PLUS))
 
-#include <elf.h>
+#include "elf_defines.h"
 
 #if (_MIPS_SZPTR == 64)
 

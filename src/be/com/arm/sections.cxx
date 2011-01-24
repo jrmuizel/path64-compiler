@@ -31,7 +31,7 @@
 
 */
 
-#include <elf.h>
+#include "elf_defines.h"
 #include "defs.h"
 #include "stab.h"
 #include "stblock.h"

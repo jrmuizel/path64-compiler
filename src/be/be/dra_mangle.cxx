@@ -40,9 +40,7 @@
 #if HAVE_ALLOCA_H
 #include <alloca.h>             // alloca
 #endif
-#if ! defined(BUILD_OS_DARWIN)
-#include <elf.h>
-#endif /* ! defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 
 #include "defs.h"               // standard definitions
 #include "wn.h"                 // WN

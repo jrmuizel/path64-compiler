@@ -44,11 +44,7 @@ extern "C" {
 #include <limits.h>
 #include <sys/types.h>
 #include <errno.h>
-#if defined(BUILD_OS_DARWIN)
-#include <darwin_elf.h>
-#else /* defined(BUILD_OS_DARWIN) */
-#include <elf.h>
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #include "defs.h"
 #include "config.h"
 #include "config_opt.h"	// for Div_Split_Allowed

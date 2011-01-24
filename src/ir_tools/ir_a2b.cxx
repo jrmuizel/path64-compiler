@@ -30,9 +30,7 @@
 #include <stdio.h>		    /* for stderr */
 #include <libgen.h>		    /* for basename() */
 #include <sys/stat.h>
-#if ! defined(BUILD_OS_DARWIN)
-#include <elf.h>
-#endif /* ! defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #include "defs.h"
 #include "mempool.h"
 #include "wn.h"			    /* for ir_reader.h */

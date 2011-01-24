@@ -29,7 +29,7 @@
 #ifndef targ_sections_INCLUDED 
 #define targ_sections_INCLUDED
 
-#include <elf.h>
+#include "elf_defines.h"
 
 /* ELF section definitions */
 

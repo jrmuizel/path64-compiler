@@ -25,15 +25,8 @@
 */
 
 
-#ifdef HAVE_ELF_H
-#include <elf.h>
-#elif defined(HAVE_LIBELF_H) 
-/* On one platform without elf.h this gets Elf32_Rel 
-   type defined (a required type). */
-#include <libelf.h>
-#endif
+#include "elf_defines.h"
 #if defined(BUILD_OS_DARWIN)
-#include "darwin_elf.h"
 #include <mach-o/reloc.h>
 #endif /* defined(BUILD_OS_DARWIN) */
 

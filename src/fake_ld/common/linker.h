@@ -40,7 +40,7 @@
 #include <cmplrs/host.h>
 #include <string.h>
 #include <sys/inst.h>
-#include <elf.h>
+#include "elf_defines.h"
 #if !defined(__NetBSD__)
 #include <sys/procfs.h>
 #endif

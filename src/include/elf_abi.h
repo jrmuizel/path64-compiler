@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-#include <elf.h>
+#include "elf_defines.h"
 
 #define _MAX_NUM_PT	10	/* the only thing missing from elf.h */
 

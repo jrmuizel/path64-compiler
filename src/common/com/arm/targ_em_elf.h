@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-#include <elf.h>
+#include "elf_defines.h"
 
 struct section_info {
     Elf_Scn *scnptr;		/* ptr to the elf section. */

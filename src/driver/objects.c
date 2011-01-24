@@ -511,7 +511,7 @@ static int check_for_whirl(char *name) { return 0; }
 // Check for ELF files containing WHIRL objects.  Code taken from
 // ../cygnus/bfd/ipa_cmdline.c.
 
-#include <elf.h>
+#include "elf_defines.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>

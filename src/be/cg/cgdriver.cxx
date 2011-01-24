@@ -55,9 +55,7 @@
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
-#if ! defined(BUILD_OS_DARWIN)
-#include <elf.h>
-#endif /* ! defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #include <sys/elf_whirl.h>	    /* for WHIRL_REVISION */
 #include <ctype.h>
 #include "defs.h"

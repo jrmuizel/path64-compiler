@@ -45,7 +45,7 @@
 #include "symtab.h"
 #ifdef TARG_ST
 #include "targ_sections.h"
-#include <elf.h> // [TB] for SHF_MIPS_MERGE
+#include "elf_defines.h"
 #endif
 
 /*

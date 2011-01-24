@@ -31,7 +31,7 @@
 #ifndef __LD_ELF_H__
 #define __LD_ELF_H__
 
-#include <elf.h>
+#include "elf_defines.h"
 #include "elfaccess.h"
 #include "sys/elf_whirl.h"
 #include "libelf/libelf.h"

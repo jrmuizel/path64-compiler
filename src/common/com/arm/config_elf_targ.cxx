@@ -35,7 +35,7 @@
  * ====================================================================
  */
 
-#include <elf.h>
+#include "elf_defines.h"
 #include <sys/elf_whirl.h>
 #include "defs.h"
 #include "erglob.h"

@@ -69,11 +69,7 @@ static char *rcs_id = "$Source: crayf90/sgi/SCCS/s.cwh_pdgcs.cxx $ $Revision: 1.
 #include "stab.h"
 #include "strtab.h"
 #include "wn.h" 
-#if defined(BUILD_OS_DARWIN)
-#include "darwin_elf.h"
-#else /* defined(BUILD_OS_DARWIN) */
-#include "elf.h"
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #include "pu_info.h"
 #include <sys/types.h>
 #include "ir_reader.h"

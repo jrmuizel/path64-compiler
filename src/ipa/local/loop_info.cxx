@@ -48,11 +48,7 @@
 //--------------------------------------------------------------------------
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
-#if defined(BUILD_OS_DARWIN)
-#include <darwin_elf.h>                        // Elf64_Word
-#else /* defined(BUILD_OS_DARWIN) */
-#include <elf.h>                        // Elf64_Word
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #include "defs.h"
 #include "tracing.h"
 #include "loop_info.h"

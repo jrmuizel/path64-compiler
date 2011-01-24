@@ -29,11 +29,7 @@
 #ifndef pu_info_INCLUDED
 #define pu_info_INCLUDED
 
-#if defined(BUILD_OS_DARWIN)
-#include "darwin_elf.h"		/* for Elf64_Word */
-#else /* defined(BUILD_OS_DARWIN) */
-#include <elf.h>		/* for Elf64_Word */
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 
 #include "dwarf_DST_mem.h"
 

@@ -52,7 +52,7 @@ using std::list;
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <elf.h>
+#include "elf_defines.h"
 #include <map>
 #include <vector>
 #include <set>

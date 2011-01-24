@@ -37,13 +37,7 @@
 #include "wb_carray.h"
 #endif 
 
-#if defined(BUILD_OS_DARWIN)
-#include "darwin_elf.h"
-#else /* defined(BUILD_OS_DARWIN) */
-#ifndef __SYS_ELF_H__
-#include <elf.h>
-#endif
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 
 #ifndef ipl_summary_INCLUDED
 #include "ipl_summary.h"

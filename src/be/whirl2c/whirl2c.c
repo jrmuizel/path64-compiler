@@ -70,7 +70,7 @@
 static char *rcs_id = "$Source$ $Revision$";
 #endif /* _KEEP_RCS_ID */
 
-#include <elf.h>              /* for wn.h */
+#include "elf_defines.h"
 #include "whirl2c_common.h"
 #include "glob.h"             /* Irb_File_Name */
 #include "flags.h"	      /* for OPTION_GROUP */

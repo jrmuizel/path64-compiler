@@ -69,7 +69,7 @@ static char *source_file = __FILE__;
 static char *rcs_id = "$Source$ $Revision$";
 
 #include <unistd.h>		    /* for close(), etc. */
-#include <elf.h>              /* for wn.h */
+#include "elf_defines.h"
 #include "whirl2f_common.h"
 #include "glob.h"             /* Irb_File_Name, Cur_PU_Name */
 #include "flags.h"	      /* for OPTION_GROUP */

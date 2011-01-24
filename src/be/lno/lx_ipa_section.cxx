@@ -50,7 +50,7 @@
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
-#include <elf.h>
+#include "elf_defines.h"
 #include <sys/elf_whirl.h>
 #include <sys/types.h>
 #if HAVE_ALLOCA_H

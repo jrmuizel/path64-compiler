@@ -44,11 +44,7 @@
 
 /* Define to `<elf.h>' or `<sys/elf.h>' if one of them is present */
 
-#if defined(BUILD_OS_DARWIN)
-#define __LIBELF_HEADER_ELF_H "darwin_elf.h"
-#else /* defined(BUILD_OS_DARWIN) */
-#define __LIBELF_HEADER_ELF_H <elf.h>
-#endif /* defined(BUILD_OS_DARWIN) */
+#define __LIBELF_HEADER_ELF_H "elf_defines.h"
 
 /* Define if you want 64-bit support (and your system supports it) */
 #define __LIBELF64 1

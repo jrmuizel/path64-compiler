@@ -59,9 +59,7 @@
  */
 
 #include <sys/types.h>
-#if ! defined(BUILD_OS_DARWIN)
-#include <elf.h>		    /* for wn.h */
-#endif /* ! defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #include <cmplrs/rcodes.h>
 #include <dirent.h>
 /* #include <libgen.h> */

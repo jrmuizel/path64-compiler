@@ -85,7 +85,7 @@
 #endif /* USE_PCH */
 #pragma hdrstop
 //#include <sys/types.h>
-//#include <elf.h>
+//#include "elf_defines.h"
 #include "opt_goto.h"
 #include "wn_util.h"
 #include "config_targ.h"

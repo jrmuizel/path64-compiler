@@ -55,7 +55,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <elf.h>
+#include "elf_defines.h"
 #include <sys/elf_whirl.h>
 
 #include "defs.h"

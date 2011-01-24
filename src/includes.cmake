@@ -27,13 +27,6 @@ SET(INCLUDE_HFILES
    )
 
 
-IF(${BUILD_OS} MATCHES "DARWIN")
-SET(INCLUDE_HFILES
-    ${INCLUDE_HFILES}
-	darwin_elf.h
-   )
-ENDIF(${BUILD_OS} MATCHES "DARWIN")
-
 SET(CMPLR_HFILES
 	cif_c.h
 	dwarf_addr_finder.h

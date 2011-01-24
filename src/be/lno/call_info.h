@@ -85,11 +85,7 @@
 #define call_info_INCLUDED
 
 #include <sys/types.h>
-#if defined(BUILD_OS_DARWIN)
-#include <darwin_elf.h>
-#else /* defined(BUILD_OS_DARWIN) */
-#include <elf.h>
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #ifndef _ara_loop_info_INCLUDED
 #include "ara_loop.h"
 #endif

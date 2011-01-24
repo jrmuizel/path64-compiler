@@ -61,9 +61,7 @@
 #ifndef wnmp_INCLUDED
 #define wnmp_INCLUDED "wn_mp.h"
 
-#if (! defined(__ELF_H__)) && (! defined(BUILD_OS_DARWIN))
-#include <elf.h>            /* pu_info.h can't compile without this */
-#endif
+#include "elf_defines.h"
 
 #ifndef dwarf_DST_INCLUDED
 #include "dwarf_DST.h"      /* for DST_IDX and DST_INFO_IDX */

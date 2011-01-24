@@ -236,11 +236,7 @@ Fix_Aliased_Commons ()
 #include <unistd.h>                 /* for unlink() */
 #include <fcntl.h>                  /* for open() */
 #include <sys/mman.h>               /* for mmap() */
-#if defined(BUILD_OS_DARWIN)
-#include <darwin_elf.h>
-#else /* defined(BUILD_OS_DARWIN) */
-#include <elf.h>
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #include <sys/elf_whirl.h>          /* for WHIRL sections' sh_info */
 #include "defs.h"                   /* for wn_core.h */
 

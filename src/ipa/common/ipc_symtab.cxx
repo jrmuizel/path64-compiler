@@ -35,11 +35,7 @@
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
-#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
-#include <darwin_elf.h>
-#elif !defined(__sun)
-#include <elf.h>
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #include <sys/elf_whirl.h>		// for WHIRL_REVISION
 
 #include "elf_stuff.h" //SHT_WHIRL_SECTION

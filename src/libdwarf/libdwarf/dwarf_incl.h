@@ -32,17 +32,11 @@
 #include <stdint.h>
 #include <string.h>
 
-#if defined(BUILD_OS_DARWIN)
-#include "darwin_elf.h"
-#else /* defined(BUILD_OS_DARWIN) */
-#ifdef HAVE_ELF_H
-#include <elf.h>
-#endif
-#endif /* defined(BUILD_OS_DARWIN) */
-
 #include <limits.h>
-#include "dwarf_stuff.h"
 
+#include "elf_defines.h"
+
+#include "dwarf_stuff.h"
 #include "dwarf_base_types.h"
 #include "dwarf_alloc.h"
 #include "dwarf_opaque.h"

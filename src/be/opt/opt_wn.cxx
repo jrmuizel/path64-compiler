@@ -68,9 +68,7 @@ static char *rcs_id = 	opt_wn_CXX"$Revision: 1.31 $";
 #endif /* _KEEP_RCS_ID */
 
 #include <sys/types.h>
-#if ! defined(BUILD_OS_DARWIN)
-#include <elf.h>         // for pu_info.h
-#endif /* ! defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #include "defs.h"
 #include "tracing.h"
 #include "mempool.h"

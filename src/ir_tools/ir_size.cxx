@@ -32,9 +32,7 @@
 #include <libgen.h>		    /* for basename() */
 #include <algorithm>
 
-#if ! defined(BUILD_OS_DARWIN)
-#include <elf.h>
-#endif /* ! defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #include "elf_stuff.h"
 
 #include "defs.h"

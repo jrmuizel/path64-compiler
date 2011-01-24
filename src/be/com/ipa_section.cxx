@@ -53,12 +53,8 @@
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
-#if defined(BUILD_OS_DARWIN)
-#include <darwin_elf.h>
-#else
-#include <elf.h>
+#include "elf_defines.h"
 #include <sys/elf_whirl.h>
-#endif /* defined(BUILD_OS_DARWIN) */
 #include <sys/types.h>
 #if HAVE_ALLOCA_H
 #include <alloca.h>

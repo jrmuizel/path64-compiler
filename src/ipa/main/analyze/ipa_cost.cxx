@@ -31,11 +31,7 @@
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
-#if defined(BUILD_OS_DARWIN)
-#include <darwin_elf.h>
-#else /* defined(BUILD_OS_DARWIN) */
-#include <elf.h>
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #include "ipl_summary.h"
 #include "ipa_cg.h" 
 #include "ipa_section_main.h"

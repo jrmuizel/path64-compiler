@@ -50,9 +50,7 @@
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include <sys/types.h>
-#if ! defined(BUILD_OS_DARWIN)
-#include <elf.h>		    /* for wn.h */
-#endif /* ! defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 
 #include "defs.h"
 #include "wn.h"

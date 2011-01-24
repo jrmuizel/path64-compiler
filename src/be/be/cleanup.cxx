@@ -41,13 +41,8 @@
  * ====================================================================
  */
 
-#if ! defined(BUILD_OS_DARWIN)
-#include <elf.h>		    /* for wn.h */
-#endif /* defined(BUILD_OS_DARWIN) */
-#ifndef _SYS_TYPES_H
+#include "elf_defines.h"
 #include <sys/types.h>              /* for off_t */
-#endif /* _SYS_TYPES_H */
-
 
 #include "defs.h"
 #include "glob.h"		    /* for Src_File_Name, etc. */

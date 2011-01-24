@@ -29,11 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
 /* Define to `<elf.h>' or `<sys/elf.h>' if one of them is present */
-#if defined(BUILD_OS_DARWIN)
-#define __LIBELF_HEADER_ELF_H "darwin_elf.h"
-#else /* defined(BUILD_OS_DARWIN) */
-#define __LIBELF_HEADER_ELF_H <elf.h>
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 
 /* Define if Elf32_Dyn is declared in <link.h> */
 /* #undef __LIBELF_NEED_LINK_H */
@@ -67,19 +63,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 /* Define to a 16-bit unsigned integer type if one exists */
 #define __libelf_u16_t unsigned short
-
-/*
- * Ok, now get the correct instance of elf.h...
- */
-#ifdef __LIBELF_HEADER_ELF_H
-# include __LIBELF_HEADER_ELF_H
-#else /* __LIBELF_HEADER_ELF_H */
-# if __LIBELF_INTERNAL__
-#  include <elf_repl.h>
-# else /* __LIBELF_INTERNAL__ */
-#  include <libelf/elf_repl.h>
-# endif /* __LIBELF_INTERNAL__ */
-#endif /* __LIBELF_HEADER_ELF_H */
 
 /*
  * On some systems, <elf.h> is severely broken.  Try to fix it.

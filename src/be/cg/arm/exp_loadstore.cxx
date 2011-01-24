@@ -35,7 +35,7 @@
 
 /* EXP routines for loads and stores */
 
-#include <elf.h>
+#include "elf_defines.h"
 #include "elf_stuff.h"
 // [HK]
 #if __GNUC__ >= 3

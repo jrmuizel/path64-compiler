@@ -28,13 +28,7 @@
 
 #include "config.h"
 #include "dwarf_incl.h"
-#if defined(BUILD_OS_DARWIN)
-#include "darwin_elf.h"
-#else /* defined(BUILD_OS_DARWIN) */
-#ifdef HAVE_ELF_H
-#include <elf.h>
-#endif
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #ifdef __SGI_FAST_LIBELF
 #include <libelf_sgi.h>
 #else

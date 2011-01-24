@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-#include <elf.h>
+#include "elf_defines.h"
 
 #ifdef __cplusplus
 }

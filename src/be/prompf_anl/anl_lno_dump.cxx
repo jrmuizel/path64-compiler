@@ -22,7 +22,7 @@
 */
 
 
-#include <elf.h>                    /* for wn.h */
+#include "elf_defines.h"
 #include "wn.h"                     /* for WN */
 #include "defs.h"		    /* for pu_info.h */ 
 #include "config.h"                 /* for LNO_Path, etc. */

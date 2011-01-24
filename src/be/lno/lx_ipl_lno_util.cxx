@@ -28,7 +28,7 @@
 
 //* -*-Mode: c++;-*- (Tell emacs to use c++ mode) */
 
-#include <elf.h>                        // Elf64_Word
+#include "elf_defines.h"
 #include <sys/types.h>                  // ir_bwrite.h needs it
 #include "wn_util.h"
 #include "lwn_util.h"

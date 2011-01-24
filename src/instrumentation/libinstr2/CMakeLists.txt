@@ -13,6 +13,7 @@ include_directories(
 
 add_definitions(${PATH64_STDC_FORMAT_MACROS})
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -U__OPTIMIZE__")
 
 path64_set_multitarget_sources(instr-static COMMON ${PATHSCALE_INSTR2_SRCS})
 path64_set_multitarget_property_(instr-static OUTPUT_NAME "instr2")

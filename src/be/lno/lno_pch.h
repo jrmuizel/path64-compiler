@@ -34,8 +34,8 @@
 #include <limits.h>
 #include <math.h>
 #include <stdarg.h>
+#include "elf_defines.h"
 #include <sys/elf_whirl.h>
-#include <elf.h>
 #include <sys/types.h>
 
 //

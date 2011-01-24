@@ -44,11 +44,7 @@
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include <unistd.h>
-#if defined(BUILD_OS_DARWIN)
-#include <darwin_elf.h>
-#else /* defined(BUILD_OS_DARWIN) */
-#include <elf.h>
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #include <cmplrs/rcodes.h>	    /* for exit return status */
 
 #include "defs.h"

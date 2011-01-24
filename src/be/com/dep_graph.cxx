@@ -69,11 +69,7 @@ static char *rcs_id = "$Source: be/com/SCCS/s.dep_graph.cxx $ $Revision: 1.7 $";
 #endif /* _KEEP_RCS_ID */
 
 #include <sys/types.h>
-#if defined(BUILD_OS_DARWIN)
-#include <darwin_elf.h>
-#else /* defined(BUILD_OS_DARWIN) */
-#include <elf.h>
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 
 #define USE_STANDARD_TYPES	    /* override unwanted defines in "defs.h" */
 

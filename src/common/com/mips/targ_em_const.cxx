@@ -583,7 +583,7 @@ Targ_Emit_EH_Const (FILE *fl,	    /* File to which to write */
  * ====================================================================
  */
 
-#include <elf.h>
+#include "elf_defines.h"
 #include "em_elf.h"
 
 void

@@ -34,9 +34,7 @@ $Header: libdwarf/dwarfdump/globals.h 1.3 05/05/25 12:44:27-07:00 bos@serpentine
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#ifdef HAVE_ELF_H
-#include <elf.h>
-#endif
+#include "elf_defines.h"
 #ifdef HAVE_LIBELF_H
 #include <libelf.h>
 #else

@@ -39,11 +39,7 @@
 #include <stdio.h> /* for debug printf and for NULL decl */
 #include "xlatebase.h"
 #include "syn.h"
-#if defined(BUILD_OS_DARWIN)
-#include "darwin_elf.h"
-#else /* defined(BUILD_OS_DARWIN) */
-#include <elf.h>
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #include "libelf/libelf.h"
 #include "dwarf_stuff.h"
 #include "libXlate.h"

@@ -26,7 +26,7 @@
 #ifndef _TARG_ELF_H
 #define _TARG_ELF_H
 
-#include <elf.h>
+#include "elf_defines.h"
 
 /* (pp) core */
 #define _ELF_ARM_CORE_BIT	        (8)                      /* 1st bit position in byte */

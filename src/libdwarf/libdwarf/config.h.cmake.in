@@ -18,9 +18,6 @@
 /* Define to 1 if you have the <elfaccess.h> header file. */
 #cmakedefine HAVE_ELFACCESS_H
 
-/* Define to 1 if you have the <elf.h> header file. */
-#cmakedefine HAVE_ELF_H
-
 /* Define to 1 if you have the <libelf/libelf.h> header file. */
 #define HAVE_LIBELF_LIBELF_H 1
 

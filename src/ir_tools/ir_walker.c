@@ -55,7 +55,7 @@
  * ====================================================================
  */
 
-#include <elf.h>
+#include "elf_defines.h"
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>

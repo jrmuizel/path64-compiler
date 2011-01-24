@@ -26,7 +26,7 @@ extern "C"{
 #include "gspin-wgen-interface.h"
 }
 #include <sys/types.h>
-#include <elf.h>
+#include "elf_defines.h"
 
 #include <map>
 #include "libiberty.h"

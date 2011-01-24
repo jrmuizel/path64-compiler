@@ -43,11 +43,7 @@
 #include <unistd.h>		    /* for unlink() */
 #include <sys/mman.h>		    /* for mmap() */
 #include <errno.h>		    /* for errno */
-#if defined(BUILD_OS_DARWIN)
-#include "darwin_elf.h"
-#else /* defined(BUILD_OS_DARWIN) */
-#include <elf.h>		    /* for all Elf stuff */
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 #include <sys/elf_whirl.h>	    /* for WHIRL sections' sh_info */
 
 #ifndef USE_STANDARD_TYPES

@@ -880,7 +880,7 @@ void Em_Targ_Emit_Const (void *, TCON, BOOL, INTSC) {}
  * ====================================================================
  */
 
-#include <elf.h>
+#include "elf_defines.h"
 #include "em_elf.h"
 
 void

@@ -44,11 +44,7 @@
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
-#if defined(BUILD_OS_DARWIN)
-#include <darwin_elf.h>                // ipl_summary.h needs it
-#else /* defined(BUILD_OS_DARWIN) */
-#include <elf.h>                // ipl_summary.h needs it
-#endif /* defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 
 #include "defs.h"
 #include "strtab.h"             // Current_Strtab
