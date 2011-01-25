@@ -3340,7 +3340,7 @@ boolean	compare_derived_types(int	dt_idx1,
       check		= (1UL << bit_idx1) & dt_cmp_tbl[entry_idx1];
 
       if (check) {
-         same = (1UL << bit_idx2) & dt_cmp_tbl[entry_idx2]; 
+         same = ((1UL << bit_idx2) & dt_cmp_tbl[entry_idx2]) != 0UL;
          goto DONE;
       }
    
