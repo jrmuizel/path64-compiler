@@ -816,27 +816,6 @@ Exp_Ldst (
   if (!strncmp (".gnu.linkonce.", ST_name (base_sym), strlen (".gnu.linkonce."))
       && (ofst == base_ofst))
     base_sym = sym;
-  else {
-    ST_SCLASS sclass = ST_sclass(sym);
-    switch (sclass) {
-      case SCLASS_PSTATIC:
-      case SCLASS_FSTATIC:
-        if (Read_Global_Data) // disable pstatic/fstatic for ipa
-          break;
-        if (!PU_c_lang(Get_Current_PU()) && !PU_cxx_lang(Get_Current_PU()))
-          break;
-        // fall through
-      case SCLASS_UGLOBAL:
-      case SCLASS_DGLOBAL:
-        if (ST_sym_class(sym) == CLASS_BLOCK /* bug 14882 */ ||
-            ST_base(sym) != base_sym /* bug 14888 */)
-          break;
-        // bug 14882: load global variables by their name
-        base_sym = sym;
-        base_ofst = ofst;
-      default: break;
-    }
-  }
   
   if( is_lda )
   {

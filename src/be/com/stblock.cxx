@@ -696,6 +696,15 @@ Base_Symbol_And_Offset_For_Addressing (
 	 && !ST_is_weak_symbol(base)
 	 && !ST_is_thread_local(base)
 #endif // KEY
+     // don't use section names for addressing global variables
+     && !(ST_class(ST_base(base)) == CLASS_BLOCK &&
+          (
+           ST_sclass(base) == SCLASS_FSTATIC || 
+           ST_sclass(base) == SCLASS_PSTATIC ||
+           ST_sclass(base) == SCLASS_UGLOBAL ||
+           ST_sclass(base) == SCLASS_DGLOBAL
+          )
+         )
 	 )
   {
       tofst += ST_ofst(base);
