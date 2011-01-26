@@ -62,7 +62,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <string.h>
-#include "elf_stuff.h"
+#include "elf_defines.h"
 #ifdef KEY /* Mac port */
 #include "dwarf_stuff.h"
 #endif /* KEY Mac port */

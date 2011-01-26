@@ -862,7 +862,7 @@ Compute_Push_Pop_Regs(OP* op, INT& spOffset, UINT when)
         }
 }
 
-#include <elf_stuff.h>
+#include "elf_defines.h"
 #include <elfaccess.h>
 
 void

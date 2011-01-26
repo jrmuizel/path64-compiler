@@ -32,7 +32,7 @@
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
-#include "elf_stuff.h"
+#include "elf_defines.h"
 #include "sections.h"
 
 #define INST_BYTES 16

@@ -1,7 +1,6 @@
 
 
 SET(LINUX_HFILES
-	elf_stuff.h
 	sgidefs.h
    )
 

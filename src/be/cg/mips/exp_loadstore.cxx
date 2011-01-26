@@ -39,7 +39,7 @@
 
 
 /* CGEXP routines for loads and stores */
-#include "elf_stuff.h"
+#include "elf_defines.h"
 #include "defs.h"
 #include "em_elf.h"
 #include "erglob.h"

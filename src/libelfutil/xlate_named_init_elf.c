@@ -35,13 +35,6 @@ $Date$
 */
 #include "xlateincl.h"
 
-#if defined(__FreeBSD__) || defined(__sun) || defined(__NetBSD__)
-/* from elf_stuff.h */
-#define SHT_MIPS_XLATE		0x70000024
-#define SHT_MIPS_XLATE_DEBUG	0x70000025
-#define SHT_MIPS_XLATE_OLD	0x70000028
-#endif
-
 #ifdef _LIBELF_XTND_EXPANDED_DATA
 #pragma weak xlate_named_init_elf_xtnd  = _xlate_named_init_elf_xtnd
 #pragma weak xlate_finish_xtnd  = _xlate_finish_xtnd

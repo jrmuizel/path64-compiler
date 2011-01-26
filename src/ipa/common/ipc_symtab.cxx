@@ -38,7 +38,7 @@
 #include "elf_defines.h"
 #include <sys/elf_whirl.h>		// for WHIRL_REVISION
 
-#include "elf_stuff.h" //SHT_WHIRL_SECTION
+#include "elf_defines.h"
 
 #include "linker.h"			// interface exported by ld
 #include "read.h"			// for read_one_section

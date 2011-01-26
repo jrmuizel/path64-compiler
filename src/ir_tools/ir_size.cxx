@@ -33,7 +33,6 @@
 #include <algorithm>
 
 #include "elf_defines.h"
-#include "elf_stuff.h"
 
 #include "defs.h"
 #include "pu_info.h"

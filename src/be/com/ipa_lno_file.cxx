@@ -53,7 +53,7 @@
 #include "stab.h"                  
 #include "irbdata.h"              
 #include "dwarf_DST_mem.h"
-#include "elf_stuff.h"
+#include "elf_defines.h"
 #include "pu_info.h"
 #include "config_targ.h" 
 #include "config_elf_targ.h"

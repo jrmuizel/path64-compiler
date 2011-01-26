@@ -81,9 +81,7 @@ static char *rcs_id = "$Source: common/com/SCCS/s.config.cxx $ $Revision: 1.63 $
 #endif /* ~FRONT_F90 */
 #endif /*  FRONT_END */
 #include <ctype.h>	/* For isdigit */
-#if ! defined(BUILD_OS_DARWIN)
-#include "elf_stuff.h"
-#endif /* ! defined(BUILD_OS_DARWIN) */
+#include "elf_defines.h"
 
 #define USE_STANDARD_TYPES 1
 #include "defs.h"

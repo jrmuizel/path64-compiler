@@ -83,7 +83,7 @@
 #include "sections.h"
 #include "betarget.h"
 #include "intrn_info.h"
-#include "elf_stuff.h"
+#include "elf_defines.h"
 #ifdef TARG_X8664
 #include "config_opt.h"    // for CIS_Allowed
 

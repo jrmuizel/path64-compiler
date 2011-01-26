@@ -78,10 +78,6 @@
 #define an_elf_conflict_record Elf32_Conflict	    /* conflict list */
 #define an_elf_interface_descriptor Elf_Interface_Descriptor /* .MIPS.interfaces */
 
-#define ELF_ST_BIND ELF32_ST_BIND
-#define ELF_ST_TYPE ELF32_ST_TYPE
-#define ELF_ST_INFO ELF32_ST_INFO
-
 #undef ELF_AR_SYMTAB_NAME
 #define ELF_AR_SYMTAB_NAME      "/               "
 #define ELF_OTHER_AR_NAME       "/SYM64/         "

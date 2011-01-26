@@ -955,6 +955,60 @@ typedef	Elf32_Versym	Elf64_Versym;
  *
  *
  */
+typedef uint8_t Elf32_Byte;
+typedef uint8_t Elf64_Byte;
+
+#define ELF_BSS		".bss"
+#define ELF_COMMENT	".comment"
+#define ELF_DATA	".data"
+#define ELF_GOT		".got"
+#define ELF_RODATA	".rodata"
+#define	ELF_SHSTRTAB	".shstrtab"
+#define ELF_STRTAB	".strtab"
+#define ELF_SYMTAB	".symtab"
+#define ELF_TBSS	".tbss"
+#define ELF_TDATA	".tdata"
+#define ELF_TEXT	".text"
+
+#define MIPS_LIT4               ".lit4"
+#define MIPS_LIT8               ".lit8"
+#define MIPS_LIT16              ".lit16"
+#define MIPS_SBSS               ".sbss"
+#define MIPS_SDATA              ".sdata"
+#define MIPS_SRDATA             ".srdata"
+
+#define	EF_IRIX_ABI64	0x00000010	
+
+#define SHF_TLS		(1 << 10)	/* Section hold thread-local data.  */
+
+#define IS_ELF(ehdr)	((ehdr).e_ident[EI_MAG0] == ELFMAG0 && \
+			(ehdr).e_ident[EI_MAG1] == ELFMAG1 && \
+			(ehdr).e_ident[EI_MAG2] == ELFMAG2 && \
+			(ehdr).e_ident[EI_MAG3] == ELFMAG3)
+
+/* Relocation table entry without addend (in section of type SHT_REL).
+   These are the same size as Elf64_Rel and Elf64_Rela, but laid out
+   a little differently. */
+
+typedef struct
+{
+  Elf64_Addr	r_offset;
+  Elf64_Byte	r_type;			/* 1st relocation op type */
+  Elf64_Byte	r_type2;		/* 2nd relocation op type */
+  Elf64_Byte	r_type3;		/* 3rd relocation op type */
+  Elf64_Byte	r_ssym;			/* Special symbol */
+  Elf64_Word	r_sym;			/* Symbol index */
+} Elf64_AltRel;
+
+typedef struct {
+  Elf64_Addr	r_offset;
+  Elf64_Byte	r_type;			/* 1st relocation op type */
+  Elf64_Byte	r_type2;		/* 2nd relocation op type */
+  Elf64_Byte	r_type3;		/* 3rd relocation op type */
+  Elf64_Byte	r_ssym;			/* Special symbol */
+  Elf64_Word	r_sym;			/* Symbol index */
+  Elf64_Sxword	r_addend;
+} Elf64_AltRela;
 
 /* Type for section indices, which are 16-bit quantities.  */
 typedef uint16_t Elf32_Section;
@@ -965,9 +1019,27 @@ typedef uint16_t Elf64_Section;
 #define R_IA64_DIR64LSB		0x27	/* symbol + addend, data8 LSB */
 #define R_IA64_SEGREL64LSB	0x5f	/* @segrel(sym + add), data8 LSB */
 
+#define	R_IA_64_NONE		0x00	/* None			None		*/
+#define R_IA_64_PCREL21B	0x49	/* instr: imm21 (form1)	S+A-P		*/
+#define	R_IA_64_DIR32MSB	0x24	/* word32 MSB		S+A		*/
+#define	R_IA_64_DIR64MSB	0x26	/* word64 MSB		S+A		*/
+#define	R_IA_64_DIR32LSB	0x25	/* word32 LSB		S+A		*/
+#define	R_IA_64_DIR64LSB	0x27	/* word64 LSB		S+A		*/
+#define	R_IA_64_SEGREL32LSB	0x5d	/* word32 LSB		@segrel(S+A)	*/
+#define	R_IA_64_SEGREL64LSB	0x5f	/* word64 LSB		@segrel(S+A)	*/
+#define	R_IA_64_SECREL64MSB	0x66	/* word64 MSB		@secrel(S+A)	*/
+#define	R_IA_64_SECREL64LSB	0x67	/* word64 LSB		@secrel(S+A)	*/
+
+#define IA64_INTERFACES         ".IA64.interfaces"
+#define EI_TVERSION 15
+#define EV_T_CURRENT 1
+
 #define SHF_IA_64_SHORT		0x10000000	/* section near gp */
 
 /* MIPS extensions */
+#define R_MIPS_26	4		/* Direct 26 bit shifted */
+#define R_MIPS_GPREL	7
+
 #define SHT_MIPS_XLATE	       0x70000024
 #define SHT_MIPS_XLATE_DEBUG   0x70000025
 #define SHT_MIPS_XLATE_OLD     0x70000028
@@ -976,6 +1048,150 @@ typedef uint16_t Elf64_Section;
 #define SHF_MIPS_LOCAL	 0x04000000
 #define SHF_MIPS_NAMES	 0x02000000
 #define SHF_MIPS_NODUPE	 0x01000000
+
+#define SHN_MIPS_SUNDEFINED 0xff04	/* Small undefined symbols */
+
+#define SHN_LOPROC	0xff00		/* Start of processor-specific */
+#define SHN_IRIX_LCOMMON	(SHN_LOPROC + 5)
+#define SHN_MIPS_LCOMMON	SHN_IRIX_LCOMMON
+
+#define SHT_IRIX_IFACE		(SHT_LOPROC + 11)
+
+/*
+ * Special Irix st_other
+ */
+#define STO_DEFAULT		0x0
+#define STO_INTERNAL		0x1
+#define STO_HIDDEN		0x2
+#define STO_PROTECTED		0x3
+#define STO_OPTIONAL		0x4
+#define STO_SC_ALIGN_UNUSED	0xff	/* No longer used 		*/
+
+/*
+ * Special Irix st_info
+ */
+#define STB_SPLIT_COMMON	(STB_LOPROC+0)
+
+#define EF_MIPS_PIC	  2		/* Contains PIC code */
+#define EF_MIPS_CPIC	  4		/* Uses PIC calling sequence */
+#define EF_MIPS_OPTIONS_FIRST	0x00000080 
+
+#ifdef X86_WHIRL_OBJECTS
+#define SHT_WHIRL_SECTION SHT_PROGBITS
+#else 
+#define SHT_WHIRL_SECTION SHT_MIPS_WHIRL
+#endif
+
+typedef enum {
+    EK_NULL = 0x00,	    /* No valid information */
+    EK_ADDR_RESET = 0x01,   /* Reset offset into associated text section */
+    EK_INCR_LOC_EXT = 0x02, /* Increment offset into associated text section */
+    EK_ENTRY = 0x03,	    /* Subprogram entrypoint */
+    EK_IF_ENTRY = 0x04,	    /* Subprogram entrypoint with associated interface offset */
+    EK_EXIT = 0x05,	    /* Subprogram exit */
+    EK_PEND = 0x06,	    /* Subprogram end (last instruction) */
+
+    EK_SWITCH_32 = 0x7,	    /* jr for switch stmt, table entries are 32bit */
+    EK_SWITCH_64 = 0x8,	    /* jr for switch stmt, table entries are 64bit */
+    EK_DUMMY = 0x09,	    /* empty slot */
+
+    EK_BB_START = 0x0a,	    /* Basic block beginning */
+    EK_INCR_LOC_UNALIGNED = 0x0b,    /* Increment unaligned byte offset */
+    EK_GP_PROLOG_HI = 0x0c, /* Establish high 16bits of GP */
+    EK_GP_PROLOG_LO = 0x0d, /* Establish low 16bits of GP */
+    EK_GOT_PAGE = 0x0e,	    /* Compact relocation: GOT page pointer */
+    EK_GOT_OFST = 0x0f,     /* Compact relocation: GOT page offset */
+    EK_HI = 0x10,	    /* Compact relocation: high 16bits of abs. addr */
+    EK_LO = 0x11,	    /* Compact relocation: low 16bits of abs. addr */
+    EK_64_HIGHEST = 0x12,   /* Compact relocation: most significant 16 bits
+			       of a 64bit absolute address */
+    EK_64_HIGHER = 0x13,    /* Compact relocation: second most significant
+			       16 bits of a 64bit absolute address */
+    EK_64_HIGH = 0x14,	    /* Compact relocation: third most significant
+			       16 bits of a 64bit absolute address */
+    EK_64_LOW = 0x15,       /* Compact relocation: least significant 16 bits
+			       of a 64bit absolute address */
+    EK_GPREL = 0x16,        /* Compact relocation: GP relative reference */
+
+    EK_DEF = 0x17,	    /* Define new event kind format */
+
+    EK_FCALL_LOCAL = 0x18,	/* point-of-call (jalr) to a local procedure */
+    EK_FCALL_EXTERN = 0x19,	/* jalr to extern procedure (small got case) */
+    EK_FCALL_EXTERN_BIG = 0x1a,	/* jalr to extern procedure (large got case) */
+    EK_FCALL_MULT = 0x1b,	/* jalr to more than one procedure */
+    EK_FCALL_MULT_PARTIAL = 0x1c, /* jalr to multiple + unknown procedures */
+
+    EK_LTR_FCALL = 0x1d,	/* jalr to rld lazy-text res.  index of
+				   symbol associated. */
+    EK_PCREL_GOT0 = 0x1e, 	/* immediate is hi 16 bits of 32-bit
+				   constant.  Argument is offset to lo,
+				   in instructions, not bytes*/
+
+    /* The following events are reserved for supporting Purify-type tools: */
+    EK_MEM_COPY_LOAD = 0x1f,    /* load only for copying data */
+    EK_MEM_COPY_STORE = 0x20,   /* store only for copying data --
+                                   LEB128 operand is word offset to
+                                   paired load */
+    EK_MEM_PARTIAL_LOAD = 0x21, /* load for reference to a subset of bytes --
+                                   BYTE operand's 8 bits indicate which
+                                   bytes are actually used */
+    EK_MEM_EAGER_LOAD = 0x22,   /* load is speculative */
+    EK_MEM_VALID_LOAD = 0x23,   /* load of data known to be valid */
+
+		/*
+		 * Yet to be defined kinds with no fields (like EK_EXIT)
+		 */
+    EK_CK_UNUSED_NONE_0 = 0x50, /*  */
+    EK_CK_UNUSED_NONE_1 = 0x51, /*  */
+    EK_CK_UNUSED_NONE_2 = 0x52, /*  */
+    EK_CK_UNUSED_NONE_3 = 0x53, /*  */
+    EK_CK_UNUSED_NONE_4 = 0x54, /*  */
+
+		/*
+		 * Yet to be defined kinds with 1 16 bit field
+		 */
+    EK_CK_UNUSED_16BIT_0 = 0x55,
+    EK_CK_UNUSED_16BIT_1 = 0x56,
+    EK_CK_UNUSED_16BIT_2 = 0x57, /*  */
+    EK_CK_UNUSED_16BIT_3 = 0x58, /*  */
+    EK_CK_UNUSED_16BIT_4 = 0x59, /*  */
+
+		/*
+		 * Yet to be defined kinds with 1 32 bit field
+		 */
+    EK_CK_UNUSED_32BIT_0 = 0x5a, /*  */
+    EK_CK_UNUSED_32BIT_1 = 0x5b, /*  */
+    EK_CK_UNUSED_32BIT_2 = 0x5c, /*  */
+
+		/*
+		 * Yet to be defined kinds with 1 64 bit field
+		 */
+
+    EK_CK_UNUSED_64BIT_0 = 0x5d,
+    EK_CK_UNUSED_64BIT_1 = 0x5e,
+    EK_CK_UNUSED_64BIT_2 = 0x5f, /*  */
+    EK_CK_UNUSED_64BIT_3 = 0x60, /*  */
+    EK_CK_UNUSED_64BIT_4 = 0x61, /*  */
+
+		/*
+		 * Yet to be defined kinds with 1 uleb128 field
+		 */
+    EK_CK_UNUSED_ULEB128_0 = 0x62, /* */
+    EK_CK_UNUSED_ULEB128_1 = 0x63, /*  */
+    EK_CK_UNUSED_ULEB128_2 = 0x64, /*  */
+    EK_CK_UNUSED_ULEB128_3 = 0x65, /*  */
+    EK_CK_UNUSED_ULEB128_4 = 0x66, /*  */
+    EK_CK_UNUSED_ULEB128_5 = 0x67, /*  */
+    EK_CK_UNUSED_ULEB128_6 = 0x68, /*  */
+    EK_CK_UNUSED_ULEB128_7 = 0x69, /*  */
+    EK_CK_UNUSED_ULEB128_8 = 0x6a, /*  */
+    EK_CK_UNUSED_ULEB128_9 = 0x6b, /*  */
+
+
+    EK_INCR_LOC = 0x80	    /* Increment offset into associated text section */
+
+} Elf_MIPS_Event_Kind;
+typedef	Elf_MIPS_Event_Kind Elf_Event_Kind;
 
 /* Entries found in sections of type SHT_MIPS_OPTIONS.  */
 
@@ -996,5 +1212,174 @@ typedef struct
   Elf32_Word hwp_flags1;	/* Extra flags.  */
   Elf32_Word hwp_flags2;	/* Extra flags.  */
 } Elf_Options_Hw;
+
+typedef struct {
+    Elf64_Word symbol;		/* symbol table index of subprogram, or 0 */
+    Elf64_Half attrs;		/* Attributes: See list below */
+    Elf64_Byte pcnt;		/* Parameter count */
+    Elf64_Byte fpmask;		/* bit on indicates an FP parameter register */
+} Elf_Ifd;
+
+/* Flags that can be set in the 'attrs' field of Elf_Interface_Descriptor */
+#define SA_PROTOTYPED	0x8000	/* Does def or ref have prototype ? */
+#define SA_VARARGS	0x4000	/* Is this a varargs subprogram ? */
+#define SA_PIC		0x2000	/* Are memory references PIC? */
+#define SA_DSO_ENTRY	0x1000	/* Is subprogram valid DSO entry? */
+#define SA_ADDRESSED	0x0800	/* Is subprogram address taken? */
+#define SA_FUNCTION	0x0400	/* Does subprogram return a result? */
+#define SA_NESTED	0x0200	/* Is subprogram nested? */
+#define SA_IGNORE_ERROR	0x0100	/* Ignore consistency errors? */
+#define SA_DEFINITION	0x0080	/* Is this a definition (no just call)? */
+#define SA_AT_FREE	0x0040	/* Is the at register free at all branches? */
+#define SA_FREE_REGS	0x0020	/* Free register mask precedes parm profile */
+#define SA_PARAMETERS	0x0010	/* Parameter profile follows descriptor? */
+#define SA_ALTINTERFACE 0x0008	/* Alternate descriptor follows? */
+
+/* Content kind -- valid for ELF-32 and ELF-64: */
+typedef enum {
+    CK_NULL	= 0,	    /* Invalid, same as EK_NULL */
+    CK_DEFAULT	= 0x30,	    /* Default type of data for section */
+    CK_ALIGN	= 0x31,	    /* Alignment for described range */
+    CK_INSTR	= 0x32,	    /* Instructions */
+    CK_DATA	= 0x33,	    /* Non-address data */
+    CK_SADDR_32	= 0x34,	    /* Simple 32-bit addresses */
+    CK_GADDR_32	= 0x35,	    /* GP-relative 32-bit addresses */
+    CK_CADDR_32	= 0x36,	    /* Complex 32-bit addresses */
+    CK_SADDR_64	= 0x37,	    /* Simple 64-bit addresses */
+    CK_GADDR_64	= 0x38,	    /* GP-relative 64-bit addresses */
+    CK_CADDR_64	= 0x39,	    /* Complex 64-bit addresses */
+    CK_NO_XFORM	= 0x3a,	    /* No transformations allowed in this range */
+    CK_NO_REORDER = 0x3b,   /* No reordering allowed in this range */
+    CK_GP_GROUP = 0x3c,	    /* Text/data in range with length given by
+			       second argument references GP group given
+			       by first. */
+    CK_STUBS	= 0x3d	    /* Text in range is stub code. ULEB */
+} Elf_MIPS_Content_Kind;
+
+/*
+ * 	Elf_Options.kind		Options descriptor kinds
+ */
+#define ODK_NULL                 0      /* Undefined */
+#define ODK_MIPS_REGINFO         1      /* MIPS Register usage information */
+#define ODK_REGINFO         1      /* MIPS Register usage information */
+#define ODK_MIPS_EXCEPTIONS      2      /* MIPS Exception processing options  */
+#define ODK_EXCEPTIONS		 2      /* MIPS Exception processing options  */
+#define ODK_PAD                  3      /* Section padding options */
+#define ODK_MIPS_HWPATCH         4      /* MIPS Hardware workarounds performed*/
+#define ODK_HWPATCH		 4      /* MIPS Hardware workarounds performed*/
+#define ODK_FILL                 5      /* The fill value used by the linker */
+#define ODK_TAGS                 6      /* Space for desktop tools to write */
+#define ODK_MIPS_HWAND           7      /* HW workarounds.'AND' when merging */
+#define ODK_HWAND		 7      /* HW workarounds.'AND' when merging */
+#define ODK_MIPS_HWOR            8      /* HW workarounds.'OR'  when merging */
+#define ODK_HWOR		 8      /* HW workarounds.'OR'  when merging */
+#define ODK_GP_GROUP             9      /* GP group for text/data sections */
+#define ODK_IDENT               10      /* ID information */
+#define ODK_IA64_REGINFO        11      /* TO BE CHANGED! */
+#define ODK_PAGESIZE            12      /* Alternate segment page size */
+
+
+#define ODK_IA64_EXCEPTIONS     12      /* NOT USED! */
+#define ODK_IA64_HWAND          13      /* NOT USED! */
+#define ODK_IA64_HWOR           14      /* NOT USED! */
+
+/*
+ *	Elf_Options.kind == ODK_MIPS_EXCEPTIONS	
+ *
+ *      masks for Elf_Options.info
+ */
+#define OEX_PAGE0       0x10000 /* page zero must be mapped */
+#define OEX_SMM         0x20000 /* Force sequential memory mode? */
+#define OEX_FPDBUG      0x40000 /* Force floating point debug mode? */
+#define OEX_PRECISEFP   OEX_FPDBUG
+#define OEX_DISMISS     0x80000 /* Dismiss invalid address faults? */
+#define OEX_FPU_MIN     0x1f    /* FPE's which MUST be enabled */
+#define OEX_FPU_MAX     0x1f00  /* FPE's which MAY be enabled */
+#define OEX_FPU_INVAL   0x10
+#define OEX_FPU_DIV0    0x08
+#define OEX_FPU_OFLO    0x04
+#define OEX_FPU_UFLO    0x02
+#define OEX_FPU_INEX    0x01
+
+/*
+ *	Elf_Options.kind == ODK_MIPS_HWPATCH
+ *
+ *      masks for Elf_Options.info
+ */
+#define OHW_R4KEOP      0x1     /* R4000 end-of-page patch */
+#define OHW_R8KPFETCH   0x2     /* may need R8000 prefetch patch */
+#define OHW_R5KEOP      0x4     /* R5000 end-of-page patch */
+#define OHW_R5KCVTL     0x8     /* R5000 cvt.[ds].l bug.  clean=1 */
+#define OHW_R10KLDL     0x10    /* R10000 requires LDL patch    */
+
+/*
+ *      Elf_Options.kind == ODK_MIPS_HWOR
+ *
+ *      masks for Elf_Options.info
+ */
+#define OHWO0_FIXADE	0x00000001	/* Object requires FIXADE call */
+
+/*
+ *      Elf_Options.kind == ODK_PAD
+ *
+ *      masks for Elf_Options.info
+ */
+#define OPAD_PREFIX	0x1	
+#define OPAD_POSTFIX	0x2
+#define OPAD_SYMBOL	0x4
+
+/*
+ *      Elf_Options.kind == ODK_GP_GROUP
+ *
+ *      masks for Elf_Options.info
+ */
+#define OGP_GROUP	0x0000ffff	/* GP group number */
+#define OGP_SELF	0x00010000	/* Self-contained GP groups */
+
+/* Fundamental Parameter Types */
+#define FT_unknown         0x0000
+#define FT_signed_char     0x0001
+#define FT_unsigned_char   0x0002
+#define FT_signed_short    0x0003
+#define FT_unsigned_short  0x0004
+#define FT_signed_int32    0x0005
+#define FT_unsigned_int32  0x0006
+#define FT_signed_int64    0x0007
+#define FT_unsigned_int64  0x0008
+#define FT_pointer32       0x0009
+#define FT_pointer64       0x000a
+#define FT_float32         0x000b
+#define FT_float64         0x000c
+#define FT_float128        0x000d
+#define FT_complex64       0x000e
+#define FT_complex128      0x000f
+#define FT_complex256      0x0010
+#define FT_void            0x0011
+#define FT_bool32          0x0012
+#define FT_bool64          0x0013
+#define FT_label32         0x0014
+#define FT_label64         0x0015
+#define FT_struct          0x0020
+#define FT_union           0x0021
+#define FT_enum            0x0022
+#define FT_typedef         0x0023
+#define FT_set             0x0024
+#define FT_range           0x0025
+#define FT_member_ptr      0x0026
+#define FT_virtual_ptr     0x0027
+#define FT_class           0x0028
+
+/* Parameter Qualifiers (aka Modifiers)  */
+#define MOD_pointer_to     0x01
+#define MOD_reference_to   0x02
+#define MOD_const          0x03
+#define MOD_volatile       0x04
+#define MOD_function       0x80
+#define MOD_array_of       0x81
+
+/* Parameter descriptor mask flags */
+#define PDMF_REFERENCE  0x40
+#define PDMF_SIZE       0x20
+#define PDMF_Qualifiers 0x0f
 
 #endif /* !ELF_DEFINES_H_ */

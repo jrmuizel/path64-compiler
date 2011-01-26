@@ -24,7 +24,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "elf_stuff.h"
+#include "elf_defines.h"
 #include <elfaccess.h>
 #include "libelf/libelf.h"
 #include <libdwarf.h>

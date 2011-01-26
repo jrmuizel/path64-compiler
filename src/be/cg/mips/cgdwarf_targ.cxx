@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include "libelf/libelf.h"
 #include <list>
-#include "elf_stuff.h"
+#include "elf_defines.h"
 #include <elfaccess.h>
 
 #include "defs.h"

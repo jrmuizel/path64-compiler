@@ -50,7 +50,7 @@
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
-#include "elf_stuff.h"
+#include "elf_defines.h"
 #include <ctype.h>
 
 #define USE_STANDARD_TYPES 1 

@@ -31,10 +31,10 @@
 
 // convert a WHIRL symbol table into Elf
 
-#include "elf_stuff.h"
 #include <sys/types.h>
 
 #include "defs.h"
+#include "elf_defines.h"
 #include "symtab.h"
 #include "pu_info.h"
 #include "opcode.h"			// needed by wn_map.h

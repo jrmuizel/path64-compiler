@@ -58,7 +58,7 @@ using std::list;
 #include <set>
 #include <algorithm>
 
-#include "elf_stuff.h"
+#include "elf_defines.h"
 
 #include "tracing.h"
 #include "config_asm.h"

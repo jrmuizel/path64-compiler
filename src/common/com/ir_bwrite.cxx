@@ -43,7 +43,7 @@
 #endif
 #include <signal.h>		    /* for signal() */
 #include <errno.h>		    /* for system error code */
-#include "elf_stuff.h"		    /* for all Elf stuff */
+#include "elf_defines.h"
 #include <sys/elf_whirl.h>	    /* for WHIRL sections' sh_info */
 #include <cmplrs/rcodes.h>
 

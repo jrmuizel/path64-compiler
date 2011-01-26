@@ -37,7 +37,7 @@
 /* CGEXP routines for loads and stores */
 #define __STDC_LIMIT_MACROS
 #include <stdint.h> // for UINT64_MAX
-#include "elf_stuff.h"
+#include "elf_defines.h"
 #include "defs.h"
 #include "em_elf.h"
 #include "erglob.h"

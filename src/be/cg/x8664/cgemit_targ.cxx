@@ -61,7 +61,7 @@
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
-#include "elf_stuff.h"
+#include "elf_defines.h"
 #ifdef KEY /* Mac port */
 #include "dwarf_stuff.h"
 #endif /* KEY Mac port */

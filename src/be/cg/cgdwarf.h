@@ -38,7 +38,7 @@
 #define cgdwarf_INCLUDED
 
 #ifdef KEY
-#include "elf_stuff.h"
+#include "elf_defines.h"
 #include "em_elf.h"
 #endif
 

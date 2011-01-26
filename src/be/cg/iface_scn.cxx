@@ -53,7 +53,7 @@
 #include <stdio.h>
 #endif
 #include <string.h>
-#include "elf_stuff.h"
+#include "elf_defines.h"
 #include <elfaccess.h>
 #include "libelf/libelf.h"
 #include <stdlib.h>

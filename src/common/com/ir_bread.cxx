@@ -39,7 +39,7 @@
 #include <sys/stat.h>		    /* for fstat() */
 #include <sys/mman.h>		    /* for mmap() */
 #include <fcntl.h>		    /* for open() */
-#include "elf_stuff.h"		    /* for all Elf stuff */
+#include "elf_defines.h"
 #include <sys/elf_whirl.h>	    /* for WHIRL sections */
 #include <errno.h>		    /* for error code */
 

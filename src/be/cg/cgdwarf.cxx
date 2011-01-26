@@ -58,7 +58,7 @@
 
 #include <limits.h>
 #include <stdio.h>
-#include "elf_stuff.h"
+#include "elf_defines.h"
 #include <elfaccess.h>
 #ifdef KEY /* Bug 3507 */
 #include <ctype.h>

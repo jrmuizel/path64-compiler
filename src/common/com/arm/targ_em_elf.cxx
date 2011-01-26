@@ -40,7 +40,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <elf_stuff.h>
+#include "elf_defines.h"
 #include <elfaccess.h>
 #include <stamp.h>
 #include <cmplrs/leb128.h>

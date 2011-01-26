@@ -38,7 +38,7 @@ static const char rcs_id[] = "$Source: common/com/SCCS/s.em_dwarf.cxx $ $Revisio
 #include <stdio.h>
 #include <strings.h>
 #include "libelf/libelf.h"
-#include "elf_stuff.h"
+#include "elf_defines.h"
 #include <limits.h>
 #define	USE_STANDARD_TYPES 1
 #include "defs.h"

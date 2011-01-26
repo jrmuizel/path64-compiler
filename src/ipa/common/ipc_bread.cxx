@@ -37,7 +37,7 @@
 #include <errno.h>
 #include <sys/types.h>
 
-#include "elf_stuff.h" //SHT_WHIRL_SECTION
+#include "elf_defines.h"
 
 #include "defs.h"
 #include "wn.h"

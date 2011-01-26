@@ -50,7 +50,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <string.h>
-#include "elf_stuff.h"
+#include "elf_defines.h"
 #include <elfaccess.h>
 #include "libelf/libelf.h"
 #include <stamp.h>
