@@ -8536,7 +8536,7 @@ EMT_Get_Qualified_Name (ST *st)
 		    (ST_sclass(st) == SCLASS_PSTATIC &&
 		     !strchr (ST_name(st), '.')))
 #endif
-            name << Label_Name_Separator << ST_pu(Get_Current_PU_ST())
+            name << Label_Name_Separator << ST_pu(st)
                  << Label_Name_Separator << ST_index(st);
 	}
 	else if (*Symbol_Name_Suffix != '\0') {
