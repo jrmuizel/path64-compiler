@@ -686,9 +686,6 @@ extern int ar_selected_real_kind (ar_data *result, const AR_TYPE *resulttype,
 				  const ar_data *opnd2,
 				  const AR_TYPE *opnd2type);
 
-extern int ar_sqrt (ar_data *result, const AR_TYPE *resulttype,
-		    const ar_data *opnd, const AR_TYPE *opndtype);
-
 extern int ar_log (ar_data *result, const AR_TYPE *resulttype,
 		   const ar_data *opnd, const AR_TYPE *opndtype);
 

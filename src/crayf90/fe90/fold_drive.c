@@ -1819,8 +1819,8 @@ boolean folder_driver(char		*l_value_ptr,
          break;
 
 
-# if defined(_USE_FOLD_DOT_f)
       case Sqrt_Opr :
+# if defined(_USE_FOLD_DOT_f)
          SHIFT_ARITH_ARG(l_value.v, res_linear_type);
 
          FOLD_OP(
@@ -1834,13 +1834,19 @@ boolean folder_driver(char		*l_value_ptr,
                         &a3_value.v,
                         &a3_linear_type);
 
-         ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
          SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
+#else
+         mask = ar_sqrt((AR_DATA *)loc_result.v,
+			(const AR_TYPE *)&linear_to_arith[res_linear_type],
+			(const AR_DATA *)l_value.v,
+			(const AR_TYPE *)&linear_to_arith[res_linear_type]);
+
+         ARITH_ERROR_RESULT_TEST(mask, (*res_type_idx), ok, line, col);
+# endif
 
 	 unpack_result(res_linear_type, loc_result.v);
 	 memcpy(result, loc_result.v, result_len);
          break;
-# endif
 
 
       case Abs_Opr :

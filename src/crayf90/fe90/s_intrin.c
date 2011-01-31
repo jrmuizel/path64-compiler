@@ -933,18 +933,21 @@ void    sin_intrinsic(opnd_type     *result_opnd,
                       expr_arg_type *res_exp_desc,
                       int           *spec_idx)
 {
-
+   long_type      folded_const[MAX_WORDS_FOR_NUMERIC];
    int		info_idx1;
    int		list_idx1;
    int		ir_idx;
-
+   int  	type_idx;
+   int          sqrt_flag;
 
    TRACE (Func_Entry, "sin_intrinsic", NULL);
 
    ir_idx = OPND_IDX((*result_opnd));
    list_idx1 = IR_IDX_R(ir_idx);
    info_idx1 = IL_ARG_DESC_IDX(list_idx1);
-   ATD_TYPE_IDX(ATP_RSLT_IDX(*spec_idx)) = arg_info_list[info_idx1].ed.type_idx;
+
+   type_idx = arg_info_list[info_idx1].ed.type_idx;
+   ATD_TYPE_IDX(ATP_RSLT_IDX(*spec_idx)) = type_idx;
 
    conform_check(0, 
                  ir_idx,
@@ -954,6 +957,7 @@ void    sin_intrinsic(opnd_type     *result_opnd,
 
    IR_TYPE_IDX(ir_idx) = arg_info_list[info_idx1].ed.type_idx;
    IR_RANK(ir_idx) = res_exp_desc->rank;
+   sqrt_flag = 0;
 
    switch (ATP_INTRIN_ENUM(*spec_idx)) {
       case Sin_Intrinsic:
@@ -1117,9 +1121,14 @@ void    sin_intrinsic(opnd_type     *result_opnd,
 # ifdef KEY
       case Zsqrt_Intrinsic:
 # endif
-         if ((IL_FLD(list_idx1) == CN_Tbl_Idx) &&
-             (arg_info_list[info_idx1].ed.type == Real)) {
+	 sqrt_flag = 1;
 
+         if ((IL_FLD(list_idx1) != CN_Tbl_Idx) ||
+             (arg_info_list[info_idx1].ed.type != Real)) {
+
+	     IR_OPR(ir_idx) = Sqrt_Opr;
+	 }
+	 else {
             if (fold_relationals(IL_IDX(list_idx1),
                                  CN_INTEGER_ZERO_IDX,
                                  Lt_Opr)) {
@@ -1127,9 +1136,30 @@ void    sin_intrinsic(opnd_type     *result_opnd,
                PRINTMSG(arg_info_list[info_idx1].line, 1062, Error,
                         arg_info_list[info_idx1].col);
             }
+	    else if (folder_driver((char *)&CN_CONST(IL_IDX(list_idx1)),
+				   arg_info_list[info_idx1].ed.type_idx,
+				   NULL,
+				   NULL_IDX,
+				   folded_const,
+				   &type_idx,
+				   IR_LINE_NUM(ir_idx),
+				   IR_COL_NUM(ir_idx),
+				   1,
+				   Sqrt_Opr)) {
+
+		OPND_FLD((*result_opnd)) = CN_Tbl_Idx;
+		OPND_IDX((*result_opnd)) = ntr_const_tbl(type_idx,
+							 FALSE,
+							 folded_const);
+		OPND_LINE_NUM((*result_opnd)) = IR_LINE_NUM(ir_idx);
+		OPND_COL_NUM((*result_opnd)) = IR_COL_NUM(ir_idx);
+		res_exp_desc->constant = TRUE;
+		res_exp_desc->foldable = TRUE;
+	    }
+	    else
+		IR_OPR(ir_idx) = Sqrt_Opr;
          }
 
-         IR_OPR(ir_idx) = Sqrt_Opr;
          break;
 
       default:
@@ -1144,14 +1174,10 @@ void    sin_intrinsic(opnd_type     *result_opnd,
    /* must reset foldable and will_fold_later because there is no */
    /* folder for this intrinsic in constructors.                  */
 
-# if defined(_USE_FOLD_DOT_f)
-   if (IR_OPR(ir_idx) != Sqrt_Opr) {      
-# endif
+   if (!sqrt_flag) {
       res_exp_desc->foldable = FALSE;
       res_exp_desc->will_fold_later = FALSE;
-# if defined(_USE_FOLD_DOT_f)
    }
-# endif
 
    /* set this flag so this opr is pulled off io lists */
    io_item_must_flatten = TRUE;

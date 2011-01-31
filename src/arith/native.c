@@ -1159,17 +1159,19 @@ static AR_TYPE native_dbl_complex  = AR_Complex_IEEE_NR_64;
 
 /* Square root */
 int
-ar_sqrt (ar_data *result, const AR_TYPE *resulttype,
-	const ar_data *opnd, const AR_TYPE *opndtype)
+ar_sqrt (AR_DATA *result, const AR_TYPE *resulttype,
+	const AR_DATA *opnd, const AR_TYPE *opndtype)
 {
 	int status;
 	ar_data nat_opnd, nat_result;
+	AR_TYPE nat_type;
+	double arg;
 
 	/* Check whether operation exists in native library */
 
         if (*resulttype == native_double) {
                 *(double_t *) result = (sqrt) (*(double_t *) opnd);
-                return AR_status((AR_DATA*)result, resulttype);
+                return AR_status(result, resulttype);
         }
 
 #ifdef complex_t
@@ -1186,23 +1188,25 @@ ar_sqrt (ar_data *result, const AR_TYPE *resulttype,
 	if (AR_FLOAT_IS_COMPLEX (*resulttype) == AR_FLOAT_COMPLEX) {
 #ifdef complex_t
 		status = AR_convert ((AR_DATA*)&nat_opnd, &native_complex,
-				     (AR_DATA*)opnd, opndtype);
-		status |= ar_sqrt (&nat_result, &native_complex,
-				   &nat_opnd, &native_complex);
+				     opnd, opndtype);
+		status |= ar_sqrt ((AR_DATA*)&nat_result, &native_complex,
+				   (AR_DATA*)&nat_opnd, &native_complex);
 		status &= ~(AR_NEGATIVE | AR_ZERO);
-		status |= AR_convert ((AR_DATA*)result, resulttype,
+		status |= AR_convert (result, resulttype,
 				      (AR_DATA*)&nat_result, &native_complex);
 #else
 		status = AR_STAT_INVALID_TYPE;
 #endif
 	} else {
-		status = AR_convert ((AR_DATA*)&nat_opnd, &native_long_double,
-				     (AR_DATA*)opnd, opndtype);
-		status |= ar_sqrt (&nat_result, &native_long_double,
-				   &nat_opnd, &native_long_double);
-		status &= ~(AR_NEGATIVE | AR_ZERO);
-		status |= AR_convert ((AR_DATA*)result, resulttype,
-				      (AR_DATA*)&nat_result, &native_long_double);
+	        nat_type = AR_Float_64;
+		status = AR_convert ((AR_DATA*)&nat_opnd, &nat_type,
+				     opnd, opndtype);
+		ar_to_host_r64(&nat_opnd, &arg);
+		arg = sqrt(arg);
+		ar_from_host_r64(&arg, &nat_result);
+
+		status |= AR_convert (result, resulttype,
+				      (AR_DATA*)&nat_result, &nat_type);
 	}
 
 	return status;
@@ -1297,13 +1301,13 @@ ar_exp (ar_data *result, const AR_TYPE *resulttype,
 		status = AR_STAT_INVALID_TYPE;
 #endif
 	} else {
-		status = AR_convert ((AR_DATA*)&nat_opnd, &native_long_double,
+		status = AR_convert ((AR_DATA*)&nat_opnd, &native_double,
 				     (AR_DATA*)opnd, opndtype);
-		status |= ar_exp (&nat_result, &native_long_double,
-				   &nat_opnd, &native_long_double);
+		status |= ar_exp (&nat_result, &native_double,
+				   &nat_opnd, &native_double);
 		status &= ~(AR_NEGATIVE | AR_ZERO);
 		status |= AR_convert ((AR_DATA*)result, resulttype,
-				      (AR_DATA*)&nat_result, &native_long_double);
+				      (AR_DATA*)&nat_result, &native_double);
 	}
 
 	return status;

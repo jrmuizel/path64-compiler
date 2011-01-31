@@ -886,11 +886,9 @@ boolean call_list_semantics(opnd_type     *result_opnd,
                            Ansi,
                            arg_info_list[i].col);
                }
-# if defined(_USE_FOLD_DOT_f)
                else if (strcmp(AT_OBJ_NAME_PTR(gen_idx), "SQRT") == 0) {
                   /* intentionally blank - will fold certain other intrinsics */
                }
-# endif
                else {
                   PRINTMSG(arg_info_list[i].line,
                            1456,

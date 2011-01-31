@@ -760,6 +760,9 @@ int AR_selected_real_kind(AR_DATA *result,
 				const AR_DATA *opnd2,
 				const AR_TYPE *opnd2type);
 
+int ar_sqrt (AR_DATA *result, const AR_TYPE *resulttype,
+	     const AR_DATA *opnd, const AR_TYPE *opndtype);
+
 int AR_transfer(void *result,
 				const void *source,
 				const void *mold,
