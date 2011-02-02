@@ -1169,11 +1169,6 @@ ar_sqrt (AR_DATA *result, const AR_TYPE *resulttype,
 
 	/* Check whether operation exists in native library */
 
-        if (*resulttype == native_double) {
-                *(double_t *) result = (sqrt) (*(double_t *) opnd);
-                return AR_status(result, resulttype);
-        }
-
 #ifdef complex_t
         if (*resulttype == native_complex) {
                 *(complex_t *) result = (csqrt) (*(complex_t *) opnd);
