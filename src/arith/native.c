@@ -1166,12 +1166,15 @@ ar_sqrt (AR_DATA *result, const AR_TYPE *resulttype,
 	ar_data nat_opnd, nat_result;
 	AR_TYPE nat_type;
 	double arg;
+	double complex carg;
 
 	/* Check whether operation exists in native library */
 
 #ifdef complex_t
-        if (*resulttype == native_complex) {
-                *(complex_t *) result = (csqrt) (*(complex_t *) opnd);
+        if (*resulttype == native_complex && *opndtype == native_complex) {
+		ar_to_host_c64(opnd, &carg);
+                carg = csqrt(carg);
+		ar_from_host_c64(&carg, result);
                 return AR_status((AR_DATA*)result, resulttype);
         }
 #endif
