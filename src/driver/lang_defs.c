@@ -100,7 +100,6 @@ static phase_info_t phase_info[] = {
    {'p',  0x0000000000000020LL,	"gcc", "", FALSE}, /* gcpp */
    {'p',  0x0000000000000040LL,	"g++", "", FALSE}, /* gcpp_plus */
 #endif // PATH64_ENABLE_PSCRUNTIME
-   {'p',  0x0000000000000080LL,	"fec",	 PHASEPATH,	FALSE},	/* c_cpp */
    {'p',  0x0000000000000100LL, "cpp",   PHASEPATH,     FALSE}, /* cplus_cpp */
    {'p',  0x0000000000000200LL,	"mfef77",PHASEPATH,	FALSE},	/* f_cpp */
    {'p',  0x0000000000000400LL,	"ftpp"   ,PHASEPATH,	FALSE},	/* f90_cpp */
