@@ -941,10 +941,8 @@ add_file_args (string_list_t *args, phases_t index)
 	case P_cplus_cpp:
 	case P_f_cpp:
 	case P_f90_cpp:
-		if (option_was_seen(O_usegfe)) {
-			add_string(args, "-E");
-		}
- 	        if (index == P_f90_cpp) {
+		add_string(args, "-E");
+		if (index == P_f90_cpp) {
 		   if (expand_ftpp_macros) {
 		      add_string(args, "-F");
 		   }
@@ -2451,11 +2449,7 @@ determine_phase_order (void)
  
 	/* determine which cpp to use */
 	if (source_lang == L_CC) {
-		if (option_was_seen(O_usegfe)) {
-			cpp_phase = P_gcpp_plus;
-		} else {
-			cpp_phase = P_cplus_cpp;
-		}
+		cpp_phase = P_gcpp_plus;
 	} else if (source_lang == L_cc) {
 		// bug 5495
 		if (option_was_seen(O_mp)) {
@@ -2463,11 +2457,7 @@ determine_phase_order (void)
                         cpp_phase = P_cpp;
 		}
 		else
-		if (option_was_seen(O_usegfe)) {
-			cpp_phase = P_gcpp;
-		} else {
-			cpp_phase = P_c_cpp;
-		}
+		cpp_phase = P_gcpp;
 	} else if (source_lang == L_f77) {
 		if (option_was_seen(O_mp)) {
 			/* power Ftn */
@@ -2487,10 +2477,7 @@ determine_phase_order (void)
 		|| (!option_was_seen(O_nocpp) &&
 		    (source_kind == S_F || source_kind == S_F90)))
 	   {
-	      if (option_was_seen(O_usegfe))
-	      	cpp_phase = P_gcpp; 
-	      else
-	      	cpp_phase = P_cpp; 
+	      cpp_phase = P_gcpp; 
 	   } else {
 	      cpp_phase = P_NONE;
 	   }
@@ -2498,10 +2485,8 @@ determine_phase_order (void)
 		&& (abi == ABI_I32 || abi == ABI_I64 || abi == ABI_IA32))
 	{
 		cpp_phase = P_gcpp;	/* use ansi-style cpp */
-	} else if (option_was_seen(O_usegfe)) {
-			cpp_phase = P_gcpp;
 	} else {
-			cpp_phase = P_cpp;
+			cpp_phase = P_gcpp;
 	}
 
 	if (last_phase == P_any_cpp

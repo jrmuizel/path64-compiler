@@ -736,8 +736,6 @@ I-object		;	ALL	ld	""
 % -noas says to skip the assembler phase
 -noas	toggle(&skip_as,TRUE);		ALL	NONE	""
 	""
--usegfe		;		Cc	NONE	"-INTERNAL:return_val=on -INTERNAL:mldid_mstid=on -INTERNAL:return_info=on"
-	""
 -usef90		;		F90	NONE	"-INTERNAL:return_val=on -INTERNAL:mldid_mstid=on -INTERNAL:return_info=on"
 	""
 

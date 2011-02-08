@@ -107,7 +107,6 @@ set_defaults (void)
 #endif
 	}
 
-	prepend_option_seen(O_usegfe);
 	prepend_option_seen(O_usef90);
 
 	if (ansi == UNDEFINED) {
