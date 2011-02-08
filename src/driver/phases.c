@@ -545,7 +545,6 @@ fix_name_by_phase (char *name, phases_t phase)
 	if (name != NULL && strcmp(name, "-") == 0) {
 		switch (phase) {
 		case P_cpp:
-		case P_cplus_cpp:
 		case P_f_cpp:
 		case P_f90_cpp:
 		case P_ratfor:
@@ -936,7 +935,6 @@ add_file_args (string_list_t *args, phases_t index)
 			add_string(args, "-dollar");
 		}
 		/* fallthru */
-	case P_cplus_cpp:
 	case P_f_cpp:
 	case P_f90_cpp:
 		add_string(args, "-E");

@@ -94,7 +94,6 @@ typedef enum {
 	P_cpp,		/* old-style cpp */
 	P_gcpp,		/* gcc cpp */
 	P_gcpp_plus,	/* g++ cpp */
-	P_cplus_cpp,	/* cpp for C++ */
 	P_f_cpp,	/* cpp for F77 */
 	P_f90_cpp,	/* cpp for F90 */
 #ifdef KEY
