@@ -1159,6 +1159,7 @@ void parse_prog_unit (void)
    int		prev_stmt_start_line;
    int		save_blk_stk_idx;
    int		sh_idx;
+   int		old_end_idx;
 
 # if (defined(_TARGET_OS_IRIX) || defined(_TARGET_OS_LINUX) || defined(_TARGET_OS_DARWIN))
    int		ir_idx;
@@ -1194,19 +1195,15 @@ void parse_prog_unit (void)
 
       stmt_type	= Null_Stmt;
 
-      if (need_new_sh) {
-         sh_idx				= curr_stmt_sh_idx;
-         curr_stmt_sh_idx		= ntr_sh_tbl();
-         SH_NEXT_IDX(sh_idx)		= curr_stmt_sh_idx;
-         SH_PREV_IDX(curr_stmt_sh_idx)	= sh_idx;
-      }
-      else {
-         /* clear out the old one. */
-         /* except for prev idx    */
-         sh_idx = SH_PREV_IDX(curr_stmt_sh_idx);
-         CLEAR_TBL_NTRY(sh_tbl, curr_stmt_sh_idx);
-         SH_PREV_IDX(curr_stmt_sh_idx) = sh_idx;
-      }
+      sh_idx				= curr_stmt_sh_idx;
+      curr_stmt_sh_idx			= ntr_sh_tbl();
+      SH_PREV_IDX(curr_stmt_sh_idx)	= sh_idx;
+
+      if (sh_idx != NULL_IDX)
+	  SH_NEXT_IDX(sh_idx) = curr_stmt_sh_idx;
+
+      old_end_idx = curr_stmt_sh_idx;
+      need_new_sh = TRUE;
 
       ck_lbl_construct_name();
 
@@ -1575,6 +1572,30 @@ void parse_prog_unit (void)
       }
 # endif
 
+      /* See if we need to reclaim the old_end_idx sh entry.  It's
+       * possible for sh_tbl[old_end_idx] to be flagged as unused via
+       * need_new_sh, yet it can have additional IR is tacked onto the
+       * end of the list.  The current known case involves an assumed
+       * length character array parameter that has a RESHAPE() in it's
+       * initializer. */
+
+      if (!need_new_sh) {
+	  SH_NEXT_IDX(SH_PREV_IDX(old_end_idx)) = SH_NEXT_IDX(old_end_idx);
+	  if (SH_NEXT_IDX(old_end_idx) != NULL_IDX) {
+	      SH_PREV_IDX(SH_NEXT_IDX(old_end_idx)) = SH_PREV_IDX(old_end_idx);
+	  }
+	  else {
+	      curr_stmt_sh_idx = SH_PREV_IDX(old_end_idx);
+	  }
+
+	  /* Put old_end_idx on the free list.  curr_stmt_sh_idx may
+	   * be invalid. */
+
+	  CLEAR_TBL_NTRY(sh_tbl, old_end_idx);
+	  SH_NEXT_IDX(old_end_idx) = SH_NEXT_IDX(NULL_IDX);
+	  SH_NEXT_IDX(NULL_IDX) = old_end_idx;
+      }
+
       if (LA_CH_CLASS == Ch_Class_EOF) {		/* EOF following EOS  */
 	 EOPU_encountered = TRUE;
       }
@@ -1590,19 +1611,10 @@ void parse_prog_unit (void)
 
       stmt_type	= End_Stmt;
 
-      if (need_new_sh) {
-         sh_idx				= curr_stmt_sh_idx;
-         curr_stmt_sh_idx		= ntr_sh_tbl();
-         SH_NEXT_IDX(sh_idx)		= curr_stmt_sh_idx;
-         SH_PREV_IDX(curr_stmt_sh_idx)	= sh_idx;
-      }
-      else {
-         /* clear out the old one. */
-         /* except for prev idx    */
-         sh_idx = SH_PREV_IDX(curr_stmt_sh_idx);
-         CLEAR_TBL_NTRY(sh_tbl, curr_stmt_sh_idx);
-         SH_PREV_IDX(curr_stmt_sh_idx) = sh_idx;
-      }
+      sh_idx				= curr_stmt_sh_idx;
+      curr_stmt_sh_idx			= ntr_sh_tbl();
+      SH_NEXT_IDX(sh_idx)		= curr_stmt_sh_idx;
+      SH_PREV_IDX(curr_stmt_sh_idx)	= sh_idx;
 
       expression_eval_end();
    }
@@ -1628,18 +1640,10 @@ void parse_prog_unit (void)
 
       clearing_blk_stk = TRUE;
 
-      if (need_new_sh) {
-         sh_idx				= curr_stmt_sh_idx;
-         curr_stmt_sh_idx		= ntr_sh_tbl();
-         SH_NEXT_IDX(sh_idx)		= curr_stmt_sh_idx;
-         SH_PREV_IDX(curr_stmt_sh_idx)	= sh_idx;
-      }
-      else { /* clear out the old one  - except for prev idx  */
-         sh_idx = SH_PREV_IDX(curr_stmt_sh_idx);
-         CLEAR_TBL_NTRY(sh_tbl, curr_stmt_sh_idx);
-         SH_PREV_IDX(curr_stmt_sh_idx)	= sh_idx;
-         need_new_sh			= TRUE;
-      }
+      sh_idx				= curr_stmt_sh_idx;
+      curr_stmt_sh_idx			= ntr_sh_tbl();
+      SH_NEXT_IDX(sh_idx)		= curr_stmt_sh_idx;
+      SH_PREV_IDX(curr_stmt_sh_idx)	= sh_idx;
 
       SH_ERR_FLG(curr_stmt_sh_idx)	= TRUE;
 
@@ -1934,7 +1938,10 @@ void init_parse_prog_unit()
    SH_STMT_TYPE(curr_stmt_sh_idx)	= Null_Stmt;
    SCP_FIRST_SH_IDX(curr_scp_idx)	= curr_stmt_sh_idx;
    CURR_BLK_FIRST_SH_IDX		= curr_stmt_sh_idx;
-   need_new_sh				= FALSE;
+
+   SH_NEXT_IDX(curr_stmt_sh_idx) = SH_NEXT_IDX(NULL_IDX);
+   SH_NEXT_IDX(NULL_IDX)         = curr_stmt_sh_idx;
+   curr_stmt_sh_idx              = NULL_IDX;
 
    /* initialize the cdir stuff */
 

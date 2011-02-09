@@ -4958,11 +4958,11 @@ static boolean array_construct_semantics(opnd_type      *top_opnd,
          }
          else if (exp_desc->type == Character) {
 
-            if (loc_exp_desc.char_len.fld == CN_Tbl_Idx) {
+	    if (loc_exp_desc.char_len.fld == CN_Tbl_Idx) {
 
-               if (exp_desc->char_len.fld == CN_Tbl_Idx) {
+	       if (exp_desc->char_len.fld == CN_Tbl_Idx) {
 
-               if (
+	           if (
 #ifdef KEY /* Bug 8004 */
 		/*
 		 * F95 requires that all char lengths inside an array ctor
@@ -4976,40 +4976,43 @@ static boolean array_construct_semantics(opnd_type      *top_opnd,
 		 * no explicit type-spec. When we add parsing for the
 		 * explicit type-spec, that will impact the following code.
 		 */
-                on_off_flags.issue_ansi_messages &&
+		       on_off_flags.issue_ansi_messages &&
 #endif /* KEY Bug 8004 */
-                  fold_relationals(loc_exp_desc.char_len.idx,
-                                       exp_desc->char_len.idx,
-                                       Ne_Opr)) {
-                     find_opnd_line_and_column((opnd_type *) &IL_OPND(list_idx),
-                                               &line, &column);
+		       fold_relationals(loc_exp_desc.char_len.idx,
+					exp_desc->char_len.idx,
+					Ne_Opr)) {
+		       find_opnd_line_and_column((opnd_type *) &IL_OPND(list_idx),
+						 &line, &column);
 #ifdef KEY /* Bug 8004 */
-                     PRINTMSG(line, 838, Ansi, column);
+		       PRINTMSG(line, 838, Ansi, column);
 #else /* KEY Bug 8004 */
-                     PRINTMSG(line, 838, Error, column);
-                     ok = FALSE;
+		       PRINTMSG(line, 838, Error, column);
+		       ok = FALSE;
 #endif /* KEY Bug 8004 */
-                  }
-/* KEY Bug 8004 # if 0 */
-                  /* if we ever extend the above constraint, */
-                  /* then include this code.                 */
+		   }
 
-                  if (fold_relationals(loc_exp_desc.char_len.idx,
-                                       exp_desc->char_len.idx,
-                                       Gt_Opr)) {
+		   if (fold_relationals(loc_exp_desc.char_len.idx,
+					exp_desc->char_len.idx,
+					Ne_Opr)) {
 
-                     COPY_OPND((exp_desc->char_len), (loc_exp_desc.char_len));
+		       needs_char_padding = TRUE;
+		   }
+
+		   if (fold_relationals(loc_exp_desc.char_len.idx,
+					exp_desc->char_len.idx,
+					Gt_Opr)) {
+
+		       COPY_OPND(loc_exp_desc.char_len, exp_desc->char_len);
 #ifdef KEY /* Bug 8004 */
-                     exp_desc->type_idx = loc_exp_desc.type_idx;
-		     needs_char_padding =
-		       (loc_exp_desc.char_len.fld == CN_Tbl_Idx);
+		       exp_desc->type_idx = loc_exp_desc.type_idx;
 #endif /* KEY Bug 8004 */
-                  }
+		   }
+
 /* KEY Bug 8004 # endif */
                }
                else {
-                  /* replace the char_len with the simpler length */
-                  COPY_OPND((exp_desc->char_len), (loc_exp_desc.char_len));
+		   /* replace the char_len with the simpler length */
+		   COPY_OPND((exp_desc->char_len), (loc_exp_desc.char_len));
                }
             }
          }
