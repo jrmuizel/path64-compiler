@@ -12890,8 +12890,8 @@ static	void	ntr_ref_in_global_tbl(int	 list_idx,
       CLEAR_TBL_NTRY(global_attr_tbl, global_attr_tbl_idx);
 
       arg_idx			= global_attr_tbl_idx;
-      GA_DEF_LINE(arg_idx)	= AT_DEF_LINE(spec_idx);
-      GA_DEF_COLUMN(arg_idx)	= AT_DEF_COLUMN(spec_idx);
+      GA_DEF_LINE(arg_idx)	= arg_info_list[info_idx].line;
+      GA_DEF_COLUMN(arg_idx)	= arg_info_list[info_idx].col;
 
       if (info_idx != NULL_IDX && arg_info_list[info_idx].kwd != NULL_IDX) {
 
