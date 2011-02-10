@@ -883,6 +883,15 @@ I-xall	;		FTN	ffe	self
 -fpathas	;	ALL	NONE	""
 	"Use Pathscale assembler"
 #endif
+#ifdef PATH64_ENABLE_PSCLANG
+#ifdef PATH64_ENABLE_DEFAULT_PSCLANG
+-fno-psclang	;	ALL	NONE	""
+	"Don't use psclang front-end"
+#else
+-fpsclang	;	ALL	NONE	""
+	"Use psclang front-end"
+#endif
+#endif
 -varargs	;		f77	ffe	self
 	"MATRA varargs"
 %-nocode last_phase=earliest_phase(P_any_fe,last_phase);  FTN ffe   self

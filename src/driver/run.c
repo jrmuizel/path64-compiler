@@ -642,6 +642,10 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 				    phase == P_f_coco ||	// bug 9058
 				    phase == P_spin_cc1 ||
 				    phase == P_spin_cc1plus ||
+#ifdef PATH64_ENABLE_PSCLANG
+				    phase == P_psclang_cpp ||
+				    phase == P_psclang ||
+#endif // PATH64_ENABLE_PSCLANG
 				    status == RC_GCC_INTERNAL_ERROR ||  //bug 9637
 #endif
 				    phase == P_gcpp || phase == P_gcpp_plus) {
