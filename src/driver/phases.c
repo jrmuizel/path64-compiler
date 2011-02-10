@@ -920,6 +920,7 @@ add_sse_cc1_options(string_list_t *args)
 }
 
 
+#ifdef PATH64_ENABLE_PSCRUNTIME
 // Adds standard include directories for preprocessor
 void add_std_includes(string_list_t *args) {
     char *root;
@@ -961,6 +962,7 @@ void add_std_includes(string_list_t *args) {
 
     add_inc_path(args, "%s/lib/" PSC_FULL_VERSION "/include", root);
 }
+#endif // PATH64_ENABLE_PSCRUNTIME
 
 
 // Adds language args for psclang
