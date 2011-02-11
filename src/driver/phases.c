@@ -1211,7 +1211,17 @@ add_file_args (string_list_t *args, phases_t index)
             add_string(args, "-D_GNU_SOURCE");
         }
 
+#ifdef PATH64_ENABLE_PSCRUNTIME
         add_std_includes(args);
+#else // !PATH64_ENABLE_PSCRUNTIME
+        {
+            char *exe_dir = get_executable_dir();
+            char *root = directory_path(exe_dir);
+            free(exe_dir);
+            add_inc_path(args, "%s/lib/" PSC_FULL_VERSION "/include", root);
+            free(root);
+        }
+#endif // !PATH64_ENABLE_PSCRUNTIME
 
         // input source
         add_string(args, input_source);
