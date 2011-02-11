@@ -924,12 +924,14 @@ add_sse_cc1_options(string_list_t *args)
 // Adds standard include directories for preprocessor
 void add_std_includes(string_list_t *args) {
     char *root;
+    char *exe_dir;
 
     if(option_was_seen(O_nostdinc))
         return;
 
-
-    root = directory_path(get_executable_dir());
+    exe_dir = get_executable_dir();
+    root = directory_path(exe_dir);
+    free(exe_dir);
 
     if (!option_was_seen(O_nostdinc__)) {
         add_inc_path(args, "%s/include/" PSC_FULL_VERSION, root);
@@ -961,6 +963,7 @@ void add_std_includes(string_list_t *args) {
     }
 
     add_inc_path(args, "%s/lib/" PSC_FULL_VERSION "/include", root);
+    free(root);
 }
 #endif // PATH64_ENABLE_PSCRUNTIME
 
