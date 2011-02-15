@@ -150,9 +150,10 @@ SET(PATHSCALE_BE_BE_COMMON_SRCS "../../common/targ_info/access/ti_init.c"
                          "../../common/com/@ARCH@/targ_const.cxx"
                          "../../common/com/@ARCH@/targ_sim.cxx"
                          "../../common/instrument/instr_reader.cxx"
-                         "../../ipa/main/optimize/ipo_tlog_utils.cxx")
+                         "../../ipa/main/optimize/ipo_tlog_utils.cxx"
+                         "../com/wn_unroll.cxx")
 
-SET(PATHSCALE_BE_BE_X8664_SRCS  "../com/wn_unroll.cxx")
+SET(PATHSCALE_BE_BE_X8664_SRCS)
 
 SET(PATHSCALE_BE_BE_ARM_SRCS
                            "../com/wn_lower_mul.cxx"
@@ -177,12 +178,10 @@ SET(PATHSCALE_BE_BE_ARM_SRCS
                          "../../common/com/dyn_dll_api_access.cxx" #st
                            )
 
-path64_is_arch_enabled(arm_enabled arm)
-if(${arm_enabled})
-SET( PATHSCALE_BE_BE_SRCS ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_ARM_SRCS})
-else()
-SET( PATHSCALE_BE_BE_SRCS ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_X8664_SRCS})
-endif()
+SET(PATHSCALE_BE_BE_MIPS_SRCS
+                         "../com/mips/quad_sim.cxx"
+                           )
+
 ADD_DEFINITIONS(
 # Apparently someone likes legos
 	-D_LEGO_CLONER)
@@ -205,7 +204,10 @@ SET_SOURCE_FILES_PROPERTIES(extension_include.h PROPERTIES GENERATED 1)
 ADD_CUSTOM_TARGET(generate_extension DEPENDS extension_include.h)
 
 #add_library(be-static STATIC ${PATHSCALE_BE_BE_SRCS})
-path64_set_multiarch_sources(be_sources COMMON ${PATHSCALE_BE_BE_SRCS})
+path64_set_multiarch_sources(be_sources COMMON ${PATHSCALE_BE_BE_COMMON_SRCS})
+path64_set_multiarch_sources(be_sources arm ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_ARM_SRCS})
+path64_set_multiarch_sources(be_sources x8664 ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_X8664_SRCS})
+path64_set_multiarch_sources(be_sources mips ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_MIPS_SRCS})
 path64_add_multiarch_library(be-static STATIC be_sources)
 path64_set_multiarch_property(be-static OUTPUT_NAME be)
 path64_multiarch_link_multiarch_libraries(be-static targinfo)

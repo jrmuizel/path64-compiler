@@ -4710,16 +4710,8 @@ extern WN *intrinsic_runtime(WN *block, WN *tree)
 	st = Gen_Intrinsic_Function(ty, "sc_memset");  break;
       case INTRN_MEMCPY:
 	st = Gen_Intrinsic_Function(ty, "sc_memcpy");  break;
-      case INTRN_MEMMOVE:
-	st = Gen_Intrinsic_Function(ty, "sc_memmove");  break;
-      case INTRN_STRCAT:
-	st = Gen_Intrinsic_Function(ty, "sc_strcat");  break;
-      case INTRN_STRCHR:
-	st = Gen_Intrinsic_Function(ty, "sc_strchr");  break;
       case INTRN_STRCPY:
 	st = Gen_Intrinsic_Function(ty, "sc_strcpy");  break;
-      case INTRN_STRLEN:
-	st = Gen_Intrinsic_Function(ty, "sc_strlen");  break;
       case INTRN_BZERO:
 	st = Gen_Intrinsic_Function(ty, "sc_bzero");  break;
       case INTRN_BCOPY:
@@ -5551,6 +5543,8 @@ static WN *em_eh_return_data_regno(WN *block, WN *tree) {
     regno = 0;
   else if(index == 1)
     regno = Is_Target_64bit() ? 1 : 2;
+#elif defined(TARG_MIPS)
+  regno = 0; // FIXME
 #else
 #error "Define em_eh_return_data_regno intrinsic for your platform"
 #endif

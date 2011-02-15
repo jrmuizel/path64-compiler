@@ -27,9 +27,9 @@ set(_PATH64_TARGET_BITS_mips_32 32)
 set(_PATH64_TARGET_ABI_mips_32 ABI_N32)
 
 set(_PATH64_TARGET_ARCH_mips_64 mips)
-set(_PATH64_TARGET_FLAG_mips_64 -n64)
+set(_PATH64_TARGET_FLAG_mips_64 -64)
 set(_PATH64_TARGET_BITS_mips_64 64)
-set(_PATH64_TARGET_ABI_mips_64 ABI_N64)
+set(_PATH64_TARGET_ABI_mips_64 ABI_64)
 
 set(_PATH64_TARGET_ARCH_rsk6_32 rsk6)
 set(_PATH64_TARGET_FLAG_rsk6_32 -q32)
@@ -183,7 +183,11 @@ endfunction()
 # Returns target for host system
 function(path64_get_host_target res_var)
     # TODO: find way how to get target for host system
-    set(${res_var} "x86_64" PARENT_SCOPE)
+    if(NOT "${PATH64_HOST_TARGET}" STREQUAL "")
+        set(${res_var} "${PATH64_HOST_TARGET}" PARENT_SCOPE)
+    else()
+        set(${res_var} "x86_64" PARENT_SCOPE)
+    endif()
 endfunction()
 
 

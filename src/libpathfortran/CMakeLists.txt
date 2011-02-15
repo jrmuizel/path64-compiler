@@ -942,6 +942,10 @@ ADD_DEFINITIONS(
 # -Wf,-eQ
 #	-Wf,-intrinsic_module_gen
 #	-Wf,-intrinsic_module_path=.
+
+	# __mips definition is used for SGI OS and should not
+	# be defined for other OS
+	-U__mips
 )
 
 IF(PATH64_ENABLE_FORTRAN)
@@ -970,6 +974,7 @@ path64_set_multitarget_sources(pathfortran-static COMMON
                                ${PATHSCALE_PATHFORTRAN_F_SRCS}
                                ${Path64_BINARY_DIR}/src/include/ieee_cpp_macros.h)
 path64_set_multitarget_property_(pathfortran-static OUTPUT_NAME "pathfortran")
+path64_set_multitarget_property_(pathfortran-static COMPILE_FLAGS -U__mips)
 path64_add_multitarget_library(pathfortran-static STATIC)
 path64_add_multitarget_multitarget_dependencies(pathfortran-static mv-static pscrt-static)
 path64_add_dependencies_from_multitarget(compiler-stage-libs-Fortran pathfortran-static)
@@ -978,7 +983,7 @@ path64_set_multitarget_sources(pathfortran COMMON
                                ${PATHSCALE_PATHFORTRAN_C_SRCS}
                                ${PATHSCALE_PATHFORTRAN_F_SRCS}
                                ${Path64_BINARY_DIR}/src/include/ieee_cpp_macros.h)
-path64_set_multitarget_property_(pathfortran COMPILE_FLAGS -fPIC -DPIC)
+path64_set_multitarget_property_(pathfortran COMPILE_FLAGS -fPIC -DPIC -U__mips)
 path64_set_multitarget_property_(pathfortran LINKER_LANGUAGE C)
 path64_set_multitarget_property_(pathfortran PROPERTY SOVERSION 1)
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
@@ -999,7 +1004,7 @@ IF(PATH64_ENABLE_PROFILING)
                                    ${PATHSCALE_PATHFORTRAN_C_SRCS}
                                    ${PATHSCALE_PATHFORTRAN_F_SRCS}
                                    ${Path64_BINARY_DIR}/src/include/ieee_cpp_macros.h)
-    path64_set_multitarget_property_(pathfortran_p COMPILE_FLAGS -pg)
+    path64_set_multitarget_property_(pathfortran_p COMPILE_FLAGS -pg -U__mips)
     path64_add_multitarget_library(pathfortran_p STATIC)
 ENDIF(PATH64_ENABLE_PROFILING)
 

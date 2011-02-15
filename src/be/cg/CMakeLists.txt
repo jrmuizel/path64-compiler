@@ -125,7 +125,8 @@ SET(PATHSCALE_CG_COMMON_SRCS
 			"../../be/cg/gra_mon/gra_region.cxx"
 			"../../be/cg/gra_mon/gra_spill.cxx"
 			"../../be/cg/gra_mon/gra_split.cxx"
-			"../../be/cg/gra_mon/gra_trace.cxx")
+			"../../be/cg/gra_mon/gra_trace.cxx"
+            "${PATHSCALE_BINARY_DIR}/be/opsch_set.h")
 
 SET( PATHSCALE_CG_ARM_SRCS "../../be/cg/swp/cg_swp.cxx" #st
                         "../../be/cg/@ARCH@/targ_op.cxx" #st
@@ -161,20 +162,17 @@ SET( PATHSCALE_CG_ARM_SRCS "../../be/cg/swp/cg_swp.cxx" #st
                         "../../be/cg/swp/cg_swp_sched.cxx"#st
                         "../../dfgforise/ExportFromBackEnd.cxx")
 
-SET( PATHSCALE_CG_X8664_SRCS 		
-                         "../../be/cg/@ARCH@/ebo_special.cxx"
-                                    	"../../be/cg/@ARCH@/exp_predicate.cxx"
-		"../../be/cg/@ARCH@/cg_sched.cxx"
-		"../../be/cg/@ARCH@/cg_convert_x87.cxx"
-			"../../be/cg/@ARCH@/cg_misc.cxx")
-path64_is_arch_enabled(arm_enabled arm)
-IF(${arm_enabled})
-SET( PATHSCALE_CG_SRCS ${PATHSCALE_CG_COMMON_SRCS} ${PATHSCALE_CG_ARM_SRCS})
-ELSE()
-SET( PATHSCALE_CG_SRCS ${PATHSCALE_CG_COMMON_SRCS} ${PATHSCALE_CG_X8664_SRCS})
-ENDIF()
+SET(PATHSCALE_CG_X8664_SRCS 		
+                        "../../be/cg/@ARCH@/ebo_special.cxx"
+                        "../../be/cg/@ARCH@/exp_predicate.cxx"
+                        "../../be/cg/@ARCH@/cg_sched.cxx"
+                        "../../be/cg/@ARCH@/cg_convert_x87.cxx"
+                        "../../be/cg/@ARCH@/cg_misc.cxx")
 
 
+SET(PATHSCALE_CG_MIPS_SRCS 		
+                        "../../be/cg/@ARCH@/ebo_special.cxx"
+                        "../../be/cg/@ARCH@/exp_predicate.cxx")
 
 
 add_custom_command(
@@ -262,7 +260,15 @@ add_custom_command(
 	WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
 )
 
-path64_set_multiarch_sources(cg_sources COMMON ${PATHSCALE_CG_SRCS} ${PATHSCALE_BINARY_DIR}/be/opsch_set.h)
+path64_set_multiarch_sources(cg_sources x8664
+                             ${PATHSCALE_CG_COMMON_SRCS}
+                             ${PATHSCALE_CG_X8664_SRCS})
+path64_set_multiarch_sources(cg_sources arm
+                             ${PATHSCALE_CG_COMMON_SRCS}
+                             ${PATHSCALE_CG_ARM_SRCS})
+path64_set_multiarch_sources(cg_sources mips
+                             ${PATHSCALE_CG_COMMON_SRCS}
+                             ${PATHSCALE_CG_MIPS_SRCS})
 path64_add_multiarch_library(cg STATIC cg_sources)
 path64_add_multiarch_multiarch_dependencies(cg targinfo)
 

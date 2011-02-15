@@ -640,7 +640,7 @@ static OPTION_DESC Options_CG[] = {
     0, 0, 0,	&CG_skip_local_swp, NULL },
   { OVK_BOOL,	OV_INTERNAL, TRUE, "skip_local_ebo", "",
     0, 0, 0,	&CG_skip_local_ebo, NULL },
-#ifndef TARG_ST
+#ifdef TARG_X8664
   { OVK_BOOL,	OV_VISIBLE, TRUE, "cmp_peep", "",
     0, 0, 0,	&CG_cmp_load_exec, NULL },
 #endif

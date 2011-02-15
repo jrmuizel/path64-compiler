@@ -7309,7 +7309,7 @@ Find_BB_TNs (BB *bb)
 	Update_op_must_not_be_moved( op, opnd_tninfo );
       }
 #endif
-#if defined(TARG_X8664) || defined(TARG_MIPS)
+#if defined(TARG_X8664)
       if( !op_replaced && !in_delay_slot ) {
 	op_replaced = EBO_Merge_Memory_Addr( op, opnd_tn, opnd_tninfo, orig_tninfo );
       }

@@ -92,7 +92,6 @@ int ffast_math_prescan;  // Bug 14302: ffast_math set in option prescan
 int instrumentation_invoked = UNDEFINED;
 int profile_type = 0;
 boolean ftz_crt = FALSE;
-int isa = UNDEFINED; /* defined from options table */
 int proc = UNDEFINED;
 #if defined (TARG_X8664) || defined (TARG_IA32)
 static int target_supported_abi = UNDEFINED;

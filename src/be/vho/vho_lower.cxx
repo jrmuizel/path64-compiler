@@ -4916,16 +4916,16 @@ vho_lower_expr ( WN * wn, WN * block, BOOL_INFO * bool_info )
         }
 #else
 #ifdef KEY
-      BOOL emulate_rrotate = ! VHO_Generate_Rrotate;
 #ifdef TARG_X8664
+      BOOL emulate_rrotate = ! VHO_Generate_Rrotate;
       // By default, generate rotate instruction only if it is C++ (bug 7932)
       // Can be controlled by internal flag -VHO:rotate
       if (!VHO_Generate_Rrotate_Set && PU_cxx_lang (Get_Current_PU()))
 	emulate_rrotate = FALSE;
       if (!Is_Target_64bit() && MTYPE_byte_size(WN_desc(wn)) > 4)
 	emulate_rrotate = TRUE;
-#endif
       if (emulate_rrotate)
+#endif
 #endif
       {
         TYPE_ID  desc  = WN_desc(wn);
@@ -4947,6 +4947,7 @@ vho_lower_expr ( WN * wn, WN * block, BOOL_INFO * bool_info )
 #endif
         wn  = WN_Bior (rtype, lshift, rshift);
       }
+#ifdef TARG_X8664
 #ifdef KEY
       else
       {
@@ -4954,6 +4955,7 @@ vho_lower_expr ( WN * wn, WN * block, BOOL_INFO * bool_info )
         WN_kid1 (wn) = vho_lower_expr (WN_kid1(wn), block, NULL);
       }
 #endif // KEY
+#endif // TARG_X8664
 #endif
       break;
     }

@@ -66,6 +66,7 @@
 #include "cxx_memory.h"
 #include "cg_spill.h"
 #include "targ_isa_enums.h"
+#include "hb_sched.h"
 
 // ======================================================================
 // Declarations (macros, variables)

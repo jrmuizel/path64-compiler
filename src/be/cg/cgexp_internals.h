@@ -29,6 +29,8 @@
 
 */
 
+#ifndef CGEXP_INTERNALS_INCLUDED
+#define CGEXP_INTERNALS_INCLUDED
 
 /* misc headers for target-specific CGEXP routines */
 
@@ -172,3 +174,6 @@ extern void Expand_Rem (TN *result, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops)
 extern void Expand_Mod (TN *result, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops);
 extern void Expand_Float_Divide (TN *result, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops);
 extern void Expand_Float_Recip (TN *result, TN *src, TYPE_ID mtype, OPS *ops);
+
+#endif // CGEXP_INTERNALS_INCLUDED
+

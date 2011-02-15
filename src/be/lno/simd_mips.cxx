@@ -91,6 +91,7 @@ static char *rcs_id = "$Source: be/lno/SCCS/s.simd.cxx $ $Revision: 1.244 $";
 #include "lego_util.h"             // for AWN_StidIntoSym, AWN_Add
 #include "minvariant.h"            // for Minvariant_Removal
 #include "prompf.h"
+#include "lno_trace.h"
 
 #define ABS(a) (((a) < 0) ? -(a) : (a))
 
@@ -480,7 +481,7 @@ static BOOL Identify_Messy_Array_Subscript (WN* array, WN* loop,
 
 // two names for diagnostics
 static const char *non_unit_stride;
-static char *non_vect_op;
+static const char *non_vect_op;
 
 
 // If not possible to determine, we will do runtime checking

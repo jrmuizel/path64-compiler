@@ -184,7 +184,7 @@ extern void Exp_Intrinsic_Op (
 /* Arthur: this is because I may have to generate them for Lai */
 extern void Exp_Intrinsic_Op (INTRINSIC id, INT num_results, INT num_opnds, TN **result, TN **opnd, OPS *ops, SRCPOS scrpos, BB* curbb);
 #else
-extern void Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, OPS *ops);
+extern void Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TYPE_ID mtype, OPS *ops);
 #endif
 #endif
 

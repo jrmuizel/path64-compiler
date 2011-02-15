@@ -2251,3 +2251,15 @@ CGTARG_Is_Delay_Slot_Op (OP *op)
 
   return TRUE;
 }
+
+BOOL 
+CGTARG_Is_OP_Barrier(OP *op)
+{
+  if (OP_code(op) == TOP_asm) {
+    extern OP_MAP OP_Asm_Map;
+    ASM_OP_ANNOT* asm_info = (ASM_OP_ANNOT*) OP_MAP_Get(OP_Asm_Map, op);
+    return (WN_Asm_Clobbers_Mem(ASM_OP_wn(asm_info)));
+  } else
+    return FALSE;
+}
+

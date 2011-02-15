@@ -100,6 +100,11 @@ extern "C" {
  */
 #define Ret_Block_Label_Format	Local_Label_Prefix "_RET_%s"
 
+/* The following sprintf format is used to create a label for a constant
+ * from a ST_IDX index:
+ */
+#define TCON_Label_Format	".LC%d"
+
 /* The following sprintf format to ensure correct alignment of
  * entry points:
  */

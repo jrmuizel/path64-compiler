@@ -9086,14 +9086,15 @@ r_apply_l_const (
 #endif /* defined(BUILD_OS_DARWIN) */
     }
     if (TN_relocs(t) != 0) {
-	// use base if referring to current pu or local data
-	if (CGEMIT_Use_Base_ST_For_Reloc (TN_relocs(t), st)) {
-		ST *base_st;
-		INT64 base_ofst;
-		Base_Symbol_And_Offset (st, &base_st, &base_ofst);
-		val += base_ofst;
-		st = base_st;
-    	}
+        // use base if referring to current pu or local data
+        if (CGEMIT_Use_Base_ST_For_Reloc (TN_relocs(t), st)) {
+            ST *base_st;
+            INT64 base_ofst;
+            Base_Symbol_And_Offset (st, &base_st, &base_ofst);
+            val += base_ofst;
+            st = base_st;
+        }
+
     	if (Use_Separate_PU_Section(current_pu,st)) {
 		/* use PU text section rather than generic one */
 		st = PU_base;
@@ -9109,14 +9110,12 @@ r_apply_l_const (
 	*buf = vstr_concat(*buf, underscorify(
                                  EMT_Get_Qualified_Name(st).c_str(), indirect));
 #else /* defined(BUILD_OS_DARWIN) */
-#ifdef TARG_X8664
 	if (ST_sym_class(st) == CLASS_CONST) {
 	  char name[32];
 	  sprintf (name, TCON_Label_Format, ST_IDX_index(ST_st_idx(st)));
 	  *buf = vstr_concat(*buf, name);
 	}
 	else
-#endif
 	*buf = vstr_concat(*buf, EMT_Get_Qualified_Name(st).c_str());
 #endif /* defined(BUILD_OS_DARWIN) */
 	if (*Symbol_Name_Suffix != '\0')
@@ -14190,11 +14189,9 @@ Process_Initos_And_Literals (SYMTAB_IDX stab)
       else
         fprintf ( Asm_File, "\t%s\t0\n", AS_ALIGN );
 
-#ifdef TARG_X8664 // limit to x86_64 for now
       if (!Emit_Global_Data) // not for symbols in ipa symtab
         fprintf ( Asm_File, TCON_Label_Format ":\n",
                   ST_IDX_index(ST_st_idx(st)) );
-#endif
 #endif
       Write_TCON (&ST_tcon_val(st), STB_scninfo_idx(base), ofst, 1);
     }

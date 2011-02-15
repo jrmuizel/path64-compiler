@@ -37,6 +37,7 @@
 static char *cgemit_rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/cg/SCCS/s.cgemit.h $ $Revision: 1.7 $";
 #endif /* _KEEP_RCS_ID */
 
+#include "bb.h"
 #include "dwarf_DST_mem.h"
 #include "symtab.h"
 #include <string>

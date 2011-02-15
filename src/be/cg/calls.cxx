@@ -355,11 +355,11 @@ Init_Callee_Saved_Regs_for_REGION ( ST *pu, BOOL is_region )
   // [VCdV] on xp70, GP is always activated.
 #ifndef TARG_STxP70
   if (Gen_GP_Relative || PU_References_GP)
-#endif
+#endif // !TARG_STxP70
+#endif // TARG_ST
 #ifndef TARG_X8664 // x86_64 does not use GP
     Setup_GP_TN_For_PU( pu );
-#endif
-#endif
+#endif // !TARG_X8664
 
 
   if (NULL != RA_TN /* IA-32 doesn't have ra reg. */) {

@@ -108,6 +108,17 @@ FOREACH(targ ${PATH64_ENABLE_TARGETS})
     ELSE()
         MESSAGE(FATAL_ERROR "CRT path for ${targ} target is not specified. Please specify PSC_CRT_PATH_${targ} variable")
     ENDIF()
+
+    if(PSC_CRTBEGIN_PATH_${targ})
+        message(STATUS "crtbegin/crtend path for ${targ} target: ${PSC_CRT_PATH_${targ}}")
+    else()
+        set(arch "${_PATH64_TARGET_ARCH_${targ}}")
+        if("${arch}" STREQUAL "x8664")
+            set(PSC_CRTBEGIN_PATH_${targ} "LOCAL")
+        else()
+            message(FATAL_ERROR "crtbegin/crtend path for ${targ} target is not specified. Please specify PSC_CRTBEGIN_PATH_${targ} variable")
+        endif()
+    endif()
 ENDFOREACH()
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
@@ -242,9 +253,6 @@ ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D_LONGLONG
                 -D_MIPSEL
                 -DTARG_LINUX
-                -D_MIPS_SZINT=32
-                -D_MIPS_SZPTR=32
-                -D_MIPS_SZLONG=32
                )
 #IF (${BUILD_TARGET_DIR} MATCHES "arm")
 #ADD_DEFINITIONS( -DTARG_ST

@@ -316,6 +316,49 @@ if(${x8664_enabled})
     add_dependencies(be-all barcelona em64t core wolfdale opteron)
 endif()
 
+# MIPS architecture specific
+path64_is_arch_enabled(mips_enabled mips)
+if(${mips_enabled})
+    path64_get_multiarch_cmake_target(si_gen_mips_name si_gen mips)
+    path64_get_multiarch_cmake_target(isa_gen_topcode_mips_name isa_gen_topcode mips)
+
+    add_executable(mips5kf_si_gen proc/mips/mips5kf_si.cxx)
+    target_link_libraries(mips5kf_si_gen ${si_gen_mips_name} ${isa_gen_topcode_mips_name})
+    set_property(TARGET mips5kf_si_gen APPEND PROPERTY
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/mips")
+
+    add_custom_command(
+      OUTPUT mips5kf.c
+      COMMAND mips5kf_si_gen
+      DEPENDS mips5kf_si_gen
+      )
+    add_library(mips5kf SHARED mips5kf.c generate/init.cxx)
+    set_property(TARGET mips5kf PROPERTY LIBRARY_OUTPUT_DIRECTORY
+                 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/mips)
+    set_property(TARGET mips5kf PROPERTY PREFIX "")
+    set_property(TARGET mips5kf APPEND PROPERTY
+                 COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/mips")
+
+    # r10000 is broken
+
+    #add_executable(r10000_si_gen proc/mips/r10000_si.cxx)
+    #target_link_libraries(r10000_si_gen ${si_gen_mips_name} ${isa_gen_topcode_mips_name})
+    #set_property(TARGET r10000_si_gen APPEND PROPERTY
+    #             COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/mips")
+
+    #add_custom_command(
+    #  OUTPUT r10000.c
+    #  COMMAND r10000_si_gen
+    #  DEPENDS r10000_si_gen
+    #  )
+    #add_library(r10000 SHARED r10000.c generate/init.cxx)
+    #set_property(TARGET r10000 PROPERTY LIBRARY_OUTPUT_DIRECTORY
+    #             ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/mips)
+    #set_property(TARGET r10000 PROPERTY PREFIX "")
+    #set_property(TARGET r10000 APPEND PROPERTY
+    #             COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/mips")
+endif()
+
 # ARM architecture specific 
 if(${arm_enabled})
     path64_get_multiarch_cmake_target(si_gen_arm_name si_gen arm)

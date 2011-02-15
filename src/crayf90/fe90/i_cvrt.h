@@ -793,7 +793,7 @@ extern INTPTR fei_pattern_con             ( TYPE  type,
                                             INT64 bitsize );
 extern INTPTR fei_smt_parameter           ( char  *name_string,
                                             TYPE  type,
-                                            INT32 con_idx,
+                                            INTPTR con_idx,
                                             INT32 Class,
                                  	    INT32 line_num );
 extern void  fei_entry_pt                 ( INTPTR st_idx );

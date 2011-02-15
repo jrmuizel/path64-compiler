@@ -3604,3 +3604,25 @@ CGTARG_Is_Thread_Local_Memory_OP (OP* op)
 
   return FALSE;
 }
+
+
+BOOL
+CGTARG_Is_OP_Barrier(OP *op);
+{
+  if (OP_code(op) == TOP_asm) {
+    extern OP_MAP OP_Asm_Map;
+    ASM_OP_ANNOT* asm_info = (ASM_OP_ANNOT*) OP_MAP_Get(OP_Asm_Map, op);
+#ifdef KEY
+    return (WN_Asm_Clobbers_Mem(ASM_OP_wn(asm_info)) || Asm_Memory);
+#else
+    return (WN_Asm_Clobbers_Mem(ASM_OP_wn(asm_info)));
+#endif
+  } else if (OP_code(op) == TOP_fwd_bar ||	// bug 4850
+	     OP_code(op) == TOP_bwd_bar ||
+	     OP_code(op) == TOP_stmxcsr ||
+	     OP_code(op) == TOP_ldmxcsr) {
+    return TRUE;
+  } else
+    return FALSE;
+}
+
