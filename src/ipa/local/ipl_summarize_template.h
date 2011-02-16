@@ -634,6 +634,8 @@ struct set_global_addr_taken_attrib
         if (ST_class (st) == CLASS_NAME) 
           return;
 
+	FmtAssert(idx < aux_st_info.size(),
+                  ("set_global_addr_taken_attrib: invalid symbol index"));
 	const IPL_ST_INFO& st_info = aux_st_info[idx];
 
 	// update the addr_taken attributes in the symbol table
