@@ -3607,7 +3607,7 @@ CGTARG_Is_Thread_Local_Memory_OP (OP* op)
 
 
 BOOL
-CGTARG_Is_OP_Barrier(OP *op);
+CGTARG_Is_OP_Barrier(OP *op)
 {
   if (OP_code(op) == TOP_asm) {
     extern OP_MAP OP_Asm_Map;

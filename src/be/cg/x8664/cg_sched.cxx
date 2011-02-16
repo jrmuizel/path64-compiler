@@ -41,6 +41,7 @@
 #include "lra.h"
 #include "wn_util.h"
 #include "hb_hazards.h"
+#include "hb_sched.h"
 #include "reg_live.h"
 #include <unistd.h>
 #include <sys/types.h>

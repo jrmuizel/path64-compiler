@@ -77,6 +77,7 @@
 #include "data_layout.h"
 #include "stblock.h"
 #include "cgexp.h"
+#include "tn_map.h"
 
 #include "w2op.h"
 #include "label_util.h"

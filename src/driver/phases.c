@@ -1515,7 +1515,7 @@ add_file_args (string_list_t *args, phases_t index)
 	case P_c_gfe:
 	case P_cplus_gfe:
 #ifdef TARG_X8664
-		if (is_target_arch_X8664()
+		if (is_target_arch_X8664())
 			add_sse_cc1_options(args);
 #endif // TARG_X8664
 

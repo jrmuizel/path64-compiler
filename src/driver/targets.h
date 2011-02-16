@@ -31,6 +31,11 @@ char *target_phase_path();
 const char *target_runtime_path();
 
 
+// Returns path to crtbegin.o/crtend.o for current target
+// Returned memory should be freed by caller
+char *target_crtbegin_path();
+
+
 #ifdef __linux__
 // Returns path to dynamic linker for target
 const char *target_dynamic_linker();
