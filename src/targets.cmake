@@ -267,6 +267,12 @@ function(path64_set_multitarget_sources name target)
 endfunction()
 
 
+# Sets base path to sources for multitarget source list
+function(path64_set_multitarget_sources_base_path name)
+    set(path64_multitarget_sources_base_${name} ${ARGN} PARENT_SCOPE)
+endfunction()
+
+
 # Sets sources for specified architecture in multiarch source list
 function(path64_set_multiarch_sources src_list_name arch)
     if(NOT "X${arch}" STREQUAL "XCOMMON")
@@ -285,7 +291,7 @@ set(path64_compiler_CXX "${Path64_BINARY_DIR}/bin/pathCC")
 set(path64_compiler_Fortran "${CMAKE_Fortran_COMPILER}")
 
 # Adds library for specified target
-function(path64_add_library_for_target name target type)
+function(path64_add_library_for_target name target type src_base_path)
     path64_check_target_exists(${target})
 
     get_property(compile_defs DIRECTORY PROPERTY COMPILE_DEFINITIONS)
@@ -406,11 +412,20 @@ function(path64_add_library_for_target name target type)
             # Getting full path to source
             set(oname ${src})
             if(NOT EXISTS ${src})
-                # Trying path relative to current source dir
-                if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
-                    set(src "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+                # Trying use base path
+                if(NOT "${src_base_path}" STREQUAL "")
+                    if(EXISTS "${src_base_path}/${src}")
+                        set(src "${src_base_path}/${src}")
+                    else()
+                        message(FATAL_ERROR "Can not find ${src_base_path}/${src} source")
+                    endif()
                 else()
-                    message(FATAL_ERROR "Can not find ${src} source")
+                    # Trying path relative to current source dir
+                    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+                        set(src "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+                    else()
+                        message(FATAL_ERROR "Can not find ${src} source")
+                    endif()
                 endif()
             endif()
 
@@ -586,11 +601,14 @@ endfunction()
 # Adds library for all enabled targets
 function(path64_add_multitarget_library name type)
     set(src_list_name path64_multitarget_sources_${name})
+    set(src_base_path "${path64_multitarget_sources_base_${name}}")
     foreach(targ ${PATH64_ENABLE_TARGETS})
         if(${src_list_name}_${targ})
-            path64_add_library_for_target(${name} ${targ} ${type} ${${src_list_name}_${targ}})
+            path64_add_library_for_target(${name} ${targ} ${type} "${src_base_path}"
+                                          ${${src_list_name}_${targ}})
         else()
-            path64_add_library_for_target(${name} ${targ} ${type} ${${src_list_name}_COMMON})
+            path64_add_library_for_target(${name} ${targ} ${type} "${src_base_path}"
+                                          ${${src_list_name}_COMMON})
         endif()
         #set_property(TARGET ${tg_name} PROPERTY OUTPUT_NAME ${name})
     endforeach()
