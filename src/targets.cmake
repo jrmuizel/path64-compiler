@@ -413,6 +413,14 @@ function(path64_add_library_for_target name target type)
                     message(FATAL_ERROR "Can not find ${src} source")
                 endif()
             endif()
+
+            # Removing first slash in oname
+            string(SUBSTRING "${oname}" 0 1 first_char)
+            if("${first_char}" STREQUAL "/")
+                string(LENGTH "${oname}" str_len)
+                math(EXPR str_len "${str_len} - 1")
+                string(SUBSTRING "${oname}" 1 ${str_len} oname)
+            endif()
     
             # Getting object output name and making path to it
             string(REPLACE "." "_" oname_mangled ${oname})
