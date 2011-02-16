@@ -73,7 +73,10 @@ WN* IPL_get_stmt_scf(WN* av);
 // aux. information for each ST that is not part of the summary.
 struct IPL_ST_INFO
 {
+private:
     UINT32 summary_symbol_idx;		// idx to the SUMMARY_SYMBOL array
+
+public:
     mBOOL addr_passed;			// computed by IPL
     mBOOL addr_saved;			// computed by IPL
     mBOOL addr_saved_reset;		// ST_addr_saved bit in the symbol
@@ -84,6 +87,9 @@ struct IPL_ST_INFO
 	addr_passed (FALSE),
 	addr_saved (FALSE),
 	addr_saved_reset (FALSE) {}
+
+    UINT32 get_summary_symbol_idx() const { return summary_symbol_idx; }
+    void set_summary_symbol_idx(UINT32 idx) { summary_symbol_idx = idx; }
 };    
 
 typedef vector<vector<IPL_ST_INFO> > AUX_SYMBOL_INFO;
