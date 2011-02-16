@@ -125,6 +125,22 @@ typedef struct {
 /****************************************************************************
  ****************************************************************************/
 
+typedef struct {
+  const SI * const *top_si;
+  const SI * const *ID_si;
+  int ID_count;
+  const SI_ISSUE_SLOT * const *issue_slots;
+  int issue_slot_count;
+  const SI_RESOURCE * const *resources;
+  int resource_count;
+  SI_RRW RRW_initializer;
+  SI_RRW RRW_overuse_mask;
+  const char *target_name;
+} SI_SUMMARY;
+
+/****************************************************************************
+ ****************************************************************************/
+
 #ifdef __cplusplus
 }
 #endif

@@ -118,7 +118,7 @@ add_custom_command(
   COMMAND opteron_si_gen
   DEPENDS opteron_si_gen
   )
-add_library(opteron SHARED opteron.c generate/init.cxx)
+add_library(opteron SHARED opteron.c)
 set_property(TARGET opteron PROPERTY PREFIX "")
 
 add_executable(barcelona_si_gen proc/x8664/barcelona_si.cxx)
@@ -129,7 +129,7 @@ add_custom_command(
   COMMAND barcelona_si_gen
   DEPENDS barcelona_si_gen
   )
-add_library(barcelona SHARED barcelona.c generate/init.cxx)
+add_library(barcelona SHARED barcelona.c)
 set_property(TARGET barcelona PROPERTY PREFIX "")
 
 
@@ -141,7 +141,7 @@ add_custom_command(
   COMMAND wolfdale_si_gen
   DEPENDS wolfdale_si_gen
   )
-add_library(wolfdale SHARED wolfdale.c generate/init.cxx)
+add_library(wolfdale SHARED wolfdale.c)
 set_property(TARGET wolfdale PROPERTY PREFIX "")
 
 
@@ -153,7 +153,7 @@ add_custom_command(
   COMMAND core_si_gen
   DEPENDS core_si_gen
   )
-add_library(core SHARED core.c generate/init.cxx)
+add_library(core SHARED core.c)
 set_property(TARGET core PROPERTY PREFIX "")
 
 
@@ -165,7 +165,7 @@ add_custom_command(
   COMMAND em64t_si_gen
   DEPENDS em64t_si_gen
   )
-add_library(em64t SHARED em64t.c generate/init.cxx)
+add_library(em64t SHARED em64t.c)
 set_property(TARGET em64t PROPERTY PREFIX "")
 
 install(TARGETS barcelona em64t core wolfdale opteron

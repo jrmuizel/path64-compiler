@@ -27,6 +27,7 @@ add_library(whirl2f SHARED ${WHIRL2F_SRC})
 add_dependencies(whirl2f generate_preg_list)
 set_property(TARGET whirl2f PROPERTY PREFIX "")
 # install(TARGETS whirl2f LIBRARY DESTINATION ${PATH64_LIB_PATH})
+target_link_libraries(whirl2f be)
 
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 ADD_EXECUTABLE(whirl2f-exec whirl2f_main.cxx)

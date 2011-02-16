@@ -9,14 +9,15 @@ install(TARGETS coco
     RUNTIME DESTINATION ${PATH64_LIB_PATH})
 
 add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/lib/coco
+    OUTPUT ${CMAKE_BINARY_DIR}/lib/coco${CMAKE_EXECUTABLE_SUFFIX}
     DEPENDS coco
-    COMMAND ${SYMLINK_COMMAND} ../bin/coco ${CMAKE_BINARY_DIR}/lib
+    COMMAND ${SYMLINK_COMMAND} bin/coco${CMAKE_EXECUTABLE_SUFFIX} lib
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}    
 )
 
 add_custom_target(
     stageit-coco ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/lib/coco
+    DEPENDS ${CMAKE_BINARY_DIR}/lib/coco${CMAKE_EXECUTABLE_SUFFIX}
 )
 
 endif()

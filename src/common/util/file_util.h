@@ -44,6 +44,8 @@ static char *file_util_rcs_id = "$Source$ $Revision$";
 #include <sys/stat.h>           /* For fstat() */
 #include <unistd.h>               /* For unlink() */
 
+#include "file_def.h"
+
 /* ====================================================================
  *
  * Muse File Utility Prototypes

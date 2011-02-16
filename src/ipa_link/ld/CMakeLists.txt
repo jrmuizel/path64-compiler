@@ -86,14 +86,15 @@ target_link_libraries(ld bfd iberty ${libdl})
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
 add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/lib/ipa_link
+    OUTPUT ${CMAKE_BINARY_DIR}/lib/ipa_link${CMAKE_EXECUTABLE_SUFFIX}
     DEPENDS ld
-    COMMAND ${SYMLINK_COMMAND} ../bin/ipa_link ${CMAKE_BINARY_DIR}/lib
+    COMMAND ${SYMLINK_COMMAND} bin/ipa_link${CMAKE_EXECUTABLE_SUFFIX} lib
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
 
 add_custom_target(
     stageit-ipa_link ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/lib/ipa_link
+    DEPENDS ${CMAKE_BINARY_DIR}/lib/ipa_link${CMAKE_EXECUTABLE_SUFFIX}
 )
 
 install(TARGETS ld

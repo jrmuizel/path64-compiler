@@ -18,7 +18,7 @@ add_library(instr-static STATIC ${PATHSCALE_INSTR2_SRCS})
 add_library(instr-shared SHARED ${PATHSCALE_INSTR2_SRCS})
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-target_link_libraries(instr-shared winlib)
+target_link_libraries(instr-shared iberty)
 endif()
 
 set_property(TARGET instr-shared PROPERTY SOVERSION 1)

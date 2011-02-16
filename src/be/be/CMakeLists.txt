@@ -182,7 +182,7 @@ ENDIF()
 
 target_link_libraries(be targinfo m ${libdl})
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-target_link_libraries(be winlib)
+target_link_libraries(be winlib iberty)
 ENDIF()
 add_dependencies(be be-static) # serialize to generate preg_list.cxx only once
 

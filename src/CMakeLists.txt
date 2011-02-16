@@ -10,7 +10,12 @@ INCLUDE(includes.cmake)
 # This kills the libpathfortran build at src/libu/numconv/mpp/defgu2s.c
 #ADD_DEFINITIONS(-D_GNU_SOURCE)
 
-ADD_SUBDIRECTORY(csu)
+#Hack for Window building
+IF((${CMAKE_SYSTEM_NAME} MATCHES "Windows"))
+ELSE() 
+    ADD_SUBDIRECTORY(csu)
+ENDIF()
+
 ADD_SUBDIRECTORY(driver)
 ADD_SUBDIRECTORY(libcif)
 ADD_SUBDIRECTORY(libcmplrs)
@@ -20,10 +25,22 @@ ADD_SUBDIRECTORY(libelfutil)
 ADD_SUBDIRECTORY(common/targ_info)
 ADD_SUBDIRECTORY(common/util)
 ADD_SUBDIRECTORY(be)
-ADD_SUBDIRECTORY(libpscrt)
+
+#Hack for Window building
+IF((${CMAKE_SYSTEM_NAME} MATCHES "Windows"))
+ELSE() 
+    ADD_SUBDIRECTORY(libpscrt)
+ENDIF()
+
 ADD_SUBDIRECTORY(wgen)
 ADD_SUBDIRECTORY(ipa)
-ADD_SUBDIRECTORY(ipa_link)
+
+#Hack for Window building
+IF((${CMAKE_SYSTEM_NAME} MATCHES "Windows"))
+ELSE() 
+    ADD_SUBDIRECTORY(ipa_link)
+ENDIF()
+
 # TODO : Threading and other things need to be ported
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 ADD_SUBDIRECTORY(libopenmp)
@@ -36,7 +53,13 @@ ADD_SUBDIRECTORY(libm)
 ADD_SUBDIRECTORY(libmpath)
 
 ADD_SUBDIRECTORY(instrumentation)
-ADD_SUBDIRECTORY(arith)
+
+#Hack for Window building
+IF((${CMAKE_SYSTEM_NAME} MATCHES "Windows")) 
+ELSE() 
+    ADD_SUBDIRECTORY(arith)
+ENDIF()
+
 # TODO : Can't determine linking method
 
 IF(${PATH64_ENABLE_FORTRAN})

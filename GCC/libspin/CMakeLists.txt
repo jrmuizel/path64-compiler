@@ -1,11 +1,9 @@
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     INCLUDE_DIRECTORIES(BEFORE ${GCC_SOURCE_DIR}/include)
-    SET(GSPIN_MMAP_C gspin-mmap.c)
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 ADD_LIBRARY(spin
-            ${GSPIN_MMAP_C}
             gspin-alloc.c
             gspin-assert.c
             gspin-io.c
@@ -17,4 +15,9 @@ ADD_LIBRARY(spin
 
 ADD_EXECUTABLE(gspin gspin-test-driver.c)
 target_link_libraries(gspin spin)
+
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    target_link_libraries(gspin winlib)
+ENDIF()
+
 install(TARGETS gspin DESTINATION ${PATH64_LIB_PATH} CONFIGURATIONS Debug)

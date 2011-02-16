@@ -99,9 +99,16 @@ install(TARGETS ${exe_prefix}pathcc
         RUNTIME DESTINATION bin)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
 target_link_libraries(table iberty winlib)
 target_link_libraries(${exe_refix}pathcc iberty winlib ws2_32)
-endif()
+
+add_custom_target(
+    stageit-driver ALL
+    DEPENDS pathcc
+)
+
+else()
 
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/bin/pathCC ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION} ${Path64_BINARY_DIR}/lib/be
@@ -117,6 +124,9 @@ add_custom_target(
 )
 
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/bin/pathCC${CMAKE_EXECUTABLE_SUFFIX}\")")
+
+endif()
+
 if(PATH64_ENABLE_FORTRAN)
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/bin/pathf95${CMAKE_EXECUTABLE_SUFFIX}\")")
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"${CMAKE_INSTALL_PREFIX}/bin/pathf90${CMAKE_EXECUTABLE_SUFFIX}\")")

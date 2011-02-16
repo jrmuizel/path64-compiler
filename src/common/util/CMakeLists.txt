@@ -38,6 +38,3 @@ add_executable(gen_x_set gen_x_set.c)
 add_executable(gen_x_list gen_x_list.c)
 
 add_executable(gen_x_prop gen_x_prop.c)
-
-add_executable(symlink symlink.c)
-target_link_libraries(symlink winlib)

@@ -1420,13 +1420,13 @@ print_magic_path(const char *base, const char *fname)
 	goto good;
     }
 
-    sfx = get_suffix(fname);
+    sfx = strchr(fname, '.');
 
     if (sfx != NULL &&	// bug 9049
-	(!strcmp(sfx, "a") || !strcmp(sfx, "o") || !strcmp(sfx, "so")))
+	(!strcmp(sfx, EXT_LIB) || !strcmp(sfx, EXT_OBJ) || !strcmp(sfx, EXT_DSO)))
       goto bad;
 
-    if ((slash = strrchr(path, '/')) && strstr(slash, ".so."))
+    if ((slash = strrchr(path, '/')) && strstr(slash, EXT_DSO "."))
       goto bad;
   }
 

@@ -832,6 +832,33 @@ pex_win32_wait (struct pex_obj *obj ATTRIBUTE_UNUSED, long pid,
   GetExitCodeProcess (h, &termstat);
   CloseHandle (h);
  
+  switch (termstat)
+    {
+      case EXCEPTION_ACCESS_VIOLATION:
+      case EXCEPTION_IN_PAGE_ERROR:
+        *status = SIGSEGV;
+        return 0;
+
+      case EXCEPTION_ILLEGAL_INSTRUCTION:
+      case EXCEPTION_PRIV_INSTRUCTION:
+        *status = SIGILL;
+		return 0;
+
+      case EXCEPTION_FLT_INVALID_OPERATION:
+      case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+      case EXCEPTION_FLT_DENORMAL_OPERAND:
+      case EXCEPTION_FLT_OVERFLOW:
+      case EXCEPTION_FLT_UNDERFLOW:
+      case EXCEPTION_FLT_INEXACT_RESULT:
+      case EXCEPTION_INT_DIVIDE_BY_ZERO:
+        *status = SIGFPE;
+		return 0;
+
+      default:
+        if (termstat >> 8)
+          termstat = 3;
+    }
+
   /* A value of 3 indicates that the child caught a signal, but not
      which one.  Since only SIGABRT, SIGFPE and SIGINT do anything, we
      report SIGABRT.  */

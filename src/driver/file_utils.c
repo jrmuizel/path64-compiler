@@ -209,9 +209,13 @@ file_utils_set_program_name(char *name)
 
 #ifdef _WIN32
 	if (GetModuleFileNameA(0, filename, sizeof(filename))) {
+		p = filename;
+		while ((p = strchr (p, '\\')) != NULL) {
+			*p = '/';
+		}
 		executable_dir = string_copy(dirname(filename));
 	} else {
-		executable_dir = string_copy("\\");
+		executable_dir = string_copy("/");
 	}
 #else
 	if (strchr(name, '/')) {

@@ -66,6 +66,11 @@ ADD_EXECUTABLE(ir_size ${IR_SIZE_SRCS} ${IR_COMMON_SRCS})
 target_link_libraries(ir_b2a comutil m )
 target_link_libraries(ir_size comutil m )
 
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows") 
+target_link_libraries(ir_b2a winlib iberty)
+target_link_libraries(ir_size winlib iberty)
+ENDIF() 
+
 install(TARGETS ir_b2a ir_size
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION ${PATH64_LIB_PATH})

@@ -81,7 +81,10 @@ extern "C" int kill(int,int);
 static char IPALNO_REVISION[] = "IPALNO:1.1"; 
 
 static void (*old_sigsegv)(int);   /* the previous signal handler */
+
+#ifdef SIGBUS
 static void (*old_sigbus)(int);   /* the previous signal handler */
+#endif
 
 //-----------------------------------------------------------------------
 // NAME: Ir_Lno_Signal_Handler

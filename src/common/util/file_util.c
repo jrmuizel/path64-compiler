@@ -169,7 +169,7 @@ New_Extension ( const char *name, const char *ext )
   new = (char *) malloc ( len + strlen(ext) + 1 );
   strcpy ( new, name );
   for ( i=len-1; i>=0; i-- ) {
-    if ( new[i] == '/' ) break;	/* Don't touch directory prefixes */
+    if ( IS_DIR_SLASH(new[i]) ) break;	/* Don't touch directory prefixes */
     if ( new[i] == '.' ) {
       new[i] = 0;
       break;
@@ -232,7 +232,7 @@ Make_Temp_File ( tmp, prefix )
   name = (char *) malloc (len + 20);
   if ( len > 0 ) {
     strcpy ( name, tmp );
-    name[len++] = '/';
+    name[len++] = DIR_SLASH;
   }
   strcpy ( &name[len], prefix );
   len += strlen(prefix);
@@ -282,7 +282,7 @@ Full_Path_Name ( base, path, pathlen )
   if ( baselen > pathlen ) exit(RC_SYSTEM_ERROR);
 
   /* If the base name is a full path, just copy it and return: */
-  if (base[0] == '/') {
+  if (IS_ABSOLUTE_PATH(base)) {
     strcpy (path, base);
     return NULL;
   }
@@ -294,7 +294,7 @@ Full_Path_Name ( base, path, pathlen )
   }
   if ( baselen + cwd_size > pathlen ) exit(RC_SYSTEM_ERROR);
   strcpy (path, cwd);
-  strcat (path, "/");
+  strcat (path, DIR_SLASH_STR);
   strcat (path, base);
   return path;
 }
@@ -321,10 +321,10 @@ Last_Pathname_Component ( char *pname )
   char *cp = pname + strlen(pname);
 
   while (cp != pname) {
-    if (*cp == '/') return cp+1;
+    if (IS_DIR_SLASH(*cp)) return cp+1;
     --cp;
   }
-  if (*cp == '/') return cp+1;
+  if (IS_DIR_SLASH(*cp)) return cp+1;
   return cp;
 
 } /*end: Last_Pathname_Component */
@@ -343,22 +343,22 @@ normalize_path(char * path)
   char * inp = path, *outp = path, *tmp;
 
   while (inp != NULL && *inp != '\0') {
-    if (inp[0] == '/') {
-      if (inp[1] == '/')
+    if (IS_DIR_SLASH(inp[0])) {
+      if (IS_DIR_SLASH(inp[1]))
 	inp+= 1;
-      else if (inp[1] == '.' && inp[2] == '/')
+      else if (inp[1] == '.' && IS_DIR_SLASH(inp[2]))
 	inp += 2;
-      else if (inp[1] == '.' && inp[2] == '.' && inp[3] == '/') {
+      else if (inp[1] == '.' && inp[2] == '.' && IS_DIR_SLASH(inp[3])) {
 	/* Skip up one level up output path */
 	for (tmp = outp-1;
-	     tmp >= path && *tmp != '/';
+	     tmp >= path && !IS_DIR_SLASH(*tmp);
 	     tmp -= 1);
         /* Check that we skipped one level up, but not past ".." */
-        if (tmp >= path && tmp[0] == '/' && 
+        if (tmp >= path && IS_DIR_SLASH(tmp[0]) && 
 	  (tmp[1] != '.' || tmp[2] != '.'))
 	  outp = tmp;
 	else {
-	  *outp++ = '/';
+	  *outp++ = DIR_SLASH;
 	  *outp++ = '.';
 	  *outp++ = '.';
 	}
@@ -374,9 +374,6 @@ normalize_path(char * path)
   *outp = '\0';
   return path;
 }
-
-#define is_absolute_file_name(file_name)	((file_name)[0] == '/')
-
 
 /* Make an absolute path name from the file name,
  * which means no .. or . or // in the path. */
@@ -395,15 +392,15 @@ Make_Absolute_Path (char *filename)
       perror("malloc");
       exit(RC_SYSTEM_ERROR);
    }
-   if (is_absolute_file_name(filename))
+   if (IS_ABSOLUTE_PATH(filename))
       (void)strcpy(normalized, filename);
    else
    {
       cwd_length = cwd_size;
       strcpy(normalized, cwd);
-      if (cwd[cwd_length - 1] != '/')
+      if (!IS_DIR_SLASH(cwd[cwd_length - 1]))
       {
-	 normalized[cwd_length++] = '/';
+	 normalized[cwd_length++] = DIR_SLASH;
 	 normalized[cwd_length] = '\0';
       }
       (void)strcpy(&normalized[cwd_length], filename);

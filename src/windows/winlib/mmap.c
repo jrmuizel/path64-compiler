@@ -1,40 +1,130 @@
-/* Copyright (C) 1994, 1995, 1996, 1997 Free Software Foundation, Inc.
-   This file is part of the GNU C Library.
-
-   The GNU C Library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Lesser General Public
-   License as published by the Free Software Foundation; either
-   version 2.1 of the License, or (at your option) any later version.
-
-   The GNU C Library is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public
-   License along with the GNU C Library; if not, write to the Free
-   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307 USA.  */
-
-#include <sys/types.h>
-#include <sys/mman.h>
+#include <stdio.h>
 #include <errno.h>
 #include <io.h>
-
-/* Map addresses starting near ADDR and extending for LEN bytes.  From
-   OFFSET into the file FD describes according to PROT and FLAGS.  If ADDR
-   is nonzero, it is the desired mapping address.  If the MAP_FIXED bit is
-   set in FLAGS, the mapping will be at ADDR exactly (which must be
-   page-aligned); otherwise the system chooses a convenient nearby address.
-   The return value is the actual mapping address chosen or MAP_FAILED
-   for errors (in which case `errno' is set).  A successful `mmap' call
-   deallocates any previous mapping for the affected region.  */
-
 #include <sys/mman.h>
+#include <windows.h>
 
-__ptr_t
-__mmap (__ptr_t addr, size_t len, int prot, int flags, int fd, off_t offset)
+static DWORD granularity = 0;
+
+#define ALIGN_OFFSET(i)  (((DWORD)(i)) & (granularity - 1))
+
+void *mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
 {
-	return __mmap64 (addr, len, prot, flags, fd, (off_t) offset);
+    HANDLE file_handle, map_handle;
+    DWORD page_access, map_access;
+    DWORD delta;
+    void *map_addr;
+
+    if (granularity == 0) {
+        SYSTEM_INFO i;
+
+        GetSystemInfo(&i);
+        granularity = i.dwAllocationGranularity;
+    }
+
+    switch (prot) {
+        case PROT_NONE:
+            page_access = PAGE_NOACCESS;
+            map_access  = FILE_MAP_READ;
+            break;
+
+        case PROT_READ:
+            page_access = PAGE_READONLY;
+            map_access  = FILE_MAP_READ;
+            break;
+
+        case PROT_WRITE:
+            page_access = PAGE_READWRITE;
+            map_access  = FILE_MAP_WRITE;
+            break;
+
+        case PROT_EXEC:
+            page_access = PAGE_EXECUTE;
+            map_access  = FILE_MAP_READ;
+            break;
+            
+        case PROT_READ | PROT_WRITE:
+            page_access = PAGE_READWRITE;
+            map_access  = FILE_MAP_ALL_ACCESS;
+            break;
+            
+        case PROT_READ | PROT_EXEC:
+            page_access = PAGE_EXECUTE_READ;
+            map_access  = FILE_MAP_READ;
+            break;
+            
+        case PROT_EXEC | PROT_WRITE:
+        case PROT_READ | PROT_WRITE | PROT_EXEC:
+            page_access = PAGE_EXECUTE_READWRITE;
+            map_access  = FILE_MAP_ALL_ACCESS;
+            break;
+
+        default:
+            errno = EINVAL;
+            return MAP_FAILED;
+    }
+
+    if (flags & MAP_PRIVATE) {
+        map_access = FILE_MAP_COPY;
+    }
+
+    if (flags & MAP_FIXED) {
+        if (ALIGN_OFFSET(addr)) {
+            errno = EINVAL;
+            return MAP_FAILED;
+        }
+    } else {
+        addr -= ALIGN_OFFSET(addr);
+    }
+
+    file_handle = (HANDLE)_get_osfhandle(fd);
+    if (file_handle == INVALID_HANDLE_VALUE ) {
+        errno = EBADF;
+        return MAP_FAILED;
+    }
+
+    map_handle = CreateFileMapping(file_handle, NULL, page_access, 
+                                   0, (DWORD)(offset + len), NULL);
+    if (!map_handle) {
+        fprintf(stderr, "CreateFileMapping Status = 0x%08X\n", GetLastError());
+        errno = EACCES;
+        return MAP_FAILED;
+    }
+
+    delta = ALIGN_OFFSET(offset);
+
+    map_addr = MapViewOfFileEx(map_handle, map_access, 0, ((DWORD)offset) - delta,
+                               (SIZE_T)(len + delta), addr);
+
+    if (map_addr == NULL) {
+        fprintf(stderr, "MapViewOfFileEx Status = 0x%08X\n", GetLastError());
+        errno = EACCES;
+        map_addr = MAP_FAILED;
+    }
+    else {
+        map_addr += delta;
+    }
+    
+    CloseHandle(map_handle);
+
+    return map_addr;
 }
-//weak_alias (__mmap, mmap)
+
+int	munmap(void *addr, size_t size)
+{
+    if (granularity == 0) {
+        SYSTEM_INFO i;
+
+        GetSystemInfo(&i);
+        granularity = i.dwAllocationGranularity;
+    }
+
+	addr -= ALIGN_OFFSET(addr);
+
+    if (!UnmapViewOfFile(addr)) {
+		fprintf(stderr, "UnmapViewOfFile Status = 0x%08X\n", GetLastError());
+		errno = EINVAL;
+		return -1;
+    }
+	return 0;
+}

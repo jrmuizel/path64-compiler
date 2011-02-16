@@ -93,14 +93,15 @@ target_link_libraries(wgen42 winlib ws2_32)
 ENDIF()
 
 add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/lib/wgen42
+    OUTPUT ${CMAKE_BINARY_DIR}/lib/wgen42${CMAKE_EXECUTABLE_SUFFIX}
     DEPENDS wgen42
-    COMMAND ${SYMLINK_COMMAND} ../bin/wgen42 ${CMAKE_BINARY_DIR}/lib
+    COMMAND ${SYMLINK_COMMAND} bin/wgen42${CMAKE_EXECUTABLE_SUFFIX} lib
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}    
 )
 
 add_custom_target(
     stageit-wgen42 ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/lib/wgen42
+    DEPENDS ${CMAKE_BINARY_DIR}/lib/wgen42${CMAKE_EXECUTABLE_SUFFIX}
 )
 
 install(TARGETS wgen42

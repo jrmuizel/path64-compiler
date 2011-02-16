@@ -167,7 +167,7 @@ void init_stdc_plus_plus_path( void )
 {
   char *tmp_name = create_temp_file_name( "gc" );
   char *gcc_name = get_full_phase_name( P_ld );
-  init_given_crt_path( "libstdc++.so", gcc_name, tmp_name );
+  init_given_crt_path( FN_DSO("libstdc++"), gcc_name, tmp_name );
 }
 
 

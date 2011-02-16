@@ -149,6 +149,13 @@ create_temp_file_name (char *suffix)
 	sprintf(pathbuf, "%s/%s", tmpdir, buf); /* full path of tmp files */
 	pathbuf_len = strlen(pathbuf);
 
+#ifdef _WIN32
+	s = pathbuf;
+	while ((s = strchr (s, '/')) != NULL) {
+		*s = '\\';
+	}
+#endif
+
 	for (p = temp_files->head; p != NULL; p = p->next) {
 		/* Can't use get_suffix here because we don't actually
 		 * want the suffix. tempnam may return a value with a period
@@ -159,7 +166,7 @@ create_temp_file_name (char *suffix)
 		 * directory divider is the position we want because we chose
 		 * its contents above.
 		 */
-		char *file_name = strrchr(p->name, '/');
+		char *file_name = strrchr(p->name, DIR_SLASH);
 		if (file_name == NULL)
 			file_name = p->name;
 		s = strchr(file_name, '.');
@@ -231,10 +238,27 @@ construct_file_with_extension (char *src, char *ext)
 void
 init_temp_files (void)
 {
-        tmpdir = string_copy(getenv("TMPDIR"));
-        if (tmpdir == NULL) {
-                tmpdir = DEFAULT_TMPDIR;
-	} 
+#ifdef _WIN32
+	tmpdir = string_copy(getenv("TMP"));
+	if (tmpdir == NULL) {
+		tmpdir = string_copy(getenv("TEMP"));
+	}
+	if (tmpdir != NULL) {
+		char *s = tmpdir;
+
+		while ((s = strchr (s, '\\')) != NULL) {
+			*s = '/';
+		}
+	}
+	if (tmpdir == NULL) {
+		tmpdir = "C:/";
+	}
+#else
+	tmpdir = string_copy(getenv("TMPDIR"));
+	if (tmpdir == NULL) {
+		tmpdir = DEFAULT_TMPDIR;
+	}
+#endif
 	else if (!is_directory(tmpdir)) {
 		error("$TMPDIR does not exist: %s", tmpdir);
 	} 

@@ -1866,7 +1866,7 @@ add_libgcc_s(string_list_t *args)
 	if (!path_set) {
 		for (p = get_library_dirs()->head; p != NULL; p = p->next) {
 			free(name);
-			asprintf(&name, "%s/lib%s.so", p->name, libgcc_s_std);
+			asprintf(&name, "%s/" FN_DSO("lib%s"), p->name, libgcc_s_std);
 			if (file_exists(name)) {
 				add_arg(args, "-L%s", p->name);
 				libgcc_s = libgcc_s_std;
@@ -1875,7 +1875,7 @@ add_libgcc_s(string_list_t *args)
 			}
 
 			free(name);
-			asprintf(&name,"%s/../lib%s.so", p->name, libgcc_s_std);
+			asprintf(&name,"%s/../" FN_DSO("lib%s"), p->name, libgcc_s_std);
 			if (file_exists(name)) {
 				add_arg(args, "-L%s/..", p->name);
 				libgcc_s = libgcc_s_std;
@@ -1889,7 +1889,7 @@ add_libgcc_s(string_list_t *args)
 			    // Assumes p->name always end in '/'.
 			    strstr(p->name, "/32/") != NULL) {
 				free(name);
-				asprintf(&name,"%s/lib%s.so", p->name,
+				asprintf(&name,"%s/" FN_DSO("lib%s"), p->name,
 					 libgcc_s_dir32);
 				if (file_exists(name)) {
 					add_arg(args, "-L%s", p->name);
@@ -2657,7 +2657,7 @@ check_existence_of_phases (void)
 	    /* check if be phase exists, to warn about wrong toolroot */
 	case P_ipl:
 	    if (!file_exists (concat_strings (get_phase_dir(phase_order[i]),
-					      "/ipl.so")))
+					      "/" FN_DSO("ipl"))))
 		give_warning = TRUE;
 
 	    /* fall through */
@@ -2665,7 +2665,7 @@ check_existence_of_phases (void)
 	case P_be:
 
 	    if (!file_exists (concat_strings (get_phase_dir(phase_order[i]),
-					      "/be.so")))
+					      "/" FN_DSO("be"))))
 		give_warning = TRUE;
 
 	    if (!file_exists(get_full_phase_name(phase_order[i])))
@@ -2935,9 +2935,10 @@ run_ld (void)
 
 	if (ipa == TRUE) {
 	    ldpath = get_phase_dir (ldphase);
-	    ldpath = concat_strings (ldpath, "/ipa.so");
+	    ldpath = concat_strings (ldpath, "/" FN_DSO("ipa"));
 	    if (!file_exists (ldpath)) {
-		error ("ipa.so is not installed on %s", get_phase_dir (ldphase));
+		error (FN_DSO("ipa") " is not installed on %s", 
+			   get_phase_dir (ldphase));
 		return;
 	    }
 	    // Tell ipa_link about the LD_LIBRARY_PATH that was in effect

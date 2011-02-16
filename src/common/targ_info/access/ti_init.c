@@ -50,11 +50,10 @@ static const char rcs_id[] = "$Source: /home/bos/bk/kpro64-pending/common/targ_i
 #include "errors.h"
 
 #include "ti_init.h"
+#include "ti_si_types.h"
 
-#ifndef USE_WEAK_REFERENCES
-const char * sanity_check_targ_so_name_p;
-#define sanity_check_targ_so_name sanity_check_targ_so_name_p
-#endif
+static const SI_SUMMARY *All_Si_Summaries[PROCESSOR_count];
+const SI_SUMMARY *Cur_Si_Summary;
 
 /* ====================================================================
  *
@@ -65,53 +64,37 @@ const char * sanity_check_targ_so_name_p;
  * ====================================================================
  */
 void
-TI_Initialize(ABI_PROPERTIES_ABI tabi, ISA_SUBSET tisa, PROCESSOR tproc, char *tpath)
+TI_Initialize(ABI_PROPERTIES_ABI tabi, ISA_SUBSET tisa, 
+              PROCESSOR tproc, char *tpath)
 {
-  static BOOL initialized;
+  if (All_Si_Summaries[tproc] == NULL) {
+    const char *targ_name = PROCESSOR_Name(tproc);
+	char *dso_name = alloca(strlen(targ_name) + sizeof(EXT_DSO));
+    const SI_SUMMARY *(*SI_Get_Summary)(void);
+    const SI_SUMMARY *summary;
+    void *handle;
 
-  if ( !initialized ) {
-    INT                i;
-    const char        *targ_name     = PROCESSOR_Name(tproc);
-    INT                targ_name_len = strlen(targ_name);
-    char              *targ_so_name  = alloca(targ_name_len + sizeof(".so"));
+    strcpy(dso_name, targ_name);
+    strcat(dso_name, EXT_DSO);
 
-    for (i = 0; i < targ_name_len; i++) {
-      targ_so_name[i] = tolower(targ_name[i]);
-    }
-    strcpy(targ_so_name + targ_name_len, ".so");
+    handle = dso_load(dso_name, tpath, FALSE);
 
-    load_so(targ_so_name, tpath, FALSE /*verbose*/);
+    SI_Get_Summary = dso_get_interface(handle, "SI_Get_Summary");
+    summary = SI_Get_Summary();
 
-    ISA_SUBSET_Value = tisa;
-    PROCESSOR_Value = tproc;
-    ABI_PROPERTIES_ABI_Value = tabi;
-
-    ABI_PROPERTIES_Initialize();
-    ISA_HAZARD_Initialize();
-    ISA_REGISTER_Initialize();
-
-#ifndef USE_WEAK_REFERENCES
     // For bug 13044, sanity check that we have loaded the proper information.
-    FmtAssert (!strcmp(targ_so_name, sanity_check_targ_so_name),
-     ("TI_Initialize did not load proper information from %s", targ_so_name));
-#endif
+    FmtAssert(!strcmp(targ_name, summary->target_name),
+     ("TI_Initialize did not load proper information for %s", targ_name));
 
-    initialized = TRUE;
+    All_Si_Summaries[tproc] = summary;
   }
+
+  Cur_Si_Summary = All_Si_Summaries[tproc];
+  ISA_SUBSET_Value = tisa;
+  PROCESSOR_Value = tproc;
+  ABI_PROPERTIES_ABI_Value = tabi;
+
+  ABI_PROPERTIES_Initialize();
+  ISA_HAZARD_Initialize();
+  ISA_REGISTER_Initialize();
 }
-
-#ifndef USE_WEAK_REFERENCES
-
-#include "ti_si_types.h"
-
-const SI * const * SI_top_si_p;
-const SI * const * SI_ID_si_p;
-const int * SI_ID_count_p;
-const SI_ISSUE_SLOT * const * SI_issue_slots_p;
-const int * SI_issue_slot_count_p;
-const SI_RESOURCE * const * SI_resources_p;
-const int * SI_resource_count_p;
-const SI_RRW * SI_RRW_initializer_p;
-const SI_RRW * SI_RRW_overuse_mask_p;
-
-#endif

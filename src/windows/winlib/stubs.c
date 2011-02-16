@@ -23,6 +23,8 @@
 #include <sys/wait.h>
 #include <sys/utsname.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <cmplrs/rcodes.h>
 
 const char * Anl_File_Path()
 {
@@ -60,6 +62,7 @@ New_Construct_Id()
 int kill(pid_t pid, int sig)
 {
     fprintf(stderr, "kill() is unimplemented\n");
+    exit(RC_UNIMPLEMENTED_ERROR);
     return 0;
 }
 
@@ -74,12 +77,6 @@ int getdomainname(char *name, size_t len)
     fprintf(stderr, "getdomainname() is unimplemented\n");
     snprintf(name, len, "fakedomain");
     return 0;
-}
-
-void
-Handle_Signals(void)
-{
-    fprintf(stderr, "Handle_Signals() is unimplemented\n");
 }
 
 void Anl_Process_Command_Line(int phase_argc, char *phase_argv[], int argc, char *argv[])
@@ -118,6 +115,7 @@ void Anl_Static_Analysis(int *pu, int id_map)
     fprintf(stderr, "Anl_Fini() is unimplemented\n");
 }
 
+#if 0
 int* Pre_Optimizer (int a1, int* a2, int* a3, int* a4)
 {
     fprintf(stderr, "Pre_Optimizer() is unimplemented\n");
@@ -129,4 +127,5 @@ char *cplus_demangle(const char * a1, int a2)
     fprintf(stderr, "cplus_demangle() is unimplemented\n");
     return 0;
 }
+#endif
 

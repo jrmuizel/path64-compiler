@@ -1,16 +1,12 @@
 
 set(winlib_SRC	
-				"mkstemp.c"
 				"mmap.c"
-				"mmap64.c"
-				"munmap.c"
 				"rawmemchr.c"
 				"readlink.c"
 				"rlimit.c"
 				"strtok_r.c"
 				"stubs.c"
 				"symlink.c"
-				"tempname.c"
 				"times.c"
 				"timersub.c"
 				"uname.c"
@@ -26,11 +22,6 @@ ADD_DEFINITIONS(
 
 include_directories(BEFORE .)
 
-ADD_LIBRARY(winlib SHARED ${winlib_SRC})
+ADD_LIBRARY(winlib STATIC ${winlib_SRC})
 target_link_libraries(winlib ws2_32)
-
-# SET_TARGET_PROPERTIES(winlib PROPERTIES OUTPUT_NAME "winlib")
-
-install(TARGETS winlib
-        ARCHIVE DESTINATION ${PATH64_LIB_PATH})
 

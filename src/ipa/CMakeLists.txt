@@ -164,35 +164,52 @@ set(PATHSCALE_INLINE_SRCS
 
 add_definitions(${PATH64_STDC_FORMAT_MACROS})
 
-ADD_LIBRARY(ipa SHARED ${libipa_sources})
 ADD_LIBRARY(ipl SHARED ${libipl_sources})
-set_property(TARGET ipa PROPERTY PREFIX "")
 set_property(TARGET ipl PROPERTY PREFIX "")
-set_property(TARGET ipa PROPERTY COMPILE_DEFINITIONS MONGOOSE_BE;_SUPPORT_IPA;__STDC_FORMAT_MACROS;__MIPS_AND_IA64_ELF_H;BACK_END)
 set_property(TARGET ipl PROPERTY COMPILE_DEFINITIONS MONGOOSE_BE;IPA_SUMMARY;__STDC_FORMAT_MACROS;__MIPS_AND_IA64_ELF_H)
 
-target_link_libraries(ipa be ipl)
-target_link_libraries(ipl be)
-
+target_link_libraries(ipl be wopt-shared)
 ADD_DEPENDENCIES(ipl generate_preg_list)
+
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
+ELSE()
+
+ADD_LIBRARY(ipa SHARED ${libipa_sources})
+set_property(TARGET ipa PROPERTY PREFIX "")
+set_property(TARGET ipa PROPERTY COMPILE_DEFINITIONS MONGOOSE_BE;_SUPPORT_IPA;__STDC_FORMAT_MACROS;__MIPS_AND_IA64_ELF_H;BACK_END)
+ 
+target_link_libraries(ipa be ipl)
+
+ENDIF()
 
 add_executable (inline ${PATHSCALE_INLINE_SRCS})
 set_property(TARGET inline PROPERTY COMPILE_DEFINITIONS MONGOOSE_BE;_LIGHTWEIGHT_INLINER;_STDC_FORMAT_MACROS)
 target_link_libraries(inline be iberty dwarf elfutil elf)
-ADD_DEPENDENCIES(inline inline_hack)
+#ADD_DEPENDENCIES(inline inline_hack)
 
 add_custom_command(
-    OUTPUT   ${Path64_BINARY_DIR}/lib/inline
-    COMMAND ${SYMLINK_COMMAND} -f ../bin/inline ${Path64_BINARY_DIR}/lib/inline
+    OUTPUT  ${Path64_BINARY_DIR}/lib/inline${CMAKE_EXECUTABLE_SUFFIX}
+    DEPENDS inline
+    COMMAND ${SYMLINK_COMMAND} bin/inline${CMAKE_EXECUTABLE_SUFFIX} lib
+    WORKING_DIRECTORY ${Path64_BINARY_DIR}
 )
 
 add_custom_target(
     inline_hack
-    DEPENDS ${Path64_BINARY_DIR}/lib/inline
+    DEPENDS ${Path64_BINARY_DIR}/lib/inline${CMAKE_EXECUTABLE_SUFFIX}
 )
 
 
-install(TARGETS ipa ipl
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
+ELSE()
+install(TARGETS ipa
+        LIBRARY DESTINATION ${PATH64_LIB_PATH}
+        ARCHIVE DESTINATION ${PATH64_LIB_PATH})
+ENDIF()
+
+install(TARGETS ipl
         LIBRARY DESTINATION ${PATH64_LIB_PATH}
         ARCHIVE DESTINATION ${PATH64_LIB_PATH})
 

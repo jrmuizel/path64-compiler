@@ -48,6 +48,9 @@ ADD_EXECUTABLE(cc1plus42
 
 TARGET_LINK_LIBRARIES(cc1plus42 backend cpp decnumber iberty spin)
 
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    TARGET_LINK_LIBRARIES(cc1plus42 winlib)
+ENDIF()
 
 
 # Use the "-lx" option to disable map file generation on Borland.
@@ -57,14 +60,15 @@ IF(BORLAND)
 ENDIF(BORLAND)
 
 add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/lib/cc1plus42
+    OUTPUT ${CMAKE_BINARY_DIR}/lib/cc1plus42${CMAKE_EXECUTABLE_SUFFIX}
     DEPENDS cc1plus42
-    COMMAND ${SYMLINK_COMMAND} ../bin/cc1plus42 ${CMAKE_BINARY_DIR}/lib
+    COMMAND ${SYMLINK_COMMAND} bin/cc1plus42${CMAKE_EXECUTABLE_SUFFIX} lib
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
 
 add_custom_target(
     stageit-cc1plus42 ALL
-    DEPENDS ${CMAKE_BINARY_DIR}/lib/cc1plus42
+    DEPENDS ${CMAKE_BINARY_DIR}/lib/cc1plus42${CMAKE_EXECUTABLE_SUFFIX}
 )
 
 # Install cc1plus42 next to the gcc executable.

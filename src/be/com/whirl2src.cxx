@@ -29,7 +29,7 @@
 
 #include "whirl2src.h"
 
-#include "dso.h"	// load_so
+#include "dso.h"	// dso_load
 
 #include "w2c_weak.h"	// W2C_
 #include "w2f_weak.h"	// W2F_
@@ -58,7 +58,7 @@ Whirl2C_Init (WN* func_nd)
       /* load and initialize whirl2c */
       extern char *W2C_Path;
       const char* const str = "";
-      load_so("whirl2c.so", W2C_Path, Show_Progress);
+      dso_load_simply("whirl2c", W2C_Path, Show_Progress);
       W2C_Process_Command_Line(0, &str, 0, &str);
       W2C_Init ();
     }
@@ -85,7 +85,7 @@ Whirl2F_Init (WN* func_nd)
       extern char *W2F_Path;
       const char* str;
       str = "";
-      load_so("whirl2f.so", W2F_Path, Show_Progress);
+      dso_load_simply("whirl2f", W2F_Path, Show_Progress);
       W2F_Process_Command_Line(0, &str, 0, &str);
       W2F_Init ();
     }

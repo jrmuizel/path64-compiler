@@ -43,6 +43,9 @@
 
 #ifndef dso_INCLUDED
 #define dso_INCLUDED
+
+#include "file_def.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,7 +54,12 @@ extern "C" {
  * Load dso of given name in given path.
  * If verbose and non-standard path, then print path on stderr.
  */
-extern void load_so (const char *soname, char *path, BOOL verbose);
+extern void *dso_load(const char *dso, const char *path, BOOL verbose);
+extern void *dso_get_interface(void *handle, const char *symbol);
+extern void  dso_unload(void *handle);
+
+#define dso_load_simply(dso, path, verbose) \
+	    dso_load(FN_DSO(dso), path, verbose)
 
 #ifdef __cplusplus
 }

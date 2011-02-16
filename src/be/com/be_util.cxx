@@ -110,6 +110,12 @@ const char *Default_Release_ID = "none";
 #if defined(BUILD_OS_DARWIN)
 #pragma weak __Release_ID
 const char *__Release_ID = "none";
+#elif defined(_WIN32)
+//Windows does not support weak data symbol
+#ifndef __RELEASE_ID__
+#define __RELEASE_ID__ "none"
+#endif
+const char *__Release_ID = __RELEASE_ID__;
 #else /* defined(BUILD_OS_DARWIN) */
 #pragma weak __Release_ID = Default_Release_ID
 #endif /* defined(BUILD_OS_DARWIN) */

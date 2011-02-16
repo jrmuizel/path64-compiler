@@ -246,14 +246,15 @@ static void dump_backtrace(FILE *fp = stderr, size_t start_frame = 1)
  *
  * ====================================================================
  */
-#ifndef _WIN32
 static void
 catch_signal (INT sig, INT error_num)
 {
     signal ( sig, SIG_DFL );
 
     switch (sig) {
+#ifdef SIGBUS
     case SIGBUS:
+#endif
     case SIGSEGV:
 	if (error_num == ENXIO || error_num == ENOSPC)
 	    /* special case for I/O error on mmapped object: report as an
@@ -277,13 +278,19 @@ catch_signal (INT sig, INT error_num)
     do_traceback = true;
     
     Signal_Cleanup ( sig );	    /* Must be provided in err_host */
-    if ( sig == SIGHUP ||  sig == SIGINT || sig == SIGTERM ) {
+    if ( sig == SIGINT ||
+#ifdef SIGUP
+         sig == SIGHUP ||
+#endif
+         sig == SIGTERM ) {
 	kill ( getpid(), sig);	/* pass signal on to driver */
     	/*NOTREACHED*/
 	exit(RC_INTERNAL_ERROR);
     }
     signal ( SIGILL, SIG_DFL );
+#ifdef SIGBUS
     signal ( SIGBUS, SIG_DFL );
+#endif
     ErrMsgLine ( EC_Signal, ERROR_LINE_UNKNOWN,
 		strsignal(sig), Current_Phase );
     /*NOTREACHED*/
@@ -312,26 +319,35 @@ setup_signal_handler (int s)
 void
 Handle_Signals ( void )
 {
-    setup_signal_handler (SIGHUP);
-    setup_signal_handler (SIGINT);
-    setup_signal_handler (SIGQUIT);
-    setup_signal_handler (SIGILL);
-    setup_signal_handler (SIGTRAP);
-    setup_signal_handler (SIGIOT);
-#ifdef ORIGINAL_SGI_CODE
-    setup_signal_handler (SIGEMT);
+#ifdef SIGHUP
+		setup_signal_handler (SIGHUP);
 #endif
-    setup_signal_handler (SIGFPE);
-    setup_signal_handler (SIGBUS);
-    setup_signal_handler (SIGSEGV);
-    setup_signal_handler (SIGTERM);
+		setup_signal_handler (SIGINT);
+#ifdef SIGQUIT
+		setup_signal_handler (SIGQUIT);
+#endif
+		setup_signal_handler (SIGILL);
+#ifdef SIGTRAP
+		setup_signal_handler (SIGTRAP);
+#endif
+#ifdef SIGIOT
+		setup_signal_handler (SIGIOT);
+#endif
 #ifdef ORIGINAL_SGI_CODE
-    syssgi(SGI_SET_FP_PRECISE, 1);
-    set_fpc_csr(get_fpc_csr() & ~FPCSR_FLUSH_ZERO);
-    syssgi(SGI_SET_FP_PRESERVE, 1);
+		setup_signal_handler (SIGEMT);
+#endif
+		setup_signal_handler (SIGFPE);
+#ifdef SIGBUS
+		setup_signal_handler (SIGBUS);
+#endif
+		setup_signal_handler (SIGSEGV);
+		setup_signal_handler (SIGTERM);
+#ifdef ORIGINAL_SGI_CODE
+		syssgi(SGI_SET_FP_PRECISE, 1);
+		set_fpc_csr(get_fpc_csr() & ~FPCSR_FLUSH_ZERO);
+		syssgi(SGI_SET_FP_PRESERVE, 1);
 #endif
 }
-#endif
 
 
 /* ====================================================================
