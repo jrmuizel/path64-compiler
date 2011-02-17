@@ -73,6 +73,9 @@ extern void EMT_Change_Symbol_To_Undefined (ST *sym);
 /* change existing elf symbol to weak binding */
 extern void EMT_Change_Symbol_To_Weak (ST *sym);
 
+// Returns TCON name
+std::string EMT_get_TCON_name(ST *st);
+
 /*
  * Check if bb should be aligned,
  * and return number of instructions it should be aligned with.

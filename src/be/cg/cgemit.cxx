@@ -2034,7 +2034,7 @@ Write_INITV (INITV_IDX invidx, INT scn_idx, Elf64_Word scn_ofst)
 	  scn_ofst = Write_TCON (&tcon, scn_idx, scn_ofst, INITV_repeat1(inv));
 	  break;
 	}
-      
+
 	default:
           scn_ofst = Write_Symbol ( st, INITV_ofst(inv),
 	  			      scn_idx, scn_ofst, INITV_repeat1(inv));
@@ -8983,6 +8983,17 @@ put_TN_comment (TN *t, BOOL add_name, vstring *comment)
   }
 }
 
+
+// Returns TCON name
+std::string EMT_get_TCON_name(ST *st)
+{
+  char name[32];
+  sprintf (name, TCON_Label_Format, ST_IDX_index(ST_st_idx(st)));
+  return name;
+}
+
+
+
 /* ====================================================================
  *
  * r_apply_l_const
@@ -9111,9 +9122,7 @@ r_apply_l_const (
                                  EMT_Get_Qualified_Name(st).c_str(), indirect));
 #else /* defined(BUILD_OS_DARWIN) */
 	if (ST_sym_class(st) == CLASS_CONST) {
-	  char name[32];
-	  sprintf (name, TCON_Label_Format, ST_IDX_index(ST_st_idx(st)));
-	  *buf = vstr_concat(*buf, name);
+	  *buf = vstr_concat(*buf, EMT_get_TCON_name(st).c_str());
 	}
 	else
 	*buf = vstr_concat(*buf, EMT_Get_Qualified_Name(st).c_str());
@@ -13268,8 +13277,7 @@ Write_Symbol (
 		(scn_ofst % address_size) == 0 ? 
 		AS_ADDRESS : AS_ADDRESS_UNALIGNED);
 	if (ST_class(sym) == CLASS_CONST) {
-		EMT_Write_Qualified_Name (Asm_File, basesym);
-		fprintf (Asm_File, " %+" SCNd64 "\n", base_ofst);
+		fprintf (Asm_File, " %s\n", EMT_get_TCON_name(sym).c_str());
 	}
 	else if (ST_class(sym) == CLASS_FUNC && fptr && ! Get_Trace(TP_EMIT,0x2000)) {
 		fprintf (Asm_File, " %s(", fptr);

@@ -430,9 +430,7 @@ CGEMIT_Relocs_In_Asm (TN *t, ST *st, vstring *buf, INT64 *val)
 	  break;
 	case TN_RELOC_IA32_GOT:
 	  if (ST_sym_class(st) == CLASS_CONST) {
-	    char name[32];
-	    sprintf (name, TCON_Label_Format, ST_IDX_index(ST_st_idx(st)));
-	    *buf = vstr_concat (*buf, name);
+	    *buf = vstr_concat (*buf, EMT_get_TCON_name(st).c_str());
 	  }
 	  else
 	    *buf = vstr_concat (*buf, EMT_Get_Qualified_Name(st).c_str());
@@ -477,9 +475,7 @@ CGEMIT_Relocs_In_Asm (TN *t, ST *st, vstring *buf, INT64 *val)
 	}
 	*buf = vstr_concat (*buf, "(" );
 	if (ST_sym_class(st) == CLASS_CONST) {
-	  char name[32];
-	  sprintf (name, TCON_Label_Format, ST_IDX_index(ST_st_idx(st)));
-	  *buf = vstr_concat (*buf, name);
+	  *buf = vstr_concat (*buf, EMT_get_TCON_name(st).c_str());
 	}
 	else
 	*buf = vstr_concat (*buf, EMT_Get_Qualified_Name(st).c_str());
