@@ -1553,7 +1553,10 @@ BOOL EBO_Merge_Memory_Addr( OP* op,
   TOP top = OP_code(op);
 
   if ( top == TOP_lwc1 || top == TOP_ldc1 ||
-       top == TOP_swc1 || top == TOP_sdc1 || top == TOP_pref ) {
+       top == TOP_swc1 || top == TOP_sdc1 || top == TOP_pref ||
+       ( Is_Target_twc9a() &&  // 15202
+	 ( top == TOP_lb || top == TOP_ld ||
+	   top == TOP_lh || top == TOP_lw ) ) ) {
 
     // Convert:  daddu $3,$4,$5; lwc1 0($3)  into  lwxc1 $4($5)
 
@@ -1603,13 +1606,17 @@ BOOL EBO_Merge_Memory_Addr( OP* op,
 	TN *tn_base_new = OP_opnd( op_add, 0 );
 	TN *tn_indx_new = OP_opnd( op_add, 1 );
 	TOP top_new;
-	BOOL is_store;
+	BOOL is_store = FALSE;
 	switch (top) {
-	case TOP_lwc1:  top_new = TOP_lwxc1;  is_store = FALSE;  break;
-	case TOP_ldc1:  top_new = TOP_ldxc1;  is_store = FALSE;  break;
+	case TOP_lwc1:  top_new = TOP_lwxc1;                     break;
+	case TOP_ldc1:  top_new = TOP_ldxc1;                     break;
 	case TOP_swc1:  top_new = TOP_swxc1;  is_store = TRUE;   break;
 	case TOP_sdc1:  top_new = TOP_sdxc1;  is_store = TRUE;   break;
-	case TOP_pref:  top_new = TOP_prefx;  is_store = FALSE;  break;
+	case TOP_pref:  top_new = TOP_prefx;                     break;
+	case TOP_lb:    top_new = TOP_lbx;                       break;
+	case TOP_ld:    top_new = TOP_ldx;                       break;
+	case TOP_lh:    top_new = TOP_lhx;                       break;
+	case TOP_lw:    top_new = TOP_lwx;                       break;
 	}
 	TN *tn0_new = NULL;
 	if ( top == TOP_pref ) {
@@ -1649,7 +1656,9 @@ BOOL EBO_Merge_Memory_Addr( OP* op,
     }
 
   } else if ( top == TOP_lwxc1 || top == TOP_ldxc1 ||
-	      top == TOP_swxc1 || top == TOP_sdxc1 || top == TOP_prefx ) {
+	      top == TOP_swxc1 || top == TOP_sdxc1 || top == TOP_prefx ||
+	      top == TOP_lbx || top == TOP_ldx ||
+	      top == TOP_lhx || top == TOP_lwx ) {
 
     // Convert:  lwxc1 $4($0) into lwc1 0($4)
 
@@ -1663,13 +1672,17 @@ BOOL EBO_Merge_Memory_Addr( OP* op,
       // Convert the indexed op into an non-index memory op.
       if ( TN_is_zero(opnd_tn[idx_base]) ) idx_base = idx_indx;
       TOP top_new;
-      BOOL is_store;
+      BOOL is_store = FALSE;
       switch (top) {
-      case TOP_lwxc1:  top_new = TOP_lwc1;  is_store = FALSE;  break;
-      case TOP_ldxc1:  top_new = TOP_ldc1;  is_store = FALSE;  break;
+      case TOP_lwxc1:  top_new = TOP_lwc1;                     break;
+      case TOP_ldxc1:  top_new = TOP_ldc1;                     break;
       case TOP_swxc1:  top_new = TOP_swc1;  is_store = TRUE;   break;
       case TOP_sdxc1:  top_new = TOP_sdc1;  is_store = TRUE;   break;
-      case TOP_prefx:  top_new = TOP_pref;  is_store = FALSE;  break;
+      case TOP_prefx:  top_new = TOP_pref;                     break;
+      case TOP_lbx:    top_new = TOP_lb;                       break;
+      case TOP_ldx:    top_new = TOP_ld;                       break;
+      case TOP_lhx:    top_new = TOP_lh;                       break;
+      case TOP_lwx:    top_new = TOP_lw;                       break;
       }
       TN *tn_base = OP_opnd( op, idx_base );
       TN *tn_zero = Gen_Literal_TN(0, 4);

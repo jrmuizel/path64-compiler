@@ -688,10 +688,9 @@ void Exp_Prefetch (TOP opc, TN* src1, TN* src2, VARIANT variant, OPS* ops)
  * Exp_Extract_Bits
  * ======================================================================*/
 void
-Exp_Extract_Bits (TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_size,
-		  TN *tgt_tn, TN *src_tn, OPS *ops)
+Exp_Extract_Bits (TYPE_ID rtype, TYPE_ID desc, UINT bit_offset,
+		  UINT bit_size, TN *tgt_tn, TN *src_tn, OPS *ops)
 {
-  TN *tmp1_tn = Build_TN_Like (tgt_tn);
   UINT pos = (!Target_Is_Little_Endian || CG_emit_non_gas_syntax)
 	     ? MTYPE_bit_size(desc)-bit_offset-bit_size : bit_offset;
   if (pos == 0 && bit_size <= 16 && ! MTYPE_signed(rtype)) {
@@ -700,6 +699,30 @@ Exp_Extract_Bits (TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_size,
     return;
   }
 
+  if (Is_Target_twc9a() && ! MTYPE_signed(rtype)) {
+    // 15202: Use single ext/dext/dextm/dextu instruction when it is
+    // safe to zero extend, instead of sll/srl or dsll/dsrl.
+    TOP extract_op = TOP_ext;
+    if (MTYPE_is_size_double(rtype)) {
+      extract_op = TOP_dext;
+      if (bit_size > 32) {
+	extract_op = TOP_dextm;
+	bit_size -= 32;
+      } else if (pos >= 32) {
+	extract_op = TOP_dextu;
+	pos -= 32;
+      }
+    }
+    // By now: 0 <= pos < 32, and 0 < size <= 32.
+    Build_OP(extract_op, tgt_tn, src_tn, Gen_Literal_TN(pos, 4),
+	     Gen_Literal_TN(bit_size, 4), ops);
+    return;
+  }
+
+  // Use left and right shifts to extract value:
+  //   tmp1 = src << (MTYPE_bit_size(rtype) - pos - bit_size);
+  //   tgt  = tmp >> (MTYPE_bit_size(rtype) - bit_size);
+  TN *tmp1_tn = Build_TN_Like (tgt_tn);
   TOP left_shift_op = TOP_sll;
   INT left_shift_amt = MTYPE_bit_size(rtype) - pos - bit_size;
   if (MTYPE_is_size_double(rtype)) {
@@ -709,8 +732,8 @@ Exp_Extract_Bits (TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_size,
       left_shift_amt -= 32;
     }
   }
-  Build_OP(left_shift_op, tmp1_tn, src_tn, Gen_Literal_TN(left_shift_amt, 4),
-	   ops);
+  Build_OP(left_shift_op, tmp1_tn, src_tn,
+	   Gen_Literal_TN(left_shift_amt, 4), ops);
   TOP right_shift_op = TOP_sra;
   INT right_shift_amt = MTYPE_bit_size(rtype) - bit_size;
   if (MTYPE_is_size_double(rtype)) {
@@ -727,8 +750,8 @@ Exp_Extract_Bits (TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_size,
       right_shift_op = TOP_dsrl;
     else right_shift_op = TOP_dsrl32;
   }
-  Build_OP(right_shift_op, tgt_tn, tmp1_tn, Gen_Literal_TN(right_shift_amt, 4), 
-	   ops);
+  Build_OP(right_shift_op, tgt_tn, tmp1_tn,
+	   Gen_Literal_TN(right_shift_amt, 4), ops);
 }
 
 /* ======================================================================
@@ -745,6 +768,30 @@ Exp_Deposit_Bits (TYPE_ID rtype, TYPE_ID desc, UINT bit_offset, UINT bit_size,
   if (!Target_Is_Little_Endian) {
     targ_bit_offset = MTYPE_bit_size(desc) - bit_offset - bit_size;
   }
+
+  if (Is_Target_twc9a()) {
+    // 15202: Use a copy and a single ins/dins/dinsm/dinsu instruction,
+    // instead of a sequence of five shifts and xors.
+    TOP insert_op = TOP_ins;
+    if (MTYPE_is_size_double(rtype)) {
+      insert_op = TOP_dins;
+      if (bit_size > 32) {
+	insert_op = TOP_dinsm;
+	bit_size -= 32;
+      } else if (targ_bit_offset >= 32) {
+	insert_op = TOP_dinsu;
+	targ_bit_offset -= 32;
+      }
+    }
+    // By now: 0 <= pos < 32, and 0 < size <= 32.
+    Expand_Copy(tgt_tn, src1_tn, desc, ops);
+    Build_OP(insert_op, tgt_tn, src2_tn,
+	     Gen_Literal_TN(targ_bit_offset, 4),
+	     Gen_Literal_TN(bit_size, 4), tgt_tn, ops);
+    Set_OP_cond_def_kind(OPS_last(ops), OP_ALWAYS_COND_DEF);
+    return;
+  }
+
   TN *tmp1_tn = Build_TN_Like (src1_tn);
   TOP shift_op = TOP_srl;
   INT shift_amt = targ_bit_offset;

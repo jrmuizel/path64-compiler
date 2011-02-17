@@ -400,11 +400,11 @@ struct ASM_OP_ANNOT
   /* Track operand number that must match the result (or -1). */
   mINT8                 *result_same_opnd;
 #else
-  const char* result_constraint[10];
-  ISA_REGISTER_SUBCLASS result_subclass[10];
-  mUINT32 result_position[10];
-  bool result_clobber[10];
-  bool result_memory[10];
+  const char* result_constraint[ASM_OP_size];
+  ISA_REGISTER_SUBCLASS result_subclass[ASM_OP_size];
+  mUINT32 result_position[ASM_OP_size];
+  bool result_clobber[ASM_OP_size];
+  bool result_memory[ASM_OP_size];
 #endif
 
 #ifdef TARG_ST

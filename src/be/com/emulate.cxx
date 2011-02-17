@@ -3416,6 +3416,18 @@ static WN *em_parity(WN *block, WN *wn)
       && bitsize > MTYPE_size_reg(WN_desc(wn))) {
     bitsize = MTYPE_size_reg(WN_desc(wn));
   }
+
+#if defined(TARG_MIPS)
+  if ( Is_Target_twc9a() ) {
+    // 15202: Use pop/dpop instruction instead
+    INTRINSIC id = bitsize <= 32 ? INTRN_POPCOUNT32 : INTRN_POPCOUNT64;
+    wn = WN_CreateParm( type, wn, MTYPE_To_TY(type), WN_PARM_BY_VALUE );
+    wn = WN_Create_Intrinsic( OPC_I4INTRINSIC_OP, id, 1, &wn );
+    wn = WN_Band( MTYPE_I4, wn, WN_Intconst(MTYPE_I4, 1) );
+    return wn;
+  }
+#endif // TARG_MIPS
+
   PREG_NUM preg = AssignExpr( block, wn, type );
 
   // t1 =  x ^ (x  >> 32);
@@ -3466,6 +3478,16 @@ static WN *em_popcount(WN *block, WN *wn, INT bitsize)
     Fail_FmtAssertion("em_popcount: expected nonzero bitsize");
   }
   TYPE_ID type = WN_rtype(wn);
+
+#if defined(TARG_MIPS)
+  if ( Is_Target_twc9a() ) {
+    // 15202: Use pop/dpop instruction instead
+    INTRINSIC id = bitsize <= 32 ? INTRN_POPCOUNT32 : INTRN_POPCOUNT64;
+    wn = WN_CreateParm( type, wn, MTYPE_To_TY(type), WN_PARM_BY_VALUE );
+    wn = WN_Create_Intrinsic( OPC_I4INTRINSIC_OP, id, 1, &wn );
+    return wn;
+  }
+#endif // TARG_MIPS
 
   // t1 = x - ((x >> 1) & 0x5555555555555555);
   PREG_NUM preg = AssignExpr( block, wn, type );
@@ -4710,8 +4732,16 @@ extern WN *intrinsic_runtime(WN *block, WN *tree)
 	st = Gen_Intrinsic_Function(ty, "sc_memset");  break;
       case INTRN_MEMCPY:
 	st = Gen_Intrinsic_Function(ty, "sc_memcpy");  break;
+//      case INTRN_MEMMOVE:
+//	st = Gen_Intrinsic_Function(ty, "sc_memmove");  break;
+//      case INTRN_STRCAT:
+//	st = Gen_Intrinsic_Function(ty, "sc_strcat");  break;
+//      case INTRN_STRCHR:
+//	st = Gen_Intrinsic_Function(ty, "sc_strchr");  break;
       case INTRN_STRCPY:
 	st = Gen_Intrinsic_Function(ty, "sc_strcpy");  break;
+//      case INTRN_STRLEN:
+//	st = Gen_Intrinsic_Function(ty, "sc_strlen");  break;
       case INTRN_BZERO:
 	st = Gen_Intrinsic_Function(ty, "sc_bzero");  break;
       case INTRN_BCOPY:

@@ -4916,16 +4916,23 @@ vho_lower_expr ( WN * wn, WN * block, BOOL_INFO * bool_info )
         }
 #else
 #ifdef KEY
+    BOOL emulate_rrotate = ! VHO_Generate_Rrotate;
 #ifdef TARG_X8664
-      BOOL emulate_rrotate = ! VHO_Generate_Rrotate;
       // By default, generate rotate instruction only if it is C++ (bug 7932)
       // Can be controlled by internal flag -VHO:rotate
       if (!VHO_Generate_Rrotate_Set && PU_cxx_lang (Get_Current_PU()))
 	emulate_rrotate = FALSE;
       if (!Is_Target_64bit() && MTYPE_byte_size(WN_desc(wn)) > 4)
 	emulate_rrotate = TRUE;
-      if (emulate_rrotate)
+#elif defined(TARG_MIPS)
+      // 15202: Generate 4 and 8 byte rotate instruction for Twc9
+      // Can be controlled by internal flag -VHO:rotate
+      if (!VHO_Generate_Rrotate_Set && Is_Target_twc9a())
+        emulate_rrotate = FALSE;
+      if (MTYPE_byte_size(WN_rtype(wn)) < 4)
+        emulate_rrotate = TRUE;
 #endif
+      if (emulate_rrotate)
 #endif
       {
         TYPE_ID  desc  = WN_desc(wn);

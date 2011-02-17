@@ -141,7 +141,7 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
   case OPR_LSHR:
 	Expand_Shift (result, op1, op2, rtype, shift_lright, ops);
 	break;
-#ifdef TARG_X8664
+#if defined(TARG_X8664) || defined(TARG_MIPS)
   case OPR_RROTATE:
 	Expand_Rrotate (result, op1, op2, rtype, desc, ops);
 	break;

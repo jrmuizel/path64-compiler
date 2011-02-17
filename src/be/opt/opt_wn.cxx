@@ -1081,7 +1081,7 @@ struct TY_IDX_EQ
   }
 };
 
-static hash_map<const TY_IDX, INT, __gnu_cxx::hash<unsigned long>, TY_IDX_EQ> TY_volatility;
+static hash_map<const TY_IDX, INT, __gnu_cxx::hash<TY_IDX>, TY_IDX_EQ> TY_volatility;
 
 #define STRUCT_HAS_VOLATILITY_COMPUTED 1
 #define STRUCT_HAS_VOLATILE 2

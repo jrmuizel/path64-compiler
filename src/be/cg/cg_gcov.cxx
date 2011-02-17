@@ -1180,12 +1180,8 @@ BB_Mov_Ops(BB* dest_bb, BB *src_bb, REGISTER reg, unsigned char type)
     for ( i = 0; i < OP_opnds( op ); i++ )
     {
       TN *tn = OP_opnd( op,i );
-      if ( ((type == 0 && TN_register_class(tn) == ISA_REGISTER_CLASS_integer) 
-#ifndef TARG_ST
-            || (type == 1 && TN_register_class(tn) == ISA_REGISTER_CLASS_float)
-#endif
-           )
-            && TN_register(tn) == reg )
+      if ( ((type == 0 && TN_register_class(tn) == ISA_REGISTER_CLASS_integer) || (type == 1 && TN_register_class(tn) == ISA_REGISTER_CLASS_float)) && 
+	   TN_register(tn) == reg )
       {
 	BB_Remove_Op( src_bb, op);
 	FmtAssert( !Is_BB_Empty(src_bb), ("BB can not be empty!"));
@@ -1413,7 +1409,7 @@ CG_Instrument_Arcs()
 	  tgt_label = Gen_Label_For_BB( bb_succ );
 #ifdef TARG_X8664
 	  Build_OP( TOP_jmp, Gen_Label_TN(tgt_label, 0), &new_ops);
-#elif TARG_MIPS
+#elif defined(TARG_MIPS)
 	  // mips
 	  Build_OP( TOP_j, Gen_Label_TN(tgt_label, 0), &new_ops);
 #endif
