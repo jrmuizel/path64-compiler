@@ -332,6 +332,7 @@ function(path64_add_library_for_target name target type src_base_path)
 
     # Adding rules for compiling sources
     set(objects)
+    set(rel_objects)
     foreach(src ${sources})
         # Getting source language
         get_property(src_lang SOURCE ${src} PROPERTY LANGUAGE)
@@ -439,7 +440,8 @@ function(path64_add_library_for_target name target type src_base_path)
     
             # Getting object output name and making path to it
             string(REPLACE "." "_" oname_mangled ${oname})
-            set(object_name "${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ}/${oname_mangled}.o")
+            set(object_rel_name "${oname_mangled}.o")
+            set(object_name "${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ}/${object_rel_name}")
             get_filename_component(object_path ${object_name} PATH)
             file(MAKE_DIRECTORY ${object_path})
 
@@ -462,7 +464,7 @@ function(path64_add_library_for_target name target type src_base_path)
             endforeach()          
 
             add_custom_command(OUTPUT ${object_name} ${obj_outputs}
-                               COMMAND ${path64_compiler_${src_lang}} -c -o ${object_name}
+                               COMMAND ${path64_compiler_${src_lang}} -c -o ${object_rel_name}
                                        ${arch_flag}
                                        ${src_flags}
                                        ${incl_dirs_flags}
@@ -475,6 +477,7 @@ function(path64_add_library_for_target name target type src_base_path)
                                        ${build_type_flags}
                                DEPENDS ${src} ${header_deps} ${obj_depends}
                                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ})
+            list(APPEND rel_objects "${object_rel_name}")
             list(APPEND objects ${object_name})
             list(FIND compiler-deps "compiler-stage-${src_lang}" res)
             if(res EQUAL -1)
@@ -494,7 +497,7 @@ function(path64_add_library_for_target name target type src_base_path)
         set(library_file
             "${build_lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}${oname}${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
-        set(cmd ${CMAKE_AR} -cr ${library_file} ${objects})
+        set(cmd ${CMAKE_AR} -cr ${library_file} ${rel_objects})
         if("X${CMAKE_BUILD_TYPE}" STREQUAL "XRelease")
             list(APPEND cmd "\;" strip -S ${library_file})
         endif()
@@ -533,7 +536,7 @@ function(path64_add_library_for_target name target type src_base_path)
                                    ${arch_flag}
                                    ${target_flags}
                                    ${target_link_flags}
-                                   ${objects}
+                                   ${rel_objects}
                                    ${link_libs_flags}
                            DEPENDS ${objects}
                            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ})
