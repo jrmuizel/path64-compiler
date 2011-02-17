@@ -37,7 +37,7 @@ __CTOR_LIST__:
 __DTOR_LIST__:
 	.quad -1
 
-	.section	.eh_frame, "a", @progbits
+	.section	.eh_frame, "a", @unwind
 	.align 8
 __EH_FRAME_LIST__:
 
