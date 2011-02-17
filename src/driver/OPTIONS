@@ -184,7 +184,12 @@
 -show-defaults	{show_defaults = TRUE; execute_flag = FALSE;} ALL	NONE	""
 	"Show the default compiler options being used"
 % gcc has -v show version as well as phases, so take that meaning
+#ifdef __sun
+// -v option should not be passed to sun ld
+-v	{show_flag = TRUE; show_version++;} ALL	cpp,as	    self "-show"
+#else
 -v	{show_flag = TRUE; show_version++;} ALL	cpp,as,ld	self "-show"
+#endif
 	"show phases and version as they are being invoked"
 -fullwarn toggle(&msglevel,2);		FTN  cpp	"-m2"
 	"give more warnings, especially about missing prototypes"
