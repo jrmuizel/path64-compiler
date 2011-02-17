@@ -391,7 +391,58 @@ main ()
 	// wrpgpr
 	// rdhwr
 	// synci
-        
+
+	// SiCortex IceT Instructions
+	// IceT integer instructions
+	"lbx",
+	"ldx",
+	"lhx",
+	"lwx",
+	"madd",
+	"maddu",
+	"msub",
+	"msubu",
+	"dmadd",
+	"dmaddu",
+	"dmsub",
+	"dmsubu",
+	"dmulg",
+	"dmulgu",
+	"mfacx",
+	"mtacx",
+	"dperm",
+	"pop",
+	"dpop",
+	// IceT FP instructions
+	"luxc1",
+	"suxc1",
+	"addred.ps",
+	"mulred.ps",
+	"ma.nlupuu.ps",
+	"ma.plunuu.ps",
+	"ma.plupll.ps",
+	"ma.puupul.ps",
+	"recipit1.d",
+	"recipit1.s",
+	"recipit1.ps",
+	"recipit2.d",
+	"recipit2.s",
+	"recipit2.ps",
+	"rsqrtit1.d",
+	"rsqrtit1.s",
+	"rsqrtit1.ps",
+	"rsqrtit2.d",
+	"rsqrtit2.s",
+	"rsqrtit2.ps",
+	"mfhc1",
+	"mthc1",
+	"bc2any2f",
+	"bc2any2t",
+	// IceT other instructions
+	"perfctl",
+	"tlbwir",
+	"tlbwrr",
+
         // And pseudo-opcodes
 	"sext",
 	"asm",

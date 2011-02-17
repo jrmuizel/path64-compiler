@@ -35,7 +35,7 @@
 // The instructions are listed by category. The different categories of
 // instructions are:
 //
-//   1. MIPS4 instructions
+//   1. MIPS64 instructions (including IceT instructions)
 //
 // Within each ISA_SUBSET instructions are listed in alphabetical order and
 // as shown in the ISA manual
@@ -52,10 +52,10 @@
 
 main()
 {
-  ISA_SUBSET mips4;
+  ISA_SUBSET mips4, mipst;
 
   ISA_Subset_Begin("MIPS");
-  mips4 = ISA_Subset_Create(NULL,"MIPS4");
+  mips4 = ISA_Subset_Create(NULL, "MIPS4");
 
   Instruction_Group(mips4,
       TOP_lb,
@@ -402,6 +402,52 @@ main()
       TOP_plu_ps,
       TOP_pul_ps,
       TOP_puu_ps,
+      TOP_lbx,
+      TOP_ldx,
+      TOP_lhx,
+      TOP_lwx,
+      TOP_madd,
+      TOP_maddu,
+      TOP_msub,
+      TOP_msubu,
+      TOP_dmadd,
+      TOP_dmaddu,
+      TOP_dmsub,
+      TOP_dmsubu,
+      TOP_dmulg,
+      TOP_dmulgu,
+      TOP_mfacx,
+      TOP_mtacx,
+      TOP_dperm,
+      TOP_pop,
+      TOP_dpop,
+      TOP_luxc1,
+      TOP_suxc1,
+      TOP_addred_ps,
+      TOP_mulred_ps,
+      TOP_ma_nlupuu_ps,
+      TOP_ma_plunuu_ps,
+      TOP_ma_plupll_ps,
+      TOP_ma_puupul_ps,
+      TOP_recipit1_d,
+      TOP_recipit1_s,
+      TOP_recipit1_ps,
+      TOP_recipit2_d,
+      TOP_recipit2_s,
+      TOP_recipit2_ps,
+      TOP_rsqrtit1_d,
+      TOP_rsqrtit1_s,
+      TOP_rsqrtit1_ps,
+      TOP_rsqrtit2_d,
+      TOP_rsqrtit2_s,
+      TOP_rsqrtit2_ps,
+      TOP_mfhc1,
+      TOP_mthc1,
+      TOP_bc2any2f,
+      TOP_bc2any2t,
+      TOP_perfctl,
+      TOP_tlbwir,
+      TOP_tlbwrr,
       TOP_UNDEFINED);
 
   ISA_Subset_End();

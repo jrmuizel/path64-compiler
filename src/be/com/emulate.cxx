@@ -3420,7 +3420,7 @@ static WN *em_parity(WN *block, WN *wn)
 #if defined(TARG_MIPS)
   if ( Is_Target_twc9a() ) {
     // 15202: Use pop/dpop instruction instead
-    INTRINSIC id = bitsize <= 32 ? INTRN_POPCOUNT32 : INTRN_POPCOUNT64;
+    INTRINSIC id = INTRN_POPCOUNT;
     wn = WN_CreateParm( type, wn, MTYPE_To_TY(type), WN_PARM_BY_VALUE );
     wn = WN_Create_Intrinsic( OPC_I4INTRINSIC_OP, id, 1, &wn );
     wn = WN_Band( MTYPE_I4, wn, WN_Intconst(MTYPE_I4, 1) );
@@ -3482,7 +3482,7 @@ static WN *em_popcount(WN *block, WN *wn, INT bitsize)
 #if defined(TARG_MIPS)
   if ( Is_Target_twc9a() ) {
     // 15202: Use pop/dpop instruction instead
-    INTRINSIC id = bitsize <= 32 ? INTRN_POPCOUNT32 : INTRN_POPCOUNT64;
+    INTRINSIC id = INTRN_POPCOUNT;
     wn = WN_CreateParm( type, wn, MTYPE_To_TY(type), WN_PARM_BY_VALUE );
     wn = WN_Create_Intrinsic( OPC_I4INTRINSIC_OP, id, 1, &wn );
     return wn;

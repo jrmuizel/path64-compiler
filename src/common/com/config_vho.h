@@ -102,9 +102,7 @@ extern INT32 VHO_Disable_MP_Local_Equal;
 extern BOOL  VHO_Delete_Extra_Retval_Store; // delete extra store of
                                             // preg_return_val to a preg
 #endif
-#ifdef TARG_X8664
 extern BOOL  VHO_Generate_Rrotate;
 extern BOOL  VHO_Generate_Rrotate_Set;
-#endif
 #endif /* config_vho_INCLUDED */
 

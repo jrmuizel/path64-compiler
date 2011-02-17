@@ -251,6 +251,16 @@ main()
 			  TOP_plu_ps,
 			  TOP_pul_ps,
 			  TOP_puu_ps,
+			  TOP_dmulg,
+			  TOP_dmulgu,
+			  TOP_addred_ps,
+			  TOP_mulred_ps,
+			  TOP_recipit2_d,
+			  TOP_recipit2_s,
+			  TOP_recipit2_ps,
+			  TOP_rsqrtit2_d,
+			  TOP_rsqrtit2_s,
+			  TOP_rsqrtit2_ps,
 			  TOP_UNDEFINED);
 
   /* No result / one operand */
@@ -264,6 +274,8 @@ main()
 			  TOP_jr,
 			  TOP_mthi,
 			  TOP_mtlo,
+			  TOP_mtacx,
+			  TOP_perfctl,
 			  TOP_UNDEFINED);
 
   /* No result / two operands */
@@ -284,6 +296,19 @@ main()
 			  TOP_bltzal,
 			  TOP_bc1f,
 			  TOP_bc1t,
+			  TOP_madd,
+			  TOP_maddu,
+			  TOP_msub,
+			  TOP_msubu,
+			  TOP_dmadd,
+			  TOP_dmaddu,
+			  TOP_dmsub,
+			  TOP_dmsubu,
+			  TOP_dperm,
+			  TOP_bc2any2f,
+			  TOP_bc2any2t,
+			  TOP_tlbwir,
+			  TOP_tlbwrr,
 			  TOP_UNDEFINED);
 
   /* No result / two operands extra $0 operand for divide */
@@ -305,6 +330,7 @@ main()
   Instruction_Print_Group(r,
 			  TOP_mfhi,
 			  TOP_mflo,
+			  TOP_mfacx,
 			  TOP_UNDEFINED);
 
   /* One result / one operand */
@@ -368,6 +394,15 @@ main()
 			  TOP_wsbh,
 			  TOP_cvt_s_pl,
 			  TOP_cvt_s_pu,
+			  TOP_pop,
+			  TOP_dpop,
+			  TOP_recipit1_d,
+			  TOP_recipit1_s,
+			  TOP_recipit1_ps,
+			  TOP_rsqrtit1_d,
+			  TOP_rsqrtit1_s,
+			  TOP_rsqrtit1_ps,
+			  TOP_mfhc1,
 			  TOP_UNDEFINED);
 
   /* One operand / one result */
@@ -378,6 +413,7 @@ main()
   Instruction_Print_Group(opr,
 			  TOP_mtc1,
 			  TOP_dmtc1,
+			  TOP_mthc1,
 			  TOP_UNDEFINED);
 
   /* One result / three operands */
@@ -409,6 +445,10 @@ main()
 			  TOP_ext,
 			  TOP_ins,
 			  TOP_alnv_ps,
+			  TOP_ma_nlupuu_ps,
+			  TOP_ma_plunuu_ps,
+			  TOP_ma_plupll_ps,
+			  TOP_ma_puupul_ps,
 			  TOP_UNDEFINED);
 
   /* No result / three operands */
@@ -458,6 +498,11 @@ main()
 			  TOP_ldc1,
 			  TOP_lwxc1,
 			  TOP_ldxc1,
+			  TOP_lbx,
+			  TOP_ldx,
+			  TOP_lhx,
+			  TOP_lwx,
+			  TOP_luxc1,
 			  TOP_UNDEFINED);
 
   /* prefetch */
@@ -492,6 +537,7 @@ main()
 			  TOP_sdc1,
 			  TOP_swxc1,
 			  TOP_sdxc1,
+			  TOP_suxc1,
 			  TOP_UNDEFINED);
 
   /* No results / no operands TODO */

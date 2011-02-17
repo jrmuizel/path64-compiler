@@ -795,7 +795,9 @@ add_sysroot(string_list_t *args, phases_t phase)  // 15149
     break;
   case P_gcpp:
   case P_gcpp_plus:
+#ifdef PATH64_ENABLE_PSCLANG
   case P_psclang_cpp:
+#endif // PATH64_ENABLE_PSCLANG
     add_string(args, "-isysroot");
     add_string(args, sysroot);
     break;

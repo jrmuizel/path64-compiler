@@ -133,10 +133,8 @@ BOOL    VHO_Delete_Extra_Retval_Store = FALSE;
 #endif /* TARG_MIPS */
 #endif /* KEY */
 
-#ifdef TARG_X8664
 BOOL	VHO_Generate_Rrotate = FALSE;
 BOOL	VHO_Generate_Rrotate_Set = FALSE;
-#endif
 
 /* List of global variables to turn on and off various optimizations */
 
@@ -217,9 +215,7 @@ static OPTION_DESC Options_VHO[] = {
   { OVK_BOOL,   OV_INTERNAL,    TRUE, "del_extra_retval_store", "",
     0, 0, 0,    &VHO_Delete_Extra_Retval_Store, NULL },
 #endif
-#ifdef TARG_X8664
   { OVK_BOOL,   OV_INTERNAL,    TRUE, "rotate", "",
     0, 0, 0,    &VHO_Generate_Rrotate, &VHO_Generate_Rrotate_Set },
-#endif
   { OVK_COUNT }		/* List terminator -- must be last */
 };

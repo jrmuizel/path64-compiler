@@ -2309,9 +2309,9 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TYPE_ID mtype, OPS
   case INTRN_I4FFS:
     Expand_Least_Significant_Bit( result, op0, mtype, ops );
     break;
-  case INTRN_POPCOUNT32:
-  case INTRN_POPCOUNT64:
-    Build_OP( id == INTRN_POPCOUNT32 ? TOP_pop : TOP_dpop, result, op0, ops );
+  case INTRN_POPCOUNT:
+    Build_OP( (mtype == MTYPE_I8 || mtype == MTYPE_U8) ? TOP_dpop : TOP_pop,
+              result, op0, ops );
     break;
   case INTRN_ISGREATER:
     // 14757: Gnu4 compatable TOPs used below.  For gnu3, substitite
