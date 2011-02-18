@@ -272,7 +272,7 @@ foreach(arch ${PATH64_ENABLE_ARCHES})
 endforeach()
 
 add_custom_target(ipl-symlinks DEPENDS ${ipl_symlink_deps})
-add_dependencies(ipl-symlinks be-exec)
+path64_add_dependencies_from_multiarch(ipl-symlinks be-exec)
 
 path64_add_dependencies_from_multiarch(be-all be-exec be)
 add_dependencies(be-all ipl-symlinks)

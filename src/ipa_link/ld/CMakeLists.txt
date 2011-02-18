@@ -100,6 +100,7 @@ foreach(arch ${PATH64_ENABLE_ARCHES})
 endforeach()
 
 add_custom_target(stageit-ipa_link DEPENDS ${ipa_symlinks_deps})
+add_dependencies(stageit-ipa_link ld)
 add_dependencies(compiler-stage stageit-ipa_link)
 
 install(TARGETS ld

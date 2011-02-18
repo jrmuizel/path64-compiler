@@ -28,16 +28,31 @@ set(PATHSCALE_TABLE_SRCS  ${PATHSCALE_COMMON_DRIVER_SRCS}
                           "table.c"
    )
 
+set(SORT_FLAGS)
 
 option(PATH64_ENABLE_PATHAS "Enables using pathas assembler" OFF)
 if(PATH64_ENABLE_PATHAS)
     add_definitions(-DPATH64_ENABLE_PATHAS)
+    list(APPEND SORT_FLAGS "-DPATH64_ENABLE_PATHAS")
 endif()
-
 
 option(PATH64_ENABLE_DEFAULT_PATHAS "Enables using pathas as default assembler" OFF)
 if(PATH64_ENABLE_DEFAULT_PATHAS)
     add_definitions(-DPATH64_ENABLE_DEFAULT_PATHAS)
+    list(APPEND SORT_FLAGS "-DPATH64_ENABLE_DEFAULT_PATHAS")
+endif()
+
+
+option(PATH64_ENABLE_PSCLANG "Enables using psclang front-end" OFF)
+if(PATH64_ENABLE_PSCLANG)
+    add_definitions(-DPATH64_ENABLE_PSCLANG)
+    list(APPEND SORT_FLAGS "-DPATH64_ENABLE_PSCLANG")
+endif()
+
+option(PATH64_ENABLE_DEFAULT_PSCLANG "Enables using psclang as default front-end" OFF)
+if(PATH64_ENABLE_DEFAULT_PSCLANG)
+    add_definitions(-DPATH64_ENABLE_DEFAULT_PSCLANG)
+    list(APPEND SORT_FLAGS "-DPATH64_ENABLE_DEFAULT_PSCLANG")
 endif()
 
 
@@ -65,7 +80,6 @@ set(PATH64_GCC ${CMAKE_C_COMPILER})
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh.cmake.in
                ${SORT_OPTIONS})
 
-set(SORT_FLAGS)
 
 if(PATH64_ENABLE_PSCRUNTIME)
     list(APPEND SORT_FLAGS "-DPATH64_ENABLE_PSCRUNTIME")
@@ -73,9 +87,6 @@ else()
     list(APPEND SORT_FLAGS "-DPATH64_NO_PSCRUNTIME")
 endif()
 
-if(PATH64_ENABLE_PATHAS)
-    list(APPEND SORT_FLAGS "-DPATH64_ENABLE_PATHAS")
-endif()
 
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P

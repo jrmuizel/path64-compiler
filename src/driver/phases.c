@@ -545,14 +545,15 @@ fix_name_by_phase (char *name, phases_t phase)
 	if (name != NULL && strcmp(name, "-") == 0) {
 		switch (phase) {
 		case P_cpp:
-		case P_c_cpp:
-		case P_cplus_cpp:
 		case P_f_cpp:
 		case P_f90_cpp:
 		case P_ratfor:
 		case P_m4:
 		case P_gcpp:
 		case P_gcpp_plus:
+#ifdef PATH64_ENABLE_PSCLANG
+        case P_psclang_cpp:
+#endif // PATH64_ENABLE_PSCLANG
 			break;
 		default:
 			switch (source_kind) {
@@ -632,6 +633,19 @@ boolean platform_is_64bit(void)
 }
 
 
+// Adds common preprocessor definitions
+void add_common_cpp_definitions(string_list_t *args) {
+    if (option_was_seen(O_pthread))
+        add_string(args, "-D_REENTRANT");
+
+    if (!option_was_seen(O_no_pathcc)) {
+        add_string(args, "-D__PATHSCALE__=\"" PSC_FULL_VERSION "\"");
+        add_string(args, "-D__PATHCC__=" PSC_MAJOR_VERSION);
+        add_string(args, "-D__PATHCC_MINOR__=" PSC_MINOR_VERSION);
+        add_string(args, "-D__PATHCC_PATCHLEVEL__=" PSC_PATCH_LEVEL);
+    }
+}
+
 
 // Like add_file_args but add args that must precede options specified on the
 // command line.
@@ -642,14 +656,18 @@ add_file_args_first (string_list_t *args, phases_t index)
     case P_gcpp:
     case P_gcpp_plus:
       // -Dfoo before user options, since user might specify -Ufoo.  Bug 6874.
-      if (option_was_seen(O_pthread))
-	add_string(args, "-D_REENTRANT");
-      if (!option_was_seen(O_no_pathcc)) {
-	add_string(args, "-D__PATHSCALE__=\"" PSC_FULL_VERSION "\"");
-	add_string(args, "-D__PATHCC__=" PSC_MAJOR_VERSION);
-	add_string(args, "-D__PATHCC_MINOR__=" PSC_MINOR_VERSION);
-	add_string(args, "-D__PATHCC_PATCHLEVEL__=" PSC_PATCH_LEVEL);
-      }
+      add_common_cpp_definitions(args);
+      break;
+
+#ifdef PATH64_ENABLE_PSCLANG
+    case P_psclang_cpp:
+      add_string(args, "-cc1");
+      add_common_cpp_definitions(args);
+      break;
+
+    case P_psclang:
+      add_string(args, "-cc1");
+#endif // PATH64_ENABLE_PSCLANG
   }
 }
 
@@ -781,6 +799,7 @@ add_sysroot(string_list_t *args, phases_t phase)  // 15149
     break;
   case P_gcpp:
   case P_gcpp_plus:
+  case P_psclang_cpp:
     add_string(args, "-isysroot");
     add_string(args, sysroot);
     break;
@@ -901,6 +920,72 @@ add_sse_cc1_options(string_list_t *args)
 }
 
 
+#ifdef PATH64_ENABLE_PSCRUNTIME
+// Adds standard include directories for preprocessor
+void add_std_includes(string_list_t *args) {
+    char *root;
+    char *exe_dir;
+
+    if(option_was_seen(O_nostdinc))
+        return;
+
+    exe_dir = get_executable_dir();
+    root = directory_path(exe_dir);
+    free(exe_dir);
+
+    if (!option_was_seen(O_nostdinc__)) {
+        add_inc_path(args, "%s/include/" PSC_FULL_VERSION, root);
+    }
+
+    if (source_lang == L_CC) {
+
+        add_arg(args, "-D__STDCXX_CONFIG=<__stl_config-%s.h>",
+                current_target->targ_name);
+
+        if(option_was_seen(O_fstrict_stl)) {
+            add_arg(args, "-D_RWSTD_STRICT_HEADERS");
+        }
+
+        // Claim to be compatible with GCC 4.2.1
+        add_arg(args, "-D__GNUC__=4");
+        add_arg(args, "-D__GNUC_MINOR__=2");
+        add_arg(args, "-D__GNUC_PATCHLEVEL__=1");
+        add_arg(args, "-D__GXX_ABI_VERSION=1002");
+
+        if(!option_was_seen(O_nostdinc__)) {
+            add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stl", root);
+            add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stl/ansi", root);
+            if(stl_threadsafe) {
+                add_string(args,"-D_RWSTD_POSIX_THREADS");
+            }
+            add_string(args,"-nostdinc++");
+        }
+    }
+
+    add_inc_path(args, "%s/lib/" PSC_FULL_VERSION "/include", root);
+    free(root);
+}
+#endif // PATH64_ENABLE_PSCRUNTIME
+
+
+// Adds language args for psclang
+void add_psclang_language_args(string_list_t *args) {
+    add_string(args, "-x");
+    switch (source_lang) {
+    case L_as:
+        add_string(args, "assembler-with-cpp");
+        break;
+    case L_CC:
+        add_string(args, "c++");
+        break;
+    case L_cc:
+    default:
+    	add_string(args, "c");
+    	break;
+    }
+}
+
+
 static void
 add_file_args (string_list_t *args, phases_t index)
 {
@@ -937,14 +1022,10 @@ add_file_args (string_list_t *args, phases_t index)
 			add_string(args, "-dollar");
 		}
 		/* fallthru */
-	case P_c_cpp:
-	case P_cplus_cpp:
 	case P_f_cpp:
 	case P_f90_cpp:
-		if (option_was_seen(O_usegfe)) {
-			add_string(args, "-E");
-		}
- 	        if (index == P_f90_cpp) {
+		add_string(args, "-E");
+		if (index == P_f90_cpp) {
 		   if (expand_ftpp_macros) {
 		      add_string(args, "-F");
 		   }
@@ -1053,9 +1134,9 @@ add_file_args (string_list_t *args, phases_t index)
 		}
 #endif // PATH64_ENABLE_PSCRUNTIME
 
+#ifndef PATH64_ENABLE_PSCRUNTIME
 		if (!option_was_seen(O_nostdinc)) {
 			char *root = directory_path(get_executable_dir());
-#ifndef PATH64_ENABLE_PSCRUNTIME
 			add_inc_path(args, "%s/include/" PSC_FULL_VERSION,
 				     root);
 			if (source_lang == L_CC) {
@@ -1069,41 +1150,10 @@ add_file_args (string_list_t *args, phases_t index)
 				}
 			}
 			add_inc_path(args, "%s/include", root);
-#else
-            if (!option_was_seen(O_nostdinc__)) {
-                add_inc_path(args, "%s/include/" PSC_FULL_VERSION, root);
-            }
-
-            if (source_lang == L_CC) {
-
-                add_arg(args, "-D__STDCXX_CONFIG=<__stl_config-%s.h>",
-                        current_target->targ_name);
-
-                if(option_was_seen(O_fstrict_stl)) {
-                    add_arg(args, "-D_RWSTD_STRICT_HEADERS");
-                }
-
-                // Claim to be compatible with GCC 4.2.1
-                add_arg(args, "-D__GNUC__=4");
-                add_arg(args, "-D__GNUC_MINOR__=2");
-                add_arg(args, "-D__GNUC_PATCHLEVEL__=1");
-                add_arg(args, "-D__GXX_ABI_VERSION=1002");
-
-                if(!option_was_seen(O_nostdinc__)) {
-                    add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stl",
-                             root);
-                    add_inc_path(args, "%s/include/" PSC_FULL_VERSION "/stl/ansi",
-                             root);
-                    if(stl_threadsafe){
-                        add_string(args,"-D_RWSTD_POSIX_THREADS");
-                    }
-                    add_string(args,"-nostdinc++");
-                }
-            }
-			add_inc_path(args, "%s/lib/" PSC_FULL_VERSION "/include",
-				     root);
-#endif //PATH64_ENABLE_PSCRUNTIME
 		}
+#else
+        add_std_includes(args);
+#endif //PATH64_ENABLE_PSCRUNTIME
 		
 		// Call gcc preprocessor using "gcc -E ...".
 		if (source_kind != S_h)	// SiCortes 5034
@@ -1142,6 +1192,59 @@ add_file_args (string_list_t *args, phases_t index)
 			add_string(args, input_source);
 		}
 		break;
+
+#ifdef PATH64_ENABLE_PSCLANG
+    case P_psclang_cpp:
+        // psclang preprocessor
+
+		add_string(args, "-E");
+        add_abi(args);
+        
+        if (ospace == TRUE ) {
+            add_string(args, "-Os");
+        }
+        
+        // language
+        add_psclang_language_args(args);
+
+        if (source_lang == L_CC) {
+            add_string(args, "-D_GNU_SOURCE");
+        }
+
+#ifdef PATH64_ENABLE_PSCRUNTIME
+        add_std_includes(args);
+#else // !PATH64_ENABLE_PSCRUNTIME
+        {
+            char *exe_dir = get_executable_dir();
+            char *root = directory_path(exe_dir);
+            free(exe_dir);
+            add_inc_path(args, "%s/lib/" PSC_FULL_VERSION "/include", root);
+            free(root);
+        }
+#endif // !PATH64_ENABLE_PSCRUNTIME
+
+        // input source
+        add_string(args, input_source);
+
+        // output
+        if (last_phase == P_any_cpp && outfile != NULL) {
+            // it's last phase, using outfile as output
+            add_string(args, "-o");
+            add_string(args, outfile);
+
+        } else if (last_phase != P_any_cpp) {
+            // constructing temporary file name for output
+
+            current_phase = P_any_cpp;
+            input_source = construct_name(input_source,"i");
+
+            add_string(args, "-o");
+            add_string(args, input_source);
+        }
+
+        break;
+#endif // PATH64_ENABLE_PSCLANG
+
 	case P_f_coco:	// bug 9058
 		{
 		  char *fortran_source = input_source;
@@ -1475,6 +1578,36 @@ add_file_args (string_list_t *args, phases_t index)
 		sprintf(buf, "-fB,%s", construct_name(the_file, "B"));
 		add_string(args, buf);
 		break;
+
+#ifdef PATH64_ENABLE_PSCLANG
+    case P_psclang:
+        // psclang front-end
+
+        if (show_version) {
+        	add_string(args, "-version");
+        }
+        
+        add_abi(args);
+        add_psclang_language_args(args);
+        
+        if (!option_was_seen(O_ffreestanding) && !fbuiltin)
+            add_string(args, "-fno-builtin" );
+        
+        if (!fmath_errno)
+            add_string(args, "-fno-math-errno");
+
+        add_string(args, "-Wno-all");
+        add_string(args, "-fsyntax-only");
+        add_string(args, "-plugin");
+        add_string(args, "whirl-print");
+        
+        add_string(args, input_source);
+        
+        add_string(args, "-o");
+        add_string(args, construct_name(the_file,"B"));
+        break;
+#endif // PATH64_ENABLE_PSCLANG
+
 	case P_inline:
         add_targ_options (args);
 		if (source_kind == S_B)
@@ -2439,6 +2572,19 @@ add_inline_option(void)
   }
 }
 
+
+#ifdef PATH64_ENABLE_PSCLANG
+// Returns true if psclang should be used as preprocessor/front-end
+int is_psclang_enabled() {
+#ifdef PATH64_ENABLE_DEFAULT_PSCLANG
+    return !option_was_seen(O_fno_psclang);
+#else // !PATH64_ENABLE_DEFAULT_PSCLANG
+    return option_was_seen(O_fpsclang);
+#endif // !PATH64_ENABLE_DEFAULT_PSCLANG
+}
+#endif // PATH64_ENABLE_PSCLANG
+
+
 static void
 determine_phase_order (void)
 {
@@ -2450,12 +2596,13 @@ determine_phase_order (void)
 	phase_order_index = 0;
  
 	/* determine which cpp to use */
+#ifdef PATH64_ENABLE_PSCLANG
+    if ((source_lang == L_cc || source_lang == L_CC) && is_psclang_enabled()) {
+        cpp_phase = P_psclang_cpp;
+    } else
+#endif // PATH64_ENABLE_PSCLANG
 	if (source_lang == L_CC) {
-		if (option_was_seen(O_usegfe)) {
-			cpp_phase = P_gcpp_plus;
-		} else {
-			cpp_phase = P_cplus_cpp;
-		}
+		cpp_phase = P_gcpp_plus;
 	} else if (source_lang == L_cc) {
 		// bug 5495
 		if (option_was_seen(O_mp)) {
@@ -2463,11 +2610,7 @@ determine_phase_order (void)
                         cpp_phase = P_cpp;
 		}
 		else
-		if (option_was_seen(O_usegfe)) {
-			cpp_phase = P_gcpp;
-		} else {
-			cpp_phase = P_c_cpp;
-		}
+		cpp_phase = P_gcpp;
 	} else if (source_lang == L_f77) {
 		if (option_was_seen(O_mp)) {
 			/* power Ftn */
@@ -2487,10 +2630,7 @@ determine_phase_order (void)
 		|| (!option_was_seen(O_nocpp) &&
 		    (source_kind == S_F || source_kind == S_F90)))
 	   {
-	      if (option_was_seen(O_usegfe))
-	      	cpp_phase = P_gcpp; 
-	      else
-	      	cpp_phase = P_cpp; 
+	      cpp_phase = P_gcpp; 
 	   } else {
 	      cpp_phase = P_NONE;
 	   }
@@ -2498,10 +2638,8 @@ determine_phase_order (void)
 		&& (abi == ABI_I32 || abi == ABI_I64 || abi == ABI_IA32))
 	{
 		cpp_phase = P_gcpp;	/* use ansi-style cpp */
-	} else if (option_was_seen(O_usegfe)) {
-			cpp_phase = P_gcpp;
 	} else {
-			cpp_phase = P_cpp;
+			cpp_phase = P_gcpp;
 	}
 
 	if (last_phase == P_any_cpp
@@ -2539,10 +2677,14 @@ determine_phase_order (void)
 		if (first_phase != P_any_cpp) {
 		    next_phase = (source_lang == L_CC ? cplus_fe : c_fe);
 		} else {
-		    if (source_lang == L_CC)
-			add_phase(P_gcpp_plus);
-		    else
-		    	add_phase(P_gcpp);
+            add_phase(cpp_phase);
+
+#ifdef PATH64_ENABLE_PSCLANG
+            if (is_psclang_enabled()) {
+                next_phase = P_psclang;
+            }
+            else
+#endif // PATH64_ENABLE_PSCLANG
 		    next_phase = (source_lang == L_CC ? cplus_fe : c_fe);
 		}
 		break;
@@ -2640,6 +2782,13 @@ determine_phase_order (void)
 			add_phase(next_phase);
 			next_phase = P_wgen;
 			break;
+
+#ifdef PATH64_ENABLE_PSCLANG
+        case P_psclang:
+			add_phase(next_phase);
+			next_phase = post_fe_phase ();
+			break;
+#endif // PATH64_ENABLE_PSCLANG
 
 		case P_wgen:
 			add_phase(next_phase);
@@ -3273,6 +3422,9 @@ run_compiler (int argc, char *argv[])
 			    phase_order[i] != P_spin_cc1 &&
 			    phase_order[i] != P_spin_cc1plus &&
 			    phase_order[i] != P_wgen &&
+#ifdef PATH64_ENABLE_PSCLANG
+                phase_order[i] != P_psclang &&
+#endif // PATH64_ENABLE_PSCLANG
 			    phase_order[i] < P_any_fe) 
 			{
 			    add_command_line_arg(args, source_file);

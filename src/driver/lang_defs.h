@@ -94,8 +94,9 @@ typedef enum {
 	P_cpp,		/* old-style cpp */
 	P_gcpp,		/* gcc cpp */
 	P_gcpp_plus,	/* g++ cpp */
-	P_c_cpp,	/* cpp for C */
-	P_cplus_cpp,	/* cpp for C++ */
+#ifdef PATH64_ENABLE_PSCLANG
+    P_psclang_cpp,      /* psclang preprocessor */
+#endif
 	P_f_cpp,	/* cpp for F77 */
 	P_f90_cpp,	/* cpp for F90 */
 #ifdef KEY
@@ -119,6 +120,9 @@ typedef enum {
 	P_spin_cc1plus,	/* gnu gcc4 C++ fe */
 	P_wgen,		/* wgen */
 #endif
+#ifdef PATH64_ENABLE_PSCLANG
+    P_psclang,  /* psclang front-end */
+#endif // PATH64_ENABLE_PSCLANG
 	P_any_fe,	/* generic union of all fe's */
 	P_pseudo_f_fe,	/* not a real phase, just a placeholder 
 			 * for options for f_fe but not c_fe */

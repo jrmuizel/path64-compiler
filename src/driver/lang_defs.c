@@ -100,8 +100,9 @@ static phase_info_t phase_info[] = {
    {'p',  0x0000000000000020LL,	"gcc", "", FALSE}, /* gcpp */
    {'p',  0x0000000000000040LL,	"g++", "", FALSE}, /* gcpp_plus */
 #endif // PATH64_ENABLE_PSCRUNTIME
-   {'p',  0x0000000000000080LL,	"fec",	 PHASEPATH,	FALSE},	/* c_cpp */
-   {'p',  0x0000000000000100LL, "cpp",   PHASEPATH,     FALSE}, /* cplus_cpp */
+#ifdef PATH64_ENABLE_PSCLANG
+   {'p',  0x0000000000000080LL,	"psclang", PHASEPATH, TRUE}, /* psclang_cpp */
+#endif // PATH64_ENABLE_PSCLANG
    {'p',  0x0000000000000200LL,	"mfef77",PHASEPATH,	FALSE},	/* f_cpp */
    {'p',  0x0000000000000400LL,	"ftpp"   ,PHASEPATH,	FALSE},	/* f90_cpp */
 #ifdef KEY	// bug 9058
@@ -139,9 +140,12 @@ static phase_info_t phase_info[] = {
    {'f',  0x0000000000800000LL,	"cc1plus",PHASEPATH,	TRUE }, /* spin_cc1plus */
    {'f',  0x0000000001000000LL,	"wgen",PHASEPATH,	TRUE }, /* wgen      */
 #endif
+#ifdef PATH64_ENABLE_PSCLANG
+   {'f',  0x0000000004000000LL,	"psclang", PHASEPATH,	TRUE }, /* psclang  */
+#endif // PATH64_ENABLE_PSCLANG
    /* place-holder for generic fe, whose mask unites all fe's; */
    /* this is so -Wf will apply to whatever fe is being invoked. */
-   {'f',  0x0000000000ff0000LL,	"",	"",		FALSE},	/* any_fe */
+   {'f',  0x0000000005ff0000LL,	"",	"",		FALSE},	/* any_fe */
    {'F',  0x00000000000f0000LL,	"",	"",		FALSE},	/* pseudo_f_fe */
    {'C',  0x0000000000f00000LL,	"",	"",		FALSE},	/* pseudo_c_fe */
    {'X',  0x0000000002000000LL, "ftnlx", PHASEPATH,	FALSE}, /* Lister */ 

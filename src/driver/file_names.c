@@ -82,6 +82,7 @@ get_object_file (char *src)
 	// bug 2025
 	// Create .o files in /tmp in case the src dir is not writable.
 	if (!(keep_flag || (ipa == TRUE) || remember_last_phase == P_any_as)) {
+	  char *tmp_file = NULL;
 	  char *obj_name = change_suffix(src, "o");
 	  string_pair_item_t *p;
 	  FOREACH_STRING_PAIR (p, temp_obj_files) {
@@ -89,11 +90,11 @@ get_object_file (char *src)
 	      return STRING_PAIR_VAL(p);
 	  }
 	  // Create temp file name as in create_temp_file_name.
-	  buffer_t buf;
-	  sprintf(buf, "cco.");
-	  char *mapped_name = tempnam (tmpdir, buf);
-	  add_string_pair (temp_obj_files, obj_name, mapped_name);
-	  return mapped_name;
+	  tmp_file = concat_strings(tmpdir, "/cco.XXXXXX");
+	  int fd = mkstemp(tmp_file);
+	  close(fd);
+	  add_string_pair (temp_obj_files, obj_name, tmp_file);
+	  return tmp_file;
 	}
 
 	// Handle IPA .o files corresponding to sources with the same basename,
@@ -123,19 +124,20 @@ get_object_file (char *src)
  * of temp file), but also need names that won't conflict.
  * Put suffix in standard place so have easy way to check 
  * if file already created. 
- * Use tempnam to generate unique file name;
- * tempnam verifies that file is writable.
+ * Use mkstemp to generate unique file name;
  */
 char *
 create_temp_file_name (char *suffix)
 {
 	buffer_t buf;
+	buffer_t template;
 	buffer_t pathbuf;
 	size_t pathbuf_len;
 	char *s;
 	string_item_t *p;
-	/* use same prefix as gcc compilers;
-	 * tempnam limits us to 5 chars, and may have 2-letter suffix. */
+	int fd;
+
+	/* use same prefix as gcc compilers; */
 #ifdef KEY
 	int len = strlen(suffix);
 	if (len > 4) {
@@ -145,36 +147,23 @@ create_temp_file_name (char *suffix)
 	  sprintf(buf, "%s.", suffix);
 	} else
 #endif
-	sprintf(buf, "cc%s.", suffix);
-	sprintf(pathbuf, "%s/%s", tmpdir, buf); /* full path of tmp files */
+	  sprintf(buf, "cc%s.", suffix);
+
+	sprintf(pathbuf, "%s/%s", tmpdir, buf);
 	pathbuf_len = strlen(pathbuf);
 
 	for (p = temp_files->head; p != NULL; p = p->next) {
-		/* Can't use get_suffix here because we don't actually
-		 * want the suffix. tempnam may return a value with a period
-		 * in it. This will confuse our duplicates check below.
-		 * We can't change get_suffix, because in other cases we
-		 * actually want the right-most period. foo.bar.c
-		 * We are guaranteed here that the first period after the last
-		 * directory divider is the position we want because we chose
-		 * its contents above.
-		 */
-		char *file_name = strrchr(p->name, '/');
-		if (file_name == NULL)
-			file_name = p->name;
-		s = strchr(file_name, '.');
-		/* we know that s won't be null because we created a string
-		 * with a period in it. */
-		s++;
-		/* assume that s points inside p->name,
-		 * e.g. /tmp/ccB.abc, s points to a */
-		if (strncmp(s-pathbuf_len, pathbuf, pathbuf_len) == 0) {
-			/* matches the prefix and suffix character */
+		if (strncmp(p->name, pathbuf, pathbuf_len) == 0) {
+			/* matches the suffix */
 			return p->name;
 		}
 	}
+
 	/* need new file name */
-	s = tempnam (tmpdir, buf);
+	sprintf(template, "/%sXXXXXX", buf);
+	s = concat_strings (tmpdir, template);
+	fd = mkstemp(s);
+	close(fd);
 	add_string (temp_files, s);
 	return s;
 }

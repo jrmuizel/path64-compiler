@@ -38,7 +38,7 @@ __CTOR_LIST_END__:
 	.align 8
 	.quad 0
 
-	.section	.eh_frame, "a", @progbits
+	.section	.eh_frame, "a", @unwind
 	.align 8
 	.quad 0
 

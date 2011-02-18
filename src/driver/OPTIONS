@@ -184,7 +184,12 @@
 -show-defaults	{show_defaults = TRUE; execute_flag = FALSE;} ALL	NONE	""
 	"Show the default compiler options being used"
 % gcc has -v show version as well as phases, so take that meaning
+#ifdef __sun
+// -v option should not be passed to sun ld
+-v	{show_flag = TRUE; show_version++;} ALL	cpp,as	    self "-show"
+#else
 -v	{show_flag = TRUE; show_version++;} ALL	cpp,as,ld	self "-show"
+#endif
 	"show phases and version as they are being invoked"
 -fullwarn toggle(&msglevel,2);		FTN  cpp	"-m2"
 	"give more warnings, especially about missing prototypes"
@@ -736,8 +741,6 @@ I-object		;	ALL	ld	""
 % -noas says to skip the assembler phase
 -noas	toggle(&skip_as,TRUE);		ALL	NONE	""
 	""
--usegfe		;		Cc	NONE	"-INTERNAL:return_val=on -INTERNAL:mldid_mstid=on -INTERNAL:return_info=on"
-	""
 -usef90		;		F90	NONE	"-INTERNAL:return_val=on -INTERNAL:mldid_mstid=on -INTERNAL:return_info=on"
 	""
 
@@ -884,6 +887,15 @@ I-xall	;		FTN	ffe	self
 	"Don't use Pathscale assembler"
 -fpathas	;	ALL	NONE	""
 	"Use Pathscale assembler"
+#endif
+#ifdef PATH64_ENABLE_PSCLANG
+#ifdef PATH64_ENABLE_DEFAULT_PSCLANG
+-fno-psclang	;	ALL	NONE	""
+	"Don't use psclang front-end"
+#else
+-fpsclang	;	ALL	NONE	""
+	"Use psclang front-end"
+#endif
 #endif
 -varargs	;		f77	ffe	self
 	"MATRA varargs"

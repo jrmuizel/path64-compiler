@@ -988,9 +988,11 @@ Process_Local_File(char* input_name, void *handle, INT& num_PU)
     MEM_POOL_Push((MEM_POOL *)(mpool));
 
     pu_tree = Read_Global_Info (&PU_count);
-    inline_init(file_header);
 
     Initialize_Special_Global_Symbols ();
+
+    // inline_init should be called after all special symbols are initialized
+    inline_init(file_header);
 
 #ifdef _LIGHTWEIGHT_INLINER
 

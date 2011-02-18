@@ -267,6 +267,12 @@ function(path64_set_multitarget_sources name target)
 endfunction()
 
 
+# Sets base path to sources for multitarget source list
+function(path64_set_multitarget_sources_base_path name)
+    set(path64_multitarget_sources_base_${name} ${ARGN} PARENT_SCOPE)
+endfunction()
+
+
 # Sets sources for specified architecture in multiarch source list
 function(path64_set_multiarch_sources src_list_name arch)
     if(NOT "X${arch}" STREQUAL "XCOMMON")
@@ -285,7 +291,7 @@ set(path64_compiler_CXX "${Path64_BINARY_DIR}/bin/pathCC")
 set(path64_compiler_Fortran "${CMAKE_Fortran_COMPILER}")
 
 # Adds library for specified target
-function(path64_add_library_for_target name target type)
+function(path64_add_library_for_target name target type src_base_path)
     path64_check_target_exists(${target})
 
     get_property(compile_defs DIRECTORY PROPERTY COMPILE_DEFINITIONS)
@@ -326,6 +332,7 @@ function(path64_add_library_for_target name target type)
 
     # Adding rules for compiling sources
     set(objects)
+    set(rel_objects)
     foreach(src ${sources})
         # Getting source language
         get_property(src_lang SOURCE ${src} PROPERTY LANGUAGE)
@@ -406,17 +413,35 @@ function(path64_add_library_for_target name target type)
             # Getting full path to source
             set(oname ${src})
             if(NOT EXISTS ${src})
-                # Trying path relative to current source dir
-                if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
-                    set(src "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+                # Trying use base path
+                if(NOT "${src_base_path}" STREQUAL "")
+                    if(EXISTS "${src_base_path}/${src}")
+                        set(src "${src_base_path}/${src}")
+                    else()
+                        message(FATAL_ERROR "Can not find ${src_base_path}/${src} source")
+                    endif()
                 else()
-                    message(FATAL_ERROR "Can not find ${src} source")
+                    # Trying path relative to current source dir
+                    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+                        set(src "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+                    else()
+                        message(FATAL_ERROR "Can not find ${src} source")
+                    endif()
                 endif()
+            endif()
+
+            # Removing first slash in oname
+            string(SUBSTRING "${oname}" 0 1 first_char)
+            if("${first_char}" STREQUAL "/")
+                string(LENGTH "${oname}" str_len)
+                math(EXPR str_len "${str_len} - 1")
+                string(SUBSTRING "${oname}" 1 ${str_len} oname)
             endif()
     
             # Getting object output name and making path to it
             string(REPLACE "." "_" oname_mangled ${oname})
-            set(object_name "${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ}/${oname_mangled}.o")
+            set(object_rel_name "${oname_mangled}.o")
+            set(object_name "${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ}/${object_rel_name}")
             get_filename_component(object_path ${object_name} PATH)
             file(MAKE_DIRECTORY ${object_path})
 
@@ -439,7 +464,7 @@ function(path64_add_library_for_target name target type)
             endforeach()          
 
             add_custom_command(OUTPUT ${object_name} ${obj_outputs}
-                               COMMAND ${path64_compiler_${src_lang}} -c -o ${object_name}
+                               COMMAND ${path64_compiler_${src_lang}} -c -o ${object_rel_name}
                                        ${arch_flag}
                                        ${src_flags}
                                        ${incl_dirs_flags}
@@ -452,6 +477,7 @@ function(path64_add_library_for_target name target type)
                                        ${build_type_flags}
                                DEPENDS ${src} ${header_deps} ${obj_depends}
                                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ})
+            list(APPEND rel_objects "${object_rel_name}")
             list(APPEND objects ${object_name})
             list(FIND compiler-deps "compiler-stage-${src_lang}" res)
             if(res EQUAL -1)
@@ -471,9 +497,14 @@ function(path64_add_library_for_target name target type)
         set(library_file
             "${build_lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}${oname}${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
-        set(cmd ${CMAKE_AR} -cr ${library_file} ${objects})
+        set(cmd ${CMAKE_AR} -cr ${library_file} ${rel_objects})
         if("X${CMAKE_BUILD_TYPE}" STREQUAL "XRelease")
-            list(APPEND cmd "\;" strip -S ${library_file})
+            list(APPEND cmd "\;")
+            if("${CMAKE_SYSTEM_NAME}" STREQUAL "SunOS")
+                list(APPEND cmd strip ${library_file} "\;" ${CMAKE_AR} -ts ${library_file})
+            else()  
+                list(APPEND cmd strip -S ${library_file})
+            endif()
         endif()
 
         add_custom_command(OUTPUT ${library_file}
@@ -510,7 +541,7 @@ function(path64_add_library_for_target name target type)
                                    ${arch_flag}
                                    ${target_flags}
                                    ${target_link_flags}
-                                   ${objects}
+                                   ${rel_objects}
                                    ${link_libs_flags}
                            DEPENDS ${objects}
                            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ})
@@ -578,11 +609,14 @@ endfunction()
 # Adds library for all enabled targets
 function(path64_add_multitarget_library name type)
     set(src_list_name path64_multitarget_sources_${name})
+    set(src_base_path "${path64_multitarget_sources_base_${name}}")
     foreach(targ ${PATH64_ENABLE_TARGETS})
         if(${src_list_name}_${targ})
-            path64_add_library_for_target(${name} ${targ} ${type} ${${src_list_name}_${targ}})
+            path64_add_library_for_target(${name} ${targ} ${type} "${src_base_path}"
+                                          ${${src_list_name}_${targ}})
         else()
-            path64_add_library_for_target(${name} ${targ} ${type} ${${src_list_name}_COMMON})
+            path64_add_library_for_target(${name} ${targ} ${type} "${src_base_path}"
+                                          ${${src_list_name}_COMMON})
         endif()
         #set_property(TARGET ${tg_name} PROPERTY OUTPUT_NAME ${name})
     endforeach()

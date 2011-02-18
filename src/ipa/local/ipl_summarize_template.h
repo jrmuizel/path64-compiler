@@ -186,8 +186,8 @@ set_addr_taken_expr (const WN* expr, SUMMARIZE<program>* sum,
           if (st_info.addr_saved_reset || ST_addr_saved (st)) {
             st_info.addr_saved = TRUE;
             Set_ST_addr_saved (st);
-            if (st_info.summary_symbol_idx > -1) {
-              sum->Get_symbol(st_info.summary_symbol_idx)->Set_addr_saved();
+            if (st_info.get_summary_symbol_idx() > -1) {
+              sum->Get_symbol(st_info.get_summary_symbol_idx())->Set_addr_saved();
             }
             // propagate addr_saved atttribute from an element 
             // of a common block to the common block itself
@@ -196,8 +196,8 @@ set_addr_taken_expr (const WN* expr, SUMMARIZE<program>* sum,
               IPL_ST_INFO& st_info = Aux_Symbol(base_st);
               st_info.addr_saved = TRUE;
               Set_ST_addr_saved(base_st);
-              if (st_info.summary_symbol_idx > -1) {
-                sum->Get_symbol(st_info.summary_symbol_idx)->Set_addr_saved(); 
+              if (st_info.get_summary_symbol_idx() > -1) {
+                sum->Get_symbol(st_info.get_summary_symbol_idx())->Set_addr_saved(); 
               }
             }
           }
@@ -210,8 +210,8 @@ set_addr_taken_expr (const WN* expr, SUMMARIZE<program>* sum,
 
         case RECORD_PASSED:
           st_info.addr_passed = TRUE;
-          if (st_info.summary_symbol_idx > -1) {
-            sum->Get_symbol(st_info.summary_symbol_idx)->Set_addr_passed();
+          if (st_info.get_summary_symbol_idx() > -1) {
+            sum->Get_symbol(st_info.get_summary_symbol_idx())->Set_addr_passed();
           }
           // propagate addr_passed atttribute from an element 
           // of a common block to the common block itself
@@ -220,8 +220,8 @@ set_addr_taken_expr (const WN* expr, SUMMARIZE<program>* sum,
             IPL_ST_INFO& st_info = Aux_Symbol(base_st);
             st_info.addr_passed = TRUE;
             Set_ST_addr_passed(base_st);
-            if (st_info.summary_symbol_idx > -1) {
-              sum->Get_symbol(st_info.summary_symbol_idx)->Set_addr_passed(); 
+            if (st_info.get_summary_symbol_idx() > -1) {
+              sum->Get_symbol(st_info.get_summary_symbol_idx())->Set_addr_passed(); 
             }
           }
           break;
@@ -634,6 +634,8 @@ struct set_global_addr_taken_attrib
         if (ST_class (st) == CLASS_NAME) 
           return;
 
+	FmtAssert(idx < aux_st_info.size(),
+                  ("set_global_addr_taken_attrib: invalid symbol index"));
 	const IPL_ST_INFO& st_info = aux_st_info[idx];
 
 	// update the addr_taken attributes in the symbol table
@@ -664,7 +666,7 @@ struct set_global_addr_taken_attrib
 	// now, update the summary_symbol
 
 	if (st_info.addr_saved || st_info.addr_passed) {
-	    UINT sym_idx = st_info.summary_symbol_idx;
+	    UINT sym_idx = st_info.get_summary_symbol_idx();
 
 	    Is_True (ST_class (st) == CLASS_VAR ||
 		     ST_class (st) == CLASS_FUNC,
@@ -803,11 +805,11 @@ SUMMARIZE<program>::Set_local_addr_taken_attrib ()
 
 	const IPL_ST_INFO& st_info = *first;
 
-	if (st_info.summary_symbol_idx == -1)
+	if (st_info.get_summary_symbol_idx() == -1)
 	    continue;
 
 	if (st_info.addr_saved || st_info.addr_passed) {
-	    SUMMARY_SYMBOL* symbol = Get_symbol (st_info.summary_symbol_idx);
+	    SUMMARY_SYMBOL* symbol = Get_symbol (st_info.get_summary_symbol_idx());
 	    if (st_info.addr_saved)
 		symbol->Set_addr_saved ();
 	    if (st_info.addr_passed)
@@ -2811,7 +2813,7 @@ SUMMARIZE<program>::Get_symbol_index (const ST *st)
     return -1;
   }
 
-  UINT32& index = Aux_Symbol(st).summary_symbol_idx;
+  UINT32 index = Aux_Symbol(st).get_summary_symbol_idx();
 
   if (index != (UINT32) -1) {
     return index;
@@ -2870,6 +2872,7 @@ SUMMARIZE<program>::Get_symbol_index (const ST *st)
       sym->Set_addr_f90_target ();
 
   index = Get_symbol_idx();
+  Aux_Symbol(st).set_summary_symbol_idx(index);
     
   return index;
 
