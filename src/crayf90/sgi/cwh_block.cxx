@@ -81,7 +81,7 @@ static const char *source_file = __FILE__;
  *===============================================
  */
 extern void 
-cwh_block_push_block(WN *deferred, WN *append, BOOL is_top_pdo)
+cwh_block_push_block(WN *deferred, WN *append, BOOL is_do, BOOL is_top_pdo)
 {
   cwh_block_bump();   
 
@@ -89,7 +89,7 @@ cwh_block_push_block(WN *deferred, WN *append, BOOL is_top_pdo)
   block_stack[block_stack_top].u.block.deferred = deferred;
   block_stack[block_stack_top].u.block.append = append;
 
-  if (parallel_do_count) {
+  if (is_do && parallel_do_count) {
     block_stack[block_stack_top].is_parallel_do = TRUE;
     parallel_do_count--;
 

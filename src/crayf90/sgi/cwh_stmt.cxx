@@ -3277,7 +3277,7 @@ fei_dowhile(void)
 
    /* Push current block & set new block for body */
 
-   cwh_block_push_block(NULL,NULL,FALSE);
+   cwh_block_push_block(NULL,NULL,FALSE,FALSE);
    cwh_block_set_current(block);
 }
 
@@ -3549,7 +3549,7 @@ fei_doloop(INT32	line)
 
    /* Push the current block & make loop body current block */
 
-   cwh_block_push_block(deferred_update,calcu,is_top_pdo);
+   cwh_block_push_block(deferred_update,calcu,TRUE,is_top_pdo);
    cwh_block_set_current(stmts);
 
    /* Add any MP directives required to start of the loop body */
@@ -3578,7 +3578,7 @@ void
 fei_doforever(void)
 {
    /* Dummy block push */
-   cwh_block_push_block(NULL,NULL,FALSE);
+   cwh_block_push_block(NULL,NULL,FALSE,FALSE);
 }
 
 /*================================================================
@@ -3608,7 +3608,7 @@ fei_if(void)
    cwh_block_append(if_cnstrct);
 
    /* Push the current block */
-   cwh_block_push_block(NULL,NULL,FALSE);
+   cwh_block_push_block(NULL,NULL,FALSE,FALSE);
 
    cwh_block_set_current(if_then);
 

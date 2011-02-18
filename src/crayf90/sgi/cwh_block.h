@@ -57,7 +57,7 @@ extern void cwh_block_push_region(WN *region);
 extern WN * cwh_block_pop_region(void);
 
 extern WN * cwh_block_set_region_pragmas(BOOL assert = TRUE);
-extern void cwh_block_push_block(WN *deferred, WN *append, BOOL is_top_pdo) ;
+extern void cwh_block_push_block(WN *deferred, WN *append, BOOL is_do, BOOL is_top_pdo) ;
 extern void cwh_block_pop_block(void) ;
 extern void cwh_block_add_to_enclosing_regions(WN_PRAGMA_ID id, ST * st);
 
