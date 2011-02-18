@@ -155,6 +155,34 @@ void* operator new (size_t sz)
   return ptr;
 }
 
+void* operator new[] (size_t sz)
+#ifdef __GNUC__
+                               throw(std::bad_alloc) 
+#endif /* __GNUC__ */
+{
+  void* ptr;
+  if (_dummy_new_mempool == (MEM_POOL*) -1) {
+#if (__GNUC__ < 3) // to many of this after building with gcc 3.2
+    DevWarn("new: _dummy_new_mempool is not yet set; Using Malloc_Mem_Pool");
+#endif
+    _dummy_new_mempool = Malloc_Mem_Pool;
+  }
+
+  ptr = (void *) MEM_POOL_Alloc_P(_dummy_new_mempool,
+				  sz+_dummy_pad,
+#ifdef Is_True_On
+				  _alloc_callsite_line,
+				  _alloc_callsite_file);
+  _alloc_callsite_file = NULL;
+  _alloc_callsite_line = 0;
+#else
+				0, NULL);
+#endif
+  _dummy_new_mempool = (MEM_POOL*) -1;
+  _dummy_pad = 0;
+  return ptr;
+}
+
 void operator delete (void* ptr)
 #ifdef __GNUC__
                                  throw() 
