@@ -92,6 +92,11 @@ get_object_file (char *src)
 	  // Create temp file name as in create_temp_file_name.
 	  tmp_file = concat_strings(tmpdir, "/cco.XXXXXX");
 	  int fd = mkstemp(tmp_file);
+      if(fd == -1) {
+		error("mkstemp failed for template: %s", tmp_file);
+        return NULL;
+      }
+
 	  close(fd);
 	  add_string_pair (temp_obj_files, obj_name, tmp_file);
 	  return tmp_file;
@@ -162,8 +167,15 @@ create_temp_file_name (char *suffix)
 	/* need new file name */
 	sprintf(template, "/%sXXXXXX", buf);
 	s = concat_strings (tmpdir, template);
+
 	fd = mkstemp(s);
+    if(fd == -1) {
+      error("mkstemp failed for templates: %s", s);
+      return NULL;
+    }
+
 	close(fd);
+
 	add_string (temp_files, s);
 	return s;
 }
