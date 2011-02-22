@@ -2439,8 +2439,8 @@ static void lower_complex_expr(WN *block, WN *tree, LOWER_ACTIONS actions,
 
       lower_complex_expr(block, WN_kid0(tree), actions, &rz, &iz);
  
-      *realpart = WN_Cvt( type, Mtype_complex_to_real(desc), rz);
-      *imagpart = WN_Cvt( type, Mtype_complex_to_real(desc), iz);
+      *realpart = WN_Cvt( Mtype_complex_to_real(desc), type, rz);
+      *imagpart = WN_Cvt( Mtype_complex_to_real(desc), type, iz);
     }
     break;
 
