@@ -474,8 +474,6 @@ I-fini%s		;		CC	ld	"-fini %s"
 	"run cpp and send result to standard output"
 -P		; 	ALL	cpp	self
 	""
--M	last_phase=P_any_cpp; 	ALL	cpp	self
-	"run cpp and print list of make dependencies"
 -MDupdate%s	;		ALL	cpp,ld	"-MDupdate %s"
 	"update the following file with make dependencies"
 -MDtarget%s	;		ALL	cpp	"-MDtarget %s"
@@ -1886,13 +1884,15 @@ I-u%s		;		Cc	ld	"-u %s"
 	""
 -isysroot%D	;		Cc,FTN,as,cpp	cpp	"-isysroot %D"
 	""
--MD	;		Cc,as,cpp	cpp	self
+-M	last_phase=P_any_cpp; 	ALL	NONE ""
+	"run cpp and print list of make dependencies"
+-MD	;		Cc,as,cpp	NONE ""
 	"Write dependencies to .d output file"
--MF%s	;		Cc,as,cpp	cpp	"-MF %s"
+-MF%s	set_dependency_file(optargs);		Cc,as,cpp	NONE ""
 	"Write dependencies to specified output file"
--MMD	;		Cc,as,cpp	cpp	self
+-MMD	;		Cc,as,cpp	NONE    ""
 	"Write user dependencies to .d output file"
--MM	last_phase=P_any_cpp;	Cc,as,cpp	cpp	self
+-MM	last_phase=P_any_cpp;	Cc,as,cpp	NONE    ""
 	"Output user dependencies of source file"
 -MG	;		Cc,as,cpp	cpp	self
 	"With -M or -MM, treat missing header files as generated files"

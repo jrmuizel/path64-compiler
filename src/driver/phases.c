@@ -1191,6 +1191,26 @@ add_file_args (string_list_t *args, phases_t index)
 			add_string(args, "-o");		// gcc -o ...
 			add_string(args, input_source);
 		}
+
+		// processing options for generating dependencies
+
+		if(option_was_seen(O_M))
+			add_string(args, "-M");
+
+		if(option_was_seen(O_MD))
+			add_string(args, "-MD");
+
+		if(dependency_file != NULL) {
+			add_string(args, "-MF");
+			add_string(args, dependency_file);
+		}
+
+		if(option_was_seen(O_MM))
+			add_string(args, "-MM");
+
+		if(option_was_seen(O_MMD))
+			add_string(args, "-MMD");
+		
 		break;
 
 #ifdef PATH64_ENABLE_PSCLANG

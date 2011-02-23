@@ -127,6 +127,8 @@ static void Get_x86_ISA();
 static boolean Get_x86_ISA_extensions();
 #endif
 
+char * dependency_file = NULL;
+
 
 /* ====================================================================
  *
@@ -3033,6 +3035,11 @@ Process_Hugepage_Group(char * hugepage_args)
 
     if (!has_err) 
         add_option_seen(O_HP);
+}
+
+
+void set_dependency_file(const char *f) {
+	dependency_file = string_copy(f);
 }
 
 
