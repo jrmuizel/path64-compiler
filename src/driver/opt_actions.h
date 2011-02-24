@@ -308,7 +308,9 @@ extern int get_os21_profiler_options_warn() ;
 #endif
 
 extern char *dependency_file;
-extern void set_dependency_file(const char * file);
+extern char *dependency_target;
+extern void set_dependency_file(const char *file);
+extern void set_dependency_target(const char *target);
 
 #endif // __DRIVER_OPT_ACTIONS_H__
 

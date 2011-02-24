@@ -1217,7 +1217,14 @@ add_file_args (string_list_t *args, phases_t index)
     case P_psclang_cpp:
         // psclang preprocessor
 
-		add_string(args, "-E");
+        if(option_was_seen(O_M) || option_was_seen(O_MM) ||
+           option_was_seen(O_MD) || option_was_seen(O_MMD)) {
+
+            add_string(args, "-Eonly");
+        } else {
+            add_string(args, "-E");
+        }
+
         add_abi(args);
         
         if (ospace == TRUE ) {
@@ -1245,6 +1252,40 @@ add_file_args (string_list_t *args, phases_t index)
 
         // input source
         add_string(args, input_source);
+
+        // processing options for generating dependencies
+
+        if(option_was_seen(O_M) || option_was_seen(O_MM) ||
+           option_was_seen(O_MD) || option_was_seen(O_MMD)) {
+
+            add_string(args, "-dependency-file");
+
+            // determining dependency file name
+            if(dependency_file != NULL) {
+                // using user defined file name
+                add_string(args, dependency_file);
+            } else if(option_was_seen(O_MD) || option_was_seen(O_MMD)) {
+                // using source name with .d suffix
+                char *dep_file = change_suffix(drop_path(input_source), "d");
+                add_string(args, dep_file);
+                free(dep_file);
+            } else {
+                // printing dependencies to stdout
+                add_string(args, "-");
+            }
+
+            if(option_was_seen(O_M) || option_was_seen(O_MD)) {
+                // system headers should be added to list of dependencies
+                add_string(args, "-sys-header-deps");
+            }
+
+            // setting dependency target
+            if(dependency_target == NULL)
+                dependency_target = change_suffix(drop_path(input_source), "o");
+
+            add_string(args, "-MT");
+            add_string(args, dependency_target);
+        }
 
         // output
         if (last_phase == P_any_cpp && outfile != NULL) {

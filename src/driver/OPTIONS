@@ -1896,9 +1896,9 @@ I-u%s		;		Cc	ld	"-u %s"
 	"Output user dependencies of source file"
 -MG	;		Cc,as,cpp	cpp	self
 	"With -M or -MM, treat missing header files as generated files"
--MT%s	;		Cc,as,cpp	cpp	"-MT %s"
+-MT%s	set_dependency_target(optargs);		Cc,as,cpp	cpp	"-MT %s"
 	"Change the target of the generated dependency rules"
--MQ%s	;		Cc,as,cpp	cpp	"-MQ %s"
+-MQ%s	set_dependency_target(optargs);		Cc,as,cpp	cpp	"-MQ %s"
 	"Same as -MT, but quote characters that are special to Make"
 %Fixing bug 375
 -MP	;		Cc,as,cpp	cpp	self
