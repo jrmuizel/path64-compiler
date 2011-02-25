@@ -404,8 +404,9 @@ Expand_OP (OPCODE opcode, TN *result, TN *op1, TN *op2, TN *op3, VARIANT variant
 		// both are int
   		// only zero-extend when enlarging an unsigned value; 
 		// else sign-extend.
-		Expand_Convert_Length ( result, op1, op2, 
-			rtype, 
+        INT sz = std::min(MTYPE_bit_size(desc), MTYPE_bit_size(rtype));
+        TN *sz_tn = Gen_Literal_TN(sz, 4);
+		Expand_Convert_Length ( result, op1, sz_tn, rtype, 
 			(MTYPE_is_signed(desc)
 			|| (MTYPE_bit_size(desc) > MTYPE_bit_size(rtype) ) ),
 			ops);
