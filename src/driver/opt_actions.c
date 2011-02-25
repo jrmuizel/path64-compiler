@@ -2789,8 +2789,7 @@ Get_x86_ISA_extensions ()
     sse = TRUE;
 
   // Use SSE2 on systems that support it.
-  if (sse2 == UNDEFINED &&
-    target_supports_sse2) {
+  if (sse2 == UNDEFINED && (target_supports_sse2 || abi == ABI_M64)) {
     sse2 = TRUE;
   }
 
