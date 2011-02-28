@@ -105,10 +105,6 @@ extern "C" {
 #include "ir_reader.h"
 #endif
 
-#ifdef _WIN32
-extern "C" int kill(pid_t pid, int sig);
-#endif
-
 
 /* ====================================================================
  *
@@ -283,7 +279,7 @@ catch_signal (INT sig, INT error_num)
          sig == SIGHUP ||
 #endif
          sig == SIGTERM ) {
-	kill ( getpid(), sig);	/* pass signal on to driver */
+	raise (sig);	/* pass signal on to driver */
     	/*NOTREACHED*/
 	exit(RC_INTERNAL_ERROR);
     }
@@ -922,7 +918,7 @@ ErrMsg_Report_Nonuser ( ERROR_DESC *edesc, INT ecode, INT line,
   /* Abort at highest severity level: */
   if ( mlevel >= ES_ERRABORT ) {
     Signal_Cleanup( 0 );
-    if ( ecode == EC_Signal )	kill ( getpid(), SIGILL );
+    if ( ecode == EC_Signal )	raise ( SIGILL );
     exit(RC_INTERNAL_ERROR);
   }
 
@@ -1097,7 +1093,7 @@ ErrMsg_Report_User (ERROR_DESC *edesc, INT ecode, INT line,
   /* Abort at highest severity level: */
   if ( mlevel >= ES_ERRABORT ) {
     Signal_Cleanup( 0 );
-    if ( ecode == EC_Signal )	kill ( getpid(), SIGILL );
+    if ( ecode == EC_Signal )	raise ( SIGILL );
     exit(RC_NORECOVER_USER_ERROR);
   }
 

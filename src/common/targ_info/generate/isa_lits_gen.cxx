@@ -247,7 +247,7 @@ void ISA_Lits_End(void)
 //  See interface description.
 /////////////////////////////////////
 {
-  fprintf(hfile, "\tLC_MAX\n");
+  fprintf(hfile, "\tLC_EMAX\n");
   fprintf(hfile, "} ISA_LIT_CLASS;\n");
 
   fprintf(cfile, "};\n");

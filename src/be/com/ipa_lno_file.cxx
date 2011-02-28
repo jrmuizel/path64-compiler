@@ -75,8 +75,6 @@
 #define MAPPED_SIZE 0x400000
 #endif
 
-extern "C" int kill(int,int);
-
 // Put this here for now.  Later move it on to /usr/sys/include/elfwhirl.h? 
 static char IPALNO_REVISION[] = "IPALNO:1.1"; 
 
@@ -126,7 +124,7 @@ static void Ir_Lno_Signal_Handler(int sig,
   }
   if (old_handler == SIG_DFL) {
     // Resignal - will get default handler
-    kill(getpid(), sig);
+    raise(sig);
   } else if (old_handler != SIG_IGN) {
     // Call old handler  
     (*old_handler)(sig);

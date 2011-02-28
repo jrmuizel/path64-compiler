@@ -27,7 +27,7 @@ struct rlimit {
     rlim_t rlim_max;
 };
 
-struct	rusage {
+struct rusage {
 	struct timeval ru_utime;
 	struct timeval ru_stime;
 };

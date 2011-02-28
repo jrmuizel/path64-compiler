@@ -3829,6 +3829,7 @@ do_f90_common_args(string_list_t *args)
 static void
 set_stack_size()
 {
+#ifdef RLIMIT_STACK
   struct rlimit rl;
   rlim_t max_stack;
 
@@ -3853,6 +3854,7 @@ set_stack_size()
     warning("cannot change stack size limit");
     return;
   }
+#endif
 }
 
 

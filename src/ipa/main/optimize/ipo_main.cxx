@@ -2316,7 +2316,7 @@ if(Get_Trace(TP_IPA, IPA_TRACE_TUNING))
 #ifdef Is_True_On
       CGB_IPA_Terminate();
 #endif
-      kill (getpid (), SIGQUIT);
+      raise (SIGQUIT);
   } 
 
   // should never reach here

@@ -177,8 +177,8 @@ ir_bwrite_signal_handler (int sig, int err_num)
     
     if (old_handler == SIG_DFL) {
       /* resignal - will get default handler */
-//      kill(getpid(), sig);
-      exit((RC_INTERNAL_ERROR << 8) | sig);
+      raise(sig);
+      exit(RC_INTERNAL_ERROR);
     } else if (old_handler != SIG_IGN) {
       /* call old handler */
       (*old_handler)(sig);

@@ -192,7 +192,7 @@ add_executable (be-exec driver.cxx driver_util.cxx iter.cxx  ../com/phase.cxx)
 # TODO : Make sure link targets are static
 target_link_libraries (be-exec -Wl,--whole-archive be-static cg wopt -Wl,--no-whole-archive iberty dwarf elfutil elf targinfo)
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-target_link_libraries(be-exec winlib regex)
+target_link_libraries(be-exec winlib)
 ENDIF()
 SET_TARGET_PROPERTIES(be-exec PROPERTIES OUTPUT_NAME "be")
 IF(${EXPORT_DYNAMIC_SUPPORTED} MATCHES "yes")

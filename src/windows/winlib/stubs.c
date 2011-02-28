@@ -25,6 +25,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cmplrs/rcodes.h>
+#include <errno.h>
+#include <sys/resource.h>
+#include <windows.h>
 
 const char * Anl_File_Path()
 {
@@ -32,10 +35,38 @@ const char * Anl_File_Path()
     return 0;
 }
 
-struct rusage;
-int getrusage(int who, struct rusage *r_usage)
+int getrusage(int who, struct rusage *usage)
 {
-    fprintf(stderr, "getrusage() is unimplemented\n");
+    FILETIME CreateTime, ExitTime;
+    FILETIME KernelTime, UserTime;
+    ULARGE_INTEGER Value;
+    
+    if (who != RUSAGE_SELF) {
+        fprintf(stderr, "The param=%d is unimplemented\n", who);
+        exit(RC_UNIMPLEMENTED_ERROR);
+	return -1;
+    }
+
+    if (GetProcessTimes(GetCurrentProcess(), &CreateTime, &ExitTime,
+    	                                     &KernelTime, &UserTime)) {
+    	errno = EINVAL;
+    	return -1;
+    }
+
+    Value.HighPart = KernelTime.dwHighDateTime;
+    Value.LowPart  = KernelTime.dwLowDateTime;
+
+#define CAST_TO(x, v)  (x) = (typeof(x))(v)
+
+    CAST_TO(usage->ru_stime.tv_sec,   Value.QuadPart / 10000000ULL);
+    CAST_TO(usage->ru_stime.tv_usec, (Value.QuadPart % 10000000ULL) / 10ULL);
+
+    Value.HighPart = UserTime.dwHighDateTime;
+    Value.LowPart  = UserTime.dwLowDateTime;
+
+    CAST_TO(usage->ru_utime.tv_sec,   Value.QuadPart / 10000000ULL);
+    CAST_TO(usage->ru_utime.tv_usec, (Value.QuadPart % 10000000ULL) / 10ULL);
+
     return 0;
 }
 
@@ -69,6 +100,7 @@ int kill(pid_t pid, int sig)
 int fork()
 {
     fprintf(stderr, "fork() is unimplemented\n");
+    exit(RC_UNIMPLEMENTED_ERROR);
     return -1;
 }
 
