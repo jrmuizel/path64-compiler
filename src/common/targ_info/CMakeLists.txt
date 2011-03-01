@@ -339,6 +339,10 @@ if(${mips_enabled})
     set_property(TARGET mips5kf APPEND PROPERTY
                  COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/mips")
 
+    install(TARGETS mips5kf
+            RUNTIME DESTINATION bin
+            LIBRARY DESTINATION ${PATH64_LIB_PATH}/mips)
+
     # r10000 is broken
 
     #add_executable(r10000_si_gen proc/mips/r10000_si.cxx)
