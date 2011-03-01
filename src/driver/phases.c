@@ -2392,7 +2392,7 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
 
     /* TODO: FIXME: Temp hack to replace gcc as a linker */
 
-    phase_name = "/usr/bin/ld";
+    phase_name = "/usr/bin/" CROSS_PFX "ld";
 
     //init_stdc_plus_plus_path();
 
@@ -3250,7 +3250,7 @@ run_ld (void)
     ldpath = get_full_phase_name(ldphase);
 
     if ( ldphase != P_ipa_link )
-        ldpath = "/usr/bin/ld";
+        ldpath = "/usr/bin/" CROSS_PFX "ld";
 
 	/* for ld, we first have options, then files, then objects,
 	 * where objects includes object-specific options */

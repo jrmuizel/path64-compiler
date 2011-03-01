@@ -72,6 +72,10 @@ add_definitions(${ARCH_DEFS})
 
 add_executable(table ${PATHSCALE_TABLE_SRCS})
 
+string(REGEX MATCH "^[^-]+" targ_arch ${PSC_TARGET})
+if(NOT ${CMAKE_SYSTEM_PROCESSOR} STREQUAL ${targ_arch})
+    add_definitions(-DPATH64_CROSS)
+endif()
 
 # Detecting gcc and configuring sort_options script
 set(SORT_OPTIONS ${CMAKE_CURRENT_BINARY_DIR}/sort_options.sh)
