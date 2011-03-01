@@ -2030,7 +2030,7 @@ I-u%s		;		Cc	ld	"-u %s"
 	"Do not use standard system libraries when linking"
 --sysroot=%D	set_sysroot(optargs,0);		Cc,FTN,as,cpp	NONE	""
 	""
-#ifdef MIPS
+#ifdef TARG_MIPS
 --sysroot-n32=%D	set_sysroot(optargs,-1);		Cc,FTN,as,cpp	NONE	""
 	""
 --sysroot-64=%D	set_sysroot(optargs,1);		Cc,FTN,as,cpp	NONE	""
