@@ -1168,6 +1168,14 @@ add_file_args (string_list_t *args, phases_t index)
 		  add_string(args, "-mfpmath=387");
         }
 #endif
+
+        add_string(args, "-U_FORTIFY_SOURCE");
+        add_string(args, "-U__GNUC__");
+        add_string(args, "-D__GNUC__=4");
+        add_string(args, "-U__GNUC_MINOR__");
+        add_string(args, "-D__GNUC_MINOR__=2");
+        add_string(args, "-U__GNUC_PATCHLEVEL__");
+        add_string(args, "-D__GNUC_PATCHLEVEL__=1");
 		
 		add_string(args, input_source);
 		if (source_kind == S_h)	{	// SiCortex 5034
