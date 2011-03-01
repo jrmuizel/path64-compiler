@@ -182,11 +182,10 @@ endfunction()
 
 # Returns target for host system
 function(path64_get_host_target res_var)
-    # TODO: find way how to get target for host system
     if(NOT "${PATH64_HOST_TARGET}" STREQUAL "")
         set(${res_var} "${PATH64_HOST_TARGET}" PARENT_SCOPE)
     else()
-        set(${res_var} "x86_64" PARENT_SCOPE)
+        set(${res_var} "${CMAKE_SYSTEM_PROCESSOR}" PARENT_SCOPE)
     endif()
 endfunction()
 
