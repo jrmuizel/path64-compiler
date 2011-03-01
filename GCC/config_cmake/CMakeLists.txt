@@ -705,7 +705,8 @@ IF(GCC_USE_PLATFORM_SCRIPT)
       ARGS
       "\"${GCCCONFIG_SOURCE_DIR}/gcc_platform.sh\""
       "\"${GCCCONFIG_BINARY_DIR}/gcc_platform.cmake\""
-      "\"${CMAKE_COMMAND}\"")
+      "\"${CMAKE_COMMAND}\""
+      "\"${PSC_TARGET}\"")
     SET(GCC_EXECUTED_PLATFORM_SCRIPT 1)
   ENDIF(GCC_SH)
 ENDIF(GCC_USE_PLATFORM_SCRIPT)
