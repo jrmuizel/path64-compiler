@@ -112,6 +112,10 @@ string(REGEX REPLACE "^([0-9.]+).*$" "\\1" TMPVERSION ${PSC_FULL_VERSION})
 string(REGEX REPLACE "^([0-9]+).+$" "\\1" PSC_MAJOR_VERSION ${TMPVERSION})
 string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*$" "\\1" PSC_MINOR_VERSION ${TMPVERSION})
 
+IF(NOT PSC_TARGET)
+    string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}-pathscale-${CMAKE_SYSTEM_NAME}" PSC_TARGET)
+ENDIF()
+
 # Checking that CRT paths are specified for all targets
 FOREACH(targ ${PATH64_ENABLE_TARGETS})
     IF(PSC_CRT_PATH_${targ})
