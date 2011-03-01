@@ -121,7 +121,7 @@ FOREACH(targ ${PATH64_ENABLE_TARGETS})
     ENDIF()
 
     if(PSC_CRTBEGIN_PATH_${targ})
-        message(STATUS "crtbegin/crtend path for ${targ} target: ${PSC_CRT_PATH_${targ}}")
+        message(STATUS "crtbegin/crtend path for ${targ} target: ${PSC_CRTBEGIN_PATH_${targ}}")
     else()
         set(arch "${_PATH64_TARGET_ARCH_${targ}}")
         if("${arch}" STREQUAL "x8664")
