@@ -13939,7 +13939,7 @@ Change_Section_Origin (ST *base, INT64 ofst)
 #endif // KEY
 #endif // TARG_MIPS
 		cur_section = base;
-#if defined(TARG_MIPS) || defined(TARG_MVP)
+#if defined(TARG_MVP)
 		CGEMIT_Change_Origin_In_Asm(base, ofst);
 #endif
 	}
@@ -14350,7 +14350,7 @@ Process_Bss_Data (SYMTAB_IDX stab)
 	  size = 1;
 #endif
 
-#ifdef TARG_X8664
+#if defined(TARG_X8664) || defined(TARG_MIPS)
 	// Fix bug 617
 	// Do not emit .org for any symbols with section attributes.
 	{

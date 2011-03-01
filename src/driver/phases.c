@@ -1953,12 +1953,10 @@ add_file_args (string_list_t *args, phases_t index)
 #elif defined(TARG_MIPS)
         if (is_target_arch_MIPS()) {
 		  if( abi == ABI_N32 ) {
-		    add_string(args, "-m");
-		    add_string(args, "elf32ltsmipn32");
+		    add_string(args, "-melf32ltsmipn32");
 		  }
 		  else {
-		    add_string(args, "-m");
-		    add_string(args, "elf64ltsmip");
+		    add_string(args, "-melf64ltsmip");
 		  }
 		  // Pass top level library dir to ipa so that
 		  // it finds libraries like lib32/libc.so.6

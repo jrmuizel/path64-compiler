@@ -688,7 +688,9 @@ static vector<std::string> get_extra_args(const char* ipaa_filename)
     break;
   case F_CALL_SHARED:
   case F_CALL_SHARED_RELOC:
+#ifndef TARG_MIPS
     args.push_back("-pic1");
+#endif
     break;
   case F_NON_SHARED:
     args.push_back("-static");

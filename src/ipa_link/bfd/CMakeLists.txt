@@ -56,6 +56,12 @@ elf32-gen.c
 cpu-i386.c
 targets.c
 peigen.c
+elf64-mips.c
+elf32-mips.c
+elfn32-mips.c
+cpu-mips.c
+elfxx-mips.c
+ecofflink.c
   )
 # We should generate bfd-h from the template below instead of hard coded
 # ipa_link/bfd/bfd-in.h
@@ -83,7 +89,33 @@ peigen.c
 #mv ldemul-tmp.h ldemul-list.h
 
 
-set_property(SOURCE archures.c targets.c PROPERTY COMPILE_DEFINITIONS DEFAULT_VECTOR=bfd_elf64_x86_64_vec;SELECT_VECS=&bfd_elf64_x86_64_vec,&bfd_elf32_i386_vec,&i386linux_vec,&bfd_efi_app_ia32_vec,&bfd_elf64_little_generic_vec,&bfd_elf64_big_generic_vec,&bfd_elf32_little_generic_vec,&bfd_elf32_big_generic_vec;SELECT_ARCHITECTURES=&bfd_i386_arch;HAVE_bfd_elf64_x86_64_vec;HAVE_bfd_elf32_i386_vec;HAVE_i386linux_vec;HAVE_bfd_efi_app_ia32_vec;HAVE_bfd_elf64_little_generic_vec;HAVE_bfd_elf64_big_generic_vec;HAVE_bfd_elf32_little_generic_vec;HAVE_bfd_elf32_big_generic_vec)
+set_property(SOURCE archures.c targets.c PROPERTY COMPILE_DEFINITIONS
+             DEFAULT_VECTOR=bfd_elf64_x86_64_vec
+	     SELECT_VECS=&bfd_elf64_x86_64_vec,&bfd_elf32_i386_vec,&i386linux_vec,&bfd_efi_app_ia32_vec,&bfd_elf64_little_generic_vec,&bfd_elf64_big_generic_vec,&bfd_elf32_little_generic_vec,&bfd_elf32_big_generic_vec,&bfd_elf32_bigmips_vec,&bfd_elf32_bigmips_vxworks_vec,&bfd_elf32_littlemips_vec,&bfd_elf32_littlemips_vxworks_vec,&bfd_elf32_nbigmips_vec,&bfd_elf32_nlittlemips_vec,&bfd_elf32_ntradbigmips_vec,&bfd_elf32_ntradlittlemips_vec,&bfd_elf32_tradbigmips_vec,&bfd_elf32_tradlittlemips_vec,&bfd_elf64_bigmips_vec,&bfd_elf64_littlemips_vec,&bfd_elf64_tradbigmips_vec,&bfd_elf64_tradlittlemips_vec
+             SELECT_ARCHITECTURES=&bfd_i386_arch,&bfd_mips_arch
+	     HAVE_bfd_elf64_x86_64_vec
+	     HAVE_bfd_elf32_i386_vec
+	     HAVE_i386linux_vec
+	     HAVE_bfd_efi_app_ia32_vec
+	     HAVE_bfd_elf64_little_generic_vec
+	     HAVE_bfd_elf64_big_generic_vec
+	     HAVE_bfd_elf32_little_generic_vec
+	     HAVE_bfd_elf32_big_generic_vec
+	     HAVE_bfd_elf32_bigmips_vec
+	     HAVE_bfd_elf32_bigmips_vxworks_vec
+	     HAVE_bfd_elf32_littlemips_vec
+	     HAVE_bfd_elf32_littlemips_vxworks_vec
+	     HAVE_bfd_elf32_nbigmips_vec
+	     HAVE_bfd_elf32_nlittlemips_vec
+	     HAVE_bfd_elf32_ntradbigmips_vec
+	     HAVE_bfd_elf32_ntradlittlemips_vec
+	     HAVE_bfd_elf32_tradbigmips_vec
+	     HAVE_bfd_elf32_tradlittlemips_vec
+	     HAVE_bfd_elf64_bigmips_vec
+	     HAVE_bfd_elf64_littlemips_vec
+	     HAVE_bfd_elf64_tradbigmips_vec
+	     HAVE_bfd_elf64_tradlittlemips_vec
+	     )
  
 ADD_LIBRARY(bfd STATIC ${BFD_SRCS})
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)

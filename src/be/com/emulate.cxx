@@ -4742,10 +4742,10 @@ extern WN *intrinsic_runtime(WN *block, WN *tree)
 	st = Gen_Intrinsic_Function(ty, "sc_strcpy");  break;
 //      case INTRN_STRLEN:
 //	st = Gen_Intrinsic_Function(ty, "sc_strlen");  break;
-      case INTRN_BZERO:
-	st = Gen_Intrinsic_Function(ty, "sc_bzero");  break;
-      case INTRN_BCOPY:
-	st = Gen_Intrinsic_Function(ty, "sc_bcopy");  break;
+//      case INTRN_BZERO:
+//	st = Gen_Intrinsic_Function(ty, "sc_bzero");  break;
+//      case INTRN_BCOPY:
+//	st = Gen_Intrinsic_Function(ty, "sc_bcopy");  break;
       }
     }
 

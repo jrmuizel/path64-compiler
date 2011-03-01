@@ -74,6 +74,17 @@ ENDIF()
 include(${Path64_SOURCE_DIR}/src/targets.cmake)
 
 
+# Use -G0 option if building with pathscale on MIPS
+if("${CMAKE_C_COMPILER_ID}" STREQUAL "PathScale")
+    path64_get_host_arch(arch)
+    if("${arch}" STREQUAL "mips")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -G0")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -G0")
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -G0")
+    endif()
+endif()
+
+
 # Define if we are doing a supported build
 OPTION(PATH64_ENABLE_SUPPORTED "Enabling supported build" OFF)
 IF(PATH64_ENABLE_SUPPORTED)
