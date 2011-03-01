@@ -287,8 +287,8 @@ CGEMIT_Change_Origin_In_Asm (ST *st, INT64 offset)
 	      strlen(EH_DESC_LINKONCE_PREFIX)))
   {
     if (CG_emit_non_gas_syntax)
-      fprintf (Asm_File, "\t%s 0x%" SCNd64 "\n", ".origin", offset);
-    else fprintf (Asm_File, "\t%s 0x%" SCNd64 "\n", AS_ORIGIN, offset);
+      fprintf (Asm_File, "\t%s 0x%" SCNx64 "\n", ".origin", offset);
+    else fprintf (Asm_File, "\t%s 0x%" SCNx64 "\n", AS_ORIGIN, offset);
     fprintf ( Asm_File, "\t%s\t0\n", AS_ALIGN );
   }
 }
