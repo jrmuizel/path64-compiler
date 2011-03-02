@@ -156,6 +156,8 @@ static void x86_64_abi(void)
 	 R8, R9, R10, R11, R12, R13, R14, R15 };
   enum { XMM0=0, XMM1, XMM2,  XMM3,  XMM4,  XMM5,  XMM6,  XMM7,
 	 XMM8,   XMM9, XMM10, XMM11, XMM12, XMM13, XMM14, XMM15 };
+  enum { YMM0=0, YMM1, YMM2,  YMM3,  YMM4,  YMM5,  YMM6,  YMM7,
+	 YMM8,   YMM9, YMM10, YMM11, YMM12, YMM13, YMM14, YMM15 };
   enum { ST0=0, ST1, ST2, ST3, ST4, ST5, ST6, ST7 };
   enum { MMX0=0, MMX1, MMX2, MMX3, MMX4, MMX5, MMX6, MMX7 };
 
@@ -206,6 +208,23 @@ static void x86_64_abi(void)
 		-1 );
   Reg_Property( func_val, ISA_REGISTER_CLASS_float,
 		XMM0, XMM1,
+		-1 );
+  
+	Reg_Property( allocatable, ISA_REGISTER_CLASS_ymmx,
+		YMM0, YMM1, YMM2,  YMM3,  YMM4,  YMM5,  YMM6,  YMM7,
+		YMM8, YMM9, YMM10, YMM11, YMM12, YMM13, YMM14, YMM15,
+		-1 );
+  Reg_Property( callee, ISA_REGISTER_CLASS_ymmx,
+		-1 );
+  Reg_Property( caller, ISA_REGISTER_CLASS_ymmx,
+		YMM0, YMM1, YMM2,  YMM3,  YMM4,  YMM5,  YMM6,  YMM7,
+		YMM8, YMM9, YMM10, YMM11, YMM12, YMM13, YMM14, YMM15,
+		-1 );
+  Reg_Property( func_arg, ISA_REGISTER_CLASS_ymmx,
+		YMM0, YMM1, YMM2, YMM3, YMM4, YMM5, YMM6, YMM7,
+		-1 );
+  Reg_Property( func_val, ISA_REGISTER_CLASS_ymmx,
+		YMM0, YMM1,
 		-1 );
 
   // ISA_REGISTER_CLASS_x87

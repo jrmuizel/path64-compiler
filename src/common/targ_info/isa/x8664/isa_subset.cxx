@@ -1298,6 +1298,7 @@ main()
 				 TOP_palignr,
 				 TOP_pshufb128,
 				 TOP_pshufb,
+             TOP_vaddpd,
 		    TOP_UNDEFINED);
 
   ISA_Subset_End();

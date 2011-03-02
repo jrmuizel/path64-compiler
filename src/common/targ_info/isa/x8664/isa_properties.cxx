@@ -145,7 +145,8 @@ main()
     vector_lo_loadstore,   /* SSE movlpd/movlps */
     vector_high_loadstore, /* SSE movhpd/movhps */
     vector_packed_single,  /* SSE packed single-precision FPU op */
-    vector_packed_double;  /* SSE packed double-precision FPU op */
+    vector_packed_double,  /* SSE packed double-precision FPU op */
+    vector_avx;
   
 
   ISA_Properties_Begin ("x8664");
@@ -2828,6 +2829,11 @@ main()
 				 TOP_pavgw128,
 		     TOP_psadbw,
                      TOP_UNDEFINED);
+
+  vector_avx = ISA_Property_Create("vector_avx");
+  Instruction_Group(vector_avx,
+		    TOP_vaddpd,
+		    TOP_UNDEFINED);
 
   /* ==== vector ops ================ */
   vector_op = ISA_Property_Create ("vector_op");

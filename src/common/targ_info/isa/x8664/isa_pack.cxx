@@ -1279,6 +1279,7 @@ main()
 				 		TOP_palignr, 0x000000ff,
 				 		TOP_pshufb128, 0x000000ff,
 				 		TOP_pshufb, 0x000000ff,
+            TOP_vaddpd, 0x000000ff,
             TOP_xchgx8, 0x000000ff,
             TOP_xchgx16, 0x000000ff,
             TOP_xchgx32, 0x000000ff,

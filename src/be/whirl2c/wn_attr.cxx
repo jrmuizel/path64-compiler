@@ -297,7 +297,10 @@ WN_intrinsic_return_ty(OPCODE wn_opc, INTRINSIC intr_opc, const WN *call)
      break;     
    case IRETURN_M8I4:
      ret_ty = Stab_Mtype_To_Ty(MTYPE_M8I4);
-     break;     
+     break;
+   case IRETURN_V32F8:
+   	 ret_ty = Stab_Mtype_To_Ty(MTYPE_V32F8);
+	 break;
 #endif
 #endif
    default:

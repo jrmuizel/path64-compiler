@@ -181,6 +181,11 @@ main()
     ISA_Reg_Opnd_Type_Create("mmx", ISA_REGISTER_CLASS_mmx,
                              ISA_REGISTER_SUBCLASS_UNDEFINED,
                              64, SIGNED, INVALID);
+  
+  const OPERAND_VALUE_TYPE ymmx =
+    ISA_Reg_Opnd_Type_Create("ymmx", ISA_REGISTER_CLASS_ymmx,
+                             ISA_REGISTER_SUBCLASS_UNDEFINED,
+                             256, SIGNED, INVALID);
   /* Enums */
 
   const OPERAND_VALUE_TYPE pfhint =
@@ -3376,6 +3381,13 @@ main()
   Result(0, fp128);
   Operand(0, fp128, opnd1);
   Operand(1, fp128, opnd2);
+  
+  Instruction_Group("vadd ymm",
+                    TOP_vaddpd,
+                    TOP_UNDEFINED);
+  Result(0, ymmx);
+  Operand(0, ymmx, opnd1);
+  Operand(1, ymmx, opnd2);
 
   Instruction_Group("pmax pmin xmm",
                     TOP_pmaxsb,

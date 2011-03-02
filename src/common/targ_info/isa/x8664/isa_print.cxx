@@ -880,6 +880,7 @@ main()
 			   TOP_cmppd,
 			   TOP_shldi32,
 			   TOP_shrdi32,
+			   TOP_vaddpd,
 			   TOP_UNDEFINED );
 
   /* Operand 0 only */

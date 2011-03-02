@@ -1313,6 +1313,7 @@ main ()
 					"palignr",
 					"pshufb128",
 					"pshufb",
+              "vaddpd",
 
 	      /* instructions to support Open MP. */
 	      "lock_add32",

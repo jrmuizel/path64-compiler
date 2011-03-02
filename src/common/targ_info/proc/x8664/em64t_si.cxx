@@ -2038,5 +2038,7 @@ Instruction_Group("sse4.1 blend",
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(0);
 
+#include "avx_si.cxx"
+
   Machine_Done("em64t.c");
 }

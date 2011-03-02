@@ -1550,6 +1550,8 @@ static void Init_OP_Name()
 	OP_Name[TOP_palignr] = "palignr";
 	OP_Name[TOP_pshufb128] = "pshufb";
 	OP_Name[TOP_pshufb] = "pshufb";
+/*AVX*/
+	OP_Name[TOP_vaddpd] = "vaddpd";
 
 //**********************************************************
 // For barcelona (bug 13108)

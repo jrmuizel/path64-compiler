@@ -2167,5 +2167,7 @@ int main (int argc, char *argv[])
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(0);
 
+#include "avx_si.cxx"
+
   Machine_Done("wolfdale.c");
 }

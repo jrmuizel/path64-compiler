@@ -1606,7 +1606,8 @@ override_options (void)
     PTA_SSE4A = 0x800,
     PTA_SSE4_1 = 0x1000,
     PTA_SSE4_2 = 0x2000,
-    PTA_SSSE3 = 0x4000
+    PTA_SSSE3 = 0x4000,
+    PTA_AVX = 0X8000
 	} flags;
     }
   const processor_alias_table[] =
@@ -1648,7 +1649,7 @@ override_options (void)
       {"athlon-mp", PROCESSOR_ATHLON, PTA_MMX | PTA_PREFETCH_SSE | PTA_3DNOW
 				      | PTA_3DNOW_A | PTA_SSE},
       {"x86-64", PROCESSOR_K8, PTA_MMX | PTA_PREFETCH_SSE | PTA_64BIT
-			       | PTA_SSE | PTA_SSE2 | PTA_SSE4_1 | PTA_SSE4_2 | PTA_SSSE3},
+			       | PTA_SSE | PTA_SSE2 | PTA_SSE4_1 | PTA_SSE4_2 | PTA_SSSE3 | PTA_AVX},
       {"k8", PROCESSOR_K8, PTA_MMX | PTA_PREFETCH_SSE | PTA_3DNOW | PTA_64BIT
 				      | PTA_3DNOW_A | PTA_SSE | PTA_SSE2},
       {"opteron", PROCESSOR_K8, PTA_MMX | PTA_PREFETCH_SSE | PTA_3DNOW | PTA_64BIT
@@ -1837,6 +1838,10 @@ override_options (void)
 	if (processor_alias_table[i].flags & PTA_SSSE3
 	    && !(target_flags_explicit & MASK_SSSE3))
 	  target_flags |= MASK_SSSE3;
+	
+	if (processor_alias_table[i].flags & PTA_AVX
+	    && !(target_flags_explicit & MASK_AVX))
+	  target_flags |= MASK_AVX;
 
 	if (TARGET_64BIT && !(processor_alias_table[i].flags & PTA_64BIT))
 	  error ("CPU you selected does not support x86-64 "
@@ -15154,6 +15159,7 @@ ix86_init_mmx_sse_builtins (void)
   tree V2DF_type_node = build_vector_type_for_mode (double_type_node, V2DFmode);
   tree V4SF_type_node = build_vector_type_for_mode (float_type_node, V4SFmode);
   tree V4SI_type_node = build_vector_type_for_mode (intSI_type_node, V4SImode);
+  tree V4DF_type_node = build_vector_type_for_mode (double_type_node, V4DFmode);
   tree V4HI_type_node = build_vector_type_for_mode (intHI_type_node, V4HImode);
   tree V8QI_type_node = build_vector_type_for_mode (intQI_type_node, V8QImode);
   tree V8HI_type_node = build_vector_type_for_mode (intHI_type_node, V8HImode);
@@ -16033,6 +16039,10 @@ ix86_init_mmx_sse_builtins (void)
 
 	def_builtin (MASK_SSSE3, "__builtin_ia32_pshufb", ftype, IX86_BUILTIN_PSHUFB);
 
+	/*AVX intrinsic*/
+	ftype = build_function_type_list(V4DF_type_node, V4DF_type_node, V4DF_type_node, NULL_TREE);
+
+	def_builtin (MASK_AVX, "__builtin_ia32_addpd256", ftype, IX86_BUILTIN_ADDPD256);
   /* Access to the vec_init patterns.  */
   ftype = build_function_type_list (V2SI_type_node, integer_type_node,
 				    integer_type_node, NULL_TREE);
