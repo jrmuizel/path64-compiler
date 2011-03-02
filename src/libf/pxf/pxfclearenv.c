@@ -35,7 +35,7 @@
 #include <stddef.h>
 #endif
 
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 extern char **environ;
 #else /* defined(BUILD_OS_DARWIN) */
 extern char **_environ;
@@ -71,7 +71,7 @@ _PXFCLEARENV(
 {
   int i;
 
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
   for(i=0; environ[i] != NULL; i++) {
     environ[i] = NULL;
   }

@@ -32,9 +32,12 @@
 typedef unsigned long ulong;
 #endif /* defined(BUILD_OS_DARWIN) */
 
+typedef unsigned long ulong;
+
 extern void MAIN__(void);
 
-static inline ulong distance(ulong a, ulong b)
+
+static inline unsigned long distance(ulong a, ulong b)
 {
 	return a > b ? a - b: b - a;
 }

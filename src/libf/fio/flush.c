@@ -183,7 +183,7 @@ flush_(
 		case FS_TEXT:
 #ifdef KEY
 			{
-# if defined(BUILD_OS_DARWIN)
+# if defined(BUILD_OS_DARWIN) || defined (__FreeBSD__)
 			int writeable = cup->ufp.std->_flags & (__SWR | __SRW);
 # elif defined(__sun)
             int writeable = TRUE;   // FIXME

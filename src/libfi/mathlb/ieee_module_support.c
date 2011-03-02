@@ -178,6 +178,8 @@ static int __f90_fesetenv(const FENV_T *envp) {
     }
   }
 
+#ifndef __FreeBSD__
+
 int
 feclearexcept(int excepts)
 {
@@ -214,6 +216,7 @@ feclearexcept(int excepts)
   /* Success.  */
   return 0;
 }
+#endif
 
 #else /* defined(TARG_whatever) */
    /* Definitions for non-X86 architectures */

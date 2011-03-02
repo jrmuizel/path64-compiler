@@ -74,7 +74,7 @@ extern void _cleanup (void);			/* unknown */
    extern int f77argc;		/* from libF77/main.c */
    extern char **f77argv;
 # endif
-#elif defined(__linux) || defined(__sun)
+#elif defined(__linux) || defined(__sun) || defined(__FreeBSD__)
   extern int f__xargc;
   extern char **f__xargv;
 #endif
@@ -97,7 +97,7 @@ extern void _cleanup (void);			/* unknown */
 #define ARGC f77argc
 #define ARGV f77argv
 #endif
-#elif defined(__linux) || defined(__sun)
+#elif defined(__linux) || defined(__sun) || defined(__FreeBSD__)
 #define ARGC f__xargc
 #define ARGV f__xargv 
 #endif

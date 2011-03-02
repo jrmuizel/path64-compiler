@@ -829,7 +829,7 @@ done:
 #if	defined(BUILD_OS_DARWIN)
 #elif	defined(__mips) || (defined(_LITTLE_ENDIAN) && defined(__sv2))
 #include <ieeefp.h>
-#elif	defined(_LITTLE_ENDIAN) && !(__sv2) && !defined(__sun)
+#elif	defined(_LITTLE_ENDIAN) && !(__sv2) && !defined(__sun) && !defined(__FreeBSD__)
 #include <fpu_control.h>
 #endif
 /*

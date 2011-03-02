@@ -78,9 +78,7 @@ static char USMID[] = "\n@(#)5.0_pl/sources/fecif.c	5.9	10/14/99 12:53:57\n";
 # include "s_globals.h"
 # include "fecif.h"
 
-# if defined(_HOST_OS_LINUX)
-#   include <sys/sysinfo.h>
-# elif defined(_HOST_OS_SOLARIS) || defined(_HOST_OS_IRIX)
+# if defined(_HOST_OS_SOLARIS) || defined(_HOST_OS_IRIX)
 #   include <sys/systeminfo.h>
 # elif defined(_HOST_OS_DARWIN)
 #   include <sys/param.h>

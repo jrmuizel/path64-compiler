@@ -1226,11 +1226,13 @@ ar_log (ar_data *result, const AR_TYPE *resulttype,
                 *(double_t *) result = (log) (*(double_t *) opnd);
                 return AR_status((AR_DATA*)result, resulttype);
         }
+#ifndef __FreeBSD__
 #ifdef complex_t
         if (*resulttype == native_complex) {
                 *(complex_t *) result = (clog) (*(complex_t *) opnd);
                 return AR_status((AR_DATA*)result, resulttype);
         }
+#endif
 #endif
 
 	/* The operation is not a native library operation.
@@ -1276,10 +1278,14 @@ ar_exp (ar_data *result, const AR_TYPE *resulttype,
                 return AR_status((AR_DATA*)result, resulttype);
         }
 #ifdef complex_t
+#ifndef __FreeBSD__
         if (*resulttype == native_complex) {
                 *(complex_t *) result = (cexp) (*(complex_t *) opnd);
                 return AR_status((AR_DATA*)result, resulttype);
         }
+#else
+	return AR_STAT_INVALID_TYPE;
+#endif
 #endif
 
 	/* The operation is not a native library operation.
@@ -1381,6 +1387,7 @@ ar_power(ar_data *result, const AR_TYPE *resulttype,
 	static int loopchk = 0;
 
 #ifdef complex_t
+#ifndef __FreeBSD__
         if (*basetype == native_complex || *powertype == native_complex) {
                 if (*resulttype != native_complex)
                         return AR_STAT_INVALID_TYPE;
@@ -1407,6 +1414,9 @@ ar_power(ar_data *result, const AR_TYPE *resulttype,
 
                 return AR_status((AR_DATA*)result, resulttype);
         }
+#else
+	return AR_STAT_INVALID_TYPE;
+#endif
 #endif
 
         if (*basetype == native_double ||

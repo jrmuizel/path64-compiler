@@ -52,7 +52,7 @@ ipxfargc_()
 {
 	return((_f_int) (__Argc - 1) );
 }
-#elif defined(__linux) || defined(__sun)
+#elif defined(__linux) || defined(__sun) || defined(__FreeBSD__)
 extern  int     f__xargc;            /* Number of argv fields */
 
 _f_int

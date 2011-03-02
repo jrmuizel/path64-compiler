@@ -594,7 +594,7 @@ void cvrt_to_pdg (char	*compiler_gen_date)
       PDG_DBG_PRINT_D("(2) one", 1);
       PDG_DBG_PRINT_END
 
-# if (defined(_TARGET_OS_IRIX) || defined(_TARGET_OS_LINUX) || defined(_TARGET_OS_DARWIN))
+# if (defined(_TARGET_OS_IRIX) || defined(_TARGET_OS_LINUX) || defined(_TARGET_OS_DARWIN) || defined(__FreeBSD__)) 
       cwh_add_to_used_files_table(GL_FILE_NAME_PTR(i), 1);
 # endif
    }

@@ -63,7 +63,7 @@ getenv_ (char *fname, char *value, int flen, int vlen)
 #endif /* KEY Bug 1683 */
 {
 /* fixed bug 9931 */
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 extern char **environ;
 register char **env = environ;
 #else

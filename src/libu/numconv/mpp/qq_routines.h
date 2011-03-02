@@ -27,7 +27,7 @@
 #if defined(_WORD32) || defined(__mips) || defined(_LITTLE_ENDIAN)
 /* Implementation's most efficient floating types */
 /* These are defined in fp.h for CRAYIEEE systems */
-#if ! defined(BUILD_OS_DARWIN) && ! defined(__linux) && ! defined(__sun)
+#if ! defined(BUILD_OS_DARWIN) && ! defined(__linux) && ! defined(__sun) && ! defined(__FreeBSD__)
 /* Darwin, we get these definitions for free from math.h, though they may
  * not be what we'd like (e.g. -march=i386 uses long double). */
 typedef double          float_t;   /* >=24 bit real */
@@ -67,7 +67,7 @@ int		ilogb(FLOAT64 x);
 FLOAT64 copysign(FLOAT64 x, FLOAT64 y);
 #endif
 
-#if ! defined(BUILD_OS_DARWIN)
+#if ! defined(BUILD_OS_DARWIN) && ! defined(__FreeBSD__)
 /* The following defines are in fp.h for PVP. */
 /* number classifications */
 #define FP_NAN		0
@@ -199,7 +199,7 @@ union _ieee_quad {
        : printf("%s %d: fpclassifyl() only supported for 128-bit\n", \
 		__FILE__, __LINE__))
 
-#ifndef __linux
+#if !defined(__linux) && !defined(__FreeBSD__)
 static int __fpclassifyl(x)
 union _ieee_quad x;
 {

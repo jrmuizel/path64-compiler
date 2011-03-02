@@ -1138,7 +1138,7 @@ int		catcherr)
  *		for tty files.  In both cases, stdio picks appropriate
  *		buffer sizes.
  */
-#if     defined(BUILD_OS_DARWIN)
+#if     defined(BUILD_OS_DARWIN) || defined(__FreeBSD__)
 		if (cup->ufp.std->_bf._base == NULL &&
 		    fileno(cup->ufp.std) != STDERR_FILENO &&
 		    ! isatty(fileno(cup->ufp.std)))

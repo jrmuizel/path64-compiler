@@ -70,7 +70,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 /* In Linux <sys/time.h> this is ifdef'ed out */
-#if defined(KEY) && ! defined(BUILD_OS_DARWIN)
+#if defined(KEY) && ! defined(BUILD_OS_DARWIN) && ! defined(__FreeBSD__)
 struct timezone
   {
     int tz_minuteswest;		/* Minutes west of GMT.  */
