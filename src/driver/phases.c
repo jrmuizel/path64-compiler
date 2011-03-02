@@ -724,7 +724,7 @@ add_abi(string_list_t *args) {
 
 // Adds target specific linker args
 static void
-add_target_linker_args(string_list_t *args) {
+add_target_linker_args(string_list_t *args, boolean is_ipa) {
     // Adding path to dynamic linker for x86 linux and netbsd platforms
 #ifdef TARG_X8664
     if(is_target_arch_X8664()) {
@@ -754,7 +754,7 @@ add_target_linker_args(string_list_t *args) {
 #ifdef TARG_X8664
     if(is_target_arch_X8664()) {
 #if defined(__sun)
-        if(abi == ABI_M64 || abi == ABI_64) {
+        if((abi == ABI_M64 || abi == ABI_64) && !is_ipa) {
             add_string(args, "-64");
         }
 #elif defined(__FreeBSD__)
@@ -1939,7 +1939,7 @@ add_file_args (string_list_t *args, phases_t index)
         if (is_target_arch_MIPS())
             add_sysroot(args, index);
 #endif
-		add_target_linker_args(args);
+		add_target_linker_args(args, FALSE);
 
 		set_library_paths(args);
 		if (outfile != NULL) {
@@ -1993,7 +1993,7 @@ add_file_args (string_list_t *args, phases_t index)
         if (is_target_arch_MIPS())
           add_sysroot(args, index);
 #endif
-        add_target_linker_args(args);
+        add_target_linker_args(args, TRUE);
 #ifdef TARG_X8664
         if (is_target_arch_X8664()) {
           if( abi == ABI_M32 ) {
