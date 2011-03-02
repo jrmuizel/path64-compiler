@@ -8215,9 +8215,7 @@ vho_lower_if ( WN * wn, WN *block )
 			    WN_field_id(istore));
     wn = WN_COPY_Tree(istore);
     WN_kid0(wn) = 
-      WN_CreateExp3(MTYPE_is_size_double(WN_desc(istore)) ?
-		    OPC_F8SELECT : OPC_F4SELECT,
-		    test, t1, t2);
+      WN_CreateExp3(OPR_SELECT, MTYPE_id(WN_desc(istore)), MTYPE_V, test, t1, t2);
     return wn;		       
   }
 
@@ -8248,9 +8246,7 @@ vho_lower_if ( WN * wn, WN *block )
                             WN_field_id(stid));
     wn = WN_COPY_Tree(stid);
     WN_kid0(wn) =
-      WN_CreateExp3(MTYPE_is_size_double(WN_desc(stid)) ?
-                    OPC_F8SELECT : OPC_F4SELECT,
-                    test, t1, t2);
+      WN_CreateExp3(OPR_SELECT, MTYPE_id(WN_desc(stid)), MTYPE_V, test, t1, t2);
     return wn;
   }
 
@@ -8296,9 +8292,7 @@ vho_lower_if ( WN * wn, WN *block )
     WN* t2 = WN_COPY_Tree(WN_kid0(WN_first(WN_else(wn))));
     wn = WN_COPY_Tree(istore);
     WN_kid0(wn) = 
-      WN_CreateExp3(MTYPE_is_size_double(WN_desc(istore)) ?
-		    OPC_F8SELECT : OPC_F4SELECT,
-		    test, t1, t2);
+      WN_CreateExp3(OPR_SELECT, MTYPE_id(WN_desc(istore)), MTYPE_V, test, t1, t2);
     return wn;		       
   }
 #endif
