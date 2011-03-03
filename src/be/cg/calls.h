@@ -184,22 +184,6 @@ extern ST* Cgdwarf_Nth_Callee_Saved_Reg_Location (INT n);
 
 #ifdef TARG_MIPS
 extern TN *Caller_GP_TN;
-/* ====================================================================
- *   Is_Function_Value
- *
- *   Return a boolean that indicates if <tn> is a function value TN.
- * ====================================================================
- */
-inline BOOL
-Is_Function_Value(TN *tn)
-{
-  if (TN_is_dedicated(tn)) {
-    REGISTER reg = TN_register(tn);
-    ISA_REGISTER_CLASS rc = TN_register_class(tn);
-    return REGISTER_SET_MemberP(REGISTER_CLASS_function_value(rc), reg);
-  }
-  return FALSE;
-}
 
 /* ====================================================================
  *   Is_Callee_Register

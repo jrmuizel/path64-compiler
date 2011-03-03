@@ -725,19 +725,15 @@ add_abi(string_list_t *args) {
 // Adds target specific linker args
 static void
 add_target_linker_args(string_list_t *args, boolean is_ipa) {
-    // Adding path to dynamic linker for x86 linux and netbsd platforms
-#ifdef TARG_X8664
-    if(is_target_arch_X8664()) {
+    // Adding path to dynamic linker for linux and netbsd platforms
 #if defined(__linux__) /* LINUX */
-        char *dyn_link_opt = concat_strings("--dynamic-linker=",
-                                            target_dynamic_linker());
-        add_arg(args, "%s", dyn_link_opt);
-        free(dyn_link_opt);
+    char *dyn_link_opt = concat_strings("--dynamic-linker=",
+                                        target_dynamic_linker());
+    add_arg(args, "%s", dyn_link_opt);
+    free(dyn_link_opt);
 #elif defined(__NetBSD__)
-        add_arg(args, "--dynamic-linker=/libexec/ld.elf_so");
+    add_arg(args, "--dynamic-linker=/libexec/ld.elf_so");
 #endif /* LINUX */
-    }
-#endif // TARG_X8664
 
     // Adding -rpath argument
     {
@@ -775,6 +771,7 @@ add_sysroot(string_list_t *args, phases_t phase)  // 15149
 {
   buffer_t buf;
   char *sysroot = (abi == ABI_N32 ? sysroot_path_n32 : sysroot_path_64);
+  if (sysroot == NULL) sysroot = sysroot_path;
   if (sysroot == NULL) return;
   switch (phase) {
   case P_ld:
@@ -799,7 +796,9 @@ add_sysroot(string_list_t *args, phases_t phase)  // 15149
     break;
   case P_gcpp:
   case P_gcpp_plus:
+#ifdef PATH64_ENABLE_PSCLANG
   case P_psclang_cpp:
+#endif // PATH64_ENABLE_PSCLANG
     add_string(args, "-isysroot");
     add_string(args, sysroot);
     break;
@@ -872,6 +871,7 @@ void add_asm_output(string_list_t *args, const char *the_file) {
 }
 
 
+#ifdef TARG_X8664
 static void
 add_sse_cc1_options(string_list_t *args)
 {
@@ -918,6 +918,7 @@ add_sse_cc1_options(string_list_t *args)
 
 #endif // PATH64_ENABLE_PSCRUNTIME
 }
+#endif // TARG_X8664
 
 
 #ifdef PATH64_ENABLE_PSCRUNTIME
@@ -1043,7 +1044,10 @@ add_file_args (string_list_t *args, phases_t index)
 		break;
 	case P_gcpp:
 	case P_gcpp_plus:
-        add_sse_cc1_options(args);
+#ifdef TARG_X8664
+        if(is_target_arch_X8664())
+            add_sse_cc1_options(args);
+#endif // TARG_X8664
 
 		if (show_but_not_run)
 			add_string(args, "-###");
@@ -1165,6 +1169,14 @@ add_file_args (string_list_t *args, phases_t index)
 		  add_string(args, "-mfpmath=387");
         }
 #endif
+
+        add_string(args, "-U_FORTIFY_SOURCE");
+        add_string(args, "-U__GNUC__");
+        add_string(args, "-D__GNUC__=4");
+        add_string(args, "-U__GNUC_MINOR__");
+        add_string(args, "-D__GNUC_MINOR__=2");
+        add_string(args, "-U__GNUC_PATCHLEVEL__");
+        add_string(args, "-D__GNUC_PATCHLEVEL__=1");
 		
 		add_string(args, input_source);
 		if (source_kind == S_h)	{	// SiCortex 5034
@@ -1560,11 +1572,8 @@ add_file_args (string_list_t *args, phases_t index)
 
 	case P_spin_cc1:
 	case P_spin_cc1plus:
-		if (abi == ABI_M64) {
-		    add_string(args, "-m64");
-		} else {
-		    add_string(args, "-m32");
-		}
+		add_abi(args);
+
 		if (gnu_exceptions == FALSE) {			// bug 11732
 		  add_string(args, "-fno-gnu-exceptions");
 		}
@@ -1577,7 +1586,10 @@ add_file_args (string_list_t *args, phases_t index)
 	        // fall through
 	case P_c_gfe:
 	case P_cplus_gfe:
-		add_sse_cc1_options(args);
+#ifdef TARG_X8664
+		if (is_target_arch_X8664())
+			add_sse_cc1_options(args);
+#endif // TARG_X8664
 
 		if (show_but_not_run)
 			add_string(args, "-###");
@@ -1923,6 +1935,13 @@ add_file_args (string_list_t *args, phases_t index)
 		}
 #endif //TARG_X8664
 
+#ifdef TARG_MIPS
+		if (is_target_arch_MIPS()) {
+		  if(pic)
+		    add_string(args, "-KPIC");
+		}
+#endif // TARG_MIPS
+
 		add_asm_source(args, input_source);
 
 		add_asm_output(args, the_file);
@@ -1958,9 +1977,9 @@ add_file_args (string_list_t *args, phases_t index)
                const char *runtime_path = target_runtime_path();
                char *crt1_path = concat_strings(runtime_path, "/crt1.o");
                char *crti_path = concat_strings(runtime_path, "/crti.o");
-               char *lib_path = target_library_path();
-               char *crtbegin_path = concat_strings(lib_path, "/crtbegin.o");
-               free(lib_path);
+               char *cb_path = target_crtbegin_path();
+               char *crtbegin_path = concat_strings(cb_path, "/crtbegin.o");
+               free(cb_path);
 
 			   add_string_if_new_basename(args, crt1_path);
 			   add_string_if_new_basename(args, crti_path);
@@ -1973,9 +1992,9 @@ add_file_args (string_list_t *args, phases_t index)
 		       } else {
                const char *runtime_path = target_runtime_path();
                char *crti_path = concat_strings(runtime_path, "/crti.o");
-               char *lib_path = target_library_path();
-               char *crtbeginS_path = concat_strings(lib_path, "/crtbeginS.o");
-               free(lib_path);
+               char *cb_path = target_crtbegin_path();
+               char *crtbeginS_path = concat_strings(cb_path, "/crtbeginS.o");
+               free(cb_path);
 
 			   add_string_if_new_basename(args, crti_path);
 			   add_string(args, crtbeginS_path);
@@ -2004,12 +2023,10 @@ add_file_args (string_list_t *args, phases_t index)
 #elif defined(TARG_MIPS)
         if (is_target_arch_MIPS()) {
 		  if( abi == ABI_N32 ) {
-		    add_string(args, "-m");
-		    add_string(args, "elf32ltsmipn32");
+		    add_string(args, "-melf32ltsmipn32");
 		  }
 		  else {
-		    add_string(args, "-m");
-		    add_string(args, "elf64ltsmip");
+		    add_string(args, "-melf64ltsmip");
 		  }
 		  // Pass top level library dir to ipa so that
 		  // it finds libraries like lib32/libc.so.6
@@ -2031,11 +2048,11 @@ add_file_args (string_list_t *args, phases_t index)
 		{
 
             const char *runtime_path = target_runtime_path();
-            char *lib_path = target_library_path();
+            char *cb_path = target_crtbegin_path();
             char *crt1_path = concat_strings(runtime_path, "/crt1.o");
             char *crti_path = concat_strings(runtime_path, "/crti.o");
-            char *crtbegin_path = concat_strings(lib_path, "/crtbegin.o");
-            free(lib_path);
+            char *crtbegin_path = concat_strings(cb_path, "/crtbegin.o");
+            free(cb_path);
 
             add_string_if_new_basename(args, crt1_path);
             add_string_if_new_basename(args, crti_path);
@@ -2164,14 +2181,14 @@ add_file_args (string_list_t *args, phases_t index)
 
 // Adds trailing crt*.o objects if needed. See the first part in add_file_args() */
 void add_crtend(string_list_t *args) {
-    char *lib_path = target_library_path();
+    char *cb_path = target_crtbegin_path();
     const char *runtime_path = target_runtime_path();
     char *crtn_path = concat_strings(runtime_path, "/crtn.o");
     const char *crtend_name = ((shared != DSO_SHARED) && (shared != RELOCATABLE)) ?
                               "/crtend.o" :
                               "/crtendS.o";
-    char *crtend_path = concat_strings(lib_path, crtend_name);
-    free(lib_path);
+    char *crtend_path = concat_strings(cb_path, crtend_name);
+    free(cb_path);
 
     add_string(args, crtend_path);
     add_string_if_new_basename(args, crtn_path);
@@ -2203,110 +2220,107 @@ add_final_ld_args (string_list_t *args)
         return;
     }
 
-#ifdef TARG_X8664 
-    if (is_target_arch_X8664()) {
 #if 0 // Bug 4813 - acml_mv is not in yet.
-        extern boolean link_with_mathlib;
-        if ((link_with_mathlib || source_lang == L_CC) && 
-	    option_was_seen(O_m64) && 
-	    strcmp(target_cpu, "em64t") && strcmp(target_cpu, "anyx86"))
-          // Bug 4680 - Link with libacml_mv by default.
-	  add_library(args, "acml_mv");
+    extern boolean link_with_mathlib;
+    if ((link_with_mathlib || source_lang == L_CC) && 
+        option_was_seen(O_m64) && 
+        strcmp(target_cpu, "em64t") && strcmp(target_cpu, "anyx86"))
+        // Bug 4680 - Link with libacml_mv by default.
+        add_library(args, "acml_mv");
 #endif
-        if (option_was_seen(O_nodefaultlibs) || option_was_seen(O_nostdlib)) {
+    if (option_was_seen(O_nodefaultlibs) || option_was_seen(O_nostdlib)) {
 #ifndef PATH64_ENABLE_PSCRUNTIME
-            //add default search paths even with -nostdlib
-            add_arg(args, "-L%s", current_target->libgcc_path);
+        //add default search paths even with -nostdlib
+        add_arg(args, "-L%s", current_target->libgcc_path);
 #endif
 
-            // If -compat-gcc, link with pscrt even if -nostdlib.  Bug 4551.
-            if (option_was_seen(O_compat_gcc) &&
-            !option_was_seen(O_fno_fast_stdlib) &&
-            !option_was_seen(O_nolibpscrt)) {	// bug 9611
+        // If -compat-gcc, link with pscrt even if -nostdlib.  Bug 4551.
+        if (option_was_seen(O_compat_gcc) &&
+        !option_was_seen(O_fno_fast_stdlib) &&
+        !option_was_seen(O_nolibpscrt)) {	// bug 9611
             add_library(args, "pscrt");
-            }
-
-            if( ! option_was_seen(O_nostartfiles)) add_crtend(args);
-            return;
         }
+
+        if( ! option_was_seen(O_nostartfiles)) add_crtend(args);
+        return;
+    }
 #ifdef PATH64_ENABLE_PSCRUNTIME
-        if(source_lang == L_CC &&
-           !option_was_seen(O_nodefaultlibs) &&
-           !option_was_seen(O_nostdlib) &&
-           !option_was_seen(O_nostdlib__)) {
-        
-            // STL library
-        	add_library(args, "stl");
-        
-            // C++ support library
-            add_library(args, "cxxrt");
-        
-            // other dependencies
-            add_library(args, "pthread");
+    if(source_lang == L_CC &&
+       !option_was_seen(O_nodefaultlibs) &&
+       !option_was_seen(O_nostdlib) &&
+       !option_was_seen(O_nostdlib__)) {
+    
+        // STL library
+    	add_library(args, "stl");
+    
+        // C++ support library
+        add_library(args, "cxxrt");
+    
+        // other dependencies
+        add_library(args, "pthread");
 
 #ifndef  __FreeBSD__
-            add_library(args, "dl");
+        add_library(args, "dl");
 #endif // !__FreeBSD__
-        }
 
-        // static libc should be grouped with libgcc and libeh
-        // because there is loop in dependencies between these libs
-        if (option_was_seen(O_static) || option_was_seen(O__static)) {
-            add_arg(args, "--start-group");
-        }
+    }
 
-        if(option_was_seen(O_static_libgcc)) {
-            add_arg(args, "-Bstatic");
-        }
+    // static libc should be grouped with libgcc and libeh
+    // because there is loop in dependencies between these libs
+    if (option_was_seen(O_static) || option_was_seen(O__static)) {
+        add_arg(args, "--start-group");
+    }
 
-        if(option_was_seen(O_static_libgcc)) {
-            add_arg(args, "-Bstatic");
-        }
+    if(option_was_seen(O_static_libgcc)) {
+        add_arg(args, "-Bstatic");
+    }
 
+    if(option_was_seen(O_static_libgcc)) {
+        add_arg(args, "-Bstatic");
+    }
+
+    add_library(args, "gcc");
+
+    // Exception support library (used by stl and gcc)
+    // staic libc also depends on libeh
+    if(option_was_seen(O_static) ||
+       source_lang == L_CC ||
+       option_was_seen(O_fexceptions)) {
+        add_library(args, "eh");
+    }
+
+    if(option_was_seen(O_static_libgcc)) {
+        add_arg(args, "-Bdynamic");
+    }
+
+    add_library(args, "c");
+
+    if (option_was_seen(O_static) || option_was_seen(O__static)) {
+        add_arg(args, "--end-group");
+    }
+#else
+    if(source_lang == L_CC) {
+        add_arg(args, "-L%s", current_target->libstdcpp_path);
+        add_library(args, "stdc++");
+    }
+
+    if (option_was_seen(O_static) || option_was_seen(O__static)){
+        add_arg(args, "--start-group");
+
+        add_arg(args, "-L%s", current_target->libgcc_path);
         add_library(args, "gcc");
 
-        // Exception support library (used by stl and gcc)
-        // staic libc also depends on libeh
-        if(option_was_seen(O_static) ||
-           source_lang == L_CC ||
-           option_was_seen(O_fexceptions)) {
-            add_library(args, "eh");
+        add_arg(args, "-L%s", current_target->libgcc_eh_path);
+        add_library(args, "gcc_eh");
+
+        add_library(args, "c");  /* the above libs should be grouped together */
+
+        add_arg(args, "--end-group");
+         
+        if(invoked_lang == L_CC){
+            add_arg(args, "-L%s", current_target->libsupcpp_path);
+            add_library(args, "supc++");
         }
-
-        if(option_was_seen(O_static_libgcc)) {
-            add_arg(args, "-Bdynamic");
-        }
-
-        add_library(args, "c");
-
-        if (option_was_seen(O_static) || option_was_seen(O__static)) {
-            add_arg(args, "--end-group");
-        }
-#else
-        if(source_lang == L_CC) {
-            add_arg(args, "-L%s", current_target->libstdcpp_path);
-            add_library(args, "stdc++");
-        }
-
-        if (option_was_seen(O_static) || option_was_seen(O__static)){
-            add_arg(args, "--start-group");
-
-            add_arg(args, "-L%s", current_target->libgcc_path);
-            add_library(args, "gcc");
-
-            add_arg(args, "-L%s", current_target->libgcc_eh_path);
-            add_library(args, "gcc_eh");
-
-            add_library(args, "c");  /* the above libs should be grouped together */
-
-            add_arg(args, "--end-group");
-             
-            if(invoked_lang == L_CC){
-                add_arg(args, "-L%s", current_target->libsupcpp_path);
-                add_library(args, "supc++");
-            }
-        }
-#endif
     }
 #endif
 	
@@ -2373,21 +2387,25 @@ add_final_ld_args (string_list_t *args)
 	    }
 	}
 
-#ifdef TARG_X8664
-    if (is_target_arch_X8664()) {
-        // Put pscrt after all the libraries that are built with PathScale
-        // compilers, since those libraries could use PathScale routines.
-        // Bug 3995.
-        if (!option_was_seen(O_fno_fast_stdlib) &&
-            !option_was_seen(O_nolibpscrt)) {	// bug 9611
-            add_library(args, "pscrt");
+    // Put pscrt & gcc after all the libraries that are built with PathScale
+    // compilers, since those libraries could use PathScale routines.
+    // Bug 3995.
+    if (!option_was_seen(O_fno_fast_stdlib) &&
+        !option_was_seen(O_nolibpscrt)) {	// bug 9611
+        add_library(args, "pscrt");
+    }
+
 #if !defined(PATH64_ENABLE_PSCRUNTIME)
-            add_arg(args, "-L%s", current_target->libgcc_path);
-            add_library(args, "gcc");
-#endif
-        }
+    if(option_was_seen(O_static) || option_was_seen(O__static)) {
+    	add_arg(args, "-L%s", current_target->libgcc_path);
+    	add_library(args, "gcc");
+    } else {
+    	add_arg(args, "-L%s", current_target->libgcc_s_path);
+    	add_library(args, "gcc_s");
     }
 #endif
+
+
 #ifdef TARG_MIPS
     if (is_target_arch_MIPS()) {
         // Put libscstr after all libraries that are built with PathScale
@@ -2440,7 +2458,7 @@ postprocess_ld_args (string_list_t *args, phases_t phase)
 
     /* TODO: FIXME: Temp hack to replace gcc as a linker */
 
-    phase_name = "/usr/bin/ld";
+    phase_name = "/usr/bin/" CROSS_PFX "ld";
 
     //init_stdc_plus_plus_path();
 
@@ -3134,32 +3152,32 @@ init_gnu_phase_info (void)
   //   mips64el-key-linux-pathcc  -->  mips64el-key-linux-gcc.
   char *prefix = get_gnu_prefix();
 
-#ifdef TARG_MIPS
-  if (is_target_arch_MIPS()) {
-    const char  name_short[] = "gcc";
-    const char *name_long = prefix ? concat_strings(prefix, name_short) : NULL;
-    char *directory = NULL;
-    const char *gcc_path = getenv("PSC_GCC_PATH");
-    if (name_long) directory = find_file_in_path(gcc_path, name_long);
-    if (directory == NULL) {
-      directory = find_file_in_path(gcc_path, name_short);
-      if (directory) prefix = NULL;
-#if 1  // 14839: Check PSC_GCC_PATH, but not PATH for gcc.
-      else {
-        gcc_path = getenv("PATH");
-        if (name_long) directory = find_file_in_path(gcc_path, name_long);
-        if (directory == NULL) {
-      directory = find_file_in_path(gcc_path, name_short);
-      if (directory) prefix = NULL;
-        }
-      }
-#endif
-    }
-    // TODO: Conflict with TOOLROOT code below
-
-    if (directory) set_phase_dir(GCC_MASK, directory);
-  }
-#endif
+//#ifdef TARG_MIPS
+//  if (is_target_arch_MIPS()) {
+//    const char  name_short[] = "gcc";
+//    const char *name_long = prefix ? concat_strings(prefix, name_short) : NULL;
+//    char *directory = NULL;
+//    const char *gcc_path = getenv("PSC_GCC_PATH");
+//    if (name_long) directory = find_file_in_path(gcc_path, name_long);
+//    if (directory == NULL) {
+//      directory = find_file_in_path(gcc_path, name_short);
+//      if (directory) prefix = NULL;
+//#if 1  // 14839: Check PSC_GCC_PATH, but not PATH for gcc.
+//      else {
+//        gcc_path = getenv("PATH");
+//        if (name_long) directory = find_file_in_path(gcc_path, name_long);
+//        if (directory == NULL) {
+//      directory = find_file_in_path(gcc_path, name_short);
+//      if (directory) prefix = NULL;
+//        }
+//      }
+//#endif
+//    }
+//    // TODO: Conflict with TOOLROOT code below
+//
+//    if (directory) set_phase_dir(GCC_MASK, directory);
+//  }
+//#endif
 
   if (prefix) prefix_all_phase_names(GCC_MASK, prefix);
 }
@@ -3298,7 +3316,7 @@ run_ld (void)
     ldpath = get_full_phase_name(ldphase);
 
     if ( ldphase != P_ipa_link )
-        ldpath = "/usr/bin/ld";
+        ldpath = "/usr/bin/" CROSS_PFX "ld";
 
 	/* for ld, we first have options, then files, then objects,
 	 * where objects includes object-specific options */

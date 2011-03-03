@@ -679,6 +679,10 @@ LOOP_MODEL::Model(WN* wn,
     _issue_rate = 2.0;
     _base_fp_regs = 18;
     _num_mem_units = 1.0;
+  } else if (Is_Target_twc9a()) {
+    _issue_rate = 2.0;
+    _base_fp_regs = 18;
+    _num_mem_units = 1.0;
 #endif
 #ifdef TARG_IA64
   } else if (Is_Target_Itanium()) {
@@ -5376,6 +5380,10 @@ REGISTER_MODEL::Evaluate(WN* inner,
     num_mem_units = 1;
 #ifdef TARG_MIPS
   } else if (Is_Target_Mips5kf()) {
+    issue_rate = 2;
+    base_fp_regs = 18;
+    num_mem_units = 1;
+  } else if (Is_Target_twc9a()) {
     issue_rate = 2;
     base_fp_regs = 18;
     num_mem_units = 1;

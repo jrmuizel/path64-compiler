@@ -190,6 +190,10 @@ Unify_Rty(OPERATOR opr, MTYPE rty)
       case OPR_ADD:
       case OPR_SUB:
       case OPR_MPY:
+#ifdef TARG_MIPS
+      case OPR_DIV:
+      case OPR_REM:
+#endif // TARG_MIPS
       case OPR_BAND:
       case OPR_BIOR:
       case OPR_BNOR:

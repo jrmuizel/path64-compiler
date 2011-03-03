@@ -97,8 +97,8 @@ static phase_info_t phase_info[] = {
    /* invoke gcc driver directly rather than cpp
     * because cpp can have different paths, reads spec file,
     * and may eventually be merged with cc1. */
-   {'p',  0x0000000000000020LL,	"gcc", "", FALSE}, /* gcpp */
-   {'p',  0x0000000000000040LL,	"g++", "", FALSE}, /* gcpp_plus */
+   {'p',  0x0000000000000020LL,	CROSS_PFX"gcc", "", FALSE}, /* gcpp */
+   {'p',  0x0000000000000040LL,	CROSS_PFX"g++", "", FALSE}, /* gcpp_plus */
 #endif // PATH64_ENABLE_PSCRUNTIME
 #ifdef PATH64_ENABLE_PSCLANG
    {'p',  0x0000000000000080LL,	"psclang", PHASEPATH, TRUE}, /* psclang_cpp */
@@ -165,9 +165,9 @@ static phase_info_t phase_info[] = {
    {'a',  0x0000001000000000LL, "pathas", PSC_INSTALL_PREFIX "/bin", FALSE}, /* pathas */
 #endif // PATH64_ENABLE_PSCRUNTIME
 #ifndef __sun__
-   {'a',  0x0000002000000000LL, "as", "", FALSE}, /* gas */
+   {'a',  0x0000002000000000LL, CROSS_PFX"as", "", FALSE}, /* gas */
 #else // __sun__
-   {'a',  0x0000002000000000LL, "gas", "", FALSE}, /* gas */
+   {'a',  0x0000002000000000LL, CROSS_PFX"gas", "", FALSE}, /* gas */
 #endif // __sun__
    {'a',  0x0000003000000000LL,	"",	"",		FALSE},	/* any_as */
 

@@ -287,8 +287,8 @@ CGEMIT_Change_Origin_In_Asm (ST *st, INT64 offset)
 	      strlen(EH_DESC_LINKONCE_PREFIX)))
   {
     if (CG_emit_non_gas_syntax)
-      fprintf (Asm_File, "\t%s 0x%" SCNd64 "\n", ".origin", offset);
-    else fprintf (Asm_File, "\t%s 0x%" SCNd64 "\n", AS_ORIGIN, offset);
+      fprintf (Asm_File, "\t%s 0x%" SCNx64 "\n", ".origin", offset);
+    else fprintf (Asm_File, "\t%s 0x%" SCNx64 "\n", AS_ORIGIN, offset);
     fprintf ( Asm_File, "\t%s\t0\n", AS_ALIGN );
   }
 }
@@ -298,15 +298,7 @@ CGEMIT_Change_Origin_In_Asm (ST *st, INT64 offset)
 extern BOOL
 CGEMIT_Use_Base_ST_For_Reloc (INT reloc, ST *st)
 {
-	if (reloc == TN_RELOC_IA_LTOFF_FPTR) 
-		// gas doesn't like addends
-		return FALSE;
-	// to handle function pointers.
-	// example: see gcc.c-torture/execute/func-ptr-1.c
-	else if (ST_sclass(st) == SCLASS_TEXT)
-	        return FALSE;
-	else 
-		return ST_is_export_local(st);
+  return FALSE;
 }
 
 	  
@@ -355,7 +347,10 @@ CGEMIT_Relocs_In_Asm (TN *t, ST *st, vstring *buf, INT64 *val)
 		/*NOTREACHED*/
 	}
 	*buf = vstr_concat (*buf, "(" );
-	*buf = vstr_concat (*buf, ST_name(st));
+	if (ST_sym_class(st) == CLASS_CONST) {
+		*buf = vstr_concat (*buf, EMT_get_TCON_name(st).c_str());
+	} else
+		*buf = vstr_concat (*buf, EMT_Get_Qualified_Name(st).c_str());
 	*buf = vstr_concat (*buf, Symbol_Name_Suffix);
 	return paren;
 }

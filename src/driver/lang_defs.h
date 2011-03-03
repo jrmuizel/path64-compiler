@@ -43,6 +43,12 @@
 
 #include "basic.h"
 
+#ifdef PATH64_CROSS
+#define CROSS_PFX PSC_TARGET "-"
+#else
+#define CROSS_PFX
+#endif
+
 /* languages */
 typedef enum {
 	L_NONE,

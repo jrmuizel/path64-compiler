@@ -151,10 +151,17 @@ Expand_Convert_Length ( TN *dest, TN *src, TN *length_tn, TYPE_ID mtype, BOOL si
   UINT64 val = TN_value(length_tn);
   if (val <= 16 && ! signed_extension) 
     Build_OP(TOP_andi, dest, src, Gen_Literal_TN((1 << val) - 1, 4), ops);
-  else if (val == 32 && signed_extension && Sext_Allowed) {
+  else if (signed_extension && val == 32 && Sext_Allowed) {
     // Bug 13497: sll tgt_tn, src_tn, 0x0 safely sign extends
     Build_OP(TOP_sext, dest, src, ops);
-  } else if (MTYPE_is_size_double(mtype) || val == 32) {
+  }
+  else if (signed_extension && val == 8 && Is_Target_twc9a()) {
+    Build_OP(TOP_seb, dest, src, ops);  // 15202
+  }
+  else if (signed_extension && val == 16 && Is_Target_twc9a()) {
+    Build_OP(TOP_seh, dest, src, ops);  // 15202
+  }
+  else if (MTYPE_is_size_double(mtype) || val == 32) {
     if (val > 32) {
       TN *tmp = Build_TN_Of_Mtype(mtype);
       lit_tn = Gen_Literal_TN(64 - val, 4);
@@ -427,10 +434,10 @@ Expand_Abs (TN *dest, TN *src, TYPE_ID mtype, OPS *ops)
   Set_OP_cond_def_kind(OPS_last(ops), OP_ALWAYS_COND_DEF);      
 }
 
+
 void
 Expand_Shift (TN *result, TN *src1, TN *src2, TYPE_ID mtype, SHIFT_DIRECTION kind, OPS *ops)
 {
-  WN *tree;
   TOP top;  
   BOOL is_64bit = MTYPE_is_size_double(mtype);
 
@@ -481,6 +488,33 @@ Expand_Shift (TN *result, TN *src1, TN *src2, TYPE_ID mtype, SHIFT_DIRECTION kin
     Build_OP(top, result, src1, src2, ops);
   }
 }
+
+
+void
+Expand_Rrotate (TN *result, TN *src1, TN *src2, TYPE_ID rtype, TYPE_ID desc, OPS *ops)
+{
+  TOP top;
+  const BOOL value_size = MTYPE_bit_size(desc);
+  const BOOL is_64bit = MTYPE_is_size_double(rtype);
+  FmtAssert(value_size == 32 || value_size == 64,
+	    ("RROTATE of size $d not available", value_size));
+
+  if (TN_is_constant(src1))
+    src1 = Expand_Immediate_Into_Register(src1, is_64bit, ops);
+  if (! TN_has_value(src2)) {
+    top = (value_size == 32 ? TOP_rotrv : TOP_drotrv);
+  } else {
+    UINT64 bits_to_rotate = TN_value(src2);
+    top = (value_size == 32 ? TOP_rotr
+	   : ((bits_to_rotate & 0x20) ? TOP_drotr32 : TOP_drotr));
+    bits_to_rotate &= 0x1f;  // only the lowest 5 bits are used
+    src2 = Gen_Literal_TN( bits_to_rotate, 4 );
+  }
+
+  Build_OP(top, result, src1, src2, ops);
+}
+
+
 
 inline void
 Expand_G_To_F (TN *ftn, TN *gtn, OPS *ops)
@@ -2033,15 +2067,23 @@ Exp_COPY_Ext (TOP opcode, TN *tgt_tn, TN *src_tn, OPS *ops)
 {
   switch (opcode) {
   case TOP_lb:
-    Build_OP(TOP_dsll32, tgt_tn, src_tn, Gen_Literal_TN(24, 4), ops);
-    Build_OP(TOP_dsra32, tgt_tn, tgt_tn, Gen_Literal_TN(24, 4), ops);
+    if (Is_Target_twc9a()) {
+      Build_OP(TOP_seb, tgt_tn, src_tn, ops);  // 15202
+    } else {
+      Build_OP(TOP_dsll32, tgt_tn, src_tn, Gen_Literal_TN(24, 4), ops);
+      Build_OP(TOP_dsra32, tgt_tn, tgt_tn, Gen_Literal_TN(24, 4), ops);
+    }
     break;
   case TOP_lbu:
     Build_OP(TOP_andi, tgt_tn, src_tn, Gen_Literal_TN(0xff, 4), ops);
     break;
   case TOP_lh:
-    Build_OP(TOP_dsll32, tgt_tn, src_tn, Gen_Literal_TN(16, 4), ops);
-    Build_OP(TOP_dsra32, tgt_tn, tgt_tn, Gen_Literal_TN(16, 4), ops);
+    if (Is_Target_twc9a()) {
+      Build_OP(TOP_seh, tgt_tn, src_tn, ops);  // 15202
+    } else {
+      Build_OP(TOP_dsll32, tgt_tn, src_tn, Gen_Literal_TN(16, 4), ops);
+      Build_OP(TOP_dsra32, tgt_tn, tgt_tn, Gen_Literal_TN(16, 4), ops);
+    }
     break;
   case TOP_lhu:
     Build_OP(TOP_andi, tgt_tn, src_tn, Gen_Literal_TN(0xffff, 4), ops);
@@ -2266,6 +2308,10 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TYPE_ID mtype, OPS
     break;
   case INTRN_I4FFS:
     Expand_Least_Significant_Bit( result, op0, mtype, ops );
+    break;
+  case INTRN_POPCOUNT:
+    Build_OP( (mtype == MTYPE_I8 || mtype == MTYPE_U8) ? TOP_dpop : TOP_pop,
+              result, op0, ops );
     break;
   case INTRN_ISGREATER:
     // 14757: Gnu4 compatable TOPs used below.  For gnu3, substitite

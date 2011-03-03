@@ -46,12 +46,7 @@
 #ifndef cg_thr_INCLUDED
 #define cg_thr_INCLUDED
 
-#include "bb_set.h"
-#include "cg_vector.h"
-#include "ti_res_res.h"
-#include "tn_map.h"
-#include "hb_sched.h"
-#include "cg_dep_graph.h"
+#include <list>
 
 // Exported interfaces
 #define THR_NONE                                       0x0000
@@ -64,6 +59,8 @@ typedef UINT16 THR_TYPE;
 
 extern BOOL Trace_THR;
 extern void Remove_Unnecessary_Check_Instrs(BB *bb);
+
+struct ARC;
 
 // Misc flags
 

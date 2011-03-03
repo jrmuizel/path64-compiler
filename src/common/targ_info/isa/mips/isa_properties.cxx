@@ -184,6 +184,11 @@ main()
 		      TOP_lwr,
 		      TOP_ldl,
 		      TOP_ldr,
+		      TOP_lbx,
+		      TOP_ldx,
+		      TOP_lhx,
+		      TOP_lwx,
+		      TOP_luxc1,
                      TOP_UNDEFINED);
 
 /* ===== Memory store operator ====== */
@@ -203,6 +208,7 @@ main()
 		      TOP_swr,
 		      TOP_sdl,
 		      TOP_sdr,
+		      TOP_suxc1,
                      TOP_UNDEFINED);
 
 /* ===== FP memory load operator ====== */
@@ -212,6 +218,7 @@ main()
 		      TOP_ldc1,
 		      TOP_lwxc1,
 		      TOP_ldxc1,
+		      TOP_luxc1,
                      TOP_UNDEFINED);
 
 /* ===== FP memory store operator ====== */
@@ -221,6 +228,7 @@ main()
 		      TOP_sdc1,
 		      TOP_swxc1,
 		      TOP_sdxc1,
+		      TOP_suxc1,
                      TOP_UNDEFINED);
 
 /* ===== Prefetch operator ====== */
@@ -252,6 +260,8 @@ main()
 		      TOP_bne,
 		      TOP_bc1f,
 		      TOP_bc1t,
+		      TOP_bc2any2f,
+		      TOP_bc2any2t,
                      TOP_UNDEFINED);
 
 /* ===== Subprogram call operator ====== */
@@ -274,6 +284,8 @@ main()
 		      TOP_bne,
 		      TOP_bc1f,
 		      TOP_bc1t,
+		      TOP_bc2any2f,
+		      TOP_bc2any2t,
                      TOP_UNDEFINED);
 
 /* ===== Cond call/xfer is likely ====== */
@@ -426,6 +438,18 @@ main()
 	  	     TOP_multu,
 	  	     TOP_dmult,
 	  	     TOP_dmultu,
+		     // The following are included because they also
+		     // impact hi/low registers
+		     TOP_madd,
+		     TOP_maddu,
+		     TOP_msub,
+		     TOP_msubu,
+		     TOP_dmadd,
+		     TOP_dmaddu,
+		     TOP_dmsub,
+		     TOP_dmsubu,
+		     TOP_dmulg,
+		     TOP_dmulgu,
                      TOP_UNDEFINED);
 
 /* ===== Integer divide operator ====== */
@@ -472,6 +496,14 @@ main()
 		     TOP_drotr,
 		     TOP_drotr32,
 		     TOP_drotrv,
+		     TOP_dmadd,
+		     TOP_dmaddu,
+		     TOP_dmsub,
+		     TOP_dmsubu,
+		     TOP_dmulg,
+		     TOP_dmulgu,
+		     TOP_dperm,
+		     TOP_dpop,
                      TOP_UNDEFINED);
 
 /* ===== Any proper floating point op ====== */
@@ -612,6 +644,24 @@ main()
 		      TOP_recip_d,
 		      TOP_rsqrt_s,
 		      TOP_rsqrt_d,
+		      TOP_addred_ps,
+		      TOP_mulred_ps,
+		      TOP_ma_nlupuu_ps,
+		      TOP_ma_plunuu_ps,
+		      TOP_ma_plupll_ps,
+		      TOP_ma_puupul_ps,
+		      TOP_recipit1_d,
+		      TOP_recipit1_s,
+		      TOP_recipit1_ps,
+		      TOP_recipit2_d,
+		      TOP_recipit2_s,
+		      TOP_recipit2_ps,
+		      TOP_rsqrtit1_d,
+		      TOP_rsqrtit1_s,
+		      TOP_rsqrtit1_ps,
+		      TOP_rsqrtit2_d,
+		      TOP_rsqrtit2_s,
+		      TOP_rsqrtit2_ps,
                      TOP_UNDEFINED);
 
 /* ===== FP add operator ====== */
@@ -757,6 +807,18 @@ main()
 		     TOP_rsqrt_d,
 		     TOP_div_s,
 		     TOP_div_d,
+		     TOP_recipit1_d,
+		     TOP_recipit1_s,
+		     TOP_recipit1_ps,
+		     TOP_recipit2_d,
+		     TOP_recipit2_s,
+		     TOP_recipit2_ps,
+		     TOP_rsqrtit1_d,
+		     TOP_rsqrtit1_s,
+		     TOP_rsqrtit1_ps,
+		     TOP_rsqrtit2_d,
+		     TOP_rsqrtit2_s,
+		     TOP_rsqrtit2_ps,
                      TOP_UNDEFINED);
 
   /* ===== Square roots ====== */
@@ -970,6 +1032,8 @@ main()
 	  	      TOP_cfc1,
 	  	      TOP_bc1f,
 	  	      TOP_bc1t,
+		      TOP_bc2any2f,
+		      TOP_bc2any2t,
                      TOP_UNDEFINED);
 
 /* ===== Operator defs int val in FP reg ====== */
@@ -1176,10 +1240,10 @@ main()
   Instruction_Group (fp_unpredictable_latency,
 		     TOP_ldc1,
 		     TOP_ldxc1,
-		     //TOP_luxc1,	not used by compiler
 		     TOP_lwc1,
 		     TOP_lwxc1,
 		     TOP_dmtc1,
+		     TOP_luxc1,
 		     TOP_UNDEFINED);
 
   fp_stall_hazard = ISA_Property_Create ("fp_stall_hazard");

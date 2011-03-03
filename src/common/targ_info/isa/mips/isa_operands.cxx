@@ -89,6 +89,9 @@ main()
   /* Enums */
   OPERAND_VALUE_TYPE pfhint;
   pfhint = ISA_Enum_Opnd_Type_Create("pfhint", 8, UNSIGNED, EC_pfhint);
+  OPERAND_VALUE_TYPE perfctlcode;
+  perfctlcode = ISA_Enum_Opnd_Type_Create("perfctlcode", 8, UNSIGNED,
+					  EC_perfctlcode);
 
   /* Operand uses... */
 
@@ -142,6 +145,8 @@ main()
 		    TOP_clz,
 		    TOP_dclo,
 		    TOP_dclz,
+		    TOP_pop,
+		    TOP_dpop,
 		    TOP_UNDEFINED);
   Result(0, int64);
   Operand(0, int64, opnd1);
@@ -229,6 +234,16 @@ main()
   Operand(1, int64, base);
   Operand(2, simm16, offset);
 
+  Instruction_Group("int load indexed",
+		    TOP_lbx,
+		    TOP_ldx,
+		    TOP_lhx,
+		    TOP_lwx,
+		    TOP_UNDEFINED);
+  Result(0, int64);
+  Operand(0, int64, base);
+  Operand(1, int64, index);
+
   Instruction_Group("prefetch",
 		    TOP_pref,
 		    TOP_UNDEFINED);
@@ -245,6 +260,8 @@ main()
 
   Instruction_Group("int mul",
                     TOP_mul,
+		    TOP_dmulg,
+		    TOP_dmulgu,
                     TOP_UNDEFINED);
   Result(0, int64);
   Result(1, hilo);
@@ -265,9 +282,26 @@ main()
   Operand(0, int64, opnd1);
   Operand(1, int64, opnd2);
 
+  Instruction_Group("int madd",
+		    TOP_dmadd,
+		    TOP_dmaddu,
+		    TOP_dmsub,
+		    TOP_dmsubu,
+		    TOP_dperm,
+		    TOP_madd,
+		    TOP_maddu,
+		    TOP_msub,
+		    TOP_msubu,
+                    TOP_UNDEFINED);
+  Result(0, hilo);
+  Operand(0, int64, opnd1);
+  Operand(1, int64, opnd2);
+  Operand(2, hilo);
+
   Instruction_Group("move from hi/lo",
 		    TOP_mfhi,
 		    TOP_mflo,
+		    TOP_mfacx,
 		    TOP_UNDEFINED);
   Result(0, int64);
   Operand(0, hilo);
@@ -275,6 +309,7 @@ main()
   Instruction_Group("move to hi/lo",
 		    TOP_mthi,
 		    TOP_mtlo,
+		    TOP_mtacx,
 		    TOP_UNDEFINED);
   Operand(0, int64, opnd1);
   Result(0, hilo);
@@ -479,6 +514,7 @@ main()
   Instruction_Group("float load indexed",
 		    TOP_lwxc1,
 		    TOP_ldxc1,
+		    TOP_luxc1,
 		    TOP_UNDEFINED);
   Result(0, fp64);
   Operand(0, int64, base);
@@ -487,6 +523,7 @@ main()
   Instruction_Group("float store indexed",
 		    TOP_swxc1,
 		    TOP_sdxc1,
+		    TOP_suxc1,
 		    TOP_UNDEFINED);
   Operand(0, fp64, storeval);
   Operand(1, int64, base);
@@ -504,6 +541,12 @@ main()
 		    TOP_sub_s,
 		    TOP_sub_d,
 		    TOP_sub_ps,
+		    TOP_recipit2_d,
+		    TOP_recipit2_s,
+		    TOP_recipit2_ps,
+		    TOP_rsqrtit2_d,
+		    TOP_rsqrtit2_s,
+		    TOP_rsqrtit2_ps,
 		    TOP_UNDEFINED);
   Result(0, fp64);
   Operand(0, fp64, opnd1);
@@ -522,6 +565,12 @@ main()
 		    TOP_recip_d,
 		    TOP_rsqrt_s,
 		    TOP_rsqrt_d,
+		    TOP_recipit1_d,
+		    TOP_recipit1_s,
+		    TOP_recipit1_ps,
+		    TOP_rsqrtit1_d,
+		    TOP_rsqrtit1_s,
+		    TOP_rsqrtit1_ps,
 		    TOP_UNDEFINED);
   Result(0, fp64);
   Operand(0, fp64, opnd1);
@@ -539,6 +588,10 @@ main()
 		    TOP_nmsub_s,
 		    TOP_nmsub_d,
 		    TOP_nmsub_ps,
+		    TOP_ma_nlupuu_ps,
+		    TOP_ma_plunuu_ps,
+		    TOP_ma_plupll_ps,
+		    TOP_ma_puupul_ps,
 		    TOP_UNDEFINED);
   Result(0, fp64);
   Operand(0, fp64, maddend);
@@ -567,6 +620,8 @@ main()
   Instruction_Group("branch fcc",
 		    TOP_bc1f,
 		    TOP_bc1t,
+		    TOP_bc2any2f,
+		    TOP_bc2any2t,
 		    TOP_UNDEFINED);
   Operand(0, fcc, opnd1);
   Operand(1, pcrel16, target);
@@ -621,6 +676,7 @@ main()
 		    TOP_cfc1,
 		    TOP_mfc1,
 		    TOP_dmfc1,
+		    TOP_mfhc1,
 		    TOP_UNDEFINED);
   Result(0, int64);
   Operand(0, fp64, opnd1);
@@ -629,6 +685,7 @@ main()
 		    TOP_ctc1,
 		    TOP_mtc1,
 		    TOP_dmtc1,
+		    TOP_mthc1,
 		    TOP_UNDEFINED);
   Result(0, fp64);
   Operand(0, int64, opnd1);
@@ -782,6 +839,8 @@ main()
 		    TOP_plu_ps,
 		    TOP_pul_ps,
 		    TOP_puu_ps,
+		    TOP_addred_ps,
+		    TOP_mulred_ps,
 		    TOP_UNDEFINED);
   Result(0, fp64);
   Operand(0, fp64, opnd1);
@@ -794,6 +853,18 @@ main()
   Operand(0, fp64, opnd1);
   Operand(1, fp64, opnd2);
   Operand(2, int64, opnd3);
+
+  Instruction_Group("perfctl",
+		    TOP_perfctl,
+		    TOP_UNDEFINED);
+  Operand(0, perfctlcode);
+
+  Instruction_Group("tlb",
+		    TOP_tlbwir,
+		    TOP_tlbwrr,
+		    TOP_UNDEFINED);
+  Operand(0, int64, opnd1);
+  Operand(1, int64, opnd2);
 
   ISA_Operands_End();
   return 0;

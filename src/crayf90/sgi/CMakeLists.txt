@@ -13,12 +13,12 @@ include_directories(
 ../../arith
 ../../common/util
 ../../common/com
-../../common/com/x8664
+../../common/com/@ARCH@
 ../../linux/mfef90_includes
 ../../clibinc/cray
 ../include
 ../../include/cmplrs
-${PATHSCALE_BINARY_DIR}/common/targ_info/x8664
+${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@
 
 )
 
@@ -140,7 +140,7 @@ ELSE()
 ENDIF()
 
 path64_set_property_for_arch(mfef95-tmp ${host_arch} COMPILE_FLAGS
-                             "-I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
+                             "-I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@ -U__mips")
 
 
 add_custom_command(

@@ -29,6 +29,8 @@
 
 */
 
+#ifndef CGEXP_INTERNALS_INCLUDED
+#define CGEXP_INTERNALS_INCLUDED
 
 /* misc headers for target-specific CGEXP routines */
 
@@ -137,8 +139,10 @@ extern BOOL Expand_Special_And_Immed(TN *dest, TN *src1, INT64 imm, OPS *ops);
 /* enumerate the different kinds of shifts */
 typedef enum {shift_left, shift_aright, shift_lright} SHIFT_DIRECTION;
 extern void Expand_Shift (TN *result, TN *src1, TN *src2, TYPE_ID mtype, SHIFT_DIRECTION kind, OPS *ops);
-#ifdef TARG_X8664
+#if defined(TARG_X8664) || defined(TARG_MIPS)
 extern void Expand_Rrotate (TN *result, TN *src1, TN *src2, TYPE_ID rtype, TYPE_ID desc, OPS *ops);
+#endif
+#ifdef TARG_X8664
 extern void Expand_Left_Rotate (TN *result, TN *src1, TN *src2, TYPE_ID rtype, TYPE_ID desc, OPS *ops);
 #endif
 
@@ -172,3 +176,6 @@ extern void Expand_Rem (TN *result, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops)
 extern void Expand_Mod (TN *result, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops);
 extern void Expand_Float_Divide (TN *result, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops);
 extern void Expand_Float_Recip (TN *result, TN *src, TYPE_ID mtype, OPS *ops);
+
+#endif // CGEXP_INTERNALS_INCLUDED
+

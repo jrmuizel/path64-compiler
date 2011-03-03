@@ -12,6 +12,7 @@ typedef struct targ_info_t_ {
     const char *abi_name;       // ABI name
     ABI abi;                    // ABI
     const char *crt_path;       // Path to CRT runtime
+    const char *crtbegin_path;  // Path to crtbegin/crtend
 #ifdef __linux__
     const char *dynamic_linker; // Dynamic linker for target
 #endif // __linux__

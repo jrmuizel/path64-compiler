@@ -74,17 +74,12 @@ set(PATHSCALE_WOPT_COMMON_SRCS
 				"wodriver.cxx")
 
 set(PATHSCALE_WOPT_ARM_SRCS "opt_tailmerge.cxx")
-path64_is_arch_enabled(arm_enabled arm)
-if(${arm_enabled})
-set(PATHSCALE_WOPT_SRCS  ${PATHSCALE_WOPT_COMMON_SRCS} ${PATHSCALE_WOPT_ARM_SRCS})
-else()
-set(PATHSCALE_WOPT_SRCS  ${PATHSCALE_WOPT_COMMON_SRCS} )
-endif()
 
 ADD_DEFINITIONS(
 	-DMONGOOSE_BE)
 
-path64_set_multiarch_sources(wopt_sources COMMON ${PATHSCALE_WOPT_SRCS})
+path64_set_multiarch_sources(wopt_sources COMMON ${PATHSCALE_WOPT_COMMON_SRCS})
+path64_set_multiarch_sources(wopt_sources arm ${PATHSCALE_WOPT_COMMON_SRCS} ${PATHSCALE_WOPT_ARM_SRCS})
 path64_add_multiarch_library(wopt STATIC wopt_sources)
 path64_add_multiarch_dependencies(wopt generate_preg_list generate_topcode)
 path64_set_multiarch_property(wopt COMPILE_FLAGS

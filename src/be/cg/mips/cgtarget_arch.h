@@ -42,6 +42,12 @@
  * ====================================================================
  */
 
+
+#ifndef CGTARGET_ARCH_INCLUDED
+#define CGTARGET_ARCH_INCLUDED
+
+#include "bb.h"
+
 #define INST_BYTES 4
 #define DEFAULT_LONG_BRANCH_LIMIT (0x1ffffff * INST_BYTES)
 #define DEFAULT_BRP_BRANCH_LIMIT DEFAULT_LONG_BRANCH_LIMIT
@@ -155,16 +161,8 @@ CGTARG_Return_Enum_TN(OP *op, ISA_ENUM_CLASS_VALUE enum_class, INT *pos)
   return NULL;
 }
 
-inline BOOL 
-CGTARG_Is_OP_Barrier(OP *op)
-{
-  if (OP_code(op) == TOP_asm) {
-    extern OP_MAP OP_Asm_Map;
-    ASM_OP_ANNOT* asm_info = (ASM_OP_ANNOT*) OP_MAP_Get(OP_Asm_Map, op);
-    return (WN_Asm_Clobbers_Mem(ASM_OP_wn(asm_info)));
-  } else
-    return FALSE;
-}
+BOOL 
+CGTARG_Is_OP_Barrier(OP *op);
 
 inline BOOL
 CGTARG_Is_OP_Intrinsic(OP *op)
@@ -270,3 +268,6 @@ CGTARG_Has_Branch_Predict(void)
 {
   return TRUE;
 }
+
+#endif // CGTARGET_ARCH_INCLUDED
+

@@ -3,12 +3,12 @@ srcdir="${GCC_SOURCE_DIR}/gcc"
 
 outfile="$1"
 cmake_command="$2"
+target="$3"
 
 # Determine the host platforms.
 config_sub="${GCC_SOURCE_DIR}/config.sub"
 host_alias=`"${GCC_SOURCE_DIR}/config.guess"`
 host=`"${GCC_SOURCE_DIR}/config.sub" $host_alias`
-target="${host}"
 
 # Collect build-machine-specific information.
 . "${GCC_SOURCE_DIR}/gcc/config.build"
@@ -34,7 +34,7 @@ out_host_hook_obj=`fix_out_host_hook_obj "${out_host_hook_obj}"`
 
 # Report the information back to the CMake process.
 cat > "${outfile}.in" <<EOF
-SET(target ${host})
+SET(target ${target})
 SET(cpu_type ${cpu_type})
 SET(tm_defines ${tm_defines})
 SET(tm_file ${tm_file})

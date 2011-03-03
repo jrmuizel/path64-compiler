@@ -77,8 +77,9 @@
 #ifndef CGPREP_INCLUDED
 #define CGPREP_INCLUDED
 
-#include "tn.h"
+#include "bb.h"
 #include "op.h"
+#include "tn.h"
 
 void CGPREP_Copy_TN(TN *dest, TN *src, OP *point, UINT8 omega, BOOL before);
 void CGPREP_Copy_TN_Into_BB(TN *dest, TN *src, BB *bb, OP *point, UINT8 omega, BOOL before);

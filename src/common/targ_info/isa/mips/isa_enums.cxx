@@ -35,10 +35,22 @@ main ()
   ISA_Enums_Begin();
 
   ISA_Create_Enum_Class ("pfhint",
-      "store",		1,
-      "load",		0,
-      "store_streamed", 5,
-      "load_streamed", 4,
+      "load",		 0,
+      "store",		 1,
+      "load_streamed",	 4,
+      "store_streamed",	 5,
+      "load_retained",	 6,
+      "store_retained",	 7,
+      "nudge_L1",	24,
+      "nudge",		25,
+      "load_to_L2",	28,
+      "store_to_L2",	29,
+      "prepare_store",	30,
+      NULL,	UNDEFINED);	// default value
+
+  ISA_Create_Enum_Class ("perfctlcode",
+      "stop",		0,
+      "start",		1,
       NULL,	UNDEFINED);	// default value
 
   ISA_Enums_End();

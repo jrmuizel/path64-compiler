@@ -74,6 +74,17 @@ ENDIF()
 include(${Path64_SOURCE_DIR}/src/targets.cmake)
 
 
+# Use -G0 option if building with pathscale on MIPS
+if("${CMAKE_C_COMPILER_ID}" STREQUAL "PathScale")
+    path64_get_host_arch(arch)
+    if("${arch}" STREQUAL "mips")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -G0")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -G0")
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -G0")
+    endif()
+endif()
+
+
 # Define if we are doing a supported build
 OPTION(PATH64_ENABLE_SUPPORTED "Enabling supported build" OFF)
 IF(PATH64_ENABLE_SUPPORTED)
@@ -101,6 +112,10 @@ string(REGEX REPLACE "^([0-9.]+).*$" "\\1" TMPVERSION ${PSC_FULL_VERSION})
 string(REGEX REPLACE "^([0-9]+).+$" "\\1" PSC_MAJOR_VERSION ${TMPVERSION})
 string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*$" "\\1" PSC_MINOR_VERSION ${TMPVERSION})
 
+IF(NOT PSC_TARGET)
+    string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}-pathscale-${CMAKE_SYSTEM_NAME}" PSC_TARGET)
+ENDIF()
+
 # Checking that CRT paths are specified for all targets
 FOREACH(targ ${PATH64_ENABLE_TARGETS})
     IF(PSC_CRT_PATH_${targ})
@@ -108,6 +123,17 @@ FOREACH(targ ${PATH64_ENABLE_TARGETS})
     ELSE()
         MESSAGE(FATAL_ERROR "CRT path for ${targ} target is not specified. Please specify PSC_CRT_PATH_${targ} variable")
     ENDIF()
+
+    if(PSC_CRTBEGIN_PATH_${targ})
+        message(STATUS "crtbegin/crtend path for ${targ} target: ${PSC_CRTBEGIN_PATH_${targ}}")
+    else()
+        set(arch "${_PATH64_TARGET_ARCH_${targ}}")
+        if("${arch}" STREQUAL "x8664")
+            set(PSC_CRTBEGIN_PATH_${targ} "LOCAL")
+        else()
+            message(FATAL_ERROR "crtbegin/crtend path for ${targ} target is not specified. Please specify PSC_CRTBEGIN_PATH_${targ} variable")
+        endif()
+    endif()
 ENDFOREACH()
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
@@ -242,9 +268,6 @@ ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D_LONGLONG
                 -D_MIPSEL
                 -DTARG_LINUX
-                -D_MIPS_SZINT=32
-                -D_MIPS_SZPTR=32
-                -D_MIPS_SZLONG=32
                )
 #IF (${BUILD_TARGET_DIR} MATCHES "arm")
 #ADD_DEFINITIONS( -DTARG_ST

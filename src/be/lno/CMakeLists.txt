@@ -111,12 +111,8 @@ set(PATHSCALE_LNO_COMMON_SRCS
 				"lx_prompf_anl.cxx")
 
 set(PATHSCALE_LNO_X8664_SRCS "simd.cxx")
-path64_is_arch_enabled(arm_enabled arm)
-IF(${arm_enabled})
-set(PATHSCALE_LNO_SRCS ${PATHSCALE_LNO_COMMON_SRCS} )
-ELSE()
-set(PATHSCALE_LNO_SRCS ${PATHSCALE_LNO_COMMON_SRCS} ${PATHSCALE_LNO_X8664_SRCS})
-ENDIF()
+
+set(PATHSCALE_LNO_MIPS_SRCS "simd_mips.cxx")
 
 ADD_DEFINITIONS(
 	-DLNO
@@ -124,7 +120,9 @@ ADD_DEFINITIONS(
 	-D_NEW_SYMTAB
 	-DMONGOOSE_BE)
 
-path64_set_multiarch_sources(lno_sources COMMON ${PATHSCALE_LNO_SRCS})
+path64_set_multiarch_sources(lno_sources COMMON ${PATHSCALE_LNO_COMMON_SRCS})
+path64_set_multiarch_sources(lno_sources x8664 ${PATHSCALE_LNO_COMMON_SRCS} ${PATHSCALE_LNO_X8664_SRCS})
+path64_set_multiarch_sources(lno_sources mips ${PATHSCALE_LNO_COMMON_SRCS} ${PATHSCALE_LNO_MIPS_SRCS})
 path64_add_multiarch_library(lno SHARED lno_sources)
 path64_set_multiarch_property(lno PREFIX "")
 path64_multiarch_link_multiarch_libraries(lno ipl)

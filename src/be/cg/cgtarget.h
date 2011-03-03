@@ -548,17 +548,21 @@ extern UINT32 CGTARG_branch_taken_penalty;
 extern BOOL CGTARG_branch_taken_penalty_overridden;
 
 #include "cgtarget_arch.h"
+#include "cg_dep_graph.h"
 #include "defs.h"
 #include "cgir.h"
 #include "variants.h"
 #include "cg_flags.h"
-#include "cg_dep_graph.h"
 #include "cg_vector.h"
- #ifdef TARG_ST 
+#ifdef TARG_ST 
 #include "cg_loop.h"
 #endif
 #include "config_targ.h"
 #include "cg_thr.h"
+
+#ifdef TARG_X8664
+#include "findloops.h"
+#endif // TARG_X8664
 
 #include "cg_grouping.h"
 #include "ti_errors.h"

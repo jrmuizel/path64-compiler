@@ -478,7 +478,7 @@ typedef enum cg_dep_kind {
  * pointers, the dynamic vector approach will require less memory not
  * considering vector reuse efficiency.)  */
 
-typedef struct arc {
+struct ARC {
   OP            *pred;		/* the predecessor */
   OP            *succ;		/* the successor */
   mINT16        latency;	/* latency in cycles from pred to succ */
@@ -487,8 +487,8 @@ typedef struct arc {
 				 * dotted edge is the next bit, which tells
 				 * if the edge is not always strict and opnd 
 				 * is the HIGH 4 bits */
-  struct arc    *next[2];	/* next ARC in pred/succ list, respectively */
-} ARC;
+  ARC           *next[2];	/* next ARC in pred/succ list, respectively */
+};
 
 /* These accessors are read-only.  The "+0" prevents use as lhs.  */
 
@@ -654,6 +654,8 @@ inline ARC *ARC_LIST_Find_First(ARC_LIST *list, CG_DEP_KIND kind, INT16 opnd)
 // (or our conservative assumptions when no Alias_Manager given)
 // will do the right thing.
 
+BOOL CGTARG_Is_OP_Barrier(OP *op);
+
 inline BOOL OP_like_barrier(OP *op)
 {
 #ifdef TARG_ST
@@ -665,7 +667,7 @@ inline BOOL OP_like_barrier(OP *op)
 
 inline BOOL OP_like_store(OP *op)
 {
-  BOOL like_store = (OP_store(op) || CGTARG_Is_OP_Intrinsic(op) ||
+  BOOL like_store = (OP_store(op) || OP_code(op) == TOP_intrncall ||
 #ifdef TARG_ST
 		     OP_like_barrier(op));
 #else 

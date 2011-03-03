@@ -5685,13 +5685,18 @@ static BOOL unroll_multi_bb(LOOP_DESCR *loop, UINT8 ntimes)
 	Copy_WN_For_Memory_OP(rop, op);
         for (resi = 0; resi < OP_results(rop); resi++) {
 	  TN *res = OP_result(rop,resi);
-	  TN *new_res = unroll_names_get(res, unrolling);
-	  Set_OP_result(rop, resi, new_res);
+	  if (!TN_is_global_reg(res)) {
+	    TN *new_res = unroll_names_get(res, unrolling);
+	    Set_OP_result(rop, resi, new_res);
+	  }
 	}
 	for (opi = 0; opi < OP_opnds(rop); opi++) {
 	  TN *opnd = OP_opnd(rop, opi);
-          TN *new_tn = unroll_names_get(opnd, unrolling);
-	  Set_OP_opnd(rop, opi, new_tn);
+	  if (TN_is_register(opnd)) {
+	    if (!TN_is_global_reg(opnd)) {
+	      Set_OP_opnd(rop, opi, unroll_names_get(opnd, unrolling));
+	    }
+	  }
 	}
 	BB_Append_Op(replica, rop);
 	if (OP_br(rop)) replica_br_op = rop;

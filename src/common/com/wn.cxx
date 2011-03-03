@@ -2989,11 +2989,13 @@ WN_Int_Type_Conversion( WN *wn, TYPE_ID to_type )
     case MTYPE_U8:
       return wn;
     } /* end to_type = U8 */
+#ifdef TARG_X8664
   case MTYPE_V16I8:
     switch ( from_type ) {
     case MTYPE_V16I4:
       return WN_Cvt( from_type, to_type, wn );
     }
+#endif // TARG_X8664
   default:
     FmtAssert( FALSE,
       ("WN_Int_Type_Conversion: bad to_type: %d\n", to_type) );

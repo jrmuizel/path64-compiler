@@ -153,7 +153,6 @@ static char *mtypes_rcs_id = "$Source: common/com/SCCS/s.mtypes.h $ $Revision: 1
 
 #define MTYPE_V8I4      28      /* 64-bit vector of signed ints (bools) */
 #define MTYPE_V8F4      29      /* 64-bit vector of signed floats */
-#define MTYPE_LAST      30	/* Must be defined */
 
 #define MTYPE_LAST	29	/* Must be defined */
 

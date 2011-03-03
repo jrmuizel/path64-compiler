@@ -84,6 +84,11 @@ static char *config_asm_rcs_id = "$Source: common/com/mips/SCCS/s.config_asm.h $
  */
 #define Ret_Block_Label_Format	".RET_%s"
 
+/* The following sprintf format is used to create a label for a constant
+ * from a ST_IDX index:
+ */
+#define TCON_Label_Format	".LC%d"
+
 /* The following sprintf format to ensure correct alignment of
  * entry points:
  */
@@ -166,9 +171,12 @@ static char *config_asm_rcs_id = "$Source: common/com/mips/SCCS/s.config_asm.h $
 #define AS_GPVALUE	".gpvalue"
 #define AS_HALF		".short"
 #define AS_HALF_UNALIGNED ".short"
+#define AS_HIDDEN	".hidden"
+#define AS_INTERNAL	".internal"
 #define AS_BSS		".lcomm"
 #define AS_MASK		"//.mask"
 #define AS_ORIGIN	".org"
+#define AS_PROTECTED	".protected"
 #define AS_RDATA	".rdata"
 #define AS_SDATA	".sdata"
 #define AS_SECTION	".section"

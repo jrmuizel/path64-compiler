@@ -106,6 +106,19 @@ const char *target_runtime_path() {
 }
 
 
+char *target_crtbegin_path() {
+#ifdef TARG_X8664
+    if(is_target_arch_X8664()) {
+        return target_library_path();
+    } else {
+#endif // !TARG_X8664
+        return string_copy(current_target->crtbegin_path);
+#ifdef TARG_X8664
+    }
+#endif // !TARG_X8664
+}
+
+
 #ifdef __linux__
 const char *target_dynamic_linker() {
     return current_target->dynamic_linker;

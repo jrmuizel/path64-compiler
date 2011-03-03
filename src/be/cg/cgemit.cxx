@@ -2034,7 +2034,7 @@ Write_INITV (INITV_IDX invidx, INT scn_idx, Elf64_Word scn_ofst)
 	  scn_ofst = Write_TCON (&tcon, scn_idx, scn_ofst, INITV_repeat1(inv));
 	  break;
 	}
-      
+
 	default:
           scn_ofst = Write_Symbol ( st, INITV_ofst(inv),
 	  			      scn_idx, scn_ofst, INITV_repeat1(inv));
@@ -8983,6 +8983,17 @@ put_TN_comment (TN *t, BOOL add_name, vstring *comment)
   }
 }
 
+
+// Returns TCON name
+std::string EMT_get_TCON_name(ST *st)
+{
+  char name[32];
+  sprintf (name, TCON_Label_Format, ST_IDX_index(ST_st_idx(st)));
+  return name;
+}
+
+
+
 /* ====================================================================
  *
  * r_apply_l_const
@@ -9086,14 +9097,15 @@ r_apply_l_const (
 #endif /* defined(BUILD_OS_DARWIN) */
     }
     if (TN_relocs(t) != 0) {
-	// use base if referring to current pu or local data
-	if (CGEMIT_Use_Base_ST_For_Reloc (TN_relocs(t), st)) {
-		ST *base_st;
-		INT64 base_ofst;
-		Base_Symbol_And_Offset (st, &base_st, &base_ofst);
-		val += base_ofst;
-		st = base_st;
-    	}
+        // use base if referring to current pu or local data
+        if (CGEMIT_Use_Base_ST_For_Reloc (TN_relocs(t), st)) {
+            ST *base_st;
+            INT64 base_ofst;
+            Base_Symbol_And_Offset (st, &base_st, &base_ofst);
+            val += base_ofst;
+            st = base_st;
+        }
+
     	if (Use_Separate_PU_Section(current_pu,st)) {
 		/* use PU text section rather than generic one */
 		st = PU_base;
@@ -9109,14 +9121,10 @@ r_apply_l_const (
 	*buf = vstr_concat(*buf, underscorify(
                                  EMT_Get_Qualified_Name(st).c_str(), indirect));
 #else /* defined(BUILD_OS_DARWIN) */
-#ifdef TARG_X8664
 	if (ST_sym_class(st) == CLASS_CONST) {
-	  char name[32];
-	  sprintf (name, TCON_Label_Format, ST_IDX_index(ST_st_idx(st)));
-	  *buf = vstr_concat(*buf, name);
+	  *buf = vstr_concat(*buf, EMT_get_TCON_name(st).c_str());
 	}
 	else
-#endif
 	*buf = vstr_concat(*buf, EMT_Get_Qualified_Name(st).c_str());
 #endif /* defined(BUILD_OS_DARWIN) */
 	if (*Symbol_Name_Suffix != '\0')
@@ -13269,8 +13277,7 @@ Write_Symbol (
 		(scn_ofst % address_size) == 0 ? 
 		AS_ADDRESS : AS_ADDRESS_UNALIGNED);
 	if (ST_class(sym) == CLASS_CONST) {
-		EMT_Write_Qualified_Name (Asm_File, basesym);
-		fprintf (Asm_File, " %+" SCNd64 "\n", base_ofst);
+		fprintf (Asm_File, " %s\n", EMT_get_TCON_name(sym).c_str());
 	}
 	else if (ST_class(sym) == CLASS_FUNC && fptr && ! Get_Trace(TP_EMIT,0x2000)) {
 		fprintf (Asm_File, " %s(", fptr);
@@ -13932,7 +13939,7 @@ Change_Section_Origin (ST *base, INT64 ofst)
 #endif // KEY
 #endif // TARG_MIPS
 		cur_section = base;
-#if defined(TARG_MIPS) || defined(TARG_MVP)
+#if defined(TARG_MVP)
 		CGEMIT_Change_Origin_In_Asm(base, ofst);
 #endif
 	}
@@ -14190,11 +14197,9 @@ Process_Initos_And_Literals (SYMTAB_IDX stab)
       else
         fprintf ( Asm_File, "\t%s\t0\n", AS_ALIGN );
 
-#ifdef TARG_X8664 // limit to x86_64 for now
       if (!Emit_Global_Data) // not for symbols in ipa symtab
         fprintf ( Asm_File, TCON_Label_Format ":\n",
                   ST_IDX_index(ST_st_idx(st)) );
-#endif
 #endif
       Write_TCON (&ST_tcon_val(st), STB_scninfo_idx(base), ofst, 1);
     }
@@ -14345,7 +14350,7 @@ Process_Bss_Data (SYMTAB_IDX stab)
 	  size = 1;
 #endif
 
-#ifdef TARG_X8664
+#if defined(TARG_X8664) || defined(TARG_MIPS)
 	// Fix bug 617
 	// Do not emit .org for any symbols with section attributes.
 	{

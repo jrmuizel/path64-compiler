@@ -72,6 +72,10 @@ add_definitions(${ARCH_DEFS})
 
 add_executable(table ${PATHSCALE_TABLE_SRCS})
 
+string(REGEX MATCH "^[^-]+" targ_arch ${PSC_TARGET})
+if(NOT ${CMAKE_SYSTEM_PROCESSOR} STREQUAL ${targ_arch})
+    add_definitions(-DPATH64_CROSS)
+endif()
 
 # Detecting gcc and configuring sort_options script
 set(SORT_OPTIONS ${CMAKE_CURRENT_BINARY_DIR}/sort_options.sh)
@@ -116,6 +120,7 @@ foreach(targ ${PATH64_ENABLE_TARGETS})
     set(abi_name ${_PATH64_TARGET_BITS_${targ}})
     set(abi ${_PATH64_TARGET_ABI_${targ}})
     set(crt_path ${PSC_CRT_PATH_${targ}})
+    set(crtbegin_path ${PSC_CRTBEGIN_PATH_${targ}})
 
     if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
         set(dyn_linker ${PSC_DYNAMIC_LINKER_${targ}})
@@ -132,7 +137,7 @@ foreach(targ ${PATH64_ENABLE_TARGETS})
         set(first false)
     endif()
 
-    set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS}\t{ \"${targ}\",\t\"${arch}\",\t\"${abi_name}\",\t${abi},\t\"${crt_path}\"")
+    set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS}\t{\"${targ}\",\t\"${arch}\",\t\"${abi_name}\",\t${abi},\t\"${crt_path}\",\t\"${crtbegin_path}\"")
 
     if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
         set(TARGET_DEFINITIONS "${TARGET_DEFINITIONS},\t\"${dyn_linker}\"")
