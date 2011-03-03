@@ -196,6 +196,7 @@ BE_EXPORTED extern TYPE_ID FIRST_COMPOSED_MTYPE;
 #ifdef TARG_X8664
 #define MTYPE_CLASS_SVECTOR	0x60 // 2 bits for short vector (64-bit vector)
 #define MTYPE_CLASS_MVECTOR	0xa0 // 2 bits for MMX vector (64-bit vector)
+#define MTYPE_CLASS_AVECTOR 0x120 // 2 bits for AVX vector(256-bit vector)
 #endif
 #ifdef TARG_MIPS
 #define MTYPE_CLASS_SVECTOR	0x60 // 2 bits for short vector (64-bit vector)
