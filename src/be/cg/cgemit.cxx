@@ -13936,7 +13936,7 @@ Change_Section_Origin (ST *base, INT64 ofst)
 #endif // KEY
 #endif // TARG_MIPS
 		cur_section = base;
-#if defined(TARG_MVP)
+#if defined(TARG_MIPS) || defined(TARG_MVP)
 		CGEMIT_Change_Origin_In_Asm(base, ofst);
 #endif
 	}
