@@ -771,6 +771,7 @@ add_sysroot(string_list_t *args, phases_t phase)  // 15149
 {
   buffer_t buf;
   char *sysroot = (abi == ABI_N32 ? sysroot_path_n32 : sysroot_path_64);
+  if (sysroot == NULL) sysroot = sysroot_path;
   if (sysroot == NULL) return;
   switch (phase) {
   case P_ld:
