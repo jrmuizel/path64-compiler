@@ -2243,7 +2243,10 @@ add_final_ld_args (string_list_t *args)
         
             // other dependencies
             add_library(args, "pthread");
+
+#ifndef  __FreeBSD__
             add_library(args, "dl");
+#endif // !__FreeBSD__
         }
 
         // static libc should be grouped with libgcc and libeh
