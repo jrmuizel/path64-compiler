@@ -179,7 +179,17 @@ Pick_Load_Instruction (TYPE_ID rtype, TYPE_ID desc,
   case MTYPE_M8I2:
   case MTYPE_M8I4:
   case MTYPE_M8F4: return base != NULL ? TOP_ld64_2m : TOP_ld64_2m_n32;
-    
+#if 0
+  case MTYPE_V32I1:
+  case MTYPE_V32I2:
+  case MTYPE_V32I4:
+  case MTYPE_V32I8:
+    return base != NULL ? TOP_vlddqa : TOP_vlddqa_n32;
+  case MTYPE_V32F4:
+    return base != NULL ? TOP_vldaps : TOP_vldaps_n32;
+  case MTYPE_V32F8:
+    return base != NULL ? TOP_vldapd : TOP_vldapd_n32;
+#endif   
   case MTYPE_V:
     if (rtype != MTYPE_V)
       // use rtype to pick load (e.g. if lda)
@@ -425,6 +435,17 @@ Pick_Store_Instruction( TYPE_ID mtype,
   case MTYPE_M8I4:
   case MTYPE_M8F4:
     return base != NULL ? TOP_store64_fm : TOP_store64_fm_n32;
+#if 0
+  case MTYPE_V32I1:
+  case MTYPE_V32I2:
+  case MTYPE_V32I4:
+  case MTYPE_V32I8:
+    return base != NULL ? TOP_vstdqa : TOP_vstdqa_n32;
+  case MTYPE_V32F4:
+    return base != NULL ? TOP_vstaps : TOP_vstaps_n32;
+  case MTYPE_V32F8:
+    return base != NULL ? TOP_vstapd : TOP_vstapd_n32;
+#endif
   default:  FmtAssert(FALSE, ("NYI: Pick_Store_Instruction mtype"));
     return TOP_UNDEFINED;
   }

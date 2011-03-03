@@ -567,6 +567,14 @@ Ldid_from_mtype( MTYPE mtype )
     case MTYPE_M8I2:	return OPC_M8I2M8I2LDID;
     case MTYPE_M8I4:	return OPC_M8I4M8I4LDID;
     case MTYPE_M8F4:	return OPC_M8F4M8F4LDID;
+	case MTYPE_V32I1:	return OPC_V32I1V32I1LDID;
+    case MTYPE_V32I2:	return OPC_V32I2V32I2LDID;
+    case MTYPE_V32I4:	return OPC_V32I4V32I4LDID;
+    case MTYPE_V32I8:	return OPC_V32I8V32I8LDID;
+    case MTYPE_V32F4:	return OPC_V32F4V32F4LDID;
+    case MTYPE_V32F8:	return OPC_V32F8V32F8LDID;
+    case MTYPE_V32C4:	return OPC_V32C4V32C4LDID;
+    case MTYPE_V32C8:	return OPC_V32C8V32C8LDID;
 #endif
 #ifdef TARG_MIPS
     case MTYPE_V8I4:	return OPC_V8I4V8I4LDID;
@@ -633,6 +641,22 @@ Mtype_from_mtype_class_and_size( INT mtype_class, INT bytes )
       case 4: return MTYPE_V16F4; 
       case 8: return MTYPE_V16F8; 
       case 16: return MTYPE_V16C8;
+      }
+    }else if ( ( mtype_class & MTYPE_CLASS_AVECTOR ) == MTYPE_CLASS_AVECTOR ) {
+      // 256-bit AVX vector
+      if ( mtype_class & MTYPE_CLASS_INTEGER ) {
+        switch ( bytes ) {
+        case 1: return MTYPE_V32I1; 
+        case 2: return MTYPE_V32I2; 
+        case 4: return MTYPE_V32I4; 
+        case 8: return MTYPE_V32I8; 
+        }
+      } else if ( mtype_class & MTYPE_CLASS_FLOAT ) {
+        switch ( bytes ) {
+        case 4: return MTYPE_V32F4; 
+        case 8: return MTYPE_V32F8; 
+        case 16: return MTYPE_V32C8;
+        }
       }
     }
     FmtAssert( FALSE, 
@@ -1463,10 +1487,15 @@ Create_identity_assignment(AUX_STAB_ENTRY *sym, AUX_ID aux_id, TY_IDX ty)
     case MTYPE_V8I4:
     case MTYPE_V8F4:
     case MTYPE_V16I4:
-    case MTYPE_V16F4: bytes = 4; break;
+    case MTYPE_V16F4:
+	case MTYPE_V32I4: 
+	case MTYPE_V32F4: bytes = 4; break;
     case MTYPE_V16I8:
-    case MTYPE_V16F8: bytes = 8; break;
-    case MTYPE_V16C8: bytes = 16; break;
+    case MTYPE_V16F8:
+	case MTYPE_V32I8:
+	case MTYPE_V32F8: bytes = 8; break;
+    case MTYPE_V16C8: 
+	case MTYPE_V32C8: bytes = 16; break;
     }
 #endif
 #ifdef TARG_MIPS

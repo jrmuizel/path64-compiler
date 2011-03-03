@@ -1144,7 +1144,15 @@ Is_MTYPE_b [MTYPE_LAST+1] = {
   0, /* MTYPE_M8I1    */
   0, /* MTYPE_M8I2    */
   0, /* MTYPE_M8I4    */
-  0  /* MTYPE_M8F4    */
+  0, /* MTYPE_M8F4    */
+  0, /* MTYPE_V32C4   */
+  0, /* MTYPE_V32C8   */
+  0, /* MTYPE_V32I1   */
+  0, /* MTYPE_V32I2   */
+  0, /* MTYPE_V32I4   */
+  0, /* MTYPE_V32I8   */
+  0, /* MTYPE_V32F4   */
+  0  /* MTYPE_V32F8   */
 #endif // TARG_X8664
 };
 #endif
@@ -1260,7 +1268,15 @@ Is_MTYPE_b_f_i_M_p_V_z [MTYPE_LAST+1] = {
   1, /* MTYPE_M8I1    */
   1, /* MTYPE_M8I2    */
   1, /* MTYPE_M8I4    */
-  1  /* MTYPE_M8F4    */
+  1, /* MTYPE_M8F4    */
+  1, /* MTYPE_V32C4   */
+  1, /* MTYPE_V32C8   */
+  1, /* MTYPE_V32I1   */
+  1, /* MTYPE_V32I2   */
+  1, /* MTYPE_V32I4   */
+  1, /* MTYPE_V32I8   */
+  1, /* MTYPE_V32F4   */
+  1  /* MTYPE_V32F8   */
 #endif // TARG_X8664
 };
 #endif
@@ -1318,7 +1334,15 @@ Is_MTYPE_b_f_i_M_p_s_z [MTYPE_LAST+1] = {
   1, /* MTYPE_M8I1    */
   1, /* MTYPE_M8I2    */
   1, /* MTYPE_M8I4    */
-  1  /* MTYPE_M8F4    */
+  1,  /* MTYPE_M8F4    */
+  1, /* MTYPE_V32C4   */
+  1, /* MTYPE_V32C8   */
+  1, /* MTYPE_V32I1   */
+  1, /* MTYPE_V32I2   */
+  1, /* MTYPE_V32I4   */
+  1, /* MTYPE_V32I8   */
+  1, /* MTYPE_V32F4   */
+  1  /* MTYPE_V32F8   */
 #endif // TARG_X8664
 };
 #endif

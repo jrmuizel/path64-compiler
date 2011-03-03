@@ -279,6 +279,15 @@ Mtype_to_Ukind(MTYPE mtype)
    case MTYPE_M8I2:
    case MTYPE_M8I4:
    case MTYPE_M8F4:
+   	
+   case MTYPE_V32C4:
+   case MTYPE_V32C8:
+   case MTYPE_V32I1:
+   case MTYPE_V32I2:
+   case MTYPE_V32I4:
+   case MTYPE_V32I8:
+   case MTYPE_V32F4:
+   case MTYPE_V32F8:
      ukind = PREG_AS_IEEE64;
      break;
 #endif
