@@ -156,15 +156,12 @@ CGEMIT_Prn_Line_Dir_In_Asm (USRCPOS usrcpos)
 void
 CGEMIT_Prn_Scn_In_Asm (ST *st, ST *cur_section)
 {
-  UINT32 tmp, power;
-  power = 0;
-  for (tmp = STB_align(st); tmp > 1; tmp >>= 1) power++;
   CGEMIT_Prn_Scn_In_Asm(Asm_File,
 			ST_name(st),
 			Get_Section_Elf_Type(STB_section_idx(st)),
 			Get_Section_Elf_Flags(STB_section_idx(st)),
 			Get_Section_Elf_Entsize(STB_section_idx(st)),
-			power,
+			STB_align(st),
 			(cur_section != NULL) ? ST_name(cur_section) : NULL);
 }
 

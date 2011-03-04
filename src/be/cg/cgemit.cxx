@@ -8331,10 +8331,7 @@ Init_Section (ST *st)
 	  CGEMIT_Prn_Scn_In_Asm(st, scn_type, scn_flags, scn_entsize, cur_section);
 #endif
 #if defined(TARG_MIPS)
-	  UINT32 tmp, power;
-	  power = 0;
-	  for (tmp = STB_align(st); tmp > 1; tmp >>= 1) power++;
-	  fprintf(Asm_File, "\t%s\t%d\n", AS_ALIGN, power);
+	  fprintf(Asm_File, "\t%s\t%d\n", AS_ALIGN, STB_align(st));
 #endif
 	}
 }
@@ -14680,15 +14677,8 @@ Setup_Text_Section_For_PU (ST *pu)
   i = Check_If_Should_Align_PU (text_PC);
   if (i != 0) {
     if (Assembly) {
-      UINT32 tmp, power;
-      power = 0;
-      for (tmp = STB_align(text_base); tmp > 1; tmp >>= 1) power++;
 #ifdef KEY
-#if defined(TARG_X8664) && ! defined(BUILD_OS_DARWIN)
-      fprintf (Asm_File, "\t%s\t%d\n", AS_ALIGN, 1 << power );
-#else
-      fprintf (Asm_File, "\t%s\t%d\n", AS_ALIGN, power);
-#endif
+      fprintf (Asm_File, "\t%s\t%d\n", AS_ALIGN, STB_align(text_base));
 #else
       ASM_DIR_ALIGN(power, text_base);
 #endif
@@ -15822,20 +15812,13 @@ EMT_End_File( void )
         Em_End_Section (em_scn[i].scninfo);
       }
       if (Assembly) {
-	UINT32 tmp, power;
-	power = 0;
-	for (tmp = STB_align(sym); tmp > 1; tmp >>= 1) power++;
 #if defined(BUILD_OS_DARWIN)
 	emit_section_directive(sym);
 #else /* defined(BUILD_OS_DARWIN) */
 	fprintf (Asm_File, "\t%s %s\n", AS_SECTION, ST_name(sym));
 #endif /* defined(BUILD_OS_DARWIN) */
 #ifdef KEY
-#if defined(TARG_X8664) && ! defined(BUILD_OS_DARWIN)
-	fprintf (Asm_File, "\t%s\t%d\n", AS_ALIGN, 1 << power );
-#else
-	fprintf (Asm_File, "\t%s\t%d\n", AS_ALIGN, power);
-#endif
+	fprintf (Asm_File, "\t%s\t%d\n", AS_ALIGN, STB_align(sym));
 #else
 	ASM_DIR_ALIGN(power, sym);
 #endif

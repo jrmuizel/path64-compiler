@@ -152,7 +152,7 @@ static char *config_asm_rcs_id = "$Source: common/com/mips/SCCS/s.config_asm.h $
 #define AS_STOP_BIT		NULL
 
 /* Defines for assembly directives */
-#define AS_ALIGN 	".align"
+#define AS_ALIGN 	".balign"
 #define AS_BYTE		".byte"
 #define AS_COM		".comm"
 #define AS_DATA		".data"
