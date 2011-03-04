@@ -10090,33 +10090,18 @@ static WN *lower_store(WN *block, WN *tree, LOWER_ACTIONS actions)
 	   imagexpN = AssignExpr(block, imagexp, realTY);
 	   imagexp_copy = WN_LdidPreg(realTY, imagexpN);
 	}
-	if(WN_rtype(realexp_copy) !=  realTY){
-		wn = WN_Stid(realTY,
-			  offset,
-			  coerceST(WN_st(tree), realTY),
-			  MTYPE_To_TY(realTY),
-			  WN_Cvt( WN_rtype(realexp_copy), realTY, realexp_copy));
-	}
-	else
-		wn = WN_Stid(realTY,
-		      offset, 
-		      coerceST(WN_st(tree), realTY),
-		      MTYPE_To_TY(realTY),
-		      realexp_copy);
+
+	wn = WN_Stid(realTY,
+		     offset, 
+		     coerceST(WN_st(tree), realTY),
+		     MTYPE_To_TY(realTY),
+		     realexp_copy);
 
         realexp = lower_store(block, wn, actions);
         WN_Set_Linenum (realexp, WN_Get_Linenum(tree));
         WN_INSERT_BlockLast(block, realexp);
 
-	if(WN_rtype(imagexp_copy) != realTY){
-		wn = WN_Stid(realTY,
-			  coerceOFFSET(tree, realTY,offset),
-			  coerceST(WN_st(tree), realTY),
-			  MTYPE_To_TY(realTY),
-			  WN_Cvt(WN_rtype(imagexp_copy), realTY, imagexp_copy));
-	}
-	else
-		wn = WN_Stid(realTY,
+	wn = WN_Stid(realTY,
 		     coerceOFFSET(tree, realTY, offset),
 		     coerceST(WN_st(tree), realTY),
 		     MTYPE_To_TY(realTY),
