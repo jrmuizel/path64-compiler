@@ -182,10 +182,7 @@ main()
                              ISA_REGISTER_SUBCLASS_UNDEFINED,
                              64, SIGNED, INVALID);
   
-  const OPERAND_VALUE_TYPE ymmx =
-    ISA_Reg_Opnd_Type_Create("ymmx", ISA_REGISTER_CLASS_ymmx,
-                             ISA_REGISTER_SUBCLASS_UNDEFINED,
-                             256, SIGNED, INVALID);
+ 
   /* Enums */
 
   const OPERAND_VALUE_TYPE pfhint =
@@ -1480,6 +1477,10 @@ main()
 		    TOP_ldhps_n32,
 		    TOP_ldlpd_n32,
 		    TOP_ldhpd_n32,
+		    /*AVX instructions*/
+		    TOP_vlddqa_n32,
+		    TOP_vldaps_n32,
+		    TOP_vldapd_n32,
 		    TOP_UNDEFINED);
   Result(0, fp128);
   Operand(0, simm32, offset);
@@ -1498,6 +1499,10 @@ main()
 		    TOP_fmovsldupx,
 		    TOP_fmovshdupx,
 		    TOP_fmovddupx,
+		    /*AVX instructions*/
+		    TOP_vldapd,
+		    TOP_vldaps,
+		    TOP_vlddqa,
 		    TOP_UNDEFINED);
   Result(0, fp128);
   Operand(0, int64, base);
@@ -1535,6 +1540,9 @@ main()
 		    TOP_sthps_n32,
 		    TOP_stlpd_n32,
 		    TOP_sthpd_n32,
+		    TOP_vstdqa_n32,
+		    TOP_vstaps_n32,
+		    TOP_vstapd_n32,
 		    TOP_UNDEFINED);
   Operand(0, fp128, storeval);
   Operand(1, simm32, offset);
@@ -1554,6 +1562,10 @@ main()
 		    TOP_stntps,
 		    TOP_storenti128,
 		    TOP_storelpd,
+		    /*AVX instructions*/
+		    TOP_vstdqa,
+		    TOP_vstapd,
+		    TOP_vstaps,
 		    TOP_UNDEFINED);
   Operand(0, fp128, storeval);
   Operand(1, int64, base);
@@ -2784,6 +2796,10 @@ main()
 		    TOP_fmovsldupxx,
 		    TOP_fmovshdupxx,
 		    TOP_fmovddupxx,
+		    /*AVX instructions*/
+		    TOP_vlddqax,
+		    TOP_vldapdx,
+		    TOP_vldapsx,
 		    TOP_UNDEFINED);
   Result(0,  fp128);
   Operand(0, int64, base);
@@ -2824,6 +2840,10 @@ main()
 		    TOP_fmovsldupxxx,
 		    TOP_fmovshdupxxx,
 		    TOP_fmovddupxxx,
+		    /*AVX instructions*/
+		    TOP_vlddqaxx,
+		    TOP_vldapdxx,
+		    TOP_vldapsxx,
 		    TOP_UNDEFINED);
   Result(0,  fp128);
   Operand(0, int64, index);
@@ -2853,6 +2873,10 @@ main()
 		    TOP_stapdx,
 		    TOP_stntpdx,
 		    TOP_stntpsx,
+		    /*AVX instructions*/
+		    TOP_vstdqax,
+		    TOP_vstapdx,
+		    TOP_vstapsx,
 		    TOP_UNDEFINED);
   Operand(0, fp128, storeval);
   Operand(1, int64, base);
@@ -2882,6 +2906,9 @@ main()
 		    TOP_stapdxx,
 		    TOP_stntpdxx,
 		    TOP_stntpsxx,
+		    TOP_vstdqaxx,
+		    TOP_vstapdxx,
+		    TOP_vstapsxx,
 		    TOP_UNDEFINED);
   Operand(0, fp128, storeval);
   Operand(1, int64, index);
@@ -3385,9 +3412,9 @@ main()
   Instruction_Group("vadd ymm",
                     TOP_vaddpd,
                     TOP_UNDEFINED);
-  Result(0, ymmx);
-  Operand(0, ymmx, opnd1);
-  Operand(1, ymmx, opnd2);
+  Result(0, fp128);
+  Operand(0, fp128, opnd1);
+  Operand(1, fp128, opnd2);
 
   Instruction_Group("pmax pmin xmm",
                     TOP_pmaxsb,

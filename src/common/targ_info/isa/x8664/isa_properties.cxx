@@ -593,6 +593,19 @@ main()
 		     TOP_fmovsldupxxx,
 		     TOP_fmovshdupxxx,
 		     TOP_fmovddupxxx,
+		     /*AVX instructions*/
+		     TOP_vlddqa_n32,
+                     TOP_vldapd_n32,
+                     TOP_vldaps_n32,
+		     TOP_vlddqa,
+                     TOP_vlddqax,
+                     TOP_vlddqaxx,
+		     TOP_vldapd,
+                     TOP_vldapdx,
+                     TOP_vldapdxx,
+                     TOP_vldaps,
+                     TOP_vldapsx,
+                     TOP_vldapsxx,
                      TOP_UNDEFINED);
 
   /* ===== Memory load and extend operator ====== */
@@ -1327,6 +1340,19 @@ main()
 		     TOP_storenti128,
 		     TOP_storelpd,
 		     TOP_storent64_fm,
+		     /* AVX instructions */
+                     TOP_vstdqa,
+                     TOP_vstdqax,
+                     TOP_vstdqaxx,
+                     TOP_vstdqa_n32,
+                     TOP_vstapd,
+                     TOP_vstapdx,
+                     TOP_vstapdxx,
+                     TOP_vstaps,
+                     TOP_vstapsx,
+                     TOP_vstapsxx,
+		     TOP_vstapd_n32,
+                     TOP_vstaps_n32,
                      TOP_UNDEFINED);
 
   /* ===== Prefetch operator ====== */
@@ -2302,6 +2328,11 @@ main()
 		     TOP_storelpd,
 		     TOP_pshufw64v16,
 		     TOP_pmovmskb128,
+		    /*AVX instructions*/
+		     TOP_vstapd_n32,
+                     TOP_vstaps_n32,
+                     TOP_vldapd_n32,
+                     TOP_vldaps_n32,
                      TOP_UNDEFINED);
 
   /* ===== FP add operator ====== */
@@ -3353,6 +3384,30 @@ main()
 				TOP_pabsd,
 				 TOP_palignr128,
 				 TOP_palignr,
+		     /*AVX instructions*/
+		     TOP_vstdqa,
+                     TOP_vstdqax,
+                     TOP_vstdqaxx,
+                     TOP_vstapd,
+                     TOP_vstapdx,
+                     TOP_vstapdxx,
+                     TOP_vstaps,
+                     TOP_vstapsx,
+                     TOP_vstapsxx,
+		     TOP_vstapd_n32,
+                     TOP_vstaps_n32,
+		     TOP_vlddqa_n32,
+                     TOP_vldapd_n32,
+                     TOP_vldaps_n32,
+		     TOP_vlddqa,
+		     TOP_vlddqax,
+		     TOP_vlddqaxx,
+		     TOP_vldapd,
+                     TOP_vldapdx,
+                     TOP_vldapdxx,
+                     TOP_vldaps,
+                     TOP_vldapsx,
+                     TOP_vldapsxx,
 		     TOP_UNDEFINED );
 
   /* ==== x86 style instructions ==== */

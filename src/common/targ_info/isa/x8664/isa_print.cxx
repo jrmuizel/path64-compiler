@@ -1171,6 +1171,13 @@ main()
 				 TOP_pabsb,
 				 TOP_pabsw,
 				 TOP_pabsd,
+			   /*AVX instructions*/
+			   TOP_vlddqa_n32,
+			   TOP_vldaps_n32,
+			   TOP_vldapd_n32,
+			   TOP_vstdqa_n32,
+			   TOP_vstaps_n32,
+			   TOP_vstapd_n32,
 			   TOP_UNDEFINED );
 
   /* Two operands / no result */
@@ -1319,6 +1326,10 @@ main()
 			   TOP_fmovddupx,			   
 			   TOP_ld64_2m,
 			   TOP_ld64_2sse,
+			   /*AVX instructions*/
+			   TOP_vlddqa,
+			   TOP_vldaps,
+			   TOP_vldapd,
 			   TOP_UNDEFINED );
 
   /* lea instruction with indx */
@@ -1403,7 +1414,11 @@ main()
 			   TOP_ldapsx,
 			   TOP_fmovsldupxx,
 			   TOP_fmovshdupxx,
-			   TOP_fmovddupxx,			   
+			   TOP_fmovddupxx,
+			   /*AVX instrucions*/
+			   TOP_vlddqax,
+			   TOP_vldapsx,
+			   TOP_vldapdx,		   
 			   TOP_UNDEFINED );
 
   /* load instruction with indx w/o base*/
@@ -1439,6 +1454,10 @@ main()
 			   TOP_fmovsldupxxx,
 			   TOP_fmovshdupxxx,
 			   TOP_fmovddupxxx,			   
+			   /*AVX instrucions*/
+			   TOP_vlddqaxx,
+			   TOP_vldapsxx,
+			   TOP_vldapdxx,		   
 			   TOP_UNDEFINED );
 
   /* store instruction with indx */
@@ -1471,6 +1490,10 @@ main()
 			   TOP_sthpdx,
 			   TOP_stapsx,
 			   TOP_stapdx,
+			   /*AVX instructions*/
+			   TOP_vstdqax,
+			   TOP_vstapdx,
+			   TOP_vstapsx,
 			   TOP_UNDEFINED );
 
   /* load_gs_seg_off and load_fs_seg_off are special in that the
@@ -1530,6 +1553,10 @@ main()
 			   TOP_stntpsxx,
 			   TOP_stapsxx,
 			   TOP_stapdxx,
+			   /*AVX instructions*/
+			   TOP_vstdqaxx,
+			   TOP_vstapdxx,
+			   TOP_vstapsxx,
 			   TOP_UNDEFINED );
 
   /* prefetch */
@@ -1625,6 +1652,10 @@ main()
 			   TOP_storenti128,
 			   TOP_storelpd,
 			   TOP_storent64_fm,
+			   /*AVX instructions*/
+			   TOP_vstdqa,
+			   TOP_vstapd,
+			   TOP_vstaps,
 			   TOP_UNDEFINED );
 
   /* instructions that read-modify-write */
