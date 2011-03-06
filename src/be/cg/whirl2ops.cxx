@@ -849,7 +849,7 @@ PREG_To_TN (ST *preg_st, PREG_NUM preg_num)
 
 #ifdef TARG_X8664
 	if( reg == First_Int_Preg_Return_Offset &&
-	    Is_Target_32bit() ){
+	    Is_Target_32bit() && ST_size(preg_st) > 4){
 	  if( !CGTARG_Preg_Register_And_Class(Last_Int_Preg_Return_Offset,
 					      &rclass, &reg) ){
 	    FmtAssert( FALSE, ("NYI") );

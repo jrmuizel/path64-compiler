@@ -623,6 +623,43 @@ ST_is_gp_relative(ST *st)
 	  ST_gprel(base_st));
 }
 
+static char *
+ST_name_decorated(ST *st)
+{
+    char *name = ST_name(st);
+
+#if defined(BUILD_OS_DARWIN) || defined(_WIN32)
+
+#define SYM_PREFIX "_"
+
+    if (name[0] != '.' && name[0] != '@') {
+        static char *buffer = NULL;
+        static int buffer_size = 0;
+        int length = strlen(name) + sizeof(SYM_PREFIX);
+   
+        if (buffer_size < length) {
+            buffer_size = length + 128;
+
+            if (buffer != NULL) {
+                free(buffer);
+            }
+            buffer = (char *)malloc(buffer_size);
+
+            if (buffer == NULL) {
+                exit(RC_OVERFLOW_ERROR);
+            }
+        }
+
+        strcpy(buffer, SYM_PREFIX);
+        strcat(buffer, name);
+
+        name = buffer;
+    }
+#endif
+
+    return name;
+}
+
 
 #define Is_Text_Section(st) (STB_exec(st) && strncmp(ST_name(st), ELF_TEXT,5)==0)
 
@@ -829,7 +866,7 @@ EMT_Write_Qualified_Name (FILE *f, ST *st)
 #if defined(BUILD_OS_DARWIN)
 	fputs(underscorify(ST_name(st)), f);
 #else /* defined(BUILD_OS_DARWIN) */
-	fputs(ST_name(st), f);
+	fputs(ST_name_decorated(st), f);
 #endif /* defined(BUILD_OS_DARWIN) */
 #ifdef KEY
 // This name is already unique, don't change it.
@@ -1155,7 +1192,7 @@ mINT32 EMT_Put_Elf_Symbol (ST *sym)
 		  underscorify(ST_name(sym)));
 	      }
 #else /* defined(BUILD_OS_DARWIN) */
-	      fprintf(Asm_File, "\t%s\t%s\n", AS_GLOBAL, ST_name(sym));
+	      fprintf(Asm_File, "\t%s\t%s\n", AS_GLOBAL, ST_name_decorated(sym));
 #endif /* defined(BUILD_OS_DARWIN) */
 	    }
 	  break;
@@ -1221,7 +1258,7 @@ mINT32 EMT_Put_Elf_Symbol (ST *sym)
 		underscorify(ST_name(sym)));
 	    }
 #else /* defined(BUILD_OS_DARWIN) */
-	    fprintf(Asm_File, "\t%s\t%s\n", AS_GLOBAL, ST_name(sym));
+	    fprintf(Asm_File, "\t%s\t%s\n", AS_GLOBAL, ST_name_decorated(sym));
 #endif /* defined(BUILD_OS_DARWIN) */
 	}
       }
@@ -1431,7 +1468,7 @@ r_apply_l_const (
 	}
 	else
 #endif
-	*buf = vstr_concat(*buf, ST_name(st));
+	*buf = vstr_concat(*buf, ST_name_decorated(st));
 #endif /* defined(BUILD_OS_DARWIN) */
 	if (*Symbol_Name_Suffix != '\0')
 		*buf = vstr_concat(*buf, Symbol_Name_Suffix);
@@ -7223,12 +7260,7 @@ EMT_Emit_PU ( ST *pu, DST_IDX pu_dst, WN *rwn )
 	! ST_is_export_local(sym)) 
     {
       if (Assembly) fprintf (Asm_File, "\t%s\t %s\n", AS_GLOBAL,
-#if defined(BUILD_OS_DARWIN)
-        underscorify(ST_name(sym))
-#else /* defined(BUILD_OS_DARWIN) */
-        ST_name(sym)
-#endif /* defined(BUILD_OS_DARWIN) */
-	);
+      	                     ST_name_decorated(sym));
       if (Object_Code) EMT_Put_Elf_Symbol (sym);
     }
 
@@ -7269,7 +7301,8 @@ EMT_Emit_PU ( ST *pu, DST_IDX pu_dst, WN *rwn )
   // Mach-O as 1.38 doesn't support .size
   // Bug 1275
   fprintf( Asm_File, "\t.size %s, %s-%s\n", 
-	   ST_name(pu), LABEL_name(Last_Label), ST_name(pu));
+	   ST_name_decorated(pu), LABEL_name(Last_Label),
+	   ST_name_decorated(pu));
 #endif /* defined(BUILD_OS_DARWIN) */
 #endif
   /* Revert back to the text section to end the PU. */
@@ -8003,13 +8036,7 @@ EMT_End_File( void )
 	// alias
 	if (Assembly) {
 	    if ( ! ST_is_export_local(sym)) {
-	    	fprintf (Asm_File, "\t%s\t %s\n", AS_GLOBAL,
-#if defined(BUILD_OS_DARWIN)
-		  underscorify(ST_name(sym))
-#else /* defined(BUILD_OS_DARWIN) */
-		  ST_name(sym)
-#endif /* defined(BUILD_OS_DARWIN) */
-		  );
+	    	fprintf (Asm_File, "\t%s\t %s\n", AS_GLOBAL, ST_name_decorated(sym));
 	    }
 	    CGEMIT_Alias (sym, ST_base(sym));
 	}
@@ -8023,13 +8050,7 @@ EMT_End_File( void )
 	// some unreferenced fortran externs need to be emitted
 	EMT_Put_Elf_Symbol(sym);
 	if (Assembly) {
-		fprintf (Asm_File, "\t%s\t %s\n", AS_GLOBAL,
-#if defined(BUILD_OS_DARWIN)
-		  underscorify(ST_name(sym))
-#else /* defined(BUILD_OS_DARWIN) */
-		  ST_name(sym)
-#endif /* defined(BUILD_OS_DARWIN) */
-		  );
+		fprintf (Asm_File, "\t%s\t %s\n", AS_GLOBAL, ST_name_decorated(sym));
 	}
     }
   }

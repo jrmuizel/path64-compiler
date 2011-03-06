@@ -67,10 +67,14 @@ static string_list_t *temp_files = NULL;
 #ifdef KEY /* Bug 11265 */
 string_list_t *isystem_dirs = NULL;
 #endif /* KEY Bug 11265 */
-static char *tmpdir;
+static char *tmpdir = NULL;
 static char *saved_object = NULL;
 
+#ifdef _WIN32
+#define DEFAULT_TMPDIR	"."
+#else
 #define DEFAULT_TMPDIR	"/tmp"
+#endif
 
 static string_pair_list_t *temp_obj_files = NULL;
 
@@ -225,7 +229,7 @@ void
 mark_saved_object_for_cleanup ( void )
 {
 	if (saved_object != NULL)
-	add_string_if_new (temp_files, saved_object);
+		add_string_if_new (temp_files, saved_object);
 }
 
 /* Create filename with the given extension; eg. foo.anl from foo.f */
@@ -238,46 +242,44 @@ construct_file_with_extension (char *src, char *ext)
 void
 init_temp_files (void)
 {
-#ifdef _WIN32
-	tmpdir = string_copy(getenv("TMP"));
-	if (tmpdir == NULL) {
-		tmpdir = string_copy(getenv("TEMP"));
-	}
-	if (tmpdir != NULL) {
-		char *s = tmpdir;
+	const char *tmpdir_env[] = {"TMP", "TEMP", "TMPDIR"};
+	int i;
 
-		while ((s = strchr (s, '\\')) != NULL) {
-			*s = '/';
+	for (i = 0; i < 3; i++) {
+		char *t = string_copy(getenv(tmpdir_env[i]));
+
+#ifdef _WIN32
+		if (t != NULL) {
+			char *s = t;
+
+			while ((s = strchr (s, '\\')) != NULL) {
+				*s = '/';
+			}
+		}
+#endif
+		if (t != NULL && is_directory(t) && directory_is_writable(t)) {
+			int len = strlen(t);
+
+			if (IS_DIR_SLASH(t[len - 1])) {
+				/* drop / or \ at end so strcmp matches */
+				t[len - 1] = '\0';
+			}
+			tmpdir = t;
+			break;
 		}
 	}
 	if (tmpdir == NULL) {
-		tmpdir = "C:/";
-	}
-#else
-	tmpdir = string_copy(getenv("TMPDIR"));
-	if (tmpdir == NULL) {
 		tmpdir = DEFAULT_TMPDIR;
 	}
-#endif
-	else if (!is_directory(tmpdir)) {
-		error("$TMPDIR does not exist: %s", tmpdir);
-	} 
-	else if (!directory_is_writable(tmpdir)) {
-		error("$TMPDIR not writable: %s", tmpdir);
-	} 
-	else if (tmpdir[strlen(tmpdir)-1] == '/') {
-		/* drop / at end so strcmp matches */
-		tmpdir[strlen(tmpdir)-1] = '\0';
-	}
-	temp_files = init_string_list();
 
+	temp_files = init_string_list();
 	temp_obj_files = init_string_pair_list();
 }
 
 void
 init_count_files (void)
 {
-        count_files = init_string_list();
+	count_files = init_string_list();
 }
 
 static char *report_file;
