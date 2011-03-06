@@ -963,7 +963,10 @@ GS_LOOKUP (gs_tree_int_cst_high, GS_TREE_INT_CST_HIGH)
 static inline gs_long_long_t gs_get_integer_value (gs_t t)
 {
   GS_ASSERT (t != (gs_t) NULL, (gs_string_t) "Got null node");
-  return (gs_long_long_t) gs_ull (gs_tree_int_cst_low (t));
+  if (sizeof(long) < sizeof(long long))
+    return (gs_long_long_t) (gs_ull(gs_tree_int_cst_low(t)) | gs_ll(gs_tree_int_cst_high(t)) << 8*sizeof(long));
+  else
+    return (gs_long_long_t) gs_ull (gs_tree_int_cst_low (t));
 }
 
 static inline gs_float_t gs_tree_real_cst_f (gs_t t) {
