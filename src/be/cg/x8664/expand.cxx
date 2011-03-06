@@ -2252,7 +2252,7 @@ void Expand_Binary_Complement (TN *dest, TN *src, TYPE_ID mtype, OPS *ops)
 		    mtype == MTYPE_M8I4);
 
   if(is_vector_type) {
-    TCON then = Host_To_Targ (MTYPE_U8, 0xffffffffffffffff);
+    TCON then = Host_To_Targ (MTYPE_U8, 0xffffffffffffffffull);
     TCON now  = Create_Simd_Const (MTYPE_V16I8, then);
     ST *sym = New_Const_Sym (Enter_tcon (now), Be_Type_Tbl(TCON_ty(now)));
     Allocate_Object(sym);
