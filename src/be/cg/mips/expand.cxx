@@ -238,10 +238,15 @@ Exp_Immediate (TN *dest, TN *src, OPS *ops)
     // Upper 32 bits match lower 32-bits (perhaps bitmask)
     TN *tmp1 = Build_TN_Like(dest);
     TN *tmp2 = Build_TN_Like(dest);
+    int inv = val & 1<<31;
+    if (inv)
+      val = ~val;
     Build_OP (TOP_lui, tmp, Gen_Literal_TN((val >> 16) & 0xffff, 4), ops);
     Build_OP (TOP_ori, tmp1, tmp, Gen_Literal_TN(val & 0xffff, 4), ops);
     Build_OP (TOP_dsll32, tmp2, tmp1, Gen_Literal_TN(0, 4), ops);
     Build_OP (TOP_or, dest, tmp1, tmp2, ops);
+    if (inv)
+      Build_OP (TOP_nor, dest, dest, Zero_TN, ops);
   }
   else {
     // In case of -G below 8, build 64-bit immediate the hard way

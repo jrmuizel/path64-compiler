@@ -1937,6 +1937,7 @@ add_file_args (string_list_t *args, phases_t index)
 
 #ifdef TARG_MIPS
 		if (is_target_arch_MIPS()) {
+		  add_string(args, abi == ABI_N32 ? "-mabi=n32" : "-mabi=64");
 		  if(pic)
 		    add_string(args, "-KPIC");
 		}
@@ -1955,8 +1956,10 @@ add_file_args (string_list_t *args, phases_t index)
 		if (show_but_not_run)
 			add_string(args, "-###");
 #ifdef TARG_MIPS
-        if (is_target_arch_MIPS())
+        if (is_target_arch_MIPS()) {
+            add_string(args, abi == ABI_N32 ? "-melf32ltsmipn32" : "-melf64ltsmip");
             add_sysroot(args, index);
+        }
 #endif
 		add_target_linker_args(args, FALSE);
 

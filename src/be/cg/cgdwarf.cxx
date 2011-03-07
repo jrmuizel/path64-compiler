@@ -4462,12 +4462,7 @@ Cg_Dwarf_Output_Asm_Bytes_Sym_Relocs (FILE                 *asm_file,
 #ifdef KEY
 #define buflen 30
   char dwarf_begin[buflen], dwarf_end[buflen];
-#ifndef TARG_MIPS
   const int alignment = Use_32_Bit_Pointers ? 4 : 8;
-#else
-  // power of 2 alignment
-  const int alignment = Use_32_Bit_Pointers ? 2 : 3;
-#endif
 #endif
 
   Dwarf_Unsigned k = 0;
