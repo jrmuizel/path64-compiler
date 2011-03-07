@@ -1975,7 +1975,12 @@ add_file_args (string_list_t *args, phases_t index)
                        if ((shared != DSO_SHARED) && (shared != RELOCATABLE)){
 
                const char *runtime_path = target_runtime_path();
-               char *crt1_path = concat_strings(runtime_path, "/crt1.o");
+	       char *crt1_path;
+	       if (option_was_seen(O_pg) || option_was_seen(O_profile)) {
+		   crt1_path = concat_strings(runtime_path, "/gcrt1.o");
+	       } else {
+		   crt1_path = concat_strings(runtime_path, "/crt1.o");
+	       }
                char *crti_path = concat_strings(runtime_path, "/crti.o");
                char *cb_path = target_crtbegin_path();
                char *crtbegin_path = concat_strings(cb_path, "/crtbegin.o");
