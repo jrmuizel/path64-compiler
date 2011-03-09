@@ -98,4 +98,6 @@ extern const char *map_section_name(const char *section_name);
 extern int is_debug_section(const char *section_name);
 #endif /* defined(BUILD_OS_DARWIN) */
 
+extern char *ST_name_decorated(ST *st);
+
 #endif /* cgemit_INCLUDED */

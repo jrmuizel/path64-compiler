@@ -273,17 +273,25 @@ CGEMIT_Prn_Scn_In_Asm (FILE       *asm_file,
       if ((scn_flags & SHF_WRITE) &&
           !(scn_name && !strncmp(scn_name,".gnu.linkonce.r.",16)))
         *p++ = 'w';
+#if ! defined(_WIN32)
       if (scn_flags & SHF_ALLOC) *p++ = 'a';
+#endif
       if (scn_flags & SHF_EXECINSTR) *p++ = 'x';
 #ifdef KEY
+#if ! defined(_WIN32)
       if (scn_flags & SHF_TLS) *p++ = 'T';
+#else
+      FmtAssert(!(scn_flags & SHF_TLS), ("TLS not support"));
+#endif
 #endif
       *p = '\0'; // null terminate the string.
       fprintf (asm_file, ", \"%s\"", scn_flags_string);
+#if ! defined(_WIN32)
       if (scn_type == SHT_PROGBITS)
         fprintf (asm_file, ",@progbits");
       else if (scn_type == SHT_NOBITS)
         fprintf (asm_file, ",@nobits");
+#endif
     }
 #endif /* defined(BUILD_OS_DARWIN) */
 #ifdef TARG_X8664
@@ -557,7 +565,7 @@ STACK_FP_Fixup_PU()
 void
 CGEMIT_Weak_Alias (ST *sym, ST *strongsym) 
 {
-  fprintf ( Asm_File, "\t%s\t%s\n", AS_WEAK, ST_name(sym));
+  fprintf ( Asm_File, "\t%s\t%s\n", AS_WEAK, ST_name_decorated(sym));
   CGEMIT_Alias (sym, strongsym);
 }
 
@@ -626,7 +634,7 @@ void CGEMIT_Write_Literal_Symbol (ST *lit_st, ST *sym,
 void CGEMIT_Alias (ST *sym, ST *strongsym) 
 {
   // bug 14491: alias statement should write out the qualified name
-  fprintf ( Asm_File, "\t%s = %s", ST_name(sym), ST_name(strongsym));
+  fprintf ( Asm_File, "\t%s = %s", ST_name_decorated(sym), ST_name_decorated(strongsym));
   if (ST_is_export_local(strongsym) && ST_class(strongsym) == CLASS_VAR) {
     // modelled after EMT_Write_Qualified_Name (bug 6899)
     if (ST_level(strongsym) == GLOBAL_SYMTAB) {
@@ -1960,11 +1968,18 @@ void CGEMIT_Setup_Ctrl_Register( FILE* f )
 // Emits function used to retrieve the Instruction Pointer (bug 9675)
 void CGEMIT_Setup_IP_Calc (void)
 {
+#ifdef _WIN32
+  fprintf (Asm_File, "\n\t.section .gnu.linkonce.t.%s,\"x\"\n", ip_calc_funcname);
+  fprintf (Asm_File, "\t.globl _%s\n", ip_calc_funcname);
+// fprintf (Asm_File, "\t.hidden %s\n", ip_calc_funcname);  
+  fprintf (Asm_File, "_%s:\n", ip_calc_funcname);
+#else
   fprintf (Asm_File, "\n\t.section .gnu.linkonce.t.%s,\"ax\",@progbits\n", ip_calc_funcname);
   fprintf (Asm_File, "\t.globl %s\n", ip_calc_funcname);
   fprintf (Asm_File, "\t.hidden %s\n", ip_calc_funcname);
   fprintf (Asm_File, "\t.type %s, @function\n", ip_calc_funcname);
   fprintf (Asm_File, "%s:\n", ip_calc_funcname);
+#endif
   fprintf (Asm_File, "\tmovl (%%esp),%%ebx\n");
   fprintf (Asm_File, "\tret\n");
 }

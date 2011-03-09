@@ -623,7 +623,7 @@ ST_is_gp_relative(ST *st)
 	  ST_gprel(base_st));
 }
 
-static char *
+char *
 ST_name_decorated(ST *st)
 {
     char *name = ST_name(st);
@@ -905,7 +905,7 @@ EMT_Write_Qualified_Name (FILE *f, ST *st)
 		fputs(Symbol_Name_Suffix, f);
 	}
   } else {
-	fprintf (f, "%s %+" SCNd64 , ST_name(ST_base(st)), ST_ofst(st));
+	fprintf (f, "%s %+" SCNd64 , ST_name_decorated(ST_base(st)), ST_ofst(st));
   }
 }
 
@@ -948,9 +948,13 @@ static void Print_Label (FILE *pfile, ST *st, INT64 size)
 	fputc ('\n', pfile);
 #ifdef KEY // bug 12145: write .hidden
 	if (ST_export(st) == EXPORT_HIDDEN) {
+#ifdef _WIN32
+          FmtAssert(0, ("hidden not support"));
+#else
 	  fprintf ( pfile, "\t.hidden\t");
 	  EMT_Write_Qualified_Name(pfile, st);
 	  fputc ('\n', pfile);
+#endif
 	}
 #endif
     }
@@ -959,7 +963,7 @@ static void Print_Label (FILE *pfile, ST *st, INT64 size)
 	EMT_Write_Qualified_Name(pfile, st);
 	fputc ('\n', pfile);
     }
-#if 1 /* defined(BUILD_OS_DARWIN) */
+#if !defined(_WIN32) /* defined(BUILD_OS_DARWIN) */
 	// Bug 1275 and 4351
 	// Always emit the function type
 	// But Mach-O as 1.38 doesn't support .type
@@ -970,7 +974,7 @@ static void Print_Label (FILE *pfile, ST *st, INT64 size)
 	}
 #endif
     if (ST_class(st) == CLASS_VAR
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(_WIN32)
 	&& 0 // Mach-O as 1.38 doesn't support .type
 #endif /* defined(BUILD_OS_DARWIN) */
 #ifdef TARG_MIPS
@@ -981,7 +985,7 @@ static void Print_Label (FILE *pfile, ST *st, INT64 size)
     	EMT_Write_Qualified_Name (pfile, st);
     	fprintf (pfile, ", %s\n", AS_TYPE_OBJECT);
     }
-#if ! defined(BUILD_OS_DARWIN)
+#if ! defined(BUILD_OS_DARWIN) && ! defined(_WIN32)
     if (size != 0 && !CG_inhibit_size_directive) {
 	/* if size is given, then emit value for asm */
       	fprintf ( pfile, "\t%s\t", AS_SIZE);
@@ -1019,7 +1023,7 @@ Print_Common (FILE *pfile, ST *st)
     fprintf ( pfile, "\t%s\t", AS_COM);
     EMT_Write_Qualified_Name(pfile, st);
 #ifdef TARG_X8664
-#if defined(BUILD_OS_DARWIN) /* .comm alignment arg not allowed */
+#if defined(BUILD_OS_DARWIN) || defined(_WIN32) /* .comm alignment arg not allowed */
     fprintf ( pfile, ", %" SCNd64 "\n", TY_size(ST_type(st)));
 #else /* defined(BUILD_OS_DARWIN) */
     if (LNO_Run_Simd && Simd_Align && TY_size(ST_type(st)) >= 16)
@@ -1046,7 +1050,7 @@ Print_Common (FILE *pfile, ST *st)
     // Bug 3923.
     fprintf ( pfile, "\t%s\t", AS_COM);
     EMT_Write_Qualified_Name(pfile, st);
-#if defined(BUILD_OS_DARWIN) /* .comm alignment arg not allowed */
+#if defined(BUILD_OS_DARWIN) || defined(_WIN32) /* .comm alignment arg not allowed */
     fputs (", 1\n", pfile);
 #else /* defined(BUILD_OS_DARWIN) */
     fputs (", 1, 1\n", pfile);
@@ -1104,7 +1108,7 @@ mINT32 EMT_Put_Elf_Symbol (ST *sym)
 	// if only .s file, then just do dummy mark that we have
 	// seen this symbol and emitted any type info for it.
 	if (ST_class(sym) == CLASS_FUNC
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(_WIN32)
 	&& 0 // Mach-O as 1.38 doesn't support .type
 #endif /* defined(BUILD_OS_DARWIN) */
 #ifdef TARG_MIPS
@@ -5619,7 +5623,7 @@ Write_Symbol (
 		fprintf (Asm_File, " %+" SCNd64 "\n", sym_ofst);
 	}
 	if (ST_class(sym) == CLASS_FUNC
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(_WIN32)
 	&& 0 // Mach-O as 1.38 doesn't support .type
 #endif /* defined(BUILD_OS_DARWIN) */
 #ifdef TARG_MIPS
@@ -7223,14 +7227,18 @@ EMT_Emit_PU ( ST *pu, DST_IDX pu_dst, WN *rwn )
     // This is an ugly hack to enable basic debugging for IA-32 target
     if (Debug_Level > 0) {
       fprintf(Asm_File, ".stabs \"%s:F(0,1)\",36,0,0,%s\n", ST_name(pu), ST_name(pu));
+#if !defined(_WIN32)
       fprintf(Asm_File, "\t%s\t%s,%s\n", AS_TYPE, ST_name(pu), AS_TYPE_FUNC);
+#endif
     }
 #endif
 #else
     if (!CG_emit_non_gas_syntax) {
+#if !defined(_WIN32)
       fprintf (Asm_File, "\t%s\t", AS_TYPE);
       EMT_Write_Qualified_Name (Asm_File, pu);
       fprintf (Asm_File, ", %s\n", AS_TYPE_FUNC);
+#endif
     }
 #endif
     Print_Label (Asm_File, pu, 0);
@@ -7297,7 +7305,7 @@ EMT_Emit_PU ( ST *pu, DST_IDX pu_dst, WN *rwn )
   // Emit Last_Label at the end of the PU to guide Dwarf DW_AT_high_pc
   fprintf( Asm_File, "%s:\n", LABEL_name(Last_Label));
   Label_Last_BB_PU_Entry[pu_entries] = Last_Label;
-#if ! defined(BUILD_OS_DARWIN)
+#if ! defined(BUILD_OS_DARWIN) && !defined(_WIN32)
   // Mach-O as 1.38 doesn't support .size
   // Bug 1275
   fprintf( Asm_File, "\t.size %s, %s-%s\n", 
@@ -8141,7 +8149,12 @@ EMT_End_File( void )
 #ifdef KEY // bug 5561: mark stack as non-executable
 #if defined(BUILD_OS_DARWIN)
     fprintf ( Asm_File, "\t%s\t.note.GNU-stack,\"\"\n", AS_SECTION);
-#else /* defined(BUILD_OS_DARWIN) */
+#elif defined(_WIN32)
+    fprintf ( Asm_File, "\t%s .note.GNU_stack,\"", AS_SECTION);
+    if (PU_has_trampoline)
+       fprintf ( Asm_File, "x");
+     fprintf ( Asm_File, "\"\n");
+#else
     fprintf ( Asm_File, "\t%s\t.note.GNU-stack,\"", AS_SECTION);
     if (PU_has_trampoline)
       fprintf ( Asm_File, "x");
