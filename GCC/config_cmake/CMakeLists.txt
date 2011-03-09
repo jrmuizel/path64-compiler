@@ -701,12 +701,18 @@ IF(GCC_USE_PLATFORM_SCRIPT)
   FIND_PROGRAM(GCC_SH sh /bin/sh c:/msys/1.0/bin/sh.exe)
   MARK_AS_ADVANCED(GCC_SH)
   IF(GCC_SH)
+    IF("${CMAKE_SYSTEM_NAME}" STREQUAL "SunOS")
+      # other values don't work on solaris
+      SET(TG "i386-pc-solaris2.11")
+    ELSE()
+      SET(TG "${PSC_TARGET}")
+    ENDIF()
     EXEC_PROGRAM(${GCC_SH}
       ARGS
       "\"${GCCCONFIG_SOURCE_DIR}/gcc_platform.sh\""
       "\"${GCCCONFIG_BINARY_DIR}/gcc_platform.cmake\""
       "\"${CMAKE_COMMAND}\""
-      "\"${PSC_TARGET}\"")
+      "\"${TG}\"")
     SET(GCC_EXECUTED_PLATFORM_SCRIPT 1)
   ENDIF(GCC_SH)
 ENDIF(GCC_USE_PLATFORM_SCRIPT)
