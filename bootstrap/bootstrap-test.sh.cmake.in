@@ -48,7 +48,7 @@ while [ $stage -lt $num_stages ]; do
                      -D PSC_LIBGCC_EH_PATH_x86_64=${PSC_LIBGCC_EH_PATH_x86_64} \
                      -D PSC_LIBGCC_S_PATH_x86_64=${PSC_LIBGCC_S_PATH_x86_64} \
                      $srcdir > cmake.out 2>&1
-    ${CMAKE_MAKE_PROGRAM} -j20 VERBOSE=1 > make.out 2>&1
+    ${CMAKE_MAKE_PROGRAM} -j${PATH64_BOOTSTRAP_CORES} VERBOSE=1 > make.out 2>&1
     if [ $? -ne 0 ]; then
 	stage=`expr $stage + 1`
 	echo Build failed during stage $stage

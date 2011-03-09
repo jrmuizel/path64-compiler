@@ -3,6 +3,10 @@ if(NOT PATH64_BOOTSTRAP_STAGES)
 	SET(PATH64_BOOTSTRAP_STAGES 2)
 endif()
 
+if("${PATH64_BOOTSTRAP_CORES}" STREQUAL "")
+    set(PATH64_BOOTSTRAP_CORES 20)
+endif()
+
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/bootstrap-test.sh.cmake.in"
                "${CMAKE_CURRENT_BINARY_DIR}/bootstrap-test.sh")
 
