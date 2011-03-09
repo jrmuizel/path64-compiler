@@ -273,6 +273,15 @@ CGEMIT_Prn_Scn_In_Asm (FILE       *asm_file,
       if ((scn_flags & SHF_WRITE) &&
           !(scn_name && !strncmp(scn_name,".gnu.linkonce.r.",16)))
         *p++ = 'w';
+
+#ifdef __sun
+      // .eh_frame section should be writable on solaris
+      // FIXME: check target os, not host
+      if (!(scn_flags & SHF_WRITE) && strcmp(scn_name, ".eh_frame") == 0) {
+        *p++ = 'w';
+      }
+#endif // __sun
+
       if (scn_flags & SHF_ALLOC) *p++ = 'a';
       if (scn_flags & SHF_EXECINSTR) *p++ = 'x';
 #ifdef KEY

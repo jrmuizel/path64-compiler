@@ -38,7 +38,11 @@ __CTOR_LIST_END__:
 	.align 8
 	.quad 0
 
+#ifdef __sun
+	.section	.eh_frame, "aw", @unwind
+#else // !__sun
 	.section	.eh_frame, "a", @unwind
+#endif // !__sun
 	.align 8
 	.quad 0
 

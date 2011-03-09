@@ -37,7 +37,12 @@ __CTOR_LIST__:
 __DTOR_LIST__:
 	.quad -1
 
+#ifdef __sun
+	.section	.eh_frame, "aw", @unwind
+#else // !__sun
 	.section	.eh_frame, "a", @unwind
+#endif // !__sun
+
 	.align 8
 __EH_FRAME_LIST__:
 
