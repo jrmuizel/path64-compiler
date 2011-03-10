@@ -547,13 +547,8 @@ function(path64_add_library_for_target name target type src_base_path)
 
         set(cmd ${CMAKE_AR} -cr ${library_file} ${rel_objects})
         if("X${CMAKE_BUILD_TYPE}" STREQUAL "XRelease")
-            if("${CMAKE_SYSTEM_NAME}" STREQUAL "SunOS")
-                # strip / ar -ts does not work on some solaris distributions
-                # list(APPEND cmd strip ${library_file} "\;" ${CMAKE_AR} -ts ${library_file})
-            else()  
-                list(APPEND cmd "\;")
-                list(APPEND cmd strip -S ${library_file})
-            endif()
+            list(APPEND cmd "\;")
+            list(APPEND cmd strip -S ${library_file})
         endif()
 
         add_custom_command(OUTPUT ${library_file}
