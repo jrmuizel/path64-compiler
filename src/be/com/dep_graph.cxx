@@ -124,7 +124,7 @@ static BOOL LNO_Erase_Dg_From_Here_In_X(WN* wn, ARRAY_DIRECTED_GRAPH16* dg)
   VINDEX16      v = dg->Get_Vertex(wn);
   if (OPCODE_is_load(op) || OPCODE_is_store(op) ||
       OPCODE_is_call(op) || (OPCODE_operator(op) == OPR_INTRINSIC_OP)
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       || (OPCODE_operator(op) == OPR_PURE_CALL_OP)
 #endif
       ) {

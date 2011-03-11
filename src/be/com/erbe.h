@@ -154,10 +154,6 @@ static char *erbe_rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/com/SCCS/s.e
 
 /* Miscellaneous */
 #define EC_Skip_PU	EC_BASE_BE+130	/* str, int, str */
-#ifdef TARG_ST
-#define EC_Uninitialized	EC_BASE_BE+131  /* str, str */
-#endif
-
 
 /* DRA cloning error messages */
 #define EC_DRA_rii_file_io       EC_BASE_BE+140  /* str, err */
@@ -169,12 +165,6 @@ static char *erbe_rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/com/SCCS/s.e
 #define EC_DRA_bad_clone_request EC_BASE_BE+146  /* str, str */
 #ifdef KEY
 #define EC_MPLOWER_copyin_st     EC_BASE_BE+147
-#endif
-#ifdef TARG_ST
-/* Additional Data layout error messages */
-#define EC_LAY_Warn_Stack_Align    EC_BASE_BE+150 /* str, int, int */
-#define EC_LAY_Warn_Stack_Modif    EC_BASE_BE+151 /* str, int, int */
-#define EC_LAY_Warn_Stack_Exceeded EC_BASE_BE+152 /* str, int, int */
 #endif
 
 #ifdef __cplusplus

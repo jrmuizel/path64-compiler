@@ -245,22 +245,6 @@ Should_Do_Mul_By_Constant(MUL_COST_MODEL_T *cost_model, MUL_SEQ_T mul_seq)
 
   /* Only candidate if cycle cost benefits. */
   if (cycle_cost <= cost_model->cycles.c_mul) {
-#ifdef TARG_ST
-    //TB:no more OPT_Space
-    if (OPT_Mul_by_cst_threshold == 0) {
-      /* For size, returns true only if both costs are lower than mul. */
-      return size_cost <= cost_model->size.c_mul;
-    } else if (OPT_Mul_by_cst_threshold >= 3) {
-      /* For -O3, returns true if cost is lower than 3 times mul. */
-      return size_cost <= cost_model->size.c_mul * 3;
-    } else if (OPT_Mul_by_cst_threshold >= 2) {
-      /* For -O2, returns true is cost is lower than 2 times mul. */
-      return size_cost <= cost_model->size.c_mul * 2;
-    } else if (OPT_Mul_by_cst_threshold >= 1) {
-      /* For -O1, returns true if cost is lower than 1.5 times mul. */
-      return 2 * size_cost <= cost_model->size.c_mul * 3;
-    }
-#else
     if (OPT_Space) {
       /* For size, returns true only if both costs are lower than mul. */
       return size_cost <= cost_model->size.c_mul;
@@ -274,7 +258,6 @@ Should_Do_Mul_By_Constant(MUL_COST_MODEL_T *cost_model, MUL_SEQ_T mul_seq)
       /* For -O1, returns true if cost is lower than 1.5 times mul. */
       return 2 * size_cost <= cost_model->size.c_mul * 3;
     }
-#endif
   }
   return FALSE;
 }

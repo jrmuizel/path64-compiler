@@ -394,7 +394,6 @@ RETYPE_EXPR_expr(WN *tree, BOOL can_be_32bit, BOOL addr_expr)
   case OPR_PARM:
   case OPR_TAS:
   case OPR_RND: case OPR_TRUNC: case OPR_CEIL: case OPR_FLOOR:
-#ifndef TARG_ST
 #ifdef KEY
   case OPR_REPLICATE:
   case OPR_REDUCE_ADD: case OPR_REDUCE_MPY: 
@@ -402,7 +401,6 @@ RETYPE_EXPR_expr(WN *tree, BOOL can_be_32bit, BOOL addr_expr)
   case OPR_SHUFFLE:
   case OPR_ATOMIC_RSQRT:
 #endif // KEY
-#endif
     WN_kid0(tree) = RETYPE_EXPR_expr(WN_kid0(tree), FALSE, FALSE);
     return tree;
 

@@ -48,9 +48,6 @@
 
 #include "w2op.h"
 
-#ifdef TARG_ST
-#include "config_opt.h"		/* For Finite_Math. */
-#endif
 
 /* ====================================================================
  * specialized version of support routines used in the RT_LOWER template 
@@ -159,13 +156,6 @@ RT_LOWER_expr (
     // nada
     return tree;
 
-#ifdef TARG_ST
-  case OPR_SUBPART:  // By symetry with other cases, we call recursively
-                     // RT_LOWER_Expr that currently does nothing on a LDID.
-    WN_kid0(new_nd) = RT_LOWER_expr (WN_kid0(tree));
-    return new_nd;
-#endif
-
   case OPR_ILOAD:
   case OPR_ILDBITS:
   case OPR_MLOAD:
@@ -175,11 +165,7 @@ RT_LOWER_expr (
 
   case OPR_NEG:
 
-#ifdef TARG_ST
-    if (MTYPE_is_longlong(res) && WN_Is_Emulated(tree)) 
-#else
     if (Only_32_Bit_Ops && MTYPE_is_longlong(res)) 
-#endif
       {
       //
       // generate an intrinsic call:
@@ -200,12 +186,8 @@ RT_LOWER_expr (
       return nd;
     }
 
-#ifdef TARG_ST
-    if (MTYPE_is_float(res) && WN_Is_Emulated(tree)) 
-#else
     if ((Only_32_Bit_Ops && MTYPE_is_double(res)) ||
 	(Emulate_FloatingPoint_Ops && MTYPE_is_float(res))) 
-#endif
       {
       //
       // generate (or same for F4)
@@ -359,12 +341,8 @@ RT_LOWER_expr (
       return new_nd;
     }
 
-#ifdef TARG_ST
-    if (WN_Is_Emulated(tree)) 
-#else
     if ((Only_32_Bit_Ops && (MTYPE_is_longlong(res) || MTYPE_is_longlong(desc) || MTYPE_is_double(res) || MTYPE_is_double(desc))) ||
 	(Emulate_FloatingPoint_Ops && (MTYPE_is_float(res) || MTYPE_is_float(desc)))) 
-#endif
       {
 
       intrinsic = OPCODE_To_INTRINSIC (RT_LOWER_opcode(tree));
@@ -392,11 +370,7 @@ RT_LOWER_expr (
 
     FmtAssert(MTYPE_signed_type(res), ("ABS for unsigned type"));
 
-#ifdef TARG_ST
-    if (MTYPE_is_longlong(res) && WN_Is_Emulated(tree))  
-#else
     if (Only_32_Bit_Ops && res == MTYPE_I8)
-#endif
       {
       intrinsic = OPCODE_To_INTRINSIC (WN_opcode(tree));
 
@@ -416,11 +390,7 @@ RT_LOWER_expr (
       return nd;
     }
 
-#ifdef TARG_ST
-    else if (MTYPE_is_float(res) && WN_Is_Emulated(tree)) 
-#else
     else if (Emulate_FloatingPoint_Ops && MTYPE_is_float(res)) 
-#endif
 	{
       //
       // generate nd = tree & 0x7fffffff ffffffff
@@ -461,32 +431,10 @@ RT_LOWER_expr (
   case OPR_MPY:
 
 
-#ifdef TARG_ST
-    if (WN_Is_Emulated(tree)) 
-#else
     if ((Emulate_FloatingPoint_Ops && MTYPE_is_float(res)) ||
 	(Only_32_Bit_Ops && (MTYPE_is_longlong(res) || MTYPE_is_double(res))))
-#endif
       {
 
-#ifdef TARG_ST
-      // [CG]: Call WN_To_INTRINSIC instead of OPCODE_To_INTRINSIC
-      // as tree based selection may strength reduce operations
-      // Defined on ST targets in targinfo.
-      kids[0] = RT_LOWER_expr(WN_kid0(tree));
-      kids[1] = RT_LOWER_expr(WN_kid1(tree));
-      intrinsic = WN_To_INTRINSIC(RT_LOWER_opcode(tree), kids);
-      kids[0] = WN_CreateParm (WN_rtype(kids[0]),
-			       kids[0],
-			       Be_Type_Tbl(WN_rtype(kids[0])),
-			       WN_PARM_BY_VALUE | WN_PARM_READ_ONLY);
-
-      kids[1] = WN_CreateParm (WN_rtype(kids[1]),
-			       kids[1],
-			       Be_Type_Tbl(WN_rtype(kids[1])),
-			       WN_PARM_BY_VALUE | WN_PARM_READ_ONLY);
-	
-#else
       intrinsic = OPCODE_To_INTRINSIC (RT_LOWER_opcode(tree));
 
       kids[0] = WN_CreateParm (res,
@@ -498,7 +446,6 @@ RT_LOWER_expr (
 			       RT_LOWER_expr(WN_kid1(tree)),
 			       Be_Type_Tbl(res),
 			       WN_PARM_BY_VALUE | WN_PARM_READ_ONLY);
-#endif
       nd = WN_Create_Intrinsic(OPCODE_make_op(OPR_INTRINSIC_OP,
 					      res, 
 					      MTYPE_V),
@@ -516,12 +463,8 @@ RT_LOWER_expr (
     // [HK] add code for MADD, MSUB
   case OPR_MADD:
   case OPR_MSUB:
-#ifdef TARG_ST
-    if (WN_Is_Emulated(tree))
-#else
     if ((Only_32_Bit_Ops && MTYPE_is_size_double(desc)) ||
 	(Emulate_FloatingPoint_Ops && MTYPE_is_float(desc)))
-#endif
 	{
       TYPE_ID parm0ty = WN_rtype(WN_kid0(tree));
       TYPE_ID parm1ty = WN_rtype(WN_kid1(tree));
@@ -564,12 +507,8 @@ RT_LOWER_expr (
     // [HK] add code for NMADD, NMSUB
   case OPR_NMADD:
   case OPR_NMSUB:
-#ifdef TARG_ST
-    if (WN_Is_Emulated(tree))
-#else
     if ((Only_32_Bit_Ops && MTYPE_is_size_double(desc)) ||
 	(Emulate_FloatingPoint_Ops && MTYPE_is_float(desc)))
-#endif
 	{
       TYPE_ID parm0ty = WN_rtype(WN_kid0(tree));
       TYPE_ID parm1ty = WN_rtype(WN_kid1(tree));
@@ -617,41 +556,9 @@ RT_LOWER_expr (
   case OPR_LE: 
   case OPR_LT:
 
-#ifdef TARG_ST
-    if (WN_Is_Emulated(tree))
-#else
     if ((Only_32_Bit_Ops && MTYPE_is_size_double(desc)) ||
 	(Emulate_FloatingPoint_Ops && MTYPE_is_float(desc)))
-#endif
       {
-#ifdef TARG_ST
-      if ( (opr == OPR_LT || opr == OPR_GE) &&
-	     MTYPE_is_longlong(desc) && MTYPE_signed_type(desc) &&
-	     WN_operator_is(WN_kid1(tree), OPR_INTCONST) &&
-	     WN_const_val(WN_kid1(tree)) == 0)
-	{
-	  //
-	  // for I8LT/GE with kid1 0, generate:
-	  //       
-	  //        kid0
-	  //        I4INTCONST 32
-	  //      I8ASHR
-	  //    I4I8CVT
-	  //    kid1
-	  //  I4LT/GE
-
-	  WN *wn1, *wn2;
-	  TYPE_ID  mtype = MTYPE_I4;
-
-	  wn1 = WN_Ashr(desc, WN_kid0(tree), WN_Intconst(mtype, 32));
-	  wn2 = WN_Cvt(desc, mtype, wn1);
-	  nd = WN_CreateExp2(opr, mtype, mtype, wn2, WN_Intconst(mtype, 0));
-	  WN_Delete(tree);
-	  
-	  RT_LOWER_expr (nd);
-	  return nd;
-	} 
-#endif
 
 #ifdef TARG_ARM
       if((MTYPE_is_double(desc) || desc == MTYPE_F4) && opr == OPR_NE) {
@@ -710,11 +617,7 @@ RT_LOWER_expr (
 
   case OPR_DIV: 
 
-#ifdef TARG_ST
-    if (WN_Is_Emulated(tree)) {
-#else
     if (Should_Call_Divide(tree)) {
-#endif
       TYPE_ID parm0ty = WN_rtype(WN_kid0(tree));
       TYPE_ID parm1ty = WN_rtype(WN_kid1(tree));
 
@@ -752,11 +655,7 @@ RT_LOWER_expr (
   case OPR_MOD: 
   case OPR_REM:
 
-#ifdef TARG_ST
-    if (WN_Is_Emulated(tree)) {
-#else
     if (Should_Call_Remainder(tree)) {
-#endif
       TYPE_ID parm0ty = WN_rtype(WN_kid0(tree));
       TYPE_ID parm1ty = WN_rtype(WN_kid1(tree));
 
@@ -798,11 +697,7 @@ RT_LOWER_expr (
   case OPR_ASHR: 
   case OPR_LSHR:
     // These are only good for long long
-#ifdef TARG_ST
-    if (MTYPE_is_longlong(res) && WN_Is_Emulated(tree))
-#else
     if (Only_32_Bit_Ops && MTYPE_is_longlong(res)) 
-#endif
       {
 
       WN *kid1 = WN_kid1(tree);
@@ -840,12 +735,8 @@ RT_LOWER_expr (
 
   case OPR_MAX: 
   case OPR_MIN: 
-#ifdef TARG_ST
-    if (WN_Is_Emulated(tree))
-#else
     if ((Only_32_Bit_Ops && (MTYPE_is_longlong(res) || MTYPE_is_double(res))) ||
 	(Emulate_FloatingPoint_Ops && MTYPE_is_float(res))) 
-#endif
       {
 
       TYPE_ID parm0ty = WN_rtype(WN_kid0(tree));
@@ -880,11 +771,7 @@ RT_LOWER_expr (
 
   case OPR_SQRT: 
 
-#ifdef TARG_ST
-    if (WN_Is_Emulated(tree))
-#else
     if (Emulate_FloatingPoint_Ops && MTYPE_is_float(res)) 
-#endif
       {
       intrinsic = OPCODE_To_INTRINSIC (WN_opcode(tree));
 
@@ -912,11 +799,7 @@ RT_LOWER_expr (
   case OPR_RECIP: 
   case OPR_RSQRT: 
 
-#ifdef TARG_ST
-    if (WN_Is_Emulated(tree))
-#else
       if (Emulate_FloatingPoint_Ops && MTYPE_is_float(res)) 
-#endif
       {  
 	if (WN_rtype(tree) == MTYPE_F4)
       {
@@ -957,16 +840,9 @@ RT_LOWER_expr (
     //
     // If this is not a hilo type or we're not emulating, get out
     //
-#ifdef TARG_ST
-    if (!WN_Is_Emulated(tree)) {
-      WN_kid0(new_nd) = RT_LOWER_expr(WN_kid0(tree));
-      return new_nd;
-    }
-#else
     if (!(Emulate_FloatingPoint_Ops && MTYPE_is_float(res)) && 
 	!(Only_32_Bit_Ops && (MTYPE_is_longlong(res) || MTYPE_is_double(res))))
       return tree;
-#endif
 
     FmtAssert(FALSE,("can't handle operator %s", OPERATOR_name(opr)));
     return new_nd;
@@ -978,12 +854,7 @@ RT_LOWER_expr (
 //     return new_nd;
 
   case OPR_TRUNC: 
-#ifdef TARG_ST
-    if (MTYPE_is_float(res) && WN_Is_Emulated(tree) ||
-	MTYPE_is_float(desc) && WN_Is_Emulated(tree))
-#else
     if (Emulate_FloatingPoint_Ops) 
-#endif
       {
 
       intrinsic = OPCODE_To_INTRINSIC (WN_opcode(tree));
@@ -1063,21 +934,11 @@ RT_LOWER_stmt_wn(WN *tree)
   case OPR_REGION_EXIT:
     return;
 
-#ifdef TARG_ST
-    /* (cbr) kid2 containts region's body */
-  case OPR_REGION:
-    RT_LOWER_stmt_wn(WN_kid2(tree));
-    break;
-#endif
-
   // only kid 0 contains no node relevant to RT lowering
   case OPR_DEALLOCA:	
   case OPR_PREFETCH:
   case OPR_EVAL: 
   case OPR_AGOTO:
-#ifdef TARG_ST
-  case OPR_AFFIRM:
-#endif
     // don't need to do anything
     WN_kid0(tree) = RT_LOWER_expr(WN_kid0(tree));
     return;
@@ -1219,77 +1080,3 @@ RT_lower_wn(WN *tree)
   return;
 }
 
-#ifdef TARG_ST
-/* ====================================================================
- *
- * Entry points exported for local use by wn_lower.cxx.
- * 
- * These entry points are declared in wn_lower_private.h and should
- * not be used from outside of wn_lower.cxx and related files.
- * For use outside of the wn_lower utilities, call RT_lower_wn().
- *
- * The usage of these private functiosn if for wn_lower.cxx, in particular
- * when lowering store/load of bitfields, this may generate arithmetic
- * that require a runtime lowering on some targets.
- * A typical sequence is: 
- * lower_bit_field_id()      // may generate STBITS
- *   -> lower_store_bits()   // may generate U8SHR that is not native
- *     -> rt_lower_stmt()    // may call runtime
- *       -> lower_store()    // complete lowering
- *
- * WN *rt_lower_expr(WN *, LOWER_ACTIONS)
- *   perform runtime lowering for the given expression and returns the
- *   new expression.
- *
- * void rt_lower_stmt(WN *, LOWER_ACTIONS)
- *   perform runtime lowering for the given statement, the statement
- *   is modified in place. 
- *   Currently limited to stmt only (no scf,region or function) as 
- *   the use of this function is supposed to be local to some other
- *   lowering transformation.
- *
- * In both cases the lowering is actually performed only if the 
- * LOWER_RUNTIME action is active. This action must be activated
- * by the main lowering driver at CG and HILO lowering time,
- * i.e. after and only after the actual RT_lower_wn() phase.
- * This allows client of this interface to use it in any context 
- * (pre or post runtime lowering).
- *
- * Note: currently, in both cases the actions argument is used only to
- * detect the LOWER_RUNTIME action. Other actions are not applied.
- * This is the initial philosophy or RT_lower that only does the runtime 
- * lowering and nothing else. This could be changed for better integration
- * with the lowering, but then, there may be some phasing problems.
- * Thus, for now, the client must take care of running an additional 
- * lowering phase after the runtime lowering, the typical sequence is:
- *   rt_lower_stmt(wn, OnlyAction(actions, LOWER_RUNTIME));
- *   wn = lower_stmt(wn, block, actions)
- * If integrated with the lowering, this could at the end be simplified into:
- *   wn = rt_lower_stmt(wn, block, actions); 
- *
- * ==================================================================== */
-void
-rt_lower_stmt(WN *stmt, LOWER_ACTIONS actions)
-{
-  Is_True(OPERATOR_is_stmt(WN_operator(stmt)), ("%s: stmt nodes only", __FUNCTION__));
-  
-  if (actions & LOWER_RUNTIME) {
-    WN_Lower_Checkdump("Local expr RT Lowering", stmt, 0);
-    RT_LOWER_stmt_wn(stmt);
-    WN_Lower_Checkdump("After Local expr RT lowering", stmt, 0);   
-    WN_verifier(stmt);
-  }
-  
-}
-
-WN *
-rt_lower_expr(WN *tree, LOWER_ACTIONS actions)
-{
-  if (actions & LOWER_RUNTIME) {
-    WN_Lower_Checkdump("Local stmt RT Lowering", tree, 0);
-    tree = RT_LOWER_expr(tree);
-    WN_Lower_Checkdump("After Local stmt RT lowering", tree, 0);   
-  }
-  return tree;
-}
-#endif
