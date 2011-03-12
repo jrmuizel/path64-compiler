@@ -499,7 +499,7 @@ Is_Array_Param(const WN *curr_nd)
     if ((WN_operator(parent) == OPR_PARM) &&
         (OPCODE_is_call(WN_opcode(LWN_Get_Parent(parent))) ||
          WN_operator(LWN_Get_Parent(parent)) == OPR_INTRINSIC_OP
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
          || WN_operator(LWN_Get_Parent(parent)) == OPR_PURE_CALL_OP
 #endif
 	 ))

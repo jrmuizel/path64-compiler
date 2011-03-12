@@ -190,15 +190,11 @@ static BOOL Is_Valtmp(WN *wn)
       case INTRN_U8VALTMP:
       case INTRN_F4VALTMP:
       case INTRN_F8VALTMP:
-#ifndef TARG_ST
       case INTRN_F16VALTMP:
-#endif
       case INTRN_FQVALTMP:
       case INTRN_C4VALTMP:
       case INTRN_C8VALTMP:
-#ifndef TARG_ST
       case INTRN_C16VALTMP:
-#endif
       case INTRN_CQVALTMP:  return TRUE;
     }
   }
@@ -222,7 +218,7 @@ static BOOL Contains_Calls(WN *wn)
   } else if (OPCODE_is_call(opcode)) {
     return TRUE;
   } else if (OPCODE_operator(opcode) == OPR_INTRINSIC_OP
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	     || OPCODE_operator(opcode) == OPR_PURE_CALL_OP
 #endif
             ) {
@@ -488,7 +484,7 @@ static BOOL Loop_Bound_Constant(WN *wn, BOOL nrs_var_read)
     }
     return FALSE;
   }
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   else if (oper == OPR_PURE_CALL_OP)
     return FALSE;
 #endif

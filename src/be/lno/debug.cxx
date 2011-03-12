@@ -256,7 +256,7 @@ static const char *operator_table[OPERATOR_LAST + 1] =
   "ALLOCA",
   "DEALLOCA",
   "LDMA",
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   "ASM_STMT",
   "ASM_EXPR",
   "ASM_INPUT",
