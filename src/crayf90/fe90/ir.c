@@ -176,11 +176,11 @@ int gen_sh_at(sh_position_type 	position,
       SH_NEXT_IDX(insertion_idx)    = sh_idx;
    }
 
-   TRACE (Func_Exit, "gen_sh", NULL);
+   TRACE (Func_Exit, "gen_sh_at", NULL);
 
    return sh_idx;
 
-}  /* gen_sh */
+}  /* gen_sh_at */
 #else /* KEY Bug 4811 */
 {
    int		next_idx;
