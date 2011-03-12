@@ -255,7 +255,7 @@ CFG::Remove_path(BB_NODE *pred, BB_NODE *succ)
 
   // Note: Feedback is updated in context, not here
 }
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 void
 CFG::Delete_bbs(BB_LIST *bbs, MOD_PHI_BB_CONTAINER *mod_phis)
 {
@@ -867,101 +867,6 @@ CFG::Create_blank_loop_info( BB_NODE *body_bb )
 
   body_bb->Set_label_loop_info(loop_info);
 }
-#ifdef TARG_ST
-// FdF 13/04/2004: When a skip edge is generated around a loop, loop
-// pragmas are moved from the node where the skip edge starts to the
-// pre-header node of the loop. The reason is to keep loop pragmas
-// closer to the loop, so as to be able to attach them to the right
-// loop header when converting from WHIRL to CGIR.
-
-static void
-Remove_wn_in(BB_NODE *bb, WN* wn)
-{
-  if (bb->Firststmt() == wn)
-    bb->Set_firststmt(WN_next(wn));
-  else
-    WN_next(WN_prev(wn)) = WN_next(wn);
-
-  if (bb->Laststmt() == wn)
-    bb->Set_laststmt(WN_prev(wn));
-  else
-    WN_prev(WN_next(wn)) = WN_prev(wn);
-
-  WN_next(wn) = NULL;
-  WN_prev(wn) = NULL;
-}
-
-static BOOL
-Loop_Pragma_Nz_Trip(BB_NODE *pragma_bb) {
-  WN *wn;
-  int loopmin = 0;
-  for (wn = pragma_bb->Firststmt(); wn; wn = WN_next(wn)) {
-    if (WN_operator(wn) == OPR_PRAGMA)
-      if ((WN_PRAGMA_ID)WN_pragma(wn) == WN_PRAGMA_LOOPMINITERCOUNT)
-	loopmin = MAX(loopmin, WN_pragma_arg1(wn));
-      // FdF 20070914: LOOPMOD also defines a minimum iteration count
-      // with its second argument
-      else if ((WN_PRAGMA_ID)WN_pragma(wn) == WN_PRAGMA_LOOPMOD)
-	loopmin = MAX(loopmin, WN_pragma_arg2(wn));
-  }
-  return (loopmin > 0);
-}
-
-// Because we want to perform dowhile conversion when the loop is
-// likely to have a non zero trip count.
-static BOOL
-While_Test_is_simple(WN *while_test) {
-  if (WN_kid_count(while_test) == 2) {
-    WN *kid0 = WN_kid(while_test, 0), *kid1 = WN_kid(while_test, 1);
-    if ((WN_kid_count(kid0) == 0) && (WN_kid_count(kid1) == 0))
-      if ((WN_operator(kid0) == OPR_INTCONST) || (WN_operator(kid1) == OPR_INTCONST))
-	return TRUE;
-    // FdF 20100319: Look also for one integer constant and one add
-    // between two variables, since a primary IV may have been created
-    WN *var_kid = (WN_operator(kid0) == OPR_INTCONST) ? kid1 :
-                  (WN_operator(kid1) == OPR_INTCONST) ? kid0 : NULL;
-    if ((var_kid != NULL) && (WN_operator(var_kid) == OPR_ADD) && 
-	(WN_kid_count(WN_kid(var_kid, 0)) == 0) &&
-	(WN_kid_count(WN_kid(var_kid, 1)) == 0))
-      return TRUE;
-  }
-  return FALSE;
-}
-
-static INT
-Loop_Pragma_Unroll(BB_NODE *pragma_bb) {
-  WN *wn;
-  for (wn = pragma_bb->Firststmt(); wn; wn = WN_next(wn)) {
-    if ((WN_operator(wn) == OPR_PRAGMA) &&
-	((WN_PRAGMA_ID)WN_pragma(wn) == WN_PRAGMA_UNROLL))
-      return WN_pragma_arg1(wn);
-  }
-  return -1;
-}
-
-static void
-Move_Loop_Pragma(CFG *cfg, BB_NODE *from_bb, BB_NODE *to_bb)
-{
-  if (from_bb == to_bb)
-    return;
-  WN *wn, *next_wn = NULL;
-  BOOL remove_all_pragmas = TRUE;
-  for (wn = from_bb->Firststmt(); wn; wn = next_wn) {
-    next_wn = WN_next(wn);
-    if (WN_operator(wn) == OPR_PRAGMA) {
-      if (WN_Pragma_Scope(WN_pragma(wn)) == WN_PRAGMA_SCOPE_LOOP) {
-	Remove_wn_in(from_bb, wn);
-	cfg->Append_wn_in(to_bb, wn);
-	to_bb->Set_haspragma();
-      } else {
-	remove_all_pragmas = FALSE;
-      }
-    }
-  }
-  if (remove_all_pragmas)
-    from_bb->Reset_haspragma();
-}
-#endif /* TARG_ST */
 
 // ====================================================================
 // fully lower DO_LOOP statements
@@ -1018,11 +923,6 @@ CFG::Lower_do_loop( WN *wn, END_BLOCK *ends_bb )
   Connect_predsucc( entry_test_bb, dohead_bb );
   Append_bb( dohead_bb );
 
-#ifdef TARG_ST
-  /* FdF 13/04/2004: Move the LOOP pragmas from the entry_test_bb to
-     the dohead_bb, to move them closer to the real loop. */
-  Move_Loop_Pragma(this, entry_test_bb, dohead_bb);
-#endif
   // Create the loop body, and connect it to the dohead
   BB_NODE *body_bb = Create_loopbody(WN_do_body(wn));
   Connect_predsucc(dohead_bb, body_bb);
@@ -1101,90 +1001,11 @@ CFG::Lower_while_do( WN *wn, END_BLOCK *ends_bb )
   //    dotail block
   // Exit:
 
-#ifdef TARG_ST
-  // FdF 20070615: For !doWhile_conversion, generate instead the following
-  // control flow.
-
-  //    goto Exit_test;
-  // Head:
-  //    dohead block
-  // Body:
-  //    statements in original loop body
-  // Exit_test:
-  //    if (cond)
-  //      goto Body;
-  // Tail:
-  //    dotail block
-  // Exit:
-#endif
-  
   // create, but do not connect, the exit bb
   BB_NODE *exit_bb = Create_labelled_bb();
   BB_NODE *dohead_bb = Create_labelled_bb( BB_DOHEAD );
   WN *wn_top_branch = NULL;
 
-
-#ifdef TARG_ST
-  BOOL nz_trip_count = Loop_Pragma_Nz_Trip(_current_bb);
-
-  BOOL doWhile_conversion;
-  switch (WOPT_Enable_DoWhile_Conversion) {
-    // Never
-  case DOWHILE_CONV_NEVER:
-    doWhile_conversion = FALSE;
-    break;
-
-    // If better for size
-  case DOWHILE_CONV_FOR_SIZE:
-    doWhile_conversion =
-      (Loop_Pragma_Unroll(_current_bb) > 1) ||
-      (OPT_unroll_times > 1) ||
-      nz_trip_count ||
-      While_Test_is_simple(WN_while_test(wn));
-    break;
-
-    // If better for perf
-  case DOWHILE_CONV_FOR_PERF: // Fall-through
-    // Always
-  case DOWHILE_CONV_ALWAYS:
-    doWhile_conversion = TRUE;
-    break;
-    
-  }
-  
-  BB_NODE *exit_test_bb = NULL;
-  if (!doWhile_conversion) {
-    exit_test_bb = Create_labelled_bb();
-    // Add an edge from _current_bb to dohead_bb
-    Connect_predsucc( _current_bb, dohead_bb );
-    Append_bb( dohead_bb );
-    
-    // Connect dohead_bb to exit_test_bb
-    WN *goto_wn = WN_CreateGoto(exit_test_bb->Labnam());
-    Add_one_stmt( goto_wn, NULL );
-  }
-  else {
-    BB_NODE *entry_test_bb = _current_bb;
-    if (!nz_trip_count) {
-      // Create loop entry test bb, and make a copy of original expn.
-      WN *testcopy = WN_copy(WN_while_test(wn));
-      WN_copy_stmap(WN_while_test(wn), testcopy);
-      if (Cur_PU_Feedback)
-	Cur_PU_Feedback->FB_clone_loop_test( WN_while_test(wn), testcopy, wn );
-
-      // Connect _current_bb to a conditional BB that goes to dohead_bb or exit_bb
-      BB_NODE *entry_test_bb = 
-	Create_conditional( testcopy, dohead_bb, exit_bb, FALSE , &wn_top_branch);
-    }
-
-    Connect_predsucc( entry_test_bb, dohead_bb );
-    Append_bb( dohead_bb );
-
-    /* FdF 13/04/2004: Move the LOOP pragmas from the entry_test_bb to
-       the dohead_bb, to move them closer to the real loop. */
-    Move_Loop_Pragma(this, entry_test_bb, dohead_bb);
-  }
-#else
   // Create loop entry test bb, and make a copy of original expn.
   WN *testcopy = WN_copy(WN_while_test(wn));
   WN_copy_stmap(WN_while_test(wn), testcopy);
@@ -1197,13 +1018,9 @@ CFG::Lower_while_do( WN *wn, END_BLOCK *ends_bb )
   // Create and connect the loop head
   Connect_predsucc( entry_test_bb, dohead_bb );
   Append_bb( dohead_bb );
-#endif
 
   // Create the loop body
   BB_NODE *body_bb = Create_loopbody(WN_while_body(wn));
-#ifdef TARG_ST
-  if (doWhile_conversion)
-#endif
   Connect_predsucc(dohead_bb, body_bb);
 
   // Create a LOOP_INFO node and attach to the body label
@@ -1212,13 +1029,6 @@ CFG::Lower_while_do( WN *wn, END_BLOCK *ends_bb )
   // Create the loop tail
   BB_NODE *dotail_bb = Create_labelled_bb( BB_DOTAIL );
 
-#ifdef TARG_ST
-  if (!doWhile_conversion) {
-    Connect_predsucc(_current_bb, exit_test_bb);
-    Append_bb(exit_test_bb);
-  }
-#endif
-  
   // Create the loop exit test
   WN *wn_back_branch;
   BB_NODE *cond_bb = Create_conditional( WN_while_test(wn), body_bb,
@@ -1254,10 +1064,6 @@ CFG::Lower_while_do( WN *wn, END_BLOCK *ends_bb )
   // FdF 20070112 (codex-22293): In case of a Not Zero Loop Trip
   // Count, consider that the while loop has an entry guard (see
   // Lower_do_loop).
-#ifdef TARG_ST
-  if (nz_trip_count)
-    loopinfo->Set_has_entry_guard();
-#endif
   loopinfo->Set_flag(LOOP_WHILE);
   dohead_bb->Set_loop(loopinfo);
   cond_bb->Set_loop(loopinfo);
@@ -1437,7 +1243,7 @@ CFG::Is_simple_expr(WN *wn) {
 #endif
   return 0;
 }
-#ifndef TARG_ST
+
 // ====================================================================
 // copy the address expression tree recursively
 // ====================================================================
@@ -1462,7 +1268,7 @@ static WN *Copy_addr_expr(WN *wn, ALIAS_CLASSIFICATION *ac)
   }
   return new_wn;
 }
-#endif
+
 // ====================================================================
 // check if the address expression has an LDA base that is a read-only symbol
 // ====================================================================
@@ -1691,7 +1497,7 @@ CFG::Lower_if_stmt( WN *wn, END_BLOCK *ends_bb, BOOL if_conv_only )
 #ifdef TARG_MIPS
       Rgn_level() != RL_RVI2 &&  // 6002
 #endif
-#if defined( KEY) && !defined(TARG_ST) // bug 5684: deleting branches interferes with branch profiling
+#if defined( KEY) // bug 5684: deleting branches interferes with branch profiling
       ! Instrumentation_Enabled &&
 #endif
 
@@ -1699,7 +1505,7 @@ CFG::Lower_if_stmt( WN *wn, END_BLOCK *ends_bb, BOOL if_conv_only )
 #ifdef TARG_MIPS
       Is_Target_ISA_M4Plus() &&  
 #endif
-#if defined( KEY) && !defined(TARG_ST)  // do not if-convert if it has either empty then or else part and it
+#if defined( KEY) // do not if-convert if it has either empty then or else part and it
       // is the only statement in the BB since CG's cflow can be quite effective
       ((!empty_else && !empty_then) ||
        WOPT_Enable_Simple_If_Conv > 1 ||
@@ -1764,7 +1570,7 @@ CFG::Lower_if_stmt( WN *wn, END_BLOCK *ends_bb, BOOL if_conv_only )
 	(empty_then || empty_else)) 
       goto skip_if_conversion;
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     if (!OPCODE_Can_Be_Speculative(OPC_I4I4ILOAD)) {
       if (WN_operator(stmt) == OPR_STID || WN_operator(stmt) == OPR_STBITS) {
 	if (!empty_then) {
@@ -1834,7 +1640,6 @@ CFG::Lower_if_stmt( WN *wn, END_BLOCK *ends_bb, BOOL if_conv_only )
 		       WN_field_id(stmt));
 	WN_set_aux(load, WN_aux(stmt)); // setting mapping to indicate ST_is_aux
       }
-#ifndef TARG_ST
       else {
 	MTYPE rtype = WN_rtype(WN_kid0(stmt));
 	if (MTYPE_byte_size(rtype) < MTYPE_byte_size(dsctyp))
@@ -1853,7 +1658,6 @@ CFG::Lower_if_stmt( WN *wn, END_BLOCK *ends_bb, BOOL if_conv_only )
 	if (ip_alias_class != OPTIMISTIC_AC_ID)
 	  WN_MAP32_Set(WN_MAP_ALIAS_CLASS, load, ip_alias_class);
       }
-#endif
     }
     WN *then_expr = empty_then ? load : WN_kid0(WN_first(then_wn));
     WN *else_expr = empty_else ? load : WN_kid0(WN_first(else_wn));
@@ -2027,15 +1831,7 @@ CFG::Add_one_do_loop_stmt( WN *wn, END_BLOCK *ends_bb )
   
   BB_NODE *start_bb;
   if (_current_bb->Firststmt() != NULL) {
-#ifdef TARG_ST
-    BB_NODE *pragma_bb = _current_bb;
-#endif
     start_bb = New_bb( TRUE/*connect*/, BB_DOSTART );
-#ifdef TARG_ST
-    /* FdF 28/04/2004: Move the LOOP pragmas from the pragma_bb to the
-       start_bb, to move them closer to the real loop. */
-    Move_Loop_Pragma(this, pragma_bb, start_bb);
-#endif
   }
   else {
     start_bb = _current_bb;
@@ -2710,7 +2506,7 @@ CFG::Add_one_region( WN *wn, END_BLOCK *ends_bb )
   // remember the last block in the region
   BB_NODE *last_region_bb = _current_bb;
 
-#if defined( KEY) && !defined(TARG_ST) // bug 8690
+#if defined( KEY) // bug 8690
   if (REGION_is_mp(wn) && _rgn_level != RL_MAINOPT &&
       Is_region_with_pragma(wn,WN_PRAGMA_SINGLE_PROCESS_BEGIN)) {
     // add extra edge in the cfg to reflect jump around the single region
@@ -2764,7 +2560,7 @@ CFG::Process_entry( WN *wn, END_BLOCK *ends_bb )
 
   // make a copy of the func_entry, none of the original WHIRL can be saved
   WN *copy_wn = WN_CopyNode(wn);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 // This wn is a OPR_FUNC_ENTRY node. If we copy the map-id directly, we don't
 // remove the id from the free-list. OPR_REGION and OPR_FUNC_ENTRY are the 
 // only 2 operators in the same annotation category. So an OPR_REGION picks
@@ -2826,7 +2622,7 @@ CFG::Process_entry( WN *wn, END_BLOCK *ends_bb )
   }
   else/* if (opr == OPR_ALTENTRY || opr == OPR_LABEL)*/ {
     if ( ends_bb ) *ends_bb = END_NOT;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     if (opr == OPR_LABEL && 
         LABEL_target_of_goto_outer_block(WN_label_number(wn)))
       Connect_predsucc(last_bb, _current_bb);
@@ -3035,7 +2831,7 @@ CFG::Add_one_stmt( WN *wn, END_BLOCK *ends_bb )
 
   case OPR_RETURN:
   case OPR_RETURN_VAL:
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   case OPR_GOTO_OUTER_BLOCK:
 #endif
     {
@@ -3057,7 +2853,7 @@ CFG::Add_one_stmt( WN *wn, END_BLOCK *ends_bb )
     {
       // Look up the _label_map to see if it's forward declared by goto
       if (WN_Label_Is_Handler_Begin(wn)
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	  || LABEL_target_of_goto_outer_block(WN_label_number(wn))
 #endif
 	 ) {
@@ -3118,7 +2914,6 @@ CFG::Add_one_stmt( WN *wn, END_BLOCK *ends_bb )
     Add_one_compgoto_stmt( wn, ends_bb );
     break;
 
-#ifndef TARG_ST
   case OPR_CALL:
   case OPR_ICALL:
   case OPR_PICCALL:
@@ -3142,28 +2937,6 @@ CFG::Add_one_stmt( WN *wn, END_BLOCK *ends_bb )
 	*ends_bb = Calls_break() ? END_FALLTHRU : END_NOT;
     }
     break;
-#else
-  case OPR_CALL:
-  case OPR_ICALL:
-  case OPR_PICCALL:
-    if (_exc) // register each call with the exception region
-      _exc->Link_top_es(wn);
-    //fall thru
-  case OPR_INTRINSIC_CALL:
-    _current_bb->Set_hascall();
-    Append_wn_in(_current_bb, wn);
-    if (WN_Call_Never_Return(wn)) {
-      _current_bb->Set_kind( BB_EXIT );
-      _current_bb->Set_hasujp();
-      if ( ends_bb )
-	*ends_bb = END_BREAK;
-    } else {
-      if ( ends_bb )
-	*ends_bb = Calls_break() ? END_FALLTHRU : END_NOT;
-    }
-    break;
-
-#endif
 
   case OPR_IO:
     // input/output statements are odd things involving calls
@@ -3591,12 +3364,6 @@ CFG::Process_multi_entryexit( BOOL is_whirl )
       ("CFG::Process_multi_entryexit: _exit_bb in _exit_vec") );
     Connect_predsucc(_exit_vec[i], _exit_bb);
   }
-
-#ifdef TARG_ST
-  // [CG] The default now is to have fake entry/exit disconnected.
-  Remove_fake_entryexit_arcs();
-#endif
-
 }
 
 // ====================================================================
@@ -4228,12 +3995,7 @@ CFG::Process_no_exit(void)
 
   // reset both reach and willexit flag
   FOR_ALL_NODE( bb, cfg_iter, Init() ) {
-#ifdef TARG_ST
-    // [CG] Improve maintainability. Actuall dforder and visit flags are equivalent.
-    bb->Reset_dforder();
-#else
     bb->Reset_visit();
-#endif
     bb->Reset_willexit();
   }
 
@@ -4366,41 +4128,7 @@ CFG::Remove_fake_entryexit_arcs( void )
     }
   }
 }
-#ifdef TARG_ST
-// ====================================================================
-// CFG::Attach_fake_entryexit_arcs()
-//
-// add pred/succ arcs to fake exit/entry blocks so they are
-// reachable from normal blocks.
-// This function must be used before algorithms that rely on reachable
-// fake entry/exits.
-// Note though that the fake entry/exits even if reachable are still
-// NOT marked Reachable().
-// At least Compute_dom_tree() requires this particular state, thus
-// a call to Compute_dome_tree()  must always be of this form:
-// cfg->Attach_fake_entryexit_arcs();
-// cfg->Compute_dom_tree();
-// cfg->Remove_fake_entryexit_arcs();
-// ====================================================================
-void
-CFG::Attach_fake_entryexit_arcs(void)
-{
-  if(Fake_entry_bb()) {
-    BB_NODE     *succ;
-    BB_LIST_ITER bb_succ_iter;
-    FOR_ALL_ELEM( succ, bb_succ_iter, Init(Fake_entry_bb()->Succ()) ) {
-      succ->Append_pred(Fake_entry_bb(), Mem_pool());
-    }
-  }
-  if(Fake_exit_bb()) {
-    BB_NODE     *pred;
-    BB_LIST_ITER bb_pred_iter;
-    FOR_ALL_ELEM( pred, bb_pred_iter, Init(Fake_exit_bb()->Pred()) ) {
-      pred->Append_succ(Fake_exit_bb(), Mem_pool());
-    }
-  }
-}
-#endif
+
 // ====================================================================
 // CFG::Func_entry_bb
 //   The BB that contains the OPR_FUNC_ENTRY node.  Note: This
@@ -4563,18 +4291,11 @@ CFG::Dfs_vec(void)
       CXX_DELETE_ARRAY(_po_vec, Mem_pool());
       _po_vec = NULL;
     }
-#ifdef TARG_ST
-    // [CM 2003926 : see opt_cfg.h fix to avoid off by one access
-    _dfs_vec = (BB_NODE **)
-          CXX_NEW_ARRAY(BB_NODE*,Last_bb_id(),Mem_pool());
-    _po_vec = (BB_NODE **)
-          CXX_NEW_ARRAY(BB_NODE*,Last_bb_id(),Mem_pool());
-#else
+
     _dfs_vec = (BB_NODE **)
           CXX_NEW_ARRAY(BB_NODE*,Last_bb_id()+1,Mem_pool());
     _po_vec = (BB_NODE **)
           CXX_NEW_ARRAY(BB_NODE*,Last_bb_id()+1,Mem_pool());
-#endif
     BB_NODE *bb;
     CFG_ITER cfg_iter(this);
     FOR_ALL_NODE( bb, cfg_iter, Init() )
@@ -5182,13 +4903,7 @@ void Find_real_loops(BB_NODE *bb, BB_LOOP *parent, CFG *cfg)
   bb->Set_innermost(NULL);
 
   BB_LOOP *cur = parent;
-#ifdef TARG_ST
-  // FdF 08/04/2004: cannot consider as a loop header a bb that is
-  // already included in the parent loop. (bug pro-release-1-5-0-B/7)
-  bool is_header = BB_is_header(bb) && !(bb->Loop() && (bb->Loop() == parent));
-#else
   bool is_header = BB_is_header(bb);
-#endif
   if (is_header) {
     cur = Allocate_loop(bb, parent, cfg);
     bb->Set_loop(cur);
@@ -5543,7 +5258,7 @@ CFG::Find_enclosing_region_bb( BB_NODE *bb, WN_PRAGMA_ID region_pragma )
   return NULL;
 }
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 // ====================================================================
 // Find a parallel region that dominates the given BB.
 // Note that the region encloses "bb" and does not start with it
@@ -5633,11 +5348,6 @@ CFG::Invalidate_and_update_aux_info(BOOL do_df)
     CXX_DELETE_ARRAY(_dfs_vec, Mem_pool());
     _dfs_vec = NULL;
   }
-
-#ifdef TARG_ST
-  // Must explicitly ask for connection of fake entry/exit for Compute_dom_tree().
-  Attach_fake_entryexit_arcs();
-#endif
 
   Compute_dom_tree(TRUE); // create dom tree
   Compute_dom_tree(FALSE);// create post-dom tree
@@ -5737,7 +5447,7 @@ CFG::Find_entry_bb(void)
     BB_LIST_ITER bb_succ_iter;
     FOR_ALL_ELEM( succ, bb_succ_iter, Init(entry_bb->Succ()) ) {
       if ( succ->Kind() == BB_ENTRY && succ->Entrywn() &&
-#if !defined( KEY) || defined(TARG_ST)
+#if !defined( KEY)
 	  !WN_Label_Is_Handler_Begin(succ->Entrywn()) 
 #else
 	  WN_operator(succ->Entrywn()) != OPR_LABEL
@@ -5972,7 +5682,7 @@ CFG::Fall_through(BB_NODE *bb1, BB_NODE *bb2)
   STMTREP *bb_branch = bb1->Branch_stmtrep();
   if (bb_branch == NULL) return TRUE;
   if (OPC_GOTO != bb_branch->Op()) return FALSE;
-#if defined( KEY) && !defined(TARG_ST) // bug 11304
+#if defined( KEY) // bug 11304
   if (bb1->Succ() == NULL) return FALSE;
 #endif
   if (bb1->Succ()->Node() == bb2) return TRUE;

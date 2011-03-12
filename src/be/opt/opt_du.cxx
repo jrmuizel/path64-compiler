@@ -1413,49 +1413,6 @@ DU_MANAGER::Verify_wn_in_tree( void ) const
   return verified;
 }
 
-#ifdef TARG_ST
-/*
- * Verify_Required_Expr()
- *
- * Returns true if part of the expression/statement is required.
- * For instance a STID may appear to be dead while the stored expression
- * has some volatility. In this cas the STID can't be removed even if
- * the written variable has no use.
- * This is only for the purpose of the verifier, hence it can be imprecise.
- * Refer to DSE::Check_Required_Expr() in opt_dse.cxx. This implementation
- * mimics the one there.
- */
-static BOOL
-Verify_Required_Expr(WN *wn)
-{
-  OPERATOR expr_oper = WN_operator(wn);
-  
-  switch ( expr_oper ) {
-  case OPR_LDID:
-  case OPR_LDBITS: 
-    if (TY_is_volatile( WN_ty(wn) ) ||
-	((ST_class(WN_st(wn)) == CLASS_PREG &&
-	  Preg_Is_Dedicated(WN_offset(wn))) ||
-	 ST_assigned_to_dedicated_preg(WN_st(wn))))
-      return TRUE;
-    break;
-    
-  case OPR_BLOCK:
-    // Should not be called in this context
-    break;
-    
-  default:
-    for ( INT32 kidnum = 0; kidnum < WN_kid_count(wn); kidnum++ ) {
-      if ( Verify_Required_Expr( WN_kid(wn,kidnum) ) ) {
-	return TRUE;
-      }
-    }
-    break;
-  }
-  
-  return FALSE;
-}
-#endif
 
 BOOL
 DU_MANAGER::Verify_scalar_usage( WN *wn ) const
@@ -1505,15 +1462,8 @@ DU_MANAGER::Verify_scalar_usage( WN *wn ) const
       if ( du_list == NULL ) {
 	// check for exceptions:  volatiles
 	if ( TY_is_volatile( WN_ty(wn) ) ||
-#ifdef TARG_ST
-	     ((ST_class(WN_st(wn)) == CLASS_PREG &&
-	       Preg_Is_Dedicated(WN_offset(wn))) ||
-	      ST_assigned_to_dedicated_preg(WN_st(wn))) ||
-	     Verify_Required_Expr(wn)
-#else
 	     ( ST_class(WN_st(wn)) == CLASS_PREG &&
 	       Preg_Is_Dedicated(WN_offset(wn)) ) 
-#endif
              ) {
 	  // ok not to have a use-list
 	  goto stid_visit_kids;

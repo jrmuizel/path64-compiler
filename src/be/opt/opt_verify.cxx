@@ -615,11 +615,7 @@ STMTREP::Verify_CODEMAP(CODEMAP *htable, OPT_STAB *opt_stab)
     ST *st = opt_stab->St(Lhs()->Aux_id());
 
     // do not test registers because epre might not introduce all phi functions
-#ifdef TARG_ST
-    if (st != NULL && ST_sclass(st) != SCLASS_REG && !ST_assigned_to_dedicated_preg(st))
-#else
     if (st != NULL && ST_sclass(st) != SCLASS_REG)
-#endif
     {
       BB_NODE_SET_ITER    df_iter;
       BB_NODE *bb_phi;
@@ -686,11 +682,7 @@ STMTREP::Verify_CODEMAP(CODEMAP *htable, OPT_STAB *opt_stab)
 	  ST *st = opt_stab->St(res->Aux_id());
 
 	  // do not test registers because epre might not introduce all phi functions
-#ifdef TARG_ST
-	  if (st != NULL && ST_sclass(st) != SCLASS_REG && !ST_assigned_to_dedicated_preg(st))
-#else
 	  if (st != NULL && ST_sclass(st) != SCLASS_REG)
-#endif
           {
 	    BB_NODE_SET_ITER    df_iter;
 	    BB_NODE *bb_phi;
@@ -984,7 +976,7 @@ Verify_version_expr(CODEREP *expr, OPT_STAB *opt_stab, BB_NODE *bb, INT32 linenu
 
       FmtAssert(! past_ret_reg_def || expr->Opr() != OPR_INTRINSIC_OP,
 		("cr%d is INTRINSIC_OP appearing after the def of a return register", expr->Coderep_id()));
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       FmtAssert(! past_ret_reg_def || expr->Opr() != OPR_PURE_CALL_OP,
 		("cr%d is PURE_CALL_OP appearing after the def of a return register", expr->Coderep_id()));
 #endif
@@ -1158,7 +1150,7 @@ COMP_UNIT::Verify_version(void)
 void
 CODEMAP::Verify_hashing(void)
 {
-#if !defined( KEY) || defined(TARG_ST)  // bug 13042: this is found to cause the WHIRL output by wopt to
+#if !defined( KEY) // bug 13042: this is found to cause the WHIRL output by wopt to
   	    // have some operands of ADD arbitrarily swapped
 #ifdef Is_True_On
   CODEREP_ITER cr_iter;

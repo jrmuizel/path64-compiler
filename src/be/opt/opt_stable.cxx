@@ -219,7 +219,7 @@ SPRE_insert_load_to_preg(CODEREP *v, IDTYPE preg, BOOL sign_extd, BB_NODE *bb, E
 	    v->Set_dtyp(MTYPE_U8);
 	    v->Set_dsctyp(MTYPE_U4);
 	    v->Set_sign_extension_flag();
-#if !defined( KEY) || defined(TARG_ST)
+#if !defined( KEY)
           } else if (opc == OPC_U4U8CVT) {
             v->Set_dtyp(MTYPE_U4);
             v->Set_sign_extension_flag();
@@ -522,7 +522,7 @@ EXP_WORKLST::SPRE_perform_insert_delete(ETABLE *etable)
     rhs->IncUsecnt();	// increment use count of preg
 
     // create a new coderep node for the lhs of the store being inserted
-#if defined( KEY) && !defined(TARG_ST) // bug 5798
+#if defined( KEY) // bug 5798
     if (old_lhs->Dtyp() == MTYPE_UNKNOWN) {
       old_lhs->Set_dsctyp(Exp()->Dsctyp());
       old_lhs->Set_dtyp(Exp()->Dtyp());

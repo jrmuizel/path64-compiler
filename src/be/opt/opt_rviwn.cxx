@@ -94,9 +94,6 @@ static char *rcs_id = 	opt_rviwn_CXX"$Revision: 1.11 $";
 #include "bb_node_set.h"
 #include "idx_32_set.h"
 #include "opt_cvtl_rule.h"
-#ifdef TARG_ST
-#include "targ_sections.h"
-#endif
 
 // ====================================================================
 // Create a new LDID of this annotation
@@ -579,12 +576,7 @@ RVI::Is_lda_candidate( const WN *parent, const WN *lda, INT whichkid ) const
     case OPR_MLOAD:
       // if kid0 is a small lda, do not RVI it
       if ( whichkid == 0 ) {
-	return !(Uses_Small_Offset( lda_st, lda_offset )
-#ifdef TARG_ST
-		 || (Is_Structure_Type(Ty_Table[ST_type (lda_st)]) &&
-		     TY_is_packed(Ty_Table[ST_type (lda_st)]))
-#endif
-                 );
+	return !(Uses_Small_Offset( lda_st, lda_offset ));
       }
       return TRUE;
 
@@ -594,12 +586,7 @@ RVI::Is_lda_candidate( const WN *parent, const WN *lda, INT whichkid ) const
       // register (WN_is_call_related), do not RVI it
       if ( whichkid == 1 ) {
 	WN *rhs = WN_kid0(parent);
-	return (!(Uses_Small_Offset( lda_st, lda_offset )
-#ifdef TARG_ST
-		 || (Is_Structure_Type(Ty_Table[ST_type (lda_st)]) &&
-		     TY_is_packed(Ty_Table[ST_type (lda_st)]))
-#endif
-               ) &&
+	return (!(Uses_Small_Offset( lda_st, lda_offset )) &&
 		!(WN_operator(rhs) == OPR_LDID && // (fix for bug 670407)
 		  ST_class(WN_st(rhs)) == CLASS_PREG &&
 		  Preg_Is_Dedicated(WN_offset(rhs))));
@@ -734,10 +721,6 @@ RVI::Store_to_preg_cvtl(WN     *store_wn, ST*      preg_st,
   WN_store_offset(store_wn) = preg_num;
   WN_st_idx(store_wn) = ST_st_idx(preg_st);
   WN_set_ty( store_wn, preg_ty );
-#ifdef TARG_ST
-  // [CG]: zeroes field_id on STID preg (checked in wn_verifier)
-  WN_set_field_id(store_wn, 0);
-#endif
 
   Alias_Mgr()->Gen_alias_id(store_wn, NULL);
 }

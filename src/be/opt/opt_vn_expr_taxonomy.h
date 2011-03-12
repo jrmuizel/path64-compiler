@@ -1216,7 +1216,7 @@ public:
 }; // VN_MEMLOC_EXPR
 
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 //-------------- Interface for VN_CALL_OP_EXPR -----------------
 //--------------------------------------------------------------
 

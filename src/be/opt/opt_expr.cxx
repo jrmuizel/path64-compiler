@@ -152,7 +152,7 @@ Rehash_tree_rec(CODEREP *newcr,
         Is_Trace(htable->Tracing(), (TFile, "  with:"));
         Is_Trace_cmd(htable->Tracing(), rhs->Print(0,TFile));
         *changed = TRUE;
-#if defined( KEY) && !defined(TARG_ST) // fix bug 2657
+#if defined( KEY) // fix bug 2657
 	rhs = newcr->Convert_type(htable, rhs, FALSE);
 #endif
         return rhs;
@@ -231,7 +231,7 @@ Rehash_tree_rec(CODEREP *newcr,
       } else
 	newcr = cr_after_simp;
 
-#if defined( KEY) && !defined(TARG_ST) // bug 5285
+#if defined( KEY) // bug 5285
       if (newcr->Kind() == CK_CONST)
 	return newcr;
 #endif
