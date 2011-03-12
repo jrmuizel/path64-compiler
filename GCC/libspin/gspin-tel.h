@@ -964,9 +964,15 @@ static inline gs_long_long_t gs_get_integer_value (gs_t t)
 {
   GS_ASSERT (t != (gs_t) NULL, (gs_string_t) "Got null node");
   if (sizeof(long) < sizeof(long long))
-    return (gs_long_long_t) (gs_ull(gs_tree_int_cst_low(t)) | gs_ll(gs_tree_int_cst_high(t)) << 8*sizeof(long));
+    return (gs_long_long_t) (gs_ull(gs_tree_int_cst_low(t)) | gs_ull(gs_tree_int_cst_high(t)) << 8*(sizeof(long long)-sizeof(long)));
   else
-    return (gs_long_long_t) gs_ull (gs_tree_int_cst_low (t));
+    return (gs_long_long_t) gs_ull (gs_tree_int_cst_low (t))
+    /*
+     * Trick pathCC to keep code for gs_tree_int_cst_high at -O0
+     * to avoid undefined reference to the same.
+     * This is a workaround for COMPILER-8931/8973
+     */
+    + (gs_long_long_t) gs_ull (gs_tree_int_cst_high (t)) * 0ull;
 }
 
 static inline gs_float_t gs_tree_real_cst_f (gs_t t) {
