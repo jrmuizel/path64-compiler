@@ -880,7 +880,6 @@ main()
 			   TOP_cmppd,
 			   TOP_shldi32,
 			   TOP_shrdi32,
-			   TOP_vaddpd,
 			   TOP_UNDEFINED );
 
   /* Operand 0 only */
@@ -1558,6 +1557,16 @@ main()
 			   TOP_vstapdxx,
 			   TOP_vstapsxx,
 			   TOP_UNDEFINED );
+
+  /*AVX opopresult*/
+  ISA_PRINT_TYPE avxopopop = ISA_Print_Type_Create("avxopopop", "%s %s,%s,%s");
+  Name();
+  Operand(1);
+  Operand(0);
+  Result(0);
+  Instruction_Print_Group(avxopopop,
+  			   TOP_vaddpd,
+  			   TOP_UNDEFINED);
 
   /* prefetch */
   ISA_PRINT_TYPE prefetch =  ISA_Print_Type_Create("prefetch", "%s %s%s(%s)");

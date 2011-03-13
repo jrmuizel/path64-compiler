@@ -1552,6 +1552,27 @@ static void Init_OP_Name()
 	OP_Name[TOP_pshufb] = "pshufb";
 /*AVX*/
 	OP_Name[TOP_vaddpd] = "vaddpd";
+	OP_Name[TOP_vldapd] = "vmovapd";
+    OP_Name[TOP_vldapdx] = "vmovapd";
+    OP_Name[TOP_vldapdxx] = "vmovapd";
+    OP_Name[TOP_vldapd_n32] = "vmovapd";
+	OP_Name[TOP_vstapd] = "vmovapd";
+    OP_Name[TOP_vstapdx] = "vmovapd";
+    OP_Name[TOP_vstapdxx] = "vmovapd";
+    OP_Name[TOP_vstapd_n32] = "vmovapd";
+	OP_Name[TOP_vldaps] = "vmovaps";
+    OP_Name[TOP_vldapsx] = "vmovaps";
+    OP_Name[TOP_vldapsxx] = "vmovaps";
+    OP_Name[TOP_vldaps_n32] = "vmovaps";
+    OP_Name[TOP_vstaps] = "vmovaps";
+    OP_Name[TOP_vstapsx] = "vmovaps";
+    OP_Name[TOP_vstapsxx] = "vmovaps";
+    OP_Name[TOP_vstaps_n32] = "vmovaps";
+	OP_Name[TOP_vstdqa] = "vmovdqa";
+    OP_Name[TOP_vstdqax] = "vmovdqa";
+    OP_Name[TOP_vstdqaxx] = "vmovdqa";
+    OP_Name[TOP_vstdqa_n32] = "vmovdqa";
+
 
 //**********************************************************
 // For barcelona (bug 13108)
