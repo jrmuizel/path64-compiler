@@ -1159,8 +1159,8 @@ static AR_TYPE native_dbl_complex  = AR_Complex_IEEE_NR_64;
 
 /* Square root */
 int
-ar_sqrt (AR_DATA *result, const AR_TYPE *resulttype,
-	const AR_DATA *opnd, const AR_TYPE *opndtype)
+ar_sqrt (ar_data *result, const AR_TYPE *resulttype,
+	const ar_data *opnd, const AR_TYPE *opndtype)
 {
 	int status;
 	ar_data nat_opnd, nat_result;
@@ -1172,7 +1172,7 @@ ar_sqrt (AR_DATA *result, const AR_TYPE *resulttype,
 
 #ifdef complex_t
         if (*resulttype == native_complex && *opndtype == native_complex) {
-		ar_to_host_c64(opnd, &carg);
+		ar_to_host_c64((void *)opnd, &carg);
                 carg = csqrt(carg);
 		ar_from_host_c64(&carg, result);
                 return AR_status((AR_DATA*)result, resulttype);
@@ -1187,8 +1187,8 @@ ar_sqrt (AR_DATA *result, const AR_TYPE *resulttype,
 #ifdef complex_t
 		status = AR_convert ((AR_DATA*)&nat_opnd, &native_complex,
 				     opnd, opndtype);
-		status |= ar_sqrt ((AR_DATA*)&nat_result, &native_complex,
-				   (AR_DATA*)&nat_opnd, &native_complex);
+		status |= ar_sqrt (&nat_result, &native_complex,
+				   &nat_opnd, &native_complex);
 		status &= ~(AR_NEGATIVE | AR_ZERO);
 		status |= AR_convert (result, resulttype,
 				      (AR_DATA*)&nat_result, &native_complex);
