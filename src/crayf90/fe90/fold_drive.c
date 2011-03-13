@@ -1836,7 +1836,7 @@ boolean folder_driver(char		*l_value_ptr,
 
          SHIFT_ARITH_RESULT(loc_result.v, res_linear_type);
 #else
-         mask = ar_sqrt((AR_DATA *)loc_result.v,
+         mask = AR_sqrt((AR_DATA *)loc_result.v,
 			(const AR_TYPE *)&linear_to_arith[res_linear_type],
 			(const AR_DATA *)l_value.v,
 			(const AR_TYPE *)&linear_to_arith[res_linear_type]);
