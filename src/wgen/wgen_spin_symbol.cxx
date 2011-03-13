@@ -3336,6 +3336,7 @@ set_DECL_ST(gs_t t, ST* st) {
 ST*&
 get_DECL_ST(gs_t t) {
   static ST *null_ST = (ST *) NULL;
+  static ST *return_st;
 
   // Find the tree node to use as index into st_map.
   gs_t t_index;
@@ -3354,7 +3355,7 @@ get_DECL_ST(gs_t t) {
   // we are being called by WFE_Add_Weak to handle a weak symbol.  Use the
   // non-PU-specific st_map.
   if (Current_scope == 0) {
-    ST* return_st = st_map[t_index];
+    return_st = st_map[t_index];
     if(return_st)
       return_st = Trans_TLS(t, return_st);
     return return_st;
@@ -3362,7 +3363,7 @@ get_DECL_ST(gs_t t) {
 
   // See if the ST is in the non-PU-specific st_map.
   if (st_map[t_index]) {
-    ST* return_st = st_map[t_index];
+    return_st = st_map[t_index];
     if(return_st)
       return_st = Trans_TLS(t, return_st);    
     return return_st;
@@ -3382,7 +3383,7 @@ get_DECL_ST(gs_t t) {
         // There is a PU-specific map.  Get the ST from the map.
         hash_map<gs_t, ST*, ptrhash> *st_map2 = pu_map[pu];
         if ((*st_map2)[t_index]) {
-          ST* return_st = (*st_map2)[t_index];
+          return_st = (*st_map2)[t_index];
           //assert(return_st);
           return_st = Trans_TLS(t, return_st);
           return return_st;
