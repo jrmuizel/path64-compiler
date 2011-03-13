@@ -570,7 +570,7 @@ W2CF_TRANSLATOR::Get_Pointer_To(TY_IDX pointed_ty)
 {
    TY_IDX ptr = TY_pointer(pointed_ty);
 
-   if (ptr == NULL)
+   if (ptr == (TY_IDX)NULL)
    {
      ptr = Make_Pointer_Type(pointed_ty,FALSE);
    }
