@@ -3664,14 +3664,14 @@ extern int     curr_stmt_stk_il_idx;
 extern long    argchck_suppress_msg[40];
 extern int     num_argchck_suppress_msg;
 
-# ifdef _USE_FOLD_DOT_f
+
 #ifdef KEY /* Bug 5554 */
 extern boolean kludge_input_conversion (char *, int, boolean);
 #else /* KEY Bug 5554 */
 extern void kludge_input_conversion (char *, int);
 #endif /* KEY Bug 5554 */
 extern void kludge_output_conversion (long_type *, int, char *);
-# endif
+
 #ifdef KEY /* Bug 5089 */
 extern  boolean		special_case_fcn_to_sub(int spec_idx);
 extern char *init_msg_processing (char *[]);
