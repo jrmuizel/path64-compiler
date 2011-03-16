@@ -83,67 +83,6 @@ Same_File ( file1, file2 )
   return ( d1.st_ino == d2.st_ino ) && ( d1.st_dev == d2.st_dev );
 }
 
-#ifndef MONGOOSE_BE
-/* ====================================================================
- *
- * Find_File
- *
- * Search for a file with a specific extension.  First look for the
- * name given; if not found, and the name does not already have the
- * given extension, look for the name with the extension appended.
- * The name string passed must have enough space to append the
- * extension, and if that is the form found, it will be appended on
- * return.
- *
- * ====================================================================
- */
-
-BOOL
-Find_File ( name, ext )
-  char *name;	/* The initial filename to search for */
-  char *ext;	/* The default extension to try */
-{
-  INT16 len;
-
-  /* Check for the initial filename: */
-  if ( Is_File(name) ) return TRUE;
-
-  /* Try appending the default extension: */
-  if ( ! Has_Extension ( name, ext ) ) {
-    len = strlen(name);
-    strcat (name, ext);
-    if ( Is_File(name) ) return TRUE;
-    name[len] = 0;	/* Restore the original file name */
-  }
-
-  /* Nothing worked */
-  return FALSE;
-}
-
-/* ====================================================================
- *
- * Has_Extension
- *
- * Determine whether a filename has a given extension.
- *
- * ====================================================================
- */
-
-BOOL
-Has_Extension ( name, ext )
-  char *name;	/* The filename to check */
-  char *ext;	/* The extension to look for */
-{
-  INT16 nlen = strlen(name);
-  INT16 elen = strlen(ext);
-
-  /* If ext is longer than name, no chance: */
-  if ( elen > nlen ) return FALSE;
-
-  /* Otherwise compare the tail of name to ext: */
-  return ( strcmp ( &name[nlen-elen], ext ) == 0 );
-}
-#endif /* MONGOOSE_BE */
 
 
 /* ====================================================================
@@ -211,35 +150,6 @@ Remove_Extension ( name )
 
 
 #ifndef MONGOOSE_BE
-/* ====================================================================
- *
- * Make_Temp_File
- *
- * Make a temporary file name from a temporary directory name, a file
- * name prefix, and the process ID.
- *
- * ====================================================================
- */
-
-char *
-Make_Temp_File ( tmp, prefix )
-  char *tmp;	/* Temporary directory pathname to use */
-  char *prefix;	/* Prefix for file name */
-{
-  INT16 len = strlen(tmp);
-  char *name;	/* Result temporary file pathname */
-
-  name = (char *) malloc (len + 20);
-  if ( len > 0 ) {
-    strcpy ( name, tmp );
-    name[len++] = '/';
-  }
-  strcpy ( &name[len], prefix );
-  len += strlen(prefix);
-  sprintf ( &name[len], "%d", getpid() );
-  return name;
-}
-
 /* current working directory */
 static char *cwd = NULL;
 static INT cwd_size;
@@ -257,46 +167,6 @@ Get_Current_Working_Directory (void)
         }
   }
   return cwd;
-}
-
-/* ====================================================================
- *
- * Full_Path_Name
- *
- * Make a full path name from a base file name.
- *
- * ====================================================================
- */
-
-char *
-Full_Path_Name ( base, path, pathlen )
-  char *base;	/* Base file name (may be full pathname) */
-  char *path;	/* String to receive pathname */
-  INT pathlen;	/* Length of path -- exceeding is a fatal error */
-{
-  INT baselen;
-
-  /* If the base name is NULL, just give up: */
-  if ( base == NULL ) return NULL;
-  baselen = strlen (base);
-  if ( baselen > pathlen ) exit(RC_SYSTEM_ERROR);
-
-  /* If the base name is a full path, just copy it and return: */
-  if (base[0] == '/') {
-    strcpy (path, base);
-    return NULL;
-  }
-
-  /* Otherwise prepend the current working directory name: */
-  if ( cwd == NULL ) {
-	cwd = Get_Current_Working_Directory();
-  	cwd_size = strlen (cwd);
-  }
-  if ( baselen + cwd_size > pathlen ) exit(RC_SYSTEM_ERROR);
-  strcpy (path, cwd);
-  strcat (path, "/");
-  strcat (path, base);
-  return path;
 }
 #endif /* MONGOOSE_BE */
 

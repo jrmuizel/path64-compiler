@@ -320,7 +320,6 @@ extern "C" {
  *
  *   Set_Error_Source ( char *filename );
  *   Set_Error_Line   ( INT linenum );
- *   Set_Error_Srcpos ( SRCPOS srcpos );
  *
  * To suppress line number reporting, e.g. during phases where errors
  * cannot be attributed to particular source lines, set the current
@@ -599,13 +598,6 @@ extern void Set_Error_Source (
 extern void Set_Error_Line (
     INT LineNo
 );
-
-/* Notify error reporter of current source position: */
-#ifdef MONGOOSE_BE
-extern void Set_Error_Srcpos (
-    SRCPOS SrcPos
-);
-#endif
 
 /* Notify error reporter of current compiler phase: */
 extern void Set_Error_Phase (

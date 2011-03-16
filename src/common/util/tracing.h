@@ -349,11 +349,6 @@ extern void Set_Trace_File_internal ( FILE *);
 
 #define TFile Get_Trace_File()
 
-/* Indent the given file according to the current execution stack
- * depth.  This routine is useful for tracing recursive algorithms.
- */
-extern void Nest_Indent ( FILE *file );
-
 extern INT Get_Current_Phase_Number( void );
 extern void Set_Current_Phase_Number(INT);
 

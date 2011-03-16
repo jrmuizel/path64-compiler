@@ -430,29 +430,6 @@ Set_Error_Source ( const char *filename )
 }
 
 
-#ifdef MONGOOSE_BE
-/* ====================================================================
- *
- * Set_Error_Srcpos
- *
- * Set Source_Line and Source_File from SRCPOS
- *
- * ====================================================================
- */
-
-void
-Set_Error_Srcpos ( SRCPOS srcpos )
-{
-  const char *fname = NULL;
-  const char *dname;
-
-  Set_Error_Line(Srcpos_To_Line(srcpos));
-  IR_Srcpos_Filename(srcpos, &fname, &dname);
-  Set_Error_Source(fname);
-}
-#endif
-
-
 /* ====================================================================
  *
  * Set_Error_Line

@@ -34,25 +34,6 @@ extern "C" {
 static char *util_rcs_id = "$Source$ $Revision$";
 #endif /* _KEEP_RCS_ID */
 
-/* Generate a call to an external command:
- * Returns 0 on success, an error code on failure.
- * An error code < 0400 is a Unix error code from errno.h.
- * An error code > 0400 is 0400 plus the signal which killed child.
- */
-extern INT Execute (
-  char *cmd,		/* The command to execute */
-  char **argv,		/* Argument list */
-  char *stdoutfile,	/* stdout for new process to use or NULL */
-  BOOL echo		/* Echo command line? */
-);
-
-/* Get the value of an environment variable: */
-extern char *Get_Environment_Value (
-  char *name,	/* The name of the environment variable */
-  char **envp,	/* Array of environment variables + NULL */
-  char *def	/* Default to return if not found */
-);
-
 /* Check an integer value against bounds: */
 extern INT Check_Range (
   INT val,	/* Check this value */
@@ -60,12 +41,6 @@ extern INT Check_Range (
   INT ubound,	/* ... and this upper bound, */
   INT def	/* ... with this default. */
 );		/* Returns val if in range, def if out of range. */
-
-/* Print tabs and spaces to indent given number of characters: */
-extern void Indent (
-  FILE *f,	/* File to indent */
-  INT16 indent	/* Number of spaces to indent */
-);
 
 /* Mathematically correct integer modulus function: */
 INT Mod(

@@ -21,7 +21,6 @@ set(COMUTIL_SRCS
   c_q_rel.c
   file_util.c
   flags.c
-  linklist.c
   memory.c
   priority_queue.c
   quadsim.c
