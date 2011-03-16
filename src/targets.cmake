@@ -307,12 +307,23 @@ function(path64_set_multiarch_sources src_list_name arch)
 endfunction()
 
 
-# path64 compilers for languages
-set(path64_compiler_C "${Path64_BINARY_DIR}/bin/pathcc")
-set(path64_compiler_CXX "${Path64_BINARY_DIR}/bin/pathCC")
-#set(path64_compiler_Fortran "${Path64_BINARY_DIR}/bin/pathf90")
-# TODO: enable pathf90
-set(path64_compiler_Fortran "${CMAKE_Fortran_COMPILER}")
+option(PATH64_USE_SYSTEM_COMPILER_FOR_TARGET_LIBS
+       "Use system compiler for building target libraries" OFF)
+
+
+if(PATH64_USE_SYSTEM_COMPILER_FOR_TARGET_LIBS)
+    set(path64_compiler_C "${CMAKE_C_COMPILER}")
+    set(path64_compiler_CXX "${CMAKE_CXX_COMPILER}")
+    set(path64_compiler_Fortran "${CMAKE_Fortran_COMPILER}")
+else()
+    # path64 compilers for languages
+    set(path64_compiler_C "${Path64_BINARY_DIR}/bin/pathcc")
+    set(path64_compiler_CXX "${Path64_BINARY_DIR}/bin/pathCC")
+    #set(path64_compiler_Fortran "${Path64_BINARY_DIR}/bin/pathf90")
+    # TODO: enable pathf90
+    set(path64_compiler_Fortran "${CMAKE_Fortran_COMPILER}")
+endif()
+
 
 # Adds library for specified target
 function(path64_add_library_for_target name target type src_base_path)
