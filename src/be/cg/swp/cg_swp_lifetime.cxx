@@ -38,7 +38,6 @@
 
 /* Standard Template Library (STL) related include files */
 #include <functional>
-#ifndef TARG_ST
 using namespace std;
 
 mUINT16 SWP_TN_LIFETIME::_num_lt = 0;
@@ -368,4 +367,4 @@ SWP_LIFETIME::Verify (void) const {
 
   return;
 }
-#endif
+

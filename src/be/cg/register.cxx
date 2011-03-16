@@ -96,11 +96,6 @@
 
 /* Exported data:
  */
-#ifdef TARG_ST
-REGISTER_SUBCLASS_INFO REGISTER_SUBCLASS_info[ISA_REGISTER_SUBCLASS_MAX_LIMIT + 1];
-ISA_REGISTER_CLASS  REGISTER_CLASS_vec[ISA_REGISTER_CLASS_MAX_LIMIT + 1];
-REGISTER_CLASS_INFO REGISTER_CLASS_info[ISA_REGISTER_CLASS_MAX_LIMIT + 1];
-#else
 REGISTER_SUBCLASS_INFO REGISTER_SUBCLASS_info[ISA_REGISTER_SUBCLASS_MAX + 1];
 ISA_REGISTER_CLASS  REGISTER_CLASS_vec[ISA_REGISTER_CLASS_MAX + 1];
 REGISTER_CLASS_INFO REGISTER_CLASS_info[ISA_REGISTER_CLASS_MAX + 1];
@@ -121,30 +116,8 @@ CLASS_REG_PAIR      CLASS_REG_PAIR_fone;
 #ifdef TARG_X8664
 CLASS_REG_PAIR      CLASS_REG_PAIR_f0;
 #endif
-#endif
 const CLASS_REG_PAIR CLASS_REG_PAIR_undef =
   {CREATE_CLASS_N_REG(ISA_REGISTER_CLASS_UNDEFINED,REGISTER_UNDEFINED)};
-#ifdef TARG_ST
-CLASS_REG_PAIR      CLASS_REG_PAIR_zero = CLASS_REG_PAIR_undef;
-CLASS_REG_PAIR      CLASS_REG_PAIR_ep = CLASS_REG_PAIR_undef;
-CLASS_REG_PAIR      CLASS_REG_PAIR_gp = CLASS_REG_PAIR_undef;
-CLASS_REG_PAIR      CLASS_REG_PAIR_sp = CLASS_REG_PAIR_undef;
-CLASS_REG_PAIR      CLASS_REG_PAIR_fp = CLASS_REG_PAIR_undef;
-CLASS_REG_PAIR      CLASS_REG_PAIR_ra = CLASS_REG_PAIR_undef;
-CLASS_REG_PAIR      CLASS_REG_PAIR_rs = CLASS_REG_PAIR_undef;
-CLASS_REG_PAIR      CLASS_REG_PAIR_v0 = CLASS_REG_PAIR_undef;
-CLASS_REG_PAIR      CLASS_REG_PAIR_static_link = CLASS_REG_PAIR_undef;
-CLASS_REG_PAIR      CLASS_REG_PAIR_pfs = CLASS_REG_PAIR_undef;
-CLASS_REG_PAIR      CLASS_REG_PAIR_lc = CLASS_REG_PAIR_undef;
-CLASS_REG_PAIR      CLASS_REG_PAIR_ec = CLASS_REG_PAIR_undef;
-CLASS_REG_PAIR      CLASS_REG_PAIR_true = CLASS_REG_PAIR_undef;
-CLASS_REG_PAIR      CLASS_REG_PAIR_fzero = CLASS_REG_PAIR_undef;
-CLASS_REG_PAIR      CLASS_REG_PAIR_fone = CLASS_REG_PAIR_undef;
-CLASS_REG_PAIR      CLASS_REG_PAIR_link = CLASS_REG_PAIR_undef;
-#endif
-#ifdef TARG_ST // [SC] TLS support
-CLASS_REG_PAIR      CLASS_REG_PAIR_tp = CLASS_REG_PAIR_undef;
-#endif
 #if ISA_REGISTER_MAX >= 64
 const REGISTER_SET REGISTER_SET_EMPTY_SET = { 0 };
 #endif /* ISA_REGISTER_MAX >= 64 */
@@ -157,11 +130,7 @@ enum {
   AS_not_allocatable = 2
 };
 
-#ifdef TARG_ST
-static mUINT8 reg_alloc_status[ISA_REGISTER_CLASS_MAX_LIMIT + 1][REGISTER_MAX + 1];
-#else
 static mUINT8 reg_alloc_status[ISA_REGISTER_CLASS_MAX + 1][REGISTER_MAX + 1];
-#endif
 
 // list of registers that should not be allocated, both globally and locally.
 static vector< pair< ISA_REGISTER_CLASS, REGISTER> > dont_allocate_these_registers;
@@ -221,18 +190,6 @@ REGISTER_SET_Range(UINT low, UINT high)
 #endif /* ISA_REGISTER_MAX < 64 */
 }
 
-#ifdef TARG_ST
-REGISTER_SET REGISTER_SET_Offset (REGISTER_SET set, INT offset)
-{
-  REGISTER_SET result = REGISTER_SET_EMPTY_SET;
-  for (REGISTER i = REGISTER_SET_Choose (set);
-       i != REGISTER_UNDEFINED;
-       i = REGISTER_SET_Choose_Next (set, i)) {
-    result = REGISTER_SET_Union1 (result, i + offset);
-  }
-  return result;
-}
-#endif
 static void
 Increment_Register_Name (
   char **name
@@ -249,28 +206,6 @@ Set_Register_Range_Not_Allocatable (
   char *regname2
 )
 {
-#ifdef TARG_ST
-  // [TTh] Replace initial implementation that was not compatible with naming
-  // convention of extension regiters.
-  // Default   reg naming: <regtype><regid>
-  // Extension reg naming: <regtype><regid>_<subregtype><subregid>
-  int regnum1, regnum2;
-  ISA_REGISTER_CLASS rclass1, rclass2;
-  rclass1 = Register_Class_Num_From_Name(regname1, &regnum1);
-  rclass2 = Register_Class_Num_From_Name(regname2, &regnum2);
-
-  REGISTER reg, reg2;
-  reg  = REGISTER_MIN + regnum1;
-  reg2 = REGISTER_MIN + regnum2;
-
-  if (rclass1 == ISA_REGISTER_CLASS_UNDEFINED || rclass1 != rclass2 || regnum1 > regnum2) {
-    ErrMsg (EC_Inv_Register_Range, regname1, regname2);
-  }
-
-  for (; reg <= reg2; reg++) {
-    dont_allocate_these_registers.push_back( std::make_pair( rclass1, reg ));
-  }
-#else
   char regname[16];
   char *p;	// points to first digit in regname 
   INT count = 0;
@@ -288,7 +223,6 @@ Set_Register_Range_Not_Allocatable (
 	++count; if (count > 200) break;	// avoid infinite loop
   }
   Set_Register_Never_Allocatable (regname);
-#endif
 }
 
 struct Set_DREG_Not_Allocatable 
@@ -340,14 +274,6 @@ Initialize_Register_Class(
   REGISTER_SET       shrink_wrap    = REGISTER_SET_EMPTY_SET;
   REGISTER_SET	     stacked        = REGISTER_SET_EMPTY_SET;
   REGISTER_SET	     rotating       = REGISTER_SET_EMPTY_SET;
-#ifdef TARG_ST
-  REGISTER_SET       eh_return      = REGISTER_SET_EMPTY_SET;
-#endif
-
-#ifdef TARG_ST
-  // Call first target dependent initialization for the register class
-  CGTARG_Initialize_Register_Class (rclass);
-#endif
 
   /* Verify we have a valid rclass and that the type used to implement 
    * a register set is large enough.
@@ -389,22 +315,6 @@ Initialize_Register_Class(
     if ( is_allocatable ) {
       allocatable = REGISTER_SET_Union1(allocatable,reg);
 
-#ifdef TARG_ST
-      if (ABI_PROPERTY_Is_global_ptr(rclass, isa_reg)) {
-	Set_CLASS_REG_PAIR_reg(CLASS_REG_PAIR_gp, reg);
-	Set_CLASS_REG_PAIR_rclass(CLASS_REG_PAIR_gp, rclass);
-	if (Constant_GP) {
-	  //        if (GP_Is_Preserved) {
-	  /* neither caller nor callee saved (always preserved). */
-	} else if (Is_Caller_Save_GP) {
-	  /* caller-saved. */
-	  caller = REGISTER_SET_Union1(caller, reg);
-	} else {
-	  /* callee-saved. */
-	  callee = REGISTER_SET_Union1(callee, reg);
-	}
-      }
-#else
 #ifdef TARG_X8664
       if( FALSE ){
 #else
@@ -420,7 +330,6 @@ Initialize_Register_Class(
           callee = REGISTER_SET_Union1(callee, reg);
         }
       }
-#endif
       else {
         if ( ABI_PROPERTY_Is_callee(rclass, isa_reg) ) {
           callee = REGISTER_SET_Union1(callee, reg);
@@ -439,10 +348,6 @@ Initialize_Register_Class(
 #if !defined(TARG_MIPS) && !defined(TARG_X8664)
         if ( ABI_PROPERTY_Is_stacked(rclass, isa_reg) )
           stacked = REGISTER_SET_Union1(stacked, reg);
-#endif
-#ifdef TARG_ST
-        if ( ABI_PROPERTY_Is_eh_return(rclass, isa_reg) )
-          eh_return = REGISTER_SET_Union1(eh_return, reg);
 #endif
       }
     }
@@ -470,15 +375,8 @@ Initialize_Register_Class(
     }
 #ifdef TARG_MIPS
     else if ( ABI_PROPERTY_Is_global_ptr(rclass, isa_reg) ) {
-#ifdef TARG_ST
-      if (Gen_GP_Relative) {
-	Set_CLASS_REG_PAIR_reg(CLASS_REG_PAIR_gp, reg);
-	Set_CLASS_REG_PAIR_rclass(CLASS_REG_PAIR_gp, rclass);
-      }
-#else
       Set_CLASS_REG_PAIR_reg(CLASS_REG_PAIR_gp, reg);
       Set_CLASS_REG_PAIR_rclass(CLASS_REG_PAIR_gp, rclass);
-#endif
     }
     else if ( ABI_PROPERTY_Is_ret_addr(rclass, isa_reg) ) {
       Set_CLASS_REG_PAIR_reg(CLASS_REG_PAIR_ra, reg);
@@ -525,12 +423,6 @@ Initialize_Register_Class(
       Set_CLASS_REG_PAIR_rclass(CLASS_REG_PAIR_fone, rclass);
     }
 #endif
-#ifdef TARG_ST // [SC] TLS support
-    else if (ABI_PROPERTY_Is_thread_ptr(rclass, isa_reg) ) {
-      Set_CLASS_REG_PAIR_reg(CLASS_REG_PAIR_tp, reg);
-      Set_CLASS_REG_PAIR_rclass(CLASS_REG_PAIR_tp, rclass);
-    }
-#endif
 
   }
 
@@ -545,17 +437,11 @@ Initialize_Register_Class(
   REGISTER_CLASS_register_count(rclass)    = register_count;
   REGISTER_CLASS_stacked(rclass)           = stacked;
   REGISTER_CLASS_rotating(rclass)          = rotating;
-#ifdef TARG_ST
-  REGISTER_CLASS_eh_return(rclass)         = eh_return;
-    REGISTER_CLASS_is_ptr(rclass)
-	= ISA_REGISTER_CLASS_INFO_Is_Ptr(icinfo);
-#endif
   REGISTER_CLASS_can_store(rclass)
 	= ISA_REGISTER_CLASS_INFO_Can_Store(icinfo);
   REGISTER_CLASS_multiple_save(rclass)
 	= ISA_REGISTER_CLASS_INFO_Multiple_Save(icinfo);
 
-#ifndef TARG_ST
   // [CG] Now done in   CGTARG_Initialize_Register_Class () called
   // at the start of this function.
   /* There are multiple integer return regs -- v0 is the lowest
@@ -570,7 +456,6 @@ Initialize_Register_Class(
     Set_CLASS_REG_PAIR_reg(CLASS_REG_PAIR_f0, REGISTER_SET_Choose(func_value));
     Set_CLASS_REG_PAIR_rclass(CLASS_REG_PAIR_f0, rclass);
   }
-#endif
 #endif
 }
 
@@ -638,14 +523,7 @@ REGISTER_Begin(void)
   }
   Initialize_Register_Subclasses();
 
-#ifndef TARG_ST
   Init_Mtype_RegClass_Map();
-#endif
-#ifdef TARG_ST
-  // [CG] Implemented in targ_register.cxx.
-  CGTARG_REGISTER_Begin();
-  CGTARG_DW_DEBUG_Begin();
-#endif
 }
 
 struct Dont_Allocate_Dreg
@@ -742,10 +620,6 @@ REGISTER_Pu_Begin(void)
   }
 
   if ( Get_Trace(TP_CG, 0x10) ) REGISTER_CLASS_Trace_All();
-#ifdef TARG_ST
-  // [CG] Implemented in targ_register.cxx.
-  CGTARG_REGISTER_Pu_Begin();
-#endif
 }
 
 // possibly reset fp to non-allocatable if need a frame pointer
@@ -776,27 +650,6 @@ REGISTER_Reset_FP (void)
  */
 
 
-#ifdef TARG_ST
-/* ====================================================================
- *
- *  REGISTER_SET_Union_Range
- *
- *  See interface description
- *
- * ====================================================================
- */
-REGISTER_SET
-REGISTER_SET_Union_Range(
-  REGISTER_SET   set,
-  REGISTER       low,
-  REGISTER       high
-)
-{
-  FmtAssert ((INT)high >= (INT)low,
-	     ("REGISTER_SET_Union_Range: high < low"));
-  return REGISTER_SET_Union(set, REGISTER_SET_Range(low, high));
-}
-#endif
 /* ====================================================================
  *
  *  REGISTER_SET_Difference_Range
@@ -812,10 +665,6 @@ REGISTER_SET_Difference_Range(
   REGISTER       high
 )
 {
-#ifdef TARG_ST
-  FmtAssert ((INT)high >= (INT)low,
-	     ("REGISTER_SET_Difference_Range: high < low"));
-#endif
   return REGISTER_SET_Difference(set, REGISTER_SET_Range(low, high));
 }
 
@@ -1011,14 +860,7 @@ REGISTER_CLASS_OP_Update_Mapping(
   INT32 i;
   const ISA_OPERAND_INFO *oinfo = ISA_OPERAND_Info(OP_code(op));
 
-#ifdef TARG_ST
-  // The mapping update can only be done for results described in
-  // ISA_OPERAND_INFO structure, which are the fixed results.
-  // (mainly concerned operations with 'var_opnds' flags)
-  for (i = OP_fixed_results(op) - 1; i >= 0; --i)
-#else
   for (i = OP_results(op) - 1; i >= 0; --i) 
-#endif
   {
     TN *tn = OP_result(op,i);
 
@@ -1031,14 +873,7 @@ REGISTER_CLASS_OP_Update_Mapping(
     }
   }
 
-#ifdef TARG_ST
-  // The mapping update can only be done for operands described in
-  // ISA_OPERAND_INFO structure, which are the fixed operands.
-  // (mainly concerned operations with 'var_opnds' flags)
-  for ( i = OP_fixed_opnds(op) - 1; i >= 0; --i )
-#else
   for ( i = OP_opnds(op) - 1; i >= 0; --i ) 
-#endif
   {
     TN *tn = OP_opnd(op,i);
 
@@ -1342,19 +1177,9 @@ REGISTER_CLASS_Trace_All(void)
 void
 Set_Register_Never_Allocatable (char *regname) 
 {
-#ifdef TARG_ST
-  //TB: Change the way register can be define with -ffixed-reg=%rclassname%reg_name
-  int regnum;
-  ISA_REGISTER_CLASS rclass = Register_Class_Num_From_Name(regname, &regnum);
-#else
 	ISA_REGISTER_CLASS rclass;
-#endif
 	REGISTER reg;
 
-#ifdef TARG_ST
-        	if (rclass == ISA_REGISTER_CLASS_UNDEFINED)
-	  ErrMsg (EC_Inv_Register, regname);
-#else
 	switch (regname[0]) {
 	case 'r':
 		rclass = ISA_REGISTER_CLASS_integer;
@@ -1365,12 +1190,7 @@ Set_Register_Never_Allocatable (char *regname)
 	default:
 		FmtAssert(FALSE, ("unexpected reg letter %c", regname[0]));
 	}
-#endif
-#ifdef TARG_ST
-	reg = REGISTER_MIN + regnum;
-#else
 	reg = REGISTER_MIN + atoi(regname+1);
-#endif
 	FmtAssert(reg <= REGISTER_CLASS_last_register(rclass),
 		("%s is not a valid register", regname));
 	dont_allocate_these_registers.push_back( pair< ISA_REGISTER_CLASS, REGISTER>( rclass, reg ));
@@ -1399,50 +1219,4 @@ ISA_REGISTER_CLASS_ASM_Name(ISA_REGISTER_CLASS rc)
   return NULL;
 }
 
-#ifdef TARG_ST
-/* 
- * See interface description. 
- */
-ISA_REGISTER_CLASS
-Register_Class_For_Mtype(TYPE_ID mtype)
-{
-  return CGTARG_Register_Class_For_Mtype(mtype);
-}
-
-ISA_REGISTER_CLASS
-Register_Subclass_For_Mtype(TYPE_ID mtype)
-{
-  return CGTARG_Register_Subclass_For_Mtype(mtype);
-}
-
-ISA_REGISTER_CLASS
-Register_Class_Num_From_Name(char *regname, INT32 *regnum)
-{
-  return CGTARG_Register_Class_Num_From_Name(regname, regnum);
-}
-
-
-/*
- * [CG]: Comment valid up to "[CG]: End of Comment" below.
- * These functions are not useful for our targets. 
- * For now return a conservative answer for all target.
- * If needed these should be put above and implemented as a call to a target
- * dependent function CGTARG_REGISTER_...() in targ_register.cxx.
- */
-BOOL 
-REGISTER_Is_Rotating(ISA_REGISTER_CLASS rclass, REGISTER reg)
-{
-  return FALSE;
-}
-
-REGISTER_SET
-REGISTER_Get_Requested_Rotating_Registers (ISA_REGISTER_CLASS rclass)
-{
-  return REGISTER_SET_EMPTY_SET;
-}
-
-
-/* [CG]: End of Comment on non useful functions. */
-
-#endif
 

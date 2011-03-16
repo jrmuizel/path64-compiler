@@ -322,107 +322,6 @@ intm_t TOP_fold_select(opc_t opc, const opnd_t *opnds) {
   return result;
 }
 
-#ifdef TARG_ST200
-// [CG]: Just to check some ST200 properties
-// Should be moved elsewhere or discarded.
-#define assert_equals(x,y,s) { FmtAssert((INT32)(x) == (INT32)(y), ("unexpect result: %s", s)); }
-static int check_st200_opcodes(void)
-{
-  TN *opnds[3];
-  TN *tn_0 = Gen_Literal_TN(0, 4);
-  TN *tn_1 = Gen_Literal_TN(1, 4);
-  TN *tn_m1 = Gen_Literal_TN(-1, 4);
-  TN *tn_31 = Gen_Literal_TN(31, 4);
-  TN *tn_32 = Gen_Literal_TN(32, 4);
-  TN *tn_255 = Gen_Literal_TN(255, 4);
-  TN *tn_256 = Gen_Literal_TN(256, 4);
-  TN *tn_imin = Gen_Literal_TN(0x80000000, 4);
-  TN *tn_imax = Gen_Literal_TN(0x7fffffff, 4);
-  INT64 res;
-
-  opnds[0] = tn_0; opnds[1] = tn_1;
-  assert_equals(TOP_fold_iadd(TOP_add_r_r_r, opnds), 1, "add_r_r_r 0 1 != 1"); 
-  opnds[0] = tn_0; opnds[1] = tn_m1;
-  assert_equals(TOP_fold_iadd(TOP_add_r_r_r, opnds), -1, "add_r 0 -1 != 1"); 
-  opnds[0] = tn_1; opnds[1] = tn_imax;
-  assert_equals(TOP_fold_iadd(TOP_add_r_r_r, opnds), 0x80000000, "add_r 1 imax != imin"); 
-  opnds[0] = tn_0; opnds[1] = tn_1;
-
-  assert_equals(TOP_fold_isub(TOP_sub_r_r_r, opnds), -1, "sub_r 0 1 != -1"); 
-  opnds[0] = tn_0; opnds[1] = tn_m1;
-  assert_equals(TOP_fold_isub(TOP_sub_r_r_r, opnds), 1, "sub_r 0 -1 != 1"); 
-  opnds[0] = tn_0; opnds[1] = tn_imin;
-  assert_equals(TOP_fold_isub(TOP_sub_r_r_r, opnds), 0x80000000, "sub_r 0 imin != imin"); 
-  opnds[0] = tn_0; opnds[1] = tn_imax;
-  assert_equals(TOP_fold_isub(TOP_sub_r_r_r, opnds), 0x80000001, "sub_r 0 imax != imin+1"); 
-
-  opnds[0] = tn_imin; opnds[1] = tn_0;
-  assert_equals(TOP_fold_shr(TOP_shr_r_r_r, opnds), 0x80000000, "shr_r imin 0 != imin"); 
-  opnds[0] = tn_imin; opnds[1] = tn_1;
-  assert_equals(TOP_fold_shr(TOP_shr_r_r_r, opnds), 0xc0000000, "shr_r imin 1 != 0xc0000000"); 
-  opnds[0] = tn_imin; opnds[1] = tn_31;
-  assert_equals(TOP_fold_shr(TOP_shr_r_r_r, opnds), -1, "shr_r imin 31 != -1"); 
-  opnds[0] = tn_imin; opnds[1] = tn_32;
-  assert_equals(TOP_fold_shr(TOP_shr_r_r_r, opnds), -1, "shr_r imin 32 != -1"); 
-  opnds[0] = tn_imin; opnds[1] = tn_255;
-  assert_equals(TOP_fold_shr(TOP_shr_r_r_r, opnds), -1, "shr_r imin 255 != -1"); 
-  opnds[0] = tn_imin; opnds[1] = tn_256;
-  assert_equals(TOP_fold_shr(TOP_shr_r_r_r, opnds), 0x80000000, "shr_r imin 256 != imin"); 
-  opnds[0] = tn_imin; opnds[1] = tn_m1;
-  assert_equals(TOP_fold_shr(TOP_shr_r_r_r, opnds), -1, "shr_r imin -1 != -1"); 
-
-  opnds[0] = tn_imax; opnds[1] = tn_0;
-  assert_equals(TOP_fold_shr(TOP_shr_r_r_r, opnds), 0x7fffffff, "shr_r imax 0 != imax"); 
-  opnds[0] = tn_imax; opnds[1] = tn_1;
-  assert_equals(TOP_fold_shr(TOP_shr_r_r_r, opnds), 0x3fffffff, "shr_r imax 1 != 0x3fffffff"); 
-  opnds[0] = tn_imax; opnds[1] = tn_31;
-  assert_equals(TOP_fold_shr(TOP_shr_r_r_r, opnds), 0, "shr_r imax 31 != 0"); 
-  opnds[0] = tn_imax; opnds[1] = tn_32;
-  assert_equals(TOP_fold_shr(TOP_shr_r_r_r, opnds), 0, "shr_r imax 32 != 0"); 
-  opnds[0] = tn_imax; opnds[1] = tn_255;
-  assert_equals(TOP_fold_shr(TOP_shr_r_r_r, opnds), 0, "shr_r imax 255 != 0"); 
-  opnds[0] = tn_imax; opnds[1] = tn_256;
-  assert_equals(TOP_fold_shr(TOP_shr_r_r_r, opnds), 0x7fffffff, "shr_r imax 256 != imax"); 
-  opnds[0] = tn_imax; opnds[1] = tn_m1;
-  assert_equals(TOP_fold_shr(TOP_shr_r_r_r, opnds), 0, "shr_r imax -1 != 0"); 
-
-  opnds[0] = tn_imin; opnds[1] = tn_0;
-  assert_equals(TOP_fold_shru(TOP_shru_r_r_r, opnds), 0x80000000, "shru_r imin 1 != imin"); 
-  opnds[0] = tn_imin; opnds[1] = tn_1;
-  assert_equals(TOP_fold_shru(TOP_shru_r_r_r, opnds), 0x40000000, "shru_r imin 1 != 0x40000000"); 
-  opnds[0] = tn_m1; opnds[1] = tn_31;
-  assert_equals(TOP_fold_shru(TOP_shru_r_r_r, opnds), 1, "shru_r -1 31 != 1"); 
-  opnds[0] = tn_m1; opnds[1] = tn_32;
-  assert_equals(TOP_fold_shru(TOP_shru_r_r_r, opnds), 0, "shru_r -1 32 != 0"); 
-  opnds[0] = tn_m1; opnds[1] = tn_255;
-  assert_equals(TOP_fold_shru(TOP_shru_r_r_r, opnds), 0, "shru_r -1 255 != 0"); 
-  opnds[0] = tn_m1; opnds[1] = tn_256;
-  assert_equals(TOP_fold_shru(TOP_shru_r_r_r, opnds), -1, "shru_r -1 256 != -1"); 
-  opnds[0] = tn_m1; opnds[1] = tn_m1;
-  assert_equals(TOP_fold_shru(TOP_shru_r_r_r, opnds), 0, "shru_r -1 -1 != 0"); 
-
-  opnds[0] = tn_1; opnds[1] = tn_0;
-  assert_equals(TOP_fold_shl(TOP_shl_r_r_r, opnds), 1, "shrl_r 1 0 != 0"); 
-  opnds[0] = tn_1; opnds[1] = tn_31;
-  assert_equals(TOP_fold_shl(TOP_shl_r_r_r, opnds), 0x80000000, "shrl_r 1 31 != 0x80000000"); 
-  opnds[0] = tn_1; opnds[1] = tn_32;
-  assert_equals(TOP_fold_shl(TOP_shl_r_r_r, opnds), 0, "shrl_r 1 32 != 0"); 
-  opnds[0] = tn_1; opnds[1] = tn_255;
-  assert_equals(TOP_fold_shl(TOP_shl_r_r_r, opnds), 0, "shrl_r 1 255 != 0"); 
-  opnds[0] = tn_1; opnds[1] = tn_256;
-  assert_equals(TOP_fold_shl(TOP_shl_r_r_r, opnds), 1, "shrl_r 1 256 != 1"); 
-  opnds[0] = tn_1; opnds[1] = tn_m1;
-  assert_equals(TOP_fold_shl(TOP_shl_r_r_r, opnds), 0, "shrl_r 1 -1 != 0"); 
-
-  opnds[0] = tn_m1; opnds[1] = tn_255;
-  assert_equals(TOP_fold_and(TOP_and_r_r_r, opnds), 255, "and_r -1 255 != 255"); 
-  opnds[0] = tn_m1; opnds[1] = tn_255;
-  assert_equals(TOP_fold_or(TOP_and_r_r_r, opnds), -1, "or_r -1 255 != -1"); 
-  opnds[0] = tn_m1; opnds[1] = tn_255;
-  assert_equals(TOP_fold_xor(TOP_xor_r_r_r, opnds), 0xffffff00, "xor_r -1 255 != 0xffffff00"); 
-  return 0;
-}
-#endif
 
 /*
  * Constraints on properties.
@@ -503,10 +402,6 @@ int TOP_check_properties(opc_t opc)
     if (!opc_is(opc, multi))
       TOP_CHECK(opc_opnd_bits(opc,storeval) == TOP_Mem_Bytes(opc)*8);
   }
-
-#ifdef TARG_ST200
-  check_st200_opcodes();
-#endif
 
   return 1;
 }

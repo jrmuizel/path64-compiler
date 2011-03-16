@@ -474,10 +474,6 @@ Convert_BB_Ops(TN_MAP multi_tn_map, BB *bb)
       }
     }
     if (replace) {
-#ifdef TARG_ST
-      // (cbr) Support for guards on false
-      OPS_Copy_Predicate (&new_ops, op);
-#endif
       BB_Insert_Ops_Before (bb, op, &new_ops);
       BB_Remove_Op (bb, op);
       if (rescan_new_ops && OPS_first(&new_ops)) {

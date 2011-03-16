@@ -30,9 +30,6 @@
 #include "defs.h"
 #include "topcode.h"
 #include "tn.h"
-#ifdef TARG_ST
-#include "variants.h"
-#endif
 
 int TOP_check_properties(TOP opc);
 INT64 TOP_fetch_opnd(TOP opc, const TN * const opnds[], int opnd);
@@ -52,10 +49,6 @@ INT64 TOP_fold_move(TOP opc, const TN * const opnds[]);
 INT64 TOP_fold_zext(TOP opc, const TN * const opnds[]);
 INT64 TOP_fold_sext(TOP opc, const TN * const opnds[]);
 INT64 TOP_fold_select(TOP opc, const TN * const opnds[]);
-#ifdef TARG_ST
-INT64 OP_fold_icmp(OP *op, const TN * const opnds[]);
-#else
 INT64 TOP_fold_icmp(TOP opc, const TN * const opnds[]);
-#endif
 
 #endif

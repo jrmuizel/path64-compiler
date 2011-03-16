@@ -34,7 +34,6 @@
 #include "cg_swp_op_vector.h"
 #include "cg_swp_mindist.h"
 
-#ifndef TARG_ST
 
 class SWP_SLACK {
   private:
@@ -127,6 +126,6 @@ SWP_SLACK::operator () (INT x) const {
   
   return _lstart[x] - _estart[x];
 }
-#endif
+
 #endif /* cg_swp_slack_INCLUDED */
 

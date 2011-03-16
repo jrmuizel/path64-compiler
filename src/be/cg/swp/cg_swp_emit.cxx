@@ -178,18 +178,10 @@ SWP_Reorder_OPs(const SWP_OP_vector& op_state,
     bool is_noop = op_state[sorted_op[i]].is_noop;
     OP_scycle(op) = op_state[sorted_op[i]].cycle;
     if (OP_has_predicate(op) &&
-#ifdef TARG_ST
-	TN_is_true_pred(OP_opnd(op, OP_find_opnd_use(op,OU_predicate))) &&
-#else
 	TN_is_true_pred(OP_opnd(op, OP_PREDICATE_OPND)) &&
-#endif
 	!is_noop) {
       INT stage = op_state[sorted_op[i]].cycle / ii;
-#ifdef TARG_ST
-      CGTARG_Predicate_OP(body, op, reg_assign.Get_Control_Predicate(stage), false);
-#else
       Set_OP_opnd(op, OP_PREDICATE_OPND, reg_assign.Get_Control_Predicate(stage));
-#endif
     }
     BB_Append_Op(body, op);
   }
@@ -399,14 +391,7 @@ static void
 SWP_Add_Glue(TN *result, TN *opnd, BB *bb, bool append)
 {
   OPS ops = OPS_EMPTY;
-#ifdef TARG_ST
-  // Arthur: seems like this is necessary in order to isolate
-  //         a copy of True_TN case. Exp_COPY should take care
-  //         of this.
-  Exp_COPY(result, opnd, &ops);
-#else
   SWP_Exp_COPY(result, opnd, &ops); 
-#endif
   OP *op;
   FOR_ALL_OPS_OPs(&ops, op) {
     Set_OP_glue(op);

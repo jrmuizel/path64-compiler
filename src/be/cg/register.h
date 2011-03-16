@@ -134,15 +134,6 @@
  *
  *              float REGISTER_priority[REGISTER_MAX+1];
  *
- * #ifdef TARG_ST
- *  REGISTER iteration:
- *
- *      FOR_ALL_NREGS(start_reg, nregs, r)
- *
- *          Apply following statement to each register in the range
- *            [ start_reg : start_reg + nregs - 1 ]
- *
-#endif
  *
  *  Special purpose registers:
  *
@@ -241,16 +232,6 @@
  *          The empty REGISTER_SET.
  *
  *
-#ifdef TARG_ST
- *	REGISTER_SET REGISTER_SET_Union_Range(
- *          REGISTER_SET  set,
- *          REGISTER      low,
- *          REGISTER      high
- *      )
- *
- *          Return Union('set',{'low':'high'}).  In other words,
- *	    'set', with the elements low..high added if they were not present.
-#endif
  *
  *	REGISTER_SET REGISTER_SET_Difference_Range(
  *          REGISTER_SET  set,
@@ -317,16 +298,6 @@
  *
  *          Is 'reg' a member of 'set'?
  *
-#ifdef TARG_ST
- *      BOOL REGISTER_SET_MembersP(
- *          REGISTER_SET set,
- *          REGISTER     reg,
- *          INT          nregs
- *      )
- *
- *          Return TRUE if and only if
- *          SET contains all of [REG..REG+NREGS-1].
-#endif
  *
  *      BOOL REGISTER_SET_IntersectsP(
  *          REGISTER_SET set1,
@@ -739,11 +710,6 @@ extern const REGISTER_SET REGISTER_SET_EMPTY_SET;
 #define REGISTER_MIN                ((REGISTER) 1)
 #define REGISTER_MAX                ((REGISTER) (ISA_REGISTER_MAX+REGISTER_MIN))
 
-#ifdef TARG_ST
-#  define FOR_ALL_NREGS(reg, nregs, r) \
-     FmtAssert(reg != REGISTER_UNDEFINED, ("FOR_ALL_NREGS: undefined register\n")); \
-     for (r = (reg); r < ((reg) + (nregs)); r++)
-#endif
 
 /* Exported data
  * =============
@@ -754,18 +720,10 @@ extern const REGISTER_SET REGISTER_SET_EMPTY_SET;
  */
 typedef struct {
   mUINT8            reg_machine_id[REGISTER_MAX + 1];
-#ifdef TARG_ST
-  // [Reconfigurability] Extended supported register width
-  mUINT16           reg_bit_size[REGISTER_MAX + 1];
-#else
   mUINT8            reg_bit_size[REGISTER_MAX + 1];
-#endif
   mBOOL             reg_allocatable[REGISTER_MAX + 1];
   const char       *reg_name[REGISTER_MAX + 1];
 
-#ifdef TARG_ST
-  mBOOL             is_ptr;
-#endif
   mBOOL             can_store;
   mBOOL		    multiple_save;
   mUINT16           register_count;
@@ -779,27 +737,16 @@ typedef struct {
   REGISTER_SET      shrink_wrap;
   REGISTER_SET	    stacked;
   REGISTER_SET      rotating;
-#ifdef TARG_ST
-  REGISTER_SET      eh_return;
-#endif
 } REGISTER_CLASS_INFO;
 
 
 extern REGISTER_CLIENT_CONST ISA_REGISTER_CLASS
-#ifdef TARG_ST
-REGISTER_CLASS_vec[ISA_REGISTER_CLASS_MAX_LIMIT + 1];
-#else
 REGISTER_CLASS_vec[ISA_REGISTER_CLASS_MAX + 1];
-#endif
 
 /* Cached information about each ISA_REGISTER_CLASS:
  */
 extern REGISTER_CLIENT_CONST REGISTER_CLASS_INFO
-#ifdef TARG_ST
-REGISTER_CLASS_info[ISA_REGISTER_CLASS_MAX_LIMIT + 1];
-#else
 REGISTER_CLASS_info[ISA_REGISTER_CLASS_MAX + 1];
-#endif
 
 /* Accessing cached information about a ISA_REGISTER_CLASS
  */
@@ -832,12 +779,6 @@ REGISTER_CLASS_info[ISA_REGISTER_CLASS_MAX + 1];
                                 (REGISTER_CLASS_info[x].function_argument)
 #define REGISTER_CLASS_shrink_wrap(x)				\
                                 (REGISTER_CLASS_info[x].shrink_wrap)
-#ifdef TARG_ST
-#define REGISTER_CLASS_eh_return(x)				\
-                                (REGISTER_CLASS_info[x].eh_return)
-#define REGISTER_CLASS_is_ptr(x)				\
-                                (REGISTER_CLASS_info[x].is_ptr)
-#endif
 #define REGISTER_CLASS_can_store(x)				\
                                 (REGISTER_CLASS_info[x].can_store)
 #define REGISTER_CLASS_multiple_save(x)				\
@@ -875,11 +816,7 @@ typedef struct {
 /* Cached information about each ISA_REGISTER_SUBCLASS:
  */
 extern REGISTER_CLIENT_CONST REGISTER_SUBCLASS_INFO
-#ifdef TARG_ST
-REGISTER_SUBCLASS_info[ISA_REGISTER_SUBCLASS_MAX_LIMIT + 1];
-#else
 REGISTER_SUBCLASS_info[ISA_REGISTER_SUBCLASS_MAX + 1];
-#endif
 
 /* Accessing cached information about a ISA_REGISTER_SUBCLASS
  */
@@ -983,13 +920,6 @@ extern CLASS_REG_PAIR		CLASS_REG_PAIR_rs;
 #define REGISTER_CLASS_rs	CLASS_REG_PAIR_rclass(CLASS_REG_PAIR_rs)
 #define CLASS_AND_REG_rs	CLASS_REG_PAIR_class_n_reg(CLASS_REG_PAIR_rs)
 
-#ifdef TARG_ST /* [SC] TLS support */
-extern CLASS_REG_PAIR           CLASS_REG_PAIR_tp;
-#define REGISTER_tp             CLASS_REG_PAIR_reg(CLASS_REG_PAIR_tp)
-#define REGISTER_CLASS_tp	CLASS_REG_PAIR_rclass(CLASS_REG_PAIR_tp)
-#define CLASS_AND_REG_tp	CLASS_REG_PAIR_class_n_reg(CLASS_REG_PAIR_tp)
-#endif
-
 
 /* Exported functions
  * ==================
@@ -1014,10 +944,6 @@ REGISTER_CLASS_OP_Update_Mapping(
  * functions are defined in register.c.
  */
 extern REGISTER_SET REGISTER_SET_Range(UINT low, UINT high);
-
-#ifdef TARG_ST
-extern REGISTER_SET REGISTER_SET_Offset (REGISTER_SET set, INT offset);
-#endif
 
 inline BOOL
 REGISTER_SET_EqualP(
@@ -1203,26 +1129,7 @@ REGISTER_SET_MemberP(
   return (  REGISTER_SET_ELEM(set, REGISTER_SET_WORD_IDX(bit))
 	  & ((REGISTER_SET_WORD)1 << REGISTER_SET_BIT_IDX(bit))) != 0;
 }
-#ifdef TARG_ST
-// Return true if and only if [REG..REG+NREGS-1] are all in SET.
-inline BOOL
-REGISTER_SET_MembersP(
-		      REGISTER_SET set,
-		      REGISTER     reg,
-		      INT          nregs
-		      )
-{
-  return REGISTER_SET_ContainsP (set,
-				 REGISTER_SET_Range (reg, reg+nregs-1));
-}
 
-extern REGISTER_SET
-REGISTER_SET_Union_Range(
-  REGISTER_SET   set,
-  REGISTER       low,
-  REGISTER       high
-);
-#endif
 extern REGISTER_SET
 REGISTER_SET_Difference_Range(
   REGISTER_SET   set,
@@ -1342,9 +1249,6 @@ extern ISA_REGISTER_CLASS Register_Class_Num_From_Name(char *regname, INT32 *reg
 extern char *ISA_REGISTER_CLASS_Symbol(ISA_REGISTER_CLASS rc);
 extern char *ISA_REGISTER_CLASS_ASM_Name(ISA_REGISTER_CLASS rc);
 
-#if TARG_ST
-extern ISA_REGISTER_CLASS Register_Class_For_Mtype(TYPE_ID mtype);
-#else
 inline ISA_REGISTER_CLASS Register_Class_For_Mtype(TYPE_ID mtype)
 {
   extern mISA_REGISTER_CLASS Mtype_RegClass_Map[MTYPE_LAST+1];
@@ -1352,17 +1256,10 @@ inline ISA_REGISTER_CLASS Register_Class_For_Mtype(TYPE_ID mtype)
 	 ? (ISA_REGISTER_CLASS)Mtype_RegClass_Map[mtype] 
 	 : ISA_REGISTER_CLASS_UNDEFINED;
 }
-#endif
+
 extern void Init_Mtype_RegClass_Map(void);
 extern void Mark_Specified_Registers_As_Not_Allocatable (void);
-#ifdef TARG_ST
-// Returns TRUE if the rclass is the predicate register class.
-extern BOOL Is_Predicate_REGISTER_CLASS(ISA_REGISTER_CLASS rclass);
-#endif
-#ifdef TARG_ST
-// Returns TRUE if stacked register set exists for <rclass>.
-extern BOOL REGISTER_Has_Stacked_Registers(ISA_REGISTER_CLASS rclass);
-#endif
+
 // Returns TRUE if rotating register set exists for <rclass>.
 extern BOOL REGISTER_Has_Rotating_Registers(ISA_REGISTER_CLASS rclass);
 
@@ -1373,23 +1270,7 @@ extern BOOL REGISTER_Is_Rotating(ISA_REGISTER_CLASS rclass, REGISTER reg);
 // Returns the set of allocated rotating registers
 extern REGISTER_SET REGISTER_Get_Requested_Rotating_Registers (ISA_REGISTER_CLASS rclass);
 
-#ifdef TARG_ST
-// Maximum number of sub-parts in Composite registers.
-// Set to a max value for all targets.
-#define REGISTER_COMPOSITE_SIZE_MAX  4
-#endif
 
-
-#ifdef TARG_ST
-//[TB]:Add a macro that returns the dwarf register ID as implemented
-//in targinfo/abi/abi_properties.cxx. Do not use any more machine_id for that.
-#define REGISTER_Get_Debug_Reg_Id(rclass,reg)  Get_Debug_Reg_Id(rclass, reg, TN_size(Build_Dedicated_TN(rclass, reg, 0)) * CHAR_BIT)
-#endif
-
-#ifdef TARG_ST
-/* [CG] Target specific register interface is defined in lai/register_targ.h. */
-#include "register_targ.h"
-#endif
 #include "register_targ.h"
 
 #endif /* REGISTER_INCLUDED */

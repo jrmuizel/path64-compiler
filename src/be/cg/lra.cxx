@@ -51,17 +51,6 @@
  * =======================================================================
  * =======================================================================
  */
-/*
- * [TARG_ST] Improvements:
- * - Overlap coalescing
- *   ------------------
- *   Enable coalescing of overlapping live-ranges linked by extracts or moves,
- *   as long as there is no related definition within the overlap.
- *   Overlap coalescing is implemented as a LR tree, where:
- *     - A parent relationship in the tree means that the child is a copy
- *       or an extract of the parent,
- *     - All nodes of the tree can be safely coalesced.
- */
 
 #ifdef USE_PCH
 #include "cg_pch.h"
@@ -92,9 +81,6 @@
 #include "gtn_set.h"
 #include "gtn_tn_set.h"
 #include "tn_set.h"
-#ifdef TARG_ST
-#include "tn_list.h"
-#endif
 #include "cg.h"
 #include "cg_flags.h"
 #include "cg_internal.h"
@@ -115,25 +101,18 @@
 #include "targ_proc_properties.h"
 #include "hb_sched.h"
 #include "ebo.h"
-#ifdef TARG_ST
-#include "cg_color.h"
-#endif
 
 #ifdef TARG_X8664
 #include "config_lno.h"  // for LNO_Run_Simd
 #endif
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 static BOOL large_asm_clobber_set[ISA_REGISTER_CLASS_MAX+1];
 #endif
 
 #define TN_is_local_reg(r)   (!(TN_is_dedicated(r) | TN_is_global_reg(r)))
 
 /* regs that need to be saved at prolog and restored at epilog: */
-#ifdef TARG_ST
-static REGISTER_SET Callee_Saved_Regs_Used[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
 static REGISTER_SET Callee_Saved_Regs_Used[ISA_REGISTER_CLASS_MAX+1];
-#endif
 
 
 /* Data structure to keep a list of available registers in each 
@@ -143,35 +122,19 @@ typedef struct {
   BOOL reg[REGISTER_MAX+1];
 } AVAIL_REGS;
 
-#ifdef TARG_ST
-static AVAIL_REGS avail_regs[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
 static AVAIL_REGS avail_regs[ISA_REGISTER_CLASS_MAX+1];
-#endif
 
 /* Set of available registers in each register class. */
-#ifdef TARG_ST
-static REGISTER_SET avail_set[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
 static REGISTER_SET avail_set[ISA_REGISTER_CLASS_MAX+1];
-#endif
 
 /* Set of excluded registers in each register class. */
-#ifdef TARG_ST
-static REGISTER_SET exclude_set[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
 static REGISTER_SET exclude_set[ISA_REGISTER_CLASS_MAX+1];
-#endif
 
 // Keeps track of the last register assigned for each register class.
 // This is used to simulate a round-robin allocation of registers.
-#ifdef TARG_ST
-static REGISTER last_assigned_reg[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
 static REGISTER last_assigned_reg[ISA_REGISTER_CLASS_MAX+1];
-#endif
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 // Data structure to keep track of the OP number that a register was last
 // freed.  Supports the least-recently-used method of register assignment.
 typedef struct {
@@ -186,21 +149,14 @@ static VECTOR Insts_Vector;
 #define Set_OP_VECTOR_element(v,i,op)   (VECTOR_element(v,i) = (void *)op)
 
 /* set of registers that are live through the basic block */
-#ifdef TARG_ST
-static REGISTER_SET livethrough[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
 static REGISTER_SET livethrough[ISA_REGISTER_CLASS_MAX+1];
-#endif
+
 // State variable to indicate if we need to compute the livethrough set.
 static BOOL livethrough_computed;
 
 /* If a result of an undeletable OP is not needed, */
 /* it may be replaced with one of these TNs.         */
-#ifdef TARG_ST
-static TN *unused_tn_def[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
 static TN *unused_tn_def[ISA_REGISTER_CLASS_MAX+1];
-#endif
 
 
 static BOOL do_global_locking = FALSE;
@@ -218,60 +174,6 @@ static BOOL Trace_LRA_Entry_Exit;       /* -Wb,-tt54:0x08 */
 static BOOL Trace_Move_GRA_Spills;      /* -Wb,-tt54:0x10 */
 // 	Trace_Fat_Points		/* -Wb,-tt54:0x20 */
 
-#ifdef TARG_ST
-/* [SC] In a 2-D array indexed by class and subclass, it is
- * often convenient to treat the array[cl][ISA_REGISTER_SUBCLASS_UNDEFINED]
- * element as representing the base class.  In this case we need to
- * include the ISA_REGISTER_SUBCLASS_UNDEFINED value in an iteration over
- * subclasses.  The normal iterator, FOR_ALL_ISA_REGISTER_SUBCLASS, does
- * not do this, so here make the desired iterator.
- * It relies omn the fact that ISA_REGISTER_SUBCLASS_UNDEFINED == 0.
- */
-#define FOR_ALL_ISA_REGISTER_SUBCLASS_AND_UNDEFINED(sc) \
-	for (sc = ISA_REGISTER_SUBCLASS (0); \
-	     sc <= ISA_REGISTER_SUBCLASS_MAX; \
-	     sc = (ISA_REGISTER_SUBCLASS)(sc + 1))
-
-/* [SC] Data structure to keep track of the live range of each dedicated
- * register.  We record only one live range for each dedicated register:
- * if it has multiple live ranges in a single block then we are
- * pessimistic.  This matches the original open64 method of using a
- * LIVE_RANGE structure to track the live range of dedicated registers,
- * which I have abandoned because it does not work well for multi-register
- * TNs.  (The open64 mapped assigned global TNs to the live range for
- * the dedicated register the TN was assigned to.  For multi-register TNs,
- * this creates a problem: there are multiple dedicated registers, so which
- * one should the TN be mapped to?)
- */
-static struct {
-  mINT32 first_def;
-  mINT32 last_use;
-  mINT32 exposed_use;
-}
-#ifdef TARG_ST
-  ded_reg_liveness[ISA_REGISTER_CLASS_MAX_LIMIT+1][REGISTER_MAX+1];
-#else
-  ded_reg_liveness[ISA_REGISTER_CLASS_MAX+1][REGISTER_MAX+1];
-#endif
-inline INT32 ded_reg_first_def (ISA_REGISTER_CLASS cl, REGISTER r) {
-  return ded_reg_liveness[cl][r].first_def;
-}
-static void Set_ded_reg_first_def (ISA_REGISTER_CLASS cl, REGISTER r, INT32 v) {
-  ded_reg_liveness[cl][r].first_def = v;
-}
-inline INT32 ded_reg_last_use (ISA_REGISTER_CLASS cl, REGISTER r) {
-  return ded_reg_liveness[cl][r].last_use;
-}
-static void Set_ded_reg_last_use (ISA_REGISTER_CLASS cl, REGISTER r, INT32 v) {
-  ded_reg_liveness[cl][r].last_use = v;
-}
-inline INT32 ded_reg_exposed_use (ISA_REGISTER_CLASS cl, REGISTER r) {
-  return ded_reg_liveness[cl][r].exposed_use;
-}
-static void Set_ded_reg_exposed_use (ISA_REGISTER_CLASS cl, REGISTER r, INT32 v) {
-  ded_reg_liveness[cl][r].exposed_use = v;
-}
-#endif
 
 /* Data structure to keep track of the local live range for each TN. 
  * There is only one live range for a TN even if there are multiple
@@ -288,299 +190,17 @@ typedef struct live_range {
   mUINT8 flags;         /* misc. flags (see definition below) */
   mREGISTER prefer_reg; /* if def of live range is a preferencing copy. */
   mINT16 first_spill;    /* first spill of exposed global */
-#ifdef TARG_ST
-  ISA_REGISTER_SUBCLASS sc; /* Smallest subclass used to reference the live range tn */
-  OP *special_def_op;    /* If this live range is defined by an extract or copy 
-			    operation, this is the operation */
-  mINT32 ovcoal_local_rank;/* Rank of current LR within parent register hierarchy */
-  mINT32 ovcoal_init_ver;  /* Value id obtained at first definition point */
-  mINT32 ovcoal_last_ver;  /* Value id obtained at last definition point */
-  struct live_range *ovcoal_parent;  /* Parent node in overlap coalescing tree */
-  struct live_range *ovcoal_child;   /* First child node in overlap coalescing tree */
-  struct live_range *ovcoal_sibling; /* next sibling node in overlap coalescing tree */
-  struct live_range *next_alias; /* Global live ranges can alias, where each
-				    alias is allocated to the same registers.
-				    We chain all aliases together in a circular
-				    list. */
-  TN_LIST *spill_tns;   /* The TNs used when this live range is spilled. */
-#endif
   struct live_range *next; /* pointer to next live range */
 } LIVE_RANGE;
 
 #define LR_tn(lr)               ((lr)->tn)
-#ifdef TARG_ST
-inline INT32 LR_first_def (const LIVE_RANGE *lr) {
-  return lr->first_def;
-}
-inline BOOL LR_early_clobber (const LIVE_RANGE *lr); // forward
-static void Set_LR_early_clobber (LIVE_RANGE *lr); // forward
-static void Set_LR_first_def (LIVE_RANGE *lr, INT32 v,
-			      BOOL early_clobber = FALSE) {
-  lr->first_def = v;
-  if (early_clobber) {
-    Set_LR_early_clobber (lr);
-    --v;
-  }
-  TN *tn = LR_tn(lr);
-  if (!TN_is_local_reg(tn)
-      && TN_register (tn) != REGISTER_UNDEFINED) {
-    ISA_REGISTER_CLASS cl = TN_register_class(tn);
-    REGISTER reg;
-    FOR_ALL_REGISTER_SET_members (TN_registers (tn), reg) {
-      if (ded_reg_first_def(cl, reg) > v) {
-	Set_ded_reg_first_def(cl, reg, v);
-      }
-    }
-  }
-}
-inline INT32 LR_effective_first_def (const LIVE_RANGE *lr) {
-  return lr->first_def - (LR_early_clobber(lr) ? 1 : 0);
-}
-inline INT32 LR_last_use (const LIVE_RANGE *lr) {
-  return lr->last_use;
-}
-static void Set_LR_last_use (LIVE_RANGE *lr, INT32 v) {
-  lr->last_use = v;
-  TN *tn = LR_tn(lr);
-  if (!TN_is_local_reg(tn)
-      && TN_register (tn) != REGISTER_UNDEFINED) {
-    ISA_REGISTER_CLASS cl = TN_register_class(tn);
-    REGISTER reg;
-    FOR_ALL_REGISTER_SET_members (TN_registers (tn), reg) {
-      if (ded_reg_last_use(cl, reg) < v) {
-	Set_ded_reg_last_use(cl, reg, v);
-      }
-    }
-  }
-}
-inline INT32 LR_exposed_use (const LIVE_RANGE *lr) { return lr->exposed_use; }
-static void Set_LR_exposed_use (LIVE_RANGE *lr, INT32 v) {
-  lr->exposed_use = v;
-  TN *tn = LR_tn(lr);
-  if (!TN_is_local_reg(tn)
-      && TN_register (tn) != REGISTER_UNDEFINED) {
-    ISA_REGISTER_CLASS cl = TN_register_class(tn);
-    REGISTER reg;
-    FOR_ALL_REGISTER_SET_members (TN_registers (tn), reg) {
-      if (ded_reg_exposed_use(cl, reg) < v) {
-	Set_ded_reg_exposed_use(cl, reg, v);
-      }
-    }
-  }
-}
-/* Set definer of current lr (either copy or extract) */
-static void Set_LR_special_def_op (LIVE_RANGE *lr, OP *op) {
-  lr->special_def_op = op;
-}
-inline OP *LR_special_def_op (const LIVE_RANGE *lr) {
-  return (lr->special_def_op);
-}
-inline OP *LR_extract_op (const LIVE_RANGE *lr) {
-  return ((lr->special_def_op && OP_extract(lr->special_def_op))?lr->special_def_op:NULL);
-}
-inline OP *LR_copy_op (const LIVE_RANGE *lr) {
-  return ((lr->special_def_op && OP_copy(lr->special_def_op))?lr->special_def_op:NULL);
-}
-inline LIVE_RANGE *LR_next_alias (const LIVE_RANGE *lr) { return lr->next_alias; }
-static void Set_LR_next_alias (LIVE_RANGE *lr, LIVE_RANGE *alias) {
-  lr->next_alias = alias;
-}
-inline TN_LIST *LR_spill_tns (const LIVE_RANGE *lr) { return lr->spill_tns; }
-static void Push_LR_spill_tns (LIVE_RANGE *lr, TN *tn, MEM_POOL *pool) {
-  lr->spill_tns =  TN_LIST_Push (tn, lr->spill_tns, pool);
-}
-inline mINT32 LR_ovcoal_local_rank(LIVE_RANGE *lr) {
-  return (lr->ovcoal_local_rank);
-}
-inline void Set_LR_ovcoal_local_rank(LIVE_RANGE *lr, mINT32 rank) {
-  lr->ovcoal_local_rank = rank;
-}
-inline mINT32 LR_ovcoal_init_ver(LIVE_RANGE *lr) {
-  return (lr->ovcoal_init_ver);
-}
-static void Set_LR_ovcoal_init_ver(LIVE_RANGE *lr, mINT32 v) {
-  lr->ovcoal_init_ver = v;
-}
-inline mINT32 LR_ovcoal_last_ver(LIVE_RANGE *lr) {
-  return (lr->ovcoal_last_ver);
-}
-static void Set_LR_ovcoal_last_ver(LIVE_RANGE *lr, mINT32 v) {
-  lr->ovcoal_last_ver = v;
-}
-inline LIVE_RANGE *LR_ovcoal_parent(LIVE_RANGE *lr) {
-  return (lr->ovcoal_parent);
-}
-static void Set_LR_ovcoal_parent(LIVE_RANGE *lr, LIVE_RANGE *parent_lr) {
-  lr->ovcoal_parent = parent_lr;
-}
-inline LIVE_RANGE *LR_ovcoal_child(LIVE_RANGE *lr) {
-  return (lr->ovcoal_child);
-}
-inline void Set_LR_ovcoal_child(LIVE_RANGE *lr, LIVE_RANGE *child_lr) {
-  lr->ovcoal_child = child_lr;
-}
-inline LIVE_RANGE *LR_ovcoal_sibling(LIVE_RANGE *lr) {
-  return (lr->ovcoal_sibling);
-}
-inline void Set_LR_ovcoal_sibling(LIVE_RANGE *lr, LIVE_RANGE *sibling_lr) {
-  lr->ovcoal_sibling = sibling_lr;
-}
-/* Return the rank of 'lr' within register hierarchy of the root node
- * of its coalescing tree */
-static mINT32 LR_ovcoal_rank(LIVE_RANGE *lr) {
-  LIVE_RANGE *lr_tmp = lr;
-  mINT32 rank = 0;
-  while (lr_tmp) {
-    rank  += lr_tmp->ovcoal_local_rank;
-    lr_tmp = lr_tmp->ovcoal_parent;
-  }
-  return (rank);
-}
-/* Add 'sibling_lr' in sibling cyclic list of 'lr' */
-static void Add_LR_ovcoal_sibling(LIVE_RANGE *lr, LIVE_RANGE *sibling_lr) {
-  LIVE_RANGE *last_lr = sibling_lr;
-  while (last_lr->ovcoal_sibling != sibling_lr) {
-    last_lr = last_lr->ovcoal_sibling;
-  }
-  last_lr->ovcoal_sibling = lr->ovcoal_sibling;
-  lr->ovcoal_sibling = sibling_lr;
-}
-/* Attach 'child_lr' to 'lr' coalescing tree */
-static void Add_LR_ovcoal_child(LIVE_RANGE *lr, LIVE_RANGE *child_lr, mINT32 local_rank) {
-  if (!lr->ovcoal_child) {
-    lr->ovcoal_child = child_lr;
-  }
-  else {
-    Add_LR_ovcoal_sibling(lr->ovcoal_child, child_lr);
-  }
-  Set_LR_ovcoal_parent(child_lr, lr);
-  Set_LR_ovcoal_local_rank(child_lr, local_rank);
-}
-/* Detach 'child_lr' from 'lr' coalescing tree */
-static void Remove_LR_ovcoal_child(LIVE_RANGE *lr, LIVE_RANGE *child_lr) {
-  if (child_lr->ovcoal_sibling == child_lr) {
-    lr->ovcoal_child = NULL;
-  }
-  else {
-    LIVE_RANGE *succ_lr = child_lr->ovcoal_sibling;
-    LIVE_RANGE *pred_lr = succ_lr;
-    while (pred_lr->ovcoal_sibling != child_lr) {
-      pred_lr = pred_lr->ovcoal_sibling;
-    }
-    pred_lr->ovcoal_sibling = succ_lr;
-    child_lr->ovcoal_sibling = child_lr;
-    if (lr->ovcoal_child == child_lr) {
-      lr->ovcoal_child = pred_lr;
-    }
-  }
-  child_lr->ovcoal_parent     = NULL;
-  child_lr->special_def_op    = NULL;
-  child_lr->ovcoal_local_rank = 0;
-}
-/* Fully detach 'lr' from its overlap coalescing tree.
- * Itself, its parent an its children will belongs to separate trees */
-static void Detach_LR_ovcoal(LIVE_RANGE *lr) {
-  LIVE_RANGE *child_lr, *next_lr;
-  if (lr->ovcoal_child) {
-    child_lr = lr->ovcoal_child;
-    do {
-      next_lr = child_lr->ovcoal_sibling;
-      child_lr->ovcoal_sibling = child_lr;
-      child_lr->ovcoal_parent  = NULL;
-      child_lr->special_def_op = NULL;
-      child_lr = next_lr;
-    } while (child_lr->ovcoal_sibling != child_lr);
-    lr->ovcoal_child = NULL;
-  }
-  if (lr->ovcoal_parent) {
-    Remove_LR_ovcoal_child(lr->ovcoal_parent, lr);
-  }
-}
-/* Return TRUE if 'is_ancestor_lr' belongs to ancestor nodes of 'lr'
- * in the coalescing tree, FALSE otherwise */
-static BOOL LR_ovcoal_is_ancestor(LIVE_RANGE *lr, LIVE_RANGE *is_ancestor_lr) {
-  LIVE_RANGE *lr_tmp = lr->ovcoal_parent;
-  while (lr_tmp) {
-    if (lr_tmp == is_ancestor_lr) {
-      return (TRUE);
-    }
-    lr_tmp = lr_tmp->ovcoal_parent;
-  }
-  return (FALSE);
-}
-/* Return root node in overlap coalescing tree */
-static LIVE_RANGE *LR_ovcoal_root(LIVE_RANGE *lr) {
-  LIVE_RANGE *lr_tmp = lr;
-  while (lr_tmp->ovcoal_parent) {
-    lr_tmp = lr_tmp->ovcoal_parent;
-  }
-  return (lr_tmp);
-}
-#else
 #define LR_first_def(lr)        ((lr)->first_def)
 #define LR_last_use(lr)         ((lr)->last_use)
 #define LR_exposed_use(lr)      ((lr)->exposed_use)
-#endif
 #define LR_def_cnt(lr)          ((lr)->def_cnt)
 #define LR_use_cnt(lr)          ((lr)->use_cnt)
 #define LR_flags(lr)            ((lr)->flags)
-#ifdef TARG_ST
-// [TTh] When using overlap coalescing, the preference might be
-// retrieved from ancestor nodes of the coalescing tree.
-// The preference is chosen by the following algorithm, which stop when
-// a valid register/preference is found (highest priority first):
-// #1 Select register(s) allocated to parent in coalescing tree,
-// #2 Select lr->prefer_reg,
-// #3 Select parent->prefer_reg.
-// #4 Select parent->parent register(s)
-// #5 Select parent->parent->prefer_reg
-// Repeat #4 and #5 until the root of the coalescing tree is reached
-// or a valid register/preference is found.
-static REGISTER LRA_TN_register(TN *tn);
-static REGISTER
-LR_prefer_reg(LIVE_RANGE *lr) {
-  mINT32 rank;
-  REGISTER parent_reg;
-  if (!LRA_overlap_coalescing) {
-    return (lr->prefer_reg);
-  }
-  else {
-    if (lr->ovcoal_parent) {
-      parent_reg = LRA_TN_register(LR_tn(lr->ovcoal_parent));
-      if ((parent_reg != REGISTER_UNDEFINED) && (parent_reg <= REGISTER_MAX)) {
-	// Select parent register(s)
-	return (parent_reg + lr->ovcoal_local_rank);
-      }
-    }
-    if (lr->prefer_reg != REGISTER_UNDEFINED) {
-      // Select lr proper preference
-      return (lr->prefer_reg);
-    }
-    if (lr->ovcoal_parent) {
-      INT rank_offset = lr->ovcoal_local_rank;
-      LIVE_RANGE *par = lr->ovcoal_parent;
-      while (par) {
-	parent_reg = LRA_TN_register(LR_tn(par));
-	if ((parent_reg != REGISTER_UNDEFINED) && (parent_reg <= REGISTER_MAX)) {
-	  // Select ancestor reg
-	  return (parent_reg + rank_offset);
-	}
-	else if (par->prefer_reg != REGISTER_UNDEFINED) {
-	  // Select ancestor preference
-	  return (par->prefer_reg + rank_offset);
-	}
-	rank_offset += par->ovcoal_local_rank;
-	par = par->ovcoal_parent;
-      }
-    }
-    // No preference found
-    return (REGISTER_UNDEFINED);
-  }
-}
-#define Set_LR_prefer_reg(lr, r) ((lr)->prefer_reg=(r))
-#else
 #define LR_prefer_reg(lr)       ((lr)->prefer_reg)
-#endif
 #define LR_first_spill(lr)	((lr)->first_spill)
 #define LR_next(lr)             ((lr)->next)
 
@@ -590,11 +210,6 @@ LR_prefer_reg(LIVE_RANGE *lr) {
 #define LR_FAT_ALLOCATED 0x8	// LR was allocated real register by fat point
                                 // calculation
 #define LR_BYTEABLE      0x10	// LR requires a byte-accessible register
-#ifdef TARG_ST
-#define LR_EARLY_CLOBBER 0x10   // LR is written early at its first def.
-#define LR_OVCOAL_PREFER 0x20   // LR has already received a prefer through
-                                //    overlap coalescing
-#endif
 #define LR_assigned(lr)         (LR_flags(lr) & LR_ASSIGNED)
 #define Set_LR_assigned(lr)     (LR_flags(lr) |= LR_ASSIGNED)
 #define LR_added(lr)            (LR_flags(lr) & LR_ADDED)
@@ -605,29 +220,6 @@ LR_prefer_reg(LIVE_RANGE *lr) {
 #define LR_fat_allocated(lr)    (LR_flags(lr) & LR_FAT_ALLOCATED)
 #define Set_LR_fat_allocated(lr)(LR_flags(lr) |= LR_FAT_ALLOCATED)
 #define Reset_LR_fat_allocated(lr)(LR_flags(lr) &= ~LR_FAT_ALLOCATED)
-#ifdef TARG_ST
-#define LR_subclass(lr)         ((lr)->sc)
-#define Set_LR_subclass(lr,s)  ((lr)->sc = (s))
-#define LR_singleton_ref(lr)    (Single_Register_Subclass(LR_subclass(lr)) != REGISTER_UNDEFINED)
-inline BOOL LR_early_clobber (const LIVE_RANGE *lr) {
-  return (LR_flags(lr) & LR_EARLY_CLOBBER) != 0;
-}
-static void Set_LR_early_clobber(LIVE_RANGE *lr) {
-  LR_flags(lr) |= LR_EARLY_CLOBBER;
-}
-static void Reset_LR_early_clobber(LIVE_RANGE *lr) {
-  LR_flags(lr) &= ~LR_EARLY_CLOBBER;
-}
-inline BOOL LR_has_ovcoal_prefer(const LIVE_RANGE *lr) {
-  return (LR_flags(lr) & LR_OVCOAL_PREFER) != 0;
-}
-static void Set_LR_has_ovcoal_prefer(LIVE_RANGE *lr) {
-  LR_flags(lr) |= LR_OVCOAL_PREFER;
-}
-static void Reset_has_ovcoal_prefer(LIVE_RANGE *lr) {
-  LR_flags(lr) &= ~LR_OVCOAL_PREFER;
-}
-#endif
 #ifdef TARG_X8664
 #define LR_byteable(lr)         (LR_flags(lr) & LR_BYTEABLE)
 #define Set_LR_byteable(lr)     (LR_flags(lr) |= LR_BYTEABLE)
@@ -636,68 +228,6 @@ static void Reset_has_ovcoal_prefer(LIVE_RANGE *lr) {
 #define LR_Is_Undefined_Local(lr) \
   (TN_is_local_reg(LR_tn(lr)) && LR_def_cnt(lr) == 0)
 
-#ifdef TARG_ST
-#define FOR_LR_AND_ALL_ALIASES(lr,alias) \
-    LIVE_RANGE *alias = lr; \
-    do {
-#define FOR_LR_AND_ALL_ALIASES_END(lr,alias) \
-      alias = LR_next_alias (alias); \
-    } while (alias != lr);
-
-static BOOL
-TNs_alias_p (TN *tn1, TN *tn2) {
-  return (! TN_is_local_reg (tn1)
-	  && ! TN_is_local_reg (tn2)
-	  && TN_register_class (tn1) == TN_register_class (tn2)
-	  && TN_register (tn1) != REGISTER_UNDEFINED
-	  && TN_register (tn1) == TN_register (tn2)
-	  && TN_nhardregs (tn1) == TN_nhardregs (tn2));
-}
-#endif
-#ifdef TARG_ST
-/* Data structure used to keep track of the overlap coalescing class used by
- * dedicated registers during the backward allocation. It contains the 
- * class id (identified by the root of the correspoding tree), the rank
- * (subpart offset, used for multi-register TNs) and the number of LRs
- * currently using a particular dedicated register.
- */
-#define OVCOAL_ROOT_UNDEF NULL
-#define OVCOAL_RANK_UNDEF 0
-#define OVCOAL_MSG        "OVCOAL:"
-#define OVCOAL_BASE_NAME  "OVCOAL_TN"
-static struct {
-  LIVE_RANGE* root;
-  mINT32      rank;
-  mINT32      alive_count;
-} ded_reg_ovcoal_info[ISA_REGISTER_CLASS_MAX_LIMIT+1][REGISTER_MAX+1];
-
-static inline void Set_ded_reg_ovcoal_root(ISA_REGISTER_CLASS rc, REGISTER r, LIVE_RANGE* c, INT rank) {
-  ded_reg_ovcoal_info[rc][r].root = c;
-  ded_reg_ovcoal_info[rc][r].rank = rank;
-}
-static inline void Set_ded_reg_ovcoal_alive_count(ISA_REGISTER_CLASS rc, REGISTER r, INT32 c) {
-  ded_reg_ovcoal_info[rc][r].alive_count = c;
-}
-static inline void Increment_ded_reg_ovcoal_alive_count(ISA_REGISTER_CLASS rc, REGISTER r) {
-  ded_reg_ovcoal_info[rc][r].alive_count++;
-}
-static void Decrement_ded_reg_ovcoal_alive_count(ISA_REGISTER_CLASS rc, REGISTER r) {
-  ded_reg_ovcoal_info[rc][r].alive_count--;
-  if (ded_reg_ovcoal_info[rc][r].alive_count==0) {
-    ded_reg_ovcoal_info[rc][r].root = OVCOAL_ROOT_UNDEF;
-    ded_reg_ovcoal_info[rc][r].rank = OVCOAL_RANK_UNDEF;
-  }
-}
-static inline LIVE_RANGE* ded_reg_ovcoal_root(ISA_REGISTER_CLASS rc, REGISTER r) {
-  return (ded_reg_ovcoal_info[rc][r].root);
-}
-static inline INT32 ded_reg_ovcoal_alive_count(ISA_REGISTER_CLASS rc, REGISTER r) {
-  return (ded_reg_ovcoal_info[rc][r].alive_count);
-}
-static inline INT32 ded_reg_ovcoal_rank(ISA_REGISTER_CLASS rc, REGISTER r) {
-  return (ded_reg_ovcoal_info[rc][r].rank);
-}
-#endif
 
 /* List of all the live ranges for a basic block */
 static LIVE_RANGE *Live_Range_List;
@@ -716,15 +246,6 @@ static ST *Magic_Spill_Location;
 static VECTOR Live_LRs_Vector;
 #define LR_VECTOR_element(v,i)  ((LIVE_RANGE *)VECTOR_element(v,i))
 
-#ifdef TARG_ST
-static void
-Delete_LR_and_aliases (VECTOR v, LIVE_RANGE *lr)
-{
-  FOR_LR_AND_ALL_ALIASES (lr, alias) {
-    VECTOR_Delete_Element (v, alias);
-  } FOR_LR_AND_ALL_ALIASES_END (lr, alias);
-}
-#endif
 /* map from OP -> opnum */
 static BB_OP_MAP op_to_opnum;
 
@@ -788,180 +309,6 @@ static ISA_REGISTER_CLASS trace_cl = (ISA_REGISTER_CLASS)2;
 #define Do_LRA_Trace(t) ((t) && !Calculating_Fat_Points())
 #define Do_LRA_Fat_Point_Trace(t) ((t) && Calculating_Fat_Points())
 
-#ifdef TARG_ST
-
-// The widest local TN (specified as number fo registers) in each register class.
-static INT regclass_widest_local_TN[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-
-// The number of members in each subclass.
-static INT subclass_size[ISA_REGISTER_SUBCLASS_MAX_LIMIT+1];
-// We have a preferred subclass ordering: a subclass with a lower
-// rank appears earlier in the ordering.
-static INT subclass_rank[ISA_REGISTER_SUBCLASS_MAX_LIMIT+1];
-
-static REGISTER
-Single_Register_Subclass (ISA_REGISTER_SUBCLASS subclass);
-
-// First of two unusable register conditions for extract/compose operations.
-// In this case, we want to allocate to a single-register tn that
-// is a result of an extract op, or a source of a compose op.
-static REGISTER_SET
-unusable_regs_for_multi_op_1 (TN *wide_tn, TN *narrow_tn[])
-{
-  // Need to avoid the situation where the wide_tn regs
-  // are a non-identity permutation of the narrow_tn regs.
-  // Detect when:
-  //   -  wide tn is allocated, all but one narrow tn is allocated,
-  //      and the allocated narrow tns are a non-identity permutation
-  //      of the registers allocated to the wide tn.
-  //      In this case, the unallocated narrow tn must not be
-  //      allocated to the remaining register in the permutation.
-  // [TTh] Note: narrow_nbregs is used to handle narrow TNs that
-  // are multiple-register TN
-  if (TN_register (wide_tn) != REGISTER_UNDEFINED
-      && TN_register (wide_tn) <= REGISTER_MAX) {
-    REGISTER wide_reg = TN_register (wide_tn);
-    REGISTER_SET wide_regs = TN_registers (wide_tn);
-    BOOL non_identity_permutation = FALSE;
-    INT n_regs = TN_nhardregs (wide_tn);
-    INT r;
-    INT narrow_nbregs = TN_nhardregs (narrow_tn[0]);
-    INT narrow_idx = 0;
-    // Remove from wide_regs all registers allocated to
-    // single-reg tns.
-    for (r = 0; r < n_regs; r += narrow_nbregs) {
-      REGISTER reg = TN_register (narrow_tn[narrow_idx++]);
-      if (reg != REGISTER_UNDEFINED
-	  && reg <= REGISTER_MAX) {
-	if (reg >= wide_reg
-	    && reg < (wide_reg + n_regs)
-	    && reg != (wide_reg + r)) {
-	  non_identity_permutation = TRUE;
-	}
-	wide_regs = REGISTER_SET_Difference_Range (wide_regs, reg,
-						   reg + narrow_nbregs - 1);
-      }
-    }
-    if (REGISTER_SET_Size (wide_regs) == narrow_nbregs) {
-      if (non_identity_permutation) {
-	// Only one register left and we have a
-	// non-identity permutation.
-	// Avoid the remaining register.
-	return wide_regs;
-      } else {
-	// Only one register left, but so far we have an
-	// identity permutation.
-	// This must mean that using remaining register
-	// maintains the identity permutation.
-	return REGISTER_SET_EMPTY_SET;
-      }
-    }
-  }
-  return REGISTER_SET_EMPTY_SET;
-}
-
-// Second of two conditions for extract/compose operations.
-// In this case, we want to allocate to a multi-register tn that
-// is a source of an extract op, or a result of a compose op.
-static REGISTER_SET
-unusable_regs_for_multi_op_2 (TN *wide_tn, TN *narrow_tn[])
-{
-  // Need to avoid the situation where the wide_tn regs
-  // are a non-identity permutation of the narrow_tn regs.
-  // Detect when:
-  //  - wide tn is unallocated
-  //  - all narrow_tns are allocated consecutively, but not
-  //      in sequence.
-  //  In this case we must avoid allocating at least
-  //  one of the allocated registers to the wide tn.
-  // [TTh] Note: narrow_nbregs is used to handle narrow TNs that
-  // are multiple-register TN
-  if (TN_register (wide_tn) == REGISTER_UNDEFINED) {
-    INT n_regs = TN_nhardregs(wide_tn);
-    REGISTER base_reg = REGISTER_UNDEFINED;
-    REGISTER low_reg = REGISTER_MAX + 1;
-    REGISTER high_reg = 0;
-    BOOL in_sequence = TRUE;
-    INT narrow_nbregs = TN_nhardregs (narrow_tn[0]);
-    INT narrow_idx = 0;
-    for (INT r = 0; r < n_regs; r += narrow_nbregs) {
-      REGISTER narrow_reg = TN_register (narrow_tn[narrow_idx++]);
-      if (narrow_reg != REGISTER_UNDEFINED
-	  && narrow_reg <= REGISTER_MAX) {
-	if (base_reg == REGISTER_UNDEFINED) {
-	  base_reg = narrow_reg - r;
-	} else if (narrow_reg != (base_reg + r)) {
-	  in_sequence = FALSE;
-	}
-	if (narrow_reg < low_reg) {
-	  low_reg = narrow_reg;
-	}
-	if ((narrow_reg + narrow_nbregs - 1) > high_reg) {
-	  high_reg = (narrow_reg + narrow_nbregs - 1);
-	}
-      } else {
-	// There is an unallocated narrow reg, so no problem.
-	return REGISTER_SET_EMPTY_SET;
-      }
-    }
-    // The narrow tns are all allocated.
-    if (! in_sequence && (high_reg - low_reg + 1) == n_regs) {
-      // The registers allocated are consecutive, but not in sequence.
-      // Avoiding one of them is sufficient to prevent a non-identity
-      // permutation.
-      return REGISTER_SET_Range(low_reg, low_reg);
-    }
-  }
-  return REGISTER_SET_EMPTY_SET;
-}
-      
-// [SC] For an extract op, OP, return the set of registers that
-// must be avoided when allocating a result.
-// The situation we want to avoid is being unable to expand
-// the extract into a sequence of moves.  This happens when
-// the result registers are a non-identity permutation of the
-// source registers.
-static REGISTER_SET
-unusable_extract_result_regs (OP *op)
-{
-  TN *dsts[OP_MAX_FIXED_RESULTS];
-  for (INT i = 0; i < OP_results(op); i++) {
-    dsts[i] = OP_result(op, i);
-  }
-  return unusable_regs_for_multi_op_1 (OP_opnd(op, 0), dsts);
-}
-
-static REGISTER_SET
-unusable_compose_operand_regs (OP *op)
-{
-  TN *opds[OP_MAX_FIXED_OPNDS];
-  for (INT i = 0; i < OP_opnds(op); i++) {
-    opds[i] = OP_opnd(op, i);
-  }
-  return unusable_regs_for_multi_op_1 (OP_result(op, 0), opds);
-}
-
-static REGISTER_SET
-unusable_extract_operand_regs (OP *op)
-{
-  TN *dsts[OP_MAX_FIXED_RESULTS];
-  for (INT i = 0; i < OP_results(op); i++) {
-    dsts[i] = OP_result(op, i);
-  }
-  return unusable_regs_for_multi_op_2 (OP_opnd(op, 0), dsts);
-}
-
-static REGISTER_SET
-unusable_compose_result_regs (OP *op)
-{
-  TN *opds[OP_MAX_FIXED_OPNDS];
-  for (INT i = 0; i < OP_opnds(op); i++) {
-    opds[i] = OP_opnd(op, i);
-  }
-  return unusable_regs_for_multi_op_2 (OP_result(op, 0), opds);
-}
-
-#endif
 
 #ifdef TARG_X8664
 static mBOOL float_reg_could_be_128bit[REGISTER_MAX + 1];
@@ -1072,19 +419,9 @@ Is_Marked_For_Removal(OP *op)
 //
 static BOOL
 Check_Allow_Reorder() {
-#ifdef TARG_ST
-  //
-  // Arthur: must also check if scheduling is enabled all together
-  //
-  if ((CG_opt_level > 1) &&
-      IGLS_Enable_All_Scheduling && LOCS_Enable_Scheduling &&
-      (Trip_Count <= CG_opt_level) &&
-      !(CG_LRA_mask & 0x2000)) {
-#else
   if ((CG_opt_level > 1) &&
       (Trip_Count <= CG_opt_level) &&
       !Get_Trace (TP_ALLOC, 0x2000)) {
-#endif
     return TRUE;
   }
   return FALSE;
@@ -1094,55 +431,9 @@ Check_Allow_Reorder() {
 // determine if we can call the local scheduler again
 // on the block.
 //
-#ifdef TARG_ST
-// [CG]: We pass the basic block now, as rescheduling
-// decision is taken at BB granularity
-static BOOL
-Check_Allow_Reschedule(BB *bb)
-#else
 static BOOL
 Check_Allow_Reschedule()
-#endif
 {
-#ifdef TARG_ST
-  // [CG]: When LAO is enabled, rescheduling takes place only 
-  // if register_requirement > 1.5*(register avail)
-  // Rescheduling can be disabled by -GC:LRA_mask=0x200
-  // Rescheduling can be forced under -GC:LRA_mask=0x20000
-#ifdef LAO_ENABLED
-  if (!Check_Allow_Reorder()) return FALSE;
-  if (Trip_Count != 1) return FALSE;
-  if (CG_LRA_mask & 0x0200) return FALSE;
-
-  if (!CG_LAO_activation) return TRUE;
-  
-  if (CG_LRA_mask & 0x20000) return TRUE; /* Force even if LAO */
-
-  /* We estimate the registers request compared to the 
-     registers availability. If it is above a fixed threshold (1.5)
-     we allow rescheduling even after LAO prepass scheduler. */
-  BOOL allow = FALSE;
-  LRA_Request_Info request;
-  LRA_Register_Request (bb, &request);
-  ISA_REGISTER_CLASS cl;
-  FOR_ALL_ISA_REGISTER_CLASS(cl) {
-    int n_request = request.summary[cl];
-    int n_avail = REGISTER_SET_Size(avail_set[cl]);
-    if (n_avail * 1.5  < n_request) {
-      DevWarn ("BB:%d rescheduled by LRA after LAO (lra_request:%d, lra_avail:%d)\n", BB_id(bb), n_request, n_avail);
-      allow = TRUE; break;
-    }
-  }
-  return allow;
-#else
-  if (Check_Allow_Reorder() &&
-      Trip_Count == 1 &&
-      !Get_Trace (TP_ALLOC, 0x0200)) {
-    return TRUE;
-  }
-  return FALSE;
-#endif
-#else
 
   if (Check_Allow_Reorder() &&
       Trip_Count == 1 &&
@@ -1150,7 +441,6 @@ Check_Allow_Reschedule()
     return TRUE;
   }
   return FALSE;
-#endif
 }
 
 //
@@ -1175,56 +465,21 @@ Op_Uses_TN(TN *spill_tn, INT opnum)
 {
   BOOL is_local_tn = TN_is_local_reg (spill_tn);
   REGISTER spill_reg = REGISTER_UNDEFINED;
-#ifdef TARG_ST
-  INT spill_nregs;
-#endif
   OP *op = OP_VECTOR_element(Insts_Vector, opnum);
   ISA_REGISTER_CLASS cl = TN_register_class(spill_tn);
 
   if (!is_local_tn) {
     spill_reg = LRA_TN_register(spill_tn);
-#ifdef TARG_ST
-    spill_nregs = TN_nhardregs (spill_tn);
-#endif
   } else {
     spill_reg = REGISTER_UNDEFINED;
-#ifdef TARG_ST
-    spill_nregs = 1;
-#endif
   }
   //
   // op is null if instruction deleted from block during spilling of
   // a live range
   //
-#ifdef TARG_ST
-  return (op == NULL || (is_local_tn && OP_Refs_TN (op, spill_tn)) ||
-	  (!is_local_tn && OP_Refs_Regs (op, cl, spill_reg, spill_nregs) > 0));
-#else
   return (op == NULL || (is_local_tn && OP_Refs_TN (op, spill_tn)) ||
 	  (!is_local_tn && OP_Refs_Reg (op, cl, spill_reg)));
-#endif
 }
-#ifdef TARG_ST
-static BOOL
-Op_Uses_spill_tn (TN_LIST *spill_tns, INT opnum)
-{
-  OP *op = OP_VECTOR_element(Insts_Vector, opnum);
-
-  if (op != NULL) {
-    for (TN_LIST *spill_tn_list = spill_tns;
-	 spill_tn_list != NULL;
-	 spill_tn_list = TN_LIST_rest(spill_tn_list)) {
-      TN *spill_tn = TN_LIST_first(spill_tn_list);
-      if (Op_Uses_TN(spill_tn, opnum)) {
-	return TRUE;
-      }
-    }
-  }
-  return FALSE;
-}
-
-static void print_lra_request (const LRA_Request_Info *request);
-#endif
 
 static void Print_Avail_Set (BB *bb)
 {
@@ -1241,202 +496,11 @@ static void Print_Avail_Set (BB *bb)
     if (!CG_localize_tns) {
       fprintf (TFile, "\n\tGRA Grant:");
       REGISTER_SET_Print (GRA_Local_Register_Grant (bb, cl), TFile);
-#ifdef TARG_ST
-      fprintf (TFile, "\nLRA Request:");
-      LRA_Request_Info request;
-      LRA_Register_Request (bb, &request);
-      print_lra_request (&request);
-#else
       fprintf (TFile, "\n\tLRA Request: %d", LRA_Register_Request (bb, cl));
-#endif
     }
     fprintf (TFile, "\n");
   }
 }
-
-#ifdef TARG_ST
-/* Return a version id to uniquely identify a TN value. Several TNs might have
- * the same version if they contain the same value (i.e. one TN is a copy/extract
- * of the other one).
- */
-static mINT32
-Generate_Overlap_Coalescing_Version() {
-  static mINT32 ver;
-  return (ver++);
-}
-
-/* Considering that current register class can be divided in N composite registers,
- * each one containing exactly (multireg_size) atomic registers, this function
- * returns TRUE only if the specified hardware register (reg) have the expected
- * position (expected_rank) within its composite register.
- */
-inline BOOL
-REGISTER_Has_Expected_Rank(REGISTER reg, INT multireg_size, INT expected_rank) {
-  INT real_reg_id = ((INT)reg - REGISTER_MIN);
-  INT rank_mask  = multireg_size-1;
-  return ((real_reg_id & rank_mask) == expected_rank);
-}
-
-/* Walk through all children of 'root_lr', and detach the ones that belongs to
- * rank range [ref_rank_min, ref_rank_max] and that have been redefined since the
- * last definition of 'used_lr'.
- */
-static void
-Detach_Conflicting_LR_From_Overlap_Coalescing_Class(LIVE_RANGE *root_lr,
-						    LIVE_RANGE *used_lr,
-						    INT ref_rank_min,
-						    INT ref_rank_max) {
-  LIVE_RANGE *cur_lr, *next_lr, *last_lr;
-
-  last_lr = LR_ovcoal_child(root_lr);
-  next_lr = LR_ovcoal_sibling(last_lr);
-
-  do {
-    cur_lr = next_lr;
-    next_lr = LR_ovcoal_sibling(cur_lr);
-
-    // Check if cur_lr belongs to the conflict rank range.
-    // Avoid costly computation, when dealing with coalescing tree
-    // containing only single register TNs.
-    BOOL can_conflict = (ref_rank_min == -1);
-    if (!can_conflict) {
-      INT cur_rank_min = LR_ovcoal_rank(cur_lr);
-      INT cur_rank_max = cur_rank_min + TN_nhardregs(LR_tn(cur_lr)) - 1;
-      can_conflict = !((cur_rank_min > ref_rank_max) || (cur_rank_max < ref_rank_min));
-    }
-    if (can_conflict) {
-      if (cur_lr != used_lr &&
-	  ((LR_def_cnt(cur_lr) >  1) ||
-	   (LR_def_cnt(cur_lr) == 1         &&
-	    TN_is_global_reg(LR_tn(cur_lr)) &&
-	    LR_exposed_use(cur_lr) > 0))) {
-	// Current node is not the read one (used_lr) and has multiple definitions
-	if (LR_ovcoal_last_ver(cur_lr) > LR_ovcoal_last_ver(used_lr)) {
-	  // Conflicting definition of cur_lr: detach it from coalescing tree
-	  if (Do_LRA_Trace(Trace_LRA_Detail)) {
-	    fprintf (TFile, OVCOAL_MSG" Detach TN%d from its parent TN%d (redefinition)\n",
-		     TN_number(LR_tn(cur_lr)), TN_number(LR_tn(root_lr)));
-	  }
-	  Remove_LR_ovcoal_child(LR_ovcoal_parent(cur_lr), cur_lr);
-	}
-      }
-      if (LR_ovcoal_parent(cur_lr) && LR_ovcoal_child(cur_lr)) {
-	// Perform a recursive walk of the children of cur_lr if the latter
-	// one has not been detached.
-	// Note: if the detached LR was an ancestor of 'used_lr', we would
-	//       have to visit its children as well,  but it cannot happen
-	//       because the pruning of ancestors has already been done in
-	//       Update_Overlap_Coalescing_Info_For_Use()
-	Detach_Conflicting_LR_From_Overlap_Coalescing_Class(cur_lr, used_lr, ref_rank_min, ref_rank_max);
-      }
-    }
-  } while (cur_lr != last_lr);
-}
-
-/* This function is called during the forward walk of Setup_Live_Ranges(),
- * when a use of LR 'clr' is found.
- * It checks that none of the node of the coalescing tree has modified the
- * value used by 'clr' (identified by its version). Otherwise, the redefined 
- * nodes are removed from the coalescing tree.
- */
-static void
-Update_Overlap_Coalescing_Info_For_Use(LIVE_RANGE *clr) {
-  LIVE_RANGE *iter_lr   = clr;
-  LIVE_RANGE *parent_lr = LR_ovcoal_parent(clr);
-  // Walk up the overlap coalescing class tree, and check for each ancestor
-  // if it has been redefined since the last definition of the used LR.
-  // If it is the case, it is required to split the coalescing tree in
-  // 2 parts: one with the ancestor LR, and another one with the use_LR.
-  while (parent_lr) {
-    if (LR_ovcoal_last_ver(parent_lr) > LR_ovcoal_last_ver(clr)) {
-      // No overlap coalescing possible
-      if (Do_LRA_Trace(Trace_LRA_Detail)) {
-	fprintf (TFile, OVCOAL_MSG" Detach TN%d from its parent  (redefinition)\n",
-		 TN_number(LR_tn(iter_lr)));
-      }
-      Remove_LR_ovcoal_child(parent_lr, iter_lr);
-      break;
-    }
-    else {
-      iter_lr   = parent_lr;
-      parent_lr = LR_ovcoal_parent(iter_lr);
-    }
-  }
-  // At this point, iter_lr is the root of the coalescing tree.
-  // Now iterate over the children of the root, to find child nodes that have
-  // been redefined, and must then be removed from current coalescing class.
-  if (LR_ovcoal_child(iter_lr)) {
-    // Compute range of conflict; -1 is used for single register TN tree,
-    // In order to avoid useless computation of range
-    INT clr_rank_min=-1, clr_rank_max=-1;
-    BOOL check_rank = (TN_nhardregs(LR_tn(iter_lr)) > 1);
-    if (check_rank) {
-      clr_rank_min = LR_ovcoal_rank(clr);
-      clr_rank_max = clr_rank_min + TN_nhardregs(LR_tn(clr)) - 1;
-    }
-    Detach_Conflicting_LR_From_Overlap_Coalescing_Class(iter_lr, clr, clr_rank_min, clr_rank_max);
-  }
-}
-
-
-/* Propagate preferred register through the overlap coalescing tree,
- * by walking up the coalescing tree and setting preference to parent
- * based on child
- */
-static void
-Propagate_Overlap_Coalescing_Preference_Leaf_To_Root(LIVE_RANGE *lr, REGISTER alloc_reg) {
-  LIVE_RANGE *cur_lr, *parent_lr;
-
-  if (alloc_reg == REGISTER_UNDEFINED || alloc_reg > REGISTER_MAX) {
-    return; // Might happens during fat point computation 
-  }
-
-  cur_lr = lr;
-  while ((parent_lr = LR_ovcoal_parent(cur_lr)) != NULL) {
-
-    if (LR_extract_op(cur_lr)) {
-      // Update pref register for 'parent_lr'
-      if (((INT)alloc_reg - LR_ovcoal_local_rank(cur_lr)) < (INT)REGISTER_MIN) {
-	break; // out of range
-      }
-      alloc_reg -= LR_ovcoal_local_rank(cur_lr);
-
-      // Check if pref register is correctly aligned for 'parent_lr'
-      INT rank_mask = TN_nhardregs(LR_tn(parent_lr))-1;
-      if ((alloc_reg - REGISTER_MIN) & rank_mask != 0) {
-	break; // misalignment
-      }
-    }
-    cur_lr = parent_lr;
-
-    if (LRA_TN_register(LR_tn(cur_lr)) != REGISTER_UNDEFINED) {
-      break; // TN already allocated
-    }
-    else if (cur_lr->prefer_reg != REGISTER_UNDEFINED) {
-      if (LR_has_ovcoal_prefer(cur_lr)) {
-	// TN has already received a preference through overlap coalescing.
-	break;
-      }
-      // Current node already have a preferencing, but that was propagated through
-      // standard preferencing in Setup_Live_Ranges(). We will override it with overlap
-      // coalescing preference.
-      // Note that standard preferencing remain useful for coalescing with TNs not
-      // candidate for overlap coalescing (mainly aliased GTN)
-      Set_LR_has_ovcoal_prefer(cur_lr);
-    }
-    if (Do_LRA_Trace(Trace_LRA_Detail)) {
-      fprintf (TFile, OVCOAL_MSG" preference %s to ",
-	       REGISTER_name (TN_register_class(LR_tn(cur_lr)), alloc_reg));
-      Print_TN(LR_tn(cur_lr),FALSE);
-      fprintf(TFile, " (inherited from ");
-      Print_TN(LR_tn(lr),FALSE);
-      fprintf (TFile, ")\n");
-    }
-    Set_LR_prefer_reg(cur_lr, alloc_reg);
-  }
-}
-
-#endif
 
 
 #ifndef TARG_X8664
@@ -1444,19 +508,11 @@ static
 #endif
 REGISTER Single_Register_Subclass (ISA_REGISTER_SUBCLASS subclass)
 {
-#ifdef TARG_ST
-  if (subclass_size[subclass] == 1) {
-    REGISTER_SET subclass_regs = REGISTER_SUBCLASS_members(subclass);
-    return REGISTER_SET_Choose(subclass_regs);
-  }
-  return REGISTER_UNDEFINED;
-#else
   REGISTER_SET subclass_regs = REGISTER_SUBCLASS_members(subclass);
   if (REGISTER_SET_Size(subclass_regs) == 1) {
     return REGISTER_SET_Choose(subclass_regs);
   }
   return REGISTER_UNDEFINED;
-#endif
 }
   
 
@@ -1472,84 +528,6 @@ static void Init_Avail_Set (BB *bb)
   OP *op;
   INT i;
 
-#ifdef TARG_ST
-  // [TTh] Compute set of dedicated registers that are used by GTNs in the BB
-  // but that are not live-out. Those registers might be marked as available
-  // for LRA, the reverse traversal of the BB will insure that they are not
-  // allocated to local TNs if they conflict with the corresponding GTNs.
-  REGISTER_SET ded_reg_live_out_set[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-  REGISTER_SET ded_reg_non_live_out_set[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-  BOOL use_improved_avail_set = FALSE;
-  // Refinement done only if liveness has been computed
-  if (BB_bbregs(bb) && BB_live_in(bb) && BB_live_out(bb) &&
-      !BB_entry(bb) && !BB_exit(bb) && !BB_call(bb)) {
-    ISA_REGISTER_CLASS cl;
-    TN *tn;
-    
-    use_improved_avail_set = TRUE;
-
-    FOR_ALL_ISA_REGISTER_CLASS(cl) {
-      ded_reg_non_live_out_set[cl] = REGISTER_SET_EMPTY_SET;
-      ded_reg_live_out_set[cl] = REGISTER_SET_EMPTY_SET;
-    }
-    // Build list of dedicated registers used by GTN that are live-out
-    for (tn  = GTN_SET_Choose(BB_live_out(bb));
-	 tn != GTN_SET_CHOOSE_FAILURE;
-	 tn  = GTN_SET_Choose_Next(BB_live_out(bb), tn)) {
-      if (LRA_TN_register(tn) != REGISTER_UNDEFINED) {
-	ded_reg_live_out_set[TN_register_class(tn)] =
-	  REGISTER_SET_Union(ded_reg_live_out_set[TN_register_class(tn)],
-			     REGISTER_SET_Range(LRA_TN_register(tn), LRA_TN_register(tn) + TN_nhardregs(tn) - 1));
-      }
-    }
-    // Build list of dedicated registers used by GTNs that are live-in but not live-out.
-    // If current GTN contains some live-out registers (might happens when aliased),
-    // then all its registers must be considered as live-out, to avoid potential problem
-    // when inserting spill code.
-    for (tn  = GTN_SET_Choose(BB_live_in(bb));
-	 tn != GTN_SET_CHOOSE_FAILURE;
-	 tn  = GTN_SET_Choose_Next(BB_live_in(bb), tn)) {
-      if (LRA_TN_register(tn) != REGISTER_UNDEFINED) {
-	if (!GTN_SET_MemberP(BB_live_out(bb), tn)) {
-	  REGISTER_SET cur_gtn_set = REGISTER_SET_Range(LRA_TN_register(tn),
-							LRA_TN_register(tn) + TN_nhardregs(tn) - 1);
-	  cl = TN_register_class(tn);
-	  if (!REGISTER_SET_IntersectsP(cur_gtn_set,
-					ded_reg_live_out_set[cl])) {
-	    ded_reg_non_live_out_set[cl] =
-	      REGISTER_SET_Union(ded_reg_non_live_out_set[cl], cur_gtn_set);
-	  }
-	  else {
-	    ded_reg_live_out_set[cl] =
-	      REGISTER_SET_Union(ded_reg_live_out_set[cl], cur_gtn_set);
-	  }
-	}
-      }
-    }
-    // Need to subtract live-out dedicated registers list from non-live-out registers list,
-    // as several GTNs might use the same dedicated registers (they are then aliased).
-    FOR_ALL_ISA_REGISTER_CLASS(cl) {
-      ded_reg_non_live_out_set[cl] =
-	REGISTER_SET_Difference(ded_reg_non_live_out_set[cl],
-				ded_reg_live_out_set[cl]);
-      // Also remove forbidden registers
-      ded_reg_non_live_out_set[cl] =
-	REGISTER_SET_Difference(ded_reg_non_live_out_set[cl],
-				CGTARG_Forbidden_LRA_Registers(cl));
-      
-      if (Do_LRA_Trace(Trace_LRA)) {
-	if (!REGISTER_SET_EmptyP(ded_reg_non_live_out_set[cl])) {
-	  fprintf (TFile, "(BB:%d, cl:%d) Non-live out registers used by GTNs:", BB_id(bb), cl);
-	  FOR_ALL_REGISTER_SET_members (ded_reg_non_live_out_set[cl], reg) {
-	    fprintf (TFile, " %s", REGISTER_name (cl, reg));
-	  }
-	  fprintf (TFile, "\n");
-	}
-      }
-    }
-  }
-#endif // TARG_ST
-  
   FOR_ALL_ISA_REGISTER_CLASS(cl) {
     if (CG_localize_tns) {
       /* Don't include callee save registers that have not already been
@@ -1560,11 +538,6 @@ static void Init_Avail_Set (BB *bb)
       avail_set[cl] = 
 	REGISTER_SET_Difference (REGISTER_CLASS_allocatable(cl),
 				 REGISTER_CLASS_callee_saves(cl));
-#ifdef TARG_ST
-      avail_set[cl] =
-      REGISTER_SET_Difference (avail_set[cl],
-                               CGTARG_Forbidden_LRA_Registers(cl));
-#endif
 #ifdef HAS_STACKED_REGISTERS
       REGISTER_SET avail_stacked =
 	REGISTER_Get_Stacked_Avail_Set(ABI_PROPERTY_stacked, cl);
@@ -1580,12 +553,6 @@ static void Init_Avail_Set (BB *bb)
     else {
       /* Use the registers granted by GRA */
       avail_set[cl] = GRA_Local_Register_Grant (bb, cl);
-#ifdef TARG_ST
-      /* [TTh] Free dedicated registers used by GTNs in the BB but that are not live out of it */
-      if (use_improved_avail_set) {
-	avail_set[cl] = REGISTER_SET_Union(avail_set[cl], ded_reg_non_live_out_set[cl]);
-      }
-#endif // TARG_ST
       exclude_set[cl] = REGISTER_SET_EMPTY_SET;
       if (BB_call(bb)) {
         /* Note: all this code may be unnecessary because gra_grant already
@@ -1596,27 +563,13 @@ static void Init_Avail_Set (BB *bb)
             OP_cond_def(call_op)) {
           /* If the call is conditionally executed, the return value registers
              may already contain values that must be preserved through the block. */
-#ifdef TARG_ST
-          avail_set[cl] = REGISTER_SET_Union (
-                            avail_set[cl],
-                            REGISTER_SET_Difference (REGISTER_CLASS_function_value(cl),
-                                                     BB_call_clobbered(bb, cl)));
-#else
           avail_set[cl] = REGISTER_SET_Union (
                             avail_set[cl],
                             REGISTER_SET_Difference (REGISTER_CLASS_function_value(cl),
                                                      REGISTER_CLASS_caller_saves(cl)));
-#endif
         } else {
-#ifdef TARG_ST
-          avail_set[cl] = REGISTER_SET_Union (
-                            avail_set[cl],
-			    REGISTER_SET_Intersection (REGISTER_CLASS_caller_saves(cl),
-						       BB_call_clobbered(bb, cl)));
-#else
           avail_set[cl] = REGISTER_SET_Union (
                             avail_set[cl], REGISTER_CLASS_caller_saves(cl));
-#endif
         }
       }
       if (BB_mod_rotating_registers(bb) ||
@@ -1637,13 +590,7 @@ static void Init_Avail_Set (BB *bb)
       if (!TN_is_local_reg(result_tn)) {
         reg = LRA_TN_register(result_tn);
         cl = TN_register_class (result_tn);
-#ifdef TARG_ST
-        avail_set[cl] = REGISTER_SET_Difference_Range
-	  (avail_set[cl], reg,
-	   reg + TN_nhardregs (result_tn) - 1);
-#else
         avail_set[cl] = REGISTER_SET_Difference1 (avail_set[cl], reg);
-#endif
       }
     }
   }
@@ -1693,12 +640,10 @@ LR_For_TN (TN *tn)
 {
   LIVE_RANGE *lr;
 
-#ifndef TARG_ST
   // [SC] This normalization does not work for multi-register TNs.
   if (!TN_is_local_reg(tn) && (LRA_TN_register(tn) != REGISTER_UNDEFINED)) {
     tn = Build_Dedicated_TN (TN_register_class(tn), LRA_TN_register(tn), 0);
   }
-#endif
   lr = (LIVE_RANGE *) hTN_MAP_Get (live_range_map, tn);
   return lr;
 }
@@ -1718,12 +663,11 @@ Create_LR_For_TN (TN *tn, BB *bb, BOOL in_lra, MEM_POOL *pool)
   ISA_REGISTER_CLASS cl = TN_register_class(tn);
   REGISTER reg = LRA_TN_register(tn);
 
-#ifndef TARG_ST
   // [SC] This normalization does not work for multi-register TNs.
   if (!local_lr && (reg != REGISTER_UNDEFINED)) {
     tn = Build_Dedicated_TN (cl, reg, 0);
   }
-#endif
+
   lr = (LIVE_RANGE *) hTN_MAP_Get (live_range_map, tn);
   if (lr == NULL) {
     lr = TYPE_MEM_POOL_ALLOC (LIVE_RANGE, pool);
@@ -1731,41 +675,17 @@ Create_LR_For_TN (TN *tn, BB *bb, BOOL in_lra, MEM_POOL *pool)
     LR_tn(lr) = orig_tn;
     LR_next(lr) = Live_Range_List;
 
-#ifdef TARG_ST
-    Set_LR_next_alias(lr, lr);
-
-    // [TTh] Initially, each TN has its own coalescing tree and
-    // its own value version.
-    if (LRA_overlap_coalescing) {
-      mINT32 v = Generate_Overlap_Coalescing_Version();
-      Set_LR_ovcoal_init_ver(lr, v);
-      Set_LR_ovcoal_last_ver(lr, v);
-      Set_LR_prefer_reg(lr, REGISTER_UNDEFINED);
-    }
-    Set_LR_ovcoal_parent (lr, NULL);
-    Set_LR_ovcoal_child  (lr, NULL);
-    Set_LR_ovcoal_sibling(lr, lr);
-    Set_LR_ovcoal_local_rank(lr, 0);
-#endif
-
     //
     // default is that globals spilled on entry.  will set otherwise
     // if left in register for some period of time.
     //
     LR_first_spill(lr) = 1;
-#ifdef TARG_ST
-    Set_LR_subclass(lr, ISA_REGISTER_SUBCLASS_UNDEFINED);
-#endif   
     
     // If <cl,reg> is available for allocation at the end of the bb, then it
     // is not liveout of the bb.
     if (!local_lr && (!in_lra || !REGISTER_SET_MemberP (avail_set[cl], reg))) {
       /* make this live range extend just beyond the last OP in the bb */
-#ifdef TARG_ST
-      Set_LR_last_use (lr, BB_length(bb)+1);
-#else
       LR_last_use(lr) = BB_length(bb)+1;
-#endif
       /* increment use count to account for the TN being live-out */
       LR_use_cnt(lr)++;
     }
@@ -1816,30 +736,10 @@ Print_BB_For_LRA (BB *bb, const char *name)
 static void
 Print_Live_Range (LIVE_RANGE *lr)
 {
-#ifdef TARG_ST
-  fprintf (TFile, "  %s_LR>TN%d  %3d%s(%d) to %3d(%d), exposed:%d ",
-                TN_is_local_reg(LR_tn(lr)) ? "LOCAL" : "GLOBAL",
-                TN_number(LR_tn(lr)), LR_first_def(lr),
-                (LR_early_clobber(lr) ? "E" : ""), LR_def_cnt(lr),
-	        LR_last_use(lr), LR_use_cnt(lr), LR_exposed_use(lr));
-  if (LR_prefer_reg (lr) != REGISTER_UNDEFINED) {
-    fprintf (TFile, "prefer ");
-    REGISTER_Print (TN_register_class (LR_tn (lr)), LR_prefer_reg (lr), TFile);
-  }
-  if (LR_subclass (lr) != ISA_REGISTER_SUBCLASS_UNDEFINED) {
-    fprintf (TFile, " subclass:%s", REGISTER_SUBCLASS_name (LR_subclass (lr)));
-  }
-  if (LR_ovcoal_parent(lr)) {
-    fprintf(TFile, " "OVCOAL_BASE_NAME"%d (rank:%d)", TN_number(LR_tn(LR_ovcoal_parent(lr))),
-	    LR_ovcoal_local_rank(lr));
-  }
-  fprintf (TFile, "\n");
-#else
   fprintf (TFile, "  %s_LR>TN%d  %3d(%d) to %3d(%d), exposed:%d\n",
                 TN_is_local_reg(LR_tn(lr)) ? "LOCAL" : "GLOBAL",
                 TN_number(LR_tn(lr)), LR_first_def(lr), LR_def_cnt(lr),
                 LR_last_use(lr), LR_use_cnt(lr), LR_exposed_use(lr));
-#endif
 }
 
 
@@ -1854,21 +754,6 @@ Print_Live_Ranges (BB *bb)
   for (lr = Live_Range_List; lr != NULL; lr = LR_next(lr)) {
     Print_Live_Range (lr);
   }
-#ifdef TARG_ST
-  ISA_REGISTER_CLASS cl;
-  FOR_ALL_ISA_REGISTER_CLASS (cl) {
-    REGISTER r;
-    for (r = REGISTER_MIN; r <= REGISTER_CLASS_last_register(cl); r++) {
-      if (ded_reg_first_def (cl, r) != INT32_MAX
-	  || ded_reg_last_use (cl, r) != 0
-	  || ded_reg_exposed_use (cl, r) != 0) { // [TTh]: Also display dedicated reg used but not live out of current BB
-	fprintf (TFile, "  DED_LR>%s  %3d to %3d, exposed:%d \n",
-		 REGISTER_name(cl, r), ded_reg_first_def (cl, r),
-		 ded_reg_last_use(cl, r), ded_reg_exposed_use(cl, r));
-      }
-    }
-  }
-#endif 
 }
 
 
@@ -1878,32 +763,16 @@ Mark_Use (TN *tn, OP *op, INT opnum, BB *bb, BOOL in_lra,
 	  INT res_opnd_idx, BOOL is_result, MEM_POOL *pool)
 {
   LIVE_RANGE *clr;
-#ifdef TARG_ST
-    ASM_OP_ANNOT* asm_info = (OP_code(op) == TOP_asm) ?
-      (ASM_OP_ANNOT*) OP_MAP_Get(OP_Asm_Map, op) : NULL;
-#endif
 
   clr = Create_LR_For_TN (tn, bb, in_lra, pool);
-#ifdef TARG_ST
-      ISA_REGISTER_SUBCLASS subclass = asm_info ?
-        ASM_OP_opnd_subclass(asm_info)[res_opnd_idx] : OP_opnd_reg_subclass(op, res_opnd_idx);
-      if (subclass != ISA_REGISTER_SUBCLASS_UNDEFINED
-	  && subclass_rank[subclass] < subclass_rank[LR_subclass(clr)]) {
-	Set_LR_subclass(clr, subclass);
-      }
-#endif
 
   if (!TN_is_local_reg(tn)) {
     if (LR_def_cnt(clr) == 0) {
-#ifdef TARG_ST
-	  Set_LR_exposed_use (clr, opnum);
-#else
       LR_exposed_use(clr) = opnum;
-#endif
     }
     /* Add this use to the live range for this TN. */
     LR_use_cnt(clr)++;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     // If the live range is not live-out, then set the last use so that we can
     // determine which OPs the live range spans.  This is needed for making the
     // live range a candidate for spilling.  Bug 7649.
@@ -1917,14 +786,6 @@ Mark_Use (TN *tn, OP *op, INT opnum, BB *bb, BOOL in_lra,
 #endif /* TARG_X8664 */
       LRA_TN_Allocate_Register (tn, REGISTER_UNDEFINED);
     if (LR_def_cnt(clr) == 0) {
-#ifdef TARG_ST
-	  if (in_lra && !LRA_no_uninit_strict_check && !OP_prologue(op) && !TN_is_dedicated(tn)) {
-	    // FdF 20080618: Set an assert, this case always mean
-	    // wrong transformation.
-	    Is_True(0, ("TN%d(PREG%d) used before definition in BB:%d",
-			TN_number(tn), TN_To_PREG(tn), BB_id(bb)));
-	  }
-#endif
       if (!OP_dummy(op) && in_lra && (!BB_entry(bb) || (TFile != stdout))) {
 	/* This can happen only if we have a use before a definition. */
         /* Note: ignore things in the first block, where we may
@@ -1944,28 +805,12 @@ Mark_Use (TN *tn, OP *op, INT opnum, BB *bb, BOOL in_lra,
 #endif
 #endif
       }
-#ifdef TARG_ST
-          Set_LR_exposed_use(clr, opnum);
-#else
       LR_exposed_use(clr) = opnum;
-#endif
     }
     /* Add this use to the live range for this TN. */
-#ifdef TARG_ST
-        Set_LR_last_use (clr, opnum);
-#else
     LR_last_use(clr) = opnum;
-#endif
     LR_use_cnt(clr)++;
   }
-#ifdef TARG_ST
-      if (LRA_overlap_coalescing) {
-	// [TTh] Check that no LR from the overlap coalescing class 
-	// has been redefined since the definition of current LR.
-	// otherwise it is require to split the coalescing class.
-	Update_Overlap_Coalescing_Info_For_Use(clr);
-      }
-#endif
 
 #ifdef TARG_X8664
   // If the TN is used as a byte, must allocate to a byte-accessible register.
@@ -1984,33 +829,6 @@ Mark_Use (TN *tn, OP *op, INT opnum, BB *bb, BOOL in_lra,
   }
 #endif
 }
-#ifdef TARG_ST
-static void 
-Print_Overlap_Coalescing() {
-  fprintf (TFile, "--------------------------------------------\n");
-  fprintf (TFile, "Overlap coalescing status for live registers\n");
-  fprintf (TFile, "--------------------------------------------\n");
-  ISA_REGISTER_CLASS cl;
-  FOR_ALL_ISA_REGISTER_CLASS (cl) {
-    REGISTER r;
-    for (r = REGISTER_MIN; r <= REGISTER_CLASS_last_register(cl); r++) {
-      if (ded_reg_ovcoal_alive_count(cl, r) > 0) {
-	fprintf (TFile, "  [%s] ", REGISTER_name(cl, r));
-
-	if (ded_reg_ovcoal_root(cl, r) == OVCOAL_ROOT_UNDEF) {
-	  fprintf (TFile, "class:UNDEF rank:UNDEF use_count:%d\n",
-		   ded_reg_ovcoal_alive_count(cl, r));
-	} else {
-	  fprintf (TFile, "class:"OVCOAL_BASE_NAME"%d rank:%d use_count:%d\n",
-		   TN_number(LR_tn(ded_reg_ovcoal_root(cl, r))),
-		   ded_reg_ovcoal_rank(cl, r),
-		   ded_reg_ovcoal_alive_count(cl, r));
-	}
-      }
-    }
-  }
-}
-#endif
 
 /* ======================================================================
  * Create the live ranges for all the local TNs in the basic block.
@@ -2035,31 +853,11 @@ Setup_Live_Ranges (BB *bb, BOOL in_lra, MEM_POOL *pool)
   Live_Range_List = NULL;
 
   Init_Insts_Vector (bb, pool);
-#ifdef TARG_ST
- {
-   ISA_REGISTER_CLASS cl;
-   FOR_ALL_ISA_REGISTER_CLASS (cl) {
-     REGISTER r;
-     for (r = REGISTER_MIN; r <= REGISTER_MAX; r++) {
-       Set_ded_reg_first_def (cl, r, INT32_MAX);
-       Set_ded_reg_last_use (cl, r, 0);
-       Set_ded_reg_exposed_use (cl, r, 0);
-       // [TTh] Initialize overlap coalescing infos
-       Set_ded_reg_ovcoal_root(cl, r, OVCOAL_ROOT_UNDEF, OVCOAL_RANK_UNDEF);
-       Set_ded_reg_ovcoal_alive_count(cl, r, 0);
-     }
-   }
- }
-#endif
 
   for (opnum = 1; opnum <= BB_length(bb); opnum++) {
     OP *op = OP_VECTOR_element (Insts_Vector, opnum);
     INT opndnum;
     INT resnum;
-#ifdef TARG_ST
-    ASM_OP_ANNOT* asm_info = (OP_code(op) == TOP_asm) ?
-      (ASM_OP_ANNOT*) OP_MAP_Get(OP_Asm_Map, op) : NULL;
-#endif
     /* process all the operand TNs. */
     for (opndnum = 0; opndnum < OP_opnds(op); opndnum++) {
       TN *tn = OP_opnd(op, opndnum);
@@ -2083,13 +881,8 @@ Setup_Live_Ranges (BB *bb, BOOL in_lra, MEM_POOL *pool)
           TN_is_global_reg(tn) &&
           (!TN_is_dedicated(tn) ||
            (CGTARG_Is_Preference_Copy(op) &&
-#ifdef TARG_ST
-            TN_is_local_reg(OP_opnd(op, OP_Copy_Operand(op))) &&
-            TN_spill(OP_opnd(op, OP_Copy_Operand(op))))) &&
-#else
             TN_is_local_reg(OP_opnd(op,CGTARG_Copy_Operand(op))) &&
             TN_spill(OP_opnd(op,CGTARG_Copy_Operand(op))))) &&
-#endif
           (LRA_TN_register(tn) != REGISTER_UNDEFINED) &&
           !REGISTER_SET_MemberP(avail_set[TN_register_class(tn)], LRA_TN_register(tn))) {
        /* Note: This series of checks was added because
@@ -2107,325 +900,36 @@ Setup_Live_Ranges (BB *bb, BOOL in_lra, MEM_POOL *pool)
           fprintf (TFile, "OP:%d>> don't reuse result reg >> ", opnum); Print_OP_No_SrcLine (op);
         }
 
-#ifdef TARG_ST
-	Set_LR_exposed_use (clr, opnum);
-#else
         LR_exposed_use(clr) = opnum;
-#endif
 
       }
       if (LR_def_cnt(clr) == 0) {
-#ifdef TARG_ST
-	if (asm_info
-	    && ASM_OP_result_clobber(asm_info)[resnum]) {
-	  // [SC] an early-clobber result
-	  Set_LR_first_def (clr, opnum, TRUE);
-	} else {
-	  Set_LR_first_def (clr, opnum);
-	}
-#else
         LR_first_def(clr) = opnum;
-#endif
       }
       LR_def_cnt(clr)++;
-#ifdef TARG_ST
-      ISA_REGISTER_SUBCLASS subclass = asm_info ?
-        ASM_OP_result_subclass(asm_info)[resnum] : OP_result_reg_subclass(op, resnum);
-      if (subclass != ISA_REGISTER_SUBCLASS_UNDEFINED
-	  && subclass_size[subclass] < subclass_size [LR_subclass(clr)]) {
-	Set_LR_subclass (clr, subclass);
-      }
-      if (LRA_overlap_coalescing) {
-	// [TTh] If overlap coalescing is enabled, check if current LR is
-	// defined by a special OP (copy, extract) and if so, insert it
-	// with the source TN coalescing tree.
-	if (OP_cond_def(op) || LR_early_clobber(clr)) {
-	  if (Do_LRA_Trace(Trace_LRA_Detail)) {
-	    fprintf (TFile, OVCOAL_MSG" Detach TN%d from its tree (conditional def or early clobbered)\n",
-		     TN_number(tn));
-	  }
-	  Detach_LR_ovcoal(clr);
-	}
-	else if (LR_def_cnt(clr) == 1 &&
-		 (TN_is_local_reg(tn) ||
-		  LR_exposed_use(clr)==0 ||
-		  (LR_ovcoal_parent(clr) == NULL && LR_ovcoal_child(clr) == NULL))) {
-	  // The following TN usages are accepted:
-	  // (1) first def of a local TN,
-	  // (2) first def of a global TN without exposed use,
-	  // (3) first real def of a global TN with exposed use but not belonging to a coalescing tree
-	  LIVE_RANGE *src_lr = NULL;
-	  if (OP_extract(op)) {
-	    src_lr = LR_For_TN(OP_opnd(op, OP_is_predicated(op)?1:0));
-	  }
-	  else if (OP_Is_Preference_Copy(op)) {
-	    src_lr = LR_For_TN(OP_opnd(op, OP_Copy_Operand(op)));
-	  }
-	  if (src_lr && !LR_early_clobber(src_lr) &&
-	      src_lr != clr && // case of copy of a reg in itself (typically ABI related)
-	      (LR_exposed_use(clr) == 0 ||
-	       LR_first_def(LR_ovcoal_root(src_lr)) >= LR_exposed_use(clr)) ) {
-	    // This result is defined by an extract or copy,
-	    // Update overlap coalescing info.
-	    Set_LR_special_def_op (clr, op);
-	    if (LR_ovcoal_is_ancestor(src_lr, clr)) {
-	      // Cyclic dependency not supported:
-	      // A TN cannot be both defined by and the definer of another TN.
-	      if (Do_LRA_Trace(Trace_LRA_Detail)) {
-		fprintf (TFile, OVCOAL_MSG" Detach TN%d from its tree (possible cyclic definition)\n",
-			 TN_number(LR_tn(src_lr)));
-	      }
-	      Detach_LR_ovcoal(src_lr);
-	    }
-	    else {
-	      // Current LR is an exact (partial) copy of the source,
-	      // we must check that it is either not allocated or it is
-	      // allocated to a register compatible with the existing
-	      // coalescing tree.
-	      BOOL compatible = TRUE;
-	      INT  local_rank = 0;
-	      if (OP_extract(op) && resnum!=0) {
-		local_rank = resnum*TN_nhardregs(tn);
-	      }
-	      if (LRA_TN_register(tn) != REGISTER_UNDEFINED) {
-		LIVE_RANGE *iter_lr = src_lr;
-		REGISTER iter_reg;
-		INT rank = local_rank;
-		while (iter_lr) {
-		  iter_reg = LRA_TN_register(LR_tn(iter_lr));
-		  if (iter_reg != REGISTER_UNDEFINED) {
-		    break;
-		  }
-		  rank   += LR_ovcoal_local_rank(iter_lr);
-		  iter_lr = LR_ovcoal_parent(iter_lr);
-		}
-		compatible = ((iter_reg == REGISTER_UNDEFINED) ||
-			      (LRA_TN_register(tn) == iter_reg+rank));
-	      }
-	      if (compatible) {
-		if (Do_LRA_Trace(Trace_LRA_Detail)) {
-		  fprintf (TFile, OVCOAL_MSG" Attach TN%d to parent TN%d\n",
-			   TN_number(tn), TN_number(LR_tn(src_lr)));
-		}
-		Add_LR_ovcoal_child(src_lr, clr, local_rank);
-		Set_LR_ovcoal_init_ver(clr, LR_ovcoal_last_ver(src_lr));
-		if (LR_exposed_use(clr) != 0) {
-		  // Update version number if dealing with a GTN with an exposed used
-		  Set_LR_ovcoal_last_ver(clr, LR_ovcoal_last_ver(src_lr));
-		}
-	      }
-	    }
-	  }
-	}
-	else {
-	  // LR potentially redefined: increment its version or inherits the one
-	  // from the source TN in case of preference copy between  2 TNs of the
-	  // same coalescing tree (the latter case happens for  instance  when a
-	  // GTN is copied into a local TN, that is then updated and finally
-	  // copied  back into the initial GTN).
-	  LIVE_RANGE *src_lr = NULL;
-	  BOOL done = FALSE;
-	  if (OP_Is_Preference_Copy(op)) {
-	    src_lr = LR_For_TN(OP_opnd(op, OP_Copy_Operand(op)));
-	    if (src_lr && !LR_early_clobber(src_lr) &&
-		LR_ovcoal_root(src_lr) == LR_ovcoal_root(clr)) {
-	      // Inherits version from source TN
-	      Set_LR_ovcoal_last_ver(clr, LR_ovcoal_last_ver(src_lr));
-	      done = TRUE;
-	    }
-	  }
-	  if (!done) {
-	    // Increment LR version
-	    Set_LR_ovcoal_last_ver(clr, Generate_Overlap_Coalescing_Version());
-	  }
-	}
-	
-	// It is not allowed to have several LRs of the same coal class
-	// to be written by the same instruction (except for extract op).
-	if (LR_ovcoal_parent(clr) && OP_results(op) > 1 && !OP_extract(op)) {
-	  LIVE_RANGE *clr_root = LR_ovcoal_root(clr);
-	  INT resnum2;
-	  for (resnum2 = 0; resnum2 < OP_results(op); ++resnum2) {
-	    if (resnum2 != resnum) {
-	      TN *tn2 = OP_result(op, resnum2);
-	      if (TN_register_class(tn2) == TN_register_class(tn)) {
-		LIVE_RANGE *clr2 = LR_For_TN(tn2);
-		// Note: clr2 == NULL means that tn2 is defined by current op
-		//       -> it will then not belongs to coalescing tree of clr
-		if ((clr2 != NULL) && (LR_ovcoal_root(clr2) == clr_root)) {
-		  // Same coalescing class, need to detach one of them
-		  if (LR_ovcoal_is_ancestor(clr2, clr)) {
-		    Remove_LR_ovcoal_child(LR_ovcoal_parent(clr2), clr2);
-		  } else {
-		    Remove_LR_ovcoal_child(LR_ovcoal_parent(clr), clr);
-		    break;
-		  }
-		}
-	      }
-	    }
-	  }
-	}
-      }
-      else {
-	if (OP_extract(op)) {
-	  // [SC] This result is defined by an extract.
-	  // Keep a note of the extract source.
-	  Set_LR_special_def_op (clr, op);
-	}
-      }
-#endif
+
       if (TN_is_local_reg(tn)) {
 #ifdef TARG_X8664 
 	if (!TN_is_preallocated (tn))
 #endif /* TARG_X8664 */
         LRA_TN_Allocate_Register (tn, REGISTER_UNDEFINED);
-#ifdef TARG_ST
-        Set_LR_last_use (clr, opnum);
-#else
         LR_last_use(clr) = opnum;
-#endif
-#ifdef TARG_ST
-	  // Default copy/extract preferencing used
-        if (OP_Is_Preference_Copy(op)) {
-          TN *src_tn = OP_opnd(op, OP_Copy_Operand(op));
-	  ISA_REGISTER_CLASS cl = TN_register_class (src_tn);
-          if (!TN_is_local_reg(src_tn)) {
-	    Set_LR_prefer_reg(clr, LRA_TN_register(src_tn));
-	    if (Do_LRA_Trace(Trace_LRA_Detail)) {
-	      fprintf (TFile, "OP:%d>> preference %s to ", opnum,
-		       REGISTER_name (cl, LR_prefer_reg(clr)));
-	      Print_TN(tn,FALSE);
-	      fprintf (TFile, "\n");
-	    }
-	  }
-        }
-	else if (OP_compose(op)) {
-	  // [SC} Preference compose result to an operand
-	  ISA_REGISTER_SUBCLASS sc = OP_result_reg_subclass(op, resnum);
-	  REGISTER_SET subclass_regs = REGISTER_SUBCLASS_members(sc);
-	  for (INT i = 0; i < OP_opnds(op); i++) {
-	    TN *src_tn = OP_opnd(op, i);
-	    REGISTER src_reg = LRA_TN_register (src_tn);
-	    // [TTh] Source TNs might be multiple-registers
-	    //       (consider that source TNs all have same size)
-	    INT src_offs = i * TN_nhardregs(src_tn);
-	    if (!TN_is_local_reg(src_tn)
-		&& src_reg != REGISTER_UNDEFINED
-		&& src_reg >= (REGISTER_MIN + src_offs)
-		&& REGISTER_SET_MemberP (subclass_regs, src_reg - src_offs)) {
-	      Set_LR_prefer_reg(clr, (src_reg - src_offs));
-	      if (Do_LRA_Trace(Trace_LRA_Detail)) {
-		fprintf (TFile, "OP:%d>> preference %s to ", opnum,
-			 REGISTER_name (TN_register_class (src_tn),
-					LR_prefer_reg (clr)));
-		Print_TN(tn,FALSE);
-		fprintf (TFile, "\n");
-	      }
-	      break;
-	    }
-	  }
-	} else if (OP_extract(op)) {
-	  // [SC] Preference extract result to the operand
-	  TN *src_tn = OP_opnd(op, 0);
-	  REGISTER src_reg = LRA_TN_register (src_tn);
-	  // [TTh] Extracted TN might be multiple-registers
-	  //       (consider that extracted TNs all have same size)
-	  INT res_offs = resnum * TN_nhardregs(tn);
-	  if (!TN_is_local_reg(src_tn)
-	      && src_reg != REGISTER_UNDEFINED
-	      && res_offs < TN_nhardregs(src_tn)) {
-	    Set_LR_prefer_reg(clr, (src_reg + res_offs));
-	    if (Do_LRA_Trace(Trace_LRA_Detail)) {
-	      fprintf (TFile, "OP:%d>> preference %s to ", opnum,
-		       REGISTER_name (TN_register_class (src_tn),
-				      LR_prefer_reg (clr)));
-	      Print_TN(tn,FALSE);
-	      fprintf (TFile, "\n");
-	    }
-	  }
-	}
-#else
         if (CGTARG_Is_Preference_Copy(op)) {
           TN *src_tn = OP_opnd(op, CGTARG_Copy_Operand(op));
           if (!TN_is_local_reg(src_tn))
             LR_prefer_reg(clr) = LRA_TN_register(src_tn);
         }
-#endif
       }
       else {
         if (CGTARG_Is_Preference_Copy(op)) {
-#ifdef TARG_ST
-          TN *src_tn = OP_opnd(op, OP_Copy_Operand(op));
-          if (!TN_is_local_reg(src_tn)) {
-            Set_LR_prefer_reg(clr, LRA_TN_register(src_tn));
-	    if (Do_LRA_Trace(Trace_LRA_Detail)) {
-	      fprintf (TFile, "OP:%d>> preference %s to ", opnum,
-		       REGISTER_name (TN_register_class(src_tn),
-				      LR_prefer_reg(clr)));
-	      Print_TN(tn,FALSE);
-	      fprintf (TFile, "\n");
-	    }
-	  }
-#else
           TN *src_tn = OP_opnd(op,CGTARG_Copy_Operand(op));
-#endif
           if (TN_is_local_reg(src_tn)) {
             LIVE_RANGE *src_lr = LR_For_TN (src_tn);
-#ifdef TARG_ST
-            Set_LR_prefer_reg(src_lr, LRA_TN_register(tn));
-#else
             LR_prefer_reg(src_lr) = LRA_TN_register(tn);
-#endif
           }
         }
       }
-#ifdef TARG_ST
-	else if (OP_compose(op)) {
-	  // [SC} Preference compose result to an operand
-	  ISA_REGISTER_SUBCLASS sc = OP_result_reg_subclass(op, resnum);
-	  REGISTER_SET subclass_regs = REGISTER_SUBCLASS_members(sc);
-	  for (INT i = 0; i < OP_opnds(op); i++) {
-	    TN *src_tn = OP_opnd(op, i);
-	    REGISTER src_reg = LRA_TN_register (src_tn);
-	    // [TTh] Source TNs might be multiple-registers
-	    //       (consider that source TNs all have same size)
-	    INT src_offs = i * TN_nhardregs(src_tn);
-	    if (!TN_is_local_reg(src_tn)
-		&& src_reg != REGISTER_UNDEFINED
-		&& src_reg >= (REGISTER_MIN + src_offs)
-		&& REGISTER_SET_MemberP (subclass_regs, src_reg - src_offs)) {
-	      Set_LR_prefer_reg(clr, (src_reg - src_offs));
-	      if (Do_LRA_Trace(Trace_LRA_Detail)) {
-		fprintf (TFile, "OP:%d>> preference %s to ", opnum,
-			 REGISTER_name (TN_register_class(src_tn),
-					LR_prefer_reg(clr)));
-		Print_TN(tn,FALSE);
-		fprintf (TFile, "\n");
-	      }
-	      break;
-	    }
-	  }
-	} else if (OP_extract(op)) {
-	  // [SC] Preference extract result to the operand
-	  TN *src_tn = OP_opnd(op, 0);
-	  REGISTER src_reg = LRA_TN_register (src_tn);
-	  // [TTh] Extracted TN might be multiple-registers
-	  //       (consider that extracted TNs all have same size)
-	  INT res_offs = resnum * TN_nhardregs(tn);
-	  if (!TN_is_local_reg(src_tn)
-	      && src_reg != REGISTER_UNDEFINED
-	      && res_offs < TN_nhardregs(src_tn)) {
-	    Set_LR_prefer_reg(clr, (src_reg + res_offs));
-	    if (Do_LRA_Trace(Trace_LRA_Detail)) {
-	      fprintf (TFile, "OP:%d>> preference %s to ", opnum,
-		       REGISTER_name (TN_register_class (src_tn),
-				      LR_prefer_reg(clr)));
-	      Print_TN(tn,FALSE);
-	      fprintf (TFile, "\n");
-	    }
-	  }
-	}
-#endif
+
 #ifdef TARG_X8664
       // If the result is a byte, must allocate to a byte-accessible register.
       if (OP_code(op) == TOP_asm) {
@@ -2442,117 +946,6 @@ Setup_Live_Ranges (BB *bb, BOOL in_lra, MEM_POOL *pool)
 #endif
     }
   }
-#ifdef TARG_ST
-  if (LRA_overlap_coalescing) {
-    // Initialize array of widest local TN found in current BB
-    ISA_REGISTER_CLASS rc;
-    FOR_ALL_ISA_REGISTER_CLASS(rc) {
-      regclass_widest_local_TN[rc] = 0;
-    }
-  }
-
-  // [SC] Now that all the live ranges are created, form their
-  // alias lists.
-  for (LIVE_RANGE *lr1 = Live_Range_List; lr1 != NULL; lr1 = LR_next(lr1)) {
-    TN *tn1 = LR_tn (lr1);
-    if (! TN_is_local_reg (tn1)) {
-      LIVE_RANGE *lr1_prev = lr1;
-      while (LR_next_alias (lr1_prev) != lr1) {
-	lr1_prev = LR_next_alias (lr1_prev);
-      }
-      for (LIVE_RANGE *lr2 = LR_next(lr1); lr2 != NULL; lr2 = LR_next(lr2)) {
-	TN *tn2 = LR_tn (lr2);
-	if (lr1 != lr2
-	    && TNs_alias_p (tn1, tn2)) {
-	  // lr1 and lr2 are aliases.  Merge their alias lists.
-	  // These are circular lists, so we are
-	  // merging two circular lists.
-	  LIVE_RANGE *lr2_next = LR_next_alias (lr2);
-	  Set_LR_next_alias (lr2, lr1);
-	  Set_LR_next_alias (lr1_prev, lr2_next);
-	  lr1_prev = lr2;
-	  if (Do_LRA_Trace(Trace_LRA_Spill)) {
-	    fprintf (TFile, "GTN%d and GTN%d alias\nAlias set:", TN_number(tn1),
-		     TN_number(tn2));
-	    FOR_LR_AND_ALL_ALIASES(lr1, alias) {
-	      fprintf (TFile, " GTN%d", TN_number(LR_tn(alias)));
-	    } FOR_LR_AND_ALL_ALIASES_END (lr1, alias);
-	    fprintf (TFile, "\n");
-	  }
-	}	  
-      }
-    }
-    else if (LRA_overlap_coalescing) {
-      // [TTh] Benefit of the current loop to find the widest local TN
-      // for each register class.
-      INT nregs = TN_nhardregs(tn1);
-      ISA_REGISTER_CLASS rc = TN_register_class(tn1);
-      if (nregs > regclass_widest_local_TN[rc]) {
-	regclass_widest_local_TN[rc] = nregs;
-      }
-    }
-  }
-#endif
-
-#ifdef TARG_ST
-  // [TTh] Fill overlap coalescing info at end of BB
-  if (LRA_overlap_coalescing && (BB_length(bb) > 0)) {
-    // Define live out dedicated registers as alive
-    ISA_REGISTER_CLASS cl;
-    FOR_ALL_ISA_REGISTER_CLASS (cl) {
-      REGISTER r;
-      for (r = REGISTER_MIN; r <= REGISTER_MAX; r++) {
-	if (avail_regs[cl].reg[r] == FALSE &&
-	    ded_reg_last_use(cl, r) > BB_length(bb)) {
-	  Set_ded_reg_ovcoal_alive_count(cl, r, 1);
-	}
-      }
-    }
-
-    BOOL bb_call = BB_call(bb);
-    for (LIVE_RANGE *lr1 = Live_Range_List; lr1 != NULL; lr1 = LR_next(lr1)) {
-      TN *tn1 = LR_tn (lr1);
-      // Cleanup overlap coalescing tree
-      if ((!TN_is_local_reg(tn1)) &&
-	  (LR_ovcoal_parent(lr1) || LR_ovcoal_child(lr1))) {
-	if (LR_next_alias(lr1) != lr1 || LR_early_clobber(lr1)) {
-	  // Forbid overlap coalescing with aliased nodes
-	  if (Do_LRA_Trace(Trace_LRA_Detail)) {
-	    fprintf(TFile, OVCOAL_MSG" Detach GTN%d from its tree (aliased or early clobbered)\n", TN_number(tn1));
-	  }
-	  Detach_LR_ovcoal(lr1);
-	}
-	else if ((LR_last_use(lr1) > BB_length(bb)) ||
-		 (bb_call && 
-		  LRA_TN_register(tn1) != REGISTER_UNDEFINED &&
-		  REGISTER_SET_MemberP(REGISTER_CLASS_caller_saves(TN_register_class(tn1)), LRA_TN_register(tn1)))) {
-	  // The GTN is either live out or potentially used by the call
-	  Update_Overlap_Coalescing_Info_For_Use(lr1);
-	}
-      }
-    }
-
-    // Propagate preference along the coalescing tree
-    for (LIVE_RANGE *lr1 = Live_Range_List; lr1 != NULL; lr1 = LR_next(lr1)) {
-      if (LRA_TN_register(LR_tn(lr1)) != REGISTER_UNDEFINED) {
-	Propagate_Overlap_Coalescing_Preference_Leaf_To_Root(lr1, LRA_TN_register(LR_tn(lr1)));
-      }
-    }
-
-    // Set overlap coalescing class for live out dedicated register
-    for (LIVE_RANGE *lr1 = Live_Range_List; lr1 != NULL; lr1 = LR_next(lr1)) {
-      TN *tn1 = LR_tn (lr1);
-      if ((!TN_is_local_reg(tn1)) && LR_last_use(lr1) > BB_length(bb)) {
-	// [TTh] Dealing with a Global TN, that is live out of the BB
-	Set_ded_reg_ovcoal_root(TN_register_class(tn1),
-				LRA_TN_register(tn1),
-				LR_ovcoal_root(lr1),
-				LR_ovcoal_rank(lr1));
-      }
-    }
-  }
-#endif
-
 }
 
 
@@ -2561,7 +954,7 @@ Is_OP_Spill_Load (OP *op, ST *spill_loc)
 {
   if (!OP_load(op)) return FALSE;
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   // 14329: Filter out indexed loads
   if (TOP_Find_Operand_Use(OP_code(op), OU_index) >= 0)
     return FALSE;
@@ -2582,7 +975,7 @@ static BOOL
 Is_OP_Spill_Store (OP *op, ST *spill_loc)
 {
   if (!OP_store(op)) return FALSE;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   // 14329: Filter out indexed stores
   if (TOP_Find_Operand_Use(OP_code(op), OU_index) >= 0)
     return FALSE;
@@ -2632,37 +1025,16 @@ static void
 Quick_Mark_Reloadable_Live_Ranges (ISA_REGISTER_CLASS cl)
 {
 
-#ifdef TARG_ST
-  // Disable Reloading for spilling with -CG:LRA_mask=0x1000.
-  if (CG_LRA_mask & 0x1000) return;
-#else
   // Disable Reloading for spilling with -Wb,-ttlra:0x1000.
   if (Get_Trace (TP_ALLOC, 0x1000)) return;
-#endif
   for (LIVE_RANGE *lr = Live_Range_List; lr != NULL; lr = LR_next(lr)) {
     // Look for live ranges with a single definition and no exposed uses.
     if (LR_exposed_use(lr) || LR_def_cnt(lr) != 1) continue;
-
-#ifdef TARG_ST
-    // Do not attempt to reload live ranges with aliases.
-    if (LR_next_alias(lr) != lr) continue;
-#endif
 
     OP *def_op = OP_VECTOR_element (Insts_Vector, LR_first_def(lr));
     // For now, restrict ourselves to considering only non-volatile loads.
     if (!OP_load(def_op) || OP_has_implicit_interactions(def_op))
       continue;
-
-#ifdef TARG_ST
-    // [CG] Multiple result load cannot be safely used for reloading
-    // a live range. I suppose that the original code did not
-    // filter this to handle loads with flag register settings that
-    // are safe to duplicate. Though in this case this property
-    // should be explicitly tested. For now disable multiple register
-    // load duplication.
-    if (OP_results(def_op) > 1)
-      continue;      
-#endif
 
     TN *result_tn;
     INT i;
@@ -2753,13 +1125,6 @@ Mark_Reloadable_Live_Ranges (ISA_REGISTER_CLASS cl)
 	Need_Dep_Graph_For_Mark_Reloadable_Live_Ranges = TRUE;
 #endif
     }
-#ifdef TARG_ST
-    if (reloadable && Do_LRA_Trace(Trace_LRA_Detail)) {
-      fprintf (TFile, "%s_LR>TN%d is reloadable\n",
-	       TN_is_local_reg(LR_tn(lr)) ? "LOCAL" : "GLOBAL",
-	       TN_number(LR_tn(lr)));
-    }
-#endif
   }
 }
 
@@ -2807,36 +1172,9 @@ Remove_Redundant_Code (BB *bb)
   do {
     OP *next_op = OP_next(op);
     if ((CGTARG_Is_Preference_Copy(op) &&
-#ifdef TARG_ST
-	 // Arthur: we need to consider the COPYA,COPYD, etc. as
-	 //         target copies. It seems that IA64 does not
-	 //         consider int->fp moves as a copy ... why ?
-	 //
-	 //         Thus, not only equivalence of TN_register matters
-	 //         but also its register class.
-	 //
-	 LRA_TN_register(OP_result(op,OP_Copy_Result(op))) ==
-	 LRA_TN_register(OP_opnd(op, OP_Copy_Operand(op))) &&
-
-	 TN_register_class(OP_result(op,OP_Copy_Result(op))) ==
-	 TN_register_class(OP_opnd(op, OP_Copy_Operand(op)))) ||
-#else
 	 LRA_TN_register(OP_result(op,0)) ==
 	 LRA_TN_register(OP_opnd(op,CGTARG_Copy_Operand(op)))) ||
-#endif
 	Is_Marked_For_Removal(op)) {
-#ifdef TARG_ST
-      // CL: hope that this won't affect next passes.
-      // When allocating a dedicated register to a tn,
-      // mark that tn as dedicated too.
-      // This is to fix an issue before a call
-      // to a function with one arg being an unnamed const
-      // and where we miss the dependency because the TN
-      // which holds that arg is not marked as dedicated.
-    if (OP_Is_Preference_Copy(op) && TN_is_dedicated(OP_result(op,OP_Copy_Result(op)))) {
-      Set_TN_is_dedicated(OP_opnd(op, OP_Copy_Operand(op)));
-    }
-#endif
       BB_Remove_Op (bb, op);
       Reset_BB_scheduled (bb);
     }
@@ -2862,14 +1200,14 @@ Init_Avail_Regs (void)
   ISA_REGISTER_CLASS cl;
 
   memset(avail_regs, 0, sizeof(avail_regs));
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   memset(last_freed, 0, sizeof(last_freed));
 #endif
 
   FOR_ALL_ISA_REGISTER_CLASS(cl) {
     FOR_ALL_REGISTER_SET_members (avail_set[cl], reg) {
       avail_regs[cl].reg[reg] = TRUE;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       last_freed[cl].reg[reg] = INT_MAX;
 #endif
     }
@@ -2882,60 +1220,7 @@ Init_Avail_Regs (void)
  *
  * Add the register (regclass,reg) back to the avail_regs list.
  *
-#ifdef TARG_ST
- * [TTh] When overlap coalescing is enabled, several TNs can be allocated
- * at the same time to a given dedicated register (they belong to the same
- * coalescing tree). A use count is then maintained and the dedicated
- * register is effectively freed when there is no more user of it.
-#endif
  * ======================================================================*/
-#ifdef TARG_ST
-  static void
-Add_Avail_Reg (ISA_REGISTER_CLASS regclass, REGISTER reg, INT nregs, INT cur_op)
-{
-  TN *tn = Build_Dedicated_TN (regclass, reg, 0);
-  REGISTER r;
-  FOR_ALL_NREGS(reg, nregs, r) {
-    // are we establishing fat points?
-    if (Calculating_Fat_Points()) {
-      if (fat_points[cur_op] != FAT_POINTS_MIN) fat_points[cur_op]--;
-      //
-      // infinite register set used when establishing fat points.
-      //
-      if (r > REGISTER_MAX) continue;
-    }
-
-    /* don't put non-allocatable registers back on the free list. */
-    /* I assume that if the first register is non-allocatable, then
-       all nregs are non-allocatable, and so return here.
-       This helps with the use of register pair ( $0, $1 ) to represent
-       zero, where $1 is not actually used. */
-    if (!REGISTER_allocatable(regclass, r)) return;
-
-    /* register excluded (by swp) */
-    if (REGISTER_SET_MemberP(exclude_set[regclass], r)) continue;
-
-    // For Zero TN, only first register is considered
-    if (r != reg && TN_is_zero_reg(tn)) continue;
-
-    if (Do_LRA_Trace(Trace_LRA_Detail)) {
-      fprintf (TFile, "Deallocated register %s\n", REGISTER_name(regclass, r));
-    }
-    Is_True (!avail_regs[regclass].reg[r], (" LRA: Error in Add_Avail_Reg"));
-    if (LRA_overlap_coalescing && !TN_is_zero_reg(tn)) {
-      // Update overlap coalescing info and effectively free the
-      // register if no more alive.
-      Decrement_ded_reg_ovcoal_alive_count(regclass, r);
-      if (ded_reg_ovcoal_alive_count(regclass, r) <= 0 ) {
-	avail_regs[regclass].reg[r] = TRUE;
-      }
-    }
-    else {
-      avail_regs[regclass].reg[r] = TRUE;
-    }
-  }
-}
-#else
 static void
 Add_Avail_Reg (ISA_REGISTER_CLASS regclass, REGISTER reg, INT cur_op)
 {
@@ -2973,7 +1258,6 @@ Add_Avail_Reg (ISA_REGISTER_CLASS regclass, REGISTER reg, INT cur_op)
   last_freed[regclass].reg[reg] = cur_op;
 #endif
 }
-#endif
 
 
 /* ======================================================================
@@ -2981,69 +1265,7 @@ Add_Avail_Reg (ISA_REGISTER_CLASS regclass, REGISTER reg, INT cur_op)
  *
  * Delete the register <regclass, reg> from the avail_regs list. 
  *
-#ifdef TARG_ST
- * [TTh] When overlap coalescing is enabled, the same dedicated registers
- * can be allocated several times as long as all allocated TNs belongs to
- * the same overlap coalescing tree.
-#endif
  * ======================================================================*/
-#ifdef TARG_ST
-inline void
-Delete_Avail_Reg (ISA_REGISTER_CLASS regclass, REGISTER reg, INT nregs,
-		  INT cur_op, LIVE_RANGE* lr)
-{
-  TN *tn = Build_Dedicated_TN (regclass, reg, 0);
-  // are we establishing fat points?
-  if (Calculating_Fat_Points()) {
-    if (fat_points[cur_op] != FAT_POINTS_MAX) fat_points[cur_op]+=nregs;
-    //
-    // infinite register set used when establishing fat points.
-    //
-    if (reg > REGISTER_MAX) return;
-  }
-  REGISTER r;
-  FOR_ALL_NREGS(reg, nregs, r) {
-    if (TN_is_zero_reg(tn)) {
-      // Specific handling for Zero TN:
-      // - No overlap coalescing sanity check performed, as LR with different
-      //   overlap coalescing classes might be allocated to it, following
-      //   optimistic coalescing done in Is_Non_Allocatable_Reg_Available()
-      // - Only first register is considered
-      if (r != reg) continue;
-    }
-    else if (LRA_overlap_coalescing) {
-      if (ded_reg_ovcoal_alive_count(regclass, r)>0) {
-	// Current register not available: Check that it is allocated to the
-	// same overlap coalescing class.
-	FmtAssert((ded_reg_ovcoal_root(regclass, r)==LR_ovcoal_root(lr) &&
-		   ded_reg_ovcoal_rank(regclass, r)==LR_ovcoal_rank(lr)+(r-reg)),
-		  ("Delete_Avail_Reg(): Register '%s' already used by an incompatible overlap coalescing class!\n"
-		   "\tAllocated class: "OVCOAL_BASE_NAME"%d (rank:%d) use_count:%d\n"
-		   "\tNew       class: "OVCOAL_BASE_NAME"%d (rank:%d) used by TN%d\n",
-		   REGISTER_name(regclass, r),
-		   ded_reg_ovcoal_root(regclass, r)?TN_number(LR_tn(ded_reg_ovcoal_root(regclass, r))):0,
-		   ded_reg_ovcoal_rank(regclass, r),
-		   ded_reg_ovcoal_alive_count(regclass, r),
-		   LR_ovcoal_root(lr)?TN_number(LR_tn(LR_ovcoal_root(lr))):0,
-		   LR_ovcoal_rank(lr)+(r-reg),
-		   TN_number(LR_tn(lr))));
-	Increment_ded_reg_ovcoal_alive_count(regclass, r);
-      }
-      else {
-	// Current register available: Associate it to current LR
-	// overlap coalescing class.
-	Set_ded_reg_ovcoal_root(regclass, r, LR_ovcoal_root(lr),
-				LR_ovcoal_rank(lr)+(r-reg));
-	Set_ded_reg_ovcoal_alive_count(regclass, r, 1);
-      }
-    }
-    if (Do_LRA_Trace(Trace_LRA_Detail)) {
-      fprintf (TFile, "Allocated register %s\n", REGISTER_name(regclass, r));
-    }
-    avail_regs[regclass].reg[r] = FALSE;
-  }
-}
-#else
 inline void
 Delete_Avail_Reg (ISA_REGISTER_CLASS regclass, REGISTER reg, INT cur_op)
 {
@@ -3057,28 +1279,6 @@ Delete_Avail_Reg (ISA_REGISTER_CLASS regclass, REGISTER reg, INT cur_op)
   }
   avail_regs[regclass].reg[reg] = FALSE;
 }
-#endif
-
-#ifdef TARG_ST
-// [TTh] When overlap coalescing is enabled, registers are seen as available if
-// they are already used by TN belonging to the same overlap coalescing tree and
-// with compatible rank.
-static BOOL Regs_Available (ISA_REGISTER_CLASS rclass, REGISTER reg, INT nregs, LIVE_RANGE *lr)
-{
-  INT rank = LR_ovcoal_rank(lr);
-  REGISTER r;
-  FOR_ALL_NREGS(reg, nregs, r) {
-    if (!avail_regs[rclass].reg[r] &&
-	(ded_reg_ovcoal_root(rclass, r) == OVCOAL_ROOT_UNDEF ||
-	 ded_reg_ovcoal_root(rclass, r) != LR_ovcoal_root(lr) ||
-	 ded_reg_ovcoal_rank(rclass, r) != rank)) {
-      return FALSE;
-    }
-    rank++;
-  }
-  return TRUE;
-}
-#endif
 
 
 /* ======================================================================
@@ -3092,62 +1292,6 @@ static BOOL Regs_Available (ISA_REGISTER_CLASS rclass, REGISTER reg, INT nregs, 
  *   3. the first definition of <lr> is the same as the exposed use of <lr>
  *      and the definition is not an OP_uniq_res.
  * ======================================================================*/
-#ifdef TARG_ST
-static BOOL
-Is_Reg_Available (ISA_REGISTER_CLASS regclass, 
-                  REGISTER_SET usable_regs, 
-                  REGISTER reg, 
-		  INT nregs,
-                  LIVE_RANGE *lr)
-{
-  //
-  // infinite register set used when establishing fat points.
-  //
-  if (reg > REGISTER_MAX) {
-    //
-    // we should only get here if we're trying to use the result
-    // register for one of the operands.  if so, then it should
-    // have just been freed if its available.  otherwise, we don't
-    // reuse the register numbers beyond the physical register set
-    // (i.e. the "infinite" ones).  as a result, we don't really
-    // keep track of their availability.
-    //
-    if (last_infinite_freed == reg) {
-      return TRUE;
-    } else {
-      return FALSE;
-    }
-  }
-
-  if (reg != REGISTER_UNDEFINED && 
-      Regs_Available(regclass, reg, nregs, lr) &&
-      REGISTER_SET_MemberP(usable_regs, reg)) {
-    OP *op;
-    INT lr_def; 
-
-    //
-    // for undefined locals, treat exposed use as first def since we
-    // want to free the register immediately after the exposed use.
-    //
-    if (LR_Is_Undefined_Local(lr)) {
-      lr_def = LR_exposed_use(lr);
-    } else {
-      lr_def = LR_effective_first_def(lr);
-    }
-    REGISTER r;
-    FOR_ALL_NREGS (reg, nregs, r) {
-      if (!(lr_def > ded_reg_exposed_use(regclass, r) ||
-	    lr_def == ded_reg_exposed_use(regclass, r) &&
-	    (op = OP_VECTOR_element (Insts_Vector, LR_first_def(lr))) &&
-	    (OP_results(op) > 0 && !OP_uniq_res(op,0)))) {
-	return FALSE;
-      }
-    }
-    return TRUE;
-  }
-  return FALSE;
-}
-#else
 static BOOL
 Is_Reg_Available (ISA_REGISTER_CLASS regclass, 
                   REGISTER_SET usable_regs, 
@@ -3200,76 +1344,11 @@ Is_Reg_Available (ISA_REGISTER_CLASS regclass,
   }
   return FALSE;
 }
-#endif
 
 
 /* If the <reg> is non-allocatable, we can use it for the live-range <lr>,
  * as long as it is safe to do so.
  */
-#ifdef TARG_ST
-static BOOL
-Is_Non_Allocatable_Reg_Available (
-  ISA_REGISTER_CLASS regclass, 
-  REGISTER_SET usable_regs,
-  REGISTER reg,
-  INT nregs,
-  LIVE_RANGE *lr)
-{
-  if (! REGISTER_SET_MemberP(usable_regs, reg)) {
-    return FALSE;
-  }
-
-  TN *tn = Build_Dedicated_TN (regclass, reg, 0);
-
-  if (TN_is_zero_reg(tn)) {
-    /* For the special case of a single definition of the live range
-     * which is a copy from $0, we can assign $0 to the live range.
-     */
-    if (LR_def_cnt(lr) == 1) {
-      OP *op = OP_VECTOR_element (Insts_Vector, LR_first_def(lr));
-      if (OP_Is_Preference_Copy(op) &&
-	  LRA_TN_register(OP_opnd(op, OP_Copy_Operand(op))) == reg)
-        return TRUE;
-      else if (OP_compose(op)) {
-	// [SC] Allow compose ops where all the opnds are reg.
-	//  e.g.   tn :- compose $0, $0
-	// can allocate $0 to tn.
-	INT opnd;
-	for (opnd = 0; opnd < OP_opnds(op); opnd++) {
-	  if (LRA_TN_register(OP_opnd(op, opnd)) != reg) {
-	    return FALSE;
-	  }
-	}
-	return TRUE;
-      }
-    }
-    return FALSE;
-  }
-
-  INT rank = LR_ovcoal_rank(lr);
-  REGISTER r;
-  FOR_ALL_NREGS (reg, nregs, r) {
-    if (REGISTER_allocatable (regclass, r) ||
-	LR_effective_first_def(lr) < ded_reg_exposed_use(regclass, r) ||
-	LR_last_use(lr) > ded_reg_first_def(regclass, r)
-	// [TTh] Disable opportunistic coalescing if non-compatible
-	// overlap coalescing class
-	|| LR_ovcoal_root(lr) == NULL
-	|| LR_ovcoal_root(lr) != ded_reg_ovcoal_root(regclass, r)
-	|| rank != ded_reg_ovcoal_rank(regclass, r)) {
-      return FALSE;
-    }
-    rank++;
-  }
-  /* extend the exposed use of the non-allocatable TN */
-  FOR_ALL_NREGS (reg, nregs, r) {
-    if (ded_reg_exposed_use(regclass, r) < LR_last_use(lr)) {
-      Set_ded_reg_exposed_use(regclass, r, LR_last_use(lr));
-    }
-  }
-  return TRUE;
-}
-#else
 static BOOL
 Is_Non_Allocatable_Reg_Available (
   ISA_REGISTER_CLASS regclass, 
@@ -3309,82 +1388,7 @@ Is_Non_Allocatable_Reg_Available (
   }
   return FALSE;
 }
-#endif
 
-#ifdef TARG_ST
-/*
- * Return TRUE if assigning <reg> to <tn> is optimal, return FALSE otherwise.
- * If the returned value is FALSE, <suboptimal_coalescing> parameter is set
- * depending on wether or not this allocation can impact coalescing.
- *
- * Details:
- * Considering that current register class is divided in N multi registers
- * of size S, and considering only the multi-register MR containing <reg>,
- * return TRUE if <tn> either fully occupy MR register or if at least one part
- * of MR that will not be used by <tn> is already allocated to another TN,
- * that will never need to be coalesced with <reg>.
- * Return FALSE otherwise.
- * The size S of multi-registers corresponds to the widest local TN of this
- * register class in current BB.
- * <suboptimal_coalescing> flag is set to TRUE if choosing this register
- * might lead to suboptimal coalescing for some other TNs.
- *
- * Notes: - This function is context sensitive and must therefore only be
- *          called during the allocation walk (dependency on avail_regs array).
- *        - Rely on the fact that registers are grouped uniformly for
- *          all registers of the register class.
- */
-static BOOL
-Is_Optimal_Fill_Register_For_TN(TN *tn, REGISTER reg, BOOL *suboptimal_coalescing) {
-  INT i;
-  INT widest_tn_nregs;
-  INT current_tn_nregs;
-
-  *suboptimal_coalescing = FALSE;
-
-  ISA_REGISTER_CLASS rc = TN_register_class(tn);
-
-  if (TN_nhardregs(tn) >= regclass_widest_local_TN[rc]) {
-    return TRUE;
-  }
-
-  widest_tn_nregs  = regclass_widest_local_TN[rc];
-  current_tn_nregs = TN_nhardregs(tn);
-
-  // Register range of current tn if allocated to reg
-  INT first_reg_to_alloc = reg;
-  INT last_reg_to_alloc  = reg + current_tn_nregs - 1;
-
-  // Register range of the widest multi-register
-  INT rank_mask = widest_tn_nregs - 1;
-  INT first_reg_to_check = (((INT)reg-1) & ~rank_mask) + 1;
-  INT last_reg_to_check  = first_reg_to_check + widest_tn_nregs - 1;
-
-  BOOL fully_avail = TRUE;
-  for (i=first_reg_to_check; i<=last_reg_to_check; i++) {
-    if ((i < first_reg_to_alloc || i > last_reg_to_alloc) &&
-	(avail_regs[rc].reg[i] == FALSE)) {
-      fully_avail = FALSE;
-      // Register <i> is already allocated to a TN: check if current
-      // allocation will block coalescing for this specific TN with
-      // its parent in the overlap coalescing tree.
-      LIVE_RANGE *lr = ded_reg_ovcoal_root(rc, i);
-      if (lr &&
-	  ((i < first_reg_to_alloc &&
-	    ((i + TN_nhardregs(LR_tn(lr)) - ded_reg_ovcoal_rank(rc, i) - 1) >= first_reg_to_alloc)) ||
-	   (i > last_reg_to_alloc &&
-	    ((i - ded_reg_ovcoal_rank(rc, i)) <= last_reg_to_alloc)))) {
-	*suboptimal_coalescing = TRUE;
-	return FALSE;
-      }
-    }
-  }
-  
-  // Return TRUE if part of the widest register is already allocated, 
-  // because choosing <reg> will contribute to fill the widest one.
-  return (!fully_avail);
-}
-#endif
 
 /* ======================================================================
  * Get_Avail_Reg
@@ -3395,30 +1399,14 @@ Is_Optimal_Fill_Register_For_TN(TN *tn, REGISTER reg, BOOL *suboptimal_coalescin
  * ======================================================================*/
 static REGISTER
 Get_Avail_Reg (ISA_REGISTER_CLASS regclass, 
-#ifdef TARG_ST
-	       INT nregs,
-#endif
                REGISTER_SET usable_regs, 
                LIVE_RANGE *lr, 
-#ifdef TARG_ST
-	       REGISTER_SET skip_regs
-#else
-               REGISTER skip_reg
-#endif
-	       )
+               REGISTER skip_reg)
 {
-#ifdef TARG_ST
-  // [SC]: If LRA_minregs is set, do not allocate registers in
-  // round-robin fashion.  This minimizes the set of registers used
-  // for LRA.
-  REGISTER next_reg = (LRA_minregs ? REGISTER_MIN
-                                   : (last_assigned_reg[regclass] + 1));
-#else
   REGISTER next_reg = last_assigned_reg[regclass] + 1;
-#endif
   REGISTER reg = REGISTER_UNDEFINED;
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   // Find the least-recently-used register.
   //
   // For x86-64, handle least-recently-used before legacy-regs because
@@ -3479,73 +1467,6 @@ Get_Avail_Reg (ISA_REGISTER_CLASS regclass,
     }
   } else
 #endif
-#ifdef TARG_ST
-  // There is a possibility here to have next_reg > REGISTER_MAX
-  // in this case set it to REGISTER_MIN
-  if (next_reg > REGISTER_MAX) next_reg = REGISTER_MIN;
-
-  // [TTh] When overlap coalescing is enabled, try to find a register which meet
-  // the following properties:
-  // - OPTIMAL RANK: the register chosen should allow to coalesce current LR
-  //   with its parents in the coalescing tree, by checking that its rank is
-  //   correct when seeing the register class as group of multi-registers of
-  //   size S, S depending on the size of parent LR in coalescing tree.
-  // - OPTIMAL FILL: considering that current register class is divided in N
-  //   multi registers of size S, prefer a register that will be contiguous
-  //   to an already allocated register within its multi-register.
-  //   This property will help to keep full multi-registers available.
-  INT ovcoal_optimal_rank=0, ovcoal_parent_size=0;
-  REGISTER suboptimal_reg   = REGISTER_UNDEFINED;
-  INT suboptimal_reg_status = -1;
-
-  if (LRA_overlap_coalescing) {
-    ovcoal_optimal_rank = LR_ovcoal_rank(lr);
-    ovcoal_parent_size  = TN_nhardregs(LR_tn(LR_ovcoal_root(lr)));
-  }
-  
-  // Get the best available register in the order given by gra_color.
-  REGISTER_SET subclass_allowed = usable_regs;
-  REGISTER_SET allowed = REGISTER_SET_Difference(REGISTER_CLASS_allocatable(regclass),
-						 skip_regs);
-  reg = CGCOLOR_Choose_Best_Register(regclass, nregs, subclass_allowed, allowed, next_reg);
-  while (reg != REGISTER_UNDEFINED) {
-    if (Is_Reg_Available(regclass, usable_regs, reg, nregs, lr)) {
-      if (!LRA_overlap_coalescing) {
-	break;
-      }
-      else {
-	BOOL subopt_coal = FALSE;
-	BOOL is_opt_rank = REGISTER_Has_Expected_Rank(reg, ovcoal_parent_size, ovcoal_optimal_rank);
-	BOOL is_opt_fill = Is_Optimal_Fill_Register_For_TN(LR_tn(lr), reg, &subopt_coal);
-
-	if (is_opt_rank && is_opt_fill) {
-	  break; // Optimal reg found
-	}
-	else {
-	  // Compute score for current register and keep the best one
-	  INT new_status;
-	  new_status  = is_opt_rank ? 4 : 0;
-	  new_status |= is_opt_fill ? 2 : 0;
-	  new_status |= subopt_coal ? 0 : 1;
-	  if (new_status > suboptimal_reg_status) {
-	    suboptimal_reg = reg;
-	    suboptimal_reg_status = new_status;
-	  }
-	}
-      }
-    }
-    reg = CGCOLOR_Choose_Next_Best_Register();
-  }
-
-  if (reg == REGISTER_UNDEFINED) {
-    // No optimal register found for coalescing, but maybe a suboptimal
-    // one is available.
-    reg = suboptimal_reg;
-  }
-  // If we found it, allocate it
-  if (reg != REGISTER_UNDEFINED) goto available;
-
-#else /* TARG_ST */
   {
     // Get the next available register starting from the last_assigned_reg.
     // This gets registers in a round-robin fashion, which is better for the
@@ -3581,31 +1502,10 @@ Get_Avail_Reg (ISA_REGISTER_CLASS regclass,
 #endif
     }
   }
-#endif /* !TARG_ST */
 
 #ifdef HAS_STACKED_REGISTERS
   //
   // Try a register stack register
- #ifdef TARG_ST
-  // Only try a stacked register if nregs == 1, because we have no way
-  // to request nregs consecutive registers.
-  //
-  if (nregs == 1) {
-    reg = REGISTER_Request_Stacked_Register(ABI_PROPERTY_stacked, regclass);
-    if (reg != REGISTER_UNDEFINED && REGISTER_SET_MemberP(usable_regs, reg)) {
-      avail_set[regclass] = REGISTER_SET_Union1(avail_set[regclass], reg);
-      if (Do_LRA_Trace(Trace_LRA_Spill)) {
-	fprintf (TFile, 
-		 "LRA_SPILL>> Got new stack register: %s %d,%d\n", 
-		 REGISTER_name(regclass, reg), regclass, reg);
-      }
-      avail_regs[regclass].reg[reg] = TRUE;
-      livethrough_computed = FALSE; /* We have added a new live reg and need to re-compute. */
-      // Available in reg
-      goto available;
-    }
-  }
-#else
   reg = REGISTER_Request_Stacked_Register(ABI_PROPERTY_stacked, regclass);
   if (reg != REGISTER_UNDEFINED && REGISTER_SET_MemberP(usable_regs, reg)) {
     avail_set[regclass] = REGISTER_SET_Union1(avail_set[regclass], reg);
@@ -3618,7 +1518,6 @@ Get_Avail_Reg (ISA_REGISTER_CLASS regclass,
     livethrough_computed = FALSE; /* We have added a new live reg and need to re-compute. */
     return reg;
   }
-#endif /* !TARG_ST */
 #endif  /* HAS_STACKED_REGISERS */
 
   /* if not running GRA, try to get additional callee save registers */
@@ -3626,32 +1525,6 @@ Get_Avail_Reg (ISA_REGISTER_CLASS regclass,
     REGISTER_SET unused_callees = REGISTER_SET_Difference (
                                       REGISTER_CLASS_callee_saves(regclass), 
                                       Callee_Saved_Regs_Used[regclass]);
-#ifdef TARG_ST
-    REGISTER_SET usable_unused_callees =
-      REGISTER_SET_Intersection(unused_callees, usable_regs);
-    
-    reg = REGISTER_SET_Choose (usable_unused_callees);
-    if (reg != REGISTER_UNDEFINED) { 
-      REGISTER_SET regs = REGISTER_SET_Range (reg, reg+nregs-1);
-      if (REGISTER_SET_ContainsP(unused_callees, regs)) {
-        avail_set[regclass] = REGISTER_SET_Union (avail_set[regclass], regs);
-        if (Do_LRA_Trace(Trace_LRA_Spill)) {
-          fprintf (TFile, 
-		   "LRA_SPILL>> Got new callee save register: %d,%d", regclass, reg);
-          if (nregs > 1) {
-            fprintf (TFile, "-%d", reg + nregs - 1);
-	  }
-          fprintf (TFile, "\n");
-        }
-        REGISTER r;
-        FOR_ALL_REGISTER_SET_members (regs, r) {
-          avail_regs[regclass].reg[r] = TRUE;
-        }
-        // Available in reg
-	goto available;
-      }
-    }
-#else
     unused_callees = REGISTER_SET_Intersection(unused_callees, usable_regs);
     reg = REGISTER_SET_Choose (unused_callees);
     if (reg != REGISTER_UNDEFINED) { 
@@ -3665,59 +1538,13 @@ Get_Avail_Reg (ISA_REGISTER_CLASS regclass,
       avail_regs[regclass].reg[reg] = TRUE;
       return reg;
     }
-#endif
   }
   if (Calculating_Fat_Points()) {
-#ifdef TARG_ST
-    reg_infinite += nregs;
-    return reg_infinite;
-#else
     return ++reg_infinite;
-#endif
   } else {
     return REGISTER_UNDEFINED;
   }
-  
-#ifdef TARG_ST
-  // We get here with available register (of nregs size) in reg variable
-  // if we found an available register
- available:
-  DevAssert(reg != REGISTER_UNDEFINED, ("Unexpected undefined register"));
-  
-  // Update callee save regs used. This update must be done as the
-  // local register allocator may have choosen a callee saved register
-  // granted by GRA.
-  {
-    // Inform cg_color that we actually allocate it
-    CGCOLOR_Allocate_N_Registers(regclass, reg, nregs);
-      
-    for (INT r = reg; r < reg + nregs; r++) {
-      if (REGISTER_SET_MemberP(REGISTER_CLASS_callee_saves(regclass), r)) {
-	Callee_Saved_Regs_Used[regclass] = 
-	  REGISTER_SET_Union1(Callee_Saved_Regs_Used[regclass], r);
-      }
-    }
-  }
-  return reg;
-#endif
 }
-
-#ifdef TARG_ST
-static void print_avail_regs ()
-{
-  REGISTER reg;
-  ISA_REGISTER_CLASS cl;
-  fprintf (TFile, " avail_regs:");
-  FOR_ALL_ISA_REGISTER_CLASS(cl) {
-    for (reg = REGISTER_MIN; reg <= REGISTER_MAX; reg++) {
-      if (avail_regs[cl].reg[reg]) {
-	fprintf (TFile, " %s", REGISTER_name (cl, reg));
-      }
-    }
-  }
-  fprintf (TFile, "\n");
-}
-#endif
 
 
 /* ======================================================================
@@ -3733,16 +1560,10 @@ Allocate_Register (
   ISA_REGISTER_CLASS result_regclass,
   REGISTER_SET usable_regs,
   REGISTER result_reg,
-#ifdef TARG_ST
-  INT result_nregs,
-#endif
   INT opnum)
 {
   ISA_REGISTER_CLASS regclass;
   REGISTER reg;
-#ifdef TARG_ST
-  INT nregs = TN_nhardregs (tn);
-#endif
   LIVE_RANGE *clr = LR_For_TN (tn);
 
   regclass = TN_register_class(tn);
@@ -3753,71 +1574,26 @@ Allocate_Register (
    */
   if (!uniq_result &&
       regclass == result_regclass &&
-#ifdef TARG_ST
-      Is_Reg_Available (regclass, usable_regs, result_reg, nregs, clr) &&
-      // [TTh] With overlap coalescing enabled, uses result_reg only if is correctly
-      // aligned to be coalesced with the root of its coalescing tree.
-      (!LRA_overlap_coalescing ||
-       REGISTER_Has_Expected_Rank(result_reg,
-				  TN_nhardregs(LR_tn(LR_ovcoal_root(clr))),
-				  LR_ovcoal_rank(clr))))
-#else
       Is_Reg_Available (regclass, usable_regs, result_reg, clr))
-#endif
   {
     reg = result_reg;
   }
   else {
-#ifdef TARG_ST
-    REGISTER_SET skip_regs;
-#else
     REGISTER skip_reg;
-#endif
 
     if (uniq_result && regclass == result_regclass) {
-#ifdef TARG_ST
-      if (result_reg == REGISTER_UNDEFINED
-	  || (Calculating_Fat_Points() && result_reg > REGISTER_MAX)) {
-	skip_regs = REGISTER_SET_EMPTY_SET;
-      } else {
-	skip_regs = REGISTER_SET_Range (result_reg, result_reg + result_nregs - 1);
-      }
-#else
       skip_reg = result_reg;
-#endif
     }
     else {
-#ifdef TARG_ST
-      skip_regs = REGISTER_SET_EMPTY_SET;
-#else
       skip_reg = REGISTER_UNDEFINED;
-#endif
     }
 
-#ifdef TARG_ST
-    reg = Get_Avail_Reg (regclass, nregs, usable_regs, clr, skip_regs);
-#else
     reg = Get_Avail_Reg (regclass, usable_regs, clr, skip_reg);
-#endif
     if (reg == REGISTER_UNDEFINED) return REGISTER_UNDEFINED;
   }
-#ifdef TARG_ST
-  Delete_Avail_Reg (regclass, reg, nregs, opnum, clr);
-#else
   Delete_Avail_Reg (regclass, reg, opnum);
-#endif
   if (Do_LRA_Trace(Trace_LRA_Detail)) {
-#ifdef TARG_ST
-    fprintf (TFile, "Allocated register%s %s", "s"+(nregs == 1),
-	     REGISTER_name (regclass, reg));
-
-    if (nregs > 1) {
-      fprintf (TFile, "-%s", REGISTER_name (regclass, reg + nregs - 1));
-    }
-    fprintf (TFile, " for ");
-#else
     fprintf (TFile, "Allocated register %s for ", REGISTER_name (regclass, reg));
-#endif
     Print_TN(tn,FALSE);fprintf(TFile,"\n");
   }
   if (Always_Trace(Trace_LRA) && trace_tn && trace_cl == regclass) {
@@ -3829,12 +1605,8 @@ Allocate_Register (
   // fat points. 
   //
   if (reg <= REGISTER_MAX) {
-#ifdef TARG_ST
-    last_assigned_reg[regclass] = reg + nregs - 1;
-#else
 #ifndef KEY
     last_assigned_reg[regclass] = reg;
-#endif
 #endif
   }
 
@@ -3853,15 +1625,9 @@ Init_Fat_Point_Calculation(ISA_REGISTER_CLASS cl, INT opnum, BB *bb)
   // don't bother calculating fat points if we're just going to
   // reschedule
   //
-#ifdef TARG_ST
-  if (Check_Allow_Reschedule(bb)) {
-    return(FALSE);
-  }
-#else
   if (Check_Allow_Reschedule()) {
     return(FALSE);
   }
-#endif
   fat_point_regs_map = hTN_MAP_Create (&lra_pool);
   use_fat_point_regs = TRUE;
   fat_points = TYPE_MEM_POOL_ALLOC_N(FAT_POINTS_TYPE, &lra_pool, BB_length(bb) + 1);
@@ -3902,7 +1668,7 @@ Update_Callee_Availability(BB *bb)
     // can't allow callee saved registers to be used below stack adjustment
     // in exit block (restores are above it).
     //
-#if defined(KEY) || defined(TARG_ST)
+#if defined(KEY)
     FOR_ALL_ISA_REGISTER_CLASS(cl) {
       avail_set[cl] = REGISTER_SET_Union(avail_set[cl],
 					 Callee_Saved_Regs_Used[cl]);
@@ -3925,7 +1691,7 @@ Update_Callee_Availability(BB *bb)
     // can't allow callee saved registers above stack adjustment in
     // entry block (saves are below it).
     //
-#if defined(KEY) || defined(TARG_ST) // bug 8300
+#if defined(KEY) // bug 8300
     FOR_ALL_ISA_REGISTER_CLASS(cl) {
       avail_set[cl] = REGISTER_SET_Difference(avail_set[cl],
 					      Callee_Saved_Regs_Used[cl]);
@@ -3958,23 +1724,6 @@ Update_Callee_Availability(BB *bb)
 //    (different from <tn>) that requires a specific register,
 //    then that register must not be assigned to <tn>.
 //
-#ifdef TARG_ST
-// 3) If <tn> is the result of an extract op where the source is
-//    an allocated <tn>, and all but one of the source registers
-//    are allocated to other results, then <tn> must not be assigned
-//    to the final remaining register of the source.
-//
-// 4) If <tn> is the result of a compose op where the sources are
-//    all allocated <tns>, and <tn> cannot be allocated
-//    to the final remaining register of the source.
-//
-// 5) If <tn> is operand/result of an asm statement, none of the clobber
-//    list can be assigned.
-//
-// 6) If <tn> is result of an asm statement where it is early clobber, 
-//    none of asm operand can be assigned to it.
-
-#endif
 static REGISTER_SET
 Usable_Registers (TN* tn, LIVE_RANGE* lr)
 {
@@ -3985,12 +1734,6 @@ Usable_Registers (TN* tn, LIVE_RANGE* lr)
   if( TN_is_preallocated(tn) ){
     REGISTER reg = LRA_TN_register( tn );
     return REGISTER_SET_Intersection1(usable_regs,reg);
-  }
-#endif
-#ifdef TARG_ST
-  if (! TN_is_save_reg(tn)) {
-    usable_regs = REGISTER_SET_Difference(usable_regs,
-					  CGTARG_Forbidden_LRA_Registers(cl));
   }
 #endif
 
@@ -4033,42 +1776,10 @@ Usable_Registers (TN* tn, LIVE_RANGE* lr)
 	}
       }
 #endif
-#ifdef TARG_ST
-      // [CG]: If an asm statement and the result is an early clobber
-      // we must not allocate it to any pre-assigned operand.
-      bool is_result_clobber = asm_info && ASM_OP_result_clobber(asm_info)[resnum];
-      if (is_result_clobber) {
-	for (INT onum = 0; onum < OP_opnds(op); onum++) {
-	  TN *opnd = OP_opnd(op, onum);
-	  if (TN_is_register(opnd) && LRA_TN_register(opnd) != REGISTER_UNDEFINED) {
-	    usable_regs = REGISTER_SET_Difference(usable_regs, TN_registers(opnd));
-	  }
-	}
-      }
-#endif
 
       ISA_REGISTER_SUBCLASS sc = asm_info ?
         ASM_OP_result_subclass(asm_info)[resnum] :
         OP_result_reg_subclass(op, resnum);
-
-#ifdef TARG_ST
-      if (OP_extract(op) || OP_compose(op)) {
-	TN* result = OP_result(op, resnum);
-	if (result == tn) {
-	  // For extract and compose ops, avoid the situation where the
-	  // result registers are a non-identity permutation of the
-	  // source registers, because that is impossible to expand
-	  // into a sequence of copies.
-	  if (OP_extract(op)) {
-	    usable_regs = REGISTER_SET_Difference(usable_regs,
-						  unusable_extract_result_regs(op));
-	  } else {
-	    usable_regs = REGISTER_SET_Difference(usable_regs,
-						  unusable_compose_result_regs(op));
-	  }
-	}
-      }
-#endif
 
       if (sc == ISA_REGISTER_SUBCLASS_UNDEFINED) {
         continue;
@@ -4078,15 +1789,7 @@ Usable_Registers (TN* tn, LIVE_RANGE* lr)
       if (result == tn) {
         usable_regs = REGISTER_SET_Intersection(usable_regs, subclass_regs);
       }
-#ifdef TARG_ST
-      // [SC] Generally, avoid a singleton subclass known to be live somewhere
-      // in the live range of TN.  However, allow it for a result in the
-      // same instruction as the last use of TN.
-      else if (REGISTER_SET_Size(subclass_regs) == 1
-	       && opnum < (last_op - 1)) {
-#else
       else if (REGISTER_SET_Size(subclass_regs) == 1) {
-#endif
         usable_regs = REGISTER_SET_Difference(usable_regs, subclass_regs);
       }
     }
@@ -4119,24 +1822,6 @@ Usable_Registers (TN* tn, LIVE_RANGE* lr)
       ISA_REGISTER_SUBCLASS sc = asm_info ?
         ASM_OP_opnd_subclass(asm_info)[opndnum] :
         OP_opnd_reg_subclass(op, opndnum);
-#ifdef TARG_ST
-      if (OP_extract(op) || OP_compose(op)) {
-	TN* opnd = OP_opnd(op, opndnum);
-	if (opnd == tn) {
-	  // For extract and compose ops, avoid the situation where the
-	  // result registers are a non-identity permutation of the
-	  // source registers, because that is impossible to expand
-	  // into a sequence of copies.
-	  if (OP_extract(op)) {
-	    usable_regs = REGISTER_SET_Difference(usable_regs,
-						  unusable_extract_operand_regs(op));
-	  } else {
-	    usable_regs = REGISTER_SET_Difference(usable_regs,
-						  unusable_compose_operand_regs(op));
-	  }
-	}
-      }
-#endif
       if (sc == ISA_REGISTER_SUBCLASS_UNDEFINED) {
         continue;
       }
@@ -4144,15 +1829,7 @@ Usable_Registers (TN* tn, LIVE_RANGE* lr)
       if (opnd == tn) {
         usable_regs = REGISTER_SET_Intersection(usable_regs, subclass_regs);
       }
-#ifdef TARG_ST
-      // [SC] Generally, avoid a singleton subclass known to be live somewhere
-      // in the live range of TN.  However, allow it for an operand in the
-      // same instruction as TN is defined.
-      else if (REGISTER_SET_Size(subclass_regs) == 1
-	       && opnum > first_op) {
-#else
       else if (REGISTER_SET_Size(subclass_regs) == 1) {
-#endif
         usable_regs = REGISTER_SET_Difference(usable_regs, subclass_regs);
       }
     }
@@ -4172,28 +1849,11 @@ Assign_Registers_For_OP (OP *op, INT opnum, TN **spill_tn, BB *bb)
   INT opndnum;
   INT resnum;
   REGISTER reg, result_reg;
-#ifdef TARG_ST
-  INT result_nregs;
-#endif
   ISA_REGISTER_CLASS result_cl;
   BOOL uniq_result;
   LIVE_RANGE *clr;
   BOOL result_failed = FALSE;
   INT nresults = OP_results(op);
-#ifdef TARG_ST
-  // [SC] Note on the size of these arrays:
-  // free_result_reg et al need to have enough entries to cope with
-  // M entries for each result, where M is the number of registers that
-  // may be allocated to a TN (i.e. TN_nhardregs()).
-  // ISA_OPERAND_max_results must be an upper bound for M,
-  // because there must exist an extract instruction with M results.
-  // So give the arrays (nresults * ISA_OPERAND_max_results) entries.
-  TN **free_result_tn = TYPE_ALLOCA_N(TN *, nresults * ISA_OPERAND_max_results);
-  REGISTER *free_result_reg = TYPE_ALLOCA_N(REGISTER, nresults * ISA_OPERAND_max_results);
-  ISA_REGISTER_CLASS *free_result_cl = TYPE_ALLOCA_N(ISA_REGISTER_CLASS,
-                                          nresults * ISA_OPERAND_max_results);
-  INT free_result_entries = 0;
-#else
   mBOOL *free_result = TYPE_ALLOCA_N(mBOOL, nresults);
   INT *free_opnum = TYPE_ALLOCA_N(INT, nresults);
   TN **free_result_tn = TYPE_ALLOCA_N(TN *, nresults);
@@ -4206,13 +1866,12 @@ Assign_Registers_For_OP (OP *op, INT opnum, TN **spill_tn, BB *bb)
   for (resnum = 0; resnum < nresults; resnum++) {
     free_result[resnum] = FALSE;
   }
-#endif
 
   //TODO: change trace to give fat point calculation, not this
   if (Do_LRA_Trace(Trace_LRA_Detail)) {
     fprintf (TFile, "OP:%d>> ", opnum);
     Print_OP_No_SrcLine (op);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     fprintf (TFile, "Avail integer registers: ");
     for (reg = REGISTER_MIN; reg <= REGISTER_MAX; reg++) {
       if (avail_regs[ISA_REGISTER_CLASS_integer].reg[reg])
@@ -4226,9 +1885,6 @@ Assign_Registers_For_OP (OP *op, INT opnum, TN **spill_tn, BB *bb)
         fprintf (TFile, " %s", REGISTER_name (ISA_REGISTER_CLASS_float, reg));
     }
     fprintf (TFile, "\n");
-#endif
-#ifdef TARG_ST
-    print_avail_regs();
 #endif
   }
 
@@ -4244,22 +1900,14 @@ Assign_Registers_For_OP (OP *op, INT opnum, TN **spill_tn, BB *bb)
   //
   uniq_result = FALSE;
   result_reg = REGISTER_UNDEFINED;
-#ifdef TARG_ST
-  result_nregs = 0;
-#endif
   result_cl = ISA_REGISTER_CLASS_UNDEFINED;
   for (resnum = 0; resnum < nresults; resnum++) {
     TN *result_tn = OP_result (op,resnum);
-#ifdef TARG_ST
-    result_nregs = TN_nhardregs(result_tn);
-#endif
 
     clr = LR_For_TN (result_tn);
     result_reg = LRA_TN_register(result_tn);
     result_cl = TN_register_class(result_tn);
-#ifndef TARG_ST
     REGISTER_SET must_use = Usable_Registers(result_tn, clr);
-#endif
 
     //
     // no need to look at result if we're calculating fat points, and
@@ -4272,27 +1920,10 @@ Assign_Registers_For_OP (OP *op, INT opnum, TN **spill_tn, BB *bb)
       // case it may not have a register is if it is an unused def that
       // was not deleted.
       if (result_reg == REGISTER_UNDEFINED) {
-#ifdef TARG_ST
-	REGISTER_SET must_use = Usable_Registers(result_tn, clr);
-#endif
 	REGISTER prefer_reg = LR_prefer_reg (clr);
 
         if (prefer_reg == REGISTER_UNDEFINED) {
-          if (TN_is_local_reg(result_tn) && (unused_tn_def[result_cl] != NULL) && !OP_side_effects(op)
-              #ifdef TARG_ST
-	      && !OP_Has_Flag_Effect(op)
-	      && REGISTER_SET_MemberP (must_use, 
-				       LRA_TN_register (unused_tn_def[result_cl]))
-	      && TN_nhardregs(result_tn) == TN_nhardregs (unused_tn_def[result_cl])
-#endif
-#ifdef TARG_ST
-	      && (OP_code(op) != TOP_asm)
-#endif
-              ) {
-#ifdef TARG_ST
-	    // Should we check that unused_tn_def[result_cl] is in the
-	    // appropriate subclass for op?
-#endif
+          if (TN_is_local_reg(result_tn) && (unused_tn_def[result_cl] != NULL) && !OP_side_effects(op)) {
             result_tn = unused_tn_def[result_cl];
             Set_OP_result(op,resnum,result_tn);
 
@@ -4304,9 +1935,6 @@ Assign_Registers_For_OP (OP *op, INT opnum, TN **spill_tn, BB *bb)
 
             if (!OP_has_implicit_interactions (op) &&
                 !OP_store(op) &&
-#ifdef TARG_ST
-		!OP_xfer(op) &&
-#endif
                 !CGTARG_Is_OP_Intrinsic(op)) {
              /* If all the results are unneeded, delete the op. */
               INT k;
@@ -4339,45 +1967,20 @@ Assign_Registers_For_OP (OP *op, INT opnum, TN **spill_tn, BB *bb)
         }
 
 	if (prefer_reg != REGISTER_UNDEFINED &&
-#ifdef TARG_ST
-	    (Is_Reg_Available (result_cl, must_use, prefer_reg, result_nregs, clr) ||
-	     Is_Non_Allocatable_Reg_Available(result_cl, must_use, prefer_reg, result_nregs, clr))){
-#else
 	    (Is_Reg_Available (result_cl, must_use, prefer_reg, clr) ||
 	     Is_Non_Allocatable_Reg_Available(result_cl, must_use, prefer_reg, clr))){
-#endif
 	  result_reg = prefer_reg;
-#ifdef TARG_ST
-	  Delete_Avail_Reg (result_cl, result_reg, result_nregs, opnum, clr);
-#else
 	  Delete_Avail_Reg (result_cl, result_reg, opnum);
-#endif
 	  if (Do_LRA_Trace(Trace_LRA_Detail)) {
-#ifdef TARG_ST
-            if (result_nregs > 1) {
-              fprintf (TFile, "Preferred registers %s:%s\n",
-		       REGISTER_name (result_cl, prefer_reg),
-		       REGISTER_name (result_cl, prefer_reg + result_nregs - 1));
-	    } else {
-	      fprintf (TFile, "Preferred register %s\n",
-		       REGISTER_name (result_cl, prefer_reg));
-	    }
-#else
 	    fprintf (TFile, "Preferred register %s\n",
 		     REGISTER_name (result_cl, prefer_reg));
-#endif
 	  }
 	  if (Always_Trace(Trace_LRA) && trace_tn && result_cl == trace_cl) {
 	    bb_live = TN_SET_Union1D(bb_live, result_tn, &lra_pool);
 	  }
 	} else {
 	  result_reg =
-#ifdef TARG_ST
-	    Allocate_Register(result_tn,FALSE, result_cl, must_use, result_reg,
-			      result_nregs, opnum);
-#else
 	    Allocate_Register(result_tn,FALSE, result_cl, must_use, result_reg,opnum);
-#endif
 	  if (result_reg == REGISTER_UNDEFINED) {
 	    *spill_tn = result_tn;
 	    if (!Calculating_Fat_Points()) {
@@ -4387,14 +1990,8 @@ Assign_Registers_For_OP (OP *op, INT opnum, TN **spill_tn, BB *bb)
 	      //
 	      if (Init_Fat_Point_Calculation(TN_register_class(*spill_tn),
 					     opnum,bb)){
-#ifdef TARG_ST
-		result_reg = Allocate_Register(result_tn, FALSE, result_cl,
-					       must_use, result_reg, result_nregs,
-					       opnum);
-#else
 		result_reg = Allocate_Register(result_tn, FALSE, result_cl,
 					       must_use, result_reg, opnum);
-#endif
 		result_failed = TRUE;
 	      } else {
 		return FALSE;
@@ -4406,11 +2003,6 @@ Assign_Registers_For_OP (OP *op, INT opnum, TN **spill_tn, BB *bb)
 	  }
 	}
 	LRA_TN_Allocate_Register (result_tn, result_reg);
-#ifdef TARG_ST
-	if (LRA_overlap_coalescing) {
-	  Propagate_Overlap_Coalescing_Preference_Leaf_To_Root(clr, result_reg);
-	}
-#endif
       } else if (result_reg == REGISTER_sp &&
 #ifdef KEY	 // Bug 4327.
 		 result_cl == ISA_REGISTER_CLASS_integer &&
@@ -4436,39 +2028,6 @@ Assign_Registers_For_OP (OP *op, INT opnum, TN **spill_tn, BB *bb)
       ok_to_free_result = ok_to_free_result && !OP_cond_def(op);
 #endif
         
-#ifdef TARG_ST
-      /*
-       * Remember all the information needed to free registers.
-       * They can't be freed now because they may accidently be
-       * reassigned for use as another result in the same OP.
-       * (This can happen if one of the results is not used.)
-       * [TTh] results of cond_def operations must not be freed
-       */
-      if (ok_to_free_result
-	  && opnum == LR_first_def(clr)
-	  && !OP_cond_def(op)
-	  && (result_reg > REGISTER_MAX
-              || REGISTER_allocatable (result_cl, result_reg))) {
-	REGISTER r;
-	FOR_ALL_NREGS (result_reg, TN_nhardregs(result_tn), r) {
-	  // [SC] Registers of dedicated/assigned TNs are considered
-	  // to be in use from their first def to their last use, so
-	  // do not free up here unless opnum is their first def.
-	  // This matches the original open64 implementation, but I
-	  // think it could be refined if necessary.
-	  if (TN_is_local_reg (result_tn)
-	      || ded_reg_first_def(result_cl, r) == opnum) {
-	    free_result_tn[free_result_entries] = result_tn;
-	    free_result_reg[free_result_entries] = r;
-	    free_result_cl[free_result_entries] = result_cl;
-	    ++free_result_entries;
-	  }
-	}
-      }
-      // Arthur: try out this logic:
-      if (OP_uniq_res(op, resnum)) uniq_result = TRUE;
-#else
-
       if (ok_to_free_result && opnum == LR_first_def(clr)) {
 
 /*
@@ -4488,7 +2047,6 @@ Assign_Registers_For_OP (OP *op, INT opnum, TN **spill_tn, BB *bb)
 #endif
       }
       if (OP_uniq_res(op)) uniq_result = TRUE;
-#endif
 
 #ifdef KEY
       // If ASM writes to a callee-saved register, then add the register to
@@ -4508,18 +2066,6 @@ Assign_Registers_For_OP (OP *op, INT opnum, TN **spill_tn, BB *bb)
  * NOW, free up the result registers for re-use.
  */
   BOOL assignment_undone = FALSE;
-#ifdef TARG_ST
-  for (resnum = 0; resnum < free_result_entries; resnum++) {
-    assignment_undone = TRUE;
-    Add_Avail_Reg (free_result_cl[resnum], free_result_reg[resnum], 1, opnum);
-    if (Always_Trace(Trace_LRA) && trace_tn && (free_result_cl[resnum] == trace_cl))  {
-      bb_live = TN_SET_Difference1D(bb_live, free_result_tn[resnum]);
-      if (TN_number(free_result_tn[resnum]) == trace_tn) {
-	LRA_Print_Liveness();
-      }
-    }
-  }
-#else
   for (resnum = 0; resnum < nresults; resnum++) {
     if (free_result[resnum]) {
 #ifdef KEY
@@ -4547,7 +2093,7 @@ Assign_Registers_For_OP (OP *op, INT opnum, TN **spill_tn, BB *bb)
 	}
     }
   }
-#endif
+
   if (assignment_undone && result_failed) {
    // set fat_points for this guy to one.  these weird things will 
    // get allocated then free'd, so Fix_LRA_Blues will flip because

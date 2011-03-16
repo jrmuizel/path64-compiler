@@ -210,10 +210,6 @@ validate_replacement (const RangeAnalysis &range_analysis,
   // If we do this, we lose the opportunity to remove the
   // register copy.
 
-#ifdef TARG_ST
-  // (cbr) Support for guards on false
-  OPS_Copy_Predicate (ops, op);
-#endif
 
   Trace_OP_Replacement (op, ops);
 
@@ -392,11 +388,7 @@ match_compare_sub_to_zero (const RangeAnalysis &range_analysis,
   // restrict to signed comparison
   if (rres1->Equal(rres2)){
     result = OP_result(l1_op, 0);
-#ifdef TARG_ST
-    variant = OP_cmp_variant(l1_op);
-#else
     variant = TOP_cmp_variant(opcode);
-#endif
     switch (variant) {
     case V_CMP_NE: 
       Expand_Int_Not_Equal(result, opnd1, opnd2, MTYPE_I4, ops);
