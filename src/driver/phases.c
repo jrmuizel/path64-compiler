@@ -2755,7 +2755,7 @@ determine_phase_order (void)
 	      cpp_phase = P_NONE;
 	   }
 	} else {
-#ifdef PATH64_ENABLE_GNU_FROTNEND
+#ifdef PATH64_ENABLE_GNU_FRONTEND
         cpp_phase = P_gcpp;
 #endif // PATH64_ENABLE_GNU_FRONTEND
 	}
