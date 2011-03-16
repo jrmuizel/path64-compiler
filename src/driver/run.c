@@ -557,11 +557,12 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 				  break;
 				}
 
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 				// bug 10215
-				if (is_matching_phase(get_phase_mask(phase),
-				      		P_wgen)) {
+				if (is_matching_phase(get_phase_mask(phase), P_wgen)) {
 				  run_inline = FALSE;
 				}
+#endif // PATH64_ENABLE_GNU_FRONTEND
 				break;
 #endif
 				if (inline_t == UNDEFINED
@@ -584,12 +585,14 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 				  break;
 				}
 
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 				// bug 10215
-				if (is_matching_phase(get_phase_mask(phase),
-				      		P_wgen)) {
+				if (is_matching_phase(get_phase_mask(phase), P_wgen)) {
 				  run_inline = TRUE;
 				}
 				break;
+#endif // PATH64_ENABLE_GNU_FRONTEND
+
 #endif
 				if (inline_t == UNDEFINED
 				    && is_matching_phase(
@@ -636,19 +639,25 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 				break;
 			} 
 			if (internal_err) {
-				if (phase == P_ld || phase == P_ldplus ||
+				if (phase == P_ld ||
+                    phase == P_ldplus ||
 #ifdef KEY
 				    phase == P_gas ||	// bug 4846
 				    phase == P_f_coco ||	// bug 9058
-				    phase == P_spin_cc1 ||
-				    phase == P_spin_cc1plus ||
 #ifdef PATH64_ENABLE_PSCLANG
 				    phase == P_psclang_cpp ||
 				    phase == P_psclang ||
 #endif // PATH64_ENABLE_PSCLANG
 				    status == RC_GCC_INTERNAL_ERROR ||  //bug 9637
-#endif
-				    phase == P_gcpp || phase == P_gcpp_plus) {
+#endif // KEY
+#ifdef PATH64_ENABLE_GNU_FRONTEND
+				    phase == P_spin_cc1 ||
+				    phase == P_spin_cc1plus ||
+				    phase == P_gcpp ||
+                    phase == P_gcpp_plus ||
+#endif // PATH64_ENABLE_GNU_FRONTEND
+                    TRUE) {
+
 					if (phase == P_gas ||
 					    status == RC_GCC_INTERNAL_ERROR) {
 						internal_error_occurred = 1;
@@ -664,11 +673,13 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 			else if (user_err) {
 				/* assume phase will print diagnostics */
 				if (phase == P_c_gfe || phase == P_cplus_gfe
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 #ifdef KEY
 				    || phase == P_wgen
 				    || phase == P_spin_cc1
 				    || phase == P_spin_cc1plus
-#endif
+#endif // KEY
+#endif // PATH64_ENABLE_GNU_FRONTEND
 				   ) {
 					nomsg_error(RC_INTERNAL_ERROR);
 				}

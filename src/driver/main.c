@@ -532,6 +532,7 @@ main (int argc, char *argv[])
 	init_frontend_phase_names();
 #endif
 
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 #ifndef PATH64_ENABLE_PSCRUNTIME
     {
         // setting c++ preprocessor phase names
@@ -541,7 +542,8 @@ main (int argc, char *argv[])
         }
     }
 
-#endif // PATH64_ENABLE_PSCRUNTIME
+#endif // !PATH64_ENABLE_PSCRUNTIME
+#endif // PATH64_ENABLE_GNU_FRONTEND
 
 	// Display version after running set_defaults, which can change
 	// the gnu version.
