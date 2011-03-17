@@ -48,7 +48,7 @@
 
 #include <stdarg.h>
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "mempool.h"
 #include "wn.h"
 #include "opcode.h"

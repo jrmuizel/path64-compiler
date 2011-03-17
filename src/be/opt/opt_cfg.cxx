@@ -68,7 +68,7 @@ static char *rcs_id = 	opt_cfg_CXX"$Revision: 1.30 $";
 #include "wn_simp.h"
 #include "wintrinsic.h"
 #include "opcode.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "tracing.h"
 #include "config_targ.h"

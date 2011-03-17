@@ -48,7 +48,7 @@
 #include "glob.h"		    /* for Src_File_Name, etc. */
 #include "erglob.h"		    /* for EC_Src_Close, etc. */
 #include "erlib.h"		    /* for EC_Obj_Close, etc. */
-#include "errors.h"		    /* Set_Error_Line(), etc. */
+#include "be_errors.h"		/* Set_Error_Line(), etc. */
 #include "file_util.h"		    /* for unlink() */
 #include "tracing.h"		    /* Set_Trace_File() */
 #include "symtab.h"		    /* for wn.h */

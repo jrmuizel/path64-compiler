@@ -42,7 +42,7 @@
 #include <vector>
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "srcpos.h"
 #include "opcode.h"
 #include "wn.h"		/* Whirl Node descriptor */

@@ -63,9 +63,7 @@
 #define opt_ssu_INCLUDED	"opt_ssu.h"
 
 #include "defs.h"
-#ifndef errors_INCLUDE
-#include "errors.h"
-#endif
+#include "be_errors.h"
 #include "opt_defs.h"
 #include "cxx_memory.h"
 #include "opt_sym.h"

@@ -33,7 +33,7 @@
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "tracing.h"
 #include "timing.h"
 #include "stab.h"

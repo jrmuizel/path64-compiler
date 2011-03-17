@@ -48,7 +48,7 @@ static char *rcs_id = "";
 
 #include "defs.h"
 #include "resource.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "tracing.h"
 #include "mempool.h"
 #include "bb.h"

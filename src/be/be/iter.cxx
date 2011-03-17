@@ -53,7 +53,7 @@ static char *rcs_id = iter_C"$Revision$";
 #include "iter.h"	/* PU_INFO_ITER */
 #include "wn.h"
 #include "be_util.h"	/* Reset_Current_PU_Count, Advance_Current_PU_Count */
-#include "errors.h"	/* FmtAssert */
+#include "be_errors.h"	/* FmtAssert */
 
 /* ==================================================================== */
 /* iterator functions for PU loop in back-end				*/

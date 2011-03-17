@@ -42,7 +42,7 @@ static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/cg/gra_mon/SCCS/s
 #endif
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "mempool.h"
 #include "register.h"
 #include "bb.h"

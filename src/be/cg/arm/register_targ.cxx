@@ -26,7 +26,7 @@
                               // really part of the register implementation
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "tracing.h"
 #include "mempool.h"
 #include "config.h"

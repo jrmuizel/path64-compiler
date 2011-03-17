@@ -88,9 +88,7 @@ static char *infin_rcs_id = infin_INCLUDED "$Revision$";
 #ifndef defs_INCLUDED
 #include "defs.h"
 #endif
-#ifndef errors_INCLUDED
-#include "errors.h"
-#endif
+#include "be_errors.h"
 
 class INT32_INFIN {
   INT32 _val;

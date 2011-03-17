@@ -53,7 +53,7 @@
  */
 
 
-#include "errors.h"	/* Always needed */
+#include "be_errors.h"	/* Always needed */
 
 /* The error codes in each erxxx.h file should start from some multiple
  * of 1000, which is the phase number.

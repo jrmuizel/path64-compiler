@@ -129,7 +129,7 @@
 
 #include "defs.h"
 #include "config.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "mempool.h"
 #include "glob.h"
 #include "cg_flags.h"

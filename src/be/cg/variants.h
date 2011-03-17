@@ -29,7 +29,7 @@
 #ifndef variants_INCLUDED
 #define variants_INCLUDED
 #ifdef TARG_ST
-#   include "errors.h"
+#   include "be_errors.h"
 #endif
 /* ====================================================================
  * ====================================================================

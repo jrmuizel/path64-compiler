@@ -69,7 +69,7 @@
 #include "flags.h"
 #include "erglob.h"
 #include "erlib.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erauxdesc.h"
 #include "file_util.h"
 #include "glob.h"

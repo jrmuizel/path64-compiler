@@ -97,15 +97,6 @@ extern "C" {
  *	is identical to ErrMsg, except that the relevant source line
  *	number is passed.
  *
- *  void ErrMsgSrcpos (
- *      INT Error_Code,
- *      SRCPOS srcpos,
- *      ...
- *  )
- *
- *	is identical to ErrMsg, except that the relevant source position
- *	is passed.
- *
  *  void Assert (
  *      BOOL condition,
  *      ( INT Error_Code, ... )
@@ -382,11 +373,6 @@ extern "C" {
  * ====================================================================
  */
 
-#ifdef MONGOOSE_BE
-#ifndef srcpos_INCLUDED
-#include "srcpos.h"
-#endif
-#endif
 
 extern void Abort_Compiler_Location (
   const char* file_name,
@@ -415,6 +401,8 @@ extern void Fatal_Error ( const char *fmt, ... );
  * ====================================================================
  */
 
+extern void ErrMsg_Report ( INT ecode, INT line, const char *file, va_list vp );
+
 /* Simple error report: */
 extern void ErrMsg ( INT ErrCode, ... );
 #pragma mips_frequency_hint NEVER ErrMsg
@@ -423,11 +411,6 @@ extern void ErrMsg ( INT ErrCode, ... );
 extern void ErrMsgLine ( INT ErrCode, INT LineNo, ... );
 #pragma mips_frequency_hint NEVER ErrMsgLine
 
-/* Error report with specified source position: */
-#ifdef MONGOOSE_BE
-extern void ErrMsgSrcpos ( INT ErrCode, SRCPOS SrcPos, ... );
-#pragma mips_frequency_hint NEVER ErrMsgSrcpos
-#endif
 
 /* Unconditional assertion checking with error code: */
 #define Assert(Cond,ParmList)					\

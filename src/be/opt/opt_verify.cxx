@@ -76,7 +76,7 @@
 #define opt_verify_CXX	"opt_verify.cxx"
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "mempool.h"
 #include "tracing.h"		// TFile and Get_Trace definition

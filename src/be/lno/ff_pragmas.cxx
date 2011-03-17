@@ -41,7 +41,7 @@
 #include "lwn_util.h"
 #include "fission.h"
 #include "fusion.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erbe.h"
 #include "erglob.h"
 #include "lnoutils.h"

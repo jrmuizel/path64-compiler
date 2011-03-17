@@ -63,7 +63,7 @@ static char *rcs_id = 	opt_dbg_CXX"$Revision: 1.4 $";
 #endif /* _KEEP_RCS_ID */
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "bb_node_set.h"
 #include "opt_bb.h"

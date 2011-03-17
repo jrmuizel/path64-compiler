@@ -58,7 +58,7 @@
 #define opt_essa_CXX	"opt_essa.cxx"
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "tracing.h"
 #include "opt_defs.h"

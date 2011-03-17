@@ -66,7 +66,7 @@ static char *rcs_id = 	opt_dom_CXX"$Revision$";
 #endif /* _KEEP_RCS_ID */
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "mempool.h"
 #include "tracing.h"

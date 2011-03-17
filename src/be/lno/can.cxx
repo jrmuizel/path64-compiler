@@ -90,7 +90,7 @@ static const char *rcs_id = "$Source: ../../be/lno/SCCS/s.can.cxx $ $Revision: 1
 #include "targ_sim.h"
 #include "wn_simp.h"
 #include "reverse.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erbe.h"
 #include "snl_utils.h"
 #include "lego_util.h"

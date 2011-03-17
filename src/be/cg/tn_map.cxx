@@ -47,7 +47,7 @@
 #pragma hdrstop
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "mempool.h"
 #include "erglob.h"
 #include "tn.h"

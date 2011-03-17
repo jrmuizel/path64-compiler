@@ -102,7 +102,7 @@
 #include "wn_pragmas.h"
 #include "ir_reader.h"		// fdump_tree
 #include "glob.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "be_symtab.h"
 #include "vho_lower.h"
 #include "fb_whirl.h"

@@ -39,7 +39,7 @@
 #endif // __GNUC__ >= 3
 #include <list>
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "tracing.h"
 #include "matrix.h"
 #include "mempool_allocator.h"

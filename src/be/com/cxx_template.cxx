@@ -45,7 +45,7 @@
 //	because this is template, hence gets included implicitly
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "cxx_memory.h"
 #include "cxx_template.h"

@@ -66,7 +66,7 @@
 #include "config_lno.h"
 #include "config_wopt.h"
 #include "config_debug.h"	    /* for DEBUG_Ir_Version_Check */
-#include "errors.h"
+#include "be_errors.h"
 #include "erauxdesc.h"
 #include "glob.h"		    /* Irb_File_Name, Cur_PU_Name */
 #include "timing.h"		    /* Start/Stop Timer */

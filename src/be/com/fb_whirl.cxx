@@ -69,7 +69,7 @@
 #include <stdlib.h>
 #include "wn_util.h"
 #include "wn_map.h"
-#include "errors.h"		// for ErrMsg
+#include "be_errors.h"		// for ErrMsg
 #include "ir_reader.h"
 #include "tracing.h"
 #include "wn_tree_util.h"	// for tree iterators

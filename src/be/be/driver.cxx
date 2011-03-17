@@ -66,7 +66,7 @@
 
 #include "defs.h"
 #include "dso.h"		    /* for load_so() */
-#include "errors.h"		    /* Set_Error_Tables(), etc. */
+#include "be_errors.h"		/* Set_Error_Tables(), etc. */
 #include "erglob.h"		    /* for EC_ errmsg */
 #include "mempool.h"		    /* for MEM_Initialze()  */
 #include "phase.h"		    /* for PHASE_CG */

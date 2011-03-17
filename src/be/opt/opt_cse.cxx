@@ -65,7 +65,7 @@
 #define opt_cse_CXX	"opt_cse.cxx"
 #include <limits.h>
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "tracing.h"
 #include "opt_defs.h"

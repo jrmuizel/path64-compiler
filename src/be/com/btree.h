@@ -57,9 +57,7 @@ static const char *bin_tree_rcs_id  = "$Source$ $Revision$";
 #ifndef defs_INCLUDED
 #include "defs.h"
 #endif
-#ifndef ERRORS_INCLUDED
-#include "errors.h"
-#endif
+#include "be_errors.h"
 #ifndef CXX_MEMORY_INCLUDED
 #include "cxx_memory.h"
 #endif

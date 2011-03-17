@@ -195,7 +195,7 @@ static char *dvector_rcs_id = "$Source$ $Revision$";
 #endif
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "mempool.h"
 
 

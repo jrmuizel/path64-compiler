@@ -44,6 +44,9 @@
 
 #ifndef tlog_INCLUDED
 #define tlog_INCLUDED
+
+#include "srcpos.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

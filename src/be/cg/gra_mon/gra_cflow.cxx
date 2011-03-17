@@ -47,7 +47,7 @@
 #pragma hdrstop
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "cgir.h"
 #include "gra_live.h"
 #include "annotations.h"

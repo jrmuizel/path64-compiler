@@ -64,7 +64,7 @@ static char *lrange_subuniverse_rcs_id = "$Source$ $Revision$";
 #endif
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "gra_lrange.h"
 
 class LRANGE_SET_SUBUNIVERSE {

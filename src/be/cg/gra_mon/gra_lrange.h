@@ -48,7 +48,7 @@ static char *gra_lrange_rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/cg/gra
 #include <limits.h>
 #include "defs.h"
 #include "mempool.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "tn.h"
 #include "tn_map.h"
 #include "bb.h"

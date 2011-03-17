@@ -79,7 +79,7 @@ static char *rcs_id = 	opt_loop_CXX"$Revision: 1.7 $";
 
 #include "defs.h"
 #include "config.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "tracing.h"
 #include "cxx_memory.h"

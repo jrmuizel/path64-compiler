@@ -44,7 +44,7 @@
 #include "bb.h"
 #include "wn.h"
 #include "symtab.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "targ_sim.h"
 #include "ttype.h"
 #include "topcode.h"

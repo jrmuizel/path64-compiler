@@ -94,7 +94,7 @@ static char *rcs_id = 	opt_ivr_CXX"$Revision: 1.19 $";
 #define USE_STANDARD_TYPES
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "tracing.h"
 #include "cxx_memory.h"

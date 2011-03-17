@@ -71,7 +71,7 @@ static char *rcs_id = 	opt_bb_CXX"$Revision: 1.5 $";
 
 #include "defs.h"
 #include "wn.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "cxx_memory.h"
 #include "region_util.h"

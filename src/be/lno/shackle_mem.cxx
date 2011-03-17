@@ -45,7 +45,7 @@
 #include "opt_du.h"
 #include "lego_util.h"
 #include "fiz_fuse.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "whirl2src.h"
 #include "scalar_expand.h"
 #include "shackle.h"

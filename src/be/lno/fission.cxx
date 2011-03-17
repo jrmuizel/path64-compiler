@@ -48,7 +48,7 @@ static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/lno/SCCS/s.fissio
 #include "stab.h"
 #include "wn.h"
 #include "lwn_util.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "cxx_graph.h"
 #include "lnoutils.h"
 #include "ff_utils.h"

@@ -36,7 +36,7 @@
 #include "defs_exported.h"     // For common type definition (needed by op.h)
 #include "op.h"                // For operation usage
 #include "bb.h"                // For basicblock usage
-#include "errors.h"            // For DevAssert
+#include "be_errors.h"         // For DevAssert
 #include "defs.h"              // Needed by mempool.h for MEM_PTR definition
 #include "dwarf.h"             // For dwarf operand definition
 #include "mempool.h"           // For MEM_POOL definition

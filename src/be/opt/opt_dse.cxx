@@ -68,7 +68,7 @@ static char *rcs_id = 	opt_dse_CXX"$Revision: 1.17 $";
 
 #include "defs.h"
 #include "opt_config.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "tracing.h"
 

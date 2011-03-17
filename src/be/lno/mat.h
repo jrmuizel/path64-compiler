@@ -274,9 +274,7 @@ extern "C" {
 #ifndef CXX_MEMORY_INCLUDED
 #include "cxx_memory.h"
 #endif
-#ifndef ERRORS_INCLUDED
-#include "errors.h"
-#endif
+#include "be_errors.h"
 #ifndef frac_INCLUDED
 #include "frac.h"
 #endif

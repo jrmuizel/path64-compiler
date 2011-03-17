@@ -99,11 +99,6 @@ extern "C" {
 #include "errdesc.h"
 #include "vstring.h"
 
-#ifdef MONGOOSE_BE
-#include "wn.h"
-#include "wn_map.h"
-#include "ir_reader.h"
-#endif
 
 
 /* ====================================================================
@@ -1061,7 +1056,7 @@ ErrMsg_Report_User (ERROR_DESC *edesc, INT ecode, INT line,
   return;
 }
 
-static void
+void
 ErrMsg_Report ( INT ecode, INT line, const char *file, va_list vp )
 {
   ERROR_DESC *edesc = Find_Error_Desc (ecode);
@@ -1074,7 +1069,7 @@ ErrMsg_Report ( INT ecode, INT line, const char *file, va_list vp )
 
 /* ====================================================================
  *
- * ErrMsg / ErrMsgLine / ErrMsgSrcpos
+ * ErrMsg / ErrMsgLine
  *
  * Report an error at the current (passed) line number.
  *
@@ -1103,25 +1098,6 @@ ErrMsgLine ( INT ecode, INT line, ... )
   va_end ( vp );
 }
 
-
-#ifdef MONGOOSE_BE
-/* ================================================================= */
-
-void
-ErrMsgSrcpos ( INT ecode, SRCPOS srcpos, ... )
-{
-  INT32  line = Srcpos_To_Line(srcpos);
-  const char   *fname = NULL;
-  const char   *dname;
-
-  va_list vp;
-  va_start ( vp, srcpos );
-
-  IR_Srcpos_Filename(srcpos, &fname, &dname);
-  ErrMsg_Report ( ecode, line, fname, vp );
-  va_end ( vp );
-}
-#endif
 
 /* ====================================================================
  *

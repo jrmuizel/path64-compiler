@@ -43,7 +43,7 @@
 #include "fusion.h"
 #include "lwn_util.h"
 #include "lnopt_main.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "dep_graph.h"
 #include "lnoutils.h"
 #include "ff_utils.h"

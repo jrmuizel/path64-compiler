@@ -29,7 +29,7 @@
 #endif /* USE_PCH */
 #pragma hdrstop
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "util.h"
 #include "topcode.h"
 #include "targ_isa_properties.h"

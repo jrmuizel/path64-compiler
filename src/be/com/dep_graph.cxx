@@ -76,7 +76,7 @@ static char *rcs_id = "$Source: be/com/SCCS/s.dep_graph.cxx $ $Revision: 1.7 $";
 #include <string.h>
 #include "wn.h"
 #include "erglob.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "strtab.h"		    /* for strtab */
 #include "stab.h"		    /* for symtab */
 #include "irbdata.h"		    /* for inito */
@@ -92,7 +92,6 @@ static char *rcs_id = "$Source: be/com/SCCS/s.dep_graph.cxx $ $Revision: 1.7 $";
 #include "call_info.h"
 #include "config.h"
 #include "config_cache.h"
-#include "errors.h"
 #include "erbe.h"
 
 #include "lnopt_main.h"

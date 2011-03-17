@@ -100,7 +100,7 @@ static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/cg/gra_mon/SCCS/s
 #include <limits.h>
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "mempool.h"
 #include "bitset.h"
 #include "priority_queue.h"

@@ -46,7 +46,7 @@
  * ====================================================================*/
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "tracing.h"
 #include "opcode.h"
 #include "wn_util.h"		// wn accessors

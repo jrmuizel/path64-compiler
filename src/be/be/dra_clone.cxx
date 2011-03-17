@@ -61,7 +61,7 @@
 #include "mempool.h"             // MEM_POOL
 #include "cxx_memory.h"         // CXX_NEW
 #include "erbe.h"               // EC_*
-#include "errors.h"             // ErrMsg, ErrMsgSrcpos
+#include "be_errors.h"          // ErrMsg, ErrMsgSrcpos
 #include "dwarf_DST_mem.h"      // DST_IDX
 #include "clone.h"              // IPO_CLONE
 #include "clone_DST_utils.h"    // DST_enter_cloned_subroutine

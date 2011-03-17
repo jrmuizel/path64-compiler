@@ -128,7 +128,7 @@ static const char source_file[] = __FILE__;
 #include <stdint.h>
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "mempool.h"
 #include "tracing.h"
 #include "timing.h"

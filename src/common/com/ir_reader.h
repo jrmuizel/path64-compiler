@@ -43,6 +43,9 @@
  */
 
 
+#include "wn.h"
+
+
 #ifdef _KEEP_RCS_ID
 static char *opt_irrcs_id = "$Source$ $Revision$";
 #endif /* _KEEP_RCS_ID */

@@ -125,9 +125,7 @@ extern "C" {
 #ifndef defs_INCLUDED
 #include "defs.h"
 #endif
-#ifndef ERRORS_INCLUDED
-#include "errors.h"
-#endif
+#include "be_errors.h"
 }
 
 // note that 16/32 bit implementations are equally possible, possibly faster,

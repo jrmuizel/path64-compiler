@@ -70,7 +70,7 @@ static char *rcs_id = opt_fold_CXX"$Revision: 1.9 $";
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "tracing.h"  	      	// for TFile
 #include "config_opt.h"		// for Div_Split_Allowed, Recip_Allowed

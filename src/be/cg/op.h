@@ -304,7 +304,7 @@
 #include "targ_isa_pack.h"
 #include "targ_isa_bundle.h"
 /* to get Is_True */
-#include "errors.h"
+#include "be_errors.h"
  
  /* to get definition of TN */
 #include "tn.h"

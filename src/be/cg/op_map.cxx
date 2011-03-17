@@ -59,7 +59,7 @@ static const char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/cg/SCCS/s.o
 #endif /* _KEEP_RCS_ID */
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "mempool.h"
 #include "cgir.h"
 

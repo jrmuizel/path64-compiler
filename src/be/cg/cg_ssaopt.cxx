@@ -49,7 +49,7 @@
 
 #include "defs.h"
 #include "tracing.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "mempool.h"
 #include "cxx_memory.h"
 #include "glob.h"

@@ -67,7 +67,7 @@ static char *rcs_id = 	opt_rviwn_CXX"$Revision: 1.11 $";
 #endif /* _KEEP_RCS_ID */
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "tracing.h"
 #include "stab.h"

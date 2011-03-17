@@ -78,7 +78,7 @@
 
 #include "defs.h"
 #include "config.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "wn.h"
 #include "wn_simp.h"
 #include "wn_util.h"

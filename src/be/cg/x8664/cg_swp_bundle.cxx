@@ -24,7 +24,7 @@
 
 #define USE_STANDARD_TYPES
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "tracing.h"
 #include "matrix.h"
 #include "mempool_allocator.h"
