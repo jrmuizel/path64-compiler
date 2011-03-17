@@ -132,6 +132,7 @@
 #include "output_func_start_profiler.h"
 #include "goto_conv.h"
 #endif
+#include "err_host.tab"
 
 extern ERROR_DESC EDESC_BE[], EDESC_CG[];
 
@@ -1946,6 +1947,7 @@ main (INT argc, char **argv)
   setlinebuf (stderr);
   Handle_Signals ();
   MEM_Initialize ();
+  Set_Error_Tables (Phases, host_errlist);
   Cur_PU_Name = NULL;
   Init_Error_Handler ( 100 );
   Set_Error_Line ( ERROR_LINE_UNKNOWN );

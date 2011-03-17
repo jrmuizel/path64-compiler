@@ -183,13 +183,9 @@ static SEVERITY_DESCRIPTOR Severities[] = {
  * ====================================================================
  */
 
-#ifdef MONGOOSE_BE
-#include "err_host.tab"		    /* for error tables */
-#else /* MONGOOSE_BE */
 /* these table pointers get pointed at the client's tables */
 static ERROR_DESC_TABLE *Phases = NULL;
 static const char **host_errlist = NULL;
-#endif /* MONGOOSE_BE */
 
 static bool do_traceback = false;
 
@@ -1337,7 +1333,6 @@ Get_Current_Phase_Number( void )
 }
 
 
-#ifndef MONGOOSE_BE
 /* ====================================================================
  *
  * Set_Error_Tables
@@ -1355,7 +1350,6 @@ extern void Set_Error_Tables(
   Phases = edt;
   host_errlist = errlist;
 }
-#endif /* MONGOOSE_BE */
 
 extern void
 Set_Error_Descriptor (INT phase, ERROR_DESC *descriptor)

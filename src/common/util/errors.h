@@ -518,20 +518,16 @@ extern BOOL Count_Limit_DevWarn( const char *const src_fname,
  * should be defined either here or in err_host.h, to avoid conflicts.
  * The symbol EP_LAST should also be defined in err_host.h.
  */
-#ifndef MONGOOSE_BE
 #define EP_UNIX		0	/* Unix error codes */
-#endif /* MONGOOSE_BE */
 
 #define EP_GLOBAL	1	/* Global, general-purpose codes */
 #define EP_LIB		2	/* Program librarian codes */
 
-#ifndef MONGOOSE_BE
 #define EP_LINK		3	/* Linker, object file codes */
 /* The following are compiler-specific, but predefined because they
  * are common to all phases:
  */
 #define EP_FE		4	/* Compiler front end codes */
-#endif /* MONGOOSE_BE */
 
 #define EP_BE		5	/* Compiler back end codes (not CG) */
 #define EP_CG		6	/* Code generator codes */

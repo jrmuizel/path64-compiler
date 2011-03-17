@@ -148,8 +148,6 @@ Remove_Extension ( name )
   return new;
 }
 
-
-#ifndef MONGOOSE_BE
 /* current working directory */
 static char *cwd = NULL;
 static INT cwd_size;
@@ -168,7 +166,7 @@ Get_Current_Working_Directory (void)
   }
   return cwd;
 }
-#endif /* MONGOOSE_BE */
+
 
 /* ====================================================================
  *
@@ -200,7 +198,6 @@ Last_Pathname_Component ( char *pname )
 } /*end: Last_Pathname_Component */
 
 
-#ifndef MONGOOSE_BE
 /* Eliminates "//", "/.", and "/.." from the path, to the extent that it
  * is possible.
  * "//"      -> "/"
@@ -281,4 +278,4 @@ Make_Absolute_Path (char *filename)
    (void)normalize_path(normalized);
    return normalized;
 }
-#endif /* MONGOOSE_BE */
+
