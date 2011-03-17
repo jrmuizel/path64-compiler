@@ -1324,6 +1324,7 @@ main()
               TOP_vldapdxx,
               TOP_vldapd_n32,
              TOP_vaddpd,
+#include "isa_avx_subset.cxx"
 		    TOP_UNDEFINED);
 
   ISA_Subset_End();

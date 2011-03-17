@@ -1309,6 +1309,7 @@ main()
             TOP_xchgx16, 0x000000ff,
             TOP_xchgx32, 0x000000ff,
             TOP_xchgx64, 0x000000ff,
+#include "isa_avx_pack.cxx"
 		    TOP_UNDEFINED);
 
   ISA_Pack_End();

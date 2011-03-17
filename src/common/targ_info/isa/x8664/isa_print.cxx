@@ -1860,5 +1860,7 @@ main()
 			   TOP_fsin,
 			   TOP_UNDEFINED );
 
+#include "isa_avx_print.cxx"
+
   ISA_Print_End();
 }

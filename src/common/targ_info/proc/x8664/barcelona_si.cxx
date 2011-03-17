@@ -2079,6 +2079,7 @@ int main (int argc, char *argv[])
   Any_Result_Available_Time(0);
 
 #include "avx_si.cxx"
+#include "avx_si2.cxx"
 
   Machine_Done("barcelona.c");
 }

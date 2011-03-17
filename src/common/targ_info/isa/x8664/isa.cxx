@@ -1389,6 +1389,7 @@ main ()
 	      "noop",
               "swp_start",
               "swp_stop",
+#include "isa_avx.cxx"
 
 	      /* END */
 	      NULL);

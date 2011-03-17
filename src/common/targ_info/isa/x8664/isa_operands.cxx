@@ -3469,6 +3469,8 @@ main()
   Operand(0, int64, opnd1);
   Operand(1, int64, base);
   Operand(2, simm32, offset);
+
+#include "isa_avx_operands.cxx"
   
   ISA_Operands_End();
   return 0;

@@ -3408,6 +3408,7 @@ main()
                      TOP_vldaps,
                      TOP_vldapsx,
                      TOP_vldapsxx,
+#include "isa_avx_properties.cxx"
 		     TOP_UNDEFINED );
 
   /* ==== x86 style instructions ==== */
@@ -4445,5 +4446,7 @@ main()
 		     TOP_UNDEFINED);
 
   ISA_Properties_End();
+
+
   return 0;
 }

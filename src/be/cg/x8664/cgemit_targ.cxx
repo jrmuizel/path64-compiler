@@ -1572,6 +1572,7 @@ static void Init_OP_Name()
     OP_Name[TOP_vstdqax] = "vmovdqa";
     OP_Name[TOP_vstdqaxx] = "vmovdqa";
     OP_Name[TOP_vstdqa_n32] = "vmovdqa";
+#include "cgemit_targ_avx.cxx"
 
 
 //**********************************************************
