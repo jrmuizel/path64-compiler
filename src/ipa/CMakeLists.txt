@@ -164,6 +164,8 @@ path64_set_multiarch_sources(PATHSCALE_INLINE_SRCS COMMON
 
 add_definitions(${PATH64_STDC_FORMAT_MACROS})
 
+if(PATH64_ENABLE_IPA)
+
 path64_add_multiarch_library(ipa SHARED libipa_sources)
 path64_set_multiarch_property(ipa PREFIX "")
 path64_set_multiarch_property(ipa COMPILE_DEFINITIONS MONGOOSE_BE;_SUPPORT_IPA;__MIPS_AND_IA64_ELF_H;BACK_END)
@@ -173,6 +175,8 @@ path64_multiarch_link_multiarch_libraries(ipa be ipl)
 path64_add_multiarch_multiarch_dependencies(ipa generate_topcode)
 path64_install_multiarch(ipa)
 path64_add_dependencies_from_multiarch(compiler-stage ipa)
+
+endif()
 
 path64_add_multiarch_library(ipl SHARED libipl_sources)
 path64_set_multiarch_property(ipl PREFIX "")
@@ -186,7 +190,7 @@ path64_add_dependencies_from_multiarch(compiler-stage ipl)
 path64_add_multiarch_executable(inline PATHSCALE_INLINE_SRCS)
 path64_set_multiarch_property(inline COMPILE_DEFINITIONS MONGOOSE_BE;_LIGHTWEIGHT_INLINER;_STDC_FORMAT_MACROS)
 path64_multiarch_link_multiarch_libraries(inline be)
-path64_multiarch_link_libraries(inline iberty)
+path64_multiarch_link_libraries(inline)
 path64_multiarch_link_multiarch_libraries(inline dwarf comutil)
 path64_multiarch_link_libraries(inline elfutil elf)
 path64_set_multiarch_property(inline COMPILE_FLAGS "-I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@")

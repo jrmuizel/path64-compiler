@@ -34,6 +34,7 @@ SET(CMAKE_Fortran_FLAGS_RELEASE  "-O2 -DNDEBUG ${SSE_FLAGS}" CACHE STRING "Flags
 
 
 OPTION(PATH64_ENABLE_GNU_FRONTEND "Use GNU C/C++ front-end" ON)
+OPTION(PATH64_ENABLE_IPA "Enable IPA" ON)
 
 
 # Define user option whether to build the Fortran compiler.

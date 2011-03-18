@@ -31,11 +31,17 @@ path64_is_arch_enabled(arm_enabled arm)
 if(${arm_enabled})
 ADD_SUBDIRECTORY(libfereconf)
 endif()
+
 IF(PATH64_ENABLE_GNU_FRONTEND)
     ADD_SUBDIRECTORY(wgen)
 ENDIF()
+
 ADD_SUBDIRECTORY(ipa)
-ADD_SUBDIRECTORY(ipa_link)
+    
+IF(PATH64_ENABLE_IPA)
+    ADD_SUBDIRECTORY(ipa_link)
+ENDIF()
+
 # TODO : Threading and other things need to be ported
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     IF(PATH64_ENABLE_OPENMP)
