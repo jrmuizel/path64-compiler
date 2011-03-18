@@ -22,6 +22,8 @@ set(COMUTIL_SRCS
   dso.c
   file_util.c
   flags.c
+  libelftc_dem_gnu3.c
+  libelftc_vstr.c
   memory.c
   priority_queue.c
   quadsim.c

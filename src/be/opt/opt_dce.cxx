@@ -77,6 +77,7 @@
 #include "glob.h"	// for Cur_PU_Name
 #include "tracing.h"
 #include "pf_cg.h"
+#include "libelftc.h"
 
 #include "cxx_base.h"
 #ifdef TARG_ST
@@ -5110,8 +5111,6 @@ COMP_UNIT::Do_dead_code_elim(BOOL do_unreachable,
 }
 
 #ifdef KEY
-#include "../../include/gnu/demangle.h"
-extern "C" char *cplus_demangle (const char *, int);
 
 void
 COMP_UNIT::Find_uninit_locals_for_entry(BB_NODE *bb) 
@@ -5162,9 +5161,14 @@ COMP_UNIT::Find_uninit_locals_for_entry(BB_NODE *bb)
       continue;
 #ifdef TARG_ST
     // TB: Add a warning when the compiler has created an uninit var
-    if (ST_is_temp_var(sym->St())) 
+    if (ST_is_temp_var(sym->St())) {
+      char *dname1 = cpp_demangle_gnu3(&Str_Table[sym->St()->u1.name_idx]);
+      char *dname2 = cpp_demangle_gnu3(Cur_PU_Name);
       DevWarn(("COMP_UNIT::Find_uninit_locals_for_entry find a temporary var that might be used unitialized %s in %s", 
-	       cplus_demangle(&Str_Table[sym->St()->u1.name_idx], DMGL_NO_OPTS), cplus_demangle(Cur_PU_Name, DMGL_NO_OPTS)));
+	       dname1, dname2));
+      free(dname1);
+      free(dname2);
+    }
 #endif
     char *output_pu_name = Cur_PU_Name;
     char *output_var_name = &Str_Table[sym->St()->u1.name_idx];
@@ -5173,12 +5177,12 @@ COMP_UNIT::Find_uninit_locals_for_entry(BB_NODE *bb)
     if ((PU_src_lang(Get_Current_PU()) & PU_CXX_LANG)) {
       // C++ mangled names begin with "_Z".
       if (output_pu_name[0] == '_' && output_pu_name[1] == 'Z') {
-	p = cplus_demangle(output_pu_name, DMGL_PARAMS|DMGL_ANSI|DMGL_TYPES);
+	p = cpp_demangle_gnu3(output_pu_name);
 	if (p)
 	  output_pu_name = p;
       }
       if (output_var_name[0] == '_' && output_var_name[1] == 'Z') {
-	v = cplus_demangle(output_var_name, DMGL_PARAMS|DMGL_ANSI|DMGL_TYPES);
+	v = cpp_demangle_gnu3(output_var_name);
 	if (v)
 	  output_var_name = v;
       }

@@ -54,15 +54,7 @@
 #define FREE(x) free(x)
 #define STRDUP(x) strdup(x)
 
-/*
- * Declaration of demangle function.
- */
-#ifdef HAVE_LIBDEMANGLE
-#include <demangle.h>
-#else
-/* For libiberty. */
-extern char * cplus_demangle(const char *, int);
-#endif
+#include "libelftc.h"
 
 /*
  * Declaration of fnmatch.
@@ -273,17 +265,7 @@ static const char *
 vspec_cplus_demangle_name(const char *name)
 {
   char *alt_name;
-#ifdef HAVE_LIBIBERTY
-  alt_name = cplus_demangle (name, 1<<14);
-#elif defined(HAVE_LIBDEMANGLE)
-  alt_name = (char *)malloc(1024);
-  if (cplus_demangle(name, alt_name, 1024) != 0) {
-    free(alt_name);
-    alt_name = NULL;
-  }
-#else
-#error "No support for demangling"
-#endif
+  alt_name = cpp_demangle_gnu3 (name);
   return alt_name;
 }
 

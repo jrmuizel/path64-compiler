@@ -133,12 +133,11 @@
 #include "goto_conv.h"
 #endif
 #include "err_host.tab"
+#include "libelftc.h"
 
 extern ERROR_DESC EDESC_BE[], EDESC_CG[];
 
 #ifdef KEY
-#include "demangle.h"
-extern "C" char *cplus_demangle (const char *, int);
 extern void Recompute_addr_saved_stmt (WN *);
 extern void Set_addr_saved_stmt (WN *, BOOL);
 extern void CYG_Instrument_Driver(WN *);
@@ -667,7 +666,7 @@ Adjust_Opt_Level (PU_Info* current_pu, WN *pu, char *pu_name)
 	// C++ mangled names begin with "_Z".
 	pu_name[0] == '_' &&
 	pu_name[1] == 'Z') {
-      p = cplus_demangle(pu_name, DMGL_PARAMS | DMGL_ANSI | DMGL_TYPES);
+      p = cpp_demangle_gnu3(pu_name);
       if (p) {
 	demangled_pu_name = p;
 	has_demangled_pu_name = TRUE;
