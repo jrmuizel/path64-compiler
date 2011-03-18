@@ -4,23 +4,6 @@ SET(PATHSCALE_BE_BE_COMMON_SRCS "../../common/targ_info/access/ti_init.c"
                          "../../common/targ_info/access/ti_res.c"
                          "../../common/targ_info/access/ti_res_count.c"
                          "../../common/targ_info/access/ti_res_res.c"
-                         "../../common/util/c_a_to_q.c"
-                         "../../common/util/c_q_rel.c"
-                         "../../common/util/c_q_to_a.c"
-                         "../../common/util/c_qtenscale.c"
-                         "../../common/util/@ARCH@/c_qwmultu.c"
-                         "../../common/util/quadsim.c"
-                         "../../common/util/bitset.c"
-                         "../../common/util/dso.c"
-                         "../../common/util/file_util.c"
-                         "../../common/util/flags.c"
-                         "../../common/util/memory.c"
-                         "../../common/util/priority_queue.c"
-                         "../../common/util/resource.c"
-                         "../../common/util/tlog.c"
-                         "../../common/util/tracing.c"
-                         "../../common/util/util.c"
-                         "../../common/util/vstring.c"
                          "../../common/com/@ARCH@/config_host.c"
                          "../../common/com/@ARCH@/config_platform.c"
                          "cleanup.cxx"
@@ -32,6 +15,7 @@ SET(PATHSCALE_BE_BE_COMMON_SRCS "../../common/targ_info/access/ti_init.c"
                          "dra_clone.cxx"
                          "dra_mangle.cxx"
                          "omp_lower.cxx"
+                         "options_stack.cxx"
                          "../com/privatize_common.cxx"
                          "rewrite_pragmas.cxx"
                          "wb_omp.cxx"
@@ -129,9 +113,6 @@ SET(PATHSCALE_BE_BE_COMMON_SRCS "../../common/targ_info/access/ti_init.c"
                          "../../common/com/wn_simp.cxx"
                          "../../common/com/wn_util.cxx"
                          "../../common/com/xstats.cxx"
-                         "../../common/util/cxx_memory.cxx"
-                         "../../common/util/errors.cxx"
-                         "../../common/util/options_stack.cxx"
                          "../region/ori.cxx"
                          "../region/rbi.cxx"
                          "../region/region_init.cxx"
@@ -160,16 +141,6 @@ SET(PATHSCALE_BE_BE_ARM_SRCS
                            "../com/wn_lower_mul.cxx"
                          "../com/rt_lower_wn.cxx"
                          "@ARCH@/mul_cost_model.cxx" #st
-                         "../../common/util/zint.cxx" #st
-                         "../../common/util/lbitmask.cxx" #st
-                         "../../common/util/lbrange.cxx" #st
-                         "../../common/util/larange.cxx" #st
-                         "../../common/util/lvrange.cxx" #st
-                         "../../common/util/lbvalrange.cxx" #st
-                         "../../common/util/lbitvalue.cxx" #st
-                         "../../common/util/lalign.cxx" #st
-                         "../../common/util/paired_lattice.cxx" #st
-                         "../../common/util/range.cxx" #st
                          "../../common/com/loader.cxx"
                          "../../common/com/isa_loader.cxx" #st
                          "../../common/com/dll_loader.cxx" #st
@@ -211,7 +182,7 @@ path64_set_multiarch_sources(be_sources x8664 ${PATHSCALE_BE_BE_COMMON_SRCS} ${P
 path64_set_multiarch_sources(be_sources mips ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_MIPS_SRCS})
 path64_add_multiarch_library(be-static STATIC be_sources)
 path64_set_multiarch_property(be-static OUTPUT_NAME be)
-path64_multiarch_link_multiarch_libraries(be-static targinfo)
+path64_multiarch_link_multiarch_libraries(be-static targinfo comutil)
 path64_multiarch_link_libraries(be-static m ${libdl})
 path64_set_multiarch_property(be-static COMPILE_FLAGS
                               "-I${CMAKE_CURRENT_SOURCE_DIR}/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@  -I${CMAKE_CURRENT_SOURCE_DIR}/../cg/@ARCH@  -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
@@ -228,7 +199,7 @@ IF(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
     path64_set_multiarch_property(be LINK_FLAGS "-Wl,--export-dynamic")
 ENDIF()
 
-path64_multiarch_link_multiarch_libraries(be targinfo)
+path64_multiarch_link_multiarch_libraries(be targinfo comutil)
 path64_multiarch_link_libraries(be SYS m ${libdl})
 # serialize to generate preg_list.cxx only once
 path64_add_multiarch_multiarch_dependencies(be be-static) 
@@ -245,7 +216,7 @@ path64_multiarch_link_multiarch_libraries(be-exec be-static cg wopt)
 path64_multiarch_link_libraries(be-exec  SYS rtkutils -Wl,--no-whole-archive iberty)
 path64_multiarch_link_multiarch_libraries(be-exec dwarf)
 path64_multiarch_link_libraries(be-exec elfutil elf)
-path64_multiarch_link_multiarch_libraries(be-exec targinfo)
+path64_multiarch_link_multiarch_libraries(be-exec targinfo comutil)
 path64_set_multiarch_property(be-exec OUTPUT_NAME "be")
 path64_set_multiarch_property(be-exec COMPILE_FLAGS
                               "-DSHARED_BUILD  -I${CMAKE_CURRENT_SOURCE_DIR}/@ARCH@  -I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../cg/@ARCH@  -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
