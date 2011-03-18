@@ -213,7 +213,7 @@ path64_add_multiarch_executable(be-exec be_exec_sources)
 # TODO : Make sure link targets are static
 path64_multiarch_link_libraries(be-exec -Wl,--whole-archive)
 path64_multiarch_link_multiarch_libraries(be-exec be-static cg wopt)
-path64_multiarch_link_libraries(be-exec  rtkutils -Wl,--no-whole-archive iberty)
+path64_multiarch_link_libraries(be-exec  rtkutils -Wl,--no-whole-archive)
 path64_multiarch_link_multiarch_libraries(be-exec dwarf)
 path64_multiarch_link_libraries(be-exec elfutil elf)
 path64_multiarch_link_multiarch_libraries(be-exec targinfo comutil)
