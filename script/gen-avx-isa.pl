@@ -18,6 +18,12 @@ sub cartesian {		#cartesian product, the perl way ]:->
     return @C;
 }
 
+sub copy_to{
+	my($path,$filename)=@_;
+	return if not ($filename);
+	system("mv -f $filename $path");
+}
+
 #pulling things out of envytools and converting them directly to isa_* interface results in fugly names, but at least it's fast as hell.
 
 #my @mem=[["base64"],["offset32"],[["base64"],["offset64"],["uimm8"],["simm32"]],[["offset64"],["uimm8"],["simm32"]];
@@ -68,15 +74,19 @@ my @vcvtdq2pd256=["vcvtdq2pd","vcvtpd2dq","vcvtps2pd"];
 ## opnd(ymm/mem),result(ymm)
 #my @vcvtdq2ps256=["vcvtdq2ps256","vcvtps2dq","vcvttpd2dq","vcvttps2dq","vmovapd","vmovaps","vmovdqa","vmovdqu"];
 ## opnd(xmm), result(xmm/mem)
-#my @movq_toxmmormem=["vmovq","vmovdqa","vmovdqu","vmovupd","vmovups"];
+#my @movq_toxmmormem=["vmovq","vmovupd","vmovups"];
 ## opnd(ymm), result(ymm/mem)
-my @vmovdqa256=["vmovdqa","vmovdqu","vmovupd","vmovups"];
+#my @vmovdqa256=["vmovdqa","vmovdqu","vmovupd","vmovups"];
 ## opnd(int32/mem), result(xmm)
 my @vmovd32_toxmm=["vmovd"];
 ## opnd(int64/mem), result(xmm)
-my @vmovd64_toxmm=["vmovq"];
+#my @vmovd64_toxmm=["vmovq"];
 ## opnd(xmm), result(int32/mem)
-my @vmovd32_tomem=["vmovd"];
+#my @vmovd32_tomem=["vmovd"];
+## opnd(int32), result(xmm)
+my @int32_to_xmm=["vmovd"];
+## opnd(int64), result(xmm)
+my @int64_to_xmm=["vmovq"];
 ## opnd(xmm), result(int64/mem)
 my @vmovd64_tomem=["vmovq"];
 ## opnd(xmm), result(int32/int64)
@@ -119,9 +129,9 @@ my @vmovhpd=["vmovhpd","vmovhps","vmovntdqa","vmovsd","vmovss"];
 ## opnd(xmm), result(xmm)
 my @vmaskmovdqu=["vmaskmovdqu"];
 ## opnd(xmm), result(mem)
-my @vmovlpd_xmm_to_mem=["vmaskmovdqu","vmovlps","vmovntpd","vmovntps","vmovsd","vmovss"];
+my @vmovlpd_xmm_to_mem=["vmaskmovdqu","vmovlps","vmovntpd","vmovntps","vmovsd","vmovss","vmovdqa","vmovdqu","vmovq","vmovupd","vmovups","vmovaps","vmovapd"];
 ## opnd(ymm), result(mem)
-my @ymm_to_mem=["vmovntdq","vmovntpd","vmovntps"];
+my @ymm_to_mem=["vmovntdq","vmovntpd","vmovntps","vmovaps","vmovapd","vmovdqa","vmovdqu","vmovupd","vmovups"];
 
 ## opnd(xmm) opnd(xmm), result(xmm)
 my @vmovhlps=["vmovhlps","vmovlhps","vmovsd","vmovss"];
@@ -144,7 +154,7 @@ my @ops=(
 		[@vblendp,["f128","f256"], ["OPS"],["ofloat"],["float"],@float_mem,["simm8"]],
 		[@vblendvp,["f128","f256"], ["OPS"],["ofloat"],["float"],@float_mem,["float"]],
 		#[@vbroadcast128,["f128"],["OPS"],["ofloat"],@only_mem],
-		[@vbroadcast256,["f256"],["OPS"],["ofloat"],@only_mem],
+		[@vbroadcast256,["f256"],["OPS"],["ofloat"],@float_mem],
 		[@vcmpsd,["f128"], ["OPS"],["ofloat"],["float"],@float_mem,["simm8"]],
 		[@vcomisd,["f128"], ["OPS"], ["ofloat"],@float_mem],
 		[@vcvtdq2pd256,["f256"], ["OPS"],["ofloat"],@float_mem],
@@ -162,13 +172,15 @@ my @ops=(
 		[@vmaskmovdqu,["f128"], ["OPS"], ["ofloat"], ["float"]],
 		[@vmaskmovps,["f128","f256"], ["OPS"], ["ofloat"],@only_mem, ["float"]],
 		[@vmaskmovps_tomem,["f128","f256"], ["OPS"],@oonly_mem,["float"],["float"]],	
-		[@vmovd32_toxmm,["f128"],["OPS"],@oint32_mem,["float"]],
-		[@vmovd64_toxmm,["f128"],["OPS"],@oint64_mem,["float"]],
+		#[@vmovd32_toxmm,["f128"],["OPS"],@oint32_mem,["float"]],
+		#[@vmovd64_toxmm,["f128"],["OPS"],@oint64_mem,["float"]],
+		[@int32_to_xmm,["f128"],["OPS"],["oint32"],["float"]],
+		[@int64_to_xmm,["f128"],["OPS"],["oint64"],["float"]],
 		[@vmovd32_tomem,["i32"],["OPS"], ["ofloat"],@int32_mem],
 		[@vmovd64_tomem,["i64"],["OPS"], ["ofloat"],@int64_mem],
 		#[@movq_toxmmormem,["f128"],["OPS"],@ofloat_mem,["float"]],
 		#[@vmovddup128, ["f128","f256"],["OPS"], ["ofloat"], @float_mem],
-		[@vmovdqa256, ["f256"],["OPS"],@ofloat_mem, ["float"]],
+		#[@vmovdqa256, ["f256"],["OPS"],@ofloat_mem, ["float"]],
 		[@vmovhlps, ["f128"],["OPS"],["ofloat"],["float"],["float"]],
 		[@vmovhpd, ["f128"],["OPS"],["float"],@only_mem],
 		[@vmovlpd128,["f128"],["OPS"],["ofloat"], ["float"],@only_mem],
@@ -241,19 +253,19 @@ foreach(@isa){
 
 print "di = $di\n";
 
-#my $dj;
-#my $dk;
-#for($dj=0;$dj<$di;$dj++){
+my $dj;
+my $dk;
+for($dj=0;$dj<$di;$dj++){
 	#print "dj=$dj di=$di\n";
-#  for($dk=0;$dk<$di;$dk++){
-#    if($dj!=$dk){
-#      if($debug_dup_isa[$dk]=~/^$debug_dup_isa[$dj]$/i){
-#	      print "shit met duplicate:\n".$debug_dup_isa[$dk]."   ".$debug_dup_isa[$dj]."   dk=$dk  dj=$dj\n";
-#      }
-#    }
-#  }
+  for($dk=0;$dk<$di;$dk++){
+    if($dj!=$dk){
+      if($debug_dup_isa[$dk]=~/^$debug_dup_isa[$dj]$/i){
+	      print "shit met duplicate:\n".$debug_dup_isa[$dk]."   ".$debug_dup_isa[$dj]."   dk=$dk  dj=$dj\n";
+      }
+    }
+  }
   #print "shit ".$debug_dup_isa[$dj]."\n";
-#}
+}
 
 #$isa_print="\nisa_operands.cxx:\n";
 foreach (keys %isa_operands){
@@ -266,6 +278,39 @@ foreach (keys %isa_operands){
 	my $pos=0;
 	my $opnd=0;
 	my $opnd_post=1;
+	if($_=~/^obase[0-9]+_/ || $_=~/^oindex[0-9]+_/){
+		#die "match store:".$_."\n";
+		@tmp_load=split("_",$_);
+		$str_store = @{$isa_operands{$_}[0]->[1]};
+		#die "debug matched store:".$str_store."\n";
+		#my $tmp_last=$tmp_load[scalar(@tmp_load)-1];
+		foreach (@{$isa_operands{$_}[0]->[1]}){
+		  if($_=~/^obase[0-9]+_/ || $_=~/^oindex[0-9]+_/){
+		    next;
+		  }
+		  if($_=~/^float/){$isa_operands_print.="\tOperand(".$opnd++.", "."fp128".",opnd".$opnd_post++.");\n";}
+		  elsif($_=~/^int64/){$isa_operands_print.="\tOperand(".$opnd++.", "."int64".",opnd".$opnd_post++.");\n";}
+		  elsif($_=~/^simm8/){$isa_operands_print.="\tOperand(".$opnd++.", "."simm8".",opnd".$opnd_post++.");\n";}
+		  else{die "doesn't know wtf:".$_."\n";}
+		}
+
+		if($_=~/^obase64_simm32_/){
+			$isa_operands_print.="\tOperand(".$opnd++.", "."int64".",base".");\n";
+			$isa_operands_print.="\tOperand(".$opnd++.", "."simm32".",offset".");\n";
+			#$opnd_post++;
+		}elsif($_=~/^obase64_index64_uimm8_simm32_/){
+			$isa_operands_print.="\tOperand(".$opnd++.", "."int64".",base".");\n";
+			$isa_operands_print.="\tOperand(".$opnd++.", "."int64".",index".");\n";
+			$isa_operands_print.="\tOperand(".$opnd++.", "."uimm8".",scale".");\n";
+			$isa_operands_print.="\tOperand(".$opnd++.", "."simm32".",offset".");\n";
+			#$opnd_post++;
+		}elsif($_=~/^oindex64_uimm8_simm32_/){
+			$isa_operands_print.="\tOperand(".$opnd++.", "."int64".",index".");\n";
+			$isa_operands_print.="\tOperand(".$opnd++.", "."uimm8".",scale".");\n";
+			$isa_operands_print.="\tOperand(".$opnd++.", "."simm32".",offset".");\n";
+			#$opnd_post++;
+		}else{die "doesn't know wtf base:".$_."\n";}
+	}else {
 	foreach (@{$isa_operands{$_}[0]->[1]}){
 		#$isa_operands_print.='@{$isa_operands{$_}[0]->[1]:';
 		#$isa_operands_print.=$_."\n";
@@ -319,6 +364,7 @@ foreach (keys %isa_operands){
 		}
 		
 	}
+   }
 	$isa_operands_print.="\n";
 }
 print "isa_print.cxx:\n";
@@ -562,3 +608,12 @@ fprint("isa_avx_subset.cxx",$isa_subset_print);
 fprint("avx_si2.cxx", $isa_si_print);
 fprint("isa_avx_properties.cxx",$isa_properties_print);
 fprint("cgemit_targ_avx.cxx", $isa_cgemit_avx_print);
+
+copy_to('../src/common/targ_info/isa/x8664/',"isa_avx.cxx");
+copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_print.cxx");
+copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_operands.cxx");
+copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_pack.cxx");
+copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_subset.cxx");
+copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties.cxx");
+copy_to('../src/common/targ_info/proc/x8664/',"avx_si2.cxx");
+copy_to('../src/be/cg/x8664/cgemit_targ_avx.cxx',"cgemit_targ_avx.cxx");
