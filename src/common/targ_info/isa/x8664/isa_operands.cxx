@@ -181,6 +181,11 @@ main()
     ISA_Reg_Opnd_Type_Create("mmx", ISA_REGISTER_CLASS_mmx,
                              ISA_REGISTER_SUBCLASS_UNDEFINED,
                              64, SIGNED, INVALID);
+
+  const OPERAND_VALUE_TYPE mxcsr =
+  	ISA_Reg_Opnd_Type_Create("mxcsr", ISA_REGISTER_CLASS_mxcsr,
+  							 ISA_REGISTER_SUBCLASS_UNDEFINED,
+  							 32, SIGNED, INVALID);
   
  
   /* Enums */

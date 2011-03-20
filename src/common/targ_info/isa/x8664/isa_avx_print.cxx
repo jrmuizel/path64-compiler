@@ -325,6 +325,19 @@ Result(0);
 		TOP_UNDEFINED);
 
 
+ISA_PRINT_TYPE obase64_index64_uimm8_simm32_mxcsr = ISA_Print_Type_Create("obase64_index64_uimm8_simm32_mxcsr",
+"%s ,%s%s(%s,%s,%s) ");
+Name();
+Segment();
+Operand(4);
+Operand(1);
+Operand(2);
+Operand(3);
+	Instruction_Print_Group(obase64_index64_uimm8_simm32_mxcsr,
+		TOP_vstmxcsr_obase64_index64_uimm8_simm32_mxcsr,
+		TOP_UNDEFINED);
+
+
 ISA_PRINT_TYPE ofloat_float_base64_index64_uimm8_simm32_simm8 = ISA_Print_Type_Create("ofloat_float_base64_index64_uimm8_simm32_simm8",
 "%s %s ,%s%s(%s,%s,%s) ,%s ,%s");
 Name();
@@ -625,6 +638,29 @@ Result(0);
 		TOP_UNDEFINED);
 
 
+ISA_PRINT_TYPE mxcsr_obase64_simm32 = ISA_Print_Type_Create("mxcsr_obase64_simm32",
+"%s ,%s%s(%s) ");
+Name();
+Segment();
+Operand(2);
+Operand(1);
+	Instruction_Print_Group(mxcsr_obase64_simm32,
+		TOP_vldmxcsr_mxcsr_obase64_simm32,
+		TOP_UNDEFINED);
+
+
+ISA_PRINT_TYPE oindex64_uimm8_simm32_mxcsr = ISA_Print_Type_Create("oindex64_uimm8_simm32_mxcsr",
+"%s ,%s%s(,%s,%s) ");
+Name();
+Segment();
+Operand(3);
+Operand(1);
+Operand(2);
+	Instruction_Print_Group(oindex64_uimm8_simm32_mxcsr,
+		TOP_vstmxcsr_oindex64_uimm8_simm32_mxcsr,
+		TOP_UNDEFINED);
+
+
 ISA_PRINT_TYPE ofloat_index64_uimm8_simm32_float = ISA_Print_Type_Create("ofloat_index64_uimm8_simm32_float",
 "%s %s%s(,%s,%s) ,%s ,%s");
 Name();
@@ -814,6 +850,18 @@ Result(0);
 		TOP_vcvtsi2ss_int64_ofloat_float_base64_simm32,
 		TOP_vmovlpd_f128_ofloat_float_base64_simm32,
 		TOP_vpermilps_f256_ofloat_float_base64_simm32,
+		TOP_UNDEFINED);
+
+
+ISA_PRINT_TYPE mxcsr_oindex64_uimm8_simm32 = ISA_Print_Type_Create("mxcsr_oindex64_uimm8_simm32",
+"%s ,%s%s(,%s,%s) ");
+Name();
+Segment();
+Operand(3);
+Operand(1);
+Operand(2);
+	Instruction_Print_Group(mxcsr_oindex64_uimm8_simm32,
+		TOP_vldmxcsr_mxcsr_oindex64_uimm8_simm32,
 		TOP_UNDEFINED);
 
 
@@ -1034,6 +1082,17 @@ Result(0);
 		TOP_vlddqu_f256_ofloat_base64_index64_uimm8_simm32,
 		TOP_i32_ofloat_base64_index64_uimm8_simm32,
 		TOP_vmovq_i64_ofloat_base64_index64_uimm8_simm32,
+		TOP_UNDEFINED);
+
+
+ISA_PRINT_TYPE obase64_simm32_mxcsr = ISA_Print_Type_Create("obase64_simm32_mxcsr",
+"%s ,%s%s(%s) ");
+Name();
+Segment();
+Operand(2);
+Operand(1);
+	Instruction_Print_Group(obase64_simm32_mxcsr,
+		TOP_vstmxcsr_obase64_simm32_mxcsr,
 		TOP_UNDEFINED);
 
 
@@ -1349,6 +1408,19 @@ Result(0);
 		TOP_vcvtss2si_int32_oint32_index64_uimm8_simm32,
 		TOP_vcvttsd2si_int32_oint32_index64_uimm8_simm32,
 		TOP_vcvttss2si_int32_oint32_index64_uimm8_simm32,
+		TOP_UNDEFINED);
+
+
+ISA_PRINT_TYPE mxcsr_obase64_index64_uimm8_simm32 = ISA_Print_Type_Create("mxcsr_obase64_index64_uimm8_simm32",
+"%s ,%s%s(%s,%s,%s) ");
+Name();
+Segment();
+Operand(4);
+Operand(1);
+Operand(2);
+Operand(3);
+	Instruction_Print_Group(mxcsr_obase64_index64_uimm8_simm32,
+		TOP_vldmxcsr_mxcsr_obase64_index64_uimm8_simm32,
 		TOP_UNDEFINED);
 
 

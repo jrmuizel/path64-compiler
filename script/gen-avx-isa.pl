@@ -143,7 +143,10 @@ my @xmm_imm_to_mem=["vpextrb"];
 ## opnd(xmm) opnd(imm), result(xmm)
 my @xmm_imm_to_xmm=["vpslldq","vpsrldq","vpsllw","vpsrad","vpsrlw"];
 
-
+## opnd(mxcsr), result(mem)
+my @mxcsr_to_mem=["vstmxcsr"];
+## opnd(mem), opnd(mxcsr)
+my @mem_to_mxcsr=["vldmxcsr"];
 ##Fixme##
 ##@vldmxcsr vstmxcsr
 ##next is movdqu
@@ -201,6 +204,8 @@ my @ops=(
 		[@xmm_to_int, ["int32"],["OPS"],["oint32","oint64"],["float"]],
 		[["vzeroall"],["OPS"],["null"]],
 		[["vzeroupper"],["OPS"],["null"]],
+		[@mxcsr_to_mem,["OPS"],@oonly_mem,["mxcsr"]],
+		[@mem_to_mxcsr,["OPS"],["mxcsr"],@oonly_mem],
 
 	);
 my @isa;
@@ -291,7 +296,8 @@ foreach (keys %isa_operands){
 		  if($_=~/^float/){$isa_operands_print.="\tOperand(".$opnd++.", "."fp128".",opnd".$opnd_post++.");\n";}
 		  elsif($_=~/^int64/){$isa_operands_print.="\tOperand(".$opnd++.", "."int64".",opnd".$opnd_post++.");\n";}
 		  elsif($_=~/^simm8/){$isa_operands_print.="\tOperand(".$opnd++.", "."simm8".",opnd".$opnd_post++.");\n";}
-		  else{die "doesn't know wtf:".$_."\n";}
+		  elsif($_=~/^mxcsr/){$isa_operands_print.="\tOperand(".$opnd++.", "."mxcsr".",opnd".$opnd_post++.");\n";}
+		  else{die "doesn't know wtf when store:".$_."\n";}
 		}
 
 		if($_=~/^obase64_simm32_/){
@@ -323,6 +329,7 @@ foreach (keys %isa_operands){
 		if($_=~/^oint32/){$isa_operands_print.="\tResult(".$res++.","."int32".");\n";}
 		if($_=~/^float/){$isa_operands_print.="\tOperand(".$opnd++.", "."fp128".",opnd".$opnd_post++.");\n";}
 		if($_=~/^int64/){$isa_operands_print.="\tOperand(".$opnd++.", "."int64".",opnd".$opnd_post++.");\n";}
+		if($_=~/^mxcsr/){$isa_operands_print.="\tOperand(".$opnd++.", "."mxcsr".",opnd".$opnd_post++.");\n";}
 		if($_=~/^obase64_simm32$/){
 			$isa_operands_print.="\tOperand(".$opnd++.", "."int64".",base".");\n";
 			$isa_operands_print.="\tOperand(".$opnd++.", "."simm32".",offset".");\n";
@@ -398,11 +405,12 @@ foreach (keys %isa_operands){
 		  $isa_print_print.='%s ';
 		}elsif($opnd[$i]=~/^int/){
 		  $isa_print_print.='%s ';
-		}elsif($opnd[$i]=~/^null/){
+		}elsif($opnd[$i]=~/^null/||$opnd[$i]=~/^mxcsr/){
 		 ##do nothing here;
 		}
 		else{
 		  $isa_print_print.="TODO NYI format opnd ".$opnd[$i]."\n";
+		  die "TODO NYI format opnd ".$opnd[$i]."\n";
 		}
 		if($result_n>0){
 			$isa_print_print.=',';
@@ -488,7 +496,7 @@ foreach (keys %isa_operands){
 		  #$isa_print_print.='%s ';
 			$isa_print_print.="Operand(".$total_opnd.");\n";
 			$total_opnd++;
-		}elsif($opnd[$i]=~/^null/){
+		}elsif($opnd[$i]=~/^null/||$opnd[$i]=~/^mxcsr/){
 		  ##donothing here;
 		}
 		else{

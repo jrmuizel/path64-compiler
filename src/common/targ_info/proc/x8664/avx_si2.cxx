@@ -1268,6 +1268,12 @@
 		TOP_vpmovmskb_int32_oint64_float,
 		TOP_vzeroall_null,
 		TOP_vzeroupper_null,
+		TOP_vstmxcsr_obase64_simm32_mxcsr,
+		TOP_vstmxcsr_obase64_index64_uimm8_simm32_mxcsr,
+		TOP_vstmxcsr_oindex64_uimm8_simm32_mxcsr,
+		TOP_vldmxcsr_mxcsr_obase64_simm32,
+		TOP_vldmxcsr_mxcsr_obase64_index64_uimm8_simm32,
+		TOP_vldmxcsr_mxcsr_oindex64_uimm8_simm32,
 		TOP_UNDEFINED);
 Any_Operand_Access_Time(0);
 Any_Result_Available_Time(2);

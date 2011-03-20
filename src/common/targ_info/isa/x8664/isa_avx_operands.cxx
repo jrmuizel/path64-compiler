@@ -281,6 +281,15 @@
 	Operand(0, int64,base);
 	Operand(1, simm32,offset);
 
+	Instruction_Group("obase64_index64_uimm8_simm32_mxcsr",
+		TOP_vstmxcsr_obase64_index64_uimm8_simm32_mxcsr,
+		TOP_UNDEFINED);
+	Operand(0, mxcsr,opnd1);
+	Operand(1, int64,base);
+	Operand(2, int64,index);
+	Operand(3, uimm8,scale);
+	Operand(4, simm32,offset);
+
 	Instruction_Group("ofloat_float_base64_index64_uimm8_simm32_simm8",
 		TOP_vblendpd_f128_ofloat_float_base64_index64_uimm8_simm32_simm8,
 		TOP_vblendpd_f256_ofloat_float_base64_index64_uimm8_simm32_simm8,
@@ -527,6 +536,21 @@
 	Operand(1, fp128,opnd2);
 	Operand(2, simm8,opnd3);
 
+	Instruction_Group("mxcsr_obase64_simm32",
+		TOP_vldmxcsr_mxcsr_obase64_simm32,
+		TOP_UNDEFINED);
+	Operand(0, mxcsr,opnd1);
+	Operand(1, int64,base);
+	Operand(2, simm32,offset);
+
+	Instruction_Group("oindex64_uimm8_simm32_mxcsr",
+		TOP_vstmxcsr_oindex64_uimm8_simm32_mxcsr,
+		TOP_UNDEFINED);
+	Operand(0, mxcsr,opnd1);
+	Operand(1, int64,index);
+	Operand(2, uimm8,scale);
+	Operand(3, simm32,offset);
+
 	Instruction_Group("ofloat_index64_uimm8_simm32_float",
 		TOP_vmaskmovps_f128_ofloat_index64_uimm8_simm32_float,
 		TOP_vmaskmovps_f256_ofloat_index64_uimm8_simm32_float,
@@ -708,6 +732,14 @@
 	Operand(0, fp128,opnd1);
 	Operand(1, int64,base);
 	Operand(2, simm32,offset);
+
+	Instruction_Group("mxcsr_oindex64_uimm8_simm32",
+		TOP_vldmxcsr_mxcsr_oindex64_uimm8_simm32,
+		TOP_UNDEFINED);
+	Operand(0, mxcsr,opnd1);
+	Operand(1, int64,index);
+	Operand(2, uimm8,scale);
+	Operand(3, simm32,offset);
 
 	Instruction_Group("obase64_simm32_float_simm8",
 		TOP_vextractps_f256_obase64_simm32_float_simm8,
@@ -899,6 +931,13 @@
 	Operand(1, int64,index);
 	Operand(2, uimm8,scale);
 	Operand(3, simm32,offset);
+
+	Instruction_Group("obase64_simm32_mxcsr",
+		TOP_vstmxcsr_obase64_simm32_mxcsr,
+		TOP_UNDEFINED);
+	Operand(0, mxcsr,opnd1);
+	Operand(1, int64,base);
+	Operand(2, simm32,offset);
 
 	Instruction_Group("ofloat_float_base64_simm32_simm8",
 		TOP_vblendpd_f128_ofloat_float_base64_simm32_simm8,
@@ -1151,6 +1190,15 @@
 	Operand(0, int64,index);
 	Operand(1, uimm8,scale);
 	Operand(2, simm32,offset);
+
+	Instruction_Group("mxcsr_obase64_index64_uimm8_simm32",
+		TOP_vldmxcsr_mxcsr_obase64_index64_uimm8_simm32,
+		TOP_UNDEFINED);
+	Operand(0, mxcsr,opnd1);
+	Operand(1, int64,base);
+	Operand(2, int64,index);
+	Operand(3, uimm8,scale);
+	Operand(4, simm32,offset);
 
 	Instruction_Group("ofloat_float_float",
 		TOP_vaddpd_f128_ofloat_float_float,
