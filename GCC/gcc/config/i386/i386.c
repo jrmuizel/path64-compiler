@@ -15165,7 +15165,7 @@ ix86_init_mmx_sse_builtins (void)
   tree V8SI_type_node = build_vector_type_for_mode (intSI_type_node, V8SImode); //V32I4
   tree V8SF_type_node = build_vector_type_for_mode (float_type_node, V8SFmode);//V32F4
   tree V4DF_type_node = build_vector_type_for_mode (double_type_node, V4DFmode);// V32F8
-  tree V4DI_type_nod = build_vector_type_for_mode (long_long_integer_type_node, V4DImode);// V32I8
+  tree V4DI_type_node = build_vector_type_for_mode (long_long_integer_type_node, V4DImode);// V32I8
   /*end AVX 256-bits*/
   tree V4HI_type_node = build_vector_type_for_mode (intHI_type_node, V4HImode);
   tree V8QI_type_node = build_vector_type_for_mode (intQI_type_node, V8QImode);
@@ -15179,6 +15179,15 @@ ix86_init_mmx_sse_builtins (void)
 			     build_type_variant (float_type_node, 1, 0));
   tree pv2si_type_node = build_pointer_type (V2SI_type_node);
   tree pv2di_type_node = build_pointer_type (V2DI_type_node);
+  /*for AVX pointer and SSEx type*/
+  tree pv2df_type_node = build_pointer_type (V2DF_type_node);
+  tree pv4sf_type_node = build_pointer_type (V4SF_type_node);
+  tree pv4si_type_node = build_pointer_type (V4SI_type_node);
+  tree pv8si_type_node = build_pointer_type (V8SI_type_node);
+  tree pv8sf_type_node = build_pointer_type (V8SF_type_node);
+  tree pv4df_type_node = build_pointer_type (V4DF_type_node);
+  tree pv4di_type_node = build_pointer_type (V4DI_type_node);
+  /*end for AVX pointer type*/
   tree pdi_type_node = build_pointer_type (long_long_unsigned_type_node);
 
   /* Comparisons.  */
@@ -15824,7 +15833,7 @@ ix86_init_mmx_sse_builtins (void)
   ftype = build_function_type_list (V8HI_type_node ,V8HI_type_node,   NULL_TREE);
   def_builtin (MASK_SSE4_1, "__builtin_ia32_phminposuw128",ftype, IX86_BUILTIN_PHMINPOSUW128);
 	/*_mm_stream_load_si128*/
-	tree pv4si_type_node = build_pointer_type(V4SI_type_node);
+	//tree pv4si_type_node = build_pointer_type(V4SI_type_node);
   ftype = build_function_type_list (V4SI_type_node ,pv4si_type_node, NULL_TREE);
   def_builtin (MASK_SSE4_1, "__builtin_ia32_movntdqa",ftype, IX86_BUILTIN_MOVNTDQA);
 	
