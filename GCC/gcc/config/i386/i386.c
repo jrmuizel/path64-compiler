@@ -15159,7 +15159,14 @@ ix86_init_mmx_sse_builtins (void)
   tree V2DF_type_node = build_vector_type_for_mode (double_type_node, V2DFmode);
   tree V4SF_type_node = build_vector_type_for_mode (float_type_node, V4SFmode);
   tree V4SI_type_node = build_vector_type_for_mode (intSI_type_node, V4SImode);
-  tree V4DF_type_node = build_vector_type_for_mode (double_type_node, V4DFmode);
+  /*for AVX 256-bits*/
+  tree V32QI_type_node = build_vector_type_for_mode (intQI_type_node, V32QImode);// V32I1
+  tree V16HI_type_node = build_vector_type_for_mode (intHI_type_node, V16HImode);// V32I2
+  tree V8SI_type_node = build_vector_type_for_mode (intSI_type_node, V8SImode); //V32I4
+  tree V8SF_type_node = build_vector_type_for_mode (float_type_node, V8SFmode);//V32F4
+  tree V4DF_type_node = build_vector_type_for_mode (double_type_node, V4DFmode);// V32F8
+  tree V4DI_type_nod = build_vector_type_for_mode (long_long_integer_type_node, V4DImode);// V32I8
+  /*end AVX 256-bits*/
   tree V4HI_type_node = build_vector_type_for_mode (intHI_type_node, V4HImode);
   tree V8QI_type_node = build_vector_type_for_mode (intQI_type_node, V8QImode);
   tree V8HI_type_node = build_vector_type_for_mode (intHI_type_node, V8HImode);
