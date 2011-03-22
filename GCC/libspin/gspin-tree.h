@@ -1830,7 +1830,8 @@ typedef enum gsbi_ts {
 	GSBI_IX86_BUILTIN_PSHUFB128,
 	GSBI_IX86_BUILTIN_PSHUFB,
   /*AVX ISA*/
-  GSBI_IX86_BUILTIN_ADDPD256,
+  //GSBI_IX86_BUILTIN_ADDPD256,
+#include "gspin-tree_avx.h";
   GSBI_IX86_BUILTIN_MAX
 
 } gsbi_ts_t;

@@ -1775,7 +1775,8 @@ typedef enum
 	INTRN_PSHUFB128,
 	INTRN_PSHUFB,
 /*AVX*/
-  INTRN_ADDPD256,
+  //INTRN_ADDPD256,
+#include "wintrinsic_avx.h"
 /*AVX end*/
   INTRN_PAND128,
   INTRN_PANDN128,

@@ -9273,7 +9273,8 @@ ix86_builtins2gsbi_ts (enum ix86_builtins code)
 		case IX86_BUILTIN_PSHUFB128: return GSBI_IX86_BUILTIN_PSHUFB128;
 		case IX86_BUILTIN_PSHUFB: return GSBI_IX86_BUILTIN_PSHUFB;
 		/*AVX ISA*/
-		case IX86_BUILTIN_ADDPD256: return GSBI_IX86_BUILTIN_ADDPD256;
+#include "tree_avx.c"
+		//case IX86_BUILTIN_ADDPD256: return GSBI_IX86_BUILTIN_ADDPD256;
     case IX86_BUILTIN_MAX: return GSBI_IX86_BUILTIN_MAX;
   }
   gcc_assert (0);

@@ -16056,9 +16056,10 @@ ix86_init_mmx_sse_builtins (void)
 	def_builtin (MASK_SSSE3, "__builtin_ia32_pshufb", ftype, IX86_BUILTIN_PSHUFB);
 
 	/*AVX intrinsic*/
-	ftype = build_function_type_list(V4DF_type_node, V4DF_type_node, V4DF_type_node, NULL_TREE);
+#include "i386_avx.c"
+	//ftype = build_function_type_list(V4DF_type_node, V4DF_type_node, V4DF_type_node, NULL_TREE);
 
-	def_builtin (MASK_AVX, "__builtin_ia32_addpd256", ftype, IX86_BUILTIN_ADDPD256);
+	//def_builtin (MASK_AVX, "__builtin_ia32_addpd256", ftype, IX86_BUILTIN_ADDPD256);
   /* Access to the vec_init patterns.  */
   ftype = build_function_type_list (V2SI_type_node, integer_type_node,
 				    integer_type_node, NULL_TREE);

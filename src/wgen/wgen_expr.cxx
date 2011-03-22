@@ -5073,9 +5073,10 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
 			*iopc = INTRN_PSHUFB;
 			break;
 /*AVX*/
-    case GSBI_IX86_BUILTIN_ADDPD256:
-      *iopc = INTRN_ADDPD256;
-      break;
+//    case GSBI_IX86_BUILTIN_ADDPD256:
+//      *iopc = INTRN_ADDPD256;
+//      break;
+#include "wgen_expr_avx.cxx";
     case GSBI_IX86_BUILTIN_PANDN128:
       *iopc = INTRN_PANDN128;
       break;

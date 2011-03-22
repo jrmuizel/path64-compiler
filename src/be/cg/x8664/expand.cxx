@@ -7941,7 +7941,7 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
     Build_OP(TOP_pshufb128, result, op0, op1, ops );
     break;
   /*AVX*/
-  case INTRN_ADDPD256:
+  case INTRN_VADDPD256:
     Build_OP(TOP_vaddpd_f256_ofloat_float_float, result, op0, op1, ops);
     break;
   case INTRN_PSHUFB:
