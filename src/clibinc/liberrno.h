@@ -797,4 +797,6 @@ extern int verbose_message(char *, int);
 #define FDC_ERR_LZ_UNCMPLEN	5551	/* Wrong uncompressed length	   */
 #define FDC_ERR_LZ_BADCOMP	5552	/* Compression not working (DEBUG) */
 
+#define LAST_LIBERRNO           5552
+
 #endif /* !_LIBERRNO_H */

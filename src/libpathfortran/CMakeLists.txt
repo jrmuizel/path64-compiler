@@ -972,6 +972,7 @@ set_source_files_properties(../libfi/mathlb/ieee_arithmetic.F90 PROPERTIES OBJEC
 path64_set_multitarget_sources(pathfortran-static COMMON
                                ${PATHSCALE_PATHFORTRAN_C_SRCS}
                                ${PATHSCALE_PATHFORTRAN_F_SRCS}
+                               ${Path64_BINARY_DIR}/src/include/ftn_lib_messages.h
                                ${Path64_BINARY_DIR}/src/include/ieee_cpp_macros.h)
 path64_set_multitarget_property_(pathfortran-static OUTPUT_NAME "pathfortran")
 path64_set_multitarget_property_(pathfortran-static COMPILE_FLAGS -U__mips)
@@ -982,6 +983,7 @@ path64_add_dependencies_from_multitarget(compiler-stage-libs-Fortran pathfortran
 path64_set_multitarget_sources(pathfortran COMMON
                                ${PATHSCALE_PATHFORTRAN_C_SRCS}
                                ${PATHSCALE_PATHFORTRAN_F_SRCS}
+                               ${Path64_BINARY_DIR}/src/include/ftn_lib_messages.h
                                ${Path64_BINARY_DIR}/src/include/ieee_cpp_macros.h)
 path64_set_multitarget_property_(pathfortran COMPILE_FLAGS -fPIC -DPIC -U__mips)
 path64_set_multitarget_property_(pathfortran LINKER_LANGUAGE C)
@@ -1003,6 +1005,7 @@ IF(PATH64_ENABLE_PROFILING)
     path64_set_multitarget_sources(pathfortran_p COMMON
                                    ${PATHSCALE_PATHFORTRAN_C_SRCS}
                                    ${PATHSCALE_PATHFORTRAN_F_SRCS}
+                                   ${Path64_BINARY_DIR}/src/include/ftn_lib_messages.h
                                    ${Path64_BINARY_DIR}/src/include/ieee_cpp_macros.h)
     path64_set_multitarget_property_(pathfortran_p COMPILE_FLAGS -pg -U__mips)
     path64_add_multitarget_library(pathfortran_p STATIC)
@@ -1017,6 +1020,7 @@ path64_get_host_arch(host_arch)
 path64_add_library_for_arch(pathfortran-host ${host_arch} STATIC
                             ${PATHSCALE_PATHFORTRAN_C_SRCS}
                             ${PATHSCALE_PATHFORTRAN_F_SRCS}
+                            ${Path64_BINARY_DIR}/src/include/ftn_lib_messages.h
                             ${Path64_BINARY_DIR}/src/include/ieee_cpp_macros.h)
 
 add_custom_command(
@@ -1043,6 +1047,17 @@ add_custom_command(
 add_custom_target(
     generate_lib_cat ALL
     DEPENDS lib.cat
+)
+
+add_executable(mk_ftn_messages mk_ftn_messages.c)
+add_custom_command(
+    OUTPUT ${Path64_BINARY_DIR}/src/include/ftn_lib_messages.h
+    COMMAND mk_ftn_messages ./lib.cat >${Path64_BINARY_DIR}/src/include/ftn_lib_messages.h
+    DEPENDS mk_ftn_messages lib.cat
+)
+add_custom_target(
+    generate_ftn_lib_messages ALL
+    DEPENDS ${Path64_BINARY_DIR}/src/include/ftn_lib_messages.h
 )
 
 

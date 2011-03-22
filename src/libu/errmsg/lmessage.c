@@ -66,6 +66,8 @@
 #endif
 #include <unistd.h>
 
+#include "ftn_lib_messages.h"
+
 #ifdef	_UNICOS
 
 #include <tapereq.h>
@@ -365,13 +367,17 @@ _lmessage(int errn, char *severity, va_list args)
 	 * "Unit n not connected") is the real problem. Usual cause is a
 	 * C-coded "main" which hides the Fortran runtime "main".
 	 */
-	char *cgm_result;
+	char *cgm_result = 0;
 	if (((nl_catd) -1) == mcfd ||
 	  0 ==
 	    (cgm_result = catgetmsg(mcfd, NL_MSGSET, flmn, &mbuf[1], MAXMLN)) ||
 	  0 == *cgm_result) {
-	  strcpy(mbuf,
-	    "\nUnable to find error message (check NLSPATH, file lib.cat)");
+	  if (strlen(_Ftn_lib_runtime_messages[flmn]) > 0) {
+	      strncat(mbuf, _Ftn_lib_runtime_messages[flmn], MAXMLN-1);
+	  } else {
+	      strcpy(mbuf,
+		"\nUnable to find error message (check NLSPATH, file lib.cat)");
+	  }
 	}
 #else /* KEY bug 6682 */
 	(void) catgetmsg(mcfd, NL_MSGSET, flmn, &mbuf[1], MAXMLN);
