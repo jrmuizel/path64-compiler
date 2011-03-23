@@ -107,8 +107,8 @@ sub builtin_type { ##this define the builtin type of each parameter
 #my @mem =["base64","offset32"];
 #TODO can't find _mm256_testz_pz and _mm_testz_pz in the include fine;
 
-my @ov32f8_v32f8_v32f8=["VADDPD256 __builtin_ia32_addpd256","VADDSUBPD256 __builtin_ia32_addsubpd256","VHADDPD256 __builtin_ia32_haddpd256","VSUBPD256 __builtin_ia32_hsubpd256","VHSUBPD256 __builtin_ia32_hsubpd256","VMULPD256 __builtin_ia32_mulpd256","VDIVPD256 __builtin_ia32_divpd256","VANDPD256 __builtin_ia32_andnpd256","VANDNPD256 __builtin_ia32_andpd256","VORPD256 __builtin_ia32_orpd256","VXORPD256 __builtin_ia32_xorpd256","VMAXPD256 __builtin_ia32_maxpd256","VMINPD256 __builtin_ia32_minpd256","VTESTPD256C __builtin_ia32_vtestcpd256"];
-my @ov32f4_v32f4_v32f4=["VADDPS256 __builtin_ia32_addps256","VADDSUBPS256 __builtin_ia32_addsubps256","VHADDPS __builtin_ia32_haddps256","VSUBPS256 __builtin_ia32_hsubps256","VHSUBPS256 __builtin_ia32_hsubps256","VMULPS256 __builtin_ia32_mulps256","VDIVPS256 __builtin_ia32_divps256","VANDPS256 __builtin_ia32_andps256","VANDNPS256 __builtin_ia32_andnps256","VORPS256 __builtin_ia32_orps256","VXORPS256 __builtin_ia32_xorps256","VMAXPS256 __builtin_ia32_maxps256","VMINPS256 __builtin_ia32_minps256", "VTESTPD256 __builtin_ia32_vtestzpd256","VTESTPS256Z __builtin_ia32_vtestzps256", "VTESTPS256C __builtin_ia32_vtestcps256"];
+my @ov32f8_v32f8_v32f8=["VADDPD256 __builtin_ia32_addpd256","VADDSUBPD256 __builtin_ia32_addsubpd256","VHADDPD256 __builtin_ia32_haddpd256","VSUBPD256 __builtin_ia32_hsubpd256","VHSUBPD256 __builtin_ia32_hsubpd256","VMULPD256 __builtin_ia32_mulpd256","VDIVPD256 __builtin_ia32_divpd256","VANDPD256 __builtin_ia32_andnpd256","VANDNPD256 __builtin_ia32_andpd256","VORPD256 __builtin_ia32_orpd256","VXORPD256 __builtin_ia32_xorpd256","VMAXPD256 __builtin_ia32_maxpd256","VMINPD256 __builtin_ia32_minpd256","VTESTPD256C __builtin_ia32_vtestcpd256","VUNPCKHPD256 __builtin_ia32_unpckhpd256","VUNPCKLPD256 __builtin_ia32_unpcklpd256"];
+my @ov32f4_v32f4_v32f4=["VADDPS256 __builtin_ia32_addps256","VADDSUBPS256 __builtin_ia32_addsubps256","VHADDPS __builtin_ia32_haddps256","VSUBPS256 __builtin_ia32_hsubps256","VHSUBPS256 __builtin_ia32_hsubps256","VMULPS256 __builtin_ia32_mulps256","VDIVPS256 __builtin_ia32_divps256","VANDPS256 __builtin_ia32_andps256","VANDNPS256 __builtin_ia32_andnps256","VORPS256 __builtin_ia32_orps256","VXORPS256 __builtin_ia32_xorps256","VMAXPS256 __builtin_ia32_maxps256","VMINPS256 __builtin_ia32_minps256", "VTESTPD256 __builtin_ia32_vtestzpd256","VTESTPS256Z __builtin_ia32_vtestzps256", "VTESTPS256C __builtin_ia32_vtestcps256","VUNPCKHPS256 __builtin_ia32_unpckhps256","VUNPCKLPS256           __builtin_ia32_unpcklps256"];
 my @ov16f8_v16f8_v16f8=["VTESTPD128C __builtin_ia32_vtestcpd"];
 my @ov16f4_v16f4_v16f4=["VTESTPD128 __builtin_ia32_vtestzpd","VTESTPS128Z __builtin_ia32_vtestzps","VTESTPS128C __builtin_ia32_vtestcps"];
 my @oint32_v32f8_v32f8=["VTESTPD256NZC __builtin_ia32_vtestnzcpd256"];
@@ -159,7 +159,17 @@ my @ov32i4_v32i4mem=["VLDDQU256 __builtin_ia32_lddqu256"];
 #my @ov32f4_v32f4=
 my @oint32_v32f8=["VMOVMSKPD256 __builtin_ia32_movmskpd256"];
 my @oint32_v32f4=["VMOVMSKPS256 __builtin_ia32_movmskps256"];
-my @ov32f8_v32f8_int32=["VROUNDPD __builtin_ia32_roundpd256"];
+my @ov32f8_v32f8_int32=["VROUNDPD256 __builtin_ia32_roundpd256","VPERMILPD256 __builtin_ia32_vpermilpd256","VPERM2F128D __builtin_ia32_vperm2f128_pd256"];
+my @ov16f8_v16f8_int32=["VPERMILPD128 __builtin_ia32_vpermilpd"];
+my @ov32f4_v32f4_int32=["VPERMILPS256 __builtin_ia32_vpermilps256","VPERM2F128S __builtin_ia32_vperm2f128_ps256"];
+my @ov16f4_v16f4_int32=["VPERMILPS128 __builtin_ia32_vpermilps"];
+my @ov32f8_v32f8_v32i4=["VPERMILPD256VAR __builtin_ia32_vpermilvarpd256"];
+my @ov16f8_v16f8_v16i4=["VPERMILPD128VAR __builtin_ia32_vpermilvarpd"];
+my @ov32f4_v32f4_v32i4=["VPERMILPS256VAR __builtin_ia32_vpermilvarps256"];
+my @ov16f4_v16f4_v16i4=["VPERMILPS128VAR __builtin_ia32_vpermilvarps"];
+my @ov32i4_v32i4_v32i4_int32=["VPERM2F128SI __builtin_ia32_vperm2f128_si256","VSHUFPS256 __builtin_ia32_shufps256"];
+my @ov32i8_v32i8_v32i8_int32=["VSHUFPD258 __builtin_ia32_shufpd256"];
+
 #my @ov32f8_double_double_double_double=["V"];
 my @ovoid_void=["VZEROALL256 __builtin_ia32_vzeroall","VZEROUPPER256 __builtin_ia32_vzeroupper"];
 ##Packed Test Operations
@@ -174,10 +184,18 @@ my @ops=(
 		[["NAME"],@ov32f8_v32f8_v16f8_int32, ["OPS"],["V32F8ov32f8"],["v32f8"],["v16f8"],["int32"]],
 		[["NAME"],@ov32f4_v32f4_v16f4_int32, ["OPS"],["V32F4ov32f4"],["v32f4"],["v16f4"],["int32"]],
 		[["NAME"],@ov32i4_v32i4_v16i4_int32, ["OPS"],["V32I4ov32i4"],["v32i4"],["v16i4"],["int32"]],
+		[["NAME"],@ov32i4_v32i4_v32i4_int32, ["OPS"],["V32I4ov32i4"],["v32i4"],["v32i4"],["int32"]],
 		[["NAME"],@ov32i4_v32i4mem,["OPS"],["V32I4ov32i4"],["memv32i4"]],
 		[["NAME"],@oint32_v32f8,["OPS"],["I4oint32"],["v32f8"]],
 		[["NAME"],@oint32_v32f4,["OPS"],["I4oint32"],["v32f4"]],
 		[["NAME"],@ov32f8_v32f8_int32,["OPS"],["V32F8ov32f8"],["v32f8"],["int32"]],
+		[["NAME"],@ov16f8_v16f8_int32,["OPS"],["V16F8ov16f8"],["v16f8"],["int32"]],
+		[["NAME"],@ov32f4_v32f4_int32,["OPS"],["V32F4ov32f4"],["v32f4"],["int32"]],
+		[["NAME"],@ov16f4_v16f4_int32,["OPS"],["V16F4ov16f4"],["v16f4"],["int32"]],
+		[["NAME"],@ov32f8_v32f8_v32i4,["OPS"],["V32F8ov32f8"],["v32f8"],["v32i4"]],
+		[["NAME"],@ov16f8_v16f8_v16i4,["OPS"],["V16F8ov16f8"],["v16f8"],["v16i4"]],
+		[["NAME"],@ov32f4_v32f4_v32i4,["OPS"],["V32F4ov32f4"],["v32f4"],["v32i4"]],
+		[["NAME"],@ov16f4_v16f4_v16i4,["OPS"],["V16F4ov16f4"],["v16f4"],["v16i4"]],
 		[["NAME"],@ovoid_void,["OPS"],["Vovd"],["vd"]],
     [["NAME"],@ov16f8_v16f8_v16f8,["OPS"],["V16F8ov16f8"],["v16f8"],["v16f8"]],
     [["NAME"],@ov16f4_v16f4_v16f4,["OPS"],["V16F4ov16f4"],["v16f4"],["v16f4"]],
