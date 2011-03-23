@@ -89,6 +89,12 @@ sub builtin_type { ##this define the builtin type of each parameter
     elsif($arg=~/memfl/){
     	return "pfloat_type_node";
     }
+		elsif($arg=~/vd/){
+		  return "void_type_node";
+		}
+		elsif($arg=~/int32/){
+		  return "integer_type_node";
+		}
     else{
       die "don't support at the moment: ".$arg."\n";
     }
@@ -99,39 +105,86 @@ sub builtin_type { ##this define the builtin type of each parameter
 
 #my @mem=[["base64"],["offset32"],[["base64"],["offset64"],["uimm8"],["simm32"]],[["offset64"],["uimm8"],["simm32"]];
 #my @mem =["base64","offset32"];
-#TODO builtin  __builtin_ia32_haddpd256
-my @ov32f8_v32f8_v32f8=["VADDPD256 __builtin_ia32_addpd256","VADDSUBPD256 __builtin_ia32_addsubpd256","VHADDPD256 __builtin_ia32_haddpd256","VSUBPD256 __builtin_ia32_hsubpd256","VHSUBPD256","VMULPD256 __builtin_ia32_mulpd256","VDIVPD256 __builtin_ia32_divpd256","VANDPD256 __builtin_ia32_andnpd256","VANDNPD256 __builtin_ia32_andpd256","VORPD256","VXORPD256","VMAXPD256 __builtin_ia32_maxpd256","VMINPD256 __builtin_ia32_minpd256"];
-my @ov32f4_v32f4_v32f4=["VADDPS256 __builtin_ia32_addps256","VADDSUBPS256 __builtin_ia32_addsubps256","VHADDPS __builtin_ia32_haddps256","VSUBPS256","VHSUBPS256 __builtin_ia32_hsubps256","VMULPS256 __builtin_ia32_mulps256","VDIVPS256 __builtin_ia32_divps256","VANDPS256 __builtin_ia32_andps256","VANDNPS256 __builtin_ia32_andnps256","VORPS256","VXORPS256","VMAXPS256 __builtin_ia32_maxps256","VMINPS256 __builtin_ia32_minps256"];
-my @ov32f4_v32f4_v32f4_simm8=["VDPPS __builtin_ia32_dpps256","VBLENDPS __builtin_ia32_blendps256","VBLENDVPS256 __builtin_ia32_blendvps256","VCMPPS"];
-my @ov16f4_v16f4_v16f4_simm8=["VCMPPS","VCMPSS"];
-my @ov32f8_v32f8_v32f8_simm8=["VBLENDPD __builtin_ia32_blendpd256","VBLENDVPD256 __builtin_ia32_blendvpd256","VCMPPD"];
-my @ov16f8_v16f8_v16f8_simm8=["VCMPPD","VCMPSD"];
-my @ov32f8_v32f8=["VSQRTPD"];
-my @ov32f4_v32f4=["VSQRTPS","VRSQRTPS","VRCPPS"];
-my @ov32f8_v16i4=["VCVTDQ2PD"];
-my @ov32f4_v32i4=["VCVTDQ2PS"];
-my @ov16i4_v32f8=["VCVTPD2DQ","VCVTTPD2DQ"];
-my @ov32i4_v32f4=["VCVTPS2DQ"];
-my @ov16f4_v32f8=["VCVTPD2PS"];
-my @ov32f8_v16f4=["VCVTPS2PD"];
-my @ov16i4_v32f4=["VCVTTPS2DQ"];
+#TODO can't find _mm256_testz_pz and _mm_testz_pz in the include fine;
 
-my @ov32f8_v16f8mem=["VBROADCAST128"];
-my @ov32f4_v16f4mem=["VBROADCAST128"];
-my @ov32f8_dbmem=["VBROADCASTSD","VMOVAPD","VMOVUPD"];
-my @ov32f4_flmem=["VBROADCASTSS","VMOVAPS","VMOVUPS"];
-my @ov16f4_flmem=["VROADCASTSS"];
-my @ov32i4_v32i4mem=["VMOVDQA"];
-my @ov32f8_dbmem_v32i4=["VMASKMOVPD"];
-my @ov16f8_dbmem_v16i4=["VMASKMOVPD"];
-my @ov32f4_flmem_v32i4=["VMASKMOVPS"];
-my @ov16f4_flmem_v16i4=["VMASKMOVPS"];
+my @ov32f8_v32f8_v32f8=["VADDPD256 __builtin_ia32_addpd256","VADDSUBPD256 __builtin_ia32_addsubpd256","VHADDPD256 __builtin_ia32_haddpd256","VSUBPD256 __builtin_ia32_hsubpd256","VHSUBPD256 __builtin_ia32_hsubpd256","VMULPD256 __builtin_ia32_mulpd256","VDIVPD256 __builtin_ia32_divpd256","VANDPD256 __builtin_ia32_andnpd256","VANDNPD256 __builtin_ia32_andpd256","VORPD256 __builtin_ia32_orpd256","VXORPD256 __builtin_ia32_xorpd256","VMAXPD256 __builtin_ia32_maxpd256","VMINPD256 __builtin_ia32_minpd256","VTESTPD256C __builtin_ia32_vtestcpd256"];
+my @ov32f4_v32f4_v32f4=["VADDPS256 __builtin_ia32_addps256","VADDSUBPS256 __builtin_ia32_addsubps256","VHADDPS __builtin_ia32_haddps256","VSUBPS256 __builtin_ia32_hsubps256","VHSUBPS256 __builtin_ia32_hsubps256","VMULPS256 __builtin_ia32_mulps256","VDIVPS256 __builtin_ia32_divps256","VANDPS256 __builtin_ia32_andps256","VANDNPS256 __builtin_ia32_andnps256","VORPS256 __builtin_ia32_orps256","VXORPS256 __builtin_ia32_xorps256","VMAXPS256 __builtin_ia32_maxps256","VMINPS256 __builtin_ia32_minps256", "VTESTPD256 __builtin_ia32_vtestzpd256","VTESTPS256Z __builtin_ia32_vtestzps256", "VTESTPS256C __builtin_ia32_vtestcps256"];
+my @ov16f8_v16f8_v16f8=["VTESTPD128C __builtin_ia32_vtestcpd"];
+my @ov16f4_v16f4_v16f4=["VTESTPD128 __builtin_ia32_vtestzpd","VTESTPS128Z __builtin_ia32_vtestzps","VTESTPS128C __builtin_ia32_vtestcps"];
+my @oint32_v32f8_v32f8=["VTESTPD256NZC __builtin_ia32_vtestnzcpd256"];
+my @oint32_v16f8_v16f8=["VTESTPD128NZC __builtin_ia32_vtestnzcpd"];
+my @oint32_v32f4_v32f4=["VTESTPS256NZC __builtin_ia32_vtestnzcps256"];
+my @oint32_v16f4_v16f4=["VTESTPS128NZC __builtin_ia32_vtestnzcps"];
+my @ov32f4_v32f4_v32f4_simm8=["VDPPS256 __builtin_ia32_dpps256","VBLENDPS256 __builtin_ia32_blendps256","VBLENDVPS256 __builtin_ia32_blendvps256","VCMPPS256 __builtin_ia32_cmpps"];
+my @ov16f4_v16f4_v16f4_simm8=["VCMPPS128 __builtin_ia32_cmpps","VCMPSS128 __builtin_ia32_cmpss"];
+my @ov32f8_v32f8_v32f8_simm8=["VBLENDPD256 __builtin_ia32_blendpd256","VBLENDVPD256 __builtin_ia32_blendvpd256","VCMPPD256 __builtin_ia32_cmppd256"];
+my @ov16f8_v16f8_v16f8_simm8=["VCMPPD128 __builtin_ia32_cmppd","VCMPSD __builtin_ia32_cmpsd"];
+my @ov32f8_v32f8=["VSQRTPD256 __builtin_ia32_sqrtpd256","VMOVDDUP256 __builtin_ia32_movddup256"];
+my @ov32f4_v32f4=["VSQRTPS256 __builtin_ia32_sqrtps256","VRSQRTPS256 __builtin_ia32_rsqrtps256","VRCPPS256 __builtin_ia32_rcpps256","VMOVSLDUP256 __builtin_ia32_movsldup256"];
+my @ov32f8_v16i4=["VCVTDQ2PD256 __builtin_ia32_cvtdq2pd256"];
+my @ov32f4_v32i4=["VCVTDQ2PS256 __builtin_ia32_cvtdq2ps256"];
+my @ov16i4_v32f8=["VCVTPD2DQ256 __builtin_ia32_cvtpd2dq256","VCVTTPD2DQ256 __builtin_ia32_cvttpd2dq256"];
+my @ov32i4_v32f4=["VCVTPS2DQ256 __builtin_ia32_cvtpd2dq256"];
+my @ov16f4_v32f8=["VCVTPD2PS256 __builtin_ia32_cvtpd2ps256"];
+my @ov32f8_v16f4=["VCVTPS2PD256 __builtin_ia32_cvtps2pd256"];
+my @ov16i4_v32f4=["VCVTTPS2DQ256 __builtin_ia32_cvttps2dq256"];
+
+my @ov32f8_v16f8mem=["VBROADCAST128D __builtin_ia32_vbroadcastf128_pd256"];
+my @ov32f4_v16f4mem=["VBROADCAST128S __builtin_ia32_vbroadcastf128_ps256" ];
+my @ov32f8_dbmem=["VBROADCASTSD256 __builtin_ia32_vbroadcastf128_ps256","VMOVAPD","VMOVUPD256 __builtin_ia32_loadupd256"];
+my @ov32f4_flmem=["VBROADCASTSS256 __builtin_ia32_vbroadcastss256","VMOVAPS","VMOVUPS256 __builtin_ia32_loadups256"];
+my @ov16f4_flmem=["VROADCASTSS128 __builtin_ia32_vbroadcastss"];
+my @ov32i4_v32i4mem=["VMOVDQA256 __builtin_ia32_loaddqu256"];
+my @ov32f8_dbmem_v32i4=["VMASKMOVPD256 __builtin_ia32_maskloadpd256"];
+my @ov16f8_dbmem_v16i4=["VMASKMOVPD128 __builtin_ia32_maskloadpd"];
+my @ov32f4_flmem_v32i4=["VMASKMOVPS256 __builtin_ia32_maskloadps256"];
+my @ov16f4_flmem_v16i4=["VMASKMOVPS128 __builtin_ia32_maskloadps"];
 #my @ov32f8_dbmem=["VMOVAPD"];
-
+my @ovoid_dbmem_v32f8=["VMOVAPD256 __builtin_ia32_storeupd256","VMOVNTPD256 __builtin_ia32_movntpd256"];
+my @ovoid_flmem_v32f4=["VMOVAPS256 __builtin_ia32_storeups256","VMOVNTPS256 __builtin_ia32_movntpd256"];
+my @ovoid_v32i4mem_v32i4=["VMOVDQA256ST __builtin_ia32_storedqu256", "VMOVNTDQ256 __builtin_ia32_movntdq256"];
+#my @ovoid_dbmem_v32f8=["VMOVNTPD256 __builtin_ia32_movntpd256"];
+my @ovoid_dbmem_v32i4_v32f8=["VMASKMOVPD256ST __builtin_ia32_maskstorepd256"];
+my @ovoid_dbmem_v32i4_v16f8=["VMASKMOVPD128ST __builtin_ia32_maskstorepd"];
+my @ovoid_flmem_v32i4_v32f4=["VMASKMOVPS256ST __builtin_ia32_maskstoreps256"];
+my @ovoid_flmem_v32i4_v16f4=["VMASKMOVPS128ST __builtin_ia32_maskstoreps"];
+my @ov16f8_v32f8_int32=["VEXTRACTF128D __builtin_ia32_vextractf128_pd256"];
+my @ov16f4_v32f4_int32=["VEXTRACTF128S __builtin_ia32_vextractf128_ps256"];
+my @ov16i4_v32i4_int32=["VEXTRACTF128I __builtin_ia32_vextractf128_si256"];
+my @ov32f8_v32f8_v16f8_int32=["VINSERTF128F __builtin_ia32_vinsertf128_pd256"];
+my @ov32f4_v32f4_v16f4_int32=["VINSERTF128D __builtin_ia32_vinsertf128_ps256"];
+my @ov32i4_v32i4_v16i4_int32=["VINSERTF128I __builtin_ia32_vinsertf128_si256"];
+my @ov32i4_v32i4mem=["VLDDQU256 __builtin_ia32_lddqu256"];
+#my @ov32f8_v32f8=["VMOVDDUP256 __builtin_ia32_movddup256"];
+#my @ov32f4_v32f4=
+my @oint32_v32f8=["VMOVMSKPD256 __builtin_ia32_movmskpd256"];
+my @oint32_v32f4=["VMOVMSKPS256 __builtin_ia32_movmskps256"];
+my @ov32f8_v32f8_int32=["VROUNDPD __builtin_ia32_roundpd256"];
+#my @ov32f8_double_double_double_double=["V"];
+my @ovoid_void=["VZEROALL256 __builtin_ia32_vzeroall","VZEROUPPER256 __builtin_ia32_vzeroupper"];
+##Packed Test Operations
+my @oint32_v32i4_v32i4=["VPTESTZ256 __builtin_ia32_ptestz256","VPTESTC256 __builtin_ia32_ptestc256","VPTESTNZC256 __builtin_ia32_ptestnzc256"];
 ##TODO _mm256_store_pd
 
 my @ops=(
 		#[@vaddp,["f128","f256"], ["OPS"],["ofloat"],["float"],@float_mem],
+		[["NAME"],@ov16f8_v32f8_int32, ["OPS"],["V16F8ov16f8"],["v32f8"],["int32"]],
+		[["NAME"],@ov16f4_v32f4_int32, ["OPS"],["V16F4ov16f4"],["v32f4"],["int32"]],
+		[["NAME"],@ov16i4_v32i4_int32, ["OPS"],["V16I4ov16i4"],["v32i4"],["int32"]],
+		[["NAME"],@ov32f8_v32f8_v16f8_int32, ["OPS"],["V32F8ov32f8"],["v32f8"],["v16f8"],["int32"]],
+		[["NAME"],@ov32f4_v32f4_v16f4_int32, ["OPS"],["V32F4ov32f4"],["v32f4"],["v16f4"],["int32"]],
+		[["NAME"],@ov32i4_v32i4_v16i4_int32, ["OPS"],["V32I4ov32i4"],["v32i4"],["v16i4"],["int32"]],
+		[["NAME"],@ov32i4_v32i4mem,["OPS"],["V32I4ov32i4"],["memv32i4"]],
+		[["NAME"],@oint32_v32f8,["OPS"],["I4oint32"],["v32f8"]],
+		[["NAME"],@oint32_v32f4,["OPS"],["I4oint32"],["v32f4"]],
+		[["NAME"],@ov32f8_v32f8_int32,["OPS"],["V32F8ov32f8"],["v32f8"],["int32"]],
+		[["NAME"],@ovoid_void,["OPS"],["Vovd"],["vd"]],
+    [["NAME"],@ov16f8_v16f8_v16f8,["OPS"],["V16F8ov16f8"],["v16f8"],["v16f8"]],
+    [["NAME"],@ov16f4_v16f4_v16f4,["OPS"],["V16F4ov16f4"],["v16f4"],["v16f4"]],
+    [["NAME"],@oint32_v32f8_v32f8,["OPS"],["I4oint32"],["v32f8"],["v32f8"]],
+    [["NAME"],@oint32_v16f8_v16f8,["OPS"],["I4oint32"],["v16f8"],["v16f8"]],
+    [["NAME"],@oint32_v32f4_v32f4,["OPS"],["I4oint32"],["v32f4"],["v32f4"]],
+    [["NAME"],@oint32_v16f4_v16f4,["OPS"],["I4oint32"],["v16f4"],["v16f4"]],
 		[["NAME"],@ov32f8_v32f8_v32f8, ["OPS"],["V32F8ov32f8"],["v32f8"],["v32f8"]],
 		[["NAME"],@ov32f4_v32f4_v32f4, ["OPS"],["V32F4ov32f4"],["v32f4"],["v32f4"]],
 		[["NAME"],@ov32f4_v32f4_v32f4_simm8,["OPS"],["V32F4ov32f4"],["v32f4"],["v32f4"],["simm8"]],
@@ -157,8 +210,13 @@ my @ops=(
 		[["NAME"],@ov32f4_flmem_v32i4, ["OPS"],["V32F4ov32f4"],["memfl"],["v32i4"]],
 		[["NAME"],@ov16f4_flmem_v16i4, ["OPS"],["V16F4ov16f4"],["memfl"],["v16i4"]],
 		#[@ov32f8_dbmem, ["OPS"],["ov32f8"],["memdb"]],
-
-
+		[["NAME"],@ovd_dfmem_v32f8,["OPS"],["Vovd"],["memdf"],["v32f8"]],
+		[["NAME"],@ovoid_v32i4mem_v32i4, ["OPS"],["Vovd"],["v32i4mem"],["v32i4"]],
+		[["NAME"],@ovoid_dbmem_v32i4_v32f8, ["OPS"],["Vovd"],["memdb"],["v32i4"],["v32f8"]],
+		[["NAME"],@ovoid_dbmem_v32i4_v16f8, ["OPS"],["Vovd"],["memdb"],["v32i4"],["v16f8"]],
+		[["NAME"],@ovoid_flmem_v32i4_v32f4, ["OPS"],["Vovd"],["memfl"],["v32i4"],["v32f4"]],
+		[["NAME"],@ovoid_flmem_v32i4_v16f4, ["OPS"],["Vovd"],["memfl"],["v32i4"],["v16f4"]],
+#		[["NAME"],@ovoid_dbmem_v32i4, ["OPS"],["Vovd"],["dbmem"],["v32i4"]],
 	);
 my @isa;
 my @tops; 		#for isa pack and subset

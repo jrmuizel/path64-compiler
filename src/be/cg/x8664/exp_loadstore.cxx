@@ -184,13 +184,13 @@ Pick_Load_Instruction (TYPE_ID rtype, TYPE_ID desc,
   case MTYPE_V32I4:
   case MTYPE_V32I8:
   	FmtAssert(base != NULL, ("Seems doesn't support vmovapd simm32, ymm"));
-    return TOP_vmovapd_f256_ofloat_base64_simm32;
+    return TOP_vmovdqa_f256_ofloat_base64_simm32;
   case MTYPE_V32F4:
   	FmtAssert(base != NULL, ("Seems doesn't support vmovaps simm32, ymm"));
     return TOP_vmovaps_f256_ofloat_base64_simm32;
   case MTYPE_V32F8:
   	FmtAssert(base != NULL, ("Seems doesn't support vmovdqa simm32, ymm"));
-    return TOP_vmovdqa_f256_ofloat_base64_simm32;   
+    return TOP_vmovapd_f256_ofloat_base64_simm32;   
   case MTYPE_V:
     if (rtype != MTYPE_V)
       // use rtype to pick load (e.g. if lda)
