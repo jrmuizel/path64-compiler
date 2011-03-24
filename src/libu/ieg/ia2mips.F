@@ -131,11 +131,6 @@ C         External (FORN) storage length, in bits.
       INTENT (IN) NATIVECH
       OPTIONAL NATIVECH
 
-#if defined(BUILD_OS_DARWIN) || defined(__GNUC__)
-      /* GNU Fortran rejects $ in ids. We just want it to compile, not work */
-      IA2MIPS = 0
-      END
-#else /* defined(BUILD_OS_DARWIN) || defined(__GNUC__) */
 
 C         Optional parameter specifying NATIVE character variable if
 C         it is of type CHARACTER (TYPE = 6).  This parameter is
@@ -825,7 +820,7 @@ C     prior to the final transfer.
           IDPTR = LOC(TEMP(0))
           ICPTR = LOC(TEMP(0))
           IFPTR = LOC(TEMP(0))
-#ifdef HAVE_FKIND
+#ifdef HAVE_FKIND16
           IQPTR = LOC(TEMP(0))
           IEPTR = LOC(TEMP(0))
 #endif
@@ -1587,4 +1582,3 @@ C
      6          O'        001'/   ! Character:  8-bit
 C
       END BLOCK DATA IA2MIPS_INIT
-#endif /* defined(BUILD_OS_DARWIN) && defined(__GNUC__) */
