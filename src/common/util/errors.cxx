@@ -482,14 +482,13 @@ void
 Set_Error_Phase ( const char *phase )
 {
     Current_Phase = phase;
-#ifdef BACK_END
     if (Get_Trace(TP_MISC, 4)) {
 	fprintf(stderr, "Entering PU %s phase %s\n",
 		Cur_PU_Name ? Cur_PU_Name : "(None)", phase);
 	fprintf(TFile, "Entering PU %s phase %s\n",
 		Cur_PU_Name ? Cur_PU_Name : "(None)", phase);
     }	    
-#endif
+
     switch (phase[0]) {
     case 'A':
 	if (strcmp(phase, "Alias Analysis") == 0)
