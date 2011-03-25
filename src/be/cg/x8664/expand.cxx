@@ -7941,63 +7941,7 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
     Build_OP(TOP_pshufb128, result, op0, op1, ops );
     break;
   /*AVX*/
-  case INTRN_VADDPD256:
-    Build_OP(TOP_vaddpd_f256_ofloat_float_float, result, op0, op1, ops);
-    break;
-  case INTRN_VADDPS256:
-    Build_OP(TOP_vaddps_f256_ofloat_float_float, result, op0, op1, ops);
-    break;
-  case INTRN_VADDSUBPD256:
-    Build_OP(TOP_addsubpd_f256_ofloat_float_float, result, op0, op1, ops);
-    break;
-  case INTRN_VADDSUBPS256://should be TOP_addsubps but the script wrong
-    Build_OP(TOP_addsupps_f256_ofloat_float_float, result, op0, op1, ops);
-    break;
-  case INTRN_VHADDPD256:
-    Build_OP(TOP_vhaddpd_f256_ofloat_float_float, result, op0, op1, ops);
-    break;
-  case INTRN_VHADDPS:
-    Build_OP(TOP_vhaddps_f256_ofloat_float_float, result, op0, op1, ops);
-    break;
-  case INTRN_VSUBPD256:
-    Build_OP(TOP_vsubpd_f256_ofloat_float_float, result, op0, op1, ops);
-    break;
-  case INTRN_VSUBPS256:
-    Build_OP(TOP_vsubps_f256_ofloat_float_float, result, op0, op1, ops);
-    break;
-  case INTRN_VHSUBPD256:
-    Build_OP(TOP_vhsubpd_f256_ofloat_float_float, result, op0, op1, ops);
-    break;
-  case INTRN_VHSUBPS256:
-    Build_OP(TOP_vhsubps_f256_ofloat_float_float, result, op0, op1, ops);
-    break;
-  case INTRN_VMULPD256:
-    Build_OP(TOP_vmulpd_f256_ofloat_float_float, result, op0, op1, ops);
-    break;
-  case INTRN_VMULPS256:
-    Build_OP(TOP_vmulps_f256_ofloat_float_float, result, op0, op1, ops);
-    break;
-  case INTRN_VDIVPD256:
-    Build_OP(TOP_vdivpd_f256_ofloat_float_float, result, op0, op1, ops);
-    break;
-  case INTRN_VDIVPS256:
-    Build_OP(TOP_vdivps_f256_ofloat_float_float, result, op0, op1, ops);
-    break;
-	case INTRN_VDPPS256:
-	  Expand_Intrinsic_Imm_Param(TOP_vdpps_f256_ofloat_float_float_simm8, result, op0, op1, op2 ,ops, 5);
-	  break;
-	case INTRN_VSQRTPD256:
-	  Build_OP(TOP_vsqrtpd_f256_ofloat_float, result, op0, ops);
-		break;
-	case INTRN_VSQRTPS256:
-	  Build_OP(TOP_vsqrtps_f256_ofloat_float, result, op0, ops);
-		break;
-	case INTRN_VRSQRTPS256:
-	  Build_OP(TOP_vrsqrtps_f256_ofloat_float, result, op0, ops);
-		break;
-	case INTRN_VRCPPS256:
-	  Build_OP(TOP_vrcpps_f256_ofloat_float, result, op0, ops);
-		break;
+#include "expand_avx.cxx"
 	/*end AVX*/
   case INTRN_PSHUFB:
     Build_OP(TOP_pshufb, result, op0, op1, ops );

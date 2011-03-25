@@ -110,14 +110,14 @@ sub builtin_type { ##this define the builtin type of each parameter
 #my @mem =["base64","offset32"];
 #TODO can't find _mm256_testz_pz and _mm_testz_pz in the include fine;
 
-my @ov32f8_v32f8_v32f8=["VADDPD256 __builtin_ia32_addpd256","VADDSUBPD256 __builtin_ia32_addsubpd256","VHADDPD256 __builtin_ia32_haddpd256","VSUBPD256 __builtin_ia32_subpd256","VHSUBPD256 __builtin_ia32_hsubpd256","VMULPD256 __builtin_ia32_mulpd256","VDIVPD256 __builtin_ia32_divpd256","VANDPD256 __builtin_ia32_andnpd256","VANDNPD256 __builtin_ia32_andpd256","VORPD256 __builtin_ia32_orpd256","VXORPD256 __builtin_ia32_xorpd256","VMAXPD256 __builtin_ia32_maxpd256","VMINPD256 __builtin_ia32_minpd256","VUNPCKHPD256 __builtin_ia32_unpckhpd256","VUNPCKLPD256 __builtin_ia32_unpcklpd256"];
+my @ov32f8_v32f8_v32f8=["VADDPD256 __builtin_ia32_addpd256","VADDSUBPD256 __builtin_ia32_addsubpd256","VHADDPD256 __builtin_ia32_haddpd256","VSUBPD256 __builtin_ia32_subpd256","VHSUBPD256 __builtin_ia32_hsubpd256","VMULPD256 __builtin_ia32_mulpd256","VDIVPD256 __builtin_ia32_divpd256","VANDNPD256 __builtin_ia32_andnpd256","VANDPD256 __builtin_ia32_andpd256","VORPD256 __builtin_ia32_orpd256","VXORPD256 __builtin_ia32_xorpd256","VMAXPD256 __builtin_ia32_maxpd256","VMINPD256 __builtin_ia32_minpd256","VUNPCKHPD256 __builtin_ia32_unpckhpd256","VUNPCKLPD256 __builtin_ia32_unpcklpd256"];
 my @ov32f4_v32f4_v32f4=["VADDPS256 __builtin_ia32_addps256","VADDSUBPS256 __builtin_ia32_addsubps256","VHADDPS __builtin_ia32_haddps256","VSUBPS256 __builtin_ia32_subps256","VHSUBPS256 __builtin_ia32_hsubps256","VMULPS256 __builtin_ia32_mulps256","VDIVPS256 __builtin_ia32_divps256","VANDPS256 __builtin_ia32_andps256","VANDNPS256 __builtin_ia32_andnps256","VORPS256 __builtin_ia32_orps256","VXORPS256 __builtin_ia32_xorps256","VMAXPS256 __builtin_ia32_maxps256","VMINPS256 __builtin_ia32_minps256", "VUNPCKHPS256 __builtin_ia32_unpckhps256","VUNPCKLPS256           __builtin_ia32_unpcklps256"];
-my @ov16f8_v16f8_v16f8=["VTESTPD128 __builtin_ia32_vtestzpd"];
+#my @ov16f8_v16f8_v16f8=["VTESTPD128 __builtin_ia32_vtestzpd"];
 #my @ov16f4_v16f4_v16f4=["VTESTPS128C __builtin_ia32_vtestcps"];
-my @oint32_v32f8_v32f8=["VTESTPD256NZC __builtin_ia32_vtestnzcpd256", "VTESTPD256 __builtin_ia32_vtestzpd256"];
-my @oint32_v16f8_v16f8=["VTESTPD128NZC __builtin_ia32_vtestnzcpd","VTESTPD128C __builtin_ia32_vtestcpd","VTESTPD256C __builtin_ia32_vtestcpd256"];
-my @oint32_v32f4_v32f4=["VTESTPS256NZC __builtin_ia32_vtestnzcps256","VTESTPS256Z __builtin_ia32_vtestzps256","VTESTPS128Z __builtin_ia32_vtestzps","VTESTPS128C __builtin_ia32_vtestcps", "VTESTPS256C __builtin_ia32_vtestcps256"];
-my @oint32_v16f4_v16f4=["VTESTPS128NZC __builtin_ia32_vtestnzcps"];
+my @oint32_v32f8_v32f8=["VTESTPD256NZC __builtin_ia32_vtestnzcpd256", "VTESTPD256 __builtin_ia32_vtestzpd256","VTESTPD256C __builtin_ia32_vtestcpd256"];
+my @oint32_v16f8_v16f8=["VTESTPD128NZC __builtin_ia32_vtestnzcpd","VTESTPD128C __builtin_ia32_vtestcpd","VTESTPD128 __builtin_ia32_vtestzpd"];
+my @oint32_v32f4_v32f4=["VTESTPS256NZC __builtin_ia32_vtestnzcps256","VTESTPS256Z __builtin_ia32_vtestzps256", "VTESTPS256C __builtin_ia32_vtestcps256"];
+my @oint32_v16f4_v16f4=["VTESTPS128NZC __builtin_ia32_vtestnzcps","VTESTPS128Z __builtin_ia32_vtestzps","VTESTPS128C __builtin_ia32_vtestcps"];
 my @ov32f8_v32f8_v32f8_v32f8=["VBLENDVPD256 __builtin_ia32_blendvpd256"];
 my @ov32f4_v32f4_v32f4_v32f4=["VBLENDVPS256 __builtin_ia32_blendvps256"];
 my @ov32f4_v32f4_v32f4_simm8=["VDPPS256 __builtin_ia32_dpps256","VBLENDPS256 __builtin_ia32_blendps256","VCMPPS256 __builtin_ia32_cmpps"];
@@ -129,7 +129,8 @@ my @ov32f4_v32f4=["VSQRTPS256 __builtin_ia32_sqrtps256","VRSQRTPS256 __builtin_i
 my @ov32f8_v16i4=["VCVTDQ2PD256 __builtin_ia32_cvtdq2pd256"];
 my @ov32f4_v32i4=["VCVTDQ2PS256 __builtin_ia32_cvtdq2ps256"];
 my @ov16i4_v32f8=["VCVTPD2DQ256 __builtin_ia32_cvtpd2dq256","VCVTTPD2DQ256 __builtin_ia32_cvttpd2dq256"];
-my @ov32i4_v32f4=["VCVTPS2DQ256 __builtin_ia32_cvtps2dq256"];
+#my @ov32i4_v32f4=["VCVTPS2DQ256 __builtin_ia32_cvtps2dq256"];
+my @ov32i8_v32f4=["VCVTPS2DQ256 __builtin_ia32_cvtps2dq256"];
 my @ov16f4_v32f8=["VCVTPD2PS256 __builtin_ia32_cvtpd2ps256"];
 my @ov32f8_v16f4=["VCVTPS2PD256 __builtin_ia32_cvtps2pd256"];
 #my @ov16i4_v32f4=["VCVTTPS2DQ256 __builtin_ia32_cvttps2dq256"];
@@ -220,7 +221,7 @@ my @ops=(
 		[["NAME"],@ovoid_void,["OPS"],["Vovd"],["vd"]],
 		[["NAME"],@ov32f8_v32f8_v32f8_v32f8,["OPS"],["V32F8ov32f8"],["v32f8"],["v32f8"],["v32f8"]],
 		[["NAME"],@ov32f4_v32f4_v32f4_v32f4,["OPS"],["V32F4ov32f4"],["v32f4"],["v32f4"],["v32f4"]],
-    [["NAME"],@ov16f8_v16f8_v16f8,["OPS"],["V16F8ov16f8"],["v16f8"],["v16f8"]],
+    #[["NAME"],@ov16f8_v16f8_v16f8,["OPS"],["V16F8ov16f8"],["v16f8"],["v16f8"]],
     [["NAME"],@ov16f4_v16f4_v16f4,["OPS"],["V16F4ov16f4"],["v16f4"],["v16f4"]],
     [["NAME"],@oint32_v32f8_v32f8,["OPS"],["I4oint32"],["v32f8"],["v32f8"]],
     [["NAME"],@oint32_v16f8_v16f8,["OPS"],["I4oint32"],["v16f8"],["v16f8"]],
@@ -237,7 +238,7 @@ my @ops=(
 		[["NAME"],@ov32f8_v16i4, ["OPS"],["V32F8ov32f8"],["v16i4"]],
 		[["NAME"],@ov32f4_v32i4, ["OPS"],["V32F4ov32f4"],["v32i4"]],
 		[["NAME"],@ov16i4_v32f8, ["OPS"],["V16I4ov16i4"],["v32f8"]],
-		[["NAME"],@ov32i4_v32f4, ["OPS"],["V32I4ov32i4"],["v32f4"]],
+		[["NAME"],@ov32i8_v32f4, ["OPS"],["V32I8ov32i8"],["v32f4"]],
 		[["NAME"],@ov16f4_v32f8, ["OPS"],["V16F4ov16f4"],["v32f8"]],
 		[["NAME"],@ov32f8_v16f4, ["OPS"],["V32F8ov32f8"],["v16f4"]],
 		[["NAME"],@ov32i4_v32f4, ["OPS"],["V32I4ov32i4"],["v32f4"]],
@@ -268,6 +269,8 @@ my @ops=(
 		[["NAME"],@ov32f8_v16f8,["OPS"],["V32F8ov32f8"],["v16f8"]],
 		[["NAME"],@ov32f4_v16f4,["OPS"],["V32F4ov32f4"],["v16f4"]],
 		[["NAME"],@ov32i4_v16i4,["OPS"],["V32I4ov32i4"],["v16i4"]],
+		[["NAME"],@ov16f8_v16f8mem_v16f8,["OPS"],["V16F8ov16f8"],["memv16f8"],["v16f8"]],
+		[["NAME"],@ov16f4_v16f4mem_v16f4,["OPS"],["V16F4ov16f4"],["memv16f4"],["v16f4"]],
 	);
 my @isa;
 my @tops; 		#for isa pack and subset
@@ -350,6 +353,7 @@ my $print_intrn_info_cxx;
 my $print_wintrinsic_h;
 my $print_wutil_cxx;
 my $wgen_expr_cxx;
+my $expand_cxx;
 foreach (keys %isa_operands){
   #print "keys ".$_."\n";
   #foreach(@{$isa_operands{$_}}){
@@ -403,6 +407,8 @@ foreach (keys %isa_operands){
   $print_intrn_info_cxx.="IRETURN_".$pre_ret[0].",\"".$intrin_name."\"".",NULL, NULL},\n";
   ##TODO return type should modify accordingly.
 
+  $expand_cxx.="case INTRN_".$intrin_name.":\n";
+  $expand_cxx.="break;\n";
 
   $print_wintrinsic_h.="INTRN_".$intrin_name.",\n";
   $print_wutil_cxx.="INTRN_".$intrin_name.",\t"."\""."INTRN_".$intrin_name."\",\n";
@@ -455,5 +461,10 @@ print "wgen_expr.cxx\n";
 fprint("wgen_expr_avx.cxx",$print_wgen_expr_cxx);
 print $print_wgen_expr_cxx;
 print "\n\n";
+print "expand.cxx\n";
+fprint("expand_avx.cxx",$expand_cxx);
+print $expand_cxx;
+print "\n\n";
 
 copy_all_file();
+#copy_to('../src/be/cg/x8664/',"expand_avx.cxx");
