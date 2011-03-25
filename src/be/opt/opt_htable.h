@@ -383,7 +383,7 @@ private:
       OPERATOR  _opr:8;	             //
       ISOP_FLAG isop_flags:22;	     
       PROPAGATABILITY propagatability:2; // used during copy propagation
-      mINT32    kid_count:14;        // number of kids
+      mUINT32   kid_count:14;        // number of kids
       MTYPE     _asm_input_dtyp:6;                  // data type
       MTYPE     _asm_input_dsctyp:6;                // descriptor type for various opcode
       mINT32    _unused:6;	     // unused
