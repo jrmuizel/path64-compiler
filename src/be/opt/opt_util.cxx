@@ -144,7 +144,7 @@ Opt_tlog( char *keyword, uint64_t srcpos, const char *fmt, ...)
 #include "defs.h"
 #include "config_wopt.h"
 #include "opt_defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "tracing.h"
 #include "srcpos.h"
 #include "tlog.h"

@@ -19,14 +19,17 @@ set(COMUTIL_SRCS
   errors.cxx
   bitset.c
   c_q_rel.c
+  dso.c
   file_util.c
   flags.c
-  linklist.c
+  libelftc_dem_gnu3.c
+  libelftc_vstr.c
   memory.c
   priority_queue.c
   quadsim.c
   resource.c
   mstack.c
+  tlog.c
   tracing.c
   util.c
   vstring.c
@@ -42,11 +45,11 @@ set(COMUTIL_SRCS
 path64_set_multiarch_sources(comutil_sources COMMON ${COMUTIL_SRCS})
 path64_add_multiarch_library(comutil STATIC comutil_sources)
 path64_set_multiarch_property(comutil COMPILE_FLAGS
-                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@")
+                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@ -fPIC")
 
 # Building comutil for host architecture (used when building fortran)
 path64_get_host_arch(host_arch)
 path64_add_library_for_arch(comutil-host ${host_arch} STATIC ${COMUTIL_SRCS})
 path64_set_property_for_arch(comutil-host ${host_arch} COMPILE_FLAGS
-                             "-I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@")
+                             "-I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@ -fPIC")
 

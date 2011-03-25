@@ -42,7 +42,7 @@ static const char rcs_id[] = "$Source$ $Revision$";
 
 #include "defs.h"
 #include "config.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "mempool.h"
 #include "tracing.h"
 #include "glob.h"

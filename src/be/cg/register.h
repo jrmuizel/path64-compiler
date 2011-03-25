@@ -618,7 +618,7 @@ static const char register_rcs_id[] = "$Source: /home/bos/bk/kpro64-pending/be/c
 
 #include "mtypes.h"
 #include "targ_isa_registers.h"
-#include "errors.h"
+#include "be_errors.h"
 
 struct op;
 struct tn;

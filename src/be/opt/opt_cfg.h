@@ -137,9 +137,7 @@ static char *opt_cfgrcs_id =	opt_cfg_INCLUDED"$Revision: 1.7 $";
 #ifndef CXX_MEMORY_INCLUDED
 #include "cxx_memory.h"
 #endif
-#ifndef ERRORS_INCLUDED
-#include "errors.h"
-#endif
+#include "be_errors.h"
 #ifndef region_util_INCLUDED
 #include "region_util.h"
 #endif

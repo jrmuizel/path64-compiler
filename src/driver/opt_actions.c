@@ -734,11 +734,15 @@ add_arm_phase_for_option( int flag )
   add_phase_for_option(flag, P_be);
   add_phase_for_option(flag, p_any_ipl);
   add_phase_for_option(flag, P_any_fe);
+
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 #if (GNU_FRONT_END==33)
   /* (cbr) -TARG now passed to cpp */
   add_phase_for_option(flag, P_gcpp);
   add_phase_for_option(flag, P_gcpp_plus);
 #endif
+#endif // PATH64_ENABLE_GNU_FRONTEND
+
   if (!already_provided(flag)) {
     /* [CL] Only prepend this option if
        not already provided by the user */
@@ -1194,12 +1198,14 @@ change_phase_path (char *arg)
 		} else {
 			set_phase_dir(get_phase_mask(get_phase(*s)), dir);
 #ifdef KEY
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 			// Special case wgen because it is affected by -Yf but
 			// is not considered a front-end (because it does not
 			// take C/C++ front-end flags in OPTIONS).
 			if (get_phase(*s) == P_any_fe)
 			  set_phase_dir(get_phase_mask(P_wgen), dir);
-#endif
+#endif // KEY
+#endif // PATH64_ENABLE_GNU_FRONTEND
 		}
 	}
 }
@@ -1671,8 +1677,10 @@ print_file_path (char *fname, int exe)
   if (print_phase_path(P_library, fname))
     return;
 
+#ifdef PATH64_ENABLE_GNU_FRONTEND
   if (print_phase_path(P_gcpp, fname))
     return;
+#endif // PATH64_ENABLE_GNU_FRONTEND
 
   if (print_phase_path(P_gas, fname))
     return;
@@ -1916,7 +1924,9 @@ Process_Std(char * option_args) {
   }
   if (flag != LAST_PREDEFINED_OPTION) {
       /* Need to pass to tools recognizing this option*/
+#ifdef PATH64_ENABLE_GNU_FRONTEND
       add_phase_for_option(flag, P_gcpp);
+#endif // PATH64_ENABLE_GNU_FRONTEND
       add_phase_for_option(flag, P_c_gfe);
       add_option_seen (flag);
   }

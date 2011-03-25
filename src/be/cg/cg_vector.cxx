@@ -47,7 +47,7 @@
 #include <stdlib.h>
 #include "defs.h"
 #include "mempool.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "cg_vector.h"
 
 

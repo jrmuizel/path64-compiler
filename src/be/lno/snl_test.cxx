@@ -64,7 +64,7 @@ static const char *rcs_id =   snl_test_CXX "$Revision: 1.9 $";
 #include "config_lno.h"
 #include "config_targ.h"
 #include "config_targ_opt.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erbe.h"
 #include "erglob.h"
 #include "tlog.h"

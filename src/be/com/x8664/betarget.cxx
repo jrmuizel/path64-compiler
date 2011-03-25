@@ -44,7 +44,7 @@
  */
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "util.h"
 #include "tracing.h"
 #include "topcode.h"

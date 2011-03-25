@@ -58,7 +58,7 @@
 
 #include "import.h"
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "cgir.h"
 #include "cg.h"
 #include "bb.h"

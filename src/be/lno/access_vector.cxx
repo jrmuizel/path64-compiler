@@ -82,7 +82,7 @@ static MEM_POOL LNO_local_pool;
 #ifdef LNO
 #include "lnoutils.h"
 #include "move.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erbe.h"
 #endif
 #include "targ_sim.h"

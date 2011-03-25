@@ -59,9 +59,7 @@
 #ifndef opt_htable_INCLUDED
 #define opt_htable_INCLUDED "opt_htable.h"
 
-#ifndef ERRORS_INCLUDED
-#include "errors.h"
-#endif
+#include "be_errors.h"
 #ifndef opt_defs_INCLUDED
 #include "opt_defs.h"
 #endif

@@ -101,7 +101,7 @@
 #include "tracing.h"			// trace flags
 #include "wn_util.h"
 #include "optimizer.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erbe.h"
 #include "stblock.h"
 #include "config.h"			// Alias_Pointer_Parms

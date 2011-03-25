@@ -82,6 +82,7 @@ path64_set_multiarch_sources(wopt_sources COMMON ${PATHSCALE_WOPT_COMMON_SRCS})
 path64_set_multiarch_sources(wopt_sources arm ${PATHSCALE_WOPT_COMMON_SRCS} ${PATHSCALE_WOPT_ARM_SRCS})
 path64_add_multiarch_library(wopt STATIC wopt_sources)
 path64_add_multiarch_dependencies(wopt generate_preg_list generate_topcode)
+path64_multiarch_link_multiarch_libraries(wopt comutil)
 path64_set_multiarch_property(wopt COMPILE_FLAGS
                               "-I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@ -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 
@@ -94,6 +95,7 @@ path64_set_multiarch_property(wopt-shared PREFIX "")
 path64_set_multiarch_property(wopt-shared OUTPUT_NAME "wopt")
 path64_set_multiarch_property(wopt-shared COMPILE_DEFINITIONS "SHARED_BUILD")
 path64_add_multiarch_dependencies(wopt-shared generate_preg_list generate_topcode)
+path64_multiarch_link_multiarch_libraries(wopt-shared comutil)
 path64_set_multiarch_property(wopt-shared COMPILE_FLAGS
                               "-I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@ -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 path64_install_multiarch(wopt-shared)

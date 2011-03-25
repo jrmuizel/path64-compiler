@@ -66,7 +66,7 @@
 #include "config_lno.h"
 #include "config_wopt.h"
 #include "config_debug.h"	    /* for DEBUG_Ir_Version_Check */
-#include "errors.h"
+#include "be_errors.h"
 #include "erauxdesc.h"
 #include "glob.h"		    /* Irb_File_Name, Cur_PU_Name */
 #include "timing.h"		    /* Start/Stop Timer */
@@ -94,6 +94,8 @@
 #include "wn_simp.h"               // for WN_Simp_Rsqrt_Newton_Raphson
 #endif
 
+#include "err_host.tab"
+
 
 /* ====================================================================
  *
@@ -116,6 +118,7 @@ lno_main (INT lno_argc, char **lno_argv, INT be_argc, char **be_argv)
 		   ("WHIRL revision mismatch between be.so (%s) and lno.so (%s)", 
 		    Whirl_Revision, WHIRL_REVISION));
 
+    Set_Error_Tables (Phases, host_errlist);
     Set_Error_Descriptor (EP_BE, EDESC_BE);
 } /* lno_main */
 

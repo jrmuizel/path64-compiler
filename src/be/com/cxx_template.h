@@ -167,7 +167,7 @@ static char *cxx_templatercs_id = cxx_template_INCLUDED"$Revision$";
 
 #include "mempool.h"
 #include "erglob.h"
-#include "errors.h"
+#include "be_errors.h"
 
 
 template <class T>

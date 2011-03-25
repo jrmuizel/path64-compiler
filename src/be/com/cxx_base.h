@@ -45,7 +45,7 @@
 #ifndef cxx_base_INCLUDED
 #define cxx_base_INCLUDED
 
-#include "errors.h"
+#include "be_errors.h"
 
 #ifdef _KEEP_RCS_ID
 static char *cxx_basercs_id = "$Source$ $Revision$";

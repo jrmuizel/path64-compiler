@@ -155,7 +155,7 @@
 #include <set>          // STL set.
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "cxx_memory.h"
 
 typedef void *NODE_ID;

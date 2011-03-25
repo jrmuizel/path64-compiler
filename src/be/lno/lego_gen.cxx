@@ -170,7 +170,7 @@
 #include "irbdata.h"
 #include "data_layout.h"
 #include "lnopt_main.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erbe.h"
 
 /***********************************************************************

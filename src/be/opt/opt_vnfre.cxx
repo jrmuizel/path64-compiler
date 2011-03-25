@@ -88,7 +88,7 @@
 #include "defs.h"
 #include "erglob.h"
 #include "opcode.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "mtypes.h"
 #include "cxx_memory.h"
 #include "wn_util.h"

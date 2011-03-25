@@ -47,7 +47,7 @@ static const char rcs_id[] = "";
 #include "resource.h"
 #include "config.h"
 #include "config_targ_opt.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "mempool.h"
 #include "cg.h"
 #include "cgir.h"

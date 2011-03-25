@@ -110,7 +110,7 @@
 #define cg_color_INCLUDED
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "targ_isa_registers.h"
 #include "register.h"
 

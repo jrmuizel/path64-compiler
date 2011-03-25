@@ -241,10 +241,12 @@ add_special_options (void)
 		/* pass -traditional to both gfe and cpp */
 		add_phase_for_option(O_traditional, P_c_gfe);
 		add_phase_for_option(O_traditional, P_cplus_gfe);
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 #ifdef KEY
 		add_phase_for_option(O_traditional, P_spin_cc1);
 		add_phase_for_option(O_traditional, P_spin_cc1plus);
-#endif
+#endif // KEY
+#endif // PATH64_ENABLE_GNU_FRONTEND
 	}
 
 #if defined(TARG_IA32)

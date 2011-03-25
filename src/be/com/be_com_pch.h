@@ -53,4 +53,4 @@
 #include "wn_simp.h"
 #include "wutil.h"
 #include "cxx_memory.h"
-#include "errors.h"
+#include "be_errors.h"

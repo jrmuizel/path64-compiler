@@ -91,7 +91,7 @@ static char *rcs_id = 	opt_tail_CXX"$Revision: 1.5 $";
 #include "opt_tail.h"
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "mempool.h"
 #include "tracing.h"

@@ -58,7 +58,7 @@ static const char *source_file = __FILE__;
 
 #include "pu_info.h"
 #include "lnopt_main.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "lego_util.h"
 #include "lego_pragma.h"
 #include "lwn_util.h"

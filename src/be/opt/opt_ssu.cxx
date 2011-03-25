@@ -69,7 +69,7 @@
 
 #include "defs.h"
 #include "config.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "glob.h"	// for Cur_PU_Name
 #include "bb_node_set.h"

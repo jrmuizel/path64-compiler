@@ -54,7 +54,7 @@
 #endif /* ! defined(BUILD_OS_DARWIN) */
 #include "dwarf_stuff.h"
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "tracing.h"
 #include "mempool.h"
 #include "symtab.h"

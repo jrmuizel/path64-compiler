@@ -33,6 +33,10 @@ SET(CMAKE_CXX_FLAGS_RELEASE  "-O2 -DNDEBUG ${SSE_FLAGS}" CACHE STRING "Flags use
 SET(CMAKE_Fortran_FLAGS_RELEASE  "-O2 -DNDEBUG ${SSE_FLAGS}" CACHE STRING "Flags used by the compiler during release builds." FORCE)
 
 
+OPTION(PATH64_ENABLE_GNU_FRONTEND "Use GNU C/C++ front-end" ON)
+OPTION(PATH64_ENABLE_IPA "Enable IPA" ON)
+
+
 # Define user option whether to build the Fortran compiler.
 OPTION(PATH64_ENABLE_FORTRAN "Build Fortran compiler" ON)
 IF(PATH64_ENABLE_FORTRAN)
@@ -414,7 +418,9 @@ endif()
 
 
 # Build GCC and pathscale.
-ADD_SUBDIRECTORY(GCC)
+IF(PATH64_ENABLE_GNU_FRONTEND)
+    ADD_SUBDIRECTORY(GCC)
+ENDIF()
 ADD_SUBDIRECTORY(src)
 
 ADD_SUBDIRECTORY(bootstrap)

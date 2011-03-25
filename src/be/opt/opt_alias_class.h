@@ -104,7 +104,7 @@
 
 #include "cxx_memory.h"
 #include "cxx_template.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "tracing.h"
 #include "opt_defs.h"
 #include "opt_union_find.h"

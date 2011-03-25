@@ -299,22 +299,24 @@ copy_phase_options (string_list_t *phase_list, phases_t phase)
 			// Pass -OPT: options to wgen for bug 10262.
 			if (!strcmp("-OPT:", get_option_name(iflag))) 
 			{
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 			  if (phase == P_spin_cc1 ||
 			      phase == P_spin_cc1plus)
 			    continue;
 			  else if (phase == P_wgen)
 			    matches_phase = TRUE;
 			  else
+#endif // PATH64_ENABLE_GNU_FRONTEND
 			    matches_phase = option_matches_phase(iflag, phase);
 			}
-			else
-			//zwu
-			if(strcmp("-fpic", get_option_name(iflag)) == 0 && phase == P_wgen)
+#ifdef PATH64_ENABLE_GNU_FRONTEND
+			else if(strcmp("-fpic", get_option_name(iflag)) == 0 && phase == P_wgen)
 			    matches_phase = TRUE;
             else if(strcmp("-fPIC", get_option_name(iflag)) == 0 && phase == P_wgen)
                 matches_phase = TRUE;
+#endif // PATH64_ENABLE_GNU_FRONTEND
 			else
-			matches_phase = option_matches_phase(iflag, phase);
+			    matches_phase = option_matches_phase(iflag, phase);
 
 			if (matches_phase
 			    && option_matches_language(flag, source_lang)
@@ -549,8 +551,10 @@ fix_name_by_phase (char *name, phases_t phase)
 		case P_f90_cpp:
 		case P_ratfor:
 		case P_m4:
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 		case P_gcpp:
 		case P_gcpp_plus:
+#endif // PATH64_ENABLE_GNU_FRONTEND
 #ifdef PATH64_ENABLE_PSCLANG
         case P_psclang_cpp:
 #endif // PATH64_ENABLE_PSCLANG
@@ -653,11 +657,13 @@ static void
 add_file_args_first (string_list_t *args, phases_t index)
 {
   switch (index) {
+#ifdef PATH64_ENABLE_GNU_FRONTEND
     case P_gcpp:
     case P_gcpp_plus:
       // -Dfoo before user options, since user might specify -Ufoo.  Bug 6874.
       add_common_cpp_definitions(args);
       break;
+#endif // PATH64_ENABLE_GNU_FRONTEND
 
 #ifdef PATH64_ENABLE_PSCLANG
     case P_psclang_cpp:
@@ -668,6 +674,9 @@ add_file_args_first (string_list_t *args, phases_t index)
     case P_psclang:
       add_string(args, "-cc1");
 #endif // PATH64_ENABLE_PSCLANG
+
+    default:
+      break;
   }
 }
 
@@ -794,8 +803,10 @@ add_sysroot(string_list_t *args, phases_t phase)  // 15149
     sprintf(buf, "-include=%s/usr/include", sysroot);
     add_string(args, buf);
     break;
+#ifdef PATH64_ENABLE_GNU_FRONTEND
   case P_gcpp:
   case P_gcpp_plus:
+#endif // PATH64_ENABLE_GNU_FRONTEND
 #ifdef PATH64_ENABLE_PSCLANG
   case P_psclang_cpp:
 #endif // PATH64_ENABLE_PSCLANG
@@ -1042,6 +1053,7 @@ add_file_args (string_list_t *args, phases_t index)
 			add_string(args, input_source);
 		}
 		break;
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 	case P_gcpp:
 	case P_gcpp_plus:
 #ifdef TARG_X8664
@@ -1059,6 +1071,7 @@ add_file_args (string_list_t *args, phases_t index)
         if (is_target_arch_MIPS())
             add_sysroot(args, index);
 #endif
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 #ifndef PATH64_ENABLE_PSCRUNTIME
 #ifdef CROSS_COMPILATION
 		{
@@ -1071,6 +1084,7 @@ add_file_args (string_list_t *args, phases_t index)
 		}
 #endif /* CROSS_COMPILATION */
 #endif // !PATH64_ENABLE_PSCRUNTIME
+#endif // PATH64_ENABLE_GNU_FRONTEND
 		add_abi(args);
 
 		if( ospace == TRUE ){	// bug 4953
@@ -1224,6 +1238,7 @@ add_file_args (string_list_t *args, phases_t index)
 			add_string(args, "-MMD");
 		
 		break;
+#endif // PATH64_ENABLE_GNU_FRONTEND
 
 #ifdef PATH64_ENABLE_PSCLANG
     case P_psclang_cpp:
@@ -1570,6 +1585,7 @@ add_file_args (string_list_t *args, phases_t index)
 
 		break;
 
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 	case P_spin_cc1:
 	case P_spin_cc1plus:
 		add_abi(args);
@@ -1584,6 +1600,7 @@ add_file_args (string_list_t *args, phases_t index)
 		  add_string(args, "-fno-cxx-openmp");
 		}
 	        // fall through
+#endif // PATH64_ENABLE_GNU_FRONTEND
 	case P_c_gfe:
 	case P_cplus_gfe:
 #ifdef TARG_X8664
@@ -1636,21 +1653,27 @@ add_file_args (string_list_t *args, phases_t index)
 		add_string(args, the_file);
 		add_string(args, input_source);
 
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 		if (index == P_spin_cc1 ||
 		    index == P_spin_cc1plus) {
 		  add_string(args, "-spinfile");
 		  add_string(args, construct_name(the_file, "spin"));
 		  break;
 		}
+#endif // PATH64_ENABLE_GNU_FRONTEND
+
 		add_string(args, "-o");
 		add_string(args, construct_name(the_file,"B"));
 		break;
+
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 	case P_wgen:
 		sprintf(buf, "-fS,%s", construct_name(the_file, "spin"));
 		add_string(args, buf);
 		sprintf(buf, "-fB,%s", construct_name(the_file, "B"));
 		add_string(args, buf);
 		break;
+#endif // PATH64_ENABLE_GNU_FRONTEND
 
 #ifdef PATH64_ENABLE_PSCLANG
     case P_psclang:
@@ -2679,7 +2702,7 @@ static void
 determine_phase_order (void)
 {
 	phases_t next_phase = P_NONE;
-	phases_t cpp_phase;
+	phases_t cpp_phase = P_NONE;
 	phases_t asm_phase;
 	phases_t link_phase;
 	phase_order[0] = P_NONE;
@@ -2691,6 +2714,7 @@ determine_phase_order (void)
         cpp_phase = P_psclang_cpp;
     } else
 #endif // PATH64_ENABLE_PSCLANG
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 	if (source_lang == L_CC) {
 		cpp_phase = P_gcpp_plus;
 	} else if (source_lang == L_cc) {
@@ -2701,7 +2725,9 @@ determine_phase_order (void)
 		}
 		else
 		cpp_phase = P_gcpp;
-	} else if (source_lang == L_f77) {
+	} else
+#endif // PATH64_ENABLE_GNU_FRONTEND
+    if (source_lang == L_f77) {
 		if (option_was_seen(O_mp)) {
 			/* power Ftn */
 			cpp_phase = P_cpp;	/* default */
@@ -2714,22 +2740,24 @@ determine_phase_order (void)
 // bug 5946
 	   if (option_was_seen(O_ftpp)) {
 	      cpp_phase = P_cppf90_fe;
-	   } else if (option_was_seen(O_cpp)
+	   }
+#ifdef PATH64_ENABLE_GNU_FRONTEND
+       else if (option_was_seen(O_cpp)
 		|| option_was_seen(O_P) 
 		|| option_was_seen(O_E)
 		|| (!option_was_seen(O_nocpp) &&
 		    (source_kind == S_F || source_kind == S_F90)))
 	   {
 	      cpp_phase = P_gcpp; 
-	   } else {
+	   }
+#endif // PATH64_ENABLE_GNU_FRONTEND
+       else {
 	      cpp_phase = P_NONE;
 	   }
-	} else if (source_lang == L_as
-		&& (abi == ABI_I32 || abi == ABI_I64 || abi == ABI_IA32))
-	{
-		cpp_phase = P_gcpp;	/* use ansi-style cpp */
 	} else {
-			cpp_phase = P_gcpp;
+#ifdef PATH64_ENABLE_GNU_FRONTEND
+        cpp_phase = P_gcpp;
+#endif // PATH64_ENABLE_GNU_FRONTEND
 	}
 
 	if (last_phase == P_any_cpp
@@ -2758,8 +2786,13 @@ determine_phase_order (void)
 	else
 		link_phase = P_ld;
 
-	phases_t c_fe = P_spin_cc1;
-	phases_t cplus_fe = P_spin_cc1plus;
+	phases_t c_fe = P_NONE;
+	phases_t cplus_fe = P_NONE;
+
+#ifdef PATH64_ENABLE_GNU_FRONTEND
+	c_fe = P_spin_cc1;
+	cplus_fe = P_spin_cc1plus;
+#endif // PATH64_ENABLE_GNU_FRONTEND
 
 	switch (source_kind) {
 	case S_c:
@@ -2867,11 +2900,14 @@ determine_phase_order (void)
 			add_phase(next_phase);
 			next_phase = post_fe_phase ();
 			break;
+
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 		case P_spin_cc1:
 		case P_spin_cc1plus:
 			add_phase(next_phase);
 			next_phase = P_wgen;
 			break;
+#endif // PATH64_ENABLE_GNU_FRONTEND
 
 #ifdef PATH64_ENABLE_PSCLANG
         case P_psclang:
@@ -2880,10 +2916,13 @@ determine_phase_order (void)
 			break;
 #endif // PATH64_ENABLE_PSCLANG
 
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 		case P_wgen:
 			add_phase(next_phase);
 			next_phase = post_fe_phase ();
 			break;
+#endif // PATH64_ENABLE_GNU_FRONTEND
+
 		case P_f90_fe:
                 case P_cppf90_fe:
 			if (keep_listing) {
@@ -3235,9 +3274,11 @@ init_phase_info (void)
 // Change the front-end names to reflect the GNU version.
 void init_frontend_phase_names ()
 {
+#ifdef PATH64_ENABLE_GNU_FRONTEND
     set_phase_name(P_spin_cc1, "cc142");
     set_phase_name(P_spin_cc1plus, "cc1plus42");
     set_phase_name(P_wgen, "wgen42");
+#endif // PATH64_ENABLE_GNU_FRONTEND
 }
 
 void
@@ -3509,9 +3550,11 @@ run_compiler (int argc, char *argv[])
 			    phase_order[i] > P_any_optfe &&
 			    phase_order[i] != P_c_gfe &&
 			    phase_order[i] != P_cplus_gfe &&
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 			    phase_order[i] != P_spin_cc1 &&
 			    phase_order[i] != P_spin_cc1plus &&
 			    phase_order[i] != P_wgen &&
+#endif // PATH64_ENABLE_GNU_FRONTEND
 #ifdef PATH64_ENABLE_PSCLANG
                 phase_order[i] != P_psclang &&
 #endif // PATH64_ENABLE_PSCLANG
@@ -3524,8 +3567,10 @@ run_compiler (int argc, char *argv[])
 			run_phase (phase_order[i],
 				   get_full_phase_name(phase_order[i]), args);
 
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 			if (phase_order[i] == P_gcpp_plus)
 			  unsetenv("DEPENDENCIES_OUTPUT");  /* bug 13154 */
+#endif // PATH64_ENABLE_GNU_FRONTEND
 
 			if ( i == 0 && (string_md == TRUE || string_mmd == TRUE)){
 			        /* Bug# 581, bug #932, bug# 1049, bug #433 */

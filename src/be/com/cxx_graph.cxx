@@ -54,7 +54,7 @@
 
 #include "cxx_graph.h"
 #include "cxx_memory.h"
-#include "errors.h"
+#include "be_errors.h"
 
 const VINDEX16 INVALID_VINDEX16=0xffff; //increase from 0xffff for bug 13018
 VINDEX16 GRAPH16_CAPACITY = 0xfffe; //increase from 0xfffe for bug 13018

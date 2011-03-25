@@ -43,7 +43,7 @@
 //
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"	// for error messages
 
 #include "cxx_base.h"

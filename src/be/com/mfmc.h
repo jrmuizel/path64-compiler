@@ -222,7 +222,7 @@
  */
 #include "defs.h"
 #include "mempool.h"
-#include "errors.h"
+#include "be_errors.h"
 
 typedef struct mfmc_handle *MFMC_HANDLE;
 typedef struct mfmc_arc    *MFMC_ARC_HANDLE;

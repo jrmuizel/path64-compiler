@@ -50,7 +50,7 @@
 #pragma hdrstop
 
 #include "defs.h"
-#include "errors.h"		    /* for definition of Is_True() */
+#include "be_errors.h"		    /* for definition of Is_True() */
 #include "mempool.h"
 #include "bitset.h"
 #include "cgir.h"

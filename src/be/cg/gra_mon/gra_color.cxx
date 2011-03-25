@@ -59,7 +59,7 @@ static char *rcs_id = "$Source: be/cg/gra_mon/SCCS/s.gra_color.cxx $ $Revision: 
 
 #include <limits.h>
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "tracing.h"
 #include "mempool.h"
 #include "register.h"

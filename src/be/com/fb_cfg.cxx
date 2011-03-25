@@ -56,7 +56,7 @@
 #include <stdlib.h>
 #include "wn_util.h"
 #include "wn_map.h"
-#include "errors.h"		// for ErrMsg
+#include "be_errors.h"    // for ErrMsg
 #include "tracing.h"
 
 #include "fb_cfg.h"

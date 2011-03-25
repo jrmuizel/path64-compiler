@@ -31,7 +31,7 @@
 #include <ext/slist>
 #include <algorithm>
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "tracing.h"
 #include "cgir.h"
 #include "opcode.h"

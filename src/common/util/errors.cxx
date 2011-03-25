@@ -99,11 +99,6 @@ extern "C" {
 #include "errdesc.h"
 #include "vstring.h"
 
-#ifdef MONGOOSE_BE
-#include "wn.h"
-#include "wn_map.h"
-#include "ir_reader.h"
-#endif
 
 
 /* ====================================================================
@@ -183,13 +178,9 @@ static SEVERITY_DESCRIPTOR Severities[] = {
  * ====================================================================
  */
 
-#ifdef MONGOOSE_BE
-#include "err_host.tab"		    /* for error tables */
-#else /* MONGOOSE_BE */
 /* these table pointers get pointed at the client's tables */
 static ERROR_DESC_TABLE *Phases = NULL;
 static const char **host_errlist = NULL;
-#endif /* MONGOOSE_BE */
 
 static bool do_traceback = false;
 
@@ -428,29 +419,6 @@ Set_Error_Source ( const char *filename )
 #endif /* KEY Bug 4469 */
   }
 }
-
-
-#ifdef MONGOOSE_BE
-/* ====================================================================
- *
- * Set_Error_Srcpos
- *
- * Set Source_Line and Source_File from SRCPOS
- *
- * ====================================================================
- */
-
-void
-Set_Error_Srcpos ( SRCPOS srcpos )
-{
-  const char *fname = NULL;
-  const char *dname;
-
-  Set_Error_Line(Srcpos_To_Line(srcpos));
-  IR_Srcpos_Filename(srcpos, &fname, &dname);
-  Set_Error_Source(fname);
-}
-#endif
 
 
 /* ====================================================================
@@ -1087,7 +1055,7 @@ ErrMsg_Report_User (ERROR_DESC *edesc, INT ecode, INT line,
   return;
 }
 
-static void
+void
 ErrMsg_Report ( INT ecode, INT line, const char *file, va_list vp )
 {
   ERROR_DESC *edesc = Find_Error_Desc (ecode);
@@ -1100,7 +1068,7 @@ ErrMsg_Report ( INT ecode, INT line, const char *file, va_list vp )
 
 /* ====================================================================
  *
- * ErrMsg / ErrMsgLine / ErrMsgSrcpos
+ * ErrMsg / ErrMsgLine
  *
  * Report an error at the current (passed) line number.
  *
@@ -1129,25 +1097,6 @@ ErrMsgLine ( INT ecode, INT line, ... )
   va_end ( vp );
 }
 
-
-#ifdef MONGOOSE_BE
-/* ================================================================= */
-
-void
-ErrMsgSrcpos ( INT ecode, SRCPOS srcpos, ... )
-{
-  INT32  line = Srcpos_To_Line(srcpos);
-  const char   *fname = NULL;
-  const char   *dname;
-
-  va_list vp;
-  va_start ( vp, srcpos );
-
-  IR_Srcpos_Filename(srcpos, &fname, &dname);
-  ErrMsg_Report ( ecode, line, fname, vp );
-  va_end ( vp );
-}
-#endif
 
 /* ====================================================================
  *
@@ -1359,7 +1308,6 @@ Get_Current_Phase_Number( void )
 }
 
 
-#ifndef MONGOOSE_BE
 /* ====================================================================
  *
  * Set_Error_Tables
@@ -1377,7 +1325,6 @@ extern void Set_Error_Tables(
   Phases = edt;
   host_errlist = errlist;
 }
-#endif /* MONGOOSE_BE */
 
 extern void
 Set_Error_Descriptor (INT phase, ERROR_DESC *descriptor)

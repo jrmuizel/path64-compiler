@@ -66,7 +66,7 @@ static char *rcs_id = 	opt_canon_CXX"$Revision: 1.8 $";
 #include "defs.h"
 #include "erglob.h"
 #include "opcode.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "tracing.h"		// for TFile
 #include "mtypes.h"
 #include "config_targ.h"

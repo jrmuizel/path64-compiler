@@ -66,7 +66,7 @@
 
 #include "defs.h"
 #include "dso.h"		    /* for load_so() */
-#include "errors.h"		    /* Set_Error_Tables(), etc. */
+#include "be_errors.h"		/* Set_Error_Tables(), etc. */
 #include "erglob.h"		    /* for EC_ errmsg */
 #include "mempool.h"		    /* for MEM_Initialze()  */
 #include "phase.h"		    /* for PHASE_CG */
@@ -132,12 +132,12 @@
 #include "output_func_start_profiler.h"
 #include "goto_conv.h"
 #endif
+#include "err_host.tab"
+#include "libelftc.h"
 
 extern ERROR_DESC EDESC_BE[], EDESC_CG[];
 
 #ifdef KEY
-#include "demangle.h"
-extern "C" char *cplus_demangle (const char *, int);
 extern void Recompute_addr_saved_stmt (WN *);
 extern void Set_addr_saved_stmt (WN *, BOOL);
 extern void CYG_Instrument_Driver(WN *);
@@ -666,7 +666,7 @@ Adjust_Opt_Level (PU_Info* current_pu, WN *pu, char *pu_name)
 	// C++ mangled names begin with "_Z".
 	pu_name[0] == '_' &&
 	pu_name[1] == 'Z') {
-      p = cplus_demangle(pu_name, DMGL_PARAMS | DMGL_ANSI | DMGL_TYPES);
+      p = cpp_demangle_gnu3(pu_name);
       if (p) {
 	demangled_pu_name = p;
 	has_demangled_pu_name = TRUE;
@@ -1946,6 +1946,7 @@ main (INT argc, char **argv)
   setlinebuf (stderr);
   Handle_Signals ();
   MEM_Initialize ();
+  Set_Error_Tables (Phases, host_errlist);
   Cur_PU_Name = NULL;
   Init_Error_Handler ( 100 );
   Set_Error_Line ( ERROR_LINE_UNKNOWN );

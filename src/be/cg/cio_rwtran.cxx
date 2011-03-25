@@ -142,7 +142,7 @@ static const char rcs_id[] = "";
 #include "defs.h"
 #include "resource.h"
 #include "config.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "mempool.h"
 #include "cg.h"
 #include "cgir.h"

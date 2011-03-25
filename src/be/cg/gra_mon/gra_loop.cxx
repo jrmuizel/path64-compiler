@@ -34,7 +34,7 @@
 #pragma hdrstop
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "cg.h"
 #include "cg_region.h"
 #include "bb.h"

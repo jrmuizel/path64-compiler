@@ -63,7 +63,7 @@ static char *rcs_id = 	opt_alias_mgr_CXX"$Revision: 1.7 $";
 #include "defs.h"
 #include "config.h"
 #include "opt_config.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "tracing.h"
 #include "cxx_base.h"

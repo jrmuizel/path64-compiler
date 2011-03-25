@@ -59,7 +59,7 @@ static char *rcs_id = 	opt_rvi_emit_CXX"$Revision$";
 #endif /* _KEEP_RCS_ID */
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "tracing.h"
 #include "wn.h"

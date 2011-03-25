@@ -41,7 +41,7 @@
 #include <stdint.h>
 #include <signal.h>
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "ercg.h"
 #include "tracing.h"

@@ -87,8 +87,9 @@ static phase_info_t phase_info[] = {
 
    {'m',  0x0000000000000008LL,	"m4",	BINPATH,	FALSE},	/* m4 */
    {'r',  0x0000000000000001LL,	"ratfor",BINPATH,	FALSE},	/* ratfor */
-
    {'p',  0x0000000000000010LL,	"cpp",	PHASEPATH,	FALSE},	/* cpp */
+
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 #ifdef PATH64_ENABLE_PSCRUNTIME
    // Invoke cc142/cc1plus42 for preprocessing
    {'p',  0x0000000000000020LL,	"cc142", PHASEPATH, TRUE}, /* gcpp */
@@ -100,9 +101,12 @@ static phase_info_t phase_info[] = {
    {'p',  0x0000000000000020LL,	CROSS_PFX"gcc", "", FALSE}, /* gcpp */
    {'p',  0x0000000000000040LL,	CROSS_PFX"g++", "", FALSE}, /* gcpp_plus */
 #endif // PATH64_ENABLE_PSCRUNTIME
+#endif // PATH64_ENABLE_GNU_FRONTEND
+
 #ifdef PATH64_ENABLE_PSCLANG
    {'p',  0x0000000000000080LL,	"psclang", PHASEPATH, TRUE}, /* psclang_cpp */
 #endif // PATH64_ENABLE_PSCLANG
+
    {'p',  0x0000000000000200LL,	"mfef77",PHASEPATH,	FALSE},	/* f_cpp */
    {'p',  0x0000000000000400LL,	"ftpp"   ,PHASEPATH,	FALSE},	/* f90_cpp */
 #ifdef KEY	// bug 9058
@@ -135,14 +139,19 @@ static phase_info_t phase_info[] = {
    {'f',  0x0000000000080000LL,	"mfef95",PHASEPATH,	TRUE},	/* cppf90_fe */
    {'f',  0x0000000000100000LL,	"gfec",PHASEPATH,	TRUE }, /* c_gfe */
    {'f',  0x0000000000200000LL,	"gfecc",PHASEPATH,	TRUE }, /* cplus_gfe */
+
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 #ifdef KEY
    {'f',  0x0000000000400000LL,	"cc1"	,PHASEPATH,	TRUE }, /* spin_cc1  */
    {'f',  0x0000000000800000LL,	"cc1plus",PHASEPATH,	TRUE }, /* spin_cc1plus */
    {'f',  0x0000000001000000LL,	"wgen",PHASEPATH,	TRUE }, /* wgen      */
-#endif
+#endif // KEY
+#endif // PATH64_ENABLE_GNU_FRONTEND
+
 #ifdef PATH64_ENABLE_PSCLANG
    {'f',  0x0000000004000000LL,	"psclang", PHASEPATH,	TRUE }, /* psclang  */
 #endif // PATH64_ENABLE_PSCLANG
+
    /* place-holder for generic fe, whose mask unites all fe's; */
    /* this is so -Wf will apply to whatever fe is being invoked. */
    {'f',  0x0000000005ff0000LL,	"",	"",		FALSE},	/* any_fe */

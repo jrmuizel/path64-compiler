@@ -28,6 +28,9 @@
 
 #ifndef erbe_INCLUDED
 #define erbe_INCLUDED
+
+#include "be_errors.h"	/* Always needed */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -61,8 +64,6 @@ extern "C" {
 #ifdef _KEEP_RCS_ID
 static char *erbe_rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/com/SCCS/s.erbe.h $ $Revision: 1.5 $";
 #endif /* _KEEP_RCS_ID */
-
-#include "errors.h"	/* Always needed */
 
 /* The error codes in each erxxx.h file should start from some multiple
  * of 1000, which is the phase number.

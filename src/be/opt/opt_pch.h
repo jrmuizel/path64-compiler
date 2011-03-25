@@ -44,7 +44,7 @@
 
 #include "defs.h"
 #include "config_targ.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "region_util.h"
 #include "symtab.h"

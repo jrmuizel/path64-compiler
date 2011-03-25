@@ -46,7 +46,7 @@
 #include "ipa_section.h"
 #include "wn.h"
 #include "erglob.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "wn_simp.h"
 #include "ir_reader.h"
 #include "strtab.h"                 

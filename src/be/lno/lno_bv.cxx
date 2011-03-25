@@ -28,7 +28,7 @@
 #pragma hdrstop
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "cxx_memory.h"
 #include "lno_bv.h"
 

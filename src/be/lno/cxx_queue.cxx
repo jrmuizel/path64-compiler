@@ -29,7 +29,7 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include "cxx_memory.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "cxx_queue.h"
 
 #ifndef __GNUC__

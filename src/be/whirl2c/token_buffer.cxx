@@ -97,7 +97,7 @@ static char *rcs_id = "$Source$ $Revision$";
 #include "defs.h"
 #include "srcpos.h"
 #include "token_buffer.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "mempool.h"
 #include "wn.h"
 #include "ir_reader.h"

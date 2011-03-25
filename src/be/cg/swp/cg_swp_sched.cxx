@@ -53,7 +53,7 @@
 #include "cg_swp_options.h"
 */
 #include "mempool.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "tracing.h"
 #include "op.h"
 #include "bb.h"

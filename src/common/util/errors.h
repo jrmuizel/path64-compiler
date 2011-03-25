@@ -97,15 +97,6 @@ extern "C" {
  *	is identical to ErrMsg, except that the relevant source line
  *	number is passed.
  *
- *  void ErrMsgSrcpos (
- *      INT Error_Code,
- *      SRCPOS srcpos,
- *      ...
- *  )
- *
- *	is identical to ErrMsg, except that the relevant source position
- *	is passed.
- *
  *  void Assert (
  *      BOOL condition,
  *      ( INT Error_Code, ... )
@@ -320,7 +311,6 @@ extern "C" {
  *
  *   Set_Error_Source ( char *filename );
  *   Set_Error_Line   ( INT linenum );
- *   Set_Error_Srcpos ( SRCPOS srcpos );
  *
  * To suppress line number reporting, e.g. during phases where errors
  * cannot be attributed to particular source lines, set the current
@@ -383,11 +373,6 @@ extern "C" {
  * ====================================================================
  */
 
-#ifdef MONGOOSE_BE
-#ifndef srcpos_INCLUDED
-#include "srcpos.h"
-#endif
-#endif
 
 extern void Abort_Compiler_Location (
   const char* file_name,
@@ -416,6 +401,8 @@ extern void Fatal_Error ( const char *fmt, ... );
  * ====================================================================
  */
 
+extern void ErrMsg_Report ( INT ecode, INT line, const char *file, va_list vp );
+
 /* Simple error report: */
 extern void ErrMsg ( INT ErrCode, ... );
 #pragma mips_frequency_hint NEVER ErrMsg
@@ -424,11 +411,6 @@ extern void ErrMsg ( INT ErrCode, ... );
 extern void ErrMsgLine ( INT ErrCode, INT LineNo, ... );
 #pragma mips_frequency_hint NEVER ErrMsgLine
 
-/* Error report with specified source position: */
-#ifdef MONGOOSE_BE
-extern void ErrMsgSrcpos ( INT ErrCode, SRCPOS SrcPos, ... );
-#pragma mips_frequency_hint NEVER ErrMsgSrcpos
-#endif
 
 /* Unconditional assertion checking with error code: */
 #define Assert(Cond,ParmList)					\
@@ -519,20 +501,16 @@ extern BOOL Count_Limit_DevWarn( const char *const src_fname,
  * should be defined either here or in err_host.h, to avoid conflicts.
  * The symbol EP_LAST should also be defined in err_host.h.
  */
-#ifndef MONGOOSE_BE
 #define EP_UNIX		0	/* Unix error codes */
-#endif /* MONGOOSE_BE */
 
 #define EP_GLOBAL	1	/* Global, general-purpose codes */
 #define EP_LIB		2	/* Program librarian codes */
 
-#ifndef MONGOOSE_BE
 #define EP_LINK		3	/* Linker, object file codes */
 /* The following are compiler-specific, but predefined because they
  * are common to all phases:
  */
 #define EP_FE		4	/* Compiler front end codes */
-#endif /* MONGOOSE_BE */
 
 #define EP_BE		5	/* Compiler back end codes (not CG) */
 #define EP_CG		6	/* Code generator codes */
@@ -599,13 +577,6 @@ extern void Set_Error_Source (
 extern void Set_Error_Line (
     INT LineNo
 );
-
-/* Notify error reporter of current source position: */
-#ifdef MONGOOSE_BE
-extern void Set_Error_Srcpos (
-    SRCPOS SrcPos
-);
-#endif
 
 /* Notify error reporter of current compiler phase: */
 extern void Set_Error_Phase (

@@ -57,7 +57,7 @@
 
 #include "cxx_graph.h"
 #include "cxx_memory.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "lno_scc.h"
 
 extern MEM_POOL LNO_local_pool;

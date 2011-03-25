@@ -58,7 +58,7 @@
 #include <list>
 #include "defs.h"
 #include "tracing.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "mempool.h"
 #include "wn.h"

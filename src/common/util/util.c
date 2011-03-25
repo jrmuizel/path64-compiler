@@ -36,93 +36,7 @@ extern pid_t wait(INT *statptr);	/* Currently not defined with
 					 *  prototype in sys/wait.h
                                          */
 
-#ifndef MONGOOSE_BE
-/* ====================================================================
- *
- * Execute
- *
- * Execute an external command via fork/execvp.
- * Returns 0 on success, an error code on failure.
- * An error code < 0400 is a Unix error code from errno.h.
- * An error code > 0400 is 0400 plus the signal which killed child.
- *
- * ====================================================================
- */
 
-INT Execute (
-  char *cmd,		/* The command to execute */
-  char **argv,		/* Argument list */
-  char *stdoutfile,	/* stdout for new process to use or NULL */
-  BOOL echo		/* Echo the command line? */
-)
-{
-  INT child, t, status;
-
-  /* Echo the command line if requested: */
-  if ( echo ) {
-    char **arg = argv+1;
-
-    fprintf ( stderr, " %s", cmd);
-    while ( *arg ) fprintf ( stderr, " %s", *arg++);
-    if ( stdoutfile != NULL ) fprintf ( stderr, " >%s", stdoutfile );
-    fprintf ( stderr, "\n" );
-  }
-
-  /* Fork and check for failure: */
-  child = fork();
-  if (child == -1) return (EAGAIN);
-
-  /* Execute the requested command in the child: */
-  if (child == 0) {
-    /* If a new stdout is given, open it: */
-    if (stdoutfile != NULL) {
-      if( freopen(stdoutfile, "w", stdout) == NULL) _exit(errno);
-    }
-
-    /* Execute the command: */
-    execvp( cmd, argv );
-
-    /* If the exec failed, return the system error code: */
-    _exit(errno);
-  }
-
-  /* Wait for the child in the parent and then check for errors: */
-  while (child != wait(&status)) {};
-  if ( (t=(status&0377)) != 0 ) return ( 0400 + t );
-  return ((status>>8) & 0377);
-
-}
-
-/* ====================================================================
- *
- * Get_Environment_Value
- *
- * Get the value of an environment variable.
- *
- * ====================================================================
- */
-
-char *
-Get_Environment_Value (
-  char *name,	/* The name of the environment variable */
-  char **envp,	/* Array of environment variables + NULL */
-  char *def	/* Default to return if not found */
-)
-{
-  INT len = strlen(name);
-  char **env = envp;
-
-  /* Search for a match: */
-  while ( *env ) {
-    if ( strncmp (name, *env, len) == 0 && *(len + *env) == '=' )
-	return (*env) + len + 1;
-    env++;
-  }
-
-  /* Not found: */
-  return def;
-}
-#endif /* MONGOOSE_BE */
 
 /* ====================================================================
  *
@@ -145,30 +59,6 @@ Check_Range (
   if ( val >= lbound && val <= ubound ) return val;
   return def;
 }
-
-#ifndef MONGOOSE_BE
-/* ====================================================================
- *
- * Indent
- *
- * Print tabs and spaces to indent given number of characters.
- *
- * ====================================================================
- */
-
-void
-Indent (
-  FILE *f,
-  INT16 indent
-)
-{
-  while ( indent >= 8 ) {
-    fprintf ( f, "\t" );
-    indent -= 8;
-  }
-  while ( indent-- > 0 ) fprintf ( f, " " );
-}
-#endif /* MONGOOSE_BE */
 
 /* ====================================================================
  *

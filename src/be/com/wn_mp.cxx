@@ -51,7 +51,7 @@
 #include "wn.h"
 #include "wn_util.h"
 #include "erglob.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "strtab.h"                 /* for strtab */
 #include "symtab.h"                 /* for symtab */
 #include "irbdata.h"                /* for inito */
@@ -78,7 +78,6 @@
 #include "cxx_template.h"
 #include "defs.h"
 #include "glob.h"
-#include "errors.h"
 #include "erglob.h"
 #include "erbe.h"
 #include "tracing.h"

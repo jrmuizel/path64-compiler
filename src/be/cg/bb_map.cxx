@@ -50,7 +50,7 @@ static char *rcs_id = "$Source$ $Revision$";
 #endif /* _KEEP_RCS_ID */
 
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "mempool.h"
 #include "bb.h"
 #include "bb_map.h"

@@ -74,7 +74,7 @@ static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/lno/SCCS/s.al_loo
 #include "lego_util.h"
 #include "array_lower.h"
 #include "al_loop.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erbe.h"
 
 /* ========================================================================

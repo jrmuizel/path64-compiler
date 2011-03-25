@@ -63,6 +63,7 @@
 #include "timing.h"		    /* for Initialize_Timing() */
 #include "tracing.h"		    /* for Set_Trace () */
 #include "inline.h"
+#include "err_host.tab"
 
 /* Default file	extensions: */
 #define	IRB_FILE_EXTENSION ".B"	/* Binary WHIRL IR file */
@@ -220,7 +221,7 @@ Process_Command_Line (INT argc, char **argv)
     }
 #endif
 
-    if ( Get_Trace ( TKIND_ALLOC, 32767 ) ) {
+    if ( Get_Trace ( TKIND_ALLOC, TP_IPA ) ) {
       MEM_Tracing_Enable ();
     }
 
@@ -294,6 +295,7 @@ main (INT argc, char **argv)
      */
     Handle_Signals();
     MEM_Initialize();
+    Set_Error_Tables (Phases, host_errlist);
     Dont_Use_WN_Free_List ();
 
     /* Perform preliminary command line processing: */

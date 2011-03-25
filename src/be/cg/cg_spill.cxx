@@ -50,7 +50,7 @@
 
 #include "defs.h"
 #include "tracing.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "ercg.h"
 #include "glob.h"

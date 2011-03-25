@@ -98,11 +98,15 @@ typedef enum {
 	P_ratfor,	/* ratfor */
 
 	P_cpp,		/* old-style cpp */
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 	P_gcpp,		/* gcc cpp */
 	P_gcpp_plus,	/* g++ cpp */
+#endif // PATH64_ENABLE_GNU_FRONTEND
+
 #ifdef PATH64_ENABLE_PSCLANG
     P_psclang_cpp,      /* psclang preprocessor */
-#endif
+#endif // PATH64_ENABLE_PSCLANG
+
 	P_f_cpp,	/* cpp for F77 */
 	P_f90_cpp,	/* cpp for F90 */
 #ifdef KEY
@@ -121,14 +125,19 @@ typedef enum {
 	P_cppf90_fe,	/* cpp embedded in f90 fe */
 	P_c_gfe,	/* gcc c fe */
 	P_cplus_gfe,	/* gnu c++ fe */
+
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 #ifdef KEY
 	P_spin_cc1,	/* gnu gcc4 C fe */
 	P_spin_cc1plus,	/* gnu gcc4 C++ fe */
 	P_wgen,		/* wgen */
-#endif
+#endif // KEY
+#endif // PATH64_ENABLE_GNU_FRONTEND
+
 #ifdef PATH64_ENABLE_PSCLANG
     P_psclang,  /* psclang front-end */
 #endif // PATH64_ENABLE_PSCLANG
+
 	P_any_fe,	/* generic union of all fe's */
 	P_pseudo_f_fe,	/* not a real phase, just a placeholder 
 			 * for options for f_fe but not c_fe */

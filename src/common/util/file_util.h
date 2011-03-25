@@ -57,24 +57,6 @@ extern BOOL Is_File ( const char *fname );
 /* Determine whether two streams are associated with the same file: */
 extern BOOL Same_File (FILE *file1, FILE *file2);
 
-/* Determine whether a filename has a given extension: */
-extern BOOL Has_Extension (
-  char *name,	/* The filename to check */
-  char *ext	/* The extension to look for */
-);
-
-/* Search for a file with a specific extension.  First look for the
- * name given; if not found, and the name does not already have the
- * given extension, look for the name with the extension appended.
- * The name string passed must have enough space to append the
- * extension, and if that is the form found, it will be appended on
- * return.
- */
-extern BOOL Find_File (
-  char *name,	/* The initial filename to search for */
-  char *ext	/* The default extension to try */
-);
-
 /* Replace the given file name's extension with another extension and
  * return a new filename string.  The given extension should include
  * the period if desired (a period in the original name will be
@@ -87,14 +69,6 @@ extern char *New_Extension (
 
 extern char *Remove_Extension (
   char *name    /* The original file name */
-);
-
-/* Make a temporary file name from a temporary directory name, a file
- * name prefix, and the process ID:
- */
-extern char *Make_Temp_File (
-  char *tmp,	/* Temporary directory pathname to use */
-  char *prefix	/* Prefix for file name */
 );
 
 /* Make a full path name from a base file name: */

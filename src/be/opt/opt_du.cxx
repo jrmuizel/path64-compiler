@@ -60,7 +60,7 @@ static char *rcs_id = 	opt_du_CXX"$Revision$";
 
 #include "defs.h"
 #include "tracing.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "erglob.h"
 #include "wn_util.h"
 #include "ir_reader.h"  // For IR_dump_map_info

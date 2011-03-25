@@ -34,7 +34,7 @@
 #include <vector.h>
 #endif // __GNUC__ >= 3
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "tracing.h"
 #include "timing.h"
 #include "glob.h"    // for Cur_PU_Name

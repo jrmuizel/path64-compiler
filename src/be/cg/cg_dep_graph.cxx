@@ -65,7 +65,7 @@
 #include <sys/types.h>
 #include "defs.h"
 #include "mempool.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "ercg.h"
 #include "wn.h"
 #include "dvector.h"				/* for LNO dep graph */

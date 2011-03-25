@@ -66,7 +66,7 @@ static char *rcs_id = "$Source: be/cg/gra_mon/SCCS/s.gra_lrange.cxx $ $Revision:
 #include <limits.h>
 #endif
 #include "defs.h"
-#include "errors.h"
+#include "be_errors.h"
 #include "cgir.h"
 #include "tn_map.h"
 #include "gtn_universe.h"
