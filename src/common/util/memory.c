@@ -1078,7 +1078,7 @@ Raw_Allocate(
   if (size <= MIN_LARGE_BLOCK_SIZE) {
     MEM_BLOCK *b = MEM_POOL_block(pool);
 
-    if (b == NULL || MEM_BLOCK_avail(b) < size) {
+    if (b == NULL || MEM_BLOCK_avail(b) < size + (REDZONE_SIZE*2)) {
       b = Allocate_Block (pool);
     }
 
