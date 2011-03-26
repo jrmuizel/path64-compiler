@@ -120,7 +120,7 @@ my @oint32_v32f4_v32f4=["VTESTPS256NZC __builtin_ia32_vtestnzcps256","VTESTPS256
 my @oint32_v16f4_v16f4=["VTESTPS128NZC __builtin_ia32_vtestnzcps","VTESTPS128Z __builtin_ia32_vtestzps","VTESTPS128C __builtin_ia32_vtestcps"];
 my @ov32f8_v32f8_v32f8_v32f8=["VBLENDVPD256 __builtin_ia32_blendvpd256"];
 my @ov32f4_v32f4_v32f4_v32f4=["VBLENDVPS256 __builtin_ia32_blendvps256"];
-my @ov32f4_v32f4_v32f4_simm8=["VDPPS256 __builtin_ia32_dpps256","VBLENDPS256 __builtin_ia32_blendps256","VCMPPS256 __builtin_ia32_cmpps"];
+my @ov32f4_v32f4_v32f4_simm8=["VDPPS256 __builtin_ia32_dpps256","VBLENDPS256 __builtin_ia32_blendps256","VCMPPS256 __builtin_ia32_cmpps256"];
 my @ov16f4_v16f4_v16f4_simm8=["VCMPPS128 __builtin_ia32_cmpps","VCMPSS128 __builtin_ia32_cmpss"];
 my @ov32f8_v32f8_v32f8_simm8=["VBLENDPD256 __builtin_ia32_blendpd256","VCMPPD256 __builtin_ia32_cmppd256"];
 my @ov16f8_v16f8_v16f8_simm8=["VCMPPD128 __builtin_ia32_cmppd","VCMPSD __builtin_ia32_cmpsd"];
@@ -181,22 +181,24 @@ my @ov32i4_v16i4=["VCASTSI128TOSI256 __builtin_ia32_si256_si"];
 
 my @oint32_v32f8=["VMOVMSKPD256 __builtin_ia32_movmskpd256"];
 my @oint32_v32f4=["VMOVMSKPS256 __builtin_ia32_movmskps256"];
-my @ov32f8_v32f8_int32=["VROUNDPD256 __builtin_ia32_roundpd256","VPERMILPD256 __builtin_ia32_vpermilpd256","VPERM2F128D __builtin_ia32_vperm2f128_pd256"];
+my @ov32f8_v32f8_int32=["VROUNDPD256 __builtin_ia32_roundpd256","VPERMILPD256 __builtin_ia32_vpermilpd256"];
 my @ov16f8_v16f8_int32=["VPERMILPD128 __builtin_ia32_vpermilpd"];
-my @ov32f4_v32f4_int32=["VPERMILPS256 __builtin_ia32_vpermilps256","VPERM2F128S __builtin_ia32_vperm2f128_ps256"];
+my @ov32f4_v32f4_int32=["VPERMILPS256 __builtin_ia32_vpermilps256","VROUNDPS256 __builtin_ia32_roundps256"];
 my @ov16f4_v16f4_int32=["VPERMILPS128 __builtin_ia32_vpermilps"];
 my @ov32f8_v32f8_v32i4=["VPERMILPD256VAR __builtin_ia32_vpermilvarpd256"];
 my @ov16f8_v16f8_v16i4=["VPERMILPD128VAR __builtin_ia32_vpermilvarpd"];
 my @ov32f4_v32f4_v32i4=["VPERMILPS256VAR __builtin_ia32_vpermilvarps256"];
 my @ov16f4_v16f4_v16i4=["VPERMILPS128VAR __builtin_ia32_vpermilvarps"];
-my @ov32i4_v32i4_v32i4_int32=["VPERM2F128SI __builtin_ia32_vperm2f128_si256","VSHUFPS256 __builtin_ia32_shufps256"];
-my @ov32i8_v32i8_v32i8_int32=["VSHUFPD258 __builtin_ia32_shufpd256"];
+my @ov32i4_v32i4_v32i4_int32=["VPERM2F128SI __builtin_ia32_vperm2f128_si256"];
+my @ov32f8_v32f8_v32f8_int32=["VSHUFPD25 __builtin_ia32_shufpd256","VPERM2F128D __builtin_ia32_vperm2f128_pd256"];
+my @ov32f4_v32f4_v32f4_int32=["VSHUFPS256 __builtin_ia32_shufps256","VPERM2F128S __builtin_ia32_vperm2f128_ps256"];
 
 #my @ov32f8_double_double_double_double=["V"];
 my @ovoid_void=["VZEROALL256 __builtin_ia32_vzeroall","VZEROUPPER256 __builtin_ia32_vzeroupper"];
 ##Packed Test Operations
 my @oint32_v32i4_v32i4=["VPTESTZ256 __builtin_ia32_ptestz256","VPTESTC256 __builtin_ia32_ptestc256","VPTESTNZC256 __builtin_ia32_ptestnzc256"];
 ##TODO _mm256_store_pd
+#my @ov32i4_v16i4_int32_int32=[""];
 
 my @ops=(
 		#[@vaddp,["f128","f256"], ["OPS"],["ofloat"],["float"],@float_mem],
@@ -207,6 +209,8 @@ my @ops=(
 		[["NAME"],@ov32f4_v32f4_v16f4_int32, ["OPS"],["V32F4ov32f4"],["v32f4"],["v16f4"],["int32"]],
 		[["NAME"],@ov32i4_v32i4_v16i4_int32, ["OPS"],["V32I4ov32i4"],["v32i4"],["v16i4"],["int32"]],
 		[["NAME"],@ov32i4_v32i4_v32i4_int32, ["OPS"],["V32I4ov32i4"],["v32i4"],["v32i4"],["int32"]],
+		[["NAME"],@ov32f8_v32f8_v32f8_int32, ["OPS"],["V32F8ov32f8"],["v32f8"],["v32f8"],["int32"]],
+		[["NAME"],@ov32f4_v32f4_v32f4_int32, ["OPS"],["V32F4ov32f4"],["v32f4"],["v32f4"],["int32"]],
 		[["NAME"],@ov32i4_v32i4mem,["OPS"],["V32I4ov32i4"],["memv32i4"]],
 		[["NAME"],@oint32_v32f8,["OPS"],["I4oint32"],["v32f8"]],
 		[["NAME"],@oint32_v32f4,["OPS"],["I4oint32"],["v32f4"]],
@@ -466,5 +470,5 @@ fprint("expand_avx.cxx",$expand_cxx);
 print $expand_cxx;
 print "\n\n";
 
-#copy_all_file();
-copy_to('../src/be/cg/x8664/',"expand_avx.cxx");
+copy_all_file();
+#copy_to('../src/be/cg/x8664/',"expand_avx.cxx");

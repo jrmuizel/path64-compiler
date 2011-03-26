@@ -452,6 +452,7 @@ main()
 				 TOP_pmovzxwd,
 				 TOP_pmovzxwq,
 				 TOP_pmovzxdq,
+#include "isa_avx_properties_move_prop.cxx"
 		     TOP_UNDEFINED);
 
   /* ===== Move ext operator ====== */
@@ -606,6 +607,7 @@ main()
                      TOP_vldaps,
                      TOP_vldapsx,
                      TOP_vldapsxx,
+#include "isa_avx_properties_load_only.cxx";
                      TOP_UNDEFINED);
 
   /* ===== Memory load and extend operator ====== */
@@ -1170,6 +1172,7 @@ main()
              TOP_xchgx16,
              TOP_xchgx32,
              TOP_xchgx64,
+#include "isa_avx_properties_load_exe.cxx"
                      TOP_UNDEFINED);
 
   /* ===== arith. operations with memory src and dest operand ====== */
@@ -1204,6 +1207,7 @@ main()
              TOP_xchgx16,
              TOP_xchgx32,
              TOP_xchgx64,
+#include "isa_avx_properties_store_only.cxx"
                      TOP_UNDEFINED);
 
   /* ===== Non-temporal memory store operator ====== */
@@ -2333,6 +2337,7 @@ main()
                      TOP_vstaps_n32,
                      TOP_vldapd_n32,
                      TOP_vldaps_n32,
+#include "isa_avx_properties_flop_prop.cxx" 
                      TOP_UNDEFINED);
 
   /* ===== FP add operator ====== */
@@ -2373,6 +2378,7 @@ main()
 		     TOP_addxxss,
 		     TOP_fadd,
 		     TOP_faddp,
+#include "isa_avx_properties_fadd_prop.cxx"
                      TOP_UNDEFINED);
 
   /* ===== FP subtract operator ====== */
@@ -2415,6 +2421,7 @@ main()
 		     TOP_fsubp,		     
 		     TOP_fsubr,
 		     TOP_fsubrp,		     
+#include "isa_avx_properties_fsub_prop.cxx"
                      TOP_UNDEFINED);
 
   /* ===== FP multiply operator ====== */
@@ -2437,6 +2444,7 @@ main()
 		     TOP_fmulxxx128v64,
 		     TOP_fmul,
 		     TOP_fmulp,
+#include "isa_avx_properties_fmul_prop.cxx"
                      TOP_UNDEFINED);
 
   /* ===== FP miscellaneous operator ====== */

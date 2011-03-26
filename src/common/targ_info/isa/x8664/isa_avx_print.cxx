@@ -34,12 +34,12 @@ Operand(1);
 ISA_PRINT_TYPE ofloat_base64_index64_uimm8_simm32_float = ISA_Print_Type_Create("ofloat_base64_index64_uimm8_simm32_float",
 "%s %s%s(%s,%s,%s) ,%s ,%s");
 Name();
+Operand(4);
 Segment();
 Operand(3);
 Operand(0);
 Operand(1);
 Operand(2);
-Operand(4);
 Result(0);
 	Instruction_Print_Group(ofloat_base64_index64_uimm8_simm32_float,
 		TOP_vmaskmovps_f128_ofloat_base64_index64_uimm8_simm32_float,
@@ -53,11 +53,11 @@ Result(0);
 ISA_PRINT_TYPE ofloat_index64_uimm8_simm32_simm8 = ISA_Print_Type_Create("ofloat_index64_uimm8_simm32_simm8",
 "%s %s%s(,%s,%s) ,%s ,%s");
 Name();
+Operand(3);
 Segment();
 Operand(2);
 Operand(0);
 Operand(1);
-Operand(3);
 Result(0);
 	Instruction_Print_Group(ofloat_index64_uimm8_simm32_simm8,
 		TOP_vpcmpestri_f128_ofloat_index64_uimm8_simm32_simm8,
@@ -77,8 +77,8 @@ Result(0);
 ISA_PRINT_TYPE oindex64_uimm8_simm32_float_float = ISA_Print_Type_Create("oindex64_uimm8_simm32_float_float",
 "%s %s ,%s ,%s%s(,%s,%s) ");
 Name();
-Operand(0);
 Operand(1);
+Operand(0);
 Segment();
 Operand(4);
 Operand(2);
@@ -94,8 +94,8 @@ Operand(3);
 ISA_PRINT_TYPE ofloat_float_int64 = ISA_Print_Type_Create("ofloat_float_int64",
 "%s %s ,%s ,%s");
 Name();
-Operand(0);
 Operand(1);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_int64,
 		TOP_vcvtsi2sd_int64_ofloat_float_int64,
@@ -121,10 +121,10 @@ Result(0);
 ISA_PRINT_TYPE float_base64_simm32 = ISA_Print_Type_Create("float_base64_simm32",
 "%s %s %s%s(%s) ");
 Name();
-Operand(0);
 Segment();
 Operand(2);
 Operand(1);
+Operand(0);
 	Instruction_Print_Group(float_base64_simm32,
 		TOP_vmovhpd_f128_float_base64_simm32,
 		TOP_vmovhps_f128_float_base64_simm32,
@@ -137,12 +137,12 @@ Operand(1);
 ISA_PRINT_TYPE ofloat_float_base64_index64_uimm8_simm32 = ISA_Print_Type_Create("ofloat_float_base64_index64_uimm8_simm32",
 "%s %s ,%s%s(%s,%s,%s) ,%s");
 Name();
-Operand(0);
 Segment();
 Operand(4);
 Operand(1);
 Operand(2);
 Operand(3);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_base64_index64_uimm8_simm32,
 		TOP_vaddpd_f128_ofloat_float_base64_index64_uimm8_simm32,
@@ -345,13 +345,13 @@ Operand(3);
 ISA_PRINT_TYPE ofloat_float_base64_index64_uimm8_simm32_simm8 = ISA_Print_Type_Create("ofloat_float_base64_index64_uimm8_simm32_simm8",
 "%s %s ,%s%s(%s,%s,%s) ,%s ,%s");
 Name();
-Operand(0);
+Operand(5);
 Segment();
 Operand(4);
 Operand(1);
 Operand(2);
 Operand(3);
-Operand(5);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_base64_index64_uimm8_simm32_simm8,
 		TOP_vblendpd_f128_ofloat_float_base64_index64_uimm8_simm32_simm8,
@@ -404,9 +404,9 @@ Result(0);
 ISA_PRINT_TYPE float_float_simm8 = ISA_Print_Type_Create("float_float_simm8",
 "%s %s %s %s ");
 Name();
-Operand(0);
-Operand(1);
 Operand(2);
+Operand(1);
+Operand(0);
 	Instruction_Print_Group(float_float_simm8,
 		TOP_vpslldq_f128_float_float_simm8,
 		TOP_vpsrldq_f128_float_float_simm8,
@@ -419,8 +419,8 @@ Operand(2);
 ISA_PRINT_TYPE obase64_index64_uimm8_simm32_float_simm8 = ISA_Print_Type_Create("obase64_index64_uimm8_simm32_float_simm8",
 "%s %s ,%s ,%s%s(%s,%s,%s) ");
 Name();
-Operand(0);
 Operand(1);
+Operand(0);
 Segment();
 Operand(5);
 Operand(2);
@@ -436,8 +436,8 @@ Operand(4);
 ISA_PRINT_TYPE obase64_simm32_float_float = ISA_Print_Type_Create("obase64_simm32_float_float",
 "%s %s ,%s ,%s%s(%s) ");
 Name();
-Operand(0);
 Operand(1);
+Operand(0);
 Segment();
 Operand(3);
 Operand(2);
@@ -452,9 +452,9 @@ Operand(2);
 ISA_PRINT_TYPE ofloat_float_float_float = ISA_Print_Type_Create("ofloat_float_float_float",
 "%s %s ,%s ,%s ,%s");
 Name();
-Operand(0);
-Operand(1);
 Operand(2);
+Operand(1);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_float_float,
 		TOP_vblendvpd_f128_ofloat_float_float_float,
@@ -468,9 +468,9 @@ Result(0);
 ISA_PRINT_TYPE ofloat_float_int32_simm8 = ISA_Print_Type_Create("ofloat_float_int32_simm8",
 "%s %s ,%s ,%s ,%s");
 Name();
-Operand(0);
-Operand(1);
 Operand(2);
+Operand(1);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_int32_simm8,
 		TOP_vpinsrb_f128_ofloat_float_int32_simm8,
@@ -506,12 +506,12 @@ Result(0);
 ISA_PRINT_TYPE ofloat_base64_index64_uimm8_simm32_simm8 = ISA_Print_Type_Create("ofloat_base64_index64_uimm8_simm32_simm8",
 "%s %s%s(%s,%s,%s) ,%s ,%s");
 Name();
+Operand(4);
 Segment();
 Operand(3);
 Operand(0);
 Operand(1);
 Operand(2);
-Operand(4);
 Result(0);
 	Instruction_Print_Group(ofloat_base64_index64_uimm8_simm32_simm8,
 		TOP_vpcmpestri_f128_ofloat_base64_index64_uimm8_simm32_simm8,
@@ -604,9 +604,9 @@ Result(0);
 ISA_PRINT_TYPE ofloat_float_float_simm8 = ISA_Print_Type_Create("ofloat_float_float_simm8",
 "%s %s ,%s ,%s ,%s");
 Name();
-Operand(0);
-Operand(1);
 Operand(2);
+Operand(1);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_float_simm8,
 		TOP_vblendpd_f128_ofloat_float_float_simm8,
@@ -668,11 +668,11 @@ Operand(2);
 ISA_PRINT_TYPE ofloat_index64_uimm8_simm32_float = ISA_Print_Type_Create("ofloat_index64_uimm8_simm32_float",
 "%s %s%s(,%s,%s) ,%s ,%s");
 Name();
+Operand(3);
 Segment();
 Operand(2);
 Operand(0);
 Operand(1);
-Operand(3);
 Result(0);
 	Instruction_Print_Group(ofloat_index64_uimm8_simm32_float,
 		TOP_vmaskmovps_f128_ofloat_index64_uimm8_simm32_float,
@@ -686,10 +686,10 @@ Result(0);
 ISA_PRINT_TYPE ofloat_float_base64_simm32 = ISA_Print_Type_Create("ofloat_float_base64_simm32",
 "%s %s ,%s%s(%s) ,%s");
 Name();
-Operand(0);
 Segment();
 Operand(2);
 Operand(1);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_base64_simm32,
 		TOP_vaddpd_f128_ofloat_float_base64_simm32,
@@ -876,8 +876,8 @@ Operand(2);
 ISA_PRINT_TYPE obase64_simm32_float_simm8 = ISA_Print_Type_Create("obase64_simm32_float_simm8",
 "%s %s ,%s ,%s%s(%s) ");
 Name();
-Operand(0);
 Operand(1);
+Operand(0);
 Segment();
 Operand(3);
 Operand(2);
@@ -981,8 +981,8 @@ Result(0);
 ISA_PRINT_TYPE ofloat_float_simm8 = ISA_Print_Type_Create("ofloat_float_simm8",
 "%s %s ,%s ,%s");
 Name();
-Operand(0);
 Operand(1);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_simm8,
 		TOP_vextractps_f256_ofloat_float_simm8,
@@ -1003,12 +1003,12 @@ Result(0);
 ISA_PRINT_TYPE float_base64_index64_uimm8_simm32 = ISA_Print_Type_Create("float_base64_index64_uimm8_simm32",
 "%s %s %s%s(%s,%s,%s) ");
 Name();
-Operand(0);
 Segment();
 Operand(4);
 Operand(1);
 Operand(2);
 Operand(3);
+Operand(0);
 	Instruction_Print_Group(float_base64_index64_uimm8_simm32,
 		TOP_vmovhpd_f128_float_base64_index64_uimm8_simm32,
 		TOP_vmovhps_f128_float_base64_index64_uimm8_simm32,
@@ -1107,11 +1107,11 @@ Operand(1);
 ISA_PRINT_TYPE ofloat_float_base64_simm32_simm8 = ISA_Print_Type_Create("ofloat_float_base64_simm32_simm8",
 "%s %s ,%s%s(%s) ,%s ,%s");
 Name();
-Operand(0);
+Operand(3);
 Segment();
 Operand(2);
 Operand(1);
-Operand(3);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_base64_simm32_simm8,
 		TOP_vblendpd_f128_ofloat_float_base64_simm32_simm8,
@@ -1222,8 +1222,8 @@ Result(0);
 ISA_PRINT_TYPE oindex64_uimm8_simm32_float_simm8 = ISA_Print_Type_Create("oindex64_uimm8_simm32_float_simm8",
 "%s %s ,%s ,%s%s(,%s,%s) ");
 Name();
-Operand(0);
 Operand(1);
+Operand(0);
 Segment();
 Operand(4);
 Operand(2);
@@ -1238,8 +1238,8 @@ Operand(3);
 ISA_PRINT_TYPE ofloat_float_int32 = ISA_Print_Type_Create("ofloat_float_int32",
 "%s %s ,%s ,%s");
 Name();
-Operand(0);
 Operand(1);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_int32,
 		TOP_vcvtsi2sd_int32_ofloat_float_int32,
@@ -1250,12 +1250,12 @@ Result(0);
 ISA_PRINT_TYPE ofloat_float_index64_uimm8_simm32_float = ISA_Print_Type_Create("ofloat_float_index64_uimm8_simm32_float",
 "%s %s ,%s%s(,%s,%s) ,%s ,%s");
 Name();
-Operand(0);
+Operand(4);
 Segment();
 Operand(3);
 Operand(1);
 Operand(2);
-Operand(4);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_index64_uimm8_simm32_float,
 		TOP_vblendvpd_f128_ofloat_float_index64_uimm8_simm32_float,
@@ -1279,10 +1279,10 @@ Result(0);
 ISA_PRINT_TYPE ofloat_base64_simm32_simm8 = ISA_Print_Type_Create("ofloat_base64_simm32_simm8",
 "%s %s%s(%s) ,%s ,%s");
 Name();
+Operand(2);
 Segment();
 Operand(1);
 Operand(0);
-Operand(2);
 Result(0);
 	Instruction_Print_Group(ofloat_base64_simm32_simm8,
 		TOP_vpcmpestri_f128_ofloat_base64_simm32_simm8,
@@ -1302,10 +1302,10 @@ Result(0);
 ISA_PRINT_TYPE ofloat_base64_simm32_float = ISA_Print_Type_Create("ofloat_base64_simm32_float",
 "%s %s%s(%s) ,%s ,%s");
 Name();
+Operand(2);
 Segment();
 Operand(1);
 Operand(0);
-Operand(2);
 Result(0);
 	Instruction_Print_Group(ofloat_base64_simm32_float,
 		TOP_vmaskmovps_f128_ofloat_base64_simm32_float,
@@ -1319,11 +1319,11 @@ Result(0);
 ISA_PRINT_TYPE float_index64_uimm8_simm32 = ISA_Print_Type_Create("float_index64_uimm8_simm32",
 "%s %s %s%s(,%s,%s) ");
 Name();
-Operand(0);
 Segment();
 Operand(3);
 Operand(1);
 Operand(2);
+Operand(0);
 	Instruction_Print_Group(float_index64_uimm8_simm32,
 		TOP_vmovhpd_f128_float_index64_uimm8_simm32,
 		TOP_vmovhps_f128_float_index64_uimm8_simm32,
@@ -1435,8 +1435,8 @@ Operand(3);
 ISA_PRINT_TYPE ofloat_float_float = ISA_Print_Type_Create("ofloat_float_float",
 "%s %s ,%s ,%s");
 Name();
-Operand(0);
 Operand(1);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_float,
 		TOP_vaddpd_f128_ofloat_float_float,
@@ -1610,9 +1610,9 @@ Result(0);
 ISA_PRINT_TYPE ofloat_float_int64_simm8 = ISA_Print_Type_Create("ofloat_float_int64_simm8",
 "%s %s ,%s ,%s ,%s");
 Name();
-Operand(0);
-Operand(1);
 Operand(2);
+Operand(1);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_int64_simm8,
 		TOP_vpinsrq_f128_ofloat_float_int64_simm8,
@@ -1622,8 +1622,8 @@ Result(0);
 ISA_PRINT_TYPE obase64_index64_uimm8_simm32_float_float = ISA_Print_Type_Create("obase64_index64_uimm8_simm32_float_float",
 "%s %s ,%s ,%s%s(%s,%s,%s) ");
 Name();
-Operand(0);
 Operand(1);
+Operand(0);
 Segment();
 Operand(5);
 Operand(2);
@@ -1640,11 +1640,11 @@ Operand(4);
 ISA_PRINT_TYPE ofloat_float_index64_uimm8_simm32 = ISA_Print_Type_Create("ofloat_float_index64_uimm8_simm32",
 "%s %s ,%s%s(,%s,%s) ,%s");
 Name();
-Operand(0);
 Segment();
 Operand(3);
 Operand(1);
 Operand(2);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_index64_uimm8_simm32,
 		TOP_vaddpd_f128_ofloat_float_index64_uimm8_simm32,
@@ -1819,12 +1819,12 @@ Result(0);
 ISA_PRINT_TYPE ofloat_float_index64_uimm8_simm32_simm8 = ISA_Print_Type_Create("ofloat_float_index64_uimm8_simm32_simm8",
 "%s %s ,%s%s(,%s,%s) ,%s ,%s");
 Name();
-Operand(0);
+Operand(4);
 Segment();
 Operand(3);
 Operand(1);
 Operand(2);
-Operand(4);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_index64_uimm8_simm32_simm8,
 		TOP_vblendpd_f128_ofloat_float_index64_uimm8_simm32_simm8,
@@ -1919,13 +1919,13 @@ Operand(3);
 ISA_PRINT_TYPE ofloat_float_base64_index64_uimm8_simm32_float = ISA_Print_Type_Create("ofloat_float_base64_index64_uimm8_simm32_float",
 "%s %s ,%s%s(%s,%s,%s) ,%s ,%s");
 Name();
-Operand(0);
+Operand(5);
 Segment();
 Operand(4);
 Operand(1);
 Operand(2);
 Operand(3);
-Operand(5);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_base64_index64_uimm8_simm32_float,
 		TOP_vblendvpd_f128_ofloat_float_base64_index64_uimm8_simm32_float,
@@ -1939,8 +1939,8 @@ Result(0);
 ISA_PRINT_TYPE oint32_float_simm8 = ISA_Print_Type_Create("oint32_float_simm8",
 "%s %s ,%s ,%s");
 Name();
-Operand(0);
 Operand(1);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(oint32_float_simm8,
 		TOP_f128_oint32_float_simm8,
@@ -1952,11 +1952,11 @@ Result(0);
 ISA_PRINT_TYPE ofloat_float_base64_simm32_float = ISA_Print_Type_Create("ofloat_float_base64_simm32_float",
 "%s %s ,%s%s(%s) ,%s ,%s");
 Name();
-Operand(0);
+Operand(3);
 Segment();
 Operand(2);
 Operand(1);
-Operand(3);
+Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_base64_simm32_float,
 		TOP_vblendvpd_f128_ofloat_float_base64_simm32_float,

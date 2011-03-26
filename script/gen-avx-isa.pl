@@ -17,11 +17,64 @@ sub cartesian {		#cartesian product, the perl way ]:->
     }
     return @C;
 }
+sub access_memory{
+	my($top_instructions)=@_;
+	if($top_instructions=~/base64_simm32/ || $top_instructions=~/base64_index64_uimm8_simm32/ || $top_instructions=~/index64_uimm8_simm32/){
+		#print "hehe met memory".$top_instructions."\n";
+	  return 1;
+	}else{
+	  return 0;
+	}
+}
+
+sub type_operation{
+	my($top_instr)=@_;
+	if($top_instr=~/obase64_simm32/ || $top_instr=~/obase64_index64_uimm8_simm32/ || $top_instr=~/oindex64_uimm8_simm32/){
+		print "match store".$top_instr."\n";
+	    return "store_only";
+		  #die "fuck that isa".$top_instr;
+		  #return 0;
+	}
+	elsif($top_instr=~/base64_simm32/ || $top_instr=~/base64_index64_uimm8_simm32/ || $top_instr=~/index64_uimm8_simm32/){
+	  print "load  ".$top_instr."\n";
+	  if($top_instr=~/mov/){
+	    return "load_only";
+  	  }else{
+	    return "load_exe";
+	  }
+  	}
+	else{
+	  print "else fuck".$top_instr."\n";
+	  if($top_instr=~/mov/){
+		  print "fuck move".$top_instr."\n";
+	    return "move_prop";
+  	  }elsif($top_instr=~/add/){
+	    return "fadd_prop";
+	  }elsif($top_instr=~/sub/){
+	    return "fsub_prop";
+	  }elsif($top_instr=~/mul/){
+	    return "fmul_prop";
+	  }else{
+	    return "none_prop";
+	  }
+	}
+}
 
 sub copy_to{
 	my($path,$filename)=@_;
 	return if not ($filename);
 	system("mv -f $filename $path");
+}
+
+sub how_many_opnds{
+	my($memory_op)=@_;
+	if($memory_op eq ""){
+	  return 0;
+	}
+	my @mem;
+	@mem=split("_",$memory_op);
+	return scalar(@mem);
+
 }
 
 #pulling things out of envytools and converting them directly to isa_* interface results in fugly names, but at least it's fast as hell.
@@ -443,7 +496,8 @@ foreach (keys %isa_operands){
 ###Result()
   my $total_opnd=0;
 	$isa_print_print.="Name();\n"; 
-	for($i=0;$i<$opnd_n;$i++){
+	#for($i=0;$i<$opnd_n;$i++){
+	for($i=$opnd_n-1;$i>=0;$i--){
 	  if($opnd[$i]=~/^base64_simm32$/){
 			my $first;
 			my $second;
@@ -484,20 +538,17 @@ foreach (keys %isa_operands){
 			$isa_print_print.="Operand(".$third.");\n";
 			#$isa_print_print.='%s%s(,%s,%s) ';
 			$total_opnd+=3;
-		}elsif($opnd[$i]=~/^simm8$/ ){
+		}elsif($opnd[$i]=~/^simm8$/ || $opnd[$i]=~/^float/ || $opnd[$i]=~/^int/){
 		  #$isa_print_print.='%s ';
-			$isa_print_print.="Operand(".$total_opnd.");\n";
-			$total_opnd++;
-		}elsif($opnd[$i]=~/^float/){
-		  #$isa_print_print.='%s ';
-			$isa_print_print.="Operand(".$total_opnd.");\n";
-			$total_opnd++;
-		}elsif($opnd[$i]=~/^int/){
-		  #$isa_print_print.='%s ';
-			$isa_print_print.="Operand(".$total_opnd.");\n";
-			$total_opnd++;
+		  	my $j,$number_opnd_front,$tmp_n;
+			$number_opnd_front=0;
+			for($j=0;$j<$i;$j++){
+			  #determine how many opnds in front;
+			  $number_opnd_front+=how_many_opnds($opnd[$j]);
+			}
+			$isa_print_print.="Operand(".$number_opnd_front.");\n";
 		}elsif($opnd[$i]=~/^null/||$opnd[$i]=~/^mxcsr/){
-		  ##donothing here;
+		   #do nothing here;
 		}
 		else{
 		  $isa_print_print.="TODO NYI $isa_print_print.=opnd ".$opnd[$i]."\n";
@@ -531,12 +582,6 @@ foreach (keys %isa_operands){
 
 		  #$isa_print_print.='%s%s(%s,%s,%s) ';
 			$total_opnd+=4;
-		}elsif($opnd[$i]=~/^index64_uimm8_simm32$/){
-			my $first;
-			my $second;
-			my $third;
-			$first=$i+3;
-		  $isa_print_print.='%s%s(%s,%s,%s) ';
 		}elsif($res[0]=~/^oindex64_uimm8_simm32$/){
 			my $first;
 			my $second;
@@ -580,9 +625,41 @@ foreach (@tops){
 	$isa_subset_print.="\t".$_.",\n";
 }
 
+my $print_load_only;
+my $print_load_exe;
+my $print_store_only;
+my $print_move_prop;
+my $print_fadd_prop;
+my $print_fsub_prop;
+my $print_fmul_prop;
+my $print_flop_prop;
 print "\navx_properties.cxx:\n";
 foreach (@tops){
 	$isa_properties_print.="\t".$_.",\n";
+	if(type_operation($_) eq "load_only"){
+	  $print_load_only.=$_.",\n";
+	}
+	if(type_operation($_) eq "load_exe"){
+	  $print_load_exe.=$_.",\n";
+	}
+	if(type_operation($_) eq "store_only"){
+	  $print_store_only.=$_.",\n";
+	}
+	if(type_operation($_) eq "move_prop"){
+	  $print_move_prop.=$_.",\n";
+	}
+	if(type_operation($_) eq "fadd_prop"){
+	  $print_fadd_prop.=$_.",\n";
+	}
+	if(type_operation($_) eq "fsub_prop"){
+	  $print_fsub_prop.=$_.",\n";
+	}
+	if(type_operation($_) eq "fmul_prop"){
+	  $print_fmul_prop.=$_.",\n";
+	}
+	if($_=~/float/){
+	  $print_flop_prop.="\t".$_.",\n";
+	}
 }
 
 print "\navx_pack.cxx:\n";
@@ -590,17 +667,33 @@ foreach (@tops){
 	$isa_pack_print.="\t".$_.", 0x000000ff,\n";
 }
 
+
 print "\navx_si.cxx:\n";
 	$isa_si_print.="//TODO should apart these instructions accordingly!\n\n\n";
-	$isa_si_print.="\tInstruction_Group(\""."avx isa"."\",\n";
+	$isa_si_print.="\tInstruction_Group(\""."avx with memory"."\",\n";
 foreach (@tops){
 	#foreach (@{$isa_operands{$_}}){
+	if(access_memory($_)){
 		$isa_si_print.="\t\t".$_.",\n";
+	}
 		#}
 }
 	$isa_si_print.="\t\tTOP_UNDEFINED);\n";
 	$isa_si_print.="Any_Operand_Access_Time(0);\n";
+	$isa_si_print.="Any_Result_Available_Time(4);\n";
+	$isa_si_print.="Resource_Requirement(res_issue, 0);\n";
+	$isa_si_print.="Resource_Requirement(res_fstore, 0);\n";
+	
+$isa_si_print.="\tInstruction_Group(\""."avx arth"."\",\n";
+foreach(@tops){
+	if(!access_memory($_)){
+		$isa_si_print.="\t\t".$_.",\n";
+	}
+}
+	$isa_si_print.="\t\tTOP_UNDEFINED);\n";
+	$isa_si_print.="Any_Operand_Access_Time(0);\n";
 	$isa_si_print.="Any_Result_Available_Time(2);\n";
+	$isa_si_print.="Resource_Requirement(res_fadd, 0);\n";
 	$isa_si_print.="Resource_Requirement(res_issue, 0);\n";
 
 foreach (@tops){
@@ -608,20 +701,58 @@ foreach (@tops){
   $isa_cgemit_avx_print.="OP_Name[".$_."] = \""."$tmp[1]"."\";\n";
 }
 
-fprint("isa_avx.cxx", $isa_isa_print);
-fprint("isa_avx_print.cxx",$isa_print_print);
-fprint("isa_avx_operands.cxx",$isa_operands_print);
-fprint("isa_avx_pack.cxx",$isa_pack_print);
-fprint("isa_avx_subset.cxx",$isa_subset_print);
+#fprint("isa_avx.cxx", $isa_isa_print);
+#fprint("isa_avx_print.cxx",$isa_print_print);
+#fprint("isa_avx_operands.cxx",$isa_operands_print);
+#fprint("isa_avx_pack.cxx",$isa_pack_print);
+#fprint("isa_avx_subset.cxx",$isa_subset_print);
 fprint("avx_si2.cxx", $isa_si_print);
-fprint("isa_avx_properties.cxx",$isa_properties_print);
-fprint("cgemit_targ_avx.cxx", $isa_cgemit_avx_print);
+#fprint("isa_avx_properties.cxx",$isa_properties_print);
+#fprint("cgemit_targ_avx.cxx", $isa_cgemit_avx_print);
 
-copy_to('../src/common/targ_info/isa/x8664/',"isa_avx.cxx");
-copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_print.cxx");
-copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_operands.cxx");
-copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_pack.cxx");
-copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_subset.cxx");
-copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties.cxx");
+#copy_to('../src/common/targ_info/isa/x8664/',"isa_avx.cxx");
+#copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_print.cxx");
+#copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_operands.cxx");
+#copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_pack.cxx");
+#copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_subset.cxx");
+#copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties.cxx");
 copy_to('../src/common/targ_info/proc/x8664/',"avx_si2.cxx");
-copy_to('../src/be/cg/x8664/cgemit_targ_avx.cxx',"cgemit_targ_avx.cxx");
+#copy_to('../src/be/cg/x8664/cgemit_targ_avx.cxx',"cgemit_targ_avx.cxx");
+  
+fprint("isa_avx_properties_load_only.cxx", $print_load_only);
+  fprint("isa_avx_properties_load_exe.cxx", $print_load_exe);
+  fprint("isa_avx_properties_store_only.cxx", $print_store_only);
+  fprint("isa_avx_properties_move_prop.cxx", $print_move_prop);
+  fprint("isa_avx_properties_fadd_prop.cxx", $print_fadd_prop);
+  fprint("isa_avx_properties_fsub_prop.cxx", $print_fsub_prop);
+  fprint("isa_avx_properties_fmul_prop.cxx", $print_fmul_prop);
+  fprint("isa_avx_properties_flop_prop.cxx", $print_flop_prop);
+  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_load_only.cxx");
+  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_load_exe.cxx");
+  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_store_only.cxx");
+  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_move_prop.cxx");
+  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_fadd_prop.cxx");
+  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_fsub_prop.cxx");
+  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_fmul_prop.cxx");
+  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_flop_prop.cxx");
+
+#sub copy_to_property{
+	#fprint("isa_avx_properties_load_only.cxx", $print_load_only);
+	# fprint("isa_avx_properties_load_exe.cxx", $print_load_exe);
+#  fprint("isa_avx_properties_store_only.cxx", $print_store_only);
+#  fprint("isa_avx_properties_move_prop.cxx", $print_move_prop);
+#  fprint("isa_avx_properties_fadd_prop.cxx", $print_fadd_prop);
+#  fprint("isa_avx_properties_fsub_prop.cxx", $print_fsub_prop);
+#  fprint("isa_avx_properties_fmul_prop.cxx", $print_fmul_prop);
+#  fprint("isa_avx_properties_flop_prop.cxx", $print_flop_prop);
+#  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_load_only.cxx");
+#  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_load_exe.cxx");
+#  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_store_only.cxx");
+#  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_move_prop.cxx");
+#  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_fadd_prop.cxx");
+#  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_fsub_prop.cxx");
+#  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_fmul_prop.cxx");
+#  copy_to('../src/common/targ_info/isa/x8664/',"sa_avx_properties_flop_prop.cxx");
+#}
+
+#copy_to_property();
