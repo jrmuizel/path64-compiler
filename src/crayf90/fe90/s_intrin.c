@@ -19031,6 +19031,8 @@ void    reshape_intrinsic(opnd_type     *result_opnd,
    boolean        fold_it;
    boolean        optimize =		TRUE;
    boolean        ok;
+   boolean        order_chk[MAX_NUM_DIMS];
+   boolean        order_ok = TRUE;
    long64	  vv;
    int		  valu1;
    long		  valu2;
@@ -19315,6 +19317,107 @@ void    reshape_intrinsic(opnd_type     *result_opnd,
                   arg_info_list[info_idx4].col);
          fold_it = FALSE;
          optimize = FALSE;
+      }
+
+      if (OPND_FLD(arg_info_list[info_idx4].ed.shape[0]) == IR_Tbl_Idx) {
+         PRINTMSG(arg_info_list[info_idx4].line, 1106, Error, 
+                  arg_info_list[info_idx4].col);
+   
+         res_exp_desc->rank = 0;
+         fold_it = FALSE;
+         optimize = FALSE;
+      }
+      else {
+         if (arg_info_list[info_idx4].ed.foldable) {
+	    /* Check that the number of values in ORDER is correct */
+	    if ( CN_INT_TO_C(OPND_IDX(arg_info_list[info_idx4].ed.shape[0])) != res_exp_desc->rank ) {
+                  PRINTMSG(arg_info_list[info_idx4].line, 1708, Error,
+                           arg_info_list[info_idx4].col);
+   
+                  fold_it = FALSE;
+                  optimize = FALSE;
+	    } else {
+               /* check that each element is > 0  and <= size(shape) */
+               /* and that it is a permutation of those values. */
+   
+               attr_idx = find_base_attr(&IL_OPND(list_idx4), &line, &col);
+   
+# ifdef _DEBUG
+               if (attr_idx == NULL_IDX ||
+                   AT_OBJ_CLASS(attr_idx) != Data_Obj ||
+                   ATD_CLASS(attr_idx) != Compiler_Tmp ||
+                   ATD_FLD(attr_idx) != CN_Tbl_Idx ||
+                   ATD_TMP_IDX(attr_idx) == NULL_IDX) {
+   
+                  PRINTMSG(arg_info_list[info_idx4].line, 626, Internal,
+                        arg_info_list[info_idx4].col,
+                        "array constant", "reshape_intrinsic");
+               }
+# endif
+   
+               NTR_IR_TBL(sub_idx);
+               IR_OPR(sub_idx) = Subscript_Opr;
+               IR_TYPE_IDX(sub_idx) = ATD_TYPE_IDX(attr_idx);
+               IR_LINE_NUM(sub_idx) = line;
+               IR_COL_NUM(sub_idx) = col;
+   
+               IR_FLD_L(sub_idx) = AT_Tbl_Idx;
+               IR_IDX_L(sub_idx) = attr_idx;
+   
+               IR_FLD_R(sub_idx) = IL_Tbl_Idx;
+               IR_LIST_CNT_R(sub_idx) = 1;
+               NTR_IR_LIST_TBL(list_idx);
+   
+               IR_IDX_R(sub_idx) = list_idx;
+   
+               IL_FLD(list_idx) = CN_Tbl_Idx;
+   
+               exp_desc = init_exp_desc;
+               exp_desc.type_idx = ATD_TYPE_IDX(attr_idx);
+               exp_desc.type = TYP_TYPE(exp_desc.type_idx);
+               exp_desc.linear_type = TYP_LINEAR(exp_desc.type_idx);
+               exp_desc.foldable = TRUE;
+               exp_desc.constant = TRUE;
+   
+               for (i = 0; i < res_exp_desc->rank; i++) {
+		   order_chk[i] = FALSE;
+               }
+               for (i = 0; i < res_exp_desc->rank; i++) {
+                  IL_IDX(list_idx) = C_INT_TO_CN(CG_INTEGER_DEFAULT_TYPE, i+1);
+   
+                  OPND_FLD(opnd) = IR_Tbl_Idx;
+                  OPND_IDX(opnd) = sub_idx;
+   
+                  ok = fold_aggragate_expression(&opnd, &exp_desc, TRUE);  
+   
+                  if (compare_cn_and_value(OPND_IDX(opnd), 1, Lt_Opr) || compare_cn_and_value(OPND_IDX(opnd), res_exp_desc->rank, Gt_Opr)) {
+                     PRINTMSG(arg_info_list[info_idx4].line, 1708, Error,
+                           arg_info_list[info_idx4].col);
+   
+                     fold_it = FALSE;
+                     optimize = FALSE;
+                     order_ok = FALSE;
+                     break;
+                  }
+	          order_chk[CN_INT_TO_C(OPND_IDX(opnd))-1] = TRUE;
+               }
+	       if (order_ok) {
+		   for (i = 0; i < res_exp_desc->rank; i++) {
+		       if (! order_chk[i]) {
+		         PRINTMSG(arg_info_list[info_idx4].line, 1708, Error,
+			       arg_info_list[info_idx4].col);
+       
+		         fold_it = FALSE;
+		         optimize = FALSE;
+		         break;
+		       }
+		   }
+	       }
+   
+               FREE_IR_NODE(sub_idx);
+               FREE_IR_LIST_NODE(list_idx);
+	    }
+         }
       }
    }
 

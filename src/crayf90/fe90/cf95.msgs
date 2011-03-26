@@ -21871,4 +21871,12 @@ Error :  I/O list cannot contain a procedure pointer
 .PP
 Procedure pointers cannot be read or written in I/O lists
 .ME
-$ LAST NUMBER USED : 1707
+$ Error : 1708
+$msg  1708 The ORDER array for the RESHAPE intrinsic function must contain a permutation of (1, 2, ..., size(SHAPE)).
+$nexp 1708
+Error :  The ORDER array for the RESHAPE intrinsic function must contain a permutation of (1, 2, ..., size(SHAPE)).
+.PP
+The ORDER array for a RESHAPE intrinsic function call must contain
+a permutation of (1, 2, ..., size(SHAPE)).
+.ME
+$ LAST NUMBER USED : 1708
