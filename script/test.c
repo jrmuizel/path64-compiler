@@ -1485,4 +1485,70 @@ int main(){
   printf("%lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
   printf("%f %f %f %f ", D.x[0], D.x[1], D.x[2], D.x[3]);
   printf("%f %f %f %f \n", D.x[5], D.x[6], D.x[7], D.x[8]);
+  
+  C.wi = _mm256_div_pd (A.wi, B.wi);
+  D.wi = _mm256_div_ps (AA.wi, BB.wi);
+  printf("%lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
+  printf("%f %f %f %f ", D.x[0], D.x[1], D.x[2], D.x[3]);
+  printf("%f %f %f %f \n", D.x[5], D.x[6], D.x[7], D.x[8]);
+  
+  C.wi = _mm256_hadd_pd (A.wi, B.wi);
+  D.wi = _mm256_hadd_ps (AA.wi, BB.wi);
+  printf("%lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
+  printf("%f %f %f %f ", D.x[0], D.x[1], D.x[2], D.x[3]);
+  printf("%f %f %f %f \n", D.x[5], D.x[6], D.x[7], D.x[8]);
+  
+  C.wi = _mm256_hsub_pd (A.wi, B.wi);
+  D.wi = _mm256_hsub_ps (AA.wi, BB.wi);
+  printf("%lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
+  printf("%f %f %f %f ", D.x[0], D.x[1], D.x[2], D.x[3]);
+  printf("%f %f %f %f \n", D.x[5], D.x[6], D.x[7], D.x[8]);
+  
+  C.wi = _mm256_max_pd (A.wi, B.wi);
+  D.wi = _mm256_max_ps (AA.wi, BB.wi);
+  printf("%lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
+  printf("%f %f %f %f ", D.x[0], D.x[1], D.x[2], D.x[3]);
+  printf("%f %f %f %f \n", D.x[5], D.x[6], D.x[7], D.x[8]);
+  
+  C.wi = _mm256_min_pd (A.wi, B.wi);
+  D.wi = _mm256_min_ps (AA.wi, BB.wi);
+  printf("%lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
+  printf("%f %f %f %f ", D.x[0], D.x[1], D.x[2], D.x[3]);
+  printf("%f %f %f %f \n", D.x[5], D.x[6], D.x[7], D.x[8]);
+  
+  C.wi = _mm256_mul_pd (A.wi, B.wi);
+  D.wi = _mm256_mul_ps (AA.wi, BB.wi);
+  printf("%lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
+  printf("%f %f %f %f ", D.x[0], D.x[1], D.x[2], D.x[3]);
+  printf("%f %f %f %f \n", D.x[5], D.x[6], D.x[7], D.x[8]);
+  
+  C.wi = _mm256_or_pd (A.wi, B.wi);
+  D.wi = _mm256_or_ps (AA.wi, BB.wi);
+  printf("%lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
+  printf("%f %f %f %f ", D.x[0], D.x[1], D.x[2], D.x[3]);
+  printf("%f %f %f %f \n", D.x[5], D.x[6], D.x[7], D.x[8]);
+  
+  C.wi = _mm256_sub_pd (A.wi, B.wi);
+  D.wi = _mm256_sub_ps (AA.wi, BB.wi);
+  printf("%lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
+  printf("%f %f %f %f ", D.x[0], D.x[1], D.x[2], D.x[3]);
+  printf("%f %f %f %f \n", D.x[5], D.x[6], D.x[7], D.x[8]);
+  
+  C.wi = _mm256_xor_pd (A.wi, B.wi);
+  D.wi = _mm256_xor_ps (AA.wi, BB.wi);
+  printf("%lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
+  printf("%f %f %f %f ", D.x[0], D.x[1], D.x[2], D.x[3]);
+  printf("%f %f %f %f \n", D.x[5], D.x[6], D.x[7], D.x[8]);
+  
+  C.wi = _mm256_unpackhi_pd (A.wi, B.wi);
+  D.wi = _mm256_unpackhi_ps (AA.wi, BB.wi);
+  printf("%lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
+  printf("%f %f %f %f ", D.x[0], D.x[1], D.x[2], D.x[3]);
+  printf("%f %f %f %f \n", D.x[5], D.x[6], D.x[7], D.x[8]);
+
+  C.wi = _mm256_unpacklo_pd (A.wi, B.wi);
+  D.wi = _mm256_unpacklo_ps (AA.wi, BB.wi);
+  printf("%lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
+  printf("%f %f %f %f ", D.x[0], D.x[1], D.x[2], D.x[3]);
+  printf("%f %f %f %f \n", D.x[5], D.x[6], D.x[7], D.x[8]);
 }

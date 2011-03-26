@@ -466,5 +466,5 @@ fprint("expand_avx.cxx",$expand_cxx);
 print $expand_cxx;
 print "\n\n";
 
-copy_all_file();
-#copy_to('../src/be/cg/x8664/',"expand_avx.cxx");
+#copy_all_file();
+copy_to('../src/be/cg/x8664/',"expand_avx.cxx");

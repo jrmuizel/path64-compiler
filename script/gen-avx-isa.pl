@@ -38,7 +38,7 @@ my @ofloat_mem=["ofloat","obase64_simm32", "obase64_index64_uimm8_simm32","oinde
 my @oint32_mem=["oint32","obase64_simm32","obase64_index64_uimm8_simm32","oindex64_uimm8_simm32"];
 my @oint64_mem=["oint64","obase64_simm32","obase64_index64_uimm8_simm32","oindex64_uimm8_simm32"];
 ##opnd(ymm/xmm), opnd(ymm/xmm/mem),result(ymm/xmm) 
-my @vaddp=["vaddpd","vaddps","vaddsubpd","vaddsubps","vandpd","vandnpd","vandps","vandnps","vdivpd","vdivps","vhaddpd","vhaddps","vhsubpd","vhsubps","vmaxpd","vmaxps","vminpd","vminps","vmulpd","vmulps","vorpd","vorps","vsubpd","vsubps","vunpckhpd","vunpcklpd","vunpcklps","vxorpd","vxorps"];
+my @vaddp=["vaddpd","vaddps","vaddsubpd","vaddsubps","vandpd","vandnpd","vandps","vandnps","vdivpd","vdivps","vhaddpd","vhaddps","vhsubpd","vhsubps","vmaxpd","vmaxps","vminpd","vminps","vmulpd","vmulps","vorpd","vorps","vsubpd","vsubps","vunpckhpd","vunpckhps","vunpcklpd","vunpcklps","vxorpd","vxorps"];
 ##opnd(ymm),opnd(ymm/mem), result(ymm)
 my @ymm_ymmomem_to_ymm=["vpermilps"];
 ##opnd(xmm),opnd(xmm/mem), result(xmm)
