@@ -1,9 +1,11 @@
 case INTRN_VSQRTPD256:
+  Build_OP(TOP_vsqrtpd_f256_ofloat_float, result,op0,ops);
 break;
 case INTRN_VBLENDPD256:
   Expand_Intrinsic_Imm_Param(TOP_vblendpd_f256_ofloat_float_float_simm8,result, op0, op1, op2, ops, 5);
 break;
 case INTRN_VPERMILPS128:
+  Expand_Intrinsic_Imm_Opnd2(TOP_vpermilps_f128_ofloat_float_simm8,result,op0,op1,ops,4);
 break;
 case INTRN_VADDSUBPS256:
   Build_OP(TOP_vaddsubps_f256_ofloat_float_float, result, op0, op1, ops);
@@ -12,13 +14,16 @@ case INTRN_VUNPCKLPD256:
   Build_OP(TOP_vunpcklpd_f256_ofloat_float_float, result, op0, op1, ops);
 break;
 case INTRN_VZEROALL256:
+  Build_OP(TOP_vzeroall_null,ops);
 break;
 case INTRN_VCVTTPD2DQ256:
+  Build_OP(TOP_vcvttpd2dq_f256_ofloat_float, result,op0,ops);
 break;
 case INTRN_VINSERTF128D:
   Expand_Intrinsic_Imm_Param(TOP_vinsertf128_f256_ofloat_float_float_simm8,result, op0, op1, op2, ops, 5);
 break;
 case INTRN_VCVTTPS2DQ256:
+  Build_OP(TOP_vcvttps2dq_f256_ofloat_float, result, op0, ops);
 break;
 case INTRN_VMULPS256:
   Build_OP(TOP_vmulps_f256_ofloat_float_float, result, op0, op1, ops);
@@ -27,13 +32,16 @@ case INTRN_VUNPCKHPD256:
   Build_OP(TOP_vunpckhpd_f256_ofloat_float_float, result, op0, op1, ops);
 break;
 case INTRN_VMASKMOVPS128ST:
+  Build_OP(TOP_vmaskmovps_f128_obase64_simm32_float_float, op0,Gen_Literal_TN(0,1),op2,op3,ops);
 break;
 case INTRN_VMOVUPD256:
+  Build_OP(TOP_vmovupd_f256_ofloat_base64_simm32,result,op0,Gen_Literal_TN(0,1), ops);
 break;
 case INTRN_VCMPSD:
   Expand_Intrinsic_Imm_Param(TOP_vcmpsd_f128_ofloat_float_float_simm8,result, op0, op1, op2, ops, 5);
 break;
 case INTRN_VMOVUPS256:
+  Build_OP(TOP_vmovups_f256_ofloat_base64_simm32, result,op0,Gen_Literal_TN(0,1),ops);
 break;
 case INTRN_VSUBPS256:
   Build_OP(TOP_vsubps_f256_ofloat_float_float, result, op0, op1, ops);

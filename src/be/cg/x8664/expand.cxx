@@ -6554,6 +6554,41 @@ void Expand_Intrinsic_Imm_Param5(TOP opc, struct tn* result, struct tn *op0,
 		 }
 }
 
+void Expand_Intrinsic_Imm_Opnd2(TOP opc, struct tn* result, struct tn *op0,
+										struct tn *op1, OPS *ops, int op_count)
+{
+  //TODO actually this is not a good way to handle immediate of param
+	   if(TN_is_constant(op1))
+		   Build_OP(opc, result, op0, op1, ops);
+	   else
+	   {
+		   OP *op = NULL;
+		   TN *tn;
+		   int tick_count = 0;
+		   FOR_ALL_OPS_OPs_REV(ops, op)
+		   {
+			   tick_count++;
+			   if(tick_count == op_count)
+				   break;
+		   }
+		   if(tick_count == op_count)
+		   {
+		   	   if(TN_is_constant(OP_opnd(op,0)))
+		   	   {
+			     tn = Gen_Literal_TN( TN_value(OP_opnd(op, 0)), 1);
+			     Build_OP(opc, result, op0, tn, ops);
+		   	   }
+			   else
+			   	Build_OP(opc, result, op0, Gen_Literal_TN(0,1), ops);
+		   }
+		   else
+		   {
+			   tn = Gen_Literal_TN(0, 1);
+			   Build_OP(opc, result, op0,tn, ops);
+		   }
+	   }
+}
+
 
 void Expand_Intrinsic_Imm_Param(TOP opc, struct tn* result, struct tn *op0,
 										struct tn *op1, struct tn *op2, OPS *ops, int op_count)
@@ -8249,6 +8284,11 @@ Exp_Intrinsic_Call (WN *intrncall, TN *op0, TN *op1, TN *op2,
   case INTRN_LOCK_TEST_AND_SET_I4:
   case INTRN_LOCK_TEST_AND_SET_I8:
     return Exp_Lock_Test_and_Set(op0, op1, WN_rtype(intrncall), ops);
+
+  /*avx*/
+  case INTRN_VMASKMOVPS128ST:
+  Build_OP(TOP_vmaskmovps_f128_obase64_simm32_float_float, op1,op2,op0,Gen_Literal_TN(0,1),ops);
+  break;
 
   default:  
     FmtAssert(FALSE, ("Exp_Intrinsic_Call: unimplemented"));

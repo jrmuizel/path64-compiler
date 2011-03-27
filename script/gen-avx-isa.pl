@@ -119,7 +119,7 @@ my @xmmomem_imm_to_xmm=["vpcmpestri","vpcmpestrm","vpcmpistri","vpcmpistrm","vpe
 ## opnd(ymm/mem),opnd(imm8),result(ymm)
 my @ymmomem_imm_to_ymm=["vpermilpd","vpermilps"];
 ## opnd(ymm/mem),result(ymm)
-my @vbroadcast256=["vbroadcastss","vbroadcastsd", "vbroadcastf128","vmovapd","vtestps","vtestpd","vrcpps","vrsqrtps","vsqrtpd","vsqrtps","vcvtdq2ps256","vcvtps2dq","vcvttpd2dq","vcvttps2dq","vmovaps","vmovdqa","vmovdqu"];
+my @vbroadcast256=["vbroadcastss","vbroadcastsd", "vbroadcastf128","vmovapd","vtestps","vtestpd","vrcpps","vrsqrtps","vsqrtpd","vsqrtps","vcvtdq2ps256","vcvtps2dq","vcvttpd2dq","vcvttps2dq","vmovaps","vmovdqa","vmovdqu","vmovddup","vmovshdup","vmovsldup","vmovupd","vmovups"];
 ## opnd(xmm/mem),result(xmm)
 my @vcomisd=["vcomisd","vcomiss","vcvtdq2pd","vcvtdq2ps","vcvtpd2ps","vcvtps2dq","vcvtps2pd","vcvttpd2dq","vcvttps2dq","vmovapd","vmovaps","vmovq","vmovdqa","vmovdqu","vmovddup","vmovshdup","vmovsldup","vmovupd","vmovups","vpabsb","vpabsw","vpabsd","vbroadcastss","vphminposuw","vpmovsxbw","vpmovsxbd","vpmovzxbw","vpmovzxbd","vtestps","vtestpd","vrcpps","vrsqrtps","vsqrtpd","vsqrtps","vucomisd","vucomiss"];
 ## opnd(xmm/mem),result(ymm)
@@ -701,23 +701,23 @@ foreach (@tops){
   $isa_cgemit_avx_print.="OP_Name[".$_."] = \""."$tmp[1]"."\";\n";
 }
 
-#fprint("isa_avx.cxx", $isa_isa_print);
-#fprint("isa_avx_print.cxx",$isa_print_print);
-#fprint("isa_avx_operands.cxx",$isa_operands_print);
-#fprint("isa_avx_pack.cxx",$isa_pack_print);
-#fprint("isa_avx_subset.cxx",$isa_subset_print);
+fprint("isa_avx.cxx", $isa_isa_print);
+fprint("isa_avx_print.cxx",$isa_print_print);
+fprint("isa_avx_operands.cxx",$isa_operands_print);
+fprint("isa_avx_pack.cxx",$isa_pack_print);
+fprint("isa_avx_subset.cxx",$isa_subset_print);
 fprint("avx_si2.cxx", $isa_si_print);
-#fprint("isa_avx_properties.cxx",$isa_properties_print);
-#fprint("cgemit_targ_avx.cxx", $isa_cgemit_avx_print);
+fprint("isa_avx_properties.cxx",$isa_properties_print);
+fprint("cgemit_targ_avx.cxx", $isa_cgemit_avx_print);
 
-#copy_to('../src/common/targ_info/isa/x8664/',"isa_avx.cxx");
-#copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_print.cxx");
-#copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_operands.cxx");
-#copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_pack.cxx");
-#copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_subset.cxx");
-#copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties.cxx");
+copy_to('../src/common/targ_info/isa/x8664/',"isa_avx.cxx");
+copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_print.cxx");
+copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_operands.cxx");
+copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_pack.cxx");
+copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_subset.cxx");
+copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties.cxx");
 copy_to('../src/common/targ_info/proc/x8664/',"avx_si2.cxx");
-#copy_to('../src/be/cg/x8664/cgemit_targ_avx.cxx',"cgemit_targ_avx.cxx");
+copy_to('../src/be/cg/x8664/cgemit_targ_avx.cxx',"cgemit_targ_avx.cxx");
   
 fprint("isa_avx_properties_load_only.cxx", $print_load_only);
   fprint("isa_avx_properties_load_exe.cxx", $print_load_exe);
