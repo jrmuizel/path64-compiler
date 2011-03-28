@@ -1,3 +1,18 @@
+ISA_PRINT_TYPE ofloat_base64_index64_uimm8_simm32_float = ISA_Print_Type_Create("ofloat_base64_index64_uimm8_simm32_float",
+"%s %s%s(%s,%s,%s) ,%s ,%s");
+Name();
+Operand(4);
+Segment();
+Operand(3);
+Operand(0);
+Operand(1);
+Operand(2);
+Result(0);
+	Instruction_Print_Group(ofloat_base64_index64_uimm8_simm32_float,
+		TOP_vmovlps_f128_ofloat_base64_index64_uimm8_simm32_float,
+		TOP_UNDEFINED);
+
+
 ISA_PRINT_TYPE obase64_simm32_float = ISA_Print_Type_Create("obase64_simm32_float",
 "%s %s ,%s%s(%s) ");
 Name();
@@ -28,25 +43,6 @@ Operand(1);
 		TOP_vmovdqu_f256_obase64_simm32_float,
 		TOP_vmovupd_f256_obase64_simm32_float,
 		TOP_vmovups_f256_obase64_simm32_float,
-		TOP_UNDEFINED);
-
-
-ISA_PRINT_TYPE ofloat_base64_index64_uimm8_simm32_float = ISA_Print_Type_Create("ofloat_base64_index64_uimm8_simm32_float",
-"%s %s%s(%s,%s,%s) ,%s ,%s");
-Name();
-Operand(4);
-Segment();
-Operand(3);
-Operand(0);
-Operand(1);
-Operand(2);
-Result(0);
-	Instruction_Print_Group(ofloat_base64_index64_uimm8_simm32_float,
-		TOP_vmaskmovps_f128_ofloat_base64_index64_uimm8_simm32_float,
-		TOP_vmaskmovps_f256_ofloat_base64_index64_uimm8_simm32_float,
-		TOP_vmaskmovpd_f128_ofloat_base64_index64_uimm8_simm32_float,
-		TOP_vmaskmovpd_f256_ofloat_base64_index64_uimm8_simm32_float,
-		TOP_vmovlps_f128_ofloat_base64_index64_uimm8_simm32_float,
 		TOP_UNDEFINED);
 
 
@@ -115,6 +111,21 @@ Result(0);
 		TOP_vcvtss2si_int32_oint32_base64_simm32,
 		TOP_vcvttsd2si_int32_oint32_base64_simm32,
 		TOP_vcvttss2si_int32_oint32_base64_simm32,
+		TOP_UNDEFINED);
+
+
+ISA_PRINT_TYPE oint32rflag_float_base64_simm32 = ISA_Print_Type_Create("oint32rflag_float_base64_simm32",
+"%s %s ,%s%s(%s) ");
+Name();
+Segment();
+Operand(2);
+Operand(1);
+Operand(0);
+	Instruction_Print_Group(oint32rflag_float_base64_simm32,
+		TOP_vtestps_f256_oint32rflag_float_base64_simm32,
+		TOP_vtestpd_f256_oint32rflag_float_base64_simm32,
+		TOP_vtestps_f128_oint32rflag_float_base64_simm32,
+		TOP_vtestpd_f128_oint32rflag_float_base64_simm32,
 		TOP_UNDEFINED);
 
 
@@ -309,6 +320,10 @@ Result(0);
 		TOP_vcvtsi2ss_int32_ofloat_float_base64_index64_uimm8_simm32,
 		TOP_vcvtsi2sd_int64_ofloat_float_base64_index64_uimm8_simm32,
 		TOP_vcvtsi2ss_int64_ofloat_float_base64_index64_uimm8_simm32,
+		TOP_vmaskmovps_f128_ofloat_float_base64_index64_uimm8_simm32,
+		TOP_vmaskmovps_f256_ofloat_float_base64_index64_uimm8_simm32,
+		TOP_vmaskmovpd_f128_ofloat_float_base64_index64_uimm8_simm32,
+		TOP_vmaskmovpd_f256_ofloat_float_base64_index64_uimm8_simm32,
 		TOP_vmovlpd_f128_ofloat_float_base64_index64_uimm8_simm32,
 		TOP_vpermilps_f256_ofloat_float_base64_index64_uimm8_simm32,
 		TOP_UNDEFINED);
@@ -427,8 +442,8 @@ Operand(2);
 Operand(3);
 Operand(4);
 	Instruction_Print_Group(obase64_index64_uimm8_simm32_float_simm8,
-		TOP_vextractps_f256_obase64_index64_uimm8_simm32_float_simm8,
-		TOP_f128_obase64_index64_uimm8_simm32_float_simm8,
+		TOP_vextractf128_f256_obase64_index64_uimm8_simm32_float_simm8,
+		TOP_vextractps_f128_obase64_index64_uimm8_simm32_float_simm8,
 		TOP_vpextrb_mem_obase64_index64_uimm8_simm32_float_simm8,
 		TOP_UNDEFINED);
 
@@ -476,6 +491,19 @@ Result(0);
 		TOP_vpinsrb_f128_ofloat_float_int32_simm8,
 		TOP_vpinsrw_f128_ofloat_float_int32_simm8,
 		TOP_vpinsrd_f128_ofloat_float_int32_simm8,
+		TOP_UNDEFINED);
+
+
+ISA_PRINT_TYPE oint32rflag_float_float = ISA_Print_Type_Create("oint32rflag_float_float",
+"%s %s ,%s ");
+Name();
+Operand(1);
+Operand(0);
+	Instruction_Print_Group(oint32rflag_float_float,
+		TOP_vtestps_f256_oint32rflag_float_float,
+		TOP_vtestpd_f256_oint32rflag_float_float,
+		TOP_vtestps_f128_oint32rflag_float_float,
+		TOP_vtestpd_f128_oint32rflag_float_float,
 		TOP_UNDEFINED);
 
 
@@ -540,8 +568,6 @@ Result(0);
 		TOP_vbroadcastsd_f256_ofloat_base64_simm32,
 		TOP_vbroadcastf128_f256_ofloat_base64_simm32,
 		TOP_vmovapd_f256_ofloat_base64_simm32,
-		TOP_vtestps_f256_ofloat_base64_simm32,
-		TOP_vtestpd_f256_ofloat_base64_simm32,
 		TOP_vrcpps_f256_ofloat_base64_simm32,
 		TOP_vrsqrtps_f256_ofloat_base64_simm32,
 		TOP_vsqrtpd_f256_ofloat_base64_simm32,
@@ -586,8 +612,6 @@ Result(0);
 		TOP_vpmovsxbd_f128_ofloat_base64_simm32,
 		TOP_vpmovzxbw_f128_ofloat_base64_simm32,
 		TOP_vpmovzxbd_f128_ofloat_base64_simm32,
-		TOP_vtestps_f128_ofloat_base64_simm32,
-		TOP_vtestpd_f128_ofloat_base64_simm32,
 		TOP_vrcpps_f128_ofloat_base64_simm32,
 		TOP_vrsqrtps_f128_ofloat_base64_simm32,
 		TOP_vsqrtpd_f128_ofloat_base64_simm32,
@@ -680,10 +704,6 @@ Operand(0);
 Operand(1);
 Result(0);
 	Instruction_Print_Group(ofloat_index64_uimm8_simm32_float,
-		TOP_vmaskmovps_f128_ofloat_index64_uimm8_simm32_float,
-		TOP_vmaskmovps_f256_ofloat_index64_uimm8_simm32_float,
-		TOP_vmaskmovpd_f128_ofloat_index64_uimm8_simm32_float,
-		TOP_vmaskmovpd_f256_ofloat_index64_uimm8_simm32_float,
 		TOP_vmovlps_f128_ofloat_index64_uimm8_simm32_float,
 		TOP_UNDEFINED);
 
@@ -861,6 +881,10 @@ Result(0);
 		TOP_vcvtsi2ss_int32_ofloat_float_base64_simm32,
 		TOP_vcvtsi2sd_int64_ofloat_float_base64_simm32,
 		TOP_vcvtsi2ss_int64_ofloat_float_base64_simm32,
+		TOP_vmaskmovps_f128_ofloat_float_base64_simm32,
+		TOP_vmaskmovps_f256_ofloat_float_base64_simm32,
+		TOP_vmaskmovpd_f128_ofloat_float_base64_simm32,
+		TOP_vmaskmovpd_f256_ofloat_float_base64_simm32,
 		TOP_vmovlpd_f128_ofloat_float_base64_simm32,
 		TOP_vpermilps_f256_ofloat_float_base64_simm32,
 		TOP_UNDEFINED);
@@ -887,9 +911,26 @@ Segment();
 Operand(3);
 Operand(2);
 	Instruction_Print_Group(obase64_simm32_float_simm8,
-		TOP_vextractps_f256_obase64_simm32_float_simm8,
-		TOP_f128_obase64_simm32_float_simm8,
+		TOP_vextractf128_f256_obase64_simm32_float_simm8,
+		TOP_vextractps_f128_obase64_simm32_float_simm8,
 		TOP_vpextrb_mem_obase64_simm32_float_simm8,
+		TOP_UNDEFINED);
+
+
+ISA_PRINT_TYPE oint32rflag_float_base64_index64_uimm8_simm32 = ISA_Print_Type_Create("oint32rflag_float_base64_index64_uimm8_simm32",
+"%s %s ,%s%s(%s,%s,%s) ");
+Name();
+Segment();
+Operand(4);
+Operand(1);
+Operand(2);
+Operand(3);
+Operand(0);
+	Instruction_Print_Group(oint32rflag_float_base64_index64_uimm8_simm32,
+		TOP_vtestps_f256_oint32rflag_float_base64_index64_uimm8_simm32,
+		TOP_vtestpd_f256_oint32rflag_float_base64_index64_uimm8_simm32,
+		TOP_vtestps_f128_oint32rflag_float_base64_index64_uimm8_simm32,
+		TOP_vtestpd_f128_oint32rflag_float_base64_index64_uimm8_simm32,
 		TOP_UNDEFINED);
 
 
@@ -906,8 +947,6 @@ Result(0);
 		TOP_vbroadcastsd_f256_ofloat_index64_uimm8_simm32,
 		TOP_vbroadcastf128_f256_ofloat_index64_uimm8_simm32,
 		TOP_vmovapd_f256_ofloat_index64_uimm8_simm32,
-		TOP_vtestps_f256_ofloat_index64_uimm8_simm32,
-		TOP_vtestpd_f256_ofloat_index64_uimm8_simm32,
 		TOP_vrcpps_f256_ofloat_index64_uimm8_simm32,
 		TOP_vrsqrtps_f256_ofloat_index64_uimm8_simm32,
 		TOP_vsqrtpd_f256_ofloat_index64_uimm8_simm32,
@@ -952,8 +991,6 @@ Result(0);
 		TOP_vpmovsxbd_f128_ofloat_index64_uimm8_simm32,
 		TOP_vpmovzxbw_f128_ofloat_index64_uimm8_simm32,
 		TOP_vpmovzxbd_f128_ofloat_index64_uimm8_simm32,
-		TOP_vtestps_f128_ofloat_index64_uimm8_simm32,
-		TOP_vtestpd_f128_ofloat_index64_uimm8_simm32,
 		TOP_vrcpps_f128_ofloat_index64_uimm8_simm32,
 		TOP_vrsqrtps_f128_ofloat_index64_uimm8_simm32,
 		TOP_vsqrtpd_f128_ofloat_index64_uimm8_simm32,
@@ -995,7 +1032,7 @@ Operand(1);
 Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_float_simm8,
-		TOP_vextractps_f256_ofloat_float_simm8,
+		TOP_vextractf128_f256_ofloat_float_simm8,
 		TOP_vpcmpestri_f128_ofloat_float_simm8,
 		TOP_vpcmpestrm_f128_ofloat_float_simm8,
 		TOP_vpcmpistri_f128_ofloat_float_simm8,
@@ -1042,8 +1079,6 @@ Result(0);
 		TOP_vbroadcastsd_f256_ofloat_base64_index64_uimm8_simm32,
 		TOP_vbroadcastf128_f256_ofloat_base64_index64_uimm8_simm32,
 		TOP_vmovapd_f256_ofloat_base64_index64_uimm8_simm32,
-		TOP_vtestps_f256_ofloat_base64_index64_uimm8_simm32,
-		TOP_vtestpd_f256_ofloat_base64_index64_uimm8_simm32,
 		TOP_vrcpps_f256_ofloat_base64_index64_uimm8_simm32,
 		TOP_vrsqrtps_f256_ofloat_base64_index64_uimm8_simm32,
 		TOP_vsqrtpd_f256_ofloat_base64_index64_uimm8_simm32,
@@ -1088,8 +1123,6 @@ Result(0);
 		TOP_vpmovsxbd_f128_ofloat_base64_index64_uimm8_simm32,
 		TOP_vpmovzxbw_f128_ofloat_base64_index64_uimm8_simm32,
 		TOP_vpmovzxbd_f128_ofloat_base64_index64_uimm8_simm32,
-		TOP_vtestps_f128_ofloat_base64_index64_uimm8_simm32,
-		TOP_vtestpd_f128_ofloat_base64_index64_uimm8_simm32,
 		TOP_vrcpps_f128_ofloat_base64_index64_uimm8_simm32,
 		TOP_vrsqrtps_f128_ofloat_base64_index64_uimm8_simm32,
 		TOP_vsqrtpd_f128_ofloat_base64_index64_uimm8_simm32,
@@ -1176,8 +1209,6 @@ Result(0);
 		TOP_vbroadcastsd_f256_ofloat_float,
 		TOP_vbroadcastf128_f256_ofloat_float,
 		TOP_vmovapd_f256_ofloat_float,
-		TOP_vtestps_f256_ofloat_float,
-		TOP_vtestpd_f256_ofloat_float,
 		TOP_vrcpps_f256_ofloat_float,
 		TOP_vrsqrtps_f256_ofloat_float,
 		TOP_vsqrtpd_f256_ofloat_float,
@@ -1222,8 +1253,6 @@ Result(0);
 		TOP_vpmovsxbd_f128_ofloat_float,
 		TOP_vpmovzxbw_f128_ofloat_float,
 		TOP_vpmovzxbd_f128_ofloat_float,
-		TOP_vtestps_f128_ofloat_float,
-		TOP_vtestpd_f128_ofloat_float,
 		TOP_vrcpps_f128_ofloat_float,
 		TOP_vrsqrtps_f128_ofloat_float,
 		TOP_vsqrtpd_f128_ofloat_float,
@@ -1249,8 +1278,8 @@ Operand(4);
 Operand(2);
 Operand(3);
 	Instruction_Print_Group(oindex64_uimm8_simm32_float_simm8,
-		TOP_vextractps_f256_oindex64_uimm8_simm32_float_simm8,
-		TOP_f128_oindex64_uimm8_simm32_float_simm8,
+		TOP_vextractf128_f256_oindex64_uimm8_simm32_float_simm8,
+		TOP_vextractps_f128_oindex64_uimm8_simm32_float_simm8,
 		TOP_vpextrb_mem_oindex64_uimm8_simm32_float_simm8,
 		TOP_UNDEFINED);
 
@@ -1264,6 +1293,22 @@ Result(0);
 	Instruction_Print_Group(ofloat_float_int32,
 		TOP_vcvtsi2sd_int32_ofloat_float_int32,
 		TOP_vcvtsi2ss_int32_ofloat_float_int32,
+		TOP_UNDEFINED);
+
+
+ISA_PRINT_TYPE oint32rflag_float_index64_uimm8_simm32 = ISA_Print_Type_Create("oint32rflag_float_index64_uimm8_simm32",
+"%s %s ,%s%s(,%s,%s) ");
+Name();
+Segment();
+Operand(3);
+Operand(1);
+Operand(2);
+Operand(0);
+	Instruction_Print_Group(oint32rflag_float_index64_uimm8_simm32,
+		TOP_vtestps_f256_oint32rflag_float_index64_uimm8_simm32,
+		TOP_vtestpd_f256_oint32rflag_float_index64_uimm8_simm32,
+		TOP_vtestps_f128_oint32rflag_float_index64_uimm8_simm32,
+		TOP_vtestpd_f128_oint32rflag_float_index64_uimm8_simm32,
 		TOP_UNDEFINED);
 
 
@@ -1328,10 +1373,6 @@ Operand(1);
 Operand(0);
 Result(0);
 	Instruction_Print_Group(ofloat_base64_simm32_float,
-		TOP_vmaskmovps_f128_ofloat_base64_simm32_float,
-		TOP_vmaskmovps_f256_ofloat_base64_simm32_float,
-		TOP_vmaskmovpd_f128_ofloat_base64_simm32_float,
-		TOP_vmaskmovpd_f256_ofloat_base64_simm32_float,
 		TOP_vmovlps_f128_ofloat_base64_simm32_float,
 		TOP_UNDEFINED);
 
@@ -1623,6 +1664,7 @@ Result(0);
 		TOP_vmovlhps_f128_ofloat_float_float,
 		TOP_vmovsd_f128_ofloat_float_float,
 		TOP_vmovss_f128_ofloat_float_float,
+		TOP_vpermilpd_f128_ofloat_float_float,
 		TOP_vpermilps_f256_ofloat_float_float,
 		TOP_UNDEFINED);
 
@@ -1654,6 +1696,54 @@ Operand(4);
 		TOP_vmaskmovps_f256_obase64_index64_uimm8_simm32_float_float,
 		TOP_vmaskmovpd_f128_obase64_index64_uimm8_simm32_float_float,
 		TOP_vmaskmovpd_f256_obase64_index64_uimm8_simm32_float_float,
+		TOP_UNDEFINED);
+
+
+ISA_PRINT_TYPE ofloat_float_index64_uimm8_simm32_simm8 = ISA_Print_Type_Create("ofloat_float_index64_uimm8_simm32_simm8",
+"%s %s ,%s%s(,%s,%s) ,%s ,%s");
+Name();
+Operand(4);
+Segment();
+Operand(3);
+Operand(1);
+Operand(2);
+Operand(0);
+Result(0);
+	Instruction_Print_Group(ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vblendpd_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vblendpd_f256_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vblendps_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vblendps_f256_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vcmppd_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vcmppd_f256_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vcmpps_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vcmpps_f256_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vdpps_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vdpps_f256_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vroundpd_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vroundpd_f256_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vroundps_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vroundps_f256_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vshufpd_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vshufpd_f256_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vshufps_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vshufps_f256_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vcmpsd_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vcmpss_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vdppd_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vinsertf128_f256_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vinsertps_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vmpsadbw_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vpalignr_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vpblendw_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vpclmulqdq_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vroundsd_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vroundss_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vperm2f128_f256_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vpinsrb_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vpinsrw_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vpinsrd_f128_ofloat_float_index64_uimm8_simm32_simm8,
+		TOP_vpinsrq_f128_ofloat_float_index64_uimm8_simm32_simm8,
 		TOP_UNDEFINED);
 
 
@@ -1831,56 +1921,12 @@ Result(0);
 		TOP_vcvtsi2ss_int32_ofloat_float_index64_uimm8_simm32,
 		TOP_vcvtsi2sd_int64_ofloat_float_index64_uimm8_simm32,
 		TOP_vcvtsi2ss_int64_ofloat_float_index64_uimm8_simm32,
+		TOP_vmaskmovps_f128_ofloat_float_index64_uimm8_simm32,
+		TOP_vmaskmovps_f256_ofloat_float_index64_uimm8_simm32,
+		TOP_vmaskmovpd_f128_ofloat_float_index64_uimm8_simm32,
+		TOP_vmaskmovpd_f256_ofloat_float_index64_uimm8_simm32,
 		TOP_vmovlpd_f128_ofloat_float_index64_uimm8_simm32,
 		TOP_vpermilps_f256_ofloat_float_index64_uimm8_simm32,
-		TOP_UNDEFINED);
-
-
-ISA_PRINT_TYPE ofloat_float_index64_uimm8_simm32_simm8 = ISA_Print_Type_Create("ofloat_float_index64_uimm8_simm32_simm8",
-"%s %s ,%s%s(,%s,%s) ,%s ,%s");
-Name();
-Operand(4);
-Segment();
-Operand(3);
-Operand(1);
-Operand(2);
-Operand(0);
-Result(0);
-	Instruction_Print_Group(ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vblendpd_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vblendpd_f256_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vblendps_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vblendps_f256_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vcmppd_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vcmppd_f256_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vcmpps_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vcmpps_f256_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vdpps_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vdpps_f256_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vroundpd_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vroundpd_f256_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vroundps_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vroundps_f256_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vshufpd_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vshufpd_f256_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vshufps_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vshufps_f256_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vcmpsd_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vcmpss_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vdppd_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vinsertf128_f256_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vinsertps_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vmpsadbw_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vpalignr_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vpblendw_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vpclmulqdq_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vroundsd_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vroundss_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vperm2f128_f256_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vpinsrb_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vpinsrw_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vpinsrd_f128_ofloat_float_index64_uimm8_simm32_simm8,
-		TOP_vpinsrq_f128_ofloat_float_index64_uimm8_simm32_simm8,
 		TOP_UNDEFINED);
 
 
@@ -1936,6 +1982,19 @@ Operand(3);
 		TOP_UNDEFINED);
 
 
+ISA_PRINT_TYPE oint32_float_simm8 = ISA_Print_Type_Create("oint32_float_simm8",
+"%s %s ,%s ,%s");
+Name();
+Operand(1);
+Operand(0);
+Result(0);
+	Instruction_Print_Group(oint32_float_simm8,
+		TOP_vextractps_f128_oint32_float_simm8,
+		TOP_vpextrb_int32_oint32_float_simm8,
+		TOP_vpextrw_int32_oint32_float_simm8,
+		TOP_UNDEFINED);
+
+
 ISA_PRINT_TYPE ofloat_float_base64_index64_uimm8_simm32_float = ISA_Print_Type_Create("ofloat_float_base64_index64_uimm8_simm32_float",
 "%s %s ,%s%s(%s,%s,%s) ,%s ,%s");
 Name();
@@ -1953,19 +2012,6 @@ Result(0);
 		TOP_vblendvps_f128_ofloat_float_base64_index64_uimm8_simm32_float,
 		TOP_vblendvps_f256_ofloat_float_base64_index64_uimm8_simm32_float,
 		TOP_vpblendvb_f128_ofloat_float_base64_index64_uimm8_simm32_float,
-		TOP_UNDEFINED);
-
-
-ISA_PRINT_TYPE oint32_float_simm8 = ISA_Print_Type_Create("oint32_float_simm8",
-"%s %s ,%s ,%s");
-Name();
-Operand(1);
-Operand(0);
-Result(0);
-	Instruction_Print_Group(oint32_float_simm8,
-		TOP_f128_oint32_float_simm8,
-		TOP_vpextrb_int32_oint32_float_simm8,
-		TOP_vpextrw_int32_oint32_float_simm8,
 		TOP_UNDEFINED);
 
 

@@ -412,6 +412,7 @@ main()
 		     TOP_bsf64,
 		     TOP_bsr32,
 		     TOP_bsr64,
+#include "isa_avx_properties_change_rflags.cxx"
                      TOP_UNDEFINED);
 
   /* ===== Move operator ====== */

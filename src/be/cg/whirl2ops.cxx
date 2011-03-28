@@ -3909,6 +3909,14 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
 		case INTRN_EXTRACTPS:
 		/*avx*/
 		case INTRN_VPERMILPS128:
+		case INTRN_VEXTRACTF128D:
+		case INTRN_VPERMILPD128:
+		case INTRN_VPERMILPD256:
+		case INTRN_VPERMILPS256:
+		case INTRN_VROUNDPD256:
+		case INTRN_VROUNDPS256:
+		case INTRN_VEXTRACTF128S:
+		case INTRN_VEXTRACTF128I:
 		{
 			WN *wn_para1 = WN_kid0 (WN_kid1 (expr));
 			if(WN_operator(wn_para1) == OPR_INTCONST)

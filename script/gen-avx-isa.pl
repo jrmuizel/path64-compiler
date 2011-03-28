@@ -30,23 +30,23 @@ sub access_memory{
 sub type_operation{
 	my($top_instr)=@_;
 	if($top_instr=~/obase64_simm32/ || $top_instr=~/obase64_index64_uimm8_simm32/ || $top_instr=~/oindex64_uimm8_simm32/){
-		print "match store".$top_instr."\n";
+		#print "match store".$top_instr."\n";
 	    return "store_only";
 		  #die "fuck that isa".$top_instr;
 		  #return 0;
 	}
 	elsif($top_instr=~/base64_simm32/ || $top_instr=~/base64_index64_uimm8_simm32/ || $top_instr=~/index64_uimm8_simm32/){
-	  print "load  ".$top_instr."\n";
+	  #print "load  ".$top_instr."\n";
 	  if($top_instr=~/mov/){
 	    return "load_only";
   	  }else{
 	    return "load_exe";
 	  }
-  	}
+  }
 	else{
-	  print "else fuck".$top_instr."\n";
+	  #print "else fuck".$top_instr."\n";
 	  if($top_instr=~/mov/){
-		  print "fuck move".$top_instr."\n";
+		  #print "fuck move".$top_instr."\n";
 	    return "move_prop";
   	  }elsif($top_instr=~/add/){
 	    return "fadd_prop";
@@ -54,7 +54,8 @@ sub type_operation{
 	    return "fsub_prop";
 	  }elsif($top_instr=~/mul/){
 	    return "fmul_prop";
-	  }else{
+	  }
+		else{
 	    return "none_prop";
 	  }
 	}
@@ -119,9 +120,9 @@ my @xmmomem_imm_to_xmm=["vpcmpestri","vpcmpestrm","vpcmpistri","vpcmpistrm","vpe
 ## opnd(ymm/mem),opnd(imm8),result(ymm)
 my @ymmomem_imm_to_ymm=["vpermilpd","vpermilps"];
 ## opnd(ymm/mem),result(ymm)
-my @vbroadcast256=["vbroadcastss","vbroadcastsd", "vbroadcastf128","vmovapd","vtestps","vtestpd","vrcpps","vrsqrtps","vsqrtpd","vsqrtps","vcvtdq2ps256","vcvtps2dq","vcvttpd2dq","vcvttps2dq","vmovaps","vmovdqa","vmovdqu","vmovddup","vmovshdup","vmovsldup","vmovupd","vmovups"];
+my @vbroadcast256=["vbroadcastss","vbroadcastsd", "vbroadcastf128","vmovapd","vrcpps","vrsqrtps","vsqrtpd","vsqrtps","vcvtdq2ps256","vcvtps2dq","vcvttpd2dq","vcvttps2dq","vmovaps","vmovdqa","vmovdqu","vmovddup","vmovshdup","vmovsldup","vmovupd","vmovups"];
 ## opnd(xmm/mem),result(xmm)
-my @vcomisd=["vcomisd","vcomiss","vcvtdq2pd","vcvtdq2ps","vcvtpd2ps","vcvtps2dq","vcvtps2pd","vcvttpd2dq","vcvttps2dq","vmovapd","vmovaps","vmovq","vmovdqa","vmovdqu","vmovddup","vmovshdup","vmovsldup","vmovupd","vmovups","vpabsb","vpabsw","vpabsd","vbroadcastss","vphminposuw","vpmovsxbw","vpmovsxbd","vpmovzxbw","vpmovzxbd","vtestps","vtestpd","vrcpps","vrsqrtps","vsqrtpd","vsqrtps","vucomisd","vucomiss"];
+my @vcomisd=["vcomisd","vcomiss","vcvtdq2pd","vcvtdq2ps","vcvtpd2ps","vcvtps2dq","vcvtps2pd","vcvttpd2dq","vcvttps2dq","vmovapd","vmovaps","vmovq","vmovdqa","vmovdqu","vmovddup","vmovshdup","vmovsldup","vmovupd","vmovups","vpabsb","vpabsw","vpabsd","vbroadcastss","vphminposuw","vpmovsxbw","vpmovsxbd","vpmovzxbw","vpmovzxbd","vrcpps","vrsqrtps","vsqrtpd","vsqrtps","vucomisd","vucomiss"];
 ## opnd(xmm/mem),result(ymm)
 my @vcvtdq2pd256=["vcvtdq2pd","vcvtpd2dq","vcvtps2pd"];
 ## opnd(ymm/mem),result(ymm)
@@ -167,7 +168,7 @@ my @xmm_int64omem_imm8_to_xmm=["vpinsrq"];
 ## opnd(ymm) opnd(imm8), result(xmm/mem)
 my @vextractf128=["vextractf128"];
 ## opnd(xmm) opnd(imm8), result(int32/mem)
-my @vextractf128=["vextractps"];
+my @vextractps=["vextractps"];
 ## opnd(xmm/ymm) opnd(mem), result(xmm/ymm)
 my @vmaskmovps=["vmaskmovps","vmaskmovpd"];
 ## opnd(xmm/ymm) opnd(xmm/ymm), result(mem)
@@ -187,7 +188,7 @@ my @vmovlpd_xmm_to_mem=["vmaskmovdqu","vmovlps","vmovntpd","vmovntps","vmovsd","
 my @ymm_to_mem=["vmovntdq","vmovntpd","vmovntps","vmovaps","vmovapd","vmovdqa","vmovdqu","vmovupd","vmovups"];
 
 ## opnd(xmm) opnd(xmm), result(xmm)
-my @vmovhlps=["vmovhlps","vmovlhps","vmovsd","vmovss"];
+my @vmovhlps=["vmovhlps","vmovlhps","vmovsd","vmovss","vpermilpd"];
 
 ## opnd(xmm) opnd(imm), result(int32)
 my @xmm_imm_to_int32=["vpextrb","vpextrw"];
@@ -200,11 +201,17 @@ my @xmm_imm_to_xmm=["vpslldq","vpsrldq","vpsllw","vpsrad","vpsrlw"];
 my @mxcsr_to_mem=["vstmxcsr"];
 ## opnd(mem), opnd(mxcsr)
 my @mem_to_mxcsr=["vldmxcsr"];
+## opnd(ymm),opnd(ymm/mem),result(int32)
+my @test_op_ymm=["vtestps","vtestpd"];
+## opnd(xmm),opnd(xmm/mem),result(int32)
+my @test_op_xmm=["vtestps","vtestpd"];
 ##Fixme##
 ##@vldmxcsr vstmxcsr
 ##next is movdqu
 
 my @ops=(
+		[@test_op_ymm,["f256"],["OPS"],["oint32rflag"],["float"],@float_mem],
+		[@test_op_xmm,["f128"],["OPS"],["oint32rflag"],["float"],@float_mem],
 		[@vaddp,["f128","f256"], ["OPS"],["ofloat"],["float"],@float_mem],
 		[@vadds,["f128"], ["OPS"],["ofloat"],["float"],@float_mem],
 		[@vblendp,["f128","f256"], ["OPS"],["ofloat"],["float"],@float_mem,["simm8"]],
@@ -226,7 +233,7 @@ my @ops=(
 		[@vinsertps,["f128"], ["OPS"], ["ofloat"],["float"], @float_mem,["simm8"]],
 		[@vlddqu,["f128","f256"],["OPS"],["ofloat"], @only_mem],
 		[@vmaskmovdqu,["f128"], ["OPS"], ["ofloat"], ["float"]],
-		[@vmaskmovps,["f128","f256"], ["OPS"], ["ofloat"],@only_mem, ["float"]],
+		[@vmaskmovps,["f128","f256"], ["OPS"], ["ofloat"], ["float"],@only_mem],
 		[@vmaskmovps_tomem,["f128","f256"], ["OPS"],@oonly_mem,["float"],["float"]],	
 		#[@vmovd32_toxmm,["f128"],["OPS"],@oint32_mem,["float"]],
 		#[@vmovd64_toxmm,["f128"],["OPS"],@oint64_mem,["float"]],
@@ -308,7 +315,7 @@ foreach(@isa){
 	$isa_isa_print.="\t\"".$_."\",\n";
 	$debug_dup_isa[$di++]=$_;
 }
-
+if(0){
 print "di = $di\n";
 
 my $dj;
@@ -324,7 +331,7 @@ for($dj=0;$dj<$di;$dj++){
   }
   #print "shit ".$debug_dup_isa[$dj]."\n";
 }
-
+}
 #$isa_print="\nisa_operands.cxx:\n";
 foreach (keys %isa_operands){
 	$isa_operands_print.="\tInstruction_Group(\"".$_."\",\n";
@@ -466,7 +473,13 @@ foreach (keys %isa_operands){
 		  die "TODO NYI format opnd ".$opnd[$i]."\n";
 		}
 		if($result_n>0){
-			$isa_print_print.=',';
+			if($i!=$opnd_n-1){
+			 $isa_print_print.=',';
+			}else{
+			 if(!($res[0]=~/rflag/)){
+			   $isa_print_print.=',';
+			 }
+			}
 		}
 	}
 
@@ -482,7 +495,9 @@ foreach (keys %isa_operands){
 		}elsif($res[0]=~/^ofloat/){
 			$isa_print_print.='%s';
 		}elsif($res[0]=~/^oint/){
-			$isa_print_print.='%s'; 
+			if(!($res[0]=~/rflag/)){
+			  $isa_print_print.='%s'; 
+			}
 		}
 		else{
 		  $isa_print_print.="TODO NYI format result".$res[0]."\n";
@@ -601,8 +616,10 @@ foreach (keys %isa_operands){
 			$isa_print_print.="Result(0);\n";
 			#$isa_print_print.='%s';
 		}elsif($res[0]=~/^oint/){
-			$isa_print_print.="Result(0);\n";
-			#$isa_print_print.='%s'; 
+			if(!($res[0]=~/rflag/)){
+			 $isa_print_print.="Result(0);\n";
+			  #$isa_print_print.='%s';
+			}
 		}
 		else{
 		  $isa_print_print.="TODO NYI isa_print_print=result".$res[0]."\n";
@@ -633,6 +650,7 @@ my $print_fadd_prop;
 my $print_fsub_prop;
 my $print_fmul_prop;
 my $print_flop_prop;
+my $print_change_rflags;
 print "\navx_properties.cxx:\n";
 foreach (@tops){
 	$isa_properties_print.="\t".$_.",\n";
@@ -656,6 +674,9 @@ foreach (@tops){
 	}
 	if(type_operation($_) eq "fmul_prop"){
 	  $print_fmul_prop.=$_.",\n";
+	}
+	if($_=~/rflag/){
+		$print_change_rflags.=$_.",\n";
 	}
 	if($_=~/float/){
 	  $print_flop_prop.="\t".$_.",\n";
@@ -697,10 +718,16 @@ foreach(@tops){
 	$isa_si_print.="Resource_Requirement(res_issue, 0);\n";
 
 foreach (@tops){
+	#print $_."\n";
   my @tmp=split("_",$_);
   $isa_cgemit_avx_print.="OP_Name[".$_."] = \""."$tmp[1]"."\";\n";
 }
+fprint("isa_avx_print.cxx",$isa_print_print);
 
+copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_print.cxx");
+
+print $isa_print_print;
+if (0){
 fprint("isa_avx.cxx", $isa_isa_print);
 fprint("isa_avx_print.cxx",$isa_print_print);
 fprint("isa_avx_operands.cxx",$isa_operands_print);
@@ -727,6 +754,7 @@ fprint("isa_avx_properties_load_only.cxx", $print_load_only);
   fprint("isa_avx_properties_fsub_prop.cxx", $print_fsub_prop);
   fprint("isa_avx_properties_fmul_prop.cxx", $print_fmul_prop);
   fprint("isa_avx_properties_flop_prop.cxx", $print_flop_prop);
+  fprint("isa_avx_properties_change_rflags.cxx", $print_change_rflags);
   copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_load_only.cxx");
   copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_load_exe.cxx");
   copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_store_only.cxx");
@@ -735,7 +763,8 @@ fprint("isa_avx_properties_load_only.cxx", $print_load_only);
   copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_fsub_prop.cxx");
   copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_fmul_prop.cxx");
   copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_flop_prop.cxx");
-
+  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_change_rflags.cxx");
+}
 #sub copy_to_property{
 	#fprint("isa_avx_properties_load_only.cxx", $print_load_only);
 	# fprint("isa_avx_properties_load_exe.cxx", $print_load_exe);
