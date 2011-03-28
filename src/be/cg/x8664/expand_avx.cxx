@@ -81,7 +81,7 @@ case INTRN_VCMPPS256:
   Expand_Intrinsic_Imm_Param(TOP_vcmpps_f256_ofloat_float_float_simm8,result, op0, op1, op2, ops, 5);
 break;
 case INTRN_VMOVDQA256:
-  //TODO not a intrinsic op
+  Build_OP(TOP_vmovdqu_f256_ofloat_base64_simm32, result, op0, Gen_Literal_TN(0,1),ops);
 break;
 case INTRN_VCVTPD2DQ256:
   Build_OP(TOP_vcvtpd2dq_f128_f256_ofloat_float,result,op0,ops);
@@ -158,10 +158,10 @@ case INTRN_VCVTPD2PS256:
   Build_OP(TOP_vcvtpd2ps_f128_f256_ofloat_float, result, op0, ops);
 break;
 case INTRN_VROUNDPD256:
-  Expand_Intrinsic_Imm_Opnd2(TOP_vroundpd_f256_ofloat_float_float_simm8, result, op0, op1, ops, 4);
+  Expand_Intrinsic_Imm_Opnd2(TOP_vroundpd_f256_ofloat_float_simm8, result, op0, op1, ops, 1);
 break;
 case INTRN_VROUNDPS256:
-  Expand_Intrinsic_Imm_Opnd2(TOP_vroundps_f256_ofloat_float_float_simm8, result, op0, op1, ops, 4);
+  Expand_Intrinsic_Imm_Opnd2(TOP_vroundps_f256_ofloat_float_simm8, result, op0, op1, ops, 4);
 break;
 case INTRN_VPERMILPD128VAR:
   Build_OP(TOP_vpermilpd_f128_ofloat_float_float, result,op0, op1,ops);
@@ -283,7 +283,7 @@ case INTRN_VMOVMSKPD256:
   Build_OP(TOP_vmovmskpd_f256_oint32_float, result, op0, ops);
 break;
 case INTRN_VMASKMOVPS256:
-  //TODO store
+  Build_OP(TOP_vmaskmovps_f256_ofloat_float_base64_simm32, result, op0, op1, Gen_Literal_TN(0,1), ops);
 break;
 case INTRN_VMOVMSKPS256:
   Build_OP(TOP_vmovmskps_f256_oint32_float, result, op0, ops);

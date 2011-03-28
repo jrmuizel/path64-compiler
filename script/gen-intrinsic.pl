@@ -30,6 +30,13 @@ sub cartesian {		#cartesian product, the perl way ]:->
     return @C;
 }
 
+sub is_intrinsic_op {
+  my($intr_op)=@_;
+  if($intr_op=~/Vovd/){
+    return 0;
+  }
+  return 1;
+}
 sub builtin_type { ##this define the builtin type of each parameter
     my($arg)=@_;
     if($arg=~/v32f4/){
@@ -418,10 +425,15 @@ foreach (keys %isa_operands){
   $print_wutil_cxx.="INTRN_".$intrin_name.",\t"."\""."INTRN_".$intrin_name."\",\n";
   $print_wgen_expr_cxx.="case "."GSBI_IX86_BUILTIN_".$intrin_name.":"."\n";
   $print_wgen_expr_cxx.="\*iopc = "."INTRN_".$intrin_name.";"."\n";
+  if(!(is_intrinsic_op($intrn_ret))){
+    $print_wgen_expr_cxx.='*intrinsic_op = FALSE'.";\n";
+    print $intrn_ret."met intrinsic_op FALSE".$intrin_name."\n";
+  }
   $print_wgen_expr_cxx.="break;"."\n";
 }
 
 sub copy_all_file{
+  if(0){
   copy_to('../GCC/gcc/config/i386/',"i386_avx.h");
   copy_to('../GCC/gcc/config/i386/',"i386_avx.c");
   copy_to('../GCC/gcc/',"tree_avx.c");
@@ -429,6 +441,7 @@ sub copy_all_file{
   copy_to('../src/common/com/',"intrn_info_avx.cxx");
   copy_to('../src/common/com/',"wintrinsic_avx.h");
   copy_to('../src/common/com',"wutil_avx.cxx");
+  }
   #copy_to('../src/wgen/',"gspin-tree_avx.cxx");
   copy_to('../src/wgen/',"wgen_expr_avx.cxx");
 }

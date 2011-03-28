@@ -100,7 +100,7 @@ my @vadds=["vaddsd","vaddss","vcvtsd2ss","vcvtss2sd","vdivsd","vdivss","vmaxsd",
 ##opnd(xmm),opnd(mem),result(xmm)
 my @vmovlps_xmm_mem_oxmm=["vmovlps"];
 ##opnd(ymm/xmm),opnd(ymm/xmm/mem),opnd(imm8), result(ymm/xmm)
-my @vblendp=["vblendpd","vblendps","vcmppd","vcmpps","vdpps","vroundpd","vroundps","vshufpd","vshufps"];
+my @vblendp=["vblendpd","vblendps","vcmppd","vcmpps","vdpps","vshufpd","vshufps"];
 #opnd(ymm) opnd(xmm/mem) opnd(imm8), result(ymm)
 my @vinsertf128=["vinsertf128"];
 #opnd(xmm) opnd(xmm/mem) opnd(imm8), result(xmm)
@@ -118,7 +118,7 @@ my @vblendvp=["vblendvpd","vblendvps"];
 ## opnd(xmm/mem),opnd(imm8),result(xmm)
 my @xmmomem_imm_to_xmm=["vpcmpestri","vpcmpestrm","vpcmpistri","vpcmpistrm","vpermilpd","vpermilps","vpshufd","vpshufhw","vpshuflw"];
 ## opnd(ymm/mem),opnd(imm8),result(ymm)
-my @ymmomem_imm_to_ymm=["vpermilpd","vpermilps"];
+my @ymmomem_imm_to_ymm=["vpermilpd","vpermilps","vroundpd","vroundps"];
 ## opnd(ymm/mem),result(ymm)
 my @vbroadcast256=["vbroadcastss","vbroadcastsd", "vbroadcastf128","vmovapd","vrcpps","vrsqrtps","vsqrtpd","vsqrtps","vcvtdq2ps256","vcvtps2dq","vcvttpd2dq","vcvttps2dq","vmovaps","vmovdqa","vmovdqu","vmovddup","vmovshdup","vmovsldup","vmovupd","vmovups"];
 ## opnd(xmm/mem),result(xmm)
@@ -722,12 +722,9 @@ foreach (@tops){
   my @tmp=split("_",$_);
   $isa_cgemit_avx_print.="OP_Name[".$_."] = \""."$tmp[1]"."\";\n";
 }
-fprint("isa_avx_print.cxx",$isa_print_print);
 
-copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_print.cxx");
 
-print $isa_print_print;
-if (0){
+if (1){
 fprint("isa_avx.cxx", $isa_isa_print);
 fprint("isa_avx_print.cxx",$isa_print_print);
 fprint("isa_avx_operands.cxx",$isa_operands_print);

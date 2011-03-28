@@ -6558,8 +6558,10 @@ void Expand_Intrinsic_Imm_Opnd2(TOP opc, struct tn* result, struct tn *op0,
 										struct tn *op1, OPS *ops, int op_count)
 {
   //TODO actually this is not a good way to handle immediate of param
-	   if(TN_is_constant(op1))
+	   if(TN_is_constant(op1)){
 		   Build_OP(opc, result, op0, op1, ops);
+		   return;
+	   }
 	   else
 	   {
 		   OP *op = NULL;
@@ -6577,14 +6579,16 @@ void Expand_Intrinsic_Imm_Opnd2(TOP opc, struct tn* result, struct tn *op0,
 		   	   {
 			     tn = Gen_Literal_TN( TN_value(OP_opnd(op, 0)), 1);
 			     Build_OP(opc, result, op0, tn, ops);
+				 return;
 		   	   }
-			   else
-			   	Build_OP(opc, result, op0, Gen_Literal_TN(0,1), ops);
+			   Build_OP(opc, result, op0, Gen_Literal_TN(0,1), ops);
+			   return;
 		   }
 		   else
 		   {
 			   tn = Gen_Literal_TN(0, 1);
 			   Build_OP(opc, result, op0,tn, ops);
+			   return;
 		   }
 	   }
 }
@@ -8289,7 +8293,29 @@ Exp_Intrinsic_Call (WN *intrncall, TN *op0, TN *op1, TN *op2,
   case INTRN_VMASKMOVPS128ST:
   Build_OP(TOP_vmaskmovps_f128_obase64_simm32_float_float, op1,op2,op0,Gen_Literal_TN(0,1),ops);
   break;
-
+  case INTRN_VMASKMOVPD128ST:
+    Build_OP(TOP_vmaskmovpd_f128_obase64_simm32_float_float, op1, op2, op0,Gen_Literal_TN(0,1),ops);
+  break;
+  case INTRN_VMOVDQA256ST:
+    Build_OP(TOP_vmovdqu_f256_obase64_simm32_float, op1, op0, Gen_Literal_TN(0,1), ops);
+  break;
+  case INTRN_VMASKMOVPD256ST:
+    Build_OP(TOP_vmaskmovpd_f256_obase64_simm32_float_float, op1, op2, op0,Gen_Literal_TN(0,1),ops);
+  break;
+  case INTRN_VZEROALL256:
+   //TODO others don't know it will affect all the ymm registers
+    Build_OP(TOP_vzeroall_null, ops);
+  break;
+  case INTRN_VZEROUPPER256:
+    Build_OP(TOP_vzeroupper_null,ops);
+    //TODO no operand and result;
+  break;
+  case INTRN_VMOVNTDQ256:
+    Build_OP(TOP_vmovntdq_f256_obase64_simm32_float, op1, op0, Gen_Literal_TN(0,1),ops);
+  break;
+  case INTRN_VMASKMOVPS256ST:
+    Build_OP(TOP_vmaskmovps_f256_obase64_simm32_float_float,op1,op2, op0, Gen_Literal_TN(0,1),ops);
+  break;
   default:  
     FmtAssert(FALSE, ("Exp_Intrinsic_Call: unimplemented"));
   }
