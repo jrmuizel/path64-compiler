@@ -163,11 +163,7 @@ static int _dwarf_pro_match_attr
 #define		OPC_INCS_ZERO		-1
 #define		OPC_OUT_OF_RANGE	-2
 #define		LINE_OUT_OF_RANGE	-3
-#ifdef TARG_ST
-static int _dwarf_pro_get_opc(Dwarf_P_Debug dbg, Dwarf_Unsigned addr_adv, int line_adv);
-#else
 static int _dwarf_pro_get_opc(Dwarf_Unsigned addr_adv, int line_adv);
-#endif
 
 
 /*
@@ -488,10 +484,6 @@ _dwarf_pro_generate_debugline(Dwarf_P_Debug dbg, Dwarf_Error * error)
     int upointer_size = dbg->de_pointer_size;
     char buff1[ENCODE_SPACE_NEEDED];
 
-#ifdef TARG_ST
-	Dwarf_Unsigned last_begin_symidx = 0;
-#endif
-
     sum_bytes = 0;
 
     elfsectno = dbg->de_elf_sects[DEBUG_LINE];
@@ -560,11 +552,7 @@ _dwarf_pro_generate_debugline(Dwarf_P_Debug dbg, Dwarf_Error * error)
 			sizeof(du), uwordb_size);
 	data += uwordb_size;
     }
-    #ifdef TARG_ST
-	db = dbg->de_min_inst_length;
-#else
 	db = MIN_INST_LENGTH;
-#endif
     WRITE_UNALIGNED(dbg, (void *) data, (const void *) &db,
 		    sizeof(db), sizeof(Dwarf_Ubyte));
     data += sizeof(Dwarf_Ubyte);
@@ -647,41 +635,6 @@ _dwarf_pro_generate_debugline(Dwarf_P_Debug dbg, Dwarf_Error * error)
 		addr_adv = curline->dpl_address - prevline->dpl_address;
 		if (addr_adv > 0) {
 		    db = DW_LNS_advance_pc;
-#ifdef TARG_ST
-			/* [TTh] Now offset can be either symbolic or immediate value */
-			if (curline->dpl_r_symidx != 0) {
-			    int k;
-			    /* Use symbolic offset: dpl_r_symidx corresponds
-			     * to end_symbol, while the start_symbol has been
-			     * registered on previous DW_LNE_set_address.
-			     * Note: addr_adv is just used to know if the address
-			     *       has changed, but not toretrieve the real offset */
-			    res = dbg->de_reloc_pair(dbg,
-						     DEBUG_LINE,
-						     sum_bytes + LEB128_SYMBOLIC_RELOC_DUMMY_SIZE,
-						     last_begin_symidx,
-						     curline->dpl_r_symidx,
-						     dwarf_drt_first_of_length_pair_inst_word,
-						     LEB128_SYMBOLIC_RELOC_DUMMY_SIZE);
-			    if(res != DW_DLV_OK) {
-				{_dwarf_p_error(dbg, error, DW_DLE_ALLOC_FAIL); return(0);}
-			    }
-			    /* Setup offset to zero (relocation will introduce the effective offset) */
-			    for (k=0; k<LEB128_SYMBOLIC_RELOC_DUMMY_SIZE; k++) {
-				buff1[k]=0x0;
-			    }
-			    nbytes = LEB128_SYMBOLIC_RELOC_DUMMY_SIZE;
-			}
-			else {
-			    res = _dwarf_pro_encode_leb128_nm(
-			      addr_adv/dbg->de_min_inst_length,
-			      &nbytes,
-			      buff1,sizeof(buff1));
-			    if(res != DW_DLV_OK) {
-				DWARF_P_DBG_ERROR(dbg,DW_DLE_CHUNK_ALLOC,-1); 
-			    }
-			}
-#else
 
 		    res =
 			_dwarf_pro_encode_leb128_nm(addr_adv /
@@ -691,7 +644,6 @@ _dwarf_pro_generate_debugline(Dwarf_P_Debug dbg, Dwarf_Error * error)
 		    if (res != DW_DLV_OK) {
 			DWARF_P_DBG_ERROR(dbg, DW_DLE_CHUNK_ALLOC, -1);
 		    }
-#endif
 		    GET_CHUNK(dbg, elfsectno, data,
 			      nbytes + sizeof(Dwarf_Ubyte), error);
 		    WRITE_UNALIGNED(dbg, (void *) data,
@@ -795,10 +747,6 @@ _dwarf_pro_generate_debugline(Dwarf_P_Debug dbg, Dwarf_Error * error)
 		sum_bytes += upointer_size;
 		prevline->dpl_address = curline->dpl_address;
 		no_lns_copy = 1;
-#ifdef TARG_ST
-		    /* Keep track of start symbol */
-		    last_begin_symidx = curline->dpl_r_symidx;
-#endif
 
 		break;
 	    }
@@ -867,19 +815,11 @@ _dwarf_pro_generate_debugline(Dwarf_P_Debug dbg, Dwarf_Error * error)
 	    addr_adv = curline->dpl_address - prevline->dpl_address;
 
 	    line_adv = (int) (curline->dpl_line - prevline->dpl_line);
-#ifdef TARG_ST
-	    if ((addr_adv % dbg->de_min_inst_length) != 0)
-#else
 	    if ((addr_adv % MIN_INST_LENGTH) != 0)
-#endif
             {
                 DWARF_P_DBG_ERROR(dbg, DW_DLE_WRONG_ADDRESS, -1);
 	    }
-#ifdef TARG_ST
-	    if ((opc = _dwarf_pro_get_opc(dbg, addr_adv,line_adv)) > 0)
-#else
 	    if ((opc = _dwarf_pro_get_opc(addr_adv,line_adv)) > 0)
-#endif
             {
                 no_lns_copy = 1;
 		db = opc;
@@ -897,11 +837,7 @@ _dwarf_pro_generate_debugline(Dwarf_P_Debug dbg, Dwarf_Error * error)
 		    db = DW_LNS_advance_pc;
 		    res =
 			_dwarf_pro_encode_leb128_nm(
-#ifdef TARG_ST
-			addr_adv/dbg->de_min_inst_length, 
-#else
 			addr_adv/MIN_INST_LENGTH, 
-#endif
 						    &nbytes, buff1,
 						    sizeof(buff1));
 		    if (res != DW_DLV_OK) {
@@ -2146,18 +2082,10 @@ _dwarf_pro_buffer(Dwarf_P_Debug dbg,
 ------------------------------------------------------------*/
 static int
 _dwarf_pro_get_opc(
-#ifdef TARG_ST
-    Dwarf_P_Debug dbg,
-#endif
-
                    Dwarf_Unsigned addr_adv, int line_adv)
 {
     int opc;
-#ifdef TARG_ST
-	addr_adv = addr_adv/dbg->de_min_inst_length;
-#else
     addr_adv = addr_adv / MIN_INST_LENGTH;
-#endif
     if (line_adv == 0 && addr_adv == 0)
 	return OPC_INCS_ZERO;
     if (line_adv >= LINE_BASE && line_adv < LINE_BASE + LINE_RANGE) {

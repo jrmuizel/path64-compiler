@@ -60,9 +60,6 @@ struct Dwarf_P_Cie_s {
     Dwarf_Sbyte cie_data_align;
     Dwarf_Ubyte cie_ret_reg;	/* return register # */
     Dwarf_Unsigned cie_personality; /* personality routine */
-#ifdef TARG_ST
-        Dwarf_Bool              cie_pcrel;      /* PC-relative format */
-#endif
     char *cie_inst;		/* initial instruction */
     long cie_inst_bytes;
     /* no of init_inst */
