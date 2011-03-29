@@ -109,16 +109,6 @@ static char *wfe_dst_rcs_id = "$Source: kg++fe/SCCS/s.wfe_dst.h $ $Revision: 1.1
 extern void 
 DST_build(int num_copts, /* Number of options passed to fec(c) */
 	  char *copts[]); /* The array of option passed to fec(c) */
-#ifdef TARG_ST // [CL] support lexical blocks
-typedef struct lexical_block_info_t {
-  LABEL_IDX         lexical_block_start_idx;
-  LABEL_IDX         lexical_block_end_idx;
-  struct lexical_block_info_t *parent;
-  DST_INFO_IDX      dst;
-  int               id;
-  gs_t              fndecl;
-} LEXICAL_BLOCK_INFO;
-#endif
 
 extern DST_INFO_IDX DST_Create_Subprogram (ST *func_st, gs_t fndecl);
 

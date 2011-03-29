@@ -68,8 +68,5 @@ extern void WGEN_Expand_Pragma (gs_t, bool);
 extern void *WGEN_Save_Pragmas();
 extern void  WGEN_Move_Pragmas(void *);
 
-#ifdef TARG_ST
-extern void WGEN_Construct_Pragma_File_Context (gs_t wfe_pragma_context);
-#endif
 #endif
 
