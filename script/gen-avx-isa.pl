@@ -120,7 +120,7 @@ my @xmmomem_imm_to_xmm=["vpcmpestri","vpcmpestrm","vpcmpistri","vpcmpistrm","vpe
 ## opnd(ymm/mem),opnd(imm8),result(ymm)
 my @ymmomem_imm_to_ymm=["vpermilpd","vpermilps","vroundpd","vroundps"];
 ## opnd(ymm/mem),result(ymm)
-my @vbroadcast256=["vbroadcastss","vbroadcastsd", "vbroadcastf128","vmovapd","vrcpps","vrsqrtps","vsqrtpd","vsqrtps","vcvtdq2ps256","vcvtps2dq","vcvttpd2dq","vcvttps2dq","vmovaps","vmovdqa","vmovdqu","vmovddup","vmovshdup","vmovsldup","vmovupd","vmovups"];
+my @vbroadcast256=["vbroadcastss","vbroadcastsd", "vbroadcastf128","vmovapd","vrcpps","vrsqrtps","vsqrtpd","vsqrtps","vcvtdq2ps","vcvtps2dq","vcvttpd2dq","vcvttps2dq","vmovaps","vmovdqa","vmovdqu","vmovddup","vmovshdup","vmovsldup","vmovupd","vmovups"];
 ## opnd(xmm/mem),result(xmm)
 my @vcomisd=["vcomisd","vcomiss","vcvtdq2pd","vcvtdq2ps","vcvtpd2ps","vcvtps2dq","vcvtps2pd","vcvttpd2dq","vcvttps2dq","vmovapd","vmovaps","vmovq","vmovdqa","vmovdqu","vmovddup","vmovshdup","vmovsldup","vmovupd","vmovups","vpabsb","vpabsw","vpabsd","vbroadcastss","vphminposuw","vpmovsxbw","vpmovsxbd","vpmovzxbw","vpmovzxbd","vrcpps","vrsqrtps","vsqrtpd","vsqrtps","vucomisd","vucomiss"];
 ## opnd(xmm/mem),result(ymm)
@@ -452,7 +452,7 @@ foreach (keys %isa_operands){
 ##the %s 
 	$isa_print_print.='"%s ';
 	my $i;
-	for($i=0;$i<$opnd_n;$i++){
+	for($i=$opnd_n-1;$i>=0;$i--){
 	  if($opnd[$i]=~/^base64_simm32$/){
 		  $isa_print_print.='%s%s(%s) ';
 		}elsif($opnd[$i]=~/^base64_index64_uimm8_simm32$/){
@@ -473,7 +473,7 @@ foreach (keys %isa_operands){
 		  die "TODO NYI format opnd ".$opnd[$i]."\n";
 		}
 		if($result_n>0){
-			if($i!=$opnd_n-1){
+			if($i!=0){##print , anyway
 			 $isa_print_print.=',';
 			}else{
 			 if(!($res[0]=~/rflag/)){

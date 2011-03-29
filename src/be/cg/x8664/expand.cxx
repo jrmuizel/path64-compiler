@@ -9089,8 +9089,13 @@ void Expand_Conv_To_Vector (TN * dest, TN * src, TYPE_ID desc, TYPE_ID rtype,
     Build_OP (TOP_movq2dq, dest, src, ops);
   else if (! MTYPE_is_mmx_vector(desc) && MTYPE_is_mmx_vector(rtype))
     Build_OP (TOP_movdq2q, dest, src, ops);
-  else // desc, rtype: vector
-    Build_OP (TOP_movdq, dest, src, ops);
+  else {
+  	// desc, rtype: vector
+  	if(MTYPE_is_long_vector(desc) && MTYPE_is_long_vector(rtype))
+		Build_OP(TOP_vmovdqa_f256_ofloat_float, dest, src, ops);
+	else
+    	Build_OP (TOP_movdq, dest, src, ops);
+  }
 }
 
 

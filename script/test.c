@@ -1633,7 +1633,7 @@ int main(){
   printf("%f %f %f %f \n",v4sf3.x[0], v4sf3.x[1], v4sf3.x[2], v4sf3.x[3]);
  
   //TODO zero
-  _mm256_zeroall();
+  //_mm256_zeroall();
 
   union{
 	__m128i wi;
@@ -1681,14 +1681,13 @@ int main(){
   //v8si3.wi = _mm256_cvttps_epi32(AA.wi);//TODO with bug -O0 
   //printf("%d %d %d %d ", v8si3.x[0], v8si3.x[1], v8si3.x[2], v8si3.x[3]);
   //printf("%d %d %d %d \n", v8si3.x[4], v8si3.x[5], v8si3.x[6], v8si3.x[7]);
-
-  float fl;
    float fl1,*pfloat;
    fl1 = 2.234;
    pfloat = &fl1;
 
-  _mm_maskstore_ps (&fl, v4sf1.wi, v4sf2.wi);
-  printf("%f\n",fl);
+
+  _mm_maskstore_ps (&fl1, v4sf1.wi, v4sf2.wi);
+  printf("%f\n",fl1);
   //_mm_maskstore_ps (float *__P, __m128 __M, __m128 __A)
 
 #if 0
@@ -1699,14 +1698,14 @@ int main(){
   printf("%f %f %f %f \n", D.x[4], D.x[5], D.x[6], D.x[7]);
   //TODO _mm256_insertf128_si256
 #endif
+
   D.wi = _mm256_loadu_ps (pfloat);
   printf("%lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
   printf("%f \n", D.x[0]);
 
- #if 0//this to the end
   int reint;
   reint = _mm_testc_pd (v2df1.wi, v2df2.wi);
-  printf("VTESTPS256C %d\n", reint);
+  printf("INTRN_VTESTPD128C %d\n", reint);
 
   reint = _mm256_testz_ps (AA.wi, BB.wi);
   printf("VTESTPS256Z %d\n", reint);
@@ -1734,15 +1733,10 @@ int main(){
    C.wi = _mm256_maskload_pd (pdouble, A.wi);
    printf("INTRN_VMASKMOVPD256 %lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
 
-   v8si3.wi = _mm256_castsi128_si256 (v4si1.wi);
-   printf("INTRN_VCASTSI128TOSI256 %d %d %d %d ", v8si3.x[0], v8si3.x[1], v8si3.x[2], v8si3.x[3]);
-  printf("%d %d %d %d \n", v8si3.x[4], v8si3.x[5], v8si3.x[6], v8si3.x[7]);
    
    reint = _mm256_testc_ps (AA.wi, BB.wi);
    printf("INTRN_VTESTPS256C %d\n", reint);
 
-   v4sf3.wi = _mm256_castps256_ps128 (AA.wi);
-   printf("INTRN_VCASTPS256TOPS128 %f %f %f %f \n",v4sf3.x[0], v4sf3.x[1], v4sf3.x[2], v4sf3.x[3]);
 
   _mm_maskstore_pd (pdouble, v2df1.wi, v2df2.wi);
   printf("INTRN_VMASKMOVPD128ST *pdouble=%f\n",*pdouble);
@@ -1808,9 +1802,6 @@ int main(){
   reint = _mm256_testc_pd (A.wi, B.wi);
    printf("INTRN_VTESTPD256C: %d\n", reint);
 
-   float fl1,*pfloat;
-   fl1 = 2.234;
-   pfloat = &fl1;
 
    v4sf3.wi = _mm_maskload_ps (pfloat, v4sf1.wi);
    printf("INTRN_VMASKMOVPS128: %f %f %f %f \n",v4sf3.x[0], v4sf3.x[1], v4sf3.x[2], v4sf3.x[3]);
@@ -1833,8 +1824,6 @@ int main(){
    reint = _mm_testnzc_pd (v2df1.wi, v2df2.wi);
    printf("INTRN_VTESTPD128NZC: %d\n", reint);
 
-   v2df3.wi=_mm256_castpd256_pd128 (A.wi);
-  printf("INTRN_VCASTPD256TOPD128 %lf %lf\n",v2df3.x[0],v2df3.x[1]);
 
   v4sf3.wi = _mm256_extractf128_ps (AA.wi, 1);
    printf("INTRN_VEXTRACTF128S:: %f %f %f %f \n",v4sf3.x[0], v4sf3.x[1], v4sf3.x[2], v4sf3.x[3]);
@@ -1858,12 +1847,7 @@ int main(){
   reint = _mm256_movemask_ps (AA.wi);
   printf("INTRN_VMOVMSKPS256: %d\n", reint);
 
-  C.wi = _mm256_castpd128_pd256 (v2df1.wi);
-   printf("INTRN_VCASTPD128TOPD256: %lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
 
-  D.wi = _mm256_castps128_ps256 (v4sf1.wi);
-  printf("INTRN_VCASTPS128TOPS256: %f %f %f %f ", D.x[0], D.x[1], D.x[2], D.x[3]);
-  printf("%f %f %f %f \n", D.x[4], D.x[5], D.x[6], D.x[7]);
 
   v8si3.wi = _mm256_lddqu_si256 (pv8si);
    printf("INTRN_VLDDQU256: %d %d %d %d ", v8si3.x[0], v8si3.x[1], v8si3.x[2], v8si3.x[3]);
@@ -1872,8 +1856,6 @@ int main(){
   reint = _mm_testc_ps (v4sf1.wi, v4sf1.wi);
   printf("INTRN_VTESTPS128C: %d\n", reint);
 
-  v4si3.wi = _mm256_castsi256_si128 (v8si1.wi);
-   printf("INTRN_VCASTSI256TOSI128: %d %d %d %d \n",v4si3.x[0], v4si3.x[1], v4si3.x[2], v4si3.x[3]);
 
   v4sf3.wi = _mm_broadcast_ss (pfloat);
    printf("INTRN_VROADCASTSS128: %f %f %f %f \n",v4sf3.x[0], v4sf3.x[1], v4sf3.x[2], v4sf3.x[3]);
@@ -1917,8 +1899,27 @@ int main(){
   
   C.wi = _mm256_movedup_pd (A.wi);
    printf("INTRN_VMOVDDUP256: %lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
-
+ 
    reint = _mm_testz_ps (v4sf1.wi, v4sf2.wi);
   printf("INTRN_VTESTPS128Z: %d\n", reint);
+ 
+  v4si3.wi = _mm256_castsi256_si128 (v8si1.wi);
+   printf("INTRN_VCASTSI256TOSI128: %d %d %d %d \n",v4si3.x[0], v4si3.x[1], v4si3.x[2], v4si3.x[3]);
+ 
+ #if 0//this to the end
+   
+	 v8si3.wi = _mm256_castsi128_si256 (v4si1.wi);
+   printf("INTRN_VCASTSI128TOSI256 %d %d %d %d ", v8si3.x[0], v8si3.x[1], v8si3.x[2], v8si3.x[3]);
+  printf("%d %d %d %d \n", v8si3.x[4], v8si3.x[5], v8si3.x[6], v8si3.x[7]);
+   v4sf3.wi = _mm256_castps256_ps128 (AA.wi);
+   printf("INTRN_VCASTPS256TOPS128 %f %f %f %f \n",v4sf3.x[0], v4sf3.x[1], v4sf3.x[2], v4sf3.x[3]);
+   v2df3.wi=_mm256_castpd256_pd128 (A.wi);
+  printf("INTRN_VCASTPD256TOPD128 %lf %lf\n",v2df3.x[0],v2df3.x[1]);
+  D.wi = _mm256_castps128_ps256 (v4sf1.wi);
+  printf("INTRN_VCASTPS128TOPS256: %f %f %f %f ", D.x[0], D.x[1], D.x[2], D.x[3]);
+  printf("%f %f %f %f \n", D.x[4], D.x[5], D.x[6], D.x[7]);
+
+  C.wi = _mm256_castpd128_pd256 (v2df1.wi);
+   printf("INTRN_VCASTPD128TOPD256: %lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
 #endif
 }

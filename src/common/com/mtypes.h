@@ -221,7 +221,7 @@ typedef struct type_desc {
   mBOOL		float_type;	/* Floating point type? */
   mCLASS_INDEX	dummy4;		/* remove when incompatible change */
   const char	*name;		/* Print name */
-  mUINT8        type_class_bits;/* The classification bits used by the simplifier */
+  mUINT16        type_class_bits;/* The classification bits used by the simplifier */
   mUINT8        type_order;	/* The order of types (I8 > I4 for example) */
   mCLASS_INDEX	complement;	/* complementary signed partner (ex. U1 -> I1) */
 } TYPE_DESC;
@@ -265,6 +265,7 @@ extern TYPE_DESC Machine_Types[];
 #ifdef TARG_X8664
 #define MTYPE_is_short_vector(n) ((MTYPE_type_class(n) & MTYPE_CLASS_SVECTOR) == MTYPE_CLASS_SVECTOR)
 #define MTYPE_is_mmx_vector(n) ((MTYPE_type_class(n) & MTYPE_CLASS_MVECTOR) == MTYPE_CLASS_MVECTOR)
+#define MTYPE_is_long_vector(n) ((MTYPE_type_class(n) & MTYPE_CLASS_AVECTOR) == MTYPE_CLASS_AVECTOR)
 #endif // TARG_X8664
 #ifdef TARG_MIPS
 #define MTYPE_is_short_vector(n) ((MTYPE_type_class(n) & MTYPE_CLASS_SVECTOR) == MTYPE_CLASS_SVECTOR)

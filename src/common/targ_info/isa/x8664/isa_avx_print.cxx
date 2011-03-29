@@ -1,5 +1,5 @@
 ISA_PRINT_TYPE ofloat_base64_index64_uimm8_simm32_float = ISA_Print_Type_Create("ofloat_base64_index64_uimm8_simm32_float",
-"%s %s%s(%s,%s,%s) ,%s ,%s");
+"%s %s ,%s%s(%s,%s,%s) ,%s");
 Name();
 Operand(4);
 Segment();
@@ -47,7 +47,7 @@ Operand(1);
 
 
 ISA_PRINT_TYPE ofloat_index64_uimm8_simm32_simm8 = ISA_Print_Type_Create("ofloat_index64_uimm8_simm32_simm8",
-"%s %s%s(,%s,%s) ,%s ,%s");
+"%s %s ,%s%s(,%s,%s) ,%s");
 Name();
 Operand(3);
 Segment();
@@ -117,7 +117,7 @@ Result(0);
 
 
 ISA_PRINT_TYPE oint32rflag_float_base64_simm32 = ISA_Print_Type_Create("oint32rflag_float_base64_simm32",
-"%s %s ,%s%s(%s) ");
+"%s %s%s(%s) ,%s ");
 Name();
 Segment();
 Operand(2);
@@ -132,7 +132,7 @@ Operand(0);
 
 
 ISA_PRINT_TYPE float_base64_simm32 = ISA_Print_Type_Create("float_base64_simm32",
-"%s %s %s%s(%s) ");
+"%s %s%s(%s) %s ");
 Name();
 Segment();
 Operand(2);
@@ -148,7 +148,7 @@ Operand(0);
 
 
 ISA_PRINT_TYPE ofloat_float_base64_index64_uimm8_simm32 = ISA_Print_Type_Create("ofloat_float_base64_index64_uimm8_simm32",
-"%s %s ,%s%s(%s,%s,%s) ,%s");
+"%s %s%s(%s,%s,%s) ,%s ,%s");
 Name();
 Segment();
 Operand(4);
@@ -530,7 +530,7 @@ Result(0);
 
 
 ISA_PRINT_TYPE ofloat_base64_index64_uimm8_simm32_simm8 = ISA_Print_Type_Create("ofloat_base64_index64_uimm8_simm32_simm8",
-"%s %s%s(%s,%s,%s) ,%s ,%s");
+"%s %s ,%s%s(%s,%s,%s) ,%s");
 Name();
 Operand(4);
 Segment();
@@ -572,7 +572,7 @@ Result(0);
 		TOP_vrsqrtps_f256_ofloat_base64_simm32,
 		TOP_vsqrtpd_f256_ofloat_base64_simm32,
 		TOP_vsqrtps_f256_ofloat_base64_simm32,
-		TOP_vcvtdq2ps256_f256_ofloat_base64_simm32,
+		TOP_vcvtdq2ps_f256_ofloat_base64_simm32,
 		TOP_vcvtps2dq_f256_ofloat_base64_simm32,
 		TOP_vcvttpd2dq_f256_ofloat_base64_simm32,
 		TOP_vcvttps2dq_f256_ofloat_base64_simm32,
@@ -691,7 +691,7 @@ Operand(2);
 
 
 ISA_PRINT_TYPE ofloat_index64_uimm8_simm32_float = ISA_Print_Type_Create("ofloat_index64_uimm8_simm32_float",
-"%s %s%s(,%s,%s) ,%s ,%s");
+"%s %s ,%s%s(,%s,%s) ,%s");
 Name();
 Operand(3);
 Segment();
@@ -705,7 +705,7 @@ Result(0);
 
 
 ISA_PRINT_TYPE ofloat_float_base64_simm32 = ISA_Print_Type_Create("ofloat_float_base64_simm32",
-"%s %s ,%s%s(%s) ,%s");
+"%s %s%s(%s) ,%s ,%s");
 Name();
 Segment();
 Operand(2);
@@ -914,7 +914,7 @@ Operand(2);
 
 
 ISA_PRINT_TYPE oint32rflag_float_base64_index64_uimm8_simm32 = ISA_Print_Type_Create("oint32rflag_float_base64_index64_uimm8_simm32",
-"%s %s ,%s%s(%s,%s,%s) ");
+"%s %s%s(%s,%s,%s) ,%s ");
 Name();
 Segment();
 Operand(4);
@@ -947,7 +947,7 @@ Result(0);
 		TOP_vrsqrtps_f256_ofloat_index64_uimm8_simm32,
 		TOP_vsqrtpd_f256_ofloat_index64_uimm8_simm32,
 		TOP_vsqrtps_f256_ofloat_index64_uimm8_simm32,
-		TOP_vcvtdq2ps256_f256_ofloat_index64_uimm8_simm32,
+		TOP_vcvtdq2ps_f256_ofloat_index64_uimm8_simm32,
 		TOP_vcvtps2dq_f256_ofloat_index64_uimm8_simm32,
 		TOP_vcvttpd2dq_f256_ofloat_index64_uimm8_simm32,
 		TOP_vcvttps2dq_f256_ofloat_index64_uimm8_simm32,
@@ -1046,7 +1046,7 @@ Result(0);
 
 
 ISA_PRINT_TYPE float_base64_index64_uimm8_simm32 = ISA_Print_Type_Create("float_base64_index64_uimm8_simm32",
-"%s %s %s%s(%s,%s,%s) ");
+"%s %s%s(%s,%s,%s) %s ");
 Name();
 Segment();
 Operand(4);
@@ -1081,7 +1081,7 @@ Result(0);
 		TOP_vrsqrtps_f256_ofloat_base64_index64_uimm8_simm32,
 		TOP_vsqrtpd_f256_ofloat_base64_index64_uimm8_simm32,
 		TOP_vsqrtps_f256_ofloat_base64_index64_uimm8_simm32,
-		TOP_vcvtdq2ps256_f256_ofloat_base64_index64_uimm8_simm32,
+		TOP_vcvtdq2ps_f256_ofloat_base64_index64_uimm8_simm32,
 		TOP_vcvtps2dq_f256_ofloat_base64_index64_uimm8_simm32,
 		TOP_vcvttpd2dq_f256_ofloat_base64_index64_uimm8_simm32,
 		TOP_vcvttps2dq_f256_ofloat_base64_index64_uimm8_simm32,
@@ -1207,7 +1207,7 @@ Result(0);
 		TOP_vrsqrtps_f256_ofloat_float,
 		TOP_vsqrtpd_f256_ofloat_float,
 		TOP_vsqrtps_f256_ofloat_float,
-		TOP_vcvtdq2ps256_f256_ofloat_float,
+		TOP_vcvtdq2ps_f256_ofloat_float,
 		TOP_vcvtps2dq_f256_ofloat_float,
 		TOP_vcvttpd2dq_f256_ofloat_float,
 		TOP_vcvttps2dq_f256_ofloat_float,
@@ -1291,7 +1291,7 @@ Result(0);
 
 
 ISA_PRINT_TYPE oint32rflag_float_index64_uimm8_simm32 = ISA_Print_Type_Create("oint32rflag_float_index64_uimm8_simm32",
-"%s %s ,%s%s(,%s,%s) ");
+"%s %s%s(,%s,%s) ,%s ");
 Name();
 Segment();
 Operand(3);
@@ -1336,7 +1336,7 @@ Result(0);
 
 
 ISA_PRINT_TYPE ofloat_base64_simm32_simm8 = ISA_Print_Type_Create("ofloat_base64_simm32_simm8",
-"%s %s%s(%s) ,%s ,%s");
+"%s %s ,%s%s(%s) ,%s");
 Name();
 Operand(2);
 Segment();
@@ -1361,7 +1361,7 @@ Result(0);
 
 
 ISA_PRINT_TYPE ofloat_base64_simm32_float = ISA_Print_Type_Create("ofloat_base64_simm32_float",
-"%s %s%s(%s) ,%s ,%s");
+"%s %s ,%s%s(%s) ,%s");
 Name();
 Operand(2);
 Segment();
@@ -1374,7 +1374,7 @@ Result(0);
 
 
 ISA_PRINT_TYPE float_index64_uimm8_simm32 = ISA_Print_Type_Create("float_index64_uimm8_simm32",
-"%s %s %s%s(,%s,%s) ");
+"%s %s%s(,%s,%s) %s ");
 Name();
 Segment();
 Operand(3);
@@ -1740,7 +1740,7 @@ Result(0);
 
 
 ISA_PRINT_TYPE ofloat_float_index64_uimm8_simm32 = ISA_Print_Type_Create("ofloat_float_index64_uimm8_simm32",
-"%s %s ,%s%s(,%s,%s) ,%s");
+"%s %s%s(,%s,%s) ,%s ,%s");
 Name();
 Segment();
 Operand(3);
