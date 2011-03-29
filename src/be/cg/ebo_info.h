@@ -144,10 +144,6 @@
 #ifndef EBO_INFO_INCLUDED
 #define EBO_INFO_INCLUDED
 
-#ifdef TARG_ST
-#include "pqs_cg.h"
-#endif
-
 /* forward decls */
 typedef struct local_tn_info EBO_TN_INFO;
 typedef struct local_op_info EBO_OP_INFO;
@@ -163,11 +159,6 @@ typedef struct local_tn_info {
         TN *local_tn;			/* My name. */
 	TN *replacement_tn;		/* Rename TN with this new name. */
 	EBO_TN_INFO *replacement_tninfo;/* Rename TN with this tninfo.   */
-#ifdef TARG_ST
-	TN *copy_tn;			/* Alternative physical replacement TN. */
-	EBO_TN_INFO *copy_tninfo;	/* Alternative physical replacement tninfo.   */
-	mBOOL false_predicate_tn; 	/* To manage ! True_TN */
-#endif
 
 	EBO_TN_INFO *predicate_tninfo;	/* link to predicate tninfo. */
         BB *in_bb;			/* The defining BB. */
@@ -207,13 +198,6 @@ typedef struct local_op_info {
         EBO_OP_INFO *prior;		/* Previous info node. */
         EBO_OP_INFO *next;		/* Next info node. */
 	EBO_TN_INFO **optimal_opnd;	/* Operand array (ptr into tn_info) */
-#ifdef TARG_ST
-        TN *optimal_tn[OP_MAX_FIXED_OPNDS];  /* FdF 20070402: A copy of
-					       opnd_tn when calling
-					       add_to_hash_table, so
-					       as to keep a TN on
-					       immediate values. */
-#endif
         EBO_TN_INFO **actual_opnd;	/* Operand array (ptr into tn_info) */
 	EBO_TN_INFO **actual_rslt;	/* Result  array (ptr into tn_info) */
 	EBO_TN_INFO *tn_info[		/* Variable size array for EBO_TN_INFOs */
@@ -222,20 +206,6 @@ typedef struct local_op_info {
 		OP_MAX_FIXED_OPNDS];	/* !!!! tn_info MUST BE LAST!!!! */
 } EBO_OP_INFO;
 
-
-#ifdef TARG_ST
-// FdF 20070402
-inline TN *
-Opinfo_optimal_tn(EBO_OP_INFO *opinfo, INT idx) {
-  if (idx < OP_MAX_FIXED_OPNDS) {
-    return opinfo->optimal_tn[idx];
-  }
-  else {
-    OP *op = opinfo->in_op;
-    return OP_opnd(op, idx);
-  }
-}
-#endif
 
 /* Given an op, return the 'sizeof' the EBO_OP_INFO struct needed
  * for that OP. For the sake of simplicity, the result of the calculation 
@@ -355,11 +325,6 @@ get_new_tninfo (BB *current_bb, OP *current_op, TN *local_tn)
   tninfo->local_tn = local_tn;
   tninfo->replacement_tn = NULL;
   tninfo->replacement_tninfo = NULL;
-#ifdef TARG_ST
-  tninfo->copy_tn = NULL;
-  tninfo->copy_tninfo = NULL;
-  tninfo->false_predicate_tn = (current_op)?OP_PredOnFalse(current_op):false; ;
-#endif
   tninfo->predicate_tninfo = NULL;
   tninfo->omega = 0;
   tninfo->in_bb = current_bb;
@@ -386,21 +351,6 @@ get_new_tninfo (BB *current_bb, OP *current_op, TN *local_tn)
   return tninfo;
 } 
 
-#ifdef TARG_ST
-/*
- * Check that the 2 provided predicate TNs are equivalent.
- * TNs_Are_Equivalent() cannot be called directly because
- * it must be checked first that we are dealing with register TNs.
- */
-inline BOOL
-EBO_Predicate_TNs_Are_Equivalent(TN *pred1, TN *pred2) {
-  return (pred1 == pred2 ||
-          (TN_is_register(pred1) &&
-           TN_is_register(pred2) &&
-           TNs_Are_Equivalent(pred1, pred2)));
-}
-#endif
-
 
 /*
  * EBO_predicate_dominates
@@ -409,36 +359,6 @@ EBO_Predicate_TNs_Are_Equivalent(TN *pred1, TN *pred2) {
  * that the second predicate is TRUE.
  *
  */
-#ifdef TARG_ST
-// (cbr) Support for guards on false
-inline BOOL
-EBO_predicate_dominates (TN *pred1, bool false1, EBO_TN_INFO *info1,
-                         TN *pred2, bool false2, EBO_TN_INFO *info2)
-{
-  if (PQSCG_pqs_valid() && !false1 && !false2) {
-    if (PQSCG_is_subset_of (pred2, pred1)) {
-      return TRUE;
-    }
-  }
-
-  if (pred1 == True_TN && !false1) {
-   /* A TRUE predicate dominates everything. */
-    return TRUE;
-  }
-
-  if (pred1 == Zero_TN && false1) {
-   /* A TRUE predicate dominates everything. */
-    return TRUE;
-  }
-
-  if (EBO_Predicate_TNs_Are_Equivalent(pred1, pred2) && false1 == false2) {
-   /* Equal predicates are fine if the values are current. */
-    return (info1 == info2);
-  }
- /* Until we can resolve subsets, assume a problem. */
-  return FALSE;
-}
-#else
 inline BOOL
 EBO_predicate_dominates (TN *pred1, EBO_TN_INFO *info1,
                          TN *pred2, EBO_TN_INFO *info2)
@@ -454,25 +374,6 @@ EBO_predicate_dominates (TN *pred1, EBO_TN_INFO *info1,
  /* Until we can resolve subsets, assume a problem. */
   return FALSE;
 }
-#endif
-
-#ifdef TARG_ST
-/*
- * EBO_predicate_equivalent
- *
- * Return TRUE if the first predicate is TRUE if and only if
- * the second predicate is TRUE.
- *
- */
-inline BOOL
-EBO_predicate_equivalent (TN *pred1, bool false1, EBO_TN_INFO *info1,
-			  TN *pred2, bool false2, EBO_TN_INFO *info2)
-{
-  return EBO_predicate_dominates(pred1, false1, info1, pred2, false2, info2) &&
-    EBO_predicate_dominates(pred2, false2, info2, pred1, false1, info1);
-}
-#endif
-
 
 
 /*
@@ -482,43 +383,6 @@ EBO_predicate_equivalent (TN *pred1, bool false1, EBO_TN_INFO *info1,
  * that the second predicate is FALSE.
  *
  */
-#ifdef TARG_ST
-// (cbr) Support for guards on false
-inline BOOL
-EBO_predicate_complements (TN *pred1, bool false1, EBO_TN_INFO *info1,
-                           TN *pred2, bool false2, EBO_TN_INFO *info2)
-{
-  if (PQSCG_pqs_valid () && !false1 && !false2) {
-    PQS_TN_SET pred;
-    pred.Insert (pred1); pred.Insert (pred2);
-    if (PQSCG_is_disjoint (pred1, pred2)
-	&& PQSCG_is_subset_of (True_TN, pred)) {
-      return TRUE;
-    }
-  }
-  if ((pred1 == True_TN && !false1) && (pred2 == Zero_TN && !false2)) {
-    return TRUE;
-  }
-  if ((pred1 == Zero_TN && !false1) && (pred2 == True_TN && !false2)) {
-    return TRUE;
-  }
-  if (EBO_Predicate_TNs_Are_Equivalent(pred1, pred2) && false1 != false2) {
-    return (info1 == info2);
-  }
-
-  if ((info1 == NULL) || (info2 == NULL) ||
-      (info1->in_op == NULL) || (info2->in_op == NULL)) {
-    return FALSE;
-  }
-  if (!EBO_Predicate_TNs_Are_Equivalent(pred1, pred2) && (false1 == false2) && (info1->in_op == info2->in_op)
-      && info1->in_op && OP_results(info1->in_op) == 1) {
-   /* If defined by the same instruction but not equal, they must be complements. */
-    return TRUE;
-  }
- /* Until we can resolve subsets, assume a problem. */
-  return FALSE;
-}
-#else
 inline BOOL
 EBO_predicate_complements (TN *pred1, EBO_TN_INFO *info1,
                            TN *pred2, EBO_TN_INFO *info2)
@@ -540,29 +404,6 @@ EBO_predicate_complements (TN *pred1, EBO_TN_INFO *info1,
  /* Until we can resolve subsets, assume a problem. */
   return FALSE;
 }
-#endif
-
-#ifdef TARG_ST
-/*
- * EBO_predicate_disjoint
- *
- * Return TRUE if the first predicate and the second predicate
- * are never true at the same time.
- * This is slightly weaker than the complements test, since
- * both may be false at the same time.
- *
- */
-inline BOOL
-EBO_predicate_disjoint (TN *pred1, bool false1, EBO_TN_INFO *info1,
-			TN *pred2, bool false2, EBO_TN_INFO *info2)
-{
-  if (PQSCG_pqs_valid () && PQSCG_is_disjoint (pred1, pred2) && !false1 && !false2) {
-      return TRUE;
-  }
-  return EBO_predicate_complements (pred1, false1, info1, pred2, false2, info2);
-}
-#endif
-
 
 
 inline EBO_TN_INFO *
@@ -581,25 +422,11 @@ tn_info_def (BB *current_bb, OP *current_op, TN *local_tn,
   if ((tninfo_prev != NULL)  &&
       (tninfo_prev->in_bb == current_bb) &&
       ((predicate_tn == NULL) ||
-#ifdef TARG_ST
-       /* (cbr) there is a redefinition only if predicate have the same logical. */
-       (EBO_predicate_dominates(predicate_tn,
-				(predicate_tn != NULL)?
-				OP_Pred_False(current_op,  OP_find_opnd_use(current_op, OU_predicate)) : false,
-                                predicate_info,
-                                (tninfo_prev->predicate_tninfo != NULL)?
-				tninfo_prev->predicate_tninfo->local_tn:True_TN,
-                                (tninfo_prev->predicate_tninfo != NULL && tninfo_prev->in_op)?
-				OP_Pred_False(tninfo_prev->in_op,
-					      OP_find_opnd_use(tninfo_prev->in_op, OU_predicate)) : false,
-                                tninfo_prev->predicate_tninfo)))) {
-#else
        (EBO_predicate_dominates(predicate_tn,
                                 predicate_info,
                                 (tninfo_prev->predicate_tninfo != NULL)?
                                  tninfo_prev->predicate_tninfo->local_tn:True_TN,
                                 tninfo_prev->predicate_tninfo)))) {
-#endif
    /* The new definition completely redefines the previous. */
 #ifdef TARG_X8664
     // In rare situations, if tninfo and tninfo_prev correspond to the same
@@ -628,156 +455,6 @@ tn_info_def (BB *current_bb, OP *current_op, TN *local_tn,
   return tninfo;
 }
 
-#ifdef TARG_ST
-inline EBO_TN_INFO *
-tn_info_use (BB *current_bb, OP *current_op, TN *local_tn,
-             TN *predicate_tn, EBO_TN_INFO *predicate_info,
-             mUINT8 associated_omega)
-{
-  EBO_TN_INFO *tninfo;
-  EBO_TN_INFO *tninfo_prev;
-  EBO_TN_INFO *tninfo_best_so_far;
-  BOOL false_predicate_tn;
-
-  tninfo = get_tn_info (local_tn);
-  tninfo_prev = tninfo;
-  tninfo_best_so_far = NULL;
-
-  // [SC] To simplify the following code, treat an unpredicated op
-  // as predicated by 1.
-  if (! predicate_tn) {
-    predicate_tn = True_TN;
-    false_predicate_tn = false;
-  }
-  else {
-    false_predicate_tn = OP_Pred_False(current_op, OP_find_opnd_use(current_op, OU_predicate));
-  }
-
-  // [SC] Scan backwards through the TNINFO entries created for this TN, finding
-  // one that is valid whenever predicate_tn is true.
-  // If predicate_tn is NULL, we search for one that is valid always (i.e. one that
-  // is unpredicated, or that has a true predicate).
-  // If predicate_tn is non-NULL, we search for one that is unpredicated, or that
-  // has a predicate which dominates predicate_tn.
-  // Note in this backwards scan, if we encounter a TNINFO for which tninfo->in_op
-  // is NULL, then this is a dummy entry marking a place where we could not find
-  // better information, for example a place where we could not find a TNINFO whose predicate
-  // dominates that predicate_tn.  It is always safe to use these (if they dominate our
-  // predicate_tn), and it is also always safe to ignore these, and continue searching for
-  // a TNINFO that dominates predicate_tn.  We prefer to continue searching
-  // to find a real TNINFO where that is possible.  However, if predicate_tn is True, there
-  // is no point to do this, since no better TNINFO will be found.
-  //
-  // Interesting cases:
-  // A.
-  //     TN283 :- p  ? ld       Create real TNINFO for TN283
-  //     TN283 :- !p ? ld       Create real TNINFO for TN283
-  //     TN216 :- mov TN283     here MUST create a dummy TNINFO for TN283 since we have
-  //                            no dominating defn for TN283
-  //
-  // B.
-  //     TN195 :- mov 2         Create real TNINFO for TN195
-  //     TN195 :- p ? ld A      Create real TNINFO for TN195
-  //           :- mov TN195     here MUST create a dummy TNINFO for TN195, since neither
-  //                            real TNINFO may reach this use.
-  //     TN163 :- p2 ? ld A     where p DOM p2
-  //   We want to transform this second load into  TN163 :- p2? mov TN195, but we
-  //   can only do this if TN195 is available at the current point.  To determine this,
-  //   we look up TN195 under predicate p2, and we want to see that it is the defn at the
-  //   first load.
-  //
-  while (tninfo != NULL) {
-
-    if (tninfo->omega == associated_omega) {
-     /* First the omegas must be equal. */
-
-      /* Compare the predicate on the previous definition (tninfo) with the
-	 current predicate.  To see if the previous definition is a suitable
-	 reaching definition of this use.
-      */
-
-      TN *tninfo_predicate_tn = ((tninfo->predicate_tninfo != NULL)
-				 ? tninfo->predicate_tninfo->local_tn
-				 : True_TN);
-
-     /* [TTh] Retrieve Pred_False value */
-      BOOL false_tninfo_predicate_tn = false;
-	  if (tninfo->predicate_tninfo != NULL) {
-		if(tninfo->in_op) 
-			false_tninfo_predicate_tn = OP_Pred_False(tninfo->in_op,   OP_find_opnd_use(tninfo->in_op, OU_predicate));
-		  else {
-			false_tninfo_predicate_tn = tninfo->false_predicate_tn;
-		  }
-	  }
-      if (EBO_predicate_complements(tninfo_predicate_tn,
-				    false_tninfo_predicate_tn,
-				    tninfo->predicate_tninfo,
-				    predicate_tn,
-				    false_predicate_tn,
-				    predicate_info)) {
-	/* The predicates are completely independent. Keep looking for a definition. */
-      } else {
-	BOOL tninfo_dom_current = EBO_predicate_dominates(tninfo_predicate_tn,
-							  false_tninfo_predicate_tn,
-							  tninfo->predicate_tninfo,
-							  predicate_tn,
-							  false_predicate_tn,
-							  predicate_info);
-	BOOL current_dom_tninfo = EBO_predicate_dominates(predicate_tn,
-							  false_predicate_tn,
-							  predicate_info,
-							  tninfo_predicate_tn,
-							  false_tninfo_predicate_tn,
-							  tninfo->predicate_tninfo);
-	if (tninfo_dom_current && current_dom_tninfo) {
-	  // Predicates are equivalent, so use this tninfo.
-	  // No point to continue searching if tninfo is dummy, since we
-	  // will not find better.
-	  break;
-	} else if (current_dom_tninfo) {
-	  // We have an instruction that only partially defines local_tn.
-	  // No point in ignoring a dummy, since we will not find better.
-	  tninfo = NULL;
-	  break;
-	} else if (tninfo_dom_current) {
-	  // We have an instruction that defines local_tn, but if it is
-	  // a dummy, we could find a better match if we continue searching.
-	  if (tninfo->in_op != NULL) {
-	    break;
-	  } else {
-	    // else its a dummy, so continue search.
-	    // But remember this one, since we can use it if we do not find
-	    // anything better.
-	    if (tninfo_best_so_far == NULL) tninfo_best_so_far = tninfo;
-	  }
-	} else {
-	  // We have a partial overlap.
-	  // Force a dummy if its a real tninfo, otherwise continue searching.
-	  if (tninfo->in_op != NULL) {
-	    tninfo = NULL;
-	    break;
-	  }
-	}
-      }
-    }
-      
-    /* Look at the next entry for a possible predicate match.       */
-    tninfo = tninfo->same;
-  }
-
-  if (tninfo == NULL) tninfo = tninfo_best_so_far;
-
-  if (tninfo == NULL) {
-    tninfo = get_new_tninfo (current_bb, NULL, local_tn);
-    tninfo->predicate_tninfo = predicate_info;
-    tninfo->false_predicate_tn = false_predicate_tn;
-    tninfo->same = tninfo_prev;
-    tninfo->omega = associated_omega;
-  }
-  inc_ref_count(tninfo);
-  return tninfo;
-}
-#else
 inline EBO_TN_INFO *
 tn_info_use (BB *current_bb, OP *current_op, TN *local_tn,
              TN *predicate_tn, EBO_TN_INFO *predicate_info,
@@ -835,7 +512,6 @@ tn_info_use (BB *current_bb, OP *current_op, TN *local_tn,
   inc_ref_count(tninfo);
   return tninfo;
 }
-#endif
 
 inline EBO_OP_INFO *
 get_new_opinfo (OP *op)

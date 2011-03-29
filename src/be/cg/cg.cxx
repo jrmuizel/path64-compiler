@@ -86,9 +86,6 @@
 #include "lra.h"
 #include "cgemit.h"
 #include "cg_loop.h"
-#ifdef TARG_ST
-#include "cg_ivs.h"
-#endif
 #include "glob.h"
 #include "cgexp.h"
 #include "igls.h"
@@ -117,17 +114,6 @@
 #ifdef KEY
 #include "cg_gcov.h"
 #endif
-#ifdef TARG_ST
-#include "cg_ssa.h"
-#include "cg_outssa.h"
-#include "cg_ssaopt.h"
-#include "dominate.h"
-#include "loop_invar_hoist.h"
-#include "ipra.h"
-#include "cg_color.h"
-#include "cg_tailmerge.h"
-#include "cg_coalesce.h"
-#endif
 #ifdef SUPPORTS_SELECT
 #include "cg_select.h"
 #endif
@@ -136,12 +122,6 @@
 #include "lao_stub.h"
 #endif
 
-#ifdef TARG_ST
-#include "top_properties.h"
-#include "mexpand.h"
-
-#include "ExportFromBackEnd.h"
-#endif
 
 MEM_POOL MEM_local_region_pool;	/* allocations local to processing a region */
 MEM_POOL MEM_local_region_nz_pool;
@@ -150,17 +130,6 @@ BOOL Trace_REGION_Interface = FALSE;
 
 BOOL PU_Has_Calls;
 BOOL PU_References_GP;
-#ifdef TARG_ST
-BOOL PU_Has_Asm;
-BOOL PU_Has_Hwloops;
-BOOL PU_Has_EH_Return;
-
-/* [GS-DFGforISE] variable used for keeping the frequency of the 
- *                entry point of the pu, before normalization of
- *                the frequencies.
- */
-float PU_freq;
-#endif
 
 #ifdef KEY
 BOOL PU_Has_Exc_Handler;
@@ -187,9 +156,6 @@ extern BOOL cg_load_execute_overridden;
 
 /* WOPT alias manager */
 struct ALIAS_MANAGER *Alias_Manager;
-#ifdef TARG_ST
-IPRA cg_ipra;
-#endif
 
 static BOOL Orig_Enable_SWP;
 
@@ -206,11 +172,6 @@ CG_PU_Initialize (WN *wn_pu)
 
   PU_Has_Calls = FALSE;
   PU_References_GP = FALSE;
-#ifdef TARG_ST
-  PU_Has_Asm = FALSE;
-  PU_Has_Hwloops = FALSE;
-  PU_Has_EH_Return = FALSE;
-#endif
 
 #ifdef KEY
   PU_Has_Exc_Handler = FALSE;
@@ -335,11 +296,6 @@ CG_PU_Initialize (WN *wn_pu)
   Init_Entry_Exit_Code (wn_pu);
   REGISTER_Reset_FP();	// in case $fp is used, must be after entry_exit init
 
-#ifdef TARG_ST
-  /* Initialize cg_color module. */
-  CGCOLOR_Initialize_For_PU();
-#endif
-
   /* Initialize global tn universe */
   GTN_UNIVERSE_Pu_Begin();
 
@@ -356,22 +312,8 @@ CG_PU_Initialize (WN *wn_pu)
     MEM_Tracing_Enable();
   }
 
-#ifdef TARG_ST
-  // [CG]: In debug mode we perform on check on topcode
-#if Is_True_On
-  for(int i = 0; i < TOP_count; ++i) {
-    FmtAssert(TOP_check_properties((TOP)i), ("topcode %s as inconsistant properties", TOP_Name((TOP)i)));
-  }
-#endif
-#endif
-
 #ifdef LAO_ENABLED
   if (CG_LAO_activation != 0) lao_init_pu();
-#endif
-
-#ifdef TARG_ST
-  // [GS-DFGforISE] Init of exportation to DfgForIseclasses for PU.
-  DfgForIse::ExportFromBackEnd_PU_Initialize();
 #endif
 
 }
@@ -379,11 +321,6 @@ CG_PU_Initialize (WN *wn_pu)
 void
 CG_PU_Finalize(void)
 {
-
-#ifdef TARG_ST
-  // [GS-DFGforISE] End of exportation to DfgForIseclasses for PU.
-  DfgForIse::ExportFromBackEnd_PU_Finalize();
-#endif
 
 #ifdef LAO_ENABLED
   if (CG_LAO_activation != 0) lao_fini_pu();
@@ -529,21 +466,6 @@ CG_Generate_Code(
     DST_IDX pu_dst, 
     BOOL region )
 {
-# ifdef TARG_ST
-  if (region) {
-    FmtAssert(FALSE,("CG_Generate_Code: region code generator for an ST target"));
-  }
-#endif
-#ifdef TARG_ST
-  if (Current_Dep_Graph != NULL && Get_Trace(TP_CG, 1)) {
-    // Try to dump the CG Dependence graph, if still valid ??
-    // Current_PU_Info should be valid ??
-    fprintf(TFile, "%sLNO dep graph for CG, before CG\n%s", DBar, DBar);
-    Current_Dep_Graph->Print(TFile);
-    fprintf(TFile, "%s", DBar);
-  }
-#endif
-
 /*later:  BOOL region = DST_IS_NULL(pu_dst); */
   BOOL orig_reuse_temp_tns = Reuse_Temp_TNs;
 
@@ -608,7 +530,7 @@ CG_Generate_Code(
     Add_Float_Stores();
   }
 #endif
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   extern BOOL profile_arcs;
   if (flag_test_coverage || profile_arcs)
 //    CG_Compute_Checksum();
@@ -673,13 +595,6 @@ CG_Generate_Code(
     Check_for_Dump ( TP_FIND_GLOB, NULL );
   }
 
-#ifdef TARG_ST
-  // FdF 20090826: At this point, we can analyze the calls to look for
-  // the input and output parameters.
-  if (PU_Has_Calls && CG_enable_ssa)
-    SSA_init_call_parms(region ? REGION_get_rid(rwn) : NULL, region);
-#endif
-
   if (Enable_CG_Peephole) {
     Set_Error_Phase("Extended Block Optimizer");
     Start_Timer(T_EBO_CU);
@@ -692,23 +607,10 @@ CG_Generate_Code(
   if (CG_opt_level > 0 && CFLOW_opt_before_cgprep) {
     // Perform all the optimizations that make things more simple.
     // Reordering doesn't have that property.
-#ifdef TARG_ST
-    // FdF 2005/11/02: Cloning may decrease if-conversion
-    // opportunities.
-    if (CG_enable_ssa && CG_enable_select)
-      CFLOW_Optimize(  (CFLOW_ALL_OPTS|CFLOW_IN_CGPREP)
-		       & ~(CFLOW_FREQ_ORDER | CFLOW_REORDER | CFLOW_CLONE),
-		       "CFLOW (first pass)", TRUE);
-    else
-      CFLOW_Optimize(  (CFLOW_ALL_OPTS|CFLOW_IN_CGPREP)
-		       & ~(CFLOW_FREQ_ORDER | CFLOW_REORDER),
-		       "CFLOW (first pass)", TRUE);
-#else
 
     CFLOW_Optimize(  (CFLOW_ALL_OPTS|CFLOW_IN_CGPREP)
 		   & ~(CFLOW_FREQ_ORDER | CFLOW_REORDER),
 		   "CFLOW (first pass)");
-#endif
     if (frequency_verify && CG_PU_Has_Feedback)
       FREQ_Verify("CFLOW (first pass)");
   }
@@ -741,85 +643,16 @@ CG_Generate_Code(
 	FREQ_Verify("Heuristic Frequency Computation");
     }
   }
-  #ifdef TARG_ST
-  // FdF: Code imported from ORC2.1. Perform before SSA and if-conversion.
-  if (IPFEC_Enable_LICM && (IPFEC_Enable_LICM_passes & 0x01 ) && CG_opt_level > 1 && !CG_localize_tns) {
-      Set_Error_Phase("Perform_Loop_Invariant_Code_Motion");
-      Perform_Loop_Invariant_Code_Motion ();
-      Check_for_Dump ( TP_LICM, NULL );
-    }
-#endif
-  // Invoke global optimizations before register allocation at -O2 and above.
-  if (CG_opt_level > 1 && !CG_localize_tns) {
-#ifdef TARG_ST
-    if (CG_enable_ssa)
-      CG_enable_ssa = SSA_Check(region ? REGION_get_rid(rwn) : NULL, region);
-    if (CG_enable_ssa) {
-      // Enter SSA.
-      // Precondition: live-analysis ok.
-      Set_Error_Phase( "CG SSA Construction");
-      SSA_Enter (region ? REGION_get_rid(rwn) : NULL, region);
-      SSA_Verify (region ? REGION_get_rid(rwn) : NULL, region);
-      GRA_LIVE_Recalc_Liveness(region ? REGION_get_rid( rwn) : NULL);
-      Check_for_Dump(TP_SSA, NULL);
-      // Postcondition: code in PSI-SSA, dominators ok, live-analysis ok.
 
-      // Perform SSA dataflow optimizations
-      // Precondition: code in PSI-SSA, dominators ok, live-analysis ok.
-      Set_Error_Phase( "CG SSA DataFlow Optimizations");
-      SSA_Optimize();
-      SSA_Verify (region ? REGION_get_rid(rwn) : NULL, region);
-      GRA_LIVE_Recalc_Liveness(region ? REGION_get_rid( rwn) : NULL);
-      Check_for_Dump(TP_SSA, NULL);
-      // Postcondition: code in PSI-SSA, dominators ok, live-analysis ok.
-
-      // Clean up the dominator/posdominator information before control flow optimizations.
-      Free_Dominators_Memory();
-      // Postcondition: code in PSI-SSA, live-analysis ok. dominators freed.
-    }
-#endif
-  } //CG_opt_level > 1
-
-   if (CG_opt_level > 1 && !CG_localize_tns) {
-#ifdef TARG_ST
-      if (CG_enable_ssa) {
-	// Perform SSA controlflow optimizations
-	// Precondition: code in PSI-SSA, live-analysis ok.
-	Set_Error_Phase( "CG SSA ControlFlow Optimizations");
-	if (CG_enable_min_max_abs) 	{
-		Convert_Min_Max(region ? REGION_get_rid(rwn) : NULL, NULL);
-		Check_for_Dump(TP_SSA, NULL);
-	}
-#ifdef SUPPORTS_SELECT
-	if (CG_enable_select) {
-	  // Perform select generation (partial predication if-conversion). 
-	  Start_Timer(T_Select_CU);
-	  Convert_Select(region ? REGION_get_rid(rwn) : NULL, NULL);
-	  Stop_Timer(T_Select_CU);
-	  if (frequency_verify)
-	    FREQ_Verify("Select Conversion");
-	  Check_for_Dump(TP_SELECT, NULL);
-	}
-#endif
-	// Postcondition: code in PSI-SSA, live-analysis ok.
-      }
-#endif
-  }
-
-  
   if (CG_opt_level > 1 && !CG_localize_tns) {
 
     // Perform hyperblock formation (if-conversion).  Only works for
     // IA-64 at the moment. 
     //
-#ifdef TARG_ST
-      if (HB_formation && (CGTARG_Can_Predicate() || CGTARG_Can_Select())) {
-#else
       if (CGTARG_Can_Predicate() ) {
-#endif
       // Initialize the predicate query system in the hyperblock formation phase
       HB_Form_Hyperblocks(region ? REGION_get_rid(rwn) : NULL, NULL);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       // We do not have a slot in the BB structure to store predicate TNs.
       // Instead, we remember the last seen block and the associated 
       // predicate TNs. So, we need to reinitialize the TNs and the basic block
@@ -834,53 +667,6 @@ CG_Generate_Code(
       if (frequency_verify)
 	FREQ_Verify("Hyperblock Formation");
     }
-#ifdef TARG_ST
-    if (CG_enable_ssa && !CG_localize_tns) {
-      // Exit SSA.
-      // Precondition: code in PSI-SSA, live-analysis ok, dominator freed.
-      Set_Error_Phase("Out of SSA Translation");
-      Start_Timer(T_OutSSA_CU);
-      SSA_Exit(region ? REGION_get_rid(rwn) : NULL, region);
-      Stop_Timer(T_OutSSA_CU);
-      GRA_LIVE_Recalc_Liveness(region ? REGION_get_rid(rwn) : NULL);
-      Check_for_Dump(TP_SSA, NULL);
-      // Postcondition: live-analysis ok, dominator freed.
-#ifdef SUPPORTS_PREDICATION
-      PQSCG_reinit(REGION_First_BB);
-#endif
-    }
-#endif
-
-#ifdef TARG_ST
-    // [CG] Run control flow opt after SSA.
-    // Currently enabled only if if_convert is true
-    // Run also an EBO pre pass after if-conversion as
-    // merge points may have been removed
-    if (CG_enable_ssa && CG_enable_select && !CG_localize_tns) {
-#ifdef TARG_ST
-#ifdef TARG_STxP70
-      if(CG_ifc_space)
-#endif
-      // FdF 2005/11/02: Perform cloning after if-conversion.
-      CFLOW_Optimize(CFLOW_MERGE|CFLOW_CLONE,
-		     "CFLOW (after ssa)", TRUE);
-#endif
-      if (Enable_CG_Peephole) {
-	Set_Error_Phase("Extended Block Optimizer (after ssa)");
-	Start_Timer(T_EBO_CU);
-	EBO_Pre_Process_Region (region ? REGION_get_rid(rwn) : NULL);
-	Stop_Timer ( T_EBO_CU );
-	Check_for_Dump ( TP_EBO, NULL );
-      }
-      if (IPFEC_Enable_LICM && (IPFEC_Enable_LICM_passes & 0x02) ) {
-	// Another pass of invariant code motion is useful after if-conversion
-	// as there are more speculated instructions in loop to hoist.
-	Set_Error_Phase("Perform_Loop_Invariant_Code_Motion after SSA");
-	Perform_Loop_Invariant_Code_Motion ();
-	Check_for_Dump ( TP_LICM, NULL );
-        }
-    }
-#endif
 
 
     if (CG_enable_loop_optimizations) {
@@ -931,11 +717,7 @@ CG_Generate_Code(
 
     /* Optimize control flow (second pass) */
     if (CFLOW_opt_after_cgprep) {
-        #ifdef TARG_ST
-      CFLOW_Optimize(CFLOW_ALL_OPTS, "CFLOW (second pass)", TRUE);
-#else
       CFLOW_Optimize(CFLOW_ALL_OPTS, "CFLOW (second pass)");
-#endif
       if (frequency_verify)
 	FREQ_Verify("CFLOW (second pass)");
     }
@@ -944,44 +726,16 @@ CG_Generate_Code(
       Set_Error_Phase( "Extended Block Optimizer");
       Start_Timer( T_EBO_CU );
       EBO_Process_Region (region ? REGION_get_rid(rwn) : NULL);
-#ifdef TARG_ST
-#ifdef TARG_STxP70
-      // Some instructions, like TBIT, need a second EBO pass to be catched
-      GRA_LIVE_Recalc_Liveness(region ? REGION_get_rid(rwn) : NULL);
-      EBO_Process_Region (region ? REGION_get_rid(rwn) : NULL);
-#endif
-      if (CG_AutoMod) {
-	GRA_LIVE_Recalc_Liveness(region ? REGION_get_rid(rwn) : NULL);   
-        if (Perform_AutoMod_Optimization()) {
-	  GRA_LIVE_Recalc_Liveness(region ? REGION_get_rid(rwn) : NULL);   
-	  EBO_Process_Region (region ? REGION_get_rid(rwn) : NULL);
-	}
-      }
-#endif
       PQSCG_reinit(REGION_First_BB);
       Stop_Timer ( T_EBO_CU );
       Check_for_Dump ( TP_EBO, NULL );
-#ifdef TARG_ST
-    // [vcdv] second call to PLICM after hwloop detection so that
-    // hwloop invariant instructions can  be factorized
-      if (IPFEC_Enable_LICM && (IPFEC_Enable_LICM_passes & 0x04) &&
-          CG_opt_level > 1 && !CG_localize_tns) {
-      Set_Error_Phase("Perform_Loop_Invariant_Code_Motion");
-      Perform_Loop_Invariant_Code_Motion ();
-      Check_for_Dump ( TP_LICM, NULL );
-    }
-#endif
 
       // FdF: Useful to run CFLOW_optimize again because EBO may have
       // propagated constants such that conditional branches become
       // inconditional.
       /* Optimize control flow (third pass) */
       if (CFLOW_opt_after_cgprep) {
-#ifdef TARG_ST
-	CFLOW_Optimize(CFLOW_ALL_OPTS, "CFLOW (third pass)", TRUE);
-#else
 	CFLOW_Optimize(CFLOW_ALL_OPTS, "CFLOW (third pass)");
-#endif
 	if (frequency_verify)
 	  FREQ_Verify("CFLOW (third pass)");
       }
@@ -1004,17 +758,6 @@ CG_Generate_Code(
     // of NaT bits, then need to save and restore ar.unat. 
   }
 
-#ifdef TARG_ST
-  // [GS-DFGforISE] Exportation to DfgForIse classes.
-  if (CG_dfg_ise_mask & 0xff) {
-    Set_Error_Phase("Exportation to DFGforISE classes");	 
-    // Computing the frequencies of basic blocks if not already done.
-    if (!CG_enable_feedback && !FREQ_Frequencies_Computed()) {	 
-      FREQ_Compute_BB_Frequencies();
-    }
-    DfgForIse::ExportFromBackEndForIse();
-  }
-#endif
 
   /* Global register allocation, Scheduling:
    *
@@ -1026,23 +769,6 @@ CG_Generate_Code(
    *   - Global code motion phase (GCM) 
    *   - Local scheduling after register allocation
    */
-#ifdef TARG_ST
-  CGTARG_Resize_Instructions ();
-#endif
-#ifdef TARG_ST
-  // [TTh] First pass of Coalescing, before Prepass Scheduling
-  //       At this stage, live-ranges are less likely to be
-  //       conflicting.
-  if ((CG_opt_level > 1) && (CG_coalesce & COALESCE_BEFORE_SCHED)) {
-      Set_Error_Phase( "GTN Coalescing before Prepass Scheduling" );
-      GRA_LIVE_Recalc_Liveness(region ? REGION_get_rid(rwn) : NULL);
-      BOOL changed = CG_Coalesce_PU();
-      if (changed) {
-        GRA_LIVE_Recalc_Liveness(region ? REGION_get_rid(rwn) : NULL);
-      }
-      Check_for_Dump (TP_COALESCE, NULL);
-    }
-#endif
 
 #ifdef KEY
   // Earlier phases (esp. CFLOW) might have introduced local definitions and
@@ -1055,10 +781,6 @@ CG_Generate_Code(
   GRA_LIVE_Rename_TNs();
 #endif
    Set_Error_Phase( "Prepass Scheduling" );
-#ifdef TARG_ST
-  extern void Check_Prolog_Epilog ();
-  Check_Prolog_Epilog();
-#endif
 #ifdef LAO_ENABLED
   // Call the LAO for software pipelining and prepass scheduling.
   if (CG_LAO_activation & OptimizeActivation_PrePass) {
@@ -1071,35 +793,11 @@ CG_Generate_Code(
     }
   } else {
     IGLS_Schedule_Region (TRUE /* before register allocation */);
-#ifdef TARG_ST
-    // FdF 20080328: Reset loop trip count to remove an artificial use
-    // for register allocation.
-    BOOL need_live = FALSE;
-    for (BB *bb = REGION_First_BB; bb != NULL; bb = BB_next(bb)) {
-      if (BB_loophead(bb)) {
-	ANNOTATION *info_ant = ANNOT_Get(BB_annotations(bb), ANNOT_LOOPINFO);
-	LOOPINFO *info = info_ant ? ANNOT_loopinfo(info_ant) : NULL;
-	TN *trip_count_tn = info ? LOOPINFO_primary_trip_count_tn(info) : NULL;
-	if (trip_count_tn != NULL && TN_is_register(trip_count_tn)) {
-	  LOOPINFO_primary_trip_count_tn(info) = NULL;
-	  need_live = TRUE;
-	}
-      }
-    }
-    if (need_live) {
-      GRA_LIVE_Recalc_Liveness(NULL);
-      GRA_LIVE_Rename_TNs();
-    }
-#endif
   }
 #else
   IGLS_Schedule_Region (TRUE /* before register allocation */);
 #endif
 
-#ifdef TARG_ST
-  extern void Schedule_Prefetch_Prepass(void);
-  Schedule_Prefetch_Prepass();
-#endif
   // Register Allocation Phase
 #ifdef LAO_ENABLED
   if (CG_LAO_activation & OptimizeActivation_RegAlloc) {
@@ -1125,21 +823,6 @@ CG_Generate_Code(
   // No allocation  performed by LAO, run full GRA/LRA
 #endif
 
-#ifdef TARG_ST
-    // [TTh] Second pass of Coalescing, after Prepass Scheduling
-    //       At this stage, the scheduling might have removed some
-    //       live-range conflicts.
-    if ((CG_opt_level > 1) && (CG_coalesce & COALESCE_AFTER_SCHED)) {
-      Set_Error_Phase( "GTN Coalescing after Prepass Scheduling" );
-      GRA_LIVE_Recalc_Liveness(region ? REGION_get_rid(rwn) : NULL);
-      BOOL changed = CG_Coalesce_PU();
-      if (changed) {
-        GRA_LIVE_Recalc_Liveness(region ? REGION_get_rid(rwn) : NULL);
-      }
-      Check_for_Dump (TP_COALESCE, NULL);
-    }
-#endif
- 
 
   if (!CG_localize_tns)
   {
@@ -1170,26 +853,9 @@ CG_Generate_Code(
     }
 
     GRA_Allocate_Global_Registers( region );
-#ifdef TARG_ST
-    if (CG_enable_rename_after_GRA) {
-      // [SC] To split the local live ranges introduced
-      // by GRA spilling.
-      GRA_LIVE_Rename_TNs();
-      Check_for_Dump (TP_LOCALIZE, NULL);
-    }
-#endif
-
   }
 
   LRA_Allocate_Registers (!region);
-#ifdef TARG_ST
-  if (CG_enable_ssa) {
-    //
-    // Collect statistical info about the SSA:
-    //
-    SSA_Collect_Info(region ? REGION_get_rid( rwn ) : NULL, region, TP_ALLOC);
-  }
-#endif
 
 #ifdef TARG_X8664
   GRU_Fuse_Global_Spills (!region);
@@ -1200,13 +866,8 @@ CG_Generate_Code(
     /* Done with all grant information */
     GRA_Finalize_Grants();
   }
-#ifdef TARG_ST
-  Set_Error_Phase ("MExpand");
-  Convert_To_Multi_Ops ();
-  Check_for_Dump (TP_ALLOC, NULL);
-#endif
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   /* Optimize control flow (third pass).  Callapse empty GOTO BBs which GRA
      didn't find useful in placing spill code.  Bug 9063. */
   if (CFLOW_opt_after_cgprep &&
@@ -1219,11 +880,6 @@ CG_Generate_Code(
     /* Check that we didn't introduce a new gp reference */
     Adjust_GP_Setup_Code( Get_Current_PU_ST(), TRUE /* allocate registers */ );
 
-#ifdef TARG_ST
-    /* Adjust stack frame temporaries before finalizing the frame layout. */
-    Adjust_Stack_Frame(Get_Current_PU_ST());
-#endif
-
     /* The stack frame is final at this point, no more spilling after this.
      * We can set the Frame_Len now.
      * Then we can go through all the entry/exit blocks and fix the SP 
@@ -1233,19 +889,6 @@ CG_Generate_Code(
     Set_Error_Phase ( "Final SP adjustment" );
     Adjust_Entry_Exit_Code ( Get_Current_PU_ST() );
   }
-#ifdef TARG_ST
-  // We have to pass after adjust entry exit code, because for stxp70 target,
-  // we cannot update gra liveness between regalloc and the adjustment (pb
-  // invalid avail temps in adjust entry code (R14 sets as available!))
-  Set_Error_Phase ( "Tailmerge 1" );
-  Tailmerge(1);
-#endif
-#ifdef TARG_ST
-  if (CFLOW_enable_last_pass || CFLOW_Space) {
-    CFLOW_Optimize(CFLOW_MERGE_OPS|CFLOW_MERGE_EMPTY|CFLOW_HOIST_OPS, "CFLOW (merge ops)", FALSE);
-    CFLOW_Optimize(CFLOW_BRANCH|CFLOW_UNREACHABLE|CFLOW_MERGE_EMPTY|CFLOW_REDUNDANT_RETURN, "CFLOW (after merge ops)", FALSE);
-  }
-#endif
 
   if (Enable_CG_Peephole) {
     Set_Error_Phase("Extended Block Optimizer");
@@ -1254,19 +897,7 @@ CG_Generate_Code(
     Stop_Timer ( T_EBO_CU );
     Check_for_Dump ( TP_EBO, NULL );
   }
-#ifdef TARG_ST
-  CGTARG_Resize_Instructions ();
-  BOOL modified = CGTARG_Pseudo_Make_Expand();
-  //[TDR] - Fix for bug #32432 : After Make Expand, some small constants may be propagated by EBO
-  if (Enable_CG_Peephole && modified) {
-    Set_Error_Phase("Extended Block Optimizer (After Make Expand)");
-    Start_Timer(T_EBO_CU);
-    EBO_Post_Process_Region (region ? REGION_get_rid(rwn) : NULL);
-    CGTARG_Pseudo_Make_Expand();
-    Stop_Timer ( T_EBO_CU );
-    Check_for_Dump ( TP_EBO, NULL );
-  }
-#endif
+
 #ifdef LAO_ENABLED
   if (CG_LAO_activation & (OptimizeActivation_PostPass|
                               OptimizeActivation_Encode)) {
@@ -1318,15 +949,6 @@ CG_Generate_Code(
 
 #if defined(KEY) && defined(TARG_MIPS)
   CFLOW_Fixup_Long_Branches();
-#endif
-
-#ifdef TARG_ST
-  extern void Schedule_Prefetch_Postpass(void);
-  if (CG_opt_level >= 3)
-    Schedule_Prefetch_Postpass ();
-  if (!region) {
-    cg_ipra.Note_Used_Registers (Get_Current_PU_ST() );
-  }
 #endif
 
   Reuse_Temp_TNs = orig_reuse_temp_tns;		/* restore */
@@ -1440,23 +1062,6 @@ CG_Generate_Code(
 /* ================================================================= */
 /* routines for dumping/tracing the program */
 
-#ifdef TARG_ST  
-/* =================================================================
- *   Trace_graphML
- * =================================================================
- */
-extern void graphML_DumpCFG(BB* bb, const char* suffix);
-
-void
-Trace_GML(
-    INT phase,		/* Phase after which we're printing */
-    const char *pname)	/* Print name for phase	*/
-  {
-  	if (Get_Trace(TKIND_GML, phase) && Get_BB_Trace(BB_id(REGION_First_BB))) {
-  		graphML_DumpCFG(REGION_First_BB,pname);
-  	}
-  }
-#endif
 void
 Trace_IR(
   INT phase,		/* Phase after which we're printing */
@@ -1542,18 +1147,6 @@ Check_for_Dump ( INT32 pass, BB *bb )
     /* Check to see if we should give a memory allocation trace.
      */
     Trace_Memory_Allocation ( pass, s );
-#ifdef TARG_ST
-    /* Check to see if we should dump graphML CFG.  
-     */
-    Trace_GML ( pass, s );
-
-    /* [GS-DFGforISE]
-     * Check to see if we should export the DFG. If yes, check each BB.
-     */
-    if (CG_dfg_debug_mask & 0xff) {
-      DfgForIse::ExportFromBackEndForDebug( pass, s, bb );
-    }
-#endif
 
   }
 }
@@ -1591,10 +1184,6 @@ CG_Dump_Region(FILE *fd, WN *wn)
 extern void
 CG_Change_Elf_Symbol_To_Undefined (ST *st)
 {
-#ifdef TARG_ST
-    FmtAssert(FALSE,("not implemented"));
-#else
 	EMT_Change_Symbol_To_Undefined(st);
-#endif
 }
 

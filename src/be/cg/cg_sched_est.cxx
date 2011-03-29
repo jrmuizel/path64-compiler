@@ -331,9 +331,6 @@ CG_SCHED_EST *CG_SCHED_EST_Create(BB *bb, MEM_POOL *pool,
   
   if (CG_SCHED_EST_use_locs && LOCS_Enable_Scheduling &&
       type != SCHED_EST_FOR_HB) {
-#ifdef TARG_ST
-    FmtAssert(FALSE,("CG_SCHED_EST_Create: HB_Schedule() not implemented"));
-#else
     HB_Schedule *Sched = CXX_NEW(HB_Schedule(), pool);
     Sched->Init(bb, 
 		HBS_BEFORE_GRA | HBS_FROM_CGPREP, 
@@ -344,7 +341,6 @@ CG_SCHED_EST *CG_SCHED_EST_Create(BB *bb, MEM_POOL *pool,
 
     if (BB_last_op(bb)) 
       se->sched_cycles = OP_scycle(BB_last_op(bb)) + 1;
-#endif
   } else {
 
     FOR_ALL_BB_OPs(bb, op) {

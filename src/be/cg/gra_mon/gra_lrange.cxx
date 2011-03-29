@@ -81,9 +81,6 @@ static char *rcs_id = "$Source: be/cg/gra_mon/SCCS/s.gra_lrange.cxx $ $Revision:
 #include "gra_region.h"
 #include "gra_lrange_subuniverse.h"
 #include "gra_grant.h"
-#ifdef TARG_ST
-#include "gra_color.h"
-#endif
 #include "gra_interfere.h"
 
 #ifdef KEY
@@ -141,10 +138,6 @@ LRANGE_MGR::Create( LRANGE_TYPE type, ISA_REGISTER_CLASS rc, size_t size )
   result->mark = 0;
   result->pref = NULL;
   result->pref_priority = 0.0;
-#ifdef TARG_ST
-  result->pref_subclass = ISA_REGISTER_SUBCLASS_UNDEFINED;
-  result->pref_subclass_offset = 0;
-#endif
 
 
   return result;
@@ -172,7 +165,7 @@ LRANGE_MGR::Create_Complement( TN* tn )
   result->u.c.first_lunit = NULL;
   // Why +2?  I think because 0 is reserved.
   result->u.c.live_bb_set = BB_SET_Create_Empty(PU_BB_Count+2,GRA_pool);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   result->u.c.internal_bb_set = BB_SET_Create_Empty(PU_BB_Count+2,GRA_pool);
   result->u.c.boundary_bbs = NULL;
 
@@ -183,9 +176,6 @@ LRANGE_MGR::Create_Complement( TN* tn )
     result->Must_Allocate_Set();
 #endif
   result->u.c.global_pref_set = NULL;
-#ifdef TARG_ST
-  result->u.c.call_clobbered = REGISTER_SET_EMPTY_SET;
-#endif
   gra_region_mgr.Complement_Region()->Add_LRANGE(result);
   TN_MAP_Set(tn_map,tn,result);
   if (TN_is_save_reg(tn))
@@ -215,28 +205,14 @@ LRANGE_MGR::Create_Region( TN* tn, GRA_REGION* region )
 
 /////////////////////////////////////
 // Create and return a new local LRANGE for the given <bb> and <cl>
-#ifdef TARG_ST
-LRANGE*
-LRANGE_MGR::Create_Local( GRA_BB* gbb, ISA_REGISTER_CLASS cl,
-			  ISA_REGISTER_SUBCLASS sc, INT nregs)
-#else
 LRANGE*
 LRANGE_MGR::Create_Local( GRA_BB* gbb, ISA_REGISTER_CLASS cl )
-#endif
 {
   LRANGE* result = Create(LRANGE_TYPE_LOCAL, cl, sizeof(LRANGE) -
                                    sizeof(result->u.c) + sizeof(result->u.l));
   ++local_lrange_count;
   result->u.l.gbb = gbb;
-#ifdef TARG_ST
-  result->priority = gbb->Freq() * (CGSPILL_DEFAULT_STORE_COST + CGSPILL_DEFAULT_RESTORE_COST) * GRA_local_spill_multiplier;
-#else
   result->priority = gbb->Freq() * 2.0F;
-#endif
-#ifdef TARG_ST
-  result->u.l.subclass = sc;
-  result->u.l.nregs = nregs;
-#endif
   gra_region_mgr.Complement_Region()->Add_LRANGE(result);
   return result;
 }
@@ -262,11 +238,6 @@ LRANGE_MGR::Create_Duplicate( LRANGE* lrange )
   result = Create_Complement(tn);
   result->u.c.original_tn = lrange->u.c.original_tn;
   result->flags = (LR_FLAG)(result->flags | (lrange->flags & LRANGE_FLAGS_avoid_ra));
-  #ifdef TARG_ST
-  if (TN_is_save_reg(lrange->Tn())) {
-    result->pref = lrange->Pref();
-  }
-#endif
   return result;
 }
 
@@ -282,12 +253,7 @@ LRANGE::Candidate_Reg_Count(void) {
     region = Region();
   else region = gra_region_mgr.Complement_Region();
   if ( Spans_A_Call() ) 
-#ifdef TARG_ST
-    return REGISTER_SET_Size (REGISTER_SET_Difference(region->Registers_Available(rc),
-						      Call_Clobbered()));
-#else
     return region->Callee_Saves_Registers_Available_Count(rc);
-#endif
   else return REGISTER_SET_Size(region->Registers_Available(rc));
 }	
 
@@ -313,7 +279,7 @@ LRANGE::Contains_BB(GRA_BB *gbb) {
   return BB_SET_MemberP(u.c.live_bb_set, gbb->Bb());   
 }
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 /////////////////////////////////////
 void 
 LRANGE::Add_Internal_BB(GRA_BB *gbb) { 
@@ -499,7 +465,7 @@ LRANGE::Interferes( LRANGE* lr1 )
 
   if ( Type() == LRANGE_TYPE_COMPLEMENT ) {
     if ( lr1->Type() == LRANGE_TYPE_COMPLEMENT ) {
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       if (GRA_optimize_boundary) {
 	// If none of the live BBs interfere, then the LRANGEs don't interfere.
 	if (!BB_SET_IntersectsP(u.c.live_bb_set, lr1->u.c.live_bb_set))
@@ -572,14 +538,7 @@ LRANGE::Calculate_Priority(void)
   if ( Must_Allocate() )
     priority = FLT_MAX;
   else if ( Type() == LRANGE_TYPE_LOCAL )
-#ifdef TARG_ST
-    // [SC] The cost of spilling a local live range is estimated
-    // as one store and one load, assuming we choose to spill a global live
-    // range at the start of the BB and reload it at the end of the BB.
-    priority = u.l.gbb->Freq() * (CGSPILL_DEFAULT_STORE_COST + CGSPILL_DEFAULT_RESTORE_COST) * GRA_local_spill_multiplier;
-#else
     priority = u.l.gbb->Freq() * 2.0F;
-#endif
   else if ( Type() == LRANGE_TYPE_REGION )
     priority = 0.0;
   else {
@@ -616,7 +575,7 @@ LRANGE::Calculate_Priority(void)
       }
     }
     priority = value;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     // Prioritize live ranges by reference density as in classic Chow.
     if (GRA_prioritize_by_density) {
       UINT32 num_bbs = BB_SET_Size(this->Live_BB_Set());
@@ -654,7 +613,7 @@ Global_Preferenced_Regs(LRANGE* lrange, GRA_BB* gbb)
 	 tn != GTN_SET_CHOOSE_FAILURE;
 	 tn = GTN_SET_Choose_Next(lrange->Global_Pref_Set(), tn)) {
       LRANGE *plrange = lrange_mgr.Get(tn);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       if (GRA_optimize_boundary) {
 	// Before making the preferenced TN's register available, check to see
 	// if that register is also used by a non-preferenced TN in the BB.  If
@@ -695,65 +654,20 @@ Global_Preferenced_Regs(LRANGE* lrange, GRA_BB* gbb)
       } else
 #endif
       if (plrange->Contains_BB(gbb) && plrange->Allocated()) {
-#ifdef TARG_ST
-	// [TTh] In case of multi-register TNs, all sub-registers
-	// must be added to the global preference set.
-	INT nhardregs = TN_nhardregs(tn);
-	if ( nhardregs > 1) {
-	  REGISTER_SET allocated;
-	  allocated    = REGISTER_SET_Range(plrange->Reg(), plrange->Reg()+nhardregs-1);
-	  global_prefs = REGISTER_SET_Union(global_prefs, allocated);
-	}
-	else
-#endif
 	global_prefs = REGISTER_SET_Union1(global_prefs, plrange->Reg());
       }
     }
   }
   return global_prefs;
 }
-#ifdef TARG_ST
-/////////////////////////////////////
-// Return the set of registers still allowed for <lrange>.
-// This means finding the set of registers such that there is
-// no conflict with any already allocated neighbor of
-// <lrange>.  <lrange> must belong to <region>.
-// Ignore any subclass requirements.
-REGISTER_SET
-LRANGE::Allowed_Registers (GRA_REGION *region)
-{
-  return Allowed_Registers (region, FALSE);
-}
 
 /////////////////////////////////////
 // Return the set of registers still allowed for <lrange>.
 // This means finding the set of registers such that there is
 // no conflict with any already allocated neighbor of
 // <lrange>.  <lrange> must belong to <region>.
-// Include all subclass requirements.
-REGISTER_SET
-LRANGE::SubClass_Allowed_Registers (GRA_REGION *region)
-{
-  return Allowed_Registers (region, TRUE);
-}
-
-#endif
-
-/////////////////////////////////////
-// Return the set of registers still allowed for <lrange>.
-// This means finding the set of registers such that there is
-// no conflict with any already allocated neighbor of
-// <lrange>.  <lrange> must belong to <region>.
-#ifdef TARG_ST
-// Include subclass requirements if INCLUDE_SUBCLASS_REQUIREMENTS
-// is true.
-REGISTER_SET
-LRANGE::Allowed_Registers( GRA_REGION* region,
-			   BOOL include_subclass_requirements)
-#else
 REGISTER_SET
 LRANGE::Allowed_Registers( GRA_REGION* region )
-#endif
 {
   LRANGE_LIVE_GBB_ITER gbb_iter;
   LRANGE_LUNIT_ITER    lunit_iter;
@@ -797,7 +711,7 @@ LRANGE::Allowed_Registers( GRA_REGION* region )
     allowed = REGISTER_SET_Difference(allowed,
 				      REGISTER_CLASS_callee_saves(rc));
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   // if PU has label jumped to from nested func, disallow callee-saved registers
   if (PU_Has_Nonlocal_Goto_Target)
     allowed = REGISTER_SET_Difference(allowed,
@@ -824,41 +738,13 @@ LRANGE::Allowed_Registers( GRA_REGION* region )
   if (   Type() != LRANGE_TYPE_LOCAL && TN_is_save_reg(Tn())
   ) {
     REGISTER sv_reg = TN_save_reg(Tn());
-#ifdef TARG_ST
-    REGISTER_SET sv_set = REGISTER_SET_Range (sv_reg, sv_reg + NHardRegs() - 1);
-    // [SC] Allow save-regs to be allocated to their own register, or
-    // any caller-save register.  However, if a save-reg live range is
-    // split, it could be allocated to multiple places, which confuses
-    // the unwind information generator; so after a split, the deferred
-    // part of the live-range must be allocated to the specified register,
-    // or else spilled.
-    if (GRA_spill_to_caller_save && ! Split_Deferred ()) {
-      sv_set = REGISTER_SET_Union (sv_set, REGISTER_CLASS_caller_saves (rc));
-    }
-    allowed = REGISTER_SET_Intersection(allowed, sv_set);
-    // [SC] Special treatment for all save-regs in a function that has an
-    // eh_return: they should always be spilled.
-    if (PU_Has_EH_Return) {
-      allowed = REGISTER_SET_EMPTY_SET;
-    }
-#else
     REGISTER_SET singleton = REGISTER_SET_Union1(REGISTER_SET_EMPTY_SET,sv_reg);
     allowed = REGISTER_SET_Intersection(allowed,singleton);
-#endif
   }
 
   switch (Type()) {
 
   case LRANGE_TYPE_LOCAL:
-#ifdef TARG_ST
-    allowed = REGISTER_SET_Difference (allowed,
-                                     CGTARG_Forbidden_LRA_Registers (rc));
-    if (include_subclass_requirements
-	&& Sc () != ISA_REGISTER_SUBCLASS_UNDEFINED) {
-      allowed = REGISTER_SET_Intersection (allowed,
-					   REGISTER_SUBCLASS_members (Sc ()));
-    }
-#endif
     return
       REGISTER_SET_Difference(allowed, Gbb()->Registers_Used(rc));
 
@@ -880,7 +766,7 @@ LRANGE::Allowed_Registers( GRA_REGION* region )
       LUNIT* lunit = lunit_iter.Current();
       GRA_BB* gbb = lunit->Gbb();
       REGISTER_SET used = gbb->Registers_Used(rc);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       if (GRA_optimize_boundary) {
 	// If <gbb> is a boundary BB, remove from <used> those registers that
 	// are unused in the parts of the BB where the lrange is live.
@@ -905,12 +791,6 @@ LRANGE::Allowed_Registers( GRA_REGION* region )
       allowed =
         REGISTER_SET_Difference(allowed,
                                 REGISTER_SET_Difference(used,allowd_prefs));
-#ifdef TARG_ST
-      if (include_subclass_requirements) {
-	allowed = REGISTER_SET_Difference(allowed,
-					  lunit->SubClass_Disallowed());
-      }
-#endif      
     }
 
     for (gbb_iter.Init(this); ! gbb_iter.Done(); gbb_iter.Step()) {
@@ -926,14 +806,6 @@ LRANGE::Allowed_Registers( GRA_REGION* region )
     }
     if ( Avoid_RA() )
       allowed = REGISTER_SET_Difference1(allowed,TN_register(RA_TN));
-#ifdef TARG_ST
-    // Forbid some registers from GRA.
-    if (! TN_is_save_reg(Tn())) {
-      FmtAssert(!Has_Wired_Register(), ("encountered wired reg"));
-      allowed = REGISTER_SET_Difference(allowed,
-					CGTARG_Forbidden_GRA_Registers (rc));
-    }
-#endif
 #ifdef TARG_MIPS
     // The user wants GRA to avoid certain registers.  Bug 12625.
     if (rc == GRA_avoid_register_class)
@@ -941,12 +813,8 @@ LRANGE::Allowed_Registers( GRA_REGION* region )
 #endif
 
     if ( Spans_A_Call() ) {
-#ifdef TARG_ST
-      return REGISTER_SET_Difference(allowed, Call_Clobbered());
-#else
       return REGISTER_SET_Difference(allowed,
 				     REGISTER_CLASS_caller_saves(rc));
-#endif
     } else {
       return allowed;
     }
@@ -965,12 +833,8 @@ LRANGE::Allowed_Registers( GRA_REGION* region )
         allowed = REGISTER_SET_Difference1(allowed, nlr->Reg());
     }
     if ( Spans_A_Call() ) {
-#ifdef TARG_ST
-      return REGISTER_SET_Difference(allowed, Call_Clobbered());
-#else
       return REGISTER_SET_Difference(allowed,
 				     REGISTER_CLASS_caller_saves(rc));
-#endif
     } else {
       return allowed;
     }
@@ -982,7 +846,7 @@ LRANGE::Allowed_Registers( GRA_REGION* region )
 }
 
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 /////////////////////////////////////
 // Return the set of registers that are reclaimable for <lrange>.  This means
 // finding the set of registers that are already allocated to some other lrange
@@ -1075,17 +939,10 @@ LRANGE::Reclaimable_Registers( GRA_REGION* region )
 // <lrange> and other data structures as appropriate
 // (particularly GRA_BBs and GRA_REGIONS.)
 void
-#ifdef TARG_ST
-LRANGE::Allocate_Register( REGISTER r, INT nregs )
-#else
 LRANGE::Allocate_Register( REGISTER r, BOOL reclaim )
-#endif
 {
   LRANGE_LIVE_GBB_ITER live_gbb_iter;
   LRANGE_GLUE_REF_GBB_ITER glue_gbb_iter;
-#ifdef TARG_ST
-  INT i;
-#endif
   DevAssert(! Allocated(),("Reallocating a LRANGE register"));
   reg = r;
   flags = (LR_FLAG)(flags | LRANGE_FLAGS_allocated);
@@ -1095,14 +952,9 @@ LRANGE::Allocate_Register( REGISTER r, BOOL reclaim )
 
   switch ( Type() ) {
   case LRANGE_TYPE_LOCAL:
-#ifdef TARG_ST
-    GRA_GRANT_Local_Registers(Gbb(),Rc(),r, nregs);
-    Gbb()->Make_Registers_Used((ISA_REGISTER_CLASS) Rc(),r, nregs);
-#else
     GRA_GRANT_Local_Register(Gbb(),Rc(),r);
     Gbb()->Make_Register_Used((ISA_REGISTER_CLASS) Rc(), r, NULL, reclaim);
-#endif
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     // Update the referenced registers.
     if (GRA_reclaim_register) {
       Gbb()->Make_Register_Referenced(Rc(), r, this);
@@ -1110,26 +962,18 @@ LRANGE::Allocate_Register( REGISTER r, BOOL reclaim )
 #endif
     break;
   case LRANGE_TYPE_REGION:
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     // Need to call Make_Register_Referenced.
     FmtAssert(!GRA_reclaim_register,
 	      ("Allocate_Register: register reclaiming not yet supported "
 	       "for LRANGE_TYPE_REGION"));
 #endif
- #ifdef TARG_ST
-    Region()->Make_Registers_Used(Rc(), r, nregs);
-#else
     TN_Allocate_Register(Tn(),r);
-#endif
     Region()->Make_Register_Used(Rc(), r);
     for (glue_gbb_iter.Init(this); ! glue_gbb_iter.Done(); glue_gbb_iter.Step())
     {
       GRA_BB* gbb = glue_gbb_iter.Current();
-#ifdef TARG_ST
-      gbb->Make_Glue_Registers_Used(Rc(),r,nregs);
-#else
       gbb->Make_Glue_Register_Used(Rc(),r);
-#endif
     }
     break;
   case LRANGE_TYPE_COMPLEMENT:
@@ -1137,13 +981,9 @@ LRANGE::Allocate_Register( REGISTER r, BOOL reclaim )
     for (live_gbb_iter.Init(this); ! live_gbb_iter.Done(); live_gbb_iter.Step())
     {
       GRA_BB* gbb = live_gbb_iter.Current();
-#ifdef TARG_ST
-      gbb->Make_Registers_Used(Rc(), r, nregs);
-#else
       gbb->Make_Register_Used(Rc(), r, this, reclaim);
-#endif
     }
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     // Update the referenced registers.
     if (GRA_reclaim_register) {
       LRANGE_LUNIT_ITER lunit_iter;
@@ -1193,134 +1033,6 @@ LRANGE::Neighbor_Count(void)
     return UNDEFINED;
   }
 }
-#ifdef TARG_ST
-/////////////////////////////////////
-// Return the amount of conflict between THIS and NEIGHBOR.
-// This is the maximum number of registers that are
-// allocatable to THIS that NEIGHBOR could occupy.
-// It is essentially the q(B,C) of Runeson/Nystrom,
-// or the squeeze*(n) of Smith, Ramsey & Holloway.
-// Simplified here though, because it does not take into
-// account the possibility of unaligned multi-register values.
-INT32
-LRANGE::Conflict (LRANGE *neighbor)
-{
-  INT32 this_regs = NHardRegs();
-  INT32 neighbor_regs = neighbor->NHardRegs();
-
-  return ((neighbor_regs / this_regs)
-	  + ((neighbor_regs % this_regs) != 0));
-}
-
-/////////////////////////////////////
-// Return the benefit to NEIGHBOR of spilling THIS.
-// This is Runeson/Nystrom q(C,B)/p(C)
-// where B is the class of THIS, C is the class of NEIGHBOR.
-float
-LRANGE::Local_Colorability_Benefit (LRANGE *neighbor,
-				    BOOL include_listed /* = FALSE */)
-{
-  if ((! include_listed && neighbor->Listed ())
-      || neighbor->Has_Wired_Register()
-      || neighbor->candidates == 0) {
-    // If neighbor is listed, then it is already locally colorable.
-    // If neighbor is wired, it will always be allocated.
-    // If neighbor has no candidates, it will always be spilled.
-    // In these cases, spilling THIS is of no benefit to NEIGHBOR.
-    return 0.0f;
-  }
-  return ((float)neighbor->Conflict (this)
-	  / (float)neighbor->candidates);
-}
-
-/////////////////////////////////////
-// Initialize the data for the locally colorable test.
-void
-LRANGE::Initialize_Local_Colorability (GRA_REGION *region)
-{
-  conflict = 0;
-  LRANGE_NEIGHBOR_ITER iter;
-  for (iter.Init(this, region); !iter.Done (); iter.Step ()) {
-    LRANGE *neighbor = iter.Current ();
-    conflict += Conflict (neighbor);
-  }
-  conflict += Forced_Locals (Rc ());
-  REGISTER_SET subclass_allowed =
-    SubClass_Allowed_Registers (region);
-  candidates = REGISTER_SET_Size (subclass_allowed);
-  colorability_benefit = -1.0f; // For tidiness in the diagnostics.
-}
-
-/////////////////////////////////////
-// Initialize the colorability benefit.
-// This uses the Runeson/Nystrom calculation of benefit(n).
-// See Runeson/Nystrom section 5.2.
-// 
-void
-LRANGE::Initialize_Colorability_Benefit (GRA_REGION *region)
-{
-  colorability_benefit = 0;
-  LRANGE_NEIGHBOR_ITER iter;
-  for (iter.Init (this, region); !iter.Done (); iter.Step ()) {
-    LRANGE *neighbor = iter.Current ();
-    float b = Local_Colorability_Benefit (neighbor);
-    colorability_benefit += b;
-    GRA_Trace_Local_Colorability_Benefit (this, neighbor, b);
-  }
-}
-
-/////////////////////////////////////
-// Update local colorability after removing a neighbor.
-// Return the new status of local colorability.
-BOOL
-LRANGE::Locally_Colorable_Remove_Neighbor (LRANGE *neighbor)
-{
-  conflict -= Conflict (neighbor);
-  colorability_benefit -= Local_Colorability_Benefit (neighbor, TRUE);
-  return Locally_Colorable ();
-}
-
-void
-LRANGE::Print_Local_Colorability (FILE *f)
-{
-  fprintf (f, "Neighbors left = %d, Conflict = %d, Candidates = %d %s locally colorable", 
-	   (int)Neighbors_Left (), (int)conflict, (int)candidates,
-	   ! Locally_Colorable() ? "not" : "");
-  if (Spans_A_Call()) {
-    fprintf (f, " spans-call");
-  }
-  if (Spans_Infreq_Call()) {
-    fprintf (f, " spans-infreq-call");
-  }
-  if (! Locally_Colorable ()) {
-    fprintf (f, " Colorability Benefit = %g", (double)colorability_benefit);
-  }
-}
-
-REGISTER_SET
-LRANGE::Call_Clobbered (void)
-{
-  if (Type() == LRANGE_TYPE_COMPLEMENT
-      && GRA_use_interprocedural_info) {
-    return u.c.call_clobbered;
-  } else {
-    return REGISTER_CLASS_caller_saves(Rc());
-  }
-}
-
-void
-LRANGE::Set_Call_Clobbered (REGISTER_SET r)
-{
-  if (Type() == LRANGE_TYPE_COMPLEMENT) {
-    u.c.call_clobbered = r;
-  }
-  // [SC] Otherwise ignore it.  Local lranges should
-  // never be call clobbered, and region lranges should
-  // rarely be call clobbered, so do not keep accurate
-  // information for them, to save space in the LRANGE
-  // data structure.
-}
-#endif
 
 /////////////////////////////////////
 // put here because in the header file, gbb_mgr has not yet been defined
@@ -1705,7 +1417,7 @@ LRANGE_CLIST_ITER::Splice( LRANGE* lrange )
     clist->last = lrange;
 }
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 // Insert <lrange> before the current element.  If current element is NULL, add
 // to end of list.
 void
@@ -1760,7 +1472,7 @@ LRANGE::Preference_Copy( LRANGE* lrange1, GRA_BB* gbb )
   if ( gbb->Region_Is_Complement() ) {
     if ( Type() == LRANGE_TYPE_REGION ) {
       lrange_mgr.Add_GBB_With_Glue_Reference(this,gbb);
-      #if defined( KEY) && !defined(TARG_ST)
+      #if defined( KEY)
       /* Pushes the priority of lranges related to glue copies.
        * This will ensure that all glue copies will be colored/
        * allocated first. This should make most of the glue copies
@@ -1771,7 +1483,7 @@ LRANGE::Preference_Copy( LRANGE* lrange1, GRA_BB* gbb )
     }
     if ( lrange1->Type() == LRANGE_TYPE_REGION ) {
       lrange_mgr.Add_GBB_With_Glue_Reference(lrange1,gbb);
-      #if defined( KEY) && !defined(TARG_ST)
+      #if defined( KEY)
       /* same as above */
       Must_Allocate_Set ();
       #endif
@@ -1809,26 +1521,13 @@ LRANGE::Format( char* buff )
 
   switch ( Type() ) {
   case LRANGE_TYPE_LOCAL:
-#ifdef TARG_ST
-    count = sprintf(buff,"[LRANGE %c%d rc %d", Has_Wired_Register()?'W':'L',
-		    Id(), Rc());
-    if (Sc() != ISA_REGISTER_SUBCLASS_UNDEFINED) {
-      count += sprintf(buff+count, " sc %d", Sc());
-    }
-    count += sprintf(buff+count, " BB:%d", BB_id(Gbb()->Bb()));
-#else 
     count = sprintf(buff,"[LRANGE L rc %d  BB:%d", Rc(), BB_id(Gbb()->Bb()));
-#endif
     break;
   case LRANGE_TYPE_REGION:
     count = sprintf(buff,"[LRANGE R rc %d TN%d", Rc(), TN_number(Tn()));
     break;
   case LRANGE_TYPE_COMPLEMENT:
-#ifdef TARG_ST
-    count = sprintf(buff,"[LRANGE C%d(TN%d) rc %d", Id(), TN_number(Tn()), Rc());
-#else
     count = sprintf(buff,"[LRANGE C rc %d TN%d", Rc(), TN_number(Tn()));
-#endif
     break;
   default:
     DevWarn("Invalid LRANGE_TYPE");
@@ -1840,38 +1539,21 @@ LRANGE::Format( char* buff )
     count += sprintf(buff+count," alloc %s",
                                 REGISTER_name(Rc(), Reg()));
   }
-#ifdef TARG_ST
-    if (NHardRegs() > 1) {
-      sprintf(buff+count,"..%s", REGISTER_name( Rc (),
-              Reg ()+NHardRegs()-1));
-    }
-#endif
   if ( Has_Wired_Register() ) {
     count += sprintf(buff+count," wired");
     if ( ! Allocated() ) {
       count += sprintf(buff+count, " %s", REGISTER_name(Rc(),Reg()));
-#ifdef TARG_ST
-      if (NHardRegs() > 1) {
-        sprintf (buff+count,"..%s", REGISTER_name (Rc (),
-                 Reg ()+NHardRegs ()-1));
-      }
-#endif
-
     }
   }
 
   if ( Tn_Is_Save_Reg() ) 
     count += sprintf(buff+count," save");
-#ifdef TARG_ST
-  if (NHardRegs() > 1)
-    count += sprintf(buff+count," nregs:%d", NHardRegs());
-#endif
 
   sprintf(buff+count,"]");
   return buff;
 }
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 /////////////////////////////////////
 // Add an already-built boundary BB to the boundary BBs list.
 void

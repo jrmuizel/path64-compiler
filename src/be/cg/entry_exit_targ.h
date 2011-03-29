@@ -37,16 +37,6 @@ extern BOOL EETARG_Do_Not_Save_Callee_Reg_Class( ISA_REGISTER_CLASS cl );
 
 // target-specific adjustments to entry ops
 extern void EETARG_Fixup_Entry_Code (BB *bb);
-#ifdef TARG_ST
-extern void EETARG_Fixup_Exit_Code (BB *bb);
-extern void EETARG_Set_Frame_Len (INT64 frame_len);
-#endif
-
-#ifdef TARG_ST
-// Should returns a super scratch (not allocatable) or defined register.
-// This register will be used to initialize stack pointer in entry block.
-extern TN *EETARG_get_temp_for_spadjust( BB *bb);
-#endif
 
 //  Replace the call OP with a jump.
 extern OP *EETARG_Build_Jump_Instead_Of_Call(OP *call_op);
@@ -58,12 +48,6 @@ inline OP* EETARG_High_Level_Procedure_Exit() { return NULL; }
 #endif
 
 extern void EETARG_Init_Entry_Exit_Code (WN *, BOOL);
-
-#ifdef TARG_ST
-// Target specific stack frame fixup before finalizing the stack frame
-// layout.
-extern void EETARG_Fixup_Stack_Frame (void);
-#endif
 
 
 #ifdef TARG_X8664

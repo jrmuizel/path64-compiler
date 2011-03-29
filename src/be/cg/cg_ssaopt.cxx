@@ -1447,13 +1447,6 @@ Optimize_Extended_Offset()
       }
 
 
-#ifdef TARG_ST
-  // Resize instructions, otherwise EBO sees no penalty at inlining
-  // extended immediates.
-  if (Optimized_Extended_Immediate)
-    CGTARG_Resize_Instructions ();
-#endif
-
   if (Trace_SSA_CBPO) {
     fprintf(TFile, "%s CFG After Optimize_Extended_Offset %s\n%s\n", DBar, __FUNCTION__, DBar);
     Print_All_BBs ();

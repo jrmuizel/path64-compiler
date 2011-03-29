@@ -57,13 +57,7 @@
 #include "cxx_hash.h"
 
 typedef struct ipra_info {
-#ifdef TARG_ST
-  REGISTER_SET used_regs[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-  // FdF ipa-align
-  int alignment;
-#else
   REGISTER_SET used_regs[ISA_REGISTER_CLASS_MAX+1];
-#endif
 } *IPRA_INFO;
 
 class IPRA {

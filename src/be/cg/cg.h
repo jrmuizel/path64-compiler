@@ -43,9 +43,6 @@
 #include "symtab.h"
 #include "tn.h"
 #include "tn_map.h"            /* needed for TN_To_PREG_Map */
-#ifdef TARG_ST
-#include "ipra.h"
-#endif
 
 
 /* type stubs - can't include appropriate files since
@@ -55,17 +52,6 @@ struct bb;
 
 extern BOOL PU_Has_Calls;
 extern BOOL PU_References_GP;
-#ifdef TARG_ST
-extern BOOL PU_Has_Asm;
-extern BOOL PU_Has_Hwloops;
-extern BOOL PU_Has_EH_Return;
-extern IPRA cg_ipra;
-/* [GS-DFGforISE] variable used to keep the frequency  of the 
- *                entry point of the pu, before normalization
- *                of the frequencies.
- */
-extern float PU_freq;
-#endif
 
 #ifdef KEY
 extern BOOL PU_Has_Exc_Handler;

@@ -138,112 +138,6 @@
  * =======================================================================
  * =======================================================================
  */
-#ifdef TARG_ST
-// Arthur: different interface
-
-extern BOOL EBO_Can_Merge_Into_Offset (OP *op, INT *index, INT *immed);
-
-// If extract opcode available, can replace some redundant loads
-// with extract from a register.
-extern BOOL EBO_replace_subset_load_with_extract (OP *op,
-						  TN *pred_result,
-						  TN *succ_result,
-						  INT offset_pred,
-						  INT offset_succ,
-						  INT size_pred,
-						  INT size_succ);
-
-// Copy value of pred_result. intervening_result is the same
-// register and may overwrite sign-extension, so make sure it is
-// correct.
-extern BOOL EBO_copy_value (OP *op,
-			    TN *pred_result, 
-			    TN *intervening_result,
-			    INT size);
-
-// Compare the reload address with the intervening store address.
-// Select the stored value if the address are the same,
-// and resuse the predecesor value if they are not the same.
-extern BOOL EBO_select_value (OP *op,
-			      TN *pred_result, 
-			      TN *pred_base, 
-			      TN *pred_offset,
-			      TN *intervening_result,
-			      TN *intervening_base,
-			      TN *intervening_offset,
-			      INT size);
-
-extern BOOL EBO_condition_redundant(OP *elim_op,
-				    EBO_TN_INFO **opnd_tninfo,
-				    EBO_OP_INFO *prev_opinfo,
-				    OPS *ops);
-
-BOOL EBO_Try_To_Simplify_Operand0 (OP *op,
-				   TN *tnr,
-				   TN *tn0,
-				   TN *tn1,
-				   OPS *ops);
-
-BOOL EBO_Try_To_Simplify_Operand1 (OP *op,
-				   TN *tnr,
-				   TN *tn0,
-				   TN *tn1,
-				   OPS *ops);
-
-// 'op' has one of its operands of 'const_val' -- try to replace 
-// with a more effcient opcode
-extern OP* EBO_simplify_operand0 (OP *op,
-				  TN *tnr, 
-				  INT64 const_val, 
-				  TN *tn1);
-
-extern OP* EBO_simplify_operand1 (OP *op,
-				  TN *tnr, 
-				  TN *tn0, 
-				  INT64 const_val);
-
-BOOL EBO_Resolve_Conditional_Branch (OP *op, TN **opnd_tn);
-
-// Two loads accessing the adjacent memory may be replaced by a
-// single load that fills both destination registers.
-BOOL EBO_combine_adjacent_loads(OP *op,
-				TN **opnd_tn,
-				EBO_TN_INFO **opnd_tninfo,
-				EBO_OP_INFO *opinfo,
-				INT64 pred_offset,
-				INT64 succ_offset);
-
-//
-// Given a compare 'op' with compared operands constant, fold it.
-// Return TRUE, if successfull
-//
-extern BOOL EBO_Fold_Constant_Compare (OP *op, TN **opnd_tn, OPS *ops);
-
-//
-// Given an 'op', see if a target-specific folding can be applied.
-// If yes, 'result_val' has the folded value, and return TRUE.
-//
-extern BOOL EBO_Fold_Special_Opcode (OP *op, TN **opnd_tn, INT64 *result_val);
-
-//BOOL EBO_Fold_Constant_Expression (OP *op,
-//				   TN **opnd_tn,
-//				   EBO_TN_INFO **opnd_tninfo);
-
-BOOL EBO_Special_Sequence (OP *op,
-			   TN **opnd_tn,
-			   EBO_TN_INFO **opnd_tninfo);
-
-
-// [CG]
-// Returns a replacement TN not caught by OP_effectivelly_copy.
-// The replacement TN must be a literal TN.
-extern TN *EBO_literal_replacement_tn(OP *op);
-
-BOOL EBO_Simplify_Special_Compare (OP *op,
-				   TN **opnd_tn,
-				   EBO_TN_INFO **opnd_tninfo);
-
-#else
 INT EBO_Copy_Operand (OP *op);
 
 BOOL delete_duplicate_op (OP *op,
@@ -327,5 +221,5 @@ BOOL EBO_Can_Merge_Into_Offset (OP *op);
 void EBO_Special_Start( MEM_POOL* );
 void EBO_Special_Finish();
 BOOL Combine_L1_L2_Prefetches( OP*, TN**, EBO_TN_INFO** );
-#endif /* TARG_ST */
 #endif // KEY
+

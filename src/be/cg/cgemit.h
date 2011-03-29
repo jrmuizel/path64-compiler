@@ -80,11 +80,7 @@ std::string EMT_get_TCON_name(ST *st);
  * Check if bb should be aligned,
  * and return number of instructions it should be aligned with.
  */
-#ifdef TARG_ST
-extern INT32 Check_If_Should_Align_BB (BB *bb);
-#else
 extern INT Check_If_Should_Align_BB (BB *bb, INT32 curpc);
-#endif
 
 extern BOOL CG_emit_asm_dwarf;
 extern BOOL CG_emit_unwind_info;
@@ -109,9 +105,5 @@ extern int logtwo(int value);
 extern const char *map_section_name(const char *section_name);
 extern int is_debug_section(const char *section_name);
 #endif /* defined(BUILD_OS_DARWIN) */
-#ifdef TARG_ST // [CL]
-void New_Debug_Line_Set_Label(INT code_address, BOOL last_line);
-#endif
-
 
 #endif /* cgemit_INCLUDED */

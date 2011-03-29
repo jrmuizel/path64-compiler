@@ -139,9 +139,6 @@ enum LR_FLAG {
   LRANGE_FLAGS_tn_is_save_reg = 0x1000, // its TN marked TN_is_save_reg
   LRANGE_FLAGS_cannot_split = 0x2000,  // meaning evident
   LRANGE_FLAGS_no_appearance = 0x4000, // should not be assigned register
-#ifdef TARG_ST
-  LRANGE_FLAGS_split_deferred = 0x8000, // Live range is deferred part of a split
-#endif
 #ifdef TARG_X8664
   LRANGE_FLAGS_spans_savexmms = 0x8000, // spans the savexmms pseudo-op
   LRANGE_FLAGS_spans_x87_OP = 0x10000,	// spans x87 OP
@@ -164,16 +161,6 @@ friend class LRANGE_LUNIT_ITER;
 private:
   INT32               id;		// for implementing LRANGE_SETs
   INT32               neighbors_left;
-#ifdef TARG_ST
-  // [SC] Data for local colorability test.
-  INT32               conflict;         // Register conflict with neighbors
-  INT32               candidates;       // The number of candidate regs available
-  float               colorability_benefit; // The sum across all neighbors of the
-                                        // benefit to the neighbors of spilling
-                                        // this live range.
-                                        // Defined only if the node is not locally
-                                        // colorable.
-#endif
   INT32               priority_queue_index; // its index in the priority queue;
 					// used by coloring to implement fast 
 					// removal from its ready/not-ready 
@@ -185,10 +172,6 @@ private:
   float               pref_priority;    // Priority of allocating the same
                                         // register to this live range as to
 					// other members of its preference class
-#ifdef TARG_ST
-  ISA_REGISTER_SUBCLASS pref_subclass;  // Preferred subclass and offset.
-  INT                 pref_subclass_offset;
-#endif
   ISA_REGISTER_CLASS  rc:8;
   mREGISTER           reg;		// the register allocated
   mREGISTER           orig_reg;         // Original register before coloring
@@ -212,12 +195,8 @@ private:
       TN*       original_tn;	// original GTN (before any spilling) from which
 				// this lrange was created
       LRANGE*   next_split_list_lrange;
-#ifdef TARG_ST
-      // The set of registers in rc clobbered by calls within the live range.
-      REGISTER_SET call_clobbered;
-#endif
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       BB_SET*   internal_bb_set; // to maintain the set of internal BBs in the
 				 // range; it is same as live_bb_set but without
 				 // the boundary bbs
@@ -233,16 +212,9 @@ private:
     struct lrange_local_specific {
       GRA_BB *gbb;		// block to which it is local
       LRANGE *next_bb_local_lrange;	// internally linked BB_Local_List
-#ifdef TARG_ST
-      INT nregs; // N registers for wired registers
-      ISA_REGISTER_SUBCLASS subclass;  // subclass requirement
-#endif      
     } l;
   }                     u;
-#ifdef TARG_ST
-  REGISTER_SET Allowed_Registers(GRA_REGION* region,
-				 BOOL include_subclass_requirements);
-#endif
+
 public:
   LRANGE(void) {}
   ~LRANGE(void) {}
@@ -254,19 +226,10 @@ public:
   TN* Tn(void) 			{ DevAssert(!(type == LRANGE_TYPE_LOCAL),
 					("No TN for local LRANGEs."));
 			  	  return u.c.tn; }
-#ifdef TARG_ST
-  INT NHardRegs(void)           { return (type == LRANGE_TYPE_LOCAL ? 
-					  u.l.nregs : 
-					  TN_nhardregs(u.c.tn)); }
-#endif
   INTERFERE Neighbors(void)	{ return u.c.neighbors; }
   INT32 Neighbors_Left(void) 	{ return neighbors_left; }
   INT32 Neighbors_Left_Increment(void) { return ++neighbors_left; }
   INT32 Neighbors_Left_Decrement(void) { return --neighbors_left; }
-#ifdef TARG_ST
-  BOOL Locally_Colorable(void)  { return candidates > conflict; }
-  float Colorability_Benefit (void) { return colorability_benefit; }
-#endif
   float Priority(void)		{ return priority; }
   void Priority_Set(float p) 	{ priority = p; }
   ISA_REGISTER_CLASS Rc(void)	{ return rc; }
@@ -285,21 +248,10 @@ public:
   GRA_BB *Gbb(void)		{ return u.l.gbb; }
   GRA_REGION *Region(void)	{ return u.r.region; }
   float Pref_Priority(void)	{ return pref_priority; }
-#ifdef TARG_ST
-  ISA_REGISTER_SUBCLASS Pref_Subclass(void) { return pref_subclass; }
-  INT Pref_Subclass_Offset(void) { return pref_subclass_offset; }
-  void Set_Pref_Subclass (ISA_REGISTER_SUBCLASS sc, INT offset) {
-                                  pref_subclass = sc;
-                                  pref_subclass_offset = offset;
-                                }
-  ISA_REGISTER_SUBCLASS Sc(void) { DevAssert(type == LRANGE_TYPE_LOCAL,
-					     ("No subclass for non-local LRANGEs"));
-                                   return u.l.subclass; }
-#endif
   REGISTER Orig_Reg(void)	{ return orig_reg; }
   INT32 Priority_Queue_Index(void) { return priority_queue_index; }
   void Priority_Queue_Index_Set(INT32 index) { priority_queue_index = index; }
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   BB_SET* Internal_BB_Set(void)	{ return u.c.internal_bb_set; }
   void Clear_Internal_BBs(void)	{ BB_SET_ClearD(u.c.internal_bb_set); }
 
@@ -343,10 +295,6 @@ public:
   void Cannot_Split_Set(void)	{ flags = (LR_FLAG)(flags|LRANGE_FLAGS_cannot_split); }
   BOOL No_Appearance(void)	{ return flags & LRANGE_FLAGS_no_appearance; }
   void No_Appearance_Set(void)	{ flags = (LR_FLAG)(flags|LRANGE_FLAGS_no_appearance); }
-  #ifdef TARG_ST
-  BOOL Split_Deferred(void)	{ return flags & LRANGE_FLAGS_split_deferred; }
-  void Split_Deferred_Set(void) { flags = (LR_FLAG)(flags|LRANGE_FLAGS_split_deferred); }
-#endif
 
 #ifdef TARG_X8664
   BOOL Spans_Savexmms(void)	{ return flags & LRANGE_FLAGS_spans_savexmms; }
@@ -402,41 +350,23 @@ public:
   void Add_LUNIT( LUNIT* lunit );
   void Add_Lunit(  LUNIT* lunit );
   REGISTER_SET Allowed_Registers(GRA_REGION* region);
-  #ifdef TARG_ST
-  REGISTER_SET SubClass_Allowed_Registers(GRA_REGION* region);
-#endif
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   REGISTER_SET Reclaimable_Registers(GRA_REGION* region);
 #endif
   BOOL Interferes( LRANGE* lr1 );
   void Region_Interference( LRANGE* lrange1,
 			    GRA_REGION* region );
   void Remove_Neighbor(LRANGE* neighbor, GRA_REGION* region );
-#ifdef TARG_ST
-  void Allocate_Register( REGISTER reg, INT nregs );
-#else
   void Allocate_Register( REGISTER reg, BOOL reclaim = FALSE );
-#endif
   INT32 Neighbor_Count(void);
   void Calculate_Priority(void);
   BOOL Find_LUNIT_For_GBB( const GRA_BB* gbb, LUNIT** lunitp );
   void Preference_Copy(LRANGE* lrange1, GRA_BB* gbb );
   void Recompute_Preference(void);
   char* Format( char* buff );
-#ifdef TARG_ST
-  REGISTER_SET Call_Clobbered(void);
-  void Set_Call_Clobbered(REGISTER_SET r);
-  INT32 Conflict (LRANGE *neighbor);
-  float Local_Colorability_Benefit (LRANGE *neighbor, BOOL include_listed = FALSE);
-  void Initialize_Local_Colorability (GRA_REGION *region);
-  void Initialize_Colorability_Benefit (GRA_REGION *region);
-  BOOL Locally_Colorable_Remove_Neighbor (LRANGE *neighbor);
-  void Print_Local_Colorability (FILE *file);
-  void Print(FILE *file);
-#endif
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   void Add_Internal_BB(GRA_BB *gbb);
   void Remove_Internal_BB(GRA_BB *gbb);
   BOOL Contains_Internal_BB(GRA_BB *gbb);
@@ -486,12 +416,7 @@ public:
   void Finalize(void);
   LRANGE* Create( LRANGE_TYPE type, ISA_REGISTER_CLASS rc, size_t size );
   LRANGE* Create_Complement( TN* tn );
-#ifdef TARG_ST
-  LRANGE* Create_Local( GRA_BB* gbb, ISA_REGISTER_CLASS cl, ISA_REGISTER_SUBCLASS sc,
-			INT nregs);
-#else
   LRANGE* Create_Local( GRA_BB* gbb, ISA_REGISTER_CLASS cl );
-#endif
   LRANGE* Create_Region( TN* tn, GRA_REGION* region );
   LRANGE* Create_Duplicate( LRANGE* lrange );
   void Begin_Complement_Interference(LRANGE *lrange);
@@ -575,7 +500,7 @@ public:
 
   void Replace_Current(LRANGE *lrange);
   void Splice(LRANGE *lrange);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   void Push(LRANGE *lrange);
 //                      Insert <lrange> before the current element of <iter>.
 #endif
@@ -649,7 +574,7 @@ public:
   void Step(void)               { current = BB_SET_Choose_Next(set, current); }
 };
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 class LRANGE_BOUNDARY_BB {
   LRANGE_BOUNDARY_BB*	next;
   LRANGE*		lrange;
@@ -707,7 +632,7 @@ LRANGE_Universe_ID_S( LRANGE* lrange, LRANGE_SET_SUBUNIVERSE* sub ) {
 
 extern LRANGE_MGR lrange_mgr;
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 extern REGISTER_SET Global_Preferenced_Regs(LRANGE* lrange, GRA_BB* gbb);
 #endif
 #endif

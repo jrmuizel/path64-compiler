@@ -111,13 +111,6 @@ INT64 Frame_Len;
 /* Callee-saved register <-> save symbol/TN map: */
 SAVE_REG *Callee_Saved_Regs;
 INT32 Callee_Saved_Regs_Count;
-#ifdef TARG_ST
-/* 
- * Regs that need to be saved at prolog and restored at epilog using
- * the regmask mechanism.
- */
-REGISTER_SET Callee_Saved_Regs_Mask[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#endif
 #ifdef KEY
 STACK<SAVE_REG_LOC> Saved_Callee_Saved_Regs(Malloc_Mem_Pool);
 #endif
@@ -165,34 +158,16 @@ static TN *Neg_Frame_Len_TN;
 BOOL Gen_Frame_Pointer;
 
 /* Trace flags: */
-#ifndef TARG_ST
 static 
-#endif
 BOOL Trace_EE = FALSE;	/* Trace entry/exit processing */
-
-#ifdef TARG_ST
-/* [JV] When set, use this register for spadjust. */
-/* This is the case when there is no more scratch register ...*/
-/* It is possible to use callee save by using a push/pop like sequence
-   before the spadjust. This does not work with varargs using va_list
-   declared as void*.
-*/
-static TN *Use_Callee_Save_TN_For_SpAdjust = NULL;
-#endif
 
 
 /* macro to test if we will use a scratch register to hold gp for
  * the pu.  we do this in leaf routines if there are no regions
  * and gra will be run.
  */
-#ifdef TARG_ST
-#define Use_Scratch_GP(need_gp_setup) \
-((need_gp_setup) && !PU_Has_Calls && !PU_has_region(Get_Current_PU()) \
- && !PU_Has_Asm)
-#else
 #define Use_Scratch_GP(need_gp_setup) \
 ((need_gp_setup) && !PU_Has_Calls && !PU_has_region(Get_Current_PU()))
-#endif
 /* ====================================================================
  *
  * Init_Pregs
@@ -247,11 +222,7 @@ Setup_GP_TN_For_PU( ST *pu)
   else if (Force_GP_Prolog) {
 	GP_Setup_Code = need_code;
   }
-#ifdef TARG_ST
-  else if (Gen_GP_Relative && !Is_Caller_Save_GP &&
-#else
   else if (!Is_Caller_Save_GP &&
-#endif
 	(Gen_PIC_Call_Shared || Gen_PIC_Shared) &&
 #ifdef TARG_MIPS
 	/* Bug 12724: For C++, a function that is apparently invisible
@@ -279,13 +250,6 @@ Setup_GP_TN_For_PU( ST *pu)
 		GP_Setup_Code = no_code;
 	}
   }
-#ifdef TARG_ST
-  else if (!Gen_GP_Relative && PU_References_GP && Is_Caller_Save_GP) {
-    // [SC] TLS support
-    // Even absolute code can reference the GP for thread support.
-    GP_Setup_Code = need_code;
-  }
-#endif
   else {
 	GP_Setup_Code = never_code;
   }
@@ -350,13 +314,6 @@ Init_Callee_Saved_Regs_for_REGION ( ST *pu, BOOL is_region )
   INT i;
   ISA_REGISTER_CLASS cl;
   TN *stn;
-#ifdef TARG_ST
-  // [SC] Allow GP to be used even in absolute code (some TLS models want it)
-  // [VCdV] on xp70, GP is always activated.
-#ifndef TARG_STxP70
-  if (Gen_GP_Relative || PU_References_GP)
-#endif // !TARG_STxP70
-#endif // TARG_ST
 #ifndef TARG_X8664 // x86_64 does not use GP
     Setup_GP_TN_For_PU( pu );
 #endif // !TARG_X8664
@@ -417,12 +374,6 @@ Init_Callee_Saved_Regs_for_REGION ( ST *pu, BOOL is_region )
 
     if (REGISTER_CLASS_multiple_save(cl)) continue;
 
-#ifdef TARG_ST
-    if (PU_Has_EH_Return) {
-      regset = REGISTER_SET_Union (regset,
-				   REGISTER_CLASS_eh_return(cl));
-    }
-#endif
     for ( reg = REGISTER_SET_Choose(regset);
 	  reg != REGISTER_UNDEFINED;
 	  reg = REGISTER_SET_Choose_Next(regset, reg), ++i
@@ -560,12 +511,6 @@ Generate_Entry (BB *bb, BOOL gra_run )
      * the frame):
      */
     Exp_Spadjust (SP_TN, Neg_Frame_Len_TN, V_NONE, &ops);
-#ifdef TARG_ST
-    // FdF 20081211: To be consistent with what is restored in
-    // Generate_Exits, this code must not be dependent on
-    // BB_handler(bb)
-  }
-#endif
     /* Initialize the frame pointer if required: */
     if ( Gen_Frame_Pointer && !PUSH_FRAME_POINTER_ON_STACK ) {
       // check if fp is callee reg
@@ -595,11 +540,6 @@ Generate_Entry (BB *bb, BOOL gra_run )
       	Exp_COPY (Caller_FP_TN, FP_TN, &ops);
 	Set_OP_no_move_before_gra(OPS_last(&ops));
       }
-#ifdef TARG_ST
-    }
-  if (!BB_handler(bb)) {
-    if (Gen_Frame_Pointer && !PUSH_FRAME_POINTER_ON_STACK) {
-#endif
       /* Now recover the new FP from the new SP: */
       Exp_Spadjust (FP_TN, Frame_Len_TN, V_NONE, &ops);
     }
@@ -669,16 +609,6 @@ Generate_Entry (BB *bb, BOOL gra_run )
       CGSPILL_Store_To_Memory (ra_sv_tn, ra_sv_sym, &ops, CGSPILL_LCL, bb);
     }
     else {
-#ifdef TARG_ST
-      /*
-       * RA_TN must be saved as a callee saved TN whatever is actual classification.
-       */
-      if (! EETARG_Save_With_Regmask (REGISTER_CLASS_ra, REGISTER_ra)) {
-        Exp_COPY (SAVE_tn(Return_Address_Reg), RA_TN, &ops);
-        Set_OP_no_move_before_gra(OPS_last(&ops));
-      }
-
-#else /* !TARG_ST */
 
       if (gra_run && PU_Has_Calls 
 	&& TN_register_class(RA_TN) != ISA_REGISTER_CLASS_integer)
@@ -698,7 +628,6 @@ Generate_Entry (BB *bb, BOOL gra_run )
         Exp_COPY (SAVE_tn(Return_Address_Reg), RA_TN, &ops );
       }
       Set_OP_no_move_before_gra(OPS_last(&ops));
-#endif /* TARG_ST */
 
     }
   }
@@ -762,14 +691,7 @@ Generate_Entry (BB *bb, BOOL gra_run )
 	Exp_ADD (Pointer_Mtype, GP_TN, Ep_TN, got_disp_tn, &ops);
       }
     } 
-#ifdef TARG_ST
-  else if (Gen_GP_Relative && 
-	   Is_Caller_Save_GP && 
-	   PU_Has_Calls && 
-	   !Constant_GP
-#else
     else if (Is_Caller_Save_GP && PU_Has_Calls && !Constant_GP
-#endif
 	&& PREG_To_TN_Array[ Caller_GP_Preg ] != NULL) 
     {
 	// need to save old gp but don't need to setup new gp.
@@ -783,12 +705,6 @@ Generate_Entry (BB *bb, BOOL gra_run )
   /* set the srcpos field for all the entry OPs */
   FOR_ALL_OPS_OPs(&ops, op)
     OP_srcpos(op) = ENTRYINFO_srcpos(ent_info);
-#ifdef TARG_ST
-  /* [CL] set the prologue field for all the entry OPs */
-  FOR_ALL_OPS_OPs(&ops, op) {
-    Set_OP_prologue(op);
-  }
-#endif
   /* If we're tracing, print the new stuff before merging it: */
   if ( Trace_EE ) {
     #pragma mips_frequency_hint NEVER
@@ -895,16 +811,6 @@ Can_Be_Tail_Call(ST *pu_st, BB *exit_bb)
   /* The exit block can have only one pred, and it must be a call block.
    */
   pred = BB_Unique_Predecessor(exit_bb);
-#ifdef TARG_ST
-  // FdF 20051010, ddts 23277: In case of a "noreturn" call, the exit
-  // block is also the call block.
-  if (BB_call(exit_bb)) {
-    Is_True(WN_Call_Never_Return(CALLINFO_call_wn(ANNOT_callinfo(ANNOT_Get (BB_annotations(exit_bb), ANNOT_CALLINFO) ))),
-	    ("Only 'noreturn' call can be both CALL and EXIT before tail call optimization"));
-    pred = exit_bb;
-    exit_bb = NULL;
-  }
-#endif
   if (!pred || !BB_call(pred)) return NULL;
 
   /* Bug 13846: The tail-call transformation discards the exit block's
@@ -923,11 +829,6 @@ Can_Be_Tail_Call(ST *pu_st, BB *exit_bb)
   
   call_st = CALLINFO_call_st(call_info);
   call_wn = CALLINFO_call_wn(call_info);
-#ifdef TARG_ST
-  OP *call_op = BB_last_op(pred);
-  if (!OP_Can_Be_Tail_Call(call_op))
-    return NULL;
-#endif
 
   /* Assume a call sequence A->B->C (i.e. A calls B which calls C)
    * We would like to change the call B->C to be a tail-call.
@@ -1025,35 +926,6 @@ Can_Be_Tail_Call(ST *pu_st, BB *exit_bb)
    * so use whirl call node in that case.
    */
   func_type = call_st ? ST_pu_type(call_st) : WN_ty(call_wn);
-#ifdef TARG_ST
-  // [CG] We must use the First_Output_PLOC_Reg/Next_Output_PLOC_REG interface
-  // to take into account strutures that overlaps the stack
-  ploc = Setup_Output_Parameter_Locations(func_type);
-  if (call_wn == NULL) {
-    TYLIST_IDX tl;
-    for (tl = TY_parms(func_type); tl != (TYLIST_IDX) NULL; tl = TYLIST_next(tl)) {
-      TY_IDX ty = TYLIST_item(tl);
-      ploc = Get_Output_Parameter_Location(ty);
-      ploc = First_Output_PLOC_Reg (ploc, ty);
-      while(PLOC_is_nonempty(ploc)) {
-	if (PLOC_on_stack(ploc)) return NULL;
-	ploc = Next_Output_PLOC_Reg ();
-      }
-    }
-  } else {
-    INT i;
-    INT num_parms = WN_num_actuals(call_wn);
-    for (i = 0; i < num_parms; i++) {
-      TY_IDX ty = TY_Of_Parameter(WN_actual(call_wn,i));
-      ploc = Get_Output_Parameter_Location (ty);
-      ploc = First_Output_PLOC_Reg (ploc, ty);
-      while(PLOC_is_nonempty(ploc)) {
-	if (PLOC_on_stack(ploc)) return NULL;
-	ploc = Next_Output_PLOC_Reg ();
-      }
-    }
-  }
-#else
   ploc = Setup_Output_Parameter_Locations(func_type);
   if (call_wn == NULL) {
     TYLIST_IDX tl;
@@ -1069,7 +941,6 @@ Can_Be_Tail_Call(ST *pu_st, BB *exit_bb)
       if (PLOC_on_stack(ploc)) return NULL;
     }
   }
-#endif
 #ifdef TARG_X8664
   /* Don't perform tail call optimization if the caller does not write the result to
      the x87 stack, but the callee does. (bug#2841)
@@ -1123,20 +994,11 @@ Can_Be_Tail_Call(ST *pu_st, BB *exit_bb)
    */
   MEM_POOL_Push(&MEM_local_pool);
   fvals = hTN_MAP_Create(&MEM_local_pool);
-#ifdef TARG_ST
-  // FdF 20051010, ddts23277: In case of a "noreturn" call, there is no exit_bb.
-  if (exit_bb)
-#endif
 
   FOR_ALL_BB_OPs_FWD(exit_bb, op) {
     if (OP_copy(op)) {
-#ifdef TARG_ST
-        TN *src = OP_opnd(op, OP_copy(op) ? OP_Copy_Operand(op) : 0);
-      TN *dst = OP_result(op, OP_copy(op) ? OP_Copy_Result(op) : 0);
-#else
       TN *src = OP_opnd(op,OP_COPY_OPND);
       TN *dst = OP_result(op,0);
-#endif
       BOOL src_is_fval = Is_Function_Value(src);
       BOOL dst_is_fval = Is_Function_Value(dst);
 
@@ -1159,7 +1021,6 @@ Can_Be_Tail_Call(ST *pu_st, BB *exit_bb)
     return NULL;
   }
   MEM_POOL_Pop(&MEM_local_pool);
-#ifndef TARG_ST
 #ifndef TARG_X8664
   /* If we had preemptible symbol for the callee, then change
    * its relocation so we avoid generating a stub for it.
@@ -1172,7 +1033,6 @@ Can_Be_Tail_Call(ST *pu_st, BB *exit_bb)
     EMT_Change_Symbol_To_Weak(call_st);
     Set_ST_is_weak_symbol(call_st);
   }
-#endif
 #endif
   return pred;
 }
@@ -1197,15 +1057,7 @@ static BOOL Can_Do_Tail_Calls_For_PU ()
   //	#pragma unknown_control_flow (func)
   // then we cannot do tail-call optimization for it.
   if (PU_has_unknown_control_flow (Get_Current_PU())) return FALSE;
-#ifdef TARG_ST
-  // If PU is an interrupt/trap handler, cannot do tail-call opt
-  // [VL-HMP] Same restriction for tasks
-  if (PU_is_interrupt(Get_Current_PU())
-      || PU_is_interrupt_nostkaln(Get_Current_PU())
-      || PU_is_task(Get_Current_PU()) ) return FALSE;
-  // If PU is an exception handler, avoid tail-call opt
-  if (PU_Has_EH_Return) return FALSE;
-#endif
+
   // If a PU has a call to setjmp and some other tail call from this
   // PU ultimately has a call to longjmp, then the stack frame will be
   // gone when we get back to the code following the setjmp. Therefore,
@@ -1297,19 +1149,11 @@ Optimize_Tail_Calls(ST *pu)
        * The call block becomes the new exit block. The exit block
        * is removed from the succ chain and will be removed by cflow later.
        */
-#ifdef TARG_ST
-      // FdF 20051010, ddts 23277: In case of a "noreturn" call, the
-      // CALL and the EXIT bb are the same
-      if (call_bb != exit_bb) {
-#endif
       BB_Transfer_Exitinfo(exit_bb, call_bb);
       Unlink_Pred_Succ(call_bb, exit_bb);
       Exit_BB_Head = BB_LIST_Delete(exit_bb, Exit_BB_Head);
       Exit_BB_Head = BB_LIST_Push(call_bb, Exit_BB_Head, &MEM_pu_pool);
       Remove_BB(exit_bb);
-#ifdef TARG_ST
-      }
-#endif
 
       if (Trace_EE) {
 	#pragma mips_frequency_hint NEVER
@@ -1352,11 +1196,7 @@ static void
 Target_Unique_Exit (
   BB *bb,
   BB *unique_exit_bb,
-#ifdef TARG_ST
-  TN *rtn_tns[ISA_REGISTER_CLASS_MAX_LIMIT+1][REGISTER_MAX+1]
-#else
   TN *rtn_tns[ISA_REGISTER_CLASS_MAX+1][REGISTER_MAX+1]
-#endif
   )
 {
   OP *op;
@@ -1389,7 +1229,7 @@ Target_Unique_Exit (
 	       TN_size measures a TN size in bytes.
 	     */
 	    INT tn_size = OP_result_size(op,i) / 8;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	    // When storing a value into a function return register where the
 	    // size of the value is smaller than the size of the return
 	    // register, Handle_STID will store the value into a temp TN and
@@ -1427,20 +1267,7 @@ Target_Unique_Exit (
 
     /* A select or unaligned load may have a use of func value TN.
      */
-#ifdef TARG_ST
-    // Arthur: the same_res info is part of OPERAND_INFO now:
-    BOOL same_res = FALSE;
-    for (UINT j = 0; j < OP_results(op); j++) {
-      if (OP_same_res(op, j) >= 0) {
-	same_res = TRUE;
-	break;
-      }
-    }
-
-    if (same_res) {
-#else
     if ( OP_same_res(op) ) {
-#endif
       INT i;
 
       for ( i = 0; i < OP_opnds(op); ++i ) {
@@ -1519,11 +1346,6 @@ Generate_Unique_Exit(void)
      */
     if (BB_call(bb)) continue;
 
-#ifdef TARG_ST
-    // [SC] Exclude EH_return exits.
-    if (EXITINFO_is_eh_return(ANNOT_exitinfo(ANNOT_Get(BB_annotations(bb), ANNOT_EXITINFO))))
-      continue;
-#endif
     /* This block will no longer be a exit block. So for the first
      * block, transfer the exitinfo to the unique exit block. For
      * the others, just remove the exitinfo.
@@ -1618,19 +1440,6 @@ Generate_Exit (
   ANNOTATION *ant = ANNOT_Get (BB_annotations(bb), ANNOT_EXITINFO);
   EXITINFO *exit_info = ANNOT_exitinfo(ant);
   BB *bb_epi;
-#ifdef TARG_ST
-  // FdF 20041105: No need for an epilog in case of a "noreturn" call.
-  // [SC] When we need to unwind through a tailcall, we must ensure that
-  // the return address is valid at the time of the tailcall.
-  // If the "tailcall" BB ends in a call instruction then the call instruction
-  // sets a valid return address, but if it ends in a goto instruction, we
-  // should have an epilog.
-  if (BB_call(bb) &&
-      WN_Call_Never_Return(CALLINFO_call_wn(ANNOT_callinfo(ANNOT_Get (BB_annotations(bb), ANNOT_CALLINFO))))
-      && ( OP_call(BB_last_op(bb))
-	   || (!CG_emit_asm_dwarf && !CXX_Exceptions_On)))
-    return;
-#endif
 
   if ( is_region && gra_run ) {
     /* get out if region and running gra.  epilog code handled with
@@ -1700,13 +1509,7 @@ Generate_Exit (
     EETARG_Generate_PIC_Exit_Code( bb_epi, &ops );
   }
 #endif
-#ifdef TARG_ST
-  // [SC]: EH return exits have the RA set up already.
-  if (RA_TN != NULL
-      && ! EXITINFO_is_eh_return(exit_info)) {
-#else
   if (NULL != RA_TN) {
-#endif
     if ( PU_has_return_address(Get_Current_PU()) ) {
       /* If the return address builtin is required, restore RA_TN from the 
        * memory location for __return_address. 
@@ -1725,16 +1528,6 @@ Generate_Exit (
       Exp_COPY (RA_TN, ra_sv_tn, &ops);
     }
     else {
-#ifdef TARG_ST
-      /*
-       * RA_TN must be saved as a callee saved TN whatever is actual classification.
-       */
-      if (!EETARG_Save_With_Regmask (REGISTER_CLASS_ra, REGISTER_ra)) {
-	Exp_COPY (RA_TN, SAVE_tn(Return_Address_Reg), &ops);
-	Set_OP_no_move_before_gra(OPS_last(&ops));
-      }
-
-#else /* !TARG_ST */
       if (gra_run && PU_Has_Calls 
 	&& TN_register_class(RA_TN) != ISA_REGISTER_CLASS_integer)
       {
@@ -1750,7 +1543,6 @@ Generate_Exit (
       	Exp_COPY ( RA_TN, SAVE_tn(Return_Address_Reg), &ops );
       }
       Set_OP_no_move_before_gra(OPS_last(&ops));
-#endif
     }
   }
 
@@ -1800,12 +1592,6 @@ Generate_Exit (
     Exp_Spadjust (SP_TN, Frame_Len_TN, V_NONE, &ops);
   }
   EXITINFO_sp_adj(exit_info) = OPS_last(&ops);
-#ifdef TARG_ST
-  if (EXITINFO_is_eh_return(exit_info)
-      && EH_Return_Stackadj_TN) {
-    Exp_ADD (Pointer_Mtype, SP_TN, SP_TN, EH_Return_Stackadj_TN, &ops);
-  }
-#endif
 
 
   /* Restore the caller's frame pointer register if we used FP: */
@@ -1852,13 +1638,6 @@ Generate_Exit (
 
     Exp_Return( RA_TN, sp_adjust, &ops );
 #else
-#ifdef TARG_ST
-       if (PU_is_interrupt(Get_Current_PU()) ||
-	PU_is_interrupt_nostkaln(Get_Current_PU())) {
-      Exp_Return_Interrupt(RA_TN, &ops);
-    }
-    else
-#endif
     Exp_Return (RA_TN, &ops);
 #endif // TARG_X8664
   }
@@ -1866,12 +1645,6 @@ Generate_Exit (
   /* set the srcpos field for all the exit OPs */
   FOR_ALL_OPS_OPs(&ops, op)
     OP_srcpos(op) = EXITINFO_srcpos(exit_info);
-#ifdef TARG_ST
-  /* [CL] set the epilogue field for all the exit OPs */
-  FOR_ALL_OPS_OPs(&ops, op) {
-    Set_OP_epilogue(op);
-  }
-#endif
   /* If we're tracing, print the new stuff before merging it: */
   if ( Trace_EE ) {
     #pragma mips_frequency_hint NEVER
@@ -1908,10 +1681,6 @@ Set_Frame_Len (INT64 val)
   Frame_Len = val;
   Set_TN_value(Frame_Len_TN, val);
   Set_TN_value(Neg_Frame_Len_TN, -val);
-#ifdef TARG_ST
-  /* Inform the target dependent part. */
-  EETARG_Set_Frame_Len(val);
-#endif
 }
 
 /* we now generate the final code after pu is processed,
@@ -2280,15 +2049,7 @@ Adjust_Entry(BB *bb)
       // Spills can be introduced now by GRA.  Skip 'em.
       //
     }
-   #ifdef TARG_ST
-    // [CG]: Fix bug in result access
-    while (sp_adj != NULL &&
-	   !(OP_results(sp_adj) > 0 && TN_is_sp_reg(OP_result(sp_adj,0))));
-    FmtAssert(sp_adj != NULL && OP_code(sp_adj) == TOP_spadjust, 
-	      ("Did not find sp adjust OP in BB:%d\n", BB_id(bb)));
-#else
     while (!OP_result(sp_adj, 0) || !TN_is_sp_reg(OP_result(sp_adj,0)));
-#endif
   }
 
   /* Get the operands that are the frame size increment.
@@ -2381,81 +2142,6 @@ Adjust_Entry(BB *bb)
       /* Get the frame size into a register
        */
       REG_LIVE_Prolog_Temps(bb, sp_adj, fp_adj, temps);
-#ifdef TARG_ST
-      cl = TN_register_class(SP_TN);
-
-      reg = REGISTER_SET_Choose(temps[cl]);
-
-      if(reg == REGISTER_UNDEFINED) {
-
-        // Try to get a super scratch or callee saved register from target specific code
-        // (For instance, on xp70, the selection of a callee saved register is
-        //  done within EETARG_get_temp_for_spadjust(), in order to
-        //  get a register also compatible with dynamic stack alignment (if needed)).
-        // Potential conflict 
-        Use_Callee_Save_TN_For_SpAdjust = EETARG_get_temp_for_spadjust(bb);
-
-        if (Use_Callee_Save_TN_For_SpAdjust == NULL) {
-          // Target specific code was unsuccessful to get a callee saved register.
-          // Now try the generic approach.
-          if(Callee_Saved_Regs_Count > 0) {
-            Use_Callee_Save_TN_For_SpAdjust = CALLEE_tn(0);
-          }
-          
-          // [JV] Check that we do not use the same TN as the one used
-          // to save FP.
-          // Check also that we get a register of same reg class as SP.
-          INT callee_num = 1;
-          while(callee_num < Callee_Saved_Regs_Count &&
-                ( TN_register_class(SP_TN) != TN_register_class(Use_Callee_Save_TN_For_SpAdjust) ||
-                  (fp_adj != sp_adj &&
-                   TN_is_save_reg(Use_Callee_Save_TN_For_SpAdjust) &&
-                   TN_save_rclass(Use_Callee_Save_TN_For_SpAdjust) == TN_register_class(FP_TN) &&
-                   TN_save_reg(Use_Callee_Save_TN_For_SpAdjust) == TN_register(FP_TN) )
-                  )
-                ) {
-            Use_Callee_Save_TN_For_SpAdjust = CALLEE_tn(callee_num);
-            callee_num++;
-          }
-        }
-        else {
-          // Sanity check: if FP is used in current PU, check that the temporary
-          // register selected for SP adjust is not the same as the one used to
-          // save initial FP value.
-          if (fp_adj != sp_adj) {
-            INT callee_num;
-            for (callee_num = 0; callee_num < Callee_Saved_Regs_Count; callee_num++) {
-              TN *callee_tn = CALLEE_tn(callee_num);
-              if (TN_is_save_reg(callee_tn) &&
-                  TN_save_rclass(callee_tn) == TN_register_class(FP_TN) &&
-                  TN_save_reg(callee_tn) == TN_register(FP_TN) ) {
-                // Found FP save register
-                FmtAssert(TN_register(callee_tn) != TN_register(Use_Callee_Save_TN_For_SpAdjust),
-                          ("Selected register is the same as the one used to save FP"));
-                break;
-              }
-            }
-          }
-        }
-	FmtAssert(Use_Callee_Save_TN_For_SpAdjust != NULL,("Cannot find callee saved reg"));
-
-	if (Trace_EE) {
-	  fprintf(TFile, "No more scratch registers, get: ");
-	  Print_TN(Use_Callee_Save_TN_For_SpAdjust,FALSE);
-	}
-
-	if(TN_is_dedicated(Use_Callee_Save_TN_For_SpAdjust)) {
-	  reg = TN_register(Use_Callee_Save_TN_For_SpAdjust);
-	}
-	else if(TN_is_save_reg(Use_Callee_Save_TN_For_SpAdjust)) {
-	  reg = TN_save_reg(Use_Callee_Save_TN_For_SpAdjust);
-	}
-	else {
-	  FmtAssert(FALSE,("Don't know how to get reg"));
-	}
-	temps[cl] = REGISTER_SET_Union1(temps[cl], reg);
-      }
-#endif
       if (Trace_EE) {
 	#pragma mips_frequency_hint NEVER
 	ISA_REGISTER_CLASS cl;
@@ -2470,13 +2156,7 @@ Adjust_Entry(BB *bb)
 	}
       }
 
-#ifdef TARG_ST
-      TN *src = Gen_Literal_TN(frame_len, Pointer_Size);
-      incr = Build_TN_Of_Mtype (Pointer_Mtype);
-      Exp_Immediate (incr, src, MTYPE_signed(Pointer_Mtype) ? TRUE : FALSE, &ops);
-#else
       incr = Gen_Prolog_LDIMM64(frame_len, &ops);
-#endif
       Assign_Prolog_Temps(OPS_first(&ops), OPS_last(&ops), temps);
     } else {
 
@@ -2492,12 +2172,6 @@ Adjust_Entry(BB *bb)
     ent_adj = OPS_last(&ops);
     BB_Insert_Ops_Before(bb, sp_adj, &ops);
     BB_Remove_Op(bb, sp_adj);
-#ifdef TARG_ST
-    /* [CL] set the prologue field for all the entry OPs */
-    FOR_ALL_OPS_OPs_FWD(&ops, op) {
-      Set_OP_prologue(op);
-    }
-#endif
     if (Trace_EE) {
       #pragma mips_frequency_hint NEVER
       fprintf(TFile, "\nNew stack frame allocation:\n");
@@ -2513,12 +2187,6 @@ Adjust_Entry(BB *bb)
       OP_srcpos(ent_adj) = OP_srcpos(fp_adj);
       BB_Insert_Ops_Before(bb, fp_adj, &ops);
       BB_Remove_Op(bb, fp_adj);
-#ifdef TARG_ST
-      /* [CL] set the prologue field for all the entry OPs */
-      FOR_ALL_OPS_OPs_FWD(&ops, op) {
-	Set_OP_prologue(op);
-      }
-#endif
       if (Trace_EE) {
 	#pragma mips_frequency_hint NEVER
       	FOR_ALL_OPS_OPs_FWD(&ops, op) Print_OP_No_SrcLine(op);
@@ -2530,38 +2198,8 @@ Adjust_Entry(BB *bb)
    */
   ENTRYINFO_sp_adj(ent_info) = ent_adj;
 
-#ifdef TARG_ST
-  if ( Trace_EE ) {
-#pragma mips_frequency_hint NEVER
-    fprintf(TFile, "\nEntry sequence before EETARG_Fixup_Entry_Code:\n");
-    OP *op, *sp_op = ENTRYINFO_sp_adj(ent_info);
-    if (sp_op == NULL) fprintf(TFile, "\n--- empty sp_adjust sequence\n");
-    else {
-      BOOL emit = TRUE;
-      FOR_ALL_BB_OPs_FWD(bb, op) {
-	if (emit) Print_OP_No_SrcLine(op);
-	if (sp_op == op) emit = FALSE;
-      }
-    }
-  }
-#endif
   // possible do target-dependent fixups
   EETARG_Fixup_Entry_Code (bb);
-#ifdef TARG_ST
-  if ( Trace_EE ) {
-#pragma mips_frequency_hint NEVER
-    fprintf(TFile, "\nEntry sequence after EETARG_Fixup_Entry_Code:\n");
-    OP *op, *sp_op = ENTRYINFO_sp_adj(ent_info);
-    if (sp_op == NULL) fprintf(TFile, "\n--- empty sp_adjust sequence\n");
-    else {
-      BOOL emit = TRUE;
-      FOR_ALL_BB_OPs_FWD(bb, op) {
-	if (emit) Print_OP_No_SrcLine(op);
-	if (sp_op == op) emit = FALSE;
-      }
-    }
-  }
-#endif
 }
 
 
@@ -2608,15 +2246,9 @@ Adjust_Exit(ST *pu_st, BB *bb)
    *   <copy> $sp, ...
    */
   if (Gen_Frame_Pointer && !PUSH_FRAME_POINTER_ON_STACK) {
-#ifdef TARG_ST
-    FmtAssert(OP_copy(sp_adj) &&
-	      TN_is_sp_reg(OP_result(sp_adj,OP_Copy_Result(sp_adj))),
-	      ("Unexpected exit SP adjust OP"));
-#else
     FmtAssert(OP_copy(sp_adj) &&
 	      TN_is_sp_reg(OP_result(sp_adj,0)),
 	      ("Unexpected exit SP adjust OP"));
-#endif
   } else {
     FmtAssert(   OP_code(sp_adj) == TOP_spadjust 
 	      && OP_results(sp_adj) == 1
@@ -2683,12 +2315,6 @@ Adjust_Exit(ST *pu_st, BB *bb)
     FOR_ALL_OPS_OPs_FWD(&ops, op) OP_srcpos(op) = OP_srcpos(sp_adj);
     sp_adj = OPS_last(&ops);
 
-#ifdef TARG_ST
-    /* [CL] set the epilogue field for all the exit OPs */
-    FOR_ALL_OPS_OPs_FWD(&ops, op) {
-      Set_OP_epilogue(op);
-    }
-#endif
     if ( Trace_EE ) {
       #pragma mips_frequency_hint NEVER
       fprintf(TFile, "\nNew stack frame de-allocation:\n");
@@ -2702,38 +2328,6 @@ Adjust_Exit(ST *pu_st, BB *bb)
    */
   EXITINFO_sp_adj(exit_info) = sp_adj;
 
-#ifdef TARG_ST
-  if ( Trace_EE ) {
-#pragma mips_frequency_hint NEVER
-    fprintf(TFile, "\nExit sequence before EETARG_Fixup_Exit_Code:\n");
-    OP *op, *sp_op = EXITINFO_sp_adj(exit_info);
-    BOOL emit = TRUE;//FALSE;
-    if (sp_op == NULL) fprintf(TFile, "\n--- empty sp_adjust sequence\n");
-    else {
-      FOR_ALL_BB_OPs_FWD(bb, op) {
-	if (sp_op == op) emit = TRUE;
-	if (emit) Print_OP_No_SrcLine(op);
-      }
-    }
-  }
-  
-  // possible do target-dependent fixups
-  EETARG_Fixup_Exit_Code (bb);
-
-  if ( Trace_EE ) {
-#pragma mips_frequency_hint NEVER
-    fprintf(TFile, "\nExit sequence after EETARG_Fixup_Exit_Code:\n");
-    OP *op, *sp_op = EXITINFO_sp_adj(exit_info);
-    BOOL emit = TRUE;//FALSE;
-    if (sp_op == NULL) fprintf(TFile, "\n--- empty sp_adjust sequence\n");
-    else {
-      FOR_ALL_BB_OPs_FWD(bb, op) {
-	if (sp_op == op) emit = TRUE;
-	if (emit) Print_OP_No_SrcLine(op);
-      }
-    }
-  }
-#endif
 }
 
 static void
@@ -2754,30 +2348,6 @@ Adjust_Alloca_Code (void)
 			continue;
 		}
   		OPS_Init(&ops);
-#ifdef TARG_ST
-      // [CG]: Fix predicated/not predicated spadjust 
-      // TOP_spadjust (plus) is like so:
-      //  $sp = TOP_spadjust pred, $sp, $old_sp	(predicated)
-      // or:
-      //  $sp = TOP_spadjust $sp, $old_sp		(not predicated)
-      // dealloca does copy of $old_sp  to $sp
-
-      if (OP_variant(op) == V_SPADJUST_PLUS) {
-	Exp_COPY (OP_result(op,0),
-		  OP_opnd(op, OP_has_predicate(op) ? 2: 1),
-		  &ops);
-      }
-      else if (OP_variant(op) == V_SPADJUST_MINUS) {
-	// TOP_spadjust (minus) is like so:
-	//  $sp = TOP_spadjust pred, $sp, ofst	(predicated)
-	// or:
-	//  $sp = TOP_spadjust $sp, ofst		(not predicated)
-	Exp_SUB (Pointer_Mtype, OP_result(op,0),
-		 OP_opnd(op, OP_has_predicate(op) ? 1: 0), 
-		 OP_opnd(op, OP_has_predicate(op) ? 2: 1),
-		 &ops);
-      }
-#else
 #ifndef KEY
 		if (OP_spadjust_plus(op)) {
 #else
@@ -2800,7 +2370,6 @@ Adjust_Alloca_Code (void)
 			  	OP_opnd(op, OP_find_opnd_use(op, OU_opnd2)),
 				&ops);
 		}
-#endif /*TARG_ST*/
 		else {
 			FmtAssert(FALSE, ("non-alloca spadjust"));
 		}
@@ -2810,16 +2379,9 @@ Adjust_Alloca_Code (void)
 				("spadjust can't copy predicates"));
 			// copy predicate to new copy/sub ops
 			if (OP_has_predicate(new_op))
-#ifdef TARG_ST
-                            // (cbr) Support for guards on false
-                            CGTARG_Predicate_OP(bb, new_op,
-                                                OP_opnd(op, OP_find_opnd_use(op, OU_predicate)),
-                                                OP_Pred_False(op, OP_find_opnd_use(op, OU_predicate)));
-#else
 
                         Set_OP_opnd (new_op, OP_PREDICATE_OPND,
                                      OP_opnd(op, OP_PREDICATE_OPND) );
-#endif
         	}
 		BB_Insert_Ops_Before(bb, op, &ops);
     		BB_Remove_Op(bb, op);
@@ -2843,41 +2405,6 @@ void
 Adjust_Entry_Exit_Code( ST *pu )
 {
   BB_LIST *elist;
-#ifdef TARG_ST
-  Use_Callee_Save_TN_For_SpAdjust = NULL;
-
-  if (Trace_EE) {
-    INT callee_num;
-
-    fprintf(TFile, "<calls> Callee saved regs used by %s\n", ST_name(pu));
-    ISA_REGISTER_CLASS cl;
-    FOR_ALL_ISA_REGISTER_CLASS(cl) {
-      fprintf(TFile, "    ISA_REGISTER_CLASS_%s: ", 
-               ISA_REGISTER_CLASS_INFO_Name(ISA_REGISTER_CLASS_Info(cl)));
-      REGISTER_SET_Print(Callee_Saved_Regs_Mask[cl], TFile);
-      fprintf(TFile, "\n");
-    }
-    fprintf(TFile, "\n");
-
-    for (callee_num = 0; callee_num < Callee_Saved_Regs_Count; callee_num++) {
-      TN *tn = CALLEE_tn(callee_num);
-      REGISTER reg = TN_save_reg(tn);
-      cl = TN_save_rclass(tn);
-
-      fprintf(TFile, "    ");
-      Print_TN(tn, FALSE);
-      fprintf(TFile, " (%d:%d): ", TN_save_rclass(tn), TN_save_reg(tn));
-
-      //      ISA_REGISTER_CLASS cl = TN_register_class(tn);
-      //      REGISTER reg = TN_register(tn);
-      if (REGISTER_SET_MemberP(Callee_Saved_Regs_Mask[cl], reg)) {
-	fprintf (TFile, "saved TN%d saved from reg %d:%d", 
-                                                  TN_number(tn), cl, reg);
-      }
-      fprintf(TFile, "\n");
-    }
-  }
-#endif
 
   for (elist = Entry_BB_Head; elist; elist = BB_LIST_rest(elist)) {
     Adjust_Entry(BB_LIST_first(elist));
@@ -2913,56 +2440,6 @@ INT Cgdwarf_Num_Callee_Saved_Regs (void)
 {
   return Saved_Callee_Saved_Regs.Elements();
 }
-#ifdef TARG_ST
-/*
- * Update callee saved registers usages.
- */
-static void
-Compute_Callee_Saved_Registers(void)
-{
-  ISA_REGISTER_CLASS rc;
-  
-  FOR_ALL_ISA_REGISTER_CLASS(rc) {
-    Callee_Saved_Regs_Mask[rc] = REGISTER_SET_EMPTY_SET;
-  }
-  
-  for (BB *bb = REGION_First_BB; bb != NULL; bb = BB_next(bb)) {
-    /* Do not account for call clobbered at it may contain RA_TN for instance
-       that we want to ignore here as it is explicitly added below. */
-    BB_Modified_Registers(bb, Callee_Saved_Regs_Mask, TRUE /* self */);
-  }
-
-  FOR_ALL_ISA_REGISTER_CLASS(rc) {
-    REGISTER_SET potential_saved = REGISTER_CLASS_callee_saves(rc);
-    if (RA_TN != NULL && TN_register_class(RA_TN) == rc) {
-      potential_saved = REGISTER_SET_Union1(potential_saved, TN_register(RA_TN));
-    }
-    Callee_Saved_Regs_Mask[rc] = REGISTER_SET_Intersection (Callee_Saved_Regs_Mask[rc],
-							    potential_saved);
-  }
-  
-  /* Here we use this global flag to find out wether RA_TN needs saving or not.
-     We use this because:
-     - RA_TN ressource is not explicit and thus BB_Modified_Registers will not have it,
-     - tail call optimization will have set it to FALSE if there is no need to save it.
-  */
-  if ((PU_Has_Calls || CG_localize_tns) && RA_TN != NULL) {
-    rc = TN_register_class(RA_TN);
-    Callee_Saved_Regs_Mask[rc] = REGISTER_SET_Union1(Callee_Saved_Regs_Mask[rc], TN_register(RA_TN));
-  }
-}
-
-void
-Adjust_Stack_Frame ( 
-  ST *pu 
-)
-{
-  /* Compute the actual callee saved usage. */
-  Compute_Callee_Saved_Registers();
-    
-  EETARG_Fixup_Stack_Frame ();
-}
-#endif
 
 struct tn* Cgdwarf_Nth_Callee_Saved_Reg (INT n)
 {
@@ -2990,111 +2467,3 @@ INT Push_Pop_Int_Saved_Regs(void)
 }
 #endif
 
-#ifdef TARG_ST
-
-/* Prolog ops are:
- * - any copy from a dedicated register that is not constant.
- * - copy, add or adjust that defines the frame pointer
- * - first copy, add or adjust that defines the stack pointer
- */
-
-void
-Check_Prolog(BB *bb) {
-  OP *entry_sp_adj = BB_entry_sp_adj_op(bb);
-  OP *stack_op = NULL;
-  OP *op;
-
-  // Entries of exception handlers do not have an sp_adj operation
-  if ((entry_sp_adj == NULL) && BB_handler(bb))
-    return;
-
-  FmtAssert(entry_sp_adj!=NULL, ("sp_adjust op not set for entry BB:%d in PU:%s", BB_id(bb), Cur_PU_Name));
-
-  FOR_ALL_BB_OPs_FWD(bb, op) {
-
-    if (op == entry_sp_adj)
-      break;
-
-    if (OP_Is_Copy(op)) {
-      TN *argument = OP_Copy_Operand_TN(op);
-      if (TN_is_register(argument) &&
-	  TN_is_dedicated(argument) &&
-	  !TN_is_const_reg(argument))
-	continue;
-    }
-
-    if (OP_results(op) == 1) {
-      TN *result = OP_result(op, 0);
-      if (result == FP_TN) {
-	if (OP_Is_Copy(op) || OP_iadd(op))
-	  continue;
-      }
-      if ((result == SP_TN) && (stack_op == NULL)) {
-	stack_op = op;
-	if (OP_Is_Copy(op) || OP_iadd(op) || (OP_code(op) == TOP_spadjust))
-	  continue;
-      }
-    }
-
-    FmtAssert(0, ("Illegal prolog sequence in BB:%d, PU:%s\n", BB_id(bb), Cur_PU_Name));
-  }
-}
-
-/* Epilog ops are:
- * - last control operation
- * - any copy to a dedicated register
- * - last copy, add or adjust of stack pointer
- */
-void
-Check_Epilog(BB *bb) {
-  OP *stack_op = NULL;
-  OP *branch_op = NULL;
-  OP *op;
-  OP *exit_sp_adj = BB_exit_sp_adj_op(bb);
-
-  if (exit_sp_adj == NULL)
-    return;
-
-  FOR_ALL_BB_OPs_REV(bb, op) {
-
-    if (op == exit_sp_adj)
-      break;
-
-    if (OP_xfer(op) && (branch_op == NULL)) {
-      branch_op = op;
-      continue;
-    }
-
-    if (OP_Is_Copy(op)) {
-      TN *result = OP_Copy_Result_TN(op);
-      if (TN_is_dedicated(result))
-	continue;
-    }
-
-    if (OP_results(op) == 1) {
-      TN *result = OP_result(op, 0);
-      if ((result == SP_TN) && (stack_op == NULL)) {
-	stack_op = op;
-	if (OP_Is_Copy(op) || OP_iadd(op) || (OP_code(op) == TOP_spadjust))
-	  continue;
-      }
-    }
-
-    FmtAssert(0, ("Illegal epilog sequence in BB:%d, PU:%s\n", BB_id(bb), Cur_PU_Name));
-  }
-}
-
-void
-Check_Prolog_Epilog () {
-
-  for (BB *bb = REGION_First_BB; bb != NULL; bb = BB_next(bb)) {
-
-    if (BB_entry(bb))
-      Check_Prolog(bb);
-
-    if (BB_exit(bb))
-      Check_Epilog(bb);
-
-  }
-}
-#endif

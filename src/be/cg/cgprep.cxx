@@ -149,7 +149,7 @@ static BOOL use_crosses_def(OP *op, UINT8 opnd)
   }
   return FALSE;
 }
-#ifndef TARG_ST
+
 // Arthur: this function is replaced by a better ARCH descriptor
 INT16 CGPREP_Same_Res_Opnd(OP *op)
 /* ----------------------------------------------------------------------
@@ -184,7 +184,6 @@ INT16 CGPREP_Same_Res_Opnd(OP *op)
 
   return -1;
 }
-#endif
 
 void CGPREP_Copy_TN(TN *dest, TN *src, OP *point, UINT8 omega, BOOL before)
 /* -----------------------------------------------------------------------

@@ -202,15 +202,8 @@ Create_GRA_BB_Call_Spill_Block(BB *bb)
   } else if (OP_has_predicate(BB_last_op(bb)) &&
              OP_has_predicate(BB_last_op(succ)) &&
              !TN_is_const_reg(OP_opnd(BB_last_op(bb), OP_PREDICATE_OPND)) &&
-  #ifdef TARG_ST
-             (!TNs_Are_Equivalent(OP_opnd(BB_last_op(bb), OP_find_opnd_use(BB_last_op(bb),OU_predicate)),
-                                 OP_opnd(BB_last_op(succ), OP_find_opnd_use(BB_last_op(succ),OU_predicate))) ||
-              OP_Pred_False (BB_last_op(bb), OP_find_opnd_use(BB_last_op(bb),OU_predicate)) !=
-              OP_Pred_False (BB_last_op(succ), OP_find_opnd_use(BB_last_op(succ),OU_predicate)))) {
-#else
              !TNs_Are_Equivalent(OP_opnd(BB_last_op(bb), OP_PREDICATE_OPND),
                                  OP_opnd(BB_last_op(succ), OP_PREDICATE_OPND))) {
-#endif
    /* We really don't know what is going on here - so insert the block! */
     goto block_needed;
   } else {
@@ -315,9 +308,6 @@ Create_GRA_BBs_And_Regions(void)
   for ( bb = REGION_First_BB; bb != NULL; bb = BB_next(bb) ) {
     GRA_REGION* region = gra_region_mgr.Get(BB_rid(bb));
     GRA_BB*     gbb    = gbb_mgr.Create(bb,region);
-#ifdef TARG_ST
-    GRA_Trace_BB_Liveness(bb);
-#endif
 
     region->Add_GBB(gbb);
     gra_loop_mgr.Set_GBB_Loop(gbb);
@@ -364,7 +354,7 @@ Region_TN_Reference( TN* tn, GRA_REGION* region )
 /////////////////////////////////////
 {
   if ( TN_Is_Allocatable(tn) && lrange_mgr.Get(tn) == NULL ) {
-    #if defined( TARG_IA64) || defined(TARG_ST)
+    #if defined( TARG_IA64)
     if (Get_Trace(TP_SWPIPE, 4)) {
     #else
     if (Get_Trace(TP_SWPIPE, GRA_FLAG)) {
@@ -534,14 +524,10 @@ Create_LRANGEs(void)
     if (GRA_loop_splitting) {
       gbb->Check_Loop_Border();
     }
-#ifdef TARG_ST
-    gbb->Create_Local_LRANGEs ();
-#else
     FOR_ALL_ISA_REGISTER_CLASS( rc ) {
       if ( gbb->Register_Girth(rc) > 0 )
         gbb->Create_Local_LRANGEs(rc,gbb->Register_Girth(rc));
     }
-#endif
   }
 
   // All the other global TNs have corresponding complement live ranges:
@@ -584,10 +570,6 @@ Set_Call_Flag(LRANGE* lrange, BB* bb)
       lrange->Spans_Infreq_Call_Set();
     }
   }
-#ifdef TARG_ST
-  lrange->Set_Call_Clobbered (REGISTER_SET_Union(lrange->Call_Clobbered(),
-						 BB_call_clobbered (bb, lrange->Rc())));
-#endif
 }
 
 /////////////////////////////////////
@@ -604,7 +586,7 @@ Create_Live_BB_Sets(void)
 
   GRA_Init_Trace_Memory();
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   GTN_SET *incoming_GTNs;
   GTN_SET *outgoing_GTNs;
   if (GRA_optimize_boundary) {
@@ -618,7 +600,7 @@ Create_Live_BB_Sets(void)
   for ( bb = REGION_First_BB; bb != NULL; bb = BB_next(bb) ) {
     GRA_BB* gbb = gbb_mgr.Get(bb);
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     if (GRA_optimize_boundary) {
       /*	TODO:  Define GTN_SET_IntersectionR in gtn_set.h.
       GTN_SET_IntersectionR(incoming_GTNs, BB_live_in(bb), BB_defreach_in(bb));
@@ -638,7 +620,7 @@ Create_Live_BB_Sets(void)
     ) {
       if ( TN_Is_Allocatable(tn) ) {
 	lrange_mgr.Get(tn)->Add_Live_BB(gbb);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	if (GRA_optimize_boundary) {
 	  // The lrange enters the BB.  If the lrange also exits the BB, then
 	  // the BB is an internal BB, else the BB is a boundary BB.  (Ignore
@@ -665,7 +647,7 @@ Create_Live_BB_Sets(void)
 
         lrange->Add_Live_BB(gbb);
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	if (GRA_optimize_boundary) {
 	  // The lrange exits the BB.  If the lrange also enters the BB, then
 	  // the BB is an internal BB, else the BB is a boundary BB.  (Ignore
@@ -718,13 +700,7 @@ Create_Live_BB_Sets(void)
 // block, we know we haven't created one for the current block yet.  Since we
 // scan each block only once to both create the wired LRANGEs and do the
 // preferencing, this works.
-#ifdef TARG_ST
-LRANGE** wired_lranges[ISA_REGISTER_CLASS_MAX_LIMIT + 1];
-// We define an alternative array for possible paired hardwired registers
-LRANGE** wired_paired_lranges[ISA_REGISTER_CLASS_MAX_LIMIT + 1];
-#else
 LRANGE** wired_lranges[ISA_REGISTER_CLASS_MAX + 1];
-#endif
 
 /////////////////////////////////////
 static void
@@ -742,13 +718,6 @@ Initialize_Wired_LRANGEs(void)
       TYPE_MEM_POOL_ALLOC_N(LRANGE*,&MEM_local_nz_pool, REGISTER_MAX + 1);
     memset(vec, 0, (REGISTER_MAX + 1) * sizeof(LRANGE*));
     wired_lranges[rc] = vec;
-#ifdef TARG_ST
-    LRANGE** vec_paired =
-      TYPE_MEM_POOL_ALLOC_N(LRANGE*,&MEM_local_nz_pool, REGISTER_MAX + 1);
-    memset(vec_paired, 0, (REGISTER_MAX + 1) * sizeof(LRANGE*));
-    wired_paired_lranges[rc] = vec_paired;
-#endif
-
   }
 }
 
@@ -762,15 +731,9 @@ Initialize_Wired_LRANGEs(void)
 #endif
 
 /////////////////////////////////////
-#ifdef TARG_ST
-static void
-Wired_TN_Reference( GRA_BB* gbb, ISA_REGISTER_CLASS rc, REGISTER reg , INT nregs,
-		   LRANGE_LIST **wired_locals)
-#else
 static void
 Wired_TN_Reference( GRA_BB* gbb, ISA_REGISTER_CLASS rc, REGISTER reg ,
 		   LRANGE_LIST **wired_locals)
-#endif
 /////////////////////////////////////
 //
 //  Possibly Generate a local LRANGE for a wired TN reference to <rc> <reg> in
@@ -780,25 +743,12 @@ Wired_TN_Reference( GRA_BB* gbb, ISA_REGISTER_CLASS rc, REGISTER reg ,
 {
   if ( REGISTER_IS_ALLOCATABLE(rc, reg) ) {
     LRANGE* lrange = wired_lranges[rc][reg];
-#ifdef TARG_ST
-    // Only handle paired wired register, not more currently.
-    if (nregs == 2) lrange = wired_paired_lranges[rc][reg];
-#endif
 
     if ( lrange == NULL || lrange->Gbb() != gbb ) {
-#ifdef TARG_ST
-      lrange = gbb->Create_Wired_LRANGE(rc,reg, nregs);
-      if (nregs == 1) wired_lranges[rc][reg] = lrange;
-      else if (nregs == 2) wired_paired_lranges[rc][reg] = lrange;
-      wired_locals[rc] = LRANGE_LIST_Push(lrange,
-					  wired_locals[rc],
-					  &MEM_local_nz_pool);
-#else
       wired_lranges[rc][reg] = gbb->Create_Wired_LRANGE(rc,reg);
       wired_locals[rc] = LRANGE_LIST_Push(wired_lranges[rc][reg],
 					  wired_locals[rc],
 					  &MEM_local_nz_pool);
-#endif
     }
   }
   // Else not allocatable
@@ -822,15 +772,7 @@ Get_Possibly_Wired_Reference( TN* tn, LRANGE** lrange )
 
     if ( ! REGISTER_IS_ALLOCATABLE(rc, reg))
       return FALSE;     // Not allocatable
-#ifdef TARG_ST
-    if (TN_nhardregs(tn) == 1) {
-      *lrange = wired_lranges[TN_register_class(tn)][TN_register(tn)];
-    } else if (TN_nhardregs(tn) == 2) {
-      *lrange = wired_paired_lranges[TN_register_class(tn)][TN_register(tn)];
-    }
-#else
     *lrange = wired_lranges[TN_register_class(tn)][TN_register(tn)];
-#endif
     return TRUE;
   }
   else if ( ! TN_Is_Allocatable(tn) )
@@ -844,12 +786,7 @@ Get_Possibly_Wired_Reference( TN* tn, LRANGE** lrange )
 /////////////////////////////////////
 static BOOL
 Complement_TN_Reference( OP* op, TN* tn, GRA_BB* gbb, LUNIT** lunitp,
-#ifdef TARG_ST
-			LRANGE_LIST **wired_locals,
-			ISA_REGISTER_SUBCLASS sc )
-#else
 			LRANGE_LIST **wired_locals )
-#endif
 /////////////////////////////////////
 //
 //  Record a reference to <tn> in <gbb> by making a LUNIT if TN has a
@@ -862,17 +799,13 @@ Complement_TN_Reference( OP* op, TN* tn, GRA_BB* gbb, LUNIT** lunitp,
 /////////////////////////////////////
 {
   if ( TN_is_dedicated(tn)
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
        // Check for local TNs allocated by SWP.
        || (!TN_is_global_reg(tn) &&
 	   TN_register(tn) != REGISTER_UNDEFINED)
 #endif
       ) {
-#ifdef TARG_ST
-    Wired_TN_Reference(gbb,TN_register_class(tn),TN_register(tn),TN_nhardregs(tn), wired_locals);
-#else
     Wired_TN_Reference(gbb,TN_register_class(tn),TN_register(tn),wired_locals);
-#endif
     return FALSE;
   }
   else if ( ! TN_Is_Allocatable(tn) )
@@ -906,15 +839,6 @@ Complement_TN_Reference( OP* op, TN* tn, GRA_BB* gbb, LUNIT** lunitp,
       (*lunitp)->True_Reference_Set();
       lrange_mgr.One_Set_Union1(lrange);
     }
-#ifdef TARG_ST
-    if (sc != ISA_REGISTER_SUBCLASS_UNDEFINED) {
-      ISA_REGISTER_CLASS cl = TN_register_class (tn);
-      REGISTER_SET disallowed_regs =
-	REGISTER_SET_Difference (REGISTER_CLASS_universe (cl),
-				 REGISTER_SUBCLASS_members(sc));
-      (*lunitp)->SubClass_Disallowed_Add (disallowed_regs);
-    }
-#endif 
     return TRUE;
   }
 
@@ -932,47 +856,8 @@ Complement_Copy( OP* op, GRA_BB *gbb, std::list<GRA_PREF_CAND*>& pref_list )
 //
 /////////////////////////////////////
 {
-#ifdef TARG_ST
-  TN *result;
-  TN *opnd;
-  if (OP_compose (op) || OP_extract (op)) {
-    // [SC] For compose and extract, preference
-    // first operand to first result.
-    // [SC] Note if a complement lr is used in extract/compose,
-    // and save in the lr the subclass of the wide operand/result,
-    // so that we can prefer it when allocating.
-    if (OP_compose (op)) {
-      for (INT j = 0; j < OP_opnds(op); j++) {
-	LRANGE *opnd_lr;
-	opnd = OP_opnd(op, j);
-	if (Get_Possibly_Wired_Reference(opnd, &opnd_lr)
-	    && opnd_lr->Type() == LRANGE_TYPE_COMPLEMENT) {
-	  opnd_lr->Set_Pref_Subclass (OP_result_reg_subclass(op, 0), j);
-	  GRA_Trace_Subclass_Preference (opnd_lr, gbb);
-	}
-      }
-    } else {
-      // OP_extract (op)
-      for (INT j = 0; j < OP_results(op); j++) {
-	LRANGE *result_lr;
-	result = OP_result (op, j);
-	if (Get_Possibly_Wired_Reference(result, &result_lr)
-	    && result_lr->Type() == LRANGE_TYPE_COMPLEMENT) {
-	  result_lr->Set_Pref_Subclass (OP_opnd_reg_subclass(op, 0), j);
-	  GRA_Trace_Subclass_Preference (result_lr, gbb);
-	}
-      }
-    }
-    result = OP_result (op, 0);
-    opnd = OP_opnd (op, 0);
-  } else {
-    result = OP_Copy_Result_TN (op);
-    opnd = OP_Copy_Operand_TN (op);
-  }
-#else    
   TN* result        = OP_result(op,0);
   TN* opnd          = CGTARG_Copy_Operand_TN(op);
-#endif
   LRANGE* result_lr = NULL;
   LRANGE* opnd_lr   = NULL;
 
@@ -1223,16 +1108,9 @@ OP_Refs_Home(OP* op, TN* home_tn)
 {
   WN* wn = Get_WN_From_Memory_OP(op);
   if (wn != NULL) {
-#ifdef TARG_ST
-    // [CG]: Handle black hole 
-    if (!OP_black_hole(op) && Aliased(Alias_Manager, TN_home(home_tn), wn) == SAME_LOCATION) {
-      return TRUE;
-    }
-#else
     if (Aliased(Alias_Manager, TN_home(home_tn), wn) == SAME_LOCATION) {
       return TRUE;
     } 
-#endif
   }
   return FALSE;
 }
@@ -1298,9 +1176,6 @@ Scan_Complement_BB_For_Referenced_TNs( GRA_BB* gbb )
   Initialize_Wired_LRANGEs();
   for (iter.Init(gbb), op_count=1; ! iter.Done(); iter.Step(), op_count++ ) {
     OP*  xop = iter.Current();
-#ifdef TARG_ST
-      ASM_OP_ANNOT* asm_info = (ASM_OP_ANNOT*) OP_MAP_Get(OP_Asm_Map, xop);
-#endif
     for ( i = OP_opnds(xop) - 1; i >= 0; --i ) {
       TN *op_tn = OP_opnd(xop, i);
       if (! TN_is_register(op_tn))
@@ -1310,14 +1185,7 @@ Scan_Complement_BB_For_Referenced_TNs( GRA_BB* gbb )
 	gpl = gra_pref_mgr.LIVE_Create(&MEM_local_nz_pool);
 	hTN_MAP_Set(live_data, op_tn, gpl);
       }
-#ifdef TARG_ST
-      ISA_REGISTER_SUBCLASS sc = (asm_info
-				  ? ASM_OP_opnd_subclass (asm_info)[i]
-				  : OP_opnd_reg_subclass(xop, i));
-      if (Complement_TN_Reference(xop, op_tn, gbb, &lunit, wired_locals, sc))
-#else
       if (Complement_TN_Reference(xop, op_tn, gbb, &lunit, wired_locals)) 
-#endif
       {
         if (!lunit->Has_Def()) {
 	  lunit->Has_Exposed_Use_Set();
@@ -1329,11 +1197,8 @@ Scan_Complement_BB_For_Referenced_TNs( GRA_BB* gbb )
       } else if (!gpl->Num_Defs()) {
 	gpl->Exposed_Use_Set(TRUE);
       }
-#ifdef TARG_ST
-      gpl->Last_Use_Set(op_count);
-#endif
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       // For GTNs with assigned registers (such as incoming parameters), track
       // the liveness of the assigned register.
       if (TN_register(op_tn) != REGISTER_UNDEFINED) {
@@ -1363,14 +1228,7 @@ Scan_Complement_BB_For_Referenced_TNs( GRA_BB* gbb )
       }
 
       if (OP_cond_def(xop)) { // there is a hidden use
-#ifdef TARG_ST
-	ISA_REGISTER_SUBCLASS sc = (asm_info
-				    ? ASM_OP_result_subclass (asm_info)[i]
-				    : OP_result_reg_subclass(xop, i));
-        if (Complement_TN_Reference(xop, res_tn, gbb, &lunit, wired_locals, sc))
-#else
         if (Complement_TN_Reference(xop, res_tn, gbb, &lunit, wired_locals))
-#endif
         {
           if (!lunit->Has_Def()) {
 	    lunit->Has_Exposed_Use_Set();
@@ -1383,14 +1241,7 @@ Scan_Complement_BB_For_Referenced_TNs( GRA_BB* gbb )
 
       gpl->Num_Defs_Set(gpl->Num_Defs() + 1);
       gpl->Last_Def_Set(op_count);
-#ifdef TARG_ST
-      ISA_REGISTER_SUBCLASS sc = (asm_info
-				  ? ASM_OP_result_subclass (asm_info)[i]
-				  : OP_result_reg_subclass(xop, i));
-      if ( Complement_TN_Reference(xop, res_tn,gbb,&lunit, wired_locals, sc))
-#else
       if ( Complement_TN_Reference(xop, res_tn,gbb,&lunit, wired_locals)) 
-#endif
       {
 	if (lunit) {
 	  //
@@ -1408,34 +1259,7 @@ Scan_Complement_BB_For_Referenced_TNs( GRA_BB* gbb )
       }
     }
 
-#ifdef TARG_ST
-    if (OP_code(xop) == TOP_asm) {
-      ISA_REGISTER_CLASS rc;
-      FOR_ALL_ISA_REGISTER_CLASS(rc) {
-	REGISTER reg;
-	for (reg = REGISTER_SET_Choose(ASM_OP_clobber_set(asm_info)[rc]);
-	     reg != REGISTER_UNDEFINED;
-	     reg = REGISTER_SET_Choose_Next(ASM_OP_clobber_set(asm_info)[rc], reg)) {
-	  TN *ded_tn = Build_Dedicated_TN(rc, reg, 0);
-	  GRA_PREF_LIVE* gpl = (GRA_PREF_LIVE*) hTN_MAP_Get(live_data, ded_tn);
-	  if (!gpl) {
-	    gpl = gra_pref_mgr.LIVE_Create(&MEM_local_nz_pool);
-	    hTN_MAP_Set(live_data, ded_tn, gpl);
-	  }
-	  Wired_TN_Reference(gbb, rc, reg, 1, wired_locals);
-	  // Clobber acts as a kill, we can consider for the live summary information
-	  // that it is an additional  def.
-	  gpl->Num_Defs_Set(gpl->Num_Defs() + 1);
-	  gpl->Last_Def_Set(op_count);
-	  if (gpl->First_Def() == 0) {
-	    gpl->First_Def_Set(op_count);
-	  }
-	}
-      }
-    }
-#endif
-
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     // Treat clobbered registers as though they are result registers.
     // Bug 4579.
     if (OP_code(xop) == TOP_asm) {
@@ -1462,14 +1286,8 @@ Scan_Complement_BB_For_Referenced_TNs( GRA_BB* gbb )
       }
     }
 #endif
-#ifdef TARG_ST
-    if ( OP_Is_Preference_Copy(xop)
-	 || OP_extract(xop)
-	 || OP_compose(xop) )
-#else
 
     if ( CGTARG_Is_Preference_Copy(xop) )
-#endif
       Complement_Copy(xop, gbb, pref_list);
     else if ( ! OP_glue(xop) ) {
       TN* region_tn;
@@ -1512,7 +1330,7 @@ Scan_Complement_BB_For_Referenced_TNs( GRA_BB* gbb )
     GRA_PREF_LIVE* gpl_dest = (GRA_PREF_LIVE*) hTN_MAP_Get(live_data, tn_dest);
     GRA_PREF_LIVE* gpl_src = (GRA_PREF_LIVE*) hTN_MAP_Get(live_data, tn_src);
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     // Do the same tests as below to see if a preferencing copy is allowed, but
     // do it for dedicated registers.  Bug 4579.
     BOOL allow_copy = TRUE;
@@ -1548,22 +1366,12 @@ Scan_Complement_BB_For_Referenced_TNs( GRA_BB* gbb )
     // there is more than one definition of it in the block, then
     // we are conservatively assuming that there is a conflict.
     //
-#ifdef TARG_ST
-    // [SC] Allow the dest to be defined multiple times provided that
-    // the src is live only until the first definition of the dest.
-    if (gpl_src->Last_Def() < gpl_dest->Last_Def()
-	&& ! gpl_dest->Exposed_Use()
-	&& (gpl_dest->Num_Defs() == 1
-	    || (gpl_src->Last_Use() == gpl_dest->First_Def()
-		&& ! GTN_SET_MemberP(BB_live_out(gbb->Bb()), tn_src)))) {
-#else
     if (gpl_src->Last_Def() < gpl_dest->Last_Def() &&
 	!gpl_dest->Exposed_Use() && gpl_dest->Num_Defs() == 1
 #ifdef KEY
 	&& allow_copy
 #endif
 	) {
-#endif
       //
       // Complement to complement preference.
       //
@@ -1947,12 +1755,7 @@ Make_Fine_Grained_Interferences( GRA_BB* gbb )
 
     for ( i = OP_results(op) - 1; i >= 0; --i ) {
       if ( TN_Is_Allocatable(OP_result(op,i)) )
-#ifdef TARG_ST
-	// Arthur: will this work ??
-	if (OP_uniq_res(op, i)) {
-#else
 	if (OP_uniq_res(op) && !OP_cond_def (op)) {
-#endif
 	  remove_after = TRUE;
 	} 
         else if (!OP_cond_def (op)) {

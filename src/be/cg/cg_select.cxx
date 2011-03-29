@@ -522,15 +522,8 @@ Create_PSI_or_Select (TN *target_tn, TN* test_tn, BB *head, BB* true_bb, BB* fal
   TN *true_tn   = OP_opnd(phi, Get_TN_Pos_in_PHI (phi, true_bb));
   TN *false_tn  = OP_opnd(phi, Get_TN_Pos_in_PHI (phi, false_bb));
 
-#ifdef TARG_ST200
-    // cond_tn1 need to be a pred register
-    // must improve interface.
-    if (TN_ssa_def (test_tn) && OP_code(TN_ssa_def (test_tn)) == TOP_convbi_b_r)
-      test_tn = OP_opnd(TN_ssa_def (test_tn), 0);
-#else
     FmtAssert(Is_Predicate_REGISTER_CLASS( TN_register_class(test_tn)),
 	      ("cond_tn1 is not a predicate"));
-#endif
 
   DevAssert(true_tn && false_tn, ("Select: undef TN"));
 
@@ -1253,12 +1246,7 @@ Check_Profitable_Logif (BB *bb1, BB *bb2)
         if (TN_is_register (cond)) {
         OP *resop = TN_ssa_def (OP_opnd(cond_op, opndnum));
         if (resop && OP_bb (resop) == bb2
-#ifdef TARG_STxP70
-	    // we don't really speculate on the stxp70
-	    )
-#else
 	    && !OP_Can_Be_Speculative(resop))
-#endif
           cycles1 += 4;
       }
     }
@@ -2449,17 +2437,6 @@ Associate_Mem_Predicates(TN *cond_tn, BOOL false_br,
   }
 
   if (comp_needed) {
-#ifdef TARG_STxP70
-    /* if cannot invert into one op, build a new cmp.
-       move into Exp_Pred_Complement */
-    OP* cond_op = TN_ssa_def (cond_tn);
-    if (cond_op ) {
-      OP* new_op = CGTARG_Negate_OP(cond_op);
-      Set_OP_result(new_op, 0, tn2);
-      OPS_Append_Op(ops, new_op);
-    }
-    else
-#endif
       Exp_Pred_Complement(tn2, NULL, cond_tn, ops);
   }
 }
@@ -2702,87 +2679,6 @@ BB_Fix_Spec_Loads (BB *bb)
   while(i_iter != i_end) {
 
     OP* op = PredOp_Map_Op(i_iter);
-
-#ifdef TARG_ST200
-    if (OP_load (op)) {
-
-      if (Can_Be_Dismissible (op)) { 
-        TOP ld_top = CGTARG_Speculative_Load (op);
-        DevAssert(ld_top != TOP_UNDEFINED, ("couldnt find a speculative load"));
-        DevAssert(!OP_volatile (op), ("cannot speculate a load"));
-
-        OP_Change_Opcode(op, ld_top); 
-        Set_OP_speculative(op);  
-      }
-
-      else if (PROC_has_predicate_loads()) {
-        TN *btn = PredOp_Map_Pred(i_iter).tn;
-
-        if (!TN_is_true(btn)) {
-          if (OP_has_predicate (op))
-            CGTARG_Predicate_OP (NULL, op, btn, false);
-          else {
-            TOP ld_top = CGTARG_Predicated_Load (op);
-            OPS ops = OPS_EMPTY;  
-        
-            Build_OP (ld_top, OP_result(op,0),
-                      btn,
-                      OP_opnd(op, OP_find_opnd_use(op, OU_offset)),
-                      OP_opnd(op, OP_find_opnd_use(op, OU_base)),
-                      &ops);
-
-            Copy_WN_For_Memory_OP(OPS_last(&ops), op);
-
-            if (OP_volatile (op))
-              Set_OP_volatile(OPS_last(&ops));
-
-            BB_Replace_Op (op, &ops);
-
-            Check_Psi_Uses(op, bb, btn);
-          }
-        }
-      }
-    }
-    else if (OP_prefetch (op)) {
-      TN *btn = PredOp_Map_Pred(i_iter).tn;
-
-      if (OP_has_predicate (op))
-        CGTARG_Predicate_OP (NULL, op, btn, false);
-      else {
-        OPS ops = OPS_EMPTY;  
-        TOP ld_top = CGTARG_Predicated_Load (op);
-
-        Build_OP (ld_top, btn, 
-                  OP_opnd(op, OP_find_opnd_use(op, OU_offset)),
-                  OP_opnd(op, OP_find_opnd_use(op, OU_base)),
-                  &ops);
-
-        Copy_WN_For_Memory_OP(OPS_last(&ops), op);
-        BB_Replace_Op (op, &ops);
-      }
-    }
-#elif TARG_STxP70
-    {
-      TN *btn = PredOp_Map_Pred(i_iter).tn;
-
-      CGTARG_Predicate_OP(bb, op, btn, PredOp_Map_Pred(i_iter).on_false);
-#if 0
-      OP *psi;
-      FOR_ALL_BB_OPs_FWD(bb, psi) {
-        if (OP_psi (psi)) {
-          for (int i = 0; i < OP_opnds(psi); i++) {
-            if (OP_opnd(psi, i) == OP_result(op, 0)) {
-              Set_OP_opnd (psi, i-1, btn);
-              if (PredOp_Map_Pred(i_iter).on_false)
-                Set_OP_Pred_False(psi,i-1);
-            }
-          }
-        }
-      }
-#endif
-    }
-#endif
-
     i_iter++;
   }
 }
@@ -3716,14 +3612,12 @@ Convert_Select(RID *rid, const BB_REGION& bb_region)
 
   Set_Error_Phase ("Select Region Formation");
 
-#ifndef TARG_ST
   //TB: no more OPT_SPACE. This is done in a centralized function
   if (OPT_Space) {
     CG_ifc_freq = FALSE;
     CG_ifc_cycles = FALSE;
     CG_select_spec_stores = PROC_has_predicate_stores() && Enable_Conditional_Store;
   }
-#endif
 
   // higher select_factor means ifc more aggressive.
   select_factor = CGTARG_Ifc_Factor();
