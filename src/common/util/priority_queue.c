@@ -46,12 +46,6 @@
  * ====================================================================
  */
 
-#ifdef TARG_ST
-/* [SC] Added PRQ_Update.  Due to the way macros are written in this
- * file, it is not possible to follow normal convention and put
- * ifdef TARG_ST around this addition.
- */
-#endif
 
 #include "defs.h"
 #include "errors.h"

@@ -140,12 +140,7 @@ extern char *Sharps;	/* Sharps w/NL, full page width */
 #define TKIND_XPHASE	-7	/* Specify final execution phase */
 #define TKIND_CTRL	-8	/* Specify a control option */
 #define TKIND_ALLOC	-9	/* Trace memory allocation */
-#ifdef TARG_ST
-#define TKIND_GML	-10	/* Generate graphml IR dump */
-#define TKIND_MIN	-11	/* Smallest valid function number */
-#else
 #define TKIND_MIN	-10	/* Smallest valid function number */
-#endif
 
 /* Several predefined masks for TKIND_INFO cases: */
 #define TINFO_TIME	1	/* Timing/resource information */
@@ -227,31 +222,13 @@ extern char *Sharps;	/* Sharps w/NL, full page width */
 #define TP_THR		59	/* Tree-Height reduction */
 #define TP_GRU          60      /* Fuse Spills */
 
- #ifdef TARG_ST
-#define TP_SSA          62	/* SSA representation */
-#define TP_SELECT       63	/* Select generation */
-#define TP_RANGE        64      /* Range analysis */
-#define TP_LICM         65      /* Loop invariant Code motion */
-#define TP_EXTENSION    66      /* Extension support (loader, native support) */
-#define TP_TAIL         67	/* Tailmerge */
-#define TP_AFFIRM	68	/* __builtin_assume and AFFIRM property. */
-#define TP_COALESCE     69      /* GTN Coalescing */
-#endif
-
 #define TP_TEMP		99	/* Temporary use */
 
 /* WARNING: TP_LAST must be at least as large as the largest phase
  * number above, and TP_COUNT must be at least one larger.
  */
- #ifdef TARG_ST
-/* WARNING: TP_LAST must be at least as large as the largest phase
- * number above, and TP_COUNT must be at least one larger.
- */
-#define TP_LAST         TP_TEMP   /* Largest valid phase number */
-#else
 
 #define TP_LAST		TP_GRU	/* Largest valid phase number */
-#endif
 #define TP_COUNT	TP_LAST+1	/* Number of valid phase numbers */
 
 /* Extract the phase number from a trace option: */
