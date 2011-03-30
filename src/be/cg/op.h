@@ -933,6 +933,7 @@ inline BOOL OP_conflict(OP *op, INT res_idx, INT opnd_idx) {
 #define OP_x87(o)		(TOP_is_x87(OP_code(o)))
 #define OP_mmx(o)		(TOP_is_mmx(OP_code(o)))
 #define OP_prefix_lock(o)	(TOP_is_prefix_lock(OP_code(o)))
+#define OP_cast_vector(o)    (TOP_is_cast_vector(OP_code(o)))
 #endif
 #ifdef TARG_MIPS
 #define OP_fp_load(o)		(TOP_is_fp_load(OP_code(o)))

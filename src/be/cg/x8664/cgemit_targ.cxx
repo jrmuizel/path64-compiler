@@ -1837,6 +1837,25 @@ static const char* int_reg_names[6][16] = {
     "%ymm8", "%ymm9", "%ymm10", "%ymm11", "%ymm12", "%ymm13", "%ymm14", "%ymm15" },
 };
 
+static void Force_Adjust_Opnd_Name( OP* op, int opnd, char* name ){
+	const TOP topcode = OP_code( op );
+	const ISA_OPERAND_INFO * oinfo = ISA_OPERAND_Info(topcode);
+	const ISA_OPERAND_VALTYP *dtype = ISA_OPERAND_INFO_Result(oinfo, 0);
+	const ISA_OPERAND_VALTYP *rtype = ISA_OPERAND_INFO_Result(oinfo, opnd);
+	const ISA_REGISTER_CLASS drc = ISA_OPERAND_VALTYP_Register_Class(dtype);
+	const ISA_REGISTER_CLASS rrc = ISA_OPERAND_VALTYP_Register_Class(rtype);
+	
+	const enum OPND_REG opnd_reg = Get_Opnd_Reg( op, -1, drc );
+
+	 for( REGISTER reg = REGISTER_MIN; reg <= REGISTER_CLASS_last_register( rrc ); reg++ ){
+      const char* n = REGISTER_name( rrc, reg );
+      if( strcmp( n+2, name+2 ) == 0 ){//skip %y or %x
+		strcpy( name, int_reg_names[opnd_reg][reg-REGISTER_MIN] );
+		return;
+      }
+    }
+}
+
 static void Adjust_Opnd_Name( OP* op, int opnd, char* name )
 {
   const TOP topcode = OP_code( op );
@@ -1931,6 +1950,8 @@ static void Adjust_Opnd_Name( OP* op, int opnd, char* name )
     }
   } // ISA_REGISTER_CLASS_integer
 
+  
+
   if( ISA_OPERAND_VALTYP_Register_Class(vtype) == ISA_REGISTER_CLASS_x87 ){
     extern int Get_OP_stack_reg( OP*, int );
     sprintf( name, "%%st(%d)", Get_OP_stack_reg( op, opnd ) );
@@ -1990,6 +2011,11 @@ INT CGEMIT_Print_Inst( OP* op, const char* result[], const char* opnd[], FILE* f
 	      ("buffer size is too small") );
       strcpy(opnd_name[opnd_i], opnd[comp - ISA_PRINT_COMP_opnd]);
       Adjust_Opnd_Name(op, comp - ISA_PRINT_COMP_opnd, opnd_name[opnd_i]);
+	  if(OP_cast_vector(op)){
+		if(TN_size(OP_result(op,0)) != TN_size(OP_opnd(op, comp - ISA_PRINT_COMP_opnd)))
+			Force_Adjust_Opnd_Name(op, comp - ISA_PRINT_COMP_opnd, opnd_name[opnd_i]);
+		
+      }
       opnd_i++;
       break;
 

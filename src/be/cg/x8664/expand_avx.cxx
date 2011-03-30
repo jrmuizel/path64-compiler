@@ -105,7 +105,7 @@ case INTRN_VBLENDPS256:
   Expand_Intrinsic_Imm_Param(TOP_vblendpd_f256_ofloat_float_float_simm8,result, op0, op1, op2, ops, 5);
 break;
 case INTRN_VCASTSI128TOSI256:
- //Build_OP(TOP_vmovdqu_f256_ofloat_float, result,op0, ops); 
+ Build_OP(TOP_vmovdqu_f256_ofloat_float, result,op0, ops); 
 break;
 case INTRN_VUNPCKHPS256:
   Build_OP(TOP_vunpckhps_f256_ofloat_float_float, result, op0, op1, ops);
@@ -122,7 +122,7 @@ case INTRN_VINSERTF128F:
   Expand_Intrinsic_Imm_Param(TOP_vinsertf128_f256_ofloat_float_float_simm8,result, op0, op1, op2, ops, 5);
 break;
 case INTRN_VCASTPS256TOPS128:
-  //Build_OP(TOP_vmovups_f256_ofloat_float,result,op0,ops);
+  Build_OP(TOP_vmovups_f256_ofloat_float,result,op0,ops);
 break;
 case INTRN_VMASKMOVPD128ST:
   //TODO store op
@@ -259,7 +259,7 @@ case INTRN_VSHUFPD25:
   Expand_Intrinsic_Imm_Param(TOP_vshufpd_f256_ofloat_float_float_simm8,result, op0, op1, op2, ops, 5);
 break;
 case INTRN_VCASTPD256TOPD128:
-  //Build_OP(TOP_vmovupd_f256_ofloat_float, result, op0,ops);
+  Build_OP(TOP_vmovupd_f256_ofloat_float, result, op0,ops);
 break;
 case INTRN_VEXTRACTF128S:
   Expand_Intrinsic_Imm_Opnd2(TOP_vextractf128_f256_ofloat_float_simm8, result, op0, op1, ops,4);
@@ -289,13 +289,13 @@ case INTRN_VMOVMSKPS256:
   Build_OP(TOP_vmovmskps_f256_oint32_float, result, op0, ops);
 break;
 case INTRN_VCASTPD128TOPD256:
-  //Build_OP(TOP_vmovapd_f256_ofloat_float, result, op0, ops);
+  Build_OP(TOP_vmovapd_f256_ofloat_float, result, op0, ops);
 break;
 case INTRN_VDIVPS256:
   Build_OP(TOP_vdivps_f256_ofloat_float_float, result, op0, op1, ops);
 break;
 case INTRN_VCASTPS128TOPS256:
-  //Build_OP(TOP_vmovups_f256_ofloat_float, result, op0, ops);
+  Build_OP(TOP_vmovups_f256_ofloat_float, result, op0, ops);
 break;
 case INTRN_VMINPD256:
   Build_OP(TOP_vminpd_f256_ofloat_float_float, result, op0, op1, ops);
@@ -315,7 +315,7 @@ case INTRN_VTESTPS128C:{
 }
 break;
 case INTRN_VCASTSI256TOSI128:
-  //Build_OP(TOP_vmovdqu_f256_ofloat_float,result, op0, ops);
+  Build_OP(TOP_vmovdqu_f256_ofloat_float,result, op0, ops);
 break;
 case INTRN_VROADCASTSS128:
   Build_OP(TOP_vbroadcastss_f256_ofloat_base64_simm32, result, op0, Gen_Literal_TN(0,1),ops);

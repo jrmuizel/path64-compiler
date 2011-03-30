@@ -146,7 +146,8 @@ main()
     vector_high_loadstore, /* SSE movhpd/movhps */
     vector_packed_single,  /* SSE packed single-precision FPU op */
     vector_packed_double,  /* SSE packed double-precision FPU op */
-    vector_avx;
+    vector_avx,
+    cast_vector;	    /*for cast from 256 vector to 128*/
   
 
   ISA_Properties_Begin ("x8664");
@@ -4453,6 +4454,16 @@ main()
 		     TOP_lock_xadd32,
 		     TOP_lock_xadd64,
 		     TOP_UNDEFINED);
+  
+  /*cast 256/128 to 128/256 AVX*/
+  cast_vector = ISA_Property_Create ("cast_vector");
+  Instruction_Group (cast_vector,
+  	         TOP_vmovdqa_f256_ofloat_float,
+  	         TOP_vmovdqu_f256_ofloat_float,
+  	         TOP_vmovups_f256_ofloat_float,
+  	         TOP_vmovupd_f256_ofloat_float,
+  	         TOP_vmovapd_f256_ofloat_float,
+  			 TOP_UNDEFINED);
 
   ISA_Properties_End();
 
