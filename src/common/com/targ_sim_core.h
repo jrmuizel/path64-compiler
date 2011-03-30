@@ -139,10 +139,6 @@ extern void Get_Return_Pregs (
   TYPE_ID mreg2,	/* in:  mtype for result register 2 */
   PREG_NUM *rreg1,	/* out: result register 1 */
   PREG_NUM *rreg2);	/* out: result register 2 */
-#ifdef TARG_ST
-/* [SC] Return the type of a nested function trampoline for the target. */
- extern TYPE_ID Get_Nested_Fn_Trampoline_Type (void);
-#endif
 
 /* PLOC contains information about the location of a parameter.
  * If reg == 0, then the parameter is stored on the stack. 
@@ -151,54 +147,22 @@ extern void Get_Return_Pregs (
  */
 typedef struct {
 	PREG_NUM reg;
-#ifdef TARG_ST       
-        INT32 formal_offset;
-	INT32 upformal_offset;
-#else
 #if defined(TARG_X8664) || defined(TARG_IA32)
 	PREG_NUM reg2;	/* for second register used in passing a struct */
 #endif
 	INT32 start_offset;
-#endif
 	INT32 size;
 	PREG_NUM vararg_reg;
-#ifdef TARG_ST
-  // Arthur: we want to calculate padding in one place, the ABI
-  //         routines.
-  INT32 lpad;
-  INT32 rpad;
-  INT32 lpad_overlap;	// Amount of lpad allocated to the previous segment when the object overlaps
-
-  // [JV] To say if the parameter is passed by reference.
-  BOOL  by_reference;
-#endif
 } PLOC;
 
 #define PLOC_reg(p)		(p.reg)
-#ifndef TARG_ST
 #define PLOC_reg2(p)		(p.reg2)
-#endif
 #define PLOC_vararg_reg(p)	(p.vararg_reg)
-#ifdef TARG_ST
-#define PLOC_offset(p)              ((PLOC_on_stack(p) ? (p).upformal_offset : (p).formal_offset) + 0)
-#define PLOC_set_offset(p,o)        if(PLOC_on_stack(p)) { (p).upformal_offset = (o); } else { (p).formal_offset = (o); }
-#define PLOC_formal_offset(p)       ((p).formal_offset)
-#define PLOC_upformal_offset(p)     ((p).upformal_offset)
-#else
 #define PLOC_offset(p)		(p.start_offset)
-#endif
 #define PLOC_on_stack(p)	(p.reg == 0)
 #define PLOC_size(p)		(p.size)
 
 #define PLOC_total_size(p)	(PLOC_offset(p)+PLOC_size(p))
-#ifdef TARG_ST
-#define PLOC_lpad(p)                ((p).lpad)
-#define PLOC_rpad(p)                ((p).rpad)
-#define PLOC_by_reference(p)        ((p).by_reference)
-#define PLOC_clear(p)		    { memset(&(p), 0, sizeof(PLOC)); }
-#define PLOC_lpad_overlap(p)		    ((p).lpad_overlap)
-#endif
-
 #define PLOC_is_empty(p)	(PLOC_size(p) == 0)
 #define PLOC_is_nonempty(p)	(PLOC_size(p) != 0)
 
@@ -221,32 +185,17 @@ typedef struct {
         	ploc = Next_PLOC_Reg (ploc);
  *
  */
-#ifdef TARG_ST
- extern PLOC Setup_Input_Parameter_Locations (TY_IDX pu_type, BOOL first_hidden_param_is_lowered = TRUE);
-#else
 extern PLOC Setup_Input_Parameter_Locations (TY_IDX pu_type);
-#endif
 extern PLOC Get_Input_Parameter_Location (TY_IDX ptype);
 
 extern PLOC First_Input_PLOC_Reg (PLOC ploc, TY_IDX parm_ty);
-#ifdef TARG_ST
-extern PLOC Next_Input_PLOC_Reg (void);
-#else
 extern PLOC Next_Input_PLOC_Reg (PLOC prev);
-#endif
-#ifdef TARG_ST
- extern PLOC Setup_Output_Parameter_Locations (TY_IDX pu_type, BOOL first_hidden_param_is_lowered = TRUE);
-#else
 extern PLOC Setup_Output_Parameter_Locations (TY_IDX pu_type);
-#endif
 extern PLOC Get_Output_Parameter_Location (TY_IDX ptype);
 
 extern PLOC First_Output_PLOC_Reg (PLOC ploc, TY_IDX parm_ty);
-#ifdef TARG_ST
- extern PLOC Next_Output_PLOC_Reg (void);
-#else
 extern PLOC Next_Output_PLOC_Reg (PLOC prev);
-#endif
+
 /* Iterate over implicit vararg non-fixed register parameters */
 extern PLOC Get_Vararg_Input_Parameter_Location (PLOC prev);
 extern PLOC Get_Vararg_Output_Parameter_Location (PLOC prev);
@@ -262,10 +211,6 @@ extern INT32 Get_Preg_Size (PREG_NUM p);
  * then we iterate with Get_Struct_Parameter_Location until it
  * returns PLOC_is_empty.
  */
-#ifdef TARG_ST
- extern BOOL Is_Struct_Input_Parameter (TY_IDX struct_ty);
- extern BOOL Is_Struct_Output_Parameter (TY_IDX struct_ty);
-#endif
 extern void Setup_Struct_Input_Parameter_Locations (TY_IDX struct_ty);
 extern PLOC Get_Struct_Input_Parameter_Location ( PLOC prev );
 extern void Setup_Struct_Output_Parameter_Locations (TY_IDX struct_ty);
@@ -296,9 +241,6 @@ extern INT Stack_Offset_Adjustment;
 extern void Init_Targ_Sim (void);	/* initialize the info */
 //TB Extend PREG registers to extension
  extern   INT Get_Static_Last_Dedicated_Preg_Offset(void);
-#ifdef TARG_ST
-#define Last_Dedicated_Preg_Offset Get_Last_Dedicated_Preg_Offset_Func()
-#endif
  extern   INT Get_Last_Dedicated_Preg_Offset_Func(void);
  extern   void Set_Last_Dedicated_Preg_Offset(INT offset);
 

@@ -123,7 +123,7 @@ static char *erglob_rcs_id = "$Source: common/com/SCCS/s.erglob.h $ $Revision: 1
 /* Warning of unimplemented optimization: */
 #define EC_Development_Warning EC_Undef_Code+20
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 /* Error for unimplemented features: */
 #define EC_Unimplemented_Feature EC_Undef_Code+24 /* str */
 /* Abort due to misc user-caused reason: */
@@ -166,15 +166,10 @@ static char *erglob_rcs_id = "$Source: common/com/SCCS/s.erglob.h $ $Revision: 1
 #define EC_Replaced_Opt	EC_Undef_Code+63	/* str, str */
 #define EC_Unimp_Opt	EC_Undef_Code+64	/* str */
 #define EC_Inv_Opt_Val	EC_Undef_Code+65	/* str */
-#ifdef TARG_ST
-#define EC_Inv_Register EC_Undef_Code+66	/* str */
-#define EC_Inv_Register_Range EC_Undef_Code+67	/* str, str */
-#else
 #ifdef KEY
 #define EC_No_Opt_Val   EC_Undef_Code+66	/* str, str */
 #define EC_No_Apo_Early_Mp   EC_Undef_Code+67	/* none */
 #endif // KEY
-#endif
 /* Control processing: */
 #define EC_Unimp_Ctrl	EC_Undef_Code+70	/* str */
 #define EC_Unrec_Group	EC_Undef_Code+71	/* str */
@@ -214,12 +209,10 @@ static char *erglob_rcs_id = "$Source: common/com/SCCS/s.erglob.h $ $Revision: 1
 #define EC_Not_Ansi_Setjmp      EC_Undef_Code+106       /* str, int, int */
 
 #ifdef KEY
-#ifndef TARG_ST
 /* Olimit support warnings: */
 #define EC_Olimit_Slow		EC_Undef_Code+107	/* str, int */
 /* IPA inconsistent options warning: */
 #define EC_Ipa_Options		EC_Undef_Code+108	/* */
-#endif
 /* Same symbol declared as function and variable error from IPA */
 #define EC_Inc_Types		EC_Undef_Code+109	/* str */
 #endif
@@ -264,9 +257,6 @@ static char *erglob_rcs_id = "$Source: common/com/SCCS/s.erglob.h $ $Revision: 1
 #define EC_No_Scope	EC_Undef_Code+149	/* int, str */
 #define EC_Bad_Scope	EC_Undef_Code+150	/* int, str */
 #define EC_Inv_Slink	EC_Undef_Code+151	/* sym, str */
-#ifdef TARG_ST
-#define EC_Bad_Align	EC_Undef_Code+152	/* int */
-#endif
 
 /* BB/INS/TN support errors: */
 #define EC_Ill_BB_Kind	EC_Undef_Code+170	/* int, int */
@@ -324,13 +314,8 @@ static char *erglob_rcs_id = "$Source: common/com/SCCS/s.erglob.h $ $Revision: 1
 #define EC_FPR_16	EC_Undef_Code+244	/* none */
 #define EC_FPR_32	EC_Undef_Code+245	/* none */
 #define EC_Inv_OPT	EC_Undef_Code+246	/* str, str */
-#ifdef TARG_ST
-#define EC_Conf_Targ	EC_Undef_Code+247	/* str */
-#define EC_Conf_CodeGen	EC_Undef_Code+248	/* str */
-#else
 #ifdef KEY
 #define EC_Inv_x87_Prec	EC_Undef_Code+247	/* int */
-#endif
 #endif
 /* Pragma errors: */
 #define EC_Pragma_Scope	EC_Undef_Code+270	/* str, str */
@@ -350,16 +335,10 @@ static char *erglob_rcs_id = "$Source: common/com/SCCS/s.erglob.h $ $Revision: 1
 #define EC_P_Heur_No_BT	EC_Undef_Code+326	/* str */
 #define EC_P_Heur_No_MU	EC_Undef_Code+327	/* str */
 #define EC_P_Heur_No_RA	EC_Undef_Code+328	/* str */
-#ifdef TARG_ST
-/* Extension code expansion errors */
-#define EC_Ext_Expand   EC_Undef_Code+340        /* str */
-#define EC_Misc_Asm EC_Undef_Code+341		/* str */
-#else
 #ifdef KEY
 /* ASM operands: */
 #define EC_Inv_Asm_Opnd EC_Undef_Code+340       /* none */
 #define EC_Misc_Asm EC_Undef_Code+341		/* str */
-#endif
 #endif
 
 /* ====================================================================
@@ -422,73 +401,10 @@ static char *erglob_rcs_id = "$Source: common/com/SCCS/s.erglob.h $ $Revision: 1
 #define EC_Inv_Ipa	EC_BASE_FILE+41		/* str */
 #define EC_Obs_Ipa	EC_BASE_FILE+42		/* str */
 #define EC_Ipa_Rename   EC_BASE_FILE+43         /* str, str */
-    #ifdef TARG_ST
-#define EC_Ipa_Incompatible EC_BASE_FILE+44     /* */
-#else
 #ifdef KEY
 #define EC_Ipa_Infile   EC_BASE_FILE+44         /* str */
 #define EC_Ipa_Outfile  EC_BASE_FILE+45         /* str */
 #endif
-#endif
-#ifdef TARG_ST
-    #define EC_Asm_Exists	EC_BASE_FILE+45		/* str */
-#define EC_Asm_Open	    EC_BASE_FILE+46		/* str, err */
-#define EC_Asm_Create	EC_BASE_FILE+47		/* str, err */
-#define EC_Asm_Delete	EC_BASE_FILE+48		/* str, err */
-#define EC_Asm_Close	EC_BASE_FILE+49		/* str, err */
-#define EC_No_Asm	    EC_BASE_FILE+50		/* str */
-
-#define EC_X_Exists	EC_BASE_FILE+52		/* str */
-#define EC_X_Open	EC_BASE_FILE+53		/* str, err */
-#define EC_X_Create	EC_BASE_FILE+54		/* str, err */
-#define EC_X_Delete	EC_BASE_FILE+55		/* str, err */
-#define EC_X_Close	EC_BASE_FILE+56		/* str, err */
-#define EC_No_X		EC_BASE_FILE+57		/* str */
-
-/* Cpp invocation error codes: */
-#define EC_Cpp_Prep	EC_BASE_FILE+60		/* str */
-#define EC_Cpp_Exec	EC_BASE_FILE+61		/* str, err */
-
-/* Linker invocation error codes: */
-#define EC_Link         EC_BASE_FILE+64		/* none */
-#define EC_Link_Exec	EC_BASE_FILE+65		/* err */
-
-/* Transformation log file error codes: */
-#define EC_Tlog_Exists	EC_BASE_FILE+70		/* str */
-#define EC_Tlog_Open	EC_BASE_FILE+71		/* str, err */
-#define EC_Tlog_Create	EC_BASE_FILE+72		/* str, err */
-#define EC_Tlog_Delete	EC_BASE_FILE+73		/* str, err */
-#define EC_Tlog_Close	EC_BASE_FILE+74		/* str, err */
-#define EC_No_Tlog	    EC_BASE_FILE+75		/* str */
-
-/* Feedback file error codes: */
-#define EC_FB_File_Fmt	EC_BASE_FILE+80		/* str, str */
-#define EC_FB_Dup_Scn	EC_BASE_FILE+81		/* str, str */
-#define EC_FB_Miss_Scn	EC_BASE_FILE+82		/* str, str */
-#define EC_FB_Unk_Scn	EC_BASE_FILE+83		/* str */
-#define EC_FB_Ent_Size	EC_BASE_FILE+84		/* str, str, int, int */
-#define EC_FB_File_Old  EC_BASE_FILE+85	 	/* str */
-
-/* CIF file error codes: */
-#define EC_Cif_Open     EC_BASE_FILE+90		/* str, err */
-#define EC_Cif_Write    EC_BASE_FILE+91		/* str, err */
-#define EC_Cif_Close    EC_BASE_FILE+92		/* str, err */
-#define EC_GI_Fork      EC_BASE_FILE+93		/* str, err */
-#define EC_GI_Exec      EC_BASE_FILE+94		/* str, err */
-
-/* IPA LNO file error codes: */ 
-#define EC_IPALNO_Create    EC_BASE_FILE+100    /* str, err */ 
-#define EC_IPALNO_Close     EC_BASE_FILE+101	/* str, err */ 
-#define EC_IPALNO_Open      EC_BASE_FILE+102	/* str, err */ 
-#define EC_IPALNO_Revision  EC_BASE_FILE+103	/* str, err */ 
-
-/* IPA dladd error codes: */
-#define EC_IP_Load_Dso  EC_BASE_FILE+110    /* str, str */
-#ifdef KEY
-#define EC_Ipa_Infile   EC_BASE_FILE+111         /* str */
-#define EC_Ipa_Outfile  EC_BASE_FILE+112         /* str */
-#endif
-#else
 #define EC_Asm_Exists	EC_BASE_FILE+50		/* str */
 #define EC_Asm_Open	    EC_BASE_FILE+51		/* str, err */
 #define EC_Asm_Create	EC_BASE_FILE+52		/* str, err */
@@ -548,22 +464,7 @@ static char *erglob_rcs_id = "$Source: common/com/SCCS/s.erglob.h $ $Revision: 1
 
 /* IPA dladd error codes: */
 #define EC_IP_Load_Dso  EC_BASE_FILE+120    /* str, str */
-#endif
 
-#ifdef TARG_ST
-    /* LAI file error codes */
-#define EC_Lai_Exists	EC_BASE_FILE+120	/* str */
-#define EC_Lai_Open	EC_BASE_FILE+121        /* str, err */
-#define EC_Lai_Create	EC_BASE_FILE+122	/* str, err */
-#define EC_Lai_Delete	EC_BASE_FILE+123	/* str, err */
-#define EC_Lai_Close	EC_BASE_FILE+124	/* str, err */
-#define EC_No_Lai	EC_BASE_FILE+125	/* str */
-
-#ifdef TARG_ST
-/* Extension loading error codes: */
-#define EC_Lib_Ext_Load EC_BASE_FILE+130        /* str, str */
-#endif
-#endif
 
 #ifdef __cplusplus
 }

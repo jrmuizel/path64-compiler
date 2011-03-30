@@ -386,7 +386,7 @@ typedef struct MHD_LEVEL {
  private:
 
   void      Compute_Effective_Size();
-#if defined (KEY) && !defined(TARG_ST)
+#if defined (KEY)
   void      Reset_CS_String();
 #endif
 #endif
@@ -401,15 +401,6 @@ typedef struct MHD {
   BOOL      Non_Blocking_Loads;
   INT32     TLB_Trustworthiness;
   BOOL      TLB_NoBlocking_Model;
-#ifdef TARG_ST
-  // FdF 20050110: Parameterize the number of prefetch buffers
-  // available if it is limited.
-  INT32     DCache_Prefetch_Buffers;
-  // FdF 20070206: Set the maximum prefetch distance to avoid
-  // accessing memory in special areas.
-  INT32     Prefetch_Padding;
-#endif
-
   MHD_LEVEL L[MHD_MAX_LEVELS];
 
 #if defined(_LANGUAGE_C_PLUS_PLUS)
@@ -419,19 +410,10 @@ typedef struct MHD {
   void      Initialize();
   void      Print(FILE*) const;
 
-#ifdef TARG_ST
-  BE_EXPORTED BOOL      Has_No_Memory_Hierarchy();
-#endif
-
-
   MHD() : Non_Blocking_Loads(-1),
           Loop_Overhead_Base(-1),
 	  Loop_Overhead_Memref(-1),
           TLB_Trustworthiness(-1),
-#ifdef TARG_ST
-          DCache_Prefetch_Buffers(-1),
-          Prefetch_Padding(-1),
-#endif
           TLB_NoBlocking_Model(-1) {}
   ~MHD() {}
 

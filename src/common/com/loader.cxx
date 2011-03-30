@@ -376,10 +376,6 @@ TYPE_ID Add_MTypes(const Extension_dll_t *dll_instance,
 	      modes[i].mbitsize,
 	      modes[i].msize,
 	      modes[i].munitsize,
-#ifdef TARG_ST
-              /* [vcdv] add pixel_size info to mtype */
-              modes[i].mpixelsize,
-#endif
 	      modes[i].mwidermode, 
 	      modes[i].innermode,
 	      new_mtype,
@@ -595,10 +591,6 @@ void Add_Composed_Mtype() {
 		/*enum mode_class*/ MODE_RANDOM, /* mbitsize*/ 0, 
 		/*msize*/ 0,  /*munitsize*/ 0,
 		/*mwidermode*/ 0,
-#ifdef TARG_ST
-                /* [vcdv] add pixel_size info to mtype */
-                /*mpixelsize*/ 0,
-#endif
                 /*innermode*/-1, 
 		/* mtype*/ MTYPE_COUNT+1, /*alignement*/TARG_NONE_ALIGN);
 

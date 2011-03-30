@@ -970,7 +970,7 @@ INT32 SIMPNODE_Simp_Compare_Trees(simpnode t1, simpnode t2)
 
       return ((INTPS)t1 - (INTPS)t2);
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     case OPR_PURE_CALL_OP:
       if (SIMPNODE_st_idx(t1) < SIMPNODE_st_idx(t2)) return (-1);
       if (SIMPNODE_st_idx(t1) > SIMPNODE_st_idx(t2)) return (1);
@@ -6056,7 +6056,7 @@ simpnode SIMPNODE_SimplifyIntrinsic(OPCODE opc, UINT32 intrinsic, INT32 n, simpn
 	    SIMP_DELETE(k[i]);
 	 }
       }
-#if defined( KEY) && !defined(TARG_ST) /* bug 14470 */
+#if defined( KEY) /* bug 14470 */
       /* Handling CONSTANT_P is trivial, so handle it separately. */
       else if (intrinsic == INTRN_CONSTANT_P) {
 	 /* constant argument */
@@ -6066,7 +6066,7 @@ simpnode SIMPNODE_SimplifyIntrinsic(OPCODE opc, UINT32 intrinsic, INT32 n, simpn
       }
 #endif /* KEY */
    }
-#if defined( KEY) && !defined(TARG_ST) 
+#if defined( KEY)
 #ifdef WN_SIMP_WORKING_ON_WHIRL
    else if (OPT_Enable_Simp_Fold)
    {

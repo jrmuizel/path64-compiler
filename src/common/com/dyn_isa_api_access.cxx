@@ -907,54 +907,6 @@ EXTENSION_ISA_Info::EXTENSION_ISA_Info(const ISA_EXT_Interface_t* input_isa_ext)
        * target specific compatibility apis in the gbu build (based on
        * targinfo and libair open64 libraries).
        */
-#ifdef TARG_STxP70
-  } else if (input_isa_ext->magic < EXT_ISA_API_20100426 ) {
-    {
-      // Convert ISA_EXEC_UNIT_PROPERTY (bundling)
-      int nb_entry = isa_ext->get_TOP_count();
-
-      const ISA_EXEC_UNIT_PROPERTY *old_tab;
-      ISA_EXEC_UNIT_PROPERTY *new_tab;
-
-      old_tab = isa_ext->get_ISA_EXEC_unit_prop_tab();
-      new_tab = new ISA_EXEC_UNIT_PROPERTY[nb_entry];
-
-#define OLD_ISA_EXEC_PROPERTY_ALL_Unit        (0x1U)
-#define OLD_ISA_EXEC_PROPERTY_isa_32b_Unit_1  (0x800U)
-#define OLD_ISA_EXEC_PROPERTY_isa_48b_Unit_1  (0x100000U)
-#define OLD_ISA_EXEC_PROPERTY_isa_32m_Unit_1  (0x10000U)
-#define OLD_ISA_EXEC_PROPERTY_isa_48m_Unit_1  (0x2000000U)
-
-      for (i=0; i<nb_entry; i++) {
-        switch((mUINT32)old_tab[i]) {
-        case OLD_ISA_EXEC_PROPERTY_ALL_Unit:
-          new_tab[i] = ISA_EXEC_PROPERTY_ALL_Unit;
-          break;
-        case OLD_ISA_EXEC_PROPERTY_isa_32b_Unit_1:
-          new_tab[i] = ISA_EXEC_PROPERTY_isa_32b_Unit_1;
-          break;
-        case OLD_ISA_EXEC_PROPERTY_isa_48b_Unit_1:
-          new_tab[i] = ISA_EXEC_PROPERTY_isa_48b_Unit_1;
-          break;
-        case OLD_ISA_EXEC_PROPERTY_isa_32m_Unit_1:
-          new_tab[i] = ISA_EXEC_PROPERTY_isa_32m_Unit_1;
-          break;
-        case OLD_ISA_EXEC_PROPERTY_isa_48m_Unit_1:
-          new_tab[i] = ISA_EXEC_PROPERTY_isa_48m_Unit_1;
-          break;
-        default:
-          FmtAssert(0,("Unkown exec property value %d", old_tab[i]));
-        }
-      }
-      overridden_ISA_EXEC_unit_prop_tab = new_tab;
-
-      overridden_ISA_EXEC_unit_slots_tab = input_isa_ext->get_ISA_EXEC_unit_slots_tab();
-      overridden_ISA_BUNDLE_slot_count_tab = input_isa_ext->get_ISA_BUNDLE_slot_count_tab();
-      overridden_ISA_PRINT_info_tab = input_isa_ext->get_ISA_PRINT_info_tab();
-
-
-    }
-#endif
   }
   else {
     

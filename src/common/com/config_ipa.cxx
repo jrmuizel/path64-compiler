@@ -124,17 +124,6 @@ BOOL IPA_Debug_AC_Temp_Files = FALSE;   /* save alias class temps til done? */
 BOOL IPA_Enable_Readonly_Ref = TRUE;	/* find out readonly ref parameter */
 BOOL IPA_Enable_Cprop = TRUE;		/* Constant Propagation */
 BOOL IPA_Enable_Cprop2 = TRUE;		/* Aggressive constant propagation */
-#ifdef TARG_ST
-// CRo ipa automatic placement
-BOOL IPA_Enable_MEM_Placement = TRUE;	/* Automatic MEM placement */
-BOOL IPA_MEM_Placement_Size = TRUE;	/* MEM placement based on code size opt, not perf*/
-BOOL IPA_MEM_Placement_Array = TRUE;	/* MEM placement done for arrays*/
-BOOL IPA_MEM_Placement_Struct = TRUE;	/* MEM placement done for struct*/
-#endif
-#ifdef TARG_ST
-// FdF ipa-align
-BOOL IPA_Enable_Align_prop = FALSE;	/* Alignment Propagation */
-#endif
 BOOL IPA_Enable_Assert = FALSE;		// generate assert statement for
 					// cprop debugging
 BOOL IPA_Enable_daVinci = FALSE;	/* Graphical display of call graph */
@@ -222,12 +211,6 @@ BOOL IPA_Use_Effective_Size = TRUE;
 
 /* max. gp-relative space available for auto Gnum */
 UINT32	IPA_Gspace = DEFAULT_GSPACE - 72;// Kluge to get around gcc problem
-#ifdef TARG_ST
-/* max. mem space available for automatic data placement */
-UINT32	IPA_SDAspace = DEFAULT_SDA_SPACE;
-/* max. da space available for automatic data placement */
-UINT32	IPA_DAspace = DEFAULT_DA_SPACE;
-#endif
 
 /* % of estimtated external got size used for estimating the whole .got size */
 UINT32  IPA_Extgot_Factor = 0;
@@ -318,9 +301,6 @@ UINT32 IPA_Max_Clone_Bloat = DEFAULT_CLONE_BLOAT_FACTOR;
 
 /* Max. "size" of each output file */
 UINT32 IPA_Max_Output_File_Size = DEFAULT_OUTPUT_FILE_SIZE;
-#ifdef TARG_ST
-UINT32 IPA_Icall_Opt_Freq = DEFAULT_ICALL_OPT_FREQ;
-#endif
 
 /* percentage change of the max. output file size */
 INT32 IPA_Output_File_Size = 0;
@@ -329,17 +309,6 @@ INT32 IPA_Output_File_Size = 0;
 BOOL IPA_Enable_Devirtualization = FALSE;
 
 BOOL IPA_Enable_Fast_Static_Analysis_VF = TRUE;
-#ifdef TARG_ST
-// [CL] remember compiler command line. Useful when linking with
-// libraries built with IPA: the user's compiler may not be the
-// same as the one used to build the libraries.
-// Also compilation options may differ.
-// The main driver stores the command line in a separate file,
-// used by IPA phase: this way, the options used for the
-// final compilation are consistent and imposed by the user
-// in the link command line
-char *Ipa_Compiler_Command_Line = NULL;	/* Compiler command */
-#endif
 
 static OPTION_DESC Options_IPA[] = {
     { OVK_BOOL,	OV_VISIBLE,	FALSE, "addressing",	"",
@@ -351,20 +320,6 @@ static OPTION_DESC Options_IPA[] = {
     { OVK_BOOL, OV_VISIBLE,	FALSE, "aggr_cprop",		"",
 	  0, 0, 0,		&IPA_Enable_Cprop2,	NULL,
 	  "Enable aggressive constant propagation" },
-#ifdef TARG_ST
-    { OVK_BOOL, OV_VISIBLE,	FALSE, "mem_placement",		"",
-	  0, 0, 0,		&IPA_Enable_MEM_Placement,	NULL,
-	  "Enable automatic SDA placement" },
-    { OVK_BOOL, OV_VISIBLE,	FALSE, "mem_size",		"",
-	  0, 0, 0,		&IPA_MEM_Placement_Size,	NULL,
-	  "Base automatic SDA placement on code size opt" },
-    { OVK_BOOL, OV_VISIBLE,	FALSE, "mem_array",		"",
-	  0, 0, 0,		&IPA_MEM_Placement_Array,	NULL,
-	  "Do automatic SDA placement for arrays" },
-    { OVK_BOOL, OV_VISIBLE,	FALSE, "mem_struct",		"",
-	  0, 0, 0,		&IPA_MEM_Placement_Struct,	NULL,
-	  "Do automatic SDA placement for struct" },
-#endif
     { OVK_BOOL,	OV_VISIBLE,	FALSE, "alias",	"",
 	  0, 0, 0,		&IPA_Enable_Simple_Alias,NULL,
 	  "Enable variable mod, use, and alias analysis" },
@@ -460,12 +415,6 @@ static OPTION_DESC Options_IPA[] = {
     { OVK_UINT32,OV_VISIBLE,	FALSE, "Gnum",	"",
 	  DEFAULT_GSPACE, 0, DEFAULT_GSPACE, &IPA_user_gnum, NULL,
 	  "Specific size limit for data in gp-relative space" },
-#ifdef TARG_ST
-    { OVK_UINT32,OV_VISIBLE,	FALSE, "SDAspace",	"",
-	  DEFAULT_SDA_SPACE, 0, DEFAULT_SDA_SPACE, &IPA_SDAspace, NULL},
-    { OVK_UINT32,OV_VISIBLE,	FALSE, "DAspace",	"",
-	  DEFAULT_DA_SPACE, 0, DEFAULT_DA_SPACE, &IPA_DAspace, NULL},
-#endif
     { OVK_UINT32,OV_INTERNAL,	FALSE, "Gfactor",   "",
           DEFAULT_EXTGOT_FACTOR, 0, UINT32_MAX, &IPA_Extgot_Factor, NULL,
 	  "Percentage used to multiply the number of External GOTs, for AutoGnum purpose" },
@@ -599,17 +548,6 @@ static OPTION_DESC Options_IPA[] = {
     { OVK_BOOL, OV_INTERNAL,    FALSE, "var_dim_array",             "",
           0, 0, 0,              &IPA_Enable_Inline_Var_Dim_Array,   NULL,
           "Enable inlining of PU with param that is variable-dim array " },
-    #ifdef TARG_ST
-    { OVK_NAME,	OV_INTERNAL,	FALSE, "compiler_command",	"",
-	  0, 0, 0,		&Ipa_Compiler_Command_Line,		NULL,
-	  "Compiler command line to use for compilation phases" },
-    { OVK_INT32, OV_INTERNAL,	FALSE, "max_output_file_size", "",
-      DEFAULT_OUTPUT_FILE_SIZE, 1000, INT32_MAX,	&IPA_Max_Output_File_Size, NULL,
-          "Maximum size of an IPA output file" },
-    { OVK_NAME,	OV_INTERNAL,	FALSE, "ipa_exec_name",	"",
-	  0, 0, 0,		&Ipa_Exec_Name,		NULL,
-	  "Name of the final executable" },
-#endif
 
     { OVK_NAME,	OV_INTERNAL,	FALSE, "propagate_feedback_file",	"",
 	  0, 0, 0,		&Feedback_Filename,		NULL,
@@ -627,11 +565,6 @@ static OPTION_DESC Options_IPA[] = {
     { OVK_BOOL, OV_INTERNAL,	FALSE, "eh_opt",	"",
 	  0, 0, 0,		&IPA_Enable_EH_Region_Removal,	NULL,
 	  "Enable removal of exception regions"},
-    #ifdef TARG_ST
-    { OVK_INT32, OV_INTERNAL,	FALSE, "freq_icall_opt", "",
-      DEFAULT_ICALL_OPT_FREQ, 0, INT32_MAX,	&IPA_Icall_Opt_Freq, NULL,
-          "Minimun number of time an indirect call is executed to be candidate for icall to call opt" },
-#endif
 
     { OVK_BOOL, OV_INTERNAL,	FALSE, "branch",	"",
 	  0, 0, 0,		&IPA_Enable_Branch_Heuristic,	NULL,
@@ -648,12 +581,6 @@ static OPTION_DESC Options_IPA[] = {
     { OVK_INT32, OV_INTERNAL,	FALSE, "call_op_skip_b",	"",
 	  0, 0, INT32_MAX,	&IPA_Pure_Call_skip_before,	NULL,
 	  "For debugging" },
-    #ifdef TARG_ST
-    // FdF ipa-allign
-    { OVK_BOOL,	OV_VISIBLE,	FALSE, "align_prop",	"",
-	  0, 0, 0,		&IPA_Enable_Align_prop,	NULL,
-	  "Enable alignment propagation" },    
-#endif
     { OVK_INT32, OV_INTERNAL,	FALSE, "pu_reorder",	"",
 	  REORDER_DISABLE, REORDER_DISABLE, REORDER_BY_EDGE_FREQ,
 	  &IPA_Enable_PU_Reorder, &IPA_Enable_PU_Reorder_Set,
@@ -695,13 +622,6 @@ static OPTION_DESC Options_IPA[] = {
 /* What is the default inlining behavior? */
 BOOL	INLINE_Enable = TRUE;	/* If FALSE, disable inliner? */
 BOOL	INLINE_All = FALSE;	/* Inline everything possible? */
-#ifdef TARG_ST
-//CL: make 'inline' functions must-inline instead of may-inline
-BOOL	INLINE_All_Inline = FALSE; /* Mark must-inline 'inline' functions */
-BOOL	INLINE_Only_Inline = TRUE; /* Mark may-inline only 'inline' functions */
-BOOL    INLINE_Only_Inline_Set = FALSE; /* Is only_inline set?. */
-BOOL	INLINE_O0 = FALSE; /* Inline even at -O0 */
-#endif
 BOOL    INLINE_Optimize_Alloca = TRUE; /* when inlining calls with alloca fix the stack and pop */
 BOOL	INLINE_Enable_Copy_Prop = TRUE; /* Copy Propogation during stand-alone inlining? */
 BOOL	INLINE_Enable_Subst_Copy_Prop = FALSE; /* Aggressive substitution of actual for formal and hence copy propogation during stand-alone inlining */
@@ -709,10 +629,6 @@ BOOL    INLINE_F90 = TRUE;  /* Enable recognition of F90 in parameter type compa
 BOOL	INLINE_None = FALSE;	/* Inline nothing? */
 BOOL	INLINE_Exceptions = TRUE;	/* Inline exception code? */
 BOOL	INLINE_Keep_PU_Order = FALSE;	/* Retain input PU order? */
-#ifdef TARG_ST
-BOOL    INLINE_Sort_PU_Order = TRUE; /* Sort input PUs to aid code generation. */
-BOOL    INLINE_Old_PU_Order = FALSE; /* Use old PUs order befor rev 16483) to ease code comparison. */
-#endif
 BOOL	INLINE_List_Actions = FALSE;	/* List inline actions? */
 UINT32	INLINE_Max_Pu_Size = DEFAULT_INLINE_Max_Pu_Size;
                                         /* Max size of pu : default 5000 */
@@ -762,17 +678,6 @@ static OPTION_DESC Options_INLINE[] = {
     { OVK_BOOL,	OV_VISIBLE,	FALSE, "all",	"a",
 	  0, 0, 0,	&INLINE_All,	NULL,
 	  "Attempt to inline all subprograms" },
-#ifdef TARG_ST
-    { OVK_BOOL,	OV_VISIBLE,	FALSE, "all_inline",	"",
-	  0, 0, 0,	&INLINE_All_Inline,	NULL,
-	  "Force inlining of all 'inline' functions" },
-    { OVK_BOOL,	OV_VISIBLE,	FALSE, "only_inline",	"",
-	  0, 0, 0,	&INLINE_Only_Inline,	&INLINE_Only_Inline_Set,
-	  "Attempt to inline only 'inline' functions" },
-    { OVK_BOOL,	OV_INTERNAL,	FALSE, "O0",	"",
-	  0, 0, 0,	&INLINE_O0,	NULL,
-	  "Attempt to inline even at -O0" },
-#endif
     { OVK_BOOL,	OV_SHY,		FALSE, "alloca",	"alloca",
 	  0, 0, 0,	&INLINE_Optimize_Alloca,	NULL,
 	  "Enable save/restore of stack when inlining calls with alloca" },
@@ -790,31 +695,16 @@ static OPTION_DESC Options_INLINE[] = {
     { OVK_BOOL,	OV_VISIBLE,	FALSE, "keep_pu_order",	"keep_pu",
 	  0, 0, 0,	&INLINE_Keep_PU_Order,	NULL,
 	  "Preserve source subprogram ordering" },
-#ifdef TARG_ST
-    { OVK_BOOL,	OV_VISIBLE,	FALSE, "sort_pu_order",	"sort_pu",
-	  0, 0, 0,	&INLINE_Sort_PU_Order,	NULL,
-	  "Sort source subprograms to improve code generation" },
-    { OVK_BOOL, OV_INTERNAL,    FALSE, "old_pu_order", "old_pu_order",
-          0, 0, 0,      &INLINE_Old_PU_Order,  NULL,
-          "Back to old PU order (before rev 16483) to ease code comparison" },
-#endif
     { OVK_LIST, OV_VISIBLE,     FALSE, "library", "lib",
           0, 0, 0,      &INLINE_List_Names,     NULL,
          "Identify archive libraries where inliner should search for subprograms" },
     { OVK_BOOL,	OV_VISIBLE,	FALSE, "list",	"l",
 	  0, 0, 0,	&INLINE_List_Actions,	NULL,
 	  "Report inliner actions" },
-#ifdef TARG_ST
-    { OVK_UINT32, OV_VISIBLE,	FALSE, "max_pu_size_inline", "max_pu_size",
-	  DEFAULT_INLINE_Max_Pu_Size, 0, UINT32_MAX,
-	  &INLINE_Max_Pu_Size, &INLINE_Max_Pu_Size_Set,
-	  "Limit size of inlined subprograms" },
-#else
     { OVK_UINT32, OV_VISIBLE,	FALSE, "max_pu_size_inline", "max_pu_size",
 	  DEFAULT_INLINE_Max_Pu_Size, 0, UINT32_MAX,
 	  &INLINE_Max_Pu_Size, NULL,
 	  "Limit size of inlined subprograms" },
-#endif
     { OVK_LIST,	OV_VISIBLE,	FALSE, "must",	"m",
 	  0, 0, 0,	&INLINE_List_Names,	NULL,
 	  "Identify subprograms to be inlined" },
@@ -923,30 +813,6 @@ static OPTION_DESC Options_INLINE[] = {
     { OVK_NAME,	OV_VISIBLE,	TRUE, "inline_script", "", 
           0, 0, 0,	&INLINE_Script_Name, &INLINE_Enable_Script, 
           "Enable call-site specific inlining based on inline description file" },
-#ifdef TARG_ST
-    // [CL] make these variable visible with -INLINE:xxx
-    { OVK_UINT32,OV_VISIBLE,	FALSE, "depth",	"",
-	  UINT32_MAX, 0, UINT32_MAX,&IPA_Max_Depth,	NULL,
-	  "Limit inlining depth" },
-    { OVK_UINT32,OV_VISIBLE,	FALSE, "maxdepth",	"",
-	  UINT32_MAX, 0, UINT32_MAX,&IPA_Max_Depth,	NULL,
-	  "Limit inlining depth" },
-    { OVK_UINT32,OV_VISIBLE,	FALSE, "forcedepth",	"",
-	  UINT32_MAX, 0, UINT32_MAX, &IPA_Force_Depth,	&IPA_Force_Depth_Set,
-	  "Inline to at least this depth" },
-    { OVK_UINT32, OV_VISIBLE,	FALSE, "small_pu",	"",
-	  DEFAULT_SMALL_PU, 1, UINT32_MAX, &IPA_PU_Minimum_Size, NULL },
-    { OVK_UINT32, OV_VISIBLE,	FALSE, "space",	"",
-	  DEFAULT_BLOAT_FACTOR, 0, UINT32_MAX, &IPA_Bloat_Factor,
-	  &IPA_Bloat_Factor_Set}, 
-    { OVK_UINT32,OV_VISIBLE,	FALSE, "hard_plimit",	"",
-	  DEFAULT_HARD_LIMIT, 0, UINT32_MAX,
-	  &IPA_PU_Hard_Limit, &IPA_PU_Hard_Limit_Set }, 
-    { OVK_UINT32, OV_VISIBLE,	FALSE, "plimit",	"",
-	  DEFAULT_PU_LIMIT, 0, UINT32_MAX, &IPA_PU_Limit, &IPA_PU_Limit_Set},
-    { OVK_UINT32, OV_SHY,	FALSE, "callee_limit", "",
-	  DEFAULT_SMALL_CALLEE, 0, UINT32_MAX, &IPA_Small_Callee_Limit, NULL},
-#endif
 
     { OVK_COUNT }	    /* List terminator -- must be last */
 };

@@ -220,11 +220,6 @@ typedef struct
 
 
 
-#ifdef TARG_STxP70
-// bwd compatibility
-#include "../../targinfo/stxp70/be/extension_compatibility.inc"
-#endif
-
 // #############################################################################
 // ##
 // ## Class: EXTENSION_HighLevel_Info
@@ -243,27 +238,6 @@ EXTENSION_HighLevel_Info::EXTENSION_HighLevel_Info(const extension_hooks *input_
   if ( hooks->magic < REV_20090908 ) { /* any version older than REV_20090908 */
     overriden_extoption_array = NULL; 
     overriden_extoption_count = 0;
-
-#ifdef TARG_STxP70
-
-    if ( hooks->magic >= REV_20080715) { /* only MP1x with api
-                                            version more recent than
-                                            20080715 are concerned */ 
-      // backward compatibility
-      /* as the extension name is not accessible in the hooks,
-       * I check MP1x on the first builtin name
-       */
-      if (input_hooks->get_builtins_count()>0) {
-        const char* name = input_hooks->get_builtins()[0].c_name;
-        
-        
-        if (strstr(name, "MP1x")!=NULL) {
-          overriden_extoption_array = mpx_extoption_array; 
-          overriden_extoption_count = mpx_extoption_count;
-        }
-      }
-    }
-#endif
   } else {
     overriden_extoption_array = hooks->get_extoption_array();
     overriden_extoption_count = hooks->get_extoption_count();
@@ -277,28 +251,6 @@ EXTENSION_HighLevel_Info::EXTENSION_HighLevel_Info(const extension_hooks *input_
                                           REV_20090813 */
     overriden_recrules = NULL;
     overriden_recrules_count = 0;
-
-#ifdef TARG_STxP70
-
-    if ( hooks->magic >= REV_20080715) { /* only MP1x with api
-                                            version more recent than
-                                            20080715 are concerned */ 
-      // backward compatibility
-      /* as the extension name is not accessible in the hooks,
-       * I check MP1x on the first builtin name
-       */
-      if (input_hooks->get_builtins_count()>0) {
-        const char* name = input_hooks->get_builtins()[0].c_name;
-        
-        
-        if (strstr(name, "MP1x")!=NULL) {
-          // backward compatiblity. use static rule table.
-          overriden_recrules = mpx_recog_rules; 
-          overriden_recrules_count = mpx_recog_rules_count;
-        }
-      }
-    }
-#endif
     
   } else {
     overriden_recrules = hooks->get_recrules();

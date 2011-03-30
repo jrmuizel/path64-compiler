@@ -33,13 +33,6 @@
 // specific target.
 #ifndef gccfe_targinfo_interface_INCLUDED
 #define gccfe_targinfo_interface_INCLUDED
-#ifdef TARG_ST
-//This file contaons all variables and types needed to transform some
-//#define in the config/target/target.h file
-
-//TB: for extension, make ADDITIONAL_REGISTER_NAMES a real array
-typedef struct {  char *name;  int number; int disabled; } gcc_register_map_t;
-#endif //TARG_ST
 
 #ifdef __cplusplus
 extern "C" {

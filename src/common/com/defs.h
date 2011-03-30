@@ -227,30 +227,6 @@ typedef uint64_t	mTARG_UINT;
 # define int	SYNTAX_ERROR_int
 # define long	SYNTAX_ERROR_long
 #endif /* USE_STANDARD_TYPES */
-#ifdef TARG_ST
-#include <float.h>
-
-inline
-BOOL KnuthCompare(float af, float bf, float relError)
-{
-    float aaf = af < 0.0F ? -af : af ;
-    float abf = bf < 0.0F ? -bf : bf ;
-    float afmbf = af - bf ; 
-    float aafmbf =  afmbf < 0.0F ? -afmbf : afmbf ;
-    float mxaafabf = aaf > abf ? aaf : abf ; 
-    return aafmbf <= relError * mxaafabf ;
-}
-
-/* [TTh] FLT_EPSILON is much too small (~1e-7) to be relevant.
- *  KNUTH_FLT_EPSILON defines a more relevant value */
-#define KNUTH_FLT_EPSILON (1000.0F*FLT_EPSILON)
-#define KnuthCompareEQ(af, bf) (((af) == (bf)) ||  KnuthCompare(af, bf, KNUTH_FLT_EPSILON))
-#define KnuthCompareNE(af, bf) (((af) != (bf)) && !KnuthCompare(af, bf, KNUTH_FLT_EPSILON))
-#define KnuthCompareLE(af, bf) (((af) <= (bf)) ||  KnuthCompare(af, bf, KNUTH_FLT_EPSILON))
-#define KnuthCompareLT(af, bf) (((af) <  (bf)) && !KnuthCompare(af, bf, KNUTH_FLT_EPSILON))
-#define KnuthCompareGE(af, bf) (((af) >= (bf)) ||  KnuthCompare(af, bf, KNUTH_FLT_EPSILON))
-#define KnuthCompareGT(af, bf) (((af) >  (bf)) && !KnuthCompare(af, bf, KNUTH_FLT_EPSILON))
-#endif
 
 
 

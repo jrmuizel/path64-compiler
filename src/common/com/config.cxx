@@ -122,16 +122,9 @@ static INT32 Ignore_Int;
 # include "instr_reader.h"
 #endif
 //TB:
-#ifdef TARG_ST
-#include "register_preg.h" // ISA_REGISTER_CLASS
-#endif
 /* IR builder sometimes	needs to know whether we're in front end: */
 #ifdef SINGLE_PROCESS
 INT16 In_Front_End = TRUE;	/* Start out there */
-#endif
-
-#ifdef TARG_ST
-BOOL Use_ELF_32          = Use_32_Bit_Pointers;
 #endif
 
 
@@ -164,21 +157,6 @@ INT32	MinStructCopyLoopSize =    16;		/* 0 = always expand */
 INT32	MinStructCopyMemIntrSize=  0;		/* generate bcopy */
 BOOL MinStructCopyMemIntrSize_Set = FALSE;
 INT32	Aggregate_Alignment = -1;		/* This alignment for aggregate layout */
-#ifdef TARG_ST
-static BOOL	UseMemcpy = FALSE;			/* Use memcpy instead of inlined copy */
-static BOOL	UseMemcpy_Set = FALSE;
-INT32   Scalar_Struct_Limit = -1;
-BOOL UnrollLoops = TRUE;
-BOOL UnrollLoops_Set = FALSE;
-INT32	MinStructCopyParallel     =    0;	/* 0 or 1 = do not generate parallel moves for struct copies */
-BOOL    MinStructCopyParallel_Set =    FALSE;
-#ifdef TARG_ST200
-BOOL PackStruct_WarningsEnabled = FALSE;
-#else
-BOOL PackStruct_WarningsEnabled = TRUE;
-#endif
-BOOL PackStruct_WarningsEnabled_Set = FALSE;
-#endif
 
 #ifdef TARG_MIPS
 BOOL	UnweaveCopyForStructs = TRUE; 	/* clump loads then stores for copy */
@@ -366,10 +344,6 @@ static BOOL Short_Data_Set = FALSE;	/* ... option seen? */
 INT32 Short_Lits = DEF_SDATA_ELT_SIZE;	/* Literals of this size in .litX */
 static BOOL Short_Lits_Set = FALSE;	/* ... option seen? */
 INT32 Max_Sdata_Elt_Size = DEF_SDATA_ELT_SIZE;	/* -Gn: sdata size */
-#ifdef TARG_ST
-INT32 Max_Srdata_Elt_Size = DEF_SRDATA_ELT_SIZE;
-static BOOL Max_Srdata_Elt_Size_Set = FALSE;
-#endif
 BOOL appli_config_file_set          = FALSE;
 
 char *appli_config_file_name        = NULL;
@@ -426,63 +400,12 @@ BOOL Use_Sse_Reg_Parm = FALSE;
 INT32 Use_Reg_Parm = 0;
 #endif
 BOOL Force_GP_Prolog;	/* force usage of gp prolog */
-#ifdef TARG_ST
-BOOL Auto_align_stack = FALSE;        /* Auto align stack */
-#endif
 
 OPTION_LIST *Registers_Not_Allocatable = NULL;
-#ifdef TARG_ST
-// [TTh] List of disabled registers (neither allocatable
-// nor usable in asm stmt clobber list or variable decl
-// with register keyword)
-OPTION_LIST *Disabled_Registers = NULL;
-#endif
 
 
 /* Unique ident from IPA */
 INT32 Ipa_Ident_Number = 0;
-#ifdef TARG_ST
-// [CL] unique label suffix to ensure that two ipa
-// link phases don't generate the same symbol names
-// (causes problems when linking together two files
-// generated in relocatable mode under IPA)
-char *Ipa_Label_Suffix = const_cast<char*>("");
-char *Ipa_Exec_Name = NULL;
-#endif
-
-#ifdef TARG_ST
-// FdF: builtin_prefetch in the code will be ignored if the option
-// -fno-builtin-prefetch is used
-BOOL Ignore_Builtin_Prefetch = FALSE;
-INT32 Prefetch_Optimize = 3;
-#endif
-#ifdef TARG_ST
-// [CG]: Enable emulation for all floating point ops
-// If this is set it disable any floating point op mapping, whatever the target dependent flags.
-// Thus it guarantees that any floating point operation is emulated.
-// This flag should be always FALSE by default, and used only to force emulation when the target has some support for floating point.
-BOOL Emulate_FloatingPoint_Ops;
-BOOL Emulate_FloatingPoint_Ops_Set;
-// [CG]: Enable Single Float Emulation
-// If this is set, the default for 'float' operations is to be emulated unless a target dependent flag forces a specific
-// operator to not be emulated.
-// Thus, this flag is not a guarantee that any 'float' operation is emulated. It is an optimization hint only.
-// This flag should be FALSE by default for target with IEEE float support, TRUE otherwise. (must be set in config_target.cxx).
-BOOL Emulate_Single_Float_Type;
-BOOL Emulate_Single_Float_Type_Set;
-// [CG]: Enable Double Float Emulation
-// If this is set, the default for 'double' operations is to be emulated unless a target dependent flag forces a specific
-// operator to not be emulated.
-// Thus, this flag is not a guarantee that any 'double' operation is emulated. It is an optimization hint only.
-// This flag should be FALSE by default for target with IEEE double support, TRUE otherwise. (must be set in config_target.cxx).
-BOOL Emulate_Double_Float_Type;
-BOOL Emulate_Double_Float_Type_Set;
-// [CM]: Enable Division or Remainder Integer Emulation
-// Optimization hint that Div/rem are available on the target.
-// This flag should be FALSE by default for target with div/rem support, TRUE otherwise. (must be set in config_target.cxx).
-BOOL Emulate_DivRem_Integer_Ops;
-BOOL Emulate_DivRem_Integer_Ops_Set;
-#endif
 
 #ifdef KEY
 // Tell ipa_link to set LD_LIBRARY_PATH to this before running the shell cmds.
@@ -493,36 +416,6 @@ char *IPA_cc_name = NULL;
 
 // Tell ipa_link about the source language.
 char *IPA_lang = NULL;
-#ifdef TARG_ST
-// [CG]: Enable transformation of builtins. 
-// For instance: strlen("toto") -> 4
-// Normally activated at Opt_Level >= 1.
-// This flag does not disable builtin mapping to intrinsics, 
-// use front-end flag -fno-builtins for this
-BOOL Enable_Expand_Builtin = FALSE;
-BOOL Enable_Expand_Builtin_Set = FALSE;
-char *Extension_Names = NULL;
-BOOL Extension_Is_Present = FALSE;
-INT32 Enable_Extension_Native_Support = EXTENSION_NATIVE_SUPPORT_DEFAULT;
-BOOL Enable_Extension_Native_Support_Set = FALSE;
-char *Disabled_Native_Extensions = NULL;
-BOOL Disabled_Native_Extensions_Set = FALSE;
-
-char *Ext_Options = NULL;
-BOOL Ext_Options_Set = FALSE;
-
-// extra options enabling to activate/block the
-// Enable_Extension_Native_Support mask bit per bit.
-INT32 Activate_Extension_Native_Support_Bits = 0;
-BOOL Activate_Extension_Native_Support_Bits_Set = FALSE;
-INT32 Block_Extension_Native_Support_Bits = 0;
-BOOL Block_Extension_Native_Support_Bits_Set = FALSE;
-
-BOOL Meta_Instruction_Threshold_Set = FALSE;
-INT32 Meta_Instruction_Threshold = INT_MAX;
-BOOL Meta_Instruction_By_Size_Set = FALSE;
-BOOL Meta_Instruction_By_Size = FALSE;
-#endif
 
 // 14839: Tell ipa_link which gcc linker to invoke.
 char *IPA_linker = NULL;
@@ -546,17 +439,8 @@ static OPTION_DESC Options_TENV[] = {
   { OVK_BOOL,   OV_SHY,		FALSE, "constant_gp",		NULL,
     0, 0, 0,    &Constant_GP, NULL },
   { OVK_BOOL,	OV_SHY,		FALSE, "cpic",			"cp",
-#ifdef TARG_ST
-    0, 0, 0, &Gen_PIC_Call_Shared, &Gen_PIC_Call_Shared_Set,
-#else      
     0, 0, 0, &Gen_PIC_Call_Shared, NULL,
-#endif
     "Generate code for executable programs which may call DSOs" },
-#ifdef TARG_ST
-  { OVK_BOOL,	OV_SHY,		FALSE, "no_shared_warning",	NULL,
-    0, 0, 0, &No_Shared_Warning, NULL,
-    "Disable warning when mixinig modules compiled for different code generation models" },
-#endif
   { OVK_NAME,	OV_VISIBLE,	FALSE, "visibility",	NULL,
     0, 0, 0, &ENV_Symbol_Visibility_String, NULL,
     "Specify default symbol visibility (default is STV_DEFAULT)" },
@@ -572,14 +456,6 @@ static OPTION_DESC Options_TENV[] = {
   { OVK_UINT32,	OV_INTERNAL,	FALSE, "ipa_ident",		NULL, 
     0, 0, UINT32_MAX, &Ipa_Ident_Number, NULL,
     "Specify IPA timestamp number" },
-#ifdef TARG_ST
-  { OVK_NAME,	OV_INTERNAL,	FALSE, "ipa_suffix",		NULL, 
-    0, 0, 0, &Ipa_Label_Suffix, NULL,
-    "Specify IPA unique suffix" },
-  { OVK_NAME,	OV_INTERNAL,	FALSE, "ipa_exec_name",		NULL, 
-    0, 0, 0, &Ipa_Exec_Name, NULL,
-    "Specify executable name when running IPA phase" },
-#endif
   { OVK_BOOL,	OV_VISIBLE,	FALSE, "kernel",		NULL,
     0, 0, 0,	&Kernel_Code,	NULL,
     "Generate code for kernel use" },
@@ -591,10 +467,6 @@ static OPTION_DESC Options_TENV[] = {
   { OVK_BOOL,	OV_INTERNAL,	FALSE, "large_stack",		NULL,
     0, 0, 0,	&Force_Large_Stack_Model, NULL,
     "Generate code assuming >32KB stack frame" },
-#ifdef TARG_ST
-  { OVK_BOOL,	OV_INTERNAL, TRUE, "auto_align_stack", "",
-    TRUE, 0, 0, &Auto_align_stack, NULL },
-#endif
 
 #ifdef TARG_X8664
   { OVK_BOOL,	OV_INTERNAL,	FALSE, "frame_pointer",		NULL,
@@ -645,18 +517,10 @@ static OPTION_DESC Options_TENV[] = {
     0, 0, 0,	&PIC_No_Page_Offset, NULL,
     "Don't use GOT page/offset addressing" },
   { OVK_BOOL,	OV_SHY,		FALSE, "pic2",			"pi",
-#ifdef TARG_ST
-    0, 0, 0, &Gen_PIC_Shared, &Gen_PIC_Shared_Set,
-#else
     0, 0, 0, &Gen_PIC_Shared, NULL,
-#endif
     "Generate position-independent code suitable for DSOs" },
   { OVK_BOOL,	OV_SHY,		FALSE, "pic1",			NULL,
-#ifdef TARG_ST
-    0, 0, 0, &Gen_PIC_Call_Shared, &Gen_PIC_Call_Shared_Set,
-#else
     0, 0, 0, &Gen_PIC_Call_Shared, NULL,
-#endif
     "Generate code for executable programs which may call DSOs" },
   { OVK_BOOL,   OV_SHY,		FALSE, "profile_call",		"prof",
     0, 0, 0,    &Gen_Profile, NULL },
@@ -677,18 +541,6 @@ static OPTION_DESC Options_TENV[] = {
     -1, 0, 4096,	&MinStructCopyLoopSize, NULL },
   { OVK_INT32,	OV_INTERNAL,	FALSE, "struct_copy_mem_intr_size", "struct_copy_mem",
     -1, 0, 4096,	&MinStructCopyMemIntrSize, NULL },
-#ifdef TARG_ST
-  { OVK_INT32,  OV_INTERNAL,    FALSE, "struct_copy_parallel", NULL,
-    -1, 0, 4096,        &MinStructCopyParallel, &MinStructCopyParallel_Set },
-  { OVK_BOOL,	OV_INTERNAL,	FALSE, "use_memcpy", 	"",
-    0, 0, 0,	&UseMemcpy, &UseMemcpy_Set },
-  { OVK_INT32,	OV_INTERNAL,	FALSE, "scalar_struct_limit", NULL,
-    4, 0, 4096,	&Scalar_Struct_Limit, NULL },
-  { OVK_BOOL,	OV_INTERNAL,	FALSE, "unroll_loops", 	"",
-    1, 0, 0,	&UnrollLoops, &UnrollLoops_Set },
-  { OVK_BOOL,	OV_INTERNAL,	FALSE, "pack-struct-warnings-enabled", 	NULL,
-    1, 0, 0,	&PackStruct_WarningsEnabled, &PackStruct_WarningsEnabled_Set },
-#endif
   { OVK_INT32,	OV_VISIBLE,	FALSE, "X",			NULL,
     1, 0, 4,	&Eager_Level,	&Eager_Level_Set,
     "Exception-enable level" },
@@ -710,11 +562,6 @@ static OPTION_DESC Options_TENV[] = {
   { OVK_LIST,	OV_VISIBLE,	FALSE, "registers_not_allocatable",	NULL,
     0, 0, 0, &Registers_Not_Allocatable, NULL,
     "list of registers that are reserved and not available for allocation" },
-  #ifdef TARG_ST
-  { OVK_LIST,	OV_VISIBLE,	FALSE, "disabled_registers",	NULL,
-    0, 0, 0, &Disabled_Registers, NULL,
-    "list of registers that are neither available for allocation nor for manual usage in asm stmt clobber list or variable decl with register keyword" },
-#endif
   { OVK_BOOL,	OV_SHY,		FALSE, "GPREL",	NULL,
     0, 0, 0, &Gen_GP_Relative, NULL,
     "do not generate GP-relative memory accesses" },
@@ -724,20 +571,6 @@ static OPTION_DESC Options_TENV[] = {
   { OVK_BOOL,	OV_INTERNAL, FALSE, "big_endian", NULL,
     0, 0, 0, &Is_Big_Endian_Set, NULL,
     "is the target big endian" },
-#ifdef TARG_ST
-  { OVK_BOOL,	OV_INTERNAL, FALSE, "no_builtin_prefetch", NULL,
-    0, 0, 0, &Ignore_Builtin_Prefetch, NULL,
-    "Allow or ignore buit-in prefetch" },
-  // FdF 20050203: This flag is used to control the optimization of prefetch. 
-  // - bit 0x1 will activate the improved association between user
-  // - prefetch and memory operations, and compute a stride on user
-  // - prefetchs
-  // - bit 0x2 will activate the scheduling of user and automatic
-  // - prefetch in the code generator
-   { OVK_INT32, OV_INTERNAL, FALSE, "prefetch_optimize", NULL,
-     3, 0, 3,   &Prefetch_Optimize, NULL,
-     "Fine tuning of prefetch optimization" },
-#endif
 
   /***** Options moved elsewhere -- retained for compatibility: *****/
   /* See -DEBUG:div_check */
@@ -772,90 +605,6 @@ static OPTION_DESC Options_TENV[] = {
   { OVK_INT32,	OV_INTERNAL,	FALSE, "iolist_reuse",	"iolist_reuse",
     100, 1, INT32_MAX,	&iolist_reuse_limit, 			NULL,
     "Maximum number of iolists which will share stack space" },
-#ifdef TARG_ST
-  { OVK_BOOL,   OV_SHY,		FALSE, "instrument_functions",		NULL,
-    0, 0, 0,    &Instrument_Functions_Enabled, NULL },
-  { OVK_BOOL,   OV_SHY,		FALSE, "instrument_functions_for_pg",		NULL,
-    0, 0, 0,    &Instrument_Functions_Enabled_For_PG, NULL },
-  { OVK_BOOL,   OV_SHY,		FALSE, "profile_arcs",		NULL,
-    0, 0, 0,    &Profile_Arcs_Enabled, NULL },
-  { OVK_BOOL,   OV_SHY,		FALSE, "test_coverage",		NULL,
-    0, 0, 0,    &Test_Coverage_Enabled, NULL },
-  { OVK_BOOL,   OV_SHY,		FALSE, "profile_arcs_cgir",		NULL,
-    0, 0, 0,    &Profile_Arcs_Enabled_Cgir, NULL },
-  { OVK_BOOL,   OV_SHY,		FALSE, "coverage_counter64",		NULL,
-    0, 0, 0,    &Coverage_Counter64, NULL },
-  { OVK_BOOL,   OV_SHY,		FALSE, "branch_probabilities",		NULL,
-    0, 0, 0,    &Branch_Probabilities, NULL },
-#endif
-#ifdef TARG_ST
-  // [CG]: Floating point options
-  { OVK_BOOL,   OV_VISIBLE,    FALSE, "emulate_fp", "",
-    0, 0, 0,    &Emulate_FloatingPoint_Ops, &Emulate_FloatingPoint_Ops_Set,
-    "Enable emulation for single and double precision floating point" },
-
-  { OVK_BOOL,   OV_VISIBLE,    FALSE, "emulate_single", "",
-    0, 0, 0,    &Emulate_Single_Float_Type, &Emulate_Single_Float_Type_Set,
-    "Enable emulation for single precision floating point" },
-
-  { OVK_BOOL,   OV_VISIBLE,    FALSE, "emulate_double", "",
-    0, 0, 0,    &Emulate_Double_Float_Type, &Emulate_Double_Float_Type_Set,
-    "Enable emulation for single precision floating point" },
-
-  { OVK_BOOL,   OV_VISIBLE,    FALSE, "emulate_divrem", "",
-    0, 0, 0,    &Emulate_DivRem_Integer_Ops, &Emulate_DivRem_Integer_Ops_Set,
-    "Enable emulation for integer division and remainder" },
-#endif
-
-#ifdef TARG_ST
-  { OVK_BOOL,   OV_VISIBLE,    FALSE, "expand_builtin", "",
-    0, 0, 0,    &Enable_Expand_Builtin, &Enable_Expand_Builtin_Set,
-    "Enable expansion of builtin functions into specialized code" },
-#endif
-#ifdef TARG_ST
-  { OVK_NAME,   OV_INTERNAL,    FALSE, "extension", NULL,
-    0, 0, 0,    &Extension_Names, &Extension_Is_Present,
-    "List of extension names to be used" },
-  { OVK_INT32,   OV_INTERNAL,    FALSE, "extension_native_support", NULL,
-    EXTENSION_NATIVE_SUPPORT_DEFAULT, 0, 0x3f, &Enable_Extension_Native_Support,
-    &Enable_Extension_Native_Support_Set,
-    "Enable support of automatic codegen for compatible extension" },
-
-  /* Internal option that enables deactivate/activate part of
-     extension native support for debug/work-around purpose.
-     This option cannot be used on a per-extension basis.
-   */
-  { OVK_INT32,   OV_INTERNAL,    FALSE, "activate_extension_native_support_bits",
-    NULL, 0, 0, 0xff, &Activate_Extension_Native_Support_Bits,
-    &Activate_Extension_Native_Support_Bits_Set,
-    "Activate support of automatic codegen for compatible extension (per bits)" },
-  { OVK_INT32,   OV_INTERNAL,    FALSE, "block_extension_native_support_bits",
-    NULL, 0, 0, 0xff, &Block_Extension_Native_Support_Bits,
-    &Block_Extension_Native_Support_Bits_Set,
-    "Block support of automatic codegen for compatible extension (per bits)" },
-
-  { OVK_INT32,   OV_INTERNAL,    FALSE, "meta_instruction_threshold", NULL,
-    INT_MAX, 0, INT_MAX,    &Meta_Instruction_Threshold,
-    &Meta_Instruction_Threshold_Set,
-    "Threshold on the accepatable cost for selecting a meta instruction" },
-  { OVK_BOOL,   OV_INTERNAL,    FALSE, "meta_instruction_by_size", NULL,
-    0, 0, 0,    &Meta_Instruction_By_Size,
-    &Meta_Instruction_By_Size_Set,
-    "Selects meta instruction by size" },
-  { OVK_NAME,   OV_INTERNAL,    FALSE, "disabled_native_extensions", NULL,
-    0, 0, 0,    &Disabled_Native_Extensions, &Disabled_Native_Extensions_Set,
-    "List of extension names with disabled native support" },
-  { OVK_NAME,   OV_INTERNAL,    FALSE, "application_configuration_decl", NULL,
-    0, 0, 0,    &appli_config_file_name, &appli_config_file_set,
-    "Apply configuration file" },
-  { OVK_NAME,   OV_INTERNAL,    FALSE, "application_configuration_select", NULL,
-    0, 0, 0,    &active_appli_config_file_name, NULL,
-    "Active application configuration selection" },
-  { OVK_NAME,   OV_INTERNAL,    FALSE, "ext_options", NULL,
-    0, 0, 0,    &Ext_Options, &Ext_Options_Set,
-    "List of extension specific options" },
-
-#endif
 
   { OVK_COUNT }		/* List terminator -- must be last */
 };
@@ -902,10 +651,6 @@ static OPTION_DESC Options_PHASE[] = {
       &Targ_Path,	NULL},
     { OVK_NAME,	OV_INTERNAL,	FALSE, "prompf_anl_path", "", 0, 0, 0,
       &Prompf_Anl_Path, NULL},
-#ifdef TARG_ST
-    { OVK_BOOL,	OV_INTERNAL,	FALSE, "extension_check_only", "", 0, 0, 0,
-      &Run_extension_check_only, NULL},
-#endif
 
     { OVK_COUNT}
 };
@@ -1146,9 +891,6 @@ OPTION_GROUP Common_Option_Groups[] = {
  *
  * ====================================================================
  */
-#ifdef TARG_ST
-BOOL FE_Cvtl_Opt = TRUE;                /* Keep CVTs for STOREs ? */
-#endif
 /* What is the model to be used for logical values in Fortran? */
 BOOL Use_C_Like_Logicals = TRUE;
 
@@ -1157,11 +899,6 @@ BOOL Allow_Exceptions = TRUE;
 
 /***** Compiler	debug/trace options *****/
 BOOL Tracing_Enabled = FALSE;		/* Any trace options set? */
-#ifdef TARG_ST
-#ifdef FE_GNU_4_2_0
-int trace_verbose = FALSE;
-#endif
-#endif
 
 /***** Miscellaneous optimization options *****/
 /* Should idict commute operands in seeking match? */
@@ -1181,7 +918,7 @@ INT32 CG_memmove_align_inst_count = 16;
 BOOL CG_memmove_inst_count_overridden = FALSE;
 BOOL CG_memmove_align_inst_count_overridden = FALSE;
 BOOL CG_bcopy_cannot_overlap = FALSE;	/* for intrinsic expansion of bcopy */
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 // For memcpy, src and dest cannot overlap
 BOOL CG_memcpy_cannot_overlap = TRUE;	/* for intrinsic expansion of memcpy */
 #else
@@ -1213,21 +950,12 @@ bool Target_Is_Little_Endian = false;	/* Set in config_host.c	*/
 BOOL Use_Base_Ptrs = TRUE;	/* Explicit ptrs to .DATA./.RDATA? */
 BOOL Gen_PIC_Call_Shared = FALSE; /* CPIC */
 BOOL Gen_PIC_Shared = FALSE;	/* PIC */
-#ifdef TARG_ST
-BOOL Gen_PIC_Call_Shared_Set = FALSE; /* CPIC */
-BOOL Gen_PIC_Shared_Set = FALSE;	/* PIC */
-BOOL No_Shared_Warning = FALSE;
-#endif
 /* [CG]: Options for symbol visibility. */
 INT32 ENV_Symbol_Visibility = 0; /* Default visibility value.
 				    (see STV_... in elf.h).
 				    Default value is STV_DEFAULT (0).  */
 char *ENV_Symbol_Visibility_String;	/* Visibility string. */
 char *ENV_Symbol_Visibility_Spec_Filename; /* Visibility spec. file. */
-#ifdef TARG_ST
-// FdF 20090318: Deactivate loop recurrences until it is retargeted.
-BOOL CG_LOOP_fix_recurrences = FALSE;
-#endif
 BOOL Gen_PIC_Calls = FALSE;	/* PIC calls */
 BOOL Guaranteed_Small_GOT = TRUE; /* GOT < 64kB? */
 BOOL Non_Volatile_GOT = FALSE;	/* GOT entries volatile? */
@@ -1241,16 +969,6 @@ BOOL Varargs_Prototypes = TRUE;	/* Varargs have prototypes for FP? */
 BOOL Gen_Profile = FALSE;	/* Generate a profile call for each user call */
 const char *Gen_Profile_Name = "__profile_call"; 
 BOOL Call_Mcount = FALSE;	/* generate a call to mcount in pu entry */
-
-#ifdef TARG_ST
-BOOL Instrument_Functions_Enabled = FALSE; /* generate calls to instrumentation for function entries and exits. */
-BOOL Instrument_Functions_Enabled_For_PG = FALSE; /* generate calls to instrumentation for profiling function entries and exits (gprof method used for stxp70). */
-BOOL Profile_Arcs_Enabled = FALSE; /* Create data files for the `gcov' code-coverage utility and instrument code. */
-BOOL Test_Coverage_Enabled = FALSE; /* Create data files for the `gcov' code-coverage utility and instrument code. */
-BOOL Profile_Arcs_Enabled_Cgir = FALSE; /* Create data files for the `gcov' code-coverage utility and instrument code in the cgir. */
-BOOL Coverage_Counter64 = FALSE; /* Use 64 bits counters instead of 32. */
-BOOL Branch_Probabilities = FALSE; /* Use .gcda file as feedback. */
-#endif
 
 BOOL GP_Is_Preserved = FALSE;	/* GP is neither caller or callee-save */
 BOOL Gen_GP_Relative = FALSE;   /* generate GP-relative addressing ? */
@@ -1288,9 +1006,6 @@ BOOL Run_w2f = FALSE;		    /* run whirl2f */
 BOOL Run_w2fc_early = FALSE;	    /* run whirl2fc after LNO auto par*/
 BOOL Run_purple = FALSE;	    /* run purple code instrumenter */
 BOOL Run_prompf = FALSE;	    /* run to generate prompf analysis file */
-#ifdef TARG_ST
-BOOL Run_extension_check_only = FALSE; /* run extension compatibility check only */
-#endif
 char *LNO_Path = 0;		    /* path to lno.so */
 char *WOPT_Path = 0;		    /* path to wopt.so */
 char *CG_Path = 0;		    /* path to cg.so */
@@ -1356,111 +1071,6 @@ Preconfigure (void)
 
 #endif /* BACK_END */
 }
-#ifdef TARG_ST
-/* ====================================================================
- *
- * Save_Default_Options
- *
- * Save the current values for common options.
- *
- * ====================================================================
- */
-
-BE_EXPORTED void
-Save_Default_Options(void)
-{
-  Save_Option_Groups(Common_Option_Groups);
-}
-/* ====================================================================
- *
- * Reset_Default_Options
- *
- * Reset the common default options.
- *
- * ====================================================================
- */
-
-BE_EXPORTED void
-Reset_Default_Options(void)
-{
-  Reset_Option_Groups(Common_Option_Groups);
-}
-
-/* ====================================================================
- *
- * Apply_Opt_Level_For_Common
- *
- * Set options for optimization level .
- *
- * ====================================================================
- */
-
-BE_EXPORTED void
-Apply_Opt_Level_For_Common(UINT32 level)
-{
-  if (!OPT_Mul_by_cst_threshold_Set)
-    OPT_Mul_by_cst_threshold = level;
-
-}
-/* ====================================================================
- *
- * Apply_Opt_Size_For_Common
- *
- * Set options for code size .
- *
- * ====================================================================
- */
-
-BE_EXPORTED void
-Apply_Opt_Size_For_Common(UINT32 level)
-{
-  //level = 0 means no size opt
-  if (level == PU_OPTLEVEL_0 || level == PU_OPTLEVEL_UNDEF) return;
-  
-  FmtAssert(level == PU_OPTLEVEL_1,
-	    ("Apply_Opt_Size_For_Common: only level 1 is implemented (asked was %d)",level));
-
-  if (!CG_memmove_inst_count_overridden)
-    CG_memmove_inst_count = 8;
-  if (! OPT_unroll_size_overridden)
-    OPT_unroll_size = 20;
-    /* reduce caller+callee "size" limit for inlining */
-  if (!INLINE_Max_Pu_Size_Set)
-    INLINE_Max_Pu_Size=1000;
-#if 0 /* not ready for this yet. */
-  /* don't inline divide expansions */
-  if (!OPT_Inline_Divide_Set) OPT_Inline_Divide = FALSE;
-#endif
-  
-#if 0 //def BACK_END
-  /* LNO options to be turned off for SPACE */
-  LNO_Outer_Unroll = 1;
-  LNO_Split_Tiles = FALSE;
-#endif /* BACK_END */
-
-  if (!WOPT_Enable_CFG_Opt_Limit_Set)
-    WOPT_Enable_CFG_Opt_Limit = 5;
-
-  if (!WOPT_Enable_While_Loop_Set)
-    WOPT_Enable_While_Loop = FALSE;
-
-  if (!UseMemcpy_Set) {
-    /* In -Os, do not inline copies, unless -mno-mempcy is passed. */
-    if (!MinStructCopyMemIntrSize_Set)
-      MinStructCopyMemIntrSize = 7;
-  }
-
-  if (!OPT_Mul_by_cst_threshold_Set)
-    OPT_Mul_by_cst_threshold = 0;
-
-  if (!OPT_Lower_While_Do_For_Space_Set)
-    OPT_Lower_While_Do_For_Space = TRUE;
-
-  if (!OPT_Expand_Switch_For_Space_Set)
-    OPT_Expand_Switch_For_Space = TRUE;
-
-}
-#endif
 
 
 /* ====================================================================
@@ -1638,24 +1248,6 @@ Configure (void)
 
   /* Perform host-specific and target-specific configuration: */
   Configure_Host (); 
-#ifdef TARG_ST
-  /* 
-   * Set the target endianness. It could have been specified as
-   * a -TENV:little_endian or -TENV:big_endian  option
-   *
-   * NOTE: this are always set by the driver anyway.
-   *
-   */
-  if (Is_Little_Endian_Set) {
-    Target_Byte_Sex = LITTLE_ENDIAN;
-  }
-  else if (Is_Big_Endian_Set) {
-    Target_Byte_Sex = BIG_ENDIAN;
-  } // else leave it as currently defined (by the front-end).
-
-  Same_Byte_Sex = ( Target_Byte_Sex == Host_Byte_Sex );
-
-#endif  
   Configure_Target ();
 
   /* What size GOT to use?  Configure_Target sets it to small for
@@ -1814,22 +1406,7 @@ Configure_Source ( char	*filename )
 
   /* if we get both TENV:CPIC and TENV:PIC, use only TENV:CPIC */
   if (Gen_PIC_Call_Shared && Gen_PIC_Shared) Gen_PIC_Shared = FALSE;
-#ifdef TARG_ST
-  /* Interpret -TENV:visibility=<string> option. */
-  if (ENV_Symbol_Visibility_String != NULL) {
-    if (strcmp(ENV_Symbol_Visibility_String, "default") == 0)
-      ENV_Symbol_Visibility = 0; /* STV_DEFAULT. */
-    else if (strcmp(ENV_Symbol_Visibility_String, "internal") == 0)
-      ENV_Symbol_Visibility = 1; /* STV_INTERNAL. */
-    else if (strcmp(ENV_Symbol_Visibility_String, "hidden") == 0)
-      ENV_Symbol_Visibility = 2; /* STV_HIDDEN. */
-    else if (strcmp(ENV_Symbol_Visibility_String, "protected") == 0)
-      ENV_Symbol_Visibility = 3; /* STV_PROTECTED. */
-    else {
-      ErrMsg(EC_Misc_String, "visibility argument", ENV_Symbol_Visibility_String);
-    }
-  }
-#endif
+
   /* Select optimization options: */
 
   /* Are we skipping any PUs for optimization? */
@@ -1902,30 +1479,6 @@ Configure_Source ( char	*filename )
     LNO_Split_Tiles = FALSE;
 #endif /* BACK_END */
   }
-#ifdef TARG_ST
-  /* -mmemcpy forces to call mempcy, -mno-memcopy forces to always
-  inline copies (the default). */
-
-  if (UseMemcpy_Set) {
-    if (UseMemcpy) {
-      if (!MinStructCopyMemIntrSize_Set)
-	MinStructCopyMemIntrSize = 7;
-    }
-    else
-      MinStructCopyMemIntrSize = 0;
-  }
-//   else if (OPT_Space) {
-//     /* In -Os, do not inline copies, unless -mno-mempcy is passed. */
-//     if (!MinStructCopyMemIntrSize)
-//       MinStructCopyMemIntrSize = 7;
-//   } 
-  // else
-  //  MinStructCopyMemIntrSize = 0;
-  if (Opt_Level > 2) {
-    MinStructCopyLoopSize = 32;
-    if(!MinStructCopyParallel_Set) MinStructCopyParallel = 3;
-  }    
-#endif
 
   /* symbolic debug stuff */
   Symbolic_Debug_Mode = SDM_NONE;
@@ -1961,12 +1514,11 @@ Configure_Source ( char	*filename )
   if (Regions_Around_Inner_Loops || Region_Boundary_Info)
     Set_PU_has_region (Get_Current_PU ());
 #endif /* !defined(SGI_FRONT_END_CPP) && !defined(QIKKI_BE) */
-#ifndef TARG_ST
+
   /* Enable IEEE_arithmetic options */
   if (Opt_Level > 2 && !IEEE_Arith_Set) {
      IEEE_Arithmetic = IEEE_INEXACT;
   }
-#endif
 #ifdef KEY
   if (!IEEE_Arith_Set && OPT_Ffast_Math_Set) {
     // -OPT:ffast_math=ON  => IEEE_a == 2
@@ -2021,32 +1573,6 @@ Configure_Source ( char	*filename )
     /* The following allow minor roundoff differences: */
     if ( ! Fast_Exp_Set )
       Fast_Exp_Allowed = Roundoff_Level >= ROUNDOFF_SIMPLE;
-#ifdef TARG_ST
-  if ( ! No_Math_Errno_Set )
-      No_Math_Errno = IEEE_Arithmetic >= IEEE_ACCURATE;
-  if ( ! Finite_Math_Set ){
-      Finite_Math = IEEE_Arithmetic >= IEEE_INEXACT;
-      Force_IEEE_Comparisons = !(Finite_Math);
-  }
-  if ( ! No_Rounding_Set )
-      No_Rounding = IEEE_Arithmetic >= IEEE_ACCURATE;
-  if ( ! No_Trapping_Set )
-      No_Trapping = IEEE_Arithmetic >= IEEE_ACCURATE;
-  if ( ! Unsafe_Math_Set )
-      Unsafe_Math = IEEE_Arithmetic >= IEEE_ANY;
-  if ( ! Fused_FP_Set ) {
-      Fused_FP = IEEE_Arithmetic >= IEEE_ACCURATE;
-  }
-  Rsqrt_Allowed &= Fused_FP;
-  if ( ! Fused_Madd_Set )
-      Fused_Madd = IEEE_Arithmetic >= IEEE_ACCURATE;
-  if ( ! No_Denormals_Set )
-      No_Denormals = IEEE_Arithmetic >= IEEE_ACCURATE;
-  if ( ! Reassoc_Set )
-       Reassoc_Level = (REASSOC)(IEEE_Arithmetic - (IEEE_Arithmetic >= IEEE_ACCURATE));
-  if ( Reassoc_Set )
-      Roundoff_Level = (ROUNDOFF) Reassoc_Level;
-#endif
 
     /* The following allows folding of intrinsics with constant arguments: */
     if ( ! Cfold_Intrinsics_Set )
@@ -2157,22 +1683,9 @@ Configure_Source ( char	*filename )
     Trace_Option_Groups ( TFile, Common_Option_Groups, FALSE );
   }
 
-#if defined( KEY) && !defined(TARG_ST) // bug 12939
+#if defined( KEY) // bug 12939
   if (Language == LANG_CPLUS && ! WOPT_Enable_Tail_Recur_Set)
     WOPT_Enable_Tail_Recur = FALSE;
-#endif
-
-  #ifdef TARG_ST
-  /* [CG]: Enable expansion of builtins at Opt_Level > 0. */
-  if (Opt_Level > 0 && !Enable_Expand_Builtin_Set) 
-    Enable_Expand_Builtin = TRUE;
-#endif
-
-#ifdef TARG_ST
-  /* Unless C++ language , exceptions must be off by default. */
-  if (Language != LANG_CPLUS && !CXX_Exceptions_Set) {
-    CXX_Exceptions_On = FALSE;
-  }
 #endif
 
 }
@@ -2594,12 +2107,6 @@ Process_Trace_Option ( char *option )
 		     Get_Trace_Phase_Number ( &cp, option ) );
 	}
 	break;
-#ifdef TARG_ST
-    case 'y':
-	Set_Trace (TKIND_GML,
-		   Get_Trace_Phase_Number ( &cp, option ) );
-	break;
-#endif
 
     case 's':
 	Set_Trace (TKIND_SYMTAB,
@@ -2699,11 +2206,6 @@ List_Compile_Options (
 	    pfx, Targ_Name (Target), Isa_Name (Target_ISA),
 	    !Target_Is_Little_Endian ? "big" : "little", 
 	    (Use_32_Bit_Pointers ? 32 : 64) );
-#ifdef TARG_ST
-  if (OPTION_Space)
-    fprintf ( f, "%s  -Os\t(Optimization level: %d)\n", pfx, OPTION_Space);
-  else
-#endif
 
   fprintf ( f, "%s  -O%d\t(Optimization level)\n", pfx, Opt_Level );
   fprintf ( f, "%s  -g%d\t(Debug level)\n", pfx, Debug_Level );
@@ -2732,47 +2234,4 @@ typedef struct {
   PREG_NUM max;
 } preg_range_t;
 static preg_range_t *Rclass_To_Preg_array;
-#ifdef TARG_ST
-//TB:Initilaize rclass to preg mapping
-static void Initialize_RegisterClass_To_Preg(void)
-{
-  int preg_index = 1; //First PREG must not be 0
-  ISA_REGISTER_CLASS rclass;
-  Rclass_To_Preg_array = TYPE_MEM_POOL_ALLOC_N(preg_range_t, Malloc_Mem_Pool,
-					       ISA_REGISTER_CLASS_MAX+1);
 
-  FOR_ALL_ISA_REGISTER_CLASS( rclass ) {
-    const ISA_REGISTER_CLASS_INFO *icinfo = ISA_REGISTER_CLASS_Info(rclass);
-    INT first_isa_reg  = ISA_REGISTER_CLASS_INFO_First_Reg(icinfo);
-    INT last_isa_reg   = ISA_REGISTER_CLASS_INFO_Last_Reg(icinfo);
-    INT register_count = last_isa_reg - first_isa_reg + 1;
-    Rclass_To_Preg_array[rclass].min = preg_index;
-    Rclass_To_Preg_array[rclass].max = preg_index + register_count - 1;
-    // Next index
-    preg_index = preg_index + register_count;
-  }
-}
-
-//TB:Reset rclass to preg mapping This to has to be done when the
-//targinfo has loaded the extension to rebuild Rclass_To_Preg_array
-//with the new extended targinfo
-void Reset_RegisterClass_To_Preg(void)
-{
-  MEM_POOL_FREE(Malloc_Mem_Pool, Rclass_To_Preg_array);
-  Rclass_To_Preg_array = NULL;
-}
-
-PREG_NUM CGTARG_Regclass_Preg_Min(  ISA_REGISTER_CLASS rclass)
-{
-  if (Rclass_To_Preg_array == NULL)
-    Initialize_RegisterClass_To_Preg();    
-  return Rclass_To_Preg_array[rclass].min;
-}
-
-PREG_NUM CGTARG_Regclass_Preg_Max(  ISA_REGISTER_CLASS rclass)
-{
-  if (Rclass_To_Preg_array == NULL)
-    Initialize_RegisterClass_To_Preg();    
-  return Rclass_To_Preg_array[rclass].max;
-}
-#endif

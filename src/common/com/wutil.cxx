@@ -46,32 +46,8 @@
 #include "wio.h"
 #include "wutil.h"
 #define NOT_SUPPORT_ST(expr1, expr2) expr1, expr2,
-#ifdef TARG_ST
-//TB: dynamic intrinsics support
-INTRINSIC INTRINSIC_COUNT;
-#endif
-#ifdef TARG_ST
-static const struct {
-  INTRINSIC   opcode;
-  const char      * name;
-} intrinsic_name_table [] = {
-  INTRINSIC_NONE,	"NONE",
 
-/* All intrinsic names are moved to intrn_entry.def */
-#define NEED_INTRN_ID_NAME
-#  include "intrn_entry.def"
-#undef NEED_INTRN_ID_NAME
 
-  INTRINSIC_GENERAL_LAST,       "INTRINSIC_GENERAL_LAST",
-
-#ifdef TARG_ST
-#include "targ_wutil.def"
-#endif
-
-  INTRINSIC_STATIC_COUNT,		"INTRINSIC_LAST"
-
-};
-#else
 static const struct {
   INTRINSIC   opcode;
   const char  * name;
@@ -970,7 +946,7 @@ static const struct {
   INTRN_SINCOS,			"SINCOS",
   INTRN_SINCOSL,		"SINCOSL",
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   INTRN_U4READFRAMEPOINTER,	"U4READFRAMEPOINTER",
   INTRN_U8READFRAMEPOINTER,	"U8READFRAMEPOINTER",
   INTRN_APPLY_ARGS,		"APPLY_ARGS",
@@ -1283,7 +1259,7 @@ static const struct {
   INTRN_MINSD,			"INTRN_MINSD",
   INTRN_SQRTSD,			"INTRN_SQRTSD",
 #endif // TARG_X8664
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   INTRN_F8F8I4EXPEXPR,		"INTRN_F8F8I4EXPEXPR",
   INTRN_F4F4I4EXPEXPR,		"INTRN_F4F4I4EXPEXPR",
   INTRN_FQFQI4EXPEXPR,		"INTRN_FQFQI4EXPEXPR",
@@ -1426,7 +1402,7 @@ static const struct {
   INTRINSIC_LAST,		"INTRINSIC_LAST"
 
 };
-#endif
+
 struct iostatement_name_table_t {
   IOSTATEMENT   opcode;
   const char        * name;

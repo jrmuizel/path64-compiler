@@ -61,12 +61,6 @@ enum INITVKIND {
     INITVKIND_SYMDIFF	= 7,
     INITVKIND_SYMDIFF16 = 8,
     INITVKIND_LABEL	= 9,
-#ifdef TARG_ST
-    /* (cbr) support for half address relocation */
-    INITVKIND_SYMOFF16	= 10,
-/* (cbr) DDTSst24451. add support for label diffs initializers */
-    INITVKIND_LABDIFF	= 11
-#endif
 };
 
 #ifdef KEY
@@ -103,14 +97,6 @@ struct INITV
 	    ST_IDX st2;
 	} stdiff;			// lab1 - st2
 	
-#ifdef TARG_ST
-/* (cbr) DDTSst24451. add support for label diffs initializers */
-	struct {
-	    LABEL_IDX labd0;
-	    LABEL_IDX labd1;
-	} labdiff;			// lab1 - lab2
-#endif
-
 	struct {
 	    union {
 		TCON_IDX tc;		// value
@@ -142,12 +128,6 @@ struct INITV
 
     LABEL_IDX Lab1 () const		{ return u.stdiff.lab1; }
     ST_IDX St2 () const			{ return u.stdiff.st2; }
-
-#ifdef TARG_ST
-/* (cbr) DDTSst24451. add support for label diffs initializers */
-    LABEL_IDX Labd0 () const		{ return u.labdiff.labd0; }
-    LABEL_IDX Labd1() const		{ return u.labdiff.labd1; }
-#endif
 
     TCON_IDX Tc () const		{ return u.tcval.u.tc; }
     TYPE_ID Mtype () const		{ return u.tcval.u.mtype; }
