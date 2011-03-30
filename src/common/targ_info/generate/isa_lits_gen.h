@@ -82,9 +82,6 @@ extern "C" {
 typedef enum {
   UNSIGNED,
   SIGNED
-#ifdef TARG_ST
-  ,NEGATIVE
-#endif
 } LIT_CLASS_TYPE;
 
 typedef struct lit_range *LIT_RANGE;
@@ -93,17 +90,9 @@ typedef struct lit_range *LIT_RANGE;
 
 extern void ISA_Lits_Begin (void);
 
-#ifdef TARG_ST
-extern LIT_RANGE ISA_Create_Lit_Range(const char *name, 
-				      long long min, 
-				      long long max,
-				      long scaling = 0,
-				      long rotate_right = 0);
-#else
 extern LIT_RANGE ISA_Create_Lit_Range(const char *name, 
 				      long long min, 
 				      long long max);
-#endif
 extern LIT_RANGE SignedBitRange(unsigned int bit_size);
 extern LIT_RANGE UnsignedBitRange(unsigned int bit_size);
 

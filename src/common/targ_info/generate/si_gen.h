@@ -213,23 +213,11 @@
 typedef class RES* RESOURCE;
 typedef class ISLOT* ISSUE_SLOT;
 
-#ifdef TARG_ST
-extern void Machine(const char* name, ISA_SUBSET isa, int argc, char** argv );
-extern void Machine( ISA_SUBSET isa );
-extern void Machine_Add_Subset( ISA_SUBSET opt_subset );
-#else
 extern void Machine( const char* name, ISA_SUBSET isa, int argc, char** argv );
-#endif
-#ifdef TARG_ST
-extern RESOURCE RESOURCE_Create( const char* name, int count );
-extern ISSUE_SLOT ISSUE_SLOT_Create( char* name, int skew, int count );
-extern void Instruction_Group( const char* name, ... );
-#else
 extern RESOURCE RESOURCE_Create( const char* name, int count );
 
 extern ISSUE_SLOT ISSUE_SLOT_Create( char* name, int skew, int count );
 extern void Instruction_Group( const char* name, ... );
-#endif
 extern void Any_Operand_Access_Time( int time );
 extern void Operand_Access_Time( int operand_index, int time );
 extern void Any_Result_Available_Time( int time );
@@ -240,10 +228,5 @@ extern void Last_Issue_Cycle( int time );
 extern void Resource_Requirement( RESOURCE resource, int time );
 extern void Valid_Issue_Slot( ISSUE_SLOT slot );
 extern void Write_Write_Interlock();
-#ifdef TARG_ST
 extern void Machine_Done( const char* filename );
-extern void Extension_Done( void );
-#else
-extern void Machine_Done( const char* filename );
-#endif
 #endif
