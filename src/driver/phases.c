@@ -53,7 +53,7 @@
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include "main_defs.h"
+#include "driver_defs.h"
 
 #include "phases.h"
 #include "options.h"

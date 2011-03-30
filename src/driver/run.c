@@ -69,7 +69,7 @@
 #include "opt_actions.h"
 #include "option_seen.h"
 #include "file_utils.h"
-#include "main_defs.h"
+#include "driver_defs.h"
 #include "option_names.h"
 #include "targets.h"
 

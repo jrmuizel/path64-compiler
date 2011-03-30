@@ -35,7 +35,7 @@
 
 #include "lang_defs.h"
 #include "license.h"
-#include "main_defs.h"
+#include "driver_defs.h"
 #include "run.h"
 #include "file_utils.h"
 #include "errors.h"

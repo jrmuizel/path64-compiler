@@ -59,7 +59,7 @@
 #include "lang_defs.h"
 #include "file_names.h"
 #include "file_utils.h"
-#include "main_defs.h"
+#include "driver_defs.h"
 #include "run.h"
 
 #include "sys/elf_whirl.h"

@@ -7,7 +7,7 @@
 #endif
 
 #include "targets.h"
-#include "main_defs.h"
+#include "driver_defs.h"
 #include "string_utils.h"
 #include "option_names.h"
 #include "opt_actions.h"

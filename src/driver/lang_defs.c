@@ -41,7 +41,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "main_defs.h"
+#include "driver_defs.h"
 #include "lang_defs.h"
 #include "file_utils.h"
 #include "string_utils.h"

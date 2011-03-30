@@ -1,0 +1,8 @@
+
+#ifndef DRIVER_DEFS_H
+#define DRIVER_DEFS_H
+
+#include "main_defs.h"
+
+#endif // DRIVER_DEFS_H
+

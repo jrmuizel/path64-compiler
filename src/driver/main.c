@@ -56,7 +56,7 @@ static char *rcs_id = "$Source: driver/SCCS/s.main.c $ $Revision: 1.109 $";
 #include <time.h>
 #include <unistd.h>
 /* TODO : Make sure BINPATH and LIBPATH are defined in main_defs.h */
-#include "main_defs.h"
+#include "driver_defs.h"
 #include "string_utils.h"
 #include "options.h"
 #include "option_seen.h"

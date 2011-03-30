@@ -74,6 +74,12 @@ if(PATH64_NO_LICENSE_CHECK)
 endif()
 
 
+# Configuring driver_defs.h
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/driver_defs.h.cmake.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/include/driver_defs.h")
+
+
 # Adding definitions for target architectures
 set(ARCH_DEFS)
 foreach(arch ${PATH64_ENABLE_ARCHES})
@@ -194,7 +200,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/targ_info.c.cmake.in
 
 include_directories(.
                     ../common/com
-                    ${CMAKE_CURRENT_BINARY_DIR})
+                    ${CMAKE_CURRENT_BINARY_DIR}
+                    "${CMAKE_CURRENT_BINARY_DIR}/include")
 
 
 # TODO: set proper build date and time 
