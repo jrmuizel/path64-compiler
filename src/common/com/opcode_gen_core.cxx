@@ -1152,7 +1152,8 @@ Is_MTYPE_b [MTYPE_LAST+1] = {
   0, /* MTYPE_V32I4   */
   0, /* MTYPE_V32I8   */
   0, /* MTYPE_V32F4   */
-  0  /* MTYPE_V32F8   */
+  0, /* MTYPE_V32F8   */
+  0
 #endif // TARG_X8664
 };
 #endif
@@ -1276,7 +1277,8 @@ Is_MTYPE_b_f_i_M_p_V_z [MTYPE_LAST+1] = {
   1, /* MTYPE_V32I4   */
   1, /* MTYPE_V32I8   */
   1, /* MTYPE_V32F4   */
-  1  /* MTYPE_V32F8   */
+  1,  /* MTYPE_V32F8   */
+  1
 #endif // TARG_X8664
 };
 #endif
@@ -1342,7 +1344,8 @@ Is_MTYPE_b_f_i_M_p_s_z [MTYPE_LAST+1] = {
   1, /* MTYPE_V32I4   */
   1, /* MTYPE_V32I8   */
   1, /* MTYPE_V32F4   */
-  1  /* MTYPE_V32F8   */
+  1,  /* MTYPE_V32F8   */
+  1
 #endif // TARG_X8664
 };
 #endif
@@ -1439,7 +1442,8 @@ Is_MTYPE_b_f_i_p_z [MTYPE_LAST+1] = {
   1, /* MTYPE_M8I1    */
   1, /* MTYPE_M8I2    */
   1, /* MTYPE_M8I4    */
-  1  /* MTYPE_M8F4    */
+  1,  /* MTYPE_M8F4    */
+  1
 #endif // TARG_X8664
 };
 #endif

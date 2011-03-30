@@ -154,10 +154,11 @@ static char *mtypes_rcs_id = "$Source: common/com/SCCS/s.mtypes.h $ $Revision: 1
 #define MTYPE_V32I8     49      /* 256-bit vector of signed long long ints   */
 #define MTYPE_V32F4     50      /* 256-bit vector of signed floats           */
 #define MTYPE_V32F8     51      /* 256-bit vector of signed doubles          */
+#define MTYPE_F32 		52 		/*256-bit floats*/
 
 
 /* must define MTYPE_LAST as the index of the last one defined. */
-#define MTYPE_LAST	51	/* Must be defined */
+#define MTYPE_LAST	52	/* Must be defined */
 
 #elif defined(TARG_MIPS)
 

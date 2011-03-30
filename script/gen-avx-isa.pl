@@ -349,12 +349,30 @@ foreach (keys %isa_operands){
 		$str_store = @{$isa_operands{$_}[0]->[1]};
 		#die "debug matched store:".$str_store."\n";
 		#my $tmp_last=$tmp_load[scalar(@tmp_load)-1];
+		my $is_store_op=0;
 		foreach (@{$isa_operands{$_}[0]->[1]}){
 		  if($_=~/^obase[0-9]+_/ || $_=~/^oindex[0-9]+_/){
+				$is_store_op=1;
 		    next;
 		  }
-		  if($_=~/^float/){$isa_operands_print.="\tOperand(".$opnd++.", "."fp128".",opnd".$opnd_post++.");\n";}
-		  elsif($_=~/^int64/){$isa_operands_print.="\tOperand(".$opnd++.", "."int64".",opnd".$opnd_post++.");\n";}
+		  if($_=~/^float/){
+				if($is_store_op==0){
+					$isa_operands_print.="\tOperand(".$opnd++.", "."fp128".",opnd".$opnd_post++.");\n";
+			  }else{
+					$isa_operands_print.="\tOperand(".$opnd++.", "."fp128".",storeval".");\n";
+					#$is_store_op=0;
+					$opnd_post++;
+				}
+			}
+		  elsif($_=~/^int64/){
+				if($is_store_op==0)
+				{$isa_operands_print.="\tOperand(".$opnd++.", "."int64".",opnd".$opnd_post++.");\n";}
+			  else{
+					$isa_operands_print.="\tOperand(".$opnd++.", "."int64".",storeval".");\n";
+					#$is_store_op=0;
+					$opnd_post++;
+			 }
+			}
 		  elsif($_=~/^simm8/){$isa_operands_print.="\tOperand(".$opnd++.", "."simm8".",opnd".$opnd_post++.");\n";}
 		  elsif($_=~/^mxcsr/){$isa_operands_print.="\tOperand(".$opnd++.", "."mxcsr".",opnd".$opnd_post++.");\n";}
 		  else{die "doesn't know wtf when store:".$_."\n";}
@@ -482,14 +500,19 @@ foreach (keys %isa_operands){
 			}
 		}
 	}
+	my $store_op;
+	$store_op=0;
 
 	if($result_n>0){
 	  if($res[0]=~/^obase64_simm32$/){
 		  $isa_print_print.='%s%s(%s) ';
+			$store_op=1;
 		}elsif($res[0]=~/^obase64_index64_uimm8_simm32$/){
 		  $isa_print_print.='%s%s(%s,%s,%s) ';
+			$store_op=1;
 		}elsif($res[0]=~/^oindex64_uimm8_simm32$/){
 			$isa_print_print.='%s%s(,%s,%s) ';
+			$store_op=1;
 		}elsif($res[0]=~/^osimm8$/){
 		  $isa_print_print.='%s';
 		}elsif($res[0]=~/^ofloat/){

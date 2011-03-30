@@ -32,7 +32,7 @@
 		TOP_vmovupd_f256_obase64_simm32_float,
 		TOP_vmovups_f256_obase64_simm32_float,
 		TOP_UNDEFINED);
-	Operand(0, fp128,opnd1);
+	Operand(0, fp128,storeval);
 	Operand(1, int64,base);
 	Operand(2, simm32,offset);
 
@@ -63,8 +63,8 @@
 		TOP_vmaskmovpd_f128_oindex64_uimm8_simm32_float_float,
 		TOP_vmaskmovpd_f256_oindex64_uimm8_simm32_float_float,
 		TOP_UNDEFINED);
-	Operand(0, fp128,opnd1);
-	Operand(1, fp128,opnd2);
+	Operand(0, fp128,storeval);
+	Operand(1, fp128,storeval);
 	Operand(2, int64,index);
 	Operand(3, uimm8,scale);
 	Operand(4, simm32,offset);
@@ -369,7 +369,7 @@
 		TOP_vextractps_f128_obase64_index64_uimm8_simm32_float_simm8,
 		TOP_vpextrb_mem_obase64_index64_uimm8_simm32_float_simm8,
 		TOP_UNDEFINED);
-	Operand(0, fp128,opnd1);
+	Operand(0, fp128,storeval);
 	Operand(1, simm8,opnd2);
 	Operand(2, int64,base);
 	Operand(3, int64,index);
@@ -382,8 +382,8 @@
 		TOP_vmaskmovpd_f128_obase64_simm32_float_float,
 		TOP_vmaskmovpd_f256_obase64_simm32_float_float,
 		TOP_UNDEFINED);
-	Operand(0, fp128,opnd1);
-	Operand(1, fp128,opnd2);
+	Operand(0, fp128,storeval);
+	Operand(1, fp128,storeval);
 	Operand(2, int64,base);
 	Operand(3, simm32,offset);
 
@@ -772,7 +772,7 @@
 		TOP_vextractps_f128_obase64_simm32_float_simm8,
 		TOP_vpextrb_mem_obase64_simm32_float_simm8,
 		TOP_UNDEFINED);
-	Operand(0, fp128,opnd1);
+	Operand(0, fp128,storeval);
 	Operand(1, simm8,opnd2);
 	Operand(2, int64,base);
 	Operand(3, simm32,offset);
@@ -1090,7 +1090,7 @@
 		TOP_vextractps_f128_oindex64_uimm8_simm32_float_simm8,
 		TOP_vpextrb_mem_oindex64_uimm8_simm32_float_simm8,
 		TOP_UNDEFINED);
-	Operand(0, fp128,opnd1);
+	Operand(0, fp128,storeval);
 	Operand(1, simm8,opnd2);
 	Operand(2, int64,index);
 	Operand(3, uimm8,scale);
@@ -1213,7 +1213,7 @@
 		TOP_vmovupd_f256_oindex64_uimm8_simm32_float,
 		TOP_vmovups_f256_oindex64_uimm8_simm32_float,
 		TOP_UNDEFINED);
-	Operand(0, fp128,opnd1);
+	Operand(0, fp128,storeval);
 	Operand(1, int64,index);
 	Operand(2, uimm8,scale);
 	Operand(3, simm32,offset);
@@ -1436,8 +1436,8 @@
 		TOP_vmaskmovpd_f128_obase64_index64_uimm8_simm32_float_float,
 		TOP_vmaskmovpd_f256_obase64_index64_uimm8_simm32_float_float,
 		TOP_UNDEFINED);
-	Operand(0, fp128,opnd1);
-	Operand(1, fp128,opnd2);
+	Operand(0, fp128,storeval);
+	Operand(1, fp128,storeval);
 	Operand(2, int64,base);
 	Operand(3, int64,index);
 	Operand(4, uimm8,scale);
@@ -1696,7 +1696,7 @@
 		TOP_vmovupd_f256_obase64_index64_uimm8_simm32_float,
 		TOP_vmovups_f256_obase64_index64_uimm8_simm32_float,
 		TOP_UNDEFINED);
-	Operand(0, fp128,opnd1);
+	Operand(0, fp128,storeval);
 	Operand(1, int64,base);
 	Operand(2, int64,index);
 	Operand(3, uimm8,scale);

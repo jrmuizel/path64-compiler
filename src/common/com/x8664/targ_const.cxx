@@ -6155,8 +6155,12 @@ Hash_TCON ( TCON * t, UINT32 modulus )
       break;
     case MTYPE_V32F4:
     case MTYPE_V32F8:
-      hash += TCON_v0(*t) + TCON_v1(*t) + TCON_v2(*t) + TCON_v3(*t);
+      hash += TCON_v0(*t) + TCON_v1(*t) + TCON_v2(*t) + TCON_v3(*t) +
               TCON_v4(*t) + TCON_v5(*t) + TCON_v6(*t) + TCON_v7(*t);
+      break;
+	case MTYPE_F32:
+      hash += TCON_v0(*t) + TCON_v1(*t) + TCON_v2(*t) + TCON_v3(*t) +
+	  		  TCON_v4(*t) + TCON_v5(*t) + TCON_v6(*t) + TCON_v7(*t);
       break;
     default:
       ErrMsg ( EC_Inv_Mtype, Mtype_Name(TCON_ty(*t)), "Hash_TCON" );

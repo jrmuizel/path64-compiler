@@ -1906,7 +1906,6 @@ int main(){
   v4si3.wi = _mm256_castsi256_si128 (v8si1.wi);
    printf("INTRN_VCASTSI256TOSI128: %d %d %d %d \n",v4si3.x[0], v4si3.x[1], v4si3.x[2], v4si3.x[3]);
  
- #if 0//this to the end
    
 	 v8si3.wi = _mm256_castsi128_si256 (v4si1.wi);
    printf("INTRN_VCASTSI128TOSI256 %d %d %d %d ", v8si3.x[0], v8si3.x[1], v8si3.x[2], v8si3.x[3]);
@@ -1921,5 +1920,6 @@ int main(){
 
   C.wi = _mm256_castpd128_pd256 (v2df1.wi);
    printf("INTRN_VCASTPD128TOPD256: %lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
+ #if 0//this to the end
 #endif
 }

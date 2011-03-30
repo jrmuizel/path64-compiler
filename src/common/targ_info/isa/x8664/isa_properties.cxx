@@ -1359,6 +1359,7 @@ main()
                      TOP_vstapsxx,
 		     TOP_vstapd_n32,
                      TOP_vstaps_n32,
+#include "isa_avx_properties_store_only.cxx"                     
                      TOP_UNDEFINED);
 
   /* ===== Prefetch operator ====== */
