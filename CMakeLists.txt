@@ -140,12 +140,6 @@ FOREACH(targ ${PATH64_ENABLE_TARGETS})
     endif()
 ENDFOREACH()
 
-IF(${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
-	SET(PSC_CRT1 "crt0.o")
-ELSE()
-	SET(PSC_CRT1 "crt1.o")
-ENDIF()
-
 # Do we build with huge pages support
 OPTION(PATH64_ENABLE_HUGEPAGES "Enabling supported huge pages" OFF)
 IF(PATH64_ENABLE_HUGEPAGES)
