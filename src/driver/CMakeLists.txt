@@ -75,6 +75,15 @@ endif()
 
 
 # Configuring driver_defs.h
+
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+	SET(PATH64_AUXILARY_LD_FLAGS "\"${LD_HASH_STYLE_FLAG} --eh-frame-hdr\"")
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
+	SET(PATH64_AUXILARY_LD_FLAGS "\"--eh-frame-hdr\"")
+else()
+	SET(PATH64_AUXILARY_LD_FLAGS "\"\"")
+endif()
+
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/driver_defs.h.cmake.in"
                "${CMAKE_CURRENT_BINARY_DIR}/include/driver_defs.h")

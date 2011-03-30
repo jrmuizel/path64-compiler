@@ -71,16 +71,6 @@ SET(LIBELF_HFILES
 
 SET(LDIRT dwarf.h)
 
-# TODO: move this to driver
-IF("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-	SET(PATH64_AUXILARY_LD_FLAGS "\"${LD_HASH_STYLE_FLAG} --eh-frame-hdr\"")
-ELSEIF("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
-	SET(PATH64_AUXILARY_LD_FLAGS "\"--eh-frame-hdr\"")
-ELSE()
-	SET(PATH64_AUXILARY_LD_FLAGS "\"\"")
-ENDIF()
-
-
 ## To prevent repetitious submakes to this subdirectory, Makefile.gsetup
 ## files in other subdirectories invoke submake here only when the file
 ## main_defs.h is absent or out of date.  The dependencies for
