@@ -470,9 +470,8 @@ get_named_language (const char *name)
 		/* skip if blank string */
 		if (*language_info[i].name[j] == NIL) 
 			continue;
-		/* look for language name at end of string */
-		p = nomen + strlen(nomen) - strlen(language_info[i].name[j]);
-		if (p >= nomen && strcmp(language_info[i].name[j], p) == 0) {
+		/* look for language name in string */
+                if(strstr(nomen, language_info[i].name[j]) != NULL) {
 			/* as does not invoke ld */
 			if (i == L_as)
 			    last_phase = P_any_as;
