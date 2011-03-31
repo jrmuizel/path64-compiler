@@ -125,6 +125,8 @@ UINT32 CGTARG_Mem_Ref_Bytes(const OP *memop)
   const TOP topcode = OP_code(memop);
 
   if (TOP_is_vector_op(topcode)) {
+  	if(TOP_is_vector_avx(topcode))
+	  return 32;
     switch (topcode) {
       case TOP_stlps:
       case TOP_stlpsx:

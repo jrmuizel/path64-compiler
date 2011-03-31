@@ -674,6 +674,7 @@ my $print_fsub_prop;
 my $print_fmul_prop;
 my $print_flop_prop;
 my $print_change_rflags;
+my $print_avx_vector;
 print "\navx_properties.cxx:\n";
 foreach (@tops){
 	$isa_properties_print.="\t".$_.",\n";
@@ -697,6 +698,9 @@ foreach (@tops){
 	}
 	if(type_operation($_) eq "fmul_prop"){
 	  $print_fmul_prop.=$_.",\n";
+	}
+	if($_=~/f256/){
+	  $print_avx_vector.=$_.",\n";
 	}
 	if($_=~/rflag/){
 		$print_change_rflags.=$_.",\n";
@@ -746,8 +750,10 @@ foreach (@tops){
   $isa_cgemit_avx_print.="OP_Name[".$_."] = \""."$tmp[1]"."\";\n";
 }
 
+  fprint("isa_avx_properties_avx_vector.cxx", $print_avx_vector);
+  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_avx_vector.cxx");
 
-if (1){
+if (0){
 fprint("isa_avx.cxx", $isa_isa_print);
 fprint("isa_avx_print.cxx",$isa_print_print);
 fprint("isa_avx_operands.cxx",$isa_operands_print);
@@ -775,6 +781,7 @@ fprint("isa_avx_properties_load_only.cxx", $print_load_only);
   fprint("isa_avx_properties_fmul_prop.cxx", $print_fmul_prop);
   fprint("isa_avx_properties_flop_prop.cxx", $print_flop_prop);
   fprint("isa_avx_properties_change_rflags.cxx", $print_change_rflags);
+  fprint("isa_avx_properties_avx_vector.cxx", $print_avx_vector);
   copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_load_only.cxx");
   copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_load_exe.cxx");
   copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_store_only.cxx");
@@ -784,6 +791,7 @@ fprint("isa_avx_properties_load_only.cxx", $print_load_only);
   copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_fmul_prop.cxx");
   copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_flop_prop.cxx");
   copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_change_rflags.cxx");
+  copy_to('../src/common/targ_info/isa/x8664/',"isa_avx_properties_avx_vector.cxx");
 }
 #sub copy_to_property{
 	#fprint("isa_avx_properties_load_only.cxx", $print_load_only);
