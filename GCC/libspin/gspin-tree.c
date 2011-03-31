@@ -341,9 +341,6 @@ struct tree_code_property {
  { GS_VEC_DELETE_EXPR,	13,	 GS_TCC_EXPRESSION, "GS_VEC_DELETE_EXPR" },
  { GS_VEC_NEW_EXPR,	13,	 GS_TCC_EXPRESSION, "GS_VEC_NEW_EXPR" },
  { GS_TEMPLATE_TEMPLATE_PARM,	27,	 GS_TCC_TYPE, "GS_TEMPLATE_TEMPLATE_PARM" },
-#ifdef TARG_ST
- { GS_PRAGMA_STMT,      13,      GS_TCC_EXPRESSION, "GS_PRAGMA_STMT" },
-#endif
 
 };
 
@@ -1165,9 +1162,6 @@ gs_string_t gsbi_name (gsbi_t code)
     case GSBI_BUILT_IN_COMPLEX_DIV_MIN: return "GSBI_BUILT_IN_COMPLEX_DIV_MIN";
     case GSBI_BUILT_IN_COMPLEX_DIV_MAX: return "GSBI_BUILT_IN_COMPLEX_DIV_MAX";
     case GSBI_END_BUILTINS: return "GSBI_END_BUILTINS";
-#ifdef TARG_ST
-    case GSBI_BUILT_IN_ASSUME: return "GSBI_BUILT_IN_ASSUME";
-#endif
 
   }
   GS_ASSERT (gs_false, (gs_string_t) "gsbi name not implemented.");
