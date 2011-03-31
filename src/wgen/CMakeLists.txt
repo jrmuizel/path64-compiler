@@ -14,7 +14,6 @@ include_directories(
   ../be/com
   ${PATHSCALE_BINARY_DIR}/../GCC/gcc
   ../../GCC/gcc
-  ../libair
   ../libfereconf
  
   ../common/targ_info/parser/inc/

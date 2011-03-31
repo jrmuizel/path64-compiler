@@ -38,7 +38,6 @@ include_directories(
   generate
   ${PATHSCALE_SOURCE_DIR}/common/com
   ${CMAKE_CURRENT_BINARY_DIR}
-  ${PATHSCALE_SOURCE_DIR}/libair/
   ${PATHSCALE_SOURCE_DIR}/common/targ_info/parser/inc
   )
 
