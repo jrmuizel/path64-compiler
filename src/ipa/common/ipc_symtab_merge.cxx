@@ -1150,9 +1150,7 @@ Synch_Pu_With_Pu (PU& merged_pu, const PU& original_pu)
 #ifdef KEY
     if (!merged_pu.misc)
     	merged_pu.misc = original_pu.misc; // EH/C nested function information
-#if !defined(TARG_ST) || !defined(PU_HAS_NO_UNUSED)
     merged_pu.unused = original_pu.unused;
-#endif
 #endif
 } // Synch_Pu_With_Pu
 

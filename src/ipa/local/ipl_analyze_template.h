@@ -1899,7 +1899,7 @@ SUMMARIZE<program>:: Record_ref (WN *w)
 
     case OPR_LDID:
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	{
 	  TY_IDX st_type = ST_type(s);
 	  TY_IDX wn_type = WN_ty(w);
@@ -1956,7 +1956,7 @@ SUMMARIZE<program>:: Record_ref (WN *w)
 	break;
 
     case OPR_LDA:
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	{
 	  TY_IDX type = WN_type(w);
 	  if (TY_kind(type) == KIND_STRUCT)
@@ -2338,7 +2338,7 @@ SUMMARIZE<program>:: Record_mod (WN* w)
 	    if (ST_st_idx (st) != ST_base_idx (st) && !ST_is_weak_symbol (st))
 		st = ST_base (st);
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	    // TODO: Find the actual base from the potentially complex
 	    // rhs expression.
 	    if (WN_operator(WN_kid0(w)) == OPR_LDID) {
