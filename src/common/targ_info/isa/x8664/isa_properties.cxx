@@ -4138,6 +4138,8 @@ main()
              TOP_xchgx16,
              TOP_xchgx32,
              TOP_xchgx64,
+             TOP_vzeroall_null,
+			 TOP_vzeroupper_null,
 		     TOP_UNDEFINED);
 
   /* ===== Instructions with branch predictions ====== */
