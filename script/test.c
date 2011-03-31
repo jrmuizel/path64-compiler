@@ -1916,9 +1916,12 @@ int main(){
   printf("INTRN_VCASTPD256TOPD128 %lf %lf\n",v2df3.x[0],v2df3.x[1]);
   D.wi = _mm256_castps128_ps256 (v4sf1.wi);
   printf("INTRN_VCASTPS128TOPS256: %f %f %f %f ", D.x[0], D.x[1], D.x[2], D.x[3]);
+  _mm256_zeroupper ();
   printf("%f %f %f %f \n", D.x[4], D.x[5], D.x[6], D.x[7]);
 
   C.wi = _mm256_castpd128_pd256 (v2df1.wi);
+   printf("INTRN_VCASTPD128TOPD256: %lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
+  _mm256_zeroall ();
    printf("INTRN_VCASTPD128TOPD256: %lf %lf %lf %lf \n",C.x[0], C.x[1], C.x[2], C.x[3]);
  #if 0//this to the end
 #endif
