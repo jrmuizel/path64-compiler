@@ -1832,12 +1832,10 @@ coff_mkobject_hook (bfd * abfd,
       xcoff->maxstack = internal_a->o_maxstack;
     }
 #endif
-#ifndef TARG_ST
 #ifdef ARM
   /* Set the flags field from the COFF header read in.  */
   if (! _bfd_coff_arm_set_private_flags (abfd, internal_f->f_flags))
     coff->flags = 0;
-#endif
 #endif
 #ifdef COFF_WITH_PE
   /* FIXME: I'm not sure this is ever executed, since peicode.h
