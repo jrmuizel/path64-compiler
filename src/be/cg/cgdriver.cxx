@@ -2333,7 +2333,8 @@ Configure_CG_Options(void)
 #ifdef TARG_X8664
   if ((Target == TARGET_em64t ||
        Target == TARGET_core ||
-       Target == TARGET_wolfdale) &&
+       Target == TARGET_wolfdale ||
+       Target == TARGET_sandy_bridge ) &&
       ! CG_use_xortozero_Set) {
     CG_use_xortozero = TRUE;
   }

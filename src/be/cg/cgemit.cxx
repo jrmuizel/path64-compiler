@@ -15499,6 +15499,7 @@ Target_Name (TARGET_PROCESSOR t)
     case TARGET_pentium4: return "pentium4";
     case TARGET_xeon: return "xeon";
     case TARGET_anyx86: return "anyx86";
+	case TARGET_sandy_bridge: return "sandy_bridge";
     default: Fail_FmtAssertion ("Add support for %s", Targ_Name (t));
   }
   return NULL;

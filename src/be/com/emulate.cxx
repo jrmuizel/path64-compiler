@@ -4655,7 +4655,7 @@ extern WN *intrinsic_runtime(WN *block, WN *tree)
     } else if (WN_intrinsic(tree) == INTRN_MEMSET &&
 	       OPT_Fast_Stdlib &&
 	       Is_Target_64bit()) {
-      if (Is_Target_EM64T() || Is_Target_Core() || Is_Target_Wolfdale())
+      if (Is_Target_EM64T() || Is_Target_Core() || Is_Target_Wolfdale()||Is_Target_Sandy_Bridge())
 	st = Gen_Intrinsic_Function(ty, "memset.pathscale.em64t");
       else
 	st = Gen_Intrinsic_Function(ty, "memset.pathscale.opteron");
@@ -4664,7 +4664,7 @@ extern WN *intrinsic_runtime(WN *block, WN *tree)
     } else if (WN_intrinsic(tree) == INTRN_MEMCPY &&
 	       OPT_Fast_Stdlib &&
 	       Is_Target_64bit()) {
-      if (Is_Target_EM64T() || Is_Target_Core() || Is_Target_Wolfdale())
+      if (Is_Target_EM64T() || Is_Target_Core() || Is_Target_Wolfdale()||Is_Target_Sandy_Bridge())
 	st = Gen_Intrinsic_Function(ty, "__memcpy_pathscale_em64t");
       else
 	st = Gen_Intrinsic_Function(ty, "__memcpy_pathscale_opteron");

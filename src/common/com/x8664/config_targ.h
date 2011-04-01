@@ -139,6 +139,7 @@ typedef enum {
   TARGET_anyx86,	/* Generic x86 processor */
   TARGET_pentium4,	/* Intel Pentium 4 */
   TARGET_xeon,		/* Intel Pentium 4 Xeon */
+  TARGET_sandy_bridge,
 } TARGET_PROCESSOR;
 
 extern TARGET_PROCESSOR Target;		/* -Tc */
@@ -163,6 +164,7 @@ extern const char *Targ_Name (TARGET_PROCESSOR target);
 #define Is_Target_Anyx86()      (Target == TARGET_anyx86)
 #define Target_x87_precision()	(Target_x87_Precision+0)
 #define Is_Target_Barcelona()   (Target == TARGET_barcelona)
+#define Is_Target_Sandy_Bridge() (Target == TARGET_sandy_bridge)
 
 
 /* ========== */
