@@ -73,13 +73,10 @@ set(PATHSCALE_WOPT_COMMON_SRCS
 				"opt_revise_ssa.cxx"
 				"wodriver.cxx")
 
-set(PATHSCALE_WOPT_ARM_SRCS "opt_tailmerge.cxx")
-
 ADD_DEFINITIONS(
 	-DMONGOOSE_BE)
 
 path64_set_multiarch_sources(wopt_sources COMMON ${PATHSCALE_WOPT_COMMON_SRCS})
-path64_set_multiarch_sources(wopt_sources arm ${PATHSCALE_WOPT_COMMON_SRCS} ${PATHSCALE_WOPT_ARM_SRCS})
 path64_add_multiarch_library(wopt STATIC wopt_sources)
 path64_add_multiarch_dependencies(wopt generate_preg_list generate_topcode)
 path64_set_multiarch_property(wopt COMPILE_FLAGS

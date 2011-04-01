@@ -95,7 +95,6 @@
 #include "cio.h"                    /* for rw, cicse etc ...*/
 #include "cg_loop.h"                /* for unrolling */
 #include "cg_loop_recur.h"	    /* recurrence fixing */
-#include "loop_invar_hoist.h"	    /* For loop invariant hoisting */
 #include "gcm.h"		    /* for GCM options */
 #include "cg_sched_est.h"	    /* for CG_SCHED_EST options */
 #include "targ_proc_properties.h"

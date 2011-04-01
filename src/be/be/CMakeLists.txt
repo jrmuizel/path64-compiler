@@ -155,29 +155,6 @@ SET(PATHSCALE_BE_BE_COMMON_SRCS "../../common/targ_info/access/ti_init.c"
 
 SET(PATHSCALE_BE_BE_X8664_SRCS)
 
-SET(PATHSCALE_BE_BE_ARM_SRCS
-                           "../com/wn_lower_mul.cxx"
-                         "../com/rt_lower_wn.cxx"
-                         "@ARCH@/mul_cost_model.cxx" #st
-                         "../../common/util/zint.cxx" #st
-                         "../../common/util/lbitmask.cxx" #st
-                         "../../common/util/lbrange.cxx" #st
-                         "../../common/util/larange.cxx" #st
-                         "../../common/util/lvrange.cxx" #st
-                         "../../common/util/lbvalrange.cxx" #st
-                         "../../common/util/lbitvalue.cxx" #st
-                         "../../common/util/lalign.cxx" #st
-                         "../../common/util/paired_lattice.cxx" #st
-                         "../../common/util/range.cxx" #st
-                         "../../common/com/loader.cxx"
-                         "../../common/com/isa_loader.cxx" #st
-                         "../../common/com/dll_loader.cxx" #st
-                         "../../common/com/lai_loader.cxx" #st
-                         "../../common/com/extension_intrinsic.cxx" #st
-                         "../../common/com/dyn_isa_api_access.cxx" #st
-                         "../../common/com/dyn_dll_api_access.cxx" #st
-                           )
-
 SET(PATHSCALE_BE_BE_MIPS_SRCS
                          "../com/mips/quad_sim.cxx"
                            )
@@ -205,7 +182,6 @@ ADD_CUSTOM_TARGET(generate_extension DEPENDS extension_include.h)
 
 #add_library(be-static STATIC ${PATHSCALE_BE_BE_SRCS})
 path64_set_multiarch_sources(be_sources COMMON ${PATHSCALE_BE_BE_COMMON_SRCS})
-path64_set_multiarch_sources(be_sources arm ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_ARM_SRCS})
 path64_set_multiarch_sources(be_sources x8664 ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_X8664_SRCS})
 path64_set_multiarch_sources(be_sources mips ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_MIPS_SRCS})
 path64_add_multiarch_library(be-static STATIC be_sources)

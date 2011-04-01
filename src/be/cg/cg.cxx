@@ -108,14 +108,10 @@
 #include "cgtarget.h"
 #include "ebo.h"
 #include "hb.h"
-#include "cg_automod.h"
 #include "pqs_cg.h"
 #include "tag.h"
 #ifdef KEY
 #include "cg_gcov.h"
-#endif
-#ifdef SUPPORTS_SELECT
-#include "cg_select.h"
 #endif
 
 #ifdef LAO_ENABLED

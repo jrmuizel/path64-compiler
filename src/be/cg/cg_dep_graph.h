@@ -633,7 +633,6 @@ inline ARC *ARC_LIST_Find_First(ARC_LIST *list, CG_DEP_KIND kind, INT16 opnd)
   return arcs ? ARC_LIST_first(arcs) : NULL;
 }
 
-// FdF: Moved from cg_dep_graph.cxx because loop_invar_hoist.cxx needs them.
 
 // =====================================================================
 //		      Barrier/Intrinsic Support

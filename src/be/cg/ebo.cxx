@@ -153,7 +153,6 @@ static const char source_file[] = __FILE__;
 #include "cflow.h"
 #include "cg_spill.h"
 #include "targ_proc_properties.h"
-#include "top_properties.h"
 #include "data_layout.h"
 
 #include "ebo.h"
