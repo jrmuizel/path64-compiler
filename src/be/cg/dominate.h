@@ -117,12 +117,5 @@ extern void Calculate_Dominators(void);
 extern void BB_REGION_Calculate_Dominators(const BB_REGION& region);
 extern void BB_SET_Calculate_Dominators(BB_SET *bbset, BOOL compute_dom, BOOL compute_pdom);
 extern void Free_Dominators_Memory(void);
-#ifdef TARG_ST
- extern BOOL PU_Has_Dominator_Info(void);
-// Returns TRUE if bb1 dominates bb2, FALSE otherwise
- extern BOOL BB_Dominates(BB* bb1, BB* bb2);
-// Returns TRUE if op1 dominates op2, FALSE otherwise
- extern BOOL OP_Dominates(OP *op1, OP* op2);
-#endif
 
 #endif /* DOMINATE_INCLUDED */

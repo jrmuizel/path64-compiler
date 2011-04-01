@@ -37,7 +37,6 @@
 #include "cg_swp_op_vector.h"
 
 
-#ifndef TARG_ST
 class SWP_SCHEDULER {
   private:
   MEM_POOL       *_m;
@@ -60,6 +59,6 @@ class SWP_SCHEDULER {
   void 
   Verify (void) const;
 };
-#endif
+
 #endif /* cg_swp_scheduler_INCLUDED */
 

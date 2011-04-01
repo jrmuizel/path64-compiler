@@ -316,11 +316,9 @@ pe_mkobject_hook (bfd * abfd,
   if (aouthdr)
     pe->pe_opthdr = ((struct internal_aouthdr *) aouthdr)->pe;
 #endif
-#ifndef TARG_ST
 #ifdef ARM
   if (! _bfd_coff_arm_set_private_flags (abfd, internal_f->f_flags))
     coff_data (abfd) ->flags = 0;
-#endif
 #endif
   return (void *) pe;
 }

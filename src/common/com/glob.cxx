@@ -124,9 +124,6 @@ char *Obj_File_Name = NULL;	/* Relocatable object file */
 char *Lai_File_Name = NULL;     /* LAI file */
 char *Instrumentation_File_Name = NULL; /* instrumentation file */
 char *Feedback_File_Name = NULL; /* Feedback file */
-#ifdef TARG_ST
-char *Object_Dir = NULL;/* Object dir */
-#endif
 char *call_graph_file_name = NULL; /* Function call graph file */
 char *cord_output_file_name = NULL; /* Output file name after function layout */
 char *cord_obj_file_name = NULL;  /* Object file name which will be reorder function layout */

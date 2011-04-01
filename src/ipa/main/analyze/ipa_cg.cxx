@@ -246,7 +246,6 @@ IPA_update_summary_st_idx (const IP_FILE_HDR& hdr)
   }
 
 #ifdef KEY
-#ifndef TARG_ST
   INT32 num_ty_infos;
   SUMMARY_TY_INFO* ty_infos = IPA_get_ty_info_file_array(hdr, num_ty_infos);
   for (i = 0; i < num_ty_infos; ++i) {
@@ -258,7 +257,6 @@ IPA_update_summary_st_idx (const IP_FILE_HDR& hdr)
         Set_TY_no_split (ty_infos[i].Get_ty());
     }
   }
-#endif
 #endif
 
   // process all ty_idxs found in SUMMARY_STRUCT_ACCESS, and sum them up!
@@ -326,7 +324,6 @@ IPA_mark_commons_used_in_io (const IP_FILE_HDR& hdr)
 }
 
 #ifdef KEY
-#ifndef TARG_ST
 void
 IPA_update_ehinfo_in_pu (IPA_NODE *node)
 {
@@ -484,7 +481,6 @@ IPA_Check_Optimization_Options (IP_FILE_HDR& hdr)
   current_options.clear();
   return;
 }
-#endif // !TARG_ST
 #endif
 
 //-------------------------------------------------------------------------
@@ -495,10 +491,8 @@ void
 IPA_Process_File (IP_FILE_HDR& hdr)
 {
 #ifdef KEY
-#ifndef TARG_ST
   if (IPA_Check_Options)
     IPA_Check_Optimization_Options (hdr);
-#endif
 #endif
   IP_READ_pu_infos (hdr);
 

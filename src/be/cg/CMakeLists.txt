@@ -128,39 +128,6 @@ SET(PATHSCALE_CG_COMMON_SRCS
 			"../../be/cg/gra_mon/gra_trace.cxx"
             "${PATHSCALE_BINARY_DIR}/be/opsch_set.h")
 
-SET( PATHSCALE_CG_ARM_SRCS "../../be/cg/swp/cg_swp.cxx" #st
-                        "../../be/cg/@ARCH@/targ_op.cxx" #st
-                        "../../be/cg/@ARCH@/targ_ebo.cxx" #st
-                        "../../be/cg/@ARCH@/targ_select.cxx" #st
-                        "../../common/com/@ARCH@/targ_register_common.cxx"
-                        "../../be/cg/cgdwarf_debug_frame.cxx" #st
-                        "../../be/cg/loop_invar_hoist.cxx" #st
-                        "../../be/cg/cg_ssa.cxx" #st
-                        "../../be/cg/cg_ssaopt.cxx" #st
-                        "../../be/cg/cg_outssa.cxx" #st
-                        "../../be/cg/cg_affirm.cxx" #st
-                        "../../be/cg/cg_select.cxx" #st
-                        "../../be/cg/top_properties.cxx" #st
-                        "../../be/cg/range_analysis.cxx" #st
-                        "../../be/cg/cg_coalesce.cxx" #st
-                        "../../be/cg/cg_color.cxx" #st
-                        "../../be/cg/swp/cg_swp_emit.cxx" #st
-                        "../../be/cg/@ARCH@/cg_swp_bundle.cxx" #st
-                        "../../be/cg/@ARCH@/targ_pqs.cxx" #st
-                        "../../be/cg/@ARCH@/exp_intrinsic.cxx" #st 
-                        "../../be/cg/@ARCH@/targ_range_prop.cxx" #st
-                        "../../be/cg/@ARCH@/targ_range_analysis.cxx" #st
-                        "../../be/cg/@ARCH@/targ_calls.cxx" #st
-                        "../../be/cg/cg_ivs.cxx" #st
-                        "../../be/cg/ipra.cxx" #st
-                        "../../be/cg/cg_tailmerge.cxx" #st
-                        "../../be/cg/range_prop.cxx" #st
-                        "../../be/cg/cg_dud.cxx" #st
-                        "../../be/cg/graphml_dumper.cxx" #st
-                        "../../be/cg/mexpand.cxx" #st
-                        "../../be/cg/cg_automod.cxx" #st
-                        "../../be/cg/swp/cg_swp_sched.cxx"#st
-                        "../../dfgforise/ExportFromBackEnd.cxx")
 
 SET(PATHSCALE_CG_X8664_SRCS 		
                         "../../be/cg/@ARCH@/ebo_special.cxx"
@@ -263,9 +230,6 @@ add_custom_command(
 path64_set_multiarch_sources(cg_sources x8664
                              ${PATHSCALE_CG_COMMON_SRCS}
                              ${PATHSCALE_CG_X8664_SRCS})
-path64_set_multiarch_sources(cg_sources arm
-                             ${PATHSCALE_CG_COMMON_SRCS}
-                             ${PATHSCALE_CG_ARM_SRCS})
 path64_set_multiarch_sources(cg_sources mips
                              ${PATHSCALE_CG_COMMON_SRCS}
                              ${PATHSCALE_CG_MIPS_SRCS})

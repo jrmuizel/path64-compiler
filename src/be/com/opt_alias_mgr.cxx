@@ -1526,35 +1526,6 @@ BOOL ALIAS_MANAGER::Safe_to_speculate(const WN *wn) const
   return FALSE;
 }
 
-#ifdef TARG_ST
-/* (cbr) interface is in opt_alias_interface.h */
-BOOL Safe_to_speculate(const ALIAS_MANAGER *am, const WN *wn) 
-{
-  IDTYPE id = am->Id(wn);
-
-  // no alias info, conservatively return FALSE;
-  if (id == 0) {
-   return FALSE; 
-  }
-  // WN accesses a register, return TRUE;
-  if (id == am->Preg_id()) {
-    return TRUE;
-  }
-  // The variable can be speculately loaded if there is a
-  // fixed ST and the ofst and size is non-zero.
-  // The check of non-zero size is for the case of extern  
-  //
-  POINTS_TO *pt = am->Pt(id);
-  if (pt->Expr_kind() == EXPR_IS_ADDR &&
-      pt->Base_kind() == BASE_IS_FIXED &&
-      pt->Ofst_kind() == OFST_IS_FIXED &&
-      pt->Safe_to_speculate()) {
-    return TRUE;
-  }
-  return FALSE;
-}
-#endif
-
 BOOL ALIAS_MANAGER::May_refer_to_alloca_mem(const WN *wn) const
 {
   IDTYPE alias_id = Id(wn);

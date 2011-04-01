@@ -37,7 +37,6 @@
 #include "cg_swp.h"
 
 
-#ifndef TARG_ST
 class SWP_LOOP {
   public:
   LOOP_DESCR      *loop_descr;
@@ -85,6 +84,6 @@ class SWP_LOOP {
   void 
   Verify (void) const;
 };
-#endif
+
 #endif /* cg_swp_loop_INCLUDED */
 

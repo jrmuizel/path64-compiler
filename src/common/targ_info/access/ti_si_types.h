@@ -36,22 +36,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#ifndef TARG_ST
 typedef enum topcode TOPCODE;
-#endif
 #include <topcode.h>
 
-#ifdef TARG_ST
-/* Redefining TOP type */
-typedef TOP TOPCODE;
-
-/* Do not define types and scheduling information as const in order
- * to configure them at runtime
- */
-#define TI_SI_CONST
-#else
 #define TI_SI_CONST const
-#endif
 /****************************************************************************
  ****************************************************************************/
 
@@ -117,12 +105,6 @@ typedef struct {
   SI_ID id;
   TI_SI_CONST mUINT8 *operand_access_times;
   TI_SI_CONST mUINT8 *result_available_times;
-#ifdef TARG_ST
-  mUINT8 n_opds;
-  mUINT8 n_results;
-  mBOOL operand_access_times_overridden;
-  mBOOL result_available_times_overridden;
-#endif
   mINT32 load_access_time;
   mINT32 last_issue_cycle;
   mINT32 store_available_time;

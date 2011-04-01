@@ -97,9 +97,6 @@ extern MEM_POOL* const GRA_pool;
 extern INT GRA_pu_num;
 extern float GRA_call_split_freq;
 extern float GRA_spill_count_factor;
-#ifdef TARG_ST
-extern float GRA_local_spill_multiplier;
-#endif
 
 
 // defined in other .cxx files

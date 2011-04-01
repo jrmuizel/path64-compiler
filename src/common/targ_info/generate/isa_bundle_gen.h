@@ -64,11 +64,6 @@
 //	The rules to encode the execution types within a bundle are described
 //      by the routine below. <slot_count> specifies the number of intruction
 //	slots in this bundle type. 
-#ifdef TARG_ST
-//  void Alignment (int bias, int base)
-//      The bundle must begin on a memory address that satisfies
-//      (address % base) == bias.
-#endif
 //  void Slot (int slot_index, Exec_Unit_Type type)
 //	The <slot_index> of the current bundling type is reserved for 
 //	execution unit <type>.
@@ -121,35 +116,16 @@ extern ISA_EXEC_UNIT_TYPE ISA_Exec_Unit_Type_Create (
 	const char* name,
 	ISA_EXEC_UNIT_TYPE base_unit );
 extern void Instruction_Exec_Unit_Group (ISA_EXEC_UNIT_TYPE unit_type, ...);
-#ifdef TARG_ST
-extern ISA_BUNDLE_PACK_INFO ISA_Bundle_Pack_Create (const char *name, ISA_BUNDLE_PACK_ENDIAN endian, int _bundle_size);
-#else
 extern void ISA_Bundle_Pack_Create (ISA_BUNDLE_PACK_ENDIAN endian);
-#endif
 extern void Pack_Template (int comp_pos, int bundle_pos, int width);
-#ifdef TARG_ST
-extern void Alignment (int bias, int base);
-#endif
 
 extern void Pack_Slot (int slot, int comp_pos, int bundle_pos, int width);
-#ifdef TARG_ST
-extern void ISA_Bundle_Type_Create ( const char* name,
-				     const char* asm_name,
-				     int slot_count,
-                                     ISA_BUNDLE_PACK_INFO bundle_pack_info,
-                                     unsigned long long pattern,
-                                     int valid_bundle_archi_mask);
-#else
 extern void ISA_Bundle_Type_Create ( const char* name,
 				     const char* asm_name,
 				     int slot_count );
-#endif
 
 extern void Slot (int slot_index, ISA_EXEC_UNIT_TYPE type);
 extern void Stop (int slot_index);
-#ifdef TARG_ST
-extern void ISA_BUNDLE_Dyn_Set_Slot_Count (int slot_count);
-#endif
 extern void ISA_Bundle_End(void);
 
 #ifdef __cplusplus

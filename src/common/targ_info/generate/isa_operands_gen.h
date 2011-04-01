@@ -118,25 +118,16 @@ extern "C" {
 #include "targ_isa_registers.h"
 #include "targ_isa_lits.h"
 #include "targ_isa_enums.h"
-#ifdef TARG_ST
-#include "targ_isa_relocs.h"
-#endif
 /* Types:
  */
 
 typedef struct operand_value_type *OPERAND_VALUE_TYPE;
 
-#ifdef TARG_ST
-// RTYPE (or the range-description type) is used to annotate a proper
-// range value to the concerned OPERAND_VALUE_TYPE.  
-
-typedef enum {PCREL, SIGNED, UNSIGNED, NEGATIVE, UNKNOWN} RTYPE; 
-#else
 // RTYPE (or the range-description type) is used to annotate a proper
 // range value to the concerned OPERAND_VALUE_TYPE.  
 
 typedef enum {PCREL, SIGNED, UNSIGNED, UNKNOWN} RTYPE; 
-#endif
+
 // FP_TYPE description is used to determine the fp-value in a floating register
 // i.e. FP32_INT => 32-bit int value in a fp- register (fixed-point)
 // or   FP64_INT => 64-bit int value in a fp- register (fixed-point)
@@ -146,17 +137,6 @@ typedef enum {FP32_INT, FP64_INT, INVALID} FP_TYPE;
 
 typedef struct operand_use_type *OPERAND_USE_TYPE;
 
-#ifdef TARG_ST
-// Operand/Result flags for operation group:
-typedef UINT32 OPERANDS_GROUP_OPERAND_USES;
-
-// Arthur: some operand uses are built-in
-extern OPERAND_USE_TYPE base;
-extern OPERAND_USE_TYPE offset;
-extern OPERAND_USE_TYPE storeval;
-extern OPERAND_USE_TYPE implicit;
-extern OPERAND_USE_TYPE uniq_res;
-#endif
 /* External functions 
  */
 
@@ -168,21 +148,11 @@ extern OPERAND_VALUE_TYPE ISA_Reg_Opnd_Type_Create (
 		int size, 
 		RTYPE rtype, 
 		FP_TYPE is_fp_int );
-#ifdef TARG_ST
-extern OPERAND_VALUE_TYPE ISA_Lit_Opnd_Type_Create ( 
-		const char* name, 
-		int size,
-		RTYPE rtype, 
-		ISA_LIT_CLASS lc,
-		ISA_RELOC default_reloc,
-		... );
-#else
 extern OPERAND_VALUE_TYPE ISA_Lit_Opnd_Type_Create ( 
 		const char* name, 
 		int size,
 		RTYPE rtype, 
 		ISA_LIT_CLASS lc );
-#endif
 extern OPERAND_VALUE_TYPE ISA_Enum_Opnd_Type_Create ( 
 		const char* name, 
 		int size,
@@ -193,17 +163,8 @@ extern void Instruction_Group ( const char *name, ... );
 extern void Operand (int operand_index, 
 		     OPERAND_VALUE_TYPE operand_type,
 		     OPERAND_USE_TYPE operand_use = 0);
-#ifdef TARG_ST
-extern void Relocation (int operand_index, int relocation_id);
-extern void Result (int result_index, 
-		    OPERAND_VALUE_TYPE result_type,
-		    OPERAND_USE_TYPE result_use = 0);
-extern void Same_Res (int operand_index);
-extern void Conflict (int operand_index);
-#else
 extern void Relocatable (int operand_index);
 extern void Result (int result_index, OPERAND_VALUE_TYPE result_type);
-#endif
 extern void ISA_Operands_End(void);
 
 #ifdef __cplusplus

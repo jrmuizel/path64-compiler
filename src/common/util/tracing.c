@@ -95,9 +95,6 @@ static char *TFile_Name = "stdout";	/* TFile name */
 static UINT TI_Mask;			/* Info mask */
 static UINT TD_Mask;			/* Debug option mask */
 static UINT TI_Phase[TP_COUNT];		/* IR trace flags */
-#ifdef TARG_ST
-static UINT TG_Phase[TP_COUNT];		/* YED dump */
-#endif
 static UINT TS_Phase[TP_COUNT];		/* SYMTAB trace flags */
 static UINT TN_Phase[TP_COUNT];		/* TN trace flags */
 static UINT TA_Phase[TP_COUNT];		/* Memory Allocation Trace */
@@ -118,12 +115,6 @@ static INT Current_PU_Number = 0;
 static INT Current_Region_Number = 0;  /* for debugging regions */
 
 extern int trace_stack(int, int);
-#ifdef TARG_ST
-/* [TTh] Current_PU_Name might have been mangled for IPA :
- * The following var stores the len of the Current_PU_Name
- * without the IPA suffix, starting by '.' */
-static INT Current_PU_Name_real_len = 0;
-#endif
 
 
 /* ====================================================================
@@ -216,18 +207,6 @@ static PDESC Phases[] = {
   { TP_PSGCM,		"PSG",	"Post Schedule Global code motion" },
   { TP_THR,		"THR",	"Tree-Height Reduction" },
   { TP_EMIT,		"EMT",	"Code emission" },
-
-#ifdef TARG_ST
-  { TP_SSA,		"SSA",	"SSA form" },
-  { TP_SELECT,		"SLC",	"Select if-conversion" },
-  { TP_RANGE,           "RAN",  "Range analysis" },
-  { TP_LICM,            "LIM",  "Loop Invariant Code Motion" },
-  { TP_EXTENSION,	"EXT",	"Extension support" },
-  { TP_TAIL,		"TAL",	"Tailmerge" },
-  { TP_AFFIRM,		"AFF",  "Affirm" },
-  { TP_COALESCE,	"COA",  "GTN Coalescing" },
-#endif
-
   { TP_TEMP,		"TMP",	"Temporary use" },
 
   /* This one must be last: */
@@ -348,16 +327,6 @@ Set_Trace ( INT func, INT arg )
 	TI_Phase[arg] = TRUE;
       }
       return;
-#ifdef TARG_ST  
-      /* YED phase: */
-      case TKIND_GML:
-        if ( arg != Check_Range (arg, TP_MIN, TP_LAST, 0) ) {
-  	ErrMsg ( EC_Trace_Phase, arg, TP_MIN, TP_LAST );
-        } else {
-  	TG_Phase[arg] = TRUE;
-        }
-        return;
-#endif 
     /* SYMTAB phase: */
     case TKIND_SYMTAB:
       if ( arg != Check_Range (arg, TP_MIN, TP_LAST, 0) ) {
@@ -445,20 +414,6 @@ Set_Current_PU_For_Trace ( char *name, INT number )
 {
   Current_PU_Name = name;
   Current_PU_Number = number;
-#ifdef TARG_ST
-  /* [TTh] Compute length of Current_PU_Name without IPA suffix */
-  if (Current_PU_Name) {
-    int i;
-    char *p = name;
-    for (i=0; (*p != 0) && (*p != '.'); i++) {
-      p++;
-    }
-    Current_PU_Name_real_len = i;
-  }
-  else {
-    Current_PU_Name_real_len = 0;
-  }
-#endif
 
   Set_Current_Region_For_Trace(RID_CREATE_NEW_ID/* invalid region id */);
 }
@@ -540,12 +495,7 @@ Get_BB_Trace ( INT32 bb_id )
 
   if ( PU_Cnt > 0 ) {
     for ( i = 1; i <= PU_Cnt; i++ ) {
-#ifdef TARG_ST
-      if ( strncmp(PU_Enable[i], Current_PU_Name, Current_PU_Name_real_len) == 0 &&
-           strlen(PU_Enable[i]) == Current_PU_Name_real_len ) return TRUE;
-#else
       if ( strcmp(PU_Enable[i],Current_PU_Name) == 0 ) return TRUE;
-#endif
     }
     enabled = FALSE;
   }
@@ -596,12 +546,6 @@ Get_Trace ( INT func, INT arg )
     case TKIND_IR:
       result = TI_Phase[arg];
       break;
-#ifdef TARG_ST
-    /* YED phase: */
-    case TKIND_GML:
-      result = TG_Phase[arg];
-      break;
-#endif
     /* SYMTAB phase: */
     case TKIND_SYMTAB:
       result = TS_Phase[arg];
@@ -634,12 +578,7 @@ Get_Trace ( INT func, INT arg )
     } else
 #endif
     for ( i = 1; i <= PU_Cnt; i++ ) {
-#ifdef TARG_ST
-      if ( strncmp(PU_Enable[i], Current_PU_Name, Current_PU_Name_real_len) == 0 &&
-	   strlen(PU_Enable[i]) == Current_PU_Name_real_len )
-#else
       if ( strcmp(PU_Enable[i], Current_PU_Name) == 0 )
-#endif
 	break;
     }
     if (i > PU_Cnt)

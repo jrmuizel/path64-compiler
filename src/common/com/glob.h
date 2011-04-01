@@ -132,9 +132,6 @@ extern char *cord_output_file_name; /* Output file name after function layout */
 extern char *cord_obj_file_name;  /* Object file name which will be reorder function layout */
 extern char *Instrumentation_File_Name; /* instrumentation file */
 extern char *Feedback_File_Name;/* feedback file produced from prof */
-#ifdef TARG_ST
-BE_EXPORTED extern char * Object_Dir;/* Object dir */
-#endif
 #ifndef MONGOOSE_BE
 extern char *Lib_File_Name;	/* Program library file */
 #endif

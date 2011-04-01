@@ -166,10 +166,8 @@ struct TCON {
 	    mINT64 ll1;
 	} llval;
 #endif
-#ifndef TARG_ST  /* do not use this - too endian dependant ! */
 
 	mINT32 word0;			/* for getting the first integer word */
-#endif
 	mINT64 i0;			/* Signed integer */
 	mUINT64 k0;			/* Unsigned integer */
         struct {
@@ -219,17 +217,10 @@ TCON_cival (const TCON& tcon)		{ return tcon.cmplxval.word0; }
 inline INT64
 TCON_ci0 (const TCON& tcon)		{ return tcon.cmplxval.i0; }
 #endif // KEY
-#ifdef TARG_ST
-inline INT32
-TCON_ival (const TCON& tcon)		{ return tcon.vals.ival.v0; }    
-inline UINT32
-TCON_uval (const TCON& tcon)		{ return tcon.vals.uval.u0; }
-#else
 inline INT32
 TCON_ival (const TCON& tcon)            { return tcon.vals.word0; }    
 inline UINT32
 TCON_uval (const TCON& tcon)            { return (UINT32) tcon.vals.word0; }   
-#endif
 
 inline INT64
 TCON_i0 (const TCON& tcon)		{ return tcon.vals.i0; }    

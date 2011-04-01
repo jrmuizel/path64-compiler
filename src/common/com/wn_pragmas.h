@@ -353,29 +353,6 @@ typedef enum {
   /* "asm" support */
   WN_PRAGMA_ASM_CONSTRAINT,	/* constraint string for an ASM operand */
   WN_PRAGMA_ASM_CLOBBER,        /* clobber string for an ASM statement */
-#ifdef TARG_ST
-  /* Additional generic pragmas */
-  WN_PRAGMA_ASM_PARSE,          /* flag to parse or not an ASM statement */
-  WN_PRAGMA_LOOPDEP,
-  WN_PRAGMA_LOOPMOD,
-  WN_PRAGMA_LOOPTRIP,		/* estimated trip count for the loop. Scope: loop. */
-  WN_PRAGMA_LOOPSEQ,		/* preserve the user given order for the access to the referenced object. Scope: loop. */
-  WN_PRAGMA_LOOPMINITERCOUNT,	/* loop minimum iteration number. Scope: loop. */
-  WN_PRAGMA_LOOPMAXITERCOUNT,	/* loop maximum iteration number. Scope: loop. */
-  /* st200 specific pragmas */
-  WN_PRAGMA_PIPELINE,
-  WN_PRAGMA_PRELOAD,
-  WN_PRAGMA_STREAM_ALIGNMENT,	/* Gives the alignment of the memory streams in a loop. */
-  WN_PRAGMA_LOOPPACK,		/* request packing within the associated loop. Scope: loop. */
-  /* stxp70 specific pragmas */
-  WN_PRAGMA_HWLOOP,		/* hwloop pragmas. Scope: loop. */
-  WN_PRAGMA_FORCE_EXTGEN,	/* Force extension code generation. Scope: function. */
-  WN_PRAGMA_DISABLE_EXTGEN,	/* Disable extension code generation. Scope: function. */
-  WN_PRAGMA_FORCE_EXTENSION_OPTION,   /* Force an extension-specific
-                                         option. Scope: function. */
-  WN_PRAGMA_DISABLE_EXTENSION_OPTION,   /* Force an extension-specific
-                                         option. Scope: function. */
-#endif
 
 #ifdef KEY
   WN_PRAGMA_FORALL,
@@ -398,9 +375,6 @@ typedef enum {
   /* matching on/off pragmas must belong to the same block */
   WN_PRAGMA_SCOPE_ON,		/* Start of affected scope */
   WN_PRAGMA_SCOPE_OFF,		/* End of affected scope */
-#ifdef TARG_ST
-  WN_PRAGMA_SCOPE_LOOP,		/* Loop scope pragma, must be located into loop pre-header. */
-#endif
   WN_PRAGMA_SCOPE_SPECIAL,	/* pragma-specific rule for scope */
 
   MAX_SCOPE_PRAGMA		/* last one in enum */
@@ -462,14 +436,6 @@ typedef enum {
   FREQUENCY_HINT_INIT     = 0x2,
   FREQUENCY_HINT_FREQUENT = 0x3
 } MIPS_FREQUENCY_HINT;
-#ifdef TARG_ST
-/* enumeration for loopdep */
-typedef enum {
-  LOOPDEP_VECTOR   = 0x1,
-  LOOPDEP_PARALLEL = 0x2,
-  LOOPDEP_LIBERAL  = 0x3
-} LOOPDEP;
-#endif
 /* enumeration for distribute/redistribute/distribute_reshape type */
 typedef enum {
   DISTRIBUTE_STAR         = 0x1,
@@ -499,35 +465,6 @@ enum {
   ASSERT_FREQUENCY_RARELY	= -2,
   ASSERT_FREQUENCY_USUALLY	= -1
 };
-#ifdef TARG_ST
-/* ====================================================================
- *
- * Pragmas properties interface
- *
- * These describe the characteristics of the WHIRL pragmas.
- *
- *  WN_PRAGMA_USERS WN_Pragma_Users(WN_PRAGMA_ID pragma_id)
- *   Returns the mask of WN_PRAGMA_USERS phases using this pragma.
- *
- *  WN_PRAGMA_SCOPE WN_Pragma_Users(WN_PRAGMA_ID pragma_id)
- *   Returns the scope (WN_PRAGMA_SCOPE) of the pragma.
- *  
- *  const char *WN_Pragma_Name(INT pragma_id)
- *   Returns the printable name of the pragma. 
- *
- * Note: the pragma_id identifier passed is a INT type and not
- * a WN_PRAGMA_ID as it allows to hide the actual enumeration to
- * some C++ clients without requiring a type cast.
- * For instance WN_Pragma_Name(WN_pragma(x)) is possible even if
- * WN_Pragma() return a INT instead of a WN_PRAGMA_ID.
- * 
- * Note: the WN_PRAGMA_DESC descriptor is now hidden to the clients
- * of this interface and as been moved to wn_pragmas.cxx.
- * ====================================================================
- */
- extern WN_PRAGMA_USERS WN_Pragma_Users(INT pragma_id);
- extern WN_PRAGMA_SCOPE WN_Pragma_Scope(INT pragma_id);
-#endif /* if !TARG_ST */
 
  extern const char *WN_Pragma_Name(INT pragma_id);
 

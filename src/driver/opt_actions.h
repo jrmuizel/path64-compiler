@@ -62,21 +62,6 @@
 #define NORMAL_MP	0
 #define CRAY_MP		1
 
-#ifdef TARG_ST
-// [CG]: Define C standards (-std=... option)
-#define C_STD_UNDEF	0
-#define C_STD_C89	1
-#define C_STD_C94	2
-#define C_STD_C99	3
-#define C_STD_GNU89	4
-#define C_STD_GNU99	5
-#define C_STD_CXX98	6   /* (cbr) for cplusplus */
-#define C_STD_GNU98	7   /* (cbr) for cplusplus */
-extern int c_std;
-
-#define STRICT_ALIAS    1
-#define NOSTRICT_ALIAS  2
-#endif
 
 /* What are the supported platforms? */
 typedef enum {
@@ -198,10 +183,6 @@ extern RUNTIME arm_runtime;
 extern boolean debug;		/* debugging turned on */
 
 extern boolean nostdinc;	/* no standard include directory */
-#ifdef TARG_ST
-/* (cbr) don't exclude non c++ standard paths */
-extern boolean nostdincc;	/* no C++ include directory */
-#endif
 
 #ifdef PATH64_ENABLE_PSCRUNTIME
 extern boolean stl_threadsafe;  /* use thread-safe STL library */
@@ -233,18 +214,6 @@ extern int ffast_math_prescan;	// Bug 14302: ffast_math set in prescan
 extern int instrumentation_invoked;	/* Instrument whirl */
 
 extern boolean ftz_crt;		/* add flush-to-zero crt */
-#ifdef TARG_ST
-extern char *print_name;
-extern int print_kind;
-#define PRINT_NONE 0
-#define PRINT_FILE 1
-#define PRINT_PROG 2
-
-/* TB: to warm if olevel is not enough if uninitialized var warning is
-   aked*/
-extern boolean Wuninitialized_is_asked; 
-
-#endif
 
 #ifdef KEY
 extern char *f90_module_dir;	/* value of -module option */	// bug 4210
@@ -297,15 +266,6 @@ extern ABI get_platform_abi(void);
 extern int subverbose ;
 
 extern char *target_cpu;
-#ifdef TARG_ST200
-typedef enum { OS21_TRACE_WRAP, OS21_TRACE_UNDEFINED } OS21_TRACE ;
-extern int os21_trace_options_set() ;
-extern int get_os21_trace_options_nelements(OS21_TRACE kind) ;
-extern int get_os21_trace_options_elements(OS21_TRACE kind, char *elts[], size_t maxnelts) ;
-extern int os21_profiler_options_set() ;
-extern int get_os21_profiler_options_emit_undefined() ;
-extern int get_os21_profiler_options_warn() ;
-#endif
 
 extern char *dependency_file;
 extern char *dependency_target;

@@ -48,14 +48,6 @@
  * interface before register allocation or not.
  * ======================================================================*/
 extern void IGLS_Schedule_Region (BOOL before_regalloc);
-#ifdef TARG_ST
-/* ======================================================================
- * Call the LAO for the entire PU (region). The 'before_regalloc'
- * parameter indicates whether we are calling the LAO interface before
- * register allocation or not.
- * ======================================================================*/
-extern void LAO_Schedule_Region (BOOL before_regalloc, BOOL frequency_verify);
-#endif
 
 #endif /* locs_INCLUDED */
 

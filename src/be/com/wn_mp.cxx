@@ -207,11 +207,7 @@ my_Get_Return_Pregs(PREG_NUM *rreg1, PREG_NUM *rreg2, mTYPE_ID type,
                         file, line);
 
   } else
-#ifdef TARG_ST
-    FmtAssert(FALSE,("Get_Return_Mtypes/Pregs shouldn't be called"));
-#else
     Get_Return_Pregs(type, MTYPE_UNKNOWN, rreg1, rreg2);
-#endif
 
   FmtAssert(*rreg1 != 0 && *rreg2 == 0, ("bad return pregs"));
 } // my_Get_Return_Pregs()
@@ -996,7 +992,7 @@ Create_Lock_Type()
 {
     if( lock_ty_idx != TY_IDX_ZERO )
       return;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     if (Is_Target_32bit())
       lock_ty_idx = MTYPE_To_TY(MTYPE_I4);
     else
@@ -1710,7 +1706,7 @@ Gen_Flush( ST *flush_var, WN_OFFSET flush_offset)
 	// TODO: finish the flush call.
   return wn;
 }
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 static WN* 
 Get_First_Stmt_in_Block(WN *block)
 {
@@ -3212,10 +3208,8 @@ static BOOL
 Is_Single_Test(WN *tree)
 {
   if (WN_operator(tree) != OPR_LDID ||
-#ifndef TARG_ST
 #ifdef KEY // bug 5118
       WN_class(tree) != CLASS_PREG ||
-#endif
 #endif
       Preg_Is_Dedicated(WN_offset(tree)) ||
       strcmp(MPSP_STATUS_PREG_NAME, Preg_Name(WN_offset(tree))) != 0)
@@ -3475,18 +3469,14 @@ Gather_Uplevel_References ( WN * block, INT32 level, WN * parent,
           if (!Is_NameLock_ST(st) &&
               !is_threadprivate_common &&
               !guarded_set->Find(tree) &&
-#ifndef TARG_ST
 #ifdef KEY
               strncmp(ST_name(st), "__thdprv", 8) &&
 #endif
-#endif
 	            !comp_gen_construct) {
-#ifndef TARG_ST
 #ifdef KEY
             USRCPOS srcpos;
             USRCPOS_srcpos(srcpos) = WN_Get_Linenum(tree);
             Set_Error_Line(USRCPOS_linenum(srcpos));
-#endif
 #endif
             ErrMsg ( EC_MPLOWER_shared_store, st );
           }
@@ -4248,7 +4238,7 @@ Verify_No_Pregs_In_Tree(WN *tree)
     it = WN_WALK_TreeNext(it);
   }
 }
-#if defined (KEY) && !defined(TARG_ST)
+#if defined (KEY)
 /* Generate a procedure body to copy the data */
 
 static ST*
@@ -5415,41 +5405,6 @@ Walk_and_Localize (WN * tree, VAR_TABLE * vtab, Localize_Parent_Stack * lps,
 * Create any needed temporaries in local scope. especially for Dos 
 * This function has been modified by csc.
 */
-#ifdef TARG_ST
-static void Make_Local_Temps ( void )
-{
-    // note that if multiple orphaned PDO's appear in a PU, then multiple
-    // instances of these local variables will be inserted into the PU's
-    // symbol table
-
-  mpbase_st = New_ST (CURRENT_SYMTAB);
-  ST_Init (mpbase_st,
-           Save_Str ( "__mpvar_base" ),
-           CLASS_VAR,
-           SCLASS_AUTO,
-           EXPORT_LOCAL,
-           MTYPE_To_TY ( MTYPE_I8 ));
-  Set_ST_addr_passed ( mpbase_st );
-
-  mptrips_st = New_ST (CURRENT_SYMTAB);
-  ST_Init (mptrips_st,
-           Save_Str ( "__mpvar_ntrip" ),
-           CLASS_VAR,
-           SCLASS_AUTO,
-           EXPORT_LOCAL,
-           MTYPE_To_TY ( MTYPE_I8 ));
-  Set_ST_addr_passed ( mptrips_st );
-
-  mpflags_st = New_ST (CURRENT_SYMTAB);
-  ST_Init (mpflags_st,
-           Save_Str ( "__mpvar_flags" ),
-           CLASS_VAR,
-           SCLASS_AUTO,
-           EXPORT_LOCAL,
-           MTYPE_To_TY ( MTYPE_I4 ));
-  Set_ST_addr_passed ( mpflags_st );
-}
-#else
 static void 
 Make_Local_Temps ( void )
 {
@@ -5472,7 +5427,6 @@ Make_Local_Temps ( void )
   Set_ST_addr_passed( last_iter );
 
 }
-#endif
 
 /***********************************************************************
  *
@@ -5633,31 +5587,6 @@ static ST * Create_Name_Lock (ST* lock_name)
   // For the IA64's cache line is 32 byte, so 
   // The padding is not need, But I'm not very
   // sure, need to be fixed. by csc.
-#ifdef TARG_ST
-  static TY_IDX struct_ty = 0;
-
- if (struct_ty == TY_IDX_ZERO) {
-    // Create a struct for the common 
-    FLD_HANDLE field = New_FLD ();
-    FLD_Init(field, Save_Str("padding"), Lock_Padding_TY(), 0);
-    Set_FLD_last_field(field);
-
-    // Create a struct type with the above fields 
-    TY &ty = New_TY(struct_ty);
-    TY_Init(ty, TY_size(FLD_type(field)), KIND_STRUCT, MTYPE_M,
-            Save_Str("padding_type"));
-    Set_TY_fld(ty, field);
-    Set_TY_align(struct_ty, TY_align(FLD_type(field)));
-  }
-  // Now create the ST entry for the COMMON block 
-  name = (char*) alloca (Targ_String_Length(ST_tcon_val(lock_name)) + 30);
-  sprintf (name, "__namelock_common_%s",
-           Targ_String_Address(ST_tcon_val(lock_name)));
-
-  base_st            = New_ST(GLOBAL_SYMTAB);
-  ST_Init(base_st, Save_Str(name), CLASS_VAR, SCLASS_COMMON,
-          EXPORT_PREEMPTIBLE, struct_ty);
-#endif 
   /* now create the real ST for the variable */
   Create_Lock_Type( );
   sprintf (name, "__namelock_%s",
@@ -6420,7 +6349,7 @@ Post_MP_Processing (WN * pu)
     }
     thread_priv_prag = WN_next(thread_priv_prag);
   }
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   Gen_Threadpriv_Func (prags, body, TRUE);
 #endif
   // Get the set of local nodes from the function pragmas.
@@ -6512,7 +6441,7 @@ Gen_MP_Copyin ( BOOL is_omp )
   }
 
   if (have_pods) {
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     wn = WN_Create ( OPC_VCALL, 3 * count + 1 );
     WN_st_idx(wn) = GET_MPRUNTIME_ST(MPR_OMP_COPYIN_THDPRV);
 #else
@@ -6528,7 +6457,7 @@ Gen_MP_Copyin ( BOOL is_omp )
     WN_Set_Call_Parm_Ref ( wn );
     WN_linenum(wn) = line_number;
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     // The library expects the first argument (n) to be (# of triplets) * 3
     WN_kid0(wn) = WN_CreateParm ( MTYPE_I4,
                                   WN_Intconst ( MTYPE_I4, 3 * count ),
@@ -6545,7 +6474,7 @@ Gen_MP_Copyin ( BOOL is_omp )
       if (is_omp && is_omp_non_pod_copyin(wnx)) {
         continue; // skip C++ non-PODs
       }
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       if (WN_opcode(wnx) == OPC_PRAGMA) {
         ST *ppthd, *global;
         global = Get_Threadprv_St(reference_block, WN_st(wnx), &ppthd);
@@ -6602,7 +6531,7 @@ Gen_MP_Copyin ( BOOL is_omp )
 #endif
     }
     WN_INSERT_BlockFirst (block, wn);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     // bug 5203: Ensure all threads get the value before giving the master
     // thread a chance to proceed/modify the variable.
     WN_INSERT_BlockAfter (block, wn, Gen_Barrier (local_gtid));
@@ -7758,7 +7687,7 @@ Gen_Restore_Stack_Pointer(WN *sp_save_stid, Alloca_Var_List *avlist)
 
 static WN *
 Gen_MP_SingleProcess_Block(WN *single_block, BOOL nowait, 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
                            WN *copyprivates,
 #endif
                            BOOL is_omp, BOOL is_orphaned)
@@ -7797,7 +7726,7 @@ Gen_MP_SingleProcess_Block(WN *single_block, BOOL nowait,
                         Gen_End_Single( 
                           WN_CreateIntconst(OPC_I4INTCONST, num_constructs),
                           local_gtid, is_omp, nowait));
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   if (copyprivates)
     Gen_MP_Copyprivate(copyprivates, &mp_single_block, Gen_MP_Load( return_st, return_ofst ));
 #endif
@@ -8106,7 +8035,7 @@ static WN *Gen_MP_SingleProcess_Region(WN *single_region)
     }
   } // if (vt_size)
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   WN_INSERT_BlockLast(mp_single_block,
     Gen_MP_SingleProcess_Block(single_block, nowait, 
       nested_copyprivate_nodes,
@@ -8134,7 +8063,7 @@ static WN *Gen_MP_SingleProcess_Region(WN *single_region)
     WN_Delete(nested_firstprivate_nodes);
     nested_firstprivate_nodes = wn;
   }
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   while (nested_copyprivate_nodes) {
     wn = WN_next(nested_copyprivate_nodes);
     WN_Delete(nested_copyprivate_nodes);
@@ -9054,7 +8983,7 @@ Cleanup_Ordered (WN* block_wn, WN* wn) {
   opc = WN_opcode(wn);
   if (opc == OPC_VCALL) {
     char* name = ST_name(WN_st(wn));
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     if (strcmp (name, "__ompc_ordered") == 0 ||
         strcmp (name, "__ompc_end_ordered") == 0 ) {
 #else
@@ -9712,7 +9641,7 @@ Extract_Do_Info ( WN * do_tree )
   do_init = WN_kid0(WN_start(do_tree));
   WN_kid0(WN_start(do_tree)) = NULL;
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   {
     // bug 5767: handle cvt
     WN * kid0 = WN_kid0 (WN_end (do_tree));
@@ -10092,701 +10021,6 @@ Rewrite_Do ( WN * do_tree )
   }
 } // Rewrite_Do()
 
-
-/*  Transform a pdo.  */
-#ifdef TARG_ST
-static WN * Transform_PDO ( WN * tree )
-{
-  INT32      i;
-  INT32      vsize;
-  WN        *wn;
-  WN        *wn1;
-  WN        *wn2;
-  WN        *cur_node;
-  WN        *first_node;
-  WN        *prev_node;
-  WN        *next_node;
-  WN        *pdo_node;
-  WN        *mpsched_wn;
-  WN        *chunk_wn;
-  WN        *body_block;
-  WN        *while_block;
-  WN        *reduction_init_block;
-  WN        *reduction_store_block;
-  ST        *return_st;
-  WN_OFFSET  return_ofst;
-  PREG_NUM   rreg1, rreg2;
-  BOOL       while_seen = FALSE;
-  BOOL       is_omp;
-  BOOL       do_dealloca = FALSE;
-  WN         *nested_alloca_block = NULL, *nested_firstprivate_block = NULL;
-  WN         *sp_save_stid;
-  Alloca_Var_List *avlist;
-  const BOOL orphaned = (mpt == MPP_ORPHANED_PDO);
-
-  Is_True(mpt == MPP_PDO || mpt == MPP_ORPHANED_PDO,
-          ("not inside a PDO loop"));
-
-  /* Initialization. */
-
-  nested_local_count      = 0;
-  nested_reduction_count  = 0;
-  nested_affinity_nodes   = NULL;
-  nested_affinity_d_nodes = NULL;
-  nested_affinity_t_nodes = NULL;
-  nested_chunk_node       = NULL;
-  nested_lastlocal_nodes  = NULL;
-  nested_lastthread_node  = NULL;
-  nested_local_nodes      = NULL;
-  nested_firstprivate_nodes = NULL;
-  nested_mpsched_node     = NULL;
-  nested_nowait_node      = NULL;
-  nested_ordered_node     = NULL;
-  nested_reduction_nodes  = NULL;
-  nested_shared_nodes     = NULL;
-  nested_do_order_lb      = NULL;
-  nested_do_order_stride  = NULL;
-
-  if (orphaned) {
-      // set up some globals
-    psymtab = CURRENT_SYMTAB;
-    ppuinfo = Current_PU_Info;
-    pmaptab = Current_Map_Tab;
-
-      /* create temporaries for calls to runtime PDO routines */
-    Make_Local_Temps();
-    local_start = mpbase_st;
-    local_ntrip = mptrips_st;
-    thread_info = mpflags_st;
-  }
-
-  cur_node = WN_first(WN_region_pragmas(tree));
-
-  FmtAssert (cur_node &&
-             WN_opcode(cur_node) == OPC_PRAGMA &&
-             WN_pragma(cur_node) == WN_PRAGMA_PDO_BEGIN,
-             ("Transform_PDO: Unexpected first pragma node"));
-  is_omp = WN_pragma_omp(cur_node);
-
-  next_node = WN_next(cur_node);
-  WN_Delete ( cur_node );
-
-  while (cur_node = next_node) {
-
-    next_node = WN_next(cur_node);
-
-    if (((WN_opcode(cur_node) == OPC_PRAGMA) ||
-	 (WN_opcode(cur_node) == OPC_XPRAGMA)) &&
-	(WN_Pragma_Users(WN_pragma(cur_node)) & PUSER_MP)) {
-
-      switch (WN_pragma(cur_node)) {
-
-	case WN_PRAGMA_AFFINITY:
-	  WN_next(cur_node) = nested_affinity_nodes;
-	  nested_affinity_nodes = cur_node;
-	  break;
-
-	case WN_PRAGMA_DATA_AFFINITY:
-	  WN_next(cur_node) = nested_affinity_d_nodes;
-	  nested_affinity_d_nodes = cur_node;
-	  break;
-
-	case WN_PRAGMA_THREAD_AFFINITY:
-	  WN_next(cur_node) = nested_affinity_t_nodes;
-	  nested_affinity_t_nodes = cur_node;
-	  break;
-
-	case WN_PRAGMA_CHUNKSIZE:
-	  if (nested_chunk_node)
-	    WN_DELETE_Tree ( nested_chunk_node );
-	  nested_chunk_node = cur_node;
-	  break;
-
-	case WN_PRAGMA_LASTLOCAL:
-	  for (wn = nested_lastlocal_nodes; wn; wn = WN_next(wn))
-	    if (Identical_Pragmas(cur_node, wn))
-	      break;
-	  if (wn == NULL) {
-	    WN_next(cur_node) = nested_lastlocal_nodes;
-	    nested_lastlocal_nodes = cur_node;
-	    ++nested_local_count;
-	    if (TY_kind(ST_type(WN_st(cur_node))) == KIND_SCALAR)
-	      shared_table[shared_count++] = WN_st(cur_node);
-	  } else
-	    WN_Delete ( cur_node );
-	  break;
-
-	case WN_PRAGMA_LASTTHREAD:
-	  if (nested_lastthread_node)
-	    WN_Delete ( nested_lastthread_node );
-	  nested_lastthread_node = cur_node;
-	  break;
-
-	case WN_PRAGMA_LOCAL:
-	  for (wn = nested_local_nodes; wn; wn = WN_next(wn))
-	    if (Identical_Pragmas(cur_node, wn))
-	      break;
-	  if (wn == NULL) {
-	    if (ST_Has_Dope_Vector(WN_st(cur_node))) {
-	        // F90 arrays with dope vectors must be initialized
-	      WN_next(cur_node) = nested_firstprivate_nodes;
-	      nested_firstprivate_nodes = cur_node;
-	    } else {
-	      WN_next(cur_node) = nested_local_nodes;
-	      nested_local_nodes = cur_node;
-	    }
-	    ++nested_local_count;
-	  } else
-	    WN_Delete ( cur_node );
-	  break;
-
-	case WN_PRAGMA_FIRSTPRIVATE:
-	  for (wn = nested_firstprivate_nodes; wn; wn = WN_next(wn))
-	    if (Identical_Pragmas(cur_node, wn))
-	      break;
-	  if (wn == NULL) {
-	    WN_next(cur_node) = nested_firstprivate_nodes;
-	    nested_firstprivate_nodes = cur_node;
-	    ++nested_local_count;
-	  } else
-	    WN_Delete ( cur_node );
-	  break;
-
-	case WN_PRAGMA_MPSCHEDTYPE:
-	  if (nested_mpsched_node)
-	    WN_Delete ( nested_mpsched_node );
-	  nested_mpsched_node = cur_node;
-	  break;
-
-	case WN_PRAGMA_NOWAIT:
-	  if (nested_nowait_node)
-	    WN_Delete ( nested_nowait_node );
-	  nested_nowait_node = cur_node;
-	  break;
-
-	case WN_PRAGMA_ORDERED:
-	  if (nested_ordered_node)
-	    WN_Delete ( nested_ordered_node );
-	  nested_ordered_node = cur_node;
-	  break;
-
-        case WN_PRAGMA_ORDERED_LOWER_BOUND:
-          if (nested_do_order_lb) WN_Delete (nested_do_order_lb);
-          nested_do_order_lb = cur_node;
-          break;
-
-        case WN_PRAGMA_ORDERED_STRIDE:
-          if (nested_do_order_stride) WN_Delete (nested_do_order_stride);
-          nested_do_order_stride = cur_node;
-          break;
-
-	case WN_PRAGMA_PDO_END: 
-	case WN_PRAGMA_END_MARKER:
-	  break; 
-
-	case WN_PRAGMA_REDUCTION:
-	  for (wn = nested_reduction_nodes; wn; wn = WN_next(wn))
-	    if (Identical_Pragmas(cur_node, wn))
-	      break;
-	  if (wn == NULL) {
-	    WN_next(cur_node) = nested_reduction_nodes;
-	    nested_reduction_nodes = cur_node;
-	    ++nested_local_count;
-	    ++nested_reduction_count;
-	    if (WN_opcode(cur_node) == OPC_PRAGMA)
-	      shared_table[shared_count++] = WN_st(cur_node);
-	  } else
-	    WN_DELETE_Tree ( cur_node );
-	  break;
-
-      /* we can get a SHARED(preg) clause in a SINGLE region due to
-         variable renaming in LNO; must allow these pragmas */
-	case WN_PRAGMA_SHARED:
-	  for (wn = nested_shared_nodes; wn; wn = WN_next(wn))
-	    if (Identical_Pragmas(cur_node, wn))
-	      break;
-	  if (wn == NULL) {
-	    WN_next(cur_node) = nested_shared_nodes;
-	    nested_shared_nodes = cur_node;
-	    if (TY_kind(ST_type(WN_st(cur_node))) == KIND_SCALAR)
-	      shared_table[shared_count++] = WN_st(cur_node);
-	  } else
-	    WN_Delete ( cur_node );
-	  break;
-
-	default:
-	  Fail_FmtAssertion (
-		  "out of context pragma (%s) in MP {region pragma} processing",
-		  WN_Pragma_Name(WN_pragma(cur_node)));
-
-      }
-
-    } else
-
-      Fail_FmtAssertion ( "out of context node (%s) in MP {region} processing",
-			  OPCODE_name(WN_opcode(cur_node)) );
-  }
-
-  body_block = WN_region_body(tree);
-  first_node = pdo_node = WN_first(body_block);
-  while (pdo_node && (WN_opcode(pdo_node) != OPC_DO_LOOP)) {
-    if ((WN_opcode(pdo_node) == OPC_DO_WHILE) ||
-	(WN_opcode(pdo_node) == OPC_WHILE_DO))
-      while_seen = TRUE;
-    pdo_node = WN_next(pdo_node);
-  }
-
-  if (pdo_node) {
-    WN *nested_non_pod_finalization_nodes;
-
-    if (non_pod_finalization_nodes) {
-        // In non-orphaned PDO, Process_Parallel_Region() will have
-        // extracted non-POD finalization code (if any), so we re-insert it
-      if (mpt != MPP_PDO)
-        Fail_FmtAssertion("out of place non-POD finalization code");
-      nested_non_pod_finalization_nodes = non_pod_finalization_nodes;
-      non_pod_finalization_nodes = NULL;
-    } else
-      nested_non_pod_finalization_nodes = NULL;
-
-    if (nested_local_count) {
-        // privatize within DO_LOOP but not code before or after it
-      vsize = (nested_local_count + 1) * sizeof(VAR_TABLE);
-      nested_var_table = (VAR_TABLE *) alloca ( vsize );
-      memset ( nested_var_table, 0, vsize );
-      Create_Local_Variables ( nested_var_table, nested_reduction_nodes,
-			       nested_lastlocal_nodes, nested_local_nodes,
-			       nested_firstprivate_nodes,
-			       &nested_firstprivate_block,
-			       nested_lastthread_node,
-                                 /* orphaned PDO does its own allocation */
-			       orphaned ? &nested_alloca_block :
-			                  &alloca_block);
-      Localize_Parent_Stack lps(orphaned, body_block);
-        // Walk_and_Localize() won't replace DO_LOOP node
-      (void) Walk_and_Localize ( pdo_node, nested_var_table, &lps, FALSE,
-                                 &nested_non_pod_finalization_nodes );
-    }
-
-    prev_node = WN_prev(pdo_node);
-    if (prev_node) {
-        // add synchronization to sandwich code before PDO
-      WN *code_before_pdo = WN_CreateBlock();
-      WN_EXTRACT_ItemsFromBlock(body_block, first_node, prev_node);
-      WN_first(code_before_pdo) = first_node;
-      WN_last(code_before_pdo) = prev_node;
-      WN_INSERT_BlockBefore(body_block, pdo_node, code_before_pdo);
-      prev_node = WN_prev(pdo_node);
-    }
-
-    WN *code_after_pdo = NULL;  // BLOCK for sandwich code after PDO (if any)
-    if (WN_next(pdo_node)) {
-      WN *next_node = WN_next(pdo_node), *last_node = WN_last(body_block);
-      code_after_pdo = WN_CreateBlock();
-      WN_EXTRACT_ItemsFromBlock(body_block, next_node, last_node);
-      WN_first(code_after_pdo) = next_node;
-      WN_last(code_after_pdo) = last_node;
-    }
-    WN_EXTRACT_FromBlock(body_block, pdo_node);
-
-    /* Determine user's real do index and type. */
-
-    do_index_st = WN_st(WN_index(pdo_node));
-
-    do_index_type = TY_mtype(ST_type(do_index_st));
-    if (do_index_type == MTYPE_I1 || do_index_type == MTYPE_I2)
-      do_index_type = MTYPE_I4;
-    else if (do_index_type == MTYPE_U1 || do_index_type == MTYPE_U2)
-      do_index_type = MTYPE_U4;
-
-    /* Translate do statement itself. */
-
-    Extract_Do_Info ( pdo_node );
-
-    Rewrite_Do ( pdo_node );
-
-    /* Determine mp scheduling parameters. */
-  
-    if (nested_lastthread_node) {
-
-      mpsched_wn = WN_CreateIntconst ( OPC_I4INTCONST,
-				       WN_PRAGMA_SCHEDTYPE_SIMPLE );
-      chunk_wn = WN_CreateIntconst ( OPC_I4INTCONST, 1 );
-
-    } else if ((nested_ordered_node && !WN_pragma_omp(nested_ordered_node)) ||
-               (ordered_node && !WN_pragma_omp(ordered_node))) {
-
-      mpsched_wn = WN_CreateIntconst ( OPC_I4INTCONST,
-				       WN_PRAGMA_SCHEDTYPE_DYNAMIC );
-      chunk_wn = WN_CreateIntconst ( OPC_I4INTCONST, 1 );
-
-    } else {
-
-      if (nested_mpsched_node)
-	mpsched_wn = WN_CreateIntconst ( OPC_I4INTCONST,
-					 WN_pragma_arg1(nested_mpsched_node) );
-      else if (mpsched_node)
-	mpsched_wn = WN_CreateIntconst ( OPC_I4INTCONST,
-					 WN_pragma_arg1(mpsched_node) );
-      else if (pu_mpsched_node)
-	mpsched_wn = WN_CreateIntconst ( OPC_I4INTCONST,
-					 WN_pragma_arg1(pu_mpsched_node) );
-      else if (nested_chunk_node || chunk_node || pu_chunk_node)
-	mpsched_wn = WN_CreateIntconst ( OPC_I4INTCONST,
-					 WN_PRAGMA_SCHEDTYPE_DYNAMIC );
-      else
-	mpsched_wn = WN_CreateIntconst ( OPC_I4INTCONST,
-					 WN_PRAGMA_SCHEDTYPE_SIMPLE );
-  
-      if (nested_chunk_node)
-	chunk_wn = WN_COPY_Tree ( WN_kid0(nested_chunk_node) );
-      else if (chunk_node)
-	chunk_wn = WN_COPY_Tree ( WN_kid0(chunk_node) );
-      else if (pu_chunk_node)
-	chunk_wn = WN_COPY_Tree ( WN_kid0(pu_chunk_node) );
-      else
-	chunk_wn = WN_CreateIntconst ( OPC_I4INTCONST, 1 );
-
-    }
-
-    /* Generate replacement code for pdo. */
-  
-    if (nested_alloca_block) {
-      WN *last = WN_last(nested_alloca_block), *save_last;
-
-        /* conditionally do deallocation of alloca()'d memory--see detailed
-	   comment in Gen_MP_SingleProcess_Region() */
-      if ((do_dealloca = !Calls_Alloca(body_block)) != 0) {
-        wn = Gen_Save_Stack_Pointer("orphaned_pdo", &sp_save_stid);
-        save_last = WN_last(wn);
-        WN_INSERT_BlockAfter(body_block, prev_node, wn);
-        prev_node = save_last;
-        avlist = CXX_NEW(Alloca_Var_List(nested_alloca_block),
-                         &mp_lower_pool);
-      }
-      WN_INSERT_BlockAfter(body_block, prev_node, nested_alloca_block);
-      prev_node = last;
-
-      Set_PU_has_alloca(Get_Current_PU());
-    }
-
-    if (nested_lastthread_node) {
-      wn = Gen_MP_Store ( WN_st(nested_lastthread_node),
-			  WN_offsetx(nested_lastthread_node),
-			  WN_Intconst ( MTYPE_I4, 0 ));
-      WN_INSERT_BlockAfter(body_block, prev_node, wn);
-      prev_node = wn;
-    }
-
-    if (nested_firstprivate_block) {
-      Is_True(nested_firstprivate_nodes, ("NULL nested_firstprivate_nodes"));
-
-      WN *last = WN_last(nested_firstprivate_block);
-
-      WN_INSERT_BlockAfter(body_block, prev_node, nested_firstprivate_block);
-      prev_node = last;
-    }
-
-    if (nested_reduction_count) {
-      WN *last;
-
-      Gen_MP_Reduction(nested_var_table, nested_local_count,
-                       &reduction_init_block, &reduction_store_block);
-      last = WN_last(reduction_init_block);
-      WN_INSERT_BlockAfter(body_block, prev_node, reduction_init_block);
-      prev_node = last;
-    }
-
-    if (nested_ordered_node && WN_pragma_omp(nested_ordered_node)) {
-      WN *order_begin;
-      order_begin = Gen_OMP_Pdo_Ordered_Begin(WN_kid0(nested_do_order_lb),
-                                              WN_kid0(nested_do_order_stride));
-      WN_INSERT_BlockAfter (body_block, prev_node, order_begin);
-      prev_node = order_begin;
-    }
-
-    if (numthreads_node)
-      wn = Gen_MP_BeginPDO_64 ( base_node, ntrip_node, stride_node,
-				WN_CreateIntconst ( OPC_I4INTCONST,
-						    num_constructs ),
-				WN_COPY_Tree ( WN_kid0(numthreads_node) ),
-				mpsched_wn, chunk_wn, is_omp );
-    else
-      wn = Gen_MP_BeginPDO_64 ( base_node, ntrip_node, stride_node,
-				WN_CreateIntconst ( OPC_I4INTCONST,
-						    num_constructs ),
-				WN_CreateIntconst ( OPC_I4INTCONST, 0 ),
-				mpsched_wn, chunk_wn, is_omp );
-
-
-    WN_INSERT_BlockAfter(body_block, prev_node, wn);
-    prev_node = wn;
-
-    wn1 = Gen_MP_NextIters_64 ( WN_CreateIntconst ( OPC_I4INTCONST,
-						    num_constructs ),
-				WN_Lda ( Pointer_type, 0, mpbase_st ),
-				WN_Lda ( Pointer_type, 0, mptrips_st ),
-				WN_Lda ( Pointer_type, 0, mpflags_st ),
-                                is_omp );
-    WN_INSERT_BlockAfter(body_block, prev_node, wn1);
-    prev_node = wn1;
-
-    Create_Preg_or_Temp ( MTYPE_I4, "mpni_status", &return_st, &return_ofst );
-    GET_RETURN_PREGS(rreg1, rreg2, MTYPE_I4);
-    wn2 = WN_Stid ( MTYPE_I4, return_ofst, return_st, ST_type(return_st),
-		    WN_LdidPreg ( MTYPE_I4, rreg1 ));
-    WN_linenum(wn2) = line_number;
-    WN_INSERT_BlockAfter(body_block, prev_node, wn2);
-    prev_node = wn2;
-
-    while_block = WN_CreateBlock ( );
-    WN_INSERT_BlockLast ( while_block, do_prefix );
-    WN_INSERT_BlockLast ( while_block, pdo_node );
-    WN_INSERT_BlockLast ( while_block, WN_COPY_Tree ( wn1 ) );
-    WN_INSERT_BlockLast ( while_block, WN_COPY_Tree ( wn2 ) );
-    wn = WN_CreateWhileDo ( WN_Ldid ( MTYPE_I4, return_ofst, return_st,
-				      ST_type(return_st) ),
-			    while_block );
-    WN_linenum(wn) = line_number;
-    WN_INSERT_BlockAfter(body_block, prev_node, wn);
-    prev_node = wn;
-  
-    if (nested_lastlocal_nodes || nested_non_pod_finalization_nodes) {
-      BOOL found_non_pod = FALSE;
-      WN *first_and_last_mp_barrier = non_pod_first_and_lastprivate ?
-                                      Gen_MP_Barrier(FALSE) : NULL;
-
-      wn = WN_CreateBlock ( );
-      for (i = 0; i < nested_local_count; i++) {
-        VAR_TABLE *v = &nested_var_table[i];
-
-	if (v->vtype == VAR_LASTLOCAL) {
-            // if any variables are both LASTLOCAL and FIRSTPRIVATE, put
-            // an MP barrier just before the LASTLOCAL finalization to
-            // prevent the race condition described in PV 566923
-	  if (v->is_last_and_firstprivate && !first_and_last_mp_barrier)
-	    first_and_last_mp_barrier = Gen_MP_Barrier(FALSE);
-
-            // generate finalization code, unless frontend already did so
-	  if (!v->is_non_pod) {
-	    WN_INSERT_BlockLast ( wn,
-	        Gen_MP_Load_Store ( v->new_st, v->new_offset,
-	                            v->orig_st, v->orig_offset,
-	                            v->is_dynamic_array ) );
-          } else
-            found_non_pod = TRUE;
-	}
-      }
-
-        // validate non-POD finalization code
-      if (nested_non_pod_finalization_nodes) {
-        if (mpt == MPP_ORPHANED_PDO) {
-            // orphaned PDO case: lastprivate nodes are on PDO
-          if (!found_non_pod)
-            Fail_FmtAssertion("missing non-POD lastprivate clauses");
-        } else {
-            // non-orphaned PDO case: lastprivate nodes are on PARALLEL
-          if (found_non_pod)
-              // fecc should move lastprivate clauses to enclosing PARALLEL
-            Fail_FmtAssertion("extraneous non-POD lastprivate clauses");
-        }
-      } else {
-        if (found_non_pod)
-            // should never have clauses without finalization code
-          Fail_FmtAssertion("missing non-POD finalization code");
-      }
-
-      if (nested_non_pod_finalization_nodes) {
-        WN *finalization_code = WN_then(nested_non_pod_finalization_nodes);
-
-        WN_then(nested_non_pod_finalization_nodes) = NULL;
-        WN_INSERT_BlockLast(wn, finalization_code);
-        WN_DELETE_Tree(nested_non_pod_finalization_nodes);
-      }
-
-      if (nested_lastthread_node)
-	wn = WN_CreateIf ( Gen_MP_Load ( WN_st(nested_lastthread_node), 
-					 WN_offsetx(nested_lastthread_node) ),
-			   wn, WN_CreateBlock() );
-      else
-	wn = WN_CreateIf ( WN_Band ( MTYPE_I4,
-				     Gen_MP_Load ( thread_info, 0 ),
-				     WN_CreateIntconst ( OPC_I4INTCONST,
-							 0x100 )),
-			   wn, WN_CreateBlock() );
-      WN_linenum(wn) = line_number;
-
-        // if needed, insert an MP barrier surrounded by memory barriers
-      if (first_and_last_mp_barrier) {
-      	WN *blk = WN_CreateBlock();
-      	WN_INSERT_BlockLast(blk, WN_CreateBarrier(TRUE, 0));
-      	WN_INSERT_BlockLast(blk, first_and_last_mp_barrier);
-      	WN_INSERT_BlockLast(blk, WN_CreateBarrier(FALSE, 0));
-      	WN *last = WN_last(blk);
-      	WN_INSERT_BlockAfter(body_block, prev_node, blk);
-      	prev_node = last;
-      }
-      
-        // insert the IF, surrounded by memory barriers
-      {
-      	WN *blk = WN_CreateBlock();
-      	WN_INSERT_BlockLast(blk, WN_CreateBarrier(TRUE, 0));
-      	WN_INSERT_BlockLast(blk, wn);
-      	WN_INSERT_BlockLast(blk, WN_CreateBarrier(FALSE, 0));
-      	WN *last = WN_last(blk);
-      	WN_INSERT_BlockAfter(body_block, prev_node, blk);
-      	prev_node = last;
-      }
-
-        // Insert barriers inside the if as well
-      WN_INSERT_BlockBefore (WN_then(wn), NULL, WN_CreateBarrier(TRUE,0));
-      WN_INSERT_BlockAfter (WN_then(wn), NULL, WN_CreateBarrier(FALSE,0));
-    } // if (nested_lastlocal_nodes || nested_non_pod_finalization_nodes)
-
-    if (nested_reduction_count) {
-      WN *last = WN_last(reduction_store_block);
-
-      WN_INSERT_BlockAfter(body_block, prev_node, reduction_store_block);
-      prev_node = last;
-    }
-
-    if (nested_nowait_node == NULL || is_omp) {
-      if (nested_nowait_node == NULL) {
-          // insert a forward barrier
-        WN *bwn = WN_CreateBarrier(TRUE, 0);
-        WN_INSERT_BlockAfter(body_block, prev_node, bwn);
-        prev_node = bwn;
-      }
-      wn = Gen_MP_EndPDO ( WN_CreateIntconst ( OPC_I4INTCONST,
-					       num_constructs ),
-                           is_omp,
-                           (nested_nowait_node ? FALSE : TRUE));
-      WN_INSERT_BlockAfter(body_block, prev_node, wn);
-      prev_node = wn;
-      if (nested_nowait_node == NULL) {
-        // insert a backward barrier
-        wn = WN_CreateBarrier(FALSE, 0);
-        WN_INSERT_BlockAfter(body_block, prev_node, wn);
-        prev_node = wn;
-      }
-    }
-
-    if (nested_ordered_node && WN_pragma_omp(nested_ordered_node)) {
-      WN *order_end = Gen_OMP_Pdo_Ordered_End ();
-      WN_INSERT_BlockAfter(body_block, prev_node, order_end);
-      prev_node = order_end;
-    }
-
-    if (do_dealloca) {
-      WN *restore_block = Gen_Restore_Stack_Pointer(sp_save_stid, avlist);
-      CXX_DELETE(avlist, &mp_lower_pool);
-      WN *last = WN_last(restore_block);
-
-      WN_INSERT_BlockAfter(body_block, prev_node, restore_block);
-      prev_node = last;
-    }
-
-    if (code_after_pdo) {
-        // insert post-PDO sandwich code after all lowered PDO code
-      WN *last = WN_last(code_after_pdo);
-      WN_INSERT_BlockAfter(body_block, prev_node, code_after_pdo);
-      prev_node = last;
-    }
-
-    WN_next(prev_node) = NULL;
-    WN_last(body_block) = prev_node;
-
-  } else {
-
-    /* There was no do_loop node in spite of a pdo pragma. Any residual code
-       can be discarded. */
-
-    if (!while_seen) {
-      if (WN_first(body_block)) {
-	WN_DELETE_Tree ( body_block );
-	body_block = WN_CreateBlock ( );
-      }
-    } else
-      Fail_FmtAssertion
-		  ("parallel DO was converted to WHILE and not converted back");
-
-  } // if (pdo_node)
-
-  /* Free up all saved nodes. */
-
-  while (nested_affinity_nodes) {
-    WN *wn = WN_next(nested_affinity_nodes);
-    WN_DELETE_Tree ( nested_affinity_nodes );
-    nested_affinity_nodes = wn;
-  }
-
-  while (nested_affinity_d_nodes) {
-    WN *wn = WN_next(nested_affinity_d_nodes);
-    WN_DELETE_Tree ( nested_affinity_d_nodes );
-    nested_affinity_d_nodes = wn;
-  }
-
-  while (nested_affinity_t_nodes) {
-    WN *wn = WN_next(nested_affinity_t_nodes);
-    WN_DELETE_Tree ( nested_affinity_t_nodes );
-    nested_affinity_t_nodes = wn;
-  }
-
-  if (nested_chunk_node)
-    WN_DELETE_Tree ( nested_chunk_node );
-
-  while (nested_lastlocal_nodes) {
-    WN *wn = WN_next(nested_lastlocal_nodes);
-    WN_Delete ( nested_lastlocal_nodes );
-    nested_lastlocal_nodes = wn;
-  }
-
-  if (nested_lastthread_node)
-    WN_Delete ( nested_lastthread_node );
-
-  while (nested_local_nodes) {
-    WN *wn = WN_next(nested_local_nodes);
-    WN_Delete ( nested_local_nodes );
-    nested_local_nodes = wn;
-  }
-
-  while (nested_firstprivate_nodes) {
-    WN *wn = WN_next(nested_firstprivate_nodes);
-    WN_Delete ( nested_firstprivate_nodes );
-    nested_firstprivate_nodes = wn;
-  }
-
-  if (nested_mpsched_node)
-    WN_Delete ( nested_mpsched_node );
-
-  if (nested_nowait_node)
-    WN_Delete ( nested_nowait_node );
-
-  if (nested_ordered_node)
-    WN_Delete ( nested_ordered_node );
-
-  while (nested_reduction_nodes) {
-    WN *wn = WN_next(nested_reduction_nodes);
-    WN_Delete ( nested_reduction_nodes );
-    nested_reduction_nodes = wn;
-  }
-
-  while (nested_shared_nodes) {
-    WN *wn = WN_next(nested_shared_nodes);
-    WN_Delete ( nested_shared_nodes );
-    nested_shared_nodes = wn;
-  }
-
-  for (i=0; i < nested_local_count; i++) {
-    if (nested_var_table[i].vtree)
-      WN_DELETE_Tree ( nested_var_table[i].vtree );
-    if (nested_var_table[i].vtreex)
-      WN_DELETE_Tree ( nested_var_table[i].vtreex );
-  }
-
-  return (body_block);
-} // Transform_PDO()
-#endif
 
 /*
 Transform do statement. This is a new version
@@ -11539,11 +10773,7 @@ Transform_Parallel_Block ( WN * tree )
       switch (cur_id = (WN_PRAGMA_ID) WN_pragma(cur_node)) {
 
 	case WN_PRAGMA_BARRIER:
-#ifdef TARG_ST
-          wn = Gen_MP_Barrier (WN_pragma_omp(cur_node));
-#else
     wn = Gen_Barrier(local_gtid);
-#endif
 	  if (prev_node)
 	    WN_next(prev_node) = wn;
 	  else
@@ -11564,11 +10794,7 @@ Transform_Parallel_Block ( WN * tree )
           gate_construct_num = ++num_constructs;
 	  // modified by csc. will this work?
 	  // or we can safely remove it.
-#ifndef TARG_ST
 	  wn = WN_CreateBlock();
-#else
-	  wn = Gen_MP_Enter_Gate (gate_construct_num);
-#endif
 	  if (prev_node)
 	    WN_next(prev_node) = wn;
 	  else
@@ -11587,11 +10813,7 @@ Transform_Parallel_Block ( WN * tree )
 
 	  // modified by csc. will this work?
 	  // or we can safely remove it.
-#ifndef TARG_ST
 	  wn = WN_CreateBlock( );
-#else
-	  wn = Gen_MP_Exit_Gate (gate_construct_num);
-#endif
 
 	  if (prev_node)
 	    WN_next(prev_node) = wn;
@@ -11660,18 +10882,10 @@ Transform_Parallel_Block ( WN * tree )
 		      "missing pragma (CRITICAL_SECTION_END) in MP processing");
 	  if (lock_st) {
 	    Linenum_Pusher p(WN_Get_Linenum(cur_node));
-#ifdef TARG_ST
-             wn = Gen_MP_Unlock ( lock_st );
-#else
 	    wn = Gen_End_Critical(local_gtid, lock_st);
-#endif
 	  } else {
 	    Linenum_Pusher p(WN_Get_Linenum(cur_node));
-#ifdef TARG_ST
-            wn = Gen_MP_Unsetlock ( );
-#else
       wn = Gen_End_Critical(local_gtid, unnamed_lock_st);
-#endif
 	  }
 	  WN_next(WN_prev(cur_node)) = wn;
 	  WN_prev(wn) = WN_prev(cur_node);
@@ -11719,7 +10933,7 @@ Transform_Parallel_Block ( WN * tree )
 
     {
       WN *mp_sp_block = Gen_MP_SingleProcess_Block(sp_block, FALSE, 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
                                                          NULL,
 #endif 
 	                                                 is_omp, FALSE);
@@ -11763,11 +10977,7 @@ Transform_Parallel_Block ( WN * tree )
       mpt = MPP_PDO;
 
       ++num_constructs;
-#ifdef TARG_ST
-      wn = Transform_PDO ( cur_node );
-#else
       wn = Process_PDO( cur_node );
-#endif
       if (non_pod_finalization_nodes)
         Fail_FmtAssertion("out of place non-POD finalization code");
 
@@ -11826,7 +11036,7 @@ Transform_Parallel_Block ( WN * tree )
       comp_gen_construct = save_comp_gen_construct; // restore old value
       mpt = save_mpt;
 
-#if defined( KEY) && !defined(TARG_ST) /* Bug 4828 */
+#if defined( KEY) /* Bug 4828 */
     } else if (is_region &&
                WN_first(WN_region_pragmas(cur_node)) &&
 	       WN_pragma(WN_first(WN_region_pragmas(cur_node))) ==
@@ -12953,212 +12163,6 @@ Process_PDO ( WN * tree )
 
 /*  Process the contents of a parallel do.  */
 //  Modified by csc. Insert contents originally in lower_mp.
-#ifdef TARG_ST
-static void Process_Parallel_Do ( void )
-{
-  INT32 i;
-  WN *wn;
-  WN *lastthread_init = NULL;
-  WN *reduction_init_block = NULL;
-  WN *reduction_store_block = NULL;
-  WN *last_local_if = NULL;
-
-  Is_True(mpt == MPP_PARALLEL_DO, ("not inside a PARALLEL DO"));
-
-  /* Initialization. */
-
-  psymtab = CURRENT_SYMTAB;
-  ppuinfo = Current_PU_Info;
-  pmaptab = Current_Map_Tab;
-
-  /* Strip any nested mp stuff due to inlining. */
-
-  Strip_Nested_MP ( stmt_block, FALSE );
-
-  // Gather STs for inner scope VLAs
-
-  Gather_Inner_Scope_Vlas ( stmt_block );
-
-  /* Extract do info for mp scheduling. */
-
-  Extract_Do_Info (do_node);
-
-  /* Create and initialize all parent temps that will be needed. */
-
-  Process_Preg_Temps ( stmt_block, FALSE );
-
-  /* Create parallel do function. */
-
-  Create_Nested_Parallel_Function ( fast_doacross ? PAR_FUNC_DO32 : 
-                                    PAR_FUNC_DO64 );
-  
-  /* Create local variable correspondence table */
-
-  Create_Local_Variables ( var_table, reduction_nodes, lastlocal_nodes,
-			   local_nodes, firstprivate_nodes,
-			   &firstprivate_block, lastthread_node,
-			   &alloca_block );
-
-  /* Do the replacement walk and identify reduction variables */
-
-  Localize_Parent_Stack lps(FALSE, NULL);
-  stmt_block = Walk_and_Localize ( stmt_block, var_table, &lps, TRUE,
-                                   &non_pod_finalization_nodes );
-
-  /* Create copyin nodes for all local vars with preamble stores. */
-
-  Process_Preamble_Stores ( if_preamble_block, var_table );
-  Process_Preamble_Stores ( do_preamble_block, var_table );
-
-  if (Cur_PU_Feedback) {
-      // scale FB frequency of do loop by (1 / num_processors)
-    Scale_FB_Parallel_Do(do_node, 1.0 / NOMINAL_PROCS);
-  }
-
-  /* Rewrite do loop */
-
-  Rewrite_Do ( do_node );
-
-  if (ordered_node && WN_pragma_omp(ordered_node)) {
-    /* Insert pdo_ordered_begin/end calls */
-    WN *order_begin = Gen_OMP_Pdo_Ordered_Begin (WN_kid0(do_order_lb),
-                                                 WN_kid0(do_order_stride));
-    WN *order_end = Gen_OMP_Pdo_Ordered_End ();
-    WN_INSERT_BlockFirst (stmt_block, order_begin);
-    WN_INSERT_BlockLast (stmt_block, order_end);
-    WN_kid0(do_order_lb) = WN_kid0(do_order_stride) = NULL;
-  }
-
-  if (copyin_nodes) {
-    WN_INSERT_BlockFirst (stmt_block, Gen_MP_Copyin(TRUE));
-  }
-
-  /* Generate initialization code for lastthread variable */
-
-  if (lastthread_node)
-    lastthread_init = Gen_MP_Store ( WN_st(lastthread_node),
-				     WN_offsetx(lastthread_node),
-				     WN_Intconst ( MTYPE_I4, 0 ));
-
-  if (reduction_count)  /* Generate init/finish reduction code */
-    Gen_MP_Reduction(var_table, local_count, &reduction_init_block,
-                     &reduction_store_block);
-
-  /* Build up the if for the last_locals */
-
-  BOOL hit_first_last_priv_bug = FALSE;
-  if (lastlocal_nodes) {
-
-    wn = WN_CreateBlock ( );
-    for (i=0; i < local_count; i++) {
-      if (var_table[i].vtype == VAR_LASTLOCAL) {
-          // if any variables are both LASTLOCAL and FIRSTPRIVATE, put
-          // an MP barrier just before the LASTLOCAL finalization to
-          // prevent the race condition described in PV 566923
-        if (var_table[i].is_last_and_firstprivate &&
-            !hit_first_last_priv_bug) {
-            // We can't use a barrier to fix PV 566923 (as we can in the
-            // PDO case) because the __mpdo_() nested routine may be called
-            // multiple times, which means the finalization code gets called
-            // multiple times, which can result in deadlock.  So this is
-            // not yet implemented for PARALLEL DO.
-          ErrMsgLine(EC_MPLOWER_first_last_priv, line_number);
-          hit_first_last_priv_bug = TRUE;
-        }
-
-	WN_INSERT_BlockLast ( wn,
-			      Gen_MP_Load_Store ( var_table[i].new_st,
-						  var_table[i].new_offset,
-						  var_table[i].orig_st,
-						  var_table[i].orig_offset,
-					       var_table[i].is_dynamic_array ));
-       }
-    }
-    if (lastthread_node)
-      last_local_if = WN_CreateIf ( Gen_MP_Load ( WN_st(lastthread_node), 
-						  WN_offsetx(lastthread_node) ),
-				    wn, WN_CreateBlock ( ) );
-    else
-      last_local_if = WN_CreateIf ( WN_Band ( MTYPE_I4,
-					      Gen_MP_Load ( thread_info, 0 ),
-					     WN_CreateIntconst ( OPC_I4INTCONST,
-								 0x100 )),
-				    wn, WN_CreateBlock ( ) );
-    WN_linenum(last_local_if) = line_number;
-  }
-
-  /* Consolidate all portions of nested parallel procedure */
-
-  if (alloca_block)
-    WN_INSERT_BlockLast ( parallel_func, alloca_block );
-  WN_INSERT_BlockLast ( parallel_func,
-			WN_CreatePragma ( WN_PRAGMA_PREAMBLE_END, ST_IDX_ZERO,
-			                  0, 0 ));
-  if (firstprivate_block)
-    WN_INSERT_BlockLast ( parallel_func, firstprivate_block );
-  if (copyin_block)
-    WN_INSERT_BlockLast ( parallel_func, copyin_block );
-  if (lastthread_init)
-    WN_INSERT_BlockLast ( parallel_func, lastthread_init );
-  if (reduction_init_block)
-    WN_INSERT_BlockLast ( parallel_func, reduction_init_block );
-  if (do_prefix)
-    WN_INSERT_BlockLast ( parallel_func, do_prefix );
-  WN_INSERT_BlockLast ( parallel_func, stmt_block );
-  if (last_local_if) {
-    WN_INSERT_BlockLast (parallel_func, WN_CreateBarrier(FALSE, 0));
-    WN_INSERT_BlockLast (parallel_func, last_local_if);
-    WN_INSERT_BlockBefore (WN_then(last_local_if), NULL, 
-					WN_CreateBarrier(TRUE,0));
-    WN_INSERT_BlockAfter (WN_then(last_local_if), NULL, 
-					WN_CreateBarrier(FALSE,0));
-    WN_INSERT_BlockLast (parallel_func, WN_CreateBarrier(TRUE, 0));// forward
-  }
-  if (reduction_store_block)
-    WN_INSERT_BlockLast ( parallel_func, reduction_store_block );
-  if (copyout_block)
-    WN_INSERT_BlockLast ( parallel_func, copyout_block );
-  
-  /* Generate return at end of parallel function */
-
-  wn = WN_CreateReturn ( );
-  WN_linenum(wn) = line_number;
-  WN_INSERT_BlockLast ( parallel_func, wn );
-
-  /* Transfer any mappings for nodes moved from parent to parallel function */
-
-  Transfer_Maps ( pmaptab, cmaptab, parallel_func,
-		  PU_Info_regions_ptr(Current_PU_Info) );
-
-  /* Create a new dependence graph for the child  and move all the 
-     appropriate vertices from the parent to the child graph */
-
-  Current_Map_Tab = cmaptab;
-  MP_Fix_Dependence_Graph ( ppuinfo, Current_PU_Info, parallel_func ); 
-  Current_Map_Tab = pmaptab;
-
-  /* Create uplevel reference list and mark pu if it contains alloca. */
-
-  pu_has_alloca = FALSE;
-  pu_has_region = FALSE;
-  WN_TO_BOOL_HASH guarded_set(NUM_HASH_ELEMENTS, Malloc_Mem_Pool);
-  Gather_Uplevel_References ( reference_block, func_level, NULL, NULL,
-			      parallel_func, &guarded_set );
-  if (pu_has_alloca) {
-      Set_PU_has_alloca(Get_Current_PU());
-  }
-  if (pu_has_region) {
-      Set_PU_has_region(Get_Current_PU());
-  }
-
-  /* Restore parent information. */
-  
-  CURRENT_SYMTAB = psymtab;
-  Current_PU_Info = ppuinfo;
-  Current_pu = &Current_PU_Info_pu();
-  Current_Map_Tab = pmaptab;
-} // Process_Parallel_Do()
-#else
 static void 
 Process_Parallel_Do ( void )
 {
@@ -13371,7 +12375,7 @@ Process_Parallel_Do ( void )
   if (copyin_nodes) {
     WN_INSERT_BlockFirst (stmt_block, Gen_MP_Copyin(TRUE));
   }
-  #if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   Gen_Threadpriv_Func(reference_block, parallel_func, FALSE);
 #endif
   /* Generate initialization code for lastthread variable */
@@ -13504,7 +12508,6 @@ Process_Parallel_Do ( void )
   Current_Map_Tab = pmaptab;
   Pop_Some_Globals( );
 } // Process_Parallel_Do()
-#endif
 
 /*  Process the contents of a parallel region.  */
 
@@ -13574,7 +12577,7 @@ Process_Parallel_Region ( void )
   }
 
   Transform_Parallel_Block ( stmt_block );
-  #if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   Gen_Threadpriv_Func(reference_block, parallel_func, FALSE);
 #endif
 

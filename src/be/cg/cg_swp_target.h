@@ -153,7 +153,6 @@ Gen_Implicit_Prefetches (CG_LOOP &cl, bool trace);
 
 extern TN* 
 Base_update_tn (OP *op);
-#ifndef TARG_ST
 #ifndef TARG_IA64
 extern void
 SWP_TARGET_Calculate_Critical_Resources (const SWP_OP_VECTOR& ops, 
@@ -173,7 +172,6 @@ SWP_TARGET_Scheduling_Constrain_For_OP (const SWP_OP_VECTOR& ops,
 
 extern void
 SWP_TARGET_Adjust_LoadStore_Offset (SWP_OP_VECTOR& ops, BOOL trace);
-#endif
 #endif
 #endif /* cg_swp_target_INCLUDED */
 

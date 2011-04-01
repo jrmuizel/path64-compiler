@@ -63,11 +63,7 @@
 #include "fb_whirl.h"
 #include "be_symtab.h"
 #include "intrn_info.h"
-#ifdef TARG_ST
-#define NOT_SUPPORT_ST(expr)
-#else
 #define NOT_SUPPORT_ST(expr) expr
-#endif
 
 #if (__GNUC__ == 2)
 //
@@ -340,46 +336,32 @@ INTRINSIC_RUNTIME_FORMALS intrinsic_runtime_formals[]=
   INTRN_C8I8EXPEXPR,	COERCE_split_complex,	COERCE_none,
   INTRN_CQI4EXPEXPR,	COERCE_split_complex,	COERCE_none,
   INTRN_CQI8EXPEXPR,	COERCE_split_complex,	COERCE_none,
-#ifndef TARG_ST
   INTRN_C16I4EXPEXPR,	COERCE_split_complex,	COERCE_none,
   INTRN_C16I8EXPEXPR,	COERCE_split_complex,	COERCE_none,
-#endif
   INTRN_C4EXPEXPR,	COERCE_split_complex,	COERCE_split_complex,
   INTRN_C8EXPEXPR,	COERCE_split_complex,	COERCE_split_complex,
   INTRN_CQEXPEXPR,	COERCE_split_complex,	COERCE_split_complex,
-#ifndef TARG_ST
   INTRN_C16EXPEXPR,	COERCE_split_complex,	COERCE_split_complex,
-#endif
   INTRN_F4C4ABS,	COERCE_split_complex,	COERCE_none,
   INTRN_F8C8ABS,	COERCE_split_complex,	COERCE_none,
   INTRN_FQCQABS,	COERCE_split_complex,	COERCE_none,
-#ifndef TARG_ST
   INTRN_F16C16ABS,	COERCE_split_complex,	COERCE_none,
-#endif
   INTRN_C4EXP,		COERCE_split_complex,	COERCE_none,
   INTRN_C8EXP,		COERCE_split_complex,	COERCE_none,
   INTRN_CQEXP,		COERCE_split_complex,	COERCE_none,
-#ifndef TARG_ST
   INTRN_C16EXP,		COERCE_split_complex,	COERCE_none,
-#endif
   INTRN_C4LOG,		COERCE_split_complex,	COERCE_none,
   INTRN_C8LOG,		COERCE_split_complex,	COERCE_none,
   INTRN_CQLOG,		COERCE_split_complex,	COERCE_none,
-#ifndef TARG_ST
   INTRN_C16LOG,		COERCE_split_complex,	COERCE_none,
-#endif
   INTRN_C4COS,		COERCE_split_complex,	COERCE_none,
   INTRN_C8COS,		COERCE_split_complex,	COERCE_none,
   INTRN_CQCOS,		COERCE_split_complex,	COERCE_none,
-#ifndef TARG_ST
   INTRN_C16COS,		COERCE_split_complex,	COERCE_none,
-#endif
   INTRN_C4SIN,		COERCE_split_complex,	COERCE_none,
   INTRN_C8SIN,		COERCE_split_complex,	COERCE_none,
-  INTRN_CQSIN,		COERCE_split_complex,	COERCE_none
-#ifndef TARG_ST
-  , INTRN_C16SIN,		COERCE_split_complex,	COERCE_none
-#endif
+  INTRN_CQSIN,		COERCE_split_complex,	COERCE_none,
+  INTRN_C16SIN,		COERCE_split_complex,	COERCE_none
 };
 
 INT32 intrinsic_runtime_formals_size = sizeof(intrinsic_runtime_formals) /
@@ -407,20 +389,14 @@ INTRINSIC_PARAMETER_TYPE intrinsic_parameter_type[]=
   INTRN_F4DIM,		MTYPE_F4,	MTYPE_F4,	MTYPE_V,
   INTRN_F8DIM,		MTYPE_F8,	MTYPE_F8,	MTYPE_V,
   INTRN_FQDIM,		MTYPE_FQ,	MTYPE_FQ,	MTYPE_V,
-#ifndef TARG_ST
   INTRN_F16DIM,		MTYPE_F16,	MTYPE_F16,	MTYPE_V,
-#endif
   INTRN_F4MOD,		MTYPE_F4,	MTYPE_F4,	MTYPE_V,
   INTRN_F8MOD,		MTYPE_F8,	MTYPE_F8,	MTYPE_V,
   INTRN_FQMOD,		MTYPE_FQ,	MTYPE_FQ,	MTYPE_V,
- #ifndef TARG_ST
   INTRN_F16MOD,		MTYPE_F16,	MTYPE_F16,	MTYPE_V,
-#endif
   INTRN_F8F4PROD,	MTYPE_F4,	MTYPE_F4,	MTYPE_V,
   INTRN_FQF8PROD,	MTYPE_F8,	MTYPE_F8,	MTYPE_V,
-#ifndef TARG_ST
   INTRN_F16F8PROD,	MTYPE_F8,	MTYPE_F8,	MTYPE_V,
-#endif
   INTRN_I1SIGN,		MTYPE_I1,	MTYPE_I1,	MTYPE_V,
   INTRN_I2SIGN,		MTYPE_I2,	MTYPE_I2,	MTYPE_V,
   INTRN_I4SIGN,		MTYPE_I4,	MTYPE_I4,	MTYPE_V,
@@ -428,15 +404,11 @@ INTRINSIC_PARAMETER_TYPE intrinsic_parameter_type[]=
   INTRN_F4SIGN,		MTYPE_F4,	MTYPE_F4,	MTYPE_V,
   INTRN_F8SIGN,		MTYPE_F8,	MTYPE_F8,	MTYPE_V,
   INTRN_FQSIGN,		MTYPE_FQ,	MTYPE_FQ,	MTYPE_V,
-#ifndef TARG_ST
   INTRN_F16SIGN,	MTYPE_F16,	MTYPE_F16,	MTYPE_V,
-#endif
   INTRN_F4AINT,		MTYPE_F4,	MTYPE_V,	MTYPE_V,
   INTRN_F8AINT,		MTYPE_F8,	MTYPE_V,	MTYPE_V,
   INTRN_FQAINT,		MTYPE_FQ,	MTYPE_V,	MTYPE_V,
- #ifndef TARG_ST
   INTRN_F16AINT,	MTYPE_F16,	MTYPE_V,	MTYPE_V,
-#endif
   INTRN_I2F4NINT,	MTYPE_F4,	MTYPE_V,	MTYPE_V,
   INTRN_I4F4NINT,	MTYPE_F4,	MTYPE_V,	MTYPE_V,
   INTRN_I8F4NINT,	MTYPE_F4,	MTYPE_V,	MTYPE_V,
@@ -446,23 +418,17 @@ INTRINSIC_PARAMETER_TYPE intrinsic_parameter_type[]=
   INTRN_I2FQIQNINT,	MTYPE_FQ,	MTYPE_V,	MTYPE_V,
   INTRN_I4FQIQNINT,	MTYPE_FQ,	MTYPE_V,	MTYPE_V,
   INTRN_I8FQIQNINT,	MTYPE_FQ,	MTYPE_V,	MTYPE_V,
-#ifndef TARG_ST
   INTRN_I2F16IQNINT,	MTYPE_F16,	MTYPE_V,	MTYPE_V,
   INTRN_I4F16IQNINT,	MTYPE_F16,	MTYPE_V,	MTYPE_V,
   INTRN_I8F16IQNINT,	MTYPE_F16,	MTYPE_V,	MTYPE_V,
-#endif
   INTRN_F4ANINT,	MTYPE_F4,	MTYPE_V,	MTYPE_V,
   INTRN_F8ANINT,	MTYPE_F8,	MTYPE_V,	MTYPE_V,
   INTRN_FQANINT,	MTYPE_FQ,	MTYPE_V,	MTYPE_V,
-#ifndef TARG_ST
   INTRN_F16ANINT,	MTYPE_F16,	MTYPE_V,	MTYPE_V,
-#endif
   INTRN_F4LOG10,	MTYPE_F4,	MTYPE_V,	MTYPE_V,
   INTRN_F8LOG10,	MTYPE_F8,	MTYPE_V,	MTYPE_V,
   INTRN_FQLOG10,	MTYPE_FQ,	MTYPE_V,	MTYPE_V,
-#ifndef TARG_ST
   INTRN_F16LOG10,	MTYPE_F16,	MTYPE_V,	MTYPE_V,
-#endif
   INTRN_I1BTEST,	MTYPE_I1,	MTYPE_I1,	MTYPE_V,
   INTRN_I2BTEST,	MTYPE_I2,	MTYPE_I2,	MTYPE_V,
   INTRN_I4BTEST,	MTYPE_I4,	MTYPE_I4,	MTYPE_V,
@@ -1433,7 +1399,7 @@ static WN *em_exp_float(WN *block, WN *x, WN *pow, TYPE_ID type)
 		       fractional);
       }
     }
-#if defined (KEY) && !defined (TARG_ST)// bug 6932 
+#if defined (KEY) // bug 6932 
     // evaluate (x**0.25) as sqrt(sqrt(x))
     if (sqrt_25 || rsqrt_25) 
     {
@@ -2152,9 +2118,7 @@ static WN *em_complex_exp(WN *block, WN *x)
    case MTYPE_F4: expID = INTRN_F4EXP; cosID = INTRN_F4COS; sinID = INTRN_F4SIN; break;
    case MTYPE_F8: expID = INTRN_F8EXP; cosID = INTRN_F8COS; sinID = INTRN_F8SIN; break;
    case MTYPE_FQ: expID = INTRN_FQEXP; cosID = INTRN_FQCOS; sinID = INTRN_FQSIN; break;
-#ifndef TARG_ST
    case MTYPE_F16: expID = INTRN_F16EXP; cosID = INTRN_F16COS; sinID = INTRN_F16SIN; break;
-#endif
   }
   
   zN = AssignExpr(block, x, type);
@@ -2226,12 +2190,10 @@ static WN *em_complex_cos(WN *block, WN *x)
     case MTYPE_FQ:	
       cosID = INTRN_FQCOS;
       coshID = INTRN_FQCOSH;
-#ifndef TARG_ST
     case MTYPE_F16:
       cosID = INTRN_F16COS;
       coshID = INTRN_F16COSH;
       break;
-#endif
     }
     cos= Intrinsic(rtype,
 		   cosID,
@@ -2265,12 +2227,10 @@ static WN *em_complex_cos(WN *block, WN *x)
       sinID = INTRN_FQSIN;
       sinhID = INTRN_FQSINH;
       break;
-#ifndef TARG_ST
     case MTYPE_F16:
       sinID = INTRN_F16SIN;
       sinhID = INTRN_F16SINH;
       break;
-#endif
     }
 
     sin= Intrinsic(rtype,
@@ -2324,12 +2284,10 @@ static WN *em_complex_sin(WN *block, WN *x)
       sinID = INTRN_FQSIN;
       coshID = INTRN_FQCOSH;
       break;
-#ifndef TARG_ST
     case MTYPE_F16:
       sinID = INTRN_F16SIN;
       coshID = INTRN_F16COSH;
       break;
-#endif
     }
     sin= Intrinsic(rtype,
 		   sinID,
@@ -2364,12 +2322,10 @@ static WN *em_complex_sin(WN *block, WN *x)
       cosID = INTRN_FQCOS;
       sinhID = INTRN_FQSINH;
       break;
-#ifndef TARG_ST
     case MTYPE_F16:
       cosID = INTRN_F16COS;
       sinhID = INTRN_F16SINH;
       break;
-#endif
     }
 
     cos= Intrinsic(rtype,
@@ -4934,7 +4890,7 @@ static WN *emulate_intrinsic_op(WN *block, WN *tree)
   case INTRN_U8READSTACKPOINTER:
     return em_readstackpointer(Pointer_type);
 
-#if defined( KEY) && !defined (TARG_ST)
+#if defined( KEY)
   case INTRN_U4READFRAMEPOINTER:
   case INTRN_U8READFRAMEPOINTER:
     return em_readframepointer(Pointer_type);
@@ -5392,11 +5348,7 @@ extern WN *emulate(WN *block, WN *tree)
 
   if (OPCODE_is_intrinsic(WN_opcode(tree)))
   {
-    if (Inline_Intrinsics_Allowed
-#ifdef TARG_ST
-        || !INTRN_runtime_exists(WN_intrinsic(tree))
-#endif
-       )
+    if (Inline_Intrinsics_Allowed)
     {
       wn = emulate_intrinsic_op(block, tree);
     }

@@ -109,11 +109,6 @@ private:
   void	    Make_diff_ssu_version_at_phi(EXP_WORKLST *wk,
 					 BB_NODE *defbb,
 					 PHI_NODE *phi);
-#ifdef TARG_ST
-  void	    Make_null_ssu_version_in_iphi(EXP_WORKLST *wk,
-					  BB_NODE *iphibb,
-					  BB_NODE *usebb);
-#endif
   void	    Check_iphi_presence(EXP_WORKLST *wk,
   				BB_NODE *iphibb);
   void	    Make_null_ssu_version_in_iphi_for_e_num_set(

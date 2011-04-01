@@ -88,9 +88,6 @@ static char *gra_bb_rcs_id = "$Source: ../../be/cg/gra_mon/SCCS/s.gra_bb.h $ $Re
 #ifdef KEY
 #include <float.h>	// FLT_MAX
 #endif
-#ifdef TARG_ST
-#include "cg_flags.h"
-#endif
 
 class INTERFERE_DEREF;
 typedef INTERFERE_DEREF* INTERFERE;
@@ -118,45 +115,21 @@ friend class GRA_BB_LOCAL_LRANGE_ITER;
 private:
   BB*           bb;
   GRA_REGION*   region;
-#ifdef TARG_ST
-  LRANGE*       local_lranges[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
   LRANGE*       local_lranges[ISA_REGISTER_CLASS_MAX+1];
-#endif
     // Heads of internally linked (through _BB_Local_List) lists of local
     // LRANGEs by ISA_REGISTER_CLASS.
-#ifdef TARG_ST
-  LUNIT*        lunits[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
   LUNIT*        lunits[ISA_REGISTER_CLASS_MAX+1];
-#endif
     // Heads of internally linked (through _BB_List) list of LUNITs by
     // ISA_REGISTER_CLASS.
-#ifdef TARG_ST
-  INTERFERE     global_lranges[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
   INTERFERE     global_lranges[ISA_REGISTER_CLASS_MAX+1];
-#endif
     // All the complement LRANGEs live in the block by register class.
-#ifdef TARG_ST
-  REGISTER_SET  registers_used[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
   REGISTER_SET  registers_used[ISA_REGISTER_CLASS_MAX+1];
-#endif
     // the set of registers used in this <gbb> for <rc>.
-#ifdef TARG_ST
-  REGISTER_SET  glue_registers_used[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
   REGISTER_SET  glue_registers_used[ISA_REGISTER_CLASS_MAX+1];
-#endif
     // the set of registers used in this <gbb> and <rc> only in glue copy 
     // references.
 #ifdef KEY
-#ifdef TARG_ST
-  REGISTER_SET  registers_referenced[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
   REGISTER_SET  registers_referenced[ISA_REGISTER_CLASS_MAX+1];
-#endif
     // the set of registers referenced in this <gbb> for <rc>.
 #endif
   GRA_BB*       region_next;
@@ -178,23 +151,11 @@ private:
   INT		split_succ_border_count; // Count of the successor blocks that 
 					 // are on the border of the split.
   INT		split_lunit_count;
-#ifdef TARG_ST
-  LRANGE_SET*   spill_above[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
   LRANGE_SET*   spill_above[ISA_REGISTER_CLASS_MAX+1];
-#endif
     // set of live ranges spilled at top of <gbb> for <rc>
-#ifdef TARG_ST
-  LRANGE_SET*   restore_below[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
   LRANGE_SET*   restore_below[ISA_REGISTER_CLASS_MAX+1];
-#endif
     // set of live ranges restored at bottom of <gbb> for <rc>
-#ifdef TARG_ST
-  LRANGE_LIST*  unpreferenced_wired_lranges[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
   LRANGE_LIST*  unpreferenced_wired_lranges[ISA_REGISTER_CLASS_MAX+1];
-#endif
     // Keeps track of wired local lranges that are not preferenced
     // to anything.  These are kept out of the normal list of local
     // live ranges so that they do not appear in the conflict graph.
@@ -222,37 +183,17 @@ private:
     // block are those that are both live into the block and which
     // have a reaching definition at the start of the block.
     // Similarly, for the exit of the block.
-#ifdef TARG_ST
-  mINT8         local_lrange_count[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
   mINT8         local_lrange_count[ISA_REGISTER_CLASS_MAX+1];
-#endif
     // the number of local LRANGEs for this <gbb> and <rc>.
   GRA_LOOP*	loop;
   UINT8		flags;
 #ifdef KEY
   // ------------ Support optimizing for boundary BBs. ------------
   mUINT16	OPs_count;	// Number of OPs in the BB.
- #ifdef TARG_ST
-  REGISTER_SET  usage_live_in[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
   REGISTER_SET  usage_live_in[ISA_REGISTER_CLASS_MAX+1];
-#endif
-#ifdef TARG_ST 
-  REGISTER_SET  usage_live_out[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
   REGISTER_SET  usage_live_out[ISA_REGISTER_CLASS_MAX+1];
-#endif
-#ifdef TARG_ST
-  mUINT16	usage_start_index[ISA_REGISTER_CLASS_MAX_LIMIT+1][REGISTER_MAX+1];
-#else
   mUINT16	usage_start_index[ISA_REGISTER_CLASS_MAX+1][REGISTER_MAX+1];
-#endif
-#ifdef TARG_ST
-  mUINT16	usage_end_index[ISA_REGISTER_CLASS_MAX_LIMIT+1][REGISTER_MAX+1];
-#else
    mUINT16	usage_end_index[ISA_REGISTER_CLASS_MAX+1][REGISTER_MAX+1];
-#endif
     // While registers_used indicate if a register is used anywhere in the BB,
     // the following give more detail about how the registers are used in the
     // BB:
@@ -298,11 +239,7 @@ private:
     // case.
 
   // ------------ Support register reclaiming. ------------
-#ifdef TARG_ST
-  LRANGE*	lrange_owner[ISA_REGISTER_CLASS_MAX_LIMIT+1][REGISTER_MAX+1];
-#else
   LRANGE*	lrange_owner[ISA_REGISTER_CLASS_MAX+1][REGISTER_MAX+1];
-#endif
     // The lrange owner of the register in this <gbb>.  In the case of a
     // boundary BB with two lranges sharing the same register, lrange_owner is
     // the latest lranges that was allocated the register, since lrange_owner
@@ -354,12 +291,6 @@ public:
   void Make_Glue_Register_Used(ISA_REGISTER_CLASS rc, REGISTER reg ) {
 			    glue_registers_used[rc] =
 			      REGISTER_SET_Union1(glue_registers_used[rc],reg);}
-#ifdef TARG_ST
-  void Make_Glue_Registers_Used(ISA_REGISTER_CLASS rc, REGISTER reg, INT nregs ) {
-    glue_registers_used[rc] = REGISTER_SET_Union(glue_registers_used[rc],
-                                 REGISTER_SET_Range (reg, reg+nregs-1));
-  }
-#endif
   void Clear_Flags(void) 	{ flags = GRA_BB_FLAGS_clear_value; }
     //Clear the flags field of a gbb, i.e. all flags unset.
   BOOL Loop_Prolog(void)	{ return flags & GRA_BB_FLAGS_loop_prolog; }
@@ -426,13 +357,9 @@ public:
     // headed by <head> and return <new_elt> which will be the new_elt
     // head.  See the iterator type GRA_BB_SPLIT_LIST_ITER.
   float Freq(void) { 
-#ifdef TARG_ST
-      if (GRA_spill_count_factor_for_size)
-#else
       if (OPT_Space) 
-#endif
 		       return BB_freq(bb) + GRA_spill_count_factor;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 		     // Prevent spilling on software-pipelined BBs.
 		     else if (BB_reg_alloc(bb))
 		       return FLT_MAX;
@@ -452,13 +379,8 @@ public:
 
   // non-inlined
   INT Register_Girth( ISA_REGISTER_CLASS rc );
-#ifdef TARG_ST
-  void Create_Local_LRANGEs();
-  LRANGE* Create_Wired_LRANGE(ISA_REGISTER_CLASS  cl, REGISTER reg, INT nregs);
-#else
   void Create_Local_LRANGEs(ISA_REGISTER_CLASS  cl, INT32 coun);
   LRANGE* Create_Wired_LRANGE(ISA_REGISTER_CLASS  cl, REGISTER reg);
-#endif
   void Create_Global_Interferences(void);
   void Rename_TN_References( TN*     orig_tn, TN*     new_tn);
   void Add_Live_Out_LRANGE( LRANGE* lrange );
@@ -470,20 +392,13 @@ public:
   BOOL Has_Multiple_Predecessors(void);
   BOOL Region_Is_Complement(void);
   void Add_LUNIT(LUNIT *lunit);
-#ifdef TARG_ST
-  void Make_Register_Used(ISA_REGISTER_CLASS rc, REGISTER reg);
-#else
   void Make_Register_Used(ISA_REGISTER_CLASS rc, REGISTER reg,
 			  LRANGE* lrange = NULL, BOOL reclaim = FALSE);
-#endif
   REGISTER_SET Registers_Used(ISA_REGISTER_CLASS  rc);
 #ifdef KEY
   void Make_Register_Referenced(ISA_REGISTER_CLASS rc, REGISTER reg,
 				LRANGE* lrange = NULL);
   REGISTER_SET Registers_Referenced(ISA_REGISTER_CLASS  rc);
-#endif
-#ifdef TARG_ST
-  void Make_Registers_Used(ISA_REGISTER_CLASS rc, REGISTER reg, INT nregs);
 #endif
   BOOL Spill_Above_Check(LRANGE *lrange);
   void Spill_Above_Set(LRANGE *lrange);

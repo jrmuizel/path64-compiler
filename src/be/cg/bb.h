@@ -414,14 +414,6 @@
  *	Return the symbol associated with the start of the BB, returning
  *	NULL if there is none.
  *
- *
- *  TARG_ST ADDENDUM:
- *
- *    REGISTER_SET BB_call_clobbered(BB *bb, ISA_REGISTER_CLASS rc)
- *       Returns the set of registers in class RC clobbered by a call at
- *       the end of BB.  Returns empty set if !BB_call(bb).
- *
- *
  *   void BB_Modified_Registers(BB *bb, REGISTER_SET *register_sets, BOOL self = FALSE)
  *	Fill the set of registers modified in the basicblock.
  *	The register_sets is an array of REGISTER_SET indexed by ISA_REGISTER_CLASS
@@ -567,9 +559,6 @@ inline void Set_BB_loop_head_bb(BB *bb, BB *head) {
 #define BBM_SWP_KERNEL          0x800000 /* BB is SWP kernel */
 #define BBM_KEEP_PREFETCH       0x1000000 /* scheduler should not drop pref */
 #endif
-#ifdef TARG_ST
-#define BBM_REACH_EXIT 0x400000 /* If a BB does reach an exit. */
-#endif
 
 #define	BB_entry(x)		(BB_flag(x) & BBM_ENTRY)
 #define BB_handler(bb)		(BB_flag(bb) & BBM_HANDLER)
@@ -597,9 +586,6 @@ inline void Set_BB_loop_head_bb(BB *bb, BB *head) {
 #define	BB_has_non_local_label(x)	(BB_flag(x) & BBM_NON_LOCAL_LABEL)
 #define	BB_swp_kernel(x)	(BB_flag(x) & BBM_SWP_KERNEL)
 #define	BB_keep_prefetch(x)	(BB_flag(x) & BBM_KEEP_PREFETCH)
-#endif
-#ifdef TARG_ST
-#define BB_reach_exit(x)		(BB_flag(x) & BBM_REACH_EXIT)
 #endif
 
 #define	Set_BB_entry(x)		(BB_flag(x) |= BBM_ENTRY)
@@ -629,9 +615,6 @@ inline void Set_BB_loop_head_bb(BB *bb, BB *head) {
 #define	Set_BB_swp_kernel(x)	(BB_flag(x) |= BBM_SWP_KERNEL)
 #define	Set_BB_keep_prefetch(x)	(BB_flag(x) |= BBM_KEEP_PREFETCH)
 #endif
-#ifdef TARG_ST
-#define Set_BB_reach_exit(x)		(BB_flag(x) |= BBM_REACH_EXIT)
-#endif
 
 #define	Reset_BB_entry(x)	(BB_flag(x) &= ~BBM_ENTRY)
 #define Reset_BB_handler(bb) 	(BB_flag(bb) &= ~BBM_HANDLER)
@@ -659,9 +642,6 @@ inline void Set_BB_loop_head_bb(BB *bb, BB *head) {
 #define	Reset_BB_has_non_local_label(x)	(BB_flag(x) &= ~BBM_NON_LOCAL_LABEL)
 #define	Reset_BB_swp_kernel(x)		(BB_flag(x) &= ~BBM_SWP_KERNEL)
 #define	Reset_BB_keep_prefetch(x)	(BB_flag(x) &= ~BBM_KEEP_PREFETCH)
-#endif
-#ifdef TARG_ST
-#define Reset_BB_reach_exit(x)		(BB_flag(x) &= ~BBM_REACH_EXIT)
 #endif
 
 #define BB_tail_call(bb)	(   (BB_flag(bb) & (BBM_CALL | BBM_EXIT)) \
@@ -1175,11 +1155,6 @@ void BB_Move_Op_After(BB *to_bb, OP *point, BB *from_bb, OP *op);
 void BB_Move_Op_To_Start(BB *to_bb, BB *from_bb, OP *op);
 void BB_Move_Op_To_End(BB *to_bb, BB *from_bb, OP *op);
 
-#ifdef TARG_ST
-// Removes old_op and insert new_op at the same place
-void BB_Replace_Op(OP *old_op, OP *new_op);
-#endif
-
 void BB_Sink_Op_Before(BB *bb, OP *op, OP *point);
 void BB_Update_OP_Order(BB *bb);
 void BB_Verify_OP_Order(BB *bb);
@@ -1208,9 +1183,6 @@ BOOL BB_Has_Outer_Block_Label(BB *bb);
 
 struct bb_map *BB_Depth_First_Map(struct bs *region, BB *entry);
 struct bb_map *BB_Topological_Map(struct bs *region, BB *entry);
-#ifdef TARG_ST
-struct bb_map *BB_Postorder_Map(struct bs *region, BB *entry);
-#endif
 BOOL BB_Is_Cold(BB *bb);
 
 ST *Gen_ST_For_BB(BB *bb);
@@ -1236,10 +1208,5 @@ inline BOOL BB_compile(BB *bb)
 /* Routine for displaying the flow graph using DaVinci */
 void draw_flow_graph(void);
 void verify_flow_graph(void);
-
-#ifdef TARG_ST
-extern REGISTER_SET BB_call_clobbered(BB *bb, ISA_REGISTER_CLASS rc);
-extern void BB_Modified_Registers(BB *bb, REGISTER_SET *register_sets, BOOL self = FALSE);
-#endif
 
 #endif /* bb_INCLUDED */

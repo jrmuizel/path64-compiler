@@ -376,7 +376,7 @@ extern WN* Hoist_Place(WN* wn_stat,
       return Scalar_Store_Hoist_Place(WN_kid0(wn_stat));  
     FmtAssert(FALSE, ("Parameter must be by value or by reference."));
   case OPR_CALL: 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   case OPR_PURE_CALL_OP:
 #endif
     {
@@ -788,7 +788,7 @@ static BOOL Maybe_Assigned_Exp_Traverse(WN* wn_exp,
   case OPR_INTRINSIC_CALL:
   case OPR_INTRINSIC_OP:
   case OPR_ARRAY: 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   case OPR_PURE_CALL_OP:
 #endif
     {
@@ -937,7 +937,7 @@ static BOOL Sinkable_Into_Loop(WN* wn_stat,
     }
     FmtAssert(FALSE, ("Parameter must be by value or by reference."));
   case OPR_CALL: 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   case OPR_PURE_CALL_OP:
 #endif
     {
@@ -1070,7 +1070,7 @@ static BOOL Sinkable_Out_Of_Loop(WN* wn_stat,
 #endif 
     FmtAssert(FALSE, ("Parameter must be by value or by reference."));
   case OPR_CALL: 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   case OPR_PURE_CALL_OP:
 #endif
     {

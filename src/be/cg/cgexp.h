@@ -124,10 +124,6 @@ extern void Exp_COPY (TN *tgt_tn, TN *src_tn, OPS *ops, BOOL copy_pair=FALSE);
 extern void Exp_COPY (TN *tgt_tn, TN *src_tn, OPS *ops); 
 #endif
 
-#ifdef TARG_ST
-extern void Exp_Enable_Allocate_Object(BOOL onoff);
-#endif
-
 #if defined(TARG_X8664) || defined(TARG_MIPS)
 /* Generate a copy from 'src_tn' to 'tgt_tn' with zero/sign extension. */
 extern void Exp_COPY_Ext (TOP opcode, TN *tgt_tn, TN *src_tn, OPS *ops); 
@@ -138,11 +134,7 @@ extern void Exp_COPY_Ext (TOP opcode, TN *tgt_tn, TN *src_tn, OPS *ops);
  * <op>. It is used to generate offsets for branches in the sequence 
  * of instructions generated.
  */
-#ifdef TARG_ST
-extern void Exp_Simulated_Op (const OP *op, OPS *ops, INT pc_value, ST **sym);
-#else
 extern void Exp_Simulated_Op (const OP *op, OPS *ops, INT pc_value);
-#endif
 
 /* For the given simulated <op>, return the number of 
  * instructions/instruction-words that will be generated after expansion.
@@ -154,15 +146,9 @@ extern INT Simulated_Op_Real_Inst_Words (const OP *op);
  * return result TN (if set).
  * if creates a loop, then returns loop ops and label for new bb.
  */
-#ifdef TARG_ST
-/* JV: Use same kind of interface for Exp_Intrinsic_Op and Exp_Intrinsic_Call */
-extern void Exp_Intrinsic_Call (INTRINSIC id, INT num_results, INT num_opnds, TN **result, TN **opnd,
-				OPS *ops, LABEL_IDX *label, OPS *loop_ops, SRCPOS srcpos);
-#else
 extern TN * Exp_Intrinsic_Call (
   WN *intncall, TN *op0, TN *op1, TN *op2, OPS *ops, 
   LABEL_IDX *label, OPS *loop_ops);
-#endif
 
 #ifdef TARG_X8664
 /* Expansion of INTRN_SAVEXMMS into TOP_savexmms pseudo instruction */
@@ -180,12 +166,7 @@ extern void Exp_Intrinsic_Op (
 #else 
 
 /* expand intrinsic op */
-#ifdef TARG_ST
-/* Arthur: this is because I may have to generate them for Lai */
-extern void Exp_Intrinsic_Op (INTRINSIC id, INT num_results, INT num_opnds, TN **result, TN **opnd, OPS *ops, SRCPOS scrpos, BB* curbb);
-#else
 extern void Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TYPE_ID mtype, OPS *ops);
-#endif
 #endif
 
 /* Expand TN(const) into a sequence of ops (used in prolog)
@@ -341,26 +322,14 @@ extern void Exp_Pred_Complement(TN *dest, TN *cdest, TN *src, OPS *ops);
 extern void Exp_Pred_Compare(TN *dest, TN *cdest, TN *src1, TN *src2, 
 			     VARIANT variant, OPS *ops);
 
-#ifdef TARG_ST
-extern void Exp_Var_Extract (INT count, TN **dests, TN *src, OPS *ops);
-extern void Exp_Var_Compose (INT count, TN *dst, TN **srcs, OPS *ops);
-extern void Exp_SIMD_Shuffle_Bits (TN *tgt_tn, TN *src1, UINT bit_offset1, UINT bit_size1, TN *src2, UINT bit_offset2, UINT bit_size2, OPS *ops);
-extern void Expand_Compose (TN *tgt_tn, TN *low_tn, TN *high_tn, OPS *ops);
-extern void Expand_Extract (TN *low_tn, TN *high_tn, TN *src_tn, OPS *ops);
-#endif
-#ifndef TARG_ST
 
 /* check if target can handle immediate operand;
  * True if target can, false if should use target-independent logic.
  */
 extern BOOL Target_Has_Immediate_Operand (WN *parent, WN *expr);
-#endif
 
 
 #ifdef TARG_X8664
 extern void CG_Set_Is_Stack_Used();
-#endif
-#ifdef TARG_ST
-#include "exp_targ.h"
 #endif
 #endif /* cgexp_INCLUDED */

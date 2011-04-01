@@ -257,30 +257,10 @@ ERROR_DESC EDESC_BE[] = {
   { EC_LAY_section_name, EM_User | ES_WARNING, RAG_EN_NONE,
     "Assigned section name (%s) has ambiguous attributes (both %s and %s)",
     3, ET_STRING, ET_STRING, ET_STRING, 0,0,0 },
-#ifdef TARG_ST
-  { EC_LAY_Warn_Stack_Align, EM_User | ES_WARNING,	RAG_EN_NONE,
-    "Stack alignment invalid in function %s, current value is %d should be %d",
-    3, ET_STRING, ET_INT, ET_INT,0,0,0 },
-
-  { EC_LAY_Warn_Stack_Modif, EM_User | ES_WARNING,	RAG_EN_NONE,
-    "Stack alignment for function %s is updated from %d to %d",
-    3, ET_STRING, ET_INT, ET_INT,0,0,0 },
-
-  { EC_LAY_Warn_Stack_Exceeded, EM_User | ES_WARNING,	RAG_EN_NONE,
-    "Required stack alignment for function %s exceeds maximal alignment %d."
-    "  Some locals require an alignment of %d. The behavior is undefined.",
-    3, ET_STRING, ET_INT, ET_INT,0,0,0 },
-#endif
-
   { EC_Skip_PU,	EM_Compiler | ES_WARNING, RAG_EN_NONE,
     "Skipping%s optimization for PU #%d: %s", 
     3, ET_STRING, ET_INT, ET_STRING, 0,0,0 },
 
-#ifdef TARG_ST
-  { EC_Uninitialized,	EM_User | ES_WARNING, RAG_EN_NONE,
-    "Variable %s in %s might be used uninitialized",
-    2, ET_STRING, ET_STRING, 0,0,0,0 },
-#endif
   /* DRA cloning errors */
   { EC_DRA_rii_file_io, EM_User | ES_ERRABORT, RAG_EN_NONE,
     "Cannot read/write prelinker file (%s): %s",

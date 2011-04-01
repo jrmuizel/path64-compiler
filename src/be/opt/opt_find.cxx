@@ -170,17 +170,13 @@ CODEREP::Same_bitpos(const CODEREP *cr) const
 	if (OPCODE_operator(Op()) == OPR_INTRINSIC_OP &&
 	    Intrinsic() != cr->Intrinsic())
 	  return FALSE;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	else if (OPCODE_operator(Op()) == OPR_PURE_CALL_OP &&
 	         Call_op_aux_id() != cr->Call_op_aux_id())
 	  return FALSE;
 #endif
 	else if (OPCODE_operator(Op()) == OPR_CVTL && Offset() != cr->Offset())
 	  return FALSE;
-#ifdef TARG_ST
-	else if (OPCODE_operator(Op()) == OPR_SUBPART && Subpart_index() != cr->Subpart_index())
-	  return FALSE;
-#endif
 
 	for (IDX_32 i=0; i< Kid_count(); i++) {
 	  if (!Opnd(i)->Same_bitpos(cr->Opnd(i)))
@@ -308,10 +304,8 @@ CODEREP::Find_cr(const CODEREP *cr)
 	return retval;
       if (OPCODE_operator(Op()) == OPR_MLOAD)
 	return Mload_size()->Find_cr(cr);
-#ifndef TARG_ST
       else if (OPCODE_operator(Op()) == OPR_ILOADX)
 	return Index()->Find_cr(cr);
-#endif
       break;
   }
   return retval;

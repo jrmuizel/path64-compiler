@@ -135,11 +135,7 @@ LOOP_DESCR_Is_Exit_Edge(BB *bb, BB *succ)
 	 * trip counts that aren't necessarily correct because of early exits!
 	 */
 	LOOPINFO *info = LOOP_DESCR_loopinfo(loop);
-#ifdef TARG_ST
-	if (info) LOOPINFO_is_exact_trip_count(info) = FALSE;
-#else
 	if (info) LOOPINFO_trip_count_tn(info) = NULL;
-#endif
       }
 
       exitloop = loop;
@@ -225,10 +221,6 @@ LOOP_DESCR_Detect_Loops (MEM_POOL *pool)
       if (annot != NULL) LOOP_DESCR_loopinfo(newloop) = ANNOT_loopinfo(annot);
 
       lastloop = NULL;
-#ifdef TARG_ST
-      LOOP_DESCR *firstinner = NULL;
-      LOOP_DESCR *prevloop = NULL;
-#endif
       for (cloop = the_loops; cloop != NULL; cloop = LOOP_DESCR_next(cloop)) 
       {
 	/* merge two loops that have the same entry basic block. This 
@@ -239,30 +231,12 @@ LOOP_DESCR_Detect_Loops (MEM_POOL *pool)
 	if (LOOP_DESCR_loophead(cloop) == succ) {
 	  BB_SET_UnionD(LOOP_DESCR_bbset(newloop), 
 			LOOP_DESCR_bbset(cloop), NULL);
-#ifdef TARG_ST
-	  /* FdF 20061115: Remove cloop from the list, we will
-	     continue to iterate to insert newloop at the right
-	     place. */
-	  if (prevloop == NULL) {
-	    the_loops = LOOP_DESCR_next(the_loops);
-	  }
-	  else {
-	    LOOP_DESCR_next(prevloop) = LOOP_DESCR_next(cloop);
-	  }
-	  /* set lastloop to prevloop, so that newloop is inserted as
-	     a replacement of the removed cloop, or further in the
-	     list. */
-	  lastloop = prevloop;
-	  LOOP_DESCR_next(newloop) = LOOP_DESCR_next(cloop);
-	  continue;
-#else
 	  if (lastloop == NULL) {
 	    the_loops = LOOP_DESCR_next(the_loops);
 	  }
 	  else {
 	    LOOP_DESCR_next(lastloop) = LOOP_DESCR_next(cloop);
 	  }
-#endif
 	}
 	/* If new loop is a subset of a loop already on the list, add
 	   it to the list just before that loop. 
@@ -275,29 +249,8 @@ LOOP_DESCR_Detect_Loops (MEM_POOL *pool)
 	  break;
 	}
 	else {
-#ifdef TARG_ST
-	  /* FdF 20060719: If new loop includes a loop already on the
-	     list, add newloop to the list just after the last one that is
-	     included in new loop.
-	  */
-	  if (BB_SET_ContainsP (LOOP_DESCR_bbset(newloop), 
-				LOOP_DESCR_bbset(cloop))) {
-	    if (firstinner == NULL)
-	      firstinner = cloop;
-	    lastloop = cloop;
-	    LOOP_DESCR_next(newloop) = LOOP_DESCR_next(lastloop);
-	  }
-	  else if (!firstinner) {
-	    lastloop = cloop;
-	    LOOP_DESCR_next(newloop) = LOOP_DESCR_next(lastloop);
-	  }
-#else
 	  lastloop = cloop;
-#endif
 	}
-#ifdef TARG_ST
-	prevloop = cloop;
-#endif	
       }
       if (lastloop == NULL) {
 	the_loops = newloop;
@@ -305,29 +258,6 @@ LOOP_DESCR_Detect_Loops (MEM_POOL *pool)
       else {
 	LOOP_DESCR_next(lastloop) = newloop;
       }
-#ifdef TARG_ST
-      /* FdF 20060719: Between firstinner to lastloop, all loops must
-	 be included in newloop */
-      if (firstinner) {
-	LOOP_DESCR *cloop_prev, *cloop_next;
-	lastloop = newloop;
-	cloop_prev = firstinner;
-	for (cloop = LOOP_DESCR_next(firstinner); cloop != newloop; cloop = cloop_next) {
-	  cloop_next = LOOP_DESCR_next(cloop);
-	  /* Move cloop after lastloop if cloop is not included in
-	     newloop. */
-	  if (!BB_SET_ContainsP (LOOP_DESCR_bbset(newloop), 
-				LOOP_DESCR_bbset(cloop))) {
-	    LOOP_DESCR_next(cloop_prev) = cloop_next;
-	    LOOP_DESCR_next(cloop) = LOOP_DESCR_next(lastloop);
-	    LOOP_DESCR_next(lastloop) = cloop;
-	    lastloop = cloop;
-	  }
-	  else
-	    cloop_prev = cloop;
-	}
-      }
-#endif
     }
   }
 
@@ -407,11 +337,7 @@ LOOP_DESCR_Add_BB(LOOP_DESCR *loop, BB *bb)
 	    ("BB:%d already in a loop", BB_id(bb)));
 
   BB_MAP_Set(LOOP_DESCR_map, bb, loop);
-#ifdef TARG_ST
-  Set_BB_loop_head_bb(bb, LOOP_DESCR_loophead(loop));
-#else
   LOOP_DESCR_Add_BB_Helper (loop, bb);
-#endif
 }
 
 
@@ -448,17 +374,11 @@ LOOP_DESCR_Next_Enclosing_Loop(LOOP_DESCR *loop)
    */
   if (LOOP_DESCR_nestlevel(loop) > 1) {
     LOOP_DESCR *enclosing = LOOP_DESCR_next(loop);
-#ifdef TARG_ST
-    while (enclosing &&
-	   (LOOP_DESCR_nestlevel(enclosing) >= LOOP_DESCR_nestlevel(loop)))
-      enclosing = LOOP_DESCR_next(enclosing);
-#else
     while (enclosing &&
 	   (LOOP_DESCR_nestlevel(enclosing) >= LOOP_DESCR_nestlevel(loop) ||
 	    !BB_SET_ContainsP(LOOP_DESCR_bbset(enclosing),
 			      LOOP_DESCR_bbset(loop))))
       enclosing = LOOP_DESCR_next(enclosing);
-#endif
     return enclosing;
   } else {
     return NULL;

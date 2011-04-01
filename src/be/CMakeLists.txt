@@ -25,7 +25,6 @@ INCLUDE_DIRECTORIES(
 
   ../ipa_link/include
 
-  ../libair
   ../common/com
   ../common/instrument
   ../common/targ_info/access

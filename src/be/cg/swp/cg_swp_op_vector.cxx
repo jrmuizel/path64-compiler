@@ -38,7 +38,6 @@
 
 /* Standard Template Library (STL) related include files */
 #include <functional>
-#ifndef TARG_ST
 using namespace std;
 
 
@@ -550,4 +549,4 @@ SWP_OP_VECTOR::Sort_OPs_Within_Cycles (void)
 
   return;
 }
-#endif
+

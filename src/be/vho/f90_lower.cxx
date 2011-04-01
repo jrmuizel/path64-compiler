@@ -383,7 +383,7 @@ static BOOL do_prewalk(WN * tree, WN * block, BOOL prewalk(WN * node, WN *block1
    return (keep_going);
 }
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 #include "cxx_base.h"
 class FF_STMT_NODE: public SLIST_NODE {
   DECLARE_SLIST_NODE_CLASS( FF_STMT_NODE);
@@ -883,7 +883,7 @@ static BOOL F90_Walk_Statements_Helper(WN * tree, WN * block,
 	 keep_going = do_prewalk(tree,block,prewalk);
 	 if (!keep_going) goto done;
       }
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       if (WN_operator(tree) == OPR_DO_LOOP) {
         BOOL forall_flag =  Find_Preceeding_Pragma(tree,WN_PRAGMA_FORALL);
         BOOL where_flag = FALSE;
@@ -987,12 +987,8 @@ static void F90_Lower_Init(void) {
    }
 
    else {
-#ifdef TARG_ST
-     FmtAssert(FALSE,("Get_Return_Mtypes/Pregs shouldn't be called"));
-#else 
      Get_Return_Mtypes(Be_Type_Tbl(Pointer_type), Use_Simulated, &mtype1, &mtype2);
      Get_Return_Pregs(mtype1, mtype2, &pointer_return_reg, &rreg2);
-#endif
    }
 
    num_alloca = 0;
@@ -1201,7 +1197,7 @@ static ST * new_temp_st(const char * name)
 
    Add_Pragma_To_MP_Regions (&F90_MP_Region,WN_PRAGMA_LOCAL,
 			     st,0,WN_MAP_UNDEFINED,FALSE);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
    // Bug 4479 - set is_temp flag for this ST. This is later used 
    // inside the SIMD module to identify (unaligned) loads and 
    // stores if need be.
@@ -1308,7 +1304,7 @@ static ST * F90_Lower_Create_Temp(WN **alloc_block, WN **free_block, WN **size,
    }
    for (i=0; i < ndim; i++) {
       cur_size = WN_COPY_Tree(size[i]);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       if (MTYPE_size_min(WN_rtype(cur_size)) != MTYPE_size_min(WN_rtype(total_size)))
         cur_size = WN_Cvt(WN_rtype(cur_size), WN_rtype(total_size), cur_size);
 #endif
@@ -1912,11 +1908,8 @@ static WN * lower_random_number(WN *rcall, WN *block, WN *insert_point)
    }
 
    else
-#ifdef TARG_ST
-     FmtAssert(FALSE,("Get_Return_Mtypes/Pregs shouldn't be called"));
-#else
      Get_Return_Pregs(rt,MTYPE_V, &rreg1, &rreg2);
-#endif
+
    /* Change into an INTRINSIC_CALL, then return the load of the PREG */
    WN_DELETE_Tree(rcall);
    rcall = WN_Create_Intrinsic(OPCODE_make_op(OPR_INTRINSIC_CALL,rt,MTYPE_V),intr,0,NULL);
@@ -3857,7 +3850,7 @@ static BOOL F90_Do_Copies(WN *stmt, WN *block)
 	 SET_F90_MAP(copy_store,copy_adata);
 	 WN_INSERT_BlockBefore(block,stmt,copy_store);
          // bug 8687: the prelist of adata should be inserted before copy_store now
-#if defined( KEY) && !defined(TARG_ST) // because rhs may use them         
+#if defined( KEY) // because rhs may use them         
          WN_INSERT_BlockFirst(PRELIST(copy_adata),PRELIST(adata));
          SET_PRELIST(adata,WN_CreateBlock());
 #endif
@@ -4084,7 +4077,7 @@ static WN * create_doloop(PREG_NUM *index, char *index_name, WN *count, DIR_FLAG
 
    index_type = doloop_ty;
    intconst_op = OPCODE_make_op(OPR_INTCONST,index_type,MTYPE_V);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
    if (MTYPE_size_min(index_type) != MTYPE_size_min(WN_rtype(count)))
      count = WN_Cvt(WN_rtype(count), index_type, count);
 #endif
@@ -4326,15 +4319,9 @@ static WN * lower_reduction(TYPE_ID rty, OPERATOR reduction_opr,
 
       /* Lower the mask and array argument */
       accum_expr = F90_Lower_Walk(kids[0],new_indices,rank,stlist,NULL);
-#ifdef TARG_ST
-      accum_store = WN_StidPreg(ty,accum,WN_CreateExp2(reduction_op,
-						       WN_LdidPreg(ty,accum),
-						       accum_expr));
-#else
       accum_store = WN_Stid(ty,0,accum_st,MTYPE_To_TY(ty),WN_CreateExp2(reduction_op,
 			                 WN_Ldid(ty, 0, accum_st, MTYPE_To_TY(ty)),
 					 accum_expr));
-#endif
       accum_block = WN_CreateBlock();
       WN_INSERT_BlockFirst(accum_block,accum_store);
       if (Mask_Present) {
@@ -4354,7 +4341,7 @@ static WN * lower_reduction(TYPE_ID rty, OPERATOR reduction_opr,
       
       /* Create a single loopnest */
       num_temps += 1;
-#if defined( KEY) && !defined(TARG_ST) // bug14194
+#if defined( KEY) // bug14194
       dim = rank + 1 - dim; /* account for ordering */
 #else
       dim = ndim + 2 - dim; /* account for ordering */
@@ -4374,15 +4361,9 @@ static WN * lower_reduction(TYPE_ID rty, OPERATOR reduction_opr,
       WN_INSERT_BlockBefore(block,insert_point,loopnest);
       /* Lower the mask and array argument */
       accum_expr = F90_Lower_Walk(kids[0],new_indices,ndim+1,stlist,NULL);
-#ifdef TARG_ST
-      accum_store = WN_StidPreg(ty,accum,WN_CreateExp2(reduction_op,
-						       WN_LdidPreg(ty,accum),
-						       accum_expr));
-#else
       accum_store = WN_Stid(ty,0,accum_st,MTYPE_To_TY(ty),WN_CreateExp2(reduction_op,
 			                   WN_Ldid(ty, 0, accum_st, MTYPE_To_TY(ty)),
 					   accum_expr));
-#endif
       accum_block = WN_CreateBlock();
       WN_INSERT_BlockFirst(accum_block,accum_store);
       if (Mask_Present) {
@@ -4395,11 +4376,7 @@ static WN * lower_reduction(TYPE_ID rty, OPERATOR reduction_opr,
    }
    
    /* Return the load of the result variable */
-#ifdef TARG_ST
-   result = WN_LdidPreg(ty,accum);
-#else
    result = WN_Ldid(ty, 0, accum_st, MTYPE_To_TY(ty));
-#endif
    if (rty == MTYPE_I1) {
       result = WN_CreateCvtl(OPC_I4CVTL,8,result);
    } else if (rty == MTYPE_I2) {
@@ -4525,7 +4502,7 @@ static WN * lower_maxminloc(OPERATOR reduction_opr,
       accum_expr = F90_Lower_Walk(kids[0],new_indices,rank,stlist,NULL);
       accum_store = WN_StidPreg(expr_ty,cur_val,accum_expr);
 // Bug #411
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       WN_INSERT_BlockLast(stlist,accum_store);
 #else
       WN_INSERT_BlockFirst(stlist,accum_store);
@@ -4578,7 +4555,7 @@ static WN * lower_maxminloc(OPERATOR reduction_opr,
       /* All cases, create a temp and insert an identity store */
       red_index = Create_Preg(doloop_ty,create_tempname("@f90redindex"));
 // Bug 2155
-# if defined( KEY) && !defined(TARG_ST)
+# if defined( KEY)
       red_store = WN_StidPreg(doloop_ty,red_index,WN_Intconst(doloop_ty,0));
 # else
       red_store = WN_StidPreg(doloop_ty,red_index,WN_Intconst(doloop_ty,-1));
@@ -4594,7 +4571,7 @@ static WN * lower_maxminloc(OPERATOR reduction_opr,
       
       /* Create a single loopnest */
       num_temps += 1;
-#if defined( KEY) && !defined(TARG_ST) // bug14194
+#if defined( KEY) // bug14194
       dim = rank + 1 - dim; /* account for ordering */
 #else
       dim = ndim + 2 - dim; /* account for ordering */
@@ -4906,7 +4883,7 @@ static WN *lower_eoshift(WN *kids[],PREG_NUM indices[],INT ndim,WN *block, WN *i
     * General case; we create a brand-new set of loops, and delete the current loopnest
     */
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 // Bug# 267
    if (MTYPE_bit_size(Pointer_type) == 64 && WN_rtype(shift) != MTYPE_I8)
      kids[1] = WN_Type_Conversion(kids[1], MTYPE_I8);
@@ -5137,7 +5114,7 @@ static WN *lower_cshift(WN *kids[],PREG_NUM indices[],INT ndim,WN *block, WN *in
 	 extent = sizes[i];
       }
    }
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 // Bug# 274
    if (MTYPE_bit_size(Pointer_type) == 64 && WN_rtype(shift) != MTYPE_I8)
      shift = WN_Type_Conversion(shift, MTYPE_I8);
@@ -5563,27 +5540,19 @@ static WN * F90_Lower_Walk(WN *expr, PREG_NUM *indices, INT ndim, WN * block, WN
       kid = F90_Lower_Walk(WN_kid0(expr),NULL,0,block,insert_point);
       kid1 = F90_Lower_Walk(WN_kid1(expr),NULL,0,block,insert_point);
       ty = doloop_ty;
-#if defined( KEY) && !defined(TARG_ST) // bug 3130
+#if defined( KEY) // bug 3130
       if (MTYPE_byte_size(ty) != MTYPE_byte_size(WN_rtype(kid)))
         kid = WN_Cvt(WN_rtype(kid), ty, kid);
 #endif
-#if defined( KEY) && !defined(TARG_ST) // bug 3518
+#if defined( KEY) // bug 3518
       if (MTYPE_byte_size(ty) != MTYPE_byte_size(WN_rtype(kid1)))
         kid1 = WN_Cvt(WN_rtype(kid1), ty, kid1);
 #endif
       index_ldid = WN_LdidPreg(ty,indices[0]);
-#ifdef TARG_ST
-       result = WN_CreateExp2(OPCODE_make_op(OPR_ADD,ty,MTYPE_V),
-			     kid,
-			     WN_CreateExp2(OPCODE_make_op(OPR_MPY,ty,MTYPE_V),
-					   index_ldid,
-					   kid1));
-#else
       kid1 = WN_CreateExp2(OPCODE_make_op(OPR_MPY,ty,MTYPE_V),
 					   index_ldid,
 					   kid1);
-#endif
-#if defined( KEY) && !defined(TARG_ST) // bug 3130
+#if defined( KEY) // bug 3130
       if (MTYPE_byte_size(ty) != MTYPE_byte_size(WN_rtype(kid1)))
         kid1 = WN_Cvt(WN_rtype(kid1), ty, kid1);
 #endif

@@ -134,7 +134,7 @@ ERROR_DESC EDESC_Globals[] = {
     "Lazy warning report in %s: %s",
     2, ET_STRING, ET_STRING, 0,0,0,0 },
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   { EC_Unimplemented_Feature,   EM_Compiler | ES_ERRABORT,	RAG_EN_NONE,
     "%s not implemented", 1, ET_STRING, 0,0,0,0,0 },
   { EC_Misc_User_Abort,		EM_User | ES_ERRABORT,		RAG_EN_NONE,
@@ -243,14 +243,6 @@ ERROR_DESC EDESC_Globals[] = {
   { EC_Inv_Opt_Val,	EM_User | ES_WARNING,	RAG_EN_NONE,
     "Invalid option value in \"-%s\" -- ignored",
     1, ET_STRING, 0,0,0,0,0 },
-#ifdef TARG_ST
-  { EC_Inv_Register,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
-    "Register name specified is invalid: %s",
-    1, ET_STRING, 0,0,0,0,0 },
-  { EC_Inv_Register_Range, EM_User | ES_ERRABORT,	RAG_EN_NONE,
-    "Register range specified is invalid: %s-%s",
-    1, ET_STRING, ET_STRING,0,0,0,0 },
-#else
 #ifdef KEY
   { EC_No_Opt_Val,	EM_User | ES_WARNING,	RAG_EN_NONE,
     "Option  \"%s\" in group '%s' should be provided a value -- ignored",
@@ -258,7 +250,6 @@ ERROR_DESC EDESC_Globals[] = {
   { EC_No_Apo_Early_Mp,	EM_User | ES_WARNING,	RAG_EN_NONE,
     "-OPT:early_mp=on ignored since it is not allowed under -apo",
     0, 0,0,0,0,0,0 },
-#endif
 #endif
   /* Control processing: */
   { EC_Unimp_Ctrl,	EM_User | ES_WARNING,	RAG_EN_NONE,
@@ -365,7 +356,6 @@ ERROR_DESC EDESC_Globals[] = {
      3, ET_STRING, ET_INT, ET_INT,0,0,0 },
 
 #ifdef KEY
-#ifndef TARG_ST 
    /* Olimit support warnings: */
   { EC_Olimit_Slow,	EM_User | ES_WARNING,   RAG_EN_NONE,
     "Optimizing huge function %s because Olimit has been overridden;\n"
@@ -378,7 +368,6 @@ ERROR_DESC EDESC_Globals[] = {
     "\tin inter-procedural optimization.\n" 
     "\tOptimization options will be honored for the functions in each file.",
     0, 0, 0, 0, 0, 0, 0 },
-#endif
    /* Inconsistent types for same symbol */
   { EC_Inc_Types,	EM_User | ES_ERRABORT,   RAG_EN_NONE,
     "Symbol %s declared both as function and variable\n",
@@ -491,11 +480,6 @@ ERROR_DESC EDESC_Globals[] = {
   { EC_Excess_Count,	EM_Compiler | ES_ERRPHASE,	RAG_EN_NONE,
     "Too many %s in %s: limit is %d",
     3, ET_SYMTAB, ET_STRING, ET_INT, 0, 0, 0 },
-#ifdef TARG_ST
-  { EC_Bad_Align,	EM_User | ES_ERRABORT ,	RAG_EN_NONE,
-    "Illegal operand access, access must be aligned on %d",
-    1, ET_INT, 0, 0, 0, 0, 0 },
-#endif
 
 
   /* BB/INS/TN support: */
@@ -641,19 +625,9 @@ ERROR_DESC EDESC_Globals[] = {
   { EC_Inv_OPT,		EM_User | ES_ERRPHASE,	RAG_EN_NONE,
     "Invalid optimization group option -OPT:%s=%s",
     2, ET_STRING, ET_STRING, 0, 0, 0, 0 },
-#ifdef TARG_ST
-  // [CL]
-  { EC_Conf_Targ,	EM_User | ES_WARNING,	RAG_EN_NONE,
-    "target group option -TARG:%s=%s conflicts with input file (%s)",
-    3, ET_STRING, ET_STRING, ET_STRING, 0, 0, 0 },
-  { EC_Conf_CodeGen,	EM_User | ES_WARNING,	RAG_EN_NONE,
-    "code generation option conflicts with input file which is %s",
-    1, ET_STRING, 0, 0, 0, 0, 0 },
-#else
   { EC_Inv_x87_Prec,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
     "Invalid x87 floating point precision: %d-bit",
     1, ET_INT, 0, 0, 0, 0, 0 },
-#endif
 /* Pragma errors: */
   { EC_Pragma_Scope,	EM_Compiler | ES_WARNING,	RAG_EN_NONE,
     "Pragma %s ignored: no relevant %s scope",
@@ -693,11 +667,6 @@ ERROR_DESC EDESC_Globals[] = {
   { EC_P_Heur_No_RA,	EM_User | ES_WARNING,	RAG_EN_NONE,
     "No register allocation limit given for priority heuristic '%s'",
     1, ET_STRING, 0, 0, 0, 0},
-#ifdef TARG_ST
-  { EC_Ext_Expand, EM_User | ES_ERRABORT,	RAG_EN_NONE,
-    "Error while Expanding Extension code: %s",
-    1, ET_STRING,0,0,0,0 },
-#endif
 
 
 /* ====================================================================
@@ -844,11 +813,6 @@ ERROR_DESC EDESC_Globals[] = {
   { EC_Ipa_Rename,      EM_User | ES_ERRPHASE,  RAG_EN_NONE,
     "Cannot rename %s to %s",
     2, ET_STRING, ET_STRING, 0,0,0,0 },
-#ifdef TARG_ST
-  { EC_Ipa_Incompatible,	EM_Compiler | ES_ERRABORT,	RAG_EN_NONE,
-    "ipa_link version incompatible with ipa.so (ipa_link:s=%d,v=%d ipa.so:s=%d,v=%d)",
-    4, ET_INT, ET_INT, ET_INT, ET_INT,0,0 },
-#else
 #ifdef KEY
   { EC_Ipa_Infile,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
     "Can't read IPA input file: %s",
@@ -856,7 +820,6 @@ ERROR_DESC EDESC_Globals[] = {
   { EC_Ipa_Outfile,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
     "Can't create IPA output file: %s",
     1, ET_STRING, 0,0,0,0,0 },
-#endif
 #endif
   { EC_Asm_Exists,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
     "Assembly file (%s) already exists",
@@ -876,7 +839,7 @@ ERROR_DESC EDESC_Globals[] = {
   { EC_No_Asm,		EM_User | ES_ERRABORT,	RAG_EN_NONE,
     "Assembly file (%s) does not exist",
     1, ET_STRING, 0,0,0,0,0 },
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   { EC_Asm_Write,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
     "Cannot write assembly file (%s)",
     1, ET_STRING, 0,0,0,0,0 },
@@ -953,11 +916,6 @@ ERROR_DESC EDESC_Globals[] = {
   { EC_FB_Ent_Size,     EM_User | ES_ERRABORT,  RAG_EN_NONE,
     "Feedback file %s %s entries of wrong size: expect %d; got %d",
     4, ET_STRING, ET_STRING, ET_INT, ET_INT, 0,0 },
-#ifdef TARG_ST
- { EC_FB_File_Old,     EM_User | ES_WARNING,   RAG_EN_NONE,
-    "Source/Feedback line number mismatch; %s probably outdated",
-    1, ET_STRING, 0,0,0,0,0 },
-#else
   { EC_FB_File_Old,     EM_User | ES_ERRABORT,  RAG_EN_NONE,
     "Feedback file checksum error; %s probably outdated",
     1, ET_STRING, 0,0,0,0,0 },
@@ -965,7 +923,6 @@ ERROR_DESC EDESC_Globals[] = {
   { EC_FB_No_File,     EM_User | ES_ERRABORT,   RAG_EN_NONE,
     "No feedback file with prefix: %s",
     1, ET_STRING, 0,0,0,0,0 },
-#endif
 #endif
   { EC_Cif_Open,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
     "Can't open CIF file (%s): %s",
@@ -999,39 +956,6 @@ ERROR_DESC EDESC_Globals[] = {
   { EC_IP_Load_Dso, EM_Compiler | ES_ERRABORT,  RAG_EN_NONE,
     "Can't dladd %s: %s ",
     2, ET_STRING, ET_STRING, 0,0,0,0 },
-#ifdef TARG_ST 
-#ifdef KEY
-  { EC_Ipa_Infile,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
-    "Can't read IPA input file: %s",
-    1, ET_STRING, 0,0,0,0,0 },
-  { EC_Ipa_Outfile,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
-    "Can't create IPA output file: %s",
-    1, ET_STRING, 0,0,0,0,0 },
-#endif
-{ EC_Lai_Exists,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
-    "LAI file (%s) already exists",
-    1, ET_STRING, 0,0,0,0,0 },
-  { EC_Lai_Open,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
-    "Can't open LAI file (%s): %s",
-    2, ET_STRING, ET_SYSERR, 0,0,0,0 },
-  { EC_Lai_Create,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
-    "Can't create LAI file (%s): %s",
-    2, ET_STRING, ET_SYSERR, 0,0,0,0 },
-  { EC_Lai_Delete,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
-    "Can't delete LAI file (%s): %s",
-    2, ET_STRING, ET_SYSERR, 0,0,0,0 },
-  { EC_Lai_Close,	EM_User | ES_ERRABORT,	RAG_EN_NONE,
-    "Closing LAI file (%s): %s",
-    2, ET_STRING, ET_SYSERR, 0,0,0,0 },
-  { EC_No_Lai,		EM_User | ES_ERRABORT,	RAG_EN_NONE,
-    "LAI file (%s) does not exist",
-    1, ET_STRING, 0,0,0,0,0 },
-#ifdef TARG_ST
-  { EC_Lib_Ext_Load, EM_User | ES_ERRABORT,	RAG_EN_NONE,
-    "Error while loading extension library '%s': %s",
-    2, ET_STRING, ET_STRING,0,0,0,0 },
-#endif
-#endif
 
   /* All error descriptor lists must end with a -1 error code: */
   { -1,	0, RAG_EN_NONE, "", 0, 0,0,0,0,0,0 }
