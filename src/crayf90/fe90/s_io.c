@@ -5439,7 +5439,7 @@ static void namelist_static_dv_whole_def(opnd_type         *l_opnd,
 # if (defined(_TARGET_OS_IRIX) || defined(_TARGET_OS_LINUX) || defined(_TARGET_OS_DARWIN))
    type_idx2 = SA_INTEGER_DEFAULT_TYPE;
  
-   if (type_idx2 == Integer_8) {
+   if (type_idx2 == Integer_8 && sizeof(long_type) == 4) {
       words_in_address = 2;
    }
 # else
@@ -5455,8 +5455,8 @@ static void namelist_static_dv_whole_def(opnd_type         *l_opnd,
    num_elements = num_words;
 
 # if (defined(_TARGET_OS_IRIX) || defined(_TARGET_OS_LINUX) || defined(_TARGET_OS_DARWIN))
-   if (TYP_LINEAR(type_idx2) == Integer_8) {
-      num_elements = num_elements / 2;
+   if (TYP_LINEAR(type_idx2) == Integer_8 && sizeof(long_type) == 4) {
+      num_elements = (num_elements + 1) / 2;
    }
 # endif
 
