@@ -29,23 +29,25 @@
 */
 
 
-//   si_gen
+//	 si_gen
 /////////////////////////////////////
 //
-//  Description:
+//	Description:
 //
-//      Digest the description of a particular hardware implementation's
-//      scheduling information and generate a c file that describes the
-//      features.  The interface is extensively described in si_gen.h.
+//		Digest the description of a particular hardware implementation's
+//		scheduling information and generate a c file that describes the
+//		features.  The interface is extensively described in si_gen.h.
 //
 /////////////////////////////////////
 
-//  $Revision: 1.6 $
-//  $Date: 04/12/21 14:57:26-08:00 $
-//  $Author: bos@eng-25.internal.keyresearch.com $
-//  $Source: /home/bos/bk/kpro64-pending/common/targ_info/generate/SCCS/s.si_gen.cxx $
+//	$Revision: 1.6 $
+//	$Date: 04/12/21 14:57:26-08:00 $
+//	$Author: bos@eng-25.internal.keyresearch.com $
+//	$Source: /home/bos/bk/kpro64-pending/common/targ_info/generate/SCCS/s.si_gen.cxx $
 
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -68,45 +70,45 @@ static ISA_SUBSET machine_isa;
 // Parameters:
 const int bits_per_long = 32;
 const int bits_per_long_long = 64;
-const bool use_long_longs = true;       // For now always
+const bool use_long_longs = true;		// For now always
 const int max_operands = ISA_OPERAND_max_operands;
 const int max_results = ISA_OPERAND_max_results;
 
 /////////////////////////////////////
 int Mod( int i, int j )
 /////////////////////////////////////
-//  Mathematically correct integer modulus function.  Unlike C's
-//  builtin remainder function, this correctly handles the case where
-//  one of the two arguments is negative.
+//	Mathematically correct integer modulus function.  Unlike C's
+//	builtin remainder function, this correctly handles the case where
+//	one of the two arguments is negative.
 /////////////////////////////////////
 {
   int rem;
 
   if ( j == 0 )
-    return i;
+	return i;
 
   rem = i % j;
 
   if ( rem == 0 )
-    return 0;
+	return 0;
 
   if ( (i < 0) != (j < 0) )
-    return j + rem;
+	return j + rem;
   else
-    return rem;
+	return rem;
 }
 
 /////////////////////////////////////
 static void Maybe_Print_Comma(FILE* fd, bool& is_first)
 /////////////////////////////////////
-// Print a "," to <fd> if <is_first> is false.  Update <is_first> to false.
+// Print a "," to <fd> if <is_first> is false.	Update <is_first> to false.
 // Great for printing C initializers.
 /////////////////////////////////////
 {
   if ( is_first )
-    is_first = false;
+	is_first = false;
   else
-    fprintf(fd,",");
+	fprintf(fd,",");
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -136,10 +138,10 @@ public:
   // pointer to it.  After this call, Addr_Of_Gname will return 0.
 
 private:
-  char gname[16];       // Where to keep the name.  (This could be more
-                        //   hi-tech, but why?
-  bool stubbed;         // Stubbed-out?
-  static int count;     // For generating the unique names.
+  char gname[16];		// Where to keep the name.	(This could be more
+						//	 hi-tech, but why?
+  bool stubbed; 		// Stubbed-out?
+  static int count; 	// For generating the unique names.
 };
 
 int GNAME::count = 0;
@@ -159,16 +161,16 @@ GNAME::GNAME(GNAME& other) : stubbed(false) {
 
 char* GNAME::Gname() {
   if (stubbed)
-    return const_cast<char*>("0");
+	return const_cast<char*>("0");
   else
-    return gname + 1;
+	return gname + 1;
 }
 
 char* GNAME::Addr_Of_Gname() {
   if (stubbed)
-    return const_cast<char*>("0");
+	return const_cast<char*>("0");
   else
-    return gname;
+	return gname;
 }
 
 void GNAME::Stub_Out() {
@@ -187,8 +189,8 @@ class RES_WORD {
 // availability and to reserve resources.  Each resource has a reserved field
 // in the RES_WORD.  The field for a given resource r is log2(count(r)) + 1
 // bits wide.  This field is wide enough to hold the count of members of r and
-// one extra bit to the left of the count.  This bit is called the "overuse
-// bit".  The field is initialized to be 2**field_width - (count + 1).  This
+// one extra bit to the left of the count.	This bit is called the "overuse
+// bit".  The field is initialized to be 2**field_width - (count + 1).	This
 // means that we can add count elements to the field without effecting the
 // overuse bit, but adding more elements to the field will set the overuse
 // bit.  So we can can check for resource availability of all the resources
@@ -205,9 +207,9 @@ class RES_WORD {
 
 public:
   static void Find_Word_Allocate_Field(int width, int count,
-                                       int &word, int &bit);
+									   int &word, int &bit);
   // Allocate the first available resource field with <widtn> bits to hold
-  // <count> resources.  A new resource word is allocated if required.  On
+  // <count> resources.  A new resource word is allocated if required.	On
   // return, <word> and <bit> hold the word index and bit index of the
   // allocated word.
 
@@ -215,24 +217,24 @@ public:
   // Write resource word descriptions to output.
 
 private:
-  int bit_inx;                          // Index of first next free bit
-  const int word_inx;                   // My index in table
-  long long initializer;                // Value when no resources used
-  long long overuse_mask;               // Bits to check
-                                        //   for overuse after adding new
-                                        //   resources
-  static std::list<RES_WORD*> res_words;     // Of all res_words in order
-  static int count;                     // Of all resource words
-  static bool has_long_long_word;       // Will we need to use long longs for
-                                        //   resource words?
+  int bit_inx;							// Index of first next free bit
+  const int word_inx;					// My index in table
+  long long initializer;				// Value when no resources used
+  long long overuse_mask;				// Bits to check
+										//	 for overuse after adding new
+										//	 resources
+  static std::list<RES_WORD*> res_words;	 // Of all res_words in order
+  static int count; 					// Of all resource words
+  static bool has_long_long_word;		// Will we need to use long longs for
+										//	 resource words?
 
   RES_WORD()
-    : bit_inx(0),
-      word_inx(count++),
-      initializer(0),
-      overuse_mask(0)
+	: bit_inx(0),
+	  word_inx(count++),
+	  initializer(0),
+	  overuse_mask(0)
   {
-    res_words.push_back(this);
+	res_words.push_back(this);
   }
   bool Allocate_Field(int width, int count, int &word, int &bit);
 };
@@ -251,14 +253,14 @@ bool RES_WORD::Allocate_Field(int width, int count, int &word, int &bit)
 {
   int new_inx = bit_inx + width;
 
-  if (    use_long_longs && new_inx >= bits_per_long_long
-       || !use_long_longs && new_inx >= bits_per_long
+  if (	  use_long_longs && new_inx >= bits_per_long_long
+	   || !use_long_longs && new_inx >= bits_per_long
   ) {
-    return false;
+	return false;
   }
 
   if ( new_inx >= bits_per_long )
-    has_long_long_word = true;
+	has_long_long_word = true;
 
   word = word_inx;
   bit = bit_inx;
@@ -269,38 +271,39 @@ bool RES_WORD::Allocate_Field(int width, int count, int &word, int &bit)
 }
 
 void RES_WORD::Find_Word_Allocate_Field(int width, int count,
-                                        int &word, int &bit)
+										int &word, int &bit)
 {
   std::list<RES_WORD*>::iterator rwi;
   for ( rwi = res_words.begin(); rwi != res_words.end(); ++rwi ) {
-    if ( (*rwi)->Allocate_Field(width,count,word,bit) )
-      return;
+	if ( (*rwi)->Allocate_Field(width,count,word,bit) )
+	  return;
   }
 
   RES_WORD* new_res_word = new RES_WORD();
 
   if ( ! new_res_word->Allocate_Field(width,count,word,bit) ) {
-    fprintf(stderr,"### Cannot allocate field for %d resources\n",count);
-    exit(EXIT_FAILURE);
+	fprintf(stderr,"### Cannot allocate field for %d resources\n",count);
+	exit(EXIT_FAILURE);
   }
 }
 
 void RES_WORD::Output_All(FILE* fd)
 {
   if ( count == 0 )
-    fprintf(stderr,"ERROR: no resource words allocated.\n");
+	fprintf(stderr,"ERROR: no resource words allocated.\n");
   else if ( count > 1 ) {
-    fprintf(stderr,"ERROR: cannot handle %d > 1 long long worth of "
-                   "resource info.\n",
-                   count);
+	fprintf(stderr,"ERROR: cannot handle %d > 1 long long worth of "
+				   "resource info.\n",
+				   count);
   }
   else {
-    // Important special case.  We don't need a vector of resource words at all
-    // and can just use a scalar.
-    fprintf(fd,"const SI_RRW SI_RRW_initializer = 0x%llx;\n",
-               res_words.front()->initializer);
-    fprintf(fd,"const SI_RRW SI_RRW_overuse_mask = 0x%llx;\n",
-               res_words.front()->overuse_mask);
+	// Important special case.	We don't need a vector of resource words at all
+	// and can just use a scalar.
+
+	fprintf(fd,"\n#define SI_RRW_initializer   0x%"PRIx64,
+			   res_words.front()->initializer);
+	fprintf(fd,"\n#define SI_RRW_overuse_mask  0x%"PRIx64"\n\n",
+			   res_words.front()->overuse_mask);
   }
 }
 
@@ -345,18 +348,18 @@ public:
   // Write out all the resource info to <fd>.
 
 private:
-  const int count;          // Available per cycle
-  const char* const name;   // For documentation and debugging
-  GNAME gname;              // Generated symbolic name
-  int word;                 // Which word in the table?
-  int field_width;          // How wide the field?
-  int shift_count;          // How much to shift (starting pos of the low
-                            //   order bit
-  const int id;             // Unique numerical identifier
-  static int total;         // Total number of different RESs (not the the
-                            //   total of their counts, 1 for each RES)
+  const int count;			// Available per cycle
+  const char* const name;	// For documentation and debugging
+  GNAME gname;				// Generated symbolic name
+  int word; 				// Which word in the table?
+  int field_width;			// How wide the field?
+  int shift_count;			// How much to shift (starting pos of the low
+							//	 order bit
+  const int id; 			// Unique numerical identifier
+  static int total; 		// Total number of different RESs (not the the
+							//	 total of their counts, 1 for each RES)
   static std::map<int,RES*> resources;
-                            // Map of all resources, ordered by their Id's
+							// Map of all resources, ordered by their Id's
   void Calculate_Field_Width();
   void Calculate_Field_Pos();
 
@@ -391,15 +394,16 @@ void RES::Output_All( FILE* fd )
   Calculate_Fields();
 
   for ( i = 0; i < total; ++i )
-    resources[i]->Output(fd);
+	resources[i]->Output(fd);
 
-  fprintf(fd,"const int SI_resource_count = %d;\n",total);
-  fprintf(fd,"const SI_RESOURCE * const SI_resources[] = {");
+  fprintf(fd,"\n#define SI_resource_count  %d\n\n",total);
+
+  fprintf(fd,"static const SI_RESOURCE * const SI_resources[] = {");
 
   bool is_first = true;
   for ( i = 0; i < total; ++i ) {
-    Maybe_Print_Comma(fd,is_first);
-    fprintf(fd,"\n  %s",resources[i]->gname.Addr_Of_Gname());
+	Maybe_Print_Comma(fd,is_first);
+	fprintf(fd,"\n	%s",resources[i]->gname.Addr_Of_Gname());
   }
 
   fprintf(fd,"\n};\n");
@@ -408,8 +412,8 @@ void RES::Output_All( FILE* fd )
 /////////////////////////////////////
 void RES::Calculate_Field_Width()
 /////////////////////////////////////
-//  Calculate the number of bits for my field and set <field_width>
-//  accordingly.
+//	Calculate the number of bits for my field and set <field_width>
+//	accordingly.
 /////////////////////////////////////
 {
   int i;
@@ -417,10 +421,10 @@ void RES::Calculate_Field_Width()
   assert(count > 0);
 
   for ( i = 31 ; i >= 0 ; --i ) {
-    if ((( (int) 1) << i) & count) {
-      field_width = i + 2;
-      break;
-    }
+	if ((( (int) 1) << i) & count) {
+	  field_width = i + 2;
+	  break;
+	}
   }
 }
 
@@ -433,12 +437,12 @@ void RES::Calculate_Field_Pos()
 /////////////////////////////////////
 void RES::Calculate_Fields()
 /////////////////////////////////////
-//  See interface description.
-//  Description
+//	See interface description.
+//	Description
 /////////////////////////////////////
 {
   for ( int i = 0; i < total; ++i )
-    resources[i]->Calculate_Field_Pos();
+	resources[i]->Calculate_Field_Pos();
 }
 
 /////////////////////////////////////
@@ -448,12 +452,12 @@ void RES::Output( FILE* fd )
 /////////////////////////////////////
 {
   fprintf(fd,"const SI_RESOURCE %s = {\"%s\",%d,%d,%d,%d};\n",
-             gname.Gname(),
-             name,
-             id,
-             count,
-             word,
-             shift_count);
+			 gname.Gname(),
+			 name,
+			 id,
+			 count,
+			 word,
+			 shift_count);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -462,7 +466,7 @@ void RES::Output( FILE* fd )
 /////////////////////////////////////
 class RES_REQ {
 /////////////////////////////////////
-// A resource requirement.  Represents all the resources needed to perform an
+// A resource requirement.	Represents all the resources needed to perform an
 // instruction.
 /////////////////////////////////////
 
@@ -471,7 +475,7 @@ public:
 
   bool Add_Resource(const RES* res, int cycle);
   // Require an additional resource <res> at the given <cycle> relative to
-  // my start.  Return indication of success.  If adding the resource would
+  // my start.	Return indication of success.  If adding the resource would
   // create an overuse, don't add it and return false.
 
   void Output(FILE* fd);
@@ -484,8 +488,8 @@ public:
   // Return my name (in generated code).
 
   bool Compute_Maybe_Output_II_RES_REQ(int ii, FILE* fd,
-                                       GNAME*& res_req_gname,
-                                       GNAME*& resource_id_set_gname );
+									   GNAME*& res_req_gname,
+									   GNAME*& resource_id_set_gname );
   // When software pipelining, we want to check all the resources for a given
   // cycle of the schedule at once.  Because the resource requirement may be
   // longer than the II into which we are trying to schedule it, we statically
@@ -527,33 +531,33 @@ private:
   /////////////////////////////////////
 
   public:
-    CYCLE_RES(int cycle, const RES* res) : cycle(cycle), res_id(res->Id()) {}
-    // Construct the <cycle,res> combination.
+	CYCLE_RES(int cycle, const RES* res) : cycle(cycle), res_id(res->Id()) {}
+	// Construct the <cycle,res> combination.
 
-    int Cycle() const { return cycle; }
-    // Return cycle component.
+	int Cycle() const { return cycle; }
+	// Return cycle component.
 
-    RES* Res() const { return RES::Get(res_id); }
-    // Return resource component.
+	RES* Res() const { return RES::Get(res_id); }
+	// Return resource component.
 
-    friend bool operator < (const CYCLE_RES a, const CYCLE_RES b)
-    // Ordering for map.
-    {  // I didn't want to put this inline, but mongoose C++ forced me to.
-      return    a.cycle< b.cycle
-             || a.cycle == b.cycle && a.res_id < b.res_id;
-    }
+	friend bool operator < (const CYCLE_RES a, const CYCLE_RES b)
+	// Ordering for map.
+	{  // I didn't want to put this inline, but mongoose C++ forced me to.
+	  return	a.cycle< b.cycle
+			 || a.cycle == b.cycle && a.res_id < b.res_id;
+	}
 
-    CYCLE_RES()
-    // Horrible useless required constructor required by STL map.
-     : cycle(0), res_id(0)
-    {  // Also forced inline by mongoose C++.
-      fprintf(stderr,"### Default initializer for CYCLE_RES"
-              " shouldn't happen.\n");
-    }
+	CYCLE_RES()
+	// Horrible useless required constructor required by STL map.
+	 : cycle(0), res_id(0)
+	{  // Also forced inline by mongoose C++.
+	  fprintf(stderr,"### Default initializer for CYCLE_RES"
+			  " shouldn't happen.\n");
+	}
 
   private:
-    const short cycle;
-    const short res_id;
+	const short cycle;
+	const short res_id;
   };
 
   typedef std::map< CYCLE_RES,int,std::less <CYCLE_RES> > CYCLE_RES_COUNT_MAP;
@@ -583,7 +587,7 @@ private:
 
 RES_REQ::RES_REQ()
   : max_res_cycle(-1),
-    gname("res_req")
+	gname("res_req")
 {}
 
 bool RES_REQ::Add_Resource(const RES* res, int cycle)
@@ -595,7 +599,7 @@ bool RES_REQ::Add_Resource(const RES* res, int cycle)
   int count = cycle_res_count[cr];
 
   if ( count >= res->Count() )
-    return false;
+	return false;
 
   cycle_res_count[cr] = ++count;
   return true;
@@ -604,34 +608,34 @@ bool RES_REQ::Add_Resource(const RES* res, int cycle)
 /////////////////////////////////////
 bool RES_REQ::Compute_II_RES_REQ(int ii, RES_REQ& ii_res_req)
 /////////////////////////////////////
-//  Compute my <ii> relative resourse requirement info <ii_res_req> and return
-//  a bool to indicate whether it is possible to issue me in a loop with <ii>
-//  cycles.
+//	Compute my <ii> relative resourse requirement info <ii_res_req> and return
+//	a bool to indicate whether it is possible to issue me in a loop with <ii>
+//	cycles.
 /////////////////////////////////////
 {
   CYCLE_RES_COUNT_MAP::iterator mi;
   for (mi = cycle_res_count.begin(); mi != cycle_res_count.end(); ++mi) {
-    int cycle = (*mi).first.Cycle();
-    RES* res = (*mi).first.Res();
-    int count = (*mi).second;
+	int cycle = (*mi).first.Cycle();
+	RES* res = (*mi).first.Res();
+	int count = (*mi).second;
 
-    for (int i = 0; i < count; ++i) {
-      if ( ! ii_res_req.Add_Resource(res,Mod(cycle,ii)) )
-        return false;
-    }
+	for (int i = 0; i < count; ++i) {
+	  if ( ! ii_res_req.Add_Resource(res,Mod(cycle,ii)) )
+		return false;
+	}
   }
 
   return true;
 }
 
 bool RES_REQ::Compute_Maybe_Output_II_RES_REQ(int ii, FILE* fd,
-                                              GNAME*& res_req_gname,
-                                              GNAME*& res_id_set_gname_ref )
+											  GNAME*& res_req_gname,
+											  GNAME*& res_id_set_gname_ref )
 {
   RES_REQ ii_res_req;
 
   if ( ! Compute_II_RES_REQ(ii,ii_res_req) )
-    return false;
+	return false;
 
   ii_res_req.Output(fd);
   res_req_gname = new GNAME(ii_res_req.gname);
@@ -642,36 +646,36 @@ bool RES_REQ::Compute_Maybe_Output_II_RES_REQ(int ii, FILE* fd,
 void RES_REQ::Compute_Output_Resource_Count_Vec(FILE* fd)
 {
   CYCLE_RES_COUNT_MAP::iterator mi;
-  std::map<int,int,std::less<int> > res_inx_count;  // res_id => count
+  std::map<int,int,std::less<int> > res_inx_count;	// res_id => count
 
   // Sum up the number of each required
   for (mi = cycle_res_count.begin(); mi != cycle_res_count.end(); ++mi) {
-    RES* res = (*mi).first.Res();
-    int count = (*mi).second;
+	RES* res = (*mi).first.Res();
+	int count = (*mi).second;
 
-    res_inx_count[res->Id()] += count;
+	res_inx_count[res->Id()] += count;
   }
 
   res_count_vec_size = res_inx_count.size();
 
   if ( res_count_vec_size == 0 ) {
-    res_count_vec_gname.Stub_Out();
-    return;
+	res_count_vec_gname.Stub_Out();
+	return;
   }
 
   // Print it out
   fprintf(fd,"static SI_RESOURCE_TOTAL %s[] = {",
-             res_count_vec_gname.Gname());
+			 res_count_vec_gname.Gname());
 
   bool is_first = true;
   std::map<int,int,std::less<int> >::iterator mj;
   for (mj = res_inx_count.begin(); mj != res_inx_count.end(); ++mj) {
-    RES* res = RES::Get((*mj).first);  // You'd think STL would allow
-    int count = (*mj).second;          // something less ugly!  But no.
+	RES* res = RES::Get((*mj).first);  // You'd think STL would allow
+	int count = (*mj).second;		   // something less ugly!	But no.
 
-    Maybe_Print_Comma(fd,is_first);
-    fprintf(fd,"\n  {%s,%d} /* %s */",
-               RES::Get(res->Id())->Addr_Of_Gname(),count,res->Name());
+	Maybe_Print_Comma(fd,is_first);
+	fprintf(fd,"\n	{%s,%d} /* %s */",
+			   RES::Get(res->Id())->Addr_Of_Gname(),count,res->Name());
   }
   fprintf(fd,"\n};\n");
 }
@@ -684,35 +688,35 @@ void RES_REQ::Output(FILE* fd)
   std::vector<unsigned long long> res_used_set((size_t) max_res_cycle + 1,0);
 
   for (mi = cycle_res_count.begin(); mi != cycle_res_count.end(); ++mi) {
-    int cycle = (*mi).first.Cycle();  // You'd think this could be abstracted,
-    RES* res = (*mi).first.Res();     // but I couldn't even explain the
-    long long  count = (*mi).second;  // the concept to Alex S.
+	int cycle = (*mi).first.Cycle();  // You'd think this could be abstracted,
+	RES* res = (*mi).first.Res();	  // but I couldn't even explain the
+	long long  count = (*mi).second;  // the concept to Alex S.
 
-    res_vec[cycle] += count << res->Shift_Count();
-    res_used_set[cycle] |= 1ll << res->Id();
+	res_vec[cycle] += count << res->Shift_Count();
+	res_used_set[cycle] |= 1ll << res->Id();
   }
 
   fprintf(fd,"static const SI_RRW %s[] = {\n  %d",
-             gname.Gname(),
-             max_res_cycle + 1);
+			 gname.Gname(),
+			 max_res_cycle + 1);
 
   for ( i = 0; i <= max_res_cycle; ++i )
-    fprintf(fd,",\n  0x%llx",res_vec[i]);
+	fprintf(fd,",\n  0x%"PRIx64,res_vec[i]);
 
   fprintf(fd,"\n};\n");
 
   if ( max_res_cycle < 0 ) {
-    res_id_set_gname.Stub_Out();
-    return;
+	res_id_set_gname.Stub_Out();
+	return;
   }
 
   fprintf(fd,"static const SI_RESOURCE_ID_SET %s[] = {",
-             res_id_set_gname.Gname());
+			 res_id_set_gname.Gname());
 
   bool is_first = true;
   for ( i = 0; i <= max_res_cycle; ++i ) {
-    Maybe_Print_Comma(fd,is_first);
-    fprintf(fd,"\n  0x%llx",res_used_set[i]);
+	Maybe_Print_Comma(fd,is_first);
+	fprintf(fd,"\n	0x%"PRIx64,res_used_set[i]);
   }
 
   fprintf(fd,"\n};\n");
@@ -744,12 +748,12 @@ public:
   // Output all the issue slots and a vector of pointers to them all.
 
 private:
-  char* const name;             // User supplied for documentation & debugging
-  const int skew;               // Latency skew
-  const int avail_count;        // How many instructions can happen in it
-  GNAME gname;                  // Symbolic name in generated
-  static std::list<ISLOT*> islots;  // All the created islot
-  static int count;             // How many issue slots total?
+  char* const name; 			// User supplied for documentation & debugging
+  const int skew;				// Latency skew
+  const int avail_count;		// How many instructions can happen in it
+  GNAME gname;					// Symbolic name in generated
+  static std::list<ISLOT*> islots;	// All the created islot
+  static int count; 			// How many issue slots total?
 };
 
 std::list<ISLOT*> ISLOT::islots;
@@ -757,8 +761,8 @@ int ISLOT::count = 0;
 
 ISLOT::ISLOT(char* name, int skew, int avail_count)
   : name(name),
-    skew(skew),
-    avail_count(avail_count)
+	skew(skew),
+	avail_count(avail_count)
 {
   islots.push_back(this);
   ++count;
@@ -768,30 +772,32 @@ void ISLOT::Output_All(FILE* fd)
 {
   std::list<ISLOT*>::iterator isi;
 
-  fprintf(fd,"const int SI_issue_slot_count = %d;\n",count);
+  fprintf(fd,"\n#define SI_issue_slot_count  %d\n\n",count);
 
   for ( isi = islots.begin(); isi != islots.end(); ++isi ) {
-    ISLOT* islot = *isi;
-    fprintf(fd,"static const SI_ISSUE_SLOT %s = { \"%s\",%d,%d};\n",
-            islot->gname.Gname(),
-            islot->name,
-            islot->skew,
-            islot->avail_count);
+	ISLOT* islot = *isi;
+	fprintf(fd,"static const SI_ISSUE_SLOT %s = { \"%s\",%d,%d};\n",
+			islot->gname.Gname(),
+			islot->name,
+			islot->skew,
+			islot->avail_count);
   }
 
   if ( count == 0 )
-    fprintf(fd,"const SI_ISSUE_SLOT * const SI_issue_slots[1] = {0};\n");
+	fprintf(fd,
+          "static const SI_ISSUE_SLOT * const SI_issue_slots[1] = {0};\n");
   else {
-    fprintf(fd,"const SI_ISSUE_SLOT * const SI_issue_slots[%d] = {",count);
+	fprintf(fd,
+		  "static const SI_ISSUE_SLOT * const SI_issue_slots[%d] = {",count);
 
-    bool is_first = true;
-    for ( isi = islots.begin(); isi != islots.end(); ++isi ) {
-      ISLOT* islot = *isi;
-      Maybe_Print_Comma(fd,is_first);
-      fprintf(fd,"\n  %s",islot->Addr_Of_Gname());
-    }
+	bool is_first = true;
+	for ( isi = islots.begin(); isi != islots.end(); ++isi ) {
+	  ISLOT* islot = *isi;
+	  Maybe_Print_Comma(fd,is_first);
+	  fprintf(fd,"\n  %s",islot->Addr_Of_Gname());
+	}
 
-    fprintf(fd,"\n};\n");
+	fprintf(fd,"\n};\n");
   }
 }
 
@@ -823,30 +829,30 @@ public:
   // Return name of pointer to me in generated file.
 
 private:
-  GNAME gname;                  // Name in generated
-  const int max_elements;       // Maximum number of operands or results
-  bool any_time_defined;        // Overriding time defined
-  int any_time;                 // And here it is
-  std::vector<bool> times_defined;   // Times for each operands defined?
-  std::vector<int> times;            // And here they are
+  GNAME gname;					// Name in generated
+  const int max_elements;		// Maximum number of operands or results
+  bool any_time_defined;		// Overriding time defined
+  int any_time; 				// And here it is
+  std::vector<bool> times_defined;	 // Times for each operands defined?
+  std::vector<int> times;			 // And here they are
 };
 
 LATENCY_INFO::LATENCY_INFO(int max_elements)
   : gname("latency"),
-    max_elements(max_elements),
-    any_time_defined(false),
-    times_defined(max_elements,false),
-    times(max_elements)
+	max_elements(max_elements),
+	any_time_defined(false),
+	times_defined(max_elements,false),
+	times(max_elements)
 {}
 
 void LATENCY_INFO::Set_Any_Time(int time)
 {
   if ( any_time_defined ) {
-    fprintf(stderr,"### Warning any_time redefined for %s.  "
-                   "Was %d.  Is %d\n",
-                   gname.Gname(),
-                   any_time,
-                   time);
+	fprintf(stderr,"### Warning any_time redefined for %s.	"
+				   "Was %d.  Is %d\n",
+				   gname.Gname(),
+				   any_time,
+				   time);
   }
 
   any_time_defined = true;
@@ -856,21 +862,21 @@ void LATENCY_INFO::Set_Any_Time(int time)
 void LATENCY_INFO::Set_Time(int index, int time)
 {
   if ( any_time_defined ) {
-    fprintf(stderr,"### WARNING: %s setting specific time after any time.  "
-                   "Any %d.  Specific %d\n",
-                   gname.Gname(),
-                   any_time,
-                   time);
+	fprintf(stderr,"### WARNING: %s setting specific time after any time.  "
+				   "Any %d.  Specific %d\n",
+				   gname.Gname(),
+				   any_time,
+				   time);
   }
 
   assert(index < max_elements);
 
   if ( times_defined[index] ) {
-    fprintf(stderr,"### WARNING: Resetting %s time.  "
-                   "Was %d. Now is %d\n",
-                   gname.Gname(),
-                   time,
-                   times[index]);
+	fprintf(stderr,"### WARNING: Resetting %s time.  "
+				   "Was %d. Now is %d\n",
+				   gname.Gname(),
+				   time,
+				   times[index]);
   }
 
   times_defined[index] = true;
@@ -881,14 +887,14 @@ void LATENCY_INFO::Output(FILE* fd)
 {
   fprintf(fd,"static const mUINT8 %s[] = {",gname.Gname());
 
-    bool is_first = true;
-    std::vector<int>::iterator i;
-    for ( i = times.begin(); i < times.end(); ++i ) {
-      Maybe_Print_Comma(fd,is_first);
-      fprintf(fd,"%d",any_time_defined ? any_time : *i);
-    }
+	bool is_first = true;
+	std::vector<int>::iterator i;
+	for ( i = times.begin(); i < times.end(); ++i ) {
+	  Maybe_Print_Comma(fd,is_first);
+	  fprintf(fd,"%d",any_time_defined ? any_time : *i);
+	}
 
-    fprintf(fd,"};\n");
+	fprintf(fd,"};\n");
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -922,23 +928,23 @@ public:
   // Name of pointer to me in generated file.
 
 private:
-  int id;                               // Index in vector of same
-  GNAME gname;                          // Variable name in generated    
-  const char* const name;                     // User supplied name for documentation
-  RES_REQ res_requirement;              // Required to issue
+  int id;								// Index in vector of same
+  GNAME gname;							// Variable name in generated	 
+  const char* const name;					  // User supplied name for documentation
+  RES_REQ res_requirement;				// Required to issue
 
-  std::list<ISLOT*> valid_islots;            // If there are any issue slots at all
-  GNAME islot_vec_gname;                // Variable name of above in generated
+  std::list<ISLOT*> valid_islots;			 // If there are any issue slots at all
+  GNAME islot_vec_gname;				// Variable name of above in generated
 
-  LATENCY_INFO operand_latency_info;    // When operands latch
-  LATENCY_INFO result_latency_info;     // When results available
+  LATENCY_INFO operand_latency_info;	// When operands latch
+  LATENCY_INFO result_latency_info; 	// When results available
 
-  int load_access_time;                 // When loads access memory
-  int last_issue_cycle;			// Last issue cycle in simulated insts
-  int store_available_time;             // When stores make value available in
-                                        //   memory 
+  int load_access_time; 				// When loads access memory
+  int last_issue_cycle; 		// Last issue cycle in simulated insts
+  int store_available_time; 			// When stores make value available in
+										//	 memory 
 
-  bool write_write_interlock;           // For simulator
+  bool write_write_interlock;			// For simulator
 
   GNAME ii_res_req_gname;
   // Generated name of vector of resource requirements for each II less than
@@ -973,15 +979,15 @@ std::list<INSTRUCTION_GROUP*> INSTRUCTION_GROUP::instruction_groups;
 int INSTRUCTION_GROUP::count = 0;
 
 INSTRUCTION_GROUP::INSTRUCTION_GROUP(const char* name)
-    : id(count++),
-      name(name),
-      operand_latency_info(max_operands),
-      result_latency_info(max_results),
-      load_access_time(0),
-      last_issue_cycle(0),
-      store_available_time(0),
-      write_write_interlock(false),
-      ii_res_req_gname("ii_rr")
+	: id(count++),
+	  name(name),
+	  operand_latency_info(max_operands),
+	  result_latency_info(max_results),
+	  load_access_time(0),
+	  last_issue_cycle(0),
+	  store_available_time(0),
+	  write_write_interlock(false),
+	  ii_res_req_gname("ii_rr")
 {
   bad_iis[0] = 0;
   bad_iis[1] = 0;
@@ -1026,10 +1032,10 @@ void INSTRUCTION_GROUP::Set_Store_Available_Time( int time )
 void INSTRUCTION_GROUP::Add_Resource_Requirement(const RES* res, int cycle)
 {
   if (! res_requirement.Add_Resource(res,cycle)) {
-    fprintf(stderr,"### ERROR: Impossible resource request for "
-                    "instruction group %s.\n",
-                    name);
-    fprintf(stderr,"###    %s at cycle %d.\n",res->Name(),cycle);
+	fprintf(stderr,"### ERROR: Impossible resource request for "
+					"instruction group %s.\n",
+					name);
+	fprintf(stderr,"###    %s at cycle %d.\n",res->Name(),cycle);
   }
 }
 
@@ -1054,9 +1060,9 @@ void INSTRUCTION_GROUP::Output_II_Info(FILE* fd)
   // enough cycles that the request doesn't need to wrap are the outside bounds.
 
   if ( ii_vec_size <= 0 ) {
-    ii_res_req_gname.Stub_Out();
-    ii_res_id_set_gname.Stub_Out();
-    return;
+	ii_res_req_gname.Stub_Out();
+	ii_res_id_set_gname.Stub_Out();
+	return;
   }
 
   std::vector<GNAME*> ii_res_req_gname_vector(ii_vec_size);
@@ -1066,46 +1072,46 @@ void INSTRUCTION_GROUP::Output_II_Info(FILE* fd)
   int greatest_bad_ii = 0;
 
   for ( i = 0; i < res_requirement.Max_Res_Cycle(); ++i ) {
-    if ( res_requirement.Compute_Maybe_Output_II_RES_REQ(
-           i+1,fd,
-           ii_res_req_gname_vector[i],
-           ii_resources_used_gname_vector[i])
-    ) {
-      ii_can_do_vector[i] = true;
-    }
-    else {
-      ii_can_do_vector[i] = false;
-      greatest_bad_ii = i;
-      if ( i > max_num_bad_iis ) {
-        fprintf(stderr,"### Error: bad II %d > %d.  "
-                "Need a more flexible representation.\n",
-                i, max_num_bad_iis);
-      }
-    }
+	if ( res_requirement.Compute_Maybe_Output_II_RES_REQ(
+		   i+1,fd,
+		   ii_res_req_gname_vector[i],
+		   ii_resources_used_gname_vector[i])
+	) {
+	  ii_can_do_vector[i] = true;
+	}
+	else {
+	  ii_can_do_vector[i] = false;
+	  greatest_bad_ii = i;
+	  if ( i > max_num_bad_iis ) {
+		fprintf(stderr,"### Error: bad II %d > %d.	"
+				"Need a more flexible representation.\n",
+				i, max_num_bad_iis);
+	  }
+	}
   }
 
   for ( i = 0; i < sizeof(bad_iis) / sizeof(bad_iis[0]); ++i ) {
-    bad_iis[i] = 0ULL;
+	bad_iis[i] = 0ULL;
   }
 
   for ( i = 0; i <= greatest_bad_ii; ++i ) {
-    if ( ! ii_can_do_vector[i] ) {
-      bad_iis[i / bits_per_long_long] |= (1ULL << (i % bits_per_long_long));
-    }
+	if ( ! ii_can_do_vector[i] ) {
+	  bad_iis[i / bits_per_long_long] |= (1ULL << (i % bits_per_long_long));
+	}
   }
   
   // Print vector of pointers to the II relative resource requirements
 
   fprintf(fd,"static const SI_RR %s[] = {",
-          ii_res_req_gname.Gname());
+		  ii_res_req_gname.Gname());
 
   is_first = true;
   for ( i = 0; i < ii_vec_size; ++i ) {
-    Maybe_Print_Comma(fd,is_first);
-    if ( ii_can_do_vector[i] )
-      fprintf(fd,"\n  %s",ii_res_req_gname_vector[i]->Gname());
-    else
-      fprintf(fd,"\n  0");
+	Maybe_Print_Comma(fd,is_first);
+	if ( ii_can_do_vector[i] )
+	  fprintf(fd,"\n  %s",ii_res_req_gname_vector[i]->Gname());
+	else
+	  fprintf(fd,"\n  0");
   }
 
   fprintf(fd,"\n};\n");
@@ -1113,17 +1119,17 @@ void INSTRUCTION_GROUP::Output_II_Info(FILE* fd)
   // Print vector of pointers to the II relative resoruce id sets
 
   fprintf(fd,"static const SI_RESOURCE_ID_SET * const %s[] = {",
-          ii_res_id_set_gname.Gname());
+		  ii_res_id_set_gname.Gname());
 
   is_first = true;
   for ( i = 0; i < ii_vec_size; ++i ) {
-    Maybe_Print_Comma(fd,is_first);
-    if ( ii_can_do_vector[i] ) {
-      fprintf(fd,"\n  %s",
-              ii_resources_used_gname_vector[i]->Gname());
-    }
-    else
-      fprintf(fd,"\n  0");
+	Maybe_Print_Comma(fd,is_first);
+	if ( ii_can_do_vector[i] ) {
+	  fprintf(fd,"\n  %s",
+			  ii_resources_used_gname_vector[i]->Gname());
+	}
+	else
+	  fprintf(fd,"\n  0");
   }
 
   fprintf(fd,"\n};\n");
@@ -1143,11 +1149,11 @@ void INSTRUCTION_GROUP::Output_Issue_Slot_Info(FILE* fd)
 /* Comment out the warning until the beast skewed support is implemented;
  * it's currently a post 7.2 affair.
  *
- *  if ( ISLOT::Count() > 0 )
- *    fprintf(stderr,"### Issue slots defined but none defined for %s\n",name);
+ *	if ( ISLOT::Count() > 0 )
+ *	  fprintf(stderr,"### Issue slots defined but none defined for %s\n",name);
 */
-    islot_vec_gname.Stub_Out();
-    return;
+	islot_vec_gname.Stub_Out();
+	return;
   }
 
   fprintf(fd,"static const SI_ISSUE_SLOT * const %s[] = {",islot_vec_gname.Gname());
@@ -1155,10 +1161,10 @@ void INSTRUCTION_GROUP::Output_Issue_Slot_Info(FILE* fd)
   bool is_first = true;
   std::list<ISLOT*>::iterator i;
   for (i = valid_islots.begin(); i != valid_islots.end(); ++i) {
-    ISLOT* islot = *i;
+	ISLOT* islot = *i;
 
-    Maybe_Print_Comma(fd,is_first);
-    fprintf(fd,"\n  %s",islot->Addr_Of_Gname());
+	Maybe_Print_Comma(fd,is_first);
+	fprintf(fd,"\n	%s",islot->Addr_Of_Gname());
   }
 
   fprintf(fd,"\n};\n");
@@ -1177,49 +1183,49 @@ void INSTRUCTION_GROUP::Output(FILE* fd)
 
 
   fprintf(fd,"static const SI %s = {\n",gname.Gname());
-  fprintf(fd,"  \"%s\",\n",name);
-  fprintf(fd,"  %-15d, /* id */\n",id);
-  fprintf(fd,"  %-15s, /* operand latency */\n",
-             operand_latency_info.Gname());
-  fprintf(fd,"  %-15s, /* result latency */\n",
-             result_latency_info.Gname());
-  fprintf(fd,"  %-15d, /* load access time */\n",
-             load_access_time);
-  fprintf(fd,"  %-15d, /* last issue cycle */\n",
-             last_issue_cycle);
-  fprintf(fd,"  %-15d, /* store available time */\n",
-             store_available_time);
-  fprintf(fd,"  %-15s, /* resource requirement */\n",
-             res_requirement.Gname());
-  fprintf(fd,"  %-15s, /* res id used set vec */\n",
-             res_requirement.Res_Id_Set_Gname());
-  fprintf(fd,"  %-15d, /* II info size */\n",
-             II_Info_Size() >= 0 ? II_Info_Size() : 0);
-  fprintf(fd,"  %-15s, /* II resource requirement vec */\n",
-             ii_res_req_gname.Gname());
-  fprintf(fd,"  %-15s, /* II res id used set vec */\n",
-             ii_res_id_set_gname.Gname());
-  fprintf(fd,"  {{");
+  fprintf(fd,"	\"%s\",\n",name);
+  fprintf(fd,"	%-15d, /* id */\n",id);
+  fprintf(fd,"	%-15s, /* operand latency */\n",
+			 operand_latency_info.Gname());
+  fprintf(fd,"	%-15s, /* result latency */\n",
+			 result_latency_info.Gname());
+  fprintf(fd,"	%-15d, /* load access time */\n",
+			 load_access_time);
+  fprintf(fd,"	%-15d, /* last issue cycle */\n",
+			 last_issue_cycle);
+  fprintf(fd,"	%-15d, /* store available time */\n",
+			 store_available_time);
+  fprintf(fd,"	%-15s, /* resource requirement */\n",
+			 res_requirement.Gname());
+  fprintf(fd,"	%-15s, /* res id used set vec */\n",
+			 res_requirement.Res_Id_Set_Gname());
+  fprintf(fd,"	%-15d, /* II info size */\n",
+			 II_Info_Size() >= 0 ? II_Info_Size() : 0);
+  fprintf(fd,"	%-15s, /* II resource requirement vec */\n",
+			 ii_res_req_gname.Gname());
+  fprintf(fd,"	%-15s, /* II res id used set vec */\n",
+			 ii_res_id_set_gname.Gname());
+  fprintf(fd,"	{{");
   for ( i = 0; i < sizeof(bad_iis) / sizeof(bad_iis[0]); ++i ) {
-    fprintf(fd, "0x%llx", bad_iis[i]);
-    if ( i < sizeof(bad_iis) / sizeof(bad_iis[0]) - 1 ) fprintf(fd, ",");
+	fprintf(fd, "0x%"PRIx64, bad_iis[i]);
+	if ( i < sizeof(bad_iis) / sizeof(bad_iis[0]) - 1 ) fprintf(fd, ",");
   }
-  fprintf(fd, "}}    , /* Bad IIs */\n");
+  fprintf(fd, "}}	 , /* Bad IIs */\n");
 #ifdef KEY /* Mac port */
-  fprintf(fd,"  %-15ld, /* valid issue slots vec size */\n",
-             (long) valid_islots.size());
+  fprintf(fd,"	%-15ld, /* valid issue slots vec size */\n",
+			 (long) valid_islots.size());
 #else /* KEY Mac port */
-  fprintf(fd,"  %-15d, /* valid issue slots vec size */\n",
-             valid_islots.size());
+  fprintf(fd,"	%-15d, /* valid issue slots vec size */\n",
+			 valid_islots.size());
 #endif /* KEY Mac port */
-  fprintf(fd,"  %-15s, /* valid issue slots vec */\n",
-             islot_vec_gname.Gname());
-  fprintf(fd,"  %-15d, /* resource count vec size */\n",
-             res_requirement.Res_Count_Vec_Size());
-  fprintf(fd,"  %-15s, /* resource count vec */\n",
-             res_requirement.Res_Count_Vec_Gname());
-  fprintf(fd,"  %-15s  /* write-write interlock */\n",
-             write_write_interlock ? "1" : "0");
+  fprintf(fd,"	%-15s, /* valid issue slots vec */\n",
+			 islot_vec_gname.Gname());
+  fprintf(fd,"	%-15d, /* resource count vec size */\n",
+			 res_requirement.Res_Count_Vec_Size());
+  fprintf(fd,"	%-15s, /* resource count vec */\n",
+			 res_requirement.Res_Count_Vec_Gname());
+  fprintf(fd,"	%-15s  /* write-write interlock */\n",
+			 write_write_interlock ? "1" : "0");
   fprintf(fd,"};\n");
 }
 
@@ -1228,26 +1234,26 @@ void INSTRUCTION_GROUP::Output_All(FILE* fd)
   std::list<INSTRUCTION_GROUP*>::iterator iig;
 
   for (iig = instruction_groups.begin();
-       iig != instruction_groups.end();
-       ++iig
+	   iig != instruction_groups.end();
+	   ++iig
   ) {
-    (*iig)->Output(fd);
+	(*iig)->Output(fd);
   }
 
-  fprintf(fd,"const SI * const SI_ID_si[] = {");
+  fprintf(fd,"static const SI * const SI_ID_si[] = {");
 
   bool is_first = true;
   for (iig = instruction_groups.begin();
-       iig != instruction_groups.end();
-       ++iig
+	   iig != instruction_groups.end();
+	   ++iig
   ) {
-    Maybe_Print_Comma(fd,is_first);
-    fprintf(fd,"\n  %s",(*iig)->Addr_Of_Gname());
+	Maybe_Print_Comma(fd,is_first);
+	fprintf(fd,"\n	%s",(*iig)->Addr_Of_Gname());
   }
 
   fprintf(fd,"\n};\n");
 
-  fprintf(fd,"const int SI_ID_count = %d;\n",count);
+  fprintf(fd,"\n#define SI_ID_count  %d\n\n",count);
 
   fprintf(fd,"\n"); // One extra new line to separate from what follows.
 
@@ -1265,7 +1271,7 @@ class TOP_SCHED_INFO_MAP {
 
 public:
   static void Add_Entry( TOP top, INSTRUCTION_GROUP* ig );
-  // Add entry to the map.  <top> uses <ig>'s scheduling information.
+  // Add entry to the map.	<top> uses <ig>'s scheduling information.
 
   static void Output( FILE* fd );
   // Write out the map.
@@ -1275,7 +1281,7 @@ public:
 
 private:
   static std::vector<const char*> top_sched_info_ptr_map;  // The map itself.
-  static std::vector<bool> top_sched_info_defined;   // Which elements defined
+  static std::vector<bool> top_sched_info_defined;	 // Which elements defined
 };
 
 std::vector<const char*> TOP_SCHED_INFO_MAP::top_sched_info_ptr_map(TOP_count,"0");
@@ -1286,22 +1292,22 @@ void TOP_SCHED_INFO_MAP::Create_Dummies( void )
   INSTRUCTION_GROUP *dummies = NULL;
 
   for ( int i = 0; i < TOP_count; ++i ) {
-    if ( TOP_is_dummy((TOP)i) ) {
-      if ( !dummies ) {
+	if ( TOP_is_dummy((TOP)i) ) {
+	  if ( !dummies ) {
 	dummies = new INSTRUCTION_GROUP("Dummy instructions");
 	dummies->Set_Any_Operand_Access_Time(0);
 	dummies->Set_Any_Result_Available_Time(0);
-      }
-      top_sched_info_ptr_map[i] = dummies->Addr_Of_Gname();
-    }
+	  }
+	  top_sched_info_ptr_map[i] = dummies->Addr_Of_Gname();
+	}
   }
 }
 
 void TOP_SCHED_INFO_MAP::Add_Entry( TOP top, INSTRUCTION_GROUP* ig )
 {
   if ( top_sched_info_defined[(int) top] ) {
-    fprintf(stderr,"### Warning: scheduling information for %s redefined.\n",
-            TOP_Name(top));
+	fprintf(stderr,"### Warning: scheduling information for %s redefined.\n",
+			TOP_Name(top));
   }
 
   top_sched_info_ptr_map[(int) top] = ig->Addr_Of_Gname();
@@ -1312,34 +1318,34 @@ void TOP_SCHED_INFO_MAP::Output( FILE* fd )
 {
   int i;
 
-  fprintf(fd,"const SI * const SI_top_si[%d] = {",TOP_count);
+  fprintf(fd,"static const SI * const SI_top_si[%d] = {",TOP_count);
 
   bool err = false;
   bool is_first = true;
   for ( i = 0; i < TOP_count; ++i ) {
-    bool isa_member = ISA_SUBSET_Member(machine_isa, (TOP)i);
-    bool is_dummy = TOP_is_dummy((TOP)i);
+	bool isa_member = ISA_SUBSET_Member(machine_isa, (TOP)i);
+	bool is_dummy = TOP_is_dummy((TOP)i);
 
-    Maybe_Print_Comma(fd,is_first);
+	Maybe_Print_Comma(fd,is_first);
 
-    fprintf(fd,"\n  %-10s  /* %s */",top_sched_info_ptr_map[i],
-                                     TOP_Name((TOP)i));
+	fprintf(fd,"\n	%-10s  /* %s */",top_sched_info_ptr_map[i],
+									 TOP_Name((TOP)i));
 
-    if ( top_sched_info_defined[i] ) {
-      if ( ! isa_member ) {
+	if ( top_sched_info_defined[i] ) {
+	  if ( ! isa_member ) {
 	fprintf(stderr,"### Warning: scheduling info for non-%s ISA opcode %s\n",
-                       ISA_SUBSET_Name(machine_isa), TOP_Name((TOP)i));
-      } else if ( is_dummy ) {
+					   ISA_SUBSET_Name(machine_isa), TOP_Name((TOP)i));
+	  } else if ( is_dummy ) {
 	fprintf(stderr,"### Warning: scheduling info for dummy opcode %s\n",
-                       TOP_Name((TOP)i));
-      }
-    } else {
-      if ( isa_member && ! is_dummy ) {  
+					   TOP_Name((TOP)i));
+	  }
+	} else {
+	  if ( isa_member && ! is_dummy ) {  
 	fprintf(stderr,"### Error: no scheduling info for opcode %s\n",
-                       TOP_Name((TOP)i));
+					   TOP_Name((TOP)i));
 	err = true;
-      }
-    }
+	  }
+	}
   }
   fprintf(fd,"\n};\n");
   if (err) exit(EXIT_FAILURE);
@@ -1380,7 +1386,7 @@ void Instruction_Group(const char* name,...)
   va_start(ap,name);
 
   while ( (opcode = static_cast<TOP>(va_arg(ap,int))) != TOP_UNDEFINED )
-    TOP_SCHED_INFO_MAP::Add_Entry(opcode,current_instruction_group);
+	TOP_SCHED_INFO_MAP::Add_Entry(opcode,current_instruction_group);
 
   va_end(ap);
 }
@@ -1439,11 +1445,11 @@ void Machine_Done( const char* filename )
 {
   FILE* fd = fopen(filename,"w");
   // assume we won't have a target .so name with > 40 characters
-  char so_name[40];
+  char target[40];
 
   if ( fd == NULL ) {
-    fprintf(stderr,"### Error: couldn't write %s\n",filename);
-    return;
+	fprintf(stderr,"### Error: couldn't write %s\n",filename);
+	return;
   }
 
   fprintf(fd,"#include \"ti_si_types.h\"\n");
@@ -1457,9 +1463,28 @@ void Machine_Done( const char* filename )
 
   // Create a variable holding the name of the shared object for sanity
   // check after loading the library.
-  strcpy (so_name, filename);
-  so_name[strlen(filename)-1] = '\0';
-  fprintf (fd,"const char * sanity_check_targ_so_name = \"%sso\";\n", so_name);
+  assert(strlen(filename) < sizeof(target));
+  strcpy (target, filename);
+  target[strlen(filename) - 2] = '\0';
+
+  // Dump machine information
+  fprintf(fd, "\nstatic const SI_SUMMARY SI_summary = {");
+  fprintf(fd, "\n  SI_top_si,");
+  fprintf(fd, "\n  SI_ID_si,");
+  fprintf(fd, "\n  SI_ID_count,");
+  fprintf(fd, "\n  SI_issue_slots,");
+  fprintf(fd, "\n  SI_issue_slot_count,");
+  fprintf(fd, "\n  SI_resources,");
+  fprintf(fd, "\n  SI_resource_count,");
+  fprintf(fd, "\n  SI_RRW_initializer,");
+  fprintf(fd, "\n  SI_RRW_overuse_mask,");
+  fprintf(fd, "\n  \"%s\"", target);
+  fprintf(fd, "\n};\n");
+
+  fprintf(fd, "\nconst SI_SUMMARY *SI_Get_Summary(void)");
+  fprintf(fd, "\n{");
+  fprintf(fd, "\n  return &SI_summary;");
+  fprintf(fd, "\n}\n");
 
   fclose(fd);
 }

@@ -152,7 +152,7 @@ if(${x8664_enabled})
       COMMAND opteron_si_gen
       DEPENDS opteron_si_gen
       )
-    add_library(opteron SHARED opteron.c generate/init.cxx)
+    add_library(opteron SHARED opteron.c)
     set_property(TARGET opteron PROPERTY LIBRARY_OUTPUT_DIRECTORY
                  ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/x8664)
     set_property(TARGET opteron PROPERTY PREFIX "")
@@ -169,7 +169,7 @@ if(${x8664_enabled})
       COMMAND barcelona_si_gen
       DEPENDS barcelona_si_gen
       )
-    add_library(barcelona SHARED barcelona.c generate/init.cxx)
+    add_library(barcelona SHARED barcelona.c)
     set_property(TARGET barcelona PROPERTY LIBRARY_OUTPUT_DIRECTORY
                  ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/x8664)
     set_property(TARGET barcelona PROPERTY PREFIX "")
@@ -187,7 +187,7 @@ if(${x8664_enabled})
       COMMAND wolfdale_si_gen
       DEPENDS wolfdale_si_gen
       )
-    add_library(wolfdale SHARED wolfdale.c generate/init.cxx)
+    add_library(wolfdale SHARED wolfdale.c)
     set_property(TARGET wolfdale PROPERTY LIBRARY_OUTPUT_DIRECTORY
                  ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/x8664)
     set_property(TARGET wolfdale PROPERTY PREFIX "")
@@ -205,7 +205,7 @@ if(${x8664_enabled})
       COMMAND core_si_gen
       DEPENDS core_si_gen
       )
-    add_library(core SHARED core.c generate/init.cxx)
+    add_library(core SHARED core.c)
     set_property(TARGET core PROPERTY PREFIX "")
     set_property(TARGET core PROPERTY LIBRARY_OUTPUT_DIRECTORY
                  ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/x8664)
@@ -223,7 +223,7 @@ if(${x8664_enabled})
       COMMAND em64t_si_gen
       DEPENDS em64t_si_gen
       )
-    add_library(em64t SHARED em64t.c generate/init.cxx)
+    add_library(em64t SHARED em64t.c)
     set_property(TARGET em64t PROPERTY LIBRARY_OUTPUT_DIRECTORY
                  ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/x8664)
     set_property(TARGET em64t PROPERTY PREFIX "")
@@ -253,7 +253,7 @@ if(${mips_enabled})
       COMMAND mips5kf_si_gen
       DEPENDS mips5kf_si_gen
       )
-    add_library(mips5kf SHARED mips5kf.c generate/init.cxx)
+    add_library(mips5kf SHARED mips5kf.c)
     set_property(TARGET mips5kf PROPERTY LIBRARY_OUTPUT_DIRECTORY
                  ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/mips)
     set_property(TARGET mips5kf PROPERTY PREFIX "")
@@ -276,7 +276,7 @@ if(${mips_enabled})
     #  COMMAND r10000_si_gen
     #  DEPENDS r10000_si_gen
     #  )
-    #add_library(r10000 SHARED r10000.c generate/init.cxx)
+    #add_library(r10000 SHARED r10000.c)
     #set_property(TARGET r10000 PROPERTY LIBRARY_OUTPUT_DIRECTORY
     #             ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/mips)
     #set_property(TARGET r10000 PROPERTY PREFIX "")

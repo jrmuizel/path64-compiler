@@ -51,6 +51,7 @@
 #if QUAD_DEBUG
 #include <stdio.h>
 #endif
+#include <inttypes.h>
 
 /* Macros to pull apart parts of single and  double precision
  * floating point numbers in IEEE format
@@ -304,8 +305,8 @@ c_qtoa(buffer,ndigit,x,fflag)
   value.qparts.lo.d = x.lo;
 
 #if QUAD_DEBUG 
-  printf("initially: HI=0x%016llx\n",HI); 
-  printf("LO=0x%016llx\n",LO); 
+  printf("initially: HI=0x%016"PRIx64"\n",HI); 
+  printf("LO=0x%016"PRIx64"\n",LO); 
 #endif
 
   signhi = SIGNBIT(HI); 
@@ -313,7 +314,7 @@ c_qtoa(buffer,ndigit,x,fflag)
   *buffer++ = signhi? '-': ' ';
 
 #if QUAD_DEBUG 
-  printf("after de-signing hi: HI=0x%016llx\n",HI); 
+  printf("after de-signing hi: HI=0x%016"PRIx64"\n",HI); 
   printf("signhi=%d\n",signhi); 
   *buffer = '\0'; 
   printf(" buffer=%s\n",buffer0);
@@ -327,7 +328,7 @@ c_qtoa(buffer,ndigit,x,fflag)
       *buffer++ = '0';
 
 #if QUAD_DEBUG 
-    printf("HI was zero: HI=0x%016llx\n",HI); 
+    printf("HI was zero: HI=0x%016"PRIx64"\n",HI); 
     printf("signhi=%d\n",signhi); 
     *buffer = '\0'; 
     printf(" buffer=%s\n",buffer0);
@@ -340,7 +341,7 @@ c_qtoa(buffer,ndigit,x,fflag)
   EXPONENT(HI) = 0;
 
 #if QUAD_DEBUG 
-  printf("HI non-zero: HI=0x%016llx\n",HI); 
+  printf("HI non-zero: HI=0x%016"PRIx64"\n",HI); 
   printf("exphi=%d\n",exphi); 
 #endif
 
@@ -371,7 +372,7 @@ c_qtoa(buffer,ndigit,x,fflag)
       exphi--;
 
 #if QUAD_DEBUG 
-      printf("HI denorm: HI=0x%016llx\n",HI); 
+      printf("HI denorm: HI=0x%016"PRIx64"\n",HI); 
       printf("exphi=%d\n",exphi); 
 #endif
 
@@ -381,7 +382,7 @@ c_qtoa(buffer,ndigit,x,fflag)
     HI |= 1ULL<<52;		/* expose hidden bit */
 
 #if QUAD_DEBUG 
-    printf("HI normal: HI=0x%016llx\n",HI); 
+    printf("HI normal: HI=0x%016"PRIx64"\n",HI); 
     printf("exphi=%d\n",exphi); 
 #endif
 
@@ -390,7 +391,7 @@ c_qtoa(buffer,ndigit,x,fflag)
   HI <<=11;			/* left align */
 
 #if QUAD_DEBUG 
-  printf("HI aligned: HI=0x%016llx\n",HI); 
+  printf("HI aligned: HI=0x%016"PRIx64"\n",HI); 
 #endif
 
   /* handle LO */
@@ -399,7 +400,7 @@ c_qtoa(buffer,ndigit,x,fflag)
   SIGNBIT(LO) = 0;		/* discard sign */
 
 #if QUAD_DEBUG
-  printf("handle LO: LO=0x%016llx\n",LO);
+  printf("handle LO: LO=0x%016"PRIx64"\n",LO);
   printf("           signlo=%d\n",signlo);
 #endif
 
@@ -409,14 +410,14 @@ c_qtoa(buffer,ndigit,x,fflag)
     EXPONENT(LO) = 0;
 
 #if QUAD_DEBUG
-  printf("non-zero LO: LO=0x%016llx\n",LO);
+  printf("non-zero LO: LO=0x%016"PRIx64"\n",LO);
   printf("             explo=%d\n",explo);
 #endif
 
     LO <<=1;			/* shift LO to expose 107th bit */
 
 #if QUAD_DEBUG
-    printf("left-shifted LO: LO=0x%016llx\n",LO);
+    printf("left-shifted LO: LO=0x%016"PRIx64"\n",LO);
 #endif
 
     if(explo == 0) {		/* denorm */
@@ -424,7 +425,7 @@ c_qtoa(buffer,ndigit,x,fflag)
 
       LO <<= 1;			/* shift up one more bit */
 #if QUAD_DEBUG
-      printf("shifted up LO: LO=0x%016llx\n",LO);
+      printf("shifted up LO: LO=0x%016"PRIx64"\n",LO);
 #endif
       shift_n = 53 - (exphi-explo);
       /* normalize to HI */
@@ -439,14 +440,14 @@ c_qtoa(buffer,ndigit,x,fflag)
       LO |= 1ULL<<53;		/* expose hidden bit */
       
 #if QUAD_DEBUG
-      printf("expose hidden bit: LO=0x%016llx\n",LO);
+      printf("expose hidden bit: LO=0x%016"PRIx64"\n",LO);
 #endif
       
       LO >>= (exphi-explo) - 53; /* normalize to HI */
     }
 
 #if QUAD_DEBUG
-    printf("normalize LO to HI: LO=0x%016llx\n",LO);
+    printf("normalize LO to HI: LO=0x%016"PRIx64"\n",LO);
 #endif
     
     if( signlo ) {		/* LO is negative */
@@ -454,8 +455,8 @@ c_qtoa(buffer,ndigit,x,fflag)
       LO = (1ULL<<54) - LO;	/* complement LO */
       
 #if QUAD_DEBUG
-      printf("LO negative: HI=0x%016llx\n",HI);
-      printf("             LO=0x%016llx\n",LO);
+      printf("LO negative: HI=0x%016"PRIx64"\n",HI);
+      printf("             LO=0x%016"PRIx64"\n",LO);
 #endif
       
     }
@@ -463,8 +464,8 @@ c_qtoa(buffer,ndigit,x,fflag)
     HI |= LO>>43;		/* combine HI and LO into 107b fract. */
     LO <<=21;
 #if QUAD_DEBUG
-  printf("LO&HI combined: HI=0x%016llx\n",HI);
-  printf("                LO=0x%016llx\n",LO);
+  printf("LO&HI combined: HI=0x%016"PRIx64"\n",HI);
+  printf("                LO=0x%016"PRIx64"\n",LO);
 #endif
 
   }
@@ -497,8 +498,8 @@ c_qtoa(buffer,ndigit,x,fflag)
     bexp=0;
 
 #if QUAD_DEBUG
-  printf("after scaling: HI=0x%016llx\n",HI);
-  printf("               LO=0x%016llx\n",LO);
+  printf("after scaling: HI=0x%016"PRIx64"\n",HI);
+  printf("               LO=0x%016"PRIx64"\n",LO);
   printf("               bexp=%d\n",bexp);
 #endif
 
@@ -519,8 +520,8 @@ c_qtoa(buffer,ndigit,x,fflag)
   HI >>= 4-exphi;
 
 #if QUAD_DEBUG
-  printf("denormalized: HI=0x%016llx\n",HI);
-  printf("              LO=0x%016llx\n",LO);
+  printf("denormalized: HI=0x%016"PRIx64"\n",HI);
+  printf("              LO=0x%016"PRIx64"\n",LO);
 #endif
 
   /* Split LO inpreparation to producing digits */
@@ -530,7 +531,7 @@ c_qtoa(buffer,ndigit,x,fflag)
 
 #if QUAD_DEBUG
   printf("split LO: lohi=0x%02x\n",lohi);
-  printf("          lolo=0x%016llx\n",lolo);
+  printf("          lolo=0x%016"PRIx64"\n",lolo);
 #endif
 
   /* find first non-zero digit */
@@ -543,9 +544,9 @@ c_qtoa(buffer,ndigit,x,fflag)
     dexp--;
 
 #if QUAD_DEBUG
-  printf("finding first digit: HI=0x%016llx\n",HI);
+  printf("finding first digit: HI=0x%016"PRIx64"\n",HI);
   printf("                     lohi=0x%02x\n",lohi);
-  printf("                     lolo=0x%016llx\n",lolo);
+  printf("                     lolo=0x%016"PRIx64"\n",lolo);
   printf("                     dexp=%d\n",dexp);
 #endif
 
@@ -576,9 +577,9 @@ c_qtoa(buffer,ndigit,x,fflag)
     lohi &= 0xF;
 
 #if QUAD_DEBUG
-  printf("another digit: HI=0x%016llx\n",HI);
+  printf("another digit: HI=0x%016"PRIx64"\n",HI);
   printf("               lohi=0x%02x\n",lohi);
-  printf("               lolo=0x%016llx\n",lolo);
+  printf("               lolo=0x%016"PRIx64"\n",lolo);
   *buffer = '\0';
   printf("               buffer=%s\n",buffer0);
 #endif

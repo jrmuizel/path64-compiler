@@ -88,7 +88,9 @@ main ()
 {
     int i;
     int num;
-    scanf("%x\n", &num); /* 0xffffffff */
+    char buf[256];
+
+    while (!scanf("%x\n", &num)) gets(buf);
     while (! feof(stdin)) {
 	int tag;
 	scanf("%x\n", &tag);

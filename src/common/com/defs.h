@@ -76,6 +76,9 @@ static char *defs_rcs_id = "$Source: /home/bos/bk/kpro64-pending/common/com/SCCS
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>
 #include <stdbool.h>
 

@@ -99,29 +99,30 @@ extern int hugepage_attr;
 
 #define LOGFILE "/var/log/messages"
 
-static void my_execv(const char *name, char *const argv[])
+static int show_command_only(const char *name, char *const argv[])
 {
-    int len = strlen(name);
-    int passthru = len > 4 && name[len - 4] == '/' &&
-	(strcmp(name + len - 3, "gcc") == 0 ||
-	 strcmp(name + len - 3, "g++") == 0);
-    
-    if (show_but_not_run) {
+    int m, n;
 	int i;
 
+    if (!show_but_not_run) {
+		return 0;
+    }
+	
 	fprintf(stderr, "\"%s\" ", name);
+
 	for (i = 1; argv[i] != NULL; i++)
 	    fprintf(stderr, "\"%s\" ", argv[i]);
 	fputc('\n', stderr);
-	if (!passthru)
-	    do_exit (0);
-    }
-			
-    execvp(name, argv);
-    error("cannot exec %s: %m", name);
-    cleanup ();
-    do_exit (RC_SYSTEM_ERROR);
-    /* NOTREACHED */
+
+	m = strlen(name);
+	n = sizeof(FN_EXE("gcc"));
+
+	if (m > n && IS_DIR_SLASH(name[m - n]) && 
+		(strcmp(name + m - n + 1, FN_EXE("gcc")) ||
+		 strcmp(name + m - n + 1, FN_EXE("g++")))) {
+		 return 0;
+	}
+	return 1;
 }
 
 /* exec another program, putting result in output.
@@ -134,82 +135,84 @@ run_simple_program (char *name, char **argv, char *output)
 	int waitpid;
 	int waitstatus;
 	int termsig;
+	struct pex_obj *pex;
+	const char *errmsg;
+	int errnum;
 
-	/* fork a process */
-	forkpid = fork();
-	if (forkpid == -1) {
-		error("no more processes");
-		cleanup ();
-		do_exit (RC_SYSTEM_ERROR);
-		/* NOTREACHED */
-	}
+    if (show_command_only(name, argv)) {
+		return;
+    }
 
-	if (forkpid == 0) {
-		/* child */
-		if ((fdout = creat (output, 0666)) == -1) {
-			error ("cannot create output file %s", output);
-			cleanup ();
-			do_exit (RC_SYSTEM_ERROR);
-			/* NOTREACHED */
-		}
-	    	dup2 (fdout, fileno(stdout));
+    pex = pex_init(0, name, NULL);
+    if (pex == NULL) {
+        error("pex_init failed");
+        cleanup();
+        do_exit(RC_SYSTEM_ERROR);
+    }
+  
+    errmsg = pex_run(pex, PEX_LAST, name, argv, output, NULL, &errnum);
+    if (errmsg != NULL || !pex_get_status(pex, 1, &waitstatus)) {
+        error(errmsg != NULL ? errmsg : "can't get program status");
+        pex_free(pex);
+        cleanup();
+        do_exit(RC_SYSTEM_ERROR);
+    }
 
-		my_execv(name, argv);
-	} else {
-		/* parent */
-		int procid;	/* id of the /proc file */
-		while ((waitpid = wait (&waitstatus)) != forkpid) {
-			if (waitpid == -1) {
-				error("bad return from wait");
-				cleanup();
-				do_exit(RC_SYSTEM_ERROR);
-				/* NOTREACHED */
-			}
-		}
-		if (WIFSTOPPED(waitstatus)) {
-			termsig = WSTOPSIG(waitstatus);
-			error("STOPPED signal received from %s", name);
-			cleanup();
-			do_exit(RC_SYSTEM_ERROR);
-			/* NOTREACHED */
-		} else if (WIFEXITED(waitstatus)) {
-		        int status = WEXITSTATUS(waitstatus);
-			if (status != RC_OKAY) {
-				/* internal error */
-				/* most internal errors use exit code of 1 */
-				internal_error("%s returned non-zero status %d",
-					name, status);
-			} 
-			return;
-		} else if(WIFSIGNALED(waitstatus)){
-			termsig = WTERMSIG(waitstatus);
-			switch (termsig) {
-			case SIGHUP:
-			case SIGINT:
-			case SIGQUIT:
-			case SIGKILL:
-			case SIGTERM:
-				error("%s died due to signal %d", name, termsig);
-				break;
-			default:
-				internal_error("%s died due to signal %d",
-					       name, termsig);
-				break;
-			}
-			if(waitstatus & WCOREFLAG) {
-				error("core dumped");
-			}
-			if (termsig == SIGKILL) {
-				error("Probably caused by running out of swap space -- check %s", LOGFILE);
-			}
-			cleanup();
-			do_exit(RC_SYSTEM_ERROR);
-		} else {
-			/* cannot happen, I think! */
-			internal_error("driver exec'ing is confused");
-			return;
-		}
-	}
+    pex_free(pex);
+
+    if (WIFSTOPPED(waitstatus)) {
+        error("STOPPED signal received from %s", name);
+        cleanup();
+        do_exit(RC_SYSTEM_ERROR);
+        /* NOTREACHED */
+    } else if (WIFEXITED(waitstatus)) {
+        int status = WEXITSTATUS(waitstatus);
+
+        if (status != RC_OKAY) {
+            /* internal error */
+            /* most internal errors use exit code of 1 */
+            internal_error("%s returned non-zero status %d", name, status);
+        } 
+        return;
+    } else if(WIFSIGNALED(waitstatus)){
+        termsig = WTERMSIG(waitstatus);
+
+        switch (termsig) {
+#ifdef SIGHUP
+            case SIGHUP:
+#endif
+            case SIGINT:
+#ifdef SIGQUIT
+            case SIGQUIT:
+#endif
+#ifdef SIGKILL
+            case SIGKILL:
+#endif
+            case SIGTERM:
+                error("%s died due to signal %d", name, termsig);
+                break;
+            default:
+                internal_error("%s died due to signal %d", name, termsig);
+                break;
+        }
+        
+        if (waitstatus & WCOREFLAG) {
+            error("core dumped");
+        }
+
+#ifdef SIGKILL
+        if (termsig == SIGKILL) {
+            error("Probably caused by running out of swap space -- check %s",
+                   LOGFILE);
+        }
+#endif
+        cleanup();
+        do_exit(RC_SYSTEM_ERROR);
+    } else {
+        /* cannot happen, I think! */
+        internal_error("driver exec'ing is confused");
+        return;
+    }
 }
 
 static void my_putenv(const char *name, const char *fmt, ...)
@@ -258,90 +261,122 @@ get_binutils_lib_path(void)
 void
 run_phase (phases_t phase, char *name, string_list_t *args)
 {
-	char **argv;
-	int argc;
-	string_item_t *p;
-	char *output = NULL;
-	char *input = NULL;
-	boolean save_stderr = FALSE;
-	int fdin, fdout;
-	int forkpid;
-	int waitstatus;
-	int termsig;
-	int	num_maps;
-	char *rld_path;
-	struct stat stat_buf;
+    char **argv;
+    int argc;
+    string_item_t *p;
+    char *output = NULL;
+    char *input = NULL;
+    boolean save_stderr = FALSE;
+    int fdin, fdout;
+    int forkpid;
+    int waitstatus;
+    int termsig;
+    int num_maps;
+    char *rld_path;
+    struct stat stat_buf;
+    struct pex_obj *pex;
+    const char* errmsg;
+    int errnum;
 #if defined(BUILD_OS_DARWIN)
-	int suppress_compiler_path = (phase == P_gas);
+    int suppress_compiler_path = (phase == P_gas);
 #endif /* defined(BUILD_OS_DARWIN) */
-	const boolean uses_message_system = 
-			(phase == P_f90_fe || phase == P_f90_cpp ||
-			 phase == P_cppf90_fe);
+    const boolean uses_message_system = 
+            (phase == P_f90_fe || phase == P_f90_cpp || phase == P_cppf90_fe);
 
-        if (((phase == P_be) || (phase == P_ipl))
-            && add_heap_limit) {
-            char buf[100];
-            char * str;
-            sprintf(&buf[0],"%d", heap_limit);
-            str = concat_strings("-OPT:hugepage_heap_limit=", buf);
-            sprintf(&buf[0],"%d", hugepage_attr);
-            str = concat_strings(str, 
-                                 concat_strings(" -OPT:hugepage_attr=", buf));
-            add_string(args, str);
+    if ((phase == P_be || phase == P_ipl) && add_heap_limit) {
+        char str[200];
+
+        sprintf(str, "-OPT:hugepage_heap_limit=%d -OPT:hugepage_attr=%d", 
+			    heap_limit, hugepage_attr);
+        add_string(args, str);
+    }
+    
+    if (show_flag) {
+        /* echo the command */
+        fprintf(stderr, "%s ", name);
+        print_string_list(stderr, args);
+    }
+
+    if (!execute_flag) return;
+
+    if (time_flag) init_time();
+
+    /* copy arg_list to argv format that exec wants */
+    for (argc = 1, p = args->head; p != NULL; p = p->next) {
+        //bug# 581, bug #932, bug #1049
+        if (p->name == NULL || p->name[0] == '\0') {
+            continue;
         }
-	
-	if (show_flag) {
-		/* echo the command */
-		fprintf(stderr, "%s ", name);
-		print_string_list(stderr, args);
+        argc++;
+    }
+    argv = (char **)malloc((argc + 1) * sizeof(char *));
+    if (argv == NULL) {
+        error("not enough memory");
+        cleanup();
+        do_exit(RC_SYSTEM_ERROR);
 	}
-	if (!execute_flag) return;
 
-	if (time_flag) init_time();
-
-	/* copy arg_list to argv format that exec wants */
-	argc = 1;
-	for (p = args->head; p != NULL; p=p->next) {
-		//bug# 581, bug #932, bug #1049
-		if (p->name == NULL) 
-                  continue;
-		argc++;
-	}
-	argv = (char **) malloc((argc+1)*sizeof(char*));
-	argv[0] = name;
-	for (argc = 1, p = args->head; p != NULL; argc++, p=p->next) {
-		//bug# 581, bug #932
-		if (p->name[0] == '\0') {
-		  argc--;
-                  continue;
-		}
-		/* don't put redirection in arg list */
-		if (strcmp(p->name, "<") == 0) {
-			/* has input file */
-			input = p->next->name;
-			break;
-		} else if (strcmp(p->name, ">") == 0) {
-			/* has output file */
-			output = p->next->name;
-			break;
-		} else if (strcmp(p->name, ">&") == 0) {
-			/* has error output file */
-			output = p->next->name;
-			save_stderr = TRUE;
-			break;
-		}
-		argv[argc] = p->name;
-	}
+    argv[0] = name;
+    for (argc = 1, p = args->head; p != NULL; p = p->next) {
+        //bug# 581, bug #932
+        if (p->name == NULL || p->name[0] == '\0') {
+            continue;
+        }
+        /* don't put redirection in arg list */
+        if (strcmp(p->name, "<") == 0) {
+            /* has input file */
+            input = p->next->name;
+            break;
+        } else if (strcmp(p->name, ">") == 0) {
+            /* has output file */
+            output = p->next->name;
+            break;
+        } else if (strcmp(p->name, ">&") == 0) {
+            /* has error output file */
+            output = p->next->name;
+            save_stderr = TRUE;
+            break;
+        }
+        argv[argc++] = p->name;
+    }
 	argv[argc] = NULL;
 
-	/* fork a process */
-	forkpid = fork();
-	if (forkpid == -1) {
-		error("no more processes");
-		cleanup ();
-		do_exit (RC_SYSTEM_ERROR);
-		/* NOTREACHED */
-	}
+    if (show_command_only(name, argv)) {
+		return;
+    }
+
+    pex = pex_init(0, name, NULL);
+    if (pex == NULL) {
+        error("pex_init failed");
+        cleanup();
+        do_exit(RC_SYSTEM_ERROR);
+    }
+  
+    if (input != NULL && pex_input_file(pex, 0, input) == NULL) {
+        error("pex_input_file failed");
+        pex_free(pex);
+        cleanup();
+        do_exit(RC_SYSTEM_ERROR);
+    }
+	else {
+        char *my_path;
+        char *l_path;
+        char *l32_path;
+        char *nls_path;
+        char *env_path;
+
+        my_path = get_binutils_lib_path();
+        rld_path = get_phase_ld_library_path(phase);
+        
+        if (rld_path != NULL) {
+            asprintf(&my_path, "%s:%s", my_path, rld_path);
+        }
+        
+        l_path = l32_path = my_path;
+        
+        if (ld_library_path) {
+            asprintf(&l_path, "%s:%s", my_path, ld_library_path);
+        }
 
 	if (forkpid == 0) {
 		char *my_path, *l_path, *l32_path, *nls_path, *root_prefix;
@@ -389,12 +424,12 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 				 ld_libraryn32_path);
 
 #if defined(BUILD_OS_DARWIN)
-		/* Darwin static linker uses LD_LIBRARY_PATH, but dynamic
-		 * linker uses DYLD_LIBRARY_PATH */
-		my_putenv("DYLD_LIBRARY_PATH", "%s", l_path);
+        /* Darwin static linker uses LD_LIBRARY_PATH, but dynamic
+         * linker uses DYLD_LIBRARY_PATH */
+        my_putenv("DYLD_LIBRARY_PATH", "%s", l_path);
 #else /* defined(BUILD_OS_DARWIN) */
-		my_putenv("LD_LIBRARY_PATH", "%s", l_path);
-		my_putenv("LD_LIBRARYN32_PATH", "%s", l32_path);
+        my_putenv("LD_LIBRARY_PATH", "%s", l_path);
+        my_putenv("LD_LIBRARYN32_PATH", "%s", l32_path);
 #endif /* defined(BUILD_OS_DARWIN) */
 		
 		// Set up NLSPATH, for the Fortran front end.
@@ -446,108 +481,118 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 		}
 
 		/* need to setenv COMPILER_PATH for collect to find ld */
-
-#ifdef KEY	// gcc will invoke the cc1 in the COMPILER_PATH directory,
+        if (
+#ifdef KEY
+		// gcc will invoke the cc1 in the COMPILER_PATH directory,
 		// which is not what we want when we invoke gcc for
 		// preprocessing.  Bug 10164.
+
 #if defined(BUILD_OS_DARWIN)
-		/* Driver uses gcc to run assembler. If we set COMPILER_PATH,
-		 * gcc uses PSC version of cc1, which doesn't accept one of
-		 * the options (-mmacosx-version-min=10.5.1) which Apple's
-		 * gcc driver passes to Apple's cc1. Looks like the
-		 * "is_matching_phase" test might already be trying to fix
-		 * this, but it's not succeeding.
-		 */
-		if ((!suppress_compiler_path) &&
-		  (!is_matching_phase(get_phase_mask(P_any_cpp), phase)))
-#else /* defined(BUILD_OS_DARWIN) */
-		if (!is_matching_phase(get_phase_mask(P_any_cpp), phase))
-#endif /* defined(BUILD_OS_DARWIN) */
+        /* Driver uses gcc to run assembler. If we set COMPILER_PATH,
+         * gcc uses PSC version of cc1, which doesn't accept one of
+         * the options (-mmacosx-version-min=10.5.1) which Apple's
+         * gcc driver passes to Apple's cc1. Looks like the
+         * "is_matching_phase" test might already be trying to fix
+         * this, but it's not succeeding.
+         */
+            !suppress_compiler_path &&
 #endif
-		my_putenv ("COMPILER_PATH", "%s", get_phase_dir(P_collect));
+            !is_matching_phase(get_phase_mask(P_any_cpp), phase) &&
+#endif
+            1) {
+            my_putenv("COMPILER_PATH", "%s", get_phase_dir(P_collect));
+        }
+        /* Tell IPA where to find the driver. */
+        my_putenv("COMPILER_BIN", "%s/" PSC_NAME_PREFIX "cc-"
+                  PSC_FULL_VERSION, get_executable_dir());
+    }
 
-		/* Tell IPA where to find the driver. */
-		my_putenv ("COMPILER_BIN", "%s/" PSC_NAME_PREFIX "cc-"
-			   PSC_FULL_VERSION, get_executable_dir());
+    errmsg = pex_run(pex, PEX_SEARCH | PEX_LAST | (save_stderr ? PEX_STDERR_TO_STDOUT : 0),
+                     name, argv, output, NULL, &errnum);
+    if (errmsg != NULL) {
+        error(errmsg);
+        pex_free(pex);
+        cleanup();
+        do_exit(RC_SYSTEM_ERROR);
+    }
 
-		my_execv(name, argv);
-	} else {
-		/* parent */
-		int ret;	/* id of the /proc file */
-		while ((ret = waitpid (forkpid, &waitstatus, 0)) == -1 && errno == EINTR); /* there is some valid -1 for waitpid(), quick dirty way to restart */
-		if (ret == -1) {
-			error("bad return from wait");
-			cleanup();
-			do_exit(RC_SYSTEM_ERROR);
-			/* NOTREACHED */
-		}
-		if (time_flag) print_time(name);
+    if (!pex_get_status(pex, 1, &waitstatus)) {
+        pex_free(pex);
+        error("can't get program status");
+        cleanup();
+        do_exit(RC_SYSTEM_ERROR);
+    }
 
-		if (WIFSTOPPED(waitstatus)) {
-			termsig = WSTOPSIG(waitstatus);
-			error("STOPPED signal received from %s", name);
-			cleanup();
-			do_exit(RC_SYSTEM_ERROR);
-			/* NOTREACHED */
-		} else if (WIFEXITED(waitstatus)) {
-		        int status = WEXITSTATUS(waitstatus);
-			extern int inline_t;
-			boolean internal_err = FALSE;
-			boolean user_err = FALSE;
-		
-			if (phase == P_prof) {
-                           /* Make sure the .cfb files were created before
-                              changing the STATUS to OKAY */
-                           if (prof_file != NULL) {
-                              if (!(stat(fb_file, &stat_buf) != 0 && errno == ENOENT))
-                                  status = RC_OKAY;
-                           } else {
-			      internal_error("No count file was specified for a prof run");
-			      perror(program_name);
-                           }
-                        }
+    if (time_flag) print_time(name);
 
-			if (phase == P_f90_fe && keep_listing) {
-			    char *cif_file;
-			    cif_file = construct_given_name(
-					  drop_path(source_file), "T", TRUE);
-                            if (!(stat(cif_file, &stat_buf) != 0 && errno == ENOENT))
-			       f90_fe_status = status;
-			       f90_fe_name = string_copy(name);
+    pex_free(pex);
 
-			       /* Change the status to OKAY so that we can 
-				* execute the lister on the cif_file; we will
-				* take appropriate action on this status once 
-				* the lister has finished executing. See below.
-				*/
+    if (WIFSTOPPED(waitstatus)) {
+        error("STOPPED signal received from %s", name);
+        cleanup();
+        do_exit(RC_SYSTEM_ERROR);
+        /* NOTREACHED */
+    } else if (WIFEXITED(waitstatus)) {
+        int status = WEXITSTATUS(waitstatus);
+        extern int inline_t;
+        boolean internal_err = FALSE;
+        boolean user_err = FALSE;
+        
+        if (phase == P_prof) {
+            /* Make sure the .cfb files were created before
+               changing the STATUS to OKAY */
+            if (prof_file != NULL) {
+                if (!(stat(fb_file, &stat_buf) != 0 && errno == ENOENT)) {
+                    status = RC_OKAY;
+                }
+            } else {
+                internal_error("No count file was specified for a prof run");
+                perror(program_name);
+            }
+        }
 
-			       status = RC_OKAY;
-                        }
+        if (phase == P_f90_fe && keep_listing) {
+            char *cif_file = construct_given_name(drop_path(source_file), 
+                                                  "T", TRUE);
 
-			if (phase == P_lister) {
-			   if (status == RC_OKAY && f90_fe_status != RC_OKAY) {
+            if (!(stat(cif_file, &stat_buf) != 0 && errno == ENOENT)) {
+                f90_fe_status = status;
+            }
+            
+            f90_fe_name = string_copy(name);
 
-			      /* We had encountered an error in the F90_fe phase
-			       * but we ignored it so that we could execute the
-			       * lister on the cif file; we need to switch the
-			       * status to the status we received from F90_fe
-			       * and use the name of the F90_fe_phase, so that
-			       * we can issue a correct error message.
-			       */
+            /* Change the status to OKAY so that we can 
+             * execute the lister on the cif_file; we will
+             * take appropriate action on this status once 
+             * the lister has finished executing. See below.
+             */
+            status = RC_OKAY;
+        }
 
-			       status = f90_fe_status;
-			       name = string_copy(f90_fe_name);
+        if (phase == P_lister) {
+            if (status == RC_OKAY && f90_fe_status != RC_OKAY) {
 
-			       /* Reset f90_fe_status to OKAY for any further
-				* compilations on other source files.
-				*/
+                /* We had encountered an error in the F90_fe phase
+                 * but we ignored it so that we could execute the
+                 * lister on the cif file; we need to switch the
+                 * status to the status we received from F90_fe
+                 * and use the name of the F90_fe_phase, so that
+                 * we can issue a correct error message.
+                 */
 
-			       f90_fe_status = RC_OKAY;
-                           }
-                        }
+                status = f90_fe_status;
+                name = string_copy(f90_fe_name);
 
-			switch (status) {
-			case RC_OKAY:
+                /* Reset f90_fe_status to OKAY for any further
+                 * compilations on other source files.
+                 */
+
+                f90_fe_status = RC_OKAY;
+            }
+        }
+
+        switch (status) {
+            case RC_OKAY:
 #ifdef KEY
 				// If the command line has explicit inline
 				// setting, follow it; else follow the
@@ -565,14 +610,12 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 #endif // PATH64_ENABLE_GNU_FRONTEND
 				break;
 #endif
-				if (inline_t == UNDEFINED
-				    && is_matching_phase(
-					get_phase_mask(phase), P_any_fe) )
-				{
+                if (inline_t == UNDEFINED  && 
+                    is_matching_phase(get_phase_mask(phase), P_any_fe)) {
 #ifdef KEY
-					run_inline = FALSE;	// bug 11325
+                    run_inline = FALSE; // bug 11325
 #else
-					inline_t = FALSE;
+                    inline_t = FALSE;
 #endif
 				}
 				break;
@@ -594,42 +637,40 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 #endif // PATH64_ENABLE_GNU_FRONTEND
 
 #endif
-				if (inline_t == UNDEFINED
-				    && is_matching_phase(
-					get_phase_mask(phase), P_any_fe) )
-				{
+                if (inline_t == UNDEFINED && 
+                    is_matching_phase(get_phase_mask(phase), P_any_fe)) {
 #ifdef KEY
-					run_inline = TRUE;	// bug 11325
+                    run_inline = TRUE;  // bug 11325
 #else
-					inline_t = TRUE;
+                    inline_t = TRUE;
 #endif
-				}
-				/* completed successfully */
-				break;
-				
-			case RC_USER_ERROR:
-			case RC_NORECOVER_USER_ERROR:
-			case RC_SYSTEM_ERROR:
-			case RC_GCC_ERROR:
+                }
+                /* completed successfully */
+                break;
+                
+            case RC_USER_ERROR:
+            case RC_NORECOVER_USER_ERROR:
+            case RC_SYSTEM_ERROR:
+            case RC_GCC_ERROR:
 #ifdef KEY
-			case RC_RTL_MISSING_ERROR: /* bug 14054 */
+            case RC_RTL_MISSING_ERROR: /* bug 14054 */
 #endif
-				user_err = TRUE;
-				break;
+                user_err = TRUE;
+                break;
 
-			case RC_OVERFLOW_ERROR:
-				if (!ran_twice && phase == P_be) {
-					/* try recompiling with larger limits */
-					ran_twice = TRUE;
-					add_string (args, "-TENV:long_eh_offsets");
-					add_string (args, "-TENV:large_stack");
-					run_phase (phase, name, args);
-					return;
-				}
-				internal_err = TRUE;
-				break;
+            case RC_OVERFLOW_ERROR:
+                if (!ran_twice && phase == P_be) {
+                    /* try recompiling with larger limits */
+                    ran_twice = TRUE;
+                    add_string(args, "-TENV:long_eh_offsets");
+                    add_string(args, "-TENV:large_stack");
+                    run_phase(phase, name, args);
+                    return;
+                }
+                internal_err = TRUE;
+                break;
 #ifdef KEY
-			case RC_GCC_INTERNAL_ERROR:
+            case RC_GCC_INTERNAL_ERROR:
 #endif
 			case RC_INTERNAL_ERROR:
 				internal_err = TRUE;
@@ -695,10 +736,16 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 		} else if(WIFSIGNALED(waitstatus)){
 			termsig = WTERMSIG(waitstatus);
 			switch (termsig) {
+#ifdef SIGHUP
 			case SIGHUP:
+#endif
 			case SIGINT:
+#ifdef SIGQUIT
 			case SIGQUIT:
+#endif
+#ifdef SIGKILL
 			case SIGKILL:
+#endif
 			case SIGTERM:
 				error("%s died due to signal %d", name, termsig);
 				break;
@@ -710,9 +757,11 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 			if(waitstatus & WCOREFLAG) {
 				error("core dumped");
 			}
+#ifdef SIGKILL
 			if (termsig == SIGKILL) {
 				error("Probably caused by running out of swap space -- check %s", LOGFILE);
 			}
+#endif
 			cleanup();
 			do_exit(RC_SYSTEM_ERROR);
 		} else {
@@ -739,28 +788,42 @@ void
 catch_signals (void)
 {
     /* modelled after Handle_Signals in common/util/errors.c */
+#ifdef SIGHUP
     if (signal (SIGHUP, SIG_IGN) != SIG_IGN)
         signal (SIGHUP,  handler);
+#endif
     if (signal (SIGINT, SIG_IGN) != SIG_IGN)
         signal (SIGINT,  handler);
+#ifdef SIGQUIT
     if (signal (SIGQUIT, SIG_IGN) != SIG_IGN)
         signal (SIGQUIT,  handler);
+#endif
     if (signal (SIGILL, SIG_IGN) != SIG_IGN)
         signal (SIGILL,  handler);
+#ifdef SIGTRAP
     if (signal (SIGTRAP, SIG_IGN) != SIG_IGN)
         signal (SIGTRAP,  handler);
+#endif
+#ifdef SIGIOT
     if (signal (SIGIOT, SIG_IGN) != SIG_IGN)
         signal (SIGIOT,  handler);
+#endif
     if (signal (SIGFPE, SIG_IGN) != SIG_IGN)
         signal (SIGFPE,  handler);
+#ifdef SIGBUS
     if (signal (SIGBUS, SIG_IGN) != SIG_IGN)
         signal (SIGBUS,  handler);
+#endif
     if (signal (SIGSEGV, SIG_IGN) != SIG_IGN)
         signal (SIGSEGV,  handler);
+#ifdef SIGTERM
     if (signal (SIGTERM, SIG_IGN) != SIG_IGN)
         signal (SIGTERM,  handler);
+#endif
+#ifdef SIGPIPE
     if (signal (SIGPIPE, SIG_IGN) != SIG_IGN)
         signal (SIGPIPE,  handler);
+#endif
 }
 
 static struct rusage time_start;

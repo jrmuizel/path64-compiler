@@ -794,6 +794,9 @@ public:
 
 #define Trace_CopyProp (0)
 
+template <>
+void SUMMARIZE<IPL>::Trace(FILE* fp);
+
 #else // IPA_SUMMARY
 
 #define PROGRAM_NAME INLINER

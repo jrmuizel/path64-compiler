@@ -161,9 +161,9 @@ Process_Cc1_Command_Line(gs_t arg_list)
   char *command = Last_Pathname_Component(argv);
 //printf("%s\n", command);
 #ifdef FE_GNU_4_2_0
-  lang_cplus = !strcmp(command, "cc1plus42");
+  lang_cplus = !strcmp(command, FN_EXE("cc1plus42"));
 #else
-  lang_cplus = !strcmp(command, "cc1plus");
+  lang_cplus = !strcmp(command, FN_EXE("cc1plus"));
 #endif
 
   if (lang_cplus)

@@ -1431,6 +1431,7 @@ read_gcc_output(char *cmdline)
 	wait(&status);
 
 bail:
+
 	free(gcc_cmd);
 	return fp;
 }

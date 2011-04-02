@@ -260,7 +260,7 @@ extern void (*Preprocess_struct_access_p)(void);
 #include "w2c_weak.h"
 #include "w2f_weak.h"
 
-#if ! defined(BUILD_OS_DARWIN)
+#if ! defined(BUILD_OS_DARWIN) && !defined(_WIN32)
 #pragma weak Prp_Process_Command_Line
 #pragma weak Prp_Needs_Whirl2c
 #pragma weak Prp_Needs_Whirl2f
@@ -287,6 +287,13 @@ extern void (*Preprocess_struct_access_p)(void);
 #endif
 
 extern void Prompf_Emit_Whirl_to_Source(PU_Info* current_pu, WN* func_nd);
+
+#ifdef _WIN32
+extern void Prompf_Emit_Whirl_to_Source(PU_Info* current_pu, WN* func_nd)
+{
+    fprintf(stderr, "Prompf_Emit_Whirl_to_Source() is unimplemented\n");
+}
+#endif
 
 static INT ecount = 0;
 static BOOL need_wopt_output = FALSE;
@@ -388,34 +395,34 @@ load_components (INT argc, char **argv)
 
     if (Run_ipl) {
       Get_Phase_Args (PHASE_IPL, &phase_argc, &phase_argv);
-      load_so ("ipl.so", Ipl_Path, Show_Progress);
+      dso_load_simply ("ipl", Ipl_Path, Show_Progress);
       ipl_main (phase_argc, phase_argv);
       Set_Error_Descriptor (EP_BE, EDESC_BE);
     }
 
     if (Run_lno || Run_autopar) {
       Get_Phase_Args (PHASE_LNO, &phase_argc, &phase_argv);
-      load_so ("lno.so", LNO_Path, Show_Progress);
+      dso_load_simply ("lno", LNO_Path, Show_Progress);
       lno_main (phase_argc, phase_argv, argc, argv);
 
       // load in ipl.so if we need to perform automatic
       // parallelization and interprocedural analysis has
       // been performed
       if (Run_autopar && LNO_IPA_Enabled) {
-	  load_so("ipl.so", Ipl_Path, Show_Progress);
+	  dso_load_simply("ipl", Ipl_Path, Show_Progress);
       }
   }
 
     if (Run_prompf || Run_w2fc_early) {
       Get_Phase_Args (PHASE_PROMPF, &phase_argc, &phase_argv);
-      load_so("prompf_anl.so", Prompf_Anl_Path, Show_Progress);
+      dso_load_simply("prompf_anl", Prompf_Anl_Path, Show_Progress);
       Prompf_anl_loaded = TRUE;
       Anl_Process_Command_Line(phase_argc, phase_argv, argc, argv);
     }
 
     if (Run_purple) {
       Get_Phase_Args (PHASE_PURPLE, &phase_argc, &phase_argv);
-      load_so("purple.so", Purple_Path, Show_Progress);
+      dso_load_simply("purple", Purple_Path, Show_Progress);
       Purple_loaded = TRUE;
       Prp_Process_Command_Line(phase_argc, phase_argv, argc, argv);
     }
@@ -425,7 +432,7 @@ load_components (INT argc, char **argv)
 	(Run_purple && Prp_Needs_Whirl2c()))
     {
       Get_Phase_Args (PHASE_W2C, &phase_argc, &phase_argv);
-      load_so("whirl2c.so", W2C_Path, Show_Progress);
+      dso_load_simply("whirl2c", W2C_Path, Show_Progress);
       Whirl2c_loaded = TRUE;
       if (Run_prompf)
 	W2C_Set_Prompf_Emission(&Prompf_Id_Map);
@@ -437,7 +444,7 @@ load_components (INT argc, char **argv)
 	(Run_purple && Prp_Needs_Whirl2f()))
     {
       Get_Phase_Args (PHASE_W2F, &phase_argc, &phase_argv);
-      load_so("whirl2f.so", W2F_Path, Show_Progress);
+      dso_load_simply("whirl2f", W2F_Path, Show_Progress);
       Whirl2f_loaded = TRUE;
       if (Run_prompf)
 	W2F_Set_Prompf_Emission(&Prompf_Id_Map);
@@ -2027,13 +2034,13 @@ main (INT argc, char **argv)
       if (!Run_wopt && !Run_preopt) {
 	/* load wopt */
 	Get_Phase_Args (PHASE_WOPT, &phase_argc, &phase_argv);
-	load_so ("wopt.so", WOPT_Path, Show_Progress);
+	dso_load_simply ("wopt", WOPT_Path, Show_Progress);
 	wopt_main (phase_argc, phase_argv, argc, argv);
 	wopt_loaded = TRUE;
       }
 
       Get_Phase_Args (PHASE_LNO, &phase_argc, &phase_argv);
-      load_so ("lno.so", LNO_Path, Show_Progress);
+      dso_load_simply ("lno", LNO_Path, Show_Progress);
       lno_main (phase_argc, phase_argv, argc, argv);
     }
   }

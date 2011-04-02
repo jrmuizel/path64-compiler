@@ -594,6 +594,10 @@ path64_multiarch_link_multiarch_libraries( cc142 spin)
 path64_install_multiarch(cc142)
 path64_add_dependencies_from_multiarch( compiler-stage cc142 )
 
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    PATH64_MULTIARCH_LINK_LIBRARIES(cc142 winlib)
+ENDIF()
+
 
 ## changed pending verification
 #ADD_LIBRARY(backend

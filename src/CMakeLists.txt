@@ -14,7 +14,12 @@ INCLUDE(includes.cmake)
 add_custom_target(be-all)
 add_dependencies(compiler-stage be-all)
 
-ADD_SUBDIRECTORY(csu)
+#Hack for Window building
+IF((${CMAKE_SYSTEM_NAME} MATCHES "Windows"))
+ELSE() 
+    ADD_SUBDIRECTORY(csu)
+ENDIF()
+
 ADD_SUBDIRECTORY(driver)
 ADD_SUBDIRECTORY(libcif)
 ADD_SUBDIRECTORY(libcmplrs)
@@ -26,16 +31,22 @@ ADD_SUBDIRECTORY(common/targ_info/parser/gensyn)
 ADD_SUBDIRECTORY(common/targ_info)
 ADD_SUBDIRECTORY(common/util)
 ADD_SUBDIRECTORY(be)
-ADD_SUBDIRECTORY(libpscrt)
-path64_is_arch_enabled(arm_enabled arm)
+
+#Hack for Window building
+IF((${CMAKE_SYSTEM_NAME} MATCHES "Windows"))
+ELSE() 
+    ADD_SUBDIRECTORY(libpscrt)
+ENDIF()
 
 IF(PATH64_ENABLE_GNU_FRONTEND)
     ADD_SUBDIRECTORY(wgen)
 ENDIF()
 
 ADD_SUBDIRECTORY(ipa)
-    
-IF(PATH64_ENABLE_IPA)
+
+#Hack for Window building
+IF((${CMAKE_SYSTEM_NAME} MATCHES "Windows"))
+ELSEIF(PATH64_ENABLE_IPA)
     ADD_SUBDIRECTORY(ipa_link)
 ENDIF()
 
@@ -53,7 +64,13 @@ ADD_SUBDIRECTORY(libm)
 ADD_SUBDIRECTORY(libmpath)
 
 ADD_SUBDIRECTORY(instrumentation)
-ADD_SUBDIRECTORY(arith)
+
+#Hack for Window building
+IF((${CMAKE_SYSTEM_NAME} MATCHES "Windows")) 
+ELSE() 
+    ADD_SUBDIRECTORY(arith)
+ENDIF()
+
 # TODO : Can't determine linking method
 
 IF(${PATH64_ENABLE_FORTRAN})
@@ -77,3 +94,7 @@ ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 # http://docs.sun.com/app/docs/doc/816-0210/6m6nb7mf1?a=view
 # http://cvs.opensolaris.org/source/xref/onnv/onnv-gate/usr/src/uts/sun4/os/startup.c
 # 
+
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+     ADD_SUBDIRECTORY(windows)
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")

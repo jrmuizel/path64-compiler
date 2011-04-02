@@ -2360,7 +2360,7 @@ coff_print_aux (bfd *abfd ATTRIBUTE_UNUSED,
 	{
 	  BFD_ASSERT (! aux->fix_scnlen);
 #ifdef XCOFF64
-	  fprintf (file, "val %5lld",
+	  fprintf (file, "val %5"PRId64,
 		   (long long) aux->u.auxent.x_csect.x_scnlen.l);
 #else
 	  fprintf (file, "val %5ld", (long) aux->u.auxent.x_csect.x_scnlen.l);
@@ -2371,7 +2371,7 @@ coff_print_aux (bfd *abfd ATTRIBUTE_UNUSED,
 	  fprintf (file, "indx ");
 	  if (! aux->fix_scnlen)
 #ifdef XCOFF64
-	    fprintf (file, "%4lld",
+	    fprintf (file, "%4"PRId64,
 		     (long long) aux->u.auxent.x_csect.x_scnlen.l);
 #else
 	    fprintf (file, "%4ld", (long) aux->u.auxent.x_csect.x_scnlen.l);

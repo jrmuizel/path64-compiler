@@ -54,7 +54,7 @@
 #endif
 #include "be_symtab.h"                  // BE_ST
 #include "config.h"                     // Run_preopt, Run_ipl
-#include "dso.h"                        // load_so
+#include "dso.h"                        // dso_load
 #include "erglob.h"                     // ErrMsg
 #include "glob.h"                       // Show_Progress
 #include "ir_reader.h"                  // fdump_tree
@@ -537,8 +537,8 @@ IPA_update_procedure (IPA_NODE* node,
 static void
 IPA_preopt_initialize ()
 {
-  load_so ("wopt.so", WOPT_Path, Show_Progress);
-  load_so ("ipl.so", Ipl_Path, Show_Progress);
+  dso_load_simply ("wopt", WOPT_Path, Show_Progress);
+  dso_load_simply ("ipl", Ipl_Path, Show_Progress);
 
   MEM_POOL_Initialize (&IPA_preopt_pool, "IPA preopt pool", FALSE);
   MEM_POOL_Push (&IPA_preopt_pool);

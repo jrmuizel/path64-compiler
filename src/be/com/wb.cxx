@@ -183,18 +183,22 @@ extern void sdebug(const char init_buffer[])
   case WBP_OMP_PRELOWER: 
     s_omp_debug(init_buffer); 
     break;
+#ifndef _WIN32
   case WBP_LNO: 
     s_lno_debug(init_buffer); 
     break; 
+#endif
   case WBP_LOWER: 
     s_lwr_debug(init_buffer); 
     break;
   case WBP_IPL:
     s_ipl_debug(init_buffer);
     break; 
+#ifndef _WIN32
   case WBP_IPA: 
     cg_sdebug(init_buffer);
     break;
+#endif
   default: 
     fprintf(stdout, "Whirl browser not valid in this phase.\n");
     break; 

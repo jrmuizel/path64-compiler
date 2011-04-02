@@ -411,20 +411,17 @@ inline UINT SI_RESOURCE_Bit_Index( const SI_RESOURCE* res )
   return res->bit_index;
 }
 
-#ifndef USE_WEAK_REFERENCES
+extern const SI_SUMMARY *Cur_Si_Summary;
 
-extern const int * SI_resource_count_p;
-#define SI_resource_count (*SI_resource_count_p)
-
-extern const SI_RESOURCE * const * SI_resources_p;
-#define SI_resources SI_resources_p
-
-#else
-
-#pragma weak SI_resource_count
-#pragma weak SI_resources
-
-#endif
+#define SI_resource_count   (Cur_Si_Summary->resource_count)
+#define SI_resources        (Cur_Si_Summary->resources)
+#define SI_RRW_initializer  (Cur_Si_Summary->RRW_initializer)
+#define SI_RRW_overuse_mask (Cur_Si_Summary->RRW_overuse_mask)
+#define SI_issue_slot_count (Cur_Si_Summary->issue_slot_count)
+#define SI_issue_slots      (Cur_Si_Summary->issue_slots)
+#define SI_top_si           (Cur_Si_Summary->top_si)
+#define SI_ID_count         (Cur_Si_Summary->ID_count)
+#define SI_ID_si            (Cur_Si_Summary->ID_si)
 
 inline const char* SI_RESOURCE_ID_Name( SI_RESOURCE_ID id )
 {
@@ -480,18 +477,6 @@ SI_RESOURCE_ID_SET_Complement( SI_RESOURCE_ID_SET s )
 
 /****************************************************************************
  ****************************************************************************/
-#ifndef USE_WEAK_REFERENCES
-extern TI_SI_CONST SI_RRW * SI_RRW_initializer_p;
-extern const SI_RRW * SI_RRW_initializer_p;
-#define SI_RRW_initializer (*SI_RRW_initializer_p)
-extern TI_SI_CONST SI_RRW * SI_RRW_overuse_mask_p;
-#define SI_RRW_overuse_mask (*SI_RRW_overuse_mask_p)
-#else
-
-#pragma weak SI_RRW_initializer
-#pragma weak SI_RRW_overuse_mask
-
-#endif
 
 inline SI_RRW SI_RRW_Initial(void)
 {
@@ -530,19 +515,6 @@ inline INT SI_ISSUE_SLOT_Avail_Per_Cycle( const SI_ISSUE_SLOT* slot )
 {
   return slot->avail_per_cycle;
 }
-
-#ifndef USE_WEAK_REFERENCES
-extern TI_SI_CONST INT * SI_issue_slot_count_p;
-extern const int * SI_issue_slot_count_p;
-#define SI_issue_slot_count (*SI_issue_slot_count_p)
-extern const SI_ISSUE_SLOT * TI_SI_CONST * SI_issue_slots_p;
-#define SI_issue_slots SI_issue_slots_p
-#else
-
-#pragma weak SI_issue_slot_count
-#pragma weak SI_issue_slots
-
-#endif
 
 inline INT SI_ISSUE_SLOT_Count(void)
 {
@@ -595,17 +567,6 @@ inline SI_RRW SI_RR_Cycle_RRW( SI_RR req, UINT cycle )
 
 /****************************************************************************
  ****************************************************************************/
-
-#ifndef USE_WEAK_REFERENCES
-
-extern const SI * TI_SI_CONST * SI_top_si_p;
-#define SI_top_si SI_top_si_p
-#else
-
-#pragma weak SI_top_si
-
-#endif
-
 
 inline const char* TSI_Name( TOP top )
 {
@@ -702,18 +663,6 @@ inline INT TSI_Write_Write_Interlock( TOP top )
 
 /****************************************************************************
  ****************************************************************************/
-#ifndef USE_WEAK_REFERENCES
-extern TI_SI_CONST int * SI_ID_count_p;
-extern const int * SI_ID_count_p;
-#define SI_ID_count (*SI_ID_count_p)
-extern const SI * TI_SI_CONST * SI_ID_si_p;
-#define SI_ID_si SI_ID_si_p
-#else
-
-#pragma weak SI_ID_count
-#pragma weak SI_ID_si
-
-#endif
 
 inline INT SI_ID_Count(void)
 {

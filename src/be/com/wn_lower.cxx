@@ -51,8 +51,10 @@
 #if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
+#ifndef _WIN32
 #include <signal.h>
 #include "elf_defines.h"
+#endif // !_WIN32
 
 #include "defs.h"
 #include "config.h"

@@ -112,7 +112,10 @@ extern void Depgraph_Write (void *depgraph, Output_File *fl, WN_MAP off_map);
 #endif /* BACK_END */
 
 static void (*old_sigsegv) (int);   /* the previous signal handler */
+
+#ifdef SIGBUS
 static void (*old_sigbus) (int);   /* the previous signal handler */
+#endif
 
 Output_File *Current_Output = 0;
 
@@ -128,8 +131,6 @@ cleanup (Output_File *fl)
 	free (fl->section_list);
     fl->num_of_section = 0;
     fl->section_list = NULL;
-
-    munmap(fl->map_addr, fl->mapped_size);
     fl->map_addr = NULL;
     fl->file_size = 0;
 } /* cleanup */
@@ -164,9 +165,11 @@ ir_bwrite_signal_handler (int sig, int err_num)
 		     err_str);
 #endif
     switch (sig) {
+#ifdef SIGBUS
     case SIGBUS:
 	old_handler = old_sigbus;
 	break;
+#endif
     case SIGSEGV:
 	old_handler = old_sigsegv;
 	break;
@@ -174,13 +177,13 @@ ir_bwrite_signal_handler (int sig, int err_num)
     
     if (old_handler == SIG_DFL) {
       /* resignal - will get default handler */
-      kill(getpid(), sig);
+      raise(sig);
+      exit(RC_INTERNAL_ERROR);
     } else if (old_handler != SIG_IGN) {
       /* call old handler */
       (*old_handler)(sig);
     }
     return;
-
 } /* ir_bwrite_signal_handler */
 
 
@@ -396,10 +399,11 @@ WN_open_output (char *file_name)
 	old_sigsegv = signal (SIGSEGV, reinterpret_cast<void (*)(int)>
 			      (ir_bwrite_signal_handler));
 
+#ifdef SIGBUS
     if (old_sigbus == 0)
 	old_sigbus = signal (SIGBUS, reinterpret_cast<void (*)(int)>
 			     (ir_bwrite_signal_handler)); 
-	
+#endif
 
     fl = (Output_File *)malloc(sizeof(Output_File));
     if (!fl) return NULL;
@@ -1302,6 +1306,8 @@ WN_close_output (Output_File *fl)
 	UINT64 e_shoff = layout_sections (strtab_sec, fl);
 	write_output (e_shoff, strtab_sec, fl, ELF64());
     }
+
+    munmap(fl->map_addr, fl->file_size);
 
     if (ftruncate(fl->output_fd, fl->file_size) != 0)
 	ErrMsg (EC_IR_Close, fl->file_name, errno);

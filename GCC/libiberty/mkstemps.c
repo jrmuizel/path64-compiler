@@ -92,6 +92,7 @@ mkstemps (char *pattern, int suffix_len)
   if ((int) len < 6 + suffix_len
       || strncmp (&pattern[len - 6 - suffix_len], "XXXXXX", 6))
     {
+      errno = EINVAL;
       return -1;
     }
 
@@ -136,5 +137,6 @@ mkstemps (char *pattern, int suffix_len)
 
   /* We return the null string if we can't find a unique file name.  */
   pattern[0] = '\0';
+  errno = EEXIST;
   return -1;
 }

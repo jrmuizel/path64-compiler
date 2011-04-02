@@ -42,7 +42,7 @@
 #include "linker.h"     
 #include "main_defs.h"
 #include "opcode.h"     
-#include "process.h"    
+#include "process_p.h"    
 
 #include "wn_core.h"    
 #include "pu_info.h"    

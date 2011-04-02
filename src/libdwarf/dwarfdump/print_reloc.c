@@ -26,6 +26,7 @@
 
 $Header: libdwarf/dwarfdump/print_reloc.c 1.2 05/05/25 12:44:27-07:00 bos@serpentine.pathscale.com $ */
 
+#include <inttypes.h>
 #include "globals.h"
 
 
@@ -368,7 +369,7 @@ static void print_reloc_information_64(int section_no, Dwarf_Small *buf,
 	/* This works for the Elf64_Rel in linux
 	*/
 	Elf64_Rel *p = (Elf64_Rel *) (buf + off);
-	printf("%5lu\t<%3lld> %-34s%s\n", (unsigned long int) (p->r_offset), 
+	printf("%5lu\t<%3"PRId64"> %-34s%s\n", (unsigned long int) (p->r_offset), 
 	       (long long) ELF64_R_SYM(p->r_info), 
 	       sym_data[ELF64_R_SYM(p->r_info) - 1].name, 
 	       get_reloc_type_names(ELF64_R_TYPE(p->r_info)));

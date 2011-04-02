@@ -149,7 +149,7 @@ gs_unsigned_char_t *gs_read (const gs_string_t filename)
   struct stat statbuf;
   char *p, *string_section, *maxptr;
  
-  fd = open (filename, O_RDONLY); 
+  fd = open (filename, O_RDWR); 
   GS_ASSERT (fd != -1, "open failed.\n");
   fstat_rv = fstat (fd, &statbuf);
   // printf ("statbuf.st_size: %ld\n", statbuf.st_size);

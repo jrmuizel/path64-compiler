@@ -65,7 +65,7 @@
 #include "f90_lower.h"
 
 #ifdef __GNUC__
-#if ! defined(BUILD_OS_DARWIN)
+#if ! (defined(BUILD_OS_DARWIN) || defined(_WIN32))
 #pragma weak Anl_File_Path
 #pragma weak New_Construct_Id
 #endif /* defined(BUILD_OS_DARWIN) */

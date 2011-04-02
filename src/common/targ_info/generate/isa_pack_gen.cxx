@@ -39,6 +39,8 @@
 //  $Author: bos@eng-25.internal.keyresearch.com $
 //  $Source: /home/bos/bk/kpro64-pending/common/targ_info/generate/SCCS/s.isa_pack_gen.cxx $
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -447,9 +449,9 @@ void ISA_Pack_End(void)
   const char * const isa_pack_null_format = 
 			"  { %-22s, %2d, %2d,   %*d },  /* %s */\n";
   const char * const isa_pack_operand_format = 
-			"  { %-22s, %2d, %2d, 0x%0*llx },  /* %s, OPND%d */\n";
+			"  { %-22s, %2d, %2d, 0x%0*"PRIx64" },  /* %s, OPND%d */\n";
   const char * const isa_pack_result_format = 
-			"  { %-22s, %2d, %2d, 0x%0*llx },  /* %s, RESULT%d */\n";
+			"  { %-22s, %2d, %2d, 0x%0*"PRIx64" },  /* %s, RESULT%d */\n";
   int init_digits;
   int mask_digits;
   int top;
@@ -636,7 +638,7 @@ void ISA_Pack_End(void)
     op_assembly *op_pack = op_packs[top];
     fprintf(cfile, "  {");
     for (w = 0; w < inst_words; ++w) {
-      fprintf(cfile, " 0x%0*llx,",
+      fprintf(cfile, " 0x%0*"PRIx64",",
 		     init_digits, op_pack ? op_pack->opcode_mask[w] : 0LL);
     }
     fprintf(cfile, " }, /* %s */\n", TOP_Name((TOP)top));

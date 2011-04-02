@@ -63,7 +63,7 @@
 ***
 ***     This is the basic data structure that all phases of the compiler
 ***     use to represent programs.  It is used to represent expressions,
-***     leaves, statments (the side-effecting roots of expression
+***     leaves, statements (the side-effecting roots of expression
 ***     trees commonly called "stats" in other compilers), and also units
 ***     of hierarchical control flow such as do loops and if statements.
 ***
@@ -136,12 +136,12 @@
 ***		For all statements:
 ***
 ***		    WN    *next
-***			If a staement is a child of a OPR_BLOCK, this
+***			If a statement is a child of a OPR_BLOCK, this
 ***			points to the next statement under the OPR_BLOCK.
 ***			Otherwise, this is NULL.
 ***
 ***		    WN    *prev
-***			If a staement is a child of a OPR_BLOCK, this
+***			If a statement is a child of a OPR_BLOCK, this
 ***			points to the previous statement under the OPR_BLOCK.
 ***			Otherwise, this is NULL.
 ***

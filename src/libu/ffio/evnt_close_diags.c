@@ -28,6 +28,7 @@
 #pragma ident "@(#) libu/ffio/evnt_close_diags.c	92.4	10/29/99 21:40:31"
 
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -261,7 +262,7 @@ _evnt_close_diags(struct fdinfo *fio, struct evnt_f *evnt_info, int final)
 		    "    parent <--> child layer     %s <--> %s\n",
 	  	    evnt_info->parent_name, evnt_info->child_name);	
 	    fprintf(_GL_evnt_logptr, 
-		    "    data transfered             %lld %s\n",
+		    "    data transfered             %"PRId64" %s\n",
 		    delivered, units);
 	    fprintf(_GL_evnt_logptr, 
 		    "    time for transfer           %fs\n", wall);
@@ -304,7 +305,7 @@ _evnt_close_diags(struct fdinfo *fio, struct evnt_f *evnt_info, int final)
 	    fprintf(_GL_evnt_logptr, "\n");
 
 	    fprintf(_GL_evnt_logptr, 
-		    "    sector size             %lld (bytes)\n", 
+		    "    sector size             %"PRId64" (bytes)\n", 
 		    (evint64) evnt_info->sector_mask + 1LL);
 #ifdef _CRAY
 	    fprintf(_GL_evnt_logptr, 
@@ -316,10 +317,10 @@ _evnt_close_diags(struct fdinfo *fio, struct evnt_f *evnt_info, int final)
 
 #endif
 	    fprintf(_GL_evnt_logptr,
-		    "    current file size       %lld %s\n",
+		    "    current file size       %"PRId64" %s\n",
 		    _evnt_units(evnt_info, evnt_info->cur_size), units);
 	    fprintf(_GL_evnt_logptr,
-		    "    high water file size    %lld %s\n",
+		    "    high water file size    %"PRId64" %s\n",
 			 _evnt_units(evnt_info, evnt_info->max_size), units);
 
 	    fprintf(_GL_evnt_logptr, "\n");
@@ -334,11 +335,11 @@ _evnt_close_diags(struct fdinfo *fio, struct evnt_f *evnt_info, int final)
 
 	    wall = evnt_info->open_time * rtc_factor;
 
-	    fprintf(_GL_evnt_logptr, "       open   %10lld           %8.2f\n",
+	    fprintf(_GL_evnt_logptr, "       open   %10"PRId64"           %8.2f\n",
 		     counts.open, wall);
 
 	    if (counts.seek || evnt_info->do_zeros)
-		fprintf(_GL_evnt_logptr, "       seek   %10lld\n", 
+		fprintf(_GL_evnt_logptr, "       seek   %10"PRId64"\n", 
 			 counts.seek);
 
 	    for (i = 0; i < 4; i++) {
@@ -372,7 +373,7 @@ _evnt_close_diags(struct fdinfo *fio, struct evnt_f *evnt_info, int final)
 
 		    wall = (double) rwinfo->time * rtc_factor;
 		    fprintf(_GL_evnt_logptr,
-			 "       %-6s %10lld%10lld %8.2f %10lld  %10lld %10lld %10lld %10lld",
+			 "       %-6s %10"PRId64"%10"PRId64" %8.2f %10"PRId64"  %10"PRId64" %10"PRId64" %10"PRId64" %10"PRId64"",
 			     name[i], count, rwinfo->ill_formed, wall,
 			     _evnt_units(evnt_info, rwinfo->requested),
 			     _evnt_units(evnt_info, rwinfo->delivered),
@@ -380,7 +381,7 @@ _evnt_close_diags(struct fdinfo *fio, struct evnt_f *evnt_info, int final)
 			     _evnt_units(evnt_info, rwinfo->max),
 			     _evnt_units(evnt_info, avg));
 		    if (i == 1 || i == 3)
-			fprintf(_GL_evnt_logptr, "%10lld\n", 
+			fprintf(_GL_evnt_logptr, "%10"PRId64"\n", 
 				 rwinfo->all_hidden);
 		    else
 			fprintf(_GL_evnt_logptr, "\n");
@@ -391,9 +392,9 @@ _evnt_close_diags(struct fdinfo *fio, struct evnt_f *evnt_info, int final)
 
 	    if (counts.listio || evnt_info->do_zeros) {
 	        fprintf(_GL_evnt_logptr,
-		         "       listio   %8lld           %8.2f\n",
+		         "       listio   %8"PRId64"           %8.2f\n",
 			 counts.listio, wall);
-		fprintf(_GL_evnt_logptr, "          seek  %8lld \n",
+		fprintf(_GL_evnt_logptr, "          seek  %8"PRId64" \n",
 			 counts.listio_seek);
 
 		for (i = 0; i < 4; i++) {
@@ -425,7 +426,7 @@ _evnt_close_diags(struct fdinfo *fio, struct evnt_f *evnt_info, int final)
 		        } else
 			    avg = rwinfo->requested / count;
 		        fprintf(_GL_evnt_logptr,
-		                 "          %-6s%8lld%10lld          %10lld  %10lld %10lld %10lld %10lld",
+		                 "          %-6s%8"PRId64"%10"PRId64"          %10"PRId64"  %10"PRId64" %10"PRId64" %10"PRId64" %10"PRId64"",
 			         name[i], count, rwinfo->ill_formed,
 			         _evnt_units(evnt_info, rwinfo->requested),
 			         _evnt_units(evnt_info, rwinfo->delivered),
@@ -434,7 +435,7 @@ _evnt_close_diags(struct fdinfo *fio, struct evnt_f *evnt_info, int final)
 			         _evnt_units (evnt_info, avg));
 
 		        if (i == 1 || i == 3)
-			    fprintf(_GL_evnt_logptr, "%10lld\n", 
+			    fprintf(_GL_evnt_logptr, "%10"PRId64"\n", 
 			         rwinfo->all_hidden);
 		        else
 			    fprintf(_GL_evnt_logptr, "\n");
@@ -449,14 +450,14 @@ _evnt_close_diags(struct fdinfo *fio, struct evnt_f *evnt_info, int final)
 		if (counts.fcntl_recall || evnt_info->do_zeros) {
 		    wall = (double) evnt_info->fcntl_recall_time * rtc_factor;
 		    fprintf(_GL_evnt_logptr,
-		             "          recall%8lld           %8.2f\n",
+		             "          recall%8"PRId64"           %8.2f\n",
 			     counts.fcntl_recall, wall);
 		}
 
 		if (counts.fcntl_ialloc || evnt_info->do_zeros) {
 		    wall = (double) evnt_info->fcntl_ialloc_time * rtc_factor;
 		    fprintf(_GL_evnt_logptr,
-			     "          ialloc%8lld           %8.2f %10lld  %10lld\n",
+			     "          ialloc%8"PRId64"           %8.2f %10"PRId64"  %10"PRId64"\n",
 		             counts.fcntl_ialloc, wall,
 			     _evnt_units(evnt_info, evnt_info->fcntl_ialloc_req),
 			     _evnt_units(evnt_info, evnt_info->fcntl_ialloc_del));
@@ -466,7 +467,7 @@ _evnt_close_diags(struct fdinfo *fio, struct evnt_f *evnt_info, int final)
 		if (counts.fcntl_other || evnt_info->do_zeros) {
 		    wall = (double) evnt_info->fcntl_other_time * rtc_factor;
 		    fprintf(_GL_evnt_logptr,
-			     "          other %8lld           %8.2f\n",
+			     "          other %8"PRId64"           %8.2f\n",
 			    counts.fcntl_other, wall);
 		}
 	    }
@@ -474,41 +475,41 @@ _evnt_close_diags(struct fdinfo *fio, struct evnt_f *evnt_info, int final)
 	    if (counts.readc || evnt_info->do_zeros) {
 		wall = (double) evnt_info->readc_time * rtc_factor;
 		fprintf(_GL_evnt_logptr,
-			 "       readc  %10lld           %8.2f\n",
+			 "       readc  %10"PRId64"           %8.2f\n",
 			 counts.readc, wall);
 	    }
 
 	    if (counts.writec || evnt_info->do_zeros) {
 		wall = (double) evnt_info->writec_time * rtc_factor;
 		fprintf(_GL_evnt_logptr,
-			 "       writec %10lld           %8.2f\n",
+			 "       writec %10"PRId64"           %8.2f\n",
 			 counts.writec, wall);
 	    }
 
 	    if (counts.flush || evnt_info->do_zeros) {
 		wall = (double) evnt_info->flush_time * rtc_factor;
-		fprintf(_GL_evnt_logptr, "       flush  %10lld           %8.2f\n",
+		fprintf(_GL_evnt_logptr, "       flush  %10"PRId64"           %8.2f\n",
 			 counts.flush, wall);
 	    }
 
 	    if (counts.weof || evnt_info->do_zeros)
-		fprintf(_GL_evnt_logptr, "       weof   %10lld\n", counts.weof);
+		fprintf(_GL_evnt_logptr, "       weof   %10"PRId64"\n", counts.weof);
 
 	    if (counts.weod || evnt_info->do_zeros)
-		fprintf(_GL_evnt_logptr, "       weod   %10lld%10lld\n",
+		fprintf(_GL_evnt_logptr, "       weod   %10"PRId64"%10"PRId64"\n",
 			 counts.weod, evnt_info->ill_formed_weod);
 
 	    if (counts.bksp || evnt_info->do_zeros)
-		fprintf(_GL_evnt_logptr, "       bksp   %10lld\n", counts.bksp);
+		fprintf(_GL_evnt_logptr, "       bksp   %10"PRId64"\n", counts.bksp);
 
 	    if (counts.close || evnt_info->do_zeros) {
 		wall = (double) evnt_info->close_time * rtc_factor;
-		fprintf(_GL_evnt_logptr, "       close  %10lld           %8.2f\n",
+		fprintf(_GL_evnt_logptr, "       close  %10"PRId64"           %8.2f\n",
 			 counts.close, wall);
  	    }
 
 	    if (counts.size_changes || evnt_info->do_zeros) {
-		fprintf(_GL_evnt_logptr, "       extends %9lld\n", 
+		fprintf(_GL_evnt_logptr, "       extends %9"PRId64"\n", 
 			 counts.size_changes);
 	    }
 

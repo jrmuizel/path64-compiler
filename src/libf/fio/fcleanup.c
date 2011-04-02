@@ -28,6 +28,7 @@
 
 #pragma ident "@(#) libf/fio/fcleanup.c	92.1	06/18/99 16:08:47"
 
+#include <inttypes.h>
 #include <errno.h>
 #include <foreign.h>
 #include <stdlib.h>
@@ -77,7 +78,7 @@ _fcleanup(void)
 
 				if (!_is_file_name(uptr->uid)) {
 					sprintf(msgbuf,
-		    "FATAL error closing unit %lld during program termination",
+		    "FATAL error closing unit %"PRId64" during program termination",
 						unum);
 				}
 				else {

@@ -30,6 +30,7 @@
 #pragma ident "@(#) libf/fio/dopexfer.c	92.3	06/18/99 10:21:14"
 #endif
 
+#include <inttypes.h>
 #include <liberrno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -160,7 +161,7 @@ _xfer_iolist(
 			DD; putc('\n', _df);
 			DD; fprintf(_df,"----------------------------------\n");
 			DD; fprintf(_df,
-				"Begin iolist for unit %lld   func=%s\n",
+				"Begin iolist for unit %"PRId64"   func=%s\n",
 				cup->uid, fnm);
 
 			DD; fprintf(_df,"iolist->icount   = %d\n",iolist->icount);
@@ -487,7 +488,7 @@ general_dv_processing:
 done:
 	if (DEBUG_90IO) {
 		if (_ddope_nest == 1) {
-			DD; fprintf(_df,"End iolist for unit %lld\n",cup->uid);
+			DD; fprintf(_df,"End iolist for unit %"PRId64"\n",cup->uid);
 		}
 		_ddope_nest--;
 	}

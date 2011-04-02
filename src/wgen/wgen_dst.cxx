@@ -100,6 +100,11 @@ extern "C"{
 #include <string>
 #include <vector>
 #include <map>
+#ifdef _WIN32
+#include <alloca.h>
+#include <winsock2.h>   /* for gethostname() */
+extern "C" int getdomainname(char *name, size_t len);
+#endif
 #ifdef KEY
 #include "stamp.h"	/* For INCLUDE_STAMP */
 #include "demangle.h"

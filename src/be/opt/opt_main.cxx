@@ -344,7 +344,7 @@
 #include "dep_graph.h"			/* for tracing Current_Dep_Graph */
 #include "wb_ipl.h"			/* whirl browser for ipl */ 
 
-#include "regex.h"                      // For regcomp and regexec
+#include <regex.h>                      // For regcomp and regexec
 #include "xstats.h"                     // For PU_WN_BB_Cnt
 
 extern "C" void

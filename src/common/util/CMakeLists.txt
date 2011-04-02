@@ -53,3 +53,10 @@ path64_add_library_for_arch(comutil-host ${host_arch} STATIC ${COMUTIL_SRCS})
 path64_set_property_for_arch(comutil-host ${host_arch} COMPILE_FLAGS
                              "-I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@ -fPIC")
 
+
+
+add_executable(gen_x_set gen_x_set.c string_case.cxx)
+
+add_executable(gen_x_list gen_x_list.c string_case.cxx)
+
+add_executable(gen_x_prop gen_x_prop.c string_case.cxx)

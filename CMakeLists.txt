@@ -315,6 +315,25 @@ ELSE()
     SET(LD_HASH_STYLE_FLAG "")
 ENDIF()
 
+IF(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+    # --export-dynamic is not supported on osol
+    SET(EXPORT_DYNAMIC_SUPPORTED "no")
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    # --export-dynamic is not supported on Windows
+    SET(EXPORT_DYNAMIC_SUPPORTED "no")
+ELSE()
+    SET(EXPORT_DYNAMIC_SUPPORTED "yes")
+ENDIF()
+
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    SET(SHELL_EXT cmd)
+    SET(SYMLINK_COMMAND ${CMAKE_COMMAND} -E copy) 
+    SET(PATH64_AUXILARY_LD_FLAGS '"-FIXME"')
+    # ADD_DEFINITIONS(-DPSC_FULL_VERSION="${PSC_FULL_VERSION}")
+ELSE()
+    SET(SHELL_EXT sh)
+    SET(SYMLINK_COMMAND ln -s)
+ENDIF()
 # build runtime search paths
 include(${Path64_SOURCE_DIR}/cmake/Modules/GCCRuntimeDirs.cmake)
 

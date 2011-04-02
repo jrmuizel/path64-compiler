@@ -175,7 +175,7 @@ public:
    {
       char s[32];
 
-      sprintf(s, "%1lld", i);
+      sprintf(s, "%1"PRId64, i);
       Write_String(s);
    }
 

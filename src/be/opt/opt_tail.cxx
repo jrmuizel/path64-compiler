@@ -105,6 +105,9 @@ static char *rcs_id = 	opt_tail_CXX"$Revision: 1.5 $";
 #include "wn.h"
 #include "config.h"
 #include "stab.h"
+#ifdef _WIN32
+#include <alloca.h>
+#endif
 
 
 // ====================================================================

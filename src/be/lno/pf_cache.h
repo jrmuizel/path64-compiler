@@ -153,7 +153,7 @@ public:
               _num_levels, Targ_Name(Target));
       for (i=0; i<_num_levels; i++) {
         MHD_LEVEL* mhdp = _mhdptr[i];
-        printf (" Level %3d cache: sz %7lld, eff_sz %7lld (cf=%2d), ln_sz %4d\n",
+        printf (" Level %3d cache: sz %7"PRId64", eff_sz %7"PRId64" (cf=%2d), ln_sz %4d\n",
                 i+1, mhdp->Size, LNO_Prefetch_Cache_Factor*(mhdp->Effective_Size),
                 LNO_Prefetch_Cache_Factor, mhdp->Line_Size);
       });
@@ -162,7 +162,7 @@ public:
                _num_levels, Targ_Name(Target)); 
       for (i=0; i<_num_levels; i++) {
         MHD_LEVEL* mhdp = _mhdptr[i];
-        fprintf (TFile, " Level %3d cache: sz %7lld, eff_sz %7lld (cf=%2d), ln_sz %4d\n",
+        fprintf (TFile, " Level %3d cache: sz %7"PRId64", eff_sz %7"PRId64" (cf=%2d), ln_sz %4d\n",
                 i+1, mhdp->Size, LNO_Prefetch_Cache_Factor*(mhdp->Effective_Size),
                  LNO_Prefetch_Cache_Factor, mhdp->Line_Size);
       });

@@ -7,6 +7,14 @@ SET(LINUX_HFILES
 SET(LINUX_SYS_HFILES
 	syssgi.h)
 
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
+include_directories(BEFORE windows/include)
+
+add_definitions(-DHAVE_ALLOCA_H=1)
+
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
 SET(INCLUDE_HFILES
 	compact_reloc.h
 	dwarf.h
@@ -119,6 +127,24 @@ ENDFOREACH(H)
 #	done
 FOREACH(H ${LINUX_SYS_HFILES})
     CONFIGURE_FILE(linux/include/sys/${H} ${PATHSCALE_INCLUDE_DIR}/sys/${H})
+ENDFOREACH(H)
+
+#	@for h in $(WINDOWS_HFILES); do \
+#	    if ! test -e $$h; then \
+#	      ln -sf $(BUILD_TOT)/windows/include/$$h $$h; \
+#	    fi; \
+#	done
+FOREACH(H ${WINDOWS_HFILES})
+    CONFIGURE_FILE(windows/include/${H} ${PATHSCALE_INCLUDE_DIR}/${H})
+ENDFOREACH(H)
+
+#	@for h in $(WINDOWS_SYS_HFILES); do \
+#	    if ! test -e sys/$$h; then \
+#	      ln -sf $(BUILD_TOT)/../windows/include/sys/$$h sys/$$h; \
+#	    fi; \
+#	done
+FOREACH(H ${WINDOWS_SYS_HFILES})
+    CONFIGURE_FILE(windows/include/sys/${H} ${PATHSCALE_INCLUDE_DIR}/sys/${H})
 ENDFOREACH(H)
 
 

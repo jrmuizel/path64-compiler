@@ -53,6 +53,9 @@
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#ifdef _WIN32
+#include <alloca.h>
+#endif
 #include "main_defs.h"
 
 #include "phases.h"
@@ -1097,7 +1100,6 @@ add_file_args (string_list_t *args, phases_t index)
 			add_string(args, "-xassembler-with-cpp");
 			break;
 		case L_CC:
-			add_string(args, "-xc++");
 			break;
 		case L_f77:
 		case L_f90:
@@ -1107,8 +1109,6 @@ add_file_args (string_list_t *args, phases_t index)
 				add_string(args, "-Wno-endif-labels");
 		case L_cc:
 		default:
-			if (source_kind != S_h)
-			  add_string(args, "-xc");
 			break;
 		}
 #else // !PATH64_ENABLE_PSCRUNTIME
@@ -3045,7 +3045,7 @@ check_existence_of_phases (void)
 	    /* check if be phase exists, to warn about wrong toolroot */
 	case P_ipl:
 	    if (!file_exists (concat_strings (get_phase_dir(phase_order[i]),
-					      "/ipl.so")))
+					      "/" FN_DSO("ipl"))))
 		give_warning = TRUE;
 
 	    /* fall through */
@@ -3053,7 +3053,7 @@ check_existence_of_phases (void)
 	case P_be:
 
 	    if (!file_exists (concat_strings (get_phase_dir(phase_order[i]),
-					      "/be.so")))
+					      "/" FN_DSO("be"))))
 		give_warning = TRUE;
 
 	    if (!file_exists(get_full_phase_name(phase_order[i])))
@@ -3320,9 +3320,10 @@ run_ld (void)
 
 	if (ipa == TRUE) {
 	    ldpath = get_phase_dir (ldphase);
-	    ldpath = concat_strings (ldpath, "/ipa.so");
+	    ldpath = concat_strings (ldpath, "/" FN_DSO("ipa"));
 	    if (!file_exists (ldpath)) {
-		error ("ipa.so is not installed on %s", get_phase_dir (ldphase));
+		error (FN_DSO("ipa") " is not installed on %s", 
+			   get_phase_dir (ldphase));
 		return;
 	    }
 	    // Tell ipa_link about the LD_LIBRARY_PATH that was in effect
@@ -3419,6 +3420,9 @@ run_ar(void)
 void
 run_pixie (void)
 {
+#ifdef _WIN32
+    error("run_pixie is unimplemented\n");
+#else
  int link_status;
  string_list_t *args = init_string_list();
  char *pixie_file;
@@ -3446,11 +3450,15 @@ run_pixie (void)
       }
    }
  }
+#endif
 }
 
 void
 run_prof (void)
 {
+#ifdef _WIN32
+    error("run_prof is unimplemented\n");
+#else
  int link_status;
  string_list_t *args = init_string_list();
  char *bin_dot_pixie, *bin_plain;
@@ -3488,7 +3496,7 @@ run_prof (void)
       perror(program_name);
     }
  }
-				
+#endif
 }
 
 void
@@ -4178,6 +4186,7 @@ do_f90_common_args(string_list_t *args)
 static void
 set_stack_size()
 {
+#ifdef RLIMIT_STACK
   struct rlimit rl;
   rlim_t max_stack;
 
@@ -4202,4 +4211,5 @@ set_stack_size()
     warning("cannot change stack size limit");
     return;
   }
+#endif
 }

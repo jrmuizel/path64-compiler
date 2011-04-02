@@ -158,6 +158,10 @@ Get_Resources (
     gettimeofday(&now, NULL);
     r->etime.secs  = now.tv_sec  - start_time.tv_sec;
     r->etime.usecs = now.tv_usec - start_time.tv_usec;
+    if (r->etime.usecs < 0) {
+        r->etime.usecs += 1000000;
+        r->etime.secs--;
+    }
 
     /* Get the CPU time information from the system: */
 #if (1)

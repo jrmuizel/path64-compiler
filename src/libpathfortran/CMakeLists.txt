@@ -1041,7 +1041,7 @@ add_custom_command(
 )
 add_custom_command(
     OUTPUT lib.cat
-    COMMAND ${PATHSCALE_SOURCE_DIR}/linux/tools/caterr -c lib.cat lib.msgs
+    COMMAND ${PATHSCALE_SOURCE_DIR}/linux/tools/caterr.${SHELL_EXT} -c lib.cat lib.msgs
     DEPENDS lib.msgs
 )
 add_custom_target(
