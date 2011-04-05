@@ -140,7 +140,7 @@ elf_getdata(Elf_Scn *scn, Elf_Data *data) {
 	    /* already cooked */
 	    return &sd->sd_data;
 	}
-	else if (scn->s_offset < 0 || scn->s_offset > elf->e_size) {
+	else if (scn->s_offset > elf->e_size) {
 	    seterr(ERROR_OUTSIDE);
 	}
 	else if (scn->s_type == SHT_NOBITS || !scn->s_size) {
