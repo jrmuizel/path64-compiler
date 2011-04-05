@@ -619,7 +619,7 @@ public:
   MTYPE     Asm_input_rtype(void)  const    { return u2.isop._asm_input_dtyp; }
   void      Set_asm_input_rtype(MTYPE dt)   { u2.isop._asm_input_dtyp = dt; }
   MTYPE     Asm_input_dsctype(void) const   { return u2.isop._asm_input_dsctyp; }
-  MTYPE     Set_asm_input_dsctype(MTYPE dt) {  u2.isop._asm_input_dsctyp = dt; }
+  void      Set_asm_input_dsctype(MTYPE dt) {  u2.isop._asm_input_dsctyp = dt; }
 #endif  
 #ifndef TARG_X8664
   void	    Set_dtyp_const_val(MTYPE dt, INT64 v) { Is_True(Kind() == CK_CONST,
