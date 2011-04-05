@@ -268,7 +268,7 @@ run_phase (phases_t phase, char *name, string_list_t *args)
     char *input = NULL;
     boolean save_stderr = FALSE;
     int fdin, fdout;
-    int forkpid;
+    int forkpid = 0;
     int waitstatus;
     int termsig;
     int num_maps;
