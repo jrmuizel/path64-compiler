@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include "string_case.h"
 
 int main(int argc, char * argv[])
