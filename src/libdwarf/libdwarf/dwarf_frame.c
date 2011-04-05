@@ -2140,7 +2140,7 @@ dwarf_expand_frame_instructions(Dwarf_Debug dbg,
 				  /* search_pc_val */ 0,
 				  /* location */ 0,
 				  instruction,
-				  (Dwarf_Ptr) (instruction + i_length),
+				  (Dwarf_Ptr) ((char *)instruction + i_length),
 				  /* Dwarf_Frame */ NULL,
 				  /* cie_ptr */ NULL,
 				  dbg, &instr_count, &dw_err);
