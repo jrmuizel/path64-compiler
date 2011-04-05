@@ -119,6 +119,7 @@ function(add_driver config_name
     endif()
     install(TARGETS pathcc${suffix}
             RUNTIME DESTINATION bin)
+    add_dependencies(pathcc${suffix} driver_gen_sources)
 endfunction()
 
 
@@ -128,9 +129,12 @@ set(PATHSCALE_COMMON_DRIVER_SRCS "errors.c"
                                  "string_utils.c"
    )
 
+set(PATHSCALE_DRIVER_GENERATED_SRCS
+    ${CMAKE_CURRENT_BINARY_DIR}/check_combos.c
+    ${CMAKE_CURRENT_BINARY_DIR}/implicits.c
+    ${CMAKE_CURRENT_BINARY_DIR}/version_hg.c)
+
 set(PATHSCALE_DRIVER_SRCS ${PATHSCALE_COMMON_DRIVER_SRCS}
-                          ${CMAKE_CURRENT_BINARY_DIR}/check_combos.c
-                          ${CMAKE_CURRENT_BINARY_DIR}/implicits.c
                           "main.c"
                           "options.c"
                           "option_seen.c"
@@ -142,9 +146,11 @@ set(PATHSCALE_DRIVER_SRCS ${PATHSCALE_COMMON_DRIVER_SRCS}
                           "run.c"
                           "special_options.c"
                           "targets.c"
-                          ${CMAKE_CURRENT_BINARY_DIR}/version_hg.c
                           "license.c"
+                          ${PATHSCALE_DRIVER_GENERATED_SRCS}
    )
+
+set_source_files_properties(${PATHSCALE_DRIVER_GENERATED_SRCS} PROPERTIES GENERATED TRUE)
 
 set(PATHSCALE_TABLE_SRCS  ${PATHSCALE_COMMON_DRIVER_SRCS}
                           "table.c"
@@ -263,6 +269,11 @@ add_custom_command(
         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/gen_version.sh > ${CMAKE_CURRENT_BINARY_DIR}/version_hg.c
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gen_version.sh
         )
+
+add_custom_target(driver_gen_sources
+                  DEPENDS
+                  ${PATHSCALE_DRIVER_GENERATED_SRCS})
+
 
 
 # Driver for host system
