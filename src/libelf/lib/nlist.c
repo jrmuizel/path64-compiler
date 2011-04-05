@@ -69,7 +69,7 @@ symbol_name(Elf *elf, const void *syms, const char *names, size_t nlimit, size_t
     else {
 	return NULL;
     }
-    if (off >= 0 && off < nlimit) {
+    if (off < nlimit) {
 	return &names[off];
     }
     return NULL;
