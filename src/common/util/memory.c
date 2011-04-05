@@ -1082,7 +1082,7 @@ Raw_Allocate(
       b = Allocate_Block (pool);
     }
 
-    result = MEM_BLOCK_ptr(b) + REDZONE_SIZE;
+    result = (MEM_PTR) (((char*) MEM_BLOCK_ptr(b)) + REDZONE_SIZE);
     MEM_BLOCK_ptr(b) = (MEM_PTR) (((char*) MEM_BLOCK_ptr(b)) + size + (REDZONE_SIZE*2));
     MEM_BLOCK_avail(b) -= size + (REDZONE_SIZE*2);
 
