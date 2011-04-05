@@ -1186,11 +1186,11 @@ ar_sqrt (ar_data *result, const AR_TYPE *resulttype,
 	if (AR_FLOAT_IS_COMPLEX (*resulttype) == AR_FLOAT_COMPLEX) {
 #ifdef complex_t
 		status = AR_convert ((AR_DATA*)&nat_opnd, &native_complex,
-				     opnd, opndtype);
+				     (AR_DATA*)opnd, opndtype);
 		status |= ar_sqrt (&nat_result, &native_complex,
 				   &nat_opnd, &native_complex);
 		status &= ~(AR_NEGATIVE | AR_ZERO);
-		status |= AR_convert (result, resulttype,
+		status |= AR_convert ((AR_DATA*)result, resulttype,
 				      (AR_DATA*)&nat_result, &native_complex);
 #else
 		status = AR_STAT_INVALID_TYPE;
@@ -1198,12 +1198,12 @@ ar_sqrt (ar_data *result, const AR_TYPE *resulttype,
 	} else {
 	        nat_type = AR_Float_64;
 		status = AR_convert ((AR_DATA*)&nat_opnd, &nat_type,
-				     opnd, opndtype);
+				     (AR_DATA*)opnd, opndtype);
 		ar_to_host_r64(&nat_opnd, &arg);
 		arg = sqrt(arg);
 		ar_from_host_r64(&arg, &nat_result);
 
-		status |= AR_convert (result, resulttype,
+		status |= AR_convert ((AR_DATA*)result, resulttype,
 				      (AR_DATA*)&nat_result, &nat_type);
 	}
 
