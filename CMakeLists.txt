@@ -107,7 +107,7 @@ ENDIF()
 
 # Whatever arbitrary number you'd like in 3 string format eg 3.9.99
 IF(NOT PSC_FULL_VERSION)
-    SET(PSC_FULL_VERSION "4.0.9" CACHE STRING "Defaulting to version 4.0.9")
+    SET(PSC_FULL_VERSION "4.0.10" CACHE STRING "Defaulting to version 4.0.10")
 ENDIF()
 
 MESSAGE(STATUS "Version is set to "${PSC_FULL_VERSION})
