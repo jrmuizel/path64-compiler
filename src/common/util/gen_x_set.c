@@ -17,7 +17,7 @@ char *utildir, *filename, *base_type, *num_elt, *elt_num, *uset_type, *lset_type
 
 int main(int argc, char * argv[])
 {
-    int i, headers;
+    int i, headers = 0;
     char *set_type, *rev, *itype;
     FILE *outfile;
     char filenamebuf[MAX_LEN];
