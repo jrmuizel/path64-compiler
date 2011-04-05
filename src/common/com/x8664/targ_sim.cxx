@@ -273,6 +273,24 @@ INT Classify_Aggregate(const TY_IDX ty,
     case MTYPE_M8F4:
       classes[0] = X86_64_X87_CLASS;
       return 1;
+	case MTYPE_V32I1:
+    case MTYPE_V32I2:
+    case MTYPE_V32I4:
+    case MTYPE_V32I8:
+      classes[0] = X86_64_INTEGER_CLASS;
+      classes[1] = X86_64_INTEGER_CLASS;
+      classes[2] = X86_64_INTEGER_CLASS;
+      classes[3] = X86_64_INTEGER_CLASS;
+      return 4;
+    case MTYPE_V32F4:
+    case MTYPE_V32F8:
+    case MTYPE_V32C4:
+    case MTYPE_V32C8:
+      classes[0] = X86_64_SSE_CLASS;
+      classes[1] = X86_64_SSEUP_CLASS;
+      classes[2] = X86_64_SSEUP_CLASS;
+      classes[3] = X86_64_SSEUP_CLASS;
+      return 4;
     default:
 	FmtAssert (FALSE, ("Classify_Aggregate:  mtype %s",
 			   MTYPE_name(TY_mtype(ty))));
@@ -438,6 +456,18 @@ Get_Return_Info(TY_IDX rtype, Mtype_Return_Level level, BOOL ff2c_abi)
       info.mtype [0] = mtype;
       info.preg  [0] = XMM0;
       break;
+	case MTYPE_V32I1:
+    case MTYPE_V32I2:
+    case MTYPE_V32I4:
+    case MTYPE_V32I8:
+    case MTYPE_V32F4:
+    case MTYPE_V32F8:
+    case MTYPE_V32C4:
+    case MTYPE_V32C8:
+	  info.count = 1;
+	  info.mtype [0] = mtype;
+	  info.preg [0] = XMM0;
+	  break;
 
     case MTYPE_C4:
       if (Is_Target_32bit()) {
@@ -750,6 +780,14 @@ Get_Parameter_Location (TY_IDX ty, BOOL is_output)
     case MTYPE_V8F4:
     case MTYPE_F4:
     case MTYPE_F8:
+	case MTYPE_V32I1:
+    case MTYPE_V32I2:
+    case MTYPE_V32I4:
+    case MTYPE_V32I8:
+    case MTYPE_V32F4:
+    case MTYPE_V32F8:
+    case MTYPE_V32C4:
+    case MTYPE_V32C8:
         ++Current_Float_Param_Num;
         if (Is_Target_32bit() && SSE_Register_Parms &&
             Current_Float_Param_Num < SSE_Register_Parms_Allowed) {

@@ -6555,6 +6555,45 @@ void Expand_Intrinsic_Imm_Param5(TOP opc, struct tn* result, struct tn *op0,
 		 }
 }
 
+void Expand_Intrinsic_Imm_Opnd2(TOP opc, struct tn* result, struct tn *op0,
+										struct tn *op1, OPS *ops, int op_count)
+{
+  //TODO actually this is not a good way to handle immediate of param
+	   if(TN_is_constant(op1)){
+		   Build_OP(opc, result, op0, op1, ops);
+		   return;
+	   }
+	   else
+	   {
+		   OP *op = NULL;
+		   TN *tn;
+		   int tick_count = 0;
+		   FOR_ALL_OPS_OPs_REV(ops, op)
+		   {
+			   tick_count++;
+			   if(tick_count == op_count)
+				   break;
+		   }
+		   if(tick_count == op_count)
+		   {
+		   	   if(TN_is_constant(OP_opnd(op,0)))
+		   	   {
+			     tn = Gen_Literal_TN( TN_value(OP_opnd(op, 0)), 1);
+			     Build_OP(opc, result, op0, tn, ops);
+				 return;
+		   	   }
+			   Build_OP(opc, result, op0, Gen_Literal_TN(0,1), ops);
+			   return;
+		   }
+		   else
+		   {
+			   tn = Gen_Literal_TN(0, 1);
+			   Build_OP(opc, result, op0,tn, ops);
+			   return;
+		   }
+	   }
+}
+
 
 void Expand_Intrinsic_Imm_Param(TOP opc, struct tn* result, struct tn *op0,
 										struct tn *op1, struct tn *op2, OPS *ops, int op_count)
@@ -7941,6 +7980,9 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
   case INTRN_PSHUFB128:
     Build_OP(TOP_pshufb128, result, op0, op1, ops );
     break;
+  /*AVX*/
+#include "expand_avx.cxx"
+	/*end AVX*/
   case INTRN_PSHUFB:
     Build_OP(TOP_pshufb, result, op0, op1, ops );
     break;
@@ -8248,6 +8290,33 @@ Exp_Intrinsic_Call (WN *intrncall, TN *op0, TN *op1, TN *op2,
   case INTRN_LOCK_TEST_AND_SET_I8:
     return Exp_Lock_Test_and_Set(op0, op1, WN_rtype(intrncall), ops);
 
+  /*avx*/
+  case INTRN_VMASKMOVPS128ST:
+  Build_OP(TOP_vmaskmovps_f128_obase64_simm32_float_float, op1,op2,op0,Gen_Literal_TN(0,1),ops);
+  break;
+  case INTRN_VMASKMOVPD128ST:
+    Build_OP(TOP_vmaskmovpd_f128_obase64_simm32_float_float, op1, op2, op0,Gen_Literal_TN(0,1),ops);
+  break;
+  case INTRN_VMOVDQA256ST:
+    Build_OP(TOP_vmovdqu_f256_obase64_simm32_float, op1, op0, Gen_Literal_TN(0,1), ops);
+  break;
+  case INTRN_VMASKMOVPD256ST:
+    Build_OP(TOP_vmaskmovpd_f256_obase64_simm32_float_float, op1, op2, op0,Gen_Literal_TN(0,1),ops);
+  break;
+  case INTRN_VZEROALL256:
+   //TODO others don't know it will affect all the ymm registers
+    Build_OP(TOP_vzeroall_null, ops);
+  break;
+  case INTRN_VZEROUPPER256:
+    Build_OP(TOP_vzeroupper_null,ops);
+    //TODO no operand and result;
+  break;
+  case INTRN_VMOVNTDQ256:
+    Build_OP(TOP_vmovntdq_f256_obase64_simm32_float, op1, op0, Gen_Literal_TN(0,1),ops);
+  break;
+  case INTRN_VMASKMOVPS256ST:
+    Build_OP(TOP_vmaskmovps_f256_obase64_simm32_float_float,op1,op2, op0, Gen_Literal_TN(0,1),ops);
+  break;
   default:  
     FmtAssert(FALSE, ("Exp_Intrinsic_Call: unimplemented"));
   }
@@ -9021,8 +9090,13 @@ void Expand_Conv_To_Vector (TN * dest, TN * src, TYPE_ID desc, TYPE_ID rtype,
     Build_OP (TOP_movq2dq, dest, src, ops);
   else if (! MTYPE_is_mmx_vector(desc) && MTYPE_is_mmx_vector(rtype))
     Build_OP (TOP_movdq2q, dest, src, ops);
-  else // desc, rtype: vector
-    Build_OP (TOP_movdq, dest, src, ops);
+  else {
+  	// desc, rtype: vector
+  	if(MTYPE_is_long_vector(desc) && MTYPE_is_long_vector(rtype))
+		Build_OP(TOP_vmovdqa_f256_ofloat_float, dest, src, ops);
+	else
+    	Build_OP (TOP_movdq, dest, src, ops);
+  }
 }
 
 

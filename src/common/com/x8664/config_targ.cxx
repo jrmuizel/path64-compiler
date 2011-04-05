@@ -332,6 +332,7 @@ Targ_Name ( TARGET_PROCESSOR b)
     case TARGET_xeon: return "Xeon";
     case TARGET_anyx86: return "Anyx86";
     case TARGET_barcelona: return "Barcelona";
+	case TARGET_sandy_bridge: return "Sandy Bridge";
     default:
       r = bnb[bnb_used].name;
       bnb_used = (bnb_used + 1) % 4;
@@ -507,6 +508,9 @@ Prepare_Target ( void )
     }
     else if ( strcasecmp ( Processor_Name, "anyx86" ) == 0 ) {
       targ = TARGET_anyx86;
+    }
+    else if (strcasecmp ( Processor_Name, "sandy_bridge") == 0){
+      targ = TARGET_sandy_bridge;
     }
     else {
       ErrMsg ( EC_Inv_TARG, "processor", Processor_Name );

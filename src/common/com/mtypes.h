@@ -146,8 +146,19 @@ static char *mtypes_rcs_id = "$Source: common/com/SCCS/s.mtypes.h $ $Revision: 1
 #define MTYPE_M8I4      42      /* 64-bit MMX vector of signed ints */
 #define MTYPE_M8F4      43      /* 64-bit MMX vector of signed floats */
 
+#define MTYPE_V32C4	    44		/* vector type for C4 not sure if useful */
+#define MTYPE_V32C8	    45		/* vector type for C8 */
+#define MTYPE_V32I1     46      /* 256-bit vector of signed bytes            */
+#define MTYPE_V32I2     47      /* 256-bit vector of signed short ints       */
+#define MTYPE_V32I4     48      /* 256-bit vector of signed ints             */
+#define MTYPE_V32I8     49      /* 256-bit vector of signed long long ints   */
+#define MTYPE_V32F4     50      /* 256-bit vector of signed floats           */
+#define MTYPE_V32F8     51      /* 256-bit vector of signed doubles          */
+#define MTYPE_F32 		52 		/*256-bit floats*/
+
+
 /* must define MTYPE_LAST as the index of the last one defined. */
-#define MTYPE_LAST	43	/* Must be defined */
+#define MTYPE_LAST	52	/* Must be defined */
 
 #elif defined(TARG_MIPS)
 
@@ -185,6 +196,7 @@ BE_EXPORTED extern TYPE_ID FIRST_COMPOSED_MTYPE;
 #ifdef TARG_X8664
 #define MTYPE_CLASS_SVECTOR	0x60 // 2 bits for short vector (64-bit vector)
 #define MTYPE_CLASS_MVECTOR	0xa0 // 2 bits for MMX vector (64-bit vector)
+#define MTYPE_CLASS_AVECTOR 0x120 // 2 bits for AVX vector(256-bit vector)
 #endif
 #ifdef TARG_MIPS
 #define MTYPE_CLASS_SVECTOR	0x60 // 2 bits for short vector (64-bit vector)
@@ -209,7 +221,7 @@ typedef struct type_desc {
   mBOOL		float_type;	/* Floating point type? */
   mCLASS_INDEX	dummy4;		/* remove when incompatible change */
   const char	*name;		/* Print name */
-  mUINT8        type_class_bits;/* The classification bits used by the simplifier */
+  mUINT16        type_class_bits;/* The classification bits used by the simplifier */
   mUINT8        type_order;	/* The order of types (I8 > I4 for example) */
   mCLASS_INDEX	complement;	/* complementary signed partner (ex. U1 -> I1) */
 } TYPE_DESC;
@@ -253,6 +265,7 @@ extern TYPE_DESC Machine_Types[];
 #ifdef TARG_X8664
 #define MTYPE_is_short_vector(n) ((MTYPE_type_class(n) & MTYPE_CLASS_SVECTOR) == MTYPE_CLASS_SVECTOR)
 #define MTYPE_is_mmx_vector(n) ((MTYPE_type_class(n) & MTYPE_CLASS_MVECTOR) == MTYPE_CLASS_MVECTOR)
+#define MTYPE_is_long_vector(n) ((MTYPE_type_class(n) & MTYPE_CLASS_AVECTOR) == MTYPE_CLASS_AVECTOR)
 #endif // TARG_X8664
 #ifdef TARG_MIPS
 #define MTYPE_is_short_vector(n) ((MTYPE_type_class(n) & MTYPE_CLASS_SVECTOR) == MTYPE_CLASS_SVECTOR)

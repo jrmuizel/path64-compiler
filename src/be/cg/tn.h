@@ -262,7 +262,7 @@ struct tn {
   ISA_RELOC	relocs;		/* Relocation flags (for symbol TNs) */
 #else
   mUINT8	relocs;		/* Relocation flags (for symbol TNs) */
-  mUINT8	size;		/* Size of the TN in bytes (must be <= 16) */
+  mUINT8	size;		/* Size of the TN in bytes (must be <= 32) */
 #endif
   /* offset 12 */
   /* offset 16 for ST version */

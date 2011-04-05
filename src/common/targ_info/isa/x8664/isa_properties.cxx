@@ -145,7 +145,9 @@ main()
     vector_lo_loadstore,   /* SSE movlpd/movlps */
     vector_high_loadstore, /* SSE movhpd/movhps */
     vector_packed_single,  /* SSE packed single-precision FPU op */
-    vector_packed_double;  /* SSE packed double-precision FPU op */
+    vector_packed_double,  /* SSE packed double-precision FPU op */
+    vector_avx,			  /*AVX vector  256-bit operation*/
+    cast_vector;	    /*for cast from 256 vector to 128*/
   
 
   ISA_Properties_Begin ("x8664");
@@ -411,6 +413,7 @@ main()
 		     TOP_bsf64,
 		     TOP_bsr32,
 		     TOP_bsr64,
+#include "isa_avx_properties_change_rflags.cxx"
                      TOP_UNDEFINED);
 
   /* ===== Move operator ====== */
@@ -451,6 +454,7 @@ main()
 				 TOP_pmovzxwd,
 				 TOP_pmovzxwq,
 				 TOP_pmovzxdq,
+#include "isa_avx_properties_move_prop.cxx"
 		     TOP_UNDEFINED);
 
   /* ===== Move ext operator ====== */
@@ -592,6 +596,20 @@ main()
 		     TOP_fmovsldupxxx,
 		     TOP_fmovshdupxxx,
 		     TOP_fmovddupxxx,
+		     /*AVX instructions*/
+		     TOP_vlddqa_n32,
+                     TOP_vldapd_n32,
+                     TOP_vldaps_n32,
+		     TOP_vlddqa,
+                     TOP_vlddqax,
+                     TOP_vlddqaxx,
+		     TOP_vldapd,
+                     TOP_vldapdx,
+                     TOP_vldapdxx,
+                     TOP_vldaps,
+                     TOP_vldapsx,
+                     TOP_vldapsxx,
+#include "isa_avx_properties_load_only.cxx";
                      TOP_UNDEFINED);
 
   /* ===== Memory load and extend operator ====== */
@@ -1156,6 +1174,7 @@ main()
              TOP_xchgx16,
              TOP_xchgx32,
              TOP_xchgx64,
+#include "isa_avx_properties_load_exe.cxx"
                      TOP_UNDEFINED);
 
   /* ===== arith. operations with memory src and dest operand ====== */
@@ -1190,6 +1209,7 @@ main()
              TOP_xchgx16,
              TOP_xchgx32,
              TOP_xchgx64,
+#include "isa_avx_properties_store_only.cxx"
                      TOP_UNDEFINED);
 
   /* ===== Non-temporal memory store operator ====== */
@@ -1326,6 +1346,20 @@ main()
 		     TOP_storenti128,
 		     TOP_storelpd,
 		     TOP_storent64_fm,
+		     /* AVX instructions */
+                     TOP_vstdqa,
+                     TOP_vstdqax,
+                     TOP_vstdqaxx,
+                     TOP_vstdqa_n32,
+                     TOP_vstapd,
+                     TOP_vstapdx,
+                     TOP_vstapdxx,
+                     TOP_vstaps,
+                     TOP_vstapsx,
+                     TOP_vstapsxx,
+		     TOP_vstapd_n32,
+                     TOP_vstaps_n32,
+#include "isa_avx_properties_store_only.cxx"                     
                      TOP_UNDEFINED);
 
   /* ===== Prefetch operator ====== */
@@ -2301,6 +2335,12 @@ main()
 		     TOP_storelpd,
 		     TOP_pshufw64v16,
 		     TOP_pmovmskb128,
+		    /*AVX instructions*/
+		     TOP_vstapd_n32,
+                     TOP_vstaps_n32,
+                     TOP_vldapd_n32,
+                     TOP_vldaps_n32,
+#include "isa_avx_properties_flop_prop.cxx" 
                      TOP_UNDEFINED);
 
   /* ===== FP add operator ====== */
@@ -2341,6 +2381,7 @@ main()
 		     TOP_addxxss,
 		     TOP_fadd,
 		     TOP_faddp,
+#include "isa_avx_properties_fadd_prop.cxx"
                      TOP_UNDEFINED);
 
   /* ===== FP subtract operator ====== */
@@ -2383,6 +2424,7 @@ main()
 		     TOP_fsubp,		     
 		     TOP_fsubr,
 		     TOP_fsubrp,		     
+#include "isa_avx_properties_fsub_prop.cxx"
                      TOP_UNDEFINED);
 
   /* ===== FP multiply operator ====== */
@@ -2405,6 +2447,7 @@ main()
 		     TOP_fmulxxx128v64,
 		     TOP_fmul,
 		     TOP_fmulp,
+#include "isa_avx_properties_fmul_prop.cxx"
                      TOP_UNDEFINED);
 
   /* ===== FP miscellaneous operator ====== */
@@ -3347,6 +3390,31 @@ main()
 				TOP_pabsd,
 				 TOP_palignr128,
 				 TOP_palignr,
+		     /*AVX instructions*/
+		     TOP_vstdqa,
+                     TOP_vstdqax,
+                     TOP_vstdqaxx,
+                     TOP_vstapd,
+                     TOP_vstapdx,
+                     TOP_vstapdxx,
+                     TOP_vstaps,
+                     TOP_vstapsx,
+                     TOP_vstapsxx,
+		     TOP_vstapd_n32,
+                     TOP_vstaps_n32,
+		     TOP_vlddqa_n32,
+                     TOP_vldapd_n32,
+                     TOP_vldaps_n32,
+		     TOP_vlddqa,
+		     TOP_vlddqax,
+		     TOP_vlddqaxx,
+		     TOP_vldapd,
+                     TOP_vldapdx,
+                     TOP_vldapdxx,
+                     TOP_vldaps,
+                     TOP_vldapsx,
+                     TOP_vldapsxx,
+#include "isa_avx_properties.cxx"
 		     TOP_UNDEFINED );
 
   /* ==== x86 style instructions ==== */
@@ -4065,6 +4133,8 @@ main()
              TOP_xchgx16,
              TOP_xchgx32,
              TOP_xchgx64,
+             TOP_vzeroall_null,
+			 TOP_vzeroupper_null,
 		     TOP_UNDEFINED);
 
   /* ===== Instructions with branch predictions ====== */
@@ -4382,7 +4452,25 @@ main()
 		     TOP_lock_xadd32,
 		     TOP_lock_xadd64,
 		     TOP_UNDEFINED);
+  
+  /*cast 256/128 to 128/256 AVX*/
+  cast_vector = ISA_Property_Create ("cast_vector");
+  Instruction_Group (cast_vector,
+  	         TOP_vmovdqa_f256_ofloat_float,
+  	         TOP_vmovdqu_f256_ofloat_float,
+  	         TOP_vmovups_f256_ofloat_float,
+  	         TOP_vmovupd_f256_ofloat_float,
+  	         TOP_vmovapd_f256_ofloat_float,
+  			 TOP_UNDEFINED);
+
+  vector_avx = ISA_Property_Create ("vector_avx"); 
+  Instruction_Group (vector_avx,
+                     TOP_vaddpd,
+#include "isa_avx_properties_avx_vector.cxx"
+		     TOP_UNDEFINED);
 
   ISA_Properties_End();
+
+
   return 0;
 }

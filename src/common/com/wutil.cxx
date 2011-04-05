@@ -1412,6 +1412,8 @@ static const struct {
 	INTRN_PALIGNR,							 "INTRN_PALIGNR",
 	INTRN_PSHUFB128,						 "INTRN_PSHUFB128",
 	INTRN_PSHUFB,									"INTRN_PSHUFB",
+/*AVX*/
+#include "wutil_avx.cxx"
   INTRN_PAND128,                "INTRN_PAND128",
   INTRN_PANDN128,               "INTRN_PANDN128",
   INTRN_POR128,                 "INTRN_POR128",

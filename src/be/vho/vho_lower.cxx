@@ -201,6 +201,34 @@ Promoted_Mtype(TYPE_ID mtype) {
     case MTYPE_CQ:
     case MTYPE_V:
     return mtype;
+#if defined(TARG_X8664)
+	case MTYPE_V16C4:	  /* MTYPE_V16C4 */
+	case MTYPE_V16C8:	  /* MTYPE_V16C8 */
+	case MTYPE_V16I1:	  /* MTYPE_V16I1 */
+	case MTYPE_V16I2:	  /* MTYPE_V16I2 */
+	case MTYPE_V16I4:	  /* MTYPE_V16I4 */
+	case MTYPE_V16I8:	  /* MTYPE_V16I8 */
+	case MTYPE_V16F4:	  /* MTYPE_V16F4 */
+	case MTYPE_V16F8:	  /* MTYPE_V16F8 */
+	case MTYPE_V8I1:	  /* MTYPE_V8I1 */
+	case MTYPE_V8I2:	  /* MTYPE_V8I2 */
+	case MTYPE_V8I4:	  /* MTYPE_V8I4 */
+	case MTYPE_V8F4:	  /* MTYPE_V8F4 */
+	case MTYPE_M8I1:	  /* MTYPE_M8I1 */
+	case MTYPE_M8I2:	  /* MTYPE_M8I2 */
+	case MTYPE_M8I4:	  /* MTYPE_M8I4 */
+	case MTYPE_M8F4:	  /* MTYPE_M8F4 */
+	case MTYPE_V32C4:	  /* MTYPE_V32C4 */
+	case MTYPE_V32C8:	  /* MTYPE_V32C8 */
+	case MTYPE_V32I1:	  /* MTYPE_V32I1 */
+	case MTYPE_V32I2:	  /* MTYPE_V32I2 */
+	case MTYPE_V32I4:	  /* MTYPE_V32I4 */
+	case MTYPE_V32I8:	  /* MTYPE_V32I8 */
+	case MTYPE_V32F4:	  /* MTYPE_V32F4 */
+	case MTYPE_V32F8:	  /* MTYPE_V32F8 */
+	 return mtype;
+#endif // TARG_X8664
+
 
     default:
 #ifdef TARG_ST

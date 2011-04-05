@@ -15050,7 +15050,8 @@ static WN *lower_return_val(WN *block, WN *tree, LOWER_ACTIONS actions)
 	preg_st = Float_Preg;
 #else
 	preg_st = (mtype==MTYPE_FQ || mtype==MTYPE_F16 ||
-		   mtype==MTYPE_CQ || mtype==MTYPE_C16)
+		   mtype==MTYPE_CQ || mtype==MTYPE_C16
+		   || MTYPE_is_vector(mtype))
 	  ? MTYPE_To_PREG(mtype) : Float_Preg;
 #endif
       else preg_st = (mtype==MTYPE_I8 || mtype==MTYPE_U8) ? 

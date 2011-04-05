@@ -133,6 +133,7 @@ BE_EXPORTED extern char *Targ_Name (TARGET_PROCESSOR target);
 #define Is_Target_Anyx86()     (FALSE)
 #define Target_x87_precision()	(FALSE)
 #define Is_Target_Barcelona()  (FALSE)
+#define Is_Target_Sandy_Bridge() (FALSE)
 /* ========== */
 /* Target ISA */
 /* ========== */

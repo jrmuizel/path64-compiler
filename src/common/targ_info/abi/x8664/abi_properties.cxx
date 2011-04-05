@@ -207,6 +207,7 @@ static void x86_64_abi(void)
   Reg_Property( func_val, ISA_REGISTER_CLASS_float,
 		XMM0, XMM1,
 		-1 );
+  
 
   // ISA_REGISTER_CLASS_x87
 

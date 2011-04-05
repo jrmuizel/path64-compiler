@@ -3869,6 +3869,23 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
 		case INTRN_INSERTPS:
     case INTRN_PALIGNR128:
     case INTRN_PALIGNR:
+    case INTRN_VBLENDPD256:
+    case INTRN_VBLENDPS256:
+    case INTRN_VDPPS256:
+    case INTRN_VSHUFPD25:
+    case INTRN_VSHUFPS256:
+    case INTRN_VCMPPS256:
+    case INTRN_VCMPPD256:
+    case INTRN_VCMPPS128:
+    case INTRN_VCMPPD128:
+    case INTRN_VCMPSD:
+    case INTRN_VCMPSS128:
+    case INTRN_VPERM2F128D:
+    case INTRN_VPERM2F128S:
+    case INTRN_VPERM2F128SI:
+    case INTRN_VINSERTF128D:
+    case INTRN_VINSERTF128F:
+    case INTRN_VINSERTF128I:
 		{
       //return Gen_Literal_TN (WN_const_val (WN_kid0 (WN_kid2 (expr))), 1);
 			WN *wn_para2 = WN_kid0 (WN_kid2 (expr));
@@ -3890,6 +3907,16 @@ Handle_Imm_Op (WN * expr, INT * kidno /* counted from 0 */)
 		case INTRN_PEXTRD:
 		case INTRN_PEXTRQ:
 		case INTRN_EXTRACTPS:
+		/*avx*/
+		case INTRN_VPERMILPS128:
+		case INTRN_VEXTRACTF128D:
+		case INTRN_VPERMILPD128:
+		case INTRN_VPERMILPD256:
+		case INTRN_VPERMILPS256:
+		case INTRN_VROUNDPD256:
+		case INTRN_VROUNDPS256:
+		case INTRN_VEXTRACTF128S:
+		case INTRN_VEXTRACTF128I:
 		{
 			WN *wn_para1 = WN_kid0 (WN_kid1 (expr));
 			if(WN_operator(wn_para1) == OPR_INTCONST)

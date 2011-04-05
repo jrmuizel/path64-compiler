@@ -2120,6 +2120,7 @@ static struct
   { "shanghai",	"barcelona",		ABI_M64,		TRUE,	TRUE,  TRUE,  TRUE},
   { "istanbul",	"barcelona",		ABI_M64,		TRUE,	TRUE,  TRUE,  TRUE},
   { "nehalem",	"wolfdale",		ABI_M64,		TRUE,	TRUE,  FALSE, FALSE},
+  { "sandy_bridge", "sandy_bridge", ABI_M64, TRUE, TRUE, TRUE, TRUE},
   { NULL,	NULL, },
 };
   
@@ -2389,6 +2390,8 @@ get_x86_auto_cpu_name ()
 	  cpu_name = "xeon";
 	  cpu_name_64bit = "em64t";
 	  break;
+	case 16://FIXME can't get sandy bridge's cpu family number from google
+	  return "sandy_bridge";
       }
 
     } else if (amd == TRUE) {

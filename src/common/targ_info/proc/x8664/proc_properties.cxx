@@ -82,6 +82,7 @@ main()
 		   PROCESSOR_em64t,
 		   PROCESSOR_core,
 		   PROCESSOR_wolfdale,
+		   PROCESSOR_sandy_bridge,
 		   PROCESSOR_UNDEFINED);
 
   /* Can the current target issue multiple instructions per cycle?
@@ -93,6 +94,7 @@ main()
 		   PROCESSOR_em64t,
 		   PROCESSOR_core,
 		   PROCESSOR_wolfdale,
+		   PROCESSOR_sandy_bridge,
 		   PROCESSOR_UNDEFINED);
 
   /* Does the target execute insts as sequence of bundles, or require 

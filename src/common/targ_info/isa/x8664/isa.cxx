@@ -1313,6 +1313,32 @@ main ()
 					"palignr",
 					"pshufb128",
 					"pshufb",
+		  /*AVX instructions*/
+   		  "vstdqa",
+          "vstdqax",
+          "vstdqaxx",
+          "vstdqa_n32",
+          "vstaps",
+              "vstapsx",
+              "vstapsxx",
+              "vstaps_n32",
+          "vstapd",
+              "vstapdx",
+              "vstapdxx",
+              "vstapd_n32",
+          "vlddqa",
+              "vlddqax",
+              "vlddqaxx",
+              "vlddqa_n32",
+          "vldaps",
+              "vldapsx",
+              "vldapsxx",
+              "vldaps_n32",
+          "vldapd",
+              "vldapdx",
+              "vldapdxx",
+              "vldapd_n32",
+          "vaddpd",
 
 	      /* instructions to support Open MP. */
 	      "lock_add32",
@@ -1363,6 +1389,7 @@ main ()
 	      "noop",
               "swp_start",
               "swp_stop",
+#include "isa_avx.cxx"
 
 	      /* END */
 	      NULL);

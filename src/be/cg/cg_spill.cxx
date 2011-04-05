@@ -633,6 +633,8 @@ CGSPILL_Get_TN_Spill_Location (TN *tn, CGSPILL_CLIENT client)
       if (TN_register_class(tn) == ISA_REGISTER_CLASS_mmx) {
 	mem_type = MTYPE_To_TY(MTYPE_M8I1);
       }
+	  if (TN_size(tn) == 32)
+	  	mem_type = MTYPE_To_TY(MTYPE_F32);
 #endif /* TARG_X8664 */
 
 #ifdef KEY

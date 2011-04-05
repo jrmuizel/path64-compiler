@@ -683,7 +683,7 @@ Gen_Register_TN (ISA_REGISTER_CLASS rclass, INT size)
     // to check that size does not exceed sizeof(mUINT16)
     if ( size >= 65536) ErrMsg ( EC_TN_Size, size );
 #else
-  	if ( size > 16 ) ErrMsg ( EC_TN_Size, size );
+  	if ( size > 32 ) ErrMsg ( EC_TN_Size, size );
 #endif
   	Set_TN_size(tn, size);
 #ifdef TARG_ST
