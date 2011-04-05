@@ -126,7 +126,7 @@ _elf_arhdr(Elf *arf) {
 	/* no error! */
 	return NULL;
     }
-    if (arf->e_off < 0 || arf->e_off > arf->e_size) {
+    if (arf->e_off > arf->e_size) {
 	seterr(ERROR_OUTSIDE);
 	return NULL;
     }
@@ -158,7 +158,7 @@ _elf_arhdr(Elf *arf) {
 		seterr(ERROR_ARSPECIAL);
 		return NULL;
 	    }
-	    if (tmp < 0 || tmp >= arf->e_strlen) {
+	    if (tmp >= arf->e_strlen) {
 		seterr(ERROR_ARSTRTAB);
 		return NULL;
 	    }
