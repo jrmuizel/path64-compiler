@@ -2872,11 +2872,6 @@ main()
 		     TOP_psadbw,
                      TOP_UNDEFINED);
 
-  vector_avx = ISA_Property_Create("vector_avx");
-  Instruction_Group(vector_avx,
-		    TOP_vaddpd,
-		    TOP_UNDEFINED);
-
   /* ==== vector ops ================ */
   vector_op = ISA_Property_Create ("vector_op");
   Instruction_Group( vector_op,
@@ -4470,8 +4465,9 @@ main()
 
   vector_avx = ISA_Property_Create ("vector_avx"); 
   Instruction_Group (vector_avx,
+                     TOP_vaddpd,
 #include "isa_avx_properties_avx_vector.cxx"
-		  TOP_UNDEFINED);
+		     TOP_UNDEFINED);
 
   ISA_Properties_End();
 
