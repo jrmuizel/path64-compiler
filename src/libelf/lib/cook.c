@@ -88,7 +88,7 @@ _elf_item(Elf *elf, Elf_Type type, size_t n, size_t off, int *flag) {
     *flag = 0;
     elf_assert(n);
     elf_assert(valid_type(type));
-    if (off < 0 || off > elf->e_size) {
+    if (off > elf->e_size) {
 	seterr(ERROR_OUTSIDE);
 	return NULL;
     }
@@ -228,7 +228,7 @@ _elf_cook_file(Elf *elf) {
 	    seterr(ERROR_ALIGN_SHDR);
 	    return 0;
 	}
-	if (off < 0 || off > elf->e_size) {
+	if (off > elf->e_size) {
 	    seterr(ERROR_OUTSIDE);
 	    return 0;
 	}
