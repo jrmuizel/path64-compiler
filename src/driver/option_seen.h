@@ -69,9 +69,4 @@ extern boolean more_option_seen (void);
 extern boolean current_option_seen_later (int optflag);
 /* set current option unseen */
 extern void set_current_option_unseen (void);
-#ifdef TARG_ST
-extern int already_provided (int);
-extern void save_options_status(boolean init);
-extern void restore_options_status(boolean init);
-#endif
 

@@ -32,6 +32,8 @@
 #include "lang_defs.h"
 #endif
 
+#include "pex.h"
+
 extern int show_version;	/* show the compiler version */
 extern boolean show_copyright;	/* show the compiler copy right */
 extern boolean dump_version;	/* dump the compiler version */

@@ -157,7 +157,7 @@ Perform_Global_Optimization (WN *pu_wn, WN *region_wn,
     Start_Timer ( T_Wopt_CU );
     Set_Error_Phase ( "Global Optimizer" );
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     if (OPT_Reassoc_For_Cse) {
       du_mgr = Create_Du_Manager(MEM_pu_nz_pool_ptr);
 

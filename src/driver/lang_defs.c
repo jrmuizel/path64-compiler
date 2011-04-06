@@ -52,6 +52,12 @@ char *ldpath_for_pixie = NULL;
  * in the OPTIONS table.
  */
 
+#ifdef _WIN32
+#define PCC  "CX"
+#else
+#define PCC  "CC"
+#endif
+
 #define MAX_LANG_NAMES 5
 typedef struct lang_struct {
 	char key;
@@ -64,7 +70,7 @@ static lang_info_t language_info[] = {
 	{'A',	0x0fffffff,	{""}},		/* ALL */
 	{'p',	0x00000001,	{"cpp"}},		/* cpp */
 	{'c',	0x00000002,	{"cc", PSC_NAME_PREFIX "cc", PSC_TARGET "-" PSC_NAME_PREFIX "cc","gcc","c89"}},	/* cc */
-	{'C',	0x00000004,	{"CC", PSC_NAME_PREFIX "CC", PSC_NAME_PREFIX "++","g++"}},	/* c++ */
+	{'C',	0x00000004,	{PCC, PSC_NAME_PREFIX PCC, PSC_NAME_PREFIX "++","g++"}},	/* c++ */
 	{'f',	0x00000008,	{"f77", PSC_NAME_PREFIX "f77","gf77","fort77"}}, /* f77 */
 	{'F',	0x00000010,	{"f90", PSC_NAME_PREFIX "f95"}},		/* f90/95 */
 	{'a',	0x00000020,	{"as", PSC_NAME_PREFIX "as","gas"}},		/* as */
@@ -184,7 +190,7 @@ static phase_info_t phase_info[] = {
    {'j',  0x0000010000000000LL,	"ipa_link", PHASEPATH,TRUE},	/* ipa_link */
    {'l',  0x0000020000000000LL,	"collect2", GNUPHASEPATH,TRUE},	/* collect */
    {'l',  0x0000040000000000LL,	NAMEPREFIX "cc", BINPATH, FALSE}, /* ld - now call pathcc & linker directly*/
-   {'l',  0x0000080000000000LL,	NAMEPREFIX "CC", BINPATH, FALSE}, /* ldplus */
+   {'l',  0x0000080000000000LL,	NAMEPREFIX PCC, BINPATH, FALSE}, /* ldplus */
    {'l',  0x01000f0000000000LL,	"",	"",		TRUE},	/* any_ld */
    {'c',  0x0000100000000000LL, "cord", BINPATH,	FALSE},	/* cord */
    {'x',  0x0000200000000000LL, "pixie", BINPATH,   FALSE}, /* pixie */
@@ -443,7 +449,13 @@ get_full_phase_name (phases_t index)
 	if (strlen(tmp) > 0) {
 	    strcat(tmp, "/");
 	}
-	return concat_strings (tmp, get_phase_name(index));
+	if (sizeof(EXT_EXE) > 1) {
+	    strcat(tmp, get_phase_name(index));
+	    return concat_strings (tmp, EXT_EXE);
+	}
+	else {
+	    return concat_strings (tmp, get_phase_name(index));
+	}
 }
 
 /* return language name */
@@ -460,6 +472,10 @@ get_named_language (const char *name)
 	int j;
 	char *p;
 	char *nomen = strdup(name);
+
+	if (sizeof(EXT_EXE) > 1 && (p = strchr(nomen, '.'))) {
+	    *p = '\0';
+	}
 
 	if ((p = strstr(nomen, "-" PSC_FULL_VERSION))) {
 	    *p = '\0';

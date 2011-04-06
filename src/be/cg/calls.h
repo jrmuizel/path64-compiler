@@ -75,10 +75,6 @@
 #ifdef KEY
 #include "bb.h"
 #endif
-#ifdef TARG_ST
-/* Target-specific ABI definitions */
-#include "targ_calls.h"
-#endif
 
 /* ================================================================= */
 
@@ -126,15 +122,6 @@ extern PREG_NUM Return_Int_Preg[2];
 extern PREG_NUM Return_Float_Preg[2];
 
 extern BOOL Gen_Frame_Pointer;
-#ifdef TARG_ST
-/* regs that need to be saved at prolog and restored at epilog. */
-extern REGISTER_SET Callee_Saved_Regs_Mask[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-/* register save mask size */
-extern INT EETARG_Callee_Saved_Regs_Mask_Size (void);
-/* Check if op can be changed for tail call optimization. */
-extern BOOL OP_Can_Be_Tail_Call(op *);
-#endif
-
 
 /* assign a special preg to each CALLEE_tn.  also ra, and gp */
 extern void Init_Callee_Saved_Regs_for_REGION( ST *pu, BOOL is_region );
@@ -144,13 +131,6 @@ extern void Init_Entry_Exit_Code ( WN *pu_wn);
 
 /* Produce subprogram entry/exit code: */
 extern void Generate_Entry_Exit_Code ( ST* pu, BOOL is_region );
-#ifdef TARG_ST
-/* Adjust stack frame allocation before calling Finalize_Stack_Frame. 
- * This function is used to allocate lately new temporaries required
- * for Adjust_Entry_Exit_Code().
- */
-extern void Adjust_Stack_Frame (ST *pu);
-#endif
 extern void Adjust_Entry_Exit_Code ( ST* pu );
 extern void Adjust_GP_Setup_Code ( ST* pu, BOOL allocate_registers );
 extern void Adjust_LC_Setup_Code ( void);
@@ -207,10 +187,6 @@ extern TN *CGTARG_Gen_Pfs_TN (void);
 extern TN *CGTARG_Get_SP_Incr (OP *sp_adj);
 extern TN *CGTARG_Get_FP_Incr (OP *fp_adj);
 
-#ifdef TARG_ST
-/* Give access to Entry/Exit trace flag from target specific file */
-extern BOOL Trace_EE;
-#endif
 
 #endif
 #endif /* calls_INCLUDED */

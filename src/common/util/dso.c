@@ -25,9 +25,15 @@
 #if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
-#include <stdio.h>		    /* for fprintf() */
+#include <stdio.h>              /* for fprintf() */
 #include <string.h>
-#include <dlfcn.h>		    /* for sgidladd(), dlerror() */
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <windows.h>            /* for Win LoadLibrary(), GetProcAddress() */
+#else
+#include <dlfcn.h>              /* for sgidladd(), dlerror() */
+#endif
+
 #include <cmplrs/rcodes.h>
 
 #include "defs.h"
@@ -38,134 +44,77 @@
  * and should not depend on other mongoose-specific files 
  * (e.g. this is why verbose is a parameter rather than a global variable).
  */
-#ifdef TARG_ST
-/*
- * Assume that LD_LIBRARY_PATH has already been set up correctly.
- */
- void* 
-load_so (const char *soname, char *path, BOOL verbose)
-{
-#ifdef STATIC_BACKEND
-  return NULL;
-#else
-  register char *full_path;
-  void* handler = NULL;
-  
-  if (path != 0) {
-      full_path = (char *) alloca (strlen(path)+strlen(soname)+2);
-	strcpy (full_path, path);
-	strcat (full_path, "/");
-	strcat (full_path, soname);
-    
-    if (verbose) {
-      fprintf (stderr, "\nReplacing default %s with %s (path:%s)\n", soname, full_path, path);
-    }
-  } else {
-    full_path = (char *)soname;
-  }
-  
-#ifdef sgi
-  if (sgidladd (full_path, RTLD_LAZY) == NULL)
-#else
-    if (! (handler = dlopen (full_path, RTLD_NOW | RTLD_GLOBAL)) )
-#endif
-    {
-      fprintf (stderr, "error while loading shared library: %s: %s\n", full_path, dlerror());
-      exit (RC_SYSTEM_ERROR);
-    }
-
-#ifdef sgi
-    return NULL;
-#else
-    return handler;
-#endif
-
-#endif // STATIC_BACKEND
-
-} /* load_so */
-
 
 /*
  * Assume that LD_LIBRARY_PATH has already been set up correctly.
  */
- void* 
-load_so_no_RTLD_GLOBAL (const char *soname, char *path, BOOL verbose)
+void *dso_load(const char *dso, const char *path, BOOL verbose)
 {
-#ifdef STATIC_BACKEND
-  return NULL;
-#else
-  register char *full_path;
-  void* handler = NULL;
-  
-  if (path != 0) {
-      full_path = (char *) alloca (strlen(path)+strlen(soname)+2);
-	strcpy (full_path, path);
-	strcat (full_path, "/");
-	strcat (full_path, soname);
-    
-    if (verbose) {
-      fprintf (stderr, "\nReplacing default %s with %s (path:%s)\n", soname, full_path, path);
-    }
-  } else {
-    full_path = (char *)soname;
-  }
-  
-#ifdef sgi
-  if (sgidladd (full_path, RTLD_LAZY) == NULL)
-#else
-    if (! (handler = dlopen (full_path, RTLD_NOW)) )
-#endif
-    {
-      fprintf (stderr, "error while loading shared library: %s: %s\n", full_path, dlerror());
-      exit (RC_SYSTEM_ERROR);
-    }
+    char *dso_path;
+    void *dso_handle;
 
-  if (path != 0) {
-	SYS_free(full_path);
-  }
-
-#ifdef sgi
-    return NULL;
-#else
-    return handler;
-#endif
-
-#endif // STATIC_BACKEND
-
-} /* load_so */
-
- void close_so (void * handler)
-{
-#ifndef STATIC_BACKEND
-  if (handler) 
-    dlclose(handler);
-#endif
-}
-#else
-/*
- * Assume that LD_LIBRARY_PATH has already been set up correctly.
- */
-void
-load_so (const char *soname, char *path, BOOL verbose)
-{
-    register char *full_path;
-
-    if (path != 0) {
-	full_path = (char *) alloca (strlen(path)+strlen(soname)+2);
-	strcpy (full_path, path);
-	strcat (full_path, "/");
-	strcat (full_path, soname);
+    if (path != NULL && *path != '\0') {
+        int length = strlen(path);
+        
+        dso_path = (char *)alloca(strlen(dso) + length + 2);
+        strcpy(dso_path, path);
+        if (!IS_DIR_SLASH(path[length - 1])) {
+            dso_path[length] = DIR_SLASH;
+            dso_path[length + 1] = '\0';
+        }
+		strcat(dso_path, dso);
 
         if (verbose) {
-	    fprintf (stderr, "\nReplacing default %s with %s\n", soname, full_path);
+            fprintf(stderr, "\nReplacing default %s with %s%\n", 
+				    dso, dso_path);
         }
-    } else {
-        full_path = (char *)soname;
+    }
+    else {
+        dso_path = (char *)dso;
     }
 
-    if (dlopen (full_path, RTLD_NOW | RTLD_GLOBAL) == NULL) {
-	fprintf (stderr, "Error loading %s: %s\n", full_path, dlerror());
-	exit (RC_SYSTEM_ERROR);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    dso_handle = (void *)LoadLibrary(dso_path);
+    if (dso_handle == NULL) {
+        fprintf(stderr, "Error loading %s: errcode=0x%08x\n",
+                        dso_path, GetLastError());
     }
-} /* load_so */
+#else
+    dso_handle = (void *)dlopen(dso_path, RTLD_NOW | RTLD_GLOBAL);
+    if (dso_handle == NULL) {
+        fprintf(stderr, "Error loading %s: %s\n",
+                        dso_path, dlerror());
+    }
 #endif
+
+    if (dso_handle == NULL) {
+        exit(RC_SYSTEM_ERROR);
+    }
+
+    return dso_handle;
+}
+
+void *dso_get_interface(void *handle, const char *symbol)
+{
+    void *function;
+    
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    function = (void *)GetProcAddress(handle, symbol);
+#else
+    function = (void *)dlsym(handle, symbol);
+#endif
+    if (function == NULL) {
+        fprintf(stderr, "Can not find function %s in dll\n", symbol);
+        exit(RC_SYSTEM_ERROR);
+    }
+    return function;
+}
+
+void dso_unload(void *handle)
+{
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    FreeLibrary(handle);
+#else
+    dlclose(handle);
+#endif
+}

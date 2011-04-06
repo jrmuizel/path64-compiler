@@ -51,6 +51,7 @@
 #include "tracing.h"
 #include "profile_com.h"
 #include "fb_info.h"
+#include "file_def.h"
 
 static BOOL simplify_tree = FALSE; /* Should we run the simplifier (for testing purposes) */
 
@@ -362,6 +363,13 @@ main (INT argc, char *argv[])
     b2a = (strcmp (progname, "ir_b2a") == 0);
     sel = (strcmp (progname, "ir_sel") == 0);
     all = (strcmp (progname, "ir_all") == 0);
+
+    if (sizeof(EXT_EXE) > 1) {
+        a2b = a2b || (strcmp (progname, FN_EXE("ir_a2b")) == 0);
+        b2a = b2a || (strcmp (progname, FN_EXE("ir_b2a")) == 0);
+        sel = sel || (strcmp (progname, FN_EXE("ir_sel")) == 0);
+        all = all || (strcmp (progname, FN_EXE("ir_all")) == 0);
+    }
 
     if (a2b) {
 	usage (progname);

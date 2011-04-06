@@ -114,6 +114,7 @@ function(add_driver config_name
     
     add_executable(pathcc${suffix} ${PATHSCALE_DRIVER_SRCS} "${targ_info_source}")
     set_property(TARGET pathcc${suffix} PROPERTY COMPILE_FLAGS "-I${include_dir}")
+    target_link_libraries(pathcc${suffix} iberty)
     if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
         set_property(TARGET pathcc${suffix} PROPERTY LINK_FLAGS "-static")
     endif()
@@ -242,6 +243,28 @@ set_property(TARGET table PROPERTY COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/
 
 
 # Detecting gcc and configuring sort_options script
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
+add_executable(sort_options sort_options.cpp)
+GET_TARGET_PROPERTY(sort_options_exe sort_options LOCATION)
+
+add_custom_command(
+        OUTPUT tmp.options.cpp
+        COMMAND cpp -traditional -P -DX8664 -DPSC_PRODNAME='"Compiler"' -DKEY -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT ${CMAKE_CURRENT_SOURCE_DIR}/OPTIONS > tmp.options.cpp
+        DEPENDS OPTIONS
+        )
+
+add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P
+        # COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/sort_options.sh ${CMAKE_CURRENT_SOURCE_DIR} OPTIONS -DX8664 -DPSC_PRODNAME='"Compiler"' -DKEY   -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/sort_options.${SHELL_EXT} ${sort_options_exe} > ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P 
+        DEPENDS sort_options.${SHELL_EXT} OPTIONS sort_options tmp.options.cpp
+        )
+
+else()
+
+# Detecting gawk and gcc and configuring sort_options script
 set(SORT_OPTIONS ${CMAKE_CURRENT_BINARY_DIR}/sort_options.sh)
 
 set(PATH64_GCC ${CMAKE_C_COMPILER})
@@ -257,6 +280,9 @@ add_custom_command(
         DEPENDS ${SORT_OPTIONS} OPTIONS
         )
 
+endif()
+
+
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/check_combos.c ${CMAKE_CURRENT_BINARY_DIR}/implicits.c
         COMMAND table < ${CMAKE_CURRENT_BINARY_DIR}/OPTIONS.P
@@ -266,8 +292,8 @@ add_custom_command(
 
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version_hg.c
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/gen_version.sh > ${CMAKE_CURRENT_BINARY_DIR}/version_hg.c
-        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gen_version.sh
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/gen_version.${SHELL_EXT} > ${CMAKE_CURRENT_BINARY_DIR}/version_hg.c
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gen_version.${SHELL_EXT}
         )
 
 add_custom_target(driver_gen_sources
@@ -335,6 +361,20 @@ endif()
 
 
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
+target_link_libraries(table iberty winlib)
+target_link_libraries(${exe_refix}pathcc iberty winlib ws2_32)
+
+add_custom_target(
+    stageit-driver ALL
+    DEPENDS pathcc
+)
+
+else()
+
+target_link_libraries(${exe_refix}pathcc iberty)
+
 add_custom_command(
     OUTPUT ${Path64_BINARY_DIR}/bin/pathCC ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
     DEPENDS pathcc
@@ -350,6 +390,9 @@ add_custom_target(
 add_dependencies(compiler-stage stageit-driver)
 
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/pathCC${CMAKE_EXECUTABLE_SUFFIX}\")")
+
+endif()
+
 if(PATH64_ENABLE_FORTRAN)
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/pathf95${CMAKE_EXECUTABLE_SUFFIX}\")")
 install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"pathcc${CMAKE_EXECUTABLE_SUFFIX}\" \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/pathf90${CMAKE_EXECUTABLE_SUFFIX}\")")

@@ -101,22 +101,9 @@ FILE *Verbose_inlining = NULL;
 #define BASETYPE TY_mtype
 
 static OPCODE OPC_UNKNOWN = (OPCODE)0;
-#ifdef TARG_ST
-//TB: extension reconfiguration: check that array accesses do not
-//overlap static counter
-#define Stid_Opcode(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Stid_Opcode: no access for dynamic MTYPE %d", (t))), OPC_UNKNOWN \
-     : \
-       Stid_Opcode[t])
-#define Stid_Opcode_set(t) \
-       FmtAssert (t <= MTYPE_STATIC_LAST, ("MTYPE_TO_PREG: no access for dynamic MTYPE %d", (t))), Stid_Opcode[t]
-static
-OPCODE Stid_Opcode [MTYPE_STATIC_LAST + 1] = {
-#else
+
 static
 OPCODE Stid_Opcode [MTYPE_LAST + 1] = {
-#endif
   OPC_UNKNOWN,    /* MTYPE_UNKNOWN */
   OPC_UNKNOWN,    /* MTYPE_UNKNOWN */
   OPC_I1STID,     /* MTYPE_I1 */

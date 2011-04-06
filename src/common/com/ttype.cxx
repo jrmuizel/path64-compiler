@@ -339,7 +339,7 @@ Equivalent_Types (TY_IDX t1, TY_IDX t2, QUAL_CHECK consider_qualifiers)
                  ARB_are_equivalent(TY_arb(ty1), TY_arb(ty2)));
 
     case KIND_STRUCT:
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	match_q = (TY_return_in_mem (t1) == TY_return_in_mem (t2) &&
 		   TY_copy_constructor (t1) == TY_copy_constructor (t2) &&
 		   match_q);

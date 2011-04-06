@@ -509,13 +509,7 @@ Preg_Home(PREG_NUM preg)
   const UINT idx = preg - Last_Dedicated_Preg_Offset;
   return (idx < Be_preg_tab.Size()) ? Be_preg_tab[idx].Home_location() : NULL;
 }
-#ifdef TARG_ST
-static inline void
-Set_Preg_Home(PREG_NUM preg, WN *home)
-{
-  Be_preg_tab[preg - Last_Dedicated_Preg_Offset].Set_home_location(home);
-}
-#endif
+
 extern void BE_symtab_initialize_be_scopes(void);
 extern void BE_symtab_free_be_scopes(void);
 extern void BE_symtab_alloc_scope_level(SYMTAB_IDX);

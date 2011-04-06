@@ -707,7 +707,7 @@ static INT RV_Index_Sign(WN* wn_index)
     case OPR_ARRAY: 
     case OPR_PARM:
     case OPR_INTRINSIC_OP:
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     case OPR_PURE_CALL_OP:
 #endif
       break_loop = TRUE; 

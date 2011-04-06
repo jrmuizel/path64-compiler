@@ -1053,7 +1053,11 @@ public:
 
   ACCESS_ARRAY(UINT16 num_vec,UINT16 nest_depth,MEM_POOL *mem_pool); 
   ACCESS_ARRAY(UINT16 num_vec,ACCESS_VECTOR* dim[],MEM_POOL *mem_pool); 
+#ifdef _WIN32
+  void Print(FILE *fp, BOOL is_bound=FALSE) const;
+#else
   void Print(FILE *fp, BOOL is_bound=FALSE) const __attribute__((weak));
+#endif // _WIN32
   ACCESS_ARRAY() { Too_Messy = TRUE; _dim = NULL; _num_vec=0;}
   ACCESS_ARRAY(const ACCESS_ARRAY *a, MEM_POOL *pool); 
   mUINT16 Non_Const_Loops() const;

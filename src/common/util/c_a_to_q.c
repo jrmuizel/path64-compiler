@@ -46,6 +46,7 @@
  * ====================================================================
  * ====================================================================
  */
+#include <inttypes.h>
 
 static char *source_file = __FILE__;
 static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/common/util/SCCS/s.c_a_to_q.c $ $Revision: 1.6 $";
@@ -128,7 +129,7 @@ static	QUAD	c_atoq(char *buffer, INT32 ndigit, INT32 exp);
 
 /* ascii to quad */
 
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(_WIN32)
 /* Can't use "pragma weak" to create aliases in Mach-O */
 QUAD c_a_to_q(char *s, INT *p_err );
 QUAD __c_a_to_q(char *s, INT *p_err) { return c_a_to_q(s, p_err); }
@@ -348,8 +349,8 @@ c_atoq(buffer,ndigit,exp)
   }
 
 #if QUAD_DEBUG
-  printf("halfway thru conversion: HI=0x%016llx\n",HI);
-  printf("                         LO=0x%016llx\n",LO);
+  printf("halfway thru conversion: HI=0x%016"PRIx64"\n",HI);
+  printf("                         LO=0x%016"PRIx64"\n",LO);
   printf("                         i=%d\n",i);
 #endif
 
@@ -361,25 +362,25 @@ c_atoq(buffer,ndigit,exp)
 
 #if QUAD_DEBUG
   printf("After LO split: lohi=0x%x\n",lohi);
-  printf("                lolo=0x%016llx\n",lolo);
+  printf("                lolo=0x%016"PRIx64"\n",lolo);
 #endif
 
     for( ; buffer < bufferend; buffer++ ){
       lolo = 10*lolo + *buffer;	/* Multiply by 10 and add digit */
 #if QUAD_DEBUG
-  printf("After 10*: lolo=0x%016llx\n",lolo);
+  printf("After 10*: lolo=0x%016"PRIx64"\n",lolo);
 #endif
       lohi = 10*lohi + (lolo>>60);
       HI   = 10*HI   + (lohi>>4);
       lolo &= (1Ull<<60)-1;	/* discard carries already propagated */
 #if QUAD_DEBUG
-  printf("After carry discard: lolo=0x%016llx\n",lolo);
+  printf("After carry discard: lolo=0x%016"PRIx64"\n",lolo);
 #endif
       lohi &= (1U  << 4)-1;	/* Are these two statements needed??? */
 
 #if QUAD_DEBUG
   printf("After iteration: lohi=0x%x\n",lohi);
-  printf("                 lolo=0x%016llx\n",lolo);
+  printf("                 lolo=0x%016"PRIx64"\n",lolo);
 #endif
 
     }
@@ -387,15 +388,15 @@ c_atoq(buffer,ndigit,exp)
     LO = lolo | ((UINT64) lohi)<<60;
 
 #if QUAD_DEBUG
-  printf("After reconstitution: HI=0x%016llx\n",HI);
-  printf("                      LO=0x%016llx\n",LO);
+  printf("After reconstitution: HI=0x%016"PRIx64"\n",HI);
+  printf("                      LO=0x%016"PRIx64"\n",LO);
 #endif
 
   }
 
 #if QUAD_DEBUG
-  printf("after conversion: HI=0x%016llx\n",HI);
-  printf("                  LO=0x%016llx\n",LO);
+  printf("after conversion: HI=0x%016"PRIx64"\n",HI);
+  printf("                  LO=0x%016"PRIx64"\n",LO);
 #endif
 
   /* Normalize HI-LO */
@@ -427,8 +428,8 @@ c_atoq(buffer,ndigit,exp)
    */
 
 #if QUAD_DEBUG
-  printf("after normalization: HI=0x%016llx\n",HI);
-  printf("                     LO=0x%016llx\n",LO);
+  printf("after normalization: HI=0x%016"PRIx64"\n",HI);
+  printf("                     LO=0x%016"PRIx64"\n",LO);
   printf("                     nzero=%d\n",nzero);
   printf("                     exphi=%d\n",exphi);
 #endif
@@ -439,8 +440,8 @@ c_atoq(buffer,ndigit,exp)
   exphi += x;
 
 #if QUAD_DEBUG
-  printf("after multiplication: HI=0x%016llx\n",HI);
-  printf("                      LO=0x%016llx\n",LO);
+  printf("after multiplication: HI=0x%016"PRIx64"\n",HI);
+  printf("                      LO=0x%016"PRIx64"\n",LO);
   printf("                     exphi=%d\n",exphi);
 #endif
   /* Round to 107 bits */
@@ -457,22 +458,22 @@ c_atoq(buffer,ndigit,exp)
   LO >>= 20;
 
 #if QUAD_DEBUG
-  printf("during split: LO=0x%016llx\n",LO);
+  printf("during split: LO=0x%016"PRIx64"\n",LO);
 #endif
 
   guard = LO & 1;
   LO >>= 1;
 
 #if QUAD_DEBUG
-  printf("during split: LO=0x%016llx\n",LO);
+  printf("during split: LO=0x%016"PRIx64"\n",LO);
 #endif
 
   LO |= (HI & (1ULL<<11)-1) << 43;
   HI >>= 11;
 
 #if QUAD_DEBUG
-  printf("after split: HI=0x%016llx\n",HI);
-  printf("             LO=0x%016llx\n",LO);
+  printf("after split: HI=0x%016"PRIx64"\n",HI);
+  printf("             LO=0x%016"PRIx64"\n",LO);
   printf("             guard=%d\n",guard);
   printf("             rest=%lx\n",rest);
 #endif
@@ -500,8 +501,8 @@ c_atoq(buffer,ndigit,exp)
   explo = exphi-53;
   
 #if QUAD_DEBUG
-  printf("after rounding: HI=0x%016llx\n",HI);
-  printf("                LO=0x%016llx\n",LO);
+  printf("after rounding: HI=0x%016"PRIx64"\n",HI);
+  printf("                LO=0x%016"PRIx64"\n",LO);
   printf("                exphi=%d\n",exphi);
   printf("                explo=%d\n",explo);
 #endif
@@ -519,8 +520,8 @@ c_atoq(buffer,ndigit,exp)
       losign = 1;
 
 #if QUAD_DEBUG
-  printf("after dekker: HI=0x%016llx\n",HI);
-  printf("              LO=0x%016llx\n",LO);
+  printf("after dekker: HI=0x%016"PRIx64"\n",HI);
+  printf("              LO=0x%016"PRIx64"\n",LO);
   printf("              exphi=%d\n",exphi);
   printf("              explo=%d\n",explo);
   printf("              losign=%d\n",losign);
@@ -535,7 +536,7 @@ c_atoq(buffer,ndigit,exp)
       LO >>=1;
 
 #if QUAD_DEBUG
-  printf("after right shift: LO=0x%016llx\n",LO);
+  printf("after right shift: LO=0x%016"PRIx64"\n",LO);
   printf("                   explo=%d\n",explo);
 #endif
       
@@ -544,7 +545,7 @@ c_atoq(buffer,ndigit,exp)
       while( ! (LO & 0x0010000000000000ULL) ){
 
 #if QUAD_DEBUG
-  printf("before left shift: LO=0x%016llx\n",LO);
+  printf("before left shift: LO=0x%016"PRIx64"\n",LO);
   printf("                  explo=%d\n",explo);
 #endif
       
@@ -556,7 +557,7 @@ c_atoq(buffer,ndigit,exp)
   }
   
 #if QUAD_DEBUG
-  printf("after LO normalize: LO=0x%016llx\n",LO);
+  printf("after LO normalize: LO=0x%016"PRIx64"\n",LO);
   printf("                    explo=%d\n",explo);
 #endif
 
@@ -578,8 +579,8 @@ c_atoq(buffer,ndigit,exp)
     value.qparts.hi.d = value.qparts.lo.d =  HUGE_VAL;
 
 #if QUAD_DEBUG
-  printf("Overflow: value.qparts.hi.d=0x%016llx\n",value.qparts.hi.d);
-  printf("          value.qparts.lo.d=0x%016llx\n",value.qparts.lo.d);
+  printf("Overflow: value.qparts.hi.d=0x%016"PRIx64"\n",value.qparts.hi.d);
+  printf("          value.qparts.lo.d=0x%016"PRIx64"\n",value.qparts.lo.d);
 #endif
 
     result.hi = value.qparts.hi.d;
@@ -594,7 +595,7 @@ c_atoq(buffer,ndigit,exp)
       value.qparts.hi.d = 0;
 
 #if QUAD_DEBUG
-  printf("HI underflow: HI=0x%016llx\n",HI);
+  printf("HI underflow: HI=0x%016"PRIx64"\n",HI);
   printf("              exphi=%d\n",exphi);
 #endif
 
@@ -605,8 +606,8 @@ c_atoq(buffer,ndigit,exp)
       HI >>= 1-exphi;		/* exponent is zero */
 
 #if QUAD_DEBUG
-  printf("HI denorm: HI=0x%016llx\n",HI);
-  printf("           rest=0x%016llx\n",rest);
+  printf("HI denorm: HI=0x%016"PRIx64"\n",HI);
+  printf("           rest=0x%016"PRIx64"\n",rest);
   printf("           guard=%d\n",guard);
   printf("           exphi=%d\n",exphi);
 #endif
@@ -621,7 +622,7 @@ c_atoq(buffer,ndigit,exp)
 	  }
 
 #if QUAD_DEBUG
-  printf("Round denorm: HI=0x%016llx\n",HI);
+  printf("Round denorm: HI=0x%016"PRIx64"\n",HI);
 #endif
 
 	}
@@ -633,7 +634,7 @@ c_atoq(buffer,ndigit,exp)
     EXPONENT(HI) = exphi + 1022; /* add bias */
 
 #if QUAD_DEBUG
-  printf("Normal HI: HI=0x%016llx\n",HI);
+  printf("Normal HI: HI=0x%016"PRIx64"\n",HI);
 #endif
 
   }
@@ -644,7 +645,7 @@ c_atoq(buffer,ndigit,exp)
       value.qparts.lo.d = 0;
 
 #if QUAD_DEBUG
-  printf("LO underflow: LO=0x%016llx\n",LO);
+  printf("LO underflow: LO=0x%016"PRIx64"\n",LO);
   printf("              explo=%d\n",explo);
 #endif
 
@@ -655,10 +656,10 @@ c_atoq(buffer,ndigit,exp)
       LO >>= 1-explo;		/* exponent is zero */
 
 #if QUAD_DEBUG
-  printf("LO denorm: LO=0x%016llx\n",LO);
+  printf("LO denorm: LO=0x%016"PRIx64"\n",LO);
   printf("           explo=%d\n",explo);
   printf("           guard=%d\n",guard);
-  printf("           rest=0x%016llx\n",rest);
+  printf("           rest=0x%016"PRIx64"\n",rest);
 #endif
 
       /* Round */
@@ -671,7 +672,7 @@ c_atoq(buffer,ndigit,exp)
   }
 
 #if QUAD_DEBUG
-  printf("After LO round: LO=0x%016llx\n",LO);
+  printf("After LO round: LO=0x%016"PRIx64"\n",LO);
 #endif
 
 	}
@@ -684,15 +685,15 @@ c_atoq(buffer,ndigit,exp)
       EXPONENT(LO) = explo + 1022; /* add bias */
     }
 #if QUAD_DEBUG
-  printf("Normal LO before making canonical: LO=0x%016llx\n",LO);
+  printf("Normal LO before making canonical: LO=0x%016"PRIx64"\n",LO);
 #endif
     /* Make representation canonical */
     z = value.qparts.lo.d + value.qparts.hi.d;
     value.qparts.lo.d -= (z - value.qparts.hi.d);
     value.qparts.hi.d = z;
 #if QUAD_DEBUG
-  printf("After making canonical: HI=0x%016llx\n",HI);
-  printf("                      : LO=0x%016llx\n",LO);
+  printf("After making canonical: HI=0x%016"PRIx64"\n",HI);
+  printf("                      : LO=0x%016"PRIx64"\n",LO);
 #endif
 
   }

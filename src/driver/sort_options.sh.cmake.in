@@ -30,7 +30,7 @@ file=$2
 shift
 shift
 # Mac port: /usr/bin/cpp works on both Fedora and Darwin
-if ${PATH64_GCC} -E -xc -traditional -P "$@" $dir/$file > tmp.options.cpp ; then
+if ${PATH64_GCC} -E -xc -traditional -P "$@" - < $dir/$file > tmp.options.cpp ; then
     if awk -f $dir/sort_options.awk tmp.options.cpp ; then
         # note that some linux versions of sort are broken,
         # so we actually re-sort within table for safety.

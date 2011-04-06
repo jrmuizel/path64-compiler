@@ -510,14 +510,14 @@ void CGEMIT_Write_Literal_Symbol (ST *lit_st, ST *sym,
     if (base_ofst == 0)
       fprintf (Asm_File, "\n");
     else
-      fprintf (Asm_File, " %+lld\n", base_ofst);
+      fprintf (Asm_File, " %+"PRId64"\n", base_ofst);
   }
   else {
     EMT_Write_Qualified_Name (Asm_File, sym);
     if (sym_ofst == 0)
       fprintf (Asm_File, "\n");
     else
-      fprintf (Asm_File, " %+lld\n", sym_ofst);
+      fprintf (Asm_File, " %+"PRId64"\n", sym_ofst);
   }
 }
 

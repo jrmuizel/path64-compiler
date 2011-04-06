@@ -61,7 +61,7 @@ path64_get_host_arch(host_arch)
 
 add_custom_command(
     OUTPUT cf95.cat
-    COMMAND ${PATHSCALE_SOURCE_DIR}/linux/tools/caterr -c cf95.cat ${CMAKE_CURRENT_SOURCE_DIR}/cf95.msgs
+    COMMAND ${PATHSCALE_SOURCE_DIR}/linux/tools/caterr.${SHELL_EXT} -c cf95.cat ${CMAKE_CURRENT_SOURCE_DIR}/cf95.msgs
     COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/cf95.cat ${Path64_BINARY_DIR}/lib
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/cf95.msgs
 )

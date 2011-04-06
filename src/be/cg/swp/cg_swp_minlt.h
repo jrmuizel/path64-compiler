@@ -34,7 +34,6 @@
 #include "cg_swp_op_vector.h"
 #include "cg_swp_mindist.h"
 
-#ifndef TARG_ST
 
 class SWP_MINLT {
   private:
@@ -78,6 +77,6 @@ SWP_MINLT::operator () (INT x) const {
   
   return _minlt[x];
 }
-#endif
+
 #endif /* cg_swp_minlt_INCLUDED */
 

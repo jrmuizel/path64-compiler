@@ -40,7 +40,8 @@
 #include <errno.h>
 
 #ifdef _WIN32
-#include <windows.h>
+//#include <windows.h> // This conflicts with other stuff
+unsigned int __stdcall GetModuleFileNameA(void*, char*, unsigned int);
 #endif
 
 #include "errors.h"
@@ -206,9 +207,13 @@ file_utils_set_program_name(char *name)
 
 #ifdef _WIN32
 	if (GetModuleFileNameA(0, filename, sizeof(filename))) {
+		p = filename;
+		while ((p = strchr (p, '\\')) != NULL) {
+			*p = '/';
+		}
 		executable_dir = string_copy(dirname(filename));
 	} else {
-		executable_dir = string_copy("\\");
+		executable_dir = string_copy("/");
 	}
 #else
 	if (strchr(name, '/')) {

@@ -48,7 +48,6 @@ enum SWP_INSERT_TYPE {
 };
 
 
-#ifndef TARG_ST
 class SWP_CODE_GEN {
   private:
   const SWP_MVE&        _mve;
@@ -133,6 +132,6 @@ class SWP_CODE_GEN {
   void Print (FILE *f = stderr) const;
   void Verify (void) const;
 };
-#endif
+
 #endif /* cg_swp_code_gen_INCLUDED */
 

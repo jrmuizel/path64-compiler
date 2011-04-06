@@ -133,10 +133,6 @@ Split_Entry( BB* bb )
   BB_freq(new_entry) = BB_freq(bb);
 
   op = BB_last_op(bb);
-#ifdef TARG_ST
-  // [SC] Exception entry blocks can have no instructions in them.
-  if (op != NULL)
-#endif
   do {
     prev_op = OP_prev(op); 
     if (OP_Is_Copy_To_Save_TN(op)) 
@@ -194,31 +190,12 @@ Split_Exit( BB* bb )
 //  
 /////////////////////////////////////
 {
-#ifdef TARG_ST
-  // FdF 20041105: No EXITINFO_sp_adj was generated in case of a
-  // "noreturn" call.
-  if (!BB_exit_sp_adj_op(bb)) {
-    Is_True(WN_Call_Never_Return( CALLINFO_call_wn(ANNOT_callinfo(ANNOT_Get(BB_annotations(bb), ANNOT_CALLINFO)))),
-	    ("Missing SP adjust"));
-    return;
-  }
-#endif
   OP* op;
   OP* next_op = NULL;
   BB* new_exit= Gen_And_Insert_BB_After(bb);
 
   BB_Transfer_Exitinfo(bb,new_exit);
   BB_freq(new_exit) = BB_freq(bb);
-#ifdef TARG_ST
-  // [SC] First op could be the sp adjust op.
-  for (op = BB_first_op (bb);
-       op != NULL && op != BB_exit_sp_adj_op (new_exit);
-       op = next_op) {
-    next_op = OP_next(op); 
-    if (OP_Is_Copy_From_Save_TN(op)) 
-      BB_Move_Op_To_End(new_exit, bb, op);
-  }
-#else
   op = BB_first_op(bb);
   do {
     next_op = OP_next(op); 
@@ -226,7 +203,6 @@ Split_Exit( BB* bb )
       BB_Move_Op_To_End(new_exit, bb, op);
     op = next_op;
   } while (op != NULL && op != BB_exit_sp_adj_op(new_exit));
-#endif
 
   for (op = BB_exit_sp_adj_op (new_exit); op != NULL; op = next_op) {
     next_op = OP_next(op);
@@ -280,7 +256,7 @@ GRA_Split_Entry_And_Exit_BBs(BOOL is_region)
   BB* next_bb = NULL;   // avoid stupid used before set warning
   BB_LIST *elist;
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   GRA_pu_has_handler = FALSE;
   Is_True(GRA_split_entry_exit_blocks, 
       ("GRA will not work correctly under -GRA:split_entry_exit_blocks=off"));
@@ -293,7 +269,7 @@ GRA_Split_Entry_And_Exit_BBs(BOOL is_region)
 
   for ( bb = REGION_First_BB; bb != NULL; bb = next_bb ) {
     next_bb = BB_next(bb);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     if (BB_handler(bb))
       GRA_pu_has_handler = TRUE;
 #endif
@@ -356,22 +332,8 @@ GRA_Add_Call_Spill_Block(BB* bb, BB* succ)
 /////////////////////////////////////
 {
   BB *new_succ = Gen_And_Insert_BB_After(bb);
-#ifdef TARG_ST
-  //
-  // Arthur: seems like a bug to me. Change_Succ() recomputes
-  //         'new_succ' and old "succ' frequencies wrong (perhaps
-  //         Change_Succ() shouldn't be used here at all ?), so do 
-  //         BB_freq(new_succ) frequency setting after, and 
-  //         remember BB_freq(succ).
-  //
-  float old_freq = BB_freq(succ);
-  Change_Succ(bb, succ, new_succ);
-  BB_freq(new_succ) = BB_freq(bb);
-  BB_freq(succ) = old_freq;
-#else
   BB_freq(new_succ) = BB_freq(bb);
   Change_Succ(bb, succ, new_succ);
-#endif
   Link_Pred_Succ_with_Prob(new_succ, succ, 1.0);
 
   GRA_LIVE_Compute_Local_Info(bb);

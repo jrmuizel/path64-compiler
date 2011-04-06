@@ -2904,7 +2904,7 @@ static void LNO_Erase_Vertices_In_Loop_Rec(WN *wn, ARRAY_DIRECTED_GRAPH16 *dg)
   }
   if (OPCODE_is_load(opcode) || OPCODE_is_store(opcode) || 
       OPCODE_is_call(opcode) || (OPCODE_operator(opcode) == OPR_INTRINSIC_OP)
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       || (OPCODE_operator(opcode) == OPR_PURE_CALL_OP)
 #endif
       ) {
@@ -3075,7 +3075,7 @@ static void Du_Sanity_Check_r(
         opr==OPR_FUNC_ENTRY || opr==OPR_RETURN || OPCODE_has_barrier(opc) ||
         opr==OPR_PARM || (opr==OPR_LABEL && WN_Label_Is_Handler_Begin(wn)) ||
         opr==OPR_IO || OPCODE_is_call(opc) || opr==OPR_INTRINSIC_OP
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
         || opr==OPR_PURE_CALL_OP
         || opr==OPR_GOTO_OUTER_BLOCK
 #endif
@@ -3480,7 +3480,7 @@ BOOL Is_Loop_Invariant_Exp(WN* wn,
 	return FALSE; 
     return TRUE; 
   } else if (opr == OPR_INTRINSIC_OP
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	     || opr == OPR_PURE_CALL_OP
 #endif
             ) { 

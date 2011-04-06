@@ -23,7 +23,7 @@
 
 #ifndef prp_driver_INCLUDED
 #define prp_driver_INCLUDED
-#if defined(BUILD_OS_DARWIN)
+#if defined(BUILD_OS_DARWIN) || defined(_WIN32)
 /* Linux assumes weak declaration followed by definition and reference will
  * create a weak symbol which won't cause an error at link time; Mach-O
  * creates an undefined symbol which causes link to fail. */

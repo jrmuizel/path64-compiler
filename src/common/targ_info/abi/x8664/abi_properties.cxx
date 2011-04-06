@@ -79,8 +79,14 @@ static void x86_32_abi(void)
   Reg_Property( caller, ISA_REGISTER_CLASS_integer,
 		EAX, ECX, EDX,
 		-1 );
+  #ifdef _WIN32
+  Reg_Property( func_arg, ISA_REGISTER_CLASS_integer,
+  		ECX, EDX,
+		-1 );
+  #else
   Reg_Property( func_arg, ISA_REGISTER_CLASS_integer,
 		-1 );
+  #endif
   Reg_Property( func_val, ISA_REGISTER_CLASS_integer,
 		EAX, EDX,
 		-1 );
@@ -90,9 +96,15 @@ static void x86_32_abi(void)
   Reg_Property( frame_ptr, ISA_REGISTER_CLASS_integer, 
 		EBP,
 	       -1 );
+  #ifdef _WIN32
+  Reg_Property( static_link, ISA_REGISTER_CLASS_integer, 
+		EAX,
+		-1 );
+  #else
   Reg_Property( static_link, ISA_REGISTER_CLASS_integer, 
   		ECX,
 	       -1 );
+  #endif
 
   // ISA_REGISTER_CLASS_float
 
@@ -107,9 +119,15 @@ static void x86_32_abi(void)
   Reg_Property( func_arg, ISA_REGISTER_CLASS_float,
 		XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7,
 		-1 );
+#ifdef _WIN32
+  Reg_Property( func_val, ISA_REGISTER_CLASS_float,
+		XMM0,
+		-1 );
+#else
   Reg_Property( func_val, ISA_REGISTER_CLASS_float,
 		XMM0, XMM1,
 		-1 );
+#endif
 
   // ISA_REGISTER_CLASS_x87
 
@@ -123,9 +141,15 @@ static void x86_32_abi(void)
 		-1 );
   Reg_Property( func_arg, ISA_REGISTER_CLASS_x87,
 		-1 );
+#ifdef _WIN32
+  Reg_Property( func_val, ISA_REGISTER_CLASS_x87,
+		ST0,
+		-1 );
+#else
   Reg_Property( func_val, ISA_REGISTER_CLASS_x87,
 		ST0, ST1,
 		-1 );
+#endif
 
   // ISA_REGISTER_CLASS_mmx
 
@@ -137,10 +161,19 @@ static void x86_32_abi(void)
   Reg_Property( caller, ISA_REGISTER_CLASS_mmx,
                 MMX0, MMX1, MMX2, MMX3, MMX4, MMX5, MMX6, MMX7,
 		-1 );
+#ifdef _WIN32
+  Reg_Property( func_arg, ISA_REGISTER_CLASS_mmx,
+		MMX0, MMX1, MMX2, MMX3, MMX4, MMX5, MMX6, MMX7,
+		-1 );
+  Reg_Property( func_val, ISA_REGISTER_CLASS_mmx,
+  		MMX0,
+		-1 );
+#else
   Reg_Property( func_arg, ISA_REGISTER_CLASS_mmx,
                 -1 );
   Reg_Property( func_val, ISA_REGISTER_CLASS_mmx,
                 -1 );
+#endif
 }
 
 
@@ -167,9 +200,23 @@ static void x86_64_abi(void)
 		RAX, RBX, RCX, RDX, RBP, RSI, RDI,
 		R8, R9, R10, R11, R12, R13, R14, R15,
 		-1 );
+#ifdef _WIN32
+  Reg_Property( callee, ISA_REGISTER_CLASS_integer,
+  		RBX, RBP, RSI, RDI, R12, R13, R14, R15,
+		-1 );
+  Reg_Property( caller, ISA_REGISTER_CLASS_integer,
+		RAX, RCX, RDX, R8, R9, R10, R11,
+		-1 );
+  Reg_Property( func_arg, ISA_REGISTER_CLASS_integer,
+		RCX, RDX, R8, R9,
+		-1 );
+  Reg_Property( func_val, ISA_REGISTER_CLASS_integer,
+		RAX,
+		-1 );
+#else
   Reg_Property( callee, ISA_REGISTER_CLASS_integer,
 		RBX, RBP, R12, R13, R14, R15,
-	       -1 );
+		-1 );
   Reg_Property( caller, ISA_REGISTER_CLASS_integer,
 		RAX, RCX, RDX, RSI, RDI, R8, R9, R10, R11,
 		-1 );
@@ -179,6 +226,7 @@ static void x86_64_abi(void)
   Reg_Property( func_val, ISA_REGISTER_CLASS_integer,
 		RAX, RDX,
 		-1 );
+#endif
   Reg_Property( stack_ptr, ISA_REGISTER_CLASS_integer, 
 		RSP,
 		-1 );
@@ -195,6 +243,34 @@ static void x86_64_abi(void)
 		XMM0, XMM1, XMM2,  XMM3,  XMM4,  XMM5,  XMM6,  XMM7,
 		XMM8, XMM9, XMM10, XMM11, XMM12, XMM13, XMM14, XMM15,
 		-1 );
+ #ifdef _WIN32
+  // According to Win64 calling convention, XMM6-XMM15's low 64 bits are
+  // callee-save. 
+  // Now, treat these XMM registers as caller-save for simplicy, which
+  // will impact performance when calling Windows library functions.
+#if 0
+  Reg_Property( callee, ISA_REGISTER_CLASS_float,
+		XMM6,  XMM7, XMM8, XMM9, XMM10, XMM11, XMM12, XMM13,
+		XMM14, XMM15,
+	       -1 );
+  Reg_Property( caller, ISA_REGISTER_CLASS_float,
+	       XMM0, XMM1, XMM2, XMM3, XMM4, XMM5,
+	       -1 );
+#else
+  Reg_Property( callee, ISA_REGISTER_CLASS_float,
+		-1 );
+  Reg_Property( caller, ISA_REGISTER_CLASS_float,
+		XMM0, XMM1, XMM2,  XMM3,  XMM4,  XMM5,  XMM6,  XMM7,
+		XMM8, XMM9, XMM10, XMM11, XMM12, XMM13, XMM14, XMM15,
+		-1 );
+#endif
+  Reg_Property( func_arg, ISA_REGISTER_CLASS_float,
+	       XMM0, XMM1, XMM2, XMM3,
+	       -1 );
+  Reg_Property( func_val, ISA_REGISTER_CLASS_float,
+	       XMM0,
+	       -1 );
+ #else
   Reg_Property( callee, ISA_REGISTER_CLASS_float,
 		-1 );
   Reg_Property( caller, ISA_REGISTER_CLASS_float,
@@ -207,8 +283,8 @@ static void x86_64_abi(void)
   Reg_Property( func_val, ISA_REGISTER_CLASS_float,
 		XMM0, XMM1,
 		-1 );
-  
 
+#endif
   // ISA_REGISTER_CLASS_x87
 
   Reg_Property( allocatable, ISA_REGISTER_CLASS_x87,
@@ -221,9 +297,16 @@ static void x86_64_abi(void)
 		-1 );
   Reg_Property( func_arg, ISA_REGISTER_CLASS_x87,
 		-1 );
+
+ #ifdef _WIN32
+  Reg_Property( func_val, ISA_REGISTER_CLASS_x87,
+		-1 );
+
+ #else
   Reg_Property( func_val, ISA_REGISTER_CLASS_x87,
 		ST0, ST1,
 		-1 );
+ #endif
 
   // ISA_REGISTER_CLASS_mmx
 

@@ -334,10 +334,6 @@ struct Dwarf_P_Debug_s {
     Dwarf_P_Inc_Dir de_inc_dirs;
     Dwarf_P_Inc_Dir de_last_inc_dir;
     Dwarf_Unsigned de_n_inc_dirs;
-#ifdef TARG_ST
-        /* Has the minimal instruction length (in bytes) */
-    Dwarf_Unsigned		de_min_inst_length;
-#endif
 
     /* Has all the line number info for the stmt program */
     Dwarf_P_Line de_lines;

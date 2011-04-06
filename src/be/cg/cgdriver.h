@@ -63,12 +63,6 @@ extern void CG_Configure_Opt_Level( INT opt_level );
 extern void CG_Init (void);	/* init once per compilation */
 
 extern void CG_Fini (void);	/* finalize once per compilation */
-#ifdef TARG_ST
-  extern void CG_Reset_Default_Options (void); /*TB: Reset the default options */
-  extern void CG_Save_Default_Options (void); /*TB: Save current values for CG options */
-  extern void CG_Apply_Opt_Size (UINT32 level); /*TB: Set CG internal options for code size */
-  extern void CG_Apply_Opt_Level (UINT32 level); /*TB: Set CG internal options for a given optim level */
-#endif
 
 #ifdef __cplusplus
 }

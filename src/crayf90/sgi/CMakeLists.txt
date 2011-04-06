@@ -203,7 +203,7 @@ add_custom_target(
     DEPENDS ${Path64_BINARY_DIR}/lib/${host_arch}/mfef95
             ${Path64_BINARY_DIR}/bin/pathf90
     VERBATIM
-    COMMAND printf "#!/bin/sh\\n${Path64_BINARY_DIR}/bin/pathf90 -Wf,-eQ -Wf,-intrinsic_module_gen -Wf,-intrinsic_module_path=. \"$\@\"\\n" > ${Path64_BINARY_DIR}/fc-wrap.sh
+    COMMAND printf "#!/bin/sh\\n${Path64_BINARY_DIR}/bin/pathf90 -Wf,-eQ -Wf,-intrinsic_module_gen -Wf,-intrinsic_module_path=. \"$\@\"\\n" > ${Path64_BINARY_DIR}/fc-wrap.${SHELL_EXT}
 )
 
 add_dependencies(switch_fc generate_cf95_cat mfef95-tmp compiler-stage)

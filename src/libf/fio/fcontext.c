@@ -24,6 +24,7 @@
 
 #pragma ident "@(#) libf/fio/fcontext.c	92.1	06/18/99 16:08:47"
 
+#include <inttypes.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -201,9 +202,9 @@ _fcontext(FIOSPTR css)
 			" an internal file (character variable)\n");
 	else {
 		if (unum != -1) {
-			(void) fprintf(errfile, " unit %lld\n", unum);
+			(void) fprintf(errfile, " unit %"PRId64"\n", unum);
 
-			(void) fprintf(errfile, "Fortran unit %lld is ",
+			(void) fprintf(errfile, "Fortran unit %"PRId64" is ",
 				unum);
 
 			if (!OPEN_UPTR(cup)) {

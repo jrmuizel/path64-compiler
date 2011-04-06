@@ -250,10 +250,6 @@ BOOL  WOPT_Enable_Verbose = FALSE;
 INT32 WOPT_Enable_Verify = 1;
 BOOL  WOPT_Enable_Vsym_Unique = FALSE;
 BOOL  WOPT_Enable_While_Loop = TRUE;
-#ifdef TARG_ST
-//TB
-BOOL  WOPT_Enable_While_Loop_Set = FALSE;
-#endif
 BOOL  WOPT_Enable_Worklist_Pruning = TRUE;
 BOOL  WOPT_Enable_Zero_Version = TRUE;
 BOOL  WOPT_Enable_Call_Zero_Version = TRUE;
@@ -303,24 +299,6 @@ BOOL  WOPT_Enable_Bdce_Before_Ivr = FALSE; // For running bdce early
 BOOL  WOPT_Enable_New_Phase_Ordering = TRUE; // Enables some phases before ivr
 
 BOOL WOPT_Enable_Warn_Uninit = FALSE;   // enable warning for detected uninitialized locals
-#ifdef TARG_ST
-// [CG 2005/01/06] Fix point analysis as a replacement to 
-// the original recursive analysis which is bogus (bug 1-6-0-B/10).
-BOOL  WOPT_Enable_FPFSA = TRUE; // Enables fix point flow sensitive analysis
-
-//TB
-BOOL WOPT_Enable_Tailmerge = FALSE;     // enable tailmerge optimization
-BOOL WOPT_Enable_Compare_Hoisting=TRUE;  //enable hoisting of compare expression
-BOOL WOPT_Enable_Flow_Simplification_In_Tailmerge = FALSE;   // enable flow simplification in tailmerge optimization
-// FdF 20070731: 0 means never, 1 means biased for code size, 2 means
-// biased for performance, 3 means always.
-INT32 WOPT_Enable_DoWhile_Conversion = DOWHILE_CONV_FOR_PERF;
-BOOL WOPT_Enable_DoWhile_Conversion_Set = FALSE;
-INT32 WOPT_Pre_Small_Immediate = 16; // Simple expressions derived from an IV with a
-                                     // small immediate offset are not subject to PRE
-UINT32 WOPT_Pre_LoadStore_offset = 0; // Create ILoad/Istore with 0 offset,
-                                 // if the nearest zero offset is lower than this value
-#endif
 
 BOOL  WOPT_Enable_Noreturn_Attr_Opt = TRUE;
 INT32 WOPT_Enable_If_Merge_Limit = -1;  // Limit number of if-merging transformations per function.
@@ -331,7 +309,7 @@ INT32 WOPT_Enable_Pro_Loop_Fusion_Func_Limit = -1; // Enable proactive loop fusi
                                                   // functions within the limit.
 BOOL  WOPT_Enable_Pro_Loop_Fusion_Trans = TRUE;  // Enables proactive loop fusion transformation
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 BOOL  WOPT_Enable_Preserve_Mem_Opnds = FALSE; // if TRUE, suppress EPRE on 
 				// iloads that are operands of FP operations
 BOOL  WOPT_Enable_Retype_Expr = FALSE;   // whether to call WN_retype_expr to 
@@ -706,13 +684,8 @@ static OPTION_DESC Options_WOPT[] = {
     0, 0, 0,    &WOPT_Enable_CFG_Opt3, NULL },
   { OVK_BOOL,   OV_VISIBLE,    FALSE, "cfo4",              "",
     0, 0, 0,    &WOPT_Enable_CFG_Opt4, NULL },
-#ifdef TARG_ST
-  { OVK_INT32,  OV_INTERNAL,    FALSE, "cfo_limit",              "",
-    INT32_MAX, 0, INT32_MAX,    &WOPT_Enable_CFG_Opt_Limit, &WOPT_Enable_CFG_Opt_Limit_Set },
-#else
   { OVK_INT32,  OV_VISIBLE,    FALSE, "cfo_limit",              "",
     INT32_MAX, 0, INT32_MAX,    &WOPT_Enable_CFG_Opt_Limit, NULL },
-#endif
   { OVK_INT32,  OV_VISIBLE,    TRUE,  "vn_ivc",	"",
     1, 0, 8,    &WOPT_Enable_Vn_Ivc, NULL },
   { OVK_UINT32,	OV_VISIBLE,	TRUE, "vnfre_after",		"vnfre_a",
@@ -741,28 +714,9 @@ static OPTION_DESC Options_WOPT[] = {
     INT32_MAX, 0, INT32_MAX,    &WOPT_Tail_Dup_Max_Clone, NULL },
   { OVK_INT32,  OV_VISIBLE,    FALSE, "pro_loop_fusion_func_limit",              "",
     INT32_MAX, 0, INT32_MAX,    &WOPT_Enable_Pro_Loop_Fusion_Func_Limit, NULL },
-#ifdef TARG_ST
-  // TB: from PathScale 2.1: add -Wuninitialized support
-  { OVK_BOOL,	OV_INTERNAL,	TRUE, "warn_uninit",		"",
-    0, 0, 0,	&WOPT_Enable_Warn_Uninit, NULL },
-  { OVK_BOOL,	OV_INTERNAL,	TRUE, "tailmerge_opt",		"",
-    0, 0, 0,	&WOPT_Enable_Tailmerge, NULL },
- { OVK_BOOL,	OV_INTERNAL,	TRUE, "compare_hoisting", "",
-    0, 0, 0,	&WOPT_Enable_Compare_Hoisting, NULL },
-  { OVK_INT32,	OV_INTERNAL,	TRUE, "dowhile_conversion",		"",
-    1, 0, 3,	&WOPT_Enable_DoWhile_Conversion, &WOPT_Enable_DoWhile_Conversion_Set },
-  { OVK_BOOL,	OV_INTERNAL,	TRUE, "simp_flow_in_tailmerge_opt",		"",
-    0, 0, 0,	&WOPT_Enable_Flow_Simplification_In_Tailmerge, NULL },
-  { OVK_UINT32,	OV_INTERNAL,	TRUE, "Pre_Small_Immediate",		"",
-    16, 0, UINT32_MAX, &WOPT_Pre_Small_Immediate, NULL },
-  // FdF 20080528: PRE on Iload/Istore for zero offset. Max value must
-  // be in sync with size of offset in opt_etable.h:EXP_OCCURS
-  { OVK_UINT32,	OV_INTERNAL,	TRUE, "Pre_LoadStore_offset",		"",
-    512, 0, 65535, &WOPT_Pre_LoadStore_offset, NULL },
-#endif
   
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   { OVK_BOOL,	OV_VISIBLE,	TRUE, "mem_opnds", "mem_opnds",
     TRUE, 0, 0,	&WOPT_Enable_Preserve_Mem_Opnds, NULL },
   { OVK_BOOL,	OV_VISIBLE,	TRUE, "retype_expr", "retype_expr",

@@ -79,21 +79,9 @@ Gen_Read_Only_Symbol(TY_IDX, const char *rootname);
 inline BOOL
 ST_visible_outside_dso(const ST &s)
 {
-#ifdef TARG_ST
-  if (ST_export(s) == EXPORT_INTERNAL
-      || ST_export(s) == EXPORT_LOCAL_INTERNAL
-      || (ST_export(s) == EXPORT_LOCAL
-	  && ! ST_addr_saved (s)
-	  && ! ST_addr_passed (s)
-	  && ! ST_is_alias_base (&s)
-	  && ! ST_is_used (&s)))
-    return FALSE;
-  return TRUE;
-#else
   // rely on fe or ipa to set static funcs to internal
   return (ST_export(s) != EXPORT_INTERNAL &&
 	  ST_export(s) != EXPORT_LOCAL_INTERNAL);
-#endif
 }
 inline BOOL
 ST_visible_outside_dso(const ST *s)	{ return ST_visible_outside_dso(*s); }
@@ -118,11 +106,8 @@ Clear_local_symtab_addr_flags (const SCOPE& scope);
 //----------------------------------------------------------------------
 // TY-related utilities
 //----------------------------------------------------------------------
-#ifdef TARG_ST
-extern TY_IDX MTYPE_TO_TY_array[MTYPE_MAX_LIMIT+1];
-#else
 extern TY_IDX MTYPE_TO_TY_array[MTYPE_LAST+1];
-#endif
+
 #define MTYPE_To_TY(t)	MTYPE_TO_TY_array[t]
 #define Be_Type_Tbl(t)	MTYPE_TO_TY_array[t]
 		    
@@ -224,21 +209,11 @@ TY_is_unique (TY_IDX);
  * (actually only have pregs for the register-size mtypes and simulated mtypes;
  * in particular, the I1/I2/U1/U2 mtypes point to the 4-byte PREG.
  */
-#ifdef TARG_ST
-extern ST* MTYPE_TO_PREG_array[MTYPE_MAX_LIMIT+1];
-#else
 extern ST* MTYPE_TO_PREG_array[MTYPE_LAST+1];
-#endif
+
 #define MTYPE_To_PREG(t)	MTYPE_TO_PREG_array[t]
 #define Int32_Preg	MTYPE_To_PREG (MTYPE_I4)
-#ifdef TARG_ST
-#define Int40_Preg      MTYPE_To_PREG (MTYPE_I5)
-#endif
 #define Int64_Preg	MTYPE_To_PREG (MTYPE_I8)
-#ifdef TARG_ST
-#define Ptr32_Preg	MTYPE_To_PREG (MTYPE_A4)
-#define Ptr64_Preg	MTYPE_To_PREG (MTYPE_A8)
-#endif
 #define Float32_Preg	MTYPE_To_PREG (MTYPE_F4)
 #define Float64_Preg	MTYPE_To_PREG (MTYPE_F8)
 /* preferred preg symbols for physical registers 
@@ -246,15 +221,6 @@ extern ST* MTYPE_TO_PREG_array[MTYPE_LAST+1];
 extern ST	*Int_Preg, *Float_Preg, *Ptr_Preg, *Return_Val_Preg;	/* for pseudo-registers */
 #ifdef TARG_X8664
 extern ST* X87_Preg;
-#endif
-#ifdef TARG_ST
-//TB: Return specific PREG to handle think like non general register in
-//clobber asm list
-BE_EXPORTED extern ST *Untyped_Preg(void);
-
-//Return smallest used alignment in type ty_id
-BE_EXPORTED extern UINT32 TY_smallest_align(TY_IDX ty_id);
-
 #endif
 
 const char *
@@ -318,22 +284,7 @@ extern void  Base_Symbol_And_Offset (
   ST    **base_symbol,      // Result: root base of st
   INT64  *offset_from_base  // Result: offset from primary base
 );
-#ifdef TARG_ST
-// Get the base symbol from a ST
-BE_EXPORTED extern ST *  Base_Symbol (
-  ST     *st                // Symbol to analyze
-);
 
-// Get the base symbol offset from a ST
-BE_EXPORTED extern INT64  Base_Offset (
-  ST     *st                // Symbol to analyze
-);
-
-// TRUE if the offset from the base symbol is known
-BE_EXPORTED extern BOOL  Base_Offset_Is_Known (
-  ST     *st                // Symbol to analyze
-);
-#endif
 //----------------------------------------------------------------------
 // Printing routines
 //----------------------------------------------------------------------
@@ -425,12 +376,8 @@ Make_arb_iter (ARB_HANDLE arb)
 inline LABEL_ITER
 Make_label_iter (LABEL_IDX label_idx)
 {
-#ifdef TARG_ST
-     return LABEL_ITER (Scope_tab[CURRENT_SYMTAB].label_tab, label_idx);
-#else
     return LABEL_ITER (Scope_tab[LABEL_IDX_level (label_idx)].label_tab, 
 		       LABEL_IDX_index (label_idx));
-#endif
 }
 
 inline PREG_ITER

@@ -1832,12 +1832,10 @@ coff_mkobject_hook (bfd * abfd,
       xcoff->maxstack = internal_a->o_maxstack;
     }
 #endif
-#ifndef TARG_ST
 #ifdef ARM
   /* Set the flags field from the COFF header read in.  */
   if (! _bfd_coff_arm_set_private_flags (abfd, internal_f->f_flags))
     coff->flags = 0;
-#endif
 #endif
 #ifdef COFF_WITH_PE
   /* FIXME: I'm not sure this is ever executed, since peicode.h
@@ -2362,7 +2360,7 @@ coff_print_aux (bfd *abfd ATTRIBUTE_UNUSED,
 	{
 	  BFD_ASSERT (! aux->fix_scnlen);
 #ifdef XCOFF64
-	  fprintf (file, "val %5lld",
+	  fprintf (file, "val %5"PRId64,
 		   (long long) aux->u.auxent.x_csect.x_scnlen.l);
 #else
 	  fprintf (file, "val %5ld", (long) aux->u.auxent.x_csect.x_scnlen.l);
@@ -2373,7 +2371,7 @@ coff_print_aux (bfd *abfd ATTRIBUTE_UNUSED,
 	  fprintf (file, "indx ");
 	  if (! aux->fix_scnlen)
 #ifdef XCOFF64
-	    fprintf (file, "%4lld",
+	    fprintf (file, "%4"PRId64,
 		     (long long) aux->u.auxent.x_csect.x_scnlen.l);
 #else
 	    fprintf (file, "%4ld", (long) aux->u.auxent.x_csect.x_scnlen.l);

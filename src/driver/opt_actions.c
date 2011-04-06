@@ -103,13 +103,6 @@ static boolean target_prefers_sse3 = FALSE;
 static boolean target_supports_3dnow = FALSE;
 static boolean target_supports_sse4a = FALSE;
 #endif
-#ifdef TARG_ST
- extern int ExtensionSeen;
-int c_std;
-/* TB: to warm if olevel is not enough if uninitialized var warning is
-   aked*/
-boolean Wuninitialized_is_asked = FALSE; 
-#endif
 
 extern boolean parsing_default_options;
 extern boolean drop_option;
@@ -119,10 +112,6 @@ static void add_hugepage_desc(HUGEPAGE_ALLOC, HUGEPAGE_SIZE, int);
 
 #ifdef KEY
 void set_memory_model(char *model);
-#endif
-#ifdef TARG_ST
-char *print_name;
-int print_kind;
 #endif
 #ifdef TARG_X8664
 static void Get_x86_ISA();
@@ -434,10 +423,6 @@ Process_Opt_Group ( char *opt_args )
   if ( debug ) {
     fprintf ( stderr, "Process_Opt_Group: %s\n", opt_args );
   }
-#ifdef TARG_ST
-  if (strncmp("enable_instrument", opt_args, strlen("enable_instrument")) == 0)
-     instrumentation_invoked = TRUE;
-#endif  
   
   /* Go look for -OPT:instrument */
   optval = Get_Group_Option_Value ( opt_args, "instrument", "instr");
@@ -1616,13 +1601,13 @@ print_magic_path(const char *base, const char *fname)
 	goto good;
     }
 
-    sfx = get_suffix(fname);
+    sfx = strchr(fname, '.');
 
     if (sfx != NULL &&	// bug 9049
-	(!strcmp(sfx, "a") || !strcmp(sfx, "o") || !strcmp(sfx, "so")))
+	(!strcmp(sfx, EXT_LIB) || !strcmp(sfx, EXT_OBJ) || !strcmp(sfx, EXT_DSO)))
       goto bad;
 
-    if ((slash = strrchr(path, '/')) && strstr(slash, ".so."))
+    if ((slash = strrchr(path, '/')) && strstr(slash, EXT_DSO "."))
       goto bad;
   }
 
@@ -1695,7 +1680,7 @@ print_file_path (char *fname, int exe)
   argv[1] = m32 ? "-m32" : "-m64";
   asprintf(&argv[2], "-print-%s-name=%s", exe ? "prog" : "file", fname);
   argv[3] = NULL;
-  execvp(argv[0], argv);
+  execvp(argv[0], (const char **)argv);
   fprintf(stderr, "could not execute %s: %m\n", argv[0]);
   exit(1);
 }
@@ -1860,99 +1845,6 @@ Process_ICachealgo_Group (string cache_args)
 
 #endif /* BCO_Enabled Thierry */
 
-#ifdef TARG_ST
-void
-Process_Std(char * option_args) {
-  int flag = LAST_PREDEFINED_OPTION ;
-
-  if ( debug ) {
-    fprintf ( stderr, "Process_Std: %s\n", option_args);
-  }
-
-  /* Select the appropriate language standard.  We currently
-     recognize:
-     -std=iso9899:1990		same as -ansi
-     -std=iso9899:199409	ISO C as modified in amend. 1
-     -std=iso9899:1999		ISO C 99
-     -std=c89			same as -std=iso9899:1990
-     -std=c99			same as -std=iso9899:1999
-     -std=gnu89			default, iso9899:1990 + gnu extensions
-     -std=gnu99			iso9899:1999 + gnu extensions
-     (cbr) recognize c++ standards
-     -std=c++98                 iso14882
-     -std=gnu++98               iso14882 + gnu extensions
-  */
-  if (!strcmp (option_args, "iso9899:1990")
-      || !strcmp (option_args, "c89")) {
-      flag = add_new_option("-std=c89") ;
-      c_std = C_STD_C89;
-      toggle(&ansi,STRICT_ANSI);
-  } else if (!strcmp (option_args, "iso9899:199409")) {
-      flag = add_new_option("-std=iso9899:199409") ;    
-      c_std = C_STD_C94;
-      toggle(&ansi,STRICT_ANSI);
-  }
-  else if (!strcmp (option_args, "iso9899:199x")
-	   || !strcmp (option_args, "iso9899:1999")
-	   || !strcmp (option_args, "c9x")
-	   || !strcmp (option_args, "c99")) {
-      flag = add_new_option("-std=c99") ;    
-      c_std = C_STD_C99;
-      toggle(&ansi,STRICT_ANSI);
-  } else if (!strcmp (option_args, "gnu89")) {
-      flag = add_new_option("-std=gnu89") ;    
-      c_std = C_STD_GNU89;
-  }
-#ifdef TARG_ST
-  /* (cbr) handle C++ */
-  else if (!strcmp (option_args, "c++98")) {
-      flag = add_new_option("-std=c++98") ;    
-      c_std = C_STD_CXX98;
-      toggle(&ansi,STRICT_ANSI);
-  }
-  else if (!strcmp (option_args, "gnu++98")) {
-      flag = add_new_option("-std=gnu++98") ;    
-      c_std = C_STD_GNU98;
-      /* (cm) gnu++98 (default mode) does not trigger strict ansi toggle(&ansi,STRICT_ANSI); */
-  }
-#endif
-  else if (!strcmp (option_args, "gnu9x") || !strcmp (option_args, "gnu99")) {   
-      flag = add_new_option("-std=gnu99") ;    
-      c_std = C_STD_GNU99;
-  } else {
-      warning("unknown C standard `%s'", option_args) ;
-  }
-  if (flag != LAST_PREDEFINED_OPTION) {
-      /* Need to pass to tools recognizing this option*/
-#ifdef PATH64_ENABLE_GNU_FRONTEND
-      add_phase_for_option(flag, P_gcpp);
-#endif // PATH64_ENABLE_GNU_FRONTEND
-      add_phase_for_option(flag, P_c_gfe);
-      add_option_seen (flag);
-  }
-
-}
-
-#endif
-
-#ifdef TARG_ST
-/* TB: add -Wuninitialized option with -Wall */
-void Add_Wuninitialized() {
-  int flag = add_new_option("-WOPT:warn_uninit=on") ;    
-  add_phase_for_option(flag, P_be);
-  if (!already_provided(flag)) {
-    prepend_option_seen (flag);
-  }
-}
-/* TB: add -Wuninitialized option with -Wall */
-void Add_Wreturn_type() {
-  int flag = add_new_option("-OPT:warn_return_void") ;    
-  add_phase_for_option(flag, P_be);
-  if (!already_provided(flag)) {
-    prepend_option_seen (flag);
-  }
-}
-#endif
 
 #ifdef TARG_ARM
 
@@ -2052,7 +1944,7 @@ print_multi_lib ()
   argv[0] = "gcc";
   asprintf(&argv[1], "-print-multi-lib");
   argv[2] = NULL;
-  execvp(argv[0], argv);
+  execvp(argv[0], (const char **)argv);
   fprintf(stderr, "could not execute %s: %m\n", argv[0]);
   exit(1);
 }

@@ -20,6 +20,7 @@
 
 
 $Header: /plroot/cmplrs.src/v7.4.4m/.RCS/PL/dwarfdump/RCS/print_die.c,v 1.44 2004/05/14 16:57:43 davea Exp $ */
+#include <inttypes.h>
 #include "globals.h"
 #include "dwarf_names.h"
 
@@ -479,7 +480,7 @@ _dwarf_print_one_locdesc(Dwarf_Debug dbg,
 	p += strlen(op_name);
 	opd1 = locd->ld_s[i].lr_number;
 	if (op >= DW_OP_breg0 && op <= DW_OP_breg31) {
-	    sprintf(p, "%+lld", (Dwarf_Signed) opd1);
+	    sprintf(p, "%+"PRId64, (Dwarf_Signed) opd1);
 	    p += strlen(p);
 	} else {
 	    switch (op) {
@@ -495,7 +496,7 @@ _dwarf_print_one_locdesc(Dwarf_Debug dbg,
 	    case DW_OP_skip:
 	    case DW_OP_bra:
 	    case DW_OP_fbreg:
-		sprintf(p, " %lld", (Dwarf_Signed) opd1);
+		sprintf(p, " %"PRId64, (Dwarf_Signed) opd1);
 		p += strlen(p);
 		break;
 	    case DW_OP_const1u:
@@ -516,7 +517,7 @@ _dwarf_print_one_locdesc(Dwarf_Debug dbg,
 		sprintf(p, "%llu", opd1);
 		p += strlen(p);
 		opd2 = locd->ld_s[i].lr_number2;
-		sprintf(p, "%+lld", (Dwarf_Signed) opd2);
+		sprintf(p, "%+"PRId64, (Dwarf_Signed) opd2);
 		p += strlen(p);
 		break;
 	    default:
@@ -870,7 +871,7 @@ get_attr_value(Dwarf_Debug dbg, Dwarf_Half tag, Dwarf_Attribute attrib,
 			int i = (int) tempud;
 
 			tempsd = i;
-			sprintf(attrib_buf, "%lld", tempsd);
+			sprintf(attrib_buf, "%"PRId64, tempsd);
 		    } else {
 			sprintf(attrib_buf, "%llu", tempud);
 		    }
@@ -883,7 +884,7 @@ get_attr_value(Dwarf_Debug dbg, Dwarf_Half tag, Dwarf_Attribute attrib,
 			    /* See bug 583450. ** we are recording
 			       enumerators ** as unsigned. Wrong. Thru
 			       cmplrs 7.2.1 */
-			    sprintf(attrib_buf, "%lld", tempsd);
+			    sprintf(attrib_buf, "%"PRId64, tempsd);
 			} else if (wres == DW_DLV_NO_ENTRY) {
 			    /* nothing? */
 			} else {
@@ -902,7 +903,7 @@ get_attr_value(Dwarf_Debug dbg, Dwarf_Half tag, Dwarf_Attribute attrib,
 	    default:
 		wres = dwarf_formsdata(attrib, &tempsd, &err);
 		if (wres == DW_DLV_OK) {
-		    sprintf(attrib_buf, "%lld", tempsd);
+		    sprintf(attrib_buf, "%"PRId64, tempsd);
 		} else if (wres == DW_DLV_NO_ENTRY) {
 		    /* nothing? */
 		} else {
@@ -928,7 +929,7 @@ get_attr_value(Dwarf_Debug dbg, Dwarf_Half tag, Dwarf_Attribute attrib,
     case DW_FORM_sdata:
 	wres = dwarf_formsdata(attrib, &tempsd, &err);
 	if (wres == DW_DLV_OK) {
-	    sprintf(attrib_buf, "%lld", tempsd);
+	    sprintf(attrib_buf, "%"PRId64, tempsd);
 	} else if (wres == DW_DLV_NO_ENTRY) {
 	    /* nothing? */
 	} else {

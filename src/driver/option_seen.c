@@ -273,31 +273,3 @@ dump_option_seen (void)
 	}
 }
 
-#ifdef TARG_ST
-/* [CL] check if an option with the same name was already provided */
-int already_provided(int option)
-{
-  char * s=get_option_name(option);
-  int flag;
-  FOREACH_OPTION_SEEN(flag) {
-    int flag2 = get_real_option_if_aliased(flag);
-    int base_flag;
-
-    if (is_derived_option(flag2)) {
-      base_flag = get_derived_parent(flag2);
-      /* sometimes base is simple alias */
-      base_flag = get_real_option_if_aliased (base_flag);
-    } else {
-      base_flag = flag2;
-    }
-
-    if (strcmp(get_option_name(flag2), s)==0){
-      return TRUE;
-    }
-  }
-  return FALSE;
-}
-
-#endif
-
-

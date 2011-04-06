@@ -76,41 +76,17 @@ static char *rcs_id = "$Source: be/cg/gra_mon/SCCS/s.gra_bb.cxx $ $Revision: 1.1
 #include "gra.h"
 #include "gra_interfere.h"
 #include "gra_trace.h"
-#ifdef TARG_ST
-#include "gra_color.h"
-#include "cg_flags.h"
-#endif
 
 GBB_MGR gbb_mgr;
 #ifdef TARG_X8664
 OP *gra_savexmms_op;
 #endif
 
-#ifdef TARG_ST
-static INT subclass_size[ISA_REGISTER_SUBCLASS_MAX_LIMIT+1];
-#endif
 
 /////////////////////////////////////
 INT 
 GRA_BB::Register_Girth( ISA_REGISTER_CLASS rc ) 
 {
-#ifdef TARG_ST
-  // We get the information from LRA for the estimate of the pressure.
-  // The returned value must be bounded by the allocatable register size.
-  // Note that this estimate is not more corrected by local forced max.
-  // This is done in a second step if necessary
-  LRA_Request_Info request_info;
-  LRA_Register_Request (bb, &request_info);
-  INT rr = request_info.summary[rc];
-  INT rs = REGISTER_SET_Size(REGISTER_CLASS_allocatable(rc));
-  // This should not be necessary anymore. But removing it
-  // may make performance vary with older versions.
-  // So for now we are forced to keep it.
-  if ( rr < Forced_Locals(rc) && rr != 0 )
-    rr = Forced_Locals(rc);
-  return rr <= rs ? rr : rs; 
-#else
-
   INT rr = LRA_Register_Request(bb,rc);
   INT rs = REGISTER_SET_Size(REGISTER_CLASS_allocatable(rc));
 #ifndef TARG_X8664  // Don't understand why we should inflate register request.
@@ -118,7 +94,6 @@ GRA_BB::Register_Girth( ISA_REGISTER_CLASS rc )
     rr = GRA_LOCAL_FORCED_MAX(rc);
 #endif
   return rr <= rs ? rr : rs; 
-#endif
 }
 
 /////////////////////////////////////
@@ -137,39 +112,18 @@ GRA_BB::Add_LUNIT( LUNIT*  lunit)
   ISA_REGISTER_CLASS rc = lunit->Lrange()->Rc();
   lunits[rc] = lunits[rc]->BB_List_Push(lunit);
 }
-#ifdef TARG_ST
-
-/////////////////////////////////////
-// Add [<reg>..<reg>+<nregs>-1] to the set of registers used in the
-// given <gbb> and <rc>.
-void
-GRA_BB::Make_Registers_Used (ISA_REGISTER_CLASS rc, REGISTER reg, INT nregs)
-{
-  for (INT i = 0; i < nregs; i++) {
-    Make_Register_Used (rc, reg + i);
-  }
-}
-#endif
 
 /////////////////////////////////////
 // Add <reg> to the set of registers used in the given <gbb> and <rc>.
 void
-GRA_BB::Make_Register_Used( ISA_REGISTER_CLASS  rc, REGISTER reg
-#ifndef TARG_ST
-			    ,LRANGE* lrange
-                            , BOOL reclaim 
-#endif
-                            )
+GRA_BB::Make_Register_Used( ISA_REGISTER_CLASS  rc, REGISTER reg,
+                            LRANGE* lrange, BOOL reclaim )
 {
   region-> Make_Register_Used(rc,reg);
-#ifdef TARG_ST
-  loop->Make_Register_Used(rc, reg);
-#else
   loop->Make_Register_Used(rc, reg, reclaim);
-#endif
   registers_used[rc] = REGISTER_SET_Union1(registers_used[rc],reg);
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   // Record that REG is owned by LRANGE.
   if (GRA_reclaim_register)
     Set_LRANGE_Owner(rc, reg, lrange);
@@ -632,13 +586,6 @@ GBB_MGR::Initialize(void)
   blocks_with_x87_OP = BB_SET_Create_Empty(PU_BB_Count + 2,GRA_pool);
   blocks_with_mmx_OP = BB_SET_Create_Empty(PU_BB_Count + 2,GRA_pool);
 #endif
-  #ifdef TARG_ST
-  ISA_REGISTER_SUBCLASS sc;
-  FOR_ALL_ISA_REGISTER_SUBCLASS (sc) {
-    subclass_size[sc] = REGISTER_SET_Size (REGISTER_SUBCLASS_members (sc));
-  }
-#endif
-
 }
 
 
@@ -680,7 +627,7 @@ GBB_MGR::Create(BB* bb, GRA_REGION* region)
     gbb->unpreferenced_wired_lranges[rc] = NULL;
     gbb->spill_above[rc] = NULL;
     gbb->restore_below[rc] = NULL;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     if (GRA_optimize_boundary) {
       gbb->usage_live_in[rc] = REGISTER_SET_EMPTY_SET;
       gbb->usage_live_out[rc] = REGISTER_SET_EMPTY_SET;
@@ -718,7 +665,7 @@ GBB_MGR::Create(BB* bb, GRA_REGION* region)
   if (BB_mod_rotating_registers(bb) || BB_mod_pred_rotating_registers(bb))
     blocks_with_rot_reg_clob = BB_SET_Union1D(blocks_with_rot_reg_clob,bb,GRA_pool);
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   mUINT16 OPs_count = 0;
   for (OP *op = BB_first_op(bb); op != NULL; op = OP_next(op)) {
     OPs_count++;		// Count the number of OPs in the BB.
@@ -746,151 +693,6 @@ GBB_MGR::Create(BB* bb, GRA_REGION* region)
 
   return gbb;
 }
-#ifdef TARG_ST
-
-// Used to sort the LRA request, so that we can replace
-// the leading requests with forced locals.
-// Sort order is:
-//   1. Smaller numbered register class first.
-//   2. Within a register class, more general (i.e. bigger)
-//      subclasses first.  As a special case of this, the
-//      undefined subclass is always placed before other
-//      subclasses.
-//   3. Demand appears before a request (to reduce the chance
-//      of it being replaced by a forced local).
-// Note that a forced local is effectively a demand for
-// a register of undefined subclass, so when pruning the LRA request,
-// we prefer to prune those.  Perhaps we should prune only
-// those ...
-static
-int compare_request (const void *r1, const void *r2)
-{
-  const LRA_Request_Element *req1 = (const LRA_Request_Element *)r1;
-  const LRA_Request_Element *req2 = (const LRA_Request_Element *)r2;
-  if (req1->cl != req2->cl) {
-    return (req1->cl - req2->cl);
-  }
-  if (req1->sc != req2->sc) {
-    if (req1->sc == ISA_REGISTER_SUBCLASS_UNDEFINED) {
-      return -1;
-    } else if (req2->sc == ISA_REGISTER_SUBCLASS_UNDEFINED) {
-      return 1;
-    } else {
-      INT sc1_size = subclass_size[req1->sc];
-      INT sc2_size = subclass_size[req2->sc];
-      if (sc1_size != sc2_size) {
-	return sc2_size - sc1_size;
-      } else {
-	return req1->sc - req2->sc;
-      }
-    }
-  } else if (req1->demand != req2->demand) {
-    return (req1->demand) ? -1 : 1;
-  } else {
-    return req1 - req2;
-  }
-}
-
-void
-GRA_BB::Create_Local_LRANGEs ()
-{
-  ISA_REGISTER_CLASS rc;
-  ISA_REGISTER_SUBCLASS sc;
-  INT nregs;
-
-  if (GRA_use_subclass_register_request) {
-    LRA_Request_Info request;
-
-    LRA_Register_Request (Bb (), &request);
-
-    // // Adjust the request to take account of forced locals.
-
-    // Ensure we request at least Register_Girth registers,
-    // to keep compatibility with non-use_subclass_register_request
-    // version of code.
-    // SC: seems bizarre to me, since register_girth can bump up
-    // the local reg request beyond the real BB register pressure.
-    FOR_ALL_ISA_REGISTER_CLASS (rc) {
-      INT32 girth = Register_Girth (rc);
-      if (girth > request.summary[rc]) {
-	request.reqs[request.n_reqs].cl = rc;
-	request.reqs[request.n_reqs].sc = ISA_REGISTER_SUBCLASS_UNDEFINED;
-	request.reqs[request.n_reqs].nregs = 1;
-	request.reqs[request.n_reqs].demand = FALSE;
-	request.reqs[request.n_reqs++].count = girth - request.summary[rc];
-	request.summary[rc] = girth;
-      }
-    }
-    
-    // Sort the request, so that more general subclasses appear
-    // before more specific subclasses, and demands appear before requests.
-    // Then we remove requests, until forced_locals goes to zero.
-    qsort (&request.reqs, request.n_reqs, sizeof (LRA_Request_Element),
-	   compare_request);
-
-    ISA_REGISTER_CLASS forced_locals_cl = ISA_REGISTER_CLASS_UNDEFINED;
-    INT forced_locals = 0;
-
-    for (INT i = 0; i < request.n_reqs; i++) {
-      const LRA_Request_Element *req = &request.reqs[i];
-      GRA_Trace_Local_LRange_Request ("before forced locals adjustment", this, req->cl, req->sc, req->count,
-				      req->nregs, req->demand);
-    }
-
-    for (INT i = 0; i < request.n_reqs; i++) {
-      ISA_REGISTER_CLASS cl = request.reqs[i].cl;
-      if (forced_locals_cl != cl) {
-	forced_locals_cl = cl;
-	forced_locals = Forced_Locals (forced_locals_cl);
-      }
-      if (forced_locals > 0) {
-	INT count = request.reqs[i].count * request.reqs[i].nregs;
-	if (count > forced_locals)
-	  count = forced_locals;
-	request.reqs[i].count -= count / request.reqs[i].nregs;
-	forced_locals -= count;
-      }
-    }
-
-    for (INT i = 0; i < request.n_reqs; i++) {
-      const LRA_Request_Element *req = &request.reqs[i];
-      GRA_Trace_Local_LRange_Request ("after forced locals adjustment", this, req->cl, req->sc, req->count,
-				      req->nregs, req->demand);
-    }
-
-    // Now create lranges for the request.
-    for (INT i = 0; i < request.n_reqs; i++) {
-      rc = request.reqs[i].cl;
-      sc = request.reqs[i].sc;
-      nregs = request.reqs[i].nregs;
-      local_lrange_count[rc] += request.reqs[i].count;
-      for (INT count = 0; count < request.reqs[i].count; count++) {
-	LRANGE *new_local = lrange_mgr.Create_Local(this,rc,sc,nregs);
-	if (request.reqs[i].demand) {
-	  new_local->Must_Allocate_Set ();
-	}
-	local_lranges[rc] = local_lranges[rc]->BB_Local_List_Push (new_local);
-      }
-    }
-  } else {
-    FOR_ALL_ISA_REGISTER_CLASS (rc) {
-      INT32 count = Register_Girth (rc);
-      if (count > 0) {
-	count -= Forced_Locals (rc);
-	if (count <= 0)
-	  continue;
-	local_lrange_count[rc] += count;
-	while ( count-- > 0 ) {
-	  LRANGE* new_local = lrange_mgr.Create_Local(this,rc,
-						      ISA_REGISTER_SUBCLASS_UNDEFINED, 1);
-	  local_lranges[rc] =
-	    local_lranges[rc]->BB_Local_List_Push(new_local);
-	}
-      }
-    }
-  }
-}
-#else
 
 
 /////////////////////////////////////
@@ -917,24 +719,14 @@ GRA_BB::Create_Local_LRANGEs(ISA_REGISTER_CLASS rc, INT32 count)
       local_lranges[rc]->BB_Local_List_Push(new_local);
   }
 }
-#endif
 
 /////////////////////////////////////
 // Create and return a new local LRANGE for <gbb> that must be
 // allocated the register -- <cl> and <reg>.
-#ifdef TARG_ST
-LRANGE*
-GRA_BB::Create_Wired_LRANGE(ISA_REGISTER_CLASS  rc, REGISTER reg, INT nregs)
-#else
 LRANGE*
 GRA_BB::Create_Wired_LRANGE(ISA_REGISTER_CLASS  rc, REGISTER reg)
-#endif
 {
-    #ifdef TARG_ST
-  LRANGE* result = lrange_mgr.Create_Local(this,rc,ISA_REGISTER_SUBCLASS_UNDEFINED, nregs);
-#else
   LRANGE* result = lrange_mgr.Create_Local(this,rc);
-#endif
 
   gbb_mgr.Incr_Wired_Local_Count();
   result->Wire_Register(reg);

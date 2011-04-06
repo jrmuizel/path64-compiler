@@ -513,7 +513,7 @@ static const OPC2CNAME_MAP WN2C_Opc2cname_Map[] =
   {OPC_U8FQFLOOR, "_U8FQFLOOR"},
   {OPC_U8F8FLOOR, "_U8F8FLOOR"},
   {OPC_U8F16FLOOR, "_U8F16FLOOR"},
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   {OPC_F4F4FLOOR, "_F4F4FLOOR"},
 #endif
   {OPC_I4BNOT, "~"},

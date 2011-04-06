@@ -590,10 +590,6 @@ private:
   UINT32          _stmt_kid_num:16; // for real occurrence, which kid
                                     // of the stmt has the occurrence
   UINT32          _saved_flags:13;
-#ifdef TARG_ST
-  // FdF 20080528: PRE on Iload/Istore for zero offset
-  INT32 	  _offset:19;
-#endif
 
 
   union {
@@ -1052,14 +1048,6 @@ public:
 
   void           Save_flags() { _saved_flags = _flag; }
   void           Restore_flags() { _flag = _saved_flags; }
-#ifdef TARG_ST
-  // FdF 20080528: PRE on Iload/Istore for zero offset
-  void            Set_offset(int offset) {
-    Is_True((offset >= -1<<18) && (offset < 1<<18), ("EXP_OCCURS:offset is out of range"));
-    _offset = offset;
-  }
-  INT             Get_offset() { return _offset; }
-#endif
 
   // A function used in SSA minimization and CodeMotion to tell what
   // occurrence *this is identical to.

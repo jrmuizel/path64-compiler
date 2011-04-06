@@ -77,7 +77,6 @@
 #define Reset_OP_visited_thr(o)                Reset_OP_flag1(o)
 
 BOOL Trace_THR = FALSE;
-#ifndef TARG_ST
 // ======================================================================
 // Remove_Unnecessary_Check_Instrs
 //
@@ -107,12 +106,8 @@ Remove_Unnecessary_Check_Instrs(BB *bb)
 
 	if (OP_load(prev_op) &&
 	    CGTARG_Is_OP_Advanced_Load(prev_op) && !store_present) {
-#ifdef TARG_ST
-          CGTARG_Perform_THR_Code_Generation(prev_op, THR_DATA_SPECULATION_NO_RB_CLEANUP);
-#else
 	  CGTARG_Perform_THR_Code_Generation(prev_op, op, 
 					THR_DATA_SPECULATION_NO_RB_CLEANUP);
-#endif
 
 	  Reset_BB_scheduled(bb);  // Need to reschedule the BB.
 	} /* CGTARG_Is_OP_Advanced_Load */
@@ -120,7 +115,7 @@ Remove_Unnecessary_Check_Instrs(BB *bb)
     } /* OP_load(op) && ... */
   } /* FOR_ALL_BB_OPs_REV */
 }
-#endif
+
 // ======================================================================
 // CG_THR::Check_THR_Profitability
 //
@@ -206,11 +201,7 @@ CG_THR::Perform_THR_Code_Generation ()
 
       OP *succ_op = ARC_succ(*arc_iter);
       if (OP_visited_thr(succ_op)) continue;
-#ifdef TARG_ST
-      CGTARG_Perform_THR_Code_Generation(succ_op, _thr_type);
-#else
       CGTARG_Perform_THR_Code_Generation(succ_op, NULL, _thr_type);
-#endif
       Set_OP_visited_thr(succ_op);
       _chk_instr_inserted = TRUE;
     }

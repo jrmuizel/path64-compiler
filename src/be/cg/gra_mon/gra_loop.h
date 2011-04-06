@@ -38,18 +38,14 @@ class GRA_BB;
 // this way, we can keep track of the register usage and such of inner loops.
 class GRA_LOOP {
 friend class GRA_LOOP_MGR;
-#ifdef TARG_ST
-  REGISTER_SET registers_used[ISA_REGISTER_CLASS_MAX_LIMIT+1];
-#else
   REGISTER_SET registers_used[ISA_REGISTER_CLASS_MAX+1]; 
-#endif
 	      // registers used by all blocks and inner loops within the loop
   GRA_LOOP*    parent; 		// parent of this loop, i.e. the next outer loop
   GRA_LOOP*    outermost; 	// outermost loop in this nest
   GRA_LOOP*    next_loop; 	// next in list of loops in nest (outermost first)
   INT          nest_level; 	// nesting level of the loop
   BB*	       loop_head; 	// bb at head of loop
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   LOOP_DESCR   *loop_descr;	// the LOOP_DESCR for this loop
 #endif
 
@@ -60,7 +56,7 @@ friend class GRA_LOOP_MGR;
   void Next_Loop_Set(GRA_LOOP *p) { next_loop = p; }
   void Nest_Level_Set(INT i) 	{ nest_level = i; }
   void Loop_Head_Set(BB *b) 	{ loop_head = b; }
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   void Loop_Descr_Set(LOOP_DESCR *ld)	{ loop_descr = ld; };
   LOOP_DESCR *Loop_Descr(void)	{ return loop_descr; }
 #endif
@@ -80,13 +76,9 @@ public:
   BB *Loop_Head(void)		{ return loop_head; }
 
   // non-inlined member functions
-  void Make_Register_Used(ISA_REGISTER_CLASS rc, REGISTER reg
-#ifndef TARG_ST
-                          , BOOL reclaim = FALSE
-#endif
-                          );
+  void Make_Register_Used(ISA_REGISTER_CLASS rc, REGISTER reg, BOOL reclaim = FALSE);
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   REGISTER_SET Registers_Referenced(ISA_REGISTER_CLASS rc);
 #endif
 };

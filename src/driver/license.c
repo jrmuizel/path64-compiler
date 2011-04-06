@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+#include <cmplrs/rcodes.h>
 #include "lang_defs.h"
 #include "license.h"
 #include "driver_defs.h"
@@ -56,6 +57,11 @@ void obtain_license (char *exedir, int argc, char *argv[]) {
     int i ;
     char *l ;
     char *prodname;
+	struct pex_obj *pex;
+	const char *errmsg;
+	int errnum;
+    const char *argvec[8] ;
+	int waitstatus;
 
     const char *errortext = "Unable to obtain subscription.  The PathScale compiler cannot run without a subscription.\nPlease see http://www.pathscale.com/subscription/1.1/msgs.html for details.\n" ;
    
@@ -158,43 +164,45 @@ void obtain_license (char *exedir, int argc, char *argv[]) {
       }
     }
 
-    pid = fork() ;
-    if (pid == 0) {		// child
-        const char *argvec[8] ;
+    pex = pex_init(0, exename, NULL);
+    if (pex == NULL) {
+        fprintf(stderr, "pex_init failed\n");
+        do_exit(RC_SYSTEM_ERROR);
+    }
 
-        argvec[0] = exename ;
-        argvec[1] = prodname;		// bug 12667
-        argvec[2] = language ;
-        argvec[3] = PSC_BUILD_DATE ;
-        argvec[4] = subflags ;
-        argvec[5] = PSC_FULL_VERSION ;
-        argvec[6] = NULL ;
-        if (subverbose) {
-            argvec[6] = "--v" ;
-            argvec[7] = NULL ;
+    argvec[0] = exename ;
+    argvec[1] = prodname;       // bug 12667
+    argvec[2] = language ;
+    argvec[3] = PSC_BUILD_DATE ;
+    argvec[4] = subflags ;
+    argvec[5] = PSC_FULL_VERSION ;
+    argvec[6] = NULL ;
+    if (subverbose) {
+        argvec[6] = "--v" ;
+        argvec[7] = NULL ;
+    }
+  
+    if (pex_run(pex, PEX_LAST, exename, argvec, NULL, NULL, 
+                &errnum) != NULL ||
+                !pex_get_status(pex, 1, &waitstatus)) {
+        fprintf(stderr, "%s\n", errortext); 
+        pex_free(pex);
+        do_exit(RC_SYSTEM_ERROR);
+    }
+    pex_free(pex);
+
+    if (WIFEXITED(waitstatus)) {
+        if (WEXITSTATUS(waitstatus) == 6) {     // no subclient program?
+            do_exit(RC_INTERNAL_ERROR) ;
+        } else if (WEXITSTATUS(waitstatus) == 7) {  // hard stop?
+            fprintf(stderr, "Compilation terminated\n");
+            do_exit(RC_INTERNAL_ERROR) ;
+        } else if (WEXITSTATUS(waitstatus) != 0) {  // license client failed, can't rely on output
+            fprintf(stderr, "Subscription client exited with error status\n");
+            do_exit(RC_INTERNAL_ERROR) ;
         }
-        execv (exename, (char*const*)argvec) ;
-        fprintf (stderr, "%s", errortext) ;
-        do_exit (6) ;
     } else {
-        int statloc ;
-        waitpid (pid, &statloc, 0) ;
-
-        // if we were not able to get a license due to missing subclient executable, tell caller
-        if (WIFEXITED(statloc)) {
-            if (WEXITSTATUS (statloc) == 6) {		// no subclient program?
-                do_exit (1) ;
-            } else if (WEXITSTATUS (statloc) == 7) {	// hard stop?
-                fprintf (stderr, "Compilation terminated\n") ;
-                do_exit (1) ;
-            } else if (WEXITSTATUS (statloc) != 0) {            // license client failed, can't rely on output
-                fprintf (stderr, "Subscription client exited with error status\n") ;
-                do_exit (1) ;
-            }
-        } else {
-	  fprintf (stderr, "Subscription client error\n") ;	// bug 9164
-	  do_exit(1);
-        }
-
+        fprintf(stderr, "Subscription client error\n"); // bug 9164
+        do_exit(RC_INTERNAL_ERROR);
     }
 }

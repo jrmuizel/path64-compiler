@@ -998,12 +998,6 @@ extern WN *WN_CreateParm(TYPE_ID rtype,
 			 UINT32 flag);
 
 extern WN *WN_CreateComma(OPERATOR opr, TYPE_ID rtype, TYPE_ID desc, WN *block, WN *value);
-#ifdef TARG_ST
-BE_EXPORTED extern WN *WN_CreateSubPart(WN *kid0, 
-					 TYPE_ID rtype, 
-					 TYPE_ID desc, 
-					 WN_OFFSET subpart_idx);
-#endif
 
 inline WN *
 WN_CreateComma (OPCODE opc, WN *block, WN *value) {
@@ -1127,10 +1121,7 @@ extern WN *WN_Inverse(TYPE_ID type,
 
 extern WN *WN_Floatconst(TYPE_ID type,
 			 double value);
-#ifdef TARG_ST
-// Unitialized pointer constant
-BE_EXPORTED extern WN *WN_UVConstPointer( TYPE_ID type);
-#endif
+
 extern WN *WN_UVConst(TYPE_ID type);
 
 extern WN * WN_Zerocon (TYPE_ID ty);

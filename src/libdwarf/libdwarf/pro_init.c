@@ -34,6 +34,9 @@
 #include "pro_section.h"	/* for MAGIC_SECT_NO */
 #include "pro_reloc_symbolic.h"
 #include "pro_reloc_stream.h"
+#ifdef _WIN32
+#include <elf.h>
+#endif
 
 
 static void common_init(Dwarf_P_Debug dbg, Dwarf_Unsigned flags);
@@ -57,9 +60,6 @@ static struct Dwarf_P_Section_Data_s init_sect = {
 Dwarf_P_Debug
 dwarf_producer_init_b(Dwarf_Unsigned flags,
 		      Dwarf_Callback_Func_b func,
-#ifdef TARG_ST
-		      Dwarf_Unsigned min_inst_length,
-#endif
 		      Dwarf_Handler errhand,
 		      Dwarf_Ptr errarg, Dwarf_Error * error)
 {
@@ -88,9 +88,6 @@ dwarf_producer_init_b(Dwarf_Unsigned flags,
 Dwarf_P_Debug
 dwarf_producer_init(Dwarf_Unsigned flags,
 		    Dwarf_Callback_Func func,
-#ifdef TARG_ST
-		    Dwarf_Unsigned min_inst_length,
-#endif
 		    Dwarf_Handler errhand,
 		    Dwarf_Ptr errarg, Dwarf_Error * error)
 {
@@ -113,9 +110,6 @@ dwarf_producer_init(Dwarf_Unsigned flags,
 			  (Dwarf_P_Debug) DW_DLV_BADADDR);
     }
     dbg->de_func = func;
-#ifdef TARG_ST
-    dbg->de_min_inst_length = min_inst_length;
-#endif
     dbg->de_errhand = errhand;
     dbg->de_errarg = errarg;
     common_init(dbg, flags);

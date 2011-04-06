@@ -233,45 +233,6 @@ Set_INITV_lab1 (INITV_IDX inv, LABEL_IDX lab1) {
 		      Initv_Table[inv].kind == INITVKIND_SYMDIFF16);
     Set_INITV_lab1(Initv_Table[inv], lab1); 
 }
-#ifdef TARG_ST
-/* (cbr) DDTSst24451. add support for label diffs initializers */
-inline LABEL_IDX
-INITV_labd0 (const INITV& initv) {
-  INITV_read_check (initv.kind == INITVKIND_LABDIFF);
-    return initv.Labd0 ();
-}
-inline LABEL_IDX
-INITV_labd0 (const INITV_IDX initv) {
-    return INITV_labd0 (Initv_Table[initv]);
-}
-inline void
-Set_INITV_labd0 (INITV& inv, LABEL_IDX lab) { 
-	inv.u.labdiff.labd0 = lab;
-}
-inline void
-Set_INITV_labd0 (INITV_IDX inv, LABEL_IDX lab) { 
-  INITV_read_check (Initv_Table[inv].kind == INITVKIND_LABDIFF);
-  Set_INITV_labd0(Initv_Table[inv], lab); 
-}
-inline LABEL_IDX
-INITV_labd1 (const INITV& initv) {
-  INITV_read_check (initv.kind == INITVKIND_LABDIFF);
-  return initv.Labd1 ();
-}
-inline LABEL_IDX
-INITV_labd1 (const INITV_IDX initv) {
-    return INITV_labd1 (Initv_Table[initv]);
-}
-inline void
-Set_INITV_labd1 (INITV& inv, LABEL_IDX lab) { 
-	inv.u.labdiff.labd1 = lab;
-}
-inline void
-Set_INITV_labd1 (INITV_IDX inv, LABEL_IDX lab) { 
-  INITV_read_check (Initv_Table[inv].kind == INITVKIND_LABDIFF);
-  Set_INITV_labd1(Initv_Table[inv], lab); 
-}
-#endif
 
 inline ST_IDX
 INITV_st2 (const INITV& initv) {
@@ -401,23 +362,13 @@ INITV_Init_Float (INITV_IDX inv, TYPE_ID mtype, double val, UINT16 repeat = 1);
 extern void
 INITV_Init_String (INITV_IDX inv, char *str, INT size, UINT16 repeat = 1);
 extern void
-#ifdef TARG_ST
-/* (cbr) support for half address relocation */
-INITV_Init_Symoff (INITV_IDX inv, ST *st, INT64 ofst, UINT16 repeat = 1, BOOL halfword = 0);
-#else
 INITV_Init_Symoff (INITV_IDX inv, ST *st, INT64 ofst, UINT16 repeat = 1);
-#endif
 extern void
 INITV_Init_Label (INITV_IDX inv, LABEL_IDX lab, UINT16 repeat = 1);
 
 extern void
 INITV_Init_Symdiff (INITV_IDX inv, 
 	LABEL_IDX lab1, ST *st2, BOOL halfword, UINT16 repeat = 1);
-#ifdef TARG_ST
-BE_EXPORTED extern void
-/* (cbr) DDTSst24451. add support for label diffs initializers */
-INITV_Init_Labdiff (INITV_IDX inv, LABEL_IDX lab1, LABEL_IDX lab2, UINT16 repeat = 1);
-#endif
 
 extern void
 #ifdef KEY
@@ -469,18 +420,9 @@ Print_Inits (UINT level);
 // internal inline routines for writing INITV
 
 inline void
-#ifdef TARG_ST
-/* (cbr) support for half address relocation */
-INITV_Set_SYMOFF (INITV& initv, mUINT16 rp1, ST_IDX st, INT32 ofst, BOOL halfword = 0) {
-#else
 INITV_Set_SYMOFF (INITV& initv, mUINT16 rp1, ST_IDX st, INT32 ofst) {
-#endif
     initv.next = 0;
-#ifdef TARG_ST
-    initv.kind = halfword ? INITVKIND_SYMOFF16 : INITVKIND_SYMOFF;
-#else
     initv.kind = INITVKIND_SYMOFF;
-#endif
     initv.repeat1 = rp1;
     initv.u.sto.st = st;
     initv.u.sto.ofst = ofst;
@@ -558,19 +500,6 @@ INITV_Set_SYMDIFF (INITV& initv, mUINT16 rp1, LABEL_IDX s1, ST_IDX s2,
     initv.u.stdiff.st2 = s2;
 }
     
-#ifdef TARG_ST
-/* (cbr) DDTSst24451. add support for label diffs initializers */
-inline void
-  INITV_Set_LABDIFF (INITV& initv, mUINT16 rp1, LABEL_IDX s1, LABEL_IDX s2)
-{ 
-    initv.next = 0;
-    initv.kind = INITVKIND_LABDIFF;
-    initv.repeat1 = rp1;
-    initv.u.labdiff.labd0 = s1;
-    initv.u.labdiff.labd1 = s2;
-}
-#endif
-
 // old routines here for compatibility; should eventually remove
 
 extern INITV_IDX

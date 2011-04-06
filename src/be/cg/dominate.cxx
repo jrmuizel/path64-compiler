@@ -323,40 +323,6 @@ Calculate_Dominators(void)
 
   MEM_POOL_Push_Freeze(&dom_pool);
   MEM_POOL_Push(&MEM_local_nz_pool);
-#ifdef TARG_ST
-  /* TDR: Fix for bug #76582
-   * Add a fake exit block when apporpriate
-   * In CFLOW, we optimize returns when predication
-   * is possible leading to guarded returns
-   * This was not properly handled when several exit points
-   * exists in the function so we need to
-   * repair the CFG for dominator construction 
-   * */
-  BOOL Need_Fake_Exit = FALSE;
-  BOOL found = FALSE;
-  BB *fake_exit_bb;
-  BB_LIST *Real_Exit_BB_List;
-  Real_Exit_BB_List = NULL;
-
-  for (bb = REGION_First_BB; bb; bb = BB_next(bb)) {
-	  last_bb = bb;
-	  if (BB_exit(bb) && BB_succs(bb)) {
-		  if (found)  Need_Fake_Exit = TRUE;
-		  found=TRUE;
-		  Real_Exit_BB_List = BB_LIST_Push(bb, Real_Exit_BB_List, &dom_pool);
-	  }
-  }
-  if (Need_Fake_Exit) {
-	  fake_exit_bb = Gen_BB();
-	  Set_BB_exit(fake_exit_bb);
-	  Chain_BBs(last_bb,fake_exit_bb);
-	  for (BB_LIST *elist = Real_Exit_BB_List; elist; elist = BB_LIST_rest(elist) ) {
-		  bb = BB_LIST_first(elist);
-		  Reset_BB_exit(bb);
-		  Link_Pred_Succ(bb,fake_exit_bb);
-	  }
-  }
-#endif
 
   /* Allocate a bit vector for temporary usage (mostly the
    * results of intersections). Later we reuse it as 'check'.
@@ -573,30 +539,8 @@ Calculate_Dominators(void)
   //
   for (bb = REGION_First_BB; bb; bb = BB_next(bb)) {
     BS_Difference1D(BB_dom_set(bb), 0);
-#ifdef TARG_ST
-    // FdF 20100222: For a BB that contains BB_ID_POST_ENTRY in its
-    // post-dominator set, set the REACH_EXIT flag.
-    if (BS_MemberP(BB_pdom_set(bb), 1+PU_BB_Count))
-      Set_BB_reach_exit(bb);
-    else
-      Reset_BB_reach_exit(bb);
-#endif
     BS_Difference1D(BB_pdom_set(bb), 1+PU_BB_Count);
-#ifdef TARG_ST
-    /*  TDR: Fix for bug #76582 Cleanup */
-    if (Need_Fake_Exit)   BS_Difference1D(BB_pdom_set(bb),BB_id(fake_exit_bb));
-#endif
   }
-#ifdef TARG_ST
-  if (Need_Fake_Exit) {
-	  for (BB_LIST *elist = Real_Exit_BB_List; elist; elist = BB_LIST_rest(elist) ) {
-		  bb = BB_LIST_first(elist);
-		  Set_BB_exit(bb);
-		  Unlink_Pred_Succ(bb,fake_exit_bb);
-	  }
-	  Remove_BB(fake_exit_bb);
-  }
-#endif
 
   Stop_Timer(T_CalcDom_CU);
 }
@@ -871,36 +815,4 @@ Free_Dominators_Memory(void)
   bb_dom_map.size = 0;
   pool_inited = FALSE;
 }
-#ifdef TARG_ST
-/* ====================================================================
- *
- *  PU_Has_Dominator_Info
- *
- *  See interface description
- *
- * ====================================================================
- */
-BOOL
-PU_Has_Dominator_Info(void)
-{
-  return pool_inited;
-}
-
-BOOL
-BB_Dominates(BB* bb1, BB* bb2) {
-    return ((BB_id(bb1) == BB_id(bb2)) || BB_SET_MemberP(BB_dom_set(bb2), bb1));
-}            
-
-BOOL
-OP_Dominates(OP *op1, OP* op2) {
-
-  BB *bb1 = OP_bb(op1), *bb2 = OP_bb(op2);
-
-  if (bb1 != bb2)
-    return BB_SET_MemberP (BB_dom_set((bb2)), bb1);
-
-  return !OP_Follows(op1, op2);
-}
-
-#endif
 

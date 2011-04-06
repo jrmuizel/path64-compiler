@@ -73,39 +73,6 @@ static char *mtypes_rcs_id = "$Source: common/com/SCCS/s.mtypes.h $ $Revision: 1
 #define MTYPE_U2	7	/*  16-bit unsigned integer */
 #define MTYPE_U4	8	/*  32-bit unsigned integer */
 #define MTYPE_U8	9	/*  64-bit unsigned integer */
-#ifdef TARG_ST
-#define MTYPE_I5	 10	/* 40-bit integer */
-#define MTYPE_U5	 11	/* 40-bit unsigned integer */
-#define MTYPE_A4	 12	/* 32-bit address */
-#define MTYPE_A8	 13	/* 64-bit address */
-#define MTYPE_F4	14	/*  32-bit IEEE floating point */
-#define MTYPE_F8	15	/*  64-bit IEEE floating point */
-#define MTYPE_F10	16	/*  80-bit IEEE floating point */
-#define MTYPE_F16	17	/* 128-bit IEEE floating point */
-#define MTYPE_STR	18	/* char strings - TCONs only */
-#define MTYPE_STRING	MTYPE_STR
-#define MTYPE_FQ	19	/* for SGI long double */
-#define MTYPE_M		20	/* memory chunk, for structures */
-#define MTYPE_C4	21	/* for 32-bit complex */
-#define MTYPE_C8	22	/* for 64-bit complex */
-#define MTYPE_CQ	23	/* for quad complex */
-#define MTYPE_V		24	/* for void type */
-#define MTYPE_BS	25	/* Bits */
-#define MTYPE_C10	26	/*  80-bit IEEE floating point complex */
-#define MTYPE_C16	27	/* 128-bit IEEE floating point complex */
-#define MTYPE_I16       28      /* 128-bit signed integer              */
-#define MTYPE_U16       29      /* 128-bit unsigned integer            */
-  // TB: extension support
-#define MTYPE_LAST	 MTYPE_COUNT
-
-#define MTYPE_STATIC_LAST  29
-#define MTYPE_STATIC_COUNT MTYPE_STATIC_LAST
-#define MTYPE_MAX_LIMIT 127
-
-// TTh: used to insure coherency of mtype encoding in datastructure
-#define MTYPE_ENCODING_BITWIDTH 7
-#define MTYPE_ENCODING_MASK     ((1<<(MTYPE_ENCODING_BITWIDTH))-1)
-#else
 #define MTYPE_F4	10	/*  32-bit IEEE floating point */
 #define MTYPE_F8	11	/*  64-bit IEEE floating point */
 #define MTYPE_F10	12	/*  80-bit IEEE floating point */
@@ -168,15 +135,10 @@ static char *mtypes_rcs_id = "$Source: common/com/SCCS/s.mtypes.h $ $Revision: 1
 #define MTYPE_LAST	29	/* Must be defined */
 
 #endif
-#endif /*TARG_ST*/
+
 /* Define the type: */
 typedef UINT8	TYPE_ID;
 typedef mUINT8	mTYPE_ID;
-#ifdef TARG_ST
-  //TB extension support
-BE_EXPORTED extern TYPE_ID MTYPE_COUNT; 
-BE_EXPORTED extern TYPE_ID FIRST_COMPOSED_MTYPE; 
-#endif
 
 
 /* Type_class_bits */
@@ -186,12 +148,6 @@ BE_EXPORTED extern TYPE_ID FIRST_COMPOSED_MTYPE;
 #define MTYPE_CLASS_COMPLEX	0x04
 #define MTYPE_CLASS_UNSIGNED	0x08
 #define MTYPE_CLASS_STR		0x10
-#ifdef TARG_ST
-#define MTYPE_CLASS_POINTER 	 0x20
-#define MTYPE_CLASS_BOOLEAN 	 0x40
-#define MTYPE_CLASS_VECTOR	0x80
-#define MTYPE_CLASS_RANDOM	0x00
-#else
 #define MTYPE_CLASS_VECTOR	0x20
 #ifdef TARG_X8664
 #define MTYPE_CLASS_SVECTOR	0x60 // 2 bits for short vector (64-bit vector)
@@ -200,7 +156,6 @@ BE_EXPORTED extern TYPE_ID FIRST_COMPOSED_MTYPE;
 #endif
 #ifdef TARG_MIPS
 #define MTYPE_CLASS_SVECTOR	0x60 // 2 bits for short vector (64-bit vector)
-#endif
 #endif
 #define MTYPE_CLASS_UNSIGNED_INTEGER (MTYPE_CLASS_UNSIGNED|MTYPE_CLASS_INTEGER)
 #define MTYPE_CLASS_COMPLEX_FLOAT (MTYPE_CLASS_COMPLEX|MTYPE_CLASS_FLOAT)
@@ -277,10 +232,6 @@ extern TYPE_DESC Machine_Types[];
 #endif // KEY
 #define MTYPE_is_m(n)		((n)==MTYPE_M)
 #define MTYPE_is_void(n)	((n)==MTYPE_V)
-#ifdef TARG_ST
-  //TB: Vector type support
-#define MTYPE_is_random(n)		(MTYPE_type_class(n)==MTYPE_CLASS_RANDOM) 
-#endif
 
 #define MTYPE_is_quad(n)	((n)==MTYPE_FQ || (n)==MTYPE_CQ)
 #define MTYPE_is_pointer(n)	((n)==Pointer_type || (n)==Pointer_type2)
@@ -337,21 +288,6 @@ extern MTYPE_MASK Machine_Types_Available;
  *	Routine to return the unsigned type corresponding to type
  *
  */
-#ifdef TARG_ST
-/* 
- * Reconfigurability: is an mtype a dynamical one?
- * 
- * The following relation holds by construction:
- *   MTYPE_STATIC_LAST < FIRST_COMPOSED_MTYPE    
- *
- * As a result, a composed mtype is always considered
- * as a dynamic mtype.
- */
-#define MTYPE_is_dynamic(n)  ((n) > MTYPE_STATIC_LAST)
-#define MTYPE_is_composed(n) ((n) >= FIRST_COMPOSED_MTYPE)
-//TB: Number of pure dynamic MTYPES (not composed) mtypes 
-#define NB_PURE_DYNAMIC_MTYPES (FIRST_COMPOSED_MTYPE - MTYPE_STATIC_LAST - 1)
-#endif
 
 extern const char  *Mtype_Name ( TYPE_ID );
 extern TYPE_ID	Mtype_AlignmentClass( INT32 , mUINT8 );
@@ -367,9 +303,5 @@ extern TYPE_ID MTYPE_TransferSize( INT32, TYPE_ID );
 
 #ifdef __cplusplus
 }
-#ifdef TARG_ST
- extern BOOL Mtype_Int_Value_In_Range( TYPE_ID, INT64 );
- extern TYPE_ID Mtype_From_Name(const char *name);
-#endif
 #endif
 #endif /* mtypes_INCLUDED */

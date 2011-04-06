@@ -24,6 +24,7 @@
 
 #pragma ident "@(#) libf/fio/util.c	92.2	08/02/99 10:38:48"
 
+#include <inttypes.h>
 #include <ctype.h>
 #include <ffio.h>
 #include <memory.h>
@@ -174,5 +175,5 @@ _fortname(
 	}
 	else
 #endif
-		return(sprintf(buf, "fort.%lld", n));
+		return(sprintf(buf, "fort.%"PRId64, n));
 }

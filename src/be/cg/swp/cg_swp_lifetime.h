@@ -73,7 +73,6 @@ typedef std::vector <SWP_TN_LIFETIME,
                      SWP_TN_LIFETIME_ALLOC> SWP_TN_LIFETIME_VECTOR;
 
 
-#ifndef TARG_ST
 class SWP_TN_LIFETIME {
   public:
   static mUINT16 _num_lt;
@@ -174,9 +173,7 @@ SWP_TN_LIFETIME::Get_TN_Lifetime (void) const {
   return (mUINT16) std::ceil ((float)lifetime / SWP_SUBCYCLES_PER_CYCLE);
 }
 
-#endif
 class SWP_MVE;
-#ifndef TARG_ST
 class SWP_LIFETIME {
   private:
   MEM_POOL *_m;
@@ -273,6 +270,6 @@ SWP_LIFETIME::operator () (SWP_TN_LIFETIME_VECTOR::size_type idx) {
 
   return _lt[idx];
 }
-#endif
+
 #endif /* cg_swp_lifetime_INCLUDED */
 

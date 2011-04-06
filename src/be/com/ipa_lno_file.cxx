@@ -75,7 +75,10 @@
 static char IPALNO_REVISION[] = "IPALNO:1.1"; 
 
 static void (*old_sigsegv)(int);   /* the previous signal handler */
+
+#ifdef SIGBUS
 static void (*old_sigbus)(int);   /* the previous signal handler */
+#endif
 
 //-----------------------------------------------------------------------
 // NAME: Ir_Lno_Signal_Handler
@@ -106,16 +109,18 @@ static void Ir_Lno_Signal_Handler(int sig,
 
   // Otherwise, handle this as a normal SIGSEGV or SIGBUS
   switch (sig) {
+#ifndef _WIN32
   case SIGBUS:
     old_handler = old_sigbus;
     break;
+#endif
   case SIGSEGV:
     old_handler = old_sigsegv;
     break;
   }
   if (old_handler == SIG_DFL) {
     // Resignal - will get default handler
-    kill(getpid(), sig);
+    raise(sig);
   } else if (old_handler != SIG_IGN) {
     // Call old handler  
     (*old_handler)(sig);
@@ -235,11 +240,11 @@ void IPA_LNO_WRITE_FILE::Open_Write_File(char *file_name)
   if (old_sigsegv == 0)
     old_sigsegv = signal(SIGSEGV, reinterpret_cast<void (*)(int)>
       (Ir_Lno_Signal_Handler));
-
+#ifndef _WIN32
   if (old_sigbus == 0)
     old_sigbus = signal (SIGBUS, reinterpret_cast<void (*)(int)>
       (Ir_Lno_Signal_Handler)); 
-
+#endif
   // Create a file descriptor for the output file 
   ofl = (Output_File *) malloc(sizeof(Output_File));
   if (!ofl) 

@@ -686,7 +686,7 @@ read_file (char *filename, off_t* mapped_size, char* file_revision)
     struct stat stat_buf;
     register char *map_addr;
 
-    fd = open (filename, O_RDONLY);
+    fd = open (filename, O_RDWR);
     if (fd < 0)
 	return (void *) ERROR_RETURN;
 

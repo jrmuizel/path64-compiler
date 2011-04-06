@@ -134,22 +134,6 @@ typedef enum {
 	T_CalcDom_CU,		/* Calculate_Dominators 
 				 * (this time is included in callers time) */
 	T_CalcDom_Comp,
-#ifdef TARG_ST
-	T_Select_Comp,               /* Select if conversion */
-	T_Select_CU,
-	T_OutSSA_Comp,               /* SSA deconstruction */
-	T_OutSSA_CU,
-	T_LAO_Interface_Comp,        /* LAO Interface */
-	T_LAO_Interface_CU,
-	T_LAO_PRE_Comp,        	     /* LAO Prepass optimizations */
-	T_LAO_PRE_CU,
-	T_LAO_REG_Comp,        	     /* LAO Register Allocation */
-	T_LAO_REG_CU,
-	T_LAO_POST_Comp,       	     /* LAO Postpass optimizations */
-	T_LAO_POST_CU,
-	T_Coalesce_Comp,             /* GTN Coalescer */
-	T_Coalesce_CU,
-#endif
 
 	T_LAST			/* Last index defined */
 } TIMER_ID;

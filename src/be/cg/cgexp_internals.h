@@ -46,11 +46,7 @@ extern void Expand_Sub (TN *result, TN *src1, TN *src2, TYPE_ID mtype, OPS *ops)
 extern void Expand_Neg (TN *result, TN *src, TYPE_ID mtype, OPS *ops);
 extern void Expand_Aux_Sign (TN *result, TN *x, TN *y, TYPE_ID mtype, OPS *ops);
 extern void Expand_Abs (TN *result, TN *x, TYPE_ID mtype, OPS *ops);
-#ifdef TARG_ST
-extern void Expand_Multiply (TN *result, TYPE_ID rmtype, TN *x, TYPE_ID xmtype, TN *y, TYPE_ID ymtype, OPS *ops);
-#else
 extern void Expand_Multiply (TN *result, TN *x, TN *y, TYPE_ID mtype, OPS *ops);
-#endif
 extern void Expand_Ptr_Not_Equal (TN *dest, TN *src1, TN *src2, TYPE_ID desc, OPS *ops);
 extern void Expand_Unsigned_To_Float (TN *dest, TN *src, TYPE_ID imtype, TYPE_ID fmtype, OPS *ops);
 extern void Expand_Float_To_Unsigned_Cvt (TN *dest, TN *src, TYPE_ID imtype, TYPE_ID fmtype, OPS *ops);
@@ -148,10 +144,7 @@ extern void Expand_Left_Rotate (TN *result, TN *src1, TN *src2, TYPE_ID rtype, T
 
 /* in exp_loadstore: */
 extern void Expand_Lda (TN *dest, TN *src, OPS *ops);
-#ifdef TARG_ST
-extern void Expand_Load (OPCODE opcode, TN *result, TN *src1, TN *src2, OPS *ops, VARIANT real_alignment=V_NONE);
-extern void Expand_Store (TYPE_ID mtype, TN *src1, TN *src2, TN *src3, OPS *ops, VARIANT real_alignment=V_NONE);
-#elif defined(TARG_MIPS) || defined(TARG_X8664)
+#if defined(TARG_MIPS) || defined(TARG_X8664)
 extern void Expand_Load (OPCODE opcode, TN *result, TN *src1, TN *src2, OPS *ops);
 extern void Expand_Store (TYPE_ID mtype, TN *src1, TN *src2, TN *src3, OPS *ops);
 #else

@@ -373,17 +373,12 @@ extern void GRA_LIVE_Finish_REGION(void);
 
 extern void GRA_LIVE_Print_Liveness( BB* bb );
 
-#ifdef TARG_ST
-/* Rename TNs in bb. */
-extern void GRA_LIVE_Rename_TNs_For_BB(BB *bb);
-#else
 #ifdef KEY
 extern void Rename_TNs_For_BB (BB *bb, TN_SET *multiple_defined_set,
 			       OP *rename_local_TN_op = NULL);
 #else
 extern void Rename_TNs_For_BB (BB *bb, TN_SET *multiple_defined_set);
 #endif /*KEY*/
-#endif /*TARG_ST*/
 extern void GRA_LIVE_Rename_TNs (void);
 extern void BB_REGION_Recompute_Global_Live_Info(const BB_REGION& region, BOOL recompute_local_info);
 

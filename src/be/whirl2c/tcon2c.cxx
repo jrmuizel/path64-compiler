@@ -50,6 +50,8 @@
  * ====================================================================
  * ====================================================================
  */
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #ifdef _KEEP_RCS_ID
 static char *rcs_id = "$Source: /home/bos/bk/kpro64-pending/be/whirl2c/SCCS/s.tcon2c.cxx $ $Revision: 1.8 $";
 #endif /* _KEEP_RCS_ID */
@@ -255,7 +257,7 @@ TCON2C_translate(TOKEN_BUFFER tokens, TCON tvalue)
       break;
 
     case MTYPE_I8:
-      Append_Token_String(tokens, Targ_Print("%1lldLL", tvalue));
+      Append_Token_String(tokens, Targ_Print("%1"PRId64"LL", tvalue));
       break;
 
     case MTYPE_U8:
@@ -337,7 +339,7 @@ TCON2C_translate(TOKEN_BUFFER tokens, TCON tvalue)
    }
    case MTYPE_V16I8: {
      char *newstr;
-     str = Targ_Print("%1lldLL", tvalue);
+     str = Targ_Print("%1"PRId64"LL", tvalue);
      newstr = (char *)malloc(sizeof(char)*1000); //((strlen(strbase)+1)*2+15));
      sprintf(newstr, "[%s, %s]", str, str);
      Append_Token_String(tokens, newstr);

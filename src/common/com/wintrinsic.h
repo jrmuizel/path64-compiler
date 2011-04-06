@@ -78,37 +78,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#ifdef TARG_ST
-/* typedef */ enum {
 
-  INTRINSIC_INVALID = -1,
-  INTRINSIC_NONE = 0,
-/* All intrinsic definations are moved to intrn_entry.def */
-#define NEED_INTRN_ID
-# include "intrn_entry.def"
-#undef  NEED_INTRN_ID
-  INTRINSIC_GENERAL_LAST,
-#ifdef TARG_ST
-#include "targ_wintrinsic.h"  /* should at least define INTRINSIC_TARG_LAST */
-#else /* not an ST target */
-  INTRINSIC_TARG_LAST  = INTRINSIC_GENERAL_LAST,
-  INTRINSIC_LAST  = INTRINSIC_TARG_LAST,
-#endif /* TARG_ST */
-
-#if defined(TARG_SL)
-  INTRN_SL_INTRN_BGN = INTRN_VBUF_OFFSET,
-  INTRN_SL2_BEGIN = INTRN_C2_MVGR_R2G,
-  INTRN_SL_INTRN_END = INTRN_VBUF_ABSOLUTE,
-  INTRN_SL2_END = INTRN_VBUF_ABSOLUTE,
-  INTRN_C3_INTRINSIC_BEGIN = INTRN_MUL_SHIFT_HI,
-  INTRN_C3_INTRINSIC_END = INTRN_COPY_HI,
-#endif
-
-  INTRINSIC_FIRST = 1,
-
-} /* INTRINSIC */;
-
-#else
 typedef enum 
 {
 
@@ -1807,18 +1777,6 @@ typedef enum
 #endif // KEY
 
 } INTRINSIC;
-#endif
-
-#ifdef TARG_ST
-typedef int INTRINSIC;
-#define INTRINSIC_LAST	 INTRINSIC_COUNT
-
-  /* [TB] extension support */
-#define INTRINSIC_STATIC_COUNT INTRINSIC_TARG_LAST
-#define INTRINSIC_STATIC_LAST INTRINSIC_TARG_LAST
-BE_EXPORTED extern INTRINSIC INTRINSIC_COUNT;
-#endif
-
 
 #ifdef __cplusplus
 }

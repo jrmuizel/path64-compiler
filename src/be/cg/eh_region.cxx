@@ -72,6 +72,9 @@
 #include "bb.h"
 #include "whirl2ops.h"
 #include "label_util.h"
+#ifdef _WIN32
+#include <alloca.h>
+#endif
 
 
 #if HAVE_ALLOCA_H
@@ -1135,22 +1138,12 @@ Create_INITO_For_Range_Table(ST * st, ST * pu)
 
     // first action index
     // build chain of actions
-#ifndef TARG_ST
       /* (cbr) don't mess up with "no action" */
     FmtAssert (INITV_next (first_initv) != 0, ("No handler information available"));
-#endif
     FmtAssert (INITV_next (first_initv) != 0, ("No handler information available"));
     INITV_IDX action_ofst = 0;
     INITV_IDX first_action = New_INITV();
 
-#ifdef TARG_ST
-    /* (cbr) don't mess up with "no action" */
-    if (!INITV_next (first_initv)) {
-      INITV_Set_ZERO (Initv_Table[first_action], MTYPE_I4, 1);
-      Set_INITV_next (pad, first_action);
-    }
-    else
-#endif
     for (INITV_IDX next_initv = INITV_next (first_initv);
          next_initv; next_initv=INITV_next (next_initv))
     {

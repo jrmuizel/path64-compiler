@@ -137,19 +137,6 @@ SET(PATHSCALE_BE_BE_COMMON_SRCS "../../common/targ_info/access/ti_init.c"
 
 SET(PATHSCALE_BE_BE_X8664_SRCS)
 
-SET(PATHSCALE_BE_BE_ARM_SRCS
-                           "../com/wn_lower_mul.cxx"
-                         "../com/rt_lower_wn.cxx"
-                         "@ARCH@/mul_cost_model.cxx" #st
-                         "../../common/com/loader.cxx"
-                         "../../common/com/isa_loader.cxx" #st
-                         "../../common/com/dll_loader.cxx" #st
-                         "../../common/com/lai_loader.cxx" #st
-                         "../../common/com/extension_intrinsic.cxx" #st
-                         "../../common/com/dyn_isa_api_access.cxx" #st
-                         "../../common/com/dyn_dll_api_access.cxx" #st
-                           )
-
 SET(PATHSCALE_BE_BE_MIPS_SRCS
                          "../com/mips/quad_sim.cxx"
                            )
@@ -160,8 +147,8 @@ ADD_DEFINITIONS(
 
 add_custom_command(
   OUTPUT ${PATHSCALE_BINARY_DIR}/be/preg_list.cxx ${PATHSCALE_BINARY_DIR}/be/preg_list.h
-  COMMAND /bin/sh ${PATHSCALE_SOURCE_DIR}/be/com/gen_preg_list.sh ${PATHSCALE_SOURCE_DIR}/common/util
-  DEPENDS ${PATHSCALE_SOURCE_DIR}/be/com/gen_preg_list.sh
+  COMMAND ${PATHSCALE_SOURCE_DIR}/be/com/gen_preg_list.${SHELL_EXT} ${PATHSCALE_SOURCE_DIR}/common/util
+  DEPENDS ${PATHSCALE_SOURCE_DIR}/be/com/gen_preg_list.${SHELL_EXT}
   WORKING_DIRECTORY ${PATHSCALE_BINARY_DIR}/be
   )
 SET_SOURCE_FILES_PROPERTIES(${PATHSCALE_BINARY_DIR}/be/preg_list.h PROPERTIES GENERATED 1)
@@ -177,7 +164,6 @@ ADD_CUSTOM_TARGET(generate_extension DEPENDS extension_include.h)
 
 #add_library(be-static STATIC ${PATHSCALE_BE_BE_SRCS})
 path64_set_multiarch_sources(be_sources COMMON ${PATHSCALE_BE_BE_COMMON_SRCS})
-path64_set_multiarch_sources(be_sources arm ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_ARM_SRCS})
 path64_set_multiarch_sources(be_sources x8664 ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_X8664_SRCS})
 path64_set_multiarch_sources(be_sources mips ${PATHSCALE_BE_BE_COMMON_SRCS} ${PATHSCALE_BE_BE_MIPS_SRCS})
 path64_add_multiarch_library(be-static STATIC be_sources)
@@ -194,13 +180,17 @@ path64_set_multiarch_property(be COMPILE_FLAGS
                               "-DSHARED_BUILD -I${CMAKE_CURRENT_SOURCE_DIR}/@ARCH@  -I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@  -I${CMAKE_CURRENT_SOURCE_DIR}/../cg/@ARCH@ -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 path64_add_multiarch_multiarch_dependencies(be generate_topcode)
 
-IF(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
+IF(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS" AND "${EXPORT_DYNAMIC_SUPPORTED}" MATCHES "yes")
     # --export-dynamic is not needed on osol
     path64_set_multiarch_property(be LINK_FLAGS "-Wl,--export-dynamic")
 ENDIF()
 
 path64_multiarch_link_multiarch_libraries(be targinfo comutil)
 path64_multiarch_link_libraries(be m ${libdl})
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    path64_multiarch_link_libraries(be winlib)
+endif()
+
 # serialize to generate preg_list.cxx only once
 path64_add_multiarch_multiarch_dependencies(be be-static) 
 path64_install_multiarch(be)
@@ -222,7 +212,11 @@ path64_set_multiarch_property(be-exec COMPILE_FLAGS
                               "-DSHARED_BUILD  -I${CMAKE_CURRENT_SOURCE_DIR}/@ARCH@  -I${CMAKE_CURRENT_SOURCE_DIR}/../com/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../cg/@ARCH@  -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 path64_add_multiarch_multiarch_dependencies(be-exec generate_topcode)
 
-if(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    path64_multiarch_link_libraries(be-exec winlib)
+endif()
+
+if(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS" AND "${EXPORT_DYNAMIC_SUPPORTED}" MATCHES "yes")
     # --export-dynamic is not needed on osol
     path64_set_multiarch_property(be-exec LINK_FLAGS "-Wl,--export-dynamic")
 endif()

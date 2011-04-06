@@ -188,12 +188,6 @@ extern BOOL	IPA_Max_Jobs_Set;
 /* max. gp-relative space available for auto Gnum */
 extern UINT32	IPA_Gspace;
 
-#ifdef TARG_ST
-/* max. SDA/DA sizes */
-BE_EXPORTED extern UINT32	IPA_SDAspace;	
-BE_EXPORTED extern UINT32	IPA_DAspace;	
-#endif	
-
 /* user specified -G num */
 extern UINT32	IPA_user_gnum;	
 
@@ -292,20 +286,10 @@ extern UINT32 IPA_Max_Clone_Bloat;
 /* Max. "size" of each output file */
 extern UINT32 IPA_Max_Output_File_Size;
 
-#ifdef TARG_ST
-BE_EXPORTED extern UINT32 IPA_Icall_Opt_Freq;
-#endif
-
 
 /* percentage change of the max. output file size */
 extern INT32 IPA_Output_File_Size;
 
-#ifdef TARG_ST
-  /* [CL] Compiler command line */    
-BE_EXPORTED extern char* Ipa_Compiler_Command_Line;
-  // [TB} Final executable name
-BE_EXPORTED extern char* Ipa_Exec_Name;
-#endif
 
 /* ====================================================================
  * List of global variables that are set by the -INLINE option group.
@@ -330,14 +314,6 @@ extern BOOL	INLINE_Static;		/* Inline static fns? */
 extern BOOL	INLINE_Static_Set;	/* explicitly set */
 extern BOOL	INLINE_Aggressive;	/* inline even non-leaf, out-of-loop
 					   calls */ 
-#ifdef TARG_ST
-BE_EXPORTED extern BOOL	INLINE_Sort_PU_Order;	/* Sort input PU order? */
-BE_EXPORTED extern BOOL INLINE_Old_PU_Order;   /* Old input PU order? */
-#endif
-#ifdef TARG_ST
-  //TB
-BE_EXPORTED extern BOOL    INLINE_Max_Pu_Size_Set;	/* ... explicitly set? */
-#endif
 extern BOOL     INLINE_Enable_DFE;     /* dead function elimination */
 extern BOOL     INLINE_Enable_Auto_Inlining;    /* automatic inline analysis */
 extern BOOL	INLINE_Enable_Restrict_Pointers; /* allow restrict pointers */

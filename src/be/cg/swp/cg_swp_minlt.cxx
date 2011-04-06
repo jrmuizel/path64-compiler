@@ -35,7 +35,6 @@
 
 /* STL related include files */
 #include <algorithm>
-#ifndef TARG_ST
 using namespace std;
 
 
@@ -104,4 +103,4 @@ SWP_MINLT::Verify (void) const {
   
   return;
 }
-#endif
+

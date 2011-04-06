@@ -167,7 +167,7 @@ NULL,	/* OPR_AFFIRM */
 NULL,	/* OPR_ALLOCA*/
 NULL,	/* OPR_DEALLOCA */
 NULL,	/* OPR_LDMA */
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 NULL,   /* OPR_ASM_STMT */
 NULL,   /* OPR_ASM_EXPR */
 NULL,   /* OPR_ASM_INPUT */

@@ -44,7 +44,7 @@ add_custom_command(
 
 add_custom_command(
     OUTPUT arith.cat
-    COMMAND ${PATHSCALE_SOURCE_DIR}/linux/tools/caterr -c arith.cat arith.msgs
+    COMMAND ${PATHSCALE_SOURCE_DIR}/linux/tools/caterr.${SHELL_EXT} -c arith.cat arith.msgs
     DEPENDS arith.msgs
 )
 add_custom_target(

@@ -675,16 +675,6 @@ Mtype_from_mtype_class_and_size( INT mtype_class, INT bytes )
   } else
 #endif
 
-#ifdef TARG_ST
-       // Arthur: POINTER CLASS ?
-  if (mtype_class & MTYPE_CLASS_POINTER) {
-    switch ( bytes ) {
-      case 4: return MTYPE_A4;
-      case 8: return MTYPE_A8;
-    }
-  }
-#endif
-
   // unsigned integer?
   if ( (mtype_class & MTYPE_CLASS_UNSIGNED) || 
        Only_Unsigned_64_Bit_Ops && ! Delay_U64_Lowering && (mtype_class & MTYPE_CLASS_INTEGER) ) {
@@ -692,9 +682,6 @@ Mtype_from_mtype_class_and_size( INT mtype_class, INT bytes )
       case 1: return MTYPE_U1;
       case 2: return MTYPE_U2;
       case 4: return MTYPE_U4;
-#ifdef TARG_ST
-      case 5: return MTYPE_U5;
-#endif
       case 8: return MTYPE_U8;
     }
   }
@@ -703,9 +690,6 @@ Mtype_from_mtype_class_and_size( INT mtype_class, INT bytes )
       case 1: return MTYPE_I1;
       case 2: return MTYPE_I2;
       case 4: return MTYPE_I4;
-#ifdef TARG_ST
-      case 5: return MTYPE_I5;
-#endif
       case 8: return MTYPE_I8;
     }
   }
@@ -728,38 +712,6 @@ Mtype_from_mtype_class_and_size( INT mtype_class, INT bytes )
 
   return MTYPE_UNKNOWN;
 }
-#ifdef TARG_ST
-// ====================================================================
-// Get a MTYPE given an AUX_STAB_ENTRY symbol.
-// ====================================================================
-extern MTYPE
-Mtype_from_AUX_STAB_ENTRY( AUX_STAB_ENTRY *sym ) {
-  MTYPE rtype;
-  if (MTYPE_is_dynamic(sym->Mtype())) {
-    // For dynamic mtypes, the mclass field cannot be used.
-    // Retrieve the mtype directly from the symbol.
-    rtype = sym->Mtype();
-
-    // ipl operates in H WHIRL and be (MAIN_OPT
-    // phase) in M WHIRL. Depending on the WHIRL level, 
-    // Byte_size information isn't always correct for
-    // pregs. In particular, for a so-called "ldid return"
-    // preg, information is not accurate until after running
-    // LOWER_RETURN_VAL lowering.
-    //
-    // We skip the following test for a preg.
-
-    if(!(sym->Is_preg())) {
-      FmtAssert((MTYPE_byte_size(rtype) == sym->Byte_size()),
-                ("Incorrect MTYPE size"));
-    }
-  }
-  else {
-    rtype = Mtype_from_mtype_class_and_size(sym->Mclass(), sym->Byte_size());
-  }
-  return rtype;
-}
-#endif
 
 // ====================================================================
 // Get a LDID opcode given an mtype class and size.  This function 

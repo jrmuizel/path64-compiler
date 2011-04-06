@@ -155,31 +155,10 @@ extern void CG_PU_Initialize (WN*);
 extern void CG_PU_Finalize ();
 extern WN* CG_Generate_Code (WN*, ALIAS_MANAGER*, DST_IDX, BOOL);
 extern void EH_Generate_Range_List (WN *);
-#ifdef TARG_ST
-//TB: Add reset option at source level
- extern void (*CG_Reset_Default_Options_p) (void);
-#define CG_Reset_Default_Options (*CG_Reset_Default_Options_p)
-//TB: Add save option at source level
- extern void (*CG_Save_Default_Options_p) (void);
-#define CG_Save_Default_Options (*CG_Save_Default_Options_p)
-//TB: set size option for CG
- extern void (*CG_Apply_Opt_Size_p) (UINT32);
-#define CG_Apply_Opt_Size (*CG_Apply_Opt_Size_p)
-//TB: set optim options for CG
- extern void (*CG_Apply_Opt_Level_p) (UINT32);
-#define CG_Apply_Opt_Level (*CG_Apply_Opt_Level_p)
-#endif
 
 #else
 
 #pragma weak CG_Process_Command_Line
-#ifdef TARG_ST
-//TB
-#pragma weak CG_Reset_Default_Options
-#pragma weak CG_Save_Default_Options
-#pragma weak CG_Apply_Opt_Size
-#pragma weak CG_Apply_Opt_Level
-#endif
 
 #pragma weak CG_Init
 #pragma weak CG_Fini
@@ -281,7 +260,7 @@ extern void (*Preprocess_struct_access_p)(void);
 #include "w2c_weak.h"
 #include "w2f_weak.h"
 
-#if ! defined(BUILD_OS_DARWIN)
+#if ! defined(BUILD_OS_DARWIN) && !defined(_WIN32)
 #pragma weak Prp_Process_Command_Line
 #pragma weak Prp_Needs_Whirl2c
 #pragma weak Prp_Needs_Whirl2f
@@ -308,6 +287,13 @@ extern void (*Preprocess_struct_access_p)(void);
 #endif
 
 extern void Prompf_Emit_Whirl_to_Source(PU_Info* current_pu, WN* func_nd);
+
+#ifdef _WIN32
+extern void Prompf_Emit_Whirl_to_Source(PU_Info* current_pu, WN* func_nd)
+{
+    fprintf(stderr, "Prompf_Emit_Whirl_to_Source() is unimplemented\n");
+}
+#endif
 
 static INT ecount = 0;
 static BOOL need_wopt_output = FALSE;
@@ -409,34 +395,34 @@ load_components (INT argc, char **argv)
 
     if (Run_ipl) {
       Get_Phase_Args (PHASE_IPL, &phase_argc, &phase_argv);
-      load_so ("ipl.so", Ipl_Path, Show_Progress);
+      dso_load_simply ("ipl", Ipl_Path, Show_Progress);
       ipl_main (phase_argc, phase_argv);
       Set_Error_Descriptor (EP_BE, EDESC_BE);
     }
 
     if (Run_lno || Run_autopar) {
       Get_Phase_Args (PHASE_LNO, &phase_argc, &phase_argv);
-      load_so ("lno.so", LNO_Path, Show_Progress);
+      dso_load_simply ("lno", LNO_Path, Show_Progress);
       lno_main (phase_argc, phase_argv, argc, argv);
 
       // load in ipl.so if we need to perform automatic
       // parallelization and interprocedural analysis has
       // been performed
       if (Run_autopar && LNO_IPA_Enabled) {
-	  load_so("ipl.so", Ipl_Path, Show_Progress);
+	  dso_load_simply("ipl", Ipl_Path, Show_Progress);
       }
   }
 
     if (Run_prompf || Run_w2fc_early) {
       Get_Phase_Args (PHASE_PROMPF, &phase_argc, &phase_argv);
-      load_so("prompf_anl.so", Prompf_Anl_Path, Show_Progress);
+      dso_load_simply("prompf_anl", Prompf_Anl_Path, Show_Progress);
       Prompf_anl_loaded = TRUE;
       Anl_Process_Command_Line(phase_argc, phase_argv, argc, argv);
     }
 
     if (Run_purple) {
       Get_Phase_Args (PHASE_PURPLE, &phase_argc, &phase_argv);
-      load_so("purple.so", Purple_Path, Show_Progress);
+      dso_load_simply("purple", Purple_Path, Show_Progress);
       Purple_loaded = TRUE;
       Prp_Process_Command_Line(phase_argc, phase_argv, argc, argv);
     }
@@ -446,7 +432,7 @@ load_components (INT argc, char **argv)
 	(Run_purple && Prp_Needs_Whirl2c()))
     {
       Get_Phase_Args (PHASE_W2C, &phase_argc, &phase_argv);
-      load_so("whirl2c.so", W2C_Path, Show_Progress);
+      dso_load_simply("whirl2c", W2C_Path, Show_Progress);
       Whirl2c_loaded = TRUE;
       if (Run_prompf)
 	W2C_Set_Prompf_Emission(&Prompf_Id_Map);
@@ -458,7 +444,7 @@ load_components (INT argc, char **argv)
 	(Run_purple && Prp_Needs_Whirl2f()))
     {
       Get_Phase_Args (PHASE_W2F, &phase_argc, &phase_argv);
-      load_so("whirl2f.so", W2F_Path, Show_Progress);
+      dso_load_simply("whirl2f", W2F_Path, Show_Progress);
       Whirl2f_loaded = TRUE;
       if (Run_prompf)
 	W2F_Set_Prompf_Emission(&Prompf_Id_Map);
@@ -723,7 +709,7 @@ Adjust_Opt_Level (PU_Info* current_pu, WN *pu, char *pu_name)
         if (Run_prompf) 
 	  Prompf_Emit_Whirl_to_Source(current_pu, pu);
     }
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 #define OLIMIT_WARN_THRESHOLD 50000
     else if (Opt_Level > 1 && !Olimit_opt && 
 	     (PU_Olimit > OLIMIT_WARN_THRESHOLD) && Show_OPT_Warnings) {
@@ -1328,7 +1314,7 @@ Backend_Processing (PU_Info *current_pu, WN *pu)
 		       "RETURN_VAL & MLDID/MSTID lowering");
     }
 
-#if defined( KEY) && !defined(TARG_ST) // bug 9171
+#if defined( KEY) // bug 9171
     if (Run_autopar && Early_MP_Processing) {
       Early_MP_Processing = FALSE;
       ErrMsg (EC_No_Apo_Early_Mp);
@@ -1475,9 +1461,6 @@ Preprocess_PU (PU_Info *current_pu)
   Cur_PU_Feedback    = NULL;
 
   BOOL is_mp_nested_pu = FALSE;
-#ifdef TARG_ST
-  saved_Instrumentatin_Enabled = Instrumentation_Enabled;
-#endif
 
   /* read from mmap area */
   Start_Timer ( T_ReadIR_CU );
@@ -1694,12 +1677,10 @@ Postprocess_PU (PU_Info *current_pu)
   if (Tlog_File) {
     fprintf (Tlog_File, "END %s\n", ST_name(PU_Info_proc_sym(current_pu)));
   }
-#ifndef TARG_ST
   if (Run_ipl != 0 && (Run_wopt || Run_preopt))
     choose_from_complete_struct_for_relayout_candidates(); // among all the
     // structures marked by ipl while compiling all the functions in this file,
     // choose the most profitable one
-#endif
   Current_Map_Tab = PU_Info_maptab(current_pu);
  
   REGION_Finalize();
@@ -1742,10 +1723,6 @@ Postprocess_PU (PU_Info *current_pu)
     Saved_run_w2f = FALSE;
     Saved_run_w2fc_early = FALSE;
   }
-#ifdef TARG_ST
-  /* [TB] Restore Instrumentation_Enabled */
-  Instrumentation_Enabled = saved_Instrumentatin_Enabled;
-#endif
 } /* Postprocess_PU */
 
 /* compile each PU through all phases before going to the next PU */
@@ -1899,7 +1876,7 @@ Process_Feedback_Options (OPTION_LIST* olist)
 
     INT prefix_len = strlen(prefix);
     DIR* dirp = opendir(path);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     if (dirp == NULL)
       ErrMsg(EC_FB_No_File, Feedback_File_Name);
 #endif
@@ -1918,7 +1895,7 @@ Process_Feedback_Options (OPTION_LIST* olist)
     }
     closedir(dirp);
 
-#if defined( KEY) && !defined(TARG_ST)	// bug 4837
+#if defined( KEY) // bug 4837
     if (fb_file_count == 0) {
       ErrMsg(EC_FB_No_File, prefix);
     }
@@ -2057,13 +2034,13 @@ main (INT argc, char **argv)
       if (!Run_wopt && !Run_preopt) {
 	/* load wopt */
 	Get_Phase_Args (PHASE_WOPT, &phase_argc, &phase_argv);
-	load_so ("wopt.so", WOPT_Path, Show_Progress);
+	dso_load_simply ("wopt", WOPT_Path, Show_Progress);
 	wopt_main (phase_argc, phase_argv, argc, argv);
 	wopt_loaded = TRUE;
       }
 
       Get_Phase_Args (PHASE_LNO, &phase_argc, &phase_argv);
-      load_so ("lno.so", LNO_Path, Show_Progress);
+      dso_load_simply ("lno", LNO_Path, Show_Progress);
       lno_main (phase_argc, phase_argv, argc, argv);
     }
   }

@@ -327,14 +327,6 @@ DST_mk_lexical_block(char        *name,         /* NULL if unnamed */
                      void        *high_pc,      /* ptr to front-end label */
 		     DST_INFO_IDX abstract_origin); /* NULL if none */
 
-#ifdef TARG_ST
-/* [SC] Update low_pc/high_pc in a DW_TAG_lexical_block entry. */
-extern void
-DST_lexical_block_add_low_pc (DST_INFO_IDX, void *);
-
-extern void
-DST_lexical_block_add_high_pc (DST_INFO_IDX, void *);
-#endif
 
 
 /* Creates a DW_TAG_label entry and returns its idx.
@@ -394,15 +386,7 @@ DST_mk_variable(USRCPOS      decl,     /* Source location */
 		BOOL         is_declaration,
 		BOOL         is_automatic,
 		BOOL         is_external,
-#ifdef TARG_ST
-		// [CL] add accessibility field
-		BOOL	   is_artificial,
-		DST_accessibility accessibility = DW_ACCESS_public
-		);
-#else
-
 		BOOL	     is_artificial);
-#endif
 
 
 
@@ -530,14 +514,7 @@ extern DST_INFO_IDX
 DST_mk_subrange_type(DST_flag is_lb_cval,
 		     DST_cval_ref low, 		/* lower bound */
 		     DST_flag is_ub_cval,
-                     #ifndef TARG_ST
 		     DST_cval_ref high); 	/* upper bound */
-#else
-		     DST_cval_ref high, 	/* upper bound */
-                     DST_flag is_count,
-                 DST_count_t count, 	/* size */
-                 DST_INFO_IDX type);
-#endif
 
 
 /* Creates a DW_TAG_string_type entry.
@@ -560,20 +537,6 @@ DST_mk_structure_type(USRCPOS      decl,      /* Source location */
 		      BOOL         is_incomplete);
 
 
-#ifdef TARG_ST 
-// [CL] enable adding containing_type attribute after creation of
-// structure_type
-void DST_add_structure_containing_type(DST_INFO_IDX struct_idx,
-  DST_ATTR_IDX containing_type_idx);
-
-// [CL] tag to avoid infinite recursion while generating info for
-// self-referencing struct/union
-void DST_set_structure_being_built(DST_INFO_IDX struct_idx);
-void DST_clear_structure_being_built(DST_INFO_IDX struct_idx);
-int DST_is_structure_being_built(DST_INFO_IDX struct_idx);
-void DST_clear_structure_declaration(DST_INFO_IDX struct_idx);
-#endif
-
 /* Creates a DW_TAG_union_type entry.
 */
 extern DST_INFO_IDX
@@ -582,20 +545,6 @@ DST_mk_union_type(USRCPOS      decl,      /* Source location */
 		  DST_size_t   byte_size, /* Size of union, if known */
 		  DST_INFO_IDX abstract_origin,
 		  BOOL         is_incomplete);
-
-#ifdef TARG_ST
-// [CL] enable adding containing_type attribute after creation of
-// union_type
-void DST_add_union_containing_type(DST_INFO_IDX union_idx,
-  DST_ATTR_IDX containing_type_idx);
-
-// [CL] tag to avoid infinite recursion while generating info for
-// self-referencing struct/union
-void DST_set_union_being_built(DST_INFO_IDX struct_idx);
-void DST_clear_union_being_built(DST_INFO_IDX struct_idx);
-int DST_is_union_being_built(DST_INFO_IDX struct_idx);
-void DST_clear_union_declaration(DST_INFO_IDX struct_idx);
-#endif
 
 
 /* Creates a DW_TAG_class_type entry.
@@ -649,20 +598,12 @@ DST_mk_member(USRCPOS      decl,       /* Source location */
 
 /* Creates a DW_TAG_inheritance entry.
 */
-#if !defined( KEY) || defined(TARG_ST)
+#if !defined( KEY)
 extern DST_INFO_IDX
 DST_mk_inheritance(USRCPOS      decl,         /* Source location */
 		   DST_INFO_IDX type,         /* Type of member */
 		   DST_virtuality virtuality, /* AT_virtuality code */
-                   #ifdef TARG_ST
-		   // [CL]
-		   DST_size_t   memb_loc,    /* Byte-offset of member container */
-                   DST_accessibility accessibility = DW_ACCESS_public,
-		   DST_size_t   virtual_offset = 0    /* offset of virtual base */
-		   );
-#else
 		   DST_size_t   memb_loc);    /* Byte-offset of member container */
-#endif
 #else
 extern DST_INFO_IDX
 DST_mk_inheritance(USRCPOS      decl,         /* Source location */

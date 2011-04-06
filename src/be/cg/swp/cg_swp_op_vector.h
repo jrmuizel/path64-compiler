@@ -55,7 +55,6 @@
 #define FOR_ALL_SWP_OP_VECTOR_IDXs FOR_ALL_SWP_OP_VECTOR_IDXs_FWD
 
 
-#ifndef TARG_ST
 class SWP_OP;
 
 typedef mempool_allocator <SWP_OP>                SWP_STL_OP_ALLOC;
@@ -305,6 +304,6 @@ SWP_OP_VECTOR::push_back (const SWP_OP& x) {
 
   SWP_STL_OP_VECTOR::push_back (x);
 }
-#endif /*!TARG_ST  */
+
 #endif /* cg_swp_op_vector_INCLUDED */
 

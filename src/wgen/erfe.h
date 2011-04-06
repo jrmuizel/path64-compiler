@@ -92,22 +92,7 @@ static char *erfe_rcs_id = "$Source: kgccfe/SCCS/s.erfe.h $ $Revision: 1.6 $";
 #define EC_PE_Only	EC_BASE_FE+21		/* str */
 #define EC_Diff_Decl	EC_BASE_FE+22		/* str */
 #define EC_Flag_Var	EC_BASE_FE+23		/* stab */
-#ifdef TARG_ST
-#define EC_Invalid_Asm	EC_BASE_FE+24		/* str */
-#define EC_Unused_Pragma EC_BASE_FE+25		/* str, str, str */
-#define EC_Pragma_Override EC_BASE_FE+26	/* str, str, str, str */
-#define EC_Pragma_Override_All EC_BASE_FE+27	/* str, str */
-#define EC_Malformed_Pragma EC_BASE_FE+28	/* str */
-#define EC_Obsolete_Pragma EC_BASE_FE+29	/* str,str */
-#define EC_Pragma_Undefined_Extension EC_BASE_FE+30 /* str,str */
-#define EC_BitField_Init  EC_BASE_FE+31         /* str */
-#define EC_Common_Alias  EC_BASE_FE+32          /* str */
-#define EC_Asm_Constraint_Operand  EC_BASE_FE+33 /* str, int */
-#endif
 #define EC_VisSpec_File  EC_BASE_FE+34          /* str */
-#ifdef TARG_ST
-#define EC_Asm_Constraint_Result EC_BASE_FE+35  /* str, int */
-#endif
 
 
 #if defined(FRONT_END_C) || defined(FRONT_END_CPLUSPLUS) || \

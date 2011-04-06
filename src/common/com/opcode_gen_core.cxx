@@ -991,7 +991,7 @@ struct OPERATOR_info_struct OPERATOR_info[OPERATOR_LAST+1] = {
    OPERATOR_MAPCAT_OEXP /* mapcat */,
    OPERATOR_PROPERTY_expression},
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 
   {"OPR_REPLICATE",
    1 /* nkids */,
@@ -1037,61 +1037,8 @@ struct OPERATOR_info_struct OPERATOR_info[OPERATOR_LAST+1] = {
    OPERATOR_PROPERTY_expression},
 
 #endif /* KEY */
-#ifdef TARG_ST
-  //TB: New operator for multiple results call
-  {"OPR_SUBPART", 
-   1 /* nkids */,
-   OPERATOR_MAPCAT_OEXP /* mapcat */,
-   OPERATOR_PROPERTY_expression},
-
-  // [HK] New operator for left-rotate
-  {"OPR_LROTATE", 
-   2 /* nkids */,
-   OPERATOR_MAPCAT_OEXP /* mapcat */,
-   OPERATOR_PROPERTY_expression},
-#endif
 };
 
-#ifdef TARG_ST
-#define Is_MTYPE_b(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_b: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_b[t])
-static BOOL
-Is_MTYPE_b [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  1, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  0, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  0, /* MTYPE_U4 */
-  0, /* MTYPE_U8 */
-  0, /* MTYPE_I5 */
-  0, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  0, /* MTYPE_F4 */
-  0, /* MTYPE_F8 */
-  0, /* MTYPE_F10 */
-  0, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  0, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  0, /* MTYPE_I16 */
-  0  /* MTYPE_U16 */
-};
-#else
 static BOOL
 Is_MTYPE_b [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -1156,9 +1103,7 @@ Is_MTYPE_b [MTYPE_LAST+1] = {
   0
 #endif // TARG_X8664
 };
-#endif
 
-#ifndef TARG_ST
 static BOOL
 Is_MTYPE_b_f_i_M_p_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -1214,9 +1159,7 @@ Is_MTYPE_b_f_i_M_p_z [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifndef TARG_ST
 static BOOL
 Is_MTYPE_b_f_i_M_p_V_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -1281,9 +1224,7 @@ Is_MTYPE_b_f_i_M_p_V_z [MTYPE_LAST+1] = {
   1
 #endif // TARG_X8664
 };
-#endif
 
-#ifndef TARG_ST
 static BOOL
 Is_MTYPE_b_f_i_M_p_s_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -1348,48 +1289,7 @@ Is_MTYPE_b_f_i_M_p_s_z [MTYPE_LAST+1] = {
   1
 #endif // TARG_X8664
 };
-#endif
 
-#ifdef TARG_ST
-#define Is_MTYPE_b_f_i_p_z(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_b_f_i_p_z: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_b_f_i_p_z[t])
-static BOOL
-Is_MTYPE_b_f_i_p_z [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  1, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  1, /* MTYPE_A4 */
-  1, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  1, /* MTYPE_C4 */
-  1, /* MTYPE_C8 */
-  1, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  1, /* MTYPE_C10 */
-  1, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#else
 static BOOL
 Is_MTYPE_b_f_i_p_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -1446,50 +1346,8 @@ Is_MTYPE_b_f_i_p_z [MTYPE_LAST+1] = {
   1
 #endif // TARG_X8664
 };
-#endif
 
-#ifdef TARG_ST
-#define Is_MTYPE_B_V(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_B_V: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_B_V[t])
-static BOOL
-Is_MTYPE_B_V [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  1, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  0, /* MTYPE_I4 */
-  0, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  0, /* MTYPE_U4 */
-  0, /* MTYPE_U8 */
-  0, /* MTYPE_I5 */
-  0, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  0, /* MTYPE_F4 */
-  0, /* MTYPE_F8 */
-  0, /* MTYPE_F10 */
-  0, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  0, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  1, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  0, /* MTYPE_I16 */
-  0  /* MTYPE_U16 */
-};
-#endif
 
-#ifndef TARG_ST
 static BOOL
 Is_MTYPE_bs_I1_I2_I4_I8 [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -1545,9 +1403,7 @@ Is_MTYPE_bs_I1_I2_I4_I8 [MTYPE_LAST+1] = {
   0  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifndef TARG_ST
 static BOOL
 Is_MTYPE_bs_U1_U2_U4_U8 [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -1603,8 +1459,7 @@ Is_MTYPE_bs_U1_U2_U4_U8 [MTYPE_LAST+1] = {
   0  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
-#ifndef TARG_ST
+
 static BOOL
 Is_MTYPE_b_bs_f_i_p_s_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -1660,8 +1515,7 @@ Is_MTYPE_b_bs_f_i_p_s_z [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
-#ifndef TARG_ST
+
 static BOOL
 Is_MTYPE_b_bs_f_i_M_p_s_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -1717,48 +1571,7 @@ Is_MTYPE_b_bs_f_i_M_p_s_z [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifdef TARG_ST
-#define Is_MTYPE_f(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_f: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_f[t])
-static BOOL
-Is_MTYPE_f [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  0, /* MTYPE_I4 */
-  0, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  0, /* MTYPE_U4 */
-  0, /* MTYPE_U8 */
-  0, /* MTYPE_I5 */
-  0, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  0, /* MTYPE_I16 */
-  0  /* MTYPE_U16 */
-};
-#else
 static BOOL
 Is_MTYPE_f [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -1814,8 +1627,7 @@ Is_MTYPE_f [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
-#ifndef TARG_ST
+
 static BOOL
 Is_MTYPE_f_I4_I8_I16 [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -1871,9 +1683,7 @@ Is_MTYPE_f_I4_I8_I16 [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifndef TARG_ST
 static BOOL
 Is_MTYPE_f_i_M_p_V_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -1929,8 +1739,7 @@ Is_MTYPE_f_i_M_p_V_z [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
-#ifndef TARG_ST
+
 static BOOL
 Is_MTYPE_f_i_M_p_s_V_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -1986,9 +1795,7 @@ Is_MTYPE_f_i_M_p_s_V_z [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifndef TARG_ST
 static BOOL
 Is_MTYPE_f_i_M_p_s_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -2044,9 +1851,7 @@ Is_MTYPE_f_i_M_p_s_z [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifndef TARG_ST
 static BOOL
 Is_MTYPE_f_i_M_p_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -2102,8 +1907,7 @@ Is_MTYPE_f_i_M_p_z [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
-#ifndef TARG_ST
+
 static BOOL
 Is_MTYPE_f_i_M_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -2159,48 +1963,7 @@ Is_MTYPE_f_i_M_z [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifdef TARG_ST
-#define Is_MTYPE_f_i(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_f_i: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_f_i[t])
-static BOOL
-Is_MTYPE_f_i [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#else
 static BOOL
 Is_MTYPE_f_i [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -2256,48 +2019,7 @@ Is_MTYPE_f_i [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifdef TARG_ST
-#define Is_MTYPE_f_i_p(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_f_i_p: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_f_i_p[t])
-static BOOL
-Is_MTYPE_f_i_p [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  1, /* MTYPE_A4 */
-  1, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#else
 static BOOL
 Is_MTYPE_f_i_p [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -2353,48 +2075,7 @@ Is_MTYPE_f_i_p [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifdef TARG_ST
-#define Is_MTYPE_f_i_p_s_z(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_f_i_p_s_z: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_f_i_p_s_z[t])
-static BOOL
-Is_MTYPE_f_i_p_s_z [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  1, /* MTYPE_I1 */
-  1, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  1, /* MTYPE_U1 */
-  1, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  1, /* MTYPE_A4 */
-  1, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  1, /* MTYPE_C4 */
-  1, /* MTYPE_C8 */
-  1, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  1, /* MTYPE_C10 */
-  1, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#else
 static BOOL
 Is_MTYPE_f_i_p_s_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -2450,48 +2131,7 @@ Is_MTYPE_f_i_p_s_z [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifdef TARG_ST
-#define Is_MTYPE_f_i_p_z(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_f_i_p_z: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_f_i_p_z[t])
-static BOOL
-Is_MTYPE_f_i_p_z [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  1, /* MTYPE_A4 */
-  1, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  1, /* MTYPE_C4 */
-  1, /* MTYPE_C8 */
-  1, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  1, /* MTYPE_C10 */
-  1, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#else
 static BOOL
 Is_MTYPE_f_i_p_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -2547,170 +2187,7 @@ Is_MTYPE_f_i_p_z [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifdef TARG_ST
-#define Is_MTYPE_I4_I5_I8_f(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_I4_I5_I8_f: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_I4_I5_I8_f[t])
-static BOOL
-Is_MTYPE_I4_I5_I8_f [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  0, /* MTYPE_U4 */
-  0, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  0, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  0, /* MTYPE_I16 */
-  0  /* MTYPE_U16 */
-};
-#endif
-
-#ifdef TARG_ST
-#define Is_MTYPE_M_V_b_f_i_p_z(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_M_V_b_f_i_p_z: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_M_V_b_f_i_p_z[t])
-static BOOL
-Is_MTYPE_M_V_b_f_i_p_z [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  1, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  1, /* MTYPE_A4 */
-  1, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  1, /* MTYPE_M */
-  1, /* MTYPE_C4 */
-  1, /* MTYPE_C8 */
-  1, /* MTYPE_CQ */
-  1, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  1, /* MTYPE_C10 */
-  1, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#endif
-
-#ifdef TARG_ST
-#define Is_MTYPE_M(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_M: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_M[t])
-static BOOL
-Is_MTYPE_M [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  0, /* MTYPE_I4 */
-  0, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  0, /* MTYPE_U4 */
-  0, /* MTYPE_U8 */
-  0, /* MTYPE_I5 */
-  0, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  0, /* MTYPE_F4 */
-  0, /* MTYPE_F8 */
-  0, /* MTYPE_F10 */
-  0, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  0, /* MTYPE_FQ */
-  1, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  0, /* MTYPE_I16 */
-  0  /* MTYPE_U16 */
-};
-#endif
-#ifdef TARG_ST
-#define Is_MTYPE_f_i_z(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_f_i_z: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_f_i_z[t])
-static BOOL
-Is_MTYPE_f_i_z [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  1, /* MTYPE_C4 */
-  1, /* MTYPE_C8 */
-  1, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  1, /* MTYPE_C10 */
-  1, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#else
 static BOOL
 Is_MTYPE_f_i_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -2766,48 +2243,7 @@ Is_MTYPE_f_i_z [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifdef TARG_ST
-#define Is_MTYPE_f_z(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_f_z: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_f_z[t])
-static BOOL
-Is_MTYPE_f_z [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  0, /* MTYPE_I4 */
-  0, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  0, /* MTYPE_U4 */
-  0, /* MTYPE_U8 */
-  0, /* MTYPE_I5 */
-  0, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  1, /* MTYPE_C4 */
-  1, /* MTYPE_C8 */
-  1, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  1, /* MTYPE_C10 */
-  1, /* MTYPE_C16 */
-  0, /* MTYPE_I16 */
-  0  /* MTYPE_U16 */
-};
-#else
 static BOOL
 Is_MTYPE_f_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -2863,47 +2299,7 @@ Is_MTYPE_f_z [MTYPE_LAST+1] = {
   1  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
-#ifdef TARG_ST
-#define Is_MTYPE_i(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_i: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_i[t])
-static BOOL
-Is_MTYPE_i [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  0, /* MTYPE_F4 */
-  0, /* MTYPE_F8 */
-  0, /* MTYPE_F10 */
-  0, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  0, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#else
+
 static BOOL
 Is_MTYPE_i [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -2959,128 +2355,7 @@ Is_MTYPE_i [MTYPE_LAST+1] = {
   0  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifdef TARG_ST
-#define Is_MTYPE_U4_U8(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_U4_U8: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_U4_U8[t])
-static BOOL
-Is_MTYPE_U4_U8 [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  0, /* MTYPE_I4 */
-  0, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  0, /* MTYPE_I5 */
-  0, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  0, /* MTYPE_F4 */
-  0, /* MTYPE_F8 */
-  0, /* MTYPE_F10 */
-  0, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  0, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  0, /* MTYPE_I16 */
-  0  /* MTYPE_U16 */
-};
-#endif
-#ifdef TARG_ST
-#define Is_MTYPE_U1_U2_U4_U8(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_U1_U2_U4_U8: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_U1_U2_U4_U8[t])
-static BOOL
-Is_MTYPE_U1_U2_U4_U8 [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  0, /* MTYPE_I4 */
-  0, /* MTYPE_I8 */
-  1, /* MTYPE_U1 */
-  1, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  0, /* MTYPE_I5 */
-  0, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  0, /* MTYPE_F4 */
-  0, /* MTYPE_F8 */
-  0, /* MTYPE_F10 */
-  0, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  0, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  0, /* MTYPE_I16 */
-  0  /* MTYPE_U16 */
-};
-#endif
-#ifdef TARG_ST
-#define Is_MTYPE_b_i_p(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_b_i_p: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_b_i_p[t])
-static BOOL
-Is_MTYPE_b_i_p [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  1, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  1, /* MTYPE_A4 */
-  1, /* MTYPE_A8 */
-  0, /* MTYPE_F4 */
-  0, /* MTYPE_F8 */
-  0, /* MTYPE_F10 */
-  0, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  0, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#else
 static BOOL
 Is_MTYPE_b_i_p [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -3136,48 +2411,7 @@ Is_MTYPE_b_i_p [MTYPE_LAST+1] = {
   0  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifdef TARG_ST
-#define Is_MTYPE_p(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_p: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_p[t])
-static BOOL
-Is_MTYPE_p [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  0, /* MTYPE_I4 */
-  0, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  0, /* MTYPE_I5 */
-  0, /* MTYPE_U5 */
-  1, /* MTYPE_A4 */
-  1, /* MTYPE_A8 */
-  0, /* MTYPE_F4 */
-  0, /* MTYPE_F8 */
-  0, /* MTYPE_F10 */
-  0, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  0, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  0, /* MTYPE_I16 */
-  0  /* MTYPE_U16 */
-};
-#else
 static BOOL
 Is_MTYPE_p [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -3233,501 +2467,7 @@ Is_MTYPE_p [MTYPE_LAST+1] = {
   0  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifdef TARG_ST
-#define Is_MTYPE_V(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_V: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_V[t])
-static BOOL
-Is_MTYPE_V [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  0, /* MTYPE_I4 */
-  0, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  0, /* MTYPE_U4 */
-  0, /* MTYPE_U8 */
-  0, /* MTYPE_I5 */
-  0, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  0, /* MTYPE_F4 */
-  0, /* MTYPE_F8 */
-  0, /* MTYPE_F10 */
-  0, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  0, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  1, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  0, /* MTYPE_I16 */
-  0  /* MTYPE_U16 */
-};
-#endif
-
-#ifdef TARG_ST
-#define Is_MTYPE_M_b_f_i_p_z(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_M_b_f_i_p_z: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_M_b_f_i_p_z[t])
-static BOOL
-Is_MTYPE_M_b_f_i_p_z [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  1, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  1, /* MTYPE_A4 */
-  1, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  1, /* MTYPE_M */
-  1, /* MTYPE_C4 */
-  1, /* MTYPE_C8 */
-  1, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  1, /* MTYPE_C10 */
-  1, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#endif
-
-
-#ifdef TARG_ST
-#define Is_MTYPE_M_b_bs_f_i_p_s_z(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_M_b_bs_f_i_p_s_z: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_M_b_bs_f_i_p_s_z[t])
-static BOOL
-Is_MTYPE_M_b_bs_f_i_p_s_z [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  1, /* MTYPE_B */
-  1, /* MTYPE_I1 */
-  1, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  1, /* MTYPE_U1 */
-  1, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  1, /* MTYPE_A4 */
-  1, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  1, /* MTYPE_M */
-  1, /* MTYPE_C4 */
-  1, /* MTYPE_C8 */
-  1, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  1, /* MTYPE_BS */
-  1, /* MTYPE_C10 */
-  1, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#endif
-
-#ifdef TARG_ST
-#define Is_MTYPE_M_f_i_p_z(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_M_f_i_p_z: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_M_f_i_p_z[t])
-static BOOL
-Is_MTYPE_M_f_i_p_z [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  1, /* MTYPE_A4 */
-  1, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  1, /* MTYPE_M */
-  1, /* MTYPE_C4 */
-  1, /* MTYPE_C8 */
-  1, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  1, /* MTYPE_C10 */
-  1, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#endif
-
-#ifdef TARG_ST
-#define Is_MTYPE_M_f_i_z(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_M_f_i_z: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_M_f_i_z[t])
-static BOOL
-Is_MTYPE_M_f_i_z [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  1, /* MTYPE_M */
-  1, /* MTYPE_C4 */
-  1, /* MTYPE_C8 */
-  1, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  1, /* MTYPE_C10 */
-  1, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#endif
-
-#ifdef TARG_ST
-#define Is_MTYPE_M_f_i_p_s_z(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_M_f_i_p_s_z: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_M_f_i_p_s_z[t])
-static BOOL
-Is_MTYPE_M_f_i_p_s_z [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  1, /* MTYPE_I1 */
-  1, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  1, /* MTYPE_U1 */
-  1, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  1, /* MTYPE_A4 */
-  1, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  1, /* MTYPE_M */
-  1, /* MTYPE_C4 */
-  1, /* MTYPE_C8 */
-  1, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  1, /* MTYPE_C10 */
-  1, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#endif
-
-#ifdef TARG_ST
-#define Is_MTYPE_M_b_f_i_p_s_z(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_M_b_f_i_p_s_z: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_M_b_f_i_p_s_z[t])
-static BOOL
-Is_MTYPE_M_b_f_i_p_s_z [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  1, /* MTYPE_B */
-  1, /* MTYPE_I1 */
-  1, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  1, /* MTYPE_U1 */
-  1, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  1, /* MTYPE_A4 */
-  1, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  1, /* MTYPE_M */
-  1, /* MTYPE_C4 */
-  1, /* MTYPE_C8 */
-  1, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  1, /* MTYPE_C10 */
-  1, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#endif
-
-#ifdef TARG_ST
-#define Is_MTYPE_b_f_i_p(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_b_f_i_p: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_b_f_i_p[t])
-static BOOL
-Is_MTYPE_b_f_i_p [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  1, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  1, /* MTYPE_A4 */
-  1, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#endif
-
-#ifdef TARG_ST
-#define Is_MTYPE_I4_I8_U4_U8_b(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_I4_I8_U4_U8_b: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_I4_I8_U4_U8_b[t])
-static BOOL
-Is_MTYPE_I4_I8_U4_U8_b [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  1, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  0, /* MTYPE_I5 */
-  0, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  0, /* MTYPE_F4 */
-  0, /* MTYPE_F8 */
-  0, /* MTYPE_F10 */
-  0, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  0, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  0, /* MTYPE_I16 */
-  0  /* MTYPE_U16 */
-};
-#endif
-
-#ifdef TARG_ST
-#define Is_MTYPE_I4_I8_U4_U8(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_I4_I8_U4_U8: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_I4_I8_U4_U8[t])
-static BOOL
-Is_MTYPE_I4_I8_U4_U8 [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  0, /* MTYPE_I5 */
-  0, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  0, /* MTYPE_F4 */
-  0, /* MTYPE_F8 */
-  0, /* MTYPE_F10 */
-  0, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  0, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  0, /* MTYPE_I16 */
-  0  /* MTYPE_U16 */
-};
-#endif
-
-#ifdef TARG_ST
-#define Is_MTYPE_I4_I8_U4_U8_s(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_I4_I8_U4_U8_s: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_I4_I8_U4_U8_s[t])
-static BOOL
-Is_MTYPE_I4_I8_U4_U8_s [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  1, /* MTYPE_I1 */
-  1, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  1, /* MTYPE_U1 */
-  1, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  0, /* MTYPE_I5 */
-  0, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  0, /* MTYPE_F4 */
-  0, /* MTYPE_F8 */
-  0, /* MTYPE_F10 */
-  0, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  0, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  0, /* MTYPE_C4 */
-  0, /* MTYPE_C8 */
-  0, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  0, /* MTYPE_C10 */
-  0, /* MTYPE_C16 */
-  0, /* MTYPE_I16 */
-  0  /* MTYPE_U16 */
-};
-#endif
-
-#ifdef TARG_ST
-#define Is_MTYPE_M_V_f_i_p_z(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_M_V_f_i_p_z: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_M_V_f_i_p_z[t])
-static BOOL
-Is_MTYPE_M_V_f_i_p_z [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  1, /* MTYPE_I4 */
-  1, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  1, /* MTYPE_U4 */
-  1, /* MTYPE_U8 */
-  1, /* MTYPE_I5 */
-  1, /* MTYPE_U5 */
-  1, /* MTYPE_A4 */
-  1, /* MTYPE_A8 */
-  1, /* MTYPE_F4 */
-  1, /* MTYPE_F8 */
-  1, /* MTYPE_F10 */
-  1, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  1, /* MTYPE_FQ */
-  1, /* MTYPE_M */
-  1, /* MTYPE_C4 */
-  1, /* MTYPE_C8 */
-  1, /* MTYPE_CQ */
-  1, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  1, /* MTYPE_C10 */
-  1, /* MTYPE_C16 */
-  1, /* MTYPE_I16 */
-  1  /* MTYPE_U16 */
-};
-#endif
-#ifndef TARG_ST
 static BOOL
 Is_MTYPE_s [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -3783,8 +2523,7 @@ Is_MTYPE_s [MTYPE_LAST+1] = {
   0  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
-#ifndef TARG_ST
+
 static BOOL
 Is_MTYPE_b_i_s [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -3840,48 +2579,7 @@ Is_MTYPE_b_i_s [MTYPE_LAST+1] = {
   0  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
-#ifdef TARG_ST
-#define Is_MTYPE_z(t) \
-     ((t > MTYPE_STATIC_LAST) ? \
-       FmtAssert (FALSE, ("Is_MTYPE_z: no access for dynamic MTYPE %d", (t))), 0 \
-     : \
-       Is_MTYPE_z[t])
-static BOOL
-Is_MTYPE_z [MTYPE_STATIC_LAST+1] = {
-  0, /* MTYPE_UNKNOWN */
-  0, /* MTYPE_B */
-  0, /* MTYPE_I1 */
-  0, /* MTYPE_I2 */
-  0, /* MTYPE_I4 */
-  0, /* MTYPE_I8 */
-  0, /* MTYPE_U1 */
-  0, /* MTYPE_U2 */
-  0, /* MTYPE_U4 */
-  0, /* MTYPE_U8 */
-  0, /* MTYPE_I5 */
-  0, /* MTYPE_U5 */
-  0, /* MTYPE_A4 */
-  0, /* MTYPE_A8 */
-  0, /* MTYPE_F4 */
-  0, /* MTYPE_F8 */
-  0, /* MTYPE_F10 */
-  0, /* MTYPE_F16 */
-  0, /* MTYPE_STR */
-  0, /* MTYPE_FQ */
-  0, /* MTYPE_M */
-  1, /* MTYPE_C4 */
-  1, /* MTYPE_C8 */
-  1, /* MTYPE_CQ */
-  0, /* MTYPE_V */
-  0, /* MTYPE_BS */
-  1, /* MTYPE_C10 */
-  1, /* MTYPE_C16 */
-  0, /* MTYPE_I16 */
-  0  /* MTYPE_U16 */
-};
-#else
 static BOOL
 Is_MTYPE_z [MTYPE_LAST+1] = {
   0, /* MTYPE_UNKNOWN */
@@ -3937,8 +2635,7 @@ Is_MTYPE_z [MTYPE_LAST+1] = {
   0  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
-#ifndef TARG_ST
+
 // 64-bit vector of integers
 static BOOL
 Is_MTYPE_64v_i [MTYPE_LAST+1] = {
@@ -3995,735 +2692,13 @@ Is_MTYPE_64v_i [MTYPE_LAST+1] = {
   0  /* MTYPE_M8F4    */
 #endif // TARG_X8664
 };
-#endif
 
 void
 breakpoint ()
 {
 }
 
-#ifdef TARG_ST
-// TB: dynamic mtype check
-static BOOL
-Is_Valid_Opcode_For_Dynamic_Mtype(OPERATOR opr, TYPE_ID rtype, TYPE_ID desc)
-{
-  FmtAssert (MTYPE_is_dynamic(rtype) || MTYPE_is_dynamic(desc), ("Is_Valid_Opcode_For_Dynamic_Mtype: not a dynamic mtype"));
-  BOOL valid;
-  switch (opr) {
-  case OPR_ILOAD:
-  case OPR_LDID:
-    valid = (rtype == desc);
-    break;
-  case OPR_CSELECT:
-  case OPR_COMMA:
-  case OPR_INTRINSIC_CALL:
-  case OPR_INTRINSIC_OP:
-  case OPR_PARM:
-    // (RTYPE): any dynamic (DESC): V 
-    valid = Is_MTYPE_V(desc);
-    break;
-  case OPR_CVT:
-    valid = TRUE;
-    break;
-  case OPR_ISTORE:
-  case OPR_STID:
-    // (RTYPE): any dynamic (DESC): V 
-    valid = Is_MTYPE_V(rtype);
-    break;
-  case OPR_SUBPART:
-    // Rtype: any non composed MTYPE
-    // desc: any composed mtype
-    valid = MTYPE_is_composed(desc) && !MTYPE_is_composed(rtype);
-    break;
-  default:
-    valid = FALSE;
-    break;
-  }
-  return valid;
-}
-// TB: dynamic mtype check
-static BOOL
-Is_Valid_Opcode_For_Composed_Mtype(OPERATOR opr, TYPE_ID rtype, TYPE_ID desc)
-{
-  FmtAssert (MTYPE_is_composed(rtype) || MTYPE_is_composed(desc), ("Is_Valid_Opcode_For_Composed_Mtype: not a composed mtype"));
-  BOOL valid;
-  switch (opr) {
-  case OPR_ILOAD:
-  case OPR_LDID:
-    valid = (rtype == desc);
-    break;
-  case OPR_CSELECT:
-  case OPR_COMMA:
-  case OPR_INTRINSIC_CALL:
-  case OPR_INTRINSIC_OP:
-  case OPR_PARM:
-    // (RTYPE): any dynamic (DESC): V 
-    valid = Is_MTYPE_V(desc);
-    break;
-  case OPR_ISTORE:
-  case OPR_STID:
-    // (RTYPE): any dynamic (DESC): V 
-    valid = Is_MTYPE_V(rtype);
-    break;
-  case OPR_SUBPART:
-    // Rtype: any non composed MTYPE
-    // desc: any composed mtype
-    valid = MTYPE_is_composed(desc) && !MTYPE_is_composed(rtype);
-    break;
-  default:
-    valid = FALSE;
-    break;
-  }
-  return valid;
-}
-#endif
 
-#ifdef TARG_ST
-BOOL
-Is_Valid_Opcode_Parts (OPERATOR opr, TYPE_ID rtype, TYPE_ID desc)
-{
-  BOOL valid;
-
-       if (opr   < OPERATOR_FIRST || opr   > OPERATOR_LAST) valid = FALSE;
-  else if (rtype < MTYPE_FIRST    || rtype > MTYPE_LAST)    valid = FALSE;
-  else if (desc  < MTYPE_FIRST    || desc  > MTYPE_LAST)    valid = FALSE;
-  
-  // TB: dynamic mtype
-  else if  (MTYPE_is_dynamic(rtype) || MTYPE_is_dynamic(desc))
-    valid = Is_Valid_Opcode_For_Dynamic_Mtype( opr,rtype, desc);
-  else if  (MTYPE_is_composed(rtype) || MTYPE_is_composed(desc))
-    valid = Is_Valid_Opcode_For_Composed_Mtype( opr,rtype, desc);
-  else  {
-    switch (opr) {
-      case OPR_LDA_LABEL:
-      case OPR_LDMA:
-      case OPR_ALLOCA:
-      case OPR_LDA:
-      case OPR_ILDA:
-      case OPR_ARRSECTION:
-      case OPR_ARRAY:
-        // [RTYPE]: p (DESC): V 
-        valid = Is_MTYPE_p(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_LDID:
-        if (   !(rtype == MTYPE_B && desc == MTYPE_B)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_I1)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_I2)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_I4)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_I8)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_I5)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_BS)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_I1)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_I2)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_I4)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_I8)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_I5)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_BS)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_U1)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_U2)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_U4)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_U8)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_U5)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_BS)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_U1)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_U2)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_U4)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_U8)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_U5)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_BS)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_I1)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_I2)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_I4)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_I8)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_I5)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_BS)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_U1)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_U2)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_U4)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_U8)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_U5)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_BS)
-          && !(rtype == MTYPE_A4 && desc == MTYPE_A4)
-          && !(rtype == MTYPE_A8 && desc == MTYPE_A8)
-          && !(rtype == MTYPE_F4 && desc == MTYPE_F4)
-          && !(rtype == MTYPE_F8 && desc == MTYPE_F8)
-          && !(rtype == MTYPE_F10 && desc == MTYPE_F10)
-          && !(rtype == MTYPE_F16 && desc == MTYPE_F16)
-          && !(rtype == MTYPE_FQ && desc == MTYPE_FQ)
-          && !(rtype == MTYPE_M && desc == MTYPE_M)
-          && !(rtype == MTYPE_C4 && desc == MTYPE_C4)
-          && !(rtype == MTYPE_C8 && desc == MTYPE_C8)
-          && !(rtype == MTYPE_CQ && desc == MTYPE_CQ)
-          && !(rtype == MTYPE_C10 && desc == MTYPE_C10)
-          && !(rtype == MTYPE_C16 && desc == MTYPE_C16)) {
-
-          valid = FALSE;
-        }
-        else {
-          valid = TRUE;
-        }
-        break;
-
-      case OPR_ILOAD:
-        if (   !(rtype == MTYPE_B && desc == MTYPE_B)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_I1)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_I2)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_I4)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_I8)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_I5)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_BS)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_I1)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_I2)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_I4)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_I8)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_I5)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_BS)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_U1)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_U2)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_U4)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_U8)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_U5)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_BS)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_U1)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_U2)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_U4)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_U8)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_U5)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_BS)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_I1)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_I2)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_I4)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_I8)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_I5)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_BS)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_U1)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_U2)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_U4)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_U8)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_U5)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_BS)
-          && !(rtype == MTYPE_A4 && desc == MTYPE_A4)
-          && !(rtype == MTYPE_A8 && desc == MTYPE_A8)
-          && !(rtype == MTYPE_F4 && desc == MTYPE_F4)
-          && !(rtype == MTYPE_F8 && desc == MTYPE_F8)
-          && !(rtype == MTYPE_F10 && desc == MTYPE_F10)
-          && !(rtype == MTYPE_F16 && desc == MTYPE_F16)
-          && !(rtype == MTYPE_FQ && desc == MTYPE_FQ)
-          && !(rtype == MTYPE_M && desc == MTYPE_M)
-          && !(rtype == MTYPE_C4 && desc == MTYPE_C4)
-          && !(rtype == MTYPE_C8 && desc == MTYPE_C8)
-          && !(rtype == MTYPE_CQ && desc == MTYPE_CQ)
-          && !(rtype == MTYPE_C10 && desc == MTYPE_C10)
-          && !(rtype == MTYPE_C16 && desc == MTYPE_C16)) {
-
-          valid = FALSE;
-        }
-        else {
-          valid = TRUE;
-        }
-        break;
-
-      case OPR_RCOMMA:
-      case OPR_COMMA:
-        // [RTYPE]: M,f,i,p,z (DESC): V 
-        valid = Is_MTYPE_M_f_i_p_z(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_STBITS:
-      case OPR_ISTBITS:
-        // [RTYPE]: V (DESC): I4,I8,U4,U8,s 
-        valid = Is_MTYPE_V(rtype) && Is_MTYPE_I4_I8_U4_U8_s(desc);
-        break;
-
-      case OPR_PARM:
-        // (RTYPE): M,V,f,i,p,z (DESC): V 
-        valid = Is_MTYPE_M_V_f_i_p_z(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_SELECT:
-        // (RTYPE): b,f,i,p,z (DESC): B,V 
-        valid = Is_MTYPE_b_f_i_p_z(rtype) && Is_MTYPE_B_V(desc);
-        break;
-
-      case OPR_TRUNC:
-      case OPR_RND:
-      case OPR_FLOOR:
-      case OPR_CEIL:
-        // (RTYPE): i (DESC): f 
-        valid = Is_MTYPE_i(rtype) && Is_MTYPE_f(desc);
-        break;
-
-      case OPR_PAIR:
-        // (RTYPE): z (DESC): V 
-        valid = Is_MTYPE_z(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_MINPART:
-      case OPR_MAXPART:
-      case OPR_MADD:
-      case OPR_MSUB:
-      case OPR_NMSUB:
-      case OPR_NMADD:
-        // (RTYPE): f,i (DESC): V 
-        valid = Is_MTYPE_f_i(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_ASM_EXPR:
-      case OPR_SUB:
-      case OPR_NEG:
-      case OPR_MPY:
-      case OPR_CONST:
-      case OPR_ADD:
-        // (RTYPE): f,i,p,z (DESC): V 
-        valid = Is_MTYPE_f_i_p_z(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_STID:
-      case OPR_ISTORE:
-        // (RTYPE): V (DESC): M,b,bs,f,i,p,s,z 
-        valid = Is_MTYPE_V(rtype) && Is_MTYPE_M_b_bs_f_i_p_s_z(desc);
-        break;
-
-      case OPR_ABS:
-        // (RTYPE): I4,I5,I8,f (DESC): V 
-        valid = Is_MTYPE_I4_I5_I8_f(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_CSELECT:
-        // (RTYPE): M,V,b,f,i,p,z (DESC): V 
-        valid = Is_MTYPE_M_V_b_f_i_p_z(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_LDBITS:
-      case OPR_ILDBITS:
-        // (RTYPE): i (DESC): I4,I8,U4,U8,s 
-        valid = Is_MTYPE_i(rtype) && Is_MTYPE_I4_I8_U4_U8_s(desc);
-        break;
-
-      case OPR_SQRT:
-      case OPR_RSQRT:
-      case OPR_RECIP:
-      case OPR_PAREN:
-        // (RTYPE): f,z (DESC): V 
-        valid = Is_MTYPE_f_z(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_MLOAD:
-        // (RTYPE): M (DESC): V 
-        valid = Is_MTYPE_M(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_INTRINSIC_CALL:
-        if (   !(rtype == MTYPE_I1 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I2 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_I4)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_I8)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U1 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U2 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_U4)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_U8)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_V)
-          && !(rtype == MTYPE_A4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_A8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F4 && desc == MTYPE_F4)
-          && !(rtype == MTYPE_F4 && desc == MTYPE_F8)
-          && !(rtype == MTYPE_F4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F8 && desc == MTYPE_F4)
-          && !(rtype == MTYPE_F8 && desc == MTYPE_F8)
-          && !(rtype == MTYPE_F8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F10 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F16 && desc == MTYPE_V)
-          && !(rtype == MTYPE_FQ && desc == MTYPE_V)
-          && !(rtype == MTYPE_M && desc == MTYPE_V)
-          && !(rtype == MTYPE_C4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_C8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_CQ && desc == MTYPE_V)
-          && !(rtype == MTYPE_V && desc == MTYPE_V)
-          && !(rtype == MTYPE_C10 && desc == MTYPE_V)
-          && !(rtype == MTYPE_C16 && desc == MTYPE_V)) {
-
-          valid = FALSE;
-        }
-        else {
-          valid = TRUE;
-        }
-        break;
-
-      case OPR_CALL:
-        if (   !(rtype == MTYPE_I1 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I2 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_I4)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_I8)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U1 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U2 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_U4)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_U8)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_V)
-          && !(rtype == MTYPE_A4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_A8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F4 && desc == MTYPE_F4)
-          && !(rtype == MTYPE_F4 && desc == MTYPE_F8)
-          && !(rtype == MTYPE_F4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F8 && desc == MTYPE_F4)
-          && !(rtype == MTYPE_F8 && desc == MTYPE_F8)
-          && !(rtype == MTYPE_F8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F10 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F16 && desc == MTYPE_V)
-          && !(rtype == MTYPE_FQ && desc == MTYPE_V)
-          && !(rtype == MTYPE_M && desc == MTYPE_V)
-          && !(rtype == MTYPE_C4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_C8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_CQ && desc == MTYPE_V)
-          && !(rtype == MTYPE_V && desc == MTYPE_V)
-          && !(rtype == MTYPE_C10 && desc == MTYPE_V)
-          && !(rtype == MTYPE_C16 && desc == MTYPE_V)) {
-
-          valid = FALSE;
-        }
-        else {
-          valid = TRUE;
-        }
-        break;
-
-      case OPR_RROTATE:
-        if (   (rtype == MTYPE_U4 && desc == MTYPE_U8)
-          || (rtype == MTYPE_U8 && desc == MTYPE_U1)
-          || (rtype == MTYPE_U8 && desc == MTYPE_U2)
-          || (rtype == MTYPE_U8 && desc == MTYPE_U4)) {
-
-          valid = FALSE;
-        }
-        else {
-          // (RTYPE): U4,U8 (DESC): U1,U2,U4,U8 
-          valid = Is_MTYPE_U4_U8(rtype) && Is_MTYPE_U1_U2_U4_U8(desc);
-        }
-        break;
-
-      case OPR_LROTATE:
-        if (   (rtype == MTYPE_U4 && desc == MTYPE_U8)
-          || (rtype == MTYPE_U8 && desc == MTYPE_U1)
-          || (rtype == MTYPE_U8 && desc == MTYPE_U2)
-          || (rtype == MTYPE_U8 && desc == MTYPE_U4)) {
-
-          valid = FALSE;
-        }
-        else {
-          // [RTYPE]: U4,U8 [DESC]: U1,U2,U4,U8 
-          valid = Is_MTYPE_U4_U8[rtype] && Is_MTYPE_U1_U2_U4_U8[desc];
-        }
-        break;
-
-      case OPR_INTCONST:
-        // (RTYPE): b,i,p (DESC): V 
-        valid = Is_MTYPE_b_i_p(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_RETURN_VAL:
-        // (RTYPE): M,f,i,p,s,z (DESC): V 
-        valid = Is_MTYPE_M_f_i_p_s_z(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_GOTO_OUTER_BLOCK:
-      case OPR_ASM_INPUT:
-      case OPR_ASM_STMT:
-      case OPR_DEALLOCA:
-      case OPR_AFFIRM:
-      case OPR_XPRAGMA:
-      case OPR_XGOTO:
-      case OPR_WHILE_DO:
-      case OPR_WHERE:
-      case OPR_VFCALL:
-      case OPR_TRUEBR:
-      case OPR_TRAP:
-      case OPR_SWITCH:
-      case OPR_RETURN:
-      case OPR_REGION_EXIT:
-      case OPR_REGION:
-      case OPR_PREFETCHX:
-      case OPR_PREFETCH:
-      case OPR_PRAGMA:
-      case OPR_OPT_RESERVE2:
-      case OPR_OPT_CHI:
-      case OPR_MSTORE:
-      case OPR_LOOP_INFO:
-      case OPR_LABEL:
-      case OPR_IO_ITEM:
-      case OPR_IO:
-      case OPR_IF:
-      case OPR_IDNAME:
-      case OPR_GOTO:
-      case OPR_FUNC_ENTRY:
-      case OPR_FORWARD_BARRIER:
-      case OPR_FALSEBR:
-      case OPR_EXC_SCOPE_END:
-      case OPR_EXC_SCOPE_BEGIN:
-      case OPR_EVAL:
-      case OPR_DO_WHILE:
-      case OPR_DO_LOOP:
-      case OPR_COMPGOTO:
-      case OPR_COMMENT:
-      case OPR_CASEGOTO:
-      case OPR_BLOCK:
-      case OPR_BACKWARD_BARRIER:
-      case OPR_ASSERT:
-      case OPR_ALTENTRY:
-      case OPR_AGOTO:
-        // (RTYPE): V (DESC): V 
-        valid = Is_MTYPE_V(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_MINMAX:
-      case OPR_MIN:
-      case OPR_MAX:
-        // (RTYPE): f,i,p (DESC): V 
-        valid = Is_MTYPE_f_i_p(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_COMPOSE_BITS:
-      case OPR_EXTRACT_BITS:
-        // (RTYPE): I4,I8,U4,U8 (DESC): V 
-        valid = Is_MTYPE_I4_I8_U4_U8(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_ICALL:
-        if (   !(rtype == MTYPE_I1 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I2 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_I4)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_I8)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U1 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U2 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_U4)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_U8)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_V)
-          && !(rtype == MTYPE_A4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_A8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F4 && desc == MTYPE_F4)
-          && !(rtype == MTYPE_F4 && desc == MTYPE_F8)
-          && !(rtype == MTYPE_F4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F8 && desc == MTYPE_F4)
-          && !(rtype == MTYPE_F8 && desc == MTYPE_F8)
-          && !(rtype == MTYPE_F8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F10 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F16 && desc == MTYPE_V)
-          && !(rtype == MTYPE_FQ && desc == MTYPE_V)
-          && !(rtype == MTYPE_M && desc == MTYPE_V)
-          && !(rtype == MTYPE_C4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_C8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_CQ && desc == MTYPE_V)
-          && !(rtype == MTYPE_V && desc == MTYPE_V)
-          && !(rtype == MTYPE_C10 && desc == MTYPE_V)
-          && !(rtype == MTYPE_C16 && desc == MTYPE_V)) {
-
-          valid = FALSE;
-        }
-        else {
-          valid = TRUE;
-        }
-        break;
-
-      case OPR_ARRAYEXP:
-        // (RTYPE): M,f,i,z (DESC): V 
-        valid = Is_MTYPE_M_f_i_z(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_NE:
-        if (   (rtype == MTYPE_I4 && desc == MTYPE_B)
-          || (rtype == MTYPE_I8 && desc == MTYPE_B)
-          || (rtype == MTYPE_U4 && desc == MTYPE_B)
-          || (rtype == MTYPE_U8 && desc == MTYPE_B)) {
-
-          valid = FALSE;
-        }
-        else {
-          // (RTYPE): I4,I8,U4,U8,b (DESC): b,f,i,p,z 
-          valid = Is_MTYPE_I4_I8_U4_U8_b(rtype) && Is_MTYPE_b_f_i_p_z(desc);
-        }
-        break;
-
-      case OPR_EQ:
-        if (   (rtype == MTYPE_I4 && desc == MTYPE_B)
-          || (rtype == MTYPE_I8 && desc == MTYPE_B)
-          || (rtype == MTYPE_U4 && desc == MTYPE_B)
-          || (rtype == MTYPE_U8 && desc == MTYPE_B)) {
-
-          valid = FALSE;
-        }
-        else {
-          // (RTYPE): I4,I8,U4,U8,b (DESC): b,f,i,p,z 
-          valid = Is_MTYPE_I4_I8_U4_U8_b(rtype) && Is_MTYPE_b_f_i_p_z(desc);
-        }
-        break;
-
-      case OPR_TAS:
-        // (RTYPE): f,i,p,s,z (DESC): V 
-        valid = Is_MTYPE_f_i_p_s_z(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_PICCALL:
-        if (   !(rtype == MTYPE_I1 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I2 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_I4)
-          && !(rtype == MTYPE_I4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_I8)
-          && !(rtype == MTYPE_I8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U1 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U2 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_U4)
-          && !(rtype == MTYPE_U4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_U8)
-          && !(rtype == MTYPE_U8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_I5 && desc == MTYPE_V)
-          && !(rtype == MTYPE_U5 && desc == MTYPE_V)
-          && !(rtype == MTYPE_A4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_A8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F4 && desc == MTYPE_F4)
-          && !(rtype == MTYPE_F4 && desc == MTYPE_F8)
-          && !(rtype == MTYPE_F4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F8 && desc == MTYPE_F4)
-          && !(rtype == MTYPE_F8 && desc == MTYPE_F8)
-          && !(rtype == MTYPE_F8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F10 && desc == MTYPE_V)
-          && !(rtype == MTYPE_F16 && desc == MTYPE_V)
-          && !(rtype == MTYPE_FQ && desc == MTYPE_V)
-          && !(rtype == MTYPE_C4 && desc == MTYPE_V)
-          && !(rtype == MTYPE_C8 && desc == MTYPE_V)
-          && !(rtype == MTYPE_V && desc == MTYPE_V)) {
-
-          valid = FALSE;
-        }
-        else {
-          valid = TRUE;
-        }
-        break;
-
-      case OPR_OPTPARM:
-      case OPR_DIV:
-        // (RTYPE): f,i,z (DESC): V 
-        valid = Is_MTYPE_f_i_z(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_LNOT:
-      case OPR_LIOR:
-      case OPR_LAND:
-      case OPR_CIOR:
-      case OPR_CAND:
-        // (RTYPE): b (DESC): V 
-        valid = Is_MTYPE_b(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_INTRINSIC_OP:
-        // (RTYPE): M,b,f,i,p,s,z (DESC): V 
-        valid = Is_MTYPE_M_b_f_i_p_s_z(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_CVT:
-        if (   (rtype == MTYPE_I4 && desc == MTYPE_I4)
-          || (rtype == MTYPE_I8 && desc == MTYPE_I8)
-          || (rtype == MTYPE_U4 && desc == MTYPE_U4)
-          || (rtype == MTYPE_U8 && desc == MTYPE_U8)
-          || (rtype == MTYPE_I5 && desc == MTYPE_I5)
-          || (rtype == MTYPE_U5 && desc == MTYPE_U5)
-          || (rtype == MTYPE_A4 && desc == MTYPE_B)
-          || (rtype == MTYPE_A4 && desc == MTYPE_A4)
-          || (rtype == MTYPE_A8 && desc == MTYPE_B)
-          || (rtype == MTYPE_A8 && desc == MTYPE_A8)
-          || (rtype == MTYPE_F4 && desc == MTYPE_B)
-          || (rtype == MTYPE_F4 && desc == MTYPE_F4)
-          || (rtype == MTYPE_F8 && desc == MTYPE_B)
-          || (rtype == MTYPE_F8 && desc == MTYPE_F8)
-          || (rtype == MTYPE_F10 && desc == MTYPE_B)
-          || (rtype == MTYPE_F10 && desc == MTYPE_F10)
-          || (rtype == MTYPE_F16 && desc == MTYPE_B)
-          || (rtype == MTYPE_F16 && desc == MTYPE_F16)
-          || (rtype == MTYPE_FQ && desc == MTYPE_B)
-          || (rtype == MTYPE_FQ && desc == MTYPE_FQ)
-          || (rtype == MTYPE_I16 && desc == MTYPE_B)
-          || (rtype == MTYPE_U16 && desc == MTYPE_B)) {
-
-          valid = FALSE;
-        }
-        else {
-          // (RTYPE): f,i,p (DESC): b,f,i,p 
-          valid = Is_MTYPE_f_i_p(rtype) && Is_MTYPE_b_f_i_p(desc);
-        }
-        break;
-
-      case OPR_FIRSTPART:
-      case OPR_SECONDPART:
-      case OPR_ILOADX:
-        // (RTYPE): f (DESC): V 
-        valid = Is_MTYPE_f(rtype) && Is_MTYPE_V(desc);
-        break;
-
-      case OPR_ISTOREX:
-        // (RTYPE): V (DESC): f 
-        valid = Is_MTYPE_V(rtype) && Is_MTYPE_f(desc);
-        break;
-
-      case OPR_LT:
-      case OPR_LE:
-      case OPR_GT:
-      case OPR_GE:
-        // (RTYPE): I4,I8,U4,U8,b (DESC): f,i,p 
-        valid = Is_MTYPE_I4_I8_U4_U8_b(rtype) && Is_MTYPE_f_i_p(desc);
-        break;
-
-      case OPR_XMPY:
-      case OPR_TRIPLET:
-      case OPR_SHL:
-      case OPR_REM:
-      case OPR_MOD:
-      case OPR_LSHR:
-      case OPR_LOWPART:
-      case OPR_HIGHPART:
-      case OPR_HIGHMPY:
-      case OPR_DIVREM:
-      case OPR_CVTL:
-      case OPR_BXOR:
-      case OPR_BNOT:
-      case OPR_BNOR:
-      case OPR_BIOR:
-      case OPR_BAND:
-      case OPR_ASHR:
-        // (RTYPE): i (DESC): V 
-        valid = Is_MTYPE_i(rtype) && Is_MTYPE_V(desc);
-        break;
-#ifdef TARG_ST
-	//TB: New subpart opr
-    case OPR_SUBPART:
-      // Rtype: any non composed MTYPE
-      // desc: any composed mtype
-      valid = MTYPE_is_composed(desc) && !MTYPE_is_composed(rtype);
-      break;
-#endif
-      default:
-        valid = FALSE;
-        break;
-    }
-  }
-
-  if (valid == FALSE)
-    breakpoint ();
-
-  return valid;
-}
-#else
 BOOL
 Is_Valid_Opcode_Parts (OPERATOR opr, TYPE_ID rtype, TYPE_ID desc)
 {
@@ -5203,7 +3178,6 @@ Is_Valid_Opcode_Parts (OPERATOR opr, TYPE_ID rtype, TYPE_ID desc)
 
   return valid;
 }
-#endif
 
 BOOL
 Is_Valid_Opcode_FUNC (OPCODE opc)
@@ -5367,7 +3341,7 @@ OPCODE_name (OPERATOR opr, TYPE_ID rtype, TYPE_ID desc)
     case OPR_TAS:
     // [RTYPE] : p [DESC] : V
     case OPR_ALLOCA:
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     // [RTYPE] : f,i,M,p,s,z [DESC] : V
     case OPR_PURE_CALL_OP:
 #endif
@@ -5414,7 +3388,7 @@ OPCODE_name (OPERATOR opr, TYPE_ID rtype, TYPE_ID desc)
     case OPR_ILOADX:
     // [RTYPE] : U4,U8 [DESC] : U1,U2,U4,U8
     case OPR_RROTATE:
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     // TARG_X8664: [RTYPE] : V16F4, V16F8, V16I1, V16I2, V16I4, V16I8
     //             [DESC] :  I1, I2, I4, I8, F4, F8
     // TARG_MIPS:  [RTYPE] : V8F4  [DESC] :  F4

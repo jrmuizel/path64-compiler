@@ -36,22 +36,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#ifndef TARG_ST
 typedef enum topcode TOPCODE;
-#endif
 #include <topcode.h>
 
-#ifdef TARG_ST
-/* Redefining TOP type */
-typedef TOP TOPCODE;
-
-/* Do not define types and scheduling information as const in order
- * to configure them at runtime
- */
-#define TI_SI_CONST
-#else
 #define TI_SI_CONST const
-#endif
 /****************************************************************************
  ****************************************************************************/
 
@@ -117,12 +105,6 @@ typedef struct {
   SI_ID id;
   TI_SI_CONST mUINT8 *operand_access_times;
   TI_SI_CONST mUINT8 *result_available_times;
-#ifdef TARG_ST
-  mUINT8 n_opds;
-  mUINT8 n_results;
-  mBOOL operand_access_times_overridden;
-  mBOOL result_available_times_overridden;
-#endif
   mINT32 load_access_time;
   mINT32 last_issue_cycle;
   mINT32 store_available_time;
@@ -138,6 +120,22 @@ typedef struct {
   SI_RESOURCE_TOTAL *resource_total_vector;
   mUINT8 write_write_interlock;
 } SI;
+
+/****************************************************************************
+ ****************************************************************************/
+
+typedef struct {
+  const SI * const *top_si;
+  const SI * const *ID_si;
+  int ID_count;
+  const SI_ISSUE_SLOT * const *issue_slots;
+  int issue_slot_count;
+  const SI_RESOURCE * const *resources;
+  int resource_count;
+  SI_RRW RRW_initializer;
+  SI_RRW RRW_overuse_mask;
+  const char *target_name;
+} SI_SUMMARY;
 
 /****************************************************************************
  ****************************************************************************/

@@ -31,6 +31,7 @@
 
 
 #include "basic.h"
+#include "file_def.h"
 
 /* drops path prefix in string; result points inside old string */
 extern char *drop_path (char *s);

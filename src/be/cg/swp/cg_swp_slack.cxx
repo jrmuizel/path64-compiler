@@ -37,7 +37,6 @@
 /* Standard Template Library (STL) related include files */
 #include <cmath>
 #include <algorithm>
-#ifndef TARG_ST
 using namespace std;
 
 
@@ -234,4 +233,4 @@ SWP_SLACK::Verify (void) const {
 
   return;
 }
-#endif
+

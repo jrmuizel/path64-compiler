@@ -56,9 +56,9 @@ eelf64ltsmip.c )
 #    -DTARGET='"x86_64-unknown-linux-gnu"' -DTARGET_SYSTEM_ROOT=\"\" \
 #    ../../../ipa_link/ld/ldmain.c
 
-# /bin/sh ../src/ipa_link/ld/genscripts.sh "../src/ipa_link/ld" "/opt/pathscale/lib" "/opt/pathscale" "/opt/pathscale" x86_64-unknown-linux-gnu x86_64-unknown-linux-gnu x86_64-unknown-linux-gnu "elf_x86_64 elf_i386" "/usr/local/lib /lib /usr/lib" no elf_x86_64 "x86_64-unknown-linux-gnu" # Makes eelf_x86_64.c
-# /bin/sh ../src/ipa_link/ld/genscripts.sh "../src/ipa_link/ld" "/opt/pathscale/lib" "/opt/pathscale" "/opt/pathscale" x86_64-unknown-linux-gnu x86_64-unknown-linux-gnu x86_64-unknown-linux-gnu "elf_x86_64 elf_i386" "/usr/local/lib /lib /usr/lib" no elf_i386 "i386-unknown-linux-gnu" # Makes eelf_i386.c
-# /bin/sh ../src/ipa_link/ld/genscripts.sh "../src/ipa_link/ld" "/opt/pathscale/lib" "/opt/pathscale" "/opt/pathscale" x86_64-unknown-linux-gnu x86_64-unknown-linux-gnu x86_64-unknown-linux-gnu "elf_x86_64 elf_i386" "/usr/local/lib /lib /usr/lib" no i386linux "i386-unknown-linux-gnuaout" # Makes ei386linux.c
+# /bin/sh ../src/ipa_link/ld/genscripts.${SHELL_EXT} "../src/ipa_link/ld" "/opt/pathscale/lib" "/opt/pathscale" "/opt/pathscale" x86_64-unknown-linux-gnu x86_64-unknown-linux-gnu x86_64-unknown-linux-gnu "elf_x86_64 elf_i386" "/usr/local/lib /lib /usr/lib" no elf_x86_64 "x86_64-unknown-linux-gnu" # Makes eelf_x86_64.c
+# /bin/sh ../src/ipa_link/ld/genscripts.${SHELL_EXT} "../src/ipa_link/ld" "/opt/pathscale/lib" "/opt/pathscale" "/opt/pathscale" x86_64-unknown-linux-gnu x86_64-unknown-linux-gnu x86_64-unknown-linux-gnu "elf_x86_64 elf_i386" "/usr/local/lib /lib /usr/lib" no elf_i386 "i386-unknown-linux-gnu" # Makes eelf_i386.c
+# /bin/sh ../src/ipa_link/ld/genscripts.${SHELL_EXT} "../src/ipa_link/ld" "/opt/pathscale/lib" "/opt/pathscale" "/opt/pathscale" x86_64-unknown-linux-gnu x86_64-unknown-linux-gnu x86_64-unknown-linux-gnu "elf_x86_64 elf_i386" "/usr/local/lib /lib /usr/lib" no i386linux "i386-unknown-linux-gnuaout" # Makes ei386linux.c
 
 
 set_property(SOURCE ldmain.c PROPERTY COMPILE_DEFINITIONS DEFAULT_EMULATION="elf_x86_64";SCRIPTDIR="${INSTALL_DIR}/x86_64-unknown-linux-gnu/lib";BINDIR="${INSTALL_DIR}/bin";TOOLBINDIR="${INSTALL_DIR}/x86_64-unknown-linux-gnu/bin";TARGET="x86_64-unknown-linux-gnu";TARGET_SYSTEM_ROOT="")
@@ -85,8 +85,7 @@ ENDFOREACH(f)
 #ADD_LIBRARY(iberty ${iberty_SRCS})
 add_executable(ld ${LD_SRCS})
 SET_TARGET_PROPERTIES(ld PROPERTIES OUTPUT_NAME "ipa_link")
-IF(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
-    # --export-dynamic is by default on osol
+IF(${EXPORT_DYNAMIC_SUPPORTED} MATCHES "yes")
     SET_TARGET_PROPERTIES(ld PROPERTIES LINK_FLAGS "-Wl,--export-dynamic")
 ENDIF()
 target_link_libraries(ld bfd iberty ${libdl})

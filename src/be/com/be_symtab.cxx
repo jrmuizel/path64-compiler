@@ -96,11 +96,7 @@ ST_is_const_initialized (const ST* st)
 
     // uninitialized constant is the same as initialized with zero, so we
     // don't check the ST_is_initialized bit
-#ifdef TARG_ST
-    /* (cbr) if it extern, it is not the same as initialized with zero */
-    if (ST_sclass(st) == SCLASS_EXTERN && !ST_is_initialized(st))
-      return FALSE;
-#endif
+
     /* get the type */
     TY_IDX ty = ST_type(st);
     

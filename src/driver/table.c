@@ -30,6 +30,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <assert.h>
 #include "basic.h"
 #include "lang_defs.h"
@@ -770,12 +771,12 @@ write_init_options (void)
 		} else {
 		    if (sizeof(mask_t)>4)
 		     {
-		     fprintf(f, "\tcreate_option_info(%d,%#llxLL,%#llxLL,\"%s\",",
+		     fprintf(f, "\tcreate_option_info(%d,%#"PRIx64"LL,%#"PRIx64"LL,\"%s\",",
 			    i, options[i].languages, options[i].phases, options[i].name);
 		     }
 		    else
 		     {
-		     fprintf(f, "\tcreate_option_info(%d,%#llx,%#llx,\"%s\",",
+		     fprintf(f, "\tcreate_option_info(%d,%#"PRIx64",%#"PRIx64",\"%s\",",
 			    i, options[i].languages, options[i].phases, options[i].name);
 		     }
 		}

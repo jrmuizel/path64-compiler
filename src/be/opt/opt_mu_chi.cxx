@@ -64,7 +64,7 @@ static char *rcs_id = 	opt_mu_chi_CXX"$Revision$";
 
 
 OCC_TAB_ENTRY *
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 OPT_STAB::Enter_occ_tab(WN *wn, AUX_ID aux_id, POINTS_TO *pt)
 #else
 OPT_STAB::Enter_occ_tab(WN *wn, AUX_ID aux_id)
@@ -86,7 +86,7 @@ OPT_STAB::Enter_occ_tab(WN *wn, AUX_ID aux_id)
     occ->Set_pf_list(NULL);
     occ->Set_pt_list(NULL);
   } else {
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     if (WOPT_Enable_New_Vsym_Allocation && pt /* probably temporary */) {
       occ->Points_to()->Copy_fully (pt);
     } else

@@ -34,6 +34,41 @@ ADD_EXECUTABLE(tag_attr_build
 GET_TARGET_PROPERTY(TAG_TREE_BUILD_EXE tag_tree_build LOCATION)
 GET_TARGET_PROPERTY(TAG_ATTR_BUILD_EXE tag_attr_build LOCATION)
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
+ADD_EXECUTABLE(dwarf_names_gen dwarfdump/dwarf_names_gen.cxx)
+
+ADD_CUSTOM_COMMAND(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dwarf_names.c
+        COMMAND dwarf_names_gen ${CMAKE_CURRENT_SOURCE_DIR}/libdwarf/dwarf.h ${CMAKE_CURRENT_BINARY_DIR}/dwarf_names.c ${CMAKE_CURRENT_BINARY_DIR}/dwarf_names.h
+        DEPENDS dwarf_names_gen ${CMAKE_CURRENT_SOURCE_DIR}/libdwarf/dwarf.h
+        )
+
+ADD_CUSTOM_COMMAND(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/_tag_attr_table.in
+        COMMAND ${CMAKE_C_COMPILER} -xc -E -I${CMAKE_CURRENT_SOURCE_DIR}/libdwarf ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/tag_attr.list > _tag_attr_table.in
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/tag_attr.list
+        )
+
+ADD_CUSTOM_COMMAND(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/_tag_attr_table.c
+        COMMAND ${TAG_ATTR_BUILD_EXE} < _tag_attr_table.in > _tag_attr_table.c
+        DEPENDS tag_attr_build _tag_attr_table.in
+        )
+
+ADD_CUSTOM_COMMAND(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/_tag_tree_table.in
+        COMMAND ${CMAKE_C_COMPILER} -xc -E -I${CMAKE_CURRENT_SOURCE_DIR}/libdwarf ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/tag_tree.list > _tag_tree_table.in
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/tag_tree.list
+        )
+
+ADD_CUSTOM_COMMAND(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/_tag_tree_table.c
+        COMMAND ${TAG_TREE_BUILD_EXE} < _tag_tree_table.in > _tag_tree_table.c
+        DEPENDS tag_tree_build ${CMAKE_CURRENT_BINARY_DIR}/_tag_tree_table.in
+        )
+
+else()
 
 ADD_CUSTOM_COMMAND(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dwarf_names.c
@@ -47,13 +82,13 @@ ADD_CUSTOM_COMMAND(
         DEPENDS tag_attr_build ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/tag_attr.list
         )
 
-
 ADD_CUSTOM_COMMAND(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/_tag_tree_table.c
         COMMAND ${CMAKE_C_COMPILER} -xc -E -I${CMAKE_CURRENT_SOURCE_DIR}/libdwarf ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/tag_tree.list | awk '!/^\#/ && !/^[ \\t]*$$/' | ${TAG_TREE_BUILD_EXE} > _tag_tree_table.c
         DEPENDS tag_tree_build ${CMAKE_CURRENT_SOURCE_DIR}/dwarfdump/tag_tree.list
         )
 
+endif()
 
 SET(DWARF_DEPS ${CMAKE_CURRENT_BINARY_DIR}/_tag_attr_table.c     
                ${CMAKE_CURRENT_BINARY_DIR}/_tag_tree_table.c)

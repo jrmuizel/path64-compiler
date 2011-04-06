@@ -519,47 +519,6 @@ COST_TABLE_Alloc(
   return result;
 }
 
-#ifdef TARG_ST
-/* ====================================================================
- *   CGTARG_ARC_Sched_Latency
- *
- *    	  Wrapper function for ARC_latency to let us fix up some cases 
- *	  where it returns a result that just doesn't make sence.  In
- *	  particular a latency of -1 for the pre-branch latency makes no
- *	  scheduling sense for CPUs which have same-cycle branch shadows.
- *	  Should be 0.
- *
- *   TODO: see if this functionality is redundant ?
- * ====================================================================
- */
-INT 
-CGTARG_ARC_Sched_Latency(
-  ARC *arc
-)
-{
-  if ( ARC_kind(arc) == CG_DEP_PREBR && PROC_has_same_cycle_branch_shadow() )
-    return 0;
-  else
-    return ARC_latency(arc);
-}
-
-/* ====================================================================
- *   CGTARG_Special_Min_II
- *
- *   Check for target specific (tail stepping, and other?) special
- *	  cases that might force a higher Min II. If a case applies, the
- *	  target specific MII is returned, otherwise 0 is returned.
- *
- *   TODO: will this functionality be needed ?
- * ====================================================================
- */
-INT32 
-CGTARG_Special_Min_II(BB* loop_body, BOOL trace)
-{
-  return 0;
-}
-
-#endif
 
 /* ====================================================================
  *

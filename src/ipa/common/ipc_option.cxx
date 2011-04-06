@@ -55,7 +55,9 @@
 #include <ctype.h>
 #include <string.h>
 #include <ar.h>         /* for support of -INLINE:library= */
+#ifndef _WIN32
 #include <sys/errno.h>  /* for EBADF */
+#endif
 #include "defs.h"
 #include "config.h"
 #include "config_ipa.h"	/* -INLINE/-IPA group options */
@@ -339,13 +341,11 @@ Add_Symbols(char *args, DATA data, ACTION perform_action
 )
 {
 #ifdef KEY
-#ifndef TARG_ST
   if (! args)
   {
     ErrMsg (EC_No_Opt_Val, opt, "INLINE");
     return;
   }
-#endif
 #endif // KEY
   BOOL more_symbols = TRUE;
 

@@ -165,9 +165,6 @@ dwarf_add_ehframe_cie(
 	Dwarf_Unsigned personality,
 	Dwarf_Ptr init_bytes,
 	Dwarf_Unsigned init_n_bytes,
-#ifdef TARG_ST
-	Dwarf_Bool pcrel,
-#endif
 	Dwarf_Error *error)
 {
 	Dwarf_P_Cie curcie;
@@ -201,9 +198,6 @@ dwarf_add_ehframe_cie(
 	curcie->cie_personality = personality;
 	curcie->cie_inst = (char *) init_bytes;
 	curcie->cie_inst_bytes = (long)init_n_bytes;
-#ifdef TARG_ST
-	curcie->cie_pcrel = pcrel;
-#endif
 	curcie->cie_next = NULL;
 	
 	return dbg->de_eh_n_cie;

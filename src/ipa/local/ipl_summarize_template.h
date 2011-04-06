@@ -3113,7 +3113,7 @@ SUMMARIZE<program>:: Record_struct_access(WN *wn, mUINT64 loop_count)
     return;
 }
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 template <PROGRAM program>
 void
 SUMMARIZE<program>::Record_ty_info_for_type (TY_IDX ty, TY_FLAGS flags)

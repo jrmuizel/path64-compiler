@@ -218,12 +218,12 @@ static void Emit_Repeated_Constant(
     if ((val >= INT32_MIN) && (val <= INT32_MAX)) 
       fprintf(fl, "\t%s\t%" SCNd64 "", dir, val);
     else
-      fprintf(fl, "\t%s\t%#llx", dir, val);
+      fprintf(fl, "\t%s\t%#"PRIx64, dir, val);
     for (i = 1; i < this_rc; ++i) {
       if ((val >= INT32_MIN) && (val <= INT32_MAX)) 
 	fprintf(fl, ", %" SCNd64 "", val);
       else
-	fprintf(fl, ", %#llx", val);
+	fprintf(fl, ", %#"PRIx64, val);
     }
     fprintf(fl, "\n");
   } while (rc -= this_rc);

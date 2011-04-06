@@ -185,9 +185,7 @@ typedef struct wn_record wn_record_t;
 
 struct extension_builtins
 {
-#ifndef TARG_ST
   enum built_in_function 		gcc_builtin_def;
-#endif
   INTRINSIC	open64_intrincic;
 
   // Builtins flags follow the WHIRL semantic (opposed to the gcc one

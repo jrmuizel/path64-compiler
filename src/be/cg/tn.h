@@ -78,24 +78,6 @@
  *           The TN_register(tn) indicates the register assigned to the
  *	     register TN.
  *
-#ifdef TARG_ST
- *         TN_nhardregs(tn)
- *           The number of consecutive machine registers that must be
- *           allocated to hold TN.  If TN_register is not REGISTER_UNDEFINED,
- *           then the tn occupies registers
- *            [ TN_register : TN_register + TN_nhardregs - 1 ]
- *
- *         TN_registers(tn)
- *           If TN_register is not REGISTER_UNDEFINED,
- *           the set of machine registers that are assigned to TN.
- *           IF TN_register is REGISTER_UNDEFINED, returns an empty set.
- *
- *         TN_bitwidth(tn)
- *           Return best guess at the number of bits required
- *           to represent the value in tn.
- *           Where we do not know exactly, must be conservative.
- *
-#endif
  *	   TN_register_and_class(tn)
  *	     TN_register_class and TN_register combined into a single
  *	     scalar type for efficiency in comparing registers and classes.
@@ -226,10 +208,6 @@ struct TN_LIST;
 #include "targ_isa_enums.h"
 #include "tracing.h"
 /* Target-specific TN info */
-#ifdef TARG_ST
-#include "targ_isa_relocs.h"
-#include "pixel_mtypes.h"
-#endif
 class WN;
 
 
@@ -255,15 +233,8 @@ struct tn {
   } u1;
   /* offset 8 */
   mUINT16	flags;		/* Attribute flags */
-#ifdef TARG_ST
-  /* <size> and <relocs> have been permuted in order
-   * to reduce memory consumption of the structure */
-  mUINT16	size;		/* Size of the TN in bytes */
-  ISA_RELOC	relocs;		/* Relocation flags (for symbol TNs) */
-#else
   mUINT8	relocs;		/* Relocation flags (for symbol TNs) */
   mUINT8	size;		/* Size of the TN in bytes (must be <= 32) */
-#endif
   /* offset 12 */
   /* offset 16 for ST version */
   union {
@@ -273,9 +244,6 @@ struct tn {
     union {			/* Spill location */
       ST	*spill;		/* ...for register TN */
       WN        *home;		/* Whirl home if rematerializable */
-#ifdef TARG_ST
-      WN	*remat;		/* Whirl rematerialization if rematerializable */
-#endif
     } u3;
   } u2;
 };
@@ -444,19 +412,11 @@ inline TN * CAN_USE_REG_TN (const TN *t)
 #define Reset_TN_is_if_conv_cond(r) (TN_flags(r) &= ~TN_IF_CONV_COND)
 
 #define      TN_is_rematerializable(r)  (TN_flags(r) &   TN_REMATERIALIZABLE)
-#ifdef TARG_ST
-#define  Set_TN_is_rematerializable(r)  (TN_flags(r) = (TN_flags(r) | TN_REMATERIALIZABLE) & ~TN_GRA_HOMEABLE)
-#else
 #define  Set_TN_is_rematerializable(r)  (TN_flags(r) |=  TN_REMATERIALIZABLE)
-#endif
 #define Reset_TN_is_rematerializable(r) (TN_flags(r) &= ~TN_REMATERIALIZABLE)
 
 #define      TN_is_gra_homeable(r)  (TN_flags(r) &   TN_GRA_HOMEABLE)
-#ifdef TARG_ST
-#define  Set_TN_is_gra_homeable(r)  (TN_flags(r) = (TN_flags(r) | TN_GRA_HOMEABLE) & ~TN_REMATERIALIZABLE)
-#else
 #define  Set_TN_is_gra_homeable(r)  (TN_flags(r) |=  TN_GRA_HOMEABLE)
-#endif
 #define Reset_TN_is_gra_homeable(r) (TN_flags(r) &= ~TN_GRA_HOMEABLE)
 
 #define      TN_is_gra_cannot_split(r)  (TN_flags(r) &   TN_GRA_CANNOT_SPLIT)
@@ -622,17 +582,7 @@ extern  TN *FZero_TN;		// Floating zero (0.0) register TN
 extern  TN *FOne_TN;		// Floating one (1.0) register TN
 extern  TN *Link_TN;            // Link TN for indirect branching
 extern  TN *RS_TN;              // TN for returning structs by value
-#ifdef TARG_ST
-extern TN *TP_TN;               // Thread Pointer
-extern  TN *EH_Return_Stackadj_TN; // Stack adjustment for EH_return.
-#endif
 
-#ifdef TARG_ST
-/* [JV] Add this macro to use in place of Zero_TN to guarantee
-   none NULL TN for target without dedicated constant register set to 0.
-*/
-#define Get_Zero_TN(size) (Zero_TN != NULL ? Zero_TN : Gen_Literal_TN(0,(size)))
-#endif
 
 /* ====================================================================
  * Prototypes of external routines.
@@ -671,41 +621,8 @@ extern  TN *Build_Dedicated_TN ( ISA_REGISTER_CLASS rclass, REGISTER reg, INT si
 #define TN_is_true_pred(r) (TN_register_and_class(r) == CLASS_AND_REG_true)
 #define TN_is_fzero_reg(r) (TN_register_and_class(r) == CLASS_AND_REG_fzero)
 #define TN_is_fone_reg(r)  (TN_register_and_class(r) == CLASS_AND_REG_fone)
-#ifdef TARG_ST /* [SC] TLS support */
-#define TN_is_tp_reg(r)  (TN_register_and_class(r) == CLASS_AND_REG_tp)
-#endif
 
-#ifdef TARG_ST
-// (cbr) if-conversion psi-ssa. True_TN used only while in psi-ssa.
-#define TN_is_true(r) ((r) == True_TN || !(r) || TN_is_true_pred(r))
-#else
 #define TN_is_true(r) (!(r) || TN_is_true_pred(r))
-#endif
-
-#ifdef TARG_ST
-inline INT TN_nhardregs (const TN *tn)
-{
-  REGISTER reg = TN_register(tn);
-  ISA_REGISTER_CLASS rclass = TN_register_class(tn);
-  if (reg == REGISTER_UNDEFINED) {
-    reg = REGISTER_CLASS_last_register(rclass);
-  }
-  INT sz = (REGISTER_bit_size(rclass, reg) + 7) / 8;
-  return (TN_size(tn) + sz - 1)/ sz;
-}
-
-inline REGISTER_SET TN_registers (const TN *tn)
-{
-  REGISTER reg = TN_register(tn);
-  if (reg == REGISTER_UNDEFINED) {
-    return REGISTER_SET_EMPTY_SET;
-  } else {
-    return REGISTER_SET_Range (reg, reg + TN_nhardregs (tn) - 1);
-  }
-}
-
-extern INT TN_bitwidth (const TN *tn);
-#endif
 
 
 #ifdef KEY
@@ -733,15 +650,9 @@ inline BOOL TNs_Are_Equivalent(TN *tn1, TN *tn2)
 /* Build a TN that matches the register class */
 inline TN* Build_RCLASS_TN (ISA_REGISTER_CLASS rclass)
 {
-#ifdef TARG_ST
-  // Ensure size is > 0 !
-  return Gen_Register_TN (rclass, 
-	(REGISTER_bit_size(rclass, REGISTER_CLASS_last_register(rclass))+7)/8);
-#else
 	return Gen_Register_TN (rclass, 
 		(REGISTER_bit_size(rclass, 
 		 REGISTER_CLASS_last_register(rclass))/8) );
-#endif
 }
 
 inline TN *Build_TN_Like(TN *tn)
@@ -772,20 +683,6 @@ inline TN *Build_TN_Of_Mtype(TYPE_ID mtype)
 #ifdef TARG_MIPS
   if (mtype == MTYPE_V8F4) Set_TN_is_vector(tn);
 #endif
-#ifdef TARG_ST
-  // FdF 20050830: MTYPE_RegisterSize(mtype) returns 0 for MTYPE_B,
-  // while size is expected to be > 0.
-  INT size = MTYPE_RegisterSize(mtype);
-  if (size == 0) size = 1;
-
-  // [VCdV] For extension mtypes of type pixel, the corresponding
-  // register size is doubled compared to the mtype.
-  if (MTYPE_pixel_size(mtype) &&
-      (rc > ISA_REGISTER_CLASS_STATIC_MAX)) {
-    size*=2;
-  }
-  return Gen_Register_TN (rc, size);
-#endif
 
   return tn;
 }
@@ -815,18 +712,10 @@ inline BOOL TN_is_dedicated_class_and_reg( TN *tn, UINT16 class_n_reg )
 
 
 /* Only the following routines should be used to build constant TNs. */
-#ifdef TARG_ST
- extern	TN *Gen_Literal_TN ( INT64 val, INT size, INT is_signed = 1 );
-#else
 extern	TN *Gen_Literal_TN ( INT64 val, INT size );
-#endif
 // normally literals are hashed and reused; this creates unique TN
 
-#ifdef TARG_ST
-extern TN *Gen_Unique_Literal_TN (INT64 ivalue, INT size, INT is_signed = 1);
-#else
 extern TN *Gen_Unique_Literal_TN (INT64 ivalue, INT size);
-#endif
 extern TN *Gen_Enum_TN (ISA_ENUM_CLASS_VALUE ecv);
 
 extern  TN *Gen_Symbol_TN ( ST *s, INT64 offset, INT32 relocs);
@@ -867,37 +756,12 @@ extern BOOL Potential_Immediate_TN_Expr (
   struct tn *tn1,	/* The primary TN (constant) */
   INT32	disp		/* Displacement from value */
 );
-#ifdef TARG_ST
-inline const char * TN_RELOCS_Syntax (mUINT8 rc)
-{
-  return ISA_RELOC_Syntax(rc);
-}
-
-inline const char * TN_RELOCS_Name (mUINT8 rc)
-{
-  return ISA_RELOC_Name(rc);
-}
-#endif
 
 #include "tn_targ.h"
 /* Initialize machine specific dedicated TNs */
 extern void Init_Dedicated_TNs (void);
 
 extern BOOL TN_Use_Base_ST_For_Reloc (INT reloc, ST *st);
-#ifdef TARG_ST
-extern INT  TN_Relocs_In_Asm (TN *t, ST *st, vstring *buf, INT64 *val);
-extern BOOL TN_Reloc_has_parenthesis( INT32 reloc );
-#endif
-
-
-#ifdef TARG_ST
-//TB: Return the name of a register, given a tn and a subclass Useful
-//for register whose name depends on the register subclass. For
-//instance on the VX extension register 6 is V6 or D3 dependin on the
-//subclass
-extern const char *REGISTER_extended_name(TN* tn,
-					  ISA_REGISTER_SUBCLASS sc) ;
-extern BOOL TN_equiv(TN *tn1, TN *tn2);
-#endif
 
 #endif /* tn_INCLUDED */
+

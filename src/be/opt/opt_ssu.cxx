@@ -89,7 +89,7 @@
 #include "opt_etable.h"
 #include "opt_ssu.h"
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 static void
 // =====================================================================
 // x's dtyp and dsctyp fields are not initialized; initialize them with
@@ -135,7 +135,7 @@ EXP_WORKLST * SSU::SPRE_candidate(CODEREP *cr)
   // if LPRE has not been run or there is no load, home_sym will be 0;
   // create a new preg and set home_sym
   if (aux->Home_sym() == 0) {
-#if !defined( KEY) || defined(TARG_ST)
+#if !defined( KEY)
     Is_True(cr->Dtyp() != MTYPE_V && cr->Dtyp() != MTYPE_UNKNOWN,
 	    ("SSU::SPRE_candidate: dtyp is void or unknown"));
 #else
@@ -348,49 +348,7 @@ void SSU::Make_null_ssu_version_in_iphi_for_e_num_set(BB_NODE *iphibb,
     pos++;
   }
 }
-#ifdef TARG_ST
-// =====================================================================
-// iphibb is in the dominance frontier of usebb; set the appropriate operand
-// of the iphi of wk to NULL; if the iphi is not there, insert it.
-// =====================================================================
-void SSU::Make_null_ssu_version_in_iphi(EXP_WORKLST *wk, 
-				        BB_NODE *iphibb,
-				        BB_NODE *usebb)
-{
-  EXP_PHI *iphi;
-  EXP_PHI_LIST_ITER  iphi_iter;
-  if (! wk->Iphi_bbs()->MemberP(iphibb)) {
-    // if iphi not yet inserted, insert it
-    wk->Iphi_bbs()->Union1D(iphibb);
-    EXP_OCCURS *iphiocc = Etable()->New_phi_occurrence(wk, Mem_pool(), iphibb);
-    iphi = iphiocc->Exp_phi();
-    iphi->Set_reverse_phi();
-    iphibb->Iphi_list()->Append(iphi);
-    // this new iphi causes more iphis to be inserted
-    Insert_iphis_recursive(wk, iphibb);
-  }
-  else { // set iphi to the right iphi node 
-    FOR_ALL_NODE(iphi, iphi_iter, Init(iphibb->Iphi_list())) {
-      if (iphi->Result()->Spre_wk() == wk) 
-	break;
-    }
-  }
-  Is_True(iphi->Result()->Spre_wk() == wk,
-	  ("SSU::Make_null_ssu_version_in_iphi: cannot find iphi"));
 
-  // find the succ bb post-dominated by usebb (may be more than 1)
-  BB_NODE *bbsucc;
-  BB_LIST_ITER bb_list_iter;
-  INT32 pos = 0;
-  FOR_ALL_ELEM(bbsucc, bb_list_iter, Init(iphibb->Succ())) {
-    if (usebb->Postdominates(bbsucc)) {
-      // set the null_ssu_version flag in the corresponding iphi result
-      iphi->Set_null_ssu_version(pos);
-    }
-    pos++;
-  }
-}
-#endif
 // =====================================================================
 // set the DIFF_SSU_VERSION flag at either a real store or the iphi result
 // that is post-dominated by usebb.  If usebb does not post-dominates v's 
@@ -509,52 +467,6 @@ void SSU::Make_diff_ssu_version(EXP_WORKLST *wk,
     }
   }
   else { // there must be intervening iphi(s)
-#ifdef TARG_ST
-      // there must be intervening iphi(s)
-      BB_NODE *iphibb;
-      BB_NODE_SET_ITER bns_iter;
-      if (wk != NULL) {
-          // go through the post dominance frontiers of usebb
-          FOR_ALL_ELEM(iphibb, bns_iter, Init(usebb->Rcfg_dom_frontier())) 
-              Make_null_ssu_version_in_iphi(wk, iphibb, usebb);
-      }
-
-      if (only_itself || wk == NULL || v->Points_to(Opt_stab())->No_alias())
-          return;
-
-      AUX_ID st_idx = v->Aux_id();
-      AUX_STAB_ENTRY *aux= Opt_stab()->Aux_stab_entry(st_idx);
-
-      if (aux->Is_real_var()) {
-          AUX_ID cur_idx = aux->St_group();
-          // loop through the variables aliased with it
-          while (cur_idx && cur_idx != st_idx) {
-              aux = Opt_stab()->Aux_stab_entry(cur_idx);
-              wk2 = aux->Spre_node();
-              if (wk2 != NULL) {
-                  FOR_ALL_ELEM(iphibb, bns_iter, Init(usebb->Rcfg_dom_frontier())) 
-                      Make_null_ssu_version_in_iphi(wk2, iphibb, usebb);
-              }
-              cur_idx = aux->St_group();
-          }
-      }
-
-      if (aux->Is_virtual() && aux->Aux_id_list() != NULL) {
-          AUX_ID_LIST_ITER id_list_iter;
-          AUX_ID_NODE *id_node;
-          FOR_ALL_ELEM(id_node, id_list_iter, Init(aux->Aux_id_list())) {
-              if ( (IDX_32)(id_node->Aux_id()) != ILLEGAL_BP ) {
-                  aux = Opt_stab()->Aux_stab_entry(id_node->Aux_id());
-                  wk2 = aux->Spre_node();
-                  if (wk2 != NULL) {
-                      FOR_ALL_ELEM(iphibb, bns_iter, Init(usebb->Rcfg_dom_frontier())) 
-                          Make_null_ssu_version_in_iphi(wk2, iphibb, usebb);
-                  }
-              }
-          }
-      }
-
-#else
     if  (_make_diff_ssu_version_called_in_bb[usebb->Id()]->MemberP(v->Aux_id()))
       return; // already processed previously
 
@@ -616,7 +528,6 @@ void SSU::Make_diff_ssu_version(EXP_WORKLST *wk,
     // null_ssu_version
     FOR_ALL_ELEM(iphibb, bns_iter, Init(usebb->Rcfg_dom_frontier())) 
       Make_null_ssu_version_in_iphi_for_e_num_set(iphibb, usebb);
-#endif
   }
 }
 

@@ -53,6 +53,10 @@ path64_multiarch_link_multiarch_libraries( cc1plus42 spin)
 path64_install_multiarch(cc1plus42)
 path64_add_dependencies_from_multiarch( compiler-stage cc1plus42 )
 
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    PATH64_MULTIARCH_LINK_LIBRARIES(cc1plus42 winlib)
+ENDIF()
+
 
 # Use the "-lx" option to disable map file generation on Borland.
 # This avoids the "Fatal: Access violation.  Link terminated." error.

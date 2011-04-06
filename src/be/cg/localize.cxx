@@ -571,16 +571,11 @@ Find_Global_TNs ( RID *rid )
         tn = OP_opnd(op, opndnum);
         if (tn == NULL || TN_is_constant(tn)) continue;
         if (TN_is_dedicated(tn)) {
-#ifdef TARG_ST
-	  // Arthur: new implementation of OP_same_res
-	  if (OP_same_res(op,0) == opndnum) {
-#else
           if (OP_same_res(op) && tn == OP_result(op,0)) {
-#endif
             /* this use is just a copy of the def */
             continue;
 	  }
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	  /* Bug#931
 	     We cannot assume <op> has only one result. An extension
 	     of the previous checking.
@@ -589,11 +584,7 @@ Find_Global_TNs ( RID *rid )
 	    continue;
 	  }
 #endif
-#ifdef TARG_ST
-	  if (OP_copy(op) && tn == OP_result(op,OP_Copy_Result(op))) {
-#else
 	  if (OP_copy(op) && tn == OP_result(op,0)) {
-#endif
             /* this use is just a self-copy, will disappear */
             continue;
 	  }
@@ -735,21 +726,6 @@ Get_Local_TN_For_Global (TN *global_tn, TN_MAP spill_tns, BB *bb, BOOL reuse)
   return tninfo;
 }
 
-#ifdef TARG_ST
-/*
- * [TTh] If specified op is marked as belonging to the prologue, then
- * propagate this information to all operations of ops list.
- */
-static void
-Propagate_Prologue_Info(OPS *ops, OP *op) {
-  OP *walker;
-  if (OP_prologue(op)) {
-    FOR_ALL_OPS_OPs_FWD(ops, walker) {
-      Set_OP_prologue(walker);
-    }
-  }
-}
-#endif
 
 /*
  * Iterate over BBs and insert spills of any global TNs in the BB, 
@@ -785,62 +761,6 @@ Insert_Spills_Of_Globals (void)
        */
       continue;
     if ( ! BB_has_globals(bb)) continue;	/* ignore this bb */
-
-#ifdef TARG_ST
-    //
-    // Arthur: there is a bug in this logic. When 'tn' is
-    //         result of a load, spilling it gives it a
-    //         new 'home location'. Then, in the EBO, the
-    //         two locations - the original one and the
-    //         new one, live their separate lives: one 
-    //         belongs to MEM_DEFAULT_HASH and the other
-    //         to MEM_SPILL_HASH. This causes errors in
-    //         EBO (and perhaps somewhere else). It only
-    //         worked on IA64 by chance because instead
-    //         of spilling, the IA64 can use stacked
-    //         callee-saved registers, see 
-    //         Get_Local_TN_For_Global() function.
-    //         I will rename the load result TN, make a copy 
-    //         to the original GTN, and then handle the copy 
-    //         GTN as usual.
-    //
-    //         Same for stores
-    //
-    FOR_ALL_BB_OPs_FWD (bb, op) {
-
-      for (opndnum = 0; opndnum < OP_opnds(op); opndnum++) {
-        tn = OP_opnd(op, opndnum);
-        if (tn != NULL && TN_is_global_reg(tn)) {
-	  if (OP_store(op)) {
-	    OPS ops = OPS_EMPTY;
-	    TN *new_tn = Build_TN_Like(tn);
-	    Set_OP_opnd(op, opndnum, new_tn);
-	    Exp_COPY(new_tn, tn, &ops);
-#ifdef TARG_ST
-	    Propagate_Prologue_Info(&ops, op);
-#endif
-	    BB_Insert_Ops(OP_bb(op), op, &ops, TRUE);
-	  }
-	}
-      }
-
-      for (resnum = 0; resnum < OP_results(op); resnum++) {
-        tn = OP_result(op, resnum);
-        if (TN_is_global_reg(tn)) {
-	  if (OP_load(op)) {
-	    OPS ops = OPS_EMPTY;
-	    TN *new_tn = Build_TN_Like(tn);
-	    Set_OP_result(op, resnum, new_tn);
-	    Exp_COPY(tn, new_tn, &ops);
-#ifdef TARG_ST
-	    Propagate_Prologue_Info(&ops, op);
-#endif
-	    BB_Insert_Ops(OP_bb(op), op, &ops, FALSE);
-	  }
-	}
-      }
-    }
-#endif
 
     /* clear map and sets for each BB */
     spill_tns = TN_MAP_Create();
@@ -895,14 +815,8 @@ Insert_Spills_Of_Globals (void)
            * if we reused the local tn throughout the block.
            * We then only spill the last local tn.
            */
-#ifdef TARG_ST
-	  BOOL same_res = (OP_same_res(op,resnum) >= 0);
-	  tninfo = Get_Local_TN_For_Global (tn, spill_tns, bb, 
-                        same_res || OP_cond_def(op) /*reuse*/);
-#else
           tninfo = Get_Local_TN_For_Global (tn, spill_tns, bb, 
                                             OP_same_res(op) || OP_cond_def(op) /*reuse*/);
-#endif
           /* replace global tn with new local tn */
           Set_OP_result(op, resnum, tninfo->local_tn);
 
@@ -934,9 +848,6 @@ Insert_Spills_Of_Globals (void)
         OPS_Init(&spill_ops);
         CGSPILL_Store_To_Memory (tninfo->local_tn, spill_loc,
                                  &spill_ops, CGSPILL_LCL, bb);
-#ifdef TARG_ST
-	Propagate_Prologue_Info(&spill_ops, tninfo->last_def);
-#endif
         CGSPILL_Insert_Ops_After (bb, tninfo->last_def, &spill_ops);
       } 
       if (tninfo->exposed_use != NULL) {
@@ -945,9 +856,6 @@ Insert_Spills_Of_Globals (void)
         OPS_Init(&spill_ops);
         CGSPILL_Load_From_Memory (tninfo->exposed_use_tn, spill_loc,
                                   &spill_ops, CGSPILL_LCL, bb);
-#ifdef TARG_ST
-	Propagate_Prologue_Info(&spill_ops, tninfo->exposed_use);
-#endif
         CGSPILL_Insert_Ops_Before (bb, tninfo->exposed_use, &spill_ops);
       }
     }
@@ -979,14 +887,7 @@ Localize_Any_Global_TNs ( RID *rid )
 	 * Even multiple-bb leaf routines will need the save/restore
 	 * in case LRA allocates $31 to an inner block.
 	 */
-#ifdef TARG_ST
-	// [CL] accept single-bb routines: in case of noreturn
-	// functions, containing only a call, we might have a
-	// single-bb non-leaf routine
-	if (NULL != RA_TN) {
-#else
 	if (NULL != RA_TN && PU_BB_Count > 1) {
-#endif
 		Set_TN_is_global_reg(SAVE_tn(Return_Address_Reg));
 	}
 
@@ -1200,15 +1101,8 @@ Localize_or_Replace_Dedicated_TNs(void)
       for (INT i = 0; i < OP_results(op); i++) {
 	tn = OP_result(op,i);
 	if ( ! TN_is_dedicated( tn ) ) continue;
-#ifdef TARG_ST
-	/* Use of non-allocatable registers ($sp, $gp) is OK */
-	/* [SC]: GP may be allocatable */
-	if (!REGISTER_allocatable(TN_register_class(tn), TN_register(tn))
-	    || tn == GP_TN)
-#else
 	/* Use of non-allocatable registers ($sp, $gp) is OK */
 	if (!REGISTER_allocatable(TN_register_class(tn), TN_register(tn)))
-#endif
 	  continue;
 	if ( non_region_use_bb == bb )
 	  continue; // the use is already local
@@ -1217,12 +1111,6 @@ Localize_or_Replace_Dedicated_TNs(void)
 	  // in non_region_use_bb
 	  // We do have one exception:  OP_same_res operands, 
 	  // which have multiple defs and and use all of the same tn.
-#ifdef TARG_ST
-	  // Arthur: this is not clear to me at all.
-	  if ((OP_same_res(op,0) >= 0) &&
-	      (tn == prev_result) &&
-	      (OP_opnd(op,OP_opnds(op)-1) == prev_result)) {
-#else
 	  // There are two case:
 	  // ldl ded_tn, tn, zero_tn ; ldr ded_tn, tn, ded_tn
 	  // and copy ded_tn, tn ; select ded_tn, tn, tn, ded_tn
@@ -1233,7 +1121,6 @@ Localize_or_Replace_Dedicated_TNs(void)
 	  if (   OP_same_res(op) && (tn == prev_result)
 	      && (OP_opnd(op, idx) == prev_result)) 
           {
-#endif
 	    // re-use new_tn everywhere
 	    Set_OP_result( op, i, new_tn );
 	    Set_OP_opnd (op, OP_opnds(op)-1, new_tn);
@@ -1265,10 +1152,6 @@ Localize_or_Replace_Dedicated_TNs(void)
 	  }
 	}
 	else {
-#ifdef TARG_ST
-	  // Arthur: we should allow instructions that use dedicated
-	  //         registers (ISA -- implicitely or explicitely).
-#else
 	  #pragma mips_frequency_hint NEVER
 	  FmtAssert( FALSE,
 		    ("def of %s in BB:%d does not reach either CALL or "
@@ -1276,7 +1159,6 @@ Localize_or_Replace_Dedicated_TNs(void)
 		     REGISTER_name(TN_register_class(tn), TN_register(tn)),
 		     BB_id(bb)));
 	  /*NOTREACHED*/
-#endif
 	}
       }
     } // FOR_ALL_BB_OPs (bb, op)
@@ -1309,21 +1191,8 @@ Localize_or_Replace_Dedicated_TNs(void)
 	// use of $25 in a call OP is OK. We will localize the def if needed
 	if ( TN_is_ep_reg(tn) && OP_call(op) ) 
 	  continue;
-#ifdef TARG_ST
-	// [SC]: use of GP_TN is OK. Note: GP may be allocatable.
-	if (tn == GP_TN)
-	  continue;
-
-	// use of RA_TN in a call is OK. Localize the def ?
-	if (tn == RA_TN && OP_call(op))
-	  continue;
-
-	// Arthur: this is more generic now
-	if (OP_same_res(op,0) == opndnum)
-#else
 	// unaligned_loads have a copy of last def as an implicit use
 	if ( OP_same_res(op) && tn == OP_result(op,0) )
-#endif
 	  continue;
 #ifdef TARG_X8664
 	// Almost all x86 insns have the OP_same_res property even though they

@@ -77,9 +77,6 @@
 #include "opt_alias_interface.h"
 #include "cgtarget.h"
 #include "targ_proc_properties.h"
-#ifdef TARG_ST
-#include "lai_loader_api.h" /* needed for EXTENSION_Get_REGISTER_CLASS_Optimal_Alignment() */
-#endif
 #ifdef KEY
 static SPILL_SYM_INFO_MAP spill_sym_info_map;
 static void CGSPILL_Record_Spill (ST *spill_loc, OP *spill_op);
@@ -147,18 +144,8 @@ typedef struct local_spills {
 
 
 /* One for each kind of spill location: */
-#ifdef TARG_ST
-// Count of valid entries is specified by CGTARG_NUM_SPILL_TYPES,
-// that is no more constant (reconfigurability)
-static LOCAL_SPILLS lra_spills[MTYPE_MAX_LIMIT+1];
-static LOCAL_SPILLS swp_spills[MTYPE_MAX_LIMIT+1];
-// Data to emit stack alignment warning on per PU basis
-#define STACK_ALIGN_WARNING_NONE 0
-static INT stack_align_warning = STACK_ALIGN_WARNING_NONE;
-#else
 static LOCAL_SPILLS lra_float_spills, lra_int_spills;
 static LOCAL_SPILLS swp_float_spills, swp_int_spills;
-#endif
 #ifdef TARG_X8664
 static LOCAL_SPILLS lra_sse2_spills;
 static LOCAL_SPILLS lra_x87_spills;
@@ -287,44 +274,6 @@ LOCAL_SPILLS_Get_Spill_Location (LOCAL_SPILLS *slc, const char *root)
   }
   return result;
 }
-#ifdef TARG_ST
-/* =======================================================================
- *
- *  Spill_Type_Index
- *
- *  Return an index into the CGTARG_Spill_Type[] array for the appropriate
- *  spill location type for 'tn'.
- *
- * =======================================================================
- */
-INT
-Spill_Type_Index(TN *tn)
-{
-  INT i;
-  ISA_REGISTER_CLASS cl = TN_register_class(tn);
-  UINT16 sz = TN_size(tn);
-  UINT16 best_sz = 65535;
-  INT best = CGTARG_NUM_SPILL_TYPES;
-
-  for (i = 0; i < CGTARG_NUM_SPILL_TYPES; i++) {
-    // There is a 1-1 correspondence between entries in Spill_Mtype and
-    // Spill_Type, so we actually look for the appropriate entry in
-    // Spill_Mtype and return that.
-    CLASS_INDEX mt = CGTARG_Spill_Mtype[i];
-    if (Register_Class_For_Mtype(mt) == cl) {
-      UINT16 this_sz = MTYPE_byte_size(mt);
-      if (this_sz >= sz && this_sz < best_sz) {
-        best = i;
-        best_sz = this_sz;
-      }
-    }
-  }
-  if (best >= CGTARG_NUM_SPILL_TYPES) {
-    best = 0;
-  }
-  return best;
-}
-#endif
 
 
 /* =======================================================================
@@ -360,17 +309,10 @@ Check_Phase_And_PU(void)
 void
 CGSPILL_Reset_Local_Spills (void)
 {
-#ifdef TARG_ST
-  for (INT i = 0; i < CGTARG_NUM_SPILL_TYPES; i++) {
-    LOCAL_SPILLS_Reset(&lra_spills[i]);
-    LOCAL_SPILLS_Reset(&swp_spills[i]);
-  }
-#else
   LOCAL_SPILLS_Reset(&lra_float_spills);
   LOCAL_SPILLS_Reset(&lra_int_spills);
   LOCAL_SPILLS_Reset(&swp_float_spills);
   LOCAL_SPILLS_Reset(&swp_int_spills);
-#endif
 #ifdef TARG_X8664
   LOCAL_SPILLS_Reset(&lra_sse2_spills);
   LOCAL_SPILLS_Reset(&lra_x87_spills);
@@ -397,48 +339,6 @@ CGSPILL_Initialize_For_PU(void)
 {
   LOCAL_SPILLS *slc;
 
-#ifdef TARG_ST
-  // Spill type for extension registers (reconfigurability)
-  TYPE_ID mty;
-  for (mty = MTYPE_STATIC_LAST+1; mty <= MTYPE_LAST; ++mty) {
-    /* [vcdv] no spill on pixel types */
-    if (MTYPE_pixel_size(mty)==0) { 
-      TY_IDX ty = MTYPE_To_TY (mty);
-      if (!MTYPE_is_composed(mty)) {
-        // [SC] Adjust alignment for extension register spill types.
-        // [TTh] Use the highest spill alignment based on constraint
-        // of available instructions and current alignment of the stack.
-        if (DEFAULT_STACK_ALIGNMENT > TY_align(ty)) {
-          ISA_REGISTER_CLASS cl = EXTENSION_MTYPE_to_REGISTER_CLASS (mty);
-          UINT64 size = MTYPE_RegisterSize (mty);
-          INT optimal_align = EXTENSION_Get_REGISTER_CLASS_Optimal_Alignment (cl, size);
-          if (optimal_align > DEFAULT_STACK_ALIGNMENT) {
-            Set_TY_align (ty, DEFAULT_STACK_ALIGNMENT);
-          }
-          else if (optimal_align > TY_align (ty)) {
-            Set_TY_align (ty, optimal_align);
-          }
-        }
-      }
-      CGTARG_Spill_Type [CGTARG_NUM_SPILL_TYPES] = ty;
-      CGTARG_Spill_Mtype[CGTARG_NUM_SPILL_TYPES] = mty;
-      CGTARG_NUM_SPILL_TYPES++;
-    }
-  }
-  INT i;
-  for (i = 0; i < CGTARG_NUM_SPILL_TYPES; i++) {
-    slc = &lra_spills[i];
-    LOCAL_SPILLS_mem_type(slc) = CGTARG_Spill_Type[i];
-    LOCAL_SPILLS_free(slc) = NULL;
-    LOCAL_SPILLS_used(slc) = NULL;
-    slc = &swp_spills[i];
-    LOCAL_SPILLS_mem_type(slc) = CGTARG_Spill_Type[i];
-    LOCAL_SPILLS_free(slc) = NULL;
-    LOCAL_SPILLS_used(slc) = NULL;
-  }
-  // Reset alignment warning
-  stack_align_warning = STACK_ALIGN_WARNING_NONE;
-#else  
   slc = &lra_int_spills;
   LOCAL_SPILLS_mem_type(slc) = Spill_Int_Type;
   LOCAL_SPILLS_free(slc) = NULL;
@@ -455,7 +355,6 @@ CGSPILL_Initialize_For_PU(void)
   LOCAL_SPILLS_mem_type(slc) = Spill_Float_Type;
   LOCAL_SPILLS_free(slc) = NULL;
   LOCAL_SPILLS_used(slc) = NULL;
-#endif
 #ifdef TARG_X8664
   slc = &lra_sse2_spills;
   LOCAL_SPILLS_mem_type(slc) = Quad_Type;
@@ -584,27 +483,6 @@ CGSPILL_Get_TN_Spill_Location (TN *tn, CGSPILL_CLIENT client)
     }
     return (ST *)TN_home(tn);
   }
-#ifdef TARG_ST
-  {
-    // [TTh] Check if stack alignment is optimal for spill code generation.
-    // If not, register the optimal stack alignment for warning emission
-    // later on.
-    // Note: at this point of the compilation flow, it is too late to 
-    //       automatically update the stack alignment
-    INT idx = Spill_Type_Index(tn);
-    TYPE_ID mty = CGTARG_Spill_Mtype[idx];
-    if (MTYPE_is_dynamic(mty) && !MTYPE_is_composed(mty)) {
-      ISA_REGISTER_CLASS cl = EXTENSION_MTYPE_to_REGISTER_CLASS (mty);
-      UINT64 size = MTYPE_RegisterSize (mty);
-      INT optimal_align = EXTENSION_Get_REGISTER_CLASS_Optimal_Alignment (cl, size);
-      if (optimal_align > TY_align(CGTARG_Spill_Type[idx]) &&
-	  optimal_align > stack_align_warning) {
-	stack_align_warning = optimal_align;
-	ErrMsg(EC_Warn_Misaligned_Spill, Cur_PU_Name, MTYPE_name(mty), stack_align_warning);
-      }
-    }
-  }
-#endif
 
   switch (client) {
   case CGSPILL_GRA:
@@ -613,13 +491,9 @@ CGSPILL_Get_TN_Spill_Location (TN *tn, CGSPILL_CLIENT client)
     mem_location = TN_spill(tn);
     if (mem_location == NULL) {
       const char *root;
-#ifdef TARG_ST
-      TY_IDX mem_type = CGTARG_Spill_Type[Spill_Type_Index(tn)];
-#else
 
       TY_IDX mem_type = TN_is_float(tn) || TN_is_fcc_register(tn) ? 
 		        Spill_Float_Type : Spill_Int_Type;
-#endif
 #ifdef TARG_X8664
       /* bug#1741
 	 For -m32, the size of long double is 96-bit long.
@@ -652,23 +526,13 @@ CGSPILL_Get_TN_Spill_Location (TN *tn, CGSPILL_CLIENT client)
       }
       mem_location = Gen_Spill_Symbol (mem_type, root);
       Set_TN_spill(tn, mem_location);
-#ifdef TARG_ST
-      if (Trace_GRA_spill_placement) {
-	fprintf (TFile, "<gra> Creating %s for TN%d\n",
-		 ST_name (mem_location), TN_number (tn));
-      }
-#endif
     }
     break;
   case CGSPILL_LRA:
     mem_location = TN_spill (tn);
     if (mem_location == NULL) {
-#ifdef TARG_ST
-      slc = &lra_spills[Spill_Type_Index(tn)];
-#else
       slc = TN_is_float(tn) || TN_is_fcc_register(tn) ?
 	      &lra_float_spills : &lra_int_spills;
-#endif
 #ifdef TARG_X8664
 
       if (TN_register_class(tn) == ISA_REGISTER_CLASS_mmx) {	// MMX
@@ -687,21 +551,11 @@ CGSPILL_Get_TN_Spill_Location (TN *tn, CGSPILL_CLIENT client)
 
       mem_location = LOCAL_SPILLS_Get_Spill_Location (slc, SYM_ROOT_LRA);
       Set_TN_spill(tn, mem_location);
-#ifdef TARG_ST
-      if (Trace_GRA_spill_placement) {
-	fprintf (TFile, "<lra> Creating %s for TN%d\n",
-		 ST_name (mem_location), TN_number (tn));
-      }
-#endif
     }
     break;
   case CGSPILL_SWP:
     FmtAssert(!TN_is_fcc_register(tn), ("SWP attempted to spill an fcc register"));
-    #ifdef TARG_ST
-    slc = &swp_spills[Spill_Type_Index(tn)];
-#else
     slc = TN_is_float(tn) ? &swp_float_spills : &swp_int_spills;
-#endif
     mem_location = LOCAL_SPILLS_Get_Spill_Location (slc, SYM_ROOT_SWP);
     break;
   }
@@ -740,28 +594,6 @@ CGSPILL_Is_Spill_Location (ST *mem_loc)
 ST *
 CGSPILL_OP_Spill_Location (const OP *op)
 {
-#ifdef TARG_ST
-  // [CG]: Op must be marked as spill. The spill mem location is
-  // retrieved from the offset tn instead of the register tn (TN_spill()).
-  ST *mem_loc = NULL;
-  
-  if (!spill_ids) return NULL;
-  
-  // [CG]: op must be marked as spill
-  if (!OP_spill(op)) return NULL;
-  
-  // Get the spilled_tn
-  TN *spilled_tn = OP_spilled_tn(op);
-  FmtAssert(spilled_tn != NULL, ("OP does not have a OP_spilled_tn():  BB:%d, OP:%d\n", BB_id(OP_bb(op)), OP_map_idx(op)));
-  
-  if (TN_spill_is_valid(spilled_tn)) 
-    mem_loc = TN_spill(spilled_tn);
-  
-  if (mem_loc && !CGSPILL_Is_Spill_Location(mem_loc))
-    mem_loc = NULL;
-  
-  return mem_loc;
-#else
   ST *mem_loc = NULL;
 
   if (spill_ids) {
@@ -797,26 +629,7 @@ CGSPILL_OP_Spill_Location (const OP *op)
   }
 
   return mem_loc;
-#endif
 }
-#ifdef TARG_ST
-static float
-OPS_spill_estimate (const OPS *ops)
-{
-  float result = 0.0f;
-  OP *op;
-  FOR_ALL_OPS_OPs (ops, op) {
-	if (OP_load(op)) {
-		result += CGSPILL_DEFAULT_RESTORE_COST;
-	} else if (OP_store(op)) {
-		result += CGSPILL_DEFAULT_STORE_COST;
-	} else {
-		result += 1.0f;
-	}	
-  }
-  return result;
-}
-#endif
 
 
 /* ======================================================================
@@ -842,36 +655,16 @@ CGSPILL_Cost_Estimate (TN *tn, ST *mem_loc,
     TN  *result = tn;
 
     *store_cost = 0.0F;
-#ifdef TARG_ST
-    // Turn off object allocation done by expand. We do not want to allocate the object if it
-    // is not actually spilled.
-    Exp_Enable_Allocate_Object(FALSE);	
-#endif
 
     switch (WN_operator(home))
     {
     case OPR_LDID:
       {
-#ifdef TARG_ST
-	OPCODE opcode = WN_opcode(home);
-
-	Exp_Load (OPCODE_rtype(opcode), OPCODE_desc(opcode), tn, WN_st(home),
-		  WN_offset(home), &OPs, V_NONE);
-	*restore_cost = OPS_spill_estimate (&OPs);
-
-	OPS_Remove_All(&OPs);
-	Exp_Store (OPCODE_desc(opcode), tn, WN_st(home),
-		   WN_offset(home), &OPs, V_NONE);
-
-	*store_cost = OPS_spill_estimate (&OPs);
-
-#else
 	OPCODE opcode = WN_opcode(home);
 	Exp_Load (OPCODE_rtype(opcode), OPCODE_desc(opcode), tn, WN_st(home),
 		  WN_offset(home), &OPs, V_NONE);
 	*restore_cost = OPS_length(&OPs);
 	*store_cost = *restore_cost;
-#endif
       }
       break;
     case OPR_LDA:
@@ -893,10 +686,6 @@ CGSPILL_Cost_Estimate (TN *tn, ST *mem_loc,
       *restore_cost = OPS_length(&OPs) + .25F;
       break;
     }
-#ifdef TARG_ST
-    // Re-enable object allocation done by expand.
-    Exp_Enable_Allocate_Object(TRUE);	
-#endif
   }
   else
   {
@@ -953,14 +742,7 @@ CGSPILL_Load_From_Memory (TN *tn, ST *mem_loc, OPS *ops, CGSPILL_CLIENT client,
     opcode = WN_opcode (home);
     opr = OPCODE_operator(opcode);
     /* make sure st is allocated. */
-#ifdef TARG_ST
-    if (OPCODE_has_sym(opcode) && WN_st(home) != NULL &&
-        !(opr == OPR_CONST &&
-          MTYPE_is_float(WN_rtype(home)) &&
-          !CG_floating_const_in_memory)) {
-#else
     if (OPCODE_has_sym(opcode) && WN_st(home) != NULL) {
-#endif
       Allocate_Object (WN_st(home));
     }
     switch (opr) {
@@ -1032,13 +814,6 @@ CGSPILL_Load_From_Memory (TN *tn, ST *mem_loc, OPS *ops, CGSPILL_CLIENT client,
 	const_tn = Gen_Literal_TN ((INT32) WN_const_val(home), 4);
 #endif // TARG_X8664
 	break;
-#ifdef TARG_ST
-	// FdF 20090827: The EBO may have created rematerialization for
-	// boolean registers
-      case OPC_BINTCONST:
-	const_tn = Gen_Literal_TN (WN_const_val(home), 1);
-	break;
-#endif
       default:
 	ErrMsg (EC_Unimplemented,
 		"CGSPILL_Restore: cannot handle WHIRL node");
@@ -1059,42 +834,11 @@ CGSPILL_Load_From_Memory (TN *tn, ST *mem_loc, OPS *ops, CGSPILL_CLIENT client,
 
     /* Must actually load it from memory
      */
-#ifdef TARG_ST
-    VARIANT variant = V_NONE;
-    TY_IDX idx = ST_type(mem_loc);
-    INT required_alignment = MTYPE_alignment(TY_mtype(ST_type(mem_loc)));
-    if (TY_align(idx) > required_alignment) {
-      // [TTh] Create an alignment variant in case of 'overaligned'
-      // access, to benefit from this information at code selection.
-      Set_V_overalign(variant);
-      Set_V_alignment(variant, TY_align(idx));
-      Set_V_align_offset_unknown(variant); 
-    }
-    CGTARG_Load_From_Memory(tn, mem_loc, ops, variant);
-#else
     CGTARG_Load_From_Memory(tn, mem_loc, ops);
-#endif
 
-#ifdef TARG_ST
-    //
-    // Mark the actual load as a spill
-    //
-    OP *op = OPS_last(ops);
-    while(!OP_load(op)) op = OP_prev(op);
-    Set_OP_spill(op);
-    Set_OP_spilled_tn(op, tn);
-#endif
-
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     CGSPILL_Inc_Restore_Count(mem_loc);
 #endif
-#ifdef TARG_ST
-    // [CL] set the epilogue field if we are in an Exit_BB
-    if (bb && (BB_exit(bb))) {
-      Set_OP_epilogue(op);
-    }
-#endif
-
   }
   Max_Sdata_Elt_Size = max_sdata_save;
 }
@@ -1146,36 +890,12 @@ CGSPILL_Store_To_Memory (TN *src_tn, ST *mem_loc, OPS *ops,
     return;
   }
 
-#ifdef TARG_ST
-  VARIANT variant = V_NONE;
-  TY_IDX idx = ST_type(mem_loc);
-  INT required_alignment = MTYPE_alignment(TY_mtype(ST_type(mem_loc)));
-  if (TY_align(idx) > required_alignment) {
-      // [TTh] Create an alignment variant in case of 'overaligned'
-      // access, to benefit from this information at code selection.
-      Set_V_overalign(variant);
-      Set_V_alignment(variant, TY_align(idx));
-      Set_V_align_offset_unknown(variant); 
-  }
-  CGTARG_Store_To_Memory(src_tn, mem_loc, ops, variant);
-#else
   CGTARG_Store_To_Memory(src_tn, mem_loc, ops);
-#endif
   //
   // Mark the actual store as a spill
   //
   OP *op = OPS_last(ops);
   while(!OP_store(op)) op = OP_prev(op);
-#ifdef TARG_ST
-  Set_OP_spill(op);
-  Set_OP_spilled_tn(op, src_tn);
-#endif
-#ifdef TARG_ST
-  // [CL] set the prologue field if we are in an Entry_BB
-  if (bb && (BB_entry(bb))) {
-    Set_OP_prologue(op);
-  }
-#endif
 
 
   Max_Sdata_Elt_Size = max_sdata_save;
@@ -1210,11 +930,7 @@ static OP* Find_Last_Copy(BB *bb)
     OP *tmp_op;
     for (tmp_op = OP_next(last_copy_op); tmp_op;
 	 tmp_op = OP_next(tmp_op)) {
-#ifdef TARG_ST
-      if (OP_copy(tmp_op) && TN_is_save_reg(OP_result(tmp_op,OP_Copy_Result(tmp_op)))) {
-#else
       if (OP_copy(tmp_op) && TN_is_save_reg(OP_result(tmp_op,0))) {
-#endif
 	last_copy_op = tmp_op;
       }
     }
@@ -1238,11 +954,7 @@ static OP* Find_First_Copy(BB *bb)
     OP *tmp_op;
     for (tmp_op = OP_prev(first_copy_op); tmp_op;
 	 tmp_op = OP_prev(tmp_op)) {
-#ifdef TARG_ST
-      if (OP_copy(tmp_op) && TN_is_save_reg(OP_opnd(tmp_op, OP_Copy_Operand(tmp_op))))
-#else
       if (OP_copy(tmp_op) && TN_is_save_reg(OP_opnd(tmp_op, OP_COPY_OPND))) 
-#endif
       {
 	first_copy_op = tmp_op;
       }
@@ -1333,13 +1045,6 @@ CGSPILL_Insert_Ops_Before (BB *bb, OP *point, OPS *ops)
      * change the point to be the SP adjustment OP.
      */
     OP *first_copy = Find_First_Copy(bb);
-#ifdef TARG_ST
-    // FdF 20041206: Basic blocks marked EXIT&CALL (tail call or
-    // noreturn call) may not have an spadjust.
-    if (first_copy == NULL)
-      FmtAssert (BB_call(bb), ("Exit BB with no sp_adj_op"));
-    else
-#endif
     if (OP_Follows(point, first_copy)) point = first_copy;
   }
   else {
@@ -1366,18 +1071,10 @@ static BOOL Is_Aliased_With_Home(TN *tn, OP* op)
 {
   if (OP_store(op) || OP_load(op)) {
     WN *wn = Get_WN_From_Memory_OP(op);
-#ifdef TARG_ST
-      // [CG] Treat black_hole
-    if (!OP_black_hole(op) && wn != NULL) {
-      ALIAS_RESULT alias = Aliased(Alias_Manager, TN_home(tn), wn);
-      return alias == SAME_LOCATION;
-    }
-#else
     if (wn != NULL) {
       ALIAS_RESULT alias = Aliased(Alias_Manager, TN_home(tn), wn);
       return alias == SAME_LOCATION;
     }
-#endif
   }
   return FALSE;
 }
@@ -1612,13 +1309,6 @@ CGSPILL_Insert_Ops_After (BB *bb, OP *point, OPS *ops)
 #if Is_True_On
   /* Assert that if BB_exit(bb), then point is not after SP adjust. */
   if (BB_exit(bb)) {
-#ifdef TARG_ST
-    // FdF 20041206: Basic blocks marked EXIT&CALL (tail call or
-    // noreturn call) may not have an spadjust.
-    if (BB_exit_sp_adj_op(bb) == NULL)
-      FmtAssert (BB_call(bb), ("Exit BB with no sp_adj_op"));
-    else
-#endif
     FmtAssert (OP_Follows(BB_exit_sp_adj_op(bb), point),
 	       ("cannot insert spill ops after SP adjust"));
   }
@@ -1674,14 +1364,6 @@ found_def:
 	      TN_number(tn), BB_id(bb));
     }
   } else if (op == BB_last_op(bb)) {
-#ifdef TARG_STxP70
-    // FdF 20060706: This situation is not handled, where a branch
-    // instruction defines a TN that is spilled. This can occur on the
-    // J{R,A}GTUDEC instructions. In this case, we must put the store
-    // instructions in each successors where the TN is live-in.
-    if (OP_xfer(op))
-      CGTARG_Spill_on_Xfer(tn, bb, ops);
-#endif
     //
     // we do some fancy footwork if we're spilling the delay slot
     // instruction.  let CGSPILL_Append_Ops handle it.
@@ -1817,19 +1499,10 @@ void CGSPILL_Attach_Lda_Remat(TN *tn, TYPE_ID typ, INT64 offset, ST *st)
  * See interface description
  *
  * ======================================================================*/
-#ifdef TARG_ST
-void CGSPILL_Attach_Intconst_Remat(TN *tn, TYPE_ID rtype, INT64 val)
-#else
 void CGSPILL_Attach_Intconst_Remat(TN *tn, INT64 val)
-#endif
 {
   if (CGSPILL_Rematerialize_Constants) {
-#ifdef TARG_ST
-    OPCODE opc = OPCODE_make_op(OPR_INTCONST, rtype, MTYPE_V);
-    WN *wn = WN_CreateIntconst(opc, val);
-#else
     WN *wn = WN_CreateIntconst(OPC_I8INTCONST, val);
-#endif
     if (wn) {
       Set_TN_is_rematerializable(tn);
       Set_TN_home(tn, wn);
@@ -1872,20 +1545,6 @@ void CGSPILL_Attach_Const_Remat(TN *tn, TYPE_ID typ, ST *st)
   }
 }
 
-#ifdef TARG_ST
-/* =======================================================================
- *
- *  CGSPILL_Gen_Spill_Symbol
- *
- *  See interface description.
- * =======================================================================
- */
-ST *
-CGSPILL_Gen_Spill_Symbol (TY_IDX ty, const char *root)
-{
-  return Gen_Spill_Symbol(ty, root);
-}
-#endif
 
 #ifdef KEY
 // Record that SPILL_OP is associated with SPILL_LOC.

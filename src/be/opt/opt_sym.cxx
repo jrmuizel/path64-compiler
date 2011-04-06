@@ -186,13 +186,9 @@ OPT_STAB::OPT_STAB(MEM_POOL *pool) : aux_stab(pool)
 
   // The following are initialized in Create:
   _has_exc_handler = FALSE;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   _has_nonlocal_goto_target = FALSE;
   _pu_has_trampoline = FALSE;
-#endif
-#ifdef TARG_ST
-  // TB
-  _in_eh = FALSE;
 #endif
 
 }
@@ -252,7 +248,7 @@ Collect_addr_passed(WN *wn)
   // occur under IO_ITEM nodes.
   //
   if (OPERATOR_is_call(opr)
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       || opr == OPR_PURE_CALL_OP
 #endif
       )
@@ -465,7 +461,7 @@ OPT_STAB::Count_syms(WN *wn)
 
   if (WN_operator(wn) == OPR_REGION && REGION_is_EH(wn))
     _has_exc_handler = TRUE;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   if (PU_has_nonlocal_goto_label(Get_Current_PU()))
     _has_nonlocal_goto_target = TRUE;
 #endif
@@ -601,7 +597,7 @@ static UINT64 Desc_type_byte_size(const WN* wn) {
   return TY_size(ty_idx);
 }
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 // Input wn is an LDA, if it has correct field_id information, then
 // return the size of the field, else return 0. Set second argument
 // appropriately.
@@ -676,14 +672,14 @@ OPT_STAB::Enter_symbol(OPERATOR opr, ST* st, INT64 ofst,
   BOOL no_register = FALSE;
   BOOL dmod = FALSE;
   UINT field_id = 0;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   BOOL is_bit_field = FALSE;
 #endif
 
   switch (opr) {
   case OPR_LDA:
     is_virtual = TRUE;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     byte_size = Get_byte_size (st, wn, field_id);
 #else
     byte_size = (ST_class(st) == CLASS_VAR) ? TY_size(ST_type(st)) : 0;
@@ -705,7 +701,7 @@ OPT_STAB::Enter_symbol(OPERATOR opr, ST* st, INT64 ofst,
       bit_ofst = FLD_bofst(fld);
       wn_object_ty = FLD_type(fld);
       byte_size = TY_size(wn_object_ty);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       is_bit_field = TRUE;
 #else
       field_id = WN_field_id(wn);
@@ -725,7 +721,7 @@ OPT_STAB::Enter_symbol(OPERATOR opr, ST* st, INT64 ofst,
     mclass = Get_mtype_class(mtype);
     is_scalar = TRUE;
     stype = VT_NO_LDA_SCALAR;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     if (opr == OPR_LDID)
       field_id = WN_field_id(wn);
 #endif
@@ -745,7 +741,7 @@ OPT_STAB::Enter_symbol(OPERATOR opr, ST* st, INT64 ofst,
       bit_ofst = FLD_bofst(fld);
       wn_object_ty = FLD_type(fld);
       byte_size = TY_size(wn_object_ty);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
       is_bit_field = TRUE;
 #else
       field_id = WN_field_id(wn);
@@ -767,7 +763,7 @@ OPT_STAB::Enter_symbol(OPERATOR opr, ST* st, INT64 ofst,
     dmod = TRUE;
     is_scalar = TRUE;
     stype = VT_NO_LDA_SCALAR;
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     if (opr == OPR_STID)
       field_id = WN_field_id(wn);
 #endif
@@ -800,15 +796,8 @@ OPT_STAB::Enter_symbol(OPERATOR opr, ST* st, INT64 ofst,
     switch (aux_stab[idx].Stype()) {
     case VT_NO_LDA_SCALAR:
     case VT_LDA_SCALAR:
-#ifdef TARG_ST
-      kind_match = ((is_scalar && 
-		     ((MTYPE_is_dynamic(mtype) && aux_stab[idx].Mtype() == mtype) ||
-		      (!MTYPE_is_dynamic(mtype) && aux_stab[idx].Mclass() == mclass)))
-		    || is_virtual);
-#else
       kind_match = ((is_scalar && aux_stab[idx].Mclass() == mclass)
 		    || is_virtual);
-#endif
       break;
     case VT_LDA_VSYM:
     case VT_UNIQUE_VSYM:
@@ -825,13 +814,13 @@ OPT_STAB::Enter_symbol(OPERATOR opr, ST* st, INT64 ofst,
 
     if (kind_match &&
 	aux_stab[idx].Byte_size() == byte_size &&
-#if defined( KEY) && !defined(TARG_ST) // bug 12321
+#if defined( KEY) // bug 12321
 	aux_stab[idx].St() == st &&
 #endif
 	aux_stab[idx].St_ofst() == ofst &&
 	aux_stab[idx].Bit_size() == bit_size &&
 	aux_stab[idx].Bit_ofst() == bit_ofst &&
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	(!is_bit_field || (aux_stab[idx].Field_id() == field_id))
 #else
 	aux_stab[idx].Field_id() == field_id
@@ -841,7 +830,7 @@ OPT_STAB::Enter_symbol(OPERATOR opr, ST* st, INT64 ofst,
       if ( is_volatile && ! aux_stab[idx].Is_volatile() ) {
 	aux_stab[idx].Set_volatile();
       }
-#if defined( KEY) && !defined(TARG_ST) // bug 5401 and 5267
+#if defined( KEY) // bug 5401 and 5267
       else if (in_parallel_region && OPERATOR_is_scalar_store(opr) &&
 	       ST_sclass(st) != SCLASS_REG)
 	aux_stab[idx].Set_mp_no_dse();
@@ -890,11 +879,6 @@ OPT_STAB::Enter_symbol(OPERATOR opr, ST* st, INT64 ofst,
   AUX_STAB_ENTRY *sym = Aux_stab_entry(idx);
 
   sym->Set_stype(stype);
-#ifdef TARG_ST
-  // TB: add support for automatic variables defined in try block and
-  // used in catck block
-  sym->Set_belongs_to_eh(_in_eh);
-#endif
   sym->Clear_flags();
   sym->Set_st(st);
   sym->Set_st_ofst(ofst);
@@ -907,7 +891,7 @@ OPT_STAB::Enter_symbol(OPERATOR opr, ST* st, INT64 ofst,
   sym->Set_field_id(field_id);
   sym->Set_mclass(0);
   sym->Set_mtype(MTYPE_UNKNOWN);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   // bug 13670: don't leave the field uninitialized
   sym->Set_value_size(0);
   sym->Set_spre_node(NULL);
@@ -935,7 +919,7 @@ OPT_STAB::Enter_symbol(OPERATOR opr, ST* st, INT64 ofst,
   if (dmod) sym->Set_dmod();
   if ( is_volatile )   sym->Set_volatile();
 
-#if defined( KEY) && !defined(TARG_ST) // bug 5401 and 5267
+#if defined( KEY) // bug 5401 and 5267
   if (in_parallel_region && OPERATOR_is_scalar_store(opr) && 
       ST_sclass(st) != SCLASS_REG)
     sym->Set_mp_no_dse();
@@ -955,7 +939,7 @@ OPT_STAB::Enter_symbol(OPERATOR opr, ST* st, INT64 ofst,
   Expand_ST_into_base_and_ofst(st, ofst, &tmpbase, &tmpofst);
   sym->Set_base(tmpbase);
   sym->Set_base_byte_ofst(tmpofst);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   sym->Set_base_kind(BASE_IS_FIXED);
 #endif
 
@@ -995,12 +979,7 @@ OPT_STAB::Enter_symbol(OPERATOR opr, ST* st, INT64 ofst,
 
 
 AUX_ID
-OPT_STAB::Enter_ded_preg(ST *st, INT64 ofst, TY_IDX ty, INT32 mclass
-#ifdef TARG_ST
-			 // Reconfigurability: dynamic mtype cannot be retrieved from mclass
-			 , TYPE_ID mtype
-#endif
-                        )
+OPT_STAB::Enter_ded_preg(ST *st, INT64 ofst, TY_IDX ty, INT32 mclass)
 {
   ST_CHAIN_INFO *st_chain_info = st_chain_map->Lookup(ST_st_idx(st));
   AUX_ID         idx;
@@ -1048,12 +1027,8 @@ OPT_STAB::Enter_ded_preg(ST *st, INT64 ofst, TY_IDX ty, INT32 mclass
 
   sym->Set_stype(VT_NO_LDA_SCALAR);
   sym->Set_mclass(mclass);
-#ifdef TARG_ST
-  sym->Set_mtype(mtype);
-#else
   sym->Set_mtype(MTYPE_UNKNOWN);
-#endif
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   // bug 13670
   sym->Set_value_size(0);
   sym->Set_spre_node(NULL);
@@ -1095,7 +1070,7 @@ OPT_STAB::Create_vsym(EXPR_KIND k)
   vsym->Clear_flags();
   vsym->Set_mclass(0);
   vsym->Set_mtype(MTYPE_UNKNOWN);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   // bug 13670
   vsym->Set_value_size(0);
   vsym->Set_spre_node(NULL);
@@ -1119,7 +1094,7 @@ AUX_ID
 OPT_STAB::Create_preg(MTYPE preg_ty, const char *name, WN *home_wn)
 {
   ST *st;
-#if defined( KEY) && !defined(TARG_ST) // bug 1523: preopt in ipl cannot use pregs due to exception handling
+#if defined( KEY) // bug 1523: preopt in ipl cannot use pregs due to exception handling
   if ((Has_exc_handler() || Has_nonlocal_goto_target()) && 
       Phase() == PREOPT_IPA0_PHASE)
     st = Gen_Temp_Symbol(MTYPE_To_TY(preg_ty), name);
@@ -1143,7 +1118,7 @@ OPT_STAB::Create_preg(MTYPE preg_ty, const char *name, WN *home_wn)
   sym->Set_mclass(Get_mtype_class(preg_ty));
   sym->Set_mtype(preg_ty);
   sym->Set_st(st);
-#if defined( KEY) && !defined(TARG_ST) // due to about change, st is no longer always preg
+#if defined( KEY) // due to about change, st is no longer always preg
   if (ST_class(st) == CLASS_PREG)
     sym->Set_st_ofst(Alloc_preg(preg_ty,name,home_wn));
   else
@@ -1157,7 +1132,7 @@ OPT_STAB::Create_preg(MTYPE preg_ty, const char *name, WN *home_wn)
   sym->Set_synonym((AUX_ID) 0);
   sym->Set_home_sym((AUX_ID) 0);
   sym->Set_zero_cr(NULL);
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
   // bug 13670
   sym->Set_value_size(0);
   sym->Set_spre_node(NULL);
@@ -1250,7 +1225,7 @@ AUX_STAB_ENTRY::Change_to_new_preg(OPT_STAB *opt_stab, CODEMAP *htable)
 	  else if (!Only_Unsigned_64_Bit_Ops && 
 		   was_formal &&
 		   (Language == LANG_CPLUS || Language == LANG_ANSI_C) &&
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 		   opt_stab->Is_prototyped_func() &&
 #endif
 		   MTYPE_is_signed(dsctyp) == MTYPE_is_signed(rhs_type) &&
@@ -1266,7 +1241,6 @@ AUX_STAB_ENTRY::Change_to_new_preg(OPT_STAB *opt_stab, CODEMAP *htable)
       case NOT_AT_ALL:
 	break;
       case NEED_CVT:
-#ifndef TARG_ST
 	if ( (opc == OPC_U4U8CVT || opc == OPC_U4I8CVT) && 
 	    cr->Dtyp() == MTYPE_U8 ) {
 	  opc = OPC_U8CVTL;
@@ -1278,7 +1252,6 @@ AUX_STAB_ENTRY::Change_to_new_preg(OPT_STAB *opt_stab, CODEMAP *htable)
 //	    rhs = Set_isop_flag(ISOP_FOLD_EXPR_VISITED);
 	  }
 	} else 
-#endif
         {
 	  tmpcr->Init_expr(opc,rhs);
 	  rhs = ftmp.Fold_Expr(tmpcr);
@@ -1541,61 +1514,6 @@ OPT_STAB::Convert_ST_to_AUX(WN *wn, WN *block_wn)
     if (opr == OPR_CALL)
       call_st = WN_st(wn);
 #endif
-#ifdef TARG_ST
-    //
-    // Arthur:
-    // 
-    //    1. There may be more than 2 regs for returning, eg. 8 on
-    //       st200
-    //    2. The ABI may be such that it requires knowing the real
-    //       TY_IDX of this call, eg. struct are passed by value
-    //       but arrays are not, etc. Is MTYPE_M valid only for
-    //       structs ? If not, we need to go look for the real
-    //       function type.
-    //
-    for (i = 0; i < MAX_NUMBER_OF_REGISTERS_FOR_RETURN; i++) {
-      ty[i] = MTYPE_V; // initialize it
-    }
-
-    TY_IDX ret_ty;
-    if (WN_operator(wn) == OPR_ICALL) 
-      ret_ty = TY_ret_type(WN_ty(wn));
-    else if (WN_operator(wn) == OPR_INTRINSIC_CALL) {
-      ret_ty = MTYPE_To_TY(WN_rtype(wn)); 
-    }
-    else {
-      ST_IDX func_stidx = WN_st_idx(wn);
-      PU_IDX puidx = ST_pu(St_Table[func_stidx]);
-#if 0
-      fprintf(TFile,"  CALL for %s\n", ST_name(St_Table[func_stidx]));
-#endif
-      ret_ty = TY_ret_type(PU_prototype(Pu_Table[puidx]));
-    }
-
-    // [YJ]: reconfigurability. For dynamic mtype,
-    // lowering has not been done yet, and we rely on
-    // 
-    if(!(WN_operator(wn) == OPR_INTRINSIC_CALL && MTYPE_is_dynamic(rtype))) {
-      RETURN_INFO return_info = Get_Return_Info (
-				  ret_ty,
-				  Allow_sim_type() ? Use_Simulated
-						   : Complex_Not_Simulated);
-      if (RETURN_INFO_count(return_info)
-	  <= MAX_NUMBER_OF_REGISTERS_FOR_RETURN) 
-      {
-	for (i = 0; i < RETURN_INFO_count(return_info); i++) {
-	  ty[i] = RETURN_INFO_mtype (return_info, i);
-	  retreg[i] = RETURN_INFO_preg (return_info, i);
-	}
-      }
-
-    else {
-	Fail_FmtAssertion ("OPT_STAB::Convert_ST_to_AUX: more than %d return"
-			   " registers", MAX_NUMBER_OF_REGISTERS_FOR_RETURN);
-    }
-   }
-
-#else
 
     ty[0] = MTYPE_V; // initialize it
     ty[1] = MTYPE_V; // initialize it
@@ -1632,62 +1550,13 @@ OPT_STAB::Convert_ST_to_AUX(WN *wn, WN *block_wn)
 			 : Complex_Not_Simulated), &ty[0], &ty[1]);
       Get_Return_Pregs(ty[0], ty[1], &retreg[0], &retreg[1]);
     }
-#endif
 
     if (ty[0] != MTYPE_V) {
-#ifdef TARG_ST
-    if(!(WN_operator(wn) == OPR_INTRINSIC_CALL && MTYPE_is_dynamic(rtype))) {
-      Enter_ded_preg(MTYPE_To_Dedicated_PREG(rtype), 
-		     retreg[0],
-		     MTYPE_To_TY(rtype),
-		     Get_mtype_class(ty[0]),
-		     ty[0]);
-    } else {
-      // TODO: improve. We shouldn't rely on -1 value.
-      // Instead of that, we should research in the next
-      // stores statements, the next LDID with a negative PREG.
-      Enter_ded_preg(MTYPE_To_Dedicated_PREG(rtype),
-                     (INT64)-1,
-		     MTYPE_To_TY(rtype),
-	             Get_mtype_class(rtype),
-	             rtype
-                    );
-    }
-      
-#else
       Enter_ded_preg(MTYPE_To_Dedicated_PREG(rtype), 
 		     retreg[0],
 		     MTYPE_To_TY(rtype),
 		     Get_mtype_class(ty[0]));
-#endif
       
-#ifdef TARG_ST
-      for (i = 0; i < MAX_NUMBER_OF_REGISTERS_FOR_RETURN; i++) {
-	ty[i] = MTYPE_V; // initialize it
-      }
-
-      // Similarly as previously, we don't manage here dynamic mtypes.
-      if(!(WN_operator(wn) == OPR_INTRINSIC_CALL && MTYPE_is_dynamic(desc))) {
-       RETURN_INFO return_info = Get_Return_Info (
-				    MTYPE_To_TY(desc),
-				    Allow_sim_type() ? Use_Simulated
-						     : Complex_Not_Simulated);
-
-       if (RETURN_INFO_count(return_info)
-	    <= MAX_NUMBER_OF_REGISTERS_FOR_RETURN) 
-        {
-	  for (i = 0; i < RETURN_INFO_count(return_info); i++) {
-	    ty[i] = RETURN_INFO_mtype (return_info, i);
-	    retreg[i] = RETURN_INFO_preg (return_info, i);
-	  }
-        }
-  
-      else {
-	Fail_FmtAssertion ("OPT_STAB::Convert_ST_to_AUX: more than %d return"
-			     " registers", MAX_NUMBER_OF_REGISTERS_FOR_RETURN);
-       }
-     }
-#else
 
       ty[0] = MTYPE_V; // initialize it
       ty[1] = MTYPE_V; // initialize it
@@ -1724,30 +1593,12 @@ OPT_STAB::Convert_ST_to_AUX(WN *wn, WN *block_wn)
 			   : Complex_Not_Simulated), &ty[0], &ty[1]);
         Get_Return_Pregs(ty[0], ty[1], &retreg[0], &retreg[1]);
       }
-#endif
+
       if (ty[0] != MTYPE_V) {
-#ifdef TARG_ST
-      if(!(WN_operator(wn) == OPR_INTRINSIC_CALL && MTYPE_is_dynamic(desc))) {
-	Enter_ded_preg(MTYPE_To_Dedicated_PREG(desc),
-		       retreg[0], 
-		       MTYPE_To_TY(desc),
-		       Get_mtype_class(ty[0]),
-		       ty[0]);
-       }
-       else {
-        Enter_ded_preg(MTYPE_To_Dedicated_PREG(desc), 
-                       (INT64)-1,
-		       MTYPE_To_TY(desc),
-	               Get_mtype_class(desc),
-	               desc
-                      );
-       }
-#else
 	Enter_ded_preg(MTYPE_To_Dedicated_PREG(desc),
 		       retreg[0], 
 		       MTYPE_To_TY(desc),
 		       Get_mtype_class(ty[0]));
-#endif
       }
     }
   }
@@ -1787,32 +1638,18 @@ OPT_STAB::Convert_ST_to_AUX(WN *wn, WN *block_wn)
     }
 
     else {
-#ifdef TARG_ST
-      FmtAssert(FALSE,("Get_Return_Mtypes/Pregs shouldn't be called"));
-#else
       Get_Return_Mtypes(ret_ty,
 			(Allow_sim_type() ? Use_Simulated
 			 : Complex_Not_Simulated), &ty[0], &ty[1]);
       Get_Return_Pregs(ty[0], ty[1], &retreg[0], &retreg[1]);
-#endif
     }
     if (ty[0] != MTYPE_V) {
       // exit mu list contains dedicated registers.
-#ifdef TARG_ST
-      idx = Enter_ded_preg(MTYPE_To_Dedicated_PREG(ty[0]), retreg[0],
-			   MTYPE_To_TY(ty[0]), Get_mtype_class(ty[0]), ty[0]);
-#else
       idx = Enter_ded_preg(MTYPE_To_Dedicated_PREG(ty[0]), retreg[0],
 			   MTYPE_To_TY(ty[0]), Get_mtype_class(ty[0]));
-#endif
       if (ty[1] != MTYPE_V) {
-#ifdef TARG_ST
-	idx = Enter_ded_preg(MTYPE_To_Dedicated_PREG(ty[1]), retreg[1], 
-			     MTYPE_To_TY(ty[1]), Get_mtype_class(ty[1]), ty[1]);
-#else
 	idx = Enter_ded_preg(MTYPE_To_Dedicated_PREG(ty[1]), retreg[1], 
 			     MTYPE_To_TY(ty[1]), Get_mtype_class(ty[1]));
-#endif
       }
     }
   }
@@ -1909,19 +1746,6 @@ OPT_STAB::Convert_ST_to_AUX(WN *wn, WN *block_wn)
     }
   }
 
-#ifdef TARG_ST
-  // TB: desactivate unitialized warning when a function has
-  // exception code.  Wopt is not able to analyze dependencies between
-  // block.  
-  if (opr == OPR_REGION || opr == OPR_FUNC_ENTRY) {
-    if (PU_has_exc_scopes(Get_Current_PU())) {
-      _in_eh = TRUE;
-    }
-    else {
-      _in_eh = FALSE;
-    }
-  }
-#endif
   if (OPERATOR_has_aux(opr)) {
     ST    *st  = WN_st(wn);
     idx = Enter_symbol(WN_operator(wn), st, WN_offset(wn), WN_object_ty(wn), 
@@ -1941,7 +1765,7 @@ OPT_STAB::Convert_ST_to_AUX(WN *wn, WN *block_wn)
 		"processed RGN %d, %s\n", RID_id(rid),RID_level_str(rid));
       return;
     }
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
     BOOL has_parallel_pragma = FALSE;
     BOOL in_parallel_region_save = FALSE;
     if (Phase() != MAINOPT_PHASE && PU_has_mp(Get_Current_PU()) && 
@@ -1969,18 +1793,10 @@ OPT_STAB::Convert_ST_to_AUX(WN *wn, WN *block_wn)
     while (prag != NULL) {
       FmtAssert(WN_pragma(prag) == WN_PRAGMA_ASM_CONSTRAINT,
 		("Unknown pragma type for ASM output constraint"));
-#ifdef TARG_ST
-      AUX_ID idx = Enter_ded_preg(WN_st(prag),
-				  WN_pragma_asm_copyout_preg(prag),
-				  ST_type(WN_st(prag)),
-				  Get_mtype_class(TY_mtype(ST_type(WN_st(prag)))),
-				  TY_mtype(ST_type(WN_st(prag))));
-#else
       AUX_ID idx = Enter_ded_preg(WN_st(prag),
 				  WN_pragma_asm_copyout_preg(prag),
 				  ST_type(WN_st(prag)),
 				  Get_mtype_class(TY_mtype(ST_type(WN_st(prag)))));
-#endif
       WN_set_aux(prag, idx);
       prag = WN_next(prag);
     }
@@ -2229,7 +2045,7 @@ OPT_STAB::Make_st_group(void)
       // Remove virtual variables
       INT32 count_var = 0;
       for (INT32 j = 0; j < count; j++) {
-#if !defined( KEY) || defined(TARG_ST) // cannot remove virtual variables because Lower_to_extract_compose 
+#if !defined( KEY) // cannot remove virtual variables because Lower_to_extract_compose 
 	    // can introduce a use of the virtual var as real var
 	if (sorted[j]->Is_real_var())
 #endif
@@ -2470,7 +2286,7 @@ void OPT_STAB::Update_attr_cache(AUX_ID idx, ST *st, POINTS_TO *pt,
       Set_external(idx);
     if (pt->Formal() && IS_FORTRAN && !ST_is_value_parm(st))
       Set_ref_formal(idx);
-#if defined( KEY) && !defined( TARG_ST)
+#if defined( KEY)
     if (pt->Const()) {
       if (ST_is_initialized(st)) {
 	aux_stab[idx].Set_const_init();
@@ -2479,7 +2295,7 @@ void OPT_STAB::Update_attr_cache(AUX_ID idx, ST *st, POINTS_TO *pt,
     if (pt->Const()) 
 #endif
       Set_const(idx);
-#if defined( KEY) && !defined( TARG_ST)
+#if defined( KEY)
     }
 #endif
     if (pt->Named())
@@ -2547,7 +2363,7 @@ void OPT_STAB::Update_attr_cache(AUX_ID idx, ST *st, POINTS_TO *pt,
 							    // aux ID's share this ST
 	    !aux_stab[idx].Is_virtual() &&    // not a const if virtual
 	    !aux_stab[idx].Dmod()) {  // then it is a const
-#if !defined( KEY) || defined(TARG_ST) // this cause the variable to become read-only, then srdata, which
+#if !defined( KEY) // this cause the variable to become read-only, then srdata, which
 	    // causes some unknown problem with the SGI assembler; by not
 	    // setting this, it will become sdata which is more efficiently
 	    // accessed than rodata
@@ -2578,7 +2394,7 @@ void OPT_STAB::Update_attr_cache(AUX_ID idx, ST *st, POINTS_TO *pt,
 	    *has_weak_var = TRUE;
 	}
 
-#if defined( KEY) && !defined( TARG_ST)
+#if defined( KEY)
  	if (ST_visible_outside_dso(st)) break;
 	if (ST_is_const_var(st) && ST_is_initialized(st)) {
 	  aux_stab[idx].Set_const_init();
@@ -2643,7 +2459,7 @@ OPT_STAB::Collect_ST_attr(void)
     POINTS_TO *pt = psym->Points_to();
     
     if (st != NULL) {
-#if defined( KEY) && !defined( TARG_ST)
+#if defined( KEY)
       // If "psym" has a field-id, we probably have very accurate type
       // information, so don't destroy it. (bug 9989)
       TY_IDX ty = (psym->Field_id() != 0 && psym->Ty() != 0) ? psym->Ty() :
@@ -2651,7 +2467,7 @@ OPT_STAB::Collect_ST_attr(void)
 #endif 
       pt->Analyze_ST(st, psym->St_ofst(), psym->Byte_size(),
 		     psym->Bit_ofst(), psym->Bit_size(),
-#if defined( KEY) && !defined( TARG_ST)
+#if defined( KEY)
 		     ty,
 #else 
 		     ST_class(st) == CLASS_VAR ? ST_type(st) : (TY_IDX)0,
@@ -2783,7 +2599,7 @@ OPT_STAB::Create(COMP_UNIT *cu, REGION_LEVEL rgn_level)
   _allow_sim_type = (cu->Phase() != MAINOPT_PHASE);
   _phase = cu->Phase();
   _rgn_level = rgn_level;
-#if defined( KEY) && !defined( TARG_ST)
+#if defined( KEY)
   _alias_mgr = cu->Alias_mgr();
 #endif
 
@@ -2792,13 +2608,13 @@ OPT_STAB::Create(COMP_UNIT *cu, REGION_LEVEL rgn_level)
 	  ("WN is not FUNC_ENTRY or REGION entry"));
   if (opr == OPR_FUNC_ENTRY) {
     _is_varargs_func = TY_is_varargs(ST_pu_type(WN_st(pu_wn)));
-#if defined( KEY) && !defined( TARG_ST)
+#if defined( KEY)
     _is_prototyped_func = TY_has_prototype(ST_pu_type(WN_st(pu_wn)));
 #endif
   }
   else {
     _is_varargs_func = FALSE; // regions don't even have parameters
-#if defined( KEY) && !defined( TARG_ST)
+#if defined( KEY)
     _is_prototyped_func = TRUE;
 #endif
   }
@@ -2840,11 +2656,7 @@ OPT_STAB::Create(COMP_UNIT *cu, REGION_LEVEL rgn_level)
   Set_BE_ST_pu_has_valid_addr_flags(Get_Current_PU_ST());
 
   // allocate a slightly larger array to avoid realloc.
-#ifdef TARG_ST
-  aux_stab.Alloc_array((mUINT32)(aux_sym_cnt*1.2)+10U);
-#else
   aux_stab.Alloc_array(unsigned(aux_sym_cnt*1.2)+10);
-#endif
   aux_stab.Setidx(aux_sym_cnt);
   aux_stab.Bzero_array();
 
@@ -2890,7 +2702,7 @@ OPT_STAB::Create(COMP_UNIT *cu, REGION_LEVEL rgn_level)
   _ver_stab->New_entry(dummy);
   Is_True(_ver_stab->Size() == 2, ("New_entry of ver_stab failed."));
 
-#if defined( KEY) && !defined( TARG_ST) // bug 15020
+#if defined( KEY) // bug 15020
   // initialize _pu_has_trampoline
   if (PU_c_lang(Get_Current_PU()) && PU_uplevel(Get_Current_PU())) {
     PU &pu = Get_Current_PU();
@@ -3057,7 +2869,7 @@ OPT_STAB::Find_vsym_with_base_ofst_and_size(ST *base,
 
 
 AUX_ID
-#if defined( KEY) && !defined( TARG_ST)
+#if defined( KEY)
 OPT_STAB::Find_vsym_with_st(ST *st, BOOL indirect, POINTS_TO * pt)
 #else
 OPT_STAB::Find_vsym_with_st(ST *st)
@@ -3067,7 +2879,7 @@ OPT_STAB::Find_vsym_with_st(ST *st)
   AUX_STAB_ITER aux_stab_iter(this);
   FOR_ALL_NODE(i, aux_stab_iter, Init()) {
     AUX_STAB_ENTRY *vsym = Aux_stab_entry(i);
-#if defined( KEY) && !defined( TARG_ST)
+#if defined( KEY)
     if (vsym->Is_virtual() && vsym->St() == st &&
         (vsym->Indirect_access()!=0) == indirect &&
         (!WOPT_Enable_New_Vsym_Allocation || !pt /* probably temporary */ ||
@@ -3094,7 +2906,7 @@ OPT_STAB::Find_sym_with_st_and_ofst(ST *st, INT64 ofst)
   return (AUX_ID) 0;
 }
 
-#if defined( KEY) && !defined( TARG_ST) // taken from wn_mp.cxx
+#if defined( KEY) // taken from wn_mp.cxx
 static const char * const dope_str_prefix = ".dope." ;
 static const INT dope_str_prefix_len = 6;
 
@@ -3251,7 +3063,7 @@ OPT_STAB::Identify_vsym(WN *memop_wn)
 	  }
 	  return vsym_id;
 	}
-#if defined( KEY) && !defined( TARG_ST)
+#if defined( KEY)
 	// bug 9582: Don't give unique vsyms to dope vectors.
 	if (WOPT_Enable_Vsym_Unique && !ST_Has_Dope_Vector(st)) {
 	  vsym_id = Find_vsym_with_st(st, !direct_use);
@@ -3690,25 +3502,11 @@ OPT_STAB::Convert_EH_pragmas(WN *wn)
 void
 CHI_NODE::Print(FILE *fp) const
 {
-#ifdef TARG_ST
-  if (Live())  {
-    fprintf(fp, "sym%d<cr%d> <- chi(", Aux_id(), RESULT()->Coderep_id());
-    fprintf(fp, "sym%d<cr%d>) LIVE", Aux_id(), OPND()->Coderep_id());
-    fprintf(fp, "\n");
-    //RESULT()->Print(4,fp);
-  }
-  else {
-    fprintf(fp, "sym%dv%d <- chi(", Aux_id(), Result());
-    fprintf(fp, "sym%dv%d) NOT LIVE\n", Aux_id(), Opnd());
-  }
-  //fprintf(fp, "\n");
-#else
 #ifdef KEY
   fprintf(fp, "sym%" PRIdPTR "v%" PRIdPTR " <- chi( sym%" PRIdPTR "v%" PRIdPTR " ) %s\n", Aux_id(), Result(), Aux_id(), Opnd(), Live() ? "LIVE" : "NOT LIVE");
 #else
   fprintf(fp, "sym%d <- chi( sym%d ) %s\n", Result(), Opnd(),
 	  Live() ? "LIVE" : "NOT LIVE");
-#endif
 #endif
 }
 
@@ -3730,7 +3528,7 @@ CHI_LIST::Print(FILE *fp)
 void
 MU_NODE::Print(FILE *fp) const
 {
-#if defined( KEY) && !defined( TARG_ST)
+#if defined( KEY)
   fprintf(fp, " sym%" PRIdPTR "v%" PRIdPTR " ", Aux_id(), Opnd());
 #else
   fprintf(fp, " sym%d ", Aux_id());
@@ -3817,7 +3615,6 @@ void OPT_STAB::Print_aux_entry(AUX_ID i, FILE *fp)
     fprintf(fp, "UNKNOWN TYPE\n" );
     break;
   }
-#ifndef TARG_ST
   // Arthur: the bbl is only valid in a part of a program
   if (psym->Is_real_var() || psym->Is_virtual()) {
     if (bbl->Len() > 0) {
@@ -3826,7 +3623,6 @@ void OPT_STAB::Print_aux_entry(AUX_ID i, FILE *fp)
       fprintf(fp, "\n");
     }
   }
-#endif
   if (psym->Is_real_var()) {
     if (aux_stab[i].St_chain()) {
       fprintf(fp, "       st_chain ");
@@ -4023,16 +3819,6 @@ Overlap(INT64 offset1, INT64 size1,
 // reference. This fixes bug 524653.
 // ====================================================================
 
-#ifdef TARG_ST
-#undef max // defined in wn_core.h
-
-// [HK]
-#if __GNUC__ >=3
-#include <algorithm>
-#else
-#include <algo.h>
-#endif //  __GNUC__ >=3
-#endif
 // Find_symtab_of should probably be in opt_util.cxx, but it's here
 // because right now this is the only client.
 static ST_TAB *
@@ -4309,7 +4095,7 @@ BOOL OPT_STAB::Safe_to_speculate(AUX_ID id)
   return Aux_stab_entry(id)->Points_to()->Safe_to_speculate();
 }
 
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 // x is a 1- or 2-byte-sized symbol.  checks whether it is part of an existing
 // 4- or 8-byte-sized symbol; if so, return that aux_id; otherwise, return 0
 AUX_ID OPT_STAB::Part_of_reg_size_symbol(AUX_ID x)

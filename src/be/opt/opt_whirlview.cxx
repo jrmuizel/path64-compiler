@@ -160,7 +160,7 @@ static void sir_put_wn(WN *wn)
     }
 
     if (OPCODE_operator(opcode) == OPR_INTRINSIC_OP
-#if defined( KEY) && !defined(TARG_ST)
+#if defined( KEY)
 	|| OPCODE_operator(opcode) == OPR_PURE_CALL_OP
 #endif
        ) {

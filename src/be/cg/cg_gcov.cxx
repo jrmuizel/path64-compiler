@@ -220,14 +220,10 @@ CG_Init_Func_Infos(ST *func_infos)
   INITV_IDX last_aggregate_initv = INITV_IDX_ZERO;
   inito = New_INITO(func_infos);
   TYPE_ID rtype;
-#ifdef TARG_ST
-  rtype = MTYPE_I4;
-#else
   if (Is_Target_32bit())
     rtype = MTYPE_I4;
   else 
     rtype = MTYPE_I8;
-#endif
 
   for (; item != 0; item = item->next){
 #ifndef GCC_303
@@ -1125,10 +1121,8 @@ Opnd_Tn_In_BB( BB* bb, REGISTER reg, unsigned char type )
       TN *tn = OP_opnd( opcode,i );
       if ( type == 0 && TN_register_class(tn) == ISA_REGISTER_CLASS_integer && TN_register(tn) == reg )
          return TRUE;
-#ifndef TARG_ST
       else if ( type == 1 && TN_register_class(tn) == ISA_REGISTER_CLASS_float && TN_register(tn) == reg )
          return TRUE;
-#endif
     }
   }
   return FALSE;
@@ -1318,14 +1312,10 @@ CG_Instrument_Arcs()
   TN *const_tn;
   TN *result_tn;
   TYPE_ID rtype;
-#ifdef TARG_ST
-  rtype = MTYPE_U4;
-#else
   if (Is_Target_32bit())
     rtype = MTYPE_U4;
   else
     rtype = MTYPE_U8;
-#endif
   if ((begin_id == -1 && end_id == -1) || (begin_id <= count && count <= end_id)) {
     OPS_Init(&new_ops);
     ld_result_tn = Build_TN_Of_Mtype(rtype);

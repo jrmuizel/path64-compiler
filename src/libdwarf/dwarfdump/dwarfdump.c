@@ -22,6 +22,7 @@
 $Header: /plroot/cmplrs.src/v7.4.4m/.RCS/PL/dwarfdump/RCS/dwarfdump.c,v 1.38 2004/05/07 21:17:56 davea Exp $ */
 #include "globals.h"
 
+#include <inttypes.h>
 /* for 'open' */
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -574,7 +575,7 @@ print_infos(Dwarf_Debug dbg)
 	string errmsg = dwarf_errmsg(err);
 	long long myerr = dwarf_errno(err);
 
-	fprintf(stderr, "%s ERROR:  %s:  %s (%lld)\n",
+	fprintf(stderr, "%s ERROR:  %s:  %s (%"PRId64")\n",
 		program_name, "attempting to print .debug_info",
 		errmsg, myerr);
 	fprintf(stderr, "attempting to continue.\n");
@@ -596,7 +597,7 @@ print_error(Dwarf_Debug dbg, string msg, int dwarf_code,
 	string errmsg = dwarf_errmsg(err);
 	long long myerr = dwarf_errno(err);
 
-	fprintf(stderr, "%s ERROR:  %s:  %s (%lld)\n",
+	fprintf(stderr, "%s ERROR:  %s:  %s (%"PRId64")\n",
 		program_name, msg, errmsg, myerr);
     } else if (dwarf_code == DW_DLV_NO_ENTRY) {
 	fprintf(stderr, "%s NO ENTRY:  %s: \n", program_name, msg);
