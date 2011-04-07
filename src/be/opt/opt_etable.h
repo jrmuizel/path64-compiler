@@ -100,6 +100,7 @@
 #include "bb_node_set.h"
 #include "opt_htable.h"
 #include "opt_vnfre.h"
+#include "id_map.h"
 
 class ALIAS_RULE;
 class BB_NODE;
@@ -133,7 +134,6 @@ enum PRE_KIND {
 extern const char *pre_kind_name(PRE_KIND);
 
 class REHASH_INFO;
-template <class NODE_TYPE, class KEY_TYPE> class ID_MAP;
 
 class EXP_OCCURS_LIST : public SLIST_NODE {
 private:
