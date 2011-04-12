@@ -955,33 +955,6 @@ EMT_Write_Qualified_Name (FILE *f, ST *st)
   fputs(EMT_Get_Qualified_Name(st).c_str(), f);
 }
 
-/* print the internal, hidden or protected attributes if present */
-static void Print_Dynsym (FILE *pfile, ST *st)
-{
-  const char *x = AS_DYNSYM;
-
-  if (x) {
-    fprintf (pfile, "\t%s\t", x);
-    EMT_Write_Qualified_Name (pfile, st);
-    switch (ST_export(st)) {
-      case EXPORT_INTERNAL:
-	fputs ("\tsto_internal\n", pfile);
-	break;
-      case EXPORT_HIDDEN:
-	fputs ("\tsto_hidden\n", pfile);
-	break;
-      case EXPORT_PROTECTED:
-	fputs ("\tsto_protected\n", pfile);
-	break;
-      case EXPORT_OPTIONAL:
-	fputs ("\tsto_optional\n", pfile);
-	break;
-      default:
-	fputs ("\tsto_default\n", pfile);
-	break;
-    }
-  }
-}
 
 static void Print_Label (FILE *pfile, ST *st, INT64 size)
 {
@@ -1043,7 +1016,6 @@ static void Print_Label (FILE *pfile, ST *st, INT64 size)
     Base_Symbol_And_Offset (st, &base_st, &base_ofst);
     EMT_Write_Qualified_Name (pfile, st);
     fprintf ( pfile, ":\t%s 0x%" SCNx64 "\n", ASM_CMNT, base_ofst);
-    Print_Dynsym (pfile, st);
 }
 
 static void
@@ -1084,7 +1056,6 @@ Print_Common (FILE *pfile, ST *st)
     fprintf ( pfile, ", %" SCNd64 ", %d\n", 
 		TY_size(ST_type(st)), TY_align(ST_type(st)));
 #endif
-    Print_Dynsym (pfile, st);
     // this is needed so that we don't emit commons more than once
     if (!generate_elf_symbols) Set_ST_elf_index(st, 1);
   }
@@ -8128,7 +8099,6 @@ EMT_End_File( void )
 
       if (Assembly) {
 	CGEMIT_Weak_Alias (sym, strongsym);
-	Print_Dynsym (Asm_File, sym);
       }
       if (Object_Code) {
 	Em_Add_New_Weak_Symbol (

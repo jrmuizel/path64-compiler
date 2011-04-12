@@ -159,7 +159,6 @@ static char *config_asm_rcs_id = "$Source: common/com/mips/SCCS/s.config_asm.h $
 #define AS_DOUBLE 	".double"
 #define AS_DWORD	".8byte"    /* bug 12484 */
 #define AS_DWORD_UNALIGNED ".8byte"    /* bug 12484 */
-#define AS_DYNSYM	NULL
 #define AS_END		".end"
 #define AS_ENT		".ent"
 #define AS_AENT		"# .aproc"

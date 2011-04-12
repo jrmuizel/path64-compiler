@@ -156,7 +156,6 @@ static char *config_asm_rcs_id = "$Source$ $Revision$";
 #define AS_DOUBLE 	".double"
 #define AS_DWORD	".quad"
 #define AS_DWORD_UNALIGNED ".quad"
-#define AS_DYNSYM	NULL
 #define AS_END		NULL
 #define AS_ENT		NULL
 #define AS_AENT		"# .aproc"
