@@ -459,68 +459,6 @@ CGEMIT_Weak_Alias (ST *sym, ST *strongsym)
   fprintf ( Asm_File, "\n");
 }
 
-void CGEMIT_Write_Literal_TCON(ST *lit_st, TCON tcon)
-{
-  INT64 val;
-  if (TCON_ty(tcon) == MTYPE_F4)
-    val = TCON_word0(tcon);
-  else if ((TCON_ty(tcon) == MTYPE_I4) || (TCON_ty(tcon) == MTYPE_U4))
-    val = TCON_v0(tcon);
-  else
-    FmtAssert(FALSE, ("Invalid literal value"));
-  fprintf ( Asm_File, "\t%s\t", ".literal");
-  EMT_Write_Qualified_Name(Asm_File, lit_st);
-  if ((val >= INT32_MIN) && (val <= INT32_MAX)) 
-    fprintf(Asm_File, ", %" SCNd64 "\n", val);
-  else
-    fprintf(Asm_File, ", %#llx\n", val);
-  
-}
-
-void CGEMIT_Write_Literal_Label (ST *lit_st, LABEL_IDX lab)
-{
-  fprintf ( Asm_File, "\t%s\t", ".literal");
-  EMT_Write_Qualified_Name(Asm_File, lit_st);
-  union {
-    UINT64 u;
-    void *p;
-  } u;
-  u.u = 0;
-  u.p = LABEL_name(lab);
-  fprintf(Asm_File, ", %" SCNd64 "\n", u.u);
-}
-
-void CGEMIT_Write_Literal_Symbol (ST *lit_st, ST *sym, 
-				  Elf64_Sxword sym_ofst)
-{
-  ST *basesym;
-  basesym = sym;
-  INT64 base_ofst = 0;
-
-  if (Has_Base_Block(sym) && ST_is_export_local(sym) && ST_class(sym) != CLASS_FUNC) {
-    Base_Symbol_And_Offset (sym, &basesym, &base_ofst);
-  }
-  base_ofst += sym_ofst;
-
-  fprintf ( Asm_File, "\t%s\t", ".literal");
-  EMT_Write_Qualified_Name(Asm_File, lit_st);
-  fprintf ( Asm_File, ", ");
-  if (ST_class(sym) == CLASS_CONST) {
-    EMT_Write_Qualified_Name (Asm_File, basesym);
-    if (base_ofst == 0)
-      fprintf (Asm_File, "\n");
-    else
-      fprintf (Asm_File, " %+"PRId64"\n", base_ofst);
-  }
-  else {
-    EMT_Write_Qualified_Name (Asm_File, sym);
-    if (sym_ofst == 0)
-      fprintf (Asm_File, "\n");
-    else
-      fprintf (Asm_File, " %+"PRId64"\n", sym_ofst);
-  }
-}
-
 void
 CGEMIT_Alias (ST *sym, ST *strongsym) 
 {
