@@ -1888,13 +1888,7 @@ add_file_args (string_list_t *args, phases_t index)
 				input_source = outfile;
 			else
 				input_source = construct_name(the_file,"s");
-			if (last_phase == P_be || keep_flag) {
-			  sprintf(buf, "-fs,%s", input_source);
-			} else {
-			  char *s = concat_strings(input_source, ".s");
-			  mark_for_cleanup(s);
-			  sprintf(buf, "-fs,%s.s", input_source);
-			}
+			sprintf(buf, "-fs,%s", input_source);
 			add_string(args, buf);
 		}
 		if (skip_as == TRUE && last_phase != P_be) {
