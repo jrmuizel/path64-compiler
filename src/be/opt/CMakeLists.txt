@@ -86,7 +86,7 @@ path64_set_multiarch_property(wopt COMPILE_FLAGS
 path64_set_multiarch_sources(wopt_shared_sources COMMON
                              init.cxx
                              ../../common/util/bitset.c
-                             ${PATHSCALE_WOPT_SRCS})
+                             ${PATHSCALE_WOPT_COMMON_SRCS})
 path64_add_multiarch_library(wopt-shared SHARED wopt_shared_sources)
 path64_set_multiarch_property(wopt-shared PREFIX "")
 path64_set_multiarch_property(wopt-shared OUTPUT_NAME "wopt")
