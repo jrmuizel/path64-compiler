@@ -194,21 +194,21 @@ if(${x8664_enabled})
     set_property(TARGET wolfdale APPEND PROPERTY
                  COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
 
-    add_executable(sandy_bridge_si_gen proc/x8664/sandy_bridge_si.cxx)
-    target_link_libraries(sandy_bridge_si_gen ${si_gen_x8664_name} ${isa_gen_topcode_x8664_name})
-    set_property(TARGET sandy_bridge_si_gen APPEND PROPERTY
+    add_executable(sandy_si_gen proc/x8664/sandy_si.cxx)
+    target_link_libraries(sandy_si_gen ${si_gen_x8664_name} ${isa_gen_topcode_x8664_name})
+    set_property(TARGET sandy_si_gen APPEND PROPERTY
                  COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
 
     add_custom_command(
-      OUTPUT sandy_bridge.c
-      COMMAND sandy_bridge_si_gen
-      DEPENDS sandy_bridge_si_gen
+      OUTPUT sandy.c
+      COMMAND sandy_si_gen
+      DEPENDS sandy_si_gen
       )
-    add_library(sandy_bridge SHARED sandy_bridge.c generate/init.cxx)
-    set_property(TARGET sandy_bridge PROPERTY LIBRARY_OUTPUT_DIRECTORY
+    add_library(sandy SHARED sandy.c generate/init.cxx)
+    set_property(TARGET sandy PROPERTY LIBRARY_OUTPUT_DIRECTORY
                  ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/x8664)
-    set_property(TARGET sandy_bridge PROPERTY PREFIX "")
-    set_property(TARGET sandy_bridge APPEND PROPERTY
+    set_property(TARGET sandy PROPERTY PREFIX "")
+    set_property(TARGET sandy APPEND PROPERTY
                  COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
 
     add_executable(core_si_gen proc/x8664/core_si.cxx)
@@ -246,11 +246,11 @@ if(${x8664_enabled})
     set_property(TARGET em64t APPEND PROPERTY
                  COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/x8664")
 
-    install(TARGETS barcelona em64t core wolfdale sandy_bridge opteron
+    install(TARGETS barcelona em64t core wolfdale sandy opteron
             RUNTIME DESTINATION bin
             LIBRARY DESTINATION ${PATH64_LIB_PATH}/x8664)
 
-    add_dependencies(be-all barcelona em64t core wolfdale sandy_bridge opteron)
+    add_dependencies(be-all barcelona em64t core wolfdale sandy opteron)
 endif()
 
 # MIPS architecture specific

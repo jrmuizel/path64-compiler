@@ -61,7 +61,7 @@
 
 int main (int argc, char *argv[])
 {
-  Machine( "sandy_bridge", ISA_SUBSET_x86_64, argc, argv );
+  Machine( "sandy", ISA_SUBSET_x86_64, argc, argv );
 
   const RESOURCE res_issue  = RESOURCE_Create( "issue",  3 );
   const RESOURCE res_alu    = RESOURCE_Create( "alu",    3 );
@@ -2170,5 +2170,5 @@ int main (int argc, char *argv[])
 #include "avx_si.cxx"
 #include "avx_si2.cxx"
 
-  Machine_Done("sandy_bridge.c");
+  Machine_Done("sandy.c");
 }

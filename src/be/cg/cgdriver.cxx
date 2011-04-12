@@ -1511,7 +1511,7 @@ Configure_CG_Options(void)
   if ((Target == TARGET_em64t ||
        Target == TARGET_core ||
        Target == TARGET_wolfdale ||
-       Target == TARGET_sandy_bridge ) &&
+       Target == TARGET_sandy ) &&
       ! CG_use_xortozero_Set) {
     CG_use_xortozero = TRUE;
   }

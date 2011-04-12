@@ -45,7 +45,7 @@ main ()
 	       "em64t",
 	       "core",
 	       "wolfdale",
-	       "sandy_bridge",
+	       "sandy",
 	       NULL );
 }
 
