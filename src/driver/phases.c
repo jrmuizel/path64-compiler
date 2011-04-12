@@ -1209,8 +1209,6 @@ add_file_args (string_list_t *args, phases_t index)
 			    input_source = construct_name(input_source,"ii");
 			else if (source_lang == L_as) {
 			    input_source = construct_name(input_source,"s");
-			    if (!keep_flag)
-			      input_source = concat_strings(input_source, ".s");
 			}
 			else
 			    input_source = construct_name(input_source,"i");

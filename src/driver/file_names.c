@@ -40,6 +40,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <fcntl.h>
 #include <time.h>
 #include <unistd.h>
 #include <errno.h>
@@ -138,57 +139,44 @@ get_object_file (char *src)
 char *
 create_temp_file_name (char *suffix)
 {
-	buffer_t buf;
-	buffer_t template;
-	buffer_t pathbuf;
-	size_t pathbuf_len;
-	char *s;
 	string_item_t *p;
+#ifdef _WIN32
+	char *s;
+#endif
+	char *prefix, *path;
+	size_t prefix_len;
 	int fd;
 
-	/* use same prefix as gcc compilers; */
-#ifdef KEY
-	int len = strlen(suffix);
-	if (len > 4) {
-	  internal_error("create_temp_file_name: suffix too long: %s", suffix);
-	  suffix = "xx";	// Let driver continue until error exit.
-	} else if (len > 2) {
-	  sprintf(buf, "%s.", suffix);
-	} else
-#endif
-	  sprintf(buf, "cc%s.", suffix);
-
-	sprintf(pathbuf, "%s/%s", tmpdir, buf);
-	pathbuf_len = strlen(pathbuf);
+	asprintf(&prefix, "%s/pathcc-%s-", tmpdir, suffix);
+	prefix_len = strlen(prefix);
 
 #ifdef _WIN32
-	s = pathbuf;
+	char *s;
 	while ((s = strchr (s, '/')) != NULL) {
 		*s = '\\';
 	}
 #endif
 
 	for (p = temp_files->head; p != NULL; p = p->next) {
-		if (strncmp(p->name, pathbuf, pathbuf_len) == 0) {
+		if (strncmp(p->name, prefix, prefix_len) == 0) {
 			/* matches the suffix */
+			free(prefix);
 			return p->name;
 		}
 	}
 
-	/* need new file name */
-	sprintf(template, "/%sXXXXXX", buf);
-	s = concat_strings (tmpdir, template);
-
-	fd = mkstemp(s);
-    if(fd == -1) {
-      error("mkstemp failed for templates: %s", s);
-      return NULL;
-    }
+	for (;;) {
+		asprintf(&path, "%s%08x.%s", prefix,
+		    (unsigned)random() & 0xffffffffU, suffix);
+		fd = open(path, O_CREAT | O_EXCL, 0600);
+		if (fd != -1)
+			break;
+	}
 
 	close(fd);
-
-	add_string (temp_files, s);
-	return s;
+	free(prefix);
+	add_string (temp_files, path);
+	return path;
 }
 
 char *
