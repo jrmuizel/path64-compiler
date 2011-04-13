@@ -460,10 +460,7 @@ add_special_options (void)
 	   error("-ar option requires archive name to be specified with -o option");
 	}
 	
-	if (skip_as == UNDEFINED) {
-		skip_as = FALSE;
-	}
-	if (skip_as == FALSE && ! keep_flag && last_phase != P_be) {
+	if (! keep_flag && last_phase != P_be) {
 		/* if going thru asm and not keeping .s file,
 		 * then don't print extra notes and source */
 		flag = add_string_option(O_LIST_, "source=off:notes=off");

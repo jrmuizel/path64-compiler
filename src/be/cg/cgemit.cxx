@@ -2823,7 +2823,7 @@ r_assemble_op(OP *op, BB *bb, ISA_BUNDLE *bundle, INT slot)
     }
 
     r_assemble_list ( op, bb );
-    if (!Object_Code) words += ISA_PACK_Inst_Words(OP_code(op));
+    words += ISA_PACK_Inst_Words(OP_code(op));
 
     inserted_movnd_for_round = FALSE;
 
@@ -2924,7 +2924,7 @@ r_assemble_op(OP *op, BB *bb, ISA_BUNDLE *bundle, INT slot)
     }
 #else
     r_assemble_list ( op, bb );
-    if (!Object_Code) words = ISA_PACK_Inst_Words(OP_code(op));
+    words = ISA_PACK_Inst_Words(OP_code(op));
 #endif
   }
 #ifdef TARG_X8664
@@ -2977,41 +2977,6 @@ r_assemble_op(OP *op, BB *bb, ISA_BUNDLE *bundle, INT slot)
     }
   }
 #endif
-
-  if (Object_Code) {
-    ISA_PACK_INST inst[ISA_PACK_MAX_INST_WORDS];
-    words = r_assemble_binary ( op, bb, inst );
-    for (i = 0; i < words; ++i) {
-      ISA_BUNDLE_PACK_COMP slot_comp = (ISA_BUNDLE_PACK_COMP)
-	  (ISA_BUNDLE_PACK_COMP_slot + slot++);
-      TI_ASM_Set_Bundle_Comp(bundle, slot_comp, inst[i]);
-      if (slot == ISA_MAX_SLOTS) {
-	slot = 0;
-	++bundle;
-      }
-    }
-
-    /* May need to add information about this call (or tail call) site */
-    if (OP_call(op) || OP_tail_call(op)) {
-      CGEMIT_Add_Call_Information (op, bb, PC, PU_section);
-    }
-if (Get_Trace ( TP_EMIT,0x100 )) {
-/* don't do this till decide on format of EK_SWITCH */
-    if (OP_ijump(op) && !OP_call(op) && !BB_exit(bb)) {
-      ANNOTATION *ant = ANNOT_Get(BB_annotations(bb), ANNOT_SWITCH);
-      if (ant != NULL) {
-	ST *jumptable = ANNOT_switch(ant);
-	BOOL gprel = ST_is_gp_relative(jumptable);
-	INT num_entries = TY_AR_ubnd_val(ST_type(jumptable),0)+1;
-	Elf_Event_Kind event_type;
-	event_type = (Use_32_Bit_Pointers ? EK_SWITCH_32 : EK_SWITCH_64);
-
-	Em_Add_New_Event (event_type, PC, 
-		gprel, EMT_Put_Elf_Symbol(jumptable), num_entries, PU_section);
-      }
-    }
-}
-  }
 
   PC = PC_Incr_N(PC, words);
 
@@ -3717,8 +3682,6 @@ Assemble_Simulated_OP(OP *op, BB *bb)
   const char *stop_bit = AS_STOP_BIT;
   
   if (OP_code(op) == TOP_asm) {
-    FmtAssert(Assembly && !Object_Code,
-	      ("can't emit object code when ASM"));
     if (stop_bit && (EMIT_stop_bits_for_asm
 		     || (EMIT_stop_bits_for_volatile_asm && OP_volatile(op)) ) )
     {
@@ -3755,9 +3718,6 @@ Assemble_Simulated_OP(OP *op, BB *bb)
   }
 
   Exp_Simulated_Op (op, &ops, PC);
-  if (is_intrncall && Object_Code) {
-    Em_Add_New_Content (CK_NO_XFORM, PC, OPS_length(&ops)*4, 0, PU_section);
-  }
 
   if (Trace_Inst) {
     fprintf (TFile, "... to: ");
@@ -3772,11 +3732,6 @@ Assemble_Simulated_OP(OP *op, BB *bb)
     INT words;
     Perform_Sanity_Checks_For_OP(op, FALSE);
     words = r_assemble_op (op, bb, bundle, 0);
-    if (Object_Code) {
-      /* write out the instruction. */
-      Em_Add_Bytes_To_Scn (PU_section, (char *)&bundle,
-			   INST_BYTES * words, INST_BYTES);
-    }
   }
   if (is_intrncall && Assembly) {
     ASM_DIR_TRANSFORM();
@@ -3886,13 +3841,6 @@ Assemble_Bundles(BB *bb)
 
     /* Bundle suffix
      */
-    if (Object_Code) {
-      TI_ASM_Set_Bundle_Comp(&bundle,
-			     ISA_BUNDLE_PACK_COMP_template, 
-			     ibundle);
-
-      Em_Add_Bytes_To_Scn (PU_section, (char *)&bundle, INST_BYTES, INST_BYTES);
-    }
     if (Assembly && EMIT_explicit_bundles) {
       fprintf(Asm_File, " %s", ISA_PRINT_END_BUNDLE);
     }
@@ -3925,11 +3873,6 @@ Assemble_Ops(BB *bb)
 
     Perform_Sanity_Checks_For_OP(op, TRUE);
     words = r_assemble_op(op, bb, bundle, 0);
-
-    if (Object_Code) {
-      Em_Add_Bytes_To_Scn(PU_section, (char *)bundle,
-			  INST_BYTES * words, INST_BYTES);
-    }
   }
 }
 
@@ -4176,15 +4119,6 @@ EMT_Assemble_BB ( BB *bb, WN *rwn )
 			Print_Label (Asm_File, entry_sym, 0 );
       		}
 		EMT_Put_Elf_Symbol (entry_sym);
-      		if ( Object_Code ) {
-        		Em_Define_Symbol (
-			    EMT_Put_Elf_Symbol(entry_sym), PC, 0, PU_section);
-			Em_Add_New_Event (EK_ENTRY, PC, 0, 0, 0, PU_section);
-      		}
-    	}
-    	if (Object_Code) {
-      		if ( EMIT_interface_section && !BB_handler(bb))
-		   Interface_Scn_Add_Def( entry_sym, rwn );
     	}
     }
   }
@@ -4380,10 +4314,6 @@ EMT_Assemble_BB ( BB *bb, WN *rwn )
     Assemble_Bundles(bb);
   } else {
     Assemble_Ops(bb);
-  }
-
-  if (Object_Code && BB_exit(bb)) {
-    Em_Add_New_Event (EK_EXIT, PC - 2*INST_BYTES, 0, 0, 0, PU_section);
   }
 } 
 
@@ -5539,9 +5469,6 @@ Write_TCON (
 #endif // KEY
     Targ_Emit_Const ( Asm_File, *tcon, add_null, repeat, scn_ofst32 );
   } 
-  if (Object_Code) {
-    Em_Targ_Emit_Const ( scn, *tcon, add_null, repeat );
-  }
 
   if ( TCON_ty(*tcon) == MTYPE_STRING )
     scn_ofst += (Targ_String_Length (*tcon) + (add_null ? 1 : 0)) * repeat;
@@ -5604,9 +5531,7 @@ Write_Symbol (
 #endif
       ASM_DIR_ZERO(Asm_File, padding);
     }
-    if (Object_Code) {
-      Em_Add_Zeros_To_Scn (scn, padding, 1);
-    }
+
     scn_ofst += padding;
     return scn_ofst;
   }
@@ -5623,26 +5548,8 @@ Write_Symbol (
   }
   base_ofst += sym_ofst;
 
-  if (Object_Code && repeat != 0) {
-    if (Use_32_Bit_Pointers) {
-      Em_Add_New_Content (CK_SADDR_32, scn_ofst, 4*repeat, 0, scn);
-    }
-    else {
-      Em_Add_New_Content (CK_SADDR_64, scn_ofst, 8*repeat, 0, scn);
-    }
-  }
-
   for ( i = 0; i < repeat; i++ ) {
     // do object code first so base section initialized
-    if (Object_Code) {
-	if (ST_sclass(sym) == SCLASS_EH_REGION_SUPP) {
-      		Em_Add_Displacement_To_Scn (scn, EMT_Put_Elf_Symbol (basesym),
-			base_ofst, 1);
-	} else {
-      		Em_Add_Address_To_Scn (scn, EMT_Put_Elf_Symbol (basesym), 
-			base_ofst, 1);
-	}
-    }
     const char *fptr = AS_FPTR;
     if (Assembly) {
 #ifdef TARG_MIPS
@@ -5732,9 +5639,7 @@ Write_Label (
 #endif
       ASM_DIR_ZERO(Asm_File, padding);
     }
-    if (Object_Code) {
-      Em_Add_Zeros_To_Scn (scn, padding, 1);
-    }
+
     scn_ofst += padding;
     return scn_ofst;
   }
@@ -5750,15 +5655,6 @@ Write_Label (
   }
   base_ofst = Get_Label_Offset(lab) + lab_ofst;
 
-  if (Object_Code && repeat != 0) {
-    if (Use_32_Bit_Pointers) {
-      Em_Add_New_Content (CK_SADDR_32, scn_ofst, 4*repeat, 0, scn);
-    }
-    else {
-      Em_Add_New_Content (CK_SADDR_64, scn_ofst, 8*repeat, 0, scn);
-    }
-  }
-
   for ( i = 0; i < repeat; i++ ) {
     if (Assembly) {
 #ifdef TARG_MIPS
@@ -5773,10 +5669,8 @@ Write_Label (
 	if (lab_ofst != 0)
 		fprintf (Asm_File, " %+" SCNd64 , lab_ofst);
 	fputc ('\n', Asm_File);
-    } 
-    if (Object_Code) {
-    	Em_Add_Address_To_Scn (scn, EMT_Put_Elf_Symbol (basesym), base_ofst, 1);
     }
+
     scn_ofst += address_size;
   }
   return scn_ofst;
@@ -5847,9 +5741,7 @@ Write_Symdiff (
       EMT_Write_Qualified_Name (Asm_File, sym2);
       fputc ('\n', Asm_File);
     } 
-    if (Object_Code) {
-      Em_Add_Bytes_To_Scn (scn, (char *) &val, size, 1);
-    }
+
     scn_ofst += size;
   }
   return scn_ofst;
@@ -6045,9 +5937,7 @@ Write_INITV (INITV_IDX invidx, INT scn_idx, Elf64_Word scn_ofst)
 #endif
         ASM_DIR_ZERO(Asm_File, INITV_pad(inv) * INITV_repeat1(inv));
       }
-      if (Object_Code) {
-	Em_Add_Zeros_To_Scn (scn, INITV_pad(inv) * INITV_repeat1(inv), 1);
-      }
+
       scn_ofst += INITV_pad(inv) * INITV_repeat1(inv);
       break;
 
@@ -6096,9 +5986,7 @@ Write_INITO (
 #endif
 	ASM_DIR_ZERO(Asm_File, (INT32)(inito_ofst - scn_ofst));
       }
-      if (Object_Code) {
-	Em_Add_Zeros_To_Scn ( scn, inito_ofst - scn_ofst, 1 );
-      }
+
       scn_ofst = inito_ofst;
     } else {
       FmtAssert ( inito_ofst >= scn_ofst, 
@@ -6112,9 +6000,6 @@ Write_INITO (
         if (name != NULL && *name != 0) {
 	  Print_Label (Asm_File, sym, TY_size(ST_type(sym)));
         }
-    }
-    if (Object_Code && ! ST_is_export_local(sym)) {
-        EMT_Put_Elf_Symbol (sym);
     }
 
     /* If there's no initial value, this should be a constant symbol,
@@ -6319,10 +6204,6 @@ Change_Section_Origin (ST *base, INT64 ofst)
 #if defined(TARG_MIPS) || defined(TARG_MVP)
 		CGEMIT_Change_Origin_In_Asm(base, ofst);
 #endif
-	}
-	/* for nobits, add final size at end because we don't write any data. */
-  	if (Object_Code && !STB_nobits(base)) {
-		Em_Change_Section_Origin (em_scn[STB_scninfo_idx(base)].scninfo, ofst);
 	}
 }
 
@@ -6994,7 +6875,7 @@ Setup_Text_Section_For_PU (ST *pu)
 
   Initial_Pu_Label = LABEL_IDX_ZERO;
 
-  if ( ! Object_Code && generate_elf_symbols) {
+  if (generate_elf_symbols) {
   	// didn't actually write instructions,
 	// but want the offset to be up-to-date.
 	Em_Change_Section_Origin (
@@ -7063,12 +6944,7 @@ Setup_Text_Section_For_PU (ST *pu)
       ASM_DIR_ALIGN(power, text_base);
 #endif
     }
-    if (Object_Code) {
-      // these bytes will never be executed so just insert 0's and
-      // then we don't have to worry about how to generate a nop for
-      // the target arch.
-      Em_Add_Zeros_To_Scn (PU_section, i * INST_BYTES, 1);
-    }
+
     // increment text_PC by 'num' bundles
     text_PC = text_PC + (i * INST_BYTES);
   }
@@ -7270,9 +7146,6 @@ EMT_Emit_PU ( ST *pu, DST_IDX pu_dst, WN *rwn )
   */
   R_Resolve_Branches (pu);
 
-  if (Object_Code) {
-    Em_Add_New_Event (EK_ENTRY, PC, 0, 0, 0, PU_section);
-  }
   if ( Assembly ) {
 #ifdef TARG_X8664
     if (CG_p2align) 
@@ -7336,7 +7209,6 @@ EMT_Emit_PU ( ST *pu, DST_IDX pu_dst, WN *rwn )
     {
       if (Assembly) fprintf (Asm_File, "\t%s\t %s\n", AS_GLOBAL,
       	                     ST_name_decorated(sym));
-      if (Object_Code) EMT_Put_Elf_Symbol (sym);
     }
 
     if (Assembly) {
@@ -7417,8 +7289,7 @@ EMT_Emit_PU ( ST *pu, DST_IDX pu_dst, WN *rwn )
     Elf64_Word symindex;
     INT eh_offset;
     BOOL has_exc_scopes = PU_has_exc_scopes(ST_pu(pu));
-    if (Object_Code)
-    	Em_Add_New_Event (EK_PEND, PC - INST_BYTES, 0, 0, 0, PU_section);
+
     /* get exception handling info */ 
     if (!CXX_Exceptions_On && has_exc_scopes) {
       eh_offset = symindex = (Elf64_Word)DW_DLX_EH_OFFSET_UNAVAILABLE;
@@ -7695,7 +7566,7 @@ EMT_Begin_File (
         Has_GP_Groups = TRUE;
   }
 
-  if (Object_Code || CG_emit_asm_dwarf) {
+  if (CG_emit_asm_dwarf) {
 	generate_dwarf = TRUE;
 	generate_elf_symbols = TRUE;
   }
@@ -7722,9 +7593,7 @@ EMT_Begin_File (
     // section indices, symbol indices, etc. for libdwarf. In such a
     // situation, we generate the object file, but we unlink it here
     // so it never shows up after the compilation is done.
-    if ( ! Object_Code) {
-      unlink(Obj_File_Name);
-    }
+    unlink(Obj_File_Name);
 
     buff = (char *) alloca (strlen("be") + sizeof(INCLUDE_STAMP) + 
 			    strlen(ism_name) + strlen(Obj_File_Name) + 4);
@@ -8008,14 +7877,6 @@ EMT_End_File( void )
 		// mergeable sections will be emitted into each .o
 		if (SEC_is_merge(STB_section_idx(sym))) continue;
 		newname = Index_To_Str(Save_Str2(ST_name(sym), "_symbol"));
-		if (Object_Code) {
-	  		(void) Em_Add_New_Symbol (
-				newname,
-				0 /* offset */, 
-				0 /* size */,
-				STB_GLOBAL, STT_OBJECT, STO_INTERNAL,
-				Em_Get_Section_Index (em_scn[STB_scninfo_idx(sym)].scninfo));
-		}
 		if (Assembly) {
             char * sym_print_name = 
 #if defined(BUILD_OS_DARWIN)
@@ -8057,14 +7918,6 @@ EMT_End_File( void )
 		/* may be notype symbol */
 		EMT_Put_Elf_Symbol(sym);
 	}
-    	else if (ST_sclass(sym) == SCLASS_COMMENT && Object_Code 
-		&& ! Read_Global_Data	// just put once in symtab.o
-		&& ! DEBUG_Optimize_Space)
-	{
-		char *buf = (char *) alloca (strlen("ident::: ") + strlen(ST_name(sym)));
-    		sprintf(buf, "ident:::%s", ST_name(sym));
-    		Em_Add_Comment (buf);
-	}
     }
 
     if (ST_class(sym) == CLASS_VAR &&
@@ -8099,13 +7952,6 @@ EMT_End_File( void )
 
       if (Assembly) {
 	CGEMIT_Weak_Alias (sym, strongsym);
-      }
-      if (Object_Code) {
-	Em_Add_New_Weak_Symbol (
-	  ST_name(sym), 
-	  symtype,
-	  st_other_for_sym (sym),
-	  EMT_Put_Elf_Symbol(strongsym));
       }
     }
     else if (Has_Base_Block(sym) && ST_class(ST_base(sym)) != CLASS_BLOCK
@@ -8144,9 +7990,6 @@ EMT_End_File( void )
     end_previous_text_region(PU_section, Em_Get_Section_Offset(PU_section));
   }
 
-  if (Object_Code) {
-    Em_Options_Scn();
-  }
   if (generate_dwarf) {
     // must write out dwarf unwind info before text section is ended
     Cg_Dwarf_Finish (PU_section);
@@ -8155,30 +7998,6 @@ EMT_End_File( void )
   /* Write out the initialized data to the object file. */
   for (i = 1; i <= last_scn; i++) {
       sym = em_scn[i].sym;
-      if (Object_Code) {
-
-#ifdef PV_205345
-	/* Data section alignment is initially set to the maximum
-         * alignment required by the objects allocated to the section.
-         * Whenever Find_Alignment is called for an object in a section
-         * with smaller alignment than it's quantum of interest, it
-         * updates the section alignment to guarantee that the
-	 * determined alignment is valid.  This override can be enabled
-	 * with -DPV_205345 to force alignment to at least 8 bytes.
-         */
-	if (STB_align(sym) < 8) Set_STB_align(sym, 8);
-#endif /* PV_205345 */
-
-	if (STB_nobits(sym)) {
-	  /* For the .bss section, the size field should be set explicitly. */
-	  Em_Add_Bytes_To_Scn (em_scn[i].scninfo, NULL,  
-		STB_size(sym), STB_align(sym));
-	}
-	else {
-	  Em_Change_Section_Alignment (em_scn[i].scninfo, STB_align(sym));
-	}
-        Em_End_Section (em_scn[i].scninfo);
-      }
       if (Assembly) {
 #if defined(BUILD_OS_DARWIN)
 	emit_section_directive(sym);
@@ -8228,24 +8047,6 @@ EMT_End_File( void )
 #ifdef TARG_MIPS
     }
 #endif
-  }
-  if (Object_Code && !CG_emit_asm_dwarf) {
-    /* TODO: compute the parameters more accurately. For now we assume 
-     * that all integer and FP registers are used. If we change the GP
-     * value to be non-zero, make sure we adjust the addends for the 
-     * GP_REL cases.
-     */
-    Em_Write_Reginfo (GP_DISP, 0xffffffff, 0xffffffff, Pure_ABI); 
-
-    Em_Dwarf_Write_Scns (Cg_Dwarf_Translate_To_Elf);
-
-    /* finalize .interfaces section (must be before Em_End_File) */
-    if ( EMIT_interface_section )
-      Interface_Scn_End_File();
-
-    Em_End_File ();
-    Em_Dwarf_End ();
-    Em_Cleanup_Unwind ();
   }
 
   if (Emit_Global_Data) {

@@ -733,12 +733,6 @@ I-m2		;		ALL	GRP	self
 I-object		;	ALL	ld	""
 	""
 
-% -useas says to go through the assembler phase
--useas	toggle(&skip_as,FALSE);		ALL	NONE	""
-	""
-% -noas says to skip the assembler phase
--noas	toggle(&skip_as,TRUE);		ALL	NONE	""
-	""
 -usef90		;		F90	NONE	"-INTERNAL:return_val=on -INTERNAL:mldid_mstid=on -INTERNAL:return_info=on"
 	""
 

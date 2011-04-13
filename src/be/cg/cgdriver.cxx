@@ -126,7 +126,6 @@ extern char *WHIRL_File_Name;
 /* Output requested: */
 BOOL Assembly =	FALSE;		/* Assembly code */
 BOOL Lai_Code = FALSE;          /* Lai code */
-BOOL Object_Code = FALSE;	/* Object code */
 
 /* Have	the OP_REGCOPY operations been translated? */
 BOOL Regcopies_Translated = FALSE;
@@ -1643,12 +1642,6 @@ Process_Command_Line (INT argc, char **argv)
 		    Assembly = TRUE;
 		    Asm_File_Name = cp + 2;
 		    break;
-
-		case 'o':	    /* object file */
-		    Object_Code = TRUE;
-		    Obj_File_Name = cp + 2;
-		    break;
-
 		}
 		break;
 

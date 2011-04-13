@@ -1880,34 +1880,16 @@ add_file_args (string_list_t *args, phases_t index)
 		  add_string(args, buf);
 		}
 
-		if (skip_as != TRUE || last_phase == P_be || keep_flag) {
-			/* create .s file */
-			add_string(args, "-s");
-			current_phase = P_be;
-			if (last_phase == P_be && outfile != NULL)
-				input_source = outfile;
-			else
-				input_source = construct_name(the_file,"s");
-			sprintf(buf, "-fs,%s", input_source);
-			add_string(args, buf);
-		}
-		if (skip_as == TRUE && last_phase != P_be) {
-			/* generate object file directly */
-			current_phase = P_any_as;
-			/* cc -c -o <file> uses <file> rather than .o */
-		        if (outfile != NULL
-					&& last_phase == current_phase
-	 				&& !multiple_source_files
-					 )
-			  {
-			    sprintf(buf, "-fo,%s", outfile);
-			  } else {
-			        sprintf(buf, "-fo,%s", 
-			            construct_given_name(the_file,"o",
-					(keep_flag || multiple_source_files || ((shared == RELOCATABLE) && (ipa == TRUE))) ? TRUE : FALSE));
-			  }
-			  add_string(args, buf);
-		}
+		/* create .s file */
+		add_string(args, "-s");
+		current_phase = P_be;
+		if (last_phase == P_be && outfile != NULL)
+			input_source = outfile;
+		else
+			input_source = construct_name(the_file,"s");
+		sprintf(buf, "-fs,%s", input_source);
+		add_string(args, buf);
+
 		if (dashdash_flag)
 		  add_string(args,"--");
 		add_string(args, the_file);
@@ -2956,16 +2938,7 @@ determine_phase_order (void)
 #endif
 		case P_be:
 			add_phase(next_phase);
-			/* may or may not generate objects directly */
-			if (skip_as == TRUE) {
-			   if (option_was_seen(O_ar)) {
-			       next_phase = P_ar;
-			   }
-			   else {
-			       next_phase = link_phase;
-			   }
-			}
-			else next_phase = asm_phase;
+			next_phase = asm_phase;
 			break;
 #ifdef PATH64_ENABLE_PATHAS
 		case P_pathas:

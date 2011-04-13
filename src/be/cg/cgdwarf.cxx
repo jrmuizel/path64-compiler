@@ -3157,8 +3157,6 @@ Cg_Dwarf_Add_Line_Entry (INT code_address,
   if ((code_address % INST_BYTES) != 0) {
 #if defined(BUILD_OS_DARWIN)
         return;
-#else /* defined(BUILD_OS_DARWIN) */
-  	if (Object_Code) return;
 #endif /* defined(BUILD_OS_DARWIN) */
   }
 #endif
@@ -3173,13 +3171,9 @@ Cg_Dwarf_Add_Line_Entry (INT code_address,
   // now do line number:
 #if defined(BUILD_OS_DARWIN)
   /* Mach-O assembler doesn't emit Dwarf for .line directive */
-  if (1) {
-#else /* defined(BUILD_OS_DARWIN) */
-  if (Object_Code) {
+  Em_Dwarf_Add_Line_Entry (code_address, srcpos);
 #endif /* defined(BUILD_OS_DARWIN) */
   
-    Em_Dwarf_Add_Line_Entry (code_address, srcpos);
-  }
   if (Assembly) {
     CGEMIT_Prn_Line_Dir_In_Asm(usrcpos);
     if (List_Source)
