@@ -5536,17 +5536,12 @@ Write_Symbol (
     return scn_ofst;
   }
 
-  /* For local static symbols that do not have their own elf entry,
-   * use the base symbol; funcs always have own elf entry. */
-  basesym = sym;
-  if (Has_Base_Block(sym) && ST_is_export_local(sym) && ST_class(sym) != CLASS_FUNC) {
-    Base_Symbol_And_Offset (sym, &basesym, &base_ofst);
-  }
+  Base_Symbol_And_Offset_For_Addressing (sym, sym_ofst, &sym, &sym_ofst);
+
   if (Use_Separate_PU_Section (current_pu, basesym)) {
 	/* use PU text section rather than generic one */
 	basesym = PU_base;
   }
-  base_ofst += sym_ofst;
 
   for ( i = 0; i < repeat; i++ ) {
     // do object code first so base section initialized
@@ -6455,9 +6450,8 @@ Process_Initos_And_Literals (SYMTAB_IDX stab)
       else
         fprintf ( Asm_File, "\t%s\t0\n", AS_ALIGN );
 
-      if (!Emit_Global_Data) // not for symbols in ipa symtab
-        fprintf ( Asm_File, TCON_Label_Format ":\n",
-                  ST_IDX_index(ST_st_idx(st)) );
+      fprintf ( Asm_File, TCON_Label_Format ":\n",
+                ST_IDX_index(ST_st_idx(st)) );
 #endif
       Write_TCON (&ST_tcon_val(st), STB_scninfo_idx(base), ofst, 1);
     }
@@ -8060,9 +8054,17 @@ EMT_End_File( void )
 			Set_ST_base(sym,sym);	
 			Set_ST_ofst(sym,0);	
 		}
-		else if (ST_class(sym) == CLASS_VAR 
-			|| ST_class(sym) == CLASS_CONST
-			|| ST_class(sym) == CLASS_FUNC)
+		else if (ST_class(sym) == CLASS_CONST)
+		{
+		    // converting constant to extern symbol
+		    Set_ST_class(sym, CLASS_VAR);
+		    Set_ST_sclass(sym, SCLASS_EXTERN);
+
+		    std::ostringstream name_str;
+		    name_str << "global_const_" << ST_st_idx(sym);
+		    Set_ST_name(sym, Save_Str(name_str.str().c_str()));
+		}
+		else if (ST_class(sym) == CLASS_VAR || ST_class(sym) == CLASS_FUNC)
 		{
 		        if (ST_sclass (sym) != SCLASS_COMMON
 			    && !ST_is_weak_symbol(sym) )
@@ -8070,6 +8072,7 @@ EMT_End_File( void )
 				Set_ST_sclass(sym, SCLASS_EXTERN);
 			}
 		}
+
 		if (ST_class(sym) != CLASS_BLOCK) continue;
 		Set_STB_scninfo_idx(sym,0);
 		Set_STB_compiler_layout(sym);
