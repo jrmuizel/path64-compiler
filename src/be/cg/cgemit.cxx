@@ -5555,7 +5555,10 @@ Write_Symbol (
 	fprintf (Asm_File, "\t%s\t", 
 		(scn_ofst % address_size) == 0 ? 
 		AS_ADDRESS : AS_ADDRESS_UNALIGNED);
-	if (ST_class(sym) == CLASS_CONST) {
+	if (ST_class(sym) == CLASS_CONST &&
+        ST_sclass(sym) != SCLASS_EXTERN     // extern const is possible only if IPA is enabled
+                                            // In such case we should not use .LC%d labels
+       ) {
 		fprintf (Asm_File, " %s\n", EMT_get_TCON_name(sym).c_str());
 	}
 	else if (ST_class(sym) == CLASS_FUNC && fptr && ! Get_Trace(TP_EMIT,0x2000)) {
@@ -8054,17 +8057,9 @@ EMT_End_File( void )
 			Set_ST_base(sym,sym);	
 			Set_ST_ofst(sym,0);	
 		}
-		else if (ST_class(sym) == CLASS_CONST)
-		{
-		    // converting constant to extern symbol
-		    Set_ST_class(sym, CLASS_VAR);
-		    Set_ST_sclass(sym, SCLASS_EXTERN);
-
-		    std::ostringstream name_str;
-		    name_str << "global_const_" << ST_st_idx(sym);
-		    Set_ST_name(sym, Save_Str(name_str.str().c_str()));
-		}
-		else if (ST_class(sym) == CLASS_VAR || ST_class(sym) == CLASS_FUNC)
+		else if (ST_class(sym) == CLASS_VAR ||
+                 ST_class(sym) == CLASS_FUNC ||
+                 ST_class(sym) == CLASS_CONST)
 		{
 		        if (ST_sclass (sym) != SCLASS_COMMON
 			    && !ST_is_weak_symbol(sym) )
