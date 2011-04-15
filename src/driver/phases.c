@@ -670,12 +670,10 @@ add_file_args_first (string_list_t *args, phases_t index)
 
 #ifdef PATH64_ENABLE_PSCLANG
     case P_psclang_cpp:
-      add_string(args, "-cc1");
       add_common_cpp_definitions(args);
       break;
 
     case P_psclang:
-      add_string(args, "-cc1");
 #endif // PATH64_ENABLE_PSCLANG
 
     default:
@@ -1689,9 +1687,9 @@ add_file_args (string_list_t *args, phases_t index)
             add_string(args, "-fno-math-errno");
 
         add_string(args, "-Wno-all");
-        add_string(args, "-fsyntax-only");
-        add_string(args, "-plugin");
-        add_string(args, "whirl-print");
+        add_string(args, "-c");
+        add_string(args, "-fcolor-diagnostics");
+        add_string(args, "-whirl");
         
         add_string(args, input_source);
         
