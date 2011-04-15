@@ -1242,9 +1242,7 @@ add_file_args (string_list_t *args, phases_t index)
     case P_psclang_cpp:
         // psclang preprocessor
 
-        if(option_was_seen(O_M) || option_was_seen(O_MM) ||
-           option_was_seen(O_MD) || option_was_seen(O_MMD)) {
-
+        if(option_was_seen(O_M) || option_was_seen(O_MM)) {
             add_string(args, "-Eonly");
         } else {
             add_string(args, "-E");
