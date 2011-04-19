@@ -125,7 +125,7 @@ path64_set_multiarch_sources(lno_sources x8664 ${PATHSCALE_LNO_COMMON_SRCS} ${PA
 path64_set_multiarch_sources(lno_sources mips ${PATHSCALE_LNO_COMMON_SRCS} ${PATHSCALE_LNO_MIPS_SRCS})
 path64_add_multiarch_library(lno SHARED lno_sources)
 path64_set_multiarch_property(lno PREFIX "")
-path64_multiarch_link_multiarch_libraries(lno ipl comutil)
+path64_multiarch_link_multiarch_libraries(lno comutil ipl)
 path64_add_multiarch_dependencies(lno generate_preg_list generate_topcode)
 path64_set_multiarch_property(lno COMPILE_FLAGS
                               "-DSHARED_BUILD -I${PATHSCALE_BINARY_DIR}/common/targ_info/@ARCH@ -I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")

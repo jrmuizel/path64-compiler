@@ -188,7 +188,7 @@ ENDIF()
 path64_multiarch_link_multiarch_libraries(be targinfo comutil)
 path64_multiarch_link_libraries(be m ${libdl})
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    path64_multiarch_link_libraries(be winlib)
+    path64_multiarch_link_libraries(be winlib iberty)
 endif()
 
 # serialize to generate preg_list.cxx only once
@@ -213,7 +213,7 @@ path64_set_multiarch_property(be-exec COMPILE_FLAGS
 path64_add_multiarch_multiarch_dependencies(be-exec generate_topcode)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    path64_multiarch_link_libraries(be-exec winlib)
+    path64_multiarch_link_libraries(be-exec winlib iberty)
 endif()
 
 if(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS" AND "${EXPORT_DYNAMIC_SUPPORTED}" MATCHES "yes")
@@ -225,17 +225,24 @@ path64_install_multiarch(be-exec)
 
 # ipl -> be symlinks
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set(LINK_COPY copy)
+else()
+    set(LINK_COPY create_symlink)
+endif()
+
 set(ipl_symlink_deps)
 
 foreach(arch ${PATH64_ENABLE_ARCHES})
     set(stage_link ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}/${arch}/ipl${CMAKE_EXECUTABLE_SUFFIX})
     add_custom_command(
         OUTPUT ${stage_link}
-        COMMAND ${CMAKE_COMMAND} -E create_symlink be${CMAKE_EXECUTABLE_SUFFIX} ${stage_link}
+	COMMAND ${CMAKE_COMMAND} -E ${LINK_COPY} be${CMAKE_EXECUTABLE_SUFFIX} ${stage_link}
+        WORKING_DIRECTORY ${Path64_BINARY_DIR}/lib/${arch}
     )
     list(APPEND ipl_symlink_deps ${stage_link})
 
-    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"be${CMAKE_EXECUTABLE_SUFFIX}\" \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/ipl${CMAKE_EXECUTABLE_SUFFIX}\")")
+    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E ${LINK_COPY} \"be${CMAKE_EXECUTABLE_SUFFIX}\" \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/${PSC_FULL_VERSION}/${arch}/ipl${CMAKE_EXECUTABLE_SUFFIX}\")")
 
 endforeach()
 

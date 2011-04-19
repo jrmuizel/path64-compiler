@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <io.h>
+#include <assert.h>
 #include <sys/mman.h>
 #include <windows.h>
 
@@ -15,6 +16,7 @@ void *mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
     DWORD delta;
     void *map_addr;
 
+    assert(len > 0);
     if (granularity == 0) {
         SYSTEM_INFO i;
 

@@ -33,7 +33,7 @@ foreach(header ${HEADERS})
 	list(APPEND header_outputs ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}/include/${header})
 endforeach()
 
-add_custom_target(headers-stage ALL true DEPENDS ${header_outputs})
+add_custom_target(headers-stage ALL DEPENDS ${header_outputs})
 add_dependencies(compiler-stage-C headers-stage)
 
 install(FILES ${HEADERS}

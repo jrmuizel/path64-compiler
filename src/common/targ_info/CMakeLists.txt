@@ -204,7 +204,7 @@ if(${x8664_enabled})
       COMMAND sandy_si_gen
       DEPENDS sandy_si_gen
       )
-    add_library(sandy SHARED sandy.c generate/init.cxx)
+    add_library(sandy SHARED sandy.c)
     set_property(TARGET sandy PROPERTY LIBRARY_OUTPUT_DIRECTORY
                  ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/x8664)
     set_property(TARGET sandy PROPERTY PREFIX "")

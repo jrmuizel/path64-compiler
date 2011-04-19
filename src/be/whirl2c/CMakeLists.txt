@@ -26,6 +26,7 @@ path64_set_multiarch_property(whirl2c PREFIX "")
 path64_set_multiarch_property(whirl2c COMPILE_FLAGS
                               "-I${CMAKE_CURRENT_SOURCE_DIR}/../../common/com/@ARCH@")
 path64_install_multiarch(whirl2c)
+path64_multiarch_link_multiarch_libraries(whirl2c comutil be)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     path64_set_multiarch_sources(whirl2c-exec_sources COMMON whirl2c_main.cxx)

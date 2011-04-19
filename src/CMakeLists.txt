@@ -44,9 +44,7 @@ ENDIF()
 
 ADD_SUBDIRECTORY(ipa)
 
-#Hack for Window building
-IF((${CMAKE_SYSTEM_NAME} MATCHES "Windows"))
-ELSEIF(PATH64_ENABLE_IPA)
+IF(PATH64_ENABLE_IPA)
     ADD_SUBDIRECTORY(ipa_link)
 ENDIF()
 
@@ -63,11 +61,10 @@ ADD_SUBDIRECTORY(libfi)
 ADD_SUBDIRECTORY(libm)
 ADD_SUBDIRECTORY(libmpath)
 
-ADD_SUBDIRECTORY(instrumentation)
-
 #Hack for Window building
 IF((${CMAKE_SYSTEM_NAME} MATCHES "Windows")) 
 ELSE() 
+    ADD_SUBDIRECTORY(instrumentation)
     ADD_SUBDIRECTORY(arith)
 ENDIF()
 

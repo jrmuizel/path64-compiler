@@ -1057,8 +1057,17 @@ struct TY_IDX_EQ
   }
 };
 
-static hash_map<const TY_IDX, INT, __gnu_cxx::hash<TY_IDX>, TY_IDX_EQ> TY_volatility;
+using std::size_t;
 
+struct TY_IDX_HASH
+{ 
+  size_t operator() (TY_IDX ty) const {
+    return size_t(ty);
+  }
+};
+
+static hash_map<const TY_IDX, INT, TY_IDX_HASH, TY_IDX_EQ> TY_volatility;
+  
 #define STRUCT_HAS_VOLATILITY_COMPUTED 1
 #define STRUCT_HAS_VOLATILE 2
 

@@ -251,7 +251,7 @@ GET_TARGET_PROPERTY(sort_options_exe sort_options LOCATION)
 
 add_custom_command(
         OUTPUT tmp.options.cpp
-        COMMAND cpp -traditional -P -DX8664 -DPSC_PRODNAME='"Compiler"' -DKEY -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT ${CMAKE_CURRENT_SOURCE_DIR}/OPTIONS > tmp.options.cpp
+        COMMAND cpp -traditional -P ${driver_defs} -DPSC_PRODNAME='"Compiler"' -DKEY -DLITTLE_ENDIAN_HOST -DHOST_IA32 -DNOOPT ${CMAKE_CURRENT_SOURCE_DIR}/OPTIONS > tmp.options.cpp 
         DEPENDS OPTIONS
         )
 
@@ -337,8 +337,7 @@ else()
     set(hash_style_supported "")
 endif()
 
-add_driver("" ${hash_style_supported})
-
+add_driver("" "${hash_style_supported}")
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 

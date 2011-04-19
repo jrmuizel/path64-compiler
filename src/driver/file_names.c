@@ -140,22 +140,12 @@ char *
 create_temp_file_name (char *suffix)
 {
 	string_item_t *p;
-#ifdef _WIN32
-	char *s;
-#endif
 	char *prefix, *path;
 	size_t prefix_len;
 	int fd;
 
 	asprintf(&prefix, "%s/pathcc-%s-", tmpdir, suffix);
 	prefix_len = strlen(prefix);
-
-#ifdef _WIN32
-	char *s;
-	while ((s = strchr (s, '/')) != NULL) {
-		*s = '\\';
-	}
-#endif
 
 	for (p = temp_files->head; p != NULL; p = p->next) {
 		if (strncmp(p->name, prefix, prefix_len) == 0) {
