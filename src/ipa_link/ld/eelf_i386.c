@@ -1407,27 +1407,8 @@ static char *
 gldelf_i386_get_script (int *isfile)
 {
   *isfile = 0;
-
-  if (link_info.relocatable && config.build_constructors)
-    return
-  ; else if (link_info.relocatable) return
-  ; else if (!config.text_read_only) return
-  ; else if (!config.magic_demand_paged) return
-  ; else if (link_info.pie && link_info.combreloc
-             && link_info.relro
-             && (link_info.flags & DT_BIND_NOW)) return
-  ; else if (link_info.pie && link_info.combreloc) return
-  ; else if (link_info.pie) return
-  ; else if (link_info.shared && link_info.combreloc
-             && link_info.relro
-             && (link_info.flags & DT_BIND_NOW)) return
-  ; else if (link_info.shared && link_info.combreloc) return
-  ; else if (link_info.shared) return
-  ; else if (link_info.combreloc && link_info.relro
-             && (link_info.flags & DT_BIND_NOW)) return
-  ; else if (link_info.combreloc) return
-  ; else return
-; }
+  return "";
+}
 
 #define OPTION_DISABLE_NEW_DTAGS	(400)
 #define OPTION_ENABLE_NEW_DTAGS		(OPTION_DISABLE_NEW_DTAGS + 1)
