@@ -49,6 +49,7 @@
 #include "erglob.h"
 #include "tracing.h"
 #include "config_elf_targ.h"
+#include "config_targ.h"
 
 /* ====================================================================
  *
@@ -87,7 +88,7 @@ Elf32_Word Config_ELF_From_Target(BOOL is_64bit, BOOL old_abi, INT isa)
 Elf32_Half Get_Elf_Target_Machine (void)
 {
 #ifdef X86_WHIRL_OBJECTS
-	return EM_X86_64; // from /usr/include/elf.h
+	return Use_32_Bit_Pointers ? EM_386 : EM_X86_64; // from /usr/include/elf.h
 #else
 #define EM_X86_64       62              /* AMD x86-64 architecture */
 // TODO        return EM_X86_64; // from /usr/include/elf.h
