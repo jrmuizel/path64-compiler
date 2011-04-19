@@ -52,6 +52,7 @@
 #include "ld_ipa_interface.h"		// for ld_for_all_ST ()
 
 #include "ipc_weak.h"
+#include "err_host.tab"       /* Include the error tables in the driver */
 
 
 /***************************************************************************/
@@ -118,6 +119,7 @@ ipa_dot_so_init ()
     ipa_dot_so_initialized = TRUE;
 
     MEM_Initialize();
+    Set_Error_Tables(Phases, host_errlist);
     Preconfigure ();
     IP_set_target();
     Dont_Use_WN_Free_List ();

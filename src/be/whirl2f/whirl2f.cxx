@@ -288,6 +288,7 @@ main (INT argc,       /* Number of command line arguments */
    * possible upon start-up.
    */
    MEM_Initialize();
+   Set_Error_Tables(Phases, host_errlist);
    Init_Error_Handler(10);
    Set_Error_Line(ERROR_LINE_UNKNOWN);
    Set_Error_Phase("Whirl2f");
