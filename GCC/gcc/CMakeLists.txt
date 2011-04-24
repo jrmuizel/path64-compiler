@@ -14,7 +14,9 @@ ADD_DEFINITIONS(-DIN_GCC -DHAVE_CONFIG_H)
 
 INCLUDE_REGULAR_EXPRESSION("^([^ri]|i[^n]|in[^s]|ins[^n]|insn[^-]|r[^t]|rt[^l]|rtl[^.])")
 
-SUBDIRS(cp)
+IF(PATH64_ENABLE_CXX)
+  SUBDIRS(cp)
+ENDIF()
 
 #-----------------------------------------------------------------------------
 # Load the platform configuration.

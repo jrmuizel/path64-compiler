@@ -188,6 +188,10 @@ ELSE()
 	MESSAGE(STATUS "GNU runtime enabled")
 ENDIF()
 
+
+OPTION(PATH64_ENABLE_CXX "Enable C++ support" ON)
+
+
 SET(NAMEPREFIX "path" CACHE STRING "Default name excutable prefix [path]")
 IF(NAMEPREFIX)
 	MESSAGE(STATUS "Executables will be prefixed with ${NAMEPREFIX}")
