@@ -3486,9 +3486,6 @@ static BOOL Compose_Addr( OP* mem_op, EBO_TN_INFO* pt_tninfo,
   */
 
   OP* addr_op = pt_tninfo->in_op;
-  if (TN_size(OP_result(mem_op, 0)) != TN_size(OP_result(addr_op, 0)))
-    return FALSE;
-
   const TOP top = OP_code( addr_op );
 
   switch( top ){
