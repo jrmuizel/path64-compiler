@@ -1974,7 +1974,8 @@ Constant_Operand1 (OP *op,
   TOP pred_opcode = OP_code(pred_op);
 
   /* Look for a sequence of two addi that can be combined. */
-  if (OP_iadd(op) && OP_iadd(pred_op))
+  if (OP_iadd(op) && OP_iadd(pred_op) &&
+      TN_size(OP_result(op, 0)) == TN_size(OP_result(pred_op, 0)))
   {
     INT ptn0_idx = 0;
     INT ptn1_idx = 1;
@@ -3485,6 +3486,9 @@ static BOOL Compose_Addr( OP* mem_op, EBO_TN_INFO* pt_tninfo,
   */
 
   OP* addr_op = pt_tninfo->in_op;
+  if (TN_size(OP_result(mem_op, 0)) != TN_size(OP_result(addr_op, 0)))
+    return FALSE;
+
   const TOP top = OP_code( addr_op );
 
   switch( top ){
