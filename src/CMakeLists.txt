@@ -64,9 +64,7 @@ ADD_SUBDIRECTORY(libmpath)
 #Hack for Window building
 IF((${CMAKE_SYSTEM_NAME} MATCHES "Windows")) 
 ELSE()
-    IF(PATH64_ENABLE_CXX)
-        ADD_SUBDIRECTORY(instrumentation)
-    endif()
+    ADD_SUBDIRECTORY(instrumentation)
     ADD_SUBDIRECTORY(arith)
 ENDIF()
 

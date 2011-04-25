@@ -325,6 +325,16 @@ else()
 endif()
 
 
+# Returns compiler for specified language
+function(path64_get_compiler_for_language res lang use_sys)
+    if(${use_sys})
+        set(${res} "${CMAKE_${lang}_COMPILER}" PARENT_SCOPE)
+    else()
+        set(${res} "${path64_compiler_${lang}}" PARENT_SCOPE)
+    endif()
+endfunction()
+
+
 # Adds library for specified target
 function(path64_add_library_for_target name target type src_base_path)
     path64_check_target_exists(${target})
@@ -364,6 +374,7 @@ function(path64_add_library_for_target name target type src_base_path)
     endforeach()
 
     set(compiler-deps)
+    set(use_sys_compiler ${path64_use_system_compiler_for_multitarget_${name}})
 
     # Adding rules for compiling sources
     set(objects)
@@ -498,8 +509,10 @@ function(path64_add_library_for_target name target type src_base_path)
                 endif()
             endforeach()          
 
+            path64_get_compiler_for_language(compiler "${src_lang}" "${use_sys_compiler}")
+
             add_custom_command(OUTPUT ${object_name} ${obj_outputs}
-                               COMMAND ${path64_compiler_${src_lang}} -c -o ${object_rel_name}
+                               COMMAND ${compiler} -c -o ${object_rel_name}
                                        ${arch_flag}
                                        ${src_flags}
                                        ${incl_dirs_flags}
@@ -572,8 +585,10 @@ function(path64_add_library_for_target name target type src_base_path)
             list(APPEND compiler-deps "compiler-stage-${link_lang}")
         endif()
 
+        path64_get_compiler_for_language(compiler "${link_lang}" "${use_sys_compiler}")
+
         add_custom_command(OUTPUT ${library_file}
-                           COMMAND ${path64_compiler_${link_lang}} -shared -o ${library_file}
+                           COMMAND ${compiler} -shared -o ${library_file}
                                    ${arch_flag}
                                    ${target_flags}
                                    ${target_link_flags}
@@ -950,5 +965,10 @@ function(path64_add_multitarget_dependencies name)
             add_dependencies(${name}-${targ} ${dep})
         endforeach()
     endforeach()
+endfunction()
+
+
+function(path64_set_use_system_compiler_for_multitarget name)
+    set(path64_use_system_compiler_for_multitarget_${name} TRUE PARENT_SCOPE)
 endfunction()
 
