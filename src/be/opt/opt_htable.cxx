@@ -2138,9 +2138,6 @@ CODEMAP::Canon_cvt(WN       *wn,
   // Fix_var_type at emitter time, we do not delete U8I4CVT #329096
   if (Is_Target_ISA_M3Plus() && (op == OPC_I8I4CVT || op == OPC_U8I4CVT))
     return propagated;
-#elif defined(TARG_X8664)
-  if (! Is_Target_32bit() && op == OPC_U8U4CVT)
-    return propagated;
 #endif
   if ((Get_mtype_class(OPCODE_rtype(op)) & 
        Get_mtype_class(OPCODE_desc(op))) != 0 &&
@@ -2966,6 +2963,7 @@ CODEMAP::Add_expr(WN *wn, OPT_STAB *opt_stab, STMTREP *stmt, CANON_CR *ccr,
             // and the kid1 is a constant, pull the constant out.
             const OPERATOR opr = retv->Opr();
             if (WOPT_Enable_CRSIMP &&
+                Allow_wrap_around_opt &&
                 (opr == OPR_ADD || opr == OPR_SUB) &&
                 retv->Get_opnd(1)->Kind() == CK_CONST) {
                   CODEREP *cr = retv->Get_opnd(0);
