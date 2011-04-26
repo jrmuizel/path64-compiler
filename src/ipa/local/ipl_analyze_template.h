@@ -64,30 +64,34 @@
 
 extern "C" {
  void _ZN10DU_MANAGER14CD_is_br_takenEj(void) __attribute__ ((weak));
- void _ZN10DU_MANAGER14CD_is_br_takenEm(void) __attribute__ ((weak));
  void _ZN10DU_MANAGER15CD_is_fall_thruEj(void) __attribute__((weak));
- void _ZN10DU_MANAGER15CD_is_fall_thruEm(void) __attribute__((weak));
  void _ZNK7CODEREP12Def_at_entryEv(void) __attribute__((weak));
  void _ZNK7CODEREP5DefbbEv(void) __attribute__((weak));
  void _ZN10DU_MANAGER8DominateEjj(void) __attribute__((weak));
- void _ZN10DU_MANAGER8DominateEmm(void) __attribute__((weak));
  void _ZN10DU_MANAGER6Get_cdEj(void) __attribute__((weak));
- void _ZN10DU_MANAGER6Get_cdEm(void) __attribute__((weak));
- void _ZN10DU_MANAGER13Get_last_stmtEm(void) __attribute__((weak));
  void _ZN10DU_MANAGER13Get_last_stmtEj(void) __attribute__((weak));
 
  void _ZN10DU_MANAGER14CD_is_br_takenEj(void) {}
- void _ZN10DU_MANAGER14CD_is_br_takenEm(void) {}
  void _ZN10DU_MANAGER15CD_is_fall_thruEj(void) {}
- void _ZN10DU_MANAGER15CD_is_fall_thruEm(void) {}
  void _ZNK7CODEREP12Def_at_entryEv(void) {}
  void _ZNK7CODEREP5DefbbEv(void) {}
  void _ZN10DU_MANAGER8DominateEjj(void) {}
- void _ZN10DU_MANAGER8DominateEmm(void) {}
  void _ZN10DU_MANAGER6Get_cdEj(void) {}
- void _ZN10DU_MANAGER6Get_cdEm(void) {}
  void _ZN10DU_MANAGER13Get_last_stmtEj(void) {}
+
+#if defined(__INTEL_COMPILER)
+ void _ZN10DU_MANAGER14CD_is_br_takenEm(void) __attribute__ ((weak));
+ void _ZN10DU_MANAGER15CD_is_fall_thruEm(void) __attribute__((weak));
+ void _ZN10DU_MANAGER8DominateEmm(void) __attribute__((weak));
+ void _ZN10DU_MANAGER6Get_cdEm(void) __attribute__((weak));
+ void _ZN10DU_MANAGER13Get_last_stmtEm(void) __attribute__((weak));
+
+ void _ZN10DU_MANAGER14CD_is_br_takenEm(void) {}
+ void _ZN10DU_MANAGER15CD_is_fall_thruEm(void) {}
+ void _ZN10DU_MANAGER8DominateEmm(void) {}
+ void _ZN10DU_MANAGER6Get_cdEm(void) {}
  void _ZN10DU_MANAGER13Get_last_stmtEm(void) {}
+#endif
 }
 
 extern BOOL CXX_Alias_Const;
