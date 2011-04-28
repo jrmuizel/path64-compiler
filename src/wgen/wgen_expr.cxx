@@ -2237,78 +2237,82 @@ WGEN_Address_Of(gs_t arg0)
   switch (code0) {
 #ifdef KEY
   case GS_RESULT_DECL:	// bug 3878
-#if 0
-    // wgen clean-up: code needed to handle lowered GNU tree should not
-    // be needed any more.
-    if (TY_return_in_mem(Get_TY
-                         (gs_tree_type
-                          (gs_tree_type(Current_Function_Decl()) ) ) ) )
     {
-      WGEN_fixup_result_decl (arg0);
-      wn = WGEN_Address_Of (arg0);
-      break;
+      st = Get_ST (arg0);
+      ty_idx = ST_type (st);
+      wn = WN_Lda (Pointer_Mtype, ST_ofst(st), st);
     }
-    // fall through
+    break;
 #endif
-#endif
+
   case GS_VAR_DECL:
-  case GS_PARM_DECL:
-  case GS_FUNCTION_DECL:
     {
       st = Get_ST (arg0);
       ty_idx = ST_type (st);
 #ifdef KEY
       // Arg0 is the virtual function table (vtable) for a class.  Initialize
       // the table.
-      if (code0 == GS_VAR_DECL) {
-        if (gs_decl_initial(arg0) &&
-            (gs_decl_virtual_p(arg0) ||
-             (/* bug 12781 */ gs_decl_tinfo_p(arg0) /* typeinfo ? */ &&
-              /* make sure it is not an NTBS name */
-              gs_tree_code(gs_decl_initial(arg0)) != GS_STRING_CST)) &&
-            !gs_decl_external(arg0))
-        {
-          gs_t init = gs_decl_initial(arg0);
-          if (gs_tree_code(init) != GS_ERROR_MARK) {
-            FmtAssert(gs_tree_code(init) == GS_CONSTRUCTOR,
-		              ("Unexpected initializer for virtual table"));
-            WGEN_Initialize_Decl(arg0);
-          }
+      if (gs_decl_initial(arg0) &&
+          (gs_decl_virtual_p(arg0) ||
+           (/* bug 12781 */ gs_decl_tinfo_p(arg0) /* typeinfo ? */ &&
+            /* make sure it is not an NTBS name */
+            gs_tree_code(gs_decl_initial(arg0)) != GS_STRING_CST)) &&
+          !gs_decl_external(arg0))
+      {
+        gs_t init = gs_decl_initial(arg0);
+        if (gs_tree_code(init) != GS_ERROR_MARK) {
+          FmtAssert(gs_tree_code(init) == GS_CONSTRUCTOR,
+	                ("Unexpected initializer for virtual table"));
+          WGEN_Initialize_Decl(arg0);
         }
       }
 
-      if (code0 == GS_VAR_DECL && gs_decl_value_expr(arg0)) {
+      if (gs_decl_value_expr(arg0)) {
         wn = WGEN_Address_Of (gs_decl_value_expr(arg0));
         break;
       }
 #endif
       // for VLAs, use the base_st instead of st
-      if (code0 == GS_VAR_DECL &&
-          st != ST_base(st)) {
+      if (st != ST_base(st)) {
         FmtAssert (ST_ofst (st) == 0,
                    ("Variable Length Arrays within struct not currently implemented"));
         wn = WN_Ldid (Pointer_Mtype, 0, ST_base(st), ST_type(ST_base(st)));
       }
       else {
-        if (!WGEN_Keep_Zero_Length_Structs &&
-            code0 == GS_PARM_DECL            &&
-            TY_mtype (ty_idx) == MTYPE_M  &&
-            TY_size (ty_idx) == 0) {
-          // taking address of zero length struct passed as parameter
-          DevWarn ("taking address of zero length struct %s at line %d",
-                   ST_name (st), lineno);
-          wn = WN_Intconst (Pointer_Mtype, 0);
-        }
-        else
-          wn = WN_Lda (Pointer_Mtype, ST_ofst(st), st);
+        wn = WN_Lda (Pointer_Mtype, ST_ofst(st), st);
       }
+    }
+    break;
+
+  case GS_PARM_DECL:
+    {
+      st = Get_ST (arg0);
+      ty_idx = ST_type (st);
+
+      // for VLAs, use the base_st instead of st
+      if (!WGEN_Keep_Zero_Length_Structs &&
+          TY_mtype (ty_idx) == MTYPE_M  &&
+          TY_size (ty_idx) == 0) {
+        // taking address of zero length struct passed as parameter
+        DevWarn ("taking address of zero length struct %s at line %d",
+                 ST_name (st), lineno);
+        wn = WN_Intconst (Pointer_Mtype, 0);
+      }
+      else
+        wn = WN_Lda (Pointer_Mtype, ST_ofst(st), st);
+    }
+    break;
+
+  case GS_FUNCTION_DECL:
+    {
+      st = Get_ST (arg0);
+      ty_idx = ST_type (st);
+      wn = WN_Lda (Pointer_Mtype, ST_ofst(st), st);
 
 #ifdef KEY
-      if (code0 == GS_FUNCTION_DECL) {
-        PU &pu = Pu_Table[ST_pu(st)];
-        if (PU_is_nested_func(pu))
-          Set_PU_need_trampoline(pu);
-      }
+      PU &pu = Pu_Table[ST_pu(st)];
+      if (PU_is_nested_func(pu))
+        Set_PU_need_trampoline(pu);
 #endif
     }
     break;
