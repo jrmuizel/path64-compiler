@@ -2261,19 +2261,20 @@ WGEN_Address_Of(gs_t arg0)
       // Arg0 is the virtual function table (vtable) for a class.  Initialize
       // the table.
       if (code0 == GS_VAR_DECL) {
-	if (gs_decl_initial(arg0) &&
-	    (gs_decl_virtual_p(arg0) ||
-	     (/* bug 12781 */ gs_decl_tinfo_p(arg0) /* typeinfo ? */ &&
-	      /* make sure it is not an NTBS name */
-	      gs_tree_code(gs_decl_initial(arg0)) != GS_STRING_CST)) &&
-	    !gs_decl_external(arg0)) {
-	  gs_t init = gs_decl_initial(arg0);
-	  if (gs_tree_code(init) != GS_ERROR_MARK) {
-	    FmtAssert (gs_tree_code(init) == GS_CONSTRUCTOR,
-		       ("Unexpected initializer for virtual table"));
-	    WGEN_Initialize_Decl(arg0);
-	  }
-	}
+        if (gs_decl_initial(arg0) &&
+            (gs_decl_virtual_p(arg0) ||
+             (/* bug 12781 */ gs_decl_tinfo_p(arg0) /* typeinfo ? */ &&
+              /* make sure it is not an NTBS name */
+              gs_tree_code(gs_decl_initial(arg0)) != GS_STRING_CST)) &&
+            !gs_decl_external(arg0))
+        {
+          gs_t init = gs_decl_initial(arg0);
+          if (gs_tree_code(init) != GS_ERROR_MARK) {
+            FmtAssert(gs_tree_code(init) == GS_CONSTRUCTOR,
+		              ("Unexpected initializer for virtual table"));
+            WGEN_Initialize_Decl(arg0);
+          }
+        }
       }
 
       if (code0 == GS_VAR_DECL && gs_decl_value_expr(arg0)) {
@@ -2288,7 +2289,7 @@ WGEN_Address_Of(gs_t arg0)
                    ("Variable Length Arrays within struct not currently implemented"));
         wn = WN_Ldid (Pointer_Mtype, 0, ST_base(st), ST_type(ST_base(st)));
       }
-      else
+      else {
         if (!WGEN_Keep_Zero_Length_Structs &&
             code0 == GS_PARM_DECL            &&
             TY_mtype (ty_idx) == MTYPE_M  &&
@@ -2300,12 +2301,13 @@ WGEN_Address_Of(gs_t arg0)
         }
         else
           wn = WN_Lda (Pointer_Mtype, ST_ofst(st), st);
+      }
 
 #ifdef KEY
       if (code0 == GS_FUNCTION_DECL) {
-	PU &pu = Pu_Table[ST_pu(st)];
-	if (PU_is_nested_func(pu))
-	  Set_PU_need_trampoline(pu);
+        PU &pu = Pu_Table[ST_pu(st)];
+        if (PU_is_nested_func(pu))
+          Set_PU_need_trampoline(pu);
       }
 #endif
     }
