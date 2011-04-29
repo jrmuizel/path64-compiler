@@ -7961,11 +7961,6 @@ WGEN_Expand_Expr (gs_t exp,
           WN_kid (call_wn, i++) = arg_wn;
         }
 
-#ifdef ADD_HANDLER_INFO
-	if (num_handlers) 
-	  Add_Handler_Info (call_wn, i, num_handlers);
-#endif
-
 #ifdef KEY
 	if (key_exceptions && !gs_tree_nothrow(exp) && 
 // Call terminate() "when the destruction of an object during stack 

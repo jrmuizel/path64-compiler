@@ -3006,81 +3006,9 @@ Set_Handler_Labels (gs_t stmt)
 INT
 Current_Handler_Count()
 {
-#ifndef ADD_HANDLER_INFO
-  return 0;
-#endif
-  if (temp_cleanup_i != -1) {
-    for (int i = temp_cleanup_i; i != -1; --i) {
-      if (temp_cleanup_stack [i].label_idx != 0)
-	return 1;
-    }
-  }
-
-  for (int i = scope_cleanup_i; i != -1; --i) {
-    gs_t t = scope_cleanup_stack [i].stmt;
-    if (gs_tree_code(t) == GS_CLEANUP_STMT)
-      return 1;
-    INT result = 0;
-    if (gs_tree_code(t) == GS_TRY_BLOCK) {
-      for (gs_t handler = gs_try_handlers(t);
-           handler;
-	   handler = gs_tree_chain(handler))
-        ++result;
-      return result;
-    }
-  }
-
   return 0;
 }
 
-static ST_IDX
-Tid_For_Handler (gs_t handler)
-{
-  gs_t t = gs_handler_body (handler);
-  while (gs_tree_code(t) != GS_COMPOUND_EXPR)
-    t = gs_tree_chain(t);
-  t = first_in_compound_expr(t);
-#if 0   /* START_CATCH_STMT no longer exists */
-  while (TREE_CODE(t) != START_CATCH_STMT)
-    t = TREE_CHAIN(t);
-#endif
-  t = gs_tree_type(t);
-  return t ? ST_st_idx(Get_ST (gs_tree_operand(t, 0))) : 0;
-}
-
-#ifdef ADD_HANDLER_INFO
-void
-Add_Handler_Info (WN * call_wn, INT i, INT num_handlers)
-{
-  if (temp_cleanup_i != -1) { 
-    for (int i = temp_cleanup_i; i != -1; --i)
-      if (temp_cleanup_stack [i].label_idx != 0) {
-        WN_kid (call_wn, i++) =
-          WN_CreateHandlerInfo (0,
-                                temp_cleanup_stack[temp_cleanup_i].label_idx);
-        return;
- 
-      }
-  }
-
-  int j = scope_cleanup_i;
-  while (gs_tree_code(scope_cleanup_stack [j].stmt) == GS_BIND_EXPR)
-    --j;
-  gs_t t = scope_cleanup_stack [j].stmt;
-  if (gs_tree_code(t) == GS_TRY_BLOCK && gs_tree_code(TRY_HANDLERS(t)) == GS_HANDLER) {
-    for (gs_t handler = TRY_HANDLERS(t);
-         handler;
-         handler = gs_tree_chain(handler))
-      WN_kid (call_wn, i++) =
-        WN_CreateHandlerInfo (Tid_For_Handler (handler),
-			      HANDLER_LABEL (handler));
-    return;
-  }
-
-  WN_kid (call_wn, i++) =
-    WN_CreateHandlerInfo (0, scope_cleanup_stack [j].label_idx);
-}  
-#endif /* ADD_HANDLER_INFO */
 
 #ifdef KEY
 // Given a type tree, return the typeinfo var for the exception tables
