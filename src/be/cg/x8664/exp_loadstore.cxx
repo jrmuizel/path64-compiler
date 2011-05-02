@@ -862,16 +862,9 @@ Exp_Ldst (
       }
       else if (Is_Target_64bit()) {
         if (Gen_PIC_Shared) {
-          //zwu
           if (ST_is_thread_local(base_sym)) {
-            TN *tmp = base_ofst == 0 ? tn : Build_TN_Like(tn);
-            Build_OP (TOP_lea64, tmp, Rip_TN(),
-                      Gen_Symbol_TN(base_sym, 0, TN_RELOC_X8664_GOTTPOFF), &newops);
-            // got address should not alias
-            Set_OP_no_alias (OPS_last(&newops));
-            //if (base_ofst != 0)
-            //  Build_OP( TOP_addi64, tn, tmp, Gen_Literal_TN(base_ofst, 8),  &newops );
-          }//end of zwu
+            FmtAssert(false, ("TLS NYI under PIC"));
+          }
           else {
           	if (!ST_is_export_local(base_sym) &&
                  ST_export(base_sym) != EXPORT_HIDDEN ||
@@ -917,9 +910,6 @@ Exp_Ldst (
                    &newops);
         } 
         else {
-#if 0 // bug 4622
-	  FmtAssert( mcmodel >= MEDIUM, ("code model is not medium or higher") );
-#endif
           TN* sym_tn = NULL;
         
           if (ISA_LC_Value_In_Class(base_ofst, LC_simm32)) {
@@ -1080,16 +1070,9 @@ Exp_Ldst (
                              // section?
                              (ST_class(base_sym) == CLASS_BLOCK && STB_section(base_sym) /* bug 10097 */)) )
       {
-        //zwu
-        if(ST_is_thread_local(base_sym) && Is_Target_64bit())
-        {
-          TN *tmp = base_ofst == 0 ? tn : Build_TN_Like(tn);
-          Build_OP( TOP_lea64, tmp, Rip_TN(), Gen_Symbol_TN( base_sym, 0, TN_RELOC_X8664_GOTTPOFF ), &newops );
-          // got address should not alias
-          Set_OP_no_alias(OPS_last(&newops));
-          // if (base_ofst != 0)
-          //   Build_OP( TOP_addi64, tn, tmp, Gen_Literal_TN(base_ofst, 8),       &newops );
-        } //end of zwu
+        if(ST_is_thread_local(base_sym) && Is_Target_64bit()) {
+          FmtAssert(false, ("TLS NYI under PIC"));
+        }
         else if( Is_Target_64bit() )
         {
           TN *new_base = Build_TN_Of_Mtype(Pointer_Mtype);
