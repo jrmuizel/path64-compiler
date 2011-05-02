@@ -1062,29 +1062,42 @@ Exp_Ldst (
             ofst_tn = Gen_Literal_TN( 0, 4 );
           }
         }
-      }
 
-      // bug 14967: a "hidden" sym need not be accessed through GOT in m64
-      if( Gen_PIC_Shared && (Is_Target_32bit() ||
-                             (!ST_is_export_local(base_sym) && ST_export(base_sym) != EXPORT_HIDDEN) ||
-                             // section?
-                             (ST_class(base_sym) == CLASS_BLOCK && STB_section(base_sym) /* bug 10097 */)) )
-      {
-        if(ST_is_thread_local(base_sym) && Is_Target_64bit()) {
-          FmtAssert(false, ("TLS NYI under PIC"));
-        }
-        else if( Is_Target_64bit() )
+        // bug 14967: a "hidden" sym need not be accessed through GOT in m64
+        if( Gen_PIC_Shared && ((!ST_is_export_local(base_sym) && ST_export(base_sym) != EXPORT_HIDDEN) ||
+                               // section?
+                               (ST_class(base_sym) == CLASS_BLOCK && STB_section(base_sym) /* bug 10097 */)) )
         {
-          TN *new_base = Build_TN_Of_Mtype(Pointer_Mtype);
-          Build_OP (TOP_ld64, new_base, base_tn, 
-                    Gen_Symbol_TN(base_sym, 0, TN_RELOC_X8664_GOTPCREL),
-                    &newops);
-          // got address should not alias
-          Set_OP_no_alias(OPS_last(&newops));
-          base_tn = new_base;
-          ofst_tn = Gen_Literal_TN( base_ofst, 4 );
-        } 
-        else {
+          if(ST_is_thread_local(base_sym)) {
+            FmtAssert(false, ("TLS NYI under PIC"));
+          }
+          else {
+            TN *new_base = Build_TN_Of_Mtype(Pointer_Mtype);
+            Build_OP (TOP_ld64, new_base, base_tn, 
+                      Gen_Symbol_TN(base_sym, 0, TN_RELOC_X8664_GOTPCREL),
+                      &newops);
+            // got address should not alias
+            Set_OP_no_alias(OPS_last(&newops));
+            base_tn = new_base;
+            ofst_tn = Gen_Literal_TN( base_ofst, 4 );
+          } 
+        }
+        else if( ofst_tn == NULL ) {
+          if (ST_is_thread_local(base_sym) && ST_sclass(sym) == SCLASS_EXTERN) {
+            // Already handled above.
+            FmtAssert(FALSE, ("Exp_Ldst: thread local extern should be handled above"));
+          } else {
+            ofst_tn = Gen_Symbol_TN(base_sym, base_ofst,
+                                    ST_is_thread_local(base_sym) ?
+                                      TN_RELOC_X8664_TPOFF32_seg_reg :
+                                      TN_RELOC_NONE);
+          }
+        }
+      }
+      else {
+        // Is_Targget_32bit() == TRUE
+
+        if (Gen_PIC_Shared) {
           // for -m32 here
           TN *new_base = Build_TN_Of_Mtype(Pointer_Mtype);
           Build_OP (TOP_ld32, new_base, Ebx_TN(), Gen_Symbol_TN(base_sym, 0, TN_RELOC_IA32_GOT),   &newops);
@@ -1094,24 +1107,21 @@ Exp_Ldst (
           base_tn = new_base;
           ofst_tn = Gen_Literal_TN( base_ofst, 4 );
         }
-      }
-      else if( ofst_tn == NULL ){
-        if (ST_is_thread_local(base_sym) &&
-            ST_sclass(sym) == SCLASS_EXTERN) {
-          // The 64-bit case already handled above.
-          FmtAssert(Is_Target_32bit(), ("Exp_Ldst: unexpected 64-bit target"));
-          base_tn = Build_TN_Of_Mtype(Pointer_Mtype);
-          Build_OP(TOP_ldc32, base_tn,
-                   Gen_Symbol_TN(base_sym, 0, TN_RELOC_X8664_GOTTPOFF),
-                   &newops);
-          ofst_tn = Gen_Literal_TN(base_ofst, 4);
-          base_ofst = 0;
-          Set_TN_is_thread_seg_ptr(base_tn);
-        } else {
-          ofst_tn = Gen_Symbol_TN(base_sym, base_ofst,
-                                  ST_is_thread_local(base_sym) ?
-                                    TN_RELOC_X8664_TPOFF32_seg_reg :
-                                    TN_RELOC_NONE);
+        else if( ofst_tn == NULL ) {
+          if (ST_is_thread_local(base_sym) && ST_sclass(sym) == SCLASS_EXTERN) {
+            base_tn = Build_TN_Of_Mtype(Pointer_Mtype);
+            Build_OP(TOP_ldc32, base_tn,
+                     Gen_Symbol_TN(base_sym, 0, TN_RELOC_X8664_GOTTPOFF),
+                     &newops);
+            ofst_tn = Gen_Literal_TN(base_ofst, 4);
+            base_ofst = 0;
+            Set_TN_is_thread_seg_ptr(base_tn);
+          } else {
+            ofst_tn = Gen_Symbol_TN(base_sym, base_ofst,
+                                    ST_is_thread_local(base_sym) ?
+                                      TN_RELOC_X8664_TPOFF32_seg_reg :
+                                      TN_RELOC_NONE);
+          }
         }
       }
     }
