@@ -124,6 +124,8 @@
 /* this next header should be after the external declarations in the others */
 #include "pragma_weak.h"	/* Alias routines defined in wopt.so */
 
+#include <sstream>
+
 /* ====================================================================
  *			 Exported Functions
  * ====================================================================
@@ -5510,6 +5512,26 @@ static WN *lower_expr(WN *block, WN *tree, LOWER_ACTIONS actions)
 	return tree;
       }
     }
+
+    // promote loads from TLS symbols to up level
+    // This is needed to avoid conflicts in result registers
+    // (as for call parameters)
+    if (ST_is_thread_local(WN_st(tree)))
+    {
+      ST *st = WN_st(tree);
+      std::ostringstream temp_name;
+      temp_name << ST_name(st) << ".tls_temp";
+
+      TYPE_ID ty = WN_rtype(tree);
+      ST *temp = MTYPE_To_PREG(ty);
+      PREG_NUM temp_num = Create_Preg(ty, temp_name.str().c_str());
+      WN *store = WN_StidIntoPreg(ty, temp_num, temp, tree);
+      WN_INSERT_BlockLast(block, store);
+
+      WN *load = WN_LdidPreg(ty, temp_num);
+      return load;
+    }
+
     break;
 
   case OPR_ILDBITS:
@@ -5585,6 +5607,25 @@ static WN *lower_expr(WN *block, WN *tree, LOWER_ACTIONS actions)
       }
     }
 #endif
+
+    // promote ldas for TLS symbols to up level
+    // This is needed to avoid conflicts in result registers
+    // (as for call parameters)
+    if (ST_is_thread_local(WN_st(tree)))
+    {
+      ST *st = WN_st(tree);
+      std::ostringstream temp_name;
+      temp_name << ST_name(st) << ".tls_temp";
+
+      TYPE_ID ty = WN_rtype(tree);
+      ST *temp = MTYPE_To_PREG(ty);
+      PREG_NUM temp_num = Create_Preg(ty, temp_name.str().c_str());
+      WN *store = WN_StidIntoPreg(ty, temp_num, temp, tree);
+      WN_INSERT_BlockLast(block, store);
+
+      WN *load = WN_LdidPreg(ty, temp_num);
+      return load;
+    }
     break;
 
   case OPR_CVT:

@@ -1391,6 +1391,10 @@ main ()
               "swp_stop",
 #include "isa_avx.cxx"
 
+	      /* thread-local storage */
+	      "tls_get_addr_64",
+	      "tls_get_addr_32",
+
 	      /* END */
 	      NULL);
 }

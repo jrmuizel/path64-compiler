@@ -148,4 +148,6 @@ extern BB_MAP outer_label_map;
 extern BOOL W2OPS_Pragma_Preamble_End_Seen (void);
 #endif
 
+BB *Start_New_Basic_Block(void);
+
 #endif /* whirl2ops_INCLUDED */

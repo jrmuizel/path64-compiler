@@ -2082,5 +2082,14 @@ int main (int argc, char *argv[])
 #include "avx_si.cxx"
 #include "avx_si2.cxx"
 
+  Instruction_Group("tls",
+                    TOP_tls_get_addr_64,
+                    TOP_tls_get_addr_32,
+                    TOP_UNDEFINED);
+  Any_Operand_Access_Time(0);
+  Any_Result_Available_Time(5);
+  Resource_Requirement(res_alu, 0);
+  Resource_Requirement(res_issue, 0);
+
   Machine_Done("opteron.c");
 }

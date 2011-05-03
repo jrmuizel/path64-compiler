@@ -1860,6 +1860,24 @@ main()
 			   TOP_fsin,
 			   TOP_UNDEFINED );
 
+  /* TLS 64 */
+  ISA_PRINT_TYPE tls_64 = ISA_Print_Type_Create("tls_64", "# %s\\n\\t.byte \\t0x66\\n\\tleaq %s@TLSGD(%%rip), %%rdi\\n\\t.word \\t0x6666\\n\\trex64\\n\\tcall __tls_get_addr");
+  Name();
+  Operand(0); /* ST# */
+  Instruction_Print_Group(tls_64,
+                          TOP_tls_get_addr_64,
+                          TOP_UNDEFINED);
+
+  /* TLS 32 */
+  ISA_PRINT_TYPE tls_32 = ISA_Print_Type_Create("tls_32", "# %s\\n\\tleal %s(,%s,1), %%eax\\n\\tcall %s");
+  Name();
+  Operand(0); /* ST# */
+  Operand(1); /* ebx */
+  Operand(2); /* __tls_get_addr */
+  Instruction_Print_Group(tls_32,
+                          TOP_tls_get_addr_32,
+                          TOP_UNDEFINED);
+
 #include "isa_avx_print.cxx"
 
   ISA_Print_End();

@@ -136,6 +136,10 @@ main()
     ISA_Reg_Opnd_Type_Create("cl", ISA_REGISTER_CLASS_integer,
 			     ISA_REGISTER_SUBCLASS_rcx,
 			     8, SIGNED, INVALID);
+  const OPERAND_VALUE_TYPE rdi =
+    ISA_Reg_Opnd_Type_Create("rdi", ISA_REGISTER_CLASS_integer,
+			     ISA_REGISTER_SUBCLASS_rdi,
+			     64, SIGNED, INVALID);
   const OPERAND_VALUE_TYPE rsp =
     ISA_Reg_Opnd_Type_Create("rsp", ISA_REGISTER_CLASS_integer,
 			     ISA_REGISTER_SUBCLASS_rsp,
@@ -3413,7 +3417,7 @@ main()
   Result(0, fp128);
   Operand(0, fp128, opnd1);
   Operand(1, fp128, opnd2);
-  
+
   Instruction_Group("vadd ymm",
                     TOP_vaddpd,
                     TOP_UNDEFINED);
@@ -3476,6 +3480,20 @@ main()
   Operand(2, simm32, offset);
 
 #include "isa_avx_operands.cxx"
+
+  Instruction_Group("tls_get_addr_64",
+		    TOP_tls_get_addr_64,
+		    TOP_UNDEFINED);
+  Result(0, rax);
+  Result(1, rdi);
+  Operand(0, simm32, offset);
+
+  Instruction_Group("tls_get_addr_32",
+		    TOP_tls_get_addr_32,
+		    TOP_UNDEFINED);
+  Operand(0, simm32, offset);
+  Operand(1, int32, base);
+  Operand(2, pcrel32, target);
   
   ISA_Operands_End();
   return 0;

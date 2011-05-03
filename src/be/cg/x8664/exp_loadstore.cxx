@@ -62,6 +62,11 @@
 
 #include "cgemit.h"	// for CG_emit_non_gas_syntax
 #include "cg_flags.h"	// for CG_valgrind_friendly
+#include "whirl2ops.h"
+
+
+ST *tls_get_addr_st = NULL;       // __tls_get_addr symbol
+
 
 static void Exp_Ldst( OPCODE opcode,
 		      TN *tn,
@@ -741,6 +746,71 @@ CG_Set_Is_Stack_Used()
   is_stack_used = TRUE;
 }
 
+// Returns symbol for __tls_get_addr function
+static ST *TLS_st ()
+{
+  if(tls_get_addr_st != NULL)
+    return tls_get_addr_st;
+
+  // creating type for __tls_get_addr function
+  TY_IDX ty_idx;
+  TY &ty = New_TY(ty_idx);
+  TY_Init(ty, 0, KIND_FUNCTION, MTYPE_UNKNOWN, 0);
+  Set_TY_align(ty_idx, 1);
+  TYLIST_IDX params;
+  Set_TYLIST_type(New_TYLIST(params), MTYPE_To_TY(Pointer_Mtype));
+  Set_TY_tylist(ty_idx, params);
+  Set_TYLIST_type(New_TYLIST(params), MTYPE_To_TY(Pointer_Mtype));
+  Set_TYLIST_type(New_TYLIST(params), 0);
+
+  // creating pu for __tls_get_addr function
+  PU_IDX pu_idx;
+  PU &pu = New_PU(pu_idx);
+  PU_Init(pu, ty_idx, GLOBAL_SYMTAB + 1);
+
+  // creating ST for __tls_get_addr function
+  tls_get_addr_st = New_ST(GLOBAL_SYMTAB);
+  ST_Init(tls_get_addr_st,
+          Save_Str("__tls_get_addr"),
+          CLASS_FUNC,
+          SCLASS_EXTERN,
+          EXPORT_PREEMPTIBLE,
+          (TY_IDX)pu_idx);
+
+  return tls_get_addr_st;
+}
+
+// Adds BB annotation for __tls_get_addr call
+static void Add_Tls_Call_Annotation(BB *bb)
+{
+  CALLINFO *info = TYPE_PU_ALLOC(CALLINFO);
+  CALLINFO_call_st(info) = tls_get_addr_st;
+  CALLINFO_call_wn(info) = WN_Create(OPR_CALL, Pointer_Mtype, MTYPE_V, 0);
+  BB_Add_Annotation(bb, ANNOT_CALLINFO, info);
+  Set_BB_call(bb);
+  PU_Has_Calls = TRUE;
+}
+
+// Builds TOP_tls_get_addr operation and copies result to specified TN
+static void Build_tls_get_addr(TN *tn, ST *sym, OPS *ops)
+{
+  TN *rax_tn = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 8);
+  TN *rdi_tn = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RDI, 8);
+  //TN *rax_tn = Build_TN_Like(tn);
+  //TN *rdi_tn = Build_TN_Like(tn);
+  TN *sym_tn = Gen_Symbol_TN(sym, 0, TN_RELOC_NONE);
+  Build_OP(TOP_tls_get_addr_64, rax_tn, rdi_tn, sym_tn, ops);
+  Add_Tls_Call_Annotation(Cur_BB);
+
+  // start new BB because tail call optimizer expects that exit BB does
+  // not contain calls
+  OPS_Append_Ops(&New_OPs, ops);
+  Start_New_Basic_Block();
+  OPS_Init(ops);
+
+  Build_OP(TOP_mov64, tn, rax_tn, ops);
+}
+
 static void
 Exp_Ldst (
   OPCODE opcode,
@@ -863,7 +933,9 @@ Exp_Ldst (
       else if (Is_Target_64bit()) {
         if (Gen_PIC_Shared) {
           if (ST_is_thread_local(base_sym)) {
-            FmtAssert(false, ("TLS NYI under PIC"));
+            TN *tmp = Build_TN_Like(tn);
+            Build_tls_get_addr(tmp, base_sym, &newops);
+            Build_OP(TOP_add64, tn, tmp, Gen_Literal_TN(base_ofst, 8), ops);
           }
           else {
           	if (!ST_is_export_local(base_sym) &&
@@ -987,112 +1059,109 @@ Exp_Ldst (
       Is_True(! on_stack, ("Exp_Ldst: unexpected stack reference"));
 
       if (Is_Target_64bit()) {
-        if (ST_is_thread_local(sym)) {
-          FmtAssert(ISA_LC_Value_In_Class(base_ofst, LC_simm32),
-                    ("Exp_Ldst: thread-local storage base offset too large"));
-          if (ST_sclass(sym) == SCLASS_EXTERN) {
+        if (Gen_PIC_Shared) {
+          if (ST_is_thread_local(base_sym)) {
             base_tn = Build_TN_Of_Mtype(Pointer_Mtype);
-            Build_OP(TOP_ld64, base_tn, Rip_TN(),
-                     Gen_Symbol_TN(base_sym, 0, TN_RELOC_X8664_GOTTPOFF),
-                     &newops);
-            ofst_tn = Gen_Literal_TN(base_ofst, 4);
-            base_ofst = 0;
-            Set_TN_is_thread_seg_ptr(base_tn);
-          } 
-          else {
-            ofst_tn = Gen_Symbol_TN(base_sym, base_ofst,
-                                    TN_RELOC_X8664_TPOFF32_seg_reg);
-            base_ofst = 0;
+            Build_tls_get_addr(base_tn, base_sym, &newops);
+            ofst_tn = Gen_Literal_TN(base_ofst, 8);
           }
-        } 
-        else if (mcmodel < MEDIUM && ISA_LC_Value_In_Class(base_ofst, LC_simm32)) {
-          base_tn = Rip_TN();
+          // bug 14967: a "hidden" sym need not be accessed through GOT in m64
+          else if (ST_export(base_sym) <= EXPORT_HIDDEN) {
+            base_tn = Rip_TN();
+            ofst_tn = Gen_Symbol_TN(base_sym, base_ofst, TN_RELOC_NONE);
+          }
+          else {
+            // TODO: implement this case for -mcmodel=[medium | large]
+            base_tn = Build_TN_Of_Mtype(Pointer_Mtype);
+            Build_OP(TOP_ld64, base_tn, Rip_TN(), 
+                     Gen_Symbol_TN(base_sym, 0, TN_RELOC_X8664_GOTPCREL),
+                     &newops);
+            // got address should not alias
+            Set_OP_no_alias(OPS_last(&newops));
+            ofst_tn = Gen_Literal_TN(base_ofst, 4);
+          }
         }
         else {
-          if (ISA_LC_Value_In_Class(base_ofst, LC_simm32)) {
-            ofst_tn = Gen_Symbol_TN( base_sym, base_ofst, TN_RELOC_X8664_64 );
-            base_ofst = 0;
-          } else {
-            ofst_tn = Gen_Symbol_TN( base_sym, 0, TN_RELOC_X8664_64 );
-          }
+          // !Gen_PIC_Shared
 
-          if (base_ofst != 0) {
-            // Bug 4461
-            base_tn = Build_TN_Of_Mtype(Pointer_Mtype);
-                                                                                                                                                             
-            Build_OP( TOP_movabsq,
-                      base_tn, Gen_Symbol_TN( base_sym, base_ofst, TN_RELOC_X8664_64 ),
-                      &newops );
-            ofst_tn = Gen_Literal_TN(0, 4);
-            base_ofst = 0;
+          if (ST_is_thread_local(base_sym)) {
+              FmtAssert(ISA_LC_Value_In_Class(base_ofst, LC_simm32),
+                        ("Exp_Ldst: thread-local storage base offset too large"));
+              if (ST_sclass(sym) == SCLASS_EXTERN) {
+                base_tn = Build_TN_Of_Mtype(Pointer_Mtype);
+                Build_OP(TOP_ld64, base_tn, Rip_TN(),
+                         Gen_Symbol_TN(base_sym, 0, TN_RELOC_X8664_GOTTPOFF),
+                         &newops);
+                ofst_tn = Gen_Literal_TN(base_ofst, 4);
+                Set_TN_is_thread_seg_ptr(base_tn);
+              } 
+              else {
+                // base tn not used
+                ofst_tn = Gen_Symbol_TN(base_sym, base_ofst,
+                                        TN_RELOC_X8664_TPOFF32_seg_reg);
+              }
+          } 
+          else if (mcmodel < MEDIUM && ISA_LC_Value_In_Class(base_ofst, LC_simm32)) {
+            base_tn = Rip_TN();
+            ofst_tn = Gen_Symbol_TN(base_sym, base_ofst, TN_RELOC_NONE);
           }
+          else {
+            if (ISA_LC_Value_In_Class(base_ofst, LC_simm32)) {
+              ofst_tn = Gen_Symbol_TN( base_sym, base_ofst, TN_RELOC_X8664_64 );
+              base_ofst = 0;
+            } else {
+              ofst_tn = Gen_Symbol_TN( base_sym, 0, TN_RELOC_X8664_64 );
+            }
 
-          /* The target of a load operation under -mcmodel=medium is %rax.
-             Make sure no conflicts will happen; otherwise, use indirect load.
-          
-             As quoted from i386.md:
-             ;; Stores and loads of ax to arbitrary constant address.
-             ;; We fake an second form of instruction to force reload to load address
-             ;; into register when rax is not available
-          */
-          bool use_iload = 
-            ( ( is_load  && !MTYPE_is_integral( OPCODE_rtype(opcode) ) ) ||
-              ( is_store && !MTYPE_is_integral( OPCODE_desc(opcode) ) ) );
-          
-          if (!use_iload) {
-            /* If <tn> holds a register already, very likely this routine
-               is called by gra spilling. If so, use iload to avoid disturbing
-               the spilling routine.
+            if (base_ofst != 0) {
+              // Bug 4461
+              base_tn = Build_TN_Of_Mtype(Pointer_Mtype);
+                                                                                                                                                               
+              Build_OP( TOP_movabsq,
+                        base_tn, Gen_Symbol_TN( base_sym, base_ofst, TN_RELOC_X8664_64 ),
+                        &newops );
+              ofst_tn = Gen_Literal_TN(0, 4);
+              base_ofst = 0;
+            }
+
+            /* The target of a load operation under -mcmodel=medium is %rax.
+               Make sure no conflicts will happen; otherwise, use indirect load.
+            
+               As quoted from i386.md:
+               ;; Stores and loads of ax to arbitrary constant address.
+               ;; We fake an second form of instruction to force reload to load address
+               ;; into register when rax is not available
             */
-            if (TN_register(tn) != REGISTER_UNDEFINED)
-              use_iload = (base_sym == SP_Sym || base_sym == FP_Sym);
-            else {
-              for(OP* op = OPS_last(ops); op != NULL; op = OP_prev(op)) {
-                if( OP_Defs_Reg( op, ISA_REGISTER_CLASS_integer, RAX ) ){
-                  use_iload = TRUE;
-                  break;
+            bool use_iload = 
+              ( ( is_load  && !MTYPE_is_integral( OPCODE_rtype(opcode) ) ) ||
+                ( is_store && !MTYPE_is_integral( OPCODE_desc(opcode) ) ) );
+            
+            if (!use_iload) {
+              /* If <tn> holds a register already, very likely this routine
+                 is called by gra spilling. If so, use iload to avoid disturbing
+                 the spilling routine.
+              */
+              if (TN_register(tn) != REGISTER_UNDEFINED)
+                use_iload = (base_sym == SP_Sym || base_sym == FP_Sym);
+              else {
+                for(OP* op = OPS_last(ops); op != NULL; op = OP_prev(op)) {
+                  if( OP_Defs_Reg( op, ISA_REGISTER_CLASS_integer, RAX ) ){
+                    use_iload = TRUE;
+                    break;
+                  }
                 }
               }
             }
-          }
-          
-          if( use_iload && base_tn == NULL){
-            base_tn = Build_TN_Of_Mtype(Pointer_Mtype);
-            Build_OP( TOP_movabsq, base_tn, ofst_tn, &newops );
-            ofst_tn = Gen_Literal_TN( 0, 4 );
+            
+            if( use_iload && base_tn == NULL){
+              base_tn = Build_TN_Of_Mtype(Pointer_Mtype);
+              Build_OP( TOP_movabsq, base_tn, ofst_tn, &newops );
+              ofst_tn = Gen_Literal_TN( 0, 4 );
+            }
           }
         }
 
-        // bug 14967: a "hidden" sym need not be accessed through GOT in m64
-        if( Gen_PIC_Shared && ((!ST_is_export_local(base_sym) && ST_export(base_sym) != EXPORT_HIDDEN) ||
-                               // section?
-                               (ST_class(base_sym) == CLASS_BLOCK && STB_section(base_sym) /* bug 10097 */)) )
-        {
-          if(ST_is_thread_local(base_sym)) {
-            FmtAssert(false, ("TLS NYI under PIC"));
-          }
-          else {
-            TN *new_base = Build_TN_Of_Mtype(Pointer_Mtype);
-            Build_OP (TOP_ld64, new_base, base_tn, 
-                      Gen_Symbol_TN(base_sym, 0, TN_RELOC_X8664_GOTPCREL),
-                      &newops);
-            // got address should not alias
-            Set_OP_no_alias(OPS_last(&newops));
-            base_tn = new_base;
-            ofst_tn = Gen_Literal_TN( base_ofst, 4 );
-          } 
-        }
-        else if( ofst_tn == NULL ) {
-          if (ST_is_thread_local(base_sym) && ST_sclass(sym) == SCLASS_EXTERN) {
-            // Already handled above.
-            FmtAssert(FALSE, ("Exp_Ldst: thread local extern should be handled above"));
-          } else {
-            ofst_tn = Gen_Symbol_TN(base_sym, base_ofst,
-                                    ST_is_thread_local(base_sym) ?
-                                      TN_RELOC_X8664_TPOFF32_seg_reg :
-                                      TN_RELOC_NONE);
-          }
-        }
+
       }
       else {
         // Is_Targget_32bit() == TRUE

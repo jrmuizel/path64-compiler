@@ -858,6 +858,11 @@ Can_Be_Tail_Call(ST *pu_st, BB *exit_bb)
      */
     if (!ST_visible_outside_dso(call_st)) return NULL;
 
+#ifdef TARG_X8664
+    // don't optimize calls to __tls_get_addr
+    if (call_st == tls_get_addr_st) return NULL;
+#endif // TARG_X8664
+
     /* Determine if valid GP might be necessary for an RLD stub.
      */
     if (ST_is_preemptible(call_st)) {

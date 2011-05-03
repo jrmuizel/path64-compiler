@@ -401,6 +401,8 @@ main()
 		    TOP_testxxx64,
 		    TOP_testi32,
 		    TOP_testi64,
+		    TOP_tls_get_addr_64,
+		    TOP_tls_get_addr_32,
 		    TOP_xor8,
 		    TOP_xor16,
 		    TOP_xorx8,

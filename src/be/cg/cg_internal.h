@@ -31,5 +31,6 @@
 #include "tn_map.h"
 
 extern TN_MAP TN_To_PREG_Map;
+extern ST *tls_get_addr_st;
 
 #endif /* cg_internal_INCLUDED */
