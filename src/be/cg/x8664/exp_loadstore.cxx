@@ -935,7 +935,7 @@ Exp_Ldst (
           if (ST_is_thread_local(base_sym)) {
             TN *tmp = Build_TN_Like(tn);
             Build_tls_get_addr(tmp, base_sym, &newops);
-            Build_OP(TOP_add64, tn, tmp, Gen_Literal_TN(base_ofst, 8), ops);
+            Build_OP(TOP_addi64, tn, tmp, Gen_Literal_TN(base_ofst, 4), &newops);
           }
           else {
           	if (!ST_is_export_local(base_sym) &&
