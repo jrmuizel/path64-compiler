@@ -794,12 +794,17 @@ static void Add_Tls_Call_Annotation(BB *bb)
 // Builds TOP_tls_get_addr operation and copies result to specified TN
 static void Build_tls_get_addr(TN *tn, ST *sym, OPS *ops)
 {
-  TN *rax_tn = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, 8);
-  TN *rdi_tn = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RDI, 8);
-  //TN *rax_tn = Build_TN_Like(tn);
-  //TN *rdi_tn = Build_TN_Like(tn);
+  TN *rax_tn = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RAX, Pointer_Size);
   TN *sym_tn = Gen_Symbol_TN(sym, 0, TN_RELOC_NONE);
-  Build_OP(TOP_tls_get_addr_64, rax_tn, rdi_tn, sym_tn, ops);
+
+  if (Is_Target_64bit()) {
+    // ls_get_addr_64 uses rdi register
+    TN *rdi_tn = Build_Dedicated_TN(ISA_REGISTER_CLASS_integer, RDI, Pointer_Size);
+    Build_OP(TOP_tls_get_addr_64, rax_tn, rdi_tn, sym_tn, ops);
+  } else {
+    Build_OP(TOP_tls_get_addr_32, rax_tn, sym_tn, ops);
+  }
+
   Add_Tls_Call_Annotation(Cur_BB);
 
   // start new BB because tail call optimizer expects that exit BB does
@@ -808,7 +813,11 @@ static void Build_tls_get_addr(TN *tn, ST *sym, OPS *ops)
   Start_New_Basic_Block();
   OPS_Init(ops);
 
-  Build_OP(TOP_mov64, tn, rax_tn, ops);
+  Build_OP(Is_Target_64bit() ? TOP_mov64 : TOP_mov32, tn, rax_tn, ops);
+
+  // set PU_References_GOT to TRUE. This indicates that ebx register should be
+  // used for address of global offset table in -m32 -fPIC mode
+  PU_References_GOT = TRUE;
 }
 
 static void
@@ -1013,18 +1022,23 @@ Exp_Ldst (
         // bugs 10097, 14967, sicortex 9249: under -m32, most syms need to be
         // accessed through GOT.
         if (Gen_PIC_Shared) {
-          FmtAssert(!ST_is_thread_local(base_sym),
-                    ("Exp_Ldst: thread-local storage NYI under PIC"));
-          TN* tmp = base_ofst == 0 ? tn : Build_TN_Like(tn);
-          Build_OP(TOP_ld32, tmp, Ebx_TN(),
-                   Gen_Symbol_TN( base_sym, 0, TN_RELOC_IA32_GOT ),
-                   &newops);
-          // got address should not alias
-          Set_OP_no_alias(OPS_last(&newops));
-          PU_References_GOT = TRUE;
+          if (ST_is_thread_local(base_sym)) {
+            TN *tmp = Build_TN_Like(tn);
+            Build_tls_get_addr(tmp, base_sym, &newops);
+            Build_OP(TOP_addi32, tn, tmp, Gen_Literal_TN(base_ofst, 4), &newops);
+          }
+          else {
+            TN* tmp = base_ofst == 0 ? tn : Build_TN_Like(tn);
+            Build_OP(TOP_ld32, tmp, Ebx_TN(),
+                     Gen_Symbol_TN( base_sym, 0, TN_RELOC_IA32_GOT ),
+                     &newops);
+            // got address should not alias
+            Set_OP_no_alias(OPS_last(&newops));
+            PU_References_GOT = TRUE;
         
-          if( base_ofst != 0 ){
-            Build_OP( TOP_addi32, tn, tmp, Gen_Literal_TN(base_ofst, 4), &newops );
+            if( base_ofst != 0 ){
+              Build_OP( TOP_addi32, tn, tmp, Gen_Literal_TN(base_ofst, 4), &newops );
+            }
           }
         } 
         else if (ST_is_thread_local(base_sym)) {
@@ -1167,14 +1181,20 @@ Exp_Ldst (
         // Is_Targget_32bit() == TRUE
 
         if (Gen_PIC_Shared) {
-          // for -m32 here
-          TN *new_base = Build_TN_Of_Mtype(Pointer_Mtype);
-          Build_OP (TOP_ld32, new_base, Ebx_TN(), Gen_Symbol_TN(base_sym, 0, TN_RELOC_IA32_GOT),   &newops);
-          // got address should not alias
-          Set_OP_no_alias(OPS_last(&newops));
-          PU_References_GOT = TRUE;
-          base_tn = new_base;
-          ofst_tn = Gen_Literal_TN( base_ofst, 4 );
+          if (ST_is_thread_local(base_sym)) {
+            base_tn = Build_TN_Of_Mtype(Pointer_Mtype);
+            Build_tls_get_addr(base_tn, base_sym, &newops);
+            ofst_tn = Gen_Literal_TN(base_ofst, 4);
+          }
+          else {
+            TN *new_base = Build_TN_Of_Mtype(Pointer_Mtype);
+            Build_OP (TOP_ld32, new_base, Ebx_TN(), Gen_Symbol_TN(base_sym, 0, TN_RELOC_IA32_GOT),   &newops);
+            // got address should not alias
+            Set_OP_no_alias(OPS_last(&newops));
+            PU_References_GOT = TRUE;
+            base_tn = new_base;
+            ofst_tn = Gen_Literal_TN( base_ofst, 4 );
+          }
         }
         else if( ofst_tn == NULL ) {
           if (ST_is_thread_local(base_sym) && ST_sclass(sym) == SCLASS_EXTERN) {

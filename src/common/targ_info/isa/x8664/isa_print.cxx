@@ -1869,11 +1869,9 @@ main()
                           TOP_UNDEFINED);
 
   /* TLS 32 */
-  ISA_PRINT_TYPE tls_32 = ISA_Print_Type_Create("tls_32", "# %s\\n\\tleal %s(,%s,1), %%eax\\n\\tcall %s");
+  ISA_PRINT_TYPE tls_32 = ISA_Print_Type_Create("tls_32", "# %s\\n\\tleal %s@TLSGD(,%%ebx,1), %%eax\\n\\tcall ___tls_get_addr");
   Name();
   Operand(0); /* ST# */
-  Operand(1); /* ebx */
-  Operand(2); /* __tls_get_addr */
   Instruction_Print_Group(tls_32,
                           TOP_tls_get_addr_32,
                           TOP_UNDEFINED);

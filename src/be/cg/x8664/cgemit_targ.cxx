@@ -1862,8 +1862,7 @@ static void Adjust_Opnd_Name( OP* op, int opnd, char* name )
 	 opnd != OP_find_opnd_use(op,OU_target)) &&
 	// Constant is not 32-bit ABI thread-local symbol offset.
 	(!(Is_Target_32bit() &&
-	   (TN_relocs(OP_opnd(op, opnd)) == TN_RELOC_X8664_TPOFF32 ||
-	    TN_relocs(OP_opnd(op, opnd)) == TN_RELOC_X8664_GOTTPOFF)))) {
+	    TN_relocs(OP_opnd(op, opnd)) == TN_RELOC_X8664_GOTTPOFF))) {
       Str_Prepend(name, '$');
     }
 

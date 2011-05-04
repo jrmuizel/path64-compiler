@@ -3491,9 +3491,8 @@ main()
   Instruction_Group("tls_get_addr_32",
 		    TOP_tls_get_addr_32,
 		    TOP_UNDEFINED);
+  Result(0, rax);
   Operand(0, simm32, offset);
-  Operand(1, int32, base);
-  Operand(2, pcrel32, target);
   
   ISA_Operands_End();
   return 0;
