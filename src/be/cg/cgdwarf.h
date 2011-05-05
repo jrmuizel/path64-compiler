@@ -145,10 +145,6 @@ Cg_Dwarf_Symtab_Entry(CGD_SYMTAB_ENTRY_TYPE  type,
 		      char                  *label_name = NULL,
 		      Dwarf_Unsigned         last_offset = 0);
 
-extern void Cg_Dwarf_Translate_To_Elf(Dwarf_Unsigned,
-				      Dwarf_Unsigned *,
-				      Dwarf_Unsigned *);
-
 //TB: export these type for accessing file_table and incl_table for
 //gcov support
 typedef struct {

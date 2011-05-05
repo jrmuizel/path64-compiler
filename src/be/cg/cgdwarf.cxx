@@ -350,40 +350,6 @@ Elf64_Word Cg_Dwarf_Translate_Offset(Dwarf_Unsigned idx_from_sym_reloc)
   return Get_Label_Offset(CGD_Symtab[idx_from_sym_reloc].index);
 }
 
-void
-Cg_Dwarf_Translate_To_Elf(Dwarf_Unsigned  idx_from_sym_reloc,
-			  Dwarf_Unsigned *elf_symbol,
-			  Dwarf_Unsigned *elf_offset)
-{
-  Is_True(CGD_Symtab.size() > idx_from_sym_reloc,
-	  ("Cg_Dwarf_Translate_Offset: Index %llu out of bounds (%lu)",
-	   idx_from_sym_reloc, CGD_Symtab.size()));
-  if (Trace_Dwarf) {
-    fprintf(TFile, "Translating %llu ", idx_from_sym_reloc);
-    fflush(TFile);
-    fprintf(TFile, "through index %llu ",
-	    CGD_Symtab[idx_from_sym_reloc].index);
-  }
-  if (CGD_Symtab[idx_from_sym_reloc].type == CGD_LABIDX) {
-    *elf_symbol = CGD_Symtab[idx_from_sym_reloc].label_info.base_sym;
-    *elf_offset = CGD_Symtab[idx_from_sym_reloc].label_info.offset;
-    if (Trace_Dwarf) {
-      fprintf(TFile, "to elfsym %s + 0x%llx\n",
-	      Em_Get_Symbol_Name(*elf_symbol), *elf_offset);
-    }
-  }
-  else  {
-    Is_True(CGD_Symtab[idx_from_sym_reloc].type == CGD_ELFSYM,
-	    ("illegal CGD_Symtab entry type"));
-    *elf_symbol = CGD_Symtab[idx_from_sym_reloc].index;
-    *elf_offset = 0;
-    if (Trace_Dwarf) {
-      fprintf(TFile, "to elfsym %s\n",
-	      Em_Get_Symbol_Name(*elf_symbol));
-    }
-  }
-}
-
 // The string returned is not valid across
 // reallocs of the global string table,
 // so callers must not save the string pointer returned.
