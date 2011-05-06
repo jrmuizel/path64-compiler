@@ -125,7 +125,6 @@ extern char *Irb_File_Name;	/* ACIR intermediate file */
 extern char *IR_File_Name;	/* SGIR intermediate file */
 extern char *Ipa_File_Name;	/* IPA file */
 extern char *Asm_File_Name;	/* Assembly file */
-extern char *Obj_File_Name;	/* Relocatable object file */
 extern char * Lai_File_Name;     /* LAI file */
 extern char *call_graph_file_name; /* Function call graph file */
 extern char *cord_output_file_name; /* Output file name after function layout */

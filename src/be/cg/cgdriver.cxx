@@ -1703,21 +1703,6 @@ Prepare_Source (void)
 	}
     }
 
-    /* Prepare relocatable object file name: */
-    if ( Obj_File_Name == NULL ) {
-#ifdef KEY
-	/* bug 2025
-	   Always create the object file in /tmp, since the current dir might
-	   not be writable.
-	 */
-	char* tmp_fname = tempnam( NULL, NULL );
-	Obj_File_Name = New_Extension( tmp_fname, OBJ_FILE_EXTENSION );
-#else
-	/* Replace source file extension to get	object file: */
-	Obj_File_Name =	New_Extension (fname, OBJ_FILE_EXTENSION);
-#endif
-    }
-
 #if 0
     /* already called by main */
     /* Configure internal options for this source file */

@@ -271,8 +271,7 @@ DRA_Close_File()
 static void 
 DRA_Make_File_Name()
 {
-  char *obj_file_name = Obj_File_Name ? 
-    Obj_File_Name : New_Extension (Src_File_Name, ".o");
+  char *obj_file_name = New_Extension (Src_File_Name, ".o");
   
   char *dir = _dirname(obj_file_name);
   strcpy (DRA_file_name, dir);

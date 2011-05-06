@@ -43,6 +43,7 @@
 #include "fiz_fuse.h"
 #include "debug.h"
 #include "glob.h"
+#include "file_util.h"
 
 #if ! defined(BUILD_OS_DARWIN)
 #pragma weak Anl_File_Path
@@ -483,15 +484,7 @@ extern void Print_Prompl_Msgs(PU_Info* current_pu,
   FIZ_FUSE_INFO* ffi=
     CXX_NEW(FIZ_FUSE_INFO(&ARA_memory_pool), &ARA_memory_pool);
   ffi->Build(func_nd, TRUE);
-  char* filename = (char *) alloca(strlen(Obj_File_Name) + strlen(".list"));
-  strcpy(filename, Obj_File_Name);
-  INT i;
-  for (i = strlen(Obj_File_Name); i >= 0; i--)
-    if (filename[i] == '.')
-      break;
-  FmtAssert(i >= 0,
-    ("Print_Prompl_Parallelization_Msgs: could not find '.'"));
-  strcpy(&filename[i], ".list");
+  char* filename = New_Extension(Src_File_Name, ".list");
   FILE* fp = NULL;
   if (!opened_lfile) {
     fprintf(stdout, 

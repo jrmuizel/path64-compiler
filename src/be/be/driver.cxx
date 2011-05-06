@@ -459,8 +459,6 @@ load_components (INT argc, char **argv)
 static void
 Phase_Init (void)
 {
-    char *output_file_name = Obj_File_Name;
-
     if (Run_Distr_Array      && 
         (Run_w2c || Run_w2f) &&
         !Run_lno             &&
@@ -509,12 +507,11 @@ Phase_Init (void)
 #endif
     }
 
-    if (output_file_name == 0) {
-	if (Src_File_Name)
-	    output_file_name = Last_Pathname_Component (Src_File_Name);
-	else
-	    output_file_name = Irb_File_Name;
-    }
+    char *output_file_name;
+    if (Src_File_Name)
+        output_file_name = Last_Pathname_Component (Src_File_Name);
+    else
+        output_file_name = Irb_File_Name;
 
     if (need_lno_output) {
 	Write_BE_Maps = TRUE;
@@ -527,9 +524,7 @@ Phase_Init (void)
     }
     if (need_ipl_output) {
 	Write_BE_Maps = FALSE;
-	ir_output = Open_Output_Info (Obj_File_Name ?
-				      Obj_File_Name :
-				      New_Extension(output_file_name, ".o"));
+	ir_output = Open_Output_Info (New_Extension(output_file_name, ".o"));
     }
     if (Emit_Global_Data) {
 	Write_BE_Maps = FALSE;

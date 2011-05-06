@@ -120,7 +120,6 @@ char *Tlog_File_Name = NULL;	/* Transformation log file */
 char *IR_File_Name  = NULL;	/* SGIR	file */
 char *Irb_File_Name = NULL;	/* ACIR	intermediate file */
 char *Asm_File_Name = NULL;	/* Assembly file */
-char *Obj_File_Name = NULL;	/* Relocatable object file */
 char *Lai_File_Name = NULL;     /* LAI file */
 char *Instrumentation_File_Name = NULL; /* instrumentation file */
 char *Feedback_File_Name = NULL; /* Feedback file */
