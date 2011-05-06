@@ -704,6 +704,8 @@ IF(GCC_USE_PLATFORM_SCRIPT)
     IF("${CMAKE_SYSTEM_NAME}" STREQUAL "SunOS")
       # other values don't work on solaris
       SET(TG "i386-pc-solaris2.11")
+    ELSEIF("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
+      SET(TG "x86_64-unknown-freebsd${CMAKE_SYSTEM_VERSION}")
     ELSE()
       SET(TG "${PSC_TARGET}")
     ENDIF()
