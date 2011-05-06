@@ -30,7 +30,8 @@ eelf32btsmipn32.c
 eelf32ltsmip.c
 eelf32ltsmipn32.c
 eelf64btsmip.c
-eelf64ltsmip.c )
+eelf64ltsmip.c
+eelf_x86_64_fbsd.c )
 
 # Auto generated crap is annoying and they should just do things correctly
 # ldemul-list.h

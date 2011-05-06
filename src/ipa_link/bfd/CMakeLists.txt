@@ -90,9 +90,9 @@ ecofflink.c
 
 
 set_property(SOURCE archures.c targets.c PROPERTY COMPILE_DEFINITIONS
-             DEFAULT_VECTOR=bfd_elf64_x86_64_vec
-	     SELECT_VECS=&bfd_elf64_x86_64_vec,&bfd_elf32_i386_vec,&i386linux_vec,&bfd_efi_app_ia32_vec,&bfd_elf64_little_generic_vec,&bfd_elf64_big_generic_vec,&bfd_elf32_little_generic_vec,&bfd_elf32_big_generic_vec,&bfd_elf32_bigmips_vec,&bfd_elf32_bigmips_vxworks_vec,&bfd_elf32_littlemips_vec,&bfd_elf32_littlemips_vxworks_vec,&bfd_elf32_nbigmips_vec,&bfd_elf32_nlittlemips_vec,&bfd_elf32_ntradbigmips_vec,&bfd_elf32_ntradlittlemips_vec,&bfd_elf32_tradbigmips_vec,&bfd_elf32_tradlittlemips_vec,&bfd_elf64_bigmips_vec,&bfd_elf64_littlemips_vec,&bfd_elf64_tradbigmips_vec,&bfd_elf64_tradlittlemips_vec
-             SELECT_ARCHITECTURES=&bfd_i386_arch,&bfd_mips_arch
+         DEFAULT_VECTOR=bfd_elf64_x86_64_vec
+	     SELECT_VECS=&bfd_elf64_x86_64_vec,&bfd_elf32_i386_vec,&i386linux_vec,&bfd_efi_app_ia32_vec,&bfd_elf64_little_generic_vec,&bfd_elf64_big_generic_vec,&bfd_elf32_little_generic_vec,&bfd_elf32_big_generic_vec,&bfd_elf32_bigmips_vec,&bfd_elf32_bigmips_vxworks_vec,&bfd_elf32_littlemips_vec,&bfd_elf32_littlemips_vxworks_vec,&bfd_elf32_nbigmips_vec,&bfd_elf32_nlittlemips_vec,&bfd_elf32_ntradbigmips_vec,&bfd_elf32_ntradlittlemips_vec,&bfd_elf32_tradbigmips_vec,&bfd_elf32_tradlittlemips_vec,&bfd_elf64_bigmips_vec,&bfd_elf64_littlemips_vec,&bfd_elf64_tradbigmips_vec,&bfd_elf64_tradlittlemips_vec,&bfd_elf64_x86_64_freebsd_vec
+         SELECT_ARCHITECTURES=&bfd_i386_arch,&bfd_mips_arch
 	     HAVE_bfd_elf64_x86_64_vec
 	     HAVE_bfd_elf32_i386_vec
 	     HAVE_i386linux_vec
