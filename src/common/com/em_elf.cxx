@@ -91,7 +91,6 @@ static SCNINFO Symtab_Info_struct;
 pSCNINFO Symtab_Info = &Symtab_Info_struct;
 
 static pSCNINFO Comment_Scn;
-static char *object_file_name;	/* remember the .o name for the .comment scn. */
  
 /* assume we work on only one elf file at a time. If not, make Elf_Ptr
    a parameter to all routines that use it. 
@@ -1091,9 +1090,8 @@ Em_Add_Comment (char *s)
 				      0, 0, sizeof(char));
     }
     if (strchr(s,':') == NULL) {
-	buff = (char *) alloca (strlen(s) + sizeof(INCLUDE_STAMP) + 
-				strlen(object_file_name) + 4);
-	sprintf(buff, "%s::%s:%s", s, INCLUDE_STAMP, object_file_name);
+	buff = (char *) alloca (strlen(s) + sizeof(INCLUDE_STAMP) + 4);
+	sprintf(buff, "%s::%s", s, INCLUDE_STAMP);
     } else {
 	buff = s;
     }
@@ -1229,9 +1227,7 @@ Read_Elf_File (void)
 
 
 /* returns the file descriptor for the file opened. */
-int Em_Begin_File (
-    char *ofilename, 
-    BOOL update, 
+void Em_Begin_File (
     BOOL elf64, 
     BOOL old_abi,
     INT  isa,
@@ -1242,7 +1238,6 @@ int Em_Begin_File (
     BOOL gp_groups,
     BOOL elf_trace)
 {
-    int ofiledes;
     Elf_Cmd cmd;
 
     /* init various sections */
@@ -1252,50 +1247,22 @@ int Em_Begin_File (
 
     Sixtyfour_Bit = elf64;
     Big_Endian = big_endian;
-    if (update) {
-	ofiledes = open (ofilename, O_RDWR);
-    }
-    else {
-	INT result;
-	struct stat statstuff;
 
-	result = stat (ofilename, &statstuff);
-	/* If the file already exists, delete it. */
-	if (result != -1) {
-	    /* it exists */
-	    result = unlink (ofilename);
-	    if (result == -1) {
-		ErrMsg (EC_Obj_Delete, ofilename, errno);
-		return (int) 0;
-	    }
-	}
-	ofiledes = open (ofilename, O_RDWR|O_TRUNC|O_CREAT, 0666);
-    }
-    if (ofiledes <= 0) {
-	ErrMsg (EC_Obj_Create, ofilename, errno);
-	return (int) 0;
-    }
-
-    object_file_name = ofilename;
-
+    INT result;
+    struct stat statstuff;
+    
     /* reset the elf error number */
     (void)elf_errno();
     /* check that we are not using an older version of libelf. */
     if (elf_version(EV_CURRENT) == EV_NONE) {
 	print_elf_error ();
     }
-    cmd = update ? ELF_C_RDWR : ELF_C_WRITE;
-    if ((Elf_Ptr = elf_begin(ofiledes, cmd, (Elf * )0)) == 0) {
+
+    if ((Elf_Ptr = elf_begin(-1, ELF_C_WRITE, (Elf * )0)) == 0) {
 	print_elf_error ();
     }
 
-    if (update) {
-	Read_Elf_File ();
-    }
-    else {
-	Create_Elf_Header (isa, old_abi, big_endian, pic, cpic, xgot, gp_groups);
-    }
-    return ofiledes;
+    Create_Elf_Header (isa, old_abi, big_endian, pic, cpic, xgot, gp_groups);
 }
 
 

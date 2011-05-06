@@ -107,22 +107,6 @@ Cleanup_Files (BOOL report,         /* Report errors during cleanup? */
     /* Release all memory used for reading the WHIRL file. */
     Free_Input_Info ();
 
-    /* Close object file -- should generally be unnecessary: */
-    if ( Obj_File != NULL ) {
-	if (delete_dotofile) {
-	    if (unlink ( Obj_File_Name) ) {
-		if ( report )
-		    ErrMsg ( EC_Obj_Close, Obj_File_Name, errno );
-	    }
-	} else if (Obj_File != (FILE *) MMAPPED_FILE) {
-	    if ( fclose (Obj_File) ) {
-		if ( report )
-		    ErrMsg ( EC_Obj_Close, Obj_File_Name, errno );
-	    }
-	}
-    }
-    Obj_File = NULL;
-
     /* Close listing file: */
     if ( Lst_File != NULL && Lst_File != stdout && fclose (Lst_File) ) {
 	if ( report )

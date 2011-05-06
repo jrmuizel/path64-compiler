@@ -933,6 +933,12 @@ elf_update(Elf *elf, Elf_Cmd cmd) {
     if (!elf) {
 	return -1;
     }
+
+    if (elf->e_fd == -1) {
+        seterr(ERROR_FDMISMATCH);
+        return NULL;
+    }
+
     elf_assert(elf->e_magic == ELF_MAGIC);
     if (cmd == ELF_C_WRITE) {
 	if (!elf->e_writable) {

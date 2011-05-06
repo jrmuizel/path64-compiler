@@ -154,7 +154,6 @@ extern FILE *IR_File;		/* SGIR intermediate file */
 extern FILE *Ipa_File;		/* IPA file */
 extern FILE *Asm_File;		/* Assembly file */
 extern FILE * Lai_File;          /* LAI file */
-extern FILE *Obj_File;		/* Relocatable object file */
 extern FILE *Lib_File;		/* Program library file */
 extern FILE *Tim_File;		/* Timing info file (usually trace) */
 

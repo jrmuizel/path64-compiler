@@ -68,10 +68,8 @@ extern pSCNINFO Options_Scn;
 
    It returns the file descriptor for the object file opened.
 */
-extern INT
+extern void
 Em_Begin_File (
-    char *ofilename, 
-    BOOL update, 
     BOOL elf64, 
     BOOL old_abi,
     INT  isa, 
@@ -81,11 +79,6 @@ Em_Begin_File (
     BOOL xgot,
     BOOL gp_groups,
     BOOL elf_trace);
-
-
-/* Write out the elf object file */
-extern void 
-Em_End_File (void);
 
 
 /* Create a new section. Its attributes are described in the arguments.

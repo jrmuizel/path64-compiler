@@ -35,6 +35,11 @@ void*
 _elf_read(Elf *elf, void *buffer, size_t off, size_t len) {
     void *tmp;
 
+    if (elf->e_fd == -1) {
+        seterr(ERROR_FDMISMATCH);
+        return NULL;
+    }
+
     elf_assert(elf);
     elf_assert(elf->e_magic == ELF_MAGIC);
     elf_assert(off >= 0 && off + len <= elf->e_size);
@@ -66,6 +71,11 @@ void*
 _elf_mmap(Elf *elf) {
 #if HAVE_MMAP
     void *tmp;
+
+    if (elf->e_fd == -1) {
+        seterr(ERROR_FDMISMATCH);
+        return NULL;
+    }
 
     elf_assert(elf);
     elf_assert(elf->e_magic == ELF_MAGIC);

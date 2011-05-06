@@ -7569,35 +7569,22 @@ EMT_Begin_File (
   }
 
   if ( generate_elf_symbols ) {
-    Obj_File = fdopen (Em_Begin_File (
-			    	Obj_File_Name, 
-			    	FALSE, 
-			    	!Use_32_Bit_Pointers, 
-				FALSE /* old_abi */,
-				(INT) Target_ISA,
-				(!Target_Is_Little_Endian),
-				Gen_PIC_Shared, 
-				Gen_PIC_Call_Shared,
-                		!Guaranteed_Small_GOT, 
-				Has_GP_Groups,
-			    	Trace_Elf),
-		       "r+");
-    if (Obj_File == NULL) return;
-
-    // If we are meant to be generating only a .s file but that .s
-    // file needs to have dwarf information represented in it, we
-    // currently use the em_elf and libelf routines to maintain
-    // section indices, symbol indices, etc. for libdwarf. In such a
-    // situation, we generate the object file, but we unlink it here
-    // so it never shows up after the compilation is done.
-    unlink(Obj_File_Name);
+    Em_Begin_File (!Use_32_Bit_Pointers, 
+                   FALSE /* old_abi */,
+                   (INT) Target_ISA,
+                   (!Target_Is_Little_Endian),
+                   Gen_PIC_Shared, 
+                   Gen_PIC_Call_Shared,
+                   !Guaranteed_Small_GOT, 
+                   Has_GP_Groups,
+                   Trace_Elf);
 
     buff = (char *) alloca (strlen("be") + sizeof(INCLUDE_STAMP) + 
-			    strlen(ism_name) + strlen(Obj_File_Name) + 4);
+			    strlen(ism_name) + 4);
     if (*ism_name != '\0')
-	sprintf(buff, "be::%s-%s:%s", INCLUDE_STAMP, ism_name, Obj_File_Name);
+	sprintf(buff, "be::%s-%s", INCLUDE_STAMP, ism_name);
     else
-	sprintf(buff, "be::%s:%s", INCLUDE_STAMP, Obj_File_Name);
+	sprintf(buff, "be::%s", INCLUDE_STAMP);
     Em_Add_Comment (buff);
     if ( ! DEBUG_Optimize_Space) {
     	buff = (char *) alloca (strlen("be-options") + strlen(options) + 4);

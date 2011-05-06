@@ -148,7 +148,6 @@ FILE *IR_File  = NULL;		/* SGIR	file */
 FILE *Irb_File = NULL;		/* ACIR	intermediate file */
 FILE *Asm_File = NULL;		/* Assembly file */
 FILE *Lai_File = NULL;          /* LAI file */
-FILE *Obj_File = NULL;		/* Relocatable object file */
 FILE *Lib_File = NULL;		/* Program library file	*/
 FILE *Tim_File = NULL;		/* Timer report	file, usually TFile */
 
