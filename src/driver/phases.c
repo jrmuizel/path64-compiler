@@ -1746,22 +1746,22 @@ add_file_args (string_list_t *args, phases_t index)
 			{
 #ifdef FAT_WHIRL_OBJECTS
 			  if(ipa == TRUE){
-    			      sprintf(buf, "-fo,.ipa-%s", outfile);
+    			      sprintf(buf, "-fp,.ipa-%s", outfile);
 			  } else 
 #endif //FAT_WHIRL_OBJECTS
-			      sprintf(buf, "-fo,%s", outfile);
+			      sprintf(buf, "-fp,%s", outfile);
 			} else {
 #ifdef KEY  // TODO : Fixme : Please look at this code again and determine if we can remove the #if KEY and the code under the #else block
 #ifdef FAT_WHIRL_OBJECTS
 			  if(ipa == TRUE){
-			     sprintf(buf, "-fo,.ipa-%s", get_object_file(the_file));
+			     sprintf(buf, "-fp,.ipa-%s", get_object_file(the_file));
 			  } else 
 #endif //FAT_WHIRL_OBJECTS
 			  // Create unique .o files for a.c and foo/a.c.
 			  // Bug 9097.
-			  sprintf(buf, "-fo,%s", get_object_file(the_file));
+			  sprintf(buf, "-fp,%s", get_object_file(the_file));
 #else
-			  sprintf(buf, "-fo,%s", 
+			  sprintf(buf, "-fp,%s", 
 			    construct_given_name(the_file,"o",
 				(keep_flag || multiple_source_files || ((shared == RELOCATABLE) && (ipa == TRUE))) ? TRUE : FALSE));
 #endif

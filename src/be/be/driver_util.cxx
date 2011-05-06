@@ -239,6 +239,9 @@ Process_Command_Line (INT argc, char **argv)
 		    case 'i':
 			Set_Instrumentation_File_Name(cp + 2);
 			break;
+                    case 'p':
+                        Ipl_File_Name = cp + 2;
+                        break;
 		    case 's':	    /* CG-specific */
 		    case 'a':
 			add_phase_args (PHASE_CG, argv[i]);

@@ -524,7 +524,8 @@ Phase_Init (void)
     }
     if (need_ipl_output) {
 	Write_BE_Maps = FALSE;
-	ir_output = Open_Output_Info (New_Extension(output_file_name, ".o"));
+	ir_output = Open_Output_Info (Ipl_File_Name != NULL ?
+                                      Ipl_File_Name : New_Extension(output_file_name, ".o"));
     }
     if (Emit_Global_Data) {
 	Write_BE_Maps = FALSE;
