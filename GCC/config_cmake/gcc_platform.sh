@@ -3,12 +3,15 @@ srcdir="${GCC_SOURCE_DIR}/gcc"
 
 outfile="$1"
 cmake_command="$2"
-target="$3"
 
 # Determine the host platforms.
 config_sub="${GCC_SOURCE_DIR}/config.sub"
 host_alias=`"${GCC_SOURCE_DIR}/config.guess"`
-host=`"${GCC_SOURCE_DIR}/config.sub" $host_alias`
+host=`${config_sub} ${host_alias}`
+
+# Determine the target platforms.
+target_alias="$3"
+target=`${config_sub} ${target_alias}`
 
 # Collect build-machine-specific information.
 . "${GCC_SOURCE_DIR}/gcc/config.build"
