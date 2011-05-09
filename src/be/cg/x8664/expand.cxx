@@ -8102,13 +8102,24 @@ Intrinsic_Returns_New_Value (INTRINSIC id)
 
 TN* Exp_Fetch_and_And(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
                       LABEL_IDX *label, OPS *loop_ops);
+TN* Exp_Fetch_and_Nand(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                      LABEL_IDX *label, OPS *loop_ops);
 TN* Exp_Fetch_and_Or(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
                      LABEL_IDX *label, OPS *loop_ops);
 TN* Exp_Fetch_and_Xor(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
                       LABEL_IDX *label, OPS *loop_ops);
+TN* Exp_And_and_Fetch(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                      LABEL_IDX *label, OPS *loop_ops);
+TN* Exp_Nand_and_Fetch(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                      LABEL_IDX *label, OPS *loop_ops);
+TN* Exp_Or_and_Fetch(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                     LABEL_IDX *label, OPS *loop_ops);
+TN* Exp_Xor_and_Fetch(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                      LABEL_IDX *label, OPS *loop_ops);
 TN* Exp_Val_Compare_and_Swap(TN* addr, TN* opnd1, TN* opnd2, TYPE_ID mtype, OPS* ops);
 TN* Exp_Bool_Compare_and_Swap(TN* addr, TN* opnd1, TN* opnd2, TYPE_ID mtype, OPS* ops);
 TN* Exp_Lock_Test_and_Set(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops);
+void Exp_Lock_Release(TN* addr, TYPE_ID mtype, OPS* ops);
 
 // initial expansion of intrinsic call (may not be complete lowering).
 // return result TN (if set).
@@ -8250,6 +8261,11 @@ Exp_Intrinsic_Call (WN *intrncall, TN *op0, TN *op1, TN *op2,
   case INTRN_FETCH_AND_XOR_I8:
     return Exp_Fetch_and_Xor(op0, op1, WN_rtype(intrncall),
                              ops, label, loop_ops);
+  
+  case INTRN_FETCH_AND_NAND_I4:
+  case INTRN_FETCH_AND_NAND_I8:
+    return Exp_Fetch_and_Nand(op0, op1, WN_rtype(intrncall),
+                              ops, label, loop_ops);
 
   // COMPARE_AND_SWAP
 
@@ -8263,7 +8279,7 @@ Exp_Intrinsic_Call (WN *intrncall, TN *op0, TN *op1, TN *op2,
     return Exp_Bool_Compare_and_Swap(op0, op1, op2,
                                      WN_rtype(WN_kid1(intrncall)), ops);
 
-  // ADD/SUB_AND_FETCH...
+  // ..._AND_FETCH 
 
   case INTRN_ADD_AND_FETCH_I4:
   case INTRN_ADD_AND_FETCH_I8:
@@ -8285,10 +8301,38 @@ Exp_Intrinsic_Call (WN *intrncall, TN *op0, TN *op1, TN *op2,
       result = Exp_Add_and_Fetch(op0, neg_tn, mtype, ops);
     }
     break;
+  
+  case INTRN_AND_AND_FETCH_I4:
+  case INTRN_AND_AND_FETCH_I8:
+    return Exp_And_and_Fetch(op0, op1, WN_rtype(intrncall),
+                             ops, label, loop_ops);
+
+  case INTRN_OR_AND_FETCH_I4:
+  case INTRN_OR_AND_FETCH_I8:
+    return Exp_Or_and_Fetch(op0, op1, WN_rtype(intrncall),
+                            ops, label, loop_ops);
+
+  case INTRN_XOR_AND_FETCH_I4:
+  case INTRN_XOR_AND_FETCH_I8:
+    return Exp_Xor_and_Fetch(op0, op1, WN_rtype(intrncall),
+                             ops, label, loop_ops);
+  
+  case INTRN_NAND_AND_FETCH_I4:
+  case INTRN_NAND_AND_FETCH_I8:
+    return Exp_Nand_and_Fetch(op0, op1, WN_rtype(intrncall),
+                              ops, label, loop_ops);
+
+  // LOCK_...
 
   case INTRN_LOCK_TEST_AND_SET_I4:
   case INTRN_LOCK_TEST_AND_SET_I8:
     return Exp_Lock_Test_and_Set(op0, op1, WN_rtype(intrncall), ops);
+  
+  case INTRN_LOCK_RELEASE_I4:
+  case INTRN_LOCK_RELEASE_I8:
+    mtype = (id == INTRN_LOCK_RELEASE_I4) ?  MTYPE_I4 : MTYPE_I8;
+    Exp_Lock_Release(op0, mtype, ops);
+    break;
 
   /*avx*/
   case INTRN_VMASKMOVPS128ST:
@@ -8800,6 +8844,230 @@ TN* Exp_Bool_Compare_and_Swap(TN* addr, TN* opnd1, TN* opnd2, TYPE_ID mtype, OPS
 }
 
 
+// Expand XXX_AND_FETCH intrinsic using lock cmpxchg instruction
+TN* Exp_XXX_and_Fetch(TOP intrn_top, TN* addr, TN* opnd1, TYPE_ID mtype,
+                      OPS* ops, LABEL_IDX *label, OPS *loop_ops)
+{
+  TN* result_tn = Build_TN_Like(opnd1);
+  TN* rflags = Rflags_TN();
+  TOP top_cmpxchg = TOP_UNDEFINED;
+  TOP top_ld = TOP_UNDEFINED;
+
+  switch( mtype ){
+  case MTYPE_I1:
+  case MTYPE_U1:
+    top_cmpxchg = TOP_lock_cmpxchg8;
+    top_ld = TOP_ldu8_32;
+    break;
+
+  case MTYPE_I2:
+  case MTYPE_U2:
+    top_cmpxchg = TOP_lock_cmpxchg16;
+    top_ld = TOP_ldu16_32;
+    break;
+
+  case MTYPE_I4:
+  case MTYPE_U4:
+    top_cmpxchg = TOP_lock_cmpxchg32;
+    top_ld = TOP_ld32;
+    break;
+
+  case MTYPE_I8:
+  case MTYPE_U8:
+    top_cmpxchg = TOP_lock_cmpxchg64;
+    top_ld = TOP_ld64;
+    break;
+
+  default:
+    FmtAssert( FALSE,
+	       ("Exp_XXX_and_Fetch: support me now") );
+  }
+
+  Build_OP(top_ld, result_tn, addr, Gen_Literal_TN(0, 4), loop_ops);
+
+  TN* new_val = Build_TN_Of_Mtype(mtype);
+  Build_OP(intrn_top, new_val, result_tn, opnd1, loop_ops);
+
+  TN* tmp = Build_TN_Like(result_tn);
+  Build_OP(top_cmpxchg, rflags, tmp, result_tn, new_val, addr, Gen_Literal_TN(0, 4), loop_ops);
+
+  *label = Gen_Temp_Label();
+  Build_OP(TOP_jne, rflags, Gen_Label_TN(*label, 0), loop_ops);
+  return new_val;
+}
+
+
+TN* Exp_And_and_Fetch(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                      LABEL_IDX *label, OPS *loop_ops)
+{
+  TOP top = TOP_UNDEFINED;
+
+  switch( mtype ){
+  case MTYPE_I1:
+  case MTYPE_U1:
+    top = TOP_and8;
+    break;
+
+  case MTYPE_I2:
+  case MTYPE_U2:
+    top = TOP_and16;
+    break;
+
+  case MTYPE_I4:
+  case MTYPE_U4:
+    top = TOP_and32;
+    break;
+
+  case MTYPE_I8:
+  case MTYPE_U8:
+    top = TOP_and64;
+    break;
+
+  default:
+    FmtAssert( FALSE,
+	       ("Exp_And_and_Fetch: support me now") );
+  }
+
+  return Exp_XXX_and_Fetch(top, addr, opnd1, mtype, ops,
+                           label, loop_ops);
+}
+
+// FIXME: not sure if this will work for 8 and 16 bit types
+TN* Exp_Nand_and_Fetch(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                       LABEL_IDX *label, OPS *loop_ops)
+{
+  TN* result_tn = Build_TN_Like(opnd1);
+  TN* rflags = Rflags_TN();
+  TOP top_and = TOP_UNDEFINED;
+  TOP top_not = TOP_UNDEFINED;
+  TOP top_cmpxchg = TOP_UNDEFINED;
+  TOP top_ld = TOP_UNDEFINED;
+
+  switch( mtype ){
+  case MTYPE_I1:
+  case MTYPE_U1:
+    top_and = TOP_and8;
+    top_not = TOP_not32;
+    top_cmpxchg = TOP_lock_cmpxchg8;
+    top_ld = TOP_ldu8_32;
+    break;
+
+  case MTYPE_I2:
+  case MTYPE_U2:
+    top_and = TOP_and16;
+    top_not = TOP_not32;
+    top_cmpxchg = TOP_lock_cmpxchg16;
+    top_ld = TOP_ldu16_32;
+    break;
+
+  case MTYPE_I4:
+  case MTYPE_U4:
+    top_and = TOP_and32;
+    top_not = TOP_not32;
+    top_cmpxchg = TOP_lock_cmpxchg32;
+    top_ld = TOP_ld32;
+    break;
+
+  case MTYPE_I8:
+  case MTYPE_U8:
+    top_and = TOP_and64;
+    top_not = TOP_not64;
+    top_cmpxchg = TOP_lock_cmpxchg64;
+    top_ld = TOP_ld64;
+    break;
+
+  default:
+    FmtAssert( FALSE,
+	       ("Exp_Nand_and_Fetch: support me now") );
+  }
+  
+  Build_OP(top_ld, result_tn, addr, Gen_Literal_TN(0, 4), loop_ops);
+
+  TN* new_val = Build_TN_Of_Mtype(mtype);
+  Build_OP(top_and, new_val, result_tn, opnd1, loop_ops);
+  Build_OP(top_not, opnd1, loop_ops);
+
+  TN* tmp = Build_TN_Like(result_tn);
+  Build_OP(top_cmpxchg, rflags, tmp, result_tn, new_val, addr, Gen_Literal_TN(0, 4), loop_ops);
+
+  *label = Gen_Temp_Label();
+  Build_OP(TOP_jne, rflags, Gen_Label_TN(*label, 0), loop_ops);
+  return new_val;
+}
+
+
+TN* Exp_Or_and_Fetch(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                     LABEL_IDX *label, OPS *loop_ops)
+{
+  TOP top = TOP_UNDEFINED;
+
+  switch( mtype ){
+  case MTYPE_I1:
+  case MTYPE_U1:
+    top = TOP_or8;
+    break;
+
+  case MTYPE_I2:
+  case MTYPE_U2:
+    top = TOP_or16;
+    break;
+
+  case MTYPE_I4:
+  case MTYPE_U4:
+    top = TOP_or32;
+    break;
+
+  case MTYPE_I8:
+  case MTYPE_U8:
+    top = TOP_or64;
+    break;
+
+  default:
+    FmtAssert( FALSE,
+	       ("Exp_Or_and_Fetch: support me now") );
+  }
+
+  return Exp_XXX_and_Fetch(top, addr, opnd1, mtype, ops,
+                           label, loop_ops);
+}
+
+
+TN* Exp_Xor_and_Fetch(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                      LABEL_IDX *label, OPS *loop_ops)
+{
+  TOP top = TOP_UNDEFINED;
+
+  switch( mtype ){
+  case MTYPE_I1:
+  case MTYPE_U1:
+    top = TOP_xor8;
+    break;
+
+  case MTYPE_I2:
+  case MTYPE_U2:
+    top = TOP_xor16;
+    break;
+
+  case MTYPE_I4:
+  case MTYPE_U4:
+    top = TOP_xor32;
+    break;
+
+  case MTYPE_I8:
+  case MTYPE_U8:
+    top = TOP_xor64;
+    break;
+
+  default:
+    FmtAssert( FALSE,
+	       ("Exp_Xor_and_Fetch: support me now") );
+  }
+
+  return Exp_XXX_and_Fetch(top, addr, opnd1, mtype, ops,
+                           label, loop_ops);
+}
+
+
 // Expand FETCH_AND_XXX intrinsic using lock cmpxchg instruction
 TN* Exp_Fetch_and_XXX(TOP intrn_top, TN* addr, TN* opnd1, TYPE_ID mtype,
                       OPS* ops, LABEL_IDX *label, OPS *loop_ops)
@@ -8836,7 +9104,7 @@ TN* Exp_Fetch_and_XXX(TOP intrn_top, TN* addr, TN* opnd1, TYPE_ID mtype,
 
   default:
     FmtAssert( FALSE,
-	       ("Exp_Compare_and_Swap: support me now") );
+	       ("Exp_Fetch_and_XXX: support me now") );
   }
 
   Build_OP(top_ld, result_tn, addr, Gen_Literal_TN(0, 4), loop_ops);
@@ -8886,6 +9154,69 @@ TN* Exp_Fetch_and_And(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
 
   return Exp_Fetch_and_XXX(top, addr, opnd1, mtype, ops,
                            label, loop_ops);
+}
+
+// FIXME: not sure if this will work for 8 and 16 bit types
+TN* Exp_Fetch_and_Nand(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
+                       LABEL_IDX *label, OPS *loop_ops)
+{
+  TN* result_tn = Build_TN_Like(opnd1);
+  TN* rflags = Rflags_TN();
+  TOP top_and = TOP_UNDEFINED;
+  TOP top_not = TOP_UNDEFINED;
+  TOP top_cmpxchg = TOP_UNDEFINED;
+  TOP top_ld = TOP_UNDEFINED;
+
+  switch( mtype ){
+  case MTYPE_I1:
+  case MTYPE_U1:
+    top_and = TOP_and8;
+    top_not = TOP_not32;
+    top_cmpxchg = TOP_lock_cmpxchg8;
+    top_ld = TOP_ldu8_32;
+    break;
+
+  case MTYPE_I2:
+  case MTYPE_U2:
+    top_and = TOP_and16;
+    top_not = TOP_not32;
+    top_cmpxchg = TOP_lock_cmpxchg16;
+    top_ld = TOP_ldu16_32;
+    break;
+
+  case MTYPE_I4:
+  case MTYPE_U4:
+    top_and = TOP_and32;
+    top_not = TOP_not32;
+    top_cmpxchg = TOP_lock_cmpxchg32;
+    top_ld = TOP_ld32;
+    break;
+
+  case MTYPE_I8:
+  case MTYPE_U8:
+    top_and = TOP_and64;
+    top_not = TOP_not64;
+    top_cmpxchg = TOP_lock_cmpxchg64;
+    top_ld = TOP_ld64;
+    break;
+
+  default:
+    FmtAssert( FALSE,
+	       ("Exp_Fetch_and_Nand: support me now") );
+  }
+  
+  Build_OP(top_ld, result_tn, addr, Gen_Literal_TN(0, 4), loop_ops);
+
+  TN* new_val = Build_TN_Of_Mtype(mtype);
+  Build_OP(top_and, new_val, result_tn, opnd1, loop_ops);
+  Build_OP(top_not, opnd1, loop_ops);
+
+  TN* tmp = Build_TN_Like(result_tn);
+  Build_OP(top_cmpxchg, rflags, tmp, result_tn, new_val, addr, Gen_Literal_TN(0, 4), loop_ops);
+
+  *label = Gen_Temp_Label();
+  Build_OP(TOP_jne, rflags, Gen_Label_TN(*label, 0), loop_ops);
+  return result_tn;
 }
 
 
@@ -8953,7 +9284,7 @@ TN* Exp_Fetch_and_Xor(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops,
 
   default:
     FmtAssert( FALSE,
-	       ("Exp_Fetch_and_Or: support me now") );
+	       ("Exp_Fetch_and_Xor: support me now") );
   }
 
   return Exp_Fetch_and_XXX(top, addr, opnd1, mtype, ops,
@@ -9031,6 +9362,41 @@ TN* Exp_Lock_Test_and_Set(TN* addr, TN* opnd1, TYPE_ID mtype, OPS* ops) {
     Build_OP(top, result_tn, opnd1, addr, Gen_Literal_TN(0,4), ops );
 
   return result_tn;
+}
+
+void Exp_Lock_Release(TN* addr, TYPE_ID mtype, OPS* ops) {
+  TOP top = TOP_UNDEFINED;
+
+  switch (mtype) {
+  case MTYPE_I1:
+  case MTYPE_U1:
+  case MTYPE_I2:
+  case MTYPE_U2:
+  case MTYPE_I4:
+  case MTYPE_U4:
+    top = TOP_ldc32;
+    break;
+
+  case MTYPE_I8:
+  case MTYPE_U8:
+    top = TOP_ldc64;
+    break;
+
+  default:
+    FmtAssert( FALSE,
+	       ("Exp_Lock_Release: support me now") );
+  }
+
+  if (Is_Target_SSE2())
+    Build_OP (TOP_mfence, ops);
+
+   TN *tmp = Build_TN_Of_Mtype(mtype); // get register for temporary value
+
+   // move zero to temporary register
+   Build_OP(top, tmp, Gen_Literal_TN(0, 4), ops);
+ 
+   // store value at address addr with offset 0
+   Expand_Store(mtype, tmp, addr, Gen_Literal_TN(0, 4), ops);
 }
 
 

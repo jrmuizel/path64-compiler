@@ -5482,7 +5482,7 @@ get_builtin_sync_mem (tree loc, enum machine_mode mode)
    ARGLIST is the operands list to the function.  CODE is the rtx code
    that corresponds to the arithmetic or logical operation from the name;
    an exception here is that NOT actually means NAND.  TARGET is an optional
-   place for us to store the results; AFTER is true if this is the
+   place for us to store the results; AFTER is false if this is the
    fetch_and_xxx form.  IGNORE is true if we don't actually care about
    the result of the operation at all.  */
 

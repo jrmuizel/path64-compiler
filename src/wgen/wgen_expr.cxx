@@ -2114,7 +2114,7 @@ emit_builtin_lock_release (gs_t exp, INT32 k)
   if (obj_mtype == MTYPE_U8)
     iopc = INTRN_LOCK_RELEASE_I8;
   else {
-    Fail_FmtAssertion ("unknown object type in __builtin_lock_test_and_set");
+    Fail_FmtAssertion ("unknown object type in __builtin_lock_release");
     opc  = OPCODE_UNKNOWN;
     iopc = INTRINSIC_NONE;
   }
@@ -7700,9 +7700,19 @@ WGEN_Expand_Expr (gs_t exp,
               case GSBI_BUILT_IN_FETCH_AND_AND_8:
                 iopc = INTRN_FETCH_AND_AND_I8;
                 break;
+              
+              // nand
+              case GSBI_BUILT_IN_FETCH_AND_NAND_1:
+              case GSBI_BUILT_IN_FETCH_AND_NAND_2:
+              case GSBI_BUILT_IN_FETCH_AND_NAND_4:
+                iopc = INTRN_FETCH_AND_NAND_I4;
+                break;
+
+              case GSBI_BUILT_IN_FETCH_AND_NAND_8:
+                iopc = INTRN_FETCH_AND_NAND_I8;
+                break;
 
               // compare_and_swap
-
               case GSBI_BUILT_IN_VAL_COMPARE_AND_SWAP_1:
               case GSBI_BUILT_IN_VAL_COMPARE_AND_SWAP_2:
               case GSBI_BUILT_IN_VAL_COMPARE_AND_SWAP_4:
@@ -7734,6 +7744,50 @@ WGEN_Expand_Expr (gs_t exp,
                 iopc = INTRN_ADD_AND_FETCH_I8;
                 break;
 
+              // and_and_fetch
+              case GSBI_BUILT_IN_AND_AND_FETCH_1:
+              case GSBI_BUILT_IN_AND_AND_FETCH_2:
+              case GSBI_BUILT_IN_AND_AND_FETCH_4:
+                iopc = INTRN_AND_AND_FETCH_I4;
+                break;
+
+              case GSBI_BUILT_IN_AND_AND_FETCH_8:
+                iopc = INTRN_AND_AND_FETCH_I8;
+                break;
+              
+              // nand_and_fetch
+              case GSBI_BUILT_IN_NAND_AND_FETCH_1:
+              case GSBI_BUILT_IN_NAND_AND_FETCH_2:
+              case GSBI_BUILT_IN_NAND_AND_FETCH_4:
+                iopc = INTRN_NAND_AND_FETCH_I4;
+                break;
+
+              case GSBI_BUILT_IN_NAND_AND_FETCH_8:
+                iopc = INTRN_NAND_AND_FETCH_I8;
+                break;
+              
+              // xor_and_fetch
+              case GSBI_BUILT_IN_XOR_AND_FETCH_1:
+              case GSBI_BUILT_IN_XOR_AND_FETCH_2:
+              case GSBI_BUILT_IN_XOR_AND_FETCH_4:
+                iopc = INTRN_XOR_AND_FETCH_I4;
+                break;
+
+              case GSBI_BUILT_IN_XOR_AND_FETCH_8:
+                iopc = INTRN_XOR_AND_FETCH_I8;
+                break;
+
+              // or_and_fetch
+              case GSBI_BUILT_IN_OR_AND_FETCH_1:
+              case GSBI_BUILT_IN_OR_AND_FETCH_2:
+              case GSBI_BUILT_IN_OR_AND_FETCH_4:
+                iopc = INTRN_OR_AND_FETCH_I4;
+                break;
+
+              case GSBI_BUILT_IN_OR_AND_FETCH_8:
+                iopc = INTRN_OR_AND_FETCH_I8;
+                break;
+
               // sub_and_fetch
               case GSBI_BUILT_IN_SUB_AND_FETCH_1:
               case GSBI_BUILT_IN_SUB_AND_FETCH_2:
@@ -7745,6 +7799,7 @@ WGEN_Expand_Expr (gs_t exp,
                 iopc = INTRN_SUB_AND_FETCH_I8;
                 break;
 
+              // lock_*
               case  GSBI_BUILT_IN_LOCK_TEST_AND_SET_1:
               case  GSBI_BUILT_IN_LOCK_TEST_AND_SET_2:
               case  GSBI_BUILT_IN_LOCK_TEST_AND_SET_4:
@@ -7753,6 +7808,16 @@ WGEN_Expand_Expr (gs_t exp,
 
               case  GSBI_BUILT_IN_LOCK_TEST_AND_SET_8:
                 iopc = INTRN_LOCK_TEST_AND_SET_I8;
+                break;
+              
+              case  GSBI_BUILT_IN_LOCK_RELEASE_1:
+              case  GSBI_BUILT_IN_LOCK_RELEASE_2:
+              case  GSBI_BUILT_IN_LOCK_RELEASE_4:
+                iopc = INTRN_LOCK_RELEASE_I4;
+                break;
+
+              case  GSBI_BUILT_IN_LOCK_RELEASE_8:
+                iopc = INTRN_LOCK_RELEASE_I8;
                 break;
 
 #endif // FE_GNU_4_2_0
