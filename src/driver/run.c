@@ -128,6 +128,7 @@ static int show_command_only(const char *name, const char *argv[])
 
 // Executes program with specified name, paramters and input/output.
 // Returns zero on success
+#ifdef _WIN32
 int execute (const char *name,
              const char **argv,
              const char *input,
@@ -160,6 +161,47 @@ int execute (const char *name,
     pex_free(pex);
     return 0;
 }
+#else // !_WIN32
+int execute (const char *name,
+             const char **argv,
+             const char *input,
+             const char *output,
+             const char **errmsg,
+             int *waitstatus) {
+
+    pid_t pid;
+
+    if (input != NULL || output != NULL) {
+        *errmsg = "execute with input/output NYI";
+        return -1;
+    }
+   
+    pid = fork();
+    if (pid == -1) {
+        // error
+        *errmsg = "fork failed";
+        return -1;
+
+    } else if(pid == 0) {
+        // child
+        execvp(name, (char * const *)argv);
+
+        // should not reach here
+        error("execvp failed");
+	do_exit(RC_SYSTEM_ERROR);
+        return -1;
+
+    } else {
+        // parent
+        if (wait(waitstatus) != pid) {
+            *errmsg = "bad return from wait";
+            return -1;
+        }
+
+        return 0;
+    }
+}
+#endif // !_WIN32
 
 
 static void my_putenv(const char *name, const char *fmt, ...)

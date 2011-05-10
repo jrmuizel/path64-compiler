@@ -114,10 +114,15 @@ function(add_driver config_name
     
     add_executable(pathcc${suffix} ${PATHSCALE_DRIVER_SRCS} "${targ_info_source}")
     set_property(TARGET pathcc${suffix} PROPERTY COMPILE_FLAGS "-I${include_dir}")
-    target_link_libraries(pathcc${suffix} iberty)
+
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+        target_link_libraries(pathcc${suffix} iberty)
+    endif()
+
     if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
         set_property(TARGET pathcc${suffix} PROPERTY LINK_FLAGS "-static")
     endif()
+
     install(TARGETS pathcc${suffix}
             RUNTIME DESTINATION bin)
     add_dependencies(pathcc${suffix} driver_gen_sources)

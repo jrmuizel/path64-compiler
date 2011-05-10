@@ -57,7 +57,6 @@ void obtain_license (char *exedir, int argc, char *argv[]) {
     int i ;
     char *l ;
     char *prodname;
-	struct pex_obj *pex;
 	const char *errmsg;
 	int errnum;
     const char *argvec[8] ;
@@ -164,12 +163,6 @@ void obtain_license (char *exedir, int argc, char *argv[]) {
       }
     }
 
-    pex = pex_init(0, exename, NULL);
-    if (pex == NULL) {
-        fprintf(stderr, "pex_init failed\n");
-        do_exit(RC_SYSTEM_ERROR);
-    }
-
     argvec[0] = exename ;
     argvec[1] = prodname;       // bug 12667
     argvec[2] = language ;
@@ -182,14 +175,12 @@ void obtain_license (char *exedir, int argc, char *argv[]) {
         argvec[7] = NULL ;
     }
   
-    if (pex_run(pex, PEX_LAST, exename, (char * const *)argvec, NULL, NULL, 
-                &errnum) != NULL ||
-                !pex_get_status(pex, 1, &waitstatus)) {
-        fprintf(stderr, "%s\n", errortext); 
-        pex_free(pex);
+    if (execute(exename, argvec, NULL, NULL, &errmsg, &waitstatus) != 0 ||
+        !WIFEXITED(waitstatus)) {
+
+        fprintf(stderr, "%s\n", errmsg); 
         do_exit(RC_SYSTEM_ERROR);
     }
-    pex_free(pex);
 
     if (WIFEXITED(waitstatus)) {
         if (WEXITSTATUS(waitstatus) == 6) {     // no subclient program?

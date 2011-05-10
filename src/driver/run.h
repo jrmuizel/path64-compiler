@@ -32,7 +32,9 @@
 #include "lang_defs.h"
 #endif
 
+#ifdef _WIN32
 #include "pex.h"
+#endif // _WIN32
 
 extern int show_version;	/* show the compiler version */
 extern boolean show_copyright;	/* show the compiler copy right */
@@ -47,6 +49,15 @@ extern boolean show_search_path; /* show the directory search path */
 extern boolean show_defaults;   /* show the default compiler options */
 
 extern const char compiler_version[];
+
+// Executes program with specified name, paramters and input/output.
+// Returns zero on success
+int execute (const char *name,
+             const char **argv,
+             const char *input,
+             const char *output,
+             const char **errmsg,
+             int *waitstatus);
 
 /* run a phase of the compiler */
 extern void run_phase (phases_t, char *, string_list_t *); 
