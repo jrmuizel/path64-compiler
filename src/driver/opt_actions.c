@@ -1680,7 +1680,7 @@ print_file_path (char *fname, int exe)
   argv[1] = m32 ? "-m32" : "-m64";
   asprintf(&argv[2], "-print-%s-name=%s", exe ? "prog" : "file", fname);
   argv[3] = NULL;
-  execvp(argv[0], (const char **)argv);
+  execvp(argv[0], (char * const *)argv);
   fprintf(stderr, "could not execute %s: %m\n", argv[0]);
   exit(1);
 }
@@ -1944,7 +1944,7 @@ print_multi_lib ()
   argv[0] = "gcc";
   asprintf(&argv[1], "-print-multi-lib");
   argv[2] = NULL;
-  execvp(argv[0], (const char **)argv);
+  execvp(argv[0], (char * const *)argv);
   fprintf(stderr, "could not execute %s: %m\n", argv[0]);
   exit(1);
 }

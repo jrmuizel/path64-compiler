@@ -772,12 +772,18 @@ write_init_options (void)
 		    if (sizeof(mask_t)>4)
 		     {
 		     fprintf(f, "\tcreate_option_info(%d,%#"PRIx64"LL,%#"PRIx64"LL,\"%s\",",
-			    i, options[i].languages, options[i].phases, options[i].name);
+			     i,
+                             (unsigned long)options[i].languages,
+                             (unsigned long)options[i].phases,
+                             options[i].name);
 		     }
 		    else
 		     {
 		     fprintf(f, "\tcreate_option_info(%d,%#"PRIx64",%#"PRIx64",\"%s\",",
-			    i, options[i].languages, options[i].phases, options[i].name);
+			     i,
+                             (unsigned long)options[i].languages,
+                             (unsigned long)options[i].phases,
+                             options[i].name);
 		     }
 		}
 		if (options[i].help == NULL)

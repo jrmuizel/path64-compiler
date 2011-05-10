@@ -152,7 +152,7 @@ run_simple_program (char *name, char **argv, char *output)
   
     errmsg = pex_run(pex, PEX_LAST, name, argv, output, NULL, &errnum);
     if (errmsg != NULL || !pex_get_status(pex, 1, &waitstatus)) {
-        error(errmsg != NULL ? errmsg : "can't get program status");
+        error("%s", errmsg != NULL ? errmsg : "can't get program status");
         pex_free(pex);
         cleanup();
         do_exit(RC_SYSTEM_ERROR);
@@ -510,7 +510,7 @@ run_phase (phases_t phase, char *name, string_list_t *args)
     errmsg = pex_run(pex, PEX_SEARCH | PEX_LAST | (save_stderr ? PEX_STDERR_TO_STDOUT : 0),
                      name, argv, output, NULL, &errnum);
     if (errmsg != NULL) {
-        error(errmsg);
+        error("%s", errmsg);
         pex_free(pex);
         cleanup();
         do_exit(RC_SYSTEM_ERROR);

@@ -68,7 +68,7 @@ set_error_status (status_codes e)
 }
 
 void
-vlog_error(char *format, va_list ap)
+vlog_error(const char *format, va_list ap)
 {
 	char *msg;
 
@@ -79,7 +79,7 @@ vlog_error(char *format, va_list ap)
 }
 
 void
-log_error(char *format, ...)
+log_error(const char *format, ...)
 {
 	va_list ap;
 
@@ -89,7 +89,7 @@ log_error(char *format, ...)
 }
 
 void
-error(char *format, ...)
+error(const char *format, ...)
 {
 	va_list args;
 	va_start (args, format);
@@ -111,7 +111,7 @@ parse_error (const char *name, const char *msg)
 }
 
 void
-warning (char *format, ...)
+warning (const char *format, ...)
 {
 	va_list args;
 	if (!print_warnings) return;
@@ -123,37 +123,37 @@ warning (char *format, ...)
 }
 
 void
-warn_ignored (char *name)
+warn_ignored (const char *name)
 {
 	warning("%s is ignored", name);
 }
 
 void
-warn_nyi (char *name)
+warn_nyi (const char *name)
 {
 	warning("%s is not yet implemented", name);
 }
 
 void
-warn_no_longer_needed (char *name)
+warn_no_longer_needed (const char *name)
 {
 	warning("%s is no longer needed", name);
 }
 
 void
-warn_no_longer_supported (char *name)
+warn_no_longer_supported (const char *name)
 {
 	warning("%s is no longer supported", name);
 }
 
 void
-warn_no_longer_supported2 (char *name, char *newname)
+warn_no_longer_supported2 (const char *name, const char *newname)
 {
 	warning("%s is no longer supported, use %s instead", name, newname);
 }
 
 void
-internal_error (char *format, ...)
+internal_error (const char *format, ...)
 {
 	va_list args;
 	va_start (args, format);

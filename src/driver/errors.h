@@ -42,28 +42,28 @@ extern boolean pass_exit_codes;         /* If true, remember the highest
 
 extern void init_error_list ();
 
-extern void error (char *format, ...)
+extern void error (const char *format, ...)
      __attribute__((format (printf, 1, 2)));
 
 extern void parse_error (const char *name, const char *msg);
 
-extern void warning (char *format, ...)
+extern void warning (const char *format, ...)
      __attribute__((format (printf, 1, 2)));
 
-extern void warn_ignored (char *name);
+extern void warn_ignored (const char *name);
 
-extern void warn_nyi (char *name);
+extern void warn_nyi (const char *name);
 
-extern void warn_no_longer_needed (char *name);
-extern void warn_no_longer_supported (char *name);
-extern void warn_no_longer_supported2 (char *name, char *newname);
+extern void warn_no_longer_needed (const char *name);
+extern void warn_no_longer_supported (const char *name);
+extern void warn_no_longer_supported2 (const char *name, const char *newname);
 
-extern void internal_error (char *format, ...)
+extern void internal_error (const char *format, ...)
      __attribute__((format (printf, 1, 2)));
 
 /* squirrel away error info for bug reporting */
-extern void vlog_error (char *format, va_list ap);
-extern void log_error (char *format, ...)
+extern void vlog_error (const char *format, va_list ap);
+extern void log_error (const char *format, ...)
      __attribute__((format (printf, 1, 2)));
 
 /* to signal that an error occured but trust previous error messages */

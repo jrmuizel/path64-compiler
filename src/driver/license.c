@@ -182,7 +182,7 @@ void obtain_license (char *exedir, int argc, char *argv[]) {
         argvec[7] = NULL ;
     }
   
-    if (pex_run(pex, PEX_LAST, exename, argvec, NULL, NULL, 
+    if (pex_run(pex, PEX_LAST, exename, (char * const *)argvec, NULL, NULL, 
                 &errnum) != NULL ||
                 !pex_get_status(pex, 1, &waitstatus)) {
         fprintf(stderr, "%s\n", errortext); 
