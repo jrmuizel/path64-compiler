@@ -314,7 +314,7 @@ run_phase (phases_t phase, char *name, string_list_t *args)
         error("not enough memory");
         cleanup();
         do_exit(RC_SYSTEM_ERROR);
-	}
+    }
 
     argv[0] = name;
     for (argc = 1, p = args->head; p != NULL; p = p->next) {
@@ -339,10 +339,10 @@ run_phase (phases_t phase, char *name, string_list_t *args)
         }
         argv[argc++] = p->name;
     }
-	argv[argc] = NULL;
+    argv[argc] = NULL;
 
     if (show_command_only(name, argv)) {
-		return;
+        return;
     }
 
     pex = pex_init(0, name, NULL);
@@ -358,7 +358,7 @@ run_phase (phases_t phase, char *name, string_list_t *args)
         cleanup();
         do_exit(RC_SYSTEM_ERROR);
     }
-	else {
+    else {
         char *my_path;
         char *l_path;
         char *l32_path;
@@ -379,236 +379,237 @@ run_phase (phases_t phase, char *name, string_list_t *args)
         }
 
 	if (forkpid == 0) {
-		char *my_path, *l_path, *l32_path, *nls_path, *root_prefix;
-		
-		/* child */
-		/* if we want memory stats, we have to wait for
-		   parent to connect to our /proc */
-		if (input != NULL) {
-			if ((fdin = open (input, O_RDONLY)) == -1) {
-				error ("cannot open input file %s", input);
-				cleanup ();
-				do_exit (RC_SYSTEM_ERROR);
-				/* NOTREACHED */
-			}
-	    		dup2 (fdin, fileno(stdin));
-		}
-		if (output != NULL) {
-			if ((fdout = creat (output, 0666)) == -1) {
-				error ("cannot create output file %s", output);
-				cleanup ();
-				do_exit (RC_SYSTEM_ERROR);
-				/* NOTREACHED */
-			}
-			if (save_stderr) {
-	    			dup2 (fdout, fileno(stderr));
-			} else {
-	    			dup2 (fdout, fileno(stdout));
-			}
-		} 
-
-		my_path = get_binutils_lib_path();
-		rld_path = get_phase_ld_library_path (phase);
-		
-		if (rld_path != 0) {
-			asprintf(&my_path, "%s:%s:%s/%s", my_path, rld_path, rld_path, current_target->abi_name);
-		}
-		
-		l_path = l32_path = my_path;
-		
-		if (ld_library_path)
-			asprintf(&l_path, "%s:%s", my_path, ld_library_path);
-
-		if (ld_libraryn32_path)
-			asprintf(&l32_path, "%s:%s", my_path,
-				 ld_libraryn32_path);
+            char *my_path, *l_path, *l32_path, *nls_path, *root_prefix;
+            
+            /* child */
+            /* if we want memory stats, we have to wait for
+               parent to connect to our /proc */
+            if (input != NULL) {
+            	if ((fdin = open (input, O_RDONLY)) == -1) {
+                    error ("cannot open input file %s", input);
+                    cleanup ();
+                    do_exit (RC_SYSTEM_ERROR);
+                    /* NOTREACHED */
+            	}
+            	dup2 (fdin, fileno(stdin));
+            }
+            if (output != NULL) {
+            	if ((fdout = creat (output, 0666)) == -1) {
+                    error ("cannot create output file %s", output);
+                    cleanup ();
+                    do_exit (RC_SYSTEM_ERROR);
+                    /* NOTREACHED */
+            	}
+            	if (save_stderr) {
+                    dup2 (fdout, fileno(stderr));
+            	} else {
+                    dup2 (fdout, fileno(stdout));
+            	}
+            } 
+            
+            my_path = get_binutils_lib_path();
+            rld_path = get_phase_ld_library_path (phase);
+            
+            if (rld_path != 0) {
+            	asprintf(&my_path, "%s:%s:%s/%s", my_path, rld_path, rld_path, current_target->abi_name);
+            }
+            
+            l_path = l32_path = my_path;
+            
+            if (ld_library_path)
+            	asprintf(&l_path, "%s:%s", my_path, ld_library_path);
+            
+            if (ld_libraryn32_path)
+            	asprintf(&l32_path, "%s:%s", my_path,
+            		 ld_libraryn32_path);
 
 #if defined(BUILD_OS_DARWIN)
-        /* Darwin static linker uses LD_LIBRARY_PATH, but dynamic
-         * linker uses DYLD_LIBRARY_PATH */
-        my_putenv("DYLD_LIBRARY_PATH", "%s", l_path);
+            /* Darwin static linker uses LD_LIBRARY_PATH, but dynamic
+             * linker uses DYLD_LIBRARY_PATH */
+            my_putenv("DYLD_LIBRARY_PATH", "%s", l_path);
 #else /* defined(BUILD_OS_DARWIN) */
-        my_putenv("LD_LIBRARY_PATH", "%s", l_path);
-        my_putenv("LD_LIBRARYN32_PATH", "%s", l32_path);
+            my_putenv("LD_LIBRARY_PATH", "%s", l_path);
+            my_putenv("LD_LIBRARYN32_PATH", "%s", l32_path);
 #endif /* defined(BUILD_OS_DARWIN) */
 		
-		// Set up NLSPATH, for the Fortran front end.
+            // Set up NLSPATH, for the Fortran front end.
+            
+            nls_path = getenv("NLSPATH");
+            root_prefix = directory_path(get_executable_dir());
+            
+            if (nls_path) {
+                my_putenv("NLSPATH", "%s:%s%s/%%N.cat", nls_path, root_prefix, LIBPATH);
+            } else {
+                my_putenv("NLSPATH", "%s%s/%%N.cat", root_prefix, LIBPATH);
+            }
+            
+            if (uses_message_system && getenv("ORIG_CMD_NAME") == NULL)
+                my_putenv("ORIG_CMD_NAME", "%s", program_name);
+            
+            if (phase == P_f90_fe) {
+                char *root;
+                char *modulepath;
+                int len;
+                char *new_env;
+                char *env_name = "FORTRAN_SYSTEM_MODULES=";
+                char *env_val = "/usr/lib/f90modules";
+                root = getenv("TOOLROOT");
+                if (root != NULL) {
+                    len = strlen(env_val) + strlen(root) +3 + strlen(env_val);
+                    new_env = alloca(len);
+                    sprintf(new_env,"%s/%s:%s",root,env_val,env_val);
+                    env_val = new_env;
+                }
+                modulepath = string_copy(getenv("FORTRAN_SYSTEM_MODULES"));
+                if (modulepath != NULL) {
+                    /* Append env_val to FORTRAN_SYSTEM_MODULES */
+                    if (modulepath[strlen(modulepath)-1] == ':') {
+                        /* Just append env_val */
+                        len = strlen(modulepath) + strlen(env_val) + 1;
+                        new_env = alloca(len);
+                        sprintf(new_env,"%s%s",modulepath,env_val);
+                    } else {
+                        /* append :env_val */
+                        len = strlen(modulepath) + strlen(env_val) + 2;
+                        new_env = alloca(len);
+                        sprintf(new_env,"%s:%s",modulepath,env_val);
+                    }
+                    env_val = new_env;
+                }
+                
+                my_putenv ("FORTRAN_SYSTEM_MODULES", "%s", env_val);
+            }
 
-		nls_path = getenv("NLSPATH");
-                root_prefix = directory_path(get_executable_dir());
-
-		if (nls_path) {
-		    my_putenv("NLSPATH", "%s:%s%s/%%N.cat", nls_path, root_prefix, LIBPATH);
-		} else {
-		    my_putenv("NLSPATH", "%s%s/%%N.cat", root_prefix, LIBPATH);
-		}
-
-		if (uses_message_system && getenv("ORIG_CMD_NAME") == NULL)
-		   my_putenv("ORIG_CMD_NAME", "%s", program_name);
-
-		if (phase == P_f90_fe) {
-		   char *root;
-		   char *modulepath;
-		   int len;
-		   char *new_env;
-		   char *env_name = "FORTRAN_SYSTEM_MODULES=";
-		   char *env_val = "/usr/lib/f90modules";
-		   root = getenv("TOOLROOT");
-		   if (root != NULL) {
-		      len = strlen(env_val) + strlen(root) +3 + strlen(env_val);
-		      new_env = alloca(len);
-		      sprintf(new_env,"%s/%s:%s",root,env_val,env_val);
-		      env_val = new_env;
-		   }
-		   modulepath = string_copy(getenv("FORTRAN_SYSTEM_MODULES"));
-		   if (modulepath != NULL) {
-		      /* Append env_val to FORTRAN_SYSTEM_MODULES */
-		      if (modulepath[strlen(modulepath)-1] == ':') {
-			 /* Just append env_val */
-			 len = strlen(modulepath) + strlen(env_val) + 1;
-			 new_env = alloca(len);
-			 sprintf(new_env,"%s%s",modulepath,env_val);
-		      } else {
-			 /* append :env_val */
-			 len = strlen(modulepath) + strlen(env_val) + 2;
-			 new_env = alloca(len);
-			 sprintf(new_env,"%s:%s",modulepath,env_val);
-		      }
-		      env_val = new_env;
-		   }
-		   
-		   my_putenv ("FORTRAN_SYSTEM_MODULES", "%s", env_val);
-		}
-
-		/* need to setenv COMPILER_PATH for collect to find ld */
-        if (
+            /* need to setenv COMPILER_PATH for collect to find ld */
+            if (
 #ifdef KEY
 		// gcc will invoke the cc1 in the COMPILER_PATH directory,
 		// which is not what we want when we invoke gcc for
 		// preprocessing.  Bug 10164.
 
 #if defined(BUILD_OS_DARWIN)
-        /* Driver uses gcc to run assembler. If we set COMPILER_PATH,
-         * gcc uses PSC version of cc1, which doesn't accept one of
-         * the options (-mmacosx-version-min=10.5.1) which Apple's
-         * gcc driver passes to Apple's cc1. Looks like the
-         * "is_matching_phase" test might already be trying to fix
-         * this, but it's not succeeding.
-         */
-            !suppress_compiler_path &&
+                /* Driver uses gcc to run assembler. If we set COMPILER_PATH,
+                 * gcc uses PSC version of cc1, which doesn't accept one of
+                 * the options (-mmacosx-version-min=10.5.1) which Apple's
+                 * gcc driver passes to Apple's cc1. Looks like the
+                 * "is_matching_phase" test might already be trying to fix
+                 * this, but it's not succeeding.
+                 */
+                !suppress_compiler_path &&
 #endif
-            !is_matching_phase(get_phase_mask(P_any_cpp), phase) &&
+                !is_matching_phase(get_phase_mask(P_any_cpp), phase) &&
 #endif
-            1) {
-            my_putenv("COMPILER_PATH", "%s", get_phase_dir(P_collect));
+                1) {
+                my_putenv("COMPILER_PATH", "%s", get_phase_dir(P_collect));
+            }
+
+            /* Tell IPA where to find the driver. */
+            my_putenv("COMPILER_BIN", "%s/" PSC_NAME_PREFIX "cc-"
+                      PSC_FULL_VERSION, get_executable_dir());
         }
-        /* Tell IPA where to find the driver. */
-        my_putenv("COMPILER_BIN", "%s/" PSC_NAME_PREFIX "cc-"
-                  PSC_FULL_VERSION, get_executable_dir());
-    }
 
-    errmsg = pex_run(pex, PEX_SEARCH | PEX_LAST | (save_stderr ? PEX_STDERR_TO_STDOUT : 0),
-                     name, argv, output, NULL, &errnum);
-    if (errmsg != NULL) {
-        error("%s", errmsg);
-        pex_free(pex);
-        cleanup();
-        do_exit(RC_SYSTEM_ERROR);
-    }
-
-    if (!pex_get_status(pex, 1, &waitstatus)) {
-        pex_free(pex);
-        error("can't get program status");
-        cleanup();
-        do_exit(RC_SYSTEM_ERROR);
-    }
-
-    if (time_flag) print_time(name);
-
-    pex_free(pex);
-
-    if (WIFSTOPPED(waitstatus)) {
-        error("STOPPED signal received from %s", name);
-        cleanup();
-        do_exit(RC_SYSTEM_ERROR);
-        /* NOTREACHED */
-    } else if (WIFEXITED(waitstatus)) {
-        int status = WEXITSTATUS(waitstatus);
-        extern int inline_t;
-        boolean internal_err = FALSE;
-        boolean user_err = FALSE;
+        errmsg = pex_run(pex, PEX_SEARCH | PEX_LAST | (save_stderr ? PEX_STDERR_TO_STDOUT : 0),
+                         name, argv, output, NULL, &errnum);
+        if (errmsg != NULL) {
+            error("%s", errmsg);
+            pex_free(pex);
+            cleanup();
+            do_exit(RC_SYSTEM_ERROR);
+        }
         
-        if (phase == P_prof) {
-            /* Make sure the .cfb files were created before
-               changing the STATUS to OKAY */
-            if (prof_file != NULL) {
-                if (!(stat(fb_file, &stat_buf) != 0 && errno == ENOENT)) {
-                    status = RC_OKAY;
-                }
-            } else {
-                internal_error("No count file was specified for a prof run");
-                perror(program_name);
-            }
+        if (!pex_get_status(pex, 1, &waitstatus)) {
+            pex_free(pex);
+            error("can't get program status");
+            cleanup();
+            do_exit(RC_SYSTEM_ERROR);
         }
-
-        if (phase == P_f90_fe && keep_listing) {
-            char *cif_file = construct_given_name(drop_path(source_file), 
-                                                  "T", TRUE);
-
-            if (!(stat(cif_file, &stat_buf) != 0 && errno == ENOENT)) {
-                f90_fe_status = status;
-            }
+        
+        if (time_flag) print_time(name);
+        
+        pex_free(pex);
+        
+        if (WIFSTOPPED(waitstatus)) {
+            error("STOPPED signal received from %s", name);
+            cleanup();
+            do_exit(RC_SYSTEM_ERROR);
+            /* NOTREACHED */
+        } else if (WIFEXITED(waitstatus)) {
+            int status = WEXITSTATUS(waitstatus);
+            extern int inline_t;
+            boolean internal_err = FALSE;
+            boolean user_err = FALSE;
             
-            f90_fe_name = string_copy(name);
-
-            /* Change the status to OKAY so that we can 
-             * execute the lister on the cif_file; we will
-             * take appropriate action on this status once 
-             * the lister has finished executing. See below.
-             */
-            status = RC_OKAY;
-        }
-
-        if (phase == P_lister) {
-            if (status == RC_OKAY && f90_fe_status != RC_OKAY) {
-
-                /* We had encountered an error in the F90_fe phase
-                 * but we ignored it so that we could execute the
-                 * lister on the cif file; we need to switch the
-                 * status to the status we received from F90_fe
-                 * and use the name of the F90_fe_phase, so that
-                 * we can issue a correct error message.
-                 */
-
-                status = f90_fe_status;
-                name = string_copy(f90_fe_name);
-
-                /* Reset f90_fe_status to OKAY for any further
-                 * compilations on other source files.
-                 */
-
-                f90_fe_status = RC_OKAY;
+            if (phase == P_prof) {
+                /* Make sure the .cfb files were created before
+                   changing the STATUS to OKAY */
+                if (prof_file != NULL) {
+                    if (!(stat(fb_file, &stat_buf) != 0 && errno == ENOENT)) {
+                        status = RC_OKAY;
+                    }
+                } else {
+                    internal_error("No count file was specified for a prof run");
+                    perror(program_name);
+                }
             }
-        }
-
-        switch (status) {
+        
+            if (phase == P_f90_fe && keep_listing) {
+                char *cif_file = construct_given_name(drop_path(source_file), 
+                                                      "T", TRUE);
+        
+                if (!(stat(cif_file, &stat_buf) != 0 && errno == ENOENT)) {
+                    f90_fe_status = status;
+                }
+                
+                f90_fe_name = string_copy(name);
+        
+                /* Change the status to OKAY so that we can 
+                 * execute the lister on the cif_file; we will
+                 * take appropriate action on this status once 
+                 * the lister has finished executing. See below.
+                 */
+                status = RC_OKAY;
+            }
+        
+            if (phase == P_lister) {
+                if (status == RC_OKAY && f90_fe_status != RC_OKAY) {
+        
+                    /* We had encountered an error in the F90_fe phase
+                     * but we ignored it so that we could execute the
+                     * lister on the cif file; we need to switch the
+                     * status to the status we received from F90_fe
+                     * and use the name of the F90_fe_phase, so that
+                     * we can issue a correct error message.
+                     */
+        
+                    status = f90_fe_status;
+                    name = string_copy(f90_fe_name);
+        
+                    /* Reset f90_fe_status to OKAY for any further
+                     * compilations on other source files.
+                     */
+        
+                    f90_fe_status = RC_OKAY;
+                }
+            }
+        
+            switch (status) {
             case RC_OKAY:
 #ifdef KEY
-				// If the command line has explicit inline
-				// setting, follow it; else follow the
-				// front-end request.  Bug 11325.
-				if (inline_t != UNDEFINED) {
-				  run_inline = inline_t;
-				  break;
-				}
+                // If the command line has explicit inline
+                // setting, follow it; else follow the
+                // front-end request.  Bug 11325.
+                if (inline_t != UNDEFINED) {
+                    run_inline = inline_t;
+                    break;
+                }
 
 #ifdef PATH64_ENABLE_GNU_FRONTEND
-				// bug 10215
-				if (is_matching_phase(get_phase_mask(phase), P_wgen)) {
-				  run_inline = FALSE;
-				}
+                // bug 10215
+                if (is_matching_phase(get_phase_mask(phase), P_wgen)) {
+                  run_inline = FALSE;
+                }
 #endif // PATH64_ENABLE_GNU_FRONTEND
-				break;
+                break;
 #endif
                 if (inline_t == UNDEFINED  && 
                     is_matching_phase(get_phase_mask(phase), P_any_fe)) {
@@ -617,23 +618,24 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 #else
                     inline_t = FALSE;
 #endif
-				}
-				break;
-			case RC_NEED_INLINER:
-#ifdef KEY			// If the command line has explicit inline
-				// setting, follow it; else follow the
-				// front-end request.  Bug 11325.
-				if (inline_t != UNDEFINED) {
-				  run_inline = inline_t;
-				  break;
-				}
+                }
+                break;
+            
+            case RC_NEED_INLINER:
+#ifdef KEY      // If the command line has explicit inline
+                // setting, follow it; else follow the
+                // front-end request.  Bug 11325.
+                if (inline_t != UNDEFINED) {
+                    run_inline = inline_t;
+                    break;
+                }
 
 #ifdef PATH64_ENABLE_GNU_FRONTEND
-				// bug 10215
-				if (is_matching_phase(get_phase_mask(phase), P_wgen)) {
-				  run_inline = TRUE;
-				}
-				break;
+                // bug 10215
+                if (is_matching_phase(get_phase_mask(phase), P_wgen)) {
+                    run_inline = TRUE;
+                }
+                break;
 #endif // PATH64_ENABLE_GNU_FRONTEND
 
 #endif
@@ -672,104 +674,106 @@ run_phase (phases_t phase, char *name, string_list_t *args)
 #ifdef KEY
             case RC_GCC_INTERNAL_ERROR:
 #endif
-			case RC_INTERNAL_ERROR:
-				internal_err = TRUE;
-				break;
-			default:
-				internal_err = TRUE;
-				break;
-			} 
-			if (internal_err) {
-				if (phase == P_ld ||
+            case RC_INTERNAL_ERROR:
+                internal_err = TRUE;
+                break;
+
+            default:
+                internal_err = TRUE;
+                break;
+            } 
+
+            if (internal_err) {
+                if (phase == P_ld ||
                     phase == P_ldplus ||
 #ifdef KEY
-				    phase == P_gas ||	// bug 4846
-				    phase == P_f_coco ||	// bug 9058
+                    phase == P_gas ||           // bug 4846
+                    phase == P_f_coco ||        // bug 9058
 #ifdef PATH64_ENABLE_PSCLANG
-				    phase == P_psclang_cpp ||
-				    phase == P_psclang ||
+                    phase == P_psclang_cpp ||
+                    phase == P_psclang ||
 #endif // PATH64_ENABLE_PSCLANG
-				    status == RC_GCC_INTERNAL_ERROR ||  //bug 9637
+                    status == RC_GCC_INTERNAL_ERROR ||  //bug 9637
 #endif // KEY
 #ifdef PATH64_ENABLE_GNU_FRONTEND
-				    phase == P_spin_cc1 ||
-				    phase == P_spin_cc1plus ||
-				    phase == P_gcpp ||
+                    phase == P_spin_cc1 ||
+                    phase == P_spin_cc1plus ||
+                    phase == P_gcpp ||
                     phase == P_gcpp_plus ||
 #endif // PATH64_ENABLE_GNU_FRONTEND
                     TRUE) {
 
-					if (phase == P_gas ||
-					    status == RC_GCC_INTERNAL_ERROR) {
-						internal_error_occurred = 1;
-					}
-					log_error("%s returned non-zero status %d",
-						  name, status);
-					nomsg_error(status);
-				} else {
-					internal_error("%s returned non-zero status %d",
-						       name, status);
-				}
-			}
-			else if (user_err) {
-				/* assume phase will print diagnostics */
-				if (phase == P_c_gfe || phase == P_cplus_gfe
+                    if (phase == P_gas ||
+                        status == RC_GCC_INTERNAL_ERROR) {
+                    	internal_error_occurred = 1;
+                    }
+                    log_error("%s returned non-zero status %d", name, status);
+                    nomsg_error(status);
+                } else {
+                    internal_error("%s returned non-zero status %d", name, status);
+                }
+            }
+            else if (user_err) {
+                /* assume phase will print diagnostics */
+                if (phase == P_c_gfe || phase == P_cplus_gfe
 #ifdef PATH64_ENABLE_GNU_FRONTEND
 #ifdef KEY
-				    || phase == P_wgen
-				    || phase == P_spin_cc1
-				    || phase == P_spin_cc1plus
+                    || phase == P_wgen
+                    || phase == P_spin_cc1
+                    || phase == P_spin_cc1plus
 #endif // KEY
 #endif // PATH64_ENABLE_GNU_FRONTEND
-				   ) {
-					nomsg_error(RC_INTERNAL_ERROR);
-				}
-				else if (!show_flag || save_stderr) {
-					nomsg_error(RC_USER_ERROR);
-				} else {
-					error("%s returned non-zero status %d",
-						name, status);
-				}
-			}
-			ran_twice = FALSE;
-			return;
-		} else if(WIFSIGNALED(waitstatus)){
-			termsig = WTERMSIG(waitstatus);
-			switch (termsig) {
+                   ) {
+                    nomsg_error(RC_INTERNAL_ERROR);
+                }
+                else if (!show_flag || save_stderr) {
+                    nomsg_error(RC_USER_ERROR);
+                } else {
+                    error("%s returned non-zero status %d", name, status);
+                }
+            }
+            ran_twice = FALSE;
+            return;
+
+        } else if(WIFSIGNALED(waitstatus)) {
+            termsig = WTERMSIG(waitstatus);
+            switch (termsig) {
 #ifdef SIGHUP
-			case SIGHUP:
+            case SIGHUP:
 #endif
-			case SIGINT:
+            case SIGINT:
 #ifdef SIGQUIT
-			case SIGQUIT:
+            case SIGQUIT:
 #endif
 #ifdef SIGKILL
-			case SIGKILL:
+            case SIGKILL:
 #endif
-			case SIGTERM:
-				error("%s died due to signal %d", name, termsig);
-				break;
-			default:
-				internal_error("%s died due to signal %d",
-					       name, termsig);
-				break;
-			}
-			if(waitstatus & WCOREFLAG) {
-				error("core dumped");
-			}
+            case SIGTERM:
+                error("%s died due to signal %d", name, termsig);
+                break;
+            default:
+                internal_error("%s died due to signal %d", name, termsig);
+                break;
+            }
+
+            if(waitstatus & WCOREFLAG) {
+                error("core dumped");
+            }
+
 #ifdef SIGKILL
-			if (termsig == SIGKILL) {
-				error("Probably caused by running out of swap space -- check %s", LOGFILE);
-			}
+            if (termsig == SIGKILL) {
+                error("Probably caused by running out of swap space -- check %s", LOGFILE);
+            }
 #endif
-			cleanup();
-			do_exit(RC_SYSTEM_ERROR);
-		} else {
-			/* cannot happen, I think! */
-			internal_error("driver exec'ing is confused");
-			return;
-		}
-	}
+
+            cleanup();
+            do_exit(RC_SYSTEM_ERROR);
+        } else {
+            /* cannot happen, I think! */
+            internal_error("driver exec'ing is confused");
+            return;
+        }
+    }
 }
 
 /*
