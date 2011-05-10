@@ -136,9 +136,6 @@ void obtain_license (char *exedir, int argc, char *argv[]) {
     }
 
     switch (invoked_lang) {
-    case L_f77:
-        strcpy (language, "FORTRAN77") ;
-	break;
     case L_f90:
         strcpy (language, "FORTRAN90") ;
 	break;

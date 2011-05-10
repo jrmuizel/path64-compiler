@@ -188,7 +188,7 @@ main (int argc, char *argv[])
 	  append_psc_env_flags(&argc, &argv, "PSC_CFLAGS");
 	else if (invoked_lang == L_CC)
 	  append_psc_env_flags(&argc, &argv, "PSC_CXXFLAGS");
-	else if (invoked_lang == L_f77 || invoked_lang == L_f90)
+	else if (invoked_lang == L_f90)
 	  append_psc_env_flags(&argc, &argv, "PSC_FFLAGS");
 
 	check_for_driver_controls (argc, argv);
@@ -203,15 +203,6 @@ main (int argc, char *argv[])
 
 	// "-o -" will set this to TRUE.
 	dump_outfile_to_stdout = FALSE;
-
-        /* Hack for F90 ftpp; For pre processing F90 calls ftpp;
-         * Unlike cpp, ftpp does not like the -Amachine(mips) and -Asystem(unix)
-         * that are passed to cpp; we need to remove these if ftpp is used for
-         * preprocessing. Also remove all the woff options for cpp and ftpp.
-         */
-
-	remove_phase_for_option(O_A,P_f90_cpp);
-	remove_phase_for_option(O_E,P_f90_cpp);
 
 	// First check for the existence of certain options anywhere in the
 	// command line, because these options affect the behavior of other
@@ -1025,14 +1016,11 @@ static struct explicit_lang {
 	{ "c++-header", S_C, L_CC, },
 	{ "c-header", S_c, L_cc, },
 	{ "cpp-output", S_i, L_cc, },
-	{ "f77", S_f90, L_f77, },
-	{ "f77-cpp-input", S_i, L_f77, },
 	{ "f90", S_f90, L_f90, },
 	{ "f90-cpp-input", S_i, L_f90, },
 	{ "f95", S_f90, L_f90, },
 	{ "f95-cpp-input", S_i, L_f90, },
 	{ "none", S_NONE, L_NONE, },
-	{ "ratfor", S_r, L_f77, },
 	{ NULL, S_NONE, L_NONE, },
 };
 

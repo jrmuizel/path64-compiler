@@ -1139,9 +1139,7 @@ Process_Inline ( void )
  */
 void dash_F_option(void)
 {
-    if (invoked_lang == L_f77) {
-	last_phase=earliest_phase(P_ratfor,last_phase);
-    } else if (invoked_lang == L_CC) {
+    if (invoked_lang == L_CC) {
 	error("-F is not supported: cannot generate intermediate C code");
     } else {
 	parse_error("-F", "unknown flag");
@@ -1554,7 +1552,7 @@ Process_Promp ( void )
   /* Invoke -PROMP:=on for f77,f90 -mplist for C, and nothing for
    * other languages.
    */
-  if (invoked_lang == L_f77 || invoked_lang == L_f90) {
+  if (invoked_lang == L_f90) {
     add_option_seen ( O_promp );
     add_option_seen(add_string_option(O_FE_, "endloop_marker=1"));
   } else if (invoked_lang == L_cc) {

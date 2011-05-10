@@ -71,7 +71,6 @@ static lang_info_t language_info[] = {
 	{'p',	0x00000001,	{"cpp"}},		/* cpp */
 	{'c',	0x00000002,	{"cc", PSC_NAME_PREFIX "cc", PSC_TARGET "-" PSC_NAME_PREFIX "cc","gcc","c89"}},	/* cc */
 	{'C',	0x00000004,	{PCC, PSC_NAME_PREFIX PCC, PSC_NAME_PREFIX "++","g++"}},	/* c++ */
-	{'f',	0x00000008,	{"f77", PSC_NAME_PREFIX "f77","gf77","fort77"}}, /* f77 */
 	{'F',	0x00000010,	{"f90", PSC_NAME_PREFIX "f95"}},		/* f90/95 */
 	{'a',	0x00000020,	{"as", PSC_NAME_PREFIX "as","gas"}},		/* as */
 	{'l',	0x00000040,	{"ld", PSC_NAME_PREFIX "ld"}},		/* ld */
@@ -91,8 +90,6 @@ static phase_info_t phase_info[] = {
    {'N',  0x0000000000000000LL,	"", 	"",		FALSE},	/* NONE */
    {'A',  0x0fffffffffffffffLL,	"", 	"",		FALSE},	/* ALL */
 
-   {'m',  0x0000000000000008LL,	"m4",	BINPATH,	FALSE},	/* m4 */
-   {'r',  0x0000000000000001LL,	"ratfor",BINPATH,	FALSE},	/* ratfor */
    {'p',  0x0000000000000010LL,	"cpp",	PHASEPATH,	FALSE},	/* cpp */
 
 #ifdef PATH64_ENABLE_GNU_FRONTEND
@@ -113,15 +110,12 @@ static phase_info_t phase_info[] = {
    {'p',  0x0000000000000080LL,	"psclang", PHASEPATH, TRUE}, /* psclang_cpp */
 #endif // PATH64_ENABLE_PSCLANG
 
-   {'p',  0x0000000000000200LL,	"mfef77",PHASEPATH,	FALSE},	/* f_cpp */
-   {'p',  0x0000000000000400LL,	"ftpp"   ,PHASEPATH,	FALSE},	/* f90_cpp */
 #ifdef KEY	// bug 9058
    {'p',  0x0000000000000800LL,	"coco"   ,PHASEPATH,	FALSE},	/* coco */
 #endif
    /* place-holder for generic cpp, whose mask unites all cpp's; */
    {'p',  0x0000000000000ff0LL,	"",	"",		FALSE},	/* any_cpp */
 
-   {'K',  0x0000000000001000LL,	"pfa",	PHASEPATH,	FALSE},	/* pfa */
    {'K',  0x0000000000002000LL,	"pca",	PHASEPATH,	FALSE},	/* pca */
    {'M',  0x0000000000008000LL, "mpc",  PHASEPATH,      FALSE}, /* mpc */
    /* place-holder for generic fe optimizer, whose mask unites opts's */
@@ -139,8 +133,6 @@ static phase_info_t phase_info[] = {
     * So what we do is give it a unique value, but when matching
     * the value for options then we compare against both cpp and cfe. */
    /* ffe is chosen by same letter as cfe */
-   {'f',  0x0000000000010000LL,	"mfef77",PHASEPATH,	FALSE},	/* f_fe */
-   {'f',  0x0000000000020000LL, "mfef77",PHASEPATH,     FALSE}, /* cppf_fe */
    {'f',  0x0000000000040000LL,	"mfef95",PHASEPATH,	TRUE},	/* f90_fe */
    {'f',  0x0000000000080000LL,	"mfef95",PHASEPATH,	TRUE},	/* cppf90_fe */
    {'f',  0x0000000000100000LL,	"gfec",PHASEPATH,	TRUE }, /* c_gfe */
@@ -227,7 +219,6 @@ static source_info_t source_info[] = {
 	{"F","FOR"},			/* F */
 	{"f90","f95"},			/* f90 */
 	{"F90","F95"},			/* F90 */
-	{"r"},				/* r */
 	{"i"},				/* i */
 	{"ii"},				/* ii */
 	{"s"},				/* s */
@@ -315,12 +306,7 @@ is_matching_language (mask_t lang_mask, languages_t l)
 boolean
 is_matching_phase (mask_t phase_mask, phases_t p)
 {
-	if (p == P_cppf_fe) {
-		return (is_matching_phase (phase_mask, P_f_cpp)
-			|| is_matching_phase (phase_mask, P_f_fe) );
-	} else {
-		return ((phase_mask & phase_info[p].mask) != 0);
-	}
+    return ((phase_mask & phase_info[p].mask) != 0);
 }
 
 /* set phase dir for associated mask of phases */
@@ -531,7 +517,6 @@ get_source_kind (const char *src)
 			switch (invoked_lang) {
 			case L_cc: return S_c;
 			case L_CC: return S_C;
-			case L_f77: return S_f;
 			case L_f90: return S_f90;
 			case L_as: return S_s;
 			}
@@ -586,8 +571,6 @@ get_source_lang (source_kind_t sk)
 	case S_s:
 	case S_S:
 		return L_as;
-	case S_r:
-		return L_f77;
 	case S_f:
 	case S_F:
 	case S_f90:

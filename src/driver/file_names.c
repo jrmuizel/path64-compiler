@@ -468,7 +468,7 @@ cleanup (void)
 			"if possible, attach %s to your problem report.\n",
 			save_count == 1 ? "" : "s",
 			save_count == 1 ? "it" : "them");
-		if (invoked_lang == L_f77 || invoked_lang == L_f90)
+		if (invoked_lang == L_f90)
 		  fprintf(stderr, "Additional included source files or modules may also be needed to reproduce the problem.\n");
 	}
 }

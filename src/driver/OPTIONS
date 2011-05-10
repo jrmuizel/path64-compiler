@@ -123,10 +123,9 @@
 #define cc	c
 #define CC	C
 #define Cc	cc,CC
-#define f77	f
 % f90 used in option name, so use F90 for define
 #define F90	F
-#define FTN	f77,F90
+#define FTN	F90
 #define as	a
 #define LINK	Cc,FTN
 % phases
@@ -195,14 +194,6 @@
 	"give more warnings, especially about missing prototypes"
 -w	toggle(&msglevel,0);		ALL	cpp,cfe,as,PFA	self "-m0"
 	""
--w2			;		f77	ffe	self
-	"warnings count as errors"
--w3			;		f77	ffe	self
-	"supress warnings but exit with error status"
--w66			;		f	ffe	self
-	"turn off F66 incompatibility warnings"
--66			;		f	ffe	self
-	"issue errors when non-F66 feature used"
 -woff*all	toggle(&msglevel,0);		ALL	NONE	"-w -m0"
 	"turn off all warnings"
 
@@ -227,8 +218,6 @@
 	"produce a .s and stop"
 -fe	last_phase=earliest_phase(P_any_fe,last_phase);	 Cc,FTN NONE	""
 	"stop after the front end is run"
--F	dash_F_option();	 f77	NONE	""
-	"stop after RATFOR (f77 only)"
 % just parse and then stop
 -parse	last_phase=earliest_phase(P_any_fe,last_phase);  Cc cfe	self
 	""
@@ -431,8 +420,6 @@ I-cpp_pic	;		ALL	NONE	"-D_PIC -D__DSO__"
 	""
 -mplist		;		FTN,cc	be	"-mplist"
 	""
--PURPLE:%s	;		f77	be	"-PHASE:purple -PURPLE:%s"
-	"option group to control problem isolation slicing tool"
 -PROMP:next_id=%d ;		FTN,Cc	be	"-PROMP:next_id=%d"
 	""
 -PROMP:%s	;		FTN,Cc	be	"-PHASE:prompf -PROMP:%s"
@@ -489,12 +476,6 @@ I-fini%s		;		CC	ld	"-fini %s"
 % -o is now handled elsewhere because of complications introduced by cord
 -o%-	save_name(&outfile,optargs);check_output_name(optargs);cancel_saved_arg(2);  ALL NONE ""
 	"put output in following file name rather than a.out"
--fonetrip	;		f77	ffe	"-1"
-	"One trip DO loops"
--onetrip	;		f77	ffe	"-1"
-	"One trip DO loops"
--1		;		f77	ffe	self
-	"One trip DO loops"
 -p	;		ALL	ld	"-TENV:call_mcount"
 	""
 -pg	;		ALL	ld	"-lm" "-TENV:call_mcount"
@@ -619,11 +600,9 @@ I-cpp_fortran		;		FTN	cpp	FTN_DEFS
 	""
 I-cpp_fortran90		;		F90	cpp	FTN90_DEFS
 	""
-I-cpp_fortran77		;		f77	cpp	FTN77_DEFS
-	""
 I-D_LANGUAGE_FORTRAN	;		FTN	cpp	self
 	""
-% f77 and as use cpp, but require k&r processing for things like # comments
+% as uses cpp, but require k&r processing for things like # comments
 -A%s			;		ALL	cpp	"-A%s"
 	"add following cpp assertions"
 -D%s			;		ALL	cpp	"-D%s"
@@ -783,9 +762,6 @@ I-cvs_nosrc,%D	;		FTN	F	"-cvs_nosrc,%D"
 -dumpspecs	warn_ignored(option_name);	ALL	FE	self
 	""
 
--backslash	first_phase=P_any_fe;		f77	ffe	self
-	"treat backslash as normal character rather than an escape"
-
 #ifdef KEY /* Bug 4260 */
 -byteswapio	toggle(&io_byteswap,1);		F90	ffe	self
  	"Swap bytes during file I/O"
@@ -796,14 +772,6 @@ I-cvs_nosrc,%D	;		FTN	F	"-cvs_nosrc,%D"
 
 -noexpopt	;		FTN	be	"-OPT:fast_exp=no"
 	"Don't optimize exponentiation operations"
--keepdollar	;		f77	ffe	self
-	"Treat $ as a normal last character in symbol names"  
--chararg1	;		f77	ffe	self
-	""
--nof77	;		f77	ffe	self
-	""
--ff77	warn_ignored(option_name);	FTN	NONE	""
-	"Use idiomatic UNIX FORTRAN 77"
 -ff90	;		FTN	NONE	""
 	"Allow Fortran 90 constructs"
 -fdirectives	;		FTN	ffe	""
@@ -889,36 +857,14 @@ I-xall	;		FTN	ffe	self
 	"Use psclang front-end"
 #endif
 #endif
--varargs	;		f77	ffe	self
-	"MATRA varargs"
 %-nocode last_phase=earliest_phase(P_any_fe,last_phase);  FTN ffe   self
 %        "do not generate any intermediate code from front-end"
 
 -vms	warn_no_longer_supported2(option_name,"-vms_cc"); 	FTN	NONE	self
 	""
--vms_cc		;		f77	ffe	self
-	""
--old_rl		;		f77	ffe	self
-	""
--bytereclen	;		f77	ffe	"-old_rl"
-	""
--vms_stdin		;		f77	ffe	self
-	""
--vms_endfile		;		f77	ffe	self
-	""
--vms_library		;		f77	ffe	self
-	""
--usefpidx		;		f	ffe	self
-	""
 
 % this should be on by default unless -mp, but off now until freeze over
 -cray_directives	;		FTN	N	self
-	""
-
--mipslibs	toggle(&use_mipslibs,TRUE);toggle(&use_craylibs,FALSE);		f77	NONE	""
-	""
-
--craylibs	toggle(&use_craylibs,TRUE);toggle(&use_mipslibs,FALSE);		f77	NONE	""
 	""
 
 #ifndef KEY
@@ -1010,12 +956,6 @@ I-xall	;		FTN	ffe	self
 I-lo=ocktl	;		FTN	PFA	self
 	""
 
--i2	toggle(&iflag,1);		f77	ffe	self
-	"make integer and logical quantities short (2 bytes)"
-
--noi4	toggle(&iflag,1);		f77	ffe	self
-	"make integer and logical quantities short (2 bytes)"
-
 -i4	toggle(&iflag,2);		FTN	ffe	self
 	"make integer and logical quantities long (4 bytes)"
 
@@ -1028,14 +968,8 @@ I-lo=ocktl	;		FTN	PFA	self
 -r8	toggle(&rflag,2);		FTN	ffe	self
 	"use REAL*8 and COMPLEX*16 as the defaults for real and complex" 
 
--r8const 		;		f77	ffe	self
-	""
-
 -d8	toggle(&dflag,1);		FTN	ffe	self
 	"use double=8 and dcomplex=16"
-
--dump_input 		;		f77	ffe	self
-	""
 
 -extend_source fortran_line_length=132;		FTN	ffe	self "-scan=132"
 	""
@@ -1141,15 +1075,15 @@ I-scan%s		;		FTN	PFA	self
 % for kernel folks
 -jalr		;		ALL	NONE	"-TARG:force_jalr"
 	""
--align8		;		Cc,f77	ffe,be	self
+-align8		;		Cc	ffe,be	self
 	"align data in common blocks to 8-bit boundaries"
--align16	;		Cc,f77	ffe,be	self
+-align16	;		Cc	ffe,be	self
 	"align data in common blocks to 16-bit boundaries"
 -align32	;		Cc,FTN	ffe,be	self
 	"align data in common blocks to 32-bit boundaries"
 -align64	;		Cc,FTN	ffe,be	self
 	"align data in common blocks to 64-bit boundaries"
--align128	;		Cc,f77	ffe,be	self
+-align128	;		Cc	ffe,be	self
 	"align data in common blocks to 128-bit boundaries"
 % -u can have two different meanings, so escape to hand-code
 -u*		;		ALL	NONE	""
@@ -1198,8 +1132,6 @@ I-u%s		;		Cc	ld	"-u %s"
 	"Pass -m args to linker"
 -m*elf_x86_64	toggle(&abi,ABI_64);		LINK	ld	""
 	"Pass -m args to linker"
-%-m	run_m4=TRUE;		f77	NONE	""
-%	"run m4 on each RATFOR source"
 -framepointer	warn_no_longer_supported2(option_name,"-TENV:large_stack");  ALL	NONE ""
 	""
 -trapuv 		;		Cc,FTN	be	"-DEBUG:trap_uninitialized"
@@ -1562,9 +1494,9 @@ I-u%s		;		Cc	ld	"-u %s"
 	"Warn about compile-time integer division by zero"
 -Wno-div-by-zero	;		Cc	f	self
 	"Suppress warnings about compile-time integer division by zero"
--Wendif-labels	;		Cc,cpp,f	cpp	self
+-Wendif-labels	;		Cc,cpp	cpp	self
 	"Warn if #if or #endif is followed by text"
--Wno-endif-labels	;		Cc,cpp,f	cpp	self
+-Wno-endif-labels	;		Cc,cpp	cpp	self
 	"Do not warn if #if or #endif is followed by text"
 -Weffc++	;		CC	f	self
 	"Warn on `Effective C++' style violations"

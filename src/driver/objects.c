@@ -174,23 +174,7 @@ add_object (int flag, char *arg)
 		     strcmp(arg, "mpath") == 0)	// bug 5184
 		    && ! option_was_seen(O_fbootstrap_hack)) {
 			/* add -lmv -lmblah */
-			if (xpg_flag && invoked_lang == L_f77) {
-			  add_library(lib_objects, "mv");
-#ifdef TARG_MIPS
-              if (is_target_arch_MIPS()) {
-			    if (ffast_math_prescan == 1) {  // Bug 14245
-			      // Link with libscm and open64 libmpath before libm
-			      add_library(lib_objects, "scm");
-			      add_library(lib_objects, "m" PSC_NAME_PREFIX);
-			    }
-              } else {
-#endif // TARG_MIPS
-			    add_library(lib_objects, "m" PSC_NAME_PREFIX);
-#ifdef TARG_MIPS
-              }
-#endif // TARG_MIPS
-			} else {
-			  add_library(objects, "mv");
+			add_library(objects, "mv");
 #ifdef TARG_MIPS
               if (is_target_arch_MIPS()) {
 			    if (ffast_math_prescan == 1) {  // Bug 14245
@@ -204,7 +188,6 @@ add_object (int flag, char *arg)
 #ifdef TARG_MIPS
               }
 #endif // TARG_MIPS
-			}
 			if (invoked_lang == L_CC) {
 			  add_library(cxx_prelinker_objects, "mv");
 #ifdef TARG_MIPS
@@ -231,11 +214,7 @@ add_object (int flag, char *arg)
 		}
 
 		/* xpg fort77 has weird rule about putting all libs after objects */
-		if (xpg_flag && invoked_lang == L_f77) {
-			add_library(lib_objects, arg);
-		} else {
-			add_library(objects, arg);
-		}
+		add_library(objects, arg);
 		if (invoked_lang == L_CC) {
 		    add_library(cxx_prelinker_objects, arg);
 		}
@@ -308,10 +287,6 @@ append_objects_to_list (string_list_t *list)
             add_string(list, filename);
           }
           free(dup_filename);
-	}
-
-	if (xpg_flag && invoked_lang == L_f77) {
-		append_string_lists (list, lib_objects);
 	}
 }
 

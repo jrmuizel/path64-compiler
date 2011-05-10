@@ -244,11 +244,10 @@ check_for_driver_controls (int argc, char *argv[])
 static int
 parse_u_option (char **argv, int *argi)
 {
-	if (invoked_lang == L_f77 || invoked_lang == L_f90) {
+	if (invoked_lang == L_f90) {
 		int flag;
        		get_next_arg(argi);
 		flag = add_new_option("-u");
-		add_phase_for_option(flag, P_f_fe);
 		return flag;
 	} else {
                 optargs = get_optarg(argv, argi);
@@ -264,14 +263,13 @@ parse_u_option (char **argv, int *argi)
 static int
 parse_U_option (char **argv, int *argi)
 {
-	if ((invoked_lang == L_f77 || invoked_lang == L_f90)
+	if ((invoked_lang == L_f90)
 		&& is_last_char(argv,argi)) 
 	{
 		/* -U */
 		int flag;
        		get_next_arg(argi);
 		flag = add_new_option("-U");
-		add_phase_for_option(flag, P_f_fe);
 		return flag;
 	} else {
 		/* -U<arg> */
@@ -289,13 +287,12 @@ static int
 parse_C_option (char **argv, int *argi)
 {
    if (is_last_char(argv,argi)) {
-      if (invoked_lang == L_f77 || invoked_lang == L_f90)
+      if (invoked_lang == L_f90)
 	{
 	   /* -C : for fortran 77/90 */
 	   int flag;
 	   get_next_arg(argi);
 	   flag = add_new_option("-DEBUG:subscript_check");
-	   add_phase_for_option(flag, P_f_fe);
 	   add_phase_for_option(flag, P_f90_fe);
 	   return flag;
 	} else {
@@ -317,15 +314,13 @@ parse_C_option (char **argv, int *argi)
 static int
 parse_R_option (char **argv, int *argi)
 {
-	if ((invoked_lang == L_f77 || invoked_lang == L_f90)
-		&& !is_last_char(argv,argi)) 
+	if (invoked_lang == L_f90 && !is_last_char(argv,argi)) 
 	{
 		/* -R */
 		int flag;
 		optargs = get_optarg(argv, argi);
        		get_next_arg(argi);
 		flag = add_new_option(optargs);
-		add_phase_for_option(flag, P_ratfor);
 		return flag;
 	} else {
 		parse_error(option_name, "no argument given for option");

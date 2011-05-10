@@ -73,10 +73,6 @@ set_defaults (void)
 		}
 	}
 
-	/* XPG fort77 doesn't allow -O with no explicit level */
-	if (xpg_flag && invoked_lang == L_f77 && option_was_seen(O_O)) {
-		error("XPG compiles must specify explicit optlevel rather than -O");
-	}
 	{
 	  /* QA wants way to turn off this check via environment var */
 	  char *ir_version_check = getenv("COMPILER_IR_VERSION_CHECK");
@@ -114,7 +110,6 @@ set_defaults (void)
 	}
 
 	prepend_option_seen(O_cpp_fortran90);
-	prepend_option_seen(O_cpp_fortran77);
 	prepend_option_seen(O_cpp_fortran);
 	prepend_option_seen(O_cpp_assembly);
 	prepend_option_seen(O_prelink);
@@ -213,8 +208,6 @@ add_special_options (void)
 	 */
 	add_phase_for_option(O_MDupdate,P_f90_fe);
 	add_phase_for_option(O_MDtarget,P_f90_fe);
-	remove_phase_for_option(O_MDupdate,P_f90_cpp);
-	remove_phase_for_option(O_MDtarget,P_f90_cpp);
 
         add_phase_for_option(O_D, P_cppf90_fe);
         add_phase_for_option(O_U, P_cppf90_fe);
@@ -367,8 +360,7 @@ add_special_options (void)
 	 * addition, when the language is Fortran, putting predefined C
 	 * preprocessor macros into the preprocessor output causes trouble.
 	 */
-	if ((invoked_lang == L_f77 || invoked_lang == L_f90) &&
-	  (option_was_seen(O_g3))) {
+	if (invoked_lang == L_f90 && option_was_seen(O_g3)) {
 	  glevel = 2;
 	  replace_option_seen (O_g3, O_g2);
 	}

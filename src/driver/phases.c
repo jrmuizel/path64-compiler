@@ -354,9 +354,6 @@ static void
 add_language_option ( string_list_t *args )
 {
   switch ( invoked_lang ) {
-    case L_f77:
-	add_string ( args, "-LANG:=f77" );
-	break;
     case L_f90:
 	add_string ( args, "-LANG:=f90" );
 	break;
@@ -550,10 +547,6 @@ fix_name_by_phase (char *name, phases_t phase)
 	if (name != NULL && strcmp(name, "-") == 0) {
 		switch (phase) {
 		case P_cpp:
-		case P_f_cpp:
-		case P_f90_cpp:
-		case P_ratfor:
-		case P_m4:
 #ifdef PATH64_ENABLE_GNU_FRONTEND
 		case P_gcpp:
 		case P_gcpp_plus:
@@ -596,7 +589,6 @@ fix_name_by_lang(char *name)
 
 	if (name != NULL && strcmp(name, "-") == 0) {
 		switch (source_lang) {
-		case L_f77:
 		case L_f90:
 			new_name = "stdin.f";
 			break;
@@ -791,8 +783,6 @@ add_sysroot(string_list_t *args, phases_t phase)  // 15149
     sprintf(buf, "--sysroot=%s", sysroot);
     add_string(args, buf);
     break;
-  case P_f_fe:
-  case P_cppf_fe:
   case P_f90_fe:
   case P_cppf90_fe:
     /* 15149: Currently, -isysroot (and hence -sysroot) is not honored by
@@ -1012,48 +1002,12 @@ add_file_args (string_list_t *args, phases_t index)
 	 * file and thus might need a local name rather than a tmp name */
 	current_phase = P_NONE;
 	switch (index) {
-	case P_m4:
-		add_string(args, the_file);
-		add_string(args, ">");
-		input_source = construct_given_name(the_file,"p", keep_flag);
-		add_string(args, input_source);
-		break;
-	case P_ratfor:
-		if (run_m4) {
-			input_source = construct_given_name(the_file,"p", keep_flag);
-			add_string(args, input_source);
-		} else {
-			add_string(args, the_file);
-		}
-		add_string(args, ">");
-		input_source = construct_given_name(the_file,"f", TRUE);
-		add_string(args, input_source);
-		break;
 	case P_cpp:
 		if (source_lang == L_as) {
 			add_string(args, "-Xdo_linesplice");
 			add_string(args, "-dollar");
 		}
 		/* fallthru */
-	case P_f_cpp:
-	case P_f90_cpp:
-		add_string(args, "-E");
-		if (index == P_f90_cpp) {
-		   if (expand_ftpp_macros) {
-		      add_string(args, "-F");
-		   }
-		   set_f90_source_form(args,TRUE);
-		}
-		if (input_source == NULL)
-		   input_source = string_copy(the_file);
-		add_string(args, input_source);
-		if (last_phase != P_any_cpp) {
-			add_string(args, ">");
-			current_phase = P_any_cpp;
-			input_source = construct_name(input_source,"i");
-			add_string(args, input_source);
-		}
-		break;
 #ifdef PATH64_ENABLE_GNU_FRONTEND
 	case P_gcpp:
 	case P_gcpp_plus:
@@ -1099,7 +1053,6 @@ add_file_args (string_list_t *args, phases_t index)
 			break;
 		case L_CC:
 			break;
-		case L_f77:
 		case L_f90:
 			add_string(args, "-traditional");
 
@@ -1115,7 +1068,6 @@ add_file_args (string_list_t *args, phases_t index)
                     add_string(args, "-lang-asm");
                     break;
                   
-		case L_f77:
 		case L_f90:
                     add_string(args, "-traditional-cpp");
                     break;
@@ -1347,56 +1299,11 @@ add_file_args (string_list_t *args, phases_t index)
 		}
 		break;
 	case P_pca:
-	case P_pfa:
 		sprintf(buf, "-I=%s", input_source);
 		add_string(args, buf);
 		sprintf(buf, "-original_filename=%s", the_file);
 		add_string(args, buf);
-		if (index == P_pfa)
-		    add_string(args, "-include=/usr/include");
-		{
-		  char *list_suffix, *cmp_suffix;
-		  extern char *optargs;
 
-		  if (roundoff) {
-		    /* if roundoff has been specified, pass it to pfa/pca */
-		    sprintf(buf, "-r=%c", roundoff);
-		    add_string(args, buf);
-		  } else if (O3_flag) {
-		    /* if -O3 has been specified, but not roundoff, pass -r=2
-		       to pfa/pca */
-		    add_string(args, "-r=2");
-		  }
-		  if (index == P_pca) {
-		     cmp_suffix = "M";
-		     list_suffix = "L";
-		  } else {
-		     /* pfa */
-		     cmp_suffix = "m";
-		     list_suffix = "l";
-		  }
-		  if (keep_list) {
-		     sprintf(buf, "-L=%s", 
-		         construct_given_name(
-			   the_file, list_suffix, TRUE /* keep*/));
-		     add_string(args, buf);
-		  } else {
-		     sprintf(buf, "-L=%s", 
-			  construct_name(input_source,list_suffix));
-		     add_string(args, buf);
-		  }
-		  if (keep_mp) {
-		     input_source = construct_given_name(the_file,
-			 cmp_suffix, TRUE);
-		     sprintf(buf, "-analysis=%snl", 
-		         construct_given_name(
-			   the_file, "a", TRUE /* keep*/));
-		     add_string(args, buf);
-		  } else {
-		     input_source = construct_name(input_source,cmp_suffix);
-		     add_string(args, "-noanalysis");
-		  }
-		}
 		if (keep_listing) {
 		   sprintf(buf, "-lo=ocktl");
 		   add_string(args, buf);
@@ -1416,65 +1323,6 @@ add_file_args (string_list_t *args, phases_t index)
                 sprintf(buf, "-XK%s", input_source);
                 add_string(args, buf);
                 break;
-	case P_f_fe:
-	case P_cppf_fe:
-		// Give -ansi to FTN fe and to the cpp embedded in the FTN fe.
-		// Bug 8029.
-		if (ansi == STRICT_ANSI) {
-		  add_string(args, "-ansi");
-		}
-		add_targ_options ( args ); /* Bug 5089 */
-		/* If doing IPA or inlining, can't do full-split: */
-		if ( ipa == TRUE || inline_t == TRUE ) {
-		  add_string ( args, "-FE:full_split=off" );
-		}
-
-		replace_string( args, "-fpic", "" );
-		replace_string( args, "-fPIC", "" );
-
-		sprintf(buf, "-fB,%s", construct_name(the_file,"B"));
- 		add_string(args, buf); 
-		if (keep_listing) {
-			sprintf(buf, "-fl,%s",construct_given_name(the_file,"L",TRUE));
-			add_string(args, buf);
-		}
-
-		if (index == P_cppf_fe) {
-		   if (Disable_open_mp) {
-		      add_string(args,"-disable_open_mp");
-                   } 
-		   if (Disable_old_mp) {
-		      add_string(args,"-disable_old_mp");
-                   }
-                }
-
-		if (use_craylibs == TRUE) {
-		  add_string(args,"-TENV:io_library=cray");
-		} else if (use_mipslibs == TRUE) {
-		  add_string(args,"-TENV:io_library=mips");
-		} else {
-		  /* This is the default for f77.  For release 7.2 the
-		     default is to use to old (libftn.so.1) library.  For
-		     release 7.3 (?) it should be switched to use the
-		     new (libftn.so.2) library. */
-		  add_string(args,"-TENV:io_library=mips");
-		}
-#ifdef TARG_MIPS
-        if (is_target_arch_MIPS())
-		  add_sysroot(args, index);  /* 15149 */
-#endif
-                add_isystem_dirs(args);  /* Bug 11265 */
-		{
-		  char *root = directory_path(get_executable_dir());
-		  sprintf (buf, "-include=%s/include/" PSC_FULL_VERSION, root);
-		  add_string(args, buf);
-		}
-
-		if (dashdash_flag)
-		  add_string(args,"--");
-		add_string(args, input_source);
-		break;
-
         case P_lister:
 		if (keep_listing) {
 		   char *listing_file;
@@ -1805,19 +1653,6 @@ add_file_args (string_list_t *args, phases_t index)
 		add_language_option ( args );
 		add_targ_options ( args );
 
-		if (invoked_lang == L_f77) {
-		  if (use_craylibs == TRUE) {
-		    add_string(args,"-TENV:io_library=cray");
-		  } else if (use_mipslibs == TRUE) {
-		    add_string(args,"-TENV:io_library=mips");
-		  } else {
-		    /* This is the default for f77.  For release 7.2 the
-		       default is to use to old (libftn.so.1) library.  For
-		       release 7.3 (?) it should be switched to use the
-		       new (libftn.so.2) library. */
-		    add_string(args,"-TENV:io_library=mips");
-		  }
-		}
 #ifdef TARG_X8664
         if (is_target_arch_X8664()) {
 		  if (msseregparm == TRUE) {
@@ -2697,14 +2532,7 @@ determine_phase_order (void)
 		cpp_phase = P_gcpp;
 	} else
 #endif // PATH64_ENABLE_GNU_FRONTEND
-    if (source_lang == L_f77) {
-		if (option_was_seen(O_mp)) {
-			/* power Ftn */
-			cpp_phase = P_cpp;	/* default */
-		} else {
-			cpp_phase = P_f_cpp;
-		}
-	} else if (use_coco == TRUE) {		// bug 9058
+        if (use_coco == TRUE) {		// bug 9058
 		cpp_phase = P_f_coco;
 	} else if (source_lang == L_f90) {
 // bug 5946
@@ -2783,9 +2611,7 @@ determine_phase_order (void)
 		break;
 	case S_i:
 	case S_ii:
-		if (source_lang == L_f77)
-			next_phase = P_f_fe;
-		else if (source_lang == L_f90)
+		if (source_lang == L_f90)
 			next_phase = P_f90_fe;
 		else if (source_lang == L_as)
 			next_phase = asm_phase;
@@ -2798,10 +2624,6 @@ determine_phase_order (void)
 		else
 			next_phase = c_fe;
 		break;
-	case S_r:
-		if (run_m4) add_phase(P_m4);
-		add_phase(P_ratfor);
-		/* FALLTHRU */
         case S_f:
         case S_f90:
 		if (cpp_phase == P_NONE) {
@@ -2858,12 +2680,6 @@ determine_phase_order (void)
 			next_phase = P_NONE;
 		}
 		switch (next_phase) {
-		case P_pfa:
-			add_phase(next_phase);
-			next_phase = P_cppf_fe;
-			break;
-		case P_f_fe:
-		case P_cppf_fe:
 		case P_lister:
 		case P_c_gfe:
 		case P_cplus_gfe:
@@ -2988,12 +2804,6 @@ check_existence_of_phases (void)
     for (i = 0; phase_order[i] != P_NONE; i++) {
 	int give_warning = FALSE;
 	switch (phase_order[i]) {
-
-	case P_pfa:
-	    if (!file_exists(get_full_phase_name(phase_order[i]))) {
-		error("Power Fortran is not installed on this system");
-	    }
-	    break;
 
 	case P_mpc:
 	    /* pca also invokes mpc, so just check mpc */
@@ -3301,7 +3111,6 @@ run_ld (void)
 
 	    // Tell ipa_link about the source language.
 	    switch (invoked_lang) {
-	      case L_f77:	str = "F77";	break;
 	      case L_f90:	str = "F90";	break;
 	      case L_cc:	str = "C";	break;
 	      case L_CC:	str = "CC";	break;
@@ -3864,7 +3673,6 @@ static void add_command_line_arg(string_list_t *args, char *source_file)
     }
     if (source_lang == L_cc ||
 	source_lang == L_CC ||
-	source_lang == L_f77 ||
 	source_lang == L_f90) 
     {
 	    add_string(args, concat_strings("-FE:cmdline=", cmd_file_name));

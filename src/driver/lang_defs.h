@@ -56,7 +56,6 @@ typedef enum {
 	L_cpp,	/* pseudo-language for cpp flags that cross languages */
 	L_cc,
 	L_CC,
-	L_f77,
 	L_f90,
 	L_as,
 	L_ld,
@@ -73,7 +72,6 @@ typedef enum {
 	S_F,
 	S_f90,
 	S_F90,
-	S_r,
 	S_i,
 	S_ii,
 	S_s,
@@ -94,9 +92,6 @@ typedef enum {
 	P_NONE,
 	P_All,
 
-	P_m4,		/* m4 */
-	P_ratfor,	/* ratfor */
-
 	P_cpp,		/* old-style cpp */
 #ifdef PATH64_ENABLE_GNU_FRONTEND
 	P_gcpp,		/* gcc cpp */
@@ -107,20 +102,15 @@ typedef enum {
     P_psclang_cpp,      /* psclang preprocessor */
 #endif // PATH64_ENABLE_PSCLANG
 
-	P_f_cpp,	/* cpp for F77 */
-	P_f90_cpp,	/* cpp for F90 */
 #ifdef KEY
 	P_f_coco,	/* coco preprocessor for Fortran	bug 9058 */
 #endif
 	P_any_cpp,	/* generic union of cpp's */
 
-	P_pfa,		/* power fortran optimizer */
 	P_pca,		/* power c optimizer */
         P_mpc,          /* multi processing c */
 	P_any_optfe,	/* generic union of all fe optimizers */
 
-	P_f_fe,		/* f77 fe */
-	P_cppf_fe,	/* cpp embedded in f77 fe */
 	P_f90_fe,	/* f90 fe */
 	P_cppf90_fe,	/* cpp embedded in f90 fe */
 	P_c_gfe,	/* gcc c fe */
