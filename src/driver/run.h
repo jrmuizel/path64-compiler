@@ -51,10 +51,6 @@ extern const char compiler_version[];
 /* run a phase of the compiler */
 extern void run_phase (phases_t, char *, string_list_t *); 
 
-/* exec another program, putting result in output.
- * This is simple version of full run_phase. */
-extern void run_simple_program (char *name, char **argv, char *output);
-
 /* Handler () is used for catching signals.  */
 extern void handler (int sig);
 
