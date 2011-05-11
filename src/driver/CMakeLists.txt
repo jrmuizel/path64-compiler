@@ -377,9 +377,6 @@ add_custom_target(
 
 else()
 
-target_link_libraries(${exe_refix}pathcc iberty)
-
-
 if(PATH64_ENABLE_CXX)
     add_custom_command(
         OUTPUT ${Path64_BINARY_DIR}/bin/pathCC ${Path64_BINARY_DIR}/lib/${PSC_FULL_VERSION}
