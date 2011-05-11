@@ -1011,6 +1011,7 @@ add_file_args (string_list_t *args, phases_t index)
 #ifdef PATH64_ENABLE_GNU_FRONTEND
 	case P_gcpp:
 	case P_gcpp_plus:
+#endif // PATH64_ENABLE_GNU_FRONTEND
 #ifdef TARG_X8664
         if(is_target_arch_X8664())
             add_sse_cc1_options(args);
@@ -1186,7 +1187,6 @@ add_file_args (string_list_t *args, phases_t index)
 			add_string(args, "-MMD");
 		
 		break;
-#endif // PATH64_ENABLE_GNU_FRONTEND
 
 #ifdef PATH64_ENABLE_PSCLANG
     case P_psclang_cpp:
