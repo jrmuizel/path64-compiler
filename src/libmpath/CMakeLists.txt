@@ -117,14 +117,14 @@ path64_set_multitarget_sources(mpath COMMON
 path64_set_multitarget_sources(mpath x86_64
                                ${PATHSCALE_MPATH_SRCS_X64} ${PATHSCALE_MPATH_S_SRCS_X64})
 path64_set_multitarget_property_(mpath COMPILE_DEFINITIONS PIC)
-path64_set_multitarget_property_(mpath COMPILE_FLAGS "-fPIC -fbootstrap-hack")
+path64_set_multitarget_property_(mpath COMPILE_FLAGS "-fPIC ${BOOTSTRAP_HACK_FLAG}")
 path64_set_multitarget_property_(mpath SOVERSION 1)
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
     path64_set_multitarget_property_(mpath LINK_FLAGS
-            "-Wl,-x -Wl,--version-script=${libmpath_SOURCE_DIR}/libmpath.vs -fbootstrap-hack -nodefaultlibs")
+            "-Wl,-x -Wl,--version-script=${libmpath_SOURCE_DIR}/libmpath.vs ${BOOTSTRAP_HACK_FLAG} -nodefaultlibs")
 else()
-    path64_set_multitarget_property_(mpath LINK_FLAGS "-fbootstrap-hack -nodefaultlibs")
+    path64_set_multitarget_property_(mpath LINK_FLAGS "${BOOTSTRAP_HACK_FLAG} -nodefaultlibs")
 endif()
 
 if(PATH64_ENABLE_PSCRUNTIME)

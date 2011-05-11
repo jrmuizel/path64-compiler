@@ -89,9 +89,9 @@ path64_set_multitarget_property_(mv SOVERSION 1)
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
     path64_set_multitarget_property_(mv LINK_FLAGS
-            "-Wl,-x -Wl,--version-script=${libmv_SOURCE_DIR}/libmv.vs -fbootstrap-hack -nodefaultlibs")
+            "-Wl,-x -Wl,--version-script=${libmv_SOURCE_DIR}/libmv.vs ${BOOTSTRAP_HACK_FLAG} -nodefaultlibs")
 else()
-    path64_set_multitarget_property_(mv LINK_FLAGS "-fbootstrap-hack -nodefaultlibs")
+    path64_set_multitarget_property_(mv LINK_FLAGS "${BOOTSTRAP_HACK_FLAG} -nodefaultlibs")
 endif()
 
 path64_multitarget_link_libraries(mv m c)

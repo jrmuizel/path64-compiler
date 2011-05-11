@@ -89,6 +89,13 @@ if("${CMAKE_C_COMPILER_ID}" STREQUAL "PathScale")
 endif()
 
 
+if(NOT PATH64_USE_SYSTEM_COMPILER_FOR_TARGET_LIBS OR "${CMAKE_C_COMPILER_ID}" STREQUAL "PathScale")
+    set(BOOTSTRAP_HACK_FLAG "-fbootstrap-hack")
+else()
+    set(BOOTSTRAP_HACK_FLAG "")
+endif()
+
+
 # Define if we are doing a supported build
 OPTION(PATH64_ENABLE_SUPPORTED "Enabling supported build" OFF)
 IF(PATH64_ENABLE_SUPPORTED)

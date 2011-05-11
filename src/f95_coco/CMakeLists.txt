@@ -13,7 +13,7 @@ if(PATH64_ENABLE_FORTRAN)
         set(host_bits ${_PATH64_TARGET_BITS_${host_targ}})
         if(PATH64_ENABLE_PSCRUNTIME AND "X${CMAKE_BUILD_TYPE}" STREQUAL "XRelease")
             path64_set_multiarch_property(coco LINK_FLAGS
-                "-fbootstrap-hack -nodefaultlibs")
+                "${BOOTSTRAP_HACK_FLAG} -nodefaultlibs")
             path64_multiarch_link_libraries(coco -lm -Wl,-Bstatic -lmv -lmpath -lpathfstart -lpathfortran -leh -lgcc -lpscrt -Wl,-Bdynamic)
         else()
             path64_multiarch_link_libraries(coco -lm)
