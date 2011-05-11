@@ -90,7 +90,7 @@ static phase_info_t phase_info[] = {
    {'N',  0x0000000000000000LL,	"", 	"",		FALSE},	/* NONE */
    {'A',  0x0fffffffffffffffLL,	"", 	"",		FALSE},	/* ALL */
 
-   {'p',  0x0000000000000010LL,	"cpp",	PHASEPATH,	FALSE},	/* cpp */
+   {'p',  0x0000000000000010LL,	"cpp",	"",             FALSE},	/* cpp */
 
 #ifdef PATH64_ENABLE_GNU_FRONTEND
 #ifdef PATH64_ENABLE_PSCRUNTIME

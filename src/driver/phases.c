@@ -2539,22 +2539,32 @@ determine_phase_order (void)
 	   if (option_was_seen(O_ftpp)) {
 	      cpp_phase = P_cppf90_fe;
 	   }
-#ifdef PATH64_ENABLE_GNU_FRONTEND
        else if (option_was_seen(O_cpp)
 		|| option_was_seen(O_P) 
 		|| option_was_seen(O_E)
 		|| (!option_was_seen(O_nocpp) &&
 		    (source_kind == S_F || source_kind == S_F90)))
 	   {
+#ifdef PATH64_ENABLE_GNU_FRONTEND
 	      cpp_phase = P_gcpp; 
+#else // !PATH64_ENABLE_GNU_FROENTEND
+              cpp_phase = P_cpp;
+#endif // !PATH64_ENABLE_GNU_FRONTEND
 	   }
-#endif // PATH64_ENABLE_GNU_FRONTEND
        else {
 	      cpp_phase = P_NONE;
 	   }
 	} else {
 #ifdef PATH64_ENABLE_GNU_FRONTEND
         cpp_phase = P_gcpp;
+#elif defined(PATH64_ENABLE_PSCLANG)
+        if (source_lang == L_as) {
+            cpp_phase = P_psclang_cpp;
+        } else {
+            cpp_phase = P_cpp;
+        }
+#else
+        cpp_phase = P_cpp;
 #endif // PATH64_ENABLE_GNU_FRONTEND
 	}
 
