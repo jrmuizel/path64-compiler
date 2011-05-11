@@ -1,9 +1,5 @@
 project(libpscrt)
 
-INCLUDE_DIRECTORIES(
-    ${PATHSCALE_BINARY_DIR}/../lib/include
-)
-
 
 set(pscrt_sources
   malloc_opt.c
