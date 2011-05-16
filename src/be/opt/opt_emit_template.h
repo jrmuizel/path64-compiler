@@ -562,6 +562,10 @@ Gen_exp_wn(CODEREP *exp, EMITTER *emitter)
     }
     else if ( exp->Opr() == OPR_PARM ) {
       wn = Gen_exp_wn(exp->Ilod_base(), emitter);
+      if (WN_operator(wn) == OPR_INTCONST &&
+	  MTYPE_byte_size(WN_rtype(wn)) < MTYPE_byte_size(exp->Dtyp())) {
+	  WN_set_rtype(wn, Mtype_TransferSize(exp->Dtyp(), WN_rtype(wn)));
+      } else
 #if defined( KEY)
  // bug 12161: fix INTCONSTs unnecessarily made 64-bit
       if (WN_operator(wn) == OPR_INTCONST && MTYPE_byte_size(WN_rtype(wn)) == 8
