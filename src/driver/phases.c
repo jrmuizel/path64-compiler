@@ -875,7 +875,7 @@ void add_asm_output(string_list_t *args, const char *the_file) {
 
 #ifdef TARG_X8664
 static void
-add_sse_cc1_options(string_list_t *args)
+add_sse_cc1_options(string_list_t *args, boolean sys_cpp)
 {
 	if (sse == TRUE)
 		add_string(args, "-msse");
@@ -895,29 +895,30 @@ add_sse_cc1_options(string_list_t *args)
 	else
 		add_string(args, "-mno-sse3");
 
-    // ssse3/sse4 options are not supported in gcc-4.2
+	// ssse3/sse4 options are not supported in gcc-4.2, use them
+	// only when using cc142/cc142plus
 #ifdef PATH64_ENABLE_PSCRUNTIME
-
-	if (ssse3 == TRUE)
-		add_string(args, "-mssse3");
-	else
-		add_string(args, "-mno-ssse3");
-
-	if (sse4a == TRUE)
-		add_string(args, "-msse4a");
-	else
-		add_string(args, "-mno-sse4a");
-
-	if (sse4_1 == TRUE)
-		add_string(args, "-msse4_1");
-	else
-		add_string(args, "-mno-sse4_1");
-
-	if (sse4_2 == TRUE)
-		add_string(args, "-msse4_2");
-	else
-		add_string(args, "-mno-sse4_2");
-
+	if(!sys_cpp) {
+		if (ssse3 == TRUE)
+			add_string(args, "-mssse3");
+		else
+			add_string(args, "-mno-ssse3");
+        
+		if (sse4a == TRUE)
+			add_string(args, "-msse4a");
+		else
+			add_string(args, "-mno-sse4a");
+        
+		if (sse4_1 == TRUE)
+			add_string(args, "-msse4_1");
+		else
+			add_string(args, "-mno-sse4_1");
+        
+		if (sse4_2 == TRUE)
+			add_string(args, "-msse4_2");
+		else
+			add_string(args, "-mno-sse4_2");
+        }
 #endif // PATH64_ENABLE_PSCRUNTIME
 }
 #endif // TARG_X8664
@@ -1014,7 +1015,7 @@ add_file_args (string_list_t *args, phases_t index)
 #endif // PATH64_ENABLE_GNU_FRONTEND
 #ifdef TARG_X8664
         if(is_target_arch_X8664())
-            add_sse_cc1_options(args);
+            add_sse_cc1_options(args, index == P_cpp);
 #endif // TARG_X8664
 
 		if (show_but_not_run)
@@ -1447,7 +1448,7 @@ add_file_args (string_list_t *args, phases_t index)
 	case P_cplus_gfe:
 #ifdef TARG_X8664
 		if (is_target_arch_X8664())
-			add_sse_cc1_options(args);
+			add_sse_cc1_options(args, FALSE);
 #endif // TARG_X8664
 
 		if (show_but_not_run)
@@ -1456,7 +1457,7 @@ add_file_args (string_list_t *args, phases_t index)
 		if (show_version) {
 			add_string(args, "-version");
 		}
-		if (quiet_flag) 
+		if (quiet_flag && index != P_cpp) 
 			add_string(args, "-quiet");
 		add_abi(args);
 #if defined(TARG_MIPS)
