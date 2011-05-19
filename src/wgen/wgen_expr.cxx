@@ -3739,9 +3739,31 @@ WGEN_target_builtins (gs_t exp, INTRINSIC * iopc, BOOL * intrinsic_op)
       *iopc = INTRN_VEC_EXT_V2SI;
       break;
     case GSBI_IX86_BUILTIN_VEC_EXT_V2DF:
-      wn = WN_Tas(MTYPE_F8, MTYPE_To_TY(MTYPE_V16F8), arg0);
-      *intrinsic_op = FALSE;
-      break;
+      {
+	  Is_True (gs_tree_code (gs_tree_value (gs_tree_chain (t_list))) == GS_INTEGER_CST,
+	    ("Immediate value required by vec_ext_v2df"));
+	  UINT val = gs_get_integer_value(gs_tree_value (gs_tree_chain (t_list)));
+	  switch(val) {
+	      case 1:
+		{
+		  WN * args[2];
+		  TY_IDX arg_ty_idx = Get_TY(gs_tree_type(gs_tree_value(t_list)));
+		  TYPE_ID arg_mtype  = TY_mtype(arg_ty_idx);
+		  args[0] = WN_CreateParm (Mtype_comparison (arg_mtype), arg0, arg_ty_idx, WN_PARM_BY_VALUE);
+		  args[1] = WN_CreateParm (Mtype_comparison (arg_mtype), arg0, arg_ty_idx, WN_PARM_BY_VALUE);
+		  *iopc = INTRN_UNPCKHPD;
+		  arg0 = WN_Create_Intrinsic(OPR_INTRINSIC_OP, MTYPE_V16F8, MTYPE_V, *iopc, 2, args);
+		  break;
+		}
+	      case 0:
+		break;
+	      default:
+		Fail_FmtAssertion ("Invalid imm value %d to vec_ext_v2df", val);
+	  }
+	  wn = WN_Tas(MTYPE_F8, MTYPE_To_TY(MTYPE_V16F8), arg0);
+	  *intrinsic_op = FALSE;
+	  break;
+      }
     case GSBI_IX86_BUILTIN_VEC_EXT_V4SF:
       wn = WN_Tas(MTYPE_F4, MTYPE_To_TY(MTYPE_V16F4), arg0);
       *intrinsic_op = FALSE;
