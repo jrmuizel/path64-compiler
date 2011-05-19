@@ -69,14 +69,6 @@
 
 #include <stdio.h>
 #include <sys/time.h>
-/* In Linux <sys/time.h> this is ifdef'ed out */
-#if defined(KEY) && ! defined(BUILD_OS_DARWIN) && ! defined(__FreeBSD__)
-struct timezone
-  {
-    int tz_minuteswest;		/* Minutes west of GMT.  */
-    int tz_dsttime;		/* Nonzero if DST is ever in effect.  */
-  };
-#endif
 
 
 short _init_hw_clock_called;

@@ -278,6 +278,12 @@ ADD_DEFINITIONS(-D_SGI_SOURCE
                 -D_MIPSEL
                 -DTARG_LINUX
                )
+
+# Define _GNU_SOURCE macro to avoid linking with new versions of glibc on linux
+IF("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    ADD_DEFINITIONS(-D_GNU_SOURCE)
+ENDIF()
+
 #IF (${BUILD_TARGET_DIR} MATCHES "arm")
 #ADD_DEFINITIONS( -DTARG_ST
 #                -DTARG_ARM

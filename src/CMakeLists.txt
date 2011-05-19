@@ -7,9 +7,6 @@ SET(CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES "m;c")
 
 INCLUDE(includes.cmake)
 
-# This kills the libpathfortran build at src/libu/numconv/mpp/defgu2s.c
-#ADD_DEFINITIONS(-D_GNU_SOURCE)
-
 # Fake target that depends on all be components
 add_custom_target(be-all)
 add_dependencies(compiler-stage be-all)
