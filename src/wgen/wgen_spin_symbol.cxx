@@ -66,9 +66,7 @@ extern "C"{
 #include "wgen_stmt.h"
 #include <map>
 #include "erfe.h"
-#ifdef TARG_X8664
 #include <ctype.h>
-#endif
 //#include "tree_cmp.h"
 
 
