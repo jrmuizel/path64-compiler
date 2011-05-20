@@ -70,6 +70,14 @@
 #include <stdio.h>
 #include <sys/time.h>
 
+#if defined(__sun)
+struct timezone
+  {
+    int tz_minuteswest;        /* Minutes west of GMT.  */
+    int tz_dsttime;            /* Nonzero if DST is ever in effect.  */
+  };
+#endif
+
 
 short _init_hw_clock_called;
 long long *_rtc_clockaddr;		/* ptr to 64 bit clock, if any */
