@@ -181,7 +181,7 @@ if(PATH64_ENABLE_DEFAULT_PATHAS)
 endif()
 
 
-option(PATH64_ENABLE_PSCLANG "Enables using psclang front-end" OFF)
+option(PATH64_ENABLE_PSCLANG "Enables using psclang front-end" ON)
 if(PATH64_ENABLE_PSCLANG)
     list(APPEND driver_defs "-DPATH64_ENABLE_PSCLANG")
 endif()
