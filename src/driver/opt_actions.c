@@ -2548,7 +2548,7 @@ get_x86_auto_cpu_name ()
         } else {
           switch (Model) {
           case 1:  return "opteron";
-          case 5:  return "athlon64-fx"; // also opteron
+          case 5:  return "opteron"; // athlon64-fx"; // also opteron
           default: return "athlon64";
           }
         }
