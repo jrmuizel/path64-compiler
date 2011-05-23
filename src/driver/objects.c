@@ -69,6 +69,7 @@ string_list_t *lib_objects;
 static string_list_t *cxx_prelinker_objects;
 static string_list_t *ar_objects; 
 static string_list_t *library_dirs;
+static string_list_t *rlibrary_dirs;
 
 #ifdef TARG_MIPS
 char * sysroot_path_n32 = NULL;
@@ -86,6 +87,7 @@ init_objects (void)
  	cxx_prelinker_objects = init_string_list();
  	ar_objects = init_string_list();
 	library_dirs = init_string_list();
+        rlibrary_dirs = init_string_list();
 }
 
 
@@ -313,6 +315,16 @@ append_libraries_to_list (string_list_t *list)
 }
 
 void
+append_rlibraries_to_list (string_list_t *list)
+{
+        string_item_t *p;
+        for (p = rlibrary_dirs->head; p != NULL; p = p->next) {
+ 		add_string(list, "-rpath");
+		add_string(list, p->name);
+        }
+}
+
+void
 dump_objects (void)
 {
 	printf("objects:  ");
@@ -323,6 +335,12 @@ void
 add_library_dir (const char *path)
 {
 	add_string_if_new(library_dirs, path);
+}
+
+void
+add_rlibrary_dir (const char *path)
+{
+	add_string_if_new(rlibrary_dirs, path);
 }
 
 void

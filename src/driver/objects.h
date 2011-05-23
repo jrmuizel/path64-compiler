@@ -53,9 +53,13 @@ extern void add_ar_objects (char *arg);
 /* add library to list */
 extern void add_library_dir (const char *path);
 
+/* add directory to runtime library search path */
+extern void add_rlibrary_dir (const char *path);
+
 /* append objects to end of list */
 extern void append_objects_to_list (string_list_t *list);
 extern void append_libraries_to_list (string_list_t *list);
+extern void append_rlibraries_to_list (string_list_t *list);
 extern void append_cxx_prelinker_objects_to_list (string_list_t *list);
 extern void append_ar_objects_to_list (string_list_t *list);
 

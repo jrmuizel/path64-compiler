@@ -271,6 +271,8 @@ I-include=%D  ;		FTN     ffe,PFA     "-include=%D"
 	""
 -L%D	add_library_dir(optargs);		LINK	NONE    ""
 	"add following directory to the library search path list"
+-R%D	add_rlibrary_dir(optargs);		LINK	NONE    ""
+	"add following directory to the runtime library search path list"
 -L		;		LINK	ld	self
 	""
 -s		;		LINK	ld	self

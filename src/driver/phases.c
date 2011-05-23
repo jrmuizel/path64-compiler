@@ -1782,6 +1782,7 @@ add_file_args (string_list_t *args, phases_t index)
 	case P_ld:
 	case P_ldplus:
 		append_libraries_to_list (args);
+                append_rlibraries_to_list (args);
 		if (show_but_not_run)
 			add_string(args, "-###");
 #ifdef TARG_MIPS
@@ -1876,6 +1877,7 @@ add_file_args (string_list_t *args, phases_t index)
 		/* add lib paths for standard libraries */
 		add_library_dir(target_runtime_path());
 		append_libraries_to_list (args);
+                append_rlibraries_to_list (args);
 
 		set_library_paths(args);
 
