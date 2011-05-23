@@ -53,9 +53,6 @@ extern void add_ar_objects (char *arg);
 /* add library to list */
 extern void add_library_dir (const char *path);
 
-/* get list of library dirs */
-extern string_list_t *get_library_dirs (void);
-
 /* append objects to end of list */
 extern void append_objects_to_list (string_list_t *list);
 extern void append_libraries_to_list (string_list_t *list);

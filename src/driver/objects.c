@@ -325,12 +325,6 @@ add_library_dir (const char *path)
 	add_string_if_new(library_dirs, path);
 }
 
-string_list_t *
-get_library_dirs(void)
-{
-	return library_dirs;
-}
-
 void
 add_library_options (void)
 {
