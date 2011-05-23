@@ -269,7 +269,7 @@ I-include=%D  ;		FTN     ffe,PFA     "-include=%D"
 	"option group to control listing file and contents"
 -LD_%s		;		ALL	ld	"-LD_%s"
 	""
--L%D	add_library_dir(optargs);		LINK	ld	"-L%D"
+-L%D	add_library_dir(optargs);		LINK	NONE    ""
 	"add following directory to the library search path list"
 -L		;		LINK	ld	self
 	""
