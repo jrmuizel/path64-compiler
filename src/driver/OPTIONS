@@ -1124,8 +1124,6 @@ I-u%s		;		Cc	ld	"-u %s"
 -IPA	toggle(&ipa,TRUE);		ALL	NONE	"-ipa"
 	"Perform interprocedural analysis and optimization"
 
--R*		;		ALL	NONE	""
-	"pass flags to RATFOR"
 % KEY	Pass "-m elf_i386" and "-m elf_x86_64" to linker.  They are the only
 %	two valid linker emulation modes.  Bug 8441.
 -m*elf_i386	toggle(&abi,ABI_M32);		LINK	ld	""
