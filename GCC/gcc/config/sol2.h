@@ -58,6 +58,7 @@ Boston, MA 02110-1301, USA.  */
     do {						\
 	builtin_define_std ("unix");			\
 	builtin_define_std ("sun");			\
+	builtin_define_std ("SunOS");			\
 	builtin_define ("__svr4__");			\
 	builtin_define ("__SVR4");			\
 	builtin_assert ("system=unix");			\
