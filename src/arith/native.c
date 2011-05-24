@@ -2067,7 +2067,7 @@ ar_selected_real_kind (ar_data *result, const AR_TYPE *resulttype,
 
 
 
-#if defined(TARG_X8664)     /* Little endian */
+#if defined(TARG_X8664) || HOST_IS_LITTLE_ENDIAN     /* Little endian */
 
 void ar_from_host_r32(void *ptr, void *ar0) {
 ar_data *ar;
