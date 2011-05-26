@@ -736,6 +736,9 @@ static void parse_cpnt_dcl_stmt()
       ATT_NUMERIC_CPNT(CURR_BLK_NAME) = TRUE;
    }
 
+   if (TYP_TYPE(type_idx) == Structure && ATT_DOPE_CPNT(TYP_IDX(type_idx)))
+       ATT_DOPE_CPNT(CURR_BLK_NAME) = TRUE;
+
    if (TYP_DESC(type_idx) == Default_Typed ||
        TYP_LINEAR(type_idx) == INTEGER_DEFAULT_TYPE ||
        TYP_LINEAR(type_idx) == LOGICAL_DEFAULT_TYPE ||
