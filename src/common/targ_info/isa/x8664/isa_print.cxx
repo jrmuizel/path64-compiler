@@ -296,6 +296,7 @@ main()
   Operand(0);
   Instruction_Print_Group( ropop,
 			   TOP_mul128v16,
+  		   TOP_mulhw128v16,
 				 TOP_pavgb128,
 				 TOP_pavgw128,
 				 TOP_psadbw128,

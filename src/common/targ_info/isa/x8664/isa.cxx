@@ -239,6 +239,7 @@ main ()
 	      "imuli64",
 	      "imulx64",
 	      "mul128v16",
+	      "mulhw128v16",
 	      "inc8",
 	      "dec8",
 	      "inc16",

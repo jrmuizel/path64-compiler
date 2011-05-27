@@ -434,6 +434,7 @@ main()
 		    TOP_addxx128v8, 
 		    TOP_addxxx128v8, 
 		    TOP_mul128v16,
+		    TOP_mulhw128v16,
 		    TOP_add128v16,
 		    TOP_addx128v16,
 		    TOP_addxx128v16,

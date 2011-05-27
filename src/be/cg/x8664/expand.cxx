@@ -6862,8 +6862,14 @@ Exp_Intrinsic_Op (INTRINSIC id, TN *result, TN *op0, TN *op1, TN *op2, TN *op3, 
   case INTRN_PMULLW:
     Build_OP( TOP_pmullw, result, op0, op1, ops );
     break;
+  case INTRN_PMULLW128:
+    Build_OP( TOP_mul128v16, result, op0, op1, ops );
+    break;
   case INTRN_PMULHW:
     Build_OP( TOP_pmulhw, result, op0, op1, ops );
+    break;
+  case INTRN_PMULHW128://TODO do we have pmulhw instead of mul128v16?
+    Build_OP( TOP_mulhw128v16, result, op0, op1, ops );
     break;
   case INTRN_PCMPEQB:
     Build_OP( TOP_pcmpeqb, result, op0, op1, ops );

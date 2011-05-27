@@ -156,6 +156,7 @@ main()
 		    TOP_xzero128v32,   0x000000ff,
 		    TOP_xzero128v64,   0x000000ff,
 		    TOP_mul128v16,	0x000000ff,
+		    TOP_mulhw128v16,	0x000000ff,
 		    TOP_add128v8,	0x000000ff,
 		    TOP_addx128v8,	0x000000ff,
 		    TOP_addxx128v8,	0x000000ff,

@@ -1770,6 +1770,7 @@ int main (int argc, char *argv[])
 
   Instruction_Group("float-alu for int mpy vector",
 		    TOP_mul128v16,
+		    TOP_mulhw128v16,
 		    TOP_UNDEFINED);
   Any_Operand_Access_Time(0);
   Any_Result_Available_Time(3);
