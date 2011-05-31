@@ -960,6 +960,28 @@ make_fdspec(
 	return(0);
 }
 
+
+/*
+ * Set buffering to line buffering if the FORT_BUFFERED environment
+ * variable is some variation of 'true'.
+ */
+
+static void
+set_buffering(FILE *fp) {
+char		*value;
+
+    value = getenv("FORT_BUFFERED");
+    if (value == NULL)
+	return;
+
+    if (strcasecmp(value, "true") == 0 || strcasecmp(value, "y") == 0 ||
+	strcasecmp(value, "1") == 0)
+
+	setvbuf(fp, NULL, _IOLBF, 0);
+}
+
+
+
 /*
  *	According to the file structure make the appropriate call to
  *	open the file.  Open routines are file structure dependent.
@@ -1097,6 +1119,8 @@ int		catcherr)
 
 			if (cup->ufp.std == NULL)
 				return(-1);
+
+			set_buffering(cup->ufp.std);
 		}
 
 /*
