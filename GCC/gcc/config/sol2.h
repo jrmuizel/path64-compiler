@@ -68,10 +68,8 @@ Boston, MA 02110-1301, USA.  */
 	   library.  */					\
 	if (c_dialect_cxx ())				\
 	  {						\
-	    builtin_define ("_XOPEN_SOURCE=500");	\
 	    builtin_define ("_LARGEFILE_SOURCE=1");	\
 	    builtin_define ("_LARGEFILE64_SOURCE=1");	\
-	    builtin_define ("__EXTENSIONS__");		\
 	  }						\
 	TARGET_SUB_OS_CPP_BUILTINS();			\
     } while (0)
