@@ -475,7 +475,7 @@ void IPA_LNO_WRITE_FILE::Write_Cleanup()
     free(ofl->section_list);
   ofl->num_of_section = 0;
   ofl->section_list = NULL;
-  munmap((void *) ofl->map_addr, (size_t) ofl->mapped_size);
+  munmap(ofl->map_addr, (size_t) ofl->mapped_size);
   ofl->map_addr = NULL;
   ofl->file_size = 0;
 } 
@@ -779,7 +779,7 @@ INT IPA_LNO_READ_FILE::Section_Size(Elf64_Word info)
 void IPA_LNO_READ_FILE::Close_Read_File()
 { 
   if (ifl != NULL)  
-    munmap(ifl->mapped_address, ifl->mapped_size); 
+    munmap((char*)ifl->mapped_address, ifl->mapped_size); 
 } 
 
 //-----------------------------------------------------------------------

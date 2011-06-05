@@ -1302,7 +1302,7 @@ WN_free_input (void *handle, off_t mapped_size)
     if (handle == 0 || handle == (void *)(-1))
 	return;
 
-    munmap (handle, mapped_size);
+    munmap ((char*)handle, mapped_size);
 } /* WN_free_input */
 
 

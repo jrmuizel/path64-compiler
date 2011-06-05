@@ -226,7 +226,7 @@ DRA_Set_Write_Location(void)
 void 
 DRA_Mem_Unmap_File()
 {
-  (void) munmap((void *)DRA_file_mmap, (size_t)DRA_file_size);
+  (void) munmap(DRA_file_mmap, (size_t)DRA_file_size);
 }
 
 
