@@ -582,6 +582,12 @@ function(path64_add_library_for_target name target type src_base_path)
 
         path64_get_compiler_for_language(compiler "${link_lang}" "${use_sys_compiler}")
 
+        if(hash_style_supported)
+            set(hash_style_flag "-Wl,--hash-style=both")
+        else()
+            message(STATUS "BBBB")
+        endif()
+
         add_custom_command(OUTPUT ${library_file}
                            COMMAND ${compiler} -shared -o ${library_file}
                                    ${arch_flag}
@@ -589,6 +595,7 @@ function(path64_add_library_for_target name target type src_base_path)
                                    ${target_link_flags}
                                    ${rel_objects}
                                    ${link_libs_flags}
+                                   ${hash_style_flag}
                            DEPENDS ${objects}
                            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${name}-${targ})
     else()

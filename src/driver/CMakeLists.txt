@@ -70,7 +70,7 @@ endfunction()
 
 
 # Configures driver_defs.h header
-function(configure_driver_defs output)
+function(configure_driver_defs output hash_style_supported)
     if(hash_style_supported)
         set(LD_HASH_STYLE_FLAG "--hash-style=gnu")
     else()
@@ -106,7 +106,7 @@ function(add_driver config_name
     # Configuring driver_defs.h
     file(MAKE_DIRECTORY "${include_dir}")
     configure_driver_defs("${include_dir}/driver_defs.h"
-                          "${hash_style_supported}")
+                          ${hash_style_supported})
     
     # generating target info
     set(targ_info_source "${CMAKE_CURRENT_BINARY_DIR}/targ_info${suffix}.c")
@@ -309,40 +309,8 @@ add_custom_target(driver_gen_sources
 
 # Driver for host system
 
-# GNU-style hashing needs support of the dynamic linker, so white-list
-# potential platforms.
-IF (NOT DEFINED SUPPORT_HASH_STYLE_GNU)
-    SET(SOURCE_FILE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/hash-style.c")
 
-    FILE(WRITE "${SOURCE_FILE}" "#include <stdio.h>
-int main(void)
-{
-	return printf(\"\");
-}
-")
-
-    MESSAGE(STATUS "Checking for --hash-style=gnu support")
-    TRY_RUN(SUPPORT_HASH_STYLE_GNU SUPPORT_HASH_STYLE_GNU_BUILD
-	${CMAKE_BINARY_DIR} ${SOURCE_FILE}
-        CMAKE_FLAGS -DLINK_LIBRARIES:STRING=-Wl,--hash-style=gnu
-	OUTPUT_VARIABLE OUTPUT)
-    IF (SUPPORT_HASH_STYLE_GNU_BUILD AND SUPPORT_HASH_STYLE_GNU EQUAL 0)
-	MESSAGE(STATUS "Checking for --hash-style=gnu support -- found ")
-    ELSE()
-	MESSAGE(STATUS "Checking for --hash-style=gnu support -- not found ")
-    	FILE(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
-    	    "Checking support for --hash-style=gnu support failed with the following output:\n"
-    	    "${OUTPUT}\n")
-    ENDIF()
-ENDIF()
-
-if(SUPPORT_HASH_STYLE_GNU_BUILD AND SUPPORT_HASH_STYLE_GNU EQUAL 0)
-    set(hash_style_supported "--hash-style=gnu")
-else()
-    set(hash_style_supported "")
-endif()
-
-add_driver("" "${hash_style_supported}")
+add_driver("" ${hash_style_supported})
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
