@@ -583,7 +583,7 @@ function(path64_add_library_for_target name target type src_base_path)
         path64_get_compiler_for_language(compiler "${link_lang}" "${use_sys_compiler}")
 
         if(hash_style_supported)
-            set(hash_style_flag "-Wl,--hash-style=both")
+            set(hash_style_flag "-Wl,--hash-style=sysv")
         else()
             message(STATUS "BBBB")
         endif()
