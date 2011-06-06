@@ -1912,11 +1912,8 @@ cwh_addr_address_ST(ST * st, OFFSET_64 off, TY_IDX ty)
   switch (ST_sclass(st)){
   case SCLASS_FORMAL:
 
-    DevAssert((TY_kind(ty) == KIND_POINTER),("formal & non-pointer"));
-
 #ifdef KEY /* Bug 14150 */
-    if (ST_is_value_parm(st) && !ST_auxst_is_rslt_tmp(st) &&
-       !PROC_BY_VALUE(ty)) {
+    if (ST_is_value_parm(st) && !ST_auxst_is_rslt_tmp(st)) {
        wn = cwh_addr_lda(st,off,ty);
        return wn;
     }
