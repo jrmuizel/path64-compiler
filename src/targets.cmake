@@ -584,8 +584,6 @@ function(path64_add_library_for_target name target type src_base_path)
 
         if(hash_style_supported)
             set(hash_style_flag "-Wl,--hash-style=sysv")
-        else()
-            message(STATUS "BBBB")
         endif()
 
         add_custom_command(OUTPUT ${library_file}
