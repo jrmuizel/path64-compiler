@@ -974,10 +974,10 @@ char		*value;
     if (value == NULL)
 	return;
 
-    if (strcasecmp(value, "true") == 0 || strcasecmp(value, "y") == 0 ||
-	strcasecmp(value, "1") == 0)
+    if (strcasecmp(value, "false") == 0 || strcasecmp(value, "n") == 0 ||
+	strcasecmp(value, "0") == 0)
 
-	setvbuf(fp, NULL, _IOLBF, 0);
+	setvbuf(fp, NULL, _IONBF, 0);
 }
 
 
