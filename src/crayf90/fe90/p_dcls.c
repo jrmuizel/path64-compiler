@@ -3142,8 +3142,10 @@ void parse_namelist_stmt (void)
                      AT_OBJ_NAME_PTR(grp_attr));
          }
 
-         AT_OBJ_CLASS(grp_attr)	= Namelist_Grp;
-	 ATN_NUM_NAMELIST(grp_attr) = 0;      /* Can be nonzero */
+	 if (AT_OBJ_CLASS(grp_attr) != Namelist_Grp) {
+	     AT_OBJ_CLASS(grp_attr)	= Namelist_Grp;
+	     ATN_NUM_NAMELIST(grp_attr) = 0;      /* Can be nonzero */
+	 }
       }
       else {
          parse_err_flush(Find_EOS, NULL);
