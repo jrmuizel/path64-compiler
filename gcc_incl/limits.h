@@ -8,8 +8,7 @@
 
 #ifndef _LIBC_LIMITS_H_
 /* Use "..." so that we find syslimits.h only in this same directory.  */
-//#include "syslimits.h"
-#include_next <limits.h>
+#include "syslimits.h"
 #endif
 #ifndef _LIMITS_H___
 #define _LIMITS_H___

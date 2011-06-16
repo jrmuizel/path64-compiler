@@ -1120,6 +1120,7 @@ add_file_args (string_list_t *args, phases_t index)
 				}
 			}
 			add_inc_path(args, "%s/include", root);
+			add_inc_path(args, "%s/lib/" PSC_FULL_VERSION "/include", root);
 		}
 #else
         add_std_includes(args);
