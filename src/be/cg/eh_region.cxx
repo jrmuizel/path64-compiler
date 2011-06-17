@@ -81,9 +81,11 @@
 #include <alloca.h>
 #endif
 
+#if 0
 extern "C" {
 #include "pro_encode_nm.h"
 }
+#endif
 
 /*
  * eh_region.cxx is responsible for building the EH range tables
@@ -1082,6 +1084,7 @@ static int
 sizeof_signed_leb128 (int value)
 {
 #if 1
+#define ENCODE_SPACE_NEEDED  8
   char buf[ENCODE_SPACE_NEEDED];
   char *str = buf;
   Dwarf_Signed sign = -(value < 0);
