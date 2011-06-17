@@ -1081,11 +1081,43 @@ Create_Type_Filter_Map (void)
 static int
 sizeof_signed_leb128 (int value)
 {
+#if 1
+  char buf[ENCODE_SPACE_NEEDED];
+  char *str = buf;
+  Dwarf_Signed sign = -(value < 0);
+  int more = 1;
+  char *end = str + ENCODE_SPACE_NEEDED;
+
+  do {
+      unsigned char byte = value & 0x7f;
+
+      value >>= 7;
+  
+      if (str >= end) {
+          FmtAssert (0 , ("Encoding for exception table failed"));
+          return 0;
+      }
+      /* 
+       * Remaining chunks would just contain the sign bit, and this chunk
+       * has already captured at least one sign bit.
+       */
+      if (value == sign && ((byte & 0x40) == (sign & 0x40))) {
+          more = 0;
+      } else {
+          byte |= 0x80;
+      }
+      *str = byte;
+      str++;
+  } while (more);
+
+  return (str - buf);
+#else
   char buff[ENCODE_SPACE_NEEDED];
   int size;
   int res = _dwarf_pro_encode_signed_leb128_nm (value, &size, buff, sizeof(buff));
   FmtAssert (res == DW_DLV_OK, ("Encoding for exception table failed"));
   return size;
+#endif
 }
 
 static void
