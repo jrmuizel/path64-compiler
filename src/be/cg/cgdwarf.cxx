@@ -110,7 +110,7 @@
 #endif
 
 extern "C" {
-#include "_libdwarf.h"
+#include "libdwarf.h"
 }
 
 BOOL Trace_Dwarf;
@@ -2092,7 +2092,7 @@ preorder_visit (
     }
   }
   #ifdef KEY /* Bug 15029 */
-  else if (DST_INFO_tag(info) == DW_TAG_base_type && dwarf_die_linked(die)) {
+  else if (DST_INFO_tag(info) == DW_TAG_base_type) {
     /* What a mess. Function Traverse_Global_DST() calls
      * DST_SET_info_mark() to indicate that it has already linked a DIE
      * into the Dwarf output tree, preventing it from being linked a second
@@ -3703,95 +3703,6 @@ Cg_Dwarf_Output_Asm_Bytes_Sym_Relocs (FILE                 *asm_file,
 #endif
 	break;
         }
-#ifdef KEY
-      case dwarf_drt_cie_label: // bug 2463
-#if defined(BUILD_OS_DARWIN)
-	/* GCC sets this to 0, so we do likewise */
-        fprintf(asm_file, "\t%s\t0", reloc_name);
-#else /* defined(BUILD_OS_DARWIN) */
-        fprintf(asm_file, "\t%s\t%s", reloc_name, ".LCIE");
-#endif /* defined(BUILD_OS_DARWIN) */
-	++k; // skip the DEBUG_FRAME label that is there just as a place-holder
-	break;
-#ifdef KEY /* Bug 3507 */
-      case dwarf_drt_module:
-	{
-#if ! defined(BUILD_OS_DARWIN)
-	  // Get the module name and lowercase it.
-	  char *module_name = 
-	    (char *)vsp.vsp_buffers[0]->sc_buffer+vsp.vsp_curbufpos+1;
-	  INT length = strlen(module_name);
-	  char *module_name_l = (char *)alloca(length+1);
-	  for (INT pos = 0; pos < length; pos ++)
-	    module_name_l[pos] = tolower(module_name[pos]);
-	  module_name_l[length] = '\0';
-	  fprintf(asm_file, "\t.globl __dm_%s\n__dm_%s:\n", 
-		  module_name_l, module_name_l);
-#endif /* ! defined(BUILD_OS_DARWIN) */
-	  k+=2; // skip the DEBUG_INFO label place-holder
-	  // do not move the cur_byte because this data is not present in 
-	  // vsp_bytes.
-	  continue; 
-	}
-      case dwarf_drt_imported_declaration: 
-	{
-	  // Get the lowercased module name.
-	  char *module_name = 
-	    (char *)vsp.vsp_buffers[0]->sc_buffer+
-	    vsp.vsp_curbufpos-(reloc_buffer[k].drd_length+1);
-	  reloc_name = 
-#if defined(BUILD_OS_DARWIN)
-	    /* .4byte not supported on gas v1.38 */
-	    (Use_32_Bit_Pointers ? ".word" : ".dword");
-#else
-#ifdef TARG_MIPS
-	    CG_emit_non_gas_syntax ? 
-	    (Use_32_Bit_Pointers ? ".word" : ".dword") :
-#endif
-	    AS_ADDRESS; // bug 12573
-#endif /* defined(BUILD_OS_DARWIN) */
-	  fprintf(asm_file, "\t.weak __dm_%s\n\t%s\t__dm_%s\n", module_name,
-	    reloc_name, module_name);
-	  k+=2; // skip the DEBUG_INFO label place-holder
-	  // do not move the cur_byte because this data is not present in 
-	  // vsp_bytes.
-	  continue; 
-	}
-#endif /* KEY Bug 3507 */
-      case dwarf_drt_data_reloc_by_str_id:
-	// it should be __gxx_personality_v0
-                // (cbr) on st200 we use PCabs
-#ifdef TARG_X8664
-        if ((Gen_PIC_Call_Shared || Gen_PIC_Shared) && 
-	     !strcmp (&Str_Table[reloc_buffer[k].drd_symbol_index], 
-	     "__gxx_personality_v0"))
-	    fprintf (asm_file, "\t%s\tDW.ref.__gxx_personality_v0-.", reloc_name);
- 	else
-#endif
-	fprintf(asm_file, "\t%s\t%s", reloc_name,
-		&Str_Table[reloc_buffer[k].drd_symbol_index]);
-	break;
-      case dwarf_drt_first_of_length_pair_create_second:
-	{
-	Is_True(k + 1 < reloc_count, ("unpaired first_of_length_pair"));
-	Is_True((reloc_buffer[k + 1].drd_type ==
-		 dwarf_drt_second_of_length_pair),
-		("unpaired first_of_length_pair"));
-	// bug 2729
-#if defined(BUILD_OS_DARWIN)
-	/* Mach-O assembler is picky about using label expressions as args
-	 * of a directive like .word */
-	const char *diff = "DIFF.DRT_DATA_RELOC";
-	fprintf(asm_file, "\t.set %s, %s - .LEHCIE\n"
-	  "%s\t%s\n",
-	  diff, dwarf_begin, reloc_name, diff);
-#else /* defined(BUILD_OS_DARWIN) */
-	fprintf(asm_file, "\t%s\t%s - .LEHCIE", reloc_name, dwarf_begin);
-#endif /* defined(BUILD_OS_DARWIN) */
-	++k;
-	}
-	break;
-#endif	// KEY
       case dwarf_drt_first_of_length_pair:
 	Is_True(k + 1 < reloc_count, ("unpaired first_of_length_pair"));
 	Is_True((reloc_buffer[k + 1].drd_type ==
@@ -3812,69 +3723,6 @@ Cg_Dwarf_Output_Asm_Bytes_Sym_Relocs (FILE                 *asm_file,
       case dwarf_drt_second_of_length_pair:
 	Fail_FmtAssertion("unpaired first/second_of_length_pair");
 	break;
-#ifdef KEY
-      // CIE begin
-      case dwarf_drt_cie_begin:
-        {
-	  Is_True (!strcmp (section_name, EH_FRAME_SECTNAME),
-	           ("This is valid only for EH_FRAME section"));
-
-	  static int cie_count = 0;
-	  cie_count++;
-
-	  // multiple CIEs not supported
-	  FmtAssert (cie_count == 1, ("Multiple CIEs not supported"));
-
-	  memset(dwarf_begin, 0, buflen);
-	  memset(dwarf_end, 0, buflen);
-	  // CIE begin and end labels
-	  strcpy (dwarf_begin, ".LEHCIE_begin");
-	  strcpy (dwarf_end, ".LEHCIE_end");
-	  // Compute length of CIE
-#if defined(BUILD_OS_DARWIN)
-	  emit_difference(asm_file, reloc_name, dwarf_end, dwarf_begin);
-#else /* defined(BUILD_OS_DARWIN) */
-	  fprintf (asm_file, "\t%s\t%s - %s\n", reloc_name,
-	           dwarf_end, dwarf_begin);
-#endif /* defined(BUILD_OS_DARWIN) */
-	  // CIE begin label
-	  fprintf (asm_file, "%s:", dwarf_begin);
-	}
-        break;
-      // FDE begin
-      case dwarf_drt_fde_begin:
-        {
-	  Is_True (!strcmp (section_name, EH_FRAME_SECTNAME),
-	           ("This is valid only for EH_FRAME section"));
-
-	  // End previous frame/cie
-#if defined(BUILD_OS_DARWIN)
-	  fprintf (asm_file, "\t%s %d\n", AS_ALIGN, logtwo(alignment));
-#else /* defined(BUILD_OS_DARWIN) */
-	  fprintf (asm_file, "\t%s %d\n", AS_ALIGN, alignment);
-#endif /* defined(BUILD_OS_DARWIN) */
-	  fprintf (asm_file, "%s:\n", dwarf_end);
-
-	  // Begin current frame
-	  static int count = 1;
-	  int this_count = count++;
-	  memset(dwarf_begin, 0, buflen);
-	  memset(dwarf_end, 0, buflen);
-
-	  // FDE begin and end labels
-	  sprintf (dwarf_begin, ".LFDE%d_begin", this_count);
-	  sprintf (dwarf_end, ".LFDE%d_end", this_count);
-	  // Compute length of FDE
-#if defined(BUILD_OS_DARWIN)
-	  emit_difference(asm_file, reloc_name, dwarf_end, dwarf_begin);
-#else /* defined(BUILD_OS_DARWIN) */
-	  fprintf (asm_file, "\t%s\t%s - %s\n", reloc_name, dwarf_end, dwarf_begin);
-#endif /* defined(BUILD_OS_DARWIN) */
-	  // FDE begin label
-	  fprintf (asm_file, "%s:", dwarf_begin);
-	}
-	break;
-#endif // KEY
       default:
 	break;
       }
