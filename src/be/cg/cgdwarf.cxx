@@ -2092,7 +2092,7 @@ preorder_visit (
     }
   }
   #ifdef KEY /* Bug 15029 */
-  else if (DST_INFO_tag(info) == DW_TAG_base_type) {
+  else if (DST_INFO_tag(info) == DW_TAG_base_type && 0) {
     /* What a mess. Function Traverse_Global_DST() calls
      * DST_SET_info_mark() to indicate that it has already linked a DIE
      * into the Dwarf output tree, preventing it from being linked a second
