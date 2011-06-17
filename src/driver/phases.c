@@ -1175,9 +1175,9 @@ add_file_args (string_list_t *args, phases_t index)
 			add_string(args, "-M");
 
 		if(option_was_seen(O_MD)) {
-			add_string(args, "-M");
+			add_string(args, "-MD");
+#ifdef PATH64_ENABLE_PSCRUNTIME
 			if (!previous_mf_exists (args)) {
-			    add_string(args, "-MF");
 			    if (outfile) {
 				add_string(args, change_suffix(outfile, "d"));
 				add_string(args, "-MQ");
@@ -1185,7 +1185,10 @@ add_file_args (string_list_t *args, phases_t index)
 			    } else {
 				add_string(args, change_suffix(drop_path(source_file), "d"));
 			    }
+			} else {
+			    add_string(args, dependency_file);
 			}
+#endif
 		}
 
 		if(dependency_file != NULL) {
@@ -1198,9 +1201,9 @@ add_file_args (string_list_t *args, phases_t index)
 			add_string(args, "-MM");
 
 		if(option_was_seen(O_MMD)) {
-			add_string(args, "-MM");
+			add_string(args, "-MMD");
+#ifdef PATH64_ENABLE_PSCRUNTIME
 			if (!previous_mf_exists (args)) {
-			    add_string(args, "-MF");
 			    if (outfile) {
 				add_string(args, change_suffix(outfile, "d"));
 				add_string(args, "-MQ");
@@ -1208,7 +1211,10 @@ add_file_args (string_list_t *args, phases_t index)
 			    } else {
 				add_string(args, change_suffix(drop_path(source_file), "d"));
 			    }
+			} else {
+			    add_string(args, dependency_file);
 			}
+#endif
 		}
 		
 		break;
