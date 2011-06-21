@@ -5496,7 +5496,6 @@ Write_Symbol (
   INT32	repeat)		/* Repeat count */
 {
   INT32 i;
-  ST *basesym;
   INT64 base_ofst = 0;
   pSCNINFO scn = em_scn[scn_idx].scninfo;
   INT address_size = ((Use_32_Bit_Pointers) ? 4 : 8);
@@ -5537,11 +5536,6 @@ Write_Symbol (
   }
 
   Base_Symbol_And_Offset_For_Addressing (sym, sym_ofst, &sym, &sym_ofst);
-
-  if (Use_Separate_PU_Section (current_pu, basesym)) {
-	/* use PU text section rather than generic one */
-	basesym = PU_base;
-  }
 
   for ( i = 0; i < repeat; i++ ) {
     // do object code first so base section initialized
@@ -5606,7 +5600,6 @@ Write_Label (
   INT32	repeat)		/* Repeat count */
 {
   INT32 i;
-  ST *basesym;
   Elf64_Sxword base_ofst = 0;
   pSCNINFO scn = em_scn[scn_idx].scninfo;
   INT address_size = ((Use_32_Bit_Pointers) ? 4 : 8);
@@ -5646,11 +5639,6 @@ Write_Label (
   // Labels are local and do not have own elf entry, 
   // so use base symbol.
   FmtAssert (Get_Label_BB(lab), ("label %d doesn't have defining bb?", lab));
-  basesym = BB_cold(Get_Label_BB(lab)) ? cold_base : text_base;
-  if (Use_Separate_PU_Section (current_pu, basesym)) {
-	/* use PU text section rather than generic one */
-	basesym = PU_base;
-  }
   base_ofst = Get_Label_Offset(lab) + lab_ofst;
 
   for ( i = 0; i < repeat; i++ ) {
