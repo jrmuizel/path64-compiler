@@ -193,7 +193,15 @@ endif()
 path64_add_multiarch_executable(inline PATHSCALE_INLINE_SRCS)
 path64_set_multiarch_property(inline COMPILE_DEFINITIONS MONGOOSE_BE;_LIGHTWEIGHT_INLINER;_STDC_FORMAT_MACROS)
 path64_multiarch_link_libraries(inline)
-path64_multiarch_link_multiarch_libraries(inline dwarf comutil be)
+path64_multiarch_link_multiarch_libraries(inline comutil be)
+
+# Link in system libdwarf
+# XXX: this is hardcoded for /usr/local/lib/libdwarf.a now, fix this
+add_library(dwarf STATIC IMPORTED)
+set_property(TARGET dwarf PROPERTY IMPORTED_LOCATION /usr/local/lib/libdwarf.a)
+
+path64_multiarch_link_libraries(inline dwarf)
+
 path64_multiarch_link_libraries(inline elfutil elf)
 path64_set_multiarch_property(inline COMPILE_FLAGS "-I${CMAKE_CURRENT_SOURCE_DIR}/../common/com/@ARCH@")
 path64_install_multiarch(inline)

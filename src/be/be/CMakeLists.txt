@@ -204,7 +204,14 @@ path64_add_multiarch_executable(be-exec be_exec_sources)
 path64_multiarch_link_libraries(be-exec -Wl,--whole-archive)
 path64_multiarch_link_multiarch_libraries(be-exec be-static cg wopt)
 path64_multiarch_link_libraries(be-exec  rtkutils -Wl,--no-whole-archive)
-path64_multiarch_link_multiarch_libraries(be-exec dwarf)
+
+# Link in system libdwarf
+# XXX: this is hardcoded for /usr/local/lib/libdwarf.a now, fix this
+add_library(dwarf STATIC IMPORTED)
+set_property(TARGET dwarf PROPERTY IMPORTED_LOCATION /usr/local/lib/libdwarf.a)
+
+path64_multiarch_link_libraries(be-exec dwarf)
+
 path64_multiarch_link_libraries(be-exec elfutil elf)
 path64_multiarch_link_multiarch_libraries(be-exec targinfo comutil)
 path64_set_multiarch_property(be-exec OUTPUT_NAME "be")
