@@ -1561,8 +1561,10 @@ DST_enter_array_type(gs_t type_tree, TY_IDX ttidx  , TY_IDX idx,INT tsize)
 	for (INT index = TY_AR_ndims(ttidx) - 1; index >= 0; index--) {
 	  // For C++, we may have declarations like "extern int a[]"
 	  // Fix bug 322
-	  if (!ARB_ubnd_var(arb[index]))
+	  if (ARB_ubnd_val(arb[index]) == 0xffffffff)
 	    break;	
+	  if (!ARB_const_ubnd(arb[index]) && !ARB_ubnd_var(arb[index]))
+	    break;
 	  // Fix bug 383
 	  if (!ARB_const_ubnd(arb[index])) { 
 	    ST* var_st = &St_Table[ARB_ubnd_var(arb[index])];
