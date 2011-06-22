@@ -234,6 +234,10 @@ ENDIF()
 OPTION(PATH64_ENABLE_CXX "Enable C++ support" ON)
 
 
+# Optional path to libdwarf
+OPTION(PATH64_LIBDWARF_PATH "Optional path to libdwarf library")
+
+
 SET(NAMEPREFIX "path" CACHE STRING "Default name excutable prefix [path]")
 IF(NAMEPREFIX)
 	MESSAGE(STATUS "Executables will be prefixed with ${NAMEPREFIX}")

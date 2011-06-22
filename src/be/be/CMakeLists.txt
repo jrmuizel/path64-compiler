@@ -204,14 +204,6 @@ path64_add_multiarch_executable(be-exec be_exec_sources)
 path64_multiarch_link_libraries(be-exec -Wl,--whole-archive)
 path64_multiarch_link_multiarch_libraries(be-exec be-static cg wopt)
 path64_multiarch_link_libraries(be-exec  rtkutils -Wl,--no-whole-archive)
-
-# Link in system libdwarf
-# XXX: this is hardcoded for /usr/local/lib/libdwarf.a now, fix this
-add_library(dwarf STATIC IMPORTED)
-set_property(TARGET dwarf PROPERTY IMPORTED_LOCATION /usr/local/lib/libdwarf.a)
-
-path64_multiarch_link_libraries(be-exec dwarf)
-
 path64_multiarch_link_libraries(be-exec elfutil elf)
 path64_multiarch_link_multiarch_libraries(be-exec targinfo comutil)
 path64_set_multiarch_property(be-exec OUTPUT_NAME "be")
@@ -223,10 +215,19 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     path64_multiarch_link_libraries(be-exec winlib iberty)
 endif()
 
+set(link_flags "")
+if(PATH64_LIBDWARF_PATH)
+    set(link_flags "${link_flags} -L ${PATH64_LIBDWARF_PATH}")
+endif()
+path64_multiarch_link_libraries(be-exec dwarf)
+
 if(NOT "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS" AND "${EXPORT_DYNAMIC_SUPPORTED}" MATCHES "yes")
     # --export-dynamic is not needed on osol
-    path64_set_multiarch_property(be-exec LINK_FLAGS "-Wl,--export-dynamic")
+    set(link_flags "${link_flags} -Wl,--export-dynamic")
 endif()
+
+path64_set_multiarch_property(be-exec LINK_FLAGS "${link_flags}")
+
 path64_install_multiarch(be-exec)
 
 
